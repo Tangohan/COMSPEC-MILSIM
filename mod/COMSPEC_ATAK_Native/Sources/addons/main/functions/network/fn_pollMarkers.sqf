@@ -1,3 +1,5 @@
+// Avec Overwatch connect, c'est lui qui interroge Athena (même session, pas de doublon).
+if ([] call comspec_atak_native_fnc_bridge) exitWith { false };
 private _raw = ["GetMarkers",["world:" + worldName]] call comspec_atak_native_fnc_extensionCall;
 if ((_raw find "OK|") isNotEqualTo 0) exitWith { false };
 

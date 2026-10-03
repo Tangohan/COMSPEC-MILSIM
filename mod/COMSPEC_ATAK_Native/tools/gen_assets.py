@@ -15,8 +15,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "..", "Sources", "addons", "main", "data")
 HEMTT = sys.argv[1] if len(sys.argv) > 1 else "hemtt"
 
-# Écran dans la coque paysage (fractions de l'image) — reprises dans fn_layoutGet.sqf.
-SCREEN_L = (0.105, 0.135, 0.875, 0.865)  # x0, y0, x1, y1
+# Coque fournie par COMSPEC (Samsung S7 en coque olive, 2048x2048, écran transparent).
+# Écran paysage (fractions de l'image) — reprises dans fn_layoutGet.sqf : (0.2222, 0.3496)-(0.7549, 0.6509).
+PHONE_SRC = os.path.join(HERE, "src", "android_s7_ca.png")
 
 
 def rr(draw, box, r, fill):
@@ -90,7 +91,44 @@ ICONS = {
     "map_clear": '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
     "map_compass": '<circle cx="12" cy="12" r="9.5"/><path d="M12 4l3 8h-6z" fill="#fff"/><path d="M12 20l-3-8h6z"/>',
     "map_follow": '<path d="M12 3l7 17-7-4-7 4z"/>',
+    "map_tools": '<path d="M4 20h16M4 20L14 4M9 20a6 6 0 0 0-1.6-4.2"/>',
+    "map_house": '<path d="M3 11l9-7 9 7M5 9.5V20h14V9.5"/><path d="M10 20v-5h4v5"/>',
+    "map_height": '<path d="M2 20l6-9 4 5 3-4 7 8z"/><path d="M18 3v7M15.5 5.5L18 3l2.5 2.5"/>',
+    "map_grid": '<path d="M3 3h18v18H3zM9 3v18M15 3v18M3 9h18M3 15h18"/>',
+    "map_flat": '<path d="M2 18h20M5 18l2-6h10l2 6"/><path d="M9 8h6M12 5v6"/>',
+    "map_los": '<circle cx="5" cy="17" r="2"/><path d="M7 15.5L20 6"/><path d="M14 20l2-4 2 4" /><circle cx="20" cy="6" r="1.5"/>',
+    "map_distance": '<path d="M3 12h18M3 8v8M21 8v8"/><path d="M7 10l-2 2 2 2M17 10l2 2-2 2"/>',
+    "app_network": '<circle cx="12" cy="18" r="1.6"/><path d="M8.5 14.5a5 5 0 0 1 7 0M5.5 11.5a9 9 0 0 1 13 0M2.5 8.5a13 13 0 0 1 19 0"/>',
+    "app_athena": '<path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+    "ui_camera": '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="6" fill="#fff"/>',
+    "ui_link": '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+    "ui_vibrate": '<rect x="8" y="4" width="8" height="16" rx="1.5"/><path d="M4 8v8M20 8v8M2 10v4M22 10v4"/>',
 }
+
+
+def compass_ring(size=256):
+    s = 4
+    S = size * s
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    c = S / 2
+    d.ellipse((6 * s, 6 * s, S - 6 * s, S - 6 * s), fill=(10, 14, 12, 190), outline=(255, 255, 255, 230), width=4 * s)
+    import math
+    for a in range(0, 360, 15):
+        r0 = c - 6 * s - (22 if a % 90 == 0 else 12) * s
+        r1 = c - 8 * s
+        x0, y0 = c + r0 * math.sin(math.radians(a)), c - r0 * math.cos(math.radians(a))
+        x1, y1 = c + r1 * math.sin(math.radians(a)), c - r1 * math.cos(math.radians(a))
+        d.line((x0, y0, x1, y1), fill=(255, 255, 255, 220), width=(4 if a % 90 == 0 else 2) * s)
+    # Triangle nord rouge
+    d.polygon([(c, 10 * s), (c - 14 * s, 40 * s), (c + 14 * s, 40 * s)], fill=(229, 72, 58, 255))
+    return img.resize((size, size), Image.LANCZOS)
+
+
+def compass_needle(size=256):
+    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="{size}" height="{size}">
+<path d="M12 4.5l3.2 10L12 12.6l-3.2 1.9z" fill="#5cc76b" stroke="#0b0f0c" stroke-width="0.5"/></svg>'''
+    return Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=size, output_height=size))).convert("RGBA")
 
 
 def icon_png(name, body, size=128):
@@ -132,9 +170,12 @@ def convert(img, name, tmp):
 def main():
     os.makedirs(OUT, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
-        land = phone_landscape()
+        land = Image.open(PHONE_SRC).convert("RGBA") if os.path.exists(PHONE_SRC) else phone_landscape()
         convert(land, "phone_landscape", tmp)
-        convert(land.rotate(90, expand=True), "phone_portrait", tmp)
+        # Rotation horaire : le bouton home du S7 passe en bas.
+        convert(land.rotate(-90, expand=True), "phone_portrait", tmp)
+        convert(compass_ring(), "compass_ring", tmp)
+        convert(compass_needle(), "compass_needle", tmp)
         for name, body in ICONS.items():
             convert(icon_png(name, body), name, tmp)
         for lvl in (100, 75, 50, 25, 10):

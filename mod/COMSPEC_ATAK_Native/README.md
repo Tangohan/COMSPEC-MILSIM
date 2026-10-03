@@ -13,17 +13,17 @@ Identités livrées :
 
 ## En jeu
 
-- `Ctrl+U` sort ou range le téléphone **porté** : il reste affiché dans le coin (vertical ou horizontal) et l'on continue à jouer, sans souris. La carte suit le joueur.
-- `Ctrl+Maj+U` prend le téléphone **en main** (souris, clavier) ou le repose. En main, les boutons du haut basculent vertical / horizontal et mini / plein écran (plein écran toujours horizontal).
-- Barre d'état : réseau Athena, batterie simulée (recharge en véhicule), météo (ACE si présent), heure de la mission.
-- Carte : indicatifs (pseudo seulement sans indicatif), carte « moi » (grille, cap, altitude), panneau curseur (grille, altitude, distance, azimut), outils centrer / suivre / zoom / marqueur (ENI, AMI, OBJ, DANGER, PT sur le canal courant) / mesure / libellés.
-- Messagerie : bulles par message, préfixes Athena (`[GROUPE]`, `[ROUTINE]`…) affichés en puces, lignes techniques masquées, envoi visible tout de suite.
-- Données web : les ordres et alertes publiés par Overwatch connect sont fusionnés avec ceux d'Athena au lieu de les écraser.
-- Le lanceur (bouton `APPS`) liste les applications déclarées dans `COMSPEC_ATAK_Apps` (`config.cpp`).
+- `Ctrl+U` sort ou range le téléphone **porté** : il reste affiché dans le coin et l'on continue à jouer, sans souris. La carte suit le joueur.
+- `Ctrl+Maj+U` le prend **en main** (souris, clavier) ou le repose. En main : glisser la coque pour déplacer le téléphone, boutons du haut pour vertical / horizontal et mini / plein écran.
+- **Athena** (app) : connexion Steam, e-mail + mot de passe, code e-mail ou code d'appairage du portail, puis Entrer. Avec COMSPEC Overwatch chargé, le terminal réutilise sa session et sa synchronisation (position, marqueurs, chat, ordres, alertes, photos) au lieu d'en ouvrir une seconde.
+- **Carte** : boussole, trait jaune joueur → curseur, panneau curseur (grille 6/8/10 chiffres, altitude, distance, azimut), carte « moi ». Outils carte : trait, dessin libre, distance, mesure A-B, bâtiments numérotés, hauteur, boussole, précision de grille, terrain plat, ligne de vue.
+- **Marqueurs** : clic avec l'outil marqueur pour un marqueur rapide, double clic pour l'éditeur complet (titre, description partagée, type, couleur, taille, orientation, opacité, canal), clic pour sélectionner, double clic pour modifier, `Suppr` sur le marqueur pointé pour l'effacer. Traits et dessins en polylignes. Fonctionne en mini comme en plein écran.
+- **Messagerie** : canaux Général / Commandement / Groupe / Alertes TOC et messages directs, en bulles. Le téléphone vibre à l'arrivée d'un message.
+- **Réseau** : stabilité, latence, perte, relais, zone radio. **Réglages** : réglages du téléphone et réglages roleplay d'Overwatch. **Photos** : photo rapide envoyée sur ATAK web.
 
 ## Ressources graphiques
 
-`tools/gen_assets.py` dessine la coque du téléphone et les icônes (SVG → PNG → PAA). Il demande Pillow, CairoSVG et HEMTT :
+`tools/gen_assets.py` convertit la coque fournie (`tools/src/android_s7_ca.png`, portrait obtenu par rotation) et dessine les icônes (SVG → PNG → PAA). Il demande Pillow, CairoSVG et HEMTT :
 `python3 tools/gen_assets.py /chemin/vers/hemtt` régénère `Sources/addons/main/data/*.paa`.
 
 ## Build

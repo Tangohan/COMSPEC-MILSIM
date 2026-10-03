@@ -2,7 +2,7 @@
     Géométrie du terminal.
     - Porté (HUD) ou en main mini : téléphone vertical ou horizontal dans le coin bas droit.
     - En main plein écran : téléphone horizontal agrandi au centre.
-    La coque est une texture 1:2 ; l'écran occupe la zone mesurée dans tools/gen_assets.py.
+    La coque est la texture carrée du S7 (tools/src) ; l'écran occupe la zone transparente mesurée.
 */
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _interactive = _s getOrDefault ["interactive", false];
@@ -14,21 +14,28 @@ private _mini = _mode isEqualTo "MINI";
 private _land = _orient isEqualTo "LANDSCAPE";
 private _ratio = pixelH / pixelW; // hauteur (unités écran) d'un carré de largeur 1
 
-private ["_dw", "_dh"];
-if (_land) then {
-    _dw = [safeZoneW * 0.98, safeZoneW * 0.44] select _mini;
-    _dh = _dw * _ratio / 2;
-    private _maxH = [safeZoneH * 0.98, safeZoneH * 0.46] select _mini;
-    if (_dh > _maxH) then { _dh = _maxH; _dw = _dh / _ratio * 2; };
+// Coque S7 : texture carrée 2048 px. Fractions mesurées dans tools/src/android_s7_ca.png.
+// _vis = boîte visible de la coque (avec la fixation), _scr = écran transparent.
+private _vis = [[0.1465, 0.1025, 0.7202, 0.9263], [0.1025, 0.2798, 0.9263, 0.8535]] select _land;
+private _scr = [[0.3491, 0.2222, 0.6504, 0.7549], [0.2222, 0.3496, 0.7549, 0.6509]] select _land;
+_vis params ["_vx0", "_vy0", "_vx1", "_vy1"];
+// Côté du carré en unités verticales (_dh) ; largeur = _dh / _ratio pour rester carré à l'écran.
+private _dh = if (_land) then {
+    private _wantW = [safeZoneW * 0.94, safeZoneW * 0.40] select _mini;
+    private _h = _wantW / (_vx1 - _vx0) * _ratio;
+    _h min (([safeZoneH * 0.96, safeZoneH * 0.50] select _mini) / (_vy1 - _vy0))
 } else {
-    _dh = safeZoneH * 0.66;
-    _dw = _dh / _ratio / 2;
+    ([safeZoneH * 0.94, safeZoneH * 0.62] select _mini) / (_vy1 - _vy0)
 };
-private _dx = [safeZoneX + (safeZoneW - _dw) / 2, safeZoneX + safeZoneW - _dw - safeZoneW * 0.01] select _mini;
-private _dy = [safeZoneY + (safeZoneH - _dh) / 2, safeZoneY + safeZoneH - _dh - safeZoneH * 0.02] select _mini;
+private _dw = _dh / _ratio;
+private _dx = if (_mini) then { safeZoneX + safeZoneW * 0.99 - _dw * _vx1 } else { safeZoneX + (safeZoneW - _dw * (_vx0 + _vx1)) / 2 };
+private _dy = if (_mini) then { safeZoneY + safeZoneH * 0.98 - _dh * _vy1 } else { safeZoneY + (safeZoneH - _dh * (_vy0 + _vy1)) / 2 };
+// Décalage choisi par le joueur (glisser la coque), par mode et orientation.
+private _offKey = format ["COMSPEC_ATAK_Offset_%1_%2", _mode, _orient];
+(profileNamespace getVariable [_offKey, [0, 0]]) params [["_ox", 0], ["_oy", 0]];
+_dx = _dx + _ox;
+_dy = _dy + _oy;
 
-// Écran dans la coque (fractions) : paysage (0.105, 0.135)-(0.875, 0.865), portrait = rotation de 90°.
-private _scr = if (_land) then { [0.105, 0.135, 0.875, 0.865] } else { [0.135, 0.125, 0.865, 0.895] };
 private _sx = _dx + _dw * (_scr select 0);
 private _sy = _dy + _dh * (_scr select 1);
 private _sw = _dw * ((_scr select 2) - (_scr select 0));
@@ -46,7 +53,7 @@ private _bodyY = _sy + _statusH + _appH;
 private _bodyH = _sh - _statusH - _appH - _dockH;
 
 createHashMapFromArray [
-    ["mode", _mode], ["mini", _mini], ["orientation", _orient], ["landscape", _land], ["interactive", _interactive], ["dock", _dock],
+    ["mode", _mode], ["offsetKey", _offKey], ["visible", [_dx + _dw * _vx0, _dy + _dh * _vy0, _dw * (_vx1 - _vx0), _dh * (_vy1 - _vy0)]], ["mini", _mini], ["orientation", _orient], ["landscape", _land], ["interactive", _interactive], ["dock", _dock],
     ["phone", [_dx, _dy, _dw, _dh]], ["phoneTexture", format ["\z\comspec_atak_native\addons\main\data\phone_%1.paa", ["portrait", "landscape"] select _land]],
     ["device", [_sx, _sy, _sw, _sh]],
     ["status", [_sx, _sy, _sw, _statusH]],
