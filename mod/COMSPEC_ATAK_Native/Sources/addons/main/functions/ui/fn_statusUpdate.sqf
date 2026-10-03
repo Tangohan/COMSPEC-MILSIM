@@ -1,11 +1,12 @@
-/* Barre d'état (indicatif, position, réseau, cap, heure), pastilles et rafraîchissement des pages vivantes. */
+/* Barre d'état (batterie, météo, heure, réseau), pastilles, suivi carte en HUD et pages vivantes. */
 disableSerialization;
-private _d = findDisplay 88500;
+private _d = [] call comspec_atak_native_fnc_display;
 if (isNull _d) exitWith {};
 private _state = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
+private _dir = "\z\comspec_atak_native\addons\main\data\";
 
-private _legacy = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
+private _legacy = missionNamespace getVariable ["COMSPEC_LinkState", ""];
 private _net = switch (toLower _legacy) do {
     case "linked": { "CONNECTED" };
     case "connecting";
@@ -13,16 +14,30 @@ private _net = switch (toLower _legacy) do {
     default { _state getOrDefault ["networkState", "OFFLINE"] };
 };
 _state set ["networkState", _net];
-private _netLabel = switch (_net) do { case "CONNECTED": { "ATHENA OK" }; case "DEGRADED": { "ATHENA DÉGRADÉ" }; default { "HORS LIGNE" }; };
-private _netColor = switch (_net) do { case "CONNECTED": { [0.36, 0.78, 0.42, 1] }; case "DEGRADED": { [0.95, 0.67, 0.20, 1] }; default { [0.58, 0.64, 0.60, 1] }; };
+private _sig = _d displayCtrl 88527;
+_sig ctrlSetText (_dir + format ["sig_%1.paa", switch (_net) do { case "CONNECTED": { 4 }; case "DEGRADED": { 2 }; default { 0 }; }]);
+_sig ctrlSetTextColor (switch (_net) do { case "CONNECTED": { [0.36, 0.78, 0.42, 1] }; case "DEGRADED": { [0.95, 0.67, 0.20, 1] }; default { [0.58, 0.64, 0.60, 1] }; });
+_sig ctrlSetTooltip (switch (_net) do { case "CONNECTED": { "Athena connecté" }; case "DEGRADED": { "Athena dégradé" }; default { "Hors ligne" }; });
 
-private _callsign = if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then { [] call comspec_overwatch_connect_fnc_getCallsign } else { groupId group player };
-(_d displayCtrl 88512) ctrlSetText format ["%1   %2", _callsign, mapGridPosition player];
-private _right = _d displayCtrl 88513;
-_right ctrlSetText format ["%1   %2°   %3", _netLabel, round getDir player, [daytime, "HH:MM"] call BIS_fnc_timeToString];
-_right ctrlSetTextColor _netColor;
+private _bat = [] call comspec_atak_native_fnc_battery;
+private _batCtrl = _d displayCtrl 88512;
+_batCtrl ctrlSetText (_dir + format ["bat_%1.paa", switch (true) do { case (_bat > 80): { 100 }; case (_bat > 55): { 75 }; case (_bat > 30): { 50 }; case (_bat > 12): { 25 }; default { 10 }; }]);
+_batCtrl ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.88, 0.25, 0.22, 1]] select (_bat <= 12));
+(_d displayCtrl 88513) ctrlSetText ((str floor _bat) + "%");
+
+([] call comspec_atak_native_fnc_weather) params ["_temp", "_speed", "_card"];
+(_d displayCtrl 88524) ctrlSetText format ["%1°C   %2 %3", _temp, _card, round _speed];
+(_d displayCtrl 88524) ctrlSetTooltip format ["Vent du %1, %2 m/s", _card, round _speed];
+(_d displayCtrl 88525) ctrlSetText ([dayTime, "HH:MM"] call BIS_fnc_timeToString);
 
 private _page = _state getOrDefault ["activePage", "LAUNCHER"];
+if (_page isEqualTo "MAP") then {
+    [] call comspec_atak_native_fnc_mapOverlayUpdate;
+    // Porté (HUD) ou suivi activé : la carte reste centrée sur le joueur.
+    if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]}) then {
+        [player] call comspec_atak_native_fnc_mapCenter;
+    };
+};
 
 // Pastilles : on ne reconstruit le dock (et le lanceur) que si un compteur change.
 private _badges = [["CHAT"] call comspec_atak_native_fnc_appBadge, ["TASK"] call comspec_atak_native_fnc_appBadge];
@@ -32,14 +47,14 @@ if (_badges isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BadgeSig", []])
 };
 
 // Pages vivantes : re-rendu quand leurs données changent (le brouillon de message est conservé).
-private _sig = switch (_page) do {
-    case "CHAT": { [count (_data getOrDefault ["messages", []]), count (_data getOrDefault ["p2p", []])] };
-    case "TASK": { [(_data getOrDefault ["revisions", createHashMap]) getOrDefault ["tasks", 0], (simpleTasks player) apply { taskState _x }] };
+private _pageSig = switch (_page) do {
+    case "CHAT": { [count ([] call comspec_atak_native_fnc_messagesAll), count (_data getOrDefault ["p2p", []])] };
+    case "TASK": { [count ([] call comspec_atak_native_fnc_tasksAll), (values ([] call comspec_atak_native_fnc_tasksAll)) apply { _x getOrDefault ["status", ""] }, (simpleTasks player) apply { taskState _x }] };
     case "GROUP": { (units group player) apply { [name _x, alive _x, lifeState _x, round ((damage _x) * 4)] } };
     default { [] };
 };
-if ((_state getOrDefault ["pageSigPage", ""]) isEqualTo _page && {_sig isNotEqualTo (_state getOrDefault ["pageSig", []])}) then {
+if ((_state getOrDefault ["pageSigPage", ""]) isEqualTo _page && {_pageSig isNotEqualTo (_state getOrDefault ["pageSig", []])}) then {
     [_page] call comspec_atak_native_fnc_pageRender;
 };
-_state set ["pageSig", _sig];
+_state set ["pageSig", _pageSig];
 _state set ["pageSigPage", _page];

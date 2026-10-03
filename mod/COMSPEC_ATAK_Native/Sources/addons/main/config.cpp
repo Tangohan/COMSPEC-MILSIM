@@ -3,21 +3,21 @@ class CfgPatches {
     class comspec_atak_native_main {
         name="COMSPEC ATAK Native Standalone"; author="COMSPEC"; requiredVersion=2.14;
         requiredAddons[]={"A3_UI_F","cba_main","cba_xeh"};
-        units[]={}; weapons[]={}; version=1.1; versionStr=VERSION_STR; versionAr[]={1,1,0};
+        units[]={}; weapons[]={}; version=1.2; versionStr=VERSION_STR; versionAr[]={1,2,0};
     };
 };
 class CfgFunctions {
     class comspec_atak_native { tag="comspec_atak_native";
         class core { file="z\comspec_atak_native\addons\main\functions\core";
-            class log {}; class stateInit {}; class storeSet {}; class schedulerStart {}; class schedulerStop {}; class schedulerTick {}; class debugDump {};
+            class log {}; class battery {}; class weather {}; class stateInit {}; class storeSet {}; class schedulerStart {}; class schedulerStop {}; class schedulerTick {}; class debugDump {};
         };
         class ui { file="z\comspec_atak_native\addons\main\functions\ui";
-            class open {}; class close {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class navigate {}; class back {}; class modeToggle {};
+            class display {}; class open {}; class close {}; class hudToggle {}; class interactToggle {}; class orientationToggle {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class navigate {}; class back {}; class modeToggle {};
             class pageRender {}; class pageClear {}; class pageCtrl {}; class tileCreate {}; class appList {}; class appBadge {}; class dockRender {}; class launcherRender {};
             class statusUpdate {}; class inspectorUpdate {}; class notify {}; class notificationsRender {};
         };
         class map { file="z\comspec_atak_native\addons\main\functions\map";
-            class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class localDataRefresh {}; class mapCenter {};
+            class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {};
         };
         class network { file="z\comspec_atak_native\addons\main\functions\network";
             class extensionCall {}; class extensionCallback {}; class remoteSync {}; class importLegacyData {};
@@ -26,7 +26,7 @@ class CfgFunctions {
         };
         class pages { file="z\comspec_atak_native\addons\main\functions\pages";
             class chatSend {}; class taskAction {}; class briefingStep {}; class settingsSave {};
-            class pageMap {}; class pageChat {}; class pageGroup {}; class pageTasks {}; class pageText {};
+            class pageMap {}; class pageChat {}; class chatParse {}; class messagesAll {}; class tasksAll {}; class pageGroup {}; class pageTasks {}; class pageText {};
         };
     };
 };
@@ -34,22 +34,22 @@ class CfgFunctions {
 // Registre des applications du lanceur (même principe que les app.hpp de BCE) :
 // un autre addon peut ajouter une classe ici pour apparaître dans le lanceur.
 //   page    : page du routeur ouverte au clic
-//   icon    : texture PAA (icônes Arma 3 de base, aucune ressource tierce)
+//   icon    : texture PAA (icônes COMSPEC dans data\, générées par tools/gen_assets.py)
 //   section : regroupement dans le lanceur ; order : tri croissant ; dock=1 : raccourci du dock
 class COMSPEC_ATAK_Apps {
-    class Map      { name="Carte";      page="MAP";      section="Opérations";    order=10;  dock=1; icon="\a3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa"; };
-    class Chat     { name="Messagerie"; page="CHAT";     section="Opérations";    order=20;  dock=1; icon="\a3\ui_f\data\igui\cfg\simpletasks\types\talk_ca.paa"; };
-    class Group    { name="Groupe";     page="GROUP";    section="Opérations";    order=30;  dock=1; icon="\a3\ui_f\data\igui\cfg\simpletasks\types\meet_ca.paa"; };
-    class Tasks    { name="Tâches";     page="TASK";     section="Opérations";    order=40;  dock=1; icon="\a3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa"; };
-    class C2       { name="C2";         page="C2";       section="Opérations";    order=50;  dock=0; icon="\a3\ui_f\data\igui\cfg\simpletasks\types\radio_ca.paa"; };
-    class Bft      { name="BFT";        page="BFT";      section="Opérations";    order=60;  dock=0; icon="\a3\ui_f\data\igui\cfg\simpletasks\types\move_ca.paa"; };
-    class Intel    { name="Rens.";      page="INTEL";    section="Renseignement"; order=110; dock=0; icon="\a3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa"; };
-    class Sse      { name="SSE";        page="SSE";      section="Renseignement"; order=120; dock=0; icon="\a3\ui_f\data\igui\cfg\simpletasks\types\search_ca.paa"; };
-    class Bda      { name="BDA";        page="BDA";      section="Renseignement"; order=130; dock=0; icon="\a3\ui_f\data\igui\cfg\simpletasks\types\destroy_ca.paa"; };
-    class Photos   { name="Photos";     page="PHOTOS";   section="Renseignement"; order=140; dock=0; icon="\a3\ui_f\data\igui\cfg\simpletasks\types\scout_ca.paa"; };
-    class Briefing { name="Briefing";   page="BRIEFING"; section="Mission";       order=210; dock=0; icon="\a3\ui_f\data\igui\cfg\simpletasks\types\whiteboard_ca.paa"; };
-    class Status   { name="Statut";     page="STATUS";   section="Système";       order=310; dock=0; icon="\a3\ui_f\data\igui\cfg\simpletasks\types\use_ca.paa"; };
-    class Settings { name="Réglages";   page="SETTINGS"; section="Système";       order=320; dock=0; icon="\a3\ui_f\data\igui\cfg\simpletasks\types\interact_ca.paa"; };
+    class Map      { name="Carte";      page="MAP";      section="Opérations";    order=10;  dock=1; icon="\z\comspec_atak_native\addons\main\data\app_map.paa"; };
+    class Chat     { name="Messagerie"; page="CHAT";     section="Opérations";    order=20;  dock=1; icon="\z\comspec_atak_native\addons\main\data\app_chat.paa"; };
+    class Group    { name="Groupe";     page="GROUP";    section="Opérations";    order=30;  dock=1; icon="\z\comspec_atak_native\addons\main\data\app_group.paa"; };
+    class Tasks    { name="Tâches";     page="TASK";     section="Opérations";    order=40;  dock=1; icon="\z\comspec_atak_native\addons\main\data\app_tasks.paa"; };
+    class C2       { name="C2";         page="C2";       section="Opérations";    order=50;  dock=0; icon="\z\comspec_atak_native\addons\main\data\app_c2.paa"; };
+    class Bft      { name="BFT";        page="BFT";      section="Opérations";    order=60;  dock=0; icon="\z\comspec_atak_native\addons\main\data\app_bft.paa"; };
+    class Intel    { name="Rens.";      page="INTEL";    section="Renseignement"; order=110; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_intel.paa"; };
+    class Sse      { name="SSE";        page="SSE";      section="Renseignement"; order=120; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_sse.paa"; };
+    class Bda      { name="BDA";        page="BDA";      section="Renseignement"; order=130; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_bda.paa"; };
+    class Photos   { name="Photos";     page="PHOTOS";   section="Renseignement"; order=140; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_photos.paa"; };
+    class Briefing { name="Briefing";   page="BRIEFING"; section="Mission";       order=210; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_briefing.paa"; };
+    class Status   { name="Statut";     page="STATUS";   section="Système";       order=310; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_status.paa"; };
+    class Settings { name="Réglages";   page="SETTINGS"; section="Système";       order=320; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_settings.paa"; };
 };
 
 class Extended_PreInit_EventHandlers { class comspec_atak_native_main { init="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_preInit.sqf'"; }; };

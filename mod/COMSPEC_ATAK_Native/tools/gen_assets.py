@@ -1,0 +1,150 @@
+#!/usr/bin/env python3
+"""
+Génère les textures du terminal (coque téléphone + icônes) en PNG puis PAA.
+Dessins originaux COMSPEC (aucune ressource BCE, cTab ou Iceman).
+
+Usage : python3 gen_assets.py <hemtt>
+Sortie : Sources/addons/main/data/*.paa
+Dépendances : Pillow, CairoSVG, HEMTT (hemtt utils paa convert).
+"""
+import io, os, subprocess, sys, tempfile
+from PIL import Image, ImageDraw, ImageFilter
+import cairosvg
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.join(HERE, "..", "Sources", "addons", "main", "data")
+HEMTT = sys.argv[1] if len(sys.argv) > 1 else "hemtt"
+
+# Écran dans la coque paysage (fractions de l'image) — reprises dans fn_layoutGet.sqf.
+SCREEN_L = (0.105, 0.135, 0.875, 0.865)  # x0, y0, x1, y1
+
+
+def rr(draw, box, r, fill):
+    draw.rounded_rectangle(box, radius=r, fill=fill)
+
+
+def phone_landscape(w=2048, h=1024):
+    s = 2  # suréchantillonnage
+    W, H = w * s, h * s
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    case = (122, 112, 80, 255)
+    case_dark = (92, 84, 60, 255)
+    # Clips haut / bas (support MOLLE)
+    rr(d, (int(W * 0.44), int(H * 0.0), int(W * 0.60), int(H * 0.10)), 18 * s, (28, 28, 28, 255))
+    rr(d, (int(W * 0.44), int(H * 0.90), int(W * 0.60), int(H * 1.0)), 18 * s, (28, 28, 28, 255))
+    # Coque renforcée
+    rr(d, (int(W * 0.01), int(H * 0.06), int(W * 0.99), int(H * 0.94)), 120 * s, case_dark)
+    rr(d, (int(W * 0.018), int(H * 0.075), int(W * 0.982), int(H * 0.925)), 110 * s, case)
+    # Bumpers d'angle
+    for (x0, y0) in [(0.012, 0.06), (0.93, 0.06), (0.012, 0.80), (0.93, 0.80)]:
+        rr(d, (int(W * x0), int(H * y0), int(W * (x0 + 0.058)), int(H * (y0 + 0.14))), 50 * s, case_dark)
+    # Corps du téléphone
+    rr(d, (int(W * 0.055), int(H * 0.105), int(W * 0.945), int(H * 0.895)), 90 * s, (52, 54, 56, 255))
+    rr(d, (int(W * 0.062), int(H * 0.115), int(W * 0.938), int(H * 0.885)), 84 * s, (34, 36, 38, 255))
+    # Écran (noir, recouvert par l'interface)
+    x0, y0, x1, y1 = SCREEN_L
+    d.rectangle((int(W * x0) - 4 * s, int(H * y0) - 4 * s, int(W * x1) + 4 * s, int(H * y1) + 4 * s), fill=(8, 10, 9, 255))
+    # Haut-parleur + capteurs (côté gauche)
+    rr(d, (int(W * 0.074), int(H * 0.40), int(W * 0.084), int(H * 0.60)), 8 * s, (70, 72, 74, 255))
+    d.ellipse((int(W * 0.072), int(H * 0.25), int(W * 0.088), int(H * 0.282)), fill=(18, 18, 18, 255))
+    # Boutons de navigation (côté droit)
+    rr(d, (int(W * 0.900), int(H * 0.40), int(W * 0.922), int(H * 0.60)), 14 * s, (24, 24, 24, 255))
+    # Boutons latéraux sur la coque
+    rr(d, (int(W * 0.20), int(H * 0.035), int(W * 0.30), int(H * 0.075)), 10 * s, (40, 40, 40, 255))
+    rr(d, (int(W * 0.66), int(H * 0.925), int(W * 0.80), int(H * 0.965)), 10 * s, (40, 40, 40, 255))
+    img = img.resize((w, h), Image.LANCZOS)
+    return img
+
+
+ICONS = {
+    "app_map": '<path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>',
+    "app_chat": '<path d="M4 4h16v11H9l-5 4v-4H4z"/><path d="M8 9h8M8 12h5"/>',
+    "app_group": '<circle cx="8" cy="8" r="3"/><circle cx="16.5" cy="9" r="2.5"/><path d="M2.5 19c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M14 14.2c.8-.5 1.6-.7 2.5-.7 2.7 0 5 2 5 5"/>',
+    "app_tasks": '<rect x="5" y="3" width="14" height="18" rx="1"/><path d="M8.5 9l1.8 1.8L13.5 7.5M8.5 15h7"/>',
+    "app_c2": '<path d="M6 21V10M18 21V10"/><path d="M12 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 13v8"/><path d="M8.5 7.5a5 5 0 0 1 7 0M5.5 4.5a9 9 0 0 1 13 0"/>',
+    "app_bft": '<circle cx="12" cy="12" r="8"/><path d="M12 6l3.5 9L12 13l-3.5 2z"/>',
+    "app_intel": '<path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+    "app_sse": '<path d="M6 3h8l4 4v6"/><path d="M6 3v18h6"/><circle cx="16" cy="17" r="3"/><path d="M18.2 19.2L21 22"/>',
+    "app_bda": '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
+    "app_photos": '<path d="M3 7h4l2-2.5h6L17 7h4v12H3z"/><circle cx="12" cy="13" r="3.5"/>',
+    "app_briefing": '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M12 16v4M8 21h8M7 12l3-3 2 2 4-4"/>',
+    "app_status": '<path d="M3 20h18M6 20v-6M10 20V9M14 20v-8M18 20V5"/>',
+    "app_settings": '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+    "ui_back": '<path d="M15 5l-7 7 7 7"/>',
+    "ui_apps": '<rect x="4" y="4" width="6" height="6"/><rect x="14" y="4" width="6" height="6"/><rect x="4" y="14" width="6" height="6"/><rect x="14" y="14" width="6" height="6"/>',
+    "ui_expand": '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+    "ui_collapse": '<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>',
+    "ui_rotate": '<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M2 14a8 8 0 0 0 5 6M22 10a8 8 0 0 0-5-6"/>',
+    "ui_send": '<path d="M3 11l18-8-7 18-3-7z"/><path d="M11 14l10-11"/>',
+    "ui_close": '<path d="M6 6l12 12M18 6L6 18"/>',
+    "ui_gps": '<path d="M12 21s-6-6.2-6-11a6 6 0 0 1 12 0c0 4.8-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/><path d="M5 21h14"/>',
+    "ui_weather": '<path d="M7 18a4 4 0 0 1-.4-8 5.5 5.5 0 0 1 10.6 1.5A3.3 3.3 0 0 1 17 18z"/>',
+    "ui_wind": '<path d="M3 9h11a2.5 2.5 0 1 0-2.5-2.5M3 13h15a2.5 2.5 0 1 1-2.5 2.5M3 17h8"/>',
+    "map_center": '<circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="1.2" fill="#fff"/>',
+    "map_zoomin": '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M8 10.5h5M10.5 8v5"/>',
+    "map_zoomout": '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L21 21M8 10.5h5"/>',
+    "map_marker": '<path d="M12 21s-6-6.2-6-11a6 6 0 0 1 12 0c0 4.8-6 11-6 11z"/><path d="M12 7v6M9 10h6"/>',
+    "map_measure": '<path d="M3 17L17 3l4 4L7 21z"/><path d="M7 13l2 2M10 10l2 2M13 7l2 2"/>',
+    "map_labels": '<path d="M4 6h16M12 6v13M8 19h8"/>',
+    "map_clear": '<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>',
+    "map_compass": '<circle cx="12" cy="12" r="9.5"/><path d="M12 4l3 8h-6z" fill="#fff"/><path d="M12 20l-3-8h6z"/>',
+    "map_follow": '<path d="M12 3l7 17-7-4-7 4z"/>',
+}
+
+
+def icon_png(name, body, size=128):
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="{size}" height="{size}" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">{body}</svg>'
+    return Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=size, output_height=size))).convert("RGBA")
+
+
+def battery(level, w=128, h=64):
+    s = 4
+    img = Image.new("RGBA", (w * s, h * s), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle((6 * s, 12 * s, 110 * s, 52 * s), radius=6 * s, outline=(255, 255, 255, 255), width=5 * s)
+    d.rectangle((112 * s, 24 * s, 122 * s, 40 * s), fill=(255, 255, 255, 255))
+    fw = int((110 - 16) * level / 100)
+    if fw > 0:
+        d.rectangle((14 * s, 20 * s, (14 + fw) * s, 44 * s), fill=(255, 255, 255, 255))
+    return img.resize((w, h), Image.LANCZOS)
+
+
+def signal(bars, w=128, h=64):
+    s = 4
+    img = Image.new("RGBA", (w * s, h * s), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    for i in range(4):
+        x = (20 + i * 24) * s
+        top = (52 - (i + 1) * 10) * s
+        fill = (255, 255, 255, 255) if i < bars else (255, 255, 255, 70)
+        d.rectangle((x, top, x + 14 * s, 56 * s), fill=fill)
+    return img.resize((w, h), Image.LANCZOS)
+
+
+def convert(img, name, tmp):
+    png = os.path.join(tmp, name + ".png")
+    img.save(png)
+    paa = os.path.join(OUT, name + ".paa")
+    subprocess.run([HEMTT, "utils", "paa", "convert", png, paa], check=True, stdout=subprocess.DEVNULL)
+
+
+def main():
+    os.makedirs(OUT, exist_ok=True)
+    with tempfile.TemporaryDirectory() as tmp:
+        land = phone_landscape()
+        convert(land, "phone_landscape", tmp)
+        convert(land.rotate(90, expand=True), "phone_portrait", tmp)
+        for name, body in ICONS.items():
+            convert(icon_png(name, body), name, tmp)
+        for lvl in (100, 75, 50, 25, 10):
+            convert(battery(lvl), f"bat_{lvl}", tmp)
+        for b in range(5):
+            convert(signal(b), f"sig_{b}", tmp)
+        # Aperçu PNG pour la revue (non packagé)
+        land.save(os.path.join(HERE, "preview_phone_landscape.png"))
+    print("ok", len(os.listdir(OUT)), "textures")
+
+
+if __name__ == "__main__":
+    main()

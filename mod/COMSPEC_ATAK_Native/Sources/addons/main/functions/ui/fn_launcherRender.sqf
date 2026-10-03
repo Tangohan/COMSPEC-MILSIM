@@ -1,6 +1,6 @@
 /* Lanceur : grille d'icônes par section, 3 colonnes en mini, 6 en plein écran. */
 disableSerialization;
-private _d = findDisplay 88500;
+private _d = ([] call comspec_atak_native_fnc_display);
 if (isNull _d) exitWith { false };
 private _g = _d displayCtrl 88531;
 private _l = [] call comspec_atak_native_fnc_layoutGet;

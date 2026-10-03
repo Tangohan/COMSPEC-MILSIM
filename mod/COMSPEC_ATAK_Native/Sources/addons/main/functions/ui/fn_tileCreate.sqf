@@ -22,6 +22,7 @@ private _iconH = ((_h - _labelH) * 0.58) min (_w * pixelH / pixelW * 0.7);
 private _iconW = _iconH * pixelW / pixelH;
 private _pic = ["COMSPEC_RscPicture", [_x0 + (_w - _iconW) / 2, _y0 + (_h - _labelH - _iconH) / 2, _iconW, _iconH]] call _mk;
 _pic ctrlSetText _icon;
+_pic ctrlSetTextColor [0.93, 0.97, 0.94, 1];
 if (_labelH > 0) then {
     private _t = ["COMSPEC_RscTextCenter", [_x0, _y0 + _h - _labelH - _h * 0.06, _w, _labelH]] call _mk;
     _t ctrlSetFontHeight _font;

@@ -20,7 +20,8 @@ Conformément à l'APL-SA de BCE, `@COMSPEC_ATAK_Native` est distribué sous APL
 crédit aux auteurs, usage non commercial (le mod reste gratuit et n'est réservé à aucune offre payante),
 même licence pour toute adaptation, Arma uniquement.
 
-Les icônes utilisées sont celles d'Arma 3 (`\a3\ui_f\data\igui\cfg\simpletasks\types\`), référencées et non redistribuées.
+La coque du téléphone et les icônes d'apps et d'outils sont dessinées par COMSPEC (`tools/gen_assets.py`).
+Les symboles de carte et certaines icônes restent celles d'Arma 3, référencées et non redistribuées.
 
 ## ATAK Enhancements — Iceman
 

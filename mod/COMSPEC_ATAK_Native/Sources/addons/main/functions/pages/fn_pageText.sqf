@@ -13,7 +13,7 @@ private _buttons = [];
 
 switch (_page) do {
     case "C2": {
-        _body = format ["%1<br/>Unités suivies : %2<br/>Ordres : %3<br/>Marqueurs : %4<br/><br/>La carte reste la vue opérationnelle principale.", ["SITUATION C2"] call _h, count (_data getOrDefault ["units", createHashMap]), count (_data getOrDefault ["tasks", createHashMap]), count (_data getOrDefault ["markers", createHashMap])];
+        _body = format ["%1<br/>Unités suivies : %2<br/>Ordres : %3<br/>Marqueurs : %4<br/><br/>La carte reste la vue opérationnelle principale.", ["SITUATION C2"] call _h, count (_data getOrDefault ["units", createHashMap]), count ([] call comspec_atak_native_fnc_tasksAll), count (_data getOrDefault ["markers", createHashMap])];
     };
     case "BFT": {
         private _lines = [["BLUE FORCE TRACKING"] call _h];
@@ -44,7 +44,7 @@ switch (_page) do {
         _body = _lines joinString "<br/>";
     };
     case "SETTINGS": {
-        _body = format ["%1<br/>Affichage : %2<br/>Détail carte : %3<br/>Labels : %4<br/>Traces : %5<br/>Notifications : %6<br/>Rafraîchissement BFT : %7 s<br/><br/>Ctrl+U ouvre le terminal, Ctrl+Maj+U bascule mini / plein écran (modifiable dans les touches CBA).", ["PARAMÈTRES"] call _h,
+        _body = format ["%1<br/>Affichage : %2<br/>Détail carte : %3<br/>Labels : %4<br/>Traces : %5<br/>Notifications : %6<br/>Rafraîchissement BFT : %7 s<br/><br/>Ctrl+U sort ou range le téléphone porté : il reste dans le coin de l'écran et vous continuez à jouer.<br/>Ctrl+Maj+U le prend en main (souris) ou le repose. En main, les boutons du haut basculent vertical / horizontal et mini / plein écran.<br/>Touches modifiables dans les réglages CBA.", ["PARAMÈTRES"] call _h,
             ["Plein écran", "Mini"] select ((([] call comspec_atak_native_fnc_layoutGet) get "mode") isEqualTo "MINI"),
             profileNamespace getVariable ["COMSPEC_ATAK_MapDetail", 2], profileNamespace getVariable ["COMSPEC_ATAK_Labels", true], profileNamespace getVariable ["COMSPEC_ATAK_Trails", true],
             profileNamespace getVariable ["COMSPEC_ATAK_Notifications", true], profileNamespace getVariable ["COMSPEC_ATAK_BftRefresh", 3]];
