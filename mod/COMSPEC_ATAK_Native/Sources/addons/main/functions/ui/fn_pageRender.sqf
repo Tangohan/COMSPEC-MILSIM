@@ -37,6 +37,10 @@ switch (_page) do {
     case "BDA": { [] call comspec_atak_native_fnc_pageBda; };
     case "SSE": { [] call comspec_atak_native_fnc_pageSse; };
     case "C2": { [] call comspec_atak_native_fnc_pageC2; };
+    case "EXPLO": { [] call comspec_atak_native_fnc_pageExplo; };
+    case "BREACH": { [] call comspec_atak_native_fnc_pageBreach; };
+    case "SNIPER": { [] call comspec_atak_native_fnc_pageSniper; };
+    case "JTAC": { [] call comspec_atak_native_fnc_pageJtac; };
     case "MUSIC": { [] call comspec_atak_native_fnc_pageMusic; };
     case "GPS": { [] call comspec_atak_native_fnc_pageGps; };
     case "WAYPOINTS": { [] call comspec_atak_native_fnc_pageWaypoints; };

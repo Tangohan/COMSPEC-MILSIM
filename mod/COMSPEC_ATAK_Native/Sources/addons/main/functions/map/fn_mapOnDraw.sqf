@@ -198,6 +198,18 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
     } forEach (missionNamespace getVariable ["COMSPEC_RoleplayZones",[]]);
 };
 
+// Mes charges (app Explosifs) : numéro de pose, mode de mise à feu, temps restant des minuteries, T- de la séquence.
+{
+    private _e = _x get "obj";
+    private _c = [[0.95,0.67,0.20,1], [0.90,0.78,0.29,1], [0.90,0.28,0.23,1], [0.79,0.83,0.81,1]] select ((["atak","command","timer","mine"] find (_x get "kind")) max 0);
+    private _txt = format ["C%1", _forEachIndex + 1];
+    if ((_x get "remaining") >= 0) then { _txt = format ["%1 · %2 s", _txt, ceil (_x get "remaining")]; };
+    private _key = _x get "key";
+    private _q = ((uiNamespace getVariable ["COMSPEC_ATAK_Explo", createHashMap]) getOrDefault ["queue", []]) select { ((_x select 1) get "key") isEqualTo _key };
+    if ((count _q) > 0) then { _txt = format ["%1 · T-%2", _txt, ((((_q select 0) select 0) - diag_tickTime) max 0) toFixed 1]; _c = [0.90,0.28,0.23,1]; };
+    _map drawIcon ["\z\comspec_atak_native\addons\main\data\app_explo.paa", _c, getPosASL _e, 18 * _k, 18 * _k, 0, _txt, 2, 0.03 * _k, "RobotoCondensedBold", "right"];
+} forEach ([] call comspec_atak_native_fnc_exploList);
+
 // Goniométrie : émetteurs estimés (cercle d'incertitude) et relèvements seuls (azimut tracé sur 3 km).
 if (profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) then {
     private _sc = [0.95,0.35,0.85,1];
