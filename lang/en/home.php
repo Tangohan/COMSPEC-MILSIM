@@ -124,6 +124,8 @@ return [
     'mod_06_d' => 'Notifications, messages and action items.',
     'mod_07' => 'SSE intelligence',
     'mod_07_d' => 'Field collection, Athena cases and reports.',
+    'mod_08' => 'Native ATAK',
+    'mod_08_d' => 'The in-game tactical phone, linked to Athena.',
     'sse_kicker' => 'SSE',
     'sse_title' => "Interpersonal\nintelligence",
     'sse_body' => 'The COMSPEC SSE Arma mod and the Athena desk form one loop: collect, qualify, link, release — without replacing human judgement.',

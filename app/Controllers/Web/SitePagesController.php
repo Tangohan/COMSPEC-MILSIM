@@ -230,4 +230,32 @@ final class SitePagesController
             'marketingActive' => 'sse',
         ]);
     }
+
+    public function atakNative(Request $request, array $params = []): Response
+    {
+        $pageUrl = rtrim(url(''), '/') . '/atak-natif';
+
+        return Response::view('layout.marketing', [
+            'content' => 'site.atak_native',
+            'title' => __('site.atakn_meta_title'),
+            'meta_description' => __('site.atakn_meta_description'),
+            'marketingActive' => 'atak-natif',
+            'og_image' => asset_url('assets/atak-native/atak-natif-poster.jpg'),
+            'marketingStyles' => [asset_url('assets/css/atak-native.css')],
+            'jsonLdExtra' => [
+                [
+                    '@context' => 'https://schema.org',
+                    '@type' => 'VideoObject',
+                    'name' => __('site.atakn_clip_label'),
+                    'description' => __('site.atakn_meta_description'),
+                    'thumbnailUrl' => asset_url('assets/atak-native/atak-natif-poster.jpg'),
+                    'contentUrl' => asset_url('assets/atak-native/atak-natif-clip.mp4'),
+                    'uploadDate' => '2026-10-03',
+                    'duration' => 'PT42S',
+                    'inLanguage' => str_starts_with((string) html_lang(), 'en') ? 'en' : 'fr',
+                    'url' => $pageUrl,
+                ],
+            ],
+        ]);
+    }
 }
