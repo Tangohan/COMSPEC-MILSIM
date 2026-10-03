@@ -42,6 +42,28 @@ if ((count _alerts) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a
     };
 } forEach _alerts;
 
+// Demande MEDEVAC 9-line (Overwatch connect → Athena, repère LZ sur la carte)
+private _m = uiNamespace getVariable ["COMSPEC_ATAK_Medevac", createHashMap];
+private _mv = { params ["_k", "_d"]; _m getOrDefault [_k, _d] };
+private _seg = {
+    params ["_label", "_key", "_def", "_opts"];
+    private _cur = [_key, _def] call _mv;
+    ["segment", _label, _opts apply { [_x select 0, compile format ["['set', '%1', '%2'] call comspec_atak_native_fnc_medicalAction;", _key, _x select 1], (_x select 1) isEqualTo _cur] }]
+};
+_rows append [
+    ["section", "Demande MEDEVAC", "9-line envoyé au poste, LZ marquée sur la carte"],
+    ["Priorité", "prio", "URGENT", [["URGENT", "URGENT"], ["PRIORITAIRE", "PRIORITY"], ["ROUTINE", "ROUTINE"]]] call _seg,
+    ["edit", "mT1", "Blessés urgents (T1)", ["mT1", "1"] call _mv],
+    ["edit", "mT2", "Blessés prioritaires (T2)", ["mT2", "0"] call _mv],
+    ["edit", "mT3", "Blessés différés (T3)", ["mT3", "0"] call _mv],
+    ["Sécurité de la LZ", "sec", "NO_ENEMY", [["PAS D'ENNEMI", "NO_ENEMY"], ["POSSIBLE", "POSSIBLE_ENEMY"], ["ENNEMI", "ENEMY_IN_AREA"], ["ESCORTE", "ARMED_ESCORT"]]] call _seg,
+    ["Marquage", "mark", "SMOKE", [["FUMÉE", "SMOKE"], ["PANNEAU", "PANEL"], ["PYRO", "PYRO"], ["AUCUN", "NONE"]]] call _seg,
+    ["Couleur", "col", "GREEN", [["VERT", "GREEN"], ["ROUGE", "RED"], ["JAUNE", "YELLOW"], ["VIOLET", "PURPLE"]]] call _seg,
+    ["edit", "mLz", "Grille de la LZ", ["mLz", [getPosASL player, 8] call comspec_atak_native_fnc_gridRef] call _mv],
+    ["edit", "mRem", "Remarques", ["mRem", ""] call _mv],
+    ["buttons", [["DEMANDER LE MEDEVAC", { ["medevac"] call comspec_atak_native_fnc_medicalAction; }, true], ["LZ À MA POSITION", { ["lzHere"] call comspec_atak_native_fnc_medicalAction; }]]]
+];
+
 // Suivi des troupes (état ACE lu localement)
 _rows pushBack ["section", "Suivi des troupes", "Camp allié, les plus graves en premier"];
 private _rank = createHashMapFromArray [["cardiac_arrest", 0], ["unconscious", 1], ["critical", 2], ["wounded", 3], ["stable", 4]];
