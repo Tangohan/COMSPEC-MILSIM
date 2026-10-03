@@ -12,9 +12,9 @@ if (_step in ["PREP", "FLIGHT"]) then {
     private _left = round ((_o get "eta") - time) max 0;
     _rows append [
         ["section", format ["Commande %1", _o get "ref"], ["En préparation en cuisine", "Drone en vol vers vous"] select (_step isEqualTo "FLIGHT")],
-        ["text", format ["<t size='1.2'>%1</t>  <t color='#8a9a93'>%2 %3 %4</t><br/>Arrivée dans <t color='#ff7a59'>%5 min %6 s</t><br/><t size='0.8' color='#8a9a93'>%7 article(s) · restez à l'extérieur, une fumée violette marquera le colis.</t>",
-            ["CUISINE", "DRONE"] select (_step isEqualTo "FLIGHT"), "● Acceptée", ["○ En vol", "● En vol"] select (_step isEqualTo "FLIGHT"), "○ Livrée",
-            floor (_left / 60), _left mod 60, count (_o get "items")]]
+        ["text", format ["<t size='0.85'><t color='#ff7a59'>ACCEPTÉE</t>  ·  <t color='%1'>EN CUISINE</t>  ·  <t color='%2'>DRONE EN VOL</t>  ·  <t color='#5c6b65'>LIVRÉE</t></t><br/><t size='1.4' font='RobotoCondensedBold'>%3 min %4 s</t>  <t color='#8a9a93'>avant l'arrivée</t><br/><t size='0.8' color='#8a9a93'>%5 article(s) · restez à l'extérieur, une fumée violette marquera le colis.</t>",
+            ["#5c6b65", "#ff7a59"] select (_step isEqualTo "PREP"), ["#5c6b65", "#ff7a59"] select (_step isEqualTo "FLIGHT"),
+            floor (_left / 60), [str (_left mod 60), "0" + str (_left mod 60)] select ((_left mod 60) < 10), count (_o get "items")]]
     ];
     if (_step isEqualTo "PREP") then { _rows pushBack ["buttons", [["ANNULER LA COMMANDE", { ["cancel"] call comspec_atak_native_fnc_foodAction; }]]]; };
 };
@@ -32,14 +32,26 @@ if (_n > 0) then {
     {
         private _k = _x; private _q = _y;
         private _it = (_menu select { (_x select 0) isEqualTo _k }) param [0, [_k, _k, ""]];
-        _rows pushBack ["person", _it select 2, format ["<t font='RobotoCondensedBold'>%1 ×</t> %2", _q, _it select 1], [["−", compile format ["['remove', '%1'] call comspec_atak_native_fnc_foodAction;", _k]]]];
+        _rows pushBack ["person", _it select 2, format ["<t font='RobotoCondensedBold'>%1 ×</t> %2", _q, _it select 1], [["-", compile format ["['remove', '%1'] call comspec_atak_native_fnc_foodAction;", _k]]]];
     } forEach _cart;
     _rows pushBack ["buttons", [["COMMANDER", { ["order"] call comspec_atak_native_fnc_foodAction; }, true]]];
 };
-_rows pushBack ["section", "Au menu", format ["%1 article(s)", count _menu]];
+// Rayons : repas, boissons, encas (d'après la classe ACE).
+private _kind = {
+    params ["_c"];
+    _c = toLower _c;
+    if ((_c find "ace_mre_") isEqualTo 0 || {(_c find "humanitarian") >= 0}) exitWith { "MEAL" };
+    if ((_c find "water") >= 0 || {(_c find "canteen") >= 0} || {(_c find "ace_can_") isEqualTo 0} || {(_c find "juice") >= 0}) exitWith { "DRINK" };
+    "SNACK"
+};
+private _cat = _s getOrDefault ["foodCat", ""];
+private _catBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['foodCat', '%1']; ['FOOD'] call comspec_atak_native_fnc_pageRender;", _k], _cat isEqualTo _k] };
+private _shown = _menu select { _cat isEqualTo "" || {([_x select 0] call _kind) isEqualTo _cat} };
+_rows pushBack ["section", "Au menu", format ["%1 article(s)", count _shown]];
+_rows pushBack ["segment", "", [["TOUT", ""] call _catBtn, ["REPAS", "MEAL"] call _catBtn, ["BOISSONS", "DRINK"] call _catBtn, ["ENCAS", "SNACK"] call _catBtn]];
 {
     _x params ["_cls", "_name", "_pic"];
     _rows pushBack ["person", _pic, format ["%1%2", _name, ["", format ["  <t color='#ff7a59'>×%1</t>", _cart getOrDefault [_cls, 0]]] select (_cls in _cart)], [["+", compile format ["['add', '%1'] call comspec_atak_native_fnc_foodAction;", _cls], true]]];
-} forEach _menu;
+} forEach _shown;
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 true

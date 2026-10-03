@@ -183,6 +183,22 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     _m setMarkerColorLocal "ColorRed";
     _m setMarkerTextLocal format ["PANIQUE %1", _who];
     [{ deleteMarkerLocal _this; }, _m, 600] call CBA_fnc_waitAndExecute;
+    ["PANIC", _who, _pos, _grid, "En détresse"] call comspec_atak_native_fnc_alertsLog;
+}] call CBA_fnc_addEventHandler;
+
+// Alertes rapides et SALUTE d'un allié (aussi sans Athena) : notification, vibreur, journal de l'app Alertes, repère 10 min.
+["comspec_atak_native_alert", {
+    params ["_type", "_who", "_pos", "_grid", ["_text", ""], ["_side", ""]];
+    if (_side isNotEqualTo str side group player || {!([player] call comspec_atak_native_fnc_hasDevice)}) exitWith {};
+    private _label = createHashMapFromArray [["TIC", "CONTACT"], ["TIC_CLEAR", "FIN DE CONTACT"], ["EAGLE_DOWN", "APPAREIL ABATTU"], ["SALUTE", "SALUTE"]] getOrDefault [_type, _type];
+    ["TACTICAL", format ["%1 · %2 · %3", _label, _who, _grid], 8, 70] call comspec_atak_native_fnc_notify;
+    [] call comspec_atak_native_fnc_vibrate;
+    private _m = createMarkerLocal [format ["COMSPEC_ALERT_%1_%2", _type, round (diag_tickTime * 10)], _pos];
+    _m setMarkerTypeLocal (createHashMapFromArray [["TIC", "mil_warning"], ["TIC_CLEAR", "mil_flag"], ["EAGLE_DOWN", "mil_destroy"]] getOrDefault [_type, "mil_unknown"]);
+    _m setMarkerColorLocal (createHashMapFromArray [["TIC", "ColorOrange"], ["TIC_CLEAR", "ColorGreen"], ["EAGLE_DOWN", "ColorRed"]] getOrDefault [_type, "ColorYellow"]);
+    _m setMarkerTextLocal format ["%1 %2", _label, _who];
+    [{ deleteMarkerLocal _this; }, _m, 600] call CBA_fnc_waitAndExecute;
+    [_type, _who, _pos, _grid, _text] call comspec_atak_native_fnc_alertsLog;
 }] call CBA_fnc_addEventHandler;
 
 // Goniométrie : émetteurs estimés par Athena, relus toutes les 15 s quand la couche est active.
