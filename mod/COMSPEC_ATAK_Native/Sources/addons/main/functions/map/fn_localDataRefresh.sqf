@@ -26,6 +26,11 @@ private _keepFriend = {
 // Unités Athena sans objet en jeu : on ne peut pas les filtrer, elles ne restent qu'en mode TOUS.
 if (_filter isNotEqualTo "ALL") then { _units = createHashMap; };
 private _athena = +_units;
+// Liaison BFT : sans réseau je ne reçois plus rien ; un allié dont le téléphone est éteint, cassé ou sans signal
+// (balise COMSPEC_ATAK_Beacon publiée par son téléphone) reste figé à sa dernière position connue.
+private _last = uiNamespace getVariable ["COMSPEC_ATAK_BftLast", createHashMap];
+uiNamespace setVariable ["COMSPEC_ATAK_BftLast", _last];
+private _meOn = (([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 1]) > 0;
 
 {
     private _obj = _x;
@@ -62,11 +67,22 @@ private _athena = +_units;
         _units deleteAt _near;
     };
     if (_callsign isEqualTo "") then { _callsign = [_obj] call comspec_atak_native_fnc_unitCallsign; };
+    private _pos = getPosASL _obj; private _hd = getDir _obj; private _upd = diag_tickTime; private _fr = "LIVE";
+    if (_obj isNotEqualTo player && {_affiliation isEqualTo "friend"}) then {
+        private _on = !isPlayer _obj || {_obj getVariable ["COMSPEC_ATAK_Beacon", true]};
+        if (_meOn && _on) then { _last set [_id, [_pos, _hd, _upd]]; } else {
+            if !(_id in _last) then { _last set [_id, [_pos, _hd, _upd]]; };
+            (_last get _id) params ["_lp", "_lh", "_lt"];
+            _pos = _lp; _hd = _lh; _upd = _lt;
+            private _age = diag_tickTime - _lt;
+            _fr = if (!_on) then { "OFFLINE" } else { switch (true) do { case (_age < 5): { "LIVE" }; case (_age < 20): { "STALE" }; default { "LOST" }; } };
+        };
+    };
     _units set [_id,createHashMapFromArray [
         ["id",_id],["object",_obj],["self",_obj isEqualTo player],
         ["callsign",_callsign],
-        ["position",getPosASL _obj],["heading",getDir _obj],
-        ["affiliation",_affiliation],["type",_type],["freshness","LIVE"],["updated",diag_tickTime],
+        ["position",_pos],["heading",_hd],
+        ["affiliation",_affiliation],["type",_type],["freshness",_fr],["updated",_upd],
         ["icon",_obj getVariable ["COMSPEC_ATAK_Icon",""]],["orbat",_obj getVariable ["COMSPEC_ATAK_Orbat",""]]
     ]];
 } forEach (allUnits select {

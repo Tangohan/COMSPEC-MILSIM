@@ -47,7 +47,13 @@ switch (toUpper _mode) do {
             // Le viseur ne doit pas apparaître sur la photo.
             if (!isNull _cam) then { { (_cam displayCtrl _x) ctrlShow false; } forEach [1, 3, 4]; };
             uiSleep 0.12;
-            private _ok = ["", _caption, "CTAB", "", false, false, true] call comspec_overwatch_connect_fnc_captureReconImage;
+            // Débit simulé : sans réseau, la photo reste sur le poste (Photos > Bibliothèque pour la retransmettre).
+            private _noNet = (([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0;
+            private _ok = if (_noNet) then {
+                screenshot format ["comspec_atak_%1.png", floor (diag_tickTime * 10)];
+                ["WARNING", "Pas de réseau : photo gardée sur le poste, à retransmettre depuis Photos > Bibliothèque", 5, 40] call comspec_atak_native_fnc_notify;
+                false
+            } else { ["", _caption, "CTAB", "", false, false, true] call comspec_overwatch_connect_fnc_captureReconImage };
             uiSleep 0.08;
             if (!isNull _cam) then {
                 { (_cam displayCtrl _x) ctrlShow true; } forEach [1, 3, 4];

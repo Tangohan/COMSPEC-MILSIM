@@ -46,8 +46,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     private _ko = count (missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []]);
     (missionNamespace getVariable ["COMSPEC_ATAK_PhotoSeen", [_up, _ko]]) params ["_up0", "_ko0"];
     missionNamespace setVariable ["COMSPEC_ATAK_PhotoSeen", [_up, _ko]];
+    if ((_up != _up0 || {_ko != _ko0}) && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "PHOTOS"}) then { ["PHOTOS"] call comspec_atak_native_fnc_pageRender; };
     if (_up > _up0) then { ["SUCCESS", format ["%1 photo(s) reçue(s) par Athena", _up - _up0], 4, 30] call comspec_atak_native_fnc_notify; };
-    if (_ko > _ko0) then { ["WARNING", "Photo refusée par Athena : voir le journal de liaison", 5, 40] call comspec_atak_native_fnc_notify; };
+    if (_ko > _ko0) then { ["WARNING", format ["Photo refusée par Athena : %1", (missionNamespace getVariable ["COMSPEC_LastReconUploadResult", []]) param [1, "voir l'app Photos"]], 6, 40] call comspec_atak_native_fnc_notify; };
 }, 2] call CBA_fnc_addPerFrameHandler;
 
 // Rattachement ORBAT (Athena) et icône choisie : partagés pour le filtre et l'affichage des autres téléphones.
@@ -57,7 +58,61 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     if ((player getVariable ["COMSPEC_ATAK_Orbat", ""]) isNotEqualTo _orbat) then { player setVariable ["COMSPEC_ATAK_Orbat", _orbat, true]; };
     private _icon = profileNamespace getVariable ["COMSPEC_ATAK_SelfIcon", ""];
     if ((player getVariable ["COMSPEC_ATAK_Icon", ""]) isNotEqualTo _icon) then { player setVariable ["COMSPEC_ATAK_Icon", _icon, true]; };
+    // Balise BFT : en ligne si j'ai un téléphone allumé avec du signal (diffusée seulement quand elle change).
+    private _on = ([player] call comspec_atak_native_fnc_hasDevice)
+        && {!((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"])}
+        && {(([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 1]) > 0};
+    if ((player getVariable ["COMSPEC_ATAK_Beacon", true]) isNotEqualTo _on) then { player setVariable ["COMSPEC_ATAK_Beacon", _on, true]; };
 }, 5] call CBA_fnc_addPerFrameHandler;
+
+// Alertes BFT de mon groupe : un équipier passe hors ligne, tombe inconscient ou meurt (et revient en ligne).
+[{
+    if !(profileNamespace getVariable ["COMSPEC_ATAK_BftAlerts", true]) exitWith {};
+    if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
+    if ((([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 1]) <= 0) exitWith {};
+    private _prev = missionNamespace getVariable ["COMSPEC_ATAK_BftPrev", createHashMap];
+    private _now = createHashMap;
+    {
+        if (_x isEqualTo player || {!isPlayer _x}) then { continue; };
+        private _st = switch (true) do {
+            case (!alive _x): { "DEAD" };
+            case (lifeState _x isEqualTo "INCAPACITATED"): { "DOWN" };
+            case !(_x getVariable ["COMSPEC_ATAK_Beacon", true]): { "OFF" };
+            default { "OK" };
+        };
+        private _id = netId _x;
+        _now set [_id, _st];
+        private _was = _prev getOrDefault [_id, ""];
+        if (_was isEqualTo "" || {_was isEqualTo _st}) then { continue; };
+        private _cs = [_x] call comspec_atak_native_fnc_unitCallsign;
+        private _grid = [getPosASL _x, 6] call comspec_atak_native_fnc_gridRef;
+        if (_st isEqualTo "OFF") then {
+            private _lp = ((uiNamespace getVariable ["COMSPEC_ATAK_BftLast", createHashMap]) getOrDefault [_id, [getPosASL _x]]) select 0;
+            _grid = [_lp, 6] call comspec_atak_native_fnc_gridRef;
+        };
+        switch (_st) do {
+            case "DEAD": { ["WARNING", format ["BFT · %1 ne répond plus · %2", _cs, _grid], 10, 80] call comspec_atak_native_fnc_notify; [] call comspec_atak_native_fnc_vibrate; };
+            case "DOWN": { ["WARNING", format ["BFT · %1 inconscient · %2", _cs, _grid], 10, 80] call comspec_atak_native_fnc_notify; [] call comspec_atak_native_fnc_vibrate; };
+            case "OFF": { ["WARNING", format ["BFT · %1 hors ligne · dernière position %2", _cs, _grid], 8, 60] call comspec_atak_native_fnc_notify; [] call comspec_atak_native_fnc_vibrate; };
+            default { if (_was isEqualTo "OFF") then { ["INFO", format ["BFT · %1 de nouveau en ligne", _cs], 5, 30] call comspec_atak_native_fnc_notify; }; };
+        };
+    } forEach units group player;
+    missionNamespace setVariable ["COMSPEC_ATAK_BftPrev", _now];
+}, 2] call CBA_fnc_addPerFrameHandler;
+
+// Vibreur BFT : un allié fait vibrer mon téléphone (signal discret de ralliement).
+["comspec_atak_native_buzz", {
+    params ["_from", "_grid"];
+    if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
+    if ((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"]) exitWith {};
+    ["WARNING", format ["VIBREUR · %1 vous appelle · %2", _from, _grid], 8, 70] call comspec_atak_native_fnc_notify;
+    private _buzz = {
+        if (isNull ([] call comspec_atak_native_fnc_display) && {!isNil "comspec_overwatch_connect_fnc_playAtakVibrate"}) then { [0.9] call comspec_overwatch_connect_fnc_playAtakVibrate; } else { [] call comspec_atak_native_fnc_vibrate; };
+    };
+    [] call _buzz;
+    [_buzz, [], 0.9] call CBA_fnc_waitAndExecute;
+    [_buzz, [], 1.8] call CBA_fnc_waitAndExecute;
+}] call CBA_fnc_addEventHandler;
 
 // PANIQUE d'un allié : alerte rouge, vibration, repère local sur la carte pendant 10 min.
 ["comspec_atak_native_panic", {
@@ -95,3 +150,128 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     ["WARNING", format ["MISSION DE TIR : %1", _summary], 8, 80] call comspec_atak_native_fnc_notify;
     [] call comspec_atak_native_fnc_vibrate;
 }] call CBA_fnc_addEventHandler;
+
+// Briefing : la page suit la diapositive en cours (deck Google du présentateur, image chargée, liste Athena).
+[{
+    private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+    if ((_s getOrDefault ["activePage", ""]) isNotEqualTo "BRIEFING" || {(_s getOrDefault ["briefTab", "SLIDES"]) isEqualTo "MISSION"}) exitWith {};
+    if (isNull ([] call comspec_atak_native_fnc_display)) exitWith {};
+    private _sig = ([] call comspec_atak_native_fnc_briefingSignature) select [0, 4];
+    if (_sig isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BriefSig", []])) exitWith {};
+    uiNamespace setVariable ["COMSPEC_ATAK_BriefSig", _sig];
+    ["BRIEFING"] call comspec_atak_native_fnc_pageRender;
+}, 1] call CBA_fnc_addPerFrameHandler;
+
+// Live cam partagé vers Overwatch beta : une image toutes les N s si le joueur l'a activé.
+[{ [] call comspec_atak_native_fnc_livecamShare; }, 2] call CBA_fnc_addPerFrameHandler;
+
+// Débit simulé : la file d'envoi part dès que le réseau revient.
+[{
+    private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
+    if ((count _queue) isEqualTo 0) exitWith {};
+    if ((([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0) exitWith {};
+    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", []];
+    ["SUCCESS", format ["Réseau revenu : %1 envoi(s) en attente partent", count _queue], 4, 30] call comspec_atak_native_fnc_notify;
+    { _x call comspec_atak_native_fnc_netSend; } forEach _queue;
+}, 2] call CBA_fnc_addPerFrameHandler;
+
+// Dégâts du téléphone : balles (surtout torse et bras, où il est porté), explosions, eau.
+if (isClass (configFile >> "CfgPatches" >> "ace_medical_engine")) then {
+    ["ace_medical_woundReceived", {
+        params ["_unit", ["_damages", []]];
+        if (_unit isNotEqualTo player) exitWith {};
+        {
+            _x params [["_d", 0], ["_part", ""]];
+            private _carry = (toLower _part) in ["body", "leftarm", "rightarm"];
+            if (_d > 0.05 && {random 1 < ([0.08, 0.45] select _carry)}) then {
+                [(_d * 0.6) min 0.6, "Impact", [0, 15] select (random 1 < 0.35)] call comspec_atak_native_fnc_deviceDamage;
+            };
+        } forEach _damages;
+    }] call CBA_fnc_addEventHandler;
+} else {
+    player addEventHandler ["Hit", { params ["_unit", "", "_d"]; if (_d > 0.05 && {random 1 < 0.3}) then { [(_d * 0.6) min 0.6, "Impact", [0, 15] select (random 1 < 0.35)] call comspec_atak_native_fnc_deviceDamage; }; }];
+};
+player addEventHandler ["Explosion", { params ["", "_d"]; if (_d > 0.03 && {random 1 < 0.6}) then { [(_d * 1.5) min 0.7, "Explosion", [0, 20] select (random 1 < 0.5)] call comspec_atak_native_fnc_deviceDamage; }; }];
+player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK_Device", createHashMap]; }];
+[{
+    if (alive player && {((eyePos player) select 2) < -0.2} && {(vehicle player) isEqualTo player}) then { [0.08, "Téléphone noyé", 30] call comspec_atak_native_fnc_deviceDamage; };
+}, 3] call CBA_fnc_addPerFrameHandler;
+
+// Actions ACE : réparer l'écran (trousse à outils) ou passer sur un téléphone de rechange.
+if (!isNil "ace_interact_menu_fnc_createAction") then {
+    private _fix = ["COMSPEC_ATAK_Repair", "Réparer le téléphone ATAK", "", {
+        private _go = { [{ ["repair"] call comspec_atak_native_fnc_deviceRepair; }] call CBA_fnc_execNextFrame; };
+        if (isNil "ace_common_fnc_progressBar") exitWith { [] call _go; };
+        [15, [], { ["repair"] call comspec_atak_native_fnc_deviceRepair; }, {}, "Réparation du téléphone…"] call ace_common_fnc_progressBar;
+    }, {
+        ((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["damage", 0]) > 0
+        && {(((items player) apply { toLower _x }) findIf { _x in ["toolkit", "ace_toolkit"] }) >= 0}
+    }] call ace_interact_menu_fnc_createAction;
+    ["CAManBase", 1, ["ACE_SelfActions", "ACE_Equipment"], _fix, true] call ace_interact_menu_fnc_addActionToClass;
+    private _swap = ["COMSPEC_ATAK_Swap", "Changer de téléphone ATAK", "", {
+        private _cat = [] call comspec_atak_native_fnc_deviceCatalog;
+        private _spare = (items player) select { (toLower _x) in _cat };
+        if ((count _spare) > 0) then { player removeItem (_spare select 0); ["swap"] call comspec_atak_native_fnc_deviceRepair; };
+    }, {
+        ((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["damage", 0]) >= 0.45
+        && {private _cat = [] call comspec_atak_native_fnc_deviceCatalog; ((((assignedItems player) + (items player)) select { (toLower _x) in _cat }) param [1, ""]) isNotEqualTo "" && {((items player) findIf { (toLower _x) in _cat }) >= 0}}
+    }] call ace_interact_menu_fnc_createAction;
+    ["CAManBase", 1, ["ACE_SelfActions", "ACE_Equipment"], _swap, true] call ace_interact_menu_fnc_addActionToClass;
+};
+
+// App Groupe : arrivées et changement de chef annoncés aux membres.
+["comspec_atak_native_groupNotice", {
+    params ["_text"];
+    ["INFO", _text, 5, 30] call comspec_atak_native_fnc_notify;
+    if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "GROUP") then { [{ ["GROUP"] call comspec_atak_native_fnc_pageRender; }, [], 0.5] call CBA_fnc_waitAndExecute; };
+}] call CBA_fnc_addEventHandler;
+
+// Rencard : un joueur m'a liké (match si c'est réciproque).
+["comspec_atak_native_rencard", {
+    params ["_uid", "_name"];
+    private _by = missionNamespace getVariable ["COMSPEC_ATAK_RencardLikedBy", []];
+    _by pushBackUnique _uid;
+    missionNamespace setVariable ["COMSPEC_ATAK_RencardLikedBy", _by];
+    if !(player getVariable ["COMSPEC_ATAK_Rencard", true]) exitWith {};
+    if (_uid in (missionNamespace getVariable ["COMSPEC_ATAK_RencardLikes", []])) then {
+        ["SUCCESS", format ["Rencard : c'est un match avec %1 !", _name], 6, 50] call comspec_atak_native_fnc_notify;
+    } else {
+        ["INFO", "Rencard : quelqu'un vous a liké", 4, 20] call comspec_atak_native_fnc_notify;
+    };
+    [] call comspec_atak_native_fnc_vibrate;
+}] call CBA_fnc_addEventHandler;
+
+// Logistique : demandes et statuts du camp ; guerre électronique : brouilleurs partagés.
+["comspec_atak_native_logi", { ["recv", _this] call comspec_atak_native_fnc_logisticsAction; }] call CBA_fnc_addEventHandler;
+[{ ["tick"] call comspec_atak_native_fnc_ewAction; }, 5] call CBA_fnc_addPerFrameHandler;
+
+// OSINT : publication sur le fil public (tous les camps).
+["comspec_atak_native_osintPost", {
+    params ["_who", "_txt", "_time"];
+    private _feed = missionNamespace getVariable ["COMSPEC_ATAK_OsintFeed", []];
+    _feed pushBack [_who, _txt, _time];
+    while { (count _feed) > 50 } do { _feed deleteAt 0; };
+    missionNamespace setVariable ["COMSPEC_ATAK_OsintFeed", _feed];
+    if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "OSINT") then { [{ ["OSINT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+}] call CBA_fnc_addEventHandler;
+
+// GPS : le guidage (arrivée, recalcul) continue hors de l'app Carte, avec les consignes en notification.
+[{
+    if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap])) isEqualTo 0) exitWith {};
+    private _onMap = ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP" && {!isNull ([] call comspec_atak_native_fnc_display)};
+    if (_onMap) exitWith {};
+    private _g = [] call comspec_atak_native_fnc_routeGuide;
+    if ((count _g) isEqualTo 0) exitWith {};
+    // Consigne vocale façon GPS : annoncée une fois à 200 m et à 50 m du virage.
+    _g params ["_txt", "_dn"];
+    private _key = format ["%1|%2", _txt, [0, 1] select (_dn < 60)];
+    if (_dn < 220 && {_key isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_RouteSaid", ""])}) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_RouteSaid", _key];
+        ["INFO", format ["GPS : dans %1 m, %2", (round (_dn / 10)) * 10, toLower _txt], 4, 40] call comspec_atak_native_fnc_notify;
+        [] call comspec_atak_native_fnc_vibrate;
+    };
+}, 1] call CBA_fnc_addPerFrameHandler;
+
+// Points de passage : itinéraire reçu d'un membre du groupe, et passage automatique à l'étape suivante.
+["comspec_atak_native_waypoints", { ["receive", _this] call comspec_atak_native_fnc_wpAction; }] call CBA_fnc_addEventHandler;
+[{ if ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["nav", false]) then { ["tick"] call comspec_atak_native_fnc_wpAction; }; }, 1] call CBA_fnc_addPerFrameHandler;

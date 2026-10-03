@@ -2,7 +2,8 @@
 params ["_action", ["_v", ""], ["_id", ""]];
 private _save = {
     private _m = uiNamespace getVariable ["COMSPEC_ATAK_Medevac", createHashMap];
-    { private _c = [_x] call comspec_atak_native_fnc_formValue; if (_c isEqualType "") then { _m set [_x, _c]; }; } forEach ["mT1", "mT2", "mT3", "mLz", "mRem"];
+    private _form = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
+    { if (_x in _form) then { _m set [_x, [_x] call comspec_atak_native_fnc_formValue]; }; } forEach ["mLz", "mRem"];
     uiNamespace setVariable ["COMSPEC_ATAK_Medevac", _m];
     _m
 };

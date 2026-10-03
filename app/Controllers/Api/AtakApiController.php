@@ -584,7 +584,52 @@ class AtakApiController
             'military_id' => $militaryId,
             'playtime_hours' => $playtimeHours,
             'last_seen_at' => $lastSeenAt,
+            'qualifications' => $this->operatorQualifications($tenantId, $userId),
         ]);
+    }
+
+    /**
+     * Qualifications en cours de validité affichées sur la fiche opérateur du téléphone ATAK :
+     * obtenues, non expirées (période de grâce comprise), visibilité normale uniquement.
+     *
+     * @return list<array{name: string, level: string, state: string, expires_at: ?string}>
+     */
+    private function operatorQualifications(int $tenantId, int $userId): array
+    {
+        try {
+            $awards = \App\Core\Container::get(\App\Repositories\QualificationAwardRepository::class)
+                ->listForUser($userId, $tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+        $temporal = new \App\Services\Personnel\QualificationTemporalStatusService();
+        $out = [];
+        foreach ($awards as $award) {
+            $visibility = \App\Support\VisibilityLevel::normalize((string) ($award['visibility_level'] ?? 'normal'));
+            if ($visibility !== \App\Support\VisibilityLevel::NORMAL || !$temporal->isEffectivelyActive($award)) {
+                continue;
+            }
+            $name = trim((string) ($award['definition_short_name'] ?? ''));
+            if ($name === '') {
+                $name = trim((string) ($award['definition_name'] ?? $award['qualification_name'] ?? ''));
+            }
+            if ($name === '') {
+                continue;
+            }
+            $expires = (string) ($award['expires_at'] ?? '');
+            $ts = $expires !== '' ? strtotime($expires) : false;
+            $out[] = [
+                'name' => $name,
+                'level' => trim((string) ($award['level_short_name'] ?? $award['level_name'] ?? $award['level'] ?? '')),
+                'state' => $temporal->resolve($award)['code'],
+                'expires_at' => $ts !== false ? date('d/m/Y', $ts) : null,
+            ];
+            if (count($out) >= 12) {
+                break;
+            }
+        }
+
+        return $out;
     }
 
     /**
@@ -11208,7 +11253,9 @@ class AtakApiController
             $deviceType = $request->query('device_type') ?? $request->query('device');
             $limit = min((int) ($request->query('limit') ?: 100), 200);
             $night = trim((string) ($request->query('night') ?? $request->query('play_night') ?? ''));
-            $rows = $this->reconImages()->list($tenantId, $missionId, $author, $dateFrom, $dateTo, $limit);
+            $feedMode = strtolower(trim((string) ($request->query('feeds') ?? '')));
+            $feedMode = in_array($feedMode, ['only', 'exclude'], true) ? $feedMode : null;
+            $rows = $this->reconImages()->list($tenantId, $missionId, $author, $dateFrom, $dateTo, $limit, $feedMode);
             if (is_string($deviceType) && $deviceType !== '') {
                 $want = strtoupper($deviceType);
                 $rows = array_values(array_filter($rows, static function (array $row) use ($want): bool {
@@ -11225,6 +11272,9 @@ class AtakApiController
                 $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
                 $row['captured_at'] = ReconCapturedAt::displayFromRow($row);
                 $row['author'] = (string) ($row['author_callsign'] ?? $row['author'] ?? '');
+                // Âge calculé ici : les dates SQL n'ont pas de fuseau, le navigateur peut être décalé.
+                $stamp = strtotime((string) $row['captured_at']);
+                $row['age_sec'] = $stamp !== false ? max(0, time() - $stamp) : null;
             }
             unset($row);
 

@@ -11,7 +11,7 @@ private _font = _l get "fontSmall";
 private _tw = (_bw - 0.012 - _pad * (_cols + 1)) / _cols;
 private _th = _tw * pixelH / pixelW * 0.92;
 private _secH = _font * 1.7;
-private _apps = [] call comspec_atak_native_fnc_appList;
+private _apps = ([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible };
 private _sections = [];
 { _sections pushBackUnique (_x get "section"); } forEach _apps;
 

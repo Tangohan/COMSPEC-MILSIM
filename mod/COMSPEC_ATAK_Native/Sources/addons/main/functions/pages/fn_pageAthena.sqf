@@ -36,23 +36,37 @@ private _latText = if (_lat isEqualType 0 && {_lat >= 0}) then { format ["%1 ms"
 private _logo = "\z\comspec_atak_native\addons\main\data\logo_atak.paa";
 // Une fois connecté, la photo de profil Athena remplace le logo (si le portail en a une).
 if (_state isEqualTo "READY") then { private _av = [player] call comspec_atak_native_fnc_avatarPath; if (_av isNotEqualTo "") then { _logo = _av; }; };
-private _rows = [
-    ["hero", _logo, format ["<t size='1.35' font='RobotoCondensedBold'>ATHENA</t>  <t color='%1' font='RobotoCondensedBold'>● %2</t><br/><t color='#8a9a93' size='0.85'>%3</t>",
-        _pill select 1, _pill select 0, ["Liaison avec le portail et le poste de commandement", ["COMSPEC_LinkDetail"] call _v] select ((["COMSPEC_LinkDetail"] call _v) isNotEqualTo "")]]
-];
+private _rows = [];
 if (_logged) then {
-    if (_bridge) then {
-        _rows pushBack ["text", format ["<t size='1.25' color='#5cc76b' font='RobotoCondensedBold'>%1</t>  <t size='1.1'>%2</t><br/><t color='#c9d4cf'>%3</t><br/><t color='#8a9a93'>%4 · %5</t>",
-            ["comspec_profile_callsign"] call _v, ["comspec_profile_name"] call _v, ["comspec_profile_unit"] call _v, ["comspec_tenant_name"] call _v, ["comspec_profile_role"] call _v]];
-    };
-    _rows pushBack ["text", format ["<t color='#8a9a93'>Canal poste</t>  %1     <t color='#8a9a93'>Latence</t>  %2",
-        ["<t color='#e5483a'>fermé</t>", "<t color='#5cc76b'>ouvert</t>"] select _ready, _latText]];
+    // Fiche : photo (ou logo), indicatif, nom, état de la liaison
+    private _cs = ["comspec_profile_callsign", [player, true] call comspec_atak_native_fnc_unitCallsign] call _v;
+    _rows pushBack ["hero", _logo, format ["<t size='1.4' color='#5cc76b' font='RobotoCondensedBold'>%1</t>  <t size='1.1'>%2</t><br/><t color='%3' font='RobotoCondensedBold'>● %4</t>  <t color='#8a9a93' size='0.85'>%5</t>",
+        _cs, ["comspec_profile_name", name player] call _v, _pill select 1, _pill select 0, ["comspec_tenant_name", "Athena"] call _v]];
     if (_hText isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#7aa89a", "#e8b84a"] select _hWarn, _hText]]; };
-    _rows pushBack ["buttons", [
-        [["ROUVRIR LE CANAL", "OUVRIR LE CANAL POSTE"] select !_ready, { ["enter"] call comspec_atak_native_fnc_athenaAction; }, !_ready],
-        ["DÉCONNEXION", { ["logout"] call comspec_atak_native_fnc_athenaAction; }]
-    ]];
+    _rows append [
+        ["section", "Liaison", ["Canal ouvert avec le poste de commandement", "Canal du poste fermé : rouvrez-le pour recevoir ordres et messages"] select !_ready],
+        ["info", "Canal poste", ["<t color='#e5483a'>fermé</t>", "<t color='#5cc76b'>ouvert</t>"] select _ready],
+        ["info", "Latence", _latText],
+        ["info", "Détail", [["COMSPEC_LinkDetail"] call _v, "—"] select ((["COMSPEC_LinkDetail"] call _v) isEqualTo "")],
+        ["buttons", [
+            [["ROUVRIR LE CANAL", "OUVRIR LE CANAL POSTE"] select !_ready, { ["enter"] call comspec_atak_native_fnc_athenaAction; }, !_ready],
+            ["DÉCONNEXION", { ["logout"] call comspec_atak_native_fnc_athenaAction; }]
+        ]]
+    ];
+    if (_bridge) then {
+        _rows append [
+            ["section", "Opérateur", "Fiche Effectifs sur Athena"],
+            ["info", "Unité (ORBAT)", ["comspec_profile_unit", "—"] call _v],
+            ["info", "Fonction", ["comspec_profile_role", "—"] call _v],
+            ["info", "Grade", ["comspec_profile_grade", "—"] call _v],
+            ["info", "Identifiant ATAK", ["COMSPEC_AtakId", "—"] call _v],
+            ["info", "Communauté", ["comspec_tenant_name", "—"] call _v],
+            ["text", "<t size='0.8' color='#8a9a93'>Qualifications, certificat et batterie : app Profil.</t>"]
+        ];
+    };
 } else {
+    _rows pushBack ["hero", _logo, format ["<t size='1.35' font='RobotoCondensedBold'>ATHENA</t>  <t color='%1' font='RobotoCondensedBold'>● %2</t><br/><t color='#8a9a93' size='0.85'>%3</t>",
+        _pill select 1, _pill select 0, ["Liaison avec le portail et le poste de commandement", ["COMSPEC_LinkDetail"] call _v] select ((["COMSPEC_LinkDetail"] call _v) isNotEqualTo "")]];
     if (_err isNotEqualTo "" && {_err isNotEqualTo "-"}) then { _rows pushBack ["text", format ["<t color='#e5483a'>%1</t>", _err]]; };
     if (_hText isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#7aa89a", "#e8b84a"] select _hWarn, _hText]]; };
     private _tab = uiNamespace getVariable ["COMSPEC_ATAK_AthenaTab", "steam"];

@@ -11,6 +11,58 @@ private _palette = createHashMapFromArray [["BLUE",[0.28,0.70,1,1]],["CYAN",[0.2
 private _allyRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_AllyColor","BLUE"],[0.28,0.70,1,1]];
 private _selfRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_SelfColor","CYAN"],[0.20,0.90,0.95,1]];
 
+// GPS : itinéraire en trait épais (bordure sombre, bleu à parcourir, gris déjà parcouru), arrivée en drapeau.
+private _route = missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap];
+if ((count _route) > 0) then {
+    private _pts = _route get "pts";
+    private _idx = _route getOrDefault ["idx", 0];
+    private _mpu = (_map ctrlMapScreenToWorld [0, 0]) distance2D (_map ctrlMapScreenToWorld [0.0035, 0]);
+    private _tex = "#(rgb,8,8,3)color(1,1,1,1)";
+    private _seg = {
+        params ["_a", "_b", "_w", "_c"];
+        private _len = _a distance2D _b;
+        if (_len < 0.5) exitWith {};
+        _map drawRectangle [[((_a select 0) + (_b select 0)) / 2, ((_a select 1) + (_b select 1)) / 2], _w, _len / 2 + _w * 0.6, _a getDir _b, _c, _tex];
+    };
+    private _proj = _route getOrDefault ["proj", _pts select 0];
+    for "_i" from 0 to ((count _pts) - 2) do {
+        private _a = _pts select _i; private _b = _pts select (_i + 1);
+        private _past = _i < _idx;
+        if (_i isEqualTo _idx) then {
+            [_a, _proj, _mpu, [0.45, 0.48, 0.50, 0.75]] call _seg;
+            _a = _proj;
+        };
+        if (_past) then { [_a, _b, _mpu, [0.45, 0.48, 0.50, 0.75]] call _seg; } else {
+            [_a, _b, _mpu * 1.45, [0.05, 0.18, 0.40, 0.9]] call _seg;
+            [_a, _b, _mpu, [0.26, 0.52, 0.96, 1]] call _seg;
+        };
+    };
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [0.92, 0.26, 0.21, 1], _route get "dest", 26, 26, 0, _route getOrDefault ["label", ""], 2, 0.028, "RobotoCondensedBold", "right"];
+};
+
+// Calques Relief (champ de vision / altitudes) et Wave Relay (liens du maillage).
+[_map] call comspec_atak_native_fnc_reliefDraw;
+[_map] call comspec_atak_native_fnc_meshDraw;
+
+// Points de passage : traits pointillés entre étapes, étape active en vert, trait de cap depuis moi en navigation.
+private _wp = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
+private _wpts = _wp getOrDefault ["pts", []];
+if ((count _wpts) > 0) then {
+    private _wi = _wp getOrDefault ["idx", 0];
+    private _dash = {
+        params ["_a", "_b", "_c"];
+        private _n = ((round ((_a distance2D _b) / 40)) max 1) min 60;
+        for "_k" from 0 to (_n - 1) step 2 do { _map drawLine [_a vectorAdd ((_b vectorDiff _a) vectorMultiply (_k / _n)), _a vectorAdd ((_b vectorDiff _a) vectorMultiply ((_k + 1) / _n)), _c]; };
+    };
+    for "_i" from 0 to ((count _wpts) - 2) do { [(_wpts select _i) select 0, (_wpts select (_i + 1)) select 0, [0.95, 0.75, 0.18, 0.9]] call _dash; };
+    if (_wp getOrDefault ["nav", false]) then { _map drawArrow [getPosATL vehicle player, (_wpts select _wi) select 0, [0.36, 0.78, 0.42, 0.9]]; };
+    {
+        _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [[0.95, 0.75, 0.18, 1], [0.36, 0.85, 0.42, 1]] select (_forEachIndex isEqualTo _wi), _x select 0, 22, 22, 0, _x select 1, 2, 0.026, "RobotoCondensedBold", "right"];
+    } forEach _wpts;
+};
+
+// Guerre électronique : position brouillée (GPS) et pistes BFT dégradées.
+([] call comspec_atak_native_fnc_ewEffects) params ["_ewGps", "_ewBft", "_ewOff"];
 {
     private _entity = _y;
     private _pos = _entity getOrDefault ["position",[]];
@@ -23,6 +75,8 @@ private _selfRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC
     private _size = if (_x isEqualTo _selected || _self) then {26} else {20};
     if ((_entity getOrDefault ["affiliation",""]) isEqualTo "friend") then { _color = +_allyRgb; };
     if (_self) then { _color = +_selfRgb; };
+    if (_self && {_ewGps > 0}) then { _pos = [(_pos select 0) + (_ewOff select 0), (_pos select 1) + (_ewOff select 1), 0]; };
+    if (_ewBft && {!_self}) then { _color set [3, ((_color select 3) min 0.65) * 0.5]; };
     private _dir = _entity getOrDefault ["heading",0];
     private _custom = _entity getOrDefault ["icon",""];
     if (_custom isNotEqualTo "" && {(_entity getOrDefault ["type",""]) isEqualTo "infantry"}) then {
@@ -278,3 +332,7 @@ if ((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_n
 };
 for "_i" from _used to ((count _pool) - 1) do { (_pool select _i) ctrlShow false; };
 uiNamespace setVariable ["COMSPEC_ATAK_MarkerTagPool", _pool select { !isNull _x }];
+
+// Calques Logistique (points de largage) et guerre électronique (gonio, brouilleurs).
+[_map] call comspec_atak_native_fnc_logisticsDraw;
+[_map] call comspec_atak_native_fnc_ewDraw;

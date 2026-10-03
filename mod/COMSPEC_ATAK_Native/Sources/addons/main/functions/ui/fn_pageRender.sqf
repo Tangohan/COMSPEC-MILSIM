@@ -20,6 +20,7 @@ if (_page isNotEqualTo "LAUNCHER") then {
     private _app = ([] call comspec_atak_native_fnc_appList) select { (_x get "page") isEqualTo _page };
     _title = if ((count _app) > 0) then { toUpper ((_app select 0) get "name") } else { _page };
 };
+if (_page isEqualTo "RECENTS") then { _title = "APPS RÉCENTES"; };
 (_d displayCtrl 88518) ctrlSetText _title;
 
 switch (_page) do {
@@ -27,6 +28,18 @@ switch (_page) do {
     case "MAP": { [] call comspec_atak_native_fnc_pageMap; };
     case "CHAT": { [] call comspec_atak_native_fnc_pageChat; };
     case "GROUP": { [] call comspec_atak_native_fnc_pageGroup; };
+    case "BFT": { [] call comspec_atak_native_fnc_pageBft; };
+    case "RECENTS": { [] call comspec_atak_native_fnc_pageRecents; };
+    case "FOOD": { [] call comspec_atak_native_fnc_pageFood; };
+    case "DATING": { [] call comspec_atak_native_fnc_pageDating; };
+    case "OSINT": { [] call comspec_atak_native_fnc_pageOsint; };
+    case "WAYPOINTS": { [] call comspec_atak_native_fnc_pageWaypoints; };
+    case "DEBUG": { [] call comspec_atak_native_fnc_pageDebug; };
+    case "WEATHER": { [] call comspec_atak_native_fnc_pageWeather; };
+    case "RELIEF": { [] call comspec_atak_native_fnc_pageRelief; };
+    case "WAVERELAY": { [] call comspec_atak_native_fnc_pageWaveRelay; };
+    case "LOGI": { [] call comspec_atak_native_fnc_pageLogistics; };
+    case "EW": { [] call comspec_atak_native_fnc_pageEw; };
     case "TASK": { [] call comspec_atak_native_fnc_pageTasks; };
     case "ATHENA": { [] call comspec_atak_native_fnc_pageAthena; };
     case "NETWORK": { [] call comspec_atak_native_fnc_pageNetwork; };
@@ -39,6 +52,10 @@ switch (_page) do {
     case "MEDICAL": { [] call comspec_atak_native_fnc_pageMedical; };
     case "PROFILE": { [] call comspec_atak_native_fnc_pageProfile; };
     case "LIVECAM": { [] call comspec_atak_native_fnc_pageLivecam; };
+    case "BRIEFING": { [] call comspec_atak_native_fnc_pageBriefing; };
     default { [_page] call comspec_atak_native_fnc_pageText; };
 };
+// Dégâts de l'écran par-dessus la page.
+uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
+[] call comspec_atak_native_fnc_deviceOverlay;
 true

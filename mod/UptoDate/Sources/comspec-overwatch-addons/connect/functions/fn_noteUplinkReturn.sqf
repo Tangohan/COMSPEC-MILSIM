@@ -24,10 +24,8 @@ private _changed = _sig isNotEqualTo _prevSig;
 missionNamespace setVariable [_sigKey, _sig, false];
 
 private _isolate = missionNamespace getVariable ["COMSPEC_DiagIsolateActive", false];
-if (!_changed) then {
-    if (!_isolate) exitWith { true };
-    if ((diag_tickTime - _lastAt) < 60) exitWith { true };
-};
+// (Un exitWith dans le bloc then ne sortait que du bloc : tout retour était journalisé, d'où le spam.)
+if (!_changed && {!_isolate || {(diag_tickTime - _lastAt) < 60}}) exitWith { true };
 
 private _isErr = ((_extra find "erreur") >= 0);
 private _lvl = "DEBUG";

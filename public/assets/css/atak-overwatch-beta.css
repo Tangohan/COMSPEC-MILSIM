@@ -483,6 +483,23 @@ button.ow-air-card .ow-card-head{pointer-events:none}
 .ow-photo-lightbox img{max-width:92vw;max-height:90vh;object-fit:contain;box-shadow:0 8px 40px #0008}
 .ow-photo-lightbox.is-blurred img{filter:blur(18px)}
 .ow-photo-lightbox-close{position:absolute;top:16px;right:18px;width:36px;height:36px;border:1px solid #27302d;background:#101413;color:#e4e8e8;border-radius:4px;font-size:22px;line-height:1;cursor:pointer}
+/* Live cam : dernière image de chaque flux caméra */
+.ow-cam-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.ow-cam-tile{position:relative;border:1px solid #222a27;background:#0d1110;border-radius:6px;padding:0 0 8px;overflow:hidden}
+.ow-cam-tile.is-stale{border-color:#3a3322}
+.ow-cam-media{display:block;width:100%;aspect-ratio:16/9;padding:0;border:0;background:#050605;cursor:zoom-in}
+.ow-cam-media img{display:block;width:100%;height:100%;object-fit:cover}
+.ow-cam-tile.is-stale .ow-cam-media img{filter:grayscale(.6) brightness(.8)}
+.ow-cam-empty{display:flex;align-items:center;justify-content:center;color:var(--athena-muted);font-size:11px;cursor:default}
+.ow-cam-badges{position:absolute;top:6px;left:6px;right:6px;display:flex;justify-content:space-between;gap:6px;pointer-events:none}
+.ow-cam-badges span{font-family:var(--ow-mono);font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;background:#000b;color:var(--athena-text)}
+.ow-cam-live{color:#fff;background:#b3262e!important}
+.ow-cam-tile.is-stale .ow-cam-live{background:#5b4a1f!important}
+.ow-cam-meta{display:flex;flex-direction:column;gap:2px;padding:8px 9px 0;font-size:11px;color:var(--athena-soft);min-width:0}
+.ow-cam-meta strong{color:var(--athena-text);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ow-cam-meta .ow-mono{font-size:10px;color:var(--athena-muted)}
+.ow-cam-tile .ow-photo-actions{padding:0 9px}
+.ow-cam-emptystate{border:1px dashed #27302d;border-radius:6px;padding:14px;font-size:12px;color:var(--athena-soft)}
 .ow-event{display:flex;justify-content:space-between;gap:8px;padding:8px 2px;border-bottom:1px solid #171c1a;font-size:12px;align-items:center}
 .ow-net-row{appearance:none;-webkit-appearance:none;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;width:100%;padding:9px 2px;border:0;border-bottom:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .ow-net-row.is-static{cursor:default}

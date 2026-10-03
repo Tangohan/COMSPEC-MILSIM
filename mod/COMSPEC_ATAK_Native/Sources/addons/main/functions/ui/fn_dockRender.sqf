@@ -6,7 +6,10 @@ if (isNull _d) exitWith { false };
 
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _active = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", "LAUNCHER"];
-private _apps = ([] call comspec_atak_native_fnc_appList) select { _x get "dock" };
+// Dock choisi par le joueur (Réglages > Personnalisation), sinon celui des apps déclarées « dock ».
+private _mine = profileNamespace getVariable ["COMSPEC_ATAK_DockApps", []];
+private _all = [] call comspec_atak_native_fnc_appList;
+private _apps = if ((count _mine) > 0) then { (_mine apply { private _id = _x; (_all select { (_x get "id") isEqualTo _id }) param [0, createHashMap] }) select { (count _x) > 0 && {[_x] call comspec_atak_native_fnc_appVisible} } } else { _all select { (_x get "dock") && {[_x] call comspec_atak_native_fnc_appVisible} } };
 private _n = (count _apps) max 1;
 private _made = [];
 
@@ -22,7 +25,7 @@ private _made = [];
         [_x0 + _w * 0.1, _y0 + _w * 0.1 + _forEachIndex * (_ch + _w * 0.1), _w * 0.8, _ch]
     };
     private _tile = [_d, controlNull, _pos, _app get "icon", "", [_app get "page"] call comspec_atak_native_fnc_appBadge, _app get "page", _l get "fontSmall"] call comspec_atak_native_fnc_tileCreate;
-    if ((_app get "page") isEqualTo _active) then { (_tile select 0) ctrlSetBackgroundColor [0.18, 0.38, 0.21, 1]; };
+    if ((_app get "page") isEqualTo _active) then { (_tile select 0) ctrlSetBackgroundColor ((((([] call comspec_atak_native_fnc_accent) select 0) select [0, 3]) apply { _x * 0.45 }) + [1]); };
     (_tile select (count _tile - 1)) ctrlSetTooltip (_app get "name");
     _made append _tile;
 } forEach _apps;

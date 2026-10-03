@@ -5491,7 +5491,7 @@
   }
 
   function loadPhotos() {
-    return api('/api/recon/images?limit=80').then(function (payload) {
+    return api('/api/recon/images?limit=80&feeds=exclude').then(function (payload) {
       photos = asList(payload, 'images');
       updateStatsBanner();
       if (window.OverwatchTools && window.OverwatchTools.drawPhotos) window.OverwatchTools.drawPhotos();
@@ -5991,6 +5991,129 @@
         close();
       }
     });
+  }
+
+  // Live cam : dernière image de chaque flux caméra (téléphone ATAK « chest: », casque, drone) des 10 dernières minutes.
+  var camFeeds = [];
+  var camFetchedAt = 0;
+  var camTimer = null;
+  var camTicks = 0;
+  var CAM_WINDOW_SEC = 600;
+  var CAM_STALE_SEC = 60;
+
+  function camFeedKey(row) {
+    var unit = String(row.unit_name || '').trim();
+    if (/^(chest|helmet|drone):/i.test(unit)) return unit.toLowerCase();
+    return String(row.author || row.author_callsign || '').toUpperCase() + ':' + String(row.device_type || '').toUpperCase();
+  }
+
+  function camKindLabel(row) {
+    var unit = String(row.unit_name || '').toLowerCase();
+    if (unit.indexOf('chest:') === 0) return 'Téléphone ATAK';
+    if (unit.indexOf('drone:') === 0) return 'Caméra drone';
+    if (unit.indexOf('helmet:') === 0) return 'Caméra casque';
+    return clean(row.device_label, 'Caméra');
+  }
+
+  function camAgeSec(row) {
+    var base = Number(row.age_sec);
+    if (!Number.isFinite(base)) return null;
+    return base + Math.max(0, (Date.now() - camFetchedAt) / 1000);
+  }
+
+  function camAgeLabel(sec) {
+    if (sec == null) return '';
+    sec = Math.max(0, Math.floor(sec));
+    if (sec < 60) return 'il y a ' + sec + ' s';
+    if (sec < 3600) return 'il y a ' + Math.floor(sec / 60) + ' min';
+    return 'il y a ' + Math.floor(sec / 3600) + ' h';
+  }
+
+  function loadCamFeeds() {
+    return api('/api/recon/images?limit=200&feeds=only').then(function (payload) {
+      var seen = {};
+      var out = [];
+      asList(payload, 'images').forEach(function (row) {
+        if (!row) return;
+        var age = Number(row.age_sec);
+        if (Number.isFinite(age) && age > CAM_WINDOW_SEC) return;
+        var key = camFeedKey(row);
+        if (seen[key]) return;
+        seen[key] = true;
+        out.push(row);
+      });
+      camFeeds = out;
+      camFetchedAt = Date.now();
+    }).catch(function () { camFetchedAt = Date.now(); });
+  }
+
+  function camTileHtml(row, index) {
+    var url = resolvePhotoUrl(row.url || row.path || '');
+    if (!url && row.image_path) url = resolvePhotoUrl('/uploads/recon/' + String(row.image_path).split('/').pop());
+    var age = camAgeSec(row);
+    var stale = age != null && age > CAM_STALE_SEC;
+    var grid = String(row.grid_ref || '').trim();
+    if (!grid && Number.isFinite(Number(row.pos_x)) && Number.isFinite(Number(row.pos_y)) && (Number(row.pos_x) || Number(row.pos_y))) {
+      grid = String(Math.round(Number(row.pos_x))).padStart(5, '0') + ' ' + String(Math.round(Number(row.pos_y))).padStart(5, '0');
+    }
+    var stamp = formatPhotoWhen(row);
+    var canLocate = !!point(row);
+    return '<article class="ow-cam-tile' + (stale ? ' is-stale' : '') + '" data-cam-index="' + index + '">' +
+      (url
+        ? '<button type="button" class="ow-cam-media" data-cam-open="' + escapeHtml(url) + '" title="Agrandir"><img src="' + escapeHtml(url) + '" alt="Vue de ' + escapeHtml(clean(row.author, 'l’opérateur')) + '" loading="lazy"></button>'
+        : '<div class="ow-cam-media ow-cam-empty">Image indisponible</div>') +
+      '<div class="ow-cam-badges"><span class="ow-cam-live">' + (stale ? 'Figée' : 'Live') + '</span>' +
+      '<span class="ow-cam-age" data-cam-age="' + index + '">' + escapeHtml(camAgeLabel(age)) + '</span></div>' +
+      '<div class="ow-cam-meta"><strong>' + escapeHtml(clean(row.author || row.author_callsign, 'Opérateur')) + '</strong>' +
+      '<span>' + escapeHtml(camKindLabel(row)) + '</span>' +
+      '<span class="ow-mono">' + escapeHtml(grid ? 'Grille ' + grid : 'Grille inconnue') + (stamp ? ' · ' + escapeHtml(stamp) : '') + '</span></div>' +
+      '<div class="ow-photo-actions">' +
+      (url ? '<button type="button" class="ow-tag" data-cam-open="' + escapeHtml(url) + '">Agrandir</button>' : '') +
+      (canLocate ? '<button type="button" class="ow-tag" data-cam-locate="' + index + '">LOCALISER</button>' : '') +
+      '</div></article>';
+  }
+
+  function camsBodyHtml() {
+    if (!camFeeds.length) {
+      return '<div class="ow-cam-emptystate"><p><b>Aucune caméra partagée pour le moment.</b></p>' +
+        '<p class="ow-help">Pour partager sa vue, le joueur ouvre les réglages de son téléphone ATAK et active « Partager ma caméra ». ' +
+        'Une image arrive alors toutes les 15 secondes environ, tant qu’il est en liaison avec Athena et en vue à la première personne.</p></div>';
+    }
+    return '<div class="ow-cam-grid">' + camFeeds.map(camTileHtml).join('') + '</div>';
+  }
+
+  function camsHtml() {
+    return '<p class="ow-help">Dernière image de chaque flux reçu ces 10 dernières minutes. Actualisé toutes les 5 secondes tant que ce panneau est ouvert. Cliquez une image pour l’agrandir.</p>' +
+      '<div id="ow-cams">' + camsBodyHtml() + '</div>';
+  }
+
+  function paintCams() {
+    var host = document.getElementById('ow-cams');
+    if (host) host.innerHTML = camsBodyHtml();
+  }
+
+  function stopCams() {
+    if (camTimer) window.clearInterval(camTimer);
+    camTimer = null;
+  }
+
+  function startCams() {
+    stopCams();
+    camTicks = 0;
+    camTimer = window.setInterval(function () {
+      var host = document.getElementById('ow-cams');
+      var drawer = document.getElementById('ow-drawer');
+      if (!host || !drawer || drawer.hidden) { stopCams(); return; }
+      camTicks += 1;
+      if (camTicks % 5 === 0 && !document.hidden) {
+        loadCamFeeds().then(paintCams);
+        return;
+      }
+      camFeeds.forEach(function (row, index) {
+        var el = host.querySelector('[data-cam-age="' + index + '"]');
+        if (el) el.textContent = camAgeLabel(camAgeSec(row));
+      });
+    }, 1000);
   }
 
   function intelHtml() {
@@ -6801,6 +6924,14 @@
       loadPhotos().then(function () { restoreOpsPanels(); openDrawer('Renseignement', 'Photos', intelHtml()); bindDrawerForms(); });
       return;
     }
+    if (name === 'cams') {
+      loadCamFeeds().then(function () {
+        restoreOpsPanels();
+        openDrawer('Caméras', 'Live cam', camsHtml());
+        startCams();
+      });
+      return;
+    }
     if (name === 'radio') {
       showOpsPanel('tab-radio', 'Radio', 'Proximité');
       if (window.ATAKRadio && typeof window.ATAKRadio.render === 'function') {
@@ -6872,6 +7003,7 @@
     ['Ouvrir le replay', 'Outils', function () { document.getElementById('ow-timeline').hidden = !document.getElementById('ow-timeline').hidden; }],
     ['Afficher les paramètres', 'Calques', function () { openView('layers'); }],
     ['Ouvrir le renseignement', 'Renseignement', function () { openView('intel'); }],
+    ['Ouvrir le Live cam', 'Caméras', function () { openView('cams'); }],
     ['Mesurer une distance', 'Carte', function () { setTool('measure'); }],
     ['Calculer un cap', 'Carte', function () { setTool('bearing'); }],
     ['Dessiner un cercle', 'Carte', function () { setTool('circle'); }],
@@ -7465,6 +7597,22 @@
   document.querySelectorAll('[data-view]').forEach(function (button) {
     button.addEventListener('click', function () { openView(button.dataset.view); });
   });
+  var camDrawer = document.getElementById('ow-drawer');
+  if (camDrawer) {
+    camDrawer.addEventListener('click', function (event) {
+      var open = event.target.closest('[data-cam-open]');
+      if (open) {
+        openPhotoLightbox(open.getAttribute('data-cam-open'), false);
+        return;
+      }
+      var locate = event.target.closest('[data-cam-locate]');
+      if (!locate) return;
+      var row = camFeeds[Number(locate.getAttribute('data-cam-locate'))];
+      var loc = row ? point(row) : null;
+      if (loc) map.setView(loc, Math.max(map.getZoom(), 4));
+      else toast('Position inconnue pour cette caméra.');
+    });
+  }
   var airDrawer = document.getElementById('ow-drawer');
   if (airDrawer) {
     airDrawer.addEventListener('click', function (event) {

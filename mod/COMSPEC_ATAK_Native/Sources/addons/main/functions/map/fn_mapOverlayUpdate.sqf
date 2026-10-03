@@ -30,6 +30,20 @@ if (!isNull _cur) then {
 if (_cursorOnly) exitWith { true };
 
 private _h = getDir (vehicle player);
+// Flèche de cap vers l'étape active (points de passage).
+private _wa = _ov getOrDefault ["wpArrow", controlNull];
+if (!isNull _wa) then {
+    private _w = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
+    private _pts = _w getOrDefault ["pts", []];
+    if ((count _pts) > 0) then {
+        ((_pts select (_w getOrDefault ["idx", 0]))) params ["_p", "_n"];
+        private _b = player getDir _p;
+        _wa ctrlSetAngle [_b - _h, 0.5, 0.5];
+        private _d = player distance2D _p;
+        (_ov getOrDefault ["wpText", controlNull]) ctrlSetStructuredText parseText format ["<t font='RobotoCondensedBold' size='1.1'>%1</t> <t size='0.8' color='#8a9a93'>%2/%3</t><br/><t size='0.95'>%4</t> <t size='0.8' color='#8a9a93'>%5°</t>",
+            _n, (_w getOrDefault ["idx", 0]) + 1, count _pts, [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 1]] select (_d >= 1000), round _b];
+    };
+};
 private _needle = _ov getOrDefault ["needle", controlNull];
 if (!isNull _needle) then { _needle ctrlSetAngle [_h, 0.5, 0.5]; };
 private _hd = _ov getOrDefault ["heading", controlNull];

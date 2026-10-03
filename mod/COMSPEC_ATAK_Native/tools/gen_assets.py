@@ -60,6 +60,21 @@ def phone_landscape(w=2048, h=1024):
 
 
 ICONS = {
+    "map_route": '<circle cx="6" cy="18" r="2"/><path d="M8 18h6a3.5 3.5 0 0 0 0-7H10a3.5 3.5 0 0 1 0-7h6"/><path d="M18 2.5l2 2-2 2"/>',
+    "nav_straight": '<path d="M12 21V4M6 10l6-6 6 6"/>',
+    "nav_left": '<path d="M16 21v-8a4 4 0 0 0-4-4H5M9 5L5 9l4 4"/>',
+    "nav_right": '<path d="M8 21v-8a4 4 0 0 1 4-4h7M15 5l4 4-4 4"/>',
+    "nav_slight_left": '<path d="M14 21v-7L8 6M7 11V5h6"/>',
+    "nav_slight_right": '<path d="M10 21v-7l6-8M17 11V5h-6"/>',
+    "nav_uturn": '<path d="M8 21V9a4 4 0 0 1 8 0v8M12 14l4 4 4-4"/>',
+    "nav_arrive": '<path d="M6 21V4M6 4h11l-2.5 4L17 12H6"/>',
+    "app_weather": '<path d="M7 18h10a4 4 0 0 0 .5-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 18z"/><path d="M9 21l1-2M13 21l1-2"/>',
+    "app_waverelay": '<circle cx="12" cy="12" r="2"/><circle cx="4" cy="6" r="1.6"/><circle cx="20" cy="6" r="1.6"/><circle cx="5" cy="19" r="1.6"/><circle cx="19" cy="19" r="1.6"/><path d="M5.3 7l5.2 3.8M18.7 7l-5.2 3.8M6.3 18l4.4-4.6M17.7 18l-4.4-4.6M5.6 6h12.8"/>',
+    "app_relief": '<path d="M2 20l6-10 4 6 3-4 7 8z"/><path d="M8 10l1.5 2.5"/>',
+    "app_logistics": '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+    "app_ew": '<path d="M4 18a11 11 0 0 1 0-12M20 6a11 11 0 0 1 0 12M7.5 15a6 6 0 0 1 0-6M16.5 9a6 6 0 0 1 0 6"/><circle cx="12" cy="12" r="1.8"/><path d="M3 3l18 18"/>',
+    "app_debug": '<rect x="7" y="7" width="10" height="13" rx="5"/><path d="M12 7V4M9 4.5l1.5 2.5M15 4.5L13.5 7M7 12H3M21 12h-4M7 16l-3 2M17 16l3 2M7 9L4 7M17 9l3-2M12 11v6"/>',
+    "app_waypoints": '<circle cx="5" cy="19" r="2"/><circle cx="12" cy="11" r="2"/><circle cx="19" cy="5" r="2"/><path d="M6.4 17.6l4.2-5.2M13.4 9.6l4.2-3.2" stroke-dasharray="2 2"/>',
     "app_map": '<path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>',
     "app_chat": '<path d="M4 4h16v11H9l-5 4v-4H4z"/><path d="M8 9h8M8 12h5"/>',
     "app_group": '<circle cx="8" cy="8" r="3"/><circle cx="16.5" cy="9" r="2.5"/><path d="M2.5 19c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M14 14.2c.8-.5 1.6-.7 2.5-.7 2.7 0 5 2 5 5"/>',
@@ -104,6 +119,9 @@ ICONS = {
     "app_athena": '<path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
     "ui_camera": '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="6" fill="#fff"/>',
     "ui_link": '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+    "app_food": '<path d="M5 8h14l-1.5 13h-11z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/><path d="M9 13h6"/>',
+    "app_dating": '<path d="M12 20s-8-4.8-8-10.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8 2.5C20 15.2 12 20 12 20z"/>',
+    "app_osint": '<circle cx="10" cy="10" r="7"/><path d="M3 10h14M10 3c2.2 2 2.2 12 0 14M10 3c-2.2 2-2.2 12 0 14"/><path d="M15.5 15.5L21 21"/>',
     "ui_vibrate": '<rect x="8" y="4" width="8" height="16" rx="1.5"/><path d="M4 8v8M20 8v8M2 10v4M22 10v4"/>',
 }
 
@@ -240,6 +258,62 @@ def wallpapers():
     return out
 
 
+def crack(level, w, h, seed):
+    """Écran fêlé (transparent) : impact, fissures rayonnantes, éclats ; niveau 3 = zone morte."""
+    import math, random
+    rnd = random.Random(seed)
+    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    s = min(w, h)
+    impacts = [(rnd.uniform(0.55, 0.8) * w, rnd.uniform(0.15, 0.35) * h)]
+    if level >= 2:
+        impacts.append((rnd.uniform(0.15, 0.4) * w, rnd.uniform(0.6, 0.85) * h))
+    if level >= 3:
+        # Zone morte : bande noire et pixels morts.
+        y0 = int(h * rnd.uniform(0.35, 0.55)); bh = int(h * 0.09)
+        d.rectangle([0, y0, w, y0 + bh], fill=(0, 0, 0, 235))
+        for _ in range(60):
+            x = rnd.randrange(w); y = rnd.randrange(h)
+            d.rectangle([x, y, x + 3, y + 3], fill=rnd.choice([(255, 0, 255, 200), (0, 255, 0, 200), (255, 255, 255, 220)]))
+    n_rays = {1: 7, 2: 11, 3: 16}[level]
+    for (cx, cy) in impacts:
+        # Toile d'araignée : anneaux brisés autour de l'impact.
+        for ring in range(1, level + 2):
+            r = s * 0.035 * ring
+            pts = []
+            for k in range(13):
+                a = k / 12 * 2 * math.pi
+                rr_ = r * rnd.uniform(0.75, 1.25)
+                pts.append((cx + rr_ * math.cos(a), cy + rr_ * math.sin(a)))
+            for a_, b_ in zip(pts, pts[1:]):
+                if rnd.random() < 0.8:
+                    d.line([a_, b_], fill=(235, 240, 238, 150), width=2)
+        for k in range(n_rays):
+            a = rnd.uniform(0, 2 * math.pi)
+            x, y = cx, cy
+            length = s * rnd.uniform(0.25, 0.9) * (0.6 + 0.2 * level)
+            step = s * 0.03
+            travelled = 0
+            while travelled < length:
+                a += rnd.uniform(-0.12, 0.12)
+                nx, ny = x + step * math.cos(a), y + step * math.sin(a)
+                d.line([(x + 1, y + 1), (nx + 1, ny + 1)], fill=(0, 0, 0, 120), width=3)
+                d.line([(x, y), (nx, ny)], fill=(240, 245, 243, 210), width=2)
+                if rnd.random() < 0.12:
+                    ba = a + rnd.choice([-1, 1]) * rnd.uniform(0.5, 1.1)
+                    bx, by = x, y
+                    for _ in range(rnd.randint(2, 6)):
+                        ba += rnd.uniform(-0.3, 0.3)
+                        ex, ey = bx + step * 0.8 * math.cos(ba), by + step * 0.8 * math.sin(ba)
+                        d.line([(bx, by), (ex, ey)], fill=(235, 240, 238, 160), width=1)
+                        bx, by = ex, ey
+                x, y = nx, ny
+                travelled += step
+        # Éclats à l'impact
+        d.ellipse([cx - s * 0.02, cy - s * 0.02, cx + s * 0.02, cy + s * 0.02], fill=(255, 255, 255, 120))
+    return img.filter(ImageFilter.SMOOTH)
+
+
 def convert(img, name, tmp):
     png = os.path.join(tmp, name + ".png")
     img.save(png)
@@ -253,6 +327,17 @@ def convert(img, name, tmp):
 def main():
     os.makedirs(OUT, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
+        # Fêlures de l'écran (dégâts du téléphone), mêmes dessins en portrait et paysage.
+        for lvl in (1, 2, 3):
+            port = crack(lvl, 512, 1024, 40 + lvl)
+            convert(port, f"crack_{lvl}_port", tmp)
+            convert(port.rotate(-90, expand=True), f"crack_{lvl}_land", tmp)
+        if len(sys.argv) > 2 and sys.argv[2] == "cracks":
+            return
+        if len(sys.argv) > 2 and sys.argv[2] == "icons":
+            for name, body in ICONS.items():
+                convert(icon_png(name, body), name, tmp)
+            return
         land = Image.open(PHONE_SRC).convert("RGBA") if os.path.exists(PHONE_SRC) else phone_landscape()
         convert(land, "phone_landscape", tmp)
         # Rotation horaire : le bouton home du S7 passe en bas.
