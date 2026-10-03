@@ -81,6 +81,7 @@ if (_interactive) then {
     if (_s getOrDefault ["mapToolsOpen", false]) then {
         private _items = [
             ["ROUTE", "map_route", "GPS : itinéraire"],
+            ["WP", "app_waypoints", "Points de passage"],
             ["LINE", "map_measure", "Tracer un trait"],
             ["DRAW", "map_labels", "Dessin libre"],
             ["DISTANCE", "map_distance", "Distance"],
@@ -185,6 +186,7 @@ if (_interactive) then {
         case "FLAT": { "TERRAIN PLAT : clic pour chercher autour" };
         case "LOS": { "LIGNE DE VUE : clic sur la cible" };
         case "ROUTE": { "GPS : clic sur la destination" };
+        case "WP": { "POINTS DE PASSAGE : clic pour ajouter une étape" };
         case "LINE": { "TRAIT : clic A puis clic B" };
         case "DRAW": { "DESSIN : maintenir le clic gauche" };
         default { "" };
@@ -248,6 +250,23 @@ private _editing = _interactive && {(count (_s getOrDefault ["markerEdit", creat
 if (_editing) then {
     private _ew = [_mw * 0.42, _mw] select (_l get "mini");
     [[_bx + _mw - _ew, _by, _ew, _bh]] call comspec_atak_native_fnc_markerEditor;
+};
+
+// Points de passage en navigation : flèche de cap (relative à mon cap) et distance, en bas au centre, aussi en mini.
+private _wpn = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
+if (_wpn getOrDefault ["nav", false] && {(count (_wpn getOrDefault ["pts", []])) > 0}) then {
+    private _ah = _font * 2.4;
+    private _aw = _ah / _ratio;
+    private _pw = _aw + _font * 5.5 / _ratio;
+    private _px = _bx + (_mw - _pw) / 2;
+    private _py = _by + _mh - _ah - _pad * ([1, 6] select (_interactive && {!(_l get "mini")}));
+    private _abg = ["COMSPEC_RscMapPanel", [_px, _py, _pw, _ah]] call _mk;
+    _abg ctrlSetBackgroundColor [0.03, 0.04, 0.035, 0.88];
+    private _arr = ["COMSPEC_RscIcon", [_px, _py, _aw, _ah], _dir + "nav_straight.paa"] call _mk;
+    _arr ctrlSetTextColor [0.36, 0.85, 0.42, 1];
+    private _atx = ["COMSPEC_RscStructuredText", [_px + _aw, _py + _ah * 0.1, _pw - _aw, _ah * 0.9]] call _mk;
+    _ov set ["wpArrow", _arr];
+    _ov set ["wpText", _atx];
 };
 
 // GPS : bandeau de guidage en haut de la carte (mis à jour chaque seconde par fn_routeBanner).

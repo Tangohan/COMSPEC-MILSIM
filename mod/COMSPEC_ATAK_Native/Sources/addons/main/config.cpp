@@ -25,7 +25,7 @@ class CfgFunctions {
             class p2pSend {}; class p2pReceive {}; class netSend {}; class bridge {}; class avatarPath {};
         };
         class nav { file="z\comspec_atak_native\addons\main\functions\nav";
-            class routeCompute {}; class routeGuide {}; class routeBanner {};
+            class routeCompute {}; class routeGuide {}; class routeBanner {}; class wpAction {}; class pageWaypoints {};
         };
         class pages { file="z\comspec_atak_native\addons\main\functions\pages";
             class chatSend {}; class taskAction {}; class briefingStep {}; class settingsSave {};
@@ -60,6 +60,7 @@ class COMSPEC_ATAK_Apps {
     class Photos   { name="Photos";     page="PHOTOS";   section="Renseignement"; order=140; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_photos.paa"; };
     class Briefing { name="Briefing";   page="BRIEFING"; section="Mission";       order=210; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_briefing.paa"; };
     class Status   { name="Statut";     page="STATUS";   section="Système";       order=310; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_status.paa"; };
+    class Waypoints { name="Points de passage"; page="WAYPOINTS"; section="Opérations"; order=15; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_waypoints.paa"; };
     class Osint    { name="OSINT";      page="OSINT";    section="Renseignement"; order=125; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_osint.paa"; };
     class Food     { name="Ration Express"; page="FOOD"; section="Civil";         order=400; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_food.paa"; };
     class Dating   { name="Rencard";    page="DATING";   section="Civil";         order=410; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_dating.paa"; };

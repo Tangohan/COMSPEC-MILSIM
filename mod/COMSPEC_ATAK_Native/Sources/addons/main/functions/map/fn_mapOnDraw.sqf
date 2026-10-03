@@ -40,6 +40,23 @@ if ((count _route) > 0) then {
     _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [0.92, 0.26, 0.21, 1], _route get "dest", 26, 26, 0, _route getOrDefault ["label", ""], 2, 0.028, "RobotoCondensedBold", "right"];
 };
 
+// Points de passage : traits pointillés entre étapes, étape active en vert, trait de cap depuis moi en navigation.
+private _wp = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
+private _wpts = _wp getOrDefault ["pts", []];
+if ((count _wpts) > 0) then {
+    private _wi = _wp getOrDefault ["idx", 0];
+    private _dash = {
+        params ["_a", "_b", "_c"];
+        private _n = ((round ((_a distance2D _b) / 40)) max 1) min 60;
+        for "_k" from 0 to (_n - 1) step 2 do { _map drawLine [_a vectorAdd ((_b vectorDiff _a) vectorMultiply (_k / _n)), _a vectorAdd ((_b vectorDiff _a) vectorMultiply ((_k + 1) / _n)), _c]; };
+    };
+    for "_i" from 0 to ((count _wpts) - 2) do { [(_wpts select _i) select 0, (_wpts select (_i + 1)) select 0, [0.95, 0.75, 0.18, 0.9]] call _dash; };
+    if (_wp getOrDefault ["nav", false]) then { _map drawArrow [getPosATL vehicle player, (_wpts select _wi) select 0, [0.36, 0.78, 0.42, 0.9]]; };
+    {
+        _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [[0.95, 0.75, 0.18, 1], [0.36, 0.85, 0.42, 1]] select (_forEachIndex isEqualTo _wi), _x select 0, 22, 22, 0, _x select 1, 2, 0.026, "RobotoCondensedBold", "right"];
+    } forEach _wpts;
+};
+
 {
     private _entity = _y;
     private _pos = _entity getOrDefault ["position",[]];

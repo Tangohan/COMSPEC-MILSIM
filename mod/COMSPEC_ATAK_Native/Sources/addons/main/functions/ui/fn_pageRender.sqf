@@ -33,6 +33,7 @@ switch (_page) do {
     case "FOOD": { [] call comspec_atak_native_fnc_pageFood; };
     case "DATING": { [] call comspec_atak_native_fnc_pageDating; };
     case "OSINT": { [] call comspec_atak_native_fnc_pageOsint; };
+    case "WAYPOINTS": { [] call comspec_atak_native_fnc_pageWaypoints; };
     case "TASK": { [] call comspec_atak_native_fnc_pageTasks; };
     case "ATHENA": { [] call comspec_atak_native_fnc_pageAthena; };
     case "NETWORK": { [] call comspec_atak_native_fnc_pageNetwork; };

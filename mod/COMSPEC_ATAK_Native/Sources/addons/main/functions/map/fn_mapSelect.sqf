@@ -22,6 +22,7 @@ switch (_tool) do {
     case "HEIGHT";
     case "FLAT";
     case "LOS": { [_tool, _world] call comspec_atak_native_fnc_mapToolRun; };
+    case "WP": { ["add", _world] call comspec_atak_native_fnc_wpAction; };
     case "ROUTE": {
         ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
         ["INFO", "GPS : calcul de l'itinéraire…", 2, 20] call comspec_atak_native_fnc_notify;

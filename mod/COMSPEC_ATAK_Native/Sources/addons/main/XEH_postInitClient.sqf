@@ -213,3 +213,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         [] call comspec_atak_native_fnc_vibrate;
     };
 }, 1] call CBA_fnc_addPerFrameHandler;
+
+// Points de passage : itinéraire reçu d'un membre du groupe, et passage automatique à l'étape suivante.
+["comspec_atak_native_waypoints", { ["receive", _this] call comspec_atak_native_fnc_wpAction; }] call CBA_fnc_addEventHandler;
+[{ if ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["nav", false]) then { ["tick"] call comspec_atak_native_fnc_wpAction; }; }, 1] call CBA_fnc_addPerFrameHandler;
