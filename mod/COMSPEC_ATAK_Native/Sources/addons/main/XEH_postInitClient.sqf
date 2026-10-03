@@ -58,7 +58,61 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     if ((player getVariable ["COMSPEC_ATAK_Orbat", ""]) isNotEqualTo _orbat) then { player setVariable ["COMSPEC_ATAK_Orbat", _orbat, true]; };
     private _icon = profileNamespace getVariable ["COMSPEC_ATAK_SelfIcon", ""];
     if ((player getVariable ["COMSPEC_ATAK_Icon", ""]) isNotEqualTo _icon) then { player setVariable ["COMSPEC_ATAK_Icon", _icon, true]; };
+    // Balise BFT : en ligne si j'ai un téléphone allumé avec du signal (diffusée seulement quand elle change).
+    private _on = ([player] call comspec_atak_native_fnc_hasDevice)
+        && {!((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"])}
+        && {(([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 1]) > 0};
+    if ((player getVariable ["COMSPEC_ATAK_Beacon", true]) isNotEqualTo _on) then { player setVariable ["COMSPEC_ATAK_Beacon", _on, true]; };
 }, 5] call CBA_fnc_addPerFrameHandler;
+
+// Alertes BFT de mon groupe : un équipier passe hors ligne, tombe inconscient ou meurt (et revient en ligne).
+[{
+    if !(profileNamespace getVariable ["COMSPEC_ATAK_BftAlerts", true]) exitWith {};
+    if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
+    if ((([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 1]) <= 0) exitWith {};
+    private _prev = missionNamespace getVariable ["COMSPEC_ATAK_BftPrev", createHashMap];
+    private _now = createHashMap;
+    {
+        if (_x isEqualTo player || {!isPlayer _x}) then { continue; };
+        private _st = switch (true) do {
+            case (!alive _x): { "DEAD" };
+            case (lifeState _x isEqualTo "INCAPACITATED"): { "DOWN" };
+            case !(_x getVariable ["COMSPEC_ATAK_Beacon", true]): { "OFF" };
+            default { "OK" };
+        };
+        private _id = netId _x;
+        _now set [_id, _st];
+        private _was = _prev getOrDefault [_id, ""];
+        if (_was isEqualTo "" || {_was isEqualTo _st}) then { continue; };
+        private _cs = [_x] call comspec_atak_native_fnc_unitCallsign;
+        private _grid = [getPosASL _x, 6] call comspec_atak_native_fnc_gridRef;
+        if (_st isEqualTo "OFF") then {
+            private _lp = ((uiNamespace getVariable ["COMSPEC_ATAK_BftLast", createHashMap]) getOrDefault [_id, [getPosASL _x]]) select 0;
+            _grid = [_lp, 6] call comspec_atak_native_fnc_gridRef;
+        };
+        switch (_st) do {
+            case "DEAD": { ["WARNING", format ["BFT · %1 ne répond plus · %2", _cs, _grid], 10, 80] call comspec_atak_native_fnc_notify; [] call comspec_atak_native_fnc_vibrate; };
+            case "DOWN": { ["WARNING", format ["BFT · %1 inconscient · %2", _cs, _grid], 10, 80] call comspec_atak_native_fnc_notify; [] call comspec_atak_native_fnc_vibrate; };
+            case "OFF": { ["WARNING", format ["BFT · %1 hors ligne · dernière position %2", _cs, _grid], 8, 60] call comspec_atak_native_fnc_notify; [] call comspec_atak_native_fnc_vibrate; };
+            default { if (_was isEqualTo "OFF") then { ["INFO", format ["BFT · %1 de nouveau en ligne", _cs], 5, 30] call comspec_atak_native_fnc_notify; }; };
+        };
+    } forEach units group player;
+    missionNamespace setVariable ["COMSPEC_ATAK_BftPrev", _now];
+}, 2] call CBA_fnc_addPerFrameHandler;
+
+// Vibreur BFT : un allié fait vibrer mon téléphone (signal discret de ralliement).
+["comspec_atak_native_buzz", {
+    params ["_from", "_grid"];
+    if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
+    if ((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"]) exitWith {};
+    ["WARNING", format ["VIBREUR · %1 vous appelle · %2", _from, _grid], 8, 70] call comspec_atak_native_fnc_notify;
+    private _buzz = {
+        if (isNull ([] call comspec_atak_native_fnc_display) && {!isNil "comspec_overwatch_connect_fnc_playAtakVibrate"}) then { [0.9] call comspec_overwatch_connect_fnc_playAtakVibrate; } else { [] call comspec_atak_native_fnc_vibrate; };
+    };
+    [] call _buzz;
+    [_buzz, [], 0.9] call CBA_fnc_waitAndExecute;
+    [_buzz, [], 1.8] call CBA_fnc_waitAndExecute;
+}] call CBA_fnc_addEventHandler;
 
 // PANIQUE d'un allié : alerte rouge, vibration, repère local sur la carte pendant 10 min.
 ["comspec_atak_native_panic", {
