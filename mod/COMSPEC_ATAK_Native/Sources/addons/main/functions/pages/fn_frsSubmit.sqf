@@ -86,15 +86,42 @@ private _json = "{" + (_parts joinString ",") + "}";
 private _sent = uiNamespace getVariable ["COMSPEC_ATAK_FrsSent", []];
 private _excerpt = if ((count _body) > 80) then { (_body select [0, 80]) + "…" } else { _body };
 private _time = [dayTime, "HH:MM"] call BIS_fnc_timeToString;
+private _pieces = +(uiNamespace getVariable ["COMSPEC_ATAK_FrsPieces", []]);
 if (!_ok && {_status isEqualTo "QUEUED"}) exitWith {
-    _sent pushBack [_time, _kind, "", "en file", _excerpt];
+    // Sans numéro de fiche, les pièces ne peuvent pas suivre : elles restent jointes au brouillon suivant.
+    _sent pushBack [_time, _kind, "", ["en file", "en file, pièces non envoyées"] select ((count _pieces) > 0), _excerpt, 0];
     uiNamespace setVariable ["COMSPEC_ATAK_FrsSent", _sent];
     ["Liaison coupée : fiche gardée en file, elle partira au retour de la liaison. Ne la ressaisissez pas.", false, true] call _say;
 };
 if (!_ok) exitWith { [format ["Fiche non transmise : %1", _detail], true] call _say; };
-private _ref = ((str _detail) splitString "|") param [1, ""];
-_ref = [_ref, """", ""] call CBA_fnc_replace;
-_sent pushBack [_time, _kind, _ref, "transmise", _excerpt];
+private _bits = ([str _detail, """", ""] call CBA_fnc_replace) splitString "|";
+private _ref = _bits param [1, ""];
+private _noteId = floor (parseNumber (_bits param [0, "0"]));
+_sent pushBack [_time, _kind, _ref, "transmise", _excerpt, [0, count _pieces] select (_noteId > 0)];
 uiNamespace setVariable ["COMSPEC_ATAK_FrsSent", _sent];
-[format ["Fiche %1 transmise au bureau SSE.", _ref], false, true] call _say;
+[format ["Fiche %1 transmise au bureau SSE.%2", _ref, ["", format [" %1 pièce(s) jointe(s) en cours d'envoi.", count _pieces]] select (_noteId > 0 && {(count _pieces) > 0})], false, true] call _say;
+// Pièces jointes : une par une après la fiche (même chaîne que le rédacteur d'Overwatch : captures recopiées puis envoyées).
+if (_noteId > 0 && {(count _pieces) > 0}) then {
+    uiNamespace setVariable ["COMSPEC_ATAK_FrsPieces", []];
+    [str _noteId, _pieces, _callsign, _pos] spawn {
+        params ["_noteId", "_pieces", "_callsign", "_pos"];
+        private _okN = 0;
+        {
+            _x params ["_kind", "_path", "_name", "_grid", ["_author", ""], ["_caption", ""]];
+            private _target = _path;
+            if (_kind isEqualTo "capture" && {!isNil "comspec_overwatch_connect_fnc_extResult"}) then {
+                private _staged = ["COMSPECExtension" callExtension ["StageCapture", [_target]]] call comspec_overwatch_connect_fnc_extResult;
+                if ((_staged isEqualType "") && {(count _staged) >= 4} && {(_staged select [0, 3]) isEqualTo "OK|"}) then {
+                    private _b = trim (_staged select [3, (count _staged) - 3]);
+                    if (_b isNotEqualTo "") then { _target = _b; };
+                };
+            };
+            (["UploadSseNoteAttachment", [_noteId, _target, [_author, _callsign] select (_author isEqualTo ""), ["photo", "capture"] select (_kind isEqualTo "capture"),
+                (_pos select 0) toFixed 2, (_pos select 1) toFixed 2, (_pos select 2) toFixed 2, _caption, _grid], "Pièce jointe de fiche", true, true, "system", false] call comspec_overwatch_connect_fnc_callExtLogged) params ["_pOk"];
+            if (_pOk) then { _okN = _okN + 1; };
+            uiSleep 1;
+        } forEach _pieces;
+        [["WARNING", "SUCCESS"] select (_okN isEqualTo (count _pieces)), format ["Fiche %1 : %2/%3 pièce(s) jointe(s) en file d'envoi", _noteId, _okN, count _pieces], 4, 30] call comspec_atak_native_fnc_notify;
+    };
+};
 ["SUCCESS", "Fiche de renseignement transmise", 3, 40] call comspec_atak_native_fnc_notify;
