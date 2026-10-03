@@ -188,12 +188,12 @@ return [
             ['label' => 'Affichage', 'href' => 'back-office/roleplay/immersion#activation-options'],
             ['label' => 'Étapes et filières', 'href' => 'back-office/roleplay/immersion#listes'],
         ]],
-        ['path' => 'back-office/roleplay/regles-phases', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · PARCOURS', 'title' => 'Parcours RH', 'subtitle' => 'Ordonnez les étapes du parcours et les conditions de passage à l’étape suivante. Un jeu vide n’avance personne.', 'quick' => [
+        ['path' => 'back-office/roleplay/regles-phases', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · PARCOURS', 'title' => 'Parcours RH', 'subtitle' => 'Ordonnez les étapes du parcours et les conditions de passage à l’étape suivante. Un jeu vide n’avance personne.', 'css' => ['back-office-roleplay-immersion.css'], 'quick' => [
             ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay/immersion'],
             ['label' => 'Sessions Arma', 'href' => 'back-office/roleplay/sessions'],
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],
         ]],
-        ['path' => 'back-office/roleplay/sessions', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · SESSIONS', 'title' => 'Sessions Arma', 'subtitle' => 'Les types de sessions de jeu, la façon de compter les heures et le temps pris en compte dans le suivi.', 'quick' => [
+        ['path' => 'back-office/roleplay/sessions', 'group' => 'Roleplay', 'kicker' => 'ROLEPLAY · SESSIONS', 'title' => 'Sessions Arma', 'subtitle' => 'Les types de sessions de jeu, la façon de compter les heures et le temps pris en compte dans le suivi.', 'css' => ['back-office-roleplay-immersion.css'], 'quick' => [
             ['label' => 'Parcours RH', 'href' => 'back-office/roleplay/regles-phases'],
             ['label' => 'Parcours d’immersion', 'href' => 'back-office/roleplay/immersion'],
             ['label' => 'Bureau de suivi', 'href' => 'back-office/roleplay-followup'],

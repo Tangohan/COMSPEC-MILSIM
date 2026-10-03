@@ -469,3 +469,81 @@
   line-height: 1.45;
   color: var(--bo-muted);
 }
+
+/* ——— Signalements mod (/admin/atak-mod-reports) ——— */
+@media (min-width: 1024px) {
+  .bo-atak-beta__kpis--five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+
+.bo-atak-beta__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.55rem 0.75rem;
+  padding: 0.75rem 1.1rem;
+  border-bottom: 1px solid var(--bo-line);
+  background: #f8fafc;
+}
+
+.bo-atak-beta__filter-label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--bo-muted);
+}
+
+.bo-atak-beta__filters select,
+.bo-atak-beta__status-form select {
+  min-width: 11rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.65rem;
+  background: #fff;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--bo-ink);
+}
+
+.bo-atak-beta__status-form select { min-width: 8rem; font-size: 0.8rem; padding: 0.4rem 0.6rem; }
+
+.bo-atak-beta__btn {
+  appearance: none;
+  border: 1px solid var(--bo-ink);
+  cursor: pointer;
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: var(--bo-ink);
+  color: #fff;
+}
+
+.bo-atak-beta__btn:hover { filter: brightness(1.08); }
+
+.bo-atak-beta__btn--ghost {
+  background: #fff;
+  color: var(--bo-ink);
+  border-color: #cbd5e1;
+  padding: 0.4rem 0.75rem;
+}
+
+.bo-atak-beta__btn--ghost:hover { border-color: #be123c; color: #be123c; filter: none; }
+
+.bo-atak-beta__status-form { margin: 0; }
+
+.bo-atak-beta__details { margin-top: 0.35rem; }
+.bo-atak-beta__details summary { cursor: pointer; font-size: 0.78rem; font-weight: 600; color: #0f766e; }
+.bo-atak-beta__details pre {
+  white-space: pre-wrap;
+  max-width: 36rem;
+  margin: 0.4rem 0 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.6rem;
+  background: #f8fafc;
+  border: 1px solid var(--bo-line);
+  font-size: 0.72rem;
+  color: #334155;
+}
+.bo-atak-beta__details pre.bo-atak-beta__log { max-height: 18rem; overflow: auto; }
