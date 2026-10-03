@@ -55,7 +55,13 @@ if (_page isEqualTo "MAP") then {
     if (missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false]) then { [] call comspec_atak_native_fnc_inspectorUpdate; };
     // Porté (HUD) ou suivi activé : la carte reste centrée sur le joueur.
     if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]}) then {
-        [player] call comspec_atak_native_fnc_mapCenter;
+        // Recentrage seulement si j'ai bougé (ou zoomé) : sinon la carte tremble à chaque seconde.
+        private _fk = [round ((getPosASL player) select 0), round ((getPosASL player) select 1), ctrlMapScale ((([] call comspec_atak_native_fnc_display)) displayCtrl 88530)];
+        private _fl = uiNamespace getVariable ["COMSPEC_ATAK_FollowLast", [0, 0, 0]];
+        if ((([_fk select 0, _fk select 1] distance2D [_fl select 0, _fl select 1]) > 3) || {(_fk select 2) isNotEqualTo (_fl select 2)}) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_FollowLast", _fk];
+            [player] call comspec_atak_native_fnc_mapCenter;
+        };
     };
 };
 

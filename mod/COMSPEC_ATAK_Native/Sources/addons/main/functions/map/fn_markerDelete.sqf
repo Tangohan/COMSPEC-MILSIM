@@ -6,6 +6,7 @@ if ((_name find "_USER_DEFINED") isNotEqualTo 0) exitWith {
     false
 };
 deleteMarker _name;
+[_name, true] call comspec_atak_native_fnc_markerWeb;
 private _notes = missionNamespace getVariable ["COMSPEC_ATAK_MarkerNotes", createHashMap];
 if (_name in _notes) then { _notes deleteAt _name; missionNamespace setVariable ["COMSPEC_ATAK_MarkerNotes", _notes, true]; };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];

@@ -45,14 +45,19 @@ if (((["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_
 };
 
 // Carte « moi » (bas droite)
-private _panW = (_mw * 0.34) min (_font * 9 / _ratio);
-private _panH = _fs * 3.4;
+// Texte fixé à la petite police (sinon le texte structuré prend la taille par défaut, trop grosse en mini).
+private _mini = _l get "mini";
+private _panFs = _fs * ([0.85, 0.7] select _mini);
+private _panW = ((_mw * 0.34) min (_font * 9 / _ratio)) * ([1, 0.75] select _mini);
+private _panH = _panFs * ([3.6, 2.5] select _mini);
 private _me = ["COMSPEC_RscMapPanel", [_bx + _mw - _panW - _pad, _by + _mh - _panH - _pad, _panW, _panH]] call _mk;
+_me ctrlSetFontHeight _panFs;
 _ov set ["me", _me];
 
 if (_interactive) then {
     // Panneau curseur (bas gauche) + bouton outils
     private _cur = ["COMSPEC_RscMapPanel", [_bx + _pad, _by + _mh - _panH - _pad, _panW, _panH]] call _mk;
+    _cur ctrlSetFontHeight _panFs;
     _ov set ["cursor", _cur];
     // Bouton « OUTILS » bien visible (icône + libellé) : ouvre le menu des outils carte.
     private _th = _fs * 1.9;

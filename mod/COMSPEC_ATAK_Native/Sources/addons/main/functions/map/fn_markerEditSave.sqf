@@ -33,6 +33,7 @@ if !(_poly) then {
 _name setMarkerColorLocal _color;
 _name setMarkerAlphaLocal _alpha;
 _name setMarkerText _text; // dernier appel global : diffuse tout l'état du marqueur
+[_name] call comspec_atak_native_fnc_markerWeb;
 profileNamespace setVariable ["COMSPEC_ATAK_LastMarkerColor", _color];
 private _notes = missionNamespace getVariable ["COMSPEC_ATAK_MarkerNotes", createHashMap];
 if (_desc isEqualTo "") then { _notes deleteAt _name; } else { _notes set [_name, [_desc, [player] call comspec_atak_native_fnc_unitCallsign]]; };

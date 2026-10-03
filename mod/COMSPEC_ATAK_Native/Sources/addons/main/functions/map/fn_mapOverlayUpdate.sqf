@@ -51,10 +51,13 @@ if (!isNull _hd) then { _hd ctrlSetText format ["%1° %2", round _h, [_h] call _
 
 private _me = _ov getOrDefault ["me", controlNull];
 if (!isNull _me) then {
-    _me ctrlSetStructuredText parseText format [
-        "<t align='right'><t font='RobotoCondensedBold' color='#5cc76b'>%1</t><br/>%2 %3°<br/>%4</t>",
-        [player] call comspec_atak_native_fnc_unitCallsign, [_h] call _cardinal, round _h, [player] call comspec_atak_native_fnc_gridRef
-    ];
+    // Mini : indicatif et cap seulement ; plein écran : avec la grille.
+    _me ctrlSetStructuredText parseText (if (([] call comspec_atak_native_fnc_layoutGet) get "mini") then {
+        format ["<t align='right'><t font='RobotoCondensedBold' color='#5cc76b'>%1</t><br/>%2 %3°</t>", [player] call comspec_atak_native_fnc_unitCallsign, [_h] call _cardinal, round _h]
+    } else {
+        format ["<t align='right'><t font='RobotoCondensedBold' color='#5cc76b'>%1</t><br/>%2 %3°<br/>%4</t>",
+            [player] call comspec_atak_native_fnc_unitCallsign, [_h] call _cardinal, round _h, [player] call comspec_atak_native_fnc_gridRef]
+    });
 };
 
 private _bar = _ov getOrDefault ["databar", controlNull];

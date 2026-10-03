@@ -41,7 +41,9 @@ class COMSPEC_RscControlsGroup: RscControlsGroup {
     class HScrollbar: HScrollbar { color[]=ATAK_GREEN; height=0; };
 };
 class COMSPEC_RscPicture: RscPicture { colorText[]=ATAK_GREEN; colorBackground[]={0,0,0,0}; style=2096; };
-class COMSPEC_RscMap: RscMapControl { colorBackground[]={0.045,0.055,0.048,1}; colorOutside[]={0.025,0.030,0.027,1}; showCountourInterval=1; };
+class COMSPEC_RscMap: RscMapControl { colorBackground[]={0.045,0.055,0.048,1}; colorOutside[]={0.025,0.030,0.027,1}; showCountourInterval=1;
+    // Textes de la carte Arma plus discrets (marqueurs, lieux, grille) : lisibles aussi sur le petit écran.
+    sizeExLabel="0.018 * safeZoneH"; sizeExGrid="0.016 * safeZoneH"; sizeExUnits="0.024 * safeZoneH"; sizeExNames="0.026 * safeZoneH"; sizeExInfo="0.018 * safeZoneH"; sizeExLevel="0.016 * safeZoneH"; sizeEx="0.018 * safeZoneH"; };
 class COMSPEC_RscPanel: COMSPEC_RscText { colorBackground[]=ATAK_BG1; };
 class COMSPEC_RscTile: COMSPEC_RscText { colorBackground[]=ATAK_BG2; };
 class COMSPEC_RscBadge: COMSPEC_RscTextCenter { font="RobotoCondensedBold"; colorBackground[]=ATAK_DANGER; colorText[]={1,1,1,1}; sizeEx="0.018 * safeZoneH"; };
