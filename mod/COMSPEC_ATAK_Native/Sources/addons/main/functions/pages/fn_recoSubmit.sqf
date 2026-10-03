@@ -5,7 +5,7 @@ private _pos = if ((_d getOrDefault ["where", "look"]) isEqualTo "me") then { ge
 private _ok = [trim (_d getOrDefault ["text", ""]), _d getOrDefault ["tag", "other"], _d getOrDefault ["confidence", "vu_direct"], _pos] call comspec_overwatch_connect_fnc_reconPushNote;
 if (_ok isEqualTo true) then {
     _d set ["text", ""];
-    uiNamespace setVariable ["COMSPEC_ATAK_RecoHint", ["Note envoyée et repère posé.", false]];
+    uiNamespace setVariable ["COMSPEC_ATAK_RecoHint", ["Repère posé. Transmission au poste : voir le message à l'écran.", false]];
 } else {
     uiNamespace setVariable ["COMSPEC_ATAK_RecoHint", ["Note non envoyée (voir le message à l'écran).", true]];
 };
