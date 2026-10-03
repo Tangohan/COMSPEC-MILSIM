@@ -8,7 +8,8 @@ if (!isNull _d && {_s getOrDefault ["interactive", false]}) exitWith {
     false
 };
 private _want = !(uiNamespace getVariable ["COMSPEC_ATAK_HudWanted", false]);
-if (_want && {!([] call comspec_atak_native_fnc_hasDevice)}) exitWith { [] call comspec_atak_native_fnc_deviceDenied };
+private _why = [] call comspec_atak_native_fnc_canUse;
+if (_want && {_why isNotEqualTo ""}) exitWith { [_why] call comspec_atak_native_fnc_deviceDenied };
 uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", _want];
 if (_want) then { [false] call comspec_atak_native_fnc_open; } else { [] call comspec_atak_native_fnc_close; };
 _want

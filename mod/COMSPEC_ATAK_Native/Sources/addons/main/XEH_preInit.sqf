@@ -11,6 +11,9 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
 ["comspec_atak_native_require_item", "CHECKBOX",
     ["Item obligatoire pour avoir l'ATAK", "Activé par défaut : il faut porter un téléphone (ItemAndroid de cTab ou équivalent d'un autre mod) pour sortir ou prendre le téléphone. Décocher pour donner l'ATAK à tout le monde."],
     _cat, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_battery_items", "EDITBOX",
+    ["Batteries de rechange", "Objets (classes, séparées par des virgules) qui rechargent le téléphone à 100 % quand on change la batterie. L'objet est consommé."],
+    _cat, "ACE_UAVBattery", 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_device_patterns", "EDITBOX",
     ["Détection des autres mods (motifs)", "Tout objet chargé dont le nom de classe contient un de ces mots compte comme téléphone. Séparer par des virgules. Par défaut : android,atak,smartphone."],
     _cat, "android,atak,smartphone", 1, _recompute] call CBA_fnc_addSetting;

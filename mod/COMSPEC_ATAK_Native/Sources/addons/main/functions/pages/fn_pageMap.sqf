@@ -88,6 +88,8 @@ if (_interactive) then {
             ["COMPASS", "map_compass", "Boussole"],
             ["GRID", "map_grid", format ["Grille %1 chiffres", profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6]]],
             ["FLAT", "map_flat", "Terrain plat"],
+            ["ZONES", "map_grid", "Zones tactiques"],
+            ["SIGINT", "map_los", "Goniométrie (émetteurs)"],
             ["LOS", "map_los", "Ligne de vue"],
             ["CLEAR", "map_clear", "Tout effacer"]
         ];
@@ -103,6 +105,8 @@ if (_interactive) then {
                 case "DISTANCE": { _s getOrDefault ["mapDistance", true] };
                 case "COMPASS": { (["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_fnc_pref) select 0 };
                 case "GRID": { (profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6]) > 6 };
+                case "ZONES": { profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true] };
+                case "SIGINT": { profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true] };
                 default { _mode isEqualTo _key };
             };
             private _ic = ["COMSPEC_RscIcon", [_bx + _pad * 1.5, _y0 + _rh * 0.15, _rh * 0.7 / _ratio, _rh * 0.7], _dir + _icon + ".paa"] call _mk;

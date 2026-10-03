@@ -72,6 +72,18 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     [{ deleteMarkerLocal _this; }, _m, 600] call CBA_fnc_waitAndExecute;
 }] call CBA_fnc_addEventHandler;
 
+// Goniométrie : émetteurs estimés par Athena, relus toutes les 15 s quand la couche est active.
+[{ if (profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) then { [] spawn comspec_atak_native_fnc_sigintPoll; }; }, 15] call CBA_fnc_addPerFrameHandler;
+
+// Action ACE : changer la batterie du téléphone (si une batterie de rechange est portée).
+if (!isNil "ace_interact_menu_fnc_createAction") then {
+    private _act = ["COMSPEC_ATAK_BatterySwap", "Changer la batterie ATAK", "", { [] call comspec_atak_native_fnc_batterySwap; }, {
+        [player] call comspec_atak_native_fnc_hasDevice && {(missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) < 95}
+        && {((items player) findIf { (toLower _x) in (((missionNamespace getVariable ["comspec_atak_native_battery_items", "ACE_UAVBattery"]) splitString ", ") apply { toLower _x }) }) >= 0}
+    }] call ace_interact_menu_fnc_createAction;
+    ["CAManBase", 1, ["ACE_SelfActions", "ACE_Equipment"], _act, true] call ace_interact_menu_fnc_addActionToClass;
+};
+
 // Mission de tir reçue (servant d'une pièce) : notification, vibration, cible sur la carte du téléphone.
 ["comspec_atak_native_fireMission", {
     params ["_summary", "_tgt", "_from"];

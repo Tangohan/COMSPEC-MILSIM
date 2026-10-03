@@ -89,6 +89,55 @@ private _dashed = {
     };
 };
 
+// Zones tactiques Athena (LZ, objectif, zone dangereuse…) et zones roleplay (brouillage, sans couverture).
+if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
+    private _zc = createHashMapFromArray [["LZ",[0.36,0.85,0.42,1]],["DZ",[0.36,0.85,0.42,1]],["EXTRACT_POINT",[0.36,0.85,0.42,1]],["RALLY_POINT",[0.28,0.70,1,1]],["SAFE_ZONE",[0.28,0.70,1,1]],["OBJECTIVE",[0.95,0.67,0.20,1]],["DANGER_ZONE",[0.95,0.22,0.18,1]],["NO_GO_AREA",[0.95,0.22,0.18,1]],["RESTRICTED_AREA",[0.95,0.5,0.15,1]]];
+    {
+        _x params [["_id",""],["_geom","CIRCLE"],["_geo",[]],["_r",0],["_type",""],["_threat",""],["_label",""]];
+        private _c = +(_zc getOrDefault [toUpper _type,[0.95,0.67,0.20,1]]);
+        if ((toUpper _geom) in ["CIRCLE","RECTANGLE"] && {(count _geo) >= 2}) then {
+            private _p = [_geo select 0,_geo select 1,0];
+            _map drawEllipse [_p,_r max 20,_r max 20,0,_c,""];
+            _map drawEllipse [_p,_r max 20,_r max 20,0,[_c select 0,_c select 1,_c select 2,0.12],"#(rgb,8,8,3)color(1,1,1,1)"];
+            _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)",_c,_p,0,0,0,_label,2,0.028,"RobotoCondensedBold","center"];
+        } else {
+            if ((count _geo) >= 2 && {(_geo select 0) isEqualType []}) then {
+                private _pts = _geo apply { [_x select 0,_x select 1,0] };
+                if ((toUpper _geom) isEqualTo "POLYGON" && {(count _pts) >= 3}) then { _map drawPolygon [_pts,_c]; } else { for "_i" from 0 to ((count _pts) - 2) do { _map drawLine [_pts select _i,_pts select (_i + 1),_c]; }; };
+                _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)",_c,_pts select 0,0,0,0,_label,2,0.028,"RobotoCondensedBold","right"];
+            };
+        };
+    } forEach (missionNamespace getVariable ["COMSPEC_DangerZones",[]]);
+    {
+        if (_x isEqualType createHashMap) then {
+            private _p = _x getOrDefault ["position",[]];
+            if ((count _p) >= 2) then {
+                private _r = _x getOrDefault ["radius",200];
+                private _c = switch (_x getOrDefault ["type",""]) do { case "jammer": {[0.85,0.25,0.95,1]}; case "no_coverage": {[0.6,0.6,0.6,1]}; default {[0.95,0.5,0.15,1]}; };
+                _map drawEllipse [[_p select 0,_p select 1,0],_r,_r,0,_c,""];
+                _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)",_c,[_p select 0,_p select 1,0],0,0,0,format ["%1 · %2 %%",_x getOrDefault ["name","Zone"],_x getOrDefault ["intensity",0]],2,0.026,"RobotoCondensed","center"];
+            };
+        };
+    } forEach (missionNamespace getVariable ["COMSPEC_RoleplayZones",[]]);
+};
+
+// Goniométrie : émetteurs estimés (cercle d'incertitude) et relèvements seuls (azimut tracé sur 3 km).
+if (profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) then {
+    private _sc = [0.95,0.35,0.85,1];
+    {
+        _x params ["_cs","_kind","_p","_r","_n","_brg"];
+        private _pp = [_p select 0,_p select 1,0];
+        if (_kind isEqualTo "azimuth") then {
+            private _end = _pp vectorAdd [3000 * sin _brg,3000 * cos _brg,0];
+            [_pp,_end,_sc] call _dashed;
+            _map drawIcon [_dot,_sc,_pp,8,8,0,format ["%1 · %2°",_cs,round _brg],2,0.026,"RobotoCondensed","right"];
+        } else {
+            _map drawEllipse [_pp,_r,_r,0,_sc,""];
+            _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa",_sc,_pp,18,18,0,format ["Émetteur probable %1 · ±%2 m · %3 relevés",_cs,round _r,_n],2,0.026,"RobotoCondensedBold","right"];
+        };
+    } forEach (uiNamespace getVariable ["COMSPEC_ATAK_Sigint",[]]);
+};
+
 // Trait jaune joueur -> curseur (outil Distance, en main)
 if ((_state getOrDefault ["interactive",false]) && {_state getOrDefault ["mapDistance",true]} && {(count _cursor) >= 2} && {(_state getOrDefault ["mapMode","SELECT"]) in ["SELECT","MARKER"]}) then {
     private _me = getPosASL player;

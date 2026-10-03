@@ -3962,6 +3962,18 @@ public static partial class Extension
                     return "OK|" + simplifiedChat;
                 });
             }
+            // Goniométrie : émetteurs estimés par recoupement des relèvements des relais (téléphone ATAK natif).
+            // Lignes : call_sign\tkind\tpos_x\tpos_y\tradius\treports\tbearing\tlast_at
+            if (function == "GetSigintZones")
+            {
+                var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
+                var url = _baseUrl + "/api/atak/sigint/zones?mapId=" + Uri.EscapeDataString(mapId) + "&limit=40";
+                return ServePollGet("GetSigintZones:" + mapId, url, (body, code) =>
+                {
+                    if (code < 200 || code >= 300) return PollHttpErr(code);
+                    return "OK|" + TruncateForExt(SimplifySigintZonesJson(body));
+                });
+            }
             if (function == "GetChatChannels")
             {
                 var mapId = args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0]!.Trim() : "1";
@@ -5929,6 +5941,28 @@ public static partial class Extension
     }
 
     /// <summary>Simplifie GET /api/chat/channels — lignes key\tlabel\tkind</summary>
+    private static string SimplifySigintZonesJson(string json)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+            if (root.ValueKind != JsonValueKind.Array) return "";
+            var sb = new StringBuilder();
+            static string Str(JsonElement el, string k) =>
+                el.TryGetProperty(k, out var v) ? (v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "") : v.ToString()).Replace("\t", " ").Replace("\n", " ") : "";
+            foreach (var el in root.EnumerateArray())
+            {
+                sb.Append(Str(el, "call_sign")).Append('\t').Append(Str(el, "kind")).Append('\t')
+                  .Append(Str(el, "pos_x")).Append('\t').Append(Str(el, "pos_y")).Append('\t')
+                  .Append(Str(el, "radius")).Append('\t').Append(Str(el, "reports")).Append('\t')
+                  .Append(Str(el, "bearing")).Append('\t').Append(Str(el, "last_at")).Append('\n');
+            }
+            return sb.ToString();
+        }
+        catch { return ""; }
+    }
+
     private static string SimplifyChatChannelsJson(string json)
     {
         try
