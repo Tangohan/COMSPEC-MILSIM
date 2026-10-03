@@ -28,7 +28,7 @@ switch (toLower _action) do {
         call _keep;
         private _kind = _d getOrDefault ["kind", "MOVE"];
         private _prio = _d getOrDefault ["prio", "ROUTINE"];
-        private _tgt = (_d getOrDefault ["target", format ["group|%1|%1", groupId group player]]) splitString "|";
+        private _tgt = (_d getOrDefault ["target", format ["group|%1|%1", [player] call comspec_atak_native_fnc_unitGroup]]) splitString "|";
         private _tType = _tgt param [0, "group"];
         private _tLabel = _tgt param [2, _tgt param [1, ""]];
         private _grid = trim (_d getOrDefault ["grid", ""]);

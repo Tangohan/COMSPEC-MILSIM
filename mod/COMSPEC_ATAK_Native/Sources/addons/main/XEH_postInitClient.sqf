@@ -383,3 +383,11 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     missionNamespace setVariable ["COMSPEC_ATAK_MyCharges", _mine];
     uiNamespace setVariable ["COMSPEC_ATAK_ExploCache", [-1, []]];
 }] call CBA_fnc_addEventHandler;
+// Signaux du poste (SMS, alerte plein écran, vibration) : Overwatch appelle ces crochets du module atak_athena,
+// absent avec le mod natif ; on les fournit seulement s'ils ne sont pas déjà définis.
+if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
+    comspec_overwatch_atak_athena_fnc_athena_onNotify = { params ["_o"]; ["notify", _o] call comspec_atak_native_fnc_athenaSignal; };
+    comspec_overwatch_atak_athena_fnc_athena_onVibrate = { params ["_o"]; ["vibrate", _o] call comspec_atak_native_fnc_athenaSignal; };
+};
+// Alertes santé (inconscient, arrêt cardiaque, KIA) diffusées par Overwatch.
+["COMSPEC_IcemanMedicalPanic", { ["health", _this] call comspec_atak_native_fnc_athenaSignal; }] call CBA_fnc_addEventHandler;

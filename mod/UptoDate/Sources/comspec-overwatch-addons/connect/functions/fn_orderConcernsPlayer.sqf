@@ -17,6 +17,9 @@ if (_target isEqualTo "" || {_targetType in ["all", "team", ""]}) exitWith { tru
 
 private _myCallsign = [] call comspec_overwatch_connect_fnc_getCallsign;
 private _myGroup = groupId (group player);
+// Groupe enregistré dans Athena (rattachement ORBAT du profil) : les ordres « groupe » émis depuis les téléphones le visent.
+private _myUnit = missionNamespace getVariable ["comspec_profile_unit", ""];
+if (!(_myUnit isEqualType "")) then { _myUnit = str _myUnit; };
 private _myName = name player;
 private _myAthena = [] call comspec_overwatch_connect_fnc_orderIssuerLabel;
 private _myMid = missionNamespace getVariable ["COMSPEC_MilitaryId", ""];
@@ -27,7 +30,7 @@ private _idents = [];
 {
     private _v = trim _x;
     if (!(_v isEqualTo "")) then { _idents pushBackUnique (toLower _v); };
-} forEach [_myCallsign, _myGroup, _myName, _myMid, _myAthena];
+} forEach [_myCallsign, _myGroup, _myName, _myMid, _myAthena, _myUnit];
 
 if (_myMid != "") then {
     _idents pushBackUnique (toLower ("mid:" + _myMid));

@@ -19,7 +19,7 @@ _rows pushBack ["hero", _logo, format ["<t size='1.3' font='RobotoCondensedBold'
 _rows append [
     ["info", "Unité (ORBAT)", ["comspec_profile_unit"] call _v],
     ["info", "Fonction", ["comspec_profile_function"] call _v],
-    ["info", "Groupe en jeu", groupId group player],
+    ["info", "Groupe", [player] call comspec_atak_native_fnc_unitGroup],
     ["info", "Compte Steam lié", ["non", "oui"] select (missionNamespace getVariable ["COMSPEC_SteamLinked", false])]
 ];
 // Identité du téléphone (roleplay, traçable en GÉOLOC par les autres camps selon la mission).

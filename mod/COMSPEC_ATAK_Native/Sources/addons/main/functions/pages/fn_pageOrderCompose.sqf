@@ -16,16 +16,18 @@ private _seg = {
     if (_def isEqualTo "") then { _def = (_opts select 0) select 1; };
     _opts apply { [_x select 0, compile format ["['set', '%1', '%2'] call comspec_atak_native_fnc_orderAction;", _key, _x select 1], ((_d getOrDefault [_key, _def]) isEqualTo (_x select 1))] }
 };
-// Destinataires : mon groupe, les autres groupes de mon camp ayant des joueurs, tout le monde.
-private _targets = [[format ["Mon groupe (%1)", groupId group player], format ["group|%1|%1", groupId group player]]];
+// Destinataires : mon groupe (celui d'Athena), les autres groupes de mon camp ayant des joueurs, tout le monde.
+private _mine = [player] call comspec_atak_native_fnc_unitGroup;
+private _targets = [[format ["Mon groupe (%1)", _mine], format ["group|%1|%1", _mine]]];
 {
-    if (_x isNotEqualTo group player && {(units _x) findIf { isPlayer _x } >= 0}) then {
-        _targets pushBack [groupId _x, format ["group|%1|%1", groupId _x]];
+    private _g = [_x] call comspec_atak_native_fnc_unitGroup;
+    if (_g isNotEqualTo _mine && {(_targets findIf { (_x select 1) isEqualTo format ["group|%1|%1", _g] }) < 0}) then {
+        _targets pushBack [_g, format ["group|%1|%1", _g]];
     };
-} forEach (groups side group player);
+} forEach ((allPlayers - [player]) select { side group _x isEqualTo side group player });
 _targets pushBack ["Tout le monde", "all||Tous"];
 private _rows = [
-    ["section", "Nouvel ordre", format ["Émis par %1", groupId group player]],
+    ["section", "Nouvel ordre", format ["Émis par %1", ([[player, true] call comspec_atak_native_fnc_unitCallsign, _mine] select { _x isNotEqualTo "" }) joinString " · "]],
     ["segment", "Type", ["kind", [["DÉPLACER", "MOVE"], ["TENIR", "HOLD"], ["RECO", "RECON"], ["DEM-SSE", "DEMSSE"]], "MOVE"] call _seg],
     ["segment", "", ["kind", [["APPUI AÉRIEN", "CAS"], ["RENFORT", "QRF"], ["FRAGO", "FRAGO"]], "MOVE"] call _seg],
     ["segment", "Priorité", ["prio", [["ROUTINE", "ROUTINE"], ["IMPORTANT", "IMPORTANT"], ["URGENT", "URGENT"], ["FLASH", "FLASH"]]] call _seg],
