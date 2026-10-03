@@ -5,6 +5,9 @@ if (isNull _d) exitWith {};
 private _state = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
 private _dir = "\z\comspec_atak_native\addons\main\data\";
+// Coque jour / nuit selon l'heure de la mission.
+private _shell = ([] call comspec_atak_native_fnc_layoutGet) get "phoneTexture";
+if ((ctrlText (_d displayCtrl 88509)) isNotEqualTo _shell) then { (_d displayCtrl 88509) ctrlSetText _shell; };
 
 private _legacy = missionNamespace getVariable ["COMSPEC_LinkState", ""];
 private _net = switch (toLower _legacy) do {

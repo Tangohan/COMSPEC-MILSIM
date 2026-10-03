@@ -45,6 +45,7 @@ private _rows = [
         saveProfileNamespace;
         [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
     }]]],
+    ["text", format ["Accès : %1 <t color='#8a9a93'>(réglage serveur CBA « COMSPEC ATAK natif »)</t>", ["libre, sans item", format ["item obligatoire (%1 objets reconnus)", count ([] call comspec_atak_native_fnc_deviceCatalog)]] select (missionNamespace getVariable ["comspec_atak_native_require_item", true])]],
     ["text", "<t color='#8a9a93'>Ctrl+U : sortir / ranger le téléphone porté (on continue à jouer).<br/>Ctrl+Maj+U : le prendre en main ou le reposer. En main, glissez la coque pour ajuster la position finement à partir du coin choisi.<br/>Touches modifiables dans les réglages CBA.</t>"]
 ];
 if (_bridge) then {

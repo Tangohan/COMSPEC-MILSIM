@@ -65,7 +65,7 @@ private _bodyH = _sh - _statusH - _appH - _dockH;
 
 createHashMapFromArray [
     ["mode", _mode], ["offsetKey", _offKey], ["visible", [_dx + _dw * _vx0, _dy + _dh * _vy0, _dw * (_vx1 - _vx0), _dh * (_vy1 - _vy0)]], ["mini", _mini], ["orientation", _orient], ["landscape", _land], ["interactive", _interactive], ["dock", _dock],
-    ["phone", [_dx, _dy, _dw, _dh]], ["phoneTexture", format ["\z\comspec_atak_native\addons\main\data\phone_%1.paa", ["portrait", "landscape"] select _land]],
+    ["phone", [_dx, _dy, _dw, _dh]], ["phoneTexture", format ["\z\comspec_atak_native\addons\main\data\phone_%1%2.paa", ["portrait", "landscape"] select _land, ["", "_night"] select (sunOrMoon < 0.5)]],
     ["device", [_sx, _sy, _sw, _sh]],
     ["status", [_sx, _sy, _sw, _statusH]],
     ["appbar", [_sx, _sy + _statusH, _sw, _appH]],
