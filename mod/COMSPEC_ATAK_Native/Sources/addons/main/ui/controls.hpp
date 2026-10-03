@@ -8,6 +8,7 @@ class RscListBox;
 class RscCheckBox;
 class RscProgress;
 class RscPicture;
+class RscActivePicture;
 class RscMapControl;
 class RscControlsGroup {
     class VScrollbar;
@@ -44,3 +45,11 @@ class COMSPEC_RscBadge: COMSPEC_RscTextCenter { font="RobotoCondensedBold"; colo
 class COMSPEC_RscLabel: COMSPEC_RscText { font="EtelkaMonospacePro"; colorText[]=ATAK_TEXT_DIM; sizeEx="0.017 * safeZoneH"; };
 class COMSPEC_RscCard: COMSPEC_RscStructuredText { colorBackground[]=ATAK_BG2; };
 class COMSPEC_RscDivider: COMSPEC_RscText { colorBackground[]=ATAK_BORDER; };
+class COMSPEC_RscPhone: RscPicture { colorText[]={1,1,1,1}; colorBackground[]={0,0,0,0}; style=48; text="\z\comspec_atak_native\addons\main\data\phone_portrait.paa"; };
+class COMSPEC_RscIcon: COMSPEC_RscPicture { colorText[]=ATAK_TEXT; };
+// Icône cliquable (barre d'app, outils carte) : blanche, verte au survol.
+class COMSPEC_RscIconButton: RscActivePicture { color[]=ATAK_TEXT; colorActive[]=ATAK_GREEN; colorDisabled[]={0.4,0.45,0.42,0.6}; colorText[]=ATAK_TEXT; style=2096; tooltipColorText[]=ATAK_TEXT; tooltipColorBox[]=ATAK_BORDER; tooltipColorShade[]=ATAK_BG0; };
+class COMSPEC_RscBubbleIn: COMSPEC_RscStructuredText { colorBackground[]=ATAK_BG2; };
+class COMSPEC_RscBubbleOut: COMSPEC_RscStructuredText { colorBackground[]={0.10,0.20,0.12,1}; };
+class COMSPEC_RscChip: COMSPEC_RscTextCenter { font="RobotoCondensedBold"; colorBackground[]={0.55,0.38,0.08,1}; colorText[]={1,1,1,1}; };
+class COMSPEC_RscMapPanel: COMSPEC_RscStructuredText { colorBackground[]={0.025,0.030,0.027,0.78}; };

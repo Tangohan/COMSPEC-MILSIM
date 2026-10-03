@@ -34,7 +34,7 @@ private _rows = [];
     _list lbSetTextRight [_i, _labels getOrDefault [_st, _st]];
     _list lbSetColor [_i, [_st] call _colorOf];
     _rows pushBack ["athena", _x, format ["<t color='#5cc76b'>%1</t><br/>Émis par %2 · priorité %3<br/>Cible : %4<br/><br/>%5", _label, _y getOrDefault ["issuer", "TOC"], _y getOrDefault ["priority", "NORMAL"], _y getOrDefault ["target", "-"], _y getOrDefault ["payload", ""]]];
-} forEach (_data getOrDefault ["tasks", createHashMap]);
+} forEach ([] call comspec_atak_native_fnc_tasksAll);
 {
     private _st = toUpper taskState _x;
     private _desc = taskDescription _x;

@@ -13,9 +13,18 @@ Identités livrées :
 
 ## En jeu
 
-- `Ctrl+U` ouvre / ferme le terminal, `Ctrl+Maj+U` bascule mini / plein écran (touches CBA modifiables).
-- Mode mini : téléphone dans le coin bas droit, dock d'apps en bas. Mode plein écran : rail d'apps à gauche, inspecteur sur la carte.
+- `Ctrl+U` sort ou range le téléphone **porté** : il reste affiché dans le coin (vertical ou horizontal) et l'on continue à jouer, sans souris. La carte suit le joueur.
+- `Ctrl+Maj+U` prend le téléphone **en main** (souris, clavier) ou le repose. En main, les boutons du haut basculent vertical / horizontal et mini / plein écran (plein écran toujours horizontal).
+- Barre d'état : réseau Athena, batterie simulée (recharge en véhicule), météo (ACE si présent), heure de la mission.
+- Carte : indicatifs (pseudo seulement sans indicatif), carte « moi » (grille, cap, altitude), panneau curseur (grille, altitude, distance, azimut), outils centrer / suivre / zoom / marqueur (ENI, AMI, OBJ, DANGER, PT sur le canal courant) / mesure / libellés.
+- Messagerie : bulles par message, préfixes Athena (`[GROUPE]`, `[ROUTINE]`…) affichés en puces, lignes techniques masquées, envoi visible tout de suite.
+- Données web : les ordres et alertes publiés par Overwatch connect sont fusionnés avec ceux d'Athena au lieu de les écraser.
 - Le lanceur (bouton `APPS`) liste les applications déclarées dans `COMSPEC_ATAK_Apps` (`config.cpp`).
+
+## Ressources graphiques
+
+`tools/gen_assets.py` dessine la coque du téléphone et les icônes (SVG → PNG → PAA). Il demande Pillow, CairoSVG et HEMTT :
+`python3 tools/gen_assets.py /chemin/vers/hemtt` régénère `Sources/addons/main/data/*.paa`.
 
 ## Build
 

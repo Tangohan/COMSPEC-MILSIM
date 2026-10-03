@@ -1,6 +1,6 @@
 params [["_page", "LAUNCHER"]];
 disableSerialization;
-private _d = findDisplay 88500;
+private _d = ([] call comspec_atak_native_fnc_display);
 if (isNull _d) exitWith { false };
 [] call comspec_atak_native_fnc_pageClear;
 [] call comspec_atak_native_fnc_layoutApply;

@@ -7,8 +7,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_NativeExtensionInit", _extInit, fals
 private _restore = "COMSPECATAKNativeExtension" callExtension ["RestoreSession", [_athenaUrl, "1.0.0-native"]];
 missionNamespace setVariable ["COMSPEC_ATAK_NativeAuthRestore", _restore, false];
 diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPECATAKNativeExtension initialization requested";
-["COMSPEC ATAK", "OpenTerminal", "Ouvrir COMSPEC ATAK", { [] call comspec_atak_native_fnc_open }, "", [0x16, [false,true,false]]] call CBA_fnc_addKeybind;
-["COMSPEC ATAK", "ToggleMode", "Basculer mini / plein écran", { [] call comspec_atak_native_fnc_modeToggle }, "", [0x16, [true,true,false]]] call CBA_fnc_addKeybind;
+// Porté : le téléphone reste affiché dans le coin et l'on continue à jouer. En main : souris et clavier.
+["COMSPEC ATAK", "PhoneCarry", "Sortir / ranger le téléphone (porté)", { [] call comspec_atak_native_fnc_hudToggle; true }, "", [0x16, [false,true,false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhoneHold", "Prendre en main / reposer le téléphone", { [] call comspec_atak_native_fnc_interactToggle; true }, "", [0x16, [true,true,false]]] call CBA_fnc_addKeybind;
 ["comspec_atak_native_p2p", { _this call comspec_atak_native_fnc_p2pReceive }] call CBA_fnc_addEventHandler;
 private _eh = addMissionEventHandler ["ExtensionCallback", { _this call comspec_atak_native_fnc_extensionCallback }];
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];

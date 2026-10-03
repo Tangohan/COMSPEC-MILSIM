@@ -7,4 +7,4 @@ while {(count _p2p) > 200} do { _p2p deleteAt 0; };
 _data set ["p2p", _p2p];
 private _preview = [_body, (_body select [0, 60]) + "…"] select ((count _body) > 60);
 ["MESSAGE", format ["%1 : %2", _from, _preview], 5, 40] call comspec_atak_native_fnc_notify;
-if (isNull (findDisplay 88500)) then { systemChat format ["[ATAK] Message de %1", _from]; };
+if (isNull ([] call comspec_atak_native_fnc_display)) then { systemChat format ["[ATAK] Message de %1", _from]; };

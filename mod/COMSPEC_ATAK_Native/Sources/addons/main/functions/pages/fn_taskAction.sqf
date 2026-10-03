@@ -12,7 +12,7 @@ if (!isNil "comspec_overwatch_connect_fnc_updateOrderStatus") then {
     ["UpdateOrderStatus", [_id, toUpper _status, name player, str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]), "ATAK Native"]] call comspec_atak_native_fnc_extensionCall;
 };
 // Retour immédiat dans la liste, avant la prochaine synchronisation Athena.
-private _task = ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["tasks", createHashMap]) getOrDefault [_id, createHashMap];
+private _task = ([] call comspec_atak_native_fnc_tasksAll) getOrDefault [_id, createHashMap];
 if ((count _task) > 0) then {
     _task set ["status", toUpper _status];
     [{ ["TASK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;

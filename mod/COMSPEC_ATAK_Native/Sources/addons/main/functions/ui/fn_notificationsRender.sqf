@@ -1,6 +1,6 @@
 /* Toasts en haut de la zone de contenu, trois au plus. */
 disableSerialization;
-private _d = findDisplay 88500;
+private _d = ([] call comspec_atak_native_fnc_display);
 if (isNull _d) exitWith {};
 { ctrlDelete _x; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_ToastControls", []]);
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
