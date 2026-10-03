@@ -1,12 +1,17 @@
 if (!hasInterface) exitWith {};
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] Client PostInit complete";
 missionNamespace setVariable ["COMSPEC_ATAK_LegacyBootstrapSuppressed", true, false];
-private _athenaUrl = profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"];
-private _extInit = "COMSPECATAKNativeExtension" callExtension ["Init", [_athenaUrl]];
-missionNamespace setVariable ["COMSPEC_ATAK_NativeExtensionInit", _extInit, false];
-private _restore = "COMSPECATAKNativeExtension" callExtension ["RestoreSession", [_athenaUrl, "1.0.0-native"]];
-missionNamespace setVariable ["COMSPEC_ATAK_NativeAuthRestore", _restore, false];
-diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPECATAKNativeExtension initialization requested";
+// Avec Overwatch connect, sa DLL porte la session Athena : on n'ouvre pas une seconde session avec la DLL native.
+if ([] call comspec_atak_native_fnc_bridge) then {
+    diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] Overwatch connect présent : session Athena partagée, DLL native non initialisée";
+} else {
+    private _athenaUrl = profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"];
+    private _extInit = "COMSPECATAKNativeExtension" callExtension ["Init", [_athenaUrl]];
+    missionNamespace setVariable ["COMSPEC_ATAK_NativeExtensionInit", _extInit, false];
+    private _restore = "COMSPECATAKNativeExtension" callExtension ["RestoreSession", [_athenaUrl, "1.0.0-native"]];
+    missionNamespace setVariable ["COMSPEC_ATAK_NativeAuthRestore", _restore, false];
+    diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPECATAKNativeExtension initialization requested";
+};
 // Porté : le téléphone reste affiché dans le coin et l'on continue à jouer. En main : souris et clavier.
 ["COMSPEC ATAK", "PhoneCarry", "Sortir / ranger le téléphone (porté)", { [] call comspec_atak_native_fnc_hudToggle; true }, "", [0x16, [false,true,false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneHold", "Prendre en main / reposer le téléphone", { [] call comspec_atak_native_fnc_interactToggle; true }, "", [0x16, [true,true,false]]] call CBA_fnc_addKeybind;
