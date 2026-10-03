@@ -39,6 +39,16 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     ["INFO", "TENANT", "Réglages communauté appliqués"] call comspec_atak_native_fnc_log;
 }, 5] call CBA_fnc_addPerFrameHandler;
 
+// Retour d'Athena sur les photos envoyées (via Overwatch connect) : reçue ou refusée.
+[{
+    private _up = count (missionNamespace getVariable ["COMSPEC_Athena_PhotoUploaded", []]);
+    private _ko = count (missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []]);
+    (missionNamespace getVariable ["COMSPEC_ATAK_PhotoSeen", [_up, _ko]]) params ["_up0", "_ko0"];
+    missionNamespace setVariable ["COMSPEC_ATAK_PhotoSeen", [_up, _ko]];
+    if (_up > _up0) then { ["SUCCESS", format ["%1 photo(s) reçue(s) par Athena", _up - _up0], 4, 30] call comspec_atak_native_fnc_notify; };
+    if (_ko > _ko0) then { ["WARNING", "Photo refusée par Athena : voir le journal de liaison", 5, 40] call comspec_atak_native_fnc_notify; };
+}, 2] call CBA_fnc_addPerFrameHandler;
+
 // Mission de tir reçue (servant d'une pièce) : notification, vibration, cible sur la carte du téléphone.
 ["comspec_atak_native_fireMission", {
     params ["_summary", "_tgt", "_from"];

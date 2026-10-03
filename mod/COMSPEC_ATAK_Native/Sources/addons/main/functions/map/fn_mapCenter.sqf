@@ -14,15 +14,23 @@ _pos = [_pos select 0, _pos select 1];
 private _z = if (_scale > 0) then { _scale } else { ctrlMapScale _map };
 _map ctrlMapAnimAdd [0, _z, _pos];
 ctrlMapAnimCommit _map;
+// Correction : on attend la fin de l'animation, on mesure l'écart au centre visible et on recale (3 passes au plus).
 [{
-    params ["_map", "_pos", "_z"];
-    if (isNull _map) exitWith {};
+    params ["_args", "_pfh"];
+    _args params ["_map", "_pos", "_z", "_tries"];
+    if (isNull _map || {_tries > 40}) exitWith { [_pfh] call CBA_fnc_removePerFrameHandler; };
+    _args set [3, _tries + 1];
+    if !(ctrlMapAnimDone _map) exitWith {};
     (ctrlPosition _map) params ["_x", "_y", "_w", "_h"];
     private _c = [_x + _w / 2, _y + _h / 2];
     private _sp = _map ctrlMapWorldToScreen _pos;
-    if ((_sp distance2D _c) < 0.002) exitWith {};
-    private _fix = _map ctrlMapScreenToWorld [2 * (_sp select 0) - (_c select 0), 2 * (_sp select 1) - (_c select 1)];
+    if ((_sp distance2D _c) < 0.003 || {(_args param [4, 0]) >= 3}) exitWith { [_pfh] call CBA_fnc_removePerFrameHandler; };
+    _args set [4, (_args param [4, 0]) + 1];
+    // Le dernier point visé (_last) s'affiche en _st : on le décale du même écart que la cible.
+    private _st = _map ctrlMapWorldToScreen (_args param [5, _pos]);
+    private _fix = _map ctrlMapScreenToWorld [(_st select 0) + (_sp select 0) - (_c select 0), (_st select 1) + (_sp select 1) - (_c select 1)];
+    _args set [5, _fix];
     _map ctrlMapAnimAdd [0, _z, _fix];
     ctrlMapAnimCommit _map;
-}, [_map, _pos, _z]] call CBA_fnc_execNextFrame;
+}, 0, [_map, _pos, _z, 0, 0, _pos]] call CBA_fnc_addPerFrameHandler;
 true

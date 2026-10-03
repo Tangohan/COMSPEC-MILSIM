@@ -186,17 +186,9 @@ if (_interactive) then {
         } forEach _cols;
     };
     if (_mode isEqualTo "MARKER") then {
-        private _cur = _s getOrDefault ["markerKind", "ENI"];
-        private _kinds = ["ENI", "AMI", "OBJ", "DNG", "PT"];
+        // Palette complète : camp, type (icônes), couleur, taille, autres marqueurs.
         private _hx = _bx + _pad * 2 + ((_mh * 0.24) min (_font * 3.6)) / _ratio;
-        private _cw = ((_tx - _hx - _pad) / (count _kinds)) min (_font * 3.4 / _ratio);
-        {
-            private _c = ["COMSPEC_RscButton", [_hx + _forEachIndex * (_cw + _pad / 2), _by + _pad * 1.5 + _fs * 1.5, _cw, _fs * 1.6], _x] call _mk;
-            _c ctrlSetFontHeight _fs;
-            if (_x isEqualTo _cur) then { _c ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.9]; _c ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
-            _c setVariable ["kind", _x];
-            _c ctrlAddEventHandler ["ButtonClick", { params ["_c"]; (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["markerKind", _c getVariable "kind"]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
-        } forEach _kinds;
+        [[_hx, _by + _pad * 2 + _fs * 1.5, (_tx - _hx - _pad * 2) max (_font * 6 / _ratio), _mh * 0.7]] call comspec_atak_native_fnc_markerPalette;
     };
 };
 // Marqueur sélectionné : titre, description et actions (en main).
