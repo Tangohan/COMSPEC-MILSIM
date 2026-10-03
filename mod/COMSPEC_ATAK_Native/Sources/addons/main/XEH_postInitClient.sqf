@@ -293,4 +293,16 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 
 // Points de passage : itinéraire reçu d'un membre du groupe, et passage automatique à l'étape suivante.
 ["comspec_atak_native_waypoints", { ["receive", _this] call comspec_atak_native_fnc_wpAction; }] call CBA_fnc_addEventHandler;
+// Synchro à l'arrivée : le serveur rejoue les demandes logistiques / MEDEVAC du camp et l'itinéraire du groupe (sans alerte).
+["comspec_atak_native_syncData", {
+    params [["_log", []], ["_route", []]];
+    missionNamespace setVariable ["COMSPEC_ATAK_Replaying", true];
+    { _x params ["_ev", "_args"]; [_ev, _args] call CBA_fnc_localEvent; } forEach _log;
+    if ((count _route) >= 2 && {(count ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["pts", []])) isEqualTo 0}) then {
+        ["receive", [_route select 0, _route select 1, false]] call comspec_atak_native_fnc_wpAction;
+    };
+    missionNamespace setVariable ["COMSPEC_ATAK_Replaying", false];
+    ["INFO", "SYNC", format ["Synchro serveur : %1 événement(s) rejoué(s)", count _log]] call comspec_atak_native_fnc_log;
+}] call CBA_fnc_addEventHandler;
+[{ ["comspec_atak_native_syncReq", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
 [{ if ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["nav", false]) then { ["tick"] call comspec_atak_native_fnc_wpAction; }; }, 1] call CBA_fnc_addPerFrameHandler;

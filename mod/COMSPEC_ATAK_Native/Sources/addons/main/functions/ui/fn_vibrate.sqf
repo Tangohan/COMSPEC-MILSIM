@@ -6,6 +6,7 @@
 if !((["COMSPEC_ATAK_Vibrate", true, "native_vibrate"] call comspec_atak_native_fnc_pref) select 0) exitWith { false };
 // Mode discrétion : la coque tremble encore (visible pour soi seul) mais aucun son.
 private _silent = profileNamespace getVariable ["COMSPEC_ATAK_Silent", false];
+if (missionNamespace getVariable ["COMSPEC_ATAK_Replaying", false]) exitWith { false };
 disableSerialization;
 private _d = [] call comspec_atak_native_fnc_display;
 if (isNull _d) exitWith { false };

@@ -43,12 +43,17 @@ switch (_act) do {
         if ((count _pts) isEqualTo 0) exitWith {};
         private _to = (units group player) select { isPlayer _x && {_x isNotEqualTo player} };
         if ((count _to) isEqualTo 0) exitWith { ["WARNING", "Personne d'autre dans le groupe", 3, 20] call comspec_atak_native_fnc_notify; };
-        [{ params ["_pts", "_to"]; ["comspec_atak_native_waypoints", [_pts, [player] call comspec_atak_native_fnc_unitCallsign], _to] call CBA_fnc_targetEvent; }, [+_pts, _to], "Itinéraire", 2] call comspec_atak_native_fnc_netSend;
+        [{
+            params ["_pts", "_to"];
+            private _who = [player] call comspec_atak_native_fnc_unitCallsign;
+            ["comspec_atak_native_waypoints", [_pts, _who], _to] call CBA_fnc_targetEvent;
+            ["comspec_atak_native_wpStore", [netId group player, _pts, _who]] call CBA_fnc_serverEvent;
+        }, [+_pts, _to], "Itinéraire", 2] call comspec_atak_native_fnc_netSend;
         ["SUCCESS", format ["Itinéraire envoyé à %1 membre(s)", count _to], 3, 20] call comspec_atak_native_fnc_notify;
     };
     case "receive": {
-        _arg params ["_in", "_who"];
-        _w set ["pts", _in]; _w set ["idx", 0]; _w set ["nav", true]; _w set ["from", _who];
+        _arg params ["_in", "_who", ["_start", true]];
+        _w set ["pts", _in]; _w set ["idx", 0]; _w set ["nav", _start]; _w set ["from", _who];
         ["WARNING", format ["Itinéraire reçu de %1 : %2 étape(s), navigation lancée", _who, count _in], 6, 60] call comspec_atak_native_fnc_notify;
         [] call comspec_atak_native_fnc_vibrate;
         call _rerender;
