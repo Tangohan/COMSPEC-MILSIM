@@ -51,8 +51,10 @@ private _pfh = [{
         };
         private _state = _st param [0, "stable"];
         if (!isNull _u && {!alive _u}) then { _state = "kia"; };
-        private _blood = parseNumber str (_st param [1, 100]);
-        private _hr = parseNumber str (_st param [3, 80]);
+        // Overwatch renvoie des textes ("76") : parseNumber str "76" donnait 0 (guillemets), d'où 0 bpm et ligne plate.
+        private _num = { params ["_v"]; if (_v isEqualType "") then { parseNumber _v } else { _v } };
+        private _blood = [_st param [1, 100]] call _num;
+        private _hr = [_st param [3, 80]] call _num;
         if (_state in ["cardiac_arrest", "kia"]) then { _hr = 0; };
         _e set [7, _hr];
         _e set [8, _state];

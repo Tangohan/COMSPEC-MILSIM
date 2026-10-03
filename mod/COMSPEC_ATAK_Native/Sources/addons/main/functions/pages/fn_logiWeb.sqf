@@ -19,7 +19,7 @@ switch (_act) do {
         private _need = createHashMapFromArray [["AMMO", "munitions"], ["MED", "santé"], ["FOOD", "vivres"], ["BATT", "batteries"], ["VEH", "véhicule carburant"]] getOrDefault [_r get "cat", "ravitaillement"];
         private _mode = createHashMapFromArray [["PICKUP", "ramassage"], ["AIRDROP", "largage"], ["VEHICLE", "livraison véhicule"]] getOrDefault [_r get "mode", "ramassage"];
         private _json = [createHashMapFromArray [
-            ["game_id", _r get "id"], ["call_sign", _r get "cs"], ["need", _need], ["qty", parseNumber str (_r get "qty")],
+            ["game_id", _r get "id"], ["call_sign", _r get "cs"], ["need", _need], ["qty", [_r get "qty", parseNumber (_r get "qty")] select ((_r get "qty") isEqualType "")],
             ["priority", _r get "prio"], ["mode", _r get "mode"], ["grid_ref", _r get "grid"],
             ["note", format ["%1 x%2 · %3%4", _r get "label", _r get "qty", _mode, ["", " · " + (_r get "note")] select ((_r get "note") isNotEqualTo "")]]
         ]] call comspec_overwatch_connect_fnc_hashMapToJson;

@@ -59,7 +59,7 @@ if (_case isEqualTo "" && {!isNil "comspec_overwatch_connect_fnc_sseActiveCase"}
 private _kind = _d getOrDefault ["kind", "FRM"];
 private _idem = format ["fiche-%1-%2", _steam, floor (diag_tickTime * 1000)];
 private _mapId = missionNamespace getVariable ["COMSPEC_MapId", missionNamespace getVariable ["comspec_overwatch_map_id", 1]];
-if !(_mapId isEqualType 0) then { _mapId = parseNumber str _mapId; };
+if (_mapId isEqualType "") then { _mapId = parseNumber _mapId; }; if !(_mapId isEqualType 0) then { _mapId = 1; };
 if (_mapId <= 0) then { _mapId = 1; };
 private _parts = [
     format ['"mapId":%1', _mapId],

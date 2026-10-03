@@ -61,7 +61,7 @@ private _topH = _font * 1.55 * 3.3 + _pad * 2;
 
 // Viseur
 private _vy = _topH + _pad / 2;
-private _vh = (_bh * 0.38) max (_font * 6);
+private _vh = (_bh * 0.3) max (_font * 5);
 private _vx = _pad;
 private _vw = _bw - _pad * 2;
 private _vf = ["COMSPEC_RscText", [_vx, _vy, _vw, _vh]] call _mk;
@@ -92,11 +92,11 @@ _info ctrlSetStructuredText parseText format ["<t size='0.8' font='EtelkaMonospa
     [getPosASL player, 8] call comspec_atak_native_fnc_gridRef, round getDir player, [dayTime, "HH:MM"] call BIS_fnc_timeToString];
 private _tip = ["COMSPEC_RscStructuredText", [_vx + _pad * 2, _vy + _vh - _pad * 1.6 - _fs * 1.4, _vw - _pad * 4, _fs * 1.4]] call _mk;
 _tip ctrlSetStructuredText parseText "<t size='0.75' align='center' color='#8a9a93'>Clic gauche : photographier · Espace : revenir au téléphone</t>";
-// Déclencheur : anneau blanc, disque intérieur vert, icône appareil
-private _sh = _vh * 0.36;
+// Déclencheur sous le viseur, centré comme dans une appli photo : anneau blanc, disque d'accent, icône.
+private _sh = (_font * 3.2) min (_vh * 0.45);
 private _sw = _sh * _ratio;
 private _scx = _vx + _vw / 2;
-private _scy = _vy + _vh * 0.66;
+private _scy = _vy + _vh + _pad / 2 + _sh / 2;
 private _ring = ["COMSPEC_RscPicture", [_scx - _sw / 2, _scy - _sh / 2, _sw, _sh], _dir + "ui_disc.paa"] call _mk;
 _ring ctrlSetTextColor [0.95, 0.97, 0.96, 1];
 private _inner = ["COMSPEC_RscPicture", [_scx - _sw * 0.41, _scy - _sh * 0.41, _sw * 0.82, _sh * 0.82], _dir + "ui_disc.paa"] call _mk;
@@ -104,13 +104,15 @@ private _inner = ["COMSPEC_RscPicture", [_scx - _sw * 0.41, _scy - _sh * 0.41, _
 _inner ctrlSetTextColor _acc;
 private _cam = ["COMSPEC_RscPicture", [_scx - _sw * 0.22, _scy - _sh * 0.22, _sw * 0.44, _sh * 0.44], _dir + "ui_photocam.paa"] call _mk;
 _cam ctrlSetTextColor [0.05, 0.08, 0.06, 1];
-private _shot = ["COMSPEC_RscButtonInvisible", [_vx, _vy, _vw, _vh]] call _mk;
-_shot ctrlSetTooltip "Ouvrir le viseur plein écran";
-_shot ctrlAddEventHandler ["ButtonClick", _open];
+{
+    private _b = ["COMSPEC_RscButtonInvisible", _x] call _mk;
+    _b ctrlSetTooltip "Ouvrir le viseur plein écran";
+    _b ctrlAddEventHandler ["ButtonClick", _open];
+} forEach [[_vx, _vy, _vw, _vh], [_scx - _sw / 2, _scy - _sh / 2, _sw, _sh]];
 
 // Compteurs d'envoi
-private _ty = _vy + _vh + _pad;
-private _tH = _font * 2.6;
+private _ty = _scy + _sh / 2 + _pad / 2;
+private _tH = _font * 3.4;
 private _tW = (_vw - _pad) / 3;
 {
     _x params ["_n", "_lab", "_hex", "_rgb"];
@@ -120,7 +122,7 @@ private _tW = (_vw - _pad) / 3;
     private _bar = ["COMSPEC_RscText", [_tx, _ty, _tW, pixelH * 3]] call _mk;
     _bar ctrlSetBackgroundColor _rgb;
     private _c = ["COMSPEC_RscStructuredText", [_tx, _ty + _tH * 0.12, _tW, _tH * 0.88]] call _mk;
-    _c ctrlSetStructuredText parseText format ["<t align='center' size='1.5' font='RobotoCondensedBold' color='%3'>%1</t><br/><t align='center' size='0.75' color='#8a9a93'>%2</t>", _n, _lab, _hex];
+    _c ctrlSetStructuredText parseText format ["<t align='center' size='1.3' font='RobotoCondensedBold' color='%3'>%1</t><br/><t align='center' size='0.7' color='#8a9a93'>%2</t>", _n, _lab, _hex];
 } forEach [
     [count (missionNamespace getVariable ["COMSPEC_Athena_PhotoPending", []]), "EN ATTENTE", "#e8b84a", [0.91, 0.72, 0.29, 1]],
     [count (missionNamespace getVariable ["COMSPEC_Athena_PhotoUploaded", []]), "REÇUES", "#5cc76b", [0.36, 0.78, 0.42, 1]],
@@ -128,7 +130,7 @@ private _tW = (_vw - _pad) / 3;
 ];
 
 // Dernier retour d'Athena et historique
-private _hy = _ty + _tH + _pad / 2;
+private _hy = _ty + _tH + _pad;
 private _rows = [
     ["text", (missionNamespace getVariable ["COMSPEC_LastReconUploadResult", []]) call {
         params [["_st", ""], ["_msg", ""], ["_tech", ""], ["_at", ""]];

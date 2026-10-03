@@ -130,7 +130,10 @@ switch (_act) do {
             _ui set ["files", _p select [2, 400]];
             _ui set ["filesErr", ""];
         } else {
-            _ui set ["filesErr", ["Lecteur audio indisponible (DLL du mod non chargée ou ancienne).", _p param [1, _raw]] select ((_p param [0, ""]) isEqualTo "ERR")];
+            // Une DLL sans lecteur (ancienne, ou pas encore recompilée) répond par une erreur de connexion Athena.
+            private _why = _p param [1, ""];
+            private _oldDll = !((_p param [0, ""]) isEqualTo "ERR") || {_why in ["not_connected", "unauthorized", "unknown_function", "unknown_command"]};
+            _ui set ["filesErr", [_why, "Lecteur audio absent de la DLL du mod : relancez build_mod.bat (DLL COMSPECATAKNativeExtension à recompiler)."] select _oldDll];
         };
         call _rerender;
     };

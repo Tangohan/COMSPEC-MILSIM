@@ -371,3 +371,15 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 }] call CBA_fnc_addEventHandler;
 [{ ["comspec_atak_native_syncReq", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
 [{ if ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["nav", false]) then { ["tick"] call comspec_atak_native_fnc_wpAction; }; }, 1] call CBA_fnc_addPerFrameHandler;
+// Breacher : top de brèche reçu du chef de colonne.
+["comspec_atak_native_breach", { _this call comspec_atak_native_fnc_breachTop; }] call CBA_fnc_addEventHandler;
+// App Explosifs : ordre et heure de pose de chaque charge du joueur (minuteries : temps restant).
+["ace_explosives_place", {
+    params ["_e", "", "", "_unit"];
+    if (isNull _e || {_unit isNotEqualTo player}) exitWith {};
+    _e setVariable ["COMSPEC_ATAK_PlacedAt", time];
+    private _mine = (missionNamespace getVariable ["COMSPEC_ATAK_MyCharges", []]) select { !isNull _x && {alive _x} };
+    _mine pushBack _e;
+    missionNamespace setVariable ["COMSPEC_ATAK_MyCharges", _mine];
+    uiNamespace setVariable ["COMSPEC_ATAK_ExploCache", [-1, []]];
+}] call CBA_fnc_addEventHandler;
