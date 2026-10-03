@@ -118,6 +118,8 @@ private _upd = {
     _p ctrlShow (_n isEqualTo 0);
 };
 [_edit] call _upd;
+// Volet ouvert : on masque la zone de saisie (un champ texte actif se dessine par-dessus les volets).
+if ((_ui getOrDefault ["head", false]) || {_ui getOrDefault ["pj", false]}) then { _edit ctrlShow false; _ph ctrlShow false; };
 _edit setVariable ["upd", _upd];
 _edit ctrlAddEventHandler ["KeyUp", { params ["_e"]; [_e] call (_e getVariable ["upd", {}]); }];
 _edit ctrlAddEventHandler ["SetFocus", { params ["_e"]; ((uiNamespace getVariable ["COMSPEC_ATAK_FrsCount", []]) param [1, controlNull]) ctrlShow false; }];
@@ -134,13 +136,14 @@ private _handle = {
     private _c = ["COMSPEC_RscText", [_x0, _hy, _hw, _hh]] call _mk;
     _c ctrlSetBackgroundColor ([[0.30, 0.30, 0.30, 1], [0.27, 0.22, 0.62, 1]] select _on);
     private _t = ["COMSPEC_RscStructuredText", [_x0, _hy + _pad / 3, _hw, _hh]] call _mk;
-    _t ctrlSetStructuredText parseText format ["<t align='center' size='0.62' color='#e6e6e6'>%1</t>", (_label splitString "") joinString "<br/>"];
-    [[_x0, _hy, _hw, _hh], _code, _label] call _btn;
+    // Lettres passées une à une : splitString "" coupe les caractères accentués (Ê) en octets.
+    _t ctrlSetStructuredText parseText format ["<t align='center' size='0.62' color='#e6e6e6'>%1</t>", _label joinString "<br/>"];
+    [[_x0, _hy, _hw, _hh], _code, _label joinString ""] call _btn;
 };
 
 // Volet ENTÊTE (gauche)
 private _headOn = _ui getOrDefault ["head", false];
-private _dw = _bw * ([0.6, 0.92] select _mini);
+private _dw = _bw * ([0.42, 0.8] select _mini);
 if (_headOn) then {
     private _kinds = (_cat get "kinds") apply { [format ["%1 · %2", _x select 0, _x select 1], _x select 0] };
     private _urgs = (_cat get "urgencies") apply { [_x select 1, _x select 0] };
@@ -173,11 +176,11 @@ if (_headOn) then {
     ];
     [_rows, [0, 0, _dw, _barTop], true, [0.07, 0.07, 0.07, 0.99]] call comspec_atak_native_fnc_formRender;
 };
-[[0, _dw] select _headOn, "ENTÊTE", { ["head"] call comspec_atak_native_fnc_frsAction; }, _headOn] call _handle;
+[[0, _dw] select _headOn, ["E", "N", "T", "Ê", "T", "E"], { ["head"] call comspec_atak_native_fnc_frsAction; }, _headOn] call _handle;
 
 // Volet PIÈCES JOINTES (droite)
 private _pjOn = _ui getOrDefault ["pj", false];
-private _pw = _bw * ([0.85, 0.92] select _mini);
+private _pw = _bw * ([0.48, 0.8] select _mini);
 if (_pjOn) then {
     private _view = _ui getOrDefault ["view", ""];
     private _rows = [];
@@ -212,11 +215,12 @@ if (_pjOn) then {
                 _rows pushBack ["person", _dir + (["ui_gallery.paa", "ui_photocam.paa"] select (_kind isEqualTo "capture")), format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.75' color='#9a9a9a'>%2 · %3</t>", [_name] call _esc, ["Photo", "Capture"] select (_kind isEqualTo "capture"), _grid],
                     [["RETIRER", compile format ["['del', %1] call comspec_atak_native_fnc_frsAction;", _forEachIndex]]], [0.85, 0.85, 0.85, 1]];
             } forEach _pieces;
+            _rows pushBack ["buttons", [["FERMER", { ["pj"] call comspec_atak_native_fnc_frsAction; }, true]]];
         };
     };
-    [_rows, [_bw - _pw, 0, _pw, _barTop], true, [0.165, 0.165, 0.165, 0.99]] call comspec_atak_native_fnc_formRender;
+    [_rows, [_bw - _pw, 0, _pw, _barTop], true, [0.11, 0.11, 0.13, 0.99]] call comspec_atak_native_fnc_formRender;
 };
-[[_bw - _hw, _bw - _pw - _hw] select _pjOn, format ["PJ %1/4", count _pieces], { ["pj"] call comspec_atak_native_fnc_frsAction; }, _pjOn] call _handle;
+[[_bw - _hw, _bw - _pw - _hw] select _pjOn, ["P", "J", " ", str (count _pieces), "/", "4"], { ["pj"] call comspec_atak_native_fnc_frsAction; }, _pjOn] call _handle;
 
 // Barre du bas : bandeau violet (creux au centre), accueil, plein écran, envoi, bouton rond.
 private _purple = [0.086, 0.047, 0.25, 1];
