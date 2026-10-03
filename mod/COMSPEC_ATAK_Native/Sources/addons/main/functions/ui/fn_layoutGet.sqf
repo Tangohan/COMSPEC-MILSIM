@@ -61,7 +61,7 @@ private _dock = !_land;
 private _dockH = [0, _font * 2.9] select _dock;
 private _railW = [_font * 2.9 / _ratio, 0] select _dock;
 // Panneau SITUATION repliable (réglage profil).
-private _inspW = [0, _sw * 0.24] select (!_mini && {profileNamespace getVariable ["COMSPEC_ATAK_InspOpen", true]});
+private _inspW = [0, _sw * 0.24] select (!_mini && {missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false]});
 private _pad = _sw * 0.012;
 private _bodyY = _sy + _statusH + _appH;
 private _bodyH = _sh - _statusH - _appH - _dockH;

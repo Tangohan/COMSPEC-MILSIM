@@ -40,6 +40,6 @@ uiNamespace setVariable ["COMSPEC_ATAK_Avatars", _cache];
     // Redessiner la page qui attend l'image.
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     private _page = _s getOrDefault ["activePage", ""];
-    if (_page in ["ATHENA", "GROUP", "PROFILE"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call CBA_fnc_execNextFrame; };
+    if (_page in ["ATHENA", "GROUP", "PROFILE", "CHAT"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call CBA_fnc_execNextFrame; };
 };
 ""

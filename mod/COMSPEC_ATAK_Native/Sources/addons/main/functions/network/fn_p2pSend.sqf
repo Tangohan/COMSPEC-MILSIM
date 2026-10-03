@@ -5,6 +5,12 @@
 params [["_peer", ""], ["_body", ""]];
 _body = trim _body;
 if (_body isEqualTo "" || {_peer isEqualTo ""}) exitWith { false };
+// Commandes du tchat (/urgent, /contact…) : puces en tête du SMS.
+([_body] call comspec_atak_native_fnc_chatCommand) params ["", "", "_text", "_unknown", "_tags", "_help"];
+if (_help) exitWith { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["chatWiki", true]; [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; true };
+if ((count _unknown) > 0) exitWith { ["WARNING", format ["Commande inconnue : %1 (tapez /aide)", _unknown joinString " "], 4, 30] call comspec_atak_native_fnc_notify; false };
+if (_text isEqualTo "") exitWith { false };
+_body = ((_tags apply { format ["[%1]", _x] }) joinString "") + ([" ", ""] select ((count _tags) isEqualTo 0)) + _text;
 if ((count _body) > 400) then { _body = _body select [0, 400]; };
 private _target = objNull;
 { if ((name _x) isEqualTo _peer) exitWith { _target = _x; }; } forEach allPlayers;
