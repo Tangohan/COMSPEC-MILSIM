@@ -16,7 +16,13 @@ if ((missionNamespace getVariable ["comspec_overwatch_atak_realism", 0]) > 0 && 
     };
     if (_ow getOrDefault ["device_destroyed", false]) then { _out set ["state", "BROKEN"]; _out set ["damage", 1]; _out set ["crack", 3]; _out set ["reason", "Appareil détruit"]; };
 };
-if ((_out get "state") isNotEqualTo "OK" || {!(missionNamespace getVariable ["comspec_atak_native_damage_sim", true])}) exitWith { _out };
+private _batteryEmpty = {
+    if ((_out get "state") isNotEqualTo "BROKEN" && {profileNamespace getVariable ["COMSPEC_ATAK_BatterySim", true]} && {missionNamespace getVariable ["comspec_atak_native_battery_sim", true]} && {(missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) <= 0}) then {
+        _out set ["state", "OFF"]; _out set ["offLeft", 0]; _out set ["reason", "Batterie vide"];
+    };
+    _out
+};
+if ((_out get "state") isNotEqualTo "OK" || {!(missionNamespace getVariable ["comspec_atak_native_damage_sim", true])}) exitWith { call _batteryEmpty };
 private _n = missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap];
 private _dmg = _n getOrDefault ["damage", 0];
 _out set ["damage", _dmg];
@@ -25,4 +31,5 @@ if (_dmg >= 0.2) then { _out set ["state", "CRACKED"]; _out set ["reason", ["Éc
 private _offUntil = _n getOrDefault ["offUntil", -1];
 if (_offUntil > time) then { _out set ["state", "OFF"]; _out set ["offLeft", round (_offUntil - time)]; _out set ["reason", _n getOrDefault ["offReason", "Redémarrage"]]; };
 if (_dmg >= 1) then { _out set ["state", "BROKEN"]; _out set ["reason", _n getOrDefault ["brokenReason", "Téléphone détruit"]]; };
-_out
+// Batterie vide : éteint jusqu'à recharge ou changement de batterie.
+call _batteryEmpty

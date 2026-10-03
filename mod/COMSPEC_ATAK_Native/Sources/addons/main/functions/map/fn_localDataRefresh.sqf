@@ -17,9 +17,12 @@ private _units = createHashMap;
 // Filtre des alliés (réglage) : tous, mon groupe, ou mon rattachement ORBAT Athena (repli : groupe).
 private _filter = profileNamespace getVariable ["COMSPEC_ATAK_AllyFilter", "ALL"];
 private _myOrbat = player getVariable ["COMSPEC_ATAK_Orbat", ""];
+private _hideAi = profileNamespace getVariable ["COMSPEC_ATAK_HideAllyAi", false];
 private _keepFriend = {
     params ["_obj"];
-    if (_obj isEqualTo player || {_filter isEqualTo "ALL"}) exitWith { true };
+    if (_obj isEqualTo player) exitWith { true };
+    if (_hideAi && {!isPlayer _obj}) exitWith { false };
+    if (_filter isEqualTo "ALL") exitWith { true };
     if (_filter isEqualTo "ORBAT" && {_myOrbat isNotEqualTo ""}) exitWith { (_obj getVariable ["COMSPEC_ATAK_Orbat", ""]) isEqualTo _myOrbat || {group _obj isEqualTo group player} };
     group _obj isEqualTo group player
 };
@@ -32,9 +35,24 @@ private _last = uiNamespace getVariable ["COMSPEC_ATAK_BftLast", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_BftLast", _last];
 private _meOn = (([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 1]) > 0;
 
+// Personne n'apparaît sans téléphone ATAK : un allié (joueur ou IA) n'est visible que s'il en porte un
+// (résultat gardé 10 s par unité). Les ennemis n'apparaissent (réglage « ennemis ») que repérés par mon camp.
+private _devCache = uiNamespace getVariable ["COMSPEC_ATAK_DevCache", createHashMap];
+uiNamespace setVariable ["COMSPEC_ATAK_DevCache", _devCache];
+private _carries = {
+    params ["_u"];
+    private _k = netId _u;
+    if (_k in ["", "0:0"]) then { _k = str _u; };
+    private _c = _devCache getOrDefault [_k, [false, -1e9]];
+    if ((diag_tickTime - (_c select 1)) > 10) then { _c = [[_u] call comspec_atak_native_fnc_hasDevice, diag_tickTime]; _devCache set [_k, _c]; };
+    _c select 0
+};
+private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends", true];
 {
     private _obj = _x;
     if (isNull _obj) then { continue };
+    if (side group _obj isEqualTo side group player && {_obj isNotEqualTo player} && {!_showFriends || {!([_obj] call _carries)}}) then { continue };
+    if (side group _obj isNotEqualTo side group player && {((side group player) knowsAbout _obj) < 1.5}) then { continue };
     if (side group _obj isEqualTo side group player && {!([_obj] call _keepFriend)}) then { continue };
     private _id = netId _obj;
     if (_id isEqualTo "0:0") then { _id = str _obj; };

@@ -6,10 +6,25 @@ private _state = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _selected = (_state getOrDefault ["selectedEntity",createHashMap]) getOrDefault ["id",""];
 private _labels = (["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 0;
 private _scale = ctrlMapScale _map;
+// Taille des symboles et textes proportionnelle à la carte (mini = petite carte, petits symboles).
+private _k = ((((ctrlPosition _map) select 3) / (safeZoneH * 0.7)) max 0.5) min 1;
 // Couleurs choisies dans les réglages (alliés, moi) ; icône choisie par chaque joueur (variable publique).
 private _palette = createHashMapFromArray [["BLUE",[0.28,0.70,1,1]],["CYAN",[0.20,0.90,0.95,1]],["GREEN",[0.36,0.85,0.42,1]],["WHITE",[0.95,0.95,0.95,1]],["YELLOW",[1,0.85,0.15,1]],["ORANGE",[1,0.55,0.15,1]],["PINK",[1,0.45,0.75,1]]];
 private _allyRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_AllyColor","BLUE"],[0.28,0.70,1,1]];
 private _selfRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_SelfColor","CYAN"],[0.20,0.90,0.95,1]];
+
+// Carte nuit : voile sombre sous tous les symboles (dessiné en premier).
+if (profileNamespace getVariable ["COMSPEC_ATAK_LayerNight", false]) then {
+    _map drawRectangle [[worldSize / 2, worldSize / 2, 0], worldSize, worldSize, 0, [0.02, 0.03, 0.08, 0.55], "#(rgb,8,8,3)color(1,1,1,1)"];
+};
+// Heatmap : activité ennemie repérée par mon camp (cases de 200 m, s'efface avec le temps).
+if (profileNamespace getVariable ["COMSPEC_ATAK_LayerHeat", false]) then {
+    {
+        _y params ["_cx", "_cy", "_w"];
+        private _k = (_w / 6) min 1;
+        _map drawRectangle [[_cx, _cy, 0], 100, 100, 0, [0.95, 0.75 - 0.6 * _k, 0.1, 0.12 + 0.43 * _k], "#(rgb,8,8,3)color(1,1,1,1)"];
+    } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Heat", createHashMap]);
+};
 
 // GPS : itinéraire en trait épais (bordure sombre, bleu à parcourir, gris déjà parcouru), arrivée en drapeau.
 private _route = missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap];
@@ -72,7 +87,7 @@ if ((count _wpts) > 0) then {
     if (_freshness isEqualTo "STALE") then { _color set [3,0.65]; };
     if (_freshness in ["LOST","OFFLINE"]) then { _color set [3,0.3]; };
     private _self = _entity getOrDefault ["self",false];
-    private _size = if (_x isEqualTo _selected || _self) then {26} else {20};
+    private _size = ([16, 21] select (_x isEqualTo _selected || _self)) * _k;
     if ((_entity getOrDefault ["affiliation",""]) isEqualTo "friend") then { _color = +_allyRgb; };
     if (_self) then { _color = +_selfRgb; };
     if (_self && {_ewGps > 0}) then { _pos = [(_pos select 0) + (_ewOff select 0), (_pos select 1) + (_ewOff select 1), 0]; };
@@ -86,7 +101,7 @@ if ((count _wpts) > 0) then {
     _map drawIcon [
         _icon,_color,_pos,_size,_size,_dir,
         if (_labels && {_scale < 0.25}) then {_entity getOrDefault ["callsign",""]} else {""},
-        1,0.026,"RobotoCondensedBold","right"
+        1,0.022 * _k,"RobotoCondensedBold","right"
     ];
     if (_x isEqualTo _selected) then {
         _map drawEllipse [_pos,18,18,0,[0.36,0.78,0.42,0.9],""];
@@ -115,7 +130,7 @@ if ((count _wpts) > 0) then {
             _rgba = _rgba apply { if (_x isEqualType "") then { call compile _x } else { _x } };
             if ((count _rgba) < 4) then { _rgba = [0.36,0.78,0.42,1]; };
             _rgba set [3,(_rgba select 3) * (_marker getOrDefault ["alpha",1])];
-            _map drawIcon [_icon,_rgba,_pos,20,20,_marker getOrDefault ["dir",0],if (_labels) then {_marker getOrDefault ["text",""]} else {""},1,0.024,"RobotoCondensed","right"];
+            _map drawIcon [_icon,_rgba,_pos,16 * _k,16 * _k,_marker getOrDefault ["dir",0],if (_labels && {_scale < 0.3}) then {_marker getOrDefault ["text",""]} else {""},1,0.02 * _k,"RobotoCondensed","right"];
         };
     };
 } forEach (_data getOrDefault ["markers",createHashMap]);
@@ -281,11 +296,11 @@ if ((count _ft) >= 2) then {
 // Seuls les marqueurs posés par les joueurs ou Athena et ayant un titre ; réglage profil COMSPEC_ATAK_MarkerTags.
 private _pool = uiNamespace getVariable ["COMSPEC_ATAK_MarkerTagPool", []];
 private _used = 0;
-if ((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_native_fnc_pref) select 0) then {
+if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_native_fnc_pref) select 0) && {_k > 0.75} && {_scale < 0.12}) then {
     private _disp = ctrlParent _map;
     private _mp = ctrlPosition _map;
     private _gridCache = uiNamespace getVariable ["COMSPEC_ATAK_TagGridCache", createHashMap];
-    private _fs = ((_mp select 3) * 0.032) max (safeZoneH * 0.011);
+    private _fs = ((_mp select 3) * 0.024) max (safeZoneH * 0.010);
     {
         if (_used >= 30) then { break };
         private _m = _y;
@@ -334,5 +349,5 @@ for "_i" from _used to ((count _pool) - 1) do { (_pool select _i) ctrlShow false
 uiNamespace setVariable ["COMSPEC_ATAK_MarkerTagPool", _pool select { !isNull _x }];
 
 // Calques Logistique (points de largage) et guerre électronique (gonio, brouilleurs).
-[_map] call comspec_atak_native_fnc_logisticsDraw;
-[_map] call comspec_atak_native_fnc_ewDraw;
+if (profileNamespace getVariable ["COMSPEC_ATAK_LayerLogi", true]) then { [_map] call comspec_atak_native_fnc_logisticsDraw; };
+if (profileNamespace getVariable ["COMSPEC_ATAK_LayerEw", true]) then { [_map] call comspec_atak_native_fnc_ewDraw; };

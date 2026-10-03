@@ -1,5 +1,67 @@
-disableSerialization; private _d=([] call comspec_atak_native_fnc_display); if (isNull _d) exitWith {};
-private _s=uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap]; private _e=_s getOrDefault ["selectedEntity",createHashMap]; private _text="<t color='#5cc76b' size='1.1'>SITUATION</t><br/><br/>";
-if (count _e isEqualTo 0) then {_text=_text+format ["Mission : %1<br/>Réseau : %2<br/>Météo : pluie %3%%<br/>Groupe : %4",worldName,_s getOrDefault ["networkState","OFFLINE"],round(rain*100),groupId group player];} else {private _p=_e getOrDefault ["position",[0,0,0]]; _text=format ["<t color='#5cc76b' size='1.1'>%1</t><br/><br/>Type : %2<br/>Affiliation : %3<br/>État : %4<br/>Grid : %5<br/>Altitude : %6 m<br/>Dernière mise à jour : %7 s",_e getOrDefault ["callsign","CONTACT"],_e getOrDefault ["type","unknown"],_e getOrDefault ["affiliation","unknown"],_e getOrDefault ["freshness","LIVE"],mapGridPosition _p,round (_p select 2),round (diag_tickTime-(_e getOrDefault ["updated",diag_tickTime]))];};
-(_d displayCtrl 88541) ctrlSetStructuredText parseText _text;
-if ((count _e) > 0 && {([] call comspec_atak_native_fnc_layoutGet) get "mini"}) then { ["INFO", format ["%1 · %2", _e getOrDefault ["callsign", "CONTACT"], mapGridPosition (_e getOrDefault ["position", [0,0,0]])], 4, 20] call comspec_atak_native_fnc_notify; };
+/*
+    Panneau SITUATION de la carte : sans sélection, résumé de la mission ; avec une unité sélectionnée (clic),
+    sa fiche ATAK : indicatif, nom, grade et fonction, groupe, état, position, distance et gisement, déplacement,
+    téléphone (en ligne, batterie, signal), identité ORBAT. Les calques sont des boutons sous ce texte (fn_pageMap).
+*/
+disableSerialization;
+private _d = [] call comspec_atak_native_fnc_display;
+if (isNull _d) exitWith {};
+private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+private _e = _s getOrDefault ["selectedEntity", createHashMap];
+private _dim = { format ["<t color='#8a9a93'>%1</t>", _this] };
+private _fmt = { params ["_m"]; [format ["%1 m", round _m], format ["%1 km", (_m / 1000) toFixed 1]] select (_m >= 1000) };
+private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
+private _text = "";
+if ((count _e) isEqualTo 0) then {
+    private _units = values ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["units", createHashMap]);
+    private _fr = { (_x getOrDefault ["affiliation", ""]) isEqualTo "friend" } count _units;
+    private _ho = { (_x getOrDefault ["affiliation", ""]) isEqualTo "hostile" } count _units;
+    _text = format ["<t size='0.9'>%1 %2<br/>%3 %4<br/>%5 pluie %6 %%, vent %7 m/s<br/>%8 %9<br/>%10 %11 allié(s) · %12 contact(s)</t><br/><br/><t size='0.8' color='#8a9a93'>Cliquez sur une unité pour sa fiche.</t>",
+        "Mission :" call _dim, worldName, "Réseau :" call _dim, _s getOrDefault ["networkState", "OFFLINE"],
+        "Météo :" call _dim, round (rain * 100), round (vectorMagnitude wind), "Groupe :" call _dim, groupId group player,
+        "Carte :" call _dim, _fr, _ho];
+} else {
+    private _p = _e getOrDefault ["position", [0, 0, 0]];
+    private _o = _e getOrDefault ["object", objNull];
+    private _aff = _e getOrDefault ["affiliation", "unknown"];
+    private _affTxt = createHashMapFromArray [["friend", "<t color='#47b3ff'>ami</t>"], ["hostile", "<t color='#e5483a'>ennemi</t>"], ["neutral", "<t color='#5cc76b'>neutre</t>"]] getOrDefault [_aff, "inconnu"];
+    private _fresh = createHashMapFromArray [["LIVE", "<t color='#5cc76b'>en direct</t>"], ["STALE", "<t color='#f2ab33'>retardée</t>"], ["LOST", "<t color='#e5483a'>perdue</t>"], ["OFFLINE", "<t color='#8a9a93'>hors ligne</t>"]] getOrDefault [_e getOrDefault ["freshness", "LIVE"], "?"];
+    private _lines = [format ["<t size='1.15' font='RobotoCondensedBold' color='#5cc76b'>%1</t>  %2", _e getOrDefault ["callsign", "CONTACT"], _affTxt]];
+    if (!isNull _o) then {
+        if (isPlayer _o && {_aff isEqualTo "friend"}) then { _lines pushBack format ["%1 %2", "Nom :" call _dim, name _o]; };
+        private _role = roleDescription _o;
+        if (_role isEqualTo "") then { _role = getText (configOf _o >> "displayName"); };
+        _lines pushBack format ["%1 %2 · %3", "Rang :" call _dim, createHashMapFromArray [["PRIVATE", "Soldat"], ["CORPORAL", "Caporal"], ["SERGEANT", "Sergent"], ["LIEUTENANT", "Lieutenant"], ["CAPTAIN", "Capitaine"], ["MAJOR", "Commandant"], ["COLONEL", "Colonel"]] getOrDefault [rank _o, rank _o], _role];
+        if (_aff isEqualTo "friend") then { _lines pushBack format ["%1 %2%3", "Groupe :" call _dim, groupId group _o, ["", " (chef)"] select (leader group _o isEqualTo _o)]; };
+        private _life = switch (true) do {
+            case (!alive _o): { "<t color='#e5483a'>mort</t>" };
+            case ((lifeState _o) isEqualTo "INCAPACITATED"): { "<t color='#e5483a'>inconscient</t>" };
+            case ((damage _o) > 0.4): { "<t color='#f2ab33'>blessé</t>" };
+            default { "<t color='#5cc76b'>valide</t>" };
+        };
+        _lines pushBack format ["%1 %2", "État :" call _dim, _life];
+    };
+    _lines pushBack format ["%1 <t font='EtelkaMonospacePro'>%2</t> · %3 m", "Position :" call _dim, [_p, 8] call comspec_atak_native_fnc_gridRef, round (_p select 2)];
+    _lines pushBack format ["%1 %2 · %3° %4", "Distance :" call _dim, [player distance2D _p] call _fmt, round (player getDir _p), [player getDir _p] call _card];
+    if (!isNull _o && {alive _o}) then {
+        private _v = vehicle _o;
+        _lines pushBack format ["%1 %2 km/h · cap %3°%4", "Mouvement :" call _dim, round ((speed _v) max 0), round getDir _v,
+            ["", format [" · à bord : %1", getText (configOf _v >> "displayName")]] select (_v isNotEqualTo _o)];
+    };
+    if (!isNull _o && {_aff isEqualTo "friend"} && {isPlayer _o}) then {
+        (_o getVariable ["COMSPEC_ATAK_Pub", []]) params [["_bat", -1], ["_bars", -1], ["_st", ""]];
+        private _on = _o getVariable ["COMSPEC_ATAK_Beacon", true];
+        _lines pushBack format ["%1 %2%3%4", "Téléphone :" call _dim, ["<t color='#e5483a'>hors ligne</t>", "<t color='#5cc76b'>en ligne</t>"] select _on,
+            ["", format [" · batterie %1 %%", _bat]] select (_bat >= 0), ["", format [" · signal %1/4", _bars]] select (_bars >= 0)];
+        if (_st in ["DAMAGED", "BROKEN"]) then { _lines pushBack format ["%1 %2", "Appareil :" call _dim, ["écran fêlé", "détruit"] select (_st isEqualTo "BROKEN")]; };
+        private _orbat = _o getVariable ["COMSPEC_ATAK_Orbat", ""];
+        if (_orbat isNotEqualTo "") then { _lines pushBack format ["%1 %2", "ORBAT :" call _dim, _orbat]; };
+    };
+    _lines pushBack format ["%1 %2 · il y a %3 s", "Liaison :" call _dim, _fresh, round (diag_tickTime - (_e getOrDefault ["updated", diag_tickTime]))];
+    _text = format ["<t size='0.9'>%1</t>", _lines joinString "<br/>"];
+};
+// Deux lignes vides : le bandeau « SITUATION · REPLIER » recouvre le haut du panneau.
+(_d displayCtrl 88541) ctrlSetStructuredText parseText ("<t size='1.1'> </t><br/><br/>" + _text);
+if ((count _e) > 0 && {([] call comspec_atak_native_fnc_layoutGet) get "mini"}) then {
+    ["INFO", format ["%1 · %2", _e getOrDefault ["callsign", "CONTACT"], [_e getOrDefault ["position", [0, 0, 0]], 8] call comspec_atak_native_fnc_gridRef], 4, 20] call comspec_atak_native_fnc_notify;
+};

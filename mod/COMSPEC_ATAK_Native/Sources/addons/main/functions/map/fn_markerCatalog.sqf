@@ -4,10 +4,20 @@ if ((count _cache) > 0) exitWith { _cache };
 // Tous les marqueurs chargés (Arma, MarkersPlus, Metis, cTab…), hors classe Système, avec le libellé du catalogue web.
 private _labels = [] call comspec_atak_native_fnc_markerLabels;
 private _first = ["Military", "NATO_BLUFOR", "NATO_OPFOR", "NATO_Independent", "NATO_Civilian", "NATO_Unknown"];
+// Marqueurs des mods de terminal et d'outils carte : souvent cachés de l'éditeur (scope 0 ou 1, classe Système),
+// on les garde quand même d'après le nom de classe, de catégorie ou d'icône.
+private _mods = ["bce", "ctab", "nswdg", "iceman", "icetab", "maptool", "mts_", "placement", "atak"];
+private _isMod = {
+    params ["_cfg", "_mc"];
+    private _hay = toLower format ["%1|%2|%3", configName _cfg, _mc, getText (_cfg >> "icon")];
+    (_mods findIf { (_hay find _x) >= 0 }) >= 0
+};
 private _types = [];
 {
     private _mc = getText (_x >> "markerClass");
-    if ((getNumber (_x >> "scope")) >= 2 && {_mc isNotEqualTo "System"} && {(getText (_x >> "icon")) isNotEqualTo ""}) then {
+    private _mod = [_x, _mc] call _isMod;
+    if ((getText (_x >> "icon")) isNotEqualTo "" && {_mod || {(getNumber (_x >> "scope")) >= 1 && {_mc isNotEqualTo "System"}}}) then {
+        if (_mod && {_mc in ["", "System"]}) then { _mc = "Mods (terminal, outils carte)"; };
         private _cls = configName _x;
         _types pushBack [_labels getOrDefault [toLower _cls, getText (_x >> "name")], _cls, getText (_x >> "icon"), _mc];
     };

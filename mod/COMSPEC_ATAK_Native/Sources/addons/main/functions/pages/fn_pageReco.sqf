@@ -11,16 +11,12 @@ if !([] call comspec_atak_native_fnc_bridge) exitWith {
     true
 };
 private _draft = uiNamespace getVariable ["COMSPEC_ATAK_RecoDraft", createHashMap];
-private _where = _draft getOrDefault ["where", "look"];
-private _lookPos = [] call comspec_overwatch_connect_fnc_reconLookPos;
 private _hint = uiNamespace getVariable ["COMSPEC_ATAK_RecoHint", ["", false]];
+// Coordonnées saisies à la main (grille 6, 8 ou 10 chiffres), ma position par défaut.
 private _rows = [
     ["title", "Note de reco"],
-    ["text", format ["<t color='#8a9a93'>Sous votre regard :</t> %1   <t color='#8a9a93'>Ma position :</t> %2", [_lookPos, 8] call comspec_atak_native_fnc_gridRef, [player, 8] call comspec_atak_native_fnc_gridRef]],
-    ["buttons", [
-        [["SOUS MON REGARD", "● SOUS MON REGARD"] select (_where isEqualTo "look"), { [] call comspec_atak_native_fnc_recoDraftSave; (uiNamespace getVariable ["COMSPEC_ATAK_RecoDraft", createHashMap]) set ["where", "look"]; [{ ["RECO"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, _where isEqualTo "look"],
-        [["MA POSITION", "● MA POSITION"] select (_where isEqualTo "me"), { [] call comspec_atak_native_fnc_recoDraftSave; (uiNamespace getVariable ["COMSPEC_ATAK_RecoDraft", createHashMap]) set ["where", "me"]; [{ ["RECO"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, _where isEqualTo "me"]
-    ]],
+    ["edit", "grid", "Coordonnées (grille, ex. 1518 1730)", _draft getOrDefault ["grid", [getPosASL player, 8] call comspec_atak_native_fnc_gridRef]],
+    ["buttons", [["MA POSITION", { [] call comspec_atak_native_fnc_recoDraftSave; (uiNamespace getVariable ["COMSPEC_ATAK_RecoDraft", createHashMap]) set ["grid", [getPosASL player, 8] call comspec_atak_native_fnc_gridRef]; [{ ["RECO"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]],
     ["combo", "tag", "Type", [["Véhicule", "vehicle"], ["Groupe armé", "armed_group"], ["Position statique", "static"], ["Obstacle / mine", "mine"], ["Civil", "civilian"], ["Infrastructure", "infrastructure"], ["Autre", "other"]], _draft getOrDefault ["tag", "armed_group"]],
     ["combo", "confidence", "Confiance", [["Vu directement", "vu_direct"], ["Rapporté", "rapporte"]], _draft getOrDefault ["confidence", "vu_direct"]],
     ["edit", "text", "Observation (140 caractères)", _draft getOrDefault ["text", ""]],

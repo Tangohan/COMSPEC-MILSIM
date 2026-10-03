@@ -76,6 +76,20 @@ _rows append [
         default { format ["<t color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select ((_hp get "crack") >= 3), _hp get "reason"] };
     }],
     ["info", "Usure", format ["%1 %%", round ((_hp get "damage") * 100)]],
+    ["info", "Batterie", call {
+        private _lvl = round (missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]);
+        (missionNamespace getVariable ["COMSPEC_ATAK_BatteryInfo", [0, []]]) params ["_r"];
+        private _left = switch (true) do {
+            case (_r < 0): { "en charge" };
+            case (_r <= 0.01): { "" };
+            default { private _m = round (_lvl / _r); format ["environ %1 h %2 restantes", floor (_m / 60), _m mod 60] };
+        };
+        format ["<t color='%1'>%2 %%</t>  <t color='#8a9a93'>%3</t>", switch (true) do { case (_lvl <= 5): { "#e5483a" }; case (_lvl <= 20): { "#f2ab33" }; default { "#5cc76b" }; }, _lvl, _left]
+    }],
+    ["text", call {
+        (missionNamespace getVariable ["COMSPEC_ATAK_BatteryInfo", [0, []]]) params ["", "_f"];
+        "<t size='0.8' color='#8a9a93'>" + ((_f apply { format ["%1 %2 %3 %%/min", _x select 0, ["", "+"] select ((_x select 1) < 0), abs (_x select 1)] }) joinString " · ") + "</t>"
+    }],
     ["text", "<t size='0.8' color='#8a9a93'>Réparation : action ACE « Réparer le téléphone ATAK » avec une trousse à outils, ou « Changer de téléphone ATAK » avec un appareil de rechange.</t>"],
     ["buttons", [
         ["TEST DE DÉBIT", { uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", []]; private _q = [] call comspec_atak_native_fnc_linkQuality; ["INFO", format ["Test de débit : %1 kbit/s, %2 ms, perte %3 %%", _q get "kbps", _q get "latency", _q get "loss"], 5, 20] call comspec_atak_native_fnc_notify; [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],

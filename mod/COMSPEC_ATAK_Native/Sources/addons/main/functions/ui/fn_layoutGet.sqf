@@ -18,6 +18,9 @@ private _ratio = pixelH / pixelW; // hauteur (unités écran) d'un carré de lar
 // _vis = boîte visible de la coque (avec la fixation), _scr = écran transparent.
 private _vis = [[0.1465, 0.1025, 0.7202, 0.9263], [0.1025, 0.2798, 0.9263, 0.8535]] select _land;
 private _scr = [[0.3491, 0.2222, 0.6504, 0.7549], [0.2222, 0.3496, 0.7549, 0.6509]] select _land;
+// L'écran déborde légèrement sous la coque : le bord flou de la texture (filtrage) laissait voir un liseré.
+private _bleed = 0.003;
+_scr = [(_scr select 0) - _bleed, (_scr select 1) - _bleed, (_scr select 2) + _bleed, (_scr select 3) + _bleed];
 _vis params ["_vx0", "_vy0", "_vx1", "_vy1"];
 // Côté du carré en unités verticales (_dh) ; largeur = _dh / _ratio pour rester carré à l'écran.
 // Taille du mini choisie dans les réglages (petit, normal, grand).

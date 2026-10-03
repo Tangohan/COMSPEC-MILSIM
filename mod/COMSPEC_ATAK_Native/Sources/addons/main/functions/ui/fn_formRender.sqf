@@ -139,7 +139,9 @@ private _mk = {
             if (_label isNotEqualTo "") then {
                 private _lb = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _fs * 1.3]] call _mk;
                 _lb ctrlSetStructuredText parseText format ["<t size='0.9'>%1</t>%2", _label, ["", format ["  <t size='0.75' color='#8a9a93'>%1</t>", _help]] select (_help isNotEqualTo "")];
-                _y = _y + _fs * 1.35;
+                private _lh = (ctrlTextHeight _lb) max (_fs * 1.3);
+                if (_lh > _fs * 1.3) then { _lb ctrlSetPosition [_pad, _y, _w, _lh]; _lb ctrlCommit 0; };
+                _y = _y + _lh + _fs * 0.05;
             };
             private _n = count _opts;
             private _sw = _w / (_n max 1);
@@ -158,12 +160,17 @@ private _mk = {
             _a ctrlSetStructuredText parseText format ["<t size='0.85' color='#8a9a93'>%1</t>", _label];
             private _b = ["COMSPEC_RscStructuredText", [_pad + _w * 0.4, _y, _w * 0.6, _fs * 1.3]] call _mk;
             _b ctrlSetStructuredText parseText format ["<t size='0.85' align='right'>%1</t>", _value];
-            _y = _y + _fs * 1.3;
+            private _ih2 = ((ctrlTextHeight _a) max (ctrlTextHeight _b)) max (_fs * 1.3);
+            if (_ih2 > _fs * 1.3) then {
+                _a ctrlSetPosition [_pad, _y, _w * 0.5, _ih2]; _a ctrlCommit 0;
+                _b ctrlSetPosition [_pad + _w * 0.4, _y, _w * 0.6, _ih2]; _b ctrlCommit 0;
+            };
+            _y = _y + _ih2;
         };
         case "gap": { _y = _y + _pad; };
         case "person": {
             _row params ["", "_pic", "_text", ["_btns", []], ["_picColor", [1, 1, 1, 1]]];
-            private _ih = _font * 1.9;
+            private _ih = _font * 2.2;
             private _iw = _ih * pixelH / pixelW;
             private _bg = ["COMSPEC_RscText", [_pad, _y, _w, _ih + _pad / 2]] call _mk;
             _bg ctrlSetBackgroundColor [0.06, 0.075, 0.07, 1];
@@ -171,8 +178,15 @@ private _mk = {
             _p ctrlSetTextColor _picColor;
             private _nb = count _btns;
             private _bwid = _w * 0.2;
-            private _t = ["COMSPEC_RscStructuredText", [_pad * 2 + _iw, _y + _pad / 4, _w - _iw - _pad * 1.5 - _nb * (_bwid + _pad / 3), _ih]] call _mk;
+            private _tw = _w - _iw - _pad * 1.5 - _nb * (_bwid + _pad / 3);
+            private _t = ["COMSPEC_RscStructuredText", [_pad * 2 + _iw, _y + _pad / 4, _tw, _ih]] call _mk;
             _t ctrlSetStructuredText parseText _text;
+            // Texte long (fil OSINT, messages) : la ligne s'agrandit au lieu de couper le texte.
+            private _rowIh = _ih max ((ctrlTextHeight _t) + _pad / 4);
+            if (_rowIh > _ih) then {
+                _t ctrlSetPosition [_pad * 2 + _iw, _y + _pad / 4, _tw, _rowIh]; _t ctrlCommit 0;
+                _bg ctrlSetPosition [_pad, _y, _w, _rowIh + _pad / 2]; _bg ctrlCommit 0;
+            };
             {
                 _x params ["_label", "_code", ["_primary", false], ["_enabled", true]];
                 private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + _w - (_nb - _forEachIndex) * (_bwid + _pad / 3), _y + _pad / 4 + _ih * 0.15, _bwid, _ih * 0.7], _label] call _mk;
@@ -180,7 +194,7 @@ private _mk = {
                 _b ctrlEnable _enabled;
                 _b ctrlAddEventHandler ["ButtonClick", _code];
             } forEach _btns;
-            _y = _y + _ih + _pad * 0.75;
+            _y = _y + _rowIh + _pad * 0.75;
         };
         case "hero": {
             _row params ["", "_pic", "_text"];

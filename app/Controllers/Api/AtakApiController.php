@@ -3421,9 +3421,10 @@ class AtakApiController
         }
 
         $resupply = [];
+        $resupplyStates = $this->resupplyStates($tenantId, $mapId);
         try {
             $result = $this->activityLog->listFiltered($tenantId, $mapId, [
-                'limit' => 40,
+                'limit' => 120,
                 'type' => AtakActivityLogService::TYPE_TOC_NOTE,
             ]);
             $events = is_array($result['events'] ?? null) ? $result['events'] : [];
@@ -3435,6 +3436,8 @@ class AtakApiController
                 if (($meta['kind'] ?? '') !== 'resupply_request') {
                     continue;
                 }
+                $gameId = (string) ($meta['game_id'] ?? '');
+                $state = $gameId !== '' ? ($resupplyStates[$gameId] ?? null) : null;
                 $resupply[] = [
                     'id' => (int) ($ev['id'] ?? 0),
                     'at' => (string) ($ev['at'] ?? ''),
@@ -3442,6 +3445,13 @@ class AtakApiController
                     'need' => (string) ($meta['need'] ?? 'ravitaillement'),
                     'note' => (string) ($meta['note'] ?? ''),
                     'grid_ref' => (string) ($meta['grid_ref'] ?? ''),
+                    'game_id' => $gameId,
+                    'qty' => (int) ($meta['qty'] ?? 0),
+                    'priority' => (string) ($meta['priority'] ?? ''),
+                    'mode' => (string) ($meta['mode'] ?? ''),
+                    'status' => $state['status'] ?? (string) ($meta['status'] ?? ''),
+                    'status_by' => $state['by'] ?? '',
+                    'status_at' => $state['at'] ?? '',
                 ];
                 if (count($resupply) >= 12) {
                     break;
@@ -3486,6 +3496,11 @@ class AtakApiController
         $need = trim((string) ($body['need'] ?? 'ravitaillement'));
         $note = trim((string) ($body['note'] ?? ''));
         $grid = trim((string) ($body['grid_ref'] ?? $body['grid'] ?? ''));
+        // Demande saisie dans le téléphone ATAK natif : identifiant de jeu, quantité, priorité, mode de livraison.
+        $gameId = mb_substr(trim((string) ($body['game_id'] ?? '')), 0, 64);
+        $qty = max(0, (int) ($body['qty'] ?? 0));
+        $priority = strtoupper(trim((string) ($body['priority'] ?? '')));
+        $mode = strtoupper(trim((string) ($body['mode'] ?? '')));
         if ($callSign === '') {
             return Response::json([
                 'error' => 'call_sign_required',
@@ -3515,6 +3530,11 @@ class AtakApiController
                 'need' => $needLabel,
                 'note' => $note !== '' ? mb_substr($note, 0, 500) : '',
                 'grid_ref' => $grid,
+                'game_id' => $gameId,
+                'qty' => $qty,
+                'priority' => in_array($priority, ['ROUTINE', 'PRIORITY', 'URGENT'], true) ? $priority : '',
+                'mode' => in_array($mode, ['PICKUP', 'AIRDROP', 'VEHICLE'], true) ? $mode : '',
+                'status' => $gameId !== '' ? 'DEMANDEE' : '',
             ]
         );
 
@@ -3522,6 +3542,120 @@ class AtakApiController
             'ok' => true,
             'message' => 'Demande de ravitaillement enregistrée pour ' . $callSign . '.',
         ], 201);
+    }
+
+    /** États possibles d'une demande logistique (mêmes codes que le téléphone ATAK natif). */
+    private const RESUPPLY_STATUSES = ['DEMANDEE', 'VALIDEE', 'REFUSEE', 'EN_ROUTE', 'LIVREE', 'ANNULEE'];
+
+    /**
+     * Change l'état d'une demande logistique (depuis le jeu ou depuis le poste web).
+     * POST /api/atak/logistics/resupply/status  { game_id, status, by }
+     */
+    public function logisticsResupplyStatus(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $body = $this->jsonBody($request);
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? $this->mapId($request));
+        $gameId = mb_substr(trim((string) ($body['game_id'] ?? '')), 0, 64);
+        $status = strtoupper(trim((string) ($body['status'] ?? '')));
+        $by = mb_substr(trim((string) ($body['by'] ?? 'Poste')), 0, 64);
+        $source = ($body['source'] ?? 'game') === 'web' ? 'web' : 'game';
+        if ($gameId === '' || !in_array($status, self::RESUPPLY_STATUSES, true)) {
+            return Response::json([
+                'error' => 'invalid_status',
+                'message' => 'Demande ou état inconnu.',
+            ], 400);
+        }
+        $this->activityLog->record(
+            $tenantId,
+            $mapId > 0 ? $mapId : self::DEFAULT_MAP_ID,
+            AtakActivityLogService::TYPE_TOC_NOTE,
+            'Logistique ' . $gameId . ' : ' . $status . ' (' . $by . ')',
+            $by,
+            [
+                'kind' => 'resupply_status',
+                'game_id' => $gameId,
+                'status' => $status,
+                'by' => $by,
+                'source' => $source,
+            ]
+        );
+
+        return Response::json(['ok' => true, 'game_id' => $gameId, 'status' => $status]);
+    }
+
+    /**
+     * Derniers états décidés au poste web, lus par le jeu.
+     * GET /api/atak/logistics/resupply/status?format=compact → « id,ÉTAT,auteur;... »
+     */
+    public function logisticsResupplyStatusList(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $mapId = (int) $this->mapId($request);
+        $states = $this->resupplyStates($tenantId, $mapId > 0 ? $mapId : self::DEFAULT_MAP_ID, true);
+        if ((string) $request->query('format', '') === 'compact') {
+            $parts = [];
+            foreach ($states as $id => $st) {
+                $clean = static fn (string $v): string => str_replace([',', ';', '|', "\n", "\r"], ' ', $v);
+                $parts[] = $clean($id) . ',' . $st['status'] . ',' . $clean($st['by']);
+            }
+
+            return (new Response())
+                ->setStatusCode(200)
+                ->header('Content-Type', 'text/plain; charset=UTF-8')
+                ->header('Cache-Control', 'no-store')
+                ->setBody(implode(';', $parts));
+        }
+
+        return Response::json(['states' => $states]);
+    }
+
+    /**
+     * Dernier état connu de chaque demande (le journal est lu du plus récent au plus ancien).
+     *
+     * @return array<string, array{status: string, by: string, at: string, source: string}>
+     */
+    private function resupplyStates(int $tenantId, int $mapId, bool $webOnly = false): array
+    {
+        $states = [];
+        try {
+            $result = $this->activityLog->listFiltered($tenantId, $mapId, [
+                'limit' => 200,
+                'type' => AtakActivityLogService::TYPE_TOC_NOTE,
+            ]);
+            foreach ((is_array($result['events'] ?? null) ? $result['events'] : []) as $ev) {
+                $meta = is_array($ev['meta'] ?? null) ? $ev['meta'] : [];
+                if (($meta['kind'] ?? '') !== 'resupply_status') {
+                    continue;
+                }
+                $id = (string) ($meta['game_id'] ?? '');
+                if ($id === '' || isset($states[$id])) {
+                    continue;
+                }
+                $source = (string) ($meta['source'] ?? 'game');
+                $states[$id] = [
+                    'status' => (string) ($meta['status'] ?? ''),
+                    'by' => (string) ($meta['by'] ?? ''),
+                    'at' => (string) ($ev['at'] ?? ''),
+                    'source' => $source,
+                ];
+            }
+        } catch (\Throwable) {
+            return [];
+        }
+        if ($webOnly) {
+            $states = array_filter($states, static fn (array $s): bool => $s['source'] === 'web');
+        }
+
+        return $states;
     }
 
     private function ammoStockLevel(?string $ammo): string

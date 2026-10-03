@@ -1,7 +1,7 @@
 COMSPEC_ATAK_UI_GENERATION = "native-rsc-v1";
 missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION, true];
-missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", "1.3.0", true];
-diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_3_0_loaded";
+missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", "1.4.0", true];
+diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
 
@@ -31,6 +31,38 @@ private _sim = ["COMSPEC ATAK natif", "Simulation"];
 ["comspec_atak_native_ew_open", "CHECKBOX",
     ["Guerre électronique ouverte à tous", "Coché : tout porteur de téléphone peut brouiller et goniométrer. Décoché : réservé aux unités COMSPEC_ATAK_EwOperator ou au rôle « guerre électronique / brouilleur / SIGINT »."],
     _sim, true, 1] call CBA_fnc_addSetting;
+private _geo = ["COMSPEC ATAK natif", "Géolocalisation (GEOLOC)"];
+["comspec_atak_native_geoloc_enabled", "CHECKBOX",
+    ["Traçage des téléphones", "App Guerre électronique, onglet GÉOLOC : localiser un téléphone à partir de son numéro, de son IMEI ou de son adresse MAC (roleplay)."],
+    _geo, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_geoloc_ew_only", "CHECKBOX",
+    ["Réservé aux opérateurs GE", "Coché : seuls ceux qui ont droit à la guerre électronique (voir Simulation) peuvent lancer une géolocalisation."],
+    _geo, false, 1] call CBA_fnc_addSetting;
+{
+    _x params ["_k", "_label", "_def"];
+    [format ["comspec_atak_native_geoloc_%1", _k], "CHECKBOX",
+        [format ["Traçables : %1", _label], format ["Les téléphones des unités %1 peuvent être géolocalisés par les autres camps.", _label]],
+        _geo, _def, 1] call CBA_fnc_addSetting;
+} forEach [["west", "BLUFOR", true], ["east", "OPFOR", true], ["guer", "INDÉPENDANTS", true], ["civ", "CIVILS", true]];
+["comspec_atak_native_geoloc_own", "CHECKBOX",
+    ["Tracer son propre camp", "Coché : on peut aussi géolocaliser un téléphone allié (sinon, ennemis et autres camps seulement)."],
+    _geo, false, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_geoloc_ai", "CHECKBOX",
+    ["IA traçables", "Les IA qui portent un téléphone ont un numéro et peuvent être géolocalisées."],
+    _geo, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_geoloc_precision", "SLIDER",
+    ["Précision (m)", "Rayon d'incertitude de la position renvoyée (triangulation par antennes)."],
+    _geo, [10, 1000, 150, 0], 1] call CBA_fnc_addSetting;
+["comspec_atak_native_geoloc_refresh", "SLIDER",
+    ["Rafraîchissement du suivi (s)", "Intervalle entre deux positions quand un suivi est actif."],
+    _geo, [10, 300, 30, 0], 1] call CBA_fnc_addSetting;
+["comspec_atak_native_geoloc_warn", "CHECKBOX",
+    ["Prévenir la cible", "La cible reçoit une alerte discrète « activité réseau anormale » quand elle est géolocalisée."],
+    _geo, false, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_battery_sim", "CHECKBOX",
+    ["Batterie simulée", "La batterie du téléphone se vide selon l'usage (écran, live cam, GPS, brouilleur) et se recharge en véhicule moteur allumé. À 0 % le téléphone s'éteint et passe hors ligne dans le BFT."],
+    _sim, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_battery_drain", "SLIDER", ["Vitesse de décharge", "Multiplicateur de consommation de la batterie (1 = environ 3 h écran en main)."], _sim, [0.25, 4, 1, 2], 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_net_sim", "CHECKBOX",
     ["Débit réseau simulé", "Bâtiments, relief, véhicule, météo, brouilleurs, relais et dégâts réduisent le débit : messages et photos partent avec un délai, se perdent et repartent, ou attendent le retour du réseau."],
     _sim, true, 1] call CBA_fnc_addSetting;

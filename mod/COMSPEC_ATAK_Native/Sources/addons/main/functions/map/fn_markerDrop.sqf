@@ -30,6 +30,7 @@ _m setMarkerTypeLocal _type;
 _m setMarkerColorLocal _color;
 _m setMarkerSizeLocal [_size, _size];
 _m setMarkerText format ["%1 %2", _prefix, _index];
+[_m] call comspec_atak_native_fnc_markerWeb;
 ["SUCCESS", format ["%1 %2 · %3", _prefix, _index, mapGridPosition _pos], 3, 20] call comspec_atak_native_fnc_notify;
 if (_s getOrDefault ["markerEditAfter", false]) then { [_m] call comspec_atak_native_fnc_markerEditOpen; };
 _m

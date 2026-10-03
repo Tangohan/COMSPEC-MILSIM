@@ -27,6 +27,9 @@ if (_labelH > 0) then {
     private _t = ["COMSPEC_RscTextCenter", [_x0, _y0 + _h - _labelH - _h * 0.06, _w, _labelH]] call _mk;
     _t ctrlSetFontHeight _font;
     _t ctrlSetText _label;
+    // Libellé trop long pour la tuile (« Guerre électronique ») : police réduite jusqu'à 70 %.
+    private _fh = _font;
+    while { (ctrlTextWidth _t) > _w * 0.94 && {_fh > _font * 0.7} } do { _fh = _fh * 0.92; _t ctrlSetFontHeight _fh; };
 };
 if (_badge > 0) then {
     private _bh = _font * 1.1;

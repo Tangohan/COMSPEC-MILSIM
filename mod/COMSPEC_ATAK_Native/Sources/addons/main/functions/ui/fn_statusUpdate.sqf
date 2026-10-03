@@ -52,9 +52,16 @@ if (_page isEqualTo "ATHENA" && {[] call comspec_atak_native_fnc_bridge}) then {
 if (_page isEqualTo "MAP") then {
     [] call comspec_atak_native_fnc_mapOverlayUpdate;
     [] call comspec_atak_native_fnc_routeBanner;
+    if (missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false]) then { [] call comspec_atak_native_fnc_inspectorUpdate; };
     // Porté (HUD) ou suivi activé : la carte reste centrée sur le joueur.
     if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]}) then {
-        [player] call comspec_atak_native_fnc_mapCenter;
+        // Recentrage seulement si j'ai bougé (ou zoomé) : sinon la carte tremble à chaque seconde.
+        private _fk = [round ((getPosASL player) select 0), round ((getPosASL player) select 1), ctrlMapScale ((([] call comspec_atak_native_fnc_display)) displayCtrl 88530)];
+        private _fl = uiNamespace getVariable ["COMSPEC_ATAK_FollowLast", [0, 0, 0]];
+        if ((([_fk select 0, _fk select 1] distance2D [_fl select 0, _fl select 1]) > 3) || {(_fk select 2) isNotEqualTo (_fl select 2)}) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_FollowLast", _fk];
+            [player] call comspec_atak_native_fnc_mapCenter;
+        };
     };
 };
 
@@ -83,6 +90,12 @@ private _pageSig = switch (_page) do {
     case "NETWORK": { [_lq get "bars", round ((_lq get "kbps") / 100), ([] call comspec_atak_native_fnc_deviceHealth) get "state", count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []])] };
     case "DEBUG": { [count (missionNamespace getVariable ["COMSPEC_ATAK_Log", []]), count (missionNamespace getVariable ["COMSPEC_DiagLog", []]), count (missionNamespace getVariable ["COMSPEC_ATAK_NetLog", []])] };
     case "BFT": { ((values (_data getOrDefault ["units", createHashMap])) select { (_x getOrDefault ["affiliation", ""]) isEqualTo "friend" }) apply { [_x getOrDefault ["freshness", ""], round (((_x getOrDefault ["position", [0,0,0]]) distance2D player) / 50), alive (_x getOrDefault ["object", objNull])] } };
+    case "GPS": {
+        // Le texte saisi est gardé avant un éventuel re-rendu.
+        (uiNamespace getVariable ["COMSPEC_ATAK_Gps", createHashMap]) set ["grid", ["gpsGrid", ""] call comspec_atak_native_fnc_formValue];
+        private _rt = missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap];
+        [count _rt, _rt getOrDefault ["idx", 0], round ((getPosASL player) select 0) / 25, round ((getPosASL player) select 1) / 25, missionNamespace getVariable ["COMSPEC_ATAK_RouteBusy", false]]
+    };
     case "GROUP": { (units group player) apply { [name _x, alive _x, lifeState _x, round ((damage _x) * 4)] } };
     default { [] };
 };

@@ -2227,6 +2227,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/perstat', [AtakApiController::class, 'perstatIndex']);
     $router->get('/api/atak/logistics', [AtakApiController::class, 'logisticsSnapshot']);
     $router->post('/api/atak/logistics/resupply', [AtakApiController::class, 'logisticsResupplyRequest']);
+    $router->post('/api/atak/logistics/resupply/status', [AtakApiController::class, 'logisticsResupplyStatus']);
+    $router->get('/api/atak/logistics/resupply/status', [AtakApiController::class, 'logisticsResupplyStatusList']);
     $router->post('/api/atak/client-init', [AtakApiController::class, 'clientInit']);
     $router->post('/api/atak/disconnect', [AtakApiController::class, 'disconnect']);
     $router->get('/api/atak/mission-plan', [AtakMissionApiController::class, 'show']);
