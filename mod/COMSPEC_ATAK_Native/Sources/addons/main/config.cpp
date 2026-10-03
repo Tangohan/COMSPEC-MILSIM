@@ -13,7 +13,7 @@ class CfgFunctions {
         };
         class ui { file="z\comspec_atak_native\addons\main\functions\ui";
             class display {}; class open {}; class close {}; class hudToggle {}; class interactToggle {}; class orientationToggle {}; class phoneDrag {}; class formRender {}; class formValue {}; class vibrate {}; class dataBarEnabled {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class navigate {}; class back {}; class modeToggle {};
-            class pageRender {}; class pageClear {}; class pageCtrl {}; class tileCreate {}; class appList {}; class appBadge {}; class dockRender {}; class launcherRender {}; class deviceOverlay {}; class appVisible {};
+            class pageRender {}; class pageClear {}; class pageCtrl {}; class tileCreate {}; class appList {}; class appBadge {}; class dockRender {}; class launcherRender {}; class deviceOverlay {}; class appVisible {}; class accent {};
             class statusUpdate {}; class inspectorUpdate {}; class notify {}; class notificationsRender {};
         };
         class map { file="z\comspec_atak_native\addons\main\functions\map";
@@ -29,7 +29,7 @@ class CfgFunctions {
         };
         class pages { file="z\comspec_atak_native\addons\main\functions\pages";
             class chatSend {}; class taskAction {}; class briefingStep {}; class settingsSave {};
-            class pageMap {}; class pageChat {}; class chatParse {}; class messagesAll {}; class tasksAll {}; class pageGroup {}; class pageTasks {}; class pageText {}; class pageAthena {}; class athenaAction {}; class pageNetwork {}; class pageSettings {}; class pagePhotos {}; class photoTake {}; class photoMode {}; class pageFrs {}; class frsDraftSave {}; class frsToggleTheme {}; class frsSubmit {}; class pageReco {}; class recoDraftSave {}; class recoSubmit {}; class pageFires {}; class firesState {}; class firesGuns {}; class firesSave {}; class firesAction {}; class pageLivecam {}; class livecamStart {}; class livecamStop {}; class pageAlerts {}; class alertsAction {}; class pageMedical {}; class medicalAction {}; class pageProfile {}; class profileAction {}; class pageBriefing {}; class chatCommand {}; class briefingAction {}; class briefingSignature {}; class photoLibrary {}; class livecamShare {}; class pageBft {}; class bftAction {}; class groupTypes {}; class groupAction {}; class pageRecents {}; class pageFood {}; class foodAction {}; class pageDating {}; class datingAction {}; class pageOsint {}; class osintAction {};
+            class pageMap {}; class pageChat {}; class chatParse {}; class messagesAll {}; class tasksAll {}; class pageGroup {}; class pageTasks {}; class pageText {}; class pageAthena {}; class athenaAction {}; class pageNetwork {}; class pageSettings {}; class pagePhotos {}; class photoTake {}; class photoMode {}; class pageFrs {}; class frsDraftSave {}; class frsToggleTheme {}; class frsSubmit {}; class pageReco {}; class recoDraftSave {}; class recoSubmit {}; class pageFires {}; class firesState {}; class firesGuns {}; class firesSave {}; class firesAction {}; class pageLivecam {}; class livecamStart {}; class livecamStop {}; class pageAlerts {}; class alertsAction {}; class pageMedical {}; class medicalAction {}; class pageProfile {}; class profileAction {}; class pageBriefing {}; class chatCommand {}; class briefingAction {}; class briefingSignature {}; class photoLibrary {}; class livecamShare {}; class pageBft {}; class bftAction {}; class groupTypes {}; class groupAction {}; class pageRecents {}; class pageDebug {}; class pageFood {}; class foodAction {}; class pageDating {}; class datingAction {}; class pageOsint {}; class osintAction {};
         };
     };
 };
@@ -64,6 +64,7 @@ class COMSPEC_ATAK_Apps {
     class Osint    { name="OSINT";      page="OSINT";    section="Renseignement"; order=125; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_osint.paa"; };
     class Food     { name="Ration Express"; page="FOOD"; section="Civil";         order=400; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_food.paa"; };
     class Dating   { name="Rencard";    page="DATING";   section="Civil";         order=410; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_dating.paa"; };
+    class Debug    { name="Debug";      page="DEBUG";    section="Système";       order=315; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_debug.paa"; };
     class Settings { name="Réglages";   page="SETTINGS"; section="Système";       order=320; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_settings.paa"; };
 };
 

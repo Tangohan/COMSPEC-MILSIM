@@ -28,6 +28,7 @@ private _w = _rw - 0.014 - 2 * _pad;
 private _rowH = _font * 1.55;
 private _y = _pad;
 private _fields = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
+([] call comspec_atak_native_fnc_accent) params ["_acc", "_accHex"];
 private _mk = {
     params ["_class", "_pos", ["_text", ""]];
     private _c = _d ctrlCreate [_class, -1, _grp];
@@ -42,7 +43,7 @@ private _mk = {
         case "title": {
             private _t = ["COMSPEC_RscText", [_pad, _y, _w, _rowH], toUpper (_row select 1)] call _mk;
             _t ctrlSetFontHeight _fs;
-            _t ctrlSetTextColor [0.36, 0.78, 0.42, 1];
+            _t ctrlSetTextColor _acc;
             _y = _y + _rowH;
         };
         case "text": {
@@ -89,7 +90,7 @@ private _mk = {
             _row params ["", "_label", "_on", "_code"];
             private _b = ["COMSPEC_RscButton", [_pad, _y, _w, _rowH], format ["%1   %2", ["○", "●"] select _on, _label]] call _mk;
             _b ctrlSetFontHeight _fs;
-            if (_on) then { _b ctrlSetTextColor [0.36, 0.78, 0.42, 1]; };
+            if (_on) then { _b ctrlSetTextColor _acc; };
             _b ctrlAddEventHandler ["ButtonClick", _code];
             _y = _y + _rowH + _pad / 3;
         };
@@ -98,9 +99,9 @@ private _mk = {
             _row params ["", "_title", ["_sub", ""]];
             _y = _y + _pad / 2;
             private _bar = ["COMSPEC_RscText", [_pad, _y + _fs * 0.15, _pad * 0.35, _fs * 1.1]] call _mk;
-            _bar ctrlSetBackgroundColor [0.36, 0.78, 0.42, 1];
+            _bar ctrlSetBackgroundColor _acc;
             private _t = ["COMSPEC_RscStructuredText", [_pad * 1.6, _y, _w - _pad, _rowH]] call _mk;
-            _t ctrlSetStructuredText parseText format ["<t font='RobotoCondensedBold' color='#5cc76b'>%1</t>%2", toUpper _title, ["", format ["<br/><t size='0.8' color='#8a9a93'>%1</t>", _sub]] select (_sub isNotEqualTo "")];
+            _t ctrlSetStructuredText parseText format ["<t font='RobotoCondensedBold' color='%3'>%1</t>%2", toUpper _title, ["", format ["<br/><t size='0.8' color='#8a9a93'>%1</t>", _sub]] select (_sub isNotEqualTo ""), _accHex];
             private _h = (ctrlTextHeight _t) max (_fs * 1.3);
             _t ctrlSetPosition [_pad * 1.6, _y, _w - _pad, _h];
             _t ctrlCommit 0;
@@ -122,7 +123,7 @@ private _mk = {
             private _ph = _fs * 1.35;
             private _pill = ["COMSPEC_RscTextCenter", [_pad + _w - _pillW - _pad / 2, _y + (_h - _ph) / 2, _pillW, _ph], [["NON", "OUI"] select _on, format ["IMPOSÉ · %1", ["NON", "OUI"] select _on]] select _locked] call _mk;
             _pill ctrlSetFontHeight (_fs * 0.85);
-            _pill ctrlSetBackgroundColor ([[[0.20, 0.23, 0.22, 1], [0.36, 0.78, 0.42, 1]] select _on, [0.55, 0.38, 0.08, 1]] select _locked);
+            _pill ctrlSetBackgroundColor ([[[0.20, 0.23, 0.22, 1], _acc] select _on, [0.55, 0.38, 0.08, 1]] select _locked);
             _pill ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.03, 0.05, 0.04, 1]] select (_on && {!_locked}));
             if !(_locked) then {
                 private _b = ["COMSPEC_RscButtonOverlay", [_pad, _y, _w, _h]] call _mk;
@@ -146,7 +147,7 @@ private _mk = {
                 _x params ["_text", "_code", ["_active", false]];
                 private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * _sw, _y, _sw - _pad / 6, _rowH * 0.9], _text] call _mk;
                 _b ctrlSetFontHeight (_fs * 0.9);
-                if (_active) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
+                if (_active) then { _b ctrlSetBackgroundColor _acc; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
                 _b ctrlAddEventHandler ["ButtonClick", _code];
             } forEach _opts;
             _y = _y + _rowH * 0.9 + _pad / 2;

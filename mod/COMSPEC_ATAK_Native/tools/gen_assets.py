@@ -73,6 +73,7 @@ ICONS = {
     "app_relief": '<path d="M2 20l6-10 4 6 3-4 7 8z"/><path d="M8 10l1.5 2.5"/>',
     "app_logistics": '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
     "app_ew": '<path d="M4 18a11 11 0 0 1 0-12M20 6a11 11 0 0 1 0 12M7.5 15a6 6 0 0 1 0-6M16.5 9a6 6 0 0 1 0 6"/><circle cx="12" cy="12" r="1.8"/><path d="M3 3l18 18"/>',
+    "app_debug": '<rect x="7" y="7" width="10" height="13" rx="5"/><path d="M12 7V4M9 4.5l1.5 2.5M15 4.5L13.5 7M7 12H3M21 12h-4M7 16l-3 2M17 16l3 2M7 9L4 7M17 9l3-2M12 11v6"/>',
     "app_waypoints": '<circle cx="5" cy="19" r="2"/><circle cx="12" cy="11" r="2"/><circle cx="19" cy="5" r="2"/><path d="M6.4 17.6l4.2-5.2M13.4 9.6l4.2-3.2" stroke-dasharray="2 2"/>',
     "app_map": '<path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>',
     "app_chat": '<path d="M4 4h16v11H9l-5 4v-4H4z"/><path d="M8 9h8M8 12h5"/>',

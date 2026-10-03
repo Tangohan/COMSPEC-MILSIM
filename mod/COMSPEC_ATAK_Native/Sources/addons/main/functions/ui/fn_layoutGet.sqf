@@ -78,6 +78,6 @@ createHashMapFromArray [
     ["inspW", _inspW],
     ["font", _font],
     ["fontSmall", _font * 0.78],
-    ["cols", [[6, 4] select _mini, 3] select (!_land)],
+    ["cols", (([[6, 4] select _mini, 3] select (!_land)) + (profileNamespace getVariable ["COMSPEC_ATAK_IconDensity", 0])) max 2],
     ["pad", _pad]
 ]
