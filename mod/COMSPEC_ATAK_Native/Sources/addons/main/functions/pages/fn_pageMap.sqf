@@ -236,8 +236,11 @@ if (_interactive && {_sel isNotEqualTo ""} && {(markerShape _sel) isNotEqualTo "
     };
 };
 
-// Éditeur de marqueur
-if (_interactive && {(count (_s getOrDefault ["markerEdit", createHashMap])) > 0}) then {
+// Éditeur de marqueur. La carte est figée pendant l'édition : sinon elle garde la molette (zoom)
+// et le formulaire ne défile pas.
+private _editing = _interactive && {(count (_s getOrDefault ["markerEdit", createHashMap])) > 0};
+((([] call comspec_atak_native_fnc_display)) displayCtrl 88530) ctrlEnable !_editing;
+if (_editing) then {
     private _ew = [_mw * 0.42, _mw] select (_l get "mini");
     [[_bx + _mw - _ew, _by, _ew, _bh]] call comspec_atak_native_fnc_markerEditor;
 };

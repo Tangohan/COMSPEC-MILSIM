@@ -5,6 +5,9 @@
     Params : [position, chiffres (profil COMSPEC_ATAK_GridDigits, 6 par défaut)]
 */
 params ["_pos", ["_digits", profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6]]];
+// Accepte aussi un objet (pièce, unité) : sinon « _pos params » plantait et la page entière ne se dessinait plus.
+if (_pos isEqualType objNull) then { _pos = getPosASL _pos; };
+if !(_pos isEqualType [] && {(count _pos) >= 2}) exitWith { "" };
 private _g = mapGridPosition _pos;
 if (_digits <= 6 || {(count _g) isNotEqualTo 6}) exitWith { _g };
 _pos params ["_x", "_y"];

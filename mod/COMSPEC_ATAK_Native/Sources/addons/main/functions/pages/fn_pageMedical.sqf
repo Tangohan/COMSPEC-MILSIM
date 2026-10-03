@@ -11,11 +11,21 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _bridge = [] call comspec_atak_native_fnc_bridge;
 private _canTriage = _bridge && {!isNil "comspec_overwatch_connect_fnc_canTriageMedical"} && {[] call comspec_overwatch_connect_fnc_canTriageMedical};
 private _sel = _s getOrDefault ["medSel", ""];
-private _rows = [];
+private _tab = _s getOrDefault ["medTab", "ALERTS"];
+private _alertsAll = (missionNamespace getVariable ["COMSPEC_MedicalAlerts", []]) select { _x isEqualType createHashMap };
+private _open = { (_x getOrDefault ["triage_status", "a_secourir"]) in ["a_secourir", "en_cours"] } count _alertsAll;
+// Onglets : une seule chose à l'écran à la fois.
+private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['medTab', '%1']; [{ ['MEDICAL'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _tab isEqualTo _k] };
+private _rows = [["segment", "", [
+    [["ALERTES", format ["ALERTES (%1)", _open]] select (_open > 0), "ALERTS"] call _tabBtn,
+    ["TROUPES", "TROOPS"] call _tabBtn,
+    ["MEDEVAC", "MEDEVAC"] call _tabBtn
+]], ["gap"]];
+if (_tab isEqualTo "ALERTS") then {
 
 // Alertes Athena
 _rows pushBack ["section", "Alertes médicales", ["Liaison Athena requise", ["Lecture seule : triage réservé aux médecins et chefs d'équipe", "Touchez une alerte pour la trier"] select _canTriage] select _bridge];
-private _alerts = (missionNamespace getVariable ["COMSPEC_MedicalAlerts", []]) select { _x isEqualType createHashMap };
+private _alerts = _alertsAll;
 if ((count _alerts) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucune alerte active.</t>"]; };
 {
     private _id = str (_x getOrDefault ["id", ""]);
@@ -42,7 +52,10 @@ if ((count _alerts) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a
     };
 } forEach _alerts;
 
+};
+
 // Demande MEDEVAC 9-line (Overwatch connect → Athena, repère LZ sur la carte)
+if (_tab isEqualTo "MEDEVAC") then {
 private _m = uiNamespace getVariable ["COMSPEC_ATAK_Medevac", createHashMap];
 private _mv = { params ["_k", "_d"]; _m getOrDefault [_k, _d] };
 private _seg = {
@@ -53,9 +66,9 @@ private _seg = {
 _rows append [
     ["section", "Demande MEDEVAC", "9-line envoyé au poste, LZ marquée sur la carte"],
     ["Priorité", "prio", "URGENT", [["URGENT", "URGENT"], ["PRIORITAIRE", "PRIORITY"], ["ROUTINE", "ROUTINE"]]] call _seg,
-    ["edit", "mT1", "Blessés urgents (T1)", ["mT1", "1"] call _mv],
-    ["edit", "mT2", "Blessés prioritaires (T2)", ["mT2", "0"] call _mv],
-    ["edit", "mT3", "Blessés différés (T3)", ["mT3", "0"] call _mv],
+    ["Blessés urgents (T1)", "mT1", "1", [["0", "0"], ["1", "1"], ["2", "2"], ["3", "3"], ["4+", "4"]]] call _seg,
+    ["Blessés prioritaires (T2)", "mT2", "0", [["0", "0"], ["1", "1"], ["2", "2"], ["3", "3"], ["4+", "4"]]] call _seg,
+    ["Blessés différés (T3)", "mT3", "0", [["0", "0"], ["1", "1"], ["2", "2"], ["3", "3"], ["4+", "4"]]] call _seg,
     ["Sécurité de la LZ", "sec", "NO_ENEMY", [["PAS D'ENNEMI", "NO_ENEMY"], ["POSSIBLE", "POSSIBLE_ENEMY"], ["ENNEMI", "ENEMY_IN_AREA"], ["ESCORTE", "ARMED_ESCORT"]]] call _seg,
     ["Marquage", "mark", "SMOKE", [["FUMÉE", "SMOKE"], ["PANNEAU", "PANEL"], ["PYRO", "PYRO"], ["AUCUN", "NONE"]]] call _seg,
     ["Couleur", "col", "GREEN", [["VERT", "GREEN"], ["ROUGE", "RED"], ["JAUNE", "YELLOW"], ["VIOLET", "PURPLE"]]] call _seg,
@@ -64,7 +77,10 @@ _rows append [
     ["buttons", [["DEMANDER LE MEDEVAC", { ["medevac"] call comspec_atak_native_fnc_medicalAction; }, true], ["LZ À MA POSITION", { ["lzHere"] call comspec_atak_native_fnc_medicalAction; }]]]
 ];
 
+};
+
 // Suivi des troupes (état ACE lu localement)
+if (_tab isEqualTo "TROOPS") then {
 _rows pushBack ["section", "Suivi des troupes", "Camp allié, les plus graves en premier"];
 private _rank = createHashMapFromArray [["cardiac_arrest", 0], ["unconscious", 1], ["critical", 2], ["wounded", 3], ["stable", 4]];
 private _list = [];
@@ -81,5 +97,7 @@ _list sort true;
     _rows pushBack ["text", format ["<t color='%1' font='RobotoCondensedBold'>%2</t>  %3  <t size='0.8' color='#8a9a93'>sang %4 %% · pouls %5 · %6 m · %7</t>",
         _lab select 1, _lab select 0, [_u, true] call comspec_atak_native_fnc_unitCallsign, _blood, _hr, round (player distance _u), [getPosASL _u, 6] call comspec_atak_native_fnc_gridRef]];
 } forEach _list;
+if ((count _list) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun joueur allié.</t>"]; };
+};
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 true

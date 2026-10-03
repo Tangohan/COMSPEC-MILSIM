@@ -34,8 +34,13 @@ uiNamespace setVariable ["COMSPEC_ATAK_Avatars", _cache];
     };
     private _dl = (["COMSPECExtension" callExtension ["DownloadBriefingSlideImage", [_url, "avatar_" + _uid]]] call _res) splitString "|";
     if ((_dl param [0, ""]) isNotEqualTo "OK" || {(_dl param [1, ""]) isEqualTo ""}) exitWith {};
+    // Chemin local normalisé (\ → /) comme pour les diapositives ; Arma n'affiche que .jpg / .paa :
+    // sinon on garde le logo (une photo PNG laissait un cadre vide).
+    private _p = ((_dl select 1) splitString (toString [92])) joinString "/";
+    private _lp = toLower _p;
+    if !((_lp select [(count _lp) - 4]) in [".jpg", "jpeg", ".paa"]) exitWith {};
     private _cache = uiNamespace getVariable ["COMSPEC_ATAK_Avatars", createHashMap];
-    _cache set [_uid, [_dl select 1, diag_tickTime]];
+    _cache set [_uid, [_p, diag_tickTime]];
     uiNamespace setVariable ["COMSPEC_ATAK_Avatars", _cache];
     // Redessiner la page qui attend l'image.
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
