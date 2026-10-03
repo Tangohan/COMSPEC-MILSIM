@@ -32,7 +32,7 @@ private _hum = if (!isNil "ace_weather_currentHumidity") then { ace_weather_curr
 private _alt = (getPosASL player) select 2;
 private _press = if (!isNil "ace_weather_fnc_calculateBarometricPressure") then { [_alt] call ace_weather_fnc_calculateBarometricPressure } else { 1013.25 * (1 - 0.0065 * _alt / 288.15) ^ 5.255 };
 private _aceWx = !isNil "ace_weather_fnc_calculateBarometricPressure";
-private _sun = date call BIS_fnc_sunriseSunsetTime;
+private _sun = [date] call BIS_fnc_sunriseSunsetTime;
 _sun params [["_rise", -1], ["_set", -1]];
 private _night = sunOrMoon < 0.5;
 

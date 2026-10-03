@@ -1,7 +1,12 @@
 /* Envoie la note de reco par Overwatch (repère d'équipe + Athena). */
 [] call comspec_atak_native_fnc_recoDraftSave;
 private _d = uiNamespace getVariable ["COMSPEC_ATAK_RecoDraft", createHashMap];
-private _pos = if ((_d getOrDefault ["where", "look"]) isEqualTo "me") then { getPosASL player } else { [] call comspec_overwatch_connect_fnc_reconLookPos };
+private _grid = ((_d getOrDefault ["grid", ""]) splitString " ") joinString "";
+private _pos = getPosASL player;
+if (_grid isNotEqualTo "") then {
+    private _p = ([_grid] call BIS_fnc_gridToPos) param [0, []];
+    if ((count _p) >= 2) then { _pos = [_p select 0, _p select 1, getTerrainHeightASL [_p select 0, _p select 1]]; };
+};
 private _ok = [trim (_d getOrDefault ["text", ""]), _d getOrDefault ["tag", "other"], _d getOrDefault ["confidence", "vu_direct"], _pos] call comspec_overwatch_connect_fnc_reconPushNote;
 if (_ok isEqualTo true) then {
     _d set ["text", ""];

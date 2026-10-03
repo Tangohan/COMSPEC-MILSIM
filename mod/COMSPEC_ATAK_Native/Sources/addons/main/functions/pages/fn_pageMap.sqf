@@ -161,15 +161,19 @@ if (_interactive) then {
         private _sh = _fs * 1.9;
         private _si = _sh / _ratio;
         private _n = count ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["units", createHashMap]);
-        private _sw = if (_open) then { (_l get "inspW") - _pad } else { (_si + _fs * 5.6 / _ratio) max (_iw + _pad) };
+        // Replié : simple icône œil, comme les outils ; ouvert : bandeau REPLIER en tête du panneau.
+        private _sw = if (_open) then { (_l get "inspW") - _pad } else { _iw };
         private _sx = if (_open) then { _bx + _bw - (_l get "inspW") + _pad / 2 } else { _tx + _iw + _pad / 2 - _sw };
         private _sy = if (_open) then { _by + _pad / 2 } else { _ty0 + _ih * (count _tools) + _pad * 1.5 };
+        if (!_open) then { _sh = _ih; _si = _iw; };
         private _sbg = ["COMSPEC_RscMapPanel", [_sx, _sy, _sw, _sh]] call _mk;
         if (_open) then { _sbg ctrlSetBackgroundColor [0.10, 0.20, 0.12, 0.92]; };
-        private _sic = ["COMSPEC_RscIcon", [_sx, _sy, _si, _sh], _dir + "app_intel.paa"] call _mk;
+        private _sic = ["COMSPEC_RscIcon", [_sx + (_si * 0.15), _sy + (_sh * 0.15), _si * 0.7, _sh * 0.7], _dir + "app_intel.paa"] call _mk;
         _sic ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _open);
-        private _slb = ["COMSPEC_RscStructuredText", [_sx + _si, _sy + _sh * 0.2, _sw - _si, _sh * 0.8]] call _mk;
-        _slb ctrlSetStructuredText parseText (if (_open) then { "<t font='RobotoCondensedBold' size='0.85' color='#5cc76b'>SITUATION</t><t size='0.85' color='#8a9a93' align='right'>REPLIER ›</t>" } else { format ["<t font='RobotoCondensedBold' size='0.85'>SITUATION</t> <t size='0.75' color='#5cc76b'>%1</t>", _n] });
+        if (_open) then {
+            private _slb = ["COMSPEC_RscStructuredText", [_sx + _si, _sy + _sh * 0.2, _sw - _si, _sh * 0.8]] call _mk;
+            _slb ctrlSetStructuredText parseText "<t font='RobotoCondensedBold' size='0.85' color='#5cc76b'>SITUATION</t><t size='0.85' color='#8a9a93' align='right'>REPLIER</t>";
+        };
         private _sb = ["COMSPEC_RscButtonOverlay", [_sx, _sy, _sw, _sh]] call _mk;
         _sb ctrlSetTooltip (["Afficher le panneau SITUATION (unités, contacts, sélection)", "Replier le panneau SITUATION"] select _open);
         _sb ctrlAddEventHandler ["ButtonClick", { [] call comspec_atak_native_fnc_inspToggle; }];
