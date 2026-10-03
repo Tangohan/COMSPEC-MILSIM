@@ -12,7 +12,7 @@ private _keep = {
     { if (_x in _form) then { _d set [_x, [_x] call comspec_atak_native_fnc_formValue]; }; } forEach ["target", "grid", "text", "sit", "mis", "exe", "sup", "cmd"];
     uiNamespace setVariable ["COMSPEC_ATAK_OrderDraft", _d];
 };
-private _redraw = { [{ ["TASKS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+private _redraw = { [{ ["TASK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
 switch (toLower _action) do {
     case "open": {
         if !([] call comspec_atak_native_fnc_bridge) exitWith { ["WARNING", "Ordres indisponibles : Overwatch connect absent", 3, 30] call comspec_atak_native_fnc_notify; };

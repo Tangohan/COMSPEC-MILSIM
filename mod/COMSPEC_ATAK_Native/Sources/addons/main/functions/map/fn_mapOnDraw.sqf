@@ -142,9 +142,17 @@ if ((count _wpts) > 0) then {
     };
 } forEach (_data getOrDefault ["routes",[]]);
 
-{
-    if ((count _x) >= 3) then { _map drawPolygon [_x,[0.95,0.67,0.20,0.18]]; };
-} forEach (_data getOrDefault ["zones",[]]);
+if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
+    {
+        if ((count _x) >= 3) then { _map drawPolygon [_x,[0.95,0.67,0.20,0.18]]; };
+    } forEach (_data getOrDefault ["zones",[]]);
+} else {
+    // Calque masqué : Overwatch recrée ses marqueurs de zone à chaque synchro, on les remasque.
+    if (diag_tickTime > (uiNamespace getVariable ["COMSPEC_ATAK_ZonesHideAt", 0])) then {
+        uiNamespace setVariable ["COMSPEC_ATAK_ZonesHideAt", diag_tickTime + 2];
+        { if ((_x select [0, 11]) isEqualTo "COMSPEC_TZ_" && {(markerAlpha _x) > 0}) then { _x setMarkerAlphaLocal 0; }; } forEach allMapMarkers;
+    };
+};
 
 private _amber = [0.95,0.67,0.20,1];
 private _yellow = [1,0.92,0.15,0.95];

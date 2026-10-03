@@ -35,6 +35,8 @@ switch (_page) do {
     case "OSINT": { [] call comspec_atak_native_fnc_pageOsint; };
     case "CREDITS": { [] call comspec_atak_native_fnc_pageCredits; };
     case "BDA": { [] call comspec_atak_native_fnc_pageBda; };
+    case "SSE": { [] call comspec_atak_native_fnc_pageSse; };
+    case "C2": { [] call comspec_atak_native_fnc_pageC2; };
     case "MUSIC": { [] call comspec_atak_native_fnc_pageMusic; };
     case "GPS": { [] call comspec_atak_native_fnc_pageGps; };
     case "WAYPOINTS": { [] call comspec_atak_native_fnc_pageWaypoints; };
