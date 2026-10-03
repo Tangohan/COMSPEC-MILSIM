@@ -108,7 +108,14 @@ if (_src isEqualTo "ATHENA" && {_total > 0}) then {
 };
 
 private _btnH = _rowH;
-private _foot = _btnH + _fs * 1.6 + _pad * 2;
+// Présentation en direct (Athena) : bandeau présentateur / présents et notes de la diapositive.
+private _live = if (_src isEqualTo "ATHENA") then { ["get"] call comspec_atak_native_fnc_briefingLive } else { [] };
+private _iPresent = (_live param [0, objNull]) isEqualTo player;
+private _follow = _s getOrDefault ["briefFollow", true];
+private _detail = if (_src isEqualTo "ATHENA" && {_total > 0}) then { ((missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) select _idx) param [4, ""] } else { "" };
+private _liveH = [0, _fs * 1.5 + _pad / 2] select (_src isEqualTo "ATHENA" && {_total > 0});
+private _notesH = [0, _fs * 3.4] select (_detail isNotEqualTo "");
+private _foot = _btnH + _fs * 1.6 + _pad * 2 + _liveH + _notesH;
 private _listW = [0, _gw * 0.28] select (_land && {_total > 1});
 private _vx = _pad + ([0, _listW + _pad] select (_listW > 0));
 private _vy = _y0 + ([0, _rowH + _pad] select (!_land && {_total > 1}));
@@ -152,6 +159,31 @@ private _title = if (_total > 0) then { _titles param [_idx, ""] } else { "" };
 private _srcLabel = createHashMapFromArray [["GOOGLE", "Google Slides · synchronisé"], ["ATHENA", "Athena"], ["LOCAL", "Briefing"]] getOrDefault [_src, ""];
 private _info = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh + _pad / 2, _vw, _fs * 1.6]] call comspec_atak_native_fnc_pageCtrl;
 _info ctrlSetStructuredText parseText format ["<t font='RobotoCondensedBold'>%1</t><t align='right' size='0.85' color='#8a9a93'>%2 · %3 / %4</t>", _title, _srcLabel, [_idx + 1, 0] select (_total < 1), _total];
+
+// Notes de la diapositive (texte saisi sur Athena).
+if (_notesH > 0) then {
+    private _nt = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh + _pad / 2 + _fs * 1.6, _vw, _notesH]] call comspec_atak_native_fnc_pageCtrl;
+    private _e = _detail;
+    { _e = [_e, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]];
+    _nt ctrlSetStructuredText parseText format ["<t size='0.85' color='#c9d4cf'>%1</t>", [_e, " ¶ ", "<br/>"] call CBA_fnc_replace];
+};
+// Bandeau de présentation : qui présente, présents, PRÉSENTER / SUIVRE.
+if (_liveH > 0) then {
+    private _ly = _bh - _btnH - _pad - _liveH;
+    private _txt = switch (true) do {
+        case (_iPresent): { private _a = ["attendees"] call comspec_atak_native_fnc_briefingLive; format ["<t color='#5cc76b' font='RobotoCondensedBold'>● VOUS PRÉSENTEZ</t>  <t size='0.85' color='#8a9a93'>%1 présent(s)%2</t>", count _a, ["", format [" : %1", ((_a select [0, 6]) apply { name _x }) joinString ", "]] select ((count _a) > 0)] };
+        case ((count _live) > 0): { format ["<t color='#f2ab33' font='RobotoCondensedBold'>● %1 présente</t>  <t size='0.85' color='#8a9a93'>%2</t>", _live select 1, ["lecture libre", "vous suivez"] select _follow] };
+        default { "<t size='0.85' color='#8a9a93'>Personne ne présente. PRÉSENTER fait suivre vos diapositives aux téléphones de votre camp.</t>" };
+    };
+    private _lt = ["COMSPEC_RscStructuredText", [_vx, _ly, _vw * 0.66, _liveH]] call comspec_atak_native_fnc_pageCtrl;
+    _lt ctrlSetStructuredText parseText _txt;
+    private _lw = _vw * 0.34 - _pad / 2;
+    if ((count _live) > 0 && {!_iPresent}) then {
+        [[_vx + _vw - _lw, _ly, _lw, _fs * 1.5], ["SUIVRE", "SUIVI ✓"] select _follow, { ["follow"] call comspec_atak_native_fnc_briefingAction; }, _follow] call _btn;
+    } else {
+        [[_vx + _vw - _lw, _ly, _lw, _fs * 1.5], ["PRÉSENTER", "ARRÊTER"] select _iPresent, { ["present"] call comspec_atak_native_fnc_briefingAction; }, _iPresent] call _btn;
+    };
+};
 
 // Navigation
 private _by = _bh - _btnH - _pad;

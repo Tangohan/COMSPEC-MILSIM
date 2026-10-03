@@ -236,11 +236,14 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     if ((_s getOrDefault ["activePage", ""]) isNotEqualTo "BRIEFING" || {(_s getOrDefault ["briefTab", "SLIDES"]) isEqualTo "MISSION"}) exitWith {};
     if (isNull ([] call comspec_atak_native_fnc_display)) exitWith {};
-    private _sig = ([] call comspec_atak_native_fnc_briefingSignature) select [0, 4];
+    private _sig = (([] call comspec_atak_native_fnc_briefingSignature) select [0, 4]) + [["get"] call comspec_atak_native_fnc_briefingLive, count (["attendees"] call comspec_atak_native_fnc_briefingLive)];
     if (_sig isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BriefSig", []])) exitWith {};
     uiNamespace setVariable ["COMSPEC_ATAK_BriefSig", _sig];
     ["BRIEFING"] call comspec_atak_native_fnc_pageRender;
 }, 1] call CBA_fnc_addPerFrameHandler;
+
+// Briefing présenté en direct : suivre le présentateur de mon camp, signaler ma présence.
+[{ ["tick"] call comspec_atak_native_fnc_briefingLive; }, 2] call CBA_fnc_addPerFrameHandler;
 
 // App Musique : son du lecteur et des haut-parleurs voisins ; coupé en quittant la partie (la DLL jouerait encore au menu).
 [{ [] call comspec_atak_native_fnc_musicTick; }, 0.5] call CBA_fnc_addPerFrameHandler;

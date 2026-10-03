@@ -5578,7 +5578,11 @@ public static partial class Extension
                 var imageUrl = el.TryGetProperty("image_url", out var u) ? (u.GetString() ?? "") : "";
                 if (imageUrl.Length == 0) continue;
                 title = title.Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
-                sb.Append(id).Append('\t').Append(title).Append('\t').Append(sortOrder).Append('\t').Append(imageUrl).Append('\n');
+                // 5e colonne : notes de la diapositive (detail), sauts de ligne en " ¶ ", 300 caractères au plus (sortie DLL limitée).
+                var detail = el.TryGetProperty("detail", out var dt) && dt.ValueKind == JsonValueKind.String ? (dt.GetString() ?? "") : "";
+                detail = detail.Replace("\t", " ").Replace("\r", "").Replace("\n", " ¶ ").Replace("|", "/").Trim();
+                if (detail.Length > 300) detail = detail.Substring(0, 300) + "…";
+                sb.Append(id).Append('\t').Append(title).Append('\t').Append(sortOrder).Append('\t').Append(imageUrl).Append('\t').Append(detail).Append('\n');
             }
             return sb.ToString();
         }
