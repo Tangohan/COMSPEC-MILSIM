@@ -26,8 +26,11 @@ private _members = units group player;
     private _u = _x;
     private _role = getText (configOf _u >> "displayName");
     private _i = _list lbAdd format ["%1   %2", name _u, _role];
-    _list lbSetPicture [_i, [_u, "texture"] call BIS_fnc_rankParams];
-    _list lbSetPictureColor [_i, [0.86, 0.90, 0.88, 1]];
+    // Photo de profil Athena si disponible, sinon le grade.
+    private _avatar = [_u] call comspec_atak_native_fnc_avatarPath;
+    _list lbSetPicture [_i, [_avatar, [_u, "texture"] call BIS_fnc_rankParams] select (_avatar isEqualTo "")];
+    _list lbSetPictureColor [_i, [[1, 1, 1, 1], [0.86, 0.90, 0.88, 1]] select (_avatar isEqualTo "")];
+    _list lbSetPictureColorSelected [_i, [1, 1, 1, 1]];
     _list lbSetTextRight [_i, if (_u isEqualTo player) then { "moi" } else { format ["%1 m", round (_u distance2D player)] }];
     private _state = switch (true) do {
         case (!alive _u): { [[0.88, 0.25, 0.22, 1], "Mort"] };

@@ -36,6 +36,7 @@ private _rows = [
     ["title", "Téléphone"],
     ["toggle", "Vibrer à chaque nouveau message", ["COMSPEC_ATAK_Vibrate", true] call _prof, { (_this select 0) setVariable ["setting", "COMSPEC_ATAK_Vibrate"]; [_this select 0] call (uiNamespace getVariable "COMSPEC_ATAK_ProfToggle"); }],
     ["toggle", "Indicatifs sur la carte", ["COMSPEC_ATAK_Labels", true] call _prof, { (_this select 0) setVariable ["setting", "COMSPEC_ATAK_Labels"]; [_this select 0] call (uiNamespace getVariable "COMSPEC_ATAK_ProfToggle"); }],
+    ["toggle", "Cartouches des marqueurs (nom, E / N)", ["COMSPEC_ATAK_MarkerTags", true] call _prof, { (_this select 0) setVariable ["setting", "COMSPEC_ATAK_MarkerTags"]; [_this select 0] call (uiNamespace getVariable "COMSPEC_ATAK_ProfToggle"); }],
     ["toggle", "Boussole sur la carte", ["COMSPEC_ATAK_Compass", true] call _prof, { (_this select 0) setVariable ["setting", "COMSPEC_ATAK_Compass"]; [_this select 0] call (uiNamespace getVariable "COMSPEC_ATAK_ProfToggle"); }],
     ["title", "Fond d'écran"],
     ["buttons", [["AUCUN", "none"], ["ATHENA", "athena"], ["OPS", "ops"]] apply {

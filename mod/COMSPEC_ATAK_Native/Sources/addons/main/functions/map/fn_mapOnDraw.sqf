@@ -146,3 +146,59 @@ if ((count _stroke) > 0) then {
     if ((count _rgba) < 4) then { _rgba = [0.9,0.1,0.1,1]; };
     for "_i" from 0 to ((count _stroke) - 2) do { _map drawLine [_stroke select _i,_stroke select (_i + 1),_rgba]; };
 };
+
+// Cartouches des marqueurs (style plan de mission) : cercle de couleur + boîte noire « nom / E / N ».
+// Seuls les marqueurs posés par les joueurs ou Athena et ayant un titre ; réglage profil COMSPEC_ATAK_MarkerTags.
+private _pool = uiNamespace getVariable ["COMSPEC_ATAK_MarkerTagPool", []];
+private _used = 0;
+if (profileNamespace getVariable ["COMSPEC_ATAK_MarkerTags", true]) then {
+    private _disp = ctrlParent _map;
+    private _mp = ctrlPosition _map;
+    private _gridCache = uiNamespace getVariable ["COMSPEC_ATAK_TagGridCache", createHashMap];
+    private _fs = ((_mp select 3) * 0.032) max (safeZoneH * 0.011);
+    {
+        if (_used >= 30) then { break };
+        private _m = _y;
+        private _id = _m getOrDefault ["id", _x];
+        private _title = _m getOrDefault ["text", ""];
+        if (_title isEqualTo "") then { continue };
+        if ((_m getOrDefault ["local", false]) && {(_id find "_USER_DEFINED") < 0}) then { continue };
+        if ((toUpper (_m getOrDefault ["shape", "ICON"])) in ["POLYLINE", "RECTANGLE", "ELLIPSE"]) then { continue };
+        private _pos = _m getOrDefault ["position", []];
+        if ((count _pos) < 2) then { continue };
+        private _sp = _map ctrlMapWorldToScreen _pos;
+        if ((_sp select 0) < (_mp select 0) || {(_sp select 0) > ((_mp select 0) + (_mp select 2))} || {(_sp select 1) < (_mp select 1)} || {(_sp select 1) > ((_mp select 1) + (_mp select 3))}) then { continue };
+        private _rgba = (getArray (configFile >> "CfgMarkerColors" >> (_m getOrDefault ["color", "ColorBlack"]) >> "color")) apply { if (_x isEqualType "") then { call compile _x } else { _x } };
+        if ((count _rgba) < 4) then { _rgba = [0.1, 0.1, 0.1, 1]; };
+        _rgba set [3, 1];
+        private _r = (_scale * 900) max 12;
+        _map drawEllipse [_pos, _r, _r, 0, _rgba, ""];
+        _map drawEllipse [_pos, _r * 0.93, _r * 0.93, 0, _rgba, ""];
+        // Coordonnées : grille 10 chiffres coupée en E / N, mises en cache par position.
+        private _key = format ["%1|%2|%3", _id, round (_pos select 0), round (_pos select 1)];
+        private _g = _gridCache getOrDefault [_key, ""];
+        if (_g isEqualTo "") then {
+            _g = [_pos, 10] call comspec_atak_native_fnc_gridRef;
+            _gridCache set [_key, _g];
+        };
+        (_g splitString " ") params [["_e", ""], ["_n", ""]];
+        private _c = _pool param [_used, controlNull];
+        if (isNull _c) then {
+            _c = _disp ctrlCreate ["COMSPEC_RscStructuredText", -1];
+            _pool set [_used, _c];
+        };
+        _c ctrlSetBackgroundColor [0.02, 0.02, 0.02, 0.86];
+        _c ctrlSetStructuredText parseText format ["<t size='%4' font='RobotoCondensedBold' color='#ffffff'>%1<br/>%2E<br/>%3N</t>", toUpper ([_title, "<", "&lt;"] call CBA_fnc_replace), _e, _n, 1];
+        _c ctrlSetFontHeight _fs;
+        private _w = (_fs * 0.42 * (((count _title) max 9) + 1)) max (_fs * 4);
+        private _ringPx = (_map ctrlMapWorldToScreen [(_pos select 0) + _r, _pos select 1]) select 0;
+        _c ctrlSetPosition [_ringPx + _fs * 0.3, (_sp select 1) - _fs * 0.2, _w, _fs * 3.3];
+        _c ctrlShow true;
+        _c ctrlCommit 0;
+        _used = _used + 1;
+    } forEach (_data getOrDefault ["markers", createHashMap]);
+    if ((count _gridCache) > 400) then { _gridCache = createHashMap; };
+    uiNamespace setVariable ["COMSPEC_ATAK_TagGridCache", _gridCache];
+};
+for "_i" from _used to ((count _pool) - 1) do { (_pool select _i) ctrlShow false; };
+uiNamespace setVariable ["COMSPEC_ATAK_MarkerTagPool", _pool select { !isNull _x }];
