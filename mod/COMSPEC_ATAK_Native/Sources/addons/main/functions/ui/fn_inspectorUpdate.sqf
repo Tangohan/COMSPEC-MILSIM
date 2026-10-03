@@ -16,10 +16,20 @@ if ((count _e) isEqualTo 0) then {
     private _units = values ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["units", createHashMap]);
     private _fr = { (_x getOrDefault ["affiliation", ""]) isEqualTo "friend" } count _units;
     private _ho = { (_x getOrDefault ["affiliation", ""]) isEqualTo "hostile" } count _units;
-    _text = format ["<t size='0.9'>%1 %2<br/>%3 %4<br/>%5 pluie %6 %%, vent %7 m/s<br/>%8 %9<br/>%10 %11 allié(s) · %12 contact(s)</t><br/><br/><t size='0.8' color='#8a9a93'>Cliquez sur une unité pour sa fiche.</t>",
-        "Mission :" call _dim, worldName, "Réseau :" call _dim, _s getOrDefault ["networkState", "OFFLINE"],
-        "Météo :" call _dim, round (rain * 100), round (vectorMagnitude wind), "Groupe :" call _dim, groupId group player,
-        "Carte :" call _dim, _fr, _ho];
+    // Résumé : une ligne par mesure, libellé à gauche, valeur alignée à droite.
+    private _net = _s getOrDefault ["networkState", "OFFLINE"];
+    private _netTxt = createHashMapFromArray [["CONNECTED", "<t color='#5cc76b'>connecté</t>"], ["DEGRADED", "<t color='#f2ab33'>dégradé</t>"]] getOrDefault [_net, "<t color='#e5483a'>hors ligne</t>"];
+    private _w = wind;
+    private _from = (((_w select 0) atan2 (_w select 1)) + 180) mod 360;
+    private _kv = { params ["_k", "_v"]; format ["<t align='left' color='#8a9a93'>%1</t><t align='right'>%2</t>", _k, _v] };
+    private _tile = { params ["_n", "_lab", "_col"]; format ["<t size='1.6' font='RobotoCondensedBold' color='%3'>%1</t><t size='0.8' color='#8a9a93'> %2</t>", _n, _lab, _col] };
+    _text = format ["<t size='0.85'>%1   %2<br/><br/>%3<br/>%4<br/>%5<br/>%6<br/>%7</t><br/><br/><t size='0.75' color='#8a9a93'>Cliquez sur une unité pour sa fiche.</t>",
+        [_fr, "alliés", "#47b3ff"] call _tile, [_ho, "contacts", ["#8a9a93", "#e5483a"] select (_ho > 0)] call _tile,
+        ["Réseau", _netTxt] call _kv,
+        ["Groupe", groupId group player] call _kv,
+        ["Terrain", worldName] call _kv,
+        ["Heure", [dayTime, "HH:MM"] call BIS_fnc_timeToString] call _kv,
+        ["Météo", format ["pluie %1 %% · vent %2 m/s du %3", round (rain * 100), round (vectorMagnitude [_w select 0, _w select 1, 0]), [_from] call _card]] call _kv];
 } else {
     private _p = _e getOrDefault ["position", [0, 0, 0]];
     private _o = _e getOrDefault ["object", objNull];
@@ -61,7 +71,15 @@ if ((count _e) isEqualTo 0) then {
     _text = format ["<t size='0.9'>%1</t>", _lines joinString "<br/>"];
 };
 // Deux lignes vides : le bandeau « SITUATION · REPLIER » recouvre le haut du panneau.
-(_d displayCtrl 88541) ctrlSetStructuredText parseText ("<t size='1.1'> </t><br/><br/>" + _text);
+private _ctl = _d displayCtrl 88541;
+_ctl ctrlSetStructuredText parseText ("<t size='1.1'> </t><br/><br/>" + _text);
+// Le texte s'arrête au-dessus des calques (posés en bas du panneau par fn_pageMap) au lieu de passer dessous.
+private _bottom = uiNamespace getVariable ["COMSPEC_ATAK_InspTextBottom", -1];
+if (_bottom > 0) then {
+    (ctrlPosition _ctl) params ["_cx", "_cy", "_cw"];
+    _ctl ctrlSetPosition [_cx, _cy, _cw, (_bottom - _cy) max 0];
+    _ctl ctrlCommit 0;
+};
 if ((count _e) > 0 && {([] call comspec_atak_native_fnc_layoutGet) get "mini"}) then {
     ["INFO", format ["%1 · %2", _e getOrDefault ["callsign", "CONTACT"], [_e getOrDefault ["position", [0, 0, 0]], 8] call comspec_atak_native_fnc_gridRef], 4, 20] call comspec_atak_native_fnc_notify;
 };

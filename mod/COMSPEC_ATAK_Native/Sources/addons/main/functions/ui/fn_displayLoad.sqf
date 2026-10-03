@@ -15,7 +15,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_ToastControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_BadgeSig", []];
 
-// Les raccourcis CBA ne passent pas quand le téléphone est en main : on reprend Ctrl+U / Ctrl+Maj+U ici.
+// Les raccourcis CBA ne passent pas quand le téléphone est en main : on reprend ici les touches « porter » et « interagir ».
 if (_interactive) then {
     _display displayAddEventHandler ["KeyDown", {
         params ["", "_key", "_shift", "_ctrl"];
@@ -30,12 +30,23 @@ if (_interactive) then {
             [_m] call comspec_atak_native_fnc_markerDelete;
             true
         };
-        if (_key isEqualTo 0x16 && {_ctrl}) exitWith {
-            if (_shift) then {
-                [{ [] call comspec_atak_native_fnc_interactToggle; }] call CBA_fnc_execNextFrame;
-            } else {
-                [{ [] call comspec_atak_native_fnc_hudToggle; }] call CBA_fnc_execNextFrame;
-            };
+        // Mêmes touches que les raccourcis CBA (y compris si le joueur les a changées).
+        params ["", "", "", "", "_alt"];
+        private _hit = {
+            params ["_action", "_default"];
+            private _kb = ["COMSPEC ATAK", _action] call CBA_fnc_getKeybind;
+            private _bind = if (isNil "_kb") then { _default } else { _kb select 5 };
+            _bind params [["_k", -1], ["_mods", [false, false, false]]];
+            _k > 0 && {_k isEqualTo _key} && {_mods isEqualTo [_shift, _ctrl, _alt]}
+        };
+        if (["PhoneHold", [0x16, [true, true, false]]] call _hit) exitWith {
+            [{ [] call comspec_atak_native_fnc_interactToggle; }] call CBA_fnc_execNextFrame;
+            true
+        };
+        if (["PhoneZoomIn", [0xC9, [false, true, false]]] call _hit) exitWith { [0.7] call comspec_atak_native_fnc_mapZoom; true };
+        if (["PhoneZoomOut", [0xD1, [false, true, false]]] call _hit) exitWith { [1 / 0.7] call comspec_atak_native_fnc_mapZoom; true };
+        if (["PhoneCarry", [0x16, [false, true, false]]] call _hit) exitWith {
+            [{ [] call comspec_atak_native_fnc_hudToggle; }] call CBA_fnc_execNextFrame;
             true
         };
         false
