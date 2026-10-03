@@ -31,6 +31,10 @@ private _sim = ["COMSPEC ATAK natif", "Simulation"];
 ["comspec_atak_native_ew_open", "CHECKBOX",
     ["Guerre électronique ouverte à tous", "Coché : tout porteur de téléphone peut brouiller et goniométrer. Décoché : réservé aux unités COMSPEC_ATAK_EwOperator ou au rôle « guerre électronique / brouilleur / SIGINT »."],
     _sim, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_battery_sim", "CHECKBOX",
+    ["Batterie simulée", "La batterie du téléphone se vide selon l'usage (écran, live cam, GPS, brouilleur) et se recharge en véhicule moteur allumé. À 0 % le téléphone s'éteint et passe hors ligne dans le BFT."],
+    _sim, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_battery_drain", "SLIDER", ["Vitesse de décharge", "Multiplicateur de consommation de la batterie (1 = environ 3 h écran en main)."], _sim, [0.25, 4, 1, 2], 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_net_sim", "CHECKBOX",
     ["Débit réseau simulé", "Bâtiments, relief, véhicule, météo, brouilleurs, relais et dégâts réduisent le débit : messages et photos partent avec un délai, se perdent et repartent, ou attendent le retour du réseau."],
     _sim, true, 1] call CBA_fnc_addSetting;
