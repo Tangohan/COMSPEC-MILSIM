@@ -1,7 +1,8 @@
 /*
     Récupère la liste des diapositives de briefing actives depuis la plateforme (via l'extension
     native, fonction GetBriefingSlides) et la stocke dans missionNamespace ["COMSPEC_BriefingSlides"].
-    Chaque diapositive : [id, title, sortOrder, imageUrl, notes] (notes : texte saisi sur Athena, DLL récente).
+    Chaque diapositive : [id, title, sortOrder, imageUrl, notes, opération] (notes : texte saisi sur Athena ;
+    opération : « CODE · Nom » de l'opération Athena rattachée, vide pour une diapositive commune ; DLL 2.0.58+).
 
     Variable mission optionnelle : comspec_overwatch_tenant_id (si le serveur héberge plusieurs
     communautés ; laissez vide pour un déploiement mono-communauté).
@@ -39,7 +40,8 @@ private _googleUrl = "";
                     _cols select 1,
                     parseNumber (_cols select 2),
                     _cols select 3,
-                    _cols param [4, ""]
+                    _cols param [4, ""],
+                    _cols param [5, ""]
                 ];
             };
         };

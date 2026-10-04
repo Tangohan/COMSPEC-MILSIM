@@ -2,9 +2,18 @@
     SMS reçu (événement CBA comspec_atak_native_p2p, ou alerte du poste via athenaSignal).
     Params : [expéditeur, texte, heure, id (""), téléphone expéditeur (objNull), date "AAAA-MM-JJ" ("")]
     Avec un id, l'expéditeur reçoit un accusé « distribué » (puis « lu » quand la conversation est ouverte).
+    Téléphone sans réseau, éteint (batterie vide) ou absent : le SMS attend chez l'opérateur
+    (COMSPEC_ATAK_P2pInbox) et n'arrive, accusé compris, qu'au retour du signal (boucle de XEH_postInitClient).
+    7e paramètre interne : true pour livrer sans revérifier le signal (vidage de l'attente).
 */
-params [["_from", ""], ["_body", ""], ["_time", "--:--"], ["_id", ""], ["_sender", objNull], ["_date", ""]];
+params [["_from", ""], ["_body", ""], ["_time", "--:--"], ["_id", ""], ["_sender", objNull], ["_date", ""], ["_force", false]];
 if (!hasInterface || {_from isEqualTo ""}) exitWith {};
+if (!_force && {!([] call comspec_atak_native_fnc_p2pReachable)}) exitWith {
+    private _inbox = missionNamespace getVariable ["COMSPEC_ATAK_P2pInbox", []];
+    if (_id isEqualTo "" || {(_inbox findIf { (_x param [3, ""]) isEqualTo _id }) < 0}) then { _inbox pushBack [_from, _body, _time, _id, _sender, _date]; };
+    while {(count _inbox) > 100} do { _inbox deleteAt 0; };
+    missionNamespace setVariable ["COMSPEC_ATAK_P2pInbox", _inbox];
+};
 if (_date isEqualTo "") then { _date = [] call comspec_atak_native_fnc_p2pDate; };
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
 private _p2p = _data getOrDefault ["p2p", []];

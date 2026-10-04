@@ -93,7 +93,6 @@ ICONS = {
     "app_intel": '<path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     "app_wanted": '<rect x="3" y="3" width="18" height="18" rx="1"/><circle cx="12" cy="10" r="3.2"/><path d="M6.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6"/><path d="M3 7h3M18 7h3"/>',
     "app_aar": '<circle cx="13" cy="12" r="8"/><path d="M13 7v5l3 2"/><path d="M5 12H1.5M3 9.5L1.5 12 3 14.5"/>',
-    "app_diag": '<rect x="3" y="4" width="18" height="14" rx="1"/><path d="M5 12h3l2-4 3 7 2-3h4"/><path d="M9 21h6"/>',
     "app_sse": '<path d="M6 3h8l4 4v6"/><path d="M6 3v18h6"/><circle cx="16" cy="17" r="3"/><path d="M18.2 19.2L21 22"/>',
     "app_explo": '<path d="M9 21h6v-8H9z"/><path d="M12 13V9"/><path d="M12 9c0-3 3-3 4-5"/><path d="M17 2l.7 1.6L19.3 4l-1.6.7L17 6.3l-.7-1.6L14.7 4l1.6-.4z"/>',
     "app_breach": '<rect x="5" y="3" width="11" height="18" rx="1"/><circle cx="13" cy="12" r="1"/><path d="M19 8l2-2M19 12h3M19 16l2 2"/>',

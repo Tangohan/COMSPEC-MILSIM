@@ -15,6 +15,11 @@ private _trace = {
     if ((count _t) > 100) then { _t deleteAt 0; };
     missionNamespace setVariable ["COMSPEC_ATAK_NetLog", _t];
 };
+// Horodatage des émissions pour la consommation de batterie (fn_battery).
+private _txAt = missionNamespace getVariable ["COMSPEC_ATAK_NetTxAt", []];
+_txAt pushBack diag_tickTime;
+if ((count _txAt) > 50) then { _txAt deleteAt 0; };
+missionNamespace setVariable ["COMSPEC_ATAK_NetTxAt", _txAt];
 if !(_q get "sim") exitWith { ["IMMÉDIAT", "simulation coupée"] call _trace; _args call _code; "SENT" };
 if ((_q get "bars") isEqualTo 0) exitWith {
     private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];

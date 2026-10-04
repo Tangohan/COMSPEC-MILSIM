@@ -8,6 +8,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Repositories\OperationWorkspaceRepository;
 use App\Repositories\TacticalBriefingSlideCommentRepository;
 use App\Repositories\TacticalBriefingSlideRepository;
 use App\Repositories\TenantRepository;
@@ -28,10 +29,12 @@ final class AdminBriefingSlidesController
         private ?TacticalBriefingSlideRepository $slides = null,
         private ?TacticalBriefingSlideCommentRepository $comments = null,
         private ?AtakActivityLogService $activityLog = null,
+        private ?OperationWorkspaceRepository $operations = null,
     ) {
         $this->slides ??= new TacticalBriefingSlideRepository();
         $this->comments ??= new TacticalBriefingSlideCommentRepository();
         $this->activityLog ??= new AtakActivityLogService();
+        $this->operations ??= new OperationWorkspaceRepository();
     }
 
     public function index(Request $request, array $params = []): Response
@@ -74,6 +77,7 @@ final class AdminBriefingSlidesController
             'briefingPresenceUrl' => url('api/atak/briefing-presence') . '?tenant_id=' . $tenantId,
             'briefingCommentsBaseUrl' => url('api/atak/briefing-slides'),
             'briefingGoogleSlidesUrl' => $googleSlidesUrl,
+            'briefingOperations' => $this->operationOptions($tenantId),
         ]);
     }
 
@@ -141,6 +145,7 @@ final class AdminBriefingSlidesController
         $this->slides->insert($tenantId, [
             'title' => $title,
             'detail_text' => trim((string) $request->input('detail_text', '')),
+            'operation_id' => $this->resolveOperationId($tenantId, $request->input('operation_id', '')),
             'image_path' => $upload['path'],
             'sort_order' => (int) $request->input('sort_order', 0),
             'is_active' => $request->input('is_active') === '1' || $request->input('is_active') === 'on',
@@ -184,6 +189,7 @@ final class AdminBriefingSlidesController
         $this->slides->update($id, $tenantId, [
             'title' => trim((string) $request->input('title', '')),
             'detail_text' => trim((string) $request->input('detail_text', '')),
+            'operation_id' => $this->resolveOperationId($tenantId, $request->input('operation_id', '')),
             'image_path' => $imagePath,
             'sort_order' => (int) $request->input('sort_order', 0),
             'is_active' => $request->input('is_active') === '1' || $request->input('is_active') === 'on',
@@ -306,6 +312,57 @@ final class AdminBriefingSlidesController
         );
 
         return Response::redirect(url('back-office/atak/briefing-slides') . '#slide-' . $id);
+    }
+
+    /**
+     * Opérations proposées au rattachement (hors opérations clôturées / archivées).
+     *
+     * @return list<array{id: int, code: string, name: string, status: string}>
+     */
+    private function operationOptions(int $tenantId): array
+    {
+        try {
+            $rows = $this->operations->listForTenant($tenantId);
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($rows as $row) {
+            $status = strtolower(trim((string) ($row['status'] ?? '')));
+            if (in_array($status, ['closed', 'archived'], true)) {
+                continue;
+            }
+            $id = (int) ($row['id'] ?? 0);
+            if ($id < 1) {
+                continue;
+            }
+            $out[] = [
+                'id' => $id,
+                'code' => trim((string) ($row['code'] ?? '')),
+                'name' => trim((string) ($row['name'] ?? '')),
+                'status' => $status,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Opération rattachée à la diapositive : doit appartenir au tenant, sinon NULL (diapositive commune).
+     */
+    private function resolveOperationId(int $tenantId, mixed $raw): ?int
+    {
+        $id = (int) $raw;
+        if ($id < 1) {
+            return null;
+        }
+        try {
+            $row = $this->operations->findById($tenantId, $id);
+        } catch (\Throwable) {
+            $row = null;
+        }
+
+        return $row ? $id : null;
     }
 
     /** @return array{path: ?string, error: ?string} */

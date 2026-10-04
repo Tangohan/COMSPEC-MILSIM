@@ -188,6 +188,12 @@ if (_total < 1 || {_path isEqualTo ""}) then {
 // Titre, source et position
 private _title = if (_total > 0) then { _titles param [_idx, ""] } else { "" };
 private _srcLabel = createHashMapFromArray [["GOOGLE", "Google Slides · synchronisé"], ["ATHENA", "Athena"], ["LOCAL", "Briefing"]] getOrDefault [_src, ""];
+// Opération Athena rattachée à la diapositive (vide : commune à toutes les opérations).
+private _op = if (_src isEqualTo "ATHENA" && {_total > 0}) then { ((missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) select _idx) param [5, ""] } else { "" };
+if (_op isNotEqualTo "") then {
+    { _op = [_op, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]];
+    _srcLabel = format ["<t color='#7fb6e6'>Op. %1</t>", _op];
+};
 private _info = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh + _pad / 2, _vw, _fs * 1.6]] call comspec_atak_native_fnc_pageCtrl;
 _info ctrlSetStructuredText parseText format ["<t font='RobotoCondensedBold'>%1</t><t align='right' size='0.85' color='#8a9a93'>%2 · %3 / %4</t>", _title, _srcLabel, [_idx + 1, 0] select (_total < 1), _total];
 

@@ -18,6 +18,7 @@ declare(strict_types=1);
  * @var list<array{label:string,source:string,last_seen_at:int}> $briefingPresence
  * @var string $briefingPresenceUrl
  * @var string $briefingGoogleSlidesUrl
+ * @var list<array{id:int,code:string,name:string,status:string}> $briefingOperations
  */
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
@@ -33,6 +34,17 @@ $commentCounts = is_array($briefingCommentCounts ?? null) ? $briefingCommentCoun
 $presence = is_array($briefingPresence ?? null) ? $briefingPresence : [];
 $presenceUrl = (string) ($briefingPresenceUrl ?? '');
 $googleSlidesUrl = trim((string) ($briefingGoogleSlidesUrl ?? ''));
+$operations = is_array($briefingOperations ?? null) ? $briefingOperations : [];
+// Libellé « CODE · Nom » d’une opération (sélecteur et pastille).
+$operationLabel = static function (string $code, string $name): string {
+    $code = trim($code);
+    $name = trim($name);
+    if ($code !== '' && $name !== '') {
+        return $code . ' · ' . $name;
+    }
+
+    return $code !== '' ? $code : $name;
+};
 $flashSuccess = \App\Core\Session::getFlash('success');
 $flashError = \App\Core\Session::getFlash('error');
 
@@ -127,6 +139,16 @@ require base_path('views/partials/ath_kpis.php');
                 <span class="ath-field__help">Vous pourrez enrichir ce texte après le briefing.</span>
             </label>
             <label class="ath-field">
+                <span class="ath-field__label">Opération</span>
+                <select name="operation_id" class="ath-field__select">
+                    <option value="">Toutes les opérations (commune)</option>
+                    <?php foreach ($operations as $op): ?>
+                    <option value="<?= (int) $op['id'] ?>"><?= $h($operationLabel((string) $op['code'], (string) $op['name'])) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <span class="ath-field__help">Le téléphone en jeu indique l’opération concernée.</span>
+            </label>
+            <label class="ath-field">
                 <span class="ath-field__label">Ordre d’affichage</span>
                 <input type="number" name="sort_order" value="<?= (int) $nextOrder ?>" class="ath-field__input">
             </label>
@@ -215,6 +237,18 @@ require base_path('views/partials/ath_kpis.php');
     $sortOrder = (int) ($row['sort_order'] ?? 0);
     $displayTitle = $title !== '' ? $title : 'Sans titre';
     $commentCount = (int) ($commentCounts[$id] ?? 0);
+    $slideOperationId = (int) ($row['operation_id'] ?? 0);
+    $slideOperationLabel = $slideOperationId > 0
+        ? $operationLabel((string) ($row['operation_code'] ?? ''), (string) ($row['operation_name'] ?? ''))
+        : '';
+    // Opération rattachée mais absente de la liste (clôturée) : on la garde sélectionnable.
+    $slideOperationListed = false;
+    foreach ($operations as $op) {
+        if ((int) $op['id'] === $slideOperationId) {
+            $slideOperationListed = true;
+            break;
+        }
+    }
     ?>
 <article class="ath-slide ath-rise" id="slide-<?= $id ?>">
     <div class="ath-slide__top">
@@ -231,6 +265,9 @@ require base_path('views/partials/ath_kpis.php');
             <div class="ath-media__badges" style="margin-top:7px;">
                 <span class="ath-tag <?= $isActive ? 'ath-tag--ok' : 'ath-tag--warn' ?>"><?= $isActive ? 'Visible en jeu' : 'Brouillon' ?></span>
                 <span class="ath-tag ath-tag--neut"><?= $commentCount ?> commentaire<?= $commentCount > 1 ? 's' : '' ?></span>
+                <?php if ($slideOperationId > 0 && $slideOperationLabel !== ''): ?>
+                <span class="ath-tag ath-tag--info" title="Opération rattachée">Op. <?= $h($slideOperationLabel) ?></span>
+                <?php endif; ?>
             </div>
             <?php if ($detailText !== ''): ?>
             <p class="ath-slide__detail"><?= nl2br($h($detailText)) ?></p>
@@ -276,6 +313,18 @@ require base_path('views/partials/ath_kpis.php');
                         </label>
                     </div>
                     <div class="ath-form__grid" style="margin-top:11px;">
+                        <label class="ath-field">
+                            <span class="ath-field__label">Opération</span>
+                            <select name="operation_id" class="ath-field__select">
+                                <option value="">Toutes les opérations (commune)</option>
+                                <?php if ($slideOperationId > 0 && !$slideOperationListed && $slideOperationLabel !== ''): ?>
+                                <option value="<?= $slideOperationId ?>" selected><?= $h($slideOperationLabel) ?></option>
+                                <?php endif; ?>
+                                <?php foreach ($operations as $op): ?>
+                                <option value="<?= (int) $op['id'] ?>"<?= (int) $op['id'] === $slideOperationId ? ' selected' : '' ?>><?= $h($operationLabel((string) $op['code'], (string) $op['name'])) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
                         <label class="ath-field">
                             <span class="ath-field__label">Ordre d’affichage</span>
                             <input type="number" name="sort_order" value="<?= $sortOrder ?>" class="ath-field__input">

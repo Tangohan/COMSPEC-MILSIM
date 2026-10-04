@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.57";
+    private const string ExtensionVersion = "2.0.58";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2624,6 +2624,13 @@ public static partial class Extension
         var gameAuth = HandleGameAuth(function, args);
         if (gameAuth.Length > 0)
             return gameAuth;
+
+        // Liste des commandes ajoutées pour l'ATAK natif : l'écran Debug > DLL la compare à ce qu'il attend
+        // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
+        if (function == "GetAtakFeatures")
+        {
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage";
+        }
 
         if (function == "GetCapabilities")
         {
@@ -5674,7 +5681,17 @@ public static partial class Extension
                 var detail = el.TryGetProperty("detail", out var dt) && dt.ValueKind == JsonValueKind.String ? (dt.GetString() ?? "") : "";
                 detail = detail.Replace("\t", " ").Replace("\r", "").Replace("\n", " ¶ ").Replace("|", "/").Trim();
                 if (detail.Length > 300) detail = detail.Substring(0, 300) + "…";
-                sb.Append(id).Append('\t').Append(title).Append('\t').Append(sortOrder).Append('\t').Append(imageUrl).Append('\t').Append(detail).Append('\n');
+                // 6e colonne : opération Athena rattachée « CODE · Nom » (vide = diapositive commune).
+                var operation = "";
+                if (el.TryGetProperty("operation", out var op) && op.ValueKind == JsonValueKind.Object)
+                {
+                    var opCode = op.TryGetProperty("code", out var oc) && oc.ValueKind == JsonValueKind.String ? (oc.GetString() ?? "").Trim() : "";
+                    var opName = op.TryGetProperty("name", out var on) && on.ValueKind == JsonValueKind.String ? (on.GetString() ?? "").Trim() : "";
+                    operation = opCode.Length > 0 && opName.Length > 0 ? opCode + " · " + opName : opCode + opName;
+                    operation = operation.Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "-");
+                    if (operation.Length > 80) operation = operation.Substring(0, 80);
+                }
+                sb.Append(id).Append('\t').Append(title).Append('\t').Append(sortOrder).Append('\t').Append(imageUrl).Append('\t').Append(detail).Append('\t').Append(operation).Append('\n');
             }
             return sb.ToString();
         }

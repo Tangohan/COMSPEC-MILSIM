@@ -3953,6 +3953,24 @@ try {
 }
 $migrationEnsurePdo();
 
+$tacticalBriefingSlideEnrichmentMigrate = require $root . '/bootstrap/tactical_briefing_slide_enrichment_migration.php';
+try {
+    echo "Migration tactical_briefing_slide_enrichment (briefing — détail diapositive, commentaires)…\n";
+    $tacticalBriefingSlideEnrichmentMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] tactical_briefing_slide_enrichment : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$tacticalBriefingSlideOperationMigrate = require $root . '/bootstrap/tactical_briefing_slide_operation_migration.php';
+try {
+    echo "Migration tactical_briefing_slide_operation (briefing — rattachement diapositive ↔ opération)…\n";
+    $tacticalBriefingSlideOperationMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] tactical_briefing_slide_operation : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakSseCaseOriginMigrate = require $root . '/bootstrap/atak_sse_case_origin_migration.php';
 try {
     echo "Migration atak_sse_case_origin (SSE — origine des dossiers)…\n";
