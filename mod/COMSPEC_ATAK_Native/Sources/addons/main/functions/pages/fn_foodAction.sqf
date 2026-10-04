@@ -1,5 +1,5 @@
 /*
-    Ration Express : commande de rations livrée par drone-cargo (caisse sous parachute près du joueur).
+    UberEats : commande de rations livrée par drone-cargo (caisse sous parachute près du joueur).
     Params : [action, argument]
       "menu"  : catalogue [[classe, nom, image]...] (rations et boissons ACE chargées)
       "add" / "remove" : panier (classe)   "order" : passer la commande   "cancel" : annuler avant le départ
@@ -62,14 +62,14 @@ switch (_act) do {
             ["SUCCESS", format ["Commande acceptée : livraison dans %1 min environ", ceil ((_prep + _fly) / 60)], 4, 30] call comspec_atak_native_fnc_notify;
             [{ ["launch"] call comspec_atak_native_fnc_foodAction; }, [], _prep] call CBA_fnc_waitAndExecute;
             [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "FOOD") then { ["FOOD"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
-        }, [_items], "Commande Ration Express", 2] call comspec_atak_native_fnc_netSend;
+        }, [_items], "Commande UberEats", 2] call comspec_atak_native_fnc_netSend;
         call _rerender;
     };
     case "launch": {
         private _o = missionNamespace getVariable ["COMSPEC_ATAK_FoodOrder", createHashMap];
         if ((_o getOrDefault ["step", ""]) isNotEqualTo "PREP") exitWith {};
         _o set ["step", "FLIGHT"];
-        ["INFO", "Ration Express : le drone est parti, restez dans la zone", 4, 30] call comspec_atak_native_fnc_notify;
+        ["INFO", "UberEats : le drone est parti, restez dans la zone", 4, 30] call comspec_atak_native_fnc_notify;
         [{ ["drop"] call comspec_atak_native_fnc_foodAction; }, [], ((_o get "eta") - time) max 5] call CBA_fnc_waitAndExecute;
         call _rerender;
     };
@@ -100,9 +100,9 @@ switch (_act) do {
         _o set ["step", "DONE"];
         _o set ["pos", _pos];
         private _m = createMarkerLocal [format ["COMSPEC_FOOD_%1", _o get "ref"], _pos];
-        _m setMarkerTypeLocal "mil_pickup"; _m setMarkerColorLocal "ColorPink"; _m setMarkerTextLocal format ["Ration Express %1", _o get "ref"];
+        _m setMarkerTypeLocal "mil_pickup"; _m setMarkerColorLocal "ColorPink"; _m setMarkerTextLocal format ["UberEats %1", _o get "ref"];
         [{ deleteMarkerLocal _this; }, _m, 900] call CBA_fnc_waitAndExecute;
-        ["SUCCESS", format ["Ration Express : livré à %1 m (fumée violette), bon appétit !", round (player distance2D _pos)], 6, 40] call comspec_atak_native_fnc_notify;
+        ["SUCCESS", format ["UberEats : livré à %1 m (fumée violette), bon appétit !", round (player distance2D _pos)], 6, 40] call comspec_atak_native_fnc_notify;
         [] call comspec_atak_native_fnc_vibrate;
         call _rerender;
     };

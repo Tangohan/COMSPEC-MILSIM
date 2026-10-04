@@ -63,6 +63,8 @@
   var airAssets = [];
   var gpsVehicles = [];
   var gpsVehicleMarkers = {};
+  var uavTrackLayers = {};
+  var uavNetIds = {};
   var airAssetMarkers = {};
   var filterWave = false;
   var medevacs = [];
@@ -1605,13 +1607,155 @@
       try { map.removeLayer(gpsVehicleMarkers[id]); } catch (e) {}
       delete gpsVehicleMarkers[id];
     });
+    clearUavTracks();
+  }
+  // --- Drones (UAV pilotés : téléphone natif / terminal) ---
+  var UAV_STALE_SEC = 30;
+  function uavProps(item) {
+    var p = item && item.properties;
+    if (typeof p === 'string') {
+      try { p = JSON.parse(p); } catch (e) { p = {}; }
+    }
+    return p && typeof p === 'object' ? p : {};
+  }
+  function isUavRow(item) {
+    if (!item) return false;
+    if (String(item.vehicle_class || '').toUpperCase() === 'UAV') return true;
+    return String(uavProps(item).kind || '').toLowerCase() === 'uav';
+  }
+  function uavAgeSec(item) {
+    var age = Number(item && item.age_sec);
+    if (item && item.age_sec != null && Number.isFinite(age)) return age;
+    var raw = (item && (item.last_seen_at || item.updated_at)) || '';
+    if (!raw) return 0;
+    var ts = Date.parse(String(raw).indexOf('T') >= 0 ? String(raw) : String(raw).replace(' ', 'T'));
+    return Number.isFinite(ts) ? Math.max(0, (Date.now() - ts) / 1000) : 0;
+  }
+  function uavIsLive(item) {
+    var st = String(item.status || '').toUpperCase();
+    if (st === 'DESTROYED' || st === 'ABANDONED') return false;
+    return uavAgeSec(item) <= UAV_STALE_SEC;
+  }
+  function uavColor(item) {
+    var s = side(item);
+    if (s === 'hostile') return '#ef4444';
+    if (s === 'unknown') return '#eab308';
+    return '#22d3ee';
+  }
+  // Pictogramme quadrirotor vu de dessus + trait de cap (pivoté selon le cap).
+  function uavSvg(color, heading) {
+    var hdg = Number.isFinite(Number(heading)) ? Number(heading) : 0;
+    return '<svg class="ow-uav-svg" viewBox="-16 -16 32 32" width="30" height="30" style="transform:rotate(' + hdg.toFixed(0) + 'deg)" aria-hidden="true">' +
+      '<line x1="0" y1="-4" x2="0" y2="-15" stroke="' + color + '" stroke-width="2" stroke-linecap="round"/>' +
+      '<g stroke="#0b1220" stroke-width="3.4" stroke-linecap="round"><line x1="-7" y1="-7" x2="7" y2="7"/><line x1="7" y1="-7" x2="-7" y2="7"/></g>' +
+      '<g stroke="' + color + '" stroke-width="1.8" stroke-linecap="round"><line x1="-7" y1="-7" x2="7" y2="7"/><line x1="7" y1="-7" x2="-7" y2="7"/></g>' +
+      '<g fill="rgba(11,18,32,.55)" stroke="' + color + '" stroke-width="1.4">' +
+      '<circle cx="-8" cy="-8" r="4.2"/><circle cx="8" cy="-8" r="4.2"/><circle cx="-8" cy="8" r="4.2"/><circle cx="8" cy="8" r="4.2"/></g>' +
+      '<rect x="-3.2" y="-3.2" width="6.4" height="6.4" rx="1.6" fill="' + color + '" stroke="#0b1220" stroke-width="1"/>' +
+      '</svg>';
+  }
+  function uavModeLabel(mode) {
+    var m = String(mode || '').toUpperCase();
+    var labels = {
+      HOVER: 'Stationnaire', ORBIT: 'Orbite', FOLLOW: 'Suivi', ESCORT: 'Escorte', GOTO: 'Ralliement',
+      HOME: 'Retour base', RTB: 'Retour base', RTH: 'Retour base', LAND: 'Atterrissage', MANUAL: 'Manuel',
+      ROUTE: 'Itinéraire', HUNT: 'Chasse', STRIKE: 'Frappe', PATROL: 'Patrouille', VOL: 'En vol', SOL: 'Au sol'
+    };
+    return labels[m] || (m || 'En vol');
+  }
+  function clearUavTrack(id) {
+    var t = uavTrackLayers[id];
+    if (!t) return;
+    ['marker', 'tgtLine', 'tgtMark'].forEach(function (k) {
+      if (t[k]) { try { map.removeLayer(t[k]); } catch (e) {} }
+    });
+    delete uavTrackLayers[id];
+  }
+  function clearUavTracks() {
+    Object.keys(uavTrackLayers).forEach(clearUavTrack);
+  }
+  function renderUavTracks(rows) {
+    var seen = {};
+    uavNetIds = {};
+    (rows || []).forEach(function (item) {
+      if (!item || !uavIsLive(item)) return;
+      var props = uavProps(item);
+      var id = 'uav_' + String(item.vehicle_callsign || item.id || '');
+      if (id === 'uav_') return;
+      var x = Number(item.pos_x);
+      var y = Number(item.pos_y);
+      if (!Number.isFinite(x) || !Number.isFinite(y) || (Math.abs(x) < 1 && Math.abs(y) < 1)) return;
+      if (props.net_id) uavNetIds[String(props.net_id)] = true;
+      seen[id] = true;
+      var latlng = worldToLatLng(x, y);
+      var color = uavColor(item);
+      var pilot = String(props.pilot || item.crew_commander_callsign || '');
+      var alt = Number(props.alt_agl);
+      var altTxt = Number.isFinite(alt) ? Math.round(alt) + ' m' : '';
+      var mode = uavModeLabel(props.mode);
+      var label = [pilot || 'Drone', mode, altTxt].filter(Boolean).join(' · ');
+      var icon = L.divIcon({
+        className: 'ow-uav-map-icon',
+        html: uavSvg(color, item.heading) + '<span class="ow-uav-label" style="border-color:' + color + '">' + escapeHtml(label) + '</span>',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15]
+      });
+      var spd = Number(props.speed_kmh != null ? props.speed_kmh : item.speed);
+      var tgtX = Number(props.tgt_x != null ? props.tgt_x : item.destination_pos_x);
+      var tgtY = Number(props.tgt_y != null ? props.tgt_y : item.destination_pos_y);
+      var hasTgt = Number.isFinite(tgtX) && Number.isFinite(tgtY) && !(Math.abs(tgtX) < 1 && Math.abs(tgtY) < 1);
+      var popup = '<div class="ow-gps-popup ow-uav-popup"><strong>' + escapeHtml(item.vehicle_name || 'Drone') + '</strong><br/>' +
+        'Drone · ' + escapeHtml(mode) +
+        (pilot ? '<br/>Pilote : ' + escapeHtml(pilot) : '') +
+        (altTxt ? '<br/>Altitude sol : ' + escapeHtml(altTxt) : '') +
+        (Number.isFinite(spd) ? '<br/>Vitesse : ' + escapeHtml(String(Math.round(spd))) + ' km/h' : '') +
+        (item.heading != null && Number.isFinite(Number(item.heading)) ? '<br/>Cap : ' + escapeHtml(String(Math.round(Number(item.heading)))) + '°' : '') +
+        (props.task ? '<br/>Tâche : ' + escapeHtml(String(props.task)) : '') +
+        (hasTgt ? '<br/>Point visé : X ' + Math.round(tgtX) + ' / Y ' + Math.round(tgtY) : '') +
+        '</div>';
+      var t = uavTrackLayers[id] || {};
+      if (t.marker) {
+        t.marker.setLatLng(latlng);
+        t.marker.setIcon(icon);
+        if (t.marker.setPopupContent) t.marker.setPopupContent(popup);
+      } else {
+        t.marker = L.marker(latlng, { icon: icon, zIndexOffset: 520 });
+        t.marker.bindPopup(popup);
+        t.marker.addTo(map);
+      }
+      // Cible / point de tâche courant : trait pointillé + réticule.
+      if (hasTgt) {
+        var tll = worldToLatLng(tgtX, tgtY);
+        if (t.tgtLine) {
+          t.tgtLine.setLatLngs([latlng, tll]);
+          t.tgtLine.setStyle({ color: color });
+        } else {
+          t.tgtLine = L.polyline([latlng, tll], { color: color, weight: 1.5, opacity: 0.8, dashArray: '4 5', interactive: false }).addTo(map);
+        }
+        if (t.tgtMark) {
+          t.tgtMark.setLatLng(tll);
+          t.tgtMark.setStyle({ color: color });
+        } else {
+          t.tgtMark = L.circleMarker(tll, { radius: 6, color: color, weight: 2, fill: false, interactive: false }).addTo(map);
+        }
+      } else {
+        if (t.tgtLine) { try { map.removeLayer(t.tgtLine); } catch (e) {} t.tgtLine = null; }
+        if (t.tgtMark) { try { map.removeLayer(t.tgtMark); } catch (e) {} t.tgtMark = null; }
+      }
+      uavTrackLayers[id] = t;
+    });
+    Object.keys(uavTrackLayers).forEach(function (id) {
+      if (!seen[id]) clearUavTrack(id);
+    });
   }
   function renderGpsVehiclesOnMap(rows) {
     gpsVehicles = Array.isArray(rows) ? rows : gpsVehicles;
     if (hiddenLayers.vehicles) { clearGpsVehicleMarkers(); return; }
     var seen = {};
+    var uavRows = [];
     gpsVehicles.forEach(function (item) {
       if (!item) return;
+      if (isUavRow(item)) { uavRows.push(item); return; }
       var id = item.id != null ? String(item.id) : String(item.vehicle_callsign || '');
       if (!id) return;
       var x = Number(item.pos_x);
@@ -1649,6 +1793,7 @@
         delete gpsVehicleMarkers[id];
       }
     });
+    renderUavTracks(uavRows);
   }
   function loadVehicles() {
     return api('/api/atak/vehicles?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
@@ -1657,6 +1802,8 @@
       gpsVehicles = rows.filter(function (item) {
         if (!item) return false;
         if (String(item.status || '').toUpperCase() === 'DESTROYED') return false;
+        // Drone : retiré dès 30 s sans nouvelle (ou relâché).
+        if (isUavRow(item)) return uavIsLive(item);
         var raw = item.last_seen_at || item.updated_at || '';
         if (!raw) return true;
         var ts = Date.parse(String(raw).indexOf('T') >= 0 ? String(raw) : String(raw).replace(' ', 'T'));
@@ -1684,6 +1831,8 @@
       if (!a) return;
       var id = 'air_' + String(a.callsign || a.call_sign || a.id || '').replace(/\s/g, '_');
       if (!id || id === 'air_') return;
+      // Drone déjà tracé via le suivi UAV : pas de doublon aérien.
+      if (a.vehicle_id != null && uavNetIds[String(a.vehicle_id)]) return;
       var x = Number(a.pos_x);
       var y = Number(a.pos_y);
       if (!Number.isFinite(x) || !Number.isFinite(y) || (Math.abs(x) < 0.5 && Math.abs(y) < 0.5)) return;

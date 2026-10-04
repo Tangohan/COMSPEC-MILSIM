@@ -41,7 +41,7 @@ _display setVariable ["COMSPEC_ArsenalToggle", _tog];
 
 // Panneau.
 private _x = safeZoneX + _sideW + _gap;
-private _w = (safeZoneW - 2 * (_sideW + _gap)) max (0.5 * safezoneW);
+private _w = ((safeZoneW - 2 * (_sideW + _gap)) max (0.5 * safezoneW)) min (safeZoneW - 2 * _gap);
 if ((_x + _w) > (safeZoneX + safeZoneW)) then { _x = safeZoneX + (safeZoneW - _w) / 2; };
 private _y = _btnY + _btnH + 0.006;
 private _h = (safeZoneY + safeZoneH) - _y - (_guiH * 2.6);
@@ -173,6 +173,14 @@ _nameEdit ctrlSetFontHeight _fsS;
 _nameEdit ctrlSetText (profileNamespace getVariable ["COMSPEC_ArsenalLastSaveName", ""]);
 _nameEdit ctrlSetTooltip "Nom de la tenue à enregistrer (ex. SOAR - Breacher). Le préfixe avant « - » sert de collection.";
 _grp setVariable ["COMSPEC_ArsenalSaveName", _nameEdit];
+private _nph = ["RscText", [_pad + _fw + 0.014, _fy, _fw * 0.6 - 0.012, _rowH]] call _mk;
+_nph ctrlSetText "Nom de la tenue à enregistrer…";
+_nph ctrlSetFontHeight _fsS;
+_nph ctrlSetTextColor [0.5, 0.6, 0.57, 1];
+_nph ctrlEnable false;
+_nph ctrlShow ((ctrlText _nameEdit) isEqualTo "");
+_nameEdit setVariable ["ph", _nph];
+_nameEdit ctrlAddEventHandler ["KeyUp", { params ["_c"]; (_c getVariable ["ph", controlNull]) ctrlShow ((ctrlText _c) isEqualTo ""); }];
 [[_pad + _fw * 1.6 + 0.012, _fy, _fw * 0.4 - 0.004, _rowH], "ENREGISTRER ET PARTAGER", "saveCurrent", [0.12, 0.42, 0.30, 1], "Enregistre la tenue portée par le mannequin dans votre arsenal et la partage à l'organisation"] call _btn;
 private _help = ["RscStructuredText", [_pad, _fy + _rowH + 0.004, _w - 2 * _pad, _rowH]] call _mk;
 _grp setVariable ["COMSPEC_ArsenalHint", _help];

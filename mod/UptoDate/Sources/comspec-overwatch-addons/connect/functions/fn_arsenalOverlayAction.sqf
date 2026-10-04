@@ -32,6 +32,27 @@ switch (_act) do {
         private _t = _d getVariable ["COMSPEC_ArsenalToggle", controlNull];
         if (!isNull _t) then { _t ctrlSetText (["ATHENA · TENUES", "FERMER LES TENUES"] select _open); };
         if (_open) then { [_d] call comspec_overwatch_connect_fnc_arsenalOverlayBeginLoad; };
+        // Les cadres de l'arsenal ACE placés sous le panneau (statistiques, infos) se dessinaient par-dessus :
+        // masqués tant que le panneau est ouvert (ACE les réaffiche, donc on repasse toutes les 0,25 s).
+        private _hidden = _d getVariable ["COMSPEC_ArsenalHidden", []];
+        { if (!isNull _x) then { _x ctrlShow true; }; } forEach _hidden;
+        _d setVariable ["COMSPEC_ArsenalHidden", []];
+        if (_open) then {
+            (ctrlPosition _g) params ["_gx", "_gy", "_gw", "_gh"];
+            private _screen = safeZoneW * safeZoneH;
+            private _under = (allControls _d) select {
+                isNull (ctrlParentControlsGroup _x) && {_x isNotEqualTo _g} && {_x isNotEqualTo _t} && {ctrlShown _x}
+                && { (ctrlPosition _x) params ["_cx", "_cy", "_cw", "_ch"];
+                     (_cw * _ch) < (_screen * 0.5) && {_cx < (_gx + _gw)} && {(_cx + _cw) > _gx} && {_cy < (_gy + _gh)} && {(_cy + _ch) > _gy} }
+            };
+            _d setVariable ["COMSPEC_ArsenalHidden", _under];
+            [{
+                params ["_d", "_pfh"];
+                if (isNull _d || {!(_d getVariable ["COMSPEC_ArsenalOverlayOpen", false])}) exitWith { [_pfh] call CBA_fnc_removePerFrameHandler; };
+                { if (!isNull _x && {ctrlShown _x}) then { _x ctrlShow false; }; } forEach (_d getVariable ["COMSPEC_ArsenalHidden", []]);
+            }, 0.25, _d] call CBA_fnc_addPerFrameHandler;
+            { _x ctrlShow false; } forEach _under;
+        };
     };
     case "close": { _d setVariable ["COMSPEC_ArsenalOverlayOpen", true]; ["toggle"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; };
     case "reload": { [] spawn { ["reloadNow"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }; };

@@ -4,6 +4,10 @@
       "list"    : relit le disque (DLL) et met la liste en cache, renvoie [[chemin, nom]...]
       "send"    : retransmet la photo n° arg de la liste en cache
       "sendAll" : retransmet toutes les photos de la liste en cache (une toutes les 2 s)
+      "check"   : demande à Athena lesquelles sont visibles (DLL ReconImagesKnown, 2.0.59+) ;
+                  uiNamespace COMSPEC_ATAK_PhotoKnown = noms en minuscules, ou nil si Athena n'a pas pu répondre
+      "delete"  : supprime du poste la photo n° arg (second appui dans les 4 s pour confirmer)
+      "deleteAll" : supprime du poste toutes les photos listées (second appui dans les 4 s pour confirmer)
 */
 params [["_action", "list"], ["_arg", -1]];
 private _fnc_send = {
@@ -27,7 +31,49 @@ switch (_action) do {
         private _out = (_raw select { _x isEqualType [] && {(count _x) >= 2} }) apply { [_x select 0, _x select 1] };
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoLib", _out];
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoLibAt", diag_tickTime];
+        ["check"] call comspec_atak_native_fnc_photoLibrary;
         _out
+    };
+    case "check": {
+        private _lib = uiNamespace getVariable ["COMSPEC_ATAK_PhotoLib", []];
+        uiNamespace setVariable ["COMSPEC_ATAK_PhotoKnown", nil];
+        if ((count _lib) isEqualTo 0 || {!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])}) exitWith { false };
+        private _names = (_lib apply { _x select 1 }) select [0, 200];
+        private _raw = "COMSPECExtension" callExtension ["ReconImagesKnown", [_names joinString "|"]];
+        if (!isNil "comspec_overwatch_connect_fnc_extResult") then { _raw = [_raw] call comspec_overwatch_connect_fnc_extResult; };
+        if (_raw isEqualType []) then { _raw = _raw param [0, ""]; };
+        if !(_raw isEqualType "") then { _raw = str _raw; };
+        if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith { false };
+        uiNamespace setVariable ["COMSPEC_ATAK_PhotoKnown", ((_raw select [3]) splitString toString [10]) apply { toLower _x }];
+        true
+    };
+    case "delete";
+    case "deleteAll": {
+        private _lib = uiNamespace getVariable ["COMSPEC_ATAK_PhotoLib", []];
+        private _key = if (_action isEqualTo "deleteAll") then { "ALL" } else { str _arg };
+        if (_action isEqualTo "delete" && {_arg < 0 || {_arg >= count _lib}}) exitWith { false };
+        private _armed = uiNamespace getVariable ["COMSPEC_ATAK_PhotoDelArm", ["", -10]];
+        // Premier appui : le bouton passe en CONFIRMER pendant 4 s.
+        if ((_armed select 0) isNotEqualTo _key || {diag_tickTime - (_armed select 1) > 4}) exitWith {
+            uiNamespace setVariable ["COMSPEC_ATAK_PhotoDelArm", [_key, diag_tickTime]];
+            [{ ["PHOTOS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            [{ if (diag_tickTime - ((uiNamespace getVariable ["COMSPEC_ATAK_PhotoDelArm", ["", -10]]) select 1) >= 4 && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "PHOTOS"}) then { ["PHOTOS"] call comspec_atak_native_fnc_pageRender; }; }, [], 4.1] call CBA_fnc_waitAndExecute;
+            true
+        };
+        uiNamespace setVariable ["COMSPEC_ATAK_PhotoDelArm", ["", -10]];
+        private _todo = if (_action isEqualTo "deleteAll") then { +_lib } else { [_lib select _arg] };
+        private _done = 0;
+        {
+            _x params ["_path", "_name"];
+            private _r = "COMSPECExtension" callExtension ["DeleteLocalFile", [_path]];
+            if (_r isEqualType []) then { _r = _r param [0, ""]; };
+            if ((_r isEqualType "") && {(_r select [0, 2]) isEqualTo "OK"}) then { _done = _done + 1; };
+        } forEach _todo;
+        private _fail = (count _todo) - _done;
+        [["SUCCESS", "WARNING"] select (_fail > 0), if (_fail > 0) then { format ["%1 photo(s) supprimée(s), %2 refusée(s) (fichier hors des dossiers COMSPEC ou déjà ouvert).", _done, _fail] } else { format ["%1 photo(s) supprimée(s) du poste.", _done] }, 4, 20] call comspec_atak_native_fnc_notify;
+        ["list"] call comspec_atak_native_fnc_photoLibrary;
+        [{ ["PHOTOS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        _done > 0
     };
     case "send": {
         private _lib = uiNamespace getVariable ["COMSPEC_ATAK_PhotoLib", []];

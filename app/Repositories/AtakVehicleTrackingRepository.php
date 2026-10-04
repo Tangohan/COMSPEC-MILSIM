@@ -256,7 +256,9 @@ class AtakVehicleTrackingRepository
 
         // Table réelle : la vue (sous-requête d’entretien par ligne) casse la
         // relève carte si elle manque, et saturait MySQL toutes les 3 s.
-        $sql = "SELECT * FROM atak_vehicle_tracking
+        // age_sec : fraîcheur calculée côté SQL (pas de fuseau navigateur) — drones périmés > 30 s.
+        $sql = "SELECT *, TIMESTAMPDIFF(SECOND, last_seen_at, NOW()) AS age_sec
+                FROM atak_vehicle_tracking
                 WHERE {$whereClause}
                 ORDER BY {$orderBy}
                 LIMIT {$limit} OFFSET {$offset}";

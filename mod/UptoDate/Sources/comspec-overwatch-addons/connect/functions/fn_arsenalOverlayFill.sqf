@@ -56,7 +56,7 @@ private _shown = _rows select {
     && { private _hay = toLower ([_r select 1, _r select _collIdx, [_r param [4, ""], ""] select !_isCloud] joinString " "); (_words findIf { (_hay find _x) < 0 }) < 0 }
 };
 if (_isCloud) then {
-    _shown = [_shown, [], { format ["%1|%2|%3", ["1", "0"] select (_x select 6), toLower (_x select 3), toLower (_x select 2)] }, "ASCEND"] call BIS_fnc_sortBy;
+    _shown = [_shown, [], { format ["%1|%2|%3", if ((_x param [6, false]) isEqualTo true) then { "0" } else { "1" }, toLower (_x param [3, ""]), toLower (_x param [2, ""])] }, "ASCEND"] call BIS_fnc_sortBy;
 } else {
     _shown = [_shown, [], { format ["%1|%2", toLower (_x select 2), toLower (_x select 1)] }, "ASCEND"] call BIS_fnc_sortBy;
 };
@@ -68,7 +68,9 @@ if (!isNull _list) then {
     lnbClear _list;
     {
         private _r = if (_isCloud) then {
-            _list lnbAddRow [format ["%1%2", ["", "★ "] select (_x select 6), _x select 2], _x select 3, _x select 4]
+            // Favori : étoile devant le nom (jamais de « select » sur une valeur qui peut manquer : affichait « any »).
+            private _star = if ((_x param [6, false]) isEqualTo true) then { "★ " } else { "" };
+            _list lnbAddRow [_star + (_x param [2, ""]), _x param [3, ""], _x param [4, ""]]
         } else {
             _list lnbAddRow [_x select 1, _x select 2, ""]
         };

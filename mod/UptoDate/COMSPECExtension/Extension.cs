@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.58";
+    private const string ExtensionVersion = "2.0.59";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2629,7 +2629,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown";
         }
 
         if (function == "GetCapabilities")
@@ -3925,6 +3925,34 @@ public static partial class Extension
             }
             // Avis de recherche d'Athena (personnes prioritaires avec photo, liste de surveillance, dossiers d'intérêt).
             // Une ligne par avis : type\tid\tréf\tnom\talias\tniveau\tdétails\tphoto\tmaj
+            // Photos du poste déjà visibles sur Athena (nom de fichier d'origine, non supprimées).
+            // Args : [noms séparés par |] → OK|nom\nnom…
+            if (function == "ReconImagesKnown")
+            {
+                var names = args.Length > 0 ? (args[0] ?? "").Trim() : "";
+                if (names.Length == 0) return "OK|";
+                var resp = SendGet(_baseUrl + "/api/recon/images/known?names=" + Uri.EscapeDataString(names), token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
+                var lines = new StringBuilder();
+                try
+                {
+                    using var doc = JsonDocument.Parse(respBody);
+                    if (doc.RootElement.TryGetProperty("known", out var arr) && arr.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var el in arr.EnumerateArray())
+                        {
+                            var n = (el.ValueKind == JsonValueKind.String ? el.GetString() : "") ?? "";
+                            n = n.Replace("\r", "").Replace("\n", " ").Trim();
+                            if (n.Length == 0) continue;
+                            if (Encoding.UTF8.GetByteCount(lines.ToString()) + Encoding.UTF8.GetByteCount(n) + 6 > MaxOutputBytes) break;
+                            lines.Append(n).Append('\n');
+                        }
+                    }
+                }
+                catch { return "ERR|bad_json"; }
+                return "OK|" + lines.ToString();
+            }
             if (function == "GetWantedNotices")
             {
                 var resp = SendGet(_baseUrl + "/api/sse/wanted?limit=40", token);

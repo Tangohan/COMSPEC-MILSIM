@@ -2369,6 +2369,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/recon/images', [AtakApiController::class, 'reconImagesIndex']);
     $router->post('/api/recon/images', [AtakApiController::class, 'reconImagesStore']);
     $router->get('/api/recon/images/sse-cases', [AtakApiController::class, 'reconImagesSseCases']);
+    $router->get('/api/recon/images/known', [AtakApiController::class, 'reconImagesKnown']);
     $router->get('/api/recon/images/{id}', [AtakApiController::class, 'reconImagesShow']);
     $router->post('/api/recon/images/{id}/ops', [AtakApiController::class, 'reconImagesOps']);
     $router->post('/api/recon/images/{id}/link-cas', [AtakApiController::class, 'reconImagesLinkCas']);

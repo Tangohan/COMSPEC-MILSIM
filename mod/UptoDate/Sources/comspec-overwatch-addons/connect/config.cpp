@@ -359,6 +359,7 @@ class CfgFunctions {
             class collectVehicleOccupants {};
             class requestVehicleService {};
             class initVehicleTracking {};
+            class reportOwnedDrones {};
             class isObjectFlag {};
             class setGpsBeacon {};
             class setPhoneTrack {};

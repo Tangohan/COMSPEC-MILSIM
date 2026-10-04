@@ -36,6 +36,17 @@ _batCtrl ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.88, 0.25, 0.22, 1]] select
 (_d displayCtrl 88524) ctrlSetText format ["%1°C   %2 %3", _temp, _card, round _speed];
 (_d displayCtrl 88524) ctrlSetTooltip format ["Vent du %1, %2 m/s", _card, round _speed];
 (_d displayCtrl 88525) ctrlSetText ([dayTime, "HH:MM"] call BIS_fnc_timeToString);
+// Cloche : orange tant qu'il reste des notifications non lues. Logo COMSPEC Link : affiché quand la liaison est établie.
+private _unread = _state getOrDefault ["notifUnread", 0];
+private _bell = _d displayCtrl 88548;
+_bell ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.95, 0.67, 0.20, 1]] select (_unread > 0));
+_bell ctrlSetTooltip (["Centre de notifications", format ["Centre de notifications : %1 non lue(s)", _unread]] select (_unread > 0));
+private _linkOk = if ([] call comspec_atak_native_fnc_bridge) then {
+    _net isEqualTo "CONNECTED" && {missionNamespace getVariable ["COMSPEC_AthenaReady", false]}
+} else {
+    _net isEqualTo "CONNECTED"
+};
+(_d displayCtrl 88549) ctrlShow _linkOk;
 
 private _page = _state getOrDefault ["activePage", "LAUNCHER"];
 // App Athena ouverte : se redessine quand la session, la liaison ou le message changent

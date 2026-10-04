@@ -13,6 +13,8 @@ return static function (PDO $pdo): void {
         'sse_case_id' => "ALTER TABLE recon_images ADD COLUMN sse_case_id int unsigned DEFAULT NULL AFTER deleted_at",
         'sse_evidence_id' => "ALTER TABLE recon_images ADD COLUMN sse_evidence_id int unsigned DEFAULT NULL AFTER sse_case_id",
         'sse_transferred_at' => "ALTER TABLE recon_images ADD COLUMN sse_transferred_at datetime DEFAULT NULL AFTER sse_evidence_id",
+        // Nom du fichier sur le poste du joueur : le téléphone sait ainsi quelles photos sont visibles sur Athena.
+        'source_name' => "ALTER TABLE recon_images ADD COLUMN source_name varchar(190) DEFAULT NULL AFTER image_path",
     ];
 
     foreach ($columns as $column => $sql) {
