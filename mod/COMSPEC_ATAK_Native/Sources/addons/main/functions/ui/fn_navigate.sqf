@@ -1,6 +1,6 @@
 params [["_page", "LAUNCHER"], ["_push", true]];
 _page = toUpper _page;
-private _allowed = ["LAUNCHER", "RECENTS"] + (([] call comspec_atak_native_fnc_appList) apply { _x get "page" });
+private _allowed = ["LAUNCHER", "RECENTS", "NOTIFS"] + (([] call comspec_atak_native_fnc_appList) apply { _x get "page" });
 if !(_page in _allowed) then { _page = "LAUNCHER"; };
 
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];

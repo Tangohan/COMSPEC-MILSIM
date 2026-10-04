@@ -5,6 +5,9 @@
     ACE Weather est utilisé s'il est chargé (température, humidité, pression), sinon estimations.
 */
 disableSerialization;
+// Diagnostic : si le rendu précédent s'est arrêté en route, l'étape est affichée en haut de la page.
+private _prevStage = uiNamespace getVariable ["COMSPEC_ATAK_WxStage", "done"];
+uiNamespace setVariable ["COMSPEC_ATAK_WxStage", "mesures"];
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -32,12 +35,27 @@ private _hum = if (!isNil "ace_weather_currentHumidity") then { ace_weather_curr
 private _alt = (getPosASL player) select 2;
 private _press = if (!isNil "ace_weather_fnc_calculateBarometricPressure") then { [_alt] call ace_weather_fnc_calculateBarometricPressure } else { 1013.25 * (1 - 0.0065 * _alt / 288.15) ^ 5.255 };
 private _aceWx = !isNil "ace_weather_fnc_calculateBarometricPressure";
-// BIS_fnc_sunriseSunsetTime prend la date telle quelle (date call …) : [date] faisait planter la page.
-private _sun = date call BIS_fnc_sunriseSunsetTime;
-if !(_sun isEqualType [] && {(count _sun) >= 2}) then { _sun = [-1, -1]; };
-_sun params [["_rise", -1], ["_set", -1]];
+// Lever et coucher calculés ici (déclinaison solaire et latitude de la carte) : la fonction BIS
+// n'a pas la même signature selon les versions et cassait la page.
+private _lat = -(getNumber (configFile >> "CfgWorlds" >> worldName >> "latitude"));
+date params ["_yy", "_mo", "_dd"];
+private _doy = _dd + ([0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334] select (((_mo - 1) max 0) min 11));
+private _decl = 23.44 * sin ((360 / 365) * (_doy - 81));
+private _cosH = ((sin (-0.83)) - (sin _lat) * (sin _decl)) / (((cos _lat) * (cos _decl)) max 0.0001);
+private _rise = -1;
+private _set = -1;
+switch (true) do {
+    case (_cosH >= 1): { _rise = -1; _set = 0; };
+    case (_cosH <= -1): { _rise = 0; _set = -1; };
+    default {
+        private _half = (acos _cosH) / 15;
+        _rise = 12 - _half;
+        _set = 12 + _half;
+    };
+};
 private _night = sunOrMoon < 0.5;
 
+uiNamespace setVariable ["COMSPEC_ATAK_WxStage", "onglet " + _tab];
 private _rows = [["segment", "", [["ACTUEL", "NOW"] call _tabBtn, ["PRÉVISIONS", "FCST"] call _tabBtn, ["AVIATION / TIR", "AVIA"] call _tabBtn]]];
 switch (_tab) do {
     case "FCST": {
@@ -176,5 +194,10 @@ switch (_tab) do {
     };
 };
 _rows pushBack ["buttons", [["ACTUALISER", { [{ ['WEATHER'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
+if (_prevStage isNotEqualTo "done") then {
+    _rows insert [1, [["text", format ["<t size='0.8' color='#e5483a'>Le dernier affichage s'est arrêté à l'étape « %1 ». Envoyez cette ligne et le fichier RPT au support.</t>", _prevStage]]]];
+};
+uiNamespace setVariable ["COMSPEC_ATAK_WxStage", "affichage"];
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+uiNamespace setVariable ["COMSPEC_ATAK_WxStage", "done"];
 true

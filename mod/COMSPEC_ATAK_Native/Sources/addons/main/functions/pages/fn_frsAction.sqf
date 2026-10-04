@@ -18,19 +18,21 @@ private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", crea
 private _full = { if ((count _pieces) >= _max) exitWith { ["WARNING", format ["%1 pièces jointes au maximum par fiche", _max], 3, 20] call comspec_atak_native_fnc_notify; true }; false };
 switch (_act) do {
     case "head": { _ui set ["head", !(_ui getOrDefault ["head", false])]; _ui set ["pj", false]; _ui set ["fab", false]; call _render; };
-    case "pj": { _ui set ["pj", !(_ui getOrDefault ["pj", false])]; _ui set ["head", false]; _ui set ["view", ""]; if !(_ui get "pj") then { _ui set ["fab", false]; }; call _render; };
+    // Volet PJ ouvert : il porte la grille et ses sources, le menu rond se referme (plus de bulles par-dessus).
+    case "pj": { _ui set ["pj", !(_ui getOrDefault ["pj", false])]; _ui set ["head", false]; _ui set ["view", ""]; _ui set ["fab", false]; call _render; };
     case "fab": {
+        // Menu rond ouvert volets fermés : les bulles ne recouvrent ni volet ni formulaire.
         _ui set ["fab", !(_ui getOrDefault ["fab", false])];
-        if (_ui get "fab") then { _ui set ["pj", true]; _ui set ["head", false]; };
+        if (_ui get "fab") then { _ui set ["pj", false]; _ui set ["head", false]; _ui set ["view", ""]; };
         call _render;
     };
     case "gallery": {
         ["list"] call comspec_atak_native_fnc_photoLibrary;
-        _ui set ["view", "gallery"]; _ui set ["pj", true]; _ui set ["head", false];
+        _ui set ["view", "gallery"]; _ui set ["pj", true]; _ui set ["head", false]; _ui set ["fab", false];
         call _render;
     };
     case "back": { _ui set ["view", ""]; _ui set ["pj", true]; call _render; };
-    case "folder": { _ui set ["view", "sent"]; _ui set ["pj", true]; _ui set ["head", false]; _ui set ["libOpen", ""]; call _render; };
+    case "folder": { _ui set ["view", "sent"]; _ui set ["pj", true]; _ui set ["head", false]; _ui set ["fab", false]; _ui set ["libOpen", ""]; call _render; };
     case "libScope": { _ui set ["libScope", _arg]; _ui set ["libOpen", ""]; call _render; };
     case "libOpen": { _ui set ["libOpen", _arg]; call _render; };
     case "add": {
@@ -63,7 +65,7 @@ switch (_act) do {
             [{ ["FRS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
         };
     };
-    case "del": { _pieces deleteAt _arg; call _render; };
+    case "del": { if (_arg isEqualType 0 && {_arg >= 0} && {_arg < count _pieces}) then { _pieces deleteAt _arg; }; call _render; };
     case "home": { [{ ["LAUNCHER"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; };
     case "full": { [{ [] call comspec_atak_native_fnc_modeToggle; }] call CBA_fnc_execNextFrame; };
     case "send": { [{ [] call comspec_atak_native_fnc_frsSubmit; }] call CBA_fnc_execNextFrame; };

@@ -21,6 +21,7 @@ if (_page isNotEqualTo "LAUNCHER") then {
     _title = if ((count _app) > 0) then { toUpper ((_app select 0) get "name") } else { _page };
 };
 if (_page isEqualTo "RECENTS") then { _title = "APPS RÉCENTES"; };
+if (_page isEqualTo "NOTIFS") then { _title = "NOTIFICATIONS"; };
 (_d displayCtrl 88518) ctrlSetText _title;
 
 switch (_page) do {
@@ -30,6 +31,7 @@ switch (_page) do {
     case "GROUP": { [] call comspec_atak_native_fnc_pageGroup; };
     case "BFT": { [] call comspec_atak_native_fnc_pageBft; };
     case "RECENTS": { [] call comspec_atak_native_fnc_pageRecents; };
+    case "NOTIFS": { [] call comspec_atak_native_fnc_pageNotifs; };
     case "FOOD": { [] call comspec_atak_native_fnc_pageFood; };
     case "DATING": { [] call comspec_atak_native_fnc_pageDating; };
     case "OSINT": { [] call comspec_atak_native_fnc_pageOsint; };
@@ -87,4 +89,6 @@ switch (_page) do {
 // Dégâts de l'écran par-dessus la page.
 uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
 [] call comspec_atak_native_fnc_deviceOverlay;
+// Toasts recréés après la page pour rester au premier plan.
+[] call comspec_atak_native_fnc_notificationsRender;
 true

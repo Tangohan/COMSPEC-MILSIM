@@ -102,6 +102,14 @@ private _loadHint = missionNamespace getVariable ["COMSPEC_NetworkLoadHint", "no
 [] call comspec_overwatch_connect_fnc_initRadioMonitor;
 [] call comspec_overwatch_connect_fnc_initLogisticsLoop;
 
+// Drones pilotés (téléphone / terminal UAV) → carte Athena. Delta géré dans la fonction.
+if (isNil "COMSPEC_DroneTrackPfh") then {
+    COMSPEC_DroneTrackPfh = [{
+        if (isNil "comspec_overwatch_connect_fnc_reportOwnedDrones") exitWith {};
+        [] call comspec_overwatch_connect_fnc_reportOwnedDrones;
+    }, 1.5] call CBA_fnc_addPerFrameHandler;
+};
+
 [{
     if !([] call comspec_overwatch_connect_fnc_isReady) exitWith {};
     [] call comspec_overwatch_connect_fnc_syncProfile;

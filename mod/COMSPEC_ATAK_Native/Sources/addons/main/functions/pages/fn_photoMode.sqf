@@ -1,7 +1,8 @@
 /*
     Mode photo : viseur plein écran, on se déplace comme à pied (arme rangée).
-    Clic gauche : photo envoyée sur ATAK web (plusieurs possibles). Espace : quitter et reprendre le téléphone.
-    Params : ["ENTER" | "SHOOT" | "EXIT", légende]
+    Clic gauche : photo envoyée sur ATAK web (plusieurs possibles). R : selfie (téléphone à bout de bras, tourné vers soi).
+    Espace : quitter et reprendre le téléphone.
+    Params : ["ENTER" | "SHOOT" | "SELFIE" | "EXIT", légende]
 */
 params [["_mode", "ENTER"], ["_caption", ""]];
 if (!hasInterface) exitWith { false };
@@ -21,13 +22,47 @@ switch (toUpper _mode) do {
         ("COMSPEC_ATAK_Camera" call BIS_fnc_rscLayer) cutRsc ["COMSPEC_RscTitleCamera", "PLAIN", 0, false];
         private _d46 = findDisplay 46;
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoEH", [
-            _d46 displayAddEventHandler ["KeyDown", { params ["", "_key"]; if (_key isEqualTo 0x39) exitWith { ["EXIT"] call comspec_atak_native_fnc_photoMode; true }; false }],
+            _d46 displayAddEventHandler ["KeyDown", { params ["", "_key"];
+                if (_key isEqualTo 0x39) exitWith { ["EXIT"] call comspec_atak_native_fnc_photoMode; true };
+                if (_key isEqualTo 0x13) exitWith { ["SELFIE"] call comspec_atak_native_fnc_photoMode; true };
+                false }],
             _d46 displayAddEventHandler ["MouseButtonDown", { params ["", "_button"]; if (_button isEqualTo 0 && {isNull curatorCamera} && {!visibleMap} && {isNull (findDisplay 49)}) then { ["SHOOT"] call comspec_atak_native_fnc_photoMode; }; false }]
         ]];
         // Sortie automatique si le joueur meurt, monte en véhicule ou perd le téléphone.
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoPFH", [{
             if (!alive player || {vehicle player isNotEqualTo player} || {!([] call comspec_atak_native_fnc_hasDevice)}) then { ["EXIT"] call comspec_atak_native_fnc_photoMode; };
         }, 0.5] call CBA_fnc_addPerFrameHandler];
+        true
+    };
+    case "SELFIE": {
+        if (!_active) exitWith { false };
+        private _sc = uiNamespace getVariable ["COMSPEC_ATAK_SelfieCam", objNull];
+        private _cam = uiNamespace getVariable ["COMSPEC_ATAK_CameraDisplay", displayNull];
+        // Deuxième appui : retour à l'objectif arrière.
+        if (!isNull _sc) exitWith {
+            [uiNamespace getVariable ["COMSPEC_ATAK_SelfiePFH", -1]] call CBA_fnc_removePerFrameHandler;
+            _sc cameraEffect ["terminate", "back"];
+            camDestroy _sc;
+            uiNamespace setVariable ["COMSPEC_ATAK_SelfieCam", objNull];
+            if (!isNull _cam) then { (_cam displayCtrl 4) ctrlSetText "Objectif arrière · R : selfie"; };
+            true
+        };
+        // Objectif avant : le téléphone tenu à bout de bras (55 cm devant le visage, un peu au-dessus), tourné vers le joueur.
+        _sc = "camera" camCreate (ASLToAGL (eyePos player));
+        _sc cameraEffect ["internal", "back"];
+        _sc camSetFov 0.85;
+        _sc camCommit 0;
+        uiNamespace setVariable ["COMSPEC_ATAK_SelfieCam", _sc];
+        uiNamespace setVariable ["COMSPEC_ATAK_SelfiePFH", [{
+            private _sc = uiNamespace getVariable ["COMSPEC_ATAK_SelfieCam", objNull];
+            if (isNull _sc) exitWith {};
+            private _eye = eyePos player;
+            private _dir = getDir player;
+            private _pos = _eye vectorAdd [0.55 * sin _dir, 0.55 * cos _dir, 0.08];
+            _sc setPosASL _pos;
+            _sc setVectorDirAndUp [vectorNormalized (_eye vectorDiff _pos), [0, 0, 1]];
+        }, 0] call CBA_fnc_addPerFrameHandler];
+        if (!isNull _cam) then { (_cam displayCtrl 4) ctrlSetText "Selfie · clic gauche : photo · R : objectif arrière"; };
         true
     };
     case "SHOOT": {
@@ -72,6 +107,7 @@ switch (toUpper _mode) do {
     };
     case "EXIT": {
         if (!_active) exitWith { false };
+        if (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_SelfieCam", objNull])) then { uiNamespace setVariable ["COMSPEC_ATAK_PhotoMode", true]; ["SELFIE"] call comspec_atak_native_fnc_photoMode; };
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoMode", false];
         private _d46 = findDisplay 46;
         (uiNamespace getVariable ["COMSPEC_ATAK_PhotoEH", []]) params [["_k", -1], ["_m", -1]];

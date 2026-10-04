@@ -101,6 +101,9 @@ if (_interactive) then {
             ["LOS", "map_los", "Ligne de vue"],
             ["CLEAR", "map_clear", "Tout effacer"]
         ];
+        // Drone appairé et en état : ses ordres se donnent aussi depuis la carte.
+        private _drn = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
+        if (!isNull _drn && {alive _drn}) then { _items insert [0, [["DRONE", "app_drone", "Drone : ordres sur la carte"]]]; };
         private _rh = _fs * 1.55;
         private _mwid = _panW;
         // Autant de lignes que la hauteur le permet, puis une seconde colonne.
@@ -250,6 +253,11 @@ if (_interactive) then {
         case "WP": { "POINTS DE PASSAGE : clic pour ajouter une étape" };
         case "LINE": { "TRAIT : clic A puis clic B" };
         case "DRAW": { "DESSIN : maintenir le clic gauche" };
+        case "DRONE": { switch (_s getOrDefault ["droneMapSub", "GOTO"]) do {
+            case "ROUTE": { format ["DRONE : clic pour ajouter un point de route (%1)", count (_s getOrDefault ["droneMapPts", []])] };
+            case "ZONE": { [["DRONE : clic au centre de la zone", "DRONE : clic au bord pour le rayon"], ["DRONE : clic sur un coin de la zone", "DRONE : clic sur le coin opposé"]] select ((_s getOrDefault ["droneZoneKind", "LOITER"]) isEqualTo "HUNT") select ((count (_s getOrDefault ["droneMapPts", []])) min 1) };
+            default { "DRONE : clic = aller ici" };
+        } };
         default { "" };
     };
     if ((count (_s getOrDefault ["markerEdit", createHashMap])) > 0) then { _hintText = ""; };
@@ -271,6 +279,11 @@ if (_interactive) then {
             _c setVariable ["cls", _cls];
             _c ctrlAddEventHandler ["ButtonClick", { params ["_c"]; profileNamespace setVariable ["COMSPEC_ATAK_DrawColor", _c getVariable "cls"]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
         } forEach _cols;
+    };
+    // Outil DRONE : barre d'ordres sous la consigne (drone appairé et en vie).
+    if (_mode isEqualTo "DRONE" && {alive (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])}) then {
+        private _hx = _bx + _pad * 2 + ((_mh * 0.24) min (_font * 3.6)) / _ratio;
+        ["mapBar", [_hx, _by + _pad * 2 + _fs * 1.5, (_tx - _hx - _pad * 2) max (_font * 6 / _ratio)]] call comspec_atak_native_fnc_droneAction;
     };
     // Palette masquée pendant l'édition d'un marqueur : un seul panneau à la fois.
     if (_mode isEqualTo "MARKER" && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {

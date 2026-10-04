@@ -129,16 +129,20 @@ if ((_hint select 0) isNotEqualTo "") then {
 };
 
 // Poignées des volets (texte vertical lettre par lettre).
+// Volet ouvert : languette étroite, collée au bord du volet et centrée sur sa hauteur (zone de saisie masquée).
+private _hwOpen = (_fs * 1.15 / _ratio) min _hw;
 private _handle = {
-    params ["_x0", "_label", "_code", "_on"];
-    private _hh = _bh * 0.24;
-    private _hy = _hdrH + (_barTop - _hdrH - _hh) / 2;
-    private _c = ["COMSPEC_RscText", [_x0, _hy, _hw, _hh]] call _mk;
+    params ["_x0", "_label", "_code", "_on", ["_side", "left"]];
+    private _w = [_hw, _hwOpen] select _on;
+    if (_on && {_side isEqualTo "right"}) then { _x0 = _x0 + _hw - _w; };
+    private _hh = [_bh * 0.24, (_bh * 0.2) min (_barTop * 0.4)] select _on;
+    private _hy = [_hdrH + (_barTop - _hdrH - _hh) / 2, (_barTop - _hh) / 2] select _on;
+    private _c = ["COMSPEC_RscText", [_x0, _hy, _w, _hh]] call _mk;
     _c ctrlSetBackgroundColor ([[0.30, 0.30, 0.30, 1], [0.27, 0.22, 0.62, 1]] select _on);
-    private _t = ["COMSPEC_RscStructuredText", [_x0, _hy + _pad / 3, _hw, _hh]] call _mk;
+    private _t = ["COMSPEC_RscStructuredText", [_x0, _hy + _pad / 3, _w, _hh]] call _mk;
     // Lettres passées une à une : splitString "" coupe les caractères accentués (Ê) en octets.
     _t ctrlSetStructuredText parseText format ["<t align='center' size='0.62' color='#e6e6e6'>%1</t>", _label joinString "<br/>"];
-    [[_x0, _hy, _hw, _hh], _code, _label joinString ""] call _btn;
+    [[_x0, _hy, _w, _hh], _code, _label joinString ""] call _btn;
 };
 
 // Volet ENTÊTE (gauche)
@@ -176,13 +180,129 @@ if (_headOn) then {
     ];
     [_rows, [0, 0, _dw, _barTop], true, [0.07, 0.07, 0.07, 0.99]] call comspec_atak_native_fnc_formRender;
 };
-[[0, _dw] select _headOn, ["E", "N", "T", "Ê", "T", "E"], { ["head"] call comspec_atak_native_fnc_frsAction; }, _headOn] call _handle;
+[[0, _dw] select _headOn, ["E", "N", "T", "Ê", "T", "E"], { ["head"] call comspec_atak_native_fnc_frsAction; }, _headOn, "left"] call _handle;
 
 // Volet PIÈCES JOINTES (droite)
 private _pjOn = _ui getOrDefault ["pj", false];
-private _pw = _bw * ([0.48, 0.8] select _mini);
-if (_pjOn) then {
-    private _view = _ui getOrDefault ["view", ""];
+private _view = _ui getOrDefault ["view", ""];
+// Grille des pièces : volet étroit (~40 % en paysage, plus large en portrait), assez pour deux colonnes lisibles.
+// Photothèque et fiches Athena (listes) gardent la largeur d'avant.
+private _land = _l getOrDefault ["landscape", false];
+private _pw = if (_view isEqualTo "") then {
+    (_bw * ([0.62, 0.40] select _land)) max ((_font * 11 / _ratio) min (_bw * 0.8))
+} else { _bw * ([0.48, 0.8] select _mini) };
+if (_pjOn && {_view isEqualTo ""}) then {
+    // Grille 2 x 2 : vignette, nom et croix de retrait pour une pièce ; tuile pointillée « + » et trois sources pour un emplacement libre.
+    private _x0 = _bw - _pw;
+    private _panel = ["COMSPEC_RscText", [_x0, 0, _pw, _barTop]] call _mk;
+    _panel ctrlSetBackgroundColor [0.11, 0.11, 0.13, 0.99];
+    private _np = count _pieces;
+    private _gx = _x0 + _pad;
+    private _gw = _pw - 2 * _pad;
+    private _titleH = _fs * 1.6;
+    private _tt = ["COMSPEC_RscText", [_gx, _pad / 2, _gw, _titleH], "PIÈCES JOINTES"] call _mk;
+    _tt ctrlSetFont "RobotoCondensedBold"; _tt ctrlSetFontHeight (_fs * 0.95); _tt ctrlSetTextColor [0.9, 0.9, 0.9, 1];
+    private _cw = _fs * 2.6 / _ratio;
+    private _cc = ["COMSPEC_RscTextCenter", [_gx + _gw - _cw, _pad / 2 + _titleH * 0.12, _cw, _titleH * 0.76], format ["%1/4", _np]] call _mk;
+    _cc ctrlSetFontHeight (_fs * 0.8); _cc ctrlSetTextColor [1, 1, 1, 1];
+    _cc ctrlSetBackgroundColor ([[0.27, 0.22, 0.62, 1], [0.85, 0.45, 0.1, 1]] select (_np >= 4));
+    private _closeH = _fs * 1.5;
+    private _helpH = _fs * 1.2;
+    private _gy = _pad / 2 + _titleH + _pad / 2;
+    private _avail = _barTop - _gy - _helpH - _closeH - _pad * 2;
+    private _tw = (_gw - _pad) / 2;
+    private _tileH = (((_avail - _pad) / 2) min (_tw * _ratio * 0.9)) max (_fs * 2.5);
+    // Pointillés d'un cadre (tirets courts, couleur atténuée).
+    private _dash = {
+        params ["_rx", "_ry", "_rw", "_rh"];
+        private _tx = pixelW * 2; private _ty = pixelH * 2;
+        private _rgb = [0.42, 0.42, 0.48, 0.9];
+        private _nx = 6; private _ny = 5;
+        for "_k" from 0 to (_nx - 1) do {
+            private _sx = _rx + _rw * _k / _nx;
+            { (["COMSPEC_RscText", [_sx, _x, _rw / _nx * 0.55, _ty]] call _mk) ctrlSetBackgroundColor _rgb; } forEach [_ry, _ry + _rh - _ty];
+        };
+        for "_k" from 0 to (_ny - 1) do {
+            private _sy = _ry + _rh * _k / _ny;
+            { (["COMSPEC_RscText", [_x, _sy, _tx, _rh / _ny * 0.55]] call _mk) ctrlSetBackgroundColor _rgb; } forEach [_rx, _rx + _rw - _tx];
+        };
+    };
+    for "_i" from 0 to 3 do {
+        private _cx = _gx + (_i mod 2) * (_tw + _pad);
+        private _cy = _gy + (floor (_i / 2)) * (_tileH + _pad);
+        if (_i < _np) then {
+            (_pieces select _i) params ["_kind", "_path", "_name", ["_grid", ""]];
+            private _tile = ["COMSPEC_RscText", [_cx, _cy, _tw, _tileH]] call _mk;
+            _tile ctrlSetBackgroundColor [0.2, 0.2, 0.23, 1];
+            private _labH = _fs * 1.15;
+            // Arma n'affiche que .jpg / .paa : une capture PNG garde l'icône de sa nature.
+            private _p = (_path splitString (toString [92])) joinString "/";
+            private _lp = toLower _p;
+            if ((_lp select [(count _lp) - 4]) in [".jpg", "jpeg", ".paa"]) then {
+                ["COMSPEC_RscSlide", [_cx, _cy, _tw, _tileH - _labH], _p] call _mk;
+            } else {
+                private _ih = (_tileH - _labH) * 0.5;
+                private _ic = ["COMSPEC_RscPicture", [_cx + (_tw - _ih / _ratio) / 2, _cy + (_tileH - _labH - _ih) / 2, _ih / _ratio, _ih], _dir + (["ui_gallery.paa", "ui_photocam.paa"] select (_kind isEqualTo "capture"))] call _mk;
+                _ic ctrlSetTextColor [0.62, 0.62, 0.66, 1];
+            };
+            private _lab = ["COMSPEC_RscText", [_cx, _cy + _tileH - _labH, _tw, _labH], format ["%1 %2", ["Photo ·", "Capture ·"] select (_kind isEqualTo "capture"), _name]] call _mk;
+            _lab ctrlSetFontHeight (_fs * 0.72); _lab ctrlSetTextColor [0.92, 0.92, 0.92, 1];
+            _lab ctrlSetBackgroundColor [0, 0, 0, 0.65];
+            _lab ctrlSetTooltip format ["%1%2", _name, ["", format [" · %1", _grid]] select (_grid isNotEqualTo "")];
+            // Croix de retrait (coin haut droit).
+            private _xs = (_fs * 1.35) min (_tileH * 0.35);
+            private _xw = _xs / _ratio;
+            private _xr = [_cx + _tw - _xw - _pad / 4, _cy + _pad / 4, _xw, _xs];
+            (["COMSPEC_RscPicture", _xr, _dir + "ui_disc.paa"] call _mk) ctrlSetTextColor [0.8, 0.12, 0.12, 0.95];
+            (["COMSPEC_RscPicture", [(_xr select 0) + _xw * 0.25, (_xr select 1) + _xs * 0.25, _xw * 0.5, _xs * 0.5], _dir + "ui_close.paa"] call _mk) ctrlSetTextColor [1, 1, 1, 1];
+            [_xr, compile format ["['del', %1] call comspec_atak_native_fnc_frsAction;", _i], "Retirer la pièce"] call _btn;
+        } else {
+            private _tile = ["COMSPEC_RscText", [_cx, _cy, _tw, _tileH]] call _mk;
+            _tile ctrlSetBackgroundColor [0.14, 0.14, 0.16, 1];
+            [_cx, _cy, _tw, _tileH] call _dash;
+            private _plusH = _tileH * 0.42;
+            private _pl = ["COMSPEC_RscTextCenter", [_cx, _cy + _tileH * 0.04, _tw, _plusH], "+"] call _mk;
+            _pl ctrlSetFontHeight (_plusH * 0.85); _pl ctrlSetTextColor [0.5, 0.5, 0.56, 1];
+            // Trois sources compactes (mêmes actions que le bouton rond).
+            private _srcs = [
+                ["ui_photocam.paa", "Caméra", { ["camera"] call comspec_atak_native_fnc_frsAction; }, "Caméra : capture de la vue jointe à la fiche"],
+                ["ui_gallery.paa", "Galerie", { ["gallery"] call comspec_atak_native_fnc_frsAction; }, "Galerie : joindre une photo de la photothèque"],
+                ["ui_folder.paa", "Athena", { ["folder"] call comspec_atak_native_fnc_frsAction; }, "Fiches Athena et leurs photos"]
+            ];
+            private _sw = (_tw - _pad / 2) / 3;
+            private _sy = _cy + _tileH * 0.48;
+            private _sh = _tileH * 0.48;
+            private _labels = _sh > (_fs * 2.2);
+            private _ih = ([_sh * 0.7, _sh * 0.5] select _labels) min (_sw * _ratio * 0.7);
+            {
+                _x params ["_file", "_name", "_code", "_tip"];
+                private _sx = _cx + _pad / 4 + _forEachIndex * _sw;
+                private _bgS = ["COMSPEC_RscText", [_sx + _sw * 0.06, _sy, _sw * 0.88, _sh - _pad / 4]] call _mk;
+                _bgS ctrlSetBackgroundColor [0.10, 0.06, 0.30, 1];
+                private _iy = _sy + ([(_sh - _ih) / 2, _sh * 0.08] select _labels);
+                (["COMSPEC_RscPicture", [_sx + (_sw - _ih / _ratio) / 2, _iy, _ih / _ratio, _ih], _dir + _file] call _mk) ctrlSetTextColor [1, 1, 1, 1];
+                if (_labels) then {
+                    private _t = ["COMSPEC_RscTextCenter", [_sx, _iy + _ih, _sw, _sh - _ih - _sh * 0.12], _name] call _mk;
+                    _t ctrlSetFontHeight ((_fs * 0.62) min ((_sh - _ih) * 0.7)); _t ctrlSetTextColor [0.85, 0.85, 0.9, 1];
+                };
+                [[_sx, _sy, _sw, _sh], _code, _tip] call _btn;
+            } forEach _srcs;
+        };
+    };
+    // Aide sur une ligne, sous la grille, puis FERMER compact en bas du volet.
+    private _hy = _gy + 2 * _tileH + _pad * 1.5;
+    private _help = ["COMSPEC_RscText", [_gx, _hy, _gw, _helpH], [
+        "4 pièces au plus, envoyées avec la fiche. La croix en retire une.",
+        "Maximum atteint : retirez une pièce (croix) pour en joindre une autre."
+    ] select (_np >= 4)] call _mk;
+    _help ctrlSetFontHeight (_fs * 0.7); _help ctrlSetTextColor [0.6, 0.6, 0.64, 1];
+    _help ctrlSetTooltip "Caméra : capture de la vue · Galerie : photothèque du poste · Athena : fiches envoyées et leurs photos";
+    private _fw0 = (_gw * 0.5) max ((_fs * 6 / _ratio) min _gw);
+    private _close = ["COMSPEC_RscButtonPrimary", [_x0 + (_pw - _fw0) / 2, _barTop - _closeH - _pad, _fw0, _closeH], "FERMER"] call _mk;
+    _close ctrlSetFontHeight (_fs * 0.85);
+    _close ctrlAddEventHandler ["ButtonClick", { ["pj"] call comspec_atak_native_fnc_frsAction; }];
+};
+if (_pjOn && {_view isNotEqualTo ""}) then {
     private _rows = [];
     switch (_view) do {
         case "gallery": {
@@ -253,20 +373,10 @@ if (_pjOn) then {
             };
             _rows pushBack ["buttons", [["RETOUR AUX PIÈCES", { ["back"] call comspec_atak_native_fnc_frsAction; }]]];
         };
-        default {
-            _rows pushBack ["title", format ["Pièce(s) jointe(s) (%1/4)", count _pieces]];
-            if ((count _pieces) isEqualTo 0) then { _rows pushBack ["text", "<t size='0.85' color='#9a9a9a'>Le bouton rond du bas ajoute une capture de la vue (appareil photo), une photo de la photothèque (galerie) ou ouvre les fiches d'Athena et leurs photos (dossier).</t>"]; };
-            {
-                _x params ["_kind", "_path", "_name", "_grid"];
-                _rows pushBack ["person", _dir + (["ui_gallery.paa", "ui_photocam.paa"] select (_kind isEqualTo "capture")), format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.75' color='#9a9a9a'>%2 · %3</t>", [_name] call _esc, ["Photo", "Capture"] select (_kind isEqualTo "capture"), _grid],
-                    [["RETIRER", compile format ["['del', %1] call comspec_atak_native_fnc_frsAction;", _forEachIndex]]], [0.85, 0.85, 0.85, 1]];
-            } forEach _pieces;
-            _rows pushBack ["buttons", [["FERMER", { ["pj"] call comspec_atak_native_fnc_frsAction; }, true]]];
-        };
     };
     [_rows, [_bw - _pw, 0, _pw, _barTop], true, [0.11, 0.11, 0.13, 0.99]] call comspec_atak_native_fnc_formRender;
 };
-[[_bw - _hw, _bw - _pw - _hw] select _pjOn, ["P", "J", " ", str (count _pieces), "/", "4"], { ["pj"] call comspec_atak_native_fnc_frsAction; }, _pjOn] call _handle;
+[[_bw - _hw, _bw - _pw - _hw] select _pjOn, ["P", "J", " ", str (count _pieces), "/", "4"], { ["pj"] call comspec_atak_native_fnc_frsAction; }, _pjOn, "right"] call _handle;
 
 // Barre du bas : bandeau violet (creux au centre), accueil, plein écran, envoi, bouton rond.
 private _purple = [0.086, 0.047, 0.25, 1];
@@ -305,17 +415,27 @@ private _round = {
     _p ctrlSetTextColor _fgRgb;
     [[_cx - _w / 2, _cy - _h / 2, _w, _h], _code, _tip] call _btn;
 };
+// Volet PJ ouvert : il porte ses propres sources, le menu rond reste fermé ; le bouton n'est dessiné que s'il ne mord pas sur le volet.
+if (_pjOn) then { _fabOn = false; };
+private _fabFree = !_pjOn || {(_fcx + _fw / 2) < (_bw - _pw - _hwOpen)};
 if (_fabOn) then {
     private _navy = [0.10, 0.06, 0.30, 1];
     private _r = _fh * 1.2;
-    [_fcx, _fcy - _r, 0.95, _navy, "ui_gallery.paa", [1, 1, 1, 1], { ["gallery"] call comspec_atak_native_fnc_frsAction; }, "Joindre une photo de la photothèque"] call _round;
-    [_fcx - _r * 0.95 * _ratio, _fcy - _r * 0.45, 0.95, _navy, "ui_folder.paa", [1, 1, 1, 1], { ["folder"] call comspec_atak_native_fnc_frsAction; }, "Fiches Athena"] call _round;
-    [_fcx + _r * 0.95 * _ratio, _fcy - _r * 0.45, 0.95, _navy, "ui_photocam.paa", [1, 1, 1, 1], { ["camera"] call comspec_atak_native_fnc_frsAction; }, "Capture de la vue jointe à la fiche"] call _round;
+    // Bulles au-dessus du bandeau (creux compris) : aucune ne recouvre les icônes de la barre.
+    private _bh2 = _fh * 0.95 / 2;
+    private _sideY = (_fcy - _r * 0.45) min ((_bh - _imgH) - _bh2 - _pad / 3);
+    private _topY = (_fcy - _r) min (_sideY - _fh * 0.95);
+    private _dx = (_r * 0.95 * _ratio) min (_fcx - _fw * 0.95 / 2 - _pad);
+    [_fcx, _topY, 0.95, _navy, "ui_gallery.paa", [1, 1, 1, 1], { ["gallery"] call comspec_atak_native_fnc_frsAction; }, "Joindre une photo de la photothèque"] call _round;
+    [_fcx - _dx, _sideY, 0.95, _navy, "ui_folder.paa", [1, 1, 1, 1], { ["folder"] call comspec_atak_native_fnc_frsAction; }, "Fiches Athena"] call _round;
+    [_fcx + _dx, _sideY, 0.95, _navy, "ui_photocam.paa", [1, 1, 1, 1], { ["camera"] call comspec_atak_native_fnc_frsAction; }, "Capture de la vue jointe à la fiche"] call _round;
     [_fcx, _fcy, 1, [0.78, 0.78, 0.78, 1], "ui_minus.paa", [0.25, 0.25, 0.25, 1], { ["fab"] call comspec_atak_native_fnc_frsAction; }, "Fermer"] call _round;
 } else {
-    [_fcx, _fcy, 1, [1, 1, 1, 1], "ui_clip.paa", [0.2, 0.2, 0.2, 1], { ["fab"] call comspec_atak_native_fnc_frsAction; }, "Pièces jointes"] call _round;
-    if ((count _pieces) > 0) then {
-        ["COMSPEC_RscBadge", [_fcx + _fw * 0.22, _fcy - _fh * 0.55, _fs * 1.1 * _ratio, _fs * 1.1], str (count _pieces)] call _mk;
+    if (_fabFree) then {
+        [_fcx, _fcy, 1, [1, 1, 1, 1], "ui_clip.paa", [0.2, 0.2, 0.2, 1], { ["fab"] call comspec_atak_native_fnc_frsAction; }, "Pièces jointes"] call _round;
+        if ((count _pieces) > 0) then {
+            ["COMSPEC_RscBadge", [_fcx + _fw * 0.22, _fcy - _fh * 0.55, _fs * 1.1 * _ratio, _fs * 1.1], str (count _pieces)] call _mk;
+        };
     };
 };
 true

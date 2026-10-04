@@ -360,6 +360,36 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     ["CAManBase", 1, ["ACE_SelfActions", "ACE_Equipment"], _swap, true] call ace_interact_menu_fnc_addActionToClass;
 };
 
+// Drones : connecter / déconnecter le téléphone ATAK en étant au contact du drone (ACE et molette).
+private _droneCan = { params ["_t"]; alive _t && {unitIsUAV _t} && {(player distance _t) < 4} && {[player] call comspec_atak_native_fnc_hasDevice} && {(missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull]) isNotEqualTo _t} };
+private _droneIsMine = { params ["_t"]; (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull]) isEqualTo _t && {(player distance _t) < 4} };
+missionNamespace setVariable ["COMSPEC_ATAK_DroneCan", _droneCan];
+missionNamespace setVariable ["COMSPEC_ATAK_DroneIsMine", _droneIsMine];
+if (!isNil "ace_interact_menu_fnc_createAction") then {
+    private _con = ["COMSPEC_ATAK_DronePair", "Connecter l'ATAK au drone", "", {
+        params ["_t"];
+        if (isNil "ace_common_fnc_progressBar") exitWith { ["pair", _t] call comspec_atak_native_fnc_droneAction; };
+        [4, [_t], { ["pair", (_this select 0) select 0] call comspec_atak_native_fnc_droneAction; }, {}, "Appairage du drone…"] call ace_common_fnc_progressBar;
+    }, { [_target] call (missionNamespace getVariable ["COMSPEC_ATAK_DroneCan", { false }]) }] call ace_interact_menu_fnc_createAction;
+    ["Air", 0, ["ACE_MainActions"], _con, true] call ace_interact_menu_fnc_addActionToClass;
+    private _dis = ["COMSPEC_ATAK_DroneUnpair", "Déconnecter l'ATAK du drone", "", { ["unpair"] call comspec_atak_native_fnc_droneAction; },
+        { [_target] call (missionNamespace getVariable ["COMSPEC_ATAK_DroneIsMine", { false }]) }] call ace_interact_menu_fnc_createAction;
+    ["Air", 0, ["ACE_MainActions"], _dis, true] call ace_interact_menu_fnc_addActionToClass;
+};
+// Molette : les actions sont posées sur chaque drone proche, une seule fois par drone.
+[{
+    if (isNull player || {!alive player}) exitWith {};
+    {
+        if (unitIsUAV _x && {!(_x getVariable ["COMSPEC_ATAK_DroneActs", false])}) then {
+            _x setVariable ["COMSPEC_ATAK_DroneActs", true];
+            _x addAction ["<t color='#7fd0b0'>Connecter l'ATAK au drone</t>", { ["pair", _this select 0] call comspec_atak_native_fnc_droneAction; }, nil, 5, false, true, "",
+                "[_target] call (missionNamespace getVariable ['COMSPEC_ATAK_DroneCan', { false }])", 4];
+            _x addAction ["<t color='#e0a050'>Déconnecter l'ATAK du drone</t>", { ["unpair"] call comspec_atak_native_fnc_droneAction; }, nil, 5, false, true, "",
+                "[_target] call (missionNamespace getVariable ['COMSPEC_ATAK_DroneIsMine', { false }])", 4];
+        };
+    } forEach (player nearEntities [["Air", "LandVehicle"], 15]);
+}, 2] call CBA_fnc_addPerFrameHandler;
+
 // App Groupe : arrivées et changement de chef annoncés aux membres.
 ["comspec_atak_native_groupNotice", {
     params ["_text"];

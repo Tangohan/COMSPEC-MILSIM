@@ -28,6 +28,9 @@ class COMSPEC_RscDisplayATAK {
         class WeatherText: COMSPEC_RscText { idc=COMSPEC_ATAK_IDC_WEATHER_TEXT; ATAK_POS; colorText[]={1,1,1,1}; };
         class Clock: COMSPEC_RscTextCenter { idc=COMSPEC_ATAK_IDC_CLOCK; ATAK_POS; text="--:--"; };
         class Gps: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_GPS; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_gps.paa"; tooltip="Centrer la carte sur moi"; action="['MAP'] call comspec_atak_native_fnc_navigate; [player, 0.05] call comspec_atak_native_fnc_mapCenter"; };
+        // À droite de l'heure : centre de notifications, puis logo COMSPEC Link quand la liaison est établie.
+        class NotifBtn: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_NOTIF; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_bell.paa"; tooltip="Centre de notifications"; action="[] call comspec_atak_native_fnc_notifCenter"; };
+        class LinkLogo: COMSPEC_RscIcon { idc=COMSPEC_ATAK_IDC_LINKLOGO; ATAK_POS; colorText[]={0.36,0.78,0.42,1}; text="\z\comspec_atak_native\addons\main\data\ui_comspec_link.paa"; tooltip="COMSPEC Link connecté"; };
         class Signal: COMSPEC_RscIcon { idc=COMSPEC_ATAK_IDC_SIGNAL; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\sig_0.paa"; };
         class Back: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_BACK; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_back.paa"; action="[] call comspec_atak_native_fnc_back"; tooltip="Retour"; };
         class Title: COMSPEC_RscText { idc=COMSPEC_ATAK_IDC_TITLE; font="RobotoCondensedBold"; text="APPLICATIONS"; ATAK_POS; };
@@ -58,7 +61,7 @@ class RscTitles {
         class controls {
             class Overlay: COMSPEC_RscPhone { idc=1; style=48; x="safeZoneX"; y="safeZoneY"; w="safeZoneW"; h="safeZoneH"; text="\z\comspec_atak_native\addons\main\data\camera_overlay.paa"; };
             class Flash: COMSPEC_RscText { idc=2; x="safeZoneX"; y="safeZoneY"; w="safeZoneW"; h="safeZoneH"; colorBackground[]={1,1,1,0}; };
-            class Info: COMSPEC_RscText { idc=3; style=2; x="safeZoneX + safeZoneW * 0.25"; y="safeZoneY + safeZoneH * 0.84"; w="safeZoneW * 0.5"; h="safeZoneH * 0.035"; colorText[]={0.92,0.95,0.93,1}; shadow=2; sizeEx="0.028 * safeZoneH"; text="CLIC GAUCHE : photo     ESPACE : quitter"; };
+            class Info: COMSPEC_RscText { idc=3; style=2; x="safeZoneX + safeZoneW * 0.25"; y="safeZoneY + safeZoneH * 0.84"; w="safeZoneW * 0.5"; h="safeZoneH * 0.035"; colorText[]={0.92,0.95,0.93,1}; shadow=2; sizeEx="0.028 * safeZoneH"; text="CLIC GAUCHE : photo     R : selfie     ESPACE : quitter"; };
             class Count: COMSPEC_RscText { idc=4; style=2; x="safeZoneX + safeZoneW * 0.25"; y="safeZoneY + safeZoneH * 0.875"; w="safeZoneW * 0.5"; h="safeZoneH * 0.03"; colorText[]={0.36,0.78,0.42,1}; shadow=2; sizeEx="0.024 * safeZoneH"; text=""; };
         };
     };

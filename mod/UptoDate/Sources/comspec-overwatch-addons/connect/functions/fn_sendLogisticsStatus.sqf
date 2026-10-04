@@ -62,8 +62,11 @@ if (vehicle _vehicle != _vehicle) then {
     };
 };
 
-if (_assetId isEqualTo "") then { _assetId = _callsign; };
 if (_callsign isEqualTo "") then { _callsign = name _vehicle; };
+if (_assetId isEqualTo "") then { _assetId = _callsign; };
+if (_assetId isEqualTo "") exitWith { false };
+// Texte libre dans du JSON : guillemets et barres obliques inverses échappés (sinon HTTP 400 côté Athena).
+private _js = { params ["_t"]; [[_t, "\", "\\"] call CBA_fnc_replace, """", "\"""] call CBA_fnc_replace };
 
 // Delta : ne pas renvoyer un LOGSTAT identique (empreinte locale).
 private _sig = format [
@@ -91,9 +94,9 @@ private _ammoJson = format [
 
 private _payload = format [
     '{"missionId":"%1","assetId":"%2","callsign":"%3","vehicle_class":"%4","fuel_ratio":%5,"ammo_state_json":%6,"damage_ratio":%7,"crew_count":%8,"cargo_slots_free":%9,"slingload_capable":%10}',
-    _missionId,
-    _assetId,
-    _callsign,
+    [_missionId] call _js,
+    [_assetId] call _js,
+    [_callsign] call _js,
     _vehicleClass,
     _fuel,
     _ammoJson,

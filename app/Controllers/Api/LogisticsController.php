@@ -36,10 +36,17 @@ class LogisticsController
     private function jsonBody(Request $request): array
     {
         $raw = file_get_contents('php://input');
-        if ($raw === false) {
-            return [];
+        if ($raw === false || $raw === '') {
+            return is_array($_POST ?? null) ? $_POST : [];
+        }
+        // Corps compressé par la DLL (Content-Encoding: gzip) quand il est gros.
+        if (str_starts_with($raw, "\x1f\x8b") && function_exists('gzdecode')) {
+            $raw = (string) @gzdecode($raw);
         }
         $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            error_log('[logistics/update] JSON illisible (' . strlen($raw) . ' o) : ' . json_last_error_msg());
+        }
         return is_array($decoded) ? $decoded : [];
     }
 
@@ -47,9 +54,10 @@ class LogisticsController
     {
         $body = $this->jsonBody($request);
         $missionId = $body['missionId'] ?? $body['mission_id'] ?? $this->missionId($request, $body);
-        $assetId = $body['assetId'] ?? $body['asset_id'] ?? '';
+        // Le jeu envoie l'indicatif comme identifiant ; on le reprend s'il manque l'assetId.
+        $assetId = trim((string) ($body['assetId'] ?? $body['asset_id'] ?? $body['callsign'] ?? $body['call_sign'] ?? ''));
         if ($assetId === '') {
-            return Response::json(['error' => 'assetId required'], 400);
+            return Response::json(['error' => 'assetId required', 'message' => 'Identifiant de l’unité manquant (assetId ou callsign).'], 400);
         }
         $row = $this->repository->upsert($missionId, (string) $assetId, $body);
         $evaluated = $this->evaluator->evaluate(array_merge($row, ['asset_id' => $assetId]));

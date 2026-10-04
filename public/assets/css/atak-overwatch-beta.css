@@ -1053,6 +1053,10 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-gps-pin{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:11px solid #f59e0b;filter:drop-shadow(0 0 1px #000);display:block}
 .ow-gps-label,.ow-air-label{display:block;margin-top:2px;font-size:9px;font-weight:700;color:#e2e8f0;text-shadow:0 1px 2px #000;white-space:nowrap}
 .ow-air-glyph{color:#3b82f6;font-size:12px;font-weight:700;filter:drop-shadow(0 0 1px #000)}
+/* Drones (UAV pilotés) : pictogramme quadrirotor + étiquette indicatif · mode · altitude */
+.ow-uav-map-icon{background:transparent;border:0;overflow:visible}
+.ow-uav-svg{display:block;filter:drop-shadow(0 0 1.5px #000);transform-origin:50% 50%;transition:transform .4s linear}
+.ow-uav-label{position:absolute;left:50%;top:31px;transform:translateX(-50%);padding:0 4px;border-left:2px solid #22d3ee;background:rgba(10,14,22,.78);font-size:9px;font-weight:700;line-height:13px;color:#e2e8f0;text-shadow:0 1px 2px #000;white-space:nowrap;pointer-events:none}
 .ow-map-stage.atak-map-wrap .atak-reach-legend{left:.75rem;bottom:4.5rem;z-index:620;min-width:16rem;max-width:22rem;padding:.7rem .8rem .65rem;background:rgba(10,14,22,.92);border:1px solid rgba(148,163,184,.28);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.35);color:#e2e8f0}
 .ow-map-stage .atak-reach-legend__head{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.25rem}
 .ow-map-stage .atak-reach-legend__head strong{font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;color:#86efac}

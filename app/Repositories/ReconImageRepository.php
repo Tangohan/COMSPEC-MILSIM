@@ -141,6 +141,37 @@ class ReconImageRepository
         }
     }
 
+    /**
+     * Noms de fichiers d'origine (poste du joueur) déjà présents et non supprimés pour ce tenant.
+     *
+     * @param list<string> $names
+     * @return list<string>
+     */
+    public function knownSourceNames(int $tenantId, array $names): array
+    {
+        $names = array_values(array_unique(array_filter(array_map(
+            static fn ($n): string => mb_substr(trim((string) $n), 0, 190),
+            $names
+        ), static fn (string $n): bool => $n !== '')));
+        if ($names === [] || $tenantId < 1 || !$this->tablesReady() || !$this->hasColumn('source_name')) {
+            return [];
+        }
+        $names = array_slice($names, 0, 200);
+        $sql = 'SELECT DISTINCT source_name FROM recon_images WHERE tenant_id = ? AND source_name IN ('
+            . implode(', ', array_fill(0, count($names), '?')) . ')';
+        if ($this->hasColumn('deleted_at')) {
+            $sql .= ' AND deleted_at IS NULL';
+        }
+        try {
+            $stmt = $this->pdo()->prepare($sql);
+            $stmt->execute(array_merge([$tenantId], $names));
+
+            return array_values(array_map('strval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []));
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
     public function create(int $tenantId, array $data): array
     {
         if (!$this->tablesReady() || $tenantId < 1) {
@@ -171,6 +202,9 @@ class ReconImageRepository
         }
         if ($this->hasColumn('fx_intensity')) {
             $cols['fx_intensity'] = $data['fx_intensity'] ?? null;
+        }
+        if ($this->hasColumn('source_name')) {
+            $cols['source_name'] = $data['source_name'] ?? null;
         }
 
         $names = array_keys($cols);

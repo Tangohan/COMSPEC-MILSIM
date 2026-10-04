@@ -11522,6 +11522,7 @@ class AtakApiController
             }
             $data = [
                 'image_path' => \App\Support\ReconImageStorage::relativeImagePath($filename),
+                'source_name' => mb_substr(basename(str_replace('\\', '/', (string) ($file['name'] ?? ''))), 0, 190) ?: null,
                 'author_callsign' => $_POST['author'] ?? $_POST['author_callsign'] ?? 'Unknown',
                 'unit_name' => $unitName,
                 'side' => $_POST['side'] ?? 'WEST',
@@ -11600,6 +11601,21 @@ class AtakApiController
         }
         $row['url'] = \App\Support\ReconImageStorage::publicUrl(basename((string) ($row['image_path'] ?? '')));
         return Response::json($row);
+    }
+
+    /**
+     * GET /api/recon/images/known?names=a.png|b.jpg : lesquelles de ces photos du poste sont visibles sur Athena.
+     */
+    public function reconImagesKnown(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $names = explode('|', (string) ($request->query('names') ?? ''));
+        $known = $this->reconImages()->knownSourceNames($r, $names);
+
+        return Response::json(['known' => $known, 'count' => count($known)]);
     }
 
     public function reconImagesSseCases(Request $request, array $params = []): Response

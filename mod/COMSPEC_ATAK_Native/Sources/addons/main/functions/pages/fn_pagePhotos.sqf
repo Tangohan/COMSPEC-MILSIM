@@ -21,9 +21,16 @@ if (_tab isEqualTo "LIB") exitWith {
     private _sent = ((missionNamespace getVariable ["COMSPEC_Athena_PhotoUploaded", []]) select { _x isEqualType "" }) apply { toLower _x };
     private _bad = ((missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []]) + (profileNamespace getVariable ["COMSPEC_Athena_PhotoDead", []])) select { _x isEqualType "" } apply { toLower _x };
     private _wait = (missionNamespace getVariable ["COMSPEC_Athena_PhotoPending", []]) apply { toLower str _x };
+    private _known = uiNamespace getVariable "COMSPEC_ATAK_PhotoKnown";
+    private _armed = uiNamespace getVariable ["COMSPEC_ATAK_PhotoDelArm", ["", -10]];
+    private _isArmed = { params ["_k"]; (_armed select 0) isEqualTo _k && {diag_tickTime - (_armed select 1) <= 4} };
     private _rows = _head + [
-        ["text", "<t color='#8a9a93'>Les photos enregistrées sur ce poste (dossier COMSPEC et captures Arma), les plus récentes en premier. Arma ne sait pas afficher une image hors de ses fichiers : l'aperçu se fait sur ATAK web, onglet Photos, une fois la photo transmise.</t>"],
-        ["buttons", [["ACTUALISER", { ['list'] call comspec_atak_native_fnc_photoLibrary; [{ ['PHOTOS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }], ["TOUT RETRANSMETTRE", { ['sendAll'] call comspec_atak_native_fnc_photoLibrary; }, true]]]
+        ["text", "<t color='#8a9a93'>Photos enregistrées sur ce poste (dossier COMSPEC et captures Arma), les plus récentes en premier. L'aperçu se fait sur Athena, onglet Photos, une fois la photo transmise.</t>"],
+        ["buttons", [
+            ["ACTUALISER", { ['list'] call comspec_atak_native_fnc_photoLibrary; [{ ['PHOTOS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+            ["TOUT RETRANSMETTRE", { ['sendAll'] call comspec_atak_native_fnc_photoLibrary; }, true, (count _lib) > 0],
+            [["TOUT SUPPRIMER", "CONFIRMER : TOUT SUPPRIMER"] select (["ALL"] call _isArmed), { ['deleteAll'] call comspec_atak_native_fnc_photoLibrary; }, ["ALL"] call _isArmed, (count _lib) > 0]
+        ]]
     ];
     if !([] call comspec_atak_native_fnc_bridge) then {
         _rows pushBack ["text", "<t color='#e0a030'>Bibliothèque disponible avec la liaison Overwatch (mod COMSPEC Overwatch chargé).</t>"];
@@ -33,14 +40,21 @@ if (_tab isEqualTo "LIB") exitWith {
     {
         _x params ["_path", "_name"];
         private _k = [toLower _path, toLower _name];
-        private _st = switch (true) do {
-            case ((_k findIf { _x in _sent }) >= 0): { "<t color='#5cc76b'>transmise</t>" };
-            case ((_k findIf { _x in _bad }) >= 0): { "<t color='#e5483a'>refusée</t>" };
-            case ((_wait findIf { ((_x find (_k select 1)) >= 0) }) >= 0): { "<t color='#e0a030'>en attente</t>" };
-            default { "<t color='#8a9a93'>sur le poste</t>" };
+        private _tx = switch (true) do {
+            case ((_k findIf { _x in _sent }) >= 0): { "<t color='#5cc76b'>● transmise</t>" };
+            case ((_k findIf { _x in _bad }) >= 0): { "<t color='#e5483a'>● envoi refusé</t>" };
+            case ((_wait findIf { ((_x find (_k select 1)) >= 0) }) >= 0): { "<t color='#e0a030'>● en attente d'envoi</t>" };
+            default { "<t color='#8a9a93'>○ non transmise</t>" };
         };
-        _rows pushBack ["info", [_name] call _esc, _st];
-        _rows pushBack ["buttons", [["RETRANSMETTRE", compile format ["['send', %1] call comspec_atak_native_fnc_photoLibrary;", _forEachIndex]]]];
+        private _vps = if (isNil "_known") then { "<t color='#8a9a93'>? Athena : inconnu</t>" } else {
+            if ((_k select 1) in _known) then { "<t color='#5cc76b'>● visible sur Athena</t>" } else { "<t color='#8a9a93'>○ absente d'Athena</t>" }
+        };
+        private _del = [str _forEachIndex] call _isArmed;
+        _rows pushBack ["person", "\z\comspec_atak_native\addons\main\data\ui_gallery.paa",
+            format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8'><t color='#5cc76b'>● sur le poste</t>   %2   %3</t>", [_name] call _esc, _tx, _vps],
+            [["ENVOYER", compile format ["['send', %1] call comspec_atak_native_fnc_photoLibrary;", _forEachIndex], true],
+             [["SUPPRIMER", "CONFIRMER"] select _del, compile format ["['delete', %1] call comspec_atak_native_fnc_photoLibrary;", _forEachIndex], _del]],
+            [0.90, 0.94, 0.91, 1]];
     } forEach _lib;
     [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
     true
