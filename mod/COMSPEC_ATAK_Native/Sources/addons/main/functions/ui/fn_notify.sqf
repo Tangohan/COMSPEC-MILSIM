@@ -14,6 +14,11 @@ _s set ["notifHistory", _hist];
 _s set ["notifUnread", (_s getOrDefault ["notifUnread", 0]) + 1];
 if ((_s getOrDefault ["activePage", ""]) isEqualTo "NOTIFS") then { [{ ["NOTIFS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
 if !(profileNamespace getVariable ["COMSPEC_ATAK_Notifications",true]) exitWith {false};
+// Préférences réglées depuis le web (Mon ATAK) : types muets (historique seulement), durée imposée des bandeaux.
+private _muted = profileNamespace getVariable ["COMSPEC_ATAK_NotifMuted", []];
+if ((_muted isEqualType []) && {(toUpper _type) in _muted}) exitWith {false};
+private _forced = profileNamespace getVariable ["COMSPEC_ATAK_NotifToastSec", 0];
+if ((_forced isEqualType 0) && {_forced > 0}) then { _duration = _forced; };
 private _q = _s getOrDefault ["notifications",[]];
 // Même texte déjà en file : on le remet en avant au lieu de l'empiler (alertes répétées chaque seconde).
 private _dup = _q findIf { (_x getOrDefault ["message", ""]) isEqualTo _message };

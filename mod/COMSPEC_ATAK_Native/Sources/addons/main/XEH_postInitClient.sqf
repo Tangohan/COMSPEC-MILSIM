@@ -528,3 +528,5 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 };
 // Alertes santé (inconscient, arrêt cardiaque, KIA) diffusées par Overwatch.
 ["COMSPEC_IcemanMedicalPanic", { ["health", _this] call comspec_atak_native_fnc_athenaSignal; }] call CBA_fnc_addEventHandler;
+// App Liaison allié : événements, sauvegarde légère, action ACE.
+[] call comspec_atak_native_fnc_linkAllyInit;

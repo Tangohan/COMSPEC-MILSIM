@@ -182,6 +182,7 @@ private _next = [];
         ["source", if (_d isEqualTo _phoneDrone) then { "phone" } else { "terminal" }],
         ["task", _taskKind],
         ["custom_name", _custom],
+        ["name", _custom],
         ["icon", _icon],
         ["task_radius", _taskRad],
         ["seq", _seq]
