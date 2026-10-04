@@ -45,7 +45,7 @@ final class OverwatchVanillaChatSilentAssetTest extends TestCase
         );
 
         self::assertMatchesRegularExpression(
-            '/"comspec_overwatch_screen_notifications".{0,800}?"COMSPEC Overwatch", false/s',
+            '/"comspec_overwatch_screen_notifications".{0,800}?\["COMSPEC", "Overwatch"\], false/s',
             $pre
         );
         self::assertStringContainsString('N’écrit jamais dans le chat du jeu', $pre);
