@@ -1,6 +1,6 @@
 /*
     App Statut : état du terminal d'un coup d'œil. Pastille de liaison en tête, puis tuiles
-    (Athena, signal, batterie, latence) et sections Liaison, Synchronisation, Terminal ;
+    (Athena, signal, batterie, latence) et sections Liaison, Synchronisation, Terminal (dont la mémoire vive) ;
     raccourcis vers Resynch, Athena et Debug.
 */
 disableSerialization;
@@ -46,6 +46,9 @@ private _rows = [
     ["info", "Ordres reçus", str _orders],
     ["section", "Terminal", ""],
     ["info", "Batterie", format ["<t color='%1'>%2 %%</t>", ["#e5483a", "#f2ab33", "#5cc76b"] select ((floor (_bat / 30)) min 2), _bat]],
+    // Mémoire vive simulée (fn_ramUsage) : total, puis la part de chaque poste.
+    ["info", "Mémoire vive", ([] call comspec_atak_native_fnc_ramUsage) call { format ["<t color='%1'>%2 / %3 Mo (%4 %5)</t>", switch (true) do { case ((_this get "pct") >= 90): { "#e5483a" }; case ((_this get "pct") >= 75): { "#f2ab33" }; default { "#5cc76b" }; }, _this get "used", _this get "total", _this get "pct", "%"] }],
+    ["text", format ["<t size='0.8' color='#8a9a93'>%1</t>", ((missionNamespace getVariable ["COMSPEC_ATAK_Ram", createHashMap]) getOrDefault ["parts", []]) apply { format ["%1 : %2 Mo", _x select 0, _x select 1] } joinString " · "]],
     ["info", "Version du mod", ["COMSPEC_ATAK_NativeVersion", "?"] call _str],
     ["info", "Extension", ["DLL native", "DLL COMSPEC Link embarquée"] select _bridge],
     ["buttons", [

@@ -1,0 +1,132 @@
+/* COMSPEC Athena — Overwatch Beta : alertes, balises, apps synchronisées, renseignement, anneaux, curseur. */
+
+/* ---- Marqueurs d'alerte (pulsation détresse) */
+.owi-alert-marker{background:transparent!important;border:0!important;overflow:visible!important}
+.owi-alert-marker>div{position:relative;width:28px;height:28px}
+.owi-alert-marker b{position:absolute;left:8px;top:8px;width:12px;height:12px;border-radius:50%;background:var(--owi-c);border:2px solid #06100d;box-shadow:0 0 0 2px var(--owi-c)}
+.owi-alert-marker i{position:absolute;left:2px;top:2px;width:24px;height:24px;border-radius:50%;border:2px solid var(--owi-c);opacity:0}
+.owi-alert-marker.is-live i.r1{animation:owiPulse 1.6s ease-out infinite}
+.owi-alert-marker.is-live i.r2{animation:owiPulse 1.6s ease-out .8s infinite}
+.owi-alert-marker.is-acked b{opacity:.6;box-shadow:none}
+.owi-alert-marker span{position:absolute;left:26px;top:4px;white-space:nowrap;padding:2px 6px;background:#0a0e0d;border:1px solid var(--owi-c);color:#fff;border-radius:3px;font:700 10px/1.2 var(--ow-mono,monospace);letter-spacing:.02em}
+.owi-k-panic.is-live b{animation:owiBlink .8s steps(1,end) infinite}
+@keyframes owiPulse{0%{transform:scale(.6);opacity:.95}100%{transform:scale(2.6);opacity:0}}
+@keyframes owiBlink{0%,49%{background:var(--owi-c)}50%,100%{background:#fff}}
+
+/* ---- Balises GPS */
+.owi-beacon-marker{background:transparent!important;border:0!important;overflow:visible!important}
+.owi-beacon-marker>div{display:flex;align-items:center;gap:4px;color:#38bdf8;filter:drop-shadow(0 1px 2px rgba(0,0,0,.8))}
+.owi-beacon-marker span{padding:1px 5px;background:#0a0e0d;border:1px solid #38bdf8;color:#e4e8e8;border-radius:3px;font:600 10px/1.2 var(--ow-mono,monospace);white-space:nowrap}
+.owi-beacon-marker.is-stale{opacity:.55}
+.owi-beacon-marker svg{animation:owiBeacon 2.4s ease-in-out infinite}
+@keyframes owiBeacon{0%,100%{opacity:1}50%{opacity:.45}}
+
+/* ---- Repère « voir sur la carte » */
+.owi-goto{background:transparent!important;border:0!important;overflow:visible!important}
+.owi-goto i{position:absolute;inset:0;border-radius:50%;border:2px solid #facc15;animation:owiPulse 1.2s ease-out 4}
+.owi-goto span{position:absolute;left:46px;top:12px;white-space:nowrap;padding:2px 6px;background:#0a0e0d;border:1px solid #facc15;color:#fff;border-radius:3px;font:600 11px/1.2 var(--ow-mono,monospace)}
+
+/* ---- Bouton et panneau Alertes */
+.owi-alerts-btn{position:absolute;top:12px;right:62px;z-index:6;display:flex;align-items:center;gap:6px;padding:6px 10px;background:#0a0e0d;border:1px solid #27302d;border-radius:6px;color:#e4e8e8;font:600 12px/1 var(--ow-sans,sans-serif);cursor:pointer}
+.owi-alerts-btn em{font-style:normal;min-width:18px;padding:2px 5px;border-radius:9px;background:#e7b14d;color:#0a0e0d;text-align:center;font-size:11px}
+.owi-alerts-btn.is-critical{border-color:#ff3b3b;color:#fff}
+.owi-alerts-btn.is-critical em{background:#ff3b3b;color:#fff;animation:owiBlink2 1s steps(1,end) infinite}
+.owi-alerts-btn.is-ring{animation:owiShake .5s ease-in-out 3}
+@keyframes owiBlink2{0%,49%{opacity:1}50%,100%{opacity:.35}}
+@keyframes owiShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+.owi-alerts-panel{position:absolute;top:48px;right:62px;z-index:7;width:340px;max-width:calc(100% - 80px);max-height:calc(100% - 120px);overflow:auto;padding:10px;background:#0a0d0c;border:1px solid #27302d;border-radius:8px;box-shadow:0 18px 54px rgba(0,0,0,.5)}
+.owi-alerts-panel[hidden]{display:none}
+.owi-panel-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.owi-panel-head span{color:#7d8883;font-size:12px}
+.owi-panel-head .owi-x{margin-left:auto}
+.owi-x{background:none;border:0;color:#9aa5a1;font-size:18px;line-height:1;cursor:pointer;padding:2px 6px}
+.owi-x:hover{color:#fff}
+.owi-sub{margin:12px 0 6px;color:#7d8883;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+
+/* ---- Cartes d'alerte et éléments du fil */
+.owi-alert-row,.owi-chat-alert,.owi-intel{border:1px solid #27302d;border-left:3px solid var(--owi-c);border-radius:5px;background:#0d1110;padding:8px 9px;margin:0 0 6px}
+.owi-alert-row.is-acked,.owi-chat-alert.is-acked{opacity:.62}
+.owi-chat-alert{flex:1 1 auto;min-width:0}
+.owi-chat-alert.is-live{box-shadow:0 0 0 1px var(--owi-c) inset;animation:owiGlow 1.6s ease-in-out infinite}
+@keyframes owiGlow{0%,100%{background:#0d1110}50%{background:#1a0f10}}
+.owi-alert-head{display:flex;align-items:center;gap:7px;min-width:0}
+.owi-alert-head b{color:#e4e8e8;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.owi-alert-head time{margin-left:auto;color:#7d8883;font:500 11px var(--ow-mono,monospace);white-space:nowrap}
+.owi-badge{flex:0 0 auto;padding:2px 6px;border-radius:3px;background:var(--owi-c);color:#06100d;font:700 10px/1.2 var(--ow-mono,monospace);letter-spacing:.03em}
+.owi-alert-row p,.owi-chat-alert p,.owi-intel p{margin:6px 0;color:#c5cbc8;font-size:12.5px;line-height:1.4;overflow-wrap:anywhere}
+.owi-alert-foot{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:4px;color:#7d8883;font-size:11.5px}
+.owi-alert-foot>span:first-child{margin-right:auto}
+.owi-ack{border-color:var(--owi-c)!important}
+.owi-acked{color:#5cc76b;font-size:11px}
+.owi-chat-grid{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-top:6px;font-size:12px}
+.owi-chat-grid span{color:#7d8883}
+.owi-chat-grid b{color:#e4e8e8;font-family:var(--ow-mono,monospace);font-weight:600}
+.owi-pop{min-width:180px;font-size:12px}
+.owi-pop p{margin:6px 0}
+.owi-pop-meta{color:#7d8883;margin-top:3px}
+.owi-pop .ow-tag{margin-top:6px}
+
+/* ---- Apps synchronisées */
+.owi-apps-sum{margin:6px 0 10px;color:#c5cbc8;font-size:13px}
+.owi-apps-sum b{color:#00d69a;font-size:18px}
+.owi-table-wrap{overflow-x:auto;max-width:100%}
+.owi-table{width:100%;border-collapse:collapse;font-size:12px;min-width:560px}
+.owi-table th{position:sticky;top:0;background:#0d1010;text-align:left;color:#7d8883;font-weight:700;font-size:11px;padding:6px;border-bottom:1px solid #27302d}
+.owi-table td{padding:6px;border-bottom:1px solid #1c2321;vertical-align:top;color:#c5cbc8}
+.owi-table td small{display:block;color:#7d8883;font-size:11px;margin-top:2px}
+.owi-table td.num{text-align:right;font-family:var(--ow-mono,monospace)}
+.owi-state{display:inline-block;padding:2px 7px;border-radius:9px;font-size:11px;font-weight:700;background:#1c2321;color:#7d8883}
+tr.is-actif .owi-state{background:rgba(0,214,154,.16);color:#00d69a}
+tr.is-inactif .owi-state{background:rgba(231,177,77,.14);color:#e7b14d}
+tr.is-jamais td{opacity:.6}
+
+/* ---- Renseignement */
+.owi-tabs{display:flex;gap:2px;margin:-2px 0 10px;border-bottom:1px solid #27302d}
+.owi-tabs button{background:none;border:0;border-bottom:2px solid transparent;color:#9aa5a1;padding:7px 10px;font:600 12px var(--ow-sans,sans-serif);cursor:pointer}
+.owi-tabs button.is-active{color:#fff;border-bottom-color:#00d69a}
+.owi-chips{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}
+.owi-chip{border:1px solid #27302d;background:#0d1110;color:#c5cbc8;border-radius:12px;padding:3px 9px;font-size:11.5px;cursor:pointer}
+.owi-chip em{font-style:normal;color:#7d8883;margin-left:2px}
+.owi-chip.is-on{border-color:var(--owi-c);background:color-mix(in srgb,var(--owi-c) 18%,#0d1110);color:#fff}
+.owi-intel{cursor:pointer}
+.owi-intel:hover,.owi-intel:focus{border-color:#3a4642;outline:none}
+.owi-intel mark{background:rgba(250,204,21,.35);color:#fff;border-radius:2px}
+.owi-thumbs{display:flex;gap:4px;margin:4px 0}
+.owi-thumbs span{width:54px;height:40px;border-radius:3px;background:#111 center/cover no-repeat;border:1px solid #27302d}
+.owi-intel-detail{cursor:default;margin-top:8px}
+.owi-kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:8px 0;font-size:12px}
+.owi-kv dt{color:#7d8883}
+.owi-kv dd{margin:0;color:#e4e8e8;overflow-wrap:anywhere}
+.owi-fulltext{white-space:normal;color:#e4e8e8;font-size:13px;line-height:1.5;margin:8px 0;overflow-wrap:anywhere}
+.owi-attach{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.owi-attach img{width:120px;height:90px;object-fit:cover;border-radius:4px;border:1px solid #27302d}
+
+/* ---- Anneaux de géolocalisation */
+.owi-ring-label{background:transparent!important;border:0!important;overflow:visible!important}
+.owi-ring-label i{position:absolute;left:3px;top:3px;width:6px;height:6px;border-radius:50%;background:#facc15}
+.owi-ring-label span{position:absolute;left:12px;top:-4px;white-space:nowrap;padding:1px 5px;background:#0a0e0d;border:1px solid #facc15;color:#fef3c7;border-radius:3px;font:600 10px/1.2 var(--ow-mono,monospace)}
+.owi-ring-form .ow-row input{min-width:0}
+.owi-ring-actions{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.owi-ring-row{display:flex;align-items:center;gap:4px;border:1px solid #27302d;border-left:3px solid #facc15;border-radius:4px;margin:4px 0;background:#0d1110}
+.owi-ring-go{flex:1 1 auto;min-width:0;text-align:left;background:none;border:0;color:#e4e8e8;padding:5px 7px;cursor:pointer}
+.owi-ring-go b{display:block;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.owi-ring-go small{color:#7d8883;font-size:11px}
+.owi-ring-clear{margin-top:6px}
+
+/* ---- Curseur du joueur */
+.owi-self-marker{background:transparent!important;border:0!important;overflow:visible!important}
+.owi-self-marker svg{display:block;overflow:visible;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7))}
+.owi-self-label{position:absolute;top:50%;transform:translateY(-50%);white-space:nowrap;padding:2px 6px;background:#0a0e0d;border:1px solid var(--owi-c);color:#fff;border-radius:3px;font:700 var(--ow-label-size,11px)/1.2 var(--ow-mono,monospace)}
+body.ow-labels-hidden .owi-self-label{display:none}
+.owi-self-marker.is-selected svg{filter:drop-shadow(0 0 4px rgba(255,255,255,.8))}
+.owi-cur-preview{position:relative;height:110px;margin:8px 0;border:1px dashed #27302d;border-radius:6px;background:#08231f;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.owi-cur-preview .owi-self-label{left:auto!important;position:static;transform:none;margin-left:-20px}
+
+@media (prefers-reduced-motion:reduce){
+  .owi-alert-marker i,.owi-goto i,.owi-beacon-marker svg,.owi-chat-alert.is-live,.owi-alerts-btn em,.owi-k-panic.is-live b{animation:none!important}
+  .owi-alert-marker.is-live i.r1{opacity:.7;transform:scale(1.4)}
+}
+@media (max-width:640px){
+  .owi-alerts-btn{right:12px}
+  .owi-alerts-panel{right:8px;left:8px;width:auto;max-width:none}
+}

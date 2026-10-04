@@ -5,7 +5,7 @@
         "Fiche SSE depuis le menu ACE",
         "Ajoute « Renseignement SSE » sur une personne (blessé, détenu, corps). Sans effet si ACE n’est pas chargé."
     ],
-    "COMSPEC Overwatch", true
+    ["COMSPEC", "SSE"], true
 ] call CBA_fnc_addSetting;
 
 diag_log "[COMSPEC Overwatch][sse_ace] PreInit OK";

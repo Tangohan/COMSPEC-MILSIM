@@ -47,37 +47,37 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 [
     "comspec_overwatch_enabled", "CHECKBOX",
     ["Activer Overwatch", "Active la liaison avec le poste. Décochez pour couper les échanges en fond (le téléphone reste utilisable). Une session déjà ouverte reste affichée jusqu’à la sortie d’Arma."],
-    "COMSPEC Overwatch", true
+    ["COMSPEC", "Overwatch"], true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_api_url", "EDITBOX",
     ["Adresse du portail", "Adresse Athena (ex. https://athena.ttrd.fr/public) — sans slash final, avec /public si le site l’utilise. Aussi réglable dans Paramètres ATAK."],
-    "COMSPEC Overwatch", "https://athena.ttrd.fr/public"
+    ["COMSPEC", "Overwatch"], "https://athena.ttrd.fr/public"
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_api_key", "EDITBOX",
     ["Clé d’accès communauté", "Fournie par l’administration. Laissez vide en local si le poste n’exige pas de clé. Aussi réglable dans Paramètres ATAK."],
-    "COMSPEC Overwatch", ""
+    ["COMSPEC", "Overwatch"], ""
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_tenant_id", "EDITBOX",
     ["Identifiant de communauté", "Numéro ou code de votre communauté. Utile si plusieurs communautés partagent la même adresse. Aussi réglable dans Paramètres ATAK."],
-    "COMSPEC Overwatch", ""
+    ["COMSPEC", "Overwatch"], ""
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_server_hub", "CHECKBOX",
     ["Hub serveur (charge mission)", "Sur le serveur dédié ou l’hôte : un seul poll pour les relais, zones roleplay, ordres IA et file anti-spam. Les clients gardent leur liaison personnelle (position, téléphone)."],
-    "COMSPEC Overwatch", true, true
+    ["COMSPEC", "Overwatch"], true, true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_map_id", "SLIDER",
     ["Numéro de carte (opération)", "Identifiant de la carte Athena pour cette mission. Changez-le si plusieurs opérations tournent en même temps, pour ne pas mélanger les positions."],
-    "COMSPEC Overwatch", [1, 99, 1, 0],
+    ["COMSPEC", "Overwatch"], [1, 99, 1, 0],
     1,
     {
         private _id = round (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
@@ -92,8 +92,8 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
 
 [
     "comspec_overwatch_update_interval", "SLIDER",
-    ["Frequency (sec)", "Delay between general synchronization cycles (longer = less load)"],
-    "COMSPEC Overwatch", [1, 600, 10, 0]
+    ["Fréquence de synchronisation (s)", "Délai entre deux cycles de synchronisation générale avec Athena (plus long = moins de charge)."],
+    ["COMSPEC", "Overwatch"], [1, 600, 10, 0]
 ] call CBA_fnc_addSetting;
 
 private _fnc_applyNet = {
@@ -105,7 +105,7 @@ private _fnc_applyNet = {
 [
     "comspec_overwatch_network_authority", "LIST",
     ["Autorité du profil réseau", "SERVEUR IMPOSÉ : toute la mission utilise le profil serveur. CLIENT AUTORISÉ : chaque joueur choisit. CLIENT LIMITÉ : le joueur peut descendre, pas dépasser le profil serveur."],
-    ["COMSPEC Overwatch", "Réseau"],
+    ["COMSPEC", "Overwatch · Réseau"],
     [
         [0, 1, 2],
         ["Serveur imposé", "Client autorisé", "Client limité"],
@@ -118,7 +118,7 @@ private _fnc_applyNet = {
 [
     "comspec_overwatch_network_profile_server", "LIST",
     ["Profil réseau (serveur / plafond)", "Économie : peu de requêtes. Standard : hybride recommandé. Tactique / Temps réel : petites opérations uniquement. Charge estimée affichée dans le journal de liaison."],
-    ["COMSPEC Overwatch", "Réseau"],
+    ["COMSPEC", "Overwatch · Réseau"],
     [
         [0, 1, 2, 3, 4],
         [
@@ -137,7 +137,7 @@ private _fnc_applyNet = {
 [
     "comspec_overwatch_network_profile", "LIST",
     ["Profil réseau (client)", "Utilisé si le serveur autorise le choix client. En mode limité, le profil ne peut pas dépasser celui du serveur."],
-    ["COMSPEC Overwatch", "Réseau"],
+    ["COMSPEC", "Overwatch · Réseau"],
     [
         [0, 1, 2, 3, 4],
         [
@@ -156,7 +156,7 @@ private _fnc_applyNet = {
 [
     "comspec_overwatch_network_policy", "LIST",
     ["Politique de transmission", "Intervalle fixe : envoi cadencé même immobile. Sur changement : mouvement / cap / état. Hybride (recommandé) : changement + heartbeat périodique."],
-    ["COMSPEC Overwatch", "Réseau"],
+    ["COMSPEC", "Overwatch · Réseau"],
     [
         [0, 1, 2],
         ["Intervalle fixe", "Sur changement", "Hybride (recommandé)"],
@@ -169,7 +169,7 @@ private _fnc_applyNet = {
 [
     "comspec_overwatch_heartbeat_interval", "SLIDER",
     ["Heartbeat (s) — personnalisé", "Même immobile, Athena reçoit un signal de présence. Utilisé uniquement en profil Personnalisé."],
-    ["COMSPEC Overwatch", "Réseau"],
+    ["COMSPEC", "Overwatch · Réseau"],
     [8, 120, 30, 0],
     0,
     _fnc_applyNet
@@ -178,7 +178,7 @@ private _fnc_applyNet = {
 [
     "comspec_overwatch_position_interval", "SLIDER",
     ["Intervalle position (s) — personnalisé", "Délai minimum entre deux envois de position. Utilisé uniquement en profil Personnalisé."],
-    ["COMSPEC Overwatch", "Réseau"],
+    ["COMSPEC", "Overwatch · Réseau"],
     [1, 60, 5, 0],
     0,
     _fnc_applyNet
@@ -187,7 +187,7 @@ private _fnc_applyNet = {
 [
     "comspec_overwatch_batch_interval", "SLIDER",
     ["Regroupement réseau (s) — personnalisé", "Délai de regroupement des positions avant envoi. Utilisé uniquement en profil Personnalisé."],
-    ["COMSPEC Overwatch", "Réseau"],
+    ["COMSPEC", "Overwatch · Réseau"],
     [0.25, 5, 1, 2],
     0,
     _fnc_applyNet
@@ -196,7 +196,7 @@ private _fnc_applyNet = {
 [
     "comspec_overwatch_position_threshold", "SLIDER",
     ["Seuil de déplacement (m) — personnalisé", "Envoi si le déplacement dépasse cette distance (infanterie). Véhicule et aérien sont dérivés. Utilisé uniquement en profil Personnalisé."],
-    ["COMSPEC Overwatch", "Réseau"],
+    ["COMSPEC", "Overwatch · Réseau"],
     [1, 50, 3, 0],
     0,
     _fnc_applyNet
@@ -204,11 +204,11 @@ private _fnc_applyNet = {
 
 [
     "comspec_overwatch_terminal_mode", "LIST",
-    ["Terminal detection (position)", "How to recognize tactical phone (S7 Android) to authorize position reporting. Object slot = ItemAndroid equipped (like GPS/NVG). Inventory = ItemAndroidMisc simply carried (cTab object). Both accepts either."],
-    "COMSPEC Overwatch",
+    ["Détection du terminal (position)", "Comment reconnaître le téléphone tactique (S7 Android) pour autoriser l’envoi de position. Emplacement = ItemAndroid équipé (comme un GPS ou des JVN). Inventaire = ItemAndroidMisc simplement porté (objet cTab). Les deux = l’un ou l’autre."],
+    ["COMSPEC", "Overwatch"],
     [
         [0, 1, 2],
-        ["Object slot only (ItemAndroid)", "Inventory presence (ItemAndroidMisc)", "Both (default)"],
+        ["Emplacement d’objet seulement (ItemAndroid)", "Présence dans l’inventaire (ItemAndroidMisc)", "Les deux (par défaut)"],
         2
     ],
     false
@@ -216,38 +216,38 @@ private _fnc_applyNet = {
 
 [
     "comspec_overwatch_playtime_enabled", "CHECKBOX",
-    ["Record playtime", "Sends time spent on the server, in Zeus, and in the editor to the portal (mod connected)"],
-    "COMSPEC Overwatch", true
+    ["Enregistrer le temps de jeu", "Envoie au portail le temps passé sur le serveur, en Zeus et dans l’éditeur (mod connecté)."],
+    ["COMSPEC", "Overwatch"], true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_playtime_report_interval", "SLIDER",
-    ["Playtime report (minutes)", "Frequency of cumulative send to portal"],
-    "COMSPEC Overwatch", [2, 60, 5, 0]
+    ["Envoi du temps de jeu (min)", "Fréquence d’envoi du cumul au portail."],
+    ["COMSPEC", "Overwatch"], [2, 60, 5, 0]
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_vehicle_mode", "CHECKBOX",
-    ["Vehicle detail", "Send 3D orientation and speed when player is in vehicle"],
-    "COMSPEC Overwatch", true
+    ["Détail véhicule", "Envoie l’orientation 3D et la vitesse quand le joueur est dans un véhicule."],
+    ["COMSPEC", "Overwatch"], true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_sync_map_markers", "CHECKBOX",
-    ["Synchronize map markers", "Sends to Athena markers created / modified / deleted in game"],
-    "COMSPEC Overwatch", true
+    ["Synchroniser les marqueurs", "Envoie à Athena les marqueurs créés, modifiés ou supprimés en jeu."],
+    ["COMSPEC", "Overwatch"], true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_profile_enabled", "CHECKBOX",
-    ["Profiler (debug)", "Measures execution time of critical loops/PerFrameHandlers (position, CAS, markers). Report visible via debug panel. Zero cost when disabled."],
-    "COMSPEC Overwatch", false
+    ["Profileur (débogage)", "Mesure le temps d’exécution des boucles critiques (position, CAS, marqueurs). Rapport visible dans le panneau de débogage. Aucun coût une fois désactivé."],
+    ["COMSPEC", "Overwatch"], false
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_notif_sound", "LIST",
     ["Son des notifications", "Joué avec les alertes (messages, ordres, connexion). Les urgences médicales ont un son dédié, y compris en mode Silencieux — vibration seule. Seul Silencieux — sans vibration coupe tout. Le mode discret ne coupe pas ces sons. Réglable aussi depuis l’app Sons de l’ATAK."],
-    "COMSPEC Overwatch",
+    ["COMSPEC", "Overwatch"],
     [
         ["silent_vib", "stalker", "health", "mute"],
         ["Silencieux — vibration seule", "Ambiance tension", "Signal médical", "Silencieux — sans vibration"],
@@ -259,7 +259,7 @@ private _fnc_applyNet = {
 [
     "comspec_overwatch_sound_master", "SLIDER",
     ["Volume général ATAK", "Multiplie uniquement les sons du terminal COMSPEC (alertes, vibration, effets de liaison). N’affecte ni le jeu, ni ACRE, ni les autres mods. 0 = silence ATAK seulement. Réglable depuis l’app Sons de l’ATAK."],
-    "COMSPEC Overwatch",
+    ["COMSPEC", "Overwatch"],
     [0, 1, 1, 2],
     false
 ] call CBA_fnc_addSetting;
@@ -267,7 +267,7 @@ private _fnc_applyNet = {
 [
     "comspec_overwatch_sound_notif_vol", "SLIDER",
     ["Volume des alertes", "Volume des sons de notification (connexion, ordres, alertes). Réglable depuis l’app Sons de l’ATAK."],
-    "COMSPEC Overwatch",
+    ["COMSPEC", "Overwatch"],
     [0, 1, 1, 2],
     false
 ] call CBA_fnc_addSetting;
@@ -275,7 +275,7 @@ private _fnc_applyNet = {
 [
     "comspec_overwatch_sound_vibrate_vol", "SLIDER",
     ["Volume de vibration", "Intensité du buzz quand l’état-major fait vibrer le terminal. Réglable depuis l’app Sons de l’ATAK."],
-    "COMSPEC Overwatch",
+    ["COMSPEC", "Overwatch"],
     [0, 1, 1, 2],
     false
 ] call CBA_fnc_addSetting;
@@ -283,45 +283,45 @@ private _fnc_applyNet = {
 [
     "comspec_overwatch_sound_fx_vol", "SLIDER",
     ["Volume des effets de liaison", "Sons de zone, coupure réseau, écran endommagé, etc. Réglable depuis l’app Sons de l’ATAK."],
-    "COMSPEC Overwatch",
+    ["COMSPEC", "Overwatch"],
     [0, 1, 0.8, 2],
     false
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_webbrowser_enabled", "CHECKBOX",
-    ["Advanced tablet (integrated screen)", "Opens Overwatch tablet with Chromium tactical screen (inspired by cTab). Disable to force classic view."],
-    "COMSPEC Overwatch", true
+    ["Tablette avancée (écran intégré)", "Ouvre la tablette Overwatch avec l’écran tactique Chromium (inspiré de cTab). Décocher pour forcer la vue classique."],
+    ["COMSPEC", "Overwatch"], true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_screen_notifications", "CHECKBOX",
     ["Afficher les notifications à l’écran", "Affiche les bandeaux Overwatch en bas à gauche de la carte (ex. « Alerte médicale transmise… »). Désactivé par défaut. N’écrit jamais dans le chat du jeu : les messages du poste restent dans le téléphone et le journal ATAK. Les sons suivent le réglage « Son des notifications ». Les alertes restent dans la tablette (cloche / journal Alertes)."],
-    "COMSPEC Overwatch", false
+    ["COMSPEC", "Overwatch"], false
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_quiet_mode", "CHECKBOX",
     ["Mode discret — masquer les alertes à l’écran", "Masque temporairement les bandeaux lorsque « Afficher les notifications à l’écran » est activé. Les sons (réglage « Son des notifications ») continuent de jouer sauf si Silencieux — sans vibration. Les alertes restent disponibles dans la tablette (cloche / journal Alertes). Les écrans de connexion et la tablette elle-même restent utilisables."],
-    "COMSPEC Overwatch", false
+    ["COMSPEC", "Overwatch"], false
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_milsim_ui", "CHECKBOX",
     ["Mode milsim — désactiver les aides d’interface", "Immersion : coupe les anomalies de suivi (ex. immobile), les messages de confort et les bandeaux à l’écran (même si « Afficher les notifications à l’écran » est activé). La liaison Athena, la synchronisation de position et la tablette restent actives. Les alertes médicales et les ordres restent dans la tablette (sons selon le réglage « Son des notifications »)."],
-    "COMSPEC Overwatch", false
+    ["COMSPEC", "Overwatch"], false
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_require_item", "CHECKBOX",
     ["Exiger un terminal ATAK pour synchroniser et ouvrir l’interface", "Activé par défaut : la synchronisation Athena et l’ouverture du téléphone / des menus ATAK ne fonctionnent que si vous portez le terminal choisi ci-dessous (téléphone ATAK, tablette cTab, etc.). Décochez uniquement pour les tests sans équipement."],
-    "COMSPEC Overwatch", true
+    ["COMSPEC", "Overwatch"], true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_required_item", "LIST",
     ["Équipement requis", "Objet d’inventaire nécessaire lorsque l’exigence d’équipement est activée. Sans effet si l’exigence est désactivée."],
-    "COMSPEC Overwatch",
+    ["COMSPEC", "Overwatch"],
     [
         ["ItemAndroid", "ItemcTab", "ItemMicroDAGR", "ACE_microDAGR", "ItemGPS", "ItemWatch"],
         ["Téléphone Android (cTab / ATAK)", "Tablette cTab", "MicroDAGR (cTab)", "MicroDAGR (ACE)", "GPS", "Montre"],
@@ -333,7 +333,7 @@ private _fnc_applyNet = {
 [
     "comspec_overwatch_required_item_custom", "EDITBOX",
     ["Équipement personnalisé (optionnel)", "Laisser vide pour utiliser la liste ci-dessus. Sinon, indiquez le nom technique de l’objet fourni par votre pack d’équipement (remplace alors le choix de la liste)."],
-    "COMSPEC Overwatch", ""
+    ["COMSPEC", "Overwatch"], ""
 ] call CBA_fnc_addSetting;
 
 [
@@ -342,13 +342,13 @@ private _fnc_applyNet = {
         "Interface uniquement via ATAK Enhanced (recommandé)",
         "Activé par défaut : les raccourcis ATAK (Options → Contrôles → Extension Addon) ouvrent le téléphone ATAK Enhanced. La tablette Overwatch séparée n’est plus ouverte hors d’ATAK. Décochez seulement si vous devez retrouver l’ancienne tablette Overwatch hors ATAK. La liaison Athena et la synchronisation restent actives dans les deux cas. La touche K reste réservée à la boussole du jeu."
     ],
-    "COMSPEC Overwatch", true
+    ["COMSPEC", "Overwatch"], true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_athena_link_help", "CHECKBOX",
-    ["Windows reminder - link Athena account", "If enabled, a Windows alert can remind you to link Athena. Left off by default to avoid pop-ups during a session. Use Esc → mod manager instead."],
-    "COMSPEC Overwatch", false
+    ["Rappel Windows : lier le compte Athena", "Coché : une alerte Windows peut rappeler de lier Athena. Décoché par défaut pour éviter les fenêtres en pleine session ; passer plutôt par Échap → gestionnaire du mod."],
+    ["COMSPEC", "Overwatch"], false
 ] call CBA_fnc_addSetting;
 
 [
@@ -357,7 +357,7 @@ private _fnc_applyNet = {
         "Réafficher la note bêta",
         "Cochez puis validez : la note de bienvenue (bêta publique) s'affiche à nouveau. La case se décoche ensuite automatiquement. Votre inscription à la bêta n'est pas annulée."
     ],
-    "COMSPEC Overwatch",
+    ["COMSPEC", "Overwatch"],
     false,
     false,
     {
@@ -391,7 +391,7 @@ private _fnc_applyNet = {
         "Menus ACE Overwatch étendus",
         "Les rapports ATAK, la demande d’appui, le service véhicule et la réparation du téléphone sont dans ACE. Connexion Athena reste en tête du menu. Décochez seulement si votre pack affiche des erreurs ACE au démarrage ; un redémarrage de mission peut être nécessaire."
     ],
-    "COMSPEC Overwatch",
+    ["COMSPEC", "Overwatch"],
     true
 ] call CBA_fnc_addSetting;
 
@@ -401,7 +401,7 @@ private _fnc_applyNet = {
         "Affichage situation (JVN)",
         "Projette alliés, marqueurs et véhicules dans le champ de vision sous jumelles de vision nocturne, avec tube, boussole et pastilles. Désactivé par défaut — activez aussi depuis ATAK → Paramètres. Sans effet si le mod F-PANO ECOTI est déjà chargé."
     ],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     false
 ] call CBA_fnc_addSetting;
 
@@ -411,28 +411,28 @@ private _fnc_applyNet = {
         "Seulement avec les JVN",
         "Si coché, l’affichage situation n’apparaît que lorsque la vision nocturne est active (toutes les JVN)."
     ],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_ecoti_show_allies", "CHECKBOX",
     ["Alliés dans le champ de vision", "Affiche les opérateurs amis proches et la distance."],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_ecoti_show_markers", "CHECKBOX",
     ["Marqueurs dans le champ de vision", "Affiche les repères de carte visibles depuis la vision nocturne."],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_ecoti_show_vehicles", "CHECKBOX",
     ["Véhicules dans le champ de vision", "Affiche les véhicules et aéronefs amis proches."],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     true
 ] call CBA_fnc_addSetting;
 
@@ -442,7 +442,7 @@ private _fnc_applyNet = {
         "Contour de l’objet regardé",
         "Dessine un cadre autour de l’objet sous le regard lorsque l’affichage situation est actif."
     ],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     true
 ] call CBA_fnc_addSetting;
 
@@ -452,7 +452,7 @@ private _fnc_applyNet = {
         "Itinéraire dans le champ de vision",
         "Affiche l’itinéraire GPS du poste et les points tracés localement sous JVN."
     ],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     true
 ] call CBA_fnc_addSetting;
 
@@ -462,7 +462,7 @@ private _fnc_applyNet = {
         "Découpage d’étage (silhouette)",
         "Quand un bâtiment est désigné : coupe la silhouette au plafond de l’étage choisi, met en évidence la dalle et marque les points intérieurs de cet étage. N’ouvre pas les murs (limite du moteur). Désactivé par défaut ; nécessite l’affichage situation. Menu ACE : Changer d’étage ou Découper à la hauteur regardée."
     ],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     false,
     0,
     {
@@ -480,7 +480,7 @@ private _fnc_applyNet = {
         "Couleurs d’affichage situation",
         "Couleur des badges, icônes, textes, contours de bâtiments et surbrillance des personnes sous JVN. « JVN (cyan clair) » reste le plus lisible de nuit."
     ],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     [
         ["nvg", "lime", "amber", "white", "blue"],
         ["JVN (cyan clair)", "Vert lime", "Ambre", "Blanc", "Bleu"],
@@ -494,7 +494,7 @@ private _fnc_applyNet = {
         "Rendu des pastilles",
         "3D dans le paysage : pastilles collées au monde. 2D à l’écran : pastilles en calque HUD, décalées si elles se chevauchent, avec fondu selon la distance. Les silhouettes de bâtiments restent en 3D dans les deux cas."
     ],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     [
         ["world3d", "screen2d"],
         ["3D dans le paysage", "2D à l’écran (anti-chevauchement)"],
@@ -508,7 +508,7 @@ private _fnc_applyNet = {
         "Surbrillance des personnes",
         "Dessine un contour autour des alliés proches sous affichage situation, en plus du badge nom / distance."
     ],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     true
 ] call CBA_fnc_addSetting;
 
@@ -518,7 +518,7 @@ private _fnc_applyNet = {
         "Rendu tube (grain et contraste)",
         "Ajoute le grain, une légère frange sur les bords et le contraste du tube lorsque l’affichage situation est actif. Complète la vision nocturne améliorée d’ACE, sans la remplacer. Décochez si un profil d’image externe gère déjà le tube."
     ],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     true
 ] call CBA_fnc_addSetting;
 
@@ -528,7 +528,7 @@ private _fnc_applyNet = {
         "Assombrissement face aux phares",
         "Quand un véhicule éclaire vers vous, le tube se ferme un instant pour éviter l’éblouissement. ACE gère déjà l’aveuglement localisé si la vision nocturne améliorée est activée."
     ],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     true
 ] call CBA_fnc_addSetting;
 
@@ -538,7 +538,7 @@ private _fnc_applyNet = {
         "Boussole et grille dans le tube",
         "Affiche la direction, la grille, la distance regardée et l’heure dans le tube, avec le masque des trois oculaires. Pour n’avoir que la direction, cochez aussi « Boussole uniquement »."
     ],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     true
 ] call CBA_fnc_addSetting;
 
@@ -548,7 +548,7 @@ private _fnc_applyNet = {
         "Boussole uniquement",
         "Dans le tube, n’affiche que votre direction. Masque la grille, la distance regardée, l’heure et les autres indications. L’affichage situation doit être actif."
     ],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     false
 ] call CBA_fnc_addSetting;
 
@@ -558,7 +558,7 @@ private _fnc_applyNet = {
         "Halo thermique sur les sources chaudes",
         "Ajoute un halo clair sur les alliés proches, les véhicules moteur allumé et le bâtiment désigné. Si une fusion thermique est déjà fournie par un autre pack, Overwatch n’ajoute pas la sienne."
     ],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     true
 ] call CBA_fnc_addSetting;
 
@@ -568,7 +568,7 @@ private _fnc_applyNet = {
         "Plaque derrière les libellés",
         "En rendu 2D à l’écran : fond très léger derrière le nom et la distance. Décochez pour le style pastille seule (recommandé sous jumelles)."
     ],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     false
 ] call CBA_fnc_addSetting;
 
@@ -578,7 +578,7 @@ private _fnc_applyNet = {
         "Barre de données sous la carte",
         "La barre de données en bas de la carte n’est plus affichée. Le réglage reste masqué."
     ],
-    ["COMSPEC Overwatch", "Téléphone ATAK"],
+    ["COMSPEC", "Overwatch · Téléphone ATAK"],
     false
 ] call CBA_fnc_addSetting;
 
@@ -588,21 +588,21 @@ private _fnc_applyNet = {
         "Simulation de liaison dégradée",
         "Simule pertes, fiabilité basse et coupures brèves vers le poste. Désactivé par défaut. Aussi dans ATAK → Paramètres. N’invente rien quand c’est désactivé : l’état affiché reste celui de la vraie liaison."
     ],
-    ["COMSPEC Overwatch", "Téléphone ATAK"],
+    ["COMSPEC", "Overwatch · Téléphone ATAK"],
     false
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_ecoti_max_dist", "SLIDER",
     ["Distance max. (m)", "Au-delà, les éléments ne sont plus projetés dans le champ de vision."],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     [200, 2500, 1200, 0]
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_ecoti_max_icons", "SLIDER",
     ["Nombre max. d’éléments", "Limite le nombre d’icônes dessinées pour préserver la fluidité."],
-    ["COMSPEC Overwatch", "Affichage situation"],
+    ["COMSPEC", "Overwatch · Affichage situation"],
     [10, 80, 40, 0]
 ] call CBA_fnc_addSetting;
 
@@ -612,7 +612,7 @@ private _fnc_applyNet = {
         "Journal technique (fichier RPT)",
         "Écrit le diagnostic Overwatch dans le journal Arma (RPT). « Détaillé » aide au dépannage pack de mods ; laisser sur « Normal » en jeu courant."
     ],
-    ["COMSPEC Overwatch", "Diagnostic"],
+    ["COMSPEC", "Overwatch · Diagnostic"],
     [
         [0, 1, 2, 3, 4],
         ["Muet", "Erreurs seulement", "Alertes", "Normal", "Détaillé"],
@@ -627,45 +627,45 @@ private _fnc_applyNet = {
         "Écrire aussi dans un fichier journal",
         "En plus du journal Arma (RPT), enregistre les lignes dans un fichier horodaté par session (%LOCALAPPDATA%\\Arma 3\\COMSPEC\\logs). Les 12 derniers fichiers sont conservés, les plus anciens sont supprimés automatiquement. Sans effet si le journal RPT est réglé sur « Muet »."
     ],
-    ["COMSPEC Overwatch", "Diagnostic"],
+    ["COMSPEC", "Overwatch · Diagnostic"],
     true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_radio_proximity_enabled", "CHECKBOX",
     ["Surveillance radio à proximité", "Détecte qui émet près de vous (ou de l’opérateur surveillé) et remonte l’état vers Athena. Nécessite un module radio (ACRE2 ou TFAR). Sans module : pastilles grisées."],
-    "COMSPEC Overwatch", true
+    ["COMSPEC", "Overwatch"], true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_radio_proximity_radius", "SLIDER",
-    ["Radio proximity radius (m)", "Contacts and transmissions listed within this radius around reference operator"],
-    "COMSPEC Overwatch", [10, 300, 75, 0]
+    ["Rayon de surveillance radio (m)", "Contacts et émissions listés dans ce rayon autour de l’opérateur de référence."],
+    ["COMSPEC", "Overwatch"], [10, 300, 75, 0]
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_radio_proximity_interval", "SLIDER",
-    ["Radio scan interval (s)", "Proximity list update frequency (local tablet cache, no network spam)"],
-    "COMSPEC Overwatch", [1, 10, 2, 1]
+    ["Intervalle de balayage radio (s)", "Fréquence de mise à jour de la liste de proximité (cache local de la tablette, sans trafic réseau)."],
+    ["COMSPEC", "Overwatch"], [1, 10, 2, 1]
 ] call CBA_fnc_addSetting;
 
 // Affichage camps sur Tacmap (inspiré Athena Remastered ATH_showEast/Guer/Civ)
 [
     "comspec_overwatch_show_opfor", "CHECKBOX",
     ["Afficher l’adversaire sur la carte", "Les positions du camp adverse restent visibles pour les observateurs sur Athena / Tacmap."],
-    "COMSPEC Overwatch", true
+    ["COMSPEC", "Overwatch"], true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_show_independent", "CHECKBOX",
     ["Afficher les indépendants sur la carte", "Les positions des indépendants restent visibles pour les observateurs sur Athena / Tacmap."],
-    "COMSPEC Overwatch", true
+    ["COMSPEC", "Overwatch"], true
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_show_civilian", "CHECKBOX",
     ["Afficher les civils sur la carte", "Les positions des civils restent visibles pour les observateurs sur Athena / Tacmap."],
-    "COMSPEC Overwatch", true
+    ["COMSPEC", "Overwatch"], true
 ] call CBA_fnc_addSetting;
 
 // Raccourcis (CBA — personnalisables dans Options > Contrôles > Extension Addon)
@@ -736,7 +736,7 @@ if (_hubOverwrite) then {
 [
     "comspec_overwatch_frs_size", "SLIDER",
     ["Taille de la fiche FRS / FRM", "Réduit ou agrandit le rédacteur de fiche dans l’ATAK. 100 % = toute la surface (rendu actuel). En dessous, la fiche reste centrée et le téléphone reste visible autour."],
-    ["COMSPEC Overwatch", "ATAK — fiches FRS / FRM"],
+    ["COMSPEC", "Overwatch · Fiches FRS / FRM"],
     [0.55, 1, 1, 0, true],
     false,
     {
@@ -750,7 +750,7 @@ if (_hubOverwrite) then {
 [
     "comspec_overwatch_frs_ui", "SLIDER",
     ["Texte et boutons de la fiche", "Agrandit ou réduit le texte, les boutons et les pastilles de la fiche, sans changer le cadre. Utile si le rédacteur est trop petit ou trop dense."],
-    ["COMSPEC Overwatch", "ATAK — fiches FRS / FRM"],
+    ["COMSPEC", "Overwatch · Fiches FRS / FRM"],
     [0.75, 1.45, 1.2, 0, true],
     false,
     {
@@ -764,11 +764,11 @@ if (_hubOverwrite) then {
 [
     "comspec_atak_enable_shortcuts", "CHECKBOX",
     ["Activer raccourcis ATAK", "Active les raccourcis clavier rapides pour rapports et POI. Désactivez si conflit avec cTab ou autres mods."],
-    ["COMSPEC Overwatch", "ATAK Tactique"], false  // Désactivé par défaut
+    ["COMSPEC", "Overwatch · ATAK Tactique"], false  // Désactivé par défaut
 ] call CBA_fnc_addSetting;
 
 [
-    "COMSPEC Overwatch - ATAK", "comspec_atak_quick_report", ["Rapport Contact Rapide", "Soumettre rapidement un rapport CONTACT ennemi"],
+    "COMSPEC Overwatch", "comspec_atak_quick_report", ["Rapport Contact Rapide", "Soumettre rapidement un rapport CONTACT ennemi"],
     {
         if (!(missionNamespace getVariable ["comspec_atak_enable_shortcuts", false])) exitWith { false };
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
@@ -781,7 +781,7 @@ if (_hubOverwrite) then {
 ] call CBA_fnc_addKeybind;
 
 [
-    "COMSPEC Overwatch - ATAK", "comspec_atak_quick_poi", ["POI Rapide", "Marquer un Point d'Intérêt à position actuelle"],
+    "COMSPEC Overwatch", "comspec_atak_quick_poi", ["POI Rapide", "Marquer un Point d'Intérêt à position actuelle"],
     {
         if (!(missionNamespace getVariable ["comspec_atak_enable_shortcuts", false])) exitWith { false };
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
@@ -794,7 +794,7 @@ if (_hubOverwrite) then {
 ] call CBA_fnc_addKeybind;
 
 [
-    "COMSPEC Overwatch - ATAK", "comspec_atak_quick_medevac", ["MEDEVAC Rapide", "Demander évacuation médicale urgente"],
+    "COMSPEC Overwatch", "comspec_atak_quick_medevac", ["MEDEVAC Rapide", "Demander évacuation médicale urgente"],
     {
         if (!(missionNamespace getVariable ["comspec_atak_enable_shortcuts", false])) exitWith { false };
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
@@ -807,7 +807,7 @@ if (_hubOverwrite) then {
 ] call CBA_fnc_addKeybind;
 
 [
-    "COMSPEC Overwatch - ATAK", "comspec_atak_quick_qrf", ["QRF Rapide", "Demander renfort d'urgence"],
+    "COMSPEC Overwatch", "comspec_atak_quick_qrf", ["QRF Rapide", "Demander renfort d'urgence"],
     {
         if (!(missionNamespace getVariable ["comspec_atak_enable_shortcuts", false])) exitWith { false };
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
@@ -857,13 +857,13 @@ if (hasInterface) then {
 [
     "comspec_overwatch_athena_feed_snapshot", "CHECKBOX",
     ["Aperçus caméra automatiques", "Envoie périodiquement un aperçu (capture d’écran) de votre caméra casque ou drone connecté vers le panneau Cams Athena. Désactivé par défaut — utilisez plutôt les actions ACE ou une photo ATAK. Pas de vidéo en direct."],
-    ["COMSPEC Overwatch", "Cams"], false
+    ["COMSPEC", "Overwatch · Cams"], false
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_athena_feed_interval", "SLIDER",
     ["Intervalle aperçus (s)", "Délai minimum entre deux aperçus automatiques casque / drone"],
-    ["COMSPEC Overwatch", "Cams"], [15, 120, 35, 0]
+    ["COMSPEC", "Overwatch · Cams"], [15, 120, 35, 0]
 ] call CBA_fnc_addSetting;
 
 // Badges UI — liaison Athena
@@ -935,25 +935,25 @@ missionNamespace setVariable ["comspec_overwatch_classic_tablet_enabled", false,
 [
     "comspec_overwatch_roleplay_enabled", "CHECKBOX",
     ["Activer le mode roleplay", "Active les dysfonctionnements simulés (réseau, capteurs). Configuration détaillée via l'administration web du portail. Le « mode troll » communauté se règle sur Athena (Configuration ATAK → Expérience en jeu)."],
-    ["COMSPEC Overwatch", "Roleplay"], false
+    ["COMSPEC", "Overwatch · Roleplay"], false
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_roleplay_network_failures", "CHECKBOX",
     ["Simulations réseau", "Active les délais, pertes de paquets et déconnexions temporaires (équivalent à Simulation de liaison dégradée dans Paramètres ATAK). Les intensités avancées restent configurables sur le portail."],
-    ["COMSPEC Overwatch", "Roleplay"], false
+    ["COMSPEC", "Overwatch · Roleplay"], false
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_roleplay_sensor_failures", "CHECKBOX",
     ["Défauts capteurs médicaux", "Simule des dysfonctionnements du capteur de rythme cardiaque sur la carte tactique web (valeurs manquantes, erronées ou nulles). Les taux de défaillance sont configurés sur le portail (administration roleplay)."],
-    ["COMSPEC Overwatch", "Roleplay"], false
+    ["COMSPEC", "Overwatch · Roleplay"], false
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_roleplay_visual_effects", "CHECKBOX",
     ["Effets visuels de dégradation", "Affiche des glitchs, parasites et messages d'erreur dans l'interface ATAK web quand la liaison se dégrade."],
-    ["COMSPEC Overwatch", "Roleplay"], true
+    ["COMSPEC", "Overwatch · Roleplay"], true
 ] call CBA_fnc_addSetting;
 
 [
@@ -962,7 +962,7 @@ missionNamespace setVariable ["comspec_overwatch_classic_tablet_enabled", false,
         "Réalisme ATAK (dommages physiques)",
         "Les blessures au torse peuvent endommager l'ATAK. Niveau 1 : peut s'éteindre (réparable). Niveau 2 : écran peut être détruit (connexion OK). Niveau 3 : ATAK peut être détruit (connexion coupée)."
     ],
-    ["COMSPEC Overwatch", "Roleplay"],
+    ["COMSPEC", "Overwatch · Roleplay"],
     [[0, 1, 2, 3], ["Désactivé", "Niveau 1 : Extinction", "Niveau 2 : Écran détruit", "Niveau 3 : Destruction complète"], 0],
     1
 ] call CBA_fnc_addSetting;
@@ -970,7 +970,7 @@ missionNamespace setVariable ["comspec_overwatch_classic_tablet_enabled", false,
 [
     "comspec_overwatch_order_compose_enabled", "CHECKBOX",
     ["Émission d’ordres / FRAGO in-game", "Autorise les chefs d’unité à ouvrir une mini-fenêtre pour rédiger et envoyer un ordre ou un FRAGO sans passer par la tablette web."],
-    ["COMSPEC Overwatch", "Ordres C2"], true
+    ["COMSPEC", "Ordres"], true
 ] call CBA_fnc_addSetting;
 
 [
@@ -979,7 +979,7 @@ missionNamespace setVariable ["comspec_overwatch_classic_tablet_enabled", false,
         "Terminal SEEK requis",
         "Exige un terminal de recueil (SEEK, BII-10 ou telephone ATAK) pour ouvrir une fiche. Decochez pour conserver l'acces sans objet."
     ],
-    ["COMSPEC Overwatch", "Renseignement SSE"], true
+    ["COMSPEC", "SSE"], true
 ] call CBA_fnc_addSetting;
 
 private _sseKeyDefault = [0x1F, [true, true, false]]; // Ctrl+Shift+S
@@ -1004,7 +1004,7 @@ if (isClass (configFile >> "CfgPatches" >> "comspec_sse_biometrics")) then {
 ] call CBA_fnc_addKeybind;
 
 [
-    "COMSPEC Overwatch - Ordres", "comspec_order_compose_key",
+    "COMSPEC Overwatch", "comspec_order_compose_key",
     ["Ouvrir rédaction d’ordre / FRAGO", "Ouvre la mini-fenêtre contextuelle pour écrire et envoyer un ordre (chefs d’unité)."],
     {
         if (!(missionNamespace getVariable ["comspec_overwatch_order_compose_enabled", true])) exitWith { false };
@@ -1018,7 +1018,7 @@ if (isClass (configFile >> "CfgPatches" >> "comspec_sse_biometrics")) then {
 ] call CBA_fnc_addKeybind;
 
 [
-    "COMSPEC Overwatch - Ordres", "comspec_frago_compose_key",
+    "COMSPEC Overwatch", "comspec_frago_compose_key",
     ["Ouvrir rédaction FRAGO", "Ouvre directement le formulaire d’ordre fragmentaire (Situation · Mission · Exécution · Soutien · Commandement)."],
     {
         if (!(missionNamespace getVariable ["comspec_overwatch_order_compose_enabled", true])) exitWith { false };

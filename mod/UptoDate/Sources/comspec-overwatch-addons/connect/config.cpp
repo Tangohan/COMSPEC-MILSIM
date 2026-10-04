@@ -360,6 +360,14 @@ class CfgFunctions {
             class requestVehicleService {};
             class initVehicleTracking {};
             class reportOwnedDrones {};
+            class phoneDeviceSync { postInit = 1; };
+            class webCmdDispatch {};
+            class webCmdAck {};
+            class webCmdUav {};
+            class webCmdUavPhoto {};
+            class webCmdExplo {};
+            class webCmdNotif {};
+            class webNotifMirror {};
             class isObjectFlag {};
             class setGpsBeacon {};
             class setPhoneTrack {};

@@ -18,6 +18,10 @@ final class DiscordWebhookCatalog
     public const KEY_OVERLAY_PUBLISHED = 'overlay_published';
     public const KEY_ORDER_PUBLISHED = 'order_published';
     public const KEY_QUICK_PICTURE = 'quick_picture';
+    /** App Discord du téléphone ATAK (messages saisis en jeu). */
+    public const KEY_ATAK_DISCORD_APP = 'atak_discord_app';
+    /** Alertes terrain graves (opérateur à terre, panique) recopiées dans le salon. */
+    public const KEY_ATAK_TACTICAL_ALERTS = 'atak_tactical_alerts';
 
     public const MODE_OFF = 'off';
     public const MODE_DEFAULT = 'default';
@@ -48,6 +52,20 @@ final class DiscordWebhookCatalog
                 'group' => 'Téléphone ATAK',
                 'label' => 'Photos Quick Picture',
                 'hint' => 'Quand un opérateur prend une photo depuis le téléphone en jeu. L’indicatif, la grille et la vue sont publiés dans le salon choisi.',
+                'default_mode' => self::MODE_OFF,
+            ],
+            [
+                'key' => self::KEY_ATAK_DISCORD_APP,
+                'group' => 'Téléphone ATAK',
+                'label' => 'App Discord du téléphone',
+                'hint' => 'Messages courts envoyés depuis l’app Discord du téléphone en jeu (500 caractères, mentions retirées, un message toutes les 5 s par joueur). Le lien du salon reste sur Athena : il n’est jamais transmis au jeu.',
+                'default_mode' => self::MODE_OFF,
+            ],
+            [
+                'key' => self::KEY_ATAK_TACTICAL_ALERTS,
+                'group' => 'Téléphone ATAK',
+                'label' => 'Alertes graves du terrain',
+                'hint' => 'Opérateur à terre, PANIQUE et rapports de décès remontés par les téléphones : recopiés dans le salon choisi.',
                 'default_mode' => self::MODE_OFF,
             ],
             [

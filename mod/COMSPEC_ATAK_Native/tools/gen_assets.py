@@ -60,6 +60,10 @@ def phone_landscape(w=2048, h=1024):
 
 
 ICONS = {
+    # Liaison ATAK : deux téléphones reliés par un câble, ondes NFC.
+    "app_linkally": '<rect x="2.5" y="5" width="7" height="13" rx="1.5"/><rect x="14.5" y="5" width="7" height="13" rx="1.5"/><path d="M6 18v2.5h12V18"/><path d="M11 9.5a2 2 0 0 1 0 4M13 9.5a2 2 0 0 0 0 4"/>',
+    # Discord (dessin maison, pas le logo) : bulle de salon avec dièse.
+    "app_discord": '<path d="M4 4h16a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-9l-5 4v-4H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M10 7.5l-1 7M15 7.5l-1 7M7.5 9.5h9M7 12.5h9"/>',
     "app_resynch": '<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/>',
     "map_route": '<circle cx="6" cy="18" r="2"/><path d="M8 18h6a3.5 3.5 0 0 0 0-7H10a3.5 3.5 0 0 1 0-7h6"/><path d="M18 2.5l2 2-2 2"/>',
     "nav_straight": '<path d="M12 21V4M6 10l6-6 6 6"/>',
@@ -93,6 +97,12 @@ ICONS = {
     "app_intel": '<path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     "app_wanted": '<rect x="3" y="3" width="18" height="18" rx="1"/><circle cx="12" cy="10" r="3.2"/><path d="M6.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6"/><path d="M3 7h3M18 7h3"/>',
     "app_drone": '<circle cx="5" cy="5" r="3"/><circle cx="19" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><path d="M7.5 7.5l3 3M16.5 7.5l-3 3M7.5 16.5l3-3M16.5 16.5l-3-3"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/>',
+    # Icônes de drone choisies par le pilote (carte du téléphone, en-tête de l'app), nez vers le haut.
+    "drone_quad": '<circle cx="5.5" cy="5.5" r="3"/><circle cx="18.5" cy="5.5" r="3"/><circle cx="5.5" cy="18.5" r="3"/><circle cx="18.5" cy="18.5" r="3"/><path d="M7.6 7.6l2.4 2.4M16.4 7.6L14 10M7.6 16.4l2.4-2.4M16.4 16.4L14 14"/><rect x="10" y="9" width="4" height="6" rx="1"/><path d="M12 9V7.5"/>',
+    "drone_fixed": '<path d="M12 2.5c1 0 1.4 1.5 1.4 3.5v11l2.6 2v1.5l-4-1-4 1V19l2.6-2V6c0-2 .4-3.5 1.4-3.5z"/><path d="M10.6 8.5L2 12v1.8l8.6-1.8M13.4 8.5L22 12v1.8l-8.6-1.8"/>',
+    "drone_hexa": '<circle cx="12" cy="12" r="2.6"/><circle cx="12" cy="3.6" r="2.2"/><circle cx="19.3" cy="7.8" r="2.2"/><circle cx="19.3" cy="16.2" r="2.2"/><circle cx="12" cy="20.4" r="2.2"/><circle cx="4.7" cy="16.2" r="2.2"/><circle cx="4.7" cy="7.8" r="2.2"/><path d="M12 9.4V5.8M14.3 10.7l3.1-1.8M14.3 13.3l3.1 1.8M12 14.6v3.6M9.7 13.3l-3.1 1.8M9.7 10.7L6.6 8.9"/>',
+    "drone_nano": '<rect x="9.5" y="8" width="5" height="8" rx="2.5"/><circle cx="8" cy="8" r="2"/><circle cx="16" cy="8" r="2"/><circle cx="8" cy="16" r="2"/><circle cx="16" cy="16" r="2"/><path d="M12 8V4.5M10.5 4.5h3"/>',
+    "drone_fpv": '<circle cx="5" cy="6" r="3.6"/><circle cx="19" cy="6" r="3.6"/><circle cx="5" cy="18" r="3.6"/><circle cx="19" cy="18" r="3.6"/><path d="M7.5 8.5L10 10M16.5 8.5L14 10M7.5 15.5L10 14M16.5 15.5L14 14"/><rect x="9.8" y="8.5" width="4.4" height="9" rx=".8"/><path d="M10.5 8.5L12 5.5l1.5 3"/>',
     "app_dronedetect": '<circle cx="7" cy="13" r="2.5"/><circle cx="17" cy="13" r="2.5"/><path d="M9.3 14l1.7 1h2l1.7-1M12 16v1.5"/><path d="M8 7.5a6 6 0 0 1 8 0M5 4.5a10 10 0 0 1 14 0"/><circle cx="12" cy="10" r=".6"/>',
     "app_aar": '<circle cx="13" cy="12" r="8"/><path d="M13 7v5l3 2"/><path d="M5 12H1.5M3 9.5L1.5 12 3 14.5"/>',
     "app_sse": '<path d="M6 3h8l4 4v6"/><path d="M6 3v18h6"/><circle cx="16" cy="17" r="3"/><path d="M18.2 19.2L21 22"/>',
@@ -654,6 +664,131 @@ def disc(size=128):
     return img.resize((size, size), Image.LANCZOS)
 
 
+# --- Alimentation : écran de démarrage, batterie vide, batterie ATAK (item d'inventaire) ---
+FONT_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+
+
+def _font(size):
+    from PIL import ImageFont
+    try:
+        return ImageFont.truetype(FONT_BOLD, size)
+    except OSError:
+        return ImageFont.load_default()
+
+
+def _emblem(d, cx, cy, r, k):
+    """Emblème COMSPEC ATAK : hexagone, rose des vents et réticule (dessin original)."""
+    import math
+    green = (92, 199, 107, 255)
+    hexa = [(cx + r * math.cos(math.radians(a)), cy + r * math.sin(math.radians(a))) for a in range(-90, 270, 60)]
+    d.line(hexa + [hexa[0]], fill=green, width=int(5 * k), joint="curve")
+    inner = [(cx + r * 0.84 * math.cos(math.radians(a)), cy + r * 0.84 * math.sin(math.radians(a))) for a in range(-90, 270, 60)]
+    d.line(inner + [inner[0]], fill=(92, 199, 107, 90), width=int(2 * k), joint="curve")
+    # Rose des vents : pointe nord pleine, trois autres creuses.
+    for a in (0, 90, 180, 270):
+        t = math.radians(a - 90)
+        tip = (cx + r * 0.62 * math.cos(t), cy + r * 0.62 * math.sin(t))
+        l = (cx + r * 0.13 * math.cos(t - math.pi / 2), cy + r * 0.13 * math.sin(t - math.pi / 2))
+        rr_ = (cx + r * 0.13 * math.cos(t + math.pi / 2), cy + r * 0.13 * math.sin(t + math.pi / 2))
+        if a == 0:
+            d.polygon([tip, l, (cx, cy), rr_], fill=(235, 242, 238, 255))
+        else:
+            d.line([tip, l, (cx, cy), rr_, tip], fill=(235, 242, 238, 200), width=int(2.5 * k), joint="curve")
+    d.ellipse([cx - r * 0.3, cy - r * 0.3, cx + r * 0.3, cy + r * 0.3], outline=green, width=int(3 * k))
+    d.ellipse([cx - r * 0.05, cy - r * 0.05, cx + r * 0.05, cy + r * 0.05], fill=green)
+
+
+def boot_screen(w, h):
+    """Écran de démarrage (portrait ou paysage, dessiné dans chaque sens pour que le logo reste droit).
+    Le bas (sous 70 %) reste libre : barre de progression, étape et version y sont posées par fn_deviceOverlay."""
+    import math
+    k = 2
+    W, H = w * k, h * k
+    img = Image.new("RGBA", (W, H), (4, 7, 6, 255))
+    # Halo vert très léger derrière l'emblème.
+    halo = Image.new("L", (W, H), 0)
+    s = min(W, H)
+    cy = H * (0.36 if h > w else 0.34)
+    ImageDraw.Draw(halo).ellipse([W / 2 - s * 0.42, cy - s * 0.42, W / 2 + s * 0.42, cy + s * 0.42], fill=60)
+    halo = halo.filter(ImageFilter.GaussianBlur(s * 0.12))
+    glow = Image.new("RGBA", (W, H), (40, 120, 70, 0)); glow.putalpha(halo)
+    img.alpha_composite(glow)
+    d = ImageDraw.Draw(img)
+    # Trame de carroyage discrète.
+    step = int(s * 0.08)
+    for x in range(0, W, step):
+        d.line([(x, 0), (x, H)], fill=(20, 40, 30, 70), width=1)
+    for y in range(0, H, step):
+        d.line([(0, y), (W, y)], fill=(20, 40, 30, 70), width=1)
+    r = s * (0.2 if h > w else 0.22)
+    _emblem(d, W / 2, cy, r, k * s / 1024)
+    f1 = _font(int(s * 0.085)); f2 = _font(int(s * 0.06))
+    ty = cy + r * 1.35
+    for txt, f, col, sp in (("COMSPEC", f1, (235, 242, 238, 255), 0.018), ("ATAK", f2, (92, 199, 107, 255), 0.04)):
+        widths = [d.textlength(c, font=f) for c in txt]
+        total = sum(widths) + s * sp * (len(txt) - 1)
+        x = W / 2 - total / 2
+        for c, cw in zip(txt, widths):
+            d.text((x, ty), c, font=f, fill=col)
+            x += cw + s * sp
+        ty += f.size * 1.25
+    return img.resize((w, h), Image.LANCZOS)
+
+
+def battery_empty_icon(size=256):
+    """Batterie vide : contour blanc, fond rouge au ras du bord, éclair barré."""
+    k = 4
+    S = size * k
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    x0, y0, x1, y1 = S * 0.12, S * 0.3, S * 0.8, S * 0.7
+    d.rounded_rectangle([x0, y0, x1, y1], radius=S * 0.05, outline=(235, 242, 238, 255), width=int(S * 0.035))
+    d.rounded_rectangle([x1 + S * 0.02, S * 0.42, x1 + S * 0.08, S * 0.58], radius=S * 0.015, fill=(235, 242, 238, 255))
+    m = S * 0.06
+    d.rectangle([x0 + m, y0 + m, x0 + m + S * 0.05, y1 - m], fill=(229, 72, 58, 255))
+    bolt = [(0.5, 0.36), (0.4, 0.52), (0.48, 0.52), (0.44, 0.64), (0.56, 0.47), (0.48, 0.47), (0.52, 0.36)]
+    d.polygon([(x * S, y * S) for x, y in bolt], fill=(235, 242, 238, 160))
+    d.line([(S * 0.3, S * 0.78), (S * 0.66, S * 0.22)], fill=(229, 72, 58, 255), width=int(S * 0.03))
+    return img.resize((size, size), Image.LANCZOS)
+
+
+def battery_item(size=256):
+    """Image d'inventaire de la batterie ATAK : bloc lithium olive, étiquette verte, éclair, bornes."""
+    k = 4
+    S = size * k
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Ombre portée
+    sh = Image.new("L", (S, S), 0)
+    ImageDraw.Draw(sh).rounded_rectangle([S * 0.24, S * 0.2, S * 0.8, S * 0.92], radius=S * 0.06, fill=150)
+    sh = sh.filter(ImageFilter.GaussianBlur(S * 0.025))
+    shadow = Image.new("RGBA", (S, S), (0, 0, 0, 0)); shadow.putalpha(sh)
+    img.alpha_composite(shadow)
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([S * 0.2, S * 0.16, S * 0.76, S * 0.88], radius=S * 0.06, fill=(58, 66, 46, 255), outline=(24, 28, 20, 255), width=int(S * 0.012))
+    # Reflet latéral
+    d.rounded_rectangle([S * 0.23, S * 0.19, S * 0.3, S * 0.85], radius=S * 0.03, fill=(86, 96, 70, 255))
+    # Bornes
+    for x in (0.33, 0.58):
+        d.rounded_rectangle([S * x, S * 0.09, S * (x + 0.08), S * 0.17], radius=S * 0.01, fill=(170, 172, 168, 255), outline=(60, 60, 60, 255), width=int(S * 0.006))
+    # Étiquette
+    d.rectangle([S * 0.2, S * 0.4, S * 0.76, S * 0.66], fill=(92, 199, 107, 255))
+    bolt = [(0.5, 0.42), (0.42, 0.54), (0.49, 0.54), (0.45, 0.645), (0.56, 0.51), (0.49, 0.51), (0.53, 0.42)]
+    d.polygon([(x * S, y * S) for x, y in bolt], fill=(16, 22, 16, 255))
+    f = _font(int(S * 0.07))
+    d.text((S * 0.25, S * 0.72), "ATAK", font=f, fill=(220, 226, 214, 255))
+    d.text((S * 0.25, S * 0.79), "3.85V", font=_font(int(S * 0.05)), fill=(160, 170, 150, 255))
+    return img.resize((size, size), Image.LANCZOS)
+
+
+def power_assets(tmp):
+    """Démarrage (boot_<port|land>), batterie vide (power_bat_empty) et item batterie (item_battery)."""
+    convert(boot_screen(512, 1024).convert("RGB"), "boot_port", tmp)
+    convert(boot_screen(1024, 512).convert("RGB"), "boot_land", tmp)
+    convert(battery_empty_icon(), "power_bat_empty", tmp)
+    convert(battery_item(), "item_battery", tmp)
+
+
 def convert(img, name, tmp):
     png = os.path.join(tmp, name + ".png")
     img.save(png)
@@ -673,6 +808,7 @@ def main():
             return
         convert(frs_bar(), "frs_bar", tmp)
         convert(disc(), "ui_disc", tmp)
+        power_assets(tmp)
         if len(sys.argv) > 2 and sys.argv[2] == "icons":
             for name, body in ICONS.items():
                 convert(icon_png(name, body), name, tmp)

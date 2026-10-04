@@ -1722,7 +1722,10 @@
         t.marker = L.marker(latlng, { icon: icon, zIndexOffset: 520 });
         t.marker.bindPopup(popup);
         t.marker.addTo(map);
+        // Panneau de commandes drone (atak-overwatch-commands.js) : clic sur le drone.
+        t.marker.on('click', function () { try { document.dispatchEvent(new CustomEvent('ow:uav-select', { detail: (uavTrackLayers[id] || {}).item })); } catch (eUav) {} });
       }
+      t.item = item;
       // Cible / point de tâche courant : trait pointillé + réticule.
       if (hasTgt) {
         var tll = worldToLatLng(tgtX, tgtY);
@@ -2214,6 +2217,9 @@
   }
   function markerIcon(unit, opts) {
     opts = opts || {};
+    // Curseur personnalisé de mon propre contact (atak-overwatch-intel.js).
+    var owiSelf = window.OverwatchIntel && window.OverwatchIntel.selfIcon ? window.OverwatchIntel.selfIcon(unit, opts) : null;
+    if (owiSelf) return owiSelf;
     var kind = side(unit);
     var prefs = markerPrefs();
     var color = kind === 'hostile' ? prefs.hostile : (kind === 'unknown' ? prefs.unknown : prefs.friend);
@@ -3192,6 +3198,9 @@
       var ownDel = (row.id && isOwnChatRow(row))
         ? '<button type="button" class="ow-msg-del" data-del-chat="' + escapeHtml(String(row.id)) + '" title="Retirer ce message">Retirer</button>'
         : '';
+      // Ligne « ALERTE TACTIQUE|… » : carte d'alerte lisible (atak-overwatch-intel.js).
+      var owiCard = window.OverwatchIntel && window.OverwatchIntel.chatAlertCard ? window.OverwatchIntel.chatAlertCard(raw, row) : '';
+      if (owiCard) { html += '<div class="ow-row-msg">' + owiCard + ownDel + '</div>'; return; }
       html += '<div class="ow-row-msg">' + bar + '<div class="ow-row-main"><div class="ow-row-text">' +
         escapeHtml(parsed.text || raw) + '</div>' +
         (parsed.prio ? '<div class="ow-row-meta"><span>' + escapeHtml(prioLabel(parsed.prio)) +
@@ -7110,7 +7119,7 @@
       return;
     }
     if (name === 'intel') {
-      loadPhotos().then(function () { restoreOpsPanels(); openDrawer('Renseignement', 'Photos', intelHtml()); bindDrawerForms(); });
+      loadPhotos().then(function () { restoreOpsPanels(); openDrawer('Renseignement', 'Photos', intelHtml()); bindDrawerForms(); if (window.OverwatchIntel && window.OverwatchIntel.afterIntelOpen) window.OverwatchIntel.afterIntelOpen(); });
       return;
     }
     if (name === 'cams') {

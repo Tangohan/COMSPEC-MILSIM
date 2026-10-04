@@ -110,6 +110,14 @@ if (isNil "COMSPEC_DroneTrackPfh") then {
     }, 1.5] call CBA_fnc_addPerFrameHandler;
 };
 
+// Notifications du téléphone ATAK natif → page « Mon téléphone ATAK » d'Athena (nouvelles entrées seulement).
+if (isNil "COMSPEC_WebNotifMirrorPfh") then {
+    COMSPEC_WebNotifMirrorPfh = [{
+        if (isNil "comspec_overwatch_connect_fnc_webNotifMirror") exitWith {};
+        [] call comspec_overwatch_connect_fnc_webNotifMirror;
+    }, 10] call CBA_fnc_addPerFrameHandler;
+};
+
 [{
     if !([] call comspec_overwatch_connect_fnc_isReady) exitWith {};
     [] call comspec_overwatch_connect_fnc_syncProfile;

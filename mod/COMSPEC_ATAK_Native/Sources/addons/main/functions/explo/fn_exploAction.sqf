@@ -10,10 +10,37 @@
 params [["_act", ""], ["_arg", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_Explo", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_Explo", _s];
+// uiNamespace survit au changement de mission : une séquence (et son identifiant de boucle) d'une partie
+// précédente bloquait toute nouvelle séquence (la boucle n'était jamais relancée). On repart à zéro par mission.
+if (isNil "COMSPEC_ATAK_ExploMissionInit") then {
+    COMSPEC_ATAK_ExploMissionInit = true;
+    _s set ["queue", []]; _s set ["pfh", -1]; _s set ["armed", false]; _s set ["sel", []]; _s set ["lastTick", -1];
+};
 private _sel = _s getOrDefault ["sel", []];
 _s set ["sel", _sel];
 private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "EXPLO") then { ["EXPLO"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 private _find = { params ["_k"]; private _l = ([true] call comspec_atak_native_fnc_exploList) select { (_x get "key") isEqualTo _k }; [createHashMap, _l select 0] select ((count _l) > 0) };
+// Charge du jour par sa clé (même résolution que le tir manuel) ; repli sur l'objet mémorisé si la liste l'a perdue.
+private _resolve = {
+    params ["_c"];
+    private _f = [_c getOrDefault ["key", ""]] call _find;
+    if ((count _f) > 0) exitWith { _f };
+    private _o = _c getOrDefault ["obj", objNull];
+    if (isNull _o) then { _o = objectFromNetId (_c getOrDefault ["key", ""]); };
+    if (isNull _o || {!alive _o}) exitWith { createHashMap };
+    private _r = +_c; _r set ["obj", _o];
+    private _cid = _o getVariable ["COMSPEC_chargeId", ""];
+    if (_cid isEqualType "" && {_cid isNotEqualTo ""}) then { _r set ["cid", _cid]; };
+    _r
+};
+// Boucle de séquence : relancée si absente ou muette depuis plus d'une seconde (identifiant périmé).
+private _ensureLoop = {
+    private _alive = ((_s getOrDefault ["pfh", -1]) >= 0) && {(diag_tickTime - (_s getOrDefault ["lastTick", -1])) < 1};
+    if (_alive) exitWith {};
+    if ((_s getOrDefault ["pfh", -1]) >= 0) then { [_s get "pfh"] call CBA_fnc_removePerFrameHandler; };
+    _s set ["lastTick", diag_tickTime];
+    _s set ["pfh", [{ ["tick"] call comspec_atak_native_fnc_exploAction; }, 0.1] call CBA_fnc_addPerFrameHandler];
+};
 // Détonation d'une charge : par Overwatch quand elle a un identifiant Athena (le poste est prévenu), sinon par ACE, sinon vanilla.
 private _boom = {
     params ["_c"];
@@ -62,9 +89,7 @@ switch (_act) do {
         _s set ["seqStart", diag_tickTime];
         _s set ["seqEnd", _t0 + ((count _queue) - 1) * _gap];
         ["WARNING", format ["Séquence lancée : %1 charge(s), première dans %2 s", count _queue, _s getOrDefault ["delay", 5]], 4, 60] call comspec_atak_native_fnc_notify;
-        if ((_s getOrDefault ["pfh", -1]) < 0) then {
-            _s set ["pfh", [{ ["tick"] call comspec_atak_native_fnc_exploAction; }, 0.1] call CBA_fnc_addPerFrameHandler];
-        };
+        call _ensureLoop;
         call _render;
     };
     case "cancel": {
@@ -74,11 +99,18 @@ switch (_act) do {
         call _render;
     };
     case "tick": {
+        _s set ["lastTick", diag_tickTime];
         private _queue = _s getOrDefault ["queue", []];
         private _due = _queue select { diag_tickTime >= (_x select 0) };
         if ((count _due) > 0) then {
-            { [_x select 1] call _boom; } forEach _due;
-            _s set ["queue", _queue - _due];
+            // On retire d'abord (pas de soustraction de tableaux de HashMap, comparaison peu fiable), puis on tire
+            // chaque charge exactement comme le bouton FEU unitaire, avec sa résolution fraîche.
+            _s set ["queue", _queue select { diag_tickTime < (_x select 0) }];
+            {
+                private _c = [_x select 1] call _resolve;
+                private _ok = if ((count _c) > 0) then { [_c] call _boom } else { false };
+                if !(_ok) then { ["WARNING", format ["%1 : pas de mise à feu (charge introuvable ou déjà sautée)", (_x select 1) getOrDefault ["label", "Charge"]], 3, 30] call comspec_atak_native_fnc_notify; };
+            } forEach _due;
             uiNamespace setVariable ["COMSPEC_ATAK_ExploCache", [-1, []]];
         };
         // Compte à rebours de la page : deux fois par seconde.
@@ -86,6 +118,7 @@ switch (_act) do {
         if ((count (_s getOrDefault ["queue", []])) isEqualTo 0) then {
             [_s getOrDefault ["pfh", -1]] call CBA_fnc_removePerFrameHandler;
             _s set ["pfh", -1];
+            _s set ["lastTick", -1];
             _s set ["armed", false];
             _s set ["sel", []];
             ["SUCCESS", "Séquence terminée, sécurité remise", 3, 40] call comspec_atak_native_fnc_notify;

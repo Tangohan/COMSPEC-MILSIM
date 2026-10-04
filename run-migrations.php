@@ -3953,6 +3953,33 @@ try {
 }
 $migrationEnsurePdo();
 
+$gamePhoneTerminalMigrate = require $root . '/bootstrap/game_phone_terminal_migration.php';
+try {
+    echo "Migration game_phone_terminal (paramètres des terminaux : batterie, type de numéro)…\n";
+    $gamePhoneTerminalMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] game_phone_terminal : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakWebCommandsMigrate = require $root . '/bootstrap/atak_web_commands_migration.php';
+try {
+    echo "Migration atak_web_commands (commandes web drones, charges, notifications)…\n";
+    $atakWebCommandsMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_web_commands : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
+$atakOverwatchIntelMigrate = require $root . '/bootstrap/atak_overwatch_intel_migration.php';
+try {
+    echo "Migration atak_overwatch_intel (acquittement des alertes, anneaux Géoloc)…\n";
+    $atakOverwatchIntelMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_overwatch_intel : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $tacticalBriefingSlideEnrichmentMigrate = require $root . '/bootstrap/tactical_briefing_slide_enrichment_migration.php';
 try {
     echo "Migration tactical_briefing_slide_enrichment (briefing — détail diapositive, commentaires)…\n";

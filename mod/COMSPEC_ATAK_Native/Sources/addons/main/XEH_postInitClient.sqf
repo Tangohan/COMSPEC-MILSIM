@@ -13,11 +13,52 @@ if ([] call comspec_atak_native_fnc_bridge) then {
     diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPECATAKNativeExtension initialization requested";
 };
 // Porté : le téléphone reste affiché dans le coin et l'on continue à jouer. En main : souris et clavier.
-["COMSPEC ATAK", "PhoneCarry", "Afficher / ranger l'ATAK (miniature)", { [] call comspec_atak_native_fnc_hudToggle; true }, "", [0x16, [false,true,false]]] call CBA_fnc_addKeybind;
-["COMSPEC ATAK", "PhoneHold", "Interagir avec l'ATAK (prendre / relâcher la souris)", { [] call comspec_atak_native_fnc_interactToggle; true }, "", [0x16, [true,true,false]]] call CBA_fnc_addKeybind;
+// Raccourcis (Options > Contrôles > Configurer les addons > COMSPEC ATAK), sur le modèle des interfaces principale / secondaire / tertiaire.
+// Les identifiants PhoneHold, PhoneCarry, PhoneZoomIn et PhoneZoomOut sont relus par fn_displayLoad (téléphone en main) ;
+// PhoneMain, PhoneOrient et PhonePosition par le gestionnaire de touches ajouté dans fn_open.
+["COMSPEC ATAK", "PhoneMain", ["Ouvrir / fermer l'ATAK (principal)", "Sort le téléphone en main (dernier mode : mini ou plein écran) ou le range complètement."], { [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyMain", {}]); true }, "", [0x16, [false, false, true]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhoneCarry", ["Porter l'ATAK en miniature (secondaire)", "Affiche ou range le téléphone dans un coin de l'écran : on continue à jouer."], { [] call comspec_atak_native_fnc_hudToggle; true }, "", [0x16, [false,true,false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhoneHold", ["Prendre l'ATAK en main (tertiaire)", "Prend ou relâche la souris sur le téléphone ; relâché, il reste affiché en miniature."], { [] call comspec_atak_native_fnc_interactToggle; true }, "", [0x16, [true,true,false]]] call CBA_fnc_addKeybind;
 // Zoom de la carte sans prendre le téléphone en main (aussi en marchant ou en conduisant).
-["COMSPEC ATAK", "PhoneZoomIn", "Carte du téléphone : zoom avant", { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [0.7] call comspec_atak_native_fnc_mapZoom; true }, "", [0xC9, [false, true, false]]] call CBA_fnc_addKeybind;
-["COMSPEC ATAK", "PhoneZoomOut", "Carte du téléphone : zoom arrière", { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [1 / 0.7] call comspec_atak_native_fnc_mapZoom; true }, "", [0xD1, [false, true, false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhoneZoomIn", ["Zoomer (carte du téléphone)", "Zoom avant sur la carte, aussi téléphone porté en marchant ou en conduisant."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [0.7] call comspec_atak_native_fnc_mapZoom; true }, "", [0xC9, [false, true, false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhoneZoomOut", ["Dézoomer (carte du téléphone)", "Zoom arrière sur la carte, aussi téléphone porté."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [1 / 0.7] call comspec_atak_native_fnc_mapZoom; true }, "", [0xD1, [false, true, false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhoneOrient", ["Permuter l'orientation (vertical / horizontal)", "Téléphone en miniature : vertical ou horizontal."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [] call comspec_atak_native_fnc_orientationToggle; true }, "", [0x16, [false, true, true]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhonePosition", ["Permuter la position de l'interface", "Déplace la miniature : bas droit, bas gauche, haut gauche, haut droit, milieu droit, milieu gauche."], { [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyPosition", {}]); true }, "", [0x16, [true, false, true]]] call CBA_fnc_addKeybind;
+// Principal : rangé -> en main ; affiché (porté ou en main) -> rangé complètement.
+missionNamespace setVariable ["COMSPEC_ATAK_KeyMain", {
+    if (isNull ([] call comspec_atak_native_fnc_display)) then {
+        private _why = [] call comspec_atak_native_fnc_canUse;
+        if (_why isNotEqualTo "") exitWith { [_why] call comspec_atak_native_fnc_deviceDenied };
+        uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
+        [true] call comspec_atak_native_fnc_open;
+    } else {
+        uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
+        [] call comspec_atak_native_fnc_close;
+    };
+}];
+// Position de la miniature : coin suivant (réglage profil COMSPEC_ATAK_MiniAnchor, aussi dans Réglages).
+missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
+    private _list = ["BR", "BL", "TL", "TR", "MR", "ML"];
+    private _cur = _list find toUpper (profileNamespace getVariable ["COMSPEC_ATAK_MiniAnchor", "BR"]);
+    private _next = _list select ((_cur max 0) + 1) mod (count _list);
+    profileNamespace setVariable ["COMSPEC_ATAK_MiniAnchor", _next];
+    saveProfileNamespace;
+    if (!isNull ([] call comspec_atak_native_fnc_display)) then {
+        private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        [_s getOrDefault ["activePage", "LAUNCHER"], false] call comspec_atak_native_fnc_navigate;
+    };
+}];
+// Menu d'actions d'Arma masqué pendant que le téléphone est affiché (réglage « Masquer le menu d'actions ») :
+// molette (PrevAction / NextAction) bloquée ; validation (Action) bloquée seulement téléphone en main.
+// Téléphone rangé : le gestionnaire renvoie false, le jeu (et ACE) se comporte normalement. Réinstallé à chaque ouverture (fn_open).
+missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
+    params [["_activate", false]];
+    private _mode = missionNamespace getVariable ["comspec_atak_native_action_menu", 2];
+    if (_mode isEqualTo 0 || {isNull ([] call comspec_atak_native_fnc_display)}) exitWith { false };
+    private _inHand = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false];
+    if (_activate) exitWith { _inHand };
+    _inHand || {_mode isEqualTo 2}
+}];
 ["COMSPEC ATAK", "PhonePanic", "Bouton PANIQUE (deux appuis)", { if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { false }; ["panic"] call comspec_atak_native_fnc_alertsAction; if (diag_tickTime < ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["panicArmedUntil", -1])) then { ["WARNING", "PANIQUE : appuyez encore pour envoyer", 5, 60] call comspec_atak_native_fnc_notify; }; true }, "", [0, [false,false,false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneNight", "Mode nuit du téléphone (normal / rouge / sombre)", {
     private _m = profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"];
@@ -213,11 +254,18 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 
 // Action ACE : changer la batterie du téléphone (si une batterie de rechange est portée).
 if (!isNil "ace_interact_menu_fnc_createAction") then {
-    private _act = ["COMSPEC_ATAK_BatterySwap", "Changer la batterie ATAK", "", { [] call comspec_atak_native_fnc_batterySwap; }, {
+    private _act = ["COMSPEC_ATAK_BatterySwap", "Changer la batterie ATAK", "\z\comspec_atak_native\addons\main\data\item_battery.paa", {
+        if (isNil "ace_common_fnc_progressBar") exitWith { [] call comspec_atak_native_fnc_batterySwap; };
+        [5, [], { [] call comspec_atak_native_fnc_batterySwap; }, {}, "Changement de la batterie…"] call ace_common_fnc_progressBar;
+    }, {
         [player] call comspec_atak_native_fnc_hasDevice && {(missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) < 95}
-        && {((items player) findIf { (toLower _x) in (((missionNamespace getVariable ["comspec_atak_native_battery_items", "ACE_UAVBattery"]) splitString ", ") apply { toLower _x }) }) >= 0}
+        && {([player] call comspec_atak_native_fnc_batteryItem) isNotEqualTo ""}
     }] call ace_interact_menu_fnc_createAction;
     ["CAManBase", 1, ["ACE_SelfActions", "ACE_Equipment"], _act, true] call ace_interact_menu_fnc_addActionToClass;
+} else {
+    // Sans ACE : action de la molette (visible seulement avec une batterie de rechange et le téléphone sous 95 %).
+    player addAction ["<t color='#7fd0b0'>Changer la batterie ATAK</t>", { [] call comspec_atak_native_fnc_batterySwap; }, nil, 1, false, true, "",
+        "_this isEqualTo _target && {[_this] call comspec_atak_native_fnc_hasDevice} && {(missionNamespace getVariable ['COMSPEC_ATAK_Battery', 100]) < 95} && {([_this] call comspec_atak_native_fnc_batteryItem) isNotEqualTo ''}"];
 };
 
 // Mission de tir reçue (servant d'une pièce) : notification, vibration, cible sur la carte du téléphone.
@@ -480,3 +528,5 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 };
 // Alertes santé (inconscient, arrêt cardiaque, KIA) diffusées par Overwatch.
 ["COMSPEC_IcemanMedicalPanic", { ["health", _this] call comspec_atak_native_fnc_athenaSignal; }] call CBA_fnc_addEventHandler;
+// App Liaison allié : événements, sauvegarde légère, action ACE.
+[] call comspec_atak_native_fnc_linkAllyInit;

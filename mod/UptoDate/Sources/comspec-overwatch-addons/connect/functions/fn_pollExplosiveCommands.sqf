@@ -1,10 +1,12 @@
 /*
     Interroge Athena pour les déclenchements demandés par le poste de commandement.
+    Le même poll porte les commandes web vers ce téléphone (drones, charges, notifications) :
+    lignes charge_id "@wc", traitées par fn_webCmdDispatch (id de commande en 3e colonne, fil en 2e).
 */
 if (!hasInterface) exitWith { false };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
-if (!isClass (configFile >> "CfgPatches" >> "ace_explosives")) exitWith { false };
+private _hasAce = isClass (configFile >> "CfgPatches" >> "ace_explosives");
 
 private _txGate = [true] call comspec_overwatch_connect_fnc_canTransmit;
 if !(_txGate getOrDefault ["can_transmit", true]) exitWith { false };
@@ -29,6 +31,13 @@ private _n = 0;
     if ((count _cols) < 1) then { continue };
     private _cid = trim (_cols select 0);
     if (_cid isEqualTo "" || {_cid isEqualTo "-"}) then { continue };
+    if (_cid isEqualTo "@wc") then {
+        if (!isNil "comspec_overwatch_connect_fnc_webCmdDispatch") then {
+            [trim (_cols param [2, ""]), trim (_cols param [1, ""])] call comspec_overwatch_connect_fnc_webCmdDispatch;
+        };
+        continue
+    };
+    if (!_hasAce) then { continue };
     if ([_cid] call comspec_overwatch_connect_fnc_detonateChargeById) then {
         _n = _n + 1;
     };

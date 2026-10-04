@@ -1,5 +1,5 @@
 /*
-    Carte : drone appairé (position, mode, ligne vers la cible d'une frappe), sa tâche en cours (point, orbite,
+    Carte : drone appairé (icône et nom choisis par le pilote, position, mode, ligne vers la cible d'une frappe), sa tâche en cours (point, orbite,
     zone de recherche, route numérotée), le tracé en cours de l'outil DRONE de la carte et les pistes capteur
     (carrés rouges : ennemis, jaunes : inconnus, bleus : amis ; estompés quand la piste n'est plus vue).
     Appelé depuis fn_mapOnDraw. Params : [contrôle carte]
@@ -90,5 +90,8 @@ if ((count _tp) >= 2) then {
 if (_rm isEqualTo "LOOP" && {(count _rp) > 2}) then { _map drawLine [_rp select ((count _rp) - 1), _rp select 0, _tc]; };
 if ((count _rp) > 0 && {_ri < (count _rp)}) then { _map drawLine [_pos, _rp select _ri, [0.36, 0.85, 0.42, 0.6]]; };
 
-_map drawIcon ["\A3\ui_f\data\map\vehicleicons\iconHelicopter_ca.paa", [_c, [0.6, 0.6, 0.6, 0.8]] select !_linked, _pos, 24, 24, getDir _d,
-    format ["Drone %1 m%2%3", round ((getPosATL _d) select 2), ["", " CQB"] select (_d getVariable ["COMSPEC_DroneCqb", false]), ["", " (hors liaison)"] select !_linked], 1, 0.03, "RobotoCondensedBold", "right"];
+// Drone : icône et nom choisis par le pilote (variables publiques COMSPEC_DroneIcon / COMSPEC_DroneName), nez vers son cap.
+if (_m isEqualTo "STANDBY") then { _c = [0.56, 0.7, 0.79, 1]; };
+_map drawIcon [[_d, [], "ICON"] call comspec_atak_native_fnc_droneOsd, [_c, [0.6, 0.6, 0.6, 0.8]] select !_linked, _pos, 26, 26, getDir _d,
+    format [" %1 %2 m%3%4%5", [_d, [], "NAME"] call comspec_atak_native_fnc_droneOsd, round ((getPosATL _d) select 2), ["", " CQB"] select (_d getVariable ["COMSPEC_DroneCqb", false]),
+        ["", " VEILLE"] select (_m isEqualTo "STANDBY"), ["", " (hors liaison)"] select !_linked], 1, 0.03, "RobotoCondensedBold", "right"];

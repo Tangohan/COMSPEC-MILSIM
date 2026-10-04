@@ -51,4 +51,25 @@ final class GamePhoneIdentityFormatTest extends TestCase
         self::assertMatchesRegularExpression('/^([0-9A-F]{2}:){5}[0-9A-F]{2}$/', $mac);
         self::assertSame(0, hexdec(substr($mac, 0, 2)) % 2);
     }
+
+    public function testOtherFormatsArePlausible(): void
+    {
+        for ($i = 0; $i < 50; $i++) {
+            self::assertMatchesRegularExpression('/^07[1-57-9]\d{2} \d{6}$/', GamePhoneIdentityRepository::newNumber('UK'));
+            self::assertMatchesRegularExpression('/^01[567]\d \d{7}$/', GamePhoneIdentityRepository::newNumber('DE'));
+            self::assertMatchesRegularExpression('/^04[6-9]\d( \d{2}){3}$/', GamePhoneIdentityRepository::newNumber('BE'));
+        }
+        foreach (array_keys(GamePhoneIdentityRepository::FORMATS) as $f) {
+            self::assertTrue(GamePhoneIdentityRepository::isPlausibleNumber(GamePhoneIdentityRepository::newNumber($f)));
+        }
+    }
+
+    public function testImeiAndMacNormalisation(): void
+    {
+        $imei = GamePhoneIdentityRepository::newImei();
+        self::assertSame($imei, GamePhoneIdentityRepository::normalizeImei(str_replace('-', '', $imei)));
+        self::assertNull(GamePhoneIdentityRepository::normalizeImei('351234567890120'));
+        self::assertSame('02:1A:2B:3C:4D:5E', GamePhoneIdentityRepository::normalizeMac('02-1a-2b-3c-4d-5e'));
+        self::assertNull(GamePhoneIdentityRepository::normalizeMac('01:1A:2B:3C:4D:5E'));
+    }
 }

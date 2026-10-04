@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.59";
+    private const string ExtensionVersion = "2.0.60";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -4813,6 +4813,13 @@ public static partial class Extension
                 var json = args[0] ?? "{}";
                 if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
                 return PostAtakJsonSync("/api/atak/reports", json, token);
+            }
+            if (function == "DiscordSend" && args.Length >= 1)
+            {
+                var json = args[0] ?? "{}";
+                if (string.IsNullOrWhiteSpace(json)) return FormatAtakExtArray("ERROR", "payload empty");
+                if (json.Length > 4000) return FormatAtakExtArray("ERROR", "payload too large");
+                return PostAtakJsonSync("/api/atak/discord/send", json, token);
             }
             // 9-line CAS saisi en jeu (app Feux du téléphone ATAK natif) : même table que le formulaire JTAC web,
             // visible du pilote (GetCASForCallsign) et du portail.

@@ -61,8 +61,9 @@ class RscTitles {
         class controls {
             class Overlay: COMSPEC_RscPhone { idc=1; style=48; x="safeZoneX"; y="safeZoneY"; w="safeZoneW"; h="safeZoneH"; text="\z\comspec_atak_native\addons\main\data\camera_overlay.paa"; };
             class Flash: COMSPEC_RscText { idc=2; x="safeZoneX"; y="safeZoneY"; w="safeZoneW"; h="safeZoneH"; colorBackground[]={1,1,1,0}; };
-            class Info: COMSPEC_RscText { idc=3; style=2; x="safeZoneX + safeZoneW * 0.25"; y="safeZoneY + safeZoneH * 0.84"; w="safeZoneW * 0.5"; h="safeZoneH * 0.035"; colorText[]={0.92,0.95,0.93,1}; shadow=2; sizeEx="0.028 * safeZoneH"; text="CLIC GAUCHE : photo     R : selfie     ESPACE : quitter"; };
+            class Info: COMSPEC_RscText { idc=3; style=2; x="safeZoneX + safeZoneW * 0.1"; y="safeZoneY + safeZoneH * 0.84"; w="safeZoneW * 0.8"; h="safeZoneH * 0.035"; colorText[]={0.92,0.95,0.93,1}; shadow=2; sizeEx="0.028 * safeZoneH"; text="CLIC GAUCHE : photo     MOLETTE ou + / - : zoom     F : flash     R : selfie     ESPACE : quitter"; };
             class Count: COMSPEC_RscText { idc=4; style=2; x="safeZoneX + safeZoneW * 0.25"; y="safeZoneY + safeZoneH * 0.875"; w="safeZoneW * 0.5"; h="safeZoneH * 0.03"; colorText[]={0.36,0.78,0.42,1}; shadow=2; sizeEx="0.024 * safeZoneH"; text=""; };
+            class Status: COMSPEC_RscText { idc=5; style=2; x="safeZoneX + safeZoneW * 0.25"; y="safeZoneY + safeZoneH * 0.06"; w="safeZoneW * 0.5"; h="safeZoneH * 0.032"; colorText[]={0.95,0.85,0.45,1}; shadow=2; sizeEx="0.026 * safeZoneH"; text="OBJECTIF ARRIÈRE     ZOOM x1     FLASH AUTO"; };
         };
     };
 };

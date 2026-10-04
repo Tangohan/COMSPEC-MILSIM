@@ -1,6 +1,7 @@
 /*
     Actions de l'app Breacher.
       "handle" : essaie la poignée de la porte au contact (révèle le verrou)
+      "target", clé : porte choisie pour le calcul de charge (clé bâtiment|numéro)
       "mat", m / "meth", m : matériau de la porte et méthode du calcul de charge
       "countdown", s : durée du compte à rebours      "charges" : mise à feu des charges cochées au top
       "go" : top synchronisé envoyé au groupe (événement comspec_atak_native_breach)
@@ -22,6 +23,7 @@ switch (_act) do {
         [["INFO", "WARNING"] select _locked, ["La poignée tourne : porte non verrouillée", "Porte verrouillée"] select _locked, 3, 20] call comspec_atak_native_fnc_notify;
         call _render;
     };
+    case "target": { _s set ["target", _arg]; call _render; };
     case "mat": { _s set ["mat", _arg]; call _render; };
     case "meth": { _s set ["meth", _arg]; call _render; };
     case "countdown": { _s set ["countdown", _arg]; call _render; };

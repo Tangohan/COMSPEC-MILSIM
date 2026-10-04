@@ -15,7 +15,7 @@ private _split = {
 private _extra = [missionNamespace getVariable ["comspec_atak_native_device_items", ""]] call _split;
 private _patterns = [missionNamespace getVariable ["comspec_atak_native_device_patterns", "android,atak,smartphone"]] call _split;
 private _tablets = missionNamespace getVariable ["comspec_atak_native_device_tablets", false];
-private _skip = ["hcam", "helmetcam", "helmet_cam", "_base"];
+private _skip = ["hcam", "helmetcam", "helmet_cam", "_base", "battery", "batterie"]; // batterie ATAK : pas un téléphone
 private _out = +_extra;
 {
     private _cls = toLower (configName _x);

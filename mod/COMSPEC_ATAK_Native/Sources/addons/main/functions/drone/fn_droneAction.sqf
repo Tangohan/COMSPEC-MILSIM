@@ -34,6 +34,29 @@
       ["routeSend"] / ["mapClear"]   envoie la route tracée / efface le tracé en cours ;
       ["mapBar", [x, y, largeur]] dessine la barre drone de la carte (appelé par fn_pageMap).
     Journal : ["log", texte, couleur] ; tout événement y est daté HH:MM:SS (100 lignes au plus).
+    Identité : ["rename", texte] (variable publique COMSPEC_DroneName, 24 caractères, vide = nom du modèle) ;
+      ["icon", "quad" | "fixed" | "hexa" | "nano" | "fpv"] (variable publique COMSPEC_DroneIcon, textures data\drone_<id>.paa).
+    Veille : ["standbyKind", "LAND" | "HOVER"] choix du pilote ; ["standby"(, genre)] se pose ou tient le stationnaire,
+      consommation réduite, capteur et caméra coupés (un second appui reprend) ; ["resume"] renvoie l'ordre d'avant la veille.
+    FORCER L'EXÉCUTION : ["force"] renvoie le dernier ordre de vol (COMSPEC_ATAK_DroneOrder) avec remise d'aplomb de l'IA
+      (équipage recréé, points de passage effacés, déplacement réactivé, altitude et vitesse, doMove) et demande au serveur
+      de recoller l'équipage à la machine du drone. Surveillance automatique (tick) : ordre sans effet ou aucun progrès vers
+      le but pendant 10 s → même reprise, une fois par ordre, notée au journal.
+    Transfert : ["transfer", uid] vers un allié à moins de 50 m portant un téléphone, à confirmer d'un second appui, puis
+      3 s de liaison ; le drone lui appartient (COMSPEC_DroneOwner, et COMSPEC_ATAK_Drone sur son client par l'événement
+      visé comspec_atak_native_droneCmd "transferIn") ; noté au journal des deux pilotes. ["transferIn", [drone, de, home, étape]].
+    Ordres web (COMSPEC Athena, via l'addon Overwatch connect), à appeler sur le client du pilote :
+      ["webCmd", [ordre, [arguments]]] → true si l'ordre est accepté, false sinon (pas de drone, hors liaison, ordre inconnu).
+      Positions : [x, y] ou [x, y, z] (z ignoré, recalé sur le sol) ; unité : uid du joueur ou netId.
+        "takeoff" []            "hover" []            "land" []             "home" []  (retour au pilote)
+        "rth" []  (retour au point de décollage)      "me" []  (suivre le pilote)
+        "follow" [uid]          "escort" [uid]        "goto" [position]
+        "loiter" [position, rayon = 150]              "observe" [position, rayon = 150]
+        "hunt" [rayon = 250 (, position du centre)]   "route" [[positions...] (12 au plus), "ONCE" | "LOOP" | "PINGPONG"]
+        "alt" [m, 2 à 500]      "speed" [km/h, 5 à 150]                       "cqb" [true | false]
+        "standby" [("LAND" | "HOVER")]                "resume" []           "force" []
+        "rename" [texte]        "icon" ["quad" | "fixed" | "hexa" | "nano" | "fpv"]
+      Pas de frappe depuis le web : elle reste confirmée au téléphone.
     État : missionNamespace COMSPEC_ATAK_Drone (drone appairé), COMSPEC_ATAK_DroneHome, COMSPEC_ATAK_DroneCam,
     COMSPEC_ATAK_DroneCamTgt (clé de piste visée par la caméra), COMSPEC_ATAK_DroneTracks (clé → [objet, type, position ASL,
     vu à (time), vu à (HH:MM:SS), camp vu, distance, n°, état]), COMSPEC_ATAK_DroneLog ([[HH:MM:SS, texte, couleur]...]).
@@ -41,11 +64,27 @@
 params [["_act", "tick"], ["_arg", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _d = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
+// Ordres de vol suivis (FORCER L'EXÉCUTION, surveillance) et mode que le drone doit afficher une fois l'ordre reçu.
+private _flight = ["takeoff", "hover", "follow", "home", "land", "hunt", "goto", "loiter", "observe", "escort", "route", "rth", "strike", "manual", "standby"];
+private _expect = createHashMapFromArray [["takeoff", "HOVER"], ["hover", "HOVER"], ["follow", "FOLLOW"], ["home", "HOME"], ["land", "LAND"], ["hunt", "HUNT"], ["goto", "GOTO"], ["loiter", "LOITER"], ["observe", "OBSERVE"], ["escort", "ESCORT"], ["route", "ROUTE"], ["rth", "RTH"], ["strike", "STRIKE"], ["manual", "MANUAL"], ["standby", "STANDBY"]];
+// Unité désignée par uid de joueur, ou par netId (équipier IA).
+private _unitOf = {
+    params [["_id", ""]];
+    if (_id isEqualType objNull) exitWith { _id };
+    if !(_id isEqualType "") exitWith { objNull };
+    private _i = allPlayers findIf { getPlayerUID _x isEqualTo _id };
+    if (_i >= 0) exitWith { allPlayers select _i };
+    if (_id isEqualTo "") exitWith { objNull };
+    objectFromNetId _id
+};
 private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONE") then { ["DRONE"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 private _send = {
     params ["_cmd", ["_args", []]];
     // Tout ordre du téléphone (sauf le passage en manuel) verrouille le terminal UAV : une seule main sur le drone.
     if (_cmd isNotEqualTo "manual" && {(_d getVariable ["COMSPEC_DroneLock", ""]) isNotEqualTo ""}) then { _d setVariable ["COMSPEC_DroneLock", "", true]; };
+    // Dernier ordre de vol : [ordre, arguments, envoyé à, compteur d'ordres reçus du drone à l'envoi, reçu, reprise auto faite,
+    // clé du but, meilleure distance, à]
+    if (_cmd in _flight) then { missionNamespace setVariable ["COMSPEC_ATAK_DroneOrder", [_cmd, _args, time, _d getVariable ["COMSPEC_DroneAckN", 0], false, false, -1, 1e9, time]]; };
     ["comspec_atak_native_droneCmd", [_d, _cmd, _args], _d] call CBA_fnc_targetEvent;
 };
 private _mapRender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
@@ -86,7 +125,7 @@ private _log = {
     while { (count _lg) > 100 } do { _lg deleteAt 0; };
     missionNamespace setVariable ["COMSPEC_ATAK_DroneLog", _lg];
 };
-private _modeName = { params ["_m"]; (createHashMapFromArray [["HOVER", "stationnaire"], ["FOLLOW", "suivi"], ["HOME", "retour au pilote"], ["LAND", "atterrissage"], ["RTH", "retour automatique au point de décollage"], ["STRIKE", "frappe"], ["HUNT", "recherche"], ["MANUAL", "pilotage manuel"], ["GOTO", "vers le point"], ["LOITER", "orbite"], ["OBSERVE", "observation"], ["ESCORT", "escorte"]]) getOrDefault [_m, toLower _m] };
+private _modeName = { params ["_m"]; (createHashMapFromArray [["ROUTE", "route"], ["STANDBY", "veille"], ["HOVER", "stationnaire"], ["FOLLOW", "suivi"], ["HOME", "retour au pilote"], ["LAND", "atterrissage"], ["RTH", "retour automatique au point de décollage"], ["STRIKE", "frappe"], ["HUNT", "recherche"], ["MANUAL", "pilotage manuel"], ["GOTO", "vers le point"], ["LOITER", "orbite"], ["OBSERVE", "observation"], ["ESCORT", "escorte"]]) getOrDefault [_m, toLower _m] };
 // Grille saisie (6, 8 ou 10 chiffres) → centre de la case, position ASL ; [] si invalide.
 private _gridPos = {
     params ["_txt"];
@@ -207,6 +246,76 @@ private _scan = {
     };
     missionNamespace setVariable ["COMSPEC_ATAK_DroneTracks", _tracks];
 };
+// Reprise : renvoie le dernier ordre de vol en mode forcé (IA remise d'aplomb là où le drone est local, équipage recollé par le serveur).
+private _recover = {
+    params [["_auto", false], ["_why", ""]];
+    private _o = missionNamespace getVariable ["COMSPEC_ATAK_DroneOrder", []];
+    private _cmd = _o param [0, "hover"];
+    private _args = _o param [1, []];
+    // Unité suivie disparue : stationnaire.
+    if (_cmd in ["follow", "escort", "home"] && {private _t = _args param [0, objNull]; !(_t isEqualType objNull) || {!alive _t}}) then { _cmd = "hover"; _args = []; };
+    if (_cmd isNotEqualTo "manual" && {(_d getVariable ["COMSPEC_DroneLock", ""]) isNotEqualTo ""}) then { _d setVariable ["COMSPEC_DroneLock", "", true]; };
+    ["comspec_atak_native_droneCmd", [_d, "force", [_cmd, _args]], _d] call CBA_fnc_targetEvent;
+    ["comspec_atak_native_droneCmd", [_d, "relocal", [_cmd, _args]]] call CBA_fnc_serverEvent;
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneOrder", [_cmd, _args, time, _d getVariable ["COMSPEC_DroneAckN", 0], false, _auto || {_o param [5, false]}, -1, 1e9, time]];
+    [format ["%1 : ordre « %2 » renvoyé, IA de vol remise d'aplomb%3", ["Exécution forcée", "Drone bloqué, reprise automatique"] select _auto,
+        [_expect getOrDefault [_cmd, "HOVER"]] call _modeName, ["", format [" (%1)", _why]] select (_why isNotEqualTo "")], "#f2ab33"] call _log;
+    if (_auto) then { ["WARNING", "Drone bloqué : ordre renvoyé automatiquement"] call _say; };
+};
+// Surveillance du dernier ordre (chaque seconde, liaison établie) : reçu par le drone, puis progrès vers son but.
+private _watch = {
+    private _o = missionNamespace getVariable ["COMSPEC_ATAK_DroneOrder", []];
+    if ((count _o) < 9 || {_o select 5}) exitWith {};
+    _o params ["_cmd", "", "_t0", "_n0", "_ack", "", "_key", "_best", "_bestT"];
+    private _m = _d getVariable ["COMSPEC_DroneMode", "HOVER"];
+    // Ordre sans effet attendu sur un drone posé (retour, atterrissage, veille) : rien à surveiller.
+    if (((getPosATL _d) select 2) < 1 && {_cmd in ["home", "land", "standby"]}) exitWith { _o set [5, true]; };
+    // Reçu : le drone a traité un ordre depuis l'envoi (compteur public COMSPEC_DroneAckN), ou affiche déjà le mode attendu.
+    if (!_ack && {(_d getVariable ["COMSPEC_DroneAckN", 0]) isNotEqualTo _n0 || {_m isEqualTo (_expect getOrDefault [_cmd, ""])}}) then { _ack = true; _o set [4, true]; _o set [8, time]; _bestT = time; };
+    if (!_ack) exitWith { if ((time - _t0) > 10) then { [true, "ordre resté sans effet 10 s"] call _recover; }; };
+    // But du mode en cours : point, étape de route, unité suivie, point de décollage, centre d'orbite, cible ; et rayon d'arrivée.
+    private _cqb = _d getVariable ["COMSPEC_DroneCqb", false];
+    private _task = _d getVariable ["COMSPEC_DroneTask", []];
+    private _f = _d getVariable ["COMSPEC_DroneFollow", objNull];
+    private _route = _d getVariable ["COMSPEC_DroneRoute", []];
+    private _goal = switch (_m) do {
+        case "GOTO": { [_task param [1, []], [25, 5] select _cqb] };
+        case "ROUTE": { [(_route param [0, []]) param [_route param [2, 0], []], [30, 3] select _cqb] };
+        case "HOME": { [[[], getPosASL _f] select (alive _f), [30, 6] select _cqb] };
+        case "FOLLOW";
+        case "ESCORT": { [[[], getPosASL _f] select (alive _f), [60, 15] select _cqb] };
+        case "RTH": { [missionNamespace getVariable ["COMSPEC_ATAK_DroneHome", []], 20] };
+        case "LOITER";
+        case "OBSERVE": { [_task param [1, []], (_task param [2, 150]) + 80] };
+        case "STRIKE": { [_d getVariable ["COMSPEC_DroneTgt", []], 130] };
+        default { [[], 0] };
+    };
+    _goal params ["_gp", "_arr"];
+    private _k = [_m, _route param [2, 0]];
+    if (_k isNotEqualTo _key) then { _o set [6, _k]; _o set [7, 1e9]; _o set [8, time]; _best = 1e9; _bestT = time; };
+    if ((count _gp) < 2) exitWith { _o set [8, time]; };
+    private _dist = _d distance2D _gp;
+    // Arrivé, en progrès d'au moins 3 m, ou en route derrière une unité qui roule : pas de blocage.
+    if (_dist < _arr || {_dist < (_best - 3)} || {_m in ["FOLLOW", "ESCORT", "HOME"] && {(speed _d) > 10}}) exitWith { _o set [7, _dist min _best]; _o set [8, time]; };
+    if ((time - _bestT) > 10) then { [true, format ["aucun progrès vers le but depuis 10 s, à %1 m", round _dist]] call _recover; };
+};
+// Prise en main d'un drone (appairage au pied, ou transfert reçu) : état du téléphone et surveillance chaque seconde.
+private _adopt = {
+    params ["_new", ["_home", []]];
+    _new setVariable ["COMSPEC_DroneOwner", getPlayerUID player, true];
+    _new setVariable ["COMSPEC_DroneLock", "", true];
+    _new setVariable ["COMSPEC_DroneSide", side group player, true];
+    missionNamespace setVariable ["COMSPEC_ATAK_Drone", _new];
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneHome", [_home, getPosASL _new] select ((count _home) < 3)];
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneLastMode", ""];
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneFuelWarn", 0];
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneEvtN", (_new getVariable ["COMSPEC_DroneEvt", [0]]) select 0];
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneLinked", true];
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneOrder", []];
+    if ((missionNamespace getVariable ["COMSPEC_ATAK_DronePfh", -1]) < 0) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_DronePfh", [{ ["tick"] call comspec_atak_native_fnc_droneAction; }, 1] call CBA_fnc_addPerFrameHandler];
+    };
+};
 switch (_act) do {
     case "link": { call _link };
     case "log": { [_arg, _this param [2, ""]] call _log; };
@@ -216,22 +325,12 @@ switch (_act) do {
         private _owner = _new getVariable ["COMSPEC_DroneOwner", ""];
         if (_owner isNotEqualTo "" && {_owner isNotEqualTo getPlayerUID player}) exitWith { ["WARNING", "Ce drone est déjà appairé à un autre téléphone"] call _say; };
         if (!isNull _d && {_d isNotEqualTo _new}) then { ["unpair"] call comspec_atak_native_fnc_droneAction; };
-        _new setVariable ["COMSPEC_DroneOwner", getPlayerUID player, true];
-        _new setVariable ["COMSPEC_DroneLock", "", true];
-        _new setVariable ["COMSPEC_DroneSide", side group player, true];
         _new setVariable ["COMSPEC_DroneAlt", _s getOrDefault ["droneAlt", 40], true];
         _new setVariable ["COMSPEC_DroneSpd", _s getOrDefault ["droneSpd", 40], true];
-        missionNamespace setVariable ["COMSPEC_ATAK_Drone", _new];
-        missionNamespace setVariable ["COMSPEC_ATAK_DroneHome", getPosASL _new];
-        missionNamespace setVariable ["COMSPEC_ATAK_DroneLastMode", ""];
-        missionNamespace setVariable ["COMSPEC_ATAK_DroneFuelWarn", 0];
-        missionNamespace setVariable ["COMSPEC_ATAK_DroneEvtN", (_new getVariable ["COMSPEC_DroneEvt", [0]]) select 0];
-        missionNamespace setVariable ["COMSPEC_ATAK_DroneLinked", true];
-        ["SUCCESS", format ["Drone appairé : %1", getText (configOf _new >> "displayName")]] call _say;
-        [format ["Appairage : %1, point de décollage en %2", getText (configOf _new >> "displayName"), [getPosASL _new, 8] call comspec_atak_native_fnc_gridRef], "#5cc76b"] call _log;
-        if ((missionNamespace getVariable ["COMSPEC_ATAK_DronePfh", -1]) < 0) then {
-            missionNamespace setVariable ["COMSPEC_ATAK_DronePfh", [{ ["tick"] call comspec_atak_native_fnc_droneAction; }, 1] call CBA_fnc_addPerFrameHandler];
-        };
+        [_new] call _adopt;
+        private _nm = [_new, [], "NAME"] call comspec_atak_native_fnc_droneOsd;
+        ["SUCCESS", format ["Drone appairé : %1", _nm]] call _say;
+        [format ["Appairage : %1, point de décollage en %2", _nm, [getPosASL _new, 8] call comspec_atak_native_fnc_gridRef], "#5cc76b"] call _log;
         call _render;
     };
     case "unpair": {
@@ -242,6 +341,7 @@ switch (_act) do {
         call _camClose;
         missionNamespace setVariable ["COMSPEC_ATAK_DroneCamTgt", ""];
         missionNamespace setVariable ["COMSPEC_ATAK_Drone", objNull];
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneOrder", []];
         [missionNamespace getVariable ["COMSPEC_ATAK_DronePfh", -1]] call CBA_fnc_removePerFrameHandler;
         missionNamespace setVariable ["COMSPEC_ATAK_DronePfh", -1];
         call _render;
@@ -252,8 +352,7 @@ switch (_act) do {
             case "hover": { ["hover"] call _send; };
             case "me": { ["follow", [player]] call _send; };
             case "player": {
-                private _uid = _s getOrDefault ["droneFollowUid", ""];
-                private _t = allPlayers param [(allPlayers findIf { getPlayerUID _x isEqualTo _uid }), objNull];
+                private _t = [_s getOrDefault ["droneFollowUid", ""]] call _unitOf;
                 if (isNull _t || {!alive _t}) exitWith { ["WARNING", "Choisissez d'abord le joueur à suivre"] call _say; };
                 ["follow", [_t]] call _send;
             };
@@ -276,6 +375,7 @@ switch (_act) do {
         _s set ["droneAlt", [40, 3] select _on];
         _s set ["droneSpd", [40, 10] select _on];
         ["cqb", [_on, _s get "droneAlt", _s get "droneSpd"]] call _send;
+        if (((getPosATL _d) select 2) > 1) then { missionNamespace setVariable ["COMSPEC_ATAK_DroneOrder", ["hover", [], time, -1, true, false, -1, 1e9, time]]; };
         [["Profil CQB quitté : 40 m, 40 km/h", "Profil CQB : vol bas à 3 m, 10 km/h, arrêt devant obstacle"] select _on, "#f2ab33"] call _log;
         call _render;
     };
@@ -504,8 +604,8 @@ switch (_act) do {
     };
     case "escort": {
         if (isNull _d || {!(call _needLink)}) exitWith {};
-        private _t = allPlayers param [(allPlayers findIf { getPlayerUID _x isEqualTo _arg }), objNull];
-        if (isNull _t || {!alive _t}) exitWith { ["WARNING", "Joueur introuvable"] call _say; };
+        private _t = [_arg] call _unitOf;
+        if (isNull _t || {!alive _t}) exitWith { ["WARNING", "Unité introuvable"] call _say; };
         ["escort", [_t]] call _send;
         [format ["Ordre : escorte de %1%2", name _t, ["", format [" (%1)", getText (configOf vehicle _t >> "displayName")]] select ((vehicle _t) isNotEqualTo _t)]] call _log;
         call _render;
@@ -543,6 +643,201 @@ switch (_act) do {
         ["Pistes effacées"] call _log;
         call _render;
     };
+    case "rename": {
+        if (isNull _d) exitWith {};
+        // Texte libre affiché en texte structuré : on retire ce qui casserait le balisage.
+        private _n = [toString ((toArray _arg) select { !(_x in [34, 38, 39, 60, 62, 92]) })] call CBA_fnc_trim;
+        _n = _n select [0, 24];
+        if (_n isEqualTo "") then { _d setVariable ["COMSPEC_DroneName", nil, true]; } else { _d setVariable ["COMSPEC_DroneName", _n, true]; };
+        [format ["Drone renommé : %1", [_d, [], "NAME"] call comspec_atak_native_fnc_droneOsd]] call _log;
+        ["SUCCESS", format ["Drone renommé : %1", [_d, [], "NAME"] call comspec_atak_native_fnc_droneOsd]] call _say;
+        call _render;
+    };
+    case "icon": {
+        if (isNull _d || {!(_arg in ["quad", "fixed", "hexa", "nano", "fpv"])}) exitWith {};
+        _d setVariable ["COMSPEC_DroneIcon", _arg, true];
+        [format ["Icône du drone : %1", (createHashMapFromArray [["quad", "quadricoptère"], ["fixed", "aile fixe"], ["hexa", "hexacoptère"], ["nano", "nano-drone"], ["fpv", "FPV"]]) get _arg]] call _log;
+        call _render;
+    };
+    case "standbyKind": { _s set ["droneStandbyKind", _arg]; call _render; };
+    case "standby": {
+        if (isNull _d || {!(call _needLink)}) exitWith {};
+        private _m = _d getVariable ["COMSPEC_DroneMode", "HOVER"];
+        if (_m isEqualTo "STANDBY") exitWith { ["resume"] call comspec_atak_native_fnc_droneAction; };
+        if (_m isEqualTo "STRIKE") exitWith { ["WARNING", "Frappe en cours : veille impossible"] call _say; };
+        private _kind = [_arg, _s getOrDefault ["droneStandbyKind", "LAND"]] select !(_arg in ["LAND", "HOVER"]);
+        // Ordre à reprendre en sortie de veille (stationnaire si c'était déjà un arrêt).
+        private _o = missionNamespace getVariable ["COMSPEC_ATAK_DroneOrder", []];
+        private _prev = [_o param [0, "hover"], _o param [1, []]];
+        if ((_prev select 0) in ["land", "standby", "manual", "home", "rth", "strike", "takeoff"]) then { _prev = ["hover", []]; };
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneResume", _prev];
+        ["standby", [_kind]] call _send;
+        call _camClose;
+        [format ["Veille : %1, capteur et caméra coupés", ["stationnaire", "posé sur place"] select (_kind isEqualTo "LAND")], "#8fb3c9"] call _log;
+        call _render;
+    };
+    case "resume": {
+        if (isNull _d || {!(call _needLink)}) exitWith {};
+        (missionNamespace getVariable ["COMSPEC_ATAK_DroneResume", ["hover", []]]) params [["_c", "hover"], ["_a", []]];
+        if (_c in ["follow", "escort"] && {private _t = _a param [0, objNull]; !(_t isEqualType objNull) || {!alive _t}}) then { _c = "hover"; _a = []; };
+        [_c, _a] call _send;
+        [format ["Fin de veille : reprise (%1)", [_expect getOrDefault [_c, "HOVER"]] call _modeName], "#5cc76b"] call _log;
+        call _render;
+    };
+    case "force": {
+        if (isNull _d || {!(call _needLink)}) exitWith {};
+        [false] call _recover;
+        ["INFO", "Exécution forcée : ordre renvoyé au drone"] call _say;
+        call _render;
+    };
+    case "transfer": {
+        if (isNull _d) exitWith {};
+        private _t = [_arg] call _unitOf;
+        if (isNull _t || {!alive _t} || {!isPlayer _t} || {(_t distance player) > 50}) exitWith { ["WARNING", "Le destinataire doit être un joueur allié à moins de 50 m"] call _say; };
+        if !([_t] call comspec_atak_native_fnc_hasDevice) exitWith { ["WARNING", format ["%1 n'a pas de téléphone", name _t]] call _say; };
+        private _uid = getPlayerUID _t;
+        if ((allUnitsUAV findIf { alive _x && {_x isNotEqualTo _d} && {(_x getVariable ["COMSPEC_DroneOwner", ""]) isEqualTo _uid} }) >= 0) exitWith { ["WARNING", format ["%1 pilote déjà un drone", name _t]] call _say; };
+        if ((_d getVariable ["COMSPEC_DroneMode", ""]) isEqualTo "STRIKE") exitWith { ["WARNING", "Frappe en cours : transfert impossible"] call _say; };
+        if (missionNamespace getVariable ["COMSPEC_ATAK_DroneXfer", false]) exitWith { ["INFO", "Transfert déjà en cours"] call _say; };
+        // Second appui dans les 5 s pour confirmer.
+        private _k = format ["XFER:%1", _uid];
+        private _c = _s getOrDefault ["droneConfirm", ["", 0]];
+        if ((_c select 0) isNotEqualTo _k || {diag_tickTime - (_c select 1) > 5}) exitWith {
+            _s set ["droneConfirm", [_k, diag_tickTime]];
+            ["WARNING", format ["Appuyez encore pour transférer le drone à %1", name _t]] call _say;
+            call _render;
+        };
+        _s set ["droneConfirm", ["", 0]];
+        // Poignée de main : 3 s de liaison entre les deux téléphones, annoncée au destinataire.
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneXfer", true];
+        ["comspec_atak_native_droneCmd", [_d, "transferIn", [name player, _uid, [], "HELLO"]], _t] call CBA_fnc_targetEvent;
+        ["INFO", format ["Liaison avec le téléphone de %1…", name _t]] call _say;
+        [{ missionNamespace setVariable ["COMSPEC_ATAK_DroneXfer", false]; ["transferDo", _this] call comspec_atak_native_fnc_droneAction; }, [_d, _t, _uid], 3] call CBA_fnc_waitAndExecute;
+        call _render;
+    };
+    case "transferDo": {
+        _arg params ["_dd", "_t", "_uid"];
+        if (isNull _d || {_dd isNotEqualTo _d} || {!alive _d}) exitWith { ["WARNING", "Transfert annulé"] call _say; };
+        if (!alive _t || {(_t distance player) > 50} || {getPlayerUID _t isNotEqualTo _uid}) exitWith {
+            ["WARNING", "Transfert annulé : liaison perdue avec le destinataire"] call _say;
+            ["Transfert annulé : destinataire hors de portée", "#f2ab33"] call _log;
+        };
+        _d setVariable ["COMSPEC_DroneOwner", _uid, true];
+        _d setVariable ["COMSPEC_DroneLock", "", true];
+        ["comspec_atak_native_droneCmd", [_d, "transferIn", [name player, _uid, missionNamespace getVariable ["COMSPEC_ATAK_DroneHome", []], "DONE"]], _t] call CBA_fnc_targetEvent;
+        [format ["Drone transféré à %1", name _t], "#5cc76b"] call _log;
+        ["SUCCESS", format ["Drone transféré à %1", name _t]] call _say;
+        // On rend la main sans libérer le drone : il appartient déjà au nouveau pilote.
+        call _camClose;
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneCamTgt", ""];
+        missionNamespace setVariable ["COMSPEC_ATAK_Drone", objNull];
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneOrder", []];
+        [missionNamespace getVariable ["COMSPEC_ATAK_DronePfh", -1]] call CBA_fnc_removePerFrameHandler;
+        missionNamespace setVariable ["COMSPEC_ATAK_DronePfh", -1];
+        call _render;
+    };
+    case "transferIn": {
+        _arg params ["_new", ["_from", ""], ["_home", []], ["_stage", "DONE"]];
+        if (isNull _new || {!alive _new}) exitWith {};
+        if (_stage isEqualTo "HELLO") exitWith {
+            ["INFO", format ["%1 vous transfère son drone : liaison en cours…", _from]] call _say;
+            [] call comspec_atak_native_fnc_vibrate;
+        };
+        if (!isNull _d && {_d isNotEqualTo _new}) then { ["unpair"] call comspec_atak_native_fnc_droneAction; };
+        _s set ["droneAlt", _new getVariable ["COMSPEC_DroneAlt", 40]];
+        _s set ["droneSpd", _new getVariable ["COMSPEC_DroneSpd", 40]];
+        [_new, _home] call _adopt;
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneLastMode", _new getVariable ["COMSPEC_DroneMode", "HOVER"]];
+        private _nm = [_new, [], "NAME"] call comspec_atak_native_fnc_droneOsd;
+        [format ["Drone reçu de %1 : %2, en %3", _from, _nm, [getPosASL _new, 8] call comspec_atak_native_fnc_gridRef], "#5cc76b"] call _log;
+        ["SUCCESS", format ["Drone reçu de %1 : %2", _from, _nm]] call _say;
+        [] call comspec_atak_native_fnc_vibrate;
+        call _render;
+    };
+    case "webCmd": {
+        // Ordres venus de COMSPEC Athena par l'addon Overwatch connect : mêmes chemins que les boutons du téléphone.
+        _arg params [["_c", ""], ["_a", []]];
+        if !(_a isEqualType []) then { _a = [_a]; };
+        _c = toLower _c;
+        private _toAsl = { params ["_p"]; if !(_p isEqualType [] && {(count _p) >= 2}) exitWith { [] }; [_p select 0, _p select 1, (getTerrainHeightASL [_p select 0, _p select 1]) + 1] };
+        private _known = ["takeoff", "hover", "land", "home", "rth", "me", "follow", "escort", "goto", "loiter", "observe", "hunt", "route", "alt", "speed", "cqb", "standby", "resume", "force", "rename", "icon"];
+        if (isNull _d || {!(_c in _known)}) exitWith { false };
+        if (!(_c in ["rename", "icon"]) && {!(call _needLink)}) exitWith { false };
+        [format ["Ordre reçu de COMSPEC Athena : %1", _c], "#4da3ff"] call _log;
+        private _ok = true;
+        switch (_c) do {
+            case "takeoff": { ["takeoff"] call comspec_atak_native_fnc_droneAction; };
+            case "hover";
+            case "land";
+            case "home";
+            case "me": { ["mode", _c] call comspec_atak_native_fnc_droneAction; };
+            case "rth": { ["rth", [missionNamespace getVariable ["COMSPEC_ATAK_DroneHome", getPosASL player]]] call _send; call _render; };
+            case "follow": {
+                private _t = [_a param [0, ""]] call _unitOf;
+                if (isNull _t || {!alive _t}) exitWith { _ok = false; };
+                ["follow", [_t]] call _send;
+                [format ["Ordre : suivi de %1", name _t]] call _log;
+                call _render;
+            };
+            case "escort": {
+                private _t = [_a param [0, ""]] call _unitOf;
+                if (isNull _t || {!alive _t}) exitWith { _ok = false; };
+                ["escort", _t] call comspec_atak_native_fnc_droneAction;
+            };
+            case "goto": {
+                private _p = [_a param [0, []]] call _toAsl;
+                if (_p isEqualTo []) exitWith { _ok = false; };
+                ["goto", [_p]] call _send;
+                [format ["Ordre : aller en %1", [_p, 8] call comspec_atak_native_fnc_gridRef]] call _log;
+                call _render;
+            };
+            case "loiter";
+            case "observe": {
+                private _p = [_a param [0, []]] call _toAsl;
+                private _r = ((_a param [1, 150, [0]]) max 30) min 800;
+                if (_p isEqualTo []) exitWith { _ok = false; };
+                [_c, [_p, _r]] call _send;
+                if (_c isEqualTo "observe") then { missionNamespace setVariable ["COMSPEC_ATAK_DroneCamTgt", ""]; };
+                [format ["Ordre : %1 en %2, rayon %3 m", ["orbite", "observer"] select (_c isEqualTo "observe"), [_p, 8] call comspec_atak_native_fnc_gridRef, round _r]] call _log;
+                call _render;
+            };
+            case "hunt": {
+                private _r = ((_a param [0, 250, [0]]) max 50) min 1000;
+                private _p = [_a param [1, []]] call _toAsl;
+                if (_p isEqualTo []) then { _s set ["droneHuntRad", _r]; ["mode", "hunt"] call comspec_atak_native_fnc_droneAction; } else {
+                    ["hunt", [_r, player, _p]] call _send;
+                    [format ["Ordre : recherche en %1, rayon %2 m", [_p, 8] call comspec_atak_native_fnc_gridRef, round _r]] call _log;
+                    call _render;
+                };
+            };
+            case "route": {
+                private _pts = ((_a param [0, [], [[]]]) apply { [_x] call _toAsl }) select { _x isNotEqualTo [] };
+                private _rm = toUpper (_a param [1, "ONCE", [""]]);
+                if !(_rm in ["ONCE", "LOOP", "PINGPONG"]) then { _rm = "ONCE"; };
+                if ((count _pts) isEqualTo 0) exitWith { _ok = false; };
+                _pts = _pts select [0, 12];
+                ["route", [_pts, _rm]] call _send;
+                [format ["Ordre : route de %1 points, %2", count _pts, (createHashMapFromArray [["ONCE", "une fois"], ["LOOP", "en boucle"], ["PINGPONG", "en aller-retour"]]) get _rm]] call _log;
+                call _render;
+            };
+            case "alt": { ["alt", round (((_a param [0, 40, [0]]) max 2) min 500)] call comspec_atak_native_fnc_droneAction; };
+            case "speed": { ["speed", round (((_a param [0, 40, [0]]) max 5) min 150)] call comspec_atak_native_fnc_droneAction; };
+            case "cqb": { if ((_a param [0, true, [true]]) isNotEqualTo (_d getVariable ["COMSPEC_DroneCqb", false])) then { ["cqb"] call comspec_atak_native_fnc_droneAction; }; };
+            case "standby": {
+                if ((_d getVariable ["COMSPEC_DroneMode", ""]) isEqualTo "STANDBY") exitWith {};
+                ["standby", toUpper (_a param [0, "", [""]])] call comspec_atak_native_fnc_droneAction;
+            };
+            case "resume": { ["resume"] call comspec_atak_native_fnc_droneAction; };
+            case "force": { ["force"] call comspec_atak_native_fnc_droneAction; };
+            case "rename": {
+                private _v = _a param [0, ""];
+                if !(_v isEqualType "") then { _v = str _v; };
+                ["rename", _v] call comspec_atak_native_fnc_droneAction;
+            };
+            case "icon": { ["icon", toLower (_a param [0, "", [""]])] call comspec_atak_native_fnc_droneAction; };
+        };
+        _ok
+    };
     case "tick": {
         if (isNull _d) exitWith { ["unpair"] call comspec_atak_native_fnc_droneAction; };
         if (!alive _d) exitWith {
@@ -559,10 +854,12 @@ switch (_act) do {
         private _was = missionNamespace getVariable ["COMSPEC_ATAK_DroneLinked", true];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneLinked", _l select 2];
         private _m = _d getVariable ["COMSPEC_DroneMode", "HOVER"];
+        // Veille posée : le drone reste au sol, quoi qu'il arrive à la liaison ou à la batterie.
+        private _parked = _m isEqualTo "STANDBY" && {(_d getVariable ["COMSPEC_DroneStandby", "LAND"]) isEqualTo "LAND"};
         // Liaison perdue : retour automatique au point de décollage (sauf frappe déjà lancée).
         if (_was && {!(_l select 2)}) then {
             ["Liaison perdue", "#e5483a"] call _log;
-            if !(_m in ["STRIKE", "RTH", "LAND"]) then {
+            if (!(_m in ["STRIKE", "RTH", "LAND"]) && {!_parked}) then {
                 ["WARNING", "Drone : liaison perdue, retour au point de décollage"] call _say;
                 [] call comspec_atak_native_fnc_vibrate;
                 ["rth", [missionNamespace getVariable ["COMSPEC_ATAK_DroneHome", getPosASL player]]] call _send;
@@ -598,7 +895,7 @@ switch (_act) do {
         };
         if (_fu <= 0.1 && {_warn < 2} && {((getPosATL _d) select 2) > 2}) then {
             missionNamespace setVariable ["COMSPEC_ATAK_DroneFuelWarn", 2];
-            if !(_m in ["STRIKE", "RTH", "LAND"]) then {
+            if (!(_m in ["STRIKE", "RTH", "LAND"]) && {!_parked}) then {
                 ["WARNING", "Drone : batterie critique, retour au point de décollage"] call _say;
                 [] call comspec_atak_native_fnc_vibrate;
                 ["rth", [missionNamespace getVariable ["COMSPEC_ATAK_DroneHome", getPosASL player]]] call _send;
@@ -606,7 +903,9 @@ switch (_act) do {
             };
         };
         // Capteur : seulement en vol et avec le retour vidéo.
-        if ((_l select 2) && {((getPosATL _d) select 2) > 3}) then { call _scan; };
+        if ((_l select 2) && {((getPosATL _d) select 2) > 3} && {_m isNotEqualTo "STANDBY"}) then { call _scan; };
+        // Ordre qui n'avance pas : reprise automatique, une fois (pas en pilotage manuel ni en veille).
+        if ((_l select 2) && {!(_m in ["MANUAL", "STANDBY"])}) then { call _watch; };
         private _osd = uiNamespace getVariable ["COMSPEC_ATAK_DroneOsd", controlNull];
         if (!isNull _osd) then { _osd ctrlSetStructuredText parseText ([_d, _l] call comspec_atak_native_fnc_droneOsd); };
         private _feed = uiNamespace getVariable ["COMSPEC_ATAK_DroneFeedTxt", []];

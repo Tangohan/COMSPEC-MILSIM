@@ -16,6 +16,40 @@ private _alertsAll = (missionNamespace getVariable ["COMSPEC_MedicalAlerts", []]
 private _open = { (_x getOrDefault ["triage_status", "a_secourir"]) in ["a_secourir", "en_cours"] } count _alertsAll;
 // Onglets : une seule chose à l'écran à la fois.
 private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['medTab', '%1']; [{ ['MEDICAL'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _tab isEqualTo _k] };
+// Identité médicale d'un patient : groupe sanguin (plaque ACE, variable ACE / KAT, profil COMSPEC) et poids (profil).
+// Renvoie [texte groupe, texte poids] ; "non renseigné" quand rien n'est connu.
+private _medIdent = {
+    params [["_u", objNull], ["_alert", createHashMap]];
+    private _bt = "";
+    private _str = { params ["_v"]; if (isNil "_v") exitWith { "" }; if (_v isEqualType "") exitWith { trim _v }; if (_v isEqualType 0) exitWith { str _v }; "" };
+    if (!isNull _u) then {
+        if (!isNil "ace_dogtags_fnc_getDogtagData") then {
+            private _d = [_u] call ace_dogtags_fnc_getDogtagData;
+            if (_d isEqualType [] && {(count _d) >= 3}) then { _bt = [_d select 2] call _str; };
+        };
+        if (_bt isEqualTo "") then {
+            private _i = _u getVariable ["ace_medical_bloodType", -1];
+            if (_i isEqualType 0 && {_i >= 0} && {_i <= 7}) then { _bt = ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"] select _i; };
+        };
+        { if (_bt isEqualTo "") then { _bt = [_u getVariable [_x, ""]] call _str; }; } forEach ["KAT_circulation_bloodType", "COMSPEC_BloodType", "comspec_blood_type", "COMSPEC_ProfileBloodType"];
+        if (_bt isEqualTo "" && {_u isEqualTo player} && {!isNil "comspec_overwatch_connect_fnc_getBloodType"}) then { _bt = [[] call comspec_overwatch_connect_fnc_getBloodType] call _str; };
+    };
+    if (_bt isEqualTo "") then { _bt = [_alert getOrDefault ["blood_type", ""]] call _str; };
+    private _w = "";
+    if (!isNull _u) then {
+        { if (_w isEqualTo "") then {
+            private _v = _u getVariable [_x, nil];
+            if (!isNil "_v") then { if (_v isEqualType "") then { _v = parseNumber _v; }; if (_v isEqualType 0 && {_v > 0}) then { _w = format ["%1 kg", round _v]; }; };
+        }; } forEach ["COMSPEC_WeightKg", "COMSPEC_weight_kg", "comspec_weight_kg", "COMSPEC_ProfileWeight"];
+    };
+    if (_w isEqualTo "") then {
+        private _v = _alert getOrDefault ["weight_kg", 0];
+        if (_v isEqualType "") then { _v = parseNumber _v; };
+        if (_v isEqualType 0 && {_v > 0}) then { _w = format ["%1 kg", round _v]; };
+    };
+    private _nr = "<t color='#8a9a93'>non renseigné</t>";
+    [[format ["<t font='RobotoCondensedBold' color='#e5483a'>%1</t>", _bt], _nr] select (_bt isEqualTo ""), [format ["<t font='RobotoCondensedBold'>%1</t>", _w], _nr] select (_w isEqualTo "")]
+};
 private _rows = [["segment", "", [
     [["ALERTES", format ["ALERTES (%1)", _open]] select (_open > 0), "ALERTS"] call _tabBtn,
     ["TROUPES", "TROOPS"] call _tabBtn,
@@ -40,6 +74,11 @@ if ((count _alerts) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a
     _rows pushBack ["text", format ["<t size='0.75' color='%1'>● %2</t><t size='0.75' color='#8a9a93'>  %3</t>", _col, _x getOrDefault ["triage_label", _status], _x getOrDefault ["created_at", ""]]];
     if (_id isEqualTo _sel) then {
         private _grid = _x getOrDefault ["grid", ""];
+        // Patient de l'alerte : retrouvé en jeu par son identifiant Steam ou son indicatif, sinon données de l'alerte.
+        private _uid = format ["%1", _x getOrDefault ["steam_id", _x getOrDefault ["uid", ""]]];
+        private _pu = (allPlayers select { (getPlayerUID _x) isEqualTo _uid || {([_x, true] call comspec_atak_native_fnc_unitCallsign) isEqualTo _who} }) param [0, objNull];
+        ([_pu, _x] call _medIdent) params ["_btT", "_wT"];
+        _rows pushBack ["info", "Groupe sanguin · poids", format ["%1 · %2", _btT, _wT]];
         private _b = [[ "LOCALISER", compile format ["['locate', '%1'] call comspec_atak_native_fnc_medicalAction;", _grid]]];
         if (_canTriage) then {
             _b append [
@@ -121,6 +160,9 @@ _list sort true;
 private _mon = objectFromNetId (_s getOrDefault ["medMon", ""]);
 if (isNull _mon) then { _mon = (_list param [0, [0, player]]) select 1; };
 uiNamespace setVariable ["COMSPEC_ATAK_MedMonitor", _mon];
+// Fiche du patient suivi au moniteur : groupe sanguin et poids.
+([_mon] call _medIdent) params ["_btM", "_wM"];
+_rows pushBack ["info", format ["Patient : %1", [_mon, true] call comspec_atak_native_fnc_unitCallsign], format ["Groupe sanguin %1 · Poids %2", _btM, _wM]];
 {
     _x params ["", "_u", "_h", "_blood", "_hr"];
     private _lab = createHashMapFromArray [["cardiac_arrest", ["ARRÊT", "#e5483a"]], ["unconscious", ["INCONSCIENT", "#e5483a"]], ["critical", ["CRITIQUE", "#f2ab33"]], ["wounded", ["BLESSÉ", "#e8b84a"]], ["kia", ["KIA", "#8a9a93"]]] getOrDefault [_h, ["STABLE", "#5cc76b"]];
