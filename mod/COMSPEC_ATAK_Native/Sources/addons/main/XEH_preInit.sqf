@@ -77,11 +77,14 @@ private _geo = ["COMSPEC ATAK natif", "Géolocalisation (GEOLOC)"];
     ["Prévenir la cible", "La cible reçoit une alerte discrète « activité réseau anormale » quand elle est géolocalisée."],
     _geo, false, 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_battery_sim", "CHECKBOX",
-    ["Batterie simulée", "La batterie du téléphone se vide selon l'usage (écran, live cam, GPS, brouilleur) et se recharge en véhicule moteur allumé. À 0 % le téléphone s'éteint et passe hors ligne dans le BFT."],
+    ["Batterie simulée", "La batterie du téléphone se vide selon l'usage (écran, appareil photo, live cam, GPS, envois de données, recherche de réseau, brouilleur) et se recharge en véhicule moteur allumé. À 0 % le téléphone s'éteint et passe hors ligne dans le BFT."],
     _sim, true, 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_battery_drain", "SLIDER", ["Vitesse de décharge", "Multiplicateur de consommation de la batterie (1 = environ 3 h écran en main)."], _sim, [0.25, 4, 1, 2], 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_net_sim", "CHECKBOX",
     ["Débit réseau simulé", "Bâtiments, relief, véhicule, météo, brouilleurs, relais et dégâts réduisent le débit : messages et photos partent avec un délai, se perdent et repartent, ou attendent le retour du réseau."],
+    _sim, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_aar", "CHECKBOX",
+    ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s (et les pertes amies) pour l'app Rejeu mission. Décocher pour ne rien enregistrer."],
     _sim, true, 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_civil_apps", "CHECKBOX",
     ["Apps civiles", "Ration Express (rations livrées par drone) et Rencard (rencontres entre joueurs). Décocher pour les retirer de tous les téléphones."],

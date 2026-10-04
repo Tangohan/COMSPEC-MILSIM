@@ -37,6 +37,7 @@ switch (_page) do {
     case "BDA": { [] call comspec_atak_native_fnc_pageBda; };
     case "SSE": { [] call comspec_atak_native_fnc_pageSse; };
     case "WANTED": { [] call comspec_atak_native_fnc_pageWanted; };
+    case "AAR": { [] call comspec_atak_native_fnc_pageAar; };
     case "C2": { [] call comspec_atak_native_fnc_pageC2; };
     case "EXPLO": { [] call comspec_atak_native_fnc_pageExplo; };
     case "BREACH": { [] call comspec_atak_native_fnc_pageBreach; };

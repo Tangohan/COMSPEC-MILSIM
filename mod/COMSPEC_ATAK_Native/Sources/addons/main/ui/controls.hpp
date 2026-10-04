@@ -10,6 +10,7 @@ class RscProgress;
 class RscPicture;
 class RscActivePicture;
 class RscMapControl;
+class RscXSliderH;
 class RscControlsGroup {
     class VScrollbar;
     class HScrollbar;
@@ -59,4 +60,6 @@ class COMSPEC_RscIconButton: RscActivePicture { color[]=ATAK_TEXT; colorActive[]
 class COMSPEC_RscBubbleIn: COMSPEC_RscStructuredText { colorBackground[]=ATAK_BG2; };
 class COMSPEC_RscBubbleOut: COMSPEC_RscStructuredText { colorBackground[]={0.10,0.20,0.12,1}; };
 class COMSPEC_RscChip: COMSPEC_RscTextCenter { font="RobotoCondensedBold"; colorBackground[]={0.55,0.38,0.08,1}; colorText[]={1,1,1,1}; };
+// Curseur du rejeu de mission (app AAR).
+class COMSPEC_RscSlider: RscXSliderH { color[]={0.36,0.78,0.42,0.9}; colorActive[]={0.46,0.88,0.52,1}; colorDisabled[]={0.4,0.45,0.42,0.6}; };
 class COMSPEC_RscMapPanel: COMSPEC_RscStructuredText { colorBackground[]={0.025,0.030,0.027,0.78}; };

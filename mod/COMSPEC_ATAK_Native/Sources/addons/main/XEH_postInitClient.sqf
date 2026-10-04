@@ -263,6 +263,19 @@ addMissionEventHandler ["Ended", { ["MusicStop"] call comspec_atak_native_fnc_ex
 // Live cam partagé vers Overwatch beta : une image toutes les N s si le joueur l'a activé.
 [{ [] call comspec_atak_native_fnc_livecamShare; }, 2] call CBA_fnc_addPerFrameHandler;
 
+// Rejeu de mission : une image toutes les 10 s, et les pertes amies avec leur position.
+[{ [] call comspec_atak_native_fnc_aarRecord; }, 10] call CBA_fnc_addPerFrameHandler;
+addMissionEventHandler ["EntityKilled", {
+    params ["_unit"];
+    if (!(_unit isKindOf "CAManBase") || {!(missionNamespace getVariable ["comspec_atak_native_aar", true])}) exitWith {};
+    if ((side group _unit) isNotEqualTo (side group player)) exitWith {};
+    private _ev = missionNamespace getVariable ["COMSPEC_ATAK_AarEvents", []];
+    private _p = getPosASL _unit;
+    _ev pushBack [time, round (_p select 0), round (_p select 1), name _unit];
+    if ((count _ev) > 300) then { _ev deleteAt 0; };
+    missionNamespace setVariable ["COMSPEC_ATAK_AarEvents", _ev];
+}];
+
 // Débit simulé : la file d'envoi part dès que le réseau revient, et les SMS restés chez l'opérateur arrivent.
 [{
     private _inbox = missionNamespace getVariable ["COMSPEC_ATAK_P2pInbox", []];
