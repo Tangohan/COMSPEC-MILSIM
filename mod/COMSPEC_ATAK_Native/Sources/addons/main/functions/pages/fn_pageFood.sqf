@@ -1,4 +1,4 @@
-/* Ration Express : catalogue des rations et boissons (ACE Field Rations), panier, suivi de livraison. */
+/* UberEats : catalogue des rations et boissons (ACE Field Rations), panier, suivi de livraison. */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
@@ -7,7 +7,7 @@ private _cart = _s getOrDefault ["foodCart", createHashMap];
 private _menu = ["menu"] call comspec_atak_native_fnc_foodAction;
 private _o = missionNamespace getVariable ["COMSPEC_ATAK_FoodOrder", createHashMap];
 private _step = _o getOrDefault ["step", ""];
-private _rows = [["hero", "\z\comspec_atak_native\addons\main\data\app_food.paa", "<t size='1.3' font='RobotoCondensedBold' color='#ff7a59'>Ration Express</t><br/><t color='#8a9a93'>Livré par drone-cargo, partout sur le théâtre.<br/>6 articles maximum, une commande toutes les 10 min.</t>"]];
+private _rows = [["hero", "\z\comspec_atak_native\addons\main\data\app_food.paa", "<t size='1.3' font='RobotoCondensedBold' color='#ff7a59'>UberEats</t><br/><t color='#8a9a93'>Livré par drone-cargo, partout sur le théâtre.<br/>6 articles maximum, une commande toutes les 10 min.</t>"]];
 if (_step in ["PREP", "FLIGHT"]) then {
     private _left = round ((_o get "eta") - time) max 0;
     _rows append [

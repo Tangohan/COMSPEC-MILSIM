@@ -1,5 +1,5 @@
 /*
-    Rencard (app civile, pour rire) : profils des joueurs qui ont le téléphone, « J'aime » / « Passer »,
+    Tinder (app civile, pour rire) : profils des joueurs qui ont le téléphone, « J'aime » / « Passer »,
     match quand c'est réciproque (notification des deux côtés, SMS ouvert).
     Params : [action, argument]  "like" / "pass" : UID du profil affiché   "visible" : apparaître ou non   "sms" : nom du joueur
     Visibilité partagée : player COMSPEC_ATAK_Rencard (vrai par défaut, réglable dans l'app).

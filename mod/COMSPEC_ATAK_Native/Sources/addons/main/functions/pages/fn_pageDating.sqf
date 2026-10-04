@@ -1,4 +1,4 @@
-/* Rencard : onglet DÉCOUVRIR (un profil à la fois, J'AIME / PASSER) et MATCHS (likes réciproques, SMS). */
+/* Tinder : onglet DÉCOUVRIR (un profil à la fois, J'AIME / PASSER) et MATCHS (likes réciproques, SMS). */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
@@ -49,6 +49,6 @@ if (_tab isEqualTo "FIND") then {
     } forEach _matches;
     if ((count _matches) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Pas encore de match. Likez, et attendez qu'on vous like en retour.</t>"]; };
 };
-_rows pushBack ["switch", "Apparaître sur Rencard", _visible, { ["visible"] call comspec_atak_native_fnc_datingAction; }, "Décochez pour cacher votre profil"];
+_rows pushBack ["switch", "Apparaître sur Tinder", _visible, { ["visible"] call comspec_atak_native_fnc_datingAction; }, "Décochez pour cacher votre profil"];
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 true

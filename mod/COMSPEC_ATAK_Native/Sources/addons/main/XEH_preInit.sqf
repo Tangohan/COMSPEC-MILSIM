@@ -92,7 +92,7 @@ private _geo = ["COMSPEC ATAK", "Géolocalisation (GEOLOC)"];
     _sim, true, 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_apps_off", "EDITBOX", ["Apps désactivées", "Noms de classe d'apps à retirer de tous les téléphones, séparés par des virgules (ex. Dating, Food, MonModule). Vaut aussi pour les modules externes."], _sim, "", 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_civil_apps", "CHECKBOX",
-    ["Apps civiles", "Ration Express (rations livrées par drone) et Rencard (rencontres entre joueurs). Décocher pour les retirer de tous les téléphones."],
+    ["Apps civiles", "UberEats (rations livrées par drone) et Tinder (rencontres entre joueurs). Décocher pour les retirer de tous les téléphones."],
     _sim, true, 1] call CBA_fnc_addSetting;
 
 // Mode drone : les ordres s'exécutent là où le drone est local (pilote, serveur ou client qui l'a posé).

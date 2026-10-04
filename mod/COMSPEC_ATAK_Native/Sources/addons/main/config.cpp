@@ -90,9 +90,9 @@ class COMSPEC_ATAK_Apps {
     class Gps       { name="GPS";        page="GPS";       section="Opérations";    order=12;  dock=0; icon="\z\comspec_atak_native\addons\main\data\app_gps.paa"; };
     class Waypoints { name="Points de passage"; page="WAYPOINTS"; section="Opérations"; order=15; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_waypoints.paa"; };
     class Osint    { name="OSINT";      page="OSINT";    section="Renseignement"; order=125; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_osint.paa"; };
-    class Food     { name="Ration Express"; page="FOOD"; section="Civil";         order=400; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_food.paa"; };
+    class Food     { name="UberEats"; page="FOOD"; section="Civil";         order=400; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_food.paa"; };
     class Music    { name="Musique";    page="MUSIC";    section="Civil";         order=395; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_music.paa"; };
-    class Dating   { name="Rencard";    page="DATING";   section="Civil";         order=410; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_dating.paa"; };
+    class Dating   { name="Tinder";    page="DATING";   section="Civil";         order=410; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_dating.paa"; };
     class Debug    { name="Debug";      page="DEBUG";    section="Système";       order=315; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_debug.paa"; };
     class Resynch   { name="Resynch";    page="RESYNCH";   section="Opérations";    order=57;  dock=0; icon="\z\comspec_atak_native\addons\main\data\app_resynch.paa"; };
     class Weather   { name="Météo";      page="WEATHER";   section="Opérations";    order=55;  dock=0; icon="\z\comspec_atak_native\addons\main\data\app_weather.paa"; };
