@@ -299,6 +299,13 @@ class AtakApiController
             if ($imagePath === '') {
                 continue;
             }
+            // Opération Athena rattachée (null = diapositive commune à toutes les opérations).
+            $operationId = (int) ($row['operation_id'] ?? 0);
+            $operationCode = trim((string) ($row['operation_code'] ?? ''));
+            $operationName = trim((string) ($row['operation_name'] ?? ''));
+            $operation = ($operationId > 0 && ($operationCode !== '' || $operationName !== ''))
+                ? ['id' => $operationId, 'code' => $operationCode, 'name' => $operationName]
+                : null;
             $out[] = [
                 'id' => (int) ($row['id'] ?? 0),
                 'title' => trim((string) ($row['title'] ?? '')),
@@ -306,6 +313,7 @@ class AtakApiController
                 'sort_order' => (int) ($row['sort_order'] ?? 0),
                 'image_url' => url($imagePath),
                 'updated_at' => (string) ($row['updated_at'] ?? $row['created_at'] ?? ''),
+                'operation' => $operation,
             ];
         }
 

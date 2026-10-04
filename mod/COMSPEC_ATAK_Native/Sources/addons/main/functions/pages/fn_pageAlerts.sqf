@@ -1,6 +1,6 @@
 /*
     App Alertes : bouton PANIQUE (double appui), alertes rapides (contact, fin de contact, appareil abattu)
-    et compte rendu SALUTE. Envoi par Overwatch connect vers Athena (fil « ALERTE TACTIQUE »)
+    et compte rendu SALUTE. Envoi par COMSPEC Link vers Athena (fil « ALERTE TACTIQUE »)
     et, pour la panique, directement aux téléphones alliés du camp (fonctionne sans Athena).
 */
 disableSerialization;

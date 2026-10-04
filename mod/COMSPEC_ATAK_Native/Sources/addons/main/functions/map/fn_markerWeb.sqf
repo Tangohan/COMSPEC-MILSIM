@@ -1,5 +1,5 @@
 /*
-    Envoie un marqueur du téléphone au web (Athena) par Overwatch connect, sans dépendre de ses EH MarkerCreated
+    Envoie un marqueur du téléphone au web (Athena) par COMSPEC Link, sans dépendre de ses EH MarkerCreated
     (non posés tant qu'Overwatch ne voit pas de terminal, ou muets pendant ses imports).
     Params : [nom, supprimé]. Sans Overwatch : rien (le marqueur reste dans le jeu).
 */

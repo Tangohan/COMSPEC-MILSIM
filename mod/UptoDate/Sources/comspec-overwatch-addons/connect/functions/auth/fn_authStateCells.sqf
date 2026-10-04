@@ -42,5 +42,9 @@ createHashMapFromArray [
     ["role", [16] call _fnc_identity],
     ["function", [17] call _fnc_identity],
     ["steam_linked", [18] call _fnc_cell],
-    ["steam_notice", [19] call _fnc_cell]
+    ["steam_notice", [19] call _fnc_cell],
+    ["phone_number", [26] call _fnc_cell],
+    ["phone_imei", [27] call _fnc_cell],
+    ["phone_mac", [28] call _fnc_cell],
+    ["phone_format", [29] call _fnc_cell]
 ]

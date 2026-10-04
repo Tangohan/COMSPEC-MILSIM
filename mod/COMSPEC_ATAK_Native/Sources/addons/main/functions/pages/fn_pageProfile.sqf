@@ -19,13 +19,13 @@ _rows pushBack ["hero", _logo, format ["<t size='1.3' font='RobotoCondensedBold'
 _rows append [
     ["info", "Unité (ORBAT)", ["comspec_profile_unit"] call _v],
     ["info", "Fonction", ["comspec_profile_function"] call _v],
-    ["info", "Groupe en jeu", groupId group player],
+    ["info", "Groupe", [player] call comspec_atak_native_fnc_unitGroup],
     ["info", "Compte Steam lié", ["non", "oui"] select (missionNamespace getVariable ["COMSPEC_SteamLinked", false])]
 ];
 // Identité du téléphone (roleplay, traçable en GÉOLOC par les autres camps selon la mission).
 ([player] call comspec_atak_native_fnc_phoneIdent) params ["_num", "_imei", "_mac"];
 _rows append [
-    ["section", "Mon téléphone", "Numéro, IMEI et adresse MAC"],
+    ["section", "Mon téléphone", (if (((missionNamespace getVariable ["comspec_profile_phone", []]) param [0, ""]) isEqualTo "") then { "Hors ligne : numéro provisoire, gardé dans Athena à la connexion" } else { format ["Attribué par Athena, modèle %1", (missionNamespace getVariable ["comspec_profile_phone", []]) param [3, "FR"]] })],
     ["info", "Numéro", _num], ["info", "IMEI", _imei], ["info", "Adresse MAC", _mac],
     ["buttons", [["COPIER LE NUMÉRO", compile format ["copyToClipboard %1; ['INFO', 'Numéro copié', 2, 10] call comspec_atak_native_fnc_notify;", str _num]]]]
 ];
@@ -34,8 +34,8 @@ _rows append [
 private _quals = (uiNamespace getVariable ["COMSPEC_ATAK_Quals", createHashMap]) getOrDefault [getPlayerUID player, []];
 _rows pushBack ["section", "Qualifications", "Attributions en cours sur Athena"];
 switch (true) do {
-    case (!_bridge): { _rows pushBack ["text", "<t color='#8a9a93'>Liaison Athena (Overwatch connect) requise.</t>"]; };
-    case (_quals isEqualTo "olddll"): { _rows pushBack ["text", "<t color='#8a9a93'>Mettez à jour la DLL Overwatch pour afficher les qualifications.</t>"]; };
+    case (!_bridge): { _rows pushBack ["text", "<t color='#8a9a93'>Liaison Athena (COMSPEC Link) requise.</t>"]; };
+    case (_quals isEqualTo "olddll"): { _rows pushBack ["text", "<t color='#8a9a93'>Mettez à jour la DLL COMSPEC Link pour afficher les qualifications.</t>"]; };
     case ((count _quals) isEqualTo 0): { _rows pushBack ["text", "<t color='#8a9a93'>Aucune qualification en cours (ou profil en cours de chargement).</t>"]; };
     default {
         {

@@ -1,9 +1,9 @@
 if (!hasInterface) exitWith {};
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] Client PostInit complete";
 missionNamespace setVariable ["COMSPEC_ATAK_LegacyBootstrapSuppressed", true, false];
-// Avec Overwatch connect, sa DLL porte la session Athena : on n'ouvre pas une seconde session avec la DLL native.
+// Avec COMSPEC Link, sa DLL porte la session Athena : on n'ouvre pas une seconde session avec la DLL native.
 if ([] call comspec_atak_native_fnc_bridge) then {
-    diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] Overwatch connect présent : session Athena partagée, DLL native non initialisée";
+    diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPEC Link présent : session Athena partagée, DLL native non initialisée";
 } else {
     private _athenaUrl = profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"];
     private _extInit = "COMSPECATAKNativeExtension" callExtension ["Init", [_athenaUrl]];
@@ -36,6 +36,7 @@ if ([] call comspec_atak_native_fnc_bridge) then {
 // Batterie : consommation aussi téléphone rangé (la barre d'état la met à jour chaque seconde quand il est ouvert).
 [{ if (isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_battery; }; }, 10] call CBA_fnc_addPerFrameHandler;
 ["comspec_atak_native_p2p", { _this call comspec_atak_native_fnc_p2pReceive }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_p2pAck", { _this call comspec_atak_native_fnc_p2pAck }] call CBA_fnc_addEventHandler;
 // MEDEVAC du camp : demandes et suivi (app Médical, onglet MEDEVAC).
 ["comspec_atak_native_medevac", { ["recv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_bda", { ["recv", _this] call comspec_atak_native_fnc_bdaAction; }] call CBA_fnc_addEventHandler;
@@ -44,7 +45,7 @@ private _eh = addMissionEventHandler ["ExtensionCallback", { _this call comspec_
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 ["COMSPEC_AthenaLinkChanged", { params ["_state"]; private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["networkState", toUpper _state]; }] call CBA_fnc_addEventHandler;
 
-// Overwatch connect (déjà installé chez les joueurs) n'ouvre ses boucles de synchro que s'il voit « son » terminal.
+// COMSPEC Link (déjà installé chez les joueurs) n'ouvre ses boucles de synchro que s'il voit « son » terminal.
 // Tant que sa version ne délègue pas au natif, on lui indique ici si le téléphone natif est autorisé.
 [{
     if !([] call comspec_atak_native_fnc_bridge) exitWith {};
@@ -63,7 +64,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     ["INFO", "TENANT", "Réglages communauté appliqués"] call comspec_atak_native_fnc_log;
 }, 5] call CBA_fnc_addPerFrameHandler;
 
-// Retour d'Athena sur les photos envoyées (via Overwatch connect) : reçue ou refusée.
+// Retour d'Athena sur les photos envoyées (via COMSPEC Link) : reçue ou refusée.
 [{
     private _up = count (missionNamespace getVariable ["COMSPEC_Athena_PhotoUploaded", []]);
     private _ko = count (missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []]);
@@ -79,6 +80,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     private _orbat = missionNamespace getVariable ["comspec_profile_unit", ""];
     if !(_orbat isEqualType "") then { _orbat = str _orbat; };
     if ((player getVariable ["COMSPEC_ATAK_Orbat", ""]) isNotEqualTo _orbat) then { player setVariable ["COMSPEC_ATAK_Orbat", _orbat, true]; };
+    // Téléphone gardé dans Athena : partagé pour que la GE des autres voie le même numéro, IMEI et MAC.
+    private _ph = missionNamespace getVariable ["comspec_profile_phone", []];
+    if ((player getVariable ["COMSPEC_ATAK_IdentDb", []]) isNotEqualTo _ph) then { player setVariable ["COMSPEC_ATAK_IdentDb", _ph, true]; };
     private _icon = profileNamespace getVariable ["COMSPEC_ATAK_SelfIcon", ""];
     if ((player getVariable ["COMSPEC_ATAK_Icon", ""]) isNotEqualTo _icon) then { player setVariable ["COMSPEC_ATAK_Icon", _icon, true]; };
     // Balise BFT : en ligne si j'ai un téléphone allumé avec du signal (diffusée seulement quand elle change).
@@ -233,22 +237,77 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     if ((_s getOrDefault ["activePage", ""]) isNotEqualTo "BRIEFING" || {(_s getOrDefault ["briefTab", "SLIDES"]) isEqualTo "MISSION"}) exitWith {};
     if (isNull ([] call comspec_atak_native_fnc_display)) exitWith {};
-    private _sig = ([] call comspec_atak_native_fnc_briefingSignature) select [0, 4];
+    private _sig = (([] call comspec_atak_native_fnc_briefingSignature) select [0, 4]) + [["get"] call comspec_atak_native_fnc_briefingLive, count (["attendees"] call comspec_atak_native_fnc_briefingLive)];
     if (_sig isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BriefSig", []])) exitWith {};
     uiNamespace setVariable ["COMSPEC_ATAK_BriefSig", _sig];
     ["BRIEFING"] call comspec_atak_native_fnc_pageRender;
 }, 1] call CBA_fnc_addPerFrameHandler;
+
+// Question posée pendant ma présentation : alerte sur mon téléphone.
+["comspec_atak_native_briefQ", {
+    params ["_who", "_txt"];
+    ["MESSAGE", format ["Question de %1 : %2", _who, [_txt, (_txt select [0, 80]) + "…"] select ((count _txt) > 80)], 8, 50] call comspec_atak_native_fnc_notify;
+    [] call comspec_atak_native_fnc_vibrate;
+    private _q = uiNamespace getVariable ["COMSPEC_ATAK_BriefQ", createHashMap];
+    _q set ["slide", -2];
+}] call CBA_fnc_addEventHandler;
+
+// Briefing présenté en direct : suivre le présentateur de mon camp, signaler ma présence.
+[{ ["tick"] call comspec_atak_native_fnc_briefingLive; }, 2] call CBA_fnc_addPerFrameHandler;
 
 // App Musique : son du lecteur et des haut-parleurs voisins ; coupé en quittant la partie (la DLL jouerait encore au menu).
 [{ [] call comspec_atak_native_fnc_musicTick; }, 0.5] call CBA_fnc_addPerFrameHandler;
 addMissionEventHandler ["Ended", { ["MusicStop"] call comspec_atak_native_fnc_extensionCall; }];
 [{ !isNull (findDisplay 46) }, { (findDisplay 46) displayAddEventHandler ["Unload", { ["MusicStop"] call comspec_atak_native_fnc_extensionCall; }]; }] call CBA_fnc_waitUntilAndExecute;
 
-// Live cam partagé vers Overwatch beta : une image toutes les N s si le joueur l'a activé.
+// Live cam partagé vers COMSPEC Overwatch : une image toutes les N s si le joueur l'a activé.
 [{ [] call comspec_atak_native_fnc_livecamShare; }, 2] call CBA_fnc_addPerFrameHandler;
 
-// Débit simulé : la file d'envoi part dès que le réseau revient.
+// Détecteur de drones : balayage automatique en fond (réglage de l'app).
+[{ if (profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false]) then { ["auto"] call comspec_atak_native_fnc_droneDetectScan; }; }, 5] call CBA_fnc_addPerFrameHandler;
+// Drones pilotés au téléphone : terminal UAV interdit sauf au pilote en mode manuel (COMSPEC_DroneLock).
+// Appliqué toutes les 0,5 s pour primer sur les mods qui réactivent la connexion (Mavic).
 [{
+    private _blocked = missionNamespace getVariable ["COMSPEC_ATAK_UavBlocked", []];
+    private _uid = getPlayerUID player;
+    {
+        private _lock = _x getVariable "COMSPEC_DroneLock";
+        if (!isNil "_lock" && {_lock isNotEqualTo _uid}) then {
+            player disableUAVConnectability [_x, true];
+            if ((getConnectedUAV player) isEqualTo _x) then {
+                player connectTerminalToUAV objNull;
+                ["WARNING", "Drone piloté depuis un téléphone : terminal déconnecté", 4, 40] call comspec_atak_native_fnc_notify;
+            };
+            _blocked pushBackUnique _x;
+        };
+    } forEach allUnitsUAV;
+    // Verrou levé ou rendu à ce joueur : connexion rétablie une fois.
+    {
+        private _lock = _x getVariable "COMSPEC_DroneLock";
+        if (isNull _x || {isNil "_lock"} || {_lock isEqualTo _uid}) then { if (!isNull _x) then { player enableUAVConnectability [_x, true]; }; _blocked set [_forEachIndex, objNull]; };
+    } forEach _blocked;
+    missionNamespace setVariable ["COMSPEC_ATAK_UavBlocked", _blocked - [objNull]];
+}, 0.5] call CBA_fnc_addPerFrameHandler;
+// Rejeu de mission : une image toutes les 10 s, et les pertes amies avec leur position.
+[{ [] call comspec_atak_native_fnc_aarRecord; }, 10] call CBA_fnc_addPerFrameHandler;
+addMissionEventHandler ["EntityKilled", {
+    params ["_unit"];
+    if (!(_unit isKindOf "CAManBase") || {!(missionNamespace getVariable ["comspec_atak_native_aar", true])}) exitWith {};
+    if ((side group _unit) isNotEqualTo (side group player)) exitWith {};
+    private _ev = missionNamespace getVariable ["COMSPEC_ATAK_AarEvents", []];
+    private _p = getPosASL _unit;
+    _ev pushBack [time, round (_p select 0), round (_p select 1), name _unit];
+    if ((count _ev) > 300) then { _ev deleteAt 0; };
+    missionNamespace setVariable ["COMSPEC_ATAK_AarEvents", _ev];
+}];
+
+// Débit simulé : la file d'envoi part dès que le réseau revient, et les SMS restés chez l'opérateur arrivent.
+[{
+    private _inbox = missionNamespace getVariable ["COMSPEC_ATAK_P2pInbox", []];
+    if ((count _inbox) > 0 && {[] call comspec_atak_native_fnc_p2pReachable}) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_P2pInbox", []];
+        { (_x + [true]) call comspec_atak_native_fnc_p2pReceive; } forEach _inbox;
+    };
     private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
     if ((count _queue) isEqualTo 0) exitWith {};
     if ((([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0) exitWith {};
@@ -383,3 +442,11 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     missionNamespace setVariable ["COMSPEC_ATAK_MyCharges", _mine];
     uiNamespace setVariable ["COMSPEC_ATAK_ExploCache", [-1, []]];
 }] call CBA_fnc_addEventHandler;
+// Signaux du poste (SMS, alerte plein écran, vibration) : Overwatch appelle ces crochets du module atak_athena,
+// absent avec le mod natif ; on les fournit seulement s'ils ne sont pas déjà définis.
+if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
+    comspec_overwatch_atak_athena_fnc_athena_onNotify = { params ["_o"]; ["notify", _o] call comspec_atak_native_fnc_athenaSignal; };
+    comspec_overwatch_atak_athena_fnc_athena_onVibrate = { params ["_o"]; ["vibrate", _o] call comspec_atak_native_fnc_athenaSignal; };
+};
+// Alertes santé (inconscient, arrêt cardiaque, KIA) diffusées par Overwatch.
+["COMSPEC_IcemanMedicalPanic", { ["health", _this] call comspec_atak_native_fnc_athenaSignal; }] call CBA_fnc_addEventHandler;

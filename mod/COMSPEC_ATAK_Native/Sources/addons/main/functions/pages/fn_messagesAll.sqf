@@ -1,8 +1,8 @@
 /*
-    Fil TOC unifié. Avec Overwatch connect : son fil par canal (general, commandement, groupe),
+    Fil TOC unifié. Avec COMSPEC Link : son fil par canal (general, commandement, groupe),
     ou ses alertes pour le canal "alertes". Sans : GetChatMessages, la boîte d'alertes et les envois locaux.
     Params : [canal ("" = tous)]
-    Renvoie des HashMaps normalisées : id, time, author, body, tags, kind, mine, status.
+    Renvoie des HashMaps normalisées : id, time, author, body, tags, kind, mine, status, stamp (date et heure d'origine).
 */
 params [["_channel", ""]];
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
@@ -24,18 +24,18 @@ private _add = {
     _out pushBack createHashMapFromArray [
         ["id", _m getOrDefault ["id", ""]], ["time", _time], ["author", _author], ["body", _text],
         ["tags", _tags], ["kind", _kind], ["mine", (_m getOrDefault ["mine", false]) || {(toLower _author) in _names}],
-        ["status", _m getOrDefault ["status", "RECEIVED"]], ["grid", _m getOrDefault ["grid", ""]]
+        ["status", _m getOrDefault ["status", "RECEIVED"]], ["grid", _m getOrDefault ["grid", ""]], ["stamp", _m getOrDefault ["stamp", ""]]
     ];
 };
 if ([] call comspec_atak_native_fnc_bridge) then {
-    // Fil Overwatch connect : [id, auteur, texte, heure, canal, moi]
+    // Fil COMSPEC Link : [id, auteur, texte, heure, canal, moi]
     if (_channel isEqualTo "alertes") then {
         { [_x, _x getOrDefault ["kind", "NOTIFY"]] call _add; } forEach (_data getOrDefault ["inbox", []]);
     } else {
         {
             _x params [["_id", ""], ["_author", ""], ["_text", ""], ["_time", ""], ["_ch", "general"], ["_mine", false]];
             if (_channel isEqualTo "" || {_ch isEqualTo _channel}) then {
-                [createHashMapFromArray [["id", _id], ["author", [_author, "Moi"] select (_mine && {_author isEqualTo ""})], ["body", _text], ["time", (_time splitString " ") param [1, _time]], ["mine", _mine]], "CHAT"] call _add;
+                [createHashMapFromArray [["id", _id], ["author", [_author, "Moi"] select (_mine && {_author isEqualTo ""})], ["body", _text], ["time", (_time splitString " ") param [1, _time]], ["stamp", _time], ["mine", _mine]], "CHAT"] call _add;
             };
         } forEach (missionNamespace getVariable ["COMSPEC_Comms_Messages", []]);
     };

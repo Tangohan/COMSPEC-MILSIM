@@ -617,6 +617,22 @@ final class SseApiController
     }
 
     /**
+     * Avis de recherche pour le téléphone en jeu : personnes prioritaires (photo), liste de surveillance,
+     * dossiers d’intérêt prioritaires ou critiques.
+     */
+    public function wanted(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $limit = (int) ($request->query('limit') ?? 40);
+        $items = (new \App\Services\Sse\SseWantedNoticeService())->forTenant($r, $limit > 0 ? $limit : 40);
+
+        return Response::json(['wanted' => $items, 'count' => count($items)]);
+    }
+
+    /**
      * Interrogation d’identité terrain (SEEK Query) — registre + listes de surveillance réels.
      */
     public function identityQuery(Request $request, array $params = []): Response

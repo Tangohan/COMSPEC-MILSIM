@@ -3,7 +3,7 @@
     Params : [[x, y, w, h] dans la zone de contenu, unité suivie]
     Le tracé est une suite de colonnes fines (une par échantillon) reliant chaque point au précédent ;
     une boucle de 40 ms le fait défiler et s'arrête seule quand la page change.
-    Constantes : état et pouls lus par Overwatch connect (ACE), tension et SpO2 estimées d'après le sang.
+    Constantes : état et pouls lus par COMSPEC Link (ACE), tension et SpO2 estimées d'après le sang.
 */
 params ["_rect", ["_u", objNull]];
 disableSerialization;

@@ -20,6 +20,8 @@ if (!hasInterface) exitWith {};
                 _player disableUAVConnectability [_x, true];
             } forEach (_uavs - _uavsNear);
             {
+                // Drone piloté depuis un téléphone COMSPEC ATAK : la connexion est gérée par son verrou.
+                if (!isNil {_x getVariable "COMSPEC_DroneLock"}) then { continue; };
                 private _signal = [_player, _x] call Mavic_fnc_getSignal;
                 if (_signal < 0.05) then {
                     _player disableUAVConnectability [_x, true];

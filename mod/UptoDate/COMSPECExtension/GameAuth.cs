@@ -26,6 +26,11 @@ public static partial class Extension
     private static string _gameProfileRole = "";
     private static string _gameProfileFunction = "";
     private static string _gameProfileAvatar = "";
+    // Téléphone en jeu attribué par Athena (numéro au format FR ou US du tenant, IMEI, MAC).
+    private static string _gamePhoneNumber = "";
+    private static string _gamePhoneImei = "";
+    private static string _gamePhoneMac = "";
+    private static string _gamePhoneFormat = "";
     private static string _gameTenantName = "";
     private static string _gameTenantSlug = "";
     private static string _gameBrandingUrl = "";
@@ -198,7 +203,11 @@ public static partial class Extension
                 TabCell(_gameAccountId),
                 TabCell(_gameAccountEmail),
                 TabCell(_gameDeviceId),
-                TabCell(_gameSessionExpiresAt));
+                TabCell(_gameSessionExpiresAt),
+                TabCell(_gamePhoneNumber),
+                TabCell(_gamePhoneImei),
+                TabCell(_gamePhoneMac),
+                TabCell(_gamePhoneFormat));
         }
     }
 
@@ -553,6 +562,10 @@ public static partial class Extension
         _gameProfileRole = "";
         _gameProfileFunction = "";
         _gameProfileAvatar = "";
+        _gamePhoneNumber = "";
+        _gamePhoneImei = "";
+        _gamePhoneMac = "";
+        _gamePhoneFormat = "";
         _gameTenantName = "";
         _gameTenantSlug = "";
         _gameBrandingUrl = "";
@@ -747,6 +760,10 @@ public static partial class Extension
         _gameProfileUnit = ReadProfileText(prof, "unit");
         _gameProfileRole = ReadProfileText(prof, "role");
         _gameProfileFunction = ReadProfileText(prof, "function");
+        _gamePhoneNumber = ReadProfileText(prof, "phone_number");
+        _gamePhoneImei = ReadProfileText(prof, "phone_imei");
+        _gamePhoneMac = ReadProfileText(prof, "phone_mac");
+        _gamePhoneFormat = ReadProfileText(prof, "phone_format");
         _gameProfileAvatar = prof.TryGetProperty("avatar", out var av)
             ? ResolveGameMediaUrl(av.GetString() ?? "")
             : "";

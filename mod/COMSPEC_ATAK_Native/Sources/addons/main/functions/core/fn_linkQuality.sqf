@@ -50,9 +50,24 @@ if (_bridge) then {
 };
 private _unit = vehicle player;
 private _eye = eyePos player;
-// Toit au-dessus de la tête : intérieur d'un bâtiment.
-if ((count (lineIntersectsSurfaces [_eye, _eye vectorAdd [0, 0, 20], player, objNull, true, 1, "GEOM", "NONE"])) > 0 && {_unit isEqualTo player}) then {
-    _mul = _mul * 0.45; _lat = _lat + 40; _f pushBack ["Dans un bâtiment", "-55 %"];
+// Intérieur : toit au-dessus de la tête, étages empilés, murs autour, sous-sol.
+// Près d'une fenêtre ou d'une porte le signal passe encore ; au cœur du bâtiment ou en sous-sol, plus rien.
+if (_unit isEqualTo player) then {
+    private _roofs = count (lineIntersectsSurfaces [_eye, _eye vectorAdd [0, 0, 30], player, objNull, true, 4, "GEOM", "NONE"]);
+    if (_roofs > 0) then {
+        private _walls = 0;
+        for "_a" from 0 to 315 step 45 do {
+            if ((count (lineIntersectsSurfaces [_eye, _eye vectorAdd [8 * sin _a, 8 * cos _a, 0], player, objNull, true, 1, "GEOM", "NONE"])) > 0) then { _walls = _walls + 1; };
+        };
+        private _under = (_eye select 2) < (getTerrainHeightASL _eye) - 0.5;
+        switch (true) do {
+            case (_under): { _mul = 0; _f pushBack ["En sous-sol", "aucun signal"]; };
+            case (_walls >= 8 && {_roofs >= 2}): { _mul = 0; _f pushBack [format ["Au cœur du bâtiment (%1 étages au-dessus)", _roofs], "aucun signal"]; };
+            case (_walls >= 7 || {_roofs >= 3}): { _mul = _mul * 0.12; _lat = _lat + 150; _f pushBack ["Au fond du bâtiment, loin des ouvertures", "-88 %"]; };
+            case (_walls >= 5 || {_roofs >= 2}): { _mul = _mul * 0.3; _lat = _lat + 80; _f pushBack ["Dans un bâtiment", "-70 %"]; };
+            default { _mul = _mul * 0.6; _lat = _lat + 30; _f pushBack ["Sous abri, près d'une ouverture", "-40 %"]; };
+        };
+    };
 };
 if (_unit isNotEqualTo player) then { _mul = _mul * 0.8; _f pushBack ["Dans un véhicule", "-20 %"]; };
 if ((_eye select 2) < 0) then { _mul = 0; _f pushBack ["Sous l'eau", "aucun signal"]; };

@@ -1,5 +1,5 @@
 /*
-    Reprend les données publiées par Overwatch connect (ordres web, boîte d'alertes, intel).
+    Reprend les données publiées par COMSPEC Link (ordres web, boîte d'alertes, intel).
     Elles vont dans des stores à part ("legacyTasks", "inbox") pour ne plus écraser
     ce que GetOrders / GetChatMessages ont rempli ; messagesAll et tasksAll fusionnent.
 */

@@ -148,7 +148,7 @@ if (_bridge) then {
     if !(_tenantOn) then { _real pushBack ["text", "<t size='0.8' color='#8a9a93'>Réglages de la communauté pas encore reçus : connectez-vous à Athena.</t>"]; };
     _live = [
         ["section", "Live cam", "Partage de ma vue vers le poste Overwatch"],
-        ["COMSPEC_ATAK_LivecamShare", false, "native_livecam_share", "Partager ma caméra", "Une image de ma vue à intervalle régulier vers Overwatch beta (onglet Live cam)"] call _profSwitch,
+        ["COMSPEC_ATAK_LivecamShare", false, "native_livecam_share", "Partager ma caméra", "Une image de ma vue à intervalle régulier vers COMSPEC Overwatch (onglet Live cam)"] call _profSwitch,
         ["COMSPEC_ATAK_LivecamShareEvery", 15, "Cadence", [["10 S", 10], ["15 S", 15], ["30 S", 30], ["60 S", 60]]] call _profSegment
     ];
 };
@@ -205,7 +205,7 @@ private _cat = _s getOrDefault ["setCat", ""];
 private _sel = (_cats select { (_x select 0) isEqualTo _cat }) param [0, []];
 private _rows = [];
 if ((count _sel) isEqualTo 0) then {
-    _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_settings.paa", format ["<t size='1.3' font='RobotoCondensedBold'>Réglages</t><br/><t color='#8a9a93'>ATAK natif %1%2</t>", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""], ["", format [" · %1 réglage(s) imposé(s) par %2", _lockedCount, ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")]] select (_lockedCount > 0)]];
+    _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_settings.paa", format ["<t size='1.3' font='RobotoCondensedBold'>Réglages</t><br/><t color='#8a9a93'>COMSPEC ATAK %1%2</t>", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""], ["", format [" · %1 réglage(s) imposé(s) par %2", _lockedCount, ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")]] select (_lockedCount > 0)]];
     {
         _x params ["_k", "_t", "_sub", "_icon", "_r"];
         if (_k isNotEqualTo "REAL" || {_bridge}) then {

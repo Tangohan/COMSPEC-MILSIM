@@ -16,7 +16,7 @@ private _peer = _s getOrDefault ["chatPeer", "ATHENA"];
 
 private _bridge = [] call comspec_atak_native_fnc_bridge;
 private _interactiveTop = _l get "interactive";
-// Canaux web : Overwatch connect ne les relit qu'à la création ou suppression, on les rafraîchit ici (toutes les 20 s).
+// Canaux web : COMSPEC Link ne les relit qu'à la création ou suppression, on les rafraîchit ici (toutes les 20 s).
 if (_bridge && {!isNil "comspec_overwatch_connect_fnc_pollChatChannels"} && {diag_tickTime - (_s getOrDefault ["chatChannelsPoll", -100]) > 20}) then {
     _s set ["chatChannelsPoll", diag_tickTime];
     [] spawn {
@@ -27,9 +27,9 @@ if (_bridge && {!isNil "comspec_overwatch_connect_fnc_pollChatChannels"} && {dia
         };
     };
 };
-// Canaux système (non supprimables), comme dans Overwatch connect.
+// Canaux système (non supprimables), comme dans COMSPEC Link.
 private _system = ["groupe", "commandement", "general", "jtac", "air", "squad", "global", "hq", "c2", "command", "group", "alertes"];
-// Canaux Athena (fil Overwatch connect quand il est chargé), puis messages directs.
+// Canaux Athena (fil COMSPEC Link quand il est chargé), puis messages directs.
 private _channelRows = []; // [clé, libellé, personnalisé]
 if (_bridge) then {
     {
@@ -45,7 +45,7 @@ private _channels = if (_bridge) then { _channelRows apply { ["CH:" + (_x select
 private _manage = _bridge && {_interactiveTop};
 private _mbw = [0, _gw * 0.14] select _interactiveTop;
 // Boutons d'en-tête en main : VIDER (toujours), + CANAL et SUPPRIMER (avec Athena).
-private _nBtn = [0, [1, 3] select _manage] select _interactiveTop;
+private _nBtn = [0, [2, 4] select _manage] select _interactiveTop;
 private _combo = ["COMSPEC_RscCombo", [_pad, _pad, _gw - 2 * _pad - _nBtn * (_mbw + _pad / 2), _rowH]] call comspec_atak_native_fnc_pageCtrl;
 _combo ctrlSetFontHeight _font;
 private _peers = (allPlayers select { _x isNotEqualTo player && {side group _x isEqualTo side group player} }) apply { name _x };
@@ -96,6 +96,14 @@ if (_interactiveTop) then {
         uiNamespace setVariable ["COMSPEC_ATAK_ChatCleared", _cleared];
         [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
     }];
+};
+// Tri par date : plus anciens en haut (comme un téléphone) ou plus récents en haut.
+if (_interactiveTop) then {
+    private _desc = _s getOrDefault ["chatSortDesc", false];
+    private _bSort = ["COMSPEC_RscButton", [_gw - _pad - _nBtn * (_mbw + _pad / 2) + _pad / 2 + (_mbw + _pad / 2), _pad, _mbw, _rowH], ["ANCIENS ↑", "RÉCENTS ↑"] select _desc] call comspec_atak_native_fnc_pageCtrl;
+    _bSort ctrlSetFontHeight (_l get "fontSmall");
+    _bSort ctrlSetTooltip "Trier par date : plus anciens ou plus récents en haut";
+    _bSort ctrlAddEventHandler ["ButtonClick", { private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["chatSortDesc", !(_s getOrDefault ["chatSortDesc", false])]; [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
 };
 if (_manage) then {
     private _curKey = _peer select [3];
@@ -166,19 +174,19 @@ private _esc = {
     _t = [_t, "<", "&lt;"] call CBA_fnc_replace;
     [_t, ">", "&gt;"] call CBA_fnc_replace
 };
-private _items = []; // [moi, en-tête, texte, clé, auteur]
+private _items = []; // [moi, auteur, heure, date, texte, puces, clé, état, non lu]
+private _today = [] call comspec_atak_native_fnc_p2pDate;
 if (_isChannel) then {
     private _msgs = [_s getOrDefault ["chatChannel", ""]] call comspec_atak_native_fnc_messagesAll;
     {
         private _mine = _x get "mine";
-        private _tags = (_x get "tags") apply { format ["<t font='RobotoCondensedBold' color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select (_x in ["URGENT", "FLASH", "PRIORITAIRE", "IMMEDIATE"]), [_x] call _esc] };
-        private _status = switch (_x get "status") do { case "FAILED": { " <t color='#e5483a'>non envoyé</t>" }; case "SENT": { " <t color='#8a9a93'>envoi…</t>" }; case "PENDING": { " <t color='#f2ab33'>en attente de réseau…</t>" }; default { "" }; };
-        _items pushBack [_mine,
-            format ["<t font='RobotoCondensedBold' color='%1'>%2</t> <t color='#8a9a93'>%3</t> %4%5", ["#5cc76b", "#9be3a5"] select _mine, [["Moi", _x get "author"] select !_mine] call _esc, [_x get "time"] call _esc, _tags joinString " ", _status],
-            [_x get "body"] call _esc,
-            toLower format ["%1|%2|%3", _x get "author", _x get "time", _x get "body"],
-            ["", _x get "author"] select !_mine];
-    } forEach (_msgs select [((count _msgs) - 40) max 0]);
+        private _tags = ((_x get "tags") apply { format ["<t font='RobotoCondensedBold' color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select (_x in ["URGENT", "FLASH", "PRIORITAIRE", "IMMEDIATE"]), [_x] call _esc] }) joinString " ";
+        private _status = switch (_x get "status") do { case "FAILED": { "<t color='#e5483a'>Non transmis</t>" }; case "SENT": { "<t color='#8a9a93'>Envoi…</t>" }; case "PENDING": { "<t color='#f2ab33'>En attente de réseau</t>" }; default { "" }; };
+        private _stamp = _x getOrDefault ["stamp", ""];
+        private _date = [_today, (_stamp splitString " ") select 0] select ((_stamp find "-") > 0);
+        _items pushBack [_mine, ["TOC", _x get "author"] select ((_x get "author") isNotEqualTo ""), _x get "time", _date, [_x get "body"] call _esc, _tags,
+            toLower format ["%1|%2|%3", _x get "author", _x get "time", _x get "body"], _status, false];
+    } forEach (_msgs select [((count _msgs) - 60) max 0]);
     _s set ["seenAthena", count ([] call comspec_atak_native_fnc_messagesAll)];
 } else {
     {
@@ -186,19 +194,42 @@ if (_isChannel) then {
             private _out = (_x getOrDefault ["dir", ""]) isEqualTo "out";
             ([_x getOrDefault ["body", ""], ""] call comspec_atak_native_fnc_chatParse) params ["", "_ptags", "_ptext"];
             private _chips = (_ptags apply { format ["<t font='RobotoCondensedBold' color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select (_x in ["URGENT", "FLASH", "IMPORTANT", "CONTACT", "TIC", "MEDEVAC"]), [_x] call _esc] }) joinString " ";
-            _items pushBack [_out,
-                format ["<t font='RobotoCondensedBold' color='%1'>%2</t> <t color='#8a9a93'>%3</t> %4", ["#5cc76b", "#9be3a5"] select _out, [[_peer] call _esc, "Moi"] select _out, [_x getOrDefault ["time", "--:--"]] call _esc, _chips],
-                [_ptext] call _esc,
-                toLower format ["%1|%2|%3", _x getOrDefault ["dir", ""], _x getOrDefault ["time", ""], _x getOrDefault ["body", ""]],
-                ["", _peer] select !_out];
-            _x set ["read", true];
+            // État d'un SMS envoyé : en attente de réseau, envoi, distribué, lu, non transmis (60 s sans accusé).
+            private _st = _x getOrDefault ["status", ""];
+            if (_st isEqualTo "SENDING" && {time - (_x getOrDefault ["sentAt", time]) > 60}) then { _st = "FAILED"; };
+            private _status = if (_out) then { switch (_st) do {
+                case "READ": { format ["<t color='#7fd0ff'>Lu %1</t>", _x getOrDefault ["statusTime", ""]] };
+                case "DELIVERED": { "<t color='#c9d4cf'>Distribué</t>" };
+                case "QUEUED": { "<t color='#f2ab33'>Non transmis · en attente de réseau</t>" };
+                case "FAILED": { "<t color='#e5483a'>Non transmis</t>" };
+                case "SENDING": { "<t color='#8a9a93'>Envoi…</t>" };
+                default { "" };
+            } } else { "" };
+            private _unread = !_out && {!(_x getOrDefault ["read", false])};
+            _items pushBack [_out, _peer, _x getOrDefault ["time", "--:--"], _x getOrDefault ["date", _today], [_ptext] call _esc, _chips,
+                toLower format ["%1|%2|%3", _x getOrDefault ["dir", ""], _x getOrDefault ["time", ""], _x getOrDefault ["body", ""]], _status, _unread];
+            // Conversation ouverte : les SMS reçus passent à « lu », l'expéditeur en est informé.
+            if (_unread) then {
+                _x set ["read", true];
+                private _snd = _x getOrDefault ["sender", objNull];
+                if ((_x getOrDefault ["id", ""]) isNotEqualTo "" && {!isNull _snd} && {_l get "interactive"}) then {
+                    ["comspec_atak_native_p2pAck", [_x get "id", "READ", [dayTime, "HH:MM"] call BIS_fnc_timeToString], _snd] call CBA_fnc_targetEvent;
+                };
+            };
         };
     } forEach (_data getOrDefault ["p2p", []]);
 };
+// Tri par date et heure (ordre d'arrivée à égalité), puis sens choisi.
+private _keyed = [];
+{ _keyed pushBack [format ["%1 %2", _x select 3, _x select 2], _forEachIndex, _x]; } forEach _items;
+_keyed sort true;
+_items = _keyed apply { _x select 2 };
+private _desc = _s getOrDefault ["chatSortDesc", false];
+if (_desc) then { reverse _items; };
 // Messages vidés de l'affichage
 private _hidden = (uiNamespace getVariable ["COMSPEC_ATAK_ChatCleared", createHashMap]) getOrDefault [_peer, []];
-_items = _items select { !((_x select 3) in _hidden) };
-uiNamespace setVariable ["COMSPEC_ATAK_ChatShownKeys", _items apply { _x select 3 }];
+_items = _items select { !((_x select 6) in _hidden) };
+uiNamespace setVariable ["COMSPEC_ATAK_ChatShownKeys", _items apply { _x select 6 }];
 private _interactive = _l get "interactive";
 private _threadY = _topY;
 private _prevH = (_l get "fontSmall") * 1.5;
@@ -252,12 +283,24 @@ if ((count _items) isEqualTo 0 && {!_wiki}) then {
     _t ctrlCommit 0;
     _t ctrlSetStructuredText parseText (["<t color='#8a9a93' align='center'>Aucun message. Écrivez ci-dessous pour démarrer la conversation.</t>", "<t color='#8a9a93' align='center'>Aucun message du TOC pour l'instant.</t>"] select _isChannel);
 };
-// Photo de l'opérateur à côté de chaque bulle (photo Athena, sinon pictogramme ; TOC : logo Athena).
+// Bulles : les miennes à droite sans photo ; les autres à gauche avec la photo de l'opérateur (TOC : logo Athena).
+// Vue SMS : en-tête du contact, bulles bleues / grises, état de chaque SMS envoyé.
 private _ratio = pixelH / pixelW;
 private _avH = _font * 1.9;
 private _avW = _avH / _ratio;
-private _bubbleW = (_tw - _avW - _pad) * 0.84;
+private _sms = !_isChannel;
 private _dir = "\z\comspec_atak_native\addons\main\data\";
+if (_sms && {!_wiki}) then {
+    private _pu = objNull;
+    { if ((name _x) isEqualTo _peer) exitWith { _pu = _x; }; } forEach allPlayers;
+    private _num = if (isNull _pu) then { "hors ligne" } else { ([_pu] call comspec_atak_native_fnc_phoneIdent) select 0 };
+    private _hd = _d ctrlCreate ["COMSPEC_RscStructuredText", -1, _thread];
+    _hd ctrlSetPosition [0, 0, _tw, _font * 2.2];
+    _hd ctrlCommit 0;
+    _hd ctrlSetBackgroundColor [0.07, 0.09, 0.12, 1];
+    _hd ctrlSetStructuredText parseText format ["<t align='center' font='RobotoCondensedBold'>%1</t><br/><t align='center' size='0.8' color='#8a9a93'>SMS · %2</t>", [_peer] call _esc, _num];
+    _y = _font * 2.2 + _font * 0.4;
+};
 private _unitCache = createHashMap;
 private _unitFor = {
     params ["_n"];
@@ -268,32 +311,75 @@ private _unitFor = {
     _unitCache set [_ln, _u];
     _u
 };
+private _dayLabel = {
+    params ["_dt"];
+    if (_dt isEqualTo _today) exitWith { "Aujourd'hui" };
+    private _p = _dt splitString "-";
+    if ((count _p) < 3) exitWith { _dt };
+    format ["%1/%2/%3", _p select 2, _p select 1, _p select 0]
+};
+private _lastDay = "";
+private _unreadShown = false;
 {
-    _x params ["_mine", "_head", "_body", "", "_author"];
-    private _u = if (_mine) then { player } else { [_author] call _unitFor };
-    private _photo = if (isNull _u) then { "" } else { [_u] call comspec_atak_native_fnc_avatarPath };
-    private _ax = [0, _tw - _avW] select _mine;
-    private _av = if (_photo isNotEqualTo "") then {
-        _d ctrlCreate ["COMSPEC_RscSlide", -1, _thread]
-    } else {
-        private _c = _d ctrlCreate ["COMSPEC_RscIcon", -1, _thread];
-        _c ctrlSetTextColor ([[0.55, 0.62, 0.58, 1], [0.36, 0.78, 0.42, 1]] select _mine);
-        _c
+    _x params ["_mine", "_author", "_time", "_date", "_body", "_chips", "", "_status", "_unread"];
+    // Séparateur de jour.
+    if (_date isNotEqualTo _lastDay) then {
+        _lastDay = _date;
+        private _sep = _d ctrlCreate ["COMSPEC_RscStructuredText", -1, _thread];
+        _sep ctrlSetPosition [0, _y, _tw, _font * 1.1];
+        _sep ctrlCommit 0;
+        _sep ctrlSetStructuredText parseText format ["<t align='center' size='0.75' color='#8a9a93'>— %1 —</t>", [_date] call _dayLabel];
+        _y = _y + _font * 1.2;
     };
-    _av ctrlSetText ([[_dir + "app_athena.paa", _dir + "app_group.paa"] select !(isNull _u), _photo] select (_photo isNotEqualTo ""));
-    _av ctrlSetPosition [_ax, _y, _avW, _avH];
-    _av ctrlCommit 0;
-    private _b = _d ctrlCreate [["COMSPEC_RscBubbleIn", "COMSPEC_RscBubbleOut"] select _mine, -1, _thread];
-    private _bx = [_avW + _pad / 2, _tw - _avW - _pad / 2 - _bubbleW] select _mine;
-    _b ctrlSetPosition [_bx, _y, _bubbleW, _rowH];
+    // Repère « non lus » avant le premier message pas encore lu.
+    if (_unread && {!_unreadShown}) then {
+        _unreadShown = true;
+        private _nl = _d ctrlCreate ["COMSPEC_RscStructuredText", -1, _thread];
+        _nl ctrlSetPosition [0, _y, _tw, _font * 1.1];
+        _nl ctrlCommit 0;
+        _nl ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.15];
+        _nl ctrlSetStructuredText parseText "<t align='center' size='0.75' color='#5cc76b' font='RobotoCondensedBold'>NON LUS</t>";
+        _y = _y + _font * 1.2;
+    };
+    private _bubbleW = _tw * ([0.74, 0.78] select _mine);
+    private _bx = 0;
+    if (_mine) then {
+        _bx = _tw - _bubbleW;
+    } else {
+        if (!_sms) then {
+            private _u = [_author] call _unitFor;
+            private _photo = if (isNull _u) then { "" } else { [_u] call comspec_atak_native_fnc_avatarPath };
+            private _av = if (_photo isNotEqualTo "") then { _d ctrlCreate ["COMSPEC_RscSlide", -1, _thread] } else {
+                private _c = _d ctrlCreate ["COMSPEC_RscIcon", -1, _thread];
+                _c ctrlSetTextColor [0.55, 0.62, 0.58, 1];
+                _c
+            };
+            _av ctrlSetText ([[_dir + "app_athena.paa", _dir + "app_group.paa"] select !(isNull _u), _photo] select (_photo isNotEqualTo ""));
+            _av ctrlSetPosition [0, _y, _avW, _avH];
+            _av ctrlCommit 0;
+            _bx = _avW + _pad / 2;
+        };
+    };
+    private _b = _d ctrlCreate ["COMSPEC_RscStructuredText", -1, _thread];
+    _b ctrlSetBackgroundColor (switch (true) do {
+        case (_sms && _mine): { [0.10, 0.36, 0.70, 1] };
+        case (_sms): { [0.20, 0.22, 0.21, 1] };
+        case (_mine): { [0.10, 0.27, 0.15, 1] };
+        default { [0.11, 0.13, 0.12, 1] };
+    });
+    _b ctrlSetPosition [_bx, _y, _bubbleW, _font];
     _b ctrlCommit 0;
-    _b ctrlSetStructuredText parseText format ["<t size='0.8'>%1</t><br/>%2", _head, _body];
-    private _h = (ctrlTextHeight _b) + _font * 0.25;
+    private _top = if (_mine || {_sms}) then { ["", _chips + "<br/>"] select (_chips isNotEqualTo "") } else {
+        format ["<t size='0.8' font='RobotoCondensedBold' color='#9be3a5'>%1</t> %2<br/>", [_author] call _esc, _chips]
+    };
+    private _foot = format ["<t align='right' size='0.7' color='#c9d4cf'>%1%2</t>", _time, ["", "  " + _status] select (_status isNotEqualTo "")];
+    _b ctrlSetStructuredText parseText format ["%1%2<br/>%3", _top, _body, _foot];
+    private _h = (ctrlTextHeight _b) + _font * 0.2;
     _b ctrlSetPosition [_bx, _y, _bubbleW, _h];
     _b ctrlCommit 0;
-    _y = _y + (_h max _avH) + _font * 0.35;
+    _y = _y + (_h max ([_avH, 0] select (_mine || _sms))) + _font * 0.35;
 } forEach _items;
-_thread ctrlSetScrollValues [[1, 0] select _wiki, -1];
+_thread ctrlSetScrollValues [[[1, 0] select _desc, 0] select _wiki, -1];
 if !(_interactive) exitWith { true };
 
 // Saisie

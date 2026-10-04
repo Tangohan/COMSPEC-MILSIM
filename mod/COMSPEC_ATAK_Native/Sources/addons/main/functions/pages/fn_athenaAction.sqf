@@ -1,7 +1,7 @@
 /*
     Connexion Athena depuis le terminal : mêmes commandes que le panneau Athena d'Overwatch
     (Steam, e-mail + mot de passe, code e-mail, code d'appairage du portail, Entrer, Déconnexion).
-    Avec Overwatch connect, on passe par sa DLL et ses fonctions pour garder une seule session.
+    Avec COMSPEC Link, on passe par sa DLL et ses fonctions pour garder une seule session.
     Params : [action]
 */
 params [["_action", ""]];

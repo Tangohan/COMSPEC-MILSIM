@@ -58,6 +58,7 @@ if ((count _route) > 0) then {
 // Calques Relief (champ de vision / altitudes) et Wave Relay (liens du maillage).
 [_map] call comspec_atak_native_fnc_reliefDraw;
 [_map] call comspec_atak_native_fnc_meshDraw;
+[_map] call comspec_atak_native_fnc_droneDraw;
 
 // Points de passage : traits pointillés entre étapes, étape active en vert, trait de cap depuis moi en navigation.
 private _wp = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
@@ -371,3 +372,11 @@ uiNamespace setVariable ["COMSPEC_ATAK_MarkerTagPool", _pool select { !isNull _x
 // Calques Logistique (points de largage) et guerre électronique (gonio, brouilleurs).
 if (profileNamespace getVariable ["COMSPEC_ATAK_LayerLogi", true]) then { [_map] call comspec_atak_native_fnc_logisticsDraw; };
 if (profileNamespace getVariable ["COMSPEC_ATAK_LayerEw", true]) then { [_map] call comspec_atak_native_fnc_ewDraw; };
+if (profileNamespace getVariable ["COMSPEC_ATAK_LayerDrone", true]) then { [_map] call comspec_atak_native_fnc_droneDetectDraw; };
+// Calques des modules externes : configFile >> "COMSPEC_ATAK_MapLayers" >> classe >> function (reçoit [carte]).
+private _ext = uiNamespace getVariable "COMSPEC_ATAK_MapLayersExt";
+if (isNil "_ext") then {
+    _ext = ("true" configClasses (configFile >> "COMSPEC_ATAK_MapLayers")) apply { getText (_x >> "function") } select { _x isNotEqualTo "" };
+    uiNamespace setVariable ["COMSPEC_ATAK_MapLayersExt", _ext];
+};
+{ if (!isNil _x) then { [_map] call (missionNamespace getVariable _x); }; } forEach _ext;

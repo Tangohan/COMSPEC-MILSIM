@@ -1,7 +1,8 @@
 /*
     Batterie simulée du téléphone (profil COMSPEC_ATAK_BatterySim et réglage serveur comspec_atak_native_battery_sim).
     Consommation par minute selon l'usage : veille, écran porté ou en main, mode nuit (écran sombre),
-    live cam, guidage GPS, brouilleur actif ; multiplicateur serveur comspec_atak_native_battery_drain.
+    appareil photo, live cam, guidage GPS, envois de données de la dernière minute, recherche de réseau
+    quand le signal est faible, brouilleur actif ; multiplicateur serveur comspec_atak_native_battery_drain.
     Recharge à bord d'un véhicule moteur allumé. Alertes à 20 % et 5 % ; à 0 % le téléphone s'éteint.
     Appelée chaque seconde écran ouvert (barre d'état) et toutes les 10 s sinon. Retourne le niveau 0–100.
     Détail de la dernière mesure : missionNamespace COMSPEC_ATAK_BatteryInfo = [% consommé par minute (négatif = recharge), [[facteur, % / min]...]].
@@ -24,7 +25,15 @@ if (_open) then {
 } else {
     _f pushBack ["Veille", 0.12];
 };
+if (uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) then { _f pushBack ["Appareil photo", 0.7]; };
 if (!isNull (missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull])) then { _f pushBack ["Live cam", 1.0]; };
+// Radio data : chaque envoi de la dernière minute (fn_netSend) coûte un peu, plafonné.
+private _tx = (missionNamespace getVariable ["COMSPEC_ATAK_NetTxAt", []]) select { _now - _x < 60 };
+missionNamespace setVariable ["COMSPEC_ATAK_NetTxAt", _tx];
+if ((count _tx) > 0) then { _f pushBack [format ["Envois de données (%1 / min)", count _tx], (0.03 * count _tx) min 0.4]; };
+// Un téléphone qui cherche le réseau pousse son émetteur : signal faible ou absent, batterie qui fond.
+private _lq = [] call comspec_atak_native_fnc_linkQuality;
+if ((_lq getOrDefault ["sim", true]) && {(_lq getOrDefault ["bars", 4]) <= 1}) then { _f pushBack ["Recherche de réseau", 0.15]; };
 if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap])) > 0) then { _f pushBack ["Guidage GPS", 0.25]; };
 private _uid = getPlayerUID player;
 private _t = [time, serverTime] select isMultiplayer;

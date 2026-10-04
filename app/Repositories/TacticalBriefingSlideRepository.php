@@ -31,13 +31,20 @@ class TacticalBriefingSlideRepository
             }
         } catch (\Throwable) {
         }
+        try {
+            require_once dirname(__DIR__, 2) . '/bootstrap/tactical_briefing_slide_operation_migration.php';
+            if (function_exists('ensure_tactical_briefing_slide_operation_schema')) {
+                ensure_tactical_briefing_slide_operation_schema($pdo);
+            }
+        } catch (\Throwable) {
+        }
     }
 
     /** @return list<array<string, mixed>> */
     public function allForTenant(int $tenantId): array
     {
         $stmt = $this->pdo()->prepare(
-            'SELECT * FROM tactical_briefing_slides WHERE tenant_id = ? ORDER BY sort_order ASC, id ASC'
+            $this->selectWithOperationSql() . ' WHERE s.tenant_id = ? ORDER BY s.sort_order ASC, s.id ASC'
         );
         $stmt->execute([$tenantId]);
 
@@ -49,7 +56,7 @@ class TacticalBriefingSlideRepository
     {
         try {
             $stmt = $this->pdo()->prepare(
-                'SELECT * FROM tactical_briefing_slides WHERE tenant_id = ? AND is_active = 1 ORDER BY sort_order ASC, id ASC'
+                $this->selectWithOperationSql() . ' WHERE s.tenant_id = ? AND s.is_active = 1 ORDER BY s.sort_order ASC, s.id ASC'
             );
             $stmt->execute([$tenantId]);
 
@@ -60,6 +67,80 @@ class TacticalBriefingSlideRepository
             }
             throw $e;
         }
+    }
+
+    /**
+     * SELECT de base (alias s) avec l'opération rattachée (operation_code / operation_name) si le schéma le permet.
+     */
+    private function selectWithOperationSql(): string
+    {
+        if ($this->hasOperationLink()) {
+            return 'SELECT s.*, o.code AS operation_code, o.name AS operation_name
+                    FROM tactical_briefing_slides s
+                    LEFT JOIN operations o ON o.id = s.operation_id AND o.tenant_id = s.tenant_id';
+        }
+
+        return 'SELECT s.*, NULL AS operation_code, NULL AS operation_name FROM tactical_briefing_slides s';
+    }
+
+    private function hasOperationIdColumn(): bool
+    {
+        static $ready = null;
+        if ($ready !== null) {
+            return $ready;
+        }
+        try {
+            $stmt = $this->pdo()->query(
+                "SHOW COLUMNS FROM tactical_briefing_slides LIKE 'operation_id'"
+            );
+            $ready = (bool) ($stmt && $stmt->fetchColumn());
+        } catch (\Throwable) {
+            $ready = false;
+        }
+
+        return $ready;
+    }
+
+    /** Colonne operation_id présente et table operations disponible (jointure possible). */
+    private function hasOperationLink(): bool
+    {
+        static $ready = null;
+        if ($ready !== null) {
+            return $ready;
+        }
+        if (!$this->hasOperationIdColumn()) {
+            return $ready = false;
+        }
+        try {
+            $stmt = $this->pdo()->query(
+                "SELECT 1 FROM information_schema.TABLES
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'operations' LIMIT 1"
+            );
+            $ready = (bool) ($stmt && $stmt->fetchColumn());
+        } catch (\Throwable) {
+            $ready = false;
+        }
+
+        return $ready;
+    }
+
+    private function normalizeOperationId(mixed $raw): ?int
+    {
+        $id = (int) ($raw ?? 0);
+
+        return $id > 0 ? $id : null;
+    }
+
+    /** Applique operation_id après insert/update (colonne optionnelle selon l'état du schéma). */
+    private function applyOperationId(int $id, int $tenantId, ?int $operationId): void
+    {
+        if ($id < 1 || !$this->hasOperationIdColumn()) {
+            return;
+        }
+        $stmt = $this->pdo()->prepare(
+            'UPDATE tactical_briefing_slides SET operation_id = ? WHERE id = ? AND tenant_id = ?'
+        );
+        $stmt->execute([$operationId, $id, $tenantId]);
     }
 
     private function hasDetailTextColumn(): bool
@@ -120,7 +201,12 @@ class TacticalBriefingSlideRepository
             ]);
         }
 
-        return (int) $this->pdo()->lastInsertId();
+        $newId = (int) $this->pdo()->lastInsertId();
+        if (array_key_exists('operation_id', $data)) {
+            $this->applyOperationId($newId, $tenantId, $this->normalizeOperationId($data['operation_id']));
+        }
+
+        return $newId;
     }
 
     /** @param array<string, mixed> $data */
@@ -157,8 +243,12 @@ class TacticalBriefingSlideRepository
                 $tenantId,
             ]);
         }
+        $changed = $stmt->rowCount() > 0;
+        if (array_key_exists('operation_id', $data)) {
+            $this->applyOperationId($id, $tenantId, $this->normalizeOperationId($data['operation_id']));
+        }
 
-        return $stmt->rowCount() > 0;
+        return $changed;
     }
 
     private function normalizeDetail(mixed $raw): ?string

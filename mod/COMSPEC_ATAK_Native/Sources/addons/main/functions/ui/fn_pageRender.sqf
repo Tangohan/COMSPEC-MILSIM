@@ -36,6 +36,10 @@ switch (_page) do {
     case "CREDITS": { [] call comspec_atak_native_fnc_pageCredits; };
     case "BDA": { [] call comspec_atak_native_fnc_pageBda; };
     case "SSE": { [] call comspec_atak_native_fnc_pageSse; };
+    case "WANTED": { [] call comspec_atak_native_fnc_pageWanted; };
+    case "DRONEDETECT": { [] call comspec_atak_native_fnc_pageDroneDetect; };
+    case "DRONE": { [] call comspec_atak_native_fnc_pageDrone; };
+    case "AAR": { [] call comspec_atak_native_fnc_pageAar; };
     case "C2": { [] call comspec_atak_native_fnc_pageC2; };
     case "EXPLO": { [] call comspec_atak_native_fnc_pageExplo; };
     case "BREACH": { [] call comspec_atak_native_fnc_pageBreach; };
@@ -65,8 +69,21 @@ switch (_page) do {
     case "PROFILE": { [] call comspec_atak_native_fnc_pageProfile; };
     case "LIVECAM": { [] call comspec_atak_native_fnc_pageLivecam; };
     case "BRIEFING": { [] call comspec_atak_native_fnc_pageBriefing; };
-    default { [_page] call comspec_atak_native_fnc_pageText; };
+    default {
+        // Modules externes (COMSPEC Modules) : une app déclarée par un autre addon avec function="tag_fnc_page"
+        // dans COMSPEC_ATAK_Apps est dessinée par cette fonction. Params : [page, [0, 0, largeur, hauteur]].
+        private _cfg = ("true" configClasses (configFile >> "COMSPEC_ATAK_Apps")) select { (toUpper getText (_x >> "page")) isEqualTo _page };
+        private _fn = if ((count _cfg) > 0) then { getText ((_cfg select 0) >> "function") } else { "" };
+        if (_fn isNotEqualTo "" && {!isNil _fn}) then {
+            ((([] call comspec_atak_native_fnc_layoutGet) get "body")) params ["", "", "_bw", "_bh"];
+            [_page, [0, 0, _bw, _bh]] call (missionNamespace getVariable _fn);
+        } else {
+            [_page] call comspec_atak_native_fnc_pageText;
+        };
+    };
 };
+// Événement pour les modules : une app vient de s'afficher.
+["comspec_atak_native_pageOpened", [_page]] call CBA_fnc_localEvent;
 // Dégâts de l'écran par-dessus la page.
 uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
 [] call comspec_atak_native_fnc_deviceOverlay;

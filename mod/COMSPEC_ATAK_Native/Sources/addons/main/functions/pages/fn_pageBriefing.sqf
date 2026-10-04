@@ -28,10 +28,41 @@ private _btn = {
 };
 
 // Onglets
-private _tw = (_gw - 2 * _pad) / 2;
+private _tw = (_gw - 2 * _pad) / 3;
+private _qn = count ((uiNamespace getVariable ["COMSPEC_ATAK_BriefQ", createHashMap]) getOrDefault ["list", []]);
 [[_pad, _pad, _tw - _pad / 6, _rowH], "DIAPOSITIVES", { ["tab", "SLIDES"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "SLIDES"] call _btn;
-[[_pad + _tw, _pad, _tw - _pad / 6, _rowH], "MISSION", { ["tab", "MISSION"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "MISSION"] call _btn;
+[[_pad + _tw, _pad, _tw - _pad / 6, _rowH], ["QUESTIONS", format ["QUESTIONS (%1)", _qn]] select (_qn > 0), { ["tab", "QUESTIONS"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "QUESTIONS"] call _btn;
+[[_pad + 2 * _tw, _pad, _tw - _pad / 6, _rowH], "MISSION", { ["tab", "MISSION"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "MISSION"] call _btn;
 private _y0 = _pad * 2 + _rowH;
+
+// Questions sur la diapositive en cours : gardées sur Athena (commentaires de la diapositive), le présentateur est prévenu.
+if (_tab isEqualTo "QUESTIONS") exitWith {
+    ([] call comspec_atak_native_fnc_briefingSignature) params ["_src", "_idx", "_total"];
+    private _slide = if (_src isEqualTo "ATHENA" && {_total > 0}) then { (missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) select _idx } else { [] };
+    private _rows = [];
+    if ((count _slide) isEqualTo 0) then {
+        _rows pushBack ["text", "<t color='#8a9a93'>Les questions portent sur une diapositive Athena. Ouvrez l'onglet DIAPOSITIVES et touchez ACTUALISER.</t>"];
+    } else {
+        private _q = uiNamespace getVariable ["COMSPEC_ATAK_BriefQ", createHashMap];
+        if ((_q getOrDefault ["slide", -1]) isNotEqualTo (_slide select 0)) then {
+            [{ ["questions", _this] call comspec_atak_native_fnc_briefingAction; }, _slide select 0] call CBA_fnc_execNextFrame;
+        };
+        private _esc = { params ["_t"]; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
+        _rows append [
+            ["section", format ["Diapositive %1 : %2", _idx + 1, _slide select 1], "Questions gardées sur Athena avec la diapositive"]
+        ];
+        private _list = _q getOrDefault ["list", []];
+        if ((_q getOrDefault ["err", ""]) isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e0a040'>%1</t>", _q get "err"]]; };
+        if ((count _list) isEqualTo 0 && {(_q getOrDefault ["err", ""]) isEqualTo ""}) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucune question sur cette diapositive.</t>"]; };
+        { _x params ["", "_author", "_when", "_body"]; _rows pushBack ["text", format ["<t font='RobotoCondensedBold' color='#9be3a5'>%1</t> <t size='0.75' color='#8a9a93'>%2</t><br/>%3", [_author] call _esc, (_when splitString " ") param [1, _when], [_body] call _esc]]; } forEach _list;
+        _rows append [
+            ["memo", "briefQ", "Votre question", uiNamespace getVariable ["COMSPEC_ATAK_BriefQDraft", ""]],
+            ["buttons", [["ENVOYER", { ["ask"] call comspec_atak_native_fnc_briefingAction; }, true], ["ACTUALISER", { ["questions", -1] call comspec_atak_native_fnc_briefingAction; }]]]
+        ];
+    };
+    [_rows, [0, _y0, _bw, _bh - _y0]] call comspec_atak_native_fnc_formRender;
+    true
+};
 
 if (_tab isEqualTo "MISSION") exitWith {
     private _h = { params ["_t"]; format ["<t color='#5cc76b' size='0.85' font='RobotoCondensedBold'>%1</t>", toUpper _t] };
@@ -108,7 +139,14 @@ if (_src isEqualTo "ATHENA" && {_total > 0}) then {
 };
 
 private _btnH = _rowH;
-private _foot = _btnH + _fs * 1.6 + _pad * 2;
+// Présentation en direct (Athena) : bandeau présentateur / présents et notes de la diapositive.
+private _live = if (_src isEqualTo "ATHENA") then { ["get"] call comspec_atak_native_fnc_briefingLive } else { [] };
+private _iPresent = (_live param [0, objNull]) isEqualTo player;
+private _follow = _s getOrDefault ["briefFollow", true];
+private _detail = if (_src isEqualTo "ATHENA" && {_total > 0}) then { ((missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) select _idx) param [4, ""] } else { "" };
+private _liveH = [0, _fs * 1.5 + _pad / 2] select (_src isEqualTo "ATHENA" && {_total > 0});
+private _notesH = [0, _fs * 3.4] select (_detail isNotEqualTo "");
+private _foot = _btnH + _fs * 1.6 + _pad * 2 + _liveH + _notesH;
 private _listW = [0, _gw * 0.28] select (_land && {_total > 1});
 private _vx = _pad + ([0, _listW + _pad] select (_listW > 0));
 private _vy = _y0 + ([0, _rowH + _pad] select (!_land && {_total > 1}));
@@ -137,7 +175,7 @@ _bg ctrlSetBackgroundColor [0, 0, 0, 1];
 if (_total < 1 || {_path isEqualTo ""}) then {
     private _msg = switch (true) do {
         case (_total < 1 && {_bridge}): { "Aucune diapositive pour l'instant.<br/>Le présentateur partage un Google Slides depuis le tableau de briefing, ou publiez des diapositives sur Athena puis touchez ACTUALISER." };
-        case (_total < 1): { "Aucun briefing reçu.<br/>Les diapositives Athena demandent Overwatch connect." };
+        case (_total < 1): { "Aucun briefing reçu.<br/>Les diapositives Athena demandent COMSPEC Link." };
         case (_src isEqualTo "GOOGLE"): { "Chargement de la diapositive…" };
         default { "Image indisponible (réseau ou cache).<br/>Touchez ACTUALISER pour réessayer." };
     };
@@ -150,8 +188,39 @@ if (_total < 1 || {_path isEqualTo ""}) then {
 // Titre, source et position
 private _title = if (_total > 0) then { _titles param [_idx, ""] } else { "" };
 private _srcLabel = createHashMapFromArray [["GOOGLE", "Google Slides · synchronisé"], ["ATHENA", "Athena"], ["LOCAL", "Briefing"]] getOrDefault [_src, ""];
+// Opération Athena rattachée à la diapositive (vide : commune à toutes les opérations).
+private _op = if (_src isEqualTo "ATHENA" && {_total > 0}) then { ((missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) select _idx) param [5, ""] } else { "" };
+if (_op isNotEqualTo "") then {
+    { _op = [_op, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]];
+    _srcLabel = format ["<t color='#7fb6e6'>Op. %1</t>", _op];
+};
 private _info = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh + _pad / 2, _vw, _fs * 1.6]] call comspec_atak_native_fnc_pageCtrl;
 _info ctrlSetStructuredText parseText format ["<t font='RobotoCondensedBold'>%1</t><t align='right' size='0.85' color='#8a9a93'>%2 · %3 / %4</t>", _title, _srcLabel, [_idx + 1, 0] select (_total < 1), _total];
+
+// Notes de la diapositive (texte saisi sur Athena).
+if (_notesH > 0) then {
+    private _nt = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh + _pad / 2 + _fs * 1.6, _vw, _notesH]] call comspec_atak_native_fnc_pageCtrl;
+    private _e = _detail;
+    { _e = [_e, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]];
+    _nt ctrlSetStructuredText parseText format ["<t size='0.85' color='#c9d4cf'>%1</t>", [_e, " ¶ ", "<br/>"] call CBA_fnc_replace];
+};
+// Bandeau de présentation : qui présente, présents, PRÉSENTER / SUIVRE.
+if (_liveH > 0) then {
+    private _ly = _bh - _btnH - _pad - _liveH;
+    private _txt = switch (true) do {
+        case (_iPresent): { private _a = ["attendees"] call comspec_atak_native_fnc_briefingLive; format ["<t color='#5cc76b' font='RobotoCondensedBold'>● VOUS PRÉSENTEZ</t>  <t size='0.85' color='#8a9a93'>%1 présent(s)%2</t>", count _a, ["", format [" : %1", ((_a select [0, 6]) apply { name _x }) joinString ", "]] select ((count _a) > 0)] };
+        case ((count _live) > 0): { format ["<t color='#f2ab33' font='RobotoCondensedBold'>● %1 présente</t>  <t size='0.85' color='#8a9a93'>%2</t>", _live select 1, ["lecture libre", "vous suivez"] select _follow] };
+        default { "<t size='0.85' color='#8a9a93'>Personne ne présente. PRÉSENTER fait suivre vos diapositives aux téléphones de votre camp.</t>" };
+    };
+    private _lt = ["COMSPEC_RscStructuredText", [_vx, _ly, _vw * 0.66, _liveH]] call comspec_atak_native_fnc_pageCtrl;
+    _lt ctrlSetStructuredText parseText _txt;
+    private _lw = _vw * 0.34 - _pad / 2;
+    if ((count _live) > 0 && {!_iPresent}) then {
+        [[_vx + _vw - _lw, _ly, _lw, _fs * 1.5], ["SUIVRE", "SUIVI ✓"] select _follow, { ["follow"] call comspec_atak_native_fnc_briefingAction; }, _follow] call _btn;
+    } else {
+        [[_vx + _vw - _lw, _ly, _lw, _fs * 1.5], ["PRÉSENTER", "ARRÊTER"] select _iPresent, { ["present"] call comspec_atak_native_fnc_briefingAction; }, _iPresent] call _btn;
+    };
+};
 
 // Navigation
 private _by = _bh - _btnH - _pad;

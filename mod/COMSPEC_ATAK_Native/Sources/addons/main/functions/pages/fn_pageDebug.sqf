@@ -1,6 +1,6 @@
 /*
     Debug : JOURNAL (natif + Overwatch, filtrable), TRANSFERTS (réseau simulé, photos, file d'attente),
-    ÉTAT (liaison, extensions, versions, simulations) et OUTILS (copier, vider, tests).
+    ÉTAT (liaison, extensions, versions, simulations), DLL (version et fonctions manquantes) et OUTILS (copier, vider, tests).
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -10,7 +10,7 @@ private _tab = _s getOrDefault ["dbgTab", "LOG"];
 private _lvl = _s getOrDefault ["dbgLvl", "ALL"];
 private _esc = { params ["_t"]; if !(_t isEqualType "") then { _t = str _t; }; [[_t, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace };
 private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['dbgTab', '%1']; [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _tab isEqualTo _k] };
-private _rows = [["segment", "", [["JOURNAL", "LOG"] call _tabBtn, ["TRANSFERTS", "NET"] call _tabBtn, ["ÉTAT", "STATE"] call _tabBtn, ["OUTILS", "TOOLS"] call _tabBtn]]];
+private _rows = [["segment", "", [["JOURNAL", "LOG"] call _tabBtn, ["TRANSFERTS", "NET"] call _tabBtn, ["ÉTAT", "STATE"] call _tabBtn, ["DLL", "DLL"] call _tabBtn, ["OUTILS", "TOOLS"] call _tabBtn]]];
 private _lvlColor = { params ["_v"]; switch (_v) do { case "ERROR": { "#e5483a" }; case "WARN"; case "WARNING": { "#f2ab33" }; case "DEBUG": { "#6c7671" }; default { "#8a9a93" }; } };
 // Journal fusionné : natif [t, niveau, module, message] et Overwatch « t [COMSPEC Overwatch][NIV][Canal] message ».
 private _merged = {
@@ -48,7 +48,7 @@ switch (_tab) do {
         private _q = { params ["_k", ["_d", "—"]]; private _v = missionNamespace getVariable [_k, _d]; [str _v, _v] select (_v isEqualType "") };
         _rows append [
             ["section", "Liaison", ""],
-            ["info", "Mode", ["DLL native seule", "Overwatch connect (session partagée)"] select ([] call comspec_atak_native_fnc_bridge)],
+            ["info", "Mode", ["DLL native seule", "COMSPEC Link (session partagée)"] select ([] call comspec_atak_native_fnc_bridge)],
             ["info", "Athena prête", ["COMSPEC_AthenaReady", false] call _q],
             ["info", "État de liaison", ["COMSPEC_LinkState"] call _q],
             ["info", "Authentification", ["comspec_overwatch_auth_state"] call _q],
@@ -58,12 +58,52 @@ switch (_tab) do {
             ["info", "Init DLL native", [["COMSPEC_ATAK_NativeExtensionInit"] call _q] call _esc],
             ["info", "Session restaurée", [["COMSPEC_ATAK_NativeAuthRestore"] call _q] call _esc],
             ["section", "Versions et simulations", ""],
-            ["info", "ATAK natif", ["COMSPEC_ATAK_NativeVersion"] call _q],
+            ["info", "COMSPEC ATAK", ["COMSPEC_ATAK_NativeVersion"] call _q],
             ["info", "Communauté", ["comspec_tenant_name", "—"] call _q],
             ["info", "Dégâts / débit / apps civiles", format ["%1 / %2 / %3", ["comspec_atak_native_damage_sim", true] call _q, ["comspec_atak_native_net_sim", true] call _q, ["comspec_atak_native_civil_apps", true] call _q]],
             ["info", "Téléphone", (([] call comspec_atak_native_fnc_deviceHealth) get "state") + format [" · batterie %1 %%", round (missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100])]],
             ["info", "FPS / joueurs", format ["%1 / %2", round diag_fps, count allPlayers]]
         ];
+    };
+    case "DLL": {
+        // Version de la DLL et fonctions attendues par COMSPEC ATAK. Une DLL plus ancienne ne connaît pas
+        // GetAtakFeatures et répond vide : tout est alors marqué manquant.
+        private _res = { params ["_r"]; if (!isNil "comspec_overwatch_connect_fnc_extResult") then { [_r] call comspec_overwatch_connect_fnc_extResult } else { _r } };
+        private _ver = ["COMSPECExtension" callExtension ["GetExtensionVersion", []]] call _res;
+        if !(_ver isEqualType "") then { _ver = str _ver; };
+        private _feat = ["COMSPECExtension" callExtension ["GetAtakFeatures", []]] call _res;
+        if !(_feat isEqualType "") then { _feat = str _feat; };
+        private _have = if ((_feat select [0, 3]) isEqualTo "OK|") then { ((_feat splitString "|") param [2, ""]) splitString "," } else { [] };
+        private _want = [
+            ["ListSseFieldNotes", "Bibliothèque FRS (fiches et images)"],
+            ["GetWantedNotices", "Avis de recherche"],
+            ["BriefingSlidesNotes", "Notes des diapositives"],
+            ["BriefingSlidesOperation", "Opération liée au briefing"],
+            ["BriefingPresence", "Présence au briefing sur Athena"],
+            ["BriefingComments", "Questions sur les diapositives"],
+            ["PhoneIdentity", "Numéro de téléphone Athena"],
+            ["DownloadBriefingSlideImage", "Images (diapositives, fiches, photos)"]
+        ];
+        private _missing = _want select { !((_x select 0) in _have) };
+        private _ok = { params ["_b"]; ["<t color='#e5483a'>MANQUANT</t>", "<t color='#5cc76b'>OK</t>"] select _b };
+        _rows append [
+            ["section", "Extension", ""],
+            ["info", "DLL chargée", ["<t color='#e5483a'>non (aucune réponse)</t>", [(_ver splitString "|") param [1, _ver]] call _esc] select (_ver isNotEqualTo "")],
+            ["info", "COMSPEC ATAK", [missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "—"]] call _esc],
+            ["info", "COMSPEC Link", [[] call comspec_atak_native_fnc_bridge] call _ok],
+            ["info", "Fonctions Overwatch récentes", [!isNil "comspec_overwatch_connect_fnc_splitKeepEmpty"] call _ok],
+            ["info", "Identité téléphone reçue", [(count (missionNamespace getVariable ["comspec_profile_phone", []])) > 0] call _ok],
+            ["section", "Fonctions de la DLL", format ["%1 / %2 présentes", (count _want) - (count _missing), count _want]]
+        ];
+        {
+            _x params ["_k", "_lab"];
+            _rows pushBack ["info", _lab, format ["%1 <t size='0.75' color='#6c7671'>%2</t>", [_k in _have] call _ok, _k]];
+        } forEach _want;
+        _rows pushBack ["text", [
+            "<t color='#5cc76b'>La DLL est à jour pour cette version de COMSPEC ATAK.</t>",
+            "<t color='#f2ab33'>Recompilez la DLL COMSPECExtension (version 2.0.58 ou plus) et relancez Arma : les écrans concernés affichent sinon « mettez la DLL à jour ».</t>"
+        ] select ((count _missing) > 0)];
+        _rows pushBack ["buttons", [["RELANCER LE TEST", { [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true]]];
     };
     case "TOOLS": {
         _rows append [
