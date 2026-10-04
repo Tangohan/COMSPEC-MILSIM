@@ -1,5 +1,5 @@
 /*
-    Fil TOC unifié. Avec Overwatch connect : son fil par canal (general, commandement, groupe),
+    Fil TOC unifié. Avec COMSPEC Link : son fil par canal (general, commandement, groupe),
     ou ses alertes pour le canal "alertes". Sans : GetChatMessages, la boîte d'alertes et les envois locaux.
     Params : [canal ("" = tous)]
     Renvoie des HashMaps normalisées : id, time, author, body, tags, kind, mine, status, stamp (date et heure d'origine).
@@ -28,7 +28,7 @@ private _add = {
     ];
 };
 if ([] call comspec_atak_native_fnc_bridge) then {
-    // Fil Overwatch connect : [id, auteur, texte, heure, canal, moi]
+    // Fil COMSPEC Link : [id, auteur, texte, heure, canal, moi]
     if (_channel isEqualTo "alertes") then {
         { [_x, _x getOrDefault ["kind", "NOTIFY"]] call _add; } forEach (_data getOrDefault ["inbox", []]);
     } else {

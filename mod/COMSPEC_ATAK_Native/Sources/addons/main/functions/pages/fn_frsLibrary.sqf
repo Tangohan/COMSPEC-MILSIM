@@ -1,5 +1,5 @@
 /*
-    Fiches FRS / FRM d'Athena sur le téléphone (Overwatch connect, commande ListSseFieldNotes de la DLL).
+    Fiches FRS / FRM d'Athena sur le téléphone (COMSPEC Link, commande ListSseFieldNotes de la DLL).
       ["load", "mine" | "all"] : récupère les fiches (les miennes par mon UID Steam, ou toutes celles de la communauté) ;
       ["images", id]           : télécharge les photos de la fiche id (cache local de la DLL).
     État : uiNamespace COMSPEC_ATAK_FrsLib = HashMap portée → [fiches, heure de synchro, erreur]
@@ -19,7 +19,7 @@ switch (_act) do {
         if !(_raw isEqualType "") then { _raw = str _raw; };
         if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith {
             private _err = switch (true) do {
-                case (_raw isEqualTo ""): { "La DLL Overwatch ne connaît pas encore les fiches : mettez-la à jour." };
+                case (_raw isEqualTo ""): { "La DLL COMSPEC Link ne connaît pas encore les fiches : mettez-la à jour." };
                 case ((_raw find "unauthorized") >= 0): { "Connexion Athena requise." };
                 case ((_raw find "forbidden") >= 0): { "Votre profil n'a pas accès aux fiches." };
                 default { format ["Athena ne répond pas (%1).", _raw select [0, 60]] };

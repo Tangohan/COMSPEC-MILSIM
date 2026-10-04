@@ -1,5 +1,5 @@
 /*
-    Live cam partagé vers le web (Overwatch beta, espace « Live cam »).
+    Live cam partagé vers le web (COMSPEC Overwatch, espace « Live cam »).
     Appelé toutes les 2 s par un CBA_fnc_addPerFrameHandler (XEH_postInitClient) : la fonction ne fait
     que des tests légers et, quand c'est l'heure, prend une capture de la vue à la 1re personne du joueur,
     téléphone masqué le temps du cliché (comme fn_photoTake), puis l'envoie par la chaîne recon
@@ -29,7 +29,7 @@ if ((player getVariable ["COMSPEC_ATAK_LivecamSharing", false]) isNotEqualTo _on
 };
 if (!_on) exitWith { false };
 
-// Chaîne d'envoi : Overwatch connect chargé et session Athena ouverte.
+// Chaîne d'envoi : COMSPEC Link chargé et session Athena ouverte.
 if !([] call comspec_atak_native_fnc_bridge) exitWith { false };
 if !(missionNamespace getVariable ["COMSPEC_AthenaReady", false]) exitWith { false };
 if (isNil "comspec_overwatch_connect_fnc_captureReconImage") exitWith { false };

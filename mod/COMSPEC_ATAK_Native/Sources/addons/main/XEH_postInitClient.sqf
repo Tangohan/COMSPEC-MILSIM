@@ -1,9 +1,9 @@
 if (!hasInterface) exitWith {};
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] Client PostInit complete";
 missionNamespace setVariable ["COMSPEC_ATAK_LegacyBootstrapSuppressed", true, false];
-// Avec Overwatch connect, sa DLL porte la session Athena : on n'ouvre pas une seconde session avec la DLL native.
+// Avec COMSPEC Link, sa DLL porte la session Athena : on n'ouvre pas une seconde session avec la DLL native.
 if ([] call comspec_atak_native_fnc_bridge) then {
-    diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] Overwatch connect présent : session Athena partagée, DLL native non initialisée";
+    diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPEC Link présent : session Athena partagée, DLL native non initialisée";
 } else {
     private _athenaUrl = profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"];
     private _extInit = "COMSPECATAKNativeExtension" callExtension ["Init", [_athenaUrl]];
@@ -45,7 +45,7 @@ private _eh = addMissionEventHandler ["ExtensionCallback", { _this call comspec_
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 ["COMSPEC_AthenaLinkChanged", { params ["_state"]; private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["networkState", toUpper _state]; }] call CBA_fnc_addEventHandler;
 
-// Overwatch connect (déjà installé chez les joueurs) n'ouvre ses boucles de synchro que s'il voit « son » terminal.
+// COMSPEC Link (déjà installé chez les joueurs) n'ouvre ses boucles de synchro que s'il voit « son » terminal.
 // Tant que sa version ne délègue pas au natif, on lui indique ici si le téléphone natif est autorisé.
 [{
     if !([] call comspec_atak_native_fnc_bridge) exitWith {};
@@ -64,7 +64,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     ["INFO", "TENANT", "Réglages communauté appliqués"] call comspec_atak_native_fnc_log;
 }, 5] call CBA_fnc_addPerFrameHandler;
 
-// Retour d'Athena sur les photos envoyées (via Overwatch connect) : reçue ou refusée.
+// Retour d'Athena sur les photos envoyées (via COMSPEC Link) : reçue ou refusée.
 [{
     private _up = count (missionNamespace getVariable ["COMSPEC_Athena_PhotoUploaded", []]);
     private _ko = count (missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []]);
@@ -260,9 +260,11 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 addMissionEventHandler ["Ended", { ["MusicStop"] call comspec_atak_native_fnc_extensionCall; }];
 [{ !isNull (findDisplay 46) }, { (findDisplay 46) displayAddEventHandler ["Unload", { ["MusicStop"] call comspec_atak_native_fnc_extensionCall; }]; }] call CBA_fnc_waitUntilAndExecute;
 
-// Live cam partagé vers Overwatch beta : une image toutes les N s si le joueur l'a activé.
+// Live cam partagé vers COMSPEC Overwatch : une image toutes les N s si le joueur l'a activé.
 [{ [] call comspec_atak_native_fnc_livecamShare; }, 2] call CBA_fnc_addPerFrameHandler;
 
+// Détecteur de drones : balayage automatique en fond (réglage de l'app).
+[{ if (profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false]) then { ["auto"] call comspec_atak_native_fnc_droneDetectScan; }; }, 5] call CBA_fnc_addPerFrameHandler;
 // Rejeu de mission : une image toutes les 10 s, et les pertes amies avec leur position.
 [{ [] call comspec_atak_native_fnc_aarRecord; }, 10] call CBA_fnc_addPerFrameHandler;
 addMissionEventHandler ["EntityKilled", {

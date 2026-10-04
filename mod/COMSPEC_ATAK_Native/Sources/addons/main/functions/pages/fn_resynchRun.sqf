@@ -1,11 +1,11 @@
 /*
     App Resynch : renvoie toutes les données du terminal vers Athena (position, marqueurs, groupe, messages récents)
-    avec la fonction d'Overwatch connect (forceSyncData), puis rafraîchit les données affichées par le téléphone.
+    avec la fonction de COMSPEC Link (forceSyncData), puis rafraîchit les données affichées par le téléphone.
 */
 if (!hasInterface) exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_ATAK_ResynchBusy", false]) exitWith { false };
 if (isNil "comspec_overwatch_connect_fnc_forceSyncData") exitWith {
-    missionNamespace setVariable ["COMSPEC_LastResynchSummary", ["<t color='#e5483a'>Resynch indisponible : Overwatch connect n'est pas chargé.</t>"], false];
+    missionNamespace setVariable ["COMSPEC_LastResynchSummary", ["<t color='#e5483a'>Resynch indisponible : COMSPEC Link n'est pas chargé.</t>"], false];
     false
 };
 missionNamespace setVariable ["COMSPEC_ATAK_ResynchBusy", true, false];

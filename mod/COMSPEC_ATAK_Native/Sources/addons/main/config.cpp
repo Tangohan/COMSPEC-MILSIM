@@ -40,6 +40,9 @@ class CfgFunctions {
             class sniperBallistics {}; class pageSniper {}; class sniperAction {}; class jtacTarget {}; class pageJtac {}; class jtacAction {};
             class breachBuilding {}; class pageBreach {}; class breachAction {}; class breachTop {};
         };
+        class drone { file="z\comspec_atak_native\addons\main\functions\drone";
+            class droneCmd {}; class droneAction {}; class droneOsd {}; class droneDraw {}; class pageDrone {}; class droneDetectScan {}; class pageDroneDetect {}; class droneDetectDraw {};
+        };
         class aar { file="z\comspec_atak_native\addons\main\functions\aar";
             class aarRecord {}; class aarAction {}; class aarDraw {}; class pageAar {};
         };
@@ -73,6 +76,8 @@ class COMSPEC_ATAK_Apps {
     class Explo    { name="Explosifs";  page="EXPLO";    section="Opérations";    order=62;  dock=0; icon="\z\comspec_atak_native\addons\main\data\app_explo.paa"; };
     class Breach   { name="Breacher";   page="BREACH";   section="Opérations";    order=63;  dock=0; icon="\z\comspec_atak_native\addons\main\data\app_breach.paa"; };
     class Sniper   { name="Tireur d'élite"; page="SNIPER"; section="Opérations";  order=64;  dock=0; icon="\z\comspec_atak_native\addons\main\data\app_sniper.paa"; };
+    class Drone    { name="Drone";      page="DRONE";    section="Opérations";    order=66;  dock=0; icon="\z\comspec_atak_native\addons\main\data\app_drone.paa"; };
+    class DroneDetect { name="Détecteur de drones"; page="DRONEDETECT"; section="Renseignement"; order=126; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_dronedetect.paa"; };
     class Jtac     { name="JTAC";       page="JTAC";     section="Opérations";    order=65;  dock=0; icon="\z\comspec_atak_native\addons\main\data\app_jtac.paa"; };
     class Bda      { name="BDA";        page="BDA";      section="Renseignement"; order=130; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_bda.paa"; };
     class Profile  { name="Profil";     page="PROFILE";  section="Système";       order=295; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_profile.paa"; };

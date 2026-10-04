@@ -1,6 +1,6 @@
 /*
     Tous les marqueurs de la carte vers le web (Athena), y compris ceux de la mission et ceux posés avec la carte Arma.
-    Overwatch connect ne relaie la carte entière que s'il voit son propre terminal : le téléphone natif s'en charge.
+    COMSPEC Link ne relaie la carte entière que s'il voit son propre terminal : le téléphone natif s'en charge.
     Un seul relais par camp (le premier joueur qui le réclame, remplacé s'il part) envoie, par différence de signature,
     40 marqueurs au plus par passage ; les marqueurs disparus sont supprimés côté web. Appelé toutes les 15 s.
 */

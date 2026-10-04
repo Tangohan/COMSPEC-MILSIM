@@ -1,6 +1,6 @@
 /*
     Pose un marqueur joueur sur le canal courant, comme la carte Arma : il est partagé avec le canal
-    et Overwatch connect l'envoie à Athena (EH MarkerCreated).
+    et COMSPEC Link l'envoie à Athena (EH MarkerCreated).
 */
 params ["_pos", ["_kind", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];

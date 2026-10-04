@@ -1,7 +1,7 @@
 /*
     Rédaction d'un ordre depuis le téléphone (app Tâches > NOUVEL ORDRE), pour le chef d'unité :
     type (déplacement, maintien, reco, DEM-SSE, appui aérien, renfort, FRAGO), priorité, destinataire,
-    consigne (ou rubriques SMEAC du FRAGO) et grille. Envoi par Overwatch connect (issueOrder) :
+    consigne (ou rubriques SMEAC du FRAGO) et grille. Envoi par COMSPEC Link (issueOrder) :
     l'ordre part vers Athena et arrive dans l'app Tâches des destinataires.
 */
 disableSerialization;

@@ -54,7 +54,7 @@ if ((count _alerts) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a
 
 };
 
-// Demande MEDEVAC 9-line (Overwatch connect → Athena, repère LZ sur la carte)
+// Demande MEDEVAC 9-line (COMSPEC Link → Athena, repère LZ sur la carte)
 if (_tab isEqualTo "MEDEVAC") then {
 private _m = uiNamespace getVariable ["COMSPEC_ATAK_Medevac", createHashMap];
 private _mv = { params ["_k", "_d"]; _m getOrDefault [_k, _d] };

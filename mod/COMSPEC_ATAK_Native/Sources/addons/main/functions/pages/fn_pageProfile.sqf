@@ -34,8 +34,8 @@ _rows append [
 private _quals = (uiNamespace getVariable ["COMSPEC_ATAK_Quals", createHashMap]) getOrDefault [getPlayerUID player, []];
 _rows pushBack ["section", "Qualifications", "Attributions en cours sur Athena"];
 switch (true) do {
-    case (!_bridge): { _rows pushBack ["text", "<t color='#8a9a93'>Liaison Athena (Overwatch connect) requise.</t>"]; };
-    case (_quals isEqualTo "olddll"): { _rows pushBack ["text", "<t color='#8a9a93'>Mettez à jour la DLL Overwatch pour afficher les qualifications.</t>"]; };
+    case (!_bridge): { _rows pushBack ["text", "<t color='#8a9a93'>Liaison Athena (COMSPEC Link) requise.</t>"]; };
+    case (_quals isEqualTo "olddll"): { _rows pushBack ["text", "<t color='#8a9a93'>Mettez à jour la DLL COMSPEC Link pour afficher les qualifications.</t>"]; };
     case ((count _quals) isEqualTo 0): { _rows pushBack ["text", "<t color='#8a9a93'>Aucune qualification en cours (ou profil en cours de chargement).</t>"]; };
     default {
         {

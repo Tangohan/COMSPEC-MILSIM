@@ -1,4 +1,4 @@
-/* Unités suivies par Athena (BFT web). Avec Overwatch connect, on reprend sa liste d'effectifs (même session). */
+/* Unités suivies par Athena (BFT web). Avec COMSPEC Link, on reprend sa liste d'effectifs (même session). */
 private _units = createHashMap;
 private _now = diag_tickTime;
 private _add = {

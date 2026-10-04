@@ -1,5 +1,5 @@
 /*
-    Signaux du poste reçus par Overwatch connect (fn_receiveOrder), affichés par l'ATAK natif à la place
+    Signaux du poste reçus par COMSPEC Link (fn_receiveOrder), affichés par COMSPEC ATAK à la place
     du module atak_athena (absent avec le mod natif) :
       "notify", ordre NOTIFY      → SMS dans la Messagerie (expéditeur = l'émetteur du poste) et notification
       "notify", ordre NOTIFY_FULL → alerte plein écran, plus le SMS

@@ -1,7 +1,7 @@
 /*
     Actions du rédacteur d'ordre (fn_pageOrderCompose).
       "open" / "cancel" : ouvre ou ferme le rédacteur     "set", clé, valeur : choix d'un segment
-      "grid" : ma position dans la grille                 "send" : envoie l'ordre (Overwatch connect)
+      "grid" : ma position dans la grille                 "send" : envoie l'ordre (COMSPEC Link)
 */
 params [["_action", ""], ["_key", ""], ["_value", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -15,7 +15,7 @@ private _keep = {
 private _redraw = { [{ ["TASK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
 switch (toLower _action) do {
     case "open": {
-        if !([] call comspec_atak_native_fnc_bridge) exitWith { ["WARNING", "Ordres indisponibles : Overwatch connect absent", 3, 30] call comspec_atak_native_fnc_notify; };
+        if !([] call comspec_atak_native_fnc_bridge) exitWith { ["WARNING", "Ordres indisponibles : COMSPEC Link absent", 3, 30] call comspec_atak_native_fnc_notify; };
         if !([] call comspec_overwatch_connect_fnc_canIssueOrder) exitWith { ["WARNING", "Seul le chef d'unité peut émettre un ordre", 3, 30] call comspec_atak_native_fnc_notify; };
         uiNamespace setVariable ["COMSPEC_ATAK_OrderHint", ""];
         _s set ["orderCompose", true];

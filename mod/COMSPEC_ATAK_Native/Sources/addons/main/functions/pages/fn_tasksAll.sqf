@@ -1,6 +1,6 @@
 /*
     Ordres unifiés : GetOrders (Athena) prioritaire, complété par COMSPEC_Orders
-    publié par Overwatch connect (ordres web). Renvoie une HashMap id -> ordre.
+    publié par COMSPEC Link (ordres web). Renvoie une HashMap id -> ordre.
 */
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
 private _all = createHashMap;

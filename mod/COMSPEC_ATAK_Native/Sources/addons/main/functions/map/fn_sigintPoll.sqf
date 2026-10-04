@@ -1,6 +1,6 @@
 /*
     Goniométrie : relit les émetteurs estimés par Athena (recoupement des relèvements des relais, /api/atak/sigint/zones)
-    via la commande DLL Overwatch GetSigintZones. Résultat : uiNamespace COMSPEC_ATAK_Sigint =
+    via la commande DLL COMSPEC Link GetSigintZones. Résultat : uiNamespace COMSPEC_ATAK_Sigint =
     [[indicatif, "ellipse"|"azimuth", [x, y], rayon, nb relevés, relèvement, heure]...]
 */
 if !([] call comspec_atak_native_fnc_bridge) exitWith { false };

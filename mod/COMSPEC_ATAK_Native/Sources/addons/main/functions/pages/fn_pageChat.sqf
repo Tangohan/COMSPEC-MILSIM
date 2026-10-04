@@ -16,7 +16,7 @@ private _peer = _s getOrDefault ["chatPeer", "ATHENA"];
 
 private _bridge = [] call comspec_atak_native_fnc_bridge;
 private _interactiveTop = _l get "interactive";
-// Canaux web : Overwatch connect ne les relit qu'à la création ou suppression, on les rafraîchit ici (toutes les 20 s).
+// Canaux web : COMSPEC Link ne les relit qu'à la création ou suppression, on les rafraîchit ici (toutes les 20 s).
 if (_bridge && {!isNil "comspec_overwatch_connect_fnc_pollChatChannels"} && {diag_tickTime - (_s getOrDefault ["chatChannelsPoll", -100]) > 20}) then {
     _s set ["chatChannelsPoll", diag_tickTime];
     [] spawn {
@@ -27,9 +27,9 @@ if (_bridge && {!isNil "comspec_overwatch_connect_fnc_pollChatChannels"} && {dia
         };
     };
 };
-// Canaux système (non supprimables), comme dans Overwatch connect.
+// Canaux système (non supprimables), comme dans COMSPEC Link.
 private _system = ["groupe", "commandement", "general", "jtac", "air", "squad", "global", "hq", "c2", "command", "group", "alertes"];
-// Canaux Athena (fil Overwatch connect quand il est chargé), puis messages directs.
+// Canaux Athena (fil COMSPEC Link quand il est chargé), puis messages directs.
 private _channelRows = []; // [clé, libellé, personnalisé]
 if (_bridge) then {
     {

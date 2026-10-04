@@ -33,7 +33,7 @@ private _units = count (_data getOrDefault ["units", createHashMap]);
 private _orders = count ([] call comspec_atak_native_fnc_tasksAll);
 private _rows = [
     ["hero", "\z\comspec_atak_native\addons\main\data\app_status.paa", format ["<t size='1.35' font='RobotoCondensedBold'>STATUT</t>  <t color='%1' font='RobotoCondensedBold'>● %2</t><br/><t color='#8a9a93' size='0.85'>%3</t>", _pillHex, _pill, _pillTxt]],
-    ["section", "Liaison", ["Session propre au terminal", "Session Athena d'Overwatch connect"] select _bridge],
+    ["section", "Liaison", ["Session propre au terminal", "Session Athena de COMSPEC Link"] select _bridge],
     ["info", "Athena", format ["<t color='%1'>%2</t>", _pillHex, toLower _pill]],
     ["info", "Canal poste", ["<t color='#e5483a'>fermé</t>", "<t color='#5cc76b'>ouvert</t>"] select _ready],
     ["info", "Signal", format ["%1/4 · %2 kbit/s · %3", _q getOrDefault ["bars", 0], _q getOrDefault ["kbps", 0], _q getOrDefault ["label", "—"]]],
@@ -47,7 +47,7 @@ private _rows = [
     ["section", "Terminal", ""],
     ["info", "Batterie", format ["<t color='%1'>%2 %%</t>", ["#e5483a", "#f2ab33", "#5cc76b"] select ((floor (_bat / 30)) min 2), _bat]],
     ["info", "Version du mod", ["COMSPEC_ATAK_NativeVersion", "?"] call _str],
-    ["info", "Extension", ["DLL native", "DLL Overwatch embarquée"] select _bridge],
+    ["info", "Extension", ["DLL native", "DLL COMSPEC Link embarquée"] select _bridge],
     ["buttons", [
         ["RESYNCH", { ["RESYNCH"] call comspec_atak_native_fnc_navigate; }, true],
         ["ATHENA", { ["ATHENA"] call comspec_atak_native_fnc_navigate; }],

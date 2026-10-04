@@ -175,7 +175,7 @@ _bg ctrlSetBackgroundColor [0, 0, 0, 1];
 if (_total < 1 || {_path isEqualTo ""}) then {
     private _msg = switch (true) do {
         case (_total < 1 && {_bridge}): { "Aucune diapositive pour l'instant.<br/>Le présentateur partage un Google Slides depuis le tableau de briefing, ou publiez des diapositives sur Athena puis touchez ACTUALISER." };
-        case (_total < 1): { "Aucun briefing reçu.<br/>Les diapositives Athena demandent Overwatch connect." };
+        case (_total < 1): { "Aucun briefing reçu.<br/>Les diapositives Athena demandent COMSPEC Link." };
         case (_src isEqualTo "GOOGLE"): { "Chargement de la diapositive…" };
         default { "Image indisponible (réseau ou cache).<br/>Touchez ACTUALISER pour réessayer." };
     };

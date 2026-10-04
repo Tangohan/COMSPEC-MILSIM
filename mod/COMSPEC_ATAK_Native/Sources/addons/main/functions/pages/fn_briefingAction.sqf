@@ -69,7 +69,7 @@ switch (_action) do {
         uiNamespace setVariable ["COMSPEC_ATAK_BriefQ", _q];
         private _raw = ["COMSPECExtension" callExtension ["BriefingComments", [str _id]]] call comspec_overwatch_connect_fnc_extResult;
         if ((_raw select [0, 3]) isNotEqualTo "OK|") then {
-            _q set ["err", ["Athena ne répond pas.", "La DLL Overwatch ne connaît pas encore les questions : mettez-la à jour."] select (_raw isEqualTo "")];
+            _q set ["err", ["Athena ne répond pas.", "La DLL COMSPEC Link ne connaît pas encore les questions : mettez-la à jour."] select (_raw isEqualTo "")];
         } else {
             _q set ["list", ((_raw select [3]) splitString toString [10]) apply { [_x, toString [9]] call comspec_overwatch_connect_fnc_splitKeepEmpty }];
         };
@@ -92,7 +92,7 @@ switch (_action) do {
     };
     case "refresh": {
         if !([] call comspec_atak_native_fnc_bridge) exitWith {
-            ["WARNING", "Diapositives Athena : Overwatch connect requis", 4, 30] call comspec_atak_native_fnc_notify;
+            ["WARNING", "Diapositives Athena : COMSPEC Link requis", 4, 30] call comspec_atak_native_fnc_notify;
         };
         uiNamespace setVariable ["COMSPEC_ATAK_SlideCache", createHashMap];
         private _slides = [] call comspec_overwatch_connect_fnc_getBriefingSlides;

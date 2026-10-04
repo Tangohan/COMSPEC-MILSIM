@@ -20,7 +20,7 @@ switch (_act) do {
         if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith {
             private _old = (uiNamespace getVariable ["COMSPEC_ATAK_Wanted", [[]]]) select 0;
             uiNamespace setVariable ["COMSPEC_ATAK_Wanted", [_old, _now, switch (true) do {
-                case (_raw isEqualTo ""): { "La DLL Overwatch ne connaît pas encore les avis de recherche : mettez-la à jour." };
+                case (_raw isEqualTo ""): { "La DLL COMSPEC Link ne connaît pas encore les avis de recherche : mettez-la à jour." };
                 case ((_raw find "unauthorized") >= 0): { "Connexion Athena requise." };
                 case ((_raw find "forbidden") >= 0): { "Votre profil n'a pas accès au SSE." };
                 default { format ["Athena ne répond pas (%1).", _raw select [0, 60]] };

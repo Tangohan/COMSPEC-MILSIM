@@ -92,6 +92,8 @@ ICONS = {
     "app_bft": '<circle cx="12" cy="12" r="8"/><path d="M12 6l3.5 9L12 13l-3.5 2z"/>',
     "app_intel": '<path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     "app_wanted": '<rect x="3" y="3" width="18" height="18" rx="1"/><circle cx="12" cy="10" r="3.2"/><path d="M6.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6"/><path d="M3 7h3M18 7h3"/>',
+    "app_drone": '<circle cx="5" cy="5" r="3"/><circle cx="19" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><path d="M7.5 7.5l3 3M16.5 7.5l-3 3M7.5 16.5l3-3M16.5 16.5l-3-3"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/>',
+    "app_dronedetect": '<circle cx="7" cy="13" r="2.5"/><circle cx="17" cy="13" r="2.5"/><path d="M9.3 14l1.7 1h2l1.7-1M12 16v1.5"/><path d="M8 7.5a6 6 0 0 1 8 0M5 4.5a10 10 0 0 1 14 0"/><circle cx="12" cy="10" r=".6"/>',
     "app_aar": '<circle cx="13" cy="12" r="8"/><path d="M13 7v5l3 2"/><path d="M5 12H1.5M3 9.5L1.5 12 3 14.5"/>',
     "app_sse": '<path d="M6 3h8l4 4v6"/><path d="M6 3v18h6"/><circle cx="16" cy="17" r="3"/><path d="M18.2 19.2L21 22"/>',
     "app_explo": '<path d="M9 21h6v-8H9z"/><path d="M12 13V9"/><path d="M12 9c0-3 3-3 4-5"/><path d="M17 2l.7 1.6L19.3 4l-1.6.7L17 6.3l-.7-1.6L14.7 4l1.6-.4z"/>',
@@ -313,60 +315,291 @@ def blurred(img):
     return Image.eval(small.filter(ImageFilter.GaussianBlur(14)).convert("RGB"), lambda v: int(v * 0.85))
 
 
-def crack(level, w, h, seed):
-    """Écran fêlé (transparent) : impact, fissures rayonnantes, éclats ; niveau 3 = zone morte."""
+# --- Écran abîmé : dessins procéduraux (graine fixe, rendu identique à chaque génération) ---
+# Les fêlures sont dessinées en portrait (512x1024) puis tournées pour le paysage ; même variante =
+# même point d'impact à tous les niveaux, la toile s'agrandit avec les dégâts.
+DMG_SS = 2  # suréchantillonnage (traits lissés)
+
+
+def _impact(variant, w, h):
+    """Points d'impact d'une variante (portrait) : le premier sert à tous les niveaux."""
+    import random
+    rnd = random.Random(900 + variant * 31)
+    pts = [(rnd.uniform(0.25, 0.8) * w, rnd.uniform(0.15, 0.45) * h)]
+    pts.append((rnd.uniform(0.15, 0.85) * w, rnd.uniform(0.6, 0.88) * h))
+    pts.append((rnd.uniform(0.1, 0.9) * w, rnd.uniform(0.05, 0.95) * h))
+    return pts
+
+
+def _web(rnd, cx, cy, n_rays, rings, reach, jitter=0.18):
+    """Toile d'araignée : rayons brisés (listes de points) et anneaux reliant les rayons voisins."""
+    import math
+    base = sorted(rnd.uniform(0, 2 * math.pi) for _ in range(n_rays))
+    rays = []
+    for a in base:
+        pts = [(cx, cy)]
+        steps = len(rings)
+        for k, r in enumerate(rings):
+            a2 = a + rnd.uniform(-jitter, jitter) * (1 - k / (steps + 1))
+            rr_ = r * rnd.uniform(0.85, 1.15)
+            pts.append((cx + rr_ * math.cos(a2), cy + rr_ * math.sin(a2)))
+        rays.append(pts)
+    return rays
+
+
+def _crack_line(d, pts, width, alpha):
+    """Fissure : ombre décalée sombre puis arête claire (reflet du verre)."""
+    width *= DMG_SS
+    d.line([(x + width * 0.5, y + width * 0.5) for x, y in pts], fill=(0, 0, 0, int(alpha * 0.55)), width=width + DMG_SS, joint="curve")
+    d.line(pts, fill=(236, 242, 240, alpha), width=width, joint="curve")
+
+
+def _walk(rnd, x, y, a, step, n, wobble):
+    import math
+    pts = [(x, y)]
+    for _ in range(n):
+        a += rnd.uniform(-wobble, wobble)
+        x += step * math.cos(a); y += step * math.sin(a)
+        pts.append((x, y))
+    return pts
+
+
+def ink_bleed(level, variant, w, h):
+    """Fuite d'encre LCD : taches noires à franges violettes qui s'étalent depuis l'impact (portrait)."""
+    import random
+    rnd = random.Random(5000 + variant * 97 + level)
+    W, H = w * DMG_SS, h * DMG_SS
+    s = min(W, H)
+    mask = Image.new("L", (W, H), 0)
+    dm = ImageDraw.Draw(mask)
+    imps = _impact(variant, W, H)[: {2: 1, 3: 2}.get(level, 1)]
+    for i, (cx, cy) in enumerate(imps):
+        size = s * (0.16 if level <= 2 else 0.34) * (1 if i == 0 else 0.6)
+        # Amas de disques autour de l'impact, plus quelques coulures qui descendent.
+        for _ in range(28 if level >= 3 else 14):
+            r = size * rnd.uniform(0.15, 0.55)
+            ox, oy = rnd.gauss(0, size * 0.55), rnd.gauss(0, size * 0.55)
+            dm.ellipse([cx + ox - r, cy + oy - r, cx + ox + r, cy + oy + r], fill=255)
+        for _ in range(3 if level <= 2 else 7):
+            pts = _walk(rnd, cx, cy, rnd.uniform(1.2, 1.95), s * 0.02, rnd.randint(8, 22 if level >= 3 else 12), 0.35)
+            dm.line(pts, fill=255, width=int(s * rnd.uniform(0.012, 0.035)), joint="curve")
+    if level >= 3:
+        # Grande zone morte : l'encre coule le long d'un bord de l'écran.
+        x0 = rnd.choice([0.0, 1.0]) * W
+        y = H * rnd.uniform(0.0, 0.3); y1 = H * rnd.uniform(0.7, 1.0)
+        while y < y1:
+            r = s * rnd.uniform(0.12, 0.3)
+            dm.ellipse([x0 - r * 1.4, y - r, x0 + r * 1.4, y + r], fill=255)
+            y += r * 0.8
+    core = mask.filter(ImageFilter.GaussianBlur(s * 0.012))
+    fringe = mask.filter(ImageFilter.GaussianBlur(s * 0.04))
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    # Frange violette / magenta, puis cœur noir opaque.
+    tint = rnd.choice([(96, 18, 150), (130, 20, 120), (60, 30, 160)])
+    halo = Image.new("RGBA", (W, H), tint + (0,))
+    halo.putalpha(fringe.point(lambda v: min(255, int(v * 1.6))))
+    img.alpha_composite(halo)
+    edge = Image.new("RGBA", (W, H), (20, 160, 190, 0))
+    edge.putalpha(Image.eval(Image.composite(fringe, Image.new("L", (W, H), 0), core.point(lambda v: 255 if 20 < v < 120 else 0)), lambda v: int(v * 0.5)))
+    img.alpha_composite(edge)
+    black = Image.new("RGBA", (W, H), (4, 2, 8, 0))
+    black.putalpha(core.point(lambda v: 0 if v < 70 else min(250, int((v - 70) * 2.2))))
+    img.alpha_composite(black)
+    return img.resize((w, h), Image.LANCZOS)
+
+
+def glass_crack(level, variant, w, h):
+    """Verre fêlé (transparent, portrait) : toile d'araignée depuis l'impact, fissures fines, reflet ;
+    niveau 2+ : taches d'encre ; niveau 3 : deuxième impact, zone morte et pixels morts."""
     import math, random
-    rnd = random.Random(seed)
+    rnd = random.Random(100 + variant * 13 + level * 1000)
+    W, H = w * DMG_SS, h * DMG_SS
+    s = min(W, H)
+    diag = math.hypot(W, H)
+    img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    if level >= 2:
+        img.alpha_composite(ink_bleed(level, variant, w, h).resize((W, H), Image.LANCZOS))
+    d = ImageDraw.Draw(img)
+    imps = _impact(variant, W, H)[: {1: 1, 2: 2, 3: 3}[level]]
+    for i, (cx, cy) in enumerate(imps):
+        main_ = i == 0
+        reach = diag * ({1: 0.35, 2: 0.6, 3: 1.0}[level] if main_ else 0.22 * level)
+        n_rays = ({1: 9, 2: 14, 3: 20}[level] if main_ else 7 + level)
+        n_rings = {1: 4, 2: 6, 3: 8}[level] if main_ else 3
+        rings = [reach * (k / n_rings) ** 1.6 for k in range(1, n_rings + 1)]
+        rays = _web(rnd, cx, cy, n_rays, rings, reach)
+        # Anneaux : segments entre rayons voisins, plus nombreux près de l'impact.
+        for k in range(1, n_rings + 1):
+            for j in range(n_rays):
+                if rnd.random() < 0.85 - k / n_rings * 0.55:
+                    p, q = rays[j][k], rays[(j + 1) % n_rays][k]
+                    mx, my = (p[0] + q[0]) / 2, (p[1] + q[1]) / 2
+                    bend = rnd.uniform(-0.08, 0.08)
+                    mid = (mx + (mx - cx) * bend, my + (my - cy) * bend)
+                    _crack_line(d, [p, mid, q], 2 if k < 3 else 1, rnd.randint(110, 180))
+        # Rayons : épais près de l'impact, s'affinent ; certains s'arrêtent tôt.
+        for pts in rays:
+            stop = len(pts) if rnd.random() < 0.7 else rnd.randint(2, len(pts))
+            for k in range(1, stop):
+                _crack_line(d, [pts[k - 1], pts[k]], max(1, 4 - k), rnd.randint(170, 230))
+            # Fissures secondaires fines qui partent des rayons.
+            for k in range(1, stop):
+                if rnd.random() < 0.35:
+                    a = math.atan2(pts[k][1] - cy, pts[k][0] - cx) + rnd.choice([-1, 1]) * rnd.uniform(0.6, 1.3)
+                    sub = _walk(rnd, pts[k][0], pts[k][1], a, s * 0.018, rnd.randint(3, 9), 0.4)
+                    d.line(sub, fill=(232, 238, 236, rnd.randint(80, 140)), width=DMG_SS, joint="curve")
+        # Éclats autour de l'impact : petits triangles clairs, centre blanchi.
+        for _ in range(10 + 6 * level if main_ else 6):
+            a = rnd.uniform(0, 2 * math.pi); r = s * rnd.uniform(0.005, 0.05)
+            px, py = cx + r * math.cos(a), cy + r * math.sin(a)
+            tri = [(px, py), (px + rnd.uniform(-1, 1) * s * 0.02, py + rnd.uniform(-1, 1) * s * 0.02), (px + rnd.uniform(-1, 1) * s * 0.02, py + rnd.uniform(-1, 1) * s * 0.02)]
+            d.polygon(tri, fill=(240, 246, 244, rnd.randint(40, 110)))
+        r0 = s * (0.012 + 0.006 * level)
+        d.ellipse([cx - r0, cy - r0, cx + r0, cy + r0], fill=(250, 252, 252, 150))
+    # Reflet du verre : bande diagonale très légère.
+    shine = Image.new("L", (W, H), 0)
+    ImageDraw.Draw(shine).polygon([(W * 0.05, 0), (W * 0.32, 0), (W * 0.95, H), (W * 0.68, H)], fill=26 + 6 * level)
+    shine = shine.filter(ImageFilter.GaussianBlur(s * 0.08))
+    sh = Image.new("RGBA", (W, H), (255, 255, 255, 0)); sh.putalpha(shine)
+    img.alpha_composite(sh)
+    if level >= 3:
+        # Bande morte et pixels morts.
+        d = ImageDraw.Draw(img)
+        y0 = int(H * rnd.uniform(0.5, 0.65)); bh = int(H * 0.06)
+        d.rectangle([0, y0, W, y0 + bh], fill=(0, 0, 0, 230))
+        for _ in range(90):
+            x = rnd.randrange(W); y = rnd.randrange(H); k = rnd.choice([4, 6, 8])
+            d.rectangle([x, y, x + k, y + k], fill=rnd.choice([(255, 0, 255, 210), (0, 255, 0, 210), (255, 255, 255, 220), (0, 200, 255, 210)]))
+    return img.resize((w, h), Image.LANCZOS)
+
+
+GLITCH_COLORS = [(255, 0, 200), (0, 255, 255), (0, 255, 60), (255, 255, 0), (255, 255, 255), (255, 30, 30), (40, 60, 255), (170, 0, 255)]
+
+
+def dead_lines(variant, frame, w, h):
+    """Lignes mortes LCD : colonnes colorées verticales (dans le sens de l'écran) et blocs de compression.
+    Les lignes principales tiennent à la variante, les artefacts changent avec la trame (scintillement)."""
+    import random
+    base = random.Random(7000 + variant * 53)
+    fr = random.Random(7100 + variant * 53 + frame * 7)
     img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    s = min(w, h)
-    impacts = [(rnd.uniform(0.55, 0.8) * w, rnd.uniform(0.15, 0.35) * h)]
-    if level >= 2:
-        impacts.append((rnd.uniform(0.15, 0.4) * w, rnd.uniform(0.6, 0.85) * h))
-    if level >= 3:
-        # Zone morte : bande noire et pixels morts.
-        y0 = int(h * rnd.uniform(0.35, 0.55)); bh = int(h * 0.09)
-        d.rectangle([0, y0, w, y0 + bh], fill=(0, 0, 0, 235))
-        for _ in range(60):
-            x = rnd.randrange(w); y = rnd.randrange(h)
-            d.rectangle([x, y, x + 3, y + 3], fill=rnd.choice([(255, 0, 255, 200), (0, 255, 0, 200), (255, 255, 255, 220)]))
-    n_rays = {1: 7, 2: 11, 3: 16}[level]
-    for (cx, cy) in impacts:
-        # Toile d'araignée : anneaux brisés autour de l'impact.
-        for ring in range(1, level + 2):
-            r = s * 0.035 * ring
-            pts = []
-            for k in range(13):
-                a = k / 12 * 2 * math.pi
-                rr_ = r * rnd.uniform(0.75, 1.25)
-                pts.append((cx + rr_ * math.cos(a), cy + rr_ * math.sin(a)))
-            for a_, b_ in zip(pts, pts[1:]):
-                if rnd.random() < 0.8:
-                    d.line([a_, b_], fill=(235, 240, 238, 150), width=2)
-        for k in range(n_rays):
-            a = rnd.uniform(0, 2 * math.pi)
-            x, y = cx, cy
-            length = s * rnd.uniform(0.25, 0.9) * (0.6 + 0.2 * level)
-            step = s * 0.03
-            travelled = 0
-            while travelled < length:
-                a += rnd.uniform(-0.12, 0.12)
-                nx, ny = x + step * math.cos(a), y + step * math.sin(a)
-                d.line([(x + 1, y + 1), (nx + 1, ny + 1)], fill=(0, 0, 0, 120), width=3)
-                d.line([(x, y), (nx, ny)], fill=(240, 245, 243, 210), width=2)
-                if rnd.random() < 0.12:
-                    ba = a + rnd.choice([-1, 1]) * rnd.uniform(0.5, 1.1)
-                    bx, by = x, y
-                    for _ in range(rnd.randint(2, 6)):
-                        ba += rnd.uniform(-0.3, 0.3)
-                        ex, ey = bx + step * 0.8 * math.cos(ba), by + step * 0.8 * math.sin(ba)
-                        d.line([(bx, by), (ex, ey)], fill=(235, 240, 238, 160), width=1)
-                        bx, by = ex, ey
-                x, y = nx, ny
-                travelled += step
-        # Éclats à l'impact
-        d.ellipse([cx - s * 0.02, cy - s * 0.02, cx + s * 0.02, cy + s * 0.02], fill=(255, 255, 255, 120))
-    return img.filter(ImageFilter.SMOOTH)
+    # Faisceaux de colonnes : quelques groupes arc-en-ciel et des lignes isolées.
+    for _ in range(base.randint(3, 5)):
+        x = base.randrange(w); n = base.randint(4, 14); cols = base.sample(GLITCH_COLORS, 4)
+        for k in range(n):
+            if fr.random() < 0.15:
+                continue
+            c = cols[k % len(cols)]
+            wd = base.choice([1, 1, 2, 3])
+            y0 = 0 if base.random() < 0.7 else base.randrange(h // 2)
+            d.rectangle([x, y0, x + wd - 1, h], fill=c + (fr.randint(170, 240),))
+            x += wd + base.choice([0, 0, 1, 2])
+    for _ in range(base.randint(8, 16)):
+        x = base.randrange(w); c = base.choice(GLITCH_COLORS)
+        if fr.random() < 0.25:
+            continue
+        d.rectangle([x, 0, x + base.choice([0, 0, 1]), h], fill=c + (fr.randint(120, 230),))
+    # Large bande colorée dégradée (pilote de colonne HS).
+    if base.random() < 0.7:
+        x = base.randrange(int(w * 0.1), int(w * 0.85)); bw = base.randint(int(w * 0.02), int(w * 0.07))
+        c = base.choice(GLITCH_COLORS)
+        d.rectangle([x, 0, x + bw, h], fill=c + (fr.randint(70, 130),))
+    # Blocs d'artefacts (macroblocs) groupés, changent à chaque trame.
+    for _ in range(fr.randint(2, 4)):
+        cx, cy = fr.randrange(w), fr.randrange(h)
+        bs = fr.choice([8, 12, 16, 24])
+        for _ in range(fr.randint(10, 40)):
+            x = cx + fr.randint(-8, 8) * bs; y = cy + fr.randint(-4, 4) * bs
+            c = fr.choice(GLITCH_COLORS + [(0, 0, 0)] * 3)
+            d.rectangle([x, y, x + bs * fr.randint(1, 3) - 1, y + bs - 1], fill=c + (fr.randint(150, 235),))
+    # Déchirures horizontales : fines bandes décalées.
+    for _ in range(fr.randint(1, 3)):
+        y = fr.randrange(h); th = fr.randint(2, 10)
+        d.rectangle([0, y, w, y + th], fill=fr.choice(GLITCH_COLORS) + (fr.randint(50, 110),))
+    return img
+
+
+def shattered(variant, w, h):
+    """Écran détruit (portrait) : verre noir presque opaque, éclats en toile depuis l'impact, arêtes brillantes."""
+    import math, random
+    rnd = random.Random(9000 + variant * 71)
+    W, H = w * DMG_SS, h * DMG_SS
+    s = min(W, H)
+    diag = math.hypot(W, H)
+    img = Image.new("RGBA", (W, H), (6, 7, 8, 248))
+    d = ImageDraw.Draw(img)
+    for idx, (cx, cy) in enumerate(_impact(variant, W, H)[:2]):
+        n_rays = 26 if idx == 0 else 14
+        n_rings = 10 if idx == 0 else 5
+        reach = diag * (1.1 if idx == 0 else 0.35)
+        rings = [reach * (k / n_rings) ** 1.7 for k in range(1, n_rings + 1)]
+        rays = _web(rnd, cx, cy, n_rays, rings, reach, 0.12)
+        rays.sort(key=lambda p: math.atan2(p[-1][1] - cy, p[-1][0] - cx))
+        for j in range(n_rays):
+            A, B = rays[j], rays[(j + 1) % n_rays]
+            for k in range(n_rings):
+                cell = [A[k], B[k], B[k + 1], A[k + 1]]
+                # Teinte de l'éclat : dépend de son orientation (lumière en haut à gauche) + bruit.
+                ang = math.atan2((A[k + 1][1] + B[k + 1][1]) / 2 - cy, (A[k + 1][0] + B[k + 1][0]) / 2 - cx)
+                g = int(10 + 18 * max(0, math.cos(ang + 2.3)) + rnd.uniform(-6, 10))
+                if idx == 0 or rnd.random() < 0.6:
+                    d.polygon(cell, fill=(g, g + 1, g + 3, 250))
+                # Arêtes : reflet clair sur un côté, sombre sur l'autre.
+                d.line([A[k], A[k + 1]], fill=(150, 160, 165, rnd.randint(90, 200)), width=2 if k < 3 else 1)
+                if rnd.random() < 0.7:
+                    d.line([A[k + 1], B[k + 1]], fill=(120, 130, 135, rnd.randint(60, 160)), width=1)
+                # Éclats secondaires dans la cellule.
+                if rnd.random() < 0.3:
+                    p = rnd.choice(cell); q = rnd.choice(cell)
+                    d.line([p, q], fill=(110, 118, 122, rnd.randint(50, 120)), width=1)
+        # Cratère de l'impact : poudre de verre claire.
+        for _ in range(140):
+            a = rnd.uniform(0, 2 * math.pi); r = abs(rnd.gauss(0, s * 0.03))
+            px, py = cx + r * math.cos(a), cy + r * math.sin(a); k = rnd.uniform(1, 4)
+            d.ellipse([px - k, py - k, px + k, py + k], fill=(200, 210, 215, rnd.randint(60, 180)))
+    # Reflets spéculaires sur quelques éclats.
+    glint = Image.new("L", (W, H), 0)
+    gd = ImageDraw.Draw(glint)
+    for _ in range(5):
+        x, y = rnd.uniform(0, W), rnd.uniform(0, H); r = s * rnd.uniform(0.04, 0.12)
+        gd.ellipse([x - r, y - r * 0.4, x + r, y + r * 0.4], fill=rnd.randint(25, 55))
+    gd.polygon([(W * 0.0, H * 0.1), (W * 0.25, 0), (W, H * 0.75), (W, H * 0.95)], fill=22)
+    glint = glint.filter(ImageFilter.GaussianBlur(s * 0.05))
+    gl = Image.new("RGBA", (W, H), (210, 225, 235, 0)); gl.putalpha(glint)
+    img.alpha_composite(gl)
+    return img.resize((w, h), Image.LANCZOS)
+
+
+DMG_CRACK_VARIANTS = 3
+DMG_GLITCH_VARIANTS = 2
+DMG_GLITCH_FRAMES = 3
+DMG_SHATTER_VARIANTS = 2
+
+
+def damage_overlays(tmp):
+    """Calques de dégâts (voir fn_deviceOverlay.sqf) :
+    crack_<niveau 1-3>_<variante>_<port|land>, glitch_<variante>_<trame>_<port|land>, shatter_<variante>_<port|land>."""
+    for v in range(DMG_CRACK_VARIANTS):
+        for lvl in (1, 2, 3):
+            port = glass_crack(lvl, v, 512, 1024)
+            convert(port, f"crack_{lvl}_{v}_port", tmp)
+            convert(port.rotate(-90, expand=True), f"crack_{lvl}_{v}_land", tmp)
+    for v in range(DMG_GLITCH_VARIANTS):
+        for f in range(DMG_GLITCH_FRAMES):
+            # Lignes verticales dans le sens de l'écran : dessinées pour chaque orientation.
+            convert(dead_lines(v, f, 512, 1024), f"glitch_{v}_{f}_port", tmp)
+            convert(dead_lines(v, f, 1024, 512), f"glitch_{v}_{f}_land", tmp)
+    for v in range(DMG_SHATTER_VARIANTS):
+        port = shattered(v, 512, 1024)
+        convert(port, f"shatter_{v}_port", tmp)
+        convert(port.rotate(-90, expand=True), f"shatter_{v}_land", tmp)
+    # Anciennes fêlures (une seule variante) : remplacées.
+    for lvl in (1, 2, 3):
+        for o in ("port", "land"):
+            old = os.path.join(OUT, f"crack_{lvl}_{o}.paa")
+            if os.path.exists(old):
+                os.remove(old)
 
 
 def soar_logo(path, size=512):
@@ -432,11 +665,8 @@ def convert(img, name, tmp):
 def main():
     os.makedirs(OUT, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
-        # Fêlures de l'écran (dégâts du téléphone), mêmes dessins en portrait et paysage.
-        for lvl in (1, 2, 3):
-            port = crack(lvl, 512, 1024, 40 + lvl)
-            convert(port, f"crack_{lvl}_port", tmp)
-            convert(port.rotate(-90, expand=True), f"crack_{lvl}_land", tmp)
+        # Écran abîmé (fêlures, encre, lignes mortes, verre brisé) ; « cracks » ne régénère que ceux-là.
+        damage_overlays(tmp)
         if len(sys.argv) > 2 and sys.argv[2] == "cracks":
             return
         convert(frs_bar(), "frs_bar", tmp)

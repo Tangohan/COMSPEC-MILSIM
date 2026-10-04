@@ -6,7 +6,7 @@ diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
 
 // Réglages serveur (forçables par l'admin dans les réglages CBA du serveur / de la mission).
-private _cat = ["COMSPEC ATAK natif", "Accès au téléphone"];
+private _cat = ["COMSPEC ATAK", "Accès au téléphone"];
 private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
 ["comspec_atak_native_require_item", "CHECKBOX",
     ["Item obligatoire pour avoir l'ATAK", "Activé par défaut : il faut porter un téléphone (ItemAndroid de cTab ou équivalent d'un autre mod) pour sortir ou prendre le téléphone. Décocher pour donner l'ATAK à tout le monde."],
@@ -24,7 +24,7 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
     ["Les tablettes et DAGR comptent aussi", "ItemcTab, MicroDAGR (cTab) et MicroDAGR (ACE) ouvrent aussi le téléphone."],
     _cat, false, 1, _recompute] call CBA_fnc_addSetting;
 
-private _mus = ["COMSPEC ATAK natif", "Musique"];
+private _mus = ["COMSPEC ATAK", "Musique"];
 ["comspec_atak_native_music_enabled", "CHECKBOX",
     ["App Musique", "Lecture de fichiers locaux, de pistes du serveur (musiques d'Arma, des mods et de la mission) et de liens audio."],
     _mus, true, 1] call CBA_fnc_addSetting;
@@ -41,14 +41,14 @@ private _mus = ["COMSPEC ATAK natif", "Musique"];
     ["Radio de la mission", "Liens proposés à tous dans l'onglet SERVEUR, sous la forme Titre|https://...;Titre 2|https://..."],
     _mus, "", 1] call CBA_fnc_addSetting;
 
-private _sim = ["COMSPEC ATAK natif", "Simulation"];
+private _sim = ["COMSPEC ATAK", "Simulation"];
 ["comspec_atak_native_damage_sim", "CHECKBOX",
     ["Dégâts du téléphone", "Balles au torse ou aux bras, explosions proches et eau fêlent l'écran, éteignent ou détruisent le téléphone. Réparation : trousse à outils ou nouvel appareil (actions ACE). Si le réalisme ATAK d'Overwatch est actif, c'est lui qui décide."],
     _sim, true, 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_ew_open", "CHECKBOX",
     ["Guerre électronique ouverte à tous", "Coché : tout porteur de téléphone peut brouiller et goniométrer. Décoché : réservé aux unités COMSPEC_ATAK_EwOperator ou au rôle « guerre électronique / brouilleur / SIGINT »."],
     _sim, true, 1] call CBA_fnc_addSetting;
-private _geo = ["COMSPEC ATAK natif", "Géolocalisation (GEOLOC)"];
+private _geo = ["COMSPEC ATAK", "Géolocalisation (GEOLOC)"];
 ["comspec_atak_native_geoloc_enabled", "CHECKBOX",
     ["Traçage des téléphones", "App Guerre électronique, onglet GÉOLOC : localiser un téléphone à partir de son numéro, de son IMEI ou de son adresse MAC (roleplay)."],
     _geo, true, 1] call CBA_fnc_addSetting;
@@ -86,6 +86,21 @@ private _geo = ["COMSPEC ATAK natif", "Géolocalisation (GEOLOC)"];
 ["comspec_atak_native_aar", "CHECKBOX",
     ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s (et les pertes amies) pour l'app Rejeu mission. Décocher pour ne rien enregistrer."],
     _sim, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_drone_range", "SLIDER", ["Portée de la liaison drone", "Distance en mètres entre le téléphone du pilote et son drone (divisée par trois derrière le relief). Au-delà, le drone rentre seul à son point de décollage."], _sim, [500, 8000, 2500, 0], 1] call CBA_fnc_addSetting;
+["comspec_atak_native_drone_strike", "CHECKBOX",
+    ["Drones armés", "Permet de fixer une charge (roquette RPG, charge de démolition, grenade) sur un drone et de l'envoyer en tir et oublie ou en recherche et frappe."],
+    _sim, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_apps_off", "EDITBOX", ["Apps désactivées", "Noms de classe d'apps à retirer de tous les téléphones, séparés par des virgules (ex. Dating, Food, MonModule). Vaut aussi pour les modules externes."], _sim, "", 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_civil_apps", "CHECKBOX",
     ["Apps civiles", "Ration Express (rations livrées par drone) et Rencard (rencontres entre joueurs). Décocher pour les retirer de tous les téléphones."],
     _sim, true, 1] call CBA_fnc_addSetting;
+
+// Mode drone : les ordres s'exécutent là où le drone est local (pilote, serveur ou client qui l'a posé).
+["comspec_atak_native_droneCmd", { _this call comspec_atak_native_fnc_droneCmd; }] call CBA_fnc_addEventHandler;
+// Retour du drone vers le pilote : ennemi repéré ou engagé en mode recherche.
+["comspec_atak_native_droneEvent", {
+    params ["_d", "_kind", "_pos", "_what"];
+    if (!hasInterface) exitWith {};
+    ["WARNING", format ["Drone : %1 %2 en %3", ["ennemi repéré,", "frappe sur"] select (_kind isEqualTo "ENGAGE"), _what, [_pos, 8] call comspec_atak_native_fnc_gridRef], 6, 60] call comspec_atak_native_fnc_notify;
+    [] call comspec_atak_native_fnc_vibrate;
+}] call CBA_fnc_addEventHandler;

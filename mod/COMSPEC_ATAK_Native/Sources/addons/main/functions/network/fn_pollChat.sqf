@@ -1,4 +1,4 @@
-// Avec Overwatch connect, c'est lui qui interroge Athena (même session, pas de doublon).
+// Avec COMSPEC Link, c'est lui qui interroge Athena (même session, pas de doublon).
 if ([] call comspec_atak_native_fnc_bridge) exitWith { false };
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap];
 private _messages = +(_data getOrDefault ["messages",[]]);
