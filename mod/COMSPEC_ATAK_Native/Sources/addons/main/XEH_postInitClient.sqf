@@ -36,6 +36,7 @@ if ([] call comspec_atak_native_fnc_bridge) then {
 // Batterie : consommation aussi téléphone rangé (la barre d'état la met à jour chaque seconde quand il est ouvert).
 [{ if (isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_battery; }; }, 10] call CBA_fnc_addPerFrameHandler;
 ["comspec_atak_native_p2p", { _this call comspec_atak_native_fnc_p2pReceive }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_p2pAck", { _this call comspec_atak_native_fnc_p2pAck }] call CBA_fnc_addEventHandler;
 // MEDEVAC du camp : demandes et suivi (app Médical, onglet MEDEVAC).
 ["comspec_atak_native_medevac", { ["recv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_bda", { ["recv", _this] call comspec_atak_native_fnc_bdaAction; }] call CBA_fnc_addEventHandler;

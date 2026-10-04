@@ -22,7 +22,7 @@ class CfgFunctions {
         class network { file="z\comspec_atak_native\addons\main\functions\network";
             class extensionCall {}; class extensionCallback {}; class remoteSync {}; class importLegacyData {};
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
-            class p2pSend {}; class p2pReceive {}; class athenaSignal {}; class netSend {}; class bridge {}; class avatarPath {};
+            class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class bridge {}; class avatarPath {};
         };
         class viz { file="z\comspec_atak_native\addons\main\functions\viz";
             class vizEcg {}; class vizSpectrum {}; class vizPlayer {};

@@ -14,16 +14,22 @@ _body = ((_tags apply { format ["[%1]", _x] }) joinString "") + ([" ", ""] selec
 if ((count _body) > 400) then { _body = _body select [0, 400]; };
 private _target = objNull;
 { if ((name _x) isEqualTo _peer) exitWith { _target = _x; }; } forEach allPlayers;
-if (isNull _target) exitWith {
-    ["WARNING", format ["%1 n'est plus connecté", _peer], 4, 30] call comspec_atak_native_fnc_notify;
-    false
-};
 private _time = [daytime, "HH:MM"] call BIS_fnc_timeToString;
-// Débit simulé : le SMS part après la latence (et attend que le destinataire ait du réseau, côté réception).
-[{ params ["_args", "_target"]; ["comspec_atak_native_p2p", _args, _target] call CBA_fnc_targetEvent; }, [[name player, _body, _time], _target], "SMS", 1] call comspec_atak_native_fnc_netSend;
+private _date = [] call comspec_atak_native_fnc_p2pDate;
+private _id = format ["%1-%2-%3", getPlayerUID player, round (time * 1000), floor random 1e5];
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
 private _p2p = _data getOrDefault ["p2p", []];
-_p2p pushBack createHashMapFromArray [["peer", _peer], ["dir", "out"], ["body", _body], ["time", _time], ["read", true]];
+private _m = createHashMapFromArray [["peer", _peer], ["dir", "out"], ["body", _body], ["time", _time], ["date", _date], ["read", true], ["id", _id], ["status", "SENDING"], ["sentAt", time]];
+_p2p pushBack _m;
 while {(count _p2p) > 200} do { _p2p deleteAt 0; };
 _data set ["p2p", _p2p];
+// Destinataire déconnecté : le SMS reste « non transmis » dans la conversation.
+if (isNull _target) exitWith {
+    _m set ["status", "FAILED"];
+    ["WARNING", format ["%1 n'est plus connecté : SMS non transmis", _peer], 4, 30] call comspec_atak_native_fnc_notify;
+    true
+};
+// Débit simulé : le SMS part après la latence ; sans réseau il attend dans la file (« en attente de réseau »).
+private _r = [{ params ["_args", "_target"]; ["comspec_atak_native_p2p", _args, _target] call CBA_fnc_targetEvent; }, [[name player, _body, _time, _id, player, _date], _target], "SMS", 1] call comspec_atak_native_fnc_netSend;
+if (_r isEqualTo "QUEUED") then { _m set ["status", "QUEUED"]; };
 true
