@@ -4,7 +4,7 @@
 */
 params ["_d", ["_l", [0, 0, false]]];
 if (isNull _d) exitWith { "" };
-private _modes = createHashMapFromArray [["HOVER", "Stationnaire"], ["FOLLOW", "Suivi"], ["HOME", "Retour au pilote"], ["LAND", "Atterrissage"], ["RTH", "Retour auto (liaison perdue)"], ["STRIKE", "FRAPPE EN COURS"], ["HUNT", "Recherche"]];
+private _modes = createHashMapFromArray [["HOVER", "Stationnaire"], ["FOLLOW", "Suivi"], ["HOME", "Retour au pilote"], ["LAND", "Atterrissage"], ["RTH", "Retour auto (liaison perdue)"], ["STRIKE", "FRAPPE EN COURS"], ["HUNT", "Recherche"], ["MANUAL", "Pilotage manuel (terminal UAV)"]];
 private _m = _d getVariable ["COMSPEC_DroneMode", "HOVER"];
 private _f = _d getVariable ["COMSPEC_DroneFollow", objNull];
 private _bars = ["▂▄▆█" select [0, _l select 0], "<t color='#e5483a'>HORS LIAISON</t>"] select !(_l select 2);

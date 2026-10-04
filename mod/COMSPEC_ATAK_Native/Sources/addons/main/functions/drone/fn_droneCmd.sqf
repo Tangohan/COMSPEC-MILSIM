@@ -6,6 +6,7 @@
       "follow"  [cible, altitude, km/h]     suit une unité (le pilote ou un autre joueur), 15 m derrière ;
       "home"    [pilote, altitude, km/h]    revient au pilote puis se pose à côté ;
       "land"    []                          se pose sur place ;
+      "manual"  []                          rend la main au terminal UAV du pilote : le drone reste en stationnaire ;
       "rth"     [position ASL]              liaison perdue : retour au point de décollage et atterrissage ;
       "alt"     [altitude] / "speed" [km/h] réglages en vol ;
       "strike"  [cible (position ASL ou objet), pilote]   tir et oublie : approche puis piqué final ;
@@ -44,6 +45,7 @@ switch (_cmd) do {
         _d doMove (getPosATL _d);
     };
     case "land": { ["LAND"] call _setMode; _d land "LAND"; };
+    case "manual": { ["MANUAL"] call _setMode; doStop _d; _d flyInHeight [_alt, true]; };
     case "rth": {
         _args params [["_home", getPosASL _d]];
         ["RTH"] call _setMode;

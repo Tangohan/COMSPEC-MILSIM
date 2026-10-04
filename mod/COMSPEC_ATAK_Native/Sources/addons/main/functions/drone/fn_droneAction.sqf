@@ -10,6 +10,10 @@
       ["arm"]                     fixe une charge prise dans l'inventaire (drone à moins de 5 m) ;
       ["strike", "LASER" | "GRID"]  tir et oublie, à confirmer d'un second appui ;
       ["cam"]                     caméra du drone dans l'app ;
+      ["manual"]                  pilotage manuel au terminal UAV ; tout autre ordre du téléphone reprend la main.
+    Verrou (variable publique COMSPEC_DroneLock du drone, appliqué par XEH_postInitClient sur chaque client) :
+      "" = le téléphone pilote, personne ne peut se connecter au drone avec un terminal UAV ;
+      uid = seul ce joueur peut s'y connecter (pilotage manuel) ; absent = drone libre.
       ["tick"]                    surveillance (toutes les secondes tant qu'un drone est appairé) ;
       ["link"]                    renvoie [barres 0-4, distance, en liaison].
     État : missionNamespace COMSPEC_ATAK_Drone (drone appairé), COMSPEC_ATAK_DroneHome, COMSPEC_ATAK_DroneCam.
@@ -18,7 +22,12 @@ params [["_act", "tick"], ["_arg", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _d = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
 private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONE") then { ["DRONE"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
-private _send = { params ["_cmd", ["_args", []]]; ["comspec_atak_native_droneCmd", [_d, _cmd, _args], _d] call CBA_fnc_targetEvent; };
+private _send = {
+    params ["_cmd", ["_args", []]];
+    // Tout ordre du téléphone (sauf le passage en manuel) verrouille le terminal UAV : une seule main sur le drone.
+    if (_cmd isNotEqualTo "manual" && {(_d getVariable ["COMSPEC_DroneLock", ""]) isNotEqualTo ""}) then { _d setVariable ["COMSPEC_DroneLock", "", true]; };
+    ["comspec_atak_native_droneCmd", [_d, _cmd, _args], _d] call CBA_fnc_targetEvent;
+};
 private _say = { params ["_lvl", "_txt"]; [_lvl, _txt, 4, 40] call comspec_atak_native_fnc_notify; };
 // Charges acceptées : chargeur de l'inventaire → munition déclenchée à l'impact.
 private _payloads = [
@@ -57,6 +66,7 @@ switch (_act) do {
         if (_owner isNotEqualTo "" && {_owner isNotEqualTo getPlayerUID player}) exitWith { ["WARNING", "Ce drone est déjà appairé à un autre téléphone"] call _say; };
         if (!isNull _d && {_d isNotEqualTo _new}) then { ["unpair"] call comspec_atak_native_fnc_droneAction; };
         _new setVariable ["COMSPEC_DroneOwner", getPlayerUID player, true];
+        _new setVariable ["COMSPEC_DroneLock", "", true];
         _new setVariable ["COMSPEC_DroneSide", side group player, true];
         _new setVariable ["COMSPEC_DroneAlt", _s getOrDefault ["droneAlt", 40], true];
         _new setVariable ["COMSPEC_DroneSpd", _s getOrDefault ["droneSpd", 40], true];
@@ -69,7 +79,7 @@ switch (_act) do {
         call _render;
     };
     case "unpair": {
-        if (!isNull _d) then { _d setVariable ["COMSPEC_DroneOwner", "", true]; };
+        if (!isNull _d) then { _d setVariable ["COMSPEC_DroneOwner", "", true]; _d setVariable ["COMSPEC_DroneLock", nil, true]; };
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
         if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", "comspec_dronecam"]; camDestroy _cam; };
         missionNamespace setVariable ["COMSPEC_ATAK_DroneCam", objNull];
@@ -93,6 +103,13 @@ switch (_act) do {
             case "land": { ["land"] call _send; };
             case "hunt": { ["hunt", [_s getOrDefault ["droneHuntRad", 250], player]] call _send; };
         };
+        call _render;
+    };
+    case "manual": {
+        if (isNull _d || {!(call _needLink)}) exitWith {};
+        _d setVariable ["COMSPEC_DroneLock", getPlayerUID player, true];
+        ["manual"] call _send;
+        ["INFO", "Pilotage manuel : connectez votre terminal UAV. Un ordre du téléphone reprend la main."] call _say;
         call _render;
     };
     case "player": { _s set ["droneFollowUid", _arg]; call _render; };

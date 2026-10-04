@@ -48,6 +48,7 @@ private _conf = _s getOrDefault ["droneConfirm", ["", 0]];
 private _confirming = { params ["_k"]; (_conf select 0) isEqualTo _k && {diag_tickTime - (_conf select 1) < 5} };
 
 if (_camOn) then { _rows pushBack ["image", "#(argb,512,512,1)r2t(comspec_dronecam,1.0)"]; };
+if (_m isEqualTo "MANUAL") then { _rows pushBack ["text", "<t color='#f2ab33'>Pilotage manuel : vous seul pouvez connecter un terminal UAV à ce drone. Le moindre ordre du téléphone reprend la main et déconnecte le terminal.</t>"]; };
 _rows append [
     ["segment", "Vol", [
         ["STATIONNAIRE", ["mode", "hover"] call _act, _m isEqualTo "HOVER"],
@@ -57,7 +58,7 @@ _rows append [
     ]],
     ["segment", "Altitude", ([15, 30, 60, 100, 150] apply { [format ["%1 m", _x], ["alt", _x] call _act, _alt isEqualTo _x] })],
     ["segment", "Vitesse", ([20, 40, 60, 90] apply { [format ["%1 km/h", _x], ["speed", _x] call _act, _spd isEqualTo _x] })],
-    ["buttons", [[["CAMÉRA", "COUPER LA CAMÉRA"] select _camOn, ["cam"] call _act, _camOn]]],
+    ["buttons", [[["CAMÉRA", "COUPER LA CAMÉRA"] select _camOn, ["cam"] call _act, _camOn], ["PILOTAGE MANUEL", ["manual"] call _act, _m isEqualTo "MANUAL"]]],
     ["section", "Suivre un joueur", "Le drone se place 15 m derrière lui"]
 ];
 private _others = (allPlayers select { alive _x && {_x isNotEqualTo player} && {(side group _x) isEqualTo (side group player)} && {(_x distance _d) < 2000} }) apply { [_x distance _d, _x] };

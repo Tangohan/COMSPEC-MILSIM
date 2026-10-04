@@ -265,6 +265,29 @@ addMissionEventHandler ["Ended", { ["MusicStop"] call comspec_atak_native_fnc_ex
 
 // Détecteur de drones : balayage automatique en fond (réglage de l'app).
 [{ if (profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false]) then { ["auto"] call comspec_atak_native_fnc_droneDetectScan; }; }, 5] call CBA_fnc_addPerFrameHandler;
+// Drones pilotés au téléphone : terminal UAV interdit sauf au pilote en mode manuel (COMSPEC_DroneLock).
+// Appliqué toutes les 0,5 s pour primer sur les mods qui réactivent la connexion (Mavic).
+[{
+    private _blocked = missionNamespace getVariable ["COMSPEC_ATAK_UavBlocked", []];
+    private _uid = getPlayerUID player;
+    {
+        private _lock = _x getVariable "COMSPEC_DroneLock";
+        if (!isNil "_lock" && {_lock isNotEqualTo _uid}) then {
+            player disableUAVConnectability [_x, true];
+            if ((getConnectedUAV player) isEqualTo _x) then {
+                player connectTerminalToUAV objNull;
+                ["WARNING", "Drone piloté depuis un téléphone : terminal déconnecté", 4, 40] call comspec_atak_native_fnc_notify;
+            };
+            _blocked pushBackUnique _x;
+        };
+    } forEach allUnitsUAV;
+    // Verrou levé ou rendu à ce joueur : connexion rétablie une fois.
+    {
+        private _lock = _x getVariable "COMSPEC_DroneLock";
+        if (isNull _x || {isNil "_lock"} || {_lock isEqualTo _uid}) then { if (!isNull _x) then { player enableUAVConnectability [_x, true]; }; _blocked set [_forEachIndex, objNull]; };
+    } forEach _blocked;
+    missionNamespace setVariable ["COMSPEC_ATAK_UavBlocked", _blocked - [objNull]];
+}, 0.5] call CBA_fnc_addPerFrameHandler;
 // Rejeu de mission : une image toutes les 10 s, et les pertes amies avec leur position.
 [{ [] call comspec_atak_native_fnc_aarRecord; }, 10] call CBA_fnc_addPerFrameHandler;
 addMissionEventHandler ["EntityKilled", {
