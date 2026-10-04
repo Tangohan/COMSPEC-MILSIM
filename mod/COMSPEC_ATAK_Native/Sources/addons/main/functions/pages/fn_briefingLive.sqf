@@ -36,6 +36,14 @@ switch (_act) do {
         // Présence : seulement quand le téléphone est sur le briefing et suit le présentateur.
         private _at = ["", netId _pres] select (_follow && _onPage);
         if ((player getVariable ["COMSPEC_ATAK_BriefAt", ""]) isNotEqualTo _at) then { player setVariable ["COMSPEC_ATAK_BriefAt", _at, true]; };
+        // Présence vue sur Athena (page briefing) : toutes les 30 s pour qui suit ou présente, téléphone ouvert sur le briefing.
+        if (_onPage && {_follow || {_pres isEqualTo player}} && {!isNil "comspec_overwatch_connect_fnc_extResult"} && {time - (uiNamespace getVariable ["COMSPEC_ATAK_BriefBeat", -100]) > 30}) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_BriefBeat", time];
+            [format ["%1 · %2", [player, true] call comspec_atak_native_fnc_unitCallsign, name player], getPlayerUID player] spawn {
+                params ["_label", "_key"];
+                ["COMSPECExtension" callExtension ["BriefingPresence", [_label, _key]]] call comspec_overwatch_connect_fnc_extResult;
+            };
+        };
         if (!_follow) exitWith {};
         private _slides = missionNamespace getVariable ["COMSPEC_BriefingSlides", []];
         private _i = _slides findIf { (_x select 0) isEqualTo (_live select 2) };

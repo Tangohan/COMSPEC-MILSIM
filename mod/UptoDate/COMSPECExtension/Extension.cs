@@ -3953,6 +3953,61 @@ public static partial class Extension
                 catch { return "ERR|bad_json"; }
                 return "OK|" + lines.ToString();
             }
+            // Présence au briefing (téléphone qui suit le présentateur) : vue sur la page briefing d'Athena.
+            // Args : [libellé, clé client] → OK|nombre de présents
+            if (function == "BriefingPresence")
+            {
+                var label = args.Length > 0 ? (args[0] ?? "").Trim() : "";
+                var key = args.Length > 1 ? (args[1] ?? "").Trim() : "";
+                var json = "{\"label\":\"" + EscapeJson(label) + "\",\"client_key\":\"" + EscapeJson(key) + "\",\"source\":\"arma\"}";
+                var resp = SendJsonPost(_baseUrl + "/api/atak/briefing-presence", json, token);
+                var body = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
+                try
+                {
+                    using var doc = JsonDocument.Parse(body);
+                    return "OK|" + (doc.RootElement.TryGetProperty("count", out var c) && c.TryGetInt32(out var n) ? n : 0);
+                }
+                catch { return "OK|0"; }
+            }
+            // Questions sur une diapositive : liste, ou ajout puis liste si un texte est fourni.
+            // Args : [id diapositive, texte (vide = lecture), auteur] → lignes id\tauteur\tdate\ttexte
+            if (function == "BriefingComments" && args.Length >= 1)
+            {
+                var slideId = (args[0] ?? "").Trim();
+                if (!int.TryParse(slideId, out var sid) || sid <= 0) return "ERR|bad_slide";
+                var text = args.Length > 1 ? (args[1] ?? "").Trim() : "";
+                var author = args.Length > 2 ? (args[2] ?? "").Trim() : "";
+                var url = _baseUrl + "/api/atak/briefing-slides/" + sid + "/comments";
+                var resp = text.Length > 0
+                    ? SendJsonPost(url, "{\"body\":\"" + EscapeJson(text) + "\",\"author_label\":\"" + EscapeJson(author) + "\",\"source\":\"arma\"}", token)
+                    : SendGet(url, token);
+                var body = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 503) return "ERR|unavailable";
+                    return "ERR|http_" + code;
+                }
+                var sb = new StringBuilder();
+                try
+                {
+                    using var doc = JsonDocument.Parse(body);
+                    if (doc.RootElement.TryGetProperty("comments", out var arr) && arr.ValueKind == JsonValueKind.Array)
+                        foreach (var el in arr.EnumerateArray())
+                        {
+                            string C(string k) => el.TryGetProperty(k, out var v)
+                                ? (v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "") : v.GetRawText()).Replace("\t", " ").Replace("\r", "").Replace("\n", " ").Replace("|", "/").Trim()
+                                : "";
+                            var line = string.Join("\t", C("id"), C("author"), C("created_at"), C("body")) + "\n";
+                            if (Encoding.UTF8.GetByteCount(sb.ToString()) + Encoding.UTF8.GetByteCount(line) > MaxOutputBytes - 8) break;
+                            sb.Append(line);
+                        }
+                }
+                catch { return "ERR|bad_json"; }
+                return "OK|" + sb.ToString();
+            }
             // Équipes de feu (mission ATAK). Format tabulaire SQF-friendly :
             // une ligne par équipe : id\tlabel\tcolor\tmapId\tkind\tmemberCount
             // puis lignes membres préfixées "M\t" : M\tteamId\tcallsign\trole\tdisplayName

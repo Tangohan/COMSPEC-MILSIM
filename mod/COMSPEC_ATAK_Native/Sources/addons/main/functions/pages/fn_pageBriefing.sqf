@@ -28,10 +28,41 @@ private _btn = {
 };
 
 // Onglets
-private _tw = (_gw - 2 * _pad) / 2;
+private _tw = (_gw - 2 * _pad) / 3;
+private _qn = count ((uiNamespace getVariable ["COMSPEC_ATAK_BriefQ", createHashMap]) getOrDefault ["list", []]);
 [[_pad, _pad, _tw - _pad / 6, _rowH], "DIAPOSITIVES", { ["tab", "SLIDES"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "SLIDES"] call _btn;
-[[_pad + _tw, _pad, _tw - _pad / 6, _rowH], "MISSION", { ["tab", "MISSION"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "MISSION"] call _btn;
+[[_pad + _tw, _pad, _tw - _pad / 6, _rowH], ["QUESTIONS", format ["QUESTIONS (%1)", _qn]] select (_qn > 0), { ["tab", "QUESTIONS"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "QUESTIONS"] call _btn;
+[[_pad + 2 * _tw, _pad, _tw - _pad / 6, _rowH], "MISSION", { ["tab", "MISSION"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "MISSION"] call _btn;
 private _y0 = _pad * 2 + _rowH;
+
+// Questions sur la diapositive en cours : gardées sur Athena (commentaires de la diapositive), le présentateur est prévenu.
+if (_tab isEqualTo "QUESTIONS") exitWith {
+    ([] call comspec_atak_native_fnc_briefingSignature) params ["_src", "_idx", "_total"];
+    private _slide = if (_src isEqualTo "ATHENA" && {_total > 0}) then { (missionNamespace getVariable ["COMSPEC_BriefingSlides", []]) select _idx } else { [] };
+    private _rows = [];
+    if ((count _slide) isEqualTo 0) then {
+        _rows pushBack ["text", "<t color='#8a9a93'>Les questions portent sur une diapositive Athena. Ouvrez l'onglet DIAPOSITIVES et touchez ACTUALISER.</t>"];
+    } else {
+        private _q = uiNamespace getVariable ["COMSPEC_ATAK_BriefQ", createHashMap];
+        if ((_q getOrDefault ["slide", -1]) isNotEqualTo (_slide select 0)) then {
+            [{ ["questions", _this] call comspec_atak_native_fnc_briefingAction; }, _slide select 0] call CBA_fnc_execNextFrame;
+        };
+        private _esc = { params ["_t"]; { _t = [_t, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]]; _t };
+        _rows append [
+            ["section", format ["Diapositive %1 : %2", _idx + 1, _slide select 1], "Questions gardées sur Athena avec la diapositive"]
+        ];
+        private _list = _q getOrDefault ["list", []];
+        if ((_q getOrDefault ["err", ""]) isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e0a040'>%1</t>", _q get "err"]]; };
+        if ((count _list) isEqualTo 0 && {(_q getOrDefault ["err", ""]) isEqualTo ""}) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucune question sur cette diapositive.</t>"]; };
+        { _x params ["", "_author", "_when", "_body"]; _rows pushBack ["text", format ["<t font='RobotoCondensedBold' color='#9be3a5'>%1</t> <t size='0.75' color='#8a9a93'>%2</t><br/>%3", [_author] call _esc, (_when splitString " ") param [1, _when], [_body] call _esc]]; } forEach _list;
+        _rows append [
+            ["memo", "briefQ", "Votre question", uiNamespace getVariable ["COMSPEC_ATAK_BriefQDraft", ""]],
+            ["buttons", [["ENVOYER", { ["ask"] call comspec_atak_native_fnc_briefingAction; }, true], ["ACTUALISER", { ["questions", -1] call comspec_atak_native_fnc_briefingAction; }]]]
+        ];
+    };
+    [_rows, [0, _y0, _bw, _bh - _y0]] call comspec_atak_native_fnc_formRender;
+    true
+};
 
 if (_tab isEqualTo "MISSION") exitWith {
     private _h = { params ["_t"]; format ["<t color='#5cc76b' size='0.85' font='RobotoCondensedBold'>%1</t>", toUpper _t] };

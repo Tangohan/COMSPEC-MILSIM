@@ -243,6 +243,15 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     ["BRIEFING"] call comspec_atak_native_fnc_pageRender;
 }, 1] call CBA_fnc_addPerFrameHandler;
 
+// Question posée pendant ma présentation : alerte sur mon téléphone.
+["comspec_atak_native_briefQ", {
+    params ["_who", "_txt"];
+    ["MESSAGE", format ["Question de %1 : %2", _who, [_txt, (_txt select [0, 80]) + "…"] select ((count _txt) > 80)], 8, 50] call comspec_atak_native_fnc_notify;
+    [] call comspec_atak_native_fnc_vibrate;
+    private _q = uiNamespace getVariable ["COMSPEC_ATAK_BriefQ", createHashMap];
+    _q set ["slide", -2];
+}] call CBA_fnc_addEventHandler;
+
 // Briefing présenté en direct : suivre le présentateur de mon camp, signaler ma présence.
 [{ ["tick"] call comspec_atak_native_fnc_briefingLive; }, 2] call CBA_fnc_addPerFrameHandler;
 
