@@ -2350,6 +2350,14 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/explosive-timers/commands', [AtakApiController::class, 'explosiveTimersCommands']);
     $router->post('/api/atak/explosive-timers/detonate-all', [AtakApiController::class, 'explosiveTimersDetonateAll']);
     $router->post('/api/atak/explosive-timers/{id}/detonate', [AtakApiController::class, 'explosiveTimersDetonate']);
+    // Commandes du poste web vers les téléphones (drones appairés, charges suivies) et notifications de MON téléphone ATAK
+    $router->get('/api/atak/web-commands', [\App\Controllers\Api\AtakWebCommandApiController::class, 'index']);
+    $router->post('/api/atak/web-commands/uav', [\App\Controllers\Api\AtakWebCommandApiController::class, 'uav']);
+    $router->post('/api/atak/web-commands/explo', [\App\Controllers\Api\AtakWebCommandApiController::class, 'explo']);
+    $router->post('/api/atak/web-commands/{id}/cancel', [\App\Controllers\Api\AtakWebCommandApiController::class, 'cancel']);
+    $router->get('/api/atak/my-phone/notifs', [\App\Controllers\Api\AtakWebCommandApiController::class, 'myNotifs']);
+    $router->post('/api/atak/my-phone/notifs/read', [\App\Controllers\Api\AtakWebCommandApiController::class, 'myNotifsRead']);
+    $router->post('/api/atak/my-phone/notif-prefs', [\App\Controllers\Api\AtakWebCommandApiController::class, 'myNotifPrefs']);
     $router->get('/api/atak/sse-case-overlay', [AtakApiController::class, 'sseCaseOverlay']);
     $router->post('/api/atak/sse-tracks', [AtakApiController::class, 'sseTrackStore']);
     $router->get('/api/nine-line', [AtakApiController::class, 'nineLineIndex']);
@@ -2673,4 +2681,17 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/ui-tours/dismiss', [UiTourController::class, 'dismiss'], [AuthMiddleware::class]);
     $router->post('/api/back-office/forum-moderation', [\App\Controllers\Admin\ForumModerationAdminApiController::class, 'handle'], [AuthMiddleware::class]);
     $router->post('/api/admin/forum-moderation', [\App\Controllers\Admin\ForumModerationAdminApiController::class, 'handle'], [AuthMiddleware::class]);
+    // App Discord du téléphone ATAK : message court publié dans le salon relié sur Athena (lien jamais envoyé au jeu).
+    $router->post('/api/atak/discord/send', [\App\Controllers\Api\AtakDiscordApiController::class, 'send']);
+    // Parc de terminaux · téléphones des opérateurs : type de numéro, numéro, IMEI, MAC gardés dans Athena.
+    $router->post('/back-office/atak/realisme/telephones/{userId}/enregistrer', [\App\Controllers\Admin\AdminAtakPhonesController::class, 'save'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/realisme/telephones/{userId}/regenerer', [\App\Controllers\Admin\AdminAtakPhonesController::class, 'regenerate'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    // Overwatch Beta — alertes tactiques et balises, applications synchronisées, fil de renseignement, anneaux de géolocalisation.
+    $router->get('/api/atak/overwatch/alerts', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'alerts']);
+    $router->post('/api/atak/overwatch/alerts/ack', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'alertAck']);
+    $router->get('/api/atak/overwatch/apps-sync', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'appsSync']);
+    $router->get('/api/atak/overwatch/intel-feed', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'intelFeed']);
+    $router->get('/api/atak/overwatch/geoloc-rings', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'ringsIndex']);
+    $router->post('/api/atak/overwatch/geoloc-rings', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'ringsStore']);
+    $router->post('/api/atak/overwatch/geoloc-rings/{id}/supprimer', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'ringsDelete']);
 };

@@ -119,6 +119,10 @@ final class AtakTelemetryBatchIngest
                     'salute' => $this->handleTrackEvent($tenantId, $mapId, $ev, $actorCallSign, 'salute'),
                     'bda' => $this->handleTrackEvent($tenantId, $mapId, $ev, $actorCallSign, 'bda'),
                     'bda_confirm' => $this->handleTrackEvent($tenantId, $mapId, $ev, $actorCallSign, 'bda_confirm'),
+                    // Téléphone en jeu : batterie, état, modèle (back-office, Parc de terminaux).
+                    'phone', 'phone_state' => (new \App\Services\Game\GamePhoneTelemetry())->ingest($tenantId, $ev, $actorCallSign),
+                    // Résultat GÉOLOC du téléphone : cercle de probabilité sur la carte Overwatch Beta.
+                    'geoloc' => (new \App\Repositories\OverwatchIntelRepository())->ingestTelemetryGeoloc($tenantId, $mapId, $ev, $actorCallSign),
                     default => ['ok' => false, 'error' => 'unsupported_type', 'http' => 422],
                 };
             } catch (\Throwable $e) {

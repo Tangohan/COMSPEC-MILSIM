@@ -105,7 +105,7 @@ private _info = ["COMSPEC_RscStructuredText", [_vx + _pad * 2, _vy + _pad * 1.6,
 _info ctrlSetStructuredText parseText format ["<t size='0.8' font='EtelkaMonospacePro' color='#c9d4cf'>%1</t><t size='0.8' align='right' font='EtelkaMonospacePro' color='#c9d4cf'>%2°  %3</t>",
     [getPosASL player, 8] call comspec_atak_native_fnc_gridRef, round getDir player, [dayTime, "HH:MM"] call BIS_fnc_timeToString];
 private _tip = ["COMSPEC_RscStructuredText", [_vx + _pad * 2, _vy + _vh - _pad * 1.6 - _fs * 1.4, _vw - _pad * 4, _fs * 1.4]] call _mk;
-_tip ctrlSetStructuredText parseText "<t size='0.75' align='center' color='#8a9a93'>Clic gauche : photographier · Espace : revenir au téléphone</t>";
+_tip ctrlSetStructuredText parseText format ["<t size='0.75' align='center' color='#8a9a93'>Clic : photo · molette : zoom · F : flash %1 · R : selfie · Espace : retour</t>", createHashMapFromArray [["AUTO", "auto"], ["ON", "forcé"], ["OFF", "coupé"]] getOrDefault [(uiNamespace getVariable ["COMSPEC_ATAK_PhotoSt", createHashMap]) getOrDefault ["flash", "AUTO"], "auto"]];
 // Déclencheur sous le viseur, centré comme dans une appli photo : anneau blanc, disque d'accent, icône.
 private _sh = (_font * 3.2) min (_vh * 0.45);
 private _sw = _sh * _ratio;

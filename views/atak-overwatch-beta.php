@@ -66,6 +66,7 @@ $icon = static function (string $path): string {
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/vendor/maplibre-gl/maplibre-gl.css">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-beta.css?v=<?= $h($owAsset) ?>">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-orbat.css?v=<?= $h($owAsset) ?>">
+  <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-intel.css?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-intel.css')) ?>">
   <link rel="stylesheet" href="<?= $h($base) ?>/assets/css/atak-overwatch-refresh.css?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/css/atak-overwatch-refresh.css')) ?>">
   <style>.ow-map-tools{display:none!important}</style>
   <script>
@@ -434,6 +435,10 @@ $icon = static function (string $path): string {
         <p class="ow-help">Réglages propres à ce poste. Les villes et routes n’apparaissent que si le jeu les a déjà transmises.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-geo-remember" checked> Mémoriser les calques villes et routes</label>
         <label class="ow-toggle"><input type="checkbox" id="ow-geo-labels" checked> Afficher les noms des localités</label>
+        <p class="ow-kicker">Anneaux de géolocalisation</p>
+        <div id="owi-geoloc-host"></div>
+        <p class="ow-kicker">Mon curseur</p>
+        <div id="owi-cursor-host"></div>
         <p class="ow-kicker">Liaison ATAK</p>
         <p class="ow-help">Les alertes ci-dessous sonnent uniquement sur ce poste.</p>
         <label class="ow-toggle"><input type="checkbox" id="ow-geofence" checked> Alerte entrée / sortie de zone</label>
@@ -1114,6 +1119,7 @@ $icon = static function (string $path): string {
 <script src="<?= $h($base) ?>/assets/js/overwatch-gl/OverwatchTileCache.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-reach-overlay.js?v=<?= $h($assetVer) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-beta.js?v=<?= $h($owAsset) ?>"></script>
+<script src="<?= $h($base) ?>/assets/js/atak-overwatch-intel.js?v=<?= $h($owAsset . '.' . (int) @filemtime(dirname(__DIR__) . '/public/assets/js/atak-overwatch-intel.js')) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-orbat.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-overwatch-support-auto.js?v=<?= $h($owAsset) ?>"></script>
 <script src="<?= $h($base) ?>/assets/js/atak-unit-dossier.js?v=<?= $h($assetVer) ?>"></script>

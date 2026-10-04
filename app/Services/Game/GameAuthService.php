@@ -627,6 +627,8 @@ final class GameAuthService
         } catch (\Throwable) {
             // Téléphone calculé par le mod si la base n'est pas prête.
         }
+        // Un réglage du back-office (numéro, format, IMEI, MAC) fait avancer la révision : SyncProfile le relit.
+        $rev = max($rev, (int) ($phone['revision'] ?? 0));
 
         return [
             'session' => [

@@ -7875,6 +7875,8 @@ class AtakApiController
             if (is_array($row)) {
                 $row['tactical'] = $tactical;
             }
+            // Recopie Discord des alertes graves (opérateur à terre / panique), si la communauté l'a activée.
+            \App\Services\Atak\AtakDiscordService::mirrorTacticalAlert((int) $tenantId, $tactical);
             $tacSummary = TacticalAlertParser::activityLabel($tactical);
             $tacMeta = array_merge($chatActivityMeta, [
                 'kind' => (string) ($tactical['kind'] ?? ''),
@@ -10572,6 +10574,11 @@ class AtakApiController
             if ($actor instanceof Response) {
                 return $actor;
             }
+            // Commandes web → jeu : compte rendu du téléphone et miroir de ses notifications (même canal).
+            $webCmd = AtakWebCommandApiController::ingestFromGame($tenantId, $this->jsonBody($request), $actor['steam_uid'] ?? null);
+            if ($webCmd !== null) {
+                return $webCmd;
+            }
         }
         if (!$this->explosiveTimers()->tablesReady()) {
             return Response::json([
@@ -10627,12 +10634,14 @@ class AtakApiController
         }
         $tenantId = $r;
         $mapId = $this->mapId($request);
+        // Commandes web → jeu (drones, charges, téléphone) : lignes charge_id « @wc » sur le même poll.
+        $webRows = AtakWebCommandApiController::wireRowsForGame($tenantId, $mapId);
         if (!$this->explosiveTimers()->tablesReady()) {
-            return Response::json(['commands' => []]);
+            return Response::json(['commands' => $webRows]);
         }
 
         return Response::json([
-            'commands' => $this->explosiveTimers()->listPendingDetonations($tenantId, $mapId),
+            'commands' => array_merge($this->explosiveTimers()->listPendingDetonations($tenantId, $mapId), $webRows),
         ]);
     }
 

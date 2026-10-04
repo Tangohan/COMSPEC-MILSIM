@@ -37,12 +37,19 @@ final class AdminAtakRealismController
         $this->realismRepository->repairCorruptIdentitiesForTenant($tenantId);
         $this->realismRepository->persistWebSessionClassification($tenantId);
         $split = AtakRealismRepository::partitionTerminals($this->realismRepository->listTerminals($tenantId));
+        // Téléphones en jeu (numéro, IMEI, MAC, batterie) : volet « Téléphones des opérateurs ».
+        try {
+            $gamePhones = (new \App\Repositories\GamePhoneIdentityRepository())->listForTenant($tenantId);
+        } catch (\Throwable) {
+            $gamePhones = [];
+        }
 
         return Response::view('layout.main', [
             'content' => 'admin.atak_realism.index',
             'title' => 'Parc de terminaux',
             'atakRealismTerminals' => $split['physical'],
             'atakRealismWebSessions' => $split['web'],
+            'atakGamePhones' => $gamePhones,
             'canManageAtakTerminals' => ModuleFeatureAccess::allows(RolePermissionMatrixCatalog::MODULE_ATAK, 'manage'),
             'csrfToken' => Csrf::token(),
         ]);

@@ -25,14 +25,44 @@
       "route"   [[positions ASL...], "ONCE" | "LOOP" | "PINGPONG"]   route tracée sur la carte : une fois puis
                                             stationnaire, en boucle, ou en aller-retour (CQB respecté).
     "hunt" accepte aussi [rayon, pilote, centre ASL, zone inArea] : recherche sur une zone tracée sur la carte.
+      "standby" ["LAND" | "HOVER"]          veille : se pose (moteurs coupés une fois au sol) ou tient le stationnaire ;
+                                            consommation réduite (2 %/h posé, 10 %/h en stationnaire), pas de capteur ;
+                                            n'importe quel ordre de vol l'en sort (le téléphone renvoie l'ordre d'avant) ;
+      "force"   [ordre, arguments]          FORCER L'EXÉCUTION : équipage IA recréé s'il manque, points de passage du groupe
+                                            effacés, déplacement IA réactivé, altitude et vitesse réappliquées, puis l'ordre
+                                            est rejoué normalement (il refait son doMove).
+    Ordres traités ailleurs que là où le drone est local (même événement, avant le contrôle de localité) :
+      "relocal" [ordre, arguments]          sur le serveur seulement : si l'équipage IA n'est pas local à la même machine que
+                                            le drone, le groupe y est déplacé (setGroupOwner), puis "force" y est renvoyé ;
+      "transferIn" [nom, uid cible, point de décollage ASL, "HELLO" | "DONE"]   sur le client du joueur qui reçoit le drone
+                                            (événement visé sur son unité) : "HELLO" annonce la liaison, "DONE" appaire le drone
+                                            chez lui (fn_droneAction "transferIn").
     Variables publiques du drone : COMSPEC_DroneMode, COMSPEC_DroneAlt, COMSPEC_DroneSpd, COMSPEC_DroneArmed (munition),
     COMSPEC_DroneSide (camp du pilote), COMSPEC_DroneCqb (profil CQB), COMSPEC_DroneTgt (position ASL visée, pour la carte),
     COMSPEC_DroneTask ([tâche, position ASL, rayon] de la tâche en cours, [] sinon),
     COMSPEC_DroneRoute ([positions, mode, étape en cours] de la route, pour la carte),
-    COMSPEC_DroneEvt ([n°, type, position ASL, quoi] : dernier événement de la recherche, lu par le journal du pilote).
+    COMSPEC_DroneEvt ([n°, type, position ASL, quoi] : dernier événement de la recherche, lu par le journal du pilote),
+    COMSPEC_DroneAckN (compteur d'ordres traités), COMSPEC_DroneStandby ("LAND" | "HOVER" en veille), COMSPEC_DroneForced (time du
+    dernier FORCER L'EXÉCUTION). Posées par le téléphone : COMSPEC_DroneOwner, COMSPEC_DroneLock, COMSPEC_DroneName, COMSPEC_DroneIcon.
 */
 params [["_d", objNull], ["_cmd", "hover"], ["_args", []]];
+// Transfert d'appairage : reçu sur le client du nouveau pilote (l'événement vise son unité, pas le drone).
+if (_cmd isEqualTo "transferIn") exitWith {
+    _args params [["_from", ""], ["_uid", ""], ["_home", []], ["_stage", "DONE"]];
+    if (!hasInterface || {isNull _d} || {!alive _d} || {getPlayerUID player isNotEqualTo _uid}) exitWith {};
+    ["transferIn", [_d, _from, _home, _stage]] call comspec_atak_native_fnc_droneAction;
+};
+// Localité : drone et équipage IA sur deux machines différentes (terminal UAV connecté puis lâché, joueur parti...).
+if (_cmd isEqualTo "relocal") exitWith {
+    if (!isServer || {isNull _d} || {!alive _d}) exitWith {};
+    private _drv = driver _d;
+    if (isNull _drv || {(groupOwner group _drv) isEqualTo (owner _d)}) exitWith {};
+    (group _drv) setGroupOwner (owner _d);
+    [{ ["comspec_atak_native_droneCmd", [_this select 0, "force", _this select 1], _this select 0] call CBA_fnc_targetEvent; }, [_d, _args], 1.5] call CBA_fnc_waitAndExecute;
+};
 if (isNull _d || {!alive _d} || {!local _d}) exitWith {};
+// Accusé de réception pour la surveillance du téléphone (ordre resté sans effet → reprise).
+_d setVariable ["COMSPEC_DroneAckN", (_d getVariable ["COMSPEC_DroneAckN", 0]) + 1, true];
 private _alt = _d getVariable ["COMSPEC_DroneAlt", 40];
 private _spd = _d getVariable ["COMSPEC_DroneSpd", 40];
 private _setMode = { params ["_m"]; _d setVariable ["COMSPEC_DroneMode", _m, true]; _d setVariable ["COMSPEC_DroneTask", [], true]; _d setVariable ["COMSPEC_DroneRoute", [], true]; _d setVariable ["COMSPEC_DroneLoop", (_d getVariable ["COMSPEC_DroneLoop", 0]) + 1]; };
@@ -55,14 +85,18 @@ private _routeNext = {
         default { [[_i + 1, -1] select ((_i + 1) >= _n), 1] };
     };
 };
-// Démarrage : IA de vol (comme un terminal qui prend le drone), moteurs, montée franche, puis l'ordre suit son cours.
+// Équipage IA (comme un terminal qui prend le drone), dans le camp du pilote.
+private _crew = {
+    if (!isNull driver _d && {alive driver _d}) exitWith {};
+    { if (!alive _x) then { _d deleteVehicleCrew _x; }; } forEach (crew _d);
+    createVehicleCrew _d;
+    private _side = _d getVariable ["COMSPEC_DroneSide", sideUnknown];
+    if (_side in [west, east, independent] && {(side group driver _d) isNotEqualTo _side}) then { (crew _d) joinSilent (createGroup [_side, true]); };
+};
+// Démarrage : IA de vol, moteurs, montée franche, puis l'ordre suit son cours.
 private _start = {
     if (((getPosATL _d) select 2) > 1 && {isEngineOn _d}) exitWith { false };
-    if (isNull driver _d) then {
-        createVehicleCrew _d;
-        private _side = _d getVariable ["COMSPEC_DroneSide", sideUnknown];
-        if (_side in [west, east, independent] && {(side group driver _d) isNotEqualTo _side}) then { (crew _d) joinSilent (createGroup [_side, true]); };
-    };
+    call _crew;
     _d land "NONE";
     _d engineOn true;
     _d flyInHeight [_d getVariable ["COMSPEC_DroneAlt", 40], true];
@@ -85,6 +119,28 @@ private _detonate = {
     _d setVariable ["COMSPEC_DroneArmed", "", true];
     _d setDamage 1;
 };
+// FORCER L'EXÉCUTION : on remet l'IA de vol d'aplomb, puis l'ordre est rejoué comme s'il arrivait.
+if (_cmd isEqualTo "force") then {
+    _args params [["_fc", "hover"], ["_fa", []]];
+    call _crew;
+    private _g = group driver _d;
+    if (!isNull _g) then {
+        for "_i" from ((count waypoints _g) - 1) to 0 step -1 do { deleteWaypoint [_g, _i]; };
+        { _x enableAI "MOVE"; _x enableAI "PATH"; } forEach (crew _d);
+        // Une IA en alerte se met à esquiver au lieu d'obéir : comportement « sans souci », comme un terminal UAV.
+        _g setBehaviour "CARELESS";
+    };
+    _d land "NONE";
+    if (((getPosATL _d) select 2) > 1) then { _d engineOn true; };
+    _d flyInHeight [_alt, true];
+    _d limitSpeed _spd;
+    _d doMove (getPosATL _d);
+    _d setVariable ["COMSPEC_DroneForced", time, true];
+    _cmd = _fc;
+    _args = _fa;
+};
+// Veille quittée par un ordre de vol : consommation normale.
+if (_cmd in ["takeoff", "hover", "follow", "home", "land", "hunt", "goto", "loiter", "observe", "escort", "route", "rth", "strike", "manual"]) then { _d setVariable ["COMSPEC_DroneStandby", nil, true]; };
 // Ordre de vol donné au sol : décollage d'abord (le retour au pilote d'un drone déjà posé ne le fait pas redécoller).
 if (_cmd in ["takeoff", "hover", "follow", "escort", "goto", "loiter", "observe", "strike", "hunt", "route"]) then { call _start; };
 // Profil CQB : l'IA de vol ne sait pas passer une porte, notre boucle prend la main ; les ordres « hauts » en sortent.
@@ -186,6 +242,28 @@ switch (_cmd) do {
         _d doMove (getPosATL _d);
     };
     case "land": { ["LAND"] call _setMode; _d land "LAND"; };
+    case "standby": {
+        _args params [["_kind", "LAND"]];
+        if !(_kind in ["LAND", "HOVER"]) then { _kind = "LAND"; };
+        ["STANDBY"] call _setMode;
+        _d setVariable ["COMSPEC_DroneStandby", _kind, true];
+        if (!isNull driver _d) then { (driver _d) enableAI "MOVE"; };
+        if (_kind isEqualTo "LAND") then { _d land "LAND"; } else { doStop _d; _d flyInHeight [_alt, true]; _d doMove (getPosATL _d); };
+        private _loop = _d getVariable ["COMSPEC_DroneLoop", 0];
+        [_d, _kind, _loop] spawn {
+            params ["_d", "_kind", "_loop"];
+            // Consommation de veille imposée : la batterie ne descend qu'au rythme de la veille, pas à celui du vol.
+            private _f0 = fuel _d;
+            private _t0 = time;
+            private _rate = [0.10, 0.02] select (_kind isEqualTo "LAND");
+            while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+                // Posé : moteurs coupés une fois au sol.
+                if (_kind isEqualTo "LAND" && {isEngineOn _d} && {((getPosATL _d) select 2) < 0.6} && {(speed _d) < 2}) then { _d engineOn false; };
+                _d setFuel ((_f0 - _rate * (time - _t0) / 3600) max 0);
+                sleep 5;
+            };
+        };
+    };
     case "manual": { ["MANUAL"] call _setMode; doStop _d; _d flyInHeight [_alt, true]; };
     case "rth": {
         _args params [["_home", getPosASL _d]];

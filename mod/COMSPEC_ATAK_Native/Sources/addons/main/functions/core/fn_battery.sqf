@@ -3,7 +3,8 @@
     Consommation par minute selon l'usage : veille, écran porté ou en main, mode nuit (écran sombre),
     appareil photo, live cam, guidage GPS, envois de données de la dernière minute, recherche de réseau
     quand le signal est faible, brouilleur actif ; multiplicateur serveur comspec_atak_native_battery_drain.
-    Recharge à bord d'un véhicule moteur allumé. Alertes à 20 % et 5 % ; à 0 % le téléphone s'éteint.
+    Recharge à bord d'un véhicule moteur allumé. Alertes à 20 % et 5 % ; à 0 % le téléphone s'éteint (animation fn_powerFx)
+    et reste inutilisable jusqu'à la recharge ou au changement de batterie (fn_batterySwap).
     Appelée chaque seconde écran ouvert (barre d'état) et toutes les 10 s sinon. Retourne le niveau 0–100.
     Détail de la dernière mesure : missionNamespace COMSPEC_ATAK_BatteryInfo = [% consommé par minute (négatif = recharge), [[facteur, % / min]...]].
 */
@@ -56,6 +57,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_Battery", _level];
 } forEach [20, 5];
 if (_old > 0 && {_level <= 0}) then {
     ["WARNING", "Batterie vide : le téléphone s'éteint", 6, 70] call comspec_atak_native_fnc_notify;
-    [{ [] call comspec_atak_native_fnc_close; }, [], 2] call CBA_fnc_waitAndExecute;
+    // Écran qui baisse, icône « batterie vide », puis noir et téléphone rangé (fn_powerFx).
+    ["empty"] call comspec_atak_native_fnc_powerFx;
 };
 _level

@@ -67,6 +67,13 @@ private _geoFix = {
     if (isPlayer _u && {missionNamespace getVariable ["comspec_atak_native_geoloc_warn", false]}) then {
         ["comspec_atak_native_geoWarn", [], _u] call CBA_fnc_targetEvent;
     };
+    // Le résultat (et non la vraie position) part au poste : cercle de probabilité sur la carte Overwatch.
+    if ([] call comspec_atak_native_fnc_bridge && {!isNil "comspec_overwatch_connect_fnc_emitTelemetryEvent"}) then {
+        ["geoloc", createHashMapFromArray [
+            ["x", _p select 0], ["y", _p select 1], ["radius", round _r], ["q", _e get "qn"],
+            ["label", format ["GÉOLOC %1", _e get "q"]], ["grid", [_p, 8] call comspec_atak_native_fnc_gridRef]
+        ], 1] call comspec_overwatch_connect_fnc_emitTelemetryEvent;
+    };
     true
 };
 private _geoAllowed = {

@@ -1,7 +1,8 @@
 /*
     App Drone : pilotage d'un drone posé par le joueur (quadricoptère ou drone de sac à dos).
     Appairage au pied du pilote, puis quatre onglets (clé droneTab de l'état) :
-      PILOTAGE : décollage, stationnaire, suivi, retour, atterrissage, profil CQB, altitude, vitesse, caméra, manuel ;
+      PILOTAGE : décollage, stationnaire, suivi, retour, atterrissage, veille, FORCER L'EXÉCUTION, profil CQB, altitude,
+                 vitesse, caméra, manuel ; nom, icône et transfert de l'appairage à un allié proche ;
       TÂCHES   : tâche sur point (grille ou carte) : aller, orbite, observer, escorte ; frappe ; recherche et frappe ;
       PISTES   : ce que voit la caméra du drone (pistes capteur) : viser, frapper, marquer ;
       JOURNAL  : chaque événement daté.
@@ -29,7 +30,7 @@ if (isNull _d) exitWith {
     if ((count _near) isEqualTo 0) then { _rows pushBack ["text", "<t color='#f2ab33'>Aucun drone posé à moins de 15 m de vous.</t>"]; };
     {
         _rows pushBack ["person", getText (configOf _x >> "picture"),
-            format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>À %2 m · batterie %3 %%</t>", getText (configOf _x >> "displayName"), round (player distance _x), round (100 * fuel _x)],
+            format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>À %2 m · batterie %3 %%</t>", [_x, [], "NAME"] call comspec_atak_native_fnc_droneOsd, round (player distance _x), round (100 * fuel _x)],
             [["APPAIRER", compile format ["['pair', objectFromNetId %1] call comspec_atak_native_fnc_droneAction;", str netId _x], true]]];
     } forEach _near;
     _rows pushBack ["buttons", [["ACTUALISER", { [{ ["DRONE"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
@@ -125,15 +126,25 @@ _rows pushBack ["segment", "", [
     ["JOURNAL", ["tab", "LOG"] call _act, _tab isEqualTo "LOG"]
 ]];
 
-// Joueurs alliés à moins de 2 km du drone (suivi et escorte).
-private _others = (allPlayers select { alive _x && {_x isNotEqualTo player} && {(side group _x) isEqualTo (side group player)} && {(_x distance _d) < 2000} }) apply { [_x distance _d, _x] };
+// Alliés à moins de 2 km du drone (suivi et escorte) : joueurs du même camp ou d'un camp ami, puis les équipiers IA
+// du groupe (seul en test, ou groupe mixte). Le pilote lui-même a son bouton ME SUIVRE.
+private _mySide = side group player;
+private _cand = allPlayers select {
+    alive _x && {_x isKindOf "CAManBase"} && {!(_x isKindOf "HeadlessClient_F")} && {_x isNotEqualTo player}
+    && {(side group _x) isEqualTo _mySide || {(side group _x) isNotEqualTo civilian && {[_mySide, side group _x] call BIS_fnc_sideIsFriendly}}}
+};
+{ _cand pushBackUnique _x; } forEach ((units group player) select { alive _x && {_x isNotEqualTo player} });
+private _others = (_cand select { (_x distance _d) < 2000 }) apply { [[1, 0] select (isPlayer _x), _x distance _d, _x] };
 _others sort true;
+_others = _others apply { [_x select 1, _x select 2] };
+// Identifiant d'une unité pour les ordres : uid d'un joueur, netId d'un équipier IA.
+private _idOf = { params ["_u"]; [netId _u, getPlayerUID _u] select (isPlayer _u) };
 private _playerRow = {
     params ["_u", "_dist", "_label", "_on", "_code"];
     private _pic = [_u] call comspec_atak_native_fnc_avatarPath;
     private _veh = ["", format [" · à bord : %1", getText (configOf vehicle _u >> "displayName")]] select ((vehicle _u) isNotEqualTo _u);
     ["person", [_pic, "\z\comspec_atak_native\addons\main\data\app_profile.paa"] select (_pic isEqualTo ""),
-        format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · à %3 m du drone%4</t>", name _u, [_u] call comspec_atak_native_fnc_unitGroup, round _dist, _veh],
+        format ["<t font='RobotoCondensedBold'>%1</t>%5<br/><t size='0.8' color='#8a9a93'>%2 · à %3 m du drone%4</t>", name _u, [_u] call comspec_atak_native_fnc_unitGroup, round _dist, _veh, ["  <t size='0.75' color='#8a9a93'>IA</t>", ""] select (isPlayer _u)],
         [[_label, _code, !_on]]]
 };
 
@@ -163,7 +174,7 @@ switch (_tab) do {
             {
                 _x params ["_dist", "_u"];
                 private _on = _m isEqualTo "ESCORT" && {(_d getVariable ["COMSPEC_DroneFollow", objNull]) isEqualTo _u};
-                _rows pushBack ([_u, _dist, ["ESCORTER", "ESCORTÉ"] select _on, _on, ["escort", getPlayerUID _u] call _act] call _playerRow);
+                _rows pushBack ([_u, _dist, ["ESCORTER", "ESCORTÉ"] select _on, _on, ["escort", [_u] call _idOf] call _act] call _playerRow);
             } forEach (_others select [0, 6]);
             _rows pushBack ["buttons", [["ANNULER LA TÂCHE", ["taskClear"] call _act, false, _m isEqualTo "ESCORT"]]];
         } else {
@@ -258,6 +269,11 @@ switch (_tab) do {
             _rows pushBack ["buttons", [["DÉMARRER ET DÉCOLLER", ["takeoff"] call _act, true]]];
             _rows pushBack ["text", format ["<t size='0.85' color='#8a9a93'>Montée à %1 m puis stationnaire. Tout ordre de vol donné au sol fait aussi décoller le drone.</t>", _alt]];
         };
+        // Veille : posé ou stationnaire, peu de consommation, capteur coupé ; reprise d'un appui.
+        if (_m isEqualTo "STANDBY") then {
+            _rows pushBack ["text", format ["<t color='#8fb3c9'>En veille (%1) : consommation réduite, capteur et caméra coupés.</t>", ["stationnaire", "posé"] select ((_d getVariable ["COMSPEC_DroneStandby", "LAND"]) isEqualTo "LAND")]];
+            _rows pushBack ["buttons", [["REPRENDRE", ["resume"] call _act, true]]];
+        };
         if (_m isEqualTo "MANUAL") then { _rows pushBack ["text", "<t color='#f2ab33'>Pilotage manuel : vous seul pouvez connecter un terminal UAV à ce drone. Le moindre ordre du téléphone reprend la main et déconnecte le terminal.</t>"]; };
         _rows append [
             ["segment", "Vol", [
@@ -270,6 +286,9 @@ switch (_tab) do {
             ["segment", "Altitude", (([[15, 30, 60, 100, 150], [2, 3, 5, 8]] select _cqb) apply { [format ["%1 m", _x], ["alt", _x] call _act, _alt isEqualTo _x] })],
             ["segment", "Vitesse", (([[20, 40, 60, 90], [5, 10, 15]] select _cqb) apply { [format ["%1 km/h", _x], ["speed", _x] call _act, _spd isEqualTo _x] })],
             ["buttons", [[["CAMÉRA", "FERMER LA CAMÉRA"] select _camOn, ["cam"] call _act, _camOn], ["PILOTAGE MANUEL", ["manual"] call _act, _m isEqualTo "MANUAL"]]],
+            ["buttons", [["FORCER L'EXÉCUTION", ["force"] call _act, false]]],
+            ["text", format ["<t size='0.8' color='#8a9a93'>Le drone ne bouge pas ou n'obéit pas ? Renvoie « %1 », recrée l'IA de vol si besoin, efface ses points de passage, réapplique altitude et vitesse. Fait seul une fois si l'ordre n'avance pas pendant 10 s.</t>",
+                ((createHashMapFromArray [["takeoff", "décoller"], ["hover", "stationnaire"], ["follow", "suivre"], ["home", "retour au pilote"], ["land", "atterrir"], ["hunt", "recherche"], ["goto", "aller au point"], ["loiter", "orbite"], ["observe", "observer"], ["escort", "escorte"], ["route", "route"], ["rth", "retour au point de décollage"], ["strike", "frappe"], ["manual", "pilotage manuel"], ["standby", "veille"]]) getOrDefault [(missionNamespace getVariable ["COMSPEC_ATAK_DroneOrder", []]) param [0, "hover"], "stationnaire"])]],
             ["section", "Suivre un joueur", ["Le drone se place 15 m derrière lui", "Profil CQB : 5 m derrière lui, à hauteur d'homme"] select _cqb]
         ];
         if ((count _others) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun allié à moins de 2 km du drone.</t>"]; };
@@ -277,8 +296,38 @@ switch (_tab) do {
             _x params ["_dist", "_u"];
             private _on = _m isEqualTo "FOLLOW" && {(_d getVariable ["COMSPEC_DroneFollow", objNull]) isEqualTo _u};
             _rows pushBack ([_u, _dist, ["SUIVRE", "SUIVI"] select _on, _on,
-                compile format ["['player', %1] call comspec_atak_native_fnc_droneAction; ['mode', 'player'] call comspec_atak_native_fnc_droneAction;", str getPlayerUID _u]] call _playerRow);
+                compile format ["['player', %1] call comspec_atak_native_fnc_droneAction; ['mode', 'player'] call comspec_atak_native_fnc_droneAction;", str ([_u] call _idOf)]] call _playerRow);
         } forEach (_others select [0, 6]);
+        // Veille (hors veille) : le pilote choisit se poser ou rester en l'air.
+        if (_m isNotEqualTo "STANDBY") then {
+            private _sk = _s getOrDefault ["droneStandbyKind", "LAND"];
+            _rows append [
+                ["section", "Veille", "Consommation réduite, capteur coupé ; reprise de l'ordre en cours d'un appui"],
+                ["segment", "", [["SE POSER", ["standbyKind", "LAND"] call _act, _sk isEqualTo "LAND"], ["RESTER EN L'AIR", ["standbyKind", "HOVER"] call _act, _sk isEqualTo "HOVER"]]],
+                ["buttons", [["METTRE EN VEILLE", ["standby"] call _act, false, _m isNotEqualTo "STRIKE"]]]
+            ];
+        };
+        // Identité : nom et icône, vus sur la carte, dans l'en-tête, la vue caméra et par le poste de commandement.
+        private _icon = [_d, [], "ICONID"] call comspec_atak_native_fnc_droneOsd;
+        _rows append [
+            ["section", "Identité", format ["Modèle : %1", getText (configOf _d >> "displayName")]],
+            ["edit", "droneName", "Nom du drone (24 caractères, vide = nom du modèle)", _d getVariable ["COMSPEC_DroneName", ""]],
+            ["buttons", [["RENOMMER", { ["rename", ["droneName", ""] call comspec_atak_native_fnc_formValue] call comspec_atak_native_fnc_droneAction; }]]],
+            ["segment", "Icône", ([["QUADRI", "quad"], ["AILE", "fixed"], ["HEXA", "hexa"], ["NANO", "nano"], ["FPV", "fpv"]] apply { [_x select 0, ["icon", _x select 1] call _act, _icon isEqualTo (_x select 1)] })]
+        ];
+        // Transfert de l'appairage : alliés à moins de 50 m de vous, téléphone sur eux.
+        private _mates = (_cand select { isPlayer _x && {(_x distance player) < 50} && {[_x] call comspec_atak_native_fnc_hasDevice} }) apply { [_x distance player, _x] };
+        _mates sort true;
+        _rows pushBack ["section", "Transférer l'appairage", "À un allié à moins de 50 m portant un téléphone ; second appui pour confirmer"];
+        if ((count _mates) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun allié équipé d'un téléphone à moins de 50 m.</t>"]; };
+        {
+            _x params ["_dist", "_u"];
+            private _ck = format ["XFER:%1", getPlayerUID _u];
+            private _pic = [_u] call comspec_atak_native_fnc_avatarPath;
+            _rows pushBack ["person", [_pic, "\z\comspec_atak_native\addons\main\data\app_profile.paa"] select (_pic isEqualTo ""),
+                format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · à %3 m de vous</t>", name _u, [_u] call comspec_atak_native_fnc_unitGroup, round _dist],
+                [[["TRANSFÉRER", "CONFIRMER"] select ([_ck] call _confirming), ["transfer", getPlayerUID _u] call _act, [_ck] call _confirming]]];
+        } forEach (_mates select [0, 6]);
         _rows pushBack ["buttons", [["DÉSAPPAIRER", ["unpair"] call _act]]];
     };
 };

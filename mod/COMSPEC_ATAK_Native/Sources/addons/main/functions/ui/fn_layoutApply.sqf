@@ -48,6 +48,20 @@ private _ww = _iw * 3.6;
 [88527, [_dx + _dw - _pad - _iw, _iy, _iw, _ih]] call _set;
 [88526, [_dx + _dw - _pad * 2 - _iw - _ih / _ratio, _iy, _ih / _ratio, _ih]] call _set;
 { (_d displayCtrl _x) ctrlSetFontHeight _fontS; } forEach [88513, 88524];
+// Mémoire vive (« RAM nn % », mise à jour par fn_statusUpdate) : entre le logo de liaison et le GPS, si la place suffit.
+private _ram = uiNamespace getVariable ["COMSPEC_ATAK_RamCtrl", controlNull];
+if (isNull _ram || {(ctrlParent _ram) isNotEqualTo _d}) then {
+    _ram = _d ctrlCreate ["COMSPEC_RscTextRight", -1];
+    _ram ctrlSetTextColor [0.62, 0.70, 0.66, 1];
+    uiNamespace setVariable ["COMSPEC_ATAK_RamCtrl", _ram];
+};
+private _rx0 = _dx + _dw * 0.58 + _pad * 2 + 2 * _ih / _ratio;
+private _rx1 = _dx + _dw - _pad * 3 - _iw - ([0, _ih / _ratio] select _interactive);
+_ram ctrlSetPosition [_rx0, _sy, (_rx1 - _rx0) max 0, _sh];
+_ram ctrlSetFontHeight (_fontS * 0.9);
+_ram ctrlCommit 0;
+if ((ctrlText _ram) isEqualTo "") then { _ram ctrlSetText "RAM 00%"; };
+_ram ctrlShow ((ctrlTextWidth _ram) <= (_rx1 - _rx0));
 (_d displayCtrl 88525) ctrlSetFontHeight _font;
 
 // Barre d'app : retour | titre ........ rotation | mini/plein | apps

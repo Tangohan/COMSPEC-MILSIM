@@ -182,6 +182,8 @@ $renderTable = static function (array $rows, string $emptyLabel, bool $web) use 
         <?php $renderTable($terminals, 'Aucun terminal enregistré pour le moment.', false); ?>
     </section>
 
+    <?php require __DIR__ . '/_phones.php'; ?>
+
     <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div class="border-b border-slate-100 px-6 py-4 flex flex-wrap items-start justify-between gap-3">
             <div>

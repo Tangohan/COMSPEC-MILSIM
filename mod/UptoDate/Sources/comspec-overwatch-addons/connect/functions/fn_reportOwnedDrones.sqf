@@ -111,7 +111,11 @@ private _next = [];
 
     private _model = getText (configOf _d >> "displayName");
     if (_model isEqualTo "") then { _model = typeOf _d; };
-    private _name = format ["Drone de %1 — %2", _pilotCs, _model];
+    private _custom = _d getVariable ["COMSPEC_DroneName", ""];
+    if (!(_custom isEqualType "")) then { _custom = ""; };
+    private _icon = _d getVariable ["COMSPEC_DroneIcon", ""];
+    if (!(_icon isEqualType "")) then { _icon = ""; };
+    private _name = if (_custom isNotEqualTo "") then { _custom } else { format ["Drone de %1 — %2", _pilotCs, _model] };
     _next pushBack [_d, _key, _name];
 
     private _pos = getPosWorld _d;
@@ -153,9 +157,9 @@ private _next = [];
     if (!(_side isEqualType sideUnknown) || {_side in [sideUnknown, civilian]}) then { _side = side group player; };
 
     // Delta (≈5 m, 2 m d’altitude, 5°)
-    private _sig = format ["%1|%2|%3|%4|%5|%6|%7",
+    private _sig = format ["%1|%2|%3|%4|%5|%6|%7|%8|%9",
         round ((_pos select 0) / 5), round ((_pos select 1) / 5), round (_agl / 2),
-        round (_dir / 5), _mode, _tgt apply { round (_x / 5) }, _taskKind];
+        round (_dir / 5), _mode, _tgt apply { round (_x / 5) }, _taskKind, _custom, _icon];
     private _last = _d getVariable ["COMSPEC_UavTrackLastAt", -1e9];
     private _changed = _sig isNotEqualTo (_d getVariable ["COMSPEC_UavTrackSig", ""]);
     if ((_now - _last) < _gap) then { continue };
@@ -177,6 +181,8 @@ private _next = [];
         ["model", _model],
         ["source", if (_d isEqualTo _phoneDrone) then { "phone" } else { "terminal" }],
         ["task", _taskKind],
+        ["custom_name", _custom],
+        ["icon", _icon],
         ["task_radius", _taskRad],
         ["seq", _seq]
     ];
