@@ -2,6 +2,7 @@
     Mode drone, côté téléphone du pilote. Le drone doit être posé à ses pieds pour s'appairer (rien à distance) ;
     ensuite la liaison radio porte comspec_atak_native_drone_range mètres, réduite par le relief.
     Liaison perdue : le drone rentre seul à son point de décollage, comme un DJI.
+    Drones du mod Mavic (Mavic_drone_base_F) : appairage identique, signal repris de Mavic_fnc_getSignal.
       ["pair", drone] / ["unpair"]
       ["mode", "hover" | "me" | "player" | "home" | "land" | "hunt"]
       ["player", uid]             joueur à suivre ;
@@ -32,6 +33,13 @@ private _link = {
     if !([player] call comspec_atak_native_fnc_hasDevice) then { _range = 0; };
     if ((missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) <= 0) then { _range = 0; };
     private _dist = player distance _d;
+    // Drone du mod Mavic (DJI) : on reprend son propre calcul de signal (0-1, perdu sous 0,05).
+    if (_range > 0 && {_d isKindOf "Mavic_drone_base_F"} && {!isNil "Mavic_fnc_getSignal"}) exitWith {
+        private _sig = [player, _d] call Mavic_fnc_getSignal;
+        if !(_sig isEqualType 0) then { _sig = 1; };
+        private _okM = _sig >= 0.05;
+        [[0, (ceil (_sig * 4)) max 1 min 4] select _okM, round _dist, _okM]
+    };
     private _ok = _dist < _range;
     [[0, ceil (4 * (1 - _dist / (_range max 1))) max 1] select _ok, round _dist, _ok]
 };

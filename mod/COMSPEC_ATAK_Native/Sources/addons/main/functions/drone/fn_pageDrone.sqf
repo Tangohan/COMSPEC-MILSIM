@@ -16,7 +16,7 @@ private _rows = [];
 
 if (isNull _d) exitWith {
     // Drones à portée de main : posés au sol à moins de 15 m, sans pilote humain.
-    private _near = (player nearEntities [["Air"], 15]) select { alive _x && {unitIsUAV _x} && {(_x getVariable ["COMSPEC_DroneOwner", ""]) in ["", getPlayerUID player]} };
+    private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {(_x getVariable ["COMSPEC_DroneOwner", ""]) in ["", getPlayerUID player]} };
     _rows append [
         ["title", "Drone"],
         ["text", "<t color='#8a9a93'>Posez votre drone à vos pieds (sac à dos, puis Assembler), puis appairez-le. La liaison porte quelques kilomètres, moins derrière le relief ; perdue, le drone rentre seul à son point de décollage.</t>"]
