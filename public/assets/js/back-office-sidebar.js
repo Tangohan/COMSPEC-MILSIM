@@ -205,7 +205,7 @@
             return;
           }
           var label = el.querySelector('.ath-sidebar__item-label');
-          var selfOk = matches(label ? label.textContent : '');
+          var selfOk = matches((label ? label.textContent : '') + ' ' + (el.getAttribute('data-ath-desc') || ''));
           var anyKid = false;
           kids.forEach(function (k) {
             var ok = selfOk || matches(k.getAttribute('data-ath-child-search') || '');

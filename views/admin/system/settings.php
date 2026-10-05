@@ -12,7 +12,7 @@ $envRaw = (string) ($adminSettingsEnvRaw ?? '');
 <div class="min-h-0 flex-1 bg-slate-50">
     <div class="max-w-[960px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 space-y-8">
 
-        <header class="relative overflow-hidden rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/90 via-white to-slate-50 shadow-sm">
+        <header class="pa-head relative overflow-hidden rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/90 via-white to-slate-50 shadow-sm">
             <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-amber-100/50 via-transparent to-transparent pointer-events-none" aria-hidden="true"></div>
             <div class="relative px-5 sm:px-8 py-7 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
                 <div class="min-w-0">

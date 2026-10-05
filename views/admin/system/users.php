@@ -103,7 +103,7 @@ $queryUrl = static function (array $overrides) use ($q, $statusFilter, $tenantFi
             <p class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900"><?= $h((string) $err) ?></p>
         <?php endif; ?>
 
-        <header>
+        <header class="pa-head">
             <h1 class="text-2xl font-black text-slate-900">Comptes utilisateurs (toutes communautés)</h1>
             <p class="mt-2 max-w-3xl text-sm text-slate-600 leading-relaxed">
                 Une personne = une ligne (regroupée par e-mail), avec toutes ses appartenances.

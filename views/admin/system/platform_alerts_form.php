@@ -125,7 +125,7 @@ $dismissible = !$isEdit || !isset($row['dismissible']) || (int) $row['dismissibl
 <div class="min-h-0 flex-1 bg-slate-50">
     <div class="w-full px-4 sm:px-5 lg:px-6 py-4 sm:py-5 space-y-5">
 
-        <header class="relative overflow-hidden rounded-xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/90 via-white to-slate-50 shadow-sm">
+        <header class="pa-head relative overflow-hidden rounded-xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/90 via-white to-slate-50 shadow-sm">
             <div class="absolute inset-y-0 left-0 w-1 bg-emerald-600" aria-hidden="true"></div>
             <div class="relative px-4 sm:px-6 py-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div class="min-w-0">

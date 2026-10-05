@@ -24,7 +24,7 @@ $formatDate = static function (mixed $value): string {
 $filter = trim((string) ($_GET['type'] ?? ''));
 ?>
 <section class="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
-    <header class="space-y-1">
+    <header class="pa-head space-y-1">
         <p class="text-xs font-bold uppercase tracking-widest text-amber-600">Support / gestion des changements</p>
         <h1 class="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Intervention — <?= $h($tenant['name'] ?? 'Organisation') ?></h1>
         <p class="text-sm text-slate-600">Organisation n°<?= $tenantId ?> · <?= $h(AuditSnapshotPresenter::displayScalar($tenant['subscription_status'] ?? null, 'subscription_status')) ?></p>

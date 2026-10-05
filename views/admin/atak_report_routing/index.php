@@ -15,6 +15,7 @@ $decode = static function (mixed $raw): array {
     return is_array($v) ? $v : [];
 };
 ?>
+<div class="bo-routing">
 <div class="page-heading">
     <div>
         <h1>Diffusion des rapports tactiques</h1>
@@ -212,3 +213,4 @@ $decode = static function (mixed $raw): array {
         </form>
     </div>
 </section>
+</div>

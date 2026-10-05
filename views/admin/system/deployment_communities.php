@@ -20,16 +20,18 @@ $typeLbl = $labels['type'] ?? [];
             <?php $flash_variant = 'success'; $flash_message = (string) $fOk; $flash_margin_class = 'mb-6'; require base_path('views/partials/flash_message.php'); ?>
         <?php endif; ?>
 
-        <p class="text-xs font-semibold uppercase tracking-wider text-amber-700">
-            <a href="<?= htmlspecialchars(url('admin/system/deployment'), ENT_QUOTES, 'UTF-8') ?>" class="hover:underline">Publications et canaux</a>
-            <span class="text-slate-400" aria-hidden="true"> · </span>
-            <span class="text-slate-600">Communautés de test</span>
-        </p>
-        <h1 class="mt-2 text-2xl font-black text-slate-900">Communautés de préqualification</h1>
-        <p class="mt-2 max-w-3xl text-sm text-slate-600">
-            Groupes de testeurs : membres rattachés par e-mail ou ID, accès aux modules en avant-première selon les règles de publication.
-            Les retours saisis par les testeurs (table <span class="font-mono text-xs">tester_feedback</span>) sont listés ci-dessous et détaillés sur chaque fiche communauté.
-        </p>
+        <header class="pa-head">
+            <p class="text-xs font-semibold uppercase tracking-wider text-amber-700">
+                <a href="<?= htmlspecialchars(url('admin/system/deployment'), ENT_QUOTES, 'UTF-8') ?>" class="hover:underline">Publications et canaux</a>
+                <span class="text-slate-400" aria-hidden="true"> · </span>
+                <span class="text-slate-600">Communautés de test</span>
+            </p>
+            <h1 class="mt-2 text-2xl font-black text-slate-900">Communautés de préqualification</h1>
+            <p class="mt-2 max-w-3xl text-sm text-slate-600">
+                Groupes de testeurs : membres rattachés par e-mail ou ID, accès aux modules en avant-première selon les règles de publication.
+                Les retours saisis par les testeurs (table <span class="font-mono text-xs">tester_feedback</span>) sont listés ci-dessous et détaillés sur chaque fiche communauté.
+            </p>
+        </header>
 
         <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <?php

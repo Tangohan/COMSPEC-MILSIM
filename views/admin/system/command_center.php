@@ -15,7 +15,7 @@ $pages = max(1, (int) ceil($total / $perPage));
 
 <div class="min-h-0 flex-1 bg-slate-50">
     <div class="max-w-[1380px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <header class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <header class="pa-head rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                 <div>
                     <p class="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Administration centrale</p>

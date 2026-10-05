@@ -5,7 +5,7 @@ $f = \App\Core\Session::getFlash('error');
 $s = \App\Core\Session::getFlash('success');
 ?>
 <div class="max-w-5xl mx-auto px-6 py-12">
-    <div class="flex items-center justify-between mb-6">
+    <div class="pa-head flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Affectations rôles site</h1>
         <a href="<?= url('admin') ?>" class="text-sm font-medium text-slate-600 hover:underline">Retour</a>
     </div>

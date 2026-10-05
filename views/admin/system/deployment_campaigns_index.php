@@ -22,7 +22,7 @@ $csrf = htmlspecialchars((string) ($deploymentCsrf ?? ''), ENT_QUOTES, 'UTF-8');
             <span class="text-slate-400" aria-hidden="true"> · </span>
             <span class="text-slate-600">Campagnes</span>
         </p>
-        <div class="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div class="pa-head mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 <h1 class="text-2xl font-black text-slate-900">Campagnes de publication</h1>
                 <p class="mt-2 max-w-3xl text-sm text-slate-600">

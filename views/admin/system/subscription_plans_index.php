@@ -19,11 +19,13 @@ $rows = is_array($subscriptionPlansRows ?? null) ? $subscriptionPlansRows : [];
             <p class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900"><?= htmlspecialchars((string) $err, ENT_QUOTES, 'UTF-8') ?></p>
         <?php endif; ?>
 
-        <h1 class="text-2xl font-black text-slate-900">Formules d’accès (paliers)</h1>
-        <p class="mt-2 max-w-3xl text-sm text-slate-600">
-            Libellés, ordre d’affichage, modules inclus, plafonds et identifiants de paiement PayPal (ou Stripe en secours).
-            L’identifiant interne de chaque formule n’est pas modifiable ici, pour ne pas désynchroniser les communautés déjà créées.
-        </p>
+        <header class="pa-head">
+            <h1 class="text-2xl font-black text-slate-900">Formules d’accès (paliers)</h1>
+            <p class="mt-2 max-w-3xl text-sm text-slate-600">
+                Libellés, ordre d’affichage, modules inclus, plafonds et identifiants de paiement PayPal (ou Stripe en secours).
+                L’identifiant interne de chaque formule n’est pas modifiable ici, pour ne pas désynchroniser les communautés déjà créées.
+            </p>
+        </header>
 
         <div class="mt-8 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
             <table class="min-w-full divide-y divide-slate-200 text-sm">

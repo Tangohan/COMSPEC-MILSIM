@@ -31,9 +31,11 @@ if ($isEdit && !empty($row['checklist_json'])) {
 }
 ?>
 <div class="max-w-2xl mx-auto px-6 py-12">
-    <a href="<?= url('admin/system/cooperation/catalog') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">← Retour</a>
-    <h1 class="mt-4 text-2xl font-black text-slate-900"><?= $isEdit ? 'Modifier le type' : 'Nouveau type (référence site)' ?></h1>
-    <p class="mt-2 text-sm text-slate-600">L’identifiant interne sert au suivi technique ; seuls le libellé et le texte d’aide sont visibles des utilisateurs.</p>
+    <header class="pa-head">
+        <a href="<?= url('admin/system/cooperation/catalog') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">← Retour</a>
+        <h1 class="mt-4 text-2xl font-black text-slate-900"><?= $isEdit ? 'Modifier le type' : 'Nouveau type (référence site)' ?></h1>
+        <p class="mt-2 text-sm text-slate-600">L’identifiant interne sert au suivi technique ; seuls le libellé et le texte d’aide sont visibles des utilisateurs.</p>
+    </header>
 
     <?php $e = \App\Core\Session::getFlash('error'); ?>
     <?php if ($e): ?><p class="text-red-600 text-sm mt-4"><?= htmlspecialchars($e, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>

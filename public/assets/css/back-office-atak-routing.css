@@ -1,0 +1,162 @@
+/**
+ * Back-office — Diffusion des rapports tactiques (admin/atak-diffusion-rapports).
+ * La vue utilise un balisage sémantique simple (panel, alert, form-hint) : cette feuille
+ * lui donne la charte du back-office (cartes, champs, tableau).
+ */
+
+.bo-routing {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 1080px;
+  padding: 26px 32px 56px;
+  color: var(--ath-ink, #0c1116);
+  font-family: var(--ath-font, 'Archivo', system-ui, sans-serif);
+  animation: bo-routing-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes bo-routing-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .bo-routing { animation: none; } }
+@media (max-width: 760px) { .bo-routing { padding: 18px 16px 40px; } }
+
+.bo-routing .page-heading h1 {
+  margin: 0 0 6px;
+  font-size: clamp(24px, 2.3vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.bo-routing .page-heading p { margin: 0; max-width: 760px; color: var(--ath-muted, #5b6762); font-size: 14px; line-height: 1.6; }
+
+.bo-routing .alert {
+  padding: 12px 16px;
+  border: 1px solid var(--ath-info-bd, #c9dcf0);
+  border-left: 3px solid var(--ath-info, #1e6fbf);
+  border-radius: 12px;
+  background: var(--ath-info-bg, #eaf2fb);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.bo-routing .alert--warning {
+  border-color: var(--ath-warn-bd, #f2ddb4);
+  border-left-color: var(--ath-warn, #c98a12);
+  background: var(--ath-warn-bg, #fdf3e2);
+}
+.bo-routing .alert p { margin: 4px 0 0; }
+
+.bo-routing .panel {
+  overflow: hidden;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 14px;
+  background: var(--ath-surface, #fff);
+  box-shadow: 0 1px 2px rgba(12, 17, 22, 0.04);
+}
+.bo-routing .panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--ath-line-soft, #f1f4f5);
+}
+.bo-routing .panel-header h2 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ath-accent, #0b8a5c);
+}
+.bo-routing .panel-meta {
+  min-width: 26px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--ath-line-soft, #f1f4f5);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.bo-routing .panel-body { padding: 20px; }
+
+.bo-routing form:not([style]) { display: grid; gap: 6px; max-width: 640px; }
+.bo-routing form label:not(:has(input[type="checkbox"])) { margin-top: 10px; font-size: 12.5px; font-weight: 600; color: var(--ath-ink-2, #2c3833); }
+.bo-routing form label:has(input[type="checkbox"]) { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+.bo-routing :is(input:not([type="checkbox"]):not([type="hidden"]), textarea, select) {
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid var(--ath-line, #d5ddd9);
+  border-radius: 8px;
+  background: var(--ath-surface, #fff);
+  font: inherit;
+  font-size: 13.5px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.bo-routing :is(input, textarea, select):focus { outline: none; border-color: #12d18e; box-shadow: 0 0 0 3px rgba(18, 209, 142, 0.15); }
+.bo-routing input[type="checkbox"] { accent-color: var(--ath-accent, #0b8a5c); }
+.bo-routing fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 10px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-radius: 10px;
+}
+.bo-routing legend { padding: 0 6px; font-size: 12.5px; font-weight: 700; }
+.bo-routing fieldset .form-hint { flex-basis: 100%; }
+.bo-routing .form-hint { margin: 2px 0 0; color: var(--ath-muted, #5b6762); font-size: 12px; }
+
+.bo-routing button[type="submit"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid var(--ath-line, #d5ddd9);
+  border-radius: 8px;
+  background: var(--ath-surface, #fff);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.bo-routing button[type="submit"]:hover { border-color: #12d18e; }
+.bo-routing .panel-body form > button[type="submit"] {
+  justify-self: start;
+  margin-top: 14px;
+  border-color: #0c1116;
+  background: #0c1116;
+  color: #fff;
+}
+.bo-routing .panel-body form > button[type="submit"]:hover { border-color: var(--ath-accent, #0b8a5c); background: var(--ath-accent, #0b8a5c); }
+
+.bo-routing .table-wrap { overflow-x: auto; }
+.bo-routing table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.bo-routing th {
+  padding: 10px 16px;
+  background: var(--ath-table-head, #fafcfc);
+  border-bottom: 1px solid var(--ath-line, #e3e8ea);
+  color: var(--ath-muted, #5b6762);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-align: left;
+  text-transform: uppercase;
+}
+.bo-routing td { padding: 11px 16px; border-bottom: 1px solid var(--ath-line-soft, #f1f4f5); vertical-align: top; }
+.bo-routing tbody tr:last-child td { border-bottom: 0; }
+.bo-routing tbody tr:hover { background: var(--ath-row-hover, #f2fbf7); }
+.bo-routing tr.is-muted td { color: var(--ath-muted, #5b6762); }
+.bo-routing td form + form { margin-left: 6px; }
+
+html[data-bo-theme="dark"] .bo-routing { color: #e3ebe7; }
+html[data-bo-theme="dark"] .bo-routing :is(.panel, input:not([type="checkbox"]), textarea, select, button[type="submit"]) { border-color: #2c3733; background: #141a18; color: #e3ebe7; }
+html[data-bo-theme="dark"] .bo-routing th { background: #101614; border-color: #2c3733; }
+html[data-bo-theme="dark"] .bo-routing :is(td, .panel-header) { border-color: #1d2522; }
+html[data-bo-theme="dark"] .bo-routing .alert { background: rgba(30, 111, 191, 0.12); border-color: rgba(30, 111, 191, 0.35); }
+html[data-bo-theme="dark"] .bo-routing .alert--warning { background: rgba(201, 138, 18, 0.12); border-color: rgba(201, 138, 18, 0.35); }
+html[data-bo-theme="dark"] .bo-routing .panel-body form > button[type="submit"] { border-color: #12d18e; background: #12d18e; color: #04140d; }

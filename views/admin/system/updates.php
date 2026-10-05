@@ -29,11 +29,13 @@ $actionLabels = [
 ?>
 <div class="min-h-0 flex-1 bg-slate-50">
     <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <h1 class="text-2xl font-black text-slate-900">Mises à jour de la plateforme</h1>
-        <p class="mt-2 max-w-3xl text-sm text-slate-600">
-            Déposez un package de mise à jour versionné, contrôlez les fichiers concernés, puis déployez.
-            Les secrets et fichiers utilisateurs ne sont jamais écrasés.
-        </p>
+        <header class="pa-head">
+            <h1 class="text-2xl font-black text-slate-900">Mises à jour de la plateforme</h1>
+            <p class="mt-2 max-w-3xl text-sm text-slate-600">
+                Déposez un package de mise à jour versionné, contrôlez les fichiers concernés, puis déployez.
+                Les secrets et fichiers utilisateurs ne sont jamais écrasés.
+            </p>
+        </header>
 
         <div class="mt-6 flex flex-wrap items-center gap-3 text-sm">
             <span class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-800">

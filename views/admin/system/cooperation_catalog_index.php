@@ -4,7 +4,7 @@ declare(strict_types=1);
 $rows = $cooperationCatalogRows ?? [];
 ?>
 <div class="max-w-5xl mx-auto px-6 py-12">
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="pa-head flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1 class="text-2xl font-black text-slate-900">Types de coopération (référence site)</h1>
         <div class="flex flex-wrap gap-3">
             <a href="<?= url('admin/system/cooperation/catalog/create') ?>" class="inline-flex items-center px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-bold hover:bg-emerald-600 transition-colors">Ajouter un type</a>
