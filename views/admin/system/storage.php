@@ -23,7 +23,7 @@ $flashOk = \App\Core\Session::getFlash('success');
 $csrf = \App\Core\Csrf::token();
 ?>
 <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-10">
-    <header>
+    <header class="pa-head">
         <p class="text-[11px] font-semibold uppercase tracking-wider text-amber-800 mb-1">Administration du site — pas une communauté</p>
         <h1 class="text-2xl font-black text-slate-900">Espace disque et historiques</h1>
         <p class="mt-2 text-sm text-slate-600 leading-relaxed max-w-3xl">

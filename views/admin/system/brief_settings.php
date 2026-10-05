@@ -5,7 +5,7 @@ $msg = (string) ($briefMemberClosedMessage ?? '');
 $csrf = $csrfToken ?? \App\Core\Csrf::token();
 ?>
 <div class="max-w-2xl mx-auto px-6 py-12">
-    <div class="flex items-center justify-between mb-6">
+    <div class="pa-head flex items-center justify-between mb-6">
         <h1 class="text-2xl font-black text-slate-900">Brief — accès pour les membres</h1>
         <a href="<?= url('admin') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">Retour</a>
     </div>

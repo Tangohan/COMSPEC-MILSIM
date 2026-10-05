@@ -14,7 +14,9 @@ declare(strict_types=1);
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
-$pageGroup = isset($boPageGroup) ? trim((string) $boPageGroup) : 'Administration';
+$pageGroup = isset($boPageGroup)
+    ? trim((string) $boPageGroup)
+    : (isset($platformAdminCrumbGroup) ? 'Plateforme · ' . trim((string) $platformAdminCrumbGroup) : 'Administration');
 $pageTitle = isset($boPageTitle) ? trim((string) $boPageTitle) : (isset($title) ? trim((string) $title) : 'Back-office');
 $pageAction = isset($boPageAction) ? trim((string) $boPageAction) : '';
 $pageActionUrl = isset($boPageActionUrl) ? trim((string) $boPageActionUrl) : '';

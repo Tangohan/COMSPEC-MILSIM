@@ -34,7 +34,7 @@ $ticketPriorityBadge = [
 ?>
 <div class="min-h-0 flex-1 bg-slate-50">
     <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10 space-y-8">
-        <header class="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-slate-50 p-6 shadow-sm">
+        <header class="pa-head rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-slate-50 p-6 shadow-sm">
             <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                 <div>
                     <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-indigo-700">Ops Center V1</p>

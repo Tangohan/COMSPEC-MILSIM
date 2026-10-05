@@ -57,7 +57,7 @@ $enlistmentOptionLabel = static function (array $r) use ($enlistStatusLabel): st
 $linkChip = 'inline-flex items-center justify-center rounded-lg border px-3 py-2 text-xs font-semibold transition';
 ?>
 <div class="max-w-4xl mx-auto px-4 sm:px-6 py-10 space-y-10">
-    <header>
+    <header class="pa-head">
         <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1">Administration plateforme</p>
         <h1 class="text-2xl font-black text-slate-900 tracking-tight">Suivi candidatures — filtre automatique et accès</h1>
         <p class="mt-3 text-sm text-slate-600 leading-relaxed max-w-3xl">

@@ -11,7 +11,7 @@ $toggleOnCount = count(array_filter($rules, static fn (array $r): bool => (int) 
 $enforcedNowCount = count(array_filter($rules, static fn (array $r): bool => \App\Support\MaintenanceService::isWithinEnabledSchedule($r)));
 ?>
 <div class="mx-auto max-w-7xl px-6 py-10">
-    <div class="mb-8 flex flex-wrap items-center justify-between gap-3">
+    <div class="pa-head mb-8 flex flex-wrap items-center justify-between gap-3">
         <div>
             <p class="text-xs font-black uppercase tracking-[0.2em] text-slate-500">System Ops</p>
             <h1 class="mt-1 text-3xl font-black text-slate-900">Centre de maintenance</h1>

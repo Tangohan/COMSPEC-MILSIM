@@ -61,7 +61,7 @@ $currentVariant = (string) ($row['ui_variant'] ?? 'military');
 $currentAnimation = ((int) ($row['ui_animation'] ?? 1)) === 1;
 ?>
 <div class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:py-10">
-    <div class="mb-7 flex items-end justify-between gap-4">
+    <div class="pa-head mb-7 flex items-end justify-between gap-4">
         <div>
             <a href="<?= url('admin/maintenance') ?>" class="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-900">
                 <span aria-hidden="true">←</span> Retour

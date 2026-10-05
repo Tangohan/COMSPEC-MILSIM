@@ -81,7 +81,7 @@ if ($uid < 1) {
             <span class="text-slate-800">Modifier la fiche</span>
         </nav>
 
-        <header class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <header class="pa-head rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Administration du site</p>
             <h1 class="text-2xl font-black text-slate-900">Modifier la fiche complète</h1>
             <p class="mt-1 text-sm text-slate-600">

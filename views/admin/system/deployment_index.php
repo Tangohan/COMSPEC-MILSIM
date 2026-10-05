@@ -8,10 +8,12 @@ $csrf = htmlspecialchars((string) ($deploymentCsrf ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 <div class="min-h-0 flex-1 bg-slate-50">
     <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <h1 class="text-2xl font-black text-slate-900">Déploiement et préqualification</h1>
-        <p class="mt-2 max-w-3xl text-sm text-slate-600">
-            Tableau des versions actuellement proposées par canal d’environnement, gestion des fonctionnalités déployables et des communautés de test.
-        </p>
+        <header class="pa-head">
+            <h1 class="text-2xl font-black text-slate-900">Déploiement et préqualification</h1>
+            <p class="mt-2 max-w-3xl text-sm text-slate-600">
+                Tableau des versions actuellement proposées par canal d’environnement, gestion des fonctionnalités déployables et des communautés de test.
+            </p>
+        </header>
 
         <?php if (!$ready): ?>
             <p class="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">Les tables nécessaires ne sont pas installées sur cette base.</p>

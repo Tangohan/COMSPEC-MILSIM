@@ -23,8 +23,10 @@ if ($ch === 'forum') {
 $csrf = \App\Core\Csrf::token();
 ?>
 <div class="max-w-3xl mx-auto px-6 py-12">
-    <a href="<?= url('admin/system/cooperation/announcements') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">← Retour</a>
-    <h1 class="mt-4 text-2xl font-black text-slate-900">Modifier le gabarit</h1>
+    <header class="pa-head">
+        <a href="<?= url('admin/system/cooperation/announcements') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">← Retour</a>
+        <h1 class="mt-4 text-2xl font-black text-slate-900">Modifier le gabarit</h1>
+    </header>
     <?php $e = \App\Core\Session::getFlash('error'); ?>
     <?php if ($e): ?><p class="text-red-600 text-sm mt-4"><?= htmlspecialchars($e, ENT_QUOTES, 'UTF-8') ?></p><?php endif; ?>
 

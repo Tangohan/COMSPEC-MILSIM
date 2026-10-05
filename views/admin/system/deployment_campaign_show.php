@@ -23,21 +23,23 @@ $canRun = !in_array($cst, ['completed', 'failed', 'cancelled'], true);
             <?php $flash_variant = 'success'; $flash_message = (string) $fOk; $flash_margin_class = 'mb-6'; require base_path('views/partials/flash_message.php'); ?>
         <?php endif; ?>
 
-        <p class="text-xs font-semibold uppercase tracking-wider text-amber-700">
-            <a href="<?= htmlspecialchars(url('admin/system/deployment'), ENT_QUOTES, 'UTF-8') ?>" class="hover:underline">Publications et canaux</a>
-            <span class="text-slate-400" aria-hidden="true"> · </span>
-            <a href="<?= htmlspecialchars(url('admin/system/deployment/campaigns'), ENT_QUOTES, 'UTF-8') ?>" class="hover:underline">Campagnes</a>
-            <span class="text-slate-400" aria-hidden="true"> · </span>
-            <span class="text-slate-600">Campagne #<?= $cid ?></span>
-        </p>
-        <h1 class="mt-2 text-2xl font-black text-slate-900">Campagne de publication</h1>
-        <p class="mt-2 text-sm text-slate-600">
-            Fonctionnalité <span class="font-semibold text-slate-800"><?= htmlspecialchars((string) ($camp['module_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-            — version <span class="font-semibold text-slate-800"><?= htmlspecialchars((string) ($camp['version_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
-        </p>
-        <p class="mt-2 inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
-            État : <?= htmlspecialchars($cstLabel, ENT_QUOTES, 'UTF-8') ?>
-        </p>
+        <header class="pa-head">
+            <p class="text-xs font-semibold uppercase tracking-wider text-amber-700">
+                <a href="<?= htmlspecialchars(url('admin/system/deployment'), ENT_QUOTES, 'UTF-8') ?>" class="hover:underline">Publications et canaux</a>
+                <span class="text-slate-400" aria-hidden="true"> · </span>
+                <a href="<?= htmlspecialchars(url('admin/system/deployment/campaigns'), ENT_QUOTES, 'UTF-8') ?>" class="hover:underline">Campagnes</a>
+                <span class="text-slate-400" aria-hidden="true"> · </span>
+                <span class="text-slate-600">Campagne #<?= $cid ?></span>
+            </p>
+            <h1 class="mt-2 text-2xl font-black text-slate-900">Campagne de publication</h1>
+            <p class="mt-2 text-sm text-slate-600">
+                Fonctionnalité <span class="font-semibold text-slate-800"><?= htmlspecialchars((string) ($camp['module_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                — version <span class="font-semibold text-slate-800"><?= htmlspecialchars((string) ($camp['version_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+            </p>
+            <p class="mt-2 inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700">
+                État : <?= htmlspecialchars($cstLabel, ENT_QUOTES, 'UTF-8') ?>
+            </p>
+        </header>
 
         <?php if ($canRun): ?>
             <section class="mt-8 rounded-xl border border-amber-200 bg-amber-50/60 p-6 shadow-sm">

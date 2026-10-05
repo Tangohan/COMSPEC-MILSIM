@@ -213,7 +213,7 @@ $barPct = static function (int $value, int $max): int {
 </style>
 
 <div class="w-full px-4 py-8 sm:px-6 lg:px-8 xl:px-10">
-    <header class="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+    <header class="pa-head mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div class="min-w-0">
             <p class="text-[11px] font-black uppercase tracking-[0.28em] text-emerald-700">Athena · Administration site</p>
             <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-900">Indicateurs transverses</h1>

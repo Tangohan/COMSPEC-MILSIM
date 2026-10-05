@@ -60,10 +60,12 @@ $limitsVal = $prettyJson(is_string($lj) ? $lj : null);
             <p class="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-900"><?= htmlspecialchars((string) $err, ENT_QUOTES, 'UTF-8') ?></p>
         <?php endif; ?>
 
-        <h1 class="text-2xl font-black text-slate-900">Modifier la formule</h1>
-        <p class="mt-2 text-sm text-slate-600">
-            Identifiant interne : <span class="font-mono text-xs font-semibold text-slate-800"><?= htmlspecialchars($slug, ENT_QUOTES, 'UTF-8') ?></span>
-        </p>
+        <header class="pa-head">
+            <h1 class="text-2xl font-black text-slate-900">Modifier la formule</h1>
+            <p class="mt-2 text-sm text-slate-600">
+                Identifiant interne : <span class="font-mono text-xs font-semibold text-slate-800"><?= htmlspecialchars($slug, ENT_QUOTES, 'UTF-8') ?></span>
+            </p>
+        </header>
 
         <form method="post" action="<?= htmlspecialchars($action, ENT_QUOTES, 'UTF-8') ?>" class="mt-8 space-y-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">

@@ -10,7 +10,7 @@ $q = $searchQuery ?? '';
 $fc = $filterCountry ?? '';
 ?>
 <div class="max-w-6xl mx-auto px-6 py-12">
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="pa-head flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
             <h1 class="text-2xl font-black text-slate-900">Référentiel militaire</h1>
             <p class="text-sm text-slate-600 mt-1 max-w-2xl">Organisations, commandements et unités de forces spéciales. Les données sont en base et servent à l’affiliation des communautés.</p>

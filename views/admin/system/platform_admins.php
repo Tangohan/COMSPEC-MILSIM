@@ -17,7 +17,7 @@ $csrf = $h(\App\Core\Csrf::token());
             <span class="text-slate-800">Administrateurs du site</span>
         </nav>
 
-        <header class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <header class="pa-head rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Liste fermée</p>
             <h1 class="text-2xl font-black text-slate-900">Administrateurs du site</h1>
             <p class="mt-2 text-sm text-slate-600">

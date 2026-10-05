@@ -232,6 +232,11 @@ $atakResChildren = [
     ['label' => 'Configuration ATAK', 'href' => url('admin/atak-config'), 'active' => $navAt('admin/atak-config')],
     ['label' => 'Mod ATAK', 'href' => url('admin/atak-mod'), 'active' => $navAt('admin/atak-mod')],
     ['label' => 'Modpacks', 'href' => url('admin/modpacks'), 'active' => $navAt('admin/modpacks')],
+    ['label' => 'Réglages réalisme', 'href' => url('admin/atak/realism/config'), 'active' => $navAt('admin/atak/realism')],
+    ['label' => 'Accès anticipé au mod', 'href' => url('admin/atak-beta'), 'active' => $navAt('admin/atak-beta')],
+    ['label' => 'Signalements du mod', 'href' => url('admin/atak-mod-reports'), 'active' => $navAt('admin/atak-mod-reports')],
+    ['label' => 'Restrictions d’accès au mod', 'href' => url('admin/atak-mod-blocks'), 'active' => $navAt('admin/atak-mod-blocks')],
+    ['label' => 'Diffusion des rapports', 'href' => url('admin/atak-diffusion-rapports'), 'active' => $navAt('admin/atak-diffusion-rapports')],
 ];
 
 $jnetChildren = [
@@ -562,6 +567,7 @@ if ($isOperatorBoNav) {
                     'badge' => $forumModBadge,
                     'warn' => $forumModBadge !== null,
                 ],
+                ['label' => 'Configuration du forum', 'href' => url('admin/forum-config'), 'icon' => 'gear', 'active' => $navAt('admin/forum-config')],
             ], static fn (?array $row): bool => is_array($row))),
         ],
         [

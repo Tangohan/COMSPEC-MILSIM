@@ -31,7 +31,7 @@ $activeMemberCount = (int) ($deploymentCommunityActiveMemberCount ?? 0);
             <span class="text-slate-400" aria-hidden="true"> · </span>
             <a href="<?= htmlspecialchars(url('admin/system/deployment/communities'), ENT_QUOTES, 'UTF-8') ?>" class="hover:underline">Communautés de test</a>
         </p>
-        <div class="mt-2 flex flex-wrap items-start justify-between gap-4">
+        <div class="pa-head mt-2 flex flex-wrap items-start justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-black text-slate-900"><?= htmlspecialchars((string) ($c['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h1>
                 <p class="mt-1 font-mono text-xs text-slate-500"><?= htmlspecialchars((string) ($c['code'] ?? ''), ENT_QUOTES, 'UTF-8') ?></p>

@@ -20,17 +20,19 @@ $csrf = htmlspecialchars((string) ($deploymentCsrf ?? ''), ENT_QUOTES, 'UTF-8');
             <?php $flash_variant = 'success'; $flash_message = (string) $fOk; $flash_margin_class = 'mb-6'; require base_path('views/partials/flash_message.php'); ?>
         <?php endif; ?>
 
-        <p class="text-xs font-semibold uppercase tracking-wider text-amber-700">
-            <a href="<?= htmlspecialchars(url('admin/system/deployment'), ENT_QUOTES, 'UTF-8') ?>" class="hover:underline">Publications et canaux</a>
-            <span class="text-slate-400" aria-hidden="true"> · </span>
-            <a href="<?= htmlspecialchars(url('admin/system/deployment/campaigns'), ENT_QUOTES, 'UTF-8') ?>" class="hover:underline">Campagnes</a>
-            <span class="text-slate-400" aria-hidden="true"> · </span>
-            <span class="text-slate-600">Nouvelle</span>
-        </p>
-        <h1 class="mt-2 text-2xl font-black text-slate-900">Nouvelle campagne de publication</h1>
-        <p class="mt-2 text-sm text-slate-600">
-            Choisissez d’abord la fonctionnalité concernée, puis la version à promouvoir et les environnements cibles. L’ordre d’exécution suivra automatiquement la progression recommandée (du plus tôt au plus exposé).
-        </p>
+        <header class="pa-head">
+            <p class="text-xs font-semibold uppercase tracking-wider text-amber-700">
+                <a href="<?= htmlspecialchars(url('admin/system/deployment'), ENT_QUOTES, 'UTF-8') ?>" class="hover:underline">Publications et canaux</a>
+                <span class="text-slate-400" aria-hidden="true"> · </span>
+                <a href="<?= htmlspecialchars(url('admin/system/deployment/campaigns'), ENT_QUOTES, 'UTF-8') ?>" class="hover:underline">Campagnes</a>
+                <span class="text-slate-400" aria-hidden="true"> · </span>
+                <span class="text-slate-600">Nouvelle</span>
+            </p>
+            <h1 class="mt-2 text-2xl font-black text-slate-900">Nouvelle campagne de publication</h1>
+            <p class="mt-2 text-sm text-slate-600">
+                Choisissez d’abord la fonctionnalité concernée, puis la version à promouvoir et les environnements cibles. L’ordre d’exécution suivra automatiquement la progression recommandée (du plus tôt au plus exposé).
+            </p>
+        </header>
 
         <section class="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 class="text-lg font-bold text-slate-900">Étape 1 — Fonctionnalité</h2>

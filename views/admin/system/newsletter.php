@@ -68,7 +68,7 @@ $queryBase = static function (string $statutKey, string $search, int $pg) use ($
 };
 ?>
 <div class="w-full px-4 sm:px-5 lg:px-6 py-4 sm:py-5">
-    <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
+    <div class="pa-head flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
         <div>
             <h1 class="text-2xl font-black text-slate-900 tracking-tight">Lettre d’information du site</h1>
             <p class="text-sm text-slate-600 mt-2 max-w-3xl leading-relaxed">

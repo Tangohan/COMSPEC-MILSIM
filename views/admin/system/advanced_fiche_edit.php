@@ -16,7 +16,7 @@ $flashError = \App\Core\Session::getFlash('error');
 $flashInfo = \App\Core\Session::getFlash('info');
 ?>
 <div class="mx-auto max-w-5xl space-y-8 px-4 py-10 sm:px-6">
-  <header class="space-y-2">
+  <header class="pa-head space-y-2">
     <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Administration plateforme</p>
     <h1 class="text-2xl font-black text-slate-900">Édition avancée de fiche</h1>
     <p class="max-w-3xl text-sm text-slate-600 leading-relaxed">

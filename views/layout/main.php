@@ -341,6 +341,10 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
     <?php endif; ?>
     <?php
     $backOfficePageCss = isset($backOfficePageCss) && is_array($backOfficePageCss) ? $backOfficePageCss : [];
+    if (!empty($isPlatformAdminShell) && empty($isBackOfficeShell)) {
+        /* Administration plateforme : charte commune à toutes les pages (cartes, tableaux, formulaires). */
+        $backOfficePageCss = array_values(array_unique(array_merge(['platform-admin.css'], $backOfficePageCss, ['platform-admin-skin.css'])));
+    }
     foreach ($backOfficePageCss as $boCssRel):
         $boCssRel = ltrim(str_replace('\\', '/', (string) $boCssRel), '/');
         if ($boCssRel === '' || str_contains($boCssRel, '..')) {
@@ -517,10 +521,17 @@ if (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell)) {
                 <?php
                 $contentPath = str_replace('.', '/', $content);
                 $innerPath = base_path('views/' . $contentPath . '.php');
+                $paSkinWrap = !empty($isPlatformAdminShell) && empty($isBackOfficeShell);
+                if ($paSkinWrap) {
+                    echo '<div class="pa-skin">';
+                }
                 if (is_file($innerPath)) {
                     require $innerPath;
                 } else {
                     echo '<div class="w-full px-4 py-5"><p>Vue non trouvée.</p></div>';
+                }
+                if ($paSkinWrap) {
+                    echo '</div>';
                 }
                 ?>
                 </div>

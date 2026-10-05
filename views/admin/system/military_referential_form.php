@@ -44,7 +44,7 @@ $infoTypeLabels = [
 ];
 ?>
 <div class="max-w-5xl mx-auto px-6 py-12">
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="pa-head flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
             <h1 class="text-2xl font-black text-slate-900"><?= $isEdit ? 'Modifier l’entité' : 'Nouvelle entité' ?></h1>
             <?php if ($hierarchy !== []): ?>

@@ -43,7 +43,7 @@ $primary = $callsign !== '' ? $callsign : ($displayName !== '' ? $displayName : 
             <span class="text-slate-800">Dossier personne</span>
         </nav>
 
-        <header class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
+        <header class="pa-head rounded-xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Identité plateforme</p>

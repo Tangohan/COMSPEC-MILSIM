@@ -6,7 +6,7 @@ $evtLabels = $cooperationAnnouncementEventLabels ?? [];
 $chLabels = $cooperationAnnouncementChannelLabels ?? [];
 ?>
 <div class="max-w-6xl mx-auto px-6 py-12">
-    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="pa-head flex flex-wrap items-center justify-between gap-4 mb-6">
         <h1 class="text-2xl font-black text-slate-900">Messages types — coopération</h1>
         <a href="<?= url('admin') ?>" class="text-sm font-medium text-slate-600 hover:text-slate-900 underline">Retour</a>
     </div>
