@@ -35,299 +35,351 @@ $sortLabels = [
 ];
 $hasActiveFilters = ($search !== '' || $currentCategoryId !== null || $documentType !== '' || $sort !== 'title_asc');
 $baseUrlList = url('documents');
+$hasEntityScope = $entity_type !== null && $entity_type !== '' && $entity_id !== null;
+
+/** Lien vers la liste en conservant les filtres courants, sauf ceux remplacés par $overrides (null = retiré). */
+$dlibUrl = static function (array $overrides = []) use ($baseUrlList, $search, $currentCategoryId, $documentType, $sort, $hasEntityScope, $entity_type, $entity_id): string {
+    $query = [
+        'q' => $search !== '' ? $search : null,
+        'category' => $currentCategoryId,
+        'document_type' => $documentType !== '' ? $documentType : null,
+        'sort' => $sort !== 'title_asc' ? $sort : null,
+    ];
+    if ($hasEntityScope) {
+        $query['entity_type'] = $entity_type;
+        $query['entity_id'] = (int) $entity_id;
+    }
+    foreach ($overrides as $key => $value) {
+        $query[$key] = $value;
+    }
+    $query = array_filter($query, static fn ($v) => $v !== null && $v !== '');
+
+    return $baseUrlList . ($query !== [] ? '?' . http_build_query($query) : '');
+};
+
+$currentCategory = null;
+foreach ($categories as $c) {
+    if ($currentCategoryId !== null && (int) ($c['id'] ?? 0) === (int) $currentCategoryId) {
+        $currentCategory = $c;
+    }
+}
+
+$recentThreshold = strtotime('-30 days');
+$recentCount = 0;
+$downloadableCount = 0;
+foreach ($documents as $d) {
+    $ts = strtotime((string) ($d['updated_at'] ?? $d['created_at'] ?? ''));
+    if ($ts !== false && $ts >= $recentThreshold) {
+        $recentCount++;
+    }
+    if ((int) ($d['download_allowed'] ?? 1) === 1 && !empty($d['file_path'])) {
+        $downloadableCount++;
+    }
+}
+
+/** Format du fichier courant : icône + libellé court. */
+$dlibFormat = static function (array $doc): array {
+    $mime = strtolower((string) ($doc['mime_type'] ?? ''));
+    $ext = strtolower(pathinfo((string) ($doc['file_path'] ?? ''), PATHINFO_EXTENSION));
+    if (empty($doc['file_path'])) {
+        return ['kind' => 'txt', 'label' => 'WEB'];
+    }
+    if ($mime === 'application/pdf' || $ext === 'pdf') {
+        return ['kind' => 'pdf', 'label' => 'PDF'];
+    }
+    if (str_starts_with($mime, 'image/') || in_array($ext, ['png', 'jpg', 'jpeg', 'gif', 'webp'], true)) {
+        return ['kind' => 'img', 'label' => $ext !== '' ? strtoupper($ext === 'jpeg' ? 'jpg' : $ext) : 'IMG'];
+    }
+
+    return ['kind' => 'doc', 'label' => $ext !== '' ? strtoupper(substr($ext, 0, 4)) : 'DOC'];
+};
+$dlibSize = static function ($bytes): string {
+    $bytes = (int) $bytes;
+    if ($bytes <= 0) {
+        return '';
+    }
+    if ($bytes >= 1048576) {
+        return number_format($bytes / 1048576, 1, ',', ' ') . ' Mo';
+    }
+
+    return max(1, (int) round($bytes / 1024)) . ' Ko';
+};
+$dlibCss = static fn (string $color): string => preg_match('/^#[0-9a-fA-F]{3,8}$/', $color) === 1 ? $color : '#12d18e';
+$e = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 ?>
-<div class="min-h-screen bg-slate-100 text-slate-900" data-doc-protect>
-    <div class="mx-auto max-w-[1800px] px-4 py-8 sm:px-6 lg:px-8">
+<link rel="stylesheet" href="<?= $e(asset_url('assets/css/documents-library.css')) ?>">
 
-        <!-- En-tête -->
-        <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_20px_70px_-30px_rgba(15,23,42,0.14)]">
-            <div class="border-b border-slate-100 bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 px-6 py-8 md:px-10 md:py-10">
-                <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div class="min-w-0 flex-1">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="inline-flex rounded-full bg-slate-900 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white">Portail</span>
-                            <span class="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-800">Lecture</span>
-                            <?php if ($canUploadDocuments): ?>
-                            <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-700">Publication autorisée</span>
-                            <?php endif; ?>
-                        </div>
-                        <h1 class="mt-5 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                            Documents publiés
-                        </h1>
-                        <p class="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600">
-                            Doctrine, SOP, manuels et ressources opérationnelles accessibles selon vos droits. Recherchez par mot-clé, filtrez par catégorie ou type, triez par date ou par titre.
-                        </p>
-                    </div>
+<div class="dlib" data-doc-protect>
+    <div class="dlib__shell">
+
+        <section class="dlib-summary" aria-label="Bibliothèque documentaire">
+            <div class="dlib-hero">
+                <p class="dlib-hero__kicker">Athena · Bibliothèque</p>
+                <h1 class="dlib-hero__title"><?= $currentCategory !== null ? $e($currentCategory['name'] ?? 'Documents') : 'Documents de la communauté' ?></h1>
+                <p class="dlib-hero__lead">
+                    Doctrine, SOP, manuels et ressources opérationnelles publiés pour vous. Seuls les documents auxquels votre compte a accès apparaissent ici.
+                </p>
+                <div class="dlib-hero__links">
                     <?php if ($canUploadDocuments): ?>
-                    <div class="flex shrink-0 flex-wrap gap-2 sm:justify-end">
-                        <a href="<?= url('documents/gestion/ajout') ?>"
-                           class="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-[11px] font-black uppercase tracking-[0.14em] text-white transition hover:bg-slate-800">
-                            Ajouter un document
-                        </a>
-                        <a href="<?= url('documents/gestion') ?>"
-                           class="inline-flex items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-[11px] font-black uppercase tracking-[0.14em] text-slate-700 transition hover:bg-slate-50">
-                            Gestion documentaire
-                        </a>
-                    </div>
-                    <?php endif; ?>
-                </div>
-                <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <div class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Résultats</p>
-                        <p class="mt-2 text-3xl font-black tabular-nums text-slate-950"><?= (int) $totalDocs ?></p>
-                        <p class="mt-1 text-xs text-slate-500">Après filtres d’accès</p>
-                    </div>
-                    <div class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm">
-                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Catégories</p>
-                        <p class="mt-2 text-3xl font-black tabular-nums text-slate-950"><?= (int) $totalCategories ?></p>
-                        <p class="mt-1 text-xs text-slate-500">Dans la communauté</p>
-                    </div>
-                    <div class="rounded-2xl border border-slate-200 bg-white/80 px-4 py-4 shadow-sm sm:col-span-2">
-                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Raccourci</p>
-                        <p class="mt-2 text-sm font-semibold text-slate-800">Besoin d’une référence précise ?</p>
-                        <p class="mt-1 text-xs leading-relaxed text-slate-500">Combinez recherche plein texte + catégorie + type pour affiner le catalogue.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Filtres & tri -->
-        <section class="mt-8 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_20px_70px_-30px_rgba(15,23,42,0.12)]">
-            <div class="border-b border-slate-200 px-6 py-4 md:px-8">
-                <div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                    <div>
-                        <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Exploration</p>
-                        <h2 class="mt-1 text-xl font-black tracking-tight text-slate-950">Recherche &amp; tri</h2>
-                    </div>
-                    <p class="max-w-xl text-sm text-slate-500">
-                        Les champs s’appliquent ensemble. La liste reflète uniquement les documents publiés auxquels vous avez accès.
-                    </p>
-                </div>
-            </div>
-
-            <form method="get" action="<?= htmlspecialchars($baseUrlList) ?>" class="px-6 py-6 md:px-8 md:py-8" id="doc-filter-form" data-doc-catalog-form>
-                <?php if ($entity_type !== null && $entity_type !== '' && $entity_id !== null): ?>
-                <input type="hidden" name="entity_type" value="<?= htmlspecialchars((string) $entity_type) ?>">
-                <input type="hidden" name="entity_id" value="<?= (int) $entity_id ?>">
-                <?php endif; ?>
-
-                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
-                    <div class="xl:col-span-2">
-                        <label for="doc-q" class="mb-2 block text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Recherche</label>
-                        <div class="relative">
-                            <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                            </span>
-                            <input
-                                id="doc-q"
-                                type="search"
-                                name="q"
-                                value="<?= htmlspecialchars((string) $search, ENT_QUOTES, 'UTF-8') ?>"
-                                placeholder="Titre, description, résumé…"
-                                autocomplete="off"
-                                class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-                            >
-                        </div>
-                    </div>
-                    <div>
-                        <label for="doc-cat" class="mb-2 block text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Catégorie</label>
-                        <select id="doc-cat" name="category" class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100">
-                            <option value="">Toutes</option>
-                            <?php foreach ($categories as $c): ?>
-                            <option value="<?= (int) $c['id'] ?>" <?= $currentCategoryId !== null && (int) $currentCategoryId === (int) $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars((string) ($c['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="doc-type" class="mb-2 block text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Type</label>
-                        <select id="doc-type" name="document_type" class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100">
-                            <option value="">Tous</option>
-                            <?php foreach ($documentTypes as $k => $label): ?>
-                            <option value="<?= htmlspecialchars($k) ?>" <?= $documentType === $k ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="doc-sort" class="mb-2 block text-[11px] font-black uppercase tracking-[0.16em] text-slate-500">Tri</label>
-                        <select id="doc-sort" name="sort" class="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100">
-                            <?php foreach ($sortLabels as $k => $label): ?>
-                            <option value="<?= htmlspecialchars($k) ?>" <?= $sort === $k ? 'selected' : '' ?>><?= htmlspecialchars($label) ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="flex flex-col justify-end gap-2 md:col-span-2 xl:col-span-1">
-                        <span class="mb-2 hidden text-[11px] font-black uppercase tracking-[0.16em] text-transparent xl:block">Actions</span>
-                        <div class="flex flex-wrap gap-2">
-                            <button type="submit" class="inline-flex flex-1 min-w-[7rem] items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-[11px] font-black uppercase tracking-[0.14em] text-white transition hover:bg-slate-800">
-                                Appliquer
-                            </button>
-                            <a href="<?= htmlspecialchars($baseUrlList) ?><?= ($entity_type !== null && $entity_type !== '' && $entity_id !== null) ? '?' . http_build_query(['entity_type' => $entity_type, 'entity_id' => $entity_id]) : '' ?>" class="inline-flex flex-1 min-w-[7rem] items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 text-[11px] font-black uppercase tracking-[0.14em] text-slate-700 transition hover:bg-slate-50">
-                                Réinitialiser
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <?php if ($hasActiveFilters): ?>
-                <div class="mt-5 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-5">
-                    <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Filtres actifs</span>
-                    <?php if ($search !== ''): ?>
-                    <span class="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900">
-                        « <?= htmlspecialchars(mb_substr($search, 0, 40)) ?><?= mb_strlen($search) > 40 ? '…' : '' ?> »
-                    </span>
-                    <?php endif; ?>
-                    <?php if ($currentCategoryId !== null): ?>
-                        <?php foreach ($categories as $c): ?>
-                            <?php if ((int) $c['id'] === (int) $currentCategoryId): ?>
-                            <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"><?= htmlspecialchars((string) ($c['name'] ?? '')) ?></span>
-                            <?php endif; ?>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                    <?php if ($documentType !== '' && isset($documentTypes[$documentType])): ?>
-                    <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"><?= htmlspecialchars($documentTypes[$documentType]) ?></span>
-                    <?php endif; ?>
-                    <?php if ($sort !== 'title_asc'): ?>
-                    <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700"><?= htmlspecialchars($sortLabels[$sort] ?? $sort) ?></span>
-                    <?php endif; ?>
-                </div>
-                <?php endif; ?>
-            </form>
-        </section>
-
-        <section id="collections" class="mt-8 <?= $focus === 'collections' ? 'ring-2 ring-emerald-300 rounded-3xl p-2' : '' ?>">
-            <article class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div class="flex items-center justify-between gap-3">
-                    <div>
-                        <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Collections</p>
-                        <h2 class="mt-1 text-lg font-black text-slate-950">Collections & dossiers personnalisés</h2>
-                    </div>
-                    <?php if ($canUploadDocuments): ?>
-                    <a href="<?= url('documents/gestion') ?>" class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100">Ouvrir la gestion</a>
-                    <?php endif; ?>
-                </div>
-                <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                    <?php if ($collections === []): ?>
-                    <p class="text-sm text-slate-500 sm:col-span-2">Aucune collection dynamique détectée pour vos filtres actuels.</p>
-                    <?php else: ?>
-                    <?php foreach ($collections as $col): ?>
-                    <a href="<?= htmlspecialchars((string) ($col['href'] ?? '#')) ?>" class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 transition hover:border-emerald-300 hover:bg-emerald-50/70">
-                        <p class="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500"><?= (int) ($col['count'] ?? 0) ?> document(s)</p>
-                        <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars((string) ($col['title'] ?? 'Collection')) ?></p>
-                        <p class="mt-1 text-xs text-slate-600"><?= htmlspecialchars((string) ($col['description'] ?? '')) ?></p>
+                    <a href="<?= url('documents/gestion/ajout') ?>" class="dlib-hero__link dlib-hero__link--primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                        Ajouter un document
                     </a>
-                    <?php endforeach; ?>
+                    <?php endif; ?>
+                    <a href="<?= url('documents/mes-documents') ?>" class="dlib-hero__link">Mes documents</a>
+                    <?php if ($canUploadDocuments): ?>
+                    <a href="<?= url('documents/gestion') ?>" class="dlib-hero__link">Gestion documentaire</a>
                     <?php endif; ?>
                 </div>
-            </article>
+            </div>
+            <div class="dlib-stats">
+                <div class="dlib-stat">
+                    <span class="dlib-stat__label">Documents</span>
+                    <span class="dlib-stat__value"><?= (int) $totalDocs ?></span>
+                    <span class="dlib-stat__hint"><?= $hasActiveFilters ? 'Avec vos filtres' : 'Accessibles pour vous' ?></span>
+                </div>
+                <div class="dlib-stat">
+                    <span class="dlib-stat__label">Récents</span>
+                    <span class="dlib-stat__value"><?= (int) $recentCount ?></span>
+                    <span class="dlib-stat__hint">Mis à jour sous 30 jours</span>
+                </div>
+                <div class="dlib-stat">
+                    <span class="dlib-stat__label">Catégories</span>
+                    <span class="dlib-stat__value"><?= (int) $totalCategories ?></span>
+                    <span class="dlib-stat__hint">Dans la communauté</span>
+                </div>
+                <div class="dlib-stat">
+                    <span class="dlib-stat__label">Téléchargeables</span>
+                    <span class="dlib-stat__value"><?= (int) $downloadableCount ?></span>
+                    <span class="dlib-stat__hint">Les autres se lisent en ligne</span>
+                </div>
+            </div>
         </section>
 
-        <!-- Liste -->
-        <section class="mt-8 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_20px_70px_-30px_rgba(15,23,42,0.1)]">
-            <div class="flex flex-col gap-3 border-b border-slate-200 px-6 py-4 md:flex-row md:items-center md:justify-between md:px-8">
-                <div>
-                    <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Catalogue</p>
-                    <h2 class="mt-1 text-xl font-black tracking-tight text-slate-950">Documents disponibles</h2>
+        <?php if ($categories !== []): ?>
+        <nav class="dlib-cats" aria-label="Catégories">
+            <a href="<?= $e($dlibUrl(['category' => null])) ?>" class="dlib-cat<?= $currentCategoryId === null ? ' is-active' : '' ?>"<?= $currentCategoryId === null ? ' aria-current="page"' : '' ?>>Toutes</a>
+            <?php foreach ($categories as $c):
+                $cid = (int) ($c['id'] ?? 0);
+                $isActive = $currentCategoryId !== null && $cid === (int) $currentCategoryId;
+                $isDoctrine = (string) ($c['slug'] ?? '') === 'doctrine';
+                ?>
+            <a href="<?= $e($isDoctrine ? url('documents') . '?category=' . $cid : $dlibUrl(['category' => $cid])) ?>" class="dlib-cat<?= $isActive ? ' is-active' : '' ?>"<?= $isActive ? ' aria-current="page"' : '' ?>>
+                <span class="dlib-cat__dot" style="background: <?= $e($dlibCss((string) ($c['color'] ?? ''))) ?>"></span>
+                <?= $e($c['name'] ?? '') ?>
+                <?php if ($isDoctrine): ?><span class="dlib-cat__tag">Référentiel</span><?php endif; ?>
+            </a>
+            <?php endforeach; ?>
+        </nav>
+        <?php endif; ?>
+
+        <form method="get" action="<?= $e($baseUrlList) ?>" class="dlib-toolbar" id="doc-filter-form" data-doc-catalog-form role="search">
+            <?php if ($hasEntityScope): ?>
+            <input type="hidden" name="entity_type" value="<?= $e($entity_type) ?>">
+            <input type="hidden" name="entity_id" value="<?= (int) $entity_id ?>">
+            <?php endif; ?>
+            <?php if ($currentCategoryId !== null): ?>
+            <input type="hidden" name="category" value="<?= (int) $currentCategoryId ?>">
+            <?php endif; ?>
+            <div class="dlib-field dlib-field--search">
+                <label for="doc-q" class="dlib-field__label">Recherche</label>
+                <div class="dlib-search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                    <input id="doc-q" type="search" name="q" value="<?= $e($search) ?>" placeholder="Titre, description, résumé…" autocomplete="off" class="dlib-input">
                 </div>
-                <div class="flex flex-wrap gap-2">
-                    <span class="inline-flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
-                        <?= (int) $totalDocs ?> document<?= $totalDocs > 1 ? 's' : '' ?>
+            </div>
+            <div class="dlib-field">
+                <label for="doc-type" class="dlib-field__label">Type</label>
+                <select id="doc-type" name="document_type" class="dlib-select" data-dlib-autosubmit>
+                    <option value="">Tous les types</option>
+                    <?php foreach ($documentTypes as $k => $label): ?>
+                    <option value="<?= $e($k) ?>" <?= $documentType === $k ? 'selected' : '' ?>><?= $e($label) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="dlib-field">
+                <label for="doc-sort" class="dlib-field__label">Tri</label>
+                <select id="doc-sort" name="sort" class="dlib-select" data-dlib-autosubmit>
+                    <?php foreach ($sortLabels as $k => $label): ?>
+                    <option value="<?= $e($k) ?>" <?= $sort === $k ? 'selected' : '' ?>><?= $e($label) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="dlib-toolbar__actions">
+                <button type="submit" class="dlib-btn dlib-btn--primary">Rechercher</button>
+                <?php if ($hasActiveFilters): ?>
+                <a href="<?= $e($baseUrlList . ($hasEntityScope ? '?' . http_build_query(['entity_type' => $entity_type, 'entity_id' => $entity_id]) : '')) ?>" class="dlib-btn">Réinitialiser</a>
+                <?php endif; ?>
+            </div>
+        </form>
+
+        <?php if ($hasActiveFilters): ?>
+        <div class="dlib-active">
+            <span class="dlib-active__label">Filtres</span>
+            <?php if ($search !== ''): ?>
+            <a href="<?= $e($dlibUrl(['q' => null])) ?>" class="dlib-chip" title="Retirer ce filtre">« <?= $e(mb_substr($search, 0, 40)) ?><?= mb_strlen($search) > 40 ? '…' : '' ?> » <span class="dlib-chip__x" aria-hidden="true">×</span></a>
+            <?php endif; ?>
+            <?php if ($currentCategory !== null): ?>
+            <a href="<?= $e($dlibUrl(['category' => null])) ?>" class="dlib-chip" title="Retirer ce filtre"><?= $e($currentCategory['name'] ?? '') ?> <span class="dlib-chip__x" aria-hidden="true">×</span></a>
+            <?php endif; ?>
+            <?php if ($documentType !== '' && isset($documentTypes[$documentType])): ?>
+            <a href="<?= $e($dlibUrl(['document_type' => null])) ?>" class="dlib-chip" title="Retirer ce filtre"><?= $e($documentTypes[$documentType]) ?> <span class="dlib-chip__x" aria-hidden="true">×</span></a>
+            <?php endif; ?>
+            <?php if ($sort !== 'title_asc'): ?>
+            <a href="<?= $e($dlibUrl(['sort' => null])) ?>" class="dlib-chip" title="Revenir au tri par titre"><?= $e($sortLabels[$sort] ?? $sort) ?> <span class="dlib-chip__x" aria-hidden="true">×</span></a>
+            <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
+        <?php if ($collections !== []): ?>
+        <section id="collections" class="dlib-shortcuts<?= $focus === 'collections' ? ' is-focus' : '' ?>" aria-label="Collections">
+            <div class="dlib-section-head">
+                <div>
+                    <p class="dlib-section-head__kicker">Collections</p>
+                    <h2 class="dlib-section-head__title">Accès rapides</h2>
+                </div>
+            </div>
+            <div class="dlib-shortcuts__grid">
+                <?php foreach ($collections as $col):
+                    $colTitle = (string) ($col['title'] ?? 'Collection');
+                    $colDesc = (string) ($col['description'] ?? '');
+                    if (preg_match('/[?&]document_type=([a-z_]+)/', (string) ($col['href'] ?? ''), $m) === 1 && isset($documentTypes[$m[1]])) {
+                        $colTitle = $documentTypes[$m[1]];
+                        $colDesc = 'Tous les documents de ce type.';
+                    }
+                    ?>
+                <a href="<?= $e($col['href'] ?? '#') ?>" class="dlib-shortcut">
+                    <span class="dlib-shortcut__count"><?= (int) ($col['count'] ?? 0) ?></span>
+                    <span>
+                        <span class="dlib-shortcut__title"><?= $e($colTitle) ?></span>
+                        <span class="dlib-shortcut__desc"><?= $e($colDesc) ?></span>
                     </span>
+                </a>
+                <?php endforeach; ?>
+            </div>
+        </section>
+        <?php else: ?>
+        <span id="collections" hidden></span>
+        <?php endif; ?>
+
+        <section class="dlib-shortcuts" aria-labelledby="dlib-catalog-title">
+            <div class="dlib-section-head">
+                <div>
+                    <p class="dlib-section-head__kicker">Catalogue</p>
+                    <h2 class="dlib-section-head__title" id="dlib-catalog-title">Documents disponibles</h2>
+                </div>
+                <div class="dlib-section-head__side">
+                    <span class="dlib-count"><?= (int) $totalDocs ?> document<?= $totalDocs > 1 ? 's' : '' ?></span>
+                    <?php if ($documents !== []): ?>
+                    <div class="dlib-viewswitch" role="group" aria-label="Affichage">
+                        <button type="button" data-dlib-view="grid" aria-pressed="true" title="Cartes">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>
+                        </button>
+                        <button type="button" data-dlib-view="list" aria-pressed="false" title="Liste">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>
+                        </button>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
-            <div id="doc-catalog-skeleton" class="hidden p-6 md:p-8" aria-hidden="true">
-                <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    <?php for ($__i = 0; $__i < 8; $__i++): ?>
-                    <div class="animate-pulse rounded-3xl border border-slate-100 bg-slate-50 p-5">
-                        <div class="h-12 w-12 rounded-2xl bg-slate-200"></div>
-                        <div class="mt-4 h-4 max-w-[85%] rounded bg-slate-200"></div>
-                        <div class="mt-3 h-3 w-full rounded bg-slate-200"></div>
-                        <div class="mt-2 h-3 max-w-[66%] rounded bg-slate-200"></div>
-                        <div class="mt-6 flex gap-2">
-                            <div class="h-9 flex-1 rounded-xl bg-slate-200"></div>
-                            <div class="h-9 flex-1 rounded-xl bg-slate-200"></div>
-                        </div>
-                    </div>
-                    <?php endfor; ?>
-                </div>
-                <p class="mt-6 text-center text-xs font-medium text-slate-500">Mise à jour du catalogue…</p>
+            <div id="doc-catalog-skeleton" class="dlib-skeleton hidden" aria-hidden="true">
+                <?php for ($__i = 0; $__i < 6; $__i++): ?>
+                <div class="dlib-skeleton__card"></div>
+                <?php endfor; ?>
             </div>
 
             <?php if (empty($documents)): ?>
-            <div class="px-6 py-10 md:px-8">
-                <?php
-                $ui_empty_title = 'Aucun document à afficher';
-                $ui_empty_description = $canUploadDocuments
-                    ? 'Aucun document publié ne correspond à vos filtres. Vous pouvez ajouter un nouveau document ou élargir la recherche.'
-                    : 'Élargissez la recherche, changez de catégorie ou réinitialisez les filtres. Seuls les documents publiés et autorisés pour votre compte apparaissent ici.';
-                $ui_empty_primary_label = $canUploadDocuments ? 'Ajouter un document' : 'Voir tout le catalogue';
-                $ui_empty_primary_href = $canUploadDocuments ? url('documents/gestion/ajout') : $baseUrlList;
-                if ($canUploadDocuments) {
-                    $ui_empty_secondary_label = 'Voir tout le catalogue';
-                    $ui_empty_secondary_href = $baseUrlList;
-                }
-                require base_path('views/partials/ui/empty_state.php');
-                ?>
+            <div class="dlib-empty">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
+                <p class="dlib-empty__title">Aucun document à afficher</p>
+                <p class="dlib-empty__text">
+                    <?= $hasActiveFilters
+                        ? 'Aucun document publié ne correspond à vos filtres. Élargissez la recherche ou retirez un filtre.'
+                        : 'Aucun document publié n’est encore accessible pour votre compte.' ?>
+                </p>
+                <div class="dlib-empty__actions">
+                    <?php if ($hasActiveFilters): ?>
+                    <a href="<?= $e($baseUrlList) ?>" class="dlib-btn">Voir tout le catalogue</a>
+                    <?php endif; ?>
+                    <?php if ($canUploadDocuments): ?>
+                    <a href="<?= url('documents/gestion/ajout') ?>" class="dlib-btn dlib-btn--primary">Ajouter un document</a>
+                    <?php endif; ?>
+                </div>
             </div>
             <?php else: ?>
-            <div id="doc-catalog-root" class="grid gap-5 p-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 md:p-8">
+            <div id="doc-catalog-root" class="dlib-results" data-view="grid">
                 <?php foreach ($documents as $doc):
                     $catName = (string) ($doc['category_name'] ?? '');
-                    $initial = $catName !== '' ? mb_strtoupper(mb_substr($catName, 0, 1)) : 'D';
-                    $categoryColor = (string) ($doc['category_color'] ?? '#10b981');
+                    $categoryColor = $dlibCss((string) ($doc['category_color'] ?? ''));
                     $snippet = trim((string) ($doc['short_description'] ?? ''));
                     if ($snippet === '' && !empty($doc['description'])) {
                         $snippet = trim(strip_tags((string) $doc['description']));
-                        if (function_exists('mb_strlen') && mb_strlen($snippet) > 140) {
-                            $snippet = mb_substr($snippet, 0, 137) . '…';
-                        } elseif (strlen($snippet) > 140) {
-                            $snippet = substr($snippet, 0, 137) . '…';
+                        if (mb_strlen($snippet) > 180) {
+                            $snippet = mb_substr($snippet, 0, 177) . '…';
                         }
                     }
                     $slug = (string) ($doc['slug'] ?? '');
+                    $docId = (int) ($doc['id'] ?? 0);
                     $docUrl = $slug !== '' ? url('documents/' . $slug) : '#';
-                    $updated = !empty($doc['updated_at']) ? date('d/m/Y', strtotime($doc['updated_at'])) : (!empty($doc['created_at']) ? date('d/m/Y', strtotime($doc['created_at'])) : '');
+                    $updatedRaw = (string) ($doc['updated_at'] ?? $doc['created_at'] ?? '');
+                    $updatedTs = $updatedRaw !== '' ? strtotime($updatedRaw) : false;
+                    $updated = $updatedTs !== false ? date('d/m/Y', $updatedTs) : '';
+                    $isNew = $updatedTs !== false && $updatedTs >= strtotime('-14 days');
+                    $format = $dlibFormat($doc);
+                    $size = $dlibSize($doc['size'] ?? 0);
+                    $version = trim((string) ($doc['version_number'] ?? ''));
+                    $typeKey = (string) ($doc['document_type'] ?? '');
+                    $typeLabel = $documentTypes[$typeKey] ?? '';
+                    $classification = trim((string) ($doc['classification_level'] ?? ''));
+                    $canDownload = (int) ($doc['download_allowed'] ?? 1) === 1 && !empty($doc['file_path']);
+                    $trainingRefs = $documentTrainingRefs[$docId] ?? [];
                     ?>
-                <article class="group flex flex-col rounded-3xl border border-slate-200 bg-gradient-to-b from-white to-slate-50/80 p-5 shadow-sm transition hover:border-emerald-300/60 hover:shadow-md">
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border text-sm font-black" style="border-color: <?= htmlspecialchars($categoryColor) ?>66; background-color: <?= htmlspecialchars($categoryColor) ?>1A; color: <?= htmlspecialchars($categoryColor) ?>;">
-                            <?= htmlspecialchars($initial) ?>
+                <article class="dlib-doc" style="--dlib-cat: <?= $e($categoryColor) ?>">
+                    <div class="dlib-doc__top">
+                        <span class="dlib-doc__icon dlib-doc__icon--<?= $e($format['kind']) ?>" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+                            <?= $e($format['label']) ?>
+                        </span>
+                        <div class="dlib-doc__head">
+                            <div class="dlib-doc__meta-top">
+                                <?php if ($catName !== ''): ?><span class="dlib-doc__cat"><?= $e($catName) ?></span><?php endif; ?>
+                                <?php if ($typeLabel !== ''): ?><span class="dlib-badge"><?= $e($typeLabel) ?></span><?php endif; ?>
+                                <?php if ($classification !== '' && !in_array(strtolower($classification), ['public', 'non_classifie', 'unclassified', 'nc'], true)): ?><span class="dlib-badge dlib-badge--class"><?= $e(str_replace('_', ' ', $classification)) ?></span><?php endif; ?>
+                                <?php if ($isNew): ?><span class="dlib-badge dlib-badge--new">Nouveau</span><?php endif; ?>
+                            </div>
+                            <h3 class="dlib-doc__title"><a href="<?= $e($docUrl) ?>"><?= $e($doc['title'] ?? '') ?></a></h3>
                         </div>
-                        <?php if ($catName !== ''): ?>
-                        <span class="max-w-[55%] text-right text-[10px] font-black uppercase tracking-[0.12em] text-slate-400"><?= htmlspecialchars($catName) ?></span>
-                        <?php endif; ?>
                     </div>
-                    <h3 class="mt-4 text-base font-black leading-snug tracking-tight text-slate-950">
-                        <a href="<?= htmlspecialchars($docUrl) ?>" class="transition hover:text-emerald-700"><?= htmlspecialchars((string) ($doc['title'] ?? ''), ENT_QUOTES, 'UTF-8') ?></a>
-                    </h3>
                     <?php if ($snippet !== ''): ?>
-                    <p class="mt-2 flex-1 text-sm leading-relaxed text-slate-600 line-clamp-3"><?= htmlspecialchars($snippet, ENT_QUOTES, 'UTF-8') ?></p>
+                    <p class="dlib-doc__snippet"><?= $e($snippet) ?></p>
                     <?php else: ?>
-                    <p class="mt-2 flex-1 text-sm text-slate-500">Document consultable en ligne ou téléchargeable.</p>
+                    <p class="dlib-doc__snippet is-placeholder">Pas de résumé pour ce document.</p>
                     <?php endif; ?>
-                    <?php
-                    $trainingRefs = $documentTrainingRefs[(int) ($doc['id'] ?? 0)] ?? [];
-                    if ($trainingRefs !== []):
-                    ?>
-                    <div class="mt-3 rounded-xl border border-violet-200/90 bg-violet-50/70 px-3 py-2.5">
-                        <p class="text-[10px] font-black uppercase tracking-[0.14em] text-violet-900/85">Référencé dans des formations</p>
-                        <ul class="mt-1.5 space-y-1">
-                            <?php foreach ($trainingRefs as $tr): ?>
-                            <li>
-                                <a href="<?= htmlspecialchars($tr['href'], ENT_QUOTES, 'UTF-8') ?>" class="text-xs font-semibold text-violet-950 underline decoration-violet-300 underline-offset-2 hover:text-violet-800"><?= htmlspecialchars($tr['label'], ENT_QUOTES, 'UTF-8') ?></a>
-                            </li>
-                            <?php endforeach; ?>
-                        </ul>
+                    <?php if ($trainingRefs !== []): ?>
+                    <div class="dlib-doc__training">
+                        <span class="dlib-doc__training-label">Formations</span>
+                        <?php foreach ($trainingRefs as $tr): ?>
+                        <a href="<?= $e($tr['href']) ?>"><?= $e($tr['label']) ?></a>
+                        <?php endforeach; ?>
                     </div>
                     <?php endif; ?>
-                    <?php if ($updated !== ''): ?>
-                    <p class="mt-3 text-[11px] font-medium text-slate-400">Mise à jour <?= htmlspecialchars($updated) ?></p>
-                    <?php endif; ?>
-                    <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
-                        <a href="<?= htmlspecialchars($docUrl) ?>" class="inline-flex flex-1 min-w-[6rem] items-center justify-center rounded-xl bg-slate-900 px-3 py-2 text-center text-[11px] font-black uppercase tracking-[0.12em] text-white transition hover:bg-slate-800">Ouvrir</a>
-                        <?php if ((int) ($doc['download_allowed'] ?? 1) === 1): ?>
-                        <a href="<?= url('documents/' . (int) ($doc['id'] ?? 0) . '/download') ?>" class="inline-flex flex-1 min-w-[6rem] items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-center text-[11px] font-black uppercase tracking-[0.12em] text-slate-700 transition hover:bg-slate-50">Télécharger</a>
-                        <?php endif; ?>
+                    <div class="dlib-doc__foot">
+                        <div class="dlib-doc__facts">
+                            <?php if ($updated !== ''): ?><span>Maj <?= $e($updated) ?></span><?php endif; ?>
+                            <?php if ($version !== ''): ?><span>v<?= $e(ltrim($version, 'vV')) ?></span><?php endif; ?>
+                            <?php if ($size !== ''): ?><span><?= $e($size) ?></span><?php endif; ?>
+                        </div>
+                        <div class="dlib-doc__actions">
+                            <?php if ($canDownload): ?>
+                            <a href="<?= url('documents/' . $docId . '/download') ?>" class="dlib-iconbtn" title="Télécharger" aria-label="Télécharger <?= $e($doc['title'] ?? '') ?>">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14"/></svg>
+                            </a>
+                            <?php endif; ?>
+                            <a href="<?= $e($docUrl) ?>" class="dlib-iconbtn" title="Ouvrir" aria-label="Ouvrir <?= $e($doc['title'] ?? '') ?>">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m0 0-5-5m5 5-5 5"/></svg>
+                            </a>
+                        </div>
                     </div>
                 </article>
                 <?php endforeach; ?>
@@ -335,10 +387,37 @@ $baseUrlList = url('documents');
             <?php endif; ?>
         </section>
 
-        <p class="mt-8 text-center text-sm text-slate-500">
-            <a href="<?= url('dashboard') ?>" class="font-semibold text-emerald-700 underline decoration-emerald-200 underline-offset-2 hover:text-emerald-800">Retour au dashboard</a>
-        </p>
+        <p class="dlib-back"><a href="<?= url('dashboard') ?>">← Retour au tableau de bord</a></p>
     </div>
 </div>
-<script defer src="<?= htmlspecialchars(url(''), ENT_QUOTES, 'UTF-8') ?>/assets/js/doc_catalog_loading.js"></script>
+<script>
+(function () {
+    var form = document.getElementById('doc-filter-form');
+    if (form) {
+        form.querySelectorAll('[data-dlib-autosubmit]').forEach(function (el) {
+            el.addEventListener('change', function () {
+                if (typeof form.requestSubmit === 'function') { form.requestSubmit(); } else { form.submit(); }
+            });
+        });
+    }
+    var root = document.getElementById('doc-catalog-root');
+    var buttons = document.querySelectorAll('[data-dlib-view]');
+    if (!root || !buttons.length) { return; }
+    function apply(view) {
+        root.setAttribute('data-view', view);
+        buttons.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-dlib-view') === view ? 'true' : 'false'); });
+    }
+    var saved = null;
+    try { saved = localStorage.getItem('athena.documents.view'); } catch (e) {}
+    if (saved === 'list' || saved === 'grid') { apply(saved); }
+    buttons.forEach(function (b) {
+        b.addEventListener('click', function () {
+            var view = b.getAttribute('data-dlib-view');
+            apply(view);
+            try { localStorage.setItem('athena.documents.view', view); } catch (e) {}
+        });
+    });
+})();
+</script>
+<script defer src="<?= $e(url('')) ?>/assets/js/doc_catalog_loading.js"></script>
 <?php require base_path('views/partials/documents_copy_protection.php'); ?>
