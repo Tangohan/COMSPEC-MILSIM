@@ -652,6 +652,8 @@ final class GameAuthService
                 'grade' => $grade,
                 'callsign' => $callsign,
                 'unit' => $unit,
+                // Abrégé saisi sur la fiche unité (vide : le mod calcule le sigle lui-même).
+                'unit_short' => $unit !== '' ? (\App\Support\UnitAbbreviation::override($unit, $tenantId) ?? '') : '',
                 'role' => $role,
                 'function' => $function,
                 'avatar' => $avatar,

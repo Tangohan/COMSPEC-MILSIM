@@ -23,6 +23,9 @@ $unitTypeLabel = (string) ($unitTypeLabel ?? '');
 $h = static fn (mixed $v): string => htmlspecialchars(trim((string) $v), ENT_QUOTES, 'UTF-8');
 
 $unitName = trim((string) ($unit['name'] ?? 'Unité'));
+$autoShort = mb_strlen($unitName) > \App\Support\UnitAbbreviation::MAX_LENGTH
+    ? \App\Support\UnitAbbreviation::auto($unitName)
+    : $unitName;
 $motto = trim((string) ($unit['motto'] ?? ''));
 $accent = trim((string) ($unit['accent_color'] ?? $unit['public_accent_color'] ?? ''));
 if ($accent === '' || !preg_match('/^#[0-9A-Fa-f]{6}$/', $accent)) {
@@ -107,6 +110,11 @@ foreach ($derivedCommand as $dc) {
             <div class="sm:col-span-2">
                 <label class="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500">Nom</label>
                 <input name="name" value="<?= $h($unit['name'] ?? '') ?>" required maxlength="255" class="ath-field__input w-full">
+            </div>
+            <div class="sm:col-span-2">
+                <label class="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500" for="unit-short-label">Abrégé</label>
+                <input id="unit-short-label" name="short_label" value="<?= $h($unit['short_label'] ?? '') ?>" maxlength="40" class="ath-field__input w-full" placeholder="<?= $h('Automatique : ' . $autoShort) ?>">
+                <p class="mt-1 text-xs text-slate-500">Affiché sur le site et dans l’ATAK à la place du nom complet (gardé au survol). Laissez vide pour l’abrégé automatique.</p>
             </div>
             <div>
                 <label class="mb-1 block text-[10px] font-black uppercase tracking-wider text-slate-500">Devise</label>

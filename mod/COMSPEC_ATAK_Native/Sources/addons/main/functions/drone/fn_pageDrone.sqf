@@ -144,7 +144,7 @@ private _playerRow = {
     private _pic = [_u] call comspec_atak_native_fnc_avatarPath;
     private _veh = ["", format [" · à bord : %1", getText (configOf vehicle _u >> "displayName")]] select ((vehicle _u) isNotEqualTo _u);
     ["person", [_pic, "\z\comspec_atak_native\addons\main\data\app_profile.paa"] select (_pic isEqualTo ""),
-        format ["<t font='RobotoCondensedBold'>%1</t>%5<br/><t size='0.8' color='#8a9a93'>%2 · à %3 m du drone%4</t>", name _u, [_u] call comspec_atak_native_fnc_unitGroup, round _dist, _veh, ["  <t size='0.75' color='#8a9a93'>IA</t>", ""] select (isPlayer _u)],
+        format ["<t font='RobotoCondensedBold'>%1</t>%5<br/><t size='0.8' color='#8a9a93'>%2 · à %3 m du drone%4</t>", name _u, [_u, true] call comspec_atak_native_fnc_unitGroup, round _dist, _veh, ["  <t size='0.75' color='#8a9a93'>IA</t>", ""] select (isPlayer _u)],
         [[_label, _code, !_on]]]
 };
 
@@ -325,7 +325,7 @@ switch (_tab) do {
             private _ck = format ["XFER:%1", getPlayerUID _u];
             private _pic = [_u] call comspec_atak_native_fnc_avatarPath;
             _rows pushBack ["person", [_pic, "\z\comspec_atak_native\addons\main\data\app_profile.paa"] select (_pic isEqualTo ""),
-                format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · à %3 m de vous</t>", name _u, [_u] call comspec_atak_native_fnc_unitGroup, round _dist],
+                format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · à %3 m de vous</t>", name _u, [_u, true] call comspec_atak_native_fnc_unitGroup, round _dist],
                 [[["TRANSFÉRER", "CONFIRMER"] select ([_ck] call _confirming), ["transfer", getPlayerUID _u] call _act, [_ck] call _confirming]]];
         } forEach (_mates select [0, 6]);
         _rows pushBack ["buttons", [["DÉSAPPAIRER", ["unpair"] call _act]]];

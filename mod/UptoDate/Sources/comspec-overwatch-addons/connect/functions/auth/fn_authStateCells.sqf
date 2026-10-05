@@ -46,5 +46,6 @@ createHashMapFromArray [
     ["phone_number", [26] call _fnc_cell],
     ["phone_imei", [27] call _fnc_cell],
     ["phone_mac", [28] call _fnc_cell],
-    ["phone_format", [29] call _fnc_cell]
+    ["phone_format", [29] call _fnc_cell],
+    ["unit_short", [30] call _fnc_identity]
 ]

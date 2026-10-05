@@ -26,7 +26,7 @@ if ((count _e) isEqualTo 0) then {
     _text = format ["<t size='0.85'>%1   %2<br/><br/>%3<br/>%4<br/>%5<br/>%6<br/>%7</t><br/><br/><t size='0.75' color='#8a9a93'>Cliquez sur une unité pour sa fiche.</t>",
         [_fr, "alliés", "#47b3ff"] call _tile, [_ho, "contacts", ["#8a9a93", "#e5483a"] select (_ho > 0)] call _tile,
         ["Réseau", _netTxt] call _kv,
-        ["Groupe", [player] call comspec_atak_native_fnc_unitGroup] call _kv,
+        ["Groupe", [player, true] call comspec_atak_native_fnc_unitGroup] call _kv,
         ["Terrain", worldName] call _kv,
         ["Heure", [dayTime, "HH:MM"] call BIS_fnc_timeToString] call _kv,
         ["Météo", format ["pluie %1 %% · vent %2 m/s du %3", round (rain * 100), round (vectorMagnitude [_w select 0, _w select 1, 0]), [_from] call _card]] call _kv];
@@ -42,7 +42,7 @@ if ((count _e) isEqualTo 0) then {
         private _role = roleDescription _o;
         if (_role isEqualTo "") then { _role = getText (configOf _o >> "displayName"); };
         _lines pushBack format ["%1 %2 · %3", "Rang :" call _dim, createHashMapFromArray [["PRIVATE", "Soldat"], ["CORPORAL", "Caporal"], ["SERGEANT", "Sergent"], ["LIEUTENANT", "Lieutenant"], ["CAPTAIN", "Capitaine"], ["MAJOR", "Commandant"], ["COLONEL", "Colonel"]] getOrDefault [rank _o, rank _o], _role];
-        if (_aff isEqualTo "friend") then { _lines pushBack format ["%1 %2%3", "Groupe :" call _dim, [_o] call comspec_atak_native_fnc_unitGroup, ["", " (chef)"] select (leader group _o isEqualTo _o)]; };
+        if (_aff isEqualTo "friend") then { _lines pushBack format ["%1 %2%3", "Groupe :" call _dim, [_o, true] call comspec_atak_native_fnc_unitGroup, ["", " (chef)"] select (leader group _o isEqualTo _o)]; };
         private _life = switch (true) do {
             case (!alive _o): { "<t color='#e5483a'>mort</t>" };
             case ((lifeState _o) isEqualTo "INCAPACITATED"): { "<t color='#e5483a'>inconscient</t>" };

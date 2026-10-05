@@ -889,6 +889,14 @@
   color: #fff;
 }
 
+.bo-unit-hero__fullname {
+  margin: 0.3rem 0 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: rgba(223, 245, 233, 0.62);
+}
+
 .bo-unit-hero__motto {
   margin: 0.4rem 0 0;
   font-size: 0.95rem;

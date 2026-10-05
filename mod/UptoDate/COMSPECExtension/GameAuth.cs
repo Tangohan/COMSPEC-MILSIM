@@ -23,6 +23,8 @@ public static partial class Extension
     private static string _gameProfileCallsign = "";
     private static string _gameProfileGrade = "";
     private static string _gameProfileUnit = "";
+    // Abrégé d'unité saisi dans Athena (vide : le mod calcule le sigle).
+    private static string _gameProfileUnitShort = "";
     private static string _gameProfileRole = "";
     private static string _gameProfileFunction = "";
     private static string _gameProfileAvatar = "";
@@ -207,7 +209,8 @@ public static partial class Extension
                 TabCell(_gamePhoneNumber),
                 TabCell(_gamePhoneImei),
                 TabCell(_gamePhoneMac),
-                TabCell(_gamePhoneFormat));
+                TabCell(_gamePhoneFormat),
+                IdentityCell(_gameProfileUnitShort));
         }
     }
 
@@ -559,6 +562,7 @@ public static partial class Extension
         _gameProfileCallsign = "";
         _gameProfileGrade = "";
         _gameProfileUnit = "";
+        _gameProfileUnitShort = "";
         _gameProfileRole = "";
         _gameProfileFunction = "";
         _gameProfileAvatar = "";
@@ -758,6 +762,7 @@ public static partial class Extension
         _gameProfileCallsign = ReadProfileText(prof, "callsign");
         _gameProfileGrade = ReadProfileText(prof, "grade");
         _gameProfileUnit = ReadProfileText(prof, "unit");
+        _gameProfileUnitShort = ReadProfileText(prof, "unit_short");
         _gameProfileRole = ReadProfileText(prof, "role");
         _gameProfileFunction = ReadProfileText(prof, "function");
         _gamePhoneNumber = ReadProfileText(prof, "phone_number");

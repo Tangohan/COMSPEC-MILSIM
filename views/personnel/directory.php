@@ -279,7 +279,7 @@ $unitCount = count(array_filter(array_keys($units), static fn ($k) => $k !== '__
                      data-days="<?= $sen !== null ? (int) $sen['days'] : -1 ?>">
 
                 <div class="pd-card__strip">
-                    <span class="pd-card__unitcode" title="<?= $e($p['unitTooltip']) ?>"><?= $e($p['unitCode'] !== '' ? $p['unitCode'] : ($p['unitName'] !== '' ? $p['unitName'] : 'Non affecté')) ?></span>
+                    <span class="pd-card__unitcode" title="<?= $e($p['unitTooltip']) ?>"><?= $e($p['unitCode'] !== '' && mb_strlen($p['unitCode']) <= \App\Support\UnitAbbreviation::MAX_LENGTH ? $p['unitCode'] : ($p['unitName'] !== '' ? \App\Support\UnitAbbreviation::standalone($p['unitName']) : 'Non affecté')) ?></span>
                     <span class="pd-card__mat"><?= $p['matricule'] !== '' ? $e($p['matricule']) : '—' ?></span>
                 </div>
 
@@ -318,7 +318,7 @@ $unitCount = count(array_filter(array_keys($units), static fn ($k) => $k !== '__
                 </div>
 
                 <div class="pd-card__assign">
-                    <p class="pd-unit" title="<?= $e($p['unitTooltip']) ?>"><?= $p['unitName'] !== '' ? $e($p['unitName']) : '<span class="pd-muted">Non affecté</span>' ?></p>
+                    <p class="pd-unit" title="<?= $e($p['unitTooltip']) ?>"><?= $p['unitName'] !== '' ? $e(\App\Support\UnitAbbreviation::standalone($p['unitName'])) : '<span class="pd-muted">Non affecté</span>' ?></p>
                     <?php if ($p['function'] !== ''): ?><p class="pd-function"><?= $e($p['function']) ?></p><?php endif; ?>
                     <?php if ($roleNames !== []): ?>
                     <ul class="pd-roles" title="<?= $e(implode(' · ', $roleNames)) ?>">

@@ -1040,6 +1040,9 @@ class UnitRepository
         if ($this->columnExists('units', 'org_callsign')) {
             $allowed[] = 'org_callsign';
         }
+        if ($this->columnExists('units', 'short_label')) {
+            $allowed[] = 'short_label';
+        }
         foreach ($allowed as $key) {
             if (!array_key_exists($key, $data)) {
                 continue;

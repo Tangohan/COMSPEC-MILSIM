@@ -588,6 +588,7 @@ class AtakApiController
             'callsign' => $callsign,
             'avatar_url' => (string) ($user['avatar_url'] ?? ''),
             'unit_name' => $unitName,
+            'unit_short' => $unitName !== '' ? \App\Support\UnitAbbreviation::standalone($unitName, $tenantId) : '',
             'atak_id' => $atakId,
             'military_id' => $militaryId,
             'playtime_hours' => $playtimeHours,

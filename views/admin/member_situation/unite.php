@@ -48,6 +48,21 @@ $pathParts = $unitPath !== ''
     ? array_values(array_filter(array_map('trim', preg_split('/\s*\/\s*/', $unitPath) ?: [])))
     : [];
 
+// Abrégés automatiques (ou saisis sur la fiche unité) : le nom complet reste en infobulle.
+$abbrTenant = (int) \App\Core\Session::get('tenant_id');
+$abbr = static fn (string $full, string $short): string => \App\Support\UnitAbbreviation::html($full, $short);
+$trail = \App\Support\UnitAbbreviation::trail($pathParts, $abbrTenant);
+$ancestors = $pathParts;
+if ($ancestors !== [] && \App\Support\UnitAbbreviation::within(end($ancestors), [$unitName]) === '') {
+    array_pop($ancestors);
+}
+$unitShort = \App\Support\UnitAbbreviation::forUnit($unitName, $ancestors, $abbrTenant);
+$parentFull = $ancestors !== [] ? (string) end($ancestors) : '';
+$parentShort = $parentFull !== '' ? \App\Support\UnitAbbreviation::forUnit($parentFull, array_slice($ancestors, 0, -1), $abbrTenant) : '';
+$roleShort = $role !== '' ? \App\Support\UnitAbbreviation::role($role, $unitName, $ancestors, $abbrTenant) : '';
+$roleIsUnit = $role !== '' && \App\Support\UnitAbbreviation::within($role, [$unitName]) === '';
+$codeIsName = $unitCode !== '' && \App\Support\UnitAbbreviation::within($unitCode, [$unitName]) === '';
+
 $commanderName = '';
 $commanderCallsign = '';
 if ($commander !== null) {
@@ -107,13 +122,16 @@ $mateLabel = static function (array $mate): string {
                 </p>
                 <?php if ($pathParts !== []): ?>
                     <nav class="bo-unit-trail" aria-label="Chemin dans l’organigramme">
-                        <?php foreach ($pathParts as $i => $part): ?>
+                        <?php foreach ($trail as $i => $part): ?>
                             <?php if ($i > 0): ?><span class="bo-unit-trail__sep" aria-hidden="true">/</span><?php endif; ?>
-                            <span class="bo-unit-trail__part<?= $i === count($pathParts) - 1 ? ' is-current' : '' ?>"><?= $h($part) ?></span>
+                            <span class="bo-unit-trail__part<?= $i === count($trail) - 1 ? ' is-current' : '' ?>"><?= $abbr($part['full'], $part['short']) ?></span>
                         <?php endforeach; ?>
                     </nav>
                 <?php endif; ?>
-                <h2 class="bo-unit-hero__title"><?= $h($unitName) ?></h2>
+                <h2 class="bo-unit-hero__title"><?= $abbr($unitName, $unitShort) ?></h2>
+                <?php if ($unitShort !== $unitName): ?>
+                    <p class="bo-unit-hero__fullname"><?= $h($unitName) ?></p>
+                <?php endif; ?>
                 <?php if ($unitMotto !== ''): ?>
                     <p class="bo-unit-hero__motto">« <?= $h($unitMotto) ?> »</p>
                 <?php endif; ?>
@@ -121,17 +139,17 @@ $mateLabel = static function (array $mate): string {
                     <?php if ($unitTypeLabel !== ''): ?>
                         <span class="bo-unit-tag"><?= $h($unitTypeLabel) ?></span>
                     <?php endif; ?>
-                    <?php if ($unitCode !== ''): ?>
+                    <?php if ($unitCode !== '' && !$codeIsName): ?>
                         <span class="bo-unit-tag bo-unit-tag--code"><?= $h($unitCode) ?></span>
                     <?php endif; ?>
-                    <?php if ($role !== ''): ?>
-                        <span class="bo-unit-tag bo-unit-tag--role"><?= $h($role) ?></span>
+                    <?php if ($role !== '' && !$roleIsUnit): ?>
+                        <span class="bo-unit-tag bo-unit-tag--role"><?= $abbr($role, $roleShort) ?></span>
                     <?php endif; ?>
                 </div>
                 <?php if ($unitBlurb !== ''): ?>
                     <p class="bo-unit-hero__blurb"><?= $h($unitBlurb) ?></p>
                 <?php elseif ($role !== ''): ?>
-                    <p class="bo-unit-hero__blurb">Vous tenez la fonction <strong><?= $h($role) ?></strong> au sein de cette unité.</p>
+                    <p class="bo-unit-hero__blurb">Vous tenez la fonction <strong><?= $abbr($role, $roleShort) ?></strong> au sein de cette unité.</p>
                 <?php else: ?>
                     <p class="bo-unit-hero__blurb">Voici votre place dans l’organigramme et les opérateurs rattachés à la même unité.</p>
                 <?php endif; ?>
@@ -167,11 +185,16 @@ $mateLabel = static function (array $mate): string {
                 <dl class="bo-unit-facts">
                     <div>
                         <dt>Fonction</dt>
-                        <dd><?= $h($role !== '' ? $role : 'Membre') ?></dd>
+                        <dd><?= $role !== '' ? $abbr($role, $roleShort) : 'Membre' ?></dd>
                     </div>
                     <div>
                         <dt>Unité</dt>
-                        <dd><?= $h($unitName) ?></dd>
+                        <dd>
+                            <?= $abbr($unitName, $unitShort) ?>
+                            <?php if ($parentShort !== ''): ?>
+                                <span class="bo-unit-muted"> · <?= $abbr($parentFull, $parentShort) ?></span>
+                            <?php endif; ?>
+                        </dd>
                     </div>
                     <?php if ($startedLabel !== ''): ?>
                         <div>
@@ -238,7 +261,7 @@ $mateLabel = static function (array $mate): string {
                                         <?php if ($isYou): ?><em>Vous</em><?php endif; ?>
                                     </strong>
                                     <?php if ($mateRole !== ''): ?>
-                                        <span><?= $h($mateRole) ?></span>
+                                        <span><?= $abbr($mateRole, \App\Support\UnitAbbreviation::role($mateRole, $unitName, $ancestors, $abbrTenant)) ?></span>
                                     <?php elseif ($fullName !== '' && strcasecmp($fullName, $label) !== 0): ?>
                                         <span><?= $h($fullName) ?></span>
                                     <?php else: ?>
@@ -272,7 +295,10 @@ $mateLabel = static function (array $mate): string {
                         $childType = trim((string) ($child['type'] ?? ''));
                         ?>
                         <li>
-                            <strong><?= $h($childName) ?></strong>
+                            <strong><?= $abbr($childName, \App\Support\UnitAbbreviation::forUnit($childName, [...$ancestors, $unitName], $abbrTenant)) ?></strong>
+                            <?php if ($childCode !== '' && \App\Support\UnitAbbreviation::within($childCode, [$childName]) === '') {
+                                $childCode = '';
+                            } ?>
                             <?php if ($childCode !== '' || $childType !== ''): ?>
                                 <span><?= $h(trim($childCode . ($childCode !== '' && $childType !== '' ? ' · ' : '') . $childType)) ?></span>
                             <?php endif; ?>
@@ -302,12 +328,20 @@ $mateLabel = static function (array $mate): string {
                         }
                         ?>
                         <article class="bo-unit-secondary__card">
-                            <h4><?= $h($secName !== '' ? $secName : $secPath) ?></h4>
+                            <?php
+                            $secTrail = \App\Support\UnitAbbreviation::trail($secPath !== '' ? $secPath : $secName, $abbrTenant);
+                            $secAnc = array_column($secTrail, 'full');
+                            if ($secAnc !== [] && $secName !== '' && \App\Support\UnitAbbreviation::within(end($secAnc), [$secName]) === '') {
+                                array_pop($secAnc);
+                            }
+                            $secTitle = $secName !== '' ? $secName : $secPath;
+                            ?>
+                            <h4><?= $abbr($secTitle, $secName !== '' ? \App\Support\UnitAbbreviation::forUnit($secName, $secAnc, $abbrTenant) : $secTitle) ?></h4>
                             <?php if ($secPath !== '' && $secPath !== $secName): ?>
-                                <p><?= $h($secPath) ?></p>
+                                <p><?php foreach ($secTrail as $i => $part): ?><?= $i > 0 ? ' / ' : '' ?><?= $abbr($part['full'], $part['short']) ?><?php endforeach; ?></p>
                             <?php endif; ?>
                             <?php if ($secRole !== ''): ?>
-                                <p><strong><?= $h($secRole) ?></strong></p>
+                                <p><strong><?= $abbr($secRole, \App\Support\UnitAbbreviation::role($secRole, $secName, $secAnc, $abbrTenant)) ?></strong></p>
                             <?php endif; ?>
                         </article>
                     <?php endforeach; ?>

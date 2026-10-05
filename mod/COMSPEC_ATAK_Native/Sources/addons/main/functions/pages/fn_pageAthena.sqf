@@ -56,8 +56,8 @@ if (_logged) then {
     if (_bridge) then {
         _rows append [
             ["section", "Opérateur", "Fiche Effectifs sur Athena"],
-            ["info", "Unité (ORBAT)", ["comspec_profile_unit", "—"] call _v],
-            ["info", "Fonction", ["comspec_profile_role", "—"] call _v],
+            ["info", "Unité (ORBAT)", [[player, true] call comspec_atak_native_fnc_unitGroup, "—"] select ((["comspec_profile_unit", ""] call _v) in ["", "—"])],
+            ["info", "Fonction", [["comspec_profile_role", "—"] call _v, [missionNamespace getVariable ["comspec_profile_unit", ""]]] call comspec_atak_native_fnc_abbrev],
             ["info", "Grade", ["comspec_profile_grade", "—"] call _v],
             ["info", "Identifiant ATAK", ["COMSPEC_AtakId", "—"] call _v],
             ["info", "Communauté", ["comspec_tenant_name", "—"] call _v],

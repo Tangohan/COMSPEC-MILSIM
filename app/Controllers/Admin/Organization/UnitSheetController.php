@@ -136,6 +136,20 @@ final class UnitSheetController
                 $data[$k] = $v === '' ? null : $v;
             }
         }
+        if ($request->input('short_label') !== null) {
+            // Colonne ajoutée ici si run-migrations.php n'est pas encore passé.
+            if (!$this->units->hasTableColumn('units', 'short_label')) {
+                try {
+                    $migrate = require base_path('bootstrap/units_short_label_migration.php');
+                    ob_start();
+                    $migrate(\App\Core\Database::getPdo());
+                    ob_end_clean();
+                } catch (\Throwable) {
+                }
+            }
+            $short = mb_substr(trim((string) $request->input('short_label', '')), 0, 40);
+            $data['short_label'] = $short === '' ? null : $short;
+        }
         if ($request->input('accent_color') !== null) {
             $data['accent_color'] = trim((string) $request->input('accent_color', ''));
         }

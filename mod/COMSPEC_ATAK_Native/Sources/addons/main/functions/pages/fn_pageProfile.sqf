@@ -9,17 +9,25 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _bridge = [] call comspec_atak_native_fnc_bridge;
 private _v = { params ["_k", ["_d", "—"]]; private _r = missionNamespace getVariable [_k, _d]; if (_r isEqualType "") then { [_r, _d] select (_r isEqualTo "") } else { str _r } };
 private _rows = [];
+private _unitFull = missionNamespace getVariable ["comspec_profile_unit", ""];
+if !(_unitFull isEqualType "") then { _unitFull = ""; };
+private _unitShort = [player, true] call comspec_atak_native_fnc_unitGroup;
+if (_unitFull isEqualTo "") then { _unitShort = ""; };
 
 // Opérateur
 private _logo = [player] call comspec_atak_native_fnc_avatarPath;
 if (_logo isEqualTo "") then { _logo = "\z\comspec_atak_native\addons\main\data\logo_atak.paa"; };
 _rows pushBack ["hero", _logo, format ["<t size='1.3' font='RobotoCondensedBold' color='#5cc76b'>%1</t>  <t size='1.05'>%2</t><br/><t color='#c9d4cf'>%3 · %4</t><br/><t size='0.85' color='#8a9a93'>%5</t>",
     ["comspec_profile_callsign", [player, true] call comspec_atak_native_fnc_unitCallsign] call _v, ["comspec_profile_name", name player] call _v,
-    ["comspec_profile_grade"] call _v, ["comspec_profile_role", roleDescription player] call _v, ["comspec_tenant_name", "Hors ligne"] call _v]];
+    ["comspec_profile_grade"] call _v, [["comspec_profile_role", roleDescription player] call _v, [_unitFull]] call comspec_atak_native_fnc_abbrev, ["comspec_tenant_name", "Hors ligne"] call _v]];
+// Unité et fonction abrégées (règle Athena) ; le nom complet suit quand il diffère.
+_rows pushBack ["info", "Unité (ORBAT)", [_unitShort, "—"] select (_unitShort isEqualTo "")];
+if (_unitShort isNotEqualTo _unitFull) then { _rows pushBack ["text", format ["<t size='0.8' color='#8a9a93'>%1</t>", _unitFull]]; };
+private _fn = ["comspec_profile_function"] call _v;
+_rows pushBack ["info", "Fonction", [[_fn, [_unitFull]] call comspec_atak_native_fnc_abbrev, _fn] select (_fn isEqualTo "—")];
+private _grp = [player, true] call comspec_atak_native_fnc_unitGroup;
+if (_grp isNotEqualTo _unitShort) then { _rows pushBack ["info", "Groupe", _grp]; };
 _rows append [
-    ["info", "Unité (ORBAT)", ["comspec_profile_unit"] call _v],
-    ["info", "Fonction", ["comspec_profile_function"] call _v],
-    ["info", "Groupe", [player] call comspec_atak_native_fnc_unitGroup],
     ["info", "Compte Steam lié", ["non", "oui"] select (missionNamespace getVariable ["COMSPEC_SteamLinked", false])]
 ];
 // Identité du téléphone (roleplay, traçable en GÉOLOC par les autres camps selon la mission).

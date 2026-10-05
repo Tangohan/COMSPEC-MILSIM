@@ -27,7 +27,10 @@ if (_extDet isEqualTo "") then { _extDet = "2.0.19"; };
 missionNamespace setVariable ["comspec_overwatch_auth_state", _state, false];
 if (!(_name isEqualTo "")) then { missionNamespace setVariable ["comspec_profile_name", _name, false]; };
 if (!(_tenant isEqualTo "")) then { missionNamespace setVariable ["comspec_tenant_name", _tenant, false]; };
-if (!(_unit isEqualTo "")) then { missionNamespace setVariable ["comspec_profile_unit", _unit, false]; };
+if (!(_unit isEqualTo "")) then {
+    missionNamespace setVariable ["comspec_profile_unit", _unit, false];
+    missionNamespace setVariable ["comspec_profile_unit_short", _auth getOrDefault ["unit_short", ""], false];
+};
 if (!(_grade isEqualTo "")) then { missionNamespace setVariable ["comspec_profile_grade", _grade, false]; };
 if (!(_role isEqualTo "")) then { missionNamespace setVariable ["comspec_profile_role", _role, false]; };
 if (!(_function isEqualTo "")) then { missionNamespace setVariable ["comspec_profile_function", _function, false]; };
