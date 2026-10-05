@@ -156,6 +156,7 @@ $tone = static fn (string $code): string => \App\Support\SseFieldNoteCatalog::th
                                     </span>
                                 <?php endforeach; ?>
                                 <span class="sse-note-badge sse-note-badge--kind"><?= $h($note['note_kind'] ?? '') ?></span>
+                                <?php if (!empty($note['redacted'])): ?><span class="sse-note-badge sse-note-badge--neutral">Caviardée</span><?php endif; ?>
                                 <?php if (($note['urgency'] ?? '') !== 'routine'): ?>
                                     <span class="sse-note-badge sse-note-badge--warning"><?= $h($note['urgency_label'] ?? '') ?></span>
                                 <?php endif; ?>

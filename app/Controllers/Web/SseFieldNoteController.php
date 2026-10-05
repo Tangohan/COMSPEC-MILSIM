@@ -11,7 +11,9 @@ use App\Core\Session;
 use App\Repositories\SseCaseRepository;
 use App\Repositories\SseFieldNoteRepository;
 use App\Repositories\UserRepository;
+use App\Services\Intel\IntelIntakeService;
 use App\Services\Sse\SseAccessCodeService;
+use App\Services\Sse\SseClearanceService;
 use App\Services\Sse\SseFieldNoteService;
 use App\Support\SseFieldNoteCatalog;
 
@@ -54,7 +56,7 @@ final class SseFieldNoteController
         return $this->view('atak.sse.field_notes', [
             'title' => 'Fiches de renseignement',
             'activeNav' => 'fiches',
-            'notes' => $this->notes->listForTenant($tenantId, array_merge($filters, ['limit' => 150])),
+            'notes' => $this->present($tenantId, $this->notes->listForTenant($tenantId, array_merge($filters, ['limit' => 150]))),
             'counters' => $this->notes->counters($tenantId),
             'filters' => $filters,
             'kindOptions' => SseFieldNoteCatalog::kindOptions(),
@@ -180,10 +182,15 @@ final class SseFieldNoteController
     {
         $tenantId = $this->tenantId();
         $note = $this->noteService->find($tenantId, (int) ($params['id'] ?? 0));
+        // Caviardages et suppressions décidés dans le back-office Remontées.
+        $note = $note !== null ? ($this->present($tenantId, [$note])[0] ?? null) : null;
         if ($note === null) {
             Session::flash('error', 'Fiche introuvable.');
 
             return Response::redirect(url('atak/sse/fiches'));
+        }
+        if (!$this->access->isGuest()) {
+            $this->intake()->recordRead($tenantId, 'fiche', (int) $note['id'], (int) Session::get('user_id'), 'web');
         }
 
         $case = null;
@@ -337,6 +344,31 @@ final class SseFieldNoteController
         );
 
         return Response::redirect($back);
+    }
+
+    private ?IntelIntakeService $intakeService = null;
+
+    private function intake(): IntelIntakeService
+    {
+        return $this->intakeService ??= new IntelIntakeService();
+    }
+
+    /**
+     * Fiches telles que la session a le droit de les lire (caviardages, fiches supprimées, pièces floutées).
+     *
+     * @param list<array<string, mixed>> $notes
+     * @return list<array<string, mixed>>
+     */
+    private function present(int $tenantId, array $notes): array
+    {
+        try {
+            $level = (new SseClearanceService($this->access))->maxLevel();
+        } catch (\Throwable) {
+            $level = SseCaseRepository::CLASS_INTERNAL;
+        }
+        $viewer = $this->access->isGuest() ? 0 : (int) Session::get('user_id');
+
+        return $this->intake()->presentNotes($tenantId, $notes, $level, $viewer);
     }
 
     /**

@@ -3,7 +3,7 @@ class CfgPatches {
     class comspec_atak_native_main {
         name="COMSPEC ATAK Native Standalone"; author="COMSPEC"; requiredVersion=2.14;
         requiredAddons[]={"A3_UI_F","A3_Weapons_F","cba_main","cba_xeh"};
-        units[]={"Item_COMSPEC_ATAK_Battery"}; weapons[]={"COMSPEC_ATAK_Battery"}; version=1.4; versionStr=VERSION_STR; versionAr[]={1,4,0};
+        units[]={"Item_COMSPEC_ATAK_Battery"}; weapons[]={"COMSPEC_ATAK_Battery"}; version=1.5; versionStr=VERSION_STR; versionAr[]={1,5,0};
     };
 };
 class CfgFunctions {

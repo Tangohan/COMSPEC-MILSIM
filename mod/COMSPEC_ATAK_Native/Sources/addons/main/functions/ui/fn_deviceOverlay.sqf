@@ -131,7 +131,7 @@ if (_off) then {
             default { "Ouverture de COMSPEC ATAK" };
         };
         _bootTxt ctrlSetStructuredText parseText format ["<t align='center' size='0.85' color='#c9d4cf'>%1</t><br/><t align='center' size='0.7' color='#5f6f68' font='EtelkaMonospacePro'>COMSPEC ATAK v%2 · %3</t>",
-            _step, missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "1.4.0"], _hp get "reason"];
+            _step, missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "1.5.0"], _hp get "reason"];
     } else {
         _txt ctrlSetStructuredText parseText format ["<t align='center' size='1.2' color='#5f6f68' font='RobotoCondensedBold'>ÉCRAN ÉTEINT</t><br/><t align='center' color='#c9d4cf'>%1</t><br/><t align='center' size='0.85' color='#8a9a93'>%2</t>", _hp get "reason", switch (true) do {
             case ((_hp get "reason") isEqualTo "Batterie vide"): { "Rechargez en véhicule ou changez la batterie" };

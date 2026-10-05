@@ -10,6 +10,9 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\SseFieldNoteRepository;
 use App\Repositories\TenantAtakConfigRepository;
+use App\Repositories\SseCaseRepository;
+use App\Repositories\UserRepository;
+use App\Services\Intel\IntelIntakeService;
 use App\Services\Sse\SseFieldNoteService;
 use App\Support\AtakArmaWriteGuard;
 use App\Support\ComspecApiKeyAuth;
@@ -64,13 +67,17 @@ final class SseFieldNoteApiController
             'status' => (string) ($request->query('status') ?? ''),
         ]);
 
-        // Téléphone en jeu : les photos de chaque fiche, pour les afficher sans rouvrir la fiche.
+        // Caviardages et suppressions du back-office Remontées : le jeu lit au niveau le plus bas,
+        // sauf l'auteur de la fiche et les membres nommés sur un caviardage.
+        $notes = $this->intake()->presentNotes($tenant, $notes, SseCaseRepository::CLASS_INTERNAL, $this->viewerId($tenant, $request));
+
+        // Téléphone en jeu : les photos de chaque fiche, pour les afficher sans rouvrir la fiche (pièces floutées exclues).
         if ((string) $request->query('with_images', '') === '1') {
             foreach ($notes as $i => $note) {
                 $images = [];
                 if ((int) ($note['attachment_count'] ?? 0) > 0) {
                     foreach ($this->notes->listAttachments($tenant, (int) $note['id']) as $piece) {
-                        if (!empty($piece['is_image']) && !empty($piece['url'])) {
+                        if (!empty($piece['is_image']) && !empty($piece['url']) && empty($piece['blurred'])) {
                             $images[] = (string) $piece['url'];
                         }
                         if (count($images) >= 4) {
@@ -93,11 +100,41 @@ final class SseFieldNoteApiController
         }
 
         $note = $this->noteService->find($tenant, (int) ($params['id'] ?? 0));
+        $viewer = $this->viewerId($tenant, $request);
+        $note = $note !== null ? ($this->intake()->presentNotes($tenant, [$note], SseCaseRepository::CLASS_INTERNAL, $viewer, true)[0] ?? null) : null;
         if ($note === null) {
             return Response::json(['error' => 'not_found', 'message' => 'Fiche introuvable.'], 404);
         }
+        $this->intake()->recordRead($tenant, 'fiche', (int) $note['id'], $viewer, 'jeu');
 
         return Response::json($note);
+    }
+
+    private ?IntelIntakeService $intakeService = null;
+
+    private function intake(): IntelIntakeService
+    {
+        return $this->intakeService ??= new IntelIntakeService();
+    }
+
+    /** Membre Athena du joueur qui lit (Steam passé par le téléphone ou la session de jeu), 0 si inconnu. */
+    private function viewerId(int $tenant, Request $request): int
+    {
+        $matched = ComspecApiKeyAuth::matchedUserId();
+        if ($matched !== null) {
+            return (int) $matched;
+        }
+        $steam = SteamId::normalize((string) ($request->query('viewer_steam_uid') ?? $request->query('steam_uid') ?? ''));
+        if ($steam === null) {
+            return 0;
+        }
+        try {
+            $user = (new UserRepository())->findBySteamIdForTenant($tenant, $steam);
+        } catch (\Throwable) {
+            return 0;
+        }
+
+        return $user !== null ? (int) $user['id'] : 0;
     }
 
     /** Réception d'une fiche rédigée sur le terrain. */
