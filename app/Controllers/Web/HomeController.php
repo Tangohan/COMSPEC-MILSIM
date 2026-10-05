@@ -244,6 +244,11 @@ class HomeController
                 } catch (\Throwable) {
                     $showcaseKitItems = [];
                 }
+                try {
+                    $showcaseKitItems = self::enrichKitShowcase($showcaseKitItems, (int) $tid);
+                } catch (\Throwable) {
+                    // Résumé de contenu optionnel : on garde les cartes sans détail.
+                }
                 $canManageKitPins = $currentUser !== null && \App\Authorization\DashboardPinsAccess::canManage();
                 $showcaseKitFeature = $showcaseKitItems !== [] || $canManageKitPins;
             }
@@ -647,6 +652,14 @@ class HomeController
                         }
                     } catch (\Throwable) {
                         // Optionnel si le schéma forum n’est pas prêt.
+                    }
+                }
+
+                if ($showcaseTrainingFeature && $showcaseItems !== []) {
+                    try {
+                        $showcaseItems = self::enrichTrainingShowcaseForMember($showcaseItems, $uid, (int) $tid);
+                    } catch (\Throwable) {
+                        // Statut membre optionnel : le catalogue reste affiché sans avancement.
                     }
                 }
 
@@ -1251,8 +1264,27 @@ class HomeController
                 $desc = substr($desc, 0, 597) . '…';
             }
             $slug = (string) ($c['slug'] ?? '');
+            $levelKey = trim((string) ($c['level'] ?? ''));
+            $levelLabels = function_exists('training_course_level_labels_fr') ? training_course_level_labels_fr() : [];
+            $sessionLabel = '';
+            if (is_string($rawDate) && $rawDate !== '' && ($sts = strtotime($rawDate)) !== false) {
+                $sessionLabel = (int) date('j', $sts) . ' ' . $monthsFr[(int) date('n', $sts) - 1] . ' ' . date('Y', $sts);
+            }
+            $isBookable = !in_array($badge, ['full', 'closed'], true);
             $out[] = [
                 'id' => (int) $c['id'],
+                'category' => trim((string) ($c['category'] ?? '')),
+                'level_label' => (string) ($levelLabels[$levelKey] ?? ''),
+                'duration_label' => self::formatShowcaseDurationFr((int) ($c['estimated_minutes'] ?? 0)),
+                'session_label' => $sessionLabel,
+                'location' => $loc,
+                'badge' => $badge,
+                'is_mandatory' => !empty($c['is_mandatory']),
+                'is_certifying' => !empty($c['is_certifying']),
+                'member_status' => '',
+                'member_status_label' => '',
+                'progress_pct' => null,
+                'cta_label' => $isBookable ? 'Commencer' : 'Voir la formation',
                 'title' => (string) ($c['title'] ?? ''),
                 'slug' => $slug,
                 'thumb' => training_media_url($c['thumbnail_path'] ?? null),
@@ -1269,6 +1301,129 @@ class HomeController
         }
 
         return $out;
+    }
+
+    private static function formatShowcaseDurationFr(int $minutes): string
+    {
+        if ($minutes <= 0) {
+            return '';
+        }
+        if ($minutes < 60) {
+            return $minutes . ' min';
+        }
+        $h = intdiv($minutes, 60);
+        $m = $minutes % 60;
+
+        return $m === 0 ? ($h . ' h') : sprintf('%d h %02d', $h, $m);
+    }
+
+    /**
+     * Ajoute au catalogue vitrine le statut du membre (inscription, avancement, libellé d’action).
+     *
+     * @param array<int, array<string, mixed>> $items
+     * @return array<int, array<string, mixed>>
+     */
+    private static function enrichTrainingShowcaseForMember(array $items, int $userId, int $tenantId): array
+    {
+        if ($items === [] || $userId < 1) {
+            return $items;
+        }
+        $enrollments = \App\Core\Container::get(\App\Repositories\TrainingEnrollmentRepository::class)
+            ->listByUserId($userId, $tenantId);
+        $byCourse = [];
+        $bySlug = [];
+        foreach ($enrollments as $e) {
+            $cid = (int) ($e['course_id'] ?? 0);
+            if ($cid > 0 && !isset($byCourse[$cid])) {
+                $byCourse[$cid] = $e;
+            }
+            $eslug = (string) ($e['course_slug'] ?? '');
+            if ($eslug !== '' && !isset($bySlug[$eslug])) {
+                $bySlug[$eslug] = $e;
+            }
+        }
+        if ($byCourse === []) {
+            return $items;
+        }
+        $trainingService = null;
+        $progressCalls = 0;
+        foreach ($items as $i => $item) {
+            $e = $byCourse[(int) $item['id']] ?? $bySlug[(string) ($item['slug'] ?? '')] ?? null;
+            if ($e === null) {
+                continue;
+            }
+            $status = (string) ($e['status'] ?? '');
+            [$statusLabel, $cta] = match ($status) {
+                'assigned' => ['Assignée', 'Commencer'],
+                'in_progress' => ['En cours', 'Continuer'],
+                'pending_approval' => ['En attente de validation', 'Voir le suivi'],
+                'completed' => ['Terminée', 'Revoir'],
+                default => ['', (string) $item['cta_label']],
+            };
+            $pct = null;
+            if ($status === 'completed') {
+                $pct = 100;
+            } elseif ($status === 'assigned') {
+                $pct = 0;
+            } elseif ($status === 'in_progress' && $progressCalls < 6 && (int) ($e['id'] ?? 0) > 0) {
+                $trainingService ??= \App\Core\Container::get(\App\Services\Training\TrainingService::class);
+                $pct = max(0, min(100, (int) round($trainingService->getGlobalProgress((int) $e['id']))));
+                $progressCalls++;
+            }
+            $items[$i]['member_status'] = $status;
+            $items[$i]['member_status_label'] = $statusLabel;
+            $items[$i]['progress_pct'] = $pct;
+            $items[$i]['cta_label'] = $cta;
+        }
+
+        return $items;
+    }
+
+    /**
+     * Résumé du contenu de chaque tenue mise en avant (nombre d’éléments, types, arme principale).
+     *
+     * @param list<array<string, mixed>> $kits
+     * @return list<array<string, mixed>>
+     */
+    private static function enrichKitShowcase(array $kits, int $tenantId): array
+    {
+        if ($kits === [] || $tenantId < 1) {
+            return $kits;
+        }
+        $repo = \App\Core\Container::get(\App\Repositories\ArsenalWardrobeRepository::class);
+        $kindLabels = \App\Support\ArsenalLoadoutItems::kindLabels();
+        foreach (array_slice(array_keys($kits), 0, 16) as $i) {
+            $kits[$i] += ['item_count' => 0, 'kinds' => [], 'primary_weapon' => '', 'sections' => []];
+            $row = $repo->findWardrobe($tenantId, (int) ($kits[$i]['wardrobe_id'] ?? 0));
+            if ($row === null) {
+                continue;
+            }
+            $payload = (string) ($row['payload_text'] ?? '');
+            $sections = \App\Support\ArsenalLoadoutItems::grouped($payload);
+            $count = 0;
+            $summary = [];
+            $weapon = '';
+            foreach ($sections as $sec) {
+                $n = count($sec['items']);
+                $count += $n;
+                $summary[] = ['title' => (string) $sec['title'], 'count' => $n];
+                if ($weapon === '' && $sec['title'] === 'Arme' && isset($sec['items'][0]['name'])) {
+                    $weapon = (string) $sec['items'][0]['name'];
+                }
+            }
+            $kinds = [];
+            foreach (\App\Support\ArsenalLoadoutItems::presentKinds($payload) as $kind) {
+                if (isset($kindLabels[$kind])) {
+                    $kinds[] = $kindLabels[$kind];
+                }
+            }
+            $kits[$i]['item_count'] = $count;
+            $kits[$i]['kinds'] = $kinds;
+            $kits[$i]['primary_weapon'] = $weapon;
+            $kits[$i]['sections'] = $summary;
+        }
+
+        return $kits;
     }
 
     public function enlistment(Request $request, array $params = []): Response

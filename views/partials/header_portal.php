@@ -179,7 +179,13 @@ if ($useAthenaHeader) {
                         <?php require base_path('views/partials/portal_alerts_bell.php'); ?>
                     <?php endif; ?>
 
-                    <?php $localeSwitcherVariant = 'light'; require base_path('views/partials/language_switcher.php'); ?>
+                    <?php
+                    // Masqué sur très petit écran (repris dans le menu mobile).
+                    $localeSwitcherVariant = 'light';
+                    $localeSwitcherClass = 'portal-nav__lang';
+                    require base_path('views/partials/language_switcher.php');
+                    $localeSwitcherClass = '';
+                    ?>
 
                     <?php if ($loggedIn): ?>
                         <a href="<?= htmlspecialchars($baseUrl) ?>/account"
@@ -209,7 +215,7 @@ if ($useAthenaHeader) {
                         </form>
                     <?php else: ?>
                         <a href="<?= htmlspecialchars($baseUrl) ?>/login"
-                           class="rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500">
+                           class="portal-nav__login inline-flex min-h-[2.5rem] items-center whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-100 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500">
                             <?= $n('Connexion') ?>
                         </a>
                     <?php endif; ?>
@@ -242,10 +248,10 @@ if ($useAthenaHeader) {
          aria-label="<?= $n('Menu de navigation') ?>"
          tabindex="-1"
          hidden>
-        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+        <div class="flex items-center justify-between border-b border-slate-200 px-4 py-2">
             <span class="text-xs font-black uppercase tracking-[0.2em] text-slate-500"><?= $n('Navigation') ?></span>
             <button type="button"
-                    class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
+                    class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
                     data-mobile-nav-close
                     aria-label="<?= $n('Fermer le menu') ?>">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -354,6 +360,15 @@ if ($useAthenaHeader) {
                     </div>
                 <?php endif; ?>
             <?php endforeach; ?>
+        </div>
+        <div class="portal-nav__drawer-foot flex items-center justify-between gap-3 border-t border-slate-200 px-4 py-3">
+            <span class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500"><?= $n('Langue') ?></span>
+            <?php
+            $localeSwitcherVariant = 'light';
+            $localeSwitcherClass = 'portal-nav__drawer-lang';
+            require base_path('views/partials/language_switcher.php');
+            $localeSwitcherClass = '';
+            ?>
         </div>
     </div>
 </header>

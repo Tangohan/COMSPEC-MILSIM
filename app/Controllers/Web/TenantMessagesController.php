@@ -42,15 +42,21 @@ final class TenantMessagesController
         if ($user) {
             $this->rbacService->setPermissionsForGateFromUserRow($user, $this->userRepository);
         }
-        $threads = $this->messageRepository->listThreadsForUser($tenantId, $userId);
+        $threads = $this->messageRepository->listInboxThreadsForUser($tenantId, $userId);
         $staffIds = $this->messageRepository->findStaffUserIdsForTenant($tenantId);
+        $composeRequested = (string) $request->query('nouveau', '') !== '';
 
         return Response::view('layout.main', [
             'title' => 'Messagerie',
             'content' => 'messages.index',
             'messagesPage' => true,
+            'backOfficePageCss' => ['back-office-messages.css'],
             'msgThreads' => $threads,
+            'msgCurrentUserId' => $userId,
+            'msgComposeOpen' => $composeRequested || $threads === [],
+            'msgComposeRequested' => $composeRequested,
             'msgRecipientsConfigured' => $staffIds !== [],
+            'msgRecipientCount' => count(array_diff($staffIds, [$userId])),
         ]);
     }
 
@@ -75,15 +81,32 @@ final class TenantMessagesController
 
             return Response::redirect(url('messages'));
         }
+        // La liste est lue avant de marquer le fil comme lu : elle donne la dernière lecture
+        // (repère « nouveaux messages ») sans requête supplémentaire.
+        $threads = $this->messageRepository->listInboxThreadsForUser($tenantId, $userId);
+        $lastReadAt = null;
+        foreach ($threads as $i => $row) {
+            if ((int) ($row['id'] ?? 0) === $threadId) {
+                $lastReadAt = isset($row['last_read_at']) ? (string) $row['last_read_at'] : null;
+                $threads[$i]['unread_count'] = 0;
+                $threads[$i]['has_unread'] = false;
+                break;
+            }
+        }
         $this->messageRepository->markThreadRead($threadId, $userId);
         $messages = $this->messageRepository->listMessages($threadId);
+        $participants = $this->messageRepository->listThreadParticipants($threadId);
 
         return Response::view('layout.main', [
             'title' => (string) ($thread['subject'] ?? 'Conversation'),
             'content' => 'messages.thread',
             'messagesPage' => true,
+            'backOfficePageCss' => ['back-office-messages.css'],
+            'msgThreads' => $threads,
             'msgThread' => $thread,
             'msgMessages' => $messages,
+            'msgParticipants' => $participants,
+            'msgLastReadAt' => $lastReadAt,
             'msgCurrentUserId' => $userId,
         ]);
     }
@@ -106,9 +129,9 @@ final class TenantMessagesController
         $subject = trim((string) $request->input('subject', ''));
         $body = trim((string) $request->input('body', ''));
         if ($body === '') {
-            Session::flash('error', 'Message vide.');
+            Session::flash('error', 'Le message est vide : écrivez quelques mots avant d’envoyer.');
 
-            return Response::redirect(url('messages'));
+            return Response::redirect(url('messages') . '?nouveau=1');
         }
         $staffIds = $this->messageRepository->findStaffUserIdsForTenant($tenantId);
         if ($staffIds === []) {

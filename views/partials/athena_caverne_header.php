@@ -449,7 +449,7 @@ if (function_exists('i18n_phrase')) {
 ?>
 <nav
     id="dash-tour-nav"
-    class="athena-header"
+    class="athena-header athena-header--portal"
     role="navigation"
     aria-label="<?= $n('Navigation principale') ?>"
     data-athena-header
@@ -488,6 +488,7 @@ if (function_exists('i18n_phrase')) {
             <a
                 href="<?= $h($ctaHref) ?>"
                 class="athena-header__cta<?= $ctaActive ? ' is-active' : '' ?>"
+                title="<?= $h($ctaLabel) ?>"
                 <?php if ($ctaActive): ?>aria-current="page"<?php endif; ?>
             >
                 <svg class="athena-header__cta-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -703,6 +704,62 @@ if (function_exists('i18n_phrase')) {
                                 </form>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <?php /* Menu mobile / tablette : liens de la barre, Espaces et langue (masqué ≥ 1280px). */ ?>
+            <div class="athena-header__burger-wrap relative">
+                <button
+                    type="button"
+                    class="athena-header__icon-btn athena-header__burger"
+                    data-athena-toggle="drawer"
+                    aria-label="<?= $n('Ouvrir le menu') ?>"
+                    aria-expanded="false"
+                    aria-haspopup="true"
+                    aria-controls="athena-header-drawer"
+                >
+                    <svg class="athena-header__burger-icon athena-header__burger-icon--open" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                    <svg class="athena-header__burger-icon athena-header__burger-icon--close" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18 18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+                <div class="athena-header__panel athena-header__panel--drawer hidden" id="athena-header-drawer" data-athena-panel="drawer" role="region" aria-label="<?= $n('Menu de navigation') ?>">
+                    <p class="athena-header__kicker"><?= $n('Navigation') ?></p>
+                    <ul class="athena-header__drawer-links">
+                        <?php foreach ($navItems as $item): ?>
+                            <?php
+                            $isActive = ((string) ($item['key'] ?? '')) === $currentKey;
+                            $itemLabel = $h((string) ($item['label'] ?? ''));
+                            ?>
+                            <li>
+                                <?php if ($isActive): ?>
+                                    <span class="athena-header__drawer-link is-active" aria-current="page"><?= $itemLabel ?></span>
+                                <?php else: ?>
+                                    <a href="<?= $h((string) ($item['href'] ?? '#')) ?>" class="athena-header__drawer-link"><?= $itemLabel ?></a>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                    <?php if ($espaceLinks !== []): ?>
+                        <p class="athena-header__kicker athena-header__drawer-kicker"><?= $n('Espaces') ?></p>
+                        <div class="athena-header__espaces-grid">
+                            <?php foreach ($espaceLinks as $link): ?>
+                                <a href="<?= $h((string) $link['href']) ?>" class="athena-header__espace-item">
+                                    <span class="athena-header__espace-abbr"><?= $h((string) $link['abbr']) ?></span>
+                                    <span class="athena-header__espace-meta">
+                                        <strong><?= $h((string) $link['label']) ?></strong>
+                                        <em><?= $h((string) $link['desc']) ?></em>
+                                    </span>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                    <div class="athena-header__drawer-lang">
+                        <span><?= $n('Langue') ?></span>
+                        <?php $localeSwitcherVariant = 'dark'; require base_path('views/partials/language_switcher.php'); ?>
                     </div>
                 </div>
             </div>
