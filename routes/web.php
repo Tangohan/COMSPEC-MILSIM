@@ -2301,6 +2301,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/playtime', [AtakApiController::class, 'playtime']);
     $router->post('/api/atak/squads/sync', [AtakApiController::class, 'squadSync']);
     $router->post('/api/atak/screen-time', [AtakApiController::class, 'screenTime']);
+    $router->post('/api/atak/screen-time/batch', [AtakApiController::class, 'screenTimeBatch']);
     $router->post('/api/atak/game-session/discover', [AtakApiController::class, 'gameSessionDiscover']);
     $router->post('/api/atak/game-session/join', [AtakApiController::class, 'gameSessionJoin']);
     $router->post('/api/atak/game-session/heartbeat', [AtakApiController::class, 'gameSessionHeartbeat']);

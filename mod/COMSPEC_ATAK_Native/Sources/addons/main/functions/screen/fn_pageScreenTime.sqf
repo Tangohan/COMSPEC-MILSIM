@@ -57,6 +57,7 @@ switch (_tab) do {
         private _tot = ["total"] call _get;
         _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_screentime.paa", format ["<t size='1.6' font='RobotoCondensedBold'>%1</t><br/><t color='#8a9a93'>d'écran pendant cette mission</t><br/><t size='0.85'>En main %2 · porté %3</t>",
             [_tot] call _dur, [["hand"] call _get] call _dur, [["carry"] call _get] call _dur]];
+        _rows pushBack ["info", "Temps de jeu", [(["play"] call _of) param [0, [0]] select 0] call _dur];
         private _apps = ["app"] call _of;
         _rows pushBack ["section", "Apps les plus utilisées", ""];
         private _max = (_apps param [0, [1]]) select 0;
@@ -66,7 +67,8 @@ switch (_tab) do {
         private _pending = 0;
         { _pending = _pending + (_y select 1); } forEach (missionNamespace getVariable ["COMSPEC_ATAK_ScreenAcc", createHashMap]);
         _rows append [
-            ["section", "Athena", "Temps d'écran et temps par rôle remontés sur votre fiche (toutes les 5 min)"],
+            ["section", "Athena", "Remonté sur votre fiche toutes les 5 min. Ce qui n'a pas pu partir est gardé sur ce PC et renvoyé plus tard."],
+            ["info", "Temps de jeu et rôles", ["envoyés par ce téléphone", "envoyés par le serveur, même sans batterie ni réseau"] select (missionNamespace getVariable ["COMSPEC_ATAK_SrvPlayOK", false])],
             ["info", "Dernier envoi", if (_at < 0) then { "jamais" } else { format ["il y a %1 · %2", [diag_tickTime - _at] call _dur, _st] }],
             ["info", "En attente", [_pending] call _dur],
             ["buttons", [["ENVOYER MAINTENANT", { ["flush"] call comspec_atak_native_fnc_screenTime; [{ ['SCREENTIME'] call comspec_atak_native_fnc_pageRender; }, [], 0.5] call CBA_fnc_waitAndExecute; }, true]]]

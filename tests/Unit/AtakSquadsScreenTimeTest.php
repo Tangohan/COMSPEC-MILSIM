@@ -69,4 +69,32 @@ final class AtakSquadsScreenTimeTest extends TestCase
         self::assertSame(7200, $items[2]['seconds'], 'plafond de 2 h par envoi');
         self::assertSame([], AtakScreenTimeRepository::normalizeItems('nope'));
     }
+
+    public function testPlayTimeKindIsAccepted(): void
+    {
+        $items = AtakScreenTimeRepository::normalizeItems([['kind' => 'play', 'key' => 'total', 'label' => 'Temps de jeu', 'seconds' => 600]]);
+
+        self::assertSame([['kind' => 'play', 'key' => 'TOTAL', 'label' => 'Temps de jeu', 'seconds' => 600]], $items);
+    }
+
+    public function testServerBatchKeepsOnlyPlayAndRolesOfValidPlayers(): void
+    {
+        $batch = AtakScreenTimeRepository::normalizeBatch([
+            ['player_uid' => '76561198000000001', 'call_sign' => 'Bravo 6', 'items' => [
+                ['kind' => 'play', 'key' => 'total', 'seconds' => 300],
+                ['kind' => 'role', 'key' => 'PIL', 'label' => 'Pilote', 'seconds' => 200],
+                ['kind' => 'screen', 'key' => 'total', 'seconds' => 300],
+            ]],
+            ['player_uid' => '76561198000000001', 'items' => [['kind' => 'play', 'key' => 'total', 'seconds' => 60]]],
+            ['player_uid' => 'pas-un-steam', 'items' => [['kind' => 'play', 'key' => 'total', 'seconds' => 60]]],
+            ['player_uid' => '76561198000000002', 'items' => [['kind' => 'app', 'key' => 'MAP', 'seconds' => 60]]],
+            'nope',
+        ]);
+
+        self::assertCount(1, $batch);
+        self::assertSame('Bravo 6', $batch[0]['call_sign']);
+        self::assertCount(2, $batch[0]['items'], 'le serveur ne remonte pas l\'écran');
+        self::assertSame(360, $batch[0]['items'][0]['seconds'], 'même joueur fusionné');
+        self::assertSame([], AtakScreenTimeRepository::normalizeBatch(null));
+    }
 }

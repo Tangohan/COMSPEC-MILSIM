@@ -25,6 +25,7 @@ $dur = static function (int $sec): string {
 
     return intdiv($m, 60) . ' h ' . str_pad((string) ($m % 60), 2, '0', STR_PAD_LEFT);
 };
+$totalPlay = array_sum(array_column($rows, 'play'));
 $totalScreen = array_sum(array_column($rows, 'screen'));
 $totalRoles = array_sum(array_column($roles, 'seconds'));
 $maxRole = $roles !== [] ? max(array_column($roles, 'seconds')) : 1;
@@ -34,9 +35,10 @@ $maxRole = $roles !== [] ? max(array_column($roles, 'seconds')) : 1;
         <header class="aksq__hero">
             <p class="aksq__kicker">ATAK · Temps d’écran et rôles</p>
             <h1 class="aksq__title">Temps d’écran et temps par rôle</h1>
-            <p class="aksq__lead">Temps passé téléphone ATAK allumé (en main ou porté en miniature), apps les plus utilisées, et temps de jeu par rôle tenu : poste d’équipage (pilote, copilote, conducteur), sinon rôle d’équipe de feu, sinon spécialité ou slot.</p>
+            <p class="aksq__lead">Temps passé téléphone ATAK allumé (en main ou porté en miniature), apps les plus utilisées, et temps de jeu par rôle tenu : poste d’équipage (pilote, copilote, conducteur), sinon rôle d’équipe de feu, sinon spécialité ou slot. Le temps de jeu et les rôles sont comptés par le serveur Arma : ils remontent même si le téléphone d’un joueur n’a plus de batterie ni de réseau.</p>
             <div class="aksq__kpis">
                 <div class="aksq__kpi"><span>Membres suivis</span><strong><?= count($rows) ?></strong></div>
+                <div class="aksq__kpi"><span>Temps de jeu</span><strong><?= $h($dur($totalPlay)) ?></strong></div>
                 <div class="aksq__kpi"><span>Temps d’écran</span><strong><?= $h($dur($totalScreen)) ?></strong></div>
                 <div class="aksq__kpi"><span>Temps de jeu par rôle</span><strong><?= $h($dur($totalRoles)) ?></strong></div>
             </div>
@@ -76,6 +78,7 @@ $maxRole = $roles !== [] ? max(array_column($roles, 'seconds')) : 1;
                         <thead>
                             <tr>
                                 <th scope="col">Membre</th>
+                                <th scope="col">Temps de jeu</th>
                                 <th scope="col">Écran</th>
                                 <th scope="col">En main / porté</th>
                                 <th scope="col">Apps les plus utilisées</th>
@@ -90,6 +93,7 @@ $maxRole = $roles !== [] ? max(array_column($roles, 'seconds')) : 1;
                                         <strong><?= $h($u['callsign'] !== '' ? $u['callsign'] : ($u['display_name'] !== '' ? $u['display_name'] : 'Membre #' . $u['user_id'])) ?></strong>
                                         <?php if ($u['callsign'] !== '' && $u['display_name'] !== ''): ?><span class="aksq__muted"><?= $h($u['display_name']) ?></span><?php endif; ?>
                                     </th>
+                                    <td><?= $h($dur((int) ($u['play'] ?? 0))) ?></td>
                                     <td><?= $h($dur((int) $u['screen'])) ?></td>
                                     <td class="aksq__muted"><?= $h($dur((int) $u['hand'])) ?> / <?= $h($dur((int) $u['carry'])) ?></td>
                                     <td>

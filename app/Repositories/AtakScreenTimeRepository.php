@@ -13,12 +13,18 @@ use PDO;
  *   screen : total | hand (en main) | carry (porté en miniature)
  *   app    : page de l'app (MAP, CHAT, BFT…)
  *   role   : rôle tenu (PIL, CDE, MED… ou SLOT:<rôle du slot>)
+ *   play   : total (temps de jeu dans la mission)
+ * Le temps de jeu et les rôles viennent aussi du serveur Arma pour tous les joueurs (« ScreenTime.Batch »,
+ * POST /api/atak/screen-time/batch), même quand le téléphone du joueur n'a plus de batterie ni de réseau.
  */
 class AtakScreenTimeRepository
 {
     use LazyDatabaseConnection;
 
-    public const KINDS = ['screen', 'app', 'role'];
+    public const KINDS = ['screen', 'app', 'role', 'play'];
+
+    /** Types qu'un envoi du serveur Arma peut porter (le serveur ne voit pas l'écran des téléphones). */
+    public const SERVER_KINDS = ['play', 'role'];
 
     private static ?bool $ready = null;
 
@@ -77,6 +83,47 @@ class AtakScreenTimeRepository
     }
 
     /**
+     * Envoi groupé du serveur Arma : [{player_uid, call_sign, items}…] → joueurs valides (Steam 17 chiffres),
+     * seulement temps de jeu et rôles, 100 joueurs au plus, un même joueur fusionné.
+     *
+     * @param mixed $players
+     * @return list<array{player_uid: string, call_sign: string, items: list<array{kind: string, key: string, label: string, seconds: int}>}>
+     */
+    public static function normalizeBatch(mixed $players): array
+    {
+        if (!is_array($players)) {
+            return [];
+        }
+        $out = [];
+        foreach (array_slice($players, 0, 100) as $p) {
+            if (!is_array($p)) {
+                continue;
+            }
+            $uid = trim((string) ($p['player_uid'] ?? $p['steam_uid'] ?? ''));
+            if (!preg_match('/^7656\d{13}$/', $uid)) {
+                continue;
+            }
+            $items = array_values(array_filter(
+                self::normalizeItems($p['items'] ?? []),
+                static fn (array $it): bool => in_array($it['kind'], self::SERVER_KINDS, true)
+            ));
+            if ($items === []) {
+                continue;
+            }
+            if (isset($out[$uid])) {
+                $items = self::normalizeItems(array_merge($out[$uid]['items'], $items));
+            }
+            $call = trim(preg_replace('/[\x00-\x1F\x7F]/u', ' ', (string) ($p['call_sign'] ?? '')) ?? '');
+            if ($call === '' && isset($out[$uid])) {
+                $call = $out[$uid]['call_sign'];
+            }
+            $out[$uid] = ['player_uid' => $uid, 'call_sign' => mb_substr($call, 0, 64), 'items' => $items];
+        }
+
+        return array_values($out);
+    }
+
+    /**
      * @param list<array{kind: string, key: string, label: string, seconds: int}> $items
      */
     public function addItems(int $tenantId, int $userId, array $items, ?string $day = null): int
@@ -102,7 +149,7 @@ class AtakScreenTimeRepository
     /**
      * Bilan par membre sur la période : écran (total, en main, porté), top apps et temps par rôle.
      *
-     * @return list<array{user_id: int, display_name: string, callsign: string, screen: int, hand: int, carry: int, apps: list<array{key: string, label: string, seconds: int}>, roles: list<array{key: string, label: string, seconds: int}>, last_day: string}>
+     * @return list<array{user_id: int, display_name: string, callsign: string, play: int, screen: int, hand: int, carry: int, apps: list<array{key: string, label: string, seconds: int}>, roles: list<array{key: string, label: string, seconds: int}>, last_day: string}>
      */
     public function summaryByUser(int $tenantId, int $days): array
     {
@@ -130,7 +177,7 @@ class AtakScreenTimeRepository
                 'user_id' => $uid,
                 'display_name' => (string) ($r['display_name'] ?? ''),
                 'callsign' => (string) ($r['callsign'] ?? ''),
-                'screen' => 0, 'hand' => 0, 'carry' => 0, 'apps' => [], 'roles' => [], 'last_day' => '',
+                'play' => 0, 'screen' => 0, 'hand' => 0, 'carry' => 0, 'apps' => [], 'roles' => [], 'last_day' => '',
             ];
             $sec = (int) $r['seconds'];
             $users[$uid]['last_day'] = max($users[$uid]['last_day'], (string) $r['last_day']);
@@ -140,6 +187,11 @@ class AtakScreenTimeRepository
                     $slot = match ($key) { 'TOTAL' => 'screen', 'HAND' => 'hand', 'CARRY' => 'carry', default => null };
                     if ($slot !== null) {
                         $users[$uid][$slot] += $sec;
+                    }
+                    break;
+                case 'play':
+                    if ($key === 'TOTAL') {
+                        $users[$uid]['play'] += $sec;
                     }
                     break;
                 case 'app':
@@ -157,7 +209,7 @@ class AtakScreenTimeRepository
         }
         unset($u);
         $list = array_values($users);
-        usort($list, static fn (array $a, array $b): int => (array_sum(array_column($b['roles'], 'seconds')) + $b['screen']) <=> (array_sum(array_column($a['roles'], 'seconds')) + $a['screen']));
+        usort($list, static fn (array $a, array $b): int => [$b['play'], $b['screen']] <=> [$a['play'], $a['screen']]);
 
         return $list;
     }

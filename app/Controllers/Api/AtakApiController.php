@@ -6664,6 +6664,47 @@ class AtakApiController
         return Response::json(['ok' => true, 'matched' => true, 'recorded' => $repo->addItems($tenantId, (int) $user['id'], $items)]);
     }
 
+    /**
+     * Serveur Arma (COMSPEC Link « ScreenTime.Batch ») : temps de jeu et temps par rôle de tous les joueurs,
+     * comptés par le serveur, donc même quand le téléphone d'un joueur n'a plus de batterie ni de réseau.
+     * Corps : {mission_key, players: [{player_uid, call_sign, items: [{kind: play|role, key, label, seconds}]}]}.
+     */
+    public function screenTimeBatch(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $repo = new \App\Repositories\AtakScreenTimeRepository();
+        if (!$repo->schemaReady()) {
+            return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+        }
+        $body = $this->jsonBody($request);
+        $matched = 0;
+        $recorded = 0;
+        $unmatched = 0;
+        foreach (\App\Repositories\AtakScreenTimeRepository::normalizeBatch($body['players'] ?? []) as $p) {
+            $uid = SteamId::normalize($p['player_uid']);
+            $user = $uid !== null ? $this->userRepository->findBySteamIdForTenant($tenantId, $uid) : null;
+            if ($user === null) {
+                $unmatched++;
+                continue;
+            }
+            $matched++;
+            $recorded += $repo->addItems($tenantId, (int) $user['id'], $p['items']);
+        }
+
+        return Response::json(['ok' => true, 'matched' => $matched, 'unmatched' => $unmatched, 'recorded' => $recorded]);
+    }
+
     public function chatIndex(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);

@@ -55,3 +55,14 @@ COMSPEC_ATAK_FtCheck = {
     private _side = str side group _unit;
     ["comspec_atak_native_syncData", [COMSPEC_ATAK_SrvLog getOrDefault [_side, []], COMSPEC_ATAK_SrvRoutes getOrDefault [netId group _unit, []]], _unit] call CBA_fnc_targetEvent;
 }] call CBA_fnc_addEventHandler;
+// Temps de jeu et temps par rôle comptés ici pour chaque joueur, quel que soit l'état de son téléphone (fn_playTimeServer).
+// Sonde au démarrage : si la DLL du serveur sait envoyer, les clients ne remontent plus eux-mêmes que l'écran et les apps.
+[{ ["tick"] call comspec_atak_native_fnc_playTimeServer; }, 10] call CBA_fnc_addPerFrameHandler;
+[{
+    private _r = "COMSPECExtension" callExtension ["ScreenTime.Batch", ["probe"]];
+    if (_r isEqualType []) then { _r = _r param [0, ""]; };
+    missionNamespace setVariable ["COMSPEC_ATAK_SrvPlayOK", (_r select [0, 3]) isEqualTo "OK|", true];
+    ["INFO", "PLAYTIME", format ["Sonde ScreenTime.Batch : %1", [_r, "COMSPEC Link 2.0.63 requis"] select (_r isEqualTo "")]] call comspec_atak_native_fnc_log;
+}, [], 15] call CBA_fnc_waitAndExecute;
+addMissionEventHandler ["HandleDisconnect", { params ["", "", "_uid"]; ["leave", _uid] call comspec_atak_native_fnc_playTimeServer; false }];
+addMissionEventHandler ["MPEnded", { ["flush"] call comspec_atak_native_fnc_playTimeServer; }];
