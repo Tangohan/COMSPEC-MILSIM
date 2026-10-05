@@ -20,14 +20,10 @@ if (!in_array($sitePhotoPriority, ['operator', 'account'], true)) {
 }
 $notifEmailCatalog = $notifEmailCatalog ?? [];
 $notifEmailState = $notifEmailState ?? [];
-$accountSnapshot = $accountSnapshot ?? ['email_masked' => '—', 'email_verified' => false, 'last_login_label' => null];
 $timezoneSuggestions = $timezoneSuggestions ?? [];
 $steamWebConfigured = !empty($steamWebConfigured ?? false);
 $steamSyncReport = is_array($steamSyncReport ?? null) ? $steamSyncReport : null;
-$loginOtpMandatory = !empty($loginOtpMandatory ?? false);
-$loginOtpVoluntaryActive = !empty($loginOtpVoluntaryActive ?? false);
-$totpEnabled = !empty($totpEnabled ?? false);
-$loginOtpTtlMinutes = isset($loginOtpTtlMinutes) ? (int) $loginOtpTtlMinutes : 10;
+$uiThemeSync = is_string($uiThemeSync ?? null) ? $uiThemeSync : null;
 
 $notifByGroup = [];
 foreach ($notifEmailCatalog as $item) {
@@ -44,10 +40,8 @@ require base_path('views/partials/account/shell_open.php');
 
 <nav class="account-hub__subnav" aria-label="Sections des préférences">
     <a href="#section-profil">Profil portail</a>
-    <a href="#section-photo">Photo site</a>
     <a href="#section-locale">Fuseau &amp; langue</a>
     <a href="#section-interface">Interface</a>
-    <a href="#connexion-verification">Double vérification</a>
     <a href="#notifications-email">Notifications</a>
 </nav>
 
@@ -105,81 +99,6 @@ require base_path('views/partials/account/shell_open.php');
     </div>
 </div>
 <?php endif; ?>
-
-<section class="account-hub__panel" style="margin-bottom:1.25rem">
-    <div class="account-hub__panel-head">
-        <p class="account-hub__panel-kicker">Résumé</p>
-        <h2 class="account-hub__panel-title">Compte actuel</h2>
-    </div>
-    <div class="account-hub__panel-body">
-        <div class="account-hub__stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(11rem,1fr))">
-            <div class="account-hub__stat">
-                <p class="account-hub__stat-label">E-mail</p>
-                <p class="account-hub__stat-value" style="font-family:ui-monospace,monospace;font-size:.85rem"><?= htmlspecialchars((string) $accountSnapshot['email_masked'], ENT_QUOTES, 'UTF-8') ?></p>
-                <p class="account-hub__stat-meta"><a href="<?= htmlspecialchars(url('account/mail'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline">Modifier l’adresse</a></p>
-            </div>
-            <div class="account-hub__stat">
-                <p class="account-hub__stat-label">Vérification</p>
-                <p class="account-hub__stat-meta" style="margin-top:.45rem">
-                    <?php if (!empty($accountSnapshot['email_verified'])): ?>
-                    <span class="account-hub__badge account-hub__badge--ok">Adresse confirmée</span>
-                    <?php else: ?>
-                    <span class="account-hub__badge account-hub__badge--warn">En attente de confirmation</span>
-                    <?php endif; ?>
-                </p>
-            </div>
-            <div class="account-hub__stat">
-                <p class="account-hub__stat-label">Dernière connexion</p>
-                <p class="account-hub__stat-value" style="font-size:.875rem"><?= $accountSnapshot['last_login_label'] !== null ? htmlspecialchars((string) $accountSnapshot['last_login_label'], ENT_QUOTES, 'UTF-8') : 'Non enregistrée' ?></p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section id="connexion-verification" class="account-hub__panel account-hub__section-anchor" style="margin-bottom:1.25rem" aria-labelledby="login-otp-title">
-    <div class="account-hub__panel-head">
-        <p class="account-hub__panel-kicker">Connexion</p>
-        <h2 id="login-otp-title" class="account-hub__panel-title">Double vérification</h2>
-        <p class="account-hub__panel-desc">Après le mot de passe, un second code peut être demandé (e-mail ou application d’authentification).</p>
-        <p style="margin:.85rem 0 0">
-            <?php if (!empty($totpEnabled)): ?>
-            <span class="account-hub__badge account-hub__badge--ok">Application activée</span>
-            <?php endif; ?>
-            <?php if ($loginOtpMandatory): ?>
-            <span class="account-hub__badge account-hub__badge--ok">Imposée pour votre rôle</span>
-            <?php elseif ($loginOtpVoluntaryActive): ?>
-            <span class="account-hub__badge account-hub__badge--ok">Code e-mail activé</span>
-            <?php elseif (empty($totpEnabled)): ?>
-            <span class="account-hub__badge account-hub__badge--off">Non activée (mot de passe seul)</span>
-            <?php endif; ?>
-        </p>
-    </div>
-    <div class="account-hub__panel-body">
-        <?php if (!empty($totpEnabled)): ?>
-        <p style="margin:0;font-size:.875rem;line-height:1.55;color:#334155">
-            L’application d’authentification est active : un code de l’application sera demandé en priorité à la connexion.
-            Gérez les méthodes sur <a href="<?= htmlspecialchars(url('account/security'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline">Double vérification</a>.
-        </p>
-        <?php elseif ($loginOtpMandatory): ?>
-        <p style="margin:0;font-size:.875rem;line-height:1.55;color:#334155">
-            Compte tenu de vos responsabilités, le portail envoie un code après le mot de passe. Validité d’environ <strong><?= (int) $loginOtpTtlMinutes ?> minute<?= (int) $loginOtpTtlMinutes > 1 ? 's' : '' ?></strong>. Pensez aux courriers indésirables si rien n’arrive. Vous pouvez aussi activer une application sur <a href="<?= htmlspecialchars(url('account/security'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline">Double vérification</a>.
-        </p>
-        <?php elseif ($loginOtpVoluntaryActive): ?>
-        <p style="margin:0;font-size:.875rem;line-height:1.55;color:#334155">
-            Vous avez ajouté le code par e-mail. Modifiez les méthodes sur <a href="<?= htmlspecialchars(url('account/security'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline">Double vérification</a>. Validité d’environ <strong><?= (int) $loginOtpTtlMinutes ?> minute<?= (int) $loginOtpTtlMinutes > 1 ? 's' : '' ?></strong>.
-        </p>
-        <?php else: ?>
-        <p style="margin:0;font-size:.875rem;line-height:1.55;color:#334155">
-            Activez la double vérification sur <a href="<?= htmlspecialchars(url('account/security'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline">Double vérification</a>, ou demandez un envoi d’essai ci-dessous pour vérifier votre boîte de réception.
-        </p>
-        <?php endif; ?>
-        <form method="post" action="<?= htmlspecialchars(url('account/preferences/login-otp-mailbox-test'), ENT_QUOTES, 'UTF-8') ?>" style="margin-top:1.15rem;display:flex;flex-wrap:wrap;align-items:center;gap:.85rem">
-            <?= \App\Core\Csrf::field() ?>
-            <button type="submit" class="account-hub__btn account-hub__btn--primary">Envoyer un code d’essai</button>
-            <p class="account-hub__hint" style="margin:0;max-width:18rem">Au plus un envoi par minute, pour limiter les envois répétés.</p>
-        </form>
-    </div>
-</section>
 
 <form method="post" action="<?= htmlspecialchars(url('account/preferences'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__stack">
     <?= \App\Core\Csrf::field() ?>
@@ -254,17 +173,6 @@ require base_path('views/partials/account/shell_open.php');
         </div>
     </section>
 
-    <section id="section-photo" class="account-hub__panel account-hub__section-anchor">
-        <div class="account-hub__panel-head">
-            <p class="account-hub__panel-kicker">Identité visuelle</p>
-            <h2 class="account-hub__panel-title">Portrait opérateur obligatoire</h2>
-            <p class="account-hub__panel-desc">Le portail utilise exclusivement votre portrait opérateur personnalisé. À défaut, la photo « inconnu » est affichée.</p>
-        </div>
-        <div class="account-hub__panel-body">
-            <a href="<?= htmlspecialchars(url('account/portrait'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__btn account-hub__btn--ink">Gérer mon portrait opérateur</a>
-        </div>
-    </section>
-
     <section id="section-locale" class="account-hub__panel account-hub__section-anchor">
         <div class="account-hub__panel-head">
             <p class="account-hub__panel-kicker">Locale</p>
@@ -297,7 +205,7 @@ require base_path('views/partials/account/shell_open.php');
         <div class="account-hub__panel-head">
             <p class="account-hub__panel-kicker">Affichage</p>
             <h2 class="account-hub__panel-title">Interface</h2>
-            <p class="account-hub__panel-desc">Thème et densité enregistrés pour votre compte sur tout le portail.</p>
+            <p class="account-hub__panel-desc">Le thème s’applique à votre espace compte et au back-office (mode nuit). La densité concerne les listes d’ATAK web.</p>
         </div>
         <div class="account-hub__panel-body">
             <div class="account-hub__form-grid account-hub__form-grid--2">
@@ -311,20 +219,13 @@ require base_path('views/partials/account/shell_open.php');
                     </select>
                 </div>
                 <div>
-                    <label class="account-hub__label" for="ui_density">Densité des listes</label>
+                    <label class="account-hub__label" for="ui_density">Densité des listes (ATAK web)</label>
                     <select name="ui_density" id="ui_density">
                         <option value="comfortable" <?= ($uiPrefs['density'] ?? '') === 'comfortable' ? 'selected' : '' ?>>Confortable</option>
                         <option value="compact" <?= ($uiPrefs['density'] ?? '') === 'compact' ? 'selected' : '' ?>>Compact</option>
                     </select>
                 </div>
             </div>
-            <label class="account-hub__check" style="margin-top:1rem;cursor:pointer">
-                <input type="checkbox" name="ui_sidebar_collapsed" id="ui_sidebar_collapsed" value="1" <?= !empty($uiPrefs['sidebar_collapsed']) ? 'checked' : '' ?>>
-                <span>
-                    <strong style="font-size:.875rem">Barre latérale repliée par défaut</strong>
-                    <span class="account-hub__hint" style="display:block">Utile sur petit écran ou pour se concentrer sur le contenu.</span>
-                </span>
-            </label>
         </div>
     </section>
 
@@ -513,5 +414,23 @@ require base_path('views/partials/account/shell_open.php');
     updateStats();
 })();
 </script>
+
+<?php if ($uiThemeSync !== null): ?>
+<script>
+/* Thème enregistré : appliqué au mode nuit de l’espace compte et du back-office (même clé que le bouton jour/nuit). */
+(function () {
+    var theme = <?= json_encode($uiThemeSync) ?>;
+    try {
+        if (theme === 'dark' || theme === 'light') {
+            localStorage.setItem('athena.bo.theme', theme);
+        } else {
+            localStorage.removeItem('athena.bo.theme');
+        }
+    } catch (e) {}
+    var dark = theme === 'dark' || (theme !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.setAttribute('data-bo-theme', dark ? 'dark' : 'light');
+})();
+</script>
+<?php endif; ?>
 
 <?php require base_path('views/partials/account/shell_close.php'); ?>

@@ -34,6 +34,7 @@ SOURCES = sorted(
         "personnel-dossier.css", "personnel-file.css", "personnel-file-refresh.css",
         "personnel-edit-refresh.css", "personnel-directory.css", "member-integration.css",
         "document-fm.css", "effectifs_lms.css", "decorations-kit.css", "dashboard-impact.css",
+        "account-hub.css",
     }
     - {"back-office-dark.css", "back-office-dark.generated.css"}
 )

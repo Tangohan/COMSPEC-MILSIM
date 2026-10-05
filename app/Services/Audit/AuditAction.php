@@ -14,6 +14,8 @@ final class AuditAction
     public const AUTH_LOGOUT = 'auth.logout';
     public const AUTH_PASSWORD_RESET_REQUESTED = 'auth.password_reset_requested';
     public const AUTH_PASSWORD_RESET_COMPLETED = 'auth.password_reset_completed';
+    public const AUTH_PASSWORD_CHANGED = 'auth.password_changed';
+    public const AUTH_SESSIONS_REVOKED = 'auth.sessions_revoked';
     public const AUTH_REGISTER = 'auth.register';
     public const AUTH_TOTP_ENABLED = 'auth.totp_enabled';
     public const AUTH_TOTP_DISABLED = 'auth.totp_disabled';

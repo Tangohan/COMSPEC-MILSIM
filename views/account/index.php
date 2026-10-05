@@ -6,139 +6,219 @@ $accountProfile = is_array($accountProfile ?? null) ? $accountProfile : [];
 $accountSnapshot = $accountSnapshot ?? ['email_masked' => '—', 'email_verified' => false, 'last_login_label' => null];
 $onboardingSnapshot = is_array($onboardingSnapshot ?? null) ? $onboardingSnapshot : [];
 $accountHasPortrait = !empty($accountHasPortrait);
+$accountSecurity = is_array($accountSecurity ?? null) ? $accountSecurity : [];
+$accountActivity = is_array($accountActivity ?? null) ? $accountActivity : [];
+$accountDeletionScheduledAt = trim((string) ($accountDeletionScheduledAt ?? ''));
+$accountMemberSince = trim((string) ($accountMemberSince ?? ''));
 
-$prefUrl = url('account/preferences');
+$h = static fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $callsign = trim((string) ($accountUser['callsign'] ?? ''));
-$displayNameVal = trim((string) ($accountUser['display_name'] ?? ''));
-$onboardingPercent = (int) ($onboardingSnapshot['percent'] ?? 0);
+$onboardingPercent = max(0, min(100, (int) ($onboardingSnapshot['percent'] ?? 0)));
 $onboardingNudge = trim((string) ($onboardingSnapshot['nudge'] ?? ''));
 $onboardingTotal = (int) ($onboardingSnapshot['total_count'] ?? 0);
 $showOnboarding = $onboardingTotal > 0 && $onboardingPercent < 100;
 
-$accountNavKey = 'overview';
-$accountTitle = 'Mon compte';
-$accountLead = 'Connexion, photo et préférences. L’unité et le grade restent sur votre fiche.';
-require base_path('views/partials/account/shell_open.php');
+$secondFactor = $accountSecurity['second_factor'] ?? null;
+$secondFactorMandatory = !empty($accountSecurity['second_factor_mandatory']);
+$steamLinked = !empty($accountSecurity['steam_linked']);
+$devicesActive = (int) ($accountSecurity['devices_active'] ?? 0);
+$devicesTotal = (int) ($accountSecurity['devices_total'] ?? 0);
 
-$chevron = '<svg class="account-hub__action-chevron" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>';
-?>
+$formatDay = static function (string $raw): ?string {
+    if ($raw === '' || str_starts_with($raw, '0000')) {
+        return null;
+    }
+    try {
+        $months = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+        $dt = new \DateTimeImmutable($raw);
 
-<?php if ($showOnboarding): ?>
-<section class="account-hub__panel" aria-labelledby="onboarding-heading">
-    <div class="account-hub__panel-head">
-        <p class="account-hub__panel-kicker"><?= htmlspecialchars(function_exists('__') ? __('common.integration_eyebrow') : 'Arrivée', ENT_QUOTES, 'UTF-8') ?></p>
-        <h2 id="onboarding-heading" class="account-hub__panel-title"><?= htmlspecialchars(function_exists('__') ? __('common.integration_account_heading') : 'Votre arrivée n’est pas terminée', ENT_QUOTES, 'UTF-8') ?></h2>
-        <p class="account-hub__panel-desc">
-            <?= $onboardingNudge !== '' && $onboardingNudge !== 'RAS'
-                ? htmlspecialchars($onboardingNudge, ENT_QUOTES, 'UTF-8')
-                : htmlspecialchars(function_exists('__') ? __('common.integration_account_nudge') : 'Les étapes restantes se trouvent dans Mon intégration, pas ici.', ENT_QUOTES, 'UTF-8') ?>
-        </p>
-    </div>
-    <div class="account-hub__panel-body">
-        <a href="<?= htmlspecialchars(url('mon-integration'), ENT_QUOTES, 'UTF-8') ?>" class="account-hub__btn account-hub__btn--ink"><?= htmlspecialchars(function_exists('__') ? __('common.integration_open') : 'Ouvrir Mon intégration', ENT_QUOTES, 'UTF-8') ?></a>
-    </div>
-</section>
-<?php endif; ?>
+        return $dt->format('j') . ' ' . $months[(int) $dt->format('n') - 1] . ' ' . $dt->format('Y');
+    } catch (\Throwable) {
+        return null;
+    }
+};
 
-<section class="account-hub__panel" aria-labelledby="account-overview-heading"<?= $showOnboarding ? ' style="margin-top:1.25rem"' : '' ?>>
-    <div class="account-hub__panel-head">
-        <p class="account-hub__panel-kicker">Aperçu</p>
-        <h2 id="account-overview-heading" class="account-hub__panel-title">Ce compte</h2>
-        <p class="account-hub__panel-desc">Trois informations utiles, puis les réglages correspondants.</p>
-    </div>
-    <div class="account-hub__panel-body">
-        <div class="account-hub__stat-grid">
-            <div class="account-hub__stat">
-                <p class="account-hub__stat-label">Connexion</p>
-                <p class="account-hub__stat-value" style="font-family:ui-monospace,monospace;font-size:.85rem"><?= htmlspecialchars((string) ($accountSnapshot['email_masked'] ?? '—'), ENT_QUOTES, 'UTF-8') ?></p>
-                <p class="account-hub__stat-meta">
-                    <?php if (!empty($accountSnapshot['email_verified'])): ?>
-                    <span class="account-hub__badge account-hub__badge--ok">Adresse confirmée</span>
-                    <?php else: ?>
-                    <span class="account-hub__badge account-hub__badge--warn">Confirmation en attente</span>
-                    <?php endif; ?>
-                </p>
-                <p class="account-hub__stat-meta" style="margin-top:.55rem">
-                    <a href="<?= htmlspecialchars(url('account/mail'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline;text-underline-offset:2px">Changer l’adresse</a>
-                </p>
-            </div>
-            <div class="account-hub__stat">
-                <p class="account-hub__stat-label">Nom affiché</p>
-                <p class="account-hub__stat-value"><?= htmlspecialchars($displayNameVal !== '' ? $displayNameVal : 'Non renseigné', ENT_QUOTES, 'UTF-8') ?></p>
-                <p class="account-hub__stat-meta">
-                    <?php if ($callsign !== ''): ?>Indicatif : <?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?><?php else: ?>Indicatif non renseigné<?php endif; ?>
-                </p>
-                <p class="account-hub__stat-meta" style="margin-top:.55rem">
-                    <a href="<?= htmlspecialchars($prefUrl, ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline;text-underline-offset:2px">Modifier le profil</a>
-                </p>
-            </div>
-            <div class="account-hub__stat">
-                <p class="account-hub__stat-label">Portrait</p>
-                <p class="account-hub__stat-value"><?= $accountHasPortrait ? 'Enregistré' : 'À ajouter' ?></p>
-                <p class="account-hub__stat-meta">Une seule photo, visible sur le portail et la fiche.</p>
-                <p class="account-hub__stat-meta" style="margin-top:.55rem">
-                    <a href="<?= htmlspecialchars(url('account/portrait'), ENT_QUOTES, 'UTF-8') ?>" style="font-weight:700;color:#047857;text-decoration:underline;text-underline-offset:2px"><?= $accountHasPortrait ? 'Changer la photo' : 'Ajouter une photo' ?></a>
-                </p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<?php
-$hubActions = [
+/* Protections du compte : chaque ligne dit son état et mène au réglage. */
+$checks = [
     [
-        'href' => $prefUrl,
-        'title' => 'Profil et préférences',
-        'desc' => 'Nom, indicatif, langue, thème et notifications par e-mail.',
-        'icon' => '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
+        'ok' => !empty($accountSnapshot['email_verified']),
+        'title' => 'Adresse e-mail confirmée',
+        'detail' => (string) ($accountSnapshot['email_masked'] ?? '—'),
+        'detail_mono' => true,
+        'warn' => 'Confirmez-la : c’est elle qui sert à récupérer le compte.',
+        'href' => url('account/mail'),
+        'cta' => !empty($accountSnapshot['email_verified']) ? 'Changer' : 'Vérifier',
     ],
     [
+        'ok' => $secondFactor !== null,
+        'title' => 'Double vérification',
+        'detail' => $secondFactor === 'totp'
+            ? 'Application d’authentification'
+            : ($secondFactor === 'email'
+                ? 'Code par e-mail' . ($secondFactorMandatory ? ' (imposé pour votre rôle)' : '')
+                : 'Mot de passe seul'),
+        'warn' => 'Un second code bloque la connexion même si le mot de passe fuite.',
         'href' => url('account/security'),
-        'title' => 'Sécurité',
-        'desc' => 'Mot de passe, double vérification et appareils ATAK.',
-        'icon' => '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>',
+        'cta' => $secondFactor !== null ? 'Gérer' : 'Activer',
     ],
     [
-        'href' => url('account/donnees'),
-        'title' => 'Mes données',
-        'desc' => 'Télécharger une copie des informations enregistrées sur ce compte.',
-        'icon' => '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>',
+        'ok' => $steamLinked,
+        'title' => 'Compte Steam lié',
+        'detail' => $steamLinked ? 'Reconnu en jeu et par COMSPEC ATAK' : 'Non lié',
+        'warn' => 'Nécessaire pour être reconnu sur le serveur et dans ATAK.',
+        'href' => $steamLinked ? url('account/preferences') . '#section-profil' : url('account/steam/connect'),
+        'cta' => $steamLinked ? 'Voir' : 'Lier Steam',
     ],
     [
-        'href' => url('personnel/me'),
-        'title' => 'Ma fiche personnelle',
-        'desc' => 'Unité, grade et affectations : ce n’est pas ici.',
-        'icon' => '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>',
+        'ok' => $accountHasPortrait,
+        'title' => 'Portrait opérateur',
+        'detail' => $accountHasPortrait ? 'Affiché sur le portail et la fiche' : 'Photo « inconnu » affichée',
+        'warn' => 'Votre portrait remplace la silhouette partout sur le site.',
+        'href' => url('account/portrait'),
+        'cta' => $accountHasPortrait ? 'Changer' : 'Ajouter',
     ],
 ];
+$checksDone = count(array_filter($checks, static fn (array $c): bool => $c['ok']));
+$checksTotal = count($checks);
+$checksPct = $checksTotal > 0 ? (int) round($checksDone * 100 / $checksTotal) : 0;
+$healthTone = $checksDone === $checksTotal ? 'ok' : ($checksDone >= $checksTotal - 1 ? 'mid' : 'low');
+$healthLabel = match ($healthTone) {
+    'ok' => 'Compte bien protégé',
+    'mid' => 'Presque complet',
+    default => 'À compléter',
+};
+
+$accountNavKey = 'overview';
+$accountTitle = 'Mon compte';
+$accountLead = 'Connexion, sécurité et préférences. L’unité et le grade restent sur votre fiche.';
+require base_path('views/partials/account/shell_open.php');
 ?>
 
-<section class="account-hub__panel" style="margin-top:1.25rem" aria-labelledby="account-go-heading">
-    <div class="account-hub__panel-head">
-        <p class="account-hub__panel-kicker">Réglages</p>
-        <h2 id="account-go-heading" class="account-hub__panel-title">Où aller</h2>
-        <p class="account-hub__panel-desc">Le menu de gauche reprend les mêmes destinations, sans les répéter deux fois.</p>
+<?php if ($accountDeletionScheduledAt !== ''): ?>
+<div class="account-hub__ov-alert account-hub__ov-alert--danger" role="alert">
+    <div>
+        <strong>Suppression du compte programmée<?= ($d = $formatDay($accountDeletionScheduledAt)) !== null ? ' le ' . $h($d) : '' ?>.</strong>
+        <span>Vous pouvez encore l’annuler.</span>
     </div>
-    <div class="account-hub__panel-body" style="padding-top:.35rem;padding-bottom:.5rem">
-        <ul class="account-hub__action-list">
-            <?php foreach ($hubActions as $action): ?>
-            <li>
-                <a href="<?= htmlspecialchars($action['href'], ENT_QUOTES, 'UTF-8') ?>" class="account-hub__action">
-                    <span class="account-hub__action-icon" aria-hidden="true"><?= $action['icon'] ?></span>
-                    <span>
-                        <p class="account-hub__action-title"><?= htmlspecialchars($action['title'], ENT_QUOTES, 'UTF-8') ?></p>
-                        <p class="account-hub__action-desc"><?= htmlspecialchars($action['desc'], ENT_QUOTES, 'UTF-8') ?></p>
-                    </span>
-                    <?= $chevron ?>
-                </a>
-            </li>
-            <?php endforeach; ?>
-        </ul>
+    <a href="<?= $h(url('account/donnees')) ?>" class="account-hub__btn account-hub__btn--ink">Annuler la suppression</a>
+</div>
+<?php endif; ?>
+
+<?php if ($showOnboarding): ?>
+<div class="account-hub__ov-alert" aria-labelledby="onboarding-heading">
+    <div class="account-hub__ov-alert-main">
+        <strong id="onboarding-heading"><?= $h(function_exists('__') ? __('common.integration_account_heading') : 'Votre arrivée n’est pas terminée') ?></strong>
+        <span>
+            <?= $onboardingNudge !== '' && $onboardingNudge !== 'RAS'
+                ? $h($onboardingNudge)
+                : $h(function_exists('__') ? __('common.integration_account_nudge') : 'Les étapes restantes se trouvent dans Mon intégration, pas ici.') ?>
+        </span>
+        <span class="account-hub__ov-meter" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $onboardingPercent ?>"><span style="width:<?= $onboardingPercent ?>%"></span></span>
     </div>
+    <a href="<?= $h(url('mon-integration')) ?>" class="account-hub__btn account-hub__btn--ink"><?= $h(function_exists('__') ? __('common.integration_open') : 'Ouvrir Mon intégration') ?></a>
+</div>
+<?php endif; ?>
+
+<section class="account-hub__ov-health is-<?= $h($healthTone) ?>" aria-labelledby="account-health-heading">
+    <div class="account-hub__ov-score">
+        <span class="account-hub__ov-ring" style="--pct:<?= $checksPct ?>" aria-hidden="true">
+            <span><?= $checksDone ?><small>/<?= $checksTotal ?></small></span>
+        </span>
+        <div>
+            <p class="account-hub__panel-kicker">État du compte</p>
+            <h2 id="account-health-heading" class="account-hub__ov-score-title"><?= $h($healthLabel) ?></h2>
+            <p class="account-hub__ov-score-desc">
+                <?= $checksDone === $checksTotal
+                    ? 'Les quatre protections sont en place.'
+                    : $h(($checksTotal - $checksDone) . ' point' . ($checksTotal - $checksDone > 1 ? 's' : '') . ' à régler, chacun en un clic.') ?>
+            </p>
+        </div>
+    </div>
+    <ul class="account-hub__ov-checks">
+        <?php foreach ($checks as $check): ?>
+        <li class="account-hub__ov-check<?= $check['ok'] ? ' is-ok' : ' is-todo' ?>">
+            <span class="account-hub__ov-check-mark" aria-hidden="true">
+                <?php if ($check['ok']): ?>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+                <?php else: ?>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 7v6M12 17h.01"/></svg>
+                <?php endif; ?>
+            </span>
+            <span class="account-hub__ov-check-text">
+                <span class="account-hub__ov-check-title"><?= $h($check['title']) ?><span class="account-hub__sr"><?= $check['ok'] ? ' : en place' : ' : à régler' ?></span></span>
+                <span class="account-hub__ov-check-detail<?= !empty($check['detail_mono']) ? ' is-mono' : '' ?>"><?= $h($check['detail']) ?></span>
+                <?php if (!$check['ok']): ?>
+                <span class="account-hub__ov-check-why"><?= $h($check['warn']) ?></span>
+                <?php endif; ?>
+            </span>
+            <a href="<?= $h($check['href']) ?>" class="account-hub__ov-check-cta"><?= $h($check['cta']) ?></a>
+        </li>
+        <?php endforeach; ?>
+    </ul>
 </section>
 
-<p class="account-hub__footer-note">
-    Une question sur votre unité ? Ouvrez <a href="<?= htmlspecialchars(url('personnel/me'), ENT_QUOTES, 'UTF-8') ?>">votre fiche</a> ou le <a href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>">tableau de bord</a>.
-</p>
+<div class="account-hub__ov-stats">
+    <div class="account-hub__ov-stat">
+        <p class="account-hub__ov-stat-label">Dernière connexion</p>
+        <p class="account-hub__ov-stat-value is-sm"><?= $h(preg_replace('/\s*\([^)]*\)$/', '', (string) ($accountSnapshot['last_login_label'] ?? '')) ?: 'Non enregistrée') ?></p>
+    </div>
+    <a class="account-hub__ov-stat is-link" href="<?= $h(url('account/security/devices')) ?>">
+        <p class="account-hub__ov-stat-label">Appareils ATAK</p>
+        <p class="account-hub__ov-stat-value"><?= $devicesActive ?></p>
+        <p class="account-hub__ov-stat-note"><?= $devicesTotal === 0 ? 'Aucun téléphone lié' : ($devicesActive === $devicesTotal ? 'actif' . ($devicesActive > 1 ? 's' : '') : 'actif' . ($devicesActive > 1 ? 's' : '') . ' sur ' . $devicesTotal) ?></p>
+    </a>
+    <div class="account-hub__ov-stat">
+        <p class="account-hub__ov-stat-label">Indicatif</p>
+        <p class="account-hub__ov-stat-value is-sm"><?= $h($callsign !== '' ? $callsign : 'Non renseigné') ?></p>
+        <p class="account-hub__ov-stat-note"><a href="<?= $h(url('account/preferences')) ?>#section-profil">Modifier le profil</a></p>
+    </div>
+    <div class="account-hub__ov-stat">
+        <p class="account-hub__ov-stat-label">Membre depuis</p>
+        <p class="account-hub__ov-stat-value is-sm"><?= $h($formatDay($accountMemberSince) ?? '—') ?></p>
+    </div>
+</div>
+
+<div class="account-hub__ov-grid">
+    <section class="account-hub__panel" aria-labelledby="account-activity-heading">
+        <div class="account-hub__panel-head">
+            <p class="account-hub__panel-kicker">Journal</p>
+            <h2 id="account-activity-heading" class="account-hub__panel-title">Activité récente</h2>
+            <p class="account-hub__panel-desc">Connexions et changements de sécurité de ce compte. Adresse IP volontairement tronquée.</p>
+        </div>
+        <div class="account-hub__panel-body">
+            <?php if ($accountActivity === []): ?>
+            <p class="account-hub__ov-empty">Aucune activité enregistrée pour l’instant.</p>
+            <?php else: ?>
+            <ol class="account-hub__ov-feed">
+                <?php foreach ($accountActivity as $event): ?>
+                <li class="account-hub__ov-event is-<?= $h($event['tone'] ?? 'muted') ?>">
+                    <span class="account-hub__ov-event-dot" aria-hidden="true"></span>
+                    <span class="account-hub__ov-event-main">
+                        <span class="account-hub__ov-event-title"><?= $h($event['label'] ?? '') ?></span>
+                        <span class="account-hub__ov-event-meta"><?= $h($event['device'] ?? '') ?> · IP <?= $h($event['ip'] ?? '—') ?></span>
+                    </span>
+                    <time class="account-hub__ov-event-when"><?= $h($event['when'] ?? '') ?></time>
+                </li>
+                <?php endforeach; ?>
+            </ol>
+            <?php endif; ?>
+        </div>
+    </section>
+
+    <section id="sessions" class="account-hub__panel account-hub__section-anchor" aria-labelledby="account-sessions-heading">
+        <div class="account-hub__panel-head">
+            <p class="account-hub__panel-kicker">Sessions</p>
+            <h2 id="account-sessions-heading" class="account-hub__panel-title">Connecté ailleurs ?</h2>
+            <p class="account-hub__panel-desc">Un ordinateur partagé, un téléphone perdu ou une connexion que vous ne reconnaissez pas : fermez toutes les autres sessions. Celle-ci reste ouverte.</p>
+        </div>
+        <div class="account-hub__panel-body">
+            <form method="post" action="<?= $h(url('account/sessions/fermer-les-autres')) ?>" onsubmit="return confirm('Fermer toutes vos autres sessions ? Les autres navigateurs devront se reconnecter.');">
+                <?= \App\Core\Csrf::field() ?>
+                <button type="submit" class="account-hub__btn account-hub__btn--ink">Déconnecter mes autres sessions</button>
+            </form>
+            <p class="account-hub__hint" style="margin-top:.85rem">Changer de mot de passe ferme aussi les autres sessions. Les téléphones ATAK se gèrent dans <a href="<?= $h(url('account/security/devices')) ?>">Appareils ATAK</a>.</p>
+        </div>
+    </section>
+</div>
 
 <?php require base_path('views/partials/account/shell_close.php'); ?>

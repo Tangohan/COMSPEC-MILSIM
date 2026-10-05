@@ -174,3 +174,20 @@ html[data-bo-theme="dark"] .ath-btn:not(.ath-btn--solid):hover { border-color: #
 /* Champ « Filtrer » du tableau : le cadre porte le fond, pas l’input */
 html[data-bo-theme="dark"] .ath-table-toolbar__search { background: #111715; border-color: #2c3733; }
 html[data-bo-theme="dark"] .ath-main__body .ath-table-toolbar__search input { background: transparent !important; border: 0; }
+
+/* Espace « Mon compte » : jetons propres (account-hub.css) */
+html[data-bo-theme="dark"] .account-hub {
+  --ah-ink: #e6ebe8;
+  --ah-muted: #9aa6a1;
+  --ah-line: #26302c;
+  --ah-surface: #141a18;
+  --ah-panel: #0d1110;
+  --ah-accent-soft: #12291f;
+  color: #dbe0de;
+}
+html[data-bo-theme="dark"] .account-hub__nav-link.is-active { color: #6ee7b7; }
+html[data-bo-theme="dark"] .account-hub__nav-link.is-active small { color: #34d399; }
+html[data-bo-theme="dark"] .account-hub__ov-check.is-todo .account-hub__ov-check-cta { background: #12d18e; border-color: #12d18e; color: #04130d; }
+html[data-bo-theme="dark"] .account-hub__btn--ink { background: #e6ebe8; color: #0c1116; }
+html[data-bo-theme="dark"] .account-hub__btn--ink:hover { background: #fff; color: #0c1116; }
+html[data-bo-theme="dark"] .account-hub__ov-check.is-todo .account-hub__ov-check-mark { color: #3d2903; }

@@ -527,6 +527,7 @@ return function (Router $router) {
     $router->get('/account', [AccountController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account/acces', [AccountController::class, 'access'], [AuthMiddleware::class]);
     $router->post('/account/quitter-communaute', [AccountController::class, 'leaveCommunity'], [AuthMiddleware::class]);
+    $router->post('/account/sessions/fermer-les-autres', [AccountController::class, 'revokeOtherSessions'], [AuthMiddleware::class]);
     $router->get('/account/donnees', [AccountPrivacyController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/account/donnees/export', [AccountPrivacyController::class, 'export'], [AuthMiddleware::class]);
     $router->post('/account/donnees/supprimer', [AccountPrivacyController::class, 'requestDeletion'], [AuthMiddleware::class]);
