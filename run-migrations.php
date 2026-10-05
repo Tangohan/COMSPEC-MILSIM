@@ -4449,6 +4449,7 @@ foreach ([
     'athena_game_auth_migration.php' => 'identité Athena globale, sessions jeu',
     'equipment_catalog_extras_migration.php' => 'catalogue d’équipement',
     'atak_recon_images_actions_migration.php' => 'actions sur les images de reconnaissance',
+    'account_session_epoch_migration.php' => 'Mon compte : déconnexion des autres sessions',
 ] as $lazyFile => $lazyLabel) {
     $migrationRunner->step($lazyFile, static function () use ($root, $lazyFile, $lazyLabel, $pdo): void {
         echo "Migration {$lazyFile} ({$lazyLabel})...\n";
