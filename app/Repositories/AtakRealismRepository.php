@@ -551,6 +551,11 @@ final class AtakRealismRepository
         }
 
         $incomingType = $this->allowed((string) ($payload['terminal_type'] ?? 'phone'), ['phone', 'tablet', 'radio', 'vehicle', 'desktop', 'web'], 'phone');
+        // Le terminal du jeu est le téléphone Android COMSPEC ; l'ancien module Connect s'annonce encore « tablet ».
+        $incomingType = \App\Support\AtakDevicePresenter::terminalType([
+            'terminal_type' => $incomingType,
+            'platform_label' => (string) ($payload['platform_label'] ?? ''),
+        ]);
 
         $row = $this->findTerminalByUid($tenantId, $uid);
         // Récupère une fiche corrompue (<null>) du même compte / indicatif pour la réparer
@@ -825,7 +830,11 @@ final class AtakRealismRepository
                        c.certificate_ref AS certificate_ref,
                        c.status AS certificate_status,
                        c.expires_at AS certificate_expires_at,
-                       c.certificate_type AS certificate_type'
+                       c.certificate_type AS certificate_type,
+                       c.serial_number AS certificate_serial,
+                       c.common_name AS certificate_common_name,
+                       c.issued_at AS certificate_issued_at,
+                       c.valid_from AS certificate_valid_from'
             . ($this->cryptoDomainsReady()
                 ? ', d.label AS crypto_domain_label, d.domain_ref AS crypto_domain_ref'
                 : ', NULL AS crypto_domain_label, NULL AS crypto_domain_ref')
@@ -875,6 +884,18 @@ final class AtakRealismRepository
             $meta = [];
         }
         $jsonMeta = json_encode($meta, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        // Comme une vraie PKI : numéro de série aléatoire (128 bits), empreinte SHA-256 et sujet toujours renseignés.
+        // Une référence déjà émise garde les siens (pas de nouveau numéro à chaque synchronisation).
+        $existing = $this->findCertificateByRef($tenantId, $ref) ?? [];
+        $serial = $this->nullableString($payload['serial_number'] ?? null, 120)
+            ?? $this->nullableString($existing['serial_number'] ?? null, 120)
+            ?? strtoupper(bin2hex(random_bytes(16)));
+        $fingerprint = $this->nullableString($payload['fingerprint_sha256'] ?? null, 128)
+            ?? $this->nullableString($existing['fingerprint_sha256'] ?? null, 128)
+            ?? strtoupper(hash('sha256', $tenantId . ':' . $ref . ':' . $serial));
+        $commonName = $this->nullableString($payload['common_name'] ?? null, 255)
+            ?? $this->nullableString($existing['common_name'] ?? null, 255)
+            ?? $this->defaultCommonName($tenantId, $terminalId, $ref);
         $sql = 'INSERT INTO atak_certificates
                 (tenant_id, terminal_id, user_id, crypto_domain_id, certificate_ref, authority_label, certificate_type,
                  common_name, serial_number, fingerprint_sha256, status, issued_at, valid_from, expires_at,
@@ -906,9 +927,9 @@ final class AtakRealismRepository
             $ref,
             $authority,
             $type,
-            $this->nullableString($payload['common_name'] ?? null, 255),
-            $this->nullableString($payload['serial_number'] ?? null, 120),
-            $this->nullableString($payload['fingerprint_sha256'] ?? null, 128),
+            $commonName,
+            $serial,
+            $fingerprint,
             $status,
             $issuedAt,
             $validFrom,
@@ -919,6 +940,24 @@ final class AtakRealismRepository
         ]);
 
         return $this->findCertificateByRef($tenantId, $ref) ?? [];
+    }
+
+    /** Sujet par défaut : indicatif de l'opérateur du terminal, sinon son identifiant, sinon la référence. */
+    private function defaultCommonName(int $tenantId, ?int $terminalId, string $ref): string
+    {
+        if ($terminalId !== null && $terminalId > 0) {
+            $terminal = $this->findTerminalById($tenantId, $terminalId);
+            if ($terminal !== null) {
+                foreach (['operator_callsign', 'terminal_uid'] as $key) {
+                    $value = trim((string) ($terminal[$key] ?? ''));
+                    if ($value !== '' && !self::isGenericCallsign($value)) {
+                        return $this->clip($value, 255);
+                    }
+                }
+            }
+        }
+
+        return $this->clip($ref, 255);
     }
 
     /**

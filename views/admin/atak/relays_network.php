@@ -106,63 +106,118 @@ $statusMeta = static function (bool $alive, int $reliability): array {
                 </a>
             </section>
         <?php else: ?>
-            <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                <div class="px-5 py-4 border-b border-slate-100 bg-slate-50/80 flex flex-wrap items-center justify-between gap-3">
+            <?php
+            // Emprise de la carte de couverture : tous les mâts et leur portée, avec 5 % de marge.
+            $minX = $minY = INF;
+            $maxX = $maxY = -INF;
+            foreach ($relays as $relay) {
+                $rx = (float) ($relay['pos_x'] ?? 0);
+                $ry = (float) ($relay['pos_y'] ?? 0);
+                $rr = max(50.0, (float) ($relay['range_m'] ?? 0));
+                $minX = min($minX, $rx - $rr);
+                $maxX = max($maxX, $rx + $rr);
+                $minY = min($minY, $ry - $rr);
+                $maxY = max($maxY, $ry + $rr);
+            }
+            $span = max($maxX - $minX, $maxY - $minY, 1.0) * 1.1;
+            $cx = ($minX + $maxX) / 2;
+            $cy = ($minY + $maxY) / 2;
+            $vb = 1000;
+            $toX = static fn (float $x): float => round(($x - ($cx - $span / 2)) / $span * $vb, 1);
+            $toY = static fn (float $y): float => round($vb - ($y - ($cy - $span / 2)) / $span * $vb, 1);
+            $scaleM = $span >= 8000 ? 2000 : ($span >= 3000 ? 1000 : 500);
+            ?>
+            <section class="atk-panel atk-admin atk-dev">
+                <div class="atk-panel__head">
                     <div>
-                        <h2 class="text-sm font-black text-slate-900 tracking-tight">Mâts visibles</h2>
-                        <p class="text-xs text-slate-500 mt-0.5"><?= count($relays) ?> antenne<?= count($relays) > 1 ? 's' : '' ?> remontée<?= count($relays) > 1 ? 's' : '' ?> depuis le théâtre</p>
+                        <h2>Couverture radio</h2>
+                        <p><?= count($relays) ?> mât<?= count($relays) > 1 ? 's' : '' ?> remonté<?= count($relays) > 1 ? 's' : '' ?> depuis le théâtre. Cercles à l’échelle de la portée déclarée ; carroyage Arma de 100 m.</p>
                     </div>
-                    <a href="#tutoriel-relais" class="text-xs font-semibold text-emerald-800 hover:underline">Comment ça marche ?</a>
+                    <a href="#tutoriel-relais" class="atk-btn">Comment ça marche ?</a>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
-                        <thead>
-                            <tr class="border-b border-slate-100 text-left text-xs uppercase tracking-wider text-slate-500">
-                                <th class="px-5 py-3 font-semibold">État</th>
-                                <th class="px-5 py-3 font-semibold">Nom</th>
-                                <th class="px-5 py-3 font-semibold">Portée</th>
-                                <th class="px-5 py-3 font-semibold">Places</th>
-                                <th class="px-5 py-3 font-semibold">Débit</th>
-                                <th class="px-5 py-3 font-semibold">Fiabilité</th>
-                                <th class="px-5 py-3 font-semibold">Dernière activité</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100">
-                            <?php foreach ($relays as $relay): ?>
-                                <?php
-                                $alive = !empty($relay['alive']);
-                                $reliability = (int) ($relay['reliability_pct'] ?? 0);
-                                $meta = $statusMeta($alive, $reliability);
-                                $slots = (int) ($relay['slots'] ?? 0);
-                                $used = (int) ($relay['slots_used'] ?? 0);
-                                $name = trim((string) ($relay['display_name'] ?? ''));
-                                if ($name === '') {
-                                    $name = trim((string) ($relay['relay_uid'] ?? 'Relais'));
-                                }
-                                $identity = trim((string) ($relay['identity'] ?? ''));
-                                ?>
-                                <tr class="hover:bg-slate-50/80">
-                                    <td class="px-5 py-3.5">
-                                        <span class="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold <?= $h($meta['class']) ?>">
-                                            <?= $h($meta['label']) ?>
-                                        </span>
-                                    </td>
-                                    <td class="px-5 py-3.5">
-                                        <div class="font-semibold text-slate-900"><?= $h($name) ?></div>
-                                        <?php if ($identity !== ''): ?>
-                                            <div class="text-xs text-slate-500 mt-0.5"><?= $h($identity) ?></div>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td class="px-5 py-3.5 text-slate-800"><?= number_format((float) ($relay['range_m'] ?? 0), 0, ',', ' ') ?> m</td>
-                                    <td class="px-5 py-3.5 text-slate-800"><?= $used ?> / <?= $slots ?></td>
-                                    <td class="px-5 py-3.5 text-slate-800"><?= number_format((float) ($relay['throughput_mbps'] ?? 0), 1, ',', ' ') ?> Mbit/s</td>
-                                    <td class="px-5 py-3.5 text-slate-800"><?= $reliability ?> %</td>
-                                    <td class="px-5 py-3.5 text-slate-600"><?= $h($formatSeen(isset($relay['last_seen_at']) ? (string) $relay['last_seen_at'] : null)) ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                <div class="atk-panel__body">
+                    <div class="atk-coverage">
+                        <svg viewBox="0 0 <?= $vb ?> <?= $vb ?>" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Carte de couverture des mâts Relais">
+                            <g>
+                                <?php foreach ($relays as $relay):
+                                    $alive = !empty($relay['alive']);
+                                    $px = $toX((float) ($relay['pos_x'] ?? 0));
+                                    $py = $toY((float) ($relay['pos_y'] ?? 0));
+                                    $pr = round(max(50.0, (float) ($relay['range_m'] ?? 0)) / $span * $vb, 1);
+                                    $col = $alive ? ((int) ($relay['reliability_pct'] ?? 0) >= 70 ? '#4fd3a2' : '#f0c27a') : '#f08585';
+                                    $nm = trim((string) ($relay['display_name'] ?? '')) ?: trim((string) ($relay['relay_uid'] ?? 'Relais'));
+                                    ?>
+                                    <circle cx="<?= $px ?>" cy="<?= $py ?>" r="<?= $pr ?>" fill="<?= $col ?>" fill-opacity=".1" stroke="<?= $col ?>" stroke-opacity=".7" stroke-width="2" <?= $alive ? '' : 'stroke-dasharray="8 6"' ?>/>
+                                    <circle cx="<?= $px ?>" cy="<?= $py ?>" r="7" fill="<?= $col ?>"/>
+                                    <text x="<?= $px + 12 ?>" y="<?= $py - 10 ?>" fill="#e8f3ee" font-size="22" font-family="system-ui, sans-serif" font-weight="700"><?= $h($nm) ?></text>
+                                    <text x="<?= $px + 12 ?>" y="<?= $py + 16 ?>" fill="#9aa6a1" font-size="18" font-family="ui-monospace, monospace"><?= $h(\App\Support\AtakDevicePresenter::gridRef($relay['pos_x'] ?? null, $relay['pos_y'] ?? null)) ?></text>
+                                <?php endforeach; ?>
+                            </g>
+                            <?php $barPx = round($scaleM / $span * $vb, 1); ?>
+                            <g transform="translate(24 <?= $vb - 28 ?>)">
+                                <rect x="0" y="0" width="<?= $barPx ?>" height="6" fill="#e8f3ee"/>
+                                <text x="0" y="-8" fill="#e8f3ee" font-size="18" font-family="system-ui, sans-serif"><?= $scaleM >= 1000 ? ($scaleM / 1000) . ' km' : $scaleM . ' m' ?></text>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="atk-coverage__legend">
+                        <span><i style="background:#4fd3a2"></i>En service</span>
+                        <span><i style="background:#f0c27a"></i>Dégradé (fiabilité &lt; 70 %)</span>
+                        <span><i style="background:#f08585"></i>Hors service</span>
+                    </div>
                 </div>
+            </section>
+
+            <section class="atk-relays atk-admin atk-dev" aria-label="Fiches des mâts">
+                <?php foreach ($relays as $relay):
+                    $alive = !empty($relay['alive']);
+                    $reliability = max(0, min(100, (int) ($relay['reliability_pct'] ?? 0)));
+                    $meta = $statusMeta($alive, $reliability);
+                    $slots = (int) ($relay['slots'] ?? 0);
+                    $used = (int) ($relay['slots_used'] ?? 0);
+                    $load = $slots > 0 ? (int) min(100, round($used * 100 / $slots)) : 0;
+                    $name = trim((string) ($relay['display_name'] ?? '')) ?: trim((string) ($relay['relay_uid'] ?? 'Relais'));
+                    $identity = trim((string) ($relay['identity'] ?? ''));
+                    $power = (int) ($relay['power_w'] ?? 0);
+                    $dbm = \App\Support\AtakDevicePresenter::wattsToDbm($power);
+                    $tone = !$alive ? 'bad' : ($reliability >= 70 ? 'ok' : 'warn');
+                    $cert = trim((string) ($relay['certificate'] ?? ''));
+                    ?>
+                    <article class="atk-relay<?= $alive ? '' : ' is-dead' ?>">
+                        <header class="atk-relay__head">
+                            <div>
+                                <strong><?= $h($name) ?></strong>
+                                <small><?= $h($identity !== '' ? $identity : (string) ($relay['relay_uid'] ?? '')) ?></small>
+                            </div>
+                            <span class="atk-chip atk-chip--<?= $h($tone) ?>"><?= $h($meta['label']) ?></span>
+                        </header>
+                        <div class="atk-relay__meters">
+                            <div class="atk-meter" style="max-width:none">
+                                <span>Places</span>
+                                <div class="atk-meter__bar<?= $load >= 90 ? ' is-low' : ($load >= 70 ? ' is-mid' : '') ?>"><i style="width: <?= $load ?>%"></i></div>
+                                <strong><?= $used ?> / <?= $slots ?></strong>
+                            </div>
+                            <div class="atk-meter" style="max-width:none">
+                                <span>Fiabilité</span>
+                                <div class="atk-meter__bar<?= $reliability < 50 ? ' is-low' : ($reliability < 70 ? ' is-mid' : '') ?>"><i style="width: <?= $alive ? $reliability : 0 ?>%"></i></div>
+                                <strong><?= $alive ? $reliability : 0 ?> %</strong>
+                            </div>
+                        </div>
+                        <div class="atk-sheet">
+                            <dl>
+                                <div><dt>Carroyage</dt><dd class="is-mono"><?= $h(\App\Support\AtakDevicePresenter::gridRef($relay['pos_x'] ?? null, $relay['pos_y'] ?? null)) ?></dd></div>
+                                <div><dt>Altitude de l’antenne</dt><dd><?= number_format((float) ($relay['pos_z'] ?? 0), 0, ',', ' ') ?> m</dd></div>
+                                <div><dt>Portée</dt><dd><?= number_format((float) ($relay['range_m'] ?? 0), 0, ',', ' ') ?> m</dd></div>
+                                <div><dt>Puissance d’émission</dt><dd><?= $power > 0 ? $power . ' W' . ($dbm !== null ? ' · ' . number_format($dbm, 1, ',', ' ') . ' dBm' : '') : '—' ?></dd></div>
+                                <div><dt>Débit</dt><dd><?= $alive ? number_format((float) ($relay['throughput_mbps'] ?? 0), 1, ',', ' ') . ' Mbit/s' : '0 Mbit/s' ?></dd></div>
+                                <div><dt>Dernière activité</dt><dd><?= $h($formatSeen(isset($relay['last_seen_at']) ? (string) $relay['last_seen_at'] : null)) ?></dd></div>
+                                <div><dt>Adresse IP</dt><dd class="is-mono"><?= $h(trim((string) ($relay['ip_addr'] ?? '')) ?: '—') ?></dd></div>
+                                <div><dt>Passerelle</dt><dd class="is-mono"><?= $h(trim((string) ($relay['gateway'] ?? '')) ?: '—') ?></dd></div>
+                                <?php if ($cert !== ''): ?><div class="is-wide"><dt>Certificat du mât</dt><dd class="is-mono is-wrap"><?= $h($cert) ?></dd></div><?php endif; ?>
+                            </dl>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
             </section>
         <?php endif; ?>
 

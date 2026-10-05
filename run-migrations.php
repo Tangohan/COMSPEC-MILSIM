@@ -3962,6 +3962,15 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakTerminalPhoneTypeMigrate = require $root . '/bootstrap/atak_terminal_phone_type_migration.php';
+try {
+    echo "Migration atak_terminal_phone_type (terminaux du jeu en téléphone, séries et empreintes des certificats)…\n";
+    $atakTerminalPhoneTypeMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_terminal_phone_type : ' . $e->getMessage() . "\n";
+}
+$migrationEnsurePdo();
+
 $atakWebCommandsMigrate = require $root . '/bootstrap/atak_web_commands_migration.php';
 try {
     echo "Migration atak_web_commands (commandes web drones, charges, notifications)…\n";

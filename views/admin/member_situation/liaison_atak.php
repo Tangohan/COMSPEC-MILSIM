@@ -29,17 +29,6 @@ $statusLabel = static function (string $status, bool $recent): string {
 
     return 'Inconnu';
 };
-
-$typeLabel = static function (string $type): string {
-    return match (strtolower(trim($type))) {
-        'phone' => 'Téléphone',
-        'tablet' => 'Tablette',
-        'radio' => 'Radio',
-        'vehicle' => 'Véhicule',
-        'desktop' => 'Poste',
-        default => 'Appareil',
-    };
-};
 ?>
 <div class="bo-member-situation">
     <?php if ($success): ?>
@@ -73,7 +62,7 @@ $typeLabel = static function (string $type): string {
                 $statusKey = strtolower(trim((string) ($terminal['status'] ?? '')));
                 $deviceName = trim((string) ($terminal['terminal_label'] ?? ''));
                 if ($deviceName === '' || preg_match('/^\d{2}-\d{4}-\d+$/', $deviceName) === 1) {
-                    $deviceName = $typeLabel((string) ($terminal['terminal_type'] ?? '')) . ' ATAK';
+                    $deviceName = \App\Support\AtakDevicePresenter::typeLabel(\App\Support\AtakDevicePresenter::terminalType($terminal)) . ' ATAK';
                 }
                 $identity = AtakRealismRepository::liaisonIdentity($terminal);
                 $certStatus = trim((string) ($terminal['certificate_status'] ?? ''));
@@ -92,7 +81,7 @@ $typeLabel = static function (string $type): string {
                     <dl class="bo-member-situation__dl">
                         <div>
                             <dt>Type</dt>
-                            <dd><?= $h($typeLabel((string) ($terminal['terminal_type'] ?? ''))) ?></dd>
+                            <dd><?= $h(\App\Support\AtakDevicePresenter::typeLabel(\App\Support\AtakDevicePresenter::terminalType($terminal))) ?></dd>
                         </div>
                         <div>
                             <dt>Dernière liaison</dt>

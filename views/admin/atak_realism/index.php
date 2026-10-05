@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+use App\Support\AtakDevicePresenter as Dev;
+
 $terminals = is_array($atakRealismTerminals ?? null) ? $atakRealismTerminals : [];
 $webSessions = is_array($atakRealismWebSessions ?? null) ? $atakRealismWebSessions : [];
 $canManage = !empty($canManageAtakTerminals);
@@ -93,7 +95,7 @@ $renderTable = static function (array $rows, string $emptyLabel, bool $web) use 
                             </td>
                         <?php endif; ?>
                         <td class="px-4 py-3"><?= $h($labelShow) ?><div class="text-xs text-slate-500 font-mono"><?= $h($uidShow) ?></div></td>
-                        <td class="px-4 py-3"><?= $h($terminalKindFr($terminal['terminal_type'] ?? null)) ?></td>
+                        <td class="px-4 py-3"><?= $h($web ? $terminalKindFr('web') : Dev::typeLabel(Dev::terminalType($terminal))) ?></td>
                         <td class="px-4 py-3"><?= $h($cs !== '' ? $cs : '—') ?><div class="text-xs text-slate-500"><?= $h($terminal['operator_military_id'] ?? '—') ?></div></td>
                         <td class="px-4 py-3"><?= $h($terminal['display_name'] ?? '—') ?></td>
                         <td class="px-4 py-3"><?= $h($terminalStatusFr($terminal['status'] ?? null)) ?></td>
@@ -104,8 +106,14 @@ $renderTable = static function (array $rows, string $emptyLabel, bool $web) use 
                             <div><span class="text-slate-500">Versions</span> · <?= $h($web ? ($liaison['versions'] !== '—' ? $liaison['versions'] : 'Session navigateur') : $liaison['versions']) ?></div>
                             <div class="font-mono"><span class="font-sans text-slate-500">Signature serveur</span> · <?= $h($liaison['signature']) ?><?php if ($liaison['host'] !== ''): ?> <span class="text-slate-400"><?= $h($liaison['host']) ?></span><?php endif; ?></div>
                             <div class="font-mono"><span class="font-sans text-slate-500">IP</span> · <?= $h($liaison['ip']) ?></div>
+                            <?php if (!$web): $life = Dev::certificateLifetime(Dev::certificateOfTerminal($terminal)); ?>
+                                <div class="mt-1 flex flex-wrap items-center gap-1">
+                                    <span class="atk-chip atk-chip--<?= $h($life['tone']) ?>">Certificat · <?= $h($life['label']) ?><?= $life['days_left'] !== null && $life['days_left'] >= 0 && $life['state'] !== 'revoked' ? ' · ' . (int) $life['days_left'] . ' j' : '' ?></span>
+                                    <?php if (($fp = Dev::shortFingerprint((string) ($terminal['certificate_fingerprint'] ?? ''))) !== ''): ?><span class="font-mono text-[11px] text-slate-500" title="Empreinte SHA-256"><?= $h($fp) ?></span><?php endif; ?>
+                                </div>
+                            <?php endif; ?>
                         </td>
-                        <td class="px-4 py-3"><?= $h($terminal['last_seen_at'] ?? '—') ?></td>
+                        <td class="px-4 py-3"><?php $ls = Dev::linkState((string) ($terminal['last_seen_at'] ?? '')); ?><span class="atk-chip atk-chip--<?= $h($ls['key']) ?>"><i></i><?= $h($ls['label']) ?></span><div class="mt-1 text-xs text-slate-500"><?= $h($ls['ago'] !== '' ? $ls['ago'] : '—') ?></div></td>
                         <td class="px-4 py-3">
                             <?php if ($cs !== ''): ?>
                                 <a class="font-semibold text-slate-900 underline decoration-slate-300 hover:decoration-slate-700" href="<?= $h(url('back-office/atak/fiche-operateur?indicatif=' . rawurlencode($cs))) ?>">Ouvrir</a>
@@ -145,16 +153,27 @@ $renderTable = static function (array $rows, string $emptyLabel, bool $web) use 
     <?php
 };
 ?>
-<div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-    <header class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p class="text-xs font-bold uppercase tracking-widest text-slate-500">ATAK · Parc</p>
-        <h1 class="mt-2 text-2xl font-black text-slate-900">Parc de terminaux</h1>
-        <p class="mt-2 text-sm text-slate-600">Inventaire des appareils terrain (jeu, tablette, téléphone appairé). Les ouvertures de la carte dans le navigateur sont listées à part : ce ne sont pas des terminaux. Vous pouvez supprimer un appareil, ou dissocier une session web pour qu’elle ne soit plus lue comme un terminal. Le compte de l’opérateur n’est pas touché.</p>
-        <div class="mt-4 flex flex-wrap gap-2">
-            <a href="<?= $h(url('back-office/atak/certificats')) ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Voir les certificats</a>
-            <a href="<?= $h(url('back-office/atak/operateurs')) ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Sessions & connexions</a>
-        </div>
-    </header>
+<div class="atk-dev max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+    <?php
+    $fleet = ['online' => 0, 'renew' => 0, 'compromised' => 0];
+    foreach ($terminals as $row) {
+        if (Dev::linkState((string) ($row['last_seen_at'] ?? ''))['key'] === 'online') {
+            $fleet['online']++;
+        }
+        if (in_array(Dev::certificateLifetime(Dev::certificateOfTerminal($row))['state'], ['expiring', 'expired', 'none'], true)) {
+            $fleet['renew']++;
+        }
+        if (!in_array(strtolower((string) ($row['compromise_state'] ?? 'none')), ['', 'none'], true)) {
+            $fleet['compromised']++;
+        }
+    }
+    ?>
+    <section class="atk-kpis" aria-label="État du parc">
+        <div class="atk-kpi"><span>Terminaux terrain</span><strong><?= count($terminals) ?></strong><small>Téléphones, postes Arma, radios</small></div>
+        <div class="atk-kpi atk-kpi--ok"><span>En liaison</span><strong><?= (int) $fleet['online'] ?></strong><small>Signe de vie depuis moins de 3 min</small></div>
+        <div class="atk-kpi atk-kpi--warn"><span>Certificat à traiter</span><strong><?= (int) $fleet['renew'] ?></strong><small>Absent, expiré ou à moins de 30 j · <a class="underline" href="<?= $h(url('back-office/atak/certificats')) ?>">certificats</a></small></div>
+        <div class="atk-kpi atk-kpi--bad"><span>Compromis</span><strong><?= (int) $fleet['compromised'] ?></strong><small>Appareils capturés ou fouillés</small></div>
+    </section>
 
     <?php if (!$canManage): ?>
         <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">Vous consultez le parc. La suppression d’appareils et la dissociation des sessions web sont réservées aux responsables ATAK de la communauté.</p>
