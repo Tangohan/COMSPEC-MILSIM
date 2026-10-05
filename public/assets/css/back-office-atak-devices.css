@@ -568,6 +568,70 @@
 .atk-relay__meters { display: grid; gap: .45rem; padding: .7rem .9rem; }
 .atk-relay .atk-sheet dl { border-radius: 0; border-left: 0; border-right: 0; border-bottom: 0; }
 
+/* ---------- Diagnostic : compteurs et onglets (apps, synchros, journal, erreurs) ---------- */
+
+.atk-diag {
+  display: grid;
+  gap: .9rem;
+  padding: 0 1.15rem 1.15rem;
+}
+
+.atk-diag__kpis { grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); }
+
+.atk-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--atk-line);
+  border-radius: .75rem;
+  overflow: hidden;
+  background: var(--atk-panel);
+}
+
+.atk-tabs > input { position: absolute; opacity: 0; pointer-events: none; }
+
+.atk-tabs > label {
+  padding: .6rem .95rem;
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--atk-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  background: var(--atk-panel-2);
+}
+
+.atk-tabs > label:hover { color: var(--atk-ink); }
+.atk-tabs > input:focus-visible + label { outline: 2px solid var(--atk-ok); outline-offset: -2px; }
+.atk-tabs > input:checked + label { color: var(--atk-ink); background: var(--atk-panel); border-bottom-color: var(--atk-ok); }
+
+.atk-tabs__count {
+  display: inline-block;
+  min-width: 1.2rem;
+  padding: 0 .3rem;
+  border-radius: 99px;
+  background: var(--atk-bad-bg);
+  color: var(--atk-bad);
+  font-size: .7rem;
+  text-align: center;
+}
+
+.atk-tabs__panel {
+  display: none;
+  order: 1;
+  width: 100%;
+  border-top: 1px solid var(--atk-line);
+}
+
+.atk-tabs__panel > .atk-sheet__note { padding: 1rem; }
+.atk-tabs__panel .atk-table { min-width: 44rem; }
+
+.atk-tabs > input:nth-of-type(1):checked ~ .atk-tabs__panel:nth-of-type(1),
+.atk-tabs > input:nth-of-type(2):checked ~ .atk-tabs__panel:nth-of-type(2),
+.atk-tabs > input:nth-of-type(3):checked ~ .atk-tabs__panel:nth-of-type(3),
+.atk-tabs > input:nth-of-type(4):checked ~ .atk-tabs__panel:nth-of-type(4) { display: block; }
+
+.atk-dir { white-space: nowrap; font-size: .78rem; color: var(--atk-muted); }
+.atk-chip--muted { background: var(--atk-panel-2); color: var(--atk-muted); }
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 760px) {

@@ -202,20 +202,18 @@ final class AtakOverwatchIntelController
 
     // ================================================================== Applications synchronisées
 
-    /** GET /api/atak/overwatch/apps-sync?mapId= */
-    public function appsSync(Request $request, array $params = []): Response
+    /**
+     * Applications du téléphone et modules qui transmettent au poste : sources SQL, télémétrie, activité.
+     * Aussi lu par Mes appareils (activité d'un seul opérateur).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function appCatalog(): array
     {
-        $tenantId = $this->tenant($request);
-        if ($tenantId === null) {
-            return $this->denied();
-        }
-        $mapId = $this->mapId($request);
-        $telemetry = $this->telemetryStats($tenantId, $mapId);
-        $activity = $this->activityStats($tenantId, $mapId);
-
         $alertLike = "(body LIKE 'ALERTE TACTIQUE%' OR body LIKE '%] ALERTE TACTIQUE%')";
         $medLike = "(body LIKE 'ALERTE M%DICALE%' OR body LIKE 'WIA%' OR body LIKE '%] ALERTE M%DICALE%')";
-        $apps = [
+
+        return [
             ['app' => 'BFT / GPS', 'module' => 'COMSPEC Overwatch (connect)', 'data' => 'Positions, cap, état de liaison',
                 'sql' => [['table' => 'atak_units', 'time' => ['updated_at'], 'author' => ['call_sign'],
                     'where' => "(extra IS NULL OR (extra NOT LIKE '%\"gps_beacon\":true%' AND extra NOT LIKE '%\"phone_geoloc\":true%'))"]],
@@ -284,6 +282,21 @@ final class AtakOverwatchIntelController
             ['app' => 'Rejeu mission (AAR)', 'module' => 'Athena · rapports AAR', 'data' => 'Rapports après action',
                 'sql' => [['table' => 'aar_reports', 'time' => ['created_at'], 'map' => []]]],
         ];
+    }
+
+
+    /** GET /api/atak/overwatch/apps-sync?mapId= */
+    public function appsSync(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenant($request);
+        if ($tenantId === null) {
+            return $this->denied();
+        }
+        $mapId = $this->mapId($request);
+        $telemetry = $this->telemetryStats($tenantId, $mapId);
+        $activity = $this->activityStats($tenantId, $mapId);
+
+        $apps = self::appCatalog();
 
         $rows = [];
         foreach ($apps as $def) {

@@ -68,7 +68,10 @@ final class OverwatchIntelRepository
     /**
      * Statistiques d'une source SQL : nombre aujourd'hui, dernière ligne (âge selon l'horloge MySQL).
      *
-     * @param array{table:string, time:list<string>, author?:list<string>, map?:list<string>, where?:string, params?:array<string,mixed>} $spec
+     * author_value : ne compte que les lignes de cet auteur (indicatif) ; source ignorée sans colonne auteur.
+     * mapId < 1 : toutes les cartes.
+     *
+     * @param array{table:string, time:list<string>, author?:list<string>, author_value?:string, map?:list<string>, where?:string, params?:array<string,mixed>} $spec
      * @return array{available:bool, today:int, total_24h:int, last_at:?string, age_sec:?int, last_author:string}
      */
     public function sourceStats(array $spec, int $tenantId, int $mapId): array
@@ -87,7 +90,15 @@ final class OverwatchIntelRepository
         $mapCol = $this->firstColumn($cols, $spec['map'] ?? ['map_id']);
         $where = ['tenant_id = :tenant'];
         $params = ['tenant' => $tenantId];
-        if ($mapCol !== null) {
+        $authorValue = trim((string) ($spec['author_value'] ?? ''));
+        if ($authorValue !== '') {
+            if ($authorCol === null) {
+                return $empty;
+            }
+            $where[] = '`' . $authorCol . '` = :author_value';
+            $params['author_value'] = $authorValue;
+        }
+        if ($mapCol !== null && $mapId > 0) {
             $where[] = '`' . $mapCol . '` = :map';
             $params['map'] = $mapId;
         }

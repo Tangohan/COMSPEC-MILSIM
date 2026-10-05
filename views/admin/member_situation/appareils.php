@@ -8,6 +8,29 @@ use App\Support\AtakDevicePresenter as Dev;
 
 $devices = is_array($devices ?? null) ? $devices : [];
 $gamePhone = is_array($gamePhone ?? null) ? $gamePhone : null;
+$deviceLogDigests = is_array($deviceLogDigests ?? null) ? $deviceLogDigests : [];
+$appActivity = is_array($appActivity ?? null) ? $appActivity : [];
+$levelLabel = static fn (string $level): string => \App\Support\AtakDeviceLog::levelLabel($level);
+$ago = static function (?int $ts): string {
+    if ($ts === null) {
+        return 'Jamais';
+    }
+    $s = max(0, time() - $ts);
+
+    return match (true) {
+        $s < 60 => 'à l’instant',
+        $s < 3600 => 'il y a ' . intdiv($s, 60) . ' min',
+        $s < 86400 => 'il y a ' . intdiv($s, 3600) . ' h',
+        default => 'le ' . date('d/m à H:i', $ts),
+    };
+};
+$syncStates = [
+    'ok' => ['À jour', 'ok'],
+    'late' => ['En retard', 'warn'],
+    'stale' => ['Ancienne', 'bad'],
+    'never' => ['Jamais', 'muted'],
+];
+$cardIndex = 0;
 $success = $success ?? null;
 $error = $error ?? null;
 $h = static fn (mixed $v): string => htmlspecialchars(trim((string) $v), ENT_QUOTES, 'UTF-8');
@@ -23,10 +46,9 @@ $statusLabel = static function (string $status): string {
     };
 };
 $fmtDate = static function (mixed $raw, string $format = 'd/m/Y à H:i'): string {
-    $raw = trim((string) $raw);
-    $ts = $raw !== '' ? strtotime($raw) : false;
+    $ts = Dev::utcTimestamp((string) $raw);
 
-    return $ts === false ? '—' : date($format, $ts);
+    return $ts === null ? '—' : date($format, $ts);
 };
 $formatLabels = GamePhoneIdentityRepository::FORMATS;
 $stateLabels = GamePhoneIdentityRepository::DEVICE_STATES;
@@ -81,7 +103,7 @@ if (!$phoneAttached && $gamePhone !== null) {
         $callsign = trim((string) ($t['operator_callsign'] ?? $t['callsign'] ?? $p['callsign'] ?? ''));
         $seenRaw = (string) ($p['device_seen_at'] ?? '');
         $tSeen = (string) ($t['last_seen_at'] ?? '');
-        if ($tSeen !== '' && ($seenRaw === '' || (strtotime($tSeen) ?: 0) > (strtotime($seenRaw) ?: 0))) {
+        if ($tSeen !== '' && ($seenRaw === '' || (Dev::utcTimestamp($tSeen) ?? 0) > (Dev::utcTimestamp($seenRaw) ?? 0))) {
             $seenRaw = $tSeen;
         }
         $link = Dev::linkState($seenRaw !== '' ? $seenRaw : null);
@@ -101,6 +123,12 @@ if (!$phoneAttached && $gamePhone !== null) {
         $serial = Dev::colonHex((string) ($cert['serial_number'] ?? ''), 16);
         $uid = trim((string) ($t['terminal_uid'] ?? ''));
         $compromise = strtolower(trim((string) ($t['compromise_state'] ?? 'none')));
+        $digest = $deviceLogDigests[$uid] ?? \App\Services\Atak\OperatorDeviceActivityService::digestLogs([]);
+        // Les apps transmettent sous l'indicatif : on les montre sur la fiche du téléphone (ou la première).
+        $cardApps = ($type === 'phone' || count($cards) === 1) ? $appActivity : [];
+        $syncs = \App\Services\Atak\OperatorDeviceActivityService::syncTable($t, $p, $digest, $cardApps);
+        $activeApps = count(array_filter($cardApps, static fn (array $a): bool => $a['status'] === 'actif'));
+        $tabKey = 'atk-tab-' . (++$cardIndex);
         ?>
         <article class="bo-member-situation__card atk-dev__card">
             <header class="atk-dev__head">
@@ -188,6 +216,7 @@ if (!$phoneAttached && $gamePhone !== null) {
                                     <div><dt>Sujet</dt><dd class="is-mono"><?= $h(Dev::subjectDn($cert)) ?></dd></div>
                                     <div><dt>Émetteur</dt><dd><?= $h((string) ($cert['authority_label'] ?? '') ?: 'Autorité ATAK locale') ?></dd></div>
                                     <div><dt>Référence</dt><dd class="is-mono"><?= $h((string) ($cert['certificate_ref'] ?? '') ?: '—') ?></dd></div>
+                                    <div><dt>Réseau de chiffrement</dt><dd><?= $h(trim((string) ($t['crypto_domain_label'] ?? '')) ?: 'Réseau par défaut') ?></dd></div>
                                     <?php if ($serial !== ''): ?><div><dt>Numéro de série</dt><dd class="is-mono"><?= $h($serial) ?></dd></div><?php endif; ?>
                                     <?php if ($fingerprint !== ''): ?><div class="is-wide"><dt>Empreinte SHA-256</dt><dd class="is-mono is-wrap"><?= $h($fingerprint) ?></dd></div><?php endif; ?>
                                 </dl>
@@ -210,6 +239,109 @@ if (!$phoneAttached && $gamePhone !== null) {
                     <?php endif; ?>
                 </div>
             </div>
+
+            <section class="atk-diag" aria-label="Diagnostic de l’appareil">
+                <div class="atk-kpis atk-diag__kpis">
+                    <div class="atk-kpi <?= $digest['errors_24h'] > 0 ? 'atk-kpi--bad' : 'atk-kpi--ok' ?>"><span>Erreurs · 24 h</span><strong><?= (int) $digest['errors_24h'] ?></strong><small>Remontées par le journal du téléphone</small></div>
+                    <div class="atk-kpi <?= $digest['warnings_24h'] > 0 ? 'atk-kpi--warn' : '' ?>"><span>Alertes · 24 h</span><strong><?= (int) $digest['warnings_24h'] ?></strong><small>Avertissements non bloquants</small></div>
+                    <div class="atk-kpi atk-kpi--ok"><span>Apps actives</span><strong><?= $activeApps ?><small style="display:inline;font-size:.9rem"> / <?= count($cardApps) ?></small></strong><small>Ont transmis dans les 15 dernières minutes</small></div>
+                    <div class="atk-kpi"><span>Dernier journal</span><strong style="font-size:1.05rem"><?= $h($ago($digest['last_at'])) ?></strong><small><?= count($digest['modules']) ?> module<?= count($digest['modules']) > 1 ? 's' : '' ?> journalisé<?= count($digest['modules']) > 1 ? 's' : '' ?></small></div>
+                </div>
+
+                <div class="atk-tabs">
+                    <input type="radio" name="<?= $h($tabKey) ?>" id="<?= $h($tabKey) ?>-apps" checked>
+                    <label for="<?= $h($tabKey) ?>-apps">Apps et modules</label>
+                    <input type="radio" name="<?= $h($tabKey) ?>" id="<?= $h($tabKey) ?>-sync">
+                    <label for="<?= $h($tabKey) ?>-sync">Synchronisations</label>
+                    <input type="radio" name="<?= $h($tabKey) ?>" id="<?= $h($tabKey) ?>-journal">
+                    <label for="<?= $h($tabKey) ?>-journal">Journal par module</label>
+                    <input type="radio" name="<?= $h($tabKey) ?>" id="<?= $h($tabKey) ?>-err">
+                    <label for="<?= $h($tabKey) ?>-err">Erreurs<?php if ($digest['errors'] !== []): ?> <b class="atk-tabs__count"><?= count($digest['errors']) ?></b><?php endif; ?></label>
+
+                    <div class="atk-tabs__panel atk-table-wrap">
+                        <?php if ($cardApps === []): ?>
+                            <p class="atk-sheet__note">Aucune donnée tactique transmise sous votre indicatif pour le moment.</p>
+                        <?php else: ?>
+                            <table class="atk-table">
+                                <thead><tr><th>App</th><th>Module</th><th>Données transmises</th><th>Aujourd’hui</th><th>24 h</th><th>Dernière transmission</th><th>État</th></tr></thead>
+                                <tbody>
+                                <?php foreach ($cardApps as $a): $st = $a['status']; ?>
+                                    <tr>
+                                        <td><strong><?= $h($a['app']) ?></strong></td>
+                                        <td><small style="margin:0"><?= $h($a['module']) ?></small></td>
+                                        <td><?= $h($a['data']) ?></td>
+                                        <td class="is-mono"><?= (int) $a['today'] ?></td>
+                                        <td class="is-mono"><?= (int) $a['day'] ?></td>
+                                        <td><?= $h($a['age_sec'] === null ? 'Jamais' : $ago(time() - (int) $a['age_sec'])) ?></td>
+                                        <td><span class="atk-chip atk-chip--<?= $st === 'actif' ? 'online' : ($st === 'inactif' ? 'muted' : 'muted') ?>"><?php if ($st === 'actif'): ?><i></i><?php endif; ?><?= $st === 'actif' ? 'Actif' : ($st === 'inactif' ? 'En veille' : 'Jamais utilisé') ?></span></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="atk-tabs__panel atk-table-wrap">
+                        <table class="atk-table">
+                            <thead><tr><th>Élément</th><th>Sens</th><th>Contenu</th><th>Dernière synchro</th><th>État</th></tr></thead>
+                            <tbody>
+                            <?php foreach ($syncs as $sync): [$sLabel, $sTone] = $syncStates[$sync['state']] ?? $syncStates['never']; ?>
+                                <tr>
+                                    <td><strong><?= $h($sync['item']) ?></strong></td>
+                                    <td class="atk-dir"><?= $h($sync['direction']) ?></td>
+                                    <td><?= $h($sync['detail']) ?></td>
+                                    <td><?= $h($ago($sync['at'])) ?><?php if ($sync['at'] !== null): ?><small><?= $h(date('d/m/Y H:i:s', $sync['at'])) ?></small><?php endif; ?></td>
+                                    <td><span class="atk-chip atk-chip--<?= $h($sTone) ?>"><?= $h($sLabel) ?></span></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="atk-tabs__panel atk-table-wrap">
+                        <?php if ($digest['modules'] === []): ?>
+                            <p class="atk-sheet__note">Le journal de cet appareil est vide sur les 14 derniers jours.</p>
+                        <?php else: ?>
+                            <table class="atk-table">
+                                <thead><tr><th>Module</th><th>Entrées</th><th>Erreurs</th><th>Alertes</th><th>Dernier message</th><th>Quand</th><th>État</th></tr></thead>
+                                <tbody>
+                                <?php foreach ($digest['modules'] as $m): ?>
+                                    <tr>
+                                        <td><strong><?= $h($m['module']) ?></strong><small class="is-mono"><?= $h($m['channel']) ?></small></td>
+                                        <td class="is-mono"><?= (int) $m['entries'] ?></td>
+                                        <td class="is-mono"><?= (int) $m['errors'] ?></td>
+                                        <td class="is-mono"><?= (int) $m['warnings'] ?></td>
+                                        <td><?= $h(mb_strimwidth((string) $m['last_message'], 0, 110, '…')) ?></td>
+                                        <td><?= $h($ago($m['last_at'])) ?></td>
+                                        <td><span class="atk-chip atk-chip--<?= $h($m['state']) ?>"><?= $m['state'] === 'ok' ? 'Normal' : ($m['state'] === 'warn' ? 'À surveiller' : 'En erreur') ?></span></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="atk-tabs__panel atk-table-wrap">
+                        <?php if ($digest['errors'] === []): ?>
+                            <p class="atk-sheet__note">Aucune erreur ni alerte dans le journal des 14 derniers jours.</p>
+                        <?php else: ?>
+                            <table class="atk-table">
+                                <thead><tr><th>Quand</th><th>Niveau</th><th>Module</th><th>Message</th></tr></thead>
+                                <tbody>
+                                <?php foreach ($digest['errors'] as $err): ?>
+                                    <tr>
+                                        <td style="white-space:nowrap"><?= $h($err['at'] !== null ? date('d/m H:i:s', $err['at']) : '—') ?></td>
+                                        <td><span class="atk-chip atk-chip--<?= $err['level'] === 'error' ? 'bad' : 'warn' ?>"><?= $h($levelLabel($err['level'])) ?></span></td>
+                                        <td><?= $h($err['module']) ?></td>
+                                        <td><?= $h($err['message']) ?><?php if ($err['detail'] !== ''): ?><small class="is-mono"><?= $h(mb_strimwidth($err['detail'], 0, 180, '…')) ?></small><?php endif; ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </section>
 
             <?php if ($id > 0 && $status !== 'revoked'): ?>
                 <footer class="atk-dev__foot">

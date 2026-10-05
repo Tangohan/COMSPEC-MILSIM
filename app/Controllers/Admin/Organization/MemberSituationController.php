@@ -87,6 +87,23 @@ final class MemberSituationController
         }
         [$user, $tenantId, $userId] = $ctx;
 
+        $devices = $this->realism->listPhysicalTerminalsForUser($tenantId, $userId);
+        $gamePhone = $this->gamePhoneFor($tenantId, $userId);
+        // Journal (modules, erreurs) par terminal et apps qui transmettent sous l'indicatif de l'opérateur.
+        $activity = new \App\Services\Atak\OperatorDeviceActivityService();
+        $digests = [];
+        $callsign = trim((string) ($gamePhone['callsign'] ?? $user['callsign'] ?? ''));
+        foreach ($devices as $device) {
+            $uid = trim((string) ($device['terminal_uid'] ?? ''));
+            if ($uid !== '') {
+                $digests[$uid] = \App\Services\Atak\OperatorDeviceActivityService::digestLogs($activity->recentLogs($tenantId, $uid));
+            }
+            if ($callsign === '') {
+                $callsign = trim((string) ($device['operator_callsign'] ?? ''));
+            }
+        }
+        $apps = $activity->appActivity($tenantId, $callsign);
+
         return Response::view('layout.main', $this->boShell([
             'title' => 'Mes appareils ATAK',
             'content' => 'admin.member_situation.appareils',
@@ -95,8 +112,10 @@ final class MemberSituationController
             'boPageSubtitle' => 'Votre téléphone ATAK tel qu’il est vu par le réseau : identité, état, liaison et certificat.',
             'backOfficePageCss' => ['back-office-member-situation.css', 'back-office-atak-devices.css'],
             'user' => $user,
-            'devices' => $this->realism->listPhysicalTerminalsForUser($tenantId, $userId),
-            'gamePhone' => $this->gamePhoneFor($tenantId, $userId),
+            'devices' => $devices,
+            'gamePhone' => $gamePhone,
+            'deviceLogDigests' => $digests,
+            'appActivity' => $apps,
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]));

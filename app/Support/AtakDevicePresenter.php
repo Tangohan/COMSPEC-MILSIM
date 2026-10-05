@@ -204,8 +204,8 @@ final class AtakDevicePresenter
     public static function linkState(?string $seenAt, ?int $now = null): array
     {
         $now ??= time();
-        $ts = $seenAt !== null && trim($seenAt) !== '' ? strtotime($seenAt) : false;
-        if ($ts === false) {
+        $ts = self::utcTimestamp($seenAt);
+        if ($ts === null) {
             return ['key' => 'never', 'label' => 'Jamais vu', 'ago' => ''];
         }
         $ago = max(0, $now - $ts);
