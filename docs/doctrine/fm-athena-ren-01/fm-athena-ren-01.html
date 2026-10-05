@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FM ATHENA REN-01 - Fiches de renseignement simplifiées (FRS / FRM)</title>
+<meta name="description" content="Circulaire REN/PROC/2026-001 relative à la rédaction, à la transmission et à l'exploitation des fiches de renseignement simplifiées.">
+<link rel="stylesheet" href="../print/doctrine-print.css">
+</head>
+<body>
+
+<!-- ===================================================== COUVERTURE -->
+<section class="cover">
+    <div class="cover__band">DIFFUSION INTERNE · COMSPEC MILSIM</div>
+    <div class="cover__code">FM ATHENA REN-01</div>
+    <div class="cover__org">COMSPEC MILSIM</div>
+    <div class="cover__rule"></div>
+    <div class="cover__brand">ATHENA</div>
+    <div class="cover__title">Fiches de renseignement simplifiées<br>FRS / FRM</div>
+    <div class="cover__subtitle">Doctrine de rédaction, de transmission et d’exploitation<br>du renseignement de contact, en jeu et au bureau SSE</div>
+    <div class="cover__ref"><strong>CIRCULAIRE N° REN/PROC/2026-001</strong><br>Édition 1.0</div>
+    <div class="cover__spacer"></div>
+    <div class="cover__date">5 OCTOBRE 2026</div>
+    <div class="cover__restriction">
+        <strong>RESTRICTION DE DIFFUSION</strong>
+        Approuvé pour l’instruction COMSPEC MILSIM et l’administration interne. La présente publication décrit
+        une organisation fictive de simulation militaire et l’emploi des systèmes COMSPEC Athena et COMSPEC ATAK.
+        Elle ne constitue ni une publication officielle d’une force armée réelle, ni une instruction
+        administrative applicable hors de la communauté.
+    </div>
+    <div class="cover__issuer">ÉTAT-MAJOR, COMSPEC MILSIM</div>
+    <div class="cover__band cover__band--bottom">BUREAU RENSEIGNEMENT · SECTION SSE</div>
+</section>
+
+<!-- ===================================================== CARTOUCHE -->
+<section class="circular">
+    <span class="doc-strings">FM ATHENA REN-01</span>
+    <span class="doc-strings-date">5 OCTOBRE 2026</span>
+    <div class="circ-head">
+        <div class="circ-head__issuer">
+            État-major COMSPEC MILSIM
+            <span>Bureau renseignement</span>
+            <span>Section sources, surveillance et exploitation (SSE)</span>
+        </div>
+        <div class="circ-head__place">
+            Le 5 octobre 2026
+            <span class="ref">N° REN/PROC/2026-001</span>
+        </div>
+    </div>
+
+    <div class="circ-title">
+        <div class="circ-title__kind">CIRCULAIRE</div>
+        <div class="circ-title__object">relative à la rédaction, à la transmission et à l’exploitation des fiches de renseignement simplifiées (FRS), dont la fiche de renseignement de mission (FRM)</div>
+    </div>
+
+    <table class="circ-meta">
+        <tr><th>CLASS.</th><td class="colon">:</td><td>REN.PROC - Renseignement, procédures.</td></tr>
+        <tr><th>DESTINATAIRES</th><td class="colon">:</td><td>Tous les membres de la communauté, et plus particulièrement : chefs d’élément et chefs de mission ; analystes du bureau SSE ; administrateurs de communauté.</td></tr>
+        <tr><th>RÉFÉRENCES</th><td class="colon">:</td><td>
+            <ul>
+                <li>Doctrine d’emploi d’ATAK / Overwatch Athena n° SIC/ATAK/2026-001 (FM ATHENA C2-01) du 2 septembre 2026 ;</li>
+                <li>Guide du module SSE, portail Athena, rubrique <i>Aide SSE</i> ;</li>
+                <li>Guide du mod COMSPEC Overwatch, portail Athena, rubrique <i>Mod Arma</i> ;</li>
+                <li>Dossier technique ATH-SSE-FICHES : présentation, référence API et dictionnaire de données.</li>
+            </ul>
+        </td></tr>
+        <tr><th>PIÈCES JOINTES</th><td class="colon">:</td><td>
+            <ul>
+                <li>Quatre annexes.</li>
+            </ul>
+        </td></tr>
+        <tr><th>TEXTES ABROGÉS</th><td class="colon">:</td><td>
+            <ul>
+                <li>Néant (première édition).</li>
+            </ul>
+        </td></tr>
+    </table>
+
+    <div class="callout callout--rule">
+        <span class="callout__label">À RETENIR</span>
+        <p>Une fiche de renseignement consigne un <b>constat daté et situé</b>. Elle n’identifie personne, ne vaut pas preuve
+        et ne remplace jamais l’alerte immédiate. Elle se rédige <b>sur le moment</b>, en quelques lignes, avec au moins un thème.</p>
+    </div>
+</section>
+
+<!-- ===================================================== SOMMAIRE -->
+<section class="toc-page page-break">
+    <div class="toc-title">SOMMAIRE</div>
+    <ol class="toc">
+        <li><a class="t" href="#preambule">Préambule</a><span class="dots"></span><a class="p" href="#preambule"></a></li>
+        <li><span class="n">I.</span><a class="t" href="#p1">Principes généraux</a><span class="dots"></span><a class="p" href="#p1"></a></li>
+        <li><span class="n">II.</span><a class="t" href="#p2">Rédaction de la fiche</a><span class="dots"></span><a class="p" href="#p2"></a></li>
+        <li><span class="n">III.</span><a class="t" href="#p3">Emploi en jeu : l’application FRS / FRM de COMSPEC ATAK</a><span class="dots"></span><a class="p" href="#p3"></a></li>
+        <li><span class="n">IV.</span><a class="t" href="#p4">Saisie au portail Athena</a><span class="dots"></span><a class="p" href="#p4"></a></li>
+        <li><span class="n">V.</span><a class="t" href="#p5">Exploitation par le bureau SSE</a><span class="dots"></span><a class="p" href="#p5"></a></li>
+        <li><span class="n">VI.</span><a class="t" href="#p6">Responsabilités et habilitations</a><span class="dots"></span><a class="p" href="#p6"></a></li>
+        <li><span class="n">VII.</span><a class="t" href="#p7">Sécurité et discipline de la liaison</a><span class="dots"></span><a class="p" href="#p7"></a></li>
+        <li class="sub"><a class="t" href="#a1">Annexe I. Mémento de l’opérateur</a><span class="dots"></span><a class="p" href="#a1"></a></li>
+        <li class="sub"><a class="t" href="#a2">Annexe II. Spécimen de fiche renseignée</a><span class="dots"></span><a class="p" href="#a2"></a></li>
+        <li class="sub"><a class="t" href="#a3">Annexe III. Référentiel des codes</a><span class="dots"></span><a class="p" href="#a3"></a></li>
+        <li class="sub"><a class="t" href="#a4">Annexe IV. Références techniques</a><span class="dots"></span><a class="p" href="#a4"></a></li>
+    </ol>
+</section>
+
+<!-- ===================================================== PRÉAMBULE -->
+<section id="preambule" class="page-break">
+    <div class="preamble-title">PRÉAMBULE</div>
+
+    <p>Dans le cadre général de leur mission, tous les éléments engagés sur le terrain contribuent à la recherche et à la remontée
+    du renseignement. Les opérateurs au contact y jouent un rôle essentiel : ce sont eux qui voient la plaque d’un véhicule,
+    l’attitude inhabituelle d’un groupe, l’axe soudain désert ou la conversation avec un habitant.</p>
+
+    <p>Ces éléments se perdaient le plus souvent, faute d’un support adapté : entre « rien à signaler » et l’ouverture d’un dossier
+    d’intérêt, il manquait la marche la plus basse, celle qui permet de noter tout de suite ce que l’on vient de constater, sans
+    formulaire lourd et sans rien conclure. La fiche de renseignement simplifiée (FRS) est cette marche.</p>
+
+    <p>Ayant vocation à fiabiliser la remontée du renseignement de contact et à simplifier le travail des opérateurs, la FRS est
+    disponible sur deux surfaces qui partagent la même mécanique : l’application <b>FRS / FRM</b> du téléphone COMSPEC ATAK, en
+    jeu, et le rédacteur du <b>portail Athena</b>, au bureau SSE. Les deux rédacteurs emploient le même référentiel de libellés ;
+    un opérateur qui passe du jeu au portail ne réapprend rien.</p>
+
+    <p>Le bureau SSE dispose désormais, avec la file des fiches, d’un véritable outil de recueil et de tri lui permettant
+    d’orienter la recherche et d’alimenter les dossiers. Répondant à l’intégralité des besoins de la remontée de contact, la FRS
+    doit mettre fin à toute autre pratique de consignation tenue en marge du système (messages privés, notes personnelles,
+    captures envoyées hors portail).</p>
+
+    <p>La présente circulaire fixe les règles de rédaction, de transmission et d’exploitation des fiches de renseignement
+    simplifiées, applicables à compter du 5 octobre 2026.</p>
+</section>
+
+<!-- ===================================================== I -->
+<section>
+    <h1 class="part-title" id="p1">I. PRINCIPES GÉNÉRAUX</h1>
+
+    <h2>1.1. Fonction de la fiche de renseignement simplifiée</h2>
+    <p>La FRS<sup class="nc">(1)</sup><span class="fn">(1) FRS : fiche de renseignement simplifiée. La lecture « fiche de recueil source / matériel » est erronée et ne doit pas être employée.</span>
+    est le support unique de la remontée du renseignement de contact. Elle consigne, au plus près de l’événement, un constat
+    daté et situé, orienté par un ou plusieurs thèmes vers l’analyste compétent.</p>
+    <p>Elle répond à trois exigences :</p>
+    <ul class="dash">
+        <li><b>la rapidité</b> : la fiche se rédige en moins d’une minute, sans quitter la mission ;</li>
+        <li><b>la traçabilité</b> : chaque fiche reçoit une référence unique et entre dans le journal des transmissions ;</li>
+        <li><b>l’exploitabilité</b> : le type, les thèmes et l’urgence permettent au bureau SSE de trier sans relire chaque texte.</li>
+    </ul>
+
+    <h2>1.2. FRS et FRM : une famille, cinq types</h2>
+    <p>Le terme FRS désigne la famille des fiches. Chaque fiche porte un <b>type</b>, affiché en pastille bleue. Le type par défaut
+    est la <b>FRM</b>, fiche de renseignement de mission, qui couvre ce que l’opérateur constate pendant la mission en cours.
+    Les quatre autres types (FRO, FRC, FRA, FRT) sont décrits au 2.2. et à l’annexe III.</p>
+
+    <h2>1.3. Ce qu’une fiche n’est pas</h2>
+
+    <h3>1.3.1. Une fiche n’identifie personne et ne vaut pas preuve</h3>
+    <p>La fiche consigne un constat. Toute conclusion relative à une personne passe par un dossier, un rapprochement et une
+    validation humaine. La règle fondamentale du module SSE s’applique sans exception aux fiches : <i>aucune conclusion
+    automatique</i>.</p>
+
+    <h3>1.3.2. Une fiche ne remplace pas l’alerte</h3>
+    <p>Une menace imminente se signale d’abord par les moyens d’alerte de la mission (radio, compte rendu au chef d’élément,
+    application <i>Alertes</i> du téléphone). La fiche de degré <b>Critique</b> vient <b>après</b> l’alerte, pour en garder la trace
+    et transmettre les pièces.</p>
+
+    <h3>1.3.3. Une fiche n’est pas un compte rendu de mission</h3>
+    <p>Le compte rendu de fin de mission, la demande d’appui et le rapport d’incident relèvent de l’application
+    <i>Comptes rendus</i>. La fiche ne porte qu’un fait ; plusieurs faits distincts donnent lieu à plusieurs fiches.</p>
+
+    <h2>1.4. Champ d’application</h2>
+    <p>La présente circulaire s’applique :</p>
+    <ul class="dash">
+        <li>à tout membre de la communauté qui rédige une fiche, en jeu ou au portail ;</li>
+        <li>aux fiches rédigées depuis l’application FRS / FRM de COMSPEC ATAK, depuis le rédacteur de COMSPEC Overwatch et depuis le
+            portail Athena ;</li>
+        <li>aux analystes chargés du suivi et du rattachement des fiches.</li>
+    </ul>
+
+    <div class="callout">
+        <span class="callout__label">CHAÎNE DE TRANSMISSION</span>
+        <div class="flow">TÉLÉPHONE COMSPEC ATAK (app FRS / FRM) -> COMSPEC LINK (DLL) -> API Athena<br>
+        -> file des fiches du bureau SSE -> suivi, rattachement à un dossier<br>
+        PORTAIL ATHENA (rédacteur web) -------------------------^</div>
+        <p>Les deux surfaces aboutissent au même service serveur : mêmes règles de validation, même journalisation, mêmes limites.</p>
+    </div>
+</section>
+
+<!-- ===================================================== II -->
+<section>
+    <h1 class="part-title" id="p2">II. RÉDACTION DE LA FICHE</h1>
+
+    <h2>2.1. Contenu d’une fiche</h2>
+
+    <h3>2.1.1. Deux éléments sont obligatoires</h3>
+    <p>Une fiche ne peut être transmise que si elle comporte :</p>
+    <ul class="dash">
+        <li>un <b>texte</b> décrivant le constat, d’au moins dix caractères<sup class="nc">(2)</sup><span class="fn">(2) Seuil contrôlé par l’application du téléphone. Au portail, un texte vide est refusé.</span>
+            et d’au plus mille caractères<sup class="nc">(3)</sup><span class="fn">(3) Soit une dizaine de lignes. Au-delà, le texte est coupé à la limite ; le compteur du rédacteur l’indique avant l’envoi.</span> ;</li>
+        <li>au moins <b>un thème</b>, et au plus quatre.</li>
+    </ul>
+
+    <h3>2.1.2. Les autres éléments sont préremplis et doivent être vérifiés</h3>
+    <p>Le rédacteur propose d’office la date et l’heure de l’événement, le lieu (localité la plus proche) et le repère de carroyage
+    de l’opérateur. Le type est réglé sur FRM et l’urgence sur Routine. Ces valeurs <b>doivent être vérifiées</b> avant l’envoi :
+    la date portée est celle du <b>constat</b>, non celle de la saisie.</p>
+
+    <table class="grid">
+        <thead><tr><th style="width:30%">Élément</th><th style="width:16%">Statut</th><th>Règle de renseignement</th></tr></thead>
+        <tbody>
+            <tr><td>Texte du renseignement</td><td>Obligatoire</td><td>10 à 1000 caractères. Faits d’abord, appréciation éventuelle ensuite, signalée comme telle.</td></tr>
+            <tr><td>Thèmes</td><td>Obligatoire</td><td>1 à 4. Le premier thème choisi est le plus significatif.</td></tr>
+            <tr><td>Type de fiche</td><td>Prérempli</td><td>FRM par défaut ; à modifier si le constat est sans lien avec la mission.</td></tr>
+            <tr><td>Urgence</td><td>Prérempli</td><td>Routine par défaut ; voir 2.4.</td></tr>
+            <tr><td>Date et heure de l’événement</td><td>Prérempli</td><td>Format JJ/MM/AAAA HH:MM, heure de la mission.</td></tr>
+            <tr><td>Lieu et repère</td><td>Prérempli</td><td>Lieu en clair et carroyage (bouton <span class="sigle">MA POSITION</span>, huit chiffres).</td></tr>
+            <tr><td>Recueil</td><td>Facultatif</td><td>Discipline par laquelle le constat a été obtenu ; voir 2.5.</td></tr>
+            <tr><td>Dossier de rattachement</td><td>Facultatif</td><td>Référence d’un dossier connu ; voir 3.8.</td></tr>
+            <tr><td>Pièces jointes</td><td>Facultatif</td><td>Quatre au plus ; voir 3.4.</td></tr>
+        </tbody>
+    </table>
+    <div class="caption">Tableau 1. Éléments d’une fiche de renseignement simplifiée.</div>
+
+    <h2>2.2. Choix du type de fiche</h2>
+    <p>Le type indique la nature du constat. En cas d’hésitation, l’opérateur retient la FRM.</p>
+    <table class="grid">
+        <thead><tr><th style="width:11%">Sigle</th><th style="width:34%">Type</th><th>Emploi</th></tr></thead>
+        <tbody>
+            <tr><td class="code">FRM</td><td>Fiche de renseignement de mission</td><td>Ce que l’opérateur a constaté pendant la mission en cours. Type par défaut.</td></tr>
+            <tr><td class="code">FRO</td><td>Fiche d’observation</td><td>Un fait observé, sans lien direct avec la mission du jour.</td></tr>
+            <tr><td class="code">FRC</td><td>Fiche de contact</td><td>Un échange avec une personne, un groupe ou une autorité locale.</td></tr>
+            <tr><td class="code">FRA</td><td>Fiche d’ambiance</td><td>Le climat général d’un secteur : attitude de la population, tensions.</td></tr>
+            <tr><td class="code">FRT</td><td>Fiche technique</td><td>Matériel, véhicule, installation, marquage ou signe distinctif relevé.</td></tr>
+        </tbody>
+    </table>
+    <div class="caption">Tableau 2. Types de fiche.</div>
+
+    <h2>2.3. Choix des thèmes</h2>
+    <p>Le thème oriente la fiche vers l’analyste compétent. Sa couleur traduit la sensibilité du domaine, non l’urgence de la fiche :
+    une fiche « Terrorisme » peut être de degré Routine. L’opérateur choisit le thème qui décrit <b>le fait</b>, non celui qui lui
+    paraît le plus important.</p>
+    <table class="grid">
+        <thead><tr><th style="width:20%">Couleur</th><th>Thèmes</th></tr></thead>
+        <tbody>
+            <tr><td><span class="swatch" style="background:#dc2626"></span>Rouge</td><td>Terrorisme (TERROR), Insurrection (INSURG), CBRNE</td></tr>
+            <tr><td><span class="swatch" style="background:#ea580c"></span>Orange</td><td>Armement / Matériel (ARMEMENT), Personnes / Cibles (PERSON), Planification (PLANIF)</td></tr>
+            <tr><td><span class="swatch" style="background:#ca8a04"></span>Jaune</td><td>Logistique (LOGIST), Communications (COMMS), Financement (FINANCE), Recrutement (RECRUT)</td></tr>
+            <tr><td><span class="swatch" style="background:#16a34a"></span>Vert</td><td>Infrastructures (INFRA), Organisation (ORGAN), Mouvements (MOUV), Sécurité / Protection (SECUR)</td></tr>
+            <tr><td><span class="swatch" style="background:#2563eb"></span>Bleu</td><td>Environnement civil (CIVIL), Météo / Terrain (METEO), Général / Divers (GENERAL)</td></tr>
+        </tbody>
+    </table>
+    <div class="caption">Tableau 3. Thèmes et code couleur. Le détail de chaque thème figure à l’annexe III.</div>
+
+    <h2>2.4. Degré d’urgence</h2>
+    <p>Le degré d’urgence fixe le délai dans lequel le bureau SSE prend la fiche en compte. Il s’apprécie au regard de la menace,
+    non de l’intérêt du renseignement.</p>
+    <table class="grid">
+        <thead><tr><th style="width:15%">Degré</th><th style="width:43%">Critère</th><th>Prise en compte par le bureau SSE<sup class="nc">(4)</sup><span class="fn">(4) Délais doctrinaux fixés par la présente circulaire. Le système n’impose aucun délai ; il affiche l’urgence dans la file des fiches.</span></th></tr></thead>
+        <tbody>
+            <tr><td><span class="swatch" style="background:#dc2626"></span><b>Critique</b></td><td>Menace imminente. À remonter immédiatement au poste de commandement, <b>après l’alerte</b>.</td><td>Dès réception, pendant la mission.</td></tr>
+            <tr><td><span class="swatch" style="background:#ea580c"></span><b>Urgent</b></td><td>À traiter sans délai, dans les prochaines heures.</td><td>Avant la fin de la mission en cours.</td></tr>
+            <tr><td><span class="swatch" style="background:#ca8a04"></span><b>Normal</b></td><td>À regarder dans le cours de la journée.</td><td>Avant la fin de la session de jeu.</td></tr>
+            <tr><td><span class="swatch" style="background:#4b5563"></span><b>Routine</b></td><td>À exploiter dans le cours normal du travail. Degré par défaut.</td><td>Au plus tard à la session suivante.</td></tr>
+        </tbody>
+    </table>
+    <div class="caption">Tableau 4. Degrés d’urgence.</div>
+
+    <h2>2.5. Discipline de recueil</h2>
+    <p>Le champ <i>Recueil</i> indique comment le constat a été obtenu. Il est facultatif mais vivement recommandé : il permet à
+    l’analyste d’apprécier la fiche sans revenir vers son auteur. Les disciplines retenues sont : renseignement humain (HUMINT),
+    imagerie (IMINT), signaux (SIGINT), sources ouvertes (OSINT), technique (TECHINT), mesures et signatures (MASINT) et
+    géospatial (GEOINT).</p>
+
+    <div class="keep">
+    <h2>2.6. Règles de rédaction du texte</h2>
+
+    <h3>2.6.1. Écrire le fait, rien que le fait</h3>
+    <p>Le texte répond, dans cet ordre, aux questions <b>quoi, qui, où, quand, comment</b>. Il emploie des phrases courtes, au
+    présent ou au passé composé, sans abréviation non réglementaire. Ce qui relève de l’appréciation est introduit par
+    « Appréciation : » et placé en fin de texte.</p>
+    </div>
+
+    <h3>2.6.2. Proscrire l’identification et le jugement</h3>
+    <p>Le rédacteur décrit une personne par son apparence, son attitude et son rôle apparent, sans lui attribuer d’identité,
+    d’appartenance ou d’intention qu’il n’a pas constatée. Les qualificatifs (« suspect », « hostile ») sont proscrits hors
+    appréciation.</p>
+
+    <h3>2.6.3. Une fiche, un fait</h3>
+    <p>Deux constats distincts, même simultanés, donnent lieu à deux fiches. Cela permet de les orienter vers des analystes
+    différents et de les rattacher à des dossiers différents.</p>
+
+    <div class="callout">
+        <span class="callout__label">EXEMPLE</span>
+        <p><b>À proscrire :</b> « Des suspects louches traînent vers la mosquée, sûrement des insurgés qui préparent un coup. »</p>
+        <p><b>Rédaction conforme :</b> « Trois hommes, 25-35 ans, tenue civile, stationnent à pied devant l’entrée nord de la mosquée
+        depuis 14h10. Un pick-up blanc sans plaque arrive à 14h22, les hommes y chargent deux caisses longues vertes et partent vers
+        le sud. Appréciation : caisses compatibles avec un transport d’armes longues. »</p>
+    </div>
+
+    <h2>2.7. Cotation</h2>
+    <p>Toute fiche est enregistrée avec la cotation par défaut <b>C3</b><sup class="nc">(5)</sup><span class="fn">(5) Grille usuelle : fiabilité de la source de A (sûre) à F (non évaluable), crédibilité de l’information de 1 (confirmée) à 6 (non évaluable).</span>
+    (source assez fiable, information possiblement vraie). L’opérateur ne cote pas sa propre fiche ; la cotation définitive relève
+    de l’analyse conduite dans le dossier auquel la fiche est rattachée.</p>
+</section>
+
+<!-- ===================================================== III -->
+<section>
+    <h1 class="part-title" id="p3">III. EMPLOI EN JEU : L’APPLICATION FRS / FRM DE COMSPEC ATAK</h1>
+
+    <h2>3.1. Accès</h2>
+    <p>L’application s’ouvre depuis la tuile <b>FRS / FRM</b> du lanceur du téléphone, rubrique <i>Renseignement</i>. Elle exige le
+    chargement de COMSPEC Overwatch sur le serveur : à défaut, l’application l’indique et aucune fiche ne peut être rédigée.</p>
+    <p>Le rédacteur historique de COMSPEC Overwatch (menu <span class="sigle">RENS</span>, icône « Fiche RENS », action ACE
+    « Rédiger une fiche de renseignement… ») demeure utilisable ; il transmet la même fiche par la même chaîne.</p>
+
+    <h2>3.2. Disposition de l’écran</h2>
+    <p>L’écran reprend la disposition des applications ATAK : le texte au centre, deux volets latéraux et une barre d’action basse.</p>
+
+    <div class="screen">
+        <div class="screen__grid">
+            <div class="screen__pane"><b>VOLET ENTÊTE</b>Type, urgence, recueil<br>Date et heure<br>Lieu, repère<br>MA POSITION<br>Thèmes (1 à 4)<br>Dossier<br>EFFACER LA FICHE</div>
+            <div class="screen__pane"><b>EN-TÊTE ET TEXTE</b>Date à gauche, lieu à droite<br>Pastilles : type et thèmes<br><br>Zone de rédaction du renseignement<br><br><span style="float:right">compteur 0 / 1000</span></div>
+            <div class="screen__pane"><b>VOLET PIÈCES JOINTES</b>Grille 2 x 2<br>Caméra · Galerie · Athena<br>Croix de retrait<br>FERMER</div>
+        </div>
+        <div class="screen__bar"><span>ACCUEIL · MINI / PLEIN ÉCRAN</span><span>( TROMBONE )</span><span class="screen__send">ENVOYER ✓</span></div>
+    </div>
+    <div class="caption">Figure 1. Disposition de l’application FRS / FRM (schéma).</div>
+
+    <ul class="dash">
+        <li><b>Volet Entête</b> (poignée gauche) : type, urgence, recueil, date, lieu, repère, thèmes, dossier de rattachement et
+            bouton <span class="sigle">EFFACER LA FICHE</span>.</li>
+        <li><b>Volet Pièces jointes</b> (poignée droite) : grille des quatre emplacements et leurs trois sources.</li>
+        <li><b>Barre du bas</b> : retour à l’accueil, bascule mini / plein écran, bouton rond des pièces jointes (trombone, avec le
+            nombre de pièces), et bouton rouge d’envoi au bureau SSE.</li>
+    </ul>
+
+    <h2>3.3. Rédaction</h2>
+    <p>L’opérateur ouvre le volet Entête, vérifie les valeurs préremplies, coche un à quatre thèmes, puis rédige le texte dans la
+    zone centrale. Le brouillon est conservé tant que l’opérateur ne l’efface pas ou ne l’envoie pas : il peut quitter
+    l’application et y revenir sans perte.</p>
+
+    <h2>3.4. Pièces jointes</h2>
+
+    <h3>3.4.1. Trois sources</h3>
+    <table class="grid">
+        <thead><tr><th style="width:18%">Source</th><th>Effet</th></tr></thead>
+        <tbody>
+            <tr><td><b>Caméra</b></td><td>Capture de la vue de l’opérateur, téléphone masqué le temps de la prise<sup class="nc">(6)</sup><span class="fn">(6) Le téléphone se masque un court instant : la capture montre la scène, non l’interface. Une capture PNG apparaît sous forme d’icône dans la grille, le jeu n’affichant que les images JPG et PAA ; elle est néanmoins transmise.</span>. Le repère de carroyage est relevé avec la capture.</td></tr>
+            <tr><td><b>Galerie</b></td><td>Photothèque du poste (captures COMSPEC et dossier Screenshots). <span class="sigle">JOINDRE</span> ajoute la photo à la fiche.</td></tr>
+            <tr><td><b>Athena</b></td><td>Fiches déjà transmises et leurs photos, pour consultation (voir 3.7.).</td></tr>
+        </tbody>
+    </table>
+    <div class="caption">Tableau 5. Sources des pièces jointes.</div>
+
+    <h3>3.4.2. Limites</h3>
+    <p>Une fiche porte <b>quatre pièces au plus</b>. Le maximum atteint, une pièce doit être retirée (croix rouge) avant d’en joindre
+    une autre. Une même photo ne peut être jointe deux fois.</p>
+
+    <h2>3.5. Transmission</h2>
+    <p>Le bouton rouge d’envoi transmet la fiche. L’application contrôle d’abord la présence du texte et d’un thème ; à défaut, elle
+    l’indique et n’envoie rien. La fiche part <b>d’abord</b>, les pièces jointes <b>ensuite</b>, une par une : le serveur attribue
+    à la fiche sa référence<sup class="nc">(7)</sup><span class="fn">(7) Référence de la forme FR-AAAA-NNNNNN, unique au sein de la communauté, par exemple FR-2026-000042.</span>,
+    qui permet d’y attacher les pièces.</p>
+    <p>L’opérateur reçoit la confirmation « Fiche FR-… transmise au bureau SSE », puis une notification indiquant le nombre de pièces
+    effectivement parties. Le brouillon est alors vidé.</p>
+
+    <h2>3.6. Fonctionnement en mode dégradé</h2>
+
+    <h3>3.6.1. Liaison Athena coupée</h3>
+    <p>Si la liaison est absente, la fiche est <b>gardée en file</b> par COMSPEC Link et part au retour de la liaison. Le message
+    « Liaison coupée : fiche gardée en file » le confirme.</p>
+
+    <div class="callout callout--warn">
+        <span class="callout__label">INTERDICTION</span>
+        <p>Une fiche gardée en file <b>ne doit pas être ressaisie</b>. Chaque fiche porte une clé unique<sup class="nc">(8)</sup><span class="fn">(8) Clé d’idempotence générée à la rédaction et conservée jusqu’à transmission réussie : une double validation ou une retransmission après coupure retombe sur la même fiche.</span>
+        qui évite les doublons à la retransmission ; une ressaisie, elle, crée une seconde fiche.</p>
+    </div>
+
+    <h3>3.6.2. Pièces jointes en mode dégradé</h3>
+    <p>Sans référence de fiche, les pièces ne peuvent pas suivre. Elles restent jointes au brouillon suivant ; l’opérateur les
+    transmet avec une fiche complémentaire de même objet, une fois la liaison rétablie.</p>
+
+    <h3>3.6.3. Renseignement suspendu</h3>
+    <p>Le commandement peut suspendre la réception des fiches (maintenance). L’envoi est alors refusé avec un message explicite :
+    l’opérateur conserve son brouillon et rend compte par radio si le fait l’exige.</p>
+
+    <h2>3.7. Consultation des fiches</h2>
+    <p>Le volet Pièces jointes, source <b>Athena</b>, présente trois listes : <span class="sigle">MES FICHES</span> (fiches de
+    l’opérateur), <span class="sigle">COMMUNAUTÉ</span> (fiches de la communauté) et <span class="sigle">SESSION</span> (fiches
+    envoyées depuis le début de la session, y compris celles en file). Les listes portent sur les vingt-cinq dernières fiches et
+    s’actualisent à la demande. Une fiche ouverte affiche son en-tête, son texte et ses photos.</p>
+
+    <h2>3.8. Rattachement à un dossier</h2>
+    <p>Le champ <i>Rattacher à un dossier</i> du volet Entête reçoit la référence d’un dossier connu de l’opérateur. Laissé vide, il
+    reprend le dossier actif de la mission lorsqu’il en existe un. Une référence inconnue est ignorée sans bloquer l’envoi : la
+    fiche part sans rattachement, et le bureau SSE y pourvoit.</p>
+</section>
+
+<!-- ===================================================== IV -->
+<section>
+    <h1 class="part-title" id="p4">IV. SAISIE AU PORTAIL ATHENA</h1>
+
+    <h2>4.1. Accès</h2>
+    <p>Au portail, le rédacteur s’ouvre par le bouton « Rédiger une fiche » de la barre supérieure du module SSE ou depuis
+    <i>Pilotage → Fiches de renseignement</i>. Il reprend la disposition du téléphone : date à gauche, lieu à droite, étiquettes,
+    cadre de rédaction avec compteur, volet des pièces jointes et barre d’action basse.</p>
+
+    <h2>4.2. Emploi</h2>
+    <p>La saisie au portail est réservée :</p>
+    <ul class="dash">
+        <li>aux fiches rédigées après la mission, lorsque le téléphone n’était pas disponible ;</li>
+        <li>aux constats issus de sources ouvertes ou de documents, qui ne relèvent pas du terrain ;</li>
+        <li>aux fiches complémentaires portant des pièces volumineuses.</li>
+    </ul>
+    <p>La date portée reste celle du <b>constat</b>. Une fiche rédigée au portail est identifiée comme d’origine « Bureau SSE ».</p>
+
+    <h2>4.3. Pièces jointes au portail</h2>
+    <p>Le portail accepte les photographies, captures d’écran, documents PDF et textes de l’ordinateur, dans la limite de quatre
+    pièces. Les documents sont limités à 8 Mo ; le type de fichier est contrôlé par le serveur, quel que soit celui annoncé.</p>
+
+    <h2>4.4. Sessions invitées</h2>
+    <p>Les sessions ouvertes par code d’accès invité ne peuvent pas rédiger de fiche. La lecture reste possible dans les limites de
+    leur habilitation.</p>
+</section>
+
+<!-- ===================================================== V -->
+<section>
+    <h1 class="part-title" id="p5">V. EXPLOITATION PAR LE BUREAU SSE</h1>
+
+    <h2>5.1. La file des fiches</h2>
+    <p>Les fiches reçues forment la file du bureau SSE (<i>Pilotage → Fiches de renseignement</i>). La file se filtre par texte,
+    statut, type, thème et urgence ; ses compteurs donnent l’état de la charge. L’analyste de permanence la consulte <b>en début et
+    en fin de chaque session</b>, et en continu pendant les missions comportant une cellule SSE active.</p>
+
+    <h2>5.2. Cycle de suivi</h2>
+    <p>Toute fiche reçue est <b>Transmise</b>. L’analyste habilité la fait évoluer en portant un commentaire de suivi, qui indique
+    ce qui a été fait ou décidé.</p>
+    <table class="grid">
+        <thead><tr><th style="width:22%">Statut</th><th>Signification</th><th style="width:30%">Commentaire de suivi attendu</th></tr></thead>
+        <tbody>
+            <tr><td><b>Brouillon</b></td><td>Fiche non encore transmise.</td><td>Sans objet.</td></tr>
+            <tr><td><b>Transmise</b></td><td>Fiche reçue, non encore lue par un analyste.</td><td>Sans objet.</td></tr>
+            <tr><td><b>Prise en compte</b></td><td>Fiche lue, orientée, en cours de recoupement.</td><td>Analyste chargé, orientation.</td></tr>
+            <tr><td><b>Exploitée</b></td><td>Le renseignement a été versé à un dossier ou a donné lieu à une action.</td><td>Dossier ou action concernés.</td></tr>
+            <tr><td><b>Classée sans suite</b></td><td>Fiche sans intérêt, redondante ou non exploitable.</td><td>Motif du classement.</td></tr>
+        </tbody>
+    </table>
+    <div class="caption">Tableau 6. Statuts de suivi.</div>
+
+    <p>Le classement sans suite n’est pas une sanction du rédacteur. Une fiche classée reste consultable et peut être reprise si un
+    fait nouveau lui redonne de l’intérêt.</p>
+
+    <h2>5.3. Rattachement à un dossier</h2>
+    <p>L’analyste rattache la fiche au dossier validé concerné. La fiche apparaît alors dans ce dossier, sans rien conclure sur les
+    personnes qui y sont citées. Le rattachement peut être retiré ; il est tracé.</p>
+
+    <h2>5.4. Traçabilité</h2>
+    <p>Chaque fiche transmise alimente :</p>
+    <ul class="dash">
+        <li>le <b>journal des transmissions terrain</b> du module SSE, sous la forme d’un événement « rapport reçu » portant la
+            référence, les thèmes et le texte ;</li>
+        <li>le <b>journal d’activité ATAK</b>, sous le type « fiche SSE ».</li>
+    </ul>
+    <p>Ces écritures sont secondaires : un incident d’indexation ne fait jamais perdre une fiche que le terrain vient de
+    transmettre.</p>
+</section>
+
+<!-- ===================================================== VI -->
+<section>
+    <div class="keep">
+    <h1 class="part-title" id="p6">VI. RESPONSABILITÉS ET HABILITATIONS</h1>
+
+    <h2>6.1. Habilitations</h2>
+    <table class="grid">
+        <thead><tr><th>Geste</th><th style="width:38%">Habilitation requise</th></tr></thead>
+        <tbody>
+            <tr><td>Rédiger et transmettre une fiche en jeu</td><td>Compte Steam de l’opérateur, vérifié par la liaison de la communauté</td></tr>
+            <tr><td>Lire la file et une fiche au portail</td><td>Accès SSE actif</td></tr>
+            <tr><td>Rédiger une fiche au portail, joindre ou retirer une pièce</td><td>Accès SSE actif (hors session invitée)</td></tr>
+            <tr><td>Faire évoluer le suivi, rattacher à un dossier</td><td>Gestion des dossiers SSE</td></tr>
+            <tr><td>Suspendre la réception des fiches</td><td>Commandement, configuration de la communauté</td></tr>
+        </tbody>
+    </table>
+    <div class="caption">Tableau 7. Habilitations.</div>
+    </div>
+
+    <h2>6.2. Responsabilités</h2>
+
+    <h3>6.2.1. L’opérateur</h3>
+    <p>Il rédige la fiche sur le moment, vérifie la date et le lieu, choisit le type, les thèmes et l’urgence, et ne ressaisit jamais
+    une fiche gardée en file.</p>
+
+    <h3>6.2.2. Le chef d’élément</h3>
+    <p>Il s’assure que les constats significatifs de son élément font l’objet d’une fiche avant la fin de la mission, et que les
+    fiches de degré Critique ont été précédées de l’alerte.</p>
+
+    <h3>6.2.3. Le chef de mission</h3>
+    <p>Il désigne, pour les missions qui le justifient, le dossier actif auquel les fiches se rattachent par défaut, et rappelle au
+    briefing les thèmes d’intérêt prioritaires.</p>
+
+    <h3>6.2.4. L’analyste du bureau SSE</h3>
+    <p>Il tient la file dans les délais du tableau 4, porte un commentaire à chaque changement de statut et rattache les fiches
+    exploitées. Il ne contacte le rédacteur qu’en cas de besoin réel de précision.</p>
+
+    <h3>6.2.5. L’administrateur de communauté</h3>
+    <p>Il veille à la cohérence entre la version du pack jeu et celle du portail. L’ordre des thèmes est contractuel<sup class="nc">(9)</sup><span class="fn">(9) Chaque case à cocher du rédacteur en jeu est associée à un rang du référentiel. Réordonner les thèmes au serveur sans mettre à jour le pack jeu décalerait toutes les cases.</span> :
+    toute évolution du référentiel est déployée simultanément au portail et au mod.</p>
+</section>
+
+<!-- ===================================================== VII -->
+<section>
+    <h1 class="part-title" id="p7">VII. SÉCURITÉ ET DISCIPLINE DE LA LIAISON</h1>
+
+    <h2>7.1. Cloisonnement</h2>
+    <p>Les fiches sont propres à chaque communauté. Elles ne sont ni lues ni transmises au-delà, et la suppression d’une communauté
+    emporte ses fiches. L’identité de l’auteur en jeu est garantie par la vérification de son compte Steam lors de l’écriture.</p>
+
+    <h2>7.2. Diffusion</h2>
+    <p>Une fiche reprend le niveau de diffusion actif du portail. Son contenu ne sort pas du module SSE : il n’est ni recopié dans
+    les canaux de discussion publics, ni capturé pour être partagé hors portail.</p>
+
+    <h2>7.3. Fiction et données réelles</h2>
+    <p>Les fiches décrivent la situation de jeu. Elles ne comportent aucune donnée personnelle réelle : ni nom réel, ni coordonnée,
+    ni capture d’un écran étranger à la simulation.</p>
+
+    <h2>7.4. Points d’attention</h2>
+    <ul class="dash">
+        <li>Une fiche n’est jamais rédigée au détriment de la sécurité de l’élément : au contact, l’opérateur rend compte d’abord, rédige ensuite.</li>
+        <li>Toute pratique de consignation parallèle (notes personnelles, messages privés, captures envoyées hors portail) est formellement proscrite.</li>
+        <li>Une erreur constatée après l’envoi se corrige par une <b>fiche complémentaire</b> rappelant la référence de la première, non par une ressaisie.</li>
+    </ul>
+
+    <div class="signature">
+        <div class="for">Pour l’état-major et par délégation,</div>
+        <div>le chef du bureau renseignement,</div>
+        <div class="name">LE CHEF DU BUREAU REN</div>
+    </div>
+</section>
+
+<!-- ===================================================== ANNEXE I -->
+<section class="annex">
+    <div class="annex__head" id="a1">ANNEXE I</div>
+    <div class="annex__ref">à la circulaire n° REN/PROC/2026-001 du 5 octobre 2026</div>
+    <div class="annex__title">Mémento de l’opérateur</div>
+
+    <div class="memento">
+        <div class="memento__card">
+            <h3>RÉDIGER EN JEU</h3>
+            <ol>
+                <li>Lanceur du téléphone → <b>FRS / FRM</b>.</li>
+                <li>Ouvrir le volet <b>Entête</b> : type, urgence, recueil.</li>
+                <li>Vérifier date, lieu ; <b>MA POSITION</b> pour le repère.</li>
+                <li>Cocher <b>1 à 4 thèmes</b>.</li>
+                <li>Rédiger le texte : quoi, qui, où, quand, comment.</li>
+                <li>Joindre jusqu’à <b>4 pièces</b> (caméra, galerie).</li>
+                <li>Bouton rouge : <b>envoyer</b>.</li>
+            </ol>
+        </div>
+        <div class="memento__card">
+            <h3>CHOISIR L’URGENCE</h3>
+            <ul>
+                <li><b>Critique</b> : menace imminente. <b>Alerte d’abord</b>, fiche ensuite.</li>
+                <li><b>Urgent</b> : à traiter dans les heures qui viennent.</li>
+                <li><b>Normal</b> : à voir dans la journée.</li>
+                <li><b>Routine</b> : cours normal du travail.</li>
+            </ul>
+        </div>
+        <div class="memento__card">
+            <h3>CHOISIR LE TYPE</h3>
+            <ul>
+                <li><b>FRM</b> : constaté pendant la mission (par défaut).</li>
+                <li><b>FRO</b> : observé hors mission.</li>
+                <li><b>FRC</b> : échange avec une personne, un groupe.</li>
+                <li><b>FRA</b> : ambiance d’un secteur.</li>
+                <li><b>FRT</b> : matériel, véhicule, marquage.</li>
+            </ul>
+        </div>
+        <div class="memento__card">
+            <h3>LIAISON COUPÉE</h3>
+            <ul>
+                <li>La fiche est <b>gardée en file</b> et part seule au retour.</li>
+                <li><b>Ne pas la ressaisir.</b></li>
+                <li>Les pièces restent sur le brouillon suivant : les envoyer avec une fiche complémentaire.</li>
+            </ul>
+        </div>
+        <div class="memento__card memento__card--wide">
+            <h3>LES CINQ INTERDITS</h3>
+            <ul>
+                <li>Nommer ou accuser quelqu’un sans l’avoir constaté ; employer « suspect » ou « hostile » hors appréciation.</li>
+                <li>Mettre deux faits distincts dans la même fiche.</li>
+                <li>Remplacer l’alerte par une fiche Critique.</li>
+                <li>Ressaisir une fiche partie en file ; corriger par ressaisie au lieu d’une fiche complémentaire.</li>
+                <li>Faire circuler le contenu d’une fiche hors du module SSE.</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ===================================================== ANNEXE II -->
+<section class="annex">
+    <div class="annex__head" id="a2">ANNEXE II</div>
+    <div class="annex__ref">à la circulaire n° REN/PROC/2026-001 du 5 octobre 2026</div>
+    <div class="annex__title">Spécimen de fiche renseignée</div>
+
+    <div class="specimen">
+        <div class="specimen__bar"><span>FR-2026-000042 · FICHE DE RENSEIGNEMENT</span><span>TRANSMISE</span></div>
+        <div class="specimen__row">
+            <div class="specimen__cell"><span class="specimen__label"><span class="k">1</span>Date et heure de l’événement</span>14/09/2035 14:22</div>
+            <div class="specimen__cell" style="text-align:right"><span class="specimen__label">Lieu · repère <span class="k">2</span></span>Zargabad · 0471 2286</div>
+        </div>
+        <div class="specimen__row">
+            <div class="specimen__cell"><span class="specimen__label"><span class="k">3</span>Type et thèmes</span>
+                <span class="chip chip--kind">FRM</span><span class="chip" style="background:#ea580c">ARMEMENT</span><span class="chip" style="background:#16a34a">MOUV</span>
+            </div>
+            <div class="specimen__cell"><span class="specimen__label"><span class="k">4</span>Urgence · recueil · auteur</span>
+                <span class="chip" style="background:#ea580c">URGENT</span> IMINT · VIPER 2-1 (2e section)
+            </div>
+        </div>
+        <div class="specimen__body"><span class="k">5</span>Trois hommes, 25-35 ans, tenue civile, stationnent à pied devant l’entrée nord de la mosquée depuis 14h10.
+        Un pick-up blanc sans plaque, benne bâchée, arrive à 14h22 par l’axe est. Les hommes y chargent deux caisses longues de couleur
+        verte, puis le véhicule part vers le sud par la route du marché. Aucune arme visible.
+        Appréciation : caisses compatibles avec un transport d’armes longues.</div>
+        <div class="specimen__count">390 / 1000</div>
+        <div class="specimen__pieces">
+            <div class="specimen__piece specimen__piece--full">Capture 14:23<br>0471 2286</div>
+            <div class="specimen__piece specimen__piece--full">Photo · véhicule</div>
+            <div class="specimen__piece">+ emplacement libre</div>
+            <div class="specimen__piece">+ emplacement libre</div>
+        </div>
+    </div>
+    <div class="caption" style="margin-top:2mm">Figure 2. Fiche FRM conforme, telle qu’elle apparaît au bureau SSE (situation fictive).</div>
+
+    <ul class="annotations">
+        <li><span class="k">1</span>Heure du <b>constat</b> (heure de la mission), non celle de la saisie.</li>
+        <li><span class="k">2</span>Lieu en clair et repère relevé par <span class="sigle">MA POSITION</span> au moment de l’observation.</li>
+        <li><span class="k">3</span>Type FRM (constat en mission) ; thèmes décrivant le fait : matériel transporté et mouvement.</li>
+        <li><span class="k">4</span>Urgent : pas de menace imminente, mais un transport à suivre dans les heures qui viennent. Recueil par observation optique.</li>
+        <li><span class="k">5</span>Faits d’abord, dans l’ordre quoi, qui, où, quand, comment ; appréciation séparée et signalée. Aucune identification, aucun qualificatif.</li>
+    </ul>
+</section>
+
+<!-- ===================================================== ANNEXE III -->
+<section class="annex">
+    <div class="annex__head" id="a3">ANNEXE III</div>
+    <div class="annex__ref">à la circulaire n° REN/PROC/2026-001 du 5 octobre 2026</div>
+    <div class="annex__title">Référentiel des codes</div>
+
+    <h2 style="margin-top:0">1. Thèmes</h2>
+    <p class="flush">L’ordre ci-dessous est celui du référentiel ; il est contractuel (voir 6.2.5.).</p>
+    <table class="grid grid--long">
+        <thead><tr><th style="width:15%">Code</th><th style="width:25%">Libellé</th><th>Périmètre</th></tr></thead>
+        <tbody>
+            <tr><td class="code"><span class="swatch" style="background:#dc2626"></span>TERROR</td><td>Terrorisme</td><td>Attentats, cellules terroristes, réseaux, financement, recrutement.</td></tr>
+            <tr><td class="code"><span class="swatch" style="background:#dc2626"></span>INSURG</td><td>Insurrection</td><td>Mouvements insurgés, rébellion, groupes armés non étatiques.</td></tr>
+            <tr><td class="code"><span class="swatch" style="background:#dc2626"></span>CBRNE</td><td>CBRNE</td><td>Armes chimiques, biologiques, radiologiques, nucléaires, explosives.</td></tr>
+            <tr><td class="code"><span class="swatch" style="background:#ea580c"></span>ARMEMENT</td><td>Armement / Matériel</td><td>Armes, munitions, équipements, véhicules, systèmes d’armes.</td></tr>
+            <tr><td class="code"><span class="swatch" style="background:#ea580c"></span>PERSON</td><td>Personnes / Cibles</td><td>Personnalités, cibles de haute valeur, leaders, combattants, personnel clé.</td></tr>
+            <tr><td class="code"><span class="swatch" style="background:#ea580c"></span>PLANIF</td><td>Planification</td><td>Intentions, plans, objectifs, calendriers d’opérations.</td></tr>
+            <tr><td class="code"><span class="swatch" style="background:#ca8a04"></span>LOGIST</td><td>Logistique</td><td>Ravitaillement, transport, stockage, chaînes d’approvisionnement.</td></tr>
+            <tr><td class="code"><span class="swatch" style="background:#ca8a04"></span>COMMS</td><td>Communications</td><td>Réseaux, transmissions, signaux, cyber, guerre électronique.</td></tr>
+            <tr><td class="code"><span class="swatch" style="background:#ca8a04"></span>FINANCE</td><td>Financement</td><td>Flux financiers, blanchiment, ressources, économie illicite.</td></tr>
+            <tr><td class="code"><span class="swatch" style="background:#ca8a04"></span>RECRUT</td><td>Recrutement</td><td>Enrôlement, radicalisation, formation, entraînement.</td></tr>
+            <tr><td class="code"><span class="swatch" style="background:#16a34a"></span>INFRA</td><td>Infrastructures</td><td>Bâtiments, installations, sites sensibles, points nodaux.</td></tr>
+            <tr><td class="code"><span class="swatch" style="background:#16a34a"></span>ORGAN</td><td>Organisation</td><td>Structures de commandement, hiérarchie, unités, groupes.</td></tr>
+            <tr><td class="code"><span class="swatch" style="background:#16a34a"></span>MOUV</td><td>Mouvements</td><td>Déplacements, infiltrations, exfiltrations, migrations.</td></tr>
+            <tr><td class="code"><span class="swatch" style="background:#16a34a"></span>SECUR</td><td>Sécurité / Protection</td><td>Mesures de sécurité, protection de forces, contre-ingérence.</td></tr>
+            <tr><td class="code"><span class="swatch" style="background:#2563eb"></span>CIVIL</td><td>Environnement civil</td><td>Population, sentiments, leaders communautaires, humanitaire.</td></tr>
+            <tr><td class="code"><span class="swatch" style="background:#2563eb"></span>METEO</td><td>Météo / Terrain</td><td>Conditions météo, terrain, environnement opérationnel.</td></tr>
+            <tr><td class="code"><span class="swatch" style="background:#2563eb"></span>GENERAL</td><td>Général / Divers</td><td>Renseignement non catégorisable, informations contextuelles.</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Disciplines de recueil</h2>
+    <table class="grid">
+        <thead><tr><th style="width:15%">Code</th><th style="width:25%">Libellé</th><th>Exemples</th></tr></thead>
+        <tbody>
+            <tr><td class="code">HUMINT</td><td>Renseignement humain</td><td>Témoignage, contact, interrogation, source humaine.</td></tr>
+            <tr><td class="code">IMINT</td><td>Imagerie</td><td>Photographie, drone, satellite, observation optique.</td></tr>
+            <tr><td class="code">SIGINT</td><td>Signaux</td><td>Écoutes, transmissions, guerre électronique.</td></tr>
+            <tr><td class="code">OSINT</td><td>Sources ouvertes</td><td>Presse, réseaux, documents publics, rumeur vérifiable.</td></tr>
+            <tr><td class="code">TECHINT</td><td>Technique</td><td>Matériel saisi, analyse d’arme ou d’engin.</td></tr>
+            <tr><td class="code">MASINT</td><td>Mesures et signatures</td><td>Détections physiques, chimiques, acoustiques, radiologiques.</td></tr>
+            <tr><td class="code">GEOINT</td><td>Géospatial</td><td>Cartographie, relief, occupation du sol, itinéraires.</td></tr>
+        </tbody>
+    </table>
+
+    <h2>3. Origines et natures de pièces</h2>
+    <table class="grid">
+        <thead><tr><th style="width:40%">Origine de la fiche</th><th>Nature de pièce jointe</th></tr></thead>
+        <tbody>
+            <tr><td>ATAK (téléphone en jeu)</td><td>Photographie</td></tr>
+            <tr><td>Terrain (Arma, rédacteur Overwatch)</td><td>Capture d’écran</td></tr>
+            <tr><td>Bureau SSE (portail)</td><td>Document, croquis</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- ===================================================== ANNEXE IV -->
+<section class="annex">
+    <div class="annex__head" id="a4">ANNEXE IV</div>
+    <div class="annex__ref">à la circulaire n° REN/PROC/2026-001 du 5 octobre 2026</div>
+    <div class="annex__title">Références techniques</div>
+    <p class="flush">Annexe destinée aux administrateurs de communauté et aux analystes. Elle n’est pas exigible des opérateurs.</p>
+
+    <h2>1. Pages du portail</h2>
+    <table class="grid">
+        <thead><tr><th style="width:42%">Adresse</th><th>Objet</th></tr></thead>
+        <tbody>
+            <tr><td class="mono">/atak/sse/fiches</td><td>File des fiches, filtres et compteurs.</td></tr>
+            <tr><td class="mono">/atak/sse/fiches/nouvelle</td><td>Rédacteur plein écran.</td></tr>
+            <tr><td class="mono">/atak/sse/fiches/{id}</td><td>Fiche, pièces, suivi et rattachement.</td></tr>
+            <tr><td class="mono">/atak/sse/transmissions</td><td>Journal des transmissions terrain.</td></tr>
+        </tbody>
+    </table>
+
+    <h2>2. Interface de programmation</h2>
+    <table class="grid">
+        <thead><tr><th style="width:42%">Appel</th><th>Objet</th></tr></thead>
+        <tbody>
+            <tr><td class="mono">GET /api/sse/notes/catalogue</td><td>Référentiel des libellés pour les clients en jeu.</td></tr>
+            <tr><td class="mono">POST /api/sse/notes</td><td>Création d’une fiche (texte et thèmes obligatoires).</td></tr>
+            <tr><td class="mono">POST /api/sse/notes/{id}/pieces</td><td>Ajout d’une pièce jointe, une par requête, après la fiche.</td></tr>
+        </tbody>
+    </table>
+    <p class="flush">Réponses de création : <b>201</b> fiche créée ; <b>200</b> clé d’idempotence déjà vue, fiche existante renvoyée ;
+    <b>422</b> texte ou thème manquant ; <b>401 / 403</b> authentification terrain ; <b>503</b> renseignement suspendu.</p>
+
+    <h2>3. Commandes COMSPEC Link</h2>
+    <table class="grid">
+        <thead><tr><th style="width:42%">Commande</th><th>Objet</th></tr></thead>
+        <tbody>
+            <tr><td class="mono">SubmitSseFieldNote</td><td>Envoi de la fiche ; mise en file si la liaison est coupée.</td></tr>
+            <tr><td class="mono">UploadSseNoteAttachment</td><td>Envoi d’une pièce jointe vers une fiche identifiée.</td></tr>
+            <tr><td class="mono">StageCapture</td><td>Préparation d’une capture d’écran avant envoi.</td></tr>
+            <tr><td class="mono">ListSseFieldNotes</td><td>Liste des 25 dernières fiches (miennes ou communauté).</td></tr>
+        </tbody>
+    </table>
+
+    <h2>4. Données</h2>
+    <p class="flush">Tables <span class="mono">sse_field_notes</span> et <span class="mono">sse_field_note_attachments</span>, installées par
+    <span class="mono">run-migrations.php</span>. Limites : texte 1000 caractères, objet 180 caractères, quatre thèmes, quatre pièces.
+    Retombées : événement <span class="mono">REPORT_RECEIVED</span> dans <span class="mono">sse_intel_events</span> et ligne
+    <span class="mono">SSE_FIELD_NOTE</span> au journal d’activité ATAK. Dictionnaire complet : dossier technique ATH-SSE-FICHES.</p>
+</section>
+
+<script>
+/* Typographie française : espace insécable avant « : ; ! ? » et à l'intérieur des guillemets. */
+(function () {
+    var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+    var n;
+    while ((n = walker.nextNode())) {
+        if (n.parentNode && /^(SCRIPT|STYLE|CODE)$/.test(n.parentNode.nodeName)) { continue; }
+        n.nodeValue = n.nodeValue
+            .replace(/ ([:;!?»])/g, ' $1')
+            .replace(/« /g, '« ');
+    }
+})();
+</script>
+</body>
+</html>

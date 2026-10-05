@@ -1,0 +1,304 @@
+/*
+ * Feuille d'impression des doctrines d'emploi COMSPEC (gabarit FM ATHENA).
+ * Rendue par Paged.js puis imprimée en PDF par Chromium : voir tools/doctrine/build-pdf.mjs.
+ *
+ * Conventions de rédaction (circulaire) :
+ *   parties « I. », sous-parties « 1.1. », paragraphes « 1.2.1. » ;
+ *   notes de bas de page : <sup class="nc">(1)</sup><span class="fn">(1) Texte.</span>
+ *   pagination « - n - » en tête de page, marquage de diffusion en pied.
+ */
+
+:root {
+    --ink: #111418;
+    --muted: #4b5563;
+    --rule: #1f2937;
+    --soft: #e5e7eb;
+    --band: #1f2a44;
+    --accent: #5b21b6;
+    --accent-soft: #f3effc;
+    --paper: #ffffff;
+    --doc-code: "FM ATHENA";
+    --doc-date: "";
+}
+
+@page {
+    size: A4;
+    margin: 24mm 20mm 26mm 22mm;
+
+    @top-left {
+        content: string(doc-code);
+        font: 700 7.5pt "Liberation Sans", Arial, sans-serif;
+        letter-spacing: 0.06em;
+        color: #1f2937;
+        vertical-align: bottom;
+        padding-bottom: 3mm;
+    }
+    @top-center {
+        content: "- " counter(page) " -";
+        font: 10pt "Liberation Serif", "Times New Roman", serif;
+        vertical-align: bottom;
+        padding-bottom: 3mm;
+    }
+    @top-right {
+        content: string(doc-date);
+        font: 700 7.5pt "Liberation Sans", Arial, sans-serif;
+        letter-spacing: 0.06em;
+        color: #1f2937;
+        vertical-align: bottom;
+        padding-bottom: 3mm;
+    }
+    @bottom-center {
+        content: "DIFFUSION INTERNE // COMSPEC MILSIM // EMPLOI EN INSTRUCTION UNIQUEMENT";
+        font: 700 6.8pt "Liberation Sans", Arial, sans-serif;
+        letter-spacing: 0.08em;
+        color: #374151;
+        vertical-align: top;
+        padding-top: 4mm;
+    }
+    @footnote {
+        background: linear-gradient(#111418, #111418) no-repeat left top / 45mm 0.5pt;
+        padding-top: 2mm;
+        margin-top: 4mm;
+    }
+}
+
+@page cover {
+    margin: 18mm 18mm 18mm 18mm;
+    @top-left { content: none; }
+    @top-center { content: none; }
+    @top-right { content: none; }
+    @bottom-center { content: none; }
+}
+
+@page :first {
+    @top-left { content: none; }
+    @top-center { content: none; }
+    @top-right { content: none; }
+}
+
+html { background: var(--paper); }
+
+body {
+    margin: 0;
+    color: var(--ink);
+    font: 11pt/1.42 "Liberation Serif", "Times New Roman", serif;
+    text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    orphans: 3;
+    widows: 3;
+}
+
+/* Paged.js justifie la dernière ligne d'un bloc coupé en fin de page ; ses descendants ne doivent pas en hériter. */
+body * { text-align-last: auto; }
+.page-break { break-before: page; }
+.keep { break-inside: avoid; }
+
+.doc-strings { string-set: doc-code content(text); display: none; }
+.doc-strings-date { string-set: doc-date content(text); display: none; }
+
+/* ---------- Couverture ---------- */
+.cover {
+    page: cover;
+    break-after: page;
+    height: 261mm;
+    box-sizing: border-box;
+    border: 1.2pt solid var(--rule);
+    outline: 0.4pt solid var(--rule);
+    outline-offset: -2.4mm;
+    padding: 14mm 16mm 12mm;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+.cover__band {
+    margin: -14mm -16mm 0;
+    padding: 2.4mm 0;
+    background: var(--band);
+    color: #fff;
+    font: 700 7.5pt "Liberation Sans", Arial, sans-serif;
+    letter-spacing: 0.22em;
+}
+.cover__code { margin-top: 12mm; font: 700 13pt "Liberation Sans", Arial, sans-serif; letter-spacing: 0.04em; }
+.cover__org { font: 700 9pt "Liberation Sans", Arial, sans-serif; letter-spacing: 0.18em; margin-top: 1mm; }
+.cover__rule { width: 34mm; height: 0; border-top: 2pt solid var(--accent); margin: 16mm auto 12mm; }
+.cover__brand { font: 700 40pt "Liberation Serif", serif; letter-spacing: 0.12em; }
+.cover__title { margin-top: 5mm; font: 700 16pt/1.25 "Liberation Serif", serif; text-transform: uppercase; }
+.cover__subtitle { margin-top: 4mm; font: italic 12pt/1.35 "Liberation Serif", serif; color: #1f2937; }
+.cover__ref { margin-top: 10mm; font: 10pt "Liberation Serif", serif; }
+.cover__ref strong { font-family: "Liberation Sans", Arial, sans-serif; font-size: 9pt; letter-spacing: 0.04em; }
+.cover__spacer { flex: 1; }
+.cover__date { font: 700 11pt "Liberation Serif", serif; letter-spacing: 0.06em; }
+.cover__restriction { margin: 6mm auto 0; max-width: 140mm; font-size: 9.5pt; line-height: 1.35; }
+.cover__restriction strong { display: block; font: 700 9pt "Liberation Sans", Arial, sans-serif; letter-spacing: 0.16em; margin-bottom: 1.5mm; }
+.cover__issuer { margin-top: 8mm; font: 700 10pt "Liberation Serif", serif; letter-spacing: 0.08em; }
+.cover__band--bottom { margin: 10mm -16mm -12mm; }
+
+/* ---------- Cartouche de circulaire ---------- */
+.circ-head { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; align-items: start; margin-bottom: 8mm; }
+.circ-head__issuer { text-align: left; font: 700 9pt/1.35 "Liberation Sans", Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.03em; }
+.circ-head__issuer span { display: block; font-weight: 400; }
+.circ-head__place { text-align: right; font-size: 10.5pt; }
+.circ-head__place .ref { display: block; margin-top: 1.5mm; font: 700 9pt "Liberation Sans", Arial, sans-serif; }
+
+.circ-title { text-align: center; margin: 4mm 0 8mm; }
+.circ-title__kind { font: 700 13pt "Liberation Serif", serif; letter-spacing: 0.12em; }
+.circ-title__object { margin: 2.5mm auto 0; max-width: 140mm; font: italic 11pt/1.35 "Liberation Serif", serif; }
+
+.circ-meta { width: 100%; border-collapse: collapse; margin: 0 0 6mm; font-size: 10.5pt; }
+.circ-meta th {
+    width: 38mm;
+    vertical-align: top;
+    text-align: left;
+    padding: 2.2mm 3mm 2.2mm 0;
+    font: 700 8.6pt "Liberation Sans", Arial, sans-serif;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+.circ-meta td.colon { width: 5mm; vertical-align: top; padding: 2.2mm 0; font-weight: 700; }
+.circ-meta td { vertical-align: top; padding: 2.2mm 0; text-align: left; }
+.circ-meta ul { margin: 0; padding: 0; list-style: none; }
+.circ-meta li { margin: 0 0 1.3mm; }
+.circ-meta li::before { content: "- "; }
+.circ-meta tr + tr th, .circ-meta tr + tr td { border-top: 0.4pt solid var(--soft); }
+
+/* ---------- Titres ---------- */
+h1, h2, h3, h4 { text-align: left; hyphens: none; break-after: avoid; }
+.part-title {
+    break-before: auto;
+    margin: 10mm 0 5mm;
+    padding: 0 0 2mm;
+    border-bottom: 1.2pt solid var(--rule);
+    font: 700 13pt "Liberation Serif", serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.preamble-title, .toc-title {
+    margin: 0 0 6mm;
+    text-align: center;
+    font: 700 12pt "Liberation Serif", serif;
+    letter-spacing: 0.14em;
+}
+h2 { margin: 6mm 0 2.5mm; font: 700 11.5pt "Liberation Serif", serif; }
+h3 { margin: 4.5mm 0 2mm; font: italic 700 11pt "Liberation Serif", serif; }
+h4 { margin: 3.5mm 0 1.5mm; font: italic 11pt "Liberation Serif", serif; text-decoration: underline; text-underline-offset: 1.2pt; }
+
+p { margin: 0 0 2.6mm; text-indent: 8mm; }
+p.flush, li p, td p, .callout p, .annex p { text-indent: 0; }
+
+ul.dash, ol.plain { margin: 0 0 3mm; padding-left: 8mm; }
+ul.dash { list-style: none; }
+ul.dash > li { position: relative; margin: 0 0 1.4mm; }
+ul.dash > li::before { content: "-"; position: absolute; left: -5mm; }
+ol.plain > li { margin: 0 0 1.4mm; }
+
+sup.nc { font-size: 7.5pt; line-height: 0; }
+.fn { float: footnote; font-size: 8.8pt; line-height: 1.3; text-indent: 0; text-align: left; }
+.fn::footnote-call { content: ""; }
+.fn::footnote-marker { content: ""; }
+
+code, .mono { font: 9pt "Liberation Mono", "DejaVu Sans Mono", monospace; }
+.sigle { font: 700 8.6pt "Liberation Sans", Arial, sans-serif; letter-spacing: 0.04em; }
+
+/* ---------- Sommaire ---------- */
+.toc { list-style: none; margin: 0; padding: 0; }
+.toc li { display: flex; align-items: baseline; gap: 2mm; margin: 0 0 2mm; }
+.toc li .n { flex: 0 0 14mm; font-weight: 700; }
+.toc li .t { flex: 0 1 auto; }
+.toc li .dots { flex: 1 1 auto; border-bottom: 0.6pt dotted #6b7280; transform: translateY(-1mm); }
+.toc li .p { flex: 0 0 auto; }
+.toc li.sub { padding-left: 14mm; font-size: 10pt; margin-bottom: 1.2mm; }
+.toc a { color: inherit; text-decoration: none; }
+.toc a.p::after { content: target-counter(attr(href), page); }
+
+/* ---------- Tableaux ---------- */
+table.grid { width: 100%; border-collapse: collapse; margin: 2mm 0 1.5mm; font-size: 9.6pt; line-height: 1.3; break-inside: avoid; }
+table.grid--long { break-inside: auto; }
+table.grid thead { display: table-header-group; }
+table.grid th {
+    background: var(--band);
+    color: #fff;
+    text-align: left;
+    padding: 1.8mm 2.2mm;
+    font: 700 8.2pt "Liberation Sans", Arial, sans-serif;
+    letter-spacing: 0.04em;
+    border: 0.5pt solid var(--band);
+}
+table.grid td { padding: 1.6mm 2.2mm; border: 0.5pt solid #9ca3af; vertical-align: top; text-align: left; }
+table.grid tr { break-inside: avoid; }
+table.grid tbody tr:nth-child(even) td { background: #f6f7f9; }
+table.grid td.code { white-space: nowrap; font: 700 8.6pt "Liberation Sans", Arial, sans-serif; }
+.caption { margin: 0 0 4mm; text-align: center; font: italic 9pt "Liberation Serif", serif; color: var(--muted); text-indent: 0; }
+
+.swatch { display: inline-block; width: 3mm; height: 3mm; border-radius: 0.6mm; vertical-align: -0.3mm; margin-right: 1.4mm; border: 0.3pt solid rgba(0,0,0,.35); }
+
+/* ---------- Encadrés ---------- */
+.callout {
+    margin: 3mm 0 4mm;
+    padding: 3mm 4mm;
+    border-left: 2.2pt solid var(--accent);
+    background: var(--accent-soft);
+    break-inside: avoid;
+    font-size: 10.2pt;
+}
+.callout__label { display: block; margin-bottom: 1.2mm; font: 700 7.8pt "Liberation Sans", Arial, sans-serif; letter-spacing: 0.14em; color: var(--accent); }
+.callout--rule { border-left-color: var(--rule); background: #f3f4f6; }
+.callout--rule .callout__label { color: var(--rule); }
+.callout--warn { border-left-color: #b45309; background: #fdf6ec; }
+.callout--warn .callout__label { color: #92400e; }
+
+.flow {
+    margin: 2mm 0 2mm;
+    padding: 2.6mm 3.5mm;
+    background: var(--band);
+    color: #fff;
+    font: 8.6pt/1.45 "Liberation Mono", monospace;
+    break-inside: avoid;
+    text-align: left;
+}
+
+/* ---------- Signature ---------- */
+.signature { margin-top: 10mm; margin-left: 55%; text-align: center; break-inside: avoid; text-indent: 0; }
+.signature .for { font-style: italic; }
+.signature .name { margin-top: 12mm; font-weight: 700; letter-spacing: 0.04em; }
+
+/* ---------- Annexes ---------- */
+.annex { break-before: page; }
+.annex__head { text-align: right; font: 700 9pt "Liberation Sans", Arial, sans-serif; letter-spacing: 0.1em; margin-bottom: 1mm; }
+.annex__ref { text-align: right; font: italic 9pt "Liberation Serif", serif; margin-bottom: 6mm; color: var(--muted); }
+.annex__title { text-align: center; font: 700 12pt "Liberation Serif", serif; letter-spacing: 0.08em; margin: 0 0 6mm; text-transform: uppercase; }
+
+/* Mémento : deux colonnes, cartes compactes */
+.memento { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.memento__card { border: 0.8pt solid var(--rule); break-inside: avoid; font-size: 9.4pt; line-height: 1.32; }
+.memento__card h3 { margin: 0; padding: 1.6mm 2.6mm; background: var(--band); color: #fff; font: 700 8pt "Liberation Sans", Arial, sans-serif; letter-spacing: 0.1em; font-style: normal; }
+.memento__card ol, .memento__card ul { margin: 2mm 2.6mm 2.4mm 7mm; padding: 0; }
+.memento__card li { margin-bottom: 1mm; }
+.memento__card--wide { grid-column: 1 / -1; }
+
+/* Spécimen de fiche */
+.specimen { border: 1pt solid var(--rule); font: 9.6pt/1.35 "Liberation Sans", Arial, sans-serif; break-inside: avoid; text-align: left; }
+.specimen__bar { display: flex; justify-content: space-between; padding: 2mm 3mm; background: var(--band); color: #fff; font-weight: 700; letter-spacing: 0.06em; font-size: 8.6pt; }
+.specimen__row { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 0.5pt solid #9ca3af; }
+.specimen__cell { padding: 1.8mm 3mm; }
+.specimen__cell + .specimen__cell { border-left: 0.5pt solid #9ca3af; }
+.specimen__label { display: block; font-size: 6.8pt; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; text-transform: uppercase; }
+.chip { display: inline-block; padding: 0.3mm 2mm; margin: 0.6mm 1mm 0 0; border-radius: 3mm; color: #fff; font-size: 7.6pt; font-weight: 700; letter-spacing: 0.04em; }
+.chip--kind { background: #2563eb; }
+.specimen__body { padding: 3mm; min-height: 38mm; font: 10.4pt/1.42 "Liberation Serif", serif; border-bottom: 0.5pt solid #9ca3af; }
+.specimen__count { text-align: right; font-size: 7.4pt; color: var(--muted); padding: 0 3mm 1mm; }
+.specimen__pieces { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2mm; padding: 2.4mm 3mm 3mm; }
+.specimen__piece { border: 0.6pt dashed #6b7280; height: 15mm; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 7.2pt; color: var(--muted); padding: 0 1mm; }
+.specimen__piece--full { border-style: solid; background: #eef0f3; color: var(--ink); }
+
+.annotations { margin-top: 4mm; padding: 0; list-style: none; font-size: 9.6pt; }
+.annotations li { margin-bottom: 1.2mm; }
+.k { display: inline-flex; align-items: center; justify-content: center; vertical-align: -1mm; width: 4.4mm; height: 4.4mm; line-height: 1; border-radius: 50%; background: var(--accent); color: #fff; text-align: center; font: 700 7pt "Liberation Sans", Arial, sans-serif; margin-right: 1.4mm; text-indent: 0; }
+
+.screen { text-align: left; border: 0.8pt solid var(--rule); background: #0f172a; color: #e5e7eb; font: 8pt/1.3 "Liberation Sans", Arial, sans-serif; break-inside: avoid; margin: 2mm 0 2mm; }
+.screen__grid { display: grid; grid-template-columns: 30mm 1fr 34mm; min-height: 46mm; }
+.screen__pane { padding: 2mm; border-right: 0.5pt dashed #475569; }
+.screen__pane:last-child { border-right: 0; }
+.screen__pane b { display: block; color: #c4b5fd; letter-spacing: 0.1em; font-size: 7pt; margin-bottom: 1mm; }
+.screen__bar { display: flex; justify-content: space-between; align-items: center; padding: 1.6mm 3mm; background: #3b1f6b; font-weight: 700; font-size: 7.4pt; letter-spacing: 0.06em; }
+.screen__send { background: #dc2626; padding: 0.6mm 2mm; border-radius: 2mm; }

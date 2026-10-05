@@ -69,6 +69,11 @@ return function (PDO $pdo): void {
     if (is_callable($rhSeed)) {
         $rhSeed($pdo);
     }
+
+    $renSeed = require dirname(__DIR__) . '/bootstrap/doctrine_ren_fiches_employment_seed.php';
+    if (is_callable($renSeed)) {
+        $renSeed($pdo);
+    }
 };
 
 function seedDefaultDoctrineCatalog(PDO $pdo): void
