@@ -32,126 +32,98 @@ if ($note['pos_x'] !== null && $note['pos_y'] !== null) {
     $coords[] = sprintf('Position jeu %.0f / %.0f', (float) $note['pos_x'], (float) $note['pos_y']);
 }
 ?>
-<div class="page-heading">
-    <div>
-        <div class="page-heading-overline">Pilotage // Fiches</div>
-        <h1><?= $h($note['reference_code'] ?? 'Fiche') ?></h1>
-        <?php if (trim((string) ($note['title'] ?? '')) !== ''): ?>
-            <p class="sse-note-title"><?= $h($note['title']) ?></p>
+<?php
+$classCode = \App\Repositories\SseCaseRepository::normalizeClassification((string) ($note['classification'] ?? 'interne'));
+$classLabel = mb_strtoupper(\App\Services\Sse\SseRedactionService::levelLabel($classCode), 'UTF-8');
+$reliability = [
+    'A' => 'Source sûre', 'B' => 'Source habituellement sûre', 'C' => 'Source assez sûre',
+    'D' => 'Source pas toujours sûre', 'E' => 'Source peu sûre', 'F' => 'Fiabilité inconnue',
+];
+$credibility = [
+    1 => 'Information confirmée', 2 => 'Information probable', 3 => 'Information possible',
+    4 => 'Information douteuse', 5 => 'Information improbable', 6 => 'Véracité inconnue',
+];
+$rel = strtoupper((string) ($note['source_reliability'] ?? 'C'));
+$cred = (int) ($note['info_credibility'] ?? 3);
+$srcCode = (string) ($note['intel_source'] ?? '');
+$srcLabel = (string) ($note['intel_source_label'] ?? '');
+$paragraphs = preg_split("/\R{2,}/u", trim((string) ($note['body'] ?? ''))) ?: [];
+$canOpenIntake = !$canManage ? false : \App\Controllers\Admin\AdminIntelIntakeController::allowed();
+?>
+<div class="sse-reading-tools">
+    <a class="btn btn--ghost" href="<?= $h(url('atak/sse/fiches')) ?>">← File des fiches</a>
+    <div class="sse-reading-tools__right">
+        <?php if ($canOpenIntake): ?>
+            <a class="btn btn--ghost" href="<?= $h(url('back-office/remontees/fiche/' . $noteId)) ?>">Suivi dans Remontées</a>
         <?php endif; ?>
-        <p>
-            <?= $h($note['note_kind_label'] ?? '') ?> —
-            constat du <?= $h($note['observed_date_label'] ?? '') ?> à <?= $h($note['observed_time_label'] ?? '') ?>,
-            rédigée par <?= $h($note['author_label'] ?? 'auteur inconnu') ?>
-            (<?= $h($note['origin_label'] ?? '') ?>).
-        </p>
-        <div class="sse-note-badges" style="margin-top:10px">
-            <?php foreach (($note['themes'] ?? []) as $themeCode): ?>
-                <span class="sse-note-badge sse-note-badge--<?= $h($tone((string) $themeCode)) ?>">
-                    <?= $h((string) $themeCode) ?> · <?= $h(\App\Support\SseFieldNoteCatalog::themeLabel((string) $themeCode)) ?>
-                </span>
-            <?php endforeach; ?>
-            <span class="sse-note-badge sse-note-badge--kind"><?= $h($note['note_kind'] ?? '') ?></span>
-            <?php if (($note['urgency'] ?? '') !== 'routine'): ?>
-                <span class="sse-note-badge sse-note-badge--warning"><?= $h($note['urgency_label'] ?? '') ?></span>
-            <?php endif; ?>
-        </div>
-    </div>
-    <div class="page-reference">
-        <strong><?= $h($note['status_label'] ?? '') ?></strong>
-        <?= $h($note['place_label'] ?? 'Lieu non précisé') ?>
+        <button type="button" class="btn btn--ghost" onclick="window.print()">Imprimer</button>
     </div>
 </div>
 
-<div class="iw-tower-grid" style="margin-top:14px">
-    <section class="panel">
-        <div class="panel-header">
-            <div class="panel-title"><span class="panel-index">R.01</span> Renseignement</div>
-            <div class="panel-meta"><?= (int) ($note['body_length'] ?? 0) ?> caractères</div>
+<article class="sse-reading sse-reading--<?= $h($classCode) ?>" aria-label="Fiche de renseignement <?= $h($note['reference_code'] ?? '') ?>">
+    <div class="sse-reading__band"><span><?= $h($classLabel) ?></span><span><?= $h($note['reference_code'] ?? '') ?></span></div>
+
+    <header class="sse-reading__head">
+        <div>
+            <p class="sse-reading__org">Bureau SSE · Renseignement</p>
+            <p class="sse-reading__kind"><?= $h($note['note_kind'] ?? '') ?> — <?= $h($note['note_kind_label'] ?? '') ?></p>
+            <h1 class="sse-reading__title"><?= $h(trim((string) ($note['title'] ?? '')) !== '' ? $note['title'] : 'Fiche ' . ($note['reference_code'] ?? '')) ?></h1>
+            <div class="sse-note-badges">
+                <?php foreach (($note['themes'] ?? []) as $themeCode): ?>
+                    <span class="sse-note-badge sse-note-badge--<?= $h($tone((string) $themeCode)) ?>"><?= $h(\App\Support\SseFieldNoteCatalog::themeLabel((string) $themeCode)) ?></span>
+                <?php endforeach; ?>
+                <?php if (($note['urgency'] ?? '') !== 'routine'): ?>
+                    <span class="sse-note-badge sse-note-badge--warning"><?= $h($note['urgency_label'] ?? '') ?></span>
+                <?php endif; ?>
+                <?php if (!empty($note['redacted'])): ?>
+                    <span class="sse-note-badge sse-note-badge--neutral">Passages caviardés</span>
+                <?php endif; ?>
+            </div>
         </div>
-        <div class="panel-body">
-            <p class="sse-note-body"><?= $h($note['body'] ?? '') ?></p>
+        <div class="sse-reading__grade" title="<?= $h(($reliability[$rel] ?? '') . ' · ' . ($credibility[$cred] ?? '')) ?>">
+            <strong><?= $h($rel . $cred) ?></strong>
+            <span>Cotation</span>
         </div>
+    </header>
+
+    <dl class="sse-reading__facts">
+        <div><dt>Constat</dt><dd><?= $h($note['observed_date_label'] ?? '') ?> à <?= $h($note['observed_time_label'] ?? '') ?></dd></div>
+        <div><dt>Lieu</dt><dd><?= $h(($note['place_label'] ?? '') !== '' ? $note['place_label'] : 'Non précisé') ?></dd></div>
+        <div><dt>Position</dt><dd><?= $coords === [] ? 'Aucune position transmise' : $h(implode(' · ', $coords)) ?></dd></div>
+        <div><dt>Recueil</dt><dd><?= $srcCode === '' ? 'Non précisé' : $h($srcCode . ($srcLabel !== '' ? ' — ' . $srcLabel : '')) ?></dd></div>
+        <div><dt>Source</dt><dd><?= $h($rel . ' · ' . ($reliability[$rel] ?? '')) ?></dd></div>
+        <div><dt>Information</dt><dd><?= $h($cred . ' · ' . ($credibility[$cred] ?? '')) ?></dd></div>
+        <div><dt>Urgence</dt><dd><?= $h($note['urgency_label'] ?? '') ?></dd></div>
+        <div><dt>État</dt><dd><?= $h($note['status_label'] ?? '') ?></dd></div>
+    </dl>
+
+    <section class="sse-reading__body" aria-label="Renseignement">
+        <h2>Renseignement</h2>
+        <?php foreach ($paragraphs as $para): ?>
+            <p><?= nl2br($h($para), false) ?></p>
+        <?php endforeach; ?>
+        <?php if ($paragraphs === []): ?><p class="muted">Texte vide.</p><?php endif; ?>
     </section>
 
-    <section class="panel">
-        <div class="panel-header">
-            <div class="panel-title"><span class="panel-index">R.02</span> Contexte</div>
-        </div>
-        <div class="panel-body">
-            <dl class="sse-def-list">
-                <dt>Date de l’événement</dt>
-                <dd><?= $h($note['observed_date_label'] ?? '') ?> à <?= $h($note['observed_time_label'] ?? '') ?></dd>
-                <dt>Lieu</dt>
-                <dd><?= $h($note['place_label'] ?? 'Non précisé') ?></dd>
-                <dt>Coordonnées</dt>
-                <dd><?= $coords === [] ? 'Aucune position transmise' : $h(implode(' · ', $coords)) ?></dd>
-                <dt>Urgence</dt>
-                <dd><?= $h($note['urgency_label'] ?? '') ?></dd>
-                <dt>Recueil</dt>
-                <dd><?php
-                    $srcCode = (string) ($note['intel_source'] ?? '');
-                    $srcLabel = (string) ($note['intel_source_label'] ?? '');
-                    if ($srcCode === '') {
-                        echo 'Non précisé';
-                    } else {
-                        echo $h($srcCode . ($srcLabel !== '' ? ' — ' . $srcLabel : ''));
-                    }
-                ?></dd>
-                <dt>Origine de la saisie</dt>
-                <dd><?= $h($note['origin_label'] ?? '') ?></dd>
-                <dt>Unité</dt>
-                <dd><?= $h($note['author_unit'] ?? 'Non précisée') ?></dd>
-                <dt>Dossier rattaché</dt>
-                <dd>
-                    <?php if (is_array($linkedCase ?? null) && !empty($linkedCase['id'])): ?>
-                        <a href="<?= $h(url('atak/sse/dossiers/' . (int) $linkedCase['id'])) ?>">
-                            <?= $h($linkedCase['reference_code'] ?? '') ?> — <?= $h($linkedCase['title'] ?? '') ?>
-                        </a>
-                    <?php else: ?>
-                        Aucun pour l’instant
-                    <?php endif; ?>
-                </dd>
-            </dl>
-            <?php if (!empty($note['triage_note'])): ?>
-                <p class="muted" style="margin-top:12px">
-                    Suivi analyste : <?= $h($note['triage_note']) ?>
-                </p>
-            <?php endif; ?>
-        </div>
-    </section>
-</div>
-
-<section class="panel" style="margin-top:14px">
-    <div class="panel-header">
-        <div class="panel-title"><span class="panel-index">R.03</span> Pièces jointes</div>
-        <div class="panel-meta"><?= count($attachments) ?>/<?= $attachmentsMax ?></div>
-    </div>
-    <div class="panel-body">
-        <?php if ($attachments === []): ?>
-            <p class="muted">Aucune pièce jointe.</p>
-        <?php else: ?>
-            <ul class="sse-note-gallery">
-                <?php foreach ($attachments as $attachment): ?>
-                    <li>
+    <?php if ($attachments !== []): ?>
+        <section class="sse-reading__atts" aria-label="Pièces jointes">
+            <h2>Pièces jointes <span><?= count($attachments) ?>/<?= $attachmentsMax ?></span></h2>
+            <ul>
+                <?php foreach ($attachments as $i => $attachment): $blur = !empty($attachment['blurred']); ?>
+                    <li class="<?= $blur ? 'is-blurred' : '' ?>">
                         <figure>
                             <?php if (!empty($attachment['is_image']) && !empty($attachment['url'])): ?>
-                                <a href="<?= $h($attachment['url']) ?>" target="_blank" rel="noopener">
-                                    <img src="<?= $h($attachment['url']) ?>" alt="<?= $h($attachment['caption'] ?? 'Pièce jointe') ?>">
-                                </a>
+                                <?php if ($blur && !$canManage): ?>
+                                    <span class="sse-reading__img"><img src="<?= $h($attachment['url']) ?>" alt="Pièce jointe floutée"></span>
+                                <?php else: ?>
+                                    <a class="sse-reading__img" href="<?= $h($attachment['url']) ?>" target="_blank" rel="noopener"><img src="<?= $h($attachment['url']) ?>" alt="<?= $h($attachment['caption'] ?? 'Pièce jointe') ?>"></a>
+                                <?php endif; ?>
                             <?php elseif (!empty($attachment['url'])): ?>
-                                <a class="btn-open" href="<?= $h($attachment['url']) ?>" target="_blank" rel="noopener">
-                                    Ouvrir le document
-                                </a>
+                                <a class="sse-reading__doc" href="<?= $h($attachment['url']) ?>" target="_blank" rel="noopener">Ouvrir le document</a>
                             <?php endif; ?>
                             <figcaption>
-                                <?= $h($attachment['kind_label'] ?? '') ?>
-                                <?php if (!empty($attachment['original_name'])): ?>
-                                    — <?= $h($attachment['original_name']) ?>
-                                <?php endif; ?>
-                                <?php if (!empty($attachment['author_label'])): ?>
-                                    <br>Jointe par <?= $h($attachment['author_label']) ?>
-                                <?php endif; ?>
+                                <strong>PJ <?= $i + 1 ?></strong> · <?= $h($attachment['kind_label'] ?? '') ?><?= !empty($attachment['caption']) ? ' — ' . $h($attachment['caption']) : '' ?>
+                                <?php if ($blur): ?><br><em>Floutée par le bureau</em><?php endif; ?>
                             </figcaption>
                             <?php if ($canWrite): ?>
                                 <form method="post"
@@ -165,11 +137,31 @@ if ($note['pos_x'] !== null && $note['pos_y'] !== null) {
                     </li>
                 <?php endforeach; ?>
             </ul>
-        <?php endif; ?>
+        </section>
+    <?php endif; ?>
 
-        <?php if ($canWrite && count($attachments) < $attachmentsMax): ?>
+    <footer class="sse-reading__foot">
+        <div><span>Rédacteur</span><strong><?= $h($note['author_label'] ?? 'Inconnu') ?></strong><?= !empty($note['author_unit']) ? ' · ' . $h($note['author_unit']) : '' ?></div>
+        <div><span>Saisie</span><strong><?= $h($note['origin_label'] ?? '') ?></strong></div>
+        <div><span>Dossier</span><strong>
+            <?php if (is_array($linkedCase ?? null) && !empty($linkedCase['id'])): ?>
+                <a href="<?= $h(url('atak/sse/dossiers/' . (int) $linkedCase['id'])) ?>"><?= $h($linkedCase['reference_code'] ?? '') ?></a>
+            <?php else: ?>Aucun<?php endif; ?>
+        </strong></div>
+    </footer>
+    <?php if (!empty($note['triage_note'])): ?>
+        <p class="sse-reading__triage"><span>Suivi analyste</span> <?= $h($note['triage_note']) ?></p>
+    <?php endif; ?>
+
+    <div class="sse-reading__band sse-reading__band--bottom"><span><?= $h($classLabel) ?></span><span>Accès limité aux personnels habilités</span></div>
+</article>
+
+<?php if ($canWrite && count($attachments) < $attachmentsMax): ?>
+    <section class="panel" style="margin-top:14px">
+        <div class="panel-header"><div class="panel-title">Ajouter une pièce jointe</div><div class="panel-meta"><?= count($attachments) ?>/<?= $attachmentsMax ?></div></div>
+        <div class="panel-body">
             <form method="post" action="<?= $h(url('atak/sse/fiches/' . $noteId . '/pieces')) ?>"
-                  enctype="multipart/form-data" class="sse-filter-row" style="margin-top:16px">
+                  enctype="multipart/form-data" class="sse-filter-row">
                 <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
                 <label class="sr-only" for="fiche-piece">Ajouter une pièce jointe</label>
                 <input id="fiche-piece" type="file" name="pieces[]" multiple
@@ -179,9 +171,9 @@ if ($note['pos_x'] !== null && $note['pos_y'] !== null) {
                        placeholder="Légende (facultative)">
                 <button class="btn" type="submit">Joindre</button>
             </form>
-        <?php endif; ?>
-    </div>
-</section>
+        </div>
+    </section>
+<?php endif; ?>
 
 <?php if ($canManage): ?>
     <div class="iw-tower-grid" style="margin-top:14px">
@@ -237,9 +229,6 @@ if ($note['pos_x'] !== null && $note['pos_y'] !== null) {
     </div>
 <?php endif; ?>
 
-<p style="margin-top:14px">
-    <a class="btn btn--ghost" href="<?= $h(url('atak/sse/fiches')) ?>">Revenir à la file des fiches</a>
-</p>
 <?php
 $sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';

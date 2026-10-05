@@ -1725,6 +1725,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/cycle-mission/{id}/cloturer', [AdminMissionCycleController::class, 'close'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/escouades', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/temps-ecran', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'screenTime'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    // Remontées : comptes rendus et fiches de renseignement suivis comme des pull requests (contrôle d'accès dans le contrôleur).
+    $router->get('/back-office/remontees', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/back-office/remontees/{source}/{id}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'show'], [AuthMiddleware::class]);
+    $router->post('/back-office/remontees/{source}/{id}/{action}', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'action'], [AuthMiddleware::class]);
     $router->get('/back-office/atak/fire-teams', [AdminFireTeamsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/fire-teams/create', [AdminFireTeamsController::class, 'create'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/fire-teams/store', [AdminFireTeamsController::class, 'store'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);

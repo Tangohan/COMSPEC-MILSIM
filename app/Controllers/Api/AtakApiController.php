@@ -12198,6 +12198,13 @@ class AtakApiController
         ];
 
         $reports = $repo->listForContext($tenantId, $mapId, array_filter($filters));
+        // Passages caviardés dans le back-office Remontées : lus au niveau le plus bas, sauf auteur et membres nommés.
+        $reports = (new \App\Services\Intel\IntelIntakeService())->presentReports(
+            $tenantId,
+            $reports,
+            \App\Repositories\SseCaseRepository::CLASS_INTERNAL,
+            (int) (ComspecApiKeyAuth::matchedUserId() ?? (int) \App\Core\Session::get('user_id'))
+        );
         
         return Response::json([
             'reports' => $reports,

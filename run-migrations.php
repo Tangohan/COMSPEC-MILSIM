@@ -4386,6 +4386,14 @@ try {
 }
 $migrationEnsurePdo();
 
+// Back-office Remontées : suivi des comptes rendus et des fiches de renseignement (fil, attribution, caviardage, lectures).
+$intelIntakeMigrate = require $root . '/bootstrap/intel_intake_migration.php';
+$migrationRunner->step('intel_intake', static function () use ($intelIntakeMigrate, $pdo): void {
+    echo "Migration intel_intake (remontées : suivi, fil, caviardage, lectures, pièces floutées)...\n";
+    $intelIntakeMigrate($pdo);
+});
+$migrationEnsurePdo();
+
 $atakSseClearancePermsMigrate = require $root . '/bootstrap/atak_sse_clearance_permissions_migration.php';
 try {
     echo "Migration atak_sse_clearance_permissions (SSE — habilitations de lecture)…\n";

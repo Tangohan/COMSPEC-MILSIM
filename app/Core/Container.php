@@ -2082,6 +2082,7 @@ class Container
                 )
             ),
             \App\Controllers\Admin\AdminAtakSquadsController::class => new \App\Controllers\Admin\AdminAtakSquadsController(),
+            \App\Controllers\Admin\AdminIntelIntakeController::class => new \App\Controllers\Admin\AdminIntelIntakeController(),
             \App\Controllers\Admin\AdminAtakOperatorsController::class => new \App\Controllers\Admin\AdminAtakOperatorsController(
                 self::get(\App\Repositories\AtakDataRepository::class),
                 self::get(\App\Repositories\AtakMapRepository::class),
