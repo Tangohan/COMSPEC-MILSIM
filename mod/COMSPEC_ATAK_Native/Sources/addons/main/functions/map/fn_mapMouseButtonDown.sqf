@@ -6,6 +6,7 @@ if (_button isEqualTo 0) exitWith {
     // App Feux : la cible est pointée sur la carte.
     private _mp = _s getOrDefault ["medevacPick", ""];
     if (_mp isNotEqualTo "") exitWith { _s set ["medevacPick", ""]; ["picked", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_medicalAction; true };
+    if ((_s getOrDefault ["reportPick", ""]) isNotEqualTo "") exitWith { _s set ["reportPick", ""]; ["picked", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_reportAction; true };
     if ((_s getOrDefault ["dronePick", ""]) isNotEqualTo "") exitWith { _s set ["dronePick", ""]; ["picked", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_droneAction; true };
     private _lp = _s getOrDefault ["logiPick", ""];
     if (_lp isNotEqualTo "") exitWith { _s set ["logiPick", ""]; ["picked", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_logisticsAction; true };

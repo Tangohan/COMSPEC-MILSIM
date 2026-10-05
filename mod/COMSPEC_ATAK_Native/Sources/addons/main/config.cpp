@@ -43,6 +43,9 @@ class CfgFunctions {
         class drone { file="z\comspec_atak_native\addons\main\functions\drone";
             class droneCmd {}; class droneAction {}; class droneOsd {}; class droneDraw {}; class pageDrone {}; class droneDetectScan {}; class pageDroneDetect {}; class droneDetectDraw {};
         };
+        class reports { file="z\comspec_atak_native\addons\main\functions\reports";
+            class reportTypes {}; class reportAction {}; class pageReports {};
+        };
         class aar { file="z\comspec_atak_native\addons\main\functions\aar";
             class aarRecord {}; class aarAction {}; class aarDraw {}; class pageAar {};
         };
@@ -75,7 +78,6 @@ class COMSPEC_ATAK_Apps {
     class Fires       { name="Feux"; page="FIRES"; section="Appui et feux"; order=50; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_fires.paa"; };
     class Jtac        { name="JTAC"; page="JTAC"; section="Appui et feux"; order=52; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_jtac.paa"; };
     class Drone       { name="Drone"; page="DRONE"; section="Appui et feux"; order=54; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_drone.paa"; };
-    class Bda         { name="BDA"; page="BDA"; section="Appui et feux"; order=56; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_bda.paa"; };
     class Medical     { name="Médical"; page="MEDICAL"; section="Spécialités"; order=70; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_medical.paa"; };
     class Sniper      { name="Sniper"; page="SNIPER"; section="Spécialités"; order=72; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_sniper.paa"; };
     class Breach      { name="Brèche"; page="BREACH"; section="Spécialités"; order=74; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_breach.paa"; };
@@ -91,6 +93,7 @@ class COMSPEC_ATAK_Apps {
     class LinkAlly    { name="Liaison allié"; page="LINKALLY"; function="comspec_atak_native_fnc_pageLinkAlly"; section="Spécialités"; order=82; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_linkally.paa"; };
     class Wanted      { name="Recherchés"; page="WANTED"; section="Renseignement"; order=122; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_wanted.paa"; };
     class Tasks       { name="Tâches"; page="TASK"; section="Mission"; order=200; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_tasks.paa"; };
+    class Reports     { name="Comptes rendus"; page="REPORTS"; section="Mission"; order=202; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_reports.paa"; };
     class Briefing    { name="Briefing"; page="BRIEFING"; section="Mission"; order=205; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_briefing.paa"; };
     class Logistics   { name="Logistique"; page="LOGI"; section="Mission"; order=210; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_logistics.paa"; };
     class Aar         { name="Rejeu"; page="AAR"; section="Mission"; order=215; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_aar.paa"; };

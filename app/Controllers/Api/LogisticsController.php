@@ -43,11 +43,47 @@ class LogisticsController
         if (str_starts_with($raw, "\x1f\x8b") && function_exists('gzdecode')) {
             $raw = (string) @gzdecode($raw);
         }
-        $decoded = json_decode($raw, true);
-        if (!is_array($decoded)) {
+        $decoded = self::decodeGameJson($raw);
+        if ($decoded === null) {
             error_log('[logistics/update] JSON illisible (' . strlen($raw) . ' o) : ' . json_last_error_msg());
         }
-        return is_array($decoded) ? $decoded : [];
+        return $decoded ?? [];
+    }
+
+    /**
+     * Décode le LOGSTAT envoyé par le jeu. `callExtension [fn, [_payload]]` livre la chaîne SQF
+     * avec ses guillemets internes doublés ({""assetId"":""TA1""}) et la DLL ≤ 2.0.60 (corrigé en 2.0.61) la relaie
+     * telle quelle : sans cette tolérance, json_decode échoue et chaque envoi tombe en 400.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function decodeGameJson(string $raw): ?array
+    {
+        $raw = trim($raw);
+        $candidates = [$raw];
+        // Chaîne SQF encore entourée de ses guillemets : "{""a"":1}".
+        if (strlen($raw) >= 2 && $raw[0] === '"' && $raw[strlen($raw) - 1] === '"') {
+            $candidates[] = $raw = substr($raw, 1, -1);
+        }
+        if (str_contains($raw, '""')) {
+            $candidates[] = $raw = str_replace('""', '"', $raw);
+        }
+        foreach ($candidates as $candidate) {
+            $decoded = json_decode($candidate, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+            // Virgule décimale (locale FR) dans fuel_ratio / damage_ratio.
+            $commaFixed = preg_replace('/(?<=[:\[\s])(-?\d+),(\d{1,6})(?=[,}\]\s])/', '$1.$2', $candidate);
+            if (is_string($commaFixed) && $commaFixed !== $candidate) {
+                $decoded = json_decode($commaFixed, true);
+                if (is_array($decoded)) {
+                    return $decoded;
+                }
+            }
+        }
+
+        return null;
     }
 
     public function update(Request $request, array $params = []): Response

@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.60";
+    private const string ExtensionVersion = "2.0.61";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -7734,16 +7734,18 @@ public static partial class Extension
 
             if (function == "Logistics.Update" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 1)
             {
-                var json = args[0] ?? "{}";
-                if (string.IsNullOrWhiteSpace(json)) return;
+                // Guillemets doublés par callExtension : sans normalisation, le serveur répond 400.
+                if (string.IsNullOrWhiteSpace(args[0])) return;
+                var json = NormalizeArmaJson(args[0]);
                 EnqueueOrSend(_baseUrl + "/api/logistics/update", json);
                 return;
             }
 
             if (function == "Intel.Report" && !string.IsNullOrEmpty(_baseUrl) && args.Length >= 1)
             {
-                var json = args[0] ?? "{}";
-                if (string.IsNullOrWhiteSpace(json)) return;
+                // Guillemets doublés par callExtension : sans normalisation, le serveur répond 400.
+                if (string.IsNullOrWhiteSpace(args[0])) return;
+                var json = NormalizeArmaJson(args[0]);
                 EnqueueOrSend(_baseUrl + "/api/intel/report", json);
                 return;
             }

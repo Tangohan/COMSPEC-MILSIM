@@ -244,7 +244,7 @@ final class AtakOverwatchIntelController
             ['app' => 'OSINT', 'module' => 'Fiches « sources ouvertes »', 'data' => 'Renseignement d’origine publique',
                 'sql' => [['table' => 'sse_field_notes', 'time' => ['created_at'], 'author' => ['author_label'], 'map' => [],
                     'where' => "UPPER(COALESCE(intel_source, '')) = 'OSINT'"]]],
-            ['app' => 'Comptes rendus', 'module' => 'COMSPEC ATAK · SALUTE / BDA', 'data' => 'SALUTE, BDA, rapports IceMan',
+            ['app' => 'Comptes rendus', 'module' => 'COMSPEC ATAK (natif) · Comptes rendus', 'data' => 'Contact, SALUTE, SPOTREP, SITREP, BDA, engin explosif, NRBC, LOGREP, FRAGO, rapports IceMan',
                 'sql' => [['table' => 'atak_tactical_reports', 'time' => ['created_at'], 'author' => ['submitter_callsign'], 'map' => ['context_id']]],
                 'tel' => ['salute', 'bda', 'bda_confirm']],
             ['app' => 'Feux / JTAC', 'module' => 'COMSPEC ATAK (natif) · Feux', 'data' => '9-line, demandes d’appui',

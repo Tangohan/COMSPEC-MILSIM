@@ -31,6 +31,10 @@ final class AdminAtakReportRoutingController
         'SPOTREP' => 'Observation',
         'SITREP' => 'Situation',
         'CONTACT' => 'Prise de contact',
+        'PATROLREP' => 'Fin de patrouille',
+        'LOGREP' => 'État logistique',
+        'UXO' => 'Engin explosif',
+        'NBC1' => 'Attaque NRBC',
         'OTHER' => 'Autre',
     ];
 
