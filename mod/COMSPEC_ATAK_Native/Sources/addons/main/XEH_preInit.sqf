@@ -99,6 +99,14 @@ private _geo = ["COMSPEC", "ATAK · Géolocalisation (GEOLOC)"];
     ["Apps civiles", "UberEats (rations livrées par drone) et Tinder (rencontres entre joueurs). Décocher pour les retirer de tous les téléphones."],
     _sim, true, 1] call CBA_fnc_addSetting;
 
+private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
+["comspec_atak_native_aircrew", "CHECKBOX",
+    ["ATAK pour les équipages d'aéronef", "Pilote, copilote et postes de tourelle d'un hélicoptère ou d'un avion ont l'ATAK par la tablette de bord, même sans téléphone porté, téléphone vide ou cassé. Il se range en quittant l'appareil."],
+    _team, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_screen_time", "CHECKBOX",
+    ["Temps d'écran et temps par rôle", "Compte le temps du téléphone allumé (en main, porté, par app) et le temps de jeu par rôle (pilote, chef d'équipe…). Visible dans l'app Temps d'écran et envoyé à Athena (fiche du membre, back-office)."],
+    _team, true, 1] call CBA_fnc_addSetting;
+
 // Interface (réglage propre à chaque joueur).
 ["comspec_atak_native_action_menu", "LIST",
     ["Masquer le menu d'actions", "Le menu d'actions d'Arma (liste en haut à gauche, molette) ne s'ouvre plus tant que le téléphone est affiché. « En main » : seulement quand on a la souris sur le téléphone. Téléphone rangé : rien ne change (ACE et actions normales)."],

@@ -107,6 +107,15 @@ if ((count _wpts) > 0) then {
     if (_x isEqualTo _selected) then {
         _map drawEllipse [_pos,18,18,0,[0.36,0.78,0.42,0.9],""];
     };
+    // Équipe de feu (mon groupe) : anneau à la couleur de l'équipe.
+    private _o = _entity getOrDefault ["object", objNull];
+    if (!isNull _o && {group _o isEqualTo group player} && {(_o getVariable ["COMSPEC_FT", ""]) isNotEqualTo ""}) then {
+        private _ft = [_o] call comspec_atak_native_fnc_ftInfo;
+        if ((_ft get "id") isNotEqualTo "") then {
+            private _rc = +(_ft get "rgba"); _rc set [3, (_color select 3) max 0.35];
+            _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", _rc, _pos, _size * 1.55, _size * 1.55, 0, "", 0];
+        };
+    };
 } forEach (_data getOrDefault ["units",createHashMap]);
 
 {

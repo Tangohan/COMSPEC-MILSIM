@@ -2081,6 +2081,7 @@ class Container
                     self::get(\App\Services\Tactical\AtakActivityLogService::class)
                 )
             ),
+            \App\Controllers\Admin\AdminAtakSquadsController::class => new \App\Controllers\Admin\AdminAtakSquadsController(),
             \App\Controllers\Admin\AdminAtakOperatorsController::class => new \App\Controllers\Admin\AdminAtakOperatorsController(
                 self::get(\App\Repositories\AtakDataRepository::class),
                 self::get(\App\Repositories\AtakMapRepository::class),

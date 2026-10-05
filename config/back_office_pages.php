@@ -235,6 +235,8 @@ return [
         ['path' => 'back-office/atak/briefing-slides', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · TACTIQUE', 'title' => 'Diapositives de briefing', 'subtitle' => 'Images du briefing, ordre de passage et visibilité en jeu pour Arma et les téléphones ATAK.', 'quick' => [
             ['label' => 'Configuration ATAK', 'href' => 'admin/atak-config'],
         ]],
+        ['path' => 'back-office/atak/escouades', 'group' => 'ATAK', 'kicker' => 'ATAK · EN JEU', 'title' => 'Escouades en jeu', 'subtitle' => 'Escouades et équipes de feu envoyées par les téléphones : couleurs, icônes, descriptions et rôles.', 'css' => ['back-office-atak-squads.css'], 'flags' => ['boSkipPageHead' => true]],
+        ['path' => 'back-office/atak/temps-ecran', 'group' => 'ATAK', 'kicker' => 'ATAK · SUIVI', 'title' => 'Temps d’écran et rôles', 'subtitle' => 'Temps du téléphone allumé, apps utilisées et temps de jeu par rôle, par membre.', 'css' => ['back-office-atak-squads.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/atak/fire-teams', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · TACTIQUE', 'title' => 'Équipes de feu', 'subtitle' => 'La composition de chaque équipe de feu pour la session.', 'css' => ['back-office-fire-teams.css']],
         ['path' => 'back-office/atak', 'group' => 'ATAK', 'kicker' => 'ATAK · POSTE', 'title' => 'Poste de situation', 'subtitle' => 'La situation en direct : qui est connecté, où, et les dossiers de renseignement en cours.'],
         ['path' => 'back-office/atak/controle-serveur', 'group' => 'ATAK', 'kicker' => 'ATAK · MISSION', 'title' => 'Contrôle de mission', 'subtitle' => 'Les règles de la mission en cours, les fonctions activées et les relais de liaison.'],

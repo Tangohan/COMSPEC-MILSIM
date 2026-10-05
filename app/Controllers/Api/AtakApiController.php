@@ -6586,6 +6586,84 @@ class AtakApiController
         ]);
     }
 
+    /**
+     * Escouade et équipes de feu envoyées par un téléphone ATAK natif (COMSPEC Link « Squad.Sync »).
+     * Corps : mission_key, squad {key, name, side, type, leader, members}, teams [{key, name, color, icon, description,
+     * locked, members [{callsign, uid, role, role_label, leader}]}], unassigned [...].
+     */
+    public function squadSync(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $body = $this->jsonBody($request);
+        $snap = \App\Services\Atak\SquadSyncService::normalizePayload($body);
+        if ($snap === null) {
+            return Response::json(['ok' => false, 'error' => 'invalid_payload', 'message' => 'mission_key, squad.key et squad.name sont requis.'], 400);
+        }
+        $service = new \App\Services\Atak\SquadSyncService(null, $this->userRepository);
+        if (!$service->schemaReady()) {
+            return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+        }
+        $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
+        $result = $service->sync($tenantId, $mapId, $snap, ComspecApiKeyAuth::matchedUserId());
+
+        return Response::json(['ok' => true] + $result);
+    }
+
+    /**
+     * Temps d'écran du téléphone et temps par rôle (COMSPEC Link « ScreenTime.Report »).
+     * Corps : player_uid, call_sign, items [{kind: screen|app|role, key, label, seconds}].
+     */
+    public function screenTime(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $requireSteam = ComspecApiKeyAuth::matchedUserId() === null;
+        $actor = $this->guardArmaWrite($request, $tenantId, $requireSteam);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $body = $this->jsonBody($request);
+        $repo = new \App\Repositories\AtakScreenTimeRepository();
+        if (!$repo->schemaReady()) {
+            return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+        }
+        $items = \App\Repositories\AtakScreenTimeRepository::normalizeItems($body['items'] ?? []);
+        if ($items === []) {
+            return Response::json(['ok' => true, 'recorded' => 0]);
+        }
+        $user = null;
+        $sessionUserId = ComspecApiKeyAuth::matchedUserId();
+        if ($sessionUserId !== null) {
+            $user = $this->userRepository->findById($sessionUserId, $tenantId);
+        }
+        $uid = $actor['steam_uid'] ?? SteamId::normalize((string) ($body['player_uid'] ?? $body['steam_uid'] ?? ''));
+        if ($user === null && $uid !== null) {
+            $user = $this->userRepository->findBySteamIdForTenant($tenantId, $uid);
+        }
+        if ($user === null) {
+            return Response::json(['ok' => true, 'matched' => false, 'recorded' => 0]);
+        }
+
+        return Response::json(['ok' => true, 'matched' => true, 'recorded' => $repo->addItems($tenantId, (int) $user['id'], $items)]);
+    }
+
     public function chatIndex(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);

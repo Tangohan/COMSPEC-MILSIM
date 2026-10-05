@@ -31,6 +31,8 @@ switch (_act) do {
     case "leave": {
         if ((count units _grp) isEqualTo 1) exitWith { ["INFO", "Vous êtes déjà seul dans votre groupe", 3, 20] call comspec_atak_native_fnc_notify; };
         private _old = groupId _grp;
+        // L'équipe de feu appartient à l'ancien groupe.
+        ["comspec_atak_native_ft", [player, "leave", []]] call CBA_fnc_serverEvent;
         private _new = createGroup [side _grp, true];
         [player] joinSilent _new;
         private _base = [player] call comspec_atak_native_fnc_unitCallsign;
@@ -44,6 +46,7 @@ switch (_act) do {
         if (isNull _to || {_to isEqualTo _grp}) exitWith {};
         if (_to getVariable ["COMSPEC_GroupLocked", false]) exitWith { ["WARNING", format ["%1 est fermé : demandez au chef de l'ouvrir", groupId _to], 4, 20] call comspec_atak_native_fnc_notify; };
         if (side _to isNotEqualTo side _grp) exitWith {};
+        ["comspec_atak_native_ft", [player, "leave", []]] call CBA_fnc_serverEvent;
         [player] joinSilent _to;
         ["SUCCESS", format ["Vous avez rejoint %1", groupId _to], 3, 20] call comspec_atak_native_fnc_notify;
         // Prévenir le chef du groupe rejoint.
