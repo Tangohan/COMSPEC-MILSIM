@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.62";
+    private const string ExtensionVersion = "2.0.63";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2587,6 +2587,33 @@ public static partial class Extension
         if (function == "MemStats")
         {
             return "OK|" + FormatMemSnapshot();
+        }
+
+        // Téléphone ATAK natif : escouades / équipes de feu (Squad.Sync) et temps d'écran / temps par rôle (ScreenTime.Report).
+        // Réponse immédiate « OK|queued » (le SQF sait ainsi que la DLL connaît la commande) ; l'envoi part en file d'attente.
+        // Serveur Arma : temps de jeu et temps par rôle de tous les joueurs (ScreenTime.Batch). « probe » : la DLL sait-elle envoyer ?
+        if (function == "ScreenTime.Batch")
+        {
+            if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0])) return "ERR|payload_empty";
+            if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+            if (!HasPortalAuth()) return "ERR|unauthorized";
+            if (args[0] == "probe") return "OK|ready";
+            var batch = NormalizeArmaJson(args[0]);
+            if (batch.Length > 60000) return "ERR|payload_too_large";
+            EnqueueOrSend(_baseUrl + "/api/atak/screen-time/batch", EnrichAtakPayload(batch));
+            return "OK|queued";
+        }
+
+        if (function is "Squad.Sync" or "ScreenTime.Report")
+        {
+            if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0])) return "ERR|payload_empty";
+            if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+            if (!HasPortalAuth()) return "ERR|unauthorized";
+            var json = NormalizeArmaJson(args[0]);
+            if (json.Length > 60000) return "ERR|payload_too_large";
+            var path = function == "Squad.Sync" ? "/api/atak/squads/sync" : "/api/atak/screen-time";
+            EnqueueOrSend(_baseUrl + path, EnrichAtakPayload(json));
+            return "OK|queued";
         }
 
         if (function == "SetMapId")

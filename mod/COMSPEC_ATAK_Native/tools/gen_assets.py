@@ -93,6 +93,8 @@ ICONS = {
     "app_group": '<circle cx="8" cy="8" r="3"/><circle cx="16.5" cy="9" r="2.5"/><path d="M2.5 19c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M14 14.2c.8-.5 1.6-.7 2.5-.7 2.7 0 5 2 5 5"/>',
     "app_tasks": '<rect x="5" y="3" width="14" height="18" rx="1"/><path d="M8.5 9l1.8 1.8L13.5 7.5M8.5 15h7"/>',
     "app_c2": '<path d="M6 21V10M18 21V10"/><path d="M12 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 13v8"/><path d="M8.5 7.5a5 5 0 0 1 7 0M5.5 4.5a9 9 0 0 1 13 0"/>',
+    "app_interteam": '<circle cx="5.5" cy="6" r="2.5"/><circle cx="18.5" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8 6h8M7 8.2l3.6 7.6M17 8.2l-3.6 7.6"/><path d="M10 11.5h4" stroke-dasharray="1.5 1.5"/>',
+    "app_screentime": '<rect x="6" y="2.5" width="12" height="19" rx="2"/><circle cx="12" cy="12" r="3.8"/><path d="M12 9.8V12l1.6 1.2M10.5 19h3"/>',
     "app_bft": '<circle cx="12" cy="12" r="8"/><path d="M12 6l3.5 9L12 13l-3.5 2z"/>',
     "app_intel": '<path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     "app_wanted": '<rect x="3" y="3" width="18" height="18" rx="1"/><circle cx="12" cy="10" r="3.2"/><path d="M6.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6"/><path d="M3 7h3M18 7h3"/>',

@@ -1,5 +1,6 @@
 /*
-    Groupe : onglet MON GROUPE (fiche, nom et type modifiables par le chef, membres, quitter)
+    Groupe : onglet MON GROUPE (fiche, nom et type modifiables par le chef, membres, quitter),
+    onglet ÉQUIPES (équipes de feu du groupe : créer, rejoindre, quitter, couleurs, icônes, descriptions, rôles ; fn_ftRows)
     et onglet GROUPES (autres groupes de mon camp avec joueurs, rejoindre).
     Membres : principe de la liste de groupe de BCE (Aaren, APL-SA).
 */
@@ -15,7 +16,7 @@ private _grp = group player;
 private _isLead = (leader _grp) isEqualTo player || {(count units _grp) isEqualTo 1};
 private _others = allGroups select { side _x isEqualTo side _grp && {_x isNotEqualTo _grp} && {(count units _x) > 0} && {((units _x) findIf { isPlayer _x }) >= 0} };
 private _tabBtn = { params ["_t", "_k"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['grpTab', '%1']; [{ ['GROUP'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _tab isEqualTo _k] };
-private _rows = [["segment", "", [["MON GROUPE", "MINE"] call _tabBtn, [format ["GROUPES (%1)", count _others], "ALL"] call _tabBtn]]];
+private _rows = [["segment", "", [["MON GROUPE", "MINE"] call _tabBtn, [format ["ÉQUIPES (%1)", count (_grp getVariable ["COMSPEC_FireTeams", []])], "FT"] call _tabBtn, [format ["GROUPES (%1)", count _others], "ALL"] call _tabBtn]]];
 private _state = {
     params ["_u"];
     switch (true) do {
@@ -26,6 +27,7 @@ private _state = {
     }
 };
 
+if (_tab isEqualTo "FT") then { _rows append ([] call comspec_atak_native_fnc_ftRows); };
 if (_tab isEqualTo "MINE") then {
     ([_grp] call _typeOf) params ["_tk", "_tname", "_ticon"];
     private _locked = _grp getVariable ["COMSPEC_GroupLocked", false];
@@ -49,13 +51,17 @@ if (_tab isEqualTo "MINE") then {
         private _role = getText (configOf _u >> "displayName");
         private _btns = [];
         if (_isLead && {_u isNotEqualTo player} && {isPlayer _u}) then { _btns pushBack ["CHEF", compile format ["['lead', '%1'] call comspec_atak_native_fnc_groupAction;", netId _u]]; };
-        _rows pushBack ["person", _pic, format ["<t font='RobotoCondensedBold'>%1</t>%2<br/><t size='0.8' color='#8a9a93'>%3 · %4 · %5</t>",
+        private _ft = [_u] call comspec_atak_native_fnc_ftInfo;
+        if ((_ft get "roleLabel") isNotEqualTo "") then { _role = _ft get "roleLabel"; };
+        _rows pushBack ["person", _pic, format ["<t font='RobotoCondensedBold'>%1</t>%2%6<br/><t size='0.8' color='#8a9a93'>%3 · %4 · %5</t>",
             [name _u] call _esc, ["", " <t color='#e8b84a'>● chef</t>"] select (_u isEqualTo leader _grp), [_role] call _esc, [_u] call _state,
-            ["moi", format ["%1 m", round (_u distance2D player)]] select (_u isNotEqualTo player)], _btns];
+            ["moi", format ["%1 m", round (_u distance2D player)]] select (_u isNotEqualTo player),
+            ["", format ["  <t size='0.8' color='%1'>● %2</t>", _ft get "hex", [_ft get "name"] call _esc]] select ((_ft get "id") isNotEqualTo "")], _btns];
     } forEach units _grp;
     _rows pushBack ["buttons", [["QUITTER LE GROUPE", { ["leave"] call comspec_atak_native_fnc_groupAction; }, false]]];
     _rows pushBack ["text", "<t size='0.8' color='#8a9a93'>Quitter crée un groupe à votre nom, que d'autres peuvent rejoindre.</t>"];
-} else {
+};
+if (_tab isEqualTo "ALL") then {
     _rows pushBack ["section", "Groupes de mon camp", "Groupes avec au moins un joueur, du plus proche au plus loin"];
     private _sorted = _others apply { [(leader _x) distance2D player, _x] };
     _sorted sort true;

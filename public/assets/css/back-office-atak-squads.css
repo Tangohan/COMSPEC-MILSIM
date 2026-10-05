@@ -1,0 +1,77 @@
+/**
+ * Back-office ATAK — Escouades en jeu et Temps d'écran et rôles (préfixe aksq-).
+ */
+.aksq {
+  --aksq-bg: var(--ds-color-bg, #f8fafc);
+  --aksq-surface: var(--ds-color-surface, #ffffff);
+  --aksq-line: var(--ds-color-border, #e2e8f0);
+  --aksq-text: var(--ds-color-text, #0f172a);
+  --aksq-muted: #64748b;
+  --aksq-accent: #059669;
+  --aksq-accent-soft: rgba(5, 150, 105, 0.1);
+  flex: 1 1 auto;
+  min-height: 0;
+  background: var(--aksq-bg);
+  color: var(--aksq-text);
+}
+.aksq__frame { max-width: 72rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; display: grid; gap: 1.5rem; }
+@media (min-width: 768px) { .aksq__frame { padding: 2rem 2rem 3.5rem; } }
+
+.aksq__hero { border: 1px solid var(--aksq-line); border-radius: 1rem; background: linear-gradient(160deg, var(--aksq-surface), rgba(5, 150, 105, 0.05)); padding: 1.4rem 1.25rem; }
+.aksq__kicker { margin: 0 0 0.35rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--aksq-muted); }
+.aksq__title { margin: 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -0.01em; }
+.aksq__lead { margin: 0.5rem 0 0; max-width: 48rem; font-size: 0.92rem; line-height: 1.55; color: var(--aksq-muted); }
+.aksq__kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 0.6rem; margin-top: 1.1rem; }
+.aksq__kpi { border: 1px solid var(--aksq-line); border-radius: 0.75rem; background: var(--aksq-surface); padding: 0.65rem 0.8rem; }
+.aksq__kpi span { display: block; font-size: 0.72rem; color: var(--aksq-muted); }
+.aksq__kpi strong { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.aksq__periods { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem; align-items: center; }
+.aksq__period, .aksq__link { border: 1px solid var(--aksq-line); border-radius: 999px; padding: 0.3rem 0.8rem; font-size: 0.8rem; font-weight: 600; color: var(--aksq-text); text-decoration: none; background: var(--aksq-surface); }
+.aksq__period.is-active { background: var(--aksq-accent); border-color: var(--aksq-accent); color: #fff; }
+.aksq__link { margin-left: auto; color: var(--aksq-accent); }
+.aksq__link + .aksq__link { margin-left: 0; }
+.aksq__period:focus-visible, .aksq__link:focus-visible { outline: 2px solid var(--aksq-accent); outline-offset: 2px; }
+
+.aksq__notice { margin: 0; border: 1px solid #fcd34d; background: #fffbeb; color: #78350f; border-radius: 0.75rem; padding: 0.8rem 1rem; font-size: 0.9rem; }
+.aksq__empty { border: 1px dashed var(--aksq-line); border-radius: 1rem; padding: 1.5rem; text-align: center; color: var(--aksq-muted); font-size: 0.9rem; }
+.aksq__empty-title { margin: 0 0 0.35rem; font-weight: 700; color: var(--aksq-text); }
+
+.aksq__session-title { margin: 0 0 0.75rem; font-size: 1.05rem; font-weight: 800; }
+.aksq__session-title small { font-size: 0.78rem; font-weight: 500; color: var(--aksq-muted); margin-left: 0.4rem; }
+.aksq__grid { display: grid; gap: 0.9rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr)); }
+.aksq__squad { border: 1px solid var(--aksq-line); border-radius: 0.9rem; background: var(--aksq-surface); padding: 0.95rem; display: grid; gap: 0.65rem; align-content: start; }
+.aksq__squad-head { display: flex; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+.aksq__squad-head h3 { margin: 0; font-size: 1.02rem; font-weight: 800; }
+.aksq__squad-head p { margin: 0.1rem 0 0; font-size: 0.78rem; color: var(--aksq-muted); }
+.aksq__squad-meta { display: flex; flex-wrap: wrap; gap: 0.35rem; font-size: 0.75rem; color: var(--aksq-muted); align-items: flex-start; }
+.aksq__squad-foot { font-size: 0.72rem; color: var(--aksq-muted); border-top: 1px solid var(--aksq-line); padding-top: 0.5rem; }
+.aksq__team { --team: #64748b; border-left: 4px solid var(--team); border-radius: 0.5rem; background: color-mix(in srgb, var(--team) 7%, transparent); padding: 0.55rem 0.7rem; }
+.aksq__team-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.45rem; font-size: 0.9rem; }
+.aksq__swatch { width: 0.75rem; height: 0.75rem; border-radius: 50%; background: var(--team); box-shadow: 0 0 0 2px var(--aksq-surface); }
+.aksq__desc { margin: 0.3rem 0 0; font-size: 0.8rem; color: var(--aksq-muted); }
+.aksq__members { list-style: none; margin: 0.45rem 0 0; padding: 0; display: grid; gap: 0.2rem; font-size: 0.82rem; }
+.aksq__members li { display: flex; gap: 0.45rem; align-items: baseline; flex-wrap: wrap; }
+.aksq__role { min-width: 7.5rem; font-size: 0.72rem; font-weight: 600; color: var(--aksq-muted); }
+.aksq__role.is-lead { color: var(--aksq-accent); }
+.aksq__free { margin: 0; font-size: 0.8rem; }
+.aksq__free span { font-weight: 700; color: var(--aksq-muted); margin-right: 0.3rem; }
+.aksq__tag { border: 1px solid var(--aksq-line); border-radius: 999px; padding: 0 0.45rem; font-size: 0.68rem; color: var(--aksq-muted); }
+.aksq__muted { color: var(--aksq-muted); font-size: 0.8rem; }
+
+.aksq__bars { display: grid; gap: 0.45rem; border: 1px solid var(--aksq-line); border-radius: 0.9rem; background: var(--aksq-surface); padding: 0.9rem; }
+.aksq__bar { display: grid; grid-template-columns: minmax(8rem, 14rem) 1fr auto; gap: 0.75rem; align-items: center; font-size: 0.85rem; }
+.aksq__bar-track { height: 0.55rem; border-radius: 999px; background: var(--aksq-accent-soft); overflow: hidden; }
+.aksq__bar-track span { display: block; height: 100%; border-radius: inherit; background: var(--aksq-accent); }
+.aksq__bar-value { font-variant-numeric: tabular-nums; color: var(--aksq-muted); font-size: 0.8rem; }
+@media (max-width: 600px) { .aksq__bar { grid-template-columns: 1fr auto; } .aksq__bar-track { grid-column: 1 / -1; grid-row: 2; } }
+
+.aksq__table-wrap { overflow-x: auto; border: 1px solid var(--aksq-line); border-radius: 0.9rem; background: var(--aksq-surface); }
+.aksq__table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.aksq__table th, .aksq__table td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--aksq-line); vertical-align: top; }
+.aksq__table thead th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--aksq-muted); font-weight: 700; }
+.aksq__table tbody th { font-weight: 400; }
+.aksq__table tbody th strong { display: block; }
+.aksq__table tbody tr:last-child th, .aksq__table tbody tr:last-child td { border-bottom: 0; }
+.aksq__chip { display: inline-flex; gap: 0.3rem; align-items: baseline; border-radius: 999px; background: rgba(100, 116, 139, 0.1); padding: 0.1rem 0.55rem; margin: 0 0.25rem 0.25rem 0; font-size: 0.76rem; }
+.aksq__chip em { font-style: normal; color: var(--aksq-muted); }
+.aksq__chip--role { background: var(--aksq-accent-soft); }

@@ -7,6 +7,8 @@
     (COMSPEC_ATAK_Device, alimenté par fn_deviceDamage), réglage serveur comspec_atak_native_damage_sim.
 */
 private _out = createHashMapFromArray [["state", "OK"], ["damage", 0], ["crack", 0], ["offLeft", 0], ["reason", ""], ["offUntil", -1], ["offFrom", -1]];
+// Équipage d'aéronef : l'ATAK tourne sur la tablette de bord, l'état du téléphone porté ne compte pas.
+if ([player] call comspec_atak_native_fnc_aircrewTerminal) exitWith { _out };
 private _ow = missionNamespace getVariable ["COMSPEC_AtakState", createHashMap];
 if ((missionNamespace getVariable ["comspec_overwatch_atak_realism", 0]) > 0 && {_ow isEqualType createHashMap} && {(count _ow) > 0}) then {
     if (_ow getOrDefault ["screen_destroyed", false]) then { _out set ["state", "CRACKED"]; _out set ["crack", 3]; _out set ["damage", 0.85]; _out set ["reason", "Écran endommagé"]; };

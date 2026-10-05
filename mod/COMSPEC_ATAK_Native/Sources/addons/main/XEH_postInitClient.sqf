@@ -133,8 +133,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     private _icon = profileNamespace getVariable ["COMSPEC_ATAK_SelfIcon", ""];
     if ((player getVariable ["COMSPEC_ATAK_Icon", ""]) isNotEqualTo _icon) then { player setVariable ["COMSPEC_ATAK_Icon", _icon, true]; };
     // Balise BFT : en ligne si j'ai un téléphone allumé avec du signal (diffusée seulement quand elle change).
-    private _on = ([player] call comspec_atak_native_fnc_hasDevice)
-        && {!((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"])}
+    // Équipage d'aéronef : tablette de bord, même téléphone éteint ou cassé.
+    private _on = (([player] call comspec_atak_native_fnc_aircrewTerminal) || {([player] call comspec_atak_native_fnc_hasDevice)
+        && {!((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"])}})
         && {(([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 1]) > 0};
     if ((player getVariable ["COMSPEC_ATAK_Beacon", true]) isNotEqualTo _on) then { player setVariable ["COMSPEC_ATAK_Beacon", _on, true]; };
     // Fiche vue par les alliés au clic sur la carte : batterie (par 10 %), barres de signal, état de l'appareil.
@@ -450,6 +451,24 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     ["INFO", _text, 5, 30] call comspec_atak_native_fnc_notify;
     if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "GROUP") then { [{ ["GROUP"] call comspec_atak_native_fnc_pageRender; }, [], 0.5] call CBA_fnc_waitAndExecute; };
 }] call CBA_fnc_addEventHandler;
+
+// Équipes de feu : un changement validé par le serveur (fn_ftServer) redessine Groupe, BFT et Inter-team ;
+// l'annonce ne s'affiche que pour le groupe concerné.
+["comspec_atak_native_ftChanged", {
+    params ["_g", ["_msg", ""]];
+    if (_g isEqualTo group player && {_msg isNotEqualTo ""}) then { ["INFO", _msg, 4, 30] call comspec_atak_native_fnc_notify; };
+    private _page = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
+    if (_page in ["GROUP", "BFT", "INTERTEAM"] && {!isNull ([] call comspec_atak_native_fnc_display)}) then {
+        [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page, 0.4] call CBA_fnc_waitAndExecute;
+    };
+}] call CBA_fnc_addEventHandler;
+// Escouades et équipes de feu vers Athena (rapporteur du groupe seulement, si quelque chose a changé).
+[{ [] call comspec_atak_native_fnc_squadSync; }, 30] call CBA_fnc_addPerFrameHandler;
+// Temps d'écran et temps par rôle (envoi à Athena toutes les 5 min et en fin de mission).
+[{ ["tick"] call comspec_atak_native_fnc_screenTime; }, 5] call CBA_fnc_addPerFrameHandler;
+addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; }];
+// Arrivée en cours de partie : mon équipe de feu d'un ancien groupe ne me suit pas.
+[{ ["comspec_atak_native_ftCheck", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
 
 // Tinder : un joueur m'a liké (match si c'est réciproque).
 ["comspec_atak_native_rencard", {

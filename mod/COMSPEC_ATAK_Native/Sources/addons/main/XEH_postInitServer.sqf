@@ -24,9 +24,45 @@ missionNamespace setVariable ["COMSPEC_ATAK_SrvKeep", _keep];
     params ["_grp", "_pts", "_who"];
     COMSPEC_ATAK_SrvRoutes set [_grp, [_pts, _who]];
 }] call CBA_fnc_addEventHandler;
+// Équipes de feu : seul le serveur écrit l'état partagé (fn_ftServer), puis le diffuse au camp.
+["comspec_atak_native_ft", { _this call comspec_atak_native_fnc_ftServer; }] call CBA_fnc_addEventHandler;
+// Clé de la session (Athena range les escouades et équipes envoyées par mission jouée).
+missionNamespace setVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2#%3", missionName, worldName, (systemTimeUTC select [0, 5]) joinString ""], true];
+// Contrôle de cohérence : unités dont l'équipe n'existe plus dans leur groupe (changement de groupe hors téléphone,
+// équipe dissoute) remises sans équipe. Toutes les 10 s, et à la demande (Inter-team > RESYNCHRONISER, arrivée d'un joueur).
+COMSPEC_ATAK_FtCheck = {
+    params [["_by", objNull]];
+    private _fixed = 0;
+    {
+        private _u = _x;
+        private _tid = _u getVariable ["COMSPEC_FT", ""];
+        if (_tid isNotEqualTo "" && {((group _u getVariable ["COMSPEC_FireTeams", []]) findIf { (_x select 0) isEqualTo _tid }) < 0}) then {
+            _u setVariable ["COMSPEC_FT", "", true];
+            if ((_u getVariable ["COMSPEC_FTRole", ""]) isEqualTo "CDE") then { _u setVariable ["COMSPEC_FTRole", "FUS", true]; };
+            [_u, "MAIN"] remoteExecCall ["assignTeam", 0];
+            _fixed = _fixed + 1;
+        };
+    } forEach allUnits;
+    if (_fixed > 0) then { missionNamespace setVariable ["COMSPEC_ATAK_SquadRev", (missionNamespace getVariable ["COMSPEC_ATAK_SquadRev", 0]) + 1, true]; };
+    if (!isNull _by) then { ["comspec_atak_native_ftChanged", [group _by, format ["Synchronisation : %1 correction(s), révision %2", _fixed, missionNamespace getVariable ["COMSPEC_ATAK_SquadRev", 0]]], _by] call CBA_fnc_targetEvent; };
+    _fixed
+};
+["comspec_atak_native_ftCheck", { _this call COMSPEC_ATAK_FtCheck; }] call CBA_fnc_addEventHandler;
+[{ [] call COMSPEC_ATAK_FtCheck; }, 10] call CBA_fnc_addPerFrameHandler;
 ["comspec_atak_native_syncReq", {
     params ["_unit"];
     if (isNull _unit) exitWith {};
     private _side = str side group _unit;
     ["comspec_atak_native_syncData", [COMSPEC_ATAK_SrvLog getOrDefault [_side, []], COMSPEC_ATAK_SrvRoutes getOrDefault [netId group _unit, []]], _unit] call CBA_fnc_targetEvent;
 }] call CBA_fnc_addEventHandler;
+// Temps de jeu et temps par rôle comptés ici pour chaque joueur, quel que soit l'état de son téléphone (fn_playTimeServer).
+// Sonde au démarrage : si la DLL du serveur sait envoyer, les clients ne remontent plus eux-mêmes que l'écran et les apps.
+[{ ["tick"] call comspec_atak_native_fnc_playTimeServer; }, 10] call CBA_fnc_addPerFrameHandler;
+[{
+    private _r = "COMSPECExtension" callExtension ["ScreenTime.Batch", ["probe"]];
+    if (_r isEqualType []) then { _r = _r param [0, ""]; };
+    missionNamespace setVariable ["COMSPEC_ATAK_SrvPlayOK", (_r select [0, 3]) isEqualTo "OK|", true];
+    ["INFO", "PLAYTIME", format ["Sonde ScreenTime.Batch : %1", [_r, "COMSPEC Link 2.0.63 requis"] select (_r isEqualTo "")]] call comspec_atak_native_fnc_log;
+}, [], 15] call CBA_fnc_waitAndExecute;
+addMissionEventHandler ["HandleDisconnect", { params ["", "", "_uid"]; ["leave", _uid] call comspec_atak_native_fnc_playTimeServer; false }];
+addMissionEventHandler ["MPEnded", { ["flush"] call comspec_atak_native_fnc_playTimeServer; }];

@@ -9,7 +9,7 @@ class CfgPatches {
 class CfgFunctions {
     class comspec_atak_native { tag="comspec_atak_native";
         class core { file="z\comspec_atak_native\addons\main\functions\core";
-            class log {}; class battery {}; class weather {}; class stateInit {}; class storeSet {}; class schedulerStart {}; class schedulerStop {}; class schedulerTick {}; class debugDump {}; class deviceCatalog {}; class hasDevice {}; class deviceDenied {}; class tenantRule {}; class pref {}; class tenantApply {}; class canUse {}; class batterySwap {}; class linkQuality {}; class deviceHealth {}; class deviceDamage {}; class deviceRepair {}; class phoneIdent {}; class ramUsage {}; class batteryItem {};
+            class log {}; class battery {}; class weather {}; class stateInit {}; class storeSet {}; class schedulerStart {}; class schedulerStop {}; class schedulerTick {}; class debugDump {}; class deviceCatalog {}; class hasDevice {}; class deviceDenied {}; class tenantRule {}; class pref {}; class tenantApply {}; class canUse {}; class batterySwap {}; class linkQuality {}; class deviceHealth {}; class deviceDamage {}; class deviceRepair {}; class phoneIdent {}; class ramUsage {}; class batteryItem {}; class aircrewTerminal {};
         };
         class ui { file="z\comspec_atak_native\addons\main\functions\ui";
             class display {}; class open {}; class close {}; class hudToggle {}; class interactToggle {}; class orientationToggle {}; class phoneDrag {}; class formRender {}; class formValue {}; class fullAlert {}; class vibrate {}; class dataBarEnabled {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class navigate {}; class back {}; class modeToggle {};
@@ -46,6 +46,13 @@ class CfgFunctions {
         class reports { file="z\comspec_atak_native\addons\main\functions\reports";
             class reportTypes {}; class reportAction {}; class pageReports {};
         };
+        class teams { file="z\comspec_atak_native\addons\main\functions\teams";
+            class ftCatalog {}; class ftInfo {}; class ftTeams {}; class ftServer {}; class ftAction {}; class ftRows {}; class ftCenter {};
+            class json {}; class squadSnapshot {}; class squadSync {}; class pageInterTeam {}; class interTeamAction {};
+        };
+        class screen { file="z\comspec_atak_native\addons\main\functions\screen";
+            class roleKey {}; class screenTime {}; class pageScreenTime {}; class playTimeServer {};
+        };
         class aar { file="z\comspec_atak_native\addons\main\functions\aar";
             class aarRecord {}; class aarAction {}; class aarDraw {}; class pageAar {};
         };
@@ -73,6 +80,7 @@ class COMSPEC_ATAK_Apps {
     class Group       { name="Groupe"; page="GROUP"; section="Communication"; order=32; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_group.paa"; };
     class Alerts      { name="Alertes"; page="ALERTS"; section="Communication"; order=34; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_alerts.paa"; };
     class Bft         { name="BFT"; page="BFT"; section="Communication"; order=36; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_bft.paa"; };
+    class InterTeam   { name="Inter-team"; page="INTERTEAM"; function="comspec_atak_native_fnc_pageInterTeam"; section="Communication"; order=37; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_interteam.paa"; };
     class C2          { name="C2"; page="C2"; section="Communication"; order=38; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_c2.paa"; };
     class WaveRelay   { name="Wave Relay"; page="WAVERELAY"; section="Communication"; order=40; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_waverelay.paa"; };
     class Fires       { name="Feux"; page="FIRES"; section="Appui et feux"; order=50; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_fires.paa"; };
@@ -104,6 +112,7 @@ class COMSPEC_ATAK_Apps {
     class Status      { name="Statut"; page="STATUS"; section="Système"; order=306; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_status.paa"; };
     class Profile     { name="Profil"; page="PROFILE"; section="Système"; order=308; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_profile.paa"; };
     class Settings    { name="Réglages"; page="SETTINGS"; section="Système"; order=310; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_settings.paa"; };
+    class ScreenTime  { name="Temps d'écran"; page="SCREENTIME"; function="comspec_atak_native_fnc_pageScreenTime"; section="Système"; order=312; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_screentime.paa"; };
     class Debug       { name="Debug"; page="DEBUG"; section="Système"; order=315; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_debug.paa"; };
     class Credits     { name="Crédits"; page="CREDITS"; section="Système"; order=330; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_credits.paa"; };
     class Music       { name="Musique"; page="MUSIC"; section="Civil"; order=395; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_music.paa"; };
