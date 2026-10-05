@@ -24,7 +24,10 @@ function run_atak_realism_config_seed(PDO $pdo): void
     }
 
     // Récupérer tous les tenants actifs
-    $st = $pdo->query('SELECT id FROM tenants WHERE deleted_at IS NULL ORDER BY id');
+    $hasDeletedAt = (bool) $pdo->query(
+        "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tenants' AND COLUMN_NAME = 'deleted_at' LIMIT 1"
+    )->fetchColumn();
+    $st = $pdo->query('SELECT id FROM tenants' . ($hasDeletedAt ? ' WHERE deleted_at IS NULL' : '') . ' ORDER BY id');
     $tenants = $st->fetchAll(PDO::FETCH_ASSOC);
 
     $atakConfigRepo = new \App\Repositories\TenantAtakConfigRepository($pdo);

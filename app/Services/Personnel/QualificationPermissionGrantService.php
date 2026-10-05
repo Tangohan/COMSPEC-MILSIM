@@ -132,8 +132,13 @@ final class QualificationPermissionGrantService
 
     private function resolvePermissionId(PDO $pdo, string $code): ?int
     {
-        $st = $pdo->prepare('SELECT id FROM permissions WHERE code = ? LIMIT 1');
-        $st->execute([$code]);
+        try {
+            $st = $pdo->prepare('SELECT id FROM permissions WHERE slug = ? LIMIT 1');
+            $st->execute([$code]);
+        } catch (Throwable) {
+            $st = $pdo->prepare('SELECT id FROM permissions WHERE code = ? LIMIT 1');
+            $st->execute([$code]);
+        }
         $id = $st->fetchColumn();
 
         return $id !== false ? (int) $id : null;

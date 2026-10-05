@@ -18,27 +18,9 @@ function run_personnel_career_advancement_migration(PDO $pdo): void
 
         return (bool) $st->fetchColumn();
     };
-    $ensurePermission = static function (string $code, string $name, string $description) use ($pdo, $hasTable): void {
-        if (!$hasTable('permissions')) {
-            return;
-        }
-        $st = $pdo->prepare('SELECT id FROM permissions WHERE code = ? LIMIT 1');
-        $st->execute([$code]);
-        if ($st->fetchColumn()) {
-            return;
-        }
-        try {
-            $ins = $pdo->prepare(
-                'INSERT INTO permissions (code, name, description, created_at) VALUES (?, ?, ?, NOW())'
-            );
-            $ins->execute([$code, $name, $description]);
-        } catch (Throwable) {
-            try {
-                $ins = $pdo->prepare('INSERT INTO permissions (code, name, description) VALUES (?, ?, ?)');
-                $ins->execute([$code, $name, $description]);
-            } catch (Throwable) {
-            }
-        }
+    require_once __DIR__ . '/migration_permissions.php';
+    $ensurePermission = static function (string $code, string $name, string $description) use ($pdo): void {
+        migration_ensure_global_permission($pdo, $code, $name, $description, 'personnel');
     };
 
     if (!$hasTable('award_definitions')) {

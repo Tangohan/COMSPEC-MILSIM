@@ -297,6 +297,12 @@ function migrations_web_collect_status(string $root): array
             } catch (Throwable $e) {
                 $status['database']['has_tenant_type'] = null;
             }
+            try {
+                require_once $root . '/bootstrap/migration_runner.php';
+                $status['sql_migrations']['ledger'] = ComspecMigrationRunner::statusReport($pdo, $root . '/migrations');
+            } catch (Throwable $e) {
+                $status['sql_migrations']['ledger'] = null;
+            }
 
             $moduleTables = [
                 'atak_poi' => ['label' => 'POI carte', 'group' => 'Modules carte'],
@@ -810,16 +816,32 @@ function migrations_web_render_dashboard(array $status, ?string $flash = null, s
     }
     echo '</section>';
 
-    $samples = $status['sql_migrations']['samples'] ?? [];
-    echo '<section class="panel col-12"><p class="label">Derniers fichiers SQL présents</p>';
-    if ($samples === []) {
-        echo '<p class="muted" style="margin-top:.7rem">Aucun fichier .sql détecté.</p>';
+    $sqlState = $status['sql_migrations']['ledger'] ?? null;
+    echo '<section class="panel col-12"><p class="label">Fichiers SQL (migrations/*.sql)</p>';
+    if (!is_array($sqlState)) {
+        echo '<p class="muted" style="margin-top:.7rem">État indisponible (base non joignable).</p>';
     } else {
-        echo '<ul class="list">';
-        foreach ($samples as $s) {
-            echo '<li>' . migrations_web_h((string) $s) . '</li>';
+        $pending = $sqlState['pending'];
+        $failed = $sqlState['failed'];
+        echo '<div class="row" style="margin-top:.55rem; gap: .5rem;">';
+        echo migrations_web_badge_for_bool($pending === [] && $failed === [], 'Tout est appliqué', 'Action requise');
+        echo '</div><div class="kv">';
+        echo '<div><span>Appliqués</span><span>' . (int) $sqlState['applied'] . ' / ' . ((int) $sqlState['total'] - (int) $sqlState['excluded']) . '</span></div>';
+        echo '<div><span>En attente</span><span>' . count($pending) . '</span></div>';
+        echo '<div><span>En échec</span><span>' . count($failed) . '</span></div>';
+        echo '<div><span>Exclus (manuels ou gérés par une étape PHP)</span><span>' . (int) $sqlState['excluded'] . '</span></div>';
+        echo '</div>';
+        if ($failed !== []) {
+            echo '<ul class="list">';
+            foreach ($failed as $row) {
+                echo '<li><strong>' . migrations_web_h((string) $row['name']) . '</strong> — ' . migrations_web_h((string) $row['error']) . '</li>';
+            }
+            echo '</ul>';
         }
-        echo '</ul>';
+        if ($pending !== []) {
+            echo '<p class="muted" style="margin-top:.7rem">En attente : ' . migrations_web_h(implode(', ', array_slice($pending, 0, 30)))
+                . (count($pending) > 30 ? ' … +' . (count($pending) - 30) : '') . '</p>';
+        }
     }
     echo '</section>';
 

@@ -29,8 +29,10 @@ ALTER TABLE `permissions`
 UPDATE `permissions` SET `code` = `slug` WHERE (`code` IS NULL OR `code` = '') AND `slug` IS NOT NULL;
 UPDATE `permissions` SET `label` = COALESCE(NULLIF(`name`, ''), `slug`, `code`) WHERE (`label` IS NULL OR `label` = '');
 
+-- `code` reste NULL-able : les migrations PHP créent des permissions par `slug` seul ; un NOT NULL
+-- sans défaut faisait échouer chacune de ces insertions. run-migrations.php recopie slug → code.
 ALTER TABLE `permissions`
-  MODIFY COLUMN `code` varchar(190) NOT NULL,
+  MODIFY COLUMN `code` varchar(190) NULL,
   ADD UNIQUE KEY IF NOT EXISTS `uniq_permissions_tenant_code` (`tenant_id`,`code`);
 
 ALTER TABLE `role_permissions`
@@ -84,16 +86,16 @@ CREATE TABLE IF NOT EXISTS `access_logs` (
 
 -- Seeds permissions (idempotent)
 INSERT INTO permissions (`tenant_id`,`code`,`slug`,`label`,`name`,`category`,`module`,`action`,`scope`,`rbac_scope`)
-SELECT NULL, 'documents.read', 'documents.read', 'Lire documents', 'Lire documents', 'module', 'documents', 'READ', 'tenant', 'tenant'
+SELECT NULL, 'documents.read', 'documents.read', 'Lire documents', 'Lire documents', 'module', 'documents', 'READ', 'community', 'tenant'
 WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE tenant_id IS NULL AND code = 'documents.read');
 INSERT INTO permissions (`tenant_id`,`code`,`slug`,`label`,`name`,`category`,`module`,`action`,`scope`,`rbac_scope`)
-SELECT NULL, 'documents.export', 'documents.export', 'Exporter documents', 'Exporter documents', 'action', 'documents', 'EXPORT', 'tenant', 'tenant'
+SELECT NULL, 'documents.export', 'documents.export', 'Exporter documents', 'Exporter documents', 'action', 'documents', 'EXPORT', 'community', 'tenant'
 WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE tenant_id IS NULL AND code = 'documents.export');
 INSERT INTO permissions (`tenant_id`,`code`,`slug`,`label`,`name`,`category`,`module`,`action`,`scope`,`rbac_scope`)
-SELECT NULL, 'courrier.read', 'courrier.read', 'Lire courriers', 'Lire courriers', 'module', 'courrier', 'READ', 'tenant', 'tenant'
+SELECT NULL, 'courrier.read', 'courrier.read', 'Lire courriers', 'Lire courriers', 'module', 'courrier', 'READ', 'community', 'tenant'
 WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE tenant_id IS NULL AND code = 'courrier.read');
 INSERT INTO permissions (`tenant_id`,`code`,`slug`,`label`,`name`,`category`,`module`,`action`,`scope`,`rbac_scope`)
-SELECT NULL, 'admin.access.manage', 'admin.access.manage', 'Gérer les accès', 'Gérer les accès', 'page', 'admin', 'WRITE', 'tenant', 'tenant'
+SELECT NULL, 'admin.access.manage', 'admin.access.manage', 'Gérer les accès', 'Gérer les accès', 'page', 'admin', 'WRITE', 'community', 'tenant'
 WHERE NOT EXISTS (SELECT 1 FROM permissions WHERE tenant_id IS NULL AND code = 'admin.access.manage');
 
 -- Seeds ABAC templates (role target by slug lookup)
