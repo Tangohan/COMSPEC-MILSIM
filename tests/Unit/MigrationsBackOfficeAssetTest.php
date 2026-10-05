@@ -6,19 +6,21 @@ use PHPUnit\Framework\TestCase;
 
 final class MigrationsBackOfficeAssetTest extends TestCase
 {
-    public function testRunnerAlwaysAppliesEverySupplementarySqlAndVerifiesResult(): void
+    public function testRunnerAppliesPendingSqlThroughLedgerAndVerifiesResult(): void
     {
         $root = dirname(__DIR__, 2);
         $runner = (string) file_get_contents($root . '/run-migrations.php');
+        $engine = (string) file_get_contents($root . '/bootstrap/migration_runner.php');
         $post = (string) file_get_contents($root . '/bootstrap/migrations_full_post.php');
 
-        self::assertStringContainsString('comspec_run_all_supplementary_sql_files($pdo, $root, $migrationFlush);', $runner);
+        self::assertStringContainsString("\$migrationRunner->runPendingSqlFiles(\$root . '/migrations');", $runner);
+        self::assertStringContainsString('$migrationRunner->printReport()', $runner);
         self::assertStringNotContainsString("defined('COMSPEC_MIGRATIONS_WEB_FULL')", $runner);
-        self::assertStringContainsString("glob($dir . '/*.sql')", $post);
+        self::assertStringContainsString("glob(rtrim(\$dir, '/') . '/*.sql')", $engine);
+        self::assertStringContainsString('comspec_schema_migrations', $engine);
+        self::assertStringContainsString('EXECUTE|CALL', $engine);
+        self::assertStringContainsString('_manual\\.sql', $engine);
         self::assertStringContainsString('Aucun compte ni communauté de démonstration', $post);
-        self::assertStringContainsString('EXECUTE|CALL', $post);
-        self::assertStringContainsString('comspec_supplementary_sql_is_excluded', $post);
-        self::assertStringContainsString('_manual\\.sql', $post);
     }
 
     public function testBackOfficeUsesDsfrServiceThemeAndChecksDemoAccounts(): void

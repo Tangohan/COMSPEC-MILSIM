@@ -33,7 +33,9 @@ declare(strict_types=1);
  *     pour que les colonnes existent même si la suite du script est longue ou interrompue.
  *  9. Seed : tenant `default`, compte admin, forum, rôles, permissions…
  *
- * Idempotent : relancer met à jour ce qui manque sans tout casser.
+ * Idempotent : relancer met à jour ce qui manque sans tout casser. Les fichiers migrations/*.sql
+ * sont suivis dans la table `comspec_schema_migrations` (voir bootstrap/migration_runner.php) ;
+ * `php run-migrations.php --status` liste ceux en attente ou en échec.
  *
  * Usage CLI :
  *   php setup-database.php

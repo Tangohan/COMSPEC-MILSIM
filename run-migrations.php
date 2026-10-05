@@ -8,7 +8,18 @@ declare(strict_types=1);
  * Ce fichier reste le moteur procédural ; ne pas le confondre avec les seuls bootstrap PHP isolés.
  *
  * Web (UI sécurisée) : /run-migrations.php — mot de passe + tableau de bord + console live
- * (bootstrap/migrations_web_ui.php). CLI : sortie texte inchangée.
+ * (bootstrap/migrations_web_ui.php). CLI : sortie texte.
+ *
+ * Moteur : bootstrap/migration_runner.php
+ *  - chaque fichier migrations/*.sql est appliqué une fois et noté dans `comspec_schema_migrations`
+ *    (rejoué seulement s’il est modifié ou s’il a échoué) ;
+ *  - chaque étape PHP est isolée : un échec est noté, la suite du pipeline continue ;
+ *  - bilan final « Bilan des migrations » et code de sortie 1 si quelque chose a échoué.
+ *
+ * Options CLI :
+ *   php run-migrations.php --status            état des fichiers SQL, sans rien exécuter
+ *   php run-migrations.php --replay=nom.sql    rejoue ce(s) fichier(s) (liste séparée par des virgules)
+ *   php run-migrations.php --replay-all        rejoue tous les fichiers SQL (ancien comportement)
  */
 
 $root = dirname(__FILE__);
@@ -108,10 +119,35 @@ $migrationEnsurePdo = static function () use (&$pdo, $migrationFlush): void {
         echo "  [INFO] Reconnexion MySQL OK\n";
         $migrationFlush();
     } catch (Throwable $e) {
-        echo '  [ATTENTION] Reconnexion MySQL impossible : ' . $e->getMessage() . "\n";
+        echo '  [ERREUR] Reconnexion MySQL impossible : ' . $e->getMessage() . "\n";
         $migrationFlush();
     }
 };
+
+require_once $root . '/bootstrap/migration_runner.php';
+$migrationArgv = PHP_SAPI === 'cli' ? array_slice((array) ($GLOBALS['argv'] ?? []), 1) : [];
+if (in_array('--status', $migrationArgv, true)) {
+    // État des fichiers SQL sans rien exécuter.
+    $sqlStatus = ComspecMigrationRunner::statusReport($pdo, $root . '/migrations');
+    echo "Fichiers SQL : {$sqlStatus['total']} (appliqués {$sqlStatus['applied']}, exclus {$sqlStatus['excluded']}, "
+        . 'en attente ' . count($sqlStatus['pending']) . ', en échec ' . count($sqlStatus['failed']) . ")\n";
+    foreach ($sqlStatus['pending'] as $pendingName) {
+        echo "  [EN ATTENTE] {$pendingName}\n";
+    }
+    foreach ($sqlStatus['failed'] as $failedRow) {
+        echo "  [ERREUR] {$failedRow['name']} — {$failedRow['error']}\n";
+    }
+    exit(0);
+}
+$migrationRunner = new ComspecMigrationRunner(
+    static function () use (&$pdo): PDO {
+        return $pdo;
+    },
+    $migrationFlush,
+    $migrationEnsurePdo,
+    $migrationArgv
+);
+$migrationRunner->registerShutdownReport();
 
 echo "[→] Chargement des fichiers bootstrap (plateforme / RBAC)…\n";
 $migrationFlush();
@@ -182,48 +218,15 @@ echo "[OK] Fichiers bootstrap chargés.\n";
 $migrationFlush();
 
 // ----- Schéma (exécution statement par statement : PDO::exec ne gère qu'une requête) -----
-set_time_limit(PHP_SAPI === 'cli' ? 300 : 0);
+// Pas de limite : un arrêt au milieu laisserait des migrations SQL jamais appliquées.
+set_time_limit(0);
 $schemaPath = $root . '/migrations/schema.sql';
 echo "Exécution du schéma...\n";
 $migrationFlush();
 
-$sql = @file_get_contents($schemaPath);
-if ($sql === false || $sql === '') {
-    echo "[ERREUR] Impossible de lire le fichier schema.sql\n";
+if (!$migrationRunner->runSchema($schemaPath)) {
     exit(1);
 }
-echo "  Fichier lu (" . strlen($sql) . " octets)\n";
-$migrationFlush();
-
-$sql = preg_replace('/--[^\r\n]*/s', '', $sql);
-$chunks = preg_split('/;\s*[\r\n]+/', $sql);
-$statements = array_filter(array_map('trim', $chunks), function ($s) { return $s !== ''; });
-echo "  " . count($statements) . " instructions à exécuter\n";
-$migrationFlush();
-
-$done = 0;
-$errors = [];
-foreach ($statements as $stmt) {
-    $stmt = trim($stmt);
-    if ($stmt === '') continue;
-    try {
-        $pdo->exec($stmt . (str_ends_with($stmt, ';') ? '' : ';'));
-        $done++;
-        // Premières instructions souvent lentes (DDL) : feedback plus fréquent pour éviter l’impression de blocage.
-        if ($done <= 25 || $done % 10 === 0) {
-            echo "  … {$done}\n";
-            $migrationFlush();
-        }
-    } catch (PDOException $e) {
-        $errors[] = $e->getMessage() . ' (extrait: ' . substr($stmt, 0, 80) . '…)';
-    }
-}
-if (!empty($errors)) {
-    echo "[ATTENTION] " . count($errors) . " erreur(s) :\n";
-    foreach (array_slice($errors, 0, 5) as $err) echo "  - $err\n";
-}
-echo "Schéma OK. ({$done} instructions exécutées)\n";
-$migrationFlush();
 
 // CREATE TABLE IF NOT EXISTS ne met jamais à jour une table existante : combler les colonnes critiques.
 require_once $root . '/bootstrap/schema_ensure_column.php';
@@ -274,85 +277,91 @@ try {
     }
 } catch (Throwable $e) {
     echo '  [ATTENTION] idx_tenants_type (ensure) : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('idx_tenants_type (ensure)', $e);
 }
 $migrationFlush();
 
 // Extensions DDL (tableau opérationnel planning_*, ORBAT, tenant_email_*, app_maintenance, label_en rôles…).
-run_core_schema_extensions_migration($pdo, $root, $migrationFlush);
+$migrationRunner->step('run_core_schema_extensions_migration', static fn () => run_core_schema_extensions_migration($pdo, $root, $migrationFlush));
 
 // Plans Stripe, colonnes tenants, invitations, modération, événements, usage, codes communauté, parrainage — idempotent.
 echo "Migrations bootstrap plateforme (community_platform + unit_commander + rbac_three_layer)...\n";
 $migrationFlush();
-run_community_platform_migration($pdo);
-run_platform_unit_commander_migration($pdo);
-run_moderation_granular_sanctions_migration($pdo);
-run_seniority_engine_migration($pdo);
-run_personnel_progression_engine_migration($pdo);
-run_tenant_member_number_migration($pdo);
-run_personnel_capability_axes_migration($pdo);
-run_qualification_referentiel_migration($pdo);
-run_advancement_grade_migration($pdo);
-run_rank_catalog_migration($pdo);
-run_personnel_career_advancement_migration($pdo);
-run_arma_playtime_migration($pdo);
-run_roleplay_game_sessions_migration($pdo);
-run_personnel_phase_rules_migration($pdo);
-run_personnel_pass_migration($pdo);
-run_user_ui_tours_migration($pdo);
-run_operator_game_registry_migration($pdo);
-run_personnel_org_history_migration($pdo);
-run_organization_visibility_status_migration($pdo);
-run_orbat_billets_management_migration($pdo);
-run_org_duty_workbench_migration($pdo);
-run_unit_identity_enrichment_migration($pdo);
-run_personnel_stage_bilans_migration($pdo);
-run_member_integration_migration($pdo);
-run_personnel_function_kits_migration($pdo);
-run_document_versions_file_path_nullable_migration($pdo);
-run_personnel_absences_migration($pdo);
-run_personnel_profile_extended_details_migration($pdo);
-run_personnel_profile_rp_identity_migration($pdo);
-run_personnel_personal_dossier_enhancements_migration($pdo);
-run_tenant_decoration_motifs_migration($pdo);
-run_user_deletion_request_migration($pdo);
-run_user_community_identity_migration($pdo, static function (string $m) use ($migrationFlush): void {
+$migrationRunner->step('run_community_platform_migration', static fn () => run_community_platform_migration($pdo));
+$migrationRunner->step('run_platform_unit_commander_migration', static fn () => run_platform_unit_commander_migration($pdo));
+$migrationRunner->step('run_moderation_granular_sanctions_migration', static fn () => run_moderation_granular_sanctions_migration($pdo));
+$migrationRunner->step('run_seniority_engine_migration', static fn () => run_seniority_engine_migration($pdo));
+$migrationRunner->step('run_personnel_progression_engine_migration', static fn () => run_personnel_progression_engine_migration($pdo));
+$migrationRunner->step('run_tenant_member_number_migration', static fn () => run_tenant_member_number_migration($pdo));
+$migrationRunner->step('run_personnel_capability_axes_migration', static fn () => run_personnel_capability_axes_migration($pdo));
+$migrationRunner->step('run_qualification_referentiel_migration', static fn () => run_qualification_referentiel_migration($pdo));
+$migrationRunner->step('run_advancement_grade_migration', static fn () => run_advancement_grade_migration($pdo));
+$migrationRunner->step('run_rank_catalog_migration', static fn () => run_rank_catalog_migration($pdo));
+$migrationRunner->step('run_personnel_career_advancement_migration', static fn () => run_personnel_career_advancement_migration($pdo));
+$migrationRunner->step('run_arma_playtime_migration', static fn () => run_arma_playtime_migration($pdo));
+$migrationRunner->step('run_roleplay_game_sessions_migration', static fn () => run_roleplay_game_sessions_migration($pdo));
+$migrationRunner->step('run_personnel_phase_rules_migration', static fn () => run_personnel_phase_rules_migration($pdo));
+$migrationRunner->step('run_personnel_pass_migration', static fn () => run_personnel_pass_migration($pdo));
+$migrationRunner->step('run_user_ui_tours_migration', static fn () => run_user_ui_tours_migration($pdo));
+$migrationRunner->step('run_operator_game_registry_migration', static fn () => run_operator_game_registry_migration($pdo));
+$migrationRunner->step('run_personnel_org_history_migration', static fn () => run_personnel_org_history_migration($pdo));
+$migrationRunner->step('run_organization_visibility_status_migration', static fn () => run_organization_visibility_status_migration($pdo));
+$migrationRunner->step('run_orbat_billets_management_migration', static fn () => run_orbat_billets_management_migration($pdo));
+$migrationRunner->step('run_org_duty_workbench_migration', static fn () => run_org_duty_workbench_migration($pdo));
+$migrationRunner->step('run_unit_identity_enrichment_migration', static fn () => run_unit_identity_enrichment_migration($pdo));
+$migrationRunner->step('run_personnel_stage_bilans_migration', static fn () => run_personnel_stage_bilans_migration($pdo));
+$migrationRunner->step('run_member_integration_migration', static fn () => run_member_integration_migration($pdo));
+$migrationRunner->step('run_personnel_function_kits_migration', static fn () => run_personnel_function_kits_migration($pdo));
+$migrationRunner->step('run_document_versions_file_path_nullable_migration', static fn () => run_document_versions_file_path_nullable_migration($pdo));
+$migrationRunner->step('run_personnel_absences_migration', static fn () => run_personnel_absences_migration($pdo));
+$migrationRunner->step('run_personnel_profile_extended_details_migration', static fn () => run_personnel_profile_extended_details_migration($pdo));
+$migrationRunner->step('run_personnel_profile_rp_identity_migration', static fn () => run_personnel_profile_rp_identity_migration($pdo));
+$migrationRunner->step('run_personnel_personal_dossier_enhancements_migration', static fn () => run_personnel_personal_dossier_enhancements_migration($pdo));
+$migrationRunner->step('run_tenant_decoration_motifs_migration', static fn () => run_tenant_decoration_motifs_migration($pdo));
+$migrationRunner->step('run_user_deletion_request_migration', static fn () => run_user_deletion_request_migration($pdo));
+$migrationRunner->step('run_user_community_identity_migration', static fn () => run_user_community_identity_migration($pdo, static function (string $m) use ($migrationFlush): void {
     echo '  ' . $m . "\n";
     $migrationFlush();
-});
-run_user_advanced_edit_grants_migration($pdo);
-run_hr_charter_lms_migration($pdo);
-run_recon_pv_tammuc_migration($pdo);
-run_production_import_gap_migrations($pdo, $root);
-run_rbac_three_layer_migration($pdo);
-run_user_roles_migration($pdo);
-run_tenant_user_roles_graph_catalog_migration($pdo);
+}));
+$migrationRunner->step('run_user_advanced_edit_grants_migration', static fn () => run_user_advanced_edit_grants_migration($pdo));
+$migrationRunner->step('run_hr_charter_lms_migration', static fn () => run_hr_charter_lms_migration($pdo));
+$migrationRunner->step('run_recon_pv_tammuc_migration', static fn () => run_recon_pv_tammuc_migration($pdo));
+$migrationRunner->step('run_production_import_gap_migrations', static fn () => run_production_import_gap_migrations($pdo, $root));
+$migrationRunner->step('run_rbac_three_layer_migration', static fn () => run_rbac_three_layer_migration($pdo));
+$migrationRunner->step('run_user_roles_migration', static fn () => run_user_roles_migration($pdo));
+$migrationRunner->step('run_tenant_user_roles_graph_catalog_migration', static fn () => run_tenant_user_roles_graph_catalog_migration($pdo));
 try {
     run_co_unit_rbac_triggers_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] co_unit_rbac_triggers : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('co_unit_rbac_triggers', $e);
 }
-run_permissions_action_migration($pdo);
-run_request_telemetry_migration($pdo);
+$migrationRunner->step('run_permissions_action_migration', static fn () => run_permissions_action_migration($pdo));
+$migrationRunner->step('run_request_telemetry_migration', static fn () => run_request_telemetry_migration($pdo));
 migratePlatformAdminTenantIntervention($pdo);
 try {
     run_users_platform_admin_flag_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] users_platform_admin_flag : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('users_platform_admin_flag', $e);
 }
 try {
     run_forum_reporting_workflow_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] forum_reporting_workflow : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('forum_reporting_workflow', $e);
 }
 try {
     run_roles_organic_architecture_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] roles_organic_architecture : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('roles_organic_architecture', $e);
 }
 try {
     run_positions_admin_category_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] positions_admin_category : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('positions_admin_category', $e);
 }
 $sitePlatformRolesPath = $root . '/bootstrap/site_platform_roles_migration.php';
 if (is_file($sitePlatformRolesPath)) {
@@ -361,6 +370,7 @@ if (is_file($sitePlatformRolesPath)) {
         run_site_platform_roles_migration($pdo);
     } catch (Throwable $e) {
         echo '  [ATTENTION] site_platform_roles : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('site_platform_roles', $e);
     }
 } else {
     echo "  [ATTENTION] Fichier absent : bootstrap/site_platform_roles_migration.php — ajoutez-le sur le serveur (même version que le dépôt) puis relancez pour créer les rôles site (modération, assistance).\n";
@@ -369,6 +379,7 @@ try {
     run_military_role_catalog_schema_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] military_role_catalog_schema : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('military_role_catalog_schema', $e);
 }
 // Invariant : aucun rôle de communauté ne porte d’habilitation réservée à la plateforme.
 $reservedPermissionsCleanupPath = $root . '/bootstrap/system_reserved_permissions_cleanup.php';
@@ -389,6 +400,7 @@ if (is_file($reservedPermissionsCleanupPath)) {
         }
     } catch (Throwable $e) {
         echo '  [ATTENTION] system_reserved_permissions_cleanup : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('system_reserved_permissions_cleanup', $e);
     }
 } else {
     echo "  [ATTENTION] Fichier absent : bootstrap/system_reserved_permissions_cleanup.php — déployez-le puis relancez (purge des habilitations plateforme rattachées à une communauté).\n";
@@ -424,6 +436,7 @@ if (!is_file($tenantTypePath)) {
             : "  [ATTENTION] tenant_type : colonne toujours absente après migration\n";
     } catch (Throwable $e) {
         echo '  [ATTENTION] tenant_type : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('tenant_type', $e);
     }
 }
 $migrationFlush();
@@ -438,6 +451,7 @@ try {
     $lmsTrainingBaseMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] socle LMS moderne : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('socle LMS moderne', $e);
 }
 
 // LMS formations : colonnes training_courses + tables engagement — exécuté tôt (idempotent). Anciennement en fin de fichier :
@@ -445,92 +459,106 @@ try {
 echo "Migrations LMS formation (training_courses, politique d’inscription, vitrine)...\n";
 $migrationFlush();
 $trainingCourseLmsThemeMigrateEarly = require $root . '/bootstrap/training_course_lms_theme_migration.php';
-$trainingCourseLmsThemeMigrateEarly($pdo);
+$migrationRunner->step('trainingCourseLmsThemeMigrateEarly', static fn () => $trainingCourseLmsThemeMigrateEarly($pdo));
 $trainingShowcaseMigrateEarly = require $root . '/bootstrap/training_showcase_migration.php';
-$trainingShowcaseMigrateEarly($pdo);
+$migrationRunner->step('trainingShowcaseMigrateEarly', static fn () => $trainingShowcaseMigrateEarly($pdo));
 $trainingLmsEngagementMigrateEarly = require $root . '/bootstrap/training_lms_engagement_migration.php';
 try {
     $trainingLmsEngagementMigrateEarly($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_lms_engagement : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_lms_engagement', $e);
 }
 $trainingEnrollmentFeaturesMigrate = require $root . '/bootstrap/training_enrollment_features_migration.php';
 try {
     $trainingEnrollmentFeaturesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_enrollment_features : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_enrollment_features', $e);
 }
 $trainingEnrollmentWithdrawnMigrate = require $root . '/bootstrap/training_enrollment_withdrawn_status_migration.php';
 try {
     $trainingEnrollmentWithdrawnMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_enrollment_withdrawn : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_enrollment_withdrawn', $e);
 }
 $trainingCourseLmsPlatformVersionMigrate = require $root . '/bootstrap/training_course_lms_platform_version_migration.php';
 try {
     $trainingCourseLmsPlatformVersionMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_course_lms_platform_version : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_course_lms_platform_version', $e);
 }
 $trainingCoursesLmsScopeMigrate = require $root . '/bootstrap/training_courses_lms_scope_migration.php';
 try {
     $trainingCoursesLmsScopeMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_courses_lms_scope : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_courses_lms_scope', $e);
 }
 $trainingPublicationEngineMigrate = require $root . '/bootstrap/training_publication_engine_migration.php';
 try {
     $trainingPublicationEngineMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_publication_engine : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_publication_engine', $e);
 }
 $trainingCertificateTemplatesMigrate = require $root . '/bootstrap/training_certificate_templates_migration.php';
 try {
     $trainingCertificateTemplatesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_certificate_templates : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_certificate_templates', $e);
 }
 $trainingCompetencyFrameworkMigrate = require $root . '/bootstrap/training_competency_framework_migration.php';
 try {
     $trainingCompetencyFrameworkMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_competency_framework : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_competency_framework', $e);
 }
 $trainingFormationCustomPagesMigrate = require $root . '/bootstrap/training_formation_custom_pages_migration.php';
 try {
     $trainingFormationCustomPagesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_formation_custom_pages : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_formation_custom_pages', $e);
 }
 $competencyProgressionFrameworkMigrate = require $root . '/bootstrap/competency_progression_framework_migration.php';
 try {
     $competencyProgressionFrameworkMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] competency_progression_framework : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('competency_progression_framework', $e);
 }
 $personnelQualificationsTrainingLinkMigrate = require $root . '/bootstrap/personnel_qualifications_training_link_migration.php';
 try {
     $personnelQualificationsTrainingLinkMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] personnel_qualifications_training_link : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('personnel_qualifications_training_link', $e);
 }
 $communityEventSlotQualificationMigrate = require $root . '/bootstrap/community_event_slot_qualification_migration.php';
 try {
     $communityEventSlotQualificationMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] community_event_slot_qualification : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('community_event_slot_qualification', $e);
 }
 $trainingLessonPlayerModeMigrate = require $root . '/bootstrap/training_lesson_player_mode_migration.php';
 try {
     $trainingLessonPlayerModeMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_lesson_player_mode : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_lesson_player_mode', $e);
 }
 $pedagogyChainMigrate = require $root . '/bootstrap/pedagogy_chain_migration.php';
 try {
     $pedagogyChainMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] pedagogy_chain : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('pedagogy_chain', $e);
 }
 
 $stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'platform_modules'");
@@ -551,6 +579,7 @@ if ($stmt && !$stmt->fetch()) {
                         $pdo->exec($stmtSql . (str_ends_with($stmtSql, ';') ? '' : ';'));
                     } catch (Throwable $e) {
                         echo '  [ATTENTION] release_channels_tester_communities : ' . $e->getMessage() . "\n";
+                        $migrationRunner->warn('release_channels_tester_communities', $e);
                     }
                 }
             }
@@ -564,6 +593,7 @@ if ($stmt && !$stmt->fetch()) {
         run_platform_training_release_seed($pdo);
     } catch (Throwable $e) {
         echo '  [ATTENTION] platform_training_release_seed : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('platform_training_release_seed', $e);
     }
     $migrationFlush();
 }
@@ -575,6 +605,7 @@ if ($stmtPm && $stmtPm->fetch()) {
         run_platform_training_release_seed($pdo);
     } catch (Throwable $e) {
         echo '  [ATTENTION] platform_training_release_seed : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('platform_training_release_seed', $e);
     }
     $migrationFlush();
 }
@@ -599,6 +630,7 @@ if ($stmtDj && $stmtDj->fetch()) {
                             $pdo->exec($stmtSql . (str_ends_with($stmtSql, ';') ? '' : ';'));
                         } catch (Throwable $e) {
                             echo '  [ATTENTION] deployment_campaigns : ' . $e->getMessage() . "\n";
+                            $migrationRunner->warn('deployment_campaigns', $e);
                         }
                     }
                 }
@@ -617,31 +649,37 @@ if ($stmtDj && $stmtDj->fetch()) {
             $pdo->exec('ALTER TABLE deployment_jobs ADD COLUMN campaign_id BIGINT UNSIGNED NULL AFTER id');
         } catch (Throwable $e) {
             echo '  [ATTENTION] deployment_jobs.campaign_id : ' . $e->getMessage() . "\n";
+            $migrationRunner->warn('deployment_jobs.campaign_id', $e);
         }
         try {
             $pdo->exec('ALTER TABLE deployment_jobs ADD COLUMN step_order SMALLINT UNSIGNED NULL AFTER target_channel_id');
         } catch (Throwable $e) {
             echo '  [ATTENTION] deployment_jobs.step_order : ' . $e->getMessage() . "\n";
+            $migrationRunner->warn('deployment_jobs.step_order', $e);
         }
         try {
             $pdo->exec('ALTER TABLE deployment_jobs ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER log_path');
         } catch (Throwable $e) {
             echo '  [ATTENTION] deployment_jobs.created_at : ' . $e->getMessage() . "\n";
+            $migrationRunner->warn('deployment_jobs.created_at', $e);
         }
         try {
             $pdo->exec('ALTER TABLE deployment_jobs ADD COLUMN updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP AFTER created_at');
         } catch (Throwable $e) {
             echo '  [ATTENTION] deployment_jobs.updated_at : ' . $e->getMessage() . "\n";
+            $migrationRunner->warn('deployment_jobs.updated_at', $e);
         }
         try {
             $pdo->exec('ALTER TABLE deployment_jobs ADD COLUMN error_message TEXT NULL AFTER updated_at');
         } catch (Throwable $e) {
             echo '  [ATTENTION] deployment_jobs.error_message : ' . $e->getMessage() . "\n";
+            $migrationRunner->warn('deployment_jobs.error_message', $e);
         }
         try {
             $pdo->exec('ALTER TABLE deployment_jobs ADD KEY idx_deployment_jobs_campaign (campaign_id)');
         } catch (Throwable $e) {
             echo '  [ATTENTION] deployment_jobs idx campaign : ' . $e->getMessage() . "\n";
+            $migrationRunner->warn('deployment_jobs idx campaign', $e);
         }
         try {
             $pdo->exec(
@@ -649,6 +687,7 @@ if ($stmtDj && $stmtDj->fetch()) {
             );
         } catch (Throwable $e) {
             echo '  [ATTENTION] deployment_jobs FK campaign : ' . $e->getMessage() . "\n";
+            $migrationRunner->warn('deployment_jobs FK campaign', $e);
         }
         echo "  [OK] deployment_jobs colonnes campagne\n";
         $migrationFlush();
@@ -673,6 +712,7 @@ if (!$stmtAppUpd || !$stmtAppUpd->fetch()) {
                         $pdo->exec($stmtSql . (str_ends_with($stmtSql, ';') ? '' : ';'));
                     } catch (Throwable $e) {
                         echo '  [ATTENTION] platform_app_updates : ' . $e->getMessage() . "\n";
+                        $migrationRunner->warn('platform_app_updates', $e);
                     }
                 }
             }
@@ -689,6 +729,7 @@ try {
     $usageAnalyticsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] usage_analytics : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('usage_analytics', $e);
 }
 echo "Migrations LMS formation (première passe) OK.\n";
 $migrationFlush();
@@ -698,6 +739,7 @@ try {
     run_training_onboarding_course_seed($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_onboarding_course : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_onboarding_course', $e);
 }
 
 require_once $root . '/bootstrap/training_roles_org_course_seed.php';
@@ -705,6 +747,7 @@ try {
     run_training_roles_org_course_seed($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_roles_org_course : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_roles_org_course', $e);
 }
 
 require_once $root . '/bootstrap/training_bureau_recrutement_course_seed.php';
@@ -712,6 +755,7 @@ try {
     run_training_bureau_recrutement_course_seed($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_bureau_recrutement_course : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_bureau_recrutement_course', $e);
 }
 
 require_once $root . '/bootstrap/training_atak_course_seed.php';
@@ -719,6 +763,7 @@ try {
     run_training_atak_course_seed($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_atak_course : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_atak_course', $e);
 }
 
 // Pointage / RSVP : colonnes community_events + community_event_rsvps (idempotent si bootstrap déjà passé)
@@ -734,6 +779,7 @@ if ($stmt && !$stmt->fetch()) {
         $pdo->exec("ALTER TABLE community_events ADD COLUMN cancelled_reason varchar(500) DEFAULT NULL AFTER cancelled_at");
     } catch (Throwable $e) {
         echo '  [ATTENTION] community_events annulation : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('community_events annulation', $e);
     }
 }
 $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'community_event_rsvps' AND COLUMN_NAME = 'checked_in_at'");
@@ -745,6 +791,7 @@ if ($stmt && !$stmt->fetch()) {
         $pdo->exec('ALTER TABLE community_event_rsvps ADD KEY idx_rsvp_reminder (event_id, reminder_sent_at)');
     } catch (Throwable $e) {
         echo '  [ATTENTION] community_event_rsvps pointage : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('community_event_rsvps pointage', $e);
     }
 }
 
@@ -1247,6 +1294,7 @@ if ($stmt && !$stmt->fetch()) {
         $pdo->exec("ALTER TABLE user_profile_display_settings ADD COLUMN hide_personal_info tinyint(1) NOT NULL DEFAULT 0 AFTER public_roster_opt_in");
     } catch (Throwable $e) {
         echo '  [ATTENTION] hide_personal_info : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('hide_personal_info', $e);
     }
 }
 $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profile_display_settings' AND COLUMN_NAME = 'hide_forum_level'");
@@ -1256,6 +1304,7 @@ if ($stmt && !$stmt->fetch()) {
         $pdo->exec("ALTER TABLE user_profile_display_settings ADD COLUMN hide_forum_level tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = masquer LVL sur carte forum' AFTER show_bio_forum");
     } catch (Throwable $e) {
         echo '  [ATTENTION] hide_forum_level : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('hide_forum_level', $e);
     }
 }
 $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profile_display_settings' AND COLUMN_NAME = 'forum_visible_role_id'");
@@ -1265,6 +1314,7 @@ if ($stmt && !$stmt->fetch()) {
         $pdo->exec("ALTER TABLE user_profile_display_settings ADD COLUMN forum_visible_role_id int unsigned DEFAULT NULL COMMENT 'Rôle org affiché sur carte forum (NULL = rôle principal du compte)' AFTER forum_label_mode");
     } catch (Throwable $e) {
         echo '  [ATTENTION] forum_visible_role_id : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('forum_visible_role_id', $e);
     }
 }
 $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profile_display_settings' AND COLUMN_NAME = 'site_photo_priority'");
@@ -1274,6 +1324,7 @@ if ($stmt && !$stmt->fetch()) {
         $pdo->exec("ALTER TABLE user_profile_display_settings ADD COLUMN site_photo_priority varchar(16) NOT NULL DEFAULT 'operator' COMMENT 'operator|account — photo prioritaire header / portail' AFTER hide_personal_info");
     } catch (Throwable $e) {
         echo '  [ATTENTION] site_photo_priority : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('site_photo_priority', $e);
     }
 }
 
@@ -1284,16 +1335,19 @@ if ($stmt && !$stmt->fetch()) {
         $pdo->exec("ALTER TABLE forum_topics ADD COLUMN is_official tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Communiqué officiel (modo)' AFTER is_hidden");
     } catch (Throwable $e) {
         echo '  [ATTENTION] is_official : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('is_official', $e);
     }
     try {
         $pdo->exec("ALTER TABLE forum_topics ADD COLUMN auto_locked_at datetime DEFAULT NULL COMMENT 'Verrouillage auto 6 mois' AFTER updated_at");
     } catch (Throwable $e) {
         echo '  [ATTENTION] auto_locked_at : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('auto_locked_at', $e);
     }
     try {
         $pdo->exec("ALTER TABLE forum_topics ADD COLUMN suppress_auto_lock tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = déverrouillage manuel, ne pas reverrouiller auto' AFTER auto_locked_at");
     } catch (Throwable $e) {
         echo '  [ATTENTION] suppress_auto_lock : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('suppress_auto_lock', $e);
     }
 }
 $stmt = $pdo->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'units' AND COLUMN_NAME = 'public_blurb'");
@@ -1503,6 +1557,7 @@ try {
     }
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_maps seed : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_maps seed', $e);
 }
 
 // Documents Athena : colonnes et tables manquantes (migration incrémentale)
@@ -1626,6 +1681,7 @@ if (is_string($filePathNullable) && strtoupper($filePathNullable) === 'NO') {
         echo "  [OK] document_versions.file_path nullable\n";
     } catch (Throwable $e) {
         echo '  [ATTENTION] document_versions.file_path nullable : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('document_versions.file_path nullable', $e);
     }
 }
 $stmt = $pdo->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'document_collaborators'");
@@ -2257,28 +2313,29 @@ if ($stmt && !$stmt->fetch()) {
 }
 
 $forumPremiumMigrate = require $root . '/bootstrap/forum_premium_migration.php';
-$forumPremiumMigrate($pdo);
+$migrationRunner->step('forumPremiumMigrate', static fn () => $forumPremiumMigrate($pdo));
 
 $forumV2Migrate = require $root . '/bootstrap/forum_v2_migration.php';
-$forumV2Migrate($pdo);
+$migrationRunner->step('forumV2Migrate', static fn () => $forumV2Migrate($pdo));
 
 $forumModerationBotMigrate = require $root . '/bootstrap/forum_moderation_bot_migration.php';
-$forumModerationBotMigrate($pdo);
+$migrationRunner->step('forumModerationBotMigrate', static fn () => $forumModerationBotMigrate($pdo));
 
 $alertsMigrate = require $root . '/bootstrap/alerts_migration.php';
-$alertsMigrate($pdo);
+$migrationRunner->step('alertsMigrate', static fn () => $alertsMigrate($pdo));
 
 $doctrineReferentialMigrate = require $root . '/bootstrap/doctrine_referential_migration.php';
-$doctrineReferentialMigrate($pdo);
+$migrationRunner->step('doctrineReferentialMigrate', static fn () => $doctrineReferentialMigrate($pdo));
 
 $documentPublicationMigrate = require $root . '/bootstrap/document_publication_system_migration.php';
-$documentPublicationMigrate($pdo);
+$migrationRunner->step('documentPublicationMigrate', static fn () => $documentPublicationMigrate($pdo));
 
 $tenantAlertsVisualMigrate = require $root . '/bootstrap/tenant_alerts_visual_migration.php';
 try {
     $tenantAlertsVisualMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_alerts_visual : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tenant_alerts_visual', $e);
 }
 
 $platformAlertsFeaturesMigrate = require $root . '/bootstrap/platform_alerts_features_migration.php';
@@ -2286,6 +2343,7 @@ try {
     $platformAlertsFeaturesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] platform_alerts_features : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('platform_alerts_features', $e);
 }
 
 $alertDisplayStyleMigrate = require $root . '/bootstrap/alert_display_style_migration.php';
@@ -2293,6 +2351,7 @@ try {
     $alertDisplayStyleMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] alert_display_style : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('alert_display_style', $e);
 }
 
 $tenantAlertsFeaturesMigrate = require $root . '/bootstrap/tenant_alerts_features_migration.php';
@@ -2300,6 +2359,7 @@ try {
     $tenantAlertsFeaturesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_alerts_features : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tenant_alerts_features', $e);
 }
 
 $communityEventsDetailsMigrate = require $root . '/bootstrap/community_events_details_migration.php';
@@ -2308,6 +2368,7 @@ try {
     $communityEventsDetailsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] community_events_details : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('community_events_details', $e);
 }
 
 $communityMediaMigrate = require $root . '/bootstrap/community_media_migration.php';
@@ -2316,6 +2377,7 @@ try {
     $communityMediaMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] community_media : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('community_media', $e);
 }
 
 $communityShowcaseVitrineMigrate = require $root . '/bootstrap/community_showcase_vitrine_migration.php';
@@ -2324,6 +2386,7 @@ try {
     $communityShowcaseVitrineMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] community_showcase_vitrine : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('community_showcase_vitrine', $e);
 }
 
 $unitsPublicDatesMigrate = require $root . '/bootstrap/units_public_dates_migration.php';
@@ -2332,6 +2395,7 @@ try {
     $unitsPublicDatesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] units_public_dates : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('units_public_dates', $e);
 }
 
 $militaryReferentialMigrate = require $root . '/bootstrap/military_referential_migration.php';
@@ -2340,6 +2404,7 @@ try {
     $militaryReferentialMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] military_referential : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('military_referential', $e);
 }
 
 $configurationUpdatesMigrate = require $root . '/bootstrap/configuration_updates_migration.php';
@@ -2348,6 +2413,7 @@ try {
     $configurationUpdatesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] configuration_updates : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('configuration_updates', $e);
 }
 
 $operationsWorkspaceMigrate = require $root . '/bootstrap/operations_workspace_migration.php';
@@ -2356,6 +2422,7 @@ try {
     $operationsWorkspaceMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] operations_workspace : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('operations_workspace', $e);
 }
 
 $communityMediaReelsMigrate = require $root . '/bootstrap/community_media_reels_migration.php';
@@ -2364,6 +2431,7 @@ try {
     $communityMediaReelsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] community_media_reels : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('community_media_reels', $e);
 }
 
 $communityEventRsvpHistoryMigrate = require $root . '/bootstrap/community_event_rsvp_history_migration.php';
@@ -2372,6 +2440,7 @@ try {
     $communityEventRsvpHistoryMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] community_event_rsvp_history : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('community_event_rsvp_history', $e);
 }
 
 $communityEventSlotsMigrate = require $root . '/bootstrap/community_event_slots_migration.php';
@@ -2380,6 +2449,7 @@ try {
     $communityEventSlotsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] community_event_slots : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('community_event_slots', $e);
 }
 
 $competencyGradeRequirementsMigrate = require $root . '/bootstrap/competency_grade_requirements_migration.php';
@@ -2388,6 +2458,7 @@ try {
     $competencyGradeRequirementsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] competency_grade_requirements : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('competency_grade_requirements', $e);
 }
 
 $contentTagsMigrate = require $root . '/bootstrap/content_tags_migration.php';
@@ -2396,6 +2467,7 @@ try {
     $contentTagsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] content_tags : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('content_tags', $e);
 }
 
 $trainingFormationCustomPageFeedbackMigrate = require $root . '/bootstrap/training_formation_custom_page_feedback_migration.php';
@@ -2404,6 +2476,7 @@ try {
     $trainingFormationCustomPageFeedbackMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_formation_custom_page_feedback : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_formation_custom_page_feedback', $e);
 }
 
 $platformUxFeedbackMigrate = require $root . '/bootstrap/platform_ux_feedback_migration.php';
@@ -2412,6 +2485,7 @@ try {
     $platformUxFeedbackMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] platform_ux_feedback : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('platform_ux_feedback', $e);
 }
 
 $platformReviewTranslateMigrate = require $root . '/bootstrap/platform_review_translation_migration.php';
@@ -2420,6 +2494,7 @@ try {
     $platformReviewTranslateMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] platform_reviews : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('platform_reviews', $e);
 }
 
 $tenantCustomMapsMigrate = require $root . '/bootstrap/tenant_custom_maps_migration.php';
@@ -2427,16 +2502,17 @@ try {
     $tenantCustomMapsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_custom_maps : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tenant_custom_maps', $e);
 }
 
 $moderationContentMigrate = require $root . '/bootstrap/moderation_content_migration.php';
-$moderationContentMigrate($pdo);
+$migrationRunner->step('moderationContentMigrate', static fn () => $moderationContentMigrate($pdo));
 
 require_once $root . '/bootstrap/transactional_email_migration.php';
-run_transactional_email_migration($pdo);
+$migrationRunner->step('run_transactional_email_migration', static fn () => run_transactional_email_migration($pdo));
 
 $systemModeratorMigrate = require $root . '/bootstrap/system_moderator_account_migration.php';
-$systemModeratorMigrate($pdo);
+$migrationRunner->step('systemModeratorMigrate', static fn () => $systemModeratorMigrate($pdo));
 
 // training_showcase + training_course_lms_theme + training_lms_engagement : déjà exécutés après le bootstrap (début de fichier).
 
@@ -2445,6 +2521,7 @@ try {
     $trainingModuleLessonEnrichmentMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_module_lesson_enrichment : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_module_lesson_enrichment', $e);
 }
 
 $trainingResourcesLibraryDocMigrate = require $root . '/bootstrap/training_resources_library_document_migration.php';
@@ -2452,6 +2529,7 @@ try {
     $trainingResourcesLibraryDocMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_resources_library_document : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_resources_library_document', $e);
 }
 
 $trainingEnrollmentMotivationMigrate = require $root . '/bootstrap/training_enrollment_motivation_migration.php';
@@ -2459,16 +2537,18 @@ try {
     $trainingEnrollmentMotivationMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_enrollment_motivation : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_enrollment_motivation', $e);
 }
 
 $personnelJobRolesMigrate = require $root . '/bootstrap/personnel_job_roles_migration.php';
-$personnelJobRolesMigrate($pdo);
+$migrationRunner->step('personnelJobRolesMigrate', static fn () => $personnelJobRolesMigrate($pdo));
 
 $elevationRequestsProposalMigrate = require $root . '/bootstrap/elevation_requests_proposal_migration.php';
 try {
     $elevationRequestsProposalMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] elevation_requests_proposal : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('elevation_requests_proposal', $e);
 }
 
 require_once $root . '/bootstrap/account_purge_requests_migration.php';
@@ -2476,6 +2556,7 @@ try {
     run_account_purge_requests_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] account_purge_requests : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('account_purge_requests', $e);
 }
 
 $personnelCorrectionRequestsMigrate = require $root . '/bootstrap/personnel_correction_requests_migration.php';
@@ -2484,6 +2565,7 @@ try {
     $personnelCorrectionRequestsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] personnel_correction_requests : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('personnel_correction_requests', $e);
 }
 
 $memberDeparturesMigrate = require $root . '/bootstrap/member_departures_migration.php';
@@ -2491,6 +2573,7 @@ try {
     $memberDeparturesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] member_departures : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('member_departures', $e);
 }
 
 $rhDossierIndividuelMigrate = require $root . '/bootstrap/rh_dossier_individuel_migration.php';
@@ -2499,16 +2582,18 @@ try {
     $rhDossierIndividuelMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] rh_dossier_individuel : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('rh_dossier_individuel', $e);
 }
 
 $enlistmentCannedMessagesMigrate = require $root . '/bootstrap/enlistment_canned_messages_migration.php';
-$enlistmentCannedMessagesMigrate($pdo);
+$migrationRunner->step('enlistmentCannedMessagesMigrate', static fn () => $enlistmentCannedMessagesMigrate($pdo));
 
 $enlistmentPortalAttachmentsMigrate = require $root . '/bootstrap/enlistment_portal_attachments_migration.php';
 try {
     $enlistmentPortalAttachmentsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] enlistment_portal_attachments : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('enlistment_portal_attachments', $e);
 }
 
 $recruitmentOpeningsMigrate = require $root . '/bootstrap/recruitment_openings_migration.php';
@@ -2516,6 +2601,7 @@ try {
     $recruitmentOpeningsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] recruitment_openings : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('recruitment_openings', $e);
 }
 
 $recruitmentTeamWallKindSubjectMigrate = require $root . '/bootstrap/recruitment_team_wall_kind_subject_migration.php';
@@ -2523,6 +2609,7 @@ try {
     $recruitmentTeamWallKindSubjectMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] recruitment_team_wall_kind_subject : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('recruitment_team_wall_kind_subject', $e);
 }
 
 $recruitmentInviteCodesMigrate = require $root . '/bootstrap/recruitment_invite_codes_migration.php';
@@ -2530,6 +2617,7 @@ try {
     $recruitmentInviteCodesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] recruitment_invite_codes : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('recruitment_invite_codes', $e);
 }
 
 $tenantDashboardPinsMigrate = require $root . '/bootstrap/tenant_dashboard_pins_migration.php';
@@ -2537,6 +2625,7 @@ try {
     $tenantDashboardPinsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_dashboard_pins : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tenant_dashboard_pins', $e);
 }
 
 $dashboardWardrobePinsMigrate = require $root . '/bootstrap/dashboard_wardrobe_pins_migration.php';
@@ -2544,6 +2633,7 @@ try {
     $dashboardWardrobePinsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_dashboard_wardrobe_pins : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tenant_dashboard_wardrobe_pins', $e);
 }
 
 $loginAccueilImagesMigrate = require $root . '/bootstrap/tenant_login_accueil_images_migration.php';
@@ -2551,6 +2641,7 @@ try {
     $loginAccueilImagesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_login_accueil_images : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tenant_login_accueil_images', $e);
 }
 
 $forumTopicPinOnDashboardMigrate = require $root . '/bootstrap/forum_topic_pin_on_dashboard_migration.php';
@@ -2558,6 +2649,7 @@ try {
     $forumTopicPinOnDashboardMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] forum_topic_pin_on_dashboard : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('forum_topic_pin_on_dashboard', $e);
 }
 
 $demoNdaGateMigrate = require $root . '/bootstrap/demo_nda_gate_migration.php';
@@ -2565,6 +2657,7 @@ try {
     $demoNdaGateMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] demo_nda_gate : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('demo_nda_gate', $e);
 }
 
 $operationalBoardShareMigrate = require $root . '/bootstrap/operational_board_share_migration.php';
@@ -2572,6 +2665,7 @@ try {
     $operationalBoardShareMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] operational_board_share : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('operational_board_share', $e);
 }
 
 $cronSystemMigrate = require $root . '/bootstrap/cron_system_migration.php';
@@ -2579,6 +2673,7 @@ try {
     $cronSystemMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] cron_system : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('cron_system', $e);
 }
 
 $userEmailLoginOtpMigrate = require $root . '/bootstrap/user_email_login_otp_migration.php';
@@ -2586,6 +2681,7 @@ try {
     $userEmailLoginOtpMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] user_email_login_otp : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('user_email_login_otp', $e);
 }
 
 $userTotpMigrate = require $root . '/bootstrap/user_totp_migration.php';
@@ -2593,6 +2689,7 @@ try {
     $userTotpMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] user_totp : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('user_totp', $e);
 }
 
 $userLegalIdentitiesMigrate = require $root . '/bootstrap/user_legal_identities_migration.php';
@@ -2600,6 +2697,7 @@ try {
     $userLegalIdentitiesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] user_legal_identities : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('user_legal_identities', $e);
 }
 
 $userProfileBannerMigrate = require $root . '/bootstrap/user_profile_banner_migration.php';
@@ -2607,6 +2705,7 @@ try {
     $userProfileBannerMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] user_profile_banner : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('user_profile_banner', $e);
 }
 
 $usersMemberPhotoMigrate = require $root . '/bootstrap/users_member_photo_columns_migration.php';
@@ -2614,6 +2713,7 @@ try {
     $usersMemberPhotoMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] users_member_photo : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('users_member_photo', $e);
 }
 
 $tenantCommunityFeedMigrate = require $root . '/bootstrap/tenant_community_feed_migration.php';
@@ -2621,6 +2721,7 @@ try {
     $tenantCommunityFeedMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_community_feed : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tenant_community_feed', $e);
 }
 
 $tenantMiniArticlesMigrate = require $root . '/bootstrap/tenant_mini_articles_migration.php';
@@ -2628,6 +2729,7 @@ try {
     $tenantMiniArticlesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_mini_articles : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tenant_mini_articles', $e);
 }
 
 $briefPlatformInterteamMigrate = require $root . '/bootstrap/brief_platform_interteam_migration.php';
@@ -2635,6 +2737,7 @@ try {
     $briefPlatformInterteamMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] brief_platform_interteam : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('brief_platform_interteam', $e);
 }
 
 $interteamCoopHubMigrate = require $root . '/bootstrap/interteam_cooperation_hub_migration.php';
@@ -2642,6 +2745,7 @@ try {
     $interteamCoopHubMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] interteam_cooperation_hub : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('interteam_cooperation_hub', $e);
 }
 
 $interteamOperationalWorkflowMigrate = require $root . '/bootstrap/interteam_mission_operational_workflow_migration.php';
@@ -2649,6 +2753,7 @@ try {
     $interteamOperationalWorkflowMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] interteam_mission_operational_workflow : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('interteam_mission_operational_workflow', $e);
 }
 
 $cooperationEnhanceMigrate = require $root . '/bootstrap/cooperation_module_enhancements_migration.php';
@@ -2656,6 +2761,7 @@ try {
     $cooperationEnhanceMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] cooperation_module_enhancements : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('cooperation_module_enhancements', $e);
 }
 
 $cooperationCatalogMigrate = require $root . '/bootstrap/cooperation_catalog_and_announcements_migration.php';
@@ -2663,6 +2769,7 @@ try {
     $cooperationCatalogMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] cooperation_catalog_and_announcements : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('cooperation_catalog_and_announcements', $e);
 }
 
 $cooperationAnnouncementsV2 = require $root . '/bootstrap/cooperation_announcement_events_v2_migration.php';
@@ -2670,6 +2777,7 @@ try {
     $cooperationAnnouncementsV2($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] cooperation_announcement_events_v2 : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('cooperation_announcement_events_v2', $e);
 }
 
 $cooperationAnnouncementsV3 = require $root . '/bootstrap/cooperation_announcement_events_v3_migration.php';
@@ -2677,6 +2785,7 @@ try {
     $cooperationAnnouncementsV3($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] cooperation_announcement_events_v3 : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('cooperation_announcement_events_v3', $e);
 }
 
 require_once $root . '/bootstrap/autoload.php';
@@ -2690,6 +2799,7 @@ try {
     echo '  communautés initialisées=' . (int) $seededScales . "\n";
 } catch (Throwable $e) {
     echo '  [ATTENTION] advancement_grade_scale_backfill : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('advancement_grade_scale_backfill', $e);
 }
 
 try {
@@ -2714,6 +2824,7 @@ try {
         . ' fiches communauté=' . (int) ($restored['community_profiles'] ?? 0) . "\n";
 } catch (Throwable $e) {
     echo '  [ATTENTION] user_identity_merge : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('user_identity_merge', $e);
 }
 
 $organizationCatalogMigrate = require $root . '/bootstrap/organization_catalog_migration.php';
@@ -2722,6 +2833,7 @@ try {
     $organizationCatalogMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] organization_catalog : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('organization_catalog', $e);
 }
 
 $trainingOnboardingBulk = $root . '/bootstrap/training_onboarding_bulk_assign.php';
@@ -2731,6 +2843,7 @@ if (is_file($trainingOnboardingBulk)) {
         run_training_onboarding_bulk_assign($pdo);
     } catch (Throwable $e) {
         echo '  [ATTENTION] training_onboarding_bulk_assign : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('training_onboarding_bulk_assign', $e);
     }
 }
 
@@ -2745,6 +2858,7 @@ try {
     echo "Comptes techniques modération (par tenant) OK.\n";
 } catch (Throwable $e) {
     echo '  [ATTENTION] Compte modération système : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('Compte modération système', $e);
 }
 
 $msgSql = $root . '/migrations/community_messaging.sql';
@@ -2761,6 +2875,7 @@ try {
     $jnetMessagingMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] jnet_messaging : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('jnet_messaging', $e);
 }
 
 // Permission messagerie interne : comms.tenant_messages.receive (+ liaison rôles gouvernance)
@@ -2801,6 +2916,7 @@ try {
     echo "Permission messagerie interne (comms.tenant_messages.receive) — synchronisation par tenant OK.\n";
 } catch (Throwable $e) {
     echo '  [ATTENTION] Permission messagerie interne : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('Permission messagerie interne', $e);
 }
 
 $platformIntPath = $root . '/migrations/platform_integrations.sql';
@@ -2810,6 +2926,7 @@ if (is_file($platformIntPath)) {
         $pdo->exec(file_get_contents($platformIntPath));
     } catch (Throwable $e) {
         echo '  [ATTENTION] platform_integrations.sql : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('platform_integrations.sql', $e);
     }
 }
 
@@ -3259,6 +3376,7 @@ if ($stmt && $stmt->fetch()) {
         echo "Catalogue permissions tenant synchronisé.\n";
     } catch (Throwable $e) {
         echo '  [ATTENTION] Catalogue permissions : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('Catalogue permissions', $e);
     }
 
     // LMS : type de leçon canvas (slides / modales)
@@ -3289,6 +3407,7 @@ if ($stmt && $stmt->fetch()) {
         }
     } catch (Throwable $e) {
         echo '  [ATTENTION] training_lessons canvas : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('training_lessons canvas', $e);
     }
 
     try {
@@ -3302,6 +3421,7 @@ if ($stmt && $stmt->fetch()) {
         }
     } catch (Throwable $e) {
         echo '  [ATTENTION] forum_reports.content_kind : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('forum_reports.content_kind', $e);
     }
 
     echo "Seed déjà présent — poursuite des migrations annexes (Discord, ATAK, etc.).\n";
@@ -3369,6 +3489,7 @@ if ($stmt && $stmt->fetch()) {
         echo "Catalogue permissions tenant synchronisé.\n";
     } catch (Throwable $e) {
         echo '  [ATTENTION] Catalogue permissions : ' . $e->getMessage() . "\n";
+        $migrationRunner->warn('Catalogue permissions', $e);
     }
 
     echo "Seed OK. Compte : admin@athena.local / admin\n";
@@ -3382,6 +3503,7 @@ try {
     $discordRecruitmentMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] discord_recruitment : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('discord_recruitment', $e);
 }
 
 $enlistmentCustomAnswersMigrate = require $root . '/bootstrap/enlistment_custom_answers_migration.php';
@@ -3390,6 +3512,7 @@ try {
     $enlistmentCustomAnswersMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] enlistment_custom_answers : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('enlistment_custom_answers', $e);
 }
 
 $personnelRoleConsolidationMigrate = require $root . '/bootstrap/personnel_role_consolidation_migration.php';
@@ -3398,6 +3521,7 @@ try {
     $personnelRoleConsolidationMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] personnel_role_consolidation : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('personnel_role_consolidation', $e);
 }
 
 $communityAccessProfilesMigrate = require $root . '/bootstrap/community_access_profiles_v1_migration.php';
@@ -3406,6 +3530,7 @@ try {
     $communityAccessProfilesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] community_access_profiles_v1 : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('community_access_profiles_v1', $e);
 }
 
 $memberBackofficeAtakMigrate = require $root . '/bootstrap/member_backoffice_atak_view_migration.php';
@@ -3414,6 +3539,7 @@ try {
     $memberBackofficeAtakMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] member_backoffice_atak_view : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('member_backoffice_atak_view', $e);
 }
 
 $memberOperatorDailyMigrate = require $root . '/bootstrap/member_operator_daily_rights_migration.php';
@@ -3422,6 +3548,7 @@ try {
     $memberOperatorDailyMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] member_operator_daily_rights : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('member_operator_daily_rights', $e);
 }
 
 $unitDerivedJobRolesMigrate = require $root . '/bootstrap/unit_derived_job_roles_migration.php';
@@ -3430,6 +3557,7 @@ try {
     $unitDerivedJobRolesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] unit_derived_job_roles : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('unit_derived_job_roles', $e);
 }
 
 $unusedRecreatedJobRolesPurgeMigrate = require $root . '/bootstrap/unused_recreated_job_roles_purge_v1_migration.php';
@@ -3438,6 +3566,7 @@ try {
     $unusedRecreatedJobRolesPurgeMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] unused_recreated_job_roles_purge_v1 : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('unused_recreated_job_roles_purge_v1', $e);
 }
 
 $unusedMilitaryCatalogJobsPurgeV2 = require $root . '/bootstrap/unused_military_catalog_jobs_purge_v2_migration.php';
@@ -3446,6 +3575,7 @@ try {
     $unusedMilitaryCatalogJobsPurgeV2($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] unused_military_catalog_jobs_purge_v2 : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('unused_military_catalog_jobs_purge_v2', $e);
 }
 
 $communityAccessRolesPurgeMigrate = require $root . '/bootstrap/community_access_roles_purge_v1_migration.php';
@@ -3454,6 +3584,7 @@ try {
     $communityAccessRolesPurgeMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] community_access_roles_purge_v1 : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('community_access_roles_purge_v1', $e);
 }
 
 $defaultTenantCleanupMigrate = require $root . '/bootstrap/default_tenant_cleanup_migration.php';
@@ -3462,6 +3593,7 @@ try {
     $defaultTenantCleanupMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] default_tenant_cleanup : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('default_tenant_cleanup', $e);
 }
 
 $roleplayBilanCadenceMigrate = require $root . '/bootstrap/roleplay_bilan_cadence_migration.php';
@@ -3470,6 +3602,7 @@ try {
     $roleplayBilanCadenceMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] roleplay_bilan_cadence : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('roleplay_bilan_cadence', $e);
 }
 
 $roleplayDeadlinesMedicalRotationMigrate = require $root . '/bootstrap/roleplay_deadlines_medical_rotation_migration.php';
@@ -3478,6 +3611,7 @@ try {
     $roleplayDeadlinesMedicalRotationMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] roleplay_deadlines_medical_rotation : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('roleplay_deadlines_medical_rotation', $e);
 }
 
 $tacticalPhonePairingMigrate = require $root . '/bootstrap/tactical_phone_pairing_migration.php';
@@ -3486,6 +3620,7 @@ try {
     $tacticalPhonePairingMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tactical_phone_pairing : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tactical_phone_pairing', $e);
 }
 
 $tacticalGameLinkMigrate = require $root . '/bootstrap/tactical_game_link_migration.php';
@@ -3494,6 +3629,7 @@ try {
     $tacticalGameLinkMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tactical_game_link : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tactical_game_link', $e);
 }
 
 $atakPairMigrate = require $root . '/bootstrap/athena_atak_pair_migration.php';
@@ -3502,6 +3638,7 @@ try {
     $atakPairMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] game_atak_pair_challenges : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('game_atak_pair_challenges', $e);
 }
 
 require_once $root . '/bootstrap/atak_map_gateway_migration.php';
@@ -3510,6 +3647,7 @@ try {
     run_atak_map_gateway_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_map_gateway : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_map_gateway', $e);
 }
 
 require_once $root . '/bootstrap/atak_beta_registrations_migration.php';
@@ -3518,6 +3656,7 @@ try {
     run_atak_beta_registrations_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_beta_registrations : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_beta_registrations', $e);
 }
 
 require_once $root . '/bootstrap/atak_terminal_sync_migration.php';
@@ -3526,6 +3665,7 @@ try {
     run_atak_terminal_sync_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_terminal_sync : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_terminal_sync', $e);
 }
 
 require_once $root . '/bootstrap/atak_mod_reports_migration.php';
@@ -3534,6 +3674,7 @@ try {
     run_atak_mod_reports_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_mod_reports : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_mod_reports', $e);
 }
 
 require_once $root . '/bootstrap/atak_device_logs_migration.php';
@@ -3542,6 +3683,7 @@ try {
     run_atak_device_logs_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_device_logs : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_device_logs', $e);
 }
 
 require_once $root . '/bootstrap/atak_marker_detection_rules_migration.php';
@@ -3550,6 +3692,7 @@ try {
     run_atak_marker_detection_rules_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_marker_detection_rules : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_marker_detection_rules', $e);
 }
 
 require_once $root . '/bootstrap/atak_scene_layers_migration.php';
@@ -3558,6 +3701,7 @@ try {
     run_atak_scene_layers_migration($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_scene_layers : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_scene_layers', $e);
 }
 
 $tenantAtakAccessKeyMigrate = require $root . '/bootstrap/tenant_atak_access_key_migration.php';
@@ -3566,6 +3710,7 @@ try {
     $tenantAtakAccessKeyMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_atak_access_key : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tenant_atak_access_key', $e);
 }
 
 $tenantAtakMaintenanceMigrate = require $root . '/bootstrap/tenant_atak_maintenance_migration.php';
@@ -3574,6 +3719,7 @@ try {
     $tenantAtakMaintenanceMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_atak_maintenance : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tenant_atak_maintenance', $e);
 }
 
 $atakModulesSchemaMigrate = require $root . '/bootstrap/atak_modules_schema_migration.php';
@@ -3583,6 +3729,7 @@ try {
     $atakModulesSchemaMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_modules_schema : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_modules_schema', $e);
 }
 $migrationEnsurePdo();
 
@@ -3592,6 +3739,7 @@ try {
     $atakIcemanReportsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_iceman_reports : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_iceman_reports', $e);
 }
 $migrationEnsurePdo();
 
@@ -3602,6 +3750,7 @@ try {
     $c2PillarsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] c2_pillars : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('c2_pillars', $e);
 }
 $migrationEnsurePdo();
 
@@ -3612,6 +3761,7 @@ try {
     $theatreMissionCycleMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] theatre_mission_cycles : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('theatre_mission_cycles', $e);
 }
 $migrationEnsurePdo();
 
@@ -3622,6 +3772,7 @@ try {
     $atakRealismRegistryMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_realism_registry : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_realism_registry', $e);
 }
 $migrationEnsurePdo();
 
@@ -3632,6 +3783,7 @@ try {
     $arsenalWardrobeMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] arsenal_wardrobe : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('arsenal_wardrobe', $e);
 }
 $migrationEnsurePdo();
 
@@ -3642,6 +3794,7 @@ try {
     $aarReportsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] aar_reports : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('aar_reports', $e);
 }
 $migrationEnsurePdo();
 
@@ -3652,6 +3805,7 @@ try {
     $rolePermissionMatrixMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] role_permission_matrix : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('role_permission_matrix', $e);
 }
 $migrationEnsurePdo();
 
@@ -3662,6 +3816,7 @@ try {
     $communityEventRsvpNominativeMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] community_event_rsvp_nominative : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('community_event_rsvp_nominative', $e);
 }
 $migrationEnsurePdo();
 
@@ -3672,6 +3827,7 @@ try {
     $tenantAtakExperienceMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_atak_experience : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tenant_atak_experience', $e);
 }
 $migrationEnsurePdo();
 
@@ -3682,6 +3838,7 @@ try {
     $tenantAtakPhotoHudMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_atak_photo_hud : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tenant_atak_photo_hud', $e);
 }
 $migrationEnsurePdo();
 
@@ -3692,6 +3849,7 @@ try {
     $tenantAtakRoleplayMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tenant_atak_roleplay : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tenant_atak_roleplay', $e);
 }
 $migrationEnsurePdo();
 
@@ -3702,6 +3860,7 @@ try {
     $fireTeamsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] fire_teams : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('fire_teams', $e);
 }
 $migrationEnsurePdo();
 
@@ -3712,6 +3871,7 @@ try {
     $missionPlanningMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] mission_planning : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('mission_planning', $e);
 }
 $migrationEnsurePdo();
 
@@ -3721,6 +3881,7 @@ try {
     $atakOrdersMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_orders : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_orders', $e);
 }
 $migrationEnsurePdo();
 
@@ -3730,6 +3891,7 @@ try {
     $atakOrdersV2Migrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_orders_v2 : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_orders_v2', $e);
 }
 $migrationEnsurePdo();
 
@@ -3739,6 +3901,7 @@ try {
     $atakOrdersSinceMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_orders_since : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_orders_since', $e);
 }
 $migrationEnsurePdo();
 
@@ -3748,6 +3911,7 @@ try {
     $atakNineLineKindMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_nine_line_mission_kind : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_nine_line_mission_kind', $e);
 }
 $migrationEnsurePdo();
 
@@ -3757,6 +3921,7 @@ try {
     $atakOrderTemplatesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_order_templates : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_order_templates', $e);
 }
 $migrationEnsurePdo();
 
@@ -3766,6 +3931,7 @@ try {
     $atakOrderTypesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_order_types : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_order_types', $e);
 }
 $migrationEnsurePdo();
 
@@ -3775,6 +3941,7 @@ try {
     $atakUnitsPositionMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_units_position : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_units_position', $e);
 }
 $migrationEnsurePdo();
 
@@ -3784,6 +3951,7 @@ try {
   $atakUnitMotionMigrate($pdo);
 } catch (Throwable $e) {
   echo '  [ATTENTION] atak_unit_motion : ' . $e->getMessage() . "\n";
+  $migrationRunner->warn('atak_unit_motion', $e);
 }
 $migrationEnsurePdo();
 
@@ -3793,6 +3961,7 @@ try {
   $tacticalTracksMigrate($pdo);
 } catch (Throwable $e) {
   echo '  [ATTENTION] tactical_tracks : ' . $e->getMessage() . "\n";
+  $migrationRunner->warn('tactical_tracks', $e);
 }
 $migrationEnsurePdo();
 
@@ -3802,6 +3971,7 @@ try {
   $atakCopTerrainMigrate($pdo);
 } catch (Throwable $e) {
   echo '  [ATTENTION] atak_cop_terrain : ' . $e->getMessage() . "\n";
+  $migrationRunner->warn('atak_cop_terrain', $e);
 }
 $migrationEnsurePdo();
 
@@ -3811,6 +3981,7 @@ try {
   $atakOverwatchOpsMigrate($pdo);
 } catch (Throwable $e) {
   echo '  [ATTENTION] atak_overwatch_ops : ' . $e->getMessage() . "\n";
+  $migrationRunner->warn('atak_overwatch_ops', $e);
 }
 $migrationEnsurePdo();
 
@@ -3820,6 +3991,7 @@ try {
   $atakRfHitsLot1Migrate($pdo);
 } catch (Throwable $e) {
   echo '  [ATTENTION] atak_rf_hits_lot1 : ' . $e->getMessage() . "\n";
+  $migrationRunner->warn('atak_rf_hits_lot1', $e);
 }
 $migrationEnsurePdo();
 
@@ -3829,6 +4001,7 @@ try {
   $atakRelaysFicheMigrate($pdo);
 } catch (Throwable $e) {
   echo '  [ATTENTION] atak_relays_fiche : ' . $e->getMessage() . "\n";
+  $migrationRunner->warn('atak_relays_fiche', $e);
 }
 $migrationEnsurePdo();
 
@@ -3838,6 +4011,7 @@ try {
   $atakGeoNetworkMigrate($pdo);
 } catch (Throwable $e) {
   echo '  [ATTENTION] atak_geo_network : ' . $e->getMessage() . "\n";
+  $migrationRunner->warn('atak_geo_network', $e);
 }
 $migrationEnsurePdo();
 
@@ -3847,6 +4021,7 @@ try {
   $atakGeoRoadLabelMigrate($pdo);
 } catch (Throwable $e) {
   echo '  [ATTENTION] atak_geo_road_operator_label : ' . $e->getMessage() . "\n";
+  $migrationRunner->warn('atak_geo_road_operator_label', $e);
 }
 $migrationEnsurePdo();
 
@@ -3856,6 +4031,7 @@ try {
     $atakMedicalTriageMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_medical_alert_triage : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_medical_alert_triage', $e);
 }
 $migrationEnsurePdo();
 
@@ -3865,6 +4041,7 @@ try {
     $atakChatSourceMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_chat_messages.source : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_chat_messages.source', $e);
 }
 $migrationEnsurePdo();
 
@@ -3874,6 +4051,7 @@ try {
     $atakChatChannelsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_chat_channels : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_chat_channels', $e);
 }
 $migrationEnsurePdo();
 
@@ -3883,6 +4061,7 @@ try {
     $atakViewshedMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_viewshed_overlays : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_viewshed_overlays', $e);
 }
 $migrationEnsurePdo();
 
@@ -3892,6 +4071,7 @@ try {
     $atakExplosiveTimersMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_explosive_timers : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_explosive_timers', $e);
 }
 $migrationEnsurePdo();
 
@@ -3901,6 +4081,7 @@ try {
     $atakExplosiveCommandMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_explosive_command : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_explosive_command', $e);
 }
 $migrationEnsurePdo();
 
@@ -3914,6 +4095,7 @@ try {
     $atakSsePersonsMigrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_persons : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_persons', $e);
 }
 $migrationEnsurePdo();
 
@@ -3923,6 +4105,7 @@ try {
     $atakSsePortalMigrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_portal : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_portal', $e);
 }
 $migrationEnsurePdo();
 
@@ -3932,6 +4115,7 @@ try {
     $atakSseInterestMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_interest_cases : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_interest_cases', $e);
 }
 $migrationEnsurePdo();
 
@@ -3941,6 +4125,7 @@ try {
     $atakSseInterestEnrichMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_interest_case_enrichment : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_interest_case_enrichment', $e);
 }
 $migrationEnsurePdo();
 
@@ -3950,6 +4135,7 @@ try {
     $gamePhoneIdentityMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] game_phone_identity : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('game_phone_identity', $e);
 }
 $migrationEnsurePdo();
 
@@ -3959,6 +4145,7 @@ try {
     $gamePhoneTerminalMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] game_phone_terminal : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('game_phone_terminal', $e);
 }
 $migrationEnsurePdo();
 
@@ -3968,6 +4155,7 @@ try {
     $atakTerminalPhoneTypeMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_terminal_phone_type : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_terminal_phone_type', $e);
 }
 $migrationEnsurePdo();
 
@@ -3977,6 +4165,7 @@ try {
     $atakWebCommandsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_web_commands : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_web_commands', $e);
 }
 $migrationEnsurePdo();
 
@@ -3986,6 +4175,7 @@ try {
     $atakOverwatchIntelMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_overwatch_intel : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_overwatch_intel', $e);
 }
 $migrationEnsurePdo();
 
@@ -3995,6 +4185,7 @@ try {
     $tacticalBriefingSlideEnrichmentMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tactical_briefing_slide_enrichment : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tactical_briefing_slide_enrichment', $e);
 }
 $migrationEnsurePdo();
 
@@ -4004,6 +4195,7 @@ try {
     $tacticalBriefingSlideOperationMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] tactical_briefing_slide_operation : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('tactical_briefing_slide_operation', $e);
 }
 $migrationEnsurePdo();
 
@@ -4013,6 +4205,7 @@ try {
     $atakSseCaseOriginMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_case_origin : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_case_origin', $e);
 }
 $migrationEnsurePdo();
 
@@ -4022,6 +4215,7 @@ try {
     $atakSseCrossDecisionsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_cross_decisions : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_cross_decisions', $e);
 }
 $migrationEnsurePdo();
 
@@ -4031,6 +4225,7 @@ try {
     $atakSseTextLibraryMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_text_library : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_text_library', $e);
 }
 $migrationEnsurePdo();
 
@@ -4040,6 +4235,7 @@ try {
     $sseDocumentPrefabsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] sse_document_prefabs : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('sse_document_prefabs', $e);
 }
 $migrationEnsurePdo();
 
@@ -4049,6 +4245,7 @@ try {
     $atakSseCaseMapMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_case_map : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_case_map', $e);
 }
 $migrationEnsurePdo();
 
@@ -4058,6 +4255,7 @@ try {
     $atakSseAnalyticalMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_analytical : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_analytical', $e);
 }
 $migrationEnsurePdo();
 
@@ -4067,6 +4265,7 @@ try {
     $atakSseEngineMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_engine : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_engine', $e);
 }
 $migrationEnsurePdo();
 
@@ -4076,6 +4275,7 @@ try {
     $atakSseMeshesMigrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_meshes : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_meshes', $e);
 }
 $migrationEnsurePdo();
 
@@ -4085,6 +4285,7 @@ try {
     $atakSseDigitalLabMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_digital_lab : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_digital_lab', $e);
 }
 $migrationEnsurePdo();
 
@@ -4094,6 +4295,7 @@ try {
     $atakSseDomexPacketsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_domex_packets : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_domex_packets', $e);
 }
 $migrationEnsurePdo();
 
@@ -4103,6 +4305,7 @@ try {
     $atakSseArmaModelsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_arma_models : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_arma_models', $e);
 }
 $migrationEnsurePdo();
 
@@ -4112,6 +4315,7 @@ try {
     $atakSseIntelFoundationMigrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_intel_foundation : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_intel_foundation', $e);
 }
 $migrationEnsurePdo();
 
@@ -4121,6 +4325,7 @@ try {
     $atakSseTerrainLot3Migrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_terrain_lot3 : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_terrain_lot3', $e);
 }
 $migrationEnsurePdo();
 
@@ -4130,6 +4335,7 @@ try {
     $atakSseIntelCycleLot4Migrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_intel_cycle_lot4 : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_intel_cycle_lot4', $e);
 }
 $migrationEnsurePdo();
 
@@ -4139,6 +4345,7 @@ try {
     $atakSseMapLayersLot5Migrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_map_layers_lot5 : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_map_layers_lot5', $e);
 }
 $migrationEnsurePdo();
 
@@ -4148,6 +4355,7 @@ try {
     $atakSseAnalysisLot6Migrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_analysis_lot6 : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_analysis_lot6', $e);
 }
 $migrationEnsurePdo();
 
@@ -4157,6 +4365,7 @@ try {
     $atakSseRobustnessLot7Migrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_robustness_lot7 : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_robustness_lot7', $e);
 }
 $migrationEnsurePdo();
 
@@ -4166,6 +4375,7 @@ try {
     $atakSseFieldNotesMigrate($pdo, $sseCliLog);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_field_notes : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_field_notes', $e);
 }
 $migrationEnsurePdo();
 
@@ -4175,6 +4385,7 @@ try {
     $atakSseClearancePermsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_sse_clearance_permissions : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_sse_clearance_permissions', $e);
 }
 $migrationEnsurePdo();
 
@@ -4184,6 +4395,7 @@ try {
     $atakCommandAlertPermsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_command_alert_permission : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_command_alert_permission', $e);
 }
 $migrationEnsurePdo();
 
@@ -4193,6 +4405,7 @@ try {
     $atakDonationsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_donations : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_donations', $e);
 }
 $migrationEnsurePdo();
 
@@ -4202,6 +4415,7 @@ try {
     $atakReconNotesMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] recon_notes : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('recon_notes', $e);
 }
 $migrationEnsurePdo();
 
@@ -4211,6 +4425,7 @@ try {
     $atakForumChannelsSeed($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] atak_forum_channels_seed : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_forum_channels_seed', $e);
 }
 $migrationEnsurePdo();
 
@@ -4220,30 +4435,57 @@ try {
     $trainingGroupsMigrate($pdo);
 } catch (Throwable $e) {
     echo '  [ATTENTION] training_groups : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_groups', $e);
 }
 $migrationEnsurePdo();
 
-echo "\n--- Pipeline exécuté (résumé) ---\n";
-echo "Schéma SQL (migrations/schema.sql) ; ensure colonnes (atak_units.*, users.deleted_*, tenants.tenant_type) ; bootstrap : community_platform, unit_commander, tenant_type, prod_import_gaps, rbac_three_layer, user_roles, tenant_user_roles_graph + co_unit triggers, permissions_action ;\n";
-echo "LMS (thème, vitrine, engagement, parcours portail) ; migrations forum/alerts/modération/e-mail/modo système ; training enrichments ; personnel job roles ; messages enrôlement ; dashboard pins ;\n";
-echo "Annexes post-seed (toujours) : discord_recruitment, ATAK (access_key, maintenance, modules schema, c2_pillars, experience, roleplay, orders…), atak_donations, training_groups ;\n";
-echo "autoload (modération système) ; option TRAINING_ONBOARDING_ASSIGN_ALL ; seeds tenant default (forum, documents, permissions) si applicable.\n";
-echo "Migrations terminées.\n";
 if (PHP_SAPI !== 'cli') {
     echo "Si vous ne voyez que les premières lignes dans le navigateur, le script a tout de même pu aller au bout côté serveur — préférez : php run-migrations.php (ou php setup-database.php) en SSH pour une sortie complète.\n";
 }
-// Le pipeline unique applique systématiquement tous les SQL versionnés puis vérifie l'état final.
-require_once $root . '/bootstrap/migrations_full_post.php';
-comspec_run_all_supplementary_sql_files($pdo, $root, $migrationFlush);
-$migrationEnsurePdo();
-// FBAC must run last so no legacy seed can recreate a global or role-derived grant.
-try {
-    run_function_based_access_v2_migration($pdo);
-} catch (Throwable $e) {
-    echo "\n[ATTENTION] FBAC v2 : " . $e->getMessage() . "\n";
-    $migrationFlush();
+// Migrations PHP jusqu’ici lancées seulement « à la demande » par l’application (première requête
+// sur l’écran concerné) : on les applique ici pour que les tables existent avant les fichiers SQL
+// qui en dépendent (ex. athena_accounts pour 20260904120000_atak_secure_device_auth.sql).
+foreach ([
+    'athena_game_auth_migration.php' => 'identité Athena globale, sessions jeu',
+    'equipment_catalog_extras_migration.php' => 'catalogue d’équipement',
+    'atak_recon_images_actions_migration.php' => 'actions sur les images de reconnaissance',
+] as $lazyFile => $lazyLabel) {
+    $migrationRunner->step($lazyFile, static function () use ($root, $lazyFile, $lazyLabel, $pdo): void {
+        echo "Migration {$lazyFile} ({$lazyLabel})...\n";
+        $migrate = require $root . '/bootstrap/' . $lazyFile;
+        $migrate($pdo);
+    });
 }
+$migrationRunner->step('atak_realism_config_migration.php', static function () use ($root, $pdo): void {
+    echo "Migration atak_realism_config (réglages réalisme ATAK par communauté)...\n";
+    require_once $root . '/bootstrap/atak_realism_config_migration.php';
+    require_once $root . '/bootstrap/atak_realism_config_seed.php';
+    run_atak_realism_config_migration($pdo);
+    run_atak_realism_config_seed($pdo);
+});
+$migrationEnsurePdo();
+
+// Tous les fichiers migrations/*.sql en attente (nouveaux, modifiés ou en échec au passage précédent).
+$migrationRunner->runPendingSqlFiles($root . '/migrations');
+$migrationEnsurePdo();
+
+// Les permissions créées par les migrations PHP n’ont que `slug` : recopier dans `code` (colonne héritée).
+$migrationRunner->step('permissions.code', static function () use ($pdo): void {
+    $hasCode = (bool) $pdo->query(
+        "SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'permissions' AND COLUMN_NAME = 'code' LIMIT 1"
+    )->fetchColumn();
+    if ($hasCode) {
+        $n = $pdo->exec("UPDATE IGNORE permissions SET code = slug WHERE (code IS NULL OR code = '') AND slug IS NOT NULL AND slug <> ''");
+        echo '  [OK] permissions.code complété depuis slug : ' . (int) $n . " ligne(s)\n";
+    }
+});
+
+// FBAC must run last so no legacy seed can recreate a global or role-derived grant.
+$migrationRunner->step('function_based_access_v2', static fn () => run_function_based_access_v2_migration($pdo));
+
+require_once $root . '/bootstrap/migrations_full_post.php';
 comspec_print_post_migration_report($pdo, $root, $migrationFlush);
+$migrationsOk = $migrationRunner->printReport();
 
 if (PHP_SAPI === 'cli' && function_exists('migrations_web_write_last_run') === false) {
     // Journal CLI optionnel si l’UI web n’a pas chargé le helper
@@ -4253,13 +4495,16 @@ if (PHP_SAPI === 'cli' && function_exists('migrations_web_write_last_run') === f
     }
 }
 if (PHP_SAPI === 'cli' && function_exists('migrations_web_write_last_run')) {
-    // Le journal détaillé est surtout alimenté en mode web (ob_start). En CLI on marque un passage OK sommaire.
+    // Le journal détaillé est surtout alimenté en mode web (ob_start). En CLI on note le bilan.
     migrations_web_write_last_run($root, [
         'started_at' => date('c'),
         'finished_at' => date('c'),
         'duration_sec' => null,
-        'ok' => true,
+        'ok' => $migrationsOk,
         'mode' => 'cli',
-        'summary_line' => 'Passage CLI terminé',
-    ], "Migrations terminées (CLI).\n");
+        'summary_line' => $migrationsOk ? 'Passage CLI terminé' : 'Passage CLI terminé avec des échecs',
+    ], $migrationsOk ? "Migrations terminées (CLI).\n" : "[ERREUR] Migrations terminées avec des échecs (CLI).\n");
+}
+if (PHP_SAPI === 'cli' && !$migrationsOk) {
+    exit(1);
 }
