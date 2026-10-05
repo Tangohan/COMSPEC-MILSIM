@@ -129,6 +129,35 @@ final class AtakIcemanReportCatalog
             'persist' => true,
             'fields' => [],
         ],
+        // Types envoyés par l’app Comptes rendus du COMSPEC ATAK natif (champs dans structured_data).
+        'PATROLREP' => [
+            'label' => 'Fin de patrouille',
+            'hint' => 'Compte rendu au retour de patrouille : itinéraire, observations, incidents.',
+            'alert_kind' => null,
+            'persist' => true,
+            'fields' => [],
+        ],
+        'LOGREP' => [
+            'label' => 'État logistique',
+            'hint' => 'Niveaux de munitions, carburant, eau, rations et besoins.',
+            'alert_kind' => null,
+            'persist' => true,
+            'fields' => [],
+        ],
+        'UXO' => [
+            'label' => 'Engin explosif',
+            'hint' => 'Compte rendu 9 lignes d’engin explosif (IED, mine, munition non explosée).',
+            'alert_kind' => null,
+            'persist' => true,
+            'fields' => [],
+        ],
+        'NBC1' => [
+            'label' => 'Attaque NRBC',
+            'hint' => 'Premier compte rendu d’attaque NRBC (NBC-1).',
+            'alert_kind' => null,
+            'persist' => true,
+            'fields' => [],
+        ],
         'CONTACT' => [
             'label' => 'Prise de contact',
             'hint' => 'Contact ennemi depuis le terminal Overwatch.',
@@ -168,6 +197,10 @@ final class AtakIcemanReportCatalog
             'EAGLE DOWN' => 'EAGLE_DOWN',
             'BDA_REPORT' => 'BDA',
             'BDAREPORT' => 'BDA',
+            'NBC-1' => 'NBC1',
+            'NBC' => 'NBC1',
+            'IED' => 'UXO',
+            'EOD' => 'UXO',
         ];
         if (isset($aliases[$code])) {
             $code = $aliases[$code];

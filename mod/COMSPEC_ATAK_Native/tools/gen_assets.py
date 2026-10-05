@@ -111,6 +111,7 @@ ICONS = {
     "app_sniper": '<circle cx="12" cy="12" r="8"/><path d="M12 2v6M12 16v6M2 12h6M16 12h6"/><circle cx="12" cy="12" r="1"/>',
     "app_jtac": '<path d="M3 15l7-2 4-8 2 1-2 7 6 1v2l-6 1 2 7-2 1-4-8-7-2z"/><path d="M3 21l5-5"/>',
     "app_bda": '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/>',
+    "app_reports": '<rect x="5" y="3.5" width="14" height="18" rx="1.5"/><path d="M9 3.5V2h6v1.5"/><path d="M8.5 9h7M8.5 12.5h7M8.5 16h4"/><path d="M14.5 17l1.3 1.3 2.7-2.8"/>',
     "app_photos": '<path d="M3 7h4l2-2.5h6L17 7h4v12H3z"/><circle cx="12" cy="13" r="3.5"/>',
     "app_briefing": '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M12 16v4M8 21h8M7 12l3-3 2 2 4-4"/>',
     "app_status": '<path d="M3 20h18M6 20v-6M10 20V9M14 20v-8M18 20V5"/>',

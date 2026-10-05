@@ -37,6 +37,7 @@ switch (_page) do {
     case "OSINT": { [] call comspec_atak_native_fnc_pageOsint; };
     case "CREDITS": { [] call comspec_atak_native_fnc_pageCredits; };
     case "BDA": { [] call comspec_atak_native_fnc_pageBda; };
+    case "REPORTS": { [] call comspec_atak_native_fnc_pageReports; };
     case "SSE": { [] call comspec_atak_native_fnc_pageSse; };
     case "WANTED": { [] call comspec_atak_native_fnc_pageWanted; };
     case "DRONEDETECT": { [] call comspec_atak_native_fnc_pageDroneDetect; };
