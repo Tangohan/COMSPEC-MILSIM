@@ -49,6 +49,14 @@ class AuthMiddleware
 
             return Response::redirect(url('login'));
         }
+        // « Déconnecter mes autres sessions » ou changement de mot de passe : les sessions plus anciennes sont fermées.
+        $sessionEpoch = (int) ($user['session_epoch'] ?? 0);
+        if ($sessionEpoch > 0 && (int) Session::get('auth_issued_at', 0) < $sessionEpoch) {
+            $this->clearAuthSession();
+            Session::flash('error', 'Cette session a été fermée depuis votre compte. Merci de vous reconnecter.');
+
+            return Response::redirect(url('login'));
+        }
         $sessionTenantId = Session::get('tenant_id');
         if ($sessionTenantId === null || (int) $sessionTenantId !== (int) $user['tenant_id']) {
             $this->clearAuthSession();
@@ -116,6 +124,7 @@ class AuthMiddleware
     private function clearAuthSession(): void
     {
         Session::forget('user_id');
+        Session::forget('auth_issued_at');
         Session::forget('tenant_id');
         Session::forget('email');
         Session::forget('display_name');

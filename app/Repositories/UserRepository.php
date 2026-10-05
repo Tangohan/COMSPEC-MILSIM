@@ -34,6 +34,7 @@ class UserRepository
 
     private static ?bool $hasEmailLoginOtpEnabledColumn = null;
     private static ?bool $hasTotpColumns = null;
+    private static ?bool $hasSessionEpochColumn = null;
 
     private static ?bool $hasProfileBannerUrlColumn = null;
 
@@ -307,6 +308,46 @@ class UserRepository
         }
 
         return self::$hasEmailLoginOtpEnabledColumn;
+    }
+
+    public function hasSessionEpochColumn(): bool
+    {
+        if (self::$hasSessionEpochColumn === null) {
+            $stmt = $this->pdo()->query("SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'session_epoch' LIMIT 1");
+            self::$hasSessionEpochColumn = $stmt && (bool) $stmt->fetchColumn();
+        }
+
+        return self::$hasSessionEpochColumn;
+    }
+
+    /**
+     * Ferme toutes les sessions ouvertes avant maintenant (AuthMiddleware compare à auth_issued_at).
+     * Ajoute la colonne au besoin (bootstrap/account_session_epoch_migration.php). Retourne l’horodatage posé, ou null.
+     */
+    public function bumpSessionEpoch(int $userId): ?int
+    {
+        if (!$this->hasSessionEpochColumn()) {
+            try {
+                $migrate = require base_path('bootstrap/account_session_epoch_migration.php');
+                ob_start();
+                try {
+                    $migrate($this->pdo());
+                } finally {
+                    ob_end_clean();
+                }
+            } catch (\Throwable) {
+                return null;
+            }
+            self::$hasSessionEpochColumn = null;
+            if (!$this->hasSessionEpochColumn()) {
+                return null;
+            }
+        }
+        $epoch = time();
+        $stmt = $this->pdo()->prepare('UPDATE users SET session_epoch = ? WHERE id = ?');
+        $stmt->execute([$epoch, $userId]);
+
+        return $epoch;
     }
 
     public function hasTotpColumns(): bool

@@ -17,10 +17,13 @@ final class AccountHubClarityAssetTest extends TestCase
         $portrait = (string) file_get_contents($root . '/views/account/portrait.php');
         $banner = (string) file_get_contents($root . '/views/account/banner.php');
 
-        self::assertStringContainsString('Connexion, photo et préférences', $index);
+        self::assertStringContainsString('Connexion, sécurité et préférences', $index);
         self::assertStringContainsString('accountHasPortrait', $index);
         self::assertStringContainsString('url(\'account/portrait\')', $index);
-        self::assertStringContainsString('Où aller', $index);
+        self::assertStringContainsString('État du compte', $index);
+        self::assertStringContainsString('Activité récente', $index);
+        self::assertStringContainsString("url('account/sessions/fermer-les-autres')", $index);
+        self::assertStringNotContainsString('Où aller', $index);
         self::assertStringNotContainsString('Photo de compte', $index);
         self::assertStringNotContainsString('État des services', $index);
         self::assertStringNotContainsString('Images du compte', $index);
@@ -35,6 +38,8 @@ final class AccountHubClarityAssetTest extends TestCase
         self::assertStringNotContainsString('Notifications e-mail', $nav);
         self::assertStringNotContainsString("'key' => 'image'", $nav);
         self::assertStringNotContainsString("'key' => 'leave'", $nav);
+        self::assertStringContainsString('OperatorPortraits::forUser', $nav);
+        self::assertStringNotContainsString('user_site_avatar_url', $nav);
 
         self::assertStringContainsString("return Response::redirect(url('account/portrait'));", $ctrl);
         self::assertStringContainsString('accountHasPortrait', $ctrl);
@@ -44,5 +49,33 @@ final class AccountHubClarityAssetTest extends TestCase
         self::assertStringNotContainsString('Distincte de la photo de compte', $portrait);
         self::assertStringNotContainsString('Photo de compte', $banner);
         self::assertStringNotContainsString('account/image', $banner);
+    }
+
+    public function testDeadAccountViewsAndDuplicatesAreGone(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $prefs = (string) file_get_contents($root . '/views/account/preferences.php');
+
+        self::assertFileDoesNotExist($root . '/views/account/atak_devices.php');
+        self::assertFileDoesNotExist($root . '/views/account/image.php');
+        self::assertStringNotContainsString('Compte actuel', $prefs);
+        self::assertStringNotContainsString('id="connexion-verification"', $prefs);
+        self::assertStringNotContainsString('name="ui_sidebar_collapsed"', $prefs);
+        self::assertStringContainsString('athena.bo.theme', $prefs);
+    }
+
+    public function testOtherSessionsCanBeClosed(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $routes = (string) file_get_contents($root . '/routes/web.php');
+        $mw = (string) file_get_contents($root . '/app/Middleware/AuthMiddleware.php');
+        $auth = (string) file_get_contents($root . '/app/Services/Auth/AuthService.php');
+        $ctrl = (string) file_get_contents($root . '/app/Controllers/Web/AccountController.php');
+
+        self::assertStringContainsString("/account/sessions/fermer-les-autres', [AccountController::class, 'revokeOtherSessions']", $routes);
+        self::assertStringContainsString("session_epoch", $mw);
+        self::assertStringContainsString("Session::set('auth_issued_at', time());", $auth);
+        self::assertStringContainsString('AUTH_PASSWORD_CHANGED', $ctrl);
+        self::assertFileExists($root . '/bootstrap/account_session_epoch_migration.php');
     }
 }

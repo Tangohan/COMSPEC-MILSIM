@@ -35,7 +35,7 @@ final class UserSiteAvatarUrlTest extends TestCase
         $view = (string) file_get_contents(dirname(__DIR__, 2) . '/views/account/preferences.php');
         self::assertStringNotContainsString('name="site_photo_priority"', $view);
         self::assertStringNotContainsString('Synchroniser photo Steam', $view);
-        self::assertStringContainsString('Portrait opérateur obligatoire', $view);
+        self::assertStringNotContainsString('Portrait opérateur obligatoire', $view);
     }
 
     public function testAdministrationCanUploadLockAndNotify(): void

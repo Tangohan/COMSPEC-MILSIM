@@ -37,6 +37,7 @@ class AuthService
     {
         Session::regenerate();
         Session::set('user_id', (int) $user['id']);
+        Session::set('auth_issued_at', time());
         Session::set('tenant_id', (int) $user['tenant_id']);
         Session::set('email', $user['email']);
         Session::set('display_name', $user['display_name'] ?? '');

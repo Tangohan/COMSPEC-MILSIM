@@ -93,6 +93,36 @@ class AccountController
         );
         $personnelProfile = $this->personnelProfileRepository->getByUserId($uid) ?? [];
         $accountHasPortrait = trim((string) ($personnelProfile['character_portrait_path'] ?? '')) !== '';
+        $timezone = trim((string) ($accountProfile['timezone'] ?? '')) ?: 'Europe/Paris';
+
+        $freshSecurity = $freshUser ?? $user;
+        $emailOtpOn = $this->userRepository->hasEmailLoginOtpEnabledColumn()
+            && (int) ($freshSecurity['email_login_otp_enabled'] ?? 0) === 1;
+        $totpOn = $this->userRepository->hasTotpColumns()
+            && $this->loginSecurityOtpService->isTotpEnabled($freshSecurity);
+        $otpMandatory = $this->loginSecurityOtpService->isMandatoryForUserId($uid);
+
+        $atakDevices = [];
+        try {
+            $atakDevices = \App\Core\Container::get(\App\Repositories\AtakRealismRepository::class)
+                ->listPhysicalTerminalsForUser($tenantId, $uid);
+        } catch (\Throwable) {
+            $atakDevices = [];
+        }
+        $activeDevices = count(array_filter(
+            $atakDevices,
+            static fn (array $d): bool => !in_array(strtolower((string) ($d['status'] ?? '')), ['revoked', 'lost', 'inactive'], true)
+        ));
+
+        $accountSecurity = [
+            'email_verified' => !empty($accountSnapshot['email_verified']),
+            'second_factor' => $totpOn ? 'totp' : ($emailOtpOn || $otpMandatory ? 'email' : null),
+            'second_factor_mandatory' => $otpMandatory,
+            'steam_linked' => trim((string) ($accountUser['steam_id'] ?? '')) !== '',
+            'portrait' => $accountHasPortrait,
+            'devices_active' => $activeDevices,
+            'devices_total' => count($atakDevices),
+        ];
 
         return $this->accountView('account.index', 'Mon compte', [
             'accountUser' => $accountUser,
@@ -100,7 +130,39 @@ class AccountController
             'accountSnapshot' => $accountSnapshot,
             'onboardingSnapshot' => $onboardingSnapshot,
             'accountHasPortrait' => $accountHasPortrait,
+            'accountSecurity' => $accountSecurity,
+            'accountActivity' => (new \App\Services\Account\AccountActivityService())->recentForUser($uid, $timezone),
+            'accountDeletionScheduledAt' => $accountUser['deletion_scheduled_at'] ?? null,
+            'accountMemberSince' => $accountUser['created_at'] ?? null,
+            'success' => Session::getFlash('success'),
+            'error' => Session::getFlash('error'),
         ]);
+    }
+
+    /** Ferme toutes les autres sessions du compte ; celle en cours reste ouverte. */
+    public function revokeOtherSessions(Request $request, array $params = []): Response
+    {
+        $user = $this->authService->user();
+        if (!$user) {
+            return Response::redirect(url('login'));
+        }
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect(url('account'));
+        }
+        $uid = (int) $user['id'];
+        $epoch = $this->userRepository->bumpSessionEpoch($uid);
+        if ($epoch === null) {
+            Session::flash('error', 'Impossible de fermer les autres sessions pour le moment. Réessayez plus tard.');
+
+            return Response::redirect(url('account'));
+        }
+        Session::set('auth_issued_at', $epoch);
+        $this->auditService->log(AuditAction::AUTH_SESSIONS_REVOKED, (int) ($user['tenant_id'] ?? 0), $uid, 'user', $uid);
+        Session::flash('success', 'Toutes vos autres sessions sont fermées. Seule celle-ci reste ouverte.');
+
+        return Response::redirect(url('account') . '#sessions');
     }
 
     /**
@@ -339,7 +401,8 @@ class AccountController
                 'density' => ($densityIn !== null && (string) $densityIn !== '')
                     ? (string) $densityIn
                     : (string) ($uiPrefs['density'] ?? 'comfortable'),
-                'sidebar_collapsed' => (string) $request->input('ui_sidebar_collapsed') === '1',
+                // Réglage sans effet sur le portail : retiré du formulaire, valeur conservée.
+                'sidebar_collapsed' => !empty($uiPrefs['sidebar_collapsed']),
             ];
             $vUi = $this->userUiPreferencesValidationService->validatePatch($uiPatch);
             $photoPriorityRaw = strtolower(trim((string) $request->input('site_photo_priority')));
@@ -431,17 +494,11 @@ class AccountController
                 Session::set('display_name', $derivedDisplay);
                 Session::set('callsign', trim((string) $request->input('callsign')));
                 Session::flash('success', 'Préférences enregistrées.');
+                // Le thème choisi pilote aussi le mode nuit du portail (localStorage athena.bo.theme).
+                Session::flash('ui_theme_sync', (string) ($vUi['normalized']['theme'] ?? $uiPatch['theme']));
                 return Response::redirect(url('account/preferences'));
             }
         }
-
-        $accountSnapshot = $this->buildAccountSnapshot($user, $profile);
-        $freshForOtp = $this->userRepository->findById($uid, $tenantId);
-        $loginOtpVoluntaryActive = $this->userRepository->hasEmailLoginOtpEnabledColumn()
-            && $freshForOtp !== null
-            && (int) ($freshForOtp['email_login_otp_enabled'] ?? 0) === 1;
-        $totpEnabled = $freshForOtp !== null
-            && $this->loginSecurityOtpService->isTotpEnabled($freshForOtp);
 
         $personnelProfile = $this->personnelProfileRepository->getByUserId($uid) ?? [];
         $extraCallsignSlots = function_exists('personnel_extra_callsign_slots') ? personnel_extra_callsign_slots() : 5;
@@ -462,17 +519,13 @@ class AccountController
             'displaySettings' => $displaySettings,
             'notifEmailCatalog' => $notifEmailCatalog,
             'notifEmailState' => $notifEmailState,
-            'accountSnapshot' => $accountSnapshot,
+            'uiThemeSync' => Session::getFlash('ui_theme_sync'),
             'timezoneSuggestions' => $this->timezoneSuggestions(),
             'errors' => $errors,
             'success' => $success,
             'error' => $error,
             'steamWebConfigured' => $this->steamWebApiService->isConfigured(),
             'steamSyncReport' => is_array($steamSyncReport) ? $steamSyncReport : null,
-            'loginOtpMandatory' => $this->loginSecurityOtpService->isMandatoryForUserId($uid),
-            'loginOtpVoluntaryActive' => $loginOtpVoluntaryActive,
-            'totpEnabled' => $totpEnabled,
-            'loginOtpTtlMinutes' => LoginSecurityOtpService::TTL_MINUTES,
         ]);
     }
 
@@ -482,7 +535,7 @@ class AccountController
         if (!$user || !$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée ou accès refusé.');
 
-            return Response::redirect(url('account/preferences'));
+            return Response::redirect(url('account/security'));
         }
         $uid = (int) ($user['id'] ?? 0);
         $tenantId = (int) ($user['tenant_id'] ?? 0);
@@ -493,7 +546,7 @@ class AccountController
             Session::flash('error', $result['message']);
         }
 
-        return Response::redirect(url('account/preferences'));
+        return Response::redirect(url('account/security'));
     }
 
     public function syncSteamProfile(Request $request, array $params = []): Response
@@ -1419,7 +1472,15 @@ class AccountController
             } else {
                 $hash = password_hash((string) $new, PASSWORD_ARGON2ID);
                 $this->userRepository->update((int) $user['id'], (int) $user['tenant_id'], ['password_hash' => $hash]);
-                Session::flash('success', 'Mot de passe modifié.');
+                $this->auditService->log(AuditAction::AUTH_PASSWORD_CHANGED, (int) $user['tenant_id'], (int) $user['id'], 'user', (int) $user['id']);
+                // Un nouveau mot de passe ferme les sessions ouvertes ailleurs ; celle-ci reste active.
+                $epoch = $this->userRepository->bumpSessionEpoch((int) $user['id']);
+                if ($epoch !== null) {
+                    Session::set('auth_issued_at', $epoch);
+                }
+                Session::flash('success', $epoch !== null
+                    ? 'Mot de passe modifié. Vos autres sessions ont été fermées.'
+                    : 'Mot de passe modifié.');
                 return Response::redirect(url('account/password'));
             }
         }

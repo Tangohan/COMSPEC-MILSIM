@@ -45,9 +45,9 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<?php if (!empty($isBackOfficeShell)): ?>
+<?php if (!empty($isBackOfficeShell) || !empty($accountHubPage)): ?>
     <script>
-    /* Mode nuit du back-office : appliqué avant l'affichage pour éviter un flash clair. */
+    /* Mode nuit du back-office (et de l’espace Mon compte) : appliqué avant l'affichage pour éviter un flash clair. */
     (function () {
         var pref = 'auto';
         try { pref = localStorage.getItem('athena.bo.theme') || 'auto'; } catch (e) {}
@@ -357,7 +357,7 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
         ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/' . $boCssRel), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endforeach; ?>
-    <?php if (!empty($isBackOfficeShell)): ?>
+    <?php if (!empty($isBackOfficeShell) || !empty($accountHubPage)): ?>
     <?php foreach (['back-office-dark.generated.css', 'back-office-dark.css'] as $boDarkCss): ?>
     <?php if (is_file(base_path('public/assets/css/' . $boDarkCss))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/' . $boDarkCss), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">

@@ -97,7 +97,7 @@ require base_path('views/partials/account/shell_open.php');
     ·
     <a href="<?= htmlspecialchars(url('account/password'), ENT_QUOTES, 'UTF-8') ?>">Mot de passe</a>
     ·
-    <a href="<?= htmlspecialchars(url('account/preferences') . '#connexion-verification', ENT_QUOTES, 'UTF-8') ?>">Tester l’envoi d’un code</a>
+    <a href="<?= htmlspecialchars(url('account/security') . '#email-otp', ENT_QUOTES, 'UTF-8') ?>">Tester l’envoi d’un code</a>
 </p>
 
 <?php require base_path('views/partials/account/shell_close.php'); ?>
