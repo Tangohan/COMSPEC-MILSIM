@@ -358,13 +358,14 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                     if ($assignmentPath === '' && $unit !== '') {
                         $assignmentPath = $unit;
                     }
-                    $assignmentLeaf = $assignmentPath;
+                    $assignmentLeaf = \App\Support\UnitAbbreviation::standalone($assignmentPath);
                     $assignmentParent = '';
                     if ($assignmentPath !== '' && str_contains($assignmentPath, '/')) {
                         $pathParts = array_values(array_filter(array_map('trim', explode('/', $assignmentPath)), static fn (string $part): bool => $part !== ''));
                         if (count($pathParts) >= 2) {
-                            $assignmentLeaf = (string) $pathParts[array_key_last($pathParts)];
-                            $assignmentParent = implode(' · ', array_slice($pathParts, 0, -1));
+                            $assignmentTrail = \App\Support\UnitAbbreviation::trail($pathParts);
+                            $assignmentLeaf = (string) $assignmentTrail[array_key_last($assignmentTrail)]['short'];
+                            $assignmentParent = implode(' · ', array_column(array_slice($assignmentTrail, 0, -1), 'short'));
                         }
                     }
                     $unitId = (int) ($row['unit_id'] ?? 0);

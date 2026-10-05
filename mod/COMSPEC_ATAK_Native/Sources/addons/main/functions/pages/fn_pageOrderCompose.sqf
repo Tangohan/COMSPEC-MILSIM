@@ -18,16 +18,16 @@ private _seg = {
 };
 // Destinataires : mon groupe (celui d'Athena), les autres groupes de mon camp ayant des joueurs, tout le monde.
 private _mine = [player] call comspec_atak_native_fnc_unitGroup;
-private _targets = [[format ["Mon groupe (%1)", _mine], format ["group|%1|%1", _mine]]];
+private _targets = [[format ["Mon groupe (%1)", [player, true] call comspec_atak_native_fnc_unitGroup], format ["group|%1|%1", _mine]]];
 {
     private _g = [_x] call comspec_atak_native_fnc_unitGroup;
     if (_g isNotEqualTo _mine && {(_targets findIf { (_x select 1) isEqualTo format ["group|%1|%1", _g] }) < 0}) then {
-        _targets pushBack [_g, format ["group|%1|%1", _g]];
+        _targets pushBack [[_x, true] call comspec_atak_native_fnc_unitGroup, format ["group|%1|%1", _g]];
     };
 } forEach ((allPlayers - [player]) select { side group _x isEqualTo side group player });
 _targets pushBack ["Tout le monde", "all||Tous"];
 private _rows = [
-    ["section", "Nouvel ordre", format ["Émis par %1", ([[player, true] call comspec_atak_native_fnc_unitCallsign, _mine] select { _x isNotEqualTo "" }) joinString " · "]],
+    ["section", "Nouvel ordre", format ["Émis par %1", ([[player, true] call comspec_atak_native_fnc_unitCallsign, [player, true] call comspec_atak_native_fnc_unitGroup] select { _x isNotEqualTo "" }) joinString " · "]],
     ["segment", "Type", ["kind", [["DÉPLACER", "MOVE"], ["TENIR", "HOLD"], ["RECO", "RECON"], ["DEM-SSE", "DEMSSE"]], "MOVE"] call _seg],
     ["segment", "", ["kind", [["APPUI AÉRIEN", "CAS"], ["RENFORT", "QRF"], ["FRAGO", "FRAGO"]], "MOVE"] call _seg],
     ["segment", "Priorité", ["prio", [["ROUTINE", "ROUTINE"], ["IMPORTANT", "IMPORTANT"], ["URGENT", "URGENT"], ["FLASH", "FLASH"]]] call _seg],

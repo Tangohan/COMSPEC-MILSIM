@@ -20,6 +20,8 @@ missionNamespace setVariable ["comspec_overwatch_auth_error", _err, false];
 missionNamespace setVariable ["comspec_profile_name", _name, false];
 missionNamespace setVariable ["comspec_tenant_name", _tenant, false];
 missionNamespace setVariable ["comspec_profile_unit", _unit, false];
+// Abrégé d'unité saisi dans Athena (COMSPEC Link 2.0.62+) ; vide : l'ATAK calcule le sigle.
+missionNamespace setVariable ["comspec_profile_unit_short", _auth getOrDefault ["unit_short", ""], false];
 missionNamespace setVariable ["comspec_profile_grade", _grade, false];
 missionNamespace setVariable ["comspec_profile_role", _role, false];
 missionNamespace setVariable ["comspec_profile_function", _function, false];

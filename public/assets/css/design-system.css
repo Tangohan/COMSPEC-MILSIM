@@ -395,3 +395,11 @@
 @media (max-width: 1023px) {
   body.athena-has-bottom-nav .athena-fab { display: inline-flex; }
 }
+
+/* Abrégés automatiques d'unités et de fonctions (App\Support\UnitAbbreviation::html) : nom complet au survol. */
+abbr.ath-abbr {
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+  border-bottom-color: color-mix(in srgb, currentColor 45%, transparent);
+  cursor: help;
+}

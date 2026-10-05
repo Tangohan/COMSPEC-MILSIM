@@ -13,6 +13,7 @@ missionNamespace setVariable ["comspec_profile_name", "", false];
 missionNamespace setVariable ["comspec_profile_callsign", "", false];
 missionNamespace setVariable ["comspec_tenant_name", "", false];
 missionNamespace setVariable ["comspec_profile_unit", "", false];
+missionNamespace setVariable ["comspec_profile_unit_short", "", false];
 missionNamespace setVariable ["comspec_profile_grade", "", false];
 missionNamespace setVariable ["comspec_profile_role", "", false];
 missionNamespace setVariable ["comspec_profile_function", "", false];

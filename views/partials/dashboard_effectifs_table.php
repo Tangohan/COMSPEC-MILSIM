@@ -209,7 +209,7 @@ $rowCount = count($rows);
                                     <span class="dash-eff-unit" tabindex="0"
                                           title="<?= htmlspecialchars($unitTooltip, ENT_QUOTES, 'UTF-8') ?>"
                                           aria-label="<?= htmlspecialchars($unitTooltip !== '' ? $unitTooltip : $assignment, ENT_QUOTES, 'UTF-8') ?>">
-                                        <?= htmlspecialchars($assignment, ENT_QUOTES, 'UTF-8') ?>
+                                        <?= htmlspecialchars(\App\Support\UnitAbbreviation::standalone($assignment), ENT_QUOTES, 'UTF-8') ?>
                                         <span class="dash-eff-unit__hint" aria-hidden="true">i</span>
                                     </span>
                                 <?php endif; ?>
@@ -333,7 +333,7 @@ $rowCount = count($rows);
                                         <span class="dash-eff-unit" tabindex="0"
                                               title="<?= htmlspecialchars($unitTooltip, ENT_QUOTES, 'UTF-8') ?>"
                                               aria-label="<?= htmlspecialchars($unitTooltip !== '' ? $unitTooltip : $assignment, ENT_QUOTES, 'UTF-8') ?>">
-                                            <?= htmlspecialchars($assignment, ENT_QUOTES, 'UTF-8') ?>
+                                            <?= htmlspecialchars(\App\Support\UnitAbbreviation::standalone($assignment), ENT_QUOTES, 'UTF-8') ?>
                                             <span class="dash-eff-unit__hint" aria-hidden="true">i</span>
                                         </span>
                                     <?php else: ?>

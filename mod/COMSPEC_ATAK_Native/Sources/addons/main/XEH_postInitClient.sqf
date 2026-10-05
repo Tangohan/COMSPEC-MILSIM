@@ -123,6 +123,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     private _orbat = missionNamespace getVariable ["comspec_profile_unit", ""];
     if !(_orbat isEqualType "") then { _orbat = str _orbat; };
     if ((player getVariable ["COMSPEC_ATAK_Orbat", ""]) isNotEqualTo _orbat) then { player setVariable ["COMSPEC_ATAK_Orbat", _orbat, true]; };
+    // Abrégé saisi dans Athena (COMSPEC Link 2.0.62+) : les autres téléphones l'affichent à la place du sigle automatique.
+    private _orbatShort = missionNamespace getVariable ["comspec_profile_unit_short", ""];
+    if !(_orbatShort isEqualType "") then { _orbatShort = ""; };
+    if ((player getVariable ["COMSPEC_ATAK_OrbatShort", ""]) isNotEqualTo _orbatShort) then { player setVariable ["COMSPEC_ATAK_OrbatShort", _orbatShort, true]; };
     // Téléphone gardé dans Athena : partagé pour que la GE des autres voie le même numéro, IMEI et MAC.
     private _ph = missionNamespace getVariable ["comspec_profile_phone", []];
     if ((player getVariable ["COMSPEC_ATAK_IdentDb", []]) isNotEqualTo _ph) then { player setVariable ["COMSPEC_ATAK_IdentDb", _ph, true]; };
