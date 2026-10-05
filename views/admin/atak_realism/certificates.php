@@ -1,19 +1,13 @@
 <?php
 declare(strict_types=1);
 
+use App\Support\AtakDevicePresenter as Dev;
+
 $terminals = is_array($atakRealismTerminals ?? null) ? $atakRealismTerminals : [];
 $certificates = is_array($atakRealismCertificates ?? null) ? $atakRealismCertificates : [];
 $domains = is_array($atakCryptoDomains ?? null) ? $atakCryptoDomains : [];
 $csrfToken = (string) ($csrfToken ?? \App\Core\Csrf::token());
-$certificateStatusFr = static function (?string $status): string {
-    return match ((string) $status) {
-        'active' => 'Actif',
-        'issued' => 'Émis',
-        'expired' => 'Expiré',
-        'revoked' => 'Révoqué',
-        default => 'Émis',
-    };
-};
+$h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 $certificateTypeFr = static function (?string $type): string {
     return match ((string) $type) {
         'server' => 'Serveur',
@@ -21,120 +15,159 @@ $certificateTypeFr = static function (?string $type): string {
         'device' => 'Appareil',
         'operator' => 'Opérateur',
         'gateway' => 'Passerelle',
-        'test' => 'Test',
+        'test' => 'Essai',
         default => ((string) $type !== '' ? (string) $type : 'Appareil'),
     };
 };
-$h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+
+// Cycle de vie de chaque certificat, puis compteurs et autorités intermédiaires.
+$rows = [];
+$counts = ['valid' => 0, 'expiring' => 0, 'expired' => 0, 'revoked' => 0];
+$authorities = [];
+foreach ($certificates as $certificate) {
+    if (!is_array($certificate)) {
+        continue;
+    }
+    $life = Dev::certificateLifetime($certificate);
+    if (isset($counts[$life['state']])) {
+        $counts[$life['state']]++;
+    } elseif ($life['state'] === 'pending') {
+        $counts['valid']++;
+    }
+    $authority = trim((string) ($certificate['authority_label'] ?? '')) ?: 'Autorité ATAK locale';
+    $authorities[$authority] = ($authorities[$authority] ?? 0) + ($life['state'] === 'revoked' || $life['state'] === 'expired' ? 0 : 1);
+    $rows[] = ['cert' => $certificate, 'life' => $life];
+}
+$revoked = array_values(array_filter($rows, static fn (array $r): bool => $r['life']['state'] === 'revoked'));
+$authorityNames = array_keys($authorities);
+if ($authorityNames === []) {
+    $authorityNames = ['Autorité ATAK locale'];
+}
 ?>
-<div class="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-    <header class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <p class="text-xs font-bold uppercase tracking-widest text-slate-500">ATAK · Sécurité</p>
-        <h1 class="mt-2 text-2xl font-black text-slate-900">Certificats & data packages</h1>
-        <p class="mt-2 text-sm text-slate-600">Cycle de vie des certificats client, réseaux de chiffrement et échéances à surveiller.</p>
-        <div class="mt-4 flex flex-wrap gap-2">
-            <a href="<?= $h(url('back-office/atak/realisme')) ?>" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Parc de terminaux</a>
-            <a href="<?= $h(url('back-office/atak/roleplay#intel-scramble')) ?>" class="inline-flex items-center rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-950 hover:bg-amber-100">Données chiffrées</a>
-        </div>
-    </header>
-
-    <section class="grid gap-6 lg:grid-cols-2">
-        <form method="post" action="<?= $h(url('back-office/atak/reseaux-chiffrement')) ?>" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-            <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-            <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Réseau de chiffrement</h2>
-            <p class="text-xs text-slate-600">Les appareils d’un même réseau peuvent lire le trafic. Un appareil hors réseau voit des données illisibles.</p>
-            <input name="label" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Nom du réseau (ex. Réseau ami)" autocomplete="off">
-            <input name="domain_ref" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Référence courte (facultatif)" autocomplete="off">
-            <button class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white">Enregistrer le réseau</button>
-            <?php if ($domains !== []): ?>
-                <ul class="mt-2 space-y-1 text-sm text-slate-700">
-                    <?php foreach ($domains as $domain): ?>
-                        <li class="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-                            <?= $h($domain['label'] ?? 'Réseau') ?>
-                            <span class="text-xs text-slate-500">(<?= ($domain['status'] ?? '') === 'active' ? 'Actif' : 'Inactif' ?>)</span>
-                        </li>
-                    <?php endforeach; ?>
-                </ul>
-            <?php endif; ?>
-        </form>
-
-        <form method="post" action="<?= $h(url('back-office/atak/certificats')) ?>" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-            <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-            <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Émettre un certificat</h2>
-            <input name="certificate_ref" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Référence certificat" autocomplete="off">
-            <input name="authority_label" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Autorité émettrice" autocomplete="off">
-            <select name="terminal_id" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                <option value="">Terminal lié (facultatif)</option>
-                <?php foreach ($terminals as $terminal): ?>
-                    <option value="<?= (int) ($terminal['id'] ?? 0) ?>"><?= $h($terminal['terminal_label'] ?? $terminal['terminal_uid'] ?? 'Terminal') ?></option>
-                <?php endforeach; ?>
-            </select>
-            <select name="crypto_domain_id" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                <option value="">Réseau de chiffrement</option>
-                <?php foreach ($domains as $domain): ?>
-                    <option value="<?= (int) ($domain['id'] ?? 0) ?>"><?= $h($domain['label'] ?? 'Réseau') ?></option>
-                <?php endforeach; ?>
-            </select>
-            <input name="user_id" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Compte membre à lier (facultatif)" inputmode="numeric" autocomplete="off">
-            <input name="expires_at" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Échéance (AAAA-MM-JJ HH:MM:SS)" autocomplete="off">
-            <button class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white">Émettre</button>
-        </form>
+<div class="atk-admin atk-dev">
+    <section class="atk-kpis" aria-label="État de la PKI">
+        <div class="atk-kpi atk-kpi--ok"><span>Valides</span><strong><?= (int) $counts['valid'] ?></strong><small>Appareils autorisés à se connecter</small></div>
+        <div class="atk-kpi atk-kpi--warn"><span>À renouveler</span><strong><?= (int) $counts['expiring'] ?></strong><small>Expirent dans 30 jours ou moins</small></div>
+        <div class="atk-kpi atk-kpi--bad"><span>Expirés</span><strong><?= (int) $counts['expired'] ?></strong><small>Refusés à la prochaine connexion</small></div>
+        <div class="atk-kpi"><span>Révoqués</span><strong><?= (int) $counts['revoked'] ?></strong><small>Inscrits sur la liste de révocation</small></div>
     </section>
 
-    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div class="border-b border-slate-100 px-6 py-4">
-            <h2 class="text-sm font-black text-slate-900">Certificats enregistrés</h2>
+    <section class="atk-panel">
+        <div class="atk-panel__head">
+            <div>
+                <h2>Chaîne de certification</h2>
+                <p>Chaque terminal présente son certificat client ; le serveur remonte la chaîne jusqu’à la racine avant d’accepter la liaison.</p>
+            </div>
+            <a class="atk-btn" href="<?= $h(url('back-office/atak/realisme')) ?>">Parc de terminaux</a>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full min-w-[1100px] text-sm">
-                <thead class="bg-slate-50 text-slate-600">
+        <div class="atk-panel__body">
+            <div class="atk-chain">
+                <div class="atk-chain__node">
+                    <span>Racine</span>
+                    <strong>COMSPEC Root CA</strong>
+                    <small>RSA 4096 · SHA-256 · hors ligne</small>
+                </div>
+                <div class="atk-chain__arrow" aria-hidden="true">→</div>
+                <div class="atk-chain__node">
+                    <span>Intermédiaire<?= count($authorityNames) > 1 ? 's' : '' ?></span>
+                    <?php foreach ($authorityNames as $name): ?>
+                        <strong><?= $h($name) ?></strong>
+                        <small><?= (int) ($authorities[$name] ?? 0) ?> certificat<?= ($authorities[$name] ?? 0) > 1 ? 's' : '' ?> en cours</small>
+                    <?php endforeach; ?>
+                </div>
+                <div class="atk-chain__arrow" aria-hidden="true">→</div>
+                <div class="atk-chain__node">
+                    <span>Feuilles</span>
+                    <strong><?= count($terminals) ?> <?= count($terminals) > 1 ? 'terminaux' : 'terminal' ?> terrain</strong>
+                    <small>ECDSA P-256 · authentification client TLS</small>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="atk-panel">
+        <div class="atk-panel__head">
+            <div>
+                <h2>Certificats émis</h2>
+                <p><?= count($rows) ?> certificat<?= count($rows) > 1 ? 's' : '' ?>. Sujet, numéro de série et empreinte sont ceux que le terminal présente au serveur.</p>
+            </div>
+        </div>
+        <div class="atk-table-wrap">
+            <table class="atk-table">
+                <thead>
                     <tr>
-                        <th class="px-4 py-3 text-left">Référence</th>
-                        <th class="px-4 py-3 text-left">Autorité</th>
-                        <th class="px-4 py-3 text-left">Type</th>
-                        <th class="px-4 py-3 text-left">Réseau</th>
-                        <th class="px-4 py-3 text-left">Terminal</th>
-                        <th class="px-4 py-3 text-left">Statut</th>
-                        <th class="px-4 py-3 text-left">Échéance</th>
-                        <th class="px-4 py-3 text-right">Actions</th>
+                        <th>Certificat</th>
+                        <th>Titulaire</th>
+                        <th>Série · empreinte</th>
+                        <th>Validité</th>
+                        <th>État</th>
+                        <th style="text-align:right">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                <?php if ($certificates === []): ?>
-                    <tr>
-                        <td colspan="8" class="px-4 py-8 text-center text-slate-500">Aucun certificat enregistré pour le moment.</td>
-                    </tr>
+                <?php if ($rows === []): ?>
+                    <tr><td colspan="6" style="text-align:center;padding:2rem">Aucun certificat émis pour le moment. Ils sont délivrés à la validation de la liaison d’un terminal, ou ci-dessous.</td></tr>
                 <?php endif; ?>
-                <?php foreach ($certificates as $certificate): ?>
-                    <?php
-                    $certId = (int) ($certificate['id'] ?? 0);
-                    $certStatus = (string) ($certificate['status'] ?? '');
-                    $certRef = (string) ($certificate['certificate_ref'] ?? '');
-                    $canRevoke = $certId > 0 && !in_array($certStatus, ['revoked'], true);
-                    $label = $certRef !== '' ? $certRef : ('#' . $certId);
-                    $confirmRevoke = 'Révoquer le certificat « ' . $label . ' » ? Le terminal ne pourra plus s’en servir tant qu’un nouveau certificat n’est pas émis.';
-                    $confirmDelete = 'Supprimer définitivement le certificat « ' . $label . ' » ? Cette action est irréversible.';
+                <?php foreach ($rows as $row):
+                    $c = $row['cert'];
+                    $life = $row['life'];
+                    $certId = (int) ($c['id'] ?? 0);
+                    $ref = (string) ($c['certificate_ref'] ?? '');
+                    $label = $ref !== '' ? $ref : ('#' . $certId);
+                    $holder = trim((string) ($c['callsign'] ?? '')) ?: trim((string) ($c['display_name'] ?? ''));
+                    $terminal = trim((string) ($c['terminal_label'] ?? '')) ?: trim((string) ($c['terminal_uid'] ?? ''));
+                    $confirmRevoke = 'Révoquer le certificat « ' . $label . ' » ? Le terminal sera refusé à sa prochaine connexion tant qu’un nouveau certificat n’est pas émis.';
+                    $confirmDelete = 'Supprimer définitivement le certificat « ' . $label . ' » ? Il disparaît aussi de la liste de révocation.';
                     ?>
-                    <tr class="border-t border-slate-100">
-                        <td class="px-4 py-3"><?= $h($certRef !== '' ? $certRef : '—') ?></td>
-                        <td class="px-4 py-3"><?= $h($certificate['authority_label'] ?? '—') ?></td>
-                        <td class="px-4 py-3"><?= $h($certificateTypeFr($certificate['certificate_type'] ?? null)) ?></td>
-                        <td class="px-4 py-3"><?= $h($certificate['crypto_domain_label'] ?? '—') ?></td>
-                        <td class="px-4 py-3"><?= $h($certificate['terminal_label'] ?? '—') ?></td>
-                        <td class="px-4 py-3"><?= $h($certificateStatusFr($certStatus !== '' ? $certStatus : null)) ?></td>
-                        <td class="px-4 py-3"><?= $h($certificate['expires_at'] ?? '—') ?></td>
-                        <td class="px-4 py-3">
+                    <tr>
+                        <td>
+                            <strong class="is-mono"><?= $h($label) ?></strong>
+                            <small class="is-mono"><?= $h(Dev::subjectDn($c)) ?></small>
+                            <small><?= $h($certificateTypeFr($c['certificate_type'] ?? null)) ?> · émis par <?= $h(trim((string) ($c['authority_label'] ?? '')) ?: 'Autorité ATAK locale') ?><?php if (trim((string) ($c['crypto_domain_label'] ?? '')) !== ''): ?> · réseau <?= $h($c['crypto_domain_label']) ?><?php endif; ?></small>
+                        </td>
+                        <td>
+                            <?= $h($holder !== '' ? $holder : '—') ?>
+                            <small><?= $h($terminal !== '' ? $terminal : 'Aucun terminal rattaché') ?></small>
+                        </td>
+                        <td>
+                            <span class="is-mono"><?= $h(Dev::colonHex((string) ($c['serial_number'] ?? ''), 8) ?: '—') ?></span>
+                            <small class="is-mono" title="<?= $h(Dev::colonHex((string) ($c['fingerprint_sha256'] ?? ''))) ?>">SHA-256 <?= $h(Dev::shortFingerprint((string) ($c['fingerprint_sha256'] ?? '')) ?: '—') ?></small>
+                        </td>
+                        <td>
+                            <div class="atk-validity atk-validity--<?= $h($life['tone']) ?>">
+                                <div class="atk-validity__bar"><i style="width: <?= (int) ($life['elapsed_pct'] ?? 0) ?>%"></i></div>
+                                <div class="atk-validity__dates">
+                                    <span><?= $h($life['from'] !== null ? date('d/m/Y', $life['from']) : '—') ?></span>
+                                    <span><?= $h($life['to'] !== null ? date('d/m/Y', $life['to']) : '—') ?></span>
+                                </div>
+                            </div>
+                            <?php if ($life['days_left'] !== null && $life['state'] !== 'revoked'): ?>
+                                <small><?= $life['days_left'] >= 0 ? (int) $life['days_left'] . ' j restants' : 'Expiré depuis ' . abs((int) $life['days_left']) . ' j' ?></small>
+                            <?php endif; ?>
+                        </td>
+                        <td>
+                            <span class="atk-chip atk-chip--<?= $h($life['tone']) ?>"><?= $h($life['label']) ?></span>
+                            <?php if ($life['state'] === 'revoked' && trim((string) ($c['revoked_reason'] ?? '')) !== ''): ?>
+                                <small><?= $h(Dev::revocationReasonLabel((string) $c['revoked_reason'])) ?></small>
+                            <?php endif; ?>
+                        </td>
+                        <td>
                             <?php if ($certId > 0): ?>
-                                <div class="flex flex-wrap items-center justify-end gap-2">
-                                    <?php if ($canRevoke): ?>
-                                        <form method="post" action="<?= $h(url('back-office/atak/certificats/' . $certId . '/revoquer')) ?>" class="inline" onsubmit="return confirm(<?= $h(json_encode($confirmRevoke, JSON_UNESCAPED_UNICODE)) ?>);">
+                                <div class="atk-actions">
+                                    <?php if ($life['state'] !== 'revoked'): ?>
+                                        <form method="post" action="<?= $h(url('back-office/atak/certificats/' . $certId . '/revoquer')) ?>" class="atk-revoke" onsubmit="return confirm(<?= $h(json_encode($confirmRevoke, JSON_UNESCAPED_UNICODE)) ?>);">
                                             <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-                                            <button type="submit" class="inline-flex rounded-md border border-amber-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-900 hover:bg-amber-50">Révoquer</button>
+                                            <select name="revoked_reason" aria-label="Motif de révocation">
+                                                <?php foreach (Dev::REVOCATION_REASONS as $code => $reasonLabel): ?>
+                                                    <option value="<?= $h($code) ?>"><?= $h($reasonLabel) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <button type="submit" class="atk-btn atk-btn--warn">Révoquer</button>
                                         </form>
                                     <?php endif; ?>
-                                    <form method="post" action="<?= $h(url('back-office/atak/certificats/' . $certId . '/supprimer')) ?>" class="inline" onsubmit="return confirm(<?= $h(json_encode($confirmDelete, JSON_UNESCAPED_UNICODE)) ?>);">
+                                    <form method="post" action="<?= $h(url('back-office/atak/certificats/' . $certId . '/supprimer')) ?>" onsubmit="return confirm(<?= $h(json_encode($confirmDelete, JSON_UNESCAPED_UNICODE)) ?>);">
                                         <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
-                                        <button type="submit" class="inline-flex rounded-md border border-rose-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-rose-800 hover:bg-rose-50">Supprimer</button>
+                                        <button type="submit" class="atk-btn atk-btn--bad">Supprimer</button>
                                     </form>
                                 </div>
                             <?php endif; ?>
@@ -145,4 +178,115 @@ $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, '
             </table>
         </div>
     </section>
+
+    <section class="atk-panel">
+        <div class="atk-panel__head">
+            <div>
+                <h2>Liste de révocation (LCR)</h2>
+                <p>Publiée aux serveurs de jeu à chaque synchronisation : un terminal inscrit ici est refusé, même avec un certificat encore dans sa période de validité.</p>
+            </div>
+        </div>
+        <div class="atk-panel__body">
+            <?php if ($revoked === []): ?>
+                <p class="atk-sheet__note">Aucun certificat révoqué.</p>
+            <?php else: ?>
+                <div class="atk-table-wrap">
+                    <table class="atk-table" style="min-width:40rem">
+                        <thead><tr><th>Numéro de série</th><th>Certificat</th><th>Révoqué le</th><th>Motif</th></tr></thead>
+                        <tbody>
+                        <?php foreach ($revoked as $row): $c = $row['cert']; $at = Dev::utcTimestamp((string) ($c['revoked_at'] ?? '')); ?>
+                            <tr>
+                                <td class="is-mono"><?= $h(Dev::colonHex((string) ($c['serial_number'] ?? ''), 16) ?: '—') ?></td>
+                                <td class="is-mono"><?= $h((string) ($c['certificate_ref'] ?? '—')) ?></td>
+                                <td><?= $h($at !== null ? date('d/m/Y H:i', $at) : '—') ?></td>
+                                <td><?= $h(Dev::revocationReasonLabel((string) ($c['revoked_reason'] ?? '')) ?: 'Non précisé') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+    </section>
+
+    <div class="atk-kpis" style="grid-template-columns:repeat(auto-fit,minmax(20rem,1fr));align-items:start">
+        <form method="post" action="<?= $h(url('back-office/atak/certificats')) ?>" class="atk-panel">
+            <div class="atk-panel__head"><div><h2>Émettre un certificat</h2><p>Numéro de série, empreinte et sujet sont générés si vous les laissez vides.</p></div></div>
+            <div class="atk-panel__body atk-form">
+                <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                <label>Terminal
+                    <select name="terminal_id">
+                        <option value="">Aucun (certificat d’opérateur ou de passerelle)</option>
+                        <?php foreach ($terminals as $terminal): ?>
+                            <?php $tLabel = trim((string) ($terminal['operator_callsign'] ?? '')) ?: (string) ($terminal['terminal_label'] ?? $terminal['terminal_uid'] ?? 'Terminal'); ?>
+                            <option value="<?= (int) ($terminal['id'] ?? 0) ?>"><?= $h($tLabel . ' · ' . Dev::typeLabel(Dev::terminalType($terminal))) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <div class="atk-form__row">
+                    <label>Usage
+                        <select name="certificate_type">
+                            <option value="device">Appareil (client TLS)</option>
+                            <option value="operator">Opérateur</option>
+                            <option value="gateway">Passerelle</option>
+                            <option value="test">Essai</option>
+                        </select>
+                    </label>
+                    <label>Durée de validité
+                        <select name="duration_days">
+                            <option value="30">30 jours</option>
+                            <option value="90">90 jours</option>
+                            <option value="180">6 mois</option>
+                            <option value="365" selected>1 an</option>
+                            <option value="730">2 ans</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="atk-form__row">
+                    <label>Autorité émettrice
+                        <input name="authority_label" list="atk-authorities" placeholder="Autorité ATAK locale" autocomplete="off">
+                    </label>
+                    <label>Réseau de chiffrement
+                        <select name="crypto_domain_id">
+                            <option value="">Réseau par défaut</option>
+                            <?php foreach ($domains as $domain): ?>
+                                <option value="<?= (int) ($domain['id'] ?? 0) ?>"><?= $h($domain['label'] ?? 'Réseau') ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                </div>
+                <datalist id="atk-authorities">
+                    <?php foreach ($authorityNames as $name): ?><option value="<?= $h($name) ?>"><?php endforeach; ?>
+                </datalist>
+                <div class="atk-form__row">
+                    <label>Sujet (CN) <input name="common_name" placeholder="Indicatif du terminal" autocomplete="off"></label>
+                    <label>Référence <input name="certificate_ref" placeholder="Générée automatiquement" autocomplete="off"></label>
+                </div>
+                <label>Compte membre à lier <input name="user_id" inputmode="numeric" placeholder="Facultatif" autocomplete="off"></label>
+                <div><button class="atk-btn atk-btn--solid" type="submit">Émettre et signer</button></div>
+            </div>
+        </form>
+
+        <form method="post" action="<?= $h(url('back-office/atak/reseaux-chiffrement')) ?>" class="atk-panel">
+            <div class="atk-panel__head"><div><h2>Réseaux de chiffrement</h2><p>Les appareils d’un même réseau lisent le trafic ; hors réseau, les données arrivent illisibles.</p></div></div>
+            <div class="atk-panel__body atk-form">
+                <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                <?php if ($domains !== []): ?>
+                    <div class="atk-chain atk-chain--stack">
+                        <?php foreach ($domains as $domain): $active = ($domain['status'] ?? '') === 'active'; ?>
+                            <div class="atk-chain__node">
+                                <span><?= $active ? 'Actif' : 'Inactif' ?></span>
+                                <strong><?= $h($domain['label'] ?? 'Réseau') ?></strong>
+                                <small><?= $h((string) ($domain['domain_ref'] ?? '')) ?> · AES-256-GCM</small>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+                <label>Nom du réseau <input name="label" required placeholder="ex. Réseau ami" autocomplete="off"></label>
+                <label>Référence courte <input name="domain_ref" placeholder="Facultatif" autocomplete="off"></label>
+                <div><button class="atk-btn atk-btn--solid" type="submit">Enregistrer le réseau</button></div>
+                <p class="atk-form__hint"><a href="<?= $h(url('back-office/atak/roleplay#intel-scramble')) ?>">Données chiffrées en jeu</a></p>
+            </div>
+        </form>
+    </div>
 </div>

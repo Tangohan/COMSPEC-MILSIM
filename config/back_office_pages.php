@@ -238,15 +238,22 @@ return [
         ['path' => 'back-office/atak/fire-teams', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · TACTIQUE', 'title' => 'Équipes de feu', 'subtitle' => 'La composition de chaque équipe de feu pour la session.', 'css' => ['back-office-fire-teams.css']],
         ['path' => 'back-office/atak', 'group' => 'ATAK', 'kicker' => 'ATAK · POSTE', 'title' => 'Poste de situation', 'subtitle' => 'La situation en direct : qui est connecté, où, et les dossiers de renseignement en cours.'],
         ['path' => 'back-office/atak/controle-serveur', 'group' => 'ATAK', 'kicker' => 'ATAK · MISSION', 'title' => 'Contrôle de mission', 'subtitle' => 'Les règles de la mission en cours, les fonctions activées et les relais de liaison.'],
-        ['path' => 'back-office/atak/relays-network', 'group' => 'ATAK', 'kicker' => 'ATAK · RELAIS', 'title' => 'Réseau de relais', 'subtitle' => 'Les relais radio sur le terrain : état, portée, places disponibles et fiabilité.', 'quick' => [
+        ['path' => 'back-office/atak/relays-network', 'group' => 'ATAK', 'kicker' => 'ATAK · RELAIS', 'title' => 'Réseau de relais', 'subtitle' => 'Les relais radio sur le terrain : état, portée, places disponibles et fiabilité.', 'css' => ['back-office-atak-devices.css'], 'quick' => [
             ['label' => 'Contrôle de mission', 'href' => 'back-office/atak/controle-serveur'],
             ['label' => 'Mode roleplay', 'href' => 'back-office/atak/roleplay'],
         ]],
         ['path' => 'back-office/atak/operateurs', 'group' => 'ATAK', 'kicker' => 'ATAK · SESSIONS', 'title' => 'Sessions & connexions', 'subtitle' => 'Qui est connecté en ce moment, et l’historique des connexions.'],
         ['path' => 'back-office/atak/fiche-operateur', 'group' => 'ATAK', 'kicker' => 'ATAK · FICHE OPÉRATEUR', 'title' => 'Fiche opérateur', 'subtitle' => 'Tout sur un opérateur : identité, appareil, certificat et liaison.'],
-        ['path' => 'back-office/atak/realisme', 'group' => 'ATAK', 'kicker' => 'ATAK · PARC', 'title' => 'Parc de terminaux', 'subtitle' => 'Les appareils reliés à la plateforme et le membre qui utilise chacun.'],
+        ['path' => 'back-office/atak/realisme', 'group' => 'ATAK', 'kicker' => 'ATAK · PARC', 'title' => 'Parc de terminaux', 'subtitle' => 'Les appareils reliés à la plateforme et le membre qui utilise chacun.', 'css' => ['back-office-atak-devices.css'], 'quick' => [
+            ['label' => 'Certificats', 'href' => 'back-office/atak/certificats'],
+            ['label' => 'Téléphones des opérateurs', 'href' => 'back-office/atak/realisme#telephones'],
+            ['label' => 'Sessions & connexions', 'href' => 'back-office/atak/operateurs'],
+        ]],
         ['path' => 'back-office/atak/realisme/terminaux', 'group' => 'ATAK', 'kicker' => 'ATAK · PARC', 'title' => 'Journal de l’appareil', 'subtitle' => 'L’activité de cet appareil : erreurs, déconnexions et qualité de liaison.'],
-        ['path' => 'back-office/atak/certificats', 'group' => 'ATAK', 'kicker' => 'ATAK · SÉCURITÉ', 'title' => 'Certificats', 'subtitle' => 'Les certificats qui autorisent chaque appareil à se connecter, et leur date d’expiration.'],
+        ['path' => 'back-office/atak/certificats', 'group' => 'ATAK', 'kicker' => 'ATAK · SÉCURITÉ', 'title' => 'Certificats', 'subtitle' => 'Les certificats qui autorisent chaque appareil à se connecter, et leur date d’expiration.', 'css' => ['back-office-atak-devices.css'], 'quick' => [
+            ['label' => 'Parc de terminaux', 'href' => 'back-office/atak/realisme'],
+            ['label' => 'Données chiffrées', 'href' => 'back-office/atak/roleplay#intel-scramble'],
+        ]],
         ['path' => 'admin/atak-mod-blocks', 'group' => 'Ressources', 'title' => 'Restrictions d’accès au mod', 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'admin/atak-diffusion-rapports', 'group' => 'Ressources', 'title' => 'Diffusion des rapports', 'css' => ['back-office-atak-routing.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'admin/atak/realism', 'group' => 'Ressources', 'title' => 'Réglages réalisme', 'flags' => ['boSkipPageHead' => true]],
