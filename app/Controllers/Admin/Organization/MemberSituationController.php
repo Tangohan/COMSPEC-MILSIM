@@ -64,16 +64,27 @@ final class MemberSituationController
         [$user, $tenantId, $userId] = $ctx;
 
         $terminals = $this->realism->listPhysicalTerminalsForUser($tenantId, $userId);
+        // Historique de liaison (connexions, démarrages, échanges Athena) lu dans le journal de chaque terminal.
+        $activity = new \App\Services\Atak\OperatorDeviceActivityService();
+        $linkEvents = [];
+        foreach ($terminals as $terminal) {
+            $uid = trim((string) ($terminal['terminal_uid'] ?? ''));
+            if ($uid !== '' && strtolower((string) ($terminal['status'] ?? '')) !== 'revoked') {
+                $linkEvents[$uid] = \App\Support\AtakDevicePresenter::linkEvents($activity->recentLogs($tenantId, $uid, 200));
+            }
+        }
 
         return Response::view('layout.main', $this->boShell([
             'title' => 'Ma liaison ATAK',
             'content' => 'admin.member_situation.liaison_atak',
             'boPageTitle' => 'Ma liaison ATAK',
             'boPageKicker' => 'OPÉRATEUR · MA LIAISON ATAK',
-            'boPageSubtitle' => 'Terminaux associés à votre compte, certificat de liaison et actions utiles.',
-            'backOfficePageCss' => ['back-office-member-situation.css'],
+            'boPageSubtitle' => 'Le chemin de votre téléphone jusqu’au serveur Athena : contrôles, session, confiance et historique.',
+            'backOfficePageCss' => ['back-office-member-situation.css', 'back-office-atak-devices.css'],
             'user' => $user,
             'terminals' => $terminals,
+            'gamePhone' => $this->gamePhoneFor($tenantId, $userId),
+            'linkEvents' => $linkEvents,
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]));
