@@ -39,4 +39,36 @@ final class AtakDevicePresenterTest extends TestCase
         self::assertSame('045 112', AtakDevicePresenter::gridRef(4520, 11230));
         self::assertSame(44.0, AtakDevicePresenter::wattsToDbm(25));
     }
+
+    public function testLiaisonChecksFlagMissingCertificateAndPendingValidation(): void
+    {
+        $now = 1_800_000_000;
+        $checks = AtakDevicePresenter::liaisonChecks([
+            'user_id' => 4,
+            'status' => 'pending',
+            'last_seen_at' => gmdate('Y-m-d H:i:s', $now - 30),
+            'server_signature' => 'a1b2c3',
+        ], $now);
+        $byKey = array_column($checks, 'state', 'key');
+
+        self::assertSame('ok', $byKey['account']);
+        self::assertSame('warn', $byKey['authorized']);
+        self::assertSame('bad', $byKey['certificate']);
+        self::assertSame('ok', $byKey['heartbeat']);
+        self::assertSame('bad', AtakDevicePresenter::liaisonVerdict($checks));
+    }
+
+    public function testLinkEventsKeepOnlyLinkChannels(): void
+    {
+        $events = AtakDevicePresenter::linkEvents([
+            ['channel' => 'liaison', 'level' => 'WARN', 'message' => 'Perte de liaison', 'logged_at' => '2026-10-05 08:00:00'],
+            ['channel' => 'markers', 'level' => 'error', 'message' => 'Échec marqueurs', 'logged_at' => '2026-10-05 07:59:00'],
+            ['channel' => 'boot', 'level' => 'info', 'message' => 'Démarré', 'logged_at' => '2026-10-05 07:58:00'],
+        ]);
+
+        self::assertCount(2, $events);
+        self::assertSame('Liaison', $events[0]['module']);
+        self::assertSame('warn', $events[0]['level']);
+        self::assertSame('Démarré', $events[1]['message']);
+    }
 }

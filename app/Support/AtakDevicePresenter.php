@@ -244,4 +244,145 @@ final class AtakDevicePresenter
 
         return round(10 * log10((float) $watts * 1000), 1);
     }
+
+    /** Canaux du journal qui racontent la liaison (connexions, démarrages, échanges avec Athena). */
+    public const LINK_LOG_CHANNELS = ['etat', 'state', 'link', 'liaison', 'boot', 'core', 'athena'];
+
+    /**
+     * Contrôles de liaison d'un terminal, comme l'écran de diagnostic d'un client TAK :
+     * chaque ligne dit si l'étape passe et quoi faire sinon.
+     *
+     * @param array<string, mixed> $terminal ligne atak_terminals + colonnes certificate_*
+     * @return list<array{key: string, label: string, state: string, detail: string}>
+     */
+    public static function liaisonChecks(array $terminal, ?int $now = null): array
+    {
+        $now ??= time();
+        $status = strtolower(trim((string) ($terminal['status'] ?? '')));
+        $compromise = strtolower(trim((string) ($terminal['compromise_state'] ?? 'none')));
+        $life = self::certificateLifetime(self::certificateOfTerminal($terminal), $now);
+        $link = self::linkState(($terminal['last_seen_at'] ?? null) !== null ? (string) $terminal['last_seen_at'] : null, $now);
+        $host = trim((string) ($terminal['server_host'] ?? ''));
+        $sig = trim((string) ($terminal['server_signature'] ?? ''));
+        $mod = trim((string) ($terminal['mod_version'] ?? ''));
+        $dll = trim((string) ($terminal['extension_version'] ?? ''));
+
+        $checks = [];
+        $checks[] = [
+            'key' => 'account',
+            'label' => 'Associé à votre compte',
+            'state' => (int) ($terminal['user_id'] ?? 0) > 0 || trim((string) ($terminal['linked_at'] ?? '')) !== '' ? 'ok' : 'bad',
+            'detail' => trim((string) ($terminal['linked_at'] ?? '')) !== '' ? 'Association enregistrée' : 'Associez l’appareil depuis l’app Liaison du téléphone',
+        ];
+        $checks[] = [
+            'key' => 'authorized',
+            'label' => 'Autorisé sur le réseau',
+            'state' => match ($status) {
+                'active' => 'ok',
+                'pending' => 'warn',
+                default => 'bad',
+            },
+            'detail' => match ($status) {
+                'active' => 'Validé par un responsable ATAK',
+                'pending' => 'En attente de validation par un responsable ATAK',
+                'lost' => 'Signalé perdu',
+                'revoked' => 'Retiré du réseau',
+                default => 'Statut inconnu',
+            },
+        ];
+        $checks[] = [
+            'key' => 'certificate',
+            'label' => 'Certificat client valide',
+            'state' => match ($life['state']) {
+                'valid' => 'ok',
+                'expiring', 'pending' => 'warn',
+                default => 'bad',
+            },
+            'detail' => match ($life['state']) {
+                'valid' => 'Valide encore ' . (int) $life['days_left'] . ' jours',
+                'expiring' => 'Expire dans ' . max(0, (int) $life['days_left']) . ' jours : demandez son renouvellement',
+                'pending' => 'Pas encore entré en validité',
+                'revoked' => 'Révoqué : demandez un nouveau certificat',
+                'expired' => 'Expiré : demandez son renouvellement',
+                default => 'Aucun certificat émis',
+            },
+        ];
+        $checks[] = [
+            'key' => 'compromise',
+            'label' => 'Appareil non compromis',
+            'state' => $compromise === '' || $compromise === 'none' ? 'ok' : 'bad',
+            'detail' => $compromise === '' || $compromise === 'none'
+                ? 'Aucun signalement'
+                : (trim((string) ($terminal['compromise_reason'] ?? '')) ?: 'Signalé compromis'),
+        ];
+        $checks[] = [
+            'key' => 'server',
+            'label' => 'Serveur Athena reconnu',
+            'state' => $sig !== '' ? 'ok' : 'warn',
+            'detail' => $sig !== '' ? 'Signature vérifiée' . ($host !== '' ? ' · ' . $host : '') : 'Le téléphone n’a pas encore présenté la signature du serveur',
+        ];
+        $checks[] = [
+            'key' => 'software',
+            'label' => 'Logiciel remonté',
+            'state' => $mod !== '' || $dll !== '' ? 'ok' : 'warn',
+            'detail' => $mod !== '' || $dll !== ''
+                ? implode(' · ', array_filter([$mod !== '' ? 'Mod ' . $mod : '', $dll !== '' ? 'COMSPEC Link ' . $dll : '']))
+                : 'Versions inconnues : relancez le jeu avec le mod à jour',
+        ];
+        $checks[] = [
+            'key' => 'heartbeat',
+            'label' => 'Signe de vie récent',
+            'state' => match ($link['key']) {
+                'online' => 'ok',
+                'idle' => 'warn',
+                default => 'bad',
+            },
+            'detail' => $link['key'] === 'never' ? 'Jamais connecté' : $link['label'] . ' · ' . $link['ago'],
+        ];
+
+        return $checks;
+    }
+
+    /** Synthèse des contrôles : le pire état l'emporte. */
+    public static function liaisonVerdict(array $checks): string
+    {
+        $states = array_column($checks, 'state');
+        if (in_array('bad', $states, true)) {
+            return 'bad';
+        }
+
+        return in_array('warn', $states, true) ? 'warn' : 'ok';
+    }
+
+    /**
+     * Événements de liaison du journal (connexions, démarrages, échanges Athena), plus récents d'abord.
+     *
+     * @param list<array<string, mixed>> $logs
+     * @return list<array{at: ?int, level: string, module: string, message: string, detail: string}>
+     */
+    public static function linkEvents(array $logs, int $limit = 15): array
+    {
+        $out = [];
+        foreach ($logs as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $channel = strtolower(trim((string) ($row['channel'] ?? 'core'))) ?: 'core';
+            if (!in_array($channel, self::LINK_LOG_CHANNELS, true)) {
+                continue;
+            }
+            $out[] = [
+                'at' => self::utcTimestamp((string) ($row['logged_at'] ?? $row['created_at'] ?? '')),
+                'level' => AtakDeviceLog::normalizeLevel((string) ($row['level'] ?? '')),
+                'module' => AtakDeviceLog::channelLabel($channel),
+                'message' => (string) ($row['message'] ?? ''),
+                'detail' => trim((string) ($row['detail_text'] ?? '')),
+            ];
+            if (count($out) >= $limit) {
+                break;
+            }
+        }
+
+        return $out;
+    }
 }
