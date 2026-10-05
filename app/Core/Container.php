@@ -688,6 +688,7 @@ class Container
                 self::get(\App\Repositories\TrainingCourseRepository::class),
                 self::get(\App\Repositories\AarReportRepository::class)
             ),
+            \App\Controllers\Web\AtakFirstLinkController::class => new \App\Controllers\Web\AtakFirstLinkController(),
             \App\Controllers\Web\CommunityEventsController::class => new \App\Controllers\Web\CommunityEventsController(
                 self::get(\App\Repositories\CommunityEventRepository::class),
                 self::get(AuthService::class),
