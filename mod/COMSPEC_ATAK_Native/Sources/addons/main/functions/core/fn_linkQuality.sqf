@@ -5,6 +5,10 @@
     véhicule, pluie et brouillard, zone radio, brouilleurs de mission (COMSPEC_ATAK_Jammers = [[pos, rayon]...]),
     état du téléphone. Réglage serveur comspec_atak_native_net_sim : coupé, débit plein et sans délai.
 */
+// Mode avion (fn_airplaneMode) : aucun réseau, même simulation coupée ; les envois partent en file comme sans signal.
+if (missionNamespace getVariable ["COMSPEC_ATAK_Airplane", false]) exitWith {
+    createHashMapFromArray [["bars", 0], ["kbps", 0], ["latency", 0], ["loss", 100], ["label", "Mode avion"], ["factors", [["Mode avion", "aucun réseau"]]], ["sim", true], ["airplane", true]]
+};
 private _cache = uiNamespace getVariable ["COMSPEC_ATAK_LinkQ", []];
 if ((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < 2}) exitWith { _cache select 1 };
 private _q = createHashMap;

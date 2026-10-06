@@ -22,9 +22,11 @@ final class DecorationMotifStorageService
 
     /**
      * @param array{tmp_name?: string, name?: string, size?: int, error?: int, type?: string} $file
+     * @param string $folder « motifs » (rubans de placard) ou « insignes » (image d’une décoration du référentiel)
      */
-    public function storeUpload(int $tenantId, array $file): string
+    public function storeUpload(int $tenantId, array $file, string $folder = 'motifs'): string
     {
+        $folder = $folder === 'insignes' ? 'insignes' : 'motifs';
         if ($tenantId < 1) {
             throw new RuntimeException('Communauté introuvable.');
         }
@@ -44,18 +46,22 @@ final class DecorationMotifStorageService
         if (!in_array($mime, self::ALLOWED_MIME, true)) {
             throw new RuntimeException('Formats acceptés : PNG, JPEG ou WebP.');
         }
+        // Le contenu doit être une vraie image raster (pas un script renommé en .png).
+        if (@getimagesize($tmp) === false) {
+            throw new RuntimeException('Le fichier n’est pas une image lisible.');
+        }
 
         $ext = match ($mime) {
             'image/jpeg' => 'jpg',
             'image/webp' => 'webp',
             default => 'png',
         };
-        $relDir = 'uploads/decorations/' . $tenantId . '/motifs';
+        $relDir = 'uploads/decorations/' . $tenantId . '/' . $folder;
         $absDir = base_path('public/' . $relDir);
         if (!is_dir($absDir) && !@mkdir($absDir, 0755, true) && !is_dir($absDir)) {
             throw new RuntimeException('Impossible de préparer le stockage de l’image.');
         }
-        $name = 'motif_' . bin2hex(random_bytes(6)) . '.' . $ext;
+        $name = ($folder === 'insignes' ? 'insigne_' : 'motif_') . bin2hex(random_bytes(8)) . '.' . $ext;
         $abs = $absDir . '/' . $name;
         if (!@move_uploaded_file($tmp, $abs) && !@copy($tmp, $abs)) {
             throw new RuntimeException('Enregistrement de l’image impossible.');

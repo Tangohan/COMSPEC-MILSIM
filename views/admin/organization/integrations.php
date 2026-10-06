@@ -125,23 +125,33 @@ $flashSuccess = \App\Core\Session::getFlash('success');
 <section id="relais-discord" class="ath-card ath-rise" style="padding:18px 20px;margin-bottom:22px;">
     <h2 class="ath-section-title" style="margin-top:0;">Relais Discord</h2>
     <div class="ath-discord-howto">
-        <p class="ath-discord-howto__title">Comment choisir le salon</p>
+        <p class="ath-discord-howto__title">Ce qu’il faut coller : le lien webhook du salon</p>
         <ol class="ath-discord-howto__list">
-            <li>Dans Discord, ouvrez les paramètres du salon → Intégrations → créez un relais, puis copiez le lien.</li>
-            <li>Collez ce lien dans <strong>Salon commun</strong> : c’est le salon utilisé dès qu’un événement est réglé sur « Salon commun ».</li>
-            <li>Pour un type d’événement, trois choix : <strong>Ne pas publier</strong>, <strong>Salon commun</strong>, ou <strong>Autre salon</strong> (un salon différent, avec son propre lien).</li>
+            <li>Dans Discord : clic droit sur le salon → <strong>Modifier le salon</strong> → <strong>Intégrations</strong> → <strong>Webhooks</strong> → <strong>Nouveau webhook</strong>.</li>
+            <li>Cliquez sur <strong>Copier l’URL du webhook</strong>. Le lien ressemble à <code>https://discord.com/api/webhooks/1234…/AbCd…</code>.</li>
+            <li>Collez-le dans <strong>Salon commun</strong> (utilisé par tout événement réglé sur « Salon commun »), ou dans <strong>Autre salon</strong> pour un événement précis.</li>
         </ol>
-        <p class="ath-discord-howto__note">Si vous choisissez « Autre salon », le message n’ira plus dans le salon commun : uniquement dans celui-là.</p>
+        <p class="ath-discord-howto__note">
+            L’identifiant du salon (le grand nombre obtenu par « Copier l’identifiant du salon ») ou le lien
+            <code>discord.com/channels/…</code> ne suffisent pas : Athena publie sans bot, Discord n’accepte que le lien webhook.
+            Si vous choisissez « Autre salon », le message part uniquement dans ce salon-là, plus dans le salon commun.
+        </p>
     </div>
     <form method="post" action="<?= $h(url('back-office/integrations/discord')) ?>" id="form-relais-discord">
         <?= \App\Core\Csrf::field() ?>
         <label class="ath-field">
-            <span class="ath-field__label">Salon commun</span>
-            <input type="url" name="discord_webhook_url" maxlength="500" class="ath-field__input" value="<?= $h($discordDefaultUrl) ?>" placeholder="Collez le lien copié depuis Discord">
+            <span class="ath-field__label">Salon commun — URL du webhook</span>
+            <input type="text" inputmode="url" autocomplete="off" spellcheck="false" name="discord_webhook_url" maxlength="500" class="ath-field__input" value="<?= $h($discordDefaultUrl) ?>" placeholder="https://discord.com/api/webhooks/…">
             <span class="ath-field__help">Tous les événements réglés sur « Salon commun » partent ici. Laissez vide si vous n’utilisez que des salons à part.</span>
         </label>
         <?php foreach ($discordGroups as $groupLabel => $groupEvents): ?>
             <h3 class="ath-form__title" style="margin:18px 0 8px;"><?= $h((string) $groupLabel) ?></h3>
+            <?php if ($groupLabel === 'Téléphone ATAK'): ?>
+                <p class="ath-item__meta" id="relais-discord-atak" style="margin:0 0 10px;">
+                    Réglages Discord du téléphone en jeu : l’<strong>App Discord du téléphone</strong> ne fonctionne qu’une fois un salon choisi ici
+                    (le lien reste sur Athena, il n’est jamais envoyé au jeu). Enregistrez, puis utilisez « Vérifier un salon » plus bas pour envoyer un message d’essai.
+                </p>
+            <?php endif; ?>
             <div class="ath-stack">
                 <?php foreach ($groupEvents as $ev): ?>
                     <?php
@@ -169,9 +179,9 @@ $flashSuccess = \App\Core\Session::getFlash('success');
                                 </select>
                             </label>
                             <label class="ath-field ath-discord-custom js-discord-custom"<?= $mode === 'custom' ? '' : ' hidden' ?>>
-                                <span class="ath-field__label">Lien de cet autre salon</span>
-                                <input type="url" name="discord_event[<?= $h($ek) ?>][url]" maxlength="500" class="ath-field__input" value="<?= $h($dedicatedUrl) ?>" placeholder="Collez le lien copié depuis Discord">
-                                <span class="ath-field__help">Uniquement si vous avez choisi « Autre salon ».</span>
+                                <span class="ath-field__label">Autre salon — URL du webhook</span>
+                                <input type="text" inputmode="url" autocomplete="off" spellcheck="false" name="discord_event[<?= $h($ek) ?>][url]" maxlength="500" class="ath-field__input" value="<?= $h($dedicatedUrl) ?>" placeholder="https://discord.com/api/webhooks/…">
+                                <span class="ath-field__help">Modifier le salon → Intégrations → Webhooks → Copier l’URL du webhook. Pas l’identifiant du salon.</span>
                             </label>
                         </div>
                     </article>
@@ -192,7 +202,7 @@ $flashSuccess = \App\Core\Session::getFlash('success');
                     <option value="<?= $h($ek) ?>" <?= $ek === 'announcements' ? 'selected' : '' ?>><?= $h((string) ($ev['label'] ?? '')) ?></option>
                 <?php endforeach; ?>
             </select>
-            <span class="ath-field__help">Un court message part dans le salon actuellement choisi pour cet événement (pensez à enregistrer d’abord).</span>
+            <span class="ath-field__help">Un court message part dans le salon actuellement choisi pour cet événement (pensez à enregistrer d’abord). Pour le téléphone, choisissez « App Discord du téléphone » ou « Photos Quick Picture ».</span>
         </label>
         <div class="ath-form__actions" style="margin-top:10px;">
             <button type="submit" class="ath-btn">Envoyer un message d’essai</button>
@@ -249,8 +259,8 @@ $flashSuccess = \App\Core\Session::getFlash('success');
                 <input type="text" name="label" maxlength="80" class="ath-field__input" placeholder="Renseignement, TOC…">
             </label>
             <label class="ath-field">
-            <span class="ath-field__label">Lien du salon Discord</span>
-            <input type="url" name="discord_url" required maxlength="500" class="ath-field__input" placeholder="Collez le lien copié depuis Discord">
+            <span class="ath-field__label">URL du webhook du salon</span>
+            <input type="text" inputmode="url" autocomplete="off" spellcheck="false" name="discord_url" required maxlength="500" class="ath-field__input" placeholder="https://discord.com/api/webhooks/…">
             </label>
         </div>
         <div class="ath-form__actions">

@@ -31,7 +31,94 @@ final class DiscordWebhookService
             return false;
         }
 
-        return $host === 'discord.com' || $host === 'discordapp.com';
+        return in_array($host, ['discord.com', 'discordapp.com', 'ptb.discord.com', 'canary.discord.com'], true);
+    }
+
+    /** Taille max d'une pièce jointe acceptée par un webhook Discord (serveur sans boost : 10 Mo). */
+    public const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024 - 64 * 1024;
+
+    /**
+     * Embed + image jointe (multipart) : l'embed affiche la photo via attachment://<nom>.
+     * Ne retombe PAS en texte seul : l'appelant décide du repli.
+     *
+     * @param array<string, mixed> $embed embed déjà construit (title, fields, image…)
+     * @return array{ok:bool, status:int, error?:string}
+     */
+    public function sendEmbedWithFile(
+        string $webhookUrl,
+        array $embed,
+        string $filePath,
+        string $filename,
+        ?string $username = null,
+        int $timeoutSeconds = 15
+    ): array {
+        if (!$this->isValidWebhookUrl($webhookUrl)) {
+            return ['ok' => false, 'status' => 0, 'error' => 'Lien Discord invalide.'];
+        }
+        if (!is_file($filePath) || !is_readable($filePath)) {
+            return ['ok' => false, 'status' => 0, 'error' => 'Photo introuvable sur le serveur.'];
+        }
+        $size = (int) @filesize($filePath);
+        if ($size < 32 || $size > self::MAX_ATTACHMENT_BYTES) {
+            return ['ok' => false, 'status' => 0, 'error' => 'Photo trop lourde pour Discord (' . (int) round($size / 1048576) . ' Mo).'];
+        }
+        $payload = [
+            'embeds' => [$embed],
+            'allowed_mentions' => ['parse' => []],
+            'attachments' => [['id' => 0, 'filename' => $filename]],
+        ];
+        $username = trim((string) $username);
+        if ($username !== '') {
+            $payload['username'] = mb_substr($username, 0, 80);
+        }
+        $ext = strtolower((string) pathinfo($filename, PATHINFO_EXTENSION));
+        $mime = match ($ext) {
+            'png' => 'image/png',
+            'webp' => 'image/webp',
+            'gif' => 'image/gif',
+            default => 'image/jpeg',
+        };
+        $timeout = max(4, min(25, $timeoutSeconds));
+        $ch = curl_init($webhookUrl);
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => [
+                'payload_json' => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'files[0]' => new \CURLFile($filePath, $mime, $filename),
+            ],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_CONNECTTIMEOUT => min(5, $timeout),
+        ]);
+        curl_exec($ch);
+        $errno = curl_errno($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        if ($errno !== 0) {
+            return ['ok' => false, 'status' => 0, 'error' => 'Discord injoignable pour le moment.'];
+        }
+        if ($status < 200 || $status >= 300) {
+            return ['ok' => false, 'status' => $status, 'error' => 'Discord a refusé la photo (code ' . $status . ').'];
+        }
+
+        return ['ok' => true, 'status' => $status];
+    }
+
+    /**
+     * Embed brut (déjà construit), sans pièce jointe.
+     *
+     * @param array<string, mixed> $embed
+     * @return array{ok:bool, error?:string}
+     */
+    public function sendRawEmbed(string $webhookUrl, array $embed, ?string $username = null): array
+    {
+        $payload = ['embeds' => [$embed], 'allowed_mentions' => ['parse' => []]];
+        $username = trim((string) $username);
+        if ($username !== '') {
+            $payload['username'] = mb_substr($username, 0, 80);
+        }
+
+        return $this->post($webhookUrl, $payload);
     }
 
     /** @return array{ok:bool, error?:string} */

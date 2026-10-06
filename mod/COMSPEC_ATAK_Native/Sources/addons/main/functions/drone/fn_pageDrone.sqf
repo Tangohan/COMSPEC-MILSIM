@@ -71,7 +71,13 @@ if (_camOn && {_tab isNotEqualTo "LOG"}) then {
     private _fh = _bw * 0.5625 * pixelH / pixelW;
     private _bg = ["COMSPEC_RscText", [0, _top, _bw, _fh]] call comspec_atak_native_fnc_pageCtrl;
     _bg ctrlSetBackgroundColor [0, 0, 0, 1];
-    ["RscPicture", [0, _top, _bw, _fh], "#(argb,1024,576,1)r2t(comspec_dronecam,1.7778)"] call comspec_atak_native_fnc_pageCtrl;
+    // Texture de rendu : largeur et hauteur en puissances de 2 (576 ne l'est pas : texture jamais créée, image noire) ;
+    // le rapport 16/9 de la caméra est donné par le dernier paramètre.
+    ["RscPicture", [0, _top, _bw, _fh], "#(argb,1024,512,1)r2t(comspec_dronecam,1.7778)"] call comspec_atak_native_fnc_pageCtrl;
+    if !(isPiPEnabled) then {
+        private _w = ["COMSPEC_RscStructuredText", [0, _top + _fh * 0.4, _bw, _fs * 2.6]] call comspec_atak_native_fnc_pageCtrl;
+        _w ctrlSetStructuredText parseText "<t align='center' color='#f2ab33'>Image dans l'image (PiP) désactivée :<br/>Options > Vidéo > Image dans l'image</t>";
+    };
     // Réticule fin au centre.
     private _cx = _bw / 2;
     private _cy = _top + _fh / 2;
@@ -193,6 +199,12 @@ switch (_tab) do {
         _rows pushBack ["section", "Frappe", ["Fixez une charge : le drone doit être à moins de 5 m de vous", format ["Charge fixée : %1", _d getVariable ["COMSPEC_DroneArmedLabel", "charge"]]] select _armed];
         if (!_strikeOk) then {
             _rows pushBack ["text", "<t color='#8a9a93'>Les drones armés sont désactivés sur ce serveur.</t>"];
+            // Recherche sans frappe : le drone signale le premier ennemi vu et l'observe.
+            _rows append [
+                ["section", "Recherche", "Parcourt la zone autour du drone, signale le premier ennemi vu puis l'observe"],
+                ["segment", "Rayon", ([100, 250, 500] apply { [format ["%1 m", _x], ["radius", _x] call _act, _rad isEqualTo _x] })],
+                ["buttons", [[["LANCER LA RECHERCHE", "RECHERCHE EN COURS"] select (_m isEqualTo "HUNT"), ["mode", "hunt"] call _act, _m isNotEqualTo "HUNT"]]]
+            ];
         } else {
             if (!_armed) then {
                 _rows pushBack ["buttons", [["ARMER", ["arm"] call _act, true]]];
@@ -206,7 +218,7 @@ switch (_tab) do {
                 ];
             };
             _rows append [
-                ["section", "Recherche et frappe", ["Orbite autour du drone et signale le premier ennemi vu", "Orbite autour du drone et frappe le premier ennemi vu"] select _armed],
+                ["section", "Recherche et frappe", ["Parcourt la zone autour du drone, signale le premier ennemi vu puis l'observe", "Parcourt la zone autour du drone et frappe le premier ennemi vu"] select _armed],
                 ["segment", "Rayon", ([100, 250, 500] apply { [format ["%1 m", _x], ["radius", _x] call _act, _rad isEqualTo _x] })],
                 ["buttons", [[["LANCER LA RECHERCHE", "RECHERCHE EN COURS"] select (_m isEqualTo "HUNT"), ["mode", "hunt"] call _act, _m isNotEqualTo "HUNT"]]]
             ];

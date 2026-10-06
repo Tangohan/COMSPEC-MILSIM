@@ -93,7 +93,7 @@ if (_fn isEqualType createHashMap && {(count _fn) > 0}) then {
             ["RÉPARER L'ÉCRAN", { ["repair", "screen"] call comspec_atak_native_fnc_profileAction; }],
             ["RÉVISION COMPLÈTE", { ["repair", "full"] call comspec_atak_native_fnc_profileAction; }]
         ]];
-        _rows pushBack ["text", "<t size='0.8' color='#8a9a93'>Écran et révision : caisse à outils (ToolKit) requise, 5 à 8 s.</t>"];
+        _rows pushBack ["text", "<t size='0.8' color='#8a9a93'>Écran et révision : kit de réparation ATAK (consommé, 12 s) ou caisse à outils (20 s).</t>"];
     };
 };
 

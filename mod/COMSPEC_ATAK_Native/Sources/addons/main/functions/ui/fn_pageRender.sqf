@@ -9,6 +9,16 @@ if ("email" in _form || {"pair" in _form} || {"otp" in _form}) then {
     { if (_x in _form) then { _draft set [_x, [_x] call comspec_atak_native_fnc_formValue]; }; } forEach ["email", "otp", "pair"];
     uiNamespace setVariable ["COMSPEC_ATAK_AthenaDraft", _draft];
 };
+// Défilement de la page affichée gardé (par page) : rendu de la même page (rafraîchissement) ou retour arrière
+// (fn_back, fn_navigate sans empilement) le retrouvent au lieu de remonter en haut.
+private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+private _scrollMem = _st getOrDefault ["scrollMem", createHashMap];
+private _drawn = _st getOrDefault ["pageDrawn", ""];
+if (_drawn isNotEqualTo "") then { _scrollMem set [_drawn, ctrlScrollValues (_d displayCtrl 88531)]; };
+_st set ["scrollMem", _scrollMem];
+private _restore = (_drawn isEqualTo _page || {_st getOrDefault ["scrollRestore", false]}) && {!(_page in ["MAP", "CHAT"])};
+_st set ["scrollRestore", false];
+_st set ["pageDrawn", _page];
 [] call comspec_atak_native_fnc_frsDraftSave;
 [] call comspec_atak_native_fnc_recoDraftSave;
 [] call comspec_atak_native_fnc_firesSave;
@@ -90,6 +100,17 @@ switch (_page) do {
 // Dégâts de l'écran par-dessus la page.
 uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", []];
 [] call comspec_atak_native_fnc_deviceOverlay;
+// Défilement retrouvé (et encore à l'image suivante, quand la hauteur du contenu est connue).
+private _sv = _scrollMem getOrDefault [_page, []];
+if (_restore && {_sv isEqualType []} && {(count _sv) isEqualTo 2} && {(_sv select 0) > 0}) then {
+    (_d displayCtrl 88531) ctrlSetScrollValues [_sv select 0, -1];
+    [{
+        params ["_page", "_v"];
+        private _d2 = [] call comspec_atak_native_fnc_display;
+        if (isNull _d2 || {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""]) isNotEqualTo _page}) exitWith {};
+        (_d2 displayCtrl 88531) ctrlSetScrollValues [_v, -1];
+    }, [_page, _sv select 0]] call CBA_fnc_execNextFrame;
+};
 // Toasts recréés après la page pour rester au premier plan.
 [] call comspec_atak_native_fnc_notificationsRender;
 true

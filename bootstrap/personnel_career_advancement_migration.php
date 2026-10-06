@@ -45,6 +45,25 @@ function run_personnel_career_advancement_migration(PDO $pdo): void
         );
     }
 
+    // Insigne (PNG / WebP / JPEG) et branche / arme de la décoration — ajout idempotent.
+    if ($hasTable('award_definitions')) {
+        $hasColumn = static function (string $column) use ($pdo): bool {
+            $st = $pdo->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $st->execute(['award_definitions', $column]);
+
+            return (bool) $st->fetchColumn();
+        };
+        if (!$hasColumn('branch')) {
+            $pdo->exec('ALTER TABLE award_definitions ADD COLUMN branch VARCHAR(80) DEFAULT NULL AFTER name');
+        }
+        if (!$hasColumn('image_path')) {
+            $pdo->exec('ALTER TABLE award_definitions ADD COLUMN image_path VARCHAR(255) DEFAULT NULL AFTER award_criterion');
+        }
+    }
+
     if (!$hasTable('personnel_awards')) {
         $pdo->exec(
             "CREATE TABLE personnel_awards (

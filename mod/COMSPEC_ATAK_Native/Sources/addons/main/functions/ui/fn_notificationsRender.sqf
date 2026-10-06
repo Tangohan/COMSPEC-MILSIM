@@ -65,7 +65,9 @@ private _label = createHashMapFromArray [["INFO", "INFO"], ["SUCCESS", "OK"], ["
 private _msg = _show getOrDefault ["message", ""];
 // Texte d'une seule ligne : balises et retours à la ligne retirés.
 private _plain = (_msg regexReplace ["<[^>]*>", ""]) regexReplace ["[\r\n\t]+", " "];
-{ _plain = (_plain splitString (_x select 0)) joinString (_x select 1); } forEach [["&amp;", "&"], ["&lt;", "<"], ["&gt;", ">"], ["&apos;", "'"], ["&quot;", """"]];
+// Entités HTML remplacées comme des chaînes entières (splitString coupait sur chaque lettre de « &lt; », « &apos; »… :
+// « votre » devenait « v'<re »). &amp; en dernier pour ne pas recréer d'entité.
+{ _plain = [_plain, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&lt;", "<"], ["&gt;", ">"], ["&apos;", "'"], ["&quot;", """"], ["&amp;", "&"]];
 
 private _made = [];
 private _mk = {

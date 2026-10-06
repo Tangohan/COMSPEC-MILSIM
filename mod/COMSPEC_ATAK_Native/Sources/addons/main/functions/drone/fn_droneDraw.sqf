@@ -72,7 +72,7 @@ if ((count _tp) >= 2) then {
             if (_k isEqualTo "OBSERVE") then { _map drawLine [_pos, _tp, [_tc select 0, _tc select 1, _tc select 2, 0.4]]; };
         };
         case "HUNT": {
-            if ((count _area) >= 3) then { _map drawRectangle [_area select 0, _area select 1, _area select 2, 0, [0.92, 0.26, 0.21, 0.8], ""]; };
+            if ((count _area) >= 3) then { _map drawRectangle [_area select 0, _area select 1, _area select 2, 0, [0.92, 0.26, 0.21, 0.8], ""]; } else { _map drawEllipse [_tp, _tr, _tr, 0, [0.92, 0.26, 0.21, 0.8], ""]; };
             _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)", [0.92, 0.26, 0.21, 1], _tp, 1, 1, 0, "RECHERCHE", 1, 0.028, "RobotoCondensedBold", "center"];
         };
         case "ESCORT": {

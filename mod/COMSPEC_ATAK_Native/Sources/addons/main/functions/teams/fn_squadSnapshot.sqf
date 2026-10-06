@@ -1,6 +1,7 @@
 /*
     Photo d'une escouade (groupe Arma) pour Athena : nom, type, camp, chef, équipes de feu (couleur, icône,
-    description, membres et rôles) et membres sans équipe. Params : [groupe]. Renvoie un HashMap (fn_json).
+    description, membres, rôles et rôle mémorisé) et membres sans équipe, plus les rôles créés en jeu (custom_roles).
+    Params : [groupe]. Renvoie un HashMap (fn_json).
 */
 params [["_g", grpNull]];
 if (isNull _g) exitWith { createHashMap };
@@ -11,7 +12,7 @@ private _member = {
     private _i = [_u] call comspec_atak_native_fnc_ftInfo;
     createHashMapFromArray [
         ["callsign", [_u] call comspec_atak_native_fnc_unitCallsign], ["name", name _u], ["uid", [getPlayerUID _u, ""] select !isPlayer _u],
-        ["player", isPlayer _u], ["role", _i get "role"], ["role_label", _i get "roleLabel"], ["leader", _i get "lead"],
+        ["player", isPlayer _u], ["role", _i get "role"], ["role_label", _i get "roleLabel"], ["role_pref", _u getVariable ["COMSPEC_FTRolePref", ""]], ["leader", _i get "lead"],
         ["alive", alive _u], ["online", _u getVariable ["COMSPEC_ATAK_Beacon", false]], ["grid", mapGridPosition _u]
     ]
 };
@@ -32,5 +33,10 @@ createHashMapFromArray [
             ["description", _t get "desc"], ["locked", _t get "locked"], ["members", _m apply { [_x] call _member }]
         ]
     }],
-    ["unassigned", _free apply { [_x] call _member }]
+    ["unassigned", _free apply { [_x] call _member }],
+    // Rôles créés en jeu (fn_ftServer « roleNew ») : retenus par Athena pour toute la communauté.
+    ["custom_roles", ((missionNamespace getVariable ["COMSPEC_ATAK_FtExtraRoles", []]) select { (_x param [4, ""]) isEqualTo "CUSTOM" }) apply {
+        _x params ["_k", "_l", "_ab", "_ik", "", ["_by", ""]];
+        createHashMapFromArray [["key", _k], ["label", _l], ["short", _ab], ["icon", _ik], ["by", _by]]
+    }]
 ]

@@ -122,7 +122,11 @@ private _map = [
     ["COMSPEC_ATAK_AllyColor", "BLUE", "Couleur des alliés", [["BLEU", "BLUE"], ["VERT", "GREEN"], ["BLANC", "WHITE"], ["JAUNE", "YELLOW"], ["ROSE", "PINK"]]] call _profSegment,
     ["COMSPEC_ATAK_SelfColor", "CYAN", "Ma couleur", [["CYAN", "CYAN"], ["BLEU", "BLUE"], ["VERT", "GREEN"], ["BLANC", "WHITE"], ["ORANGE", "ORANGE"]]] call _profSegment,
     ["COMSPEC_ATAK_SelfIcon", "", "Mon icône (vue par tous)", [["FLÈCHE", ""], ["INF", "b_inf"], ["RECO", "b_recon"], ["MÉDIC", "b_med"], ["PC", "b_hq"], ["SOUTIEN", "b_support"]]] call _profSegment,
-    ["COMSPEC_ATAK_GridDigits", 6, "Précision des grilles", [["6 CHIFFRES", 6], ["8 CHIFFRES", 8], ["10 CHIFFRES", 10]], "100 m, 10 m ou 1 m"] call _profSegment
+    ["COMSPEC_ATAK_GridDigits", 6, "Précision des grilles", [["6 CHIFFRES", 6], ["8 CHIFFRES", 8], ["10 CHIFFRES", 10]], "100 m, 10 m ou 1 m"] call _profSegment,
+    ["section", "Lisibilité et fond", "Taille des textes et symboles de la carte, fond de carte"],
+    ["COMSPEC_ATAK_MapTextScale", 1.25, "Textes de la carte", [["PETIT", 1], ["NORMAL", 1.25], ["GRAND", 1.5], ["TRÈS GRAND", 1.8]], "Indicatifs, numéros de grille, cartouches, panneaux d'info"] call _profSegment,
+    ["COMSPEC_ATAK_MapIconScale", 1.25, "Symboles de la carte", [["PETIT", 1], ["NORMAL", 1.25], ["GRAND", 1.5], ["TRÈS GRAND", 1.8]], "Unités, repères, charges, points de passage"] call _profSegment,
+    ["COMSPEC_ATAK_MapStyle", [] call comspec_atak_native_fnc_mapStyle, "Fond de carte", [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"]], "Topographique Arma, éclairci, assombri ou bleu nuit (aussi dans CALQUES)"] call _profSegment
 ];
 private _alerts = [
     ["COMSPEC_ATAK_Notifications", true, "", "Bandeaux de notification", "Messages du poste, missions de tir, photos"] call _profSwitch,
@@ -155,6 +159,9 @@ if (_bridge) then {
 private _hp = [] call comspec_atak_native_fnc_deviceHealth;
 private _lq = [] call comspec_atak_native_fnc_linkQuality;
 private _hw = [
+    ["section", "Connexions", "Mode avion et Bluetooth (aussi dans l'app Bluetooth et le centre de notifications)"],
+    ["switch", "Mode avion", [] call comspec_atak_native_fnc_airplaneMode, { ["toggle"] call comspec_atak_native_fnc_airplaneMode; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, "Plus de réseau : ni synchro, ni SMS, ni BFT (les envois attendent en file)"],
+    ["switch", "Bluetooth", (["state"] call comspec_atak_native_fnc_btAction) get "on", { ["toggle"] call comspec_atak_native_fnc_btAction; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, "Appairage par code et partage de sons avec les ATAK proches (indépendant du mode avion)"],
     ["section", "Matériel et réseau", "Simulations réglées par le serveur (réglages CBA)"],
     ["info", "Dégâts du téléphone", [ "<t color='#8a9a93'>simulation coupée</t>", format ["%1 · usure %2 %%", ["<t color='#5cc76b'>intact</t>", format ["<t color='#f2ab33'>%1</t>", _hp get "reason"]] select ((_hp get "state") isNotEqualTo "OK"), round ((_hp get "damage") * 100)]] select (missionNamespace getVariable ["comspec_atak_native_damage_sim", true])],
     ["info", "Débit simulé", [ "<t color='#8a9a93'>simulation coupée</t>", format ["%1 · %2", _lq get "label", [format ["%1 kbit/s", _lq get "kbps"], format ["%1 Mbit/s", ((_lq get "kbps") / 1000) toFixed 1]] select ((_lq get "kbps") >= 1000)]] select (_lq get "sim")]
@@ -193,10 +200,10 @@ private _access = [
 private _cats = [
     ["PERSO", "Personnalisation", "Thème, coque, fond d'écran, texte, dock", "app_settings", _perso],
     ["PLACE", "Emplacement", "Coin, taille et sens du téléphone porté", "ui_rotate", _place],
-    ["MAP", "Carte", "Indicatifs, boussole, couleurs, grilles", "app_map", _map],
+    ["MAP", "Carte", "Indicatifs, couleurs, grilles, tailles, fond", "app_map", _map],
     ["ALERTS", "Alertes", "Notifications et vibration", "ui_vibrate", _alerts],
     ["APPS", "Applications", format ["%1 app(s) cachée(s)", count (profileNamespace getVariable ["COMSPEC_ATAK_HiddenApps", []])], "ui_apps", _appsRows],
-    ["HW", "Matériel et réseau", "Dégâts, débit simulé, Live cam", "app_network", _hw + _live],
+    ["HW", "Matériel et réseau", "Mode avion, Bluetooth, dégâts, débit simulé, Live cam", "app_network", _hw + _live],
     ["REAL", "Réalisme", ["Overwatch non chargé", "Roleplay d'Overwatch, réglages imposés"] select _bridge, "app_status", _real],
     ["ACCESS", "Accès et touches", "Objet requis, raccourcis clavier", "ui_link", _access]
 ];

@@ -6616,6 +6616,12 @@ class AtakApiController
         }
         $mapId = (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID);
         $result = $service->sync($tenantId, $mapId, $snap, ComspecApiKeyAuth::matchedUserId());
+        // Rôles créés en jeu et rôle mémorisé de chaque joueur (relus par GetFireTeams « roles:<steam> »).
+        try {
+            $result['roles'] = (new \App\Services\Atak\AtakRoleService())->recordFromSync($tenantId, $body, $snap);
+        } catch (\Throwable) {
+            $result['roles'] = null;
+        }
 
         return Response::json(['ok' => true] + $result);
     }
@@ -11697,9 +11703,21 @@ class AtakApiController
             } catch (\Throwable $logErr) {
                 error_log('[atak/recon-images] activity ' . $logErr->getMessage());
             }
-            register_shutdown_function(static function () use ($tenantId, $path, $data): void {
+            // Relais Discord après l'enregistrement : photo jointe + carte, lieu, date/heure (champs facultatifs du jeu).
+            $discordMeta = $data + [
+                'map_id' => $mapId > 0 ? $mapId : self::DEFAULT_MAP_ID,
+                'world_name' => mb_substr(trim((string) ($_POST['world_name'] ?? $_POST['worldName'] ?? '')), 0, 64),
+                'location' => mb_substr(trim((string) ($_POST['location'] ?? $_POST['nearest_location'] ?? $_POST['place'] ?? '')), 0, 120),
+                'game_date' => mb_substr(trim((string) ($_POST['game_date'] ?? $_POST['gameDate'] ?? '')), 0, 40),
+                'game_time' => mb_substr(trim((string) ($_POST['game_time'] ?? $_POST['gameTime'] ?? $_POST['daytime'] ?? '')), 0, 16),
+            ];
+            register_shutdown_function(static function () use ($tenantId, $path, $discordMeta): void {
                 try {
-                    (new \App\Services\Integrations\DiscordEventRelayService())->notifyQuickPicture($tenantId, $path, $data);
+                    // Réponse rendue au jeu d'abord : l'envoi Discord (photo) ne retarde pas l'accusé d'upload.
+                    if (function_exists('fastcgi_finish_request')) {
+                        @fastcgi_finish_request();
+                    }
+                    (new \App\Services\Integrations\DiscordEventRelayService())->notifyQuickPicture($tenantId, $path, $discordMeta);
                 } catch (\Throwable $discordErr) {
                     error_log('[atak/recon-images] discord ' . $discordErr->getMessage());
                 }

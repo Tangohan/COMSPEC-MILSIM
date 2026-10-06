@@ -9,6 +9,7 @@ _state set ["pageSig", []];
 _state set ["pageSigPage", ""];
 _state set ["mapCentered", false];
 _state set ["drag", []];
+_state set ["pageDrawn", ""];
 uiNamespace setVariable ["COMSPEC_ATAK_Display", _display];
 uiNamespace setVariable ["COMSPEC_ATAK_PageControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []];
@@ -54,6 +55,11 @@ if (_interactive) then {
     _display displayAddEventHandler ["MouseButtonDown", { params ["", "_button"]; ["DOWN", _button] call comspec_atak_native_fnc_phoneDrag; }];
     _display displayAddEventHandler ["MouseMoving", { ["MOVE"] call comspec_atak_native_fnc_phoneDrag; }];
     _display displayAddEventHandler ["MouseButtonUp", { ["UP"] call comspec_atak_native_fnc_phoneDrag; }];
+    // Après un clic dans une app : effets d'écran (fêlures, filtre de nuit) remis devant (fn_overlayFront).
+    _display displayAddEventHandler ["MouseButtonUp", {
+        if (uiNamespace getVariable ["COMSPEC_ATAK_DevFront", false]) then { [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame; };
+        false
+    }];
 };
 
 [] call comspec_atak_native_fnc_schedulerStart;

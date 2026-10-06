@@ -27,7 +27,7 @@ private _pos = _nodes apply { [_x select 1, getPosWorld (_x select 0)] select (a
     if (_kind isEqualTo "gw" || {_forEachIndex isEqualTo (_mesh getOrDefault ["gw", -1])}) then {
         _map drawEllipse [_p, _r * 2.2, _r * 2.2, 0, [0.28, 0.70, 1, 1], ""];
         if (_kind isEqualTo "gw") then {
-            _map drawIcon ["\A3\ui_f\data\map\markers\nato\b_hq.paa", [0.28, 0.70, 1, 1], _p, 20, 20, 0, _name, 1, 0.028, "RobotoCondensedBold", "right"];
+            _map drawIcon ["\A3\ui_f\data\map\markers\nato\b_hq.paa", [0.28, 0.70, 1, 1], _p, 20, 20, 0, _name, 1, 0.028 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), "RobotoCondensedBold", "right"];
         };
     };
 } forEach _nodes;

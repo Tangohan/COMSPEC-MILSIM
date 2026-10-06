@@ -72,6 +72,8 @@ final class SquadSyncService
                 'uid' => SteamId::normalize((string) ($m['uid'] ?? '')),
                 'role' => strtoupper(self::str($m['role'] ?? '', 16)),
                 'role_label' => self::str($m['role_label'] ?? '', 64),
+                // Rôle mémorisé par le joueur (AtakRoleService : retenu sur Athena, réappliqué à la prochaine mission).
+                'role_pref' => strtoupper(self::str($m['role_pref'] ?? '', 16)),
                 'leader' => !empty($m['leader']),
                 'player' => !empty($m['player']),
                 'alive' => !array_key_exists('alive', $m) || !empty($m['alive']),

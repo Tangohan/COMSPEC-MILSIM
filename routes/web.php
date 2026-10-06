@@ -1402,9 +1402,11 @@ return function (Router $router) {
     $router->get('/back-office/referentiels/decorations', [AwardReferentielController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/decorations', [AwardReferentielController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/decorations/attribuer', [AwardReferentielController::class, 'grant'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/decorations/lot', [AwardReferentielController::class, 'importImages'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/decorations/motifs', [AwardReferentielController::class, 'storeMotif'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/decorations/motifs/{id}', [AwardReferentielController::class, 'updateMotif'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/decorations/motifs/{id}/archive', [AwardReferentielController::class, 'archiveMotif'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/decorations/{id}/update', [AwardReferentielController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/decorations/{id}/archive', [AwardReferentielController::class, 'archive'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
 
     $router->get('/back-office/referentiels/dotation', [EquipmentReferentielController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

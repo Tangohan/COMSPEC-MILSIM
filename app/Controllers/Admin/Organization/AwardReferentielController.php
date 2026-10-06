@@ -16,6 +16,7 @@ use App\Repositories\UserRepository;
 use App\Services\Personnel\DecorationMotifStorageService;
 use App\Services\Personnel\PersonnelServiceHistoryWriter;
 use App\Support\DecorationCatalog;
+use App\Support\DecorationImageImport;
 use RuntimeException;
 use Throwable;
 
@@ -50,6 +51,8 @@ final class AwardReferentielController
             'boPageKicker' => 'ORGANISATION · DÉCORATIONS',
             'boPageSubtitle' => 'Ce que l’on reconnaît avoir fait — distinct des qualifications (ce que l’on sait faire).',
             'definitions' => $this->definitions->listForTenant($tenantId, true),
+            'imagesReady' => $this->definitions->supportsImages(),
+            'maxImportFiles' => DecorationImageImport::MAX_FILES,
             'members' => $this->users->listForTenant($tenantId, null, 'active', null, 200, 0, true),
             'customMotifs' => $this->motifs->listForTenant($tenantId, false),
             'patternChoices' => DecorationCatalog::PATTERN_CHOICES,
@@ -61,7 +64,7 @@ final class AwardReferentielController
                 'circle' => 'Cercle',
             ],
             'loadDecorationsKit' => true,
-            'backOfficePageCss' => ['decorations-kit.css'],
+            'backOfficePageCss' => ['decorations-kit.css', 'referentiel-decorations.css'],
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]);
@@ -73,23 +76,204 @@ final class AwardReferentielController
         if ($tenantId instanceof Response) {
             return $tenantId;
         }
-        $code = strtoupper(trim((string) $request->input('code', '')));
         $name = trim((string) $request->input('name', ''));
+        $code = DecorationImageImport::sanitizeCode((string) $request->input('code', ''));
+        if ($code === '' && $name !== '') {
+            $code = DecorationImageImport::codeFromName($name);
+        }
         if ($code === '' || $name === '') {
             Session::flash('error', 'Code et nom obligatoires.');
 
             return Response::redirect(url('back-office/referentiels/decorations'));
         }
+        if ($this->definitions->findByCode($tenantId, $code) !== null) {
+            Session::flash('error', 'Le code ' . $code . ' est déjà utilisé. Choisissez-en un autre, ou importez l’insigne en lot pour mettre à jour la décoration existante.');
+
+            return Response::redirect(url('back-office/referentiels/decorations'));
+        }
+        $imagePath = null;
+        $upload = $_FILES['image'] ?? null;
+        if (is_array($upload) && (int) ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            try {
+                $imagePath = $this->motifStorage->storeUpload($tenantId, $upload, 'insignes');
+            } catch (RuntimeException $e) {
+                Session::flash('error', $e->getMessage());
+
+                return Response::redirect(url('back-office/referentiels/decorations'));
+            } catch (Throwable) {
+                Session::flash('error', 'Impossible d’enregistrer l’insigne.');
+
+                return Response::redirect(url('back-office/referentiels/decorations'));
+            }
+        }
         $this->definitions->create($tenantId, [
             'code' => $code,
             'name' => $name,
+            'branch' => $request->input('branch'),
             'decoration_grade' => $request->input('decoration_grade'),
             'award_criterion' => $request->input('award_criterion'),
             'sort_order' => (int) $request->input('sort_order', 0),
+            'image_path' => $imagePath,
         ], (int) Session::get('user_id'));
-        Session::flash('success', 'Décoration créée.');
+        Session::flash('success', 'Décoration « ' . $name . ' » créée.');
 
-        return Response::redirect(url('back-office/referentiels/decorations'));
+        return Response::redirect(url('back-office/referentiels/decorations#referentiel'));
+    }
+
+    /**
+     * Modifie une décoration (texte et insigne). Le code reste celui d’origine s’il est laissé vide.
+     */
+    public function update(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->post($request);
+        if ($tenantId instanceof Response) {
+            return $tenantId;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $existing = $this->definitions->find($tenantId, $id);
+        if ($existing === null || !empty($existing['archived_at'])) {
+            Session::flash('error', 'Décoration introuvable ou archivée.');
+
+            return Response::redirect(url('back-office/referentiels/decorations#referentiel'));
+        }
+        $name = trim((string) $request->input('name', ''));
+        $code = DecorationImageImport::sanitizeCode((string) $request->input('code', ''));
+        if ($code === '') {
+            $code = (string) ($existing['code'] ?? '');
+        }
+        if ($name === '') {
+            Session::flash('error', 'Le nom est obligatoire.');
+
+            return Response::redirect(url('back-office/referentiels/decorations#deco-' . $id));
+        }
+        if ($code !== (string) ($existing['code'] ?? '')) {
+            $clash = $this->definitions->findByCode($tenantId, $code);
+            if ($clash !== null && (int) ($clash['id'] ?? 0) !== $id) {
+                Session::flash('error', 'Le code ' . $code . ' est déjà utilisé par une autre décoration.');
+
+                return Response::redirect(url('back-office/referentiels/decorations#deco-' . $id));
+            }
+        }
+        $data = [
+            'code' => $code,
+            'name' => $name,
+            'branch' => $request->input('branch'),
+            'decoration_grade' => $request->input('decoration_grade'),
+            'award_criterion' => $request->input('award_criterion'),
+            'sort_order' => (int) $request->input('sort_order', (int) ($existing['sort_order'] ?? 0)),
+        ];
+        $oldImage = isset($existing['image_path']) ? (string) $existing['image_path'] : null;
+        $upload = $_FILES['image'] ?? null;
+        if (is_array($upload) && (int) ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+            try {
+                $data['image_path'] = $this->motifStorage->storeUpload($tenantId, $upload, 'insignes');
+                $this->motifStorage->delete($oldImage);
+            } catch (RuntimeException $e) {
+                Session::flash('error', $e->getMessage());
+
+                return Response::redirect(url('back-office/referentiels/decorations#deco-' . $id));
+            } catch (Throwable) {
+                Session::flash('error', 'Impossible d’enregistrer l’insigne.');
+
+                return Response::redirect(url('back-office/referentiels/decorations#deco-' . $id));
+            }
+        } elseif ((string) $request->input('remove_image', '') === '1') {
+            $this->motifStorage->delete($oldImage);
+            $data['image_path'] = null;
+        }
+        $this->definitions->update($tenantId, $id, $data);
+        Session::flash('success', 'Décoration « ' . $name . ' » mise à jour.');
+
+        return Response::redirect(url('back-office/referentiels/decorations#deco-' . $id));
+    }
+
+    /**
+     * Import en lot : chaque image déposée crée la décoration (ou met à jour celle qui a le même code).
+     */
+    public function importImages(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->post($request);
+        if ($tenantId instanceof Response) {
+            return $tenantId;
+        }
+        $back = url('back-office/referentiels/decorations#import');
+        if (!$this->definitions->supportsImages()) {
+            Session::flash('error', 'La base n’a pas encore la colonne des insignes : lancez run-migrations.php puis réessayez.');
+
+            return Response::redirect($back);
+        }
+        $asArray = static fn (mixed $v): array => is_array($v) ? $v : [];
+        $built = DecorationImageImport::buildRows(
+            DecorationImageImport::normalizeUploads($_FILES['images'] ?? null),
+            $asArray($request->input('bulk_name', [])),
+            $asArray($request->input('bulk_code', [])),
+            $asArray($request->input('bulk_branch', [])),
+            $asArray($request->input('bulk_criterion', []))
+        );
+        if ($built['rows'] === []) {
+            $msg = 'Aucune image reçue. Déposez un ou plusieurs fichiers PNG, WebP ou JPEG.';
+            if ($built['skipped'] !== []) {
+                $msg .= ' Ignorés : ' . implode(', ', $built['skipped']) . '.';
+            }
+            Session::flash('error', $msg);
+
+            return Response::redirect($back);
+        }
+        $actor = (int) Session::get('user_id');
+        $created = 0;
+        $updated = 0;
+        $errors = $built['skipped'];
+        foreach ($built['rows'] as $row) {
+            try {
+                $path = $this->motifStorage->storeUpload($tenantId, $row['file'], 'insignes');
+            } catch (RuntimeException $e) {
+                $errors[] = $row['file']['name'] . ' (' . rtrim($e->getMessage(), '.') . ')';
+                continue;
+            } catch (Throwable) {
+                $errors[] = $row['file']['name'] . ' (enregistrement impossible)';
+                continue;
+            }
+            $data = [
+                'code' => $row['code'],
+                'name' => $row['name'],
+                'image_path' => $path,
+            ];
+            if ($row['branch'] !== '') {
+                $data['branch'] = $row['branch'];
+            }
+            if ($row['criterion'] !== '') {
+                $data['award_criterion'] = $row['criterion'];
+            }
+            try {
+                $existing = $this->definitions->findByCode($tenantId, $row['code']);
+                if ($existing !== null) {
+                    $this->definitions->update($tenantId, (int) $existing['id'], $data + ['restore' => true]);
+                    $this->motifStorage->delete(isset($existing['image_path']) ? (string) $existing['image_path'] : null);
+                    $updated++;
+                } else {
+                    $this->definitions->create($tenantId, $data, $actor > 0 ? $actor : null);
+                    $created++;
+                }
+            } catch (Throwable) {
+                $this->motifStorage->delete($path);
+                $errors[] = $row['file']['name'] . ' (enregistrement en base impossible)';
+            }
+        }
+        $parts = [];
+        if ($created > 0) {
+            $parts[] = $created . ' décoration' . ($created > 1 ? 's créées' : ' créée');
+        }
+        if ($updated > 0) {
+            $parts[] = $updated . ' mise' . ($updated > 1 ? 's' : '') . ' à jour';
+        }
+        if ($parts !== []) {
+            Session::flash('success', 'Import terminé : ' . implode(', ', $parts) . '.');
+        }
+        if ($errors !== []) {
+            Session::flash('error', 'Non importés : ' . implode(', ', $errors) . '.');
+        }
+
+        return Response::redirect(url('back-office/referentiels/decorations#referentiel'));
     }
 
     public function archive(Request $request, array $params = []): Response

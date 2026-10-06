@@ -1,7 +1,8 @@
 /*
     App Musique : boucle du son (toutes les 0,5 s, et après chaque action).
     1. Ma piste : fin, erreur, recalage de l'heure de départ sur la position réelle (téléchargement d'une URL).
-    2. Haut-parleur : ma piste publiée sur mon unité (COMSPEC_ATAK_Spk = [kind, ref, titre, départ, volume, jeton]).
+    2. Haut-parleur : ma piste publiée sur mon unité (COMSPEC_ATAK_Spk = [kind, ref, titre, départ, volume haut-parleur, jeton]).
+       Deux volumes : écouteurs (vol, moi seul) et haut-parleur (spkVol, moi et les joueurs proches).
     3. Ce que j'entends : ma propre musique, sinon le haut-parleur le plus fort autour de moi (distance, véhicule),
        calé sur l'heure de départ du propriétaire pour que tout le monde entende le même passage.
     Moteurs : DLL (fichiers, URL : lecteur Windows) ou Arma (pistes CfgMusic : playMusic + fadeMusic).
@@ -56,14 +57,16 @@ _key = call _ownKey;
 // 2. Haut-parleur
 private _pub = [];
 if (_key isNotEqualTo "" && {_m get "speaker"} && {missionNamespace getVariable ["comspec_atak_native_music_speaker", true]}) then {
-    _pub = [_m get "kind", _m get "ref", _m get "title", (round ((_m get "start") * 10)) / 10, _m get "vol", _m getOrDefault ["tok", 0]];
+    _pub = [_m get "kind", _m get "ref", _m get "title", (round ((_m get "start") * 10)) / 10, _m getOrDefault ["spkVol", 70], _m getOrDefault ["tok", 0]];
 };
 if (_pub isNotEqualTo (player getVariable ["COMSPEC_ATAK_Spk", []])) then { player setVariable ["COMSPEC_ATAK_Spk", _pub, true]; };
 
 // 3. Ce que j'entends
 private _tgt = [];
 if (_key isNotEqualTo "") then {
-    _tgt = [_key, _m get "kind", _m get "ref", _m get "start", _m get "vol"];
+    // Écouteurs : volume des écouteurs ; haut-parleur : j'entends mon téléphone au volume du haut-parleur.
+    private _spkOn = (_pub isNotEqualTo []);
+    _tgt = [_key, _m get "kind", _m get "ref", _m get "start", if (_spkOn) then { _m getOrDefault ["spkVol", 70] } else { _m get "vol" }];
 } else {
     if (_enabled && {alive player} && {_m get "hear"}) then {
         private _best = 0;
@@ -81,14 +84,15 @@ if (_key isNotEqualTo "") then {
                 private _k2 = format ["%1|%2|%3|%4", getPlayerUID _x, _s select 0, _s select 1, _s select 5];
                 if (_g > _best && {!(_k2 in _fail)}) then {
                     _best = _g;
-                    _tgt = [_k2, _s select 0, _s select 1, _s select 3, (_s select 4) * _g * ((_m get "vol") / 100), name _x, _s select 2];
+                    _tgt = [_k2, _s select 0, _s select 1, _s select 3, (_s select 4) * _g, name _x, _s select 2];
                 };
             };
-        } forEach (allPlayers - [player]);
+        } forEach ((allPlayers - [player]) select { (_x distance player) < _range });
         if (_best < 0.02) then { _tgt = []; };
     };
 };
-missionNamespace setVariable ["COMSPEC_ATAK_MusicHeard", [[], [_tgt select 5, _tgt select 6]] select ((count _tgt) > 5)];
+// Les deux branches d'un tableau sont évaluées : un if évite le select sur une cible vide.
+missionNamespace setVariable ["COMSPEC_ATAK_MusicHeard", if ((count _tgt) > 6) then { [_tgt select 5, _tgt select 6] } else { [] }];
 
 // 4. Appliquer
 private _stopCur = {

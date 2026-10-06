@@ -39,6 +39,12 @@ final class FireTeamApiController
         if ($r instanceof Response) {
             return $r;
         }
+        // Rôles d'équipe de feu du téléphone ATAK natif : la DLL (GetFireTeams [tenant, "roles:<steam>"]) passe
+        // « roles:<steam> » dans mapId ; réponse au même format fire_teams (AtakRoleService::catalogPayload).
+        $roles = \App\Services\Atak\AtakRoleService::parseRolesQuery($request->query('mapId') ?? $request->query('map_id'));
+        if ($roles !== null) {
+            return Response::json((new \App\Services\Atak\AtakRoleService())->catalogFor($r, $roles['steam']));
+        }
         if (!$this->fireTeams->tablesReady()) {
             return Response::json(['error' => 'not_migrated', 'message' => 'Les équipes de feu ne sont pas encore disponibles.'], 503);
         }

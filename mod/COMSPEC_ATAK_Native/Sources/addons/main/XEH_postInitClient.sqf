@@ -16,26 +16,25 @@ if ([] call comspec_atak_native_fnc_bridge) then {
 // Raccourcis (Options > Contrôles > Configurer les addons > COMSPEC ATAK), sur le modèle des interfaces principale / secondaire / tertiaire.
 // Les identifiants PhoneHold, PhoneCarry, PhoneZoomIn et PhoneZoomOut sont relus par fn_displayLoad (téléphone en main) ;
 // PhoneMain, PhoneOrient et PhonePosition par le gestionnaire de touches ajouté dans fn_open.
-["COMSPEC ATAK", "PhoneMain", ["Ouvrir / fermer l'ATAK (principal)", "Sort le téléphone en main (dernier mode : mini ou plein écran) ou le range complètement."], { [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyMain", {}]); true }, "", [0x16, [false, false, true]]] call CBA_fnc_addKeybind;
-["COMSPEC ATAK", "PhoneCarry", ["Porter l'ATAK en miniature (secondaire)", "Affiche ou range le téléphone dans un coin de l'écran : on continue à jouer."], { [] call comspec_atak_native_fnc_hudToggle; true }, "", [0x16, [false,true,false]]] call CBA_fnc_addKeybind;
-["COMSPEC ATAK", "PhoneHold", ["Prendre l'ATAK en main (tertiaire)", "Prend ou relâche la souris sur le téléphone ; relâché, il reste affiché en miniature."], { [] call comspec_atak_native_fnc_interactToggle; true }, "", [0x16, [true,true,false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhoneMain", ["Prendre en main / interagir avec l'ATAK (principal)", "Miniature ou rangé : le téléphone passe en grand (souris). En grand : il redevient la miniature."], { [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyMain", {}]); true }, "", [0x16, [false, false, true]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhoneCarry", ["Porter l'ATAK en miniature (secondaire)", "Affiche ou range la miniature dans un coin de l'écran (on continue à jouer). En grand : réduit en miniature."], { [] call comspec_atak_native_fnc_hudToggle; true }, "", [0x16, [false,true,false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhoneHold", ["Prendre en main / interagir (touche alternative)", "Même effet que la touche principale : miniature -> grand, grand -> miniature."], { [] call comspec_atak_native_fnc_interactToggle; true }, "", [0x16, [true,true,false]]] call CBA_fnc_addKeybind;
 // Zoom de la carte sans prendre le téléphone en main (aussi en marchant ou en conduisant).
 ["COMSPEC ATAK", "PhoneZoomIn", ["Zoomer (carte du téléphone)", "Zoom avant sur la carte, aussi téléphone porté en marchant ou en conduisant."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [0.7] call comspec_atak_native_fnc_mapZoom; true }, "", [0xC9, [false, true, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneZoomOut", ["Dézoomer (carte du téléphone)", "Zoom arrière sur la carte, aussi téléphone porté."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [1 / 0.7] call comspec_atak_native_fnc_mapZoom; true }, "", [0xD1, [false, true, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneOrient", ["Permuter l'orientation (vertical / horizontal)", "Téléphone en miniature : vertical ou horizontal."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [] call comspec_atak_native_fnc_orientationToggle; true }, "", [0x16, [false, true, true]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhonePosition", ["Permuter la position de l'interface", "Déplace la miniature : bas droit, bas gauche, haut gauche, haut droit, milieu droit, milieu gauche."], { [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyPosition", {}]); true }, "", [0x16, [true, false, true]]] call CBA_fnc_addKeybind;
-// Principal : rangé -> en main ; affiché (porté ou en main) -> rangé complètement.
-missionNamespace setVariable ["COMSPEC_ATAK_KeyMain", {
-    if (isNull ([] call comspec_atak_native_fnc_display)) then {
-        private _why = [] call comspec_atak_native_fnc_canUse;
-        if (_why isNotEqualTo "") exitWith { [_why] call comspec_atak_native_fnc_deviceDenied };
-        uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
-        [true] call comspec_atak_native_fnc_open;
-    } else {
-        uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
-        [] call comspec_atak_native_fnc_close;
-    };
+// Principal = interagir (comme le mod d'origine) : miniature ou rangé -> grand ; grand -> miniature (fn_interactToggle).
+// Ranger complètement : touche « porter » depuis la miniature.
+missionNamespace setVariable ["COMSPEC_ATAK_KeyMain", { [] call comspec_atak_native_fnc_interactToggle; }];
+// Mort ou inconscient : le téléphone se range tout de suite (miniature et grand) et ne revient pas en miniature.
+// fn_canUse renvoie aussi "down" : fn_schedulerTick le range au plus tard en une seconde (inconscience sans ACE).
+missionNamespace setVariable ["COMSPEC_ATAK_StowDown", {
+    uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
+    if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_close; };
 }];
+["ace_unconscious", { params ["_unit", "_state"]; if (_state && {_unit isEqualTo player}) then { call (missionNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }] call CBA_fnc_addEventHandler;
+addMissionEventHandler ["EntityKilled", { params ["_unit"]; if (_unit isEqualTo player) then { call (missionNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }];
 // Position de la miniature : coin suivant (réglage profil COMSPEC_ATAK_MiniAnchor, aussi dans Réglages).
 missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
     private _list = ["BR", "BL", "TL", "TR", "MR", "ML"];
@@ -393,15 +392,13 @@ player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK
     if (alive player && {((eyePos player) select 2) < -0.2} && {(vehicle player) isEqualTo player}) then { [0.08, "Téléphone noyé", 30] call comspec_atak_native_fnc_deviceDamage; };
 }, 3] call CBA_fnc_addPerFrameHandler;
 
-// Actions ACE : réparer l'écran (trousse à outils) ou passer sur un téléphone de rechange.
+// Actions ACE : réparer le téléphone (kit de réparation ATAK consommé, ou caisse à outils) ou passer sur un téléphone de rechange.
+// La réparation couvre aussi l'état du réalisme Overwatch (écran cassé, appareil détruit) : fn_repairStart, fn_deviceRepair.
 if (!isNil "ace_interact_menu_fnc_createAction") then {
-    private _fix = ["COMSPEC_ATAK_Repair", "Réparer le téléphone ATAK", "", {
-        private _go = { [{ ["repair"] call comspec_atak_native_fnc_deviceRepair; }] call CBA_fnc_execNextFrame; };
-        if (isNil "ace_common_fnc_progressBar") exitWith { [] call _go; };
-        [15, [], { ["repair"] call comspec_atak_native_fnc_deviceRepair; }, {}, "Réparation du téléphone…"] call ace_common_fnc_progressBar;
+    private _fix = ["COMSPEC_ATAK_Repair", "Réparer le téléphone ATAK", "\z\comspec_atak_native\addons\main\data\item_repairkit.paa", {
+        [{ ["start"] call comspec_atak_native_fnc_repairStart; }] call CBA_fnc_execNextFrame;
     }, {
-        ((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["damage", 0]) > 0
-        && {(((items player) apply { toLower _x }) findIf { _x in ["toolkit", "ace_toolkit"] }) >= 0}
+        ["can"] call comspec_atak_native_fnc_repairStart
     }] call ace_interact_menu_fnc_createAction;
     ["CAManBase", 1, ["ACE_SelfActions", "ACE_Equipment"], _fix, true] call ace_interact_menu_fnc_addActionToClass;
     private _swap = ["COMSPEC_ATAK_Swap", "Changer de téléphone ATAK", "", {
@@ -469,6 +466,8 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; }];
 // Arrivée en cours de partie : mon équipe de feu d'un ancien groupe ne me suit pas.
 [{ ["comspec_atak_native_ftCheck", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
+// Rôles d'Athena et rôle mémorisé du joueur, réappliqué à l'arrivée et à la réapparition (fn_ftRoleSync).
+["init"] call comspec_atak_native_fnc_ftRoleSync;
 
 // Tinder : un joueur m'a liké (match si c'est réciproque).
 ["comspec_atak_native_rencard", {
@@ -555,3 +554,5 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 ["COMSPEC_IcemanMedicalPanic", { ["health", _this] call comspec_atak_native_fnc_athenaSignal; }] call CBA_fnc_addEventHandler;
 // App Liaison allié : événements, sauvegarde légère, action ACE.
 [] call comspec_atak_native_fnc_linkAllyInit;
+// Icônes PAA gardées en mémoire (sinon elles disparaissent un instant à chaque rafraîchissement de page).
+[{ !isNull (findDisplay 46) }, { [] call comspec_atak_native_fnc_textureKeep; }] call CBA_fnc_waitUntilAndExecute;

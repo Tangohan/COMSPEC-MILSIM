@@ -12,7 +12,7 @@ private _players = (units _g) select { isPlayer _x };
 private _reporter = [_players param [0, objNull], leader _g] select (isPlayer leader _g);
 if (!_force && {_reporter isNotEqualTo player}) exitWith { false };
 private _snap = [_g] call comspec_atak_native_fnc_squadSnapshot;
-private _sig = str [_snap get "squad", (_snap get "teams") apply { [_x get "name", _x get "color", _x get "icon", _x get "description", (_x get "members") apply { [_x get "uid", _x get "role"] }] }, (_snap get "unassigned") apply { _x get "uid" }];
+private _sig = str [_snap get "squad", (_snap get "teams") apply { [_x get "name", _x get "color", _x get "icon", _x get "description", (_x get "members") apply { [_x get "uid", _x get "role", _x get "role_pref"] }] }, (_snap get "unassigned") apply { [_x get "uid", _x get "role", _x get "role_pref"] }, count (_snap get "custom_roles")];
 (missionNamespace getVariable ["COMSPEC_ATAK_SquadSyncSig", ["", -1e9]]) params ["_last", "_at"];
 private _age = diag_tickTime - _at;
 if (!_force && {(_sig isEqualTo _last && {_age < 300}) || {_age < 20}}) exitWith { false };

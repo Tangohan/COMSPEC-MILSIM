@@ -21,8 +21,8 @@ if (_dmg >= 1) then { _n set ["brokenReason", format ["%1 : téléphone détruit
 missionNamespace setVariable ["COMSPEC_ATAK_Device", _n];
 private _crack = { switch (true) do { case (_this >= 0.75): { 3 }; case (_this >= 0.45): { 2 }; case (_this >= 0.2): { 1 }; default { 0 }; } };
 switch (true) do {
-    // Détruit : l'écran se brouille, clignote et s'éteint (fn_powerFx), puis le téléphone est rangé.
-    case (_dmg >= 1): { ["WARNING", format ["%1 : téléphone détruit, il faut le remplacer", _why], 8, 90] call comspec_atak_native_fnc_notify; ["broken"] call comspec_atak_native_fnc_powerFx; };
+    // Détruit : l'écran se brouille et clignote (fn_powerFx), puis reste éclaté et inutilisable (fn_deviceOverlay).
+    case (_dmg >= 1): { ["WARNING", format ["%1 : téléphone détruit (kit de réparation ATAK ou nouvel appareil)", _why], 8, 90] call comspec_atak_native_fnc_notify; ["broken"] call comspec_atak_native_fnc_powerFx; };
     case ((_dmg call _crack) > (_before call _crack)): { ["WARNING", format ["%1 : écran %2", _why, ["fêlé", "fêlé", "très abîmé", "en morceaux"] select (_dmg call _crack)], 5, 60] call comspec_atak_native_fnc_notify; };
     case (_off > 0): { ["WARNING", format ["%1 : le téléphone s'est éteint", _why], 4, 50] call comspec_atak_native_fnc_notify; };
 };

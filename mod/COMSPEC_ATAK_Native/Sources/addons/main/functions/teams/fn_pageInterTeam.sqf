@@ -61,7 +61,7 @@ switch (_tab) do {
                 }) joinString " · ";
                 _rows pushBack ["person", _tm get "icon", format ["<t color='%1' font='RobotoCondensedBold'>   ● %2</t>  <t size='0.8' color='#8a9a93'>%3 · chef %4%5</t>%6<br/><t size='0.8'>   %7</t>",
                     _tm get "hex", [_tm get "name"] call _esc, count _m, [["—", name _lead] select !isNull _lead] call _esc,
-                    ["", format [" · %1 %2°", [player distance2D _c] call _dist, round (player getDir _c)]] select ((count _c) > 0),
+                    if ((count _c) > 0) then { format [" · %1 %2°", [player distance2D _c] call _dist, round (player getDir _c)] } else { "" },
                     ["", format ["<br/><t size='0.8' color='#b8c4bd'>   %1</t>", [_tm get "desc"] call _esc]] select ((_tm get "desc") isNotEqualTo ""),
                     [_names, "<t color='#8a9a93'>vide</t>"] select ((count _m) isEqualTo 0)],
                     [[], [["CARTE", "mapTeam", [netId _g, _tm get "id"]] call _act]] select ((count _c) > 0), _tm get "rgba"];
@@ -80,7 +80,7 @@ switch (_tab) do {
             private _g = _x;
             private _all = [_g] call comspec_atak_native_fnc_ftTeams;
             _all deleteAt ((count _all) - 1);
-            { _x params ["_tm", "_m"]; private _c = [_m] call _center; _list pushBack [[1e9, player distance2D _c] select ((count _c) > 0), _g, _tm, _m, _c]; } forEach _all;
+            { _x params ["_tm", "_m"]; private _c = [_m] call _center; _list pushBack [if ((count _c) > 0) then { player distance2D _c } else { 1e9 }, _g, _tm, _m, _c]; } forEach _all;
         } forEach _groups;
         _list sort true;
         {

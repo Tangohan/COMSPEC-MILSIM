@@ -365,35 +365,61 @@ switch (_cmd) do {
         ["HUNT"] call _setMode;
         private _loop = _d getVariable ["COMSPEC_DroneLoop", 0];
         if ((count _center) < 3) then { _center = getPosASL _d; };
-        if ((count _area) > 0) then { _d setVariable ["COMSPEC_DroneTask", ["HUNT", _center, _rad, _area], true]; };
+        // Tâche publiée dans tous les cas : la carte du pilote affiche la zone, la surveillance du téléphone a un but.
+        _d setVariable ["COMSPEC_DroneTask", ["HUNT", _center, _rad, _area], true];
+        // IA de vol « sans souci » : sinon, au premier contact, elle esquive ou se met à couvert au lieu de chercher.
+        call _crew;
+        private _g = group driver _d;
+        if (!isNull _g) then { _g setBehaviour "CARELESS"; _g setCombatMode "BLUE"; };
         [_d, _center, _rad, _loop, _pilot, _area] spawn {
             params ["_d", "_center", "_rad", "_loop", "_pilot", "_area"];
             private _side = _d getVariable ["COMSPEC_DroneSide", sideUnknown];
-            private _a = 0;
-            private _n = 0;
+            if !(_side in [west, east, independent]) then { _side = side group _pilot; };
+            if !(_side in [west, east, independent]) then { _side = side group driver _d; };
+            // Parcours de recherche : anneaux concentriques (1/3, 2/3 puis tout le rayon), 8 points par anneau,
+            // point suivant une fois le précédent atteint (ou après 25 s) ; en boucle tant que rien n'est trouvé.
+            private _pts = [];
+            {
+                private _r = _rad * _x;
+                for "_a" from 0 to 315 step 45 do {
+                    private _p = _center vectorAdd [_r * sin (_a + 22.5 * _forEachIndex), _r * cos (_a + 22.5 * _forEachIndex), 0];
+                    if ((count _area) isEqualTo 0 || {_p inArea _area}) then { _pts pushBack _p; };
+                };
+            } forEach [0.33, 0.66, 1];
+            if ((count _pts) isEqualTo 0) then { _pts = [_center]; };
+            private _i = -1;
+            private _goal = [];
+            private _t0 = 0;
             while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
-                // Orbite de recherche autour du point de départ (nouveau point toutes les 4 s, balayage chaque seconde).
-                if ((_n mod 4) isEqualTo 0) then {
-                    _a = (_a + 30) mod 360;
+                if (_goal isEqualTo [] || {(_d distance2D _goal) < 30} || {(time - _t0) > 25}) then {
+                    _i = (_i + 1) mod (count _pts);
+                    _goal = _pts select _i;
+                    _t0 = time;
+                    _d setVariable ["COMSPEC_DroneTgt", _goal, true];
                     _d flyInHeight [_d getVariable ["COMSPEC_DroneAlt", 40], true];
                     _d limitSpeed (_d getVariable ["COMSPEC_DroneSpd", 40]);
-                    _d doMove (ASLToAGL (_center vectorAdd [_rad * sin _a, _rad * cos _a, 0]));
+                    _d doMove (ASLToAGL _goal);
                 };
-                _n = _n + 1;
-                // Ennemi vu par la caméra : à moins de 400 m et en vue directe.
-                private _eye = getPosASL _d;
-                private _seen = (_d nearEntities [["CAManBase", "LandVehicle"], 400]) select {
-                    alive _x && {[_side, side group _x] call BIS_fnc_sideIsEnemy} && {!captive _x} && {(count _area) isEqualTo 0 || {_x inArea _area}}
-                    && {([_d, "VIEW", vehicle _x] checkVisibility [_eye, aimPos _x]) > 0.35}
+                // Ennemi vu par la caméra : à moins de 400 m, en vue directe (œil sous le drone), véhicule avec équipage vivant.
+                private _eye = _d modelToWorldWorld [0, 0, -0.4];
+                private _seen = (_d nearEntities [["CAManBase", "LandVehicle", "Ship"], 400]) select {
+                    alive _x
+                    && {if (_x isKindOf "CAManBase") then { !captive _x } else { ({alive _x} count (crew _x)) > 0 }}
+                    && {[_side, side group _x] call BIS_fnc_sideIsEnemy}
+                    && {(count _area) isEqualTo 0 || {_x inArea _area}}
+                    && {([_d, "VIEW", _x] checkVisibility [_eye, aimPos _x]) > 0.25}
                 };
                 if ((count _seen) > 0) exitWith {
-                    _seen = _seen apply { [_x distance _d, _x] };
-                    _seen sort true;
-                    private _t = (_seen select 0) select 1;
+                    private _t = _seen select 0;
+                    { if ((_x distance _d) < (_t distance _d)) then { _t = _x; }; } forEach _seen;
                     private _armed = (_d getVariable ["COMSPEC_DroneArmed", ""]) isNotEqualTo "";
-                    _d setVariable ["COMSPEC_DroneEvt", [((_d getVariable ["COMSPEC_DroneEvt", [0]]) select 0) + 1, ["SPOT", "ENGAGE"] select _armed, getPosASL _t, getText (configOf _t >> "displayName")], true];
-                    if (!isNull _pilot) then { ["comspec_atak_native_droneEvent", [_d, ["SPOT", "ENGAGE"] select _armed, getPosASL _t, getText (configOf _t >> "displayName")], _pilot] call CBA_fnc_targetEvent; };
-                    if (_armed) then { [_d, "strike", [_t, _pilot]] call comspec_atak_native_fnc_droneCmd; } else { [_d, "hover", []] call comspec_atak_native_fnc_droneCmd; };
+                    private _what = getText (configOf _t >> "displayName");
+                    _d setVariable ["COMSPEC_DroneEvt", [((_d getVariable ["COMSPEC_DroneEvt", [0]]) select 0) + 1, ["SPOT", "ENGAGE"] select _armed, getPosASL _t, _what], true];
+                    if (!isNull _pilot) then { ["comspec_atak_native_droneEvent", [_d, ["SPOT", "ENGAGE"] select _armed, getPosASL _t, _what], _pilot] call CBA_fnc_targetEvent; };
+                    // Armé : frappe ; sinon le drone garde la cible à l'œil (observation en orbite au-dessus d'elle).
+                    if (_armed) then { [_d, "strike", [_t, _pilot]] call comspec_atak_native_fnc_droneCmd; } else {
+                        [_d, "observe", [getPosASL _t, 120]] call comspec_atak_native_fnc_droneCmd;
+                    };
                 };
                 sleep 1;
             };
