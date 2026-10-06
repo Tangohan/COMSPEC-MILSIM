@@ -216,7 +216,6 @@ if (_interactive) then {
             // [libellé, espace (P profil, M mission), variable, défaut, clé communauté (verrou Athena) ou ""]
             private _layers = [
                 ["Alliés", "P", "COMSPEC_ATAK_LayerFriends", true, ""],
-                ["Ennemis repérés", "P", "COMSPEC_ATAK_ShowHostile", false, ""],
                 ["Cartouches", "P", "COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"],
                 ["Zones Athena", "P", "COMSPEC_ATAK_ZonesLayer", true, ""],
                 ["SIGINT", "P", "COMSPEC_ATAK_SigintLayer", true, ""],

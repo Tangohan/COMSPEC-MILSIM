@@ -104,52 +104,8 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
     ]];
 } forEach (allUnits select { alive _x && {side group _x isEqualTo side group player} });
 
-// Ennemis repérés (calque « Ennemis repérés ») : uniquement les cibles qu'un groupe de mon camp équipé d'un ATAK
-// a réellement repérées (connaissance du groupe, vue il y a moins de 2 min), à la position ESTIMÉE par ce groupe,
-// jamais la position réelle. Une IA posée par Zeus ou un ennemi que personne n'a vu n'apparaît donc pas.
-// Pas d'objet attaché à l'entité : le panneau SITUATION n'en affiche ni le rang, ni l'état, ni la vitesse.
-// Calcul toutes les 2 s (la collecte tourne 4 fois par seconde).
-if (profileNamespace getVariable ["COMSPEC_ATAK_ShowHostile", false]) then {
-    private _cache = uiNamespace getVariable ["COMSPEC_ATAK_SpottedCache", [-1e9, []]];
-    if ((diag_tickTime - (_cache select 0)) > 2) then {
-        private _seen = createHashMap;
-        private _mySide = side group player;
-        {
-            private _g = _x;
-            if (((units _g) findIf { alive _x && {[_x] call _carries} }) < 0) then { continue };
-            private _ldr = leader _g;
-            {
-                private _t = _x;
-                if (isNull _t || {!alive _t} || {(side group _t) isEqualTo _mySide}) then { continue };
-                if (_t isKindOf "CAManBase" && {vehicle _t isNotEqualTo _t}) then { _t = vehicle _t; };
-                private _tk = _ldr targetKnowledge _t;
-                _tk params [["_byGroup", false], "", ["_lastSeen", -1e9], "", "", ["_err", 1e9], ["_tpos", []]];
-                if (!_byGroup || {(time - _lastSeen) > 120} || {(count _tpos) < 2}) then { continue };
-                private _k = hashValue _t;
-                private _prev = _seen getOrDefault [_k, []];
-                if ((count _prev) isEqualTo 0 || {_lastSeen > (_prev select 2)}) then { _seen set [_k, [_t, _tpos, _lastSeen, _err]]; };
-            } forEach (_ldr targets [true, 0, [], 120]);
-        } forEach (groups _mySide);
-        _cache = [diag_tickTime, values _seen];
-        uiNamespace setVariable ["COMSPEC_ATAK_SpottedCache", _cache];
-    };
-    {
-        _x params ["_t", "_tpos", "_lastSeen"];
-        if (isNull _t) then { continue };
-        private _age = time - _lastSeen;
-        private _type = if (_t isKindOf "CAManBase") then { "infantry" } else { if (_t isKindOf "Air") then { "air" } else { if (_t isKindOf "Tank") then { "armor" } else { "vehicle" } } };
-        private _sd = side group _t;
-        private _id = "spot:" + str (hashValue _t);
-        _units set [_id, createHashMapFromArray [
-            ["id", _id], ["object", objNull],
-            ["callsign", if (_t isKindOf "CAManBase") then { "ENI" } else { "ENI " + getText (configOf _t >> "displayName") }],
-            ["position", [_tpos select 0, _tpos select 1, 0]], ["heading", 0],
-            ["affiliation", if (_sd isEqualTo civilian) then { "neutral" } else { "hostile" }], ["type", _type],
-            ["freshness", switch (true) do { case (_age < 15): { "LIVE" }; case (_age < 60): { "STALE" }; default { "LOST" }; }],
-            ["updated", diag_tickTime - _age], ["icon", ""], ["orbat", ""]
-        ]];
-    } forEach (_cache select 1);
-};
+// Aucune IA ennemie sur la carte, même repérée (choix de la communauté) : ni calcul local, ni contact relayé par Athena.
+{ if ((_y getOrDefault ["affiliation", ""]) isEqualTo "hostile") then { _units deleteAt _x; }; } forEach +_units;
 ["units",_units] call comspec_atak_native_fnc_storeSet;
 
 // Les marqueurs de la mission sont déjà dessinés par la carte Arma : on les garde pour la sélection
