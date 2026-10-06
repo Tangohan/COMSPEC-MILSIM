@@ -12,6 +12,12 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
 ["comspec_atak_native_require_item", "CHECKBOX",
     ["Item obligatoire pour avoir l'ATAK", "Activé par défaut : il faut porter un téléphone (ItemAndroid de cTab ou équivalent d'un autre mod) pour sortir ou prendre le téléphone. Décocher pour donner l'ATAK à tout le monde."],
     _cat, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_photo_anim", "EDITBOX",
+    ["Animation de l'appareil photo", "Jouée tant que l'appareil photo est ouvert (vue normale). Nom d'une action ou d'un geste (ex. gesturePoint), d'une animation (CfgMoves, ex. AmovPercMstpSrasWrflDnon_AinvPercMstpSrasWrflDnon), ou d'une fonction (ex. mon_fnc_photoPose, appelée avec [joueur, ""photo""]). Vide : aucune animation."],
+    ["COMSPEC", "ATAK · Photo"], "gesturePoint", 1] call CBA_fnc_addSetting;
+["comspec_atak_native_selfie_anim", "EDITBOX",
+    ["Animation du selfie", "Jouée en mode selfie. Même format : action ou geste, animation CfgMoves, ou fonction appelée avec [joueur, ""selfie""] (puis [joueur, ""exit""] à la fermeture). Vide : on garde l'animation de l'appareil photo."],
+    ["COMSPEC", "ATAK · Photo"], "gesturePoint", 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_battery_items", "EDITBOX",
     ["Batteries de rechange", "Objets (classes exactes, séparées par des virgules) qui rechargent le téléphone à 100 % quand on change la batterie. L'objet est consommé. La « Batterie ATAK » (COMSPEC_ATAK_Battery) est toujours acceptée."],
     _cat, "COMSPEC_ATAK_Battery,ACE_UAVBattery", 1] call CBA_fnc_addSetting;

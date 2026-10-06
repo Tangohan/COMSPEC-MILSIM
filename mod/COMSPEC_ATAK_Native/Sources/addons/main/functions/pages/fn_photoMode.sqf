@@ -64,7 +64,31 @@ switch (toUpper _mode) do {
         // Bras tendu, téléphone devant soi (geste vanilla relancé tant que le mode photo dure).
         if (diag_tickTime >= (_st getOrDefault ["nextPose", 0])) then {
             _st set ["nextPose", diag_tickTime + 1.2];
-            if (((toLower (gestureState player)) find "point") < 0) then { player playActionNow "gesturePoint"; };
+            // Animation réglable (CBA « ATAK · Photo ») : action/geste, animation CfgMoves ou fonction.
+            private _self = _st getOrDefault ["selfie", false];
+            private _anim = trim (missionNamespace getVariable [["comspec_atak_native_photo_anim", "comspec_atak_native_selfie_anim"] select _self, "gesturePoint"]);
+            if (_self && {_anim isEqualTo ""}) then { _anim = trim (missionNamespace getVariable ["comspec_atak_native_photo_anim", "gesturePoint"]); };
+            if (_anim isNotEqualTo "") then {
+                switch (true) do {
+                    case ((toLower _anim) find "_fnc_" >= 0): {
+                        private _fn = missionNamespace getVariable [_anim, {}];
+                        if (_fn isEqualType {}) then { [player, ["photo", "selfie"] select _self] call _fn; };
+                    };
+                    case (isClass (configFile >> "CfgMovesMaleSdr" >> "States" >> _anim)): {
+                        if ((toLower (animationState player)) isNotEqualTo (toLower _anim)) then { player playMoveNow _anim; };
+                    };
+                    default {
+                        // Un geste retombe tout seul : on le relance ; une autre action n'est jouée qu'une fois par changement.
+                        private _lo = toLower _anim;
+                        if ((_lo find "gesture") isEqualTo 0) then {
+                            if (((toLower (gestureState player)) find (_lo select [7])) < 0) then { player playActionNow _anim; };
+                        } else {
+                            if ((_st getOrDefault ["lastAnim", ""]) isNotEqualTo _anim) then { player playActionNow _anim; };
+                        };
+                    };
+                };
+                _st set ["lastAnim", _anim];
+            };
         };
         private _selfie = _st getOrDefault ["selfie", false];
         private _zoom = _st getOrDefault ["zoom", 1];
@@ -251,7 +275,18 @@ switch (toUpper _mode) do {
         if (_mv >= 0) then { _d46 displayRemoveEventHandler ["MouseMoving", _mv]; };
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoEH", []];
         [uiNamespace getVariable ["COMSPEC_ATAK_PhotoPFH", -1]] call CBA_fnc_removePerFrameHandler;
-        // Bras baissé : le geste n'est plus relancé et se termine de lui-même.
+        // Bras baissé : le geste n'est plus relancé et se termine de lui-même ; une animation CfgMoves est rendue,
+        // une fonction reçoit [joueur, "exit"] pour remettre sa pose à zéro.
+        private _last = _st getOrDefault ["lastAnim", ""];
+        _st set ["lastAnim", ""];
+        if (_last isNotEqualTo "" && {alive player} && {vehicle player isEqualTo player}) then {
+            if ((toLower _last) find "_fnc_" >= 0) then {
+                private _fn = missionNamespace getVariable [_last, {}];
+                if (_fn isEqualType {}) then { [player, "exit"] call _fn; };
+            } else {
+                if ((toLower (animationState player)) isEqualTo (toLower _last)) then { player playMoveNow ""; player switchMove ""; };
+            };
+        };
         ("COMSPEC_ATAK_Camera" call BIS_fnc_rscLayer) cutText ["", "PLAIN"];
         (uiNamespace getVariable ["COMSPEC_ATAK_PhotoCtx", []]) params [["_interactive", true], ["_hud", false], ["_weapon", ""]];
         if (_weapon isNotEqualTo "" && {alive player} && {vehicle player isEqualTo player}) then { player selectWeapon _weapon; };
