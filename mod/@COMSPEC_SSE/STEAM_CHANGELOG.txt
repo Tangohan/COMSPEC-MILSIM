@@ -2,11 +2,32 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
-[h1]COMSPEC SSE 0.7.22[/h1]
-[b]20/09/2026[/b] — Relancer Arma complètement après la mise à jour (pas seulement la mission).
+[h1]COMSPEC SSE 0.8.0[/h1]
+[b]06/10/2026[/b] — Relancer Arma complètement après la mise à jour (pas seulement la mission).
 
+[h2]Zeus[/h2]
 [list]
-[*] Dans l’éditeur, le nom, l’alias et le choix Signalé ou Recherché s’affichent sur le terminal SEEK du pack
+[*] Chaque module ouvre un formulaire à la pose (profil, richesse, rayon…), sans avoir besoin de Zeus Enhanced
+[*] Messages clairs pour le Zeus : ce qui a été fait, ou pourquoi rien ne s’est passé
+[*] Les modules ne s’exécutent plus chez tous les joueurs : plus de générations en double ni de fenêtres ouvertes chez les autres
+[*] Les menus SSE des objets apparaissent aussi chez les autres joueurs après une génération Zeus
+[*] Modules rangés en trois catégories : SSE, SSE · Outils Zeus, SSE · Numérique (DOMEX)
+[*] Nouveaux modules : Poser un objet de renseignement, Réinitialiser un site, Lier des entités, Référence de dossier
+[*] L’inspecteur debug se désactive en reposant le module ; le site d’entraînement se crée autour du module (plus autour du joueur)
+[/list]
+
+[h2]Éditeur (Eden)[/h2]
+[list]
+[*] Tous les modules ont des attributs en français avec aide au survol, listes déroulantes et cases à cocher
+[*] Profils supplémentaires sur les personnes (courrier, financier, technicien, renseignement, logistique)
+[*] Aide au survol sur tous les champs Documents, Téléphone, Ordinateur et Numérique
+[/list]
+
+[h2]Interface[/h2]
+[list]
+[*] Début de refonte de l’interface SSE : terminal, numérique, site, graphe, preuves, mission et panneau Zeus
+[*] Thème sombre unifié, titres et sections lisibles, boutons d’action en pied d’écran
+[*] Les fenêtres s’adaptent à la taille d’interface et au format d’écran
 [/list]
 
 Prérequis : CBA A3 + ACE3. Overwatch optionnel pour remonter vers Athena.
@@ -14,6 +35,15 @@ Prérequis : CBA A3 + ACE3. Overwatch optionnel pour remonter vers Athena.
 ================================================================================
 HISTORIQUE
 ================================================================================
+
+COMSPEC SSE 0.8.0 — 06/10/2026
+
+• Zeus : formulaire à la pose pour chaque module, sans Zeus Enhanced
+• Zeus : messages de retour clairs, plus d’exécution en double chez les joueurs
+• Nouveaux modules : objet de renseignement, réinitialiser un site, lier des entités, référence de dossier
+• Éditeur : attributs des modules en français, avec aide, listes et cases à cocher
+• Interface SSE : début de refonte (thème sombre unifié, mise en page adaptée à tous les écrans)
+• Relancer Arma complètement après la mise à jour
 
 COMSPEC SSE 0.7.22 — 20/09/2026
 

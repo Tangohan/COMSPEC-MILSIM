@@ -1,5 +1,32 @@
 #include "common.hpp"
 
+/*
+    Écrans SSE « hors SEEK » (terminal, numérique, site, graphe, preuves,
+    mission, Zeus).
+
+    Refonte V0.8 : cadre commun sombre, bandeau titre + filet d'accent,
+    sections titrées, barre d'actions en pied, grille centrée safeZone.
+    Les idd / idc et les classes de contrôles (liste, texte structuré…)
+    sont inchangés : les fonctions uiFill* / uiDisplayCtx restent valides.
+*/
+
+// Position dans le cadre (cases de grille)
+#define SSE_POS(X,Y,W,H) x = SSE_Q(SSE_FX(X)); y = SSE_Q(SSE_FY(Y)); w = SSE_Q(SSE_W(W)); h = SSE_Q(SSE_H(H))
+
+// Cadre commun : voile, fond, bandeau titre, marque, filet, sous-titre, pied
+#define SSE_FRAME(HDRCLASS,LINECLASS,TITLE_IDC,TITLE_TXT,SUB_IDC,SUB_TXT) \
+    class Dim: COMSPEC_SSE_RscDim { SSE_FULLSCREEN; }; \
+    class BG: COMSPEC_SSE_RscBackground { SSE_POS(0,0,SSE_FRAME_W,SSE_FRAME_H); }; \
+    class Title: HDRCLASS { idc = TITLE_IDC; text = TITLE_TXT; SSE_POS(0,0,SSE_FRAME_W,1.6); }; \
+    class Brand: COMSPEC_SSE_RscLabel { text = "COMSPEC SSE"; style = 1; SSE_POS(25.5,0.3,10,1); }; \
+    class TitleLine: LINECLASS { SSE_POS(0,1.6,SSE_FRAME_W,0.12); }; \
+    class Sub: COMSPEC_SSE_RscSubHeader { idc = SUB_IDC; text = SUB_TXT; SSE_POS(0,1.72,SSE_FRAME_W,1.1); }; \
+    class Footer: COMSPEC_SSE_RscPanel { SSE_POS(0,20,SSE_FRAME_W,3); }; \
+    class FooterLine: COMSPEC_SSE_RscText { colorBackground[] = SSE_C_ACCENT_SOFT; SSE_POS(0,20,SSE_FRAME_W,0.08); }
+
+// Titre de section (petites capitales vertes)
+#define SSE_SECTION(NAME,TXT,X,Y,W) class NAME: COMSPEC_SSE_RscSection { text = TXT; SSE_POS(X,Y,W,0.9); }
+
 // ============================================================
 // TERMINAL SSE TERRAIN — hub principal (idd 93200)
 // ============================================================
@@ -10,120 +37,98 @@ class COMSPEC_SSE_TerminalDialog {
     onLoad = "['terminal'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
-        class BG: RscText {
-            idc = -1;
-            x = 0.08; y = 0.06; w = 0.84; h = 0.88;
-            colorBackground[] = SSE_UI_BG;
-        };
-        class Title: RscText {
-            idc = 93201;
-            text = "TERMINAL SSE — TERRAIN";
-            x = 0.08; y = 0.06; w = 0.84; h = 0.045;
-            colorBackground[] = SSE_UI_HDR;
-            colorText[] = SSE_UI_ACCENT;
-        };
-        class Sub: RscText {
-            idc = 93202;
-            text = "Record lié · collecte · transmission";
-            x = 0.08; y = 0.105; w = 0.84; h = 0.028;
-            colorBackground[] = {0.04,0.1,0.05,1};
-            colorText[] = {0.7,0.9,0.7,1};
-        };
+        SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93201,"TERMINAL SSE — TERRAIN",93202,"  Record lié · collecte · transmission");
+        SSE_SECTION(SecSummary,"SYNTHÈSE DU RECORD",0.5,4.6,17);
+        SSE_SECTION(SecDetail,"TRANSMISSION ET DÉTAIL",0.5,13.2,17);
     };
 
     class controls {
-        class NavBar: RscStructuredText {
+        class NavBar: COMSPEC_SSE_RscStructuredText {
             idc = 93210;
-            x = 0.1; y = 0.145; w = 0.8; h = 0.04;
-            colorBackground[] = {0,0,0,0.2};
+            colorBackground[] = SSE_C_PANEL_ALT;
+            SSE_POS(0.5,3.1,35,1.2);
         };
-        class Summary: RscStructuredText {
+        class Summary: COMSPEC_SSE_RscStructuredText {
             idc = 93211;
-            x = 0.1; y = 0.195; w = 0.38; h = 0.28;
-            colorBackground[] = {0,0,0,0.25};
+            SSE_POS(0.5,5.5,17,7.4);
         };
-        class ListTitle: RscText {
+        class ListTitle: COMSPEC_SSE_RscSection {
             idc = -1;
-            text = "Éléments / dossiers";
-            x = 0.5; y = 0.195; w = 0.4; h = 0.03;
-            colorText[] = SSE_UI_ACCENT;
+            text = "ÉLÉMENTS ET DOSSIERS";
+            SSE_POS(18,4.6,17.5,0.9);
         };
-        class List: RscListBox {
+        class List: COMSPEC_SSE_RscListBox {
             idc = 93212;
-            x = 0.5; y = 0.225; w = 0.4; h = 0.4;
-            colorBackground[] = {0,0,0,0.35};
+            SSE_POS(18,5.5,17.5,14.2);
         };
-        class Detail: RscStructuredText {
+        class Detail: COMSPEC_SSE_RscStructuredText {
             idc = 93213;
-            x = 0.1; y = 0.49; w = 0.38; h = 0.28;
-            colorBackground[] = {0,0,0,0.25};
+            SSE_POS(0.5,14.1,17,5.6);
         };
 
-        class BtnDigital: RscButton {
-            idc = 93220; text = "DIGITAL";
-            x = 0.1; y = 0.8; w = 0.11; h = 0.04;
+        class BtnDigital: COMSPEC_SSE_RscButtonNav {
+            idc = 93220; text = "NUMÉRIQUE";
+            tooltip = "Exploitation numérique du support lié (contacts, messages, fichiers…)";
             action = "['digital'] call comspec_sse_fnc_uiOpenScreen";
-            colorBackground[] = SSE_UI_BTN;
+            SSE_POS(0.5,20.3,5.6,1.25);
         };
-        class BtnSeek: RscButton {
+        class BtnSeek: COMSPEC_SSE_RscButtonNav {
             idc = 93221; text = "SEEK II";
-            x = 0.22; y = 0.8; w = 0.11; h = 0.04;
+            tooltip = "Terminal biométrique SEEK II";
             action = "['seek'] call comspec_sse_fnc_uiOpenScreen";
-            colorBackground[] = SSE_UI_BTN;
+            SSE_POS(6.4,20.3,5.6,1.25);
         };
-        class BtnSite: RscButton {
+        class BtnSite: COMSPEC_SSE_RscButtonNav {
             idc = 93222; text = "SITE";
-            x = 0.34; y = 0.8; w = 0.11; h = 0.04;
+            tooltip = "Complétude et triage du site autour du record";
             action = "['site'] call comspec_sse_fnc_uiOpenScreen";
-            colorBackground[] = SSE_UI_BTN;
+            SSE_POS(12.3,20.3,5.6,1.25);
         };
-        class BtnGraph: RscButton {
-            idc = 93223; text = "GRAPH";
-            x = 0.46; y = 0.8; w = 0.11; h = 0.04;
+        class BtnGraph: COMSPEC_SSE_RscButtonNav {
+            idc = 93223; text = "GRAPHE";
+            tooltip = "Relations entre personnes, objets et lieux";
             action = "['graph'] call comspec_sse_fnc_uiOpenScreen";
-            colorBackground[] = SSE_UI_BTN;
+            SSE_POS(18.2,20.3,5.6,1.25);
         };
-        class BtnEvidence: RscButton {
+        class BtnEvidence: COMSPEC_SSE_RscButtonNav {
             idc = 93224; text = "PREUVES";
-            x = 0.58; y = 0.8; w = 0.11; h = 0.04;
+            tooltip = "Pièces saisies et chaîne de conservation";
             action = "['evidence'] call comspec_sse_fnc_uiOpenScreen";
-            colorBackground[] = SSE_UI_BTN;
+            SSE_POS(24.1,20.3,5.6,1.25);
         };
-        class BtnMission: RscButton {
+        class BtnMission: COMSPEC_SSE_RscButtonNav {
             idc = 93225; text = "MISSION";
-            x = 0.7; y = 0.8; w = 0.11; h = 0.04;
+            tooltip = "Fusion du renseignement de la mission";
             action = "['mission'] call comspec_sse_fnc_uiOpenScreen";
-            colorBackground[] = SSE_UI_BTN;
+            SSE_POS(30,20.3,5.6,1.25);
         };
-        class BtnRefresh: RscButton {
+        class BtnRefresh: COMSPEC_SSE_RscButtonNav {
             idc = 93226; text = "RAFRAÎCHIR";
-            x = 0.1; y = 0.86; w = 0.14; h = 0.04;
             action = "['terminal'] call comspec_sse_fnc_uiRefresh";
-            colorBackground[] = SSE_UI_BTN2;
+            SSE_POS(0.5,21.7,5.6,1.15);
         };
-        class BtnTx: RscButton {
+        class BtnTx: COMSPEC_SSE_RscButton {
             idc = 93227; text = "TRANSMETTRE";
-            x = 0.26; y = 0.86; w = 0.16; h = 0.04;
+            tooltip = "Envoie le record vers Athena (ou file hors-ligne)";
             action = "[] call comspec_sse_fnc_uiTransmitRecord";
-            colorBackground[] = SSE_UI_BTN2;
+            SSE_POS(6.4,21.7,7,1.15);
         };
-        class BtnZeus: RscButton {
+        class BtnZeus: COMSPEC_SSE_RscButtonZeus {
             idc = 93229; text = "ZEUS";
-            x = 0.44; y = 0.86; w = 0.12; h = 0.04;
+            tooltip = "Contrôle Zeus (réservé au chef de mission)";
             action = "['zeus'] call comspec_sse_fnc_uiOpenScreen";
-            colorBackground[] = {0.35,0.2,0.05,1};
+            SSE_POS(13.7,21.7,5,1.15);
         };
-        class BtnClose: RscButton {
+        class BtnClose: COMSPEC_SSE_RscButtonClose {
             idc = 93228; text = "FERMER";
-            x = 0.72; y = 0.86; w = 0.14; h = 0.04;
             action = "closeDialog 0";
-            colorBackground[] = SSE_UI_MUTED;
+            SSE_POS(30,21.7,5.6,1.15);
         };
     };
 };
 
 // ============================================================
-// DIGITAL EXPLOITATION — onglets (idd 93250)
+// EXPLOITATION NUMÉRIQUE — onglets (idd 93250)
 // ============================================================
 class COMSPEC_SSE_DigitalDialog {
     idd = 93250;
@@ -132,53 +137,42 @@ class COMSPEC_SSE_DigitalDialog {
     onLoad = "['digital'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
-        class BG: RscText {
-            idc = -1;
-            x = 0.1; y = 0.06; w = 0.8; h = 0.88;
-            colorBackground[] = SSE_UI_BG;
-        };
-        class Title: RscText {
-            idc = 93251;
-            text = "DIGITAL EXPLOITATION";
-            x = 0.1; y = 0.06; w = 0.8; h = 0.045;
-            colorBackground[] = SSE_UI_HDR;
-            colorText[] = SSE_UI_ACCENT;
-        };
+        SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93251,"EXPLOITATION NUMÉRIQUE",-1,"  Support numérique lié au record");
+        SSE_SECTION(SecBody,"CONTENU",0.5,4.6,22);
+        SSE_SECTION(SecList,"ÉLÉMENTS",23,4.6,12.5);
     };
 
     class controls {
-        class Tabs: RscStructuredText {
+        class Tabs: COMSPEC_SSE_RscStructuredText {
             idc = 93252;
-            x = 0.12; y = 0.12; w = 0.76; h = 0.035;
-            colorBackground[] = {0,0,0,0.2};
+            colorBackground[] = SSE_C_PANEL_ALT;
+            SSE_POS(0.5,3.1,35,1.2);
         };
-        class Body: RscStructuredText {
+        class Body: COMSPEC_SSE_RscStructuredText {
             idc = 93253;
-            x = 0.12; y = 0.17; w = 0.46; h = 0.62;
-            colorBackground[] = {0,0,0,0.25};
+            SSE_POS(0.5,5.5,22,14.2);
         };
-        class List: RscListBox {
+        class List: COMSPEC_SSE_RscListBox {
             idc = 93254;
-            x = 0.6; y = 0.17; w = 0.28; h = 0.62;
-            colorBackground[] = {0,0,0,0.35};
+            SSE_POS(23,5.5,12.5,14.2);
         };
 
-        class BtnOV: RscButton { idc=93260; text="OVERVIEW"; x=0.12; y=0.82; w=0.09; h=0.035; action="['overview'] call comspec_sse_fnc_uiDigitalTab"; colorBackground[]=SSE_UI_BTN; };
-        class BtnCT: RscButton { idc=93261; text="CONTACTS"; x=0.215; y=0.82; w=0.09; h=0.035; action="['contacts'] call comspec_sse_fnc_uiDigitalTab"; colorBackground[]=SSE_UI_BTN; };
-        class BtnMSG: RscButton { idc=93262; text="MSG"; x=0.31; y=0.82; w=0.07; h=0.035; action="['messages'] call comspec_sse_fnc_uiDigitalTab"; colorBackground[]=SSE_UI_BTN; };
-        class BtnCALL: RscButton { idc=93263; text="APPELS"; x=0.385; y=0.82; w=0.08; h=0.035; action="['calls'] call comspec_sse_fnc_uiDigitalTab"; colorBackground[]=SSE_UI_BTN; };
-        class BtnFILE: RscButton { idc=93264; text="FICHIERS"; x=0.47; y=0.82; w=0.09; h=0.035; action="['files'] call comspec_sse_fnc_uiDigitalTab"; colorBackground[]=SSE_UI_BTN; };
-        class BtnPIC: RscButton { idc=93265; text="PHOTOS"; x=0.565; y=0.82; w=0.08; h=0.035; action="['photos'] call comspec_sse_fnc_uiDigitalTab"; colorBackground[]=SSE_UI_BTN; };
-        class BtnLOC: RscButton { idc=93266; text="LOCS"; x=0.65; y=0.82; w=0.07; h=0.035; action="['locations'] call comspec_sse_fnc_uiDigitalTab"; colorBackground[]=SSE_UI_BTN; };
-        class BtnDEL: RscButton { idc=93267; text="DELETED"; x=0.725; y=0.82; w=0.085; h=0.035; action="['deleted'] call comspec_sse_fnc_uiDigitalTab"; colorBackground[]=SSE_UI_BTN; };
-        class BtnNET: RscButton { idc=93268; text="NETWORK"; x=0.12; y=0.865; w=0.1; h=0.035; action="['network'] call comspec_sse_fnc_uiDigitalTab"; colorBackground[]=SSE_UI_BTN2; };
-        class BtnBack: RscButton { idc=93269; text="TERMINAL"; x=0.6; y=0.865; w=0.12; h=0.035; action="['terminal'] call comspec_sse_fnc_uiOpenScreen"; colorBackground[]=SSE_UI_BTN2; };
-        class BtnClose: RscButton { idc=93270; text="FERMER"; x=0.74; y=0.865; w=0.12; h=0.035; action="closeDialog 0"; colorBackground[]=SSE_UI_MUTED; };
+        class BtnOV: COMSPEC_SSE_RscButtonNav { idc = 93260; text = "APERÇU"; sizeEx = SSE_TXT_S; action = "['overview'] call comspec_sse_fnc_uiDigitalTab"; SSE_POS(0.5,20.3,3.6,1.25); };
+        class BtnCT: COMSPEC_SSE_RscButtonNav { idc = 93261; text = "CONTACTS"; sizeEx = SSE_TXT_S; action = "['contacts'] call comspec_sse_fnc_uiDigitalTab"; SSE_POS(4.42,20.3,3.6,1.25); };
+        class BtnMSG: COMSPEC_SSE_RscButtonNav { idc = 93262; text = "MESSAGES"; sizeEx = SSE_TXT_S; action = "['messages'] call comspec_sse_fnc_uiDigitalTab"; SSE_POS(8.34,20.3,3.6,1.25); };
+        class BtnCALL: COMSPEC_SSE_RscButtonNav { idc = 93263; text = "APPELS"; sizeEx = SSE_TXT_S; action = "['calls'] call comspec_sse_fnc_uiDigitalTab"; SSE_POS(12.26,20.3,3.6,1.25); };
+        class BtnFILE: COMSPEC_SSE_RscButtonNav { idc = 93264; text = "FICHIERS"; sizeEx = SSE_TXT_S; action = "['files'] call comspec_sse_fnc_uiDigitalTab"; SSE_POS(16.18,20.3,3.6,1.25); };
+        class BtnPIC: COMSPEC_SSE_RscButtonNav { idc = 93265; text = "PHOTOS"; sizeEx = SSE_TXT_S; action = "['photos'] call comspec_sse_fnc_uiDigitalTab"; SSE_POS(20.1,20.3,3.6,1.25); };
+        class BtnLOC: COMSPEC_SSE_RscButtonNav { idc = 93266; text = "LIEUX"; sizeEx = SSE_TXT_S; action = "['locations'] call comspec_sse_fnc_uiDigitalTab"; SSE_POS(24.02,20.3,3.6,1.25); };
+        class BtnDEL: COMSPEC_SSE_RscButtonNav { idc = 93267; text = "SUPPRIMÉS"; sizeEx = SSE_TXT_S; action = "['deleted'] call comspec_sse_fnc_uiDigitalTab"; SSE_POS(27.94,20.3,3.6,1.25); };
+        class BtnNET: COMSPEC_SSE_RscButtonNav { idc = 93268; text = "RÉSEAU"; sizeEx = SSE_TXT_S; action = "['network'] call comspec_sse_fnc_uiDigitalTab"; SSE_POS(31.86,20.3,3.64,1.25); };
+        class BtnBack: COMSPEC_SSE_RscButtonNav { idc = 93269; text = "TERMINAL"; action = "['terminal'] call comspec_sse_fnc_uiOpenScreen"; SSE_POS(0.5,21.7,5.6,1.15); };
+        class BtnClose: COMSPEC_SSE_RscButtonClose { idc = 93270; text = "FERMER"; action = "closeDialog 0"; SSE_POS(30,21.7,5.6,1.15); };
     };
 };
 
 // ============================================================
-// SITE EXPLOITATION (idd 93300)
+// EXPLOITATION DE SITE (idd 93300)
 // ============================================================
 class COMSPEC_SSE_SiteDialog {
     idd = 93300;
@@ -187,26 +181,24 @@ class COMSPEC_SSE_SiteDialog {
     onLoad = "['site'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
-        class BG: RscText { idc=-1; x=0.12; y=0.08; w=0.76; h=0.84; colorBackground[]=SSE_UI_BG; };
-        class Title: RscText {
-            idc=93301; text="SITE EXPLOITATION";
-            x=0.12; y=0.08; w=0.76; h=0.045;
-            colorBackground[]=SSE_UI_HDR; colorText[]=SSE_UI_ACCENT;
-        };
+        SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93301,"EXPLOITATION DE SITE",-1,"  Complétude · priorités · éléments non traités");
+        SSE_SECTION(SecSummary,"SYNTHÈSE",0.5,3.1,35);
+        SSE_SECTION(SecList,"ÉLÉMENTS — TRIAGE",0.5,8.7,17.25);
+        SSE_SECTION(SecDetail,"DÉTAIL",18.25,8.7,17.25);
     };
     class controls {
-        class Summary: RscStructuredText { idc=93310; x=0.14; y=0.14; w=0.72; h=0.16; colorBackground[]={0,0,0,0.25}; };
-        class List: RscListBox { idc=93311; x=0.14; y=0.32; w=0.35; h=0.45; colorBackground[]={0,0,0,0.35}; };
-        class Detail: RscStructuredText { idc=93312; x=0.51; y=0.32; w=0.35; h=0.45; colorBackground[]={0,0,0,0.25}; };
-        class BtnTriage: RscButton { idc=93320; text="TRIAGE"; x=0.14; y=0.8; w=0.12; h=0.04; action="[] call comspec_sse_fnc_uiSiteTriage"; colorBackground[]=SSE_UI_BTN; };
-        class BtnRefresh: RscButton { idc=93321; text="RAFRAÎCHIR"; x=0.28; y=0.8; w=0.14; h=0.04; action="['site'] call comspec_sse_fnc_uiRefresh"; colorBackground[]=SSE_UI_BTN2; };
-        class BtnBack: RscButton { idc=93322; text="TERMINAL"; x=0.58; y=0.8; w=0.12; h=0.04; action="['terminal'] call comspec_sse_fnc_uiOpenScreen"; colorBackground[]=SSE_UI_BTN2; };
-        class BtnClose: RscButton { idc=93323; text="FERMER"; x=0.72; y=0.8; w=0.12; h=0.04; action="closeDialog 0"; colorBackground[]=SSE_UI_MUTED; };
+        class Summary: COMSPEC_SSE_RscStructuredText { idc = 93310; SSE_POS(0.5,4,35,4.4); };
+        class List: COMSPEC_SSE_RscListBox { idc = 93311; SSE_POS(0.5,9.6,17.25,10.1); };
+        class Detail: COMSPEC_SSE_RscStructuredText { idc = 93312; SSE_POS(18.25,9.6,17.25,10.1); };
+        class BtnTriage: COMSPEC_SSE_RscButton { idc = 93320; text = "TRIAGE"; tooltip = "Classe les éléments par priorité d'exploitation"; action = "[] call comspec_sse_fnc_uiSiteTriage"; SSE_POS(0.5,20.75,6,1.5); };
+        class BtnRefresh: COMSPEC_SSE_RscButtonNav { idc = 93321; text = "RAFRAÎCHIR"; action = "['site'] call comspec_sse_fnc_uiRefresh"; SSE_POS(6.8,20.75,6,1.5); };
+        class BtnBack: COMSPEC_SSE_RscButtonNav { idc = 93322; text = "TERMINAL"; action = "['terminal'] call comspec_sse_fnc_uiOpenScreen"; SSE_POS(23.2,20.75,6,1.5); };
+        class BtnClose: COMSPEC_SSE_RscButtonClose { idc = 93323; text = "FERMER"; action = "closeDialog 0"; SSE_POS(29.5,20.75,6,1.5); };
     };
 };
 
 // ============================================================
-// INTELLIGENCE GRAPH (idd 93350)
+// GRAPHE DE RENSEIGNEMENT (idd 93350)
 // ============================================================
 class COMSPEC_SSE_GraphDialog {
     idd = 93350;
@@ -215,24 +207,21 @@ class COMSPEC_SSE_GraphDialog {
     onLoad = "['graph'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
-        class BG: RscText { idc=-1; x=0.08; y=0.06; w=0.84; h=0.88; colorBackground[]=SSE_UI_BG; };
-        class Title: RscText {
-            idc=93351; text="INTELLIGENCE GRAPH";
-            x=0.08; y=0.06; w=0.84; h=0.045;
-            colorBackground[]=SSE_UI_HDR; colorText[]=SSE_UI_ACCENT;
-        };
+        SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93351,"GRAPHE DE RENSEIGNEMENT",-1,"  Nœuds et relations établies sur le terrain");
+        SSE_SECTION(SecNodes,"NŒUDS",0.5,3.1,13);
+        SSE_SECTION(SecEdges,"RELATIONS",14,3.1,21.5);
     };
     class controls {
-        class Nodes: RscListBox { idc=93360; x=0.1; y=0.13; w=0.28; h=0.65; colorBackground[]={0,0,0,0.35}; };
-        class Edges: RscStructuredText { idc=93361; x=0.4; y=0.13; w=0.5; h=0.65; colorBackground[]={0,0,0,0.25}; };
-        class BtnPivot: RscButton { idc=93370; text="PIVOT"; x=0.1; y=0.82; w=0.12; h=0.04; action="[] call comspec_sse_fnc_uiGraphPivot"; colorBackground[]=SSE_UI_BTN; };
-        class BtnBack: RscButton { idc=93371; text="TERMINAL"; x=0.6; y=0.82; w=0.14; h=0.04; action="['terminal'] call comspec_sse_fnc_uiOpenScreen"; colorBackground[]=SSE_UI_BTN2; };
-        class BtnClose: RscButton { idc=93372; text="FERMER"; x=0.76; y=0.82; w=0.12; h=0.04; action="closeDialog 0"; colorBackground[]=SSE_UI_MUTED; };
+        class Nodes: COMSPEC_SSE_RscListBox { idc = 93360; SSE_POS(0.5,4,13,15.7); };
+        class Edges: COMSPEC_SSE_RscStructuredText { idc = 93361; SSE_POS(14,4,21.5,15.7); };
+        class BtnPivot: COMSPEC_SSE_RscButton { idc = 93370; text = "PIVOT"; tooltip = "Recherche les liens à partir du nœud sélectionné"; action = "[] call comspec_sse_fnc_uiGraphPivot"; SSE_POS(0.5,20.75,6,1.5); };
+        class BtnBack: COMSPEC_SSE_RscButtonNav { idc = 93371; text = "TERMINAL"; action = "['terminal'] call comspec_sse_fnc_uiOpenScreen"; SSE_POS(23.2,20.75,6,1.5); };
+        class BtnClose: COMSPEC_SSE_RscButtonClose { idc = 93372; text = "FERMER"; action = "closeDialog 0"; SSE_POS(29.5,20.75,6,1.5); };
     };
 };
 
 // ============================================================
-// EVIDENCE / CHAIN OF CUSTODY (idd 93400)
+// PREUVES / CHAÎNE DE CONSERVATION (idd 93400)
 // ============================================================
 class COMSPEC_SSE_EvidenceDialog {
     idd = 93400;
@@ -241,24 +230,21 @@ class COMSPEC_SSE_EvidenceDialog {
     onLoad = "['evidence'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
-        class BG: RscText { idc=-1; x=0.1; y=0.08; w=0.8; h=0.84; colorBackground[]=SSE_UI_BG; };
-        class Title: RscText {
-            idc=93401; text="EVIDENCE / CHAIN OF CUSTODY";
-            x=0.1; y=0.08; w=0.8; h=0.045;
-            colorBackground[]=SSE_UI_HDR; colorText[]=SSE_UI_ACCENT;
-        };
+        SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93401,"PREUVES — CHAÎNE DE CONSERVATION",-1,"  Pièces saisies · scellés · traçabilité");
+        SSE_SECTION(SecList,"PIÈCES",0.5,3.1,16);
+        SSE_SECTION(SecDetail,"DÉTAIL DE LA PIÈCE",17,3.1,18.5);
     };
     class controls {
-        class List: RscListBox { idc=93410; x=0.12; y=0.15; w=0.36; h=0.6; colorBackground[]={0,0,0,0.35}; };
-        class Detail: RscStructuredText { idc=93411; x=0.5; y=0.15; w=0.38; h=0.6; colorBackground[]={0,0,0,0.25}; };
-        class BtnBag: RscButton { idc=93420; text="SOUS SCELLÉ"; x=0.12; y=0.78; w=0.14; h=0.04; action="[] call comspec_sse_fnc_uiBagSelected"; colorBackground[]=SSE_UI_BTN; };
-        class BtnBack: RscButton { idc=93421; text="TERMINAL"; x=0.6; y=0.78; w=0.12; h=0.04; action="['terminal'] call comspec_sse_fnc_uiOpenScreen"; colorBackground[]=SSE_UI_BTN2; };
-        class BtnClose: RscButton { idc=93422; text="FERMER"; x=0.74; y=0.78; w=0.12; h=0.04; action="closeDialog 0"; colorBackground[]=SSE_UI_MUTED; };
+        class List: COMSPEC_SSE_RscListBox { idc = 93410; SSE_POS(0.5,4,16,15.7); };
+        class Detail: COMSPEC_SSE_RscStructuredText { idc = 93411; SSE_POS(17,4,18.5,15.7); };
+        class BtnBag: COMSPEC_SSE_RscButton { idc = 93420; text = "METTRE SOUS SCELLÉ"; tooltip = "Place la pièce sélectionnée sous scellé"; action = "[] call comspec_sse_fnc_uiBagSelected"; SSE_POS(0.5,20.75,8,1.5); };
+        class BtnBack: COMSPEC_SSE_RscButtonNav { idc = 93421; text = "TERMINAL"; action = "['terminal'] call comspec_sse_fnc_uiOpenScreen"; SSE_POS(23.2,20.75,6,1.5); };
+        class BtnClose: COMSPEC_SSE_RscButtonClose { idc = 93422; text = "FERMER"; action = "closeDialog 0"; SSE_POS(29.5,20.75,6,1.5); };
     };
 };
 
 // ============================================================
-// MISSION INTEL (idd 93450)
+// RENSEIGNEMENT MISSION — FUSION (idd 93450)
 // ============================================================
 class COMSPEC_SSE_MissionIntelDialog {
     idd = 93450;
@@ -267,28 +253,24 @@ class COMSPEC_SSE_MissionIntelDialog {
     onLoad = "['mission'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
-        class BG: RscText { idc=-1; x=0.08; y=0.06; w=0.84; h=0.88; colorBackground[]=SSE_UI_BG; };
-        class Title: RscText {
-            idc=93451; text="MISSION INTEL — FUSION";
-            x=0.08; y=0.06; w=0.84; h=0.045;
-            colorBackground[]=SSE_UI_HDR; colorText[]=SSE_UI_ACCENT;
-        };
+        SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93451,"RENSEIGNEMENT MISSION — FUSION",-1,"  Ensemble des renseignements recueillis · filtre par fiabilité");
+        SSE_SECTION(SecList,"RENSEIGNEMENTS",0.5,4.6,35);
     };
     class controls {
-        class Filter: RscStructuredText { idc=93452; x=0.1; y=0.12; w=0.8; h=0.04; colorBackground[]={0,0,0,0.2}; };
-        class List: RscListBox { idc=93453; x=0.1; y=0.18; w=0.8; h=0.58; colorBackground[]={0,0,0,0.35}; };
-        class BtnAll: RscButton { idc=93460; text="TOUS"; x=0.1; y=0.8; w=0.1; h=0.04; action="['ALL'] call comspec_sse_fnc_uiMissionFilter"; colorBackground[]=SSE_UI_BTN; };
-        class BtnObs: RscButton { idc=93461; text="OBSERVED"; x=0.21; y=0.8; w=0.12; h=0.04; action="['OBSERVED'] call comspec_sse_fnc_uiMissionFilter"; colorBackground[]=SSE_UI_BTN; };
-        class BtnRep: RscButton { idc=93462; text="REPORTED"; x=0.34; y=0.8; w=0.12; h=0.04; action="['REPORTED'] call comspec_sse_fnc_uiMissionFilter"; colorBackground[]=SSE_UI_BTN; };
-        class BtnAss: RscButton { idc=93463; text="ASSESSED"; x=0.47; y=0.8; w=0.12; h=0.04; action="['ASSESSED'] call comspec_sse_fnc_uiMissionFilter"; colorBackground[]=SSE_UI_BTN; };
-        class BtnConf: RscButton { idc=93464; text="CONFIRMED"; x=0.6; y=0.8; w=0.13; h=0.04; action="['CONFIRMED'] call comspec_sse_fnc_uiMissionFilter"; colorBackground[]=SSE_UI_BTN; };
-        class BtnBack: RscButton { idc=93465; text="TERMINAL"; x=0.1; y=0.86; w=0.14; h=0.04; action="['terminal'] call comspec_sse_fnc_uiOpenScreen"; colorBackground[]=SSE_UI_BTN2; };
-        class BtnClose: RscButton { idc=93466; text="FERMER"; x=0.76; y=0.86; w=0.12; h=0.04; action="closeDialog 0"; colorBackground[]=SSE_UI_MUTED; };
+        class Filter: COMSPEC_SSE_RscStructuredText { idc = 93452; colorBackground[] = SSE_C_PANEL_ALT; SSE_POS(0.5,3.1,35,1.2); };
+        class List: COMSPEC_SSE_RscListBox { idc = 93453; SSE_POS(0.5,5.5,35,14.2); };
+        class BtnAll: COMSPEC_SSE_RscButtonNav { idc = 93460; text = "TOUS"; action = "['ALL'] call comspec_sse_fnc_uiMissionFilter"; SSE_POS(0.5,20.3,5.6,1.25); };
+        class BtnObs: COMSPEC_SSE_RscButtonNav { idc = 93461; text = "OBSERVÉ"; tooltip = "Constaté directement sur le terrain"; action = "['OBSERVED'] call comspec_sse_fnc_uiMissionFilter"; SSE_POS(6.4,20.3,5.6,1.25); };
+        class BtnRep: COMSPEC_SSE_RscButtonNav { idc = 93462; text = "RAPPORTÉ"; tooltip = "Rapporté par une source, non vérifié"; action = "['REPORTED'] call comspec_sse_fnc_uiMissionFilter"; SSE_POS(12.3,20.3,5.6,1.25); };
+        class BtnAss: COMSPEC_SSE_RscButtonNav { idc = 93463; text = "ÉVALUÉ"; tooltip = "Analysé et jugé plausible"; action = "['ASSESSED'] call comspec_sse_fnc_uiMissionFilter"; SSE_POS(18.2,20.3,5.6,1.25); };
+        class BtnConf: COMSPEC_SSE_RscButtonNav { idc = 93464; text = "CONFIRMÉ"; tooltip = "Corroboré par plusieurs sources"; action = "['CONFIRMED'] call comspec_sse_fnc_uiMissionFilter"; SSE_POS(24.1,20.3,5.6,1.25); };
+        class BtnBack: COMSPEC_SSE_RscButtonNav { idc = 93465; text = "TERMINAL"; action = "['terminal'] call comspec_sse_fnc_uiOpenScreen"; SSE_POS(0.5,21.7,5.6,1.15); };
+        class BtnClose: COMSPEC_SSE_RscButtonClose { idc = 93466; text = "FERMER"; action = "closeDialog 0"; SSE_POS(30,21.7,5.6,1.15); };
     };
 };
 
 // ============================================================
-// ZEUS SSE CONTROL (idd 93500)
+// CONTRÔLE ZEUS SSE (idd 93500)
 // ============================================================
 class COMSPEC_SSE_ZeusControlDialog {
     idd = 93500;
@@ -297,21 +279,19 @@ class COMSPEC_SSE_ZeusControlDialog {
     onLoad = "['zeus'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
-        class BG: RscText { idc=-1; x=0.05; y=0.04; w=0.9; h=0.92; colorBackground[]={0.05,0.05,0.08,0.97}; };
-        class Title: RscText {
-            idc=93501; text="ZEUS SSE CONTROL — VÉRITÉ / CONNU JOUEURS";
-            x=0.05; y=0.04; w=0.9; h=0.045;
-            colorBackground[]={0.25,0.12,0.05,1}; colorText[]={1,0.85,0.4,1};
-        };
+        SSE_FRAME(COMSPEC_SSE_RscHeaderZeus,COMSPEC_SSE_RscAccentLineZeus,93501,"CONTRÔLE ZEUS SSE — VÉRITÉ / CONNU JOUEURS",-1,"  Réservé au chef de mission · ne pas afficher aux joueurs");
+        SSE_SECTION(SecKnown,"CE QUE SAVENT LES JOUEURS",0.5,3.1,17.25);
+        SSE_SECTION(SecTruth,"VÉRITÉ COMPLÈTE",18.25,3.1,17.25);
+        SSE_SECTION(SecList,"ENTITÉS SSE À PROXIMITÉ",0.5,13.1,35);
     };
     class controls {
-        class Known: RscStructuredText { idc=93510; x=0.07; y=0.11; w=0.42; h=0.35; colorBackground[]={0,0,0,0.3}; };
-        class Truth: RscStructuredText { idc=93511; x=0.51; y=0.11; w=0.42; h=0.35; colorBackground[]={0.1,0.02,0.02,0.35}; };
-        class List: RscListBox { idc=93512; x=0.07; y=0.48; w=0.86; h=0.32; colorBackground[]={0,0,0,0.35}; };
-        class BtnGen: RscButton { idc=93520; text="BRIEF / GÉNÉRER"; x=0.07; y=0.84; w=0.16; h=0.04; action="[] call comspec_sse_fnc_uiZeusGenerate"; colorBackground[]={0.35,0.2,0.05,1}; };
-        class BtnLink: RscButton { idc=93521; text="LIER SÉLECTION"; x=0.25; y=0.84; w=0.16; h=0.04; action="[] call comspec_sse_fnc_uiZeusLink"; colorBackground[]={0.35,0.2,0.05,1}; };
-        class BtnExport: RscButton { idc=93522; text="EXPORT GRAPHE"; x=0.43; y=0.84; w=0.16; h=0.04; action="[] call comspec_sse_fnc_uiZeusExport"; colorBackground[]={0.35,0.2,0.05,1}; };
-        class BtnAAR: RscButton { idc=93523; text="AAR"; x=0.61; y=0.84; w=0.1; h=0.04; action="[] call comspec_sse_fnc_uiZeusAAR"; colorBackground[]={0.35,0.2,0.05,1}; };
-        class BtnClose: RscButton { idc=93524; text="FERMER"; x=0.8; y=0.84; w=0.12; h=0.04; action="closeDialog 0"; colorBackground[]=SSE_UI_MUTED; };
+        class Known: COMSPEC_SSE_RscStructuredText { idc = 93510; SSE_POS(0.5,4,17.25,8.8); };
+        class Truth: COMSPEC_SSE_RscStructuredText { idc = 93511; colorBackground[] = {0.14,0.07,0.06,0.94}; SSE_POS(18.25,4,17.25,8.8); };
+        class List: COMSPEC_SSE_RscListBox { idc = 93512; SSE_POS(0.5,14,35,5.7); };
+        class BtnGen: COMSPEC_SSE_RscButtonZeus { idc = 93520; text = "BRIEF / GÉNÉRER"; tooltip = "Applique le dataset FALCON autour de vous (ou un brief par défaut)"; action = "[] call comspec_sse_fnc_uiZeusGenerate"; SSE_POS(0.5,20.75,7,1.5); };
+        class BtnLink: COMSPEC_SSE_RscButtonZeus { idc = 93521; text = "LIER (PIVOT)"; tooltip = "Crée / affiche les liens pivot du record courant"; action = "[] call comspec_sse_fnc_uiZeusLink"; SSE_POS(7.8,20.75,7,1.5); };
+        class BtnExport: COMSPEC_SSE_RscButtonZeus { idc = 93522; text = "EXPORTER LE GRAPHE"; action = "[] call comspec_sse_fnc_uiZeusExport"; SSE_POS(15.1,20.75,7,1.5); };
+        class BtnAAR: COMSPEC_SSE_RscButtonZeus { idc = 93523; text = "AAR"; tooltip = "Compte rendu de fin de mission"; action = "[] call comspec_sse_fnc_uiZeusAAR"; SSE_POS(22.4,20.75,5,1.5); };
+        class BtnClose: COMSPEC_SSE_RscButtonClose { idc = 93524; text = "FERMER"; action = "closeDialog 0"; SSE_POS(29.5,20.75,6,1.5); };
     };
 };

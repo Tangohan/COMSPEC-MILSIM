@@ -1,4 +1,5 @@
-// RscText / RscButton / RscListbox sont déclarés dans config.cpp avant l’inclusion.
+// Dialogue Zeus « Appliquer un modèle SSE » (idd 93030).
+// Classes COMSPEC_SSE_Rsc* : addon ui, déclarées dans config.cpp.
 
 class COMSPEC_SSE_ModelDialog {
     idd = 93030;
@@ -6,38 +7,41 @@ class COMSPEC_SSE_ModelDialog {
     enableSimulation = 1;
 
     class controlsBackground {
-        class BG: RscText {
-            idc = -1;
-            x = 0.28; y = 0.2; w = 0.44; h = 0.52;
-            colorBackground[] = {0.05, 0.08, 0.05, 0.95};
+        class Dim: COMSPEC_SSE_RscDim { SSE_FULLSCREEN; };
+        class BG: COMSPEC_SSE_RscBackground { SSE_ZPOS(10,3.5,20,18); };
+        class Title: COMSPEC_SSE_RscHeaderZeus {
+            text = "APPLIQUER UN MODÈLE SSE";
+            SSE_ZPOS(10,3.5,20,1.6);
         };
-        class Title: RscText {
-            idc = -1;
-            text = "COMSPEC SSE — MODÈLES";
-            x = 0.28; y = 0.2; w = 0.44; h = 0.04;
-            colorBackground[] = {0.1, 0.25, 0.1, 1};
-            colorText[] = {0.6, 1, 0.6, 1};
+        class TitleLine: COMSPEC_SSE_RscAccentLineZeus { SSE_ZPOS(10,5.1,20,0.12); };
+        class SecList: COMSPEC_SSE_RscSection {
+            text = "MODÈLES DISPONIBLES — intégrés · mission · locaux";
+            SSE_ZPOS(10.5,6.9,19,0.9);
         };
+        class Footer: COMSPEC_SSE_RscPanel { SSE_ZPOS(10,19.1,20,2.4); };
     };
 
     class controls {
-        class List: RscListbox {
-            idc = 93031;
-            x = 0.3; y = 0.26; w = 0.4; h = 0.34;
+        class Info: COMSPEC_SSE_RscLabel {
+            idc = 93034;
+            text = "";
+            SSE_ZPOS(10.5,5.6,19,1.2);
         };
-        class BtnApply: RscButton {
+        class List: COMSPEC_SSE_RscListBox {
+            idc = 93031;
+            SSE_ZPOS(10.5,7.8,19,11);
+        };
+        class BtnApply: COMSPEC_SSE_RscButtonZeus {
             idc = 93032;
             text = "APPLIQUER";
-            x = 0.3; y = 0.63; w = 0.18; h = 0.045;
             action = "[] call comspec_sse_fnc_applyModelDialog";
-            colorBackground[] = {0.1, 0.35, 0.1, 1};
+            SSE_ZPOS(10.5,19.5,9.2,1.5);
         };
-        class BtnClose: RscButton {
+        class BtnClose: COMSPEC_SSE_RscButtonClose {
             idc = 93033;
             text = "FERMER";
-            x = 0.52; y = 0.63; w = 0.18; h = 0.045;
             action = "closeDialog 0";
-            colorBackground[] = {0.2, 0.2, 0.2, 1};
+            SSE_ZPOS(20.3,19.5,9.2,1.5);
         };
     };
 };

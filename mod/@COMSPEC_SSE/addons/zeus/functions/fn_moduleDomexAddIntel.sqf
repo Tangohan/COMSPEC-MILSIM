@@ -5,6 +5,8 @@ params [
 ];
 
 if (!_activated) exitWith { true };
+// Un seul exécutant : le poste où la logique est locale (Zeus qui pose / serveur en Eden).
+if (!local _logic) exitWith { true };
 
 private _obj = objNull;
 private _attached = _logic getVariable ["bis_fnc_curatorAttachObject_object", objNull];

@@ -59,6 +59,7 @@ class COMSPEC_SSE_Documents {
         };
         class comspec_sse_doc2_title {
             displayName = "Pièce 2 — intitulé";
+            tooltip = "Intitulé affiché de la deuxième pièce (vide = pas de pièce 2).";
             property = "comspec_sse_doc2_title";
             control = "Edit";
             expression = "_this setVariable ['comspec_sse_doc2_title', _value, true];";
@@ -68,6 +69,7 @@ class COMSPEC_SSE_Documents {
         };
         class comspec_sse_doc2_summary {
             displayName = "Pièce 2 — contenu";
+            tooltip = "Texte lu par les joueurs lors de la lecture du document.";
             property = "comspec_sse_doc2_summary";
             control = "EditMulti3";
             expression = "_this setVariable ['comspec_sse_doc2_summary', _value, true];";
@@ -77,6 +79,7 @@ class COMSPEC_SSE_Documents {
         };
         class comspec_sse_doc2_grid {
             displayName = "Pièce 2 — grille";
+            tooltip = "Coordonnée mentionnée dans la pièce (ex. 045 112). Optionnel.";
             property = "comspec_sse_doc2_grid";
             control = "Edit";
             expression = "_this setVariable ['comspec_sse_doc2_grid', _value, true];";
@@ -86,6 +89,7 @@ class COMSPEC_SSE_Documents {
         };
         class comspec_sse_doc2_codeword {
             displayName = "Pièce 2 — mot de code";
+            tooltip = "Mot de code cité dans la pièce. Optionnel.";
             property = "comspec_sse_doc2_codeword";
             control = "Edit";
             expression = "_this setVariable ['comspec_sse_doc2_codeword', _value, true];";
@@ -95,6 +99,7 @@ class COMSPEC_SSE_Documents {
         };
         class comspec_sse_doc3_title {
             displayName = "Pièce 3 — intitulé";
+            tooltip = "Intitulé affiché de la troisième pièce (vide = pas de pièce 3).";
             property = "comspec_sse_doc3_title";
             control = "Edit";
             expression = "_this setVariable ['comspec_sse_doc3_title', _value, true];";
@@ -104,6 +109,7 @@ class COMSPEC_SSE_Documents {
         };
         class comspec_sse_doc3_summary {
             displayName = "Pièce 3 — contenu";
+            tooltip = "Texte lu par les joueurs lors de la lecture du document.";
             property = "comspec_sse_doc3_summary";
             control = "EditMulti3";
             expression = "_this setVariable ['comspec_sse_doc3_summary', _value, true];";
@@ -113,6 +119,7 @@ class COMSPEC_SSE_Documents {
         };
         class comspec_sse_doc3_grid {
             displayName = "Pièce 3 — grille";
+            tooltip = "Coordonnée mentionnée dans la pièce (ex. 045 112). Optionnel.";
             property = "comspec_sse_doc3_grid";
             control = "Edit";
             expression = "_this setVariable ['comspec_sse_doc3_grid', _value, true];";
@@ -122,6 +129,7 @@ class COMSPEC_SSE_Documents {
         };
         class comspec_sse_doc3_codeword {
             displayName = "Pièce 3 — mot de code";
+            tooltip = "Mot de code cité dans la pièce. Optionnel.";
             property = "comspec_sse_doc3_codeword";
             control = "Edit";
             expression = "_this setVariable ['comspec_sse_doc3_codeword', _value, true];";
@@ -153,6 +161,7 @@ class COMSPEC_SSE_Phone {
         };
         class comspec_sse_phoneNumber {
             displayName = "Numéro";
+            tooltip = "Numéro du téléphone saisi. Vide = généré.";
             property = "comspec_sse_phoneNumber";
             control = "Edit";
             expression = "_this setVariable ['comspec_sse_phoneNumber', _value, true];";
@@ -192,6 +201,7 @@ class COMSPEC_SSE_Phone {
         };
         class comspec_sse_phoneNotes {
             displayName = "Notes du téléphone (une par ligne)";
+            tooltip = "Notes enregistrées dans le téléphone, une par ligne.";
             property = "comspec_sse_phoneNotes";
             control = "EditMulti3";
             expression = "_this setVariable ['comspec_sse_phoneNotes', _value, true];";
@@ -243,6 +253,7 @@ class COMSPEC_SSE_Computer {
         };
         class comspec_sse_pcOwner {
             displayName = "Compte / propriétaire";
+            tooltip = "Nom du compte utilisateur affiché à l'ouverture de session.";
             property = "comspec_sse_pcOwner";
             control = "Edit";
             expression = "_this setVariable ['comspec_sse_pcOwner', _value, true];";
@@ -262,6 +273,7 @@ class COMSPEC_SSE_Computer {
         };
         class comspec_sse_pcMailSubject {
             displayName = "Courrier — objet";
+            tooltip = "Objet du courrier le plus récent trouvé sur l'ordinateur.";
             property = "comspec_sse_pcMailSubject";
             control = "Edit";
             expression = "_this setVariable ['comspec_sse_pcMailSubject', _value, true];";
@@ -271,6 +283,7 @@ class COMSPEC_SSE_Computer {
         };
         class comspec_sse_pcMailSnippet {
             displayName = "Courrier — extrait";
+            tooltip = "Extrait lisible du courrier (quelques lignes).";
             property = "comspec_sse_pcMailSnippet";
             control = "EditMulti3";
             expression = "_this setVariable ['comspec_sse_pcMailSnippet', _value, true];";

@@ -2,7 +2,7 @@
 
 Addon Arma 3 autonome — **Sensitive Site Exploitation** (CBA + ACE3).
 
-Version actuelle : **V0.7.15**
+Version actuelle : **V0.8.0**
 
 ## Contenu
 
@@ -19,6 +19,7 @@ Version actuelle : **V0.7.15**
 | V0.7.1 | Catalogues d’ères Irak 2010–2020 et Russie 2020–2024 |
 | V0.7.3 | Région **Russie** exposée dans Eden + pools enrichis |
 | V0.7.2 | Passerelle **BII Identifi** (scans / preuves / modules → modèle SSE) |
+| V0.8 | Modules Zeus / Eden refondus (formulaires sans ZEN, nouveaux modules), début de refonte de l’UI SSE |
 
 ## Prérequis
 

@@ -223,6 +223,32 @@
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
         portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
 
+        class Attributes
+        {
+            class Radius
+            {
+                displayName = "Rayon de dotation (m)";
+                tooltip = "Sans unité synchronisée ni attachée, seuls les joueurs dans ce rayon autour du module reçoivent le terminal. Garder court (25 m par défaut) pour ne pas doter toute une compagnie.";
+                property = "COMSPEC_SSE_Equip_Radius";
+                control = "Edit";
+                expression = "_this setVariable ['Radius',_value,true];";
+                defaultValue = "25";
+                validate = "number";
+                typeName = "NUMBER";
+            };
+        };
+
+        class Arguments
+        {
+            class Radius
+            {
+                displayName = "Rayon de dotation (m)";
+                description = "Portée autour du module quand aucune unité n'est synchronisée";
+                typeName = "NUMBER";
+                defaultValue = 25;
+            };
+        };
+
         class ModuleDescription
         {
             description = "Place le terminal biométrique SEEK dans l'équipement des joueurs désignés (sac, gilet puis uniforme). Sans terminal, aucune fiche n'est ouvrable.";
@@ -294,6 +320,7 @@
             class TitlePerson
             {
                 displayName = "Titre fiche personne (optionnel)";
+                tooltip = "Titre en tête de la fiche d'un sujet contrôlé. Vide = texte du modèle.";
                 property = "COMSPEC_SSE_DocChrome_TitlePerson";
                 control = "Edit";
                 expression = "_this setVariable ['TitlePerson',_value,true];";
@@ -303,6 +330,7 @@
             class TitleDocs
             {
                 displayName = "Titre dossier documentaire (optionnel)";
+                tooltip = "Titre en tête d'un dossier documentaire (téléphone, papiers, support numérique). Vide = texte du modèle.";
                 property = "COMSPEC_SSE_DocChrome_TitleDocs";
                 control = "Edit";
                 expression = "_this setVariable ['TitleDocs',_value,true];";
@@ -312,6 +340,7 @@
             class SubtitleDossier
             {
                 displayName = "Sous-titre compte rendu (optionnel)";
+                tooltip = "Sous-titre affiché sous le titre du compte rendu. Vide = texte du modèle.";
                 property = "COMSPEC_SSE_DocChrome_SubtitleDossier";
                 control = "Edit";
                 expression = "_this setVariable ['SubtitleDossier',_value,true];";
@@ -331,6 +360,7 @@
             class BtnConsult
             {
                 displayName = "Libellé bouton consultation (optionnel)";
+                tooltip = "Libellé du bouton qui affiche la feuille. Vide = FEUILLE.";
                 property = "COMSPEC_SSE_DocChrome_BtnConsult";
                 control = "Edit";
                 expression = "_this setVariable ['BtnConsult',_value,true];";
@@ -340,6 +370,7 @@
             class BtnTransmit
             {
                 displayName = "Libellé bouton transmettre (optionnel)";
+                tooltip = "Libellé du bouton qui transmet la fiche au poste de commandement. Vide = TRANSMETTRE.";
                 property = "COMSPEC_SSE_DocChrome_BtnTransmit";
                 control = "Edit";
                 expression = "_this setVariable ['BtnTransmit',_value,true];";
@@ -349,6 +380,7 @@
             class BtnClose
             {
                 displayName = "Libellé bouton fermer (optionnel)";
+                tooltip = "Libellé du bouton de fermeture. Vide = FERMER.";
                 property = "COMSPEC_SSE_DocChrome_BtnClose";
                 control = "Edit";
                 expression = "_this setVariable ['BtnClose',_value,true];";

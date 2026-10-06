@@ -1,4 +1,8 @@
-// RscText / RscButton / RscCombo / RscCheckbox / RscSlider sont déclarés dans config.cpp.
+// Dialogue Zeus « Générer un profil SSE » (idd 93001).
+// Classes COMSPEC_SSE_Rsc* : addon ui (dialogs\base.hpp), déclarées dans config.cpp.
+// Rempli par comspec_sse_fnc_openGenerateDialog, validé par comspec_sse_fnc_applyGenerateDialog.
+
+#define SSE_ZPOS(X,Y,W,H) x = SSE_Q(SSE_X(X)); y = SSE_Q(SSE_Y(Y)); w = SSE_Q(SSE_W(W)); h = SSE_Q(SSE_H(H))
 
 class COMSPEC_SSE_GenerateDialog {
     idd = 93001;
@@ -6,112 +10,101 @@ class COMSPEC_SSE_GenerateDialog {
     enableSimulation = 1;
 
     class controlsBackground {
-        class BG: RscText {
-            idc = -1;
-            x = 0.3;
-            y = 0.2;
-            w = 0.4;
-            h = 0.58;
-            colorBackground[] = {0.05, 0.08, 0.05, 0.95};
+        class Dim: COMSPEC_SSE_RscDim { SSE_FULLSCREEN; };
+        class BG: COMSPEC_SSE_RscBackground { SSE_ZPOS(11,3.5,18,19.5); };
+        class Title: COMSPEC_SSE_RscHeaderZeus {
+            text = "GÉNÉRER UN PROFIL SSE";
+            SSE_ZPOS(11,3.5,18,1.6);
         };
-        class Title: RscText {
-            idc = -1;
-            text = "COMSPEC SSE — GÉNÉRER PROFIL";
-            x = 0.3;
-            y = 0.2;
-            w = 0.4;
-            h = 0.04;
-            colorBackground[] = {0.1, 0.25, 0.1, 1};
-            colorText[] = {0.6, 1, 0.6, 1};
+        class TitleLine: COMSPEC_SSE_RscAccentLineZeus { SSE_ZPOS(11,5.1,18,0.12); };
+        class LblProfile: COMSPEC_SSE_RscText {
+            text = "Profil";
+            tooltip = "Rôle narratif du sujet : oriente contacts, messages, documents.";
+            SSE_ZPOS(11.5,7.3,6,1.15);
         };
+        class LblRich: COMSPEC_SSE_RscText {
+            text = "Richesse";
+            tooltip = "Quantité d'éléments exploitables générés.";
+            SSE_ZPOS(11.5,8.8,6,1.15);
+        };
+        class SecContent: COMSPEC_SSE_RscSection {
+            text = "CONTENU GÉNÉRÉ";
+            SSE_ZPOS(11.5,10.4,17,0.9);
+        };
+        class LblId: COMSPEC_SSE_RscText {
+            text = "Identité réelle (Arma / Eden)";
+            tooltip = "Décoché : le terminal invente un nom SSE au lieu de reprendre l'identité de l'unité.";
+            SSE_ZPOS(13.3,11.4,15,1.15);
+        };
+        class LblPhone: COMSPEC_SSE_RscText {
+            text = "Téléphone";
+            tooltip = "Décoché : aucun téléphone généré sur le sujet.";
+            SSE_ZPOS(13.3,12.7,15,1.15);
+        };
+        class LblDoc: COMSPEC_SSE_RscText {
+            text = "Documents";
+            tooltip = "Décoché : aucun document papier généré.";
+            SSE_ZPOS(13.3,14,15,1.15);
+        };
+        class LblBio: COMSPEC_SSE_RscText {
+            text = "Biométrie";
+            tooltip = "Décoché : pas d'empreintes / iris / ADN pour SEEK.";
+            SSE_ZPOS(13.3,15.3,15,1.15);
+        };
+        class LblNet: COMSPEC_SSE_RscText {
+            text = "Lier les cibles entre elles";
+            tooltip = "Crée des liens « associé » entre les cibles sélectionnées (graphe).";
+            SSE_ZPOS(13.3,16.6,15,1.15);
+        };
+        class LblNoise: COMSPEC_SSE_RscText {
+            text = "Données inutiles (bruit)";
+            tooltip = "Probabilité d'ajouter des messages sans intérêt, pour masquer les vrais indices.";
+            SSE_ZPOS(11.5,18,12,1.1);
+        };
+        class Footer: COMSPEC_SSE_RscPanel { SSE_ZPOS(11,20.6,18,2.4); };
     };
 
     class controls {
-        class LblProfile: RscText {
-            text = "Profil";
-            x = 0.32; y = 0.26; w = 0.15; h = 0.03;
-            colorText[] = {0.7, 1, 0.7, 1};
+        class Targets: COMSPEC_SSE_RscLabel {
+            idc = 93018;
+            text = "";
+            SSE_ZPOS(11.5,5.6,17,1.2);
         };
-        class Profile: RscCombo {
+        class Profile: COMSPEC_SSE_RscCombo {
             idc = 93010;
-            x = 0.48; y = 0.26; w = 0.2; h = 0.03;
+            SSE_ZPOS(18,7.3,10.5,1.15);
         };
-        class LblRich: RscText {
-            text = "Richesse";
-            x = 0.32; y = 0.31; w = 0.15; h = 0.03;
-            colorText[] = {0.7, 1, 0.7, 1};
-        };
-        class Rich: RscCombo {
+        class Rich: COMSPEC_SSE_RscCombo {
             idc = 93011;
-            x = 0.48; y = 0.31; w = 0.2; h = 0.03;
+            SSE_ZPOS(18,8.8,10.5,1.15);
         };
-        class CbId: RscCheckbox {
-            idc = 93012;
-            x = 0.32; y = 0.37; w = 0.04; h = 0.04;
+        class CbId: COMSPEC_SSE_RscCheckBox { idc = 93012; SSE_ZPOS(11.5,11.4,1.5,1.15); };
+        class CbPhone: COMSPEC_SSE_RscCheckBox { idc = 93013; SSE_ZPOS(11.5,12.7,1.5,1.15); };
+        class CbDoc: COMSPEC_SSE_RscCheckBox { idc = 93014; SSE_ZPOS(11.5,14,1.5,1.15); };
+        class CbBio: COMSPEC_SSE_RscCheckBox { idc = 93015; SSE_ZPOS(11.5,15.3,1.5,1.15); };
+        class CbNet: COMSPEC_SSE_RscCheckBox { idc = 93016; SSE_ZPOS(11.5,16.6,1.5,1.15); };
+        class NoiseValue: COMSPEC_SSE_RscText {
+            idc = 93019;
+            text = "25 %";
+            style = 1;
+            SSE_ZPOS(24.5,18,4,1.1);
         };
-        class LblId: RscText {
-            text = "Identité";
-            x = 0.37; y = 0.37; w = 0.2; h = 0.04;
-            colorText[] = {0.7, 1, 0.7, 1};
-        };
-        class CbPhone: RscCheckbox {
-            idc = 93013;
-            x = 0.32; y = 0.42; w = 0.04; h = 0.04;
-        };
-        class LblPhone: RscText {
-            text = "Téléphone";
-            x = 0.37; y = 0.42; w = 0.2; h = 0.04;
-            colorText[] = {0.7, 1, 0.7, 1};
-        };
-        class CbDoc: RscCheckbox {
-            idc = 93014;
-            x = 0.32; y = 0.47; w = 0.04; h = 0.04;
-        };
-        class LblDoc: RscText {
-            text = "Documents";
-            x = 0.37; y = 0.47; w = 0.2; h = 0.04;
-            colorText[] = {0.7, 1, 0.7, 1};
-        };
-        class CbBio: RscCheckbox {
-            idc = 93015;
-            x = 0.32; y = 0.52; w = 0.04; h = 0.04;
-        };
-        class LblBio: RscText {
-            text = "Biométrie";
-            x = 0.37; y = 0.52; w = 0.2; h = 0.04;
-            colorText[] = {0.7, 1, 0.7, 1};
-        };
-        class CbNet: RscCheckbox {
-            idc = 93016;
-            x = 0.32; y = 0.57; w = 0.04; h = 0.04;
-        };
-        class LblNet: RscText {
-            text = "Liens réseau";
-            x = 0.37; y = 0.57; w = 0.2; h = 0.04;
-            colorText[] = {0.7, 1, 0.7, 1};
-        };
-        class LblNoise: RscText {
-            text = "Données inutiles %";
-            x = 0.32; y = 0.63; w = 0.2; h = 0.03;
-            colorText[] = {0.7, 1, 0.7, 1};
-        };
-        class Noise: RscSlider {
+        class Noise: COMSPEC_SSE_RscSlider {
             idc = 93017;
-            x = 0.32; y = 0.66; w = 0.36; h = 0.03;
+            onSliderPosChanged = "params ['_c','_v']; ((ctrlParent _c) displayCtrl 93019) ctrlSetText format ['%1 %2', round _v, '%'];";
+            SSE_ZPOS(11.5,19.1,17,1);
         };
-        class BtnGen: RscButton {
+        class BtnGen: COMSPEC_SSE_RscButtonZeus {
             idc = 93020;
             text = "GÉNÉRER";
-            x = 0.32; y = 0.71; w = 0.17; h = 0.045;
             action = "[] call comspec_sse_fnc_applyGenerateDialog";
-            colorBackground[] = {0.1, 0.35, 0.1, 1};
+            SSE_ZPOS(11.5,21,8.2,1.5);
         };
-        class BtnClose: RscButton {
+        class BtnClose: COMSPEC_SSE_RscButtonClose {
             idc = 93021;
             text = "FERMER";
-            x = 0.51; y = 0.71; w = 0.17; h = 0.045;
             action = "closeDialog 0";
-            colorBackground[] = {0.2, 0.2, 0.2, 1};
+            SSE_ZPOS(20.3,21,8.2,1.5);
         };
     };
 };

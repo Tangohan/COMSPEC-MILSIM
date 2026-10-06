@@ -5,6 +5,8 @@ params [
 ];
 
 if (!_activated) exitWith { true };
+// Un seul exécutant : le poste où la logique est locale (Zeus qui pose / serveur en Eden).
+if (!local _logic) exitWith { true };
 
 private _obj = objNull;
 private _attached = _logic getVariable ["bis_fnc_curatorAttachObject_object", objNull];
@@ -19,10 +21,12 @@ if (isNull _obj) then {
 };
 
 private _stageArg = _logic getVariable ["Stage", ""];
+// Eden : la valeur par défaut de l'attribut n'est pas enregistrée → palier « découvert ».
+if (_stageArg isEqualTo "" && {isNull curatorCamera}) then { _stageArg = "decouvert"; };
 if (_stageArg isNotEqualTo "" && {!isNull _obj}) then {
     [_obj, _stageArg, true] call comspec_sse_fnc_domexSetStage;
     if (hasInterface) then {
-        hint "Palier d’accès mis à jour.";
+        ["Palier d’accès mis à jour."] call comspec_sse_fnc_zeusNotify;
     };
 } else {
     private _open = uiNamespace getVariable ["COMSPEC_SSE_DomexOpenStage", {}];

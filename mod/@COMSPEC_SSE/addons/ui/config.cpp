@@ -6,7 +6,7 @@ class CfgPatches {
         units[] = {};
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
-        requiredAddons[] = {"comspec_sse_core"};
+        requiredAddons[] = {"comspec_sse_core", "A3_Ui_F"};
         author = "COMSPEC";
         VERSION_CONFIG;
     };
@@ -48,17 +48,26 @@ class CfgFunctions {
             class uiZeusExport {};
             class uiZeusAAR {};
             class uiTransmitRecord {};
+            class uiGrid {};
+            class uiForm {};
+            class uiFormConfirm {};
         };
     };
 };
 
-// Classes de base déclarées une seule fois : chaque dialogue inclus ensuite les réutilise.
+// Classes vanilla déclarées une seule fois : base.hpp en dérive les contrôles COMSPEC_SSE_Rsc*.
 class RscText;
 class RscButton;
 class RscStructuredText;
 class RscListBox;
 class RscEdit;
 class RscCombo;
+class RscCheckBox;
+class RscXSliderH;
+class RscControlsGroup;
 
+#include "ui_macros.hpp"
+#include "dialogs\base.hpp"
 #include "dialogs\resultDialog.hpp"
 #include "dialogs\screens.hpp"
+#include "dialogs\formDialog.hpp"
