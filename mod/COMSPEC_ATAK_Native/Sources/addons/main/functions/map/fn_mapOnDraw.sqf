@@ -29,13 +29,54 @@ private _veil = switch (_bgStyle) do {
 if ((count _veil) > 0) then {
     _map drawRectangle [[worldSize / 2, worldSize / 2, 0], worldSize * 1.5, worldSize * 1.5, 0, _veil, "#(rgb,8,8,3)color(1,1,1,1)"];
 };
-// Heatmap : activité ennemie repérée par mon camp (cases de 200 m, s'efface avec le temps).
+// Heatmap : altitudes du terrain en couleur (bleu bas, vert, jaune, brun, blanc haut). Aucune donnée ennemie.
+// Cases visibles seulement, taille adaptée au zoom (environ 48 cases de large), hauteurs gardées en cache.
 if (profileNamespace getVariable ["COMSPEC_ATAK_LayerHeat", false]) then {
-    {
-        _y params ["_cx", "_cy", "_w"];
-        private _k = (_w / 6) min 1;
-        _map drawRectangle [[_cx, _cy, 0], 100, 100, 0, [0.95, 0.75 - 0.6 * _k, 0.1, 0.12 + 0.43 * _k], "#(rgb,8,8,3)color(1,1,1,1)"];
-    } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Heat", createHashMap]);
+    private _rng = missionNamespace getVariable ["COMSPEC_ATAK_HeightRange", []];
+    if ((count _rng) < 2) then {
+        private _lo = 1e9; private _hi = -1e9; private _st = worldSize / 48;
+        for "_ix" from 0 to 47 do { for "_iy" from 0 to 47 do {
+            private _h = getTerrainHeightASL [(_ix + 0.5) * _st, (_iy + 0.5) * _st];
+            if (_h > 0) then { _lo = _lo min _h; _hi = _hi max _h; };
+        }; };
+        if (_hi < _lo) then { _lo = 0; _hi = 100; };
+        _rng = [_lo, (_hi - _lo) max 20];
+        missionNamespace setVariable ["COMSPEC_ATAK_HeightRange", _rng];
+    };
+    _rng params ["_hLo", "_hSpan"];
+    (ctrlPosition _map) params ["_mx", "_my", "_mw", "_mh"];
+    private _tl = _map ctrlMapScreenToWorld [_mx, _my];
+    private _br = _map ctrlMapScreenToWorld [_mx + _mw, _my + _mh];
+    private _wx0 = ((_tl select 0) min (_br select 0)) max 0;
+    private _wx1 = ((_tl select 0) max (_br select 0)) min worldSize;
+    private _wy0 = ((_tl select 1) min (_br select 1)) max 0;
+    private _wy1 = ((_tl select 1) max (_br select 1)) min worldSize;
+    private _cell = 50;
+    { if (((_wx1 - _wx0) / _x) > 48) then { _cell = _x * 2; }; } forEach [50, 100, 200, 400, 800, 1600];
+    private _cache = uiNamespace getVariable ["COMSPEC_ATAK_HeightCache", createHashMap];
+    if ((count _cache) > 20000) then { _cache = createHashMap; };
+    uiNamespace setVariable ["COMSPEC_ATAK_HeightCache", _cache];
+    private _stops = [[0, [0.15, 0.35, 0.85]], [0.25, [0.2, 0.7, 0.35]], [0.5, [0.9, 0.85, 0.25]], [0.75, [0.6, 0.38, 0.18]], [1, [0.97, 0.97, 0.97]]];
+    private _tex = "#(rgb,8,8,3)color(1,1,1,1)";
+    private _half = _cell / 2;
+    for "_gx" from ((floor (_wx0 / _cell)) * _cell) to _wx1 step _cell do {
+        for "_gy" from ((floor (_wy0 / _cell)) * _cell) to _wy1 step _cell do {
+            private _k = format ["%1:%2:%3", _cell, _gx, _gy];
+            private _h = _cache getOrDefault [_k, -1e9];
+            if (_h < -1e8) then { _h = getTerrainHeightASL [_gx + _half, _gy + _half]; _cache set [_k, _h]; };
+            if (_h <= 0) then { continue };
+            private _t = (((_h - _hLo) / _hSpan) max 0) min 1;
+            private _i = 1;
+            while { _i < 4 && {_t > ((_stops select _i) select 0)} } do { _i = _i + 1; };
+            (_stops select (_i - 1)) params ["_t0", "_c0"];
+            (_stops select _i) params ["_t1", "_c1"];
+            private _f = ((_t - _t0) / ((_t1 - _t0) max 0.001)) min 1;
+            _map drawRectangle [[_gx + _half, _gy + _half, 0], _half, _half, 0, [
+                (_c0 select 0) + ((_c1 select 0) - (_c0 select 0)) * _f,
+                (_c0 select 1) + ((_c1 select 1) - (_c0 select 1)) * _f,
+                (_c0 select 2) + ((_c1 select 2) - (_c0 select 2)) * _f, 0.38], _tex];
+        };
+    };
 };
 
 // GPS : itinéraire en trait épais (bordure sombre, bleu à parcourir, gris déjà parcouru), arrivée en drapeau.

@@ -223,7 +223,7 @@ if (_interactive) then {
                 ["Logistique", "P", "COMSPEC_ATAK_LayerLogi", true, ""],
                 ["Relief", "M", "COMSPEC_ATAK_ViewshedShow", true, ""],
                 ["Wave Relay", "P", "COMSPEC_ATAK_MeshOnMap", false, ""],
-                ["Heatmap", "P", "COMSPEC_ATAK_LayerHeat", false, ""]
+                ["Altitudes (heatmap)", "P", "COMSPEC_ATAK_LayerHeat", false, ""]
             ];
             // Liste en deux colonnes : case à cocher À GAUCHE du libellé complet (aligné à gauche).
             // Actif : case verte pleine, texte blanc, fond vert sombre. Inactif mais disponible : case vide bordée,

@@ -149,27 +149,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 // Tous les marqueurs de la carte vers le web (relais unique par camp).
 [{ [] call comspec_atak_native_fnc_markerWebSweep; }, 15] call CBA_fnc_addPerFrameHandler;
 
-// Heatmap : toutes les 20 s, chaque ennemi repéré par mon camp chauffe sa case de 200 m ; tout refroidit de 4 %.
-[{
-    if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
-    private _heat = missionNamespace getVariable ["COMSPEC_ATAK_Heat", createHashMap];
-    { _y set [2, (_y select 2) * 0.96]; } forEach _heat;
-    private _cold = (keys _heat) select { ((_heat get _x) select 2) < 0.2 };
-    { _heat deleteAt _x; } forEach _cold;
-    private _mySide = side group player;
-    {
-        if (alive _x && {(side group _x) isNotEqualTo _mySide} && {(side group _x) isNotEqualTo civilian} && {(_mySide knowsAbout _x) >= 1.5}) then {
-            private _p = getPosATL _x;
-            private _cx = (floor ((_p select 0) / 200)) * 200 + 100;
-            private _cy = (floor ((_p select 1) / 200)) * 200 + 100;
-            private _key = format ["%1_%2", _cx, _cy];
-            private _c = _heat getOrDefault [_key, [_cx, _cy, 0]];
-            _c set [2, (_c select 2) + 1];
-            _heat set [_key, _c];
-        };
-    } forEach allUnits;
-    missionNamespace setVariable ["COMSPEC_ATAK_Heat", _heat];
-}, 20] call CBA_fnc_addPerFrameHandler;
+// Heatmap : altitudes du terrain en couleur, calculées au dessin (fn_mapOnDraw) ; aucune donnée ennemie.
 
 // Alertes BFT de mon groupe : un équipier passe hors ligne, tombe inconscient ou meurt (et revient en ligne).
 [{
