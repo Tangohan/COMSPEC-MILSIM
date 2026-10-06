@@ -4,10 +4,15 @@
                Les cinq couleurs d'Arma (blanc, rouge, vert, bleu, jaune) sont aussi appliquées à l'équipe du jeu
                (assignTeam : barre d'escouade, carte d'Arma, ACE) ; les autres restent propres au téléphone.
       icons  : [[clé, libellé, texture]...]
-      roles  : [[clé, libellé, abrégé, texture]...]  CDE = chef d'équipe (un seul par équipe).
+      roles  : [[clé, libellé, abrégé, texture, origine]...]  CDE = chef d'équipe (un seul par équipe).
+               Origine "" (rôle du mod), "ATHENA" (fonction de la communauté, clé A<id>) ou "CUSTOM" (créé en jeu, clé C_<NOM>) :
+               ces deux dernières viennent de missionNamespace COMSPEC_ATAK_FtExtraRoles, publié par le serveur (fn_ftServer « roles »).
+      roleIcons : [[clé, libellé, texture]...]  icônes proposées pour un rôle créé en jeu (celles des rôles du mod).
+    Le cache suit COMSPEC_ATAK_FtRolesRev (nouvelle liste de rôles reçue).
 */
+private _rev = missionNamespace getVariable ["COMSPEC_ATAK_FtRolesRev", 0];
 private _c = missionNamespace getVariable "COMSPEC_ATAK_FtCatalog";
-if (!isNil "_c") exitWith { _c };
+if (!isNil "_c" && {(_c getOrDefault ["rev", -1]) isEqualTo _rev}) exitWith { _c };
 private _hex = {
     params ["_h"];
     private _d = "0123456789ABCDEF";
@@ -41,12 +46,20 @@ private _roles = [
     ["RAD", "Opérateur radio", "RAD", "\A3\ui_f\data\map\vehicleicons\iconManCommander_ca.paa"],
     ["ENG", "Sapeur", "SAP", "\A3\ui_f\data\map\vehicleicons\iconManEngineer_ca.paa"],
     ["EOD", "Démineur (EOD)", "EOD", "\A3\ui_f\data\map\vehicleicons\iconManExplosive_ca.paa"],
-    ["JTAC", "JTAC", "JTAC", _n + "b_art.paa"],
-    ["DRN", "Télépilote drone", "DRN", _n + "b_uav.paa"],
+    // Même jeu d'icônes que les autres rôles (les symboles OTAN b_art / b_uav s'affichaient à part).
+    ["JTAC", "JTAC", "JTAC", "\A3\ui_f\data\map\vehicleicons\iconManOfficer_ca.paa"],
+    ["DRN", "Télépilote drone", "DRN", "\A3\ui_f\data\map\vehicleicons\iconManVirtual_ca.paa"],
     ["PIL", "Pilote", "PIL", "\A3\ui_f\data\map\vehicleicons\iconAir_ca.paa"],
     ["CPL", "Copilote / mitrailleur de bord", "CPL", "\A3\ui_f\data\map\vehicleicons\iconAir_ca.paa"],
     ["DRV", "Conducteur", "CON", "\A3\ui_f\data\map\vehicleicons\iconCar_ca.paa"]
 ];
-_c = createHashMapFromArray [["colors", _colors], ["icons", _icons], ["roles", _roles]];
+_roles = _roles apply { _x + [""] };
+private _roleIcons = (_roles select { !((_x select 0) in ["CPL"]) }) apply { [_x select 0, _x select 1, _x select 3] };
+{
+    _x params [["_k", ""], ["_l", ""], ["_ab", ""], ["_ik", "FUS"], ["_o", "CUSTOM"]];
+    private _tex = ((_roleIcons select { (_x select 0) isEqualTo _ik }) param [0, ["", "", "\A3\ui_f\data\map\vehicleicons\iconMan_ca.paa"]]) select 2;
+    if (_k isNotEqualTo "" && {(_roles findIf { (_x select 0) isEqualTo _k }) < 0}) then { _roles pushBack [_k, _l, _ab, _tex, _o]; };
+} forEach (missionNamespace getVariable ["COMSPEC_ATAK_FtExtraRoles", []]);
+_c = createHashMapFromArray [["colors", _colors], ["icons", _icons], ["roles", _roles], ["roleIcons", _roleIcons], ["rev", _rev]];
 missionNamespace setVariable ["COMSPEC_ATAK_FtCatalog", _c];
 _c

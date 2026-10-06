@@ -31,16 +31,57 @@ private _openAddIntel = {
     params [["_obj", objNull], ["_pos", []]];
     private _entity = [_obj, _pos] call comspec_sse_fnc_domexPickObject;
     if (isNull _entity) exitWith {
-        hint "Sélectionnez un objet (ordinateur, téléphone, radio…) — pas une personne.";
+        ["Sélectionnez un objet (ordinateur, téléphone, radio…) — pas une personne.", "error"] call comspec_sse_fnc_zeusNotify;
     };
-    if (isNil "zen_dialog_fnc_create") exitWith {
-        hint "Zeus Enhanced est nécessaire pour ce menu.";
-    };
-
     private _types = ["message", "document", "photo", "contact", "coordinate", "frequency", "schedule", "manifest", "objective"];
     private _typeLabs = ["Message", "Document", "Photographie", "Contact", "Coordonnée / point", "Fréquence", "Horaire", "Manifeste", "Objectif"];
     private _qVals = ["complet", "fragment", "leurre_possible"];
     private _qLabs = ["Complet", "Fragment (à croiser)", "Peut être un leurre"];
+
+    private _onConfirm = {
+        params ["_values", "_args"];
+        _values params ["_type", "_text", "_quality", "_entities"];
+        _args params ["_entity"];
+        if ((trim _text) isEqualTo "") exitWith {
+            ["Saisissez le texte du renseignement.", "warn"] call comspec_sse_fnc_zeusNotify;
+        };
+        private _packet = createHashMapFromArray [
+            ["type", _type],
+            ["packet_type", _type],
+            ["text", trim _text],
+            ["body_text", trim _text],
+            ["quality", _quality],
+            ["entities", _entities],
+            ["origin", "zeus_live"],
+            ["channel", "zeus_live"],
+            ["reveal", "immediat"]
+        ];
+        if (_type isEqualTo "coordinate") then {
+            private _p = getPosATL _entity;
+            _packet set ["position", _p];
+            _packet set ["pos_x", _p select 0];
+            _packet set ["pos_y", _p select 1];
+            _packet set ["show_on_map", true];
+            _packet set ["grid_reference", mapGridPosition _p];
+        };
+        [_entity, _packet, true] call comspec_sse_fnc_domexAddLivePacket;
+        ["Renseignement ajouté. Il rejoint la file du laboratoire."] call comspec_sse_fnc_zeusNotify;
+    };
+
+    // Sans ZEN : formulaire SSE vanilla (mêmes champs).
+    if (isNil "zen_dialog_fnc_create") exitWith {
+        [
+            format ["Ajouter un renseignement — %1", _entity getVariable ["comspec_sse_domex_nodeId", "support"]],
+            [
+                ["COMBO", "Type", "Ce que le bureau lira dans la file.", [_types, _typeLabs, 0]],
+                ["EDIT", "Texte", "Renseignement scénarisé. Ce n’est pas une preuve.", ""],
+                ["COMBO", "Qualité", "Un fragment ou un leurre devra être corroboré.", [_qVals, _qLabs, 0]],
+                ["EDIT", "Entités", "Format : Nom | type (lieu, personne, organisation…). Séparer par ; si plusieurs.", ""]
+            ],
+            _onConfirm,
+            [_entity]
+        ] call comspec_sse_fnc_uiForm;
+    };
 
     [
         format ["Ajouter un renseignement — %1", _entity getVariable ["comspec_sse_domex_nodeId", "support"]],
@@ -50,35 +91,7 @@ private _openAddIntel = {
             ["LIST", ["Qualité", "Un fragment ou un leurre devra être corroboré."], [_qVals, _qLabs, 0]],
             ["EDIT", ["Entités (une par ligne)", "Format : Nom | type (lieu, personne, organisation…)."], ""]
         ],
-        {
-            params ["_values", "_args"];
-            _values params ["_type", "_text", "_quality", "_entities"];
-            _args params ["_entity"];
-            if ((trim _text) isEqualTo "") exitWith {
-                hint "Saisissez le texte du renseignement.";
-            };
-            private _packet = createHashMapFromArray [
-                ["type", _type],
-                ["packet_type", _type],
-                ["text", trim _text],
-                ["body_text", trim _text],
-                ["quality", _quality],
-                ["entities", _entities],
-                ["origin", "zeus_live"],
-                ["channel", "zeus_live"],
-                ["reveal", "immediat"]
-            ];
-            if (_type isEqualTo "coordinate") then {
-                private _p = getPosATL _entity;
-                _packet set ["position", _p];
-                _packet set ["pos_x", _p select 0];
-                _packet set ["pos_y", _p select 1];
-                _packet set ["show_on_map", true];
-                _packet set ["grid_reference", mapGridPosition _p];
-            };
-            [_entity, _packet, true] call comspec_sse_fnc_domexAddLivePacket;
-            hint "Renseignement ajouté. Il rejoint la file du laboratoire.";
-        },
+        _onConfirm,
         {},
         [_entity]
     ] call zen_dialog_fnc_create;
@@ -88,17 +101,31 @@ private _openStage = {
     params [["_obj", objNull], ["_pos", []]];
     private _entity = [_obj, _pos] call comspec_sse_fnc_domexPickObject;
     if (isNull _entity) exitWith {
-        hint "Sélectionnez un support numérique (objet), pas une personne.";
+        ["Sélectionnez un support numérique (objet), pas une personne.", "error"] call comspec_sse_fnc_zeusNotify;
     };
-    if (isNil "zen_dialog_fnc_create") exitWith {
-        hint "Zeus Enhanced est nécessaire pour ce menu.";
-    };
-
     private _stages = ["non_identifie", "decouvert", "acces_en_cours", "acces_etabli", "exploite"];
     private _stageLabs = ["Non identifié", "Découvert", "Accès en cours", "Accès établi", "Exploité"];
     private _cur = _entity getVariable ["comspec_sse_domex_stage", "non_identifie"];
     private _idx = _stages find _cur;
     if (_idx < 0) then { _idx = 0; };
+
+    // Sans ZEN : formulaire SSE vanilla.
+    if (isNil "zen_dialog_fnc_create") exitWith {
+        [
+            format ["Palier d’accès — %1", _entity getVariable ["comspec_sse_domex_nodeId", "support"]],
+            [
+                ["COMBO", "Palier", "Progression scénarisée. Au palier « accès établi », les contenus prévus pour ce palier rejoignent la file.", [_stages, _stageLabs, _idx]]
+            ],
+            {
+                params ["_values", "_args"];
+                _args params ["_entity", "_stages", "_stageLabs"];
+                private _stage = _values select 0;
+                [_entity, _stage, true] call comspec_sse_fnc_domexSetStage;
+                [format ["Palier mis à jour : %1.", _stageLabs param [(_stages find _stage) max 0, _stage]]] call comspec_sse_fnc_zeusNotify;
+            },
+            [_entity, _stages, _stageLabs]
+        ] call comspec_sse_fnc_uiForm;
+    };
 
     [
         format ["Palier d’accès — %1", _entity getVariable ["comspec_sse_domex_nodeId", "support"]],
@@ -117,7 +144,7 @@ private _openStage = {
                 ["acces_etabli", "Accès établi"],
                 ["exploite", "Exploité"]
             ];
-            hint format ["Palier mis à jour : %1.", _labs getOrDefault [_stage, _stage]];
+            [format ["Palier mis à jour : %1.", _labs getOrDefault [_stage, _stage]]] call comspec_sse_fnc_zeusNotify;
         },
         {},
         [_entity]
@@ -137,18 +164,33 @@ private _openMapPoint = {
         if (_obj isEqualType objNull && {!isNull _obj}) then { _pos = getPosATL _obj; } else { _pos = []; };
     };
     if (!(_pos isEqualType []) || {count _pos < 2} || {!((_pos select 0) isEqualType 0)}) exitWith {
-        hint "Posez le module sur la carte, à l’endroit du point.";
+        ["Posez le module sur la carte, à l’endroit du point.", "error"] call comspec_sse_fnc_zeusNotify;
     };
-    if (isNil "zen_dialog_fnc_create") exitWith {
-        [_pos, "Point de renseignement", _obj, "complet"] call comspec_sse_fnc_domexPlaceMapPoint;
-        hint "Point posé sur la carte du bureau.";
-    };
-
     private _qVals = ["complet", "fragment", "leurre_possible"];
     private _qLabs = ["Complet", "Fragment (à croiser)", "Peut être un leurre"];
     private _entity = objNull;
     if (_obj isEqualType objNull && {!isNull _obj} && {!(_obj isKindOf "CAManBase")}) then {
         _entity = _obj;
+    };
+
+    // Sans ZEN : formulaire SSE vanilla.
+    if (isNil "zen_dialog_fnc_create") exitWith {
+        [
+            "Poser un point carte",
+            [
+                ["EDIT", "Libellé", "Ce que le bureau verra. Le point n’apparaît pas sur la carte des joueurs.", ""],
+                ["COMBO", "Qualité", "Un fragment ou un leurre devra être corroboré.", [_qVals, _qLabs, 0]]
+            ],
+            {
+                params ["_values", "_args"];
+                _values params ["_text", "_quality"];
+                _args params ["_pos", "_entity"];
+                [_pos, _text, _entity, _quality] call comspec_sse_fnc_domexPlaceMapPoint;
+                ["Point posé. Il apparaît sur la carte du bureau, pas sur celle des joueurs."] call comspec_sse_fnc_zeusNotify;
+            },
+            [_pos, _entity],
+            format ["Grille %1", mapGridPosition _pos]
+        ] call comspec_sse_fnc_uiForm;
     };
 
     [
@@ -162,7 +204,7 @@ private _openMapPoint = {
             _values params ["_text", "_quality"];
             _args params ["_pos", "_entity"];
             [_pos, _text, _entity, _quality] call comspec_sse_fnc_domexPlaceMapPoint;
-            hint "Point posé. Il apparaît sur la carte du bureau, pas sur celle des joueurs.";
+            ["Point posé. Il apparaît sur la carte du bureau, pas sur celle des joueurs."] call comspec_sse_fnc_zeusNotify;
         },
         {},
         [_pos, _entity]

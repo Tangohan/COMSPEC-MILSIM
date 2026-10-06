@@ -24,6 +24,12 @@ private _bars = if (_lq get "sim") then { _lq get "bars" } else { switch (_net) 
 _sig ctrlSetText (_dir + format ["sig_%1.paa", _bars]);
 _sig ctrlSetTextColor (switch (true) do { case (_bars >= 3): { [0.36, 0.78, 0.42, 1] }; case (_bars >= 1): { [0.95, 0.67, 0.20, 1] }; default { [0.88, 0.25, 0.22, 1] }; });
 _sig ctrlSetTooltip format ["%1 · %2 · %3 kbit/s · %4 ms · perte %5 %%", switch (_net) do { case "CONNECTED": { "Athena connecté" }; case "DEGRADED": { "Athena dégradé" }; default { "Athena hors ligne" }; }, _lq get "label", _lq get "kbps", _lq get "latency", _lq get "loss"];
+// Mode avion : icône d'avion à la place des barres.
+if (_lq getOrDefault ["airplane", false]) then {
+    _sig ctrlSetText "\a3\ui_f\data\map\vehicleicons\iconplane_ca.paa";
+    _sig ctrlSetTextColor [0.95, 0.67, 0.20, 1];
+    _sig ctrlSetTooltip "Mode avion : réseau coupé (Bluetooth disponible)";
+};
 [] call comspec_atak_native_fnc_deviceOverlay;
 
 private _bat = [] call comspec_atak_native_fnc_battery;

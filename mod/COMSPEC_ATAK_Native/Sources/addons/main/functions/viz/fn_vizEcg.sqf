@@ -58,15 +58,23 @@ private _pfh = [{
         if (_state in ["cardiac_arrest", "kia"]) then { _hr = 0; };
         _e set [7, _hr];
         _e set [8, _state];
+        // Données masquées (Réglages > Réalisme, fn_medShow) : ni valeur, ni tracé, ni couleur d'alerte.
+        (["state", "hr", "bp", "spo2", "blood"] apply { [_x, "medical"] call comspec_atak_native_fnc_medShow }) params ["_vState", "_vHr", "_vBp", "_vSpo", "_vBlood"];
+        _e set [9, [_vHr, _vState]];
         private _lab = createHashMapFromArray [["cardiac_arrest", ["ARRÊT CARDIAQUE", "#e5483a"]], ["unconscious", ["INCONSCIENT", "#e5483a"]], ["critical", ["CRITIQUE", "#f2ab33"]], ["wounded", ["BLESSÉ", "#e8b84a"]], ["kia", ["KIA", "#8a9a93"]], ["none", ["AUCUN BLESSÉ", "#8a9a93"]]] getOrDefault [_state, ["STABLE", "#5cc76b"]];
+        if (!_vState && {!(_state in ["kia", "none"])}) then { _lab = ["SUIVI", "#8a9a93"]; };
         _head ctrlSetStructuredText parseText format ["<t size='0.75' color='#8a9a93'>BLESSÉ SUIVI</t>  <t size='0.75' color='%3'>● %2</t><br/><t size='1.25' font='RobotoCondensedBold'>%1</t>",
             [[_u, true] call comspec_atak_native_fnc_unitCallsign, "—"] select (isNull _u), _lab select 0, _lab select 1];
         private _sys = round (70 + 50 * (_blood / 100)); private _dia = round (40 + 30 * (_blood / 100));
         private _spo = [round ((80 + 18 * (_blood / 100)) min 99), 0] select (_hr isEqualTo 0);
         private _col = { params ["_v", "_ok"]; format ["<t color='%1'>%2</t>", ["#f2ab33", "#5cc76b"] select _ok, _v] };
-        _vit ctrlSetStructuredText parseText format ["<t size='0.8'>Fréquence cardiaque<t align='right'>%1 bpm</t><br/>Tension<t align='right'>%2 / %3</t><br/>SpO2<t align='right'>%4 %%</t><br/>Sang<t align='right'>%5 %%</t><br/>Distance<t align='right'>%6</t></t>",
-            [_hr, _hr >= 50 && {_hr <= 110}] call _col, _sys, _dia, [_spo, _spo >= 94] call _col, [round _blood, _blood >= 80] call _col,
-            [format ["%1 m", round (player distance _u)], "—"] select (isNull _u)];
+        private _lines = [];
+        if (_vHr) then { _lines pushBack format ["Fréquence cardiaque<t align='right'>%1 bpm</t>", [_hr, _hr >= 50 && {_hr <= 110}] call _col]; };
+        if (_vBp) then { _lines pushBack format ["Tension<t align='right'>%1 / %2</t>", _sys, _dia]; };
+        if (_vSpo) then { _lines pushBack format ["SpO2<t align='right'>%1 %%</t>", [_spo, _spo >= 94] call _col]; };
+        if (_vBlood) then { _lines pushBack format ["Sang<t align='right'>%1 %%</t>", [round _blood, _blood >= 80] call _col]; };
+        _lines pushBack format ["Distance<t align='right'>%1</t>", [format ["%1 m", round (player distance _u)], "—"] select (isNull _u)];
+        _vit ctrlSetStructuredText parseText format ["<t size='0.8'>%1</t>", _lines joinString "<br/>"];
     };
     private _hr = _e param [7, 0];
     private _state = _e param [8, "none"];
@@ -89,8 +97,11 @@ private _pfh = [{
     private _span = 2.6;
     private _n = count _cols;
     private _prev = -1;
-    private _rgb = [[0.36, 0.85, 0.42, 1], [0.9, 0.28, 0.23, 1]] select (_state in ["cardiac_arrest", "unconscious", "critical"]);
+    (_e param [9, [true, true]]) params ["_vHr", "_vState"];
+    if (!_vHr) exitWith { { _x ctrlShow false; } forEach _cols; };
+    private _rgb = [[0.36, 0.85, 0.42, 1], [0.9, 0.28, 0.23, 1]] select (_vState && {_state in ["cardiac_arrest", "unconscious", "critical"]});
     {
+        _x ctrlShow true;
         private _t = _t0 + _forEachIndex * _span / _n;
         private _v = if (_hr <= 0) then { [0, (random 0.06) - 0.03] select (_state isEqualTo "cardiac_arrest") } else { [(_t mod _per) / _per] call _wave };
         // Point : 62 % de la hauteur = ligne de base, 1 = haut de la zone.

@@ -16,6 +16,7 @@ use App\Services\Personnel\QualificationCertificatePdfService;
 use App\Services\Personnel\QualificationStatusTransitionService;
 use App\Services\Personnel\QualificationTemporalStatusService;
 use App\Support\QualificationAdminStatus;
+use App\Support\QualificationExamples;
 use App\Support\VisibilityLevel;
 use Throwable;
 
@@ -39,13 +40,23 @@ final class QualificationReferentielController
             return $tenantId;
         }
 
+        $definitions = $this->definitions->listForTenant($tenantId, true);
+        $badgeUrls = [];
+        foreach ($definitions as $d) {
+            if (trim((string) ($d['badge_media_path'] ?? '')) !== '') {
+                $badgeUrls[(int) ($d['id'] ?? 0)] = $this->badges->publicUrl((string) $d['badge_media_path']);
+            }
+        }
+
         return Response::view('layout.main', [
             'content' => 'admin.organization.qualifications.index',
+            'backOfficePageCss' => ['referentiel-qualifications.css'],
+            'badgeUrls' => $badgeUrls,
             'title' => 'Référentiel des qualifications',
             'boPageKicker' => 'PERSONNEL · QUALIFICATIONS',
             'boPageTitle' => 'Qualifications',
             'boPageSubtitle' => 'Ce que les membres savent faire : définissez les qualifications, leurs niveaux et leur durée de validité, puis attribuez-les.',
-            'definitions' => $this->definitions->listForTenant($tenantId, true),
+            'definitions' => $definitions,
             'categories' => $this->referentiel->listCategories($tenantId),
             'types' => $this->referentiel->listTypes($tenantId),
             'temporal' => $this->temporal,
@@ -62,6 +73,9 @@ final class QualificationReferentielController
         return Response::view('layout.main', [
             'content' => 'admin.organization.qualifications.form',
             'title' => 'Nouvelle qualification',
+            'backOfficePageCss' => ['referentiel-qualifications.css'],
+            'boSkipPageHead' => true,
+            'qualificationExamples' => QualificationExamples::all(),
             'definition' => null,
             'categories' => $this->referentiel->listCategories($tenantId),
             'types' => $this->referentiel->listTypes($tenantId),
@@ -80,7 +94,7 @@ final class QualificationReferentielController
         if ($tenantId instanceof Response) {
             return $tenantId;
         }
-        if (!Csrf::validate($request)) {
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
             return Response::redirect(url('back-office/referentiels/qualifications/create'));
@@ -126,6 +140,9 @@ final class QualificationReferentielController
         return Response::view('layout.main', [
             'content' => 'admin.organization.qualifications.form',
             'title' => 'Modifier la qualification',
+            'backOfficePageCss' => ['referentiel-qualifications.css'],
+            'boSkipPageHead' => true,
+            'qualificationExamples' => QualificationExamples::all(),
             'definition' => $definition,
             'categories' => $this->referentiel->listCategories($tenantId),
             'types' => $this->referentiel->listTypes($tenantId),
@@ -148,7 +165,7 @@ final class QualificationReferentielController
             return $tenantId;
         }
         $id = (int) ($params['id'] ?? 0);
-        if (!Csrf::validate($request)) {
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
             return Response::redirect(url('back-office/referentiels/qualifications/' . $id . '/edit'));
@@ -170,7 +187,7 @@ final class QualificationReferentielController
             return $tenantId;
         }
         $id = (int) ($params['id'] ?? 0);
-        if (!Csrf::validate($request)) {
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée.');
 
             return Response::redirect(url('back-office/referentiels/qualifications'));
@@ -679,7 +696,7 @@ final class QualificationReferentielController
         if ($tenantId instanceof Response) {
             return $tenantId;
         }
-        if (!Csrf::validate($request)) {
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
             return Response::redirect(url('back-office/referentiels/qualifications'));

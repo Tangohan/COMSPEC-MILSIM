@@ -784,12 +784,44 @@ def battery_item(size=256):
     return img.resize((size, size), Image.LANCZOS)
 
 
+def repair_kit_item(size=256):
+    """Image d'inventaire du kit de réparation ATAK : trousse olive, croix verte, tournevis et écran de rechange."""
+    k = 4
+    S = size * k
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    sh = Image.new("L", (S, S), 0)
+    ImageDraw.Draw(sh).rounded_rectangle([S * 0.12, S * 0.3, S * 0.9, S * 0.9], radius=S * 0.07, fill=150)
+    sh = sh.filter(ImageFilter.GaussianBlur(S * 0.025))
+    shadow = Image.new("RGBA", (S, S), (0, 0, 0, 0)); shadow.putalpha(sh)
+    img.alpha_composite(shadow)
+    d = ImageDraw.Draw(img)
+    # Poignée
+    d.rounded_rectangle([S * 0.36, S * 0.16, S * 0.64, S * 0.32], radius=S * 0.05, outline=(30, 34, 26, 255), width=int(S * 0.035))
+    # Trousse
+    d.rounded_rectangle([S * 0.1, S * 0.27, S * 0.88, S * 0.86], radius=S * 0.07, fill=(74, 82, 56, 255), outline=(24, 28, 20, 255), width=int(S * 0.012))
+    d.rounded_rectangle([S * 0.13, S * 0.30, S * 0.2, S * 0.83], radius=S * 0.03, fill=(98, 108, 78, 255))
+    d.line([(S * 0.1, S * 0.42), (S * 0.88, S * 0.42)], fill=(40, 46, 32, 255), width=int(S * 0.014))
+    # Écran de rechange (rectangle sombre fêlé) et tournevis
+    d.rounded_rectangle([S * 0.24, S * 0.48, S * 0.5, S * 0.8], radius=S * 0.02, fill=(18, 24, 22, 255), outline=(150, 160, 150, 255), width=int(S * 0.008))
+    d.line([(S * 0.28, S * 0.52), (S * 0.37, S * 0.63), (S * 0.33, S * 0.74)], fill=(200, 215, 220, 220), width=int(S * 0.008))
+    d.line([(S * 0.37, S * 0.63), (S * 0.46, S * 0.6)], fill=(200, 215, 220, 220), width=int(S * 0.008))
+    d.line([(S * 0.58, S * 0.78), (S * 0.78, S * 0.5)], fill=(190, 192, 188, 255), width=int(S * 0.022))
+    d.line([(S * 0.55, S * 0.82), (S * 0.62, S * 0.72)], fill=(229, 72, 58, 255), width=int(S * 0.05))
+    # Croix verte
+    d.rectangle([S * 0.66, S * 0.31, S * 0.72, S * 0.4], fill=(92, 199, 107, 255))
+    d.rectangle([S * 0.645, S * 0.335, S * 0.735, S * 0.375], fill=(92, 199, 107, 255))
+    f = _font(int(S * 0.065))
+    d.text((S * 0.22, S * 0.31), "ATAK", font=f, fill=(220, 226, 214, 255))
+    return img.resize((size, size), Image.LANCZOS)
+
+
 def power_assets(tmp):
     """Démarrage (boot_<port|land>), batterie vide (power_bat_empty) et item batterie (item_battery)."""
     convert(boot_screen(512, 1024).convert("RGB"), "boot_port", tmp)
     convert(boot_screen(1024, 512).convert("RGB"), "boot_land", tmp)
     convert(battery_empty_icon(), "power_bat_empty", tmp)
     convert(battery_item(), "item_battery", tmp)
+    convert(repair_kit_item(), "item_repairkit", tmp)
 
 
 def convert(img, name, tmp):

@@ -122,6 +122,7 @@ switch (_tab) do {
         _vizH = _vizH + _tabH;
         private _mine = (_m get "kind") isNotEqualTo "";
         private _vol = _m get "vol";
+        private _spkVol = _m getOrDefault ["spkVol", 70];
         private _rep = _m get "repeat";
         _rows append [
             ["buttons", [
@@ -130,11 +131,16 @@ switch (_tab) do {
                 ["SUIV.", ["next"] call _act],
                 ["STOP", ["stop"] call _act, false, _mine]
             ]],
-            ["segment", "Volume", [
+            ["segment", "Volume des écouteurs", [
                 ["-", ["volStep", -10] call _act],
-                [["MUET", (str _vol) + " %"] select (_vol > 0), ["vol", [0, profileNamespace getVariable ["COMSPEC_ATAK_MusicVolBack", 60]] select (_vol isEqualTo 0)] call _act, true],
+                [["MUET", (str _vol) + " %"] select (_vol > 0), ["vol", [0, profileNamespace getVariable ["COMSPEC_ATAK_MusicVolBack", 60]] select (_vol isEqualTo 0)] call _act, !(_m get "speaker")],
                 ["+", ["volStep", 10] call _act]
-            ]],
+            ], "Vous seul entendez (haut-parleur coupé)."],
+            ["segment", "Volume du haut-parleur", [
+                ["-", ["spkVolStep", -10] call _act],
+                [["MUET", (str _spkVol) + " %"] select (_spkVol > 0), ["spkVol", [0, profileNamespace getVariable ["COMSPEC_ATAK_MusicSpkVolBack", 70]] select (_spkVol isEqualTo 0)] call _act, _m get "speaker"],
+                ["+", ["spkVolStep", 10] call _act]
+            ], "Vous et les joueurs proches entendez (haut-parleur activé)."],
             ["switch", "Haut-parleur", _m get "speaker", ["speaker"] call _act, format ["Les joueurs à moins de %1 m entendent votre musique, plus fort en s'approchant (atténué entre l'intérieur et l'extérieur d'un véhicule).", _range], !(missionNamespace getVariable ["comspec_atak_native_music_speaker", true])],
             ["switch", "Entendre les haut-parleurs proches", _m get "hear", ["hear"] call _act, "Quand vous n'écoutez rien, la musique d'un téléphone voisin passe dans votre casque."],
             ["segment", "Répéter", [["NON", ["repeat", "off"] call _act, _rep isEqualTo "off"], ["LA FILE", ["repeat", "all"] call _act, _rep isEqualTo "all"], ["LE MORCEAU", ["repeat", "one"] call _act, _rep isEqualTo "one"]]],

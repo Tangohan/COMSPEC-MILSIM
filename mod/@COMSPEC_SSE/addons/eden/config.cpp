@@ -39,12 +39,12 @@ class Cfg3DEN {
     class Object {
         class AttributeCategories {
             class COMSPEC_SSE {
-                displayName = "COMSPEC SSE";
+                displayName = "COMSPEC SSE — Renseignement";
                 collapsed = 1;
 
                 class Attributes {
                     class comspec_sse_enabled {
-                        displayName = "SSE activé";
+                        displayName = "Activer le renseignement SSE";
                         tooltip = "Active le renseignement SSE sur cette entité.";
                         property = "comspec_sse_enabled";
                         control = "Checkbox";
@@ -62,38 +62,45 @@ class Cfg3DEN {
                         defaultValue = "'RANDOM'";
                         typeName = "STRING";
                         class values {
-                            class RANDOM { name = "RANDOM"; value = "RANDOM"; default = 1; };
-                            class CIVILIAN { name = "CIVILIAN"; value = "CIVILIAN"; };
-                            class INSURGENT { name = "INSURGENT"; value = "INSURGENT"; };
-                            class MILITARY { name = "MILITARY"; value = "MILITARY"; };
-                            class HVT { name = "HVT"; value = "HVT"; };
-                            class CUSTOM { name = "CUSTOM"; value = "CUSTOM"; };
+                            class RANDOM { name = "Aléatoire"; value = "RANDOM"; default = 1; };
+                            class CIVILIAN { name = "Civil"; value = "CIVILIAN"; };
+                            class INSURGENT { name = "Insurgé"; value = "INSURGENT"; };
+                            class MILITARY { name = "Militaire"; value = "MILITARY"; };
+                            class HVT { name = "Chef / HVT"; value = "HVT"; };
+                            class COURIER { name = "Courrier"; value = "COURIER"; };
+                            class FINANCIER { name = "Financier"; value = "FINANCIER"; };
+                            class TECHNICIAN { name = "Technicien / artificier"; value = "TECHNICIAN"; };
+                            class INTELLIGENCE { name = "Renseignement"; value = "INTELLIGENCE"; };
+                            class LOGISTICS { name = "Logistique"; value = "LOGISTICS"; };
+                            class CUSTOM { name = "Personnalisé (contenu saisi)"; value = "CUSTOM"; };
                         };
                     };
                     class comspec_sse_generation {
-                        displayName = "Génération";
+                        displayName = "Moment de la génération";
+                        tooltip = "Automatique : le contenu est généré au premier examen. Manuel : seulement par un module ou un script.";
                         property = "comspec_sse_generation";
                         control = "Combo";
                         expression = "_this setVariable ['comspec_sse_generation', _value, true];";
                         defaultValue = "'AUTO'";
                         typeName = "STRING";
                         class values {
-                            class AUTO { name = "AUTO"; value = "AUTO"; default = 1; };
-                            class MANUAL { name = "MANUAL"; value = "MANUAL"; };
+                            class AUTO { name = "Automatique (au premier examen)"; value = "AUTO"; default = 1; };
+                            class MANUAL { name = "Manuelle (module / script)"; value = "MANUAL"; };
                         };
                     };
                     class comspec_sse_complexity {
                         displayName = "Richesse";
+                        tooltip = "Quantité d'éléments exploitables générés (légère → haute valeur).";
                         property = "comspec_sse_complexity";
                         control = "Combo";
                         expression = "_this setVariable ['comspec_sse_complexity', _value, true];";
                         defaultValue = "'STANDARD'";
                         typeName = "STRING";
                         class values {
-                            class LIGHT { name = "LIGHT"; value = "LIGHT"; };
-                            class STANDARD { name = "STANDARD"; value = "STANDARD"; default = 1; };
-                            class DETAILED { name = "DETAILED"; value = "DETAILED"; };
-                            class HIGH_VALUE { name = "HIGH_VALUE"; value = "HIGH_VALUE"; };
+                            class LIGHT { name = "Légère — quelques indices"; value = "LIGHT"; };
+                            class STANDARD { name = "Standard"; value = "STANDARD"; default = 1; };
+                            class DETAILED { name = "Détaillée"; value = "DETAILED"; };
+                            class HIGH_VALUE { name = "Haute valeur — dossier riche"; value = "HIGH_VALUE"; };
                         };
                     };
                     class comspec_sse_identityMode {
@@ -163,6 +170,7 @@ class Cfg3DEN {
                     };
                     class comspec_sse_personNationality {
                         displayName = "Nationalité déclarée";
+                        tooltip = "Ce que la personne déclare, pas ce qui est établi. Vide = génération automatique.";
                         property = "comspec_sse_personNationality";
                         control = "Edit";
                         expression = "[_this, 'Nationality', _value] call comspec_sse_fnc_edenWriteField;";
@@ -171,6 +179,7 @@ class Cfg3DEN {
                     };
                     class comspec_sse_personLanguage {
                         displayName = "Langue parlée";
+                        tooltip = "Détermine si un interprète est nécessaire. Vide = génération automatique.";
                         property = "comspec_sse_personLanguage";
                         control = "Edit";
                         expression = "[_this, 'Language', _value] call comspec_sse_fnc_edenWriteField;";
@@ -188,6 +197,7 @@ class Cfg3DEN {
                     };
                     class comspec_sse_bioMode {
                         displayName = "Biométrie";
+                        tooltip = "Empreintes, iris et ADN consultables avec le terminal SEEK.";
                         property = "comspec_sse_bioMode";
                         control = "Combo";
                         expression = "_this setVariable ['comspec_sse_bioMode', _value, true];";
@@ -217,7 +227,7 @@ class Cfg3DEN {
                         typeName = "STRING";
                     };
                     class comspec_sse_modelId {
-                        displayName = "Modèle SSE";
+                        displayName = "Modèle SSE (identifiant)";
                         tooltip = "ID d'un modèle (ex. builtin_chef_hvt). Prioritaire sur le profil si renseigné.";
                         property = "comspec_sse_modelId";
                         control = "Edit";
@@ -253,7 +263,8 @@ class Cfg3DEN {
                         typeName = "STRING";
                     };
                     class comspec_sse_region {
-                        displayName = "Région narrative";
+                        displayName = "Région / théâtre";
+                        tooltip = "Oriente noms, lieux, langues et documents générés.";
                         property = "comspec_sse_region";
                         control = "Combo";
                         expression = "_this setVariable ['comspec_sse_region', _value, true];";

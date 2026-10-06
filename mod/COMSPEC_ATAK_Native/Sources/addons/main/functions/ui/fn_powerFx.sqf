@@ -1,11 +1,14 @@
 /*
     Animations d'alimentation de l'écran, jouées par-dessus tout le reste. Params : [type]
       "empty"    : batterie vide. L'écran baisse, l'icône « batterie vide » clignote, noir, puis le téléphone est rangé.
-      "broken"   : téléphone détruit. Coupures noires, « ERREUR MATÉRIELLE », extinction façon tube cathodique, rangé.
+      "broken"   : téléphone détruit. Coupures noires, « ERREUR MATÉRIELLE », extinction façon tube cathodique ; il reste
+                   affiché, écran éclaté et inutilisable (fn_deviceOverlay), jusqu'à réparation ou changement.
       "shutdown" : arrêt avant redémarrage. « Arrêt… », extinction ; l'écran de démarrage suit (fn_deviceOverlay).
     Pendant l'animation, uiNamespace COMSPEC_ATAK_PowerFx = [type, heure de fin (diag_tickTime)] :
     fn_schedulerTick ne range pas le téléphone et fn_notificationsRender masque les toasts.
-    Téléphone fermé : rien à montrer ; pour « empty » et « broken », on s'assure qu'il reste rangé.
+    Téléphone fermé : rien à montrer ; pour « empty », on s'assure qu'il reste rangé.
+    Pendant l'animation, la zone de contenu (fenêtres d'app) est masquée et le focus rendu au bouton hors écran
+    (fn_deviceOverlay, fn_overlayFront) : une app ouverte ne cache plus l'animation.
 */
 params [["_kind", "empty"]];
 disableSerialization;
@@ -14,7 +17,7 @@ private _stow = {
     uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
     [] call comspec_atak_native_fnc_close;
 };
-if (isNull _d) exitWith { if (_kind isNotEqualTo "shutdown") then { call _stow; }; false };
+if (isNull _d) exitWith { if (_kind isEqualTo "empty") then { call _stow; }; false };
 if (((uiNamespace getVariable ["COMSPEC_ATAK_PowerFx", []]) param [1, -1]) > diag_tickTime) exitWith { false };
 private _dur = createHashMapFromArray [["empty", 3.7], ["broken", 2.9], ["shutdown", 1.5]] getOrDefault [_kind, 2];
 uiNamespace setVariable ["COMSPEC_ATAK_PowerFx", [_kind, diag_tickTime + _dur + 0.5]];
@@ -47,6 +50,8 @@ _crt ctrlShow false;
 { _x ctrlEnable false; } forEach [_dim, _icon, _txt, _crt];
 private _ctrls = [_block, _dim, _icon, _txt, _crt];
 uiNamespace setVariable ["COMSPEC_ATAK_PowerFxCtrls", _ctrls];
+// Fenêtres d'app masquées et focus rendu : l'animation passe devant tout.
+[] call comspec_atak_native_fnc_deviceOverlay;
 [] call comspec_atak_native_fnc_notificationsRender;
 
 // Étapes : [délai depuis le début (s), code]. Chaque code reçoit [contrôles, rectangle, police].
@@ -107,13 +112,13 @@ uiNamespace setVariable ["COMSPEC_ATAK_PowerCollapse", _collapse];
         [_c, _r, _f] call _code;
     }, [_code, _ctrls, [_rx, _ry, _rw, _rh], _font], _t] call CBA_fnc_waitAndExecute;
 } forEach _steps;
-// Fin : contrôles supprimés ; batterie vide ou casse : téléphone rangé.
+// Fin : contrôles supprimés ; batterie vide : téléphone rangé ; casse : écran éclaté (fn_deviceOverlay).
 [{
     params ["_kind", "_ctrls"];
     { ctrlDelete _x; } forEach _ctrls;
     uiNamespace setVariable ["COMSPEC_ATAK_PowerFx", []];
     uiNamespace setVariable ["COMSPEC_ATAK_PowerFxCtrls", []];
-    if (_kind in ["empty", "broken"]) then {
+    if (_kind isEqualTo "empty") then {
         uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
         [] call comspec_atak_native_fnc_close;
     } else {

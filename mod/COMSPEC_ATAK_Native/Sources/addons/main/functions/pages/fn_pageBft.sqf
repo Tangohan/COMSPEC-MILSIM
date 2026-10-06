@@ -104,7 +104,8 @@ private _selIdx = -1;
     private _f = _e getOrDefault ["freshness", "LIVE"];
     private _age = round (diag_tickTime - (_e getOrDefault ["updated", diag_tickTime]));
     ([_e] call comspec_atak_native_fnc_symbology) params ["_icon", "_color"];
-    private _dead = !isNull _obj && {!alive _obj || {lifeState _obj isEqualTo "INCAPACITATED"}};
+    // État médical masqué (Réglages > Réalisme, fn_medShow) : seul le décès compte.
+    private _dead = !isNull _obj && {!alive _obj || {lifeState _obj isEqualTo "INCAPACITATED" && {["state", "allies"] call comspec_atak_native_fnc_medShow}}};
     // Équipe de feu (camp ami) : couleur de l'icône et nom de l'équipe après l'indicatif.
     private _ft = if (isNull _obj) then { createHashMap } else { [_obj] call comspec_atak_native_fnc_ftInfo };
     private _ftName = _ft getOrDefault ["name", ""];
@@ -180,7 +181,7 @@ if ((count _sel) isEqualTo 0) then {
         case (!_isLive): { format ["<br/><t color='#f2ab33'>Dernière position il y a %1</t>", _ageTxt] };
         default { "" };
     };
-    private _health = if (isNull _obj) then { "—" } else { if (_f isEqualTo "OFFLINE") then { "<t color='#8a9a93'>inconnu</t>" } else { switch (true) do { case (!alive _obj): { "<t color='#e5483a'>Mort</t>" }; case (lifeState _obj isEqualTo "INCAPACITATED"): { "<t color='#e5483a'>Inconscient</t>" }; case ((damage _obj) > 0.25): { "<t color='#f2ab33'>Blessé</t>" }; default { "<t color='#5cc76b'>Apte</t>" }; } } };
+    private _health = if (isNull _obj) then { "—" } else { if (_f isEqualTo "OFFLINE") then { "<t color='#8a9a93'>inconnu</t>" } else { switch (true) do { case (!alive _obj): { "<t color='#e5483a'>Mort</t>" }; case !(["state", "allies"] call comspec_atak_native_fnc_medShow): { "<t color='#8a9a93'>—</t>" }; case (lifeState _obj isEqualTo "INCAPACITATED"): { "<t color='#e5483a'>Inconscient</t>" }; case ((damage _obj) > 0.25): { "<t color='#f2ab33'>Blessé</t>" }; default { "<t color='#5cc76b'>Apte</t>" }; } } };
     private _grp = if (isNull _obj) then { "Athena" } else { groupId group _obj };
     private _ftI = if (isNull _obj) then { createHashMap } else { [_obj] call comspec_atak_native_fnc_ftInfo };
     private _ftTxt = switch (true) do {

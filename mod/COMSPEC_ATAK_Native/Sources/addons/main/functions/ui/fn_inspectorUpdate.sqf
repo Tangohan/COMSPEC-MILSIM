@@ -45,6 +45,7 @@ if ((count _e) isEqualTo 0) then {
         if (_aff isEqualTo "friend") then { _lines pushBack format ["%1 %2%3", "Groupe :" call _dim, [_o, true] call comspec_atak_native_fnc_unitGroup, ["", " (chef)"] select (leader group _o isEqualTo _o)]; };
         private _life = switch (true) do {
             case (!alive _o): { "<t color='#e5483a'>mort</t>" };
+            case !(["state", "allies"] call comspec_atak_native_fnc_medShow): { "<t color='#8a9a93'>—</t>" };
             case ((lifeState _o) isEqualTo "INCAPACITATED"): { "<t color='#e5483a'>inconscient</t>" };
             case ((damage _o) > 0.4): { "<t color='#f2ab33'>blessé</t>" };
             default { "<t color='#5cc76b'>valide</t>" };

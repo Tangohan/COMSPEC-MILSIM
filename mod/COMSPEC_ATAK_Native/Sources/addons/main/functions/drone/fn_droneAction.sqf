@@ -140,12 +140,21 @@ private _gridPos = {
 private _saveGrid = { private _v = ["droneTaskGrid", "§"] call comspec_atak_native_fnc_formValue; if (_v isNotEqualTo "§") then { _s set ["droneTaskGridVal", _v]; }; };
 private _camOpen = {
     if (!isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull]) || {isNull _d}) exitWith {};
-    private _cam = "camera" camCreate (getPosATL _d);
+    // Caméra posée sur la nacelle du drone (point mémoire de la caméra UAV), sous le fuselage à défaut :
+    // une caméra au centre du modèle filme l'intérieur de la coque sur les gros drones.
+    private _mem = getText (configOf _d >> "uavCameraGunnerPos");
+    private _off = if (_mem isNotEqualTo "") then { _d selectionPosition [_mem, "Memory"] } else { [0, 0, 0] };
+    if (_off isEqualTo [0, 0, 0]) then { _off = [0, 0.3, -0.3 - ((((boundingBoxReal _d) select 1) select 2) * 0.1)]; };
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneCamOff", _off];
+    private _cam = "camera" camCreate (_d modelToWorld _off);
     _cam cameraEffect ["Internal", "Back", "comspec_dronecam"];
     _cam camSetFov (0.7 / (missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1]));
     _cam camCommit 0;
-    _cam attachTo [_d, [0, 0.3, -0.3]];
+    _cam attachTo [_d, _off];
     _cam setVectorDirAndUp [[0, 0.8, -0.6], [0, 0.6, 0.8]];
+    // Rendu de l'image (render-to-texture) : coûteux, il ne tourne que quand la page Drone est à l'écran.
+    _cam setVariable ["rendering", true];
+    if !(isPiPEnabled) then { ["WARNING", "Caméra du drone : activez « Image dans l'image » (PiP) dans Options > Vidéo d'Arma", 6, 40] call comspec_atak_native_fnc_notify; };
     missionNamespace setVariable ["COMSPEC_ATAK_DroneVision", [0, 1] select (sunOrMoon < 0.3)];
     "comspec_dronecam" setPiPEffect [missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0]];
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamT0", time];
@@ -155,6 +164,17 @@ private _camOpen = {
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
         private _d = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
         if (isNull _cam || {isNull _d}) exitWith {};
+        // Page Drone fermée (ou téléphone rangé) : rendu suspendu, repris au retour sur la page.
+        private _show = !isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])
+            && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONE"};
+        if (_show isNotEqualTo (_cam getVariable ["rendering", true])) then {
+            _cam setVariable ["rendering", _show];
+            if (_show) then {
+                _cam cameraEffect ["Internal", "Back", "comspec_dronecam"];
+                "comspec_dronecam" setPiPEffect [missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0]];
+            } else { _cam cameraEffect ["Terminate", "Back", "comspec_dronecam"]; };
+        };
+        if (!_show) exitWith {};
         private _k = missionNamespace getVariable ["COMSPEC_ATAK_DroneCamTgt", ""];
         private _p = [];
         // Nadir : nacelle à la verticale, sous le drone.
@@ -178,7 +198,7 @@ private _camOpen = {
                 missionNamespace setVariable ["COMSPEC_ATAK_DroneCamDir", []];
             };
         };
-        private _dir = vectorNormalized (_p vectorDiff (_d modelToWorldVisualWorld [0, 0.3, -0.3]));
+        private _dir = vectorNormalized (_p vectorDiff (_d modelToWorldVisualWorld (missionNamespace getVariable ["COMSPEC_ATAK_DroneCamOff", [0, 0.3, -0.3]])));
         private _side = _dir vectorCrossProduct [0, 0, 1];
         if ((vectorMagnitude _side) < 0.01) then { _side = [1, 0, 0]; };
         private _up = _side vectorCrossProduct _dir;

@@ -160,6 +160,9 @@ switch (_action) do {
             ["frs", [[_frs getOrDefault ["kind", ""]] call _str, [_frs getOrDefault ["place", ""]] call _str, [_frs getOrDefault ["grid", ""]] call _str, _frsBody select [0, _cut]]],
             ["reco", [[_reco getOrDefault ["tag", ""]] call _str, [_reco getOrDefault ["grid", ""]] call _str, _recoText select [0, _cut]]],
             ["battery", round (missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100])],
+            // État matériel détaillé (écran, batterie, haut-parleur, GPS, antenne, saleté, derniers chocs) : fn_deviceReport.
+            // Copie de sauvegarde : valeurs arrondies au dixième (elle n'est republiée que si elle change).
+            ["device", (["export"] call comspec_atak_native_fnc_deviceReport) apply { _x params ["_k", "_v"]; if (_small && {_v isEqualType 0} && {_k isNotEqualTo "level"}) then { [_k, (round (_v * 10)) / 10] } else { [_k, _v] } }],
             ["readAt", [dayTime, "HH:MM"] call BIS_fnc_timeToString]
         ]
     };
@@ -274,34 +277,56 @@ switch (_action) do {
         private _arrest = _u getVariable ["ace_medical_inCardiacArrest", false];
         private _uncon = lifeState _u isEqualTo "INCAPACITATED" || {_u getVariable ["ACE_isUnconscious", false]};
         private _ace = isClass (configFile >> "CfgPatches" >> "ace_medical");
+        // Données médicales masquées (Réglages > Réalisme, fn_medShow) : ni affichées, ni envoyées dans le rapport.
+        private _show = { [_this, "nfc"] call comspec_atak_native_fnc_medShow };
+        if !("wounds" call _show) then { _wounds = ""; _types = ""; };
         if (!alive _u) exitWith {
             (_u getVariable ["COMSPEC_ATAK_KillInfo", []]) params [["_tod", ""], ["_kill", ""]];
             if (_tod isEqualTo "") then { _tod = format ["avant %1 (constaté)", _now]; };
             private _causeRaw = _u getVariable ["ace_medical_causeOfDeath", ""];
             if !(_causeRaw isEqualType "") then { _causeRaw = str _causeRaw; };
             private _cl = toLower _causeRaw;
-            private _cause = switch (true) do {
+            private _cause = if !("state" call _show) then { "" } else { switch (true) do {
                 case ((_cl find "cardiac") >= 0): { "arrêt cardiaque prolongé" };
                 case ((_cl find "blood") >= 0 || {(_cl find "bleed") >= 0}): { "hémorragie" };
                 case ((_cl find "fatal") >= 0): { "blessure mortelle" };
                 default { "" };
-            };
+            } };
             private _parts = [_cause, _kill, ["", format ["blessures : %1", _types]] select (_types isNotEqualTo "")] select { _x isNotEqualTo "" };
             private _causeTxt = [(_parts joinString " · "), "indéterminée"] select ((count _parts) isEqualTo 0);
             private _sum = format ["KIA — %1 · %2", _who, _grid];
             private _det = format ["Décès de %1 constaté par %2 (liaison ATAK). Heure : %3. Grille : %4. Cause probable : %5.%6", _who, _me, _tod, _grid, _causeTxt, ["", format [" Localisation des blessures : %1.", _wounds]] select (_wounds isNotEqualTo "")];
             ["KIA", _sum, _det, [["casualty", _who], ["status", "KIA"], ["mechanism", _causeTxt], ["callsign", _me], ["grid", _grid], ["dtg", _tod], ["remarks", format ["Témoin : %1", _me]]], _pos,
-                [["Défunt", _who], ["Heure du décès", _tod], ["Grille", _grid], ["Cause probable", _causeTxt], ["Blessures", [_wounds, "aucune relevée"] select (_wounds isEqualTo "")], ["Témoin", format ["%1 (moi)", _me]]]]
+                [["Défunt", _who], ["Heure du décès", _tod], ["Grille", _grid], ["Cause probable", _causeTxt]] + ([[["Blessures", [_wounds, "aucune relevée"] select (_wounds isEqualTo "")]], []] select !("wounds" call _show)) + [["Témoin", format ["%1 (moi)", _me]]]]
         };
         private _consc = switch (true) do { case (_arrest): { "arrêt cardiaque" }; case (_uncon): { "inconscient" }; default { "conscient" }; };
         private _bleedTxt = if (!_ace) then { "non mesurable" } else { switch (true) do { case (_bleed <= 0): { "aucune" }; case (_bleed < 0.02): { "légère" }; case (_bleed < 0.08): { "importante" }; default { "massive" }; } };
-        private _sum = format ["BLESSÉ — %1 · %2 · %3", _who, _consc, _grid];
-        private _det = format ["Blessé : %1, relevé par %2 (liaison ATAK) à %3, grille %4. État : %5. Hémorragie : %6. Garrots : %7. Fractures : %8. Pouls : %9. Volume sanguin : %10 %%. Blessures : %11.",
-            _who, _me, _now, _grid, _consc, _bleedTxt, [_tqTxt, "aucun"] select (_tqTxt isEqualTo ""), [_frTxt, "aucune"] select (_frTxt isEqualTo ""),
-            [format ["%1/min", round _hr], "non mesurable"] select !_ace, round ((_bv / 6) * 100), [format ["%1 (%2)", _wounds, _types], "aucune relevée"] select (_wounds isEqualTo "")];
-        ["WIA", _sum, _det, [["casualty", _who], ["status", toUpper _consc], ["mechanism", [_types, "inconnu"] select (_types isEqualTo "")], ["callsign", _me], ["grid", _grid], ["treatment", ["", format ["garrots : %1", _tqTxt]] select (_tqTxt isNotEqualTo "")], ["remarks", _det]], _pos,
-            [["Conscience", _consc], ["Hémorragie", _bleedTxt], ["Garrots", [_tqTxt, "aucun"] select (_tqTxt isEqualTo "")], ["Fractures", [_frTxt, "aucune"] select (_frTxt isEqualTo "")],
-             ["Pouls", [format ["%1/min", round _hr], "non mesurable"] select !_ace], ["Volume sanguin", format ["%1 %%", round ((_bv / 6) * 100)]], ["Blessures", [_wounds, "aucune relevée"] select (_wounds isEqualTo "")], ["Grille", _grid]]]
+        private _pain = _u getVariable ["ace_medical_pain", 0];
+        if !(_pain isEqualType 0) then { _pain = 0; };
+        private _painTxt = if (!_ace) then { "non mesurable" } else { switch (true) do { case (_pain < 0.1): { "aucune" }; case (_pain < 0.4): { "légère" }; case (_pain < 0.7): { "forte" }; default { "intense" }; } };
+        // Médicaments ACE : [[classe, heure, ...]...] ; noms uniques.
+        private _meds = [];
+        { if (_x isEqualType [] && {(_x param [0, ""]) isEqualType ""}) then { _meds pushBackUnique (_x select 0); }; } forEach (_u getVariable ["ace_medical_medications", []]);
+        private _tri = _u getVariable ["ace_medical_triageLevel", 0];
+        if !(_tri isEqualType 0) then { _tri = 0; };
+        // Lignes du bilan, réduites aux données affichées.
+        private _lines = [
+            ["state", "Conscience", _consc],
+            ["bleed", "Hémorragie", _bleedTxt],
+            ["tq", "Garrots", [_tqTxt, "aucun"] select (_tqTxt isEqualTo "")],
+            ["fractures", "Fractures", [_frTxt, "aucune"] select (_frTxt isEqualTo "")],
+            ["hr", "Pouls", [format ["%1/min", round _hr], "non mesurable"] select !_ace],
+            ["blood", "Volume sanguin", format ["%1 %%", round ((_bv / 6) * 100)]],
+            ["pain", "Douleur", _painTxt],
+            ["meds", "Médicaments", [_meds joinString ", ", "aucun relevé"] select ((count _meds) isEqualTo 0)],
+            ["triage", "Triage", ["non posé", "T3 (mineur, vert)", "T2 (différé, jaune)", "T1 (immédiat, rouge)", "T4 (décédé, noir)"] param [_tri, "non posé"]],
+            ["wounds", "Blessures", [format ["%1 (%2)", _wounds, _types], "aucune relevée"] select (_wounds isEqualTo "")]
+        ] select { (_x select 0) call _show };
+        private _sum = format ["BLESSÉ — %1%2 · %3", _who, ["", format [" · %1", _consc]] select ("state" call _show), _grid];
+        private _det = format ["Blessé : %1, relevé par %2 (liaison ATAK) à %3, grille %4.%5", _who, _me, _now, _grid,
+            ["", " " + ((_lines apply { format ["%1 : %2.", _x select 1, _x select 2] }) joinString " ")] select ((count _lines) > 0)];
+        ["WIA", _sum, _det, [["casualty", _who], ["status", ["WIA", toUpper _consc] select ("state" call _show)], ["mechanism", [_types, "inconnu"] select (_types isEqualTo "")], ["callsign", _me], ["grid", _grid], ["treatment", ["", format ["garrots : %1", _tqTxt]] select (_tqTxt isNotEqualTo "" && {"tq" call _show})], ["remarks", _det]], _pos,
+            (_lines apply { [_x select 1, _x select 2] }) + [["Grille", _grid]]]
     };
     case "deathReport";
     case "injuryReport": {

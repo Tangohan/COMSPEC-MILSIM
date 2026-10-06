@@ -22,9 +22,16 @@ if (_atakState isEqualTo createHashMap) then {
 
 if (_atakState getOrDefault ["device_destroyed", false]) exitWith {};
 
+// COMSPEC ATAK Native chargé : ses dégâts localisés (où le téléphone est porté, munition, gilet, souffle, chute, eau ;
+// comspec_atak_native_fnc_deviceImpact) remplacent les chocs et blessures au torse ci-dessous, qui cassaient le
+// téléphone même quand le gilet avait arrêté la balle. Il respecte le niveau de réalisme et recopie un appareil
+// détruit dans COMSPEC_AtakState.
+private _native = !isNil "comspec_atak_native_fnc_deviceImpact";
+
 // Choc / explosion récente (définie par EH Hit / Explosion)
 private _impact = missionNamespace getVariable ["COMSPEC_LastAtakImpact", 0];
-if (_impact > 0.25) then {
+if (_native) then { missionNamespace setVariable ["COMSPEC_LastAtakImpact", 0, false]; };
+if (_impact > 0.25 && {!_native}) then {
     missionNamespace setVariable ["COMSPEC_LastAtakImpact", 0, false];
     if (_realism >= 2 && {random 100 < (_impact * 50)}) then {
         _atakState set ["screen_destroyed", true];
@@ -109,6 +116,8 @@ if (_armDamage > 0.65 && {_realism >= 1} && {random 100 < 25}) then {
         }, [], 45] call CBA_fnc_waitAndExecute;
     };
 };
+
+if (_native) exitWith { missionNamespace setVariable ["COMSPEC_AtakState", _atakState, false]; };
 
 private _wasPowered = _atakState getOrDefault ["powered_on", true];
 private _wasScreenDestroyed = _atakState getOrDefault ["screen_destroyed", false];

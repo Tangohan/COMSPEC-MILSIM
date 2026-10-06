@@ -18,7 +18,7 @@ private _labels = ctrlMapScale _map < 0.3;
             if (_st isEqualTo "DEMANDEE") then { _c set [3, 0.7]; };
             _map drawIcon [_icon, _c, [_p select 0, _p select 1, 0], 22, 22, 0,
                 if (_labels) then { format ["%1 %2", _y getOrDefault ["id", ""], _y getOrDefault ["cs", ""]] } else { "" },
-                1, 0.024, "RobotoCondensed", "right"];
+                1, 0.024 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), "RobotoCondensed", "right"];
         };
     };
 } forEach _reqs;

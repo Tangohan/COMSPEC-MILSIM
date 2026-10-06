@@ -23,7 +23,7 @@ private _none = "#(argb,8,8,3)color(0,0,0,0)";
     // Bande de distance : rectangle orienté sur le relèvement, largeur = cône d'erreur à mi-bande.
     private _midD = (_b0 + _b1) / 2;
     _map drawRectangle [_from getPos [_midD, _brg], (_midD * tan _err) max 25, (_b1 - _b0) / 2, _brg, _rgb + [_a * 0.22], _fill];
-    _map drawIcon [_none, _c, _from getPos [_b1, _brg], 0, 0, 0, format ["%1 %2°", _kind, round _brg], 1, 0.024, "RobotoCondensedBold", "right"];
+    _map drawIcon [_none, _c, _from getPos [_b1, _brg], 0, 0, 0, format ["%1 %2°", _kind, round _brg], 1, 0.024 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), "RobotoCondensedBold", "right"];
     _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _c, _from, 10, 10, 0, "", 0];
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_EwBearings", []]);
 // Géolocalisations : cercle d'incertitude orange, plein si le suivi est actif.
@@ -34,7 +34,7 @@ private _none = "#(argb,8,8,3)color(0,0,0,0)";
     private _r = (_x getOrDefault ["rad", 100]) max 10;
     _map drawEllipse [_p, _r, _r, 0, _rgb + [0.95], ""];
     _map drawEllipse [_p, _r, _r, 0, _rgb + [[0.08, 0.18] select (_x getOrDefault ["track", false])], _fill];
-    _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _rgb + [1], _p, 12, 12, 0, format ["GÉOLOC %1 · %2", _x get "q", _x getOrDefault ["hour", ""]], 1, 0.026, "RobotoCondensedBold", "right"];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _rgb + [1], _p, 12, 12, 0, format ["GÉOLOC %1 · %2", _x get "q", _x getOrDefault ["hour", ""]], 1, 0.026 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), "RobotoCondensedBold", "right"];
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_GeoTracks", []]);
 private _now = [time, serverTime] select isMultiplayer;
 private _side = str side group player;
@@ -44,7 +44,7 @@ private _side = str side group player;
         if (_pos isEqualType objNull) then { _pos = getPosATL _pos; };
         _map drawEllipse [[_pos select 0, _pos select 1, 0], _rad, _rad, 0, [0.85, 0.25, 0.95, 0.9], ""];
         _map drawEllipse [[_pos select 0, _pos select 1, 0], _rad, _rad, 0, [0.85, 0.25, 0.95, 0.08], _fill];
-        _map drawIcon [_none, [0.85, 0.25, 0.95, 1], [_pos select 0, _pos select 1, 0], 0, 0, 0, "BROUILLEUR", 2, 0.024, "RobotoCondensedBold", "center"];
+        _map drawIcon [_none, [0.85, 0.25, 0.95, 1], [_pos select 0, _pos select 1, 0], 0, 0, 0, "BROUILLEUR", 2, 0.024 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), "RobotoCondensedBold", "center"];
     };
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
 ([] call comspec_atak_native_fnc_ewEffects) params ["_gpsErr", "", "_off"];

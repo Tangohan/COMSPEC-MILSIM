@@ -21,6 +21,7 @@ private _state = {
     params ["_u"];
     switch (true) do {
         case (!alive _u): { "<t color='#e5483a'>Mort</t>" };
+        case !(["state", "allies"] call comspec_atak_native_fnc_medShow): { "<t color='#8a9a93'>—</t>" };
         case (lifeState _u isEqualTo "INCAPACITATED" || {_u getVariable ["ACE_isUnconscious", false]}): { "<t color='#e5483a'>Inconscient</t>" };
         case ((damage _u) > 0.25): { "<t color='#f2ab33'>Blessé</t>" };
         default { "<t color='#5cc76b'>Apte</t>" };

@@ -11,6 +11,8 @@ if ((_push || {(count _history) isEqualTo 0}) && {_last isNotEqualTo _page}) the
     while {(count _history) > 20} do { _history deleteAt 0; };
 };
 _s set ["history", _history];
+// Retour arrière ou redessin sans empilement : fn_pageRender retrouve le défilement de la page.
+_s set ["scrollRestore", !_push];
 _s set ["activePage", _page];
 
 [_page] call comspec_atak_native_fnc_pageRender;

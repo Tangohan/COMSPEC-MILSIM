@@ -50,6 +50,9 @@ if (!is_string($showcase_kit_json) || $showcase_kit_json === '') {
     <?php if (is_file(base_path('public/assets/css/dashboard-refresh.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/dashboard-refresh.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
+    <?php if (is_file(base_path('public/assets/css/dashboard-catalog.css'))): ?>
+    <link href="<?= htmlspecialchars(asset_url('assets/css/dashboard-catalog.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
+    <?php endif; ?>
     <?php if (is_file(base_path('public/assets/css/dashboard-orbat.css'))): ?>
     <link href="<?= htmlspecialchars(asset_url('assets/css/dashboard-orbat.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
     <?php endif; ?>
@@ -80,51 +83,16 @@ if (!is_string($showcase_kit_json) || $showcase_kit_json === '') {
         || !empty($my_applications_all ?? [])
     );
     ?>
-    <?php if (!empty($showcase_training_feature) && !empty($showcase_items)): ?>
+    <?php
+    $dashCatCourses = !empty($showcase_training_feature) && !empty($showcase_items);
+    $dashCatKits = !empty($showcase_kit_feature) && !empty($showcase_kit_items);
+    ?>
+    <?php if ($dashCatCourses || $dashCatKits): ?>
     <script>
-        window.__dashboardShowcaseCourses = <?= $showcase_json ?>;
-        document.addEventListener('alpine:init', function () {
-            Alpine.data('trainingShowcase', function () {
-                return {
-                    openModal: null,
-                    courses: window.__dashboardShowcaseCourses || [],
-                    active: function () {
-                        var self = this;
-                        return this.courses.find(function (c) { return c.id === self.openModal; });
-                    },
-                    scrollTrack: function (dx) {
-                        var track = this.$refs.track;
-                        if (track) {
-                            track.scrollBy({ left: dx, behavior: 'smooth' });
-                        }
-                    }
-                };
-            });
-        });
+        <?php if ($dashCatCourses): ?>window.__dashboardShowcaseCourses = <?= $showcase_json ?>;<?php endif; ?>
+        <?php if ($dashCatKits): ?>window.__dashboardShowcaseKits = <?= $showcase_kit_json ?>;<?php endif; ?>
     </script>
-    <?php endif; ?>
-    <?php if (!empty($showcase_kit_feature) && !empty($showcase_kit_items)): ?>
-    <script>
-        window.__dashboardShowcaseKits = <?= $showcase_kit_json ?>;
-        document.addEventListener('alpine:init', function () {
-            Alpine.data('kitShowcase', function () {
-                return {
-                    openModal: null,
-                    kits: window.__dashboardShowcaseKits || [],
-                    active: function () {
-                        var self = this;
-                        return this.kits.find(function (k) { return k.id === self.openModal; });
-                    },
-                    scrollTrack: function (dx) {
-                        var track = this.$refs.track;
-                        if (track) {
-                            track.scrollBy({ left: dx, behavior: 'smooth' });
-                        }
-                    }
-                };
-            });
-        });
-    </script>
+    <script src="<?= htmlspecialchars(asset_url('assets/js/dashboard-catalog.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
     <?php endif; ?>
     <?php if ($loadAlpineDashboard): ?>
     <script defer src="<?= htmlspecialchars($alpineSrc, ENT_QUOTES, 'UTF-8') ?>"></script>

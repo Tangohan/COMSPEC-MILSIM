@@ -1,6 +1,10 @@
 // Visionneuse de résultat SSE — présentation « dossier / feuille ».
-// RscText / RscButton / RscStructuredText : config.cpp du addon ui.
-// Chrome (bandeau, titres, pied, papier) : comspec_sse_fnc_getDocumentChrome.
+// Classes COMSPEC_SSE_Rsc* : dialogs\base.hpp. Chrome (bandeau, titres, pied,
+// papier) : comspec_sse_fnc_getDocumentChrome / comspec_sse_fnc_applyPaperStyle.
+// V0.8 : feuille centrée sur la grille safeZone (lisible quelle que soit la
+// taille d'interface), polices Roboto / Purista. idc inchangés.
+
+#define SSE_RPOS(X,Y,W,H) x = SSE_Q(SSE_X(X)); y = SSE_Q(SSE_Y(Y)); w = SSE_Q(SSE_W(W)); h = SSE_Q(SSE_H(H))
 
 class COMSPEC_SSE_ResultDialog {
     idd = 93010;
@@ -10,184 +14,131 @@ class COMSPEC_SSE_ResultDialog {
     onUnload = "uiNamespace setVariable ['COMSPEC_SSE_ResultDisplay', displayNull];";
 
     class controlsBackground {
-        class Dim: RscText {
-            idc = -1;
-            x = safezoneXAbs;
-            y = safezoneY;
-            w = safezoneWAbs;
-            h = safezoneH;
-            colorBackground[] = {0.02, 0.03, 0.04, 0.55};
+        class Dim: COMSPEC_SSE_RscDim {
+            SSE_FULLSCREEN;
         };
-        class PaperShadow: RscText {
-            idc = -1;
-            x = 0.275;
-            y = 0.125;
-            w = 0.46;
-            h = 0.74;
-            colorBackground[] = {0, 0, 0, 0.35};
+        class PaperShadow: COMSPEC_SSE_RscText {
+            colorBackground[] = {0, 0, 0, 0.4};
+            SSE_RPOS(10.8,1.85,19,20);
         };
-        class Paper: RscText {
+        class Paper: COMSPEC_SSE_RscText {
             idc = 93019;
-            x = 0.265;
-            y = 0.11;
-            w = 0.46;
-            h = 0.74;
             colorBackground[] = {0.94, 0.91, 0.84, 0.98};
+            SSE_RPOS(10.5,1.5,19,20);
         };
         // Taches / plis (masqués par défaut — activés selon paper_style)
-        class StainA: RscText {
+        class StainA: COMSPEC_SSE_RscText {
             idc = 93024;
-            x = 0.29;
-            y = 0.24;
-            w = 0.09;
-            h = 0.07;
             colorBackground[] = {0.35, 0.22, 0.1, 0.18};
             show = 0;
+            SSE_RPOS(11.5,6.5,3.7,2.8);
         };
-        class StainB: RscText {
+        class StainB: COMSPEC_SSE_RscText {
             idc = 93025;
-            x = 0.58;
-            y = 0.55;
-            w = 0.1;
-            h = 0.08;
             colorBackground[] = {0.28, 0.18, 0.08, 0.16};
             show = 0;
+            SSE_RPOS(23.5,15,4,3.2);
         };
-        class FoldLine: RscText {
+        class FoldLine: COMSPEC_SSE_RscText {
             idc = 93026;
-            x = 0.34;
-            y = 0.42;
-            w = 0.32;
-            h = 0.004;
             colorBackground[] = {0.2, 0.16, 0.1, 0.22};
             show = 0;
+            SSE_RPOS(12.5,11.5,15,0.12);
         };
-        class ClassBand: RscText {
+        class ClassBand: COMSPEC_SSE_RscText {
             idc = 93021;
-            x = 0.265;
-            y = 0.11;
-            w = 0.46;
-            h = 0.028;
             colorBackground[] = {0.45, 0.08, 0.08, 0.92};
+            SSE_RPOS(10.5,1.5,19,1.1);
         };
-        class ClassLabel: RscText {
+        class ClassLabel: COMSPEC_SSE_RscText {
             idc = 93016;
             text = "DIFFUSION RESTREINTE — EXPLOITATION TERRAIN";
-            x = 0.275;
-            y = 0.11;
-            w = 0.44;
-            h = 0.028;
-            colorBackground[] = {0, 0, 0, 0};
+            font = SSE_FONT_BOLD;
+            sizeEx = SSE_TXT_S;
             colorText[] = {0.98, 0.92, 0.88, 1};
-            sizeEx = 0.028;
             style = 2;
+            SSE_RPOS(10.9,1.55,18.2,1);
         };
-        class HeaderBar: RscText {
+        class HeaderBar: COMSPEC_SSE_RscText {
             idc = 93022;
-            x = 0.265;
-            y = 0.138;
-            w = 0.46;
-            h = 0.055;
             colorBackground[] = {0.88, 0.84, 0.74, 1};
+            SSE_RPOS(10.5,2.6,19,2.3);
         };
-        class Title: RscText {
+        class Title: COMSPEC_SSE_RscText {
             idc = 93011;
             text = "DOSSIER SSE";
-            x = 0.28;
-            y = 0.142;
-            w = 0.43;
-            h = 0.032;
-            colorBackground[] = {0, 0, 0, 0};
+            font = SSE_FONT_TITLE;
+            sizeEx = SSE_TXT_XL;
             colorText[] = {0.12, 0.1, 0.08, 1};
-            sizeEx = 0.038;
-            style = 0;
+            SSE_RPOS(11.1,2.65,17.8,1.3);
         };
-        class SubTitle: RscText {
+        class SubTitle: COMSPEC_SSE_RscText {
             idc = 93017;
             text = "Consultation documentaire";
-            x = 0.28;
-            y = 0.17;
-            w = 0.43;
-            h = 0.022;
-            colorBackground[] = {0, 0, 0, 0};
+            sizeEx = SSE_TXT_S;
             colorText[] = {0.35, 0.3, 0.22, 1};
-            sizeEx = 0.026;
+            SSE_RPOS(11.1,3.9,17.8,0.9);
         };
-        class Rule: RscText {
-            idc = -1;
-            x = 0.28;
-            y = 0.198;
-            w = 0.43;
-            h = 0.002;
+        class Rule: COMSPEC_SSE_RscText {
             colorBackground[] = {0.35, 0.28, 0.18, 0.55};
+            SSE_RPOS(11.1,4.95,17.8,0.08);
         };
-        class Footer: RscText {
+        class Footer: COMSPEC_SSE_RscText {
             idc = 93023;
-            x = 0.265;
-            y = 0.78;
-            w = 0.46;
-            h = 0.07;
             colorBackground[] = {0.86, 0.82, 0.72, 1};
+            SSE_RPOS(10.5,19,19,2.5);
         };
     };
 
     class controls {
-        class Body: RscStructuredText {
+        class Body: COMSPEC_SSE_RscStructuredText {
             idc = 93012;
-            x = 0.28;
-            y = 0.21;
-            w = 0.43;
-            h = 0.55;
             colorBackground[] = {0, 0, 0, 0};
             colorText[] = {0.12, 0.1, 0.08, 1};
-            size = 0.032;
+            size = SSE_TXT_M;
+            class Attributes {
+                font = SSE_FONT;
+                color = "#1F1A14";
+                colorLink = "#5A3A10";
+                align = "left";
+                shadow = 0;
+            };
+            SSE_RPOS(11.1,5.25,17.8,13.5);
         };
-        class Meta: RscStructuredText {
+        class Meta: COMSPEC_SSE_RscStructuredText {
             idc = 93018;
-            x = 0.28;
-            y = 0.785;
-            w = 0.43;
-            h = 0.055;
             colorBackground[] = {0, 0, 0, 0};
+            size = SSE_TXT_S;
+            class Attributes {
+                font = SSE_FONT;
+                color = "#3A3226";
+                colorLink = "#5A3A10";
+                align = "left";
+                shadow = 0;
+            };
+            SSE_RPOS(11.1,19.15,17.8,2.2);
         };
-        class BtnConsult: RscButton {
+        class BtnConsult: COMSPEC_SSE_RscButton {
             idc = 93013;
             text = "FEUILLE";
-            x = 0.28;
-            y = 0.855;
-            w = 0.12;
-            h = 0.038;
             action = "[] call comspec_sse_fnc_resultConsult;";
             colorBackground[] = {0.28, 0.22, 0.14, 0.95};
             colorBackgroundActive[] = {0.4, 0.32, 0.18, 1};
+            colorFocused[] = {0.4, 0.32, 0.18, 1};
             colorText[] = {0.96, 0.93, 0.86, 1};
-            sizeEx = 0.028;
+            SSE_RPOS(10.5,21.9,5.6,1.4);
         };
-        class BtnTx: RscButton {
+        class BtnTx: COMSPEC_SSE_RscButton {
             idc = 93014;
             text = "TRANSMETTRE";
-            x = 0.41;
-            y = 0.855;
-            w = 0.15;
-            h = 0.038;
             action = "[] call comspec_sse_fnc_resultTransmit;";
-            colorBackground[] = {0.12, 0.32, 0.22, 0.95};
-            colorBackgroundActive[] = {0.16, 0.42, 0.28, 1};
-            colorText[] = {0.9, 0.98, 0.92, 1};
-            sizeEx = 0.028;
+            SSE_RPOS(16.4,21.9,7.2,1.4);
         };
-        class BtnClose: RscButton {
+        class BtnClose: COMSPEC_SSE_RscButtonClose {
             idc = 93015;
             text = "FERMER";
-            x = 0.575;
-            y = 0.855;
-            w = 0.12;
-            h = 0.038;
             action = "closeDialog 0;";
-            colorBackground[] = {0.22, 0.2, 0.18, 0.95};
-            colorBackgroundActive[] = {0.32, 0.28, 0.24, 1};
-            colorText[] = {0.95, 0.93, 0.88, 1};
-            sizeEx = 0.028;
+            SSE_RPOS(23.9,21.9,5.6,1.4);
         };
     };
 };

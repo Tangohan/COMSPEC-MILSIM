@@ -149,7 +149,8 @@ private _mk = {
                 _x params ["_text", "_code", ["_active", false]];
                 private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * _sw, _y, _sw - _pad / 6, _rowH * 0.9], _text] call _mk;
                 _b ctrlSetFontHeight (_fs * 0.9);
-                if (_active) then { _b ctrlSetBackgroundColor _acc; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
+                // Option non choisie mais disponible : fond clair-sombre et texte blanc (ne doit pas sembler désactivée).
+                if (_active) then { _b ctrlSetBackgroundColor _acc; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; } else { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor [0.92, 0.96, 0.93, 1]; };
                 _b ctrlAddEventHandler ["ButtonClick", _code];
             } forEach _opts;
             _y = _y + _rowH * 0.9 + _pad / 2;
@@ -200,6 +201,12 @@ private _mk = {
             _row params ["", "_pic", "_text"];
             private _ih = _font * 3.2;
             private _iw = _ih * pixelH / pixelW; // carré à l'écran
+            // Image hors addon (photo Athena téléchargée sur le disque) : le logo ATAK reste dessous. Si Arma ne peut pas
+            // charger le fichier, le logo reste visible au lieu d'un cadre vide (le logo « disparaissait » après connexion).
+            if (_pic isNotEqualTo "" && {(_pic select [0, 1]) isNotEqualTo "\"}) then {
+                private _under = ["COMSPEC_RscPicture", [_pad, _y, _iw, _ih], "\z\comspec_atak_native\addons\main\data\logo_atak.paa"] call _mk;
+                _under ctrlSetTextColor [1, 1, 1, 1];
+            };
             private _p = ["COMSPEC_RscPicture", [_pad, _y, _iw, _ih], _pic] call _mk;
             _p ctrlSetTextColor [1, 1, 1, 1];
             private _t = ["COMSPEC_RscStructuredText", [_pad * 2 + _iw, _y, _w - _iw - _pad, _ih]] call _mk;

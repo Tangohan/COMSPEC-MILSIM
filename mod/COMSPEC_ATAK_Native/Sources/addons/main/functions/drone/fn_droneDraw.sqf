@@ -11,6 +11,8 @@ private _sq = "#(argb,8,8,3)color(1,1,1,1)";
 // Pistes capteur : dernière position vue (elles restent après le vol, jusqu'à « Effacer les pistes »).
 {
     _y params ["_o", "_name", "_pos", "_seen", "_clock", "_tag", "", "_num", "_state"];
+    // Les cibles vues par le drone restent dans l'app Drone : la carte n'affiche aucune IA ennemie ou inconnue.
+    if (_tag isNotEqualTo "AMI") then { continue };
     private _c = +((createHashMapFromArray [["ENNEMI", [0.92, 0.26, 0.21, 1]], ["INCONNU", [0.98, 0.78, 0.15, 1]], ["AMI", [0.3, 0.64, 1, 1]]]) getOrDefault [_tag, [1, 1, 1, 1]]);
     if ((time - _seen) > 60 || {_state isNotEqualTo ""}) then { _c set [3, 0.5]; };
     _map drawIcon [_sq, [0, 0, 0, _c select 3], _pos, 13, 13, 0, "", 0];
@@ -72,7 +74,7 @@ if ((count _tp) >= 2) then {
             if (_k isEqualTo "OBSERVE") then { _map drawLine [_pos, _tp, [_tc select 0, _tc select 1, _tc select 2, 0.4]]; };
         };
         case "HUNT": {
-            if ((count _area) >= 3) then { _map drawRectangle [_area select 0, _area select 1, _area select 2, 0, [0.92, 0.26, 0.21, 0.8], ""]; };
+            if ((count _area) >= 3) then { _map drawRectangle [_area select 0, _area select 1, _area select 2, 0, [0.92, 0.26, 0.21, 0.8], ""]; } else { _map drawEllipse [_tp, _tr, _tr, 0, [0.92, 0.26, 0.21, 0.8], ""]; };
             _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)", [0.92, 0.26, 0.21, 1], _tp, 1, 1, 0, "RECHERCHE", 1, 0.028, "RobotoCondensedBold", "center"];
         };
         case "ESCORT": {

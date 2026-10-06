@@ -1,33 +1,37 @@
 /*
-    Applique les choix du dialogue Zeus Generate.
+    Valide le dialogue Zeus « Générer un profil SSE » (idd 93001).
 */
 private _display = findDisplay 93001;
 if (isNull _display) exitWith { false };
 
-private _profile = (_display displayCtrl 93010) lbText (lbCurSel (_display displayCtrl 93010));
-private _complexity = (_display displayCtrl 93011) lbText (lbCurSel (_display displayCtrl 93011));
-private _noise = sliderPosition (_display displayCtrl 93017);
-missionNamespace setVariable ["comspec_sse_noiseProbability", (_noise / 100) max 0 min 1];
+private _comboData = {
+    params ["_ctrl", "_default"];
+    private _i = lbCurSel _ctrl;
+    if (_i < 0) exitWith { _default };
+    private _d = _ctrl lbData _i;
+    if (_d isEqualTo "") then { _default } else { _d }
+};
+
+private _profile = [_display displayCtrl 93010, "INSURGENT"] call _comboData;
+private _complexity = [_display displayCtrl 93011, "STANDARD"] call _comboData;
+private _options = createHashMapFromArray [
+    ["identity", cbChecked (_display displayCtrl 93012)],
+    ["phone", cbChecked (_display displayCtrl 93013)],
+    ["documents", cbChecked (_display displayCtrl 93014)],
+    ["bio", cbChecked (_display displayCtrl 93015)],
+    ["network", cbChecked (_display displayCtrl 93016)],
+    ["noise", round (sliderPosition (_display displayCtrl 93017))]
+];
 
 private _targets = missionNamespace getVariable ["comspec_sse_zeusPendingTargets", []];
-private _jobs = [];
-{
-    if (!isNull _x) then {
-        _jobs pushBack [_x, _profile, _complexity, "ZEUS"];
-    };
-} forEach _targets;
+closeDialog 1;
 
-[
-    _jobs,
-    {
-        params ["_ent", "_profile", "_complexity", "_by"];
-        if (isNull _ent) exitWith {};
-        if (_ent getVariable ["comspec_sse_generating", false]) exitWith {};
-        [_ent, _profile, _complexity, _by] call comspec_sse_fnc_generateData;
-    },
-    0.28
-] call comspec_sse_fnc_queueEntityJobs;
+if (_targets isEqualTo []) exitWith {
+    ["Aucune cible à générer.", "error"] call comspec_sse_fnc_zeusNotify;
+    false
+};
 
-closeDialog 0;
-hint format ["GÉNÉRATION EN FILE — %1 cible(s) | %2 / %3", count _jobs, _profile, _complexity];
+private _n = [_targets, _profile, _complexity, _options] call comspec_sse_fnc_zeusGenerateTargets;
+missionNamespace setVariable ["comspec_sse_zeusPendingTargets", []];
+[format ["Génération en file : %1 cible(s)\nProfil %2 · richesse %3", _n, _profile, _complexity]] call comspec_sse_fnc_zeusNotify;
 true

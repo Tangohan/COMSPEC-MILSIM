@@ -3,21 +3,21 @@ class CfgPatches {
     class comspec_atak_native_main {
         name="COMSPEC ATAK Native Standalone"; author="COMSPEC"; requiredVersion=2.14;
         requiredAddons[]={"A3_UI_F","A3_Weapons_F","cba_main","cba_xeh"};
-        units[]={"Item_COMSPEC_ATAK_Battery"}; weapons[]={"COMSPEC_ATAK_Battery"}; version=1.5; versionStr=VERSION_STR; versionAr[]={1,5,0};
+        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit"}; version=1.6; versionStr=VERSION_STR; versionAr[]={1,6,0};
     };
 };
 class CfgFunctions {
     class comspec_atak_native { tag="comspec_atak_native";
         class core { file="z\comspec_atak_native\addons\main\functions\core";
-            class log {}; class battery {}; class weather {}; class stateInit {}; class storeSet {}; class schedulerStart {}; class schedulerStop {}; class schedulerTick {}; class debugDump {}; class deviceCatalog {}; class hasDevice {}; class deviceDenied {}; class tenantRule {}; class pref {}; class tenantApply {}; class canUse {}; class batterySwap {}; class linkQuality {}; class deviceHealth {}; class deviceDamage {}; class deviceRepair {}; class phoneIdent {}; class ramUsage {}; class batteryItem {}; class aircrewTerminal {};
+            class log {}; class battery {}; class weather {}; class stateInit {}; class storeSet {}; class schedulerStart {}; class schedulerStop {}; class schedulerTick {}; class debugDump {}; class deviceCatalog {}; class hasDevice {}; class deviceDenied {}; class tenantRule {}; class pref {}; class tenantApply {}; class canUse {}; class batterySwap {}; class linkQuality {}; class deviceHealth {}; class deviceDamage {}; class deviceRepair {}; class phoneIdent {}; class ramUsage {}; class batteryItem {}; class aircrewTerminal {}; class repairStart {}; class deviceImpact {}; class deviceReport {}; class screenDirt {}; class screenClean {}; class medShow {};
         };
         class ui { file="z\comspec_atak_native\addons\main\functions\ui";
             class display {}; class open {}; class close {}; class hudToggle {}; class interactToggle {}; class orientationToggle {}; class phoneDrag {}; class formRender {}; class formValue {}; class fullAlert {}; class vibrate {}; class dataBarEnabled {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class navigate {}; class back {}; class modeToggle {};
             class pageRender {}; class pageClear {}; class pageCtrl {}; class tileCreate {}; class appList {}; class appBadge {}; class dockRender {}; class launcherRender {}; class deviceOverlay {}; class appVisible {}; class accent {};
-            class statusUpdate {}; class inspectorUpdate {}; class abbrev {}; class notify {}; class notificationsRender {}; class notifCenter {}; class powerFx {};
+            class statusUpdate {}; class inspectorUpdate {}; class abbrev {}; class notify {}; class notificationsRender {}; class notifCenter {}; class powerFx {}; class overlayFront {}; class screenSurface {};
         };
         class map { file="z\comspec_atak_native\addons\main\functions\map";
-            class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class unitGroup {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerWeb {}; class markerWebSweep {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {}; class mapUnfocus {}; class inspToggle {}; class markerPalette {}; class markerPaletteData {}; class markerLabels {}; class sigintPoll {}; class reliefDraw {}; class meshDraw {}; class logisticsDraw {}; class ewDraw {};
+            class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class unitGroup {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerWeb {}; class markerWebSweep {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {}; class mapUnfocus {}; class inspToggle {}; class markerPalette {}; class markerPaletteData {}; class markerLabels {}; class sigintPoll {}; class reliefDraw {}; class meshDraw {}; class logisticsDraw {}; class ewDraw {}; class mapStyle {}; class textureKeep {};
         };
         class network { file="z\comspec_atak_native\addons\main\functions\network";
             class extensionCall {}; class extensionCallback {}; class remoteSync {}; class importLegacyData {};
@@ -43,12 +43,15 @@ class CfgFunctions {
         class drone { file="z\comspec_atak_native\addons\main\functions\drone";
             class droneCmd {}; class droneAction {}; class droneOsd {}; class droneDraw {}; class pageDrone {}; class droneDetectScan {}; class pageDroneDetect {}; class droneDetectDraw {};
         };
+        class bluetooth { file="z\comspec_atak_native\addons\main\functions\bluetooth";
+            class airplaneMode {}; class btAction {}; class btSounds {}; class pageBluetooth {}; class btInit { postInit=1; };
+        };
         class reports { file="z\comspec_atak_native\addons\main\functions\reports";
             class reportTypes {}; class reportAction {}; class pageReports {};
         };
         class teams { file="z\comspec_atak_native\addons\main\functions\teams";
             class ftCatalog {}; class ftInfo {}; class ftTeams {}; class ftServer {}; class ftAction {}; class ftRows {}; class ftCenter {};
-            class json {}; class squadSnapshot {}; class squadSync {}; class pageInterTeam {}; class interTeamAction {};
+            class json {}; class squadSnapshot {}; class squadSync {}; class pageInterTeam {}; class interTeamAction {}; class ftRoleSync {};
         };
         class screen { file="z\comspec_atak_native\addons\main\functions\screen";
             class roleKey {}; class screenTime {}; class pageScreenTime {}; class playTimeServer {};
@@ -108,6 +111,7 @@ class COMSPEC_ATAK_Apps {
     class Athena      { name="Athena"; page="ATHENA"; section="Système"; order=300; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_athena.paa"; };
     class Discord     { name="Discord"; page="DISCORD"; function="comspec_atak_native_fnc_pageDiscord"; section="Communication"; order=42; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_discord.paa"; };
     class Network     { name="Réseau"; page="NETWORK"; section="Système"; order=302; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_network.paa"; };
+    class Bluetooth   { name="Bluetooth"; page="BLUETOOTH"; function="comspec_atak_native_fnc_pageBluetooth"; section="Système"; order=303; dock=0; icon="\a3\ui_f\data\igui\cfg\simpletasks\types\radio_ca.paa"; };
     class Resynch     { name="Synchro"; page="RESYNCH"; section="Système"; order=304; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_resynch.paa"; };
     class Status      { name="Statut"; page="STATUS"; section="Système"; order=306; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_status.paa"; };
     class Profile     { name="Profil"; page="PROFILE"; section="Système"; order=308; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_profile.paa"; };
@@ -133,6 +137,16 @@ class CfgWeapons {
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=2; };
     };
+    // Kit de réparation du téléphone (action ACE « Réparer le téléphone ATAK », consommé ; fn_repairStart).
+    class COMSPEC_ATAK_RepairKit: ItemCore {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="Kit de réparation ATAK";
+        descriptionShort="Écran de rechange, nappe et outils pour le téléphone COMSPEC ATAK. Action ACE « Réparer le téléphone ATAK » (12 s) : écran, alimentation et appareil remis en état, même détruit. Consommé.";
+        picture="\z\comspec_atak_native\addons\main\data\item_repairkit.paa";
+        model="\A3\Weapons_F\Items\Toolkit";
+        type=4096; detectRange=-1; simulation="ItemMineDetector";
+        class ItemInfo: InventoryItem_Base_F { mass=10; };
+    };
 };
 class CfgVehicles {
     class Item_Base_F;
@@ -141,6 +155,12 @@ class CfgVehicles {
         displayName="Batterie ATAK";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_Battery { name="COMSPEC_ATAK_Battery"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_RepairKit: Item_Base_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="Kit de réparation ATAK";
+        vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
+        class TransportItems { class _xx_COMSPEC_ATAK_RepairKit { name="COMSPEC_ATAK_RepairKit"; count=1; }; };
     };
 };
 

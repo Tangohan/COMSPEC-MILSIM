@@ -1,6 +1,6 @@
 COMSPEC_ATAK_UI_GENERATION = "native-rsc-v1";
 missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION, true];
-missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", "1.5.0", true];
+missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", "1.6.0", true];
 diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
@@ -12,6 +12,12 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
 ["comspec_atak_native_require_item", "CHECKBOX",
     ["Item obligatoire pour avoir l'ATAK", "Activé par défaut : il faut porter un téléphone (ItemAndroid de cTab ou équivalent d'un autre mod) pour sortir ou prendre le téléphone. Décocher pour donner l'ATAK à tout le monde."],
     _cat, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_photo_anim", "EDITBOX",
+    ["Animation de l'appareil photo", "Jouée tant que l'appareil photo est ouvert (vue normale). Nom d'une action ou d'un geste (ex. gesturePoint), d'une animation (CfgMoves, ex. AmovPercMstpSrasWrflDnon_AinvPercMstpSrasWrflDnon), ou d'une fonction (ex. mon_fnc_photoPose, appelée avec [joueur, ""photo""]). Vide : aucune animation."],
+    ["COMSPEC", "ATAK · Photo"], "gesturePoint", 1] call CBA_fnc_addSetting;
+["comspec_atak_native_selfie_anim", "EDITBOX",
+    ["Animation du selfie", "Jouée en mode selfie. Même format : action ou geste, animation CfgMoves, ou fonction appelée avec [joueur, ""selfie""] (puis [joueur, ""exit""] à la fermeture). Vide : on garde l'animation de l'appareil photo."],
+    ["COMSPEC", "ATAK · Photo"], "gesturePoint", 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_battery_items", "EDITBOX",
     ["Batteries de rechange", "Objets (classes exactes, séparées par des virgules) qui rechargent le téléphone à 100 % quand on change la batterie. L'objet est consommé. La « Batterie ATAK » (COMSPEC_ATAK_Battery) est toujours acceptée."],
     _cat, "COMSPEC_ATAK_Battery,ACE_UAVBattery", 1] call CBA_fnc_addSetting;
@@ -47,7 +53,10 @@ private _mus = ["COMSPEC", "ATAK · Musique"];
 
 private _sim = ["COMSPEC", "ATAK · Simulation"];
 ["comspec_atak_native_damage_sim", "CHECKBOX",
-    ["Dégâts du téléphone", "Balles au torse ou aux bras, explosions proches et eau fêlent l'écran, éteignent ou détruisent le téléphone. Réparation : trousse à outils ou nouvel appareil (actions ACE). Si le réalisme ATAK d'Overwatch est actif, c'est lui qui décide."],
+    ["Dégâts du téléphone", "Selon où il est porté (en main, sur le gilet, en poche, dans le sac), la partie du corps touchée, la munition et ce que le gilet arrête : balles, éclats, souffle, chutes, accidents et eau peuvent ne rien faire, rayer ou fêler l'écran, tuer des pixels, abîmer la batterie, le haut-parleur, le GPS ou l'antenne, éteindre ou détruire le téléphone. Réparation : kit de réparation ou caisse à outils, ou nouvel appareil (actions ACE). Réalisme ATAK d'Overwatch : niveau 1 = extinction seulement, 2 = jamais détruit."],
+    _sim, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_dirt_sim", "CHECKBOX",
+    ["Saleté et sang sur l'écran", "Poussière dehors (plus vite couché, en véhicule ouvert, après une explosion), gouttes de pluie, traces de doigts, sang sur l'écran et la coque après un soin. Nettoyage : action ACE « Nettoyer l'écran du téléphone » ou app Profil. Chaque joueur peut aussi le couper dans Réglages > Réalisme."],
     _sim, true, 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_ew_open", "CHECKBOX",
     ["Guerre électronique ouverte à tous", "Coché : tout porteur de téléphone peut brouiller et goniométrer. Décoché : réservé aux unités COMSPEC_ATAK_EwOperator ou au rôle « guerre électronique / brouilleur / SIGINT »."],
@@ -98,6 +107,15 @@ private _geo = ["COMSPEC", "ATAK · Géolocalisation (GEOLOC)"];
 ["comspec_atak_native_civil_apps", "CHECKBOX",
     ["Apps civiles", "UberEats (rations livrées par drone) et Tinder (rencontres entre joueurs). Décocher pour les retirer de tous les téléphones."],
     _sim, true, 1] call CBA_fnc_addSetting;
+
+// Données médicales affichées par l'ATAK : décocher masque la donnée (ou l'endroit) pour tous, sans choix possible (fn_medShow).
+private _med = ["COMSPEC", "ATAK · Données médicales"];
+{
+    _x params ["_k", "_label"];
+    [format ["comspec_atak_native_med_%1", _k], "CHECKBOX",
+        [format ["Afficher : %1", _label], "Décoché : jamais affiché dans l'ATAK (app Médical, moniteur, liaison NFC et rapports, carte, alertes), pour tous les joueurs. Coché : chaque joueur peut encore le masquer dans Réglages > Réalisme."],
+        _med, true, 1] call CBA_fnc_addSetting;
+} forEach ((["fields"] call comspec_atak_native_fnc_medShow) + (["contexts"] call comspec_atak_native_fnc_medShow));
 
 private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 ["comspec_atak_native_aircrew", "CHECKBOX",

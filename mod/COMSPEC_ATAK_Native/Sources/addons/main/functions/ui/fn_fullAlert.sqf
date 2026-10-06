@@ -5,6 +5,8 @@
 */
 params [["_title", "ALERTE"], ["_msg", ""], ["_from", ""], ["_rgba", [0.55, 0.08, 0.06, 0.92]], ["_dur", 10]];
 if (!hasInterface) exitWith {};
+// Événements rejoués par la synchro serveur (arrivée en cours de partie) : pas d'alerte plein écran.
+if (missionNamespace getVariable ["COMSPEC_ATAK_Replaying", false]) exitWith {};
 disableSerialization;
 private _d = findDisplay 46;
 if (isNull _d) exitWith {};

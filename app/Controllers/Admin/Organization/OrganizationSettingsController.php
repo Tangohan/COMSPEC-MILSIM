@@ -689,10 +689,10 @@ final class OrganizationSettingsController
         $discordRaw = trim((string) $request->input('discord_webhook_url', ''));
         if ($discordRaw === '') {
             $integrations['discord_webhook_url'] = null;
-        } elseif ($this->discordWebhook->isValidWebhookUrl($discordRaw)) {
-            $integrations['discord_webhook_url'] = $discordRaw;
+        } elseif (\App\Support\DiscordChannelInput::webhookUrl($discordRaw) !== '') {
+            $integrations['discord_webhook_url'] = \App\Support\DiscordChannelInput::webhookUrl($discordRaw);
         } else {
-            $warnings[] = 'L’URL de webhook Discord n’a pas été enregistrée : elle doit commencer par https://discord.com/api/webhooks/…';
+            $warnings[] = 'Relais Discord non enregistré. ' . (\App\Support\DiscordChannelInput::problem($discordRaw, 'Relais Discord (annonces)') ?? 'Le lien doit commencer par https://discord.com/api/webhooks/…');
         }
 
         $this->tenantRepository->mergeSettings($tenantId, [

@@ -708,3 +708,40 @@
 .portal-alerts-panel__item + .portal-alerts-panel__item {
   border-top: 1px solid rgb(241 245 249);
 }
+
+/* ==========================================================================
+ * Responsive barre invité (header_portal) : rien ne déborde à 320px,
+ * cibles tactiles ≥ 40px, langue reprise dans le menu mobile.
+ * ========================================================================== */
+.portal-nav__brand {
+  min-width: 0;
+}
+
+.portal-nav__tools {
+  min-width: 0;
+}
+
+@media (max-width: 419px) {
+  .portal-nav .portal-nav__lang {
+    display: none;
+  }
+
+  .portal-nav__tools {
+    gap: 0.375rem;
+  }
+}
+
+.portal-nav .portal-nav__drawer-lang a,
+.portal-nav .portal-nav__drawer-lang [aria-current] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  min-height: 2.5rem;
+}
+
+@media (min-width: 1280px) {
+  .portal-nav__drawer-foot {
+    display: none;
+  }
+}

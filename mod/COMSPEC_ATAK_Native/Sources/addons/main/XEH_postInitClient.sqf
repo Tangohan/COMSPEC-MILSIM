@@ -16,26 +16,25 @@ if ([] call comspec_atak_native_fnc_bridge) then {
 // Raccourcis (Options > Contrôles > Configurer les addons > COMSPEC ATAK), sur le modèle des interfaces principale / secondaire / tertiaire.
 // Les identifiants PhoneHold, PhoneCarry, PhoneZoomIn et PhoneZoomOut sont relus par fn_displayLoad (téléphone en main) ;
 // PhoneMain, PhoneOrient et PhonePosition par le gestionnaire de touches ajouté dans fn_open.
-["COMSPEC ATAK", "PhoneMain", ["Ouvrir / fermer l'ATAK (principal)", "Sort le téléphone en main (dernier mode : mini ou plein écran) ou le range complètement."], { [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyMain", {}]); true }, "", [0x16, [false, false, true]]] call CBA_fnc_addKeybind;
-["COMSPEC ATAK", "PhoneCarry", ["Porter l'ATAK en miniature (secondaire)", "Affiche ou range le téléphone dans un coin de l'écran : on continue à jouer."], { [] call comspec_atak_native_fnc_hudToggle; true }, "", [0x16, [false,true,false]]] call CBA_fnc_addKeybind;
-["COMSPEC ATAK", "PhoneHold", ["Prendre l'ATAK en main (tertiaire)", "Prend ou relâche la souris sur le téléphone ; relâché, il reste affiché en miniature."], { [] call comspec_atak_native_fnc_interactToggle; true }, "", [0x16, [true,true,false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhoneMain", ["Prendre en main / interagir avec l'ATAK (principal)", "Miniature ou rangé : le téléphone passe en grand (souris). En grand : il redevient la miniature."], { [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyMain", {}]); true }, "", [0x16, [false, false, true]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhoneCarry", ["Porter l'ATAK en miniature (secondaire)", "Affiche ou range la miniature dans un coin de l'écran (on continue à jouer). En grand : réduit en miniature."], { [] call comspec_atak_native_fnc_hudToggle; true }, "", [0x16, [false,true,false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhoneHold", ["Prendre en main / interagir (touche alternative)", "Même effet que la touche principale : miniature -> grand, grand -> miniature."], { [] call comspec_atak_native_fnc_interactToggle; true }, "", [0x16, [true,true,false]]] call CBA_fnc_addKeybind;
 // Zoom de la carte sans prendre le téléphone en main (aussi en marchant ou en conduisant).
 ["COMSPEC ATAK", "PhoneZoomIn", ["Zoomer (carte du téléphone)", "Zoom avant sur la carte, aussi téléphone porté en marchant ou en conduisant."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [0.7] call comspec_atak_native_fnc_mapZoom; true }, "", [0xC9, [false, true, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneZoomOut", ["Dézoomer (carte du téléphone)", "Zoom arrière sur la carte, aussi téléphone porté."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [1 / 0.7] call comspec_atak_native_fnc_mapZoom; true }, "", [0xD1, [false, true, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneOrient", ["Permuter l'orientation (vertical / horizontal)", "Téléphone en miniature : vertical ou horizontal."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [] call comspec_atak_native_fnc_orientationToggle; true }, "", [0x16, [false, true, true]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhonePosition", ["Permuter la position de l'interface", "Déplace la miniature : bas droit, bas gauche, haut gauche, haut droit, milieu droit, milieu gauche."], { [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyPosition", {}]); true }, "", [0x16, [true, false, true]]] call CBA_fnc_addKeybind;
-// Principal : rangé -> en main ; affiché (porté ou en main) -> rangé complètement.
-missionNamespace setVariable ["COMSPEC_ATAK_KeyMain", {
-    if (isNull ([] call comspec_atak_native_fnc_display)) then {
-        private _why = [] call comspec_atak_native_fnc_canUse;
-        if (_why isNotEqualTo "") exitWith { [_why] call comspec_atak_native_fnc_deviceDenied };
-        uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
-        [true] call comspec_atak_native_fnc_open;
-    } else {
-        uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
-        [] call comspec_atak_native_fnc_close;
-    };
+// Principal = interagir (comme le mod d'origine) : miniature ou rangé -> grand ; grand -> miniature (fn_interactToggle).
+// Ranger complètement : touche « porter » depuis la miniature.
+missionNamespace setVariable ["COMSPEC_ATAK_KeyMain", { [] call comspec_atak_native_fnc_interactToggle; }];
+// Mort ou inconscient : le téléphone se range tout de suite (miniature et grand) et ne revient pas en miniature.
+// fn_canUse renvoie aussi "down" : fn_schedulerTick le range au plus tard en une seconde (inconscience sans ACE).
+missionNamespace setVariable ["COMSPEC_ATAK_StowDown", {
+    uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
+    if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_close; };
 }];
+["ace_unconscious", { params ["_unit", "_state"]; if (_state && {_unit isEqualTo player}) then { call (missionNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }] call CBA_fnc_addEventHandler;
+addMissionEventHandler ["EntityKilled", { params ["_unit"]; if (_unit isEqualTo player) then { call (missionNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }];
 // Position de la miniature : coin suivant (réglage profil COMSPEC_ATAK_MiniAnchor, aussi dans Réglages).
 missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
     private _list = ["BR", "BL", "TL", "TR", "MR", "ML"];
@@ -150,27 +149,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 // Tous les marqueurs de la carte vers le web (relais unique par camp).
 [{ [] call comspec_atak_native_fnc_markerWebSweep; }, 15] call CBA_fnc_addPerFrameHandler;
 
-// Heatmap : toutes les 20 s, chaque ennemi repéré par mon camp chauffe sa case de 200 m ; tout refroidit de 4 %.
-[{
-    if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
-    private _heat = missionNamespace getVariable ["COMSPEC_ATAK_Heat", createHashMap];
-    { _y set [2, (_y select 2) * 0.96]; } forEach _heat;
-    private _cold = (keys _heat) select { ((_heat get _x) select 2) < 0.2 };
-    { _heat deleteAt _x; } forEach _cold;
-    private _mySide = side group player;
-    {
-        if (alive _x && {(side group _x) isNotEqualTo _mySide} && {(side group _x) isNotEqualTo civilian} && {(_mySide knowsAbout _x) >= 1.5}) then {
-            private _p = getPosATL _x;
-            private _cx = (floor ((_p select 0) / 200)) * 200 + 100;
-            private _cy = (floor ((_p select 1) / 200)) * 200 + 100;
-            private _key = format ["%1_%2", _cx, _cy];
-            private _c = _heat getOrDefault [_key, [_cx, _cy, 0]];
-            _c set [2, (_c select 2) + 1];
-            _heat set [_key, _c];
-        };
-    } forEach allUnits;
-    missionNamespace setVariable ["COMSPEC_ATAK_Heat", _heat];
-}, 20] call CBA_fnc_addPerFrameHandler;
+// Heatmap : altitudes du terrain en couleur, calculées au dessin (fn_mapOnDraw) ; aucune donnée ennemie.
 
 // Alertes BFT de mon groupe : un équipier passe hors ligne, tombe inconscient ou meurt (et revient en ligne).
 [{
@@ -183,7 +162,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
         if (_x isEqualTo player || {!isPlayer _x}) then { continue; };
         private _st = switch (true) do {
             case (!alive _x): { "DEAD" };
-            case (lifeState _x isEqualTo "INCAPACITATED"): { "DOWN" };
+            // État médical masqué pour les alliés ou les alertes (Réglages > Réalisme, fn_medShow) : pas d'alerte « inconscient ».
+            case (lifeState _x isEqualTo "INCAPACITATED" && {["state", "allies"] call comspec_atak_native_fnc_medShow} && {["ctx", "alerts"] call comspec_atak_native_fnc_medShow}): { "DOWN" };
             case !(_x getVariable ["COMSPEC_ATAK_Beacon", true]): { "OFF" };
             default { "OK" };
         };
@@ -245,6 +225,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 ["comspec_atak_native_alert", {
     params ["_type", "_who", "_pos", "_grid", ["_text", ""], ["_side", ""]];
     if (_side isNotEqualTo str side group player || {!([player] call comspec_atak_native_fnc_hasDevice)}) exitWith {};
+    // Bilan de blessé (liaison ATAK) : son état n'est pas gardé si je masque l'état médical dans les alertes (fn_medShow).
+    if (_type isEqualTo "WIA" && {!(["state", "alerts"] call comspec_atak_native_fnc_medShow)}) then { _text = ""; };
     private _label = createHashMapFromArray [["TIC", "CONTACT"], ["TIC_CLEAR", "FIN DE CONTACT"], ["EAGLE_DOWN", "APPAREIL ABATTU"], ["SALUTE", "SALUTE"]] getOrDefault [_type, _type];
     ["TACTICAL", format ["%1 · %2 · %3", _label, _who, _grid], 8, 70] call comspec_atak_native_fnc_notify;
     [] call comspec_atak_native_fnc_vibrate;
@@ -371,37 +353,104 @@ addMissionEventHandler ["EntityKilled", {
     { _x call comspec_atak_native_fnc_netSend; } forEach _queue;
 }, 2] call CBA_fnc_addPerFrameHandler;
 
-// Dégâts du téléphone : balles (surtout torse et bras, où il est porté), explosions, eau.
+// Dégâts du téléphone (fn_deviceImpact) : selon où il est porté (main, gilet, poche, sac), la partie du corps touchée,
+// la munition et ce que le gilet arrête ; éclats et souffle des explosions, chutes, accidents, eau.
+// Les parties touchées d'un même coup sont regroupées et traitées à l'image suivante (un seul tirage par coup).
+missionNamespace setVariable ["COMSPEC_ATAK_HitQueue", []];
+missionNamespace setVariable ["COMSPEC_ATAK_HitPush", {
+    params ["_part", "_dmg", "_raw", "_ammo"];
+    private _q = missionNamespace getVariable ["COMSPEC_ATAK_HitQueue", []];
+    if ((count _q) isEqualTo 0) then {
+        [{
+            private _q = missionNamespace getVariable ["COMSPEC_ATAK_HitQueue", []];
+            missionNamespace setVariable ["COMSPEC_ATAK_HitQueue", []];
+            if (alive player && {(count _q) > 0}) then { ["hits", _q] call comspec_atak_native_fnc_deviceImpact; };
+        }] call CBA_fnc_execNextFrame;
+    };
+    _q pushBack [_part, _dmg, _raw, _ammo];
+    missionNamespace setVariable ["COMSPEC_ATAK_HitQueue", _q];
+}];
 if (isClass (configFile >> "CfgPatches" >> "ace_medical_engine")) then {
+    // ACE : [unité, [[dégâts après gilet, partie, dégâts sans gilet]...], tireur, munition] (munition « falling », « vehiclecrash »… pour les chocs).
     ["ace_medical_woundReceived", {
-        params ["_unit", ["_damages", []]];
+        params ["_unit", ["_damages", []], ["", objNull], ["_ammo", ""]];
         if (_unit isNotEqualTo player) exitWith {};
+        if !(_ammo isEqualType "") then { _ammo = ""; };
         {
-            _x params [["_d", 0], ["_part", ""]];
-            private _carry = (toLower _part) in ["body", "leftarm", "rightarm"];
-            if (_d > 0.05 && {random 1 < ([0.08, 0.45] select _carry)}) then {
-                [(_d * 0.6) min 0.6, "Impact", [0, 15] select (random 1 < 0.35)] call comspec_atak_native_fnc_deviceDamage;
-            };
+            _x params [["_d", 0], ["_part", ""], ["_raw", -1]];
+            if (_raw < 0) then { _raw = _d; };
+            if ((_d max _raw) > 0.02) then { [_part, _d, _raw, _ammo] call (missionNamespace getVariable ["COMSPEC_ATAK_HitPush", {}]); };
         } forEach _damages;
     }] call CBA_fnc_addEventHandler;
 } else {
-    player addEventHandler ["Hit", { params ["_unit", "", "_d"]; if (_d > 0.05 && {random 1 < 0.3}) then { [(_d * 0.6) min 0.6, "Impact", [0, 15] select (random 1 < 0.35)] call comspec_atak_native_fnc_deviceDamage; }; }];
+    // Sans ACE : chaque point de dégâts qui augmente (Dammaged ne change pas les dégâts, contrairement à HandleDamage).
+    player addEventHandler ["Dammaged", {
+        params ["_unit", "_sel", "_dmg", "", "_hp", "", ["_proj", ""]];
+        private _prev = missionNamespace getVariable ["COMSPEC_ATAK_HitPrev", createHashMap];
+        private _k = toLower ([_hp, _sel] select (_hp isEqualTo ""));
+        private _d = _dmg - (_prev getOrDefault [_k, 0]);
+        _prev set [_k, _dmg];
+        missionNamespace setVariable ["COMSPEC_ATAK_HitPrev", _prev];
+        if (_d < 0.03 || {_k isEqualTo ""}) exitWith {};
+        private _part = switch (true) do {
+            case ((_k find "head") >= 0 || {(_k find "face") >= 0} || {(_k find "neck") >= 0}): { "head" };
+            case ((_k find "hand") >= 0 || {(_k find "arm") >= 0}): { selectRandom ["leftarm", "rightarm"] };
+            case ((_k find "leg") >= 0): { selectRandom ["leftleg", "rightleg"] };
+            default { "body" };
+        };
+        if !(_proj isEqualType "") then { _proj = ""; };
+        [_part, _d, _d, _proj] call (missionNamespace getVariable ["COMSPEC_ATAK_HitPush", {}]);
+    }];
+    player addEventHandler ["HandleHeal", { missionNamespace setVariable ["COMSPEC_ATAK_HitPrev", createHashMap]; }];
 };
-player addEventHandler ["Explosion", { params ["", "_d"]; if (_d > 0.03 && {random 1 < 0.6}) then { [(_d * 1.5) min 0.7, "Explosion", [0, 20] select (random 1 < 0.5)] call comspec_atak_native_fnc_deviceDamage; }; }];
-player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK_Device", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_Battery", 100]; }];
+player addEventHandler ["Explosion", {
+    params ["", "_d", ["_src", objNull]];
+    if (_d < 0.02 || {diag_tickTime < (missionNamespace getVariable ["COMSPEC_ATAK_BlastAt", 0])}) exitWith {};
+    missionNamespace setVariable ["COMSPEC_ATAK_BlastAt", diag_tickTime + 0.5];
+    private _dist = [-1, player distance _src] select (!isNull _src);
+    ["blast", [_d, _dist]] call comspec_atak_native_fnc_deviceImpact;
+    ["blast", _d] call comspec_atak_native_fnc_screenDirt;
+}];
+player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK_Device", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_Battery", 100]; missionNamespace setVariable ["COMSPEC_ATAK_HitPrev", createHashMap]; missionNamespace setVariable ["COMSPEC_ATAK_HandsBlood", 0]; }];
+// Eau : téléphone étanche quelques dizaines de secondes ; ensuite l'eau s'infiltre (haut-parleur, batterie, extinction…),
+// détruit seulement après une longue immersion. Dans le sac, l'eau entre deux fois moins vite. L'eau lave aussi l'écran.
 [{
-    if (alive player && {((eyePos player) select 2) < -0.2} && {(vehicle player) isEqualTo player}) then { [0.08, "Téléphone noyé", 30] call comspec_atak_native_fnc_deviceDamage; };
+    if (!alive player) exitWith {};
+    private _n = missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap];
+    private _wet = _n getOrDefault ["wet", 0];
+    if (((eyePos player) select 2) < -0.2 && {(vehicle player) isEqualTo player}) then {
+        _wet = _wet + ([3, 1.5] select ((["carry"] call comspec_atak_native_fnc_deviceImpact) isEqualTo "backpack"));
+        _n set ["wet", _wet];
+        missionNamespace setVariable ["COMSPEC_ATAK_Device", _n];
+        ["water"] call comspec_atak_native_fnc_screenDirt;
+        if (_wet > 25 && {random 1 < 0.12}) then { ["water", _wet] call comspec_atak_native_fnc_deviceImpact; };
+    } else {
+        if (_wet > 0) then { _n set ["wet", (_wet - 2) max 0]; missionNamespace setVariable ["COMSPEC_ATAK_Device", _n]; };
+    };
 }, 3] call CBA_fnc_addPerFrameHandler;
 
-// Actions ACE : réparer l'écran (trousse à outils) ou passer sur un téléphone de rechange.
+// Saleté de l'écran (fn_screenDirt, rendu fn_screenSurface) : poussière, pluie, traces de doigts, sang après un soin.
+[{ ["tick"] call comspec_atak_native_fnc_screenDirt; }, 5] call CBA_fnc_addPerFrameHandler;
+["ace_treatmentSucceded", {
+    params [["_medic", objNull], ["_patient", objNull]];
+    if (_medic isEqualTo player && {_patient isNotEqualTo player || {(player getVariable ["ace_medical_woundBleeding", 0]) > 0}}) then { ["treat", _patient] call comspec_atak_native_fnc_screenDirt; };
+}] call CBA_fnc_addEventHandler;
 if (!isNil "ace_interact_menu_fnc_createAction") then {
-    private _fix = ["COMSPEC_ATAK_Repair", "Réparer le téléphone ATAK", "", {
-        private _go = { [{ ["repair"] call comspec_atak_native_fnc_deviceRepair; }] call CBA_fnc_execNextFrame; };
-        if (isNil "ace_common_fnc_progressBar") exitWith { [] call _go; };
-        [15, [], { ["repair"] call comspec_atak_native_fnc_deviceRepair; }, {}, "Réparation du téléphone…"] call ace_common_fnc_progressBar;
+    private _clean = ["COMSPEC_ATAK_Clean", "Nettoyer l'écran du téléphone", "", {
+        [{ ["start"] call comspec_atak_native_fnc_screenClean; }] call CBA_fnc_execNextFrame;
     }, {
-        ((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["damage", 0]) > 0
-        && {(((items player) apply { toLower _x }) findIf { _x in ["toolkit", "ace_toolkit"] }) >= 0}
+        ["can"] call comspec_atak_native_fnc_screenClean
+    }] call ace_interact_menu_fnc_createAction;
+    ["CAManBase", 1, ["ACE_SelfActions", "ACE_Equipment"], _clean, true] call ace_interact_menu_fnc_addActionToClass;
+};
+
+// Actions ACE : réparer le téléphone (kit de réparation ATAK consommé, ou caisse à outils) ou passer sur un téléphone de rechange.
+// La réparation couvre aussi l'état du réalisme Overwatch (écran cassé, appareil détruit) : fn_repairStart, fn_deviceRepair.
+if (!isNil "ace_interact_menu_fnc_createAction") then {
+    private _fix = ["COMSPEC_ATAK_Repair", "Réparer le téléphone ATAK", "\z\comspec_atak_native\addons\main\data\item_repairkit.paa", {
+        [{ ["start"] call comspec_atak_native_fnc_repairStart; }] call CBA_fnc_execNextFrame;
+    }, {
+        ["can"] call comspec_atak_native_fnc_repairStart
     }] call ace_interact_menu_fnc_createAction;
     ["CAManBase", 1, ["ACE_SelfActions", "ACE_Equipment"], _fix, true] call ace_interact_menu_fnc_addActionToClass;
     private _swap = ["COMSPEC_ATAK_Swap", "Changer de téléphone ATAK", "", {
@@ -469,6 +518,8 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; }];
 // Arrivée en cours de partie : mon équipe de feu d'un ancien groupe ne me suit pas.
 [{ ["comspec_atak_native_ftCheck", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
+// Rôles d'Athena et rôle mémorisé du joueur, réappliqué à l'arrivée et à la réapparition (fn_ftRoleSync).
+["init"] call comspec_atak_native_fnc_ftRoleSync;
 
 // Tinder : un joueur m'a liké (match si c'est réciproque).
 ["comspec_atak_native_rencard", {
@@ -555,3 +606,5 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 ["COMSPEC_IcemanMedicalPanic", { ["health", _this] call comspec_atak_native_fnc_athenaSignal; }] call CBA_fnc_addEventHandler;
 // App Liaison allié : événements, sauvegarde légère, action ACE.
 [] call comspec_atak_native_fnc_linkAllyInit;
+// Icônes PAA gardées en mémoire (sinon elles disparaissent un instant à chaque rafraîchissement de page).
+[{ !isNull (findDisplay 46) }, { [] call comspec_atak_native_fnc_textureKeep; }] call CBA_fnc_waitUntilAndExecute;

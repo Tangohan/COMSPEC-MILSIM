@@ -4,6 +4,9 @@ private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", crea
 switch (_action) do {
     case "battery": { [] call comspec_atak_native_fnc_batterySwap; call _render; };
     case "repair": {
+        // Écran et révision : réparation native (kit de réparation ATAK ou caisse à outils), qui remet aussi en état
+        // l'appareil Overwatch détruit que sa propre réparation refuse.
+        if (_arg in ["screen", "full"]) exitWith { ["start"] call comspec_atak_native_fnc_repairStart; };
         if (isNil "comspec_overwatch_connect_fnc_repairAtak") exitWith { ["WARNING", "Réparation : COMSPEC Overwatch requis", 4, 30] call comspec_atak_native_fnc_notify; };
         [_arg, _render] spawn { params ["_t", "_r"]; [_t] call comspec_overwatch_connect_fnc_repairAtak; sleep 9; call _r; };
     };

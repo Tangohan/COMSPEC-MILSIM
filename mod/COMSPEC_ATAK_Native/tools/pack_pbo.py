@@ -31,6 +31,7 @@ def main():
             full = os.path.join(root, n)
             rel = os.path.relpath(full, src).replace("/", "\\")
             files.append((rel, full))
+    files.sort(key=lambda f: f[0].lower())
     head = bytearray()
     head += b"\0" + struct.pack("<5I", 0x56657273, 0, 0, 0, 0)
     if prefix:

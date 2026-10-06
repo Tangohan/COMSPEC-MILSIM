@@ -44,20 +44,35 @@ if (((["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_
     _ov set ["heading", _hd];
 };
 
-// Carte « moi » (bas droite)
-// Texte fixé à la petite police (sinon le texte structuré prend la taille par défaut, trop grosse en mini).
+// Carte « moi » (bas droite) et panneau curseur (bas gauche) : fond + liseré + texte en retrait.
+// Police = petite police × taille des textes de carte (Réglages > Carte) ; hauteur calculée sur le nombre de lignes
+// (le panneau curseur en a 4 : grille, altitude, distance, azimut) pour ne jamais couper la dernière.
 private _mini = _l get "mini";
-private _panFs = _fs * ([0.85, 0.7] select _mini);
-private _panW = ((_mw * 0.34) min (_font * 9 / _ratio)) * ([1, 0.75] select _mini);
-private _panH = _panFs * ([3.6, 2.5] select _mini);
-private _me = ["COMSPEC_RscMapPanel", [_bx + _mw - _panW - _pad, _by + _mh - _panH - _pad, _panW, _panH]] call _mk;
-_me ctrlSetFontHeight _panFs;
+private _mts = ((profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25]) max 0.8) min 2.2;
+private _panFs = _fs * ([0.85, 0.7] select _mini) * _mts;
+private _panW = ((((_mw * 0.34) min (_font * 9 / _ratio)) * ([1, 0.75] select _mini)) * (_mts max 1)) min (_mw * ([0.44, 0.62] select _mini));
+private _panIn = _pad * 0.6;
+private _panLine = _panFs * 1.18;
+private _panel = {
+    params ["_px0", "_lines"];
+    private _h = _panLine * _lines + _panIn * 2;
+    private _py0 = _by + _mh - _h - _pad;
+    private _bg = ["COMSPEC_RscText", [_px0, _py0, _panW, _h]] call _mk;
+    _bg ctrlSetBackgroundColor [0.02, 0.025, 0.022, 0.86];
+    private _edge = ["COMSPEC_RscText", [_px0, _py0, _panW, pixelH * 2]] call _mk;
+    _edge ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.55];
+    private _t = ["COMSPEC_RscStructuredText", [_px0 + _panIn / _ratio * 0.6, _py0 + _panIn, _panW - _panIn / _ratio * 1.2, _h - _panIn * 1.5]] call _mk;
+    _t ctrlSetFontHeight _panFs;
+    [_t, _h]
+};
+([_bx + _mw - _panW - _pad, [3, 2] select _mini] call _panel) params ["_me", "_meH"];
 _ov set ["me", _me];
+private _panH = _meH;
 
 if (_interactive) then {
     // Panneau curseur (bas gauche) + bouton outils
-    private _cur = ["COMSPEC_RscMapPanel", [_bx + _pad, _by + _mh - _panH - _pad, _panW, _panH]] call _mk;
-    _cur ctrlSetFontHeight _panFs;
+    ([_bx + _pad, 4] call _panel) params ["_cur", "_curH"];
+    _panH = _curH;
     _ov set ["cursor", _cur];
     // Bouton « OUTILS » bien visible (icône + libellé) : ouvre le menu des outils carte.
     private _th = _fs * 1.9;
@@ -198,44 +213,82 @@ if (_interactive) then {
                 if (_var isEqualTo "COMSPEC_ATAK_SigintLayer") then { [] spawn comspec_atak_native_fnc_sigintPoll; };
                 [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
             }];
+            // [libellé, espace (P profil, M mission), variable, défaut, clé communauté (verrou Athena) ou ""]
             private _layers = [
-                ["Alliés", "P", "COMSPEC_ATAK_LayerFriends", true],
-                ["Ennemis repérés", "P", "COMSPEC_ATAK_ShowHostile", false],
-                ["Cartouches", "P", "COMSPEC_ATAK_MarkerTags", true],
-                ["Zones Athena", "P", "COMSPEC_ATAK_ZonesLayer", true],
-                ["SIGINT", "P", "COMSPEC_ATAK_SigintLayer", true],
-                ["Guerre élec.", "P", "COMSPEC_ATAK_LayerEw", true],
-                ["Logistique", "P", "COMSPEC_ATAK_LayerLogi", true],
-                ["Relief", "M", "COMSPEC_ATAK_ViewshedShow", true],
-                ["Wave Relay", "P", "COMSPEC_ATAK_MeshOnMap", false],
-                ["Heatmap", "P", "COMSPEC_ATAK_LayerHeat", false],
-                ["Carte nuit", "P", "COMSPEC_ATAK_LayerNight", false]
+                ["Alliés", "P", "COMSPEC_ATAK_LayerFriends", true, ""],
+                ["Cartouches", "P", "COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"],
+                ["Zones Athena", "P", "COMSPEC_ATAK_ZonesLayer", true, ""],
+                ["SIGINT", "P", "COMSPEC_ATAK_SigintLayer", true, ""],
+                ["Guerre élec.", "P", "COMSPEC_ATAK_LayerEw", true, ""],
+                ["Logistique", "P", "COMSPEC_ATAK_LayerLogi", true, ""],
+                ["Relief", "M", "COMSPEC_ATAK_ViewshedShow", true, ""],
+                ["Wave Relay", "P", "COMSPEC_ATAK_MeshOnMap", false, ""],
+                ["Altitudes (heatmap)", "P", "COMSPEC_ATAK_LayerHeat", false, ""]
             ];
+            // Liste en deux colonnes : case à cocher À GAUCHE du libellé complet (aligné à gauche).
+            // Actif : case verte pleine, texte blanc, fond vert sombre. Inactif mais disponible : case vide bordée,
+            // texte clair (jamais grisé). Imposé par la communauté : texte atténué + « imposé », pas de clic.
+            private _gap = _pad / 3;
             private _lw = ((_l get "inspW") - _pad * 2.5) / 2;
-            private _lh = _fs * 1.45;
+            private _lh = _fs * 1.6;
+            private _lfs = _fs * 0.86;
             private _rowsN = ceil ((count _layers) / 2);
-            private _ly0 = _by + _bh - _pad - _rowsN * (_lh + _pad / 3);
-            private _lt = ["COMSPEC_RscStructuredText", [_sx, _ly0 - _fs * 1.3, _sw, _fs * 1.2]] call _mk;
-            _lt ctrlSetStructuredText parseText "<t font='RobotoCondensedBold' size='0.8' color='#5cc76b'>CALQUES</t>";
-            uiNamespace setVariable ["COMSPEC_ATAK_InspTextBottom", _ly0 - _fs * 1.4];
-            private _sep = ["COMSPEC_RscText", [_sx, _ly0 - _fs * 1.45, _sw, pixelH]] call _mk;
+            private _ly0 = _by + _bh - _pad - _rowsN * (_lh + _gap);
+            // Rangée « Fond de carte » au-dessus de la liste.
+            private _fy = _ly0 - _lh - _gap * 2;
+            private _hy = _fy - _fs * 1.35;
+            private _lt = ["COMSPEC_RscStructuredText", [_sx, _hy, _sw, _fs * 1.25]] call _mk;
+            _lt ctrlSetStructuredText parseText "<t font='RobotoCondensedBold' size='0.85' color='#5cc76b'>CALQUES</t>";
+            uiNamespace setVariable ["COMSPEC_ATAK_InspTextBottom", _hy - _fs * 0.2];
+            private _sep = ["COMSPEC_RscText", [_sx, _hy - _fs * 0.1, _sw, pixelH]] call _mk;
             _sep ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.35];
+            private _style = [] call comspec_atak_native_fnc_mapStyle;
+            private _flw = _sw * 0.2;
+            private _fl = ["COMSPEC_RscText", [_sx, _fy, _flw, _lh], "Fond"] call _mk;
+            _fl ctrlSetFontHeight _lfs;
+            _fl ctrlSetTextColor [0.80, 0.86, 0.82, 1];
+            private _styles = [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"]];
+            private _cw = (_sw - _flw - _gap * ((count _styles) - 1)) / (count _styles);
             {
-                _x params ["_lbl", "_ns", "_var", "_def"];
+                _x params ["_t", "_k"];
+                private _on = _k isEqualTo _style;
+                private _b = ["COMSPEC_RscButton", [_sx + _flw + _forEachIndex * (_cw + _gap), _fy, _cw, _lh], _t] call _mk;
+                _b ctrlSetFontHeight (_lfs * 0.92);
+                _b ctrlSetBackgroundColor ([[0.11, 0.135, 0.12, 1], [0.36, 0.78, 0.42, 1]] select _on);
+                _b ctrlSetTextColor ([[0.92, 0.96, 0.93, 1], [0.03, 0.05, 0.04, 1]] select _on);
+                _b ctrlSetTooltip "Fond de carte (aussi dans Réglages > Carte)";
+                _b ctrlAddEventHandler ["ButtonClick", compile format ["[%1] call comspec_atak_native_fnc_mapStyle; [{ ['MAP'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", str _k]];
+            } forEach _styles;
+            private _boxH = _lh * 0.5;
+            private _boxW = _boxH / _ratio;
+            {
+                _x params ["_lbl", "_ns", "_var", "_def", "_tenant"];
                 private _on = ([profileNamespace, missionNamespace] select (_ns isEqualTo "M")) getVariable [_var, _def];
-                private _col = _forEachIndex mod 2;
-                private _row = floor (_forEachIndex / 2);
-                // Bouton à bascule : fond et pastille verts quand le calque est affiché, gris sinon.
-                private _bx0 = _sx + _col * (_lw + _pad / 2);
-                private _by0 = _ly0 + _row * (_lh + _pad / 3);
-                private _b = ["COMSPEC_RscButton", [_bx0, _by0, _lw, _lh], _lbl] call _mk;
-                _b ctrlSetFontHeight (_fs * 0.78);
-                _b ctrlSetBackgroundColor ([[0.08, 0.10, 0.09, 0.95], [0.10, 0.30, 0.16, 0.95]] select _on);
-                _b ctrlSetTextColor ([[0.6, 0.65, 0.62, 1], [0.92, 0.97, 0.93, 1]] select _on);
-                private _dotH = _lh * 0.34;
-                private _dot = ["COMSPEC_RscText", [_bx0 + _lh * 0.3 * _ratio, _by0 + (_lh - _dotH) / 2, _dotH * pixelH / pixelW, _dotH]] call _mk;
-                _dot ctrlSetBackgroundColor ([[0.30, 0.34, 0.32, 1], [0.36, 0.78, 0.42, 1]] select _on);
-                _b ctrlAddEventHandler ["ButtonClick", compile format ["[%1, %2, %3] call (uiNamespace getVariable 'COMSPEC_ATAK_LayerToggle');", str _ns, str _var, _def]];
+                private _locked = false;
+                if (_tenant isNotEqualTo "") then { ([_var, _def, _tenant] call comspec_atak_native_fnc_pref) params ["_v", "_lk"]; _on = _v; _locked = _lk; };
+                private _bx0 = _sx + (_forEachIndex mod 2) * (_lw + _pad / 2);
+                private _by0 = _ly0 + (floor (_forEachIndex / 2)) * (_lh + _gap);
+                private _row = ["COMSPEC_RscText", [_bx0, _by0, _lw, _lh]] call _mk;
+                _row ctrlSetBackgroundColor ([[0.065, 0.08, 0.072, 0.96], [0.08, 0.20, 0.11, 0.96]] select _on);
+                // Case (pas de glyphe ✓ : absent des polices Roboto d'Arma) : bordure claire, intérieur vert plein si actif, sombre sinon.
+                private _cx = _bx0 + _boxW * 0.45;
+                private _cy = _by0 + (_lh - _boxH) / 2;
+                private _frame = ["COMSPEC_RscText", [_cx, _cy, _boxW, _boxH]] call _mk;
+                _frame ctrlSetBackgroundColor ([[0.70, 0.76, 0.72, 1], [0.36, 0.78, 0.42, 1]] select _on);
+                private _inner = ["COMSPEC_RscText", [_cx + pixelW * 2, _cy + pixelH * 2, _boxW - pixelW * 4, _boxH - pixelH * 4]] call _mk;
+                _inner ctrlSetBackgroundColor ([[0.04, 0.05, 0.045, 1], [0.36, 0.78, 0.42, 1]] select _on);
+                private _tx0 = _cx + _boxW * 1.45;
+                private _t = ["COMSPEC_RscText", [_tx0, _by0, _bx0 + _lw - _tx0, _lh], _lbl + (["", " · imposé"] select _locked)] call _mk;
+                _t ctrlSetFontHeight _lfs;
+                _t ctrlSetTextColor ([[[0.86, 0.91, 0.88, 1], [1, 1, 1, 1]] select _on, [0.50, 0.54, 0.52, 0.85]] select _locked);
+                if (_locked) then {
+                    _row ctrlSetBackgroundColor [0.035, 0.04, 0.037, 0.8];
+                    _row ctrlSetTooltip "Réglé par votre communauté sur Athena (Contrôle serveur)";
+                } else {
+                    private _b = ["COMSPEC_RscButtonOverlay", [_bx0, _by0, _lw, _lh]] call _mk;
+                    _b ctrlSetTooltip format ["%1 : %2 (cliquer pour %3)", _lbl, ["masqué", "affiché"] select _on, ["afficher", "masquer"] select _on];
+                    _b ctrlAddEventHandler ["ButtonClick", compile format ["[%1, %2, %3] call (uiNamespace getVariable 'COMSPEC_ATAK_LayerToggle');", str _ns, str _var, _def]];
+                };
             } forEach _layers;
         };
     };

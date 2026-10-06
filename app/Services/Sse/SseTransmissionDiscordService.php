@@ -71,10 +71,15 @@ final class SseTransmissionDiscordService
         if ($label === '') {
             $label = 'Salon Discord';
         }
+        $normalized = \App\Support\DiscordChannelInput::webhookUrl($url);
+        if ($normalized !== '') {
+            $url = $normalized;
+        }
         if (!$this->discord->isValidWebhookUrl($url)) {
             return [
                 'ok' => false,
-                'message' => 'Le lien Discord n’est pas reconnu. Dans le salon, ouvrez Intégrations, créez un relais, puis collez ici l’adresse complète.',
+                'message' => \App\Support\DiscordChannelInput::problem($url, 'Lien du salon Discord')
+                    ?? 'Le lien Discord n’est pas reconnu. Collez l’URL du webhook du salon (https://discord.com/api/webhooks/…).',
             ];
         }
         $cfg = $this->config($tenantId);

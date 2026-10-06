@@ -66,7 +66,7 @@ final class AtakMapGatewayController
 
     public function create(Request $request, array $params = []): Response
     {
-        if (!Csrf::validate($request)) {
+        if (!Csrf::validate((string) ($request->input('_csrf_token', '') ?: ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
             return Response::redirect(url('atak/passerelle'));
@@ -100,7 +100,7 @@ final class AtakMapGatewayController
 
     public function redeem(Request $request, array $params = []): Response
     {
-        if (!Csrf::validate($request)) {
+        if (!Csrf::validate((string) ($request->input('_csrf_token', '') ?: ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
             return Response::redirect(url('atak/passerelle'));
@@ -137,7 +137,7 @@ final class AtakMapGatewayController
 
     public function accept(Request $request, array $params = []): Response
     {
-        if (!Csrf::validate($request)) {
+        if (!Csrf::validate((string) ($request->input('_csrf_token', '') ?: ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
             return Response::redirect(url('atak/passerelle'));
@@ -165,7 +165,7 @@ final class AtakMapGatewayController
 
     public function revoke(Request $request, array $params = []): Response
     {
-        if (!Csrf::validate($request)) {
+        if (!Csrf::validate((string) ($request->input('_csrf_token', '') ?: ($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')))) {
             Session::flash('error', 'Session expirée. Réessayez.');
 
             return Response::redirect(url('atak/passerelle'));

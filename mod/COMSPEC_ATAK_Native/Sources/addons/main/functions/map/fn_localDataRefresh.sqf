@@ -52,7 +52,6 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
     private _obj = _x;
     if (isNull _obj) then { continue };
     if (side group _obj isEqualTo side group player && {_obj isNotEqualTo player} && {!_showFriends || {!([_obj] call _carries)}}) then { continue };
-    if (side group _obj isNotEqualTo side group player && {((side group player) knowsAbout _obj) < 1.5}) then { continue };
     if (side group _obj isEqualTo side group player && {!([_obj] call _keepFriend)}) then { continue };
     private _id = netId _obj;
     if (_id isEqualTo "0:0") then { _id = str _obj; };
@@ -103,9 +102,10 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
         ["affiliation",_affiliation],["type",_type],["freshness",_fr],["updated",_upd],
         ["icon",_obj getVariable ["COMSPEC_ATAK_Icon",""]],["orbat",_obj getVariable ["COMSPEC_ATAK_Orbat",""]]
     ]];
-} forEach (allUnits select {
-    alive _x && {(side group _x isEqualTo side group player) || {profileNamespace getVariable ["COMSPEC_ATAK_ShowHostile",false]}}
-});
+} forEach (allUnits select { alive _x && {side group _x isEqualTo side group player} });
+
+// Aucune IA ennemie sur la carte, même repérée (choix de la communauté) : ni calcul local, ni contact relayé par Athena.
+{ if ((_y getOrDefault ["affiliation", ""]) isEqualTo "hostile") then { _units deleteAt _x; }; } forEach +_units;
 ["units",_units] call comspec_atak_native_fnc_storeSet;
 
 // Les marqueurs de la mission sont déjà dessinés par la carte Arma : on les garde pour la sélection

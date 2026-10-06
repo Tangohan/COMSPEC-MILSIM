@@ -9,6 +9,27 @@
 */
 params [["_kind", ""], ["_arg", createHashMap]];
 if (!hasInterface) exitWith {};
+// Déjà affichée : pas de second affichage à la reconnexion (COMSPEC Link oublie ses ordres vus en quittant la partie
+// et rejoue les NOTIFY non acquittés). Identifiants gardés dans le profil (300 derniers).
+private _key = switch (_kind) do {
+    case "notify";
+    case "vibrate": { private _id = if (_arg isEqualType createHashMap) then { _arg getOrDefault ["id", ""] } else { "" }; if (_id isEqualType "") then { _id } else { str _id } };
+    case "health": {
+        _arg params [["_k", ""], ["_who", objNull], ["_pos", []], ["_cs", ""]];
+        format ["H|%1|%2|%3|%4|%5", _k, [getPlayerUID _who, _cs] select (isNull _who), round ((_pos param [0, 0]) / 50), round ((_pos param [1, 0]) / 50), [missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", ""], floor (dayTime * 6)]]
+    };
+    default { "" };
+};
+if (_key isNotEqualTo "") then { _key = format ["%1|%2", _kind, _key]; };
+private _seen = profileNamespace getVariable ["COMSPEC_ATAK_AlertsSeen", []];
+if !(_seen isEqualType []) then { _seen = []; };
+if (_key isNotEqualTo "" && {_key in _seen}) exitWith { ["INFO", "ALERT", format ["Alerte déjà affichée, ignorée : %1", _key]] call comspec_atak_native_fnc_log; };
+if (_key isNotEqualTo "") then {
+    _seen pushBack _key;
+    if ((count _seen) > 300) then { _seen deleteRange [0, (count _seen) - 300]; };
+    profileNamespace setVariable ["COMSPEC_ATAK_AlertsSeen", _seen];
+    saveProfileNamespace;
+};
 private _time = [dayTime, "HH:MM"] call BIS_fnc_timeToString;
 switch (_kind) do {
     case "notify": {

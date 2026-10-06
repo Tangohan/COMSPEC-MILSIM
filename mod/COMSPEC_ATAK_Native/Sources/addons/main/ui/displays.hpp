@@ -19,7 +19,7 @@ class COMSPEC_RscDisplayATAK {
         class WeatherBg: COMSPEC_RscPanel { idc=COMSPEC_ATAK_IDC_WEATHER_BG; ATAK_POS; colorBackground[]={0.55,0.38,0.08,1}; };
     };
     class controls {
-        class Map: COMSPEC_RscMap { idc=COMSPEC_ATAK_IDC_MAP; ATAK_POS; onDraw="_this call comspec_atak_native_fnc_mapOnDraw"; onMouseButtonDown="_this call comspec_atak_native_fnc_mapMouseButtonDown"; onMouseMoving="_this call comspec_atak_native_fnc_mapMouseMoving"; onMouseButtonUp="_this call comspec_atak_native_fnc_mapMouseButtonUp"; onMouseButtonDblClick="_this call comspec_atak_native_fnc_mapDblClick"; };
+        class Map: COMSPEC_RscMapAtak { idc=COMSPEC_ATAK_IDC_MAP; ATAK_POS; onDraw="_this call comspec_atak_native_fnc_mapOnDraw"; onMouseButtonDown="_this call comspec_atak_native_fnc_mapMouseButtonDown"; onMouseMoving="_this call comspec_atak_native_fnc_mapMouseMoving"; onMouseButtonUp="_this call comspec_atak_native_fnc_mapMouseButtonUp"; onMouseButtonDblClick="_this call comspec_atak_native_fnc_mapDblClick"; };
         class Content: COMSPEC_RscControlsGroup { idc=COMSPEC_ATAK_IDC_CONTENT; ATAK_POS; };
         class InspectorText: COMSPEC_RscStructuredText { idc=COMSPEC_ATAK_IDC_INSPECTOR_TEXT; ATAK_POS; text=""; };
         class Battery: COMSPEC_RscIcon { idc=COMSPEC_ATAK_IDC_BATTERY; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\bat_100.paa"; };
@@ -42,7 +42,7 @@ class COMSPEC_RscDisplayATAK {
         class HwBack: COMSPEC_RscButtonInvisible { idc=COMSPEC_ATAK_IDC_HW_BACK; ATAK_POS; tooltip="Retour"; action="[] call comspec_atak_native_fnc_back; playSound 'ClickSoft'"; };
         class HwHome: COMSPEC_RscButtonInvisible { idc=COMSPEC_ATAK_IDC_HW_HOME; ATAK_POS; tooltip="Accueil"; action="['LAUNCHER'] call comspec_atak_native_fnc_navigate; playSound 'ClickSoft'"; };
         class HwApps: COMSPEC_RscButtonInvisible { idc=COMSPEC_ATAK_IDC_HW_APPS; ATAK_POS; tooltip="Apps récentes"; action="['RECENTS'] call comspec_atak_native_fnc_navigate; playSound 'ClickSoft'"; };
-        class HwPower: COMSPEC_RscButtonInvisible { idc=COMSPEC_ATAK_IDC_HW_POWER; ATAK_POS; tooltip="Ranger le téléphone"; action="[] call comspec_atak_native_fnc_interactToggle"; };
+        class HwPower: COMSPEC_RscButtonInvisible { idc=COMSPEC_ATAK_IDC_HW_POWER; ATAK_POS; tooltip="Réduire en miniature"; action="[] call comspec_atak_native_fnc_interactToggle"; };
         // Reprend le focus après un clic carte : la carte focalisée passe devant les panneaux et les outils.
         class FocusSink: COMSPEC_RscButtonOverlay { idc=COMSPEC_ATAK_IDC_FOCUS; x="safeZoneX - 0.1"; y="safeZoneY - 0.1"; w=0.01; h=0.01; };
     };

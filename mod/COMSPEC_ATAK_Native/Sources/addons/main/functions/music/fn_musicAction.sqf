@@ -2,7 +2,8 @@
     App Musique. Params : [action, argument]
       "playList" [pistes, index] : joue la piste et met la liste en file      "enqueue" piste : ajoute à la file
       "toggle" : pause / reprise     "stop"     "next"     "prev"     "jump" index : piste de la file
-      "vol" n (0-100)    "volStep" ±n    "speaker" / "hear" / "shuffle" : bascule    "repeat" off|all|one
+      "vol" n (0-100) : écouteurs    "volStep" ±n    "spkVol" n / "spkVolStep" ±n : haut-parleur
+      "speaker" / "hear" / "shuffle" : bascule    "repeat" off|all|one
       "files" : relit le dossier local (DLL)    "openFolder"    "url" : lit l'URL saisie    "urlDel" index
       "tab" onglet    "srvCat" catégorie    "srvSearch" : applique la recherche    "srvPage" n
     Une piste = [kind, ref, titre, durée s] ; kind = file (dossier Documents\Arma 3\COMSPEC_Music), url, srv (CfgMusic).
@@ -112,8 +113,18 @@ switch (_act) do {
         call _rerender;
     };
     case "volStep": { ["vol", (_m get "vol") + _arg] call comspec_atak_native_fnc_musicAction; };
+    case "spkVol": {
+        private _v = (round (if (_arg isEqualType "") then { parseNumber _arg } else { _arg })) max 0 min 100;
+        if (_v isEqualTo 0 && {(_m getOrDefault ["spkVol", 70]) > 0}) then { profileNamespace setVariable ["COMSPEC_ATAK_MusicSpkVolBack", _m getOrDefault ["spkVol", 70]]; };
+        _m set ["spkVol", _v];
+        profileNamespace setVariable ["COMSPEC_ATAK_MusicSpkVol", _v];
+        [] call comspec_atak_native_fnc_musicTick;
+        call _rerender;
+    };
+    case "spkVolStep": { ["spkVol", (_m getOrDefault ["spkVol", 70]) + _arg] call comspec_atak_native_fnc_musicAction; };
     case "speaker": {
         if !(missionNamespace getVariable ["comspec_atak_native_music_speaker", true]) exitWith { ["WARNING", "Haut-parleur interdit sur ce serveur", 3, 30] call comspec_atak_native_fnc_notify; };
+        if (!(_m get "speaker") && {((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["audio", 0]) >= 0.5}) exitWith { ["WARNING", "Haut-parleur du téléphone hors service (à réparer)", 3, 30] call comspec_atak_native_fnc_notify; };
         _m set ["speaker", !(_m get "speaker")];
         ["INFO", ["Haut-parleur coupé : vous seul entendez", format ["Haut-parleur : audible à %1 m", round (missionNamespace getVariable ["comspec_atak_native_music_range", 30])]] select (_m get "speaker"), 3, 20] call comspec_atak_native_fnc_notify;
         [] call comspec_atak_native_fnc_musicTick;

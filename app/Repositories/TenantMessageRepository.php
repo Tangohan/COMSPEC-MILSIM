@@ -233,6 +233,61 @@ class TenantMessageRepository
         }
     }
 
+    /**
+     * Boîte de réception de la messagerie (/messages), en une seule requête :
+     * dernier message (texte, auteur, date), nombre de messages, messages reçus non lus
+     * (envoyés par d’autres après la dernière lecture) et auteur du fil.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listInboxThreadsForUser(int $tenantId, int $userId, int $limit = 100): array
+    {
+        $lim = max(1, min(200, $limit));
+        try {
+            $stmt = $this->pdo->prepare(
+                "SELECT t.id, t.subject, t.created_at, t.updated_at, t.created_by_user_id,
+                tu.last_read_at,
+                cu.display_name AS creator_name,
+                agg.message_count, agg.unread_count,
+                lm.body AS last_preview, lm.sender_user_id AS last_sender_id, lm.created_at AS last_message_at,
+                lu.display_name AS last_sender_name
+                FROM tenant_message_threads t
+                INNER JOIN tenant_message_thread_users tu ON tu.thread_id = t.id AND tu.user_id = ?
+                LEFT JOIN users cu ON cu.id = t.created_by_user_id
+                LEFT JOIN (
+                    SELECT m.thread_id,
+                        COUNT(*) AS message_count,
+                        MAX(m.id) AS last_id,
+                        SUM(CASE WHEN m.sender_user_id <> ? AND m.created_at > COALESCE(mu.last_read_at, '1970-01-01') THEN 1 ELSE 0 END) AS unread_count
+                    FROM tenant_messages m
+                    INNER JOIN tenant_message_thread_users mu ON mu.thread_id = m.thread_id AND mu.user_id = ?
+                    GROUP BY m.thread_id
+                ) agg ON agg.thread_id = t.id
+                LEFT JOIN tenant_messages lm ON lm.id = agg.last_id
+                LEFT JOIN users lu ON lu.id = lm.sender_user_id
+                WHERE t.tenant_id = ?
+                ORDER BY t.updated_at DESC, t.id DESC
+                LIMIT {$lim}"
+            );
+            $stmt->execute([$userId, $userId, $userId, $tenantId]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (\PDOException $e) {
+            if ($e->getCode() === '42S02' || str_contains($e->getMessage(), "doesn't exist")) {
+                return [];
+            }
+            throw $e;
+        }
+
+        foreach ($rows as &$row) {
+            $row['message_count'] = (int) ($row['message_count'] ?? 0);
+            $row['unread_count'] = (int) ($row['unread_count'] ?? 0);
+            $row['has_unread'] = $row['unread_count'] > 0;
+        }
+        unset($row);
+
+        return $rows;
+    }
+
     public function findThread(int $threadId, int $tenantId): ?array
     {
         try {

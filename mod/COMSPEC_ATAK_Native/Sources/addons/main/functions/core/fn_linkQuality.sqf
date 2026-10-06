@@ -5,6 +5,10 @@
     véhicule, pluie et brouillard, zone radio, brouilleurs de mission (COMSPEC_ATAK_Jammers = [[pos, rayon]...]),
     état du téléphone. Réglage serveur comspec_atak_native_net_sim : coupé, débit plein et sans délai.
 */
+// Mode avion (fn_airplaneMode) : aucun réseau, même simulation coupée ; les envois partent en file comme sans signal.
+if (missionNamespace getVariable ["COMSPEC_ATAK_Airplane", false]) exitWith {
+    createHashMapFromArray [["bars", 0], ["kbps", 0], ["latency", 0], ["loss", 100], ["label", "Mode avion"], ["factors", [["Mode avion", "aucun réseau"]]], ["sim", true], ["airplane", true]]
+};
 private _cache = uiNamespace getVariable ["COMSPEC_ATAK_LinkQ", []];
 if ((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < 2}) exitWith { _cache select 1 };
 private _q = createHashMap;
@@ -97,7 +101,10 @@ if (fog > 0.5) then { _mul = _mul * 0.9; _f pushBack ["Brouillard dense", "-10 %
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
 private _hp = [] call comspec_atak_native_fnc_deviceHealth;
 private _dmg = _hp getOrDefault ["damage", 0];
-if (_dmg > 0.3) then { _mul = _mul * (1.15 - _dmg); _f pushBack ["Antenne du téléphone abîmée", format ["-%1 %%", round ((_dmg - 0.15) * 100)]]; };
+if (_dmg > 0.3) then { _mul = _mul * (1.15 - _dmg); _f pushBack ["Boîtier du téléphone abîmé", format ["-%1 %%", round ((_dmg - 0.15) * 100)]]; };
+// Antenne touchée (fn_deviceDamage) : jusqu'à -75 % de débit.
+private _ant = (_hp getOrDefault ["parts", createHashMap]) getOrDefault ["antenna", 0];
+if (_ant > 0) then { private _m = 1 - 0.75 * _ant; _mul = _mul * _m; _f pushBack ["Antenne du téléphone endommagée", format ["-%1 %%", round ((1 - _m) * 100)]]; };
 _mul = 0 max (_mul min 1);
 _kbps = round (_kbps * _mul);
 _lat = round (_lat + (1 - _mul) * 600);

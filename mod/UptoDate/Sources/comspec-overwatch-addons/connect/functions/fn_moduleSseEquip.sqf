@@ -6,7 +6,7 @@
     exploiter un objectif qui n'était pas prévu pour.
 
     Cible : les unités attachées ou synchronisées, sinon les personnes proches. Une
-    portée volontairement courte (25 m), pour ne pas distribuer le terminal à toute
+    portée volontairement courte (25 m par défaut, attribut Rayon), pour ne pas distribuer le terminal à toute
     une compagnie d'un clic — et notamment pas aux PNJ qu'on est en train de fouiller.
 */
 private _logic = objNull;
@@ -41,7 +41,12 @@ if (!isServer && { isMultiplayer }) exitWith {
     true
 };
 
-private _targets = [_logic, _units, 25] call comspec_overwatch_connect_fnc_sseModuleTargets;
+private _radius = _logic getVariable ["Radius", 25];
+if (_radius isEqualType "") then { _radius = parseNumber _radius; };
+if (!(_radius isEqualType 0) || { _radius <= 0 }) then { _radius = 25; };
+_radius = (_radius max 1) min 500;
+
+private _targets = [_logic, _units, _radius] call comspec_overwatch_connect_fnc_sseModuleTargets;
 
 // Seuls les joueurs sont dotés : donner le terminal à un PNJ ne sert à rien et
 // le rend récupérable sur son corps, ce qui n'est pas l'effet recherché.

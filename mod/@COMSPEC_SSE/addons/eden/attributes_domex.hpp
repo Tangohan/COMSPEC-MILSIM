@@ -24,6 +24,7 @@ class COMSPEC_SSE_Domex {
         };
         class comspec_sse_domex_deviceType {
             displayName = "Type de support";
+            tooltip = "Nature du support numérique.";
             property = "comspec_sse_domex_deviceType";
             control = "Combo";
             expression = "_this setVariable ['comspec_sse_domex_deviceType', _value, true];";
@@ -54,6 +55,7 @@ class COMSPEC_SSE_Domex {
         };
         class comspec_sse_domex_org {
             displayName = "Organisation";
+            tooltip = "Groupe ou structure fictive à laquelle le support semble appartenir.";
             property = "comspec_sse_domex_org";
             control = "Edit";
             expression = "_this setVariable ['comspec_sse_domex_org', _value, true];";
@@ -73,6 +75,7 @@ class COMSPEC_SSE_Domex {
         };
         class comspec_sse_domex_exploitable {
             displayName = "Exploitable";
+            tooltip = "Décoché : le support est visible mais ne livre rien.";
             property = "comspec_sse_domex_exploitable";
             control = "Checkbox";
             expression = "_this setVariable ['comspec_sse_domex_exploitable', _value, true];";
@@ -82,6 +85,7 @@ class COMSPEC_SSE_Domex {
         };
         class comspec_sse_domex_accessPhysical {
             displayName = "Accès physique possible";
+            tooltip = "Les joueurs peuvent exploiter le support sur place.";
             property = "comspec_sse_domex_accessPhysical";
             control = "Checkbox";
             expression = "_this setVariable ['comspec_sse_domex_accessPhysical', _value, true];";
@@ -116,6 +120,7 @@ class COMSPEC_SSE_Domex {
         };
         class comspec_sse_domex_profile {
             displayName = "Profil de contenu";
+            tooltip = "Oriente les contenus proposés par le laboratoire.";
             property = "comspec_sse_domex_profile";
             control = "Combo";
             expression = "_this setVariable ['comspec_sse_domex_profile', _value, true];";
@@ -132,6 +137,7 @@ class COMSPEC_SSE_Domex {
         };
         class comspec_sse_domex_duration {
             displayName = "Durée d’exploitation";
+            tooltip = "Temps d'exploitation scénarisé avant que les contenus arrivent.";
             property = "comspec_sse_domex_duration";
             control = "Combo";
             expression = "_this setVariable ['comspec_sse_domex_duration', _value, true];";
@@ -164,6 +170,7 @@ class COMSPEC_SSE_Domex {
         };
         class comspec_sse_domex_p1_type {
             displayName = "Paquet 1 — type";
+            tooltip = "Nature du premier renseignement contenu.";
             property = "comspec_sse_domex_p1_type";
             control = "Combo";
             expression = "_this setVariable ['comspec_sse_domex_p1_type', _value, true];";
@@ -195,6 +202,7 @@ class COMSPEC_SSE_Domex {
         };
         class comspec_sse_domex_p1_quality {
             displayName = "Paquet 1 — qualité";
+            tooltip = "Un fragment ou un leurre devra être corroboré.";
             property = "comspec_sse_domex_p1_quality";
             control = "Combo";
             expression = "_this setVariable ['comspec_sse_domex_p1_quality', _value, true];";
@@ -209,6 +217,7 @@ class COMSPEC_SSE_Domex {
         };
         class comspec_sse_domex_p1_channel {
             displayName = "Paquet 1 — canal";
+            tooltip = "Comment le renseignement parvient au bureau.";
             property = "comspec_sse_domex_p1_channel";
             control = "Combo";
             expression = "_this setVariable ['comspec_sse_domex_p1_channel', _value, true];";
@@ -223,6 +232,7 @@ class COMSPEC_SSE_Domex {
         };
         class comspec_sse_domex_p1_reveal {
             displayName = "Paquet 1 — révélation";
+            tooltip = "À quel moment le renseignement rejoint la file.";
             property = "comspec_sse_domex_p1_reveal";
             control = "Combo";
             expression = "_this setVariable ['comspec_sse_domex_p1_reveal', _value, true];";
@@ -247,6 +257,7 @@ class COMSPEC_SSE_Domex {
         };
         class comspec_sse_domex_p2_type {
             displayName = "Paquet 2 — type";
+            tooltip = "Nature du second renseignement contenu.";
             property = "comspec_sse_domex_p2_type";
             control = "Combo";
             expression = "_this setVariable ['comspec_sse_domex_p2_type', _value, true];";
@@ -268,6 +279,7 @@ class COMSPEC_SSE_Domex {
         };
         class comspec_sse_domex_p2_text {
             displayName = "Paquet 2 — texte";
+            tooltip = "Renseignement scénarisé. Ce n'est pas une preuve.";
             property = "comspec_sse_domex_p2_text";
             control = "EditMulti5";
             expression = "_this setVariable ['comspec_sse_domex_p2_text', _value, true];";
@@ -277,6 +289,7 @@ class COMSPEC_SSE_Domex {
         };
         class comspec_sse_domex_p2_quality {
             displayName = "Paquet 2 — qualité";
+            tooltip = "Un fragment ou un leurre devra être corroboré.";
             property = "comspec_sse_domex_p2_quality";
             control = "Combo";
             expression = "_this setVariable ['comspec_sse_domex_p2_quality', _value, true];";
@@ -291,6 +304,7 @@ class COMSPEC_SSE_Domex {
         };
         class comspec_sse_domex_p2_channel {
             displayName = "Paquet 2 — canal";
+            tooltip = "Comment le renseignement parvient au bureau.";
             property = "comspec_sse_domex_p2_channel";
             control = "Combo";
             expression = "_this setVariable ['comspec_sse_domex_p2_channel', _value, true];";
@@ -305,6 +319,7 @@ class COMSPEC_SSE_Domex {
         };
         class comspec_sse_domex_p2_reveal {
             displayName = "Paquet 2 — révélation";
+            tooltip = "À quel moment le renseignement rejoint la file.";
             property = "comspec_sse_domex_p2_reveal";
             control = "Combo";
             expression = "_this setVariable ['comspec_sse_domex_p2_reveal', _value, true];";

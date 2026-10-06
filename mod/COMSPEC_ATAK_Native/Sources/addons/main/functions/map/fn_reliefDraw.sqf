@@ -28,5 +28,5 @@ private _y1 = ((_tl select 1) max (_br select 1)) + _cell;
 } forEach _cells;
 if (_best >= 0) then {
     private _bp = (_cells select _best) select 0;
-    _map drawIcon ["\A3\ui_f\data\map\markers\military\triangle_CA.paa", [0.95, 0.55, 0.2, 1], _bp, 18, 18, 0, format ["%1 m", round (_bp select 2)], 1, 0.03, "RobotoCondensedBold", "right"];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\triangle_CA.paa", [0.95, 0.55, 0.2, 1], _bp, 18, 18, 0, format ["%1 m", round (_bp select 2)], 1, 0.03 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]), "RobotoCondensedBold", "right"];
 };

@@ -33,10 +33,13 @@ final class DashboardWardrobeShowcaseAssetTest extends TestCase
         self::assertStringContainsString('tenant_dashboard_wardrobe_pins', $sql);
         $run = (string) file_get_contents($root . '/run-migrations.php');
         self::assertStringContainsString('dashboard_wardrobe_pins_migration', $run);
-        self::assertStringContainsString('Nos tenues', $dash);
-        self::assertStringContainsString('dash-showcase__card--kit', $dash);
-        self::assertStringContainsString('dash-showcase__card-figure', $css);
-        self::assertStringContainsString('object-fit: contain', $css);
+        $catalog = (string) file_get_contents($root . '/views/partials/dashboard_catalog_showcase.php');
+        $catalogCss = (string) file_get_contents($root . '/public/assets/css/dashboard-catalog.css');
+        self::assertStringContainsString('dashboard_catalog_showcase.php', $dash);
+        self::assertStringContainsString('Nos tenues', $catalog);
+        self::assertStringContainsString('dash-cat-card--kit', $catalog);
+        self::assertStringContainsString('dash-cat-card__figure', $catalogCss);
+        self::assertStringContainsString('object-fit: contain', $catalogCss);
         self::assertStringContainsString('storeFigureFromUpload', $storage);
         self::assertStringContainsString('savePreservingAlpha', $storage);
         self::assertStringContainsString('PNG du personnage', $form);

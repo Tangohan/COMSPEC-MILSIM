@@ -21,8 +21,10 @@ class COMSPEC_RscTextRight: COMSPEC_RscText { style=1; };
 class COMSPEC_RscTextCenter: COMSPEC_RscText { style=2; };
 class COMSPEC_RscStructuredText: RscStructuredText { colorText[]=ATAK_TEXT; colorBackground[]={0,0,0,0}; size="0.024 * safeZoneH"; };
 class COMSPEC_RscButton: RscButton {
-    font="RobotoCondensedBold"; colorText[]=ATAK_TEXT; colorDisabled[]=ATAK_TEXT_DIM;
-    colorBackground[]=ATAK_BG2; colorBackgroundActive[]=ATAK_GREEN_DIM; colorBackgroundDisabled[]=ATAK_BG1;
+    // Désactivé (ctrlEnable false) : texte nettement atténué et fond quasi transparent, bien distinct d'un bouton
+    // disponible non choisi (fond BG2, texte clair).
+    font="RobotoCondensedBold"; colorText[]=ATAK_TEXT; colorDisabled[]={0.42,0.46,0.44,0.7};
+    colorBackground[]=ATAK_BG2; colorBackgroundActive[]=ATAK_GREEN_DIM; colorBackgroundDisabled[]={0.04,0.045,0.042,0.55};
     colorFocused[]=ATAK_BG2; colorBorder[]=ATAK_BORDER; colorShadow[]={0,0,0,0}; offsetPressedX=0; offsetPressedY=0;
     sizeEx="0.024 * safeZoneH";
 };
@@ -45,6 +47,9 @@ class COMSPEC_RscPicture: RscPicture { colorText[]=ATAK_GREEN; colorBackground[]
 class COMSPEC_RscMap: RscMapControl { colorBackground[]={0.045,0.055,0.048,1}; colorOutside[]={0.025,0.030,0.027,1}; showCountourInterval=1;
     // Textes de la carte Arma plus discrets (marqueurs, lieux, grille) : lisibles aussi sur le petit écran.
     sizeExLabel="0.018 * safeZoneH"; sizeExGrid="0.016 * safeZoneH"; sizeExUnits="0.024 * safeZoneH"; sizeExNames="0.026 * safeZoneH"; sizeExInfo="0.018 * safeZoneH"; sizeExLevel="0.016 * safeZoneH"; sizeEx="0.018 * safeZoneH"; };
+// Carte du téléphone : libellés Arma (repères de mission, lieux) un peu plus grands ; numéros de grille Arma masqués
+// (taille minuscule) car redessinés par fn_mapOnDraw à la taille choisie dans Réglages > Carte.
+class COMSPEC_RscMapAtak: COMSPEC_RscMap { sizeExLabel="0.022 * safeZoneH"; sizeExGrid="0.0005"; sizeExNames="0.030 * safeZoneH"; sizeExInfo="0.021 * safeZoneH"; sizeEx="0.021 * safeZoneH"; };
 class COMSPEC_RscPanel: COMSPEC_RscText { colorBackground[]=ATAK_BG1; };
 class COMSPEC_RscTile: COMSPEC_RscText { colorBackground[]=ATAK_BG2; };
 class COMSPEC_RscBadge: COMSPEC_RscTextCenter { font="RobotoCondensedBold"; colorBackground[]=ATAK_DANGER; colorText[]={1,1,1,1}; sizeEx="0.018 * safeZoneH"; };

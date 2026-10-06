@@ -83,13 +83,48 @@ if (_s getOrDefault ["ftCreate", false]) then {
     _rows pushBack ["buttons", [["CRÉER UNE ÉQUIPE", { ["createOpen"] call comspec_atak_native_fnc_ftAction; }, true, (count _teams) < 8]]];
 };
 
-// Mon rôle
-private _roleItems = (_cat get "roles") apply { [_x select 1, _x select 0, _x select 3, [0.9, 0.94, 0.91, 1]] };
+// Mon rôle (rôles du mod, fonctions d'Athena, rôles créés en jeu)
+private _roleItems = (_cat get "roles") apply {
+    private _o = _x param [4, ""];
+    [format ["%1%2", _x select 1, ["", "  · Athena", "  · créé en jeu"] select (((["", "ATHENA", "CUSTOM"] find _o)) max 0)], _x select 0, _x select 3, [0.9, 0.94, 0.91, 1]]
+};
+private _pref = player getVariable ["COMSPEC_FTRolePref", ""];
+private _prefLabel = (((_cat get "roles") select { (_x select 0) isEqualTo _pref }) param [0, ["", ""]]) select 1;
+(missionNamespace getVariable ["COMSPEC_ATAK_RoleAthena", ["", "", "", "", 0]]) params [["_athSt", ""], "", "", ["_athJob", ""], ["_athN", 0]];
 _rows append [
-    ["section", "Mon rôle", "Compté dans les temps par rôle (app Temps d'écran et Athena)"],
+    ["section", "Mon rôle", "Compté dans les temps par rôle (app Temps d'écran et Athena). Mémorisé : réappliqué à chaque arrivée et réapparition"],
     ["combo", "ftMyRole", "Rôle", [["Aucun rôle", "", "", []]] + _roleItems, _me get "role"],
-    ["buttons", [["APPLIQUER MON RÔLE", { ["myRole"] call comspec_atak_native_fnc_ftAction; }]]]
+    ["text", "<t size='0.8' color='#8a9a93'>Ou touchez directement un rôle :</t>"],
+    ["text", format ["<t size='0.8' color='#8a9a93'>Rôle mémorisé : %1%2 · Athena : %3</t>",
+        [[_prefLabel] call _esc, "aucun"] select (_prefLabel isEqualTo ""),
+        ["", format [" · fonction %1", [_athJob] call _esc]] select (_athJob isNotEqualTo ""),
+        [[_athSt, "en attente"] select (_athSt isEqualTo ""), format ["%1 rôle(s) reçu(s)", _athN]] select (_athSt isEqualTo "OK")]],
+    ["buttons", [
+        ["APPLIQUER MON RÔLE", { ["myRole"] call comspec_atak_native_fnc_ftAction; }, true],
+        ["NOUVEAU RÔLE", { ["roleNewOpen"] call comspec_atak_native_fnc_ftAction; }],
+        ["RECHARGER", { ["roleReload"] call comspec_atak_native_fnc_ftAction; }]
+    ]]
 ];
+// Grille de rôles : un appui applique le rôle (la liste déroulante coupait les dernières lignes, JTAC et télépilote compris).
+private _roleKeys = [["", "AUCUN"]] + ((_cat get "roles") apply { [_x select 0, _x select 2] });
+private _rowsGrid = [];
+{
+    _x params ["_rk", "_rab"];
+    if (_rk isEqualTo "" || {_rk regexMatch "^[A-Za-z0-9_]{1,16}$"}) then {
+        _rowsGrid pushBack [toUpper _rab, compile format ["['myRoleKey', '%1'] call comspec_atak_native_fnc_ftAction;", _rk], (_me get "role") isEqualTo _rk];
+    };
+} forEach _roleKeys;
+for "_i" from 0 to ((count _rowsGrid) - 1) step 4 do {
+    _rows pushBack ["segment", "", _rowsGrid select [_i, 4]];
+};
+if (_s getOrDefault ["ftRoleNew", false]) then {
+    _rows append [
+        ["section", "Nouveau rôle", "Retenu sur Athena pour toute la communauté et proposé à chaque mission"],
+        ["edit", "ftRName", "Nom du rôle", ""],
+        ["combo", "ftRIcon", "Icône", (_cat get "roleIcons") apply { [_x select 1, _x select 0, _x select 2, [0.9, 0.94, 0.91, 1]] }, "FUS"],
+        ["buttons", [["CRÉER ET PRENDRE CE RÔLE", { ["roleNew"] call comspec_atak_native_fnc_ftAction; }, true], ["ANNULER", { ["roleNewClose"] call comspec_atak_native_fnc_ftAction; }]]]
+    ];
+};
 
 // Placement des membres (chef de groupe, chefs d'équipe)
 if (_isGL || {_isTL}) then {

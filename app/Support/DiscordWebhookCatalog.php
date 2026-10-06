@@ -51,7 +51,7 @@ final class DiscordWebhookCatalog
                 'key' => self::KEY_QUICK_PICTURE,
                 'group' => 'Téléphone ATAK',
                 'label' => 'Photos Quick Picture',
-                'hint' => 'Quand un opérateur prend une photo depuis le téléphone en jeu. L’indicatif, la grille et la vue sont publiés dans le salon choisi.',
+                'hint' => 'Quand un opérateur prend une photo depuis le téléphone en jeu : la photo est publiée avec l’indicatif, la grille, la carte, la date et l’heure (en jeu et réelles).',
                 'default_mode' => self::MODE_OFF,
             ],
             [
