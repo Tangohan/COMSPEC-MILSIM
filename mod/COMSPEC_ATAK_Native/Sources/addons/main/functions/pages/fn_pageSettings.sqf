@@ -156,6 +156,35 @@ if (_bridge) then {
         ["COMSPEC_ATAK_LivecamShareEvery", 15, "Cadence", [["10 S", 10], ["15 S", 15], ["30 S", 30], ["60 S", 60]]] call _profSegment
     ];
 };
+// Téléphone (dégâts, saleté) et données médicales affichées (fn_medShow) : choix du joueur, sauf si le serveur
+// (réglages CBA) ou la communauté (Athena) les imposent.
+uiNamespace setVariable ["COMSPEC_ATAK_MedToggle", {
+    params ["_k"];
+    private _h = profileNamespace getVariable ["COMSPEC_ATAK_MedHide", []];
+    if !(_h isEqualType []) then { _h = []; };
+    _h = +_h;
+    if (_k in _h) then { _h = _h - [_k]; } else { _h pushBack _k; };
+    profileNamespace setVariable ["COMSPEC_ATAK_MedHide", _h];
+    saveProfileNamespace;
+    [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+}];
+private _medRow = {
+    params ["_k", "_label"];
+    (["rule", _k] call comspec_atak_native_fnc_medShow) params ["_on", "_locked", "_by"];
+    ["switch", _label, _on, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_MedToggle');", _k], ["", format ["Imposé par %1", _by]] select _locked, _locked]
+};
+_real append [
+    ["section", "Téléphone", "Dégâts selon où il est porté, saleté de l'écran"],
+    ["info", "Dégâts localisés", ["<t color='#8a9a93'>coupés par le serveur</t>", "actifs : main, gilet, poche ou sac ; balle, éclat, souffle, chute, eau"] select (missionNamespace getVariable ["comspec_atak_native_damage_sim", true])],
+    if (missionNamespace getVariable ["comspec_atak_native_dirt_sim", true]) then {
+        ["COMSPEC_ATAK_DirtFx", true, "native_dirt", "Saleté et sang sur l'écran", "Poussière, gouttes de pluie, traces de doigts, sang après un soin ; nettoyage par l'action ACE ou l'app Profil"] call _profSwitch
+    } else { ["info", "Saleté et sang sur l'écran", "<t color='#8a9a93'>coupés par le serveur</t>"] },
+    ["section", "Données médicales affichées", "Une donnée masquée disparaît de tout l'ATAK"]
+];
+{ _real pushBack (_x call _medRow); } forEach (["fields"] call comspec_atak_native_fnc_medShow);
+_real pushBack ["section", "Où les afficher", "Masquer un endroit retire toutes les données médicales de cet endroit"];
+{ _real pushBack (_x call _medRow); } forEach (["contexts"] call comspec_atak_native_fnc_medShow);
+
 private _hp = [] call comspec_atak_native_fnc_deviceHealth;
 private _lq = [] call comspec_atak_native_fnc_linkQuality;
 private _hw = [
@@ -164,6 +193,7 @@ private _hw = [
     ["switch", "Bluetooth", (["state"] call comspec_atak_native_fnc_btAction) get "on", { ["toggle"] call comspec_atak_native_fnc_btAction; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, "Appairage par code et partage de sons avec les ATAK proches (indépendant du mode avion)"],
     ["section", "Matériel et réseau", "Simulations réglées par le serveur (réglages CBA)"],
     ["info", "Dégâts du téléphone", [ "<t color='#8a9a93'>simulation coupée</t>", format ["%1 · usure %2 %%", ["<t color='#5cc76b'>intact</t>", format ["<t color='#f2ab33'>%1</t>", _hp get "reason"]] select ((_hp get "state") isNotEqualTo "OK"), round ((_hp get "damage") * 100)]] select (missionNamespace getVariable ["comspec_atak_native_damage_sim", true])],
+    ["buttons", [["NETTOYER L'ÉCRAN", { [{ ["start"] call comspec_atak_native_fnc_screenClean; }] call CBA_fnc_execNextFrame; }, false, ["can"] call comspec_atak_native_fnc_screenClean]]],
     ["info", "Débit simulé", [ "<t color='#8a9a93'>simulation coupée</t>", format ["%1 · %2", _lq get "label", [format ["%1 kbit/s", _lq get "kbps"], format ["%1 Mbit/s", ((_lq get "kbps") / 1000) toFixed 1]] select ((_lq get "kbps") >= 1000)]] select (_lq get "sim")]
 ];
 
@@ -204,7 +234,7 @@ private _cats = [
     ["ALERTS", "Alertes", "Notifications et vibration", "ui_vibrate", _alerts],
     ["APPS", "Applications", format ["%1 app(s) cachée(s)", count (profileNamespace getVariable ["COMSPEC_ATAK_HiddenApps", []])], "ui_apps", _appsRows],
     ["HW", "Matériel et réseau", "Mode avion, Bluetooth, dégâts, débit simulé, Live cam", "app_network", _hw + _live],
-    ["REAL", "Réalisme", ["Overwatch non chargé", "Roleplay d'Overwatch, réglages imposés"] select _bridge, "app_status", _real],
+    ["REAL", "Réalisme", ["Données médicales, saleté de l'écran", "Roleplay d'Overwatch, données médicales, réglages imposés"] select _bridge, "app_status", _real],
     ["ACCESS", "Accès et touches", "Objet requis, raccourcis clavier", "ui_link", _access]
 ];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -215,10 +245,8 @@ if ((count _sel) isEqualTo 0) then {
     _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_settings.paa", format ["<t size='1.3' font='RobotoCondensedBold'>Réglages</t><br/><t color='#8a9a93'>COMSPEC ATAK %1%2</t>", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""], ["", format [" · %1 réglage(s) imposé(s) par %2", _lockedCount, ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")]] select (_lockedCount > 0)]];
     {
         _x params ["_k", "_t", "_sub", "_icon", "_r"];
-        if (_k isNotEqualTo "REAL" || {_bridge}) then {
-            _rows pushBack ["person", format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon], format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2</t>", _t, _sub],
-                [["OUVRIR", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['setCat', '%1']; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], true]], ([] call comspec_atak_native_fnc_accent) select 0];
-        };
+        _rows pushBack ["person", format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon], format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2</t>", _t, _sub],
+            [["OUVRIR", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['setCat', '%1']; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], true]], ([] call comspec_atak_native_fnc_accent) select 0];
     } forEach _cats;
 } else {
     _rows pushBack ["buttons", [[format ["< RÉGLAGES · %1", toUpper (_sel select 1)], { (uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['setCat', '']; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];

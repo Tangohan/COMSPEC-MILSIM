@@ -18,6 +18,9 @@ private _k = 0;
     if (_d < _rad) then { _k = _k max (1 - _d / (_rad max 1)); };
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
 private _err = [0, round (25 + 175 * _k)] select (_k > 0);
+// Puce GPS du téléphone abîmée (fn_deviceDamage) : erreur de 15 à 100 m, 400 m si elle est hors service.
+private _gpsHw = ((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["gps", 0]) * ([0, 1] select (missionNamespace getVariable ["comspec_atak_native_damage_sim", true]));
+if (_gpsHw > 0) then { _err = _err + round ([15 + 85 * _gpsHw, 400] select (_gpsHw >= 1)); };
 // Dérive lente de la position affichée : le cap de l'erreur tourne de quelques degrés à chaque calcul.
 private _drift = uiNamespace getVariable ["COMSPEC_ATAK_EwDrift", random 360];
 _drift = _drift + (random 50) - 25;

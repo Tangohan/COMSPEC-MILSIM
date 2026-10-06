@@ -10,6 +10,8 @@ if (missionNamespace getVariable ["COMSPEC_ATAK_Replaying", false]) exitWith { f
 disableSerialization;
 private _d = [] call comspec_atak_native_fnc_display;
 if (isNull _d) exitWith { false };
+// Haut-parleur hors service (fn_deviceDamage) : plus de son de vibration.
+if (((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["audio", 0]) >= 0.5) then { _silent = true; };
 if (!_silent && {!isNil "comspec_overwatch_connect_fnc_playAtakVibrate"}) then { [0.7] call comspec_overwatch_connect_fnc_playAtakVibrate; };
 private _c = _d displayCtrl 88509;
 if ((uiNamespace getVariable ["COMSPEC_ATAK_Vibrating", -1]) >= 0) exitWith { true };

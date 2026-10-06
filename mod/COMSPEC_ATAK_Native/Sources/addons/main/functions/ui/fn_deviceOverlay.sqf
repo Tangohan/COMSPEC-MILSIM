@@ -276,6 +276,8 @@ private _front = _showCrack || _broken || _off || _fxOn || {ctrlShown _tint};
 uiNamespace setVariable ["COMSPEC_ATAK_DevFront", _front];
 if (_front) then { [] call comspec_atak_native_fnc_overlayFront; };
 uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", [_crack, _black, _txt, _block, _tint, _glitch, _shatter, _boot, _barBg, _bar, _bootTxt, _dead, _deadSig, _lines, _lineSig]];
+// Rayures, pixels morts, poussière, traces de doigts, sang et gouttes, par-dessus le reste (fn_screenSurface).
+[_hp] call comspec_atak_native_fnc_screenSurface;
 // Redémarrage terminé : on redessine la page.
 private _wasOff = uiNamespace getVariable ["COMSPEC_ATAK_DevWasOff", false];
 uiNamespace setVariable ["COMSPEC_ATAK_DevWasOff", _off];

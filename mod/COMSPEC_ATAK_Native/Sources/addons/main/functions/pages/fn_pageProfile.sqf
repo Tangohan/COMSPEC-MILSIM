@@ -1,7 +1,7 @@
 /*
     App Profil : fiche opérateur Athena (photo, indicatif, grade, unité ORBAT, fonction),
     certificat du terminal (état, échéance, renouvellement), état du téléphone (allumé, écran, détruit)
-    avec réparations Overwatch, batterie (autonomie, recharge, rechange) et relais le plus proche.
+    avec réparations Overwatch, diagnostic matériel (composants abîmés, propreté), batterie (autonomie, recharge, rechange) et relais le plus proche.
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -96,6 +96,14 @@ if (_fn isEqualType createHashMap && {(count _fn) > 0}) then {
         _rows pushBack ["text", "<t size='0.8' color='#8a9a93'>Écran et révision : kit de réparation ATAK (consommé, 12 s) ou caisse à outils (20 s).</t>"];
     };
 };
+
+// Diagnostic matériel (dégâts localisés et saleté du téléphone natif) : fn_deviceReport.
+_rows pushBack ["section", "Diagnostic du téléphone", "Écran, batterie, haut-parleur, GPS, antenne, propreté"];
+_rows append (["rows"] call comspec_atak_native_fnc_deviceReport);
+_rows pushBack ["buttons", [
+    ["RÉPARER", { [{ ["start"] call comspec_atak_native_fnc_repairStart; }] call CBA_fnc_execNextFrame; }, true, ["can"] call comspec_atak_native_fnc_repairStart],
+    ["NETTOYER L'ÉCRAN", { [{ ["start"] call comspec_atak_native_fnc_screenClean; }] call CBA_fnc_execNextFrame; }, false, ["can"] call comspec_atak_native_fnc_screenClean]
+]];
 
 // Batterie
 private _bat = [] call comspec_atak_native_fnc_battery;

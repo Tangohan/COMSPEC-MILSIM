@@ -42,6 +42,9 @@ if (((missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) findIf { _x isE
 private _rate = 0;
 { _rate = _rate + (_x select 1); } forEach _f;
 _rate = _rate * (missionNamespace getVariable ["comspec_atak_native_battery_drain", 1]);
+// Cellule abîmée (choc, balle, eau : fn_deviceDamage) : elle se vide jusqu'à trois fois plus vite.
+private _wear = ((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["battery", 0]) * ([0, 1] select (missionNamespace getVariable ["comspec_atak_native_damage_sim", true]));
+if (_wear > 0 && {_rate > 0}) then { _f pushBack ["Batterie endommagée", (_rate * 2 * _wear) toFixed 2]; _rate = _rate * (1 + 2 * _wear); };
 private _veh = vehicle player;
 if (_veh isNotEqualTo player && {isEngineOn _veh}) then { _f pushBack ["Recharge véhicule", -3]; _rate = _rate - 3; };
 missionNamespace setVariable ["COMSPEC_ATAK_BatteryInfo", [_rate, _f]];

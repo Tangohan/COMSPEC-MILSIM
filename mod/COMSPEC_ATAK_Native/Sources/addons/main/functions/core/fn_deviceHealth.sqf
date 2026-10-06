@@ -2,11 +2,15 @@
     État matériel du téléphone. Renvoie un HashMap :
       state  : "OK" | "CRACKED" (écran fêlé, utilisable) | "OFF" (éteint, redémarre seul) | "BROKEN" (à remplacer)
       damage : 0-1, crack : 0-3 (fêlures affichées), offLeft : secondes avant redémarrage, reason : texte,
-      offUntil / offFrom : heures (time) de fin et de début de l'extinction (-1 si inconnues).
+      offUntil / offFrom : heures (time) de fin et de début de l'extinction (-1 si inconnues),
+      parts : HashMap des composants abîmés 0-1 (scratch, pixels, battery, audio, gps, antenna).
     Avec le réalisme ATAK d'Overwatch actif, son état (COMSPEC_AtakState) prime ; sinon modèle natif
     (COMSPEC_ATAK_Device, alimenté par fn_deviceDamage), réglage serveur comspec_atak_native_damage_sim.
 */
 private _out = createHashMapFromArray [["state", "OK"], ["damage", 0], ["crack", 0], ["offLeft", 0], ["reason", ""], ["offUntil", -1], ["offFrom", -1]];
+// Composants abîmés (fn_deviceDamage) : rayures, pixels, batterie, haut-parleur / micro, GPS, antenne (0-1).
+private _dev = missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap];
+_out set ["parts", createHashMapFromArray (["scratch", "pixels", "battery", "audio", "gps", "antenna"] apply { [_x, [0, _dev getOrDefault [_x, 0]] select (missionNamespace getVariable ["comspec_atak_native_damage_sim", true])] })];
 // Équipage d'aéronef : l'ATAK tourne sur la tablette de bord, l'état du téléphone porté ne compte pas.
 if ([player] call comspec_atak_native_fnc_aircrewTerminal) exitWith { _out };
 private _ow = missionNamespace getVariable ["COMSPEC_AtakState", createHashMap];

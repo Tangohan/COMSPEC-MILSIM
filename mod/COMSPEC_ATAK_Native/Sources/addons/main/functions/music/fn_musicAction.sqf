@@ -124,6 +124,7 @@ switch (_act) do {
     case "spkVolStep": { ["spkVol", (_m getOrDefault ["spkVol", 70]) + _arg] call comspec_atak_native_fnc_musicAction; };
     case "speaker": {
         if !(missionNamespace getVariable ["comspec_atak_native_music_speaker", true]) exitWith { ["WARNING", "Haut-parleur interdit sur ce serveur", 3, 30] call comspec_atak_native_fnc_notify; };
+        if (!(_m get "speaker") && {((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["audio", 0]) >= 0.5}) exitWith { ["WARNING", "Haut-parleur du téléphone hors service (à réparer)", 3, 30] call comspec_atak_native_fnc_notify; };
         _m set ["speaker", !(_m get "speaker")];
         ["INFO", ["Haut-parleur coupé : vous seul entendez", format ["Haut-parleur : audible à %1 m", round (missionNamespace getVariable ["comspec_atak_native_music_range", 30])]] select (_m get "speaker"), 3, 20] call comspec_atak_native_fnc_notify;
         [] call comspec_atak_native_fnc_musicTick;

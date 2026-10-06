@@ -75,7 +75,11 @@ _rows append [
         case "OFF": { format ["<t color='#f2ab33'>%1</t>", _hp get "reason"] };
         default { format ["<t color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select ((_hp get "crack") >= 3), _hp get "reason"] };
     }],
-    ["info", "Usure", format ["%1 %%", round ((_hp get "damage") * 100)]],
+    ["info", "Usure", format ["%1 %%", round ((_hp get "damage") * 100)]]
+];
+// Détail par composant (fn_deviceReport) : écran, batterie, haut-parleur, GPS, antenne, propreté.
+_rows append ((["rows"] call comspec_atak_native_fnc_deviceReport) select { (_x select 1) isNotEqualTo "Appareil" });
+_rows append [
     ["info", "Batterie", call {
         private _lvl = round (missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]);
         (missionNamespace getVariable ["COMSPEC_ATAK_BatteryInfo", [0, []]]) params ["_r"];

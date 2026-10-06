@@ -50,6 +50,14 @@ private _medIdent = {
     private _nr = "<t color='#8a9a93'>non renseigné</t>";
     [[format ["<t font='RobotoCondensedBold' color='#e5483a'>%1</t>", _bt], _nr] select (_bt isEqualTo ""), [format ["<t font='RobotoCondensedBold'>%1</t>", _w], _nr] select (_w isEqualTo "")]
 };
+// Ligne d'identité médicale réduite aux données affichées : [libellé, valeur] ("" si rien).
+private _identRow = {
+    params ["_bt", "_w", "_ctx"];
+    private _lb = []; private _vl = [];
+    if (["bloodtype", _ctx] call comspec_atak_native_fnc_medShow) then { _lb pushBack "Groupe sanguin"; _vl pushBack _bt; };
+    if (["weight", _ctx] call comspec_atak_native_fnc_medShow) then { _lb pushBack "Poids"; _vl pushBack _w; };
+    [_lb joinString " · ", _vl joinString " · "]
+};
 private _rows = [["segment", "", [
     [["ALERTES", format ["ALERTES (%1)", _open]] select (_open > 0), "ALERTS"] call _tabBtn,
     ["TROUPES", "TROOPS"] call _tabBtn,
@@ -60,13 +68,17 @@ if (_tab isEqualTo "ALERTS") then {
 // Alertes Athena
 _rows pushBack ["section", "Alertes médicales", ["Liaison Athena requise", ["Lecture seule : triage réservé aux médecins et chefs d'équipe", "Touchez une alerte pour la trier"] select _canTriage] select _bridge];
 private _alerts = _alertsAll;
-if ((count _alerts) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucune alerte active.</t>"]; };
+// Alertes médicales masquées (Réglages > Réalisme) : liste retirée.
+private _showA = ["ctx", "alerts"] call comspec_atak_native_fnc_medShow;
+if (!_showA) then { _alerts = []; _rows pushBack ["text", "<t color='#8a9a93'>Alertes médicales masquées (Réglages > Réalisme).</t>"]; };
+if (_showA && {(count _alerts) isEqualTo 0}) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucune alerte active.</t>"]; };
+private _showState = ["state", "alerts"] call comspec_atak_native_fnc_medShow;
 {
     private _id = str (_x getOrDefault ["id", ""]);
     private _kind = toLower (_x getOrDefault ["kind", ""]);
     private _status = _x getOrDefault ["triage_status", "a_secourir"];
     private _col = switch (_status) do { case "en_cours": { "#f2ab33" }; case "traite": { "#5cc76b" }; case "kia": { "#8a9a93" }; default { "#e5483a" }; };
-    private _kindLabel = switch (_kind) do { case "cardiac_arrest": { "ARRÊT CARDIAQUE" }; case "unconscious": { "INCONSCIENT" }; case "kia": { "KIA" }; case "wia_report": { "BILAN" }; default { "ASSISTANCE" }; };
+    private _kindLabel = if (!_showState && {_kind isNotEqualTo "kia"}) then { "ALERTE MÉDICALE" } else { switch (_kind) do { case "cardiac_arrest": { "ARRÊT CARDIAQUE" }; case "unconscious": { "INCONSCIENT" }; case "kia": { "KIA" }; case "wia_report": { "BILAN" }; default { "ASSISTANCE" }; } };
     private _who = _x getOrDefault ["call_sign", ""];
     if (_who isEqualTo "") then { _who = _x getOrDefault ["label", "?"]; };
     _rows pushBack ["buttons", [[format ["%1 · %2 · %3 · %4", _kindLabel, _who, _x getOrDefault ["grid", "—"], toUpper (_x getOrDefault ["triage_label", _status])],
@@ -78,7 +90,9 @@ if ((count _alerts) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a
         private _uid = format ["%1", _x getOrDefault ["steam_id", _x getOrDefault ["uid", ""]]];
         private _pu = (allPlayers select { (getPlayerUID _x) isEqualTo _uid || {([_x, true] call comspec_atak_native_fnc_unitCallsign) isEqualTo _who} }) param [0, objNull];
         ([_pu, _x] call _medIdent) params ["_btT", "_wT"];
-        _rows pushBack ["info", "Groupe sanguin · poids", format ["%1 · %2", _btT, _wT]];
+        // Données masquées (Réglages > Réalisme, fn_medShow) : la ligne ne garde que ce qui est affiché.
+        ([_btT, _wT, "alerts"] call _identRow) params ["_idL", "_idV"];
+        if (_idL isNotEqualTo "") then { _rows pushBack ["info", _idL, _idV]; };
         private _b = [[ "LOCALISER", compile format ["['locate', '%1'] call comspec_atak_native_fnc_medicalAction;", _grid]]];
         if (_canTriage) then {
             _b append [
@@ -145,15 +159,21 @@ _rows pushBack ["section", "Suivi des MEDEVAC", ["Aucune demande en cours", form
 };
 
 // Suivi des troupes (état ACE lu localement)
-if (_tab isEqualTo "TROOPS") then {
-_rows pushBack ["section", "Suivi des troupes", "Camp allié, les plus graves en premier"];
+// Suivi des troupes masqué (Réglages > Réalisme, fn_medShow) : ni liste ni moniteur.
+private _showT = ["ctx", "medical"] call comspec_atak_native_fnc_medShow;
+if (_tab isEqualTo "TROOPS" && {!_showT}) then {
+    _rows pushBack ["text", "<t color='#8a9a93'>Suivi médical des troupes masqué (Réglages > Réalisme).</t>"];
+};
+if (_tab isEqualTo "TROOPS" && {_showT}) then {
+private _vis = createHashMapFromArray (["state", "blood", "hr"] apply { [_x, [_x, "medical"] call comspec_atak_native_fnc_medShow] });
+_rows pushBack ["section", "Suivi des troupes", ["Camp allié", "Camp allié, les plus graves en premier"] select (_vis get "state")];
 private _rank = createHashMapFromArray [["cardiac_arrest", 0], ["unconscious", 1], ["critical", 2], ["wounded", 3], ["stable", 4]];
 private _list = [];
 {
     private _st = if (isNil "comspec_overwatch_connect_fnc_getMedicalState") then { ["stable", 100, 0, 80] } else { ([_x] call comspec_overwatch_connect_fnc_getMedicalState) splitString "|" };
     private _h = _st param [0, "stable"];
     if (!alive _x) then { _h = "kia"; };
-    _list pushBack [_rank getOrDefault [_h, 5], _x, _h, _st param [1, "100"], _st param [3, "80"]];
+    _list pushBack [[[_x, true] call comspec_atak_native_fnc_unitCallsign, _rank getOrDefault [_h, 5]] select (_vis get "state"), _x, _h, _st param [1, "100"], _st param [3, "80"]];
 } forEach (allPlayers select { side group _x isEqualTo side group player });
 _list sort true;
 // Blessé suivi au moniteur : choisi dans la liste, sinon le plus grave (moi s'il n'y a personne).
@@ -162,17 +182,23 @@ if (isNull _mon) then { _mon = (_list param [0, [0, player]]) select 1; };
 uiNamespace setVariable ["COMSPEC_ATAK_MedMonitor", _mon];
 // Fiche du patient suivi au moniteur : groupe sanguin et poids.
 ([_mon] call _medIdent) params ["_btM", "_wM"];
-_rows pushBack ["info", format ["Patient : %1", [_mon, true] call comspec_atak_native_fnc_unitCallsign], format ["Groupe sanguin %1 · Poids %2", _btM, _wM]];
+([_btM, _wM, "medical"] call _identRow) params ["_idL", "_idV"];
+_rows pushBack ["info", format ["Patient : %1", [_mon, true] call comspec_atak_native_fnc_unitCallsign], [_idV, ""] select (_idL isEqualTo "")];
 {
     _x params ["", "_u", "_h", "_blood", "_hr"];
     private _lab = createHashMapFromArray [["cardiac_arrest", ["ARRÊT", "#e5483a"]], ["unconscious", ["INCONSCIENT", "#e5483a"]], ["critical", ["CRITIQUE", "#f2ab33"]], ["wounded", ["BLESSÉ", "#e8b84a"]], ["kia", ["KIA", "#8a9a93"]]] getOrDefault [_h, ["STABLE", "#5cc76b"]];
-    _rows pushBack ["text", format ["<t color='%1' font='RobotoCondensedBold'>%2</t>  %3  <t size='0.8' color='#8a9a93'>sang %4 %% · pouls %5 · %6 m · %7</t>",
-        _lab select 1, _lab select 0, [_u, true] call comspec_atak_native_fnc_unitCallsign, _blood, _hr, round (player distance _u), [getPosASL _u, 6] call comspec_atak_native_fnc_gridRef]];
+    if (!(_vis get "state") && {_h isNotEqualTo "kia"}) then { _lab = ["—", "#8a9a93"]; };
+    private _vit = [];
+    if (_vis get "blood") then { _vit pushBack format ["sang %1 %%", _blood]; };
+    if (_vis get "hr") then { _vit pushBack format ["pouls %1", _hr]; };
+    _vit append [format ["%1 m", round (player distance _u)], [getPosASL _u, 6] call comspec_atak_native_fnc_gridRef];
+    _rows pushBack ["text", format ["<t color='%1' font='RobotoCondensedBold'>%2</t>  %3  <t size='0.8' color='#8a9a93'>%4</t>",
+        _lab select 1, _lab select 0, [_u, true] call comspec_atak_native_fnc_unitCallsign, _vit joinString " · "]];
     _rows pushBack ["buttons", [[["MONITEUR", "● SUIVI"] select (_u isEqualTo _mon), compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['medMon', %1]; [{ ['MEDICAL'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", str netId _u], _u isEqualTo _mon]]];
 } forEach _list;
 if ((count _list) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun joueur allié.</t>"]; };
 };
-if (_tab isEqualTo "TROOPS") then {
+if (_tab isEqualTo "TROOPS" && {_showT}) then {
     private _vh = _bh * 0.4;
     [[0, 0, _bw, _vh], uiNamespace getVariable ["COMSPEC_ATAK_MedMonitor", player]] call comspec_atak_native_fnc_vizEcg;
     [_rows, [0, _vh, _bw, _bh - _vh]] call comspec_atak_native_fnc_formRender;

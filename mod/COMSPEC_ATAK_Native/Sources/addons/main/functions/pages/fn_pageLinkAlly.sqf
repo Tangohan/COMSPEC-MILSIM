@@ -42,8 +42,11 @@ switch (_phase) do {
         private _sent = _st getOrDefault ["sent", createHashMap];
         private _dead = !alive _target;
         private _uncon = !_dead && {lifeState _target isEqualTo "INCAPACITATED" || {_target getVariable ["ACE_isUnconscious", false]}};
+        // État masqué (Réglages > Réalisme, fn_medShow) : seul le décès reste visible.
+        private _showState = ["state", "nfc"] call comspec_atak_native_fnc_medShow;
         private _stateTxt = switch (true) do {
             case (_dead): { "<t color='#e5483a' font='RobotoCondensedBold'>KIA</t>" };
+            case (!_showState): { "" };
             case (_uncon): { "<t color='#f2ab33' font='RobotoCondensedBold'>INCONSCIENT</t>" };
             case ((_target getVariable ["ace_medical_woundBleeding", 0]) > 0 || {(damage _target) > 0.1}): { "<t color='#e8b84a' font='RobotoCondensedBold'>BLESSÉ</t>" };
             default { "<t color='#5cc76b' font='RobotoCondensedBold'>VALIDE</t>" };
@@ -70,6 +73,13 @@ switch (_phase) do {
         };
         _rows pushBack ["text", _srcTxt];
 
+        // Son téléphone, lu par le lien : ce qui est cassé et à quel point (fn_deviceReport).
+        private _dev = _data getOrDefault ["device", []];
+        if (_dev isEqualType [] && {(count _dev) > 0}) then {
+            _rows pushBack ["section", "Son téléphone", "Diagnostic lu par le lien"];
+            _rows append (["rows", _dev] call comspec_atak_native_fnc_deviceReport);
+        };
+
         // Identité : profil Athena de son téléphone, plaque d'identité ACE, numéro de la SIM.
         private _bt = _data getOrDefault ["blood", ""];
         if (_bt isEqualTo "") then {
@@ -87,7 +97,7 @@ switch (_phase) do {
             ["info", "Matricule", [_mat] call _val],
             ["info", "Nom et prénom", [_name] call _val],
             ["info", "Grade", [_data getOrDefault ["grade", ""]] call _val],
-            ["info", "Groupe sanguin", [_bt] call _val],
+            if (["bloodtype", "nfc"] call comspec_atak_native_fnc_medShow) then { ["info", "Groupe sanguin", [_bt] call _val] } else { ["gap"] },
             ["info", "Affectation", [_aff] call _val],
             ["info", "Fonction", [[_data getOrDefault ["function", ""], _data getOrDefault ["role", ""]] select ((_data getOrDefault ["function", ""]) isEqualTo "")] call _val],
             ["info", "Groupe en jeu", [[_grp, ""] select (_dead && {_grp isEqualTo ""})] call _val],
@@ -144,6 +154,7 @@ switch (_phase) do {
             _x params ["_obj", "_owner", "_dist", "_what"];
             private _st2 = switch (true) do {
                 case (!alive _owner): { "<t color='#e5483a'>KIA</t>" };
+                case !(["state", "nfc"] call comspec_atak_native_fnc_medShow): { "" };
                 case (lifeState _owner isEqualTo "INCAPACITATED" || {_owner getVariable ["ACE_isUnconscious", false]}): { "<t color='#f2ab33'>inconscient</t>" };
                 default { "<t color='#5cc76b'>valide</t>" };
             };

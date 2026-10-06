@@ -56,7 +56,8 @@ _key = call _ownKey;
 
 // 2. Haut-parleur
 private _pub = [];
-if (_key isNotEqualTo "" && {_m get "speaker"} && {missionNamespace getVariable ["comspec_atak_native_music_speaker", true]}) then {
+// Haut-parleur du téléphone hors service (fn_deviceDamage) : les autres n'entendent plus rien.
+if (_key isNotEqualTo "" && {_m get "speaker"} && {missionNamespace getVariable ["comspec_atak_native_music_speaker", true]} && {((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["audio", 0]) < 0.5}) then {
     _pub = [_m get "kind", _m get "ref", _m get "title", (round ((_m get "start") * 10)) / 10, _m getOrDefault ["spkVol", 70], _m getOrDefault ["tok", 0]];
 };
 if (_pub isNotEqualTo (player getVariable ["COMSPEC_ATAK_Spk", []])) then { player setVariable ["COMSPEC_ATAK_Spk", _pub, true]; };

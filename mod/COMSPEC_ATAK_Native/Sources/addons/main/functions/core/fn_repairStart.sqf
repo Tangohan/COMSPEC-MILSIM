@@ -12,6 +12,7 @@ private _hp = [] call comspec_atak_native_fnc_deviceHealth;
 private _state = _hp get "state";
 private _needs = (((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["damage", 0]) > 0)
     || {_state in ["CRACKED", "BROKEN"]}
+    || {((values (_hp getOrDefault ["parts", createHashMap])) findIf { _x > 0 }) >= 0}
     || {_state isEqualTo "OFF" && {(_hp get "reason") isNotEqualTo "Batterie vide"}};
 private _items = (items player) apply { toLower _x };
 private _kit = "comspec_atak_repairkit" in _items;

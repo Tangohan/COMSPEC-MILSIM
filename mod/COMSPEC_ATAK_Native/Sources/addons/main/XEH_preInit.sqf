@@ -53,7 +53,10 @@ private _mus = ["COMSPEC", "ATAK · Musique"];
 
 private _sim = ["COMSPEC", "ATAK · Simulation"];
 ["comspec_atak_native_damage_sim", "CHECKBOX",
-    ["Dégâts du téléphone", "Balles au torse ou aux bras, explosions proches et eau fêlent l'écran, éteignent ou détruisent le téléphone. Réparation : trousse à outils ou nouvel appareil (actions ACE). Si le réalisme ATAK d'Overwatch est actif, c'est lui qui décide."],
+    ["Dégâts du téléphone", "Selon où il est porté (en main, sur le gilet, en poche, dans le sac), la partie du corps touchée, la munition et ce que le gilet arrête : balles, éclats, souffle, chutes, accidents et eau peuvent ne rien faire, rayer ou fêler l'écran, tuer des pixels, abîmer la batterie, le haut-parleur, le GPS ou l'antenne, éteindre ou détruire le téléphone. Réparation : kit de réparation ou caisse à outils, ou nouvel appareil (actions ACE). Réalisme ATAK d'Overwatch : niveau 1 = extinction seulement, 2 = jamais détruit."],
+    _sim, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_dirt_sim", "CHECKBOX",
+    ["Saleté et sang sur l'écran", "Poussière dehors (plus vite couché, en véhicule ouvert, après une explosion), gouttes de pluie, traces de doigts, sang sur l'écran et la coque après un soin. Nettoyage : action ACE « Nettoyer l'écran du téléphone » ou app Profil. Chaque joueur peut aussi le couper dans Réglages > Réalisme."],
     _sim, true, 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_ew_open", "CHECKBOX",
     ["Guerre électronique ouverte à tous", "Coché : tout porteur de téléphone peut brouiller et goniométrer. Décoché : réservé aux unités COMSPEC_ATAK_EwOperator ou au rôle « guerre électronique / brouilleur / SIGINT »."],
@@ -104,6 +107,15 @@ private _geo = ["COMSPEC", "ATAK · Géolocalisation (GEOLOC)"];
 ["comspec_atak_native_civil_apps", "CHECKBOX",
     ["Apps civiles", "UberEats (rations livrées par drone) et Tinder (rencontres entre joueurs). Décocher pour les retirer de tous les téléphones."],
     _sim, true, 1] call CBA_fnc_addSetting;
+
+// Données médicales affichées par l'ATAK : décocher masque la donnée (ou l'endroit) pour tous, sans choix possible (fn_medShow).
+private _med = ["COMSPEC", "ATAK · Données médicales"];
+{
+    _x params ["_k", "_label"];
+    [format ["comspec_atak_native_med_%1", _k], "CHECKBOX",
+        [format ["Afficher : %1", _label], "Décoché : jamais affiché dans l'ATAK (app Médical, moniteur, liaison NFC et rapports, carte, alertes), pour tous les joueurs. Coché : chaque joueur peut encore le masquer dans Réglages > Réalisme."],
+        _med, true, 1] call CBA_fnc_addSetting;
+} forEach ((["fields"] call comspec_atak_native_fnc_medShow) + (["contexts"] call comspec_atak_native_fnc_medShow));
 
 private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 ["comspec_atak_native_aircrew", "CHECKBOX",

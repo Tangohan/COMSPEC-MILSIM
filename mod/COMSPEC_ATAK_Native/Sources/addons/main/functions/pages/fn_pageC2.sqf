@@ -41,6 +41,7 @@ _rows pushBack ["section", "Mon groupe", format ["%1 membre(s)", count units _gr
 {
     private _life = switch (true) do {
         case (!alive _x): { "<t color='#e5483a'>mort</t>" };
+        case !(["state", "allies"] call comspec_atak_native_fnc_medShow): { "<t color='#8a9a93'>—</t>" };
         case ((lifeState _x) isEqualTo "INCAPACITATED"): { "<t color='#e5483a'>inconscient</t>" };
         case ((damage _x) > 0.4): { "<t color='#f2ab33'>blessé</t>" };
         default { "<t color='#5cc76b'>valide</t>" };
