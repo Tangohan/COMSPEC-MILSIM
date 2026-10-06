@@ -34,8 +34,5 @@ hintSilent parseText format [
     _safe
 ];
 
-if (_kind in ["warn", "error"]) then {
-    systemChat format ["[SSE] %1", _message regexReplace ["\r\n|\n|\\n", " — "]];
-};
 ["[ZEUS] " + _message, if (_kind isEqualTo "info") then { "INFO" } else { "WARNING" }] call comspec_sse_fnc_log;
 true

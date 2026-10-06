@@ -39,6 +39,6 @@ final class SseIndependentEdenContractAssetTest extends TestCase
         self::assertStringContainsString('COMSPEC_SSE_FirstName', $content);
 
         self::assertStringContainsString('comspec_sse_fnc_edenWriteField', $owHelper);
-        self::assertStringContainsString('0.7.22', $ver);
+        self::assertStringContainsString('0.8.0', $ver);
     }
 }
