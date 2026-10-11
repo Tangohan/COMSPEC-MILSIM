@@ -8,7 +8,8 @@
     les clics ne passent plus. Coupures noires de plus en plus fréquentes avec les dégâts.
     La variante est tirée au premier choc et gardée (COMSPEC_ATAK_DevLook) : la toile grandit depuis le même impact,
     les lignes mortes changent à chaque nouveau choc, tout est oublié à la réparation.
-    Mode nuit (profil COMSPEC_ATAK_NightMode) : filtre rouge (RED) ou écran assombri (DIM) par-dessus le contenu.
+    Mode nuit (profil COMSPEC_ATAK_NightMode) : filtre rouge (RED) ou écran assombri (DIM) par-dessus le contenu ;
+    filtre d'écran JVN (fn_screenGlow) : film sombre en plus.
     Contrôles de page (hors zone de contenu) recréés à chaque rendu pour rester au-dessus ; mis à jour chaque seconde.
     Par-dessus les textures : fêlures procédurales (éclats en étoile autour d'un ou deux impacts, graine tirée au
     premier choc), différentes d'un appareil et d'un choc à l'autre.
@@ -71,10 +72,12 @@ if (isNull _crack || {isNull _tint} || {isNull _glitch} || {isNull _shatter} || 
         playSound "ClickSoft";
     }];
 };
+// Filtre d'écran JVN posé (fn_screenGlow) : film sombre légèrement vert, ajouté au mode nuit.
+private _film = ["filter"] call comspec_atak_native_fnc_screenGlow;
 switch (profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"]) do {
-    case "RED": { _tint ctrlShow true; _tint ctrlSetBackgroundColor [0.55, 0, 0, 0.42]; };
-    case "DIM": { _tint ctrlShow true; _tint ctrlSetBackgroundColor [0, 0, 0, 0.58]; };
-    default { _tint ctrlShow false; };
+    case "RED": { _tint ctrlShow true; _tint ctrlSetBackgroundColor [0.55, 0, 0, [0.42, 0.55] select _film]; };
+    case "DIM": { _tint ctrlShow true; _tint ctrlSetBackgroundColor [0, 0, 0, [0.58, 0.68] select _film]; };
+    default { _tint ctrlShow _film; _tint ctrlSetBackgroundColor [0.02, 0.06, 0.03, 0.42]; };
 };
 private _state = _hp get "state";
 private _lvl = _hp get "crack";

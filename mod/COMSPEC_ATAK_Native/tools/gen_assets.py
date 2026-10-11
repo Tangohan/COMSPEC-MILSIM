@@ -1103,6 +1103,12 @@ def phone_back(src):
     panel = os.path.join(RENDER_DIR, "back_panel.png")
     if os.path.exists(panel):
         front.alpha_composite(Image.open(panel).convert("RGBA"))
+        # Balise IR vissée entre la plaque et les nervures (render_3d.render_irbeacon, rendu au double).
+        ir = os.path.join(RENDER_DIR, "irbeacon.png")
+        if os.path.exists(ir):
+            b = Image.open(ir).convert("RGBA")
+            b = b.resize((b.width // 2, b.height // 2), Image.LANCZOS)
+            front.alpha_composite(_soft_edges(b), (IR_POS[0] - b.width // 2, IR_POS[1] - b.height // 2))
         return front
     p = []
     p.append('<defs>'
@@ -1164,6 +1170,137 @@ def back_variants(tmp):
     convert(back, "phone_back", tmp)
     for key, tint in SHELL_TINTS.items():
         convert(shell_tint(back, tint), f"phone_back_{key}", tmp)
+    vest_phone_atlas(back, tmp)
+
+
+# --- Accessoires vus de dos : batterie externe sur la plaque (calque), balise IR (dans la texture du dos) ---
+IR_POS = (1327, 776)
+PLATE_C = (1025, 1020)
+
+
+def _soft_edges(img, frac=0.12):
+    """Rendu sur capteur d'ombre : l'ombre s'efface vers les bords du cadre (pas de boîte visible)."""
+    import numpy as np
+    a = np.array(img).astype(float)
+    h, w = a.shape[:2]
+    yy, xx = np.mgrid[0:h, 0:w]
+    m = np.minimum.reduce([xx / (w * frac), (w - 1 - xx) / (w * frac), yy / (h * frac), (h - 1 - yy) / (h * frac)]).clip(0, 1)
+    a[..., 3] *= m
+    return Image.fromarray(a.astype("uint8"), "RGBA")
+
+
+def powerbank_overlay():
+    pb = os.path.join(RENDER_DIR, "powerbank.png")
+    out = Image.new("RGBA", (2048, 2048), (0, 0, 0, 0))
+    if os.path.exists(pb):
+        b = _soft_edges(Image.open(pb).convert("RGBA"))
+        out.alpha_composite(b, (PLATE_C[0] - b.width // 2, PLATE_C[1] - b.height // 2))
+    return out
+
+
+def _icon_from(img, size=256, rot=0):
+    if rot:
+        img = img.rotate(rot, expand=True, resample=Image.BICUBIC)
+    img = img.crop(img.getbbox())
+    k = (size * 0.9) / max(img.size)
+    img = img.resize((max(1, int(img.width * k)), max(1, int(img.height * k))), Image.LANCZOS)
+    out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    out.alpha_composite(img, ((size - img.width) // 2, (size - img.height) // 2))
+    return out
+
+
+def nvgfilter_item(size=256):
+    """Filtre d'écran JVN : film sombre teinté vert, languette de pose, marquage."""
+    k = 4
+    S = size * k
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    sh = Image.new("L", (S, S), 0)
+    ImageDraw.Draw(sh).rounded_rectangle([S * 0.12, S * 0.26, S * 0.92, S * 0.80], radius=S * 0.06, fill=140)
+    sh = sh.filter(ImageFilter.GaussianBlur(S * 0.02))
+    shadow = Image.new("RGBA", (S, S), (0, 0, 0, 0)); shadow.putalpha(sh)
+    img.alpha_composite(shadow)
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([S * 0.08, S * 0.22, S * 0.88, S * 0.76], radius=S * 0.06, fill=(18, 40, 26, 215), outline=(90, 120, 96, 255), width=int(S * 0.008))
+    d.polygon([(S * 0.12, S * 0.26), (S * 0.5, S * 0.26), (S * 0.2, S * 0.72), (S * 0.12, S * 0.72)], fill=(255, 255, 255, 28))
+    d.rounded_rectangle([S * 0.80, S * 0.30, S * 0.95, S * 0.40], radius=S * 0.02, fill=(200, 120, 40, 255))
+    d.text((S * 0.16, S * 0.60), "NVG-SAFE", font=_font(int(S * 0.07)), fill=(150, 200, 160, 230))
+    return img.resize((size, size), Image.LANCZOS)
+
+
+# --- Autres modèles (render_phones.py) : même ouverture d'écran que le S7 (x 455..1546, y 716..1333) ---
+PHONE_MODELS = ["rugged", "iphone", "tablet"]
+
+
+def _night(img):
+    """Variante de nuit : coque très assombrie, alpha gardé (l'ouverture de l'écran reste transparente)."""
+    from PIL import ImageEnhance
+    a = img.getchannel("A")
+    out = ImageEnhance.Brightness(img.convert("RGB")).enhance(0.28).convert("RGBA")
+    out.putalpha(a)
+    return out
+
+
+def model_assets(tmp):
+    for m in PHONE_MODELS:
+        f = os.path.join(RENDER_DIR, f"phone_{m}_front.png")
+        if not os.path.exists(f):
+            continue
+        land = Image.open(f).convert("RGBA")
+        for key, img in (("", land), ("_night", _night(land))):
+            convert(img, f"phone_landscape_{m}{key}", tmp)
+            convert(img.rotate(-90, expand=True), f"phone_portrait_{m}{key}", tmp)
+        b = os.path.join(RENDER_DIR, f"phone_{m}_back.png")
+        if m != "tablet" and os.path.exists(b):
+            convert(Image.open(b).convert("RGBA"), f"phone_back_{m}", tmp)
+
+
+def accessory_assets(tmp):
+    convert(powerbank_overlay(), "back_powerbank", tmp)
+    pb = os.path.join(RENDER_DIR, "powerbank.png")
+    if os.path.exists(pb):
+        convert(_icon_from(_soft_edges(Image.open(pb).convert("RGBA"))), "item_powerbank", tmp)
+    convert(nvgfilter_item(), "item_nvgfilter", tmp)
+    tab = os.path.join(RENDER_DIR, "phone_tablet_front.png")
+    if os.path.exists(tab):
+        t = Image.open(tab).convert("RGBA")
+        glass = Image.new("RGBA", t.size, (0, 0, 0, 0))
+        glass.paste(_glass(1092, 618), (455, 716))
+        glass.alpha_composite(t)
+        convert(_icon_from(glass), "item_vehiclekit", tmp)
+
+
+# --- Téléphone porté sur le gilet (vest_phone.p3d, model_vest_phone.py) : atlas face en haut, dos en bas ---
+VEST_CASE = (270, 630, 1720, 1425)  # rectangle de la coque dans la texture de la face (le dos en est le miroir)
+
+
+def _glass(w, h):
+    """Écran éteint : verre sombre, léger reflet en diagonale."""
+    import numpy as np
+    yy, xx = np.mgrid[0:h, 0:w].astype(float)
+    base = 14 + 10 * (1 - yy / h)
+    band = np.exp(-(((xx / w) - (yy / h) * 0.6 - 0.25) ** 2) / 0.01) * 18
+    v = np.clip(base + band, 0, 255)
+    rgb = np.stack([v * 0.95, v, v * 1.08], -1).astype("uint8")
+    return Image.fromarray(rgb, "RGB").convert("RGBA")
+
+
+def vest_phone_atlas(back, tmp):
+    x0, y0, x1, y1 = VEST_CASE
+    front = Image.open(PHONE_SRC).convert("RGBA").crop(VEST_CASE)
+    rear = back.crop((2048 - x1, y0, 2048 - x0, y1))
+    for key, tint in [("", None)] + list(SHELL_TINTS.items()):
+        f = front if tint is None else shell_tint(front, tint)
+        r = rear if tint is None else shell_tint(rear, tint)
+        face = _glass(*f.size)
+        face.alpha_composite(f)
+        # Hors coque (coins arrondis) : couleur du rebord, pas de liseré noir au filtrage.
+        rim = f.getpixel((1000 - x0, 652 - y0))
+        bg = Image.new("RGBA", r.size, rim[:3] + (255,))
+        bg.alpha_composite(r)
+        atlas = Image.new("RGB", (1024, 1024))
+        atlas.paste(face.convert("RGB").resize((1024, 512), Image.LANCZOS), (0, 0))
+        atlas.paste(bg.convert("RGB").resize((1024, 512), Image.LANCZOS), (0, 512))
+        convert(atlas, f"vest_phone{'_' + key if key else ''}_co", tmp)
 
 
 # --- Antennes d'extension de débit (port SMA en haut à gauche de la coque, x 430, y 632 de la texture 2048) ---
@@ -1396,6 +1533,8 @@ def main():
         datalink_assets(tmp)
         antenna_assets(tmp)
         patch_assets(tmp)
+        accessory_assets(tmp)
+        model_assets(tmp)
         back_variants(tmp)
         shell_variants(tmp)
         if len(sys.argv) > 2 and sys.argv[2] == "datalink":

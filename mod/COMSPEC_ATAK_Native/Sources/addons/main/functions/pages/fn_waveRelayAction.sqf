@@ -6,7 +6,8 @@
                     me (mon index), gw (index de la passerelle ou -1), gwLabel.
                     Lien si la distance est sous la portée (COMSPEC_ATAK_MeshRange, 3 000 m par défaut),
                     portée réduite à 35 % quand le relief coupe la ligne entre les deux antennes.
-                    Passerelle : relais Overwatch le plus proche s'il existe et est intact, sinon le chef de groupe.
+                    Passerelle : relais Overwatch le plus proche s'il existe et est intact, sinon passerelle de véhicule
+                    ou PC mobile (fn_vehicleGateway), sinon le chef de groupe.
       "talkgroup" : choisit le talkgroup data (variable publique COMSPEC_ATAK_Talkgroup) quand ACRE2 est absent.
       "channel"   : [id radio ACRE, canal] change le canal d'une radio ACRE2.
       "mapLinks"  : affiche / masque les liens du maillage sur la carte.
@@ -35,6 +36,14 @@ switch (_act) do {
                 _gw = (count _nodes) - 1;
             };
         };
+        // Passerelles de véhicule et postes de commandement mobiles du camp (fn_vehicleGateway), la plus proche d'abord.
+        private _vg = (["list"] call comspec_atak_native_fnc_vehicleGateway) apply { [player distance (_x select 0), _x] };
+        _vg sort true;
+        {
+            (_x select 1) params ["_o", "_m", "_r", "", "_n"];
+            _nodes pushBack [_o, (getPosASL _o) vectorAdd [0, 0, [3, 9] select (_m isEqualTo "cp")], _n, "gw", _r];
+            if (_gw < 0) then { _gw = (count _nodes) - 1; _gwLabel = format ["%1 %2", ["Passerelle", "PC mobile"] select (_m isEqualTo "cp"), _n]; };
+        } forEach _vg;
         if (_gw < 0) then {
             private _lead = leader group player;
             _gw = _nodes findIf { (_x select 0) isEqualTo _lead };

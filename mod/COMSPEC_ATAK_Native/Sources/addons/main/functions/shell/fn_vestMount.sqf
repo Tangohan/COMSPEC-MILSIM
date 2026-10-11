@@ -1,8 +1,11 @@
 /*
-    Téléphone visible sur le gilet (essai) : un objet 3D accroché au torse du joueur (os spine3, suit ses mouvements),
-    vu par tous, sur n'importe quel gilet. Modèle : téléphone d'Overwatch (cTab) si le mod est chargé, sinon le
-    smartphone vanilla. Masqué pour soi en vue à la première personne. Retiré sans téléphone, à la mort ou en véhicule.
-    Réglages profil : COMSPEC_ATAK_VestMount (off, left, center, right), COMSPEC_ATAK_VestDepth (épaisseur du gilet).
+    Téléphone visible sur le gilet : notre modèle 3D (COMSPEC_ATAK_VestPhone, data/vest_phone.p3d) accroché au torse
+    du joueur (os spine3, suit ses mouvements), vu par tous, sur n'importe quel gilet. Couleur de la coque
+    (COMSPEC_ATAK_ShellTint) et patch du dos (COMSPEC_ATAK_Patch) appliqués à tous par setObjectTextureGlobal.
+    Masqué pour soi en vue à la première personne. Retiré sans téléphone, à la mort ou en véhicule.
+    Réglages profil : COMSPEC_ATAK_VestMount (off, left, center, right), COMSPEC_ATAK_VestDepth (épaisseur du gilet),
+    COMSPEC_ATAK_VestFace (back : dos et patch vers l'extérieur, pochette rabattue ; screen : écran vers l'extérieur).
+    Réglage fin de l'orientation (essais en jeu) : missionNamespace COMSPEC_ATAK_VestDirUp = [[dir], [up]].
     Actions : ["tick"] (client, toutes les 2 s) ; ["sweep"] (serveur : objets orphelins après une déconnexion).
 */
 params [["_act", "tick"]];
@@ -19,19 +22,24 @@ if (!_want) exitWith {
     if (!isNull _cur) then { deleteVehicle _cur; missionNamespace setVariable ["COMSPEC_ATAK_VestObj", objNull]; };
     false
 };
-private _key = [_mount, _depth, player];
+private _face = profileNamespace getVariable ["COMSPEC_ATAK_VestFace", "back"];
+private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"];
+private _patch = profileNamespace getVariable ["COMSPEC_ATAK_Patch", "none"];
+private _key = [_mount, _depth, _face, _tint, _patch, player];
 if (isNull _cur || {(missionNamespace getVariable ["COMSPEC_ATAK_VestKey", []]) isNotEqualTo _key} || {(attachedTo _cur) isNotEqualTo player}) then {
     if (!isNull _cur) then { deleteVehicle _cur; };
-    private _model = "\z\comspec_overwatch\addons\connect\data\device\itemandroid.p3d";
-    if !(isClass (configFile >> "CfgPatches" >> "comspec_overwatch_connect") && {fileExists _model}) then {
-        _model = getText (configFile >> "CfgVehicles" >> "Land_MobilePhone_smart_F" >> "model");
-    };
-    _cur = createSimpleObject [_model, getPosASL player, false];
+    private _d = "\z\comspec_atak_native\addons\main\data\";
+    _cur = createSimpleObject ["COMSPEC_ATAK_VestPhone", getPosASL player, false];
     _cur setVariable ["COMSPEC_ATAK_Vest", true, true];
-    // Décalage depuis spine3 (repère du corps : x à droite, y devant, z en haut) ; écran tourné vers l'avant.
+    _cur setObjectTextureGlobal [0, format ["%1vest_phone%2_co.paa", _d, ["", "_" + _tint] select (_tint in ["od", "black"])]];
+    // Patch du dos : invisible sans patch ou écran vers l'extérieur (le dos est alors contre le gilet).
+    _cur setObjectTextureGlobal [1, ["", format ["%1patch_%2.paa", _d, _patch]] select (_patch isNotEqualTo "none" && {_face isEqualTo "back"})];
+    // Décalage depuis spine3 (repère du corps : x à droite, y devant, z en haut).
+    // Modèle : l'avant (+Z du P3D, vectorDir) est le dos du téléphone, l'écran regarde vers l'arrière.
     private _x = switch (_mount) do { case "left": { -0.12 }; case "right": { 0.12 }; default { 0 }; };
     _cur attachTo [player, [_x, _depth, 0.05], "spine3", true];
-    _cur setVectorDirAndUp [[0, 0, 1], [0, 1, 0]];
+    private _dirUp = missionNamespace getVariable ["COMSPEC_ATAK_VestDirUp", [[[0, -1, 0], [0, 1, 0]] select (_face isEqualTo "back"), [0, 0, 1]]];
+    _cur setVectorDirAndUp _dirUp;
     missionNamespace setVariable ["COMSPEC_ATAK_VestObj", _cur];
     missionNamespace setVariable ["COMSPEC_ATAK_VestKey", _key];
 };

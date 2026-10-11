@@ -4,6 +4,8 @@
 */
 if (!hasInterface) exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_ATAK_ResynchBusy", false]) exitWith { false };
+// Téléphone effacé en urgence (fn_phoneSecurity) : la resynchronisation le remet en service.
+["resync"] call comspec_atak_native_fnc_phoneSecurity;
 if (isNil "comspec_overwatch_connect_fnc_forceSyncData") exitWith {
     missionNamespace setVariable ["COMSPEC_LastResynchSummary", ["<t color='#e5483a'>Resynch indisponible : COMSPEC Link n'est pas chargé.</t>"], false];
     false

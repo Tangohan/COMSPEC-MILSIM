@@ -264,8 +264,18 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 
 // Menu ACE « Téléphone ATAK » (fn_aceMenu) : les actions d'entretien ci-dessous vont dans son sous-menu Entretien.
 [] call comspec_atak_native_fnc_aceMenu;
-// Téléphone visible sur le gilet (réglage Personnaliser, fn_vestMount).
-[{ ["tick"] call comspec_atak_native_fnc_vestMount; }, 2] call CBA_fnc_addPerFrameHandler;
+// Téléphone visible sur le gilet (fn_vestMount), balise IR (fn_irBeacon), téléphone extractible en cas de capture (fn_phoneSecurity).
+[{ ["tick"] call comspec_atak_native_fnc_vestMount; ["tick"] call comspec_atak_native_fnc_irBeacon; ["tick"] call comspec_atak_native_fnc_phoneSecurity; }, 2] call CBA_fnc_addPerFrameHandler;
+// Terminal de bord (tablette du véhicule, PC mobile) gagné ou perdu : coque redessinée, message à l'arrivée.
+[{
+    private _k = [player] call comspec_atak_native_fnc_vehicleTerminal;
+    if (_k isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_TermKind", ""])) exitWith {};
+    uiNamespace setVariable ["COMSPEC_ATAK_TermKind", _k];
+    if (_k in ["vehicle", "cp"]) then { ["INFO", ["Tablette du véhicule disponible (ATAK)", "Terminal du poste de commandement disponible"] select (_k isEqualTo "cp"), 4, 20] call comspec_atak_native_fnc_notify; };
+    if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; };
+}, 2] call CBA_fnc_addPerFrameHandler;
+// Lueur des écrans la nuit (la sienne publiée, celle des joueurs proches dessinée) et filtre JVN (fn_screenGlow).
+[{ ["tick"] call comspec_atak_native_fnc_screenGlow; }, 1] call CBA_fnc_addPerFrameHandler;
 // Action ACE : changer la batterie du téléphone (si une batterie de rechange est portée).
 if (!isNil "ace_interact_menu_fnc_createAction") then {
     private _act = ["COMSPEC_ATAK_BatterySwap", "Changer la batterie", "\z\comspec_atak_native\addons\main\data\item_battery.paa", {

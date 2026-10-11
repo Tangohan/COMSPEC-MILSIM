@@ -1,6 +1,6 @@
 """
-Rendus 3D (Blender / Cycles) des pièces « réalistes » de l'ATAK natif : module DL-7 (trois teintes) et panneau
-arrière de la coque (dos du téléphone). Les PNG produits sont repris par gen_assets.py (datalink_*, phone_back*,
+Rendus 3D (Blender / Cycles) des pièces « réalistes » de l'ATAK natif : module DL-7 (trois teintes), panneau
+arrière de la coque (dos du téléphone), batterie externe et balise IR (accessoires vus de dos). Les PNG produits sont repris par gen_assets.py (datalink_*, phone_back*,
 item_datacable). Prérequis : pip install bpy (Blender comme module Python, 5.x).
 
     python3 render_3d.py [sortie]      # par défaut tools/render/
@@ -477,6 +477,87 @@ def render_back(path, size=2048):
     os.remove(tmp)
 
 
+# --- Accessoires : batterie externe sur la plaque, balise IR de la coque (vus de dos) ---
+PB_W, PB_H, ACC_PAD = 440, 300, 60
+IR_W = 110
+
+
+def render_powerbank(path):
+    """Batterie externe 10 000 mAh tenue sur la plaque par deux sangles velcro ; prise USB-C et câble court."""
+    reset()
+    P = lambda u, v: px(u, v, PB_W / 2, PB_H / 2)  # noqa: E731
+    body = mat_paint("pb", (0.075, 0.08, 0.072), rough=0.7, grain=1.6)
+    edge = mat_paint("pb2", (0.05, 0.052, 0.05), rough=0.8, grain=1.2)
+    strap = mat_paint("strap", (0.20, 0.22, 0.15), rough=0.95, grain=5.0)
+    blackm = mat_simple("black", (0.02, 0.02, 0.02), 0.4)
+    led = mat_simple("led", (0.1, 0.9, 0.3), 0.3, emit=(0.2, 1.0, 0.35))
+    ledoff = mat_simple("ledoff", (0.05, 0.08, 0.05), 0.3)
+    ink = mat_simple("ink", (0.80, 0.80, 0.76), 0.6)
+    steel = mat_simple("steel", (0.7, 0.7, 0.68), 0.3, 1.0)
+    T = 0.42
+    x, y = P(0, 0)
+    rrect(x, y, PB_W / 100, PB_H / 100, 0.36, 0.0, T, edge, bevel=0.08, name="pb")
+    x, y = P(14, 14)
+    rrect(x, y, (PB_W - 28) / 100, (PB_H - 28) / 100, 0.28, T - 0.02, T + 0.03, body, bevel=0.05)
+    # Nervures de préhension moulées (bas).
+    for i in range(6):
+        x, y = P(140 + i * 28, 236)
+        rrect(x, y, 0.14, 0.34, 0.05, T + 0.02, T + 0.045, edge, bevel=0.01)
+    tx, ty = P(PB_W / 2, 92)
+    text("COMSPEC", tx, ty, T + 0.031, 0.32, ink, align="CENTER")
+    tx, ty = P(PB_W / 2, 126)
+    text("PWR-10K · 10 000 mAh", tx, ty, T + 0.031, 0.15, ink, font=FONT_R, align="CENTER")
+    # Témoin de charge : 4 diodes (3 allumées).
+    for i in range(4):
+        cx, cy = P(PB_W / 2 - 51 + i * 34, 176)
+        cyl(cx, cy, 0.07, T + 0.02, T + 0.05, blackm)
+        dome(cx, cy, 0.055, T + 0.05, 0.025, led if i < 3 else ledoff)
+    # Sangles velcro autour de la plaque (bords), coutures plus sombres.
+    seam = mat_paint("seam", (0.12, 0.13, 0.09), rough=0.95, grain=3.0)
+    for su in (62, PB_W - 62):
+        x, y = P(su - 22, -16)
+        rrect(x, y, 0.44, (PB_H + 32) / 100, 0.04, T - 0.1, T + 0.07, strap, bevel=0.015)
+        for dv in (8, PB_H + 2):
+            x, y = P(su - 20, dv)
+            rrect(x, y, 0.40, 0.06, 0.02, T + 0.065, T + 0.075, seam, bevel=0.005)
+    # Prise USB-C sur la tranche droite et câble court vers le téléphone.
+    x, y = P(PB_W - 8, 200)
+    rrect(x, y, 0.32, 0.5, 0.08, 0.08, T - 0.08, blackm, bevel=0.02)
+    x, y = P(PB_W + 16, 214)
+    rrect(x, y, 0.26, 0.22, 0.1, 0.12, 0.3, steel, bevel=0.02)
+    shadow_catcher(14, 10)
+    lights(key=(-3.5, 4.5, 9), power=800, size=6, fill=150)
+    camera(0, 0, (PB_W + 2 * ACC_PAD) / 100, PB_W + 2 * ACC_PAD, PB_H + 2 * ACC_PAD)
+    bpy.context.scene.render.filepath = path
+    bpy.ops.render.render(write_still=True)
+
+
+def render_irbeacon(path):
+    """Balise IR vissée sur la coque : boîtier noir, lentille bombée sur l'émetteur, marquage IR."""
+    reset()
+    P = lambda u, v: px(u, v, IR_W / 2, IR_W / 2)  # noqa: E731
+    body = mat_paint("ir", (0.05, 0.05, 0.048), rough=0.6, grain=1.2)
+    blackm = mat_simple("black", (0.015, 0.015, 0.015), 0.3)
+    lens = mat_simple("lens", (0.25, 0.08, 0.1), 0.05, coat=1.0)
+    ink = mat_simple("ink", (0.8, 0.8, 0.76), 0.6)
+    steel = mat_simple("steel", (0.7, 0.7, 0.68), 0.3, 1.0)
+    x, y = P(0, 0)
+    rrect(x, y, IR_W / 100, IR_W / 100, 0.22, 0.0, 0.3, body, bevel=0.06)
+    cx, cy = P(IR_W / 2, IR_W / 2 - 6)
+    cyl(cx, cy, 0.3, 0.28, 0.34, blackm, bevel=0.02)
+    dome(cx, cy, 0.26, 0.33, 0.16, lens)
+    tx, ty = P(IR_W / 2, IR_W - 10)
+    text("IR", tx, ty, 0.301, 0.14, ink, align="CENTER")
+    for u, v in ((14, 14), (IR_W - 14, 14)):
+        sx, sy = P(u, v)
+        phillips(sx, sy, 0.05, 0.3, steel, blackm)
+    shadow_catcher(6, 6)
+    lights(key=(-3.5, 4.5, 9), power=500, size=5, fill=100)
+    camera(0, 0, (IR_W + 2 * 30) / 100, (IR_W + 60) * 2, (IR_W + 60) * 2)
+    bpy.context.scene.render.filepath = path
+    bpy.ops.render.render(write_still=True)
+
+
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
     what = os.environ.get("RENDER_ONLY", "all")
@@ -485,4 +566,7 @@ if __name__ == "__main__":
             render_module(t, os.path.join(OUT, f"dl7_{t}.png"))
     if what in ("all", "back"):
         render_back(os.path.join(OUT, "back_panel.png"))
+    if what in ("all", "acc"):
+        render_powerbank(os.path.join(OUT, "powerbank.png"))
+        render_irbeacon(os.path.join(OUT, "irbeacon.png"))
     print("ok")

@@ -112,7 +112,18 @@ final class AtakShellPersonalisationTest extends TestCase
         $fn = $this->read(self::MAIN . '/functions/shell/fn_vestMount.sqf');
         self::assertStringContainsString('"spine3", true]', $fn);
         self::assertStringContainsString('hideObject (cameraView isEqualTo "INTERNAL")', $fn);
-        self::assertStringContainsString('"Land_MobilePhone_smart_F"', $fn);
+        // Notre modèle 3D (vest_phone.p3d) : couleur de coque et patch appliqués à tous.
+        self::assertStringContainsString('createSimpleObject ["COMSPEC_ATAK_VestPhone"', $fn);
+        self::assertStringContainsString('setObjectTextureGlobal [1,', $fn);
+        $cfg = $this->read(self::MAIN . '/config.cpp');
+        self::assertStringContainsString('class COMSPEC_ATAK_VestPhone: Static', $cfg);
+        self::assertStringContainsString('hiddenSelections[]={"camo","patch"};', $cfg);
+        self::assertStringContainsString('sections[]={"camo","patch"};', $this->read(self::MAIN . '/data/model.cfg'));
+        foreach (['vest_phone.p3d', 'vest_phone_co.paa', 'vest_phone_od_co.paa', 'vest_phone_black_co.paa'] as $f) {
+            self::assertFileExists(dirname(__DIR__, 2) . '/' . self::MAIN . '/data/' . $f);
+        }
+        self::assertStringContainsString('def vest_phone_atlas', $this->read('mod/COMSPEC_ATAK_Native/tools/gen_assets.py'));
+        self::assertStringContainsString('a3ob.export_p3d', $this->read('mod/COMSPEC_ATAK_Native/tools/model_vest_phone.py'));
         self::assertStringContainsString('["tick"] call comspec_atak_native_fnc_vestMount;', $this->read(self::MAIN . '/XEH_postInitClient.sqf'));
         self::assertStringContainsString('["sweep"] call comspec_atak_native_fnc_vestMount;', $this->read(self::MAIN . '/XEH_postInitServer.sqf'));
         self::assertStringContainsString('"COMSPEC_ATAK_VestMount", "off", "Téléphone sur le gilet"', $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf'));

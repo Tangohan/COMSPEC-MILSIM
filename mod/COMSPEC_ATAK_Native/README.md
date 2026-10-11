@@ -29,9 +29,16 @@ Identités livrées :
 
 - Réglages > Personnalisation : couleur de la coque (coyote, vert OD, noir), du module DL-7 (olive, noir, tan), antenne montée, bouton « Voir l'arrière ».
 - Antennes (objets `COMSPEC_ATAK_Antenna_Stub`, `_Whip`, `_Patch`) : à porter dans l'inventaire puis visser (ACE « Téléphone ATAK > Antenne » ou Réglages). Effet sur le débit simulé (`fn_linkQuality`) : courte x1,25, fouet x1,5, patch x1,7 à l'arrêt seulement.
-- ACE : une seule entrée « Téléphone ATAK » en auto-interaction (Voir l'arrière, Antenne, Personnaliser, Entretien, Débrancher le câble DL-7).
+- ACE : une seule entrée « Téléphone ATAK » en auto-interaction (Voir l'arrière, Antenne, Personnaliser, Accessoires, Entretien, Passerelle du véhicule, Effacement d'urgence, Débrancher le câble DL-7).
 - Textures générées par `tools/gen_assets.py` (`MODULE_TINTS`, `SHELL_TINTS`, `phone_back`, `antenna_svg`).
 - Module DL-7 et panneau arrière rendus en 3D par `tools/render_3d.py` (Blender en module Python : `pip install bpy`), images dans `tools/render/`, puis repris par `gen_assets.py`.
+
+## Gilet, modèles, accessoires et véhicules
+
+- Téléphone sur le gilet : modèle `data/vest_phone.p3d` (classe `COMSPEC_ATAK_VestPhone`, sélections `camo` et `patch`), exporté par `tools/model_vest_phone.py` (Blender + extension « Arma 3 Object Builder », GPL-3, non livrée) ; textures `vest_phone*_co.paa` par `gen_assets.vest_phone_atlas`. Orientation à régler en jeu si besoin : `COMSPEC_ATAK_VestDirUp = [[dir], [up]]`.
+- Modèles de téléphone (`COMSPEC_ATAK_PhoneModel` : `s7`, `rugged`, `iphone`) et tablette de bord (`tablet`) : rendus par `tools/render_phones.py`, même ouverture d'écran que le S7.
+- Accessoires : `COMSPEC_ATAK_PowerBank` (`fn_powerBank`), balise IR (`fn_irBeacon`), `COMSPEC_ATAK_NvgFilter` et lueur des écrans (`fn_screenGlow`, réglage serveur « Lueur des écrans la nuit »). Effacement d'urgence et téléphone extractible en cas de capture : `fn_phoneSecurity`.
+- Véhicules : `fn_vehicleTerminal` (tablette de bord, réglage serveur « Tablette des véhicules », objet `COMSPEC_ATAK_VehicleKit`), `fn_vehicleGateway` (passerelle, PC mobile ; portées par mission `COMSPEC_ATAK_GwRange = [4000, 10000]`).
 
 ## Données à extraire (mission makers)
 

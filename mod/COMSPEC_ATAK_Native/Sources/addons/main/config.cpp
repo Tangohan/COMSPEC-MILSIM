@@ -3,7 +3,7 @@ class CfgPatches {
     class comspec_atak_native_main {
         name="COMSPEC ATAK Native Standalone"; author="COMSPEC"; requiredVersion=2.14;
         requiredAddons[]={"A3_UI_F","A3_Weapons_F","A3_Modules_F","cba_main","cba_xeh"};
-        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
+        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
     };
 };
 class CfgFunctions {
@@ -47,7 +47,10 @@ class CfgFunctions {
             class airplaneMode {}; class btAction {}; class btSounds {}; class pageBluetooth {}; class btInit { postInit=1; };
         };
         class shell { file="z\comspec_atak_native\addons\main\functions\shell";
-            class antenna {}; class backView {}; class aceMenu {}; class vestMount {};
+            class antenna {}; class backView {}; class aceMenu {}; class vestMount {}; class powerBank {}; class irBeacon {}; class screenGlow {}; class phoneSecurity {};
+        };
+        class vehicle { file="z\comspec_atak_native\addons\main\functions\vehicle";
+            class vehicleTerminal {}; class vehicleGateway {};
         };
         class datalink { file="z\comspec_atak_native\addons\main\functions\datalink";
             class dataSetup {}; class dataParseFiles {}; class dataServer {}; class dataAction {}; class dataInit {}; class dataOverlay {}; class pageDataLink {}; class zeusForm {}; class moduleContext {}; class moduleDataNode {}; class moduleDataFile {}; class moduleDataReset {};
@@ -194,9 +197,45 @@ class CfgWeapons {
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=4; };
     };
+    class COMSPEC_ATAK_PowerBank: ItemCore {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="Batterie externe ATAK 10 000 mAh";
+        descriptionShort="Se fixe sur la plaque au dos du téléphone (menu ACE « Téléphone ATAK »). Recharge le téléphone à 2 % par minute, deux charges complètes. Vide, elle est jetée.";
+        picture="\z\comspec_atak_native\addons\main\data\item_powerbank.paa";
+        model="\A3\Weapons_F\Ammo\mag_univ.p3d";
+        type=4096; detectRange=-1; simulation="ItemMineDetector";
+        class ItemInfo: InventoryItem_Base_F { mass=10; };
+    };
+    class COMSPEC_ATAK_NvgFilter: ItemCore {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="Filtre d'écran JVN (ATAK)";
+        descriptionShort="Film à poser sur l'écran du téléphone : coupe le proche infrarouge et assombrit l'écran. De nuit, l'écran allumé ne se voit presque plus de loin, même aux JVN.";
+        picture="\z\comspec_atak_native\addons\main\data\item_nvgfilter.paa";
+        model="\A3\Weapons_F\Ammo\mag_univ.p3d";
+        type=4096; detectRange=-1; simulation="ItemMineDetector";
+        class ItemInfo: InventoryItem_Base_F { mass=1; };
+    };
+    class COMSPEC_ATAK_VehicleKit: ItemCore {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="Kit terminal véhicule ATAK";
+        descriptionShort="Tablette durcie et support RAM à installer dans un véhicule (action ACE sur le véhicule) quand le serveur réserve la tablette de bord aux véhicules équipés.";
+        picture="\z\comspec_atak_native\addons\main\data\item_vehiclekit.paa";
+        model="\A3\Weapons_F\Ammo\mag_univ.p3d";
+        type=4096; detectRange=-1; simulation="ItemMineDetector";
+        class ItemInfo: InventoryItem_Base_F { mass=30; };
+    };
 };
 class CfgVehicles {
     class Item_Base_F;
+    class Static;
+    // Téléphone porté sur le gilet (fn_vestMount) : objet simple accroché au torse, non listé dans l'éditeur.
+    // Sélections camo (coque : vest_phone{,_od,_black}_co) et patch (velcro du dos : patch_*.paa, vide sans patch).
+    class COMSPEC_ATAK_VestPhone: Static {
+        scope=1; scopeCurator=0; author="COMSPEC"; displayName="Téléphone ATAK (gilet)";
+        model="\z\comspec_atak_native\addons\main\data\vest_phone.p3d";
+        hiddenSelections[]={"camo","patch"};
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\vest_phone_co.paa",""};
+    };
     class Item_COMSPEC_ATAK_Battery: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="Batterie ATAK";
@@ -232,6 +271,24 @@ class CfgVehicles {
         displayName="Antenne patch 9 dBi (ATAK)";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_Antenna_Patch { name="COMSPEC_ATAK_Antenna_Patch"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_PowerBank: Item_Base_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="Batterie externe ATAK 10 000 mAh";
+        vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
+        class TransportItems { class _xx_COMSPEC_ATAK_PowerBank { name="COMSPEC_ATAK_PowerBank"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_NvgFilter: Item_Base_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="Filtre d'écran JVN (ATAK)";
+        vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
+        class TransportItems { class _xx_COMSPEC_ATAK_NvgFilter { name="COMSPEC_ATAK_NvgFilter"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_VehicleKit: Item_Base_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="Kit terminal véhicule ATAK";
+        vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
+        class TransportItems { class _xx_COMSPEC_ATAK_VehicleKit { name="COMSPEC_ATAK_VehicleKit"; count=1; }; };
     };
     // Modules Zeus / Eden « ATAK · Données » (extraction au câble DL-7).
     #include "modules.hpp"

@@ -145,6 +145,9 @@ private _data = ["COMSPEC", "ATAK · Extraction de données"];
     _data, [0.25, 4, 1, 2], 1] call CBA_fnc_addSetting;
 // Serveur de l'extraction : branché dès le preInit (les modules Eden posent leurs données au démarrage).
 if (isServer) then { ["comspec_atak_native_dataSrv", { _this call comspec_atak_native_fnc_dataServer; }] call CBA_fnc_addEventHandler; };
+// Passerelles de véhicule (fn_vehicleGateway) et messages courts du serveur vers des joueurs.
+if (isServer) then { ["comspec_atak_native_gwSrv", { _this call comspec_atak_native_fnc_vehicleGateway; }] call CBA_fnc_addEventHandler; };
+if (hasInterface) then { ["comspec_atak_native_note", { params [["_t", ""]]; ["INFO", _t, 5, 40] call comspec_atak_native_fnc_notify; }] call CBA_fnc_addEventHandler; };
 
 // Données médicales affichées par l'ATAK : décocher masque la donnée (ou l'endroit) pour tous, sans choix possible (fn_medShow).
 private _med = ["COMSPEC", "ATAK · Données médicales"];
@@ -158,6 +161,12 @@ private _med = ["COMSPEC", "ATAK · Données médicales"];
 private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 ["comspec_atak_native_aircrew", "CHECKBOX",
     ["ATAK pour les équipages d'aéronef", "Pilote, copilote et postes de tourelle d'un hélicoptère ou d'un avion ont l'ATAK par la tablette de bord, même sans téléphone porté, téléphone vide ou cassé. Il se range en quittant l'appareil."],
+    _team, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_vehicle_terminal", "LIST",
+    ["Tablette des véhicules", "Conducteur, tireur, chef de bord et tourelles d'un véhicule terrestre ou d'un bateau ont l'ATAK sur une tablette durcie de bord, sans téléphone porté. « Kit » : seulement les véhicules où le kit terminal a été installé (action ACE)."],
+    _team, [["all", "kit", "off"], ["Tous les véhicules", "Avec le kit installé", "Aucun"], 0], 1] call CBA_fnc_addSetting;
+["comspec_atak_native_screen_glow", "CHECKBOX",
+    ["Lueur des écrans la nuit", "Un téléphone allumé de nuit éclaire son porteur et se voit de loin (encore plus aux JVN). Mode nuit, véhicule et filtre d'écran JVN la réduisent."],
     _team, true, 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_screen_time", "CHECKBOX",
     ["Temps d'écran et temps par rôle", "Compte le temps du téléphone allumé (en main, porté, par app) et le temps de jeu par rôle (pilote, chef d'équipe…). Visible dans l'app Temps d'écran et envoyé à Athena (fiche du membre, back-office)."],

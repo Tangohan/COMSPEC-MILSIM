@@ -2,7 +2,8 @@
     Géométrie du terminal.
     - Porté (HUD) ou en main mini : téléphone vertical ou horizontal, dans le coin choisi (bas droit par défaut).
     - En main plein écran : téléphone horizontal agrandi au centre.
-    La coque est la texture carrée du S7 (tools/src) ; l'écran occupe la zone transparente mesurée.
+    La coque est la texture carrée du S7 (tools/src) ou d'un autre modèle (durci XT, premium, tablette de bord des
+    véhicules : tools/render_phones.py) ; l'écran occupe la même zone transparente sur toutes.
 */
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _interactive = _s getOrDefault ["interactive", false];
@@ -16,7 +17,18 @@ private _ratio = pixelH / pixelW; // hauteur (unités écran) d'un carré de lar
 
 // Coque S7 : texture carrée 2048 px. Fractions mesurées dans tools/src/android_s7_ca.png.
 // _vis = boîte visible de la coque (avec la fixation), _scr = écran transparent.
-private _vis = [[0.1465, 0.1025, 0.7202, 0.9263], [0.1025, 0.2798, 0.9263, 0.8535]] select _land;
+// Modèle choisi (profil COMSPEC_ATAK_PhoneModel) ou tablette de bord (véhicule équipé, poste de commandement).
+// Toutes les coques gardent la même ouverture d'écran ; seule la boîte visible change (paysage, mesurée sur les rendus).
+private _term = [player] call comspec_atak_native_fnc_vehicleTerminal;
+private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
+if (_term in ["vehicle", "cp"] && {profileNamespace getVariable ["COMSPEC_ATAK_VehTablet", true]}) then { _model = "tablet"; };
+private _visLand = (createHashMapFromArray [
+    ["s7", [0.1025, 0.2798, 0.9263, 0.8535]], ["rugged", [0.1138, 0.2847, 0.8726, 0.7163]], ["iphone", [0.1914, 0.3159, 0.7861, 0.6851]], ["tablet", [0.0850, 0.2510, 0.9258, 0.7549]]
+]) getOrDefault [_model, []];
+if (_visLand isEqualTo []) then { _model = "s7"; _visLand = [0.1025, 0.2798, 0.9263, 0.8535]; };
+// Vertical : texture tournée d'un quart de tour horaire.
+_visLand params ["_lx0", "_ly0", "_lx1", "_ly1"];
+private _vis = [[1 - _ly1, _lx0, 1 - _ly0, _lx1], _visLand] select _land;
 private _scr = [[0.3491, 0.2222, 0.6504, 0.7549], [0.2222, 0.3496, 0.7549, 0.6509]] select _land;
 // L'écran déborde légèrement sous la coque : le bord flou de la texture (filtrage) laissait voir un liseré.
 private _bleed = 0.003;
@@ -75,7 +87,9 @@ private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"
 private _shellSfx = if (_night) then { "_night" } else { ["", "_" + _tint] select (_tint in ["od", "black"]) };
 createHashMapFromArray [
     ["mode", _mode], ["offsetKey", _offKey], ["visible", [_dx + _dw * _vx0, _dy + _dh * _vy0, _dw * (_vx1 - _vx0), _dh * (_vy1 - _vy0)]], ["mini", _mini], ["orientation", _orient], ["landscape", _land], ["interactive", _interactive], ["dock", _dock],
-    ["phone", [_dx, _dy, _dw, _dh]], ["phoneTexture", format ["\z\comspec_atak_native\addons\main\data\phone_%1%2.paa", ["portrait", "landscape"] select _land, _shellSfx]],
+    ["phone", [_dx, _dy, _dw, _dh]], ["phoneTexture", if (_model isEqualTo "s7") then { format ["\z\comspec_atak_native\addons\main\data\phone_%1%2.paa", ["portrait", "landscape"] select _land, _shellSfx] } else {
+        format ["\z\comspec_atak_native\addons\main\data\phone_%1_%2%3.paa", ["portrait", "landscape"] select _land, _model, ["", "_night"] select _night] }],
+    ["model", _model], ["terminal", _term],
     ["device", [_sx, _sy, _sw, _sh]],
     ["status", [_sx, _sy, _sw, _statusH]],
     ["appbar", [_sx, _sy + _statusH, _sw, _appH]],
