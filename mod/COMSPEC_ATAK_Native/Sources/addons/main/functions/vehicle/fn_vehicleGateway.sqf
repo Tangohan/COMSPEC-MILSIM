@@ -55,17 +55,22 @@ switch (_act) do {
     case "nearest": {
         private _best = [];
         private _score = -1;
+        // Hystérésis : la passerelle déjà accrochée est gardée jusqu'à 20 % au-delà de sa portée (le masque du
+        // relief, recalculé depuis la tête du joueur, basculait à chaque pas au bord de la zone : liaison qui clignote).
+        private _last = uiNamespace getVariable ["COMSPEC_ATAK_GwLast", objNull];
         {
             _x params ["_o", "_m", "_r", "_mb", "_n"];
             private _d = player distance _o;
             private _eff = _r;
             // Relief entre l'antenne et le téléphone : portée réduite comme pour le maillage.
             if (terrainIntersectASL [eyePos player, (getPosASL _o) vectorAdd [0, 0, [3, 9] select (_m isEqualTo "cp")]]) then { _eff = _r * 0.35; };
+            if (_o isEqualTo _last) then { _eff = _eff * 1.2; };
             if (_d < _eff) then {
                 private _s = _mb * (1 - (_d / _eff) ^ 2);
                 if (_s > _score) then { _score = _s; _best = [_o, _d, _eff, _mb, _m, _n]; };
             };
         } forEach (["list"] call comspec_atak_native_fnc_vehicleGateway);
+        uiNamespace setVariable ["COMSPEC_ATAK_GwLast", _best param [0, objNull]];
         _best
     };
     case "srv": {

@@ -112,9 +112,10 @@ private _mk = {
             _row params ["", "_label", "_on", "_code", ["_help", ""], ["_locked", false]];
             private _pillW = _font * 3.6 * pixelH / pixelW;
             private _card = ["COMSPEC_RscText", [_pad, _y, _w, _rowH]] call _mk;
-            _card ctrlSetBackgroundColor [0.06, 0.075, 0.068, 1];
+            _card ctrlSetBackgroundColor [0.085, 0.105, 0.095, 1];
             private _t = ["COMSPEC_RscStructuredText", [_pad * 1.5, _y + _pad / 4, _w - _pillW - _pad * 2.5, _rowH]] call _mk;
-            _t ctrlSetStructuredText parseText format ["<t size='0.95'>%1</t>%2", _label, ["", format ["<br/><t size='0.75' color='#8a9a93'>%1</t>", _help]] select (_help isNotEqualTo "")];
+            // Libellé en blanc franc, aide en gris clair (retour de jeu : les lignes semblaient grisées).
+            _t ctrlSetStructuredText parseText format ["<t size='0.95' color='#eef4f0'>%1</t>%2", _label, ["", format ["<br/><t size='0.75' color='#a9b8b1'>%1</t>", _help]] select (_help isNotEqualTo "")];
             private _h = ((ctrlTextHeight _t) + _pad / 2) max _rowH;
             _t ctrlSetPosition [_pad * 1.5, _y + _pad / 4, _w - _pillW - _pad * 2.5, _h - _pad / 2];
             _t ctrlCommit 0;
@@ -123,7 +124,7 @@ private _mk = {
             private _ph = _fs * 1.35;
             private _pill = ["COMSPEC_RscTextCenter", [_pad + _w - _pillW - _pad / 2, _y + (_h - _ph) / 2, _pillW, _ph], [["NON", "OUI"] select _on, format ["IMPOSÉ · %1", ["NON", "OUI"] select _on]] select _locked] call _mk;
             _pill ctrlSetFontHeight (_fs * 0.85);
-            _pill ctrlSetBackgroundColor ([[[0.20, 0.23, 0.22, 1], _acc] select _on, [0.55, 0.38, 0.08, 1]] select _locked);
+            _pill ctrlSetBackgroundColor ([[[0.30, 0.34, 0.32, 1], _acc] select _on, [0.55, 0.38, 0.08, 1]] select _locked);
             _pill ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.03, 0.05, 0.04, 1]] select (_on && {!_locked}));
             if !(_locked) then {
                 private _b = ["COMSPEC_RscButtonOverlay", [_pad, _y, _w, _h]] call _mk;

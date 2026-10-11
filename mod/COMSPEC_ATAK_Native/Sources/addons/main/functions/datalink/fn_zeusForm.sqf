@@ -18,7 +18,8 @@ private _rowH = safeZoneH * 0.034;
 private _gap = safeZoneH * 0.008;
 private _labW = _w * 0.36;
 private _inH = 0;
-{ _inH = _inH + _gap + ([_rowH, _rowH * ((_x param [3, 4]) max 2)] select ((_x select 0) isEqualTo "MEMO")); } forEach _fields;
+// Le 4e élément n'est un nombre de lignes que pour MEMO (COMBO y range sa donnée) : pas de select qui évaluerait les deux.
+{ _inH = _inH + _gap + (if ((_x select 0) isEqualTo "MEMO") then { _rowH * ((_x param [3, 4]) max 2) } else { _rowH }); } forEach _fields;
 private _helpH = [0, _rowH * 1.6] select (_help isNotEqualTo "");
 private _bodyH = (_inH + _gap) min (safeZoneH * 0.7);
 private _h = _rowH * 1.3 + _helpH + _bodyH + _rowH * 1.6;
@@ -47,7 +48,8 @@ private _gy = _gap;
 private _ctrls = [];
 {
     _x params ["_kind", "_label", ["_val", ""], ["_extra", 4]];
-    private _lh = [_rowH, _rowH * (_extra max 2)] select (_kind isEqualTo "MEMO");
+    // Même piège que plus haut : COMBO range sa donnée (texte) en 4e élément, « max » ne doit voir que MEMO.
+    private _lh = if (_kind isEqualTo "MEMO") then { _rowH * (_extra max 2) } else { _rowH };
     private _lb = ["COMSPEC_RscText", [_gap, _gy, _labW, _rowH], _grp] call _mk;
     _lb ctrlSetText _label;
     private _ix = _labW + _gap;

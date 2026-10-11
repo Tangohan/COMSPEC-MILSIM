@@ -65,7 +65,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_PersoSet", _set];
     ["COMSPEC_ATAK_ShellTint", "coyote", "COMSPEC_ATAK_PersoShell", "Couleur de la coque", [["Coyote", "coyote"], ["Vert OD", "od"], ["Noir", "black"]]],
     ["COMSPEC_ATAK_ModuleTint", "olive", "COMSPEC_ATAK_PersoModule", "Couleur du module DL-7", [["Olive", "olive"], ["Noir", "black"], ["Tan", "tan"]]],
     ["COMSPEC_ATAK_Patch", "none", "COMSPEC_ATAK_PersoPatch", "Patch au dos", [["Aucun", "none"], ["France", "fr"], ["France basse visibilité", "fr_sub"], ["USA", "us"], ["USA basse visibilité", "us_ir"],
-        ["Crâne", "skull"], ["Croix", "crusader"], ["Alien", "alien"], ["COMSPEC", "comspec"], ["Nominatif", "name"]]],
+        ["Crâne", "skull"], ["Croix", "crusader"], ["Alien", "alien"], ["COMSPEC", "comspec"], ["Nominatif", "name"],
+        ["Insigne de l'uniforme", "uniform"]]],
     ["COMSPEC_ATAK_VestMount", "off", "COMSPEC_ATAK_PersoVest", "Téléphone sur le gilet", [["Non", "off"], ["Poitrine gauche", "left"], ["Centre", "center"], ["Poitrine droite", "right"]]]
 ];
 

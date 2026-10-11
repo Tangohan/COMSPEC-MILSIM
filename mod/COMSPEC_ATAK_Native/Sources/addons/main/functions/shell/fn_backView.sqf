@@ -1,7 +1,7 @@
 /*
     « Voir l'arrière » : le téléphone retourné au centre de l'écran (coque à la couleur choisie, plaque de fixation,
     appareil photo, étiquette, balise IR, antenne vissée, batterie externe fixée, patch). Clic, touche ou 12 s : fermé.
-    Modèles « durci XT » et « premium » (profil COMSPEC_ATAK_PhoneModel) : leur dos seul, sans la coque S7 et ses ajouts.
+    Modèles « tactique » et « premium » (profil COMSPEC_ATAK_PhoneModel) : leur dos seul, sans la coque S7 et ses ajouts.
 */
 disableSerialization;
 private _parent = findDisplay 46;
@@ -45,12 +45,15 @@ if (_s7 && {_ant isNotEqualTo []}) then {
     _a ctrlCommit 0;
 };
 // Patch sur le velcro (réglage Personnaliser) : patch 300 x 200 px au centre de la texture 320 x 320, x 440, y 790.
+// Nos patchs ("fr", "fr_sub", "us", "us_ir", "skull", "crusader", "alien", "comspec", "name") ou un insigne d'unité
+// des mods chargés (CfgUnitInsignia, carré : posé au centre du velcro), fn_patchTexture.
 private _patch = profileNamespace getVariable ["COMSPEC_ATAK_Patch", "none"];
-if (_s7 && {_patch in ["fr", "fr_sub", "us", "us_ir", "skull", "crusader", "alien", "comspec", "name"]}) then {
+([player, _patch] call comspec_atak_native_fnc_patchTexture) params ["_ptex", "_psq"];
+if (_s7 && {_ptex isNotEqualTo ""}) then {
     private _pc = _d ctrlCreate ["COMSPEC_RscPicture", -1];
-    _pc ctrlSetText format ["\z\comspec_atak_native\addons\main\data\patch_%1.paa", _patch];
+    _pc ctrlSetText _ptex;
     _pc ctrlSetTextColor [1, 1, 1, 1];
-    _pc ctrlSetPosition [_x + _w * 440 / 2048, _y + _h * 790 / 2048, _w * 320 / 2048, _h * 320 / 2048];
+    _pc ctrlSetPosition ([[_x + _w * 440 / 2048, _y + _h * 790 / 2048, _w * 320 / 2048, _h * 320 / 2048], [_x + _w * 485 / 2048, _y + _h * 835 / 2048, _w * 230 / 2048, _h * 230 / 2048]] select _psq);
     _pc ctrlCommit 0;
     if (_patch isEqualTo "name") then {
         // Bande nominative : indicatif choisi, sinon nom du joueur, brodé en majuscules.
@@ -70,7 +73,7 @@ _cap ctrlSetPosition [safeZoneX, safeZoneY + safeZoneH * 0.86, safeZoneW, safeZo
 _cap ctrlCommit 0;
 _cap ctrlSetStructuredText parseText format [
     "<t align='center' size='1.1' color='#e8eadf'>Dos du téléphone ATAK</t><br/><t align='center' size='0.85' color='#9aa59f'>%1 · IMEI %2 · Antenne : %3<br/>Balise IR %4 · Batterie externe : %5<br/>Clic ou touche pour fermer</t>",
-    [createHashMapFromArray [["rugged", "Durci XT"], ["iphone", "Premium"]] getOrDefault [_model, ""], "Coque " + (createHashMapFromArray [["coyote", "coyote"], ["od", "vert OD"], ["black", "noire"]] getOrDefault [_tint, "coyote"])] select _s7,
+    [createHashMapFromArray [["rugged", "Tactique EUD"], ["iphone", "Premium"]] getOrDefault [_model, ""], "Coque " + (createHashMapFromArray [["coyote", "coyote"], ["od", "vert OD"], ["black", "noire"]] getOrDefault [_tint, "coyote"])] select _s7,
     _ident param [1, "?"], [_ant param [2, ""], "aucune (port SMA bouché)"] select (_ant isEqualTo []),
     ["éteinte", "allumée"] select (["state"] call comspec_atak_native_fnc_irBeacon),
     ["aucune", (["label"] call comspec_atak_native_fnc_powerBank) select [17]] select (missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false])

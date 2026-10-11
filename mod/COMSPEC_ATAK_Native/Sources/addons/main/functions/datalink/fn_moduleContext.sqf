@@ -15,6 +15,11 @@ private _add = { params ["_o"]; if (_o isEqualType objNull && {!isNull _o} && {!
 { [_x] call _add; } forEach (synchronizedObjects _logic);
 { [_x] call _add; } forEach _units;
 private _zeus = hasInterface && {!isNull curatorCamera || {!isNull (findDisplay 312)}};
+// Zeus : la variable d'accroche de BIS peut arriver après l'appel du module ; l'objet sous la souris sert de repli.
+if (_zeus && {_targets isEqualTo []}) then {
+    curatorMouseOver params [["_mType", ""], ["_mObj", objNull]];
+    if (_mType isEqualTo "OBJECT") then { [_mObj] call _add; };
+};
 _out set ["run", true];
 _out set ["zeus", _zeus];
 _out set ["logic", _logic];

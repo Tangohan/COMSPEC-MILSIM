@@ -21,10 +21,13 @@ switch (_function) do {
         private _label = [_uri] call comspec_overwatch_connect_fnc_portalLabel;
         [format ["[Athena] Connecte a %1", _label], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
         // Pas de bandeau / chat pendant le handshake au démarrage (1 message max ailleurs)
+        // Un bandeau (et son bip) par 30 s au plus : une liaison qui bat ne doit pas notifier en boucle.
         if (
             !(missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false])
             && {[] call comspec_overwatch_connect_fnc_shouldShowScreenNotification}
+            && {(diag_tickTime - (missionNamespace getVariable ["COMSPEC_LinkNotifAt", -1e9])) >= 30}
         ) then {
+            missionNamespace setVariable ["COMSPEC_LinkNotifAt", diag_tickTime, false];
             ["COMSPEC_Info", [format ["Connecte a %1", _label]]] call comspec_overwatch_connect_fnc_showNotification;
         };
         [] call comspec_overwatch_connect_fnc_updateLinkDiary;
@@ -37,7 +40,10 @@ switch (_function) do {
         missionNamespace setVariable ["COMSPEC_LinkDetail", _msg, false];
         ["WARN", "Athena", format ["Extension Error: %1", _msg]] call comspec_overwatch_connect_fnc_log;
         [format ["[Athena] %1", _msg], "system"] call comspec_overwatch_connect_fnc_appendLinkLog;
-        ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
+        if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_LinkNotifAt", -1e9])) >= 30) then {
+            missionNamespace setVariable ["COMSPEC_LinkNotifAt", diag_tickTime, false];
+            ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
+        };
         [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     };
     case "AccessDenied": {

@@ -1,6 +1,7 @@
 """
-Rendus 3D (Blender / Cycles) des trois cadres alternatifs du terminal ATAK : smartphone durci (« rugged »), smartphone
-premium fin (« iphone ») et tablette véhicule durcie (« tablet »). Appareils génériques : aucune marque ni logo réel.
+Rendus 3D (Blender / Cycles) des trois cadres alternatifs du terminal ATAK : smartphone en coque tactique
+(« tactique », identifiant rugged), smartphone premium fin (« iphone ») et tablette véhicule durcie (« tablet »).
+Appareils génériques : aucune marque ni logo réel.
 Chaque appareil donne une face (paysage, trou d'écran transparent où le jeu incruste l'interface) et un dos (miroir
 horizontal de la face : la silhouette se superpose une fois retournée). Toiles 2048 x 2048 RGBA.
 Prérequis : pip install bpy (Blender comme module Python, 5.x) ; réutilise les aides de render_3d.py.
@@ -34,8 +35,9 @@ FONT_B, FONT_R = r3.FONT_B, r3.FONT_R
 SIZE = 2048
 HOLE = (455, 716, 1546, 1333)  # rectangle transparent de l'écran (inclus)
 RING = 6  # marge opaque minimale autour du trou
-BOUNDS = {"rugged": (200, 560, 1900, 1500), "iphone": (200, 560, 1900, 1500), "tablet": (150, 480, 1950, 1580)}
-ACCENT = (0.80, 0.43, 0.13)  # orange mat des touches et rondelles du modèle durci
+BOUNDS = {"rugged": (200, 560, 1900, 1560), "iphone": (200, 560, 1900, 1500), "tablet": (150, 480, 1950, 1580)}
+TAC_GREEN = (0.33, 0.34, 0.29)  # polymère vert ranger mat de la coque tactique
+TAC_BLACK = (0.055, 0.056, 0.055)  # polymère noir (clip, liseré, patin dorsal)
 
 
 # --- Repère de vue : coordonnées image (px, y vers le bas) -> scène ---
@@ -218,66 +220,202 @@ def camera(view):
         cam.rotation_euler = (0, math.pi, 0)  # regarde +Z ; la droite de l'image devient -X
 
 
-# --- 1. Smartphone durci ---
+# --- 1. Smartphone en coque tactique ---
+def mat_polymer(name, color, rough=0.66, grain=1.1, edge=0.35):
+    """Polymère injecté mat : grain fin en relief et chanfreins plus clairs (usure, reprise de lumière). Le facteur
+    d'usure vient de l'inclinaison de la normale (|N.z| < 1 sur les chanfreins), valable de face comme de dos."""
+    m = r3.mat_paint(name, color, rough=rough, grain=grain)
+    nt = m.node_tree
+    n = nt.nodes
+    bsdf = n["Principled BSDF"]
+    base = bsdf.inputs["Base Color"].links[0].from_socket
+    geo = n.new("ShaderNodeNewGeometry")
+    sep = n.new("ShaderNodeSeparateXYZ")
+    ab = n.new("ShaderNodeMath")
+    ab.operation = "ABSOLUTE"
+    ramp = n.new("ShaderNodeMapRange")
+    ramp.inputs["From Min"].default_value = 0.97
+    ramp.inputs["From Max"].default_value = 0.70
+    ramp.inputs["To Max"].default_value = edge
+    nt.links.new(geo.outputs["Normal"], sep.inputs["Vector"])
+    nt.links.new(sep.outputs["Z"], ab.inputs[0])
+    nt.links.new(ab.outputs[0], ramp.inputs["Value"])
+    mix = n.new("ShaderNodeMix")
+    mix.data_type = "RGBA"
+    nt.links.new(ramp.outputs["Result"], mix.inputs["Factor"])
+    nt.links.new(base, mix.inputs["A"])
+    mix.inputs["B"].default_value = r3.srgb(tuple(min(1.0, c * 1.55 + 0.06) for c in color))
+    nt.links.new(mix.outputs["Result"], bsdf.inputs["Base Color"])
+    return m
+
+
+def mat_stipple(name, color, scale=22.0, strength=0.8):
+    """Texture pointillée du patin dorsal (grain de préhension moulé, cellules de Voronoï en relief)."""
+    m = r3.mat_paint(name, color, rough=0.82, grain=1.4)
+    nt = m.node_tree
+    n = nt.nodes
+    vo = n.new("ShaderNodeTexVoronoi")
+    vo.feature = "F1"
+    vo.inputs["Scale"].default_value = scale
+    tc = n.new("ShaderNodeTexCoord")
+    nt.links.new(tc.outputs["Object"], vo.inputs["Vector"])
+    bump = n.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = strength
+    bump.inputs["Distance"].default_value = 0.01
+    nt.links.new(vo.outputs["Distance"], bump.inputs["Height"])
+    old = n["Principled BSDF"].inputs["Normal"].links[0].from_node
+    nt.links.new(old.outputs["Normal"], bump.inputs["Normal"])
+    nt.links.new(bump.outputs["Normal"], n["Principled BSDF"].inputs["Normal"])
+    return m
+
+
+def mat_knurl(name, color, scale=34.0):
+    """Métal anodisé sombre moleté (molette de blocage du rail)."""
+    m = r3.mat_simple(name, color, 0.36, 0.85)
+    nt = m.node_tree
+    n = nt.nodes
+    tc = n.new("ShaderNodeTexCoord")
+    mp = n.new("ShaderNodeMapping")
+    mp.inputs["Rotation"].default_value = (math.radians(45), 0, math.radians(45))
+    mp.inputs["Scale"].default_value = (scale, scale, scale)
+    ck = n.new("ShaderNodeTexChecker")
+    ck.inputs["Scale"].default_value = 1.0
+    bump = n.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = 0.7
+    bump.inputs["Distance"].default_value = 0.01
+    nt.links.new(tc.outputs["Object"], mp.inputs["Vector"])
+    nt.links.new(mp.outputs["Vector"], ck.inputs["Vector"])
+    nt.links.new(ck.outputs["Fac"], bump.inputs["Height"])
+    nt.links.new(bump.outputs["Normal"], n["Principled BSDF"].inputs["Normal"])
+    return m
+
+
+def carve(ob, cutters, bevel, segments=2):
+    """Évide ob par des découpeurs (booléen exact appliqué, matériau du découpeur transféré aux faces creusées :
+    fonds de rainures sombres), puis chanfrein. ob et les découpeurs sont créés sans biseau."""
+    for o in [ob] + cutters:
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        bm.to_mesh(o.data)
+        bm.free()
+    for i, c in enumerate(cutters):
+        m = ob.modifiers.new(f"cut{i}", "BOOLEAN")
+        m.object = c
+        m.operation = "DIFFERENCE"
+        m.solver = "EXACT"
+        m.material_mode = "TRANSFER"
+    ev = ob.evaluated_get(bpy.context.evaluated_depsgraph_get())
+    me = bpy.data.meshes.new_from_object(ev)
+    ob.modifiers.clear()
+    ob.data = me
+    for c in cutters:
+        bpy.data.objects.remove(c)
+    for p in me.polygons:
+        p.use_smooth = True
+    if bevel:
+        b = ob.modifiers.new("bev", "BEVEL")
+        b.width = bevel
+        b.segments = segments
+        b.limit_method = "ANGLE"
+        b.angle_limit = math.radians(50)
+        b.harden_normals = True
+    return ob
+
+
+def crisp(ob, segments=1):
+    """Chanfrein vif (un segment) au lieu de l'arrondi par défaut de rrect."""
+    ob.modifiers["bev"].segments = segments
+    return ob
+
+
+def hcyl(view, u0, u1, v, r, h, mat, verts=48, bevel=0.0):
+    """Cylindre couché dans le plan de l'image (axe le long de u), centré à la hauteur h."""
+    x0, x1 = view.X(u0), view.X(u1)
+    zc, half = view.Z(h), abs(x1 - x0) / 2
+    ob = r3.cyl((x0 + x1) / 2, view.Y(v), r / 100, zc - half, zc + half, mat, verts=verts, bevel=bevel)
+    ob.rotation_euler = (0, math.pi / 2, 0)
+    return ob
+
+
 def rugged(back):
-    D = 0.55
-    F, V = View(False, D), View(back, D, 1010)  # F : coque commune (coordonnées de la face) ; V : détails de la vue
-    rubber = r3.mat_paint("rubber", (0.115, 0.12, 0.12), rough=0.74, grain=1.6)
-    rim = r3.mat_paint("rim", (0.165, 0.17, 0.17), rough=0.62, grain=1.0)
-    bump = mat_grip("bumper", (0.10, 0.104, 0.104), scale=7.0, strength=0.6)
-    accent = r3.mat_paint("accent", ACCENT, rough=0.55, grain=0.8)
-    gun = r3.mat_simple("gun", (0.36, 0.37, 0.38), 0.3, 1.0)
-    dark = r3.mat_simple("dark", (0.02, 0.02, 0.02), 0.5)
-    glass = mat_glass("glass")
-    # Coque : bloc caoutchouc à flancs arrondis, butoirs d'angle, nervures de préhension, touches latérales.
-    F.box(250, 600, 1770, 1450, 125, -2 * D, 0, rubber, bevel=0.14, name="body")
-    for u0, v0 in ((240, 590), (1580, 590), (240, 1260), (1580, 1260)):
-        F.box(u0, v0, u0 + 200, v0 + 200, 92, -2 * D - 0.2, 0.2, bump, bevel=0.13, name="bumper")
-        F.box(u0 - 6, v0 - 6, u0 + 206, v0 + 206, 96, -2 * D - 0.1, 0.1, accent, bevel=0.05, name="bumper_trim")
-    for ux in (243, 1771):
-        for k in range(16):
-            F.box(ux, 812 + k * 28, ux + 6, 826 + k * 28, 3, -2 * D + 0.15, -0.15, bump, bevel=0.02)
-    F.box(1160, 588, 1330, 602, 6, -D - 0.22, -D + 0.22, accent, bevel=0.03, name="volume")
-    F.box(1380, 588, 1460, 602, 6, -D - 0.22, -D + 0.22, rim, bevel=0.03, name="power")
-    F.box(760, 1448, 900, 1463, 7, -D - 0.25, -D + 0.25, accent, bevel=0.035, name="ptt")
-    F.box(1610, 1448, 1660, 1458, 5, -D - 0.12, -D + 0.12, rim, bevel=0.02, name="sos")
+    """Coque tactique d'EUD : cadre polymère vert ranger chanfreiné, liseré noir fin autour de l'écran, embouts plus
+    épais (rainures de préhension côté bas du téléphone), clip en haut, rail de fixation à ailettes et molette en bas."""
+    D = 0.5
+    F, V = View(False, D), View(back, D, 1001)  # F : coque commune (coordonnées de la face) ; V : détails de la vue
+    frame = mat_polymer("frame", TAC_GREEN)
+    cap = mat_polymer("cap", tuple(c * 1.06 for c in TAC_GREEN), rough=0.7, edge=0.4)
+    black = mat_polymer("black", TAC_BLACK, rough=0.6, grain=1.0, edge=0.5)
+    groove = r3.mat_simple("groove", (0.02, 0.021, 0.018), 0.85)
+    anod = r3.mat_simple("anod", (0.07, 0.072, 0.075), 0.34, 0.85)
+    glass = mat_glass("glass", (0.006, 0.007, 0.008), 0.03)
+    # Cadre : prisme à coins modérément arrondis, fenêtre de l'écran (face) évidée, lèvre chanfreinée.
+    # (cadre limité aux bords longs : les embouts le recouvrent, rien ne déborde dans les rainures)
+    body = F.box(398, 625, 1604, 1425, 8, -2 * D - 0.06, 0.08, frame, bevel=0, name="frame")
+    win = F.box(422, 684, 1579, 1365, 30, -0.02, 1.0, black, bevel=0, name="win")
+    carve(body, [win], 0.07)
+    # Embouts (bords courts) plus épais, débordant un peu du cadre : coins extérieurs arrondis, arête intérieure
+    # droite ; rainures de préhension verticales sur l'embout droit (côté bas du téléphone), face et dos.
+    lcap = F.box(310, 619, 560, 1431, 76, -2 * D - 0.12, 0.14, cap, bevel=0, name="cap_l")
+    carve(lcap, [F.box(406, 500, 700, 1600, 1, -3, 3, cap, bevel=0, name="c")], 0.06)
+    rcap = F.box(1442, 619, 1692, 1431, 76, -2 * D - 0.12, 0.14, cap, bevel=0, name="cap_r")
+    cuts = [F.box(1300, 500, 1596, 1600, 1, -3, 3, cap, bevel=0, name="c")]
+    for v0, v1 in ((730, 960), (1090, 1320)):
+        cuts.append(F.box(1634, v0, 1654, v1, 10, 0.02, 1.0, groove, bevel=0, name="slot"))
+        cuts.append(F.box(1634, v0, 1654, v1, 10, -2 * D - 1.0, -2 * D - 0.06, groove, bevel=0, name="slot"))
+    carve(rcap, cuts, 0.05)
+    # Touches latérales sur la tranche haute : boutons noirs encadrés de gardes moulées.
+    for u0, u1 in ((1170, 1310), (1360, 1430)):
+        F.box(u0, 613, u1, 630, 6, -D - 0.16, -D + 0.16, black, bevel=0.03, name="key")
+        for g in (u0 - 22, u1 + 4):
+            F.box(g, 607, g + 18, 630, 7, -D - 0.24, -D + 0.24, cap, bevel=0.04, name="guard")
+    # Clip supérieur (noir), posé sur le dos.
+    F.box(888, 590, 1112, 640, 14, -2 * D - 0.30, -0.30, black, bevel=0.035, name="clip")
+    F.box(942, 563, 1058, 600, 16, -2 * D - 0.40, -0.36, black, bevel=0.035, name="clip_tab")
+    for k in range(3):
+        F.box(958, 570 + k * 9, 1042, 574 + k * 9, 2, -2 * D - 0.40, -0.345, black, bevel=0.008, name="clip_rib")
+    # Rail de fixation inférieur : platine anodisée, bloc à ailettes (créneaux), molette moletée à droite.
+    F.box(770, 1395, 1232, 1458, 14, -2 * D - 0.16, -0.62, anod, bevel=0.03, name="rail_plate")
+    F.box(792, 1440, 1210, 1522, 16, -2 * D - 0.26, -0.46, groove, bevel=0.04, name="rail_block")
+    for k in range(11):
+        u = 802 + k * 37.6
+        crisp(F.box(u, 1436, u + 22, 1550, 7, -2 * D - 0.40, -0.22, frame, bevel=0.045, name="fin"))
+    knurl = mat_knurl("knurl", (0.05, 0.05, 0.055))
+    hcyl(F, 1205, 1238, 1494, 33, -D - 0.2, anod, bevel=0.012)
+    hcyl(F, 1234, 1306, 1494, 18, -D - 0.2, anod, bevel=0.005)
+    hcyl(F, 1302, 1318, 1494, 32, -D - 0.2, anod, bevel=0.012)
+    hcyl(F, 1314, 1440, 1494, 33, -D - 0.2, knurl, verts=64)
+    for k in range(7):
+        hcyl(F, 1320 + k * 16, 1330 + k * 16, 1494, 36, -D - 0.2, knurl, verts=64, bevel=0.02)
+    hcyl(F, 1432, 1458, 1494, 36, -D - 0.2, anod, verts=64, bevel=0.07)
     if not back:
-        # Cadre surélevé autour d'une vitre plate pleine largeur.
-        V.ring((250, 600, 1770, 1450), (291, 641, 1729, 1409), 125, 84, -0.05, 0.10, rim, bevel=0.035)
-        V.box(292, 642, 1728, 1408, 84, -0.05, 0.05, glass, bevel=0.012, name="glass")
-        V.box(443, 704, 1559, 1346, 4, 0.05, 0.052, mat_glass("screen", (0.004, 0.006, 0.01), 0.02))
-        # Haut du téléphone à gauche : écouteur, caméra frontale, capteurs.
-        grille = r3.mat_paint("grille", (0.05, 0.05, 0.05), rough=0.9, grain=5.0)
-        V.box(316, 950, 334, 1100, 9, 0.03, 0.053, grille)
-        V.cyl(392, 1175, 16, 0.05, 0.056, dark)
-        V.dome(392, 1175, 10, 0.056, 0.03, r3.mat_simple("flens", (0.06, 0.08, 0.16), 0.05, coat=1.0))
-        V.cyl(392, 880, 6, 0.05, 0.056, r3.mat_simple("prox", (0.05, 0.03, 0.04), 0.1, coat=1.0))
-        # Bas du téléphone à droite : haut-parleur, marquage générique.
-        V.box(1690, 930, 1706, 1120, 8, 0.03, 0.053, grille)
-        V.text("X-TREM", 1625, 1025, 0.051, 34, r3.mat_simple("ink", (0.30, 0.31, 0.31), 0.5), rot=math.pi / 2)
-        for u, v in ((312, 662), (1708, 662), (312, 1388), (1708, 1388)):
-            V.torx(u, v, 14, 0.2, gun, dark, washer=accent)
+        # Verre noir (liseré fin et régulier autour de l'écran), dalle légèrement plus sombre.
+        V.box(422, 684, 1579, 1365, 30, -0.06, 0.0, glass, bevel=0.008, name="glass")
+        V.box(447, 708, 1554, 1341, 4, 0.0, 0.002, mat_glass("screen", (0.003, 0.004, 0.006), 0.02))
+        # Haut du téléphone à gauche : caméra frontale dans le liseré.
+        V.cyl(438, 1025, 8, 0.0, 0.004, r3.mat_simple("fcam", (0.0, 0.0, 0.0), 0.1, coat=1.0))
+        V.dome(438, 1025, 4.5, 0.004, 0.02, r3.mat_simple("flens", (0.06, 0.08, 0.16), 0.05, coat=1.0))
+        # Marquage moulé discret sur l'embout gauche.
+        V.text("COMSPEC", 358, 1025, 0.142, 26, r3.mat_paint("emb", tuple(c * 0.82 for c in TAC_GREEN), rough=0.75),
+               rot=math.pi / 2, extrude=0.004)
     else:
-        # Dos : plaque à motif losange, îlot photo côté haut (à droite en vue de dos), connecteur magnétique.
-        V.ring((250, 600, 1770, 1450), (300, 650, 1720, 1400), 125, 80, -0.05, 0.10, rim, bevel=0.035)
-        V.box(301, 651, 1719, 1399, 80, -0.05, 0.04, mat_grip("grip", (0.10, 0.105, 0.105), strength=0.8), bevel=0.02)
-        V.box(560, 760, 1300, 1290, 60, 0.03, 0.07, r3.mat_paint("panel", (0.13, 0.135, 0.135), rough=0.6), bevel=0.02)
-        V.text("X-TREM", 930, 1025, 0.07, 80, r3.mat_paint("emb", (0.17, 0.175, 0.175), rough=0.55), rot=-math.pi / 2,
-               extrude=0.012)
-        V.text("IP68 · MIL-STD-810H", 760, 1025, 0.07, 24, r3.mat_simple("ink2", (0.36, 0.37, 0.37), 0.5),
-               font=FONT_R, rot=-math.pi / 2)
-        V.box(1410, 830, 1660, 1220, 70, 0.0, 0.16, gun, bevel=0.04, name="cam_trim")
-        V.box(1424, 844, 1646, 1206, 58, 0.1, 0.19, mat_glass("camglass", (0.01, 0.01, 0.012)), bevel=0.02)
+        # Dos : plaque d'adaptation chanfreinée, patin texturé noir, insert photo noir côté haut (à droite de dos).
+        V.box(392, 660, 1300, 1390, 46, 0.0, 0.16, cap, bevel=0.035, name="plate")
+        V.box(432, 694, 1262, 1356, 34, 0.1, 0.27, mat_stipple("pad", TAC_BLACK), bevel=0.05, name="pad")
+        ink = r3.mat_paint("ink", (0.26, 0.265, 0.25), rough=0.8)
+        V.text("COMSPEC", 470, 1322, 0.27, 24, ink, align="LEFT", extrude=0.004)
+        V.text("COMSPEC", 846, 677, 0.16, 14, r3.mat_paint("emb", tuple(c * 0.8 for c in TAC_GREEN), rough=0.8),
+               font=FONT_R, extrude=0.003)
+        V.box(1336, 680, 1616, 1370, 38, 0.0, 0.14, black, bevel=0.03, name="cam_insert")
+        V.box(1364, 724, 1588, 930, 30, 0.1, 0.17, mat_glass("camglass", (0.008, 0.008, 0.01), 0.06), bevel=0.012)
         coat = r3.mat_simple("coat", (0.10, 0.12, 0.30), 0.04, coat=1.0)
-        V.lens(1535, 925, 52, 0.19, gun, dark, coat, ring_h=0.06)
-        V.lens(1535, 1050, 40, 0.19, gun, dark, coat, ring_h=0.06)
-        V.box(1508, 1130, 1562, 1170, 12, 0.19, 0.205, r3.mat_simple("flash", (0.93, 0.89, 0.72), 0.3, coat=0.8))
-        V.box(430, 975, 486, 1075, 26, -0.02, 0.06, dark, bevel=0.02, name="xlink")
-        gold = r3.mat_simple("gold", (0.85, 0.66, 0.30), 0.25, 1.0)
-        for v in (1005, 1045):
-            V.cyl(458, v, 9, 0.0, 0.07, gold, bevel=0.01)
-        for u, v in ((312, 662), (1708, 662), (312, 1388), (1708, 1388), (1010, 690), (1010, 1360)):
-            V.torx(u, v, 14 if u != 1010 else 12, 0.2 if u != 1010 else 0.1, gun, dark, washer=accent if u != 1010 else None)
+        gun = r3.mat_simple("gun", (0.30, 0.31, 0.32), 0.3, 1.0)
+        dark = r3.mat_simple("dark", (0.02, 0.02, 0.02), 0.5)
+        V.lens(1424, 800, 46, 0.15, gun, dark, coat, ring_h=0.05)
+        V.lens(1528, 800, 46, 0.15, gun, dark, coat, ring_h=0.05)
+        for u in (1450, 1502):
+            V.cyl(u, 885, 11, 0.15, 0.175, r3.mat_simple("flash", (0.93, 0.89, 0.72), 0.3, coat=0.8), verts=32)
+        V.text("TAC-EUD", 1476, 1320, 0.14, 20, ink, font=FONT_R, extrude=0.003)
     return {"power": 3300, "size": 14, "fill": 560}
 
 

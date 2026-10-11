@@ -143,13 +143,23 @@ switch (_phase) do {
     default {
         private _c = ["candidates"] call comspec_atak_native_fnc_linkAllyAction;
         uiNamespace setVariable ["COMSPEC_ATAK_LinkAllySeen", _c apply { _x select 0 }];
-        _rows append [
-            ["title", "Liaison ATAK"],
-            ["text", "<t size='0.85' color='#c9d4cf'>Approchez-vous à moins de 2 m d'un équipier tué, inconscient ou dont l'ATAK est hors service (ou de son téléphone tombé au sol), puis reliez les deux appareils : identité, rapport de décès ou de blessure, et données qu'il n'a pas pu transmettre.</t>"]
-        ];
-        if ((count _c) isEqualTo 0) then {
-            _rows pushBack ["text", "<t color='#8a9a93'>Aucun équipier équipé d'un téléphone à portée de lien.</t>"];
+        // Écran d'accueil (retour de jeu : un long paragraphe et une ligne vide) : état en un coup d'œil, trois étapes
+        // courtes, puis les équipiers proches avec leur distance ; RELIER s'active à moins de 2 m.
+        private _near = (player nearEntities ["CAManBase", 50]) select {
+            _x isNotEqualTo player && {[_x] call comspec_atak_native_fnc_hasDevice}
+            && {!alive _x || {(side group _x) isEqualTo (side group player)}}
+            && {(_c findIf { (_x select 1) isEqualTo _x }) < 0}
         };
+        _near = [_near, [], { player distance _x }, "ASCEND"] call BIS_fnc_sortBy;
+        private _ready = count _c;
+        _rows append [
+            ["hero", _icon, format ["<t size='1.15' font='RobotoCondensedBold'>Liaison ATAK</t><br/>%1", [
+                format ["<t color='#5cc76b'>%1 appareil(s) à portée de lien</t>", _ready],
+                ["<t color='#8a9a93'>Aucun équipier à moins de 2 m</t>", format ["<t color='#f2ab33'>%1 équipier(s) à moins de 50 m : approchez-vous</t>", count _near]] select ((count _near) > 0)
+            ] select (_ready isEqualTo 0)]],
+            ["text", "<t size='0.85' color='#c9d4cf'><t color='#5cc76b' font='RobotoCondensedBold'>1</t>  Approchez-vous à 2 m du blessé, du corps ou de son téléphone tombé<br/><t color='#5cc76b' font='RobotoCondensedBold'>2</t>  RELIER, puis gardez le contact pendant la liaison<br/><t color='#5cc76b' font='RobotoCondensedBold'>3</t>  Lisez son identité, envoyez son rapport, renvoyez ses données</t>"]
+        ];
+        if (_ready > 0) then { _rows pushBack ["section", "À portée de lien", "Moins de 2 m"]; };
         {
             _x params ["_obj", "_owner", "_dist", "_what"];
             private _st2 = switch (true) do {
@@ -163,6 +173,15 @@ switch (_phase) do {
                 [name _owner] call _esc, _st2, _what, _dist toFixed 1, createHashMapFromArray [["OK", "intact"], ["CRACKED", "fêlé"], ["OFF", "éteint"], ["BROKEN", "détruit"]] getOrDefault [_dev, "?"]],
                 [["RELIER", compile format ["['link', objectFromNetId '%1'] call comspec_atak_native_fnc_linkAllyAction;", netId _obj], true]]];
         } forEach _c;
+        if ((count _near) > 0) then {
+            _rows pushBack ["section", "À proximité", "Équipiers avec un téléphone, à moins de 50 m"];
+            {
+                private _down = !alive _x || {lifeState _x isEqualTo "INCAPACITATED"} || {_x getVariable ["ACE_isUnconscious", false]};
+                _rows pushBack ["person", _icon, format ["<t font='RobotoCondensedBold'>%1</t>  %2<br/><t size='0.8' color='#8a9a93'>%3 m · approchez-vous à 2 m</t>",
+                    [name _x] call _esc, ["", "<t color='#f2ab33'>à terre</t>"] select (_down && {["state", "nfc"] call comspec_atak_native_fnc_medShow}), round (player distance _x)],
+                    [["TROP LOIN", {}, false, false]], [0.55, 0.6, 0.58, 1]];
+            } forEach (_near select [0, 6]);
+        };
         _rows pushBack ["buttons", [["ACTUALISER", { ["refresh"] call comspec_atak_native_fnc_linkAllyAction; }]]];
     };
 };

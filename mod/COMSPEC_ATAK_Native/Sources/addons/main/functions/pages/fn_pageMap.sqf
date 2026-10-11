@@ -46,15 +46,15 @@ if (((["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_
 
 // Carte « moi » (bas droite) et panneau curseur (bas gauche) : fond + liseré + texte en retrait.
 // Police = petite police × taille des textes de carte (Réglages > Carte) ; hauteur calculée sur le nombre de lignes
-// (le panneau curseur en a 4 : grille, altitude, distance, azimut) pour ne jamais couper la dernière.
+// (le panneau curseur en a 2 : grille et altitude, distance et azimut) pour ne jamais couper la dernière.
 private _mini = _l get "mini";
 private _mts = ((profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25]) max 0.8) min 2.2;
-private _panFs = _fs * ([0.85, 0.7] select _mini) * _mts;
+private _panFs = _fs * ([0.78, 0.7] select _mini) * _mts;
 private _panW = ((((_mw * 0.34) min (_font * 9 / _ratio)) * ([1, 0.75] select _mini)) * (_mts max 1)) min (_mw * ([0.44, 0.62] select _mini));
 private _panIn = _pad * 0.6;
 private _panLine = _panFs * 1.18;
 private _panel = {
-    params ["_px0", "_lines"];
+    params ["_px0", "_lines", ["_panW", _panW]];
     private _h = _panLine * _lines + _panIn * 2;
     private _py0 = _by + _mh - _h - _pad;
     private _bg = ["COMSPEC_RscText", [_px0, _py0, _panW, _h]] call _mk;
@@ -65,13 +65,15 @@ private _panel = {
     _t ctrlSetFontHeight _panFs;
     [_t, _h]
 };
-([_bx + _mw - _panW - _pad, [3, 2] select _mini] call _panel) params ["_me", "_meH"];
+// En main, la barre d'outils occupe le bord droit : la carte « moi » se cale à sa gauche (elle passait dessous).
+private _toolCol = [0, ((((_mh - 2 * _pad) / 7) min (_font * 2.1)) / _ratio) + _pad] select _interactive;
+([_bx + _mw - _panW - _pad - _toolCol, [3, 2] select _mini] call _panel) params ["_me", "_meH"];
 _ov set ["me", _me];
 private _panH = _meH;
 
 if (_interactive) then {
     // Panneau curseur (bas gauche) + bouton outils
-    ([_bx + _pad, 4] call _panel) params ["_cur", "_curH"];
+    ([_bx + _pad, 2, _panW * 0.9] call _panel) params ["_cur", "_curH"];
     _panH = _curH;
     _ov set ["cursor", _cur];
     // Bouton « OUTILS » bien visible (icône + libellé) : ouvre le menu des outils carte.
@@ -193,6 +195,8 @@ if (_interactive) then {
         private _sx = if (_open) then { _bx + _bw - (_l get "inspW") + _pad / 2 } else { _tx + _iw + _pad / 2 - _sw };
         private _sy = if (_open) then { _by + _pad / 2 } else { _ty0 + _ih * (count _tools) + _pad * 1.5 };
         if (!_open) then { _sh = _ih; _si = _iw; };
+        // Pas de place sous la barre d'outils (drone appairé, petit écran) : l'œil passe à sa gauche, en haut.
+        if (!_open && {_sy + _sh > _by + _mh - _pad}) then { _sx = _tx - _iw - _pad; _sy = _ty0 - _pad / 2; };
         private _sbg = ["COMSPEC_RscMapPanel", [_sx, _sy, _sw, _sh]] call _mk;
         if (_open) then { _sbg ctrlSetBackgroundColor [0.10, 0.20, 0.12, 0.92]; };
         private _sic = ["COMSPEC_RscIcon", [_sx + (_si * 0.15), _sy + (_sh * 0.15), _si * 0.7, _sh * 0.7], _dir + "app_intel.paa"] call _mk;

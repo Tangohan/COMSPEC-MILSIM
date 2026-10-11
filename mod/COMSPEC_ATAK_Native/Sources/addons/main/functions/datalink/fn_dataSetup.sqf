@@ -50,6 +50,12 @@ _out set ["files", _files];
     if (_v isEqualType "") then { _v = parseNumber _v; };
     _out set [_k, (_v max _min) min _max];
 } forEach [["attempts", 0, 20], ["crackTime", 5, 1800], ["duration", 3, 3600]];
+// Cases à cocher reçues en nombre ou en texte (script, champ init) : « if !(…) » attend un booléen (forçage, usage unique).
+{
+    private _v = _out get _x;
+    if (_v isEqualType 0) then { _out set [_x, _v > 0]; };
+    if (_v isEqualType "") then { _out set [_x, (toLower trim _v) in ["true", "1", "oui", "yes"]]; };
+} forEach ["crack", "oneShot"];
 if !((_out get "theme") in ["windows", "linux", "militaire", "scada", "telephone", "coffre"]) then { _out set ["theme", "windows"]; };
 if !((_out get "port") in ["usb", "rj45", "serie"]) then { _out set ["port", "usb"]; };
 if !((_out get "onFail") in ["lock", "wipe", "alarm", "none"]) then { _out set ["onFail", "lock"]; };

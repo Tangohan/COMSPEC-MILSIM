@@ -137,13 +137,14 @@ if (!isNull _target) then {
         };
     };
 
-    private _etat = if (alive _target) then { "" } else { " — personne décédée" };
+    private _etat = if (alive _target) then { "" } else { " (décédée)" };
     private _cible = trim (format ["%1 %2", _edenFirst, _edenLast]);
     if (_cible isEqualTo "") then { _cible = _edenAlias; };
     if (_cible isEqualTo "") then { _cible = name _target; };
     if (_cible isEqualTo "" || {_cible find "Error:" >= 0}) then { _cible = "personne visée"; };
     (_disp displayCtrl 9500) ctrlSetStructuredText parseText format [
-        "<t align='center' size='0.64' color='#c8eadc'>Cible : %1%2 — inventaire et statut préremplis si disponibles.</t>",
+        // Une seule ligne sous les tuiles : la suite (« inventaire et statut préremplis… ») était coupée.
+        "<t align='center' size='0.56' color='#c8eadc'>Cible : %1%2</t>",
         _cible,
         _etat
     ];
@@ -221,7 +222,11 @@ if (_med isEqualType createHashMap && {(count _med) > 0}) then {
 // Nouvelle fiche : aucun échantillon, aucune signature — sauf reprise après un relevé.
 private _resume = uiNamespace getVariable ["COMSPEC_SsePerson_ResumeCollect", false];
 if (!_resume) then {
-    uiNamespace setVariable ["COMSPEC_SsePerson_Samples", []];
+    // Relevés déjà faits sur cette personne (fiche précédente, hors liaison) : repris.
+    private _prior = if (isNull _target) then { [] } else { _target getVariable ["comspec_sse_bioSamples", []] };
+    if (!(_prior isEqualType [])) then { _prior = []; };
+    uiNamespace setVariable ["COMSPEC_SsePerson_Samples", +(_prior select { (_x isEqualType []) && {(count _x) >= 3} })];
+    uiNamespace setVariable ["COMSPEC_SsePerson_BioMsg", ""];
     uiNamespace setVariable ["COMSPEC_SsePerson_Signature", []];
     uiNamespace setVariable ["COMSPEC_SsePerson_Query", []];
     uiNamespace setVariable ["COMSPEC_SsePerson_QueryPending", false];

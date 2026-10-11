@@ -16,6 +16,15 @@ private _net = switch (toLower _legacy) do {
     case "degraded": { "DEGRADED" };
     default { _state getOrDefault ["networkState", "OFFLINE"] };
 };
+// Anti-battement : un nouvel état doit tenir 3 s (perte) ou 5 s (retour) avant d'être affiché, sinon la barre
+// d'état clignote connecté / hors ligne quand COMSPEC Link hésite entre deux états.
+(uiNamespace getVariable ["COMSPEC_ATAK_NetShown", [_net, _net, diag_tickTime]]) params ["_netCur", "_netCand", "_netSince"];
+if (_net isEqualTo _netCur) then { _netCand = _net; _netSince = diag_tickTime; } else {
+    if (_net isNotEqualTo _netCand) then { _netCand = _net; _netSince = diag_tickTime; };
+    if (diag_tickTime - _netSince >= ([5, 3] select (_net isEqualTo "OFFLINE"))) then { _netCur = _net; };
+};
+uiNamespace setVariable ["COMSPEC_ATAK_NetShown", [_netCur, _netCand, _netSince]];
+_net = _netCur;
 _state set ["networkState", _net];
 private _sig = _d displayCtrl 88527;
 // Barres : débit simulé (fn_linkQuality), qui tient compte de la liaison Athena quand Overwatch est là.

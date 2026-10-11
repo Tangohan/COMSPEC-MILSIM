@@ -238,14 +238,24 @@ switch (_act) do {
             private _xy = (_txt splitString ", ") apply { parseNumber _x };
             [_xy param [0, 0], _xy param [1, 0]]
         } else {
-            private _g = [(_txt splitString " ") joinString ""] call BIS_fnc_gridToPos;
-            (_g select 0) vectorAdd ((_g select 1) vectorMultiply 0.5)
+            // Carroyage en tête (« 045123 libellé » des marqueurs d'un téléphone capturé) : seuls les blocs de chiffres
+            // du début, sinon le libellé fausse BIS_fnc_gridToPos. Centre de la case calculé à la main (vecteurs 2D).
+            private _grid = "";
+            {
+                if ((_x regexReplace ["[0-9]", ""]) isNotEqualTo "") exitWith {};
+                _grid = _grid + _x;
+            } forEach (_txt splitString " ");
+            if (_grid isEqualTo "") then { [] } else {
+                ([_grid] call BIS_fnc_gridToPos) params [["_gp", [0, 0]], ["_gs", [0, 0]]];
+                [(_gp select 0) + (_gs param [0, 0]) / 2, (_gp select 1) + (_gs param [1, 0]) / 2]
+            }
         };
+        if ((count _pos) < 2) exitWith { ["WARNING", "Coordonnées illisibles", 3, 20] call comspec_atak_native_fnc_notify; };
         private _n = format ["COMSPEC_DATA_%1_%2", _arg, floor diag_tickTime];
         private _m = createMarkerLocal [_n, _pos];
         _m setMarkerTypeLocal "mil_objective";
         _m setMarkerColorLocal "ColorOrange";
-        _m setMarkerText (_e select 1);
+        _m setMarkerTextLocal (_e select 1); // local : setMarkerText rendait le marqueur visible de tous
         ["SUCCESS", format ["%1 marqué sur la carte (%2)", _e select 1, mapGridPosition _pos], 3, 20] call comspec_atak_native_fnc_notify;
     };
     case "play": {

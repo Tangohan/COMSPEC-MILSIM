@@ -75,7 +75,11 @@ if (!isNil "comspec_overwatch_connect_fnc_isLinkDegradeSimActive"
 if !(_result getOrDefault ["can_transmit", true]) exitWith { _result };
 
 if (missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]) then {
-    if !([] call comspec_overwatch_connect_fnc_isNearLiveRelay) then {
+    // Passerelle de véhicule du téléphone natif (relais monté, poste de commandement) : vaut un relais.
+    if (
+        !([] call comspec_overwatch_connect_fnc_isNearLiveRelay)
+        && {isNil "comspec_atak_native_fnc_vehicleGateway" || {(["nearest"] call comspec_atak_native_fnc_vehicleGateway) isEqualTo []}}
+    ) then {
         _result set ["can_transmit", false];
         _result set ["mode", "none"];
         _result set ["reason", "no_relay"];

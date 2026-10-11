@@ -59,9 +59,12 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
                 _done pushBack _x;
                 private _act = ["COMSPEC_ATAK_DataLink", "Brancher l'ATAK (câble DL-7)", "\z\comspec_atak_native\addons\main\data\app_datalink.paa",
                     { params ["_target"]; ["connect", _target] call comspec_atak_native_fnc_dataAction; },
-                    { params ["_target"]; ["can", _target] call comspec_atak_native_fnc_dataAction }
+                    { params ["_target"]; ["can", _target] call comspec_atak_native_fnc_dataAction },
+                    {}, [], [0, 0, 0], 3
                 ] call ace_interact_menu_fnc_createAction;
-                [_x, 0, [], _act] call ace_interact_menu_fnc_addActionToObject;
+                // Corps / joueur capturé : sous « Interactions » (point au torse) ; à la racine, le point tombait aux pieds
+                // de l'unité, hors de portée (2 m de la tête). Objets : racine, portée du câble.
+                [_x, 0, [[], ["ACE_MainActions"]] select (_x isKindOf "CAManBase"), _act] call ace_interact_menu_fnc_addActionToObject;
             };
         } forEach (missionNamespace getVariable ["COMSPEC_ATAK_DataNodes", []]);
         missionNamespace setVariable ["COMSPEC_ATAK_DataAce", _done select { !isNull _x }];

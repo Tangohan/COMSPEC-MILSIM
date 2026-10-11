@@ -2,7 +2,7 @@
     Géométrie du terminal.
     - Porté (HUD) ou en main mini : téléphone vertical ou horizontal, dans le coin choisi (bas droit par défaut).
     - En main plein écran : téléphone horizontal agrandi au centre.
-    La coque est la texture carrée du S7 (tools/src) ou d'un autre modèle (durci XT, premium, tablette de bord des
+    La coque est la texture carrée du S7 (tools/src) ou d'un autre modèle (tactique, premium, tablette de bord des
     véhicules : tools/render_phones.py) ; l'écran occupe la même zone transparente sur toutes.
 */
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -23,7 +23,7 @@ private _term = [player] call comspec_atak_native_fnc_vehicleTerminal;
 private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
 if (_term in ["vehicle", "cp"] && {profileNamespace getVariable ["COMSPEC_ATAK_VehTablet", true]}) then { _model = "tablet"; };
 private _visLand = (createHashMapFromArray [
-    ["s7", [0.1025, 0.2798, 0.9263, 0.8535]], ["rugged", [0.1138, 0.2847, 0.8726, 0.7163]], ["iphone", [0.1914, 0.3159, 0.7861, 0.6851]], ["tablet", [0.0850, 0.2510, 0.9258, 0.7549]]
+    ["s7", [0.1025, 0.2798, 0.9263, 0.8535]], ["rugged", [0.1509, 0.2744, 0.8267, 0.7573]], ["iphone", [0.1914, 0.3159, 0.7861, 0.6851]], ["tablet", [0.0850, 0.2510, 0.9258, 0.7549]]
 ]) getOrDefault [_model, []];
 if (_visLand isEqualTo []) then { _model = "s7"; _visLand = [0.1025, 0.2798, 0.9263, 0.8535]; };
 // Vertical : texture tournée d'un quart de tour horaire.

@@ -15,12 +15,13 @@ if (!isNull _cur) then {
     private _text = if ((count _measure) >= 2) then {
         _measure params ["_a", "_b"];
         private _az = _a getDir _b;
-        format ["<t size='0.85' color='#f2ab33'>MESURE A-B</t><br/>%1 m<br/>%2° %3<br/>Δ alt %4 m", round (_a distance2D _b), round _az, [_az] call _cardinal, round ((getTerrainHeightASL _b) - (getTerrainHeightASL _a))]
+        format ["<t size='0.85' color='#f2ab33'>A-B</t> %1 m · %2° %3<br/><t color='#8a9a93'>Δ alt %4 m</t>", round (_a distance2D _b), round _az, [_az] call _cardinal, round ((getTerrainHeightASL _b) - (getTerrainHeightASL _a))]
     } else {
         if ((count _p) < 2) then { "<t size='0.85' color='#8a9a93'>Survolez la carte</t>" } else {
             private _az = player getDir _p;
             private _alt = getTerrainHeightASL _p;
-            format ["<t align='center'>%1<br/>%2 m <t color='#8a9a93'>(%3%4)</t><br/>%5 m<br/>%6° %7</t>",
+            // Deux lignes compactes (retour de jeu : le panneau à quatre lignes centrées masquait la carte).
+            format ["%1 · %2 m <t color='#8a9a93'>(%3%4)</t><br/>%5 m · %6° %7",
                 [_p] call comspec_atak_native_fnc_gridRef, round _alt, ["", "+"] select (_alt >= ((getPosASL player) select 2)), round (_alt - ((getPosASL player) select 2)),
                 round (player distance2D _p), round _az, [_az] call _cardinal]
         }

@@ -33,7 +33,7 @@ if (isNull _cur || {(missionNamespace getVariable ["COMSPEC_ATAK_VestKey", []]) 
     _cur setVariable ["COMSPEC_ATAK_Vest", true, true];
     _cur setObjectTextureGlobal [0, format ["%1vest_phone%2_co.paa", _d, ["", "_" + _tint] select (_tint in ["od", "black"])]];
     // Patch du dos : invisible sans patch ou écran vers l'extérieur (le dos est alors contre le gilet).
-    _cur setObjectTextureGlobal [1, ["", format ["%1patch_%2.paa", _d, _patch]] select (_patch isNotEqualTo "none" && {_face isEqualTo "back"})];
+    _cur setObjectTextureGlobal [1, ["", ([player, _patch] call comspec_atak_native_fnc_patchTexture) select 0] select (_face isEqualTo "back")];
     // Décalage depuis spine3 (repère du corps : x à droite, y devant, z en haut).
     // Modèle : l'avant (+Z du P3D, vectorDir) est le dos du téléphone, l'écran regarde vers l'arrière.
     private _x = switch (_mount) do { case "left": { -0.12 }; case "right": { 0.12 }; default { 0 }; };

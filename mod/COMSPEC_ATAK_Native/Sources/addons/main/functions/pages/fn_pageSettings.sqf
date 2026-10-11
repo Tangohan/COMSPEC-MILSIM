@@ -86,7 +86,7 @@ private _perso = [
     ["COMSPEC_ATAK_Accent", "GREEN", "Couleur d'accent", [["VERT", "GREEN"], ["BLEU", "BLUE"], ["ORANGE", "ORANGE"], ["ROUGE", "RED"], ["VIOLET", "PURPLE"], ["SABLE", "SAND"]]] call _profSegment,
     ["COMSPEC_ATAK_Shell", "auto", "Coque", [["AUTO", "auto"], ["JOUR", "day"], ["NUIT", "night"]], "auto : nuit après le coucher du soleil"] call _profSegment,
     ["COMSPEC_ATAK_ShellTint", "coyote", "Couleur de la coque", [["COYOTE", "coyote"], ["VERT OD", "od"], ["NOIR", "black"]]] call _profSegment,
-    ["COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone", [["DURCI S7", "s7"], ["DURCI XT", "rugged"], ["PREMIUM", "iphone"]], "Coque affichée autour de l'écran ; la couleur de coque ne change que le S7"] call _profSegment,
+    ["COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone", [["DURCI S7", "s7"], ["TACTIQUE", "rugged"], ["PREMIUM", "iphone"]], "Coque affichée autour de l'écran ; la couleur de coque ne change que le S7"] call _profSegment,
     ["COMSPEC_ATAK_VehTablet", true, "", "Tablette dans les véhicules", "Tablette durcie de bord affichée à la place du téléphone dans un véhicule équipé ou au poste de commandement"] call _profSwitch,
     ["COMSPEC_ATAK_ModuleTint", "olive", "Module DL-7", [["OLIVE", "olive"], ["NOIR", "black"], ["TAN", "tan"]], "Couleur du module de l'app Extraction"] call _profSegment,
     ["segment", "Antenne (port SMA)", [["AUCUNE", { ["unmount"] call comspec_atak_native_fnc_antenna; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, (["get"] call comspec_atak_native_fnc_antenna) isEqualTo []]]
@@ -95,7 +95,35 @@ private _perso = [
                 ((["get"] call comspec_atak_native_fnc_antenna) param [0, ""]) isEqualTo (_x select 0)]
         }), "Antennes d'extension de débit portées dans l'inventaire : courte, fouet ou patch (à l'arrêt)"],
     ["COMSPEC_ATAK_Patch", "none", "Patch au dos", [["AUCUN", "none"], ["FRANCE", "fr"], ["FRANCE BD", "fr_sub"], ["USA", "us"], ["USA BD", "us_ir"]]] call _profSegment,
-    ["COMSPEC_ATAK_Patch", "none", "", [["CRÂNE", "skull"], ["CROIX", "crusader"], ["ALIEN", "alien"], ["COMSPEC", "comspec"], ["NOMINATIF", "name"]], "Patch velcro visible avec « Voir l'arrière » ; BD = basse visibilité. Nominatif : votre nom, ou le texte ci-dessous"] call _profSegment,
+    ["COMSPEC_ATAK_Patch", "none", "", [["CRÂNE", "skull"], ["CROIX", "crusader"], ["ALIEN", "alien"], ["COMSPEC", "comspec"], ["NOMINATIF", "name"]]] call _profSegment,
+    ["COMSPEC_ATAK_Patch", "none", "", [["INSIGNE DE L'UNIFORME", "uniform"]], "Patch velcro visible avec « Voir l'arrière » ; BD = basse visibilité. Nominatif : votre nom, ou le texte ci-dessous. Insignes : ceux des mods chargés (RHS, 3CB, unités…)"] call _profSegment
+] + (call {
+    // Insignes d'unité des mods chargés et de la mission (CfgUnitInsignia) : on les parcourt un par un avec l'aperçu.
+    private _list = uiNamespace getVariable ["COMSPEC_ATAK_InsList", []];
+    if (_list isEqualTo []) then {
+        {
+            private _t = getText (_x >> "texture");
+            if (_t isNotEqualTo "" && {(_t select [0, 1]) isNotEqualTo "\"}) then { _t = "\" + _t; };
+            if (_t isNotEqualTo "" && {(getNumber (_x >> "scope")) >= 1 || {!isNumber (_x >> "scope")}}) then {
+                _list pushBackUnique [configName _x, [getText (_x >> "displayName"), configName _x] select ((getText (_x >> "displayName")) isEqualTo ""), _t];
+            };
+        } forEach (("true" configClasses (configFile >> "CfgUnitInsignia")) + ("true" configClasses (missionConfigFile >> "CfgUnitInsignia")));
+        _list sort true;
+        uiNamespace setVariable ["COMSPEC_ATAK_InsList", _list];
+    };
+    if (_list isEqualTo []) exitWith { [["text", "<t size='0.8' color='#8a9a93'>Aucun insigne d'unité fourni par les mods chargés.</t>"]] };
+    private _cur = profileNamespace getVariable ["COMSPEC_ATAK_Patch", "none"];
+    private _i = uiNamespace getVariable ["COMSPEC_ATAK_InsIdx", -1];
+    if (_i < 0) then { _i = (_list findIf { ("ins:" + (_x select 0)) isEqualTo _cur }) max 0; };
+    _i = _i mod (count _list);
+    (_list select _i) params ["_cls", "_name", "_tex"];
+    private _on = ("ins:" + _cls) isEqualTo _cur;
+    private _go = { params ["_d"]; format ["private _l = uiNamespace getVariable ['COMSPEC_ATAK_InsList', []]; uiNamespace setVariable ['COMSPEC_ATAK_InsIdx', ((uiNamespace getVariable ['COMSPEC_ATAK_InsIdx', %1]) + %2 + count _l) mod ((count _l) max 1)]; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _i, _d] };
+    [
+        ["hero", _tex, format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>Insigne %2 / %3%4</t>", _name regexReplace ["[<>&]", ""], _i + 1, count _list, ["", " · choisi"] select _on]],
+        ["buttons", [["◀", compile ([-1] call _go)], [["METTRE CET INSIGNE", "INSIGNE CHOISI"] select _on, compile format ["['COMSPEC_ATAK_Patch', 'ins:%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_ProfSet');", _cls], true, !_on], ["▶", compile ([1] call _go)]]]
+    ]
+}) + [
     ["COMSPEC_ATAK_VestMount", "off", "Téléphone sur le gilet", [["NON", "off"], ["GAUCHE", "left"], ["CENTRE", "center"], ["DROITE", "right"]], "Le téléphone (notre modèle 3D) est accroché au torse et visible par les autres joueurs, sur tous les gilets"] call _profSegment,
     ["COMSPEC_ATAK_VestDepth", 0.19, "Épaisseur du gilet", [["FIN", 0.15], ["NORMAL", 0.19], ["ÉPAIS", 0.23]], "Écarte le téléphone du torse s'il rentre dans le gilet"] call _profSegment,
     ["COMSPEC_ATAK_VestFace", "back", "Sens sur le gilet", [["DOS ET PATCH", "back"], ["ÉCRAN", "screen"]], "Dos vers l'extérieur (pochette rabattue, patch visible) ou écran vers l'extérieur"] call _profSegment,
@@ -237,7 +265,8 @@ private _hw = [
     ["switch", "Bluetooth", (["state"] call comspec_atak_native_fnc_btAction) get "on", { ["toggle"] call comspec_atak_native_fnc_btAction; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, "Appairage par code et partage de sons avec les ATAK proches (indépendant du mode avion)"],
     ["section", "Matériel et réseau", "Simulations réglées par le serveur (réglages CBA)"],
     ["info", "Dégâts du téléphone", [ "<t color='#8a9a93'>simulation coupée</t>", format ["%1 · usure %2 %%", ["<t color='#5cc76b'>intact</t>", format ["<t color='#f2ab33'>%1</t>", _hp get "reason"]] select ((_hp get "state") isNotEqualTo "OK"), round ((_hp get "damage") * 100)]] select (missionNamespace getVariable ["comspec_atak_native_damage_sim", true])],
-    ["buttons", [["NETTOYER L'ÉCRAN", { [{ ["start"] call comspec_atak_native_fnc_screenClean; }] call CBA_fnc_execNextFrame; }, false, ["can"] call comspec_atak_native_fnc_screenClean]]],
+    ["buttons", [["NETTOYER L'ÉCRAN", { [{ ["start"] call comspec_atak_native_fnc_screenClean; }] call CBA_fnc_execNextFrame; }, false, ["can"] call comspec_atak_native_fnc_screenClean],
+        ["REDÉMARRER LE TÉLÉPHONE", { ["reboot"] call comspec_atak_native_fnc_deviceRepair; }]]],
     ["info", "Débit simulé", [ "<t color='#8a9a93'>simulation coupée</t>", format ["%1 · %2", _lq get "label", [format ["%1 kbit/s", _lq get "kbps"], format ["%1 Mbit/s", ((_lq get "kbps") / 1000) toFixed 1]] select ((_lq get "kbps") >= 1000)]] select (_lq get "sim")]
 ];
 
