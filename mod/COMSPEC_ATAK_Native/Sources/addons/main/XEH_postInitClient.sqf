@@ -73,6 +73,27 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
     ["INFO", ["Mode discrétion désactivé", "Mode discrétion : aucun son"] select _on, 2, 10] call comspec_atak_native_fnc_notify;
     true
 }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
+// Marquage au viseur : caméra du drone (vue drone ou app Drone à l'écran), sinon appareil photo du téléphone.
+["COMSPEC ATAK", "LockMark", ["Marquer la cible (réticule)", "Accroche la cible sous le réticule : caméra du drone si sa vue est à l'écran (carte ou app Drone), sinon l'appareil photo du téléphone (touche T en mode photo)."], {
+    if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { false };
+    private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+    private _page = _s getOrDefault ["activePage", ""];
+    private _droneOnScreen = !isNull ([] call comspec_atak_native_fnc_display) && {!isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull])}
+        && {_page isEqualTo "DRONE" || {_page isEqualTo "MAP" && {(_s getOrDefault ["droneView", "OFF"]) isNotEqualTo "OFF"}}};
+    if (_droneOnScreen) then { ["lock"] call comspec_atak_native_fnc_droneAction; } else {
+        if (uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) then { ["mark", "PHONE"] call comspec_atak_native_fnc_lockAction; } else {
+            ["INFO", "Marquer : ouvrez l'appareil photo ou la vue drone pour viser", 3, 20] call comspec_atak_native_fnc_notify;
+        };
+    };
+    true
+}, "", [0x14, [false, true, false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "DroneView", ["Vue drone sur la carte", "Carte, vue drone à la place de la carte, ou vue incrustée (aussi en miniature)."], {
+    if (isNull (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])) exitWith { false };
+    ["view"] call comspec_atak_native_fnc_droneAction;
+    true
+}, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
+// Suivi des cibles marquées : en vue, perdues, neutralisées (deux fois par seconde).
+[{ ["tick"] call comspec_atak_native_fnc_lockAction; }, 0.5] call CBA_fnc_addPerFrameHandler;
 // Batterie : consommation aussi téléphone rangé (la barre d'état la met à jour chaque seconde quand il est ouvert).
 [{ if (isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_battery; }; }, 10] call CBA_fnc_addPerFrameHandler;
 ["comspec_atak_native_p2p", { _this call comspec_atak_native_fnc_p2pReceive }] call CBA_fnc_addEventHandler;

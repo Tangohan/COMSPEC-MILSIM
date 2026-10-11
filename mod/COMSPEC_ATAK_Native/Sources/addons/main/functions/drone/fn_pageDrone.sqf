@@ -74,6 +74,9 @@ if (_camOn && {_tab isNotEqualTo "LOG"}) then {
     // Texture de rendu : largeur et hauteur en puissances de 2 (576 ne l'est pas : texture jamais créée, image noire) ;
     // le rapport 16/9 de la caméra est donné par le dernier paramètre.
     ["RscPicture", [0, _top, _bw, _fh], "#(argb,1024,512,1)r2t(comspec_dronecam,1.7778)"] call comspec_atak_native_fnc_pageCtrl;
+    // Clic sur l'image : la nacelle vise le point cliqué (le réticule s'y pose, MARQUER accroche ce qui est dessous).
+    private _hit = ["COMSPEC_RscButtonInvisible", [0, _top, _bw, _fh]] call comspec_atak_native_fnc_pageCtrl;
+    _hit ctrlAddEventHandler ["MouseButtonDown", { params ["", "_btn", "_mx", "_my"]; if (_btn isEqualTo 0) then { ["click", [_mx, _my]] call comspec_atak_native_fnc_droneFlir; }; }];
     if !(isPiPEnabled) then {
         private _w = ["COMSPEC_RscStructuredText", [0, _top + _fh * 0.4, _bw, _fs * 2.6]] call comspec_atak_native_fnc_pageCtrl;
         _w ctrlSetStructuredText parseText "<t align='center' color='#f2ab33'>Image dans l'image (PiP) désactivée :<br/>Options > Vidéo > Image dans l'image</t>";
@@ -105,10 +108,13 @@ if (_camOn && {_tab isNotEqualTo "LOG"}) then {
     private _feed = [_d, _link, "FEED"] call comspec_atak_native_fnc_droneOsd;
     { _x ctrlSetStructuredText parseText (_feed select _forEachIndex); } forEach _txt;
     uiNamespace setVariable ["COMSPEC_ATAK_DroneFeedTxt", _txt];
+    // Cadres LOCK des cibles marquées et cadre « visé » sous le réticule, suivis image par image.
+    ["build", [0, _top, _bw, _fh], "FEED", true] call comspec_atak_native_fnc_droneFlir;
     // Boutons sur l'image : zoom, vision, nadir / devant, fermer.
     private _zoom = missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1];
     private _aim = missionNamespace getVariable ["COMSPEC_ATAK_DroneCamTgt", ""];
     private _btns = [
+        ["MARQUER", ["lock"] call _act, false],
         ["x1", ["zoom", 1] call _act, _zoom isEqualTo 1], ["x2", ["zoom", 2] call _act, _zoom isEqualTo 2], ["x4", ["zoom", 4] call _act, _zoom isEqualTo 4],
         [["JOUR", "NUIT", "THERM."] select (missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0]), ["vision"] call _act, false],
         [["NADIR", "DEVANT"] select (_aim isEqualTo "NADIR"), ["camAim", ["NADIR", ""] select (_aim isEqualTo "NADIR")] call _act, false],
@@ -120,6 +126,7 @@ if (_camOn && {_tab isNotEqualTo "LOG"}) then {
         private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * _bwid, _btnY, _bwid - _pad / 3, _bh2], _lbl] call comspec_atak_native_fnc_pageCtrl;
         _b ctrlSetFontHeight (_fs * 0.85);
         _b ctrlSetBackgroundColor ([[0, 0, 0, 0.55], [0.36, 0.78, 0.42, 0.85]] select _on);
+        if (_lbl isEqualTo "MARQUER") then { _b ctrlSetBackgroundColor [0.75, 0.18, 0.15, 0.85]; _b ctrlSetTooltip "Marque la cible sous le réticule. Clic sur l'image : la nacelle vise ce point."; };
         _b ctrlAddEventHandler ["ButtonClick", _code];
     } forEach _btns;
     _top = _top + _fh;
@@ -234,6 +241,30 @@ switch (_tab) do {
                 ["EFFACER LES PISTES", ["tracksClear"] call _act, false, (count _tracks) > 0]
             ]]
         ];
+        // Cibles marquées au viseur : suivies tant que la caméra les voit, puis perdues selon le réglage serveur.
+        private _locks = ["list"] call comspec_atak_native_fnc_lockAction;
+        _rows pushBack ["section", format ["Cibles marquées : %1", count _locks], "Réticule sur la cible, puis MARQUER (ou la touche « Marquer la cible »)"];
+        if ((count _locks) isEqualTo 0) then {
+            _rows pushBack ["text", "<t color='#8a9a93'>Aucune cible marquée. Ouvrez la caméra, cliquez l'image pour pointer la nacelle, puis MARQUER.</t>"];
+        };
+        {
+            _x params ["_lk", "_e"];
+            private _o = _e get "obj";
+            private _st = _e get "state";
+            private _hex = (createHashMapFromArray [["TRACK", "#e5483a"], ["LOST", "#8a9a93"], ["DOWN", "#5cc76b"]]) getOrDefault [_st, "#c9d4cf"];
+            private _ago = round (time - (_e get "seen"));
+            _rows pushBack ["text", format ["<t font='RobotoCondensedBold'>LOCK %1 · %2</t>  <t size='0.8' color='%3'>%4</t><br/><t size='0.8' color='#8a9a93'>%5 · %6 · marqué à %7</t>",
+                [_e get "num", 3] call CBA_fnc_formatNumber, _e get "name", _hex,
+                (createHashMapFromArray [["TRACK", "ACCROCHÉ"], ["LOST", "PERDU"], ["DOWN", "NEUTRALISÉ"]]) getOrDefault [_st, _st],
+                [_e get "pos", 8] call comspec_atak_native_fnc_gridRef, [format ["vu il y a %1 s", _ago], "en vue"] select (_ago < 2), _e get "clock"]];
+            private _lb = [["SUIVRE", ["camAim", format ["LOCK:%1", _lk]] call _act, false, _st isNotEqualTo "DOWN"]];
+            if (_strikeOk && {_armed} && {_st isEqualTo "TRACK"} && {(_e get "tag") isNotEqualTo "AMI"}) then {
+                private _tk = hashValue _o;
+                if (_tk in _tracks) then { _lb pushBack [["FRAPPER", "CONFIRMER"] select ([format ["TRK:%1", _tk]] call _confirming), ["strike", format ["TRK:%1", _tk]] call _act, true]; };
+            };
+            _lb pushBack ["LIBÉRER", compile format ["['release', %1] call comspec_atak_native_fnc_lockAction; ['DRONE'] call comspec_atak_native_fnc_pageRender;", str _lk]];
+            _rows pushBack ["buttons", _lb];
+        } forEach (_locks select [0, 8]);
         if ((count _tracks) isEqualTo 0) then {
             _rows pushBack ["text", format ["<t color='#8a9a93'>%1</t>", ["Aucune piste pour l'instant. Le drone relève ce qu'il voit dès qu'il vole avec la liaison.", "Aucune piste : le drone doit voler et garder la liaison pour relever ce qu'il voit."] select (_ground || {!(_link select 2)})]];
         };
