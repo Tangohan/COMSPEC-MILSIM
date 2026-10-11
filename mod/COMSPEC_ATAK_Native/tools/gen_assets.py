@@ -976,14 +976,58 @@ def datalink_svg(name, px=1024, tint="olive"):
     port = name.startswith("datalink_port")
     # Prise du téléphone à droite du module (paysage, portrait gauche) ou à gauche (portrait droit).
     phone_right = name != "datalink_port_right"
-    body = _cable_svg(c2, 46) + _cable_svg(c1, 40) + _module_svg(mx, my, mw, mh, tint)
+    render = _module_render(tint)
+    cables = _cable_svg(c2, 46) + _cable_svg(c1, 40)
     in_x, out_x = (mx + mw * 1.05, mx - mw * 0.05) if phone_right else (mx - mw * 0.05, mx + mw * 1.05)
-    body += _boot_svg(in_x, my + mh / 2, "right" if phone_right else "left", ribs=2)
-    body += _boot_svg(out_x, my + mh / 2, "left" if phone_right else "right", True)
-    body += _boot_svg(698, 1858, "down") if port else _boot_svg(1866, 1350, "right")
-    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vx} {vy} {vw} {vh}" width="{W}" height="{H}">{body}</svg>')
-    img = Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=W, output_height=H))).convert("RGBA")
-    return _grain(img)
+    boots = _boot_svg(in_x, my + mh / 2, "right" if phone_right else "left", ribs=2)
+    boots += _boot_svg(out_x, my + mh / 2, "left" if phone_right else "right", True)
+    boots += _boot_svg(698, 1858, "down") if port else _boot_svg(1866, 1350, "right")
+    if render is None:
+        return _grain(_svg_img(cables + _module_svg(mx, my, mw, mh, tint) + boots, (vx, vy, vw, vh), W, H))
+    # Module rendu en 3D (render_3d.py) entre les câbles et les manchons.
+    img = _grain(_svg_img(cables, (vx, vy, vw, vh), W, H))
+    _paste_module(img, render, (mx - vx) * W / vw, (my - vy) * H / vh, mw * W / vw)
+    img.alpha_composite(_svg_img(boots, (vx, vy, vw, vh), W, H))
+    return img
+
+
+def _svg_img(body, view, W, H):
+    vx, vy, vw, vh = view
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vx} {vy} {vw} {vh}" width="{W}" height="{H}">{body}</svg>'
+    return Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=W, output_height=H))).convert("RGBA")
+
+
+# Rendus 3D (render_3d.py) : module DL-7 700 x 290 px avec 70 px de marge (ombre portée, prises latérales).
+RENDER_DIR = os.path.join(HERE, "render")
+MOD_PAD = 70
+
+
+def _module_render(tint):
+    path = os.path.join(RENDER_DIR, f"dl7_{tint}.png")
+    if not os.path.exists(path):
+        return None
+    import numpy as np
+    im = np.array(Image.open(path).convert("RGBA")).astype(float)
+    h, w = im.shape[:2]
+    # Ombre portée (pixels semi-transparents) : adoucie et fondue vers les bords du cadre, sinon le cadre se voit.
+    k = w / (700 + 2 * MOD_PAD)
+    pad = MOD_PAD * k
+    yy, xx = np.mgrid[0:h, 0:w]
+    dx = np.minimum(xx, w - 1 - xx) / pad
+    dy = np.minimum(yy, h - 1 - yy) / pad
+    fade = np.clip(np.minimum(dx, dy) * 1.25 - 0.1, 0, 1) ** 1.5
+    shadow = im[..., 3] < 250
+    im[..., 3] = np.where(shadow, im[..., 3] * fade * 0.75, im[..., 3])
+    return Image.fromarray(im.clip(0, 255).astype("uint8"), "RGBA")
+
+
+def _paste_module(img, render, x, y, w):
+    """Colle le rendu du module dont la face fait w px de large, coin haut gauche de la face en (x, y)."""
+    k = w / 700
+    pad = MOD_PAD * k
+    tw = int(round((700 + 2 * MOD_PAD) * k))
+    th = int(round((290 + 2 * MOD_PAD) * k))
+    img.alpha_composite(render.resize((tw, th), Image.LANCZOS), (int(round(x - pad)), int(round(y - pad))))
 
 
 def datalink_assets(tmp):
@@ -995,12 +1039,19 @@ def datalink_assets(tmp):
 
 def data_cable_item(size=256):
     """Kit de câble de données (objet d'inventaire) : module DL-7 et câble enroulé."""
-    svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="1100 100 860 520" width="512" height="310">'
-           + _cable_svg("M 1200 520 C 1150 600 1350 640 1420 560 C 1490 480 1300 430 1250 520 C 1200 610 1450 640 1520 560", 40)
-           + _module_svg(1180, 180, 700, 290) + _boot_svg(1143, 325, 'left') + _boot_svg(1917, 325, 'right') + '</svg>')
-    img = Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=512, output_height=310))).convert("RGBA")
+    view = (1100, 100, 860, 520)
+    cable = _cable_svg("M 1200 520 C 1150 600 1350 640 1420 560 C 1490 480 1300 430 1250 520 C 1200 610 1450 640 1520 560", 40)
+    boots = _boot_svg(1143, 325, 'left') + _boot_svg(1917, 325, 'right')
+    render = _module_render("olive")
+    if render is None:
+        img = _grain(_svg_img(cable + _module_svg(1180, 180, 700, 290) + boots, view, 512, 310))
+    else:
+        img = _grain(_svg_img(cable, view, 512, 310))
+        k = 512 / 860
+        _paste_module(img, render, (1180 - 1100) * k, (180 - 100) * k, 700 * k)
+        img.alpha_composite(_svg_img(boots, view, 512, 310))
     out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    img = _grain(img).resize((size, int(size * 310 / 512)), Image.LANCZOS)
+    img = img.resize((size, int(size * 310 / 512)), Image.LANCZOS)
     out.alpha_composite(img, (0, (size - img.height) // 2))
     return out
 
@@ -1044,8 +1095,15 @@ def shell_variants(tmp):
 
 # --- Dos du téléphone (action « Voir l'arrière ») : silhouette de la face, miroir, panneau arrière dessiné ---
 def phone_back(src):
-    """Coque vue de dos (paysage) : même silhouette que la face retournée, appareil photo à droite, plaque de fixation."""
+    """Coque vue de dos (paysage) : même silhouette que la face retournée, appareil photo à droite, plaque de fixation.
+    Panneau arrière rendu en 3D (render_3d.py, render/back_panel.png) ; sans rendu, dessin vectoriel."""
     front = ImageOps.mirror(Image.open(src).convert("RGBA"))
+    # Le marquage « OPENA » du rebord serait lu à l'envers : recouvert par un morceau de rebord lisse pris plus bas.
+    front.paste(front.crop((1722, 960, 1775, 1140)), (1722, 745))
+    panel = os.path.join(RENDER_DIR, "back_panel.png")
+    if os.path.exists(panel):
+        front.alpha_composite(Image.open(panel).convert("RGBA"))
+        return front
     p = []
     p.append('<defs>'
              '<linearGradient id="bk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a8b64"/><stop offset="0.5" stop-color="#857754"/><stop offset="1" stop-color="#6c6044"/></linearGradient>'

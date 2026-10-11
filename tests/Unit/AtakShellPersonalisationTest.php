@@ -98,5 +98,13 @@ final class AtakShellPersonalisationTest extends TestCase
         foreach (['MODULE_TINTS', 'SHELL_TINTS', 'def phone_back', 'def antenna_svg', 'antenna_assets(tmp)', 'back_variants(tmp)', 'shell_variants(tmp)'] as $s) {
             self::assertStringContainsString($s, $gen, $s);
         }
+        // Module DL-7 et dos du téléphone rendus en 3D (Blender), repris par le générateur.
+        self::assertStringContainsString('def _module_render', $gen);
+        $render = $this->read('mod/COMSPEC_ATAK_Native/tools/render_3d.py');
+        self::assertStringContainsString('def render_module', $render);
+        self::assertStringContainsString('def render_back', $render);
+        foreach (['dl7_olive.png', 'dl7_black.png', 'dl7_tan.png', 'back_panel.png'] as $png) {
+            self::assertFileExists(dirname(__DIR__, 2) . '/mod/COMSPEC_ATAK_Native/tools/render/' . $png);
+        }
     }
 }

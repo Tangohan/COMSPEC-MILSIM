@@ -16,6 +16,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 ### Nouveau — Personnalisation, dos du téléphone, antennes, menu ACE rangé
 
 - Couleur de la coque : coyote, vert OD ou noir ; couleur du module DL-7 : olive, noir ou tan (app Réglages > Personnalisation, ou ACE « Téléphone ATAK > Personnaliser »). La coque de nuit reste la silhouette sombre.
+- Module DL-7 et dos du téléphone en rendu 3D réaliste (métal peint, butées caoutchouc, vis, plaque aluminium anodisé, objectif, étiquette).
 - « Voir l'arrière » : le téléphone retourné au centre de l'écran (plaque de fixation, appareil photo, étiquette avec l'IMEI, antenne vissée). Clic ou touche pour fermer.
 - Antennes d'extension de débit, nouveaux objets d'inventaire vissés sur le port SMA de la coque et dessinés autour du téléphone :
   - courte SMA : débit x1,25, liaison un peu plus tenace ;
