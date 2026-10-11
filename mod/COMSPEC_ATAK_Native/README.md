@@ -23,6 +23,18 @@ Identités livrées :
 - **Messagerie** : canaux Général / Commandement / Groupe / Alertes TOC et messages directs, en bulles. Le téléphone vibre à l'arrivée d'un message.
 - **Musique** : fichiers du dossier `Documents\Arma 3\COMSPEC_Music`, pistes du serveur (musiques d'Arma, des mods et de la mission, radio de la mission en réglage CBA) et liens audio (MP3, WAV, WMA, M4A, AAC, webradio). Volume, file d'attente, répétition, aléatoire, et **haut-parleur** : les joueurs proches entendent la même musique au même moment, plus fort en s'approchant. Fichiers et liens passent par la DLL (lecteur Windows), les pistes serveur par le moteur d'Arma.
 - **Réseau** : stabilité, latence, perte, relais, zone radio. **Réglages** : réglages du téléphone et réglages roleplay d'Overwatch. **Photos** : photo rapide envoyée sur ATAK web.
+- **Extraction** (câble DL-7) : regarder un support de données (ordinateur, téléphone, clé USB, caisse, corps…) et « Brancher l'ATAK » (molette ou ACE). Le câble et le module DL-7 apparaissent autour du téléphone (écran LCD, voyants PWR / AUTH / DATA) ; l'app montre l'écran du support (Windows, Linux, militaire, SCADA, téléphone, coffre), demande le mot de passe ou force l'accès, puis télécharge les fichiers choisis. S'éloigner arrache le câble (les fichiers déjà reçus restent). Données récupérées : lecture, coordonnées sur la carte, audio, partage au groupe.
+
+## Données à extraire (mission makers)
+
+- **Eden** : module **COMSPEC — ATAK · Données > Données à extraire (câble ATAK)** synchronisé à un ou plusieurs objets (sans objet : le support choisi est créé à l'emplacement du module). **Ajouter un fichier** pour compléter.
+- **Zeus** : mêmes modules, lâchés sur l'objet ; un formulaire s'ouvre. **Remettre / retirer les données** remet un support à zéro (essais, verrou, effacement).
+- **Script** (champ init d'un objet) :
+  `[this, [["name", "PC du QG"], ["password", "4471"], ["files", "ordre.txt | texte" + endl + "Repli à 04h00" + endl + "---" + endl + "cache | coord" + endl + "045123"]]] call comspec_atak_native_fnc_dataSetup;`
+- Fichiers : un bloc par fichier, séparés par `---`, première ligne `nom | type`. Types : `texte`, `document`, `identifiants` (le mot de passe d'un autre poste, pour enchaîner), `coord` (carroyage ou `x, y`), `image` (chemin dans la mission), `audio` (classe CfgSounds ou chemin).
+- Réglages : écran, organisation, couleur, image, mot de passe (diffusé en empreinte seulement), indice, essais, sanction (verrou, effacement, alarme), forçage et sa durée, durée du transfert, port (USB-C, RJ45, série), alarme (branchement, mauvais mot de passe, fin), usage unique, code serveur en fin.
+- Événement CBA global en fin de téléchargement : `comspec_atak_native_dataDownloaded` `[objet, joueur, noms des fichiers]`.
+- Réglages serveur **COMSPEC > ATAK · Extraction de données** : câble DL-7 obligatoire (objet « Câble de données DL-7 »), longueur du câble, vitesse des transferts.
 
 ## Ressources graphiques
 

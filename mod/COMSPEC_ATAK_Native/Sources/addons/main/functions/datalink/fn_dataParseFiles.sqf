@@ -45,7 +45,7 @@ private _out = [];
 private _block = [];
 private _flush = {
     if ((_block findIf { (trim _x) isNotEqualTo "" }) < 0) exitWith { _block = []; };
-    while {(count _block) > 0 && {(trim (_block select 0)) isEqualTo ""}} do { _block deleteAt 0; };
+    while {_block isNotEqualTo [] && {(trim (_block select 0)) isEqualTo ""}} do { _block deleteAt 0; };
     private _head = (_block select 0) splitString "|";
     private _name = trim (_head param [0, ""]);
     private _type = trim (_head param [1, "texte"]);

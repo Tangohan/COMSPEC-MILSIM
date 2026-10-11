@@ -92,7 +92,7 @@ if (_phase isNotEqualTo "") exitWith {
             private _lines = [];
             for "_i" from 1 to 4 do {
                 private _l = [];
-                for "_j" from 1 to 8 do { _l pushBack ((([] resize 0) + [1, 2, 3, 4]) apply { selectRandom _hex } joinString ""); };
+                for "_j" from 1 to 8 do { _l pushBack ((selectRandom _hex) + (selectRandom _hex) + (selectRandom _hex) + (selectRandom _hex)); };
                 _lines pushBack (_l joinString " ");
             };
             _rows pushBack ["text", format ["<t font='EtelkaMonospacePro' size='0.8' color='%1'>%2</t>", _acc, _lines joinString "<br/>"]];
@@ -206,7 +206,7 @@ if (_nodes isEqualTo []) then { _rows pushBack ["text", format ["<t color='%1'>A
     };
     _rows pushBack ["person", "\z\comspec_atak_native\addons\main\data\app_datalink.paa",
         format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.85' color='%2'>%3 m · %4</t> %5", [_cfg getOrDefault ["name", "Support"]] call _esc, _grey, round _d, _cfg getOrDefault ["kind", ""], _state],
-        [["BRANCHER", compile format ["['connect', objectFromNetId '%1'] call comspec_atak_native_fnc_dataAction;", netId _o], _d <= _len + 0.5]]];
+        [["BRANCHER", compile format ["['connect', '%1' call BIS_fnc_objectFromNetId] call comspec_atak_native_fnc_dataAction;", _o call BIS_fnc_netId], true, _d <= _len + 0.5]]];
 } forEach (_nodes select [0, 8]);
 
 _rows pushBack ["section", "Données récupérées", format ["%1 fichier(s)", count _lib]];

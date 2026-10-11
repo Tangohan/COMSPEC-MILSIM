@@ -2,8 +2,8 @@
 class CfgPatches {
     class comspec_atak_native_main {
         name="COMSPEC ATAK Native Standalone"; author="COMSPEC"; requiredVersion=2.14;
-        requiredAddons[]={"A3_UI_F","A3_Weapons_F","cba_main","cba_xeh"};
-        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit"}; version=1.7; versionStr=VERSION_STR; versionAr[]={1,7,0};
+        requiredAddons[]={"A3_UI_F","A3_Weapons_F","A3_Modules_F","cba_main","cba_xeh"};
+        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
     };
 };
 class CfgFunctions {
@@ -45,6 +45,9 @@ class CfgFunctions {
         };
         class bluetooth { file="z\comspec_atak_native\addons\main\functions\bluetooth";
             class airplaneMode {}; class btAction {}; class btSounds {}; class pageBluetooth {}; class btInit { postInit=1; };
+        };
+        class datalink { file="z\comspec_atak_native\addons\main\functions\datalink";
+            class dataSetup {}; class dataParseFiles {}; class dataServer {}; class dataAction {}; class dataInit {}; class dataOverlay {}; class pageDataLink {}; class zeusForm {}; class moduleContext {}; class moduleDataNode {}; class moduleDataFile {}; class moduleDataReset {};
         };
         class reports { file="z\comspec_atak_native\addons\main\functions\reports";
             class reportTypes {}; class reportAction {}; class pageReports {};
@@ -99,6 +102,7 @@ class COMSPEC_ATAK_Apps {
     class Reco        { name="Reco"; page="RECO"; section="Renseignement"; order=112; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_reco.paa"; };
     class Photos      { name="Photos"; page="PHOTOS"; section="Renseignement"; order=114; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_photos.paa"; };
     class Livecam     { name="Vidéo live"; page="LIVECAM"; section="Renseignement"; order=116; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_livecam.paa"; };
+    class DataLink    { name="Extraction"; page="DATALINK"; function="comspec_atak_native_fnc_pageDataLink"; section="Renseignement"; order=119; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_datalink.paa"; };
     class Sse         { name="SSE"; page="SSE"; section="Renseignement"; order=118; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_sse.paa"; };
     class Osint       { name="OSINT"; page="OSINT"; section="Renseignement"; order=120; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_osint.paa"; };
     class LinkAlly    { name="Liaison allié"; page="LINKALLY"; function="comspec_atak_native_fnc_pageLinkAlly"; section="Spécialités"; order=82; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_linkally.paa"; };
@@ -147,6 +151,16 @@ class CfgWeapons {
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=10; };
     };
+    // Câble de données DL-7 (app Extraction) : obligatoire si le réglage serveur « Câble DL-7 obligatoire » est coché.
+    class COMSPEC_ATAK_DataCable: ItemCore {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="Câble de données DL-7";
+        descriptionShort="Module DL-7 et câble USB-C / RJ45 / série pour le téléphone COMSPEC ATAK. Regardez un ordinateur, un téléphone ou une clé, « Brancher l'ATAK » : l'app Extraction télécharge ses données.";
+        picture="\z\comspec_atak_native\addons\main\data\item_datacable.paa";
+        model="\A3\Weapons_F\Ammo\mag_univ.p3d";
+        type=4096; detectRange=-1; simulation="ItemMineDetector";
+        class ItemInfo: InventoryItem_Base_F { mass=4; };
+    };
 };
 class CfgVehicles {
     class Item_Base_F;
@@ -162,6 +176,18 @@ class CfgVehicles {
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_RepairKit { name="COMSPEC_ATAK_RepairKit"; count=1; }; };
     };
+    class Item_COMSPEC_ATAK_DataCable: Item_Base_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="Câble de données DL-7";
+        vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
+        class TransportItems { class _xx_COMSPEC_ATAK_DataCable { name="COMSPEC_ATAK_DataCable"; count=1; }; };
+    };
+    // Modules Zeus / Eden « ATAK · Données » (extraction au câble DL-7).
+    #include "modules.hpp"
+};
+class CfgFactionClasses {
+    class NO_CATEGORY;
+    class COMSPEC_ATAK_Data: NO_CATEGORY { displayName="COMSPEC — ATAK · Données (extraction)"; priority=2; side=7; };
 };
 
 class Extended_PreInit_EventHandlers { class comspec_atak_native_main { init="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_preInit.sqf'"; }; };

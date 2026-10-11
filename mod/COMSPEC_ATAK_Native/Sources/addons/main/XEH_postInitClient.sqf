@@ -627,5 +627,6 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 ["COMSPEC_IcemanMedicalPanic", { ["health", _this] call comspec_atak_native_fnc_athenaSignal; }] call CBA_fnc_addEventHandler;
 // App Liaison allié : événements, sauvegarde légère, action ACE.
 [] call comspec_atak_native_fnc_linkAllyInit;
+[] call comspec_atak_native_fnc_dataInit;
 // Icônes PAA gardées en mémoire (sinon elles disparaissent un instant à chaque rafraîchissement de page).
 [{ !isNull (findDisplay 46) }, { [] call comspec_atak_native_fnc_textureKeep; }] call CBA_fnc_waitUntilAndExecute;

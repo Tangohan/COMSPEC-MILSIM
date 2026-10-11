@@ -132,6 +132,20 @@ private _lock = ["COMSPEC", "ATAK · Marquage au viseur"];
     ["Portée du marquage au téléphone", "Distance maximale en mètres pour marquer et suivre une cible à l'appareil photo du téléphone (la caméra du drone garde sa portée de capteur)."],
     _lock, [100, 2000, 800, 0], 1] call CBA_fnc_addSetting;
 
+// Extraction de données au câble DL-7 (app Extraction, modules Zeus / Eden « ATAK · Données »).
+private _data = ["COMSPEC", "ATAK · Extraction de données"];
+["comspec_atak_native_data_cable", "CHECKBOX",
+    ["Câble DL-7 obligatoire", "Coché : il faut l'objet « Câble de données DL-7 » dans l'équipement pour se brancher sur un support. Décoché : le téléphone suffit."],
+    _data, false, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_data_length", "SLIDER",
+    ["Longueur du câble (m)", "Distance au support au-delà de laquelle le câble est arraché (transfert coupé, fichiers déjà reçus gardés)."],
+    _data, [1.5, 10, 3, 1], 1] call CBA_fnc_addSetting;
+["comspec_atak_native_data_speed", "SLIDER",
+    ["Vitesse des transferts", "Multiplie la vitesse de téléchargement et de forçage réglée par le mission maker (2 = deux fois plus rapide)."],
+    _data, [0.25, 4, 1, 2], 1] call CBA_fnc_addSetting;
+// Serveur de l'extraction : branché dès le preInit (les modules Eden posent leurs données au démarrage).
+if (isServer) then { ["comspec_atak_native_dataSrv", { _this call comspec_atak_native_fnc_dataServer; }] call CBA_fnc_addEventHandler; };
+
 // Données médicales affichées par l'ATAK : décocher masque la donnée (ou l'endroit) pour tous, sans choix possible (fn_medShow).
 private _med = ["COMSPEC", "ATAK · Données médicales"];
 {
