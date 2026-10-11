@@ -50,6 +50,14 @@ final class AtakOverwatchIntelController
         }
         $mapId = $this->mapId($request);
         $acks = $this->repo->acks($tenantId, $mapId);
+        $seen = $this->repo->seenBy($tenantId, $mapId);
+        // Âges calculés sur l'horloge MySQL : le poste compare ensuite aux derniers signaux des terminaux.
+        $dbNow = strtotime((string) ($this->repo->safeFetch('SELECT NOW() AS n')[0]['n'] ?? '')) ?: time();
+        $ageOf = static function (string $sqlDate) use ($dbNow): ?int {
+            $t = $sqlDate !== '' ? strtotime($sqlDate) : false;
+
+            return $t === false ? null : max(0, $dbNow - $t);
+        };
 
         $alerts = [];
         try {
@@ -60,6 +68,9 @@ final class AtakOverwatchIntelController
         }
         foreach ($rows as $row) {
             $key = 'chat:' . (int) ($row['id'] ?? 0);
+            if (!empty($acks[$key]['dismissed'])) {
+                continue;
+            }
             $summary = (string) ($row['summary'] ?? '');
             $kind = (string) ($row['kind'] ?? '');
             // Le module connect range la PANIQUE du téléphone sous EAGLE_DOWN : on la distingue par son texte.
@@ -77,14 +88,20 @@ final class AtakOverwatchIntelController
                 'summary' => $summary,
                 'author' => (string) ($row['author'] ?? ''),
                 'created_at' => (string) ($row['created_at'] ?? ''),
+                'age_sec' => $ageOf((string) ($row['created_at'] ?? '')),
                 'acked' => isset($acks[$key]),
                 'acked_by' => $acks[$key]['by'] ?? '',
                 'acked_at' => $acks[$key]['at'] ?? '',
+                'acked_age_sec' => isset($acks[$key]) ? $ageOf((string) $acks[$key]['at']) : null,
+                'seen_by' => $seen[$key] ?? [],
             ];
         }
         $alerts = array_reverse($alerts);
 
-        $beacons = $this->beacons($tenantId, $mapId);
+        $beacons = array_values(array_filter(
+            $this->beacons($tenantId, $mapId),
+            static fn (array $b): bool => empty($acks[$b['key']]['dismissed'])
+        ));
         foreach ($beacons as &$b) {
             $b['acked'] = isset($acks[$b['key']]);
             $b['acked_by'] = $acks[$b['key']]['by'] ?? '';
@@ -119,6 +136,61 @@ final class AtakOverwatchIntelController
             : $this->repo->ack((int) $tenantId, $mapId, $key, $this->operatorLabel(), $this->userId());
 
         return Response::json(['ok' => $ok, 'key' => $key, 'acked_by' => $this->operatorLabel()]);
+    }
+
+    /** POST /api/atak/overwatch/alerts/dismiss { key, undo? } — supprime l'alerte (ou la balise) pour tous les postes. */
+    public function alertDismiss(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenant($request);
+        $guard = $this->guardWrite($request, $tenantId);
+        if ($guard !== null) {
+            return $guard;
+        }
+        $body = $this->body();
+        $mapId = $this->mapId($request, $body);
+        $keys = $this->alertKeys($body['keys'] ?? ($body['key'] ?? ''));
+        if ($keys === []) {
+            return Response::json(['ok' => false, 'error' => 'Alerte inconnue.'], 422);
+        }
+        $ok = true;
+        foreach ($keys as $key) {
+            $ok = $this->repo->dismiss((int) $tenantId, $mapId, $key, $this->operatorLabel(), $this->userId(), !empty($body['undo'])) && $ok;
+        }
+
+        return Response::json(['ok' => $ok, 'keys' => $keys, 'by' => $this->operatorLabel()]);
+    }
+
+    /** POST /api/atak/overwatch/alerts/seen { keys[] } — accusé de lecture du poste connecté. */
+    public function alertSeen(Request $request, array $params = []): Response
+    {
+        $tenantId = $this->tenant($request);
+        $guard = $this->guardWrite($request, $tenantId);
+        if ($guard !== null) {
+            return $guard;
+        }
+        $body = $this->body();
+        $keys = $this->alertKeys($body['keys'] ?? []);
+        $n = $keys === [] ? 0 : $this->repo->markSeen((int) $tenantId, $this->mapId($request, $body), $keys, (int) $this->userId(), $this->operatorLabel());
+
+        return Response::json(['ok' => true, 'marked' => $n]);
+    }
+
+    /** @return list<string> clés valides (« chat:12 », « beacon:… »), 80 au plus */
+    private function alertKeys(mixed $raw): array
+    {
+        $list = is_array($raw) ? $raw : [$raw];
+        $out = [];
+        foreach ($list as $k) {
+            $k = trim((string) (is_scalar($k) ? $k : ''));
+            if ($k !== '' && preg_match('/^[a-z]+:[A-Za-z0-9_.:\-]{1,80}$/', $k) === 1) {
+                $out[$k] = true;
+            }
+            if (count($out) >= 80) {
+                break;
+            }
+        }
+
+        return array_keys($out);
     }
 
     /**
