@@ -190,4 +190,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
 [_root, "COMSPEC_ATAK_CableOff", "Débrancher le câble DL-7", "\z\comspec_atak_native\addons\main\data\app_datalink.paa",
     { ["disconnect"] call comspec_atak_native_fnc_dataAction; },
     { ((uiNamespace getVariable ["COMSPEC_ATAK_DataLink", createHashMap]) getOrDefault ["phase", ""]) isNotEqualTo "" }] call _add;
+
+// Caméras IP fixes : « Caméras > Poser une caméra » et actions sur la caméra posée (fn_camAction).
+["aceInit"] call comspec_atak_native_fnc_camAction;
 true

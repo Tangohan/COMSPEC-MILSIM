@@ -143,7 +143,7 @@ switch (_act) do {
             private _lb = ["COMSPEC_RscStructuredText", [_tx, _ty + _th - _lblH - _pad / 3, _tw, _lblH]] call _mk;
             _lb ctrlSetStructuredText parseText format ["<t align='center' size='0.72' color='%1'>%2</t>", ["#dfe8e3", _accHex] select _on, [_name] call _esc];
             private _b = ["COMSPEC_RscButtonOverlay", [_tx, _ty, _tw, _th]] call _mk;
-            _b ctrlSetTooltip format ["%1\n%2 · %3", _name, [_v select [4], _v] select (_from isEqualTo "ours"), ["nos patchs", "mods", "mission"] select (["ours", "mods", "mission"] find _from)];
+            _b ctrlSetTooltip format ["%1 — %2 · %3", _name, [_v select [4], _v] select (_from isEqualTo "ours"), ["nos patchs", "mods", "mission"] select (["ours", "mods", "mission"] find _from)];
             _b ctrlAddEventHandler ["ButtonClick", compile format ["['pick', %1] call comspec_atak_native_fnc_pagePatches;", str _v]];
         } forEach (_match select [_pg * _per, _per]);
 
@@ -164,7 +164,7 @@ switch (_act) do {
         (uiNamespace getVariable ["COMSPEC_ATAK_PatchMsg", ["", -100]]) params ["_msg", "_at"];
         private _st = ["COMSPEC_RscStructuredText", [_x0, _fy + _rowH + _pad / 4, _w, _fs * 1.4]] call _mk;
         _st ctrlSetStructuredText parseText (if (diag_tickTime - _at < 4) then {
-            format ["<t align='center' size='0.85' color='%1'>✓ %2 · enregistré</t>", _accHex, [_msg] call _esc]
+            format ["<t align='center' size='0.85' color='%1'>%2 · enregistré</t>", _accHex, [_msg] call _esc]
         } else {
             format ["<t align='center' size='0.85' color='#8a9a93'>Porté : </t><t align='center' size='0.85'>%1</t>", [["name", _cur] call comspec_atak_native_fnc_patchCatalog] call _esc]
         });
@@ -186,7 +186,11 @@ switch (_act) do {
         private _y = _pad;
         private _back = ["COMSPEC_RscButton", [_pad, _y, _w * 0.3, _rowH], "< RÉGLAGES"] call comspec_atak_native_fnc_pageCtrl;
         _back ctrlSetFontHeight (_fs * 0.9);
-        _back ctrlAddEventHandler ["ButtonClick", { [{ [] call comspec_atak_native_fnc_back; }] call CBA_fnc_execNextFrame; }];
+        // Retour aux Réglages (page d'avant dans l'historique, sinon ouverte, ex. téléphone rouvert sur cette page).
+        _back ctrlAddEventHandler ["ButtonClick", { [{
+            private _h = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["history", []];
+            if ((count _h) > 1 && {(_h select ((count _h) - 2)) isEqualTo "SETTINGS"}) then { [] call comspec_atak_native_fnc_back; } else { ["SETTINGS"] call comspec_atak_native_fnc_navigate; };
+        }] call CBA_fnc_execNextFrame; }];
         private _hd = ["COMSPEC_RscStructuredText", [_pad + _w * 0.32, _y + (_rowH - _fs * 1.4) / 2, _w * 0.68, _fs * 1.4]] call comspec_atak_native_fnc_pageCtrl;
         _hd ctrlSetStructuredText parseText format ["<t align='right' font='RobotoCondensedBold'>Patch au dos</t><t align='right' size='0.8' color='#8a9a93'>  %1 insignes d'unité</t>", ["count"] call comspec_atak_native_fnc_patchCatalog];
         _y = _y + _rowH + _pad / 2;
@@ -212,7 +216,7 @@ switch (_act) do {
         _y = _y + _rowH + _pad / 2;
         // Première ouverture : la page qui montre le patch porté.
         if (isNil { uiNamespace getVariable "COMSPEC_ATAK_PatchPg" }) then {
-            private _per = [12, 12] select (_l get "landscape");
+            private _per = 12; // 4 x 3 ou 6 x 2
             private _i = (["list"] call comspec_atak_native_fnc_patchCatalog) findIf { (_x select 0) isEqualTo (profileNamespace getVariable ["COMSPEC_ATAK_Patch", "none"]) };
             uiNamespace setVariable ["COMSPEC_ATAK_PatchSrc", "all"];
             uiNamespace setVariable ["COMSPEC_ATAK_PatchPg", floor ((_i max 0) / _per)];

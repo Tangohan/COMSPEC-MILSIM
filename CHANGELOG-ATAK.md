@@ -11,6 +11,27 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vague 2026-10-11 (suite) — Un téléphone qui réagit (ATAK natif 1.9.0)
+
+### Nouveau — Mouvement, toasts, volet rapide, écran de verrouillage
+- Onde verte sous le doigt à chaque appui sur l'écran, clic doux et légère vibration de la coque (pas de son en mode discrétion ; rien après un glissé de carte ou de curseur).
+- Une app s'ouvre en grandissant depuis l'icône touchée (0,2 s) ; l'accueil revient en fondu ; au retour, la page quittée glisse vers la droite.
+- Toasts Android : petite bulle en bas de l'écran qui s'efface seule (`[texte, durée] call comspec_atak_native_fnc_toast`), utilisée pour les confirmations brèves (code de verrouillage et patch enregistrés, numéro ou journal copiés, marqueur enregistré, étape d'itinéraire ajoutée, raccourcis mode nuit / discrétion).
+- Volet rapide tiré de la barre d'état (clic sur l'heure ou la batterie, petite poignée sous l'heure) : curseur de luminosité, mode nuit, mode avion, silencieux, vibration, Bluetooth, balise IR, état du réseau et batterie (ouvrent les apps Réseau et Statut), accès à tous les réglages. Il reprend les réglages existants (mode nuit, avion, discrétion, vibration, Bluetooth, balise IR).
+- Luminosité de l'écran (nouveau réglage, aussi dans Réglages) : voile sombre, lueur de l'écran vue par les autres réduite, batterie un peu ménagée.
+- Écran de verrouillage : grande heure, date, carte et température, batterie et réseau, trois dernières notifications ; à la première sortie en main de la mission, après une minute rangé ou après un redémarrage, une batterie vide ou un écran détruit. Clic, glissé vers le haut ou touche accueil : l'écran remonte.
+- Réglages > Personnalisation > « Animations et sons » : animations, clic et vibration des appuis, écran de verrouillage, luminosité (chacun désactivable).
+
+### Nouveau — Caméras IP fixes (demande de TTRD)
+- Item « Caméra IP compacte (ATAK) » (`COMSPEC_ATAK_Camera`, arsenal et éditeur). ACE « Téléphone ATAK > Caméras > Poser une caméra » : visez à moins de 3 m un mur, le sol, un objet ou un véhicule (elle y reste accrochée et le suit) ; nommée CAM-1, CAM-2… L'objet est visible de tous et peut être détruit (tirs, explosion, véhicule détruit).
+- ACE sur la caméra posée : « Récupérer la caméra » (rend l'item), « Renommer » (ouvre le téléphone sur la caméra), « Orienter » à gauche / à droite de 45° ; une caméra détruite se retire sans rendre l'item.
+- App Vidéo live : section « Caméras fixes » sous les porteurs (nom, distance, état : en ligne, hors liaison, brouillée, pas de réseau, détruite). Même image que le Live cam (jour, JVN, thermique), panoramique local ◀ ▶ de 30°, bouton Renommer. Liaison : il faut du réseau sur son téléphone et un ATAK du camp à moins de 600 m de la caméra (`comspec_atak_native_camera_range`) ; un brouilleur de mission la coupe.
+
+### Corrigé
+- Réglages (et toutes les pages redessinées sur place) : un clic ne fait plus remonter la page en haut ; le défilement n'est remis à zéro qu'en changeant de page.
+
+---
+
 ## Vague 2026-10-11 (retours de test) — ATAK natif 1.8.1, SEEK, Overwatch embarqué
 
 ### Corrigé — Retours de test en jeu
@@ -26,10 +47,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 - Dos du téléphone : dos simple de S7 dans sa coque (plus de plaque de fixation).
 - Le « durci XT » devient le modèle « tactique » : coque EUD vert ranger à cadre fin, rail de fixation à ailettes et molette, dos à pad et double objectif.
 - Patch au dos : en plus de nos patchs, l'insigne porté sur l'uniforme, ou n'importe quel insigne d'unité des mods chargés et de la mission (CfgUnitInsignia : RHS, 3CB, unités…), choisi dans Réglages avec l'aperçu ; visible au dos et sur le téléphone porté au gilet.
+- Réglages : les insignes ne se parcourent plus un par un (chaque clic renvoyait en haut de la page et les flèches ◀ ▶ étaient vides) ; « Choisir un insigne » ouvre la page « Patch au dos » : recherche par nom ou classe (sans accents ni majuscules), sources Tous / Nos patchs / Mods / Mission, vignettes 4 × 3 avec le nom et le patch porté en surbrillance, pages PRÉC. / SUIV. ; un clic met le patch tout de suite sans bouger la page (recherche, source et page gardées, le champ garde son texte pendant la frappe).
 - Téléphone lâché au sol : notre modèle 3D de la coque (couleur choisie) posé à plat, écran vers le haut, au lieu du petit objet générique.
 - Liaison Athena : plus de spam connexion / déconnexion avec son (état tenu quelques secondes avant de changer, sons de perte et de retour limités à un toutes les 30 s, passerelles véhicule comptées comme relais).
 - Alerte médicale Overwatch : erreur `!` (type Tableau) corrigée.
 - SEEK : relevés empreintes, iris et ADN enregistrés avec le terminal seul (hors liaison aussi) et rattachés à la personne ; photo d'un sujet au sol cadrée au-dessus du visage ; textes de la page Terrain et de la barre d'état raccourcis.
+
+### Nouveau — App Accessoires (établi)
+- App « Accessoires » (Système) : un établi visuel au lieu d'une liste. Le dos du téléphone (modèle et coque choisis, antenne et batterie externe montées) au centre, six emplacements reliés à leur point de fixation par un trait fin : antenne (port SMA), balise IR, batterie de rechange, module DL-7, filtre d'écran JVN, batterie externe (plaque). Chaque emplacement montre l'objet monté, son état (débit, charge %, allumée…) ou « vide » ; un toucher ouvre un tiroir avec les objets compatibles de l'inventaire (FIXER / REMPLACER), RETIRER, et les actions propres (allumer la balise IR, changer la batterie comme l'action ACE, ouvrir l'Extraction ou débrancher le câble DL-7).
 
 ---
 

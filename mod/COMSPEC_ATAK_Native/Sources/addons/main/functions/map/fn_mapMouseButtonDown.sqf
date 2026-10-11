@@ -1,7 +1,13 @@
-/* Clic gauche : action de l'outil actif. Clic droit : quitte l'outil (retour à la sélection). */
+/* Clic gauche : action de l'outil actif. Clic droit : quitte l'outil (retour à la sélection), sinon menu contextuel (au relâchement). */
 params ["_map","_button","_mx","_my",["_shift",false],["_ctrl",false],["_alt",false]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _world = _map ctrlMapScreenToWorld [_mx,_my];
+// Menu contextuel ouvert : un clic gauche ailleurs le ferme seulement ; un clic droit le ferme et peut en rouvrir un.
+if ((count (_s getOrDefault ["mapCtx", createHashMap])) > 0) then {
+    ["close"] call comspec_atak_native_fnc_mapCtxMenu;
+    if (_button isEqualTo 0) exitWith { _s set ["mapCtxSwallow", true]; };
+};
+if (_s getOrDefault ["mapCtxSwallow", false]) exitWith { _s set ["mapCtxSwallow", false]; true };
 if (_button isEqualTo 0) exitWith {
     // App Feux : la cible est pointée sur la carte.
     private _mp = _s getOrDefault ["medevacPick", ""];
@@ -41,6 +47,10 @@ if (_button isEqualTo 1) exitWith {
         _s set ["drawStroke",[]];
         ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
         [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        _s set ["mapRc", []];
+    } else {
+        // Sélection : clic droit armé, le menu contextuel s'ouvre au relâchement s'il n'y a pas eu de glisser (fn_mapMouseButtonUp).
+        _s set ["mapRc", [_mx, _my, diag_tickTime]];
     };
     true
 };

@@ -7,7 +7,8 @@ namespace Tests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Terminal SEEK — page Contexte : champs pleine largeur, plus grands, contrastés.
+ * Terminal SEEK — page Contexte : champs pleine largeur, plus grands, contrastés
+ * (encre sombre sur fond clair, habillage Windows embarqué du SEEK II).
  */
 final class SseSeekContexteLayoutAssetTest extends TestCase
 {
@@ -21,16 +22,16 @@ final class SseSeekContexteLayoutAssetTest extends TestCase
         self::assertStringContainsString('#define SEEK_FONT   (0.024 * SEEK_K)', $hpp);
         self::assertStringContainsString('#define SEEK_EDIT_EX (0.028 * SEEK_K)', $hpp);
         self::assertStringContainsString('#define CTX_MARKS_H', $hpp);
-        self::assertStringContainsString("color='#c8eadc'>STATUT", $hpp);
+        self::assertStringContainsString("font='TahomaB' color='#33414c'>STATUT", $hpp);
         self::assertStringContainsString('idc = 9505;', $hpp);
         self::assertStringContainsString('w = IN_W; h = FIELD_H;', $hpp);
         self::assertStringContainsString('y = ROW(1);', $hpp);
         self::assertStringContainsString('idc = 9506; y = (ROW(1) + LBL_H);', $hpp);
         self::assertStringContainsString('style = 16;', $hpp);
         self::assertStringContainsString('h = CTX_MARKS_H;', $hpp);
-        self::assertStringContainsString('colorBackground[] = {0.055, 0.102, 0.098, 0.98};', $hpp);
-        self::assertStringContainsString('colorSelectBackground[] = {0.14, 0.42, 0.36, 1};', $hpp);
-        self::assertStringContainsString('font = "PuristaMedium";', $hpp);
+        self::assertStringContainsString('colorBackground[] = {0.84, 0.83, 0.81, 1};', $hpp);
+        self::assertStringContainsString('colorSelectBackground[] = {0.04, 0.14, 0.42, 1};', $hpp);
+        self::assertStringContainsString('font = "RobotoCondensed";', $hpp);
         self::assertStringNotContainsString("color='#8aa0b0'>STATUT", $hpp);
         self::assertStringNotContainsString('w = HALF_W; h = (ROW_H - LBL_H);', $hpp);
     }

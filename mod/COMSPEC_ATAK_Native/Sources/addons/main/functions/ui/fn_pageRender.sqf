@@ -32,6 +32,7 @@ if (_page isNotEqualTo "LAUNCHER") then {
 };
 if (_page isEqualTo "RECENTS") then { _title = "APPS RÉCENTES"; };
 if (_page isEqualTo "NOTIFS") then { _title = "NOTIFICATIONS"; };
+if (_page isEqualTo "PATCHES") then { _title = "PATCH AU DOS"; };
 (_d displayCtrl 88518) ctrlSetText _title;
 
 switch (_page) do {
@@ -73,6 +74,7 @@ switch (_page) do {
     case "ATHENA": { [] call comspec_atak_native_fnc_pageAthena; };
     case "NETWORK": { [] call comspec_atak_native_fnc_pageNetwork; };
     case "SETTINGS": { [] call comspec_atak_native_fnc_pageSettings; };
+    case "PATCHES": { ["page"] call comspec_atak_native_fnc_pagePatches; };
     case "PHOTOS": { [] call comspec_atak_native_fnc_pagePhotos; };
     case "FRS": { [] call comspec_atak_native_fnc_pageFrs; };
     case "RECO": { [] call comspec_atak_native_fnc_pageReco; };

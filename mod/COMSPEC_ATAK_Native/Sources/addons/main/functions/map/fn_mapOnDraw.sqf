@@ -132,6 +132,7 @@ if ((count _wpts) > 0) then {
 
 // Guerre électronique : position brouillée (GPS) et pistes BFT dégradées.
 ([] call comspec_atak_native_fnc_ewEffects) params ["_ewGps", "_ewBft", "_ewOff"];
+private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "DOTS"]) isEqualTo "NATO";
 {
     private _entity = _y;
     private _pos = _entity getOrDefault ["position",[]];
@@ -152,11 +153,19 @@ if ((count _wpts) > 0) then {
         private _ci = getText (configFile >> "CfgMarkers" >> _custom >> "icon");
         if (_ci isNotEqualTo "") then { _icon = _ci; _dir = 0; };
     };
+    // Réglages > Carte « Icônes des unités » OTAN : cadre + modificateur MIL-STD-2525 / APP-6 (moi : inchangé),
+    // non orienté, un peu plus grand que le point ; échelon (points d'équipe / groupe) au-dessus pour les chefs.
+    private _ech = "";
+    if (_nato && {!_self}) then {
+        ([_entity] call comspec_atak_native_fnc_natoSymbol) params ["_nt", "_ne"];
+        _icon = _nt; _ech = _ne; _dir = 0; _size = _size * 1.3;
+    };
     _map drawIcon [
         _icon,_color,_pos,_size,_size,_dir,
         if (_labels && {_scale < 0.25}) then {_entity getOrDefault ["callsign",""]} else {""},
         1,0.022 * _k * _ts,"RobotoCondensedBold","right"
     ];
+    if (_ech isNotEqualTo "") then { _map drawIcon [_ech, _color, _pos, _size, _size, 0, "", 0]; };
     if (_x isEqualTo _selected) then {
         _map drawEllipse [_pos,18 * _is,18 * _is,0,[0.36,0.78,0.42,0.9],""];
     };
