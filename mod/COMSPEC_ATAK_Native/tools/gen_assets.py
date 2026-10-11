@@ -107,6 +107,7 @@ ICONS = {
     "drone_fpv": '<circle cx="5" cy="6" r="3.6"/><circle cx="19" cy="6" r="3.6"/><circle cx="5" cy="18" r="3.6"/><circle cx="19" cy="18" r="3.6"/><path d="M7.5 8.5L10 10M16.5 8.5L14 10M7.5 15.5L10 14M16.5 15.5L14 14"/><rect x="9.8" y="8.5" width="4.4" height="9" rx=".8"/><path d="M10.5 8.5L12 5.5l1.5 3"/>',
     "app_dronedetect": '<circle cx="7" cy="13" r="2.5"/><circle cx="17" cy="13" r="2.5"/><path d="M9.3 14l1.7 1h2l1.7-1M12 16v1.5"/><path d="M8 7.5a6 6 0 0 1 8 0M5 4.5a10 10 0 0 1 14 0"/><circle cx="12" cy="10" r=".6"/>',
     "app_aar": '<circle cx="13" cy="12" r="8"/><path d="M13 7v5l3 2"/><path d="M5 12H1.5M3 9.5L1.5 12 3 14.5"/>',
+    "app_datalink": '<path d="M8 2v4M12 2v4"/><rect x="6" y="6" width="8" height="6" rx="1.2"/><path d="M10 12v3.5a3.5 3.5 0 0 0 3.5 3.5H15"/><rect x="15" y="16" width="6" height="6" rx="1"/><path d="M18 9v4M16.5 11.5L18 13l1.5-1.5"/>',
     "app_sse": '<path d="M6 3h8l4 4v6"/><path d="M6 3v18h6"/><circle cx="16" cy="17" r="3"/><path d="M18.2 19.2L21 22"/>',
     "app_explo": '<path d="M9 21h6v-8H9z"/><path d="M12 13V9"/><path d="M12 9c0-3 3-3 4-5"/><path d="M17 2l.7 1.6L19.3 4l-1.6.7L17 6.3l-.7-1.6L14.7 4l1.6-.4z"/>',
     "app_breach": '<rect x="5" y="3" width="11" height="18" rx="1"/><circle cx="13" cy="12" r="1"/><path d="M19 8l2-2M19 12h3M19 16l2 2"/>',
@@ -824,6 +825,111 @@ def power_assets(tmp):
     convert(repair_kit_item(), "item_repairkit", tmp)
 
 
+# --- Extraction de données : câble branché au connecteur de la coque et module DL-7 (fn_dataOverlay.sqf) ---
+# Repère : pixels de la coque paysage 2048 (android_s7_ca.png). Bout du câble d'origine (sortie du connecteur) : (1883, 1350).
+# En portrait la coque est tournée d'un quart de tour horaire : (x, y) devient (2048 - y, x), bout du câble (698, 1883).
+# Chaque variante a son cadre (fractions du carré de la coque) et l'emplacement du module, repris dans fn_dataOverlay.
+DATALINK = {
+    # nom : (cadre x0, y0, l, h), module (x, y, l, h), câble téléphone -> module, câble module -> cible
+    "datalink_land_up": ((0.5, 0.0, 0.5, 1.0), (1180, 180, 700, 290),
+        "M 1870 1350 L 1880 1350 Q 1905 1350 1905 1310 L 1905 400 Q 1905 325 1872 325",
+        "M 1188 325 C 1110 325 1080 300 1000 250"),
+    "datalink_land_down": ((0.5, 0.25, 0.5, 1.0), (1180, 1800, 700, 290),
+        "M 1870 1350 L 1880 1350 Q 1905 1350 1905 1395 L 1905 1870 Q 1905 1945 1872 1945",
+        "M 1188 1945 C 1110 1945 1080 1990 1000 2080"),
+    "datalink_port_left": ((-0.5, 0.5, 1.0, 0.5), (-760, 1560, 700, 290),
+        "M 698 1870 L 698 1885 Q 698 1925 655 1925 L 30 1925 Q -20 1925 -20 1875 L -20 1765 Q -20 1705 -68 1705",
+        "M -752 1705 C -830 1705 -900 1680 -1040 1620"),
+    "datalink_port_right": ((0.5, 0.5, 1.0, 0.5), (2110, 1560, 700, 290),
+        "M 698 1870 L 698 1885 Q 698 1925 741 1925 L 2030 1925 Q 2080 1925 2080 1875 L 2080 1765 Q 2080 1705 2118 1705",
+        "M 2802 1705 C 2880 1705 2950 1680 3090 1620"),
+}
+
+
+def _cable_svg(d, w=52):
+    return (f'<path d="{d}" transform="translate(7,10)" stroke="#000" stroke-opacity="0.35" stroke-width="{w + 8}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+            f'<path d="{d}" stroke="#08090a" stroke-width="{w + 6}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+            f'<path d="{d}" stroke="#1c2120" stroke-width="{w - 4}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+            f'<path d="{d}" transform="translate(-7,-9)" stroke="#4d5551" stroke-opacity="0.75" stroke-width="{max(4, w // 7)}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>')
+
+
+def _module_svg(x, y, w, h):
+    r = h * 0.16
+    out = [
+        '<defs><linearGradient id="dlc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a5038"/><stop offset="0.55" stop-color="#30352a"/><stop offset="1" stop-color="#1d2019"/></linearGradient>'
+        '<linearGradient id="dll" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d2416"/><stop offset="1" stop-color="#06120b"/></linearGradient></defs>',
+        # Ombre portée, prises latérales (manchons de câble) puis boîtier durci.
+        f'<rect x="{x + 10}" y="{y + 14}" width="{w}" height="{h}" rx="{r}" fill="#000" fill-opacity="0.35"/>',
+        f'<rect x="{x - 26}" y="{y + h * 0.36}" width="{w + 52}" height="{h * 0.28}" rx="10" fill="#0b0c0c"/>',
+        f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{r}" fill="url(#dlc)" stroke="#0a0b09" stroke-width="7"/>',
+        f'<rect x="{x + 8}" y="{y + 6}" width="{w - 16}" height="{h * 0.1}" rx="{r * 0.6}" fill="#ffffff" fill-opacity="0.07"/>',
+    ]
+    # Pare-chocs caoutchouc aux coins et vis.
+    for cx, cy in ((x, y), (x + w, y), (x, y + h), (x + w, y + h)):
+        k = h * 0.13
+        out.append(f'<rect x="{cx - k}" y="{cy - k}" width="{2 * k}" height="{2 * k}" rx="{k * 0.45}" fill="#121410" stroke="#050505" stroke-width="4"/>')
+    for fx, fy in ((0.045, 0.16), (0.955, 0.16), (0.045, 0.84), (0.955, 0.84)):
+        sx, sy = x + w * fx, y + h * fy
+        out.append(f'<circle cx="{sx}" cy="{sy}" r="{h * 0.035}" fill="#8a8f86" stroke="#222" stroke-width="2"/>'
+                   f'<path d="M {sx - h * 0.022} {sy} L {sx + h * 0.022} {sy}" stroke="#333" stroke-width="3"/>')
+    # Plaque : marque et modèle.
+    out.append(f'<text x="{x + w * 0.07}" y="{y + h * 0.25}" font-family="DejaVu Sans" font-weight="bold" font-size="{h * 0.13}" fill="#d9ddcf" letter-spacing="1">COMSPEC</text>')
+    out.append(f'<text x="{x + w * 0.93}" y="{y + h * 0.25}" text-anchor="end" font-family="DejaVu Sans" font-size="{h * 0.095}" fill="#9aa190" letter-spacing="1">DL-7 · DATA LINK</text>')
+    # Écran LCD (le texte est dessiné par le jeu par-dessus) et loupiotes (allumées par le jeu).
+    out.append(f'<rect x="{x + w * 0.07 - 6}" y="{y + h * 0.36 - 6}" width="{w * 0.5 + 12}" height="{h * 0.44 + 12}" rx="10" fill="#050605"/>')
+    out.append(f'<rect x="{x + w * 0.07}" y="{y + h * 0.36}" width="{w * 0.5}" height="{h * 0.44}" rx="6" fill="url(#dll)"/>')
+    out.append(f'<rect x="{x + w * 0.07}" y="{y + h * 0.36}" width="{w * 0.5}" height="{h * 0.1}" rx="6" fill="#ffffff" fill-opacity="0.06"/>')
+    for i, (fx, lab) in enumerate(((0.655, "PWR"), (0.77, "AUTH"), (0.885, "DATA"))):
+        cx, cy = x + w * fx, y + h * 0.52
+        out.append(f'<circle cx="{cx}" cy="{cy}" r="{w * 0.036}" fill="#0a0a0a" stroke="#56594f" stroke-width="3"/>'
+                   f'<circle cx="{cx}" cy="{cy}" r="{w * 0.024}" fill="#1b1f1b"/>'
+                   f'<text x="{cx}" y="{y + h * 0.78}" text-anchor="middle" font-family="DejaVu Sans" font-weight="bold" font-size="{h * 0.062}" fill="#9aa190">{lab}</text>')
+    # Grille d'aération.
+    for i in range(6):
+        gx = x + w * (0.64 + i * 0.045)
+        out.append(f'<path d="M {gx} {y + h * 0.86} L {gx + w * 0.02} {y + h * 0.86}" stroke="#14160f" stroke-width="7" stroke-linecap="round"/>')
+    return "".join(out)
+
+
+def _plug_svg(x, y, horizontal=True):
+    if horizontal:
+        return (f'<rect x="{x - 36}" y="{y - 24}" width="72" height="48" rx="8" fill="#101211" stroke="#000" stroke-width="4"/>'
+                f'<rect x="{x - 30}" y="{y - 18}" width="60" height="10" rx="4" fill="#ffffff" fill-opacity="0.08"/>')
+    return (f'<rect x="{x - 24}" y="{y - 36}" width="48" height="72" rx="8" fill="#101211" stroke="#000" stroke-width="4"/>'
+            f'<rect x="{x - 18}" y="{y - 30}" width="10" height="60" rx="4" fill="#ffffff" fill-opacity="0.08"/>')
+
+
+def datalink_svg(name, px=1024):
+    (fx, fy, fw, fh), (mx, my, mw, mh), c1, c2 = DATALINK[name]
+    vx, vy, vw, vh = fx * 2048, fy * 2048, fw * 2048, fh * 2048
+    W, H = int(px * fw * 2), int(px * fh * 2)
+    body = _cable_svg(c2, 40) + _cable_svg(c1, 52) + _module_svg(mx, my, mw, mh)
+    # Manchons sur les prises du module (gauche, droite) et sur le bout du câble d'origine.
+    body += _plug_svg(mx - 4, my + mh / 2) + _plug_svg(mx + mw + 4, my + mh / 2)
+    port = name.startswith("datalink_port")
+    body += _plug_svg(698, 1872, False) if port else _plug_svg(1872, 1350)
+    svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vx} {vy} {vw} {vh}" width="{W}" height="{H}">{body}</svg>')
+    return Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=W, output_height=H))).convert("RGBA")
+
+
+def datalink_assets(tmp):
+    for name in DATALINK:
+        convert(datalink_svg(name), name, tmp)
+    convert(data_cable_item(), "item_datacable", tmp)
+
+
+def data_cable_item(size=256):
+    """Kit de câble de données (objet d'inventaire) : module DL-7 et câble enroulé."""
+    svg = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="1100 100 860 520" width="512" height="310">'
+           + _cable_svg("M 1200 520 C 1150 600 1350 640 1420 560 C 1490 480 1300 430 1250 520 C 1200 610 1450 640 1520 560", 40)
+           + _module_svg(1180, 180, 700, 290) + _plug_svg(1176, 325) + _plug_svg(1884, 325) + '</svg>')
+    img = Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=512, output_height=310))).convert("RGBA")
+    out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    img = img.resize((size, int(size * 310 / 512)), Image.LANCZOS)
+    out.alpha_composite(img, (0, (size - img.height) // 2))
+    return out
+
+
 def convert(img, name, tmp):
     png = os.path.join(tmp, name + ".png")
     img.save(png)
@@ -844,6 +950,9 @@ def main():
         convert(frs_bar(), "frs_bar", tmp)
         convert(disc(), "ui_disc", tmp)
         power_assets(tmp)
+        datalink_assets(tmp)
+        if len(sys.argv) > 2 and sys.argv[2] == "datalink":
+            return
         if len(sys.argv) > 2 and sys.argv[2] == "icons":
             for name, body in ICONS.items():
                 convert(icon_png(name, body), name, tmp)
