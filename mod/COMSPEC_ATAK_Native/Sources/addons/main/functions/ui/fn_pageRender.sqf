@@ -113,4 +113,6 @@ if (_restore && {_sv isEqualType []} && {(count _sv) isEqualTo 2} && {(_sv selec
 };
 // Toasts recréés après la page pour rester au premier plan.
 [] call comspec_atak_native_fnc_notificationsRender;
+// Écran de verrouillage, volet rapide et toast Android remis devant la page redessinée (fn_fx).
+["raise"] call comspec_atak_native_fnc_fx;
 true

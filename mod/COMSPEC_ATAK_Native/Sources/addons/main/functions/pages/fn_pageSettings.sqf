@@ -130,7 +130,7 @@ private _perso = [
     ["edit", "patchText", "Texte du patch nominatif", profileNamespace getVariable ["COMSPEC_ATAK_PatchText", ""]],
     ["buttons", [["ENREGISTRER LE TEXTE", {
         private _t = ["patchText"] call comspec_atak_native_fnc_formValue;
-        if (_t isEqualType "") then { profileNamespace setVariable ["COMSPEC_ATAK_PatchText", (trim _t) select [0, 14]]; saveProfileNamespace; ["INFO", "Patch nominatif enregistré", 3, 10] call comspec_atak_native_fnc_notify; };
+        if (_t isEqualType "") then { profileNamespace setVariable ["COMSPEC_ATAK_PatchText", (trim _t) select [0, 14]]; saveProfileNamespace; ["Patch nominatif enregistré", 2] call comspec_atak_native_fnc_toast; };
     }]]],
     ["buttons", [["VOIR L'ARRIÈRE DU TÉLÉPHONE", { [{ [] call comspec_atak_native_fnc_backView; }] call CBA_fnc_execNextFrame; }]]],
     ["section", "Accessoires", "Batterie externe, balise IR et filtre d'écran JVN (objets de l'inventaire)"],
@@ -145,7 +145,7 @@ private _perso = [
     ["edit", "lockCode", "Code de verrouillage (vide = aucun)", profileNamespace getVariable ["COMSPEC_ATAK_LockCode", ""]],
     ["buttons", [["ENREGISTRER LE CODE", {
         private _t = ["lockCode"] call comspec_atak_native_fnc_formValue;
-        if (_t isEqualType "") then { profileNamespace setVariable ["COMSPEC_ATAK_LockCode", (trim _t) select [0, 12]]; saveProfileNamespace; ["INFO", "Code de verrouillage enregistré", 3, 10] call comspec_atak_native_fnc_notify; };
+        if (_t isEqualType "") then { profileNamespace setVariable ["COMSPEC_ATAK_LockCode", (trim _t) select [0, 12]]; saveProfileNamespace; ["Code de verrouillage enregistré", 2] call comspec_atak_native_fnc_toast; };
     }], [["EFFACEMENT D'URGENCE", "CONFIRMER L'EFFACEMENT"] select (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_WipeArm", -10]) < 5), {
         // Deux appuis en moins de 5 s : rien ne s'efface par erreur.
         if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_WipeArm", -10]) < 5) then {
@@ -163,6 +163,11 @@ private _perso = [
     ["COMSPEC_ATAK_WallBlur", false, "", "Flou du fond", "Fond d'écran flouté et assombri : icônes plus lisibles"] call _profSwitch,
     ["COMSPEC_ATAK_TextScale", 1, "Taille du texte", [["PETIT", 0.9], ["NORMAL", 1], ["GRAND", 1.15]]] call _profSegment,
     ["COMSPEC_ATAK_IconDensity", 0, "Icônes du lanceur", [["GRANDES", -1], ["NORMALES", 0], ["SERRÉES", 1]], "Moins ou plus d'icônes par ligne"] call _profSegment,
+    ["section", "Animations et sons", "Un téléphone qui réagit : mouvement, clic et vibration légère, écran de verrouillage"],
+    ["COMSPEC_ATAK_Animations", true, "", "Animations", "App qui s'ouvre en zoomant, page qui glisse au retour, onde sous le doigt, volet rapide animé"] call _profSwitch,
+    ["COMSPEC_ATAK_TapFeedback", true, "", "Clic et vibration des appuis", "Clic doux et légère vibration de la coque à chaque appui (aucun son en mode discrétion)"] call _profSwitch,
+    ["COMSPEC_ATAK_LockScreen", true, "", "Écran de verrouillage", "Heure, date, dernières notifications : à la première sortie, après une minute rangé ou un redémarrage"] call _profSwitch,
+    ["COMSPEC_ATAK_Brightness", 1, "Luminosité", [["30 %", 0.3], ["50 %", 0.5], ["75 %", 0.75], ["100 %", 1]], "Aussi dans le volet rapide (clic sur l'heure) ; écran moins lumineux : moins visible de nuit, moins de batterie"] call _profSegment,
     ["section", "Dock", format ["%1 app(s) en raccourci en bas de l'écran (6 au plus)", count _dockNow]]
 ];
 {

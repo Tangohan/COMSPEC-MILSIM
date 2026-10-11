@@ -5,6 +5,7 @@
     Masqué pour soi en vue à la première personne. Retiré sans téléphone, à la mort ou en véhicule.
     Réglages profil : COMSPEC_ATAK_VestMount (off, left, center, right), COMSPEC_ATAK_VestDepth (épaisseur du gilet),
     COMSPEC_ATAK_VestFace (back : dos et patch vers l'extérieur, pochette rabattue ; screen : écran vers l'extérieur).
+    Gilet avec ATAK intégré (fn_vestBuiltin) : rien n'est accroché tant que COMSPEC_ATAK_VestBuiltinUse ne vaut pas "ours".
     Réglage fin de l'orientation (essais en jeu) : missionNamespace COMSPEC_ATAK_VestDirUp = [[dir], [up]].
     Actions : ["tick"] (client, toutes les 2 s) ; ["sweep"] (serveur : objets orphelins après une déconnexion).
 */
@@ -17,7 +18,9 @@ if (!hasInterface) exitWith { false };
 private _mount = profileNamespace getVariable ["COMSPEC_ATAK_VestMount", "off"];
 private _depth = profileNamespace getVariable ["COMSPEC_ATAK_VestDepth", 0.19];
 private _cur = missionNamespace getVariable ["COMSPEC_ATAK_VestObj", objNull];
-private _want = _mount in ["left", "center", "right"] && {alive player} && {vehicle player isEqualTo player} && {[player] call comspec_atak_native_fnc_hasDevice};
+// Gilet qui porte déjà un ATAK modélisé : le sien suffit, sauf si le joueur veut aussi le nôtre (menu ACE « Gilet »).
+private _builtinOnly = [player] call comspec_atak_native_fnc_vestBuiltin && {(profileNamespace getVariable ["COMSPEC_ATAK_VestBuiltinUse", "vest"]) isNotEqualTo "ours"};
+private _want = _mount in ["left", "center", "right"] && {!_builtinOnly} && {alive player} && {vehicle player isEqualTo player} && {[player] call comspec_atak_native_fnc_hasDevice};
 if (!_want) exitWith {
     if (!isNull _cur) then { deleteVehicle _cur; missionNamespace setVariable ["COMSPEC_ATAK_VestObj", objNull]; };
     false

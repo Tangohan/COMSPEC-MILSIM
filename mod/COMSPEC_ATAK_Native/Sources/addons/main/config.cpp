@@ -15,6 +15,7 @@ class CfgFunctions {
             class display {}; class open {}; class close {}; class hudToggle {}; class interactToggle {}; class orientationToggle {}; class phoneDrag {}; class formRender {}; class formValue {}; class fullAlert {}; class vibrate {}; class dataBarEnabled {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class navigate {}; class back {}; class modeToggle {};
             class pageRender {}; class pageClear {}; class pageCtrl {}; class tileCreate {}; class appList {}; class appBadge {}; class dockRender {}; class launcherRender {}; class deviceOverlay {}; class appVisible {}; class accent {};
             class statusUpdate {}; class inspectorUpdate {}; class abbrev {}; class notify {}; class notificationsRender {}; class notifCenter {}; class powerFx {}; class overlayFront {}; class screenSurface {};
+            class fx {}; class toast {}; class quickSettings {}; class lockScreen {};
         };
         class map { file="z\comspec_atak_native\addons\main\functions\map";
             class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class unitGroup {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerWeb {}; class markerWebSweep {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {}; class mapUnfocus {}; class inspToggle {}; class markerPalette {}; class markerPaletteData {}; class markerLabels {}; class sigintPoll {}; class reliefDraw {}; class meshDraw {}; class logisticsDraw {}; class ewDraw {}; class mapStyle {}; class textureKeep {};
@@ -47,7 +48,7 @@ class CfgFunctions {
             class airplaneMode {}; class btAction {}; class btSounds {}; class pageBluetooth {}; class btInit { postInit=1; };
         };
         class shell { file="z\comspec_atak_native\addons\main\functions\shell";
-            class antenna {}; class backView {}; class aceMenu {}; class vestMount {}; class powerBank {}; class irBeacon {}; class screenGlow {}; class phoneSecurity {}; class droppedPhone {}; class patchTexture {};
+            class antenna {}; class backView {}; class aceMenu {}; class vestMount {}; class powerBank {}; class irBeacon {}; class screenGlow {}; class phoneSecurity {}; class droppedPhone {}; class patchTexture {}; class pageAccessories {}; class accessoriesAction {}; class vestBuiltin {};
         };
         class vehicle { file="z\comspec_atak_native\addons\main\functions\vehicle";
             class vehicleTerminal {}; class vehicleGateway {};
@@ -125,6 +126,7 @@ class COMSPEC_ATAK_Apps {
     class Resynch     { name="Synchro"; page="RESYNCH"; section="Système"; order=304; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_resynch.paa"; };
     class Status      { name="Statut"; page="STATUS"; section="Système"; order=306; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_status.paa"; };
     class Profile     { name="Profil"; page="PROFILE"; section="Système"; order=308; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_profile.paa"; };
+    class Accessories { name="Accessoires"; page="ACCESSORIES"; function="comspec_atak_native_fnc_pageAccessories"; section="Système"; order=309; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_accessories.paa"; };
     class Settings    { name="Réglages"; page="SETTINGS"; section="Système"; order=310; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_settings.paa"; };
     class ScreenTime  { name="Temps d'écran"; page="SCREENTIME"; function="comspec_atak_native_fnc_pageScreenTime"; section="Système"; order=312; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_screentime.paa"; };
     class Debug       { name="Debug"; page="DEBUG"; section="Système"; order=315; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_debug.paa"; };
@@ -224,6 +226,16 @@ class CfgWeapons {
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=30; };
     };
+    // Notre téléphone (Samsung S7 en coque tactique) : compte toujours comme terminal ATAK (fn_deviceCatalog).
+    class COMSPEC_ATAK_Phone: ItemCore {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="Téléphone COMSPEC ATAK (Samsung S7)";
+        descriptionShort="Samsung Galaxy S7 en coque tactique, ATAK COMSPEC installé. Suffit pour ouvrir le téléphone, sans autre mod.";
+        picture="\z\comspec_atak_native\addons\main\data\item_phone.paa";
+        model="\A3\Weapons_F\Ammo\mag_univ.p3d";
+        type=4096; detectRange=-1; simulation="ItemMineDetector";
+        class ItemInfo: InventoryItem_Base_F { mass=3; };
+    };
 };
 class CfgVehicles {
     class Item_Base_F;
@@ -289,6 +301,12 @@ class CfgVehicles {
         displayName="Kit terminal véhicule ATAK";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_VehicleKit { name="COMSPEC_ATAK_VehicleKit"; count=1; }; };
+    };
+    class Item_COMSPEC_ATAK_Phone: Item_Base_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="Téléphone COMSPEC ATAK (Samsung S7)";
+        vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
+        class TransportItems { class _xx_COMSPEC_ATAK_Phone { name="COMSPEC_ATAK_Phone"; count=1; }; };
     };
     // Modules Zeus / Eden « ATAK · Données » (extraction au câble DL-7).
     #include "modules.hpp"

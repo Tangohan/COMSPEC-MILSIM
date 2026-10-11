@@ -144,7 +144,7 @@ if (!isNull _target) then {
     if (_cible isEqualTo "" || {_cible find "Error:" >= 0}) then { _cible = "personne visée"; };
     (_disp displayCtrl 9500) ctrlSetStructuredText parseText format [
         // Une seule ligne sous les tuiles : la suite (« inventaire et statut préremplis… ») était coupée.
-        "<t align='center' size='0.56' color='#c8eadc'>Cible : %1%2</t>",
+        "<t align='center' size='0.56' color='#33414c'>Cible : %1%2</t>",
         _cible,
         _etat
     ];
@@ -157,13 +157,13 @@ for "_i" from 0 to (lbSize _status) - 1 do {
 };
 
 private _wTxt = if ((count _weaponsLines) > 0) then {
-    format ["<t size='0.64' color='#e8f4f0'>Armes : %1</t>", _weaponsLines joinString ", "]
+    format ["<t size='0.64' color='#14181d'>Armes : %1</t>", _weaponsLines joinString ", "]
 } else {
-    "<t size='0.64' color='#c8eadc'>Aucune arme détectée.</t>"
+    "<t size='0.64' color='#33414c'>Aucune arme détectée.</t>"
 };
 private _eTxt = if ((count _equipmentLines) > 0) then {
     private _sample = _equipmentLines select [0, (count _equipmentLines) min 8];
-    format ["<br/><t size='0.62' color='#c8eadc'>Équipement : %1</t>", _sample joinString ", "]
+    format ["<br/><t size='0.62' color='#33414c'>Équipement : %1</t>", _sample joinString ", "]
 } else {
     ""
 };
@@ -179,33 +179,33 @@ if (!isNull _target) then {
 };
 uiNamespace setVariable ["COMSPEC_SsePerson_Medical", _med];
 
-private _medTxt = "<t size='0.62' color='#a8c8bc'>Aucune personne visée — constat indisponible.</t>";
+private _medTxt = "<t size='0.62' color='#5a6670'>Aucune personne visée — constat indisponible.</t>";
 if (_med isEqualType createHashMap && {(count _med) > 0}) then {
     private _etat = _med getOrDefault ["etat", "inconnu"];
     private _col = switch (_etat) do {
-        case "decede": { "#c88a8a" };
+        case "decede": { "#8a2020" };
         case "cardiac_arrest";
-        case "critical": { "#e09a7e" };
+        case "critical": { "#b3261e" };
         case "unconscious";
-        case "wounded": { "#e0d27e" };
-        default { "#7ee0a0" };
+        case "wounded": { "#8a6d00" };
+        default { "#1a7f37" };
     };
     private _rows = [format [
-        "<t size='0.62' color='#b8ddd0'>État</t>  <t size='0.62' color='%1'>%2</t>",
+        "<t size='0.62' color='#5a6670'>État</t>  <t size='0.62' color='%1'>%2</t>",
         _col,
         _med getOrDefault ["etat_label", "Inconnu"]
     ]];
     private _pouls = _med getOrDefault ["pouls", -1];
     if (_pouls > 0) then {
-        _rows pushBack format ["<t size='0.62' color='#b8ddd0'>Pouls</t>  <t size='0.62' color='#e8fff4'>%1/min</t>", _pouls];
+        _rows pushBack format ["<t size='0.62' color='#5a6670'>Pouls</t>  <t size='0.62' color='#14181d'>%1/min</t>", _pouls];
     };
     private _sang = _med getOrDefault ["sang", -1];
     if (_sang >= 0 && {_sang < 100}) then {
-        _rows pushBack format ["<t size='0.62' color='#b8ddd0'>Volémie</t>  <t size='0.62' color='#e8fff4'>≈ %1%2</t>", _sang, "%"];
+        _rows pushBack format ["<t size='0.62' color='#5a6670'>Volémie</t>  <t size='0.62' color='#14181d'>≈ %1%2</t>", _sang, "%"];
     };
     private _les = _med getOrDefault ["lesions", []];
     if ((_les isEqualType []) && {(count _les) > 0}) then {
-        _rows pushBack format ["<t size='0.62' color='#b8ddd0'>Lésions</t>  <t size='0.62' color='#e8fff4'>%1</t>", _les joinString ", "];
+        _rows pushBack format ["<t size='0.62' color='#5a6670'>Lésions</t>  <t size='0.62' color='#14181d'>%1</t>", _les joinString ", "];
     };
     _medTxt = _rows joinString "<br/>";
 

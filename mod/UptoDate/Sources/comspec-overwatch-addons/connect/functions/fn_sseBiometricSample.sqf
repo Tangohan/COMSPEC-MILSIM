@@ -46,7 +46,7 @@ if (isNull _target) then {
 // Retour visible sur l'écran du SEEK : « announce » n'écrit que dans le journal
 // HTML de la tablette — hors liaison / sans tablette, l'opérateur ne voyait rien.
 private _fnc_screenMsg = {
-    params ["_msg", ["_col", "#e0a233"]];
+    params ["_msg", ["_col", "#9a5b00"]];
     uiNamespace setVariable ["COMSPEC_SsePerson_BioMsg", format ["<t size='0.46' color='%1'>%2</t>", _col, _msg]];
     if (!isNil "comspec_overwatch_connect_fnc_ssePersonRefreshPanels") then {
         [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;
@@ -62,7 +62,7 @@ private _already = false;
 } forEach _samples;
 if (_already) exitWith {
     [format ["%1 déjà enregistré pour cette personne.", _label], "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
-    [format ["%1 déjà enregistré.", _label], "#9ed8b4"] call _fnc_screenMsg;
+    [format ["%1 déjà enregistré.", _label], "#1d6b34"] call _fnc_screenMsg;
 };
 
 private _gear = (items _player) + (assignedItems _player);
@@ -158,9 +158,15 @@ if (
     && {_target getVariable [_takenVar, false]}
 ) exitWith {
     [format ["%1 déjà prélevé sur cette personne.", _label], "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
-    [format ["%1 déjà prélevé sur cette personne.", _label], "#9ed8b4"] call _fnc_screenMsg;
+    [format ["%1 déjà prélevé sur cette personne.", _label], "#1d6b34"] call _fnc_screenMsg;
 };
 uiNamespace setVariable ["COMSPEC_SsePerson_BioMsg", ""];
+// Le SEEK se rouvre sur l'écran de la modalité relevée : empreintes (3), iris (8), revue (9) pour l'ADN.
+uiNamespace setVariable ["COMSPEC_SseSampleReopenPage", switch (_kind) do {
+    case "iris": { 8 };
+    case "adn": { 9 };
+    default { 3 };
+}];
 
 uiNamespace setVariable ["COMSPEC_SseSampleFinish", {
     params ["_kind", "_label", "_kit", "_consume", "_give", "_takenVar", "_target"];
@@ -263,15 +269,15 @@ if (!isNil "ace_common_fnc_progressBar") exitWith {
         {
             (_this select 0) params ["_kind", "_label", "_kit", "_consume", "_give", "_takenVar", "_target"];
             [_kind, _label, _kit, _consume, _give, _takenVar, _target] call (uiNamespace getVariable ["COMSPEC_SseSampleFinish", {}]);
-            [3] call (uiNamespace getVariable ["COMSPEC_SseSampleReopen", {}]);
+            [uiNamespace getVariable ["COMSPEC_SseSampleReopenPage", 3]] call (uiNamespace getVariable ["COMSPEC_SseSampleReopen", {}]);
         },
         {
             if (vehicle player == player) then {
                 player playMoveNow "AmovPknlMstpSnonWnonDnon";
             };
             ["Relevé interrompu.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
-            uiNamespace setVariable ["COMSPEC_SsePerson_BioMsg", "<t size='0.46' color='#e0a233'>Relevé interrompu : restez à moins de 5 m du sujet.</t>"];
-            [3] call (uiNamespace getVariable ["COMSPEC_SseSampleReopen", {}]);
+            uiNamespace setVariable ["COMSPEC_SsePerson_BioMsg", "<t size='0.46' color='#9a5b00'>Relevé interrompu : restez à moins de 5 m du sujet.</t>"];
+            [uiNamespace getVariable ["COMSPEC_SseSampleReopenPage", 3]] call (uiNamespace getVariable ["COMSPEC_SseSampleReopen", {}]);
         },
         format ["%1…", _label],
         {
@@ -286,5 +292,5 @@ if (!isNil "ace_common_fnc_progressBar") exitWith {
 [{
     _this params ["_kind", "_label", "_kit", "_consume", "_give", "_takenVar", "_target"];
     [_kind, _label, _kit, _consume, _give, _takenVar, _target] call (uiNamespace getVariable ["COMSPEC_SseSampleFinish", {}]);
-    [3] call (uiNamespace getVariable ["COMSPEC_SseSampleReopen", {}]);
+    [uiNamespace getVariable ["COMSPEC_SseSampleReopenPage", 3]] call (uiNamespace getVariable ["COMSPEC_SseSampleReopen", {}]);
 }, _args, _duration] call CBA_fnc_waitAndExecute;

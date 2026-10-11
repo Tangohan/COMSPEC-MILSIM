@@ -28,6 +28,8 @@ switch (_act) do {
         if ((([] call comspec_atak_native_fnc_deviceHealth) getOrDefault ["state", "OK"]) in ["OFF", "BROKEN"]) exitWith { 0 };
         private _lvl = [0.55, 1] select (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false]));
         _lvl = _lvl * (switch (profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"]) do { case "RED": { 0.45 }; case "DIM": { 0.4 }; default { 1 }; });
+        // Luminosité réglée (volet rapide) : écran baissé, lueur réduite d'autant.
+        _lvl = _lvl * ((profileNamespace getVariable ["COMSPEC_ATAK_Brightness", 1]) max 0.2 min 1);
         if (!isNull objectParent player) then { _lvl = _lvl * 0.3; };
         if (["filter"] call comspec_atak_native_fnc_screenGlow) then { _lvl = _lvl * 0.12; };
         _lvl

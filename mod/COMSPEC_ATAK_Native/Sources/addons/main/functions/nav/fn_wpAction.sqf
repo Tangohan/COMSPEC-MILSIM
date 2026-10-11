@@ -14,7 +14,7 @@ switch (_act) do {
     case "add": {
         if ((count _pts) >= 20) exitWith { ["WARNING", "20 étapes au maximum", 3, 20] call comspec_atak_native_fnc_notify; };
         _pts pushBack [[_arg select 0, _arg select 1, 0], format ["WP%1", (count _pts) + 1]];
-        ["INFO", format ["Étape WP%1 ajoutée", count _pts], 2, 10] call comspec_atak_native_fnc_notify;
+        if !(([format ["Étape WP%1 ajoutée", count _pts], 2] call comspec_atak_native_fnc_toast)) then { ["INFO", format ["Étape WP%1 ajoutée", count _pts], 2, 10] call comspec_atak_native_fnc_notify; };
         call _rerender;
     };
     case "del": {

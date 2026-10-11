@@ -22,6 +22,8 @@ private _night = profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"];
 if (_open) then {
     private _scr = [0.35, 0.55] select (_s getOrDefault ["interactive", false]);
     if (_night isNotEqualTo "OFF") then { _scr = _scr * 0.6; };
+    // Luminosité baissée (volet rapide) : l'écran consomme moins.
+    _scr = _scr * (0.6 + 0.4 * ((profileNamespace getVariable ["COMSPEC_ATAK_Brightness", 1]) max 0.2 min 1));
     _f pushBack [["Écran porté", "Écran en main"] select (_s getOrDefault ["interactive", false]), _scr];
 } else {
     _f pushBack ["Veille", 0.12];

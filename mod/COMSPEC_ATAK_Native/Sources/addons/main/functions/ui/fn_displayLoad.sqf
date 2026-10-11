@@ -15,6 +15,13 @@ uiNamespace setVariable ["COMSPEC_ATAK_PageControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_ToastControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_BadgeSig", []];
+// Calques Android (fn_lockScreen, fn_quickSettings, fn_toast) : leurs contrôles sont morts avec l'ancien display.
+uiNamespace setVariable ["COMSPEC_ATAK_LockUp", false];
+uiNamespace setVariable ["COMSPEC_ATAK_LockCtrls", []];
+uiNamespace setVariable ["COMSPEC_ATAK_ShadeOpen", false];
+uiNamespace setVariable ["COMSPEC_ATAK_ShadeCtrls", []];
+uiNamespace setVariable ["COMSPEC_ATAK_ShadeHandle", []];
+uiNamespace setVariable ["COMSPEC_ATAK_ToastPill", []];
 
 // Les raccourcis CBA ne passent pas quand le téléphone est en main : on reprend ici les touches « porter » et « interagir ».
 if (_interactive) then {
@@ -55,6 +62,25 @@ if (_interactive) then {
     _display displayAddEventHandler ["MouseButtonDown", { params ["", "_button"]; ["DOWN", _button] call comspec_atak_native_fnc_phoneDrag; }];
     _display displayAddEventHandler ["MouseMoving", { ["MOVE"] call comspec_atak_native_fnc_phoneDrag; }];
     _display displayAddEventHandler ["MouseButtonUp", { ["UP"] call comspec_atak_native_fnc_phoneDrag; }];
+    // Appui sur l'écran (fn_fx « tap ») : onde, clic doux, vibration légère. Pas après un glissé (carte, curseur) :
+    // la position du bouton enfoncé est gardée, au-delà de quelques pixels le relâchement n'est pas un appui.
+    _display displayAddEventHandler ["MouseButtonDown", {
+        params ["", "_button", "_mx", "_my"];
+        if (_button isEqualTo 0) then { uiNamespace setVariable ["COMSPEC_ATAK_TapDown", [_mx, _my, diag_tickTime]]; };
+        false
+    }];
+    _display displayAddEventHandler ["MouseButtonUp", {
+        params ["", "_button", "_mx", "_my"];
+        if (_button isNotEqualTo 0) exitWith { false };
+        (uiNamespace getVariable ["COMSPEC_ATAK_TapDown", [_mx, _my, -10]]) params ["_ix", "_iy", "_it"];
+        private _moved = (diag_tickTime - _it) < 2 && {((abs (_mx - _ix)) / pixelW) + ((abs (_my - _iy)) / pixelH) > 12};
+        if (!_moved) then { ["tap", [_mx, _my]] call comspec_atak_native_fnc_fx; };
+        // Volet rapide ou écran de verrouillage affiché : ils repassent devant l'app cliquée.
+        if ((uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]) || {uiNamespace getVariable ["COMSPEC_ATAK_ShadeOpen", false]}) then {
+            [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame;
+        };
+        false
+    }];
     // Après un clic dans une app : effets d'écran (fêlures, filtre de nuit) remis devant (fn_overlayFront).
     _display displayAddEventHandler ["MouseButtonUp", {
         if (uiNamespace getVariable ["COMSPEC_ATAK_DevFront", false]) then { [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame; };
@@ -64,6 +90,9 @@ if (_interactive) then {
 
 [] call comspec_atak_native_fnc_schedulerStart;
 [profileNamespace getVariable ["COMSPEC_ATAK_LastPage", "MAP"]] call comspec_atak_native_fnc_navigate;
+// Écran de verrouillage : première sortie de la mission, après une minute rangé ou un redémarrage (fn_lockScreen).
+// Avant fn_statusUpdate, qui note l'heure du dernier affichage.
+["check"] call comspec_atak_native_fnc_lockScreen;
 [] call comspec_atak_native_fnc_statusUpdate;
 
 ["INFO", "UI", format ["display_created (%1)", ["HUD", "en main"] select _interactive]] call comspec_atak_native_fnc_log;

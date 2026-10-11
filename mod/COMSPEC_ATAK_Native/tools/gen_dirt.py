@@ -51,23 +51,32 @@ def dust(seed):
 
 
 def fingerprint(seed):
+    """Trace de pouce : ovale allongé, crêtes en boucle déformées, grasse et partielle (un bord appuyé, l'autre effacé)."""
+    import numpy as np
     rnd = random.Random(seed)
-    s = 128
-    a = Image.new("L", (s, s), 0)
-    d = ImageDraw.Draw(a)
-    cx, cy = s / 2 + rnd.uniform(-6, 6), s / 2 + rnd.uniform(-6, 6)
-    for i in range(3, 30):
-        rx, ry = i * 1.9, i * 2.5
-        start = rnd.uniform(0, 40)
-        for seg in range(0, 360, 12):
-            if rnd.random() < 0.12:
-                continue
-            d.arc([cx - rx, cy - ry, cx + rx, cy + ry], start + seg, start + seg + 10, fill=200, width=1)
-    mask = Image.new("L", (s, s), 0)
-    ImageDraw.Draw(mask).ellipse([12, 4, s - 12, s - 4], fill=255)
-    mask = mask.filter(ImageFilter.GaussianBlur(10))
-    a = Image.composite(a, Image.new("L", (s, s), 0), mask)
-    return white(a.filter(ImageFilter.GaussianBlur(0.5)))
+    w, h = 128, 256  # PAA : côtés en puissances de 2 ; l'ovale occupe ~200 px de haut
+    ys, xs = np.mgrid[0:h, 0:w].astype(np.float32)
+    u = (xs - w / 2) / (w / 2)
+    v = (ys - h * 0.56) / (h * 0.40)
+    # Bruit lisse pour tordre les crêtes (pas de cercles parfaits).
+    noise = Image.effect_noise((4, 6), 70).resize((w, h), Image.BICUBIC).filter(ImageFilter.GaussianBlur(12))
+    warp = (np.asarray(noise, dtype=np.float32) - 128) / 128
+    # Boucle : distance elliptique, crêtes qui s'ouvrent vers le bas.
+    r = np.sqrt((u * 1.0) ** 2 + (np.minimum(v, 0) * 1.25) ** 2 + (np.maximum(v, 0) * 0.35) ** 2)
+    r = r + 0.025 * warp + 0.012 * np.sin(u * 3 + rnd.uniform(0, 6))
+    period = 0.062 + rnd.uniform(-0.005, 0.005)
+    ridge = 0.5 + 0.5 * np.sin(2 * np.pi * r / period)
+    ridge = np.clip((ridge - 0.35) * 2.2, 0, 1)
+    # Contour du doigt : ovale flou ; pression inégale (un côté plus marqué), lacunes de crêtes.
+    shape = np.clip(1 - ((u / 0.92) ** 2 + ((ys - h * 0.5) / (h * 0.39)) ** 2), 0, 1) ** 0.6
+    ang = rnd.uniform(0, 2 * np.pi)
+    press = np.clip(0.35 + 0.9 * (u * np.cos(ang) + v * np.sin(ang)), 0, 1) ** 1.4
+    gaps = np.clip(1.4 - 1.0 * (np.asarray(Image.effect_noise((w // 6, h // 6), 90).resize((w, h), Image.BICUBIC), dtype=np.float32) / 255), 0, 1)
+    a = ridge * shape * press * gaps
+    # Voile gras sous les crêtes.
+    a = 0.7 * a + 0.3 * shape * press
+    img = Image.fromarray(np.uint8(np.clip(a, 0, 1) * 210), "L").filter(ImageFilter.GaussianBlur(0.7))
+    return white(img)
 
 
 def smear(seed):
@@ -181,8 +190,13 @@ def convert(img, name, tmp):
 
 def main():
     with tempfile.TemporaryDirectory() as tmp:
+        if len(sys.argv) > 2 and sys.argv[2] == "prints":
+            for i in range(4):
+                convert(fingerprint(21 + i), f"dirt_print_{i}", tmp)
+            return
         for i in range(2):
             convert(dust(11 + i), f"dirt_dust_{i}", tmp)
+        for i in range(4):
             convert(fingerprint(21 + i), f"dirt_print_{i}", tmp)
         for i in range(3):
             convert(smear(31 + i), f"dirt_smear_{i}", tmp)

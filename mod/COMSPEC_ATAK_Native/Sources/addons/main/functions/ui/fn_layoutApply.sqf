@@ -101,7 +101,20 @@ private _step = _bw * 1.7;
 private _isMap = _page isEqualTo "MAP";
 private _inspW = [0, _l get "inspW"] select _isMap;
 [88530, [_bx, _byy, _bww - _inspW, _bhh]] call _set;
-[88531, [_bx, _byy, _bww, _bhh]] call _set;
+// Zone de contenu : la repositionner remet son défilement en haut. On ne la déplace que si sa place change
+// (chaque bascule des Réglages appelait layoutApply avant le redessin : la page remontait en haut à chaque clic),
+// et le défilement est rendu après un vrai déplacement.
+private _cg = _d displayCtrl 88531;
+private _cgPos = [_bx, _byy, _bww, _bhh];
+private _cgCur = ctrlPosition _cg;
+private _cgMoved = (count _cgCur) < 4;
+{ if ((abs (_x - (_cgCur param [_forEachIndex, -1]))) > 0.00001) then { _cgMoved = true; }; } forEach _cgPos;
+if (_cgMoved) then {
+    private _sv = ctrlScrollValues _cg;
+    _cg ctrlSetPosition _cgPos;
+    _cg ctrlCommit 0;
+    if ((_sv select 0) > 0) then { _cg ctrlSetScrollValues [_sv select 0, -1]; };
+};
 [88540, [_bx + _bww - _inspW, _byy, _inspW, _bhh]] call _set;
 [88541, [_bx + _bww - _inspW + _pad, _byy + _pad, (_inspW - 2 * _pad) max 0, (_bhh - 2 * _pad) max 0]] call _set;
 // Fond d'écran de l'accueil (réglage profil : athena, ops ou aucun).
@@ -121,4 +134,6 @@ _wc ctrlShow (_page isEqualTo "LAUNCHER" && {_wall in _walls});
 [] call comspec_atak_native_fnc_dataOverlay;
 // Antenne d'extension vissée sur le port SMA (fn_antenna).
 ["overlay"] call comspec_atak_native_fnc_antenna;
+// Volet rapide : zone cliquable de la barre d'état et poignée (fn_quickSettings).
+["handle"] call comspec_atak_native_fnc_quickSettings;
 true

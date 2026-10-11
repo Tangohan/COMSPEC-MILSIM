@@ -111,7 +111,7 @@ switch (_tab) do {
             ["buttons", [["COPIER LE JOURNAL", {
                 private _lines = ([] call (uiNamespace getVariable ["COMSPEC_ATAK_DbgMerged", { [] }])) apply { format ["%1 [%2][%3] %4", (_x select 0) toFixed 1, _x select 1, _x select 2, _x select 3] };
                 copyToClipboard (_lines joinString endl);
-                ["SUCCESS", format ["%1 ligne(s) copiée(s) dans le presse-papiers", count _lines], 3, 20] call comspec_atak_native_fnc_notify;
+                [format ["%1 ligne(s) copiée(s) dans le presse-papiers", count _lines], 2.5] call comspec_atak_native_fnc_toast;
             }, true], ["VIDER", { missionNamespace setVariable ["COMSPEC_ATAK_Log", []]; missionNamespace setVariable ["COMSPEC_ATAK_NetLog", []]; ["INFO", "Journaux natifs vidés", 2, 10] call comspec_atak_native_fnc_notify; }]]],
             ["buttons", [["TEST DE DÉBIT", { uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", []]; private _q = [] call comspec_atak_native_fnc_linkQuality; ["INFO", format ["%1 kbit/s, %2 ms, perte %3 %%", _q get "kbps", _q get "latency", _q get "loss"], 4, 10] call comspec_atak_native_fnc_notify; }],
                 ["MESURER LA LATENCE", { if (isNil "comspec_overwatch_connect_fnc_measureLatency") exitWith { ["WARNING", "Overwatch non chargé", 3, 10] call comspec_atak_native_fnc_notify; }; [] call comspec_overwatch_connect_fnc_measureLatency; }]]],

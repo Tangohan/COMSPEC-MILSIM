@@ -40,6 +40,9 @@ if (_lq getOrDefault ["airplane", false]) then {
     _sig ctrlSetTooltip "Mode avion : réseau coupé (Bluetooth disponible)";
 };
 [] call comspec_atak_native_fnc_deviceOverlay;
+// Écran de verrouillage (heure, batterie, verrouillage au rallumage) et volet rapide (batterie, réseau).
+["tick"] call comspec_atak_native_fnc_lockScreen;
+["tick"] call comspec_atak_native_fnc_quickSettings;
 
 private _bat = [] call comspec_atak_native_fnc_battery;
 private _batCtrl = _d displayCtrl 88512;
