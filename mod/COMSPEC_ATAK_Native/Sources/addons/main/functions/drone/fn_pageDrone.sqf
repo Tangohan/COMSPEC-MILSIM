@@ -66,71 +66,173 @@ private _conf = _s getOrDefault ["droneConfirm", ["", 0]];
 private _confirming = { params ["_k"]; (_conf select 0) isEqualTo _k && {diag_tickTime - (_conf select 1) < 5} };
 private _top = _osdH;
 
-// Vue caméra : pleine largeur en 16/9, incrustations façon DJI, boutons posés sur l'image.
+// Vue caméra : tient dans l'écran du téléphone sans défilement. Image 16/9 centrée dans la place restante sous la
+// télémétrie, incrustations posées sur l'image, une barre de commandes dessous. Mode LISTE (droneCamSplit) : image
+// réduite en haut et onglets dessous (pistes, tâches), comme avant.
+// Nacelle : glisser sur l'image (cap et site), molette = zoom continu, flèches ou ZQSD/WASD quand la souris est sur
+// l'image, CENTRER ; un clic sans glisser vise le point (et le marque en mode MARQUAGE).
+private _camFull = _camOn && {_tab isNotEqualTo "LOG"} && {!(_s getOrDefault ["droneCamSplit", false])};
 if (_camOn && {_tab isNotEqualTo "LOG"}) then {
-    private _fh = _bw * 0.5625 * pixelH / pixelW;
-    private _bg = ["COMSPEC_RscText", [0, _top, _bw, _fh]] call comspec_atak_native_fnc_pageCtrl;
+    private _zoom = missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1];
+    private _aim = missionNamespace getVariable ["COMSPEC_ATAK_DroneCamTgt", ""];
+    private _markMode = uiNamespace getVariable ["COMSPEC_ATAK_DroneMarkMode", false];
+    private _alts = [[15, 30, 60, 100, 150], [2, 3, 5, 8]] select _cqb;
+    private _up = (_alts select { _x > _alt }) param [0, -1];
+    private _dn = (_alts select { _x < _alt }) param [(count (_alts select { _x < _alt })) - 1, -1];
+    private _btns = [
+        [["MARQ.", "MARQ. ●"] select _markMode, ["markMode"] call _act, _markMode, "Mode marquage : un clic sur l'image vise ce point et marque la cible (touche « Marquer la cible » : marque sous le réticule)", [0.75, 0.18, 0.15, 0.9]],
+        [format ["x%1", _zoom], ["zoom", [[2, 4] select (_zoom >= 2), 1] select (_zoom >= 4)] call _act, false, "Zoom x1 → x2 → x4 (molette sur l'image : zoom continu jusqu'à x8)"],
+        [["JOUR", "NUIT", "THERM."] select (missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0]), ["vision"] call _act, false, "Vision : jour, nuit, thermique"],
+        [["NADIR", "DEVANT"] select (_aim isEqualTo "NADIR"), ["camAim", ["NADIR", ""] select (_aim isEqualTo "NADIR")] call _act, _aim isEqualTo "NADIR", "Nacelle à la verticale sous le drone"],
+        ["CENTRER", { ["recenter"] call comspec_atak_native_fnc_droneAction; }, false, "Nacelle remise devant (cap du drone, 37° vers le bas)"],
+        ["▲ ALT", ["alt", _up] call _act, false, format ["Monter à %1 m", _up], [], _up > 0],
+        ["▼ ALT", ["alt", _dn] call _act, false, format ["Descendre à %1 m", _dn], [], _dn > 0],
+        ["STAT.", ["mode", "hover"] call _act, _m isEqualTo "HOVER", "Stationnaire : le drone s'arrête là où il est"],
+        [["LISTE", "PLEIN"] select (_s getOrDefault ["droneCamSplit", false]), { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["droneCamSplit", !(_st getOrDefault ["droneCamSplit", false])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, false, "LISTE : image réduite et onglets dessous · PLEIN : image seule, à la taille de l'écran"],
+        ["✕", ["cam"] call _act, false, "Fermer la caméra"]
+    ];
+    private _nb = count _btns;
+    private _rowsN = [1, 2] select (((_bw - _pad) / _nb) < _fs * 2.6);
+    private _perRow = ceil (_nb / _rowsN);
+    private _bh2 = _fs * 1.5;
+    private _barH = _rowsN * (_bh2 + _pad * 0.3) + _pad * 0.3;
+    private _areaH = if (_camFull) then { _bh - _top - _barH } else { ((_bw * 0.5625 * pixelH / pixelW) min (_bh * 0.45)) };
+    // Image 16/9 ajustée à la place disponible (bandes noires sur les côtés ou dessus / dessous).
+    private _k169 = 0.5625 * pixelH / pixelW;
+    private _iw = _bw min (_areaH / _k169);
+    private _ih = _iw * _k169;
+    private _ix = (_bw - _iw) / 2;
+    private _iy = _top + (_areaH - _ih) / 2;
+    private _bg = ["COMSPEC_RscText", [0, _top, _bw, _areaH + _barH]] call comspec_atak_native_fnc_pageCtrl;
     _bg ctrlSetBackgroundColor [0, 0, 0, 1];
     // Texture de rendu : largeur et hauteur en puissances de 2 (576 ne l'est pas : texture jamais créée, image noire) ;
     // le rapport 16/9 de la caméra est donné par le dernier paramètre.
-    ["RscPicture", [0, _top, _bw, _fh], "#(argb,1024,512,1)r2t(comspec_dronecam,1.7778)"] call comspec_atak_native_fnc_pageCtrl;
-    // Clic sur l'image : la nacelle vise le point cliqué (le réticule s'y pose, MARQUER accroche ce qui est dessous).
-    private _hit = ["COMSPEC_RscButtonInvisible", [0, _top, _bw, _fh]] call comspec_atak_native_fnc_pageCtrl;
-    _hit ctrlAddEventHandler ["MouseButtonDown", { params ["", "_btn", "_mx", "_my"]; if (_btn isEqualTo 0) then { ["click", [_mx, _my]] call comspec_atak_native_fnc_droneFlir; }; }];
+    ["RscPicture", [_ix, _iy, _iw, _ih], "#(argb,1024,512,1)r2t(comspec_dronecam,1.7778)"] call comspec_atak_native_fnc_pageCtrl;
     if !(isPiPEnabled) then {
-        private _w = ["COMSPEC_RscStructuredText", [0, _top + _fh * 0.4, _bw, _fs * 2.6]] call comspec_atak_native_fnc_pageCtrl;
+        private _w = ["COMSPEC_RscStructuredText", [_ix, _iy + _ih * 0.4, _iw, _fs * 2.6]] call comspec_atak_native_fnc_pageCtrl;
         _w ctrlSetStructuredText parseText "<t align='center' color='#f2ab33'>Image dans l'image (PiP) désactivée :<br/>Options > Vidéo > Image dans l'image</t>";
     };
     // Réticule fin au centre.
-    private _cx = _bw / 2;
-    private _cy = _top + _fh / 2;
-    private _rw = _bw * 0.035;
+    private _cx = _ix + _iw / 2;
+    private _cy = _iy + _ih / 2;
+    private _rw = _iw * 0.035;
     private _rh = _rw * pixelH / pixelW;
     {
         private _r = ["COMSPEC_RscText", _x] call comspec_atak_native_fnc_pageCtrl;
-        _r ctrlSetBackgroundColor [1, 1, 1, 0.85];
+        _r ctrlSetBackgroundColor ([[1, 1, 1, 0.85], [0.95, 0.3, 0.25, 0.95]] select _markMode);
     } forEach [
         [_cx - _rw * 1.4, _cy - pixelH, _rw, pixelH * 2], [_cx + _rw * 0.4, _cy - pixelH, _rw, pixelH * 2],
         [_cx - pixelW, _cy - _rh * 1.4, pixelW * 2, _rh], [_cx - pixelW, _cy + _rh * 0.4, pixelW * 2, _rh]
     ];
+    // Mode marquage : cadre rouge autour de l'image.
+    if (_markMode) then {
+        {
+            private _r = ["COMSPEC_RscText", _x] call comspec_atak_native_fnc_pageCtrl;
+            _r ctrlSetBackgroundColor [0.9, 0.25, 0.2, 0.9];
+        } forEach [[_ix, _iy, _iw, pixelH * 3], [_ix, _iy + _ih - pixelH * 3, _iw, pixelH * 3], [_ix, _iy, pixelW * 3, _ih], [_ix + _iw - pixelW * 3, _iy, pixelW * 3, _ih]];
+    };
     // Incrustations : haut gauche, haut centre, haut droite, bas gauche, bas droite (mises à jour chaque seconde).
-    private _ih = _fs * 2.2;
-    private _bh2 = _fs * 1.35;
-    private _btnY = _top + _fh - _bh2 - _pad / 2;
+    private _ih2 = _fs * 2.2;
     private _txt = [
-        [_pad, _top + _pad / 2, _bw * 0.25, _ih], [_bw * 0.2, _top + _pad / 2, _bw * 0.6, _ih], [_bw * 0.7 - _pad, _top + _pad / 2, _bw * 0.3, _ih],
-        [_pad, _btnY - _fs * 1.25, _bw * 0.5, _fs * 1.2], [_bw * 0.45 - _pad, _btnY - _fs * 1.25, _bw * 0.55, _fs * 1.2]
+        [_ix + _pad, _iy + _pad / 2, _iw * 0.25, _ih2], [_ix + _iw * 0.2, _iy + _pad / 2, _iw * 0.6, _ih2], [_ix + _iw * 0.7 - _pad, _iy + _pad / 2, _iw * 0.3, _ih2],
+        [_ix + _pad, _iy + _ih - _fs * 1.3, _iw * 0.5, _fs * 1.2], [_ix + _iw * 0.45 - _pad, _iy + _ih - _fs * 1.3, _iw * 0.55, _fs * 1.2]
     ] apply {
         private _t = ["COMSPEC_RscStructuredText", _x] call comspec_atak_native_fnc_pageCtrl;
         _t ctrlSetBackgroundColor [0, 0, 0, 0];
+        _t ctrlEnable false;
         _t
     };
     private _feed = [_d, _link, "FEED"] call comspec_atak_native_fnc_droneOsd;
     { _x ctrlSetStructuredText parseText (_feed select _forEachIndex); } forEach _txt;
     uiNamespace setVariable ["COMSPEC_ATAK_DroneFeedTxt", _txt];
+    // Angles de la nacelle et aide, au-dessus des incrustations du bas (mis à jour à chaque mouvement).
+    private _gim = ["COMSPEC_RscStructuredText", [_ix + _iw * 0.2, _iy + _ih - _fs * 2.5, _iw * 0.6, _fs * 1.2]] call comspec_atak_native_fnc_pageCtrl;
+    _gim ctrlEnable false;
+    uiNamespace setVariable ["COMSPEC_ATAK_DroneGimTxt", [_gim, ""]];
+    ["gimbalHud"] call comspec_atak_native_fnc_droneAction;
     // Cadres LOCK des cibles marquées et cadre « visé » sous le réticule, suivis image par image.
-    ["build", [0, _top, _bw, _fh], "FEED", true] call comspec_atak_native_fnc_droneFlir;
-    // Boutons sur l'image : zoom, vision, nadir / devant, fermer.
-    private _zoom = missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1];
-    private _aim = missionNamespace getVariable ["COMSPEC_ATAK_DroneCamTgt", ""];
-    private _btns = [
-        ["MARQUER", ["lock"] call _act, false],
-        ["x1", ["zoom", 1] call _act, _zoom isEqualTo 1], ["x2", ["zoom", 2] call _act, _zoom isEqualTo 2], ["x4", ["zoom", 4] call _act, _zoom isEqualTo 4],
-        [["JOUR", "NUIT", "THERM."] select (missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0]), ["vision"] call _act, false],
-        [["NADIR", "DEVANT"] select (_aim isEqualTo "NADIR"), ["camAim", ["NADIR", ""] select (_aim isEqualTo "NADIR")] call _act, false],
-        ["FERMER", ["cam"] call _act, false]
-    ];
-    private _bwid = (_bw - _pad * 2) / (count _btns);
+    ["build", [_ix, _iy, _iw, _ih], "FEED", true] call comspec_atak_native_fnc_droneFlir;
+    // Surface de commande de la nacelle (au-dessus de l'image et des cadres).
+    private _hit = ["COMSPEC_RscButtonInvisible", [_ix, _iy, _iw, _ih]] call comspec_atak_native_fnc_pageCtrl;
+    _hit setVariable ["img", [_iw, _ih]];
+    _hit ctrlSetTooltip "Glisser : orienter la nacelle · molette : zoom · clic : viser le point (MARQ. : le marquer) · flèches / ZQSD : nacelle";
+    _hit ctrlAddEventHandler ["MouseButtonDown", {
+        params ["_c", "_btn", "_mx", "_my"];
+        if (_btn isNotEqualTo 0) exitWith {};
+        uiNamespace setVariable ["COMSPEC_ATAK_DroneDrag", [_mx, _my, ["gimbalGet"] call comspec_atak_native_fnc_droneAction, false]];
+    }];
+    _hit ctrlAddEventHandler ["MouseMoving", {
+        params ["_c", "_mx", "_my"];
+        private _dr = uiNamespace getVariable ["COMSPEC_ATAK_DroneDrag", []];
+        if ((count _dr) < 4) exitWith {};
+        _dr params ["_x0", "_y0", "_g0", "_moved"];
+        private _dx = _mx - _x0;
+        private _dy = _my - _y0;
+        if (!_moved && {(abs _dx) < pixelW * 5} && {(abs _dy) < pixelH * 5}) exitWith {};
+        _dr set [3, true];
+        (_c getVariable ["img", [1, 1]]) params ["_w", "_h"];
+        // Glisser d'une largeur d'image = un champ de vision : le point saisi reste sous la souris.
+        private _tv = 0.7 / (missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1]);
+        private _fovV = 2 * atan _tv;
+        private _fovH = 2 * atan (_tv * 1.7778);
+        ["gimbal", [(_g0 select 0) - _dx / _w * _fovH, (_g0 select 1) + _dy / _h * _fovV]] call comspec_atak_native_fnc_droneAction;
+        ["gimbalHud"] call comspec_atak_native_fnc_droneAction;
+    }];
+    _hit ctrlAddEventHandler ["MouseButtonUp", {
+        params ["_c", "_btn", "_mx", "_my"];
+        if (_btn isNotEqualTo 0) exitWith {};
+        private _dr = uiNamespace getVariable ["COMSPEC_ATAK_DroneDrag", []];
+        uiNamespace setVariable ["COMSPEC_ATAK_DroneDrag", []];
+        if ((count _dr) >= 4 && {!(_dr select 3)}) then { ["imgClick", [_mx, _my]] call comspec_atak_native_fnc_droneAction; };
+    }];
+    _hit ctrlAddEventHandler ["MouseEnter", { uiNamespace setVariable ["COMSPEC_ATAK_DroneHover", true]; }];
+    _hit ctrlAddEventHandler ["MouseExit", { uiNamespace setVariable ["COMSPEC_ATAK_DroneHover", false]; uiNamespace setVariable ["COMSPEC_ATAK_DroneDrag", []]; }];
+    _hit ctrlAddEventHandler ["MouseZChanged", {
+        params ["", "_z"];
+        ["zoomBy", 1.15 ^ ([-1, 1] select (_z > 0))] call comspec_atak_native_fnc_droneAction;
+        ["gimbalHud"] call comspec_atak_native_fnc_droneAction;
+        true
+    }];
+    // Clavier sur l'image : un gestionnaire par écran du téléphone (retiré avec lui).
+    private _disp = [] call comspec_atak_native_fnc_display;
+    if ((_disp getVariable ["COMSPEC_DroneKeyEh", -1]) < 0) then {
+        _disp setVariable ["COMSPEC_DroneKeyEh", _disp displayAddEventHandler ["KeyDown", {
+            params ["", "_key", "_shift"];
+            if !(uiNamespace getVariable ["COMSPEC_ATAK_DroneHover", false]) exitWith { false };
+            if (isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull])) exitWith { false };
+            if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "DRONE") exitWith { false };
+            private _st = [4, 1] select _shift;
+            private _v = switch (_key) do {
+                case 200; case 17: { [0, _st] };
+                case 208; case 31: { [0, -_st] };
+                case 203; case 30: { [-_st, 0] };
+                case 205; case 32: { [_st, 0] };
+                default { [] };
+            };
+            if (_key in [201, 209]) exitWith { ["zoomBy", [1 / 1.15, 1.15] select (_key isEqualTo 201)] call comspec_atak_native_fnc_droneAction; ["gimbalHud"] call comspec_atak_native_fnc_droneAction; true };
+            if (_v isEqualTo []) exitWith { false };
+            ["gimbalNudge", _v] call comspec_atak_native_fnc_droneAction;
+            ["gimbalHud"] call comspec_atak_native_fnc_droneAction;
+            true
+        }]];
+    };
+    // Barre de commandes sous l'image (une ou deux rangées selon la largeur).
+    private _by0 = _top + _areaH + _pad * 0.3;
+    private _bwid = (_bw - _pad) / _perRow;
     {
-        _x params ["_lbl", "_code", "_on"];
-        private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * _bwid, _btnY, _bwid - _pad / 3, _bh2], _lbl] call comspec_atak_native_fnc_pageCtrl;
-        _b ctrlSetFontHeight (_fs * 0.85);
-        _b ctrlSetBackgroundColor ([[0, 0, 0, 0.55], [0.36, 0.78, 0.42, 0.85]] select _on);
-        if (_lbl isEqualTo "MARQUER") then { _b ctrlSetBackgroundColor [0.75, 0.18, 0.15, 0.85]; _b ctrlSetTooltip "Marque la cible sous le réticule. Clic sur l'image : la nacelle vise ce point."; };
+        _x params ["_lbl", "_code", "_on", ["_tip", ""], ["_onCol", []], ["_en", true]];
+        private _r = floor (_forEachIndex / _perRow);
+        private _cI = _forEachIndex mod _perRow;
+        private _b = ["COMSPEC_RscButton", [_pad / 2 + _cI * _bwid, _by0 + _r * (_bh2 + _pad * 0.3), _bwid - _pad / 3, _bh2], _lbl] call comspec_atak_native_fnc_pageCtrl;
+        _b ctrlSetFontHeight (_fs * 0.78);
+        _b ctrlSetBackgroundColor ([[0.12, 0.14, 0.13, 1], [_onCol, [0.36, 0.78, 0.42, 0.85]] select (_onCol isEqualTo [])] select _on);
+        if (_tip isNotEqualTo "") then { _b ctrlSetTooltip _tip; };
+        _b ctrlEnable _en;
         _b ctrlAddEventHandler ["ButtonClick", _code];
     } forEach _btns;
-    _top = _top + _fh;
+    _top = _top + _areaH + _barH;
 };
+if (_camFull) exitWith { true };
 
 _rows pushBack ["segment", "", [
     ["PILOTAGE", ["tab", "PILOT"] call _act, _tab isEqualTo "PILOT"],
@@ -203,33 +305,63 @@ switch (_tab) do {
             _rows pushBack ["buttons", [["ENVOYER", ["taskSend"] call _act, true], ["EFFACER", ["taskClear"] call _act]]];
         };
 
-        _rows pushBack ["section", "Frappe", ["Fixez une charge : le drone doit être à moins de 5 m de vous", format ["Charge fixée : %1", _d getVariable ["COMSPEC_DroneArmedLabel", "charge"]]] select _armed];
+        // Frappe : état de l'armement, puis trois étapes pour armer, ou les frappes possibles une fois armé.
+        _rows pushBack ["section", "Frappe", "Drone kamikaze : il pique sur la cible et la charge explose à l'impact (drone perdu)"];
         if (!_strikeOk) then {
             _rows pushBack ["text", "<t color='#8a9a93'>Les drones armés sont désactivés sur ce serveur.</t>"];
-            // Recherche sans frappe : le drone signale le premier ennemi vu et l'observe.
-            _rows append [
-                ["section", "Recherche", "Parcourt la zone autour du drone, signale le premier ennemi vu puis l'observe"],
-                ["segment", "Rayon", ([100, 250, 500] apply { [format ["%1 m", _x], ["radius", _x] call _act, _rad isEqualTo _x] })],
-                ["buttons", [[["LANCER LA RECHERCHE", "RECHERCHE EN COURS"] select (_m isEqualTo "HUNT"), ["mode", "hunt"] call _act, _m isNotEqualTo "HUNT"]]]
-            ];
         } else {
+            private _armLabel = _d getVariable ["COMSPEC_DroneArmedLabel", "charge"];
+            _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_drone.paa", [
+                "<t size='1.15' font='RobotoCondensedBold' color='#8a9a93'>DRONE NON ARMÉ</t><br/><t size='0.85' color='#8a9a93'>Aucune charge fixée : frappe impossible, la recherche ne fait que signaler.</t>",
+                format ["<t size='1.15' font='RobotoCondensedBold' color='#e5483a'>ARMÉ · %1</t><br/><t size='0.85' color='#c9d4cf'>Prêt à frapper. La charge part avec le drone.</t>", toUpper _armLabel]
+            ] select _armed];
             if (!_armed) then {
-                _rows pushBack ["buttons", [["ARMER", ["arm"] call _act, true]]];
-                _rows pushBack ["text", "<t size='0.85' color='#8a9a93'>Roquette RPG, charge de démolition ou grenade, prise dans votre inventaire.</t>"];
+                private _dist = round (player distance _d);
+                private _near = _dist <= 5;
+                private _pl = ["payloads"] call comspec_atak_native_fnc_droneAction;
+                private _pick = _s getOrDefault ["droneArmMag", ""];
+                if ((_pl findIf { (_x select 0) isEqualTo _pick }) < 0) then { _pick = (_pl param [0, [""]]) select 0; };
+                private _pickLbl = ((_pl select { (_x select 0) isEqualTo _pick }) param [0, ["", ""]]) select 1;
+                private _ok = "<t color='#5cc76b' font='RobotoCondensedBold'>✓</t>";
+                private _no = "<t color='#e5483a' font='RobotoCondensedBold'>✗</t>";
+                _rows pushBack ["text", format ["%1 <t font='RobotoCondensedBold'>1. Approchez-vous du drone à moins de 5 m</t><br/><t size='0.85' color='%2'>Vous êtes à %3 m du drone%4</t>",
+                    [_no, _ok] select _near, ["#f2ab33", "#5cc76b"] select _near, _dist, ["", " : posez-le au sol près de vous (ATTERRIR, ou RETOUR puis ATTERRIR)"] select (!_near)]];
+                _rows pushBack ["text", format ["%1 <t font='RobotoCondensedBold'>2. Choisissez la charge</t>", [_no, _ok] select ((count _pl) > 0)]];
+                if ((count _pl) isEqualTo 0) then {
+                    _rows pushBack ["text", "<t size='0.85' color='#f2ab33'>Aucune charge compatible dans votre inventaire.</t><br/><t size='0.8' color='#8a9a93'>Acceptées : roquette RPG-7 ou RPG-42, charge de démolition, grenade RGO ou RGN.</t>"];
+                } else {
+                    _rows pushBack ["segment", "", _pl apply {
+                        _x params ["_mag", "_lbl", "_n"];
+                        [format ["%1 x%2", toUpper _lbl, _n], compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['droneArmMag', %1]; ['tab', 'TASK'] call comspec_atak_native_fnc_droneAction;", str _mag], _mag isEqualTo _pick]
+                    }, "La charge choisie est retirée de votre inventaire et fixée sous le drone"];
+                };
+                private _can = _near && {_pick isNotEqualTo ""};
+                _rows pushBack ["text", format ["%1 <t font='RobotoCondensedBold'>3. Armez</t>%2", [_no, _ok] select _can,
+                    ["", format ["<br/><t size='0.85' color='#8a9a93'>%1</t>", ["Terminez d'abord l'étape 1.", "Terminez d'abord l'étape 2."] select _near]] select (!_can)]];
+                _rows pushBack ["buttons", [[[format ["ARMER : %1", toUpper _pickLbl], "ARMER"] select (_pickLbl isEqualTo ""), ["arm", _pick] call _act, true, _can]]];
             } else {
                 _rows append [
-                    ["buttons", [[["TIR ET OUBLIE : LASER", "CONFIRMER : LASER"] select (["LASER"] call _confirming), ["strike", "LASER"] call _act, true]]],
+                    ["text", "<t font='RobotoCondensedBold'>Laser</t><br/><t size='0.85' color='#8a9a93'>Le drone pique sur le point laser allumé par un membre de votre groupe (désignateur, pointeur IR). Tir et oublie : si le laser s'éteint, il garde la dernière position.</t>"],
+                    ["buttons", [[["PIQUER SUR LE LASER", "CONFIRMER : LASER"] select (["LASER"] call _confirming), ["strike", "LASER"] call _act, true]]],
+                    ["text", "<t font='RobotoCondensedBold'>Grille</t><br/><t size='0.85' color='#8a9a93'>Le drone pique sur le centre de la case saisie.</t>"],
                     ["edit", "droneGrid", "Grille de la cible (8 ou 10 chiffres)", _s getOrDefault ["droneGridVal", ""]],
-                    ["buttons", [[["TIR ET OUBLIE : GRILLE", "CONFIRMER : GRILLE"] select (["GRID"] call _confirming), { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["droneGridVal", ["droneGrid", ""] call comspec_atak_native_fnc_formValue]; ["strike", "GRID"] call comspec_atak_native_fnc_droneAction; }, true]]],
-                    ["text", "<t size='0.85' color='#8a9a93'>Une piste vue par la caméra se frappe aussi depuis l'onglet PISTES.</t>"]
+                    ["buttons", [[["PIQUER SUR LA GRILLE", "CONFIRMER : GRILLE"] select (["GRID"] call _confirming), { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["droneGridVal", ["droneGrid", ""] call comspec_atak_native_fnc_formValue]; ["strike", "GRID"] call comspec_atak_native_fnc_droneAction; }, true]]],
+                    ["text", "<t size='0.85' color='#8a9a93'>Chaque frappe demande un second appui dans les 5 s pour confirmer. Une piste vue par la caméra se frappe aussi depuis l'onglet PISTES (FRAPPER).</t>"],
+                    ["text", format ["<t font='RobotoCondensedBold'>Désarmer</t><br/><t size='0.85' color='#8a9a93'>Retire la charge et la remet dans votre inventaire. Drone à moins de 5 m (vous êtes à %1 m).</t>", round (player distance _d)]],
+                    ["buttons", [["DÉSARMER", ["disarm"] call _act, false, (player distance _d) <= 5 && {_m isNotEqualTo "STRIKE"}]]]
                 ];
             };
-            _rows append [
-                ["section", "Recherche et frappe", ["Parcourt la zone autour du drone, signale le premier ennemi vu puis l'observe", "Parcourt la zone autour du drone et frappe le premier ennemi vu"] select _armed],
-                ["segment", "Rayon", ([100, 250, 500] apply { [format ["%1 m", _x], ["radius", _x] call _act, _rad isEqualTo _x] })],
-                ["buttons", [[["LANCER LA RECHERCHE", "RECHERCHE EN COURS"] select (_m isEqualTo "HUNT"), ["mode", "hunt"] call _act, _m isNotEqualTo "HUNT"]]]
-            ];
         };
+        _rows append [
+            ["section", ["Recherche", "Recherche et frappe"] select (_strikeOk && {_armed}), [
+                "Le drone tourne autour de sa position dans le rayon choisi, signale le premier ennemi vu, puis l'observe.",
+                "Le drone tourne autour de sa position dans le rayon choisi et pique sur le premier ennemi vu (drone perdu)."
+            ] select (_strikeOk && {_armed})],
+            ["text", format ["<t size='0.85' color='%1'>%2</t>", ["#8a9a93", "#e5483a"] select (_strikeOk && {_armed}),
+                [["Mode signalement : armez le drone (ci-dessus) pour qu'il frappe.", "Drone non armé : signalement seulement."] select (!_strikeOk), format ["Drone armé (%1) : la recherche frappera.", _d getVariable ["COMSPEC_DroneArmedLabel", "charge"]]] select (_strikeOk && {_armed})]],
+            ["segment", "Rayon", ([100, 250, 500] apply { [format ["%1 m", _x], ["radius", _x] call _act, _rad isEqualTo _x] })],
+            ["buttons", [[["LANCER LA RECHERCHE", "RECHERCHE EN COURS"] select (_m isEqualTo "HUNT"), ["mode", "hunt"] call _act, _m isNotEqualTo "HUNT"]]]
+        ];
     };
     case "TRACKS": {
         private _tracks = missionNamespace getVariable ["COMSPEC_ATAK_DroneTracks", createHashMap];

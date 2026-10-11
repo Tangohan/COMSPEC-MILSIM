@@ -67,6 +67,8 @@ private _bars = {
     _bw1 * 1.45 * 4
 };
 private _qBars = { params ["_q"]; switch (true) do { case (_q <= 0): { 0 }; case (_q < 0.25): { 1 }; case (_q < 0.5): { 2 }; case (_q < 0.75): { 3 }; default { 4 }; } };
+// Fond de page, allongé à la fin à la hauteur du contenu.
+private _bgc = [[0, 0, _bw, _bh], [0.035, 0.045, 0.04, 0.96]] call _rect;
 private _y = _pad * 0.6;
 private _section = {
     params ["_title", ["_sub", ""]];
@@ -422,7 +424,8 @@ if !(_sim) then {
     ["TEST DE DÉBIT", { uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", []]; private _q = [] call comspec_atak_native_fnc_linkQuality; ["INFO", format ["Test de débit : %1 kbit/s, %2 ms, perte %3 %%", _q get "kbps", _q get "latency", _q get "loss"], 5, 20] call comspec_atak_native_fnc_notify; [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
     ["REDÉMARRER", { ["reboot"] call comspec_atak_native_fnc_deviceRepair; }]
 ]] call _buttons;
-// Fond sous tout le contenu (créé en dernier, placé derrière : les contrôles d'un groupe se dessinent dans l'ordre).
+_bgc ctrlSetPosition [0, 0, _bw, _bh max (_y + _pad)];
+_bgc ctrlCommit 0;
 // Rafraîchissement toutes les 5 s tant que la page est affichée (le défilement est gardé par fn_pageRender).
 private _tok = diag_tickTime;
 uiNamespace setVariable ["COMSPEC_ATAK_NetTok", _tok];

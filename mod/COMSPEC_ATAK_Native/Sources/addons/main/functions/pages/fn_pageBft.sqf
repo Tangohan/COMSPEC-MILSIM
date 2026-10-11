@@ -238,7 +238,6 @@ if (_filtersOpen) then {
     _c ctrlSetFontHeight _fs;
     _c ctrlAddEventHandler ["ButtonClick", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["bftFiltersOpen", false]; [{ ['BFT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
     _fy = _fy + _rh + _pad;
-    private _fh = _fy min _listH;
     _bg ctrlSetPosition [0, 0, _w, _fy max _listH];
     _bg ctrlCommit 0;
     if ((_s getOrDefault ["bftFiltersAnim", false]) && {["anim"] call comspec_atak_native_fnc_fx}) then {
@@ -324,11 +323,12 @@ if (_view isEqualTo "ORBAT") then {
         private _groups = _forms get _form;
         private _fk = "f:" + _form;
         private _nf = 0;
-        { _nf = _nf + count (_y select 2); } forEach _groups;
+        { _nf = _nf + count ((_groups get _x) select 2); } forEach (keys _groups);
         [_fk, format ["%1%2", [_fk] call _sign, _form], format ["%1 piste(s)", _nf], [0.50, 0.72, 0.92, 1]] call _addHead;
         if (_open getOrDefault [_fk, true]) then {
-            private _gKeys = keys _groups;
-            _gKeys = [_gKeys, [], { (_groups get _x) select 0 }] call BIS_fnc_sortBy;
+            private _gKeys = (keys _groups) apply { [toLower ((_groups get _x) select 0), _x] };
+            _gKeys sort true;
+            _gKeys = _gKeys apply { _x select 1 };
             {
                 private _gk = _x;
                 (_groups get _gk) params ["_gName", "_gArr", "_mem"];
@@ -346,7 +346,9 @@ if (_view isEqualTo "ORBAT") then {
                     format ["%1 membre(s)%2", _n, ["", "  ·  " + _ldrTxt] select (_ldrTxt isNotEqualTo "")], [0.86, 0.90, 0.88, 1]] call _addHead;
                 if (_open getOrDefault [_gKey2, true]) then {
                     // Chef d'abord, puis par distance.
-                    _mem = [_mem, [], { [1, 0] select ((_x select 3) isEqualTo _ldr && {!isNull _ldr}) }, "ASCEND", {}] call BIS_fnc_sortBy;
+                    _mem = _mem apply { [[1, 0] select (!isNull _ldr && {(_x select 3) isEqualTo _ldr}), _x select 0, _x] };
+                    _mem sort true;
+                    _mem = _mem apply { _x select 2 };
                     private _teams = createHashMap;
                     private _free = [];
                     {
@@ -389,7 +391,8 @@ if ((count _tracks) isEqualTo 0) then {
 };
 uiNamespace setVariable ["COMSPEC_ATAK_BftIds", _ids];
 uiNamespace setVariable ["COMSPEC_ATAK_BftRows", _rows];
-if (_selIdx < 0 && {_firstRow >= 0}) then { _selIdx = _firstRow; _selId = _ids select _firstRow; _s set ["bftSel", _selId]; };
+// Piste choisie absente (filtrée) : la première de la liste ; repliée dans l'ORBAT : elle reste choisie.
+if (_selIdx < 0 && {_firstRow >= 0} && {(_tracks findIf { (_x select 1) isEqualTo _selId }) < 0}) then { _selIdx = _firstRow; _selId = _ids select _firstRow; _s set ["bftSel", _selId]; };
 if (_selIdx >= 0) then { _list lbSetCurSel _selIdx; };
 _list ctrlAddEventHandler ["LBSelChanged", {
     params ["", "_i"];
