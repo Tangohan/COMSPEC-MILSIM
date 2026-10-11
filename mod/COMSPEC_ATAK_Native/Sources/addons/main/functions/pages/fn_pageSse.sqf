@@ -36,6 +36,24 @@ if (isNull _t) then {
     if (_who isEqualTo "") then { _who = name _t; };
     _rows pushBack ["info", "Sujet", format ["<t font='RobotoCondensedBold'>%1</t>  <t color='%2'>%3 · %4 m</t>", _who, _grey, ["décédé", "vivant"] select (alive _t), round (player distance _t)]];
 };
+// Photo du visage depuis le téléphone : cadrage portrait, jointe à la prochaine fiche SEEK du sujet.
+_rows pushBack ["section", "Photo du visage", "Cadrée de face sur la tête du sujet, jointe à sa fiche SEEK"];
+if (!isNull _t) then {
+    private _meta = _t getVariable ["comspec_sse_facePhotoMeta", []];
+    if ((_meta isEqualType []) && {(count _meta) >= 3}) then {
+        _rows pushBack ["info", "Cliché", format ["<t color='#5cc76b'>pris à %1</t>  <t color='%2'>qualité %3%4</t>", _meta select 2, _grey, _meta select 1, ["", format [" · %1", _meta param [3, ""]]] select ((_meta param [3, ""]) isNotEqualTo "")]];
+    } else {
+        _rows pushBack ["info", "Cliché", format ["<t color='%1'>aucun pour ce sujet</t>", _grey]];
+    };
+};
+private _faceOk = !isNull _t && {(player distance _t) <= 4} && {!isNil "comspec_overwatch_connect_fnc_sseCaptureFacePhoto"};
+if (!isNull _t && {(player distance _t) > 4}) then {
+    _rows pushBack ["text", "<t color='#e5a03a'>Approchez-vous à 4 m au plus pour photographier le visage.</t>"];
+};
+_rows pushBack ["buttons", [["PHOTO DU VISAGE", { ['face'] call comspec_atak_native_fnc_sseAction; }, true, _faceOk]]];
+_rows pushBack ["text", format ["<t size='0.8' color='%1'>Le téléphone se range le temps du cliché. Pour choisir le profil ou les trois quarts, ou voir le viseur, utilisez la page PHOTO du terminal SEEK.</t>", _grey]];
+
+_rows pushBack ["section", "Terminal SEEK", "Fiche du sujet, biométrie, transmission"];
 if (!_item) then {
     _rows pushBack ["text", "<t color='#e5a03a'>Terminal SEEK absent : récupérez l'appareil dans votre équipement.</t>"];
 };

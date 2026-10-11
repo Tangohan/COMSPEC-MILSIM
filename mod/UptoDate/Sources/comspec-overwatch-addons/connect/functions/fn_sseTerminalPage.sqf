@@ -22,13 +22,13 @@ if (isNull _disp) exitWith {};
 // Chaque libellé porte un IDC : sans cela il resterait affiché et se
 // superposerait au libellé de la page suivante, posé sur la même ligne.
 private _pages = [
-    ["ACCUEIL",   [9530, 9531, 9532, 9533, 9534, 9535]],
+    ["ACCUEIL",   [9530, 9531, 9532, 9533, 9534, 9535, 9545, 9546, 9547, 9548, 9549, 9550]],
     ["SUJET",     [9501, 9502, 9503, 9504, 9507, 9508, 9511,
                    9551, 9552, 9553, 9554, 9555, 9556]],
     ["CONTEXTE",  [9505, 9506, 9509, 9510, 9560, 9561, 9562, 9563]],
     ["BIOMETRIE", [9514, 9522, 9523, 9524, 9527, 9566]],
     ["CONSTAT",   [9512, 9521, 9564]],
-    ["PHOTO",     [9515, 9525, 9567]],
+    ["PHOTO",     [9515, 9525, 9567, 9574, 9575, 9576, 9577, 9578, 9579, 9557]],
     ["DOSSIER",   [9513, 9516, 9517, 9518, 9519, 9520, 9544, 9565, 9568]],
     ["TERRAIN",   [9580, 9581, 9582, 9590, 9591, 9592, 9593, 9594]]
 ];
@@ -97,6 +97,9 @@ private _prev = _disp displayCtrl 9541;
 private _next = _disp displayCtrl 9542;
 if (!isNull _prev) then { _prev ctrlShow (_target > 0); };
 if (!isNull _next) then { _next ctrlShow (_target < (_count - 1)); };
+
+// Viseur du visage : actif seulement sur la page photo (une caméra de moins sinon).
+[["stop", "start"] select (_target isEqualTo 5)] call comspec_overwatch_connect_fnc_sseFaceViewfinder;
 
 // Le bandeau LCD suit la page photo ; le reste du temps il informe depuis l'accueil.
 [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;
