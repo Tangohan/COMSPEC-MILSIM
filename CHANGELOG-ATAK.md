@@ -11,6 +11,27 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vague 2026-10-11 (retours de test) — ATAK natif 1.8.1, SEEK, Overwatch embarqué
+
+### Corrigé — Retours de test en jeu
+- Poussière de l'écran beaucoup plus lente (couche complète en ~2 h debout, ~20 min couché sur du sable) et voile plus léger au début.
+- « Nettoyer l'écran » nettoie vraiment (poussière, gouttes et traces partent, le sang demande deux passages) et l'écran se met à jour tout de suite.
+- La saleté touche aussi la coque (poussière plus dense contre les arêtes, pour chaque modèle) ; le sang de la coque reste sur le rebord au lieu de flotter hors du téléphone.
+- Pixels morts bien visibles : amas de pixels, taches noires de dalle morte, lignes verticales et horizontales plus épaisses.
+- Carte : la carte « moi » ne passe plus sous la barre d'outils ; panneau du curseur réduit à deux lignes.
+- Réglages : interrupteurs bien lisibles (libellé blanc, fond plus clair) ; bouton « Redémarrer le téléphone » à côté de « Nettoyer l'écran ».
+- App Réseau : la page plantait (ligne 95) avec une batterie endommagée et masquait le bouton REDÉMARRER.
+- Extraction DL-7 : formulaires Zeus des modules « ATAK · Données » qui plantaient (erreur `max`, deux endroits), module Zeus posé sur un objet reconnu sous la souris, action ACE « Brancher l'ATAK » sur un corps ou un prisonnier rangée sous les actions principales (atteignable), action à 3 m sur les objets, « Marquer sur la carte » au bon carré, réglages « forçage » et « usage unique » acceptés en nombre ou en texte.
+- Liaison allié : écran d'accueil refait (état, trois étapes courtes, équipiers proches avec leur distance, RELIER à moins de 2 m).
+- Dos du téléphone : dos simple de S7 dans sa coque (plus de plaque de fixation).
+- Le « durci XT » devient le modèle « tactique » : coque EUD vert ranger à cadre fin, rail de fixation à ailettes et molette, dos à pad et double objectif.
+- Patchs au dos forces spéciales (dessins COMSPEC) : SAS B Squadron, FOG, Special Forces (et basse visibilité), Navy SEAL, 1er RPIMa, 13e RDP, SFOD-D.
+- Liaison Athena : plus de spam connexion / déconnexion avec son (état tenu quelques secondes avant de changer, sons de perte et de retour limités à un toutes les 30 s, passerelles véhicule comptées comme relais).
+- Alerte médicale Overwatch : erreur `!` (type Tableau) corrigée.
+- SEEK : relevés empreintes, iris et ADN enregistrés avec le terminal seul (hors liaison aussi) et rattachés à la personne ; photo d'un sujet au sol cadrée au-dessus du visage ; textes de la page Terrain et de la barre d'état raccourcis.
+
+---
+
 ## Vague 2026-10-11 (suite) — Extraction de données au câble (ATAK natif 1.8.0)
 
 ### Nouveau — Personnalisation, dos du téléphone, antennes, menu ACE rangé

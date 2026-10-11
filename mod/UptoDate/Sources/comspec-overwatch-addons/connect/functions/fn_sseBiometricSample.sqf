@@ -24,6 +24,35 @@ private _label = switch (_kind) do {
 private _target = uiNamespace getVariable ["COMSPEC_SsePerson_Target", objNull];
 private _player = player;
 
+// Terminal ouvert sans personne visée (menu ATAK, solo) : la personne la plus proche
+// devant l'opérateur devient le sujet de la fiche — le relevé lui est rattaché.
+if (isNull _target) then {
+    private _c = cursorObject;
+    if (!isNull _c && {_c isKindOf "CAManBase"} && {_c != _player} && {(_player distance _c) < 5}) then {
+        _target = _c;
+    } else {
+        // nearestObjects (et non nearEntities) : les corps comptent aussi.
+        private _near = (nearestObjects [_player, ["CAManBase"], 3]) - [_player];
+        _near = _near select { (vehicle _x) isEqualTo _x };
+        private _best = 1e9;
+        {
+            private _d = _player distance _x;
+            if (_d < _best) then { _best = _d; _target = _x; };
+        } forEach _near;
+    };
+    if (!isNull _target) then { uiNamespace setVariable ["COMSPEC_SsePerson_Target", _target]; };
+};
+
+// Retour visible sur l'écran du SEEK : « announce » n'écrit que dans le journal
+// HTML de la tablette — hors liaison / sans tablette, l'opérateur ne voyait rien.
+private _fnc_screenMsg = {
+    params ["_msg", ["_col", "#e0a233"]];
+    uiNamespace setVariable ["COMSPEC_SsePerson_BioMsg", format ["<t size='0.46' color='%1'>%2</t>", _col, _msg]];
+    if (!isNil "comspec_overwatch_connect_fnc_ssePersonRefreshPanels") then {
+        [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;
+    };
+};
+
 // Un seul échantillon par type sur cette fiche.
 private _samples = uiNamespace getVariable ["COMSPEC_SsePerson_Samples", []];
 if (!(_samples isEqualType [])) then { _samples = []; };
@@ -33,6 +62,7 @@ private _already = false;
 } forEach _samples;
 if (_already) exitWith {
     [format ["%1 déjà enregistré pour cette personne.", _label], "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
+    [format ["%1 déjà enregistré.", _label], "#9ed8b4"] call _fnc_screenMsg;
 };
 
 private _gear = (items _player) + (assignedItems _player);
@@ -109,8 +139,17 @@ switch (_kind) do {
     };
 };
 
+// Le SEEK est lui-même un lecteur biométrique (capteur d'empreintes, objectif iris,
+// écouvillon ADN du coffret) : l'objet du terminal COMSPEC_Item_SeekTerminal — ou
+// l'accès sans objet (comspec_sse_require_item = false) — suffit. Auparavant seuls
+// SEEKII / BII étaient reconnus : avec le SEEK COMSPEC en main, aucun relevé ne partait.
+if (_kit isEqualTo "" && {[] call comspec_overwatch_connect_fnc_sseHasTerminalItem}) then {
+    _kit = "terminal";
+};
+
 if (_kit isEqualTo "") exitWith {
     [_needTxt, "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+    [_needTxt] call _fnc_screenMsg;
 };
 
 if (
@@ -119,7 +158,9 @@ if (
     && {_target getVariable [_takenVar, false]}
 ) exitWith {
     [format ["%1 déjà prélevé sur cette personne.", _label], "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
+    [format ["%1 déjà prélevé sur cette personne.", _label], "#9ed8b4"] call _fnc_screenMsg;
 };
+uiNamespace setVariable ["COMSPEC_SsePerson_BioMsg", ""];
 
 uiNamespace setVariable ["COMSPEC_SseSampleFinish", {
     params ["_kind", "_label", "_kit", "_consume", "_give", "_takenVar", "_target"];
@@ -157,6 +198,15 @@ uiNamespace setVariable ["COMSPEC_SseSampleFinish", {
     _samples pushBack [_kind, _quality, _labRef];
     uiNamespace setVariable ["COMSPEC_SsePerson_Samples", _samples];
     uiNamespace setVariable ["COMSPEC_SsePerson_BioPending", true];
+    uiNamespace setVariable ["COMSPEC_SsePerson_BioMsg", ""];
+    // Le relevé suit la personne : une fiche rouverte sur elle le retrouve (hors liaison aussi).
+    if (!isNull _target) then {
+        private _onTarget = _target getVariable ["comspec_sse_bioSamples", []];
+        if (!(_onTarget isEqualType [])) then { _onTarget = []; };
+        _onTarget = _onTarget select { (_x isEqualType []) && {(count _x) >= 3} && {(_x select 0) isNotEqualTo _kind} };
+        _onTarget pushBack [_kind, _quality, _labRef];
+        _target setVariable ["comspec_sse_bioSamples", _onTarget, true];
+    };
 
     [
         format ["%1 : échantillon exploitable (qualité %2%3) — réf. %4", _label, _quality, "%", _labRef],
@@ -220,6 +270,7 @@ if (!isNil "ace_common_fnc_progressBar") exitWith {
                 player playMoveNow "AmovPknlMstpSnonWnonDnon";
             };
             ["Relevé interrompu.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+            uiNamespace setVariable ["COMSPEC_SsePerson_BioMsg", "<t size='0.46' color='#e0a233'>Relevé interrompu : restez à moins de 5 m du sujet.</t>"];
             [3] call (uiNamespace getVariable ["COMSPEC_SseSampleReopen", {}]);
         },
         format ["%1…", _label],

@@ -12,14 +12,38 @@
 params [["_t", objNull, [objNull]], ["_angle", "face", [""]], ["_zoom", 1, [0]]];
 if (isNull _t || {!(_t isKindOf "CAManBase")}) exitWith { [] };
 
-private _sel = _t selectionPosition "head";
-if (_sel isEqualTo [0, 0, 0]) then { _sel = _t selectionPosition "pilot"; };
-private _head = if (_sel isEqualTo [0, 0, 0]) then {
-    (getPosASL _t) vectorAdd [0, 0, 1.6]
-} else {
-    _t modelToWorldVisualWorld _sel
+// --- Position de la tête, vérifiée ---
+// « selectionPosition "head" » (LOD de résolution) ne suit pas toujours le ragdoll
+// d'un corps au sol : la tête pouvait tomber sous le terrain, et la caméra avec
+// elle (viseur dans l'herbe, ciel en fond). On essaie plusieurs LOD et on garde
+// le premier point cohérent : proche du corps, pas sous le sol.
+private _bodyASL = getPosASL _t;
+private _fnc_selASL = {
+    params ["_name", "_lod"];
+    private _p = if (_lod isEqualTo "") then { _t selectionPosition _name } else { _t selectionPosition [_name, _lod] };
+    if (!(_p isEqualType []) || {(count _p) < 3} || {_p isEqualTo [0, 0, 0]}) exitWith { [] };
+    _t modelToWorldVisualWorld _p
+};
+private _fnc_sane = {
+    params ["_p"];
+    if ((count _p) < 3) exitWith { false };
+    if ((_p distance2D _bodyASL) > 2.4) exitWith { false };
+    if (((_p select 2) - (_bodyASL select 2)) > 2.2) exitWith { false };
+    (_p select 2) > ((getTerrainHeightASL _p) - 0.05)
+};
+private _head = [];
+{
+    private _p = _x call _fnc_selASL;
+    if ([_p] call _fnc_sane) exitWith { _head = _p; };
+} forEach [["head", "FireGeometry"], ["head", "HitPoints"], ["head", ""], ["pilot", "Memory"], ["pilot", ""]];
+if (_head isEqualTo []) then {
+    private _e = eyePos _t;
+    _head = if ([_e] call _fnc_sane) then { _e } else { _bodyASL vectorAdd [0, 0, [1.6, 0.25] select (!alive _t)] };
 };
 _head = _head vectorAdd [0, 0, 0.02];
+// Jamais sous le sol (un sol de bâtiment est au-dessus du terrain : ce plancher ne gêne pas).
+private _groundAtHead = getTerrainHeightASL _head;
+if ((_head select 2) < (_groundAtHead + 0.10)) then { _head set [2, _groundAtHead + 0.10]; };
 
 private _eye = if (isNull player) then { _head vectorAdd [0, -1, 0] } else { eyePos player };
 private _toOp = _eye vectorDiff _head;
@@ -30,15 +54,28 @@ _toOp = vectorNormalized _toOp;
 private _down = !alive _t
     || {(lifeState _t) isEqualTo "INCAPACITATED"}
     || {_t getVariable ["ACE_isUnconscious", false]}
-    || {((_head select 2) - ((getPosASL _t) select 2)) < 0.7};
+    || {((_head select 2) - (_bodyASL select 2)) < 0.7};
 private _dist = 0.85;
 private _cam = [];
 private _look = _head;
 
 if (_down) then {
-    // Au sol : l'opérateur se penche au-dessus du visage, léger décalage vers lui
-    // (une visée parfaitement verticale fait basculer l'horizon de la caméra).
-    _cam = _head vectorAdd [0, 0, _dist] vectorAdd (_toOp vectorMultiply 0.18);
+    // Au sol : l'objectif se place au-dessus du visage, décalé vers la poitrine
+    // (axe cou → tête) : le haut de l'image est le sommet du crâne et la visée
+    // reste à ~25° de la verticale — une visée verticale fait basculer l'horizon.
+    private _axis = [];
+    {
+        private _n = _x call _fnc_selASL;
+        if ([_n] call _fnc_sane && {(_n distance2D _head) > 0.08}) exitWith {
+            _axis = _head vectorDiff _n;
+        };
+    } forEach [["neck", "FireGeometry"], ["neck", ""], ["spine3", "FireGeometry"], ["spine3", ""]];
+    private _back = if (_axis isEqualTo []) then { _toOp } else {
+        _axis set [2, 0];
+        if ((vectorMagnitude _axis) < 0.05) then { _toOp } else { (vectorNormalized _axis) vectorMultiply -1 }
+    };
+    _cam = _head vectorAdd [0, 0, 0.75] vectorAdd (_back vectorMultiply 0.35);
+    _look = _head;
 } else {
     private _f = eyeDirection _t;
     if ((vectorMagnitude _f) < 0.1) then { _f = vectorDir _t; };
@@ -60,12 +97,23 @@ if (_down) then {
     _look = _head vectorAdd [0, 0, -0.06];
 };
 
-// Mur ou véhicule entre le visage et l'objectif : on rapproche la caméra.
-private _hit = lineIntersectsSurfaces [_head, _cam, _t, player, true, 1, "VIEW", "FIRE"];
+// Mur, plafond ou véhicule entre le visage et l'objectif : on rapproche la caméra.
+// Le terrain n'est pas un obstacle (objet nul) : la caméra resterait au ras du sol ;
+// un rapprochement à moins de 35 cm est ignoré pour la même raison.
+private _from = _head vectorAdd [0, 0, 0.05];
+private _hit = lineIntersectsSurfaces [_from, _cam, _t, player, true, 1, "VIEW", "FIRE"];
 if ((count _hit) > 0) then {
-    private _p = (_hit select 0) select 0;
-    _cam = _p vectorAdd ((vectorNormalized (_head vectorDiff _cam)) vectorMultiply 0.06);
+    (_hit select 0) params ["_p", "", "_obj"];
+    if (!isNull _obj) then {
+        private _c = _p vectorAdd ((vectorNormalized (_head vectorDiff _cam)) vectorMultiply 0.06);
+        if ((_c distance _head) > 0.35) then { _cam = _c; };
+    };
 };
+
+// Garde-fous finaux : objectif au-dessus du terrain, et au-dessus du visage pour un sujet au sol.
+private _groundAtCam = getTerrainHeightASL _cam;
+if ((_cam select 2) < (_groundAtCam + 0.30)) then { _cam set [2, _groundAtCam + 0.30]; };
+if (_down && {(_cam select 2) < ((_head select 2) + 0.45)}) then { _cam set [2, (_head select 2) + 0.45]; };
 
 _zoom = (_zoom max 1) min 2.5;
 private _fov = 0.36 / _zoom;

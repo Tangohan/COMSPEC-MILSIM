@@ -340,8 +340,8 @@ class COMSPEC_SsePerson_Dialog {
         };
         class TextBiometrics: COMSPEC_SeekText {
             idc = 9522;
-            text = "<t size='0.62' color='#c8eadc'>Aucun prélèvement.</t>";
-            x = IN_X; y = ROW(2); w = IN_W; h = (3.2 * ROW_H);
+            text = "<t size='0.5' color='#c8eadc'>Aucun relevé.</t>";
+            x = IN_X; y = ROW(2); w = IN_W; h = (3.6 * ROW_H);
         };
 
         // ================= PAGE 4 — CONSTAT =================

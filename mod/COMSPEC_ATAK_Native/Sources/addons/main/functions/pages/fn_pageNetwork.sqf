@@ -92,7 +92,7 @@ _rows append [
     }],
     ["text", call {
         (missionNamespace getVariable ["COMSPEC_ATAK_BatteryInfo", [0, []]]) params ["", "_f"];
-        "<t size='0.8' color='#8a9a93'>" + ((_f apply { format ["%1 %2 %3 %%/min", _x select 0, ["", "+"] select ((_x select 1) < 0), abs (_x select 1)] }) joinString " · ") + "</t>"
+        "<t size='0.8' color='#8a9a93'>" + ((_f apply { _x params ["_n", ["_v", 0]]; if (_v isEqualType 0) then { format ["%1 %2%3 %%/min", _n, ["", "+"] select (_v < 0), abs _v] } else { format ["%1 %2", _n, _v] } }) joinString " · ") + "</t>"
     }],
     ["text", "<t size='0.8' color='#8a9a93'>Réparation : action ACE « Réparer le téléphone ATAK » avec une trousse à outils, ou « Changer de téléphone ATAK » avec un appareil de rechange.</t>"],
     ["buttons", [

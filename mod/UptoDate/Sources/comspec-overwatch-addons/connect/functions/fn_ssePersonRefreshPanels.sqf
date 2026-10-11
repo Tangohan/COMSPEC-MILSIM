@@ -21,12 +21,6 @@ private _lines = [];
             case "adn": { "ADN" };
             default { "EMPREINTES" };
         };
-        // Points caractéristiques : ordre de grandeur crédible par modalité.
-        private _pts = switch (_kind) do {
-            case "iris": { 96 + floor (random 64) };
-            case "adn": { 16 };
-            default { 24 + floor (random 40) };
-        };
         private _col = if (_quality >= 80) then { "#7ee0a0" } else {
             if (_quality >= 60) then { "#e0d27e" } else { "#e09a7e" }
         };
@@ -39,14 +33,16 @@ private _lines = [];
 
         // Une seule ligne par prélèvement : le panneau n'en affiche que quatre, et
         // trois modalités sur deux lignes débordaient — l'ADN était tronqué à l'écran.
+        // (Le nombre de points tiré au hasard à chaque rafraîchissement faisait
+        // clignoter la ligne et la poussait sur deux lignes : retiré.)
         _lines pushBack format [
             "<t size='0.44' color='%1'>■ %2</t> <t size='0.42' color='%1'>%3</t>"
             + " <t size='0.42' color='#c8e8ff'>%4%5</t>"
-            + " <t size='0.4' color='#7f95a8'>· %6 pts · %7</t>",
+            + " <t size='0.4' color='#7f95a8'>· %6</t>",
             _col, _lbl,
             _gauge,
             _quality, "%",
-            _pts, _ref
+            _ref
         ];
     };
 } forEach _samples;
@@ -54,7 +50,7 @@ private _lines = [];
 // Verdict d'identité — remplace la note générique dès qu'une requête a abouti.
 private _queryPending = uiNamespace getVariable ["COMSPEC_SsePerson_QueryPending", false];
 private _query = uiNamespace getVariable ["COMSPEC_SsePerson_Query", []];
-private _verdict = "<t size='0.42' color='#5f7383'>Analyse locale simulée — lancez une requête pour interroger la base.</t>";
+private _verdict = "<t size='0.42' color='#5f7383'>Touchez QUERY pour interroger la base d’identités.</t>";
 if (_queryPending) then {
     _verdict = "<t size='0.44' color='#c8e8ff'>INTERROGATION DE LA BASE D’IDENTITÉS…</t>";
 } else {
@@ -80,12 +76,49 @@ if (_queryPending) then {
     };
 };
 
-private _bioTxt = if ((count _lines) > 0) then {
-    (_lines joinString "<br/>") + "<br/>" + _verdict
+// Sujet de la fiche : le relevé lui est rattaché (sans sujet, la personne la plus
+// proche est prise au moment du relevé).
+private _bt = uiNamespace getVariable ["COMSPEC_SsePerson_Target", objNull];
+private _subj = if (isNull _bt) then {
+    "<t size='0.44' color='#e0d27e'>Aucun sujet visé : placez-vous à côté de la personne.</t>"
 } else {
-    "<t size='0.62' color='#a8c8bc'>Aucun prélèvement. Présentez la personne au lecteur.</t>"
+    private _n = trim format ["%1 %2", _bt getVariable ["COMSPEC_SSE_FirstName", ""], _bt getVariable ["COMSPEC_SSE_LastName", ""]];
+    if (_n isEqualTo "") then { _n = "personne visée"; };
+    format [
+        "<t size='0.44' color='#8fb3a6'>Sujet : </t><t size='0.44' color='#f2fff8'>%1</t><t size='0.42' color='#8fb3a6'>%2  ·  %3 m</t>",
+        _n,
+        ["", " (décédé)"] select (!alive _bt),
+        (player distance _bt) toFixed 1
+    ]
 };
-(_disp displayCtrl 9522) ctrlSetStructuredText parseText _bioTxt;
+private _bioMsg = uiNamespace getVariable ["COMSPEC_SsePerson_BioMsg", ""];
+if (!(_bioMsg isEqualType "")) then { _bioMsg = ""; };
+
+private _bioRows = [_subj];
+if ((count _lines) > 0) then {
+    _bioRows append _lines;
+    _bioRows pushBack _verdict;
+} else {
+    _bioRows pushBack "<t size='0.5' color='#c8eadc'>Aucun relevé.</t> <t size='0.42' color='#8fb3a6'>Touchez EMPR., IRIS ou ADN.</t>";
+};
+if (_bioMsg isNotEqualTo "") then { _bioRows pushBack _bioMsg; };
+(_disp displayCtrl 9522) ctrlSetStructuredText parseText (_bioRows joinString "<br/>");
+
+// Platine (9566) : jauge des trois modalités (empreintes, iris, ADN) — elle était
+// toujours pleine et passait pour un relevé terminé.
+private _platen = _disp displayCtrl 9566;
+private _bioCtrl = _disp displayCtrl 9522;
+if (!isNull _platen && {!isNull _bioCtrl}) then {
+    private _full = (ctrlPosition _bioCtrl) select 2;
+    private _pp = ctrlPosition _platen;
+    private _kinds = [];
+    { if ((_x isEqualType []) && {(count _x) >= 1}) then { _kinds pushBackUnique (_x select 0); }; } forEach _samples;
+    private _frac = ((count _kinds) min 3) / 3;
+    _pp set [2, _full * (_frac max 0.04)];
+    _platen ctrlSetPosition _pp;
+    _platen ctrlCommit 0;
+    _platen ctrlSetBackgroundColor ([[0.176, 0.784, 0.290, 0.25], [0.176, 0.784, 0.290, 0.85]] select (_frac > 0));
+};
 
 // --- Signature (9520) ---
 private _sig = uiNamespace getVariable ["COMSPEC_SsePerson_Signature", []];
@@ -107,7 +140,7 @@ private _ft = _face getOrDefault ["target", objNull];
 if (isNull _ft) then { _ft = uiNamespace getVariable ["COMSPEC_SsePerson_Target", objNull]; };
 private _faceLines = [];
 if (isNull _ft) then {
-    _faceLines pushBack "<t size='0.5' color='#c8eadc'>Aucun sujet.</t><br/><t size='0.4' color='#8fb3a6'>Regardez la personne (4 m au plus) puis rouvrez le terminal.</t>";
+    _faceLines pushBack "<t size='0.5' color='#c8eadc'>Aucun sujet.</t><br/><t size='0.4' color='#8fb3a6'>Visez la personne (4 m) puis rouvrez le SEEK.</t>";
 } else {
     private _who = trim format ["%1 %2", _ft getVariable ["COMSPEC_SSE_FirstName", ""], _ft getVariable ["COMSPEC_SSE_LastName", ""]];
     if (_who isEqualTo "") then { _who = "Sujet non identifié"; };
@@ -194,11 +227,11 @@ private _outbox = ["get"] call comspec_overwatch_connect_fnc_outboxState;
 private _pending = _outbox getOrDefault ["count", 0];
 private _extra = [];
 if (_pending > 0) then {
-    _extra pushBack (format ["<t color='#e0a233'>%1 en attente</t>", _pending]);
+    _extra pushBack (format ["<t color='#e0a233'>%1 att.</t>", _pending]);
 };
 private _nSamples = count _samples;
 if (_nSamples > 0) then {
-    _extra pushBack (format ["%1 relevé%2", _nSamples, if (_nSamples > 1) then { "s" } else { "" }]);
+    _extra pushBack (format ["%1 rel.", _nSamples]);
 };
 _extra pushBack format [
     "%1:%2",
@@ -206,9 +239,11 @@ _extra pushBack format [
     if (_mm < 10) then { format ["0%1", _mm] } else { str _mm }
 ];
 
+// Barre d'état compacte : police réduite et libellés courts — à 0.56 avec des
+// séparateurs doubles, la ligne débordait de la moitié droite de la barre.
 (_disp displayCtrl 9526) ctrlSetStructuredText parseText format [
-    "<t size='0.56' align='right' color='#d8f0e6'>%1  ·  %2  ·  %3</t>",
+    "<t size='0.48' align='right' color='#d8f0e6'>%1 · %2 · %3</t>",
     _linkTxt,
     _caseTxt,
-    _extra joinString "  ·  "
+    _extra joinString " · "
 ];

@@ -161,7 +161,39 @@ def mat_image(name, path, rough=0.6):
     return m
 
 
+def mat_grip(name, color, scale=5.0, strength=0.35):
+    """Caoutchouc à motif losange (damier tourné de 45°) en relief."""
+    m = mat_paint(name, color, rough=0.78, grain=1.2)
+    nt = m.node_tree
+    n = nt.nodes
+    tc = n.new("ShaderNodeTexCoord")
+    mp = n.new("ShaderNodeMapping")
+    mp.inputs["Rotation"].default_value = (0, 0, math.radians(45))
+    mp.inputs["Scale"].default_value = (scale, scale, scale)
+    ck = n.new("ShaderNodeTexChecker")
+    ck.inputs["Scale"].default_value = 1.0
+    bump = n.new("ShaderNodeBump")
+    bump.inputs["Strength"].default_value = strength
+    bump.inputs["Distance"].default_value = 0.03
+    nt.links.new(tc.outputs["Object"], mp.inputs["Vector"])
+    nt.links.new(mp.outputs["Vector"], ck.inputs["Vector"])
+    nt.links.new(ck.outputs["Fac"], bump.inputs["Height"])
+    old = n["Principled BSDF"].inputs["Normal"].links[0].from_node
+    nt.links.new(old.outputs["Normal"], bump.inputs["Normal"])
+    nt.links.new(bump.outputs["Normal"], n["Principled BSDF"].inputs["Normal"])
+    return m
+
+
 # --- Géométrie ---
+def cut(ob, cutter):
+    """Perce ob avec cutter (booléen), cutter masqué au rendu."""
+    mod = ob.modifiers.new("cut", "BOOLEAN")
+    mod.operation = "DIFFERENCE"
+    mod.object = cutter
+    mod.solver = "EXACT"
+    cutter.hide_render = True
+
+
 def rrect(x, y, w, h, r, z0, z1, mat, bevel=0.02, name="rr", seg=10):
     """Prisme à coins arrondis : (x, y) coin haut gauche en BU (Y vers le haut), extrudé de z0 à z1, arêtes adoucies."""
     r = min(r, w / 2 - 1e-4, h / 2 - 1e-4)
@@ -419,10 +451,6 @@ def render_back(path, size=2048):
     rrect(bx, by, 13.58, 6.68, 0.84, 0.0, 0.10, tpu_dark, bevel=0.03)
     bx, by = P(384, 700)
     rrect(bx, by, 13.34, 6.48, 0.78, 0.08, 0.22, tpu, bevel=0.06)
-    # Nervures antidérapantes.
-    for i in range(9):
-        bx, by = P(1395 + (i % 2) * 14, 760 + i * 60)
-        rrect(bx, by, 1.50, 0.26, 0.13, 0.2, 0.30, tpu, bevel=0.06)
     # Panneau velcro (boucles) pour un patch : 300 x 200 px de patch posé par le jeu au centre (x 450-750, y 850-1050).
     bx, by = P(432, 832)
     rrect(bx, by, 3.36, 2.36, 0.16, 0.2, 0.25, tpu_dark, bevel=0.02)
@@ -441,34 +469,11 @@ def render_back(path, size=2048):
     rrect(bx, by, 0.44, 0.30, 0.08, 0.34, 0.39, flash, bevel=0.01)
     bx, by = P(1630, 1104)
     rrect(bx, by, 0.36, 0.36, 0.08, 0.34, 0.38, glass, bevel=0.01)
-    # Plaque de fixation : aluminium anodisé noir, vissée, deux passants MOLLE, molette de rotation.
-    bx, by = P(790, 742)
-    rrect(bx, by, 4.70, 5.60, 0.40, 0.2, 0.42, alu, bevel=0.05)
-    for vv in (800, 1206):
-        bx, by = P(850, vv)
-        rrect(bx, by, 3.50, 0.42, 0.18, 0.38, 0.425, blackm, bevel=0.01)
-    cx, cy = P(1025, 1024)
-    cyl(cx, cy, 1.40, 0.40, 0.56, alu, verts=96, bevel=0.04)
-    # Moletage de la bague : stries radiales.
-    for kk in range(60):
-        a = kk * math.pi / 30
-        bpy.ops.mesh.primitive_cube_add(size=1, location=(cx + 1.38 * math.cos(a), cy + 1.38 * math.sin(a), 0.48), rotation=(0, 0, a))
-        ob = bpy.context.active_object
-        ob.scale = (0.10, 0.035, 0.16)
-        ob.data.materials.append(alu)
-    cyl(cx, cy, 1.04, 0.52, 0.60, blackm, verts=96, bevel=0.02)
-    bx, by = P(1005, 944)
-    rrect(bx, by, 0.40, 1.60, 0.12, 0.58, 0.70, alu, bevel=0.04)
-    for su, sv in ((830, 782), (1220, 782), (830, 1262), (1220, 1262)):
-        sx, sy = P(su, sv)
-        screw(sx, sy, 0.17, 0.42, steel, blackm)
+    # Dos simple de S7 dans sa coque : TPU lisse, pas de plaque de fixation (retour de jeu).
+    # La batterie externe, quand elle est fixée, se pose au centre (gen_assets.PLATE_C).
     # Étiquette du fabricant (papier sérigraphié, un peu plus haut que le TPU).
     bx, by = P(470, 1110)
     rrect(bx, by, 1.70, 1.52, 0.08, 0.22, 0.226, label, bevel=0)
-    # Pieds caoutchouc aux coins du panneau.
-    for su, sv in ((470, 740), (1630, 740), (470, 1310), (1630, 1310)):
-        sx, sy = P(su, sv)
-        cyl(sx, sy, 0.16, 0.2, 0.3, rubber, bevel=0.04)
     # Exposition calée sur la photo de la coque (le panneau doit avoir la même teinte que le rebord).
     lights(key=(-6, 9, 16), power=3300, size=14, fill=560)
     camera(0, 0, 20.48, size, size)

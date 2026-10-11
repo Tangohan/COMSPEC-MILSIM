@@ -34,7 +34,8 @@ switch (_mode) do {
         private _openVeh = _veh isNotEqualTo player && {isTurnedOut player || {_veh isKindOf "Motorcycle"} || {_veh isKindOf "Quadbike_01_base_F"} || {(_veh emptyPositions "cargo") > 0 && {_veh isKindOf "Helicopter"} && {(speed _veh) > 20}}};
         // Poussière : dehors, à pied ou en véhicule ouvert ; écran sorti, elle se dépose beaucoup plus vite.
         if (!_roof && {_veh isEqualTo player || _openVeh}) then {
-            private _r = 0.0015;
+            // Base lente : couche complète en ~2 h écran sorti debout, ~20 min couché sur du sable (retours de jeu : trop rapide).
+            private _r = 0.0004;
             if (_veh isEqualTo player) then {
                 if ((stance player) isEqualTo "PRONE") then { _r = _r * 4; };
                 if ((speed player) > 10) then { _r = _r * 1.5; };
@@ -65,7 +66,7 @@ switch (_mode) do {
         };
         // Téléphone en main : les doigts laissent leurs traces (et le sang de mains ensanglantées, sur l'écran et la coque).
         if (_inHand) then {
-            ["prints", 0.004 + 0.01 * ((_n getOrDefault ["dust", 0]) min 1) * (parseNumber ((stance player) isEqualTo "PRONE"))] call _add;
+            ["prints", 0.0008 + 0.003 * ((_n getOrDefault ["dust", 0]) min 1) * (parseNumber ((stance player) isEqualTo "PRONE"))] call _add;
             if (_hands > 0.05) then {
                 ["blood", 0.05 * _hands] call _add;
                 ["frameBlood", 0.04 * _hands] call _add;
@@ -98,15 +99,19 @@ switch (_mode) do {
         if (_b > 0 || _wounds || {!alive _u}) then { _hands = (_hands + 0.2 + (_b * 4 min 0.5)) min 1; };
     };
     case "clean": {
-        // Mains en sang : on étale autant qu'on essuie.
+        // Un vrai coup de chiffon (retour de jeu : l'ancien passage laissait un voile visible). Poussière, gouttes et
+        // traces partent ; le sang demande deux passages ; mains en sang : on étale autant qu'on essuie.
         private _dirty = _hands > 0.3;
-        _n set ["dust", (_n getOrDefault ["dust", 0]) * 0.12];
+        _n set ["dust", [0, (_n getOrDefault ["dust", 0]) * 0.3] select _dirty];
         _n set ["drops", 0];
-        _n set ["prints", (_n getOrDefault ["prints", 0]) * ([0.15, 0.6] select _dirty)];
+        _n set ["prints", [0, (_n getOrDefault ["prints", 0]) * 0.6] select _dirty];
         private _b = _n getOrDefault ["blood", 0];
-        _n set ["blood", _b * ([0.4, 0.8] select _dirty)];
-        if (_b > 0.05) then { ["prints", _b * 0.2] call _add; };
-        _n set ["frameBlood", (_n getOrDefault ["frameBlood", 0]) * ([0.5, 0.9] select _dirty)];
+        _n set ["blood", [_b * 0.25, _b * 0.8] select _dirty];
+        if (_dirty && {_b > 0.05}) then { ["prints", _b * 0.2] call _add; };
+        _n set ["frameBlood", (_n getOrDefault ["frameBlood", 0]) * ([0.3, 0.9] select _dirty)];
+        { if ((_n getOrDefault [_x, 0]) < 0.04) then { _n set [_x, 0]; }; } forEach ["blood", "frameBlood"];
+        // Calque de surface recréé tout de suite (sinon les taches restent jusqu'au prochain changement de nombre).
+        uiNamespace setVariable ["COMSPEC_ATAK_SurfOverlay", ["", (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) select 1]];
     };
 };
 missionNamespace setVariable ["COMSPEC_ATAK_HandsBlood", _hands];

@@ -126,6 +126,50 @@ def drop():
     return white(a.filter(ImageFilter.GaussianBlur(1.2)))
 
 
+def case_dust(src, seed):
+    """Saleté de la coque d'un modèle (même cadre que sa texture) : poussière plus dense vers les bords et les
+    creux, éclaboussures de boue ; masquée par la silhouette de la coque (l'ouverture de l'écran reste propre)."""
+    rnd = random.Random(seed)
+    S = 1024
+    shape = Image.open(src).convert("RGBA").getchannel("A").resize((S, S), Image.LANCZOS)
+    shape = shape.point(lambda v: 255 if v > 200 else 0).filter(ImageFilter.MinFilter(3))
+    # Bords : 1 - flou de la silhouette (la saleté s'accumule contre les arêtes et dans les angles).
+    soft = shape.filter(ImageFilter.GaussianBlur(26))
+    edge = Image.eval(soft, lambda v: 255 - v)
+    base = dust(seed).getchannel("A").resize((S, S), Image.LANCZOS)
+    a = Image.new("L", (S, S), 0)
+    d = ImageDraw.Draw(a)
+    # Taches de boue séchée, surtout près des bords.
+    for _ in range(70):
+        x, y, r = rnd.randint(0, S), rnd.randint(0, S), rnd.randint(4, 22)
+        d.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rnd.randint(60, 150))
+    for _ in range(900):
+        x, y = rnd.randint(0, S - 1), rnd.randint(0, S - 1)
+        r = rnd.choice([1, 1, 2, 3])
+        d.ellipse([x - r, y - r, x + r, y + r], fill=rnd.randint(80, 200))
+    a = a.filter(ImageFilter.GaussianBlur(1.5))
+    from PIL import ImageChops
+    mix = ImageChops.add(ImageChops.add(base, Image.eval(edge, lambda v: int(v * 0.9))), ImageChops.multiply(a, Image.eval(edge, lambda v: min(255, 90 + v))))
+    return white(ImageChops.multiply(mix, shape))
+
+
+CASE_SRC = {
+    "s7": os.path.join(os.path.dirname(os.path.abspath(__file__)), "src", "android_s7_ca.png"),
+    "rugged": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_rugged_front.png"),
+    "iphone": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_iphone_front.png"),
+    "tablet": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_tablet_front.png"),
+}
+
+
+def case_assets(tmp, only=None):
+    for i, (m, src) in enumerate(CASE_SRC.items()):
+        if (only and m not in only) or not os.path.exists(src):
+            continue
+        land = case_dust(src, 51 + i)
+        convert(land, f"dirt_case_{m}_land", tmp)
+        convert(land.rotate(-90, expand=True), f"dirt_case_{m}_port", tmp)
+
+
 def convert(img, name, tmp):
     png = os.path.join(tmp, name + ".png")
     img.save(png)
@@ -144,6 +188,7 @@ def main():
             convert(smear(31 + i), f"dirt_smear_{i}", tmp)
         convert(splat(41), "dirt_splat", tmp)
         convert(drop(), "dirt_drop", tmp)
+        case_assets(tmp)
 
 
 if __name__ == "__main__":

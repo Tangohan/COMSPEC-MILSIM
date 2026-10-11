@@ -361,8 +361,10 @@ if (!_shouldSend) exitWith {};
 private _txGate = [false] call comspec_overwatch_connect_fnc_canTransmit;
 if !(_txGate getOrDefault ["can_transmit", true]) exitWith {
     // Répercuter l’état réel sur le bandeau (sinon OK + sync 2m alors que rien ne part).
+    // Sauf perte de paquet tirée au sort (zone, simulation) : un paquet perdu n'est pas une liaison perdue,
+    // et l'écrire faisait alterner l'état avec fn_refreshLinkState (bip et notifications en boucle).
     private _ls = _txGate getOrDefault ["link_state", "offline"];
-    if (_ls isEqualType "" && {_ls isNotEqualTo ""}) then {
+    if (_ls isEqualType "" && {_ls isNotEqualTo ""} && {!((_txGate getOrDefault ["reason", ""]) in ["zone_packet_loss", "sim_packet_loss"])}) then {
         private _prev = missionNamespace getVariable ["COMSPEC_LinkState", "linked"];
         if (_prev isNotEqualTo _ls) then {
             missionNamespace setVariable ["COMSPEC_LinkState", _ls, false];

@@ -1381,11 +1381,291 @@ def antenna_assets(tmp):
 
 
 # --- Patchs velcro au dos du téléphone (réglage Personnaliser) : broderie dessinée, 512 px, patch 480 x 320 centré ---
-PATCHES = ["fr", "fr_sub", "us", "us_ir", "skull", "crusader", "alien", "comspec", "name"]
+# Patchs forces spéciales : recréations vectorielles originales (style brodé), pas d'image copiée.
+FONT_SERIF = "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf"
+SF_PATCHES = ["sas_b", "fog", "sf", "sf_sub", "seal", "rpima", "rdp13", "delta"]
+
+
+def _pf(size, path=None):
+    try:
+        return ImageFont.truetype(path or FONT_BOLD, int(size))
+    except OSError:
+        return ImageFont.load_default()
+
+
+def _rot(pts, ang, cx, cy):
+    import math
+    c, s = math.cos(math.radians(ang)), math.sin(math.radians(ang))
+    return [(cx + x * c - y * s, cy + x * s + y * c) for x, y in pts]
+
+
+def _shade(c, f):
+    return tuple(max(0, min(255, int(v * f))) for v in c[:3]) + (255,)
+
+
+def _poly(d, pts, fill, edge=None, w=4):
+    d.polygon(pts, fill=fill)
+    if edge:
+        d.line(list(pts) + [pts[0]], fill=edge, width=int(w), joint="curve")
+
+
+def _text(d, xy, s, size, fill, path=None, edge=None, sw=0, anchor="mm"):
+    d.text(xy, s, font=_pf(size, path), fill=fill, anchor=anchor, stroke_width=int(sw), stroke_fill=edge)
+
+
+def _arc_text(d, cx, cy, r, s, size, fill, center=90, path=None, spread=1.0):
+    """Texte le long d'un arc (centre en degrés, 90 = bas : lu de gauche à droite)."""
+    import math
+    f = _pf(size, path)
+    widths = [f.getlength(ch) * spread for ch in s]
+    total = sum(widths)
+    bottom = 0 < center < 180
+    ang = math.radians(center) + (total / 2 / r if bottom else -total / 2 / r)
+    for ch, w in zip(s, widths):
+        step = w / r
+        a = ang - step / 2 if bottom else ang + step / 2
+        x, y = cx + r * math.cos(a), cy + r * math.sin(a)
+        tile = Image.new("RGBA", (int(size * 2), int(size * 2)), (0, 0, 0, 0))
+        ImageDraw.Draw(tile).text((size, size), ch, font=f, fill=fill, anchor="mm")
+        deg = math.degrees(a) - 90 if bottom else math.degrees(a) + 90
+        tile = tile.rotate(-deg, resample=Image.BICUBIC)
+        d._image.alpha_composite(tile, (int(x - size), int(y - size)))
+        ang = ang - step if bottom else ang + step
+
+
+def _scroll(d, cx, cy, r, half, thick, fill, edge, text, tcol, size, path=FONT_SERIF):
+    """Banderole courbe (arc vers le bas, centre du cercle au-dessus) avec bouts repliés."""
+    import math
+    a0, a1 = math.radians(90 + half), math.radians(90 - half)
+    n = 48
+    outer = [(cx + (r + thick / 2) * math.cos(a0 + (a1 - a0) * i / n), cy + (r + thick / 2) * math.sin(a0 + (a1 - a0) * i / n)) for i in range(n + 1)]
+    inner = [(cx + (r - thick / 2) * math.cos(a1 + (a0 - a1) * i / n), cy + (r - thick / 2) * math.sin(a1 + (a0 - a1) * i / n)) for i in range(n + 1)]
+    dark = _shade(fill, 0.62)
+    for a, sgn in ((a0, -1), (a1, 1)):
+        # Queue repliée en V derrière la bande.
+        ex, ey = cx + r * math.cos(a), cy + r * math.sin(a)
+        nx, ny = math.cos(a), math.sin(a)
+        L = thick * 1.3
+        base = [(ex + nx * (thick / 2) + 0, ey + ny * (thick / 2) + thick * 0.35),
+                (ex - nx * (thick / 2), ey - ny * (thick / 2) + thick * 0.35)]
+        dirx = sgn * L
+        tail = [base[1], (base[1][0] + dirx, base[1][1]), (base[1][0] + dirx - sgn * thick * 0.35, (base[0][1] + base[1][1]) / 2),
+                (base[0][0] + dirx, base[0][1]), base[0]]
+        _poly(d, tail, dark, _shade(edge, 1.0), 4)
+    _poly(d, outer + inner, fill, edge, 6)
+    _arc_text(d, cx, cy, r, text, size, tcol, center=90, path=path)
+
+
+def _dagger(d, cx, cy, length, width, ang, blade, hilt, edge, grip=None):
+    """Dague pointe vers le haut (ang = rotation en degrés), centre = garde."""
+    L, w = length, width
+    bl = [(0, -L * 0.72), (w * 0.5, -L * 0.6), (w * 0.5, 0), (-w * 0.5, 0), (-w * 0.5, -L * 0.6)]
+    _poly(d, _rot(bl, ang, cx, cy), blade, edge, max(3, w * 0.08))
+    half = [(0, -L * 0.72), (w * 0.5, -L * 0.6), (w * 0.5, 0), (0, 0)]
+    d.polygon(_rot(half, ang, cx, cy), fill=_shade(blade, 0.78))
+    d.line(_rot([(0, -L * 0.68), (0, -w * 0.2)], ang, cx, cy), fill=_shade(blade, 0.55), width=max(2, int(w * 0.07)))
+    gw, gh = w * 1.9, w * 0.32
+    _poly(d, _rot([(-gw, 0), (gw, 0), (gw * 0.9, gh), (-gw * 0.9, gh)], ang, cx, cy), hilt, edge, max(3, w * 0.07))
+    gl = L * 0.2
+    _poly(d, _rot([(-w * 0.26, gh), (w * 0.26, gh), (w * 0.3, gh + gl), (-w * 0.3, gh + gl)], ang, cx, cy), grip or _shade(hilt, 0.7), edge, max(3, w * 0.07))
+    for i in range(1, 5):
+        yy = gh + gl * i / 5
+        d.line(_rot([(-w * 0.27, yy), (w * 0.27, yy - gl * 0.06)], ang, cx, cy), fill=_shade(grip or _shade(hilt, 0.7), 0.6), width=max(2, int(w * 0.06)))
+    px, py = _rot([(0, gh + gl + w * 0.3)], ang, cx, cy)[0]
+    pr = w * 0.38
+    d.ellipse((px - pr, py - pr, px + pr, py + pr), fill=hilt, outline=edge, width=max(3, int(w * 0.07)))
+
+
+def _wing(d, rx, ry, sgn, span, c1, c2, edge, n=7, lift=0.55):
+    """Aile déployée en éventail de plumes, racine (rx, ry), sgn = côté."""
+    import math
+    for layer, col, sc in ((0, c2, 1.0), (1, c1, 0.72)):
+        for i in range(n):
+            t = i / (n - 1)
+            ang = math.radians(-2 - t * 58) if layer == 0 else math.radians(-10 - t * 46)
+            Lf = span * sc * (1.0 - 0.42 * t)
+            wf = span * (0.095 if layer == 0 else 0.085)
+            pts_a, pts_b = [], []
+            for j in range(13):
+                u = j / 12
+                bend = lift * Lf * 0.22 * u * u
+                x = u * Lf
+                y = -bend
+                hw = wf * math.sin(math.pi * min(1.0, u * 1.08)) ** 0.7 * (1 - 0.35 * u)
+                pts_a.append((x, y - hw))
+                pts_b.append((x, y + hw))
+            pts = pts_a + pts_b[::-1]
+            pts = [(sgn * (x * math.cos(ang) - y * math.sin(ang)), x * math.sin(ang) + y * math.cos(ang)) for x, y in pts]
+            pts = [(rx + x, ry + y) for x, y in pts]
+            _poly(d, pts, col, edge, 3)
+            # Rachis.
+            mid = [(sgn * (u * Lf * 0.85 * math.cos(ang) + lift * (u * Lf * 0.85) ** 2 / Lf * 0.22 * math.sin(ang)),
+                    u * Lf * 0.85 * math.sin(ang) - lift * (u * Lf * 0.85) ** 2 / Lf * 0.22 * math.cos(ang)) for u in (0.12, 0.5, 0.9)]
+            d.line([(rx + x, ry + y) for x, y in mid], fill=_shade(col, 0.7), width=3)
+
+
+def _arrow(d, x0, y0, x1, y1, w, shaft, head, edge):
+    import math
+    ang = math.degrees(math.atan2(y1 - y0, x1 - x0)) + 90
+    L = math.hypot(x1 - x0, y1 - y0)
+    cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+    # Coordonnées locales : y vers le haut = vers la pointe (-y).
+    _poly(d, _rot([(-w * 0.5, -L / 2 + w * 3), (w * 0.5, -L / 2 + w * 3), (w * 0.5, L / 2), (-w * 0.5, L / 2)], ang, cx, cy), shaft, edge, 3)
+    _poly(d, _rot([(0, -L / 2 - w * 1.2), (w * 2.1, -L / 2 + w * 3.4), (0, -L / 2 + w * 2.6), (-w * 2.1, -L / 2 + w * 3.4)], ang, cx, cy), head, edge, 3)
+    for j in range(3):
+        y = L / 2 - w * (1.0 + j * 1.6)
+        for s in (-1, 1):
+            _poly(d, _rot([(0, y), (s * w * 1.9, y + w * 1.4), (s * w * 1.9, y + w * 2.6), (0, y + w * 1.2)], ang, cx, cy), head, edge, 2)
+
+
+def _anchor(d, cx, top, bot, w, col, edge):
+    _poly(d, [(cx - w / 2, top + w * 1.6), (cx + w / 2, top + w * 1.6), (cx + w / 2, bot), (cx - w / 2, bot)], col, edge, 4)
+    r = w * 1.1
+    d.ellipse((cx - r, top - r * 0.2, cx + r, top + r * 1.8), outline=col, width=int(w * 0.55))
+    sy = top + w * 3.2
+    _poly(d, [(cx - w * 4.2, sy), (cx + w * 4.2, sy), (cx + w * 4.2, sy + w * 0.8), (cx - w * 4.2, sy + w * 0.8)], col, edge, 4)
+    for s in (-1, 1):
+        d.ellipse((cx + s * w * 4.2 - w * 0.6, sy - w * 0.2, cx + s * w * 4.2 + w * 0.6, sy + w), fill=col, outline=edge, width=3)
+    R = (bot - top) * 0.36
+    d.arc((cx - R, bot - R * 2 + w * 0.3, cx + R, bot + w * 0.3), 15, 165, fill=edge, width=int(w * 1.15))
+    d.arc((cx - R, bot - R * 2 + w * 0.3, cx + R, bot + w * 0.3), 18, 162, fill=col, width=int(w * 0.85))
+    import math
+    for s in (-1, 1):
+        a = math.radians(90 - s * 72)
+        ex, ey = cx + R * math.cos(a), bot - R + w * 0.3 + R * math.sin(a)
+        _poly(d, [(ex - s * w * 0.4, ey + w * 0.6), (ex + s * w * 1.0, ey - w * 1.9), (ex + s * w * 1.1, ey + w * 0.4)], col, edge, 3)
+
+
+def _sf_patch(kind, d, W, H, k):
+    import math
+    cx = W / 2
+    if kind in ("sas_b", "rpima"):
+        sas = kind == "sas_b"
+        bg = (22, 28, 50, 255) if sas else (24, 22, 26, 255)
+        d.rectangle((0, 0, W, H), fill=bg)
+        if not sas:
+            _anchor(d, cx, 150, 452, 24, (196, 160, 72, 255), (90, 70, 30, 255))
+        wing1, wing2 = ((128, 182, 222, 255), (52, 92, 150, 255)) if sas else ((218, 182, 92, 255), (150, 112, 46, 255))
+        for s in (-1, 1):
+            _wing(d, cx + s * 22, 318, s, 330, wing1, wing2, (14, 18, 30, 255) if sas else (60, 44, 18, 255), n=6, lift=0.8)
+        _dagger(d, cx, 330, 380, 56, 0, (232, 234, 238, 255), (206, 170, 80, 255) if sas else (200, 200, 206, 255), (30, 34, 48, 255),
+                grip=(60, 70, 110, 255) if sas else (150, 30, 36, 255))
+        sc_fill = (128, 182, 222, 255) if sas else (176, 30, 40, 255)
+        sc_txt = (18, 26, 58, 255) if sas else (240, 236, 226, 255)
+        _scroll(d, cx, -420, 960, 17, 76, sc_fill, (16, 20, 34, 255), "WHO DARES WINS" if sas else "QUI OSE GAGNE", sc_txt, 48)
+        if sas:
+            _text(d, (200, 425), "B", 104, (236, 236, 230, 255), edge=(12, 16, 30, 255), sw=4)
+            _text(d, (W - 200, 425), "SQN", 76, (236, 236, 230, 255), edge=(12, 16, 30, 255), sw=4)
+        else:
+            gold = (220, 186, 96, 255)
+            f1, f2 = _pf(92), _pf(40)
+            x = 125
+            d.text((x, 452), "1", font=f1, fill=gold, anchor="ls", stroke_width=3, stroke_fill=(20, 16, 10, 255))
+            d.text((x + f1.getlength("1") + 2, 399), "er", font=f2, fill=gold, anchor="ls", stroke_width=2, stroke_fill=(20, 16, 10, 255))
+            _text(d, (W - 200, 420), "RPIMa", 66, gold, edge=(20, 16, 10, 255), sw=3)
+        return (120, 160, 205) if sas else (170, 30, 40)
+    if kind in ("sf", "sf_sub"):
+        sub = kind == "sf_sub"
+        bg = (150, 134, 100, 255) if sub else (22, 46, 34, 255)
+        metal = (36, 34, 30, 255) if sub else (200, 202, 206, 255)
+        gold = (36, 34, 30, 255) if sub else (214, 176, 78, 255)
+        edge = (24, 22, 18, 255) if sub else (12, 22, 16, 255)
+        d.rectangle((0, 0, W, H), fill=bg)
+        _text(d, (cx, 92), "SPECIAL FORCES", 64, gold, edge=edge, sw=0 if sub else 3)
+        _arrow(d, 200, 455, 760, 150, 18, metal, metal if sub else (226, 228, 232, 255), edge if not sub else bg)
+        _arrow(d, 760, 455, 200, 150, 18, metal, metal if sub else (226, 228, 232, 255), edge if not sub else bg)
+        _dagger(d, cx, 360, 300, 46, 0, (52, 50, 44, 255) if sub else (234, 236, 240, 255), gold, bg if sub else edge,
+                grip=(52, 50, 44, 255) if sub else (40, 40, 44, 255))
+        _scroll(d, cx, 40, 480, 33, 70, (110, 96, 70, 255) if sub else (206, 208, 212, 255), edge,
+                "DE OPPRESSO LIBER", (24, 22, 18, 255) if sub else (16, 16, 18, 255), 40)
+        return (52, 46, 34) if sub else (196, 160, 70)
+    if kind == "seal":
+        navy, gold, dk = (20, 30, 62, 255), (218, 178, 80, 255), (90, 64, 22, 255)
+        d.rectangle((0, 0, W, H), fill=navy)
+        for s_ in (-1, 1):
+            _wing(d, cx + s_ * 26, 270, s_, 320, gold, (170, 130, 48, 255), dk, n=6, lift=0.8)
+        _anchor(d, cx, 120, 468, 20, gold, dk)
+        # Trident en diagonale, devant l'ancre.
+        tri = (238, 222, 170, 255)
+        a, tc = -42, (cx - 10, 330)
+        _poly(d, _rot([(-9, -170), (9, -170), (9, 200), (-9, 200)], a, *tc), tri, (8, 12, 30, 255), 5)
+        _poly(d, _rot([(-54, -182), (54, -182), (54, -164), (-54, -164)], a, *tc), tri, (8, 12, 30, 255), 5)
+        for px in (-45, 0, 45):
+            _poly(d, _rot([(px - 8, -180), (px - 8, -228), (px - 20, -228), (px, -272), (px + 20, -228), (px + 8, -228), (px + 8, -180)], a, *tc), tri, (8, 12, 30, 255), 5)
+        # Tête d'aigle de profil.
+        _poly(d, [(cx - 34, 262), (cx - 30, 210), (cx + 2, 190), (cx + 40, 200), (cx + 66, 214), (cx + 36, 226), (cx + 22, 262)], gold, dk, 4)
+        d.ellipse((cx + 10, 204, cx + 22, 216), fill=dk)
+        _poly(d, [(cx + 40, 200), (cx + 76, 212), (cx + 58, 232), (cx + 38, 222)], (236, 214, 150, 255), dk, 3)
+        _text(d, (cx, 560), "NAVY  SEALS", 68, gold, path=FONT_SERIF, edge=(8, 12, 30, 255), sw=3)
+        return (196, 160, 70)
+    if kind == "rdp13":
+        bg, silver, edge = (42, 48, 36, 255), (214, 216, 210, 255), (16, 18, 14, 255)
+        d.rectangle((0, 0, W, H), fill=bg)
+        # Brevet parachutiste : voilure à côtes, suspentes, ailes.
+        ccx, cy0, R = cx, 250, 140
+        for s in (-1, 1):
+            _wing(d, ccx + s * 40, 290, s, 330, silver, (150, 154, 146, 255), edge, n=7, lift=0.35)
+        d.pieslice((ccx - R, cy0 - R, ccx + R, cy0 + R), 180, 360, fill=silver, outline=edge, width=6)
+        for i in range(1, 6):
+            a = math.radians(180 + i * 30)
+            d.line((ccx, cy0, ccx + R * math.cos(a), cy0 + R * math.sin(a)), fill=_shade(silver, 0.6), width=4)
+        for i in range(7):
+            x = ccx - R + i * R / 3
+            d.line((x, cy0, ccx, 360), fill=silver, width=4)
+        d.rectangle((ccx - R, cy0 - 4, ccx + R, cy0 + 6), fill=_shade(silver, 0.7))
+        d.ellipse((ccx - 16, 350, ccx + 16, 382), fill=silver, outline=edge, width=4)
+        gold = (222, 184, 86, 255)
+        f1, f2 = _pf(110), _pf(48)
+        tx = cx - (f1.getlength("13") + f2.getlength("e") + _pf(110).getlength(" RDP")) / 2
+        d.text((tx, 518), "13", font=f1, fill=gold, anchor="ls", stroke_width=4, stroke_fill=edge)
+        tx += f1.getlength("13") + 2
+        d.text((tx, 458), "e", font=f2, fill=gold, anchor="ls", stroke_width=3, stroke_fill=edge)
+        tx += f2.getlength("e")
+        d.text((tx, 518), " RDP", font=f1, fill=gold, anchor="ls", stroke_width=4, stroke_fill=edge)
+        _text(d, (cx, 572), "DRAGONS PARACHUTISTES", 40, silver)
+        return (60, 66, 50)
+    if kind == "fog":
+        bg, tan, blk = (62, 68, 50, 255), (196, 176, 132, 255), (18, 18, 16, 255)
+        d.rectangle((0, 0, W, H), fill=bg)
+        # Rose des vents sombre derrière le monogramme.
+        cy0 = 330
+        for i in range(8):
+            a = math.radians(i * 45 - 90)
+            L = 250 if i % 2 == 0 else 150
+            for s in (-1, 1):
+                pts = [(cx, cy0), (cx + L * math.cos(a), cy0 + L * math.sin(a)), (cx + 40 * math.cos(a + s * math.pi / 4), cy0 + 40 * math.sin(a + s * math.pi / 4))]
+                d.polygon(pts, fill=(34, 38, 28, 255) if s < 0 else (46, 52, 38, 255))
+        _text(d, (cx, 335), "FOG", 230, tan, edge=blk, sw=10)
+        # Éclairs croisés sous le monogramme.
+        _text(d, (cx, 84), "FORWARD OPERATIONS", 54, tan, edge=blk, sw=2)
+        _text(d, (cx, 568), "★  GROUP  ★", 54, tan, edge=blk, sw=2)
+        for s in (-1, 1):
+            bolt = [(0, -70), (20, -70), (6, -12), (26, -12), (-14, 70), (-2, 8), (-22, 8)]
+            _poly(d, [(cx + s * 380 + x * s, 330 + y) for x, y in bolt], tan, blk, 4)
+        return (30, 30, 26)
+    # delta : basse visibilité, pointe de flèche et dague, « 1st SFOD-D ».
+    bg, grey, dk = (28, 28, 27, 255), (132, 132, 126, 255), (10, 10, 10, 255)
+    d.rectangle((0, 0, W, H), fill=bg)
+    ax, ay = 230, 320
+    head = [(ax - 150, ay - 200), (ax + 150, ay - 200), (ax + 150, ay + 40), (ax, ay + 220), (ax - 150, ay + 40)]
+    _poly(d, head, (40, 40, 38, 255), grey, 10)
+    _poly(d, [(ax - 118, ay - 168), (ax + 118, ay - 168), (ax + 118, ay + 26), (ax, ay + 176), (ax - 118, ay + 26)], None, (64, 64, 60, 255), 3)
+    _dagger(d, ax, ay + 50, 330, 50, 0, grey, grey, dk, grip=(70, 70, 66, 255))
+    f1 = _pf(110)
+    d.text((410, 300), "1", font=f1, fill=grey, anchor="ls", stroke_width=3, stroke_fill=dk)
+    d.text((410 + f1.getlength("1") + 4, 300), "st", font=_pf(60), fill=grey, anchor="ls", stroke_width=2, stroke_fill=dk)
+    d.text((410, 430), "SFOD-D", font=_pf(108), fill=grey, anchor="ls", stroke_width=3, stroke_fill=dk)
+    _text(d, (410, 500), "AIRBORNE", 46, (96, 96, 92, 255), anchor="lm")
+    return (48, 48, 46)
+
+
+PATCHES = ["fr", "fr_sub", "us", "us_ir", "skull", "crusader", "alien", "comspec", "name"] + SF_PATCHES
 
 
 def _patch_content(kind, d, W, H, k):
     import math
+    if kind in SF_PATCHES:
+        return _sf_patch(kind, d, W, H, k)
     if kind in ("fr", "fr_sub"):
         cols = [(0, 38, 140), (236, 236, 228), (214, 40, 52)] if kind == "fr" else [(52, 58, 44), (150, 140, 108), (92, 84, 62)]
         for i, c in enumerate(cols):
