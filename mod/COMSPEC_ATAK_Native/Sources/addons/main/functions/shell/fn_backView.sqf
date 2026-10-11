@@ -33,6 +33,26 @@ if (_ant isNotEqualTo []) then {
     _a ctrlSetPosition [_x + _w * 1426 / 2048, _y + _h * -832 / 2048, _w * 384 / 2048, _h * 1536 / 2048];
     _a ctrlCommit 0;
 };
+// Patch sur le velcro (réglage Personnaliser) : patch 300 x 200 px au centre de la texture 320 x 320, x 440, y 790.
+private _patch = profileNamespace getVariable ["COMSPEC_ATAK_Patch", "none"];
+if (_patch in ["fr", "fr_sub", "us", "us_ir", "skull", "crusader", "alien", "comspec", "name"]) then {
+    private _pc = _d ctrlCreate ["COMSPEC_RscPicture", -1];
+    _pc ctrlSetText format ["\z\comspec_atak_native\addons\main\data\patch_%1.paa", _patch];
+    _pc ctrlSetTextColor [1, 1, 1, 1];
+    _pc ctrlSetPosition [_x + _w * 440 / 2048, _y + _h * 790 / 2048, _w * 320 / 2048, _h * 320 / 2048];
+    _pc ctrlCommit 0;
+    if (_patch isEqualTo "name") then {
+        // Bande nominative : indicatif choisi, sinon nom du joueur, brodé en majuscules.
+        private _txt = profileNamespace getVariable ["COMSPEC_ATAK_PatchText", ""];
+        if (_txt isEqualTo "") then { _txt = name player; };
+        private _tc = _d ctrlCreate ["COMSPEC_RscStructuredText", -1];
+        private _th = _h * 200 / 2048;
+        _tc ctrlSetPosition [_x + _w * 470 / 2048, _y + _h * 850 / 2048 + _th * 0.27, _w * 260 / 2048, _th * 0.6];
+        _tc ctrlCommit 0;
+        _tc ctrlSetStructuredText parseText format ["<t align='center' font='PuristaBold' size='%1' color='#1d1b14'>%2</t>",
+            (_th * 0.32) / (0.024 * safeZoneH), toUpper ((_txt select [0, 14]) regexReplace ["[<>&]", ""])];
+    };
+};
 private _ident = [player] call comspec_atak_native_fnc_phoneIdent;
 private _cap = _d ctrlCreate ["COMSPEC_RscStructuredText", -1];
 _cap ctrlSetPosition [safeZoneX, safeZoneY + safeZoneH * 0.86, safeZoneW, safeZoneH * 0.1];

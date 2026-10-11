@@ -8,7 +8,7 @@ Sortie : Sources/addons/main/data/*.paa
 Dépendances : Pillow, CairoSVG, HEMTT (hemtt utils paa convert).
 """
 import io, os, subprocess, sys, tempfile
-from PIL import Image, ImageDraw, ImageFilter, ImageOps
+from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 import cairosvg
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -1243,6 +1243,136 @@ def antenna_assets(tmp):
         convert(antenna_item(kind), f"item_antenna_{kind}", tmp)
 
 
+# --- Patchs velcro au dos du téléphone (réglage Personnaliser) : broderie dessinée, 512 px, patch 480 x 320 centré ---
+PATCHES = ["fr", "fr_sub", "us", "us_ir", "skull", "crusader", "alien", "comspec", "name"]
+
+
+def _patch_content(kind, d, W, H, k):
+    import math
+    if kind in ("fr", "fr_sub"):
+        cols = [(0, 38, 140), (236, 236, 228), (214, 40, 52)] if kind == "fr" else [(52, 58, 44), (150, 140, 108), (92, 84, 62)]
+        for i, c in enumerate(cols):
+            d.rectangle((i * W / 3, 0, (i + 1) * W / 3, H), fill=c + (255,))
+        return (24, 24, 22) if kind == "fr_sub" else (210, 196, 120)
+    if kind in ("us", "us_ir"):
+        red, white, blue, star = ((178, 34, 52), (240, 238, 230), (40, 52, 110), (240, 238, 230)) if kind == "us" else ((88, 90, 80), (150, 150, 136), (60, 62, 56), (150, 150, 136))
+        for i in range(13):
+            d.rectangle((0, i * H / 13, W, (i + 1) * H / 13), fill=(red if i % 2 == 0 else white) + (255,))
+        cw, ch = W * 0.42, H * 7 / 13
+        d.rectangle((0, 0, cw, ch), fill=blue + (255,))
+        for row in range(9):
+            n = 6 if row % 2 == 0 else 5
+            for c in range(n):
+                x = cw * ((c + (0.5 if row % 2 == 0 else 1.0)) / 6.0)
+                y = ch * (row + 0.75) / 10
+                r = 6 * k
+                pts = [(x + r * math.cos(math.radians(-90 + j * 36)) * (1 if j % 2 == 0 else 0.42),
+                        y + r * math.sin(math.radians(-90 + j * 36)) * (1 if j % 2 == 0 else 0.42)) for j in range(10)]
+                d.polygon(pts, fill=star + (255,))
+        return (196, 170, 90) if kind == "us" else (40, 40, 36)
+    d.rectangle((0, 0, W, H), fill=(18, 18, 18, 255) if kind != "comspec" and kind != "name" else ((44, 50, 36, 255) if kind == "comspec" else (98, 90, 66, 255)))
+    cx, cy = W / 2, H / 2
+    if kind == "skull":
+        bone = (226, 216, 186, 255)
+        d.ellipse((cx - 100 * k, cy - 125 * k, cx + 100 * k, cy + 55 * k), fill=bone)
+        d.polygon([(cx - 92 * k, cy + 5 * k), (cx + 92 * k, cy + 5 * k), (cx + 62 * k, cy + 75 * k), (cx - 62 * k, cy + 75 * k)], fill=bone)
+        d.rounded_rectangle((cx - 58 * k, cy + 60 * k, cx + 58 * k, cy + 118 * k), radius=18 * k, fill=bone)
+        for sx in (-1, 1):
+            d.ellipse((cx + sx * 52 * k - 32 * k, cy - 40 * k, cx + sx * 52 * k + 32 * k, cy + 22 * k), fill=(18, 18, 18, 255))
+        d.polygon([(cx, cy + 30 * k), (cx - 16 * k, cy + 60 * k), (cx + 16 * k, cy + 60 * k)], fill=(18, 18, 18, 255))
+        for i in range(-3, 4):
+            d.rectangle((cx + i * 18 * k - 6 * k, cy + 76 * k, cx + i * 18 * k + 6 * k, cy + 110 * k), fill=(18, 18, 18, 255))
+        return (60, 60, 56)
+    if kind == "crusader":
+        red = (150, 24, 28, 255)
+        a, b, t = 120 * k, 70 * k, 22 * k
+        for ang in range(4):
+            pts = [(0, -t), (a, -b), (a, b), (0, t)]
+            ca, sa = math.cos(ang * math.pi / 2), math.sin(ang * math.pi / 2)
+            d.polygon([(cx + x * ca - y * sa, cy + x * sa + y * ca) for x, y in pts], fill=red)
+        return (60, 60, 56)
+    if kind == "alien":
+        grey = (176, 180, 176, 255)
+        d.ellipse((cx - 95 * k, cy - 125 * k, cx + 95 * k, cy + 40 * k), fill=grey)
+        d.polygon([(cx - 92 * k, cy - 10 * k), (cx + 92 * k, cy - 10 * k), (cx, cy + 125 * k)], fill=grey)
+        # Yeux en amande inclinés.
+        for sx in (-1, 1):
+            ex, ey, rot = cx + sx * 46 * k, cy - 12 * k, math.radians(-30 * sx)
+            pts = []
+            for i in range(36):
+                t = i * math.pi / 18
+                x, y = 42 * k * math.cos(t), 18 * k * math.sin(t) * (1.25 if math.sin(t) > 0 else 0.8)
+                pts.append((ex + x * math.cos(rot) - y * math.sin(rot), ey + x * math.sin(rot) + y * math.cos(rot)))
+            d.polygon(pts, fill=(14, 14, 14, 255))
+        return (60, 60, 56)
+    if kind == "comspec":
+        _emblem(d, W * 0.25, cy, H * 0.30, k)
+        f = ImageFont.truetype(FONT_BOLD, int(42 * k))
+        d.text((W * 0.44, cy - 24 * k), "COMSPEC", font=f, fill=(226, 232, 214, 255), anchor="lm")
+        d.text((W * 0.44, cy + 34 * k), "MILSIM", font=ImageFont.truetype(FONT_BOLD, int(34 * k)), fill=(92, 199, 107, 255), anchor="lm")
+        return (20, 22, 18)
+    # name : bande nominative vierge, le texte (indicatif ou nom) est écrit par le jeu.
+    return (40, 38, 30)
+
+
+def patch_img(kind, size=512):
+    """Patch brodé : contenu, sergé en diagonale, fils, bord surjeté, relief et ombre."""
+    import numpy as np
+    from PIL import ImageFont as _IF  # noqa: F401
+    k = 2
+    W, H = 480 * k, 320 * k
+    face = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    border = _patch_content(kind, ImageDraw.Draw(face), W, H, k)
+    mask = Image.new("L", (W, H), 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, W - 1, H - 1), radius=26 * k, fill=255)
+    a = np.array(face).astype(float)
+    yy, xx = np.mgrid[0:H, 0:W]
+    twill = 1 + 0.07 * np.sin((xx + yy) * 0.9) + 0.04 * np.sin((xx - yy) * 0.33)
+    noise = np.array(Image.effect_noise((W, H), 30).convert("L")).astype(float) / 255 - 0.5
+    a[..., :3] = np.clip(a[..., :3] * (twill + noise * 0.18)[..., None], 0, 255)
+    face = Image.fromarray(a.astype("uint8"), "RGBA")
+    d = ImageDraw.Draw(face)
+    # Bord surjeté : bande épaisse, points de couture obliques.
+    bw = 18 * k
+    d.rounded_rectangle((0, 0, W - 1, H - 1), radius=26 * k, outline=border + (255,), width=int(bw))
+    step = 7 * k
+    per = 2 * (W + H)
+    for i in range(int(per / step)):
+        t = i * step
+        if t < W:
+            x, y, dx, dy = t, bw / 2, 0, 1
+        elif t < W + H:
+            x, y, dx, dy = W - bw / 2, t - W, 1, 0
+        elif t < 2 * W + H:
+            x, y, dx, dy = W - (t - W - H), H - bw / 2, 0, 1
+        else:
+            x, y, dx, dy = bw / 2, H - (t - 2 * W - H), 1, 0
+        sh = tuple(max(0, c - 40) for c in border) + (200,)
+        d.line((x - dx * bw * 0.45 - dy * 4 * k, y - dy * bw * 0.45 - dx * 4 * k, x + dx * bw * 0.45 + dy * 4 * k, y + dy * bw * 0.45 + dx * 4 * k), fill=sh, width=k)
+    face.putalpha(mask)
+    # Relief : liseré clair en haut à gauche, sombre en bas à droite.
+    hl = mask.filter(ImageFilter.GaussianBlur(6 * k))
+    out = Image.new("RGBA", (size * k, size * k), (0, 0, 0, 0))
+    ox, oy = (size * k - W) // 2, (size * k - H) // 2
+    shadow = Image.new("RGBA", (W, H), (0, 0, 0, 150))
+    shadow.putalpha(mask.point(lambda v: v * 150 // 255))
+    sh_layer = Image.new("RGBA", out.size, (0, 0, 0, 0))
+    sh_layer.alpha_composite(shadow, (ox + 6 * k, oy + 9 * k))
+    out.alpha_composite(sh_layer.filter(ImageFilter.GaussianBlur(7 * k)))
+    out.alpha_composite(face, (ox, oy))
+    edge = np.array(mask).astype(float) - np.array(hl).astype(float)
+    shade = Image.fromarray(np.clip(edge * 1.2, 0, 255).astype("uint8"), "L")
+    dark = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    dark.putalpha(shade.point(lambda v: v * 90 // 255))
+    out.alpha_composite(dark, (ox + 2 * k, oy + 2 * k))
+    return out.resize((size, size), Image.LANCZOS)
+
+
+def patch_assets(tmp):
+    for kind in PATCHES:
+        convert(patch_img(kind), f"patch_{kind}", tmp)
+
+
 def convert(img, name, tmp):
     png = os.path.join(tmp, name + ".png")
     img.save(png)
@@ -1265,6 +1395,7 @@ def main():
         power_assets(tmp)
         datalink_assets(tmp)
         antenna_assets(tmp)
+        patch_assets(tmp)
         back_variants(tmp)
         shell_variants(tmp)
         if len(sys.argv) > 2 and sys.argv[2] == "datalink":

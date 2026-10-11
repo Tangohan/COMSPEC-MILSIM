@@ -2,7 +2,7 @@
     Menu ACE du téléphone, rangé sous une seule entrée « Téléphone ATAK » (auto-interaction) :
       Voir l'arrière
       Antenne ▸ visser une antenne de l'inventaire / la retirer
-      Personnaliser ▸ Coque (coyote, vert OD, noir) ▸ Module DL-7 (olive, noir, tan)
+      Personnaliser ▸ Coque (coyote, vert OD, noir) ▸ Module DL-7 (olive, noir, tan) ▸ Patch au dos
       Entretien ▸ batterie, nettoyage, réparation, téléphone de rechange (posés par XEH_postInitClient)
                   + rallumer, réparer l'écran, diagnostic d'Overwatch (repris ici et retirés de « Équipement »)
       Débrancher le câble DL-7 (pendant une extraction)
@@ -60,7 +60,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_PersoSet", _set];
     } forEach _opts;
 } forEach [
     ["COMSPEC_ATAK_ShellTint", "coyote", "COMSPEC_ATAK_PersoShell", "Couleur de la coque", [["Coyote", "coyote"], ["Vert OD", "od"], ["Noir", "black"]]],
-    ["COMSPEC_ATAK_ModuleTint", "olive", "COMSPEC_ATAK_PersoModule", "Couleur du module DL-7", [["Olive", "olive"], ["Noir", "black"], ["Tan", "tan"]]]
+    ["COMSPEC_ATAK_ModuleTint", "olive", "COMSPEC_ATAK_PersoModule", "Couleur du module DL-7", [["Olive", "olive"], ["Noir", "black"], ["Tan", "tan"]]],
+    ["COMSPEC_ATAK_Patch", "none", "COMSPEC_ATAK_PersoPatch", "Patch au dos", [["Aucun", "none"], ["France", "fr"], ["France basse visibilité", "fr_sub"], ["USA", "us"], ["USA basse visibilité", "us_ir"],
+        ["Crâne", "skull"], ["Croix", "crusader"], ["Alien", "alien"], ["COMSPEC", "comspec"], ["Nominatif", "name"]]]
 ];
 
 // Entretien : les actions sont posées dans ce sous-menu par XEH_postInitClient. Celles d'Overwatch y sont reprises.

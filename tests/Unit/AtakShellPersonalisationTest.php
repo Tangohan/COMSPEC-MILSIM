@@ -92,6 +92,20 @@ final class AtakShellPersonalisationTest extends TestCase
         self::assertStringContainsString('ace_interact_menu_fnc_removeActionFromClass', $menu);
     }
 
+    public function testPatchesOnTheBack(): void
+    {
+        $data = dirname(__DIR__, 2) . '/' . self::MAIN . '/data/';
+        $back = $this->read(self::MAIN . '/functions/shell/fn_backView.sqf');
+        foreach (['fr', 'fr_sub', 'us', 'us_ir', 'skull', 'crusader', 'alien', 'comspec', 'name'] as $p) {
+            self::assertFileExists($data . 'patch_' . $p . '.paa');
+            self::assertStringContainsString('"' . $p . '"', $back, $p);
+        }
+        self::assertStringContainsString('"COMSPEC_ATAK_PatchText"', $back);
+        self::assertStringContainsString('"COMSPEC_ATAK_Patch", "none", "Patch au dos"', $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf'));
+        self::assertStringContainsString('"COMSPEC_ATAK_PersoPatch"', $this->read(self::MAIN . '/functions/shell/fn_aceMenu.sqf'));
+        self::assertStringContainsString('def patch_img', $this->read('mod/COMSPEC_ATAK_Native/tools/gen_assets.py'));
+    }
+
     public function testGeneratorProducesVariants(): void
     {
         $gen = $this->read('mod/COMSPEC_ATAK_Native/tools/gen_assets.py');

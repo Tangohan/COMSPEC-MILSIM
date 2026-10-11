@@ -410,6 +410,7 @@ def render_back(path, size=2048):
     glass = mat_simple("glass", (0.02, 0.03, 0.05), 0.03, coat=1.0)
     lensblue = mat_simple("lensb", (0.08, 0.12, 0.22), 0.05, coat=1.0)
     flash = mat_simple("flash", (0.93, 0.90, 0.78), 0.25)
+    velcro = mat_paint("velcro", (0.13, 0.13, 0.12), rough=0.95, grain=6.0)
     tmp = os.path.join(OUT, "_label.png")
     label_png(tmp)
     label = mat_image("label", tmp, 0.55)
@@ -419,10 +420,14 @@ def render_back(path, size=2048):
     bx, by = P(384, 700)
     rrect(bx, by, 13.34, 6.48, 0.78, 0.08, 0.22, tpu, bevel=0.06)
     # Nervures antidérapantes.
-    for u0 in (430, 1395):
-        for i in range(9):
-            bx, by = P(u0 + (i % 2) * 14, 760 + i * 60)
-            rrect(bx, by, 1.10 if u0 < 1000 else 1.50, 0.26, 0.13, 0.2, 0.30, tpu, bevel=0.06)
+    for i in range(9):
+        bx, by = P(1395 + (i % 2) * 14, 760 + i * 60)
+        rrect(bx, by, 1.50, 0.26, 0.13, 0.2, 0.30, tpu, bevel=0.06)
+    # Panneau velcro (boucles) pour un patch : 300 x 200 px de patch posé par le jeu au centre (x 450-750, y 850-1050).
+    bx, by = P(432, 832)
+    rrect(bx, by, 3.36, 2.36, 0.16, 0.2, 0.25, tpu_dark, bevel=0.02)
+    bx, by = P(440, 840)
+    rrect(bx, by, 3.20, 2.20, 0.12, 0.22, 0.27, velcro, bevel=0.015)
     # Bloc appareil photo (verre noir, objectif, flash, capteur).
     bx, by = P(1600, 890)
     rrect(bx, by, 0.96, 2.68, 0.44, 0.18, 0.36, blackm, bevel=0.05)
@@ -458,7 +463,7 @@ def render_back(path, size=2048):
         sx, sy = P(su, sv)
         screw(sx, sy, 0.17, 0.42, steel, blackm)
     # Étiquette du fabricant (papier sérigraphié, un peu plus haut que le TPU).
-    bx, by = P(600, 1110)
+    bx, by = P(470, 1110)
     rrect(bx, by, 1.70, 1.52, 0.08, 0.22, 0.226, label, bevel=0)
     # Pieds caoutchouc aux coins du panneau.
     for su, sv in ((470, 740), (1630, 740), (470, 1310), (1630, 1310)):
