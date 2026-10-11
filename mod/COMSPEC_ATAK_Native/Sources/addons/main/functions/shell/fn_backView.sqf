@@ -45,12 +45,15 @@ if (_s7 && {_ant isNotEqualTo []}) then {
     _a ctrlCommit 0;
 };
 // Patch sur le velcro (réglage Personnaliser) : patch 300 x 200 px au centre de la texture 320 x 320, x 440, y 790.
+// Nos patchs ("fr", "fr_sub", "us", "us_ir", "skull", "crusader", "alien", "comspec", "name") ou un insigne d'unité
+// des mods chargés (CfgUnitInsignia, carré : posé au centre du velcro), fn_patchTexture.
 private _patch = profileNamespace getVariable ["COMSPEC_ATAK_Patch", "none"];
-if (_s7 && {_patch in ["fr", "fr_sub", "us", "us_ir", "skull", "crusader", "alien", "comspec", "name", "sas_b", "fog", "sf", "sf_sub", "seal", "rpima", "rdp13", "delta"]}) then {
+([player, _patch] call comspec_atak_native_fnc_patchTexture) params ["_ptex", "_psq"];
+if (_s7 && {_ptex isNotEqualTo ""}) then {
     private _pc = _d ctrlCreate ["COMSPEC_RscPicture", -1];
-    _pc ctrlSetText format ["\z\comspec_atak_native\addons\main\data\patch_%1.paa", _patch];
+    _pc ctrlSetText _ptex;
     _pc ctrlSetTextColor [1, 1, 1, 1];
-    _pc ctrlSetPosition [_x + _w * 440 / 2048, _y + _h * 790 / 2048, _w * 320 / 2048, _h * 320 / 2048];
+    _pc ctrlSetPosition ([[_x + _w * 440 / 2048, _y + _h * 790 / 2048, _w * 320 / 2048, _h * 320 / 2048], [_x + _w * 485 / 2048, _y + _h * 835 / 2048, _w * 230 / 2048, _h * 230 / 2048]] select _psq);
     _pc ctrlCommit 0;
     if (_patch isEqualTo "name") then {
         // Bande nominative : indicatif choisi, sinon nom du joueur, brodé en majuscules.

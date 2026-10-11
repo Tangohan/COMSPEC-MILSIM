@@ -96,8 +96,34 @@ private _perso = [
         }), "Antennes d'extension de débit portées dans l'inventaire : courte, fouet ou patch (à l'arrêt)"],
     ["COMSPEC_ATAK_Patch", "none", "Patch au dos", [["AUCUN", "none"], ["FRANCE", "fr"], ["FRANCE BD", "fr_sub"], ["USA", "us"], ["USA BD", "us_ir"]]] call _profSegment,
     ["COMSPEC_ATAK_Patch", "none", "", [["CRÂNE", "skull"], ["CROIX", "crusader"], ["ALIEN", "alien"], ["COMSPEC", "comspec"], ["NOMINATIF", "name"]]] call _profSegment,
-    ["COMSPEC_ATAK_Patch", "none", "", [["SAS B SQN", "sas_b"], ["FOG", "fog"], ["SF", "sf"], ["SF BD", "sf_sub"]]] call _profSegment,
-    ["COMSPEC_ATAK_Patch", "none", "", [["SEAL", "seal"], ["1ER RPIMA", "rpima"], ["13E RDP", "rdp13"], ["SFOD-D", "delta"]], "Patch velcro visible avec « Voir l'arrière » ; BD = basse visibilité. Nominatif : votre nom, ou le texte ci-dessous"] call _profSegment,
+    ["COMSPEC_ATAK_Patch", "none", "", [["INSIGNE DE L'UNIFORME", "uniform"]], "Patch velcro visible avec « Voir l'arrière » ; BD = basse visibilité. Nominatif : votre nom, ou le texte ci-dessous. Insignes : ceux des mods chargés (RHS, 3CB, unités…)"] call _profSegment
+] + (call {
+    // Insignes d'unité des mods chargés et de la mission (CfgUnitInsignia) : on les parcourt un par un avec l'aperçu.
+    private _list = uiNamespace getVariable ["COMSPEC_ATAK_InsList", []];
+    if (_list isEqualTo []) then {
+        {
+            private _t = getText (_x >> "texture");
+            if (_t isNotEqualTo "" && {(_t select [0, 1]) isNotEqualTo "\"}) then { _t = "\" + _t; };
+            if (_t isNotEqualTo "" && {(getNumber (_x >> "scope")) >= 1 || {!isNumber (_x >> "scope")}}) then {
+                _list pushBackUnique [configName _x, [getText (_x >> "displayName"), configName _x] select ((getText (_x >> "displayName")) isEqualTo ""), _t];
+            };
+        } forEach (("true" configClasses (configFile >> "CfgUnitInsignia")) + ("true" configClasses (missionConfigFile >> "CfgUnitInsignia")));
+        _list sort true;
+        uiNamespace setVariable ["COMSPEC_ATAK_InsList", _list];
+    };
+    if (_list isEqualTo []) exitWith { [["text", "<t size='0.8' color='#8a9a93'>Aucun insigne d'unité fourni par les mods chargés.</t>"]] };
+    private _cur = profileNamespace getVariable ["COMSPEC_ATAK_Patch", "none"];
+    private _i = uiNamespace getVariable ["COMSPEC_ATAK_InsIdx", -1];
+    if (_i < 0) then { _i = (_list findIf { ("ins:" + (_x select 0)) isEqualTo _cur }) max 0; };
+    _i = _i mod (count _list);
+    (_list select _i) params ["_cls", "_name", "_tex"];
+    private _on = ("ins:" + _cls) isEqualTo _cur;
+    private _go = { params ["_d"]; format ["private _l = uiNamespace getVariable ['COMSPEC_ATAK_InsList', []]; uiNamespace setVariable ['COMSPEC_ATAK_InsIdx', ((uiNamespace getVariable ['COMSPEC_ATAK_InsIdx', %1]) + %2 + count _l) mod ((count _l) max 1)]; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _i, _d] };
+    [
+        ["hero", _tex, format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>Insigne %2 / %3%4</t>", _name regexReplace ["[<>&]", ""], _i + 1, count _list, ["", " · choisi"] select _on]],
+        ["buttons", [["◀", compile ([-1] call _go)], [["METTRE CET INSIGNE", "INSIGNE CHOISI"] select _on, compile format ["['COMSPEC_ATAK_Patch', 'ins:%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_ProfSet');", _cls], true, !_on], ["▶", compile ([1] call _go)]]]
+    ]
+}) + [
     ["COMSPEC_ATAK_VestMount", "off", "Téléphone sur le gilet", [["NON", "off"], ["GAUCHE", "left"], ["CENTRE", "center"], ["DROITE", "right"]], "Le téléphone (notre modèle 3D) est accroché au torse et visible par les autres joueurs, sur tous les gilets"] call _profSegment,
     ["COMSPEC_ATAK_VestDepth", 0.19, "Épaisseur du gilet", [["FIN", 0.15], ["NORMAL", 0.19], ["ÉPAIS", 0.23]], "Écarte le téléphone du torse s'il rentre dans le gilet"] call _profSegment,
     ["COMSPEC_ATAK_VestFace", "back", "Sens sur le gilet", [["DOS ET PATCH", "back"], ["ÉCRAN", "screen"]], "Dos vers l'extérieur (pochette rabattue, patch visible) ou écran vers l'extérieur"] call _profSegment,

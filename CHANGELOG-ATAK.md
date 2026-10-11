@@ -25,7 +25,8 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 - Liaison allié : écran d'accueil refait (état, trois étapes courtes, équipiers proches avec leur distance, RELIER à moins de 2 m).
 - Dos du téléphone : dos simple de S7 dans sa coque (plus de plaque de fixation).
 - Le « durci XT » devient le modèle « tactique » : coque EUD vert ranger à cadre fin, rail de fixation à ailettes et molette, dos à pad et double objectif.
-- Patchs au dos forces spéciales (dessins COMSPEC) : SAS B Squadron, FOG, Special Forces (et basse visibilité), Navy SEAL, 1er RPIMa, 13e RDP, SFOD-D.
+- Patch au dos : en plus de nos patchs, l'insigne porté sur l'uniforme, ou n'importe quel insigne d'unité des mods chargés et de la mission (CfgUnitInsignia : RHS, 3CB, unités…), choisi dans Réglages avec l'aperçu ; visible au dos et sur le téléphone porté au gilet.
+- Téléphone lâché au sol : notre modèle 3D de la coque (couleur choisie) posé à plat, écran vers le haut, au lieu du petit objet générique.
 - Liaison Athena : plus de spam connexion / déconnexion avec son (état tenu quelques secondes avant de changer, sons de perte et de retour limités à un toutes les 30 s, passerelles véhicule comptées comme relais).
 - Alerte médicale Overwatch : erreur `!` (type Tableau) corrigée.
 - SEEK : relevés empreintes, iris et ADN enregistrés avec le terminal seul (hors liaison aussi) et rattachés à la personne ; photo d'un sujet au sol cadrée au-dessus du visage ; textes de la page Terrain et de la barre d'état raccourcis.

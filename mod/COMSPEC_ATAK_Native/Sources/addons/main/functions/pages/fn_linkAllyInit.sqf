@@ -23,7 +23,11 @@ addMissionEventHandler ["EntityKilled", { params ["_unit", "_killer", "_inst"]; 
 // Téléphone posé dans une caisse ou au sol : on retient son propriétaire pour pouvoir s'y relier.
 ["CAManBase", "Put", {
     params ["_unit", "_container", "_item"];
-    if ((toLower _item) in ([] call comspec_atak_native_fnc_deviceCatalog)) then { _container setVariable ["COMSPEC_ATAK_PhoneOwner", _unit, true]; };
+    if ((toLower _item) in ([] call comspec_atak_native_fnc_deviceCatalog)) then {
+        _container setVariable ["COMSPEC_ATAK_PhoneOwner", _unit, true];
+        // Au sol : notre modèle 3D du téléphone à la place du petit objet générique.
+        if (local _unit && {_unit isEqualTo player}) then { [_container, _item] call comspec_atak_native_fnc_droppedPhone; };
+    };
 }] call CBA_fnc_addClassEventHandler;
 
 // Tick : barre de progression, lien coupé si l'on s'éloigne, liste à portée remise à jour.
