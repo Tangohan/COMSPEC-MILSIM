@@ -106,6 +106,18 @@ final class AtakShellPersonalisationTest extends TestCase
         self::assertStringContainsString('def patch_img', $this->read('mod/COMSPEC_ATAK_Native/tools/gen_assets.py'));
     }
 
+    public function testPhoneCanBeWornOnTheVest(): void
+    {
+        self::assertStringContainsString('class vestMount {};', $this->read(self::MAIN . '/config.cpp'));
+        $fn = $this->read(self::MAIN . '/functions/shell/fn_vestMount.sqf');
+        self::assertStringContainsString('"spine3", true]', $fn);
+        self::assertStringContainsString('hideObject (cameraView isEqualTo "INTERNAL")', $fn);
+        self::assertStringContainsString('"Land_MobilePhone_smart_F"', $fn);
+        self::assertStringContainsString('["tick"] call comspec_atak_native_fnc_vestMount;', $this->read(self::MAIN . '/XEH_postInitClient.sqf'));
+        self::assertStringContainsString('["sweep"] call comspec_atak_native_fnc_vestMount;', $this->read(self::MAIN . '/XEH_postInitServer.sqf'));
+        self::assertStringContainsString('"COMSPEC_ATAK_VestMount", "off", "Téléphone sur le gilet"', $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf'));
+    }
+
     public function testGeneratorProducesVariants(): void
     {
         $gen = $this->read('mod/COMSPEC_ATAK_Native/tools/gen_assets.py');

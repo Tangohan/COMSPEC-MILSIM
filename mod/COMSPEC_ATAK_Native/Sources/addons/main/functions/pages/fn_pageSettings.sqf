@@ -94,6 +94,8 @@ private _perso = [
         }), "Antennes d'extension de débit portées dans l'inventaire : courte, fouet ou patch (à l'arrêt)"],
     ["COMSPEC_ATAK_Patch", "none", "Patch au dos", [["AUCUN", "none"], ["FRANCE", "fr"], ["FRANCE BD", "fr_sub"], ["USA", "us"], ["USA BD", "us_ir"]]] call _profSegment,
     ["COMSPEC_ATAK_Patch", "none", "", [["CRÂNE", "skull"], ["CROIX", "crusader"], ["ALIEN", "alien"], ["COMSPEC", "comspec"], ["NOMINATIF", "name"]], "Patch velcro visible avec « Voir l'arrière » ; BD = basse visibilité. Nominatif : votre nom, ou le texte ci-dessous"] call _profSegment,
+    ["COMSPEC_ATAK_VestMount", "off", "Téléphone sur le gilet", [["NON", "off"], ["GAUCHE", "left"], ["CENTRE", "center"], ["DROITE", "right"]], "Essai : le téléphone est accroché au torse et visible par les autres joueurs, sur tous les gilets"] call _profSegment,
+    ["COMSPEC_ATAK_VestDepth", 0.19, "Épaisseur du gilet", [["FIN", 0.15], ["NORMAL", 0.19], ["ÉPAIS", 0.23]], "Écarte le téléphone du torse s'il rentre dans le gilet"] call _profSegment,
     ["edit", "patchText", "Texte du patch nominatif", profileNamespace getVariable ["COMSPEC_ATAK_PatchText", ""]],
     ["buttons", [["ENREGISTRER LE TEXTE", {
         private _t = ["patchText"] call comspec_atak_native_fnc_formValue;
@@ -113,7 +115,7 @@ private _perso = [
 } forEach (([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible });
 _perso pushBack ["buttons", [["DOCK PAR DÉFAUT", { profileNamespace setVariable ["COMSPEC_ATAK_DockApps", []]; saveProfileNamespace; [{ [] call comspec_atak_native_fnc_dockRender; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
 _perso pushBack ["buttons", [["TOUT RÉINITIALISER (APPARENCE)", {
-    { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Accent", "COMSPEC_ATAK_Shell", "COMSPEC_ATAK_ShellTint", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_Patch", "COMSPEC_ATAK_PatchText", "COMSPEC_ATAK_Wallpaper", "COMSPEC_ATAK_WallBlur", "COMSPEC_ATAK_TextScale", "COMSPEC_ATAK_IconDensity", "COMSPEC_ATAK_DockApps", "COMSPEC_ATAK_HiddenApps"];
+    { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Accent", "COMSPEC_ATAK_Shell", "COMSPEC_ATAK_ShellTint", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_Patch", "COMSPEC_ATAK_PatchText", "COMSPEC_ATAK_VestMount", "COMSPEC_ATAK_VestDepth", "COMSPEC_ATAK_Wallpaper", "COMSPEC_ATAK_WallBlur", "COMSPEC_ATAK_TextScale", "COMSPEC_ATAK_IconDensity", "COMSPEC_ATAK_DockApps", "COMSPEC_ATAK_HiddenApps"];
     saveProfileNamespace;
     [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }]]];

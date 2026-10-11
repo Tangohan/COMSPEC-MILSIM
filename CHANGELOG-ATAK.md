@@ -18,6 +18,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 - Couleur de la coque : coyote, vert OD ou noir ; couleur du module DL-7 : olive, noir ou tan (app Réglages > Personnalisation, ou ACE « Téléphone ATAK > Personnaliser »). La coque de nuit reste la silhouette sombre.
 - Module DL-7 et dos du téléphone en rendu 3D réaliste (métal peint, butées caoutchouc, vis, plaque aluminium anodisé, objectif, étiquette).
 - Patchs velcro au dos : France, France basse visibilité, USA, USA basse visibilité, crâne, croix, alien, COMSPEC, nominatif (nom du joueur ou texte choisi). Réglages ou ACE « Personnaliser > Patch au dos ».
+- Essai : téléphone visible sur le gilet (poitrine gauche, centre ou droite, épaisseur réglable), accroché au torse sur tous les gilets et vu par les autres joueurs ; masqué pour soi en première personne. Modèle du téléphone d'Overwatch si présent, sinon smartphone vanilla.
 - « Voir l'arrière » : le téléphone retourné au centre de l'écran (plaque de fixation, appareil photo, étiquette avec l'IMEI, antenne vissée). Clic ou touche pour fermer.
 - Antennes d'extension de débit, nouveaux objets d'inventaire vissés sur le port SMA de la coque et dessinés autour du téléphone :
   - courte SMA : débit x1,25, liaison un peu plus tenace ;

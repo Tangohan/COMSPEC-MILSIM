@@ -47,7 +47,7 @@ class CfgFunctions {
             class airplaneMode {}; class btAction {}; class btSounds {}; class pageBluetooth {}; class btInit { postInit=1; };
         };
         class shell { file="z\comspec_atak_native\addons\main\functions\shell";
-            class antenna {}; class backView {}; class aceMenu {};
+            class antenna {}; class backView {}; class aceMenu {}; class vestMount {};
         };
         class datalink { file="z\comspec_atak_native\addons\main\functions\datalink";
             class dataSetup {}; class dataParseFiles {}; class dataServer {}; class dataAction {}; class dataInit {}; class dataOverlay {}; class pageDataLink {}; class zeusForm {}; class moduleContext {}; class moduleDataNode {}; class moduleDataFile {}; class moduleDataReset {};

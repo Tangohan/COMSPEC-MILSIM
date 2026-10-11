@@ -264,6 +264,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 
 // Menu ACE « Téléphone ATAK » (fn_aceMenu) : les actions d'entretien ci-dessous vont dans son sous-menu Entretien.
 [] call comspec_atak_native_fnc_aceMenu;
+// Téléphone visible sur le gilet (réglage Personnaliser, fn_vestMount).
+[{ ["tick"] call comspec_atak_native_fnc_vestMount; }, 2] call CBA_fnc_addPerFrameHandler;
 // Action ACE : changer la batterie du téléphone (si une batterie de rechange est portée).
 if (!isNil "ace_interact_menu_fnc_createAction") then {
     private _act = ["COMSPEC_ATAK_BatterySwap", "Changer la batterie", "\z\comspec_atak_native\addons\main\data\item_battery.paa", {
