@@ -166,6 +166,10 @@ if (_interactive) then {
         ["MARKER", "map_marker", "Poser un marqueur (clic sur la carte)", { ["MARKER"] call comspec_atak_native_fnc_mapToolMenu; }],
         ["labels", "map_labels", "Afficher / masquer les indicatifs", { if ((["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 1) exitWith { ["INFO", "Réglage imposé par votre communauté", 3, 20] call comspec_atak_native_fnc_notify; }; profileNamespace setVariable ["COMSPEC_ATAK_Labels", !(profileNamespace getVariable ["COMSPEC_ATAK_Labels", true])]; [] call comspec_atak_native_fnc_mapOverlayUpdate; }]
     ];
+    // Drone appairé : bascule carte / vue drone plein écran / vue incrustée.
+    if (alive (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])) then {
+        _tools pushBack ["droneview", "app_drone", "Vue drone : carte, plein écran ou incrustée", { ["view"] call comspec_atak_native_fnc_droneAction; }];
+    };
     private _ty0 = _by + _pad + _ih * 0.5;
     ["COMSPEC_RscMapPanel", [_tx - _pad / 2, _ty0 - _pad / 2, _iw + _pad, _ih * (count _tools) + _pad]] call _mk;
     {
@@ -422,6 +426,71 @@ if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap]))
     };
     uiNamespace setVariable ["COMSPEC_ATAK_RouteBanner", [_g1, _g2, _g3]];
     [] call comspec_atak_native_fnc_routeBanner;
+};
+
+// Vue drone (nacelle FLIR) : à la place de la carte ou incrustée, en grand comme en miniature.
+private _dv = _s getOrDefault ["droneView", "OFF"];
+private _drv = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
+if (_dv isNotEqualTo "OFF" && {isNull _drv || {!alive _drv}}) then { _s set ["droneView", "OFF"]; _dv = "OFF"; };
+if (_dv isNotEqualTo "OFF") then {
+    ["camEnsure"] call comspec_atak_native_fnc_droneAction;
+    private _act = { params ["_a", ["_v", ""]]; compile format ["[%1, %2] call comspec_atak_native_fnc_droneAction;", str _a, str _v] };
+    if (_dv isEqualTo "FULL") then {
+        // La carte disparaît derrière un fond noir ; l'image garde son 16/9 (bandes noires en haut et en bas).
+        private _cover = ["COMSPEC_RscText", [_bx, _by, _mw, _mh]] call _mk;
+        _cover ctrlSetBackgroundColor [0, 0, 0, 1];
+        private _bh2 = [0, _fs * 1.45] select _interactive;
+        private _vw = _mw;
+        private _vh = _vw * 0.5625 * _ratio;
+        if (_vh > (_mh - _bh2 - _pad)) then { _vh = _mh - _bh2 - _pad; _vw = _vh / 0.5625 / _ratio; };
+        private _vx = _bx + (_mw - _vw) / 2;
+        private _vy = _by + (((_mh - _bh2 - _vh) / 2) max 0);
+        ["build", [_vx, _vy, _vw, _vh], "FULL", false] call comspec_atak_native_fnc_droneFlir;
+        if (_interactive) then {
+            private _zoom = missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1];
+            private _btns = [
+                ["MARQUER", ["lock"] call _act, true],
+                [["JOUR", "NUIT", "THERM."] select (missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0]), ["vision"] call _act, false],
+                ["x1", ["zoom", 1] call _act, _zoom isEqualTo 1], ["x2", ["zoom", 2] call _act, _zoom isEqualTo 2], ["x4", ["zoom", 4] call _act, _zoom isEqualTo 4],
+                ["DEVANT", ["camAim", ""] call _act, false],
+                ["LIBÉRER", { ["release", ""] call comspec_atak_native_fnc_lockAction; }, false],
+                ["INCRUSTER", ["view", "INSET"] call _act, false],
+                ["CARTE", ["view", "OFF"] call _act, false]
+            ];
+            private _bwid = (_mw - _pad * 2) / (count _btns);
+            private _byb = _by + _mh - _bh2 - _pad / 2;
+            {
+                _x params ["_lbl", "_code", "_on"];
+                private _b = ["COMSPEC_RscButton", [_bx + _pad + _forEachIndex * _bwid, _byb, _bwid - _pad / 3, _bh2], _lbl] call _mk;
+                _b ctrlSetFontHeight (_fs * 0.78);
+                _b ctrlSetBackgroundColor ([[0.08, 0.1, 0.09, 0.9], [0.36, 0.78, 0.42, 0.9]] select _on);
+                if (_lbl isEqualTo "MARQUER") then { _b ctrlSetBackgroundColor [0.75, 0.18, 0.15, 0.95]; _b ctrlSetTooltip "Marque la cible sous le réticule (touche « Marquer la cible »). Clic sur l'image : la nacelle vise ce point."; };
+                _b ctrlAddEventHandler ["ButtonClick", _code];
+            } forEach _btns;
+        };
+    } else {
+        // Incrustée : coin haut droit (à gauche de la barre d'outils en main), plus large en miniature.
+        private _iw2 = _mw * ([0.42, 0.62] select _mini);
+        private _ih2 = _iw2 * 0.5625 * _ratio;
+        private _ix = _bx + _mw - _iw2 - _pad - ([0, ((((_mh - 2 * _pad) / 7) min (_font * 2.1)) / _ratio) + _pad] select _interactive);
+        private _iy = _by + _pad;
+        ["build", [_ix, _iy, _iw2, _ih2], "INSET", false] call comspec_atak_native_fnc_droneFlir;
+        if (_interactive) then {
+            private _bh3 = _fs * 1.2;
+            private _b3w = _iw2 / 3;
+            {
+                _x params ["_lbl", "_code", "_col"];
+                private _b = ["COMSPEC_RscButton", [_ix + _forEachIndex * _b3w, _iy + _ih2, _b3w - pixelW * 2, _bh3], _lbl] call _mk;
+                _b ctrlSetFontHeight (_fs * 0.72);
+                _b ctrlSetBackgroundColor _col;
+                _b ctrlAddEventHandler ["ButtonClick", _code];
+            } forEach [
+                ["MARQUER", ["lock"] call _act, [0.75, 0.18, 0.15, 0.95]],
+                ["AGRANDIR", ["view", "FULL"] call _act, [0.08, 0.1, 0.09, 0.9]],
+                ["FERMER", ["view", "OFF"] call _act, [0.08, 0.1, 0.09, 0.9]]
+            ];
+        };
+    };
 };
 
 uiNamespace setVariable ["COMSPEC_ATAK_MapOverlay", _ov];

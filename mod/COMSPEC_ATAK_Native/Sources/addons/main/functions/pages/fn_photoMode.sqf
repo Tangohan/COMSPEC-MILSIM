@@ -40,6 +40,8 @@ switch (toUpper _mode) do {
                 if (_key isEqualTo 0x39) exitWith { ["EXIT"] call comspec_atak_native_fnc_photoMode; true };
                 if (_key isEqualTo 0x13) exitWith { ["SELFIE"] call comspec_atak_native_fnc_photoMode; true };
                 if (_key isEqualTo 0x21) exitWith { ["FLASH"] call comspec_atak_native_fnc_photoMode; true };
+                // T : marque la cible sous le réticule (cadre jaune « VISÉ »).
+                if (_key isEqualTo 0x14) exitWith { ["mark", "PHONE"] call comspec_atak_native_fnc_lockAction; true };
                 if (_key in [0x0D, 0x4E]) exitWith { ["ZOOM", "", 1] call comspec_atak_native_fnc_photoMode; true };
                 if (_key in [0x0C, 0x4A]) exitWith { ["ZOOM", "", -1] call comspec_atak_native_fnc_photoMode; true };
                 false }],
@@ -47,6 +49,12 @@ switch (toUpper _mode) do {
             _d46 displayAddEventHandler ["MouseZChanged", { params ["", "_z"]; if (_z isNotEqualTo 0) then { ["ZOOM", "", [-1, 1] select (_z > 0)] call comspec_atak_native_fnc_photoMode; }; false }],
             _d46 displayAddEventHandler ["MouseMoving", { params ["", "_dx", "_dy"]; ["MOUSE", "", [_dx, _dy]] call comspec_atak_native_fnc_photoMode; false }]
         ]];
+        // Cadres des cibles marquées et de la cible visée, dessinés dans la scène.
+        uiNamespace setVariable ["COMSPEC_ATAK_PhotoDraw", addMissionEventHandler ["Draw3D", {
+            if !(uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) exitWith {};
+            if !(missionNamespace getVariable ["comspec_atak_native_lock_enabled", true]) exitWith {};
+            ["draw3d"] call comspec_atak_native_fnc_lockAction;
+        }]];
         // Une boucle par image : objectif (zoom, selfie, transitions), geste du bras, sortie automatique.
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoPFH", [{ ["FRAME"] call comspec_atak_native_fnc_photoMode; }, 0] call CBA_fnc_addPerFrameHandler];
         [{ ["HUD"] call comspec_atak_native_fnc_photoMode; }] call CBA_fnc_execNextFrame;
@@ -178,7 +186,7 @@ switch (toUpper _mode) do {
             ["OBJECTIF ARRIÈRE", "SELFIE"] select _selfie, [_z toFixed 1, str _z] select ((_z mod 1) isEqualTo 0),
             createHashMapFromArray [["AUTO", "AUTO"], ["ON", "FORCÉ"], ["OFF", "COUPÉ"]] get _fl];
         (_cam displayCtrl 3) ctrlSetText ([
-            "CLIC GAUCHE : photo     MOLETTE ou + / - : zoom     F : flash     R : selfie     ESPACE : quitter",
+            "CLIC GAUCHE : photo     T : marquer la cible     MOLETTE ou + / - : zoom     F : flash     R : selfie     ESPACE : quitter",
             "CLIC GAUCHE : photo     SOURIS : cadrer     MOLETTE : zoom     F : flash     R : objectif arrière     ESPACE : quitter"
         ] select _selfie);
         true
@@ -274,6 +282,8 @@ switch (toUpper _mode) do {
         if (_z >= 0) then { _d46 displayRemoveEventHandler ["MouseZChanged", _z]; };
         if (_mv >= 0) then { _d46 displayRemoveEventHandler ["MouseMoving", _mv]; };
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoEH", []];
+        removeMissionEventHandler ["Draw3D", uiNamespace getVariable ["COMSPEC_ATAK_PhotoDraw", -1]];
+        uiNamespace setVariable ["COMSPEC_ATAK_PhotoDraw", -1];
         [uiNamespace getVariable ["COMSPEC_ATAK_PhotoPFH", -1]] call CBA_fnc_removePerFrameHandler;
         // Bras baissé : le geste n'est plus relancé et se termine de lui-même ; une animation CfgMoves est rendue,
         // une fonction reçoit [joueur, "exit"] pour remettre sa pose à zéro.

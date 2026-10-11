@@ -11,6 +11,22 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vague 2026-10-11 — Marquage au viseur, vue drone FLIR, Overwatch beta
+
+### Nouveau — Marquage au viseur (ATAK natif 1.7.0)
+
+Réticule de la caméra du drone ou de l'appareil photo du téléphone sur une cible assez visible, un appui (**MARQUER**, **T** en mode photo, ou la touche CBA « Marquer la cible ») : la cible devient **LOCK_0xx**, un marqueur est posé sur la carte et la suit tant qu'elle est vue. Sortie du champ, masquée ou drone hors liaison : cible perdue après un délai, puis traitée selon les réglages serveur **COMSPEC > ATAK · Marquage au viseur** (calque retiré et marqueur gardé, marqueur effacé après délai, tout effacé, ou tout gardé). Raccrochage automatique quand elle revient. Clic sur l'image du drone : la nacelle vise ce point.
+
+### Nouveau — Vue drone façon nacelle (FLIR)
+
+Bouton drone de la carte (ou touche « Vue drone sur la carte ») : la vue du drone remplace la carte ou s'incruste dans un coin, aussi téléphone en miniature. Thermique à la première ouverture, réticule, coins de cadrage, cap, altitude, batterie, grille du drone et du point visé, distance, heure, cadres LOCK sur les cibles marquées.
+
+### Corrigé — Overwatch beta
+
+Paniques et alertes supprimables pour tous les postes (liste, carte, tchat), balises retirables. Acquittement immédiat à l'écran. « Acquittée par X à HH:MM », reçu / pas reçu par terminal (déduit du dernier signal du téléphone) et postes Athena qui l'ont vue. Le panneau Drones / Charges / Mon ATAK se ferme enfin (barre repliable, Échap) ; le drone affiche batterie, état et charges emportées (mod connect à jour).
+
+---
+
 ## Vague 2026-10-11 — Photo du visage SEEK / ATAK natif 1.6.1 / Overwatch 1.6.16
 
 ### Nouveau — Photo du visage cadrée (SEEK et app SSE de l'ATAK)
@@ -20,6 +36,8 @@ Page **PHOTO** du terminal SEEK : viseur en direct sur la tête du sujet (face, 
 ### Amélioré — Terminal SEEK
 
 Appareil affiché sans déformation et cadré sur l'écran et le clavier (écran ~1,7 fois plus grand), écran calé dans le verre, nouvelles PAA (verre LCD, tuiles d'accueil illustrées, gabarit du viseur), touches A1 / A2 / QUERY / SIGN posées sur les vraies touches de l'appareil.
+
+---
 
 ## Vague 2026-10-01 — Fieldwatch RF hits (Lot 1)
 

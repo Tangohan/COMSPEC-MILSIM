@@ -165,8 +165,10 @@ private _camOpen = {
         private _d = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
         if (isNull _cam || {isNull _d}) exitWith {};
         // Page Drone fermée (ou téléphone rangé) : rendu suspendu, repris au retour sur la page.
+        // Vue drone sur la carte (à la place de la carte ou incrustée, aussi en miniature) : rendu aussi.
+        private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         private _show = !isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])
-            && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONE"};
+            && {((_st getOrDefault ["activePage", ""]) isEqualTo "DRONE") || {((_st getOrDefault ["activePage", ""]) isEqualTo "MAP") && {(_st getOrDefault ["droneView", "OFF"]) isNotEqualTo "OFF"}}};
         if (_show isNotEqualTo (_cam getVariable ["rendering", true])) then {
             _cam setVariable ["rendering", _show];
             if (_show) then {
@@ -179,7 +181,14 @@ private _camOpen = {
         private _p = [];
         // Nadir : nacelle à la verticale, sous le drone.
         if (_k isEqualTo "NADIR") then { _p = (getPosASLVisual _d) vectorAdd [0.01, 0.01, -50]; };
-        if (_k isNotEqualTo "" && {_k isNotEqualTo "NADIR"}) then {
+        // Point cliqué sur l'image (vue drone) : la nacelle y reste pointée.
+        if (_k isEqualTo "PT") then { _p = missionNamespace getVariable ["COMSPEC_ATAK_DroneCamPt", []]; };
+        // Cible marquée : suivie tant qu'elle est accrochée, sinon sa dernière position.
+        if ((_k select [0, 5]) isEqualTo "LOCK:") then {
+            private _e = (missionNamespace getVariable ["COMSPEC_ATAK_Locks", createHashMap]) getOrDefault [_k select [5], createHashMap];
+            if ((count _e) > 0) then { _p = [_e get "pos", aimPos (_e get "obj")] select ((_e get "state") isEqualTo "TRACK" && {alive (_e get "obj")}); };
+        };
+        if (_k isNotEqualTo "" && {!(_k in ["NADIR", "PT"])} && {(_k select [0, 5]) isNotEqualTo "LOCK:"}) then {
             private _tr = (missionNamespace getVariable ["COMSPEC_ATAK_DroneTracks", createHashMap]) getOrDefault [_k, []];
             if ((count _tr) > 0) then {
                 _tr params ["_o", "", "_pos", "_seen"];
@@ -581,6 +590,27 @@ switch (_act) do {
             } forEach _row;
             _y = _y + _rh + _pad / 3;
         } forEach _rows;
+    };
+    // Vue drone sur la carte : "OFF" (carte), "FULL" (la vue remplace la carte), "INSET" (incrustée) ; sans argument, fait le tour.
+    case "view": {
+        if (isNull _d) exitWith { ["WARNING", "Aucun drone appairé"] call _say; };
+        private _v = if (_arg isEqualTo "") then { ["OFF", "FULL", "INSET"] select ((((["OFF", "FULL", "INSET"] find (_s getOrDefault ["droneView", "OFF"])) max 0) + 1) mod 3) } else { _arg };
+        _s set ["droneView", _v];
+        if (_v isNotEqualTo "OFF") then {
+            private _fresh = isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull]);
+            call _camOpen;
+            // Première ouverture en vue nacelle : thermique.
+            if (_fresh) then { missionNamespace setVariable ["COMSPEC_ATAK_DroneVision", 2]; "comspec_dronecam" setPiPEffect [2]; };
+        };
+        call _mapRender;
+    };
+    case "camEnsure": { if (!isNull _d) then { call _camOpen; }; };
+    // Marquage au viseur de la caméra du drone (appui sur MARQUER ou touche « Marquer la cible »).
+    case "lock": {
+        if (isNull _d) exitWith {};
+        if (isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull])) exitWith { ["WARNING", "Ouvrez la caméra du drone pour viser"] call _say; };
+        ["mark", "DRONE"] call comspec_atak_native_fnc_lockAction;
+        call _render;
     };
     case "camAim": {
         if (isNull _d) exitWith {};

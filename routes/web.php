@@ -2701,6 +2701,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // Overwatch Beta — alertes tactiques et balises, applications synchronisées, fil de renseignement, anneaux de géolocalisation.
     $router->get('/api/atak/overwatch/alerts', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'alerts']);
     $router->post('/api/atak/overwatch/alerts/ack', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'alertAck']);
+    $router->post('/api/atak/overwatch/alerts/dismiss', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'alertDismiss']);
+    $router->post('/api/atak/overwatch/alerts/seen', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'alertSeen']);
     $router->get('/api/atak/overwatch/apps-sync', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'appsSync']);
     $router->get('/api/atak/overwatch/intel-feed', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'intelFeed']);
     $router->get('/api/atak/overwatch/geoloc-rings', [\App\Controllers\Api\AtakOverwatchIntelController::class, 'ringsIndex']);

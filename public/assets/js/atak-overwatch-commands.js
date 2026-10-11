@@ -77,7 +77,11 @@
   function build() {
     var dock = document.createElement('div');
     dock.className = 'owc-dock';
+    var folded = false;
+    try { folded = localStorage.getItem('athena:owc-dock-folded') === '1'; } catch (e) {}
+    dock.classList.toggle('is-folded', folded);
     dock.innerHTML =
+      '<button type="button" class="owc-fold" data-owc-fold title="Replier / déplier la barre" aria-label="Replier la barre">' + svgChevron() + '</button>' +
       '<button type="button" data-owc-open="uav" title="Commander un drone appairé">' + svgUav() + '<span>Drones</span></button>' +
       '<button type="button" data-owc-open="explo" title="Charges ACE suivies">' + svgCharge() + '<span>Charges</span></button>' +
       '<button type="button" data-owc-open="notif" title="Notifications de mon téléphone ATAK">' + svgPhone() + '<span>Mon ATAK</span><b class="owc-badge" hidden></b></button>';
@@ -86,7 +90,7 @@
     root.hidden = true;
     root.setAttribute('aria-label', 'Commandes du poste');
     root.innerHTML =
-      '<header class="owc-head"><nav class="owc-tabs">' +
+      '<header class="owc-head"><span class="owc-title">Poste</span><nav class="owc-tabs">' +
       '<button type="button" data-owc-tab="uav">Drones</button><button type="button" data-owc-tab="explo">Charges</button>' +
       '<button type="button" data-owc-tab="notif">Mon ATAK</button></nav>' +
       '<button type="button" class="owc-close" data-owc-close aria-label="Fermer">×</button></header>' +
@@ -95,13 +99,30 @@
     host.appendChild(dock);
     host.appendChild(root);
     dock.addEventListener('click', function (e) {
+      if (e.target.closest('[data-owc-fold]')) {
+        var f = !dock.classList.contains('is-folded');
+        dock.classList.toggle('is-folded', f);
+        try { localStorage.setItem('athena:owc-dock-folded', f ? '1' : '0'); } catch (er) {}
+        if (f) close();
+        return;
+      }
       var b = e.target.closest('[data-owc-open]');
-      if (b) open(b.getAttribute('data-owc-open'));
+      if (!b) return;
+      var which = b.getAttribute('data-owc-open');
+      // Second clic sur l'onglet ouvert : referme le panneau.
+      if (openNow && view === which) return close();
+      open(which);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && openNow) close();
     });
     root.addEventListener('click', onClick);
     root.addEventListener('change', onChange);
   }
 
+  function svgChevron() {
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>';
+  }
   function svgUav() {
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="5" r="3"/><circle cx="19" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><path d="M7.2 7.2l3 3M16.8 7.2l-3 3M7.2 16.8l3-3M16.8 16.8l-3-3"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/></svg>';
   }
@@ -119,6 +140,9 @@
     Array.prototype.forEach.call(root.querySelectorAll('[data-owc-tab]'), function (b) {
       b.classList.toggle('is-on', b.getAttribute('data-owc-tab') === view);
     });
+    Array.prototype.forEach.call(document.querySelectorAll('.owc-dock [data-owc-open]'), function (b) {
+      b.classList.toggle('is-on', b.getAttribute('data-owc-open') === view);
+    });
     render();
     refresh();
     if (pollTimer) clearInterval(pollTimer);
@@ -127,6 +151,7 @@
   function close() {
     openNow = false;
     root.hidden = true;
+    Array.prototype.forEach.call(document.querySelectorAll('.owc-dock [data-owc-open]'), function (b) { b.classList.remove('is-on'); });
     cancelPick();
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
   }
@@ -207,8 +232,10 @@
       out += '<div class="owc-chips">' + uavRows.map(function (v) {
         var p = props(v);
         var on = selectedUav && selectedUav.vehicle_callsign === v.vehicle_callsign;
+        var bat = batteryOf(v);
         return '<button type="button" class="owc-chip' + (on ? ' is-on' : '') + '" data-owc-uav="' + esc(v.vehicle_callsign) + '">' +
-          esc(p.name || p.pilot || v.vehicle_name || 'Drone') + '</button>';
+          esc(p.name || p.pilot || v.vehicle_name || 'Drone') +
+          (bat != null ? ' <span class="owc-chip-bat owc-lvl-' + level(bat) + '">' + bat + ' %</span>' : '') + '</button>';
       }).join('') + '</div>';
     }
     if (selectedUav) {
@@ -219,6 +246,7 @@
         '<p class="owc-meta">Pilote ' + esc(p.pilot || '—') + ' · ' + esc(p.model || '') + ' · ' +
         (p.alt_agl != null ? esc(p.alt_agl) + ' m sol' : '') + (p.speed_kmh != null ? ' · ' + esc(p.speed_kmh) + ' km/h' : '') +
         (p.task ? ' · tâche ' + esc(p.task) : '') + '</p>' +
+        gaugesHtml(selectedUav) +
         (paired ? '' : '<p class="owc-warn">Drone connecté par un terminal UAV, pas appairé à un téléphone : il ne reçoit pas d’ordres du poste.</p>') +
         '</div>';
       if (paired) {
@@ -246,6 +274,37 @@
       out += '<h4>Journal</h4>' + logHtml();
     }
     return out + '</div>';
+  }
+  function num(v) { var n = Number(v); return Number.isFinite(n) ? n : null; }
+  function batteryOf(v) {
+    var p = props(v);
+    var b = num(p.battery);
+    if (b == null) b = num(v.fuel_percent);
+    return b == null ? null : Math.max(0, Math.min(100, Math.round(b)));
+  }
+  function level(pct) { return pct <= 15 ? 'low' : (pct <= 40 ? 'mid' : 'ok'); }
+  function gauge(label, pct) {
+    if (pct == null) return '';
+    return '<div class="owc-gauge owc-lvl-' + level(pct) + '"><span>' + esc(label) + '</span><i><b style="width:' + pct + '%"></b></i><em>' + pct + ' %</em></div>';
+  }
+  // Batterie, état de la cellule et munitions emportées (remontées par le mod connect).
+  function gaugesHtml(v) {
+    var p = props(v);
+    var health = num(p.health);
+    if (health == null) health = num(v.hull_health);
+    var out = '<div class="owc-gauges">' + gauge('Batterie', batteryOf(v)) +
+      gauge('Cellule', health == null ? null : Math.max(0, Math.min(100, Math.round(health)))) + '</div>';
+    var pl = Array.isArray(p.payload) ? p.payload : null;
+    if (pl === null) {
+      out += '<p class="owc-hint">Charges emportées : le jeu ne les remonte pas encore (mettre à jour le mod connect).</p>';
+    } else if (!pl.length) {
+      out += '<p class="owc-meta owc-payload-none">Aucune charge emportée.</p>';
+    } else {
+      out += '<div class="owc-payload"><span>Charges</span>' + pl.map(function (m) {
+        return '<b title="' + esc(m.label) + '">' + esc(m.label) + ' <em>× ' + esc(num(m.count) || 0) + '</em></b>';
+      }).join('') + '</div>';
+    }
+    return out;
   }
   function btn(cmd) { return '<button type="button" data-owc-cmd="' + cmd + '">' + esc(UAV_LABELS[cmd]) + '</button>'; }
   function pickBtn(cmd, lbl) {

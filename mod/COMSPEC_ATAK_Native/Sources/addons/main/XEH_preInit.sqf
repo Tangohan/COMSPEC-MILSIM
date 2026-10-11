@@ -1,6 +1,6 @@
 COMSPEC_ATAK_UI_GENERATION = "native-rsc-v1";
 missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION, true];
-missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", "1.6.0", true];
+missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", "1.7.0", true];
 diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
@@ -107,6 +107,30 @@ private _geo = ["COMSPEC", "ATAK · Géolocalisation (GEOLOC)"];
 ["comspec_atak_native_civil_apps", "CHECKBOX",
     ["Apps civiles", "UberEats (rations livrées par drone) et Tinder (rencontres entre joueurs). Décocher pour les retirer de tous les téléphones."],
     _sim, true, 1] call CBA_fnc_addSetting;
+
+// Marquage au viseur (caméra du drone, appareil photo du téléphone) et cibles perdues.
+private _lock = ["COMSPEC", "ATAK · Marquage au viseur"];
+["comspec_atak_native_lock_enabled", "CHECKBOX",
+    ["Marquage au viseur", "Réticule de la caméra du drone ou de l'appareil photo sur un ennemi, un appui : la cible est marquée sur la carte (LOCK) et suivie tant qu'elle est vue."],
+    _lock, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_lock_live", "CHECKBOX",
+    ["Le marqueur suit la cible", "Coché : tant que la source voit la cible, le marqueur se déplace avec elle (une fois par seconde). Décoché : il reste où la cible a été marquée."],
+    _lock, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_lock_grace", "SLIDER",
+    ["Délai avant cible perdue", "Secondes sans voir la cible (sortie du champ de la caméra, masquée, hors portée, drone hors liaison) avant qu'elle soit déclarée perdue."],
+    _lock, [1, 30, 5, 0], 1] call CBA_fnc_addSetting;
+["comspec_atak_native_lock_lost", "LIST",
+    ["Cible perdue", "Ce qui se passe quand la cible n'est plus vue. Le calque est le cadre LOCK dessiné sur l'image ; le marqueur est celui de la carte (et d'Athena)."],
+    _lock, [[0, 1, 2, 3], ["Calque retiré, marqueur gardé à la dernière position", "Calque retiré, marqueur effacé après le délai ci-dessous", "Calque et marqueur effacés aussitôt", "Tout gardé (cadre gris à la dernière position)"], 0], 1] call CBA_fnc_addSetting;
+["comspec_atak_native_lock_keep", "SLIDER",
+    ["Durée de vie d'un marqueur perdu", "Secondes avant d'effacer le marqueur d'une cible perdue (réglage « effacé après le délai ») ou neutralisée."],
+    _lock, [30, 1800, 300, 0], 1] call CBA_fnc_addSetting;
+["comspec_atak_native_lock_reacquire", "CHECKBOX",
+    ["Raccrochage automatique", "Une cible perdue qui revient dans le champ est raccrochée seule (même numéro LOCK). Décoché : il faut la marquer à nouveau."],
+    _lock, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_lock_range", "SLIDER",
+    ["Portée du marquage au téléphone", "Distance maximale en mètres pour marquer et suivre une cible à l'appareil photo du téléphone (la caméra du drone garde sa portée de capteur)."],
+    _lock, [100, 2000, 800, 0], 1] call CBA_fnc_addSetting;
 
 // Données médicales affichées par l'ATAK : décocher masque la donnée (ou l'endroit) pour tous, sans choix possible (fn_medShow).
 private _med = ["COMSPEC", "ATAK · Données médicales"];

@@ -3,7 +3,7 @@ class CfgPatches {
     class comspec_atak_native_main {
         name="COMSPEC ATAK Native Standalone"; author="COMSPEC"; requiredVersion=2.14;
         requiredAddons[]={"A3_UI_F","A3_Weapons_F","cba_main","cba_xeh"};
-        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit"}; version=1.6; versionStr=VERSION_STR; versionAr[]={1,6,1};
+        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit"}; version=1.7; versionStr=VERSION_STR; versionAr[]={1,7,0};
     };
 };
 class CfgFunctions {
@@ -41,7 +41,7 @@ class CfgFunctions {
             class breachBuilding {}; class pageBreach {}; class breachAction {}; class breachTop {};
         };
         class drone { file="z\comspec_atak_native\addons\main\functions\drone";
-            class droneCmd {}; class droneAction {}; class droneOsd {}; class droneDraw {}; class pageDrone {}; class droneDetectScan {}; class pageDroneDetect {}; class droneDetectDraw {};
+            class droneCmd {}; class droneAction {}; class droneOsd {}; class droneDraw {}; class pageDrone {}; class droneDetectScan {}; class pageDroneDetect {}; class droneDetectDraw {}; class lockAction {}; class droneFlir {};
         };
         class bluetooth { file="z\comspec_atak_native\addons\main\functions\bluetooth";
             class airplaneMode {}; class btAction {}; class btSounds {}; class pageBluetooth {}; class btInit { postInit=1; };
