@@ -27,6 +27,10 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 - ACE sur la caméra posée : « Récupérer la caméra » (rend l'item), « Renommer » (ouvre le téléphone sur la caméra), « Orienter » à gauche / à droite de 45° ; une caméra détruite se retire sans rendre l'item.
 - App Vidéo live : section « Caméras fixes » sous les porteurs (nom, distance, état : en ligne, hors liaison, brouillée, pas de réseau, détruite). Même image que le Live cam (jour, JVN, thermique), panoramique local ◀ ▶ de 30°, bouton Renommer. Liaison : il faut du réseau sur son téléphone et un ATAK du camp à moins de 600 m de la caméra (`comspec_atak_native_camera_range`) ; un brouilleur de mission la coupe.
 
+### Nouveau — Carte : symboles OTAN et menu du clic droit (demandes de TTRD)
+- Réglages > Carte > « Icônes des unités » : POINTS (actuel) ou OTAN MIL-STD (MIL-STD-2525 / APP-6, textures OTAN d'Arma). En OTAN, chaque unité amie (carte, mini-carte, liste BFT) a son cadre bleu et sa fonction : véhicule (drone, avion, hélicoptère, navire, char, VBTT / mécanisé, artillerie, ambulance, véhicule motorisé, mortier ou arme fixe), sinon rôle (sanitaire via ACE / trait / rôle SAN, PC pour les fonctions de commandement, reco pour tireur d'élite / éclaireur, mortier, télépilote, sapeur / EOD) puis infanterie. Les chefs ont leur échelon au-dessus du cadre (équipe, groupe, section). Indicatifs, couleurs et ma propre icône inchangés ; symbole recalculé toutes les 4 s par unité.
+- Clic droit sur la carte (sans glisser : le glisser droit déplace toujours la carte) : petit menu au curseur avec les coordonnées du point en tête. PING (cercles qui s'élargissent et indicatif pendant 10 s sur l'ATAK de tout mon camp, bandeau et vibration chez les autres ; Ctrl + clic envoie aussi ce ping partagé), METTRE UN MARQUEUR (formulaire de nouveau marqueur à cet endroit), SUPPRIMER (seulement sur un marqueur posé par un joueur). Fermeture : clic ailleurs, Échap ou choix d'une ligne.
+
 ### Corrigé
 - Réglages (et toutes les pages redessinées sur place) : un clic ne fait plus remonter la page en haut ; le défilement n'est remis à zéro qu'en changeant de page.
 

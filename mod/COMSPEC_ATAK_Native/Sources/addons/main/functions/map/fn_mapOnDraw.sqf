@@ -112,6 +112,7 @@ if ((count _route) > 0) then {
 [_map] call comspec_atak_native_fnc_reliefDraw;
 [_map] call comspec_atak_native_fnc_meshDraw;
 [_map] call comspec_atak_native_fnc_droneDraw;
+["draw", _map] call comspec_atak_native_fnc_mapPing;
 
 // Points de passage : traits pointillés entre étapes, étape active en vert, trait de cap depuis moi en navigation.
 private _wp = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];

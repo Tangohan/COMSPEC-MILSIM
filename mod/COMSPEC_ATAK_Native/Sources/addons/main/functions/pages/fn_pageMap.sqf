@@ -497,6 +497,8 @@ if (_dv isNotEqualTo "OFF") then {
     };
 };
 
+// Menu contextuel du clic droit (PING / MARQUEUR / SUPPRIMER), par-dessus tout le reste.
+if (_interactive) then { ["render"] call comspec_atak_native_fnc_mapCtxMenu; };
 uiNamespace setVariable ["COMSPEC_ATAK_MapOverlay", _ov];
 
 if !(_s getOrDefault ["mapCentered", false]) then {

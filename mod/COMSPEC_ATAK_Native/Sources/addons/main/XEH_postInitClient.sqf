@@ -631,6 +631,8 @@ addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screen
 [{ if ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["nav", false]) then { ["tick"] call comspec_atak_native_fnc_wpAction; }; }, 1] call CBA_fnc_addPerFrameHandler;
 // Breacher : top de brèche reçu du chef de colonne.
 ["comspec_atak_native_breach", { _this call comspec_atak_native_fnc_breachTop; }] call CBA_fnc_addEventHandler;
+// Carte : ping d'un membre de mon camp (menu clic droit, fn_mapPing).
+["comspec_atak_native_mapPing", { ["recv", _this] call comspec_atak_native_fnc_mapPing; }] call CBA_fnc_addEventHandler;
 // App Explosifs : ordre et heure de pose de chaque charge du joueur (minuteries : temps restant).
 ["ace_explosives_place", {
     params ["_e", "", "", "_unit"];

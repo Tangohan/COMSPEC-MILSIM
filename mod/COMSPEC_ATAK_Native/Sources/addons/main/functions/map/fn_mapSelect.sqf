@@ -7,11 +7,8 @@ if (_shift) then {_tool = "MARKER"};
 if (_alt) then {_tool = "MEASURE"};
 _world = [_world select 0, _world select 1, 0];
 switch (_tool) do {
-    case "PING": {
-        private _events = (uiNamespace getVariable ["COMSPEC_ATAK_Data",createHashMap]) getOrDefault ["events",[]];
-        _events pushBack [_world,diag_tickTime];
-        ["TACTICAL",format ["PING %1",[_world] call comspec_atak_native_fnc_gridRef],3,40] call comspec_atak_native_fnc_notify;
-    };
+    // Ping partagé avec mon camp (même envoi que le menu du clic droit).
+    case "PING": { ["send", _world] call comspec_atak_native_fnc_mapPing; };
     case "MARKER": { [_world] call comspec_atak_native_fnc_markerDrop; };
     case "MEASURE": {
         private _m = _s getOrDefault ["mapMeasure",[]];
