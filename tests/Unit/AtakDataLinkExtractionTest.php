@@ -63,7 +63,7 @@ final class AtakDataLinkExtractionTest extends TestCase
     {
         $gen = $this->read('mod/COMSPEC_ATAK_Native/tools/gen_assets.py');
         $ov = $this->read(self::MAIN . '/functions/datalink/fn_dataOverlay.sqf');
-        foreach (['(1180, 180, 700, 290)' => '[1180, 180, 700, 290]', '(1180, 1800, 700, 290)' => '[1180, 1800, 700, 290]', '(-760, 1560, 700, 290)' => '[-760, 1560, 700, 290]', '(2110, 1560, 700, 290)' => '[2110, 1560, 700, 290]'] as $py => $sqf) {
+        foreach (['(1100, 180, 700, 290)' => '[1100, 180, 700, 290]', '(1100, 1800, 700, 290)' => '[1100, 1800, 700, 290]', '(-760, 1560, 700, 290)' => '[-760, 1560, 700, 290]', '(2110, 1560, 700, 290)' => '[2110, 1560, 700, 290]'] as $py => $sqf) {
             self::assertStringContainsString($py, $gen);
             self::assertStringContainsString($sqf, $ov);
         }

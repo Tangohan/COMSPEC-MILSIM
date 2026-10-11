@@ -13,6 +13,17 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ## Vague 2026-10-11 (suite) — Extraction de données au câble (ATAK natif 1.8.0)
 
+### Nouveau — Personnalisation, dos du téléphone, antennes, menu ACE rangé
+
+- Couleur de la coque : coyote, vert OD ou noir ; couleur du module DL-7 : olive, noir ou tan (app Réglages > Personnalisation, ou ACE « Téléphone ATAK > Personnaliser »). La coque de nuit reste la silhouette sombre.
+- « Voir l'arrière » : le téléphone retourné au centre de l'écran (plaque de fixation, appareil photo, étiquette avec l'IMEI, antenne vissée). Clic ou touche pour fermer.
+- Antennes d'extension de débit, nouveaux objets d'inventaire vissés sur le port SMA de la coque et dessinés autour du téléphone :
+  - courte SMA : débit x1,25, liaison un peu plus tenace ;
+  - fouet longue : débit x1,5, nettement plus tenace (relief, bâtiments, brouillage) ;
+  - patch 9 dBi : débit x1,7 et meilleure tenue, à l'arrêt seulement (mal orientée en mouvement ou en véhicule).
+  Une antenne externe contourne l'antenne interne endommagée. Sans aucun signal (sous-sol, sous l'eau), rien ne change.
+- Menu ACE : tout est sous une seule entrée « Téléphone ATAK » (Voir l'arrière, Antenne, Personnaliser, Entretien, Débrancher le câble DL-7). Les actions Overwatch « Rallumer », « Réparer écran » et « Diagnostic » sont reprises dans Entretien et retirées de « Équipement ».
+
 ### Nouveau — App Extraction et câble DL-7
 
 Regarder un ordinateur, un téléphone, une clé ou n'importe quel objet porteur de données, « Brancher l'ATAK » : un câble sort du connecteur de la coque vers un module **COMSPEC DL-7** dessiné à côté du téléphone (écran LCD et voyants PWR / AUTH / DATA animés). L'app **Extraction** affiche l'écran du support à son thème, demande le mot de passe (essais comptés, verrou, effacement ou alarme) ou force l'accès, puis télécharge les fichiers choisis avec barre de transfert. Câble arraché si l'on s'éloigne : les fichiers déjà reçus restent. Fichiers lisibles dans l'app (texte, identifiants, image, coordonnées sur la carte, audio), partage au groupe. Objet « Câble de données DL-7 », obligatoire en réglage serveur.

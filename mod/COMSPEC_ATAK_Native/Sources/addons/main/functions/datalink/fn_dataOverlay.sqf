@@ -24,8 +24,8 @@ private _want = if (_l get "landscape") then {
 };
 // Cadre de la texture et module, en fractions du carré de la coque (mêmes valeurs que DATALINK dans gen_assets.py).
 private _geo = createHashMapFromArray [
-    ["datalink_land_up", [[0.5, 0, 0.5, 1], [1180, 180, 700, 290]]],
-    ["datalink_land_down", [[0.5, 0.25, 0.5, 1], [1180, 1800, 700, 290]]],
+    ["datalink_land_up", [[0.5, 0, 0.5, 1], [1100, 180, 700, 290]]],
+    ["datalink_land_down", [[0.5, 0.25, 0.5, 1], [1100, 1800, 700, 290]]],
     ["datalink_port_left", [[-0.5, 0.5, 1, 0.5], [-760, 1560, 700, 290]]],
     ["datalink_port_right", [[0.5, 0.5, 1, 0.5], [2110, 1560, 700, 290]]]
 ];
@@ -46,7 +46,10 @@ if (_fresh) then {
 (_geo get _want) params ["_frame", "_mod"];
 (_l get "phone") params ["_px", "_py", "_pw", "_ph"];
 _frame params ["_fx", "_fy", "_fw", "_fh"];
-if (_fresh || {_variant isNotEqualTo _want}) then { _img ctrlSetText format ["\z\comspec_atak_native\addons\main\data\%1.paa", _want]; };
+// Couleur du module (réglage Personnaliser) : olive par défaut, noir ou tan.
+private _mt = profileNamespace getVariable ["COMSPEC_ATAK_ModuleTint", "olive"];
+private _tex = _want + (["", "_" + _mt] select (_mt in ["black", "tan"]));
+if (_fresh || {_variant isNotEqualTo _tex}) then { _img ctrlSetText format ["\z\comspec_atak_native\addons\main\data\%1.paa", _tex]; };
 _img ctrlSetPosition [_px + _pw * _fx, _py + _ph * _fy, _pw * _fw, _ph * _fh];
 _img ctrlCommit 0;
 _mod params ["_mx", "_my", "_mw", "_mh"];
@@ -54,7 +57,7 @@ private _mxx = _px + _pw * _mx / 2048;
 private _myy = _py + _ph * _my / 2048;
 private _mww = _pw * _mw / 2048;
 private _mhh = _ph * _mh / 2048;
-_lcd ctrlSetPosition [_mxx + _mww * 0.08, _myy + _mhh * 0.37, _mww * 0.48, _mhh * 0.42];
+_lcd ctrlSetPosition [_mxx + _mww * 0.11, _myy + _mhh * 0.40, _mww * 0.44, _mhh * 0.38];
 _lcd ctrlCommit 0;
 {
     private _cx = _mxx + _mww * ([0.655, 0.77, 0.885] select _forEachIndex);
@@ -108,5 +111,5 @@ if (_fresh) then {
     // Câble qui apparaît au branchement.
     { _x ctrlSetFade 1; _x ctrlCommit 0; _x ctrlSetFade 0; _x ctrlCommit 0.35; } forEach ([_img, _lcd] + _leds);
 };
-uiNamespace setVariable ["COMSPEC_ATAK_DataOverlay", [_img, _lcd, _leds, _want]];
+uiNamespace setVariable ["COMSPEC_ATAK_DataOverlay", [_img, _lcd, _leds, _tex]];
 true

@@ -1,0 +1,102 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Unit;
+
+use PHPUnit\Framework\TestCase;
+
+/**
+ * ATAK natif : couleurs de coque et du module DL-7, dos du téléphone, antennes d'extension de débit, menu ACE rangé.
+ */
+final class AtakShellPersonalisationTest extends TestCase
+{
+    private const MAIN = 'mod/COMSPEC_ATAK_Native/Sources/addons/main';
+
+    private function read(string $rel): string
+    {
+        return (string) file_get_contents(dirname(__DIR__, 2) . '/' . $rel);
+    }
+
+    public function testFunctionsItemsAndTexturesExist(): void
+    {
+        $cfg = $this->read(self::MAIN . '/config.cpp');
+        self::assertStringContainsString('class shell { file="z\\comspec_atak_native\\addons\\main\\functions\\shell";', $cfg);
+        foreach (['antenna', 'backView', 'aceMenu'] as $fn) {
+            self::assertStringContainsString('class ' . $fn . ' {};', $cfg, $fn);
+            self::assertFileExists(dirname(__DIR__, 2) . '/' . self::MAIN . '/functions/shell/fn_' . $fn . '.sqf');
+        }
+        $data = dirname(__DIR__, 2) . '/' . self::MAIN . '/data/';
+        foreach (['Stub' => 'stub', 'Whip' => 'whip', 'Patch' => 'patch'] as $cls => $id) {
+            self::assertStringContainsString('class COMSPEC_ATAK_Antenna_' . $cls . ': ItemCore', $cfg);
+            self::assertStringContainsString('class Item_COMSPEC_ATAK_Antenna_' . $cls . ': Item_Base_F', $cfg);
+            self::assertStringContainsString('"COMSPEC_ATAK_Antenna_' . $cls . '"', $cfg);
+            foreach (['land', 'port', 'back'] as $v) {
+                self::assertFileExists($data . 'antenna_' . $id . '_' . $v . '.paa');
+            }
+            self::assertFileExists($data . 'item_antenna_' . $id . '.paa');
+        }
+        foreach (['', '_od', '_black'] as $t) {
+            self::assertFileExists($data . 'phone_back' . $t . '.paa');
+            self::assertFileExists($data . 'phone_landscape' . $t . '.paa');
+            self::assertFileExists($data . 'phone_portrait' . $t . '.paa');
+        }
+        foreach (['land_up', 'land_down', 'port_left', 'port_right'] as $p) {
+            foreach (['', '_black', '_tan'] as $t) {
+                self::assertFileExists($data . 'datalink_' . $p . $t . '.paa');
+            }
+        }
+    }
+
+    public function testTintsAreWiredIntoTexturesAndSettings(): void
+    {
+        $get = $this->read(self::MAIN . '/functions/ui/fn_layoutGet.sqf');
+        self::assertStringContainsString('"COMSPEC_ATAK_ShellTint", "coyote"', $get);
+        self::assertStringContainsString('phone_%1%2.paa", ["portrait", "landscape"] select _land, _shellSfx', $get);
+        $ov = $this->read(self::MAIN . '/functions/datalink/fn_dataOverlay.sqf');
+        self::assertStringContainsString('"COMSPEC_ATAK_ModuleTint", "olive"', $ov);
+        $set = $this->read(self::MAIN . '/functions/pages/fn_pageSettings.sqf');
+        self::assertStringContainsString('["COMSPEC_ATAK_ShellTint", "coyote", "Couleur de la coque"', $set);
+        self::assertStringContainsString('["COMSPEC_ATAK_ModuleTint", "olive", "Module DL-7"', $set);
+        self::assertStringContainsString('"Antenne (port SMA)"', $set);
+        self::assertStringContainsString('comspec_atak_native_fnc_backView', $set);
+        self::assertStringContainsString('"COMSPEC_ATAK_ShellTint", "COMSPEC_ATAK_ModuleTint"', $set);
+    }
+
+    public function testAntennaBoostsLinkQuality(): void
+    {
+        $lq = $this->read(self::MAIN . '/functions/core/fn_linkQuality.sqf');
+        self::assertStringContainsString('["boost", _mul] call comspec_atak_native_fnc_antenna', $lq);
+        self::assertStringContainsString('_ant > 0 && {_ext isEqualTo []}', $lq);
+        $ant = $this->read(self::MAIN . '/functions/shell/fn_antenna.sqf');
+        self::assertStringContainsString('["patch", "COMSPEC_ATAK_Antenna_Patch"', $ant);
+        self::assertStringContainsString('(_m min 1) ^ _exp', $ant);
+        self::assertStringContainsString('["overlay"] call comspec_atak_native_fnc_antenna;', $this->read(self::MAIN . '/functions/ui/fn_layoutApply.sqf'));
+    }
+
+    public function testAceMenuIsGroupedUnderOneRoot(): void
+    {
+        $init = $this->read(self::MAIN . '/XEH_postInitClient.sqf');
+        self::assertStringContainsString('[] call comspec_atak_native_fnc_aceMenu;', $init);
+        self::assertStringNotContainsString('["ACE_SelfActions", "ACE_Equipment"]', $init);
+        self::assertSame(4, substr_count($init, '["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"]'));
+        // Le menu doit exister avant que les actions d'entretien s'y accrochent.
+        self::assertTrue(strpos($init, 'fnc_aceMenu') < strpos($init, 'COMSPEC_ATAK_BatterySwap'));
+        $menu = $this->read(self::MAIN . '/functions/shell/fn_aceMenu.sqf');
+        foreach (['"COMSPEC_ATAK_Phone", "Téléphone ATAK"', '"Voir l\'arrière"', '"COMSPEC_ATAK_AntMenu", "Antenne"', '"Personnaliser"', '"Entretien"', '"Débrancher le câble DL-7"'] as $s) {
+            self::assertStringContainsString($s, $menu, $s);
+        }
+        foreach (['COMSPEC_RepairAtakPower', 'COMSPEC_RepairAtakScreen', 'COMSPEC_DiagnosticAtak'] as $id) {
+            self::assertStringContainsString('"' . $id . '"', $menu);
+        }
+        self::assertStringContainsString('ace_interact_menu_fnc_removeActionFromClass', $menu);
+    }
+
+    public function testGeneratorProducesVariants(): void
+    {
+        $gen = $this->read('mod/COMSPEC_ATAK_Native/tools/gen_assets.py');
+        foreach (['MODULE_TINTS', 'SHELL_TINTS', 'def phone_back', 'def antenna_svg', 'antenna_assets(tmp)', 'back_variants(tmp)', 'shell_variants(tmp)'] as $s) {
+            self::assertStringContainsString($s, $gen, $s);
+        }
+    }
+}

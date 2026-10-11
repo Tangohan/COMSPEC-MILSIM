@@ -69,9 +69,13 @@ private _pad = _sw * 0.012;
 private _bodyY = _sy + _statusH + _appH;
 private _bodyH = _sh - _statusH - _appH - _dockH;
 
+// Coque : texture de nuit (silhouette sombre) ou de jour à la couleur choisie (coyote, vert OD, noir).
+private _night = switch (profileNamespace getVariable ["COMSPEC_ATAK_Shell", "auto"]) do { case "day": { false }; case "night": { true }; default { sunOrMoon < 0.5 }; };
+private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"];
+private _shellSfx = if (_night) then { "_night" } else { ["", "_" + _tint] select (_tint in ["od", "black"]) };
 createHashMapFromArray [
     ["mode", _mode], ["offsetKey", _offKey], ["visible", [_dx + _dw * _vx0, _dy + _dh * _vy0, _dw * (_vx1 - _vx0), _dh * (_vy1 - _vy0)]], ["mini", _mini], ["orientation", _orient], ["landscape", _land], ["interactive", _interactive], ["dock", _dock],
-    ["phone", [_dx, _dy, _dw, _dh]], ["phoneTexture", format ["\z\comspec_atak_native\addons\main\data\phone_%1%2.paa", ["portrait", "landscape"] select _land, ["", "_night"] select (switch (profileNamespace getVariable ["COMSPEC_ATAK_Shell", "auto"]) do { case "day": { false }; case "night": { true }; default { sunOrMoon < 0.5 }; })]],
+    ["phone", [_dx, _dy, _dw, _dh]], ["phoneTexture", format ["\z\comspec_atak_native\addons\main\data\phone_%1%2.paa", ["portrait", "landscape"] select _land, _shellSfx]],
     ["device", [_sx, _sy, _sw, _sh]],
     ["status", [_sx, _sy, _sw, _statusH]],
     ["appbar", [_sx, _sy + _statusH, _sw, _appH]],

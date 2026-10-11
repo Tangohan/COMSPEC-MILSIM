@@ -25,6 +25,13 @@ Identités livrées :
 - **Réseau** : stabilité, latence, perte, relais, zone radio. **Réglages** : réglages du téléphone et réglages roleplay d'Overwatch. **Photos** : photo rapide envoyée sur ATAK web.
 - **Extraction** (câble DL-7) : regarder un support de données (ordinateur, téléphone, clé USB, caisse, corps…) et « Brancher l'ATAK » (molette ou ACE). Le câble et le module DL-7 apparaissent autour du téléphone (écran LCD, voyants PWR / AUTH / DATA) ; l'app montre l'écran du support (Windows, Linux, militaire, SCADA, téléphone, coffre), demande le mot de passe ou force l'accès, puis télécharge les fichiers choisis. S'éloigner arrache le câble (les fichiers déjà reçus restent). Données récupérées : lecture, coordonnées sur la carte, audio, partage au groupe.
 
+## Personnalisation, antennes et menu ACE
+
+- Réglages > Personnalisation : couleur de la coque (coyote, vert OD, noir), du module DL-7 (olive, noir, tan), antenne montée, bouton « Voir l'arrière ».
+- Antennes (objets `COMSPEC_ATAK_Antenna_Stub`, `_Whip`, `_Patch`) : à porter dans l'inventaire puis visser (ACE « Téléphone ATAK > Antenne » ou Réglages). Effet sur le débit simulé (`fn_linkQuality`) : courte x1,25, fouet x1,5, patch x1,7 à l'arrêt seulement.
+- ACE : une seule entrée « Téléphone ATAK » en auto-interaction (Voir l'arrière, Antenne, Personnaliser, Entretien, Débrancher le câble DL-7).
+- Textures générées par `tools/gen_assets.py` (`MODULE_TINTS`, `SHELL_TINTS`, `phone_back`, `antenna_svg`).
+
 ## Données à extraire (mission makers)
 
 - **Eden** : module **COMSPEC — ATAK · Données > Données à extraire (câble ATAK)** synchronisé à un ou plusieurs objets (sans objet : le support choisi est créé à l'emplacement du module). **Ajouter un fichier** pour compléter.

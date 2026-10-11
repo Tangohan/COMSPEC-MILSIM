@@ -102,10 +102,18 @@ if (fog > 0.5) then { _mul = _mul * 0.9; _f pushBack ["Brouillard dense", "-10 %
 private _hp = [] call comspec_atak_native_fnc_deviceHealth;
 private _dmg = _hp getOrDefault ["damage", 0];
 if (_dmg > 0.3) then { _mul = _mul * (1.15 - _dmg); _f pushBack ["Boîtier du téléphone abîmé", format ["-%1 %%", round ((_dmg - 0.15) * 100)]]; };
-// Antenne touchée (fn_deviceDamage) : jusqu'à -75 % de débit.
+// Antenne touchée (fn_deviceDamage) : jusqu'à -75 % de débit. Une antenne externe (fn_antenna) la remplace.
+private _ext = ["get"] call comspec_atak_native_fnc_antenna;
 private _ant = (_hp getOrDefault ["parts", createHashMap]) getOrDefault ["antenna", 0];
-if (_ant > 0) then { private _m = 1 - 0.75 * _ant; _mul = _mul * _m; _f pushBack ["Antenne du téléphone endommagée", format ["-%1 %%", round ((1 - _m) * 100)]]; };
+if (_ant > 0 && {_ext isEqualTo []}) then { private _m = 1 - 0.75 * _ant; _mul = _mul * _m; _f pushBack ["Antenne du téléphone endommagée", format ["-%1 %%", round ((1 - _m) * 100)]]; };
 _mul = 0 max (_mul min 1);
+// Antenne d'extension de débit : pertes atténuées et débit de base relevé (rien à faire sans aucun signal).
+if (_ext isNotEqualTo [] && {_mul > 0}) then {
+    (["boost", _mul] call comspec_atak_native_fnc_antenna) params ["_m2", "_gain", "_name", "_txt"];
+    _mul = _m2;
+    _kbps = _kbps * _gain;
+    _f pushBack [_name, _txt];
+};
 _kbps = round (_kbps * _mul);
 _lat = round (_lat + (1 - _mul) * 600);
 _loss = round (_loss max ((1 - _mul) * 35));
