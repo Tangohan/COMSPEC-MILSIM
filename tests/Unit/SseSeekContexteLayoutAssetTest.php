@@ -17,9 +17,9 @@ final class SseSeekContexteLayoutAssetTest extends TestCase
             dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/display_sse_person.hpp'
         );
 
-        self::assertStringContainsString('#define ROW_H       (0.0315 * safezoneH)', $hpp);
-        self::assertStringContainsString('#define SEEK_FONT   0.024', $hpp);
-        self::assertStringContainsString('#define SEEK_EDIT_EX 0.028', $hpp);
+        self::assertStringContainsString('#define ROW_H       SEEK_U(0.0315)', $hpp);
+        self::assertStringContainsString('#define SEEK_FONT   (0.024 * SEEK_K)', $hpp);
+        self::assertStringContainsString('#define SEEK_EDIT_EX (0.028 * SEEK_K)', $hpp);
         self::assertStringContainsString('#define CTX_MARKS_H', $hpp);
         self::assertStringContainsString("color='#c8eadc'>STATUT", $hpp);
         self::assertStringContainsString('idc = 9505;', $hpp);

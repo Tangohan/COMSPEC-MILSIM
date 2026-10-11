@@ -23,6 +23,7 @@ use App\Support\ComspecApiKeyAuth;
 use App\Support\SsePersonDedupe;
 use App\Support\SteamId;
 use App\Support\HttpJsonBody;
+use App\Support\SseFacePortrait;
 use App\Support\TerrainUploadedImage;
 
 /**
@@ -482,6 +483,19 @@ final class SseApiController
         if ($gridRef !== '') {
             $meta['grid_reference'] = $gridRef;
         }
+        // Cliché SEEK cadré sur la tête : recadrage portrait 3:4, la capture brute reste en archive.
+        $angleInfo = SseFacePortrait::parseAngle((string) ($_POST['angle'] ?? 'face'));
+        if ($angleInfo['portrait']) {
+            $portraitName = sprintf('sse_%d_%s_%s_portrait.jpg', $personId, time(), $safeAuthor);
+            if (SseFacePortrait::writePortrait($dest, $dir . DIRECTORY_SEPARATOR . $portraitName)) {
+                $meta['source_image_path'] = $relative;
+                $meta['portrait'] = true;
+                $relative = 'uploads/sse/' . $portraitName;
+            }
+        }
+        if ($angleInfo['quality'] !== null) {
+            $meta['quality_estimate'] = $angleInfo['quality'];
+        }
         foreach (['pos_x', 'pos_y', 'pos_z'] as $coordKey) {
             if (isset($_POST[$coordKey]) && $_POST[$coordKey] !== '' && is_numeric($_POST[$coordKey])) {
                 $meta[$coordKey] = (float) $_POST[$coordKey];
@@ -489,7 +503,8 @@ final class SseApiController
         }
         $photoId = $this->persons->addPhoto($personId, $tenantId, [
             'image_path' => $relative,
-            'angle' => $_POST['angle'] ?? 'face',
+            'angle' => $angleInfo['angle'],
+            'quality' => $angleInfo['quality'],
             'caption' => $_POST['caption'] ?? null,
             'author_callsign' => $author,
             'pos_x' => $_POST['pos_x'] ?? null,

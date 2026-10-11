@@ -27,6 +27,18 @@ Paniques et alertes supprimables pour tous les postes (liste, carte, tchat), bal
 
 ---
 
+## Vague 2026-10-11 — Photo du visage SEEK / ATAK natif 1.6.1 / Overwatch 1.6.16
+
+### Nouveau — Photo du visage cadrée (SEEK et app SSE de l'ATAK)
+
+Page **PHOTO** du terminal SEEK : viseur en direct sur la tête du sujet (face, trois quarts, profil, zoom), qualité estimée (nuit, visage masqué, sujet au sol), flash de nuit, cliché figé à l'écran. L'app **SSE** de l'ATAK prend aussi la photo du visage du sujet visé (4 m au plus) ; elle part avec la fiche SEEK. Le site recadre la capture en portrait 3:4 et garde la capture brute. Capture d'écran Arma : qualité HDR au moins Moyen. Non testé en jeu.
+
+### Amélioré — Terminal SEEK
+
+Appareil affiché sans déformation et cadré sur l'écran et le clavier (écran ~1,7 fois plus grand), écran calé dans le verre, nouvelles PAA (verre LCD, tuiles d'accueil illustrées, gabarit du viseur), touches A1 / A2 / QUERY / SIGN posées sur les vraies touches de l'appareil.
+
+---
+
 ## Vague 2026-10-01 — Fieldwatch RF hits (Lot 1)
 
 ### Nouveau — Fieldwatch (veille RF simulée)
