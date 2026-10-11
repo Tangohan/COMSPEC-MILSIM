@@ -1,7 +1,7 @@
 /*
     Qualité de la liaison radio-data du téléphone (simulation de débit), recalculée au plus toutes les 2 s.
     Renvoie un HashMap : bars (0-4), kbps, latency (ms), loss (%), label, factors [[nom, effet]...].
-    Facteurs : liaison Athena / relais Overwatch, bâtiment au-dessus de la tête, masque du relief,
+    Facteurs : liaison Athena / relais Overwatch, passerelle de véhicule ou poste de commandement mobile, bâtiment au-dessus de la tête, masque du relief,
     véhicule, pluie et brouillard, zone radio, brouilleurs de mission (COMSPEC_ATAK_Jammers = [[pos, rayon]...]),
     état du téléphone. Réglage serveur comspec_atak_native_net_sim : coupé, débit plein et sans délai.
 */
@@ -22,6 +22,8 @@ private _mul = 1;
 private _lat = 60;
 private _loss = 0;
 private _kbps = 4000;
+// Passerelle de véhicule de son camp à portée (fn_vehicleGateway) : relais monté sur véhicule ou PC mobile.
+private _gwv = ["nearest"] call comspec_atak_native_fnc_vehicleGateway;
 private _bridge = [] call comspec_atak_native_fnc_bridge;
 if (_bridge) then {
     private _link = toLower (missionNamespace getVariable ["COMSPEC_LinkState", "offline"]);
@@ -40,7 +42,7 @@ if (_bridge) then {
                 _kbps = ((_r getOrDefault ["throughput_mbps", 4]) * 1000) max 200;
                 _f pushBack [format ["Relais %1 à %2 m", _r getOrDefault ["name", ""], round (_r getOrDefault ["dist", 0])], format ["%1 Mbit/s", _r getOrDefault ["throughput_mbps", 4]]];
             } else {
-                if (missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]) then { _mul = _mul * 0.1; _f pushBack ["Aucun relais à portée", "-90 %"]; };
+                if ((missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]) && {_gwv isEqualTo []}) then { _mul = _mul * 0.1; _f pushBack ["Aucun relais à portée", "-90 %"]; };
             };
         };
     };
@@ -51,6 +53,11 @@ if (_bridge) then {
         if (_zone getOrDefault ["force_disconnect", false]) then { _mul = 0; };
         _f pushBack [format ["Zone %1", _zone getOrDefault ["name", "radio"]], format ["perte %1 %%", _loss]];
     };
+};
+if (_gwv isNotEqualTo []) then {
+    _gwv params ["", "_gd", "_gr", "_gmb", "_gm", "_gn"];
+    _kbps = _kbps max round (_gmb * 1000 * (1 - 0.6 * (_gd / _gr) ^ 2));
+    _f pushBack [format ["%1 %2 à %3 m", ["Passerelle", "Poste de commandement"] select (_gm isEqualTo "cp"), _gn, round _gd], format ["%1 Mbit/s", _gmb]];
 };
 private _unit = vehicle player;
 private _eye = eyePos player;
@@ -73,7 +80,8 @@ if (_unit isEqualTo player) then {
         };
     };
 };
-if (_unit isNotEqualTo player) then { _mul = _mul * 0.8; _f pushBack ["Dans un véhicule", "-20 %"]; };
+// Dans un véhicule : la carrosserie gêne, sauf sur son terminal de bord ou sa passerelle (antenne du toit).
+if (_unit isNotEqualTo player && {([player] call comspec_atak_native_fnc_vehicleTerminal) isEqualTo ""} && {(["state", _unit] call comspec_atak_native_fnc_vehicleGateway) isEqualTo ""}) then { _mul = _mul * 0.8; _f pushBack ["Dans un véhicule", "-20 %"]; };
 if ((_eye select 2) < 0) then { _mul = 0; _f pushBack ["Sous l'eau", "aucun signal"]; };
 // Masque du relief : 8 directions vers un point haut à 1,5 km.
 private _masked = 0;
@@ -102,10 +110,18 @@ if (fog > 0.5) then { _mul = _mul * 0.9; _f pushBack ["Brouillard dense", "-10 %
 private _hp = [] call comspec_atak_native_fnc_deviceHealth;
 private _dmg = _hp getOrDefault ["damage", 0];
 if (_dmg > 0.3) then { _mul = _mul * (1.15 - _dmg); _f pushBack ["Boîtier du téléphone abîmé", format ["-%1 %%", round ((_dmg - 0.15) * 100)]]; };
-// Antenne touchée (fn_deviceDamage) : jusqu'à -75 % de débit.
+// Antenne touchée (fn_deviceDamage) : jusqu'à -75 % de débit. Une antenne externe (fn_antenna) la remplace.
+private _ext = ["get"] call comspec_atak_native_fnc_antenna;
 private _ant = (_hp getOrDefault ["parts", createHashMap]) getOrDefault ["antenna", 0];
-if (_ant > 0) then { private _m = 1 - 0.75 * _ant; _mul = _mul * _m; _f pushBack ["Antenne du téléphone endommagée", format ["-%1 %%", round ((1 - _m) * 100)]]; };
+if (_ant > 0 && {_ext isEqualTo []}) then { private _m = 1 - 0.75 * _ant; _mul = _mul * _m; _f pushBack ["Antenne du téléphone endommagée", format ["-%1 %%", round ((1 - _m) * 100)]]; };
 _mul = 0 max (_mul min 1);
+// Antenne d'extension de débit : pertes atténuées et débit de base relevé (rien à faire sans aucun signal).
+if (_ext isNotEqualTo [] && {_mul > 0}) then {
+    (["boost", _mul] call comspec_atak_native_fnc_antenna) params ["_m2", "_gain", "_name", "_txt"];
+    _mul = _m2;
+    _kbps = _kbps * _gain;
+    _f pushBack [_name, _txt];
+};
 _kbps = round (_kbps * _mul);
 _lat = round (_lat + (1 - _mul) * 600);
 _loss = round (_loss max ((1 - _mul) * 35));

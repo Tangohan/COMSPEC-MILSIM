@@ -23,6 +23,33 @@ Identités livrées :
 - **Messagerie** : canaux Général / Commandement / Groupe / Alertes TOC et messages directs, en bulles. Le téléphone vibre à l'arrivée d'un message.
 - **Musique** : fichiers du dossier `Documents\Arma 3\COMSPEC_Music`, pistes du serveur (musiques d'Arma, des mods et de la mission, radio de la mission en réglage CBA) et liens audio (MP3, WAV, WMA, M4A, AAC, webradio). Volume, file d'attente, répétition, aléatoire, et **haut-parleur** : les joueurs proches entendent la même musique au même moment, plus fort en s'approchant. Fichiers et liens passent par la DLL (lecteur Windows), les pistes serveur par le moteur d'Arma.
 - **Réseau** : stabilité, latence, perte, relais, zone radio. **Réglages** : réglages du téléphone et réglages roleplay d'Overwatch. **Photos** : photo rapide envoyée sur ATAK web.
+- **Extraction** (câble DL-7) : regarder un support de données (ordinateur, téléphone, clé USB, caisse, corps…) et « Brancher l'ATAK » (molette ou ACE). Le câble et le module DL-7 apparaissent autour du téléphone (écran LCD, voyants PWR / AUTH / DATA) ; l'app montre l'écran du support (Windows, Linux, militaire, SCADA, téléphone, coffre), demande le mot de passe ou force l'accès, puis télécharge les fichiers choisis. S'éloigner arrache le câble (les fichiers déjà reçus restent). Données récupérées : lecture, coordonnées sur la carte, audio, partage au groupe.
+
+## Personnalisation, antennes et menu ACE
+
+- Réglages > Personnalisation : couleur de la coque (coyote, vert OD, noir), du module DL-7 (olive, noir, tan), antenne montée, bouton « Voir l'arrière ».
+- Antennes (objets `COMSPEC_ATAK_Antenna_Stub`, `_Whip`, `_Patch`) : à porter dans l'inventaire puis visser (ACE « Téléphone ATAK > Antenne » ou Réglages). Effet sur le débit simulé (`fn_linkQuality`) : courte x1,25, fouet x1,5, patch x1,7 à l'arrêt seulement.
+- ACE : une seule entrée « Téléphone ATAK » en auto-interaction (Voir l'arrière, Antenne, Personnaliser, Accessoires, Entretien, Passerelle du véhicule, Effacement d'urgence, Débrancher le câble DL-7).
+- Textures générées par `tools/gen_assets.py` (`MODULE_TINTS`, `SHELL_TINTS`, `phone_back`, `antenna_svg`).
+- Module DL-7 et panneau arrière rendus en 3D par `tools/render_3d.py` (Blender en module Python : `pip install bpy`), images dans `tools/render/`, puis repris par `gen_assets.py`.
+
+## Gilet, modèles, accessoires et véhicules
+
+- Téléphone sur le gilet : modèle `data/vest_phone.p3d` (classe `COMSPEC_ATAK_VestPhone`, sélections `camo` et `patch`), exporté par `tools/model_vest_phone.py` (Blender + extension « Arma 3 Object Builder », GPL-3, non livrée) ; textures `vest_phone*_co.paa` par `gen_assets.vest_phone_atlas`. Orientation à régler en jeu si besoin : `COMSPEC_ATAK_VestDirUp = [[dir], [up]]`.
+- Modèles de téléphone (`COMSPEC_ATAK_PhoneModel` : `s7`, `rugged`, `iphone`) et tablette de bord (`tablet`) : rendus par `tools/render_phones.py`, même ouverture d'écran que le S7.
+- Accessoires : `COMSPEC_ATAK_PowerBank` (`fn_powerBank`), balise IR (`fn_irBeacon`), `COMSPEC_ATAK_NvgFilter` et lueur des écrans (`fn_screenGlow`, réglage serveur « Lueur des écrans la nuit »). Effacement d'urgence et téléphone extractible en cas de capture : `fn_phoneSecurity`.
+- Véhicules : `fn_vehicleTerminal` (tablette de bord, réglage serveur « Tablette des véhicules », objet `COMSPEC_ATAK_VehicleKit`), `fn_vehicleGateway` (passerelle, PC mobile ; portées par mission `COMSPEC_ATAK_GwRange = [4000, 10000]`).
+
+## Données à extraire (mission makers)
+
+- **Eden** : module **COMSPEC — ATAK · Données > Données à extraire (câble ATAK)** synchronisé à un ou plusieurs objets (sans objet : le support choisi est créé à l'emplacement du module). **Ajouter un fichier** pour compléter.
+- **Zeus** : mêmes modules, lâchés sur l'objet ; un formulaire s'ouvre. **Remettre / retirer les données** remet un support à zéro (essais, verrou, effacement).
+- **Script** (champ init d'un objet) :
+  `[this, [["name", "PC du QG"], ["password", "4471"], ["files", "ordre.txt | texte" + endl + "Repli à 04h00" + endl + "---" + endl + "cache | coord" + endl + "045123"]]] call comspec_atak_native_fnc_dataSetup;`
+- Fichiers : un bloc par fichier, séparés par `---`, première ligne `nom | type`. Types : `texte`, `document`, `identifiants` (le mot de passe d'un autre poste, pour enchaîner), `coord` (carroyage ou `x, y`), `image` (chemin dans la mission), `audio` (classe CfgSounds ou chemin).
+- Réglages : écran, organisation, couleur, image, mot de passe (diffusé en empreinte seulement), indice, essais, sanction (verrou, effacement, alarme), forçage et sa durée, durée du transfert, port (USB-C, RJ45, série), alarme (branchement, mauvais mot de passe, fin), usage unique, code serveur en fin.
+- Événement CBA global en fin de téléchargement : `comspec_atak_native_dataDownloaded` `[objet, joueur, noms des fichiers]`.
+- Réglages serveur **COMSPEC > ATAK · Extraction de données** : câble DL-7 obligatoire (objet « Câble de données DL-7 »), longueur du câble, vitesse des transferts.
 
 ## Ressources graphiques
 

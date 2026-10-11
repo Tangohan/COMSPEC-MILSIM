@@ -262,16 +262,30 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 // Goniométrie : émetteurs estimés par Athena, relus toutes les 15 s quand la couche est active.
 [{ if (profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) then { [] spawn comspec_atak_native_fnc_sigintPoll; }; }, 15] call CBA_fnc_addPerFrameHandler;
 
+// Menu ACE « Téléphone ATAK » (fn_aceMenu) : les actions d'entretien ci-dessous vont dans son sous-menu Entretien.
+[] call comspec_atak_native_fnc_aceMenu;
+// Téléphone visible sur le gilet (fn_vestMount), balise IR (fn_irBeacon), téléphone extractible en cas de capture (fn_phoneSecurity).
+[{ ["tick"] call comspec_atak_native_fnc_vestMount; ["tick"] call comspec_atak_native_fnc_irBeacon; ["tick"] call comspec_atak_native_fnc_phoneSecurity; }, 2] call CBA_fnc_addPerFrameHandler;
+// Terminal de bord (tablette du véhicule, PC mobile) gagné ou perdu : coque redessinée, message à l'arrivée.
+[{
+    private _k = [player] call comspec_atak_native_fnc_vehicleTerminal;
+    if (_k isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_TermKind", ""])) exitWith {};
+    uiNamespace setVariable ["COMSPEC_ATAK_TermKind", _k];
+    if (_k in ["vehicle", "cp"]) then { ["INFO", ["Tablette du véhicule disponible (ATAK)", "Terminal du poste de commandement disponible"] select (_k isEqualTo "cp"), 4, 20] call comspec_atak_native_fnc_notify; };
+    if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; };
+}, 2] call CBA_fnc_addPerFrameHandler;
+// Lueur des écrans la nuit (la sienne publiée, celle des joueurs proches dessinée) et filtre JVN (fn_screenGlow).
+[{ ["tick"] call comspec_atak_native_fnc_screenGlow; }, 1] call CBA_fnc_addPerFrameHandler;
 // Action ACE : changer la batterie du téléphone (si une batterie de rechange est portée).
 if (!isNil "ace_interact_menu_fnc_createAction") then {
-    private _act = ["COMSPEC_ATAK_BatterySwap", "Changer la batterie ATAK", "\z\comspec_atak_native\addons\main\data\item_battery.paa", {
+    private _act = ["COMSPEC_ATAK_BatterySwap", "Changer la batterie", "\z\comspec_atak_native\addons\main\data\item_battery.paa", {
         if (isNil "ace_common_fnc_progressBar") exitWith { [] call comspec_atak_native_fnc_batterySwap; };
         [5, [], { [] call comspec_atak_native_fnc_batterySwap; }, {}, "Changement de la batterie…"] call ace_common_fnc_progressBar;
     }, {
         [player] call comspec_atak_native_fnc_hasDevice && {(missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) < 95}
         && {([player] call comspec_atak_native_fnc_batteryItem) isNotEqualTo ""}
     }] call ace_interact_menu_fnc_createAction;
-    ["CAManBase", 1, ["ACE_SelfActions", "ACE_Equipment"], _act, true] call ace_interact_menu_fnc_addActionToClass;
+    ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"], _act, true] call ace_interact_menu_fnc_addActionToClass;
 } else {
     // Sans ACE : action de la molette (visible seulement avec une batterie de rechange et le téléphone sous 95 %).
     player addAction ["<t color='#7fd0b0'>Changer la batterie ATAK</t>", { [] call comspec_atak_native_fnc_batterySwap; }, nil, 1, false, true, "",
@@ -457,24 +471,24 @@ player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK
     if (_medic isEqualTo player && {_patient isNotEqualTo player || {(player getVariable ["ace_medical_woundBleeding", 0]) > 0}}) then { ["treat", _patient] call comspec_atak_native_fnc_screenDirt; };
 }] call CBA_fnc_addEventHandler;
 if (!isNil "ace_interact_menu_fnc_createAction") then {
-    private _clean = ["COMSPEC_ATAK_Clean", "Nettoyer l'écran du téléphone", "", {
+    private _clean = ["COMSPEC_ATAK_Clean", "Nettoyer l'écran", "", {
         [{ ["start"] call comspec_atak_native_fnc_screenClean; }] call CBA_fnc_execNextFrame;
     }, {
         ["can"] call comspec_atak_native_fnc_screenClean
     }] call ace_interact_menu_fnc_createAction;
-    ["CAManBase", 1, ["ACE_SelfActions", "ACE_Equipment"], _clean, true] call ace_interact_menu_fnc_addActionToClass;
+    ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"], _clean, true] call ace_interact_menu_fnc_addActionToClass;
 };
 
 // Actions ACE : réparer le téléphone (kit de réparation ATAK consommé, ou caisse à outils) ou passer sur un téléphone de rechange.
 // La réparation couvre aussi l'état du réalisme Overwatch (écran cassé, appareil détruit) : fn_repairStart, fn_deviceRepair.
 if (!isNil "ace_interact_menu_fnc_createAction") then {
-    private _fix = ["COMSPEC_ATAK_Repair", "Réparer le téléphone ATAK", "\z\comspec_atak_native\addons\main\data\item_repairkit.paa", {
+    private _fix = ["COMSPEC_ATAK_Repair", "Réparer le téléphone", "\z\comspec_atak_native\addons\main\data\item_repairkit.paa", {
         [{ ["start"] call comspec_atak_native_fnc_repairStart; }] call CBA_fnc_execNextFrame;
     }, {
         ["can"] call comspec_atak_native_fnc_repairStart
     }] call ace_interact_menu_fnc_createAction;
-    ["CAManBase", 1, ["ACE_SelfActions", "ACE_Equipment"], _fix, true] call ace_interact_menu_fnc_addActionToClass;
-    private _swap = ["COMSPEC_ATAK_Swap", "Changer de téléphone ATAK", "", {
+    ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"], _fix, true] call ace_interact_menu_fnc_addActionToClass;
+    private _swap = ["COMSPEC_ATAK_Swap", "Passer au téléphone de rechange", "", {
         private _cat = [] call comspec_atak_native_fnc_deviceCatalog;
         private _spare = (items player) select { (toLower _x) in _cat };
         if ((count _spare) > 0) then { player removeItem (_spare select 0); ["swap"] call comspec_atak_native_fnc_deviceRepair; };
@@ -482,7 +496,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         ((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["damage", 0]) >= 0.45
         && {private _cat = [] call comspec_atak_native_fnc_deviceCatalog; ((((assignedItems player) + (items player)) select { (toLower _x) in _cat }) param [1, ""]) isNotEqualTo "" && {((items player) findIf { (toLower _x) in _cat }) >= 0}}
     }] call ace_interact_menu_fnc_createAction;
-    ["CAManBase", 1, ["ACE_SelfActions", "ACE_Equipment"], _swap, true] call ace_interact_menu_fnc_addActionToClass;
+    ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"], _swap, true] call ace_interact_menu_fnc_addActionToClass;
 };
 
 // Drones : connecter / déconnecter le téléphone ATAK en étant au contact du drone (ACE et molette).
@@ -627,5 +641,6 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 ["COMSPEC_IcemanMedicalPanic", { ["health", _this] call comspec_atak_native_fnc_athenaSignal; }] call CBA_fnc_addEventHandler;
 // App Liaison allié : événements, sauvegarde légère, action ACE.
 [] call comspec_atak_native_fnc_linkAllyInit;
+[] call comspec_atak_native_fnc_dataInit;
 // Icônes PAA gardées en mémoire (sinon elles disparaissent un instant à chaque rafraîchissement de page).
 [{ !isNull (findDisplay 46) }, { [] call comspec_atak_native_fnc_textureKeep; }] call CBA_fnc_waitUntilAndExecute;

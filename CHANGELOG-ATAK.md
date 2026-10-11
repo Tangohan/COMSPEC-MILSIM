@@ -11,6 +11,45 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vague 2026-10-11 (suite) — Extraction de données au câble (ATAK natif 1.8.0)
+
+### Nouveau — Personnalisation, dos du téléphone, antennes, menu ACE rangé
+
+- Couleur de la coque : coyote, vert OD ou noir ; couleur du module DL-7 : olive, noir ou tan (app Réglages > Personnalisation, ou ACE « Téléphone ATAK > Personnaliser »). La coque de nuit reste la silhouette sombre.
+- Module DL-7 et dos du téléphone en rendu 3D réaliste (métal peint, butées caoutchouc, vis, plaque aluminium anodisé, objectif, étiquette).
+- Patchs velcro au dos : France, France basse visibilité, USA, USA basse visibilité, crâne, croix, alien, COMSPEC, nominatif (nom du joueur ou texte choisi). Réglages ou ACE « Personnaliser > Patch au dos ».
+- Téléphone visible sur le gilet (poitrine gauche, centre ou droite, épaisseur réglable), accroché au torse sur tous les gilets et vu par les autres joueurs ; masqué pour soi en première personne. Notre propre modèle 3D de la coque, à la couleur choisie, dos et patch vers l'extérieur ou écran vers l'extérieur.
+- Modèles de téléphone au choix : durci S7 (coque actuelle), durci XT (téléphone de chantier à butées) et premium (téléphone fin à cadre métal), sans marque. Même écran pour tous.
+- Accessoires (nouveaux objets) :
+  - batterie externe 10 000 mAh fixée sur la plaque du dos : recharge le téléphone à 2 % par minute, deux charges complètes, visible au dos ;
+  - balise IR de la coque : clignotant infrarouge vu aux JVN par tous (identification ami), alimentée par le téléphone ;
+  - filtre d'écran JVN : de nuit, un écran allumé éclaire son porteur et se voit de loin (encore plus aux JVN) ; le filtre réduit presque toute la lueur. Mode nuit et véhicule la réduisent aussi.
+- Sécurité en cas de capture : menotté, inconscient ou mort, votre téléphone devient extractible au câble DL-7 par l'ennemi (messages, marqueurs, comptes rendus, position). Code de verrouillage dans les Réglages (3 essais puis effacement, forçable en 2 min). **Effacement d'urgence** (ACE ou Réglages, double confirmation) : plus rien d'exploitable jusqu'à la resynchronisation.
+
+### Nouveau — Tablette des véhicules, passerelles et poste de commandement mobile
+
+- Tablette durcie de bord : conducteur, tireur, chef de bord et tourelles d'un véhicule terrestre ou d'un bateau ont l'ATAK sans téléphone porté (réglage serveur : tous les véhicules, ceux équipés du « Kit terminal véhicule », ou aucun). La coque devient une tablette.
+- Passerelle du véhicule (ACE, équipage à bord ou à côté) : le véhicule devient relais du réseau de son camp, 4 km, 6 Mbit/s, même en roulant.
+- Poste de commandement mobile : véhicule à l'arrêt, mât dressé sur le toit, 10 km et 20 Mbit/s ; tablette du PC pour tous à bord et à moins de 8 m. Le véhicule qui repart replie le mât.
+- Les téléphones à portée y prennent leur débit, même sans relais Overwatch ; le maillage Wave Relay s'y raccroche et la carte montre la portée.
+- « Voir l'arrière » : le téléphone retourné au centre de l'écran (plaque de fixation, appareil photo, étiquette avec l'IMEI, antenne vissée). Clic ou touche pour fermer.
+- Antennes d'extension de débit, nouveaux objets d'inventaire vissés sur le port SMA de la coque et dessinés autour du téléphone :
+  - courte SMA : débit x1,25, liaison un peu plus tenace ;
+  - fouet longue : débit x1,5, nettement plus tenace (relief, bâtiments, brouillage) ;
+  - patch 9 dBi : débit x1,7 et meilleure tenue, à l'arrêt seulement (mal orientée en mouvement ou en véhicule).
+  Une antenne externe contourne l'antenne interne endommagée. Sans aucun signal (sous-sol, sous l'eau), rien ne change.
+- Menu ACE : tout est sous une seule entrée « Téléphone ATAK » (Voir l'arrière, Antenne, Personnaliser, Accessoires, Entretien, Passerelle du véhicule, Effacement d'urgence, Débrancher le câble DL-7). Les actions Overwatch « Rallumer », « Réparer écran » et « Diagnostic » sont reprises dans Entretien et retirées de « Équipement ».
+
+### Nouveau — App Extraction et câble DL-7
+
+Regarder un ordinateur, un téléphone, une clé ou n'importe quel objet porteur de données, « Brancher l'ATAK » : un câble sort du connecteur de la coque vers un module **COMSPEC DL-7** dessiné à côté du téléphone (écran LCD et voyants PWR / AUTH / DATA animés). L'app **Extraction** affiche l'écran du support à son thème, demande le mot de passe (essais comptés, verrou, effacement ou alarme) ou force l'accès, puis télécharge les fichiers choisis avec barre de transfert. Câble arraché si l'on s'éloigne : les fichiers déjà reçus restent. Fichiers lisibles dans l'app (texte, identifiants, image, coordonnées sur la carte, audio), partage au groupe. Objet « Câble de données DL-7 », obligatoire en réglage serveur.
+
+### Nouveau — Modules Zeus et Eden « ATAK · Données »
+
+**Données à extraire**, **Ajouter un fichier**, **Remettre / retirer les données** (Zeus). Sans objet visé, le module crée le support (portable, PC, serveur, téléphone, tablette, clé USB, radio). Code serveur et événement CBA `comspec_atak_native_dataDownloaded` en fin de téléchargement ; `comspec_atak_native_fnc_dataSetup` pour les scripts. Non testé en jeu.
+
+---
+
 ## Vague 2026-10-11 — Marquage au viseur, vue drone FLIR, Overwatch beta
 
 ### Nouveau — Marquage au viseur (ATAK natif 1.7.0)

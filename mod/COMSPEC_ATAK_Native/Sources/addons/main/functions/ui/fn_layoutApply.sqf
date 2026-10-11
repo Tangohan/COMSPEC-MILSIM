@@ -117,4 +117,8 @@ _wc ctrlShow (_page isEqualTo "LAUNCHER" && {_wall in _walls});
 (_d displayCtrl 88541) ctrlShow (_isMap && {_inspW > 0});
 
 [] call comspec_atak_native_fnc_dockRender;
+// Câble DL-7 branché (app Extraction) : suit la coque.
+[] call comspec_atak_native_fnc_dataOverlay;
+// Antenne d'extension vissée sur le port SMA (fn_antenna).
+["overlay"] call comspec_atak_native_fnc_antenna;
 true

@@ -5,6 +5,10 @@
     Un client demande la synchro à son arrivée (comspec_atak_native_syncReq) ; le serveur répond par comspec_atak_native_syncData.
 */
 if (!isServer) exitWith {};
+// Téléphones accrochés aux gilets (fn_vestMount) restés seuls après une déconnexion.
+[{ ["sweep"] call comspec_atak_native_fnc_vestMount; }, 30] call CBA_fnc_addPerFrameHandler;
+// Passerelles de véhicule : véhicules détruits retirés, PC mobile qui repart replié (fn_vehicleGateway).
+[{ ["sweep"] call comspec_atak_native_fnc_vehicleGateway; }, 5] call CBA_fnc_addPerFrameHandler;
 COMSPEC_ATAK_SrvLog = createHashMap;      // camp -> [[événement, arguments]...] (200 au plus)
 COMSPEC_ATAK_SrvRoutes = createHashMap;   // netId du groupe -> [points, auteur]
 private _keep = {

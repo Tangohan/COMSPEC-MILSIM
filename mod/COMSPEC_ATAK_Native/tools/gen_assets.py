@@ -8,7 +8,7 @@ Sortie : Sources/addons/main/data/*.paa
 Dépendances : Pillow, CairoSVG, HEMTT (hemtt utils paa convert).
 """
 import io, os, subprocess, sys, tempfile
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 import cairosvg
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -107,6 +107,7 @@ ICONS = {
     "drone_fpv": '<circle cx="5" cy="6" r="3.6"/><circle cx="19" cy="6" r="3.6"/><circle cx="5" cy="18" r="3.6"/><circle cx="19" cy="18" r="3.6"/><path d="M7.5 8.5L10 10M16.5 8.5L14 10M7.5 15.5L10 14M16.5 15.5L14 14"/><rect x="9.8" y="8.5" width="4.4" height="9" rx=".8"/><path d="M10.5 8.5L12 5.5l1.5 3"/>',
     "app_dronedetect": '<circle cx="7" cy="13" r="2.5"/><circle cx="17" cy="13" r="2.5"/><path d="M9.3 14l1.7 1h2l1.7-1M12 16v1.5"/><path d="M8 7.5a6 6 0 0 1 8 0M5 4.5a10 10 0 0 1 14 0"/><circle cx="12" cy="10" r=".6"/>',
     "app_aar": '<circle cx="13" cy="12" r="8"/><path d="M13 7v5l3 2"/><path d="M5 12H1.5M3 9.5L1.5 12 3 14.5"/>',
+    "app_datalink": '<path d="M8 2v4M12 2v4"/><rect x="6" y="6" width="8" height="6" rx="1.2"/><path d="M10 12v3.5a3.5 3.5 0 0 0 3.5 3.5H15"/><rect x="15" y="16" width="6" height="6" rx="1"/><path d="M18 9v4M16.5 11.5L18 13l1.5-1.5"/>',
     "app_sse": '<path d="M6 3h8l4 4v6"/><path d="M6 3v18h6"/><circle cx="16" cy="17" r="3"/><path d="M18.2 19.2L21 22"/>',
     "app_explo": '<path d="M9 21h6v-8H9z"/><path d="M12 13V9"/><path d="M12 9c0-3 3-3 4-5"/><path d="M17 2l.7 1.6L19.3 4l-1.6.7L17 6.3l-.7-1.6L14.7 4l1.6-.4z"/>',
     "app_breach": '<rect x="5" y="3" width="11" height="18" rx="1"/><circle cx="13" cy="12" r="1"/><path d="M19 8l2-2M19 12h3M19 16l2 2"/>',
@@ -824,6 +825,691 @@ def power_assets(tmp):
     convert(repair_kit_item(), "item_repairkit", tmp)
 
 
+# --- Extraction de données : câble branché au connecteur de la coque et module DL-7 (fn_dataOverlay.sqf) ---
+# Repère : pixels de la coque paysage 2048 (android_s7_ca.png). Bout du câble d'origine (sortie du connecteur) : (1883, 1350).
+# En portrait la coque est tournée d'un quart de tour horaire : (x, y) devient (2048 - y, x), bout du câble (698, 1883).
+# Chaque variante a son cadre (fractions du carré de la coque) et l'emplacement du module, repris dans fn_dataOverlay.
+DATALINK = {
+    # nom : (cadre x0, y0, l, h), module (x, y, l, h), câble téléphone -> module, câble module -> cible
+    "datalink_land_up": ((0.5, 0.0, 0.5, 1.0), (1100, 180, 700, 290),
+        "M 1870 1350 L 1880 1350 Q 1910 1350 1910 1310 L 1910 400 Q 1910 325 1840 325 L 1800 325",
+        "M 1060 325 C 1040 325 1030 310 1000 280"),
+    "datalink_land_down": ((0.5, 0.25, 0.5, 1.0), (1100, 1800, 700, 290),
+        "M 1870 1350 L 1880 1350 Q 1910 1350 1910 1395 L 1910 1870 Q 1910 1945 1840 1945 L 1800 1945",
+        "M 1060 1945 C 1040 1945 1030 1970 1000 2010"),
+    "datalink_port_left": ((-0.5, 0.5, 1.0, 0.5), (-760, 1560, 700, 290),
+        "M 698 1870 L 698 1885 Q 698 1925 655 1925 L 170 1925 Q 120 1925 120 1875 L 120 1765 Q 120 1705 60 1705 L -60 1705",
+        "M -800 1705 C -880 1705 -940 1680 -1040 1620"),
+    "datalink_port_right": ((0.5, 0.5, 1.0, 0.5), (2110, 1560, 700, 290),
+        "M 698 1870 L 698 1885 Q 698 1925 741 1925 L 1930 1925 Q 1980 1925 1980 1875 L 1980 1765 Q 1980 1705 2040 1705 L 2110 1705",
+        "M 2850 1705 C 2930 1705 2990 1680 3090 1620"),
+}
+
+
+def _cable_svg(d, w=52):
+    """Câble gainé noir mat : ombre, gaine, reflet doux."""
+    return (f'<path d="{d}" transform="translate(6,12)" stroke="#000" stroke-opacity="0.45" stroke-width="{w + 10}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+            f'<path d="{d}" stroke="#050505" stroke-width="{w + 4}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+            f'<path d="{d}" stroke="#191b1b" stroke-width="{w - 6}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+            f'<path d="{d}" transform="translate(-5,-8)" stroke="#5b6260" stroke-opacity="0.55" stroke-width="{max(4, w // 6)}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>')
+
+
+def _screw(cx, cy, r):
+    """Vis à six pans creux dans un capuchon caoutchouc."""
+    return (f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="#0b0c0b" stroke="#2a2c2a" stroke-width="{r * 0.18}"/>'
+            f'<circle cx="{cx}" cy="{cy}" r="{r * 0.62}" fill="url(#dlscrew)"/>'
+            f'<circle cx="{cx}" cy="{cy}" r="{r * 0.28}" fill="#0a0a0a"/>')
+
+
+# Teintes du boîtier DL-7 (réglage Personnaliser) : olive (défaut), noir, tan.
+MODULE_TINTS = {
+    "olive": ("#5c6247", "#4a5039", "#3a3f2d", "#262a1e"),
+    "black": ("#3e403f", "#2d2f2e", "#202221", "#121313"),
+    "tan": ("#b09a72", "#9c875f", "#82704e", "#5c4f37"),
+}
+
+
+def _module_svg(x, y, w, h, tint="olive"):
+    r = h * 0.1
+    c0, c1, c2, c3 = MODULE_TINTS[tint]
+    out = [
+        '<defs>'
+        f'<linearGradient id="dlc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{c0}"/><stop offset="0.12" stop-color="{c1}"/><stop offset="0.6" stop-color="{c2}"/><stop offset="1" stop-color="{c3}"/></linearGradient>'
+        '<linearGradient id="dll" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#061009"/><stop offset="1" stop-color="#020604"/></linearGradient>'
+        '<radialGradient id="dlscrew" cx="0.4" cy="0.35" r="0.7"><stop offset="0" stop-color="#9da19a"/><stop offset="1" stop-color="#3b3e3a"/></radialGradient>'
+        '<radialGradient id="dlbezel" cx="0.4" cy="0.3" r="0.8"><stop offset="0" stop-color="#d5d8d0"/><stop offset="0.55" stop-color="#7c8079"/><stop offset="1" stop-color="#2f322e"/></radialGradient>'
+        '<linearGradient id="dlcap" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a2c2a"/><stop offset="1" stop-color="#0b0c0b"/></linearGradient>'
+        '</defs>',
+        # Ombre portée puis boîtier métal olive, arête haute éclairée, arête basse sombre.
+        f'<rect x="{x + 12}" y="{y + 18}" width="{w}" height="{h}" rx="{r}" fill="#000" fill-opacity="0.5"/>',
+        f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{r}" fill="url(#dlc)" stroke="#121410" stroke-width="5"/>',
+        f'<rect x="{x + 10}" y="{y + 6}" width="{w - 20}" height="{h * 0.05}" rx="{h * 0.025}" fill="#c9cdb4" fill-opacity="0.22"/>',
+        f'<rect x="{x + 10}" y="{y + h * 0.93}" width="{w - 20}" height="{h * 0.04}" rx="{h * 0.02}" fill="#000" fill-opacity="0.35"/>',
+        # Petits boutons sur le dessus.
+        f'<rect x="{x + w * 0.37}" y="{y - h * 0.05}" width="{w * 0.05}" height="{h * 0.06}" rx="4" fill="#1a1c1a"/>',
+        f'<rect x="{x + w * 0.45}" y="{y - h * 0.05}" width="{w * 0.05}" height="{h * 0.06}" rx="4" fill="#1a1c1a"/>',
+    ]
+    # Capuchons caoutchouc d'angle avec vis creuse.
+    k = h * 0.15
+    for cx, cy in ((x + k * 0.35, y + k * 0.35), (x + w - k * 0.35, y + k * 0.35), (x + k * 0.35, y + h - k * 0.35), (x + w - k * 0.35, y + h - k * 0.35)):
+        out.append(f'<rect x="{cx - k}" y="{cy - k}" width="{2 * k}" height="{2 * k}" rx="{k * 0.35}" fill="url(#dlcap)" stroke="#000" stroke-width="4"/>')
+        out.append(_screw(cx, cy, k * 0.5))
+    # Prises latérales (blocs noirs) et petites vis de façade.
+    for sx in (x - w * 0.015, x + w * 1.015):
+        out.append(f'<rect x="{sx - w * 0.035}" y="{y + h * 0.36}" width="{w * 0.07}" height="{h * 0.28}" rx="8" fill="#0d0e0d" stroke="#000" stroke-width="4"/>')
+        out.append(f'<rect x="{sx - w * 0.03}" y="{y + h * 0.38}" width="{w * 0.06}" height="{h * 0.05}" rx="4" fill="#ffffff" fill-opacity="0.08"/>')
+    for fx, fy in ((0.1, 0.86), (0.9, 0.86)):
+        out.append(f'<circle cx="{x + w * fx}" cy="{y + h * fy}" r="{h * 0.022}" fill="#1b1d18" stroke="#8d917f" stroke-width="2"/>')
+    # Marquage.
+    out.append(f'<text x="{x + w * 0.1}" y="{y + h * 0.29}" font-family="DejaVu Sans" font-weight="bold" font-size="{h * 0.13}" fill="#d6d9cc" letter-spacing="1">COMSPEC</text>')
+    out.append(f'<text x="{x + w * 0.88}" y="{y + h * 0.29}" text-anchor="end" font-family="DejaVu Sans" font-size="{h * 0.1}" fill="#d0d3c4" letter-spacing="1">DL-7 · DATA LINK</text>')
+    # Écran LCD (texte et lueur dessinés par le jeu) : biseau, verre noir, reflet.
+    lx, ly, lw, lh = x + w * 0.1, y + h * 0.38, w * 0.46, h * 0.42
+    out.append(f'<rect x="{lx - 8}" y="{ly - 8}" width="{lw + 16}" height="{lh + 16}" rx="12" fill="#0a0b0a" stroke="#2c2f27" stroke-width="3"/>')
+    out.append(f'<rect x="{lx}" y="{ly}" width="{lw}" height="{lh}" rx="7" fill="url(#dll)"/>')
+    out.append(f'<path d="M {lx + 6} {ly + 6} L {lx + lw * 0.55} {ly + 6} L {lx + lw * 0.35} {ly + lh * 0.45} L {lx + 6} {ly + lh * 0.45} Z" fill="#ffffff" fill-opacity="0.035"/>')
+    # Voyants : lunette chromée, lentille éteinte (allumée par le jeu), étiquette.
+    for fx, lab in ((0.655, "PWR"), (0.77, "AUTH"), (0.885, "DATA")):
+        cx, cy = x + w * fx, y + h * 0.52
+        out.append(f'<circle cx="{cx}" cy="{cy}" r="{w * 0.04}" fill="url(#dlbezel)" stroke="#111" stroke-width="2"/>'
+                   f'<circle cx="{cx}" cy="{cy}" r="{w * 0.028}" fill="#141614"/>'
+                   f'<circle cx="{cx - w * 0.008}" cy="{cy - w * 0.009}" r="{w * 0.008}" fill="#ffffff" fill-opacity="0.18"/>'
+                   f'<text x="{cx}" y="{y + h * 0.76}" text-anchor="middle" font-family="DejaVu Sans" font-weight="bold" font-size="{h * 0.07}" fill="#c8cbbd">{lab}</text>')
+    # Aérations.
+    for i in range(6):
+        gx = x + w * (0.635 + i * 0.047)
+        out.append(f'<rect x="{gx}" y="{y + h * 0.84}" width="{w * 0.028}" height="{h * 0.022}" rx="3" fill="#121410"/>')
+    return "".join(out)
+
+
+def _boot_svg(x, y, side, long=False, ribs=None):
+    """Manchon de câble : bloc de prise, bague, soufflet nervuré (côté gauche ou droit d'une prise horizontale,
+    « down » pour une prise verticale qui descend)."""
+    n, step, rw = (7, 13, 30) if long else (5, 12, 24)
+    if ribs is not None:
+        n = ribs
+    out = []
+    if side in ("left", "right"):
+        sgn = -1 if side == "left" else 1
+        out.append(f'<rect x="{x + (0 if sgn > 0 else -34)}" y="{y - 30}" width="34" height="60" rx="8" fill="#141514" stroke="#000" stroke-width="4"/>')
+        for i in range(n):
+            cx = x + sgn * (40 + i * step)
+            hh = rw * (1 - i * 0.06)
+            out.append(f'<rect x="{cx - 5}" y="{y - hh}" width="10" height="{2 * hh}" rx="4" fill="#1d1f1e" stroke="#060606" stroke-width="3"/>')
+    else:
+        out.append(f'<rect x="{x - 30}" y="{y}" width="60" height="34" rx="8" fill="#141514" stroke="#000" stroke-width="4"/>')
+        for i in range(n):
+            cy = y + 40 + i * step
+            ww = rw * (1 - i * 0.06)
+            out.append(f'<rect x="{x - ww}" y="{cy - 5}" width="{2 * ww}" height="10" rx="4" fill="#1d1f1e" stroke="#060606" stroke-width="3"/>')
+    return "".join(out)
+
+
+def _grain(img, seed=7):
+    """Grain et usure du métal, sur les zones opaques."""
+    import random
+    rnd = random.Random(seed)
+    w, h = img.size
+    noise = Image.effect_noise((w, h), 28).convert("L")
+    alpha = img.split()[3]
+    grain = Image.merge("RGBA", (noise, noise, noise, alpha.point(lambda a: 26 if a > 200 else 0)))
+    out = Image.alpha_composite(img, grain)
+    # Rayures fines claires.
+    d = ImageDraw.Draw(out)
+    for _ in range(int(w * h / 9000)):
+        x0, y0 = rnd.randrange(w), rnd.randrange(h)
+        if alpha.getpixel((x0, y0)) < 250:
+            continue
+        r, g, b, _a = out.getpixel((x0, y0))
+        if not (34 < g < 170):  # sur le boîtier seulement (pas sur la gaine noire)
+            continue
+        x1 = x0 + rnd.randint(-14, 14)
+        y1 = y0 + rnd.randint(-3, 3)
+        d.line([(x0, y0), (x1, y1)], fill=(190, 194, 170, 60), width=1)
+    return out
+
+
+def datalink_svg(name, px=1024, tint="olive"):
+    (fx, fy, fw, fh), (mx, my, mw, mh), c1, c2 = DATALINK[name]
+    vx, vy, vw, vh = fx * 2048, fy * 2048, fw * 2048, fh * 2048
+    W, H = int(px * fw * 2), int(px * fh * 2)
+    port = name.startswith("datalink_port")
+    # Prise du téléphone à droite du module (paysage, portrait gauche) ou à gauche (portrait droit).
+    phone_right = name != "datalink_port_right"
+    render = _module_render(tint)
+    cables = _cable_svg(c2, 46) + _cable_svg(c1, 40)
+    in_x, out_x = (mx + mw * 1.05, mx - mw * 0.05) if phone_right else (mx - mw * 0.05, mx + mw * 1.05)
+    boots = _boot_svg(in_x, my + mh / 2, "right" if phone_right else "left", ribs=2)
+    boots += _boot_svg(out_x, my + mh / 2, "left" if phone_right else "right", True)
+    boots += _boot_svg(698, 1858, "down") if port else _boot_svg(1866, 1350, "right")
+    if render is None:
+        return _grain(_svg_img(cables + _module_svg(mx, my, mw, mh, tint) + boots, (vx, vy, vw, vh), W, H))
+    # Module rendu en 3D (render_3d.py) entre les câbles et les manchons.
+    img = _grain(_svg_img(cables, (vx, vy, vw, vh), W, H))
+    _paste_module(img, render, (mx - vx) * W / vw, (my - vy) * H / vh, mw * W / vw)
+    img.alpha_composite(_svg_img(boots, (vx, vy, vw, vh), W, H))
+    return img
+
+
+def _svg_img(body, view, W, H):
+    vx, vy, vw, vh = view
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{vx} {vy} {vw} {vh}" width="{W}" height="{H}">{body}</svg>'
+    return Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=W, output_height=H))).convert("RGBA")
+
+
+# Rendus 3D (render_3d.py) : module DL-7 700 x 290 px avec 70 px de marge (ombre portée, prises latérales).
+RENDER_DIR = os.path.join(HERE, "render")
+MOD_PAD = 70
+
+
+def _module_render(tint):
+    path = os.path.join(RENDER_DIR, f"dl7_{tint}.png")
+    if not os.path.exists(path):
+        return None
+    import numpy as np
+    im = np.array(Image.open(path).convert("RGBA")).astype(float)
+    h, w = im.shape[:2]
+    # Ombre portée (pixels semi-transparents) : adoucie et fondue vers les bords du cadre, sinon le cadre se voit.
+    k = w / (700 + 2 * MOD_PAD)
+    pad = MOD_PAD * k
+    yy, xx = np.mgrid[0:h, 0:w]
+    dx = np.minimum(xx, w - 1 - xx) / pad
+    dy = np.minimum(yy, h - 1 - yy) / pad
+    fade = np.clip(np.minimum(dx, dy) * 1.25 - 0.1, 0, 1) ** 1.5
+    shadow = im[..., 3] < 250
+    im[..., 3] = np.where(shadow, im[..., 3] * fade * 0.75, im[..., 3])
+    return Image.fromarray(im.clip(0, 255).astype("uint8"), "RGBA")
+
+
+def _paste_module(img, render, x, y, w):
+    """Colle le rendu du module dont la face fait w px de large, coin haut gauche de la face en (x, y)."""
+    k = w / 700
+    pad = MOD_PAD * k
+    tw = int(round((700 + 2 * MOD_PAD) * k))
+    th = int(round((290 + 2 * MOD_PAD) * k))
+    img.alpha_composite(render.resize((tw, th), Image.LANCZOS), (int(round(x - pad)), int(round(y - pad))))
+
+
+def datalink_assets(tmp):
+    for name in DATALINK:
+        for tint in MODULE_TINTS:
+            convert(datalink_svg(name, tint=tint), name + ("" if tint == "olive" else "_" + tint), tmp)
+    convert(data_cable_item(), "item_datacable", tmp)
+
+
+def data_cable_item(size=256):
+    """Kit de câble de données (objet d'inventaire) : module DL-7 et câble enroulé."""
+    view = (1100, 100, 860, 520)
+    cable = _cable_svg("M 1200 520 C 1150 600 1350 640 1420 560 C 1490 480 1300 430 1250 520 C 1200 610 1450 640 1520 560", 40)
+    boots = _boot_svg(1143, 325, 'left') + _boot_svg(1917, 325, 'right')
+    render = _module_render("olive")
+    if render is None:
+        img = _grain(_svg_img(cable + _module_svg(1180, 180, 700, 290) + boots, view, 512, 310))
+    else:
+        img = _grain(_svg_img(cable, view, 512, 310))
+        k = 512 / 860
+        _paste_module(img, render, (1180 - 1100) * k, (180 - 100) * k, 700 * k)
+        img.alpha_composite(_svg_img(boots, view, 512, 310))
+    out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    img = img.resize((size, int(size * 310 / 512)), Image.LANCZOS)
+    out.alpha_composite(img, (0, (size - img.height) // 2))
+    return out
+
+
+# --- Teintes de coque (réglage Personnaliser) : la coque coyote recolorée en vert OD ou noir ---
+SHELL_TINTS = {"od": (64, 71, 47), "black": (40, 41, 40)}
+
+
+def shell_tint(img, tint):
+    """Recolore la coque coyote (teinte 15-60°, saturée) en gardant les ombres et reflets de la texture."""
+    import numpy as np
+    a = np.array(img.convert("RGBA")).astype(float) / 255
+    rgb = a[..., :3]
+    mx = rgb.max(-1)
+    mn = rgb.min(-1)
+    d = mx - mn + 1e-6
+    sat = d / (mx + 1e-6)
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    hue = np.where(mx == r, ((g - b) / d) % 6, np.where(mx == g, (b - r) / d + 2, (r - g) / d + 4)) * 60
+    w = np.clip((sat - 0.10) / 0.08, 0, 1) * np.clip(1.4 - np.abs(hue - 38) / 22, 0, 1) * (mx > 0.08)
+    # Masque adouci : sans lui, le grain de la texture laisse des points coyote dans la nouvelle teinte.
+    wi = Image.fromarray((w * 255).astype("uint8"), "L").filter(ImageFilter.GaussianBlur(3)).filter(ImageFilter.MaxFilter(5))
+    w = np.minimum(np.array(wi).astype(float) / 255 * 1.3, 1) * (a[..., 3] > 0.05)
+    lum = (((rgb * [0.3, 0.55, 0.15]).sum(-1)) / 0.31)[..., None]
+    target = np.array(tint, dtype=float)[None, None, :] / 255
+    new = np.clip(target * lum, 0, 1)
+    out = rgb * (1 - w[..., None]) + new * w[..., None]
+    res = np.concatenate([out, a[..., 3:4]], -1)
+    return Image.fromarray((res * 255).astype("uint8"), "RGBA")
+
+
+def shell_variants(tmp):
+    for key, tint in SHELL_TINTS.items():
+        # La texture de nuit est une silhouette noire : pas de variante de teinte.
+        if not os.path.exists(PHONE_SRC):
+            continue
+        land = shell_tint(Image.open(PHONE_SRC).convert("RGBA"), tint)
+        convert(land, f"phone_landscape_{key}", tmp)
+        convert(land.rotate(-90, expand=True), f"phone_portrait_{key}", tmp)
+
+
+# --- Dos du téléphone (action « Voir l'arrière ») : silhouette de la face, miroir, panneau arrière dessiné ---
+def phone_back(src):
+    """Coque vue de dos (paysage) : même silhouette que la face retournée, appareil photo à droite, plaque de fixation.
+    Panneau arrière rendu en 3D (render_3d.py, render/back_panel.png) ; sans rendu, dessin vectoriel."""
+    front = ImageOps.mirror(Image.open(src).convert("RGBA"))
+    # Le marquage « OPENA » du rebord serait lu à l'envers : recouvert par un morceau de rebord lisse pris plus bas.
+    front.paste(front.crop((1722, 960, 1775, 1140)), (1722, 745))
+    panel = os.path.join(RENDER_DIR, "back_panel.png")
+    if os.path.exists(panel):
+        front.alpha_composite(Image.open(panel).convert("RGBA"))
+        # Balise IR vissée entre la plaque et les nervures (render_3d.render_irbeacon, rendu au double).
+        ir = os.path.join(RENDER_DIR, "irbeacon.png")
+        if os.path.exists(ir):
+            b = Image.open(ir).convert("RGBA")
+            b = b.resize((b.width // 2, b.height // 2), Image.LANCZOS)
+            front.alpha_composite(_soft_edges(b), (IR_POS[0] - b.width // 2, IR_POS[1] - b.height // 2))
+        return front
+    p = []
+    p.append('<defs>'
+             '<linearGradient id="bk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a8b64"/><stop offset="0.5" stop-color="#857754"/><stop offset="1" stop-color="#6c6044"/></linearGradient>'
+             '<linearGradient id="pl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2c2d2c"/><stop offset="1" stop-color="#121312"/></linearGradient>'
+             '<radialGradient id="lens" cx="0.4" cy="0.35" r="0.75"><stop offset="0" stop-color="#3a4a66"/><stop offset="0.45" stop-color="#0c1018"/><stop offset="1" stop-color="#020203"/></radialGradient>'
+             '<radialGradient id="scr" cx="0.4" cy="0.35" r="0.7"><stop offset="0" stop-color="#b8bab4"/><stop offset="1" stop-color="#4a4c48"/></radialGradient>'
+             '</defs>')
+    # Panneau arrière en caoutchouc (même teinte que la coque, recolorée avec elle).
+    p.append('<rect x="372" y="690" width="1358" height="668" rx="84" fill="#5d5440"/>')
+    p.append('<rect x="384" y="700" width="1334" height="648" rx="78" fill="url(#bk)"/>')
+    p.append('<rect x="400" y="712" width="1302" height="22" rx="11" fill="#d8caa0" fill-opacity="0.25"/>')
+    # Nervures antidérapantes aux deux bouts.
+    for x0 in (430, 1395):
+        for i in range(9):
+            p.append(f'<rect x="{x0 + (i % 2) * 14}" y="{760 + i * 60}" width="150" height="26" rx="13" fill="#5f5640" stroke="#4a4232" stroke-width="3"/>')
+    # Appareil photo, flash, capteur (haut du téléphone, à droite vue de dos).
+    p.append('<rect x="1600" y="890" width="96" height="268" rx="44" fill="#151616" stroke="#3b3d3b" stroke-width="5"/>')
+    p.append('<rect x="1612" y="905" width="72" height="140" rx="36" fill="#262827"/>')
+    p.append('<circle cx="1648" cy="975" r="38" fill="url(#lens)" stroke="#6f726d" stroke-width="5"/>')
+    p.append('<circle cx="1638" cy="963" r="9" fill="#fff" fill-opacity="0.35"/>')
+    p.append('<rect x="1626" y="1062" width="44" height="30" rx="8" fill="#e8e2c8" stroke="#555" stroke-width="3"/>')
+    p.append('<rect x="1630" y="1104" width="36" height="36" rx="8" fill="#0d0d0d" stroke="#555" stroke-width="3"/>')
+    # Plaque de fixation (rail MOLLE + bouton de rotation) vissée au centre.
+    p.append('<rect x="790" y="742" width="470" height="560" rx="40" fill="#000" fill-opacity="0.45" transform="translate(10,16)"/>')
+    p.append('<rect x="790" y="742" width="470" height="560" rx="40" fill="url(#pl)" stroke="#060606" stroke-width="6"/>')
+    p.append('<rect x="806" y="754" width="438" height="16" rx="8" fill="#fff" fill-opacity="0.08"/>')
+    for yy in (800, 1206):
+        p.append(f'<rect x="850" y="{yy}" width="350" height="42" rx="18" fill="#050505" stroke="#3a3b3a" stroke-width="3"/>')
+    p.append('<circle cx="1025" cy="1024" r="140" fill="#1a1b1a" stroke="#454745" stroke-width="6"/>')
+    p.append('<circle cx="1025" cy="1024" r="104" fill="#232423" stroke="#0a0a0a" stroke-width="4"/>')
+    for k in range(12):
+        import math
+        a = k * math.pi / 6
+        p.append(f'<rect x="{1025 + 120 * math.cos(a) - 9}" y="{1024 + 120 * math.sin(a) - 9}" width="18" height="18" rx="4" fill="#0c0c0c" transform="rotate({k * 30} {1025 + 120 * math.cos(a)} {1024 + 120 * math.sin(a)})"/>')
+    p.append('<rect x="1005" y="944" width="40" height="160" rx="12" fill="#3d3f3d"/>')
+    for sx, sy in ((830, 782), (1220, 782), (830, 1262), (1220, 1262)):
+        p.append(f'<circle cx="{sx}" cy="{sy}" r="17" fill="url(#scr)" stroke="#111" stroke-width="3"/><rect x="{sx - 9}" y="{sy - 3}" width="18" height="6" fill="#222"/>')
+    # Étiquette du fabricant.
+    p.append('<rect x="560" y="1110" width="190" height="170" rx="10" fill="#d9d4c2" stroke="#7a7464" stroke-width="3"/>')
+    p.append('<text x="655" y="1146" text-anchor="middle" font-family="DejaVu Sans" font-weight="bold" font-size="24" fill="#222">COMSPEC</text>')
+    p.append('<text x="655" y="1172" text-anchor="middle" font-family="DejaVu Sans" font-size="17" fill="#333">ATAK · TAC-S7</text>')
+    for i in range(30):
+        bw = 2 + (i * 7) % 5
+        p.append(f'<rect x="{578 + i * 5.2}" y="1188" width="{bw * 0.8}" height="52" fill="#111"/>')
+    p.append('<text x="655" y="1266" text-anchor="middle" font-family="DejaVu Sans Mono" font-size="15" fill="#333">S/N CS-0417-ATK</text>')
+    # Bossage du port SMA (antenne) en haut à gauche vu de face : à droite vu de dos.
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048" width="2048" height="2048">{"".join(p)}</svg>'
+    over = Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=2048, output_height=2048))).convert("RGBA")
+    out = front.copy()
+    out.alpha_composite(over)
+    return _grain(out, seed=11)
+
+
+def back_variants(tmp):
+    if not os.path.exists(PHONE_SRC):
+        return
+    back = phone_back(PHONE_SRC)
+    convert(back, "phone_back", tmp)
+    for key, tint in SHELL_TINTS.items():
+        convert(shell_tint(back, tint), f"phone_back_{key}", tmp)
+    vest_phone_atlas(back, tmp)
+
+
+# --- Accessoires vus de dos : batterie externe sur la plaque (calque), balise IR (dans la texture du dos) ---
+IR_POS = (1327, 776)
+PLATE_C = (1025, 1020)
+
+
+def _soft_edges(img, frac=0.12):
+    """Rendu sur capteur d'ombre : l'ombre s'efface vers les bords du cadre (pas de boîte visible)."""
+    import numpy as np
+    a = np.array(img).astype(float)
+    h, w = a.shape[:2]
+    yy, xx = np.mgrid[0:h, 0:w]
+    m = np.minimum.reduce([xx / (w * frac), (w - 1 - xx) / (w * frac), yy / (h * frac), (h - 1 - yy) / (h * frac)]).clip(0, 1)
+    a[..., 3] *= m
+    return Image.fromarray(a.astype("uint8"), "RGBA")
+
+
+def powerbank_overlay():
+    pb = os.path.join(RENDER_DIR, "powerbank.png")
+    out = Image.new("RGBA", (2048, 2048), (0, 0, 0, 0))
+    if os.path.exists(pb):
+        b = _soft_edges(Image.open(pb).convert("RGBA"))
+        out.alpha_composite(b, (PLATE_C[0] - b.width // 2, PLATE_C[1] - b.height // 2))
+    return out
+
+
+def _icon_from(img, size=256, rot=0):
+    if rot:
+        img = img.rotate(rot, expand=True, resample=Image.BICUBIC)
+    img = img.crop(img.getbbox())
+    k = (size * 0.9) / max(img.size)
+    img = img.resize((max(1, int(img.width * k)), max(1, int(img.height * k))), Image.LANCZOS)
+    out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    out.alpha_composite(img, ((size - img.width) // 2, (size - img.height) // 2))
+    return out
+
+
+def nvgfilter_item(size=256):
+    """Filtre d'écran JVN : film sombre teinté vert, languette de pose, marquage."""
+    k = 4
+    S = size * k
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    sh = Image.new("L", (S, S), 0)
+    ImageDraw.Draw(sh).rounded_rectangle([S * 0.12, S * 0.26, S * 0.92, S * 0.80], radius=S * 0.06, fill=140)
+    sh = sh.filter(ImageFilter.GaussianBlur(S * 0.02))
+    shadow = Image.new("RGBA", (S, S), (0, 0, 0, 0)); shadow.putalpha(sh)
+    img.alpha_composite(shadow)
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([S * 0.08, S * 0.22, S * 0.88, S * 0.76], radius=S * 0.06, fill=(18, 40, 26, 215), outline=(90, 120, 96, 255), width=int(S * 0.008))
+    d.polygon([(S * 0.12, S * 0.26), (S * 0.5, S * 0.26), (S * 0.2, S * 0.72), (S * 0.12, S * 0.72)], fill=(255, 255, 255, 28))
+    d.rounded_rectangle([S * 0.80, S * 0.30, S * 0.95, S * 0.40], radius=S * 0.02, fill=(200, 120, 40, 255))
+    d.text((S * 0.16, S * 0.60), "NVG-SAFE", font=_font(int(S * 0.07)), fill=(150, 200, 160, 230))
+    return img.resize((size, size), Image.LANCZOS)
+
+
+# --- Autres modèles (render_phones.py) : même ouverture d'écran que le S7 (x 455..1546, y 716..1333) ---
+PHONE_MODELS = ["rugged", "iphone", "tablet"]
+
+
+def _night(img):
+    """Variante de nuit : coque très assombrie, alpha gardé (l'ouverture de l'écran reste transparente)."""
+    from PIL import ImageEnhance
+    a = img.getchannel("A")
+    out = ImageEnhance.Brightness(img.convert("RGB")).enhance(0.28).convert("RGBA")
+    out.putalpha(a)
+    return out
+
+
+def model_assets(tmp):
+    for m in PHONE_MODELS:
+        f = os.path.join(RENDER_DIR, f"phone_{m}_front.png")
+        if not os.path.exists(f):
+            continue
+        land = Image.open(f).convert("RGBA")
+        for key, img in (("", land), ("_night", _night(land))):
+            convert(img, f"phone_landscape_{m}{key}", tmp)
+            convert(img.rotate(-90, expand=True), f"phone_portrait_{m}{key}", tmp)
+        b = os.path.join(RENDER_DIR, f"phone_{m}_back.png")
+        if m != "tablet" and os.path.exists(b):
+            convert(Image.open(b).convert("RGBA"), f"phone_back_{m}", tmp)
+
+
+def accessory_assets(tmp):
+    convert(powerbank_overlay(), "back_powerbank", tmp)
+    pb = os.path.join(RENDER_DIR, "powerbank.png")
+    if os.path.exists(pb):
+        convert(_icon_from(_soft_edges(Image.open(pb).convert("RGBA"))), "item_powerbank", tmp)
+    convert(nvgfilter_item(), "item_nvgfilter", tmp)
+    tab = os.path.join(RENDER_DIR, "phone_tablet_front.png")
+    if os.path.exists(tab):
+        t = Image.open(tab).convert("RGBA")
+        glass = Image.new("RGBA", t.size, (0, 0, 0, 0))
+        glass.paste(_glass(1092, 618), (455, 716))
+        glass.alpha_composite(t)
+        convert(_icon_from(glass), "item_vehiclekit", tmp)
+
+
+# --- Téléphone porté sur le gilet (vest_phone.p3d, model_vest_phone.py) : atlas face en haut, dos en bas ---
+VEST_CASE = (270, 630, 1720, 1425)  # rectangle de la coque dans la texture de la face (le dos en est le miroir)
+
+
+def _glass(w, h):
+    """Écran éteint : verre sombre, léger reflet en diagonale."""
+    import numpy as np
+    yy, xx = np.mgrid[0:h, 0:w].astype(float)
+    base = 14 + 10 * (1 - yy / h)
+    band = np.exp(-(((xx / w) - (yy / h) * 0.6 - 0.25) ** 2) / 0.01) * 18
+    v = np.clip(base + band, 0, 255)
+    rgb = np.stack([v * 0.95, v, v * 1.08], -1).astype("uint8")
+    return Image.fromarray(rgb, "RGB").convert("RGBA")
+
+
+def vest_phone_atlas(back, tmp):
+    x0, y0, x1, y1 = VEST_CASE
+    front = Image.open(PHONE_SRC).convert("RGBA").crop(VEST_CASE)
+    rear = back.crop((2048 - x1, y0, 2048 - x0, y1))
+    for key, tint in [("", None)] + list(SHELL_TINTS.items()):
+        f = front if tint is None else shell_tint(front, tint)
+        r = rear if tint is None else shell_tint(rear, tint)
+        face = _glass(*f.size)
+        face.alpha_composite(f)
+        # Hors coque (coins arrondis) : couleur du rebord, pas de liseré noir au filtrage.
+        rim = f.getpixel((1000 - x0, 652 - y0))
+        bg = Image.new("RGBA", r.size, rim[:3] + (255,))
+        bg.alpha_composite(r)
+        atlas = Image.new("RGB", (1024, 1024))
+        atlas.paste(face.convert("RGB").resize((1024, 512), Image.LANCZOS), (0, 0))
+        atlas.paste(bg.convert("RGB").resize((1024, 512), Image.LANCZOS), (0, 512))
+        convert(atlas, f"vest_phone{'_' + key if key else ''}_co", tmp)
+
+
+# --- Antennes d'extension de débit (port SMA en haut à gauche de la coque, x 430, y 632 de la texture 2048) ---
+ANT_BASE = (430, 632)
+ANT_FRAME = (238, -832, 384, 1536)  # zone dessinée (x, y, l, h) en pixels de la texture du téléphone
+
+
+def _sma_svg(x, y):
+    """Embase SMA dorée vissée sur la coque."""
+    return (f'<rect x="{x - 40}" y="{y - 14}" width="80" height="26" rx="8" fill="#1b1c1b"/>'
+            f'<polygon points="{x - 30},{y - 14} {x - 22},{y - 46} {x + 22},{y - 46} {x + 30},{y - 14}" fill="url(#gold)" stroke="#5a4512" stroke-width="3"/>'
+            f'<rect x="{x - 6}" y="{y - 44}" width="12" height="28" fill="#fff4c0" fill-opacity="0.35"/>')
+
+
+def _collar_svg(x, y, w=60, h=54):
+    out = [f'<rect x="{x - w / 2}" y="{y - h}" width="{w}" height="{h}" rx="8" fill="#1a1b1a" stroke="#050505" stroke-width="3"/>']
+    for i in range(6):
+        out.append(f'<rect x="{x - w / 2 + 6 + i * (w - 12) / 6}" y="{y - h + 5}" width="{(w - 12) / 12}" height="{h - 10}" fill="#2e302e"/>')
+    return "".join(out)
+
+
+def antenna_svg(kind):
+    x, y = ANT_BASE
+    defs = ('<defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a6a1c"/><stop offset="0.45" stop-color="#f0d27a"/><stop offset="1" stop-color="#7a5c14"/></linearGradient>'
+            '<linearGradient id="rub" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0c0d0c"/><stop offset="0.35" stop-color="#3a3c3a"/><stop offset="0.6" stop-color="#1c1d1c"/><stop offset="1" stop-color="#070707"/></linearGradient>'
+            '<linearGradient id="pat" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a3c3a"/><stop offset="1" stop-color="#111211"/></linearGradient></defs>')
+    b = [defs, _sma_svg(x, y)]
+    top = y - 46
+    if kind == "stub":
+        b.append(_collar_svg(x, top))
+        b.append(f'<path d="M {x - 27} {top - 50} L {x - 22} {top - 300} Q {x} {top - 330} {x + 22} {top - 300} L {x + 27} {top - 50} Z" fill="url(#rub)" stroke="#000" stroke-width="3"/>')
+        for i in range(3):
+            b.append(f'<rect x="{x - 27}" y="{top - 70 - i * 18}" width="54" height="7" rx="3" fill="#000" fill-opacity="0.55"/>')
+        b.append(f'<text x="{x}" y="{top - 180}" text-anchor="middle" transform="rotate(-90 {x} {top - 180})" font-family="DejaVu Sans" font-weight="bold" font-size="20" fill="#9a9d98">2.4/5.8</text>')
+    elif kind == "whip":
+        b.append(_collar_svg(x, top))
+        b.append(f'<circle cx="{x}" cy="{top - 80}" r="30" fill="url(#rub)" stroke="#000" stroke-width="3"/><circle cx="{x}" cy="{top - 80}" r="9" fill="#555"/>')
+        b.append(f'<path d="M {x - 25} {top - 110} L {x - 11} {-760} Q {x} {-790} {x + 11} {-760} L {x + 25} {top - 110} Z" fill="url(#rub)" stroke="#000" stroke-width="3"/>')
+        b.append(f'<rect x="{x - 15}" y="-800" width="30" height="44" rx="14" fill="#2a2b2a" stroke="#000" stroke-width="3"/>')
+        b.append(f'<rect x="{x - 26}" y="{top - 200}" width="52" height="60" rx="8" fill="#151615" stroke="#000" stroke-width="3"/>')
+    else:  # patch : coude SMA à 90°, rotule, panneau carré face à l'opérateur
+        b.append(_collar_svg(x, top))
+        b.append(f'<rect x="{x - 22}" y="{top - 150}" width="44" height="100" fill="url(#rub)" stroke="#000" stroke-width="3"/>')
+        b.append(f'<circle cx="{x}" cy="{top - 160}" r="26" fill="#1c1d1c" stroke="#000" stroke-width="3"/>')
+        px0, py0, ps = x - 150, top - 470, 300
+        b.append(f'<rect x="{px0 + 10}" y="{py0 + 16}" width="{ps}" height="{ps}" rx="26" fill="#000" fill-opacity="0.45"/>')
+        b.append(f'<rect x="{px0}" y="{py0}" width="{ps}" height="{ps}" rx="26" fill="#0f100f" stroke="#000" stroke-width="5"/>')
+        b.append(f'<rect x="{px0 + 26}" y="{py0 + 26}" width="{ps - 52}" height="{ps - 52}" rx="16" fill="url(#pat)" stroke="#4a4c4a" stroke-width="3"/>')
+        b.append(f'<rect x="{px0 + 34}" y="{py0 + 32}" width="{ps - 68}" height="14" rx="7" fill="#fff" fill-opacity="0.10"/>')
+        b.append(f'<circle cx="{x}" cy="{py0 + ps / 2}" r="16" fill="url(#gold)" stroke="#3a2c08" stroke-width="3"/>')
+        b.append(f'<text x="{x}" y="{py0 + ps - 44}" text-anchor="middle" font-family="DejaVu Sans" font-weight="bold" font-size="24" fill="#8d908a">PATCH 9 dBi</text>')
+    fx, fy, fw, fh = ANT_FRAME
+    W, H = 256, 1024
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{fx} {fy} {fw} {fh}" width="{W}" height="{H}">{"".join(b)}</svg>'
+    return Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=W, output_height=H))).convert("RGBA")
+
+
+def antenna_item(kind, size=256):
+    img = antenna_svg(kind)
+    if kind == "whip":  # fouet couché en diagonale, sinon trop fin dans la case d'inventaire
+        img = img.rotate(-38, expand=True, resample=Image.BICUBIC)
+    box = img.getbbox()
+    img = img.crop(box)
+    k = (size * 0.9) / max(img.size)
+    img = img.resize((max(1, int(img.width * k)), max(1, int(img.height * k))), Image.LANCZOS)
+    out = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    out.alpha_composite(img, ((size - img.width) // 2, (size - img.height) // 2))
+    return out
+
+
+def antenna_assets(tmp):
+    for kind in ("stub", "whip", "patch"):
+        land = antenna_svg(kind)
+        convert(land, f"antenna_{kind}_land", tmp)
+        convert(land.rotate(-90, expand=True), f"antenna_{kind}_port", tmp)
+        convert(ImageOps.mirror(land), f"antenna_{kind}_back", tmp)
+        convert(antenna_item(kind), f"item_antenna_{kind}", tmp)
+
+
+# --- Patchs velcro au dos du téléphone (réglage Personnaliser) : broderie dessinée, 512 px, patch 480 x 320 centré ---
+PATCHES = ["fr", "fr_sub", "us", "us_ir", "skull", "crusader", "alien", "comspec", "name"]
+
+
+def _patch_content(kind, d, W, H, k):
+    import math
+    if kind in ("fr", "fr_sub"):
+        cols = [(0, 38, 140), (236, 236, 228), (214, 40, 52)] if kind == "fr" else [(52, 58, 44), (150, 140, 108), (92, 84, 62)]
+        for i, c in enumerate(cols):
+            d.rectangle((i * W / 3, 0, (i + 1) * W / 3, H), fill=c + (255,))
+        return (24, 24, 22) if kind == "fr_sub" else (210, 196, 120)
+    if kind in ("us", "us_ir"):
+        red, white, blue, star = ((178, 34, 52), (240, 238, 230), (40, 52, 110), (240, 238, 230)) if kind == "us" else ((88, 90, 80), (150, 150, 136), (60, 62, 56), (150, 150, 136))
+        for i in range(13):
+            d.rectangle((0, i * H / 13, W, (i + 1) * H / 13), fill=(red if i % 2 == 0 else white) + (255,))
+        cw, ch = W * 0.42, H * 7 / 13
+        d.rectangle((0, 0, cw, ch), fill=blue + (255,))
+        for row in range(9):
+            n = 6 if row % 2 == 0 else 5
+            for c in range(n):
+                x = cw * ((c + (0.5 if row % 2 == 0 else 1.0)) / 6.0)
+                y = ch * (row + 0.75) / 10
+                r = 6 * k
+                pts = [(x + r * math.cos(math.radians(-90 + j * 36)) * (1 if j % 2 == 0 else 0.42),
+                        y + r * math.sin(math.radians(-90 + j * 36)) * (1 if j % 2 == 0 else 0.42)) for j in range(10)]
+                d.polygon(pts, fill=star + (255,))
+        return (196, 170, 90) if kind == "us" else (40, 40, 36)
+    d.rectangle((0, 0, W, H), fill=(18, 18, 18, 255) if kind != "comspec" and kind != "name" else ((44, 50, 36, 255) if kind == "comspec" else (98, 90, 66, 255)))
+    cx, cy = W / 2, H / 2
+    if kind == "skull":
+        bone = (226, 216, 186, 255)
+        d.ellipse((cx - 100 * k, cy - 125 * k, cx + 100 * k, cy + 55 * k), fill=bone)
+        d.polygon([(cx - 92 * k, cy + 5 * k), (cx + 92 * k, cy + 5 * k), (cx + 62 * k, cy + 75 * k), (cx - 62 * k, cy + 75 * k)], fill=bone)
+        d.rounded_rectangle((cx - 58 * k, cy + 60 * k, cx + 58 * k, cy + 118 * k), radius=18 * k, fill=bone)
+        for sx in (-1, 1):
+            d.ellipse((cx + sx * 52 * k - 32 * k, cy - 40 * k, cx + sx * 52 * k + 32 * k, cy + 22 * k), fill=(18, 18, 18, 255))
+        d.polygon([(cx, cy + 30 * k), (cx - 16 * k, cy + 60 * k), (cx + 16 * k, cy + 60 * k)], fill=(18, 18, 18, 255))
+        for i in range(-3, 4):
+            d.rectangle((cx + i * 18 * k - 6 * k, cy + 76 * k, cx + i * 18 * k + 6 * k, cy + 110 * k), fill=(18, 18, 18, 255))
+        return (60, 60, 56)
+    if kind == "crusader":
+        red = (150, 24, 28, 255)
+        a, b, t = 120 * k, 70 * k, 22 * k
+        for ang in range(4):
+            pts = [(0, -t), (a, -b), (a, b), (0, t)]
+            ca, sa = math.cos(ang * math.pi / 2), math.sin(ang * math.pi / 2)
+            d.polygon([(cx + x * ca - y * sa, cy + x * sa + y * ca) for x, y in pts], fill=red)
+        return (60, 60, 56)
+    if kind == "alien":
+        grey = (176, 180, 176, 255)
+        d.ellipse((cx - 95 * k, cy - 125 * k, cx + 95 * k, cy + 40 * k), fill=grey)
+        d.polygon([(cx - 92 * k, cy - 10 * k), (cx + 92 * k, cy - 10 * k), (cx, cy + 125 * k)], fill=grey)
+        # Yeux en amande inclinés.
+        for sx in (-1, 1):
+            ex, ey, rot = cx + sx * 46 * k, cy - 12 * k, math.radians(-30 * sx)
+            pts = []
+            for i in range(36):
+                t = i * math.pi / 18
+                x, y = 42 * k * math.cos(t), 18 * k * math.sin(t) * (1.25 if math.sin(t) > 0 else 0.8)
+                pts.append((ex + x * math.cos(rot) - y * math.sin(rot), ey + x * math.sin(rot) + y * math.cos(rot)))
+            d.polygon(pts, fill=(14, 14, 14, 255))
+        return (60, 60, 56)
+    if kind == "comspec":
+        _emblem(d, W * 0.25, cy, H * 0.30, k)
+        f = ImageFont.truetype(FONT_BOLD, int(42 * k))
+        d.text((W * 0.44, cy - 24 * k), "COMSPEC", font=f, fill=(226, 232, 214, 255), anchor="lm")
+        d.text((W * 0.44, cy + 34 * k), "MILSIM", font=ImageFont.truetype(FONT_BOLD, int(34 * k)), fill=(92, 199, 107, 255), anchor="lm")
+        return (20, 22, 18)
+    # name : bande nominative vierge, le texte (indicatif ou nom) est écrit par le jeu.
+    return (40, 38, 30)
+
+
+def patch_img(kind, size=512):
+    """Patch brodé : contenu, sergé en diagonale, fils, bord surjeté, relief et ombre."""
+    import numpy as np
+    from PIL import ImageFont as _IF  # noqa: F401
+    k = 2
+    W, H = 480 * k, 320 * k
+    face = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    border = _patch_content(kind, ImageDraw.Draw(face), W, H, k)
+    mask = Image.new("L", (W, H), 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, W - 1, H - 1), radius=26 * k, fill=255)
+    a = np.array(face).astype(float)
+    yy, xx = np.mgrid[0:H, 0:W]
+    twill = 1 + 0.07 * np.sin((xx + yy) * 0.9) + 0.04 * np.sin((xx - yy) * 0.33)
+    noise = np.array(Image.effect_noise((W, H), 30).convert("L")).astype(float) / 255 - 0.5
+    a[..., :3] = np.clip(a[..., :3] * (twill + noise * 0.18)[..., None], 0, 255)
+    face = Image.fromarray(a.astype("uint8"), "RGBA")
+    d = ImageDraw.Draw(face)
+    # Bord surjeté : bande épaisse, points de couture obliques.
+    bw = 18 * k
+    d.rounded_rectangle((0, 0, W - 1, H - 1), radius=26 * k, outline=border + (255,), width=int(bw))
+    step = 7 * k
+    per = 2 * (W + H)
+    for i in range(int(per / step)):
+        t = i * step
+        if t < W:
+            x, y, dx, dy = t, bw / 2, 0, 1
+        elif t < W + H:
+            x, y, dx, dy = W - bw / 2, t - W, 1, 0
+        elif t < 2 * W + H:
+            x, y, dx, dy = W - (t - W - H), H - bw / 2, 0, 1
+        else:
+            x, y, dx, dy = bw / 2, H - (t - 2 * W - H), 1, 0
+        sh = tuple(max(0, c - 40) for c in border) + (200,)
+        d.line((x - dx * bw * 0.45 - dy * 4 * k, y - dy * bw * 0.45 - dx * 4 * k, x + dx * bw * 0.45 + dy * 4 * k, y + dy * bw * 0.45 + dx * 4 * k), fill=sh, width=k)
+    face.putalpha(mask)
+    # Relief : liseré clair en haut à gauche, sombre en bas à droite.
+    hl = mask.filter(ImageFilter.GaussianBlur(6 * k))
+    out = Image.new("RGBA", (size * k, size * k), (0, 0, 0, 0))
+    ox, oy = (size * k - W) // 2, (size * k - H) // 2
+    shadow = Image.new("RGBA", (W, H), (0, 0, 0, 150))
+    shadow.putalpha(mask.point(lambda v: v * 150 // 255))
+    sh_layer = Image.new("RGBA", out.size, (0, 0, 0, 0))
+    sh_layer.alpha_composite(shadow, (ox + 6 * k, oy + 9 * k))
+    out.alpha_composite(sh_layer.filter(ImageFilter.GaussianBlur(7 * k)))
+    out.alpha_composite(face, (ox, oy))
+    edge = np.array(mask).astype(float) - np.array(hl).astype(float)
+    shade = Image.fromarray(np.clip(edge * 1.2, 0, 255).astype("uint8"), "L")
+    dark = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    dark.putalpha(shade.point(lambda v: v * 90 // 255))
+    out.alpha_composite(dark, (ox + 2 * k, oy + 2 * k))
+    return out.resize((size, size), Image.LANCZOS)
+
+
+def patch_assets(tmp):
+    for kind in PATCHES:
+        convert(patch_img(kind), f"patch_{kind}", tmp)
+
+
 def convert(img, name, tmp):
     png = os.path.join(tmp, name + ".png")
     img.save(png)
@@ -844,6 +1530,15 @@ def main():
         convert(frs_bar(), "frs_bar", tmp)
         convert(disc(), "ui_disc", tmp)
         power_assets(tmp)
+        datalink_assets(tmp)
+        antenna_assets(tmp)
+        patch_assets(tmp)
+        accessory_assets(tmp)
+        model_assets(tmp)
+        back_variants(tmp)
+        shell_variants(tmp)
+        if len(sys.argv) > 2 and sys.argv[2] == "datalink":
+            return
         if len(sys.argv) > 2 and sys.argv[2] == "icons":
             for name, body in ICONS.items():
                 convert(icon_png(name, body), name, tmp)
