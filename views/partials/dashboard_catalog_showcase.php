@@ -124,112 +124,44 @@ $catNav = static function (string $label) use ($catIcon): string {
                 </div>
             </div>
             <?php else: ?>
-            <ul x-ref="track" @scroll.passive.debounce.80ms="syncNav()" class="dash-cat__track" role="list" aria-label="Formations mises en avant">
+            <?php /* Cartes affiches (image pleine hauteur, badge et titre) et fenêtre de détail : présentation d'origine, gardée à la demande. */ ?>
+            <div x-ref="track" @scroll.passive.debounce.80ms="syncNav()" class="dash-showcase__track no-scrollbar" role="list" aria-label="Formations mises en avant">
                 <?php foreach ($catCourses as $sc): ?>
-                <?php
-                $scId = (int) $sc['id'];
-                $scEyebrow = implode(' · ', array_filter([
-                    trim((string) ($sc['category'] ?? '')),
-                    trim((string) ($sc['level_label'] ?? '')),
-                ], static fn (string $s): bool => $s !== ''));
-                $scStatus = (string) ($sc['member_status'] ?? '');
-                $scPct = isset($sc['progress_pct']) && $sc['progress_pct'] !== null ? max(0, min(100, (int) $sc['progress_pct'])) : null;
-                $scBadge = (string) ($sc['badge'] ?? 'open');
-                $scCta = trim((string) ($sc['cta_label'] ?? '')) ?: 'Voir la formation';
-                $scDuration = trim((string) ($sc['duration_label'] ?? ''));
-                $scSession = trim((string) ($sc['session_label'] ?? ''));
-                $scLocation = trim((string) ($sc['location'] ?? ''));
-                $scThumb = trim((string) ($sc['thumb'] ?? ''));
-                ?>
-                <li class="dash-cat__item">
-                    <article class="dash-cat-card" aria-labelledby="dash-cat-f-<?= $scId ?>">
-                        <div class="dash-cat-card__media">
-                            <?php if ($scThumb !== ''): ?>
-                            <img src="<?= $catEsc($scThumb) ?>" alt="" width="320" height="180" loading="lazy" decoding="async">
-                            <?php else: ?>
-                            <span class="dash-cat-card__placeholder"><?= $catIcon['book'] ?></span>
-                            <?php endif; ?>
-                            <span class="dash-cat-pill dash-cat-pill--<?= $catEsc($scBadge) ?>"><?= $catEsc($sc['badge_label'] ?? '') ?></span>
-                            <?php if (!empty($sc['is_mandatory'])): ?>
-                            <span class="dash-cat-pill dash-cat-pill--flag">Obligatoire</span>
-                            <?php elseif (!empty($sc['is_certifying'])): ?>
-                            <span class="dash-cat-pill dash-cat-pill--flag">Certifiante</span>
-                            <?php endif; ?>
-                        </div>
-                        <div class="dash-cat-card__body">
-                            <?php if ($scEyebrow !== ''): ?>
-                            <p class="dash-cat-card__eyebrow"><?= $catEsc($scEyebrow) ?></p>
-                            <?php endif; ?>
-                            <h4 id="dash-cat-f-<?= $scId ?>" class="dash-cat-card__title"><?= $catEsc($sc['title'] ?? '') ?></h4>
-                            <?php if ($scDuration !== '' || $scSession !== '' || $scLocation !== ''): ?>
-                            <ul class="dash-cat-card__facts">
-                                <?php if ($scDuration !== ''): ?>
-                                <li><?= $catIcon['clock'] ?><span><span class="dash-cat-sr">Durée : </span><?= $catEsc($scDuration) ?></span></li>
-                                <?php endif; ?>
-                                <?php if ($scSession !== ''): ?>
-                                <li><?= $catIcon['cal'] ?><span>Session le <?= $catEsc($scSession) ?></span></li>
-                                <?php endif; ?>
-                                <?php if ($scLocation !== ''): ?>
-                                <li><?= $catIcon['pin'] ?><span><span class="dash-cat-sr">Lieu : </span><?= $catEsc($scLocation) ?></span></li>
-                                <?php endif; ?>
-                            </ul>
-                            <?php endif; ?>
-
-                            <?php if ($scStatus === 'in_progress' && $scPct !== null): ?>
-                            <div class="dash-cat-progress">
-                                <div class="dash-cat-progress__row"><span>En cours</span><strong><?= $scPct ?>&nbsp;%</strong></div>
-                                <div class="dash-cat-progress__bar" role="progressbar" aria-valuenow="<?= $scPct ?>" aria-valuemin="0" aria-valuemax="100" aria-label="Avancement">
-                                    <span style="width:<?= $scPct ?>%"></span>
-                                </div>
-                            </div>
-                            <?php elseif ($scStatus === 'completed'): ?>
-                            <p class="dash-cat-status dash-cat-status--done"><?= $catIcon['check'] ?> Formation terminée</p>
-                            <?php elseif ($scStatus !== ''): ?>
-                            <p class="dash-cat-status"><?= $catEsc($sc['member_status_label'] ?? '') ?><?= $scStatus === 'assigned' ? ' · pas encore commencée' : '' ?></p>
-                            <?php endif; ?>
-                        </div>
-                        <div class="dash-cat-card__foot">
-                            <a href="<?= $catEsc($sc['course_url'] ?? '#') ?>" class="dash-cat-btn dash-cat-btn--primary" data-lms-module-entry="formation"
-                               aria-label="<?= $catEsc($scCta . ' : ' . ($sc['title'] ?? '')) ?>"><?= $catEsc($scCta) ?></a>
-                            <button type="button" class="dash-cat-btn dash-cat-btn--ghost" @click="open(<?= $scId ?>, $event)" aria-haspopup="dialog"
-                                    aria-label="<?= $catEsc('Détails : ' . ($sc['title'] ?? '')) ?>">Détails</button>
-                        </div>
-                    </article>
-                </li>
+                <button type="button" role="listitem" class="dash-showcase__card" @click="open(<?= (int) $sc['id'] ?>, $event)" aria-haspopup="dialog"
+                        aria-label="<?= $catEsc('Détails : ' . ($sc['title'] ?? '')) ?>">
+                    <img
+                        src="<?= $catEsc($sc['thumb'] ?? '') ?>"
+                        alt="<?= $catEsc($sc['title'] ?? '') ?>"
+                        class="dash-showcase__card-img"
+                        width="224"
+                        height="320"
+                        loading="lazy"
+                        decoding="async"
+                    >
+                    <span class="dash-showcase__card-veil" aria-hidden="true"></span>
+                    <span class="dash-showcase__card-body">
+                        <span class="dash-showcase__card-badge"><?= $catEsc($sc['badge_label'] ?? '') ?></span>
+                        <span class="dash-showcase__card-title"><?= $catEsc($sc['title'] ?? '') ?></span>
+                    </span>
+                </button>
                 <?php endforeach; ?>
-            </ul>
-
+            </div>
             <template x-if="openModal !== null && active()">
-                <div class="dash-cat-modal">
-                    <div class="dash-cat-modal__scrim" @click="close()" aria-hidden="true"></div>
-                    <div class="dash-cat-modal__panel" data-cat-dialog role="dialog" aria-modal="true"
-                         aria-labelledby="dash-cat-f-modal-title" @keydown.tab="trap($event)">
-                        <button type="button" class="dash-cat-modal__close" data-cat-close @click="close()" aria-label="Fermer la fenêtre">
-                            <?= $catIcon['close'] ?>
+                <div class="dash-showcase__modal fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" @click="close()"></div>
+                    <div class="relative flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl md:flex-row"
+                         data-cat-dialog role="dialog" aria-modal="true" aria-labelledby="dash-showcase-modal-title" @keydown.tab="trap($event)">
+                        <button type="button" data-cat-close @click="close()" class="absolute right-4 top-4 z-10 rounded-full bg-slate-100 p-2" aria-label="Fermer">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
-                        <div class="dash-cat-modal__art dash-cat-modal__art--photo">
-                            <img :src="active().banner || active().thumb" alt="">
+                        <div class="h-56 w-full shrink-0 bg-slate-900 md:h-auto md:w-1/2">
+                            <img :src="active().banner || active().thumb" :alt="active().title" class="h-full w-full object-cover">
                         </div>
-                        <div class="dash-cat-modal__content">
-                            <p class="dash-cat__kicker" x-text="[active().category, active().level_label].filter(Boolean).join(' · ') || 'Formation'"></p>
-                            <h2 id="dash-cat-f-modal-title" class="dash-cat-modal__title" x-text="active().title"></h2>
-                            <dl class="dash-cat-modal__facts">
-                                <div><dt>Statut</dt><dd x-text="active().badge_label"></dd></div>
-                                <template x-if="active().duration_label"><div><dt>Durée</dt><dd x-text="active().duration_label"></dd></div></template>
-                                <template x-if="active().session_label"><div><dt>Prochaine session</dt><dd x-text="active().session_label"></dd></div></template>
-                                <template x-if="active().location"><div><dt>Lieu</dt><dd x-text="active().location"></dd></div></template>
-                                <template x-if="active().member_status_label"><div><dt>Votre suivi</dt><dd x-text="active().member_status_label + (active().member_status === 'in_progress' && active().progress_pct !== null ? ' · ' + active().progress_pct + '\u00a0%' : '')"></dd></div></template>
-                            </dl>
-                            <template x-if="active().member_status === 'in_progress' && active().progress_pct !== null">
-                                <div class="dash-cat-progress__bar dash-cat-progress__bar--lg" role="progressbar" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="active().progress_pct" aria-label="Avancement">
-                                    <span :style="'width:' + active().progress_pct + '%'"></span>
-                                </div>
-                            </template>
-                            <p class="dash-cat-modal__text" x-text="active().description || 'Aucune description pour cette formation.'"></p>
-                            <div class="dash-cat-modal__actions">
-                                <a :href="active().course_url" class="dash-cat-btn dash-cat-btn--primary dash-cat-btn--lg" data-lms-module-entry="formation" x-text="active().cta_label || 'Ouvrir la formation'"></a>
-                                <button type="button" class="dash-cat-btn dash-cat-btn--ghost dash-cat-btn--lg" @click="close()">Fermer</button>
-                            </div>
+                        <div class="flex-1 overflow-y-auto p-8">
+                            <p class="cc-kicker cc-kicker--primary">Détails</p>
+                            <h2 id="dash-showcase-modal-title" class="mt-2 text-2xl font-black tracking-tight text-slate-900" x-text="active().title"></h2>
+                            <p class="mt-6 whitespace-pre-wrap text-sm leading-relaxed text-slate-600" x-text="active().description"></p>
+                            <a :href="active().course_url" class="cc-btn cc-btn-primary mt-8 w-full" data-lms-module-entry="formation">Ouvrir la formation</a>
                         </div>
                     </div>
                 </div>
