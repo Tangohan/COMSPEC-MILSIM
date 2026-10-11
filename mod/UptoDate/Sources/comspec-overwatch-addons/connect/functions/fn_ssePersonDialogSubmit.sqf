@@ -440,8 +440,11 @@ if (_photoPending && { _personId isNotEqualTo "" }) then {
     };
     ["UploadSsePhoto", "attempt", format ["personne %1 stem=%2", _personId, _stem], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
     // File async : la DLL attend le PNG (jusqu’à ~12 s) hors thread jeu.
-    [_personId, _stem, _callsign, _posX, _posY, _posZ, _grid] spawn {
-        params ["_pid", "_stem", "_cs", "_px", "_py", "_pz", "_gridRef"];
+    // « face@portrait,q=88 » : le site recadre la capture en portrait et garde la qualité.
+    private _angle = uiNamespace getVariable ["COMSPEC_SsePerson_PhotoAngle", "face"];
+    if (!(_angle isEqualType "") || {_angle isEqualTo ""}) then { _angle = "face"; };
+    [_personId, _stem, _callsign, _posX, _posY, _posZ, _grid, _angle] spawn {
+        params ["_pid", "_stem", "_cs", "_px", "_py", "_pz", "_gridRef", "_angle"];
         uiSleep 0.35;
         if (!isNil "comspec_overwatch_connect_fnc_extResult") then {
             private _staged = ["COMSPECExtension" callExtension ["StageCapture", [_stem]]] call comspec_overwatch_connect_fnc_extResult;
@@ -455,7 +458,7 @@ if (_photoPending && { _personId isNotEqualTo "" }) then {
                 _pid,
                 _stem,
                 _cs,
-                "face",
+                _angle,
                 _px,
                 _py,
                 _pz,
@@ -479,6 +482,7 @@ if (_photoPending && { _personId isNotEqualTo "" }) then {
         };
         uiNamespace setVariable ["COMSPEC_SsePerson_PhotoPending", false];
         uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", ""];
+        uiNamespace setVariable ["COMSPEC_SsePerson_PhotoAngle", "face"];
     };
 };
 

@@ -101,11 +101,61 @@ private _sigTxt = if ((_sig isEqualType []) && {(count _sig) >= 4}) then {
 };
 (_disp displayCtrl 9520) ctrlSetStructuredText parseText _sigTxt;
 
+// --- Viseur du visage (9577) : sujet, cadrage, qualité estimée, dernier cliché ---
+private _face = uiNamespace getVariable ["COMSPEC_SseFace", createHashMap];
+private _ft = _face getOrDefault ["target", objNull];
+if (isNull _ft) then { _ft = uiNamespace getVariable ["COMSPEC_SsePerson_Target", objNull]; };
+private _faceLines = [];
+if (isNull _ft) then {
+    _faceLines pushBack "<t size='0.5' color='#c8eadc'>Aucun sujet.</t><br/><t size='0.4' color='#8fb3a6'>Regardez la personne (4 m au plus) puis rouvrez le terminal.</t>";
+} else {
+    private _who = trim format ["%1 %2", _ft getVariable ["COMSPEC_SSE_FirstName", ""], _ft getVariable ["COMSPEC_SSE_LastName", ""]];
+    if (_who isEqualTo "") then { _who = "Sujet non identifié"; };
+    private _info = _face getOrDefault ["info", createHashMap];
+    private _angleTxt = switch (_face getOrDefault ["angle", "face"]) do {
+        case "trois_quarts": { "Trois quarts" };
+        case "profil": { "Profil" };
+        default { "Face" };
+    };
+    private _dist = player distance _ft;
+    _faceLines pushBack format ["<t size='0.54' color='#f2fff8'>%1</t>", _who];
+    _faceLines pushBack format [
+        "<t size='0.44' color='#9ed8b4'>%1  ·  zoom x%2  ·  %3 m%4</t>",
+        _angleTxt, _face getOrDefault ["zoom", 1], _dist toFixed 1,
+        ["", "  ·  au sol"] select ((_info getOrDefault ["couche", ""]) isEqualTo "sol")
+    ];
+    if (_dist > 4) then {
+        _faceLines pushBack "<t size='0.44' color='#e0a233'>Trop loin : approchez-vous à 4 m au plus.</t>";
+    } else {
+        private _q = _info getOrDefault ["qualite", -1];
+        if (_q >= 0) then {
+            private _qc = ["#e09a7e", "#e0d27e", "#7ee0a0"] select ((parseNumber (_q >= 55)) + (parseNumber (_q >= 80)));
+            private _note = _info getOrDefault ["note", ""];
+            _faceLines pushBack format [
+                "<t size='0.44' color='%1'>Qualité estimée %2</t>%3",
+                _qc, _q, ["", format [" <t size='0.4' color='#8fb3a6'>· %1</t>", _note]] select (_note isNotEqualTo "")
+            ];
+        };
+    };
+    private _meta = _ft getVariable ["comspec_sse_facePhotoMeta", []];
+    if ((_meta isEqualType []) && {(count _meta) >= 3}) then {
+        _faceLines pushBack format [
+            "<t size='0.44' color='#7ee0a0'>Cliché de %1 · qualité %2</t>",
+            _meta select 2, _meta select 1
+        ];
+    };
+};
+private _faceCtrl = _disp displayCtrl 9577;
+if (!isNull _faceCtrl) then { _faceCtrl ctrlSetStructuredText parseText (_faceLines joinString "<br/>"); };
+
 // --- Bandeau LCD (9525) ---
 private _photo = uiNamespace getVariable ["COMSPEC_SsePerson_PhotoPending", false];
 private _bits = [];
 _bits pushBack format ["%1 ÉCH.", count _samples];
 if (_photo) then { _bits pushBack "PHOTO ARMÉE"; };
+if ((_face getOrDefault ["frozen", false])) then { _bits pushBack "CLICHÉ AFFICHÉ"; } else {
+    if (!isNull (_face getOrDefault ["cam", objNull])) then { _bits pushBack "VISEUR"; };
+};
 if ((_sig isEqualType []) && {(count _sig) >= 4}) then { _bits pushBack "SIGNÉ"; } else { _bits pushBack "NON SIGNÉ"; };
 if (_queryPending) then {
     _bits pushBack "REQUÊTE…";

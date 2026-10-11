@@ -4,6 +4,7 @@
       (sans action) : renvoie le sujet visé (homme à moins de 6 m, vivant ou non) ou objNull
       "case" : pose le dossier saisi pour tout l'élément     "clear" : efface le dossier actif
       "open" n : ferme l'ATAK et ouvre le terminal SEEK à la page n (0 accueil … 7 terrain)
+      "face" : range l'ATAK, photographie le visage du sujet visé, puis rouvre l'app SSE
 */
 params [["_act", ""], ["_arg", 0]];
 private _target = {
@@ -23,6 +24,27 @@ switch (_act) do {
         call _render;
     };
     case "clear": { ["clear"] call comspec_overwatch_connect_fnc_sseActiveCase; call _render; };
+    case "face": {
+        private _t = call _target;
+        if (isNull _t) exitWith { ["WARNING", "Regardez la personne à photographier", 3, 20] call comspec_atak_native_fnc_notify; };
+        // Pas de téléphone porté (HUD) réaffiché pendant le cliché.
+        private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        _s set ["suppressHudRestore", true];
+        [] call comspec_atak_native_fnc_close;
+        _s set ["suppressHudRestore", false];
+        [{
+            params ["_t"];
+            // Le cliché prend ~0,2 s : on rouvre l'ATAK sur l'app SSE une fois l'image enregistrée
+            // (ou tout de suite si la capture a été refusée : sujet trop loin, capture déjà en cours).
+            [_t] call comspec_overwatch_connect_fnc_sseCaptureFacePhoto;
+            [{ !(missionNamespace getVariable ["COMSPEC_SsePerson_PhotoBusy", false]) }, {
+                [] call comspec_atak_native_fnc_open;
+                [{ ["SSE"] call comspec_atak_native_fnc_navigate; }, [], 0.1] call CBA_fnc_waitAndExecute;
+            }, [], 5, {
+                [] call comspec_atak_native_fnc_open;
+            }] call CBA_fnc_waitUntilAndExecute;
+        }, [_t], 0.15] call CBA_fnc_waitAndExecute;
+    };
     case "open": {
         private _t = call _target;
         // Le terminal SEEK est un écran à part : on range l'ATAK pour lui laisser la souris.
