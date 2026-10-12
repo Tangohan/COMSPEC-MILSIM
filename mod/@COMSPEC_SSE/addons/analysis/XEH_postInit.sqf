@@ -19,7 +19,6 @@ if (!hasInterface) exitWith {};
     params [["_msg", "", [""]]];
     if (_msg isEqualTo "") exitWith {};
     hint parseText format ["<t color='#7fd08a' size='1.1'>SSE · Analyse</t><br/><br/>%1", _msg];
-    systemChat ("SSE · " + _msg);
 }] call CBA_fnc_addEventHandler;
 
 // Tableau des liens et registre ouverts : suivent l'état diffusé par le serveur

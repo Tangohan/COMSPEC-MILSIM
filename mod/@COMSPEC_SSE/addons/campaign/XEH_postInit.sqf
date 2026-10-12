@@ -21,8 +21,8 @@ if (!hasInterface) exitWith {};
 ["comspec_sse_campNote", {
     params [["_msg", "", [""]]];
     if (_msg isEqualTo "") exitWith {};
-    systemChat ("SSE · Campagne : " + _msg);
-    if (!isNull (getAssignedCuratorLogic player) || {isServer}) then { hint parseText format ["<t color='#7fd08a'>SSE · Campagne</t><br/>%1", _msg]; };
+    // Jamais dans le chat du jeu : une note à l'écran.
+    hint parseText format ["<t color='#7fd08a'>SSE · Campagne</t><br/>%1", _msg];
 }] call CBA_fnc_addEventHandler;
 
 ["comspec_sse_campExport", {
