@@ -14,7 +14,8 @@
 
   function resolveUrl(apiBase, p) {
     var u = (p && (p.url || p.path)) || '';
-    if (!u && p && p.image_path) {
+    // recon-private/… : cliché confidentiel, jamais sous /uploads (url = route authentifiée).
+    if (!u && p && p.image_path && String(p.image_path).indexOf('recon-private/') !== 0) {
       u = '/uploads/recon/' + String(p.image_path).split('/').pop();
     }
     if (!u) return '';

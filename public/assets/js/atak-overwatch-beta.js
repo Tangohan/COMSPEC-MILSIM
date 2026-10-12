@@ -6257,7 +6257,7 @@
 
   function camTileHtml(row, index) {
     var url = resolvePhotoUrl(row.url || row.path || '');
-    if (!url && row.image_path) url = resolvePhotoUrl('/uploads/recon/' + String(row.image_path).split('/').pop());
+    if (!url && row.image_path && String(row.image_path).indexOf('recon-private/') !== 0) url = resolvePhotoUrl('/uploads/recon/' + String(row.image_path).split('/').pop());
     var age = camAgeSec(row);
     var stale = age != null && age > CAM_STALE_SEC;
     var grid = String(row.grid_ref || '').trim();
@@ -6331,7 +6331,8 @@
       '<button class="ow-primary" type="submit">Déposer la photo</button></form>' +
       photos.slice(0, 24).map(function (row) {
         var url = resolvePhotoUrl(row.url || row.path || '');
-        if (!url && row.image_path) {
+        // recon-private/… : cliché confidentiel servi seulement par /api/recon/images/{id}/file.
+        if (!url && row.image_path && String(row.image_path).indexOf('recon-private/') !== 0) {
           url = resolvePhotoUrl('/uploads/recon/' + String(row.image_path).split('/').pop());
         }
         var id = String(row.id || '');
