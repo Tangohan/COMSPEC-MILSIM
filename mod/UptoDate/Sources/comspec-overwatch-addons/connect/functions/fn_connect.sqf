@@ -1,4 +1,6 @@
 if (!hasInterface) exitWith {};
+// Service Athéna refusé ou pas encore choisi : aucune connexion.
+if (([] call comspec_overwatch_connect_fnc_athenaMode) isNotEqualTo "on") exitWith {};
 
 // Retire guillemets / espaces colles (profileNamespace, CBA, retour extension).
 private _cleanSecret = {

@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Vague 2026-10-12 — Retours de test en jeu (ATAK natif 1.10.0)
+## Vague 2026-10-12 — Retours de test en jeu (ATAK natif 1.11.0)
 
 Non testé en jeu. Inclut les correctifs de performance de la PR #629 (même base). DLL à recompiler (`build_mod.bat`) pour le presse-papiers du Plan.
 
@@ -51,6 +51,13 @@ Non testé en jeu. Inclut les correctifs de performance de la PR #629 (même bas
 - Photo : la souris vise de nouveau en zoom, flash moins violent (rendu délavé), cadres de visée retirés du cliché, interface revue.
 - Mode porté : pastille main + « Ctrl+Maj+U » au lieu de la phrase, masquable.
 - Personnalisation : style d'horloge, thèmes rapides (Opérations, Nuit, Désert, Athena), interrupteurs pastille et recherche.
+## Vague 2026-10-12 — Service Athéna au premier lancement (ATAK natif 1.10.0, Overwatch connect)
+
+### Nouveau — « Votre unité utilise-t-elle le service Athéna ? »
+- Au premier lancement (menu principal, ou en mission si le joueur rejoint directement un serveur), un écran en français et en anglais (boutons FR / EN, langue du jeu par défaut) pose la question avec deux cartes **OUI** et **NON**. Il faut répondre (Échap bloqué la première fois).
+- **Non** : l'ATAK reste en local (carte, BFT, messages et apps entre joueurs du serveur). Aucune connexion à Athena, aucune synchro, aucune note bêta ni inscription envoyée ; Overwatch est coupé (`comspec_overwatch_enabled` forcé à faux même si un réglage CBA le rallume). Les apps Athena, Synchro, Discord et Recherchés disparaissent du lanceur et du dock.
+- **Oui** : comportement habituel (COMSPEC Link, restauration de la session, synchro). Sans session, la fenêtre Connexion Athena s'ouvre pour lier le compte tout de suite.
+- Le choix est enregistré dans le profil Arma (`COMSPEC_AthenaMode` = `on` / `off`) et se change à tout moment : téléphone ATAK > Réglages > **Service Athéna** (Oui / Non, revoir la question, lier mon compte) ou menu Échap > bouton **Service Athéna**. Passer à Non garde la clé enregistrée : revenir à Oui ne demande pas de relier le compte.
 
 ## Vague 2026-10-11 (suite) — Un téléphone qui réagit (ATAK natif 1.9.0)
 
