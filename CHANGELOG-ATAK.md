@@ -11,6 +11,38 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Doigt d'honneur libre, qui suit la cible (ATAK natif 1.44.0)
+
+Non testé en jeu. Demande de TTRD : « un doigt d'honneur libre, qui suit vraiment le curseur et les joueurs, comme GTA ». Pas de DLL à recompiler, pas de migration. Le doigt d'honneur classique (geste de 2,4 s) reste tel quel.
+- Nouvelle touche CBA « Doigt d'honneur libre (maintenir) » (COMSPEC ATAK, non attribuée par défaut) : tant qu'elle est maintenue, bras gauche tendu, dos de la main vers la cible, majeur levé, petit coup sec en boucle. Action ACE perso « Doigt d'honneur libre (6 s) ».
+- Cible revue 8 fois par seconde : l'homme sous le curseur (100 m), sinon le joueur ou l'IA le plus proche du centre de l'écran (moins de 30°, 60 m), sinon la direction du curseur. Le bras suit sur une grille de 24 poses (cap de -40° à +60° côté gauche, site de -20° à +40°, par pas de 20°) ; au-delà il reste au bord. Arma ne permet pas de tourner un os librement par script, d'où la grille.
+- À vérifier en jeu : passage d'une case à l'autre (fluide ou saccadé), bras qui suit bien un joueur qui se déplace, cibles au-dessus et en dessous, fusil en main (la main gauche quitte puis retrouve le garde-main), geste vu par les autres.
+
+## Correctif 2026-10-12 — App Plan : la zone terminée ne disparaît plus ; symboles et étiquettes de la carte lisibles (ATAK natif 1.43.1)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration.
+- Une zone (ou tout élément) envoyée au plan **partagé** disparaissait à la fin du tracé : le téléphone vidait le tracé et attendait que le serveur écrive le plan, et rien ne revenait (serveur sans le mod ATAK natif, ou refus du serveur).
+- L'élément reste affiché pendant l'attente. Sans réponse du serveur au bout de 5 s, il est gardé dans le brouillon, avec un message et une ligne `PLAN` dans le RPT.
+- Le serveur annonce qu'il a le mod (`COMSPEC_ATAK_PlanSrvOn`). Sans lui, le téléphone place tout de suite les éléments dans le brouillon et le dit : le plan partagé avec les coéquipiers demande le mod sur le serveur.
+- Carte du téléphone : les symboles suivent la taille de l'écran de l'ATAK (mini, porté, plein écran, portrait ou paysage) au lieu d'un plancher qui les gardait trop gros sur la petite carte. Les textes suivent aussi, sans descendre sous une taille lisible.
+- Étiquettes de la carte : indicatifs et textes des marqueurs en blanc cerné de noir, un peu plus grands, au lieu de la couleur de l'unité avec une ombre légère. Cartouches plein écran plus grands, deuxième ligne plus claire. Même règle pour l'app Plan.
+
+## Selfie : le téléphone dans la main, l'objectif sur le téléphone (ATAK natif 1.43.0)
+
+Non testé en jeu. Retour de TTRD après essai : « anime OK et manque le S7 dans la main », la main passait aussi devant l'image. Pas de DLL à recompiler, pas de migration.
+- Pendant le selfie, le téléphone du profil (S7 par défaut, coque teintée comme sur le JPC ; autres modèles du profil, la tablette à touches devient un S7) est tenu dans la main droite, en paysage, écran vers le visage. Objet global accroché à l'os de la main : il suit le bras et les autres joueurs le voient. Il redescend avec le bras puis disparaît.
+- La caméra du selfie (app Photo objectif avant et plein écran R) est maintenant posée sur le téléphone, 3 cm devant l'écran, tournée vers les yeux : la main ne masque plus le visage. La souris (ou le glisser dans l'app) tourne la vue autour du téléphone.
+- À vérifier en jeu : téléphone bien dans la paume (ni décalé ni traversant les doigts). Réglage sans recompiler, dans la console : `COMSPEC_ATAK_SelfiePhoneAttach = ["righthand", [x, y, z], vectorDir, vectorUp]` (valeur actuelle `["righthand", [0.013, -0.05, -0.066], [0.941, -0.134, 0.311], [0.293, 0.782, -0.55]]`), puis repasser en selfie.
+
+## ALERTES refaite, SALUTE dans sa propre app (ATAK natif 1.42.0)
+
+Non testé en jeu. Demande de TTRD : reprendre le style de l'app Reco pour les Alertes, bouton panique prioritaire, compte rendu SALUTE hors des Alertes. Pas de DLL à recompiler, pas de migration.
+- **Alertes** : en-tête rouge (heure, ma grille, pastille CAMP + POSTE ou CAMP SEULEMENT selon Athena). **PANIQUE** en tête, sur toute la largeur : grand bouton rouge sombre, rouge vif quand il est armé (« Appuyez encore dans les 5 secondes pour ENVOYER »), toujours deux appuis. Alertes rapides en trois tuiles à icône (CONTACT, FIN DE CONTACT, APPAREIL ABATTU). Journal en cartes de la couleur de l'alerte, bouton CARTE sur chacune.
+- **SALUTE** : nouvelle app (section Renseignement, à côté de Reco), en bleu. Une grande lettre par champ avec exemple ; L avec ICI et VISÉ (point sous mon regard) et la distance et l'azimut ; T avec MAINTENANT ; compteur « x/6 remplis » ; ENVOYER LE SALUTE et EFFACER ; derniers SALUTE de la mission en cartes. Raccourci depuis les Alertes. Même envoi qu'avant (camp et poste Athena).
+- Nouvelles icônes : panique, contact, fin de contact, appareil abattu, SALUTE.
+
+À tester en jeu : PANIQUE (un appui arme, le deuxième envoie, retour au repos après 5 s ; reçue par un autre joueur du camp) ; les trois alertes rapides ; app SALUTE : saisir, ICI / VISÉ / MAINTENANT sans perdre la saisie, envoyer avec moins de deux champs (refusé) puis complet ; le SALUTE apparaît dans les deux journaux ; affichage en portrait et en mode petit.
+
 ## Drone : flotte de 4 drones, rôles, essaim, garde rapprochée ; repérage automatique en réglage admin (ATAK natif 1.39.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Suite des demandes de TTRD sur le drone.

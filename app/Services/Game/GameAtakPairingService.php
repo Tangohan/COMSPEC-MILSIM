@@ -87,7 +87,7 @@ final class GameAtakPairingService
             return ['ok' => true, 'status' => 200, 'payload' => ['status' => 'pending']];
         }
         $status = strtolower(trim((string) ($row['status'] ?? 'pending')));
-        if ($this->isExpiredRow($row)) {
+        if (self::isExpiredRow($row)) {
             $this->challenges->markExpired((int) $row['id']);
 
             return ['ok' => true, 'status' => 200, 'payload' => ['status' => 'expired']];
@@ -133,7 +133,7 @@ final class GameAtakPairingService
             return $this->fail('unavailable', 503, 'La validation n’est pas encore disponible sur ce serveur.');
         }
         $row = $this->challenges->findPendingByUserHash(hash('sha256', $code));
-        if ($row === null || $this->isExpiredRow($row) || (string) ($row['status'] ?? '') !== 'pending') {
+        if ($row === null || self::isExpiredRow($row) || (string) ($row['status'] ?? '') !== 'pending') {
             return $this->fail('invalid_code', 404, 'Ce code est inconnu ou a déjà expiré. Générez-en un nouveau dans Arma.');
         }
         $user = $this->users->findById($userId, $tenantId);
@@ -277,13 +277,20 @@ final class GameAtakPairingService
     }
 
     /**
+     * expires_at est écrit en UTC (UTC_TIMESTAMP() dans le dépôt). Lu sans fuseau, strtotime() le prendrait
+     * à l'heure de Paris (APP_TIMEZONE) : en été le code paraissait expiré depuis 1 h 50 dès sa création.
+     *
      * @param array<string, mixed> $row
      */
-    private function isExpiredRow(array $row): bool
+    public static function isExpiredRow(array $row, ?int $now = null): bool
     {
-        $expires = strtotime((string) ($row['expires_at'] ?? '')) ?: 0;
+        $raw = trim((string) ($row['expires_at'] ?? ''));
+        if ($raw === '') {
+            return false;
+        }
+        $expires = strtotime($raw . ' UTC') ?: 0;
 
-        return $expires > 0 && $expires < time();
+        return $expires > 0 && $expires < ($now ?? time());
     }
 
     public function normalizeCode(string $code): string
@@ -303,7 +310,7 @@ final class GameAtakPairingService
                 $code .= self::USER_CODE_ALPHABET[random_int(0, $max)];
             }
             $existing = $this->challenges->findPendingByUserHash(hash('sha256', $code));
-            if ($existing === null || $this->isExpiredRow($existing) || (string) ($existing['status'] ?? '') !== 'pending') {
+            if ($existing === null || self::isExpiredRow($existing) || (string) ($existing['status'] ?? '') !== 'pending') {
                 return $code;
             }
         }
