@@ -27,7 +27,10 @@ private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
 if (_term in ["vehicle", "cp"] && {profileNamespace getVariable ["COMSPEC_ATAK_VehTablet", true]}) then { _model = "tablet"; };
 private _visLand = (createHashMapFromArray [
     ["s7", [0.1025, 0.2798, 0.9263, 0.8535]], ["rugged", [0.1509, 0.2744, 0.8267, 0.7573]], ["iphone", [0.1914, 0.3159, 0.7861, 0.6851]], ["tablet", [0.0850, 0.2510, 0.9258, 0.7549]],
-    ["keys", [0.0923, 0.2495, 0.9083, 0.7178]]
+    ["keys", [0.0923, 0.2495, 0.9083, 0.7178]],
+    ["plate", [0.0728, 0.2974, 0.9272, 0.8013]],
+    ["flip", [0.0972, 0.2671, 0.9028, 0.7104]],
+    ["ribbed", [0.1191, 0.2974, 0.8809, 0.6987]]
 ]) getOrDefault [_model, []];
 if (_visLand isEqualTo []) then { _model = "s7"; _visLand = [0.1025, 0.2798, 0.9263, 0.8535]; };
 // Vertical : texture tournée d'un quart de tour horaire.
