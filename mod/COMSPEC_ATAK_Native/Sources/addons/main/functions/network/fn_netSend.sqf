@@ -24,6 +24,8 @@ if !(_q get "sim") exitWith { ["IMMÉDIAT", "simulation coupée"] call _trace; _
 if ((_q get "bars") isEqualTo 0) exitWith {
     private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
     _queue pushBack [_code, _args, _label, _kb];
+    // File bornée : sans réseau longtemps, les plus anciens envois sont abandonnés au-delà de 50.
+    while { (count _queue) > 50 } do { _queue deleteAt 0; };
     ["EN FILE", "aucun signal"] call _trace;
     missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue];
     ["WARNING", format ["Pas de réseau : %1 en attente (%2 dans la file)", _label, count _queue], 4, 40] call comspec_atak_native_fnc_notify;

@@ -3,12 +3,14 @@
     Params : [drone, liaison [barres, distance, ok], "HEAD" | "FEED" | "NAME" | "ICON" | "ICONID"]
       "HEAD" : en-tête de la page, deux lignes compactes (texte structuré) ;
       "FEED" : incrustations de la vue caméra, à la façon d'un DJI : [haut gauche, haut centre, haut droite, bas gauche, bas droite] ;
+      "FEEDMINI" : mêmes cinq places pour une petite image (téléphone en petit format) : une ligne en haut à gauche
+                 (mode, hauteur, batterie, liaison), une en bas à droite (zoom, vision, point visé), les autres vides ;
       "NAME" : nom donné par le pilote (variable publique COMSPEC_DroneName), sinon le nom du modèle ;
       "ICONID" / "ICON" : icône choisie (variable publique COMSPEC_DroneIcon : quad, fixed, hexa, nano, fpv),
                  sinon devinée d'après le modèle ; "ICON" renvoie le chemin de la texture (data\drone_<id>.paa).
 */
 params ["_d", ["_l", [0, 0, false]], ["_kind", "HEAD"]];
-if (isNull _d) exitWith { ["", ["", "", "", "", ""]] select (_kind isEqualTo "FEED") };
+if (isNull _d) exitWith { ["", ["", "", "", "", ""]] select (_kind in ["FEED", "FEEDMINI"]) };
 if (_kind isEqualTo "NAME") exitWith {
     private _n = _d getVariable ["COMSPEC_DroneName", ""];
     [_n, getText (configOf _d >> "displayName")] select (_n isEqualTo "")
@@ -39,7 +41,7 @@ private _state = switch (true) do {
     default { _modes getOrDefault [_m, _m] };
 };
 private _cqb = _d getVariable ["COMSPEC_DroneCqb", false];
-private _who = ["", format [" (%1)", name _f]] select (_m in ["FOLLOW", "ESCORT"] && {!isNull _f} && {!_ground});
+private _who = ["", format [" (%1)", [name _f, getText (configOf _f >> "displayName")] select !(_f isKindOf "CAManBase")]] select (_m in ["FOLLOW", "ESCORT"] && {!isNull _f} && {!_ground});
 private _bat = round (100 * fuel _d);
 private _batHex = ["#c9d4cf", "#f2ab33", "#e5483a"] select ([_bat > 20, _bat > 10 && {_bat <= 20}, _bat <= 10] find true);
 private _link = ["<t color='#e5483a'>Hors liaison</t>", format ["Liaison %1/4", _l select 0]] select (_l select 2);
@@ -53,15 +55,23 @@ if (_kind isEqualTo "HEAD") exitWith {
         ["", format [" · <t color='#e5483a'>Armé : %1</t>", _d getVariable ["COMSPEC_DroneArmedLabel", "charge"]]] select _armed, [_d, _l, "ICON"] call comspec_atak_native_fnc_droneOsd]
 };
 // Vue caméra : point du sol sous le réticule (là où regarde la nacelle).
-private _eye = _d modelToWorldVisualWorld [0, 0.3, -0.3];
+private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
+private _eye = if (isNull _cam) then { _d modelToWorldVisualWorld [0, 0.3, -0.3] } else { _cam modelToWorldVisualWorld [0, 0, 0] };
 private _dir = missionNamespace getVariable ["COMSPEC_ATAK_DroneCamDir", []];
-if (_dir isEqualTo []) then { _dir = _d vectorModelToWorldVisual [0, 0.8, -0.6]; };
+if (_dir isEqualTo []) then { _dir = if (isNull _cam) then { _d vectorModelToWorldVisual [0, 0.8, -0.6] } else { vectorDirVisual _cam }; };
 private _hit = lineIntersectsSurfaces [_eye, _eye vectorAdd (_dir vectorMultiply 3000), _d, objNull, true, 1];
 private _under = if ((count _hit) > 0) then { format ["%1 · %2 m", [(_hit select 0) select 0, 8] call comspec_atak_native_fnc_gridRef, round (_eye distance ((_hit select 0) select 0))] } else { "Ciel" };
 private _rec = round (time - (missionNamespace getVariable ["COMSPEC_ATAK_DroneCamT0", time]));
 private _zoom = missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1];
 private _vis = ["", " · NUIT", " · THERMIQUE"] select (missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0]);
 private _sh = "shadow='2' shadowColor='#000000'";
+if (_kind isEqualTo "FEEDMINI") exitWith {
+    [
+        format ["<t size='0.7' %1><t color='%2'>%3</t> · H %4 m · <t color='%5'>%6 %%</t> · %7</t>", _sh, _stateHex, _state, _h, _batHex, _bat, ["<t color='#e5483a'>HORS LIAISON</t>", format ["L %1/4", _l select 0]] select (_l select 2)],
+        "", "", "",
+        format ["<t size='0.7' align='right' %1>x%2%3 · %4</t>", _sh, _zoom, _vis, _under]
+    ]
+};
 [
     format ["<t size='0.8' %1><t color='#e5483a'>●</t> REC %2:%3<br/>%4</t>", _sh, [floor (_rec / 60), 2] call CBA_fnc_formatNumber, [_rec mod 60, 2] call CBA_fnc_formatNumber, _name],
     format ["<t size='0.8' align='center' %1>CAP %2° · <t color='%3'>%4</t>%5 · x%6%7</t>", _sh, [round (getDirVisual _d) mod 360, 3] call CBA_fnc_formatNumber, _stateHex, _state, ["", " · CQB"] select _cqb, _zoom, _vis],
