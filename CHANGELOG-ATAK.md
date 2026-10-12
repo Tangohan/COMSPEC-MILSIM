@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Vague 2026-10-12 (suite) — Serveur de la communauté, Tinder refait (ATAK natif 1.34.0, COMSPEC Link 2.0.75)
+## Vague 2026-10-12 (suite) — Serveur de la communauté, Tinder refait (ATAK natif 1.35.0, COMSPEC Link 2.0.75)
 
 Non testé en jeu. DLL COMSPEC Link à recompiler (build_mod.bat) et `run-migrations.php` à lancer (tables `tenant_game_servers`, `tenant_game_server_presence`).
 - Site, Gestion › Mod ATAK › **Serveurs de jeu** : la communauté déclare ses serveurs (IP ou nom d'hôte, port, nom dans la liste Arma). La page montre où ses joueurs reliés à Athena ont joué sur 72 h et propose d'ajouter en un clic un serveur inconnu.
@@ -20,6 +20,14 @@ Non testé en jeu. DLL COMSPEC Link à recompiler (build_mod.bat) et `run-migrat
 - Tinder : grande carte de profil avec le vrai visage de la personne rendu en direct (3 photos : portrait, buste, en pied), prénom, âge, grade, rôle, distance, bio, centres d'intérêt, compatibilité. PASSER, SUPER LIKE (le nom est donné, 1 toutes les 10 min), J'AIME. Onglet MON PROFIL (aperçu de sa carte, bio, visibilité, likes reçus).
 - Tinder : de temps en temps un profil tiré des IA de la carte à moins de 5 km, HVT ou personne SSE, sans rien qui le signale. Un match ouvre une conversation qui livre le lieu-dit et un carroyage approximatif (300 m HVT, 150 m SSE), « OÙ ES-TU ? » toutes les 3 min, marquage de la zone sur sa carte.
 - Réglage de mission « Tinder : profils HVT et SSE » (Jamais, Rare, Parfois, Souvent) et module Zeus « Tinder : profil HVT / SSE » (type, prénom, bio, chance de match). En Eden : `this setVariable ["COMSPEC_ATAK_TinderKind", "HVT", true];`.
+
+## Gestes : doigt d'honneur et selfie (ATAK natif 1.34.0)
+
+Non testé en jeu. Demande de TTRD : « une animation pour faire des doigts d'honneur et une animation pour le selfie ». Pas de DLL à recompiler, pas de migration.
+- Deux animations maison (fichiers `anim/*.rtm`, générés par `tools/gen_gestures.py`, sans reprise d'un autre mod). Aperçus filaires : `tools/gen_gestures.py --preview dossier`.
+- **Doigt d'honneur** : bras gauche levé devant l'épaule, dos de la main vers la cible, majeur tendu, deux coups secs vers l'avant (~2,4 s), puis retour. La main gauche quitte le garde-main et y revient : marche aussi fusil en main. Touche CBA « Doigt d'honneur » (COMSPEC ATAK, non attribuée par défaut) et action ACE perso (dans le menu Gestes d'ACE quand il est affiché). Pas en véhicule, inconscient, sous l'eau ni pendant l'appareil photo.
+- **Selfie** : bras droit qui se lève (0,6 s), tendu devant le visage à hauteur des yeux, téléphone tourné vers soi, léger balancement tant que dure le selfie, puis redescend. Joué dans l'app Photo (objectif avant : l'arme est rangée et ressortie quand on repasse à l'objectif arrière ou qu'on quitte l'app) et dans le plein écran (R). Réglage CBA « Animation du selfie » : par défaut `comspec_atak_native_fnc_gestureSelfie` (l'ancien `gesturePoint` reste possible).
+- À vérifier en jeu : cadrage du bras sur le perso (fusil, pistolet, mains vides, accroupi), main gauche qui revient bien sur le garde-main, bras visible dans la vue selfie, geste vu par les autres joueurs.
 
 ## 2026-10-12 — Tâches et ordres : crash, suivi par joueur, chef pour le groupe ; rejeux datés ; temps par rôle (ATAK natif 1.33.0)
 

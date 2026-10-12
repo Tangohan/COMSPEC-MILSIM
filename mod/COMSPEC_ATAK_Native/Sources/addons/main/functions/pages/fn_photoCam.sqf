@@ -12,7 +12,8 @@
       ["stop"]               coupe la caméra et sa boucle
       ["zoom", +1 | -1]      palier de zoom numérique (x1 à x8)
       ["flash"]              AUTO → FORCÉ → COUPÉ
-      ["selfie"]             objectif avant / arrière
+      ["selfie"]             objectif avant / arrière (avant : arme rangée, bras droit tendu, fn_gestureSelfie)
+      ["pose"]               tient ou relâche la pose du selfie (boucle de la caméra, toutes les 1,2 s)
       ["aim", [dx, dy]]      décale l'objectif (fractions de l'image glissées) ; ["aimReset"] le recentre
       ["shoot", légende]     prend la photo et l'envoie vers Athena (gardée sur le téléphone hors réseau)
       ["osd"]                rafraîchit l'incrustation du viseur (grille, cap, heure, zoom)
@@ -64,6 +65,7 @@ private _stop = {
     private _cam = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCam", objNull];
     if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", _cam getVariable ["r2t", ""]]; camDestroy _cam; };
     missionNamespace setVariable ["COMSPEC_ATAK_PhotoCam", objNull];
+    ["pose", false] call comspec_atak_native_fnc_photoCam;
     private _pfh = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamPfh", -1];
     if (_pfh >= 0) then { [_pfh] call CBA_fnc_removePerFrameHandler; };
     missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamPfh", -1];
@@ -96,6 +98,10 @@ switch (_act) do {
                 // Pendant le déclenchement, la caméra de prise de vue reste figée sur la pose du viseur.
                 if (uiNamespace getVariable ["COMSPEC_ATAK_PhotoShooting", false]) exitWith {};
                 ["place"] call comspec_atak_native_fnc_photoCam;
+                if (diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamPoseAt", 0])) then {
+                    missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamPoseAt", diag_tickTime + 1.2];
+                    ["pose", true] call comspec_atak_native_fnc_photoCam;
+                };
                 if (diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamOsdAt", 0])) then {
                     missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamOsdAt", diag_tickTime + 0.5];
                     ["osd"] call comspec_atak_native_fnc_photoCam;
@@ -132,8 +138,37 @@ switch (_act) do {
         _st set ["camSelfie", !(_st getOrDefault ["camSelfie", false])];
         _st set ["camYaw", 0];
         _st set ["camPitch", 0];
+        ["pose", true] call comspec_atak_native_fnc_photoCam;
         playSound "ClickSoft";
         call _redraw;
+        true
+    };
+    // Selfie : arme rangée et bras droit tendu, téléphone face au visage (fn_gestureSelfie) ; objectif arrière,
+    // app quittée ou caméra coupée : bras baissé et arme ressortie. Le plein écran (fn_photoMode) reprend la main
+    // avec l'arme gardée de côté, qu'il ressortira à sa fermeture.
+    case "pose": {
+        private _want = _arg isEqualTo true && {_st getOrDefault ["camSelfie", false]} && {alive player} && {vehicle player isEqualTo player};
+        private _posed = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamPosed", false];
+        if (_want) then {
+            if (!_posed) then {
+                missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamPosed", true];
+                missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamWeapon", currentWeapon player];
+                if ((currentWeapon player) isNotEqualTo "") then { player action ["SwitchWeapon", player, player, 299]; };
+            };
+            [player, "selfie"] call comspec_atak_native_fnc_gestureSelfie;
+        } else {
+            if (_posed) then {
+                missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamPosed", false];
+                private _w = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamWeapon", ""];
+                if (uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) then {
+                    private _ctx = uiNamespace getVariable ["COMSPEC_ATAK_PhotoCtx", []];
+                    if (count _ctx > 2 && {(_ctx select 2) isEqualTo ""}) then { _ctx set [2, _w]; };
+                } else {
+                    [player, "exit"] call comspec_atak_native_fnc_gestureSelfie;
+                    if (_w isNotEqualTo "" && {alive player} && {vehicle player isEqualTo player}) then { player selectWeapon _w; };
+                };
+            };
+        };
         true
     };
     case "aim": {

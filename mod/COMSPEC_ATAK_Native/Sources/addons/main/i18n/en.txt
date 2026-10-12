@@ -2465,7 +2465,7 @@
 ["Journal détaillé (DEBUG)", "Detailed log (DEBUG)"],
 ["Journal vide.", "Log empty."],
 ["Journaux natifs vidés", "Native logs cleared"],
-["Jouée en mode selfie. Même format : action ou geste, animation CfgMoves, ou fonction appelée avec [joueur, ""selfie""] (puis [joueur, ""exit""] à la fermeture). Vide : on garde l'animation de l'appareil photo.", "Played in selfie mode. Same format: action or gesture, CfgMoves animation, or function called with [player, ""selfie""] (then [player, ""exit""] on close). Empty: keep the camera animation."],
+["Jouée en mode selfie. Par défaut comspec_atak_native_fnc_gestureSelfie : bras droit tendu devant le visage, téléphone tourné vers soi. Même format : action ou geste, animation CfgMoves, ou fonction appelée avec [joueur, ""selfie""] (puis [joueur, ""exit""] à la fermeture). Vide : on garde l'animation de l'appareil photo.", "Played in selfie mode. Default comspec_atak_native_fnc_gestureSelfie: right arm stretched out in front of the face, phone turned towards you. Same format: action or gesture, CfgMoves animation, or function called with [player, ""selfie""] (then [player, ""exit""] on close). Empty: keep the camera animation."],
 ["juillet", "July"],
 ["JUILLET", "JULY"],
 ["juin", "June"],
