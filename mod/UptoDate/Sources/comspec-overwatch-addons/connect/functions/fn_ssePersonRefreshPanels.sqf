@@ -371,6 +371,24 @@ if ((count _query) >= 3 && {_qd isEqualType createHashMap} && {(count _qd) > 0})
             _qd getOrDefault ["fpMatched", 0], _qd getOrDefault ["fpCompared", 0], _qd getOrDefault ["irisMatched", 0], _qd getOrDefault ["irisCompared", 0],
             [str (_qd getOrDefault ["faceScore", 0]), "--"] select ((_qd getOrDefault ["faceScore", 0]) == 0)];
     };
+    // Détail comme sur un vrai ABIS : minuties par doigt, distance de Hamming de l'iris, similarité faciale.
+    private _fpD = _qd getOrDefault ["fpDetail", []];
+    if (_fpD isNotEqualTo []) then {
+        private _fn = ["PD", "ID", "MD", "AD", "OD", "PG", "IG", "MG", "AG", "OG"];
+        _rows pushBack format ["<t size='0.40' color='%1'>Minuties (seuil 12) : %2</t>", _cMute,
+            (_fpD apply { format ["%1 %2/%3", _fn select (_x select 0), _x select 1, _x select 2] }) joinString " · "];
+    };
+    private _hd = _qd getOrDefault ["irisHd", [-1, -1]];
+    if ((_hd findIf { _x >= 0 }) >= 0) then {
+        _rows pushBack format ["<t size='0.40' color='%1'>Iris, distance de Hamming (seuil 0,32) : OD %2 · OG %3</t>", _cMute,
+            ["--", (_hd select 0) toFixed 3] select ((_hd select 0) >= 0), ["--", (_hd select 1) toFixed 3] select ((_hd select 1) >= 0)];
+    };
+    if ((_qd getOrDefault ["faceSim", -1]) >= 0) then {
+        _rows pushBack format ["<t size='0.40' color='%1'>Visage, similarité : %2</t>", _cMute, (_qd get "faceSim") toFixed 2];
+    };
+    if ((_qd getOrDefault ["henry", ""]) isNotEqualTo "") then {
+        _rows pushBack format ["<t size='0.40' color='%1'>Henry %2 · FPC %3</t>", _cMute, _qd get "henry", _qd getOrDefault ["fpc", ""]];
+    };
     { _rows pushBack format ["<t size='0.42' color='%1'>Latente %2 : %3 (%4)</t>", _cWarn, _x select 0, _x select 1, _x select 2]; } forEach (_qd getOrDefault ["latents", []]);
     if ((_qd getOrDefault ["note", ""]) isNotEqualTo "") then { _rows pushBack format ["<t size='0.40' color='%1'>%2</t>", _cMute, _qd get "note"]; };
 };

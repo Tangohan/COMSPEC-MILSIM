@@ -9,6 +9,13 @@ private _p = [_packed] call comspec_sse_fnc_bioUnpack;
 if (!(_p isEqualType createHashMap)) then { _p = createHashMap; };
 private _res = createHashMap;
 
+// Les clés viennent du registre du serveur, jamais du poste qui demande.
+{
+    _x params ["_uField", "_kField"];
+    private _u = _p getOrDefault [_uField, objNull];
+    if (_u isEqualType objNull && {!isNull _u}) then { _p set [_kField, [_u] call comspec_sse_fnc_bioPersonKey]; };
+} forEach [["unit", "key"], ["ownerUnit", "ownerKey"]];
+
 // Avis Athena relayés par un terminal en liaison (la DLL vit côté joueur).
 private _wanted = _p getOrDefault ["wanted", []];
 if (_wanted isEqualType [] && {_wanted isNotEqualTo []}) then {

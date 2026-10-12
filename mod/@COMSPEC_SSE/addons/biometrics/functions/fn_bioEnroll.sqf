@@ -12,7 +12,8 @@ if (!isServer) exitWith { "" };
 private _unit = _probe getOrDefault ["unit", objNull];
 if (!(_unit isEqualType objNull)) then { _unit = objNull; };
 private _key = _probe getOrDefault ["key", ""];
-if (_key isEqualTo "") then { _key = [_unit] call comspec_sse_fnc_bioPersonKey; };
+// Sur le serveur, la clé de l'unité est celle du registre (jamais celle calculée par un poste).
+if (_key isEqualTo "" || {!isNull _unit}) then { _key = [_unit] call comspec_sse_fnc_bioPersonKey; };
 if (_key isEqualTo "") exitWith { "" };
 
 private _runtime = missionNamespace getVariable ["comspec_sse_bioRuntime", createHashMap];
@@ -54,7 +55,7 @@ _runtime set [_key, _e];
 missionNamespace setVariable ["comspec_sse_bioRuntime", _runtime];
 
 // Campagne : les personnages à identifiant fixé gardent leurs rencontres.
-if ((missionNamespace getVariable ["comspec_sse_bio_campaignMemory", false]) && {(_key select [0, 1]) isNotEqualTo "P"}) then {
+if ((missionNamespace getVariable ["comspec_sse_bio_campaignMemory", false]) && {!isNull _unit} && {((_unit getVariable ["COMSPEC_SSE_BioId", ""]) isNotEqualTo "")}) then {
     private _store = format ["comspec_sse_bioCampaign_%1", [missionNamespace getVariable ["comspec_sse_bio_campaignSeed", ""], missionName] select ((missionNamespace getVariable ["comspec_sse_bio_campaignSeed", ""]) isEqualTo "")];
     private _saved = profileNamespace getVariable [_store, []];
     if (!(_saved isEqualType [])) then { _saved = []; };

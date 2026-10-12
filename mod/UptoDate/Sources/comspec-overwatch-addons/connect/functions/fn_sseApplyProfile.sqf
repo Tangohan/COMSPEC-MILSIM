@@ -107,6 +107,7 @@ if (_confidence isEqualType 0) then {
 private _seed = ["seed"] call _get;
 if (_seed isEqualType 0 && { _seed > 0 }) then {
     _unit setVariable ["COMSPEC_SSE_Seed", round _seed, true];
+    _unit setVariable ["COMSPEC_SSE_SeedAuthored", true, true];
 };
 
 if (!isNil "comspec_sse_fnc_bioSetProfile") then {

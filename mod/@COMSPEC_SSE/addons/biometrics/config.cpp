@@ -68,6 +68,8 @@ class CfgFunctions {
             class bioCaptureLatentAction {};
             class bioSetProfile {};
             class bioApplyCapture {};
+            class bioRegistry {};
+            class bioTemplates {};
         };
     };
 };
@@ -90,6 +92,16 @@ class Extended_PostInit_EventHandlers {
     class comspec_sse_biometrics {
         init = "call compile preprocessFileLineNumbers 'z\comspec_sse\addons\biometrics\XEH_postInit.sqf'";
         clientInit = "call compile preprocessFileLineNumbers 'z\comspec_sse\addons\biometrics\XEH_postInitClient.sqf'";
+    };
+};
+
+// Chaque personne reçoit sa clé biométrique du registre du serveur dès son apparition
+// (image suivante : les attributs Eden et le champ init sont alors appliqués).
+class Extended_InitPost_EventHandlers {
+    class CAManBase {
+        class comspec_sse_biometrics {
+            serverInit = "[{ if (!isNull (_this select 0) && {missionNamespace getVariable ['comspec_sse_bio_enabled', true]}) then { ['assign', _this select 0] call comspec_sse_fnc_bioRegistry; }; }, [_this select 0]] call CBA_fnc_execNextFrame;";
+        };
     };
 };
 

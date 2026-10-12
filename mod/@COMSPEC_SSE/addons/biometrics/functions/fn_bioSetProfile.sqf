@@ -36,4 +36,16 @@ private _map = createHashMapFromArray [
         };
     };
 } forEach _pairs;
+// Nouvel identifiant fixé : le registre réattribue la clé (et vérifie qu'elle n'est pas déjà prise).
+if (isServer && {(_pairs findIf { (_x isEqualType []) && {(toLower (_x param [0, ""])) isEqualTo "bioid"} }) >= 0}) then {
+    private _old = _unit getVariable ["COMSPEC_SSE_BioKey", ""];
+    private _reg = missionNamespace getVariable ["comspec_sse_bioReg", createHashMap];
+    if (_old isNotEqualTo "" && {(count _reg) > 0}) then {
+        (_reg get "owners") deleteAt _old;
+        private _tpl = _reg get "templates";
+        { if ((_tpl getOrDefault [_x, ""]) isEqualTo _old) then { _tpl deleteAt _x; }; } forEach ([_old] call comspec_sse_fnc_bioTemplates);
+    };
+    _unit setVariable ["COMSPEC_SSE_BioKey", nil, true];
+    ["assign", _unit] call comspec_sse_fnc_bioRegistry;
+};
 true

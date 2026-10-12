@@ -30,6 +30,17 @@ if (_res getOrDefault ["mismatch", false]) then {
 if ((_res getOrDefault ["fpCompared", 0]) > 0 || {(_res getOrDefault ["irisCompared", 0]) > 0} || {(_res getOrDefault ["faceScore", 0]) > 0}) then {
     _lines pushBack format ["Concordance : doigts %1/%2 · iris %3/%4 · visage %5", _res getOrDefault ["fpMatched", 0], _res getOrDefault ["fpCompared", 0], _res getOrDefault ["irisMatched", 0], _res getOrDefault ["irisCompared", 0], [format ["%1", _res get "faceScore"], "--"] select ((_res getOrDefault ["faceScore", 0]) == 0)];
 };
+private _fpD = _res getOrDefault ["fpDetail", []];
+if (_fpD isNotEqualTo []) then {
+    private _fn = ["PD", "ID", "MD", "AD", "OD", "PG", "IG", "MG", "AG", "OG"];
+    _lines pushBack format ["Minuties concordantes (seuil 12) : %1", (_fpD apply { format ["%1 %2/%3", _fn select (_x select 0), _x select 1, _x select 2] }) joinString ", "];
+};
+private _hd = _res getOrDefault ["irisHd", [-1, -1]];
+if ((_hd findIf { _x >= 0 }) >= 0) then {
+    _lines pushBack format ["Iris, distance de Hamming (seuil 0,32) : OD %1, OG %2", ["--", (_hd select 0) toFixed 3] select ((_hd select 0) >= 0), ["--", (_hd select 1) toFixed 3] select ((_hd select 1) >= 0)];
+};
+if ((_res getOrDefault ["faceSim", -1]) >= 0) then { _lines pushBack format ["Visage, similarité : %1", (_res get "faceSim") toFixed 2]; };
+if ((_res getOrDefault ["henry", ""]) isNotEqualTo "") then { _lines pushBack format ["Classification Henry %1 · FPC %2", _res get "henry", _res getOrDefault ["fpc", ""]]; };
 private _cands = _res getOrDefault ["candidates", []];
 if ((count _cands) > 1) then {
     _lines pushBack format ["Autre candidat : %1 (%2) score %3", (_cands select 1) select 1, (_cands select 1) select 0, (_cands select 1) select 2];

@@ -29,4 +29,11 @@ if (isServer) then {
 if (hasInterface) then {
     ["comspec_sse_bioRes", { _this call comspec_sse_fnc_bioClientResult }] call CBA_fnc_addEventHandler;
     ["comspec_sse_bioNotify", { _this call comspec_sse_fnc_bioNotify }] call CBA_fnc_addEventHandler;
+    // Avertissements de préparation (identité en double…) : Zeus seulement.
+    ["comspec_sse_bioZeusNote", {
+        params [["_msg", ""]];
+        if (isNull (getAssignedCuratorLogic player)) exitWith {};
+        systemChat ("[SSE · Biométrie] " + _msg);
+        if (!isNull (findDisplay 312)) then { [_msg] call BIS_fnc_showCuratorFeedbackMessage; };
+    }] call CBA_fnc_addEventHandler;
 };

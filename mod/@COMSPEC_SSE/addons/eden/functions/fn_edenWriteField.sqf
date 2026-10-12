@@ -88,6 +88,7 @@ if (_name isEqualTo "Seed") exitWith {
     private _seed = round _value;
     if (!_person) then { _obj setVariable ["Seed", _seed, true]; };
     _obj setVariable ["COMSPEC_SSE_Seed", _seed, true];
+    _obj setVariable ["COMSPEC_SSE_SeedAuthored", true, true];
     true
 };
 

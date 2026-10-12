@@ -23,7 +23,8 @@ params [["_probe", createHashMap, [createHashMap]]];
 private _unit = _probe getOrDefault ["unit", objNull];
 if (!(_unit isEqualType objNull)) then { _unit = objNull; };
 private _key = _probe getOrDefault ["key", ""];
-if (_key isEqualTo "") then { _key = [_unit] call comspec_sse_fnc_bioPersonKey; };
+// Sur le serveur, la clé de l'unité est celle du registre (jamais celle calculée par un poste).
+if (_key isEqualTo "" || {!isNull _unit}) then { _key = [_unit] call comspec_sse_fnc_bioPersonKey; };
 private _scope = _probe getOrDefault ["scope", "local"];
 private _attempt = _probe getOrDefault ["attempt", 1];
 private _nfiqs = _probe getOrDefault ["nfiqs", []];
@@ -40,8 +41,12 @@ private _res = createHashMapFromArray [
     ["enrolledAt", ""], ["encounters", []], ["mismatch", false],
     ["declaredName", _probe getOrDefault ["declaredName", ""]],
     ["fpMatched", 0], ["fpCompared", 0], ["irisMatched", 0], ["irisCompared", 0], ["faceScore", 0],
-    ["candidates", []], ["latents", []], ["scope", _scope], ["note", ""], ["athenaRef", ""]
+    ["candidates", []], ["latents", []], ["scope", _scope], ["note", ""], ["athenaRef", ""],
+    ["fpDetail", []], ["irisHd", [-1, -1]], ["faceSim", -1], ["henry", ""], ["fpc", ""]
 ];
+// Seuils affichés comme sur un vrai ABIS : minuties concordantes par doigt, distance de Hamming de l'iris.
+private _minT = 12;
+private _hdT = 0.32;
 
 // --- Qualité du relevé : assez pour interroger ? ----------------------------------------
 private _goodFingers = [];
@@ -71,6 +76,11 @@ private _verdict = "none";
 private _score = 0;
 
 if (_reachable) then {
+    private _prof = [_unit, _key] call comspec_sse_fnc_bioProfile;
+    private _pf = _prof getOrDefault ["fingers", []];
+    private _fpDetail = [];
+    _res set ["henry", _prof getOrDefault ["henry", ""]];
+    _res set ["fpc", _prof getOrDefault ["fpc", ""]];
     private _recFps = _rec getOrDefault ["fpFingers", []];
     private _recFpQ = _rec getOrDefault ["fpQuality", 0];
     private _recFactor = switch (true) do { case (_recFpQ >= 70): { 1 }; case (_recFpQ >= 50): { 0.85 }; default { 0.7 }; };
@@ -82,13 +92,23 @@ if (_reachable) then {
             private _n = _nfiqs select _x;
             _fpCompared = _fpCompared + 1;
             private _p = ([0, 0.995, 0.985, 0.94, 0.72] select _n) * _recFactor;
-            if ((["fp" + str _x] call _r) < _p) then {
+            // Minuties du doigt au dossier, et part retrouvée selon la qualité du relevé.
+            private _tot = (_pf param [_x, []]) param [4, 60];
+            private _ok = (["fp" + str _x] call _r) < _p;
+            private _found = if (_ok) then {
+                (_minT + 2) max (round (_tot * ([0, 0.8, 0.65, 0.45, 0.28] select _n) * (0.85 + (["fm" + str _x] call _r) * 0.3)))
+            } else {
+                3 + floor ((["fm" + str _x] call _r) * (_minT - 4))
+            };
+            _fpDetail pushBack [_x, _found min _tot, _tot];
+            if (_ok) then {
                 _fpMatched = _fpMatched + 1;
                 _fpScore = _fpScore + ([0, 30, 26, 20, 12] select _n);
             };
         };
     } forEach _goodFingers;
     _fpScore = _fpScore min 70;
+    _res set ["fpDetail", _fpDetail];
 
     private _irisScore = 0;
     private _irisMatched = 0;
@@ -98,7 +118,15 @@ if (_reachable) then {
             private _q = _eyes select _x;
             _irisCompared = _irisCompared + 1;
             private _p = switch (true) do { case (_q >= 70): { 0.995 }; case (_q >= 55): { 0.93 }; default { 0.7 }; };
-            if ((["ir" + str _x] call _r) < _p) then { _irisMatched = _irisMatched + 1; _irisScore = _irisScore + 40; };
+            private _hds = _res get "irisHd";
+            if ((["ir" + str _x] call _r) < _p) then {
+                _irisMatched = _irisMatched + 1;
+                _irisScore = _irisScore + 40;
+                // Même œil : distance de Hamming 0,12 à 0,30 (plus faible si le relevé est bon).
+                _hds set [_x, parseNumber ((0.12 + ((100 - _q) / 100) * 0.25 + (["hd" + str _x] call _r) * 0.05) toFixed 3)];
+            } else {
+                _hds set [_x, parseNumber ((0.33 + (["hd" + str _x] call _r) * 0.05) toFixed 3)];
+            };
         } forEach _goodEyes;
     };
     _irisScore = _irisScore min 60;
@@ -107,7 +135,12 @@ if (_reachable) then {
     if (_faceOk && {_rec getOrDefault ["face", false]}) then {
         private _rq = _rec getOrDefault ["faceQuality", 60];
         private _p = (switch (true) do { case (_faceQ >= 80): { 0.92 }; case (_faceQ >= 60): { 0.8 }; default { 0.55 }; }) * ([0.8, 1] select (_rq >= 60));
-        if ((["face"] call _r) < _p) then { _faceScore = round (15 + (_faceQ / 5)); };
+        if ((["face"] call _r) < _p) then {
+            _faceScore = round (15 + (_faceQ / 5));
+            _res set ["faceSim", parseNumber ((0.72 + (_faceQ / 100) * 0.2 + (["fs"] call _r) * 0.05) toFixed 2)];
+        } else {
+            _res set ["faceSim", parseNumber ((0.45 + (["fs"] call _r) * 0.2) toFixed 2)];
+        };
     };
 
     _score = ((_fpScore + _irisScore + _faceScore) + ((["dec"] call _r) * 0.9)) min 99.6;
@@ -160,7 +193,14 @@ if (_verdict isNotEqualTo "none") then {
             ["source", (_candidates select 0) select 3], ["tier", (_candidates select 0) select 4],
             ["alias", ""], ["nationality", ""], ["reason", ""], ["enrolledAt", ""], ["encounters", []]
         ];
-        _res set ["note", "Correspondance faible : confirmez par une autre modalité avant toute mesure."];
+        // Ce que l'opérateur voit d'un imposteur : peu de minuties, iris au-delà du seuil.
+        _res set ["fpDetail", _goodFingers apply { [_x, 6 + floor ((["im" + str _x] call _r) * 5), 45 + floor ((["it" + str _x] call _r) * 40)] }];
+        _res set ["irisHd", [0, 1] apply { if (_x in _goodEyes) then { parseNumber ((0.42 + (["ih" + str _x] call _r) * 0.06) toFixed 3) } else { -1 } }];
+        _res set ["faceSim", [-1, parseNumber ((0.6 + (["if"] call _r) * 0.12) toFixed 2)] select _faceOk];
+        _res set ["henry", ""];
+        _res set ["fpc", ""];
+        _res set ["impostor", true];
+        _res set ["note", "Candidat à confirmer : concordance faible (minuties sous le seuil, iris non concordant). Gabarits différents du sujet : relevez une autre modalité avant toute mesure."];
     };
 };
 

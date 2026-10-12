@@ -8,8 +8,11 @@
     l'unité.
 
     Doigts (ordre FBI) : 0 pouce D … 4 auriculaire D, 5 pouce G … 9 auriculaire G.
-      [dessin, gabarit, état]   état : normal | use | cicatrice | ampute
-    Yeux : 0 OD, 1 OG — [couleur, gabarit, état]   état : normal | cataracte | lesion | prothese
+      [dessin, gabarit, état, minuties, noyaux, deltas, crêtes, tracé]
+      état : normal | use | cicatrice | ampute ; tracé (verticilles) : I | M | O
+      + classification de Henry (« henry ») et code NCIC (« fpc »)
+    Yeux : 0 OD, 1 OG — [couleur, gabarit, état, cryptes, sillons, rapport pupille]
+      état : normal | cataracte | lesion | prothese
     ADN : 13 loci CODIS — [locus, allèle 1, allèle 2]
 
     Params: [_unit, _key, _skipRelative]
@@ -130,8 +133,40 @@ for "_i" from 0 to 9 do {
     if (_worker && {(["wear" + str _i] call _r) < 0.55}) then { _state = "use"; };
     if ((["scar" + str _i] call _r) < 0.03) then { _state = "cicatrice"; };
     if (_i in _missing) then { _state = "ampute"; };
-    _fingers pushBack [_pattern, [_key, "fp" + str _i, 8] call comspec_sse_fnc_bioHex, _state];
+    // Caractéristiques d'un relevé roulé : minuties (40-100), noyaux, deltas, nombre de crêtes.
+    private _cores = switch (_pattern) do { case "Arc": { 0 }; case "Arc en tente": { 1 }; case "Double boucle": { 2 }; default { 1 }; };
+    private _deltas = switch (_pattern) do { case "Arc": { 0 }; case "Verticille"; case "Double boucle": { 2 }; default { 1 }; };
+    private _ridges = if (_pattern in ["Boucle cubitale", "Boucle radiale"]) then { 4 + floor ((["rc" + str _i] call _r) * 17) } else { 0 };
+    private _minutiae = 40 + floor (((["mn" + str _i] call _r) + (["mn2" + str _i] call _r)) * 30);
+    if (_isIndex || {_i in [0, 5]}) then { _minutiae = _minutiae + 8; };
+    // Verticille : tracé de crête (I intérieur, M rencontre, O extérieur).
+    private _trace = if (_pattern in ["Verticille", "Double boucle"]) then { ["I", "M", "O"] select (floor ((["tr" + str _i] call _r) * 3)) } else { "" };
+    _fingers pushBack [_pattern, [_key, "fp" + str _i, 8] call comspec_sse_fnc_bioHex, _state, _minutiae, _cores, _deltas, _ridges, _trace];
 };
+
+// Classification de Henry (primaire) : verticilles des doigts pairs sur impairs (numérotation FBI 1-10).
+private _wv = [16, 16, 8, 8, 4, 4, 2, 2, 1, 1];
+private _hNum = 1;
+private _hDen = 1;
+// Ordre Henry : 1 pouce D, 2 index D, 3 majeur D, 4 annulaire D, 5 auriculaire D, 6 pouce G… (= ordre FBI).
+{
+    if ((_x select 0) in ["Verticille", "Double boucle"]) then {
+        if ((_forEachIndex mod 2) == 1) then { _hNum = _hNum + (_wv select _forEachIndex); } else { _hDen = _hDen + (_wv select _forEachIndex); };
+    };
+} forEach _fingers;
+// Code NCIC (FPC) : 2 caractères par doigt.
+private _fpc = (_fingers apply {
+    _x params ["_p", "", "_s", "", "", "", "_rc", "_tr"];
+    switch (true) do {
+        case (_s isEqualTo "ampute"): { "XX" };
+        case (_s isEqualTo "cicatrice"): { "SR" };
+        case (_p isEqualTo "Arc"): { "AA" };
+        case (_p isEqualTo "Arc en tente"): { "TT" };
+        case (_p in ["Verticille", "Double boucle"]): { "P" + _tr };
+        case (_p isEqualTo "Boucle radiale"): { str (50 + _rc) };
+        default { ([str _rc, "0" + str _rc] select (_rc < 10)) };
+    }
+}) joinString "";
 
 // --- Iris ---------------------------------------------------------------------
 private _cr = ["eyecol"] call _r;
@@ -156,7 +191,11 @@ for "_e" from 0 to 1 do {
     };
     private _col = _colour;
     if (_e == 1 && {(["hetero"] call _r) < 0.005}) then { _col = "vairon"; };
-    _eyes pushBack [_col, [_key, "ir" + str _e, 16] call comspec_sse_fnc_bioHex, _state];
+    // Texture de l'iris : cryptes, sillons de contraction, rapport pupille / iris.
+    private _crypts = 3 + floor ((["cr" + str _e] call _r) * 22);
+    private _furrows = 2 + floor ((["fu" + str _e] call _r) * 9);
+    private _pupil = parseNumber ((0.25 + ((["pu" + str _e] call _r) * 0.3)) toFixed 2);
+    _eyes pushBack [_col, [_key, "ir" + str _e, 16] call comspec_sse_fnc_bioHex, _state, _crypts, _furrows, _pupil];
 };
 
 // --- Visage -------------------------------------------------------------------
@@ -237,6 +276,8 @@ createHashMapFromArray [
     ["age", _age],
     ["worker", _worker],
     ["fingers", _fingers],
+    ["henry", format ["%1/%2", _hNum, _hDen]],
+    ["fpc", _fpc],
     ["eyes", _eyes],
     ["face", _face],
     ["dna", _dna],
