@@ -17,6 +17,36 @@ Non testé en jeu.
 - Menu CBA (Échap > Options > Options des addons > COMSPEC) : titres, aides, sections et choix des listes dans la langue du téléphone (`fn_addSetting`). Changer de langue en partie : relancer la mission pour que ce menu suive (le téléphone, lui, change tout de suite).
 - Noms et descriptions des objets (arsenal, inventaire, Zeus) et modules Eden/Zeus d'extraction de données : `stringtable.xml`, dans la langue du jeu (Arma en anglais = anglais). Généré par `tools/i18n.py stringtable`.
 
+## 2026-10-12 — Connexion au compte Athena sans clé ni identifiant (ATAK natif 1.20.0, COMSPEC Link 2.0.72)
+
+Non testé en jeu. Demande de TTRD : celui qui installe le mod se connecte avec son compte Athena et tout se synchronise, sans clé de communauté ni identifiant de communauté dans les options d'addons.
+- App Athena du téléphone, nouvel onglet **COMPTE** (ouvert par défaut) : un code de 8 caractères s'affiche tout seul. Le joueur l'autorise sur **athena.ttrd.fr/lier**, connecté à son compte (bouton OUVRIR LA PAGE : le navigateur s'ouvre avec le code déjà rempli). Le jeu reçoit sa session : profil, communauté, réglages.
+- Le Steam du joueur est associé au compte à cette occasion : aux parties suivantes, la connexion se fait seule.
+- Premier lancement : après « Oui » au service Athéna, la page s'ouvre avec le code. À chaque partie sans session : un code et une notification, sans fenêtre à remplir.
+- Options d'addons : la clé d'accès et l'identifiant de communauté passent dans **COMSPEC > Overwatch · Serveur (optionnel)**, à laisser vides. Un serveur peut encore les imposer.
+- La communauté de la session est reprise par le mod (fiches d'équipe, avatars, diapositives) sans identifiant saisi.
+- Site : nouvelle page **/lier** (Mon compte > Appareils ATAK) qui valide le code du jeu ; le code de l'adresse est gardé si la personne doit d'abord se connecter.
+- COMSPEC Link 2.0.72 (DLL à recompiler) : `OpenAthenaLink` (ouvre la page du portail, refuse tout autre site), `GetSessionTenant`, et `PairStart` renvoie l'adresse avec le code.
+
+## Vague 2026-10-12 (suite) — App Photo dans le téléphone, nouvelle app Galerie (ATAK natif 1.18.0)
+
+Non testé en jeu. Demande de TTRD : l'app Photo doit s'ouvrir sur l'appareil photo, dans l'écran du téléphone, et non en mode photo plein écran ; le plein écran devient un bouton ; les photos se revoient dans une app Galerie séparée.
+
+- **App Photo** : s'ouvre sur le viseur en direct, dans l'écran du téléphone (caméra rendue dans l'écran, comme Live cam et Drone). L'image suit la vue du joueur ; glisser sur l'image décale l'objectif, la molette zoome (x1 à x8), un double clic recentre. Grille des tiers, réticule, grille MGRS, cap et heure incrustés.
+- Boutons sur l'image : FLASH (AUTO / FORCÉ / COUPÉ), PLEIN ÉCRAN (l'ancien mode photo, inchangé) et zoom − / +. Sous l'image : GALERIE, déclencheur, SELFIE (objectif avant). Légende facultative en bas.
+- Au déclenchement, l'écran bascule un instant sur une caméra posée comme le viseur (même zoom), téléphone et HUD masqués, puis la photo part vers Athena (gardée sur le téléphone hors réseau).
+- **Nouvelle app Galerie** (section Renseignement, à côté de Photo) : onglets PHOTOS (photos du téléphone et clichés du drone, filtres, fiches, envoi, suppression) et ENVOIS (suivi de réception par Athena). C'est l'ancienne partie GALERIE / ENVOIS de l'app Photos, déplacée.
+- Sans « Image dans l'image » (PiP) dans les options vidéo d'Arma, le viseur l'indique et propose le plein écran.
+
+## Volet rapide redessiné, portrait opérateur du site (ATAK natif 1.17.0)
+
+Non testé en jeu. Demande de TTRD : « Améliore l'UI du menu et affiche l'image de l'opérateur issue du web ».
+- Volet Réglages rapides (tiré de la barre d'état) : en tête, la fiche de l'opérateur avec son portrait Athena encadré (couleur d'accent quand Athena est en ligne), indicatif, grade et nom, unité et communauté ; à droite l'heure en grand, la date du jour et l'état de la liaison Athena.
+- Sans portrait (hors ligne, pas encore reçu ou aucun sur le site) : les initiales de l'indicatif à la place. Le portrait apparaît tout seul dès qu'il arrive.
+- Tuiles avec icône (lune, avion, cloche barrée, vibreur, Bluetooth, balise IR, réseau, batterie) ; allumée = fond teinté de l'accent et liseré en haut. Luminosité avec deux soleils et la valeur en %, mise à jour pendant le glissé. TOUS LES RÉGLAGES en accent, FERMER discret.
+- Site : `/api/atak/player-profile` renvoie le portrait opérateur (jamais la photo de compte ni Steam), en vignette JPEG carrée 256 px recadrée vers le visage (`uploads/portraits/atak/`), car Arma ne lit ni PNG ni WebP. Le même portrait s'affiche donc aussi dans les apps Athena, Profil, Groupe et Chat. Pas de DLL à recompiler, pas de migration.
+- Textes traduits en anglais.
+
 ## Correctif 2026-10-12 — App CAS, alertes du poste, barre de dessin (ATAK natif 1.16.2)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration (déploiement PHP pour la correction des photos).

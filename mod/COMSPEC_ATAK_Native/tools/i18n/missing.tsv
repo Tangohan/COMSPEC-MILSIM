@@ -78,7 +78,6 @@ Français, English, ou Auto : langue du jeu (français si Arma est en français,
 Interface	XEH_preInit.sqf
 Langue / Language	XEH_preInit.sqf
 Langue du téléphone / Phone language	XEH_preInit.sqf
-Photo	XEH_preInit.sqf
 Simulation	XEH_preInit.sqf
 [COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded	XEH_preInit.sqf
 [COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1	XEH_preInit.sqf
@@ -504,7 +503,6 @@ prev	functions/music/fn_musicAction.sqf
 repeat	functions/music/fn_musicAction.sqf
 shuffle	functions/music/fn_musicAction.sqf
 speaker	functions/music/fn_musicAction.sqf
-http	functions/music/fn_musicServerList.sqf
 me|%1|%2|%3	functions/music/fn_musicTick.sqf
 skip	functions/music/fn_musicTick.sqf
 Genre	functions/music/fn_pageMusic.sqf
@@ -525,6 +523,21 @@ proj	functions/nav/fn_routeGuide.sqf
 WP%1	functions/nav/fn_wpAction.sqf
 goto	functions/nav/fn_wpAction.sqf
 link	functions/network/fn_athenaChoice.sqf
+%1?code=%2	functions/network/fn_athenaLink.sqf
+Code de connexion %1 (valable %2 s)	functions/network/fn_athenaLink.sqf
+Code de connexion %1 : %2	functions/network/fn_athenaLink.sqf
+Code de connexion impossible : %1	functions/network/fn_athenaLink.sqf
+ERR|expired	functions/network/fn_athenaLink.sqf
+ERR|http_4	functions/network/fn_athenaLink.sqf
+ERR|no_pairing	functions/network/fn_athenaLink.sqf
+OK|approved	functions/network/fn_athenaLink.sqf
+approved	functions/network/fn_athenaLink.sqf
+asking	functions/network/fn_athenaLink.sqf
+error	functions/network/fn_athenaLink.sqf
+expired	functions/network/fn_athenaLink.sqf
+http	functions/network/fn_athenaLink.sqf
+native	functions/network/fn_athenaLink.sqf
+sans réponse	functions/network/fn_athenaLink.sqf
 H|%1|%2|%3|%4|%5	functions/network/fn_athenaSignal.sqf
 issuer	functions/network/fn_athenaSignal.sqf
 payload	functions/network/fn_athenaSignal.sqf
@@ -544,7 +557,6 @@ bftidentity	functions/network/fn_extensionCallback.sqf
 briefing	functions/network/fn_extensionCallback.sqf
 comspec	functions/network/fn_extensionCallback.sqf
 connected	functions/network/fn_extensionCallback.sqf
-error	functions/network/fn_extensionCallback.sqf
 index	functions/network/fn_extensionCallback.sqf
 networkhiccup	functions/network/fn_extensionCallback.sqf
 path	functions/network/fn_extensionCallback.sqf
@@ -572,7 +584,6 @@ salute	functions/pages/fn_alertsAction.sqf
 Logout	functions/pages/fn_athenaAction.sqf
 enter	functions/pages/fn_athenaAction.sqf
 logout	functions/pages/fn_athenaAction.sqf
-native	functions/pages/fn_athenaAction.sqf
 steam	functions/pages/fn_athenaAction.sqf
 BDA %1	functions/pages/fn_bdaAction.sqf
 BDA%1	functions/pages/fn_bdaAction.sqf
@@ -769,6 +780,7 @@ taxi	functions/pages/fn_osintAction.sqf
 û	functions/pages/fn_osintAction.sqf
 CONTACT (TIC)	functions/pages/fn_pageAlerts.sqf
 Steam : %1	functions/pages/fn_pageAthena.sqf
+account	functions/pages/fn_pageAthena.sqf
 EKIA %1	functions/pages/fn_pageBda.sqf
 1 KM	functions/pages/fn_pageBft.sqf
 10 KM	functions/pages/fn_pageBft.sqf
@@ -833,6 +845,8 @@ session	functions/pages/fn_pageFrs.sqf
 sources	functions/pages/fn_pageFrs.sqf
 urgencies	functions/pages/fn_pageFrs.sqf
 Ê	functions/pages/fn_pageFrs.sqf
+DRONE (%1)	functions/pages/fn_pageGallery.sqf
+SSE %1	functions/pages/fn_pageGallery.sqf
 A+	functions/pages/fn_pageLinkAlly.sqf
 AB+	functions/pages/fn_pageLinkAlly.sqf
 B+	functions/pages/fn_pageLinkAlly.sqf
@@ -864,16 +878,12 @@ sending	functions/pages/fn_pageNetwork.sqf
 slow	functions/pages/fn_pageNetwork.sqf
 warn	functions/pages/fn_pageNetwork.sqf
 Info	functions/pages/fn_pageNotifs.sqf
-DRONE (%1)	functions/pages/fn_pagePhotos.sqf
-F flash	functions/pages/fn_pagePhotos.sqf
-Flash	functions/pages/fn_pagePhotos.sqf
-R selfie	functions/pages/fn_pagePhotos.sqf
-SSE %1	functions/pages/fn_pagePhotos.sqf
+FLASH %1	functions/pages/fn_pagePhotos.sqf
+bind	functions/pages/fn_pagePhotos.sqf
 Qualifications	functions/pages/fn_pageProfile.sqf
 captured	functions/pages/fn_pageProfile.sqf
 cert	functions/pages/fn_pageProfile.sqf
 compromised	functions/pages/fn_pageProfile.sqf
-expired	functions/pages/fn_pageProfile.sqf
 issued	functions/pages/fn_pageProfile.sqf
 missing	functions/pages/fn_pageProfile.sqf
 revoked	functions/pages/fn_pageProfile.sqf
@@ -924,6 +934,10 @@ Talkgroup	functions/pages/fn_pageWaveRelay.sqf
 ACE Weather	functions/pages/fn_pageWeather.sqf
 Aviation	functions/pages/fn_pageWeather.sqf
 Conditions	functions/pages/fn_pageWeather.sqf
+comspec_photocam%1	functions/pages/fn_photoCam.sqf
+selfie	functions/pages/fn_photoCam.sqf
+shoot	functions/pages/fn_photoCam.sqf
+x%6	functions/pages/fn_photoCam.sqf
 Photo %1/%2	functions/pages/fn_photoLibrary.sqf
 profile	functions/pages/fn_photoLibrary.sqf
 Draw3D	functions/pages/fn_photoMode.sqf
@@ -932,7 +946,6 @@ exit	functions/pages/fn_photoMode.sqf
 gesture	functions/pages/fn_photoMode.sqf
 internal	functions/pages/fn_photoMode.sqf
 pitch	functions/pages/fn_photoMode.sqf
-selfie	functions/pages/fn_photoMode.sqf
 terminate	functions/pages/fn_photoMode.sqf
 x%2	functions/pages/fn_photoMode.sqf
 ATAK Native	functions/pages/fn_taskAction.sqf
@@ -1408,7 +1421,6 @@ email	functions/ui/fn_pageRender.sqf
 broken	functions/ui/fn_powerFx.sqf
 display_panel: no response	functions/ui/fn_powerFx.sqf
 empty	functions/ui/fn_powerFx.sqf
-Balise IR	functions/ui/fn_quickSettings.sqf
 Vibration	functions/ui/fn_quickSettings.sqf
 airplane	functions/ui/fn_quickSettings.sqf
 battery	functions/ui/fn_quickSettings.sqf

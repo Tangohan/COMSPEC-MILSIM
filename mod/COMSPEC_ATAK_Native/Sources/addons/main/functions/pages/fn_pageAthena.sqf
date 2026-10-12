@@ -1,6 +1,7 @@
 /*
     App Athena : en-tête (logo, état de la liaison), fiche opérateur une fois connecté,
-    sinon connexion par onglets : Steam, e-mail (mot de passe masqué ou code e-mail), code du portail.
+    sinon connexion par onglets : Compte (code à autoriser sur athena.ttrd.fr/lier, sans clé ni identifiant de
+    communauté, fn_athenaLink), Steam, e-mail (mot de passe masqué ou code e-mail), code du portail.
     La page se redessine seule quand l'état change (fn_statusUpdate), en gardant ce qui est saisi.
 */
 disableSerialization;
@@ -69,12 +70,12 @@ if (_logged) then {
         _pill select 1, _pill select 0, ["Liaison avec le portail et le poste de commandement", ["COMSPEC_LinkDetail"] call _v] select ((["COMSPEC_LinkDetail"] call _v) isNotEqualTo "")]];
     if (_err isNotEqualTo "" && {_err isNotEqualTo "-"}) then { _rows pushBack ["text", format ["<t color='#e5483a'>%1</t>", _err]]; };
     if (_hText isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#7aa89a", "#e8b84a"] select _hWarn, _hText]]; };
-    private _tab = uiNamespace getVariable ["COMSPEC_ATAK_AthenaTab", "steam"];
+    private _tab = uiNamespace getVariable ["COMSPEC_ATAK_AthenaTab", "account"];
     private _tabBtn = {
         params ["_label", "_key"];
         [_label, compile format ["uiNamespace setVariable ['COMSPEC_ATAK_AthenaTab', '%1']; ['ATHENA'] call comspec_atak_native_fnc_pageRender;", _key], _tab isEqualTo _key]
     };
-    _rows pushBack ["buttons", [["STEAM", "steam"] call _tabBtn, ["E-MAIL", "email"] call _tabBtn, ["CODE PORTAIL", "pair"] call _tabBtn]];
+    _rows pushBack ["buttons", [["COMPTE", "account"] call _tabBtn, ["STEAM", "steam"] call _tabBtn, ["E-MAIL", "email"] call _tabBtn, ["CODE PORTAIL", "pair"] call _tabBtn]];
     _rows pushBack ["gap"];
     private _draft = uiNamespace getVariable ["COMSPEC_ATAK_AthenaDraft", createHashMap];
     switch (_tab) do {
@@ -99,12 +100,56 @@ if (_logged) then {
                 ["buttons", [["LIER CE JEU À MON COMPTE", { ["pair"] call comspec_atak_native_fnc_athenaAction; }, true]]]
             ];
         };
-        default {
+        case "steam": {
             _rows append [
                 ["text", format ["<t color='#c9d4cf'>Connexion avec le compte Steam lié à votre profil Athena.</t><br/><t color='#8a9a93'>Steam : %1</t>", getPlayerUID player]],
                 ["buttons", [["CONNEXION STEAM", { ["steam"] call comspec_atak_native_fnc_athenaAction; }, true]]],
-                ["text", "<t color='#8a9a93'>Compte pas encore lié ? Onglet CODE PORTAIL.</t>"]
+                ["text", "<t color='#8a9a93'>Compte pas encore lié ? Onglet COMPTE.</t>"]
             ];
+        };
+        default {
+            // Compte Athena : un code à autoriser sur le site, connecté à son compte. Rien d'autre à saisir.
+            (uiNamespace getVariable ["COMSPEC_ATAK_AthenaLink", ["", "", 0, "", "", ""]]) params ["_ls", "_lc", "_lu", "_luri", "", "_ld"];
+            if (_ls isEqualTo "pending" && {diag_tickTime >= _lu}) then { _ls = "expired"; };
+            private _short = (_luri regexReplace ["^https?://", ""]) regexReplace ["/public/", "/"];
+            switch (_ls) do {
+                case "pending": {
+                    _rows append [
+                        ["text", "<t color='#c9d4cf'>Sur votre ordinateur ou votre téléphone, connecté à votre compte Athena, ouvrez :</t>"],
+                        ["text", format ["<t size='1.25' font='RobotoCondensedBold' color='#5cc76b'>%1</t>", _short]],
+                        ["text", "<t color='#c9d4cf'>puis saisissez ce code :</t>"],
+                        ["text", format ["<t size='2.4' font='RobotoCondensedBold' align='center'>%1</t>", _lc]],
+                        ["text", format ["<t color='#8a9a93'>En attente de votre accord. Code valable encore %1 min.</t>", ceil ((_lu - diag_tickTime) / 60)]],
+                        ["buttons", [
+                            ["OUVRIR LA PAGE", { ["open"] call comspec_atak_native_fnc_athenaLink; }, true],
+                            ["NOUVEAU CODE", { ["start"] call comspec_atak_native_fnc_athenaLink; }]
+                        ]]
+                    ];
+                };
+                case "asking": { _rows pushBack ["text", "<t color='#c9d4cf'>Demande d'un code à Athena…</t>"]; };
+                case "approved": { _rows pushBack ["text", "<t color='#5cc76b'>Compte autorisé : synchronisation de votre profil…</t>"]; };
+                case "expired": {
+                    _rows append [
+                        ["text", "<t color='#e8b84a'>Ce code a expiré sans être autorisé.</t>"],
+                        ["buttons", [["NOUVEAU CODE", { ["start"] call comspec_atak_native_fnc_athenaLink; }, true]]]
+                    ];
+                };
+                case "error": {
+                    _rows append [
+                        ["text", format ["<t color='#e8b84a'>Athena n'a pas donné de code (%1). Vérifiez la connexion internet.</t>", _ld]],
+                        ["buttons", [["RÉESSAYER", { ["start"] call comspec_atak_native_fnc_athenaLink; }, true]]]
+                    ];
+                };
+                default {
+                    _rows append [
+                        ["text", "<t color='#c9d4cf'>Connectez ce jeu à votre compte Athena : un code s'affiche, vous l'autorisez sur le site, et tout se synchronise (profil, communauté, réglages). Aucune clé ni identifiant de communauté à saisir.</t>"],
+                        ["buttons", [["OBTENIR MON CODE", { ["start"] call comspec_atak_native_fnc_athenaLink; }, true]]]
+                    ];
+                    // App ouverte sans session ni code : le code est demandé tout de suite.
+                    if (([] call comspec_atak_native_fnc_athenaMode) isEqualTo "on") then { ["start"] call comspec_atak_native_fnc_athenaLink; };
+                };
+            };
+            _rows pushBack ["text", "<t color='#8a9a93' size='0.85'>Votre Steam est associé au compte à cette occasion : aux parties suivantes, la connexion se fait seule.</t>"];
         };
     };
 };
