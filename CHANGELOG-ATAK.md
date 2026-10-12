@@ -37,6 +37,11 @@ Non testé en jeu. Inclut les correctifs de performance de la PR #629 (même bas
 - Source du flux : drone, caméra ATAK ou caméra casque (soi ou un membre du groupe).
 - Marquage corrigé sur les véhicules (« Rien sous le réticule »).
 
+### Refonte — App Photo
+- Onglets APPAREIL / GALERIE / ENVOIS, groupes de boutons libellés, état de la liaison Athena.
+- Galerie filtrable (téléphone / drone) avec titres, étiquettes SSE et CONFIDENTIEL, statut d'envoi et page de détail (modifier, envoyer, supprimer).
+- « Envoyer les nouvelles » n'envoie que les photos absentes d'Athena ; viseur : ligne de destination (direct ou hors réseau) et légende.
+
 ### Corrigé / amélioré — Interface
 - Briefing : texte géant (« ||0.8% ») des fiches du journal de mission ramené à taille normale.
 - Réseau : la page s'ouvre de nouveau.
