@@ -27,8 +27,13 @@ if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapF
 // Réglages > Carte « Cartouches des unités » : COMPLET (indicatif + distance / azimut), INDICATIF SEUL ou AUCUN.
 private _lblStyle = profileNamespace getVariable ["COMSPEC_ATAK_LabelStyle", "FULL"];
 private _lblOn = _labels && {_lblStyle isNotEqualTo "NONE"};
-// Taille des symboles et textes proportionnelle à la carte (mini = petite carte, petits symboles).
-private _k = ((((ctrlPosition _map) select 3) / (safeZoneH * 0.7)) max 0.5) min 1;
+// Symboles proportionnels à la taille de l'écran de l'ATAK (mini, porté, plein écran, portrait ou paysage) ;
+// textes proportionnels aussi mais jamais sous une taille lisible.
+private _kRaw = ((ctrlPosition _map) select 3) / (safeZoneH * 0.7);
+private _k = (_kRaw max 0.35) min 1.35;
+private _kt = (_kRaw max 0.8) min 1.25;
+// Étiquettes : blanc cerné de noir (ombre 2), lisible sur tous les fonds de carte.
+private _clear = "#(argb,8,8,3)color(0,0,0,0)";
 // Réglages > Carte : taille des textes (indicatifs, grilles, libellés) et des symboles. Défaut 1.25 (plus grand qu'avant).
 private _ts = ((profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25]) max 0.8) min 2.2;
 private _is = ((profileNamespace getVariable ["COMSPEC_ATAK_MapIconScale", 1.25]) max 0.8) min 2.2;
@@ -36,7 +41,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_MapTs", _ts];
 uiNamespace setVariable ["COMSPEC_ATAK_MapIs", _is];
 private _bgStyle = [] call comspec_atak_native_fnc_mapStyle;
 // Cartouches façon ATAK (fn_mapLabels) en carte plein écran ; la petite carte (téléphone en HUD) garde l'indicatif simple.
-private _boxOn = _lblOn && {_k > 0.75} && {_scale < 0.25};
+private _boxOn = _lblOn && {_kRaw > 0.75} && {_scale < 0.25};
 private _lblCands = [];
 private _myGroup = group player;
 // Couleurs choisies dans les réglages (alliés, moi) ; icône choisie par chaque joueur (variable publique).
@@ -161,7 +166,7 @@ if ((count _route) > 0) then {
             [_a, _b, _mpu, [0.26, 0.52, 0.96, 1]] call _seg;
         };
     };
-    _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [0.92, 0.26, 0.21, 1], _route get "dest", 26 * _is, 26 * _is, 0, _route getOrDefault ["label", ""], 2, 0.028 * _ts, "RobotoCondensedBold", "right"];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [0.92, 0.26, 0.21, 1], _route get "dest", 26 * _k * _is, 26 * _k * _is, 0, _route getOrDefault ["label", ""], 2, 0.028 * _ts, "RobotoCondensedBold", "right"];
 };
 
 // Calques Relief (champ de vision / altitudes) et Wave Relay (liens du maillage).
@@ -188,7 +193,7 @@ if ((count _wpts) > 0) then {
     for "_i" from 0 to ((count _wpts) - 2) do { [(_wpts select _i) select 0, (_wpts select (_i + 1)) select 0, [0.95, 0.75, 0.18, 0.9]] call _dash; };
     if (_wp getOrDefault ["nav", false]) then { _map drawArrow [getPosATL vehicle player, (_wpts select _wi) select 0, [0.36, 0.78, 0.42, 0.9]]; };
     {
-        _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [[0.95, 0.75, 0.18, 1], [0.36, 0.85, 0.42, 1]] select (_forEachIndex isEqualTo _wi), _x select 0, 22 * _is, 22 * _is, 0, _x select 1, 2, 0.026 * _ts, "RobotoCondensedBold", "right"];
+        _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [[0.95, 0.75, 0.18, 1], [0.36, 0.85, 0.42, 1]] select (_forEachIndex isEqualTo _wi), _x select 0, 22 * _k * _is, 22 * _k * _is, 0, _x select 1, 2, 0.026 * _ts, "RobotoCondensedBold", "right"];
     } forEach _wpts;
 };
 
@@ -223,11 +228,11 @@ private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO
         ([_entity] call comspec_atak_native_fnc_natoSymbol) params ["_nt", "_ne"];
         _icon = _nt; _ech = _ne; _dir = 0; _size = _size * 1.3;
     };
-    _map drawIcon [
-        _icon,_color,_pos,_size,_size,_dir,
-        if (_lblOn && {!_boxOn} && {_scale < 0.25}) then {_entity getOrDefault ["callsign",""]} else {""},
-        1,0.022 * _k * _ts,"RobotoCondensedBold","right"
-    ];
+    _map drawIcon [_icon,_color,_pos,_size,_size,_dir,"",0];
+    if (_lblOn && {!_boxOn} && {_scale < 0.25}) then {
+        private _cs = _entity getOrDefault ["callsign",""];
+        if (_cs isNotEqualTo "") then { _map drawIcon [_clear,[1,1,1,(_color select 3) max 0.6],_pos,_size,_size,0,_cs,2,0.027 * _kt * _ts,"RobotoCondensedBold","right"]; };
+    };
     if (_ech isNotEqualTo "") then { _map drawIcon [_ech, _color, _pos, _size, _size, 0, "", 0]; };
     // Candidat au cartouche : pas moi (carte « moi »), et pour les autres groupes seulement le chef (un cartouche par
     // groupe, pas un par équipier) ; les unités Athena sans objet et l'unité sélectionnée gardent toujours le leur.
@@ -286,7 +291,8 @@ private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO
             private _mt = if (_labels && {_scale < 0.3}) then {_marker getOrDefault ["text",""]} else {""};
             // Contact ENI : son cartouche rouge (fn_mapLabels) remplace le texte.
             if (_boxOn && {_mt isNotEqualTo ""} && {((toLower _type) select [0, 2]) isEqualTo "o_" || {(toUpper (_mt select [0, 4])) isEqualTo "ENI "}}) then { _mt = ""; };
-            _map drawIcon [_icon,_rgba,_pos,16 * _k * _is,16 * _k * _is,_marker getOrDefault ["dir",0],_mt,1,0.02 * _k * _ts,"RobotoCondensed","right"];
+            _map drawIcon [_icon,_rgba,_pos,16 * _k * _is,16 * _k * _is,_marker getOrDefault ["dir",0],"",0];
+            if (_mt isNotEqualTo "") then { _map drawIcon [_clear,[1,1,1,(_rgba select 3) max 0.6],_pos,16 * _k * _is,16 * _k * _is,0,_mt,2,0.025 * _kt * _ts,"RobotoCondensedBold","right"]; };
         };
     };
 } forEach (_data getOrDefault ["markers",createHashMap]);
@@ -363,7 +369,7 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
     private _key = _x get "key";
     private _q = ((uiNamespace getVariable ["COMSPEC_ATAK_Explo", createHashMap]) getOrDefault ["queue", []]) select { ((_x select 1) get "key") isEqualTo _key };
     if ((count _q) > 0) then { _txt = format ["%1 · T-%2", _txt, ((((_q select 0) select 0) - diag_tickTime) max 0) toFixed 1]; _c = [0.90,0.28,0.23,1]; };
-    _map drawIcon ["\z\comspec_atak_native\addons\main\data\app_explo.paa", _c, getPosASL _e, 18 * _k * _is, 18 * _k * _is, 0, _txt, 2, 0.03 * _k * _ts, "RobotoCondensedBold", "right"];
+    _map drawIcon ["\z\comspec_atak_native\addons\main\data\app_explo.paa", _c, getPosASL _e, 18 * _k * _is, 18 * _k * _is, 0, _txt, 2, 0.03 * _kt * _ts, "RobotoCondensedBold", "right"];
 } forEach ([] call comspec_atak_native_fnc_exploList);
 
 // Goniométrie : émetteurs estimés (cercle d'incertitude) et relèvements seuls (azimut tracé sur 3 km).
