@@ -11,16 +11,14 @@ if (isNull _display) exitWith {};
 uiNamespace setVariable ["COMSPEC_AthenaChoice_Lang", _lang];
 
 private _mode = [] call comspec_overwatch_connect_fnc_athenaMode;
-([_lang, _mode] call comspec_overwatch_connect_fnc_athenaChoiceTexts) params ["_title", "_question", "_yes", "_yesBtn", "_no", "_noBtn", "_footer", "_current", "_closeTxt"];
+([_lang, _mode] call comspec_overwatch_connect_fnc_athenaChoiceTexts) params ["_title", "_subtitle", "_question", "_yesTitle", "_yes", "_yesBtn", "_noTitle", "_no", "_noBtn", "_footer", "_current", "_closeTxt"];
 
-(_display displayCtrl 9462) ctrlSetStructuredText parseText _title;
-(_display displayCtrl 9465) ctrlSetStructuredText parseText _question;
-(_display displayCtrl 9466) ctrlSetStructuredText parseText _yes;
+{
+    _x params ["_idc", "_txt"];
+    (_display displayCtrl _idc) ctrlSetStructuredText parseText _txt;
+} forEach [[9462, _title], [9475, _subtitle], [9465, _question], [9473, _yesTitle], [9466, _yes], [9474, _noTitle], [9468, _no], [9470, _footer], [9471, _current]];
 (_display displayCtrl 9467) ctrlSetText _yesBtn;
-(_display displayCtrl 9468) ctrlSetStructuredText parseText _no;
 (_display displayCtrl 9469) ctrlSetText _noBtn;
-(_display displayCtrl 9470) ctrlSetStructuredText parseText _footer;
-(_display displayCtrl 9471) ctrlSetStructuredText parseText _current;
 
 private _close = _display displayCtrl 9472;
 _close ctrlSetText _closeTxt;
