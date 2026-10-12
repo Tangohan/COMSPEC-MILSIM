@@ -57,6 +57,9 @@ COMSPEC_PhoneDeviceSyncPfh = [{
         };
     };
     private _ident = [player] call comspec_atak_native_fnc_phoneIdent;
+    // Version de l'ATAK natif jointe au modèle (affichée, floutée, sous les photos publiées sur Discord).
+    private _ver = getText (configFile >> "CfgPatches" >> "comspec_atak_native_main" >> "versionStr");
+    if (_ver isNotEqualTo "") then { _model = [format ["%1 · ATAK %2", _model, _ver], format ["ATAK %1", _ver]] select (_model isEqualTo ""); };
 
     // Envoi au changement (batterie par paliers de 5 %) ou toutes les 2 minutes.
     private _sig = [_state, floor (_battery / 5), _bars, _model, _ident, _gen];

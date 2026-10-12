@@ -77,3 +77,7 @@ Identités livrées :
 - Après un ajout de texte ou un rebase : `python3 tools/i18n.py wrap` (fait passer les nouveaux affichages par `fnc_tr`, sans effet sur ce qui l'est déjà), puis `python3 tools/i18n.py extract` liste dans `tools/i18n/missing.tsv` les textes sans traduction ; une fois traduits (`français<TAB>anglais`), `python3 tools/i18n.py merge fichier.tsv`.
 - Menu CBA traduit au chargement (`fn_addSetting`). Noms d'objets et modules Eden/Zeus : `stringtable.xml` (langue du jeu), régénéré par `python3 tools/i18n.py stringtable` après un ajout dans `config.cpp` ou `modules.hpp` (écrire le texte en français, l'outil le remplace par une clé `$STR_`).
 - Commandes du tchat en anglais acceptées aussi : `/help`, `/priority`, `/order`, `@grid`, `@time`, `@hdg`.
+
+## Envoyer ses logs
+
+Dans le dossier du mod, double-cliquez sur `Envoyer_mes_logs.bat`. Il prépare `COMSPEC_logs_<date>.zip` sur le Bureau avec les deux derniers `.rpt` d'Arma (`%LOCALAPPDATA%\Arma 3`) et les deux derniers journaux COMSPEC Link (`%LOCALAPPDATA%\Arma 3\COMSPEC\logs`). Les mots de passe, jetons et liens de webhook sont masqués dans la copie. Il reste à glisser le .zip dans un sujet bugs ou help du Discord.
