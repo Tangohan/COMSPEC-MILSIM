@@ -216,5 +216,5 @@ $livePreview = false;
     </section>
 </div>
 <?php
-$content = ob_get_clean();
+$sseContent = ob_get_clean();
 require __DIR__ . '/_layout.php';
