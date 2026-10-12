@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## App JTAC refaite : contrôle CAS réaliste du check-in au BDA (ATAK natif 1.46.0)
+## App JTAC refaite : contrôle CAS réaliste du check-in au BDA (ATAK natif 1.47.0)
 
 Non testé en jeu. Demande de TTRD : « JTAC faut une refonte complète, réaliste de l'app ». Pas de DLL à recompiler, pas de migration.
 - Onglet SITUATION : cible verrouillée au laser, à la visée ou pointée sur la carte (grille 10 chiffres, altitude en ft MSL, amis les plus proches) ; appareils amis en station avec leur fiche de check-in lue sur l'appareil (armement restant, carburant, altitude, vitesse, nacelle).
