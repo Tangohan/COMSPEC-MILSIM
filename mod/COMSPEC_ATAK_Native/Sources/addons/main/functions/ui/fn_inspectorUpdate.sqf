@@ -23,13 +23,14 @@ if ((count _e) isEqualTo 0) then {
     private _from = (((_w select 0) atan2 (_w select 1)) + 180) mod 360;
     private _kv = { params ["_k", "_v"]; format ["<t align='left' color='#8a9a93'>%1</t><t align='right'>%2</t>", _k, _v] };
     private _tile = { params ["_n", "_lab", "_col"]; format ["<t size='1.6' font='RobotoCondensedBold' color='%3'>%1</t><t size='0.8' color='#8a9a93'> %2</t>", _n, _lab, _col] };
-    _text = format ["<t size='0.85'>%1   %2<br/><br/>%3<br/>%4<br/>%5<br/>%6<br/>%7</t><br/><br/><t size='0.75' color='#8a9a93'>Cliquez sur une unité pour sa fiche.</t>",
+    _text = format ["<t size='0.85'>%1   %2<br/><br/>%3<br/>%4<br/>%5<br/>%6<br/>%7<br/>%8</t><br/><br/><t size='0.75' color='#8a9a93'>Cliquez sur une unité pour sa fiche.</t>",
         [_fr, "alliés", "#47b3ff"] call _tile, [_ho, "contacts", ["#8a9a93", "#e5483a"] select (_ho > 0)] call _tile,
         ["Réseau", _netTxt] call _kv,
         ["Groupe", [player, true] call comspec_atak_native_fnc_unitGroup] call _kv,
         ["Terrain", worldName] call _kv,
         ["Heure", [dayTime, "HH:MM"] call BIS_fnc_timeToString] call _kv,
-        ["Météo", format ["pluie %1 %% · vent %2 m/s du %3", round (rain * 100), round (vectorMagnitude [_w select 0, _w select 1, 0]), [_from] call _card]] call _kv];
+        ["Pluie", format ["%1 %%", round (rain * 100)]] call _kv,
+        ["Vent", format ["%1 m/s du %2", round (vectorMagnitude [_w select 0, _w select 1, 0]), [_from] call _card]] call _kv];
 } else {
     private _p = _e getOrDefault ["position", [0, 0, 0]];
     private _o = _e getOrDefault ["object", objNull];
@@ -73,7 +74,6 @@ if ((count _e) isEqualTo 0) then {
 };
 // Deux lignes vides : le bandeau « SITUATION · REPLIER » recouvre le haut du panneau.
 private _ctl = _d displayCtrl 88541;
-_ctl ctrlSetStructuredText parseText ((("<t size='1.1'> </t><br/><br/>" + _text)) call comspec_atak_native_fnc_tr);
 // Le texte s'arrête au-dessus des calques (posés en bas du panneau par fn_pageMap) au lieu de passer dessous.
 private _bottom = uiNamespace getVariable ["COMSPEC_ATAK_InspTextBottom", -1];
 if (_bottom > 0) then {
@@ -81,6 +81,12 @@ if (_bottom > 0) then {
     _ctl ctrlSetPosition [_cx, _cy, _cw, (_bottom - _cy) max 0];
     _ctl ctrlCommit 0;
 };
+// Tout doit se lire : texte réduit pas à pas (jusqu'aux deux tiers) tant qu'il dépasse la hauteur du panneau.
+private _avail = (ctrlPosition _ctl) select 3;
+{
+    _ctl ctrlSetStructuredText parseText ((format ["<t size='%1'><t size='1.1'> </t><br/><br/>%2</t>", _x, _text]) call comspec_atak_native_fnc_tr);
+    if ((ctrlTextHeight _ctl) <= _avail) exitWith {};
+} forEach [1, 0.92, 0.84, 0.76, 0.68];
 if ((count _e) > 0 && {([] call comspec_atak_native_fnc_layoutGet) get "mini"}) then {
     ["INFO", format ["%1 · %2", _e getOrDefault ["callsign", "CONTACT"], [_e getOrDefault ["position", [0, 0, 0]], 8] call comspec_atak_native_fnc_gridRef], 4, 20] call comspec_atak_native_fnc_notify;
 };

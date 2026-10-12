@@ -1,4 +1,4 @@
-// Gestes du joueur (ATAK natif 1.31.0) : doigt d'honneur (bras gauche, compatible fusil en main) et selfie
+// Gestes du joueur (ATAK natif 1.32.0) : doigt d'honneur (bras gauche, compatible fusil en main) et selfie
 // (bras droit tendu, téléphone face au visage). Animations maison : anim/*.rtm, générées par
 // tools/gen_gestures.py (non binarisées, le jeu les lit telles quelles).
 class CfgMovesBasic {

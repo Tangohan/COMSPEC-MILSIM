@@ -1,4 +1,4 @@
-/* Actions de l'app BFT sur la piste choisie. Params : ["center" | "route" | "sms" | "buzz"] */
+/* Actions de l'app BFT sur la piste choisie. Params : ["center" | "route" | "sms" | "buzz" | "cam"] */
 params [["_act", "center"]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _e = ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["units", createHashMap]) getOrDefault [_s getOrDefault ["bftSel", ""], createHashMap];
@@ -20,6 +20,13 @@ switch (_act) do {
         [{ params ["_t", "_from", "_grid"]; ["comspec_atak_native_buzz", [_from, _grid], _t] call CBA_fnc_targetEvent; },
             [_obj, [player] call comspec_atak_native_fnc_unitCallsign, [getPosASL player, 6] call comspec_atak_native_fnc_gridRef], "Vibreur", 1] call comspec_atak_native_fnc_netSend;
         ["INFO", format ["Vibreur envoyé à %1", _e getOrDefault ["callsign", name _obj]], 3] call comspec_atak_native_fnc_notify;
+    };
+    // VOIR CAMÉRA : carte centrée sur l'équipier, sa caméra poitrine en petite fenêtre (fn_pageMap, clé mapCam).
+    case "cam": {
+        if (isNull _obj || {!isPlayer _obj} || {!alive _obj}) exitWith {};
+        _s set ["mapCam", netId _obj];
+        ["MAP"] call comspec_atak_native_fnc_navigate;
+        [_obj, 0.03] call comspec_atak_native_fnc_mapCenter;
     };
     case "sms": {
         if (isNull _obj) exitWith {};
