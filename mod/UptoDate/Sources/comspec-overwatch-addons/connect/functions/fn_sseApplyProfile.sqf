@@ -26,6 +26,9 @@
 */
 params [["_unit", objNull, [objNull]], ["_profile", [], [[]]]];
 
+// Le pack SSE porte cette logique : Overwatch ne garde qu'un relais.
+if (!isNil "comspec_sse_fnc_applyProfile") exitWith { _this call comspec_sse_fnc_applyProfile };
+
 if (isNull _unit) exitWith { false };
 
 // Lecture souple : [["alias", "Le Meunier"], ...] ou ["alias", "Le Meunier", ...].

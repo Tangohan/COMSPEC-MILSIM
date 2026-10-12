@@ -34,7 +34,7 @@ private _fnc_lines = {
     private _raw = _s splitString (toString [10]);
     private _out = [];
     {
-        private _ln = _x replaceString [toString [13], ""];
+        private _ln = [_x, toString [13], ""] call CBA_fnc_replace;
         _ln = trim _ln;
         if (_ln isNotEqualTo "") then { _out pushBack _ln; };
     } forEach _raw;

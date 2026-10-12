@@ -159,6 +159,38 @@ class Cfg3DEN {
                         defaultValue = "''";
                         typeName = "STRING";
                     };
+                    class COMSPEC_SSE_RecordRef
+                    {
+                        displayName = "Référence de dossier antérieur";
+                        tooltip = "Affichée par le terminal en cas de correspondance. Laisser vide pour génération automatique.";
+                        property = "COMSPEC_SSE_RecordRef";
+                        control = "Edit";
+                        expression = "[_this, 'RecordRef', _value] call comspec_sse_fnc_edenWriteField;";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                    };
+                    class COMSPEC_SSE_Confidence
+                    {
+                        displayName = "Indice de confiance imposé (-1 = automatique)";
+                        tooltip = "Pourcentage affiché par le terminal après requête. -1 laisse le calcul dépendre de la qualité réelle des relevés, ce qui est le comportement souhaitable dans la plupart des scénarios.";
+                        property = "COMSPEC_SSE_Confidence";
+                        control = "Edit";
+                        expression = "[_this, 'Confidence', _value] call comspec_sse_fnc_edenWriteField;";
+                        defaultValue = "-1";
+                        validate = "number";
+                        typeName = "NUMBER";
+                    };
+                    class COMSPEC_SSE_Seed
+                    {
+                        displayName = "Graine (0 = automatique)";
+                        tooltip = "Fixer la graine rend le sujet identique d'une session à l'autre — utile pour un scénario rejoué ou une séance de formation. 0 laisse dériver de l'identifiant réseau.";
+                        property = "COMSPEC_SSE_Seed";
+                        control = "Edit";
+                        expression = "[_this, 'Seed', _value] call comspec_sse_fnc_edenWriteField;";
+                        defaultValue = "0";
+                        validate = "number";
+                        typeName = "NUMBER";
+                    };
                     class comspec_sse_personRole {
                         displayName = "Rôle déclaré";
                         tooltip = "Fonction ou rôle connu (courrier, financier, habitant…). Vide = génération automatique.";

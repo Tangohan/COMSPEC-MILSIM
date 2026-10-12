@@ -80,11 +80,6 @@ class CfgFunctions {
             class intelNoteSubmit {};
             class intelNoteClose {};
             class intelNoteApplyGeometry {};
-            class moduleSseCase {};
-            class moduleSseProfile {};
-            class moduleSseEquip {};
-            class moduleSseDocChrome {};
-            class registerZenSseModules {};
             class giveSeekTerminal {};
             class medevacDialogShow {};
             class medevacDialogSubmit {};
@@ -827,12 +822,6 @@ class CfgFactionClasses
         priority = 2;
         side = 7;
     };
-    class COMSPEC_SSE : NO_CATEGORY
-    {
-        displayName = "COMSPEC SSE";
-        priority = 2;
-        side = 7;
-    };
     class COMSPEC_Outils : NO_CATEGORY
     {
         displayName = "COMSPEC Outils";
@@ -886,8 +875,7 @@ class CfgVehicles
     // Zones roleplay (sans couverture, brouillage, etc.)
     #include "modules\module_roleplay_zone.hpp"
 
-    // Exploitation SSE
-    #include "modules\module_sse.hpp"
+    // Exploitation SSE : modules Eden et Zeus dans le pack COMSPEC SSE (zeus\modules_seek.hpp).
 
     // Relevé de carte (Eden)
     #include "modules\module_theater_survey.hpp"

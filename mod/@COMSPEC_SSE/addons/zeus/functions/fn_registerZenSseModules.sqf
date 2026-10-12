@@ -1,6 +1,7 @@
 /*
-    Enregistre les modules SSE dans Zeus Enhanced (ZEN) si présent.
-    Les modules CfgVehicles restent pour Eden (scopeCurator = 0).
+    Modules SSE de Zeus Enhanced (ZEN) : dossier, identité et biométrie d'un sujet,
+    dotation SEEK, présentation des documents. Repris du mod Overwatch : tout le SSE
+    passe par ce pack. Les modules CfgVehicles équivalents servent à Eden.
 */
 if (!hasInterface) exitWith {};
 if (isNil "zen_custom_modules_fnc_register") exitWith {};
@@ -10,10 +11,10 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
 
 // --- Dossier SSE actif ---------------------------------------------------
 [
-    "COMSPEC SSE",
+    "COMSPEC SSE · Mission",
     "Dossier SSE actif",
     {
-        private _current = ["get"] call comspec_overwatch_connect_fnc_sseActiveCase;
+        private _current = [] call comspec_sse_fnc_getCaseReference;
         [
             "Dossier SSE actif",
             [
@@ -23,12 +24,9 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
                 params ["_values"];
                 _values params ["_ref"];
                 private _clean = toUpper (trim _ref);
-                if (_clean isEqualTo "") then {
-                    ["clear"] remoteExecCall ["comspec_overwatch_connect_fnc_sseActiveCase", 0];
-                } else {
-                    // Diffusé à tous : le dossier est un contexte d'élément.
-                    ["set", _clean, true] remoteExecCall ["comspec_overwatch_connect_fnc_sseActiveCase", 0];
-                };
+                // Diffusé à tous (et aux joueurs qui rejoignent) : le dossier est un contexte d'élément.
+                [_clean] remoteExecCall ["comspec_sse_fnc_setCaseReference", 0, "comspec_sse_caseReferenceJIP"];
+                [["Dossier SSE actif effacé.", format ["Dossier SSE actif : %1", _clean]] select (_clean isNotEqualTo "")] call comspec_sse_fnc_zeusNotify;
             },
             {},
             []
@@ -39,17 +37,17 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
 
 // --- Profil d'identité ---------------------------------------------------
 [
-    "COMSPEC SSE",
+    "COMSPEC SSE · Personnes",
     "Profil d'identité SSE",
     {
         params ["_pos", "_obj"];
 
         if (isNull _obj || { !(_obj isKindOf "CAManBase") }) exitWith {
-            ["Posez ce module sur une personne : c'est son profil que vous réglez.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+            ["Posez ce module sur une personne : c'est son profil que vous réglez.", "warn"] call comspec_sse_fnc_zeusNotify;
         };
 
-        private _presets = ["list"] call comspec_overwatch_connect_fnc_sseProfilePreset;
-        private _labels = ["labels"] call comspec_overwatch_connect_fnc_sseProfilePreset;
+        private _presets = ["list"] call comspec_sse_fnc_profilePreset;
+        private _labels = ["labels"] call comspec_sse_fnc_profilePreset;
 
         [
             format ["Profil SSE — %1", name _obj],
@@ -67,7 +65,7 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
                 _values params ["_preset", "_alias", "_last", "_first", "_nat", "_lang", "_ref"];
                 _args params ["_obj"];
 
-                private _profile = [_preset] call comspec_overwatch_connect_fnc_sseProfilePreset;
+                private _profile = [_preset] call comspec_sse_fnc_profilePreset;
                 {
                     _x params ["_key", "_v"];
                     if ((trim _v) isNotEqualTo "") then { _profile pushBack [_key, trim _v]; };
@@ -81,8 +79,8 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
                 ];
 
                 // Un seul écrivain : le serveur diffuse, les clients lisent.
-                [_obj, _profile] remoteExecCall ["comspec_overwatch_connect_fnc_sseApplyProfile", 2];
-                [format ["Profil SSE appliqué à %1.", name _obj], "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
+                [_obj, _profile] remoteExecCall ["comspec_sse_fnc_applyProfile", 2];
+                [format ["Profil SSE appliqué à %1.", name _obj], "info"] call comspec_sse_fnc_zeusNotify;
             },
             {},
             [_obj]
@@ -93,15 +91,15 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
 
 // --- Biométrie du sujet (moteur du pack SSE) ------------------------------
 [
-    "COMSPEC SSE",
+    "COMSPEC SSE · Personnes",
     "Biométrie du sujet",
     {
         params ["_pos", "_obj"];
         if (isNil "comspec_sse_fnc_bioSetProfile") exitWith {
-            ["Pack COMSPEC SSE requis pour la biométrie.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+            ["Pack COMSPEC SSE requis pour la biométrie.", "warn"] call comspec_sse_fnc_zeusNotify;
         };
         if (isNull _obj || { !(_obj isKindOf "CAManBase") }) exitWith {
-            ["Posez ce module sur une personne.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+            ["Posez ce module sur une personne.", "warn"] call comspec_sse_fnc_zeusNotify;
         };
         private _str = { params ["_v"]; private _x0 = _obj getVariable [_v, ""]; if (_x0 isEqualType "") then { _x0 } else { "" } };
         private _dbCodes = ["auto", "absent", "enrole", "bewl1", "bewl2", "bewl3", "bewl4"];
@@ -139,7 +137,7 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
                     ["missingFingers", [_missing, "auto"] select ((trim _missing) isEqualTo "")], ["irisState", _iris]
                 ];
                 [_obj, _pairs] remoteExecCall ["comspec_sse_fnc_bioSetProfile", 2];
-                [format ["Biométrie réglée pour %1.", name _obj], "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
+                [format ["Biométrie réglée pour %1.", name _obj], "info"] call comspec_sse_fnc_zeusNotify;
             },
             {},
             [_obj]
@@ -150,14 +148,14 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
 
 // --- Doter en terminal SEEK ----------------------------------------------
 [
-    "COMSPEC SSE",
+    "COMSPEC SSE · Mission",
     "Doter en terminal SEEK",
     {
         params ["_pos", "_obj"];
 
         if (!isNull _obj && { isPlayer _obj }) exitWith {
-            [_obj, "COMSPEC_Item_SeekTerminal"] remoteExecCall ["comspec_overwatch_connect_fnc_giveSeekTerminal", _obj];
-            [format ["Terminal SEEK remis à %1.", name _obj], "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
+            [_obj] remoteExecCall ["comspec_sse_fnc_giveSeek", _obj];
+            [format ["Terminal SEEK remis à %1.", name _obj], "info"] call comspec_sse_fnc_zeusNotify;
         };
 
         [
@@ -172,16 +170,12 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
 
                 private _players = (allPlayers select { _x distance _pos <= _radius });
                 if (_players isEqualTo []) exitWith {
-                    ["Aucun joueur dans le rayon désigné.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+                    ["Aucun joueur dans le rayon désigné.", "warn"] call comspec_sse_fnc_zeusNotify;
                 };
                 {
-                    [_x, "COMSPEC_Item_SeekTerminal"] remoteExecCall ["comspec_overwatch_connect_fnc_giveSeekTerminal", _x];
+                    [_x] remoteExecCall ["comspec_sse_fnc_giveSeek", _x];
                 } forEach _players;
-                [
-                    format ["Terminal SEEK distribué à %1 joueur(s).", count _players],
-                    "tactical",
-                    "info"
-                ] call comspec_overwatch_connect_fnc_announce;
+                [format ["Terminal SEEK distribué à %1 joueur(s).", count _players], "info"] call comspec_sse_fnc_zeusNotify;
             },
             {},
             [_pos]
@@ -192,7 +186,7 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
 
 // --- Présentation des documents / fiches --------------------------------
 [
-    "COMSPEC SSE",
+    "COMSPEC SSE · Mission",
     "Présentation des documents",
     {
         private _current = missionNamespace getVariable ["COMSPEC_SSE_DocChrome", createHashMap];
@@ -248,7 +242,7 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
                 params ["_values"];
                 _values params ["_prefab", "_style", "_banner", "_footer"];
                 if (isNil "comspec_sse_fnc_getDocumentChrome") exitWith {
-                    ["Pack SSE requis pour la présentation des documents.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+                    ["Pack SSE requis pour la présentation des documents.", "warn"] call comspec_sse_fnc_zeusNotify;
                 };
                 private _chrome = ["apply_prefab", _prefab] call comspec_sse_fnc_getDocumentChrome;
                 private _ov = createHashMap;
@@ -258,11 +252,7 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
                 if ((count _ov) > 0) then {
                     ["set", _ov] call comspec_sse_fnc_getDocumentChrome;
                 };
-                [
-                    format ["Présentation SSE appliquée (%1).", _prefab],
-                    "tactical",
-                    "info"
-                ] call comspec_overwatch_connect_fnc_announce;
+                [format ["Présentation SSE appliquée (%1).", _prefab], "info"] call comspec_sse_fnc_zeusNotify;
             },
             {},
             []
@@ -272,4 +262,4 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
 ] call zen_custom_modules_fnc_register;
 
 missionNamespace setVariable ["COMSPEC_ZenSseModulesRegistered", true];
-["INFO", "SSE", "Modules SSE enregistrés dans Zeus Enhanced"] call comspec_overwatch_connect_fnc_log;
+["Modules SSE enregistrés dans Zeus Enhanced", "INFO"] call comspec_sse_fnc_log;

@@ -15,6 +15,9 @@
 */
 params [["_key", "list", [""]]];
 
+// Le pack SSE porte cette logique : Overwatch ne garde qu'un relais.
+if (!isNil "comspec_sse_fnc_profilePreset") exitWith { _this call comspec_sse_fnc_profilePreset };
+
 private _keys = ["auto", "inconnu", "signale", "recherche"];
 
 if ((toLower _key) isEqualTo "list") exitWith { _keys };

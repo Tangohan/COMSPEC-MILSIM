@@ -6,6 +6,7 @@ réécrits (non compressés), puis la somme SHA-1 finale est recalculée.
 
     python3 tools/pbo_patch.py ADDON.pbo DOSSIER_SOURCE chemin/relatif.sqf [...]
     python3 tools/pbo_patch.py ADDON.pbo DOSSIER_SOURCE --changed
+    python3 tools/pbo_patch.py ADDON.pbo DOSSIER_SOURCE --rm chemin/supprime.sqf [...]
 
 Les chemins sont relatifs au dossier source de l'addon (ex. functions/fn_x.sqf).
 --changed : tous les fichiers texte du dossier source (sqf, hpp, cpp, ext, inc)
@@ -88,6 +89,14 @@ def main():
                 key = rel.replace("/", "\\").lower()
                 if key not in index or files[index[key]][2] != content:
                     wanted.append(rel)
+    if wanted and wanted[0] == "--rm":
+        gone = {w.replace("/", "\\").lower() for w in wanted[1:]}
+        kept = [f for f in files if f[0].decode("latin1").lower() not in gone]
+        for f in files:
+            if f[0].decode("latin1").lower() in gone:
+                print("supprimé", f[0].decode("latin1"))
+        write_pbo(pbo, headers, kept)
+        return
     now = int(time.time())
     for rel in wanted:
         content = open(os.path.join(src, rel), "rb").read()

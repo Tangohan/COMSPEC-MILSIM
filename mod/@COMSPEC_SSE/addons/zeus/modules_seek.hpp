@@ -1,20 +1,13 @@
 /*
-    Modules Zeus/Eden — exploitation SSE.
+    Modules Eden repris du mod Overwatch (mêmes classes : les missions déjà faites
+    continuent de les charger). Tout le SSE passe désormais par ce pack.
 
-    Mêmes précautions que module_roleplay_zone.hpp :
-    - ne PAS rouvrir Module_F:Logic (casse ACE Arsenal / ZEN),
-    - Attributes / Arguments / ModuleDescription définis à plat.
+      · Dossier SSE actif      → masqué, doublon de « Référence de dossier SSE »
+      · Identité d'un sujet    → ce que la requête rendra pour les personnes synchronisées
+      · Doter en terminal SEEK → SEEK d'Overwatch s'il est chargé, sinon SEEK II du pack
+      · Présentation des documents
 
-    Trois modules, choisis pour ce qu'ils débloquent réellement en partie :
-      · Dossier SSE actif      → classe automatiquement tout ce qui suit
-      · Profil d'identité SSE  → décide de ce que la requête va rendre
-      · Doter en terminal SEEK → rend le module utilisable sans redéploiement
-
-    Le profil d’identité écrit le même contrat que les attributs d’unité
-    (sseEdenWriteField → COMSPEC_SSE_*). Au lancement, la fonction du module
-    recopie ces champs sur les personnes synchronisées.
-
-    Inclus dans un seul class CfgVehicles (config.cpp) — ne pas rouvrir CfgVehicles ici.
+    Inclus dans le CfgVehicles de config.cpp — ne pas rouvrir CfgVehicles ici.
 */
 
     class COMSPEC_Module_SSE_Base: Module_F
@@ -38,10 +31,11 @@
 
     class COMSPEC_Module_SSE_Case: COMSPEC_Module_SSE_Base
     {
-        scope = 2;
+        scope = 1;
         scopeCurator = 0;
+        category = "COMSPEC_SSE_Mission";
         displayName = "Dossier SSE actif";
-        function = "comspec_overwatch_connect_fnc_moduleSseCase";
+        function = "comspec_sse_fnc_moduleCaseReference";
 
         class Attributes
         {
@@ -82,8 +76,9 @@
     {
         scope = 2;
         scopeCurator = 0;
-        displayName = "Profil d'identité SSE";
-        function = "comspec_overwatch_connect_fnc_moduleSseProfile";
+        category = "COMSPEC_SSE_People";
+        displayName = "Identité d'un sujet (requête SEEK)";
+        function = "comspec_sse_fnc_moduleSubjectProfile";
 
         class Attributes
         {
@@ -218,8 +213,9 @@
     {
         scope = 2;
         scopeCurator = 0;
+        category = "COMSPEC_SSE_Mission";
         displayName = "Doter en terminal SEEK";
-        function = "comspec_overwatch_connect_fnc_moduleSseEquip";
+        function = "comspec_sse_fnc_moduleEquipSeek";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
         portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
 
@@ -264,8 +260,9 @@
     {
         scope = 2;
         scopeCurator = 0;
+        category = "COMSPEC_SSE_Mission";
         displayName = "Présentation des documents SSE";
-        function = "comspec_overwatch_connect_fnc_moduleSseDocChrome";
+        function = "comspec_sse_fnc_moduleDocChrome";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
         portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
 
