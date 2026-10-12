@@ -41,5 +41,7 @@ if (_interactive) exitWith {
     };
     !isNull _disp
 };
+// Style « porté » JPC : l'ATAK s'affiche sur l'écran 3D de la tablette du gilet (fn_jpcScreen), sinon miniature.
+if (["active"] call comspec_atak_native_fnc_jpcScreen) exitWith { ["open"] call comspec_atak_native_fnc_jpcScreen };
 ("COMSPEC_ATAK_Hud" call BIS_fnc_rscLayer) cutRsc ["COMSPEC_RscTitleATAK", "PLAIN", 0, false];
 true

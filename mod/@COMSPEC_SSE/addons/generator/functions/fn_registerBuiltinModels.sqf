@@ -335,7 +335,7 @@ private _mk = {
 ] call _mk;
 
 comspec_sse_models_builtin = _builtins;
-if (isServer) then { publicVariable "comspec_sse_models_builtin"; };
+// Pas de diffusion : chaque machine construit déjà cette table au chargement (generator XEH_preInit).
 
 // WARN → toujours visible RPT (INFO est filtré sans comspec_sse_debug)
 [format ["registerBuiltinModels: %1 modèles (force=%2)", count _builtins, _forceRebuild], "WARN"] call comspec_sse_fnc_log;

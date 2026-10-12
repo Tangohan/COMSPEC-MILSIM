@@ -6,7 +6,7 @@ use App\Services\Moderation\ModerationRestrictionsCatalog;
 use App\Services\Moderation\ModerationSourceType;
 
 $baseUrl = url('');
-$contentModerationUrl = rtrim(url('admin/content-moderation'), '/');
+$contentModerationUrl = rtrim(url('back-office/content-moderation'), '/');
 $artifacts = $artifacts ?? [];
 $recentForumPublished = $recentForumPublished ?? [];
 $moduleLabels = $moduleLabels ?? ModerationRestrictionsCatalog::moduleLabels();

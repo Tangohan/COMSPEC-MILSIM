@@ -12,7 +12,6 @@ if !(["core"] call comspec_debug_fnc_isModuleEnabled) exitWith {
 if (isServer) then {
     if (isNil "comspec_sse_missionRecords") then {
         comspec_sse_missionRecords = [];
-        publicVariable "comspec_sse_missionRecords";
     };
 };
 

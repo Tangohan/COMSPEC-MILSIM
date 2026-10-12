@@ -69,7 +69,11 @@ private _ackTerminalSignal = {
             private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
             private _by = [] call comspec_overwatch_connect_fnc_getCallsign;
             if (_by isEqualTo "") then { _by = name player; };
-            ["COMSPECExtension" callExtension ["UpdateOrderStatus", [_oid, "ACK", _by, _mapId, _note]]] call comspec_overwatch_connect_fnc_extResult;
+            // Repli hors du thread de jeu (spawn + extAwait) : retour inutilisé, l'appel synchrone figeait le jeu.
+            [_oid, _by, _mapId, _note] spawn {
+                params ["_oid", "_by", "_mapId", "_note"];
+                ["COMSPECExtension", "UpdateOrderStatus", [_oid, "ACK", _by, _mapId, _note]] call comspec_overwatch_connect_fnc_extAwait;
+            };
         };
     }, [_oid, _note], 3] call CBA_fnc_waitAndExecute;
 };

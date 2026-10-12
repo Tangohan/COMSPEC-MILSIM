@@ -1419,13 +1419,13 @@ if (!function_exists('back_office_nav_rule_for_path')) {
         if ($best !== null) {
             return $best;
         }
-        // Défaut prudent pour tout chemin BO / admin / jnet non cartographié.
-        if (
-            str_starts_with($path, 'back-office')
-            || str_starts_with($path, 'admin/')
-            || $path === 'admin'
-            || str_starts_with($path, 'jnet')
-        ) {
+        // « Admin » = administrateur de la plateforme uniquement : un chemin /admin non cartographié
+        // ne s’affiche jamais pour un gestionnaire de communauté.
+        if (str_starts_with($path, 'admin/') || $path === 'admin') {
+            return ['any_permissions' => ['admin.system']];
+        }
+        // Défaut prudent pour tout chemin BO / jnet non cartographié.
+        if (str_starts_with($path, 'back-office') || str_starts_with($path, 'jnet')) {
             return ['any_permissions' => ['admin.organization', 'admin.access', 'admin.system']];
         }
 
@@ -1617,7 +1617,8 @@ if (!function_exists('is_formation_workspace_request')) {
 if (!function_exists('is_platform_site_admin_shell_request')) {
     /**
      * Pages d’administration « site entier » (pilotage / infra) avec barre latérale dédiée.
-     * Exclut les écrans rattachés à la communauté active (/admin/modpacks, /admin/atak-config, etc.).
+     * Les outils de la communauté active vivent sous /back-office (modpacks, ATAK, forum…) :
+     * tout ce qui reste sous /admin relève de l’administrateur de la plateforme.
      */
     function is_platform_site_admin_shell_request(): bool
     {
@@ -1629,7 +1630,7 @@ if (!function_exists('is_platform_site_admin_shell_request')) {
             return false;
         }
         $rest = substr($p, strlen('admin/'));
-        $prefixes = ['ops-center', 'audit', 'analytics', 'newsletter', 'content-moderation', 'maintenance', 'roles', 'settings', 'site-roles', 'tenants', 'users'];
+        $prefixes = ['ops-center', 'audit', 'analytics', 'newsletter', 'maintenance', 'roles', 'settings', 'site-roles', 'tenants', 'users', 'atak-beta', 'atak-mod-reports'];
         foreach ($prefixes as $prefix) {
             if ($rest === $prefix || str_starts_with($rest, $prefix . '/')) {
                 return true;
@@ -2061,6 +2062,7 @@ if (!function_exists('detect_current_module')) {
             '/admin/atak-config', '/admin/atak-mod', '/admin/atak-mod-blocks', '/admin/atak-beta', '/admin/atak',
             '/back-office/atak', '/back-office/ressources/atak-config', '/back-office/ressources/atak-mod',
             '/back-office/ressources/atak-mod-blocks', '/back-office/ressources/atak-beta',
+            '/back-office/ressources/atak-diffusion-rapports', '/back-office/ressources/atak-realism',
             '/api/atak', '/api/markers', '/api/units', '/api/chat', '/api/pings',
             '/api/nine-line', '/api/cas', '/api/recon', '/api/map-shapes', '/api/flight-manifest',
             '/api/intel', '/api/fire-support', '/api/danger-zones', '/api/logistics', '/api/replay', '/api/iff',

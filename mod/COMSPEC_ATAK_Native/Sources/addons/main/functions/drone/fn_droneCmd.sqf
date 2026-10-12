@@ -89,7 +89,9 @@ private _routeNext = {
 private _crew = {
     if (!isNull driver _d && {alive driver _d}) exitWith {};
     { if (!alive _x) then { _d deleteVehicleCrew _x; }; } forEach (crew _d);
-    createVehicleCrew _d;
+    // Groupe d'origine supprimé une fois vide (sinon un groupe vide de plus par prise du drone, plafond de 288 par camp).
+    private _cg = createVehicleCrew _d;
+    if (!isNull _cg) then { _cg deleteGroupWhenEmpty true; };
     private _side = _d getVariable ["COMSPEC_DroneSide", sideUnknown];
     if (_side in [west, east, independent] && {(side group driver _d) isNotEqualTo _side}) then { (crew _d) joinSilent (createGroup [_side, true]); };
 };
@@ -174,7 +176,7 @@ if (_cqb && {_cmd in ["takeoff", "hover", "follow", "escort", "goto", "home", "r
         private _ri = 0;
         private _rdir = 1;
         private _ign = if (_goal isEqualType objNull) then { vehicle _goal } else { objNull };
-        while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+        while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
             private _pos = getPosASL _d;
             // Point visé : la cible suivie (5 m derrière elle, à hauteur d'homme) ou le point fixe.
             private _g = if (_goal isEqualType objNull) then {
@@ -256,7 +258,7 @@ switch (_cmd) do {
             private _f0 = fuel _d;
             private _t0 = time;
             private _rate = [0.10, 0.02] select (_kind isEqualTo "LAND");
-            while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+            while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
                 // Posé : moteurs coupés une fois au sol.
                 if (_kind isEqualTo "LAND" && {isEngineOn _d} && {((getPosATL _d) select 2) < 0.6} && {(speed _d) < 2}) then { _d engineOn false; };
                 _d setFuel ((_f0 - _rate * (time - _t0) / 3600) max 0);
@@ -271,7 +273,7 @@ switch (_cmd) do {
         private _loop = _d getVariable ["COMSPEC_DroneLoop", 0];
         [_d, _home, _loop] spawn {
             params ["_d", "_home", "_loop"];
-            while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+            while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
                 if ((_d distance2D _home) < 15) exitWith { _d land "LAND"; };
                 _d flyInHeight [(_d getVariable ["COMSPEC_DroneAlt", 40]) max 40, true];
                 _d doMove (ASLToAGL _home);
@@ -293,7 +295,7 @@ switch (_cmd) do {
             params ["_d", "_t", "_loop", "_cmd"];
             // Escorte : plus loin en arrière, pour voir le convoi et ce qui l'attend devant.
             private _off = [15, 30] select (_cmd isEqualTo "escort");
-            while { alive _d && {alive _t} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+            while { alive _d && {local _d} && {alive _t} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
                 private _dir = getDir (vehicle _t);
                 private _p = (getPosASL _t) vectorAdd [-_off * sin _dir, -_off * cos _dir, 0];
                 if (_cmd isEqualTo "home" && {(_d distance2D _t) < 25}) exitWith { _d setVariable ["COMSPEC_DroneMode", "LAND", true]; _d land "LAND"; };
@@ -314,7 +316,7 @@ switch (_cmd) do {
             // Tir et oublie : un point laser éteint en route laisse la dernière position connue ; une cible détruite arrête la frappe.
             private _last = if (_tgt isEqualType objNull) then { getPosASL _tgt } else { _tgt };
             private _isUnit = _tgt isEqualType objNull && {_tgt isKindOf "AllVehicles"};
-            while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+            while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
                 if (_isUnit && {!alive _tgt}) exitWith { [_d, "hover", []] call comspec_atak_native_fnc_droneCmd; };
                 if (_tgt isEqualType objNull && {!isNull _tgt}) then { _last = [getPosASL _tgt, aimPos _tgt] select _isUnit; };
                 private _p = _last;
@@ -345,7 +347,7 @@ switch (_cmd) do {
             params ["_d", "_pts", "_rmode", "_loop", "_routeNext"];
             private _i = 0;
             private _dir = 1;
-            while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+            while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
                 private _p = _pts select _i;
                 if ((_d distance2D _p) < 25) then {
                     ([_i, count _pts, _rmode, _dir] call _routeNext) params ["_ni", "_nd"];
@@ -390,7 +392,7 @@ switch (_cmd) do {
             private _i = -1;
             private _goal = [];
             private _t0 = 0;
-            while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+            while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
                 if (_goal isEqualTo [] || {(_d distance2D _goal) < 30} || {(time - _t0) > 25}) then {
                     _i = (_i + 1) mod (count _pts);
                     _goal = _pts select _i;
@@ -433,7 +435,7 @@ switch (_cmd) do {
         private _loop = _d getVariable ["COMSPEC_DroneLoop", 0];
         [_d, _p, _loop] spawn {
             params ["_d", "_p", "_loop"];
-            while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+            while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
                 // Arrivé : stationnaire au-dessus du point (le journal du pilote note le passage GOTO → HOVER).
                 if ((_d distance2D _p) < 20) exitWith { [_d, "hover", []] call comspec_atak_native_fnc_droneCmd; };
                 _d flyInHeight [_d getVariable ["COMSPEC_DroneAlt", 40], true];
@@ -455,7 +457,7 @@ switch (_cmd) do {
             params ["_d", "_c", "_rad", "_loop"];
             // Orbite : on entre sur le cercle du côté où se trouve le drone, puis un nouveau point toutes les 3 s.
             private _a = _c getDir _d;
-            while { alive _d && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
+            while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
                 private _ms = (_d getVariable ["COMSPEC_DroneSpd", 40]) / 3.6;
                 // Pas angulaire : l'arc parcouru en 3 s (borné pour garder un cercle propre sur les petits rayons).
                 if ((_d distance2D _c) < (_rad + 60)) then { _a = (_a + ((deg (_ms * 3 / (_rad max 30))) max 8 min 45)) mod 360; };

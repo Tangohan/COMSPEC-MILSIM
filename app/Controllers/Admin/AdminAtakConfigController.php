@@ -108,7 +108,7 @@ class AdminAtakConfigController
         }
         if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
-            return Response::redirect(url('admin/atak-config'));
+            return Response::redirect(url('back-office/ressources/atak-config'));
         }
 
         $this->atakConfigRepository->createOrUpdate((int) $tenantId, [
@@ -122,7 +122,7 @@ class AdminAtakConfigController
         ]);
 
         Session::flash('success', 'Configuration ATAK / Tacmap enregistrée.');
-        return Response::redirect(url('admin/atak-config'));
+        return Response::redirect(url('back-office/ressources/atak-config'));
     }
 
     /** Génère ou régénère la clé d’accès Overwatch pour la communauté courante. */
@@ -135,14 +135,14 @@ class AdminAtakConfigController
         if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
 
-            return Response::redirect(url('admin/atak-config'));
+            return Response::redirect(url('back-office/ressources/atak-config'));
         }
 
         $created = $this->atakConfigRepository->generateAccessKey((int) $tenantId);
         if ($created === null) {
             Session::flash('error', 'Impossible de générer la clé d’accès. Réessayez ou contactez le support plateforme.');
 
-            return Response::redirect(url('admin/atak-config'));
+            return Response::redirect(url('back-office/ressources/atak-config'));
         }
 
         Session::flash('new_atak_access_key', $created['plain_key']);
@@ -155,7 +155,7 @@ class AdminAtakConfigController
             null
         );
 
-        return Response::redirect(url('admin/atak-config'));
+        return Response::redirect(url('back-office/ressources/atak-config'));
     }
 
     /** Active ou désactive les modules pont ATAK Enhanced / cTab. */
@@ -168,7 +168,7 @@ class AdminAtakConfigController
         if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
 
-            return Response::redirect(url('admin/atak-config'));
+            return Response::redirect(url('back-office/ressources/atak-config'));
         }
 
         $svc = new AtakBridgeModulesService();
@@ -180,7 +180,7 @@ class AdminAtakConfigController
         $svc->put((int) $tenantId, $boolMap);
         Session::flash('success', 'Modules ATAK Enhanced / cTab enregistrés. Les joueurs en liaison récupèrent le réglage sous environ une minute.');
 
-        return Response::redirect(url('admin/atak-config'));
+        return Response::redirect(url('back-office/ressources/atak-config'));
     }
 
     /** Réglages d’expérience Overwatch (réalisme, troll, personnalisation). */
@@ -193,7 +193,7 @@ class AdminAtakConfigController
         if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
 
-            return Response::redirect(url('admin/atak-config'));
+            return Response::redirect(url('back-office/ressources/atak-config'));
         }
 
         if (!$this->atakConfigRepository->isExperienceSchemaReady()) {
@@ -202,7 +202,7 @@ class AdminAtakConfigController
                 'Impossible d’enregistrer l’expérience : la base de données n’est pas à jour. Contactez le support plateforme pour appliquer la mise à jour, puis réessayez.'
             );
 
-            return Response::redirect(url('admin/atak-config'));
+            return Response::redirect(url('back-office/ressources/atak-config'));
         }
 
         $svc = new AtakExperienceService();
@@ -225,7 +225,7 @@ class AdminAtakConfigController
         $svc->put((int) $tenantId, $incoming);
         Session::flash('success', 'Expérience Overwatch enregistrée. Les opérateurs en liaison récupèrent les réglages sous environ une minute.');
 
-        return Response::redirect(url('admin/atak-config'));
+        return Response::redirect(url('back-office/ressources/atak-config'));
     }
 
     public function storeGameExperience(Request $request, array $params = []): Response
@@ -237,7 +237,7 @@ class AdminAtakConfigController
         if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
 
-            return Response::redirect(url('admin/atak-config') . '#overwatch-game-experience');
+            return Response::redirect(url('back-office/ressources/atak-config') . '#overwatch-game-experience');
         }
         $tenantId = (int) $tenantId;
         $svc = new \App\Services\Game\GameOverwatchExperienceService();
@@ -262,7 +262,7 @@ class AdminAtakConfigController
             if (($stored['error'] ?? null) !== null) {
                 Session::flash('error', (string) $stored['error']);
 
-                return Response::redirect(url('admin/atak-config') . '#overwatch-game-experience');
+                return Response::redirect(url('back-office/ressources/atak-config') . '#overwatch-game-experience');
             }
             if (!empty($stored['path'])) {
                 $incoming['login_image_path'] = $stored['path'];
@@ -273,7 +273,7 @@ class AdminAtakConfigController
             if (($stored['error'] ?? null) !== null) {
                 Session::flash('error', (string) $stored['error']);
 
-                return Response::redirect(url('admin/atak-config') . '#overwatch-game-experience');
+                return Response::redirect(url('back-office/ressources/atak-config') . '#overwatch-game-experience');
             }
             if (!empty($stored['path'])) {
                 $incoming['logo_path'] = $stored['path'];
@@ -287,7 +287,7 @@ class AdminAtakConfigController
         }
         Session::flash('success', 'L’expérience en jeu a été enregistrée. Elle s’applique à la prochaine connexion Overwatch.');
 
-        return Response::redirect(url('admin/atak-config') . '#overwatch-game-experience');
+        return Response::redirect(url('back-office/ressources/atak-config') . '#overwatch-game-experience');
     }
 
     /**
@@ -315,7 +315,7 @@ class AdminAtakConfigController
         if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
 
-            return Response::redirect(url('admin/atak-config'));
+            return Response::redirect(url('back-office/ressources/atak-config'));
         }
 
         $svc = new \App\Services\Media\ReconPhotoHudService();
@@ -334,7 +334,7 @@ class AdminAtakConfigController
         ]);
         Session::flash('success', 'Bandeau des photos terrain enregistré. Il s’appliquera aux prochaines captures.');
 
-        return Response::redirect(url('admin/atak-config') . '#photo-hud');
+        return Response::redirect(url('back-office/ressources/atak-config') . '#photo-hud');
     }
 
     public function storeMarkerIcons(Request $request, array $params = []): Response
@@ -346,7 +346,7 @@ class AdminAtakConfigController
         if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
 
-            return Response::redirect(url('admin/atak-config') . '#marker-icons');
+            return Response::redirect(url('back-office/ressources/atak-config') . '#marker-icons');
         }
         $svc = new \App\Services\Tactical\AtakMarkerIconsService();
         $assign = [];
@@ -356,7 +356,7 @@ class AdminAtakConfigController
         $svc->saveAssignments((int) $tenantId, $assign);
         Session::flash('success', 'Apparence des symboles enregistrée. Rechargez la carte pour la voir.');
 
-        return Response::redirect(url('admin/atak-config') . '#marker-icons');
+        return Response::redirect(url('back-office/ressources/atak-config') . '#marker-icons');
     }
 
     public function uploadMarkerIcon(Request $request, array $params = []): Response
@@ -368,7 +368,7 @@ class AdminAtakConfigController
         if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
 
-            return Response::redirect(url('admin/atak-config') . '#marker-icons');
+            return Response::redirect(url('back-office/ressources/atak-config') . '#marker-icons');
         }
         $file = $_FILES['marker_icon_file'] ?? [];
         if (!is_array($file)) {
@@ -378,7 +378,7 @@ class AdminAtakConfigController
         $res = $svc->addUpload((int) $tenantId, $file, trim((string) $request->input('marker_icon_label', '')));
         Session::flash($res['ok'] ? 'success' : 'error', $res['message']);
 
-        return Response::redirect(url('admin/atak-config') . '#marker-icons');
+        return Response::redirect(url('back-office/ressources/atak-config') . '#marker-icons');
     }
 
     public function deleteMarkerIcon(Request $request, array $params = []): Response
@@ -390,13 +390,13 @@ class AdminAtakConfigController
         if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
 
-            return Response::redirect(url('admin/atak-config') . '#marker-icons');
+            return Response::redirect(url('back-office/ressources/atak-config') . '#marker-icons');
         }
         $svc = new \App\Services\Tactical\AtakMarkerIconsService();
         $svc->deleteLibraryItem((int) $tenantId, trim((string) $request->input('icon_id', '')));
         Session::flash('success', 'Icône retirée de la bibliothèque.');
 
-        return Response::redirect(url('admin/atak-config') . '#marker-icons');
+        return Response::redirect(url('back-office/ressources/atak-config') . '#marker-icons');
     }
 
     /** Active ou désactive le mode maintenance ATAK / Tacmap. */
@@ -409,7 +409,7 @@ class AdminAtakConfigController
         if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
 
-            return Response::redirect(url('admin/atak-config'));
+            return Response::redirect(url('back-office/ressources/atak-config'));
         }
 
         $enabled = (string) $request->input('maintenance_enabled', '0') === '1';
@@ -426,7 +426,7 @@ class AdminAtakConfigController
                 'Impossible d’enregistrer le mode maintenance : la mise à jour qui active cette fonction n’a pas encore été appliquée. Demandez au support plateforme de lancer la mise à jour, puis réessayez.'
             );
 
-            return Response::redirect(url('admin/atak-config'));
+            return Response::redirect(url('back-office/ressources/atak-config'));
         }
 
         Session::flash(
@@ -436,7 +436,7 @@ class AdminAtakConfigController
                 : 'Mode maintenance désactivé. La carte tactique est à nouveau accessible.'
         );
 
-        return Response::redirect(url('admin/atak-config'));
+        return Response::redirect(url('back-office/ressources/atak-config'));
     }
 
     /** Télécharge un export JSON de tout le journal et des données de mission. */
@@ -452,7 +452,7 @@ class AdminAtakConfigController
         if ($json === false) {
             Session::flash('error', 'Impossible de préparer l’export. Réessayez.');
 
-            return Response::redirect(url('admin/atak-config'));
+            return Response::redirect(url('back-office/ressources/atak-config'));
         }
 
         $filename = 'atak-export-communaute-' . $tenantId . '-' . date('Ymd-His') . '.json';
@@ -476,7 +476,7 @@ class AdminAtakConfigController
         if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide.');
 
-            return Response::redirect(url('admin/atak-config'));
+            return Response::redirect(url('back-office/ressources/atak-config'));
         }
 
         $confirm = trim((string) $request->input('confirm_phrase', ''));
@@ -486,7 +486,7 @@ class AdminAtakConfigController
                 'Pour confirmer l’effacement, saisissez exactement le mot demandé (en majuscules).'
             );
 
-            return Response::redirect(url('admin/atak-config'));
+            return Response::redirect(url('back-office/ressources/atak-config'));
         }
 
         $tenantId = (int) $tenantId;
@@ -519,6 +519,6 @@ class AdminAtakConfigController
             )
         );
 
-        return Response::redirect(url('admin/atak-config'));
+        return Response::redirect(url('back-office/ressources/atak-config'));
     }
 }

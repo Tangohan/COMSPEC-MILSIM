@@ -9,7 +9,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _page = _s getOrDefault ["activePage", "LAUNCHER"];
 private _interactive = _l get "interactive";
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 
 private _set = {
     params ["_idc", "_pos"];
@@ -78,7 +78,35 @@ private _step = _bw * 1.7;
 [88528, [_dx + _dw * 0.45, _ay, _dw * 0.55 - _pad, _ah]] call _set;
 (_d displayCtrl 88518) ctrlSetFontHeight _font;
 (_d displayCtrl 88528) ctrlSetFontHeight _fontS;
-(_d displayCtrl 88528) ctrlSetText (["Ctrl+Maj+U : prendre en main", ""] select _interactive);
+// Téléphone porté : pastille « main + Ctrl+Maj+U » à droite de la barre d'app au lieu de la phrase ;
+// coupée dans Réglages > Personnalisation (profil COMSPEC_ATAK_HandHint) pour un écran sans indication.
+(_d displayCtrl 88528) ctrlSetText "";
+(uiNamespace getVariable ["COMSPEC_ATAK_HandHintCtrls", []]) params [["_hBg", controlNull], ["_hIc", controlNull], ["_hKey", controlNull]];
+if (isNull _hBg || {(ctrlParent _hBg) isNotEqualTo _d}) then {
+    _hBg = _d ctrlCreate ["COMSPEC_RscText", -1];
+    _hBg ctrlSetBackgroundColor [0, 0, 0, 0.55];
+    _hIc = _d ctrlCreate ["COMSPEC_RscPicture", -1];
+    _hIc ctrlSetText "\z\comspec_atak_native\addons\main\data\ui_hand.paa";
+    _hIc ctrlSetTextColor [0.88, 0.93, 0.9, 0.95];
+    _hKey = _d ctrlCreate ["COMSPEC_RscTextCenter", -1];
+    _hKey ctrlSetFont "RobotoCondensedBold";
+    _hKey ctrlSetText "Ctrl+Maj+U";
+    _hKey ctrlSetBackgroundColor [1, 1, 1, 0.13];
+    _hKey ctrlSetTextColor [0.92, 0.96, 0.93, 1];
+    uiNamespace setVariable ["COMSPEC_ATAK_HandHintCtrls", [_hBg, _hIc, _hKey]];
+};
+private _hShow = !_interactive && {profileNamespace getVariable ["COMSPEC_ATAK_HandHint", true]};
+_hKey ctrlSetFontHeight (_fontS * 0.8);
+private _hh = _ah * 0.58;
+private _hIcH = _hh * 0.78;
+private _hKw = (ctrlTextWidth _hKey) + _pad * 2;
+private _hW = _pad * 3 + _hIcH / _ratio + _hKw;
+private _hX = _dx + _dw - _pad * 2 - _hW;
+private _hY = _ay + (_ah - _hh) / 2;
+_hBg ctrlSetPosition [_hX, _hY, _hW, _hh];
+_hIc ctrlSetPosition [_hX + _pad, _hY + (_hh - _hIcH) / 2, _hIcH / _ratio, _hIcH];
+_hKey ctrlSetPosition [_hX + _pad * 2 + _hIcH / _ratio, _hY + _hh * 0.14, _hKw, _hh * 0.72];
+{ _x ctrlCommit 0; _x ctrlShow _hShow; _x ctrlEnable false; } forEach [_hBg, _hIc, _hKey];
 { (_d displayCtrl _x) ctrlShow _interactive; } forEach [88517, 88519, 88521, 88522, 88526];
 (_d displayCtrl 88522) ctrlShow (_interactive && {_l get "mini"});
 (_d displayCtrl 88521) ctrlSetText format ["\z\comspec_atak_native\addons\main\data\ui_%1.paa", ["collapse", "expand"] select (_l get "mini")];

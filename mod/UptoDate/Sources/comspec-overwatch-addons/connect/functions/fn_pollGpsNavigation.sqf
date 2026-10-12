@@ -263,16 +263,23 @@ missionNamespace setVariable ["COMSPEC_GpsNavDistanceM", round _dist, false];
 missionNamespace setVariable ["COMSPEC_GpsNavEtaSeconds", _eta, false];
 missionNamespace setVariable ["COMSPEC_GpsNavLabel", _label, false];
 
-if (_dist <= _radius) then {
+// Point atteint : POST en spawn via extAwait (appelé depuis un PFH, l'appel synchrone figeait le jeu) ;
+// un seul envoi en vol par point (le poll repasse toutes les 5 s tant qu'on est dans le rayon).
+if (_dist <= _radius && {(missionNamespace getVariable ["COMSPEC_GpsMarkPending", ""]) isNotEqualTo _wpId}) then {
+    missionNamespace setVariable ["COMSPEC_GpsMarkPending", _wpId, false];
     private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
-    private _mark = ["COMSPECExtension" callExtension ["MarkWaypointReached", [_wpId, _cs, "1"]]] call comspec_overwatch_connect_fnc_extResult;
-    private _parsed = [_mark] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
-    if ((_parsed isEqualType []) && {(count _parsed) > 0} && {_parsed select 0}) then {
-        ["Point GPS atteint" + (if (_label isEqualTo "") then { "" } else { " — " + _label }), "gps", "info"] call comspec_overwatch_connect_fnc_announce;
-        private _hitName = format ["COMSPEC_GPS_WP_%1", _wpId];
-        if (_hitName in allMapMarkers) then {
-            _hitName setMarkerColorLocal "ColorGrey";
-            _hitName setMarkerAlphaLocal 0.45;
+    [_wpId, _cs, _label] spawn {
+        params ["_wpId", "_cs", "_label"];
+        private _mark = [["COMSPECExtension", "MarkWaypointReached", [_wpId, _cs, "1"]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
+        missionNamespace setVariable ["COMSPEC_GpsMarkPending", "", false];
+        private _parsed = [_mark] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
+        if ((_parsed isEqualType []) && {(count _parsed) > 0} && {_parsed select 0}) then {
+            ["Point GPS atteint" + (if (_label isEqualTo "") then { "" } else { " — " + _label }), "gps", "info"] call comspec_overwatch_connect_fnc_announce;
+            private _hitName = format ["COMSPEC_GPS_WP_%1", _wpId];
+            if (_hitName in allMapMarkers) then {
+                _hitName setMarkerColorLocal "ColorGrey";
+                _hitName setMarkerAlphaLocal 0.45;
+            };
         };
     };
 };

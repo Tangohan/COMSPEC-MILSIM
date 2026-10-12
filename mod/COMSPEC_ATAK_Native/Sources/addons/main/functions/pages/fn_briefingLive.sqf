@@ -39,9 +39,14 @@ switch (_act) do {
         // Présence vue sur Athena (page briefing) : toutes les 30 s pour qui suit ou présente, téléphone ouvert sur le briefing.
         if (_onPage && {_follow || {_pres isEqualTo player}} && {!isNil "comspec_overwatch_connect_fnc_extResult"} && {time - (uiNamespace getVariable ["COMSPEC_ATAK_BriefBeat", -100]) > 30}) then {
             uiNamespace setVariable ["COMSPEC_ATAK_BriefBeat", time];
-            [format ["%1 · %2", [player, true] call comspec_atak_native_fnc_unitCallsign, name player], getPlayerUID player] spawn {
-                params ["_label", "_key"];
-                ["COMSPECExtension" callExtension ["BriefingPresence", [_label, _key]]] call comspec_overwatch_connect_fnc_extResult;
+            // Un seul envoi en cours : l'appel DLL est bloquant, un Athena lent ne doit pas en empiler.
+            if !(missionNamespace getVariable ["COMSPEC_ATAK_BriefPresBusy", false]) then {
+                missionNamespace setVariable ["COMSPEC_ATAK_BriefPresBusy", true];
+                [format ["%1 · %2", [player, true] call comspec_atak_native_fnc_unitCallsign, name player], getPlayerUID player] spawn {
+                    params ["_label", "_key"];
+                    [(["COMSPECExtension", "BriefingPresence", [_label, _key]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
+                    missionNamespace setVariable ["COMSPEC_ATAK_BriefPresBusy", false];
+                };
             };
         };
         if (!_follow) exitWith {};
@@ -51,8 +56,9 @@ switch (_act) do {
         if (_i < 0 && {(uiNamespace getVariable ["COMSPEC_ATAK_BriefReload", objNull]) isNotEqualTo _pres} && {!isNil "comspec_overwatch_connect_fnc_getBriefingSlides"}) then {
             uiNamespace setVariable ["COMSPEC_ATAK_BriefReload", _pres];
             uiNamespace setVariable ["COMSPEC_ATAK_SlideCache", createHashMap];
-            _slides = [] call comspec_overwatch_connect_fnc_getBriefingSlides;
-            _i = _slides findIf { (_x select 0) isEqualTo (_live select 2) };
+            // Relecture hors de l'image en cours : l'appel à Athena figeait le jeu de chaque spectateur au même moment.
+            // La liste arrive dans COMSPEC_BriefingSlides et sert au passage suivant (2 s).
+            [] spawn { [] call comspec_overwatch_connect_fnc_getBriefingSlides; };
         };
         if (_i < 0) then { _i = (_live select 3) min (((count _slides) - 1) max 0); };
         if ((missionNamespace getVariable ["COMSPEC_BriefingSlideIndex", 0]) isNotEqualTo _i) then { missionNamespace setVariable ["COMSPEC_BriefingSlideIndex", _i]; };

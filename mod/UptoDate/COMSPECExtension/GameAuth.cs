@@ -400,12 +400,50 @@ public static partial class Extension
             || raw.Contains("http_403", StringComparison.OrdinalIgnoreCase);
     }
 
+    // Rafraîchissement du jeton de jeu : un seul à la fois, et pas plus d'un essai par minute après un échec.
+    // Il est appelé avant chaque requête, souvent depuis le thread du jeu : un rafraîchissement raté (réseau)
+    // était retenté à chaque appel, avec jusqu'à SyncTimeoutSeconds d'attente à chaque fois (gel de la partie).
+    private static int _gameRefreshBusy;
+    private static long _gameRefreshFailTicks;
+
     private static bool EnsureFreshGameAccessToken()
     {
         if (_gameAccessToken.Length > 0
             && (_gameAccessExpiresAt == DateTimeOffset.MinValue
                 || DateTimeOffset.UtcNow < _gameAccessExpiresAt.AddSeconds(-45)))
             return true;
+
+        // Jeton encore valide mais proche de l'échéance : rafraîchi en arrière-plan, la requête part avec l'actuel.
+        if (_gameAccessToken.Length > 0 && DateTimeOffset.UtcNow < _gameAccessExpiresAt)
+        {
+            if (System.Threading.Interlocked.CompareExchange(ref _gameRefreshBusy, 1, 0) == 0)
+            {
+                _ = Task.Run(() =>
+                {
+                    try { RefreshGameAccessTokenNow(); }
+                    catch { System.Threading.Interlocked.Exchange(ref _gameRefreshFailTicks, DateTime.UtcNow.Ticks); }
+                    finally { System.Threading.Interlocked.Exchange(ref _gameRefreshBusy, 0); }
+                });
+            }
+            return true;
+        }
+
+        // Jeton périmé : rafraîchissement direct, sauf si un autre est en cours ou si le dernier a échoué il y a moins d'une minute.
+        if (DateTime.UtcNow.Ticks - System.Threading.Interlocked.Read(ref _gameRefreshFailTicks) < TimeSpan.FromSeconds(60).Ticks)
+            return _gameAccessToken.Length > 0;
+        if (System.Threading.Interlocked.CompareExchange(ref _gameRefreshBusy, 1, 0) != 0)
+            return _gameAccessToken.Length > 0;
+        try { return RefreshGameAccessTokenNow(); }
+        catch
+        {
+            System.Threading.Interlocked.Exchange(ref _gameRefreshFailTicks, DateTime.UtcNow.Ticks);
+            return false;
+        }
+        finally { System.Threading.Interlocked.Exchange(ref _gameRefreshBusy, 0); }
+    }
+
+    private static bool RefreshGameAccessTokenNow()
+    {
 
         var store = DpapiGameStore.Load();
         if (store == null || string.IsNullOrEmpty(store.RefreshToken))
@@ -436,8 +474,10 @@ public static partial class Extension
         }
 
         var result = ApplyGameAuthResponse(json, "RefreshSession");
-        return result.StartsWith("OK|", StringComparison.Ordinal)
+        var ok = result.StartsWith("OK|", StringComparison.Ordinal)
             && _gameAccessToken.Length > 0;
+        if (!ok) System.Threading.Interlocked.Exchange(ref _gameRefreshFailTicks, DateTime.UtcNow.Ticks);
+        return ok;
     }
 
     private static string GameAuthPassword(string email, string password, string modVersion)

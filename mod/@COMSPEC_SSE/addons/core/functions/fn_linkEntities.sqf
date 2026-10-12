@@ -31,9 +31,17 @@ private _link = createHashMapFromArray [
 if (isNil "comspec_sse_linkGraph") then {
     comspec_sse_linkGraph = [];
 };
+// Lien déjà connu : rien à refaire (un site généré reliait et rediffusait le même graphe des dizaines de fois).
+if (isNil "comspec_sse_linkKeys") then { comspec_sse_linkKeys = createHashMap; };
+private _linkKey = format ["%1|%2|%3", _srcUid, _tgtUid, toUpper _relationType];
+if (_linkKey in comspec_sse_linkKeys) exitWith { true };
+comspec_sse_linkKeys set [_linkKey, true];
 comspec_sse_linkGraph pushBack _link;
-if (isServer) then {
-    publicVariable "comspec_sse_linkGraph";
+if ((count comspec_sse_linkGraph) > 600) then { comspec_sse_linkGraph deleteRange [0, (count comspec_sse_linkGraph) - 600]; };
+// Une seule diffusion du graphe toutes les 2 s au plus, au lieu d'une par lien.
+if (isServer && {isNil "comspec_sse_linkPvPending"}) then {
+    comspec_sse_linkPvPending = true;
+    [{ comspec_sse_linkPvPending = nil; publicVariable "comspec_sse_linkGraph"; }, [], 2] call CBA_fnc_waitAndExecute;
 };
 
 private _assoc = [_source, "associations"] call comspec_sse_fnc_getSection;

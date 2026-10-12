@@ -18,7 +18,9 @@ final class CooperationLifecycleWiringAssetTest extends TestCase
         $routes = $this->read('routes/web.php');
         self::assertStringContainsString("'/back-office/cooperation/missions/{id}/remove-partner', [InterteamMissionWebController::class, 'removePartner']", $routes);
         self::assertStringContainsString("'/back-office/cooperation/missions/{id}/cancel', [InterteamMissionWebController::class, 'cancelProposal']", $routes);
-        self::assertStringContainsString("'/admin/interteam-missions/{id}/invite'", $routes);
+        // Anciennes adresses /admin : redirections GET seulement, les actions vivent dans le back-office.
+        self::assertStringContainsString("'/admin/interteam-missions/{id}/edit'", $routes);
+        self::assertStringNotContainsString("router->post('/admin/interteam-missions", $routes);
         self::assertStringContainsString("'/back-office/ressources/interteam-missions/{id}'", $routes);
     }
 

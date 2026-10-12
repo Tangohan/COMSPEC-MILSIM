@@ -849,6 +849,8 @@ html.tacmap-night .leaflet-control-attribution {
 .tacmap-recon-meta strong { color: var(--tm-fg); }
 .tacmap-recon-meta span,
 .tacmap-recon-meta p { color: var(--tm-muted); margin: 0; }
+.tacmap-recon-badge { display: inline-block; border: 1px solid currentColor; border-radius: 3px; padding: 0 4px; margin-right: 4px; font-size: 0.65rem; letter-spacing: 0.04em; color: #9fe7c8; text-decoration: none; }
+.tacmap-recon-badge--conf { color: #ff8a7a; }
 .tacmap-recon-item--locate { cursor: pointer; }
 .tacmap-recon-item--locate:hover { filter: brightness(1.05); }
 .tacmap-recon-note {

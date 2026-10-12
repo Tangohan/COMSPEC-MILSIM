@@ -18,10 +18,13 @@ class CfgFunctions {
             class fx {}; class toast {}; class quickSettings {}; class lockScreen {};
         };
         class map { file="z\comspec_atak_native\addons\main\functions\map";
-            class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class natoSymbol {}; class mapCtxMenu {}; class mapPing {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class unitGroup {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerWeb {}; class markerWebSweep {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {}; class mapUnfocus {}; class inspToggle {}; class markerPalette {}; class markerPaletteData {}; class markerLabels {}; class sigintPoll {}; class reliefDraw {}; class meshDraw {}; class logisticsDraw {}; class ewDraw {}; class mapStyle {}; class textureKeep {};
+            class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class natoSymbol {}; class mapLabels {}; class mapCtxMenu {}; class mapPing {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class unitGroup {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerWeb {}; class markerWebSweep {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {}; class mapUnfocus {}; class inspToggle {}; class markerPalette {}; class markerPaletteData {}; class markerLabels {}; class sigintPoll {}; class reliefDraw {}; class meshDraw {}; class logisticsDraw {}; class ewDraw {}; class mapStyle {}; class textureKeep {}; class strokeSimplify {}; class strokeDraw {}; class strokeBar {};
+        };
+        class plan { file="z\comspec_atak_native\addons\main\functions\plan";
+            class planCatalog {}; class planGfx {}; class planDraw {}; class planServer {}; class planAction {}; class planMap {}; class pagePlan {};
         };
         class network { file="z\comspec_atak_native\addons\main\functions\network";
-            class extensionCall {}; class extensionCallback {}; class remoteSync {}; class importLegacyData {};
+            class extensionCall {}; class extAwait {}; class extensionCallback {}; class remoteSync {}; class importLegacyData {};
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
             class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {};
         };
@@ -42,13 +45,13 @@ class CfgFunctions {
             class breachBuilding {}; class pageBreach {}; class breachAction {}; class breachTop {};
         };
         class drone { file="z\comspec_atak_native\addons\main\functions\drone";
-            class droneCmd {}; class droneAction {}; class droneOsd {}; class droneDraw {}; class pageDrone {}; class droneDetectScan {}; class pageDroneDetect {}; class droneDetectDraw {}; class lockAction {}; class droneFlir {};
+            class droneCmd {}; class droneAction {}; class droneOsd {}; class droneDraw {}; class pageDrone {}; class droneDetectScan {}; class pageDroneDetect {}; class droneDetectDraw {}; class lockAction {}; class droneFlir {}; class droneSeq {}; class dronePhoto {}; class droneStatic {};
         };
         class bluetooth { file="z\comspec_atak_native\addons\main\functions\bluetooth";
             class airplaneMode {}; class btAction {}; class btSounds {}; class pageBluetooth {}; class btInit { postInit=1; };
         };
         class shell { file="z\comspec_atak_native\addons\main\functions\shell";
-            class antenna {}; class backView {}; class aceMenu {}; class vestMount {}; class powerBank {}; class irBeacon {}; class screenGlow {}; class phoneSecurity {}; class droppedPhone {}; class patchTexture {}; class patchCatalog {}; class pagePatches {}; class pageAccessories {}; class accessoriesAction {}; class vestBuiltin {};
+            class antenna {}; class backView {}; class aceMenu {}; class vestMount {}; class powerBank {}; class irBeacon {}; class screenGlow {}; class phoneSecurity {}; class droppedPhone {}; class patchTexture {}; class patchCatalog {}; class pagePatches {}; class pageAccessories {}; class accessoriesAction {}; class vestBuiltin {}; class jpcScreen {};
         };
         class vehicle { file="z\comspec_atak_native\addons\main\functions\vehicle";
             class vehicleTerminal {}; class vehicleGateway {};
@@ -123,6 +126,7 @@ class COMSPEC_ATAK_Apps {
     class Tasks       { name="Tâches"; page="TASK"; section="Mission"; order=200; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_tasks.paa"; };
     class Reports     { name="Comptes rendus"; page="REPORTS"; section="Mission"; order=202; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_reports.paa"; };
     class Briefing    { name="Briefing"; page="BRIEFING"; section="Mission"; order=205; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_briefing.paa"; };
+    class Plan        { name="Plan"; page="PLAN"; function="comspec_atak_native_fnc_pagePlan"; section="Mission"; order=206; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_plan.paa"; };
     class Logistics   { name="Logistique"; page="LOGI"; section="Mission"; order=210; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_logistics.paa"; };
     class Aar         { name="Rejeu"; page="AAR"; section="Mission"; order=215; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_aar.paa"; };
     class Athena      { name="Athena"; page="ATHENA"; section="Système"; order=300; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_athena.paa"; };
@@ -273,6 +277,14 @@ class CfgVehicles {
         model="\z\comspec_atak_native\addons\main\data\vest_phone.p3d";
         hiddenSelections[]={"camo","patch"};
         hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\vest_phone_co.paa",""};
+    };
+    // Tablette durcie à touches sur le rabat du JPC (fn_jpcScreen, tools/model_jpc_tablet.py) : coque, écran (texture UI).
+    class COMSPEC_ATAK_JpcTablet: Static {
+        scope=1; scopeCurator=0; author="COMSPEC"; displayName="Tablette ATAK (JPC)";
+        model="\z\comspec_atak_native\addons\main\data\jpc_tablet.p3d";
+        hiddenSelections[]={"camo","screen"};
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_tablet_co.paa","#(argb,8,8,3)color(0,0,0,1)"};
+        hiddenSelectionsMaterials[]={"","\z\comspec_atak_native\addons\main\data\jpc_screen.rvmat"};
     };
     class Item_COMSPEC_ATAK_Battery: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";

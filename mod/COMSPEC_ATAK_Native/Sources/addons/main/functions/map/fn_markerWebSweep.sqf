@@ -35,9 +35,11 @@ private _budget = 40;
         if ((_prev getOrDefault [_n, ""]) isEqualTo _sig) then { _next set [_n, _sig]; };
     };
 } forEach allMapMarkers;
+// Marqueurs existants lus une fois (allMapMarkers recopiait toute la liste à chaque marqueur suivi).
+private _alive = createHashMapFromArray (allMapMarkers apply { [_x, true] });
 {
     if !(_x in _next) then {
-        if (!(_x in allMapMarkers)) then { [_x, true, true] call comspec_overwatch_connect_fnc_syncMapMarker; } else { _next set [_x, _y]; };
+        if (!(_x in _alive)) then { [_x, true, true] call comspec_overwatch_connect_fnc_syncMapMarker; } else { _next set [_x, _y]; };
     };
 } forEach _prev;
 uiNamespace setVariable ["COMSPEC_ATAK_MkSnap", _next];

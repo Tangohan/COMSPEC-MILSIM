@@ -67,7 +67,7 @@ class AdminModpackController
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::set('error', 'Session expirée.');
-            return Response::redirect(url('admin/modpacks/create'));
+            return Response::redirect(url('back-office/ressources/modpacks/create'));
         }
         $name = trim((string) $request->input('name'));
         $slugInput = trim((string) $request->input('slug'));
@@ -77,17 +77,17 @@ class AdminModpackController
         }
         if ($name === '') {
             Session::set('error', 'Le nom est requis.');
-            return Response::redirect(url('admin/modpacks/create'));
+            return Response::redirect(url('back-office/ressources/modpacks/create'));
         }
         if ($this->modpackRepository->slugExists((int) $tenantId, $effectiveSlug)) {
             Session::set('error', 'Ce slug existe déjà.');
-            return Response::redirect(url('admin/modpacks/create'));
+            return Response::redirect(url('back-office/ressources/modpacks/create'));
         }
 
         $externalUrl = $this->normalizeExternalUrl((string) $request->input('url', ''));
         if ($externalUrl === false) {
             Session::set('error', 'L’URL externe doit commencer par http:// ou https://.');
-            return Response::redirect(url('admin/modpacks/create'));
+            return Response::redirect(url('back-office/ressources/modpacks/create'));
         }
 
         $staged = $this->resolveStagedUpload((int) $tenantId, (string) $request->input('staged_upload_id', ''));
@@ -97,7 +97,7 @@ class AdminModpackController
             $validationError = $this->validateModpackUpload($file['tmp_name'], (int) $file['size'], (string) ($file['name'] ?? ''));
             if ($validationError !== null) {
                 Session::set('error', $validationError);
-                return Response::redirect(url('admin/modpacks/create'));
+                return Response::redirect(url('back-office/ressources/modpacks/create'));
             }
         }
 
@@ -140,7 +140,7 @@ class AdminModpackController
 
         $this->processImageUploads($id, $baseDir, 0);
         Session::set('success', 'Modpack créé.');
-        return Response::redirect(url('admin/modpacks'));
+        return Response::redirect(url('back-office/ressources/modpacks'));
     }
 
     public function edit(Request $request, array $params = []): Response
@@ -171,7 +171,7 @@ class AdminModpackController
         }
         if (!Csrf::validate($request->input('_csrf_token'))) {
             Session::set('error', 'Session expirée.');
-            return Response::redirect(url('admin/modpacks'));
+            return Response::redirect(url('back-office/ressources/modpacks'));
         }
         $id = (int) ($params['id'] ?? 0);
         $modpack = $this->modpackRepository->findById($id, (int) $tenantId);
@@ -186,17 +186,17 @@ class AdminModpackController
         }
         if ($name === '') {
             Session::set('error', 'Le nom est requis.');
-            return Response::redirect(url('admin/modpacks/' . $id . '/edit'));
+            return Response::redirect(url('back-office/ressources/modpacks/' . $id . '/edit'));
         }
         if ($this->modpackRepository->slugExists((int) $tenantId, $effectiveSlug, $id)) {
             Session::set('error', 'Ce slug existe déjà.');
-            return Response::redirect(url('admin/modpacks/' . $id . '/edit'));
+            return Response::redirect(url('back-office/ressources/modpacks/' . $id . '/edit'));
         }
 
         $externalUrl = $this->normalizeExternalUrl((string) $request->input('url', ''));
         if ($externalUrl === false) {
             Session::set('error', 'L’URL externe doit commencer par http:// ou https://.');
-            return Response::redirect(url('admin/modpacks/' . $id . '/edit'));
+            return Response::redirect(url('back-office/ressources/modpacks/' . $id . '/edit'));
         }
 
         $now = date('Y-m-d H:i:s');
@@ -218,7 +218,7 @@ class AdminModpackController
             $validationError = $this->validateModpackUpload($file['tmp_name'], (int) $file['size'], (string) ($file['name'] ?? ''));
             if ($validationError !== null) {
                 Session::set('error', $validationError);
-                return Response::redirect(url('admin/modpacks/' . $id . '/edit'));
+                return Response::redirect(url('back-office/ressources/modpacks/' . $id . '/edit'));
             }
         }
 
@@ -267,7 +267,7 @@ class AdminModpackController
         $existingCount = count($modpack['images'] ?? []);
         $this->processImageUploads($id, $baseDir, $existingCount);
         Session::set('success', 'Modpack mis à jour.');
-        return Response::redirect(url('admin/modpacks'));
+        return Response::redirect(url('back-office/ressources/modpacks'));
     }
 
     public function delete(Request $request, array $params = []): Response
@@ -287,7 +287,7 @@ class AdminModpackController
             $this->removeDirRecursive($dir);
         }
         Session::set('success', 'Modpack supprimé.');
-        return Response::redirect(url('admin/modpacks'));
+        return Response::redirect(url('back-office/ressources/modpacks'));
     }
 
     /** Initialise un upload par morceaux (gros fichiers). */

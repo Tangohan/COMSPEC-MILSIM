@@ -1165,7 +1165,7 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
         </div>
     </div>
 
-    <p class="mt-10"><a href="<?= htmlspecialchars(url('back-office')) ?>" class="text-sm text-slate-600 underline">Retour administration organisation</a></p>
+    <p class="mt-10"><a href="<?= htmlspecialchars(url('back-office')) ?>" class="text-sm text-slate-600 underline">Retour au back-office</a></p>
 </div>
 <script>
 (function () {

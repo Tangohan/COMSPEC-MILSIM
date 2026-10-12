@@ -34,9 +34,9 @@ $expiresLabel = static function (mixed $raw): string {
             liaison de compte, synchronisation et envois depuis le jeu seront refusés, avec un message explicite côté mod.
         </p>
         <div class="mt-4 flex flex-wrap gap-3 text-sm">
-            <a href="<?= htmlspecialchars(url('admin/atak-mod'), ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:underline">Pack Overwatch</a>
+            <a href="<?= htmlspecialchars(url('back-office/ressources/atak-mod'), ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:underline">Pack Overwatch</a>
             <span class="text-slate-300">·</span>
-            <a href="<?= htmlspecialchars(url('admin/atak-config'), ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:underline">Configuration ATAK</a>
+            <a href="<?= htmlspecialchars(url('back-office/ressources/atak-config'), ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:underline">Configuration ATAK</a>
             <span class="text-slate-300">·</span>
             <a href="<?= htmlspecialchars(url('admin/system/blocklist'), ENT_QUOTES, 'UTF-8') ?>" class="text-slate-600 hover:underline">Liste e-mail / réseau (site)</a>
         </div>
@@ -53,7 +53,7 @@ $expiresLabel = static function (mixed $raw): string {
                 Recherchez un membre pour remplir l’identifiant Steam, ou saisissez une adresse réseau observée côté serveur.
             </p>
         </div>
-        <form method="post" action="<?= htmlspecialchars(url('admin/atak-mod-blocks/add'), ENT_QUOTES, 'UTF-8') ?>" class="grid md:grid-cols-2 gap-4">
+        <form method="post" action="<?= htmlspecialchars(url('back-office/ressources/atak-mod-blocks/add'), ENT_QUOTES, 'UTF-8') ?>" class="grid md:grid-cols-2 gap-4">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
             <div>
                 <label for="block_kind" class="block text-xs font-semibold text-slate-600 mb-1">Type</label>
@@ -64,7 +64,7 @@ $expiresLabel = static function (mixed $raw): string {
             </div>
             <div class="md:col-span-2 rounded-lg border border-dashed border-slate-200 bg-slate-50/60 p-4"
                  data-mod-block-member-picker
-                 data-search-url="<?= htmlspecialchars(url('api/admin/atak-mod-blocks/members'), ENT_QUOTES, 'UTF-8') ?>">
+                 data-search-url="<?= htmlspecialchars(url('api/back-office/atak-mod-blocks/members'), ENT_QUOTES, 'UTF-8') ?>">
                 <p class="text-xs font-semibold text-slate-700 mb-2">Choisir un membre (identifiant Steam)</p>
                 <p class="text-xs text-slate-500 mb-2">Tapez au moins deux caractères (nom, indicatif, e-mail ou Steam). Seuls les comptes avec Steam lié peuvent être sélectionnés pour ce type.</p>
                 <input type="search"
@@ -143,7 +143,7 @@ $expiresLabel = static function (mixed $raw): string {
                                 <td class="p-3 text-slate-600"><?= htmlspecialchars(trim((string) ($b['reason'] ?? '')) !== '' ? (string) $b['reason'] : '—', ENT_QUOTES, 'UTF-8') ?></td>
                                 <td class="p-3 text-right">
                                     <?php if ($canRevoke): ?>
-                                        <form method="post" action="<?= htmlspecialchars(url('admin/atak-mod-blocks/revoke'), ENT_QUOTES, 'UTF-8') ?>" class="inline"
+                                        <form method="post" action="<?= htmlspecialchars(url('back-office/ressources/atak-mod-blocks/revoke'), ENT_QUOTES, 'UTF-8') ?>" class="inline"
                                               onsubmit="return confirm('Lever cette restriction ?');">
                                             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars(\App\Core\Csrf::token(), ENT_QUOTES, 'UTF-8') ?>">
                                             <input type="hidden" name="indicator_id" value="<?= $id ?>">

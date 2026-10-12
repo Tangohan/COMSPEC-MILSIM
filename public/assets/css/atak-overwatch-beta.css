@@ -479,6 +479,8 @@ button.ow-air-card .ow-card-head{pointer-events:none}
 .ow-card.is-blurred .ow-thumb{filter:blur(14px)}
 .ow-photo-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .ow-photo-actions .ow-tag{cursor:pointer}
+.ow-photo-badges{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+.ow-photo-badges a.ow-tag{text-decoration:none;cursor:pointer}
 .ow-photo-lightbox{position:fixed;inset:0;z-index:80;background:#000c;display:flex;align-items:center;justify-content:center}
 .ow-photo-lightbox img{max-width:92vw;max-height:90vh;object-fit:contain;box-shadow:0 8px 40px #0008}
 .ow-photo-lightbox.is-blurred img{filter:blur(18px)}

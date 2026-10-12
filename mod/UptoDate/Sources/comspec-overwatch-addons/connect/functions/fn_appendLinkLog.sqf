@@ -22,7 +22,8 @@ if (count _lines > 40) then {
     _lines = _lines select [(count _lines) - 40, 40];
     _log = (_lines joinString _nl) + _nl;
 };
-missionNamespace setVariable ["COMSPEC_Log", _log, true];
+// Journal propre au client (lu par sa messagerie) : plus de diffusion réseau à chaque ligne.
+missionNamespace setVariable ["COMSPEC_Log", _log, false];
 
 private _display = uiNamespace getVariable ["COMSPEC_Chat_Display", displayNull];
 if (!isNull _display) then {

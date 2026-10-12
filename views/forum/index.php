@@ -10,7 +10,7 @@ $forumContextMenuEnabled = !empty($forumContextMenuEnabled);
 $forumFullCategoryAdmin = !empty($forumFullCategoryAdmin);
 $forumCsrfToken = $forumCsrfToken ?? '';
 $forumCategoriesApiUrl = $forumCategoriesApiUrl ?? '';
-$forumAdminForumConfigUrl = $forumAdminForumConfigUrl ?? url('admin/forum-config');
+$forumAdminForumConfigUrl = $forumAdminForumConfigUrl ?? url('back-office/ressources/forum-config');
 $forumContextTenantId = (int) ($forumContextTenantId ?? \App\Core\Session::get('tenant_id') ?? 0);
 $forumSessionTenantId = (int) ($forumSessionTenantId ?? $forumContextTenantId);
 $forumViewTenantSwitcher = is_array($forumViewTenantSwitcher ?? null) ? $forumViewTenantSwitcher : [];
@@ -426,7 +426,7 @@ $forumCanDeleteCategoryMenu = !empty($forumCanDeleteCategoryMenu);
                   <p class="text-[10px] text-slate-500">Aucune quarantaine active</p>
                 <?php endif; ?>
               </div>
-              <a href="<?= $baseUrl ?>/admin/content-moderation" class="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-800 shadow-sm transition hover:border-amber-300 hover:text-amber-900">Traiter</a>
+              <a href="<?= $baseUrl ?>/back-office/content-moderation" class="shrink-0 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-800 shadow-sm transition hover:border-amber-300 hover:text-amber-900">Traiter</a>
             </div>
           </div>
           <?php else: ?>

@@ -1,6 +1,6 @@
 COMSPEC_ATAK_UI_GENERATION = "native-rsc-v1";
 missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION, true];
-missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", "1.10.0", true];
+missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", "1.11.0", true];
 diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
@@ -194,6 +194,11 @@ private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 ["comspec_atak_native_screen_time", "CHECKBOX",
     ["Temps d'écran et temps par rôle", "Compte le temps du téléphone allumé (en main, porté, par app) et le temps de jeu par rôle (pilote, chef d'équipe…). Visible dans l'app Temps d'écran et envoyé à Athena (fiche du membre, back-office)."],
     _team, true, 1] call CBA_fnc_addSetting;
+// App Plan (carte de briefing) : qui modifie le plan partagé du camp ; le serveur seul l'écrit (fn_planServer).
+["comspec_atak_native_plan_edit", "LIST",
+    ["Plan de briefing : édition", "Qui peut dessiner sur le plan partagé du camp (app Plan). Les autres le voient et préparent leur brouillon, ajouté ensuite par un chef."],
+    _team, [[0, 1, 2], ["Tout le monde", "Chefs de groupe, Zeus et admins", "Zeus et admins seulement"], 1], 1] call CBA_fnc_addSetting;
+if (isServer) then { ["comspec_atak_native_planSrv", { _this call comspec_atak_native_fnc_planServer; }] call CBA_fnc_addEventHandler; };
 
 // Interface (réglage propre à chaque joueur).
 ["comspec_atak_native_action_menu", "LIST",

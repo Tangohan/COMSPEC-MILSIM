@@ -119,6 +119,8 @@ ICONS = {
     "app_reports": '<rect x="5" y="3.5" width="14" height="18" rx="1.5"/><path d="M9 3.5V2h6v1.5"/><path d="M8.5 9h7M8.5 12.5h7M8.5 16h4"/><path d="M14.5 17l1.3 1.3 2.7-2.8"/>',
     "app_photos": '<path d="M3 7h4l2-2.5h6L17 7h4v12H3z"/><circle cx="12" cy="13" r="3.5"/>',
     "app_briefing": '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M12 16v4M8 21h8M7 12l3-3 2 2 4-4"/>',
+    # Plan (carte de briefing) : cadre de carte, zone ennemie, axe en tirets vers l'objectif, bâtiment nettoyé.
+    "app_plan": '<rect x="3" y="3" width="18" height="18" rx="1.5"/><path d="M6 6.5h5.5v4H6z"/><path d="M6.5 17.5c3-.5 6-2.5 8.5-6.5" stroke-dasharray="2 1.7"/><path d="M12.6 11l2.6-.4.4 2.7"/><path d="M14.5 17l1.6 1.6 3-3.3"/>',
     "app_status": '<path d="M3 20h18M6 20v-6M10 20V9M14 20v-8M18 20V5"/>',
     "app_settings": '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
     "ui_back": '<path d="M15 5l-7 7 7 7"/>',
@@ -165,6 +167,8 @@ ICONS = {
     "ui_bell": '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
     "ui_comspec_link": '<path d="M12 2.5l8.2 4.75v9.5L12 21.5l-8.2-4.75v-9.5z"/><path d="M10.4 13.6a2.6 2.6 0 0 0 3.7 0l1.9-1.9a2.6 2.6 0 0 0-3.7-3.7l-.6.6"/><path d="M13.6 10.4a2.6 2.6 0 0 0-3.7 0l-1.9 1.9a2.6 2.6 0 0 0 3.7 3.7l.6-.6"/>',
     "ui_vibrate": '<rect x="8" y="4" width="8" height="16" rx="1.5"/><path d="M4 8v8M20 8v8M2 10v4M22 10v4"/>',
+    # Main ouverte : « prendre en main » (pastille Ctrl+Maj+U du téléphone porté).
+    "ui_hand": '<path d="M9.1 12V5.6a1.3 1.3 0 0 1 2.6 0V11M11.7 11V4.3a1.3 1.3 0 0 1 2.6 0V11M14.3 11V5.6a1.3 1.3 0 0 1 2.6 0V11M16.9 11.2V8.3a1.3 1.3 0 0 1 2.6 0v5.4c0 4.1-2.8 7.3-6.6 7.3-2.7 0-4.3-1.3-5.8-3.5l-2.6-4a1.4 1.4 0 0 1 2.2-1.7l2.4 2.8V8.2"/>',
 }
 
 
@@ -267,10 +271,34 @@ def topo_wallpaper(w, h, seed, hue):
     return out
 
 
+def erase_box(img, box):
+    """Efface un logo incrusté (box en fractions de l'image) : fondu vertical entre les lignes au-dessus et au-dessous,
+    puis flou léger. Le logo ATHENA du coin haut gauche passait sous la barre d'app et chevauchait le lanceur."""
+    W, H = img.size
+    x0, y0, x1, y1 = int(box[0] * W), int(box[1] * H), int(box[2] * W), int(box[3] * H)
+    top, bot = max(0, y0 - 1), min(H - 1, y1)
+    px = img.load()
+    for x in range(x0, x1):
+        a, b = px[x, top], px[x, bot]
+        for y in range(y0, y1):
+            t = (y - y0) / max(1, y1 - y0)
+            px[x, y] = tuple(int(a[i] * (1 - t) + b[i] * t) for i in range(3))
+    m = 12
+    reg = (max(0, x0 - m), max(0, y0 - m), min(W, x1 + m), min(H, y1 + m))
+    img.paste(img.crop(reg).filter(ImageFilter.GaussianBlur(10)), reg[:2])
+    return img
+
+
+# Logo incrusté dans la photo source, effacé avant recadrage (fractions de l'image source).
+WALL_ERASE = {"wallpaper_athena.jpg": (0.0, 0.0, 0.2, 0.135)}
+
+
 def photo_wallpaper(path, w, h, dim):
     """Photo en fond : couvre l'écran sans l'étirer ; en vertical, la photo entière sur un fond flouté."""
     from PIL import ImageFilter
     img = Image.open(path).convert("RGB")
+    if os.path.basename(path) in WALL_ERASE:
+        img = erase_box(img, WALL_ERASE[os.path.basename(path)])
     img = Image.eval(img, lambda v: int(v * dim))
     sw, sh = img.size
     cover = max(w / sw, h / sh)
@@ -1230,7 +1258,7 @@ def nvgfilter_item(size=256):
 
 
 # --- Autres modèles (render_phones.py) : même ouverture d'écran que le S7 (x 455..1546, y 716..1333) ---
-PHONE_MODELS = ["rugged", "iphone", "tablet"]
+PHONE_MODELS = ["rugged", "iphone", "tablet", "keys", "plate", "flip", "ribbed"]
 
 
 def _night(img):
@@ -1242,8 +1270,10 @@ def _night(img):
     return out
 
 
-def model_assets(tmp):
+def model_assets(tmp, only=None):
     for m in PHONE_MODELS:
+        if only and m not in only:
+            continue
         f = os.path.join(RENDER_DIR, f"phone_{m}_front.png")
         if not os.path.exists(f):
             continue
@@ -1529,6 +1559,67 @@ def patch_img(kind, size=512):
     return out.resize((size, size), Image.LANCZOS)
 
 
+# --- Tablette à touches sur le JPC (jpc_tablet.p3d, model_jpc_tablet.py) : atlas face en haut, dos en bas ---
+JPC_CROP = (186, 508, 1864, 1474)  # même rectangle que model_jpc_tablet.CROP
+JPC_HOLE = (455, 716, 1547, 1334)
+
+
+def jpc_tablet_atlas(tmp):
+    f = os.path.join(RENDER_DIR, "phone_keys_front.png")
+    b = os.path.join(RENDER_DIR, "phone_keys_back.png")
+    if not (os.path.exists(f) and os.path.exists(b)):
+        print("rendus keys absents : python3 render_phones.py (RENDER_ONLY=keys)")
+        return
+    x0, y0, x1, y1 = JPC_CROP
+    front = Image.open(f).convert("RGBA")
+    # Écran éteint dans le trou (l'écran vivant est une sélection à part, posée devant).
+    hx0, hy0, hx1, hy1 = JPC_HOLE
+    under = Image.new("RGBA", front.size, (0, 0, 0, 0))
+    under.paste(_glass(hx1 - hx0, hy1 - hy0), (hx0, hy0))
+    under.alpha_composite(front)
+    front = under.crop(JPC_CROP)
+    rear = Image.open(b).convert("RGBA").crop((2048 - x1, y0, 2048 - x0, y1))
+    rim = front.getpixel((1000 - x0, 1400 - y0))
+    atlas = Image.new("RGBA", (2048, 2048), rim[:3] + (255,))
+    for img, top in ((front, 0), (rear, 1024)):
+        bg = Image.new("RGBA", img.size, rim[:3] + (255,))
+        bg.alpha_composite(img)
+        atlas.paste(bg.resize((2048, 1024), Image.LANCZOS), (0, top))
+    convert(atlas.convert("RGB"), "jpc_tablet_co", tmp)
+
+
+def jpc_screen_static(tmp):
+    """Écran de la tablette vu par les autres joueurs : carte ATAK figée (topo, barre d'état, outils, positions)."""
+    img = topo_wallpaper(1024, 576, 11, (120, 170, 120)).convert("RGBA")
+    d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, 1023, 26), fill=(0, 0, 0, 255))
+    d.text((10, 5), "13:46", font=_font(16), fill=(230, 230, 230, 255))
+    d.rectangle((960, 7, 1004, 19), outline=(230, 230, 230, 255), width=2)
+    d.rectangle((962, 9, 994, 17), fill=(92, 199, 107, 255))
+    d.rectangle((0, 27, 1023, 70), fill=(24, 30, 26, 235))
+    for i in range(7):
+        d.rounded_rectangle((640 + i * 52, 33, 680 + i * 52, 64), radius=6, fill=(70, 90, 76, 255))
+    d.text((14, 38), "CARTE", font=_font(22), fill=(230, 235, 230, 255))
+    for x, y in ((300, 260), (360, 300), (330, 340), (420, 280)):
+        d.rectangle((x - 9, y - 9, x + 9, y + 9), fill=(40, 120, 230, 255), outline=(255, 255, 255, 255), width=2)
+    for x, y in ((700, 200), (760, 240)):
+        d.polygon([(x, y - 12), (x + 12, y), (x, y + 12), (x - 12, y)], fill=(220, 50, 40, 255), outline=(255, 255, 255, 255))
+    d.ellipse((470, 390, 494, 414), fill=(92, 199, 107, 255), outline=(255, 255, 255, 255), width=2)
+    d.rectangle((0, 520, 1023, 575), fill=(18, 22, 20, 230))
+    d.text((14, 532), "31U DQ 12345 67890   ALT 112 m", font=_font(20), fill=(210, 220, 210, 255))
+    # PAA : côtés en puissances de deux (l'écran étire la texture sur toute sa surface).
+    convert(img.convert("RGB").resize((1024, 512), Image.LANCZOS), "jpc_screen_static_co", tmp)
+
+
+def jpc_rvmats():
+    """Écran lumineux (émissif) : jour plus fort, nuit atténuée (fn_jpcScreen choisit selon sunOrMoon)."""
+    for name, em in (("jpc_screen", 2.2), ("jpc_screen_night", 0.45)):
+        with open(os.path.join(OUT, name + ".rvmat"), "w", newline="\r\n") as fh:
+            fh.write("ambient[]={0,0,0,1};\ndiffuse[]={0,0,0,1};\nforcedDiffuse[]={0,0,0,0};\n"
+                     f"emmisive[]={{{em},{em},{em},1}};\nspecular[]={{0.05,0.05,0.05,1}};\nspecularPower=80;\n"
+                     "PixelShaderID=\"Normal\";\nVertexShaderID=\"Basic\";\n")
+
+
 def patch_assets(tmp):
     for kind in PATCHES:
         convert(patch_img(kind), f"patch_{kind}", tmp)
@@ -1609,7 +1700,33 @@ def main():
         if len(sys.argv) > 2 and sys.argv[2] == "accicon":
             convert(icon_png("app_accessories", ICONS["app_accessories"]), "app_accessories", tmp)
             return
+        # « hand » : seulement l'icône main (pastille « prendre en main » du téléphone porté).
+        if len(sys.argv) > 2 and sys.argv[2] == "hand":
+            convert(icon_png("ui_hand", ICONS["ui_hand"]), "ui_hand", tmp)
+            return
+        # « athena » : seulement le fond ATHENA (logo du coin effacé) et sa variante floutée.
+        if len(sys.argv) > 2 and sys.argv[2] == "athena":
+            for suffix, (w, h) in (("land", (2048, 1024)), ("port", (1024, 2048))):
+                img = photo_wallpaper(os.path.join(HERE, "src", "wallpaper_athena.jpg"), w, h, 0.85)
+                convert(img.convert("RGB"), f"wall_athena_{suffix}", tmp)
+                convert(blurred(img), f"wall_athena_blur_{suffix}", tmp)
+            return
+        # « planicon » : seulement l'icône de l'app Plan.
+        if len(sys.argv) > 2 and sys.argv[2] == "planicon":
+            convert(icon_png("app_plan", ICONS["app_plan"]), "app_plan", tmp)
+            return
         # « camera » : seulement l'image de l'item Caméra IP compacte.
+        # « jpc » : tablette à touches (coques 2D, dos, atlas du modèle 3D, écran figé, rvmat de l'écran).
+        if len(sys.argv) > 2 and sys.argv[2] == "jpc":
+            model_assets(tmp, only=["keys"])
+            jpc_tablet_atlas(tmp)
+            jpc_screen_static(tmp)
+            jpc_rvmats()
+            return
+        # « cases » : coques de référence (support JPC, étui multicam, coque nervurée).
+        if len(sys.argv) > 2 and sys.argv[2] == "cases":
+            model_assets(tmp, only=["plate", "flip", "ribbed"])
+            return
         if len(sys.argv) > 2 and sys.argv[2] == "camera":
             convert(camera_item(), "item_camera", tmp)
             return
@@ -1625,6 +1742,9 @@ def main():
         patch_assets(tmp)
         accessory_assets(tmp)
         model_assets(tmp)
+        jpc_tablet_atlas(tmp)
+        jpc_screen_static(tmp)
+        jpc_rvmats()
         back_variants(tmp)
         shell_variants(tmp)
         if len(sys.argv) > 2 and sys.argv[2] == "datalink":

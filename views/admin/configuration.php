@@ -274,7 +274,7 @@ $card = static function (string $href, string $title, string $desc, string $acce
                 <?php if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()): ?>
                 <?php $card(url('back-office/forum-moderation'), 'Modération forum', 'Files et outils modérateur forum.'); ?>
                 <?php endif; ?>
-                <?php $card(url('admin/content-moderation'), 'Modération fichiers', 'Approbation des pièces jointes et médias.'); ?>
+                <?php $card(url('back-office/content-moderation'), 'Modération fichiers', 'Approbation des pièces jointes et médias.'); ?>
                 <?php endif; ?>
             </div>
         </section>
