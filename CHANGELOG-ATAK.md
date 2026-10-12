@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Drone : zones interdites, app Marquer tracking, raccourcis, journal en fil (ATAK natif 1.35.0)
+## Drone : zones interdites, app Marquer tracking, raccourcis, journal en fil (ATAK natif 1.36.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Suite des demandes de TTRD sur le drone (après 1.31.0).
 - **Suivi (ME SUIVRE, escorte)** : le drone ne tourne plus en rond autour d'un joueur immobile. Il garde le cap de la dernière marche et, à moins de 15 m de sa place, reste en stationnaire, caméra sur le joueur, jusqu'à ce qu'il reparte.
@@ -22,6 +22,16 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration. Suite des demande
 - **Journal du drone en fil de discussion** : ordres du pilote à droite (PILOTE), retours du drone à gauche (DRONE).
 - Pas encore fait : plusieurs drones à la fois, essaim et rôles simultanés (drone 1 en CQB, drone 2 sur un marqueur), IA de proximité. Le téléphone ne pilote qu'un drone appairé ; c'est un chantier à part.
 - À vérifier en jeu : suivi joueur arrêté puis reparti, les 4 touches, zone posée/retirée et vue par un équipier, drone qui ressort d'une zone, ordre refusé, EN MARQUEUR / EN FICHE SSE, app Marquer tracking, journal.
+
+## Vague 2026-10-12 (suite) — Serveur de la communauté, Tinder refait (ATAK natif 1.35.0, COMSPEC Link 2.0.75)
+
+Non testé en jeu. DLL COMSPEC Link à recompiler (build_mod.bat) et `run-migrations.php` à lancer (tables `tenant_game_servers`, `tenant_game_server_presence`).
+- Site, Gestion › Mod ATAK › **Serveurs de jeu** : la communauté déclare ses serveurs (IP ou nom d'hôte, port, nom dans la liste Arma). La page montre où ses joueurs reliés à Athena ont joué sur 72 h et propose d'ajouter en un clic un serveur inconnu.
+- Téléphone : un joueur relié à Athena qui joue ailleurs que sur un serveur de sa communauté reçoit une notification (puis un rappel toutes les 30 min). L'app Réseau affiche le serveur reconnu.
+- Le serveur dédié demande son adresse publique à Athena au lancement (`Server.PublicIp`) et la diffuse ; sans DLL côté serveur (Linux), le nom du serveur sert de repli. Le client se signale avec `Server.Presence` (POST `/api/atak/server-presence`) toutes les 10 min.
+- Tinder : grande carte de profil avec le vrai visage de la personne rendu en direct (3 photos : portrait, buste, en pied), prénom, âge, grade, rôle, distance, bio, centres d'intérêt, compatibilité. PASSER, SUPER LIKE (le nom est donné, 1 toutes les 10 min), J'AIME. Onglet MON PROFIL (aperçu de sa carte, bio, visibilité, likes reçus).
+- Tinder : de temps en temps un profil tiré des IA de la carte à moins de 5 km, HVT ou personne SSE, sans rien qui le signale. Un match ouvre une conversation qui livre le lieu-dit et un carroyage approximatif (300 m HVT, 150 m SSE), « OÙ ES-TU ? » toutes les 3 min, marquage de la zone sur sa carte.
+- Réglage de mission « Tinder : profils HVT et SSE » (Jamais, Rare, Parfois, Souvent) et module Zeus « Tinder : profil HVT / SSE » (type, prénom, bio, chance de match). En Eden : `this setVariable ["COMSPEC_ATAK_TinderKind", "HVT", true];`.
 
 ## Gestes : doigt d'honneur et selfie (ATAK natif 1.34.0)
 

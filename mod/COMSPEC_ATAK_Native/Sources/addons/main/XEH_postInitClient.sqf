@@ -636,17 +636,30 @@ addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screen
 // Rôles d'Athena et rôle mémorisé du joueur, réappliqué à l'arrivée et à la réapparition (fn_ftRoleSync).
 ["init"] call comspec_atak_native_fnc_ftRoleSync;
 
+// Serveur de la communauté : avertit le joueur relié à Athena qui joue ailleurs (vérifié dès que la liaison est prête,
+// puis toutes les 10 min).
+[{ ["check"] call comspec_atak_native_fnc_serverPresence; }, 60] call CBA_fnc_addPerFrameHandler;
+[{ ["check"] call comspec_atak_native_fnc_serverPresence; }, [], 20] call CBA_fnc_waitAndExecute;
+
 // Tinder : un joueur m'a liké (match si c'est réciproque).
 ["comspec_atak_native_rencard", {
-    params ["_uid", "_name"];
+    params ["_uid", "_name", ["_super", false]];
     private _by = missionNamespace getVariable ["COMSPEC_ATAK_RencardLikedBy", []];
     _by pushBackUnique _uid;
     missionNamespace setVariable ["COMSPEC_ATAK_RencardLikedBy", _by];
+    if (_super) then {
+        private _sup = missionNamespace getVariable ["COMSPEC_ATAK_RencardSuperBy", []];
+        _sup pushBackUnique _uid;
+        missionNamespace setVariable ["COMSPEC_ATAK_RencardSuperBy", _sup];
+    };
     if !(player getVariable ["COMSPEC_ATAK_Rencard", true]) exitWith {};
-    if (_uid in (missionNamespace getVariable ["COMSPEC_ATAK_RencardLikes", []])) then {
-        ["SUCCESS", format ["Tinder : c'est un match avec %1 !", _name], 6, 50] call comspec_atak_native_fnc_notify;
-    } else {
-        ["INFO", "Tinder : quelqu'un vous a liké", 4, 20] call comspec_atak_native_fnc_notify;
+    switch (true) do {
+        case (_uid in (missionNamespace getVariable ["COMSPEC_ATAK_RencardLikes", []])): {
+            ["SUCCESS", format ["Tinder : c'est un match avec %1 !", _name], 6, 50] call comspec_atak_native_fnc_notify;
+        };
+        // Un super like se montre : le nom est donné.
+        case (_super): { ["SUCCESS", format ["Tinder : %1 vous a envoyé un super like !", _name], 5, 30] call comspec_atak_native_fnc_notify; };
+        default { ["INFO", "Tinder : quelqu'un vous a liké", 4, 20] call comspec_atak_native_fnc_notify; };
     };
     [] call comspec_atak_native_fnc_vibrate;
 }] call CBA_fnc_addEventHandler;

@@ -13923,4 +13923,75 @@ class AtakApiController
 
         return Response::json($out);
     }
+
+    /**
+     * Serveur de jeu du joueur comparé aux serveurs déclarés par sa communauté (Gestion › Serveurs de jeu).
+     * Corps : server_ip (adresse publique du serveur si connue), server_name, mission, world, player_name.
+     * Réponse : state ok | away | none, server_label, community, message (affiché sur le téléphone).
+     */
+    public function serverPresence(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $body = $this->jsonBody($request);
+        $clip = static fn (mixed $v, int $n): string => mb_substr(trim(is_scalar($v) ? (string) $v : ''), 0, $n, 'UTF-8');
+        $serverIp = $clip($body['server_ip'] ?? '', 64);
+        $serverName = $clip($body['server_name'] ?? '', 190);
+        $community = '';
+        try {
+            $community = (string) ($this->tenantRepository->findById($tenantId)['name'] ?? '');
+        } catch (\Throwable) {
+        }
+
+        $repo = \App\Core\Container::get(\App\Repositories\TenantGameServerRepository::class);
+        $servers = $repo->listForTenant($tenantId, true);
+        $match = $servers === [] ? null : (new \App\Services\Atak\CommunityServerMatcher())->match($servers, $serverIp, $serverName);
+        $steam = is_array($actor) ? (string) ($actor['steam_uid'] ?? '') : '';
+        if ($steam === '') {
+            $steam = \App\Support\SteamId::normalize($clip($body['steam_uid'] ?? '', 32)) ?? '';
+        }
+        if ($steam !== '') {
+            $repo->recordPresence(
+                $tenantId,
+                $steam,
+                $clip($body['player_name'] ?? '', 120) ?: null,
+                $serverIp !== '' ? $serverIp : null,
+                $serverName !== '' ? $serverName : null,
+                $clip($body['mission'] ?? '', 190) ?: null,
+                $clip($body['world'] ?? '', 64) ?: null,
+                $match !== null ? (int) $match['id'] : null
+            );
+        }
+
+        if ($servers === []) {
+            return Response::json(['state' => 'none', 'server_label' => '', 'community' => $community, 'message' => '']);
+        }
+        if ($match !== null) {
+            return Response::json([
+                'state' => 'ok',
+                'server_label' => (string) $match['label'],
+                'community' => $community,
+                'message' => 'Serveur de la communauté : ' . (string) $match['label'],
+            ]);
+        }
+        $labels = array_map(static fn (array $s): string => (string) $s['label'], array_slice($servers, 0, 3));
+
+        return Response::json([
+            'state' => 'away',
+            'server_label' => '',
+            'community' => $community,
+            'message' => 'Vous êtes connecté à Athena' . ($community !== '' ? ' (' . $community . ')' : '')
+                . ' mais pas sur un serveur de votre communauté. Serveurs déclarés : ' . implode(', ', $labels) . '.',
+        ]);
+    }
 }
