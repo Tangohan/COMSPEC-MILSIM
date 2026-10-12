@@ -11,6 +11,12 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Correctif 2026-10-12 — Langue dans l'app Réglages (ATAK natif 1.16.1)
+
+Non testé en jeu. TTRD ne trouvait pas où passer le téléphone en anglais.
+- Nouvelle catégorie **Langue / Language** en tête de l'app Réglages du téléphone : FRANÇAIS, ENGLISH ou AUTO (langue du jeu). Même réglage que le menu CBA, la page se redessine aussitôt dans la langue choisie.
+- Le réglage CBA reste dans Échap > Options > Options des addons > COMSPEC, onglet Client, section **ATAK · Langue / Language** (plus bas dans la liste des sections ATAK).
+
 ## Vague 2026-10-12 (suite) — Réseau, drone, photos drone sur Discord, saleté (ATAK natif 1.16.0, COMSPEC Link 2.0.69)
 
 Non testé en jeu. Corrige l'app Réseau qui affichait « Athena hors ligne · réponse jamais · 0 paquet envoyé » alors que la position arrivait sur le site et que l'icône de liaison était verte.

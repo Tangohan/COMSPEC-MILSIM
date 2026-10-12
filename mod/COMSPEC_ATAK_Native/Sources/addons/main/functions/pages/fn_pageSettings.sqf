@@ -321,8 +321,20 @@ private _athena = [
     ["text", "<t size='0.8' color='#8a9a93'>Aussi dans le menu Échap, bouton Service Athéna.</t>"]
 ];
 
+// Langue du téléphone : même réglage que CBA (COMSPEC > ATAK · Langue / Language), libellés bilingues ; le changer redessine la page (fn_langApply).
+private _langSet = missionNamespace getVariable ["comspec_atak_native_language", "fr"];
+private _lang = [
+    ["section", "Langue / Language", "Langue du téléphone / Phone language"],
+    ["segment", "Langue / Language", [
+        ["FRANÇAIS", { ["comspec_atak_native_language", "fr", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "fr"],
+        ["ENGLISH", { ["comspec_atak_native_language", "en", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "en"],
+        ["AUTO", { ["comspec_atak_native_language", "auto", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "auto"]
+    ], "Auto : langue du jeu / game language. Aussi dans Échap > Options > Options des addons > COMSPEC > ATAK · Langue / Language."]
+];
+
 // Catégories, façon Android : liste d'accueil, puis une page par catégorie.
 private _cats = [
+    ["LANG", "Langue / Language", ["Français", "English", "Auto"] select (["fr", "en", "auto"] find _langSet), "app_settings", _lang],
     ["PERSO", "Personnalisation", "Thème, coque, fond d'écran, texte, dock", "app_settings", _perso],
     ["PLACE", "Emplacement", "Coin, taille et sens du téléphone porté", "ui_rotate", _place],
     ["MAP", "Carte", "Indicatifs, couleurs, grilles, tailles, fond", "app_map", _map],
