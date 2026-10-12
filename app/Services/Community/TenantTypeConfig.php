@@ -250,6 +250,7 @@ final class TenantTypeConfig
             'back-office/ressources/atak-mod-blocks' => 'atak',
             'back-office/ressources/atak-beta' => 'atak',
             'back-office/ressources/atak-diffusion-rapports' => 'atak',
+            'back-office/ressources/serveurs-de-jeu' => 'atak',
             'back-office/ressources/atak-realism' => 'atak',
             'api/atak' => 'atak',
             'api/tacmap' => 'atak',

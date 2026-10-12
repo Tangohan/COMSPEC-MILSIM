@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.69";
+    private const string ExtensionVersion = "2.0.74";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2740,6 +2740,53 @@ public static partial class Extension
             var path = function == "Squad.Sync" ? "/api/atak/squads/sync" : "/api/atak/screen-time";
             EnqueueOrSend(_baseUrl + path, EnrichAtakPayload(json));
             return "OK|queued";
+        }
+
+        // Adresse publique de cette machine vue par Athena (serveur dédié : son IP, diffusée aux joueurs pour
+        // reconnaître le serveur de la communauté). Sans liaison, l'adresse d'Athena passée en argument sert de base.
+        // args: [baseUrl?] → OK|ip
+        if (function == "Server.PublicIp")
+        {
+            var baseUrl = NormalizeBaseUrl(_baseUrl ?? "");
+            if (baseUrl.Length == 0) baseUrl = NormalizeBaseUrl(args.Length > 0 ? (args[0] ?? "") : "");
+            if (baseUrl.Length == 0) return "ERR|invalid_url";
+            if (!TryBuildRequestUri(baseUrl, "/api/atak/whoami", out var ipUri, out var ipErr) || ipUri is null)
+                return "ERR|" + ipErr;
+            try
+            {
+                using var ipCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                var resp = SendGet(ipUri, ipCts.Token);
+                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
+                using var doc = JsonDocument.Parse(ReadContentUtf8(resp, ipCts.Token));
+                var ip = doc.RootElement.TryGetProperty("ip", out var p) ? (p.GetString() ?? "") : "";
+                return ip.Length > 0 && ip != "—" ? "OK|" + ip : "ERR|no_ip";
+            }
+            catch (Exception ex) { return FormatCaughtError(ex); }
+        }
+
+        // Serveur de jeu du joueur comparé aux serveurs enregistrés par sa communauté (site : Gestion › Serveurs de jeu).
+        // args: [json {server_ip, server_name, mission, world}] → OK|état\tserveur reconnu\tcommunauté\tmessage
+        // état : ok (serveur de la communauté), away (autre serveur), none (la communauté n'a enregistré aucun serveur)
+        if (function == "Server.Presence")
+        {
+            if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0])) return "ERR|payload_empty";
+            if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+            if (!HasPortalAuth()) return "ERR|unauthorized";
+            if (!TryBuildRequestUri(_baseUrl, "/api/atak/server-presence", out var spUri, out var spErr) || spUri is null)
+                return "ERR|" + spErr;
+            try
+            {
+                using var spCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+                var resp = SendJsonPost(spUri.AbsoluteUri, EnrichAtakPayload(NormalizeArmaJson(args[0])), spCts.Token);
+                var body = ReadContentUtf8(resp, spCts.Token);
+                if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
+                using var doc = JsonDocument.Parse(body);
+                string Field(string k) => doc.RootElement.TryGetProperty(k, out var v) && v.ValueKind == JsonValueKind.String
+                    ? (v.GetString() ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", " ").Replace("|", "-")
+                    : "";
+                return "OK|" + Field("state") + "\t" + Field("server_label") + "\t" + Field("community") + "\t" + Field("message");
+            }
+            catch (Exception ex) { return FormatCaughtError(ex); }
         }
 
         if (function == "SetMapId")

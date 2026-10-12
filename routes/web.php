@@ -1797,6 +1797,10 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/ressources/atak-mod', [AdminAtakModController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-mod/upload', [AdminAtakModController::class, 'upload'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-mod/delete', [AdminAtakModController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/ressources/serveurs-de-jeu', [\App\Controllers\Admin\AdminGameServersController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/serveurs-de-jeu/enregistrer', [\App\Controllers\Admin\AdminGameServersController::class, 'save'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/serveurs-de-jeu/activer', [\App\Controllers\Admin\AdminGameServersController::class, 'toggle'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/serveurs-de-jeu/supprimer', [\App\Controllers\Admin\AdminGameServersController::class, 'delete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/ressources/atak-mod-blocks', [AdminAtakModBlocklistController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-mod-blocks/add', [AdminAtakModBlocklistController::class, 'add'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/atak-mod-blocks/revoke', [AdminAtakModBlocklistController::class, 'revoke'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -2315,6 +2319,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/send-queue/report', [AtakApiController::class, 'sendQueueReport']);
     $router->post('/api/atak/game-session/discover', [AtakApiController::class, 'gameSessionDiscover']);
     $router->post('/api/atak/game-session/join', [AtakApiController::class, 'gameSessionJoin']);
+    $router->post('/api/atak/server-presence', [AtakApiController::class, 'serverPresence']);
     $router->post('/api/atak/game-session/heartbeat', [AtakApiController::class, 'gameSessionHeartbeat']);
     $router->post('/api/atak/game-session/check-in', [AtakApiController::class, 'gameSessionCheckIn']);
     $router->post('/api/atak/game-session/check-out', [AtakApiController::class, 'gameSessionCheckOut']);

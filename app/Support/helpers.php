@@ -2062,7 +2062,7 @@ if (!function_exists('detect_current_module')) {
             '/admin/atak-config', '/admin/atak-mod', '/admin/atak-mod-blocks', '/admin/atak-beta', '/admin/atak',
             '/back-office/atak', '/back-office/ressources/atak-config', '/back-office/ressources/atak-mod',
             '/back-office/ressources/atak-mod-blocks', '/back-office/ressources/atak-beta',
-            '/back-office/ressources/atak-diffusion-rapports', '/back-office/ressources/atak-realism',
+            '/back-office/ressources/atak-diffusion-rapports', '/back-office/ressources/atak-realism', '/back-office/ressources/serveurs-de-jeu',
             '/api/atak', '/api/markers', '/api/units', '/api/chat', '/api/pings',
             '/api/nine-line', '/api/cas', '/api/recon', '/api/map-shapes', '/api/flight-manifest',
             '/api/intel', '/api/fire-support', '/api/danger-zones', '/api/logistics', '/api/replay', '/api/iff',

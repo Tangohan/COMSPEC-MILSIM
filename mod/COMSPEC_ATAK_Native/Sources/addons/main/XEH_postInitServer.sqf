@@ -7,6 +7,8 @@
 if (!isServer) exitWith {};
 // Socles de recharge CS-10 : mémoire, recharge et emplacements (fn_dockServer).
 ["init"] call comspec_atak_native_fnc_dockServer;
+// Adresse publique du serveur, pour reconnaître le serveur de la communauté (fn_serverPresence).
+["serverInit"] call comspec_atak_native_fnc_serverPresence;
 // Téléphones accrochés aux gilets (fn_vestMount) restés seuls après une déconnexion.
 [{ ["sweep"] call comspec_atak_native_fnc_vestMount; ["sweep"] call comspec_atak_native_fnc_jpcScreen; }, 30] call CBA_fnc_addPerFrameHandler;
 // Passerelles de véhicule : véhicules détruits retirés, PC mobile qui repart replié (fn_vehicleGateway).

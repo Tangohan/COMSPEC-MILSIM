@@ -142,6 +142,9 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_civil_apps", "CHECKBOX",
     ["Apps civiles", "UberEats (rations livrées par drone) et Tinder (rencontres entre joueurs). Décocher pour les retirer de tous les téléphones."],
     _sim, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_dating_specials", "LIST",
+    ["Tinder : profils HVT et SSE", "Fréquence des profils tirés des IA de la carte (HVT et personnes SSE à moins de 5 km) entre deux joueurs. Le Zeus peut aussi marquer une IA avec le module « Tinder : profil HVT / SSE »."],
+    _sim, [[0, 1, 2, 3], ["Jamais", "Rare (1 profil sur 10)", "Parfois (1 sur 4)", "Souvent (1 sur 2)"], 1], 1] call CBA_fnc_addSetting;
 
 // Marquage au viseur (caméra du drone, appareil photo du téléphone) et cibles perdues.
 private _lock = ["COMSPEC", "ATAK · Marquage au viseur"];
