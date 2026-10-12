@@ -141,6 +141,9 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_drone_strike", "CHECKBOX",
     ["Drones armés", "Permet de fixer une charge (roquette RPG, charge de démolition, grenade) sur un drone et de l'envoyer en tir et oublie ou en recherche et frappe."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_drone_autospot", "CHECKBOX",
+    ["Repérage automatique par drone", "La caméra du drone relève seule les ennemis qu'elle voit (onglet CIBLES, pistes sur la carte) et la garde rapprochée de la flotte prévient le pilote des ennemis proches. Désactivé : le pilote repère et marque lui-même."],
+    _sim, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_apps_off", "EDITBOX", ["Apps désactivées", "Noms de classe d'apps à retirer de tous les téléphones, séparés par des virgules (ex. Dating, Food, MonModule). Vaut aussi pour les modules externes."], _sim, "", 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_civil_apps", "CHECKBOX",
     ["Apps civiles", "UberEats (rations livrées par drone) et Tinder (rencontres entre joueurs). Décocher pour les retirer de tous les téléphones."],
