@@ -21,6 +21,7 @@ Non testé en jeu. Demande de TTRD : celui qui installe le mod se connecte avec 
 - La communauté de la session est reprise par le mod (fiches d'équipe, avatars, diapositives) sans identifiant saisi.
 - Site : nouvelle page **/lier** (Mon compte > Appareils ATAK) qui valide le code du jeu ; le code de l'adresse est gardé si la personne doit d'abord se connecter.
 - COMSPEC Link 2.0.72 (DLL à recompiler) : `OpenAthenaLink` (ouvre la page du portail, refuse tout autre site), `GetSessionTenant`, et `PairStart` renvoie l'adresse avec le code.
+
 ## Correctif 2026-10-12 — App CAS, alertes du poste, barre de dessin (ATAK natif 1.16.2)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration (déploiement PHP pour la correction des photos).
