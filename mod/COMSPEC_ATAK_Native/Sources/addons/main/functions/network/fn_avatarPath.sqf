@@ -24,7 +24,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_Avatars", _cache];
     call {
         private _res = { params ["_r"]; if (_r isEqualType []) then { _r param [0, ""] } else { _r } };
         private _tenant = missionNamespace getVariable ["comspec_overwatch_tenant_id", ""];
-        private _info = (["COMSPECExtension" callExtension ["GetPlayerAvatarInfo", [_uid, _tenant]]] call _res) splitString "|";
+        private _info = ([(["COMSPECExtension", "GetPlayerAvatarInfo", [_uid, _tenant]] call comspec_atak_native_fnc_extAwait)] call _res) splitString "|";
         if ((_info param [0, ""]) isNotEqualTo "OK") exitWith {};
         private _cols = (_info param [1, ""]) splitString (toString [9]);
         // Qualifications (colonne « Q: », DLL récente) : [[nom, niveau, état, expiration], ...] ; absente = DLL ancienne.
@@ -40,7 +40,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_Avatars", _cache];
             private _page = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
             if (_page isEqualTo "PROFILE") then { [{ ["PROFILE"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
         };
-        private _dl = (["COMSPECExtension" callExtension ["DownloadBriefingSlideImage", [_url, "avatar_" + _uid]]] call _res) splitString "|";
+        private _dl = ([(["COMSPECExtension", "DownloadBriefingSlideImage", [_url, "avatar_" + _uid]] call comspec_atak_native_fnc_extAwait)] call _res) splitString "|";
         if ((_dl param [0, ""]) isNotEqualTo "OK" || {(_dl param [1, ""]) isEqualTo ""}) exitWith {};
         // Chemin local normalisé (\ → /) comme pour les diapositives ; Arma n'affiche que .jpg / .paa :
         // sinon on garde le logo (une photo PNG laissait un cadre vide).

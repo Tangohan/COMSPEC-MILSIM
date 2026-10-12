@@ -67,7 +67,7 @@ switch (_action) do {
         };
         private _q = createHashMapFromArray [["slide", _id], ["list", []], ["err", ""]];
         uiNamespace setVariable ["COMSPEC_ATAK_BriefQ", _q];
-        private _raw = ["COMSPECExtension" callExtension ["BriefingComments", [str _id]]] call comspec_overwatch_connect_fnc_extResult;
+        private _raw = [(["COMSPECExtension", "BriefingComments", [str _id]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
         if ((_raw select [0, 3]) isNotEqualTo "OK|") then {
             _q set ["err", ["Athena ne répond pas.", "La DLL COMSPEC Link ne connaît pas encore les questions : mettez-la à jour."] select (_raw isEqualTo "")];
         } else {
@@ -81,7 +81,7 @@ switch (_action) do {
         private _id = (uiNamespace getVariable ["COMSPEC_ATAK_BriefQ", createHashMap]) getOrDefault ["slide", -1];
         if (_id isEqualTo -1) exitWith {};
         private _who = format ["%1 · %2", [player, true] call comspec_atak_native_fnc_unitCallsign, name player];
-        private _raw = ["COMSPECExtension" callExtension ["BriefingComments", [str _id, _txt, _who]]] call comspec_overwatch_connect_fnc_extResult;
+        private _raw = [(["COMSPECExtension", "BriefingComments", [str _id, _txt, _who]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
         if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith { ["WARNING", "Question non envoyée : Athena ne répond pas", 4, 30] call comspec_atak_native_fnc_notify; };
         uiNamespace setVariable ["COMSPEC_ATAK_BriefQDraft", ""];
         // Le présentateur la voit tout de suite sur son téléphone.

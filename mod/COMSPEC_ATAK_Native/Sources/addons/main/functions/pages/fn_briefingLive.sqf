@@ -44,7 +44,7 @@ switch (_act) do {
                 missionNamespace setVariable ["COMSPEC_ATAK_BriefPresBusy", true];
                 [format ["%1 · %2", [player, true] call comspec_atak_native_fnc_unitCallsign, name player], getPlayerUID player] spawn {
                     params ["_label", "_key"];
-                    ["COMSPECExtension" callExtension ["BriefingPresence", [_label, _key]]] call comspec_overwatch_connect_fnc_extResult;
+                    [(["COMSPECExtension", "BriefingPresence", [_label, _key]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
                     missionNamespace setVariable ["COMSPEC_ATAK_BriefPresBusy", false];
                 };
             };

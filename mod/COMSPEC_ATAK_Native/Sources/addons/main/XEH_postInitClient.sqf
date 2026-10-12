@@ -270,7 +270,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 }] call CBA_fnc_addEventHandler;
 
 // Goniométrie : émetteurs estimés par Athena, relus toutes les 15 s quand la couche est active.
-[{ if (profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) then { [] spawn comspec_atak_native_fnc_sigintPoll; }; }, 15] call CBA_fnc_addPerFrameHandler;
+// Seulement avec un téléphone et une carte à l'écran (téléphone ou carte Arma) : inutile sinon.
+[{
+    if !(profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) exitWith {};
+    if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
+    if (isNull ([] call comspec_atak_native_fnc_display) && {!visibleMap}) exitWith {};
+    [] call comspec_atak_native_fnc_sigintPoll;
+}, 15] call CBA_fnc_addPerFrameHandler;
 
 // Menu ACE « Téléphone ATAK » (fn_aceMenu) : les actions d'entretien ci-dessous vont dans son sous-menu Entretien.
 [] call comspec_atak_native_fnc_aceMenu;

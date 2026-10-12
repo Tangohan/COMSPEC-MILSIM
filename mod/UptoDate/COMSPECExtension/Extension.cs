@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.63";
+    private const string ExtensionVersion = "2.0.65";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2574,6 +2574,34 @@ public static partial class Extension
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
             return "OK|" + ExtensionProductName + " " + CurrentExtensionVersion();
+        }
+
+        // Appel non bloquant : ["Async", [ticket, commande, args...]] répond tout de suite « QUEUED|ticket »,
+        // exécute la commande sur un thread à part et renvoie son résultat par le rappel ("comspec", "async:<ticket>", résultat).
+        // callExtension bloque le thread du jeu, même lancé depuis un spawn : une requête HTTP lente (jusqu'à
+        // SyncTimeoutSeconds) figeait la partie. Une DLL plus ancienne répond "" et le SQF retombe sur l'appel direct.
+        if (function == "Async")
+        {
+            if (args.Length < 2 || string.IsNullOrEmpty(args[0]) || string.IsNullOrEmpty(args[1])) return "ERR|async_args";
+            if (_callback == null) return "ERR|no_callback";
+            var ticket = args[0]!;
+            var command = args[1]!;
+            if (command == "Async") return "ERR|async_nested";
+            var rest = args[2..];
+            _ = Task.Run(() =>
+            {
+                string result;
+                try
+                {
+                    // Même chemin que RVExtensionArgs : réponse directe, sinon commande « tire et oublie ».
+                    var direct = TryGetSyncResponse(command, rest);
+                    if (direct == null) { RvExtensionArgsImpl(command, rest); direct = ""; }
+                    result = direct;
+                }
+                catch (Exception ex) { result = FormatCaughtError(ex); }
+                InvokeCallback("async:" + ticket, result);
+            });
+            return "QUEUED|" + ticket;
         }
 
 #if COMSPEC_ATAK_NATIVE
