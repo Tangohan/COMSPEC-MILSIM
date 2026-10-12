@@ -149,6 +149,15 @@ final class AdminAtakOperatorsController
             : null;
 
         $titleCall = $requested !== '' ? $requested : 'opérateur';
+        $linkedUid = is_array($live) ? (int) ($live['linked_user_id'] ?? 0) : 0;
+        $roleTimes = [];
+        if ($linkedUid > 0) {
+            try {
+                $roleTimes = (new \App\Repositories\AtakScreenTimeRepository())->rolesForUser($tenantId, $linkedUid);
+            } catch (\Throwable) {
+                $roleTimes = [];
+            }
+        }
 
         return Response::view('layout.main', [
             'content' => 'admin.atak_operators.profile',
@@ -158,6 +167,7 @@ final class AdminAtakOperatorsController
             'atakOperatorLive' => $live,
             'atakOperatorTerminal' => $terminal,
             'atakOperatorCertificate' => $certificate,
+            'atakOperatorRoleTimes' => $roleTimes,
             'atakOperatorMilitaryId' => is_array($opId) ? (string) ($opId['military_id'] ?? '') : '',
             'atakOperatorMaps' => $roster['maps'],
             'atakOperatorMapId' => $roster['mapId'],

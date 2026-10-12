@@ -34,6 +34,17 @@ private _rowH = _font * 1.55;
 private _y = _pad;
 private _fields = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
 ([] call comspec_atak_native_fnc_accent) params ["_acc", "_accHex"];
+// Clic différé d'une image : beaucoup d'actions redessinent la page (ou en changent), ce qui supprimait le bouton
+// pendant son propre gestionnaire, une cause connue d'arrêt du moteur (« can't resize AutoArray to negative size »).
+private _click = {
+    params ["_b", "_code"];
+    if (_code isEqualType "") then { _code = compile _code; };
+    _b setVariable ["comspec_click", _code];
+    _b ctrlAddEventHandler ["ButtonClick", {
+        params ["_c"];
+        [{ params ["_c", "_code"]; [_c] call _code; }, [_c, _c getVariable ["comspec_click", {}]]] call CBA_fnc_execNextFrame;
+    }];
+};
 private _mk = {
     params ["_class", "_pos", ["_text", ""]];
     private _c = _d ctrlCreate [_class, -1, _grp];
@@ -96,7 +107,7 @@ private _mk = {
             private _b = ["COMSPEC_RscButton", [_pad, _y, _w, _rowH], format ["%1   %2", ["○", "●"] select _on, _label]] call _mk;
             _b ctrlSetFontHeight _fs;
             if (_on) then { _b ctrlSetTextColor _acc; };
-            _b ctrlAddEventHandler ["ButtonClick", _code];
+            [_b, _code] call _click;
             _y = _y + _rowH + _pad / 3;
         };
         case "section": {
@@ -133,7 +144,7 @@ private _mk = {
             _pill ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.03, 0.05, 0.04, 1]] select (_on && {!_locked}));
             if !(_locked) then {
                 private _b = ["COMSPEC_RscButtonOverlay", [_pad, _y, _w, _h]] call _mk;
-                _b ctrlAddEventHandler ["ButtonClick", _code];
+                [_b, _code] call _click;
             } else {
                 _card ctrlSetTooltip (("Réglé par votre communauté sur Athena (Contrôle serveur)") call comspec_atak_native_fnc_tr);
             };
@@ -158,7 +169,7 @@ private _mk = {
                 _b ctrlSetFontHeight (_fs * 0.9);
                 // Option non choisie mais disponible : fond clair-sombre et texte blanc (ne doit pas sembler désactivée).
                 if (_active) then { _b ctrlSetBackgroundColor _acc; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; } else { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor [0.92, 0.96, 0.93, 1]; };
-                _b ctrlAddEventHandler ["ButtonClick", _code];
+                [_b, _code] call _click;
             } forEach _opts;
             _y = _y + _rowH * 0.9 + _pad / 2;
         };
@@ -186,7 +197,8 @@ private _mk = {
             _p ctrlSetTextColor _picColor;
             private _nb = count _btns;
             private _bwid = _w * 0.2;
-            private _tw = _w - _iw - _pad * 1.5 - _nb * (_bwid + _pad / 3);
+            // Jamais de largeur nulle ou négative (même famille d'arrêt moteur que plus haut).
+            private _tw = (_w - _iw - _pad * 1.5 - _nb * (_bwid + _pad / 3)) max (_w * 0.2);
             private _t = ["COMSPEC_RscStructuredText", [_pad * 2 + _iw, _y + _pad / 4, _tw, _ih]] call _mk;
             _t ctrlSetStructuredText parseText ((_text) call comspec_atak_native_fnc_tr);
             // Texte long (fil OSINT, messages) : la ligne s'agrandit au lieu de couper le texte.
@@ -201,7 +213,7 @@ private _mk = {
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlSetFontHeight (_fs * 0.85);
                 _b ctrlEnable _enabled;
-                _b ctrlAddEventHandler ["ButtonClick", _code];
+                [_b, _code] call _click;
             } forEach _btns;
             _y = _y + _rowIh + _pad * 0.75;
         };
@@ -276,7 +288,7 @@ private _mk = {
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlSetFontHeight _fs;
                 _b ctrlEnable _enabled;
-                _b ctrlAddEventHandler ["ButtonClick", _code];
+                [_b, _code] call _click;
             } forEach _btns;
             _y = _y + _rowH + _pad / 2;
         };
@@ -328,7 +340,7 @@ private _mk = {
                         };
                         if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                         _b ctrlEnable _en;
-                        _b ctrlAddEventHandler ["ButtonClick", _code];
+                        [_b, _code] call _click;
                     } forEach _btns;
                     _x0 = _x0 + _span + _gw;
                 } forEach _line;

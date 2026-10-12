@@ -88,15 +88,36 @@ window.ATAKReplay = (function () {
     return Math.max(40, Math.round(500 / sp));
   }
 
-  function formatTs(ts) {
+  /* Date et heure locales (fuseau du navigateur) : la base est en UTC, l'heure seule ne disait pas quel jour. */
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function formatTs(ts, withSeconds) {
     if (!ts) return '—';
-    var s = String(ts).replace(' ', 'T');
-    var d = new Date(s);
-    if (isNaN(d.getTime())) return String(ts);
-    var hh = d.getUTCHours();
-    var mm = d.getUTCMinutes();
-    var ss = d.getUTCSeconds();
-    return (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm + ':' + (ss < 10 ? '0' : '') + ss + ' Z';
+    var ms = parseTsMs(ts);
+    if (isNaN(ms)) return String(ts);
+    var d = new Date(ms);
+    return pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad2(d.getHours()) + ':' + pad2(d.getMinutes())
+      + (withSeconds === false ? '' : ':' + pad2(d.getSeconds()));
+  }
+  function formatClock(ts) {
+    var ms = parseTsMs(ts);
+    if (isNaN(ms)) return '';
+    var d = new Date(ms);
+    return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+  var WEEKDAYS = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
+  /* « lun. 12/10/2026 22:14 → 22:46 (32 min) » : jour, début, fin et durée d'une session jouée. */
+  function formatRange(from, to) {
+    var a = parseTsMs(from);
+    var b = parseTsMs(to);
+    if (isNaN(a)) return '';
+    var out = WEEKDAYS[new Date(a).getDay()] + ' ' + formatTs(from, false);
+    if (!isNaN(b) && b > a) {
+      var min = Math.round((b - a) / 60000);
+      var sameDay = new Date(a).toDateString() === new Date(b).toDateString();
+      out += ' → ' + (sameDay ? formatClock(to) : formatTs(to, false))
+        + ' (' + (min >= 60 ? Math.floor(min / 60) + ' h ' + pad2(min % 60) : min + ' min') + ')';
+    }
+    return out;
   }
 
   function frameToUnits(frame) {
@@ -414,7 +435,7 @@ window.ATAKReplay = (function () {
       .then(function (data) {
         var list = Array.isArray(data && data.sessions) ? data.sessions : [];
         fillSelect(sel, list.map(function (m) {
-          return { value: String(m.key), label: String(m.label || m.key) + ' · ' + formatDay(dayOf(m.from)) + ' ' + formatTs(m.from) };
+          return { value: String(m.key), label: String(m.label || m.key) + ' · ' + formatRange(m.from, m.to) };
         }), missionKeyFilter, 'Toutes les sessions');
       })
       .catch(function () { /* sélecteur laissé tel quel */ });

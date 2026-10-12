@@ -584,6 +584,109 @@ class AtakOrderRepository
         return $this->findByExternalId($tenantId, $mapId, $externalId);
     }
 
+    private static ?bool $responsesReady = null;
+
+    /**
+     * Réponses par joueur (qui a reçu, qui exécute, qui a terminé) : l’ordre lui-même ne garde qu’un statut,
+     * celui du dernier qui a répondu. Table posée à la première écriture.
+     */
+    private function ensureResponsesTable(): bool
+    {
+        if (self::$responsesReady !== null) {
+            return self::$responsesReady;
+        }
+        try {
+            $this->pdo()->exec(
+                'CREATE TABLE IF NOT EXISTS atak_order_responses (
+                    id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    tenant_id INT UNSIGNED NOT NULL,
+                    order_id INT UNSIGNED NOT NULL,
+                    responder VARCHAR(128) NOT NULL,
+                    status VARCHAR(16) NOT NULL,
+                    note VARCHAR(500) NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY uq_order_responder (order_id, responder),
+                    KEY idx_tenant_order (tenant_id, order_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+            );
+            self::$responsesReady = true;
+        } catch (\Throwable) {
+            self::$responsesReady = false;
+        }
+
+        return self::$responsesReady;
+    }
+
+    /** Rang d’un statut dans le cycle (un retour en arrière d’un joueur ne fait pas reculer l’ordre). */
+    public function statusRank(string $status): int
+    {
+        return match ($this->normalizeStatus($status)) {
+            'PENDING' => 0,
+            'DELIVERED' => 1,
+            'ACK' => 2,
+            'EXEC' => 3,
+            'DONE', 'FAILED' => 4,
+            'CANCELLED' => 5,
+            default => 0,
+        };
+    }
+
+    public function recordResponse(int $tenantId, int $orderDbId, string $by, string $status, string $note = ''): void
+    {
+        $by = mb_substr(trim($by), 0, 128);
+        $status = $this->normalizeStatus($status);
+        if ($tenantId < 1 || $orderDbId < 1 || $by === '' || in_array($status, ['PENDING', 'CANCELLED'], true)) {
+            return;
+        }
+        if (!$this->ensureResponsesTable()) {
+            return;
+        }
+        $note = mb_substr(trim($note), 0, 500);
+        try {
+            $this->pdo()->prepare(
+                'INSERT INTO atak_order_responses (tenant_id, order_id, responder, status, note)
+                 VALUES (?, ?, ?, ?, ?)
+                 ON DUPLICATE KEY UPDATE status = VALUES(status), note = COALESCE(VALUES(note), note), updated_at = NOW()'
+            )->execute([$tenantId, $orderDbId, $by, $status, $note !== '' ? $note : null]);
+        } catch (\Throwable) {
+            // Suivi par joueur facultatif : le statut de l’ordre est déjà écrit.
+        }
+    }
+
+    /**
+     * @param list<int> $orderDbIds
+     * @return array<int, list<array{by: string, status: string, note: string, at: string}>>
+     */
+    public function responsesForOrders(int $tenantId, array $orderDbIds): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $orderDbIds), static fn (int $id): bool => $id > 0)));
+        if ($tenantId < 1 || $ids === [] || !$this->ensureResponsesTable()) {
+            return [];
+        }
+        try {
+            $st = $this->pdo()->prepare(
+                'SELECT order_id, responder, status, note, updated_at FROM atak_order_responses
+                 WHERE tenant_id = ? AND order_id IN (' . implode(',', array_fill(0, count($ids), '?')) . ')
+                 ORDER BY updated_at ASC'
+            );
+            $st->execute(array_merge([$tenantId], $ids));
+        } catch (\Throwable) {
+            return [];
+        }
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $out[(int) $row['order_id']][] = [
+                'by' => (string) $row['responder'],
+                'status' => (string) $row['status'],
+                'note' => (string) ($row['note'] ?? ''),
+                'at' => (string) $row['updated_at'],
+            ];
+        }
+
+        return $out;
+    }
+
     /**
      * Fait progresser l’état radio / livraison. Retourne null si l’ordre n’est pas encore
      * visible côté destinataire (vue non-émetteur).

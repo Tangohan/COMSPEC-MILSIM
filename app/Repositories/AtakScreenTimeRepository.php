@@ -241,6 +241,51 @@ class AtakScreenTimeRepository
     }
 
     /**
+     * Temps passé dans chaque rôle par un joueur (fiches du site), du plus long au plus court, avec sa dernière partie
+     * dans ce rôle. $days = 0 : depuis le début.
+     *
+     * @return list<array{key: string, label: string, seconds: int, last_day: string}>
+     */
+    public function rolesForUser(int $tenantId, int $userId, int $days = 0): array
+    {
+        if ($tenantId < 1 || $userId < 1 || !$this->schemaReady()) {
+            return [];
+        }
+        $where = "tenant_id = ? AND user_id = ? AND kind = 'role'";
+        $args = [$tenantId, $userId];
+        if ($days > 0) {
+            $where .= ' AND day >= (CURRENT_DATE - INTERVAL ? DAY)';
+            $args[] = $days - 1;
+        }
+        try {
+            $st = $this->pdo()->prepare(
+                "SELECT item_key, MAX(item_label) AS item_label, SUM(seconds) AS seconds, MAX(day) AS last_day
+                 FROM atak_screen_time WHERE {$where} GROUP BY item_key ORDER BY seconds DESC LIMIT 20"
+            );
+            $st->execute($args);
+        } catch (\PDOException) {
+            return [];
+        }
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $sec = (int) $r['seconds'];
+            if ($sec < 60) {
+                continue;
+            }
+            $key = (string) $r['item_key'];
+            $label = trim((string) ($r['item_label'] ?? ''));
+            $out[] = [
+                'key' => $key,
+                'label' => $label !== '' ? $label : (str_starts_with($key, 'SLOT:') ? substr($key, 5) : $key),
+                'seconds' => $sec,
+                'last_day' => (string) ($r['last_day'] ?? ''),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Totaux par rôle pour toute la communauté sur la période.
      *
      * @return list<array{key: string, label: string, seconds: int, members: int}>

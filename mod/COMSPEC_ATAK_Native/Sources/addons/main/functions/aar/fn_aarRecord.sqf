@@ -2,7 +2,7 @@
     Enregistrement local pour le rejeu de mission (app AAR), appelé toutes les 10 s par XEH_postInitClient.
     Le téléphone garde ce qu'il a vu : les positions de son camp (comme le suivi des forces amies)
     et sa propre trace, depuis le début de la mission. Réglage serveur comspec_atak_native_aar (vrai par défaut).
-    État : missionNamespace COMSPEC_ATAK_Aar = [[temps mission, heure "HH:MM", [[x, y, cap, nom, groupe, moi, véhicule]...]]...]
+    État : missionNamespace COMSPEC_ATAK_Aar = [[temps mission, heure "HH:MM", [[x, y, cap, nom, groupe, moi, véhicule]...], n°, date réelle "JJ/MM/AAAA HH:MM"]...]
            (30 dernières minutes à 10 s, plus ancien à 30 s, 400 images au plus ; au-delà les plus anciennes partent).
 */
 if (!hasInterface || {isNull player}) exitWith {};
@@ -22,7 +22,11 @@ private _frame = _units apply {
 private _log = missionNamespace getVariable ["COMSPEC_ATAK_Aar", []];
 private _seq = (missionNamespace getVariable ["COMSPEC_ATAK_AarSeq", 0]) + 1;
 missionNamespace setVariable ["COMSPEC_ATAK_AarSeq", _seq];
-_log pushBack [time, [dayTime, "HH:MM"] call BIS_fnc_timeToString, _frame, _seq];
+// Date réelle (horloge du PC) : le rejeu dit quel jour et à quelle heure la partie a eu lieu, pas seulement l'heure du jeu.
+private _now = systemTime;
+private _pad2 = { params ["_n"]; [str _n, "0" + str _n] select (_n < 10) };
+private _real = format ["%1/%2/%3 %4:%5", [_now select 2] call _pad2, [_now select 1] call _pad2, _now select 0, [_now select 3] call _pad2, [_now select 4] call _pad2];
+_log pushBack [time, [dayTime, "HH:MM"] call BIS_fnc_timeToString, _frame, _seq, _real];
 // Mémoire bornée : les 30 dernières minutes gardent une image toutes les 10 s, au-delà une sur trois (30 s).
 // Une mission de 2 h tient ainsi en environ 360 images au lieu de 720.
 private _old = (count _log) - 181;
