@@ -51,7 +51,7 @@ class CfgFunctions {
             class airplaneMode {}; class btAction {}; class btSounds {}; class pageBluetooth {}; class btInit { postInit=1; };
         };
         class shell { file="z\comspec_atak_native\addons\main\functions\shell";
-            class antenna {}; class backView {}; class aceMenu {}; class vestMount {}; class powerBank {}; class irBeacon {}; class screenGlow {}; class phoneSecurity {}; class droppedPhone {}; class patchTexture {}; class patchCatalog {}; class pagePatches {}; class pageAccessories {}; class accessoriesAction {}; class vestBuiltin {}; class jpcScreen {};
+            class antenna {}; class backView {}; class aceMenu {}; class vestMount {}; class powerBank {}; class irBeacon {}; class screenGlow {}; class phoneSecurity {}; class droppedPhone {}; class patchTexture {}; class patchCatalog {}; class pagePatches {}; class pageAccessories {}; class accessoriesAction {}; class vestBuiltin {}; class jpcScreen {}; class jpcMap {};
         };
         class vehicle { file="z\comspec_atak_native\addons\main\functions\vehicle";
             class vehicleTerminal {}; class vehicleGateway {};
@@ -285,6 +285,32 @@ class CfgVehicles {
         hiddenSelections[]={"camo","screen"};
         hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_tablet_co.paa","#(argb,8,8,3)color(0,0,0,1)"};
         hiddenSelectionsMaterials[]={"","\z\comspec_atak_native\addons\main\data\jpc_screen.rvmat"};
+    };
+    // Téléphone du profil ouvert sur le JPC (fn_jpcScreen, tools/model_jpc_phones.py) : S7 par défaut, coques.
+    class COMSPEC_ATAK_JpcPhone_s7: COMSPEC_ATAK_JpcTablet {
+        displayName="Téléphone ATAK (JPC)";
+        model="\z\comspec_atak_native\addons\main\data\jpc_s7.p3d";
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_s7_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
+    };
+    class COMSPEC_ATAK_JpcPhone_rugged: COMSPEC_ATAK_JpcPhone_s7 {
+        model="\z\comspec_atak_native\addons\main\data\jpc_rugged.p3d";
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_rugged_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
+    };
+    class COMSPEC_ATAK_JpcPhone_iphone: COMSPEC_ATAK_JpcPhone_s7 {
+        model="\z\comspec_atak_native\addons\main\data\jpc_iphone.p3d";
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_iphone_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
+    };
+    class COMSPEC_ATAK_JpcPhone_plate: COMSPEC_ATAK_JpcPhone_s7 {
+        model="\z\comspec_atak_native\addons\main\data\jpc_plate.p3d";
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_plate_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
+    };
+    class COMSPEC_ATAK_JpcPhone_flip: COMSPEC_ATAK_JpcPhone_s7 {
+        model="\z\comspec_atak_native\addons\main\data\jpc_flip.p3d";
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_flip_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
+    };
+    class COMSPEC_ATAK_JpcPhone_ribbed: COMSPEC_ATAK_JpcPhone_s7 {
+        model="\z\comspec_atak_native\addons\main\data\jpc_ribbed.p3d";
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_ribbed_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
     };
     class Item_COMSPEC_ATAK_Battery: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";

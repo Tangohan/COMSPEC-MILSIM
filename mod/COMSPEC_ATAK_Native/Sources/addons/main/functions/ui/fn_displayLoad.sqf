@@ -26,6 +26,8 @@ uiNamespace setVariable ["COMSPEC_ATAK_ShadeOpen", false];
 uiNamespace setVariable ["COMSPEC_ATAK_ShadeCtrls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_ShadeHandle", []];
 uiNamespace setVariable ["COMSPEC_ATAK_ToastPill", []];
+// Écran 3D du JPC : une carte ne se dessine pas dans une texture UI, vue aérienne à la place (fn_jpcMap).
+if (_texture) then { ["init", _display] call comspec_atak_native_fnc_jpcMap; };
 // Textes fixes de l'écran (ui/displays.hpp) dans la langue du téléphone (fn_tr ; sans effet en français).
 if ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]) isNotEqualTo "fr") then {
     { if (ctrlType _x in [0, 1, 16]) then { private _t = ctrlText _x; if (_t isNotEqualTo "") then { _x ctrlSetText (_t call comspec_atak_native_fnc_tr); }; }; } forEach (allControls _display); // i18n:brut
