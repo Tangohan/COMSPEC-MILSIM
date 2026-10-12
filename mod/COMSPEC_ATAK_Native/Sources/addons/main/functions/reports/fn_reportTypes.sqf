@@ -84,7 +84,7 @@ private _prio = ["seg", "Priorité", ["ROUTINE", "PRIORITAIRE", "IMMÉDIAT", "FL
         ["reattack", "seg", "Reprise", ["PAS DE REPRISE", "REPRISE REQUISE"], "faut-il frapper la cible à nouveau ?"],
         ["remarks", "memo", "Remarques", 2, ""]
     ]],
-    ["@FIRES", "Demande d'appui feu", "Feux et effets", "", "Ouvre l'app Feux : demande de tir, réglage, fin de mission.", ["FIRES", ""]],
+    ["@FIRES", "Demande d'appui feu", "Feux et effets", "", "Ouvre l'app CAS : demande de tir, réglage, fin de mission.", ["FIRES", ""]],
     ["@JTAC", "Appui aérien (CAS 9 lignes)", "Feux et effets", "", "Ouvre l'app JTAC : 9 lignes CAS, désignation, contrôle.", ["JTAC", ""]],
     // ── Santé ───────────────────────────────────────────────────────────────
     ["EAGLE_DOWN", "Opérateur à terre", "Santé", "EAGLE_DOWN", "Blessé ou opérateur hors de combat, avec l'état de la zone.", [

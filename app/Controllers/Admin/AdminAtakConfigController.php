@@ -331,6 +331,7 @@ class AdminAtakConfigController
             'show_grid' => (string) $request->input('photo_hud_show_grid', '0') === '1',
             'show_heading' => (string) $request->input('photo_hud_show_heading', '0') === '1',
             'show_altitude' => (string) $request->input('photo_hud_show_altitude', '0') === '1',
+            'show_logo' => (string) $request->input('photo_hud_show_logo', '0') === '1',
         ]);
         Session::flash('success', 'Bandeau des photos terrain enregistré. Il s’appliquera aux prochaines captures.');
 

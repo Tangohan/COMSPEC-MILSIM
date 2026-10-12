@@ -190,6 +190,17 @@ final class ReconImageStorage
         if ($abs !== null) {
             @unlink($abs);
         }
+        // Original d'avant la correction de couleur (PhotoAutoLevel).
+        $base = basename(str_replace('\\', '/', trim($imagePathOrName)));
+        if (self::isSafeFileName($base)) {
+            @unlink(PhotoAutoLevel::originalPath($base, self::originalsDir()));
+        }
+    }
+
+    /** Dossier privé des originaux avant correction de couleur (hors racine web). */
+    public static function originalsDir(): string
+    {
+        return base_path(self::PRIVATE_DIR . '/originals');
     }
 
     /**
