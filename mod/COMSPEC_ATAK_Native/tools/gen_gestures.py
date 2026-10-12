@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Gestes du joueur (ATAK natif 1.27.0) : génère les animations non binarisées (RTM_0101) de
+Gestes du joueur (ATAK natif 1.31.0) : génère les animations non binarisées (RTM_0101) de
 Sources/addons/main/anim/ :
   comspec_finger.rtm       doigt d'honneur, bras gauche (geste GestureComspecFinger)
   comspec_selfie_up.rtm    bras droit qui se lève pour le selfie (GestureComspecSelfieUp)

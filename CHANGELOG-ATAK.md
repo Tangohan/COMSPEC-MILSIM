@@ -11,13 +11,21 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Gestes : doigt d'honneur et selfie (ATAK natif 1.30.0)
+## Gestes : doigt d'honneur et selfie (ATAK natif 1.31.0)
 
 Non testé en jeu. Demande de TTRD : « une animation pour faire des doigts d'honneur et une animation pour le selfie ». Pas de DLL à recompiler, pas de migration.
 - Deux animations maison (fichiers `anim/*.rtm`, générés par `tools/gen_gestures.py`, sans reprise d'un autre mod). Aperçus filaires : `tools/gen_gestures.py --preview dossier`.
 - **Doigt d'honneur** : bras gauche levé devant l'épaule, dos de la main vers la cible, majeur tendu, deux coups secs vers l'avant (~2,4 s), puis retour. La main gauche quitte le garde-main et y revient : marche aussi fusil en main. Touche CBA « Doigt d'honneur » (COMSPEC ATAK, non attribuée par défaut) et action ACE perso (dans le menu Gestes d'ACE quand il est affiché). Pas en véhicule, inconscient, sous l'eau ni pendant l'appareil photo.
 - **Selfie** : bras droit qui se lève (0,6 s), tendu devant le visage à hauteur des yeux, téléphone tourné vers soi, léger balancement tant que dure le selfie, puis redescend. Joué dans l'app Photo (objectif avant : l'arme est rangée et ressortie quand on repasse à l'objectif arrière ou qu'on quitte l'app) et dans le plein écran (R). Réglage CBA « Animation du selfie » : par défaut `comspec_atak_native_fnc_gestureSelfie` (l'ancien `gesturePoint` reste possible).
 - À vérifier en jeu : cadrage du bras sur le perso (fusil, pistolet, mains vides, accroupi), main gauche qui revient bien sur le garde-main, bras visible dans la vue selfie, geste vu par les autres joueurs.
+
+## 2026-10-12 — Photos : vraie grille MGRS et heure Zulu du jeu (ATAK natif 1.30.0, COMSPEC Link 2.0.74)
+
+Non testé en jeu. Demande de TTRD : les photos envoyées doivent porter une vraie grille militaire et l'heure Zulu du jeu, pas celle du PC.
+
+- **Grille MGRS** : nouvelle fonction `fn_mgrsGrid` (connect). Le terrain est placé sur le globe par sa latitude et sa longitude (CfgWorlds), puis converti en UTM WGS84 : zone, bande, carré de 100 km et coordonnées à 1 m, par exemple `35S LC 12345 67890`. Remplace la grille Arma à 6 chiffres sur les photos envoyées.
+- **Heure Zulu du jeu** : la photo transmet la date, l'heure et le terrain de la partie (COMSPEC Link 2.0.74, champs `game_date`, `game_time`, `world_name`). Le bandeau incrusté par Athena et le relais Discord affichent cette heure. Sans ces champs (ancienne DLL), l'heure réelle reste utilisée.
+- À faire par TTRD : reconstruire la DLL avec `build_mod.bat`.
 
 ## Vague 2026-10-12 — Musique : bibliothèque du site et lecteur refait (ATAK natif 1.29.0, COMSPEC Link 2.0.73)
 
