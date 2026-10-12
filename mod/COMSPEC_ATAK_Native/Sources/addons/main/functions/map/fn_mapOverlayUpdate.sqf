@@ -79,6 +79,31 @@ if (!isNull _wa) then {
 };
 private _needle = _ov getOrDefault ["needle", controlNull];
 if (!isNull _needle) then { _needle ctrlSetAngle [_h, 0.5, 0.5]; };
+private _card = _ov getOrDefault ["compassCard", controlNull];
+if (!isNull _card) then { _card ctrlSetAngle [-_h, 0.5, 0.5]; };
+private _tape = _ov getOrDefault ["compassTape", controlNull];
+if (!isNull _tape) then {
+    // Bandeau : trois dizaines de chaque côté du cap, points cardinaux en lettres (N rouge), cap exact au centre.
+    private _west = ["O", "W"] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]) isNotEqualTo "fr");
+    private _lbl = {
+        params ["_a"];
+        _a = (round _a) mod 360;
+        switch (_a) do {
+            case 0: { "<t color='#e5483a' font='RobotoCondensedBold'>N</t>" };
+            case 90: { "<t font='RobotoCondensedBold'>E</t>" };
+            case 180: { "<t font='RobotoCondensedBold'>S</t>" };
+            case 270: { format ["<t font='RobotoCondensedBold'>%1</t>", _west] };
+            default { format ["<t color='#c5ccc8'>%1</t>", _a] };
+        };
+    };
+    private _lo = (floor (_h / 10)) * 10;
+    private _hi = _lo + 10;
+    private _left = [_lo - 20, _lo - 10, _lo] apply { [(_x + 360) mod 360] call _lbl };
+    private _right = [_hi, _hi + 10, _hi + 20] apply { [_x mod 360] call _lbl };
+    _tape ctrlSetStructuredText parseText format [
+        "<t align='center' font='EtelkaMonospaceProBold' size='0.85'>%1  %2  %3 <t color='#5cc76b' size='1.05'>│%4°│</t> %5  %6  %7</t>",
+        _left select 0, _left select 1, _left select 2, round _h, _right select 0, _right select 1, _right select 2];
+};
 private _hd = _ov getOrDefault ["heading", controlNull];
 if (!isNull _hd) then { _hd ctrlSetText ((format ["%1° %2", round _h, [_h] call _cardinal]) call comspec_atak_native_fnc_tr); };
 
