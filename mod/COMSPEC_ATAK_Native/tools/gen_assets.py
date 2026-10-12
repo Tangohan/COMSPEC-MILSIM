@@ -1230,7 +1230,7 @@ def nvgfilter_item(size=256):
 
 
 # --- Autres modèles (render_phones.py) : même ouverture d'écran que le S7 (x 455..1546, y 716..1333) ---
-PHONE_MODELS = ["rugged", "iphone", "tablet", "keys"]
+PHONE_MODELS = ["rugged", "iphone", "tablet", "keys", "plate", "flip", "ribbed"]
 
 
 def _night(img):
@@ -1244,7 +1244,7 @@ def _night(img):
 
 def model_assets(tmp, only=None):
     for m in PHONE_MODELS:
-        if only and m != only:
+        if only and m not in only:
             continue
         f = os.path.join(RENDER_DIR, f"phone_{m}_front.png")
         if not os.path.exists(f):
@@ -1675,10 +1675,14 @@ def main():
         # « camera » : seulement l'image de l'item Caméra IP compacte.
         # « jpc » : tablette à touches (coques 2D, dos, atlas du modèle 3D, écran figé, rvmat de l'écran).
         if len(sys.argv) > 2 and sys.argv[2] == "jpc":
-            model_assets(tmp, only="keys")
+            model_assets(tmp, only=["keys"])
             jpc_tablet_atlas(tmp)
             jpc_screen_static(tmp)
             jpc_rvmats()
+            return
+        # « cases » : coques de référence (support JPC, étui multicam, coque nervurée).
+        if len(sys.argv) > 2 and sys.argv[2] == "cases":
+            model_assets(tmp, only=["plate", "flip", "ribbed"])
             return
         if len(sys.argv) > 2 and sys.argv[2] == "camera":
             convert(camera_item(), "item_camera", tmp)

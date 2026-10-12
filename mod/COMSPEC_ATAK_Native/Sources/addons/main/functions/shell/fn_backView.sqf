@@ -23,7 +23,7 @@ private _x = safeZoneX + (safeZoneW - _w) / 2;
 private _y = safeZoneY + safeZoneH / 2 - _h * 0.57;
 private _img = _d ctrlCreate ["COMSPEC_RscPicture", -1];
 private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
-private _s7 = !(_model in ["rugged", "iphone", "keys"]);
+private _s7 = !(_model in ["rugged", "iphone", "keys", "plate", "flip", "ribbed"]);
 _img ctrlSetText (["\z\comspec_atak_native\addons\main\data\phone_back_" + _model + ".paa", format ["\z\comspec_atak_native\addons\main\data\phone_back%1.paa", _suffix]] select _s7);
 _img ctrlSetTextColor [1, 1, 1, 1];
 _img ctrlSetPosition [_x, _y, _w, _h];
