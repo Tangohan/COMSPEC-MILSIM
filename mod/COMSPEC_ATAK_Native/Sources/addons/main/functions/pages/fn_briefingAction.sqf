@@ -95,10 +95,13 @@ switch (_action) do {
             ["WARNING", "Diapositives Athena : COMSPEC Link requis", 4, 30] call comspec_atak_native_fnc_notify;
         };
         uiNamespace setVariable ["COMSPEC_ATAK_SlideCache", createHashMap];
-        private _slides = [] call comspec_overwatch_connect_fnc_getBriefingSlides;
-        missionNamespace setVariable ["COMSPEC_BriefingSlideIndex", 0];
-        ["INFO", format ["%1 diapositive(s) publiée(s) sur Athena", count _slides], 3, 20] call comspec_atak_native_fnc_notify;
-        call _rerender;
+        // Relecture hors de l'image en cours (l'appel à Athena peut prendre plusieurs secondes).
+        [] spawn {
+            private _slides = [] call comspec_overwatch_connect_fnc_getBriefingSlides;
+            missionNamespace setVariable ["COMSPEC_BriefingSlideIndex", 0];
+            ["INFO", format ["%1 diapositive(s) publiée(s) sur Athena", count _slides], 3, 20] call comspec_atak_native_fnc_notify;
+            [{ ["BRIEFING"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        };
     };
 };
 true

@@ -568,14 +568,19 @@ public static partial class Extension
         // Ne plus envoyer le jeton mort pendant le client-init / les posts suivants.
         _sessionToken = "";
         _sessionExpiresAt = DateTimeOffset.MinValue;
-        try
+        // Renouvellement en arrière-plan : appelé avant chaque requête (souvent sur le thread du jeu),
+        // le client-init synchrone pouvait figer la partie jusqu'à SyncTimeoutSeconds.
+        _ = Task.Run(() =>
         {
-            VerifyClientInitSync();
-        }
-        catch
-        {
-            // La clé communauté / Bearer suffit ; le prochain cycle retentera.
-        }
+            try
+            {
+                VerifyClientInitSync();
+            }
+            catch
+            {
+                // La clé communauté / Bearer suffit ; le prochain cycle retentera.
+            }
+        });
     }
 
     private static void TryRememberSessionFromInitBody(string respBody)
@@ -872,14 +877,19 @@ public static partial class Extension
     /// Retry après échec / backoff. Positions = slot unique (dernière gagne) ;
     /// marqueurs = slot par arma_name ; autres posts = FIFO bornée.
     /// </summary>
+    private static int _queueDirty;
+
     private static void EnqueueForRetry(string url, string jsonBody)
     {
+        System.Threading.Interlocked.Exchange(ref _queueDirty, 1);
+        // Pas d'écriture disque ici : appelé depuis le thread du jeu à chaque envoi en échec, réécrire queue.jsonl
+        // (jusqu'à 500 envois en attente) figeait la partie pendant une coupure d'Athena. Le minuteur de vidage
+        // (DrainQueue) sauvegarde la file à chaque passage.
         if (IsPositionEndpoint(url))
         {
             lock (CoalescedPositionLock)
                 _coalescedPosition = (url, jsonBody);
             EnsureDrainTimer();
-            PersistQueueToDisk();
             return;
         }
         if (IsMarkerEndpoint(url))
@@ -887,17 +897,15 @@ public static partial class Extension
             var key = ExtractMarkerArmaName(jsonBody);
             if (key.Length == 0)
                 key = "anon:" + (PendingMarkersByName.Count + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            // Marqueurs en attente bornés (une coupure longue en accumulait sans limite).
+            if (PendingMarkersByName.Count >= 1000 && !PendingMarkersByName.ContainsKey(key)) return;
             PendingMarkersByName[key] = (url, jsonBody);
             EnsureDrainTimer();
-            PersistQueueToDisk();
             return;
         }
         if (PendingPosts.Count < MaxQueueSize)
-        {
             PendingPosts.Enqueue((url, jsonBody));
-            EnsureDrainTimer();
-        }
-        PersistQueueToDisk();
+        EnsureDrainTimer();
     }
 
     private static string ExtractMarkerArmaName(string jsonBody)
@@ -1358,6 +1366,10 @@ public static partial class Extension
 
     private static void DrainQueue()
     {
+        // File modifiée depuis la dernière sauvegarde (EnqueueForRetry) : sauvegardée ici, hors du thread du jeu,
+        // même pendant une coupure ou un ralentissement imposé par Athena.
+        if (System.Threading.Interlocked.Exchange(ref _queueDirty, 0) == 1)
+            PersistQueueToDisk();
         if (string.IsNullOrEmpty(_baseUrl)) return;
         if (IsRateLimitedNow() || IsNetworkBackoffNow()) return;
         lock (QueueDrainLock)

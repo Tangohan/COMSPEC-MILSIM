@@ -19,7 +19,9 @@ private _uid = _payload getOrDefault ["record_id", "?"];
 
 private _records = missionNamespace getVariable ["comspec_sse_missionRecords", []];
 _records pushBack _payload;
-missionNamespace setVariable ["comspec_sse_missionRecords", _records, true];
+// Copie locale bornée : diffusée à tous à chaque envoi (et gardée pour chaque arrivant), elle grossissait toute la mission.
+if ((count _records) > 50) then { _records deleteRange [0, (count _records) - 50]; };
+missionNamespace setVariable ["comspec_sse_missionRecords", _records];
 
 private _envelope = createHashMapFromArray [
     ["kind", "DIGITAL"],

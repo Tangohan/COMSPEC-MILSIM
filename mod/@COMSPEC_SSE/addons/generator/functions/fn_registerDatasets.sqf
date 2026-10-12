@@ -12,6 +12,6 @@ if (!isNil "comspec_sse_datasets" && {comspec_sse_datasets isEqualType createHas
 comspec_sse_datasets = createHashMap;
 comspec_sse_datasets set ["falcon", [] call comspec_sse_fnc_datasetFalcon];
 
-if (isServer) then { publicVariable "comspec_sse_datasets"; };
+// Pas de diffusion : chaque machine construit déjà cette table au chargement (generator XEH_preInit).
 [format ["registerDatasets: %1 pack(s)", count comspec_sse_datasets], "WARN"] call comspec_sse_fnc_log;
 true
