@@ -111,6 +111,8 @@ final class EmailService
     /**
      * @param array<string, mixed> $templateVars
      * @param array<string, mixed> $payloadSummary
+     * @param bool $forceImmediate Messages attendus dans la minute (lien d'inscription, code de connexion,
+     *                             mot de passe) : ne jamais dépendre du worker MAIL_QUEUE.
      */
     public function sendTemplated(
         string $eventCode,
@@ -120,7 +122,8 @@ final class EmailService
         array $templateVars,
         ?int $tenantId = null,
         ?string $replyTo = null,
-        ?array $payloadSummary = null
+        ?array $payloadSummary = null,
+        bool $forceImmediate = false
     ): bool {
         $this->lastSendError = null;
         $parts = $this->templateEngine->render($templateName, $templateVars);
@@ -138,7 +141,9 @@ final class EmailService
             $parts['text'] !== '' ? $parts['text'] : strip_tags($parts['html']),
             $tenantId,
             $replyTo,
-            $payloadSummary
+            $payloadSummary,
+            null,
+            $forceImmediate
         );
     }
 
@@ -181,7 +186,8 @@ final class EmailService
             ['resetUrl' => $resetUrl, 'hoursValid' => $hoursValid],
             $tenantId,
             null,
-            ['purpose' => 'password_reset']
+            ['purpose' => 'password_reset'],
+            true
         );
     }
 
@@ -241,7 +247,8 @@ final class EmailService
             ],
             $tenantId,
             null,
-            ['purpose' => 'register']
+            ['purpose' => 'register'],
+            true
         );
     }
 
@@ -380,7 +387,8 @@ final class EmailService
             ],
             $tenantId,
             null,
-            ['purpose' => 'login_security_otp']
+            ['purpose' => 'login_security_otp'],
+            true
         );
     }
 

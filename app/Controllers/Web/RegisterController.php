@@ -198,8 +198,22 @@ final class RegisterController
 
                 return Response::redirect(url('login'));
             }
+            $stillPending = array_filter(
+                $this->userRepository->listUsersForLoginByEmail($email),
+                static fn (array $r): bool => ($r['status'] ?? '') === 'pending_verification'
+            ) !== [];
+            if ($stillPending) {
+                // Cas fréquent : le membre se réinscrit parce qu'il n'a jamais reçu ou ouvert le lien.
+                Session::set('pending_verification_email', $email);
+                Session::flash(
+                    'error',
+                    'Vous avez déjà créé un compte avec cette adresse, mais il n’est pas encore confirmé. Cliquez sur « Renvoyer le lien de confirmation » ci-dessous.'
+                );
+
+                return Response::redirect(url('login'));
+            }
             $flashBack(
-                'Un compte existe déjà avec cette adresse e-mail. Connectez-vous, puis rejoignez la communauté via une invitation ou une candidature — ne créez pas un second compte.'
+                'Un compte existe déjà avec cette adresse e-mail. Connectez-vous (ou utilisez « Mot de passe oublié »), puis rejoignez la communauté via une invitation ou une candidature — ne créez pas un second compte.'
             );
 
             return Response::redirect(url('login'));
@@ -265,7 +279,7 @@ final class RegisterController
 
         $rawToken = bin2hex(random_bytes(32));
         $tokenHash = hash('sha256', $rawToken);
-        $expires = new \DateTimeImmutable('+15 minutes');
+        $expires = new \DateTimeImmutable('+' . EmailTokenPurpose::REGISTER_CONFIRM_TTL_MINUTES . ' minutes');
         $verifyUrl = url('verify-email') . '?token=' . rawurlencode($rawToken);
         $tenantName = email_community_label($tenant, (string) ($tenant['name'] ?? ''));
         $emailNorm = strtolower(trim($email));
@@ -310,7 +324,7 @@ final class RegisterController
             $displayName,
             $tenantName,
             $verifyUrl,
-            15,
+            EmailTokenPurpose::REGISTER_CONFIRM_TTL_MINUTES,
             $tenantId
         );
         if (!$sentOk) {

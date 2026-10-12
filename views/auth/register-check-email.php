@@ -4,6 +4,7 @@ $brand = function_exists('email_brand_name') ? email_brand_name() : 'Athena';
 $emailAddr = (string) ($email ?? '');
 $error = $error ?? null;
 $warning = $warning ?? null;
+$success = $success ?? null;
 $fileMailerNotice = \email_file_mailer_notice();
 $athena_header_current = 'register';
 ?>
@@ -49,6 +50,9 @@ $athena_header_current = 'register';
         <?php if (!empty($error)): ?>
             <?php $flash_variant = 'error'; $flash_message = (string) $error; $flash_margin_class = ''; require base_path('views/partials/flash_message.php'); ?>
         <?php endif; ?>
+        <?php if (!empty($success)): ?>
+            <?php $flash_variant = 'success'; $flash_message = (string) $success; $flash_margin_class = ''; require base_path('views/partials/flash_message.php'); ?>
+        <?php endif; ?>
         <?php if (!empty($warning)): ?>
             <?php $flash_variant = 'warning'; $flash_message = (string) $warning; $flash_margin_class = ''; require base_path('views/partials/flash_message.php'); ?>
         <?php endif; ?>
@@ -77,6 +81,7 @@ $athena_header_current = 'register';
         <form method="post" action="<?= htmlspecialchars(url('resend-verification'), ENT_QUOTES, 'UTF-8') ?>" class="ds-form" style="margin-top:1.25rem">
             <?= \App\Core\Csrf::field() ?>
             <input type="hidden" name="email" value="<?= htmlspecialchars($emailAddr, ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="from" value="check-email">
             <button type="submit" class="ds-btn ds-btn--primary ds-btn--block">
                 <?= htmlspecialchars(__('auth.resend_confirm'), ENT_QUOTES, 'UTF-8') ?>
             </button>

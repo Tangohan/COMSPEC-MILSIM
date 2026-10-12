@@ -79,6 +79,7 @@ $brandText = htmlspecialchars($brand, ENT_QUOTES, 'UTF-8');
             <label for="email" class="ds-label"><?= htmlspecialchars(__('auth.email'), ENT_QUOTES, 'UTF-8') ?></label>
             <p class="ds-hint" id="email-hint"><?= htmlspecialchars(__('auth.email_hint'), ENT_QUOTES, 'UTF-8') ?></p>
             <input type="email" name="email" id="email" required autocomplete="email" autocapitalize="none" spellcheck="false"
+                   value="<?= htmlspecialchars((string) ($oldEmail ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                    class="ds-input"
                    aria-describedby="email-hint"
                    data-lowercase="email">
