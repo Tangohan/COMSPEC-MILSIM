@@ -40,7 +40,12 @@ switch (toUpper _mode) do {
             _d46 displayAddEventHandler ["KeyDown", { params ["", "_key"];
                 if (_key isEqualTo 0x39) exitWith { ["EXIT"] call comspec_atak_native_fnc_photoMode; true };
                 if (_key isEqualTo 0x13) exitWith { ["SELFIE"] call comspec_atak_native_fnc_photoMode; true };
-                if (_key isEqualTo 0x21) exitWith { ["FLASH"] call comspec_atak_native_fnc_photoMode; true };
+                if (_key isEqualTo 0x21) exitWith {
+                    ["FLASH"] call comspec_atak_native_fnc_photoMode;
+                    // Filet : si le jeu a quand même vu F (mode de tir), l'arme est rangée de nouveau.
+                    [{ if ((uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) && {(currentWeapon player) isNotEqualTo ""}) then { player action ["SwitchWeapon", player, player, 299]; }; }, [], 0.1] call CBA_fnc_waitAndExecute;
+                    true
+                };
                 // T : marque la cible sous le réticule (cadre jaune « VISÉ »).
                 if (_key isEqualTo 0x14) exitWith { ["mark", "PHONE"] call comspec_atak_native_fnc_lockAction; true };
                 if (_key in [0x0D, 0x4E]) exitWith { ["ZOOM", "", 1] call comspec_atak_native_fnc_photoMode; true };

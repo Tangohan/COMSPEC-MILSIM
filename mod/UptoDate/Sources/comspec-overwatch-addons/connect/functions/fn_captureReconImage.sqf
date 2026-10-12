@@ -104,7 +104,8 @@ private _wall = [] call comspec_overwatch_connect_fnc_wallClockSeconds;
 private _unix = floor (_wall - (2440588 * 86400));
 if (_unix < 1000000000) then { _unix = 0; };
 private _capturedAt = str _unix;
-private _unitName = if (_feedId isEqualTo "") then { name _unit } else { _feedId };
+// Groupe en jeu, jamais le pseudo du profil Arma (le site remplace par l'unité de l'opérateur quand il le connaît).
+private _unitName = if (_feedId isEqualTo "") then { groupId (group _unit) } else { _feedId };
 if (!isNull _overlayHost) then {
     private _hostName = name _overlayHost;
     if (_hostName isNotEqualTo "") then { _unitName = _hostName; };

@@ -54,6 +54,74 @@ final class OperatorPortraits
     }
 
     /**
+     * Portrait opérateur pour le téléphone en jeu (ATAK natif) : Arma n'affiche que du JPEG ou du PAA,
+     * et cadre l'image dans un carré. On sert donc une vignette carrée JPEG 256 px, recadrée vers le haut
+     * (le visage), générée une fois à côté du portrait (uploads/portraits/atak/). Le nom du portrait change
+     * à chaque envoi, la vignette suit. Sans portrait, ou si l'image n'est pas lisible : null (le jeu
+     * affiche alors les initiales). Jamais la photo de compte ni Steam.
+     */
+    public static function gameThumbnailUrl(int $tenantId, int $userId): ?string
+    {
+        $url = self::forUser($tenantId, $userId);
+        if ($url === null) {
+            return null;
+        }
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        $pos = strpos($path, '/uploads/portraits/');
+        $public = function_exists('base_path') ? base_path('public') : '';
+        if ($pos === false || $public === '') {
+            return self::isJpeg($url) ? $url : null;
+        }
+        $rel = substr($path, $pos + 1);
+        $src = $public . '/' . $rel;
+        if (str_contains($rel, '..') || !is_file($src)) {
+            return self::isJpeg($url) ? $url : null;
+        }
+        $thumbRel = 'uploads/portraits/atak/' . pathinfo($rel, PATHINFO_FILENAME) . '.jpg';
+        $thumb = $public . '/' . $thumbRel;
+        if (!is_file($thumb) && !self::writeSquareJpeg($src, $thumb, 256)) {
+            return self::isJpeg($url) ? $url : null;
+        }
+
+        return substr($url, 0, (int) strpos($url, $path) + $pos + 1) . $thumbRel;
+    }
+
+    private static function isJpeg(string $url): bool
+    {
+        return (bool) preg_match('/\.jpe?g$/i', (string) parse_url($url, PHP_URL_PATH));
+    }
+
+    private static function writeSquareJpeg(string $src, string $dest, int $size): bool
+    {
+        if (!function_exists('imagecreatefromstring')) {
+            return false;
+        }
+        $bin = @file_get_contents($src);
+        $im = $bin !== false ? @imagecreatefromstring($bin) : false;
+        if ($im === false) {
+            return false;
+        }
+        $w = imagesx($im);
+        $h = imagesy($im);
+        $side = min($w, $h);
+        // Recadrage centré en largeur, au quart supérieur en hauteur : le visage reste dans le cadre.
+        $sx = (int) floor(($w - $side) / 2);
+        $sy = (int) floor(($h - $side) * 0.25);
+        $out = imagecreatetruecolor($size, $size);
+        imagefill($out, 0, 0, imagecolorallocate($out, 18, 22, 20));
+        imagecopyresampled($out, $im, 0, 0, $sx, $sy, $size, $size, $side, $side);
+        $dir = dirname($dest);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+        $ok = @imagejpeg($out, $dest, 88);
+        imagedestroy($out);
+        imagedestroy($im);
+
+        return $ok;
+    }
+
+    /**
      * @param list<int> $ids
      */
     private static function load(int $tenantId, array $ids): void
