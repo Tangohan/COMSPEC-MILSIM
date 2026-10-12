@@ -899,6 +899,35 @@ if ($personnelFileIsRhFull) {
                                 <?php endif; ?>
                             </div>
                             <?php endif; ?>
+                            <?php
+                            $atakRoleTimes = is_array($atakRoleTimes ?? null) ? $atakRoleTimes : [];
+                            $roleDur = static function (int $s): string {
+                                $h = intdiv($s, 3600);
+                                $m = intdiv($s % 3600, 60);
+                                return $h > 0 ? $h . ' h ' . str_pad((string) $m, 2, '0', STR_PAD_LEFT) : max(1, $m) . ' min';
+                            };
+                            ?>
+                            <?php if ($atakRoleTimes !== []): ?>
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:col-span-2 xl:col-span-1">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Temps par rôle en jeu</p>
+                                <ul class="mt-2 space-y-1.5">
+                                    <?php $roleMax = max(1, (int) $atakRoleTimes[0]['seconds']); ?>
+                                    <?php foreach (array_slice($atakRoleTimes, 0, 8) as $rt): ?>
+                                    <li>
+                                        <div class="flex items-baseline justify-between gap-3 text-xs">
+                                            <span class="font-semibold text-slate-800"><?= htmlspecialchars((string) $rt['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="tabular-nums font-bold text-slate-900"><?= htmlspecialchars($roleDur((int) $rt['seconds']), ENT_QUOTES, 'UTF-8') ?></span>
+                                        </div>
+                                        <div class="mt-1 h-1.5 rounded-full bg-slate-200/80" aria-hidden="true"><div class="h-1.5 rounded-full bg-emerald-500" style="width: <?= max(4, (int) round(100 * (int) $rt['seconds'] / $roleMax)) ?>%"></div></div>
+                                        <?php if (($rt['last_day'] ?? '') !== '' && ($ts = strtotime((string) $rt['last_day'])) !== false): ?>
+                                        <p class="mt-0.5 text-[10px] text-slate-500">Dernière fois le <?= date('d/m/Y', $ts) ?></p>
+                                        <?php endif; ?>
+                                    </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                                <p class="mt-2 text-[10px] text-slate-500">Relevé par le téléphone ATAK en partie (rôle tenu et slot joué).</p>
+                            </div>
+                            <?php endif; ?>
                             <?php if ($accountCreatedDisplay !== null): ?>
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Membre depuis</p>

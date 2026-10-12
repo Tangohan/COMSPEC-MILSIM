@@ -14,7 +14,7 @@ private _hostiles = _units select { (_x getOrDefault ["affiliation", ""]) isEqua
 private _lost = { (_x getOrDefault ["freshness", "LIVE"]) in ["LOST", "OFFLINE"] } count _friends;
 private _orders = [] call comspec_atak_native_fnc_tasksAll;
 private _open = [];
-{ if !((toUpper (_y getOrDefault ["status", "NEW"])) in ["DELIVERED", "FAILED", "SUCCEEDED", "CANCELED"]) then { _open pushBack _y; }; } forEach _orders;
+{ if !((toUpper (_y getOrDefault ["status", "NEW"])) in ["DONE", "FAILED", "SUCCEEDED", "CANCELED", "CANCELLED"]) then { _open pushBack _y; }; } forEach _orders;
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
 private _dist = { params ["_m"]; [format ["%1 m", round _m], format ["%1 km", (_m / 1000) toFixed 1]] select (_m >= 1000) };
 private _posOf = { private _o = _this getOrDefault ["object", objNull]; if (isNull _o) then { _this getOrDefault ["position", []] } else { getPosASL _o } };

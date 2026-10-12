@@ -788,25 +788,83 @@
     renderGroupTaskLists();
     fillFsAlertSelects();
   }
+  /* Tâches transmises : cartes avec étapes (transmis, vu, reçu, en cours, terminé), réponses de chaque joueur
+     et tâches créées en jeu (ordres du terrain). Filtre : en cours, terrain, toutes. */
+  var groupTaskFilter = 'open';
+  var TASK_STEPS = [['PENDING', 'Transmis'], ['DELIVERED', 'Vu'], ['ACK', 'Reçu'], ['EXEC', 'En cours'], ['DONE', 'Terminé']];
+  var TASK_STATUS_FR = { PENDING: 'Transmis', DELIVERED: 'Vu', ACK: 'Reçu', EXEC: 'En cours', DONE: 'Terminé', FAILED: 'Impossible', CANCELLED: 'Annulé' };
+  function taskTone(status) {
+    if (status === 'DONE') return 'ok';
+    if (status === 'FAILED' || status === 'CANCELLED') return 'off';
+    if (status === 'ACK' || status === 'EXEC') return 'run';
+    return 'new';
+  }
+  function taskWhen(ts) {
+    var s = String(ts || '').trim();
+    if (!s) return '';
+    var iso = s.indexOf('T') >= 0 ? s : s.replace(' ', 'T');
+    if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(iso)) iso += 'Z';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    var today = new Date();
+    var day = d.toDateString() === today.toDateString() ? '' : p(d.getDate()) + '/' + p(d.getMonth() + 1) + ' ';
+    return day + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function taskIsOpen(row) {
+    var st = String(row.status || '').toUpperCase();
+    return st !== 'CANCELLED' && st !== 'FAILED' && st !== 'DONE';
+  }
   function renderGroupTaskLists() {
-    var html = groupTasks.slice(0, 12).map(function (row) {
-      var status = String(row.status || '').toUpperCase();
-      var open = status !== 'CANCELLED' && status !== 'FAILED' && status !== 'DONE';
-      var text = String(row.payload_display || '').trim();
-      var who = String(row.ack_by || row.status_by || '').trim();
-      var statusText = clean(row.status_label, 'Transmis');
-      if (who && (status === 'ACK' || status === 'EXEC' || status === 'DONE' || status === 'DELIVERED')) {
-        statusText += ' · ' + who;
+    var rows = groupTasks.filter(function (row) {
+      if (groupTaskFilter === 'open') return taskIsOpen(row);
+      if (groupTaskFilter === 'game') return String(row.source || '') === 'game';
+      return true;
+    });
+    var counts = {
+      open: groupTasks.filter(taskIsOpen).length,
+      game: groupTasks.filter(function (row) { return String(row.source || '') === 'game'; }).length,
+      all: groupTasks.length
+    };
+    var tabs = '<div class="ow-task-filter" role="group" aria-label="Filtrer les tâches">' +
+      [['open', 'En cours'], ['game', 'Créées en jeu'], ['all', 'Toutes']].map(function (t) {
+        return '<button type="button" class="ow-task-filter-btn' + (groupTaskFilter === t[0] ? ' is-active' : '') +
+          '" data-task-filter="' + t[0] + '" aria-pressed="' + (groupTaskFilter === t[0]) + '">' + t[1] +
+          ' <span>' + counts[t[0]] + '</span></button>';
+      }).join('') + '</div>';
+    var cards = rows.slice(0, 20).map(function (row) {
+      var status = String(row.status || 'PENDING').toUpperCase();
+      var tone = taskTone(status);
+      var fromGame = String(row.source || '') === 'game';
+      var text = String(row.payload_display || row.payload || '').trim();
+      var stepIdx = -1;
+      TASK_STEPS.forEach(function (step, i) { if (step[0] === status) stepIdx = i; });
+      var steps = (status === 'FAILED' || status === 'CANCELLED') ? '' : '<ol class="ow-task-steps">' + TASK_STEPS.map(function (step, i) {
+        return '<li class="' + (i <= stepIdx ? 'is-done' : '') + (i === stepIdx ? ' is-now' : '') + '">' + step[1] + '</li>';
+      }).join('') + '</ol>';
+      var responses = Array.isArray(row.responses) ? row.responses.slice() : [];
+      if (!responses.length && (row.ack_by || row.status_by) && status !== 'PENDING' && status !== 'DELIVERED') {
+        responses.push({ by: row.ack_by || row.status_by, status: status, note: row.note || '', at: row.updated_at || '' });
       }
-      return '<div class="ow-event"><span>' + escapeHtml(clean(row.type_label, 'Tâche')) +
-        ' · ' + escapeHtml(clean(row.target_label, 'Groupe')) +
-        '</span><strong>' + escapeHtml(statusText) +
-        (row.priority_label ? ' · ' + escapeHtml(row.priority_label) : '') +
-        '</strong>' +
-        (open && canIssueGroupTasks ? '<button type="button" class="ow-tag" data-cancel-task="' +
-          escapeHtml(String(row.id || '')) + '">Annuler</button>' : '') +
-        '</div>' + (text ? '<p class="ow-help">' + escapeHtml(text) + '</p>' : '');
-    }).join('') || '<p class="ow-help">Aucune tâche transmise pour cette mission.</p>';
+      var who = responses.length ? '<ul class="ow-task-who">' + responses.map(function (r) {
+        var st = String(r.status || '').toUpperCase();
+        return '<li><span class="ow-task-dot is-' + taskTone(st) + '"></span><strong>' + escapeHtml(clean(r.by, '—')) + '</strong> ' +
+          escapeHtml(TASK_STATUS_FR[st] || st) + (r.at ? ' · ' + escapeHtml(taskWhen(r.at)) : '') +
+          (r.note ? '<em>' + escapeHtml(r.note) + '</em>' : '') + '</li>';
+      }).join('') + '</ul>' : '<p class="ow-task-none">Personne n’a encore répondu.</p>';
+      var canCancel = taskIsOpen(row) && canIssueGroupTasks;
+      return '<article class="ow-task-card is-' + tone + '">' +
+        '<header><div><strong>' + escapeHtml(clean(row.type_label, 'Tâche')) + '</strong> <span>→ ' + escapeHtml(clean(row.target_label, 'Groupe')) + '</span></div>' +
+        '<span class="ow-task-status is-' + tone + '">' + escapeHtml(clean(row.status_label, TASK_STATUS_FR[status] || 'Transmis')) + '</span></header>' +
+        '<p class="ow-task-meta">' + (fromGame ? '<span class="ow-task-src is-game">Créée en jeu</span>' : '<span class="ow-task-src">Poste</span>') +
+        (row.issuer ? ' par ' + escapeHtml(row.issuer) : '') + (row.created_at ? ' · ' + escapeHtml(taskWhen(row.created_at)) : '') +
+        (row.priority_label ? ' · ' + escapeHtml(row.priority_label) : '') + '</p>' +
+        (text ? '<p class="ow-task-text">' + escapeHtml(text) + '</p>' : '') + steps + who +
+        (canCancel ? '<footer><button type="button" class="ow-tag" data-cancel-task="' + escapeHtml(String(row.id || '')) + '">Annuler</button></footer>' : '') +
+        '</article>';
+    }).join('');
+    var empty = '<p class="ow-help">' + (groupTaskFilter === 'open' ? 'Aucune tâche en cours.' : groupTaskFilter === 'game' ? 'Aucune tâche créée en jeu pour cette mission.' : 'Aucune tâche transmise pour cette mission.') + '</p>';
+    var html = tabs + (cards || empty);
     document.querySelectorAll('.ow-group-task-list').forEach(function (host) {
       host.innerHTML = html;
     });
@@ -900,9 +958,11 @@
   function loadGroupTasks() {
     return api('/api/atak/orders?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
       var rows = asList(payload, 'orders');
+      // Tâches de groupe et toutes les tâches créées en jeu (ordres du terrain), sauf alertes plein écran.
       groupTasks = rows.filter(function (row) {
         var kind = String(row.target_type || '').toLowerCase();
-        return kind === 'group' || kind === 'fire_team';
+        if (String(row.type || '').toUpperCase() === 'NOTIFY_FULL') return false;
+        return kind === 'group' || kind === 'fire_team' || String(row.source || '') === 'game';
       }).sort(function (a, b) {
         return String(b.created_at || b.updated_at || '').localeCompare(String(a.created_at || a.updated_at || ''));
       });
@@ -7808,6 +7868,13 @@
     if (first) { selectUnit(first); if (key !== 'none') fitSquad(first); }
   });
   function handleGroupTaskClick(event) {
+    var filter = event.target.closest('[data-task-filter]');
+    if (filter) {
+      event.preventDefault();
+      groupTaskFilter = filter.getAttribute('data-task-filter') || 'open';
+      renderGroupTaskLists();
+      return;
+    }
     var btn = event.target.closest('[data-cancel-task]');
     if (!btn) return;
     event.preventDefault();
