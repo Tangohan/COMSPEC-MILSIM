@@ -292,11 +292,11 @@ switch (toUpper _mode) do {
                 _light setLightDayLight (sunOrMoon >= 0.5);
             };
             uiSleep 0.12;
-            // Débit simulé : sans réseau, la photo reste sur le poste (Photos > Bibliothèque pour la retransmettre).
+            // Débit simulé : sans réseau, la photo reste sur le poste (app Galerie pour la retransmettre).
             private _noNet = (([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0;
             private _ok = if (_noNet) then {
                 screenshot format ["comspec_atak_%1.png", floor (diag_tickTime * 10)];
-                ["WARNING", "Pas de réseau : photo gardée sur le poste, à envoyer depuis Photos > Galerie", 5, 40] call comspec_atak_native_fnc_notify;
+                ["WARNING", "Pas de réseau : photo gardée sur le poste, à envoyer depuis l'app Galerie", 5, 40] call comspec_atak_native_fnc_notify;
                 false
             } else { ["", _caption, "CTAB", "", false, false, true] call comspec_overwatch_connect_fnc_captureReconImage };
             uiSleep 0.08;
@@ -311,7 +311,7 @@ switch (toUpper _mode) do {
                 _flash ctrlCommit ([0.35, 0.6] select _fire);
                 private _n = (_ctx param [4, 0]) + ([0, 1] select _ok);
                 _ctx set [4, _n];
-                (_cam displayCtrl 4) ctrlSetText ((format ["%1%2", ["Photo non envoyée : voir Photos > Envois", format ["%1 photo(s) en cours d'envoi vers Athena", _n]] select _ok, ["", " · flash"] select _fire]) call comspec_atak_native_fnc_tr);
+                (_cam displayCtrl 4) ctrlSetText ((format ["%1%2", ["Photo non envoyée : voir Galerie > Envois", format ["%1 photo(s) en cours d'envoi vers Athena", _n]] select _ok, ["", " · flash"] select _fire]) call comspec_atak_native_fnc_tr);
             };
             playSound "ClickSoft";
         };
