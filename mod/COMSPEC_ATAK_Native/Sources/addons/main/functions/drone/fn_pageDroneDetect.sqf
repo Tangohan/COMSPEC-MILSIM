@@ -80,7 +80,7 @@ private _summary = {
         ["Balayage manuel", "<t color='#5cc76b'>● Balayage automatique</t>"] select (profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false]),
         ["Pas encore balayé", format ["Dernier balayage il y a %1", [format ["%1 s", _s], format ["%1 min %2 s", floor (_s / 60), _s mod 60]] select (_s >= 60)]] select (_at >= 0)]
 };
-_side ctrlSetStructuredText parseText ([_h] call _summary);
+_side ctrlSetStructuredText parseText ((([_h] call _summary)) call comspec_atak_native_fnc_tr);
 uiNamespace setVariable ["COMSPEC_ATAK_DroneRadar", [_ring, _needles, _side, _summary]];
 
 // --- Liste ---
@@ -130,7 +130,7 @@ if ((uiNamespace getVariable ["COMSPEC_ATAK_DronePfh", -1]) < 0) then {
         if (!isNull _ring) then {
             _ring ctrlSetAngle [-_hd, 0.5, 0.5];
             { (_x select 0) ctrlSetAngle [(_x select 1) - _hd, 0.5, 0.5]; } forEach _needles;
-            _side ctrlSetStructuredText parseText ([_hd] call _summary);
+            _side ctrlSetStructuredText parseText ((([_hd] call _summary)) call comspec_atak_native_fnc_tr);
         };
         if !(profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false]) exitWith {};
         if (diag_tickTime < (uiNamespace getVariable ["COMSPEC_ATAK_DronePageScan", 0])) exitWith {};

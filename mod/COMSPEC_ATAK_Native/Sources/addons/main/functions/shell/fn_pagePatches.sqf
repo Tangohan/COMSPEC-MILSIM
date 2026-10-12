@@ -116,7 +116,7 @@ switch (_act) do {
         private _lblH = _fs * 1.9;
         if ((count _match) isEqualTo 0) then {
             private _t = ["COMSPEC_RscStructuredText", [_x0, _gy + _pad, _w, _fs * 3]] call _mk;
-            _t ctrlSetStructuredText parseText "<t align='center' color='#8a9a93'>Aucun patch ne correspond à la recherche.</t>";
+            _t ctrlSetStructuredText parseText (("<t align='center' color='#8a9a93'>Aucun patch ne correspond à la recherche.</t>") call comspec_atak_native_fnc_tr);
         };
         {
             _x params ["_v", "_name", "_tex", "_from"];
@@ -141,9 +141,9 @@ switch (_act) do {
                 _e ctrlSetTextColor [0.55, 0.6, 0.58, 1];
             };
             private _lb = ["COMSPEC_RscStructuredText", [_tx, _ty + _th - _lblH - _pad / 3, _tw, _lblH]] call _mk;
-            _lb ctrlSetStructuredText parseText format ["<t align='center' size='0.72' color='%1'>%2</t>", ["#dfe8e3", _accHex] select _on, [_name] call _esc];
+            _lb ctrlSetStructuredText parseText ((format ["<t align='center' size='0.72' color='%1'>%2</t>", ["#dfe8e3", _accHex] select _on, [_name] call _esc]) call comspec_atak_native_fnc_tr);
             private _b = ["COMSPEC_RscButtonOverlay", [_tx, _ty, _tw, _th]] call _mk;
-            _b ctrlSetTooltip format ["%1 — %2 · %3", _name, [_v select [4], _v] select (_from isEqualTo "ours"), ["nos patchs", "mods", "mission"] select (["ours", "mods", "mission"] find _from)];
+            _b ctrlSetTooltip ((format ["%1 — %2 · %3", _name, [_v select [4], _v] select (_from isEqualTo "ours"), ["nos patchs", "mods", "mission"] select (["ours", "mods", "mission"] find _from)]) call comspec_atak_native_fnc_tr);
             _b ctrlAddEventHandler ["ButtonClick", compile format ["['pick', %1] call comspec_atak_native_fnc_pagePatches;", str _v]];
         } forEach (_match select [_pg * _per, _per]);
 
@@ -159,15 +159,15 @@ switch (_act) do {
         _prev ctrlAddEventHandler ["ButtonClick", { ['pg', -1] call comspec_atak_native_fnc_pagePatches; }];
         _next ctrlAddEventHandler ["ButtonClick", { ['pg', 1] call comspec_atak_native_fnc_pagePatches; }];
         private _pt = ["COMSPEC_RscStructuredText", [_x0 + _bwid, _fy + (_rowH - _fs * 1.3) / 2, _w - 2 * _bwid, _fs * 1.3]] call _mk;
-        _pt ctrlSetStructuredText parseText format ["<t align='center' size='0.85'>Page %1 / %2  <t color='#8a9a93'>· %3 patch(s)</t></t>", _pg + 1, _pages, count _match];
+        _pt ctrlSetStructuredText parseText ((format ["<t align='center' size='0.85'>Page %1 / %2  <t color='#8a9a93'>· %3 patch(s)</t></t>", _pg + 1, _pages, count _match]) call comspec_atak_native_fnc_tr);
         // Ligne de confirmation : patch porté, et le dernier choix pendant quelques secondes.
         (uiNamespace getVariable ["COMSPEC_ATAK_PatchMsg", ["", -100]]) params ["_msg", "_at"];
         private _st = ["COMSPEC_RscStructuredText", [_x0, _fy + _rowH + _pad / 4, _w, _fs * 1.4]] call _mk;
-        _st ctrlSetStructuredText parseText (if (diag_tickTime - _at < 4) then {
+        _st ctrlSetStructuredText parseText (((if (diag_tickTime - _at < 4) then {
             format ["<t align='center' size='0.85' color='%1'>%2 · enregistré</t>", _accHex, [_msg] call _esc]
         } else {
             format ["<t align='center' size='0.85' color='#8a9a93'>Porté : </t><t align='center' size='0.85'>%1</t>", [["name", _cur] call comspec_atak_native_fnc_patchCatalog] call _esc]
-        });
+        })) call comspec_atak_native_fnc_tr);
         uiNamespace setVariable ["COMSPEC_ATAK_PatchGrid", _made];
         true
     };
@@ -192,7 +192,7 @@ switch (_act) do {
             if ((count _h) > 1 && {(_h select ((count _h) - 2)) isEqualTo "SETTINGS"}) then { [] call comspec_atak_native_fnc_back; } else { ["SETTINGS"] call comspec_atak_native_fnc_navigate; };
         }] call CBA_fnc_execNextFrame; }];
         private _hd = ["COMSPEC_RscStructuredText", [_pad + _w * 0.32, _y + (_rowH - _fs * 1.4) / 2, _w * 0.68, _fs * 1.4]] call comspec_atak_native_fnc_pageCtrl;
-        _hd ctrlSetStructuredText parseText format ["<t align='right' font='RobotoCondensedBold'>Patch au dos</t><t align='right' size='0.8' color='#8a9a93'>  %1 insignes d'unité</t>", ["count"] call comspec_atak_native_fnc_patchCatalog];
+        _hd ctrlSetStructuredText parseText ((format ["<t align='right' font='RobotoCondensedBold'>Patch au dos</t><t align='right' size='0.8' color='#8a9a93'>  %1 insignes d'unité</t>", ["count"] call comspec_atak_native_fnc_patchCatalog]) call comspec_atak_native_fnc_tr);
         _y = _y + _rowH + _pad / 2;
         private _lb = ["COMSPEC_RscLabel", [_pad, _y, _w, _fs * 1.2], "RECHERCHER (NOM OU CLASSE)"] call comspec_atak_native_fnc_pageCtrl;
         _lb ctrlSetFontHeight (_fs * 0.9);
@@ -208,7 +208,7 @@ switch (_act) do {
         _clr ctrlSetFontHeight (_fs * 0.85);
         _clr ctrlAddEventHandler ["ButtonClick", {
             private _e = uiNamespace getVariable ["COMSPEC_ATAK_PatchEdit", controlNull];
-            if (!isNull _e) then { _e ctrlSetText ""; ctrlSetFocus _e; };
+            if (!isNull _e) then { _e ctrlSetText (("") call comspec_atak_native_fnc_tr); ctrlSetFocus _e; };
             uiNamespace setVariable ["COMSPEC_ATAK_PatchQuery", ""];
             uiNamespace setVariable ["COMSPEC_ATAK_PatchPg", 0];
             [{ ["grid"] call comspec_atak_native_fnc_pagePatches; }] call CBA_fnc_execNextFrame;

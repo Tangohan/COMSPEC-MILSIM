@@ -26,7 +26,7 @@ private _made = [];
     };
     private _tile = [_d, controlNull, _pos, _app get "icon", "", [_app get "page"] call comspec_atak_native_fnc_appBadge, _app get "page", _l get "fontSmall"] call comspec_atak_native_fnc_tileCreate;
     if ((_app get "page") isEqualTo _active) then { (_tile select 0) ctrlSetBackgroundColor ((((([] call comspec_atak_native_fnc_accent) select 0) select [0, 3]) apply { _x * 0.45 }) + [1]); };
-    (_tile select (count _tile - 1)) ctrlSetTooltip (_app get "name");
+    (_tile select (count _tile - 1)) ctrlSetTooltip (((_app get "name")) call comspec_atak_native_fnc_tr);
     _made append _tile;
 } forEach _apps;
 

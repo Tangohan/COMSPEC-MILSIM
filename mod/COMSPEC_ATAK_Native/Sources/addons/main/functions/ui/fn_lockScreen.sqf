@@ -54,10 +54,10 @@ switch (_act) do {
                 ["front"] call comspec_atak_native_fnc_fx;
             };
             (uiNamespace getVariable ["COMSPEC_ATAK_LockClock", []]) params [["_clock", controlNull], ["_bat", controlNull], ["_net", controlNull], ["_hint", controlNull], ["_bar", controlNull]];
-            if (!isNull _clock) then { _clock ctrlSetText ([dayTime, "HH:MM"] call BIS_fnc_timeToString); };
+            if (!isNull _clock) then { _clock ctrlSetText ((([dayTime, "HH:MM"] call BIS_fnc_timeToString)) call comspec_atak_native_fnc_tr); };
             (call (uiNamespace getVariable ["COMSPEC_ATAK_LockStatus", { [] }])) params [["_bt", ""], ["_bc", [1, 1, 1, 1]], ["_nt", ""], ["_nc", [1, 1, 1, 1]]];
-            if (!isNull _bat && {_bt isNotEqualTo ""}) then { _bat ctrlSetText _bt; _bat ctrlSetTextColor _bc; };
-            if (!isNull _net && {_nt isNotEqualTo ""}) then { _net ctrlSetText _nt; _net ctrlSetTextColor _nc; };
+            if (!isNull _bat && {_bt isNotEqualTo ""}) then { _bat ctrlSetText ((_bt) call comspec_atak_native_fnc_tr); _bat ctrlSetTextColor _bc; };
+            if (!isNull _net && {_nt isNotEqualTo ""}) then { _net ctrlSetText ((_nt) call comspec_atak_native_fnc_tr); _net ctrlSetTextColor _nc; };
             // Invite qui respire : fondu alterné d'une seconde.
             private _f = [0, 0.55] select (((floor diag_tickTime) mod 2) isEqualTo 0);
             { if (!isNull _x) then { _x ctrlSetFade _f; _x ctrlCommit 0.9; }; } forEach [_hint, _bar];
@@ -108,7 +108,7 @@ switch (_act) do {
             params ["_class", "_pos", ["_text", ""]];
             private _c = _d ctrlCreate [_class, -1, _grp];
             _c ctrlSetPosition _pos;
-            if (_text isNotEqualTo "") then { _c ctrlSetText _text; };
+            if (_text isNotEqualTo "") then { _c ctrlSetText ((_text) call comspec_atak_native_fnc_tr); };
             _c ctrlCommit 0;
             _made pushBack _c;
             _c
@@ -166,7 +166,7 @@ switch (_act) do {
             private _c = ["COMSPEC_RscTextCenter", [0, _y, _dw * 0.3, _chipH], _sample] call _mk;
             _c ctrlSetFontHeight (_fs * 0.85);
             private _w = (ctrlTextWidth _c) + _pad * 2.4;
-            _c ctrlSetText _txt;
+            _c ctrlSetText ((_txt) call comspec_atak_native_fnc_tr);
             _c ctrlSetTextColor _col;
             _c ctrlSetBackgroundColor [1, 1, 1, 0.09];
             _chips pushBack [_c, _w];
@@ -232,8 +232,8 @@ switch (_act) do {
             _pic ctrlSetTextColor [0.95, 0.98, 0.96, 1];
             private _tx = _ix + _iw + _pad;
             private _body = ["COMSPEC_RscStructuredText", [_tx, _y + _ch * 0.1, _cx + _cw - _tx - _pad, _ch * 0.85]] call _mk;
-            _body ctrlSetStructuredText parseText format ["<t size='0.8' font='RobotoCondensedBold' color='#eef3ef'>%1</t><t size='0.72' align='right' color='#8a9a93'>%2</t><br/><t size='0.8' color='#c4cfc9'>%3</t>",
-                [_title] call _e, _x getOrDefault ["time", ""], [_plain] call _e];
+            _body ctrlSetStructuredText parseText ((format ["<t size='0.8' font='RobotoCondensedBold' color='#eef3ef'>%1</t><t size='0.72' align='right' color='#8a9a93'>%2</t><br/><t size='0.8' color='#c4cfc9'>%3</t>",
+                [_title] call _e, _x getOrDefault ["time", ""], [_plain] call _e]) call comspec_atak_native_fnc_tr);
             _y = _y + _ch + _pad * 0.5;
             _shown = _shown + 1;
         } forEach _last;
@@ -252,7 +252,7 @@ switch (_act) do {
         uiNamespace setVariable ["COMSPEC_ATAK_LockClock", [_clock, (_chips select 1) select 0, (_chips select 2) select 0, _hint, _bar]];
         // Tout l'écran déverrouille (clic, ou glissé : le relâchement sur le bouton compte comme un clic).
         private _btn = ["COMSPEC_RscButtonInvisible", [0, 0, _dw, _dh]] call _mk;
-        _btn ctrlSetTooltip "Déverrouiller";
+        _btn ctrlSetTooltip (("Déverrouiller") call comspec_atak_native_fnc_tr);
         _btn ctrlAddEventHandler ["ButtonClick", { [{ ["unlock"] call comspec_atak_native_fnc_lockScreen; }] call CBA_fnc_execNextFrame; }];
         uiNamespace setVariable ["COMSPEC_ATAK_LockCtrls", _made];
         // À l'ouverture : volet rapide refermé, effets d'écran (fêlures, filtre de nuit) remis devant.

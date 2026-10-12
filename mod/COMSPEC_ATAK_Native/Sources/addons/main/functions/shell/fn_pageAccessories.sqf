@@ -23,7 +23,7 @@ private _mk = { params ["_cls", "_pos", ["_txt", ""]]; [_cls, _pos, _txt] call c
 private _txt = {
     params ["_pos", "_s"];
     private _c = ["COMSPEC_RscStructuredText", _pos] call _mk;
-    _c ctrlSetStructuredText parseText _s;
+    _c ctrlSetStructuredText parseText ((_s) call comspec_atak_native_fnc_tr);
     _c ctrlEnable false;
     _c
 };
@@ -111,8 +111,8 @@ private _tex = { params ["_p"]; [_ix + _iw * (_p select 0) / 2048, _iy + _ih * (
 
 // Téléphone vu de dos, et ses accessoires en calque (comme fn_backView).
 private _back = ["COMSPEC_RscPicture", [_ix, _iy, _iw, _ih]] call _mk;
-_back ctrlSetText (["\z\comspec_atak_native\addons\main\data\phone_back_" + _model + ".paa",
-    format ["\z\comspec_atak_native\addons\main\data\phone_back%1.paa", ["", "_" + _tint] select (_tint in ["od", "black"])]] select _s7);
+_back ctrlSetText (((["\z\comspec_atak_native\addons\main\data\phone_back_" + _model + ".paa",
+    format ["\z\comspec_atak_native\addons\main\data\phone_back%1.paa", ["", "_" + _tint] select (_tint in ["od", "black"])]] select _s7)) call comspec_atak_native_fnc_tr);
 _back ctrlSetTextColor [1, 1, 1, 1];
 _back ctrlEnable false;
 if (_s7 && {missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false]}) then {
@@ -189,7 +189,7 @@ if (_s7 && {_ant isNotEqualTo []}) then {
         _bd ctrlEnable false;
     };
     private _btn = ["COMSPEC_RscButtonOverlay", [_bx, _by, _bw2, _bh2]] call _mk;
-    _btn ctrlSetTooltip format ["%1 : %2", _s get "title", ["vide", _s get "name"] select _on];
+    _btn ctrlSetTooltip ((format ["%1 : %2", _s get "title", ["vide", _s get "name"] select _on]) call comspec_atak_native_fnc_tr);
     _btn ctrlAddEventHandler ["ButtonClick", compile format [
         "private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['accSlot', [%1, ''] select ((_s getOrDefault ['accSlot', '']) isEqualTo %1)]; playSound 'ClickSoft'; ['refresh'] call comspec_atak_native_fnc_accessoriesAction;",
         str _id]];

@@ -11,7 +11,7 @@ COMSPEC_ATAK_DataInitDone = true;
 
 ["comspec_atak_native_dataNote", {
     params [["_msg", ""]];
-    systemChat format ["[ATAK · Données] %1", _msg];
+    systemChat ((format ["[ATAK · Données] %1", _msg]) call comspec_atak_native_fnc_tr);
     if (!isNull (findDisplay 312)) then { [_msg] call BIS_fnc_showCuratorFeedbackMessage; };
 }] call CBA_fnc_addEventHandler;
 

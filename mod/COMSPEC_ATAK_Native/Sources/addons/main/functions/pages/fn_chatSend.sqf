@@ -8,7 +8,7 @@ if (_message isEqualTo "") exitWith { false };
 ([_message] call comspec_atak_native_fnc_chatCommand) params ["_prio", "_kind", "_text", "_unknown", "_tags", "_help"];
 if (_help) exitWith {
     (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["chatWiki", true];
-    _edit ctrlSetText ""; uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ""];
+    _edit ctrlSetText (("") call comspec_atak_native_fnc_tr); uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ""];
     [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
     false
 };
@@ -34,7 +34,7 @@ if ([] call comspec_atak_native_fnc_bridge) exitWith {
         missionNamespace setVariable ["COMSPEC_Comms_Priority", _prevPrio];
         if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
     }, [_out, _prio], "Message", 1] call comspec_atak_native_fnc_netSend;
-    _edit ctrlSetText "";
+    _edit ctrlSetText (("") call comspec_atak_native_fnc_tr);
     uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ""];
     if !(_ok) then { ["WARNING", "Athena non connecté : message affiché ici seulement", 4, 30] call comspec_atak_native_fnc_notify; };
     [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
@@ -63,7 +63,7 @@ private _ok = true;
     if !(_ok) then { ["WARNING", "Athena indisponible : message gardé sur le terminal", 4, 30] call comspec_atak_native_fnc_notify; };
     if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "CHAT") then { [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
 }, [_id, _author, _message], "Message", 1] call comspec_atak_native_fnc_netSend;
-_edit ctrlSetText "";
+_edit ctrlSetText (("") call comspec_atak_native_fnc_tr);
 uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ""];
 [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 _ok

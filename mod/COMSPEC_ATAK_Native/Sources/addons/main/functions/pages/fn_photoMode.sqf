@@ -208,27 +208,27 @@ switch (toUpper _mode) do {
         private _z = _st getOrDefault ["zoom", 1];
         private _fl = _st getOrDefault ["flash", "AUTO"];
         private _zs = { params ["_v"]; [_v toFixed 1, str _v] select ((_v mod 1) isEqualTo 0) };
-        (_cam displayCtrl 5) ctrlSetStructuredText parseText format ["<t align='center' font='RobotoCondensedBold'><t color='#f2d36b'>%1</t>   <t color='#6d7a74'>|</t>   ZOOM <t color='#5cc76b'>x%2</t>   <t color='#6d7a74'>|</t>   FLASH <t color='%3'>%4</t></t>",
+        (_cam displayCtrl 5) ctrlSetStructuredText parseText ((format ["<t align='center' font='RobotoCondensedBold'><t color='#f2d36b'>%1</t>   <t color='#6d7a74'>|</t>   ZOOM <t color='#5cc76b'>x%2</t>   <t color='#6d7a74'>|</t>   FLASH <t color='%3'>%4</t></t>",
             ["OBJECTIF ARRIÈRE", "SELFIE"] select _selfie, [_z] call _zs, ["#e8eadf", "#f2ab33"] select (_fl isEqualTo "ON"),
-            createHashMapFromArray [["AUTO", "AUTO"], ["ON", "FORCÉ"], ["OFF", "COUPÉ"]] get _fl];
+            createHashMapFromArray [["AUTO", "AUTO"], ["ON", "FORCÉ"], ["OFF", "COUPÉ"]] get _fl]) call comspec_atak_native_fnc_tr);
         // Échelle de zoom à droite : palier en cours en vert.
-        (_cam displayCtrl 6) ctrlSetStructuredText parseText ((_zoomSteps apply {
+        (_cam displayCtrl 6) ctrlSetStructuredText parseText ((((_zoomSteps apply {
             private _on = abs (_x - _z) < 0.01;
             format ["<t align='right' size='%1' color='%2'>x%3</t>", [0.8, 1.05] select _on, ["#8a9a93", "#5cc76b"] select _on, [_x] call _zs]
-        }) joinString "<br/>");
+        }) joinString "<br/>")) call comspec_atak_native_fnc_tr);
         // Aide en touches : touche en clair, action en gris.
         private _keys = [
             [["CLIC", "photo"], ["T", "marquer"], ["MOLETTE", "zoom"], ["SOURIS", "viser"], ["F", "flash"], ["R", "selfie"], ["ESPACE", "quitter"]],
             [["CLIC", "photo"], ["SOURIS", "cadrer"], ["MOLETTE", "zoom"], ["F", "flash"], ["R", "objectif arrière"], ["ESPACE", "quitter"]]
         ] select _selfie;
-        (_cam displayCtrl 3) ctrlSetStructuredText parseText format ["<t align='center' size='0.9'>%1</t>", (_keys apply { format ["<t font='RobotoCondensedBold' color='#eef3ef'>%1</t> <t color='#a9b8b0'>%2</t>", _x select 0, _x select 1] }) joinString "     "];
+        (_cam displayCtrl 3) ctrlSetStructuredText parseText ((format ["<t align='center' size='0.9'>%1</t>", (_keys apply { format ["<t font='RobotoCondensedBold' color='#eef3ef'>%1</t> <t color='#a9b8b0'>%2</t>", _x select 0, _x select 1] }) joinString "     "]) call comspec_atak_native_fnc_tr);
         // Où part la photo : Athena (réseau présent) ou poste seul, et légende choisie dans l'app.
         private _net = (([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 0]) > 0;
         private _cap = (uiNamespace getVariable ["COMSPEC_ATAK_PhotoCtx", []]) param [3, ""];
         if !(_cap isEqualType "") then { _cap = ""; };
         _cap = [[[_cap select [0, 40], "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace, "légende automatique (grille, cap)"] select (_cap isEqualTo "");
-        (_cam displayCtrl 9) ctrlSetStructuredText parseText format ["<t align='center'>%1   <t color='#6d7a74'>|</t>   <t color='#a9b8b0'>%2</t></t>",
-            ["<t color='#f2ab33'>HORS RÉSEAU : photo gardée sur le poste</t>", "<t color='#5cc76b'>ENVOI DIRECT VERS ATHENA</t>"] select _net, _cap];
+        (_cam displayCtrl 9) ctrlSetStructuredText parseText ((format ["<t align='center'>%1   <t color='#6d7a74'>|</t>   <t color='#a9b8b0'>%2</t></t>",
+            ["<t color='#f2ab33'>HORS RÉSEAU : photo gardée sur le poste</t>", "<t color='#5cc76b'>ENVOI DIRECT VERS ATHENA</t>"] select _net, _cap]) call comspec_atak_native_fnc_tr);
         true
     };
     case "SELFIE": {
@@ -250,7 +250,7 @@ switch (toUpper _mode) do {
         if (!_active) exitWith { false };
         if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PhotoLast", -10]) < 3) exitWith {
             private _cam = uiNamespace getVariable ["COMSPEC_ATAK_CameraDisplay", displayNull];
-            if (!isNull _cam) then { (_cam displayCtrl 4) ctrlSetText "Patientez : enregistrement de la photo précédente…"; };
+            if (!isNull _cam) then { (_cam displayCtrl 4) ctrlSetText (("Patientez : enregistrement de la photo précédente…") call comspec_atak_native_fnc_tr); };
             false
         };
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoLast", diag_tickTime];
@@ -306,7 +306,7 @@ switch (toUpper _mode) do {
                 _flash ctrlCommit ([0.35, 0.6] select _fire);
                 private _n = (_ctx param [4, 0]) + ([0, 1] select _ok);
                 _ctx set [4, _n];
-                (_cam displayCtrl 4) ctrlSetText format ["%1%2", ["Photo non envoyée : voir Photos > Envois", format ["%1 photo(s) en cours d'envoi vers Athena", _n]] select _ok, ["", " · flash"] select _fire];
+                (_cam displayCtrl 4) ctrlSetText ((format ["%1%2", ["Photo non envoyée : voir Photos > Envois", format ["%1 photo(s) en cours d'envoi vers Athena", _n]] select _ok, ["", " · flash"] select _fire]) call comspec_atak_native_fnc_tr);
             };
             playSound "ClickSoft";
         };

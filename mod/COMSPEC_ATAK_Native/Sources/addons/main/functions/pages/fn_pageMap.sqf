@@ -100,7 +100,7 @@ if (_interactive) then {
     _tlb ctrlSetFontHeight _fs;
     _tlb ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _toolsOpen);
     private _tb = ["COMSPEC_RscButtonOverlay", [_bx + _pad, _tby, _tbw, _th]] call _mk;
-    _tb ctrlSetTooltip "Outils carte";
+    _tb ctrlSetTooltip (("Outils carte") call comspec_atak_native_fnc_tr);
     _tb ctrlAddEventHandler ["ButtonClick", {
         private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         _s set ["mapToolsOpen", !(_s getOrDefault ["mapToolsOpen", false])];
@@ -186,7 +186,7 @@ if (_interactive) then {
     {
         _x params ["_key", "_icon", "_tip", "_code"];
         private _b = ["COMSPEC_RscIconButton", [_tx, _ty0 + _forEachIndex * _ih, _iw, _ih * 0.92], _dir + _icon + ".paa"] call _mk;
-        _b ctrlSetTooltip _tip;
+        _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
         _b ctrlAddEventHandler ["ButtonClick", _code];
         _ov set ["tool_" + _key, _b];
     } forEach _tools;
@@ -212,10 +212,10 @@ if (_interactive) then {
         _sic ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _open);
         if (_open) then {
             private _slb = ["COMSPEC_RscStructuredText", [_sx + _si, _sy + _sh * 0.2, _sw - _si, _sh * 0.8]] call _mk;
-            _slb ctrlSetStructuredText parseText "<t font='RobotoCondensedBold' size='0.85' color='#5cc76b'>SITUATION</t><t size='0.85' color='#8a9a93' align='right'>REPLIER</t>";
+            _slb ctrlSetStructuredText parseText (("<t font='RobotoCondensedBold' size='0.85' color='#5cc76b'>SITUATION</t><t size='0.85' color='#8a9a93' align='right'>REPLIER</t>") call comspec_atak_native_fnc_tr);
         };
         private _sb = ["COMSPEC_RscButtonOverlay", [_sx, _sy, _sw, _sh]] call _mk;
-        _sb ctrlSetTooltip (["Afficher le panneau SITUATION (unités, contacts, sélection)", "Replier le panneau SITUATION"] select _open);
+        _sb ctrlSetTooltip (((["Afficher le panneau SITUATION (unités, contacts, sélection)", "Replier le panneau SITUATION"] select _open)) call comspec_atak_native_fnc_tr);
         _sb ctrlAddEventHandler ["ButtonClick", { [] call comspec_atak_native_fnc_inspToggle; }];
         _ov set ["insp_toggle", _sb];
         // Calques : boutons à bascule en bas du panneau SITUATION ouvert (deux colonnes).
@@ -255,7 +255,7 @@ if (_interactive) then {
             private _fy = _ly0 - _lh - _gap * 2;
             private _hy = _fy - _fs * 1.35;
             private _lt = ["COMSPEC_RscStructuredText", [_sx, _hy, _sw, _fs * 1.25]] call _mk;
-            _lt ctrlSetStructuredText parseText "<t font='RobotoCondensedBold' size='0.85' color='#5cc76b'>CALQUES</t>";
+            _lt ctrlSetStructuredText parseText (("<t font='RobotoCondensedBold' size='0.85' color='#5cc76b'>CALQUES</t>") call comspec_atak_native_fnc_tr);
             uiNamespace setVariable ["COMSPEC_ATAK_InspTextBottom", _hy - _fs * 0.2];
             private _sep = ["COMSPEC_RscText", [_sx, _hy - _fs * 0.1, _sw, pixelH]] call _mk;
             _sep ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.35];
@@ -273,7 +273,7 @@ if (_interactive) then {
                 _b ctrlSetFontHeight (_lfs * 0.92);
                 _b ctrlSetBackgroundColor ([[0.11, 0.135, 0.12, 1], [0.36, 0.78, 0.42, 1]] select _on);
                 _b ctrlSetTextColor ([[0.92, 0.96, 0.93, 1], [0.03, 0.05, 0.04, 1]] select _on);
-                _b ctrlSetTooltip "Fond de carte (aussi dans Réglages > Carte)";
+                _b ctrlSetTooltip (("Fond de carte (aussi dans Réglages > Carte)") call comspec_atak_native_fnc_tr);
                 _b ctrlAddEventHandler ["ButtonClick", compile format ["[%1] call comspec_atak_native_fnc_mapStyle; [{ ['MAP'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", str _k]];
             } forEach _styles;
             private _boxH = _lh * 0.5;
@@ -300,10 +300,10 @@ if (_interactive) then {
                 _t ctrlSetTextColor ([[[0.86, 0.91, 0.88, 1], [1, 1, 1, 1]] select _on, [0.50, 0.54, 0.52, 0.85]] select _locked);
                 if (_locked) then {
                     _row ctrlSetBackgroundColor [0.035, 0.04, 0.037, 0.8];
-                    _row ctrlSetTooltip "Réglé par votre communauté sur Athena (Contrôle serveur)";
+                    _row ctrlSetTooltip (("Réglé par votre communauté sur Athena (Contrôle serveur)") call comspec_atak_native_fnc_tr);
                 } else {
                     private _b = ["COMSPEC_RscButtonOverlay", [_bx0, _by0, _lw, _lh]] call _mk;
-                    _b ctrlSetTooltip format ["%1 : %2 (cliquer pour %3)", _lbl, ["masqué", "affiché"] select _on, ["afficher", "masquer"] select _on];
+                    _b ctrlSetTooltip ((format ["%1 : %2 (cliquer pour %3)", _lbl, ["masqué", "affiché"] select _on, ["afficher", "masquer"] select _on]) call comspec_atak_native_fnc_tr);
                     _b ctrlAddEventHandler ["ButtonClick", compile format ["[%1, %2, %3] call (uiNamespace getVariable 'COMSPEC_ATAK_LayerToggle');", str _ns, str _var, _def]];
                 };
             } forEach _layers;
@@ -362,9 +362,9 @@ if (_interactive && {_sel isNotEqualTo ""} && {(markerShape _sel) isNotEqualTo "
     private _ph = _fs * 4.6;
     private _py = _by + _mh - _ph - _pad;
     private _info = ["COMSPEC_RscMapPanel", [_px, _py, _pw, _ph]] call _mk;
-    _info ctrlSetStructuredText parseText format ["<t font='RobotoCondensedBold' color='#5cc76b'>%1</t>  <t color='#8a9a93' size='0.85'>%2</t><br/><t size='0.85'>%3</t>",
+    _info ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='#5cc76b'>%1</t>  <t color='#8a9a93' size='0.85'>%2</t><br/><t size='0.85'>%3</t>",
         [markerText _sel, "(sans titre)"] select ((markerText _sel) isEqualTo ""), [getMarkerPos _sel] call comspec_atak_native_fnc_gridRef,
-        [_note select 0, "Double clic : modifier · Suppr : effacer"] select ((_note select 0) isEqualTo "")];
+        [_note select 0, "Double clic : modifier · Suppr : effacer"] select ((_note select 0) isEqualTo "")]) call comspec_atak_native_fnc_tr);
     private _own = (_sel find "_USER_DEFINED") isEqualTo 0;
     private _go = ["COMSPEC_RscButtonPrimary", [_px + _pw - _pad - _fs * 5 / _ratio * 0.6, _py + _pad / 2, _fs * 5 / _ratio * 0.6, _fs * 1.4], "Y ALLER"] call _mk;
     _go ctrlSetFontHeight (_fs * 0.85);
@@ -468,7 +468,7 @@ if (_dv isNotEqualTo "OFF") then {
                 private _b = ["COMSPEC_RscButton", [_bx + _pad + _forEachIndex * _bwid, _byb, _bwid - _pad / 3, _bh2], _lbl] call _mk;
                 _b ctrlSetFontHeight (_fs * 0.78);
                 _b ctrlSetBackgroundColor ([[0.08, 0.1, 0.09, 0.9], [0.36, 0.78, 0.42, 0.9]] select _on);
-                if (_lbl isEqualTo "MARQUER") then { _b ctrlSetBackgroundColor [0.75, 0.18, 0.15, 0.95]; _b ctrlSetTooltip "Marque la cible sous le réticule (touche « Marquer la cible »). Clic sur l'image : la nacelle vise ce point."; };
+                if (_lbl isEqualTo "MARQUER") then { _b ctrlSetBackgroundColor [0.75, 0.18, 0.15, 0.95]; _b ctrlSetTooltip (("Marque la cible sous le réticule (touche « Marquer la cible »). Clic sur l'image : la nacelle vise ce point.") call comspec_atak_native_fnc_tr); };
                 _b ctrlAddEventHandler ["ButtonClick", _code];
             } forEach _btns;
         };

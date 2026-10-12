@@ -28,7 +28,7 @@ private _btn = {
     private _b = ["COMSPEC_RscButton", _rect, _label] call comspec_atak_native_fnc_pageCtrl;
     _b ctrlSetFontHeight (_fs * 0.86);
     if (_on) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
-    if (_tip isNotEqualTo "") then { _b ctrlSetTooltip _tip; };
+    if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
     _b ctrlAddEventHandler ["ButtonClick", _code];
     _b
 };
@@ -154,9 +154,9 @@ if ((count _pv) > 1) then {
 private _hint = ["COMSPEC_RscStructuredText", [_pad, _yb, _hintW, _rowH]] call comspec_atak_native_fnc_pageCtrl;
 _ctrls set ["hint", _hint];
 if ((count _pv) > 1) then {
-    _hint ctrlSetStructuredText parseText format ["<t size='0.8' color='#e0c060'>APERÇU : %1 (%2 éléments)</t>", (_pv select 0) regexReplace ["[<>&]", ""], count (_pv select 1)];
+    _hint ctrlSetStructuredText parseText ((format ["<t size='0.8' color='#e0c060'>APERÇU : %1 (%2 éléments)</t>", (_pv select 0) regexReplace ["[<>&]", ""], count (_pv select 1)]) call comspec_atak_native_fnc_tr);
 } else {
-    _hint ctrlSetStructuredText parseText (["hintText"] call comspec_atak_native_fnc_planAction);
+    _hint ctrlSetStructuredText parseText (((["hintText"] call comspec_atak_native_fnc_planAction)) call comspec_atak_native_fnc_tr);
 };
 _yb = _yb + _rowH + _gap;
 
@@ -194,9 +194,9 @@ _yb = _yb + _rowH + _gap;
 // Texte des prochains éléments et actions.
 private _ew = (_bw - _pad * 2) * 0.3;
 private _ed = ["COMSPEC_RscEdit", [_pad, _yb, _ew, _rowH]] call comspec_atak_native_fnc_pageCtrl;
-_ed ctrlSetText (_ui get "text");
+_ed ctrlSetText (((_ui get "text")) call comspec_atak_native_fnc_tr);
 _ed ctrlSetFontHeight (_fs * 0.9);
-_ed ctrlSetTooltip "Texte des prochains éléments (vide : nom du type, ex. ENY, INFIL, PL). CLEARED / UNCLEARED sont numérotés tout seuls.";
+_ed ctrlSetTooltip (("Texte des prochains éléments (vide : nom du type, ex. ENY, INFIL, PL). CLEARED / UNCLEARED sont numérotés tout seuls.") call comspec_atak_native_fnc_tr);
 _ed ctrlAddEventHandler ["KeyUp", { params ["_c"]; ["text", ctrlText _c] call comspec_atak_native_fnc_planAction; }];
 _ed ctrlAddEventHandler ["KillFocus", { params ["_c"]; ["text", ctrlText _c] call comspec_atak_native_fnc_planAction; }];
 private _acts = [

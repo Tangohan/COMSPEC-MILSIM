@@ -38,7 +38,7 @@ private _mk = {
     params ["_class", "_pos", ["_text", ""]];
     private _c = _d ctrlCreate [_class, -1, _grp];
     _c ctrlSetPosition _pos;
-    if (_text isNotEqualTo "") then { _c ctrlSetText _text; };
+    if (_text isNotEqualTo "") then { _c ctrlSetText ((_text) call comspec_atak_native_fnc_tr); };
     _c ctrlCommit 0;
     _c
 };
@@ -53,7 +53,7 @@ private _mk = {
         };
         case "text": {
             private _t = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _rowH]] call _mk;
-            _t ctrlSetStructuredText parseText (_row select 1);
+            _t ctrlSetStructuredText parseText (((_row select 1)) call comspec_atak_native_fnc_tr);
             private _h = (ctrlTextHeight _t) max (_fs * 1.2);
             _t ctrlSetPosition [_pad, _y, _w, _h];
             _t ctrlCommit 0;
@@ -81,7 +81,7 @@ private _mk = {
             private _sel = 0;
             {
                 _x params ["_text", "_data", ["_pic", ""], ["_color", []]];
-                private _i = _c lbAdd _text;
+                private _i = _c lbAdd ((_text) call comspec_atak_native_fnc_tr);
                 _c lbSetData [_i, _data];
                 if (_pic isNotEqualTo "") then { _c lbSetPicture [_i, _pic]; };
                 if ((count _color) isEqualTo 4) then { _c lbSetPictureColor [_i, _color]; _c lbSetPictureColorSelected [_i, _color]; };
@@ -106,7 +106,7 @@ private _mk = {
             private _bar = ["COMSPEC_RscText", [_pad, _y + _fs * 0.15, _pad * 0.35, _fs * 1.1]] call _mk;
             _bar ctrlSetBackgroundColor _acc;
             private _t = ["COMSPEC_RscStructuredText", [_pad * 1.6, _y, _w - _pad, _rowH]] call _mk;
-            _t ctrlSetStructuredText parseText format ["<t font='RobotoCondensedBold' color='%3'>%1</t>%2", toUpper _title, ["", format ["<br/><t size='0.8' color='#8a9a93'>%1</t>", _sub]] select (_sub isNotEqualTo ""), _accHex];
+            _t ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='%3'>%1</t>%2", toUpper _title, ["", format ["<br/><t size='0.8' color='#8a9a93'>%1</t>", _sub]] select (_sub isNotEqualTo ""), _accHex]) call comspec_atak_native_fnc_tr);
             private _h = (ctrlTextHeight _t) max (_fs * 1.3);
             _t ctrlSetPosition [_pad * 1.6, _y, _w - _pad, _h];
             _t ctrlCommit 0;
@@ -120,7 +120,7 @@ private _mk = {
             _card ctrlSetBackgroundColor [0.085, 0.105, 0.095, 1];
             private _t = ["COMSPEC_RscStructuredText", [_pad * 1.5, _y + _pad / 4, _w - _pillW - _pad * 2.5, _rowH]] call _mk;
             // Libellé en blanc franc, aide en gris clair (retour de jeu : les lignes semblaient grisées).
-            _t ctrlSetStructuredText parseText format ["<t size='0.95' color='#eef4f0'>%1</t>%2", _label, ["", format ["<br/><t size='0.75' color='#a9b8b1'>%1</t>", _help]] select (_help isNotEqualTo "")];
+            _t ctrlSetStructuredText parseText ((format ["<t size='0.95' color='#eef4f0'>%1</t>%2", _label, ["", format ["<br/><t size='0.75' color='#a9b8b1'>%1</t>", _help]] select (_help isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
             private _h = ((ctrlTextHeight _t) + _pad / 2) max _rowH;
             _t ctrlSetPosition [_pad * 1.5, _y + _pad / 4, _w - _pillW - _pad * 2.5, _h - _pad / 2];
             _t ctrlCommit 0;
@@ -135,7 +135,7 @@ private _mk = {
                 private _b = ["COMSPEC_RscButtonOverlay", [_pad, _y, _w, _h]] call _mk;
                 _b ctrlAddEventHandler ["ButtonClick", _code];
             } else {
-                _card ctrlSetTooltip "Réglé par votre communauté sur Athena (Contrôle serveur)";
+                _card ctrlSetTooltip (("Réglé par votre communauté sur Athena (Contrôle serveur)") call comspec_atak_native_fnc_tr);
             };
             _y = _y + _h + _pad / 3;
         };
@@ -144,7 +144,7 @@ private _mk = {
             _row params ["", "_label", "_opts", ["_help", ""]];
             if (_label isNotEqualTo "") then {
                 private _lb = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _fs * 1.3]] call _mk;
-                _lb ctrlSetStructuredText parseText format ["<t size='0.9'>%1</t>%2", _label, ["", format ["  <t size='0.75' color='#8a9a93'>%1</t>", _help]] select (_help isNotEqualTo "")];
+                _lb ctrlSetStructuredText parseText ((format ["<t size='0.9'>%1</t>%2", _label, ["", format ["  <t size='0.75' color='#8a9a93'>%1</t>", _help]] select (_help isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
                 private _lh = (ctrlTextHeight _lb) max (_fs * 1.3);
                 if (_lh > _fs * 1.3) then { _lb ctrlSetPosition [_pad, _y, _w, _lh]; _lb ctrlCommit 0; };
                 _y = _y + _lh + _fs * 0.05;
@@ -154,7 +154,7 @@ private _mk = {
             {
                 _x params ["_text", "_code", ["_active", false], ["_tip", ""]];
                 private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * _sw, _y, _sw - _pad / 6, _rowH * 0.9], _text] call _mk;
-                if (_tip isNotEqualTo "") then { _b ctrlSetTooltip _tip; };
+                if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlSetFontHeight (_fs * 0.9);
                 // Option non choisie mais disponible : fond clair-sombre et texte blanc (ne doit pas sembler désactivée).
                 if (_active) then { _b ctrlSetBackgroundColor _acc; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; } else { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor [0.92, 0.96, 0.93, 1]; };
@@ -165,9 +165,9 @@ private _mk = {
         case "info": {
             _row params ["", "_label", "_value"];
             private _a = ["COMSPEC_RscStructuredText", [_pad, _y, _w * 0.5, _fs * 1.3]] call _mk;
-            _a ctrlSetStructuredText parseText format ["<t size='0.85' color='#8a9a93'>%1</t>", _label];
+            _a ctrlSetStructuredText parseText ((format ["<t size='0.85' color='#8a9a93'>%1</t>", _label]) call comspec_atak_native_fnc_tr);
             private _b = ["COMSPEC_RscStructuredText", [_pad + _w * 0.4, _y, _w * 0.6, _fs * 1.3]] call _mk;
-            _b ctrlSetStructuredText parseText format ["<t size='0.85' align='right'>%1</t>", _value];
+            _b ctrlSetStructuredText parseText ((format ["<t size='0.85' align='right'>%1</t>", _value]) call comspec_atak_native_fnc_tr);
             private _ih2 = ((ctrlTextHeight _a) max (ctrlTextHeight _b)) max (_fs * 1.3);
             if (_ih2 > _fs * 1.3) then {
                 _a ctrlSetPosition [_pad, _y, _w * 0.5, _ih2]; _a ctrlCommit 0;
@@ -188,7 +188,7 @@ private _mk = {
             private _bwid = _w * 0.2;
             private _tw = _w - _iw - _pad * 1.5 - _nb * (_bwid + _pad / 3);
             private _t = ["COMSPEC_RscStructuredText", [_pad * 2 + _iw, _y + _pad / 4, _tw, _ih]] call _mk;
-            _t ctrlSetStructuredText parseText _text;
+            _t ctrlSetStructuredText parseText ((_text) call comspec_atak_native_fnc_tr);
             // Texte long (fil OSINT, messages) : la ligne s'agrandit au lieu de couper le texte.
             private _rowIh = _ih max ((ctrlTextHeight _t) + _pad / 4);
             if (_rowIh > _ih) then {
@@ -198,7 +198,7 @@ private _mk = {
             {
                 _x params ["_label", "_code", ["_primary", false], ["_enabled", true], ["_tip", ""]];
                 private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + _w - (_nb - _forEachIndex) * (_bwid + _pad / 3), _y + _pad / 4 + _ih * 0.15, _bwid, _ih * 0.7], _label] call _mk;
-                if (_tip isNotEqualTo "") then { _b ctrlSetTooltip _tip; };
+                if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlSetFontHeight (_fs * 0.85);
                 _b ctrlEnable _enabled;
                 _b ctrlAddEventHandler ["ButtonClick", _code];
@@ -218,7 +218,7 @@ private _mk = {
             private _p = ["COMSPEC_RscPicture", [_pad, _y, _iw, _ih], _pic] call _mk;
             _p ctrlSetTextColor [1, 1, 1, 1];
             private _t = ["COMSPEC_RscStructuredText", [_pad * 2 + _iw, _y, _w - _iw - _pad, _ih]] call _mk;
-            _t ctrlSetStructuredText parseText _text;
+            _t ctrlSetStructuredText parseText ((_text) call comspec_atak_native_fnc_tr);
             private _h = (ctrlTextHeight _t) max _ih;
             _t ctrlSetPosition [_pad * 2 + _iw, _y, _w - _iw - _pad, _h];
             _t ctrlCommit 0;
@@ -246,7 +246,7 @@ private _mk = {
             _e setVariable ["secretVar", _secretVar];
             private _redraw = {
                 params ["_c"];
-                [{ params ["_c"]; if (!isNull _c) then { _c ctrlSetText (((uiNamespace getVariable [_c getVariable "secretVar", ""]) splitString "") apply { "•" } joinString ""); }; }, [_c]] call CBA_fnc_execNextFrame;
+                [{ params ["_c"]; if (!isNull _c) then { _c ctrlSetText (((((uiNamespace getVariable [_c getVariable "secretVar", ""]) splitString "") apply { "•" } joinString "")) call comspec_atak_native_fnc_tr); }; }, [_c]] call CBA_fnc_execNextFrame;
             };
             _e setVariable ["redraw", _redraw];
             _e ctrlAddEventHandler ["Char", {
@@ -273,7 +273,7 @@ private _mk = {
             {
                 _x params ["_label", "_code", ["_primary", false], ["_enabled", true], ["_tip", ""]];
                 private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + _forEachIndex * (_bw + _pad / 2), _y, _bw, _rowH], _label] call _mk;
-                if (_tip isNotEqualTo "") then { _b ctrlSetTooltip _tip; };
+                if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlSetFontHeight _fs;
                 _b ctrlEnable _enabled;
                 _b ctrlAddEventHandler ["ButtonClick", _code];
@@ -311,7 +311,7 @@ private _mk = {
                     private _span = _bwid * (count _btns);
                     if (_titled && {_glabel isNotEqualTo ""}) then {
                         private _t = ["COMSPEC_RscStructuredText", [_x0, _y, _span, _lh]] call _mk;
-                        _t ctrlSetStructuredText parseText format ["<t size='0.72' font='RobotoCondensedBold' color='#8a9a93'>%1</t>", toUpper _glabel];
+                        _t ctrlSetStructuredText parseText ((format ["<t size='0.72' font='RobotoCondensedBold' color='#8a9a93'>%1</t>", toUpper _glabel]) call comspec_atak_native_fnc_tr);
                         _t ctrlEnable false;
                         private _ln = ["COMSPEC_RscText", [_x0, _y + _lh - pixelH * 3, _span - _pad / 3, pixelH * 2]] call _mk;
                         _ln ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.45];
@@ -326,7 +326,7 @@ private _mk = {
                             case "main": {};
                             default { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor ([[0.45, 0.5, 0.47, 1], [0.92, 0.96, 0.93, 1]] select _en); };
                         };
-                        if (_tip isNotEqualTo "") then { _b ctrlSetTooltip _tip; };
+                        if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                         _b ctrlEnable _en;
                         _b ctrlAddEventHandler ["ButtonClick", _code];
                     } forEach _btns;

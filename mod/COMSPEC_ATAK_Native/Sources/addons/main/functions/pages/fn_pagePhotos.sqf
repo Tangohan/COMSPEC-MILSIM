@@ -309,16 +309,16 @@ private _rv = ["COMSPEC_RscText", [_vx + _vw / 2, _vy + _vh * 0.4 - _rc, _tw, _r
 _rv ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.8];
 // Infos de prise de vue : grille, cap, heure
 private _info = ["COMSPEC_RscStructuredText", [_vx + _pad * 2, _vy + _pad * 1.6, _vw - _pad * 4, _fs * 1.4]] call _mk;
-_info ctrlSetStructuredText parseText format ["<t size='0.8' font='EtelkaMonospacePro' color='#c9d4cf'>%1</t><t size='0.8' align='right' font='EtelkaMonospacePro' color='#c9d4cf'>%2°  %3</t>",
-    [getPosASL player, 8] call comspec_atak_native_fnc_gridRef, round getDir player, [dayTime, "HH:MM"] call BIS_fnc_timeToString];
+_info ctrlSetStructuredText parseText ((format ["<t size='0.8' font='EtelkaMonospacePro' color='#c9d4cf'>%1</t><t size='0.8' align='right' font='EtelkaMonospacePro' color='#c9d4cf'>%2°  %3</t>",
+    [getPosASL player, 8] call comspec_atak_native_fnc_gridRef, round getDir player, [dayTime, "HH:MM"] call BIS_fnc_timeToString]) call comspec_atak_native_fnc_tr);
 // Ce que fait le viseur, puis les touches du mode photo.
 // Juste au-dessus de la ligne des touches, jamais sur le réticule (évite le chevauchement en paysage).
 private _tipY = _vy + _vh - _pad * 1.6 - _fs * 1.4;
 private _call = ["COMSPEC_RscStructuredText", [_vx + _pad * 2, (_tipY - _fs * 1.6) max (_vy + _vh * 0.5), _vw - _pad * 4, _fs * 1.5]] call _mk;
-_call ctrlSetStructuredText parseText format ["<t align='center' size='0.95' font='RobotoCondensedBold' color='%2'>%1</t>",
-    ["CONNECTEZ-VOUS À ATHENA POUR PHOTOGRAPHIER", "TOUCHER POUR OUVRIR LE VISEUR"] select _canShoot, ["#f2ab33", "#eef4f0"] select _canShoot];
+_call ctrlSetStructuredText parseText ((format ["<t align='center' size='0.95' font='RobotoCondensedBold' color='%2'>%1</t>",
+    ["CONNECTEZ-VOUS À ATHENA POUR PHOTOGRAPHIER", "TOUCHER POUR OUVRIR LE VISEUR"] select _canShoot, ["#f2ab33", "#eef4f0"] select _canShoot]) call comspec_atak_native_fnc_tr);
 private _tip = ["COMSPEC_RscStructuredText", [_vx + _pad * 2, _tipY, _vw - _pad * 4, _fs * 1.4]] call _mk;
-_tip ctrlSetStructuredText parseText "<t size='0.75' align='center' color='#a9b8b1'>Dans le viseur : clic photo · molette zoom · T marquer · F flash · R selfie · Espace retour</t>";
+_tip ctrlSetStructuredText parseText (("<t size='0.75' align='center' color='#a9b8b1'>Dans le viseur : clic photo · molette zoom · T marquer · F flash · R selfie · Espace retour</t>") call comspec_atak_native_fnc_tr);
 // Déclencheur sous le viseur, centré comme dans une appli photo : anneau blanc, disque d'accent, icône.
 private _sh = (_font * 3.2) min (_vh * 0.45);
 private _sw = _sh * _ratio;
@@ -336,7 +336,7 @@ private _lw = (_vw / 2) - _sw / 2 - _pad;
 {
     _x params ["_lx", "_txt", "_al"];
     private _t = ["COMSPEC_RscStructuredText", [_lx, _scy - _fs * 0.8, _lw, _fs * 1.6]] call _mk;
-    _t ctrlSetStructuredText parseText format ["<t size='0.8' align='%2' color='#a9b8b1'>%1</t>", _txt, _al];
+    _t ctrlSetStructuredText parseText ((format ["<t size='0.8' align='%2' color='#a9b8b1'>%1</t>", _txt, _al]) call comspec_atak_native_fnc_tr);
     _t ctrlEnable false;
 } forEach [
     [_vx, format ["Flash : <t color='#eef4f0'>%1</t>", createHashMapFromArray [["AUTO", "AUTO"], ["ON", "FORCÉ"], ["OFF", "COUPÉ"]] getOrDefault [_flash, "AUTO"]], "right"],
@@ -344,7 +344,7 @@ private _lw = (_vw / 2) - _sw / 2 - _pad;
 ];
 {
     private _b = ["COMSPEC_RscButtonInvisible", _x] call _mk;
-    _b ctrlSetTooltip "Ouvrir le viseur plein écran (clic gauche pour photographier, Espace pour revenir)";
+    _b ctrlSetTooltip (("Ouvrir le viseur plein écran (clic gauche pour photographier, Espace pour revenir)") call comspec_atak_native_fnc_tr);
     _b ctrlAddEventHandler ["ButtonClick", _open];
 } forEach [[_vx, _vy, _vw, _vh], [_scx - _sw / 2, _scy - _sh / 2, _sw, _sh]];
 
@@ -360,9 +360,9 @@ private _tW = (_vw - _pad) / 3;
     private _bar = ["COMSPEC_RscText", [_tx, _ty, _tW, pixelH * 3]] call _mk;
     _bar ctrlSetBackgroundColor _rgb;
     private _c = ["COMSPEC_RscStructuredText", [_tx, _ty + _tH * 0.12, _tW, _tH * 0.88]] call _mk;
-    _c ctrlSetStructuredText parseText format ["<t align='center' size='1.3' font='RobotoCondensedBold' color='%3'>%1</t><br/><t align='center' size='0.7' color='#8a9a93'>%2</t>", _n, _lab, _hex];
+    _c ctrlSetStructuredText parseText ((format ["<t align='center' size='1.3' font='RobotoCondensedBold' color='%3'>%1</t><br/><t align='center' size='0.7' color='#8a9a93'>%2</t>", _n, _lab, _hex]) call comspec_atak_native_fnc_tr);
     private _b = ["COMSPEC_RscButtonInvisible", [_tx, _ty, _tW, _tH]] call _mk;
-    _b ctrlSetTooltip "Voir le suivi des envois (onglet ENVOIS)";
+    _b ctrlSetTooltip (("Voir le suivi des envois (onglet ENVOIS)") call comspec_atak_native_fnc_tr);
     _b ctrlAddEventHandler ["ButtonClick", ["SENT"] call _go];
 } forEach [
     [_pending, "EN COURS D'ENVOI", "#e8b84a", [0.91, 0.72, 0.29, 1]],

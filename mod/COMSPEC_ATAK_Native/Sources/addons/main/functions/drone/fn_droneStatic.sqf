@@ -86,7 +86,7 @@ switch (_act) do {
                 } forEach _layers;
                 if (_last isNotEqualTo _why) then {
                     _entry set [3, _why];
-                    _lb ctrlSetStructuredText parseText format ["<t align='center' font='EtelkaMonospacePro' shadow='2' shadowColor='#000000' color='#f2f2f2'><t size='1.4'>NO DATA</t><br/><t size='0.75'>%1</t></t>", _why];
+                    _lb ctrlSetStructuredText parseText ((format ["<t align='center' font='EtelkaMonospacePro' shadow='2' shadowColor='#000000' color='#f2f2f2'><t size='1.4'>NO DATA</t><br/><t size='0.75'>%1</t></t>", _why]) call comspec_atak_native_fnc_tr);
                 };
             };
         } forEach _all;

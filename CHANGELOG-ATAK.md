@@ -11,6 +11,15 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vague 2026-10-12 — Anglais en option (ATAK natif 1.14.0, non testé en jeu)
+
+### Nouveau — Langue du téléphone
+- Réglage CBA par joueur « Langue du téléphone » : Français (par défaut), English, ou Auto (langue du jeu).
+- Le code reste en français ; les textes affichés passent par `comspec_atak_native_fnc_tr` et le dictionnaire `i18n/en.txt` (modèles %1, %2… traduits aussi).
+- Textes des apps Plan, Drone, Photo, socle CS-10, tablette du JPC et files d'envoi traduits ; `tools/i18n.py wrap` puis `extract` à relancer après chaque fusion.
+
+---
+
 ## Vague 2026-10-12 — Socle de recharge CS-10 (ATAK natif 1.13.0, non testé en jeu)
 
 ### Nouveau — Socle de recharge 10 téléphones

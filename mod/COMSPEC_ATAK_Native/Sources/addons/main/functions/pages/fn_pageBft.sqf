@@ -105,17 +105,17 @@ private _meOn = (([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["ba
 private _hbW = _bw * ([0.24, 0.16] select _land);
 private _head = ["COMSPEC_RscCard", [0, 0, _bw - _hbW - _pad / 2, _font * 2.6]] call comspec_atak_native_fnc_pageCtrl;
 _head ctrlSetBackgroundColor [0.035, 0.05, 0.07, 1];
-_head ctrlSetStructuredText parseText format [
+_head ctrlSetStructuredText parseText ((format [
     "<t size='0.75' color='#7fb6e6'> MOI </t><t font='EtelkaMonospacePro' size='0.9'>%1</t>  <t size='0.8' color='#8a9a93'>cap</t> %2° %3  <t size='0.8' color='#8a9a93'>alt</t> %4 m  <t size='0.8' color='#8a9a93'>vit</t> %9 km/h%10<br/><t size='0.75' color='#7fb6e6'> PISTES </t><t color='#5cc76b'>● %5 direct</t>   <t color='#f2ab33'>● %6 ancienne(s)</t>   <t color='#e5483a'>● %7 perdue(s)</t>   <t color='#8a948f'>○ %8 hors ligne</t>",
     [player, 8] call comspec_atak_native_fnc_gridRef, round getDir player, [getDir player] call _card, round (_me select 2), _counts select 0, _counts select 1, _counts select 2, _counts select 3,
-    round (_mySpd * 3.6), ["  <t color='#e5483a'>● PAS DE RÉSEAU : pistes figées</t>", ""] select _meOn];
+    round (_mySpd * 3.6), ["  <t color='#e5483a'>● PAS DE RÉSEAU : pistes figées</t>", ""] select _meOn]) call comspec_atak_native_fnc_tr);
 // À droite de l'en-tête : vue LISTE / ORBAT et tiroir des filtres (nombre de filtres actifs).
 private _nFilt = ({ profileNamespace getVariable [_x, false] } count ["COMSPEC_ATAK_HideAllyAi", "COMSPEC_ATAK_BftHideAir", "COMSPEC_ATAK_BftHideVeh", "COMSPEC_ATAK_BftHideLost", "COMSPEC_ATAK_BftHideOffline"])
     + ([0, 1] select ((profileNamespace getVariable ["COMSPEC_ATAK_AllyFilter", "ALL"]) isNotEqualTo "ALL"))
     + ([0, 1] select ((profileNamespace getVariable ["COMSPEC_ATAK_BftMaxDist", 0]) isNotEqualTo 0));
 private _vb = ["COMSPEC_RscButton", [_bw - _hbW, 0, _hbW, _font * 1.25], ["VUE : LISTE", "VUE : ORBAT"] select (_view isEqualTo "ORBAT")] call comspec_atak_native_fnc_pageCtrl;
 _vb ctrlSetFontHeight (_fs * 0.9);
-_vb ctrlSetTooltip "Basculer entre le tableau des pistes et l'arbre ORBAT (formation, groupe, équipe)";
+_vb ctrlSetTooltip (("Basculer entre le tableau des pistes et l'arbre ORBAT (formation, groupe, équipe)") call comspec_atak_native_fnc_tr);
 _vb ctrlAddEventHandler ["ButtonClick", {
     profileNamespace setVariable ["COMSPEC_ATAK_BftView", ["ORBAT", "LIST"] select ((profileNamespace getVariable ["COMSPEC_ATAK_BftView", "LIST"]) isEqualTo "ORBAT")];
     saveProfileNamespace;
@@ -125,7 +125,7 @@ _vb ctrlAddEventHandler ["ButtonClick", {
 private _fb = ["COMSPEC_RscButton", [_bw - _hbW, _font * 1.35, _hbW, _font * 1.25], ["FILTRES", format ["FILTRES (%1)", _nFilt]] select (_nFilt > 0)] call comspec_atak_native_fnc_pageCtrl;
 _fb ctrlSetFontHeight (_fs * 0.9);
 if (_filtersOpen || {_nFilt > 0}) then { _fb ctrlSetBackgroundColor ([[0.18, 0.32, 0.50, 1], [0.28, 0.55, 0.85, 1]] select _filtersOpen); _fb ctrlSetTextColor [1, 1, 1, 1]; };
-_fb ctrlSetTooltip "Masquer IA, aériens, véhicules, pistes anciennes ou hors ligne ; distance max (aussi sur la carte)";
+_fb ctrlSetTooltip (("Masquer IA, aériens, véhicules, pistes anciennes ou hors ligne ; distance max (aussi sur la carte)") call comspec_atak_native_fnc_tr);
 _fb ctrlAddEventHandler ["ButtonClick", {
     private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     _st set ["bftFiltersOpen", !(_st getOrDefault ["bftFiltersOpen", false])];
@@ -151,11 +151,11 @@ private _detailH = [_bh * 0.36, 0] select _land;
 private _listW = [_bw, _bw * 0.58] select _land;
 private _listH = _bh - _y - _detailH - _pad / 2;
 private _cols = ["COMSPEC_RscLabel", [_pad, _y, _listW - _pad, _fs * 1.2], ""] call comspec_atak_native_fnc_pageCtrl;
-_cols ctrlSetText (switch (true) do {
+_cols ctrlSetText (((switch (true) do {
     case _filtersOpen: { "  FILTRES DU BFT (aussi appliqués à la carte)" };
     case (_view isEqualTo "ORBAT"): { "  FORMATION › GROUPE › ÉQUIPE › MEMBRE        DISTANCE · GISEMENT · TRAJET · ÂGE" };
     default { "  INDICATIF                 DISTANCE · GISEMENT · TRAJET · ÂGE" };
-});
+})) call comspec_atak_native_fnc_tr);
 _cols ctrlSetFontHeight (_fs * 0.8);
 _y = _y + _fs * 1.2;
 _listH = _listH - _fs * 1.2;
@@ -180,7 +180,7 @@ if (_filtersOpen) then {
         params ["_class", "_pos", ["_text", ""]];
         private _c = _d ctrlCreate [_class, -1, _g];
         _c ctrlSetPosition _pos;
-        if (_text isNotEqualTo "") then { _c ctrlSetText _text; };
+        if (_text isNotEqualTo "") then { _c ctrlSetText ((_text) call comspec_atak_native_fnc_tr); };
         _c ctrlCommit 0;
         _made pushBack _c;
         _c
@@ -271,14 +271,14 @@ private _addMember = {
     private _ft = if (isNull _obj) then { createHashMap } else { [_obj] call comspec_atak_native_fnc_ftInfo };
     private _ftName = _ft getOrDefault ["name", ""];
     if (_ftName isNotEqualTo "") then { _color = _ft get "rgba"; };
-    private _i = _list lbAdd format ["%5%1%2%3%4%6", [_id, _e] call _labelOf, ["", format ["  · %1%2", _ftName, ["", " " + (_ft get "roleShort")] select ((_ft getOrDefault ["roleShort", ""]) isNotEqualTo "")]] select (_ftName isNotEqualTo ""), ["", "  (blessé)"] select _dead, ["", "  (hors ligne)"] select (_f isEqualTo "OFFLINE"), _indent, _extra];
+    private _i = _list lbAdd ((format ["%5%1%2%3%4%6", [_id, _e] call _labelOf, ["", format ["  · %1%2", _ftName, ["", " " + (_ft get "roleShort")] select ((_ft getOrDefault ["roleShort", ""]) isNotEqualTo "")]] select (_ftName isNotEqualTo ""), ["", "  (blessé)"] select _dead, ["", "  (hors ligne)"] select (_f isEqualTo "OFFLINE"), _indent, _extra]) call comspec_atak_native_fnc_tr);
     _list lbSetPicture [_i, _icon];
     _list lbSetPictureColor [_i, [_color, [0.45, 0.50, 0.55, 1]] select (_f in ["LOST", "OFFLINE"])];
     _list lbSetPictureColorSelected [_i, [1, 1, 1, 1]];
     _list lbSetTextRight [_i, format ["%1 · %2° %3 · %4 · %5", [_dist] call _distTxt, round (player getDir _pos), [player getDir _pos] call _card, [_dist, _mySpd max _walk] call _etaTxt, [format ["%1 s", _age], format ["%1 min", floor (_age / 60)]] select (_age >= 60)]];
     _list lbSetColor [_i, switch (true) do { case _dead: { [0.88, 0.25, 0.22, 1] }; case (_f isEqualTo "LIVE"): { [0.90, 0.94, 0.91, 1] }; case (_f isEqualTo "STALE"): { [0.95, 0.67, 0.20, 1] }; default { [0.55, 0.60, 0.58, 1] }; }];
     _list lbSetColorRight [_i, [0.62, 0.70, 0.66, 1]];
-    _list lbSetTooltip [_i, format ["%1 · %2 · trajet %3 %4", (_fresh getOrDefault [_f, [_f]]) select 0, mapGridPosition _pos, [_dist, _mySpd max _walk] call _etaTxt, ["à pied", "à ma vitesse"] select (_mySpd > _walk)]];
+    _list lbSetTooltip (([_i, format ["%1 · %2 · trajet %3 %4", (_fresh getOrDefault [_f, [_f]]) select 0, mapGridPosition _pos, [_dist, _mySpd max _walk] call _etaTxt, ["à pied", "à ma vitesse"] select (_mySpd > _walk)]]) call comspec_atak_native_fnc_tr);
     _ids pushBack _id;
     _rows pushBack ["m", _id];
     if (_firstRow < 0) then { _firstRow = _i; };
@@ -287,11 +287,11 @@ private _addMember = {
 // Ligne d'en-tête de l'ORBAT (clic : replier / déplier).
 private _addHead = {
     params ["_key", "_text", "_right", "_rgba"];
-    private _i = _list lbAdd _text;
+    private _i = _list lbAdd ((_text) call comspec_atak_native_fnc_tr);
     _list lbSetColor [_i, _rgba];
     _list lbSetTextRight [_i, _right];
     _list lbSetColorRight [_i, [0.62, 0.70, 0.66, 1]];
-    _list lbSetTooltip [_i, "Clic : replier / déplier"];
+    _list lbSetTooltip (([_i, "Clic : replier / déplier"]) call comspec_atak_native_fnc_tr);
     _rows pushBack ["h", _key];
     _ids pushBack "";
 };
@@ -385,7 +385,7 @@ if (_view isEqualTo "ORBAT") then {
     { [_x] call _addMember; } forEach _tracks;
 };
 if ((count _tracks) isEqualTo 0) then {
-    private _i = _list lbAdd (["Aucune piste amie suivie.", "Aucune piste pour ce filtre."] select (_filter isNotEqualTo "ALL" || {_nFilt > 0}));
+    private _i = _list lbAdd (((["Aucune piste amie suivie.", "Aucune piste pour ce filtre."] select (_filter isNotEqualTo "ALL" || {_nFilt > 0}))) call comspec_atak_native_fnc_tr);
     _list lbSetColor [_i, [0.55, 0.60, 0.58, 1]];
     _rows pushBack ["", ""];
 };
@@ -423,7 +423,7 @@ private _sel = (_tracks select { (_x select 1) isEqualTo _selId }) param [0, []]
 private _det = ["COMSPEC_RscCard", [_dx, _dy, _dw, _dh - _font * 1.6], ""] call comspec_atak_native_fnc_pageCtrl;
 _det ctrlSetBackgroundColor [0.035, 0.05, 0.07, 1];
 if ((count _sel) isEqualTo 0) then {
-    _det ctrlSetStructuredText parseText "<t color='#8a9a93'>Choisissez une piste dans le tableau.</t>";
+    _det ctrlSetStructuredText parseText (("<t color='#8a9a93'>Choisissez une piste dans le tableau.</t>") call comspec_atak_native_fnc_tr);
 } else {
     _sel params ["_dist", "_id", "_e", "_obj", "_pos"];
     private _f = _e getOrDefault ["freshness", "LIVE"];
@@ -468,12 +468,12 @@ if ((count _sel) isEqualTo 0) then {
         default { "" };
     };
     private _crew = if (!isNull _obj && {vehicle _obj isNotEqualTo _obj}) then { format ["<br/><t color='#8a9a93'>Dans</t> %1", getText (configOf vehicle _obj >> "displayName")] } else { "" };
-    _det ctrlSetStructuredText parseText format [
+    _det ctrlSetStructuredText parseText ((format [
         "<t size='1.15' font='RobotoCondensedBold'>%1</t>  <t size='0.8' color='%2'>● %3</t><br/><t color='#8a9a93'>%4 · %5</t>%6%18<br/><t font='EtelkaMonospacePro'>%7</t><br/>%8 · %9° %10<br/>%15%16<br/><t color='#8a9a93'>Vitesse</t> %11  <t color='#8a9a93'>Cap</t> %12°  <t color='#8a9a93'>Alt</t> %13 m<br/><t color='#8a9a93'>État</t> %14%17",
         [[_id, _e] call _labelOf] call _esc, _fc, _ft, _type, [_grp] call _esc, _crew,
         [_pos, 8] call comspec_atak_native_fnc_gridRef,
         [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 2]] select (_dist >= 1000), round (player getDir _pos), [player getDir _pos] call _card,
-        _speed, round (_e getOrDefault ["heading", 0]), round (_pos select 2), _health, _eta, _close, _offTxt, _ftTxt];
+        _speed, round (_e getOrDefault ["heading", 0]), round (_pos select 2), _health, _eta, _close, _offTxt, _ftTxt]) call comspec_atak_native_fnc_tr);
 };
 private _bw3 = (_dw - _pad * 3) / 4;
 {

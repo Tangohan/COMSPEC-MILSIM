@@ -690,7 +690,7 @@ switch (_act) do {
         private _t = format ["<t size='0.75' align='center' font='EtelkaMonospacePro' shadow='2' shadowColor='#000000' color='%1'>NACELLE CAP %2%3° · SITE %4° · x%5%6</t>",
             ["#e8f0ea", "#ff8a7a"] select _mk, ["", "+"] select (_gp > 0.5), round _gp, round _gt, missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1],
             ["", "<br/>MARQUAGE : CLIQUEZ LA CIBLE"] select _mk];
-        if (_t isNotEqualTo _last) then { _c ctrlSetStructuredText parseText _t; uiNamespace setVariable ["COMSPEC_ATAK_DroneGimTxt", [_c, _t]]; };
+        if (_t isNotEqualTo _last) then { _c ctrlSetStructuredText parseText ((_t) call comspec_atak_native_fnc_tr); uiNamespace setVariable ["COMSPEC_ATAK_DroneGimTxt", [_c, _t]]; };
     };
     case "markMode": {
         uiNamespace setVariable ["COMSPEC_ATAK_DroneMarkMode", !(uiNamespace getVariable ["COMSPEC_ATAK_DroneMarkMode", false])];
@@ -824,10 +824,10 @@ switch (_act) do {
         private _bg = ["COMSPEC_RscMapPanel", [_x0, _y0, _w, _h]] call _mk;
         _bg ctrlSetBackgroundColor [0.025, 0.030, 0.027, 0.92];
         private _st = ["COMSPEC_RscStructuredText", [_x0 + _pad / 2, _y0 + _pad / 4, _w - _pad, _rh * 1.1]] call _mk;
-        _st ctrlSetStructuredText parseText format ["<t size='0.85'><t font='RobotoCondensedBold' color='#5cc76b'>DRONE</t>  %1 · %2 · H %3 m%4</t>",
+        _st ctrlSetStructuredText parseText ((format ["<t size='0.85'><t font='RobotoCondensedBold' color='#5cc76b'>DRONE</t>  %1 · %2 · H %3 m%4</t>",
             [_d getVariable ["COMSPEC_DroneMode", "HOVER"]] call _modeName,
             ["<t color='#e5483a'>hors liaison</t>", format ["liaison %1/4", _ln select 0]] select (_ln select 2),
-            round ((getPosATL _d) select 2), ["", " · CQB"] select (_d getVariable ["COMSPEC_DroneCqb", false])];
+            round ((getPosATL _d) select 2), ["", " · CQB"] select (_d getVariable ["COMSPEC_DroneCqb", false])]) call comspec_atak_native_fnc_tr);
         private _y = _y0 + _rh * 1.1 + _pad / 4;
         {
             private _row = _x;
@@ -1210,11 +1210,11 @@ switch (_act) do {
         // Ordre qui n'avance pas : reprise automatique, une fois (pas en pilotage manuel ni en veille).
         if ((_l select 2) && {!(_m in ["MANUAL", "STANDBY"])}) then { call _watch; };
         private _osd = uiNamespace getVariable ["COMSPEC_ATAK_DroneOsd", controlNull];
-        if (!isNull _osd) then { _osd ctrlSetStructuredText parseText ([_d, _l] call comspec_atak_native_fnc_droneOsd); };
+        if (!isNull _osd) then { _osd ctrlSetStructuredText parseText ((([_d, _l] call comspec_atak_native_fnc_droneOsd)) call comspec_atak_native_fnc_tr); };
         private _feed = uiNamespace getVariable ["COMSPEC_ATAK_DroneFeedTxt", []];
         if ((count _feed) isEqualTo 5 && {!isNull (_feed select 0)}) then {
             private _t = [_d, _l, uiNamespace getVariable ["COMSPEC_ATAK_DroneFeedKind", "FEED"]] call comspec_atak_native_fnc_droneOsd;
-            { _x ctrlSetStructuredText parseText (_t select _forEachIndex); } forEach _feed;
+            { _x ctrlSetStructuredText parseText (((_t select _forEachIndex)) call comspec_atak_native_fnc_tr); } forEach _feed;
         };
         ["gimbalHud"] call comspec_atak_native_fnc_droneAction;
         // Suivi des cibles marquées dans l'ordre choisi : cible suivante, position de l'orbite tenue à jour.

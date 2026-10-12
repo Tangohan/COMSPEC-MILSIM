@@ -88,7 +88,7 @@ private _view = switch (true) do {
 private _top = 0;
 if (_view isEqualTo "" || {!_mini && {_view isNotEqualTo "TOTAL"}}) then {
     private _osd = ["COMSPEC_RscMapPanel", [0, 0, _bw, _fs * 2.6]] call comspec_atak_native_fnc_pageCtrl;
-    _osd ctrlSetStructuredText parseText ([_d, _link] call comspec_atak_native_fnc_droneOsd);
+    _osd ctrlSetStructuredText parseText ((([_d, _link] call comspec_atak_native_fnc_droneOsd)) call comspec_atak_native_fnc_tr);
     private _osdH = ((ctrlTextHeight _osd) + _fs * 0.5) max (_fs * 2.6);
     _osd ctrlSetPosition [0, 0, _bw, _osdH];
     _osd ctrlCommit 0;
@@ -200,7 +200,7 @@ if (_view isNotEqualTo "") then {
         _t
     };
     private _feed = [_d, _link, _kind] call comspec_atak_native_fnc_droneOsd;
-    { _x ctrlSetStructuredText parseText (_feed select _forEachIndex); } forEach _txt;
+    { _x ctrlSetStructuredText parseText (((_feed select _forEachIndex)) call comspec_atak_native_fnc_tr); } forEach _txt;
     uiNamespace setVariable ["COMSPEC_ATAK_DroneFeedTxt", _txt];
     // Angles de la nacelle et aide, au-dessus des incrustations du bas (grande image seulement).
     if (!_compact) then {
@@ -214,7 +214,7 @@ if (_view isNotEqualTo "") then {
     // Surface de commande de la nacelle (au-dessus de l'image et des cadres).
     private _hit = ["COMSPEC_RscButtonInvisible", [_ix, _iy, _iw, _ih]] call comspec_atak_native_fnc_pageCtrl;
     _hit setVariable ["img", [_iw, _ih]];
-    _hit ctrlSetTooltip (["Glisser : orienter la nacelle · molette : zoom · clic : viser le point · flèches / ZQSD : nacelle (Maj : pas fin)", "MARQUAGE : cliquez sur la personne ou le véhicule à marquer · glisser : orienter la nacelle"] select _markMode);
+    _hit ctrlSetTooltip (((["Glisser : orienter la nacelle · molette : zoom · clic : viser le point · flèches / ZQSD : nacelle (Maj : pas fin)", "MARQUAGE : cliquez sur la personne ou le véhicule à marquer · glisser : orienter la nacelle"] select _markMode)) call comspec_atak_native_fnc_tr);
     _hit ctrlAddEventHandler ["MouseButtonDown", {
         params ["_c", "_btn", "_mx", "_my"];
         if (_btn isNotEqualTo 0) exitWith {};
@@ -292,7 +292,7 @@ if (_view isNotEqualTo "") then {
             private _span = _bwid * (count _btns);
             if (_lh > 0) then {
                 private _t = ["COMSPEC_RscStructuredText", [_x0, _y, _span, _lh]] call comspec_atak_native_fnc_pageCtrl;
-                _t ctrlSetStructuredText parseText format ["<t size='0.72' font='RobotoCondensedBold' color='#8a9a93'>%1</t>", _glabel];
+                _t ctrlSetStructuredText parseText ((format ["<t size='0.72' font='RobotoCondensedBold' color='#8a9a93'>%1</t>", _glabel]) call comspec_atak_native_fnc_tr);
                 _t ctrlEnable false;
                 private _ln = ["COMSPEC_RscText", [_x0, _y + _lh - pixelH * 3, _span - _pad / 3, pixelH * 2]] call comspec_atak_native_fnc_pageCtrl;
                 _ln ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.45];
@@ -306,7 +306,7 @@ if (_view isNotEqualTo "") then {
                     case "red": { _b ctrlSetBackgroundColor [0.78, 0.2, 0.16, 0.95]; _b ctrlSetTextColor [1, 1, 1, 1]; };
                     default { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor ([[0.45, 0.5, 0.47, 1], [0.92, 0.96, 0.93, 1]] select _en); };
                 };
-                if (_tip isNotEqualTo "") then { _b ctrlSetTooltip _tip; };
+                if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlEnable _en;
                 _b ctrlAddEventHandler ["ButtonClick", _code];
             } forEach _btns;

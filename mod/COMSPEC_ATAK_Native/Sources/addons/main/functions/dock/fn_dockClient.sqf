@@ -15,7 +15,7 @@ private _say = {
     if (!isNil "ace_common_fnc_displayTextStructured") then {
         [format ["<t color='%1'>%2</t>", ["#ff9a7a", "#ffffff"] select _ok, _msg], 2.5, player] call ace_common_fnc_displayTextStructured;
     } else {
-        hintSilent _msg;
+        hintSilent ((_msg) call comspec_atak_native_fnc_tr);
     };
 };
 // Rend un objet : dans l'inventaire s'il y a la place, sinon posé au sol aux pieds du joueur.
@@ -81,7 +81,7 @@ switch (_act) do {
         } forEach (_dock getVariable ["COMSPEC_ATAK_DockSlots", []]);
         if ((count _lines) == 1) then { _lines pushBack "Socle en démarrage…"; };
         _lines pushBack format ["<t size='0.85' color='#a0a6a0'>%1 %% par minute</t>", missionNamespace getVariable ["comspec_atak_native_dock_rate", 1.5]];
-        hint parseText (_lines joinString "<br/>");
+        hint ((parseText (_lines joinString "<br/>")) call comspec_atak_native_fnc_tr);
     };
     case "deploy": {
         if !("COMSPEC_ATAK_DockKit" in (items player)) exitWith { ["Pas de socle dans l'inventaire", false] call _say; };

@@ -63,8 +63,8 @@ private _pfh = [{
         _e set [9, [_vHr, _vState]];
         private _lab = createHashMapFromArray [["cardiac_arrest", ["ARRÊT CARDIAQUE", "#e5483a"]], ["unconscious", ["INCONSCIENT", "#e5483a"]], ["critical", ["CRITIQUE", "#f2ab33"]], ["wounded", ["BLESSÉ", "#e8b84a"]], ["kia", ["KIA", "#8a9a93"]], ["none", ["AUCUN BLESSÉ", "#8a9a93"]]] getOrDefault [_state, ["STABLE", "#5cc76b"]];
         if (!_vState && {!(_state in ["kia", "none"])}) then { _lab = ["SUIVI", "#8a9a93"]; };
-        _head ctrlSetStructuredText parseText format ["<t size='0.75' color='#8a9a93'>BLESSÉ SUIVI</t>  <t size='0.75' color='%3'>● %2</t><br/><t size='1.25' font='RobotoCondensedBold'>%1</t>",
-            [[_u, true] call comspec_atak_native_fnc_unitCallsign, "—"] select (isNull _u), _lab select 0, _lab select 1];
+        _head ctrlSetStructuredText parseText ((format ["<t size='0.75' color='#8a9a93'>BLESSÉ SUIVI</t>  <t size='0.75' color='%3'>● %2</t><br/><t size='1.25' font='RobotoCondensedBold'>%1</t>",
+            [[_u, true] call comspec_atak_native_fnc_unitCallsign, "—"] select (isNull _u), _lab select 0, _lab select 1]) call comspec_atak_native_fnc_tr);
         private _sys = round (70 + 50 * (_blood / 100)); private _dia = round (40 + 30 * (_blood / 100));
         private _spo = [round ((80 + 18 * (_blood / 100)) min 99), 0] select (_hr isEqualTo 0);
         private _col = { params ["_v", "_ok"]; format ["<t color='%1'>%2</t>", ["#f2ab33", "#5cc76b"] select _ok, _v] };
@@ -74,7 +74,7 @@ private _pfh = [{
         if (_vSpo) then { _lines pushBack format ["SpO2<t align='right'>%1 %%</t>", [_spo, _spo >= 94] call _col]; };
         if (_vBlood) then { _lines pushBack format ["Sang<t align='right'>%1 %%</t>", [round _blood, _blood >= 80] call _col]; };
         _lines pushBack format ["Distance<t align='right'>%1</t>", [format ["%1 m", round (player distance _u)], "—"] select (isNull _u)];
-        _vit ctrlSetStructuredText parseText format ["<t size='0.8'>%1</t>", _lines joinString "<br/>"];
+        _vit ctrlSetStructuredText parseText ((format ["<t size='0.8'>%1</t>", _lines joinString "<br/>"]) call comspec_atak_native_fnc_tr);
     };
     private _hr = _e param [7, 0];
     private _state = _e param [8, "none"];

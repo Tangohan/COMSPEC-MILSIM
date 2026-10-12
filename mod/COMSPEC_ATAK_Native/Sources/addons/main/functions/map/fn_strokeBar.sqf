@@ -41,7 +41,7 @@ private _wCur = profileNamespace getVariable ["COMSPEC_ATAK_DrawWidth", 2];
     private _b = ["COMSPEC_RscButton", [_x0 + (count _cols) * (_cw + _gap) + _gap + _forEachIndex * (_ww + _gap), _y0, _ww, _h], _t] call _mk;
     _b ctrlSetFontHeight (_fs * 0.8);
     if (_v isEqualTo _wCur) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
-    _b ctrlSetTooltip "Épaisseur du trait (vue par tous les joueurs)";
+    _b ctrlSetTooltip (("Épaisseur du trait (vue par tous les joueurs)") call comspec_atak_native_fnc_tr);
     _b ctrlAddEventHandler ["ButtonClick", ["COMSPEC_ATAK_DrawWidth", str _v] call _set];
 } forEach _widths;
 // Seconde rangée : options et corrections.
@@ -62,7 +62,7 @@ private _bw = (((_row1W min _wMax) - _gap * ((count _btns) - 1)) / (count _btns)
     private _b = ["COMSPEC_RscButton", [_x0 + _forEachIndex * (_bw + _gap), _y1, _bw, _h], _t] call _mk;
     _b ctrlSetFontHeight (_fs * 0.8);
     if (_on) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
-    _b ctrlSetTooltip _tip;
+    _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
     _b ctrlAddEventHandler ["ButtonClick", _code];
 } forEach _btns;
 true

@@ -308,7 +308,7 @@ switch (_act) do {
         // Consigne et boutons sans redessiner la page (la carte garde sa vue, aucun clignotement).
         private _c = uiNamespace getVariable ["COMSPEC_ATAK_PlanCtrls", createHashMap];
         private _hint = _c getOrDefault ["hint", controlNull];
-        if (!isNull _hint) then { _hint ctrlSetStructuredText parseText (["hintText"] call comspec_atak_native_fnc_planAction); };
+        if (!isNull _hint) then { _hint ctrlSetStructuredText parseText (((["hintText"] call comspec_atak_native_fnc_planAction)) call comspec_atak_native_fnc_tr); };
         private _has = (_ui get "sel") isNotEqualTo "";
         { private _b = _c getOrDefault [_x, controlNull]; if (!isNull _b) then { _b ctrlEnable _has; }; } forEach ["del", "toggle"];
     };
