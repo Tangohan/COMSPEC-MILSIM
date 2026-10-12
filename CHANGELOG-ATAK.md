@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Retours en jeu 2026-10-12 — Volet rapide, Météo, CAS, Reco refaite (ATAK natif 1.36.0)
+## Retours en jeu 2026-10-12 — Volet rapide, Météo, CAS, Reco refaite (ATAK natif 1.37.0)
 
 Non testé en jeu. Corrections tirées du journal Arma (.rpt) envoyé par TTRD.
 - **Volet rapide** : les tuiles étaient trois fois trop larges et sortaient de l'écran (variable `_tW` de la fiche opérateur qui écrasait `_tw`, SQF ignore la casse). Même défaut corrigé dans l'établi des **Accessoires** (`_bW` / `_bw`).
@@ -22,6 +22,18 @@ Non testé en jeu. Corrections tirées du journal Arma (.rpt) envoyé par TTRD.
 - **Réglages** : icônes propres pour Langue (globe) et Personnalisation (palette).
 - **Téléphone porté** : la carte suit le joueur à chaque image au lieu de sauter chaque seconde ; barre du bas avec ma grille, le MGRS et l'altitude.
 - **Reco** refaite : en-tête façon FRS en ambre, tuiles QUOI à icône, FIABILITÉ, OÙ (MA POSITION, SOUS MON REGARD, distance et azimut), OBSERVATION avec compteur 140, ENVOYER, dernières notes en cartes colorées.
+
+## Drone : zones interdites, app Marquer tracking, raccourcis, journal en fil (ATAK natif 1.36.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Suite des demandes de TTRD sur le drone (après 1.31.0).
+- **Suivi (ME SUIVRE, escorte)** : le drone ne tourne plus en rond autour d'un joueur immobile. Il garde le cap de la dernière marche et, à moins de 15 m de sa place, reste en stationnaire, caméra sur le joueur, jusqu'à ce qu'il reparte.
+- **Raccourcis CBA** (COMSPEC ATAK, non attribués par défaut) : « Drone : RECHERCHE », « Drone : ME SUIVRE », « Drone : RTB », « Drone : ATTERRIR ». Ordre noté au journal.
+- **Cible marquée (LOCK)** : nouveaux boutons EN MARQUEUR (éditeur de marqueur prérempli à sa position), EN FICHE SSE (fiche FRO préremplie) dans l'onglet CIBLES du drone et dans la nouvelle app ; CAMÉRA DU DRONE accroche la caméra dessus et l'affiche en petit sur la carte.
+- **App MARQUER TRACKING** (Renseignement) : toutes les cibles marquées, filtre TOUTES / ACCROCHÉES / PERDUES / NEUTRALISÉES, CARTE, EN MARQUEUR, EN FICHE SSE, CAMÉRA DU DRONE, OUBLIER, OUBLIER TOUTES ; plus la liste des zones interdites (CARTE, RETIRER).
+- **Zones interdites au drone** : clic droit sur la carte > « Zone interdite au drone » (rayon 200 m, partagée avec le camp, cercle rouge hachuré). Un ordre dont le but y tombe est refusé ; un drone qui y entre en ressort par le bord le plus proche (sauf frappe, atterrissage, retour automatique).
+- **Journal du drone en fil de discussion** : ordres du pilote à droite (PILOTE), retours du drone à gauche (DRONE).
+- Pas encore fait : plusieurs drones à la fois, essaim et rôles simultanés (drone 1 en CQB, drone 2 sur un marqueur), IA de proximité. Le téléphone ne pilote qu'un drone appairé ; c'est un chantier à part.
+- À vérifier en jeu : suivi joueur arrêté puis reparti, les 4 touches, zone posée/retirée et vue par un équipier, drone qui ressort d'une zone, ordre refusé, EN MARQUEUR / EN FICHE SSE, app Marquer tracking, journal.
 
 ## Vague 2026-10-12 (suite) — Serveur de la communauté, Tinder refait (ATAK natif 1.35.0, COMSPEC Link 2.0.75)
 

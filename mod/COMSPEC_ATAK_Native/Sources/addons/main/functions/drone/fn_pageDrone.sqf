@@ -672,6 +672,10 @@ switch (_tab) do {
             };
             _lb2 pushBack ["OUBLIER LA CIBLE", compile format ["['release', %1] call comspec_atak_native_fnc_lockAction; ['DRONE'] call comspec_atak_native_fnc_pageRender;", str _lk], false, true, "Retire le marquage (LOCK) de cette cible, sur le téléphone et sur la carte"];
             _rows pushBack ["buttons", _lb2];
+            _rows pushBack ["buttons", [
+                ["EN MARQUEUR", compile format ["['toMarker', %1] call comspec_atak_native_fnc_lockAction;", str _lk], false, true, "Pose un marqueur permanent à sa position (éditeur de marqueur prérempli)"],
+                ["EN FICHE SSE", compile format ["['toSse', %1] call comspec_atak_native_fnc_lockAction;", str _lk], false, true, "Ouvre une fiche SSE d'observation (FRO) préremplie avec la cible"]
+            ]];
         } forEach (_locks select [0, 12]);
 
         // Détections automatiques : ce que la caméra relève seule en vol (ex-onglet PISTES).
@@ -737,11 +741,16 @@ switch (_tab) do {
     };
     case "LOG": {
         private _lg = missionNamespace getVariable ["COMSPEC_ATAK_DroneLog", []];
-        _rows pushBack ["section", "Journal", format ["%1 événements, le plus récent en haut", count _lg]];
+        _rows pushBack ["section", "Journal", format ["%1 messages, le plus récent en haut. À droite les ordres du pilote, à gauche ce que le drone renvoie.", count _lg]];
+        // Fil de discussion : ordres envoyés (« Ordre… », « Ordre refusé… ») à droite, retours du drone à gauche.
         private _lines = [];
         for "_i" from ((count _lg) - 1) to 0 step -1 do {
             (_lg select _i) params ["_t", "_txt", ["_c", ""]];
-            _lines pushBack format ["<t size='0.85'><t color='#8a9a93'>%1</t>  <t color='%3'>%2</t></t>", _t, _txt, ["#c9d4cf", _c] select (_c isNotEqualTo "")];
+            if ((_txt find "Ordre") isEqualTo 0) then {
+                _lines pushBack format ["<t align='right' size='0.72' color='#8a9a93'>PILOTE · %1</t><br/><t align='right' size='0.85' color='%3'>%2</t>", _t, _txt, ["#4da3ff", _c] select (_c isNotEqualTo "")];
+            } else {
+                _lines pushBack format ["<t align='left' size='0.72' color='#8a9a93'>DRONE · %1</t><br/><t align='left' size='0.85' color='%3'>%2</t>", _t, _txt, ["#c9d4cf", _c] select (_c isNotEqualTo "")];
+            };
         };
         _rows pushBack ["text", ([["<t color='#8a9a93'>Rien à signaler pour l'instant.</t>"], _lines] select ((count _lines) > 0)) joinString "<br/>"];
     };

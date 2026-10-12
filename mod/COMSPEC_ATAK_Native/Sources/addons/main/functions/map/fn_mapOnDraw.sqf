@@ -167,6 +167,7 @@ if ((count _route) > 0) then {
 // Calques Relief (champ de vision / altitudes) et Wave Relay (liens du maillage).
 [_map] call comspec_atak_native_fnc_reliefDraw;
 [_map] call comspec_atak_native_fnc_meshDraw;
+["draw", _map] call comspec_atak_native_fnc_noFly;
 [_map] call comspec_atak_native_fnc_droneDraw;
 ["draw", _map] call comspec_atak_native_fnc_mapPing;
 // Plan de briefing partagé du camp (app Plan), sous les unités, si le joueur l'a mis sur la carte.

@@ -1,6 +1,6 @@
 /*
     Menu contextuel de la carte (clic droit sans glisser) : VOIR LA CAMÉRA (équipier pointé), PING, MARQUEUR, Y ALLER,
-    CENTRER ICI, COPIER LA GRILLE, SUPPRIMER (marqueur joueur pointé).
+    CENTRER ICI, COPIER LA GRILLE, ZONE INTERDITE AU DRONE (poser ou retirer, fn_noFly), SUPPRIMER (marqueur joueur pointé).
     ["open", [contrôle carte, position écran]]  ouvre le menu au curseur (en-tête : grille, altitude, distance et azimut)
     ["close"]                                    ferme (clic ailleurs, Échap, choix d'une ligne)
     ["act", clé]                                 exécute une ligne
@@ -76,6 +76,11 @@ switch (_mode) do {
                 [format ["Grille %1 copiée", _g], 2] call comspec_atak_native_fnc_toast;
             };
             case "DELETE": { if (_m isNotEqualTo "") then { [_m] call comspec_atak_native_fnc_markerDelete; }; };
+            case "NOFLY": { ["add", [_pos, 200]] call comspec_atak_native_fnc_noFly; };
+            case "NOFLYDEL": {
+                private _z = ["inside", _pos] call comspec_atak_native_fnc_noFly;
+                if ((count _z) > 0) then { ["remove", _z select 0] call comspec_atak_native_fnc_noFly; };
+            };
             case "CAM": {
                 private _u = objectFromNetId (_c getOrDefault ["unit", ""]);
                 if (isNull _u || {!alive _u}) exitWith {};
@@ -113,6 +118,11 @@ switch (_mode) do {
         ];
         private _cu = objectFromNetId (_c getOrDefault ["unit", ""]);
         if (!isNull _cu && {alive _cu}) then { _rows insert [0, [["CAM", "Voir la caméra", [_cu, true] call comspec_atak_native_fnc_unitCallsign, _dir + "app_photos.paa", [0.36, 0.78, 0.42, 1]]]]; };
+        if ((count (["inside", _pos] call comspec_atak_native_fnc_noFly)) > 0) then {
+            _rows pushBack ["NOFLYDEL", "Retirer la zone interdite", "drone, tout le camp", _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
+        } else {
+            _rows pushBack ["NOFLY", "Zone interdite au drone", "rayon 200 m", _dir + "app_drone.paa", [0.95, 0.30, 0.25, 1]];
+        };
         if (_m isNotEqualTo "") then { _rows pushBack ["DELETE", "Supprimer le marqueur", [markerText _m, ""] select ((markerText _m) isEqualTo ""), _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]]; };
         private _rowH = _font * 1.55;
         private _headH = _font * 2.05;
