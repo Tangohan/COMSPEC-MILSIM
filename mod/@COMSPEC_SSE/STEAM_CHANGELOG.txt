@@ -65,6 +65,19 @@ NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 [*] Zeus : « Scellé : altérer le journal » pour les exercices de contrôle de la chaîne
 [/list]
 
+[h2]Campagnes[/h2]
+[list]
+[*] Une campagne garde sa graine biométrique, ses personnages récurrents, ses organisations, ce que les joueurs savent, les rencontres et le registre des scellés
+[*] Permanente : la vraie campagne, tout est gardé d'une mission à l'autre (pièces des missions précédentes archivées au registre)
+[*] Récurrente : le bootcamp, mêmes personnages et organisations à chaque drill, tout redevient inconnu au chargement
+[*] Temporaire : drill SOT jetable, graine propre, rien n'est sauvegardé, vidé à la fin ; peut copier la structure d'une autre campagne
+[*] Personnages récurrents (identifiant biométrique fixé ou clé BII) : même nom, même alias, mêmes empreintes, même appartenance d'une carte à l'autre
+[*] Eden : module Campagne SSE (identifiant, type, sauvegarde automatique, sauvegarde en fin de mission) et module de sauvegarde sur déclencheur
+[*] Zeus : charger ou créer, sauvegarder, état et journal, remettre à zéro, fin de mission, exporter, importer, supprimer
+[*] Export et import en texte : une campagne passe d'un serveur ou d'une communauté à l'autre
+[*] ACE : « Campagne en cours » (type, mission n°, personnages récurrents, journal de campagne)
+[/list]
+
 [h2]Configuration[/h2]
 [list]
 [*] Réglages CBA COMSPEC SSE › Biométrie et Biométrie — population

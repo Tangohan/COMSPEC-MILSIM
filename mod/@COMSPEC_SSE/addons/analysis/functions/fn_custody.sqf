@@ -38,7 +38,7 @@ if (_op isEqualTo "held") exitWith {
     _args params [["_u", objNull, [objNull]]];
     private _uid = [_u] call _uidOf;
     private _all = missionNamespace getVariable ["comspec_sse_custody", createHashMap];
-    (keys _all) select { private _p = _all get _x; (_p getOrDefault ["holderUid", ""]) isEqualTo _uid && {(_p getOrDefault ["state", ""]) isNotEqualTo "DÉTRUITE"} }
+    (keys _all) select { private _p = _all get _x; (_p getOrDefault ["holderUid", ""]) isEqualTo _uid && {!(_p getOrDefault ["archived", false])} }
 };
 if (!isServer) exitWith { ["comspec_sse_custodyOp", [_op, _args]] call CBA_fnc_serverEvent; "" };
 

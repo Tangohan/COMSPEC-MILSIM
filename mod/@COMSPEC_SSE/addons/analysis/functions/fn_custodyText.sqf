@@ -17,7 +17,7 @@ private _lines = [
     format ["<t color='#9aa'>Objet</t>  %1", _p getOrDefault ["desc", "?"]],
     format ["<t color='#9aa'>Étiquette</t>  %1", _p getOrDefault ["label", ""]],
     format ["<t color='#9aa'>Scellé</t>  %1", [_p getOrDefault ["seal", ""], "non posé"] select ((_p getOrDefault ["seal", ""]) isEqualTo "")],
-    format ["<t color='#9aa'>Détenteur</t>  %1", _p getOrDefault ["holder", "?"]],
+    format ["<t color='#9aa'>Détenteur</t>  %1%2", _p getOrDefault ["holder", "?"], ["", " · archivée (mission précédente)"] select (_p getOrDefault ["archived", false])],
     format ["<t color='#9aa'>Intégrité du journal</t>  %1",
         ["<t color='#ff6b6b'>ROMPUE à la ligne " + str (_bad + 1) + "</t>", "<t color='#8fdc8f'>intègre</t>"] select _ok],
     ""
