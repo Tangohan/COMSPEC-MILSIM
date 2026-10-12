@@ -19,6 +19,11 @@ private _json = _raw select [3, count _raw - 3];
 private _seenIds = [];
 private _shaped = 0;
 private _bootSh = missionNamespace getVariable ["COMSPEC_MapShapesBootstrapped", false];
+// Réponse identique au dernier passage traité : formes déjà posées, rien à refaire (le parse caractère par
+// caractère de toute la réponse tournait toutes les 10 s dans le thread du jeu).
+if (_bootSh && {_json isEqualTo (missionNamespace getVariable ["COMSPEC_MapShapesLastJson", ""])}) exitWith {
+    ["formes", 0, " (inchangé)"] call comspec_overwatch_connect_fnc_noteUplinkReturn;
+};
 if (!_bootSh) then {
     missionNamespace setVariable ["COMSPEC_MapShapesBootstrapped", true, false];
 };
@@ -125,22 +130,24 @@ while {_idx >= 0} do {
         if (isNil "_radius" || {_radius <= 0}) then { _radius = 100 };
     };
 
-    private _flat = [_json, _idPos, 1200, _qq] call _fnc_parseFlatCoords;
-    if ((count _flat) >= 4 && {_x == 0} && {_y == 0}) then {
-        _x = _flat select 0;
-        _y = _flat select 1;
-    };
-
-    if ((count _flat) >= 4 && {((count _flat) % 2) == 1}) then {
-        _flat deleteAt ((count _flat) - 1);
-    };
-
     if (_bootSh && {_shaped < 6}) then {
+        // Coordonnées lues seulement pour les formes réellement posées (lecture caractère par caractère coûteuse).
+        private _flat = [_json, _idPos, 1200, _qq] call _fnc_parseFlatCoords;
+        if ((count _flat) >= 4 && {_x == 0} && {_y == 0}) then {
+            _x = _flat select 0;
+            _y = _flat select 1;
+        };
+
+        if ((count _flat) >= 4 && {((count _flat) % 2) == 1}) then {
+            _flat deleteAt ((count _flat) - 1);
+        };
+
         [_num, _type, _label, _color, _x, _y, _radius, _flat] call comspec_overwatch_connect_fnc_receiveMapShape;
         _shaped = _shaped + 1;
     };
     _idx = _idPos + 1;
 };
+if (_bootSh) then { missionNamespace setVariable ["COMSPEC_MapShapesLastJson", _json, false]; };
 
 ["formes", count _seenIds, if (_bootSh) then { "" } else { " · première lecture" }] call comspec_overwatch_connect_fnc_noteUplinkReturn;
 

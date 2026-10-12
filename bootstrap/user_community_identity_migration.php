@@ -344,6 +344,22 @@ function run_user_community_identity_migration(PDO $pdo, ?callable $log = null):
         );
         $say('user_community_memberships repaired (backfill + reactivate active users)');
     }
+    // Réparation idempotente : e-mail confirmé (users.status actif) mais fiche communauté restée
+    // « pending_verification » — la connexion refusait alors le membre en boucle.
+    if ($tableExists('users') && $tableExists('user_community_profiles')) {
+        try {
+            $fixed = $pdo->exec(
+                "UPDATE user_community_profiles p
+                 INNER JOIN users u ON u.id = p.user_id
+                 SET p.status = 'active', p.updated_at = NOW()
+                 WHERE p.status = 'pending_verification'
+                   AND u.status = 'active'"
+            );
+            $say('user_community_profiles: ' . (int) $fixed . ' verified account(s) unblocked');
+        } catch (Throwable $e) {
+            $say('user_community_profiles verification repair skipped: ' . $e->getMessage());
+        }
+    }
     if ($tableExists('user_community_memberships') && $tableExists('tenants')) {
         try {
             $pdo->exec(

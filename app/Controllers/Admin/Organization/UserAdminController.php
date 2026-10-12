@@ -1678,26 +1678,10 @@ class UserAdminController
         }
         $rawToken = bin2hex(random_bytes(32));
         $tokenHash = hash('sha256', $rawToken);
-        $expires = new \DateTimeImmutable('+15 minutes');
+        $expires = new \DateTimeImmutable('+' . EmailTokenPurpose::REGISTER_CONFIRM_TTL_MINUTES . ' minutes');
         $verifyUrl = url('verify-email') . '?token=' . rawurlencode($rawToken);
-        $ok = $this->emailService->sendUserRegisterConfirmation(
-            $email,
-            (string) ($user['display_name'] ?? 'Membre'),
-            $tenantName,
-            $verifyUrl,
-            15,
-            $tenantId
-        );
-        if (!$ok) {
-            Session::flash(
-                'error',
-                'L’e-mail n’a pas pu être envoyé. Vérifiez la configuration d’envoi des courriels ou réessayez plus tard.'
-            );
-
-            return Response::redirect($returnList ? $backUsers : $backUser);
-        }
-        $this->emailTokenRepository->deletePendingForUserPurpose($id, EmailTokenPurpose::REGISTER_CONFIRM);
-        $this->emailTokenRepository->create(
+        // Le jeton doit exister avant l'envoi : un clic immédiat sur le lien ne doit pas tomber sur « lien invalide ».
+        $tokenId = $this->emailTokenRepository->create(
             $tenantId,
             $id,
             EmailTokenPurpose::REGISTER_CONFIRM,
@@ -1705,6 +1689,25 @@ class UserAdminController
             bin2hex(random_bytes(16)),
             $expires
         );
+        $ok = $this->emailService->sendUserRegisterConfirmation(
+            $email,
+            (string) ($user['display_name'] ?? 'Membre'),
+            $tenantName,
+            $verifyUrl,
+            EmailTokenPurpose::REGISTER_CONFIRM_TTL_MINUTES,
+            $tenantId
+        );
+        if (!$ok) {
+            // L'ancien lien reste utilisable si le nouveau message n'est jamais parti.
+            $this->emailTokenRepository->deleteById($tokenId);
+            Session::flash(
+                'error',
+                'L’e-mail n’a pas pu être envoyé. Vérifiez la configuration d’envoi des courriels ou réessayez plus tard.'
+            );
+
+            return Response::redirect($returnList ? $backUsers : $backUser);
+        }
+        $this->emailTokenRepository->deleteOtherPendingForUserPurpose($id, EmailTokenPurpose::REGISTER_CONFIRM, $tokenId);
         $notice = \email_file_mailer_notice();
         if ($notice !== '') {
             Session::flash('warning', $notice);

@@ -16,6 +16,7 @@ if (_lang isEqualTo "en" && {isNil {missionNamespace getVariable "COMSPEC_ATAK_I
     private _pairs = parseSimpleArray (loadFile "\z\comspec_atak_native\addons\main\i18n\en.txt");
     private _exact = createHashMap;
     private _tpls = createHashMap;
+    private _gen = toString [1];
     {
         _x params ["_fr", "_en"];
         if ((_fr find "%") < 0) then {
@@ -47,13 +48,22 @@ if (_lang isEqualTo "en" && {isNil {missionNamespace getVariable "COMSPEC_ATAK_I
             private _ok = (count _ids) > 0 && {((_parts select [1, (count _parts) - 2]) findIf { _x isEqualTo "" }) < 0};
             if (_ok) then {
                 private _p0 = _parts select 0;
-                private _key = ["", _p0 select [0, 3]] select ((count _p0) >= 3);
+                // Début de 3 caractères ou plus : rangé sous ce début. Sinon (« %1 m », « à %1 ») : rangé sous la fin
+                // (3 derniers caractères, la fin du texte doit y correspondre), ou avec les modèles sans fin fixe.
+                private _pz = _parts select ((count _parts) - 1);
+                private _key = if ((count _p0) >= 3) then { _p0 select [0, 3] } else {
+                    [_gen, _gen + (_pz select [(count _pz) - 3])] select ((count _pz) >= 3)
+                };
                 private _list = _tpls getOrDefault [_key, []];
                 _list pushBack [_parts, _ids, _en];
                 _tpls set [_key, _list];
             };
         };
     } forEach _pairs;
+    // Modèles sans début fixe rangés par fin : chaque liste « fin » reçoit aussi ceux sans fin fixe (fn_tr ne parcourt
+    // ainsi qu'une cinquantaine de modèles au lieu de plus de deux cents pour un texte inconnu).
+    private _noEnd = _tpls getOrDefault [_gen, []];
+    { if ((count _x) > 1 && {(_x select [0, 1]) isEqualTo _gen}) then { _tpls set [_x, (_tpls get _x) + _noEnd]; }; } forEach (keys _tpls);
     // Modèles les plus longs d'abord : « Distance au point : %1 » avant « Distance : %1 ».
     { _tpls set [_x, [_tpls get _x, [], { -(count ((_x select 0) joinString "")) }] call BIS_fnc_sortBy]; } forEach (keys _tpls);
     missionNamespace setVariable ["COMSPEC_ATAK_I18nExact", _exact];

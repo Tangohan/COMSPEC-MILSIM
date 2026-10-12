@@ -26,6 +26,15 @@ missionNamespace setVariable ["COMSPEC_ATAK_SrvKeep", _keep];
 ["comspec_atak_native_bda", { [_this param [1, ""], "comspec_atak_native_bda", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_report", { [_this param [1, ""], "comspec_atak_native_report", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_medevacStatus", { [_this param [3, ""], "comspec_atak_native_medevacStatus", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
+// Événements de camp (logistique, MEDEVAC, BDA, comptes rendus, alertes) : relayés par le serveur aux seuls joueurs du camp.
+// CBA_fnc_globalEvent les envoyait aussi au camp adverse, qui les jetait. Le serveur les reçoit comme avant (journal ci-dessus).
+["comspec_atak_native_sideEvent", {
+    params [["_ev", ""], ["_args", []], ["_side", ""]];
+    if !(_ev in ["comspec_atak_native_logi", "comspec_atak_native_medevac", "comspec_atak_native_medevacStatus", "comspec_atak_native_bda", "comspec_atak_native_report", "comspec_atak_native_alert"]) exitWith {};
+    [_ev, _args] call CBA_fnc_localEvent;
+    private _to = allPlayers select { !local _x && {(str side group _x) isEqualTo _side} };
+    if (_to isNotEqualTo []) then { [_ev, _args, _to] call CBA_fnc_targetEvent; };
+}] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_wpStore", {
     params ["_grp", "_pts", "_who"];
     COMSPEC_ATAK_SrvRoutes set [_grp, [_pts, _who]];

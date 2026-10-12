@@ -347,7 +347,8 @@ return function (Router $router) {
     $router->get('/register', [RegisterController::class, 'show'], [GuestMiddleware::class]);
     $router->post('/register', [RegisterController::class, 'store'], [GuestMiddleware::class]);
     $router->get('/register/check-email', [VerifyEmailController::class, 'showCheckEmail'], [GuestMiddleware::class]);
-    $router->get('/verify-email', [VerifyEmailController::class, 'verify'], [GuestMiddleware::class]);
+    // Sans GuestMiddleware : un membre déjà connecté (autre compte, autre onglet) doit pouvoir confirmer son adresse.
+    $router->get('/verify-email', [VerifyEmailController::class, 'verify']);
     $router->post('/resend-verification', [VerifyEmailController::class, 'resendVerification'], [GuestMiddleware::class]);
     $router->get('/security/device-deny', [SecurityDeviceController::class, 'denyDevice'], [GuestMiddleware::class]);
     $router->get('/join', [JoinController::class, 'show']);

@@ -13,7 +13,14 @@ if ((_unit getVariable ["COMSPEC_CombatFiredEH", -1]) < 0) then {
         if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith {};
         params ["_unit", "", "", "", "_ammo", "", "", ""];
         if (isNull _unit || {_unit != player}) exitWith {};
-        private _sim = toLower (getText (configFile >> "CfgAmmo" >> _ammo >> "simulation"));
+        // Simulation de la munition mise en cache par classe : lecture config à chaque balle sinon (tir auto).
+        private _simCache = missionNamespace getVariable ["COMSPEC_CombatAmmoSim", createHashMap];
+        private _sim = _simCache getOrDefault [_ammo, ""];
+        if (_sim isEqualTo "") then {
+            _sim = toLower (getText (configFile >> "CfgAmmo" >> _ammo >> "simulation"));
+            _simCache set [_ammo, _sim];
+            missionNamespace setVariable ["COMSPEC_CombatAmmoSim", _simCache, false];
+        };
         private _pos = getPosWorld _unit;
         private _detail = createHashMapFromArray [
             ["x", _pos select 0],

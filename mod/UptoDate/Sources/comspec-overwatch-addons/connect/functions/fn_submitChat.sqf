@@ -37,7 +37,9 @@ _radioLog pushBack [serverTime, name player, _channel, _priority, _kind, _msg];
 if (count _radioLog > 200) then {
     _radioLog deleteRange [0, (count _radioLog) - 200];
 };
-missionNamespace setVariable ["COMSPEC_RadioReplay", _radioLog, true];
+// Journal local (200 entrées) : diffusé, il repartait en entier vers tous les clients à chaque message
+// et chaque client écrasait le journal des autres. Seul ce poste le relit (forceSyncData).
+missionNamespace setVariable ["COMSPEC_RadioReplay", _radioLog, false];
 
 [_formatted] call comspec_overwatch_connect_fnc_appendLinkLog;
 

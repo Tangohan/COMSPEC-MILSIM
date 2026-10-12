@@ -85,7 +85,7 @@ switch (_action) do {
         private _r = _reqs getOrDefault [_v, createHashMap];
         if ((count _r) isEqualTo 0) exitWith {};
         private _st = parseNumber _id;
-        [{ params ["_rid", "_st", "_by", "_side"]; ["comspec_atak_native_medevacStatus", [_rid, _st, _by, _side]] call CBA_fnc_globalEvent; },
+        [{ params ["_rid", "_st", "_by", "_side"]; ["comspec_atak_native_sideEvent", ["comspec_atak_native_medevacStatus", [_rid, _st, _by, _side], _side]] call CBA_fnc_serverEvent; },
             [_v, _st, [player] call comspec_atak_native_fnc_unitCallsign, str side group player], "MEDEVAC", 1] call comspec_atak_native_fnc_netSend;
     };
     case "statusRecv": {
@@ -126,7 +126,7 @@ switch (_action) do {
             ["pos", _pos], ["grid", [_pos, 8] call comspec_atak_native_fnc_gridRef], ["rem", _m getOrDefault ["mRem", ""]],
             ["status", 0], ["by", ""], ["time", [dayTime, "HH:MM"] call BIS_fnc_timeToString]
         ];
-        [{ params ["_r", "_side"]; ["comspec_atak_native_medevac", [_r, _side]] call CBA_fnc_globalEvent; }, [_r, str side group player], "MEDEVAC", 2] call comspec_atak_native_fnc_netSend;
+        [{ params ["_r", "_side"]; ["comspec_atak_native_sideEvent", ["comspec_atak_native_medevac", [_r, _side], _side]] call CBA_fnc_serverEvent; }, [_r, str side group player], "MEDEVAC", 2] call comspec_atak_native_fnc_netSend;
         ["SUCCESS", "MEDEVAC envoyé au camp · suivi dans l'onglet MEDEVAC", 5, 50] call comspec_atak_native_fnc_notify;
         // Avec Overwatch : aussi au poste web.
         if (isNil "comspec_overwatch_connect_fnc_requestMEDEVAC") exitWith {};

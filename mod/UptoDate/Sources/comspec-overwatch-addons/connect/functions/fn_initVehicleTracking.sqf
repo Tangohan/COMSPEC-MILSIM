@@ -111,7 +111,10 @@ _evh = player addEventHandler ["Killed", {
         _vehicleData set ["vehicle_callsign", getText (configOf _vehicle >> "displayName")];
         _vehicleData set ["status", "DESTROYED"];
         private _jsonString = [_vehicleData] call comspec_overwatch_connect_fnc_hashMapToJson;
-        "COMSPECExtension" callExtension ["UpdateVehicleTracking", [_jsonString]];
+        // POST hors du thread de jeu (spawn + extAwait) : retour inutilisé, l'appel synchrone figeait le jeu.
+        [_jsonString] spawn {
+            ["COMSPECExtension", "UpdateVehicleTracking", _this] call comspec_overwatch_connect_fnc_extAwait;
+        };
     };
 }];
 missionNamespace setVariable ["COMSPEC_VehTrackEh_Killed", _evh, false];

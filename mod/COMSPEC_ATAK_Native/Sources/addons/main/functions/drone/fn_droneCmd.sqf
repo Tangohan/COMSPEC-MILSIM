@@ -261,7 +261,9 @@ switch (_cmd) do {
             while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
                 // Posé : moteurs coupés une fois au sol.
                 if (_kind isEqualTo "LAND" && {isEngineOn _d} && {((getPosATL _d) select 2) < 0.6} && {(speed _d) < 2}) then { _d engineOn false; };
-                _d setFuel ((_f0 - _rate * (time - _t0) / 3600) max 0);
+                // setFuel est diffusé à tous : seulement quand l'écart dépasse 0,2 % (moteur coupé : quelques fois par heure).
+                private _f = (_f0 - _rate * (time - _t0) / 3600) max 0;
+                if (abs ((fuel _d) - _f) > 0.002) then { _d setFuel _f; };
                 sleep 5;
             };
         };
@@ -316,11 +318,13 @@ switch (_cmd) do {
             // Tir et oublie : un point laser éteint en route laisse la dernière position connue ; une cible détruite arrête la frappe.
             private _last = if (_tgt isEqualType objNull) then { getPosASL _tgt } else { _tgt };
             private _isUnit = _tgt isEqualType objNull && {_tgt isKindOf "AllVehicles"};
+            // Point publié seulement s'il bouge de plus de 5 m : en piqué (0,05 s) il partait 20 fois par seconde à tous.
+            private _sent = [];
             while { alive _d && {local _d} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
                 if (_isUnit && {!alive _tgt}) exitWith { [_d, "hover", []] call comspec_atak_native_fnc_droneCmd; };
                 if (_tgt isEqualType objNull && {!isNull _tgt}) then { _last = [getPosASL _tgt, aimPos _tgt] select _isUnit; };
                 private _p = _last;
-                _d setVariable ["COMSPEC_DroneTgt", _p, true];
+                if (_sent isEqualTo [] || {(_sent distance _p) > 5}) then { _sent = _p; _d setVariable ["COMSPEC_DroneTgt", _p, true]; };
                 if ((_d distance2D _p) > 120) then {
                     _d flyInHeight [(_d getVariable ["COMSPEC_DroneAlt", 40]) max 50, true];
                     _d limitSpeed 150;

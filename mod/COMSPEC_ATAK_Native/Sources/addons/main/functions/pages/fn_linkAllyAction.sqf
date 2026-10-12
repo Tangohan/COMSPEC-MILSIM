@@ -348,7 +348,7 @@ switch (_action) do {
         // Camp : alerte par le réseau simulé (marche sans Athena) ; poste : rapport structuré + alerte « opérateur à terre ».
         [{
             params ["_kind", "_summary", "_details", "_fields", "_pos", "_grid", "_me"];
-            ["comspec_atak_native_alert", [_kind, _me, _pos, _grid, _summary, str side group player]] call CBA_fnc_globalEvent;
+            ["comspec_atak_native_sideEvent", ["comspec_atak_native_alert", [_kind, _me, _pos, _grid, _summary, str side group player], str side group player]] call CBA_fnc_serverEvent;
             if ([] call comspec_atak_native_fnc_bridge) then {
                 [{
                     params ["_kind", "_summary", "_details", "_fields", "_pos"];

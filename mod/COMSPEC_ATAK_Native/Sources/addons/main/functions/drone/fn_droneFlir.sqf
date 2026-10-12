@@ -186,7 +186,11 @@ switch (_act) do {
                 _x ctrlCommit 0;
             } forEach _edges;
             _lbl ctrlSetPosition [_bx, _by - (ctrlPosition _lbl select 3), (_w * 0.4), ctrlPosition _lbl select 3];
-            _lbl ctrlSetText ((_txt) call comspec_atak_native_fnc_tr);
+            // Texte posé seulement s'il change (traduction et rendu à chaque image sinon, pour chaque cadre).
+            if ((_lbl getVariable ["txt", ""]) isNotEqualTo _txt) then {
+                _lbl setVariable ["txt", _txt];
+                _lbl ctrlSetText ((_txt) call comspec_atak_native_fnc_tr);
+            };
             _lbl ctrlSetTextColor _c;
             _lbl ctrlShow true;
             _lbl ctrlCommit 0;

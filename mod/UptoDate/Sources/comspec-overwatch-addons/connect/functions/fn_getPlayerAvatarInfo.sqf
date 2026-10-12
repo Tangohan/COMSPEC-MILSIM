@@ -12,7 +12,8 @@ private _steamUid = getPlayerUID player;
 if (_steamUid isEqualTo "") exitWith { [] };
 
 private _tenantId = missionNamespace getVariable ["comspec_overwatch_tenant_id", ""];
-private _raw = ["COMSPECExtension" callExtension ["GetPlayerAvatarInfo", [_steamUid, _tenantId]]] call comspec_overwatch_connect_fnc_extResult;
+// GET HTTP synchrone côté DLL : extAwait ne fige plus le jeu quand l'appelant est en spawn (direct sinon).
+private _raw = [["COMSPECExtension", "GetPlayerAvatarInfo", [_steamUid, _tenantId]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _raw splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 

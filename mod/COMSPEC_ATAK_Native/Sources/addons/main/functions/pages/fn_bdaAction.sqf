@@ -30,7 +30,7 @@ switch (_act) do {
             ["ekia", _f getOrDefault ["ekia", ""]], ["equip", _f getOrDefault ["equip", ""]], ["ammo", _f getOrDefault ["ammo", ""]],
             ["rem", _f getOrDefault ["rem", ""]], ["pos", [_pos select 0, _pos select 1, 0]], ["grid", [_pos, 8] call comspec_atak_native_fnc_gridRef]
         ];
-        [{ params ["_r", "_side"]; ["comspec_atak_native_bda", [_r, _side]] call CBA_fnc_globalEvent; }, [_r, str side group player], "BDA", 1] call comspec_atak_native_fnc_netSend;
+        [{ params ["_r", "_side"]; ["comspec_atak_native_sideEvent", ["comspec_atak_native_bda", [_r, _side], _side]] call CBA_fnc_serverEvent; }, [_r, str side group player], "BDA", 1] call comspec_atak_native_fnc_netSend;
         { _f deleteAt _x; } forEach ["ekia", "equip", "ammo", "rem"];
         ["SUCCESS", "Bilan des dégâts transmis au camp", 4, 40] call comspec_atak_native_fnc_notify;
         // Avec Overwatch : rapport BDA au poste web.

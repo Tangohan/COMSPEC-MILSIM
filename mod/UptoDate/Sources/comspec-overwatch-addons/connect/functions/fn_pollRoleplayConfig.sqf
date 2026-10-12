@@ -19,7 +19,19 @@ if (isServer && {!hasInterface}) exitWith {
 
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
 
-private _raw = ["COMSPECExtension" callExtension ["GetRoleplayConfig", []]] call comspec_overwatch_connect_fnc_extResult;
+// GET HTTP hors du thread de jeu : spawn + extAwait (un seul en vol, libéré au retour), puis relance
+// de cette fonction avec la réponse, traitée en non planifié comme avant (isNil).
+private _raw = _this param [0, nil, [""]];
+if (isNil "_raw") exitWith {
+    if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_RoleplayCfgBusyAt", -1e9])) < 60) exitWith { nil };
+    missionNamespace setVariable ["COMSPEC_RoleplayCfgBusyAt", diag_tickTime, false];
+    [] spawn {
+        private _r = [["COMSPECExtension", "GetRoleplayConfig", _this] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
+        missionNamespace setVariable ["COMSPEC_RoleplayCfgBusyAt", -1e9, false];
+        isNil { [_r] call comspec_overwatch_connect_fnc_pollRoleplayConfig };
+    };
+    nil
+};
 if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
 
 private _payload = _raw select [3, count _raw - 3];

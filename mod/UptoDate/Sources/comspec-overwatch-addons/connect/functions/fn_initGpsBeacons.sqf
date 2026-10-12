@@ -51,7 +51,8 @@ private _scan = {
         };
         if ([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag || {_listed}) then {
             _allies pushBackUnique _x;
-            _x enableDynamicSimulation false;
+            // Commande à effet global : seulement si encore active (sinon renvoyée à chaque passage).
+            if (dynamicSimulationEnabled _x) then { _x enableDynamicSimulation false; };
         };
         if ([_x, "COMSPEC_PhoneTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) then {
             _phones pushBackUnique _x;
@@ -62,7 +63,7 @@ private _scan = {
         private _obj = objectFromNetId _x;
         if (isNull _obj || {!alive _obj} || {isPlayer _obj}) then { continue };
         _allies pushBackUnique _obj;
-        _obj enableDynamicSimulation false;
+        if (dynamicSimulationEnabled _obj) then { _obj enableDynamicSimulation false; };
     } forEach _allyIds;
     _phones = _phones select { !isNull _x && {alive _x} };
     _allies = _allies select { !isNull _x && {alive _x} };
@@ -76,7 +77,13 @@ missionNamespace setVariable ["COMSPEC_GpsBeaconScan", _scan, false];
 
 [{
     if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith {};
-    [] call (missionNamespace getVariable ["COMSPEC_GpsBeaconScan", {}]);
+    // Balayage complet (vehicles + allUnits, drapeaux lus sur chaque objet) toutes les 12 s au lieu de 3 s :
+    // il tournait à chaque passage sur tous les postes. Les poses locales (set*Track / setGpsBeacon)
+    // alimentent déjà les listes directement.
+    if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_GpsBeaconScanAt", -1e9])) >= 12) then {
+        missionNamespace setVariable ["COMSPEC_GpsBeaconScanAt", diag_tickTime, false];
+        [] call (missionNamespace getVariable ["COMSPEC_GpsBeaconScan", {}]);
+    };
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
 
     private _vehs = missionNamespace getVariable ["COMSPEC_GpsBeaconObjects", []];

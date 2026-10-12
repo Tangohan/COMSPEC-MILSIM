@@ -27,7 +27,8 @@ if (!isNil "BCE_cTab_Marker_Sync") then {
 if ((_markerName select [0, 1]) isNotEqualTo "_") exitWith { true };
 
 // Filet : losange OTAN (o_inf, b_inf…) même si le nom IceMan change
-if (_markerName in allMapMarkers) then {
+// Existence via getMarkerColor ("" = absent) : « in allMapMarkers » recopiait toute la liste à chaque appel.
+if ((getMarkerColor _markerName) isNotEqualTo "") then {
     private _type = toLower (markerType _markerName);
     if ((_type select [0, 2]) in ["o_", "b_", "n_", "c_", "u_"]) exitWith { true };
 };

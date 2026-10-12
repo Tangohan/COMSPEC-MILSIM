@@ -2257,12 +2257,14 @@ class UserRepository
                      updated_at = NOW()
                  WHERE id = ? AND status = 'pending_verification'"
             )->execute([$userId]);
+            $this->activatePendingCommunityProfiles($userId);
 
             return;
         }
         $this->pdo()->prepare(
             "UPDATE users SET status = 'active', updated_at = NOW() WHERE id = ? AND status = 'pending_verification'"
         )->execute([$userId]);
+        $this->activatePendingCommunityProfiles($userId);
     }
 
     /**
@@ -3892,11 +3894,29 @@ class UserRepository
         if (!$this->hasEmailVerifiedColumn()) {
             $this->pdo()->prepare('UPDATE users SET status = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')
                 ->execute(['active', $userId, $tenantId]);
+            $this->activatePendingCommunityProfiles($userId);
 
             return;
         }
         $this->pdo()->prepare('UPDATE users SET email_verified_at = NOW(), status = ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?')
             ->execute(['active', $userId, $tenantId]);
+        $this->activatePendingCommunityProfiles($userId);
+    }
+
+    /**
+     * La connexion lit le statut de la fiche communauté (COALESCE(p.status, u.status)) : une fiche
+     * restée « pending_verification » bloquait le membre après un clic valide sur le lien.
+     * L'adresse étant commune à toutes les communautés, toutes ses fiches en attente passent actives.
+     */
+    private function activatePendingCommunityProfiles(int $userId): void
+    {
+        if ($userId < 1 || !$this->hasCommunityMembershipTable() || !$this->tableExists('user_community_profiles')) {
+            return;
+        }
+        $this->pdo()->prepare(
+            "UPDATE user_community_profiles SET status = 'active', updated_at = NOW()
+             WHERE user_id = ? AND status = 'pending_verification'"
+        )->execute([$userId]);
     }
 
     /** Comptes créés par l’admin : considérer l’e-mail comme déjà vérifié sans changer le statut choisi. */

@@ -108,10 +108,11 @@ private _m = ["COMSPEC_RscText", [_mx, _y, _mw, _h], _plain] call _mk;
 _m ctrlSetFontHeight _fs;
 // Coupe au dernier mot qui tient, avec « … ».
 if ((ctrlTextWidth _m) > _mw) then {
-    private _codes = toArray _plain;
+    // Coupe sur le texte déjà traduit (chaque morceau passait sinon par fn_tr et remplissait son cache).
+    private _codes = toArray ((_plain) call comspec_atak_native_fnc_tr);
     private _n = floor ((count _codes) * _mw / (ctrlTextWidth _m)) max 1;
     while {_n > 1} do {
-        _m ctrlSetText ((((toString (_codes select [0, _n])) + "…")) call comspec_atak_native_fnc_tr);
+        _m ctrlSetText ((toString (_codes select [0, _n])) + "…"); // i18n:brut
         if ((ctrlTextWidth _m) <= _mw) exitWith {};
         _n = _n - 2;
     };

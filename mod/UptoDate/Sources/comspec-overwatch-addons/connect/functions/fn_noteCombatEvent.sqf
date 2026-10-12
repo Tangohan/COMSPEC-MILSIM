@@ -12,7 +12,13 @@ if (!hasInterface) exitWith { false };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 if (isNull player || {!alive player}) exitWith { false };
 if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RespawnGraceUntil", -1e9])) exitWith { false };
-if !([player] call comspec_overwatch_connect_fnc_hasTerminal) exitWith { false };
+// Terminal relu au plus une fois par seconde : appelé à chaque balle en tir automatique (scan d'inventaire).
+private _termChk = missionNamespace getVariable ["COMSPEC_CombatTermChk", [-1e9, false, objNull]];
+if ((diag_tickTime - (_termChk select 0)) >= 1 || {(_termChk select 2) isNotEqualTo player}) then {
+    _termChk = [diag_tickTime, [player] call comspec_overwatch_connect_fnc_hasTerminal, player];
+    missionNamespace setVariable ["COMSPEC_CombatTermChk", _termChk, false];
+};
+if !(_termChk select 1) exitWith { false };
 
 private _kindNorm = toLower _kind;
 if !(_kindNorm in ["fire", "hit", "missile"]) exitWith { false };
