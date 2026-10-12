@@ -2,12 +2,17 @@
     Batterie simulée du téléphone (profil COMSPEC_ATAK_BatterySim et réglage serveur comspec_atak_native_battery_sim).
     Consommation par minute selon l'usage : veille, écran porté ou en main, mode nuit (écran sombre),
     appareil photo, live cam, guidage GPS, envois de données de la dernière minute, recherche de réseau
-    quand le signal est faible, brouilleur actif ; multiplicateur serveur comspec_atak_native_battery_drain.
+    quand le signal est faible, brouilleur actif. Réglages serveur : autonomie écran en main comspec_atak_native_battery_hours
+    (3 h par défaut, tous les usages suivent la même proportion), charge de départ comspec_atak_native_battery_start,
+    recharge en véhicule comspec_atak_native_battery_vehicle.
     Recharge à bord d'un véhicule moteur allumé ou par la batterie externe (fn_powerBank) ; balise IR alimentée par le téléphone. Alertes à 20 % et 5 % ; à 0 % le téléphone s'éteint (animation fn_powerFx)
     et reste inutilisable jusqu'à la recharge ou au changement de batterie (fn_batterySwap).
     Appelée chaque seconde écran ouvert (barre d'état) et toutes les 10 s sinon. Retourne le niveau 0–100.
     Détail de la dernière mesure : missionNamespace COMSPEC_ATAK_BatteryInfo = [% consommé par minute (négatif = recharge), [[facteur, % / min]...]].
 */
+if (isNil { missionNamespace getVariable "COMSPEC_ATAK_Battery" }) then {
+    missionNamespace setVariable ["COMSPEC_ATAK_Battery", 5 max (missionNamespace getVariable ["comspec_atak_native_battery_start", 100]) min 100];
+};
 private _level = missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100];
 if !((profileNamespace getVariable ["COMSPEC_ATAK_BatterySim", true]) && {missionNamespace getVariable ["comspec_atak_native_battery_sim", true]}) exitWith { 100 };
 if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { _level };
@@ -45,7 +50,8 @@ if (missionNamespace getVariable ["COMSPEC_ATAK_IrOn", false]) then { _f pushBac
 if (((missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) findIf { _x isEqualType [] && {(_x param [2, ""]) isEqualTo _uid} && {(_x param [4, 1e9]) > _t} }) >= 0) then { _f pushBack ["Brouilleur", 0.8]; };
 private _rate = 0;
 { _rate = _rate + (_x select 1); } forEach _f;
-_rate = _rate * (missionNamespace getVariable ["comspec_atak_native_battery_drain", 1]);
+// Les taux ci-dessus donnent environ 3 h écran en main (0,55 % / min) ; l'admin règle cette autonomie.
+_rate = _rate * 3 / ((missionNamespace getVariable ["comspec_atak_native_battery_hours", 3]) max 0.5);
 // Cellule abîmée (choc, balle, eau : fn_deviceDamage) : elle se vide jusqu'à trois fois plus vite.
 private _wear = ((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["battery", 0]) * ([0, 1] select (missionNamespace getVariable ["comspec_atak_native_damage_sim", true]));
 if (_wear > 0 && {_rate > 0}) then { _f pushBack ["Batterie endommagée", round (_rate * 2 * _wear * 100) / 100]; _rate = _rate * (1 + 2 * _wear); };
@@ -53,7 +59,8 @@ if (_wear > 0 && {_rate > 0}) then { _f pushBack ["Batterie endommagée", round 
 private _pb = ["rate", [_dt, _level]] call comspec_atak_native_fnc_powerBank;
 if (_pb < 0) then { _f pushBack [["label"] call comspec_atak_native_fnc_powerBank, _pb]; _rate = _rate + _pb; };
 private _veh = vehicle player;
-if (_veh isNotEqualTo player && {isEngineOn _veh}) then { _f pushBack ["Recharge véhicule", -3]; _rate = _rate - 3; };
+private _vr = missionNamespace getVariable ["comspec_atak_native_battery_vehicle", 3];
+if (_vr > 0 && {_veh isNotEqualTo player} && {isEngineOn _veh}) then { _f pushBack ["Recharge véhicule", -_vr]; _rate = _rate - _vr; };
 missionNamespace setVariable ["COMSPEC_ATAK_BatteryInfo", [_rate, _f]];
 
 private _old = _level;

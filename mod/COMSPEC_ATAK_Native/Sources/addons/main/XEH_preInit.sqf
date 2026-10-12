@@ -109,7 +109,23 @@ private _geo = ["COMSPEC", "ATAK · Géolocalisation (GEOLOC)"];
 ["comspec_atak_native_battery_sim", "CHECKBOX",
     ["Batterie simulée", "La batterie du téléphone se vide selon l'usage (écran, appareil photo, live cam, GPS, envois de données, recherche de réseau, brouilleur) et se recharge en véhicule moteur allumé. À 0 % le téléphone s'éteint et passe hors ligne dans le BFT."],
     _sim, true, 1] call CBA_fnc_addSetting;
-["comspec_atak_native_battery_drain", "SLIDER", ["Vitesse de décharge", "Multiplicateur de consommation de la batterie (1 = environ 3 h écran en main)."], _sim, [0.25, 4, 1, 2], 1] call CBA_fnc_addSetting;
+// Batterie et mémoire vive du téléphone : réglés par l'admin du serveur ou de la mission.
+private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
+["comspec_atak_native_battery_hours", "SLIDER",
+    ["Autonomie écran en main (h)", "Durée d'une charge complète téléphone en main, écran allumé. Les autres usages (veille, appareil photo, live cam, GPS, brouilleur…) consomment dans la même proportion : 3 h en main donnent environ 14 h en veille."],
+    _pow, [0.5, 24, 3, 1], 1] call CBA_fnc_addSetting;
+["comspec_atak_native_battery_start", "SLIDER",
+    ["Charge au début de la mission (%)", "Niveau de la batterie quand le joueur arrive en jeu. Les batteries de rechange sont toujours pleines."],
+    _pow, [5, 100, 100, 0], 1] call CBA_fnc_addSetting;
+["comspec_atak_native_battery_vehicle", "SLIDER",
+    ["Recharge en véhicule (% par minute)", "Vitesse de recharge à bord d'un véhicule moteur allumé. 0 : pas de recharge en véhicule."],
+    _pow, [0, 20, 3, 1], 1] call CBA_fnc_addSetting;
+["comspec_atak_native_ram_total", "LIST",
+    ["Mémoire vive du téléphone", "RAM du téléphone (le S7 a 4 Go). Android en prend environ 1,2 Go ; avec moins de mémoire, les apps en arrière-plan sont fermées plus tôt."],
+    _pow, [[2048, 3072, 4096, 6144, 8192, 12288], ["2 Go", "3 Go", "4 Go (S7)", "6 Go", "8 Go", "12 Go"], 2], 1] call CBA_fnc_addSetting;
+["comspec_atak_native_ram_bg", "SLIDER",
+    ["Apps gardées en arrière-plan", "Nombre maximum d'apps qu'Android garde en mémoire derrière l'app ouverte. Au-delà, ou quand la mémoire est pleine, les plus anciennes sont fermées."],
+    _pow, [0, 10, 6, 0], 1] call CBA_fnc_addSetting;
 ["comspec_atak_native_net_sim", "CHECKBOX",
     ["Débit réseau simulé", "Bâtiments, relief, véhicule, météo, brouilleurs, relais et dégâts réduisent le débit : messages et photos partent avec un délai, se perdent et repartent, ou attendent le retour du réseau."],
     _sim, true, 1] call CBA_fnc_addSetting;

@@ -22,6 +22,16 @@ Non testé en jeu. `run-migrations.php` à lancer (clé de mission, table des pe
 - La carte se centre sur le résultat : anneau pulsant, fiche (propriétaire, vu à, précision, grille), SUIVRE (balise et BFT toutes les 2 s, téléphone au rythme GÉOLOC), CENTRER, FERMER.
 
 
+### Nouveau — Batterie et mémoire réglables par l'admin
+- Réglages serveur CBA « COMSPEC › ATAK · Batterie et mémoire » :
+  - autonomie écran en main de 0,5 à 24 h (3 h par défaut, tous les usages suivent) ;
+  - charge au début de la mission ;
+  - recharge en véhicule en % par minute (0 = aucune) ;
+  - RAM du téléphone de 2 à 12 Go (4 Go par défaut) ;
+  - nombre d'apps gardées en arrière-plan (6 par défaut).
+- Mémoire pleine : Android ferme les apps d'arrière-plan les plus anciennes pour rester sous 90 %.
+- Remplace « Vitesse de décharge » : un serveur qui l'avait changée doit régler l'autonomie à la place.
+
 ### Nouveau — Données du jeu exploitées par le site
 - Clé de mission (`nom@carte#UTC`) stockée avec les positions, le temps d'écran et les comptes rendus ; onglet Relecture de /atak : sélecteur de mission.
 - Pertes amies envoyées au site (un seul téléphone par mort) : points rouges sur la relecture et total dans la synthèse.
