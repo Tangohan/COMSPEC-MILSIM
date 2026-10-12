@@ -25,6 +25,8 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration (déploiement PHP 
 - Site : correction de couleur automatique des photos reçues du jeu (téléphone, tablette, caméra casque ; pas la vision nocturne, la thermique ni le drone). Niveaux étirés, tons moyens plus denses, saturation un peu relevée ; l'original est gardé hors de la racine web (`storage/private/recon/originals`) et supprimé avec la photo (`PhotoAutoLevel`).
 - Appareil photo : F (flash) ne ressort plus l'arme. Les touches de l'appareil (Espace, R, F, T, zoom) restent au téléphone ; si le jeu voit quand même F, l'arme est rangée de nouveau.
 - Traits et repères du téléphone absents du site : quand l'envoi au site est refusé ou mis en attente, le téléphone l'affiche avec la raison (synchro des marqueurs coupée, liaison Athena pas prête…). COMSPEC Link note maintenant la raison de chaque refus.
+- Discord, photos postées (Quick Picture, drone) : champ « Téléphone » (« Terminal de contrôle » pour le drone) avec appareil et version ATAK, numéro, IMEI, MAC et batterie, chacun en texte masqué (spoiler, cliquer pour lire). Rien pour une photo confidentielle. La version ATAK arrive avec le nouveau connect de COMSPEC Link (`fn_phoneDeviceSync`, repaqueté).
+- Photos : logo de l'unité en filigrane (logo de l'organisation dans les paramètres du site, PNG transparent), avec « © UNITÉ » dessous, dans le coin opposé au bandeau. Désactivable dans Config ATAK > bandeau photo (« Logo de l'unité en filigrane »). Le texte gauche du bandeau ne chevauche plus l'heure.
 
 ## Vague 2026-10-12 (suite) — Réseau, drone, photos drone sur Discord, saleté (ATAK natif 1.16.0, COMSPEC Link 2.0.69)
 

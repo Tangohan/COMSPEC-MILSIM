@@ -1146,6 +1146,43 @@ class AtakApiController
         return $id;
     }
 
+    /**
+     * Téléphone de l'opérateur qui envoie la photo (session jeu) : numéro, IMEI, MAC, modèle et version de l'ATAK,
+     * batterie. Affiché flouté (spoiler) sous la photo publiée sur Discord. Vide si l'opérateur est inconnu.
+     *
+     * @return array<string, string>
+     */
+    private function reconPhoneIdent(int $tenantId): array
+    {
+        try {
+            if (\App\Support\ComspecApiKeyAuth::matchedTenantId() !== $tenantId) {
+                return [];
+            }
+            $userId = \App\Support\ComspecApiKeyAuth::matchedUserId();
+            if ($userId === null || $userId < 1) {
+                return [];
+            }
+            $row = (new \App\Repositories\GamePhoneIdentityRepository())->findRow($tenantId, $userId);
+            if ($row === null) {
+                return [];
+            }
+            $pick = static fn (string ...$keys): string => (string) (array_values(array_filter(
+                array_map(static fn (string $k): string => trim((string) ($row[$k] ?? '')), $keys),
+                static fn (string $v): bool => $v !== ''
+            ))[0] ?? '');
+
+            return array_filter([
+                'number' => $pick('live_number', 'phone_number'),
+                'imei' => $pick('live_imei', 'imei'),
+                'mac' => $pick('live_mac', 'mac'),
+                'model' => $pick('device_model'),
+                'battery' => isset($row['battery_pct']) && $row['battery_pct'] !== null ? (int) $row['battery_pct'] . ' %' : '',
+            ], static fn (string $v): bool => $v !== '');
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
     private function recompressIntelPhotoToJpeg(string $path): string
     {
         return \App\Support\IntelPhotoRecompress::recompressFile($path)['path'];
@@ -11953,6 +11990,7 @@ class AtakApiController
             // Relais Discord après l'enregistrement : photo jointe + carte, lieu, date/heure (champs facultatifs du jeu).
             // Clichés du drone compris (flux drone:<netId>). read_url : lecture sur Athena (route habilitée si confidentiel).
             $discordMeta = $data + [
+                'device_ident' => $this->reconPhoneIdent($tenantId),
                 'feed_id' => mb_substr($feedId, 0, 120),
                 'read_url' => (string) ($row['url'] ?? ''),
                 'map_id' => $mapId > 0 ? $mapId : self::DEFAULT_MAP_ID,

@@ -269,6 +269,7 @@ foreach ($dataSummary as $k => $v) {
         'show_grid' => ['Référence de grille', !empty($photoHud['show_grid']) || !array_key_exists('show_grid', $photoHud)],
         'show_heading' => ['Cap', !empty($photoHud['show_heading'])],
         'show_altitude' => ['Altitude', !empty($photoHud['show_altitude'])],
+        'show_logo' => ['Logo de l’unité en filigrane, avec « © unité »', !empty($photoHud['show_logo']) || !array_key_exists('show_logo', $photoHud)],
     ];
     ?>
     <div id="photo-hud" class="mb-8 border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
