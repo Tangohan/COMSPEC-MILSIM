@@ -254,7 +254,7 @@ if ($atakMapConfig) {
   <?php if (!empty($atakMaintenanceActive) && !empty($canAccessAdminAtakConfig)): ?>
   <div class="atak-maint-banner" role="status" style="position:relative;z-index:40;padding:0.65rem 1rem;background:#78350f;color:#fffbeb;font-size:0.85rem;text-align:center;">
     Mode maintenance actif — les opérateurs ne voient pas cette carte.
-    <a href="<?= htmlspecialchars(url('admin/atak-config'), ENT_QUOTES, 'UTF-8') ?>" style="color:#fde68a;font-weight:700;margin-left:0.5rem;">Gérer</a>
+    <a href="<?= htmlspecialchars(url('back-office/ressources/atak-config'), ENT_QUOTES, 'UTF-8') ?>" style="color:#fde68a;font-weight:700;margin-left:0.5rem;">Gérer</a>
   </div>
   <?php endif; ?>
   <div class="atak-api-outage" id="atak-api-outage" hidden role="status">
@@ -561,7 +561,7 @@ if ($atakMapConfig) {
           <a href="<?= url('atak/tuto') ?>">Tutoriel joueur</a>
           <a href="<?= url('equipment') ?>">Mes tenues</a>
           <?php if ($canAccessAdminAtakConfig): ?>
-          <a href="<?= url('admin/atak-config') ?>">Configuration admin</a>
+          <a href="<?= url('back-office/ressources/atak-config') ?>">Configuration ATAK</a>
           <?php endif; ?>
         </nav>
       </section>
@@ -609,7 +609,7 @@ if ($atakMapConfig) {
         <?php endif; ?>
         <p><a href="<?= url('atak/tuto') ?>">Tutoriel connexion en jeu</a></p>
         <?php if ($canAccessAdminAtakConfig): ?>
-        <p><a href="<?= url('admin/atak-config') ?>">Configurer le mod et le serveur</a></p>
+        <p><a href="<?= url('back-office/ressources/atak-config') ?>">Configurer le mod et le serveur</a></p>
         <?php endif; ?>
       </section>
       <?php else: ?>
@@ -973,7 +973,7 @@ if ($atakMapConfig) {
         </div>
       </details>
       <?php else: ?>
-      <p class="atak-game-config-warn" id="atak-no-node-url">Aucune adresse de serveur de liaison configurée. Complétez la <a href="<?= url('admin/atak-config') ?>">configuration ATAK</a> dans l’administration pour activer la liaison.</p>
+      <p class="atak-game-config-warn" id="atak-no-node-url">Aucune adresse de serveur de liaison configurée. Complétez la <a href="<?= url('back-office/ressources/atak-config') ?>">configuration ATAK</a> dans le back-office pour activer la liaison.</p>
       <?php endif; ?>
       <details class="atak-details">
         <summary>Votre adresse réseau (visiteur)</summary>
@@ -1728,7 +1728,7 @@ if ($atakMapConfig) {
             </ul>
           <?php endif; ?>
           <?php if (!empty($canAccessAdminAtakConfig)): ?>
-            <a class="atak-settings-icons__cta" href="<?= htmlspecialchars(url('admin/atak-config') . '#marker-icons', ENT_QUOTES, 'UTF-8') ?>">Choisir ou ajouter des icônes</a>
+            <a class="atak-settings-icons__cta" href="<?= htmlspecialchars(url('back-office/ressources/atak-config') . '#marker-icons', ENT_QUOTES, 'UTF-8') ?>">Choisir ou ajouter des icônes</a>
             <p class="atak-settings-copy atak-settings-copy--muted">Envoi d’une image, ou choix parmi celles déjà présentes. Les changements s’appliquent à toute la communauté ; rechargez ensuite la carte.</p>
           <?php else: ?>
             <p class="atak-settings-copy atak-settings-copy--muted">Le gestionnaire de la communauté choisit ces icônes dans la bibliothèque de la carte.</p>

@@ -224,5 +224,5 @@ $gradesQuerySuffix = static function (string $t, ?int $catId): string {
     <?php endif; ?>
     <?php endif; ?>
 
-    <p class="mt-8 text-sm text-slate-500"><a href="<?= url('back-office') ?>" class="underline">Retour administration organisationnelle</a></p>
+    <p class="mt-8 text-sm text-slate-500"><a href="<?= url('back-office') ?>" class="underline">Retour au back-office</a></p>
 </div>

@@ -74,7 +74,7 @@ $sectionLabelByKey = [
     'formations' => 'Formations',
     'effectifs' => 'Effectifs',
     'recrutement' => 'Recrutement',
-    'admin' => 'Administration',
+    'admin' => 'Gestion',
     'events' => 'Manœuvres',
 ];
 $sectionLabel = (string) ($athena_header_section ?? ($sectionLabelByKey[$currentKey] ?? 'Espace membre'));
@@ -134,7 +134,7 @@ if ($canRecruit) {
     ];
 }
 if ($canOpenBackOffice) {
-    $navItems[] = ['key' => 'admin', 'label' => $canAdmin ? 'Administration' : 'Mon espace', 'href' => url('back-office'), 'path' => 'back-office'];
+    $navItems[] = ['key' => 'admin', 'label' => $canAdmin ? 'Gestion' : 'Mon espace', 'href' => url('back-office'), 'path' => 'back-office'];
 }
 $navItems = array_values(array_filter(
     $navItems,
@@ -186,7 +186,7 @@ if ($canOpenBackOffice) {
     $espaceLinks[] = [
         'abbr' => 'BO',
         'label' => $canAdmin ? 'Back-office' : 'Mon back-office',
-        'desc' => $canAdmin ? 'Administration de la communauté' : 'Synthèse opérationnelle personnelle',
+        'desc' => $canAdmin ? 'Gestion de la communauté' : 'Synthèse opérationnelle personnelle',
         'href' => url('back-office'),
         'path' => 'back-office',
     ];

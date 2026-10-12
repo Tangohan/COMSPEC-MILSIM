@@ -249,6 +249,8 @@ final class TenantTypeConfig
             'back-office/ressources/atak-mod' => 'atak',
             'back-office/ressources/atak-mod-blocks' => 'atak',
             'back-office/ressources/atak-beta' => 'atak',
+            'back-office/ressources/atak-diffusion-rapports' => 'atak',
+            'back-office/ressources/atak-realism' => 'atak',
             'api/atak' => 'atak',
             'api/tacmap' => 'atak',
             'api/overwatch' => 'atak',
@@ -273,6 +275,8 @@ final class TenantTypeConfig
             'back-office/forum' => 'forum',
             'back-office/forum-moderation' => 'forum',
             'admin/content-moderation' => 'forum',
+            'back-office/ressources/forum-config' => 'forum',
+            'back-office/content-moderation' => 'forum',
             // Documents / courrier
             'documents' => 'documents',
             'courrier' => 'documents',
@@ -330,6 +334,7 @@ final class TenantTypeConfig
             'equipement' => 'operations',
             'modpacks' => 'operations',
             'admin/modpacks' => 'operations',
+            'back-office/ressources/modpacks' => 'operations',
             // Coopérations
             'cooperation' => 'cooperation',
             'interteam' => 'cooperation',

@@ -7,8 +7,7 @@ declare(strict_types=1);
  * Chaque entrée déclare son niveau d’accès (aligné sur le middleware de la route) :
  * - system : administrateur plateforme (SystemAdminMiddleware)
  * - hub    : administrateur ou assistance plateforme (PlatformHubMiddleware)
- * - org    : accès au back-office d’une communauté
- * - forum  : console de modération des fichiers
+ * - org    : sortie vers le back-office de sa propre communauté (gestion, pas administration)
  *
  * Expose aussi $platformAdminCrumbGroup (rubrique de la page courante) pour le fil d’Ariane.
  */
@@ -17,14 +16,12 @@ $gate = \App\Core\Gate::getInstance();
 $isPlatformAdmin = $gate->allows('admin.system');
 $isSupportHub = $gate->allows('site.support') && !$isPlatformAdmin;
 $hasOrgPath = $gate->allows('admin.organization') || $gate->allows('admin.access') || $gate->allows('site.support');
-$canForumModConsole = function_exists('forum_user_can_moderate') && forum_user_can_moderate();
 $h = static fn (string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 
 $accessOk = [
     'system' => $isPlatformAdmin,
     'hub' => $isPlatformAdmin || $isSupportHub,
     'org' => $hasOrgPath,
-    'forum' => $canForumModConsole,
 ];
 
 $icons = [
@@ -93,7 +90,6 @@ $platformNav = [
     ['key' => 'moderation', 'label' => 'Modération & sécurité', 'items' => [
         ['path' => 'admin/system/blocklist', 'label' => 'Liste de restriction', 'icon' => 'ban', 'access' => 'system', 'desc' => 'E-mails et réseaux bloqués sur tout le site'],
         ['path' => 'admin/system/member-sanctions', 'label' => 'Sanctions du site', 'icon' => 'gavel', 'access' => 'system', 'desc' => 'Restrictions de compte, forum, messagerie'],
-        ['path' => 'admin/content-moderation', 'label' => 'Modération des fichiers', 'icon' => 'file-check', 'access' => 'forum', 'desc' => 'Pièces jointes en quarantaine'],
     ]],
     ['key' => 'communication', 'label' => 'Communication', 'items' => [
         ['path' => 'admin/system/alerts', 'label' => 'Alertes plateforme', 'icon' => 'megaphone', 'access' => 'hub', 'desc' => 'Bandeaux et annonces sur le portail'],
@@ -113,11 +109,15 @@ $platformNav = [
         ['path' => 'admin/system/deployment/campaigns', 'label' => 'Campagnes de publication', 'icon' => 'flag', 'access' => 'system', 'desc' => 'Déploiements progressifs en cours'],
         ['path' => 'admin/system/deployment/communities', 'label' => 'Communautés de test', 'icon' => 'flask', 'access' => 'system', 'desc' => 'Communautés qui reçoivent les préversions'],
     ]],
+    ['key' => 'overwatch', 'label' => 'Mod Overwatch', 'items' => [
+        ['path' => 'admin/atak-beta', 'label' => 'Accès anticipé', 'icon' => 'flag', 'access' => 'system', 'desc' => 'Joueurs inscrits au pack bêta, toutes communautés'],
+        ['path' => 'admin/atak-mod-reports', 'label' => 'Rapports d’erreurs du mod', 'icon' => 'audit', 'access' => 'system', 'desc' => 'Erreurs remontées par le pack, toutes communautés'],
+    ]],
     ['key' => 'exploitation', 'label' => 'Exploitation', 'items' => [
         ['path' => 'admin/system/storage', 'label' => 'Espace disque', 'icon' => 'disk', 'access' => 'system', 'desc' => 'Occupation et vidage des historiques'],
         ['path' => 'admin/maintenance', 'label' => 'Maintenance des données', 'icon' => 'wrench', 'access' => 'hub', 'desc' => 'Fenêtres de maintenance planifiées'],
         ['path' => 'admin/audit', 'label' => 'Journal d’audit', 'icon' => 'audit', 'access' => 'hub', 'desc' => 'Toutes les actions sensibles'],
-        ['path' => 'back-office', 'label' => 'Back-office communauté', 'icon' => 'home', 'access' => 'org', 'desc' => 'Administration de votre communauté'],
+        ['path' => 'back-office', 'label' => 'Gestion de ma communauté', 'icon' => 'home', 'access' => 'org', 'desc' => 'Back-office de votre communauté (hors administration plateforme)'],
     ]],
 ];
 

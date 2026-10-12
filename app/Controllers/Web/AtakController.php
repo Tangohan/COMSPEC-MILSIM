@@ -668,7 +668,7 @@ class AtakController
             'atakUrl' => url('atak'),
             'docsUrl' => url('documentation') . '#diapositives-briefing-eden',
             'canManageMod' => function_exists('can') && (can('admin.access') || can('admin.organization')),
-            'adminModUrl' => url('admin/atak-mod'),
+            'adminModUrl' => url('back-office/ressources/atak-mod'),
         ]);
     }
 

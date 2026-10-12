@@ -139,8 +139,8 @@ $canTba = !empty($canTba);
                     <input type="radio" name="portal" value="tba" class="sr-only" required>
                     <span class="portal-card__abbr portal-card__abbr--cmd">CMD</span>
                     <span>
-                        <span class="block text-[10px] font-black uppercase tracking-[0.22em] text-amber-400/90">Administration</span>
-                        <span class="mt-1.5 block text-base font-bold text-white">Tableau de bord administratif</span>
+                        <span class="block text-[10px] font-black uppercase tracking-[0.22em] text-amber-400/90">Gestion</span>
+                        <span class="mt-1.5 block text-base font-bold text-white">Gestion de la communauté</span>
                         <span class="mt-1.5 block text-sm leading-relaxed text-white/50">Paramétrage, effectifs, recrutement, modération et outils d’état-major.</span>
                     </span>
                 </label>

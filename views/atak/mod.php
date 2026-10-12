@@ -12,7 +12,7 @@ $docsUrl = (string) ($docsUrl ?? url('documentation'));
 $owGuideUrl = (string) ($owGuideUrl ?? url('atak/mod/guide'));
 $owFormationUrl = (string) ($owFormationUrl ?? url('atak/mod/formation'));
 $canManageMod = !empty($canManageMod);
-$adminModUrl = (string) ($adminModUrl ?? url('admin/atak-mod'));
+$adminModUrl = (string) ($adminModUrl ?? url('back-office/ressources/atak-mod'));
 ?>
 <link href="<?= htmlspecialchars(asset_url('assets/css/atak-mod-download.css'), ENT_QUOTES, 'UTF-8') ?>" rel="stylesheet">
 

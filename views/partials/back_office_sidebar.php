@@ -184,7 +184,7 @@ try {
     $boTidSide = (int) \App\Core\Session::get('tenant_id');
     $boUserName = trim((string) (\App\Core\Session::get('display_name') ?? \App\Core\Session::get('callsign') ?? ''));
     if ($boUserName === '') {
-        $boUserName = 'Administrateur';
+        $boUserName = 'Gestionnaire';
     }
     $parts = preg_split('/\s+/u', $boUserName) ?: [];
     if (count($parts) >= 2) {
@@ -243,7 +243,7 @@ try {
 } catch (\Throwable) {
 }
 
-$tenantShort = $tenantLabel !== '' ? mb_strtoupper($tenantLabel, 'UTF-8') : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'ADMINISTRATION') : 'ADMINISTRATION');
+$tenantShort = $tenantLabel !== '' ? mb_strtoupper($tenantLabel, 'UTF-8') : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'GESTION') : 'GESTION');
 
 require __DIR__ . '/ath_sidebar_nav.php';
 
@@ -253,7 +253,7 @@ require __DIR__ . '/ath_sidebar_nav.php';
         <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__logo" aria-label="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au tableau de bord') : 'Retour au tableau de bord') ?>" title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au tableau de bord') : 'Retour au tableau de bord') ?>">A</a>
         <div class="ath-sidebar__brand">
             <a href="<?= $h(url('dashboard')) ?>" class="ath-sidebar__brand-name" title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Retour au tableau de bord') : 'Retour au tableau de bord') ?>">ATHENA<span>.</span></a>
-            <div class="ath-sidebar__brand-sub"><?= $h(!empty($isOperatorBoNav) ? 'ESPACE OPÉRATEUR' : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'ADMINISTRATION') : 'ADMINISTRATION')) ?> · <?= $h($tenantShort) ?></div>
+            <div class="ath-sidebar__brand-sub"><?= $h(!empty($isOperatorBoNav) ? 'ESPACE OPÉRATEUR' : (function_exists('i18n_phrase') ? i18n_phrase('nav', 'GESTION') : 'GESTION')) ?> · <?= $h($tenantShort) ?></div>
         </div>
         <button type="button" class="ath-sidebar__toggle" data-ath-sidebar-toggle title="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Plier le menu') : 'Plier le menu') ?>" aria-label="<?= $h(function_exists('i18n_phrase') ? i18n_phrase('nav', 'Plier le menu') : 'Plier le menu') ?>">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>

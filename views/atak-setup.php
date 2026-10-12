@@ -14,7 +14,7 @@ $atakModDownloadUrl = $atakModDownloadUrl ?? null;
         <a href="<?= $baseUrl ?>/atak/tuto" class="text-slate-600 hover:text-slate-900 text-sm font-medium">Tutoriel détaillé</a>
         <?php if (function_exists('can') && can('admin.access')): ?>
         <span class="text-slate-400">·</span>
-        <a href="<?= $baseUrl ?>/admin/atak-config" class="text-slate-600 hover:text-slate-900 text-sm font-medium">Config ATAK (admin)</a>
+        <a href="<?= $baseUrl ?>/back-office/ressources/atak-config" class="text-slate-600 hover:text-slate-900 text-sm font-medium">Configuration ATAK</a>
         <?php endif; ?>
     </nav>
 
@@ -83,7 +83,7 @@ $atakModDownloadUrl = $atakModDownloadUrl ?? null;
                 <?php endif; ?>
             </div>
             <?php else: ?>
-            <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">L’adresse du serveur de liaison n’est pas renseignée. Un administrateur doit compléter la <a href="<?= $baseUrl ?>/admin/atak-config" class="underline">configuration ATAK</a>.</p>
+            <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">L’adresse du serveur de liaison n’est pas renseignée. Un administrateur doit compléter la <a href="<?= $baseUrl ?>/back-office/ressources/atak-config" class="underline">configuration ATAK</a>.</p>
             <?php endif; ?>
         </section>
 

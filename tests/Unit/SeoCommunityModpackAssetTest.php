@@ -69,9 +69,9 @@ final class SeoCommunityModpackAssetTest extends TestCase
         self::assertStringContainsString('function uploadFinalize', $controller);
         self::assertStringContainsString('staged_upload_id', $controller);
         self::assertStringContainsString("normalizeExternalUrl", $controller);
-        self::assertStringContainsString('/admin/modpacks/upload/init', $routes);
-        self::assertStringContainsString('/admin/modpacks/upload/chunk', $routes);
-        self::assertStringContainsString('/admin/modpacks/upload/finalize', $routes);
+        self::assertStringContainsString('/back-office/ressources/modpacks/upload/init', $routes);
+        self::assertStringContainsString('/back-office/ressources/modpacks/upload/chunk', $routes);
+        self::assertStringContainsString('/back-office/ressources/modpacks/upload/finalize', $routes);
         self::assertStringContainsString('data-modpack-upload', $create);
         self::assertStringContainsString('name="url"', $create);
         self::assertStringContainsString('uploadChunked', $js);

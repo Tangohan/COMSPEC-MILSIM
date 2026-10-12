@@ -45,6 +45,8 @@ final class AdminAtakBetaRegistrationsController
         return Response::view('layout.main', [
             'title' => 'Accès anticipé Overwatch',
             'content' => 'admin.atak-beta-registrations.index',
+            'isPlatformAdminShell' => true,
+            'backOfficePageCss' => ['back-office-atak-beta.css'],
             'rows' => $rows,
             'total' => $total,
         ]);
@@ -122,15 +124,15 @@ final class AdminAtakBetaRegistrationsController
         try {
             $this->indicatorBlocklistService->addSteamBlock(
                 (int) $actor['id'],
-                'tenant',
-                $tenantId,
+                'global',
+                null,
                 $steam,
                 $reason,
                 null
             );
             Session::flash(
                 'success',
-                'Restriction Steam enregistrée. Le pack Overwatch refusera désormais cet accès pour votre communauté.'
+                'Restriction Steam enregistrée. Le pack Overwatch refusera désormais cet accès sur toute la plateforme.'
             );
         } catch (\Throwable $e) {
             Session::flash('error', $e->getMessage());
@@ -245,8 +247,8 @@ final class AdminAtakBetaRegistrationsController
             try {
                 $this->indicatorBlocklistService->addSteamBlock(
                     (int) $actor['id'],
-                    'tenant',
-                    $tenantId,
+                    'global',
+                    null,
                     $steam,
                     $reason,
                     null

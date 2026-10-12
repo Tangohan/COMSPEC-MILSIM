@@ -15,7 +15,7 @@ $img = trim((string) ($gp['image'] ?? ''));
         Ces réglages sont appliqués automatiquement après connexion — personne n’a à saisir un identifiant de communauté.
     </p>
     <div class="grid lg:grid-cols-2 gap-5">
-        <form action="<?= $h($baseUrl) ?>/admin/atak-config/game-experience" method="post" enctype="multipart/form-data" class="space-y-4">
+        <form action="<?= $h($baseUrl) ?>/back-office/ressources/atak-config/game-experience" method="post" enctype="multipart/form-data" class="space-y-4">
             <?= \App\Core\Csrf::field() ?>
             <div>
                 <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Personnalisation</h3>

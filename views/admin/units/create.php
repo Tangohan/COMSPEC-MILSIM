@@ -8,7 +8,7 @@ $unitTypes = $unitTypes ?? [];
     <?php if (\App\Core\Session::get('error')): ?>
     <p class="mb-4 text-sm text-red-600"><?= htmlspecialchars(\App\Core\Session::get('error')) ?></p>
     <?php \App\Core\Session::forget('error'); endif; ?>
-    <form action="<?= url('admin/units/store') ?>" method="post" class="space-y-4">
+    <form action="<?= url('back-office/units/store') ?>" method="post" class="space-y-4">
         <div>
             <label class="block text-sm font-medium text-slate-700 mb-1">Nom *</label>
             <input type="text" name="name" required class="w-full border border-slate-200 rounded px-3 py-2" value="<?= htmlspecialchars($_POST['name'] ?? '') ?>" />
@@ -54,7 +54,7 @@ $unitTypes = $unitTypes ?? [];
         </div>
         <div class="flex gap-3">
             <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Créer</button>
-            <a href="<?= url('admin/units') ?>" class="px-4 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Annuler</a>
+            <a href="<?= url('back-office/units') ?>" class="px-4 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Annuler</a>
         </div>
     </form>
 </div>

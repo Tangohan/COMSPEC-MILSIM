@@ -44,7 +44,7 @@ final class AtakMarkerIconsAssetTest extends TestCase
         self::assertStringContainsString('id="atak-settings-icons"', $view);
         self::assertStringContainsString('Icônes de la communauté', $view);
         self::assertStringContainsString('Choisir ou ajouter des icônes', $view);
-        self::assertStringContainsString("url('admin/atak-config') . '#marker-icons'", $view);
+        self::assertStringContainsString("url('back-office/ressources/atak-config') . '#marker-icons'", $view);
         self::assertStringContainsString('Déjà dans la bibliothèque', $view);
         self::assertStringContainsString('.atak-settings-icons__cta', $css);
         self::assertStringContainsString("can('admin.organization')", $controller);

@@ -79,5 +79,5 @@ $catalogLocked = $isEdit;
             <a href="<?= url('back-office/referentiels/grades') ?>?tab=<?= rawurlencode($returnTab) ?>" class="px-4 py-2 border border-slate-300 text-slate-700 text-sm font-medium rounded hover:bg-slate-50">Annuler</a>
         </div>
     </form>
-    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('back-office') ?>" class="underline">Retour administration organisationnelle</a></p>
+    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('back-office') ?>" class="underline">Retour au back-office</a></p>
 </div>

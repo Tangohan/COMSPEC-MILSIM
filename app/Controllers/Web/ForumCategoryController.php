@@ -182,8 +182,8 @@ class ForumCategoryController
             'forumFullCategoryAdmin' => $forumFullCategoryAdmin,
             'forumCanDeleteCategoryMenu' => $forumCanDeleteCategoryMenu,
             'forumCsrfToken' => Csrf::token(),
-            'forumCategoriesApiUrl' => url('api/admin/forum-categories'),
-            'forumAdminForumConfigUrl' => url('admin/forum-config'),
+            'forumCategoriesApiUrl' => url('api/back-office/forum-categories'),
+            'forumAdminForumConfigUrl' => url('back-office/ressources/forum-config'),
             'forumContextTenantId' => $forumDataTenantId,
             'forumSessionTenantId' => $sessionTenantId,
         ]);

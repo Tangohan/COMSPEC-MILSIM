@@ -119,7 +119,7 @@ $flashSuccess = \App\Core\Session::getFlash('success');
         L’expérience en jeu (image de connexion, méthodes d’accès, fonctions Overwatch) se règle dans la configuration ATAK.
         Les opérateurs s’identifient avec leur compte Athena : la communauté n’est plus saisie dans le jeu.
     </p>
-    <a class="ath-btn ath-btn--solid" href="<?= $h(url('admin/atak-config')) ?>#overwatch-game-experience">Ouvrir l’expérience en jeu</a>
+    <a class="ath-btn ath-btn--solid" href="<?= $h(url('back-office/ressources/atak-config')) ?>#overwatch-game-experience">Ouvrir l’expérience en jeu</a>
 </section>
 
 <section id="relais-discord" class="ath-card ath-rise" style="padding:18px 20px;margin-bottom:22px;">
