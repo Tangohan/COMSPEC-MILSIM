@@ -522,6 +522,8 @@ switch (_function) do {
         private _baseLow = toLower _name;
         if (_baseLow find "comspec_sse_face" >= 0) exitWith {};
         if (_baseLow find "comspec_fiche_" >= 0) exitWith {};
+        // Clichés du drone (ATAK natif) : envoyés par leur fiche (titre obligatoire), jamais remontés seuls depuis le disque.
+        if (_baseLow find "comspec_drone_" >= 0) exitWith {};
         // Anti double miroir Captures / Screenshots (même nom, chemins distincts).
         private _seen = missionNamespace getVariable ["COMSPEC_Athena_PhotoDiskSeen", []];
         if (!(_seen isEqualType [])) then { _seen = []; };

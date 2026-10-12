@@ -237,4 +237,5 @@ switch (_act) do {
         } forEach _all;
     };
 };
-true
+
+// Pas de valeur finale : ["reason"] renvoie la raison du switch (un « true » ici affichait NO DATA en permanence).
