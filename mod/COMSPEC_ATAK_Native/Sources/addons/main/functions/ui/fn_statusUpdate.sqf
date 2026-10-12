@@ -103,7 +103,11 @@ if (_page isEqualTo "MAP") then {
         // Recentrage seulement si j'ai bougé (ou zoomé) : sinon la carte tremble à chaque seconde.
         private _fk = [round ((getPosASL player) select 0), round ((getPosASL player) select 1), ctrlMapScale ((([] call comspec_atak_native_fnc_display)) displayCtrl 88530)];
         private _fl = uiNamespace getVariable ["COMSPEC_ATAK_FollowLast", [0, 0, 0]];
-        if ((([_fk select 0, _fk select 1] distance2D [_fl select 0, _fl select 1]) > 3) || {(_fk select 2) isNotEqualTo (_fl select 2)}) then {
+        // Le suivi image par image (fn_mapOnDraw) prend le relais dès le premier centrage : ici, seulement au besoin
+        // (premier affichage, zoom changé) ou en secours s'il a décroché (plus de 30 m).
+        private _fMap = (([] call comspec_atak_native_fnc_display)) displayCtrl 88530;
+        private _fFar = ((count (_fMap getVariable ["comspec_lastAim", []])) isNotEqualTo 2) || {(([_fk select 0, _fk select 1] distance2D [_fl select 0, _fl select 1]) > 30)};
+        if (_fFar || {(_fk select 2) isNotEqualTo (_fl select 2)}) then {
             uiNamespace setVariable ["COMSPEC_ATAK_FollowLast", _fk];
             [player] call comspec_atak_native_fnc_mapCenter;
         };

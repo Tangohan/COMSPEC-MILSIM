@@ -221,14 +221,14 @@ if (count _s > 0) then {
     _x2 ctrlSetFontHeight (_fs * 0.75);
     _x2 ctrlAddEventHandler ["ButtonClick", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["accSlot", ""]; ['refresh'] call comspec_atak_native_fnc_accessoriesAction; }];
     _y = _y + _fs * 1.9;
-    private _bW = _fs * 5.6;
+    private _btnW = _fs * 5.6;
     private _row = {
         params ["_icon", "_title", "_sub", "_alpha"];
         private _icH = _rowH * 0.8;
         private _ic = ["COMSPEC_RscPicture", [_pad, _y + _rowH * 0.1, _icH / _ratio, _icH], _icon] call _mk;
         _ic ctrlSetTextColor [1, 1, 1, _alpha];
         _ic ctrlEnable false;
-        [[_pad * 1.5 + _icH / _ratio, _y + _rowH * 0.05, _bw - _bW * 2 - _pad * 3 - _icH / _ratio, _rowH], format ["<t size='%1' font='RobotoCondensedBold'>%2</t><br/><t size='%3' color='#8a9a93'>%4</t>",
+        [[_pad * 1.5 + _icH / _ratio, _y + _rowH * 0.05, _bw - _btnW * 2 - _pad * 3 - _icH / _ratio, _rowH], format ["<t size='%1' font='RobotoCondensedBold'>%2</t><br/><t size='%3' color='#8a9a93'>%4</t>",
             _k * 0.85, [_title] call _esc, _k * 0.7, [_sub] call _esc]] call _txt;
     };
     // Monté actuellement.
@@ -237,9 +237,9 @@ if (count _s > 0) then {
     } else {
         [_s get "icon", "Emplacement vide", _s get "state", 0.25] call _row;
     };
-    private _bx = _bw - _pad - _bW;
+    private _bx = _bw - _pad - _btnW;
     if (_hasRemove) then {
-        private _b = ["COMSPEC_RscButton", [_bx, _y + _rowH * 0.15, _bW, _rowH * 0.7], _s get "remove"] call _mk;
+        private _b = ["COMSPEC_RscButton", [_bx, _y + _rowH * 0.15, _btnW, _rowH * 0.7], _s get "remove"] call _mk;
         _b ctrlSetFontHeight (_fs * 0.8);
         _b ctrlSetBackgroundColor [0.45, 0.14, 0.12, 1];
         _b ctrlAddEventHandler ["ButtonClick", ["remove"] call _do];
@@ -249,7 +249,7 @@ if (count _s > 0) then {
     {
         _x params ["_name", "_icon", "_count", "_arg"];
         [_icon, _name, format ["dans l'inventaire · x%1", _count], 1] call _row;
-        private _b = ["COMSPEC_RscButtonPrimary", [_bw - _pad - _bW, _y + _rowH * 0.15, _bW, _rowH * 0.7], ["FIXER", "REMPLACER"] select (_s get "mounted")] call _mk;
+        private _b = ["COMSPEC_RscButtonPrimary", [_bw - _pad - _btnW, _y + _rowH * 0.15, _btnW, _rowH * 0.7], ["FIXER", "REMPLACER"] select (_s get "mounted")] call _mk;
         _b ctrlSetFontHeight (_fs * 0.8);
         _b ctrlAddEventHandler ["ButtonClick", ["fix", _arg] call _do];
         _y = _y + _rowH + _pad * 0.4;

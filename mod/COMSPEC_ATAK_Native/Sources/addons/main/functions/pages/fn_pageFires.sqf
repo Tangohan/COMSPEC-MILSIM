@@ -22,20 +22,24 @@ if !(_tab in ["nine", "five"]) exitWith {
     private _pad = (_fl get "pad") * 1.6;
     private _hh = _font * 1.6;
     private _top = ["COMSPEC_RscText", [0, 0, _bw, _hh]] call comspec_atak_native_fnc_pageCtrl;
-    _top ctrlSetBackgroundColor [0.42, 0.49, 0.56, 1];
+    _top ctrlSetBackgroundColor [0.020, 0.026, 0.023, 1];
+    private _acc = ([] call comspec_atak_native_fnc_accent) select 0;
+    private _topLine = ["COMSPEC_RscText", [0, _hh - pixelH, _bw, pixelH]] call comspec_atak_native_fnc_pageCtrl;
+    _topLine ctrlSetBackgroundColor [_acc select 0, _acc select 1, _acc select 2, 0.45];
     private _tw = (_bw * 0.13) max (_fs * 5 * pixelH / pixelW);
     {
         _x params ["_t", "_k"];
         private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * (_tw + _pad / 2), _hh * 0.12, _tw, _hh * 0.76], _t] call comspec_atak_native_fnc_pageCtrl;
         _b ctrlSetFontHeight (_fs * 0.95);
-        _b ctrlSetBackgroundColor ([[0.36, 0.42, 0.48, 1], [0.49, 0.69, 0.88, 1]] select (_tab isEqualTo _k || {_k isEqualTo "cff" && {!(_tab in ["nine", "five"])}}));
-        _b ctrlSetTextColor [1, 1, 1, 1];
+        private _on = _tab isEqualTo _k || {_k isEqualTo "cff" && {!(_tab in ["nine", "five"])}};
+        _b ctrlSetBackgroundColor ([[0.11, 0.135, 0.12, 1], [_acc select 0, _acc select 1, _acc select 2, 1]] select _on);
+        _b ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.03, 0.05, 0.04, 1]] select _on);
         _b ctrlAddEventHandler ["ButtonClick", compile format ["['tab', '%1'] call comspec_atak_native_fnc_firesAction;", _k]];
     } forEach [["9-LINE", "nine"], ["5-LINE", "five"], ["APPEL DE FEU", "cff"]];
     // À droite : ma grille, mon altitude, le vent.
     private _info = ["COMSPEC_RscTextRight", [_pad + 3 * (_tw + _pad / 2), 0, _bw - _pad * 2 - 3 * (_tw + _pad / 2), _hh]] call comspec_atak_native_fnc_pageCtrl;
     _info ctrlSetFontHeight (_fs * 0.95);
-    _info ctrlSetTextColor [1, 1, 1, 1];
+    _info ctrlSetTextColor [0.78, 0.86, 0.82, 1];
     _info ctrlSetText ((format ["%1   %2   %3", [player, 10] call comspec_atak_native_fnc_gridRef,
         format [("ÉLÉV %1 m") call comspec_atak_native_fnc_tr, round ((getPosASL player) select 2)], ([] call comspec_atak_native_fnc_firesWind) select 0]) call comspec_atak_native_fnc_tr);
     [[0, _hh, _bw, _bh - _hh]] call comspec_atak_native_fnc_firesCff;

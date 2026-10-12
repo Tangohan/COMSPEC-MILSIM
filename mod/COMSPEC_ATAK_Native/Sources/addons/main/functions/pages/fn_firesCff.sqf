@@ -1,5 +1,5 @@
 /*
-    App CAS, onglet APPEL DE FEU : écran du clip (clip-motion, img/cff.jpg), clair, en panneaux.
+    App CAS, onglet APPEL DE FEU : mise en page du clip (clip-motion, img/cff.jpg) en panneaux, aux couleurs sombres du téléphone.
     Paysage : à gauche POSITION DE TIR, CIBLE et la solution ; à droite ÉTAT DE LA MISSION et JOURNAL.
     Portrait : les mêmes panneaux l'un sous l'autre (défilement). En bas : CALCULER, FIN DE MISSION, TIR.
     Champs gardés par fn_firesSave (clés gun, gunGrid, tgtGrid, az, dist, obsGrid, enemy, rounds) ; actions : fn_firesAction.
@@ -18,20 +18,25 @@ private _form = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_Form", _form];
 private _v = { params ["_k", ["_def", ""]]; _f getOrDefault [_k, _def] };
 
-// Couleurs du clip.
-private _cPage = [0.84, 0.86, 0.88, 1];
-private _cPanel = [0.97, 0.975, 0.98, 1];
-private _cHead = [0.30, 0.33, 0.37, 1];
-private _cLine = [0.80, 0.82, 0.85, 1];
-private _cBlue = [0.49, 0.69, 0.88, 1];
-private _cWhite = [1, 1, 1, 1];
-private _cInk = [0.16, 0.18, 0.21, 1];
-private _cDim = [0.55, 0.58, 0.62, 1];
-private _cYellow = [0.93, 0.83, 0.50, 1];
-private _cDark = [0.33, 0.38, 0.43, 1];
+// Couleurs : thème sombre du téléphone (fond vert nuit, panneaux, accent choisi), lisible de nuit et sous NVG.
+// Le thème clair du clip délavait l'écran en jeu.
+private _acc = ([] call comspec_atak_native_fnc_accent) select 0;
+private _cPage = [0.030, 0.038, 0.034, 1];
+private _cPanel = [0.058, 0.070, 0.063, 1];
+private _cHead = [0.60, 0.68, 0.64, 1];
+private _cLine = [0.16, 0.20, 0.17, 1];
+private _cBlue = [_acc select 0, _acc select 1, _acc select 2, 1];
+private _cWhite = [0.94, 0.97, 0.95, 1];
+private _cBtn = [0.11, 0.135, 0.12, 1];
+private _cField = [0.018, 0.022, 0.020, 1];
+private _cOnAcc = [0.03, 0.05, 0.04, 1];
+private _cInk = [0.90, 0.94, 0.91, 1];
+private _cDim = [0.55, 0.61, 0.58, 1];
+private _cYellow = [0.90, 0.66, 0.20, 1];
+private _cDark = [0.018, 0.024, 0.021, 1];
 private _cValue = [0.86, 0.95, 0.62, 1];
-private _cGrey = [0.62, 0.66, 0.70, 1];
-private _cRed = [0.89, 0.47, 0.40, 1];
+private _cGrey = [0.20, 0.235, 0.215, 1];
+private _cRed = [0.80, 0.24, 0.20, 1];
 
 private _land = (_rw / pixelW) > (_rh / pixelH) * 1.15;
 private _rowH = _font * 1.45;
@@ -59,13 +64,13 @@ private _mk = {
 private _btn = {
     params ["_pos", "_txt", "_code", ["_style", "off"], ["_parent", controlNull], ["_tip", ""]];
     private _cols = switch (_style) do {
-        case "sel": { [_cBlue, _cWhite] };
-        case "yellow": { [_cYellow, _cInk] };
-        case "blue": { [_cBlue, _cWhite] };
+        case "sel": { [_cBlue, _cOnAcc] };
+        case "yellow": { [_cYellow, _cOnAcc] };
+        case "blue": { [_cBlue, _cOnAcc] };
         case "grey": { [_cGrey, _cWhite] };
         case "red": { [_cRed, _cWhite] };
-        case "flat": { [_cWhite, _cDim] };
-        default { [_cWhite, _cInk] };
+        case "flat": { [_cBtn, _cDim] };
+        default { [_cBtn, _cInk] };
     };
     private _b = ["COMSPEC_RscButton", _pos, _txt, _cols select 0, _cols select 1, _fs * 0.95, _parent] call _mk;
     _b ctrlAddEventHandler ["ButtonClick", _code];
@@ -78,14 +83,14 @@ private _label = {
 };
 private _edit = {
     params ["_key", "_pos", "_val"];
-    private _e = ["COMSPEC_RscEdit", _pos, _val, _cWhite, _cInk, _font * 0.95] call _mk;
+    private _e = ["COMSPEC_RscEdit", _pos, _val, _cField, _cInk, _font * 0.95] call _mk;
     _form set [_key, _e];
     _e
 };
 // Valeur affichée seulement (champ grisé du clip).
 private _ro = {
     params ["_pos", "_txt"];
-    ["COMSPEC_RscText", _pos, _txt, [0.94, 0.945, 0.95, 1], _cDim, _font * 0.95] call _mk
+    ["COMSPEC_RscText", _pos, _txt, [0.045, 0.055, 0.050, 1], _cDim, _font * 0.95] call _mk
 };
 // Panneau titré : fond, liseré, titre ; renvoie le y du contenu.
 private _panel = {
@@ -119,7 +124,7 @@ private _drawFiring = {
     private _iw = _pw - 2 * _pad;
     // Pièce : liste des pièces du camp (bleue) et MAN.
     private _cw = _iw * 0.62;
-    private _combo = ["COMSPEC_RscCombo", [_ix, _cy, _cw, _rowH], "", _cBlue, _cWhite, _fs * 0.95] call _mk;
+    private _combo = ["COMSPEC_RscCombo", [_ix, _cy, _cw, _rowH], "", _cBtn, _cInk, _fs * 0.95] call _mk;
     { _combo lbSetData [_combo lbAdd (((([_x, _forEachIndex] call _gunName) + " · " + ([_x, 8] call comspec_atak_native_fnc_gridRef))) call comspec_atak_native_fnc_tr), netId _x]; } forEach _guns;
     if ((count _guns) isEqualTo 0) then { _combo lbAdd (("Aucune pièce du camp") call comspec_atak_native_fnc_tr); _combo lbSetData [0, "MAN"]; };
     private _ci = _guns findIf { netId _x isEqualTo _gunId };
@@ -218,7 +223,7 @@ private _drawSolution = {
     private _cw = (_pw - 2 * _pad) / 6;
     {
         _x params ["_t", "_val"];
-        ["COMSPEC_RscText", [_px + _pad + _forEachIndex * _cw, _py + _pad * 0.6, _cw, _fs], _t, [], [0.82, 0.85, 0.88, 1], _fs * 0.72] call _mk;
+        ["COMSPEC_RscText", [_px + _pad + _forEachIndex * _cw, _py + _pad * 0.6, _cw, _fs], _t, [], _cDim, _fs * 0.72] call _mk;
         private _vc = ["COMSPEC_RscLabel", [_px + _pad + _forEachIndex * _cw, _py + _pad * 0.6 + _fs, _cw, _rowH], "", [], _cValue, _font * 1.05] call _mk;
         _vc ctrlSetText ((_val) call comspec_atak_native_fnc_tr);
     } forEach _cells;
@@ -294,7 +299,7 @@ private _bw = _rw * ([0.16, 0.25] select !_land);
 {
     _x params ["_t", "_code", "_style", "_tip"];
     private _b = ["COMSPEC_RscButton", [_rx + _pad + _forEachIndex * (_bw + _pad), _by + _pad * 0.4, _bw, _barH - _pad * 0.8], _t, [], [], _font * 0.9, _d displayCtrl 88531] call _mk;
-    private _cols = switch (_style) do { case "blue": { [_cBlue, _cWhite] }; case "red": { [_cRed, _cWhite] }; default { [_cGrey, _cWhite] }; };
+    private _cols = switch (_style) do { case "blue": { [_cBlue, _cOnAcc] }; case "red": { [_cRed, _cWhite] }; default { [_cGrey, _cWhite] }; };
     _b ctrlSetBackgroundColor (_cols select 0);
     _b ctrlSetTextColor (_cols select 1);
     _b ctrlAddEventHandler ["ButtonClick", _code];
@@ -310,7 +315,7 @@ private _state = if ((_hint select 0) isNotEqualTo "") then { (_hint select 0) c
     if (_f getOrDefault ["active", false]) then { format [("%1 EN TIR · CIBLE %2") call comspec_atak_native_fnc_tr, _gunLabel, _tgtGrid] } else { "" }
 };
 if (_state isNotEqualTo "") then {
-    private _st = ["COMSPEC_RscTextRight", [_rx + _pad * 4 + 3 * (_bw + _pad), _by, _rw - _pad * 5 - 3 * (_bw + _pad), _barH], "", [], [[0.30, 0.33, 0.37, 1], _cRed] select (_hint select 1), _fs * 0.95, _d displayCtrl 88531] call _mk;
+    private _st = ["COMSPEC_RscTextRight", [_rx + _pad * 4 + 3 * (_bw + _pad), _by, _rw - _pad * 5 - 3 * (_bw + _pad), _barH], "", [], [_cHead, [0.95, 0.42, 0.36, 1]] select (_hint select 1), _fs * 0.95, _d displayCtrl 88531] call _mk;
     _st ctrlSetText ((_state) call comspec_atak_native_fnc_tr);
     (uiNamespace getVariable ["COMSPEC_ATAK_PageControls", []]) pushBack _st;
 };

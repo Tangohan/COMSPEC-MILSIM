@@ -6,6 +6,24 @@ private _state = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _selected = (_state getOrDefault ["selectedEntity",createHashMap]) getOrDefault ["id",""];
 private _labels = (["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 0;
 private _scale = ctrlMapScale _map;
+// Téléphone porté (ou « Suivre ma position ») : la carte suit le joueur à chaque image, sans à-coup.
+// fn_mapCenter pose le premier centrage et son décalage (comspec_lastAim) ; ensuite on glisse du même écart que le joueur.
+if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]}) then {
+    private _fwLast = _map getVariable ["comspec_lastAim", []];
+    if ((count _fwLast) isEqualTo 2 && {ctrlMapAnimDone _map} && {diag_tickTime - (_map getVariable ["comspec_centerAt", -1]) > 0.6}) then {
+        (ctrlPosition _map) params ["_fwX", "_fwY", "_fwW", "_fwH"];
+        private _fwVis = _map ctrlMapScreenToWorld [_fwX + _fwW / 2, _fwY + _fwH / 2];
+        private _fwPos = getPosASL (vehicle player);
+        private _fwDx = (_fwPos select 0) - (_fwVis select 0);
+        private _fwDy = (_fwPos select 1) - (_fwVis select 1);
+        if ((abs _fwDx) + (abs _fwDy) > 0.25) then {
+            private _fwAim = [(_fwLast select 0) + _fwDx, (_fwLast select 1) + _fwDy];
+            _map setVariable ["comspec_lastAim", _fwAim];
+            _map ctrlMapAnimAdd [0, _scale, _fwAim];
+            ctrlMapAnimCommit _map;
+        };
+    };
+};
 // Réglages > Carte « Cartouches des unités » : COMPLET (indicatif + distance / azimut), INDICATIF SEUL ou AUCUN.
 private _lblStyle = profileNamespace getVariable ["COMSPEC_ATAK_LabelStyle", "FULL"];
 private _lblOn = _labels && {_lblStyle isNotEqualTo "NONE"};
