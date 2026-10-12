@@ -359,7 +359,7 @@ final class ReconPhotoHudService
         $grid = preg_replace('/\s+/', ' ', $grid) ?? $grid;
         $agency = trim((string) ($cfg['agency'] ?? ''));
         $custom = trim((string) ($cfg['custom_line'] ?? ''));
-        $when = $this->formatStamp($meta['captured_at'] ?? null);
+        $when = $this->formatStamp($meta);
 
         $identity = [];
         if (!empty($cfg['show_device']) && $device !== '') {
@@ -455,9 +455,23 @@ final class ReconPhotoHudService
         return $text;
     }
 
-    private function formatStamp(mixed $capturedAt): string
+    /**
+     * Date et heure Zulu du bandeau : celles du jeu quand le téléphone les envoie (game_date « AAAA-MM-JJ »,
+     * game_time « HH:MM[:SS] », COMSPEC Link 2.0.74), sinon l'heure réelle de la prise de vue.
+     *
+     * @param array<string, mixed> $meta
+     */
+    public function formatStamp(array $meta): string
     {
-        $ts = ReconCapturedAt::unixFromPosted($capturedAt);
+        $date = trim((string) ($meta['game_date'] ?? ''));
+        $time = trim((string) ($meta['game_time'] ?? ''));
+        if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})$/', $date, $d) === 1
+            && preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $time, $t) === 1
+            && checkdate((int) $d[2], (int) $d[3], (int) $d[1])
+            && (int) $t[1] < 24 && (int) $t[2] < 60 && (int) ($t[3] ?? 0) < 60) {
+            return sprintf('%02d/%02d/%04d  %02d:%02d:%02d Z', (int) $d[3], (int) $d[2], (int) $d[1], (int) $t[1], (int) $t[2], (int) ($t[3] ?? 0));
+        }
+        $ts = ReconCapturedAt::unixFromPosted($meta['captured_at'] ?? null);
 
         return gmdate('d/m/Y  H:i:s', $ts) . ' Z';
     }

@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## 2026-10-12 — Tâches et ordres : crash, suivi par joueur, chef pour le groupe ; rejeux datés ; temps par rôle (ATAK natif 1.30.0)
+## 2026-10-12 — Tâches et ordres : crash, suivi par joueur, chef pour le groupe ; rejeux datés ; temps par rôle (ATAK natif 1.31.0)
 
 Non testé en jeu. Pas de DLL à recompiler. Côté site : la table `atak_order_responses` se crée toute seule à la première réponse.
 - Crash sur l'app Tâches (`can't resize AutoArray to negative size`, sans erreur de script avant) : les boutons des formulaires (SUIVRE, CARTE, REÇU…) redessinaient la page pendant leur propre clic, ce qui détruisait le bouton en cours d'exécution. Les clics passent maintenant à l'image suivante, et la colonne de texte d'une ligne n'a plus jamais une largeur nulle ou négative.
@@ -20,6 +20,13 @@ Non testé en jeu. Pas de DLL à recompiler. Côté site : la table `atak_order_
 - Chef d'un groupe de plusieurs joueurs : sa réponse vaut pour tout le groupe (statut mis à jour sur les téléphones des membres, note « Pour le groupe … » sur le site).
 - Rejeu (app AAR) : date et heure réelles de chaque image, début de la session. Clé de mission avec une date lisible (AAAAMMJJHHMM sur deux chiffres).
 - Site : tâches transmises en cartes (étapes Transmis, Vu, Reçu, En cours, Terminé ; réponses de chaque joueur ; filtre En cours, Créées en jeu, Toutes), tâches créées en jeu listées. Rejeux : jour, début, fin et durée de chaque session, heures locales. Fiche personnel et fiche ATAK : temps passé dans chaque rôle.
+## 2026-10-12 — Photos : vraie grille MGRS et heure Zulu du jeu (ATAK natif 1.30.0, COMSPEC Link 2.0.74)
+
+Non testé en jeu. Demande de TTRD : les photos envoyées doivent porter une vraie grille militaire et l'heure Zulu du jeu, pas celle du PC.
+
+- **Grille MGRS** : nouvelle fonction `fn_mgrsGrid` (connect). Le terrain est placé sur le globe par sa latitude et sa longitude (CfgWorlds), puis converti en UTM WGS84 : zone, bande, carré de 100 km et coordonnées à 1 m, par exemple `35S LC 12345 67890`. Remplace la grille Arma à 6 chiffres sur les photos envoyées.
+- **Heure Zulu du jeu** : la photo transmet la date, l'heure et le terrain de la partie (COMSPEC Link 2.0.74, champs `game_date`, `game_time`, `world_name`). Le bandeau incrusté par Athena et le relais Discord affichent cette heure. Sans ces champs (ancienne DLL), l'heure réelle reste utilisée.
+- À faire par TTRD : reconstruire la DLL avec `build_mod.bat`.
 
 ## Vague 2026-10-12 — Musique : bibliothèque du site et lecteur refait (ATAK natif 1.29.0, COMSPEC Link 2.0.73)
 

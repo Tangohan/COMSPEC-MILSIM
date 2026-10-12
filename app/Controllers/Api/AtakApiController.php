@@ -12030,7 +12030,11 @@ class AtakApiController
                 }
             }
             try {
-                (new \App\Services\Media\ReconPhotoHudService())->applyToFile($tenantId, $path, $data);
+                // Bandeau de la photo à l'heure du jeu (COMSPEC Link 2.0.74), sinon à l'heure réelle de la prise.
+                (new \App\Services\Media\ReconPhotoHudService())->applyToFile($tenantId, $path, $data + [
+                    'game_date' => mb_substr(trim((string) ($_POST['game_date'] ?? $_POST['gameDate'] ?? '')), 0, 40),
+                    'game_time' => mb_substr(trim((string) ($_POST['game_time'] ?? $_POST['gameTime'] ?? '')), 0, 16),
+                ]);
             } catch (\Throwable $hudErr) {
                 error_log('[atak/recon-images] photo hud ' . $hudErr->getMessage());
             }
