@@ -1,6 +1,6 @@
 /*
     Rendu du socle de recharge (serveur) : sélections du modèle charging_dock.p3d
-      0-9   phone1..10  : coque du téléphone posé (vest_phone{,_od,_black}_co, couleur du propriétaire), "" si libre
+      0-9   phone1..10  : coque du téléphone posé (vest_phone{,_od,_black}_co, couleur du propriétaire), transparent si libre
       10-19 screen1..10 : écran de charge (dock_screen_0..5_co : < 20 %, < 40, < 60, < 80, < 100, chargé)
       20-29 led1..10    : voyant (éteint, rouge < 20 %, orange en charge, vert chargé)
     Seules les textures qui changent sont renvoyées (setObjectTextureGlobal).
@@ -8,13 +8,15 @@
 */
 params ["_dock", "_slots"];
 private _data = "\z\comspec_atak_native\addons\main\data\";
+// Emplacement libre : téléphone et écran transparents (le modèle porte sinon un téléphone par défaut).
+private _none = "#(argb,8,8,3)color(0,0,0,0,ca)";
 private _want = [];
 private _screens = [];
 private _leds = [];
 {
     if ((count _x) < 4) then {
-        _want pushBack "";
-        _screens pushBack "";
+        _want pushBack _none;
+        _screens pushBack _none;
         _leds pushBack "#(argb,8,8,3)color(0.03,0.03,0.03,1,co)";
     } else {
         _x params ["", "", "_lv", "_tint"];

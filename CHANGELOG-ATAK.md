@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## 2026-10-12 — Tâches et ordres : crash, suivi par joueur, chef pour le groupe ; rejeux datés ; temps par rôle (ATAK natif 1.31.0)
+## 2026-10-12 — Tâches et ordres : crash, suivi par joueur, chef pour le groupe ; rejeux datés ; temps par rôle (ATAK natif 1.33.0)
 
 Non testé en jeu. Pas de DLL à recompiler. Côté site : la table `atak_order_responses` se crée toute seule à la première réponse.
 - Crash sur l'app Tâches (`can't resize AutoArray to negative size`, sans erreur de script avant) : les boutons des formulaires (SUIVRE, CARTE, REÇU…) redessinaient la page pendant leur propre clic, ce qui détruisait le bouton en cours d'exécution. Les clics passent maintenant à l'image suivante, et la colonne de texte d'une ligne n'a plus jamais une largeur nulle ou négative.
@@ -20,6 +20,17 @@ Non testé en jeu. Pas de DLL à recompiler. Côté site : la table `atak_order_
 - Chef d'un groupe de plusieurs joueurs : sa réponse vaut pour tout le groupe (statut mis à jour sur les téléphones des membres, note « Pour le groupe … » sur le site).
 - Rejeu (app AAR) : date et heure réelles de chaque image, début de la session. Clé de mission avec une date lisible (AAAAMMJJHHMM sur deux chiffres).
 - Site : tâches transmises en cartes (étapes Transmis, Vu, Reçu, En cours, Terminé ; réponses de chaque joueur ; filtre En cours, Créées en jeu, Toutes), tâches créées en jeu listées. Rejeux : jour, début, fin et durée de chaque session, heures locales. Fiche personnel et fiche ATAK : temps passé dans chaque rôle.
+## Drone : flux réparé, caméra, titre des clichés, caméra d'un équipier sur la carte (ATAK natif 1.31.0)
+
+Non testé en jeu. Retours de TTRD après le test du 12 octobre au soir. Pas de DLL à recompiler, pas de migration.
+- Flux du drone : le filtre NO DATA restait affiché en permanence, avec « true » écrit dessous. La fonction de la neige renvoyait toujours `true` au lieu de la raison de la coupure : n'importe quel flux passait pour coupé. Elle renvoie maintenant la vraie raison (vide quand le flux passe).
+- « Nacelle » devient « caméra » partout à l'écran (CAMÉRA CAP … · SITE …, DIRIGER LA CAMÉRA, aide et infobulles), en français comme en anglais.
+- Clichés du drone : plus rien ne part sur Athena ni sur Discord sans titre. ENVOYER sur une fiche sans titre rouvre la fiche avec un avertissement ; le champ s'appelle TITRE (obligatoire). L'envoi automatique depuis le dossier Screenshots (surveillance disque de COMSPEC Link) ignore désormais les fichiers COMSPEC_DRONE_ : c'est lui qui publiait les clichés aussitôt pris, sans titre, description ni SSE.
+- Panneau SITUATION de la carte : le texte se réduit tout seul tant qu'il ne tient pas au-dessus des calques (plus de ligne coupée ni de texte sous CALQUES) ; la météo tient sur deux lignes (Pluie, Vent) ; le dernier calque seul sur sa rangée prend toute la largeur (« Altitudes (heatmap) » lisible en entier).
+- VOIR CAMÉRA : dans l'app BFT (piste d'un équipier choisie) ou d'un clic droit sur un équipier de la carte (« Voir la caméra »), la carte se centre sur lui et sa caméra poitrine s'affiche en petite fenêtre en haut à gauche, à côté de la boussole (aussi sur la petite carte). Boutons : JOUR / VISION NOCT. / THERMIQUE, GRAND (app Vidéo live), FERMER. Le flux se coupe seul si l'équipier meurt ou perd son téléphone.
+
+À tester en jeu : ouvrir la caméra du drone (plus de NO DATA tant que la liaison passe, NO DATA avec une vraie raison quand on éloigne le drone) ; prendre un cliché et vérifier qu'aucun message n'arrive sur Discord avant ENVOYER, et qu'ENVOYER sans titre est refusé ; VOIR CAMÉRA depuis le BFT et depuis le clic droit, avec un deuxième joueur ; panneau SITUATION ouvert avec un long nom de groupe.
+
 ## 2026-10-12 — Photos : vraie grille MGRS et heure Zulu du jeu (ATAK natif 1.30.0, COMSPEC Link 2.0.74)
 
 Non testé en jeu. Demande de TTRD : les photos envoyées doivent porter une vraie grille militaire et l'heure Zulu du jeu, pas celle du PC.
