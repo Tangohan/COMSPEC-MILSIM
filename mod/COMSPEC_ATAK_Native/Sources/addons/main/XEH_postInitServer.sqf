@@ -5,6 +5,8 @@
     Un client demande la synchro à son arrivée (comspec_atak_native_syncReq) ; le serveur répond par comspec_atak_native_syncData.
 */
 if (!isServer) exitWith {};
+// Le serveur a le mod : il écrit le plan partagé de l'app Plan (sinon les clients gardent leurs tracés en brouillon).
+missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 // Socles de recharge CS-10 : mémoire, recharge et emplacements (fn_dockServer).
 ["init"] call comspec_atak_native_fnc_dockServer;
 // Adresse publique du serveur, pour reconnaître le serveur de la communauté (fn_serverPresence).
