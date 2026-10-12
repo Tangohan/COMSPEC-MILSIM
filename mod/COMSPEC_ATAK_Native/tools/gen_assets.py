@@ -169,6 +169,15 @@ ICONS = {
     "ui_bell": '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
     "ui_comspec_link": '<path d="M12 2.5l8.2 4.75v9.5L12 21.5l-8.2-4.75v-9.5z"/><path d="M10.4 13.6a2.6 2.6 0 0 0 3.7 0l1.9-1.9a2.6 2.6 0 0 0-3.7-3.7l-.6.6"/><path d="M13.6 10.4a2.6 2.6 0 0 0-3.7 0l-1.9 1.9a2.6 2.6 0 0 0 3.7 3.7l.6-.6"/>',
     "ui_vibrate": '<rect x="8" y="4" width="8" height="16" rx="1.5"/><path d="M4 8v8M20 8v8M2 10v4M22 10v4"/>',
+    # Volet rapide (fn_quickSettings) : tuiles et curseur de luminosité.
+    "qs_night": '<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z"/>',
+    "qs_airplane": '<path d="M12 2.5c.9 0 1.5.8 1.5 1.8V9l7.5 4.5v2L13.5 13v4.6l2.5 1.9V21L12 20l-4 1v-1.5l2.5-1.9V13L3 15.5v-2L10.5 9V4.3c0-1 .6-1.8 1.5-1.8z"/>',
+    "qs_silent": '<path d="M6 16.5V11a6 6 0 0 1 9.8-4.6M18 10.5v6l1.5 2H8"/><path d="M10 20.5a2 2 0 0 0 4 0"/><path d="M3.5 3.5l17 17"/>',
+    "qs_bt": '<path d="M7 7.5l10 9-5 4.5V3l5 4.5-10 9"/>',
+    "qs_ir": '<path d="M9 21h6M10 21V11h4v10"/><rect x="9" y="7" width="6" height="4" rx="1"/><path d="M12 2v2.5M5.5 4.5l1.8 1.8M18.5 4.5l-1.8 1.8M3.5 10h2M18.5 10h2"/>',
+    "qs_battery": '<rect x="7" y="4.5" width="10" height="17" rx="1.6"/><path d="M10 2.5h4"/><path d="M9.5 15h5M9.5 18h5" stroke-width="2.2"/>',
+    "qs_sun": '<circle cx="12" cy="12" r="4.2"/><path d="M12 1.8v2.6M12 19.6v2.6M1.8 12h2.6M19.6 12h2.6M4.8 4.8l1.8 1.8M17.4 17.4l1.8 1.8M4.8 19.2l1.8-1.8M17.4 6.6l1.8-1.8"/>',
+    "qs_sun_low": '<circle cx="12" cy="12" r="3.6"/><path d="M12 5.5v1.2M12 17.3v1.2M5.5 12h1.2M17.3 12h1.2M7.4 7.4l.9.9M15.7 15.7l.9.9M7.4 16.6l.9-.9M15.7 8.3l.9-.9"/>',
     # Main ouverte : « prendre en main » (pastille Ctrl+Maj+U du téléphone porté).
     "ui_hand": '<path d="M9.1 12V5.6a1.3 1.3 0 0 1 2.6 0V11M11.7 11V4.3a1.3 1.3 0 0 1 2.6 0V11M14.3 11V5.6a1.3 1.3 0 0 1 2.6 0V11M16.9 11.2V8.3a1.3 1.3 0 0 1 2.6 0v5.4c0 4.1-2.8 7.3-6.6 7.3-2.7 0-4.3-1.3-5.8-3.5l-2.6-4a1.4 1.4 0 0 1 2.2-1.7l2.4 2.8V8.2"/>',
 }
@@ -1754,6 +1763,12 @@ def main():
         # « hand » : seulement l'icône main (pastille « prendre en main » du téléphone porté).
         if len(sys.argv) > 2 and sys.argv[2] == "hand":
             convert(icon_png("ui_hand", ICONS["ui_hand"]), "ui_hand", tmp)
+            return
+        # « qsicons » : seulement les icônes du volet rapide.
+        if len(sys.argv) > 2 and sys.argv[2] == "qsicons":
+            for name, body in ICONS.items():
+                if name.startswith("qs_"):
+                    convert(icon_png(name, body), name, tmp)
             return
         # « athena » : seulement le fond ATHENA (logo du coin effacé) et sa variante floutée.
         if len(sys.argv) > 2 and sys.argv[2] == "athena":

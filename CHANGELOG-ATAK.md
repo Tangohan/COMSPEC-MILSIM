@@ -20,6 +20,14 @@ Non testé en jeu. Demande de TTRD : l'app Photo doit s'ouvrir sur l'appareil ph
 - Au déclenchement, l'écran bascule un instant sur une caméra posée comme le viseur (même zoom), téléphone et HUD masqués, puis la photo part vers Athena (gardée sur le téléphone hors réseau).
 - **Nouvelle app Galerie** (section Renseignement, à côté de Photo) : onglets PHOTOS (photos du téléphone et clichés du drone, filtres, fiches, envoi, suppression) et ENVOIS (suivi de réception par Athena). C'est l'ancienne partie GALERIE / ENVOIS de l'app Photos, déplacée.
 - Sans « Image dans l'image » (PiP) dans les options vidéo d'Arma, le viseur l'indique et propose le plein écran.
+
+## Volet rapide redessiné, portrait opérateur du site (ATAK natif 1.17.0)
+
+Non testé en jeu. Demande de TTRD : « Améliore l'UI du menu et affiche l'image de l'opérateur issue du web ».
+- Volet Réglages rapides (tiré de la barre d'état) : en tête, la fiche de l'opérateur avec son portrait Athena encadré (couleur d'accent quand Athena est en ligne), indicatif, grade et nom, unité et communauté ; à droite l'heure en grand, la date du jour et l'état de la liaison Athena.
+- Sans portrait (hors ligne, pas encore reçu ou aucun sur le site) : les initiales de l'indicatif à la place. Le portrait apparaît tout seul dès qu'il arrive.
+- Tuiles avec icône (lune, avion, cloche barrée, vibreur, Bluetooth, balise IR, réseau, batterie) ; allumée = fond teinté de l'accent et liseré en haut. Luminosité avec deux soleils et la valeur en %, mise à jour pendant le glissé. TOUS LES RÉGLAGES en accent, FERMER discret.
+- Site : `/api/atak/player-profile` renvoie le portrait opérateur (jamais la photo de compte ni Steam), en vignette JPEG carrée 256 px recadrée vers le visage (`uploads/portraits/atak/`), car Arma ne lit ni PNG ni WebP. Le même portrait s'affiche donc aussi dans les apps Athena, Profil, Groupe et Chat. Pas de DLL à recompiler, pas de migration.
 - Textes traduits en anglais.
 
 ## Correctif 2026-10-12 — App CAS, alertes du poste, barre de dessin (ATAK natif 1.16.2)
