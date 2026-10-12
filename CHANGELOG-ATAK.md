@@ -11,6 +11,42 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vague 2026-10-12 — Retours de test en jeu (ATAK natif 1.10.0)
+
+Non testé en jeu. Inclut les correctifs de performance de la PR #629 (même base). DLL à recompiler (`build_mod.bat`) pour le presse-papiers du Plan.
+
+### Nouveau — App Plan (carte de briefing)
+- Carte fixe nord en haut, indépendante du joueur et de la caméra ISR ; le plan est stocké en coordonnées monde, identique pour tous.
+- Zones ENY, INFIL, EXFIL, OBJ, AO, NAI, EA, AA, HLZ, NFA ; lignes PL, LD, LOA, limite, itinéraire, axe d'effort, attaques principale et secondaire, stylo ; points CLEARED n / UNCLEARED n, unités amie/ennemie, note, CP, RP, TRP, OBJ, SBF, ABF.
+- Stylo lissé ou segments clic par clic, pointillés, flèche dans le sens du tracé, épaisseur, couleur, étiquettes.
+- Plan partagé par camp (serveur seul écrivain, JIP) ; droit d'édition par réglage CBA `comspec_atak_native_plan_edit` (tous / chefs de groupe + Zeus + admin par défaut / Zeus + admin).
+- Plans nommés (aperçu, chargement, publication en ajout ou remplacement), export/import en texte `COMSPECPLAN1|…`. Onglet CARTE dans Briefing.
+
+### Amélioré — Dessin libre et carte
+- Traits lissés et allégés, barre couleur / épaisseur / flèche / forme fermée / Défaire / Effacer mes traits ; épaisseur et flèche visibles par tous.
+- Les dessins libres arrivent sur la carte Overwatch beta (le point provisoire est remplacé par le tracé ; décalage de carte appliqué aux polylignes).
+- Clic droit : menu redessiné sans redessiner la page (en-tête grille, altitude, distance, azimut ; Y aller, Centrer ici, Copier la grille).
+- Le léger voile noir des transitions de page est désactivé par défaut (Réglages > Animations et sons > « Transitions entre les pages »).
+
+### Refonte — App Drone
+- Onglets VOL / TÂCHES / CIBLES / PHOTOS / JOURNAL ; barre de boutons par groupes (Caméra, Cibles, Vol, Affichage) avec libellés clairs ; « Pistes » devient CIBLES (cibles marquées + détections automatiques).
+- Suivi des cibles marquées : une ou plusieurs, dans l'ordre choisi, en filature ou en orbite, temps par cible réglable.
+- Clichés photo depuis le drone, avec formulaire avant envoi : titre, description, SSE oui/non, confidentiel oui/non.
+- La caméra ne voit plus le drone lui-même ; qualité du flux Basse / Moyenne / Haute ; nacelle plus douce.
+- Mode petit : vue totale de la caméra ; plus d'écran noir à la réouverture ; neige grise « NO DATA » sans flux.
+- Source du flux : drone, caméra ATAK ou caméra casque (soi ou un membre du groupe).
+- Marquage corrigé sur les véhicules (« Rien sous le réticule »).
+
+### Corrigé / amélioré — Interface
+- Briefing : texte géant (« ||0.8% ») des fiches du journal de mission ramené à taille normale.
+- Réseau : la page s'ouvre de nouveau.
+- Écran de verrouillage redessiné (heure, puces d'état, cartes de notification avec icône).
+- Applications V2 : logo du fond qui chevauchait la première section retiré, en-têtes de section, recherche.
+- SSE : bouton « Fiche rapide » (FRM, FRC, FRO, FRT) qui ouvre une FRS préremplie.
+- Photo : la souris vise de nouveau en zoom, flash moins violent (rendu délavé), cadres de visée retirés du cliché, interface revue.
+- Mode porté : pastille main + « Ctrl+Maj+U » au lieu de la phrase, masquable.
+- Personnalisation : style d'horloge, thèmes rapides (Opérations, Nuit, Désert, Athena), interrupteurs pastille et recherche.
+
 ## Vague 2026-10-11 (suite) — Un téléphone qui réagit (ATAK natif 1.9.0)
 
 ### Nouveau — Mouvement, toasts, volet rapide, écran de verrouillage
