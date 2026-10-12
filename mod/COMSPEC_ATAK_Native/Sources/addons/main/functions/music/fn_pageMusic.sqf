@@ -1,5 +1,6 @@
 /*
-    App Musique : onglets LECTURE (lecteur, volume, haut-parleur, file d'attente, haut-parleurs proches),
+    App Musique : onglets LECTURE (lecteur, avance / recul, volume, haut-parleur, file d'attente, favoris, haut-parleurs proches),
+    ATHENA (bibliothèque musicale du site : playlist globale, communauté, organisation, playlists, mes envois),
     FICHIERS (dossier local Documents\Arma 3\COMSPEC_Music), SERVEUR (pistes Arma, mods, mission et radio de la mission)
     et LIEN (fichier audio ou webradio par URL).
 */
@@ -17,7 +18,7 @@ private _esc = { params ["_t"]; { _t = [_t, _x select 0, _x select 1] call CBA_f
 private _fmt = { params ["_s"]; if (_s <= 0) exitWith { "" }; _s = floor _s; format ["%1:%2", floor (_s / 60), [str (_s mod 60), "0" + str (_s mod 60)] select ((_s mod 60) < 10)] };
 private _act = { params ["_a", ["_v", ""]]; compile format ["[%1, %2] call comspec_atak_native_fnc_musicAction;", str _a, str _v] };
 private _tabBtn = { params ["_t", "_k"]; [_t, ["tab", _k] call _act, _tab isEqualTo _k] };
-private _rows = [["segment", "", [["LECTURE", "PLAY"] call _tabBtn, ["FICHIERS", "LOCAL"] call _tabBtn, ["SERVEUR", "SRV"] call _tabBtn, ["LIEN", "URL"] call _tabBtn]]];
+private _rows = [["segment", "", [["LECTURE", "PLAY"] call _tabBtn, ["ATHENA", "ATH"] call _tabBtn, ["FICHIERS", "LOCAL"] call _tabBtn, ["SERVEUR", "SRV"] call _tabBtn, ["LIEN", "URL"] call _tabBtn]]];
 if !(missionNamespace getVariable ["comspec_atak_native_music_enabled", true]) exitWith {
     _rows pushBack ["text", "<t color='#f2ab33'>La musique est désactivée sur ce serveur.</t>"];
     [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
@@ -27,20 +28,81 @@ if !(missionNamespace getVariable ["comspec_atak_native_music_enabled", true]) e
 private _lists = createHashMap;
 uiNamespace setVariable ["COMSPEC_ATAK_MusicLists", _lists];
 private _listRef = { params ["_key"]; format ["((uiNamespace getVariable ['COMSPEC_ATAK_MusicLists', createHashMap]) getOrDefault [%1, []])", str _key] };
-// Ligne de piste : vignette, titre, durée, boutons LIRE et + FILE.
+// Favoris (profil) : une piste Athena est reconnue par son identifiant, son URL signée changeant.
+private _favs = profileNamespace getVariable ["COMSPEC_ATAK_MusicFavs", []];
+private _isFav = {
+    params ["_k", "_r", ["_id", ""]];
+    (_favs findIf { (_x select 0) isEqualTo _k && {(_x select 1) isEqualTo _r || {_id isNotEqualTo "" && {(_x param [5, ""]) isEqualTo _id}}} }) >= 0
+};
+// Ligne de piste : vignette, titre, durée, boutons LIRE, + FILE et FAV.
 private _trackRow = {
     params ["_key", "_i", ["_sub", ""]];
     private _items = _lists getOrDefault [_key, []];
-    (_items select _i) params ["_k", "_r", "_t", ["_len", 0]];
-    private _isCur = (_m get "kind") isEqualTo _k && {(_m get "ref") isEqualTo _r};
+    (_items select _i) params ["_k", "_r", "_t", ["_len", 0], ["_artist", ""], ["_id", ""]];
+    private _isCur = (_m get "kind") isEqualTo _k && {(_m get "ref") isEqualTo _r || {_id isNotEqualTo "" && {((_m get "queue") param [_m get "qi", []]) param [5, ""] isEqualTo _id}}};
     ["person", _icon, format ["<t %1>%2</t><br/><t size='0.75' color='#8a9a93'>%3%4</t>", ["", format ["color='%1' font='RobotoCondensedBold'", _accHex]] select _isCur,
         [_t] call _esc, [_sub] call _esc, ["", format [" · %1", [_len] call _fmt]] select (_len > 0)],
         [["LIRE", compile format ["['playList', [%1, %2]] call comspec_atak_native_fnc_musicAction;", [_key] call _listRef, _i], true],
-         ["+ FILE", compile format ["['enqueue', +(%1 select %2)] call comspec_atak_native_fnc_musicAction;", [_key] call _listRef, _i]]],
+         ["+ FILE", compile format ["['enqueue', +(%1 select %2)] call comspec_atak_native_fnc_musicAction;", [_key] call _listRef, _i]],
+         ["FAV", compile format ["['fav', +(%1 select %2)] call comspec_atak_native_fnc_musicAction;", [_key] call _listRef, _i], [_k, _r, _id] call _isFav, true, "Ajouter / retirer des favoris"]],
         [[0.55, 0.6, 0.58, 1], _acc] select _isCur]
 };
 
 switch (_tab) do {
+    case "ATH": {
+        private _ath = uiNamespace getVariable ["COMSPEC_ATAK_MusicAth", createHashMap];
+        private _view = _ui getOrDefault ["ath", "global"];
+        private _isPl = (_view select [0, 3]) isEqualTo "pl:";
+        private _vBtn = { params ["_t", "_v", ["_tip", ""]]; [_t, ["ath", _v] call _act, _view isEqualTo _v || {_v isEqualTo "playlists" && {_isPl}}, _tip] };
+        _rows pushBack ["segment", "Bibliothèque du site Athena", [
+            ["GLOBALE", "global", "Playlist globale de la plateforme"] call _vBtn,
+            ["COMMUNAUTÉ", "community", "Bibliothèque communautaire : toute la plateforme"] call _vBtn,
+            ["MON ORGA", "org", "Bibliothèque de mon organisation"] call _vBtn,
+            ["PLAYLISTS", "playlists", "Playlists publiques, de mon organisation et les miennes"] call _vBtn,
+            ["MES ENVOIS", "mine", "Les morceaux que j'ai mis en ligne"] call _vBtn
+        ]];
+        if !(missionNamespace getVariable ["comspec_atak_native_music_athena", true]) exitWith {
+            _rows pushBack ["text", "<t color='#f2ab33'>Bibliothèque Athena désactivée sur ce serveur.</t>"];
+        };
+        (_ath getOrDefault [_view, [[], "", "", false]]) params ["_items", "_at", "_err", "_busy"];
+        if (_view isEqualTo "playlists") then {
+            _rows pushBack ["section", "Playlists", format ["%1 playlist(s)%2", count _items, ["", format [" · synchro %1", _at]] select (_at isNotEqualTo "")]];
+            _rows pushBack ["buttons", [["ACTUALISER", ["athReload"] call _act, false, !_busy]]];
+            if (_busy) then { _rows pushBack ["text", "<t color='#8a9a93'>Chargement depuis Athena…</t>"]; };
+            if (_err isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e5483a'>%1</t>", [_err] call _esc]]; };
+            if ((count _items) isEqualTo 0 && {!_busy} && {_err isEqualTo ""}) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucune playlist. Créez-en sur le site : Mon espace > Musique.</t>"]; };
+            private _kinds = createHashMapFromArray [["global", "Globale"], ["public", "Publique"], ["org", "Organisation"], ["private", "Privée"]];
+            {
+                _x params ["_id", "_name", "_owner", "_n", "_kind", ["_desc", ""]];
+                _rows pushBack ["person", _icon, format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.75' color='#8a9a93'>%2 · %3 · %4 morceau(x)</t>", [_name] call _esc,
+                    _kinds getOrDefault [_kind, _kind], [_owner] call _esc, _n],
+                    [["OUVRIR", compile format ["['athOpen', [%1, %2]] call comspec_atak_native_fnc_musicAction;", str _id, str _name], true]], [[0.55, 0.6, 0.58, 1], _acc] select (_kind isEqualTo "global")];
+            } forEach _items;
+        } else {
+            private _titles = createHashMapFromArray [["global", "Playlist globale"], ["community", "Bibliothèque communautaire"], ["org", "Bibliothèque de mon organisation"], ["mine", "Mes envois"]];
+            private _title = if (_isPl) then { (_ui getOrDefault ["athPl", ["", "Playlist"]]) param [1, "Playlist"] } else { _titles getOrDefault [_view, _view] };
+            _rows pushBack ["section", _title, format ["%1 morceau(x)%2", count _items, ["", format [" · synchro %1", _at]] select (_at isNotEqualTo "")]];
+            if (_view isNotEqualTo "global" && {!_isPl}) then {
+                _rows pushBack ["edit", "musicAthSearch", "Rechercher un titre ou un artiste", _ui getOrDefault ["athQ", ""]];
+            };
+            _lists set ["ath", _items];
+            _rows pushBack ["buttons", [
+                ["TOUT LIRE", compile format ["['playList', [%1, 0]] call comspec_atak_native_fnc_musicAction;", ["ath"] call _listRef], true, (count _items) > 0],
+                (if (_view isNotEqualTo "global" && {!_isPl}) then { ["RECHERCHER", ["athSearch"] call _act, false, !_busy] } else { ["ACTUALISER", ["athReload"] call _act, false, !_busy] }),
+                (if (_isPl) then { ["PLAYLISTS", ["ath", "playlists"] call _act] } else { ["EFFACER", { (uiNamespace getVariable ["COMSPEC_ATAK_MusicUi", createHashMap]) set ["athQ", ""]; ["athReload"] call comspec_atak_native_fnc_musicAction; }, false, (_ui getOrDefault ["athQ", ""]) isNotEqualTo ""] })
+            ]];
+            if (_busy) then { _rows pushBack ["text", "<t color='#8a9a93'>Chargement depuis Athena…</t>"]; };
+            if (_err isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e5483a'>%1</t>", [_err] call _esc]]; };
+            if ((count _items) isEqualTo 0 && {!_busy} && {_err isEqualTo ""}) then {
+                _rows pushBack ["text", ["<t color='#8a9a93'>Aucun morceau ici pour l'instant. Ajoutez-en sur le site : Mon espace > Musique.</t>", "<t color='#8a9a93'>La playlist globale est vide : l'administrateur de la plateforme la remplit depuis le site.</t>"] select (_view isEqualTo "global")];
+            };
+            for "_i" from 0 to (((count _items) min 80) - 1) do {
+                (_items select _i) params ["", "", "", "", ["_artist", ""], "", ["_by", ""]];
+                _rows pushBack (["ath", _i, [_artist, "Artiste inconnu"] select (_artist isEqualTo "")] call _trackRow);
+            };
+        };
+        _rows pushBack ["text", "<t size='0.75' color='#8a9a93'>Morceaux mis en ligne par les joueurs sur le site Athena (Mon espace > Musique), téléchargés une fois puis gardés en cache. En haut-parleur, les joueurs proches entendent le même morceau.</t>"];
+    };
     case "LOCAL": {
         private _files = _ui getOrDefault ["files", []];
         _rows append [
@@ -131,6 +193,12 @@ switch (_tab) do {
                 ["SUIV.", ["next"] call _act],
                 ["STOP", ["stop"] call _act, false, _mine]
             ]],
+            ["buttons", [
+                ["- 30 S", ["seek", -30] call _act, false, _mine],
+                ["- 10 S", ["seek", -10] call _act, false, _mine],
+                ["+ 10 S", ["seek", 10] call _act, false, _mine],
+                ["+ 30 S", ["seek", 30] call _act, false, _mine && {(_m get "len") > 0}]
+            ]],
             ["segment", "Volume des écouteurs", [
                 ["-", ["volStep", -10] call _act],
                 [["MUET", (str _vol) + " %"] select (_vol > 0), ["vol", [0, profileNamespace getVariable ["COMSPEC_ATAK_MusicVolBack", 60]] select (_vol isEqualTo 0)] call _act, !(_m get "speaker")],
@@ -148,14 +216,25 @@ switch (_tab) do {
         ];
         private _q = _m get "queue";
         _rows pushBack ["section", "File d'attente", format ["%1 morceau(x)", count _q]];
-        if ((count _q) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Vide. Lancez un morceau depuis FICHIERS, SERVEUR ou LIEN.</t>"]; };
-        private _src = createHashMapFromArray [["file", "Fichier local"], ["url", "Lien web"], ["srv", "Serveur"]];
+        if ((count _q) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Vide. Lancez un morceau depuis ATHENA, FICHIERS, SERVEUR ou LIEN.</t>"]; };
+        if ((count _q) > 1) then { _rows pushBack ["buttons", [["VIDER LA FILE", ["qClear"] call _act, false, true, "Garde le morceau en cours"]]]; };
+        private _src = createHashMapFromArray [["file", "Fichier local"], ["url", "Lien web"], ["srv", "Serveur"], ["lib", "Athena"]];
         for "_i" from 0 to (((count _q) min 40) - 1) do {
             (_q select _i) params ["_k", "_r", "_t", ["_len", 0]];
             private _isCur = _i isEqualTo (_m get "qi") && {_mine};
             _rows pushBack ["person", _icon, format ["<t %1>%2. %3</t><br/><t size='0.75' color='#8a9a93'>%4%5</t>", ["", format ["color='%1' font='RobotoCondensedBold'", _accHex]] select _isCur, _i + 1, [_t] call _esc,
                 _src getOrDefault [_k, ""], ["", format [" · %1", [_len] call _fmt]] select (_len > 0)],
-                [[["JOUER", "EN COURS"] select _isCur, ["jump", _i] call _act, !_isCur, !_isCur]], [[0.55, 0.6, 0.58, 1], _acc] select _isCur];
+                [[["JOUER", "EN COURS"] select _isCur, ["jump", _i] call _act, !_isCur, !_isCur], ["MONTER", ["qUp", _i] call _act, false, _i > 0], ["RETIRER", ["qDel", _i] call _act]], [[0.55, 0.6, 0.58, 1], _acc] select _isCur];
+        };
+        // Favoris
+        _rows pushBack ["section", "Favoris", format ["%1 morceau(x)", count _favs]];
+        if ((count _favs) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Touchez FAV sur un morceau pour le retrouver ici.</t>"]; } else {
+            _lists set ["fav", +_favs];
+            _rows pushBack ["buttons", [["TOUT LIRE", compile format ["['playList', [%1, 0]] call comspec_atak_native_fnc_musicAction;", ["fav"] call _listRef], true]]];
+            for "_i" from 0 to (((count _favs) min 30) - 1) do {
+                private _f = _favs select _i;
+                _rows pushBack (["fav", _i, _src getOrDefault [_f select 0, ""]] call _trackRow);
+            };
         };
         // Haut-parleurs autour de moi
         private _near = [];

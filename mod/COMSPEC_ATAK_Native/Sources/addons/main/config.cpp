@@ -32,7 +32,7 @@ class CfgFunctions {
             class vizEcg {}; class vizSpectrum {}; class vizPlayer {};
         };
         class music { file="z\comspec_atak_native\addons\main\functions\music";
-            class musicState {}; class musicAction {}; class musicTick {}; class musicServerList {}; class pageMusic {};
+            class musicState {}; class musicAction {}; class musicTick {}; class musicServerList {}; class musicAthena {}; class pageMusic {};
         };
         class nav { file="z\comspec_atak_native\addons\main\functions\nav";
             class routeCompute {}; class routeGuide {}; class routeBanner {}; class wpAction {}; class pageWaypoints {}; class pageGps {}; class gpsAction {};
