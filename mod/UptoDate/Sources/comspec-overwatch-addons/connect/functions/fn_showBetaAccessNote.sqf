@@ -7,6 +7,7 @@
 params [["_force", false]];
 
 if (!hasInterface) exitWith {};
+if (([] call comspec_overwatch_connect_fnc_athenaMode) isNotEqualTo "on") exitWith {};
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 
 private _fnc_isTrue = {
