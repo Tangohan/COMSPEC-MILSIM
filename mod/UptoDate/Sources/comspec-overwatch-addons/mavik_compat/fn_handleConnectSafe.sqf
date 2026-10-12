@@ -12,7 +12,9 @@ if (!hasInterface) exitWith {};
         private _vanillaUI = missionNamespace getVariable ["mavic_setting_vanillaInterface", false];
         private _showUI = missionNamespace getVariable ["mavic_setting_showInterface", true];
 
-        if (_enableDist) then {
+        // Portée de connexion relue une fois par seconde (recherche jusqu'à 6 km : dix fois par seconde coûtait cher).
+        if (_enableDist && {diag_tickTime >= (missionNamespace getVariable ["COMSPEC_MavicDistNext", 0])}) then {
+            missionNamespace setVariable ["COMSPEC_MavicDistNext", diag_tickTime + 1];
             private _uavs = allUnitsUAV select {typeOf _x isKindOf "Mavic_drone_base_F"};
             private _uavsNear = _player nearEntities ["Mavic_drone_base_F", _maxDist];
 

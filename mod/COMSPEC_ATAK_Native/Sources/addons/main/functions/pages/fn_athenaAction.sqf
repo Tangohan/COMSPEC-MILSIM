@@ -7,7 +7,7 @@
 params [["_action", ""]];
 _action = toLower _action;
 private _bridge = [] call comspec_atak_native_fnc_bridge;
-private _ext = { params ["_cmd", ["_args", []]]; if (_bridge) then { private _r = "COMSPECExtension" callExtension [_cmd, _args]; if (_r isEqualType []) then { _r select 0 } else { _r } } else { [_cmd, _args] call comspec_atak_native_fnc_extensionCall } };
+private _ext = { params ["_cmd", ["_args", []]]; if (_bridge) then { private _r = ["COMSPECExtension", _cmd, _args] call comspec_atak_native_fnc_extAwait; if (_r isEqualType []) then { _r select 0 } else { _r } } else { [_cmd, _args] call comspec_atak_native_fnc_extensionCall } };
 private _url = if (_bridge) then { [] call comspec_overwatch_connect_fnc_portalUrl } else { profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"] };
 private _pack = if (_bridge) then { [] call comspec_overwatch_connect_fnc_packVersion } else { "native" };
 private _steam = getPlayerUID player;

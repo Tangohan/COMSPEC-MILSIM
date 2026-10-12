@@ -119,6 +119,8 @@ ICONS = {
     "app_reports": '<rect x="5" y="3.5" width="14" height="18" rx="1.5"/><path d="M9 3.5V2h6v1.5"/><path d="M8.5 9h7M8.5 12.5h7M8.5 16h4"/><path d="M14.5 17l1.3 1.3 2.7-2.8"/>',
     "app_photos": '<path d="M3 7h4l2-2.5h6L17 7h4v12H3z"/><circle cx="12" cy="13" r="3.5"/>',
     "app_briefing": '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M12 16v4M8 21h8M7 12l3-3 2 2 4-4"/>',
+    # Plan (carte de briefing) : cadre de carte, zone ennemie, axe en tirets vers l'objectif, bâtiment nettoyé.
+    "app_plan": '<rect x="3" y="3" width="18" height="18" rx="1.5"/><path d="M6 6.5h5.5v4H6z"/><path d="M6.5 17.5c3-.5 6-2.5 8.5-6.5" stroke-dasharray="2 1.7"/><path d="M12.6 11l2.6-.4.4 2.7"/><path d="M14.5 17l1.6 1.6 3-3.3"/>',
     "app_status": '<path d="M3 20h18M6 20v-6M10 20V9M14 20v-8M18 20V5"/>',
     "app_settings": '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
     "ui_back": '<path d="M15 5l-7 7 7 7"/>',
@@ -165,6 +167,8 @@ ICONS = {
     "ui_bell": '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
     "ui_comspec_link": '<path d="M12 2.5l8.2 4.75v9.5L12 21.5l-8.2-4.75v-9.5z"/><path d="M10.4 13.6a2.6 2.6 0 0 0 3.7 0l1.9-1.9a2.6 2.6 0 0 0-3.7-3.7l-.6.6"/><path d="M13.6 10.4a2.6 2.6 0 0 0-3.7 0l-1.9 1.9a2.6 2.6 0 0 0 3.7 3.7l.6-.6"/>',
     "ui_vibrate": '<rect x="8" y="4" width="8" height="16" rx="1.5"/><path d="M4 8v8M20 8v8M2 10v4M22 10v4"/>',
+    # Main ouverte : « prendre en main » (pastille Ctrl+Maj+U du téléphone porté).
+    "ui_hand": '<path d="M9.1 12V5.6a1.3 1.3 0 0 1 2.6 0V11M11.7 11V4.3a1.3 1.3 0 0 1 2.6 0V11M14.3 11V5.6a1.3 1.3 0 0 1 2.6 0V11M16.9 11.2V8.3a1.3 1.3 0 0 1 2.6 0v5.4c0 4.1-2.8 7.3-6.6 7.3-2.7 0-4.3-1.3-5.8-3.5l-2.6-4a1.4 1.4 0 0 1 2.2-1.7l2.4 2.8V8.2"/>',
 }
 
 
@@ -267,10 +271,34 @@ def topo_wallpaper(w, h, seed, hue):
     return out
 
 
+def erase_box(img, box):
+    """Efface un logo incrusté (box en fractions de l'image) : fondu vertical entre les lignes au-dessus et au-dessous,
+    puis flou léger. Le logo ATHENA du coin haut gauche passait sous la barre d'app et chevauchait le lanceur."""
+    W, H = img.size
+    x0, y0, x1, y1 = int(box[0] * W), int(box[1] * H), int(box[2] * W), int(box[3] * H)
+    top, bot = max(0, y0 - 1), min(H - 1, y1)
+    px = img.load()
+    for x in range(x0, x1):
+        a, b = px[x, top], px[x, bot]
+        for y in range(y0, y1):
+            t = (y - y0) / max(1, y1 - y0)
+            px[x, y] = tuple(int(a[i] * (1 - t) + b[i] * t) for i in range(3))
+    m = 12
+    reg = (max(0, x0 - m), max(0, y0 - m), min(W, x1 + m), min(H, y1 + m))
+    img.paste(img.crop(reg).filter(ImageFilter.GaussianBlur(10)), reg[:2])
+    return img
+
+
+# Logo incrusté dans la photo source, effacé avant recadrage (fractions de l'image source).
+WALL_ERASE = {"wallpaper_athena.jpg": (0.0, 0.0, 0.2, 0.135)}
+
+
 def photo_wallpaper(path, w, h, dim):
     """Photo en fond : couvre l'écran sans l'étirer ; en vertical, la photo entière sur un fond flouté."""
     from PIL import ImageFilter
     img = Image.open(path).convert("RGB")
+    if os.path.basename(path) in WALL_ERASE:
+        img = erase_box(img, WALL_ERASE[os.path.basename(path)])
     img = Image.eval(img, lambda v: int(v * dim))
     sw, sh = img.size
     cover = max(w / sw, h / sh)
@@ -1671,6 +1699,21 @@ def main():
         # « accicon » : seulement l'icône de l'app Accessoires.
         if len(sys.argv) > 2 and sys.argv[2] == "accicon":
             convert(icon_png("app_accessories", ICONS["app_accessories"]), "app_accessories", tmp)
+            return
+        # « hand » : seulement l'icône main (pastille « prendre en main » du téléphone porté).
+        if len(sys.argv) > 2 and sys.argv[2] == "hand":
+            convert(icon_png("ui_hand", ICONS["ui_hand"]), "ui_hand", tmp)
+            return
+        # « athena » : seulement le fond ATHENA (logo du coin effacé) et sa variante floutée.
+        if len(sys.argv) > 2 and sys.argv[2] == "athena":
+            for suffix, (w, h) in (("land", (2048, 1024)), ("port", (1024, 2048))):
+                img = photo_wallpaper(os.path.join(HERE, "src", "wallpaper_athena.jpg"), w, h, 0.85)
+                convert(img.convert("RGB"), f"wall_athena_{suffix}", tmp)
+                convert(blurred(img), f"wall_athena_blur_{suffix}", tmp)
+            return
+        # « planicon » : seulement l'icône de l'app Plan.
+        if len(sys.argv) > 2 and sys.argv[2] == "planicon":
+            convert(icon_png("app_plan", ICONS["app_plan"]), "app_plan", tmp)
             return
         # « camera » : seulement l'image de l'item Caméra IP compacte.
         # « jpc » : tablette à touches (coques 2D, dos, atlas du modèle 3D, écran figé, rvmat de l'écran).

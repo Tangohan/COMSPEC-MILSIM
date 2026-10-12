@@ -202,14 +202,15 @@ switch (_act) do {
             createVehicle ["SmokeShellGreen", getPosATL _box, [], 0, "CAN_COLLIDE"];
             if (sunOrMoon < 0.5) then { createVehicle ["Chemlight_green", getPosATL _box, [], 0, "CAN_COLLIDE"]; };
             // Besoin véhicule : un jerrican à côté de la caisse (ACE Refuel s'il est chargé).
+            private _trash = [_box];
             if (_veh) then {
                 private _can = createVehicle ["Land_CanisterFuel_F", _box getRelPos [2, 90], [], 0, "CAN_COLLIDE"];
                 if (!isNil "ace_refuel_fnc_makeJerryCan") then { [_can, 20] call ace_refuel_fnc_makeJerryCan; };
+                _trash pushBack _can;
             };
             [{ ["landed", _this] call comspec_atak_native_fnc_logisticsAction; }, [_id, getPosATL _box]] call CBA_fnc_execNextFrame;
-            // Caisse oubliée : retirée au bout de 30 min.
-            sleep 1800;
-            if (!isNull _box) then { deleteVehicle _box; };
+            // Caisse (et jerrican) oubliés : retirés au bout de 30 min par le serveur, même si le demandeur a quitté la partie.
+            ["comspec_atak_native_deleteLater", [_trash, 1800]] call CBA_fnc_serverEvent;
         };
     };
     case "landed": {

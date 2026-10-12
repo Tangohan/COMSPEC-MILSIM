@@ -45,6 +45,13 @@ if (isNull player || {!([player] call comspec_overwatch_connect_fnc_hasTerminal)
 
 missionNamespace setVariable ["COMSPEC_SyncLoopsStarted", true, false];
 
+// SyncLoopsStarted peut être remis à false (XEH_postInit, relance canal) alors que les PFH tournent déjà :
+// un 2e passage empilait une seconde série complète de PFH / boucles (CPU + appels Athena doublés).
+if (!isNil "COMSPEC_SyncLoopsInstalled") exitWith {
+    ["INFO", "Boot", "Boucles de sync déjà installées — pas de doublon"] call comspec_overwatch_connect_fnc_log;
+};
+COMSPEC_SyncLoopsInstalled = true;
+
 // Faction settings / fiche : différés — HTTP sync au même frame que l’open ATAK = gel.
 [{
     if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
@@ -119,10 +126,16 @@ if (isNil "COMSPEC_WebNotifMirrorPfh") then {
     }, 10] call CBA_fnc_addPerFrameHandler;
 };
 
+// SyncProfile : toutes les 5 min (au lieu de 60 s) et hors du PFH — l'appel HTTP figeait le jeu (extAwait en spawn).
 [{
     if !([] call comspec_overwatch_connect_fnc_isReady) exitWith {};
-    [] call comspec_overwatch_connect_fnc_syncProfile;
-}, 60] call CBA_fnc_addPerFrameHandler;
+    if (missionNamespace getVariable ["COMSPEC_SyncProfileBusy", false]) exitWith {};
+    missionNamespace setVariable ["COMSPEC_SyncProfileBusy", true, false];
+    0 spawn {
+        [] call comspec_overwatch_connect_fnc_syncProfile;
+        missionNamespace setVariable ["COMSPEC_SyncProfileBusy", false, false];
+    };
+}, 300] call CBA_fnc_addPerFrameHandler;
 
 if (isNil "COMSPEC_MapMarkerEHs") then {
     private _resyncSoon = {
@@ -416,7 +429,10 @@ private _fnc_addPoll = {
         "FIRETEAM",
         _target
     ];
-    missionNamespace setVariable ["COMSPEC_OrderPropagationLog", _chainLog, true];
+    // Journal local (lu nulle part ailleurs) : la diffusion réseau du tableau entier à chaque ordre était inutile ;
+    // borné à 100 entrées pour ne pas grossir toute la partie.
+    if (count _chainLog > 100) then { _chainLog deleteRange [0, (count _chainLog) - 100]; };
+    missionNamespace setVariable ["COMSPEC_OrderPropagationLog", _chainLog, false];
 
     [_order] call comspec_overwatch_connect_fnc_receiveOrder;
 }] call comspec_overwatch_connect_fnc_registerEventHandler;

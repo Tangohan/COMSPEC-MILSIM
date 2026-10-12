@@ -39,6 +39,8 @@ final class AdminAtakModReportsController
         return Response::view('layout.main', [
             'title' => 'Rapports Overwatch',
             'content' => 'admin.atak-mod-reports.index',
+            'isPlatformAdminShell' => true,
+            'backOfficePageCss' => ['back-office-atak-beta.css'],
             'rows' => $rows,
             'total' => $total,
             'totalAll' => $totalAll,

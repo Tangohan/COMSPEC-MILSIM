@@ -160,7 +160,7 @@ $canGrp = $gate->allows('comms.email.send.orbat') || $gate->allows('comms.email.
 
         <div class="flex flex-wrap gap-4">
             <button type="submit" class="rounded-xl bg-slate-900 px-6 py-3 text-sm font-bold text-white shadow hover:bg-slate-800">Envoyer</button>
-            <a href="<?= url('back-office') ?>" class="inline-flex items-center text-sm font-semibold text-slate-600 underline">Retour administration</a>
+            <a href="<?= url('back-office') ?>" class="inline-flex items-center text-sm font-semibold text-slate-600 underline">Retour au back-office</a>
         </div>
     </form>
 

@@ -15,7 +15,7 @@ switch (_act) do {
         private _lib = uiNamespace getVariable ["COMSPEC_ATAK_FrsLib", createHashMap];
         uiNamespace setVariable ["COMSPEC_ATAK_FrsLib", _lib];
         private _steam = if (_arg isEqualTo "mine") then { getPlayerUID player } else { "" };
-        private _raw = ["COMSPECExtension" callExtension ["ListSseFieldNotes", ["25", _steam]]] call _res;
+        private _raw = [(["COMSPECExtension", "ListSseFieldNotes", ["25", _steam]] call comspec_atak_native_fnc_extAwait)] call _res;
         if !(_raw isEqualType "") then { _raw = str _raw; };
         if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith {
             private _err = switch (true) do {
@@ -46,7 +46,7 @@ switch (_act) do {
         { private _f = (_x select 0) findIf { (_x select 0) isEqualTo _arg }; if (_f >= 0) exitWith { _note = (_x select 0) select _f; }; } forEach values (uiNamespace getVariable ["COMSPEC_ATAK_FrsLib", createHashMap]);
         private _paths = [];
         {
-            private _dl = (["COMSPECExtension" callExtension ["DownloadBriefingSlideImage", [_x, format ["frs_%1_%2", _arg, _forEachIndex]]]] call _res) splitString "|";
+            private _dl = ([(["COMSPECExtension", "DownloadBriefingSlideImage", [_x, format ["frs_%1_%2", _arg, _forEachIndex]]] call comspec_atak_native_fnc_extAwait)] call _res) splitString "|";
             private _p = if ((_dl param [0, ""]) isEqualTo "OK") then { ((_dl param [1, ""]) splitString (toString [92])) joinString "/" } else { "" };
             private _lp = toLower _p;
             _paths pushBack ([_p, ""] select !((_lp select [(count _lp) - 4]) in [".jpg", "jpeg", ".paa"]));

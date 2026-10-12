@@ -11,7 +11,17 @@
 */
 params [["_act", "tick"]];
 if (_act isEqualTo "sweep") exitWith {
-    { if ((_x getVariable ["COMSPEC_ATAK_Vest", false]) && {isNull attachedTo _x}) then { deleteVehicle _x; }; } forEach (allSimpleObjects []);
+    // Seulement nos modèles (plus tous les objets simples de la carte) ; aussi les téléphones posés au sol
+    // dont le propriétaire est parti (leur retrait se faisait sur sa machine) ou qui ont été ramassés.
+    {
+        private _drop = _x getVariable "COMSPEC_ATAK_DropOf";
+        if (isNil "_drop") then {
+            if ((_x getVariable ["COMSPEC_ATAK_Vest", false]) && {isNull attachedTo _x}) then { deleteVehicle _x; };
+        } else {
+            _drop params [["_h", objNull], ["_i", ""]];
+            if (isNull _h || {!((toLower _i) in (((itemCargo _h) + (weaponCargo _h)) apply { toLower _x }))}) then { deleteVehicle _x; };
+        };
+    } forEach (allSimpleObjects ["COMSPEC_ATAK_VestPhone"]);
     true
 };
 if (!hasInterface) exitWith { false };

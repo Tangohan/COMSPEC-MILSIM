@@ -94,6 +94,10 @@ switch (_act) do {
                 _mast attachTo [_veh, [0, ((_bb select 0) select 1) * 0.4, (_bb select 1) select 2]];
                 _mast allowDamage false;
                 _veh setVariable ["COMSPEC_ATAK_GwMast", _mast];
+                // Liste des mâts (serveur) : un véhicule supprimé laissait le sien planté là.
+                private _masts = missionNamespace getVariable ["COMSPEC_ATAK_GwMasts", []];
+                _masts pushBack _mast;
+                missionNamespace setVariable ["COMSPEC_ATAK_GwMasts", _masts];
             };
         };
         missionNamespace setVariable ["COMSPEC_ATAK_Gateways", _list, true];
@@ -101,6 +105,10 @@ switch (_act) do {
     case "sweep": {
         if (!isServer) exitWith {};
         private _list = missionNamespace getVariable ["COMSPEC_ATAK_Gateways", []];
+        // Mâts dont le véhicule a disparu (supprimé, nettoyé) : retirés.
+        missionNamespace setVariable ["COMSPEC_ATAK_GwMasts", (missionNamespace getVariable ["COMSPEC_ATAK_GwMasts", []]) select {
+            if (isNull _x) then { false } else { if (isNull attachedTo _x) then { deleteVehicle _x; false } else { true } }
+        }];
         private _keep = [];
         {
             if (isNull _x) then { continue };

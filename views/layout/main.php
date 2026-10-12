@@ -26,7 +26,7 @@ $communityReelsPage = !empty($communityReelsPage);
 
 $usesAdminSidebarShell = (!$hideAdminSidebar) && (!empty($isBackOfficeShell) || !empty($isPlatformAdminShell) || !empty($isFormationWorkspace));
 $adminSidebarShellMobileTitle = !empty($isBackOfficeShell)
-    ? (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Administration communauté') : 'Administration communauté')
+    ? (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Gestion de la communauté') : 'Gestion de la communauté')
     : (!empty($isPlatformAdminShell)
         ? (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Administration plateforme') : 'Administration plateforme')
         : (!empty($isFormationWorkspace) ? (function_exists('i18n_phrase') ? i18n_phrase('nav', 'Pilotage des formations') : 'Pilotage des formations') : ''));

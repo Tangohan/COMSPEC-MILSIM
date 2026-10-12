@@ -39,7 +39,7 @@ switch (_act) do {
             };
             private _tn = missionNamespace getVariable ["comspec_overwatch_tenant_id", ""];
             if !(_tn isEqualType "") then { _tn = str _tn; };
-            private _r = "COMSPECExtension" callExtension ["GetFireTeams", [_tn, "roles:" + getPlayerUID player]];
+            private _r = (["COMSPECExtension", "GetFireTeams", [_tn, "roles:" + getPlayerUID player]] call comspec_atak_native_fnc_extAwait);
             if (_r isEqualType []) then { _r = _r param [0, ""]; };
             if !(_r isEqualType "") then { _r = ""; };
             if ((_r select [0, 3]) isNotEqualTo "OK|") exitWith {

@@ -68,7 +68,7 @@ $createOrgaUrl = url('back-office/atak/fire-teams/create?type=organigramme');
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.25a7.5 7.5 0 0 1 15 0"/><path stroke-linecap="round" d="M19.5 8.25v3m0 0v3m0-3h3m-3 0h-3" opacity=".7"/></svg>
                         <span>Effectifs en liaison</span>
                     </a>
-                    <a href="<?= $h(url('admin/atak-config')) ?>" class="bo-ft__btn bo-ft__btn--ghost">
+                    <a href="<?= $h(url('back-office/ressources/atak-config')) ?>" class="bo-ft__btn bo-ft__btn--ghost">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.174.1.331.24.46.41l1.12.01c.54.005.99.45.99.99v2.592c0 .54-.45.985-.99.99l-1.12.01a1.6 1.6 0 0 0-.46.41c-.332.184-.582.496-.645.87l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281a1.17 1.17 0 0 0-.645-.87 1.6 1.6 0 0 0-.46-.41l-1.12-.01c-.54-.005-.99-.45-.99-.99V8.502c0-.54.45-.985.99-.99l1.12-.01c.17-.002.33-.12.46-.41.332-.184.582-.496.645-.87l.213-1.28Z"/><circle cx="12" cy="12" r="2.6"/></svg>
                         <span>Config ATAK</span>
                     </a>

@@ -20,7 +20,6 @@ if ($sys || $org || $support) {
     $links[] = ['href' => url('back-office/ressources/modpacks'), 'label' => 'Modpacks', 'desc' => 'Packs mods de la communauté sélectionnée'];
     $links[] = ['href' => url('back-office/ressources/atak-config'), 'label' => 'Configuration ATAK / Tacmap', 'desc' => 'Carte et paramètres tactiques pour cette communauté'];
     $links[] = ['href' => url('back-office/ressources/atak-mod-blocks'), 'label' => 'Restrictions d’accès au mod', 'desc' => 'Bloquer un Steam ou une adresse réseau côté Overwatch'];
-    $links[] = ['href' => url('back-office/ressources/atak-beta'), 'label' => 'Accès anticipé Overwatch', 'desc' => 'Joueurs ayant lancé le pack bêta et accepté la note d’accès'];
     $links[] = ['href' => url('back-office/ressources/atak-mod'), 'label' => 'Mod ATAK (Overwatch)', 'desc' => 'Fichiers mod côté communauté'];
     if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()) {
         $links[] = ['href' => url('back-office/ressources/forum-config'), 'label' => 'Configuration forum', 'desc' => 'Canaux, modération technique, filtres'];

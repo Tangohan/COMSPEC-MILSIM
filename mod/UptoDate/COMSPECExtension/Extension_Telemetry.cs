@@ -203,7 +203,10 @@ public static partial class Extension
         };
 
         // Delta : ne pas renvoyer un état inchangé (heartbeat position ~25 s).
-        if (!ShouldTransmitDelta(coalesceKey, eventJson))
+        // Seulement pour les états suivis (position, météo, véhicule) : les autres événements ont une clé unique,
+        // leur empreinte ne servait jamais et la table grossissait de deux entrées par événement toute la session.
+        var tracked = type is "pos" or "weather" or "veh";
+        if (tracked && !ShouldTransmitDelta(coalesceKey, eventJson))
         {
             if (priority == 0)
             {

@@ -24,8 +24,20 @@ params [["_force", false, [false]]];
 
 if (!hasInterface) exitWith { 0 };
 
+// Un seul passage à la fois : le PFH (10 s) lance ce script en spawn et chaque envoi attend la DLL
+// (extAwait) ; un Resynch manuel pendant ce temps aurait renvoyé les mêmes entrées.
+if (_force && {canSuspend}) then {
+    private _t0 = diag_tickTime;
+    waitUntil { sleep 0.1; !(missionNamespace getVariable ["COMSPEC_OutboxBusy", false]) || {diag_tickTime - _t0 > 15} };
+};
+if (missionNamespace getVariable ["COMSPEC_OutboxBusy", false]) exitWith { 0 };
+missionNamespace setVariable ["COMSPEC_OutboxBusy", true, false];
+private _sentTotal = [_force] call {
+params ["_force"];
+
 private _queue = profileNamespace getVariable ["COMSPEC_Outbox", []];
 if (!(_queue isEqualType [])) then { _queue = []; };
+private _countIn = count _queue;
 _queue = _queue select {
     !((toLower (_x param [0, ""])) in ["syncwardrobe", "syncwardrobesbatch"])
 };
@@ -53,9 +65,11 @@ if (!(_maxTries isEqualType 0) || { _maxTries < 1 }) then { _maxTries = 5; };
 private _now = [] call comspec_overwatch_connect_fnc_wallClockSeconds;
 
 private _remaining = [];
+private _retryLast = [];
 private _sent = 0;
 private _expired = 0;
 private _failed = 0;
+private _tried = 0;
 
 {
     _x params ["_cmd", "_args", "_label", "_linkCat", "_queuedAt", "_tries"];
@@ -91,26 +105,38 @@ private _failed = 0;
             ] call comspec_overwatch_connect_fnc_log;
         };
         default {
-            // On repasse par le chemin normal, sans remise en file : sinon un
-            // échec réinjecterait indéfiniment la même entrée.
-            private _res = [_cmd, _args, _label, false, true, _linkCat, false]
-                call comspec_overwatch_connect_fnc_callExtLogged;
-
-            if (_res param [0, false]) then {
-                _sent = _sent + 1;
+            // Hors rejeu manuel : une seule transmission par passage. Rejouer toute la file d'un coup
+            // enchaînait les appels DLL et figeait le jeu au retour de la liaison ; le reste attend le tick suivant.
+            if (!_force && {_tried > 0}) then {
+                _remaining pushBack _x;
             } else {
-                _failed = _failed + 1;
-                _remaining pushBack [_cmd, _args, _label, _linkCat, _queuedAt, _tries + 1];
+                _tried = _tried + 1;
+                // On repasse par le chemin normal, sans remise en file : sinon un
+                // échec réinjecterait indéfiniment la même entrée.
+                private _res = [_cmd, _args, _label, false, true, _linkCat, false]
+                    call comspec_overwatch_connect_fnc_callExtLogged;
+
+                if (_res param [0, false]) then {
+                    _sent = _sent + 1;
+                } else {
+                    _failed = _failed + 1;
+                    // En fin de file : une entrée en échec ne bloque pas les suivantes (une par passage).
+                    _retryLast pushBack [_cmd, _args, _label, _linkCat, _queuedAt, _tries + 1];
+                };
             };
         };
     };
 } forEach _queue;
 
+_remaining append _retryLast;
 profileNamespace setVariable ["COMSPEC_Outbox", _remaining];
-saveProfileNamespace;
+// Écriture disque seulement si la file a changé (saveProfileNamespace est coûteux).
+if (_sent > 0 || {_failed > 0} || {_expired > 0} || {(count _remaining) != _countIn}) then {
+    saveProfileNamespace;
+};
 
-// Attente croissante tant qu'il reste des échecs.
-if (_remaining isEqualTo []) then {
+// Attente croissante tant qu'il reste des échecs (les entrées pas encore tentées partent au tick suivant).
+if (_failed == 0) then {
     missionNamespace setVariable ["COMSPEC_OutboxNextAt", 0];
 } else {
     private _base = missionNamespace getVariable ["COMSPEC_OutboxRetryBase", 15];
@@ -127,9 +153,13 @@ if (_failed > 0) then {
     ] call comspec_overwatch_connect_fnc_log;
 };
 
-if (_sent > 0) then {
+// Envoi une entrée à la fois : cumul, puis un seul message quand la file est vidée.
+private _sentAccum = (missionNamespace getVariable ["COMSPEC_OutboxSentAccum", 0]) + _sent;
+missionNamespace setVariable ["COMSPEC_OutboxSentAccum", _sentAccum, false];
+if (_sentAccum > 0 && {_force || {_remaining isEqualTo []}}) then {
+    missionNamespace setVariable ["COMSPEC_OutboxSentAccum", 0, false];
     [
-        format ["Liaison rétablie — %1 transmission(s) en attente envoyée(s).", _sent],
+        format ["Liaison rétablie — %1 transmission(s) en attente envoyée(s).", _sentAccum],
         "tactical",
         "info"
     ] call comspec_overwatch_connect_fnc_announce;
@@ -147,3 +177,6 @@ if (_expired > 0) then {
 };
 
 _sent
+};
+missionNamespace setVariable ["COMSPEC_OutboxBusy", false, false];
+_sentTotal

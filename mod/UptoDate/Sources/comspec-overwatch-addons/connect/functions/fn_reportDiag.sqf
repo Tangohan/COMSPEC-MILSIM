@@ -30,11 +30,18 @@ private _severity = switch (_levelKey) do {
 };
 
 // Anti-spam local : même empreinte ≤ 1 envoi / 5 min
-private _fp = format ["%1|%2|%3", _severity, toLower _channel, toLower (_message select [0, 120])];
+// Chiffres retirés de l'empreinte : un message avec horodatage / id / coordonnées en faisait une nouvelle à chaque fois.
+private _msgFp = toString ((toArray toLower (_message select [0, 120])) select {_x < 48 || {_x > 57}});
+private _fp = format ["%1|%2|%3", _severity, toLower _channel, _msgFp];
 private _map = missionNamespace getVariable ["COMSPEC_DiagReportThrottle", createHashMap];
 if (!(_map isEqualType createHashMap)) then { _map = createHashMap; };
+// Table bornée (fuite mémoire sur une longue session sinon).
+if (count _map > 200) then { _map = createHashMap; };
 private _last = _map getOrDefault [_fp, -99999];
 if (_source isNotEqualTo "player" && {(diag_tickTime - _last) < 300}) exitWith { false };
+// Garde globale : au plus un signalement auto / 60 s, toutes empreintes confondues.
+if (_source isNotEqualTo "player" && {(diag_tickTime - (missionNamespace getVariable ["COMSPEC_DiagReportLastAuto", -99999])) < 60}) exitWith { false };
+if (_source isNotEqualTo "player") then { missionNamespace setVariable ["COMSPEC_DiagReportLastAuto", diag_tickTime, false]; };
 _map set [_fp, diag_tickTime];
 missionNamespace setVariable ["COMSPEC_DiagReportThrottle", _map, false];
 
@@ -76,7 +83,12 @@ if (_pv isEqualType [] && {count _pv >= 4}) then {
 };
 
 private _extVersion = "";
-private _extRaw = ["COMSPECExtension" callExtension ["GetExtensionVersion", []]] call comspec_overwatch_connect_fnc_extResult;
+// Version DLL : lue une seule fois par partie (évite un appel extension de plus par signalement).
+private _extRaw = missionNamespace getVariable ["COMSPEC_DiagExtVersionRaw", ""];
+if (_extRaw isEqualTo "") then {
+    _extRaw = ["COMSPECExtension" callExtension ["GetExtensionVersion", []]] call comspec_overwatch_connect_fnc_extResult;
+    missionNamespace setVariable ["COMSPEC_DiagExtVersionRaw", _extRaw, false];
+};
 private _extParts = _extRaw splitString "|";
 if ((count _extParts) >= 2 && {(_extParts select 0) isEqualTo "OK"}) then {
     private _label = _extParts select 1;
@@ -99,8 +111,10 @@ if (_source isEqualTo "player") then {
     if (count _fpServer > 40) then { _fpServer = _fpServer select [0, 40]; };
 };
 
+// Envoi HTTP via extAwait : non bloquant depuis le spawn de fn_log (direct si appelé hors spawn, ex. bouton).
 private _raw = [
-    "COMSPECExtension" callExtension [
+    [
+        "COMSPECExtension",
         "ReportDiag",
         [
             _url,
@@ -118,7 +132,7 @@ private _raw = [
             _armaBuild,
             _extVersion
         ]
-    ]
+    ] call comspec_overwatch_connect_fnc_extAwait
 ] call comspec_overwatch_connect_fnc_extResult;
 
 missionNamespace setVariable ["COMSPEC_LastDiagReport", _raw, false];

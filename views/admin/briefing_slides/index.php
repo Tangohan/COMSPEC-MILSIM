@@ -447,7 +447,7 @@ require base_path('views/partials/ath_kpis.php');
     <?php endif; ?>
 
     <div class="ath-form__actions">
-        <a href="<?= $h(url('admin/atak-config')) ?>" class="ath-btn">Configuration ATAK</a>
+        <a href="<?= $h(url('back-office/ressources/atak-config')) ?>" class="ath-btn">Configuration ATAK</a>
         <a href="<?= $h(url('atak/setup')) ?>" class="ath-btn">Assistant d’installation du mod</a>
     </div>
 </div>

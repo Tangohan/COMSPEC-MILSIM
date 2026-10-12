@@ -397,16 +397,34 @@ window.ATAKCams = (function () {
       var blurred = !!Number(p.is_blurred || 0);
       var transferred = !!(p.sse_case_id || p.sse_transferred_at);
       var fxClass = photoFxClass(p);
+      // Fiche du cliché (drone de l'ATAK natif) : titre, description, SSE (lien vers le dossier), confidentiel.
+      var photoTitle = String(p.title || '').trim();
+      var photoDesc = String(p.description || '').trim();
+      var isSse = !!Number(p.is_sse || 0);
+      var isConf = !!Number(p.is_confidential || 0);
+      var restricted = !!p.restricted;
+      var caseRef = String(p.sse_case_ref || '').trim();
+      var caseUrl = String(p.sse_case_url || '').trim();
+      var sseLabel = 'SSE' + (caseRef ? ' ' + caseRef : '');
+      var badges = (isConf ? '<span class="atak-cam-photo-flag atak-cam-photo-flag--conf">CONFIDENTIEL</span>' : '') +
+        (isSse ? (caseUrl
+          ? '<a class="atak-cam-photo-flag" href="' + escapeHtml(caseUrl) + '" target="_blank" rel="noopener">' + escapeHtml(sseLabel) + '</a>'
+          : '<span class="atak-cam-photo-flag">' + escapeHtml(sseLabel) + '</span>') : '');
       html +=
         '<article class="atak-cam-photo' + (blurred ? ' is-blurred' : '') + fxClass + '" data-id="' + escapeHtml(p.id || '') + '">' +
           (src
             ? '<img src="' + escapeHtml(src) + '" alt="" loading="lazy" data-atak-cam-full="' + escapeHtml(src) + '" />'
-            : '<div class="atak-cam-photo-missing" role="status">Image indisponible — lien dégradé ou fichier manquant.</div>') +
+            : '<div class="atak-cam-photo-missing" role="status">' + (restricted
+              ? 'Cliché confidentiel — réservé aux habilitations « confidentiel » et plus.'
+              : 'Image indisponible — lien dégradé ou fichier manquant.') + '</div>') +
           '<div class="atak-cam-photo-meta">' +
             '<span class="atak-cam-photo-kind">' + escapeHtml(label) + '</span>' +
             (stamp ? '<time class="atak-cam-photo-stamp" datetime="">' + escapeHtml(stamp) + '</time>' : '') +
             (author ? '<strong>' + escapeHtml(author) + '</strong>' : '') +
             (grid ? '<span>Grille ' + escapeHtml(grid) + '</span>' : '') +
+            (badges ? '<p class="atak-cam-photo-badges">' + badges + '</p>' : '') +
+            (photoTitle ? '<p><strong>' + escapeHtml(photoTitle) + '</strong></p>' : '') +
+            (photoDesc ? '<p>' + escapeHtml(photoDesc) + '</p>' : '') +
             (caption ? '<p>' + escapeHtml(caption) + '</p>' : '') +
             (comment ? '<p class="atak-cam-photo-comment">Commentaire: ' + escapeHtml(comment) + '</p>' : '') +
             (transferred ? '<p class="atak-cam-photo-flag">Archivée dans SSE</p>' : '') +

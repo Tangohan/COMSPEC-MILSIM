@@ -5,7 +5,7 @@
       "tapFx"  : son et vibration des appuis permis ? (profil COMSPEC_ATAK_TapFeedback)
       "tap"    : [x, y] appui sur l'écran : onde verte sous le doigt, clic doux (pas en mode discrétion) et
                  légère vibration de la coque (1 px, 60 ms). Appelée par le relâchement du clic (fn_displayLoad).
-      "open"   : app qui s'ouvre : une carte grandit depuis le point touché jusqu'à la zone de l'app (0,18 s) puis s'efface.
+      "open"   : (transitions activées, profil COMSPEC_ATAK_PageFx) app qui s'ouvre : une carte grandit depuis le point touché jusqu'à la zone de l'app (0,18 s) puis s'efface.
       "home"   : retour à l'accueil : fondu court.
       "back"   : retour arrière : la page quittée glisse vers la droite et découvre la précédente (0,18 s).
       "raise"  : après un rendu de page : écran de verrouillage, volet rapide, effets d'écran et toast remis devant.
@@ -15,6 +15,9 @@
 params [["_act", "anim"], ["_arg", []]];
 disableSerialization;
 private _animOn = { (profileNamespace getVariable ["COMSPEC_ATAK_Animations", true]) && {!(missionNamespace getVariable ["COMSPEC_ATAK_Replaying", false])} };
+// Transitions entre pages (voile sombre qui grandit, fondu, glissé) : désactivées par défaut, elles faisaient un bref
+// clignotement noir à chaque changement d'app (Réglages > Animations et sons > Transitions entre les pages).
+private _pageFxOn = { profileNamespace getVariable ["COMSPEC_ATAK_PageFx", false] };
 switch (_act) do {
     case "anim": { call _animOn };
     case "tapFx": { profileNamespace getVariable ["COMSPEC_ATAK_TapFeedback", true] };
@@ -64,7 +67,7 @@ switch (_act) do {
     };
     case "open";
     case "home": {
-        if !(call _animOn) exitWith { false };
+        if !(call _animOn && {call _pageFxOn}) exitWith { false };
         private _d = [] call comspec_atak_native_fnc_display;
         if (isNull _d) exitWith { false };
         private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -104,7 +107,7 @@ switch (_act) do {
         true
     };
     case "back": {
-        if !(call _animOn) exitWith { false };
+        if !(call _animOn && {call _pageFxOn}) exitWith { false };
         private _d = [] call comspec_atak_native_fnc_display;
         if (isNull _d) exitWith { false };
         private _l = [] call comspec_atak_native_fnc_layoutGet;

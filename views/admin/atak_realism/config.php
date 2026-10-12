@@ -428,7 +428,7 @@ $profilesJson = json_encode($schema['profiles'] ?? [], JSON_UNESCAPED_UNICODE);
                 📜 Historique
             </button>
             
-            <button type="button" id="btn-verify" class="btn btn-secondary" onclick="window.open('<?= $h(url('admin/atak/realism/verify')) ?>', '_blank')">
+            <button type="button" id="btn-verify" class="btn btn-secondary" onclick="window.open('<?= $h(url('back-office/ressources/atak-realism/verify')) ?>', '_blank')">
                 🔍 Vérifier migration
             </button>
             
@@ -520,7 +520,7 @@ $profilesJson = json_encode($schema['profiles'] ?? [], JSON_UNESCAPED_UNICODE);
         const CURRENT_CONFIG = <?= $configJson ?>;
         const PROFILES = <?= $profilesJson ?>;
         const CSRF_TOKEN = '<?= $h($csrfToken) ?>';
-        const SAVE_URL = '<?= $h(url('admin/atak/realism/save')) ?>';
+        const SAVE_URL = '<?= $h(url('back-office/ressources/atak-realism/save')) ?>';
         
         // Instance générateur
         let generator = null;

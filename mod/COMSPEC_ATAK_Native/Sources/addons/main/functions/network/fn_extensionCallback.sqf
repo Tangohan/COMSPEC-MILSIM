@@ -1,5 +1,11 @@
 params ["_name","_function",["_payload",""]];
 if (_name isNotEqualTo "comspec") exitWith {};
+// Réponse d'un appel non bloquant (fn_extAwait), quelle que soit la DLL qui rappelle.
+if (_function isEqualType "" && {(_function select [0, 6]) isEqualTo "async:"}) exitWith {
+    private _pending = missionNamespace getVariable ["COMSPEC_ATAK_ExtPending", createHashMap];
+    private _ticket = _function select [6];
+    if (_ticket in _pending) then { _pending set [_ticket, [_payload]]; };
+};
 // Les deux DLL rappellent sous le même nom : avec Overwatch, ces rappels sont les siens, pas ceux du natif.
 if ([] call comspec_atak_native_fnc_bridge) exitWith {};
 

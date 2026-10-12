@@ -225,7 +225,7 @@ class AdminAtakModController
         if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide. Réessayez.');
 
-            return Response::redirect(url('admin/atak-mod'));
+            return Response::redirect(url('back-office/ressources/atak-mod'));
         }
 
         $file = $_FILES['mod_zip'] ?? null;
@@ -236,7 +236,7 @@ class AdminAtakModController
             Session::flash('errors', $errors);
             Session::flash('error', 'Envoi impossible.');
 
-            return Response::redirect(url('admin/atak-mod'));
+            return Response::redirect(url('back-office/ressources/atak-mod'));
         }
 
         if (($file['size'] ?? 0) > self::MAX_SIZE) {
@@ -260,20 +260,20 @@ class AdminAtakModController
             Session::flash('errors', $errors);
             Session::flash('error', implode(' ', $errors));
 
-            return Response::redirect(url('admin/atak-mod'));
+            return Response::redirect(url('back-office/ressources/atak-mod'));
         }
 
         $dir = $this->getStoragePath($tenantId);
         if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
             Session::flash('error', 'Impossible d’enregistrer le pack pour le moment.');
 
-            return Response::redirect(url('admin/atak-mod'));
+            return Response::redirect(url('back-office/ressources/atak-mod'));
         }
         $dest = $this->getModFilePath($tenantId);
         if (!@move_uploaded_file((string) $file['tmp_name'], $dest)) {
             Session::flash('error', 'Impossible d’enregistrer le pack pour le moment.');
 
-            return Response::redirect(url('admin/atak-mod'));
+            return Response::redirect(url('back-office/ressources/atak-mod'));
         }
 
         $version = $this->readVersionFromZip($dest);
@@ -310,7 +310,7 @@ class AdminAtakModController
             . $discordSuffix
         );
 
-        return Response::redirect(url('admin/atak-mod'));
+        return Response::redirect(url('back-office/ressources/atak-mod'));
     }
 
     public function delete(Request $request, array $params = []): Response
@@ -322,7 +322,7 @@ class AdminAtakModController
         if ($request->method() !== 'POST' || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', 'Requête invalide. Réessayez.');
 
-            return Response::redirect(url('admin/atak-mod'));
+            return Response::redirect(url('back-office/ressources/atak-mod'));
         }
         $path = $this->getModFilePath($tenantId);
         if (is_file($path)) {
@@ -330,6 +330,6 @@ class AdminAtakModController
         }
         Session::flash('success', 'Pack Overwatch retiré. Les membres ne peuvent plus le télécharger.');
 
-        return Response::redirect(url('admin/atak-mod'));
+        return Response::redirect(url('back-office/ressources/atak-mod'));
     }
 }

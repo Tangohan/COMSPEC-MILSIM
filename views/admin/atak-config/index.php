@@ -102,7 +102,7 @@ foreach ($dataSummary as $k => $v) {
         <?php if ($bridgeModulesUpdatedAt !== ''): ?>
             <p class="text-xs text-slate-400 mb-3">Dernière mise à jour : <?= htmlspecialchars($bridgeModulesUpdatedAt, ENT_QUOTES, 'UTF-8') ?></p>
         <?php endif; ?>
-        <form action="<?= $baseUrl ?>/admin/atak-config/modules" method="post" class="space-y-3">
+        <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/modules" method="post" class="space-y-3">
             <?= \App\Core\Csrf::field() ?>
             <div class="grid sm:grid-cols-2 gap-3">
                 <?php foreach ($bridgeModules as $mod): ?>
@@ -172,7 +172,7 @@ foreach ($dataSummary as $k => $v) {
                 </p>
             </div>
         <?php else: ?>
-        <form action="<?= $baseUrl ?>/admin/atak-config/experience" method="post" class="space-y-4" id="atak-experience-form">
+        <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/experience" method="post" class="space-y-4" id="atak-experience-form">
             <?= \App\Core\Csrf::field() ?>
             <div class="grid sm:grid-cols-2 gap-3">
                 <?php foreach ($experienceCatalog as $exp): ?>
@@ -277,7 +277,7 @@ foreach ($dataSummary as $k => $v) {
             Un bandeau du type caméra-piéton est gravé sur les photos reçues du terrain (casque, tablette, drone) :
             unité, indicatif, grille et horodatage. Les photos déjà archivées ne sont pas modifiées.
         </p>
-        <form action="<?= $baseUrl ?>/admin/atak-config/photo-hud" method="post" class="space-y-4">
+        <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/photo-hud" method="post" class="space-y-4">
             <?= \App\Core\Csrf::field() ?>
             <input type="hidden" name="photo_hud_enabled" value="0" />
             <label class="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-3 cursor-pointer hover:border-emerald-300">
@@ -355,7 +355,7 @@ foreach ($dataSummary as $k => $v) {
             Choisissez le symbole OTAN, une icône déjà présente dans la bibliothèque de la carte, ou envoyez la vôtre.
             Ces choix s’appliquent à toute la communauté et restent mémorisés.
         </p>
-        <form action="<?= $baseUrl ?>/admin/atak-config/marker-icons/upload" method="post" enctype="multipart/form-data" class="mb-6 space-y-3 rounded-lg border border-slate-100 bg-slate-50 p-4">
+        <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/marker-icons/upload" method="post" enctype="multipart/form-data" class="mb-6 space-y-3 rounded-lg border border-slate-100 bg-slate-50 p-4">
             <?= \App\Core\Csrf::field() ?>
             <p class="text-sm font-medium text-slate-800">Ajouter une icône</p>
             <div class="grid sm:grid-cols-2 gap-3">
@@ -387,7 +387,7 @@ foreach ($dataSummary as $k => $v) {
                                 <img src="<?= htmlspecialchars($iconUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" class="h-8 w-8 object-contain" />
                             <?php endif; ?>
                             <span class="text-xs text-slate-700"><?= htmlspecialchars((string) ($iconRow['label'] ?? 'Icône'), ENT_QUOTES, 'UTF-8') ?></span>
-                            <form action="<?= $baseUrl ?>/admin/atak-config/marker-icons/delete" method="post" class="inline">
+                            <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/marker-icons/delete" method="post" class="inline">
                                 <?= \App\Core\Csrf::field() ?>
                                 <input type="hidden" name="icon_id" value="<?= htmlspecialchars((string) ($iconRow['id'] ?? ''), ENT_QUOTES, 'UTF-8') ?>" />
                                 <button type="submit" class="text-xs text-slate-500 hover:text-red-700">Retirer</button>
@@ -397,7 +397,7 @@ foreach ($dataSummary as $k => $v) {
                 </ul>
             </div>
         <?php endif; ?>
-        <form action="<?= $baseUrl ?>/admin/atak-config/marker-icons" method="post" class="space-y-4" id="atak-marker-assign-form">
+        <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/marker-icons" method="post" class="space-y-4" id="atak-marker-assign-form">
             <?= \App\Core\Csrf::field() ?>
             <?php foreach ($markerIconKinds as $kind => $kindLabel): ?>
                 <?php $cur = (string) ($markerAssign[$kind] ?? 'nato'); ?>
@@ -460,7 +460,7 @@ foreach ($dataSummary as $k => $v) {
                         </p>
                     </div>
                 <?php else: ?>
-                <form action="<?= $baseUrl ?>/admin/atak-config/maintenance" method="post" class="space-y-4">
+                <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/maintenance" method="post" class="space-y-4">
                     <?= \App\Core\Csrf::field() ?>
                     <label class="flex items-start gap-3 cursor-pointer">
                         <input type="hidden" name="maintenance_enabled" value="0" />
@@ -491,11 +491,11 @@ foreach ($dataSummary as $k => $v) {
                     <span class="font-semibold"><?= $missionRowsCount ?></span> enregistrement(s) de mission.
                 </p>
                 <div class="flex flex-wrap gap-2 mb-5">
-                    <a href="<?= $baseUrl ?>/admin/atak-config/export" class="inline-flex px-4 py-2 bg-white border border-slate-200 text-slate-800 text-sm font-semibold rounded-lg hover:bg-slate-50">
+                    <a href="<?= $baseUrl ?>/back-office/ressources/atak-config/export" class="inline-flex px-4 py-2 bg-white border border-slate-200 text-slate-800 text-sm font-semibold rounded-lg hover:bg-slate-50">
                         Exporter tout (fichier)
                     </a>
                 </div>
-                <form action="<?= $baseUrl ?>/admin/atak-config/purge" method="post" class="rounded-lg border border-red-200 bg-white p-4 space-y-3" onsubmit="return confirm('Confirmer l’effacement définitif du journal et des données de mission de cette communauté&nbsp;? Cette action est irréversible.');">
+                <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/purge" method="post" class="rounded-lg border border-red-200 bg-white p-4 space-y-3" onsubmit="return confirm('Confirmer l’effacement définitif du journal et des données de mission de cette communauté&nbsp;? Cette action est irréversible.');">
                     <?= \App\Core\Csrf::field() ?>
                     <p class="text-sm font-medium text-slate-800">Effacer définitivement</p>
                     <p class="text-xs text-slate-600 leading-relaxed">
@@ -560,7 +560,7 @@ foreach ($dataSummary as $k => $v) {
                                 <p class="text-xs text-amber-800 mt-1">Aucune clé configurée. Générez-en une pour activer Appairer et la liaison jeu.</p>
                             <?php endif; ?>
                         </div>
-                        <form action="<?= $baseUrl ?>/admin/atak-config/access-key" method="post" onsubmit="return confirm('Générer une nouvelle clé&nbsp;? L’ancienne ne fonctionnera plus tant que les joueurs n’auront pas refait Appairer.');">
+                        <form action="<?= $baseUrl ?>/back-office/ressources/atak-config/access-key" method="post" onsubmit="return confirm('Générer une nouvelle clé&nbsp;? L’ancienne ne fonctionnera plus tant que les joueurs n’auront pas refait Appairer.');">
                             <?= \App\Core\Csrf::field() ?>
                             <button type="submit" class="px-4 py-2 bg-emerald-800 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700">
                                 <?= $hasTenantAccessKey ? 'Régénérer la clé' : 'Générer une clé d’accès' ?>
@@ -629,7 +629,7 @@ foreach ($dataSummary as $k => $v) {
                 </p>
             </div>
 
-            <form action="<?= $baseUrl ?>/admin/atak-config" method="post" class="space-y-6">
+            <form action="<?= $baseUrl ?>/back-office/ressources/atak-config" method="post" class="space-y-6">
                 <?= \App\Core\Csrf::field() ?>
 
                 <div class="border border-slate-200 rounded-xl p-5 bg-white shadow-sm">
@@ -738,11 +738,10 @@ foreach ($dataSummary as $k => $v) {
 
                 <div class="flex flex-wrap gap-2 pt-1">
                     <button type="submit" class="px-5 py-2.5 bg-slate-900 text-white text-sm font-semibold rounded-lg hover:bg-slate-800">Enregistrer</button>
-                    <a href="<?= $baseUrl ?>/admin/atak-mod" class="px-4 py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50">Fichier du mod (upload)</a>
-                    <a href="<?= $baseUrl ?>/admin/atak-mod-blocks" class="px-4 py-2.5 border border-rose-200 bg-rose-50/70 text-rose-950 text-sm font-medium rounded-lg hover:bg-rose-100">Restrictions d’accès au mod</a>
-                    <a href="<?= $baseUrl ?>/admin/atak-beta" class="px-4 py-2.5 border border-amber-200 bg-amber-50/70 text-amber-950 text-sm font-medium rounded-lg hover:bg-amber-100">Accès anticipé</a>
+                    <a href="<?= $baseUrl ?>/back-office/ressources/atak-mod" class="px-4 py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50">Fichier du mod (upload)</a>
+                    <a href="<?= $baseUrl ?>/back-office/ressources/atak-mod-blocks" class="px-4 py-2.5 border border-rose-200 bg-rose-50/70 text-rose-950 text-sm font-medium rounded-lg hover:bg-rose-100">Restrictions d’accès au mod</a>
                     <a href="<?= $baseUrl ?>/atak" class="px-4 py-2.5 border border-emerald-200 text-emerald-900 text-sm font-medium rounded-lg bg-emerald-50/80 hover:bg-emerald-50">Ouvrir la Tacmap</a>
-                    <a href="<?= $baseUrl ?>/admin" class="px-4 py-2.5 border border-slate-200 text-slate-600 text-sm rounded-lg hover:bg-slate-50">Retour administration</a>
+                    <a href="<?= $baseUrl ?>/back-office" class="px-4 py-2.5 border border-slate-200 text-slate-600 text-sm rounded-lg hover:bg-slate-50">Retour au back-office</a>
                 </div>
             </form>
         </div>
@@ -779,7 +778,7 @@ foreach ($dataSummary as $k => $v) {
 
             <div class="border border-slate-200 rounded-xl p-4 bg-white text-xs text-slate-600 leading-relaxed">
                 <p class="font-semibold text-slate-800 mb-1">Fichier du mod</p>
-                <p>Pour proposer un téléchargement direct du mod depuis le portail et le tableau de bord, déposez l’archive sur l’écran <a href="<?= $baseUrl ?>/admin/atak-mod" class="text-slate-900 underline">Mod ATAK (upload)</a>.</p>
+                <p>Pour proposer un téléchargement direct du mod depuis le portail et le tableau de bord, déposez l’archive sur l’écran <a href="<?= $baseUrl ?>/back-office/ressources/atak-mod" class="text-slate-900 underline">Mod ATAK (upload)</a>.</p>
             </div>
         </aside>
     </div>
