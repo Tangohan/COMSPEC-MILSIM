@@ -5,8 +5,10 @@ COMSPECExtension	XEH_postInitClient.sqf
 COMSPEC_ALERT_%1_%2	XEH_postInitClient.sqf
 COMSPEC_PANIC_%1_%2	XEH_postInitClient.sqf
 Dammaged	XEH_postInitClient.sqf
+Doigt d'honneur	XEH_postInitClient.sqf
 Ended	XEH_postInitClient.sqf
 Explosion	XEH_postInitClient.sqf
+Geste du bras gauche (marche aussi fusil en main). Aussi dans les actions ACE perso.	XEH_postInitClient.sqf
 HH:MM	XEH_postInitClient.sqf
 HH:MM:SS	XEH_postInitClient.sqf
 Init	XEH_postInitClient.sqf
@@ -23,6 +25,7 @@ bars	XEH_postInitClient.sqf
 blast	XEH_postInitClient.sqf
 body	XEH_postInitClient.sqf
 carry	XEH_postInitClient.sqf
+check	XEH_postInitClient.sqf
 combat	XEH_postInitClient.sqf
 damage	XEH_postInitClient.sqf
 face	XEH_postInitClient.sqf
@@ -31,10 +34,12 @@ hand	XEH_postInitClient.sqf
 head	XEH_postInitClient.sqf
 health	XEH_postInitClient.sqf
 hits	XEH_postInitClient.sqf
+hunt	XEH_postInitClient.sqf
 init	XEH_postInitClient.sqf
 interactive	XEH_postInitClient.sqf
 kia:%1:%2	XEH_postInitClient.sqf
 kind	XEH_postInitClient.sqf
+land	XEH_postInitClient.sqf
 leftarm	XEH_postInitClient.sqf
 leftleg	XEH_postInitClient.sqf
 lock	XEH_postInitClient.sqf
@@ -59,6 +64,7 @@ texture	XEH_postInitClient.sqf
 tick	XEH_postInitClient.sqf
 toggle	XEH_postInitClient.sqf
 treat	XEH_postInitClient.sqf
+true	XEH_postInitClient.sqf
 unpair	XEH_postInitClient.sqf
 vehicle	XEH_postInitClient.sqf
 vibrate	XEH_postInitClient.sqf
@@ -78,6 +84,7 @@ Français, English, ou Auto : langue du jeu (français si Arma est en français,
 Interface	XEH_preInit.sqf
 Langue / Language	XEH_preInit.sqf
 Langue du téléphone / Phone language	XEH_preInit.sqf
+Photo	XEH_preInit.sqf
 Simulation	XEH_preInit.sqf
 [COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded	XEH_preInit.sqf
 [COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1	XEH_preInit.sqf
@@ -92,8 +99,10 @@ fields	XEH_preInit.sqf
 guer	XEH_preInit.sqf
 native-rsc-v1	XEH_preInit.sqf
 west	XEH_preInit.sqf
-H+%2 min	functions/aar/fn_aarAction.sqf
+%6heure jeu %2	functions/aar/fn_aarAction.sqf
+H+%3 min	functions/aar/fn_aarAction.sqf
 follow	functions/aar/fn_aarAction.sqf
+image %4 / %5	functions/aar/fn_aarAction.sqf
 seek	functions/aar/fn_aarAction.sqf
 speed	functions/aar/fn_aarAction.sqf
 step	functions/aar/fn_aarAction.sqf
@@ -274,7 +283,8 @@ force	functions/drone/fn_droneAction.sqf
 gimbal	functions/drone/fn_droneAction.sqf
 hexa	functions/drone/fn_droneAction.sqf
 hover	functions/drone/fn_droneAction.sqf
-hunt	functions/drone/fn_droneAction.sqf
+inside	functions/drone/fn_droneAction.sqf
+keep	functions/drone/fn_droneAction.sqf
 loiter	functions/drone/fn_droneAction.sqf
 manual	functions/drone/fn_droneAction.sqf
 nano	functions/drone/fn_droneAction.sqf
@@ -283,8 +293,10 @@ observe	functions/drone/fn_droneAction.sqf
 observer	functions/drone/fn_droneAction.sqf
 payloads	functions/drone/fn_droneAction.sqf
 picked	functions/drone/fn_droneAction.sqf
+promote	functions/drone/fn_droneAction.sqf
 quad	functions/drone/fn_droneAction.sqf
 quality	functions/drone/fn_droneAction.sqf
+quick	functions/drone/fn_droneAction.sqf
 radius	functions/drone/fn_droneAction.sqf
 recenter	functions/drone/fn_droneAction.sqf
 relocal	functions/drone/fn_droneAction.sqf
@@ -307,6 +319,8 @@ DRONE %1 %2° ±%3°%4	functions/drone/fn_droneDetectDraw.sqf
 DRONE-%1	functions/drone/fn_droneDetectScan.sqf
 Plane	functions/drone/fn_droneDetectScan.sqf
 P%1 %2%3	functions/drone/fn_droneDraw.sqf
+drop	functions/drone/fn_droneFleet.sqf
+swarm	functions/drone/fn_droneFleet.sqf
 %1 FLIR	functions/drone/fn_droneFlir.sqf
 ALT %1 m	functions/drone/fn_droneFlir.sqf
 BAT %3 %%	functions/drone/fn_droneFlir.sqf
@@ -348,7 +362,6 @@ conf	functions/drone/fn_dronePhoto.sqf
 drone:%1	functions/drone/fn_dronePhoto.sqf
 flag	functions/drone/fn_dronePhoto.sqf
 forget	functions/drone/fn_dronePhoto.sqf
-keep	functions/drone/fn_dronePhoto.sqf
 meta	functions/drone/fn_dronePhoto.sqf
 modal	functions/drone/fn_dronePhoto.sqf
 LOCK:%1	functions/drone/fn_droneSeq.sqf
@@ -363,14 +376,17 @@ perlinNoise(2,3,0,1)	functions/drone/fn_droneStatic.sqf
 perlinNoise(3,2,0,1)	functions/drone/fn_droneStatic.sqf
 perlinNoise(3,3,0,1)	functions/drone/fn_droneStatic.sqf
 smears	functions/drone/fn_droneStatic.sqf
+%1 LOCK %2	functions/drone/fn_lockAction.sqf
 clock	functions/drone/fn_lockAction.sqf
 draw3d	functions/drone/fn_lockAction.sqf
 release	functions/drone/fn_lockAction.sqf
 seen	functions/drone/fn_lockAction.sqf
+NF%1%2	functions/drone/fn_noFly.sqf
 1 min	functions/drone/fn_pageDrone.sqf
 2 min	functions/drone/fn_pageDrone.sqf
 30 s	functions/drone/fn_pageDrone.sqf
 Laser	functions/drone/fn_pageDrone.sqf
+Ordre	functions/drone/fn_pageDrone.sqf
 PHOTOS (%1)	functions/drone/fn_pageDrone.sqf
 TRK:%1	functions/drone/fn_pageDrone.sqf
 ZOOM +	functions/drone/fn_pageDrone.sqf
@@ -394,6 +410,11 @@ remaining	functions/explo/fn_exploList.sqf
 C%1	functions/explo/fn_pageExplo.sqf
 T-%1 s	functions/explo/fn_pageExplo.sqf
 charge	functions/explo/fn_pageExplo.sqf
+comspecselfie	functions/gestures/fn_gestureSelfie.sqf
+comspecselfieup	functions/gestures/fn_gestureSelfie.sqf
+down	functions/gestures/fn_gestureSelfie.sqf
+exit	functions/gestures/fn_gestureSelfie.sqf
+selfie	functions/gestures/fn_gestureSelfie.sqf
 hour	functions/map/fn_ewDraw.sqf
 track	functions/map/fn_ewDraw.sqf
 Tank	functions/map/fn_localDataRefresh.sqf
@@ -402,7 +423,10 @@ orbat	functions/map/fn_localDataRefresh.sqf
 self	functions/map/fn_localDataRefresh.sqf
 prio	functions/map/fn_logisticsDraw.sqf
 Ping	functions/map/fn_mapCtxMenu.sqf
+compute	functions/map/fn_mapCtxMenu.sqf
 render	functions/map/fn_mapCtxMenu.sqf
+triangulation	functions/map/fn_mapCtxMenu.sqf
+unit	functions/map/fn_mapCtxMenu.sqf
 _USER_DEFINED #	functions/map/fn_mapLabels.sqf
 Grid	functions/map/fn_mapOnDraw.sqf
 LZ %1	functions/map/fn_mapOnDraw.sqf
@@ -414,6 +438,7 @@ jammer	functions/map/fn_mapOnDraw.sqf
 routes	functions/map/fn_mapOnDraw.sqf
 zones	functions/map/fn_mapOnDraw.sqf
 ±%2 m	functions/map/fn_mapOnDraw.sqf
+%1 Mbit/s %2 %%	functions/map/fn_mapOverlayUpdate.sqf
 databar	functions/map/fn_mapOverlayUpdate.sqf
 labels	functions/map/fn_mapOverlayUpdate.sqf
 latitude	functions/map/fn_mapOverlayUpdate.sqf
@@ -449,7 +474,6 @@ Description	functions/map/fn_markerEditor.sqf
 Direct	functions/map/fn_markerEditor.sqf
 Global	functions/map/fn_markerEditor.sqf
 Normal	functions/map/fn_markerEditor.sqf
-Orientation (°)	functions/map/fn_markerEditor.sqf
 Bunker	functions/map/fn_markerLabels.sqf
 Contact	functions/map/fn_markerLabels.sqf
 Destruction	functions/map/fn_markerLabels.sqf
@@ -480,6 +504,7 @@ service	functions/map/fn_markerPaletteData.sqf
 support	functions/map/fn_markerPaletteData.sqf
 COMSPEC_ATAK_SK_%1	functions/map/fn_markerStroke.sqf
 COMSPEC_ATAK_MkRelay_%1	functions/map/fn_markerWebSweep.sqf
+%3 Mbit/s	functions/map/fn_meshDraw.sqf
 hops	functions/map/fn_meshDraw.sqf
 links	functions/map/fn_meshDraw.sqf
 scan	functions/map/fn_meshDraw.sqf
@@ -599,7 +624,15 @@ aliases	functions/network/fn_pollOrders.sqf
 tasks	functions/network/fn_pollOrders.sqf
 heading	functions/network/fn_pollUnits.sqf
 infantry	functions/network/fn_pollUnits.sqf
-quick	functions/pages/fn_alertsAction.sqf
+coverage	functions/network/fn_relayNet.sqf
+list	functions/network/fn_relayNet.sqf
+locate	functions/network/fn_relayNet.sqf
+relay	functions/network/fn_relayNet.sqf
+Server.Presence	functions/network/fn_serverPresence.sqf
+[COMSPEC ATAK] Adresse publique du serveur : %1	functions/network/fn_serverPresence.sqf
+away	functions/network/fn_serverPresence.sqf
+mission	functions/network/fn_serverPresence.sqf
+world	functions/network/fn_serverPresence.sqf
 salute	functions/pages/fn_alertsAction.sqf
 Logout	functions/pages/fn_athenaAction.sqf
 enter	functions/pages/fn_athenaAction.sqf
@@ -627,8 +660,25 @@ urgent	functions/pages/fn_chatCommand.sqf
 wiki	functions/pages/fn_chatCommand.sqf
 general	functions/pages/fn_chatSend.sqf
 out:%1	functions/pages/fn_chatSend.sqf
+Border	functions/pages/fn_datingAction.sqf
+Patience...	functions/pages/fn_datingAction.sqf
+ai:	functions/pages/fn_datingAction.sqf
+chance	functions/pages/fn_datingAction.sqf
+clue	functions/pages/fn_datingAction.sqf
+comspec_rencard_%1	functions/pages/fn_datingAction.sqf
 like	functions/pages/fn_datingAction.sqf
 pass	functions/pages/fn_datingAction.sqf
+profile	functions/pages/fn_datingAction.sqf
+roll	functions/pages/fn_datingAction.sqf
+shot	functions/pages/fn_datingAction.sqf
+super	functions/pages/fn_datingAction.sqf
+bind	functions/pages/fn_datingCam.sqf
+comspec_datecam%1	functions/pages/fn_datingCam.sqf
+Football	functions/pages/fn_datingSpecials.sqf
+Hill	functions/pages/fn_datingSpecials.sqf
+ai:%1	functions/pages/fn_datingSpecials.sqf
+pool	functions/pages/fn_datingSpecials.sqf
+tags	functions/pages/fn_datingSpecials.sqf
 "message":"	functions/pages/fn_discordAction.sqf
 @everyone	functions/pages/fn_discordAction.sqf
 @here	functions/pages/fn_discordAction.sqf
@@ -642,7 +692,6 @@ exempt	functions/pages/fn_ewAction.sqf
 geoloc	functions/pages/fn_ewAction.sqf
 geoq	functions/pages/fn_ewAction.sqf
 guerre	functions/pages/fn_ewAction.sqf
-locate	functions/pages/fn_ewAction.sqf
 sigint	functions/pages/fn_ewAction.sqf
 "line%1":"%2"	functions/pages/fn_firesAction.sqf
 5-LINE | 1 %1 | 2 %2 | 3 %3 | 4 %4 | 5 %5	functions/pages/fn_firesAction.sqf
@@ -651,7 +700,6 @@ APPEL DE FEU %1 | pièce %2 | cible %3%9 | %4 x%5%6 | az %7 mil | %8 m	functions
 IR strobe	functions/pages/fn_firesAction.sqf
 Laser %1	functions/pages/fn_firesAction.sqf
 clearing	functions/pages/fn_firesAction.sqf
-compute	functions/pages/fn_firesAction.sqf
 drift	functions/pages/fn_firesAction.sqf
 elev	functions/pages/fn_firesAction.sqf
 five	functions/pages/fn_firesAction.sqf
@@ -667,7 +715,6 @@ send5	functions/pages/fn_firesAction.sqf
 send9	functions/pages/fn_firesAction.sqf
 sheaf	functions/pages/fn_firesAction.sqf
 shells	functions/pages/fn_firesAction.sqf
-shot	functions/pages/fn_firesAction.sqf
 smoke	functions/pages/fn_firesAction.sqf
 solution	functions/pages/fn_firesAction.sqf
 {"mapId":%1,"author":"%2","jtac":"%2","mission_kind":"CAS","remarks":"%3","lines":{%4}}	functions/pages/fn_firesAction.sqf
@@ -679,7 +726,6 @@ yellow	functions/pages/fn_firesCff.sqf
 COMSPEC_FOOD_%1	functions/pages/fn_foodAction.sqf
 RX-%1	functions/pages/fn_foodAction.sqf
 UberEats %1	functions/pages/fn_foodAction.sqf
-drop	functions/pages/fn_foodAction.sqf
 launch	functions/pages/fn_foodAction.sqf
 capture	functions/pages/fn_frsAction.sqf
 folder	functions/pages/fn_frsAction.sqf
@@ -746,6 +792,7 @@ snapshot	functions/pages/fn_linkAllyAction.sqf
 unlink	functions/pages/fn_linkAllyAction.sqf
 velocitywound	functions/pages/fn_linkAllyAction.sqf
 Put	functions/pages/fn_linkAllyInit.sqf
+Take	functions/pages/fn_linkAllyInit.sqf
 chest:%1	functions/pages/fn_livecamShare.sqf
 %1 (web)	functions/pages/fn_logiWeb.sqf
 LOGREQ %1	functions/pages/fn_logiWeb.sqf
@@ -771,7 +818,7 @@ T1 %3 / T2 %4 / T3 %5	functions/pages/fn_medicalAction.sqf
 cancelled	functions/pages/fn_medicalAction.sqf
 litter	functions/pages/fn_medicalAction.sqf
 stamp	functions/pages/fn_messagesAll.sqf
-tags	functions/pages/fn_messagesAll.sqf
+rank	functions/pages/fn_orderAck.sqf
 ORDER_ID=%1|%2	functions/pages/fn_orderAction.sqf
 cache	functions/pages/fn_orderAction.sqf
 documents	functions/pages/fn_orderAction.sqf
@@ -837,7 +884,12 @@ Extension (DLL)	functions/pages/fn_pageCredits.sqf
 Version %1	functions/pages/fn_pageCredits.sqf
 Versions	functions/pages/fn_pageCredits.sqf
 version	functions/pages/fn_pageCredits.sqf
+%4 message(s)%5	functions/pages/fn_pageDating.sqf
 Match	functions/pages/fn_pageDating.sqf
+SUPER (%1 min)	functions/pages/fn_pageDating.sqf
+SUPER LIKE	functions/pages/fn_pageDating.sqf
+compat	functions/pages/fn_pageDating.sqf
+fallback	functions/pages/fn_pageDating.sqf
 %2 kbit/s	functions/pages/fn_pageDebug.sqf
 ATAK·	functions/pages/fn_pageDebug.sqf
 Extension	functions/pages/fn_pageDebug.sqf
@@ -886,7 +938,6 @@ T2 %6	functions/pages/fn_pageMedical.sqf
 T3 %7	functions/pages/fn_pageMedical.sqf
 %1 %2%3 %%/min	functions/pages/fn_pageNetwork.sqf
 %1 kbit/s	functions/pages/fn_pageNetwork.sqf
-%3 Mbit/s	functions/pages/fn_pageNetwork.sqf
 Mode %1	functions/pages/fn_pageNetwork.sqf
 failed	functions/pages/fn_pageNetwork.sqf
 inactive	functions/pages/fn_pageNetwork.sqf
@@ -898,7 +949,6 @@ slow	functions/pages/fn_pageNetwork.sqf
 warn	functions/pages/fn_pageNetwork.sqf
 Info	functions/pages/fn_pageNotifs.sqf
 FLASH %1	functions/pages/fn_pagePhotos.sqf
-bind	functions/pages/fn_pagePhotos.sqf
 Qualifications	functions/pages/fn_pageProfile.sqf
 captured	functions/pages/fn_pageProfile.sqf
 cert	functions/pages/fn_pageProfile.sqf
@@ -907,27 +957,17 @@ issued	functions/pages/fn_pageProfile.sqf
 missing	functions/pages/fn_pageProfile.sqf
 revoked	functions/pages/fn_pageProfile.sqf
 ≈ %1 h %2 min	functions/pages/fn_pageProfile.sqf
-Carroyage de 6, 8 ou 10 chiffres, ex. 1518 1730	functions/pages/fn_pageReco.sqf
-Ce que vous voyez, combien, ce qu'ils font, vers où. Ex. : 2 pick-up armés, 6 PAX, direction nord, en mouvement.	functions/pages/fn_pageReco.sqf
 Infrastructure	functions/pages/fn_pageReco.sqf
-NOTE D'OBSERVATION	functions/pages/fn_pageReco.sqf
 Obstacle / mine	functions/pages/fn_pageReco.sqf
-Où	functions/pages/fn_pageReco.sqf
-Point visé, jusqu'à 200 m	functions/pages/fn_pageReco.sqf
-Quoi	functions/pages/fn_pageReco.sqf
-RAPPORTÉ	functions/pages/fn_pageReco.sqf
-Repère d'équipe sur la carte et note envoyée à Athena	functions/pages/fn_pageReco.sqf
-SOUS MON REGARD	functions/pages/fn_pageReco.sqf
-VU DIRECTEMENT	functions/pages/fn_pageReco.sqf
 civilian	functions/pages/fn_pageReco.sqf
-grille illisible	functions/pages/fn_pageReco.sqf
 infrastructure	functions/pages/fn_pageReco.sqf
 other	functions/pages/fn_pageReco.sqf
-par moi ou mon équipe	functions/pages/fn_pageReco.sqf
-par un tiers, à confirmer	functions/pages/fn_pageReco.sqf
 static	functions/pages/fn_pageReco.sqf
 1 km	functions/pages/fn_pageRelief.sqf
+10 m	functions/pages/fn_pageRelief.sqf
+150 m	functions/pages/fn_pageRelief.sqf
 2 km	functions/pages/fn_pageRelief.sqf
+50 m	functions/pages/fn_pageRelief.sqf
 500 m	functions/pages/fn_pageRelief.sqf
 Altitude %1 m	functions/pages/fn_pageRelief.sqf
 10 S	functions/pages/fn_pageSettings.sqf
@@ -949,7 +989,12 @@ confirmed	functions/pages/fn_pageSse.sqf
 possible	functions/pages/fn_pageSse.sqf
 Signal	functions/pages/fn_pageStatus.sqf
 Terminal	functions/pages/fn_pageStatus.sqf
+Vu %1/%5	functions/pages/fn_pageTasks.sqf
 color='%1'	functions/pages/fn_pageTasks.sqf
+en cours %3	functions/pages/fn_pageTasks.sqf
+reçu %2	functions/pages/fn_pageTasks.sqf
+terminé %4	functions/pages/fn_pageTasks.sqf
+tous	functions/pages/fn_pageTasks.sqf
 BATTLE DAMAGE ASSESSMENT	functions/pages/fn_pageText.sqf
 BLUE FORCE TRACKING	functions/pages/fn_pageText.sqf
 Capture	functions/pages/fn_pageText.sqf
@@ -958,32 +1003,37 @@ PHOTOS / RECON	functions/pages/fn_pageText.sqf
 Page %2 / %3	functions/pages/fn_pageText.sqf
 interest	functions/pages/fn_pageWanted.sqf
 watchlist	functions/pages/fn_pageWanted.sqf
+%2 source(s)	functions/pages/fn_pageWaveRelay.sqf
+%6 Mbit/s	functions/pages/fn_pageWaveRelay.sqf
+10 km	functions/pages/fn_pageWaveRelay.sqf
+5 km	functions/pages/fn_pageWaveRelay.sqf
 Section Alpha	functions/pages/fn_pageWaveRelay.sqf
 Section Bravo	functions/pages/fn_pageWaveRelay.sqf
 Section Charlie	functions/pages/fn_pageWaveRelay.sqf
 Talkgroup	functions/pages/fn_pageWaveRelay.sqf
+Triangulations	functions/pages/fn_pageWaveRelay.sqf
+node	functions/pages/fn_pageWaveRelay.sqf
+± %1 m	functions/pages/fn_pageWaveRelay.sqf
 %1 hPa%2	functions/pages/fn_pageWeather.sqf
 ACE Weather	functions/pages/fn_pageWeather.sqf
 Aviation	functions/pages/fn_pageWeather.sqf
 Conditions	functions/pages/fn_pageWeather.sqf
 comspec_photocam%1	functions/pages/fn_photoCam.sqf
-selfie	functions/pages/fn_photoCam.sqf
+pose	functions/pages/fn_photoCam.sqf
 shoot	functions/pages/fn_photoCam.sqf
 x%6	functions/pages/fn_photoCam.sqf
 Photo %1/%2	functions/pages/fn_photoLibrary.sqf
-profile	functions/pages/fn_photoLibrary.sqf
 Draw3D	functions/pages/fn_photoMode.sqf
 States	functions/pages/fn_photoMode.sqf
-exit	functions/pages/fn_photoMode.sqf
 gesture	functions/pages/fn_photoMode.sqf
 internal	functions/pages/fn_photoMode.sqf
 pitch	functions/pages/fn_photoMode.sqf
 terminate	functions/pages/fn_photoMode.sqf
 x%2	functions/pages/fn_photoMode.sqf
 ATAK Native	functions/pages/fn_taskAction.sqf
+Ordre %1%2	functions/pages/fn_taskAction.sqf
 wanted_%1_%2	functions/pages/fn_wantedAction.sqf
 Talkgroup %1	functions/pages/fn_waveRelayAction.sqf
-node	functions/pages/fn_waveRelayAction.sqf
 talkgroup	functions/pages/fn_waveRelayAction.sqf
 COMSPEC_ATAK_Plan_%1	functions/plan/fn_pagePlan.sqf
 Draw	functions/plan/fn_pagePlan.sqf
@@ -992,7 +1042,6 @@ cancel	functions/plan/fn_pagePlan.sqf
 cats	functions/plan/fn_pagePlan.sqf
 clear	functions/plan/fn_pagePlan.sqf
 dash	functions/plan/fn_pagePlan.sqf
-down	functions/plan/fn_pagePlan.sqf
 draft	functions/plan/fn_pagePlan.sqf
 draw	functions/plan/fn_pagePlan.sqf
 export	functions/plan/fn_pagePlan.sqf
@@ -1089,7 +1138,6 @@ situation	functions/reports/fn_reportTypes.sqf
 symptoms	functions/reports/fn_reportTypes.sqf
 threatened	functions/reports/fn_reportTypes.sqf
 treatment	functions/reports/fn_reportTypes.sqf
-unit	functions/reports/fn_reportTypes.sqf
 vehicles	functions/reports/fn_reportTypes.sqf
 weapons	functions/reports/fn_reportTypes.sqf
 what	functions/reports/fn_reportTypes.sqf
@@ -1146,7 +1194,6 @@ crusader	functions/shell/fn_aceMenu.sqf
 left	functions/shell/fn_aceMenu.sqf
 none	functions/shell/fn_aceMenu.sqf
 power	functions/shell/fn_aceMenu.sqf
-relay	functions/shell/fn_aceMenu.sqf
 right	functions/shell/fn_aceMenu.sqf
 screen	functions/shell/fn_aceMenu.sqf
 skull	functions/shell/fn_aceMenu.sqf
@@ -1161,6 +1208,8 @@ stub	functions/shell/fn_antenna.sqf
 whip	functions/shell/fn_antenna.sqf
 IMEI %2	functions/shell/fn_backView.sqf
 Premium	functions/shell/fn_backView.sqf
+itemctab	functions/shell/fn_droppedPhone.sqf
+itemmicrodagr	functions/shell/fn_droppedPhone.sqf
 spine3	functions/shell/fn_irBeacon.sqf
 Back	functions/shell/fn_jpcMap.sqf
 Internal	functions/shell/fn_jpcMap.sqf
@@ -1170,8 +1219,6 @@ update	functions/shell/fn_jpcMap.sqf
 Page %1 / %2	functions/shell/fn_pagePatches.sqf
 count	functions/shell/fn_pagePatches.sqf
 fold	functions/shell/fn_pagePatches.sqf
-list	functions/shell/fn_pagePatches.sqf
-mission	functions/shell/fn_pagePatches.sqf
 mods	functions/shell/fn_pagePatches.sqf
 query	functions/shell/fn_pagePatches.sqf
 ins:	functions/shell/fn_patchCatalog.sqf
@@ -1290,7 +1337,6 @@ push	functions/teams/fn_interTeamAction.sqf
 sync	functions/teams/fn_interTeamAction.sqf
 false	functions/teams/fn_json.sqf
 null	functions/teams/fn_json.sqf
-true	functions/teams/fn_json.sqf
 freshness	functions/teams/fn_pageInterTeam.sqf
 info	functions/teams/fn_pageInterTeam.sqf
 units	functions/teams/fn_pageInterTeam.sqf
@@ -1350,14 +1396,12 @@ filter	functions/ui/fn_deviceOverlay.sqf
 frame	functions/ui/fn_deviceOverlay.sqf
 glitch_%1_%2	functions/ui/fn_deviceOverlay.sqf
 glitch_%1_0	functions/ui/fn_deviceOverlay.sqf
-land	functions/ui/fn_deviceOverlay.sqf
 landscape	functions/ui/fn_deviceOverlay.sqf
 port	functions/ui/fn_deviceOverlay.sqf
 reason	functions/ui/fn_deviceOverlay.sqf
 seed	functions/ui/fn_deviceOverlay.sqf
 shatter_%1	functions/ui/fn_deviceOverlay.sqf
 shutdown	functions/ui/fn_deviceOverlay.sqf
-check	functions/ui/fn_displayLoad.sqf
 display	functions/ui/fn_displayLoad.sqf
 display_created (%1)	functions/ui/fn_displayLoad.sqf
 drag	functions/ui/fn_displayLoad.sqf
@@ -1393,6 +1437,9 @@ position	functions/ui/fn_inspectorUpdate.sqf
 signal %1/4	functions/ui/fn_inspectorUpdate.sqf
 unknown	functions/ui/fn_inspectorUpdate.sqf
 updated	functions/ui/fn_inspectorUpdate.sqf
+ATAK NATIF	functions/ui/fn_introSplash.sqf
+ATHENA LINK  //  INITIALISATION	functions/ui/fn_introSplash.sqf
+ATHENA LINK  //  OK	functions/ui/fn_introSplash.sqf
 cols	functions/ui/fn_launcherRender.sqf
 hint	functions/ui/fn_launcherRender.sqf
 ×	functions/ui/fn_launcherRender.sqf

@@ -1,5 +1,6 @@
 /*
-    App Relief : champ de vision depuis ma position (cases vues / cachées par le terrain)
+    App Relief : champ de vision depuis ma position, un point de la carte, un équipier ou le drone (cases vues / cachées
+    par le terrain, les bâtiments et la végétation), avec hauteur d'œil ajoutée (toit, mât, drone) et secteur de vision,
     et carte des altitudes autour de moi. Calcul par comspec_atak_native_fnc_reliefAction,
     affiché en calque sur l'app Carte (vert vu, rouge caché, ou dégradé d'altitude).
 */
@@ -14,13 +15,20 @@ private _dist = { params ["_d"]; [format ["%1 m", round _d], format ["%1 km", (_
 private _busy = missionNamespace getVariable ["COMSPEC_ATAK_ViewshedBusy", false];
 private _vs = missionNamespace getVariable ["COMSPEC_ATAK_Viewshed", []];
 private _show = missionNamespace getVariable ["COMSPEC_ATAK_ViewshedShow", true];
+private _hgt = _s getOrDefault ["rlHeight", 0];
+private _sec = _s getOrDefault ["rlSector", 360];
+private _objs = _s getOrDefault ["rlObjects", true];
+private _drone = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
 private _opt = { params ["_t", "_k", "_v", "_cur"]; [_t, compile format ["['set', '%1', %2] call comspec_atak_native_fnc_reliefAction;", _k, str _v], _v isEqualTo _cur] };
 
 private _rows = [
     ["hero", "\z\comspec_atak_native\addons\main\data\app_relief.paa", format ["<t size='1.2' font='RobotoCondensedBold'>Relief et vues</t><br/><t color='#8a9a93'>Altitude %1 m · %2</t><br/><t size='0.8' color='#8a9a93'>Ce que je vois depuis ici, et ce qui me voit.</t>",
         round ((getPosASL player) select 2), [getPosASL player] call comspec_atak_native_fnc_gridRef]],
-    ["section", "Réglages", "Grille de 41 x 41 cases autour de moi, œil à hauteur actuelle, cible à 1,7 m du sol"],
+    ["section", "Réglages", "Grille de 41 x 41 cases autour de l'observateur, cible à 1,7 m du sol. Depuis un point ou un équipier : clic droit sur la carte"],
     ["segment", "Rayon", [["500 m", "rlRadius", 500, _radius] call _opt, ["1 km", "rlRadius", 1000, _radius] call _opt, ["2 km", "rlRadius", 2000, _radius] call _opt], format ["case de %1 m", round ((2 * _radius) / 40)]],
+    ["segment", "Hauteur d'œil ajoutée", [["AUCUNE", "rlHeight", 0, _hgt] call _opt, ["10 m", "rlHeight", 10, _hgt] call _opt, ["50 m", "rlHeight", 50, _hgt] call _opt, ["150 m", "rlHeight", 150, _hgt] call _opt], "toit, mât, drone en vol"],
+    ["segment", "Secteur", [["360°", "rlSector", 360, _sec] call _opt, ["120°", "rlSector", 120, _sec] call _opt, ["60°", "rlSector", 60, _sec] call _opt], "dans la direction du regard"],
+    ["switch", "Bâtiments et végétation", _objs, { ["set", "rlObjects", !((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["rlObjects", true])] call comspec_atak_native_fnc_reliefAction; }, "Orange : vue coupée par un mur, une maison ou des arbres"],
     ["segment", "Affichage", [["VISIBILITÉ", "rlMode", "VIS", _mode] call _opt, ["ALTITUDE", "rlMode", "ALT", _mode] call _opt]],
     ["switch", "Calque sur la carte", _show, { ["show"] call comspec_atak_native_fnc_reliefAction; }, ["Masqué : le calcul est conservé", "Vert : vu · rouge : caché (ou dégradé bleu / vert / rouge en altitude)"] select _show]
 ];
@@ -29,13 +37,16 @@ if (_busy) then {
     _rows pushBack ["buttons", [["ACTUALISER", { [{ ['RELIEF'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
 } else {
     _rows pushBack ["buttons", [["CALCULER", { ["compute"] call comspec_atak_native_fnc_reliefAction; }, true], ["EFFACER", { ["clear"] call comspec_atak_native_fnc_reliefAction; }]]];
+    if (!isNull _drone && {alive _drone}) then {
+        _rows pushBack ["buttons", [["DEPUIS LE DRONE", compile format ["['compute', '%1'] call comspec_atak_native_fnc_reliefAction;", netId _drone]]]];
+    };
 };
 
 if ((count _vs) > 8) then {
-    _vs params ["_center", "_cell", "_cells", "_r", "_minH", "_maxH", "_pctVis", "_best", "_when"];
+    _vs params ["_center", "_cell", "_cells", "_r", "_minH", "_maxH", "_pctVis", "_best", "_when", ["_eye", []], ["_sector", []], ["_who", "Moi"]];
     private _moved = player distance2D _center;
     _rows append [
-        ["section", "Résultat", format ["Calculé à %1 sur %2 de rayon", [_when, "HH:MM"] call BIS_fnc_timeToString, [_r] call _dist]],
+        ["section", "Résultat", format ["%3 · calculé à %1 sur %2 de rayon%4", [_when, "HH:MM"] call BIS_fnc_timeToString, [_r] call _dist, _who, ["", format [" · secteur %1°", _sector param [1, 360]]] select (_sector isNotEqualTo [])]],
         ["info", "Terrain visible", format ["<t color='%1'>%2 %%</t>", ["#e5483a", "#f2ab33", "#5cc76b"] select ((floor (_pctVis / 34)) min 2), _pctVis]],
         ["info", "Terrain caché", format ["%1 %%", 100 - _pctVis]],
         ["info", "Altitude mini / maxi", format ["%1 m / %2 m", round _minH, round _maxH]],
@@ -62,7 +73,7 @@ if ((count _vs) > 8) then {
         private _p = round (100 * (_sect select _forEachIndex) / ((_sectN select _forEachIndex) max 1));
         _rows pushBack ["info", _x, format ["<t color='%1'>%2 %%</t>", ["#e5483a", "#f2ab33", "#5cc76b"] select ((floor (_p / 34)) min 2), _p]];
     } forEach ["Nord", "Nord-est", "Est", "Sud-est", "Sud", "Sud-ouest", "Ouest", "Nord-ouest"];
-    if (_moved > _cell * 2) then {
+    if (_who isEqualTo "Moi" && {_moved > _cell * 2}) then {
         _rows pushBack ["text", format ["<t size='0.8' color='#f2ab33'>Vous avez bougé de %1 depuis le calcul : relancez-le pour une vue à jour.</t>", [_moved] call _dist]];
     };
     _rows pushBack ["buttons", [["VOIR SUR LA CARTE", { ["locate", "center"] call comspec_atak_native_fnc_reliefAction; }]]];

@@ -1,7 +1,7 @@
 /*
     App Wave Relay : radio maillée (MANET) entre les téléphones du camp.
-    Onglets MON NŒUD (débit, sauts jusqu'à la passerelle, voisins directs), RÉSEAU (tous les nœuds)
-    et TALKGROUPS (canaux des radios ACRE2 si chargé, sinon talkgroup data choisi sur le téléphone).
+    Onglets MON NŒUD (débit, sauts jusqu'à la passerelle, voisins directs), RÉSEAU (tous les nœuds, LOCALISER un équipier
+    par triangulation), COUVERTURE (carte de débit des relais, liste des relais) et TALKGROUPS (canaux des radios ACRE2 si chargé, sinon talkgroup data choisi sur le téléphone).
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -20,7 +20,7 @@ private _hops = _mesh get "hops";
 private _gw = _mesh get "gw";
 private _myHops = _hops select 0;
 private _acre = !isNil "acre_api_fnc_getCurrentRadioList";
-private _rows = [["segment", "", [["MON NŒUD", "NODE"] call _tabBtn, [format ["RÉSEAU (%1)", count _nodes], "MESH"] call _tabBtn, ["TALKGROUPS", "TG"] call _tabBtn]]];
+private _rows = [["segment", "", [["MON NŒUD", "NODE"] call _tabBtn, [format ["RÉSEAU (%1)", count _nodes], "MESH"] call _tabBtn, ["COUVERTURE", "COV"] call _tabBtn, ["TALKGROUPS", "TG"] call _tabBtn]]];
 private _refresh = ["buttons", [
     ["ACTUALISER", { ["scan", "force"] call comspec_atak_native_fnc_waveRelayAction; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
     ["VOIR SUR LA CARTE", { if !(profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then { profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", true]; }; ["MAP"] call comspec_atak_native_fnc_navigate; }]
@@ -37,13 +37,67 @@ switch (_tab) do {
             (_nodes select _i) params ["_o", "_p", "_name", "_kind"];
             private _h = _hops select _i;
             private _deg = { (_x select 0) isEqualTo _i || {(_x select 1) isEqualTo _i} } count _links;
-            _rows pushBack ["text", format ["<t color='%1'>●</t> <t font='RobotoCondensedBold'>%2</t>%3  <t size='0.8' color='#8a9a93'>%4 · %5 voisin(s) · %6</t>",
+            private _txt = format ["<t color='%1'>●</t> <t font='RobotoCondensedBold'>%2</t>%3<br/><t size='0.8' color='#8a9a93'>%4 · %5 voisin(s) · %6</t>",
                 [["#e5483a", "#5cc76b"] select (_h >= 0), "#7fb6e6"] select (_kind isEqualTo "gw"), [_name] call _esc,
                 ["", " <t size='0.8' color='#7fb6e6'>(moi)</t>"] select (_kind isEqualTo "me"),
                 switch (true) do { case (_kind isEqualTo "gw" || {_i isEqualTo _gw}): { "passerelle" }; case (_h < 0): { "<t color='#e5483a'>isolé</t>" }; default { format ["%1 saut(s)", _h] }; },
-                _deg, [player distance2D _p] call _dist]];
+                _deg, [player distance2D _p] call _dist];
+            // Téléphone d'un équipier : triangulation par les relais et les téléphones qui l'entendent (balise coupée, joueur perdu).
+            _rows pushBack ["person", "\z\comspec_atak_native\addons\main\data\app_waverelay.paa", _txt,
+                [[], [["LOCALISER", compile format ["['locate', '%1'] call comspec_atak_native_fnc_relayNet; profileNamespace setVariable ['COMSPEC_ATAK_MeshOnMap', true]; ['MAP'] call comspec_atak_native_fnc_navigate;", netId _o]]]] select (_kind isEqualTo "node"),
+                [0.9, 0.94, 0.91, 1]];
         } forEach _order;
         _rows pushBack _refresh;
+    };
+    case "COV": {
+        private _cv = missionNamespace getVariable ["COMSPEC_ATAK_Coverage", []];
+        private _busy = missionNamespace getVariable ["COMSPEC_ATAK_CoverageBusy", false];
+        private _rad = _s getOrDefault ["rcRadius", 5000];
+        private _opt = { params ["_t", "_v"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['rcRadius', %1]; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _v], _v isEqualTo _rad] };
+        private _relays = ["list"] call comspec_atak_native_fnc_relayNet;
+        _rows append [
+            ["section", "Couverture réseau", "Débit reçu à hauteur d'homme autour de moi, d'après les relais et passerelles du camp, relief et brouilleurs compris"],
+            ["segment", "Rayon", [["2 km", 2000] call _opt, ["5 km", 5000] call _opt, ["10 km", 10000] call _opt], format ["case de %1 m", round ((2 * _rad) / 40)]]
+        ];
+        if (_busy) then {
+            _rows pushBack ["text", format ["<t color='#f2ab33'>● Calcul en cours : %1 %%</t>", round (100 * (missionNamespace getVariable ["COMSPEC_ATAK_CoverageProgress", 0]))]];
+            _rows pushBack ["buttons", [["ACTUALISER", { [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
+        } else {
+            _rows pushBack ["buttons", [
+                ["CALCULER", { ["coverage"] call comspec_atak_native_fnc_relayNet; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true],
+                ["EFFACER", { ["clear"] call comspec_atak_native_fnc_relayNet; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]
+            ]];
+        };
+        if ((count _cv) >= 8) then {
+            _cv params ["_center", "_cell", "_cells", "_r", "_pct", "_when", "_nr", "_avg"];
+            _rows append [
+                ["info", "Terrain couvert", format ["<t color='%1'>%2 %%</t>", ["#e5483a", "#f2ab33", "#5cc76b"] select ((floor (_pct / 34)) min 2), _pct]],
+                ["info", "Zones blanches", format ["%1 %%", 100 - _pct]],
+                ["info", "Débit moyen couvert", format ["%1 Mbit/s", _avg toFixed 1]],
+                ["info", "Calculé", format ["%1 · %2 · %3 relais", [_when, "HH:MM"] call BIS_fnc_timeToString, [_r] call _dist, _nr]]
+            ];
+            private _here = ["at", getPosASL player] call comspec_atak_native_fnc_relayNet;
+            if (_here isNotEqualTo []) then { _rows pushBack ["info", "À ma position", format ["%1 Mbit/s · perte %2 %%", (_here select 0) toFixed 1, _here select 1]]; };
+            if ((player distance2D _center) > _cell * 3) then { _rows pushBack ["text", "<t size='0.8' color='#f2ab33'>Vous avez bougé depuis le calcul : relancez-le pour la zone où vous êtes.</t>"]; };
+        };
+        _rows pushBack ["text", "<t size='0.8'><t color='#33d94d'>●</t> 4 Mbit/s et plus  <t color='#bfd933'>●</t> 1,5  <t color='#ff9926'>●</t> 0,5  <t color='#e5332a'>●</t> faible  <t color='#777777'>●</t> zone blanche</t>"];
+        _rows pushBack ["switch", "Relais et couverture sur la carte", profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false], { ["mapLinks"] call comspec_atak_native_fnc_waveRelayAction; }, "Calque Wave Relay : relais, portées, couverture, liens"];
+        _rows pushBack ["section", format ["Relais et passerelles (%1)", count _relays], "Portée, débit nominal, distance"];
+        {
+            _x params ["_o", "_ap", "_name", "_kind", "_rng", "_mb", "_ok"];
+            private _l = ["link", [_ap, _rng, _mb, eyePos player]] call comspec_atak_native_fnc_relayNet;
+            _rows pushBack ["text", format ["<t color='%1'>●</t> <t font='RobotoCondensedBold'>%2</t>  <t size='0.8' color='#8a9a93'>%3</t><br/><t size='0.8' color='#8a9a93'>%4 · portée %5 · %6 Mbit/s · %7 %8 · %9</t>",
+                ["#777777", "#7fb6e6"] select _ok, [_name] call _esc, createHashMapFromArray [["relay", "relais"], ["gw", "passerelle véhicule"], ["cp", "PC mobile"]] getOrDefault [_kind, _kind],
+                ["détruit", "intact"] select _ok, [_rng] call _dist, round _mb, [player distance2D _ap] call _dist, [player getDir _ap] call _card,
+                [format ["<t color='#e5483a'>hors de portée</t>"], format ["<t color='#5cc76b'>reçu %1 Mbit/s</t>", (_l select 1) toFixed 1]] select ((_l select 1) > 0)]];
+        } forEach _relays;
+        if (_relays isEqualTo []) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun relais dans cette mission ni passerelle de véhicule active dans votre camp.</t>"]; };
+        private _tri = missionNamespace getVariable ["COMSPEC_ATAK_Trilat", []];
+        if (_tri isNotEqualTo []) then {
+            _rows pushBack ["section", "Triangulations", "Localisations par les relais (10 min sur la carte)"];
+            { _rows pushBack ["info", _x select 0, [format ["± %1 m · %2 source(s)", _x select 2, count (_x select 3)], "une source"] select ((_x select 1) isEqualTo [])]; } forEach _tri;
+            _rows pushBack ["buttons", [["EFFACER", { ["trilatClear"] call comspec_atak_native_fnc_relayNet; [{ ['WAVERELAY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
+        };
     };
     case "TG": {
         if (_acre) then {

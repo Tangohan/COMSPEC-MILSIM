@@ -6,8 +6,8 @@
                     me (mon index), gw (index de la passerelle ou -1), gwLabel.
                     Lien si la distance est sous la portée (COMSPEC_ATAK_MeshRange, 3 000 m par défaut),
                     portée réduite à 35 % quand le relief coupe la ligne entre les deux antennes.
-                    Passerelle : relais Overwatch le plus proche s'il existe et est intact, sinon passerelle de véhicule
-                    ou PC mobile (fn_vehicleGateway), sinon le chef de groupe.
+                    Passerelles : tous les relais Overwatch intacts et passerelles de véhicule / PC mobiles (fn_relayNet) ;
+                    la principale est le relais le plus proche, sinon la passerelle de véhicule, sinon le chef de groupe.
       "talkgroup" : choisit le talkgroup data (variable publique COMSPEC_ATAK_Talkgroup) quand ACRE2 est absent.
       "channel"   : [id radio ACRE, canal] change le canal d'une radio ACRE2.
       "mapLinks"  : affiche / masque les liens du maillage sur la carte.
@@ -24,26 +24,17 @@ switch (_act) do {
         private _ant = { params ["_u"]; (eyePos _u) vectorAdd [0, 0, 0.5] };
         private _nodes = [[player, [player] call _ant, [player, true] call comspec_atak_native_fnc_unitCallsign, "me", _range]];
         { _nodes pushBack [_x, [_x] call _ant, [_x, true] call comspec_atak_native_fnc_unitCallsign, "node", _range]; } forEach _units;
-        // Passerelle : relais Overwatch intact, sinon chef de groupe (s'il porte un téléphone).
+        // Passerelles : tous les relais Overwatch intacts (le plus proche d'abord), puis passerelles de véhicule et PC mobiles
+        // du camp (fn_relayNet "list"). La passerelle principale est la plus proche ; à défaut, le chef de groupe.
         private _gw = -1;
         private _gwLabel = "";
-        if (!isNil "comspec_overwatch_connect_fnc_getNearestAtakRelay") then {
-            private _r = [] call comspec_overwatch_connect_fnc_getNearestAtakRelay;
-            if (_r isEqualType createHashMap && {(count _r) > 0} && {_r getOrDefault ["alive", false]}) then {
-                private _o = _r get "obj";
-                _gwLabel = _r getOrDefault ["name", "Relais"];
-                _nodes pushBack [_o, (getPosASL _o) vectorAdd [0, 0, 4], _gwLabel, "gw", _r getOrDefault ["range", _range]];
-                _gw = (count _nodes) - 1;
-            };
-        };
-        // Passerelles de véhicule et postes de commandement mobiles du camp (fn_vehicleGateway), la plus proche d'abord.
-        private _vg = (["list"] call comspec_atak_native_fnc_vehicleGateway) apply { [player distance (_x select 0), _x] };
-        _vg sort true;
+        private _rl = ((["list"] call comspec_atak_native_fnc_relayNet) select { _x select 6 }) apply { [[player distance2D (_x select 0), 1e6 + (player distance2D (_x select 0))] select ((_x select 3) isNotEqualTo "relay"), _x] };
+        _rl sort true;
         {
-            (_x select 1) params ["_o", "_m", "_r", "", "_n"];
-            _nodes pushBack [_o, (getPosASL _o) vectorAdd [0, 0, [3, 9] select (_m isEqualTo "cp")], _n, "gw", _r];
-            if (_gw < 0) then { _gw = (count _nodes) - 1; _gwLabel = format ["%1 %2", ["Passerelle", "PC mobile"] select (_m isEqualTo "cp"), _n]; };
-        } forEach _vg;
+            (_x select 1) params ["_o", "_ap", "_n", "_k", "_r"];
+            _nodes pushBack [_o, _ap, _n, "gw", _r];
+            if (_gw < 0) then { _gw = (count _nodes) - 1; _gwLabel = [format ["%1 %2", ["Passerelle", "PC mobile"] select (_k isEqualTo "cp"), _n], _n] select (_k isEqualTo "relay"); };
+        } forEach _rl;
         if (_gw < 0) then {
             private _lead = leader group player;
             _gw = _nodes findIf { (_x select 0) isEqualTo _lead };
@@ -74,8 +65,9 @@ switch (_act) do {
         // Sauts jusqu'à la passerelle : parcours en largeur depuis elle.
         private _hops = _nodes apply { -1 };
         if (_gw >= 0) then {
-            _hops set [_gw, 0];
-            private _queue = [_gw];
+            // Toutes les passerelles comptent : un nœud raccroché à n'importe quel relais n'est pas isolé.
+            private _queue = [];
+            { if ((_x select 3) isEqualTo "gw" || {_forEachIndex isEqualTo _gw}) then { _hops set [_forEachIndex, 0]; _queue pushBack _forEachIndex; }; } forEach _nodes;
             while { _queue isNotEqualTo [] } do {
                 private _c = _queue deleteAt 0;
                 {

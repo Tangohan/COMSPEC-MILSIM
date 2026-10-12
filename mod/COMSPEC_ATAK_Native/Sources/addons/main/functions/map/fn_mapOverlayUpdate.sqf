@@ -50,8 +50,16 @@ if (!isNull _cur) then {
             private _dig = profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6];
             private _g = [_p] call comspec_atak_native_fnc_gridRef;
             private _g8 = [[_p, 8] call comspec_atak_native_fnc_gridRef, _g] select (_dig isEqualTo 8);
-            format ["<t font='EtelkaMonospacePro'><t color='#5cc76b'>CURSEUR</t> %1 · %2 m · %3° %4%8<t color='#8a9a93'>MGRS</t> %5 %6 · <t color='#8a9a93'>ALT</t> %7 m</t>",
-                _g, round (player distance2D _p), (round _az) mod 360, [_az] call _cardinal, _zone select 1, _g8, round _alt, _br]
+            // Couverture réseau calculée (app Wave Relay) et calque affiché : débit et perte sous le curseur.
+            private _net = "";
+            if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
+                private _cv = ["at", _p] call comspec_atak_native_fnc_relayNet;
+                if (_cv isNotEqualTo []) then {
+                    _net = [format [" · <t color='#8a9a93'>RÉSEAU</t> %1 Mbit/s %2 %%", (_cv select 0) toFixed 1, _cv select 1], " · <t color='#e5483a'>ZONE BLANCHE</t>"] select ((_cv select 0) <= 0);
+                };
+            };
+            format ["<t font='EtelkaMonospacePro'><t color='#5cc76b'>CURSEUR</t> %1 · %2 m · %3° %4%8<t color='#8a9a93'>MGRS</t> %5 %6 · <t color='#8a9a93'>ALT</t> %7 m%9</t>",
+                _g, round (player distance2D _p), (round _az) mod 360, [_az] call _cardinal, _zone select 1, _g8, round _alt, _br, _net]
         }
     };
     // Texte inchangé (souris immobile) : ni traduction ni texte structuré refaits.

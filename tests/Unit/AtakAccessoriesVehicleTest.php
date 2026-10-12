@@ -93,7 +93,8 @@ final class AtakAccessoriesVehicleTest extends TestCase
         self::assertStringContainsString('"Land_TTowerSmall_1_F"', $gw);
         self::assertStringContainsString('missionNamespace setVariable ["COMSPEC_ATAK_Gateways", _list, true];', $gw);
         self::assertStringContainsString('["nearest"] call comspec_atak_native_fnc_vehicleGateway', $this->read(self::MAIN . '/functions/core/fn_linkQuality.sqf'));
-        self::assertStringContainsString('["list"] call comspec_atak_native_fnc_vehicleGateway', $this->read(self::MAIN . '/functions/pages/fn_waveRelayAction.sqf'));
+        self::assertStringContainsString('["list"] call comspec_atak_native_fnc_vehicleGateway', $this->read(self::MAIN . '/functions/network/fn_relayNet.sqf'));
+        self::assertStringContainsString('["list"] call comspec_atak_native_fnc_relayNet', $this->read(self::MAIN . '/functions/pages/fn_waveRelayAction.sqf'));
         $pre = $this->read(self::MAIN . '/XEH_preInit.sqf');
         self::assertStringContainsString('"comspec_atak_native_gwSrv"', $pre);
         self::assertStringContainsString('["sweep"] call comspec_atak_native_fnc_vehicleGateway;', $this->read(self::MAIN . '/XEH_postInitServer.sqf'));
