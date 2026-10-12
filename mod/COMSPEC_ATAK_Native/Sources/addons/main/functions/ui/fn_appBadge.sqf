@@ -9,7 +9,8 @@ switch (_page) do {
         _athena + _p2p
     };
     case "TASK": {
-        private _done = ["ACK", "EXEC", "DELIVERED", "FAILED", "DONE", "COMPLETED", "CANCELLED"];
+        // DELIVERED = transmis (« vu » par Athena), pas encore traité par le joueur.
+        private _done = ["ACK", "EXEC", "FAILED", "DONE", "COMPLETED", "CANCELLED", "CANCELED"];
         {!((toUpper (_x getOrDefault ["status", ""])) in _done)} count (values ([] call comspec_atak_native_fnc_tasksAll))
     };
     default { 0 };

@@ -1450,3 +1450,38 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-air-sheet .ow-air-card.is-sheet .ow-card-body{padding:10px 12px}
 .ow-air-sheet .ow-kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12px}
 .ow-air-sheet .ow-kv>span:nth-child(odd){color:var(--athena-muted)}
+
+/* Tâches transmises : cartes, étapes et réponses par joueur */
+.ow-task-filter{display:flex;gap:4px;margin:0 0 8px}
+.ow-task-filter-btn{flex:1;border:1px solid var(--athena-line);background:transparent;color:var(--athena-muted);border-radius:6px;padding:5px 6px;font-size:11px;font-weight:700;cursor:pointer}
+.ow-task-filter-btn span{opacity:.7;font-weight:600}
+.ow-task-filter-btn.is-active{border-color:var(--athena-green);color:var(--athena-text);background:rgba(0,214,154,.1)}
+.ow-task-card{border:1px solid var(--athena-line);border-left:3px solid var(--athena-red);border-radius:8px;padding:9px 10px;margin:0 0 8px;background:rgba(255,255,255,.015);font-size:12px}
+.ow-task-card.is-run{border-left-color:var(--athena-amber)}
+.ow-task-card.is-ok{border-left-color:var(--athena-green)}
+.ow-task-card.is-off{border-left-color:var(--athena-muted);opacity:.75}
+.ow-task-card header{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.ow-task-card header strong{color:var(--athena-text)}
+.ow-task-card header span{color:var(--athena-soft)}
+.ow-task-status{flex:0 0 auto;border-radius:999px;padding:1px 8px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;background:rgba(224,91,99,.15);color:var(--athena-red)}
+.ow-task-status.is-run{background:rgba(231,177,77,.15);color:var(--athena-amber)}
+.ow-task-status.is-ok{background:rgba(0,214,154,.15);color:var(--athena-green)}
+.ow-task-status.is-off{background:rgba(125,136,131,.15);color:var(--athena-muted)}
+.ow-task-meta{margin:4px 0 0;color:var(--athena-muted);font-size:11px}
+.ow-task-src{border:1px solid var(--athena-line);border-radius:4px;padding:0 5px;font-weight:700;color:var(--athena-soft)}
+.ow-task-src.is-game{border-color:var(--athena-blue);color:var(--athena-blue)}
+.ow-task-text{margin:6px 0 0;color:var(--athena-soft);white-space:pre-line;line-height:1.45}
+.ow-task-steps{display:flex;list-style:none;margin:8px 0 0;padding:0;gap:2px}
+.ow-task-steps li{flex:1;text-align:center;font-size:9.5px;color:var(--athena-muted);padding-top:5px;border-top:3px solid var(--athena-line)}
+.ow-task-steps li.is-done{border-top-color:var(--athena-green);color:var(--athena-soft)}
+.ow-task-steps li.is-now{color:var(--athena-text);font-weight:800}
+.ow-task-who{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:3px}
+.ow-task-who li{color:var(--athena-soft);font-size:11px}
+.ow-task-who li strong{color:var(--athena-text)}
+.ow-task-who em{display:block;margin-left:14px;color:var(--athena-muted);font-style:normal;font-size:10.5px}
+.ow-task-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;background:var(--athena-red)}
+.ow-task-dot.is-run{background:var(--athena-amber)}
+.ow-task-dot.is-ok{background:var(--athena-green)}
+.ow-task-dot.is-off{background:var(--athena-muted)}
+.ow-task-none{margin:8px 0 0;color:var(--athena-muted);font-size:11px}
+.ow-task-card footer{margin-top:8px;display:flex;justify-content:flex-end}
