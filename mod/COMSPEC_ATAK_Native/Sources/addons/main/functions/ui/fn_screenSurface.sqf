@@ -39,7 +39,7 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
     _ctrls = [];
     _rect params ["_rx", "_ry", "_rw", "_rh"];
     _phone params ["_px", "_py", "_pw", "_ph"];
-    private _ratio = pixelH / pixelW;
+    private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
     private _k = 0;
     private _rnd = { _k = _k + 1; private _v = (sin (_seed * 0.731 + _k * 97.13)) * 4375.85; _v - floor _v };
     private _tex = { format ["\z\comspec_atak_native\addons\main\data\%1.paa", _this] };

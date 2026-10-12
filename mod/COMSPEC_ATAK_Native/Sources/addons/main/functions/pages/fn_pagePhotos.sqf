@@ -268,7 +268,7 @@ if (_tab isEqualTo "SENT") exitWith {
 // ---------------------------------------------------------------- APPAREIL
 // Façon appli photo : onglets et légende, viseur avec infos de prise de vue, gros déclencheur, compteurs d'envoi,
 // puis réglages groupés (prise de vue, flash).
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 private _dir = "\z\comspec_atak_native\addons\main\data\";
 private _mk = { params ["_c", "_p", ["_t", ""]]; [_c, _p, _t] call comspec_atak_native_fnc_pageCtrl };
 private _open = { private _c = ["caption"] call comspec_atak_native_fnc_formValue; (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["photoCaption", _c]; [{ ["ENTER", _this] call comspec_atak_native_fnc_photoMode; }, _c] call CBA_fnc_execNextFrame; };

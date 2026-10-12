@@ -148,7 +148,7 @@ if (_view isNotEqualTo "") then {
         _cnt = _cnt + _n;
     } forEach _groups;
     private _barH = [0, (count _barRows) * (_lh + _btnH + _pad * 0.3) + _pad * 0.3] select ((count _barRows) > 0);
-    private _k169 = 0.5625 * pixelH / pixelW;
+    private _k169 = 0.5625 * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
     private _areaH = if (_view isEqualTo "SPLIT") then { (_bw * _k169) min (_bh * 0.45) } else { _bh - _top - _barH };
     // Image 16/9 ajustée à la place disponible (bandes noires sur les côtés ou dessus / dessous).
     private _iw = _bw min (_areaH / _k169);
@@ -165,7 +165,7 @@ if (_view isNotEqualTo "") then {
     private _cx = _ix + _iw / 2;
     private _cy = _iy + _ih / 2;
     private _rw = _iw * 0.035;
-    private _rh = _rw * pixelH / pixelW;
+    private _rh = _rw * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
     {
         private _r = ["COMSPEC_RscText", _x] call comspec_atak_native_fnc_pageCtrl;
         _r ctrlSetBackgroundColor ([[1, 1, 1, 0.85], [0.95, 0.3, 0.25, 0.95]] select _markMode);

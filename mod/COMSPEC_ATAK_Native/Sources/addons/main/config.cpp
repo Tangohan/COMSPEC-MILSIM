@@ -51,7 +51,7 @@ class CfgFunctions {
             class airplaneMode {}; class btAction {}; class btSounds {}; class pageBluetooth {}; class btInit { postInit=1; };
         };
         class shell { file="z\comspec_atak_native\addons\main\functions\shell";
-            class antenna {}; class backView {}; class aceMenu {}; class vestMount {}; class powerBank {}; class irBeacon {}; class screenGlow {}; class phoneSecurity {}; class droppedPhone {}; class patchTexture {}; class patchCatalog {}; class pagePatches {}; class pageAccessories {}; class accessoriesAction {}; class vestBuiltin {};
+            class antenna {}; class backView {}; class aceMenu {}; class vestMount {}; class powerBank {}; class irBeacon {}; class screenGlow {}; class phoneSecurity {}; class droppedPhone {}; class patchTexture {}; class patchCatalog {}; class pagePatches {}; class pageAccessories {}; class accessoriesAction {}; class vestBuiltin {}; class jpcScreen {};
         };
         class vehicle { file="z\comspec_atak_native\addons\main\functions\vehicle";
             class vehicleTerminal {}; class vehicleGateway {};
@@ -264,6 +264,14 @@ class CfgVehicles {
         model="\z\comspec_atak_native\addons\main\data\vest_phone.p3d";
         hiddenSelections[]={"camo","patch"};
         hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\vest_phone_co.paa",""};
+    };
+    // Tablette durcie à touches sur le rabat du JPC (fn_jpcScreen, tools/model_jpc_tablet.py) : coque, écran (texture UI).
+    class COMSPEC_ATAK_JpcTablet: Static {
+        scope=1; scopeCurator=0; author="COMSPEC"; displayName="Tablette ATAK (JPC)";
+        model="\z\comspec_atak_native\addons\main\data\jpc_tablet.p3d";
+        hiddenSelections[]={"camo","screen"};
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_tablet_co.paa","#(argb,8,8,3)color(0,0,0,1)"};
+        hiddenSelectionsMaterials[]={"","\z\comspec_atak_native\addons\main\data\jpc_screen.rvmat"};
     };
     class Item_COMSPEC_ATAK_Battery: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";

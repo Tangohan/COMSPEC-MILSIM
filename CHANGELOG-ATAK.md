@@ -11,6 +11,24 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vague 2026-10-12 — Tablette durcie et ATAK ouvert sur le JPC (ATAK natif 1.12.0, non testé en jeu)
+
+### Nouveau — Tablette durcie à touches (demande de TTRD)
+- Nouveau modèle de terminal « TABLETTE A/B » (Réglages > Personnalisation > Modèle du téléphone) : tablette durcie gris sable, mini-joystick de chaque côté, touches retour / accueil / apps récentes / fn à gauche, A / B / X / Y à droite, patte de fixation en haut, charnière au dos. Rendus 3D Blender (`tools/render_phones.py`, appareil `keys`), coques jour et nuit, dos (« Voir l'arrière ») et poussière de coque.
+
+### Nouveau — ATAK ouvert sur le JPC, en 3D (demande de TTRD)
+- Réglage « Terminal porté » : MINIATURE (comme avant) ou SUR LE JPC. Sur le JPC, la touche « porter » (Ctrl+U) relève la tablette du rabat du porte-plaques vers le visage et l'interface ATAK s'affiche en direct sur son écran 3D (texture UI). Rien n'est affiché à l'écran du joueur : vue libre, déplacement, arme et menu d'actions restent disponibles, on baisse les yeux pour lire.
+- La touche principale prend toujours le terminal en main (plein écran, souris) ; le reposer rouvre l'écran sur le JPC. Ctrl+U à nouveau : la tablette se rabat.
+- ACE « Téléphone ATAK > Ouvrir l'ATAK sur le JPC » / « Rabattre la tablette du JPC », et raccourci « Tablette sur le JPC » (sans touche par défaut).
+- Les autres joueurs voient la tablette ouverte sur le gilet avec un écran ATAK figé ; rabattue, ils voient son dos. Sans gilet, en véhicule ou sans terminal : retour automatique à la miniature. Le téléphone du gilet n'est pas accroché en plus.
+- Écran rafraîchi 6 fois par seconde, seulement s'il est visible et à moins de 6 m de la caméra ; un seul display par ouverture. Écran émissif plus doux la nuit.
+- Réglages fins pour les essais (missionNamespace) : `COMSPEC_ATAK_JpcOffset` (position sur le torse), `COMSPEC_ATAK_JpcTilt` (inclinaison, 50° par défaut), `COMSPEC_ATAK_JpcRate` (images par seconde).
+- Modèle `data/jpc_tablet.p3d` (`tools/model_jpc_tablet.py`), atlas `jpc_tablet_co.paa`, écran figé `jpc_screen_static_co.paa`, matériaux `jpc_screen*.rvmat` (`tools/gen_assets.py <hemtt> jpc`).
+
+### Nouveau — Trois coques de référence (demande de TTRD)
+- Trois nouveaux modèles dans Réglages > Personnalisation > Modèle du téléphone, à côté du S7 qui reste le modèle par défaut : SUPPORT JPC (coque sable sur platine de gilet, équerres noires aux coins, velcro central, patte crantée avec levier, triple objectif), ÉTUI MULTICAM (étui à rabat camouflage, charnières en haut et en bas, velcro en L, îlot double objectif) et COQUE NERVURÉE (coque fine vert-gris, nervures verticales, îlot triple objectif vertical). Géométrie modélisée par nos soins d'après les photos, sans logo de marque. Coques jour et nuit, dos et poussière.
+- Tablette A/B : dos simplifié, caméra déplacée dans le coin façon S7, velcro au centre, mentions MIL-STD-810H et étiquette réglementaire.
+
 ## Vague 2026-10-12 — Retours de test en jeu (ATAK natif 1.11.0)
 
 Non testé en jeu. Inclut les correctifs de performance de la PR #629 (même base). DLL à recompiler (`build_mod.bat`) pour le presse-papiers du Plan.

@@ -1,9 +1,11 @@
-params ["_display", ["_interactive", true]];
+// _texture : écran 3D de la tablette sur le JPC (texture UI, fn_jpcScreen), non interactif comme le HUD.
+params ["_display", ["_interactive", true], ["_texture", false]];
 disableSerialization;
 if (!hasInterface || {isNull _display}) exitWith {};
 private _state = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 _state set ["display", _display];
 _state set ["interactive", _interactive];
+_state set ["texture", _texture];
 _state set ["history", []];
 _state set ["pageSig", []];
 _state set ["pageSigPage", ""];
@@ -11,6 +13,8 @@ _state set ["mapCentered", false];
 _state set ["drag", []];
 _state set ["pageDrawn", ""];
 uiNamespace setVariable ["COMSPEC_ATAK_Display", _display];
+// Proportions d'un carré (hauteur / largeur en unités d'interface) : écran du joueur, ou texture 1024 x 576 du JPC.
+uiNamespace setVariable ["COMSPEC_ATAK_Ratio", [pixelH / pixelW, 1024 / 576] select _texture];
 uiNamespace setVariable ["COMSPEC_ATAK_PageControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_ToastControls", []];
@@ -95,4 +99,4 @@ if (_interactive) then {
 ["check"] call comspec_atak_native_fnc_lockScreen;
 [] call comspec_atak_native_fnc_statusUpdate;
 
-["INFO", "UI", format ["display_created (%1)", ["HUD", "en main"] select _interactive]] call comspec_atak_native_fnc_log;
+["INFO", "UI", format ["display_created (%1)", [["HUD", "écran JPC"] select _texture, "en main"] select _interactive]] call comspec_atak_native_fnc_log;

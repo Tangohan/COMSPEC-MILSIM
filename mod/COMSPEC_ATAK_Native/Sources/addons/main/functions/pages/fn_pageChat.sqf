@@ -285,7 +285,7 @@ if ((count _items) isEqualTo 0 && {!_wiki}) then {
 };
 // Bulles : les miennes à droite sans photo ; les autres à gauche avec la photo de l'opérateur (TOC : logo Athena).
 // Vue SMS : en-tête du contact, bulles bleues / grises, état de chaque SMS envoyé.
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 private _avH = _font * 1.9;
 private _avW = _avH / _ratio;
 private _sms = !_isChannel;

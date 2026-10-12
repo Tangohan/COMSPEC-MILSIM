@@ -115,7 +115,7 @@ private _mk = {
         case "switch": {
             // Ligne réglage : libellé + aide à gauche, interrupteur à droite ; « IMPOSÉ » si la communauté fixe la valeur.
             _row params ["", "_label", "_on", "_code", ["_help", ""], ["_locked", false]];
-            private _pillW = _font * 3.6 * pixelH / pixelW;
+            private _pillW = _font * 3.6 * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
             private _card = ["COMSPEC_RscText", [_pad, _y, _w, _rowH]] call _mk;
             _card ctrlSetBackgroundColor [0.085, 0.105, 0.095, 1];
             private _t = ["COMSPEC_RscStructuredText", [_pad * 1.5, _y + _pad / 4, _w - _pillW - _pad * 2.5, _rowH]] call _mk;
@@ -179,7 +179,7 @@ private _mk = {
         case "person": {
             _row params ["", "_pic", "_text", ["_btns", []], ["_picColor", [1, 1, 1, 1]]];
             private _ih = _font * 2.2;
-            private _iw = _ih * pixelH / pixelW;
+            private _iw = _ih * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
             private _bg = ["COMSPEC_RscText", [_pad, _y, _w, _ih + _pad / 2]] call _mk;
             _bg ctrlSetBackgroundColor [0.06, 0.075, 0.07, 1];
             private _p = ["COMSPEC_RscPicture", [_pad * 1.3, _y + _pad / 4, _iw, _ih], _pic] call _mk;
@@ -208,7 +208,7 @@ private _mk = {
         case "hero": {
             _row params ["", "_pic", "_text"];
             private _ih = _font * 3.2;
-            private _iw = _ih * pixelH / pixelW; // carré à l'écran
+            private _iw = _ih * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]); // carré à l'écran
             // Image hors addon (photo Athena téléchargée sur le disque) : le logo ATAK reste dessous. Si Arma ne peut pas
             // charger le fichier, le logo reste visible au lieu d'un cadre vide (le logo « disparaissait » après connexion).
             if (_pic isNotEqualTo "" && {(_pic select [0, 1]) isNotEqualTo "\"}) then {
@@ -227,7 +227,7 @@ private _mk = {
         case "image": {
             // Photo en pleine largeur (format 16/9 à l'écran, proportions conservées).
             _row params ["", "_pic"];
-            private _ih = _w * 0.5625 * pixelH / pixelW;
+            private _ih = _w * 0.5625 * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
             private _bgI = ["COMSPEC_RscText", [_pad, _y, _w - _pad, _ih]] call _mk;
             _bgI ctrlSetBackgroundColor [0, 0, 0, 0.6];
             ["COMSPEC_RscSlide", [_pad, _y, _w - _pad, _ih], _pic] call _mk;
@@ -284,7 +284,7 @@ private _mk = {
             // Groupes titrés côte à côte (titre gris souligné de vert), passage à la ligne si les boutons deviennent
             // trop étroits pour leur libellé.
             private _groups = (_row select 1) select { (count (_x select 1)) > 0 };
-            private _minW = _fs * 6.5 * pixelH / pixelW;
+            private _minW = _fs * 6.5 * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
             private _perRow = (floor (_w / _minW)) max 1;
             private _lines = [];
             private _cur = [];

@@ -13,7 +13,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _cols = _l get "cols";
 private _pad = (_l get "pad") * 2;
 private _font = _l get "fontSmall";
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 ([] call comspec_atak_native_fnc_accent) params ["_acc", "_accHex"];
 private _tw = (_bw - 0.012 - _pad * (_cols + 1)) / _cols;
 private _th = _tw * _ratio * 0.92;

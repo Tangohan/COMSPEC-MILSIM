@@ -9,7 +9,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _page = _s getOrDefault ["activePage", "LAUNCHER"];
 private _interactive = _l get "interactive";
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 
 private _set = {
     params ["_idc", "_pos"];

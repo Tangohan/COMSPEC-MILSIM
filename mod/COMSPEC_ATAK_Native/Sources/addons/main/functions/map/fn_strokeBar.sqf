@@ -10,7 +10,7 @@ _rect params ["_x0", "_y0", "_wMax"];
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _fs = _l get "fontSmall";
 private _pad = (_l get "pad") * 2;
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 private _mk = { params ["_class", "_pos", ["_text", ""]]; [_class, _pos, _text, false] call comspec_atak_native_fnc_pageCtrl };
 private _set = { params ["_var", "_val"]; compile format ["profileNamespace setVariable [%1, %2]; saveProfileNamespace; [{ ['MAP'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", str _var, _val] };
 private _h = _fs * 1.55;

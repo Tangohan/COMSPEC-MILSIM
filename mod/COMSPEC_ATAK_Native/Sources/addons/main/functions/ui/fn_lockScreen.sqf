@@ -124,7 +124,7 @@ switch (_act) do {
         _veil ctrlSetBackgroundColor [0, 0, 0, 0.45];
         // Hiérarchie : heure (grande, fine), date en accent, pastilles d'état, puis les notifications en cartes.
         ([] call comspec_atak_native_fnc_accent) params ["_acc", "_accHex"];
-        private _ratio = pixelH / pixelW;
+        private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
         private _y = _dh * ([0.08, 0.06] select _land);
         private _clockH = _font * 3.6;
         private _clock = ["COMSPEC_RscTextCenter", [0, _y, _dw, _clockH], [dayTime, "HH:MM"] call BIS_fnc_timeToString] call _mk;

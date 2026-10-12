@@ -1,0 +1,8 @@
+ambient[]={0,0,0,1};
+diffuse[]={0,0,0,1};
+forcedDiffuse[]={0,0,0,0};
+emmisive[]={0.45,0.45,0.45,1};
+specular[]={0.05,0.05,0.05,1};
+specularPower=80;
+PixelShaderID="Normal";
+VertexShaderID="Basic";

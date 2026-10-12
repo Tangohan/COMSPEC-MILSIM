@@ -35,7 +35,7 @@ switch (_act) do {
         if (_mx < _dx || {_mx > _dx + _dw} || {_my < _dy} || {_my > _dy + _dh}) exitWith { false };
         // Onde : disque vert (couleur d'accent) qui grandit et s'efface.
         if (call _animOn) then {
-            private _ratio = pixelH / pixelW;
+            private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
             private _r1 = _dw * 0.11;
             private _r0 = _r1 * 0.25;
             private _col = +(([] call comspec_atak_native_fnc_accent) select 0);
@@ -89,7 +89,7 @@ switch (_act) do {
             private _inside = (_l get "interactive") && {(_m select 0) > _dx} && {(_m select 0) < _dx + _dw} && {(_m select 1) > _dy} && {(_m select 1) < _dy + _dh};
             if !(_inside) then { _m = [_bx + _bw / 2, _by + _bh / 2]; };
             private _sw = _bw * 0.16;
-            private _sh = _sw * pixelH / pixelW;
+            private _sh = _sw * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
             _c ctrlSetPosition [(_m select 0) - _sw / 2, (_m select 1) - _sh / 2, _sw, _sh];
             _c ctrlSetBackgroundColor [0.07, 0.10, 0.08, 1];
             _c ctrlCommit 0;
