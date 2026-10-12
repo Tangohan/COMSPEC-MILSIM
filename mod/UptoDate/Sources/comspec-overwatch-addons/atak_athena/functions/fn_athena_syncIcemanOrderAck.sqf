@@ -57,19 +57,14 @@ if (_by isEqualTo "") then { _by = name player; };
     if (_oid in _ackDone) then { continue };
 
     _ackDone pushBack _oid;
-    // 1 000 ordres retenus : à 60, les plus anciens sortaient de la liste et étaient de nouveau acquittés auprès d'Athena.
-    while { (count _ackDone) > 1000 } do { _ackDone deleteAt 0; };
+    while { (count _ackDone) > 60 } do { _ackDone deleteAt 0; };
     missionNamespace setVariable ["COMSPEC_IcemanOrderAcks", _ackDone, false];
 
-    // Acquittement envoyé hors de l'image en cours (appel à Athena qui pouvait figer le jeu à l'ouverture des messages).
-    [_oid, _by] spawn {
-        params ["_oid", "_by"];
-        if (!isNil "comspec_overwatch_connect_fnc_updateOrderStatus") then {
-            [_oid, "ACK", "Lu sur ATAK Reports"] call comspec_overwatch_connect_fnc_updateOrderStatus;
-        } else {
-            private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
-            ["COMSPECExtension" callExtension ["UpdateOrderStatus", [_oid, "ACK", _by, _mapId, "Lu sur ATAK Reports"]]]
-                call comspec_overwatch_connect_fnc_extResult;
-        };
+    if (!isNil "comspec_overwatch_connect_fnc_updateOrderStatus") then {
+        [_oid, "ACK", "Lu sur ATAK Reports"] call comspec_overwatch_connect_fnc_updateOrderStatus;
+    } else {
+        private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
+        ["COMSPECExtension" callExtension ["UpdateOrderStatus", [_oid, "ACK", _by, _mapId, "Lu sur ATAK Reports"]]]
+            call comspec_overwatch_connect_fnc_extResult;
     };
 } forEach _msgArray;

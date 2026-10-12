@@ -15,8 +15,8 @@ if (!(_inside isEqualType createHashMap)) then { _inside = createHashMap; };
 
 private _exitR = _radius * 1.15;
 
-// Seulement les unités qui portent le drapeau (filtre bon marché) : les morts s'accumulent toute la mission.
-private _scan = (allUnits + allDeadMen) select { !isNil { _x getVariable "COMSPEC_PhoneTrack" } };
+private _scan = +allUnits;
+_scan append allDeadMen;
 
 {
     private _u = _x;

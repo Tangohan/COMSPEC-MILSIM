@@ -81,14 +81,6 @@ if (!isNil "cTab_userMarkerLists") then {
 if ((count _list) < 1) exitWith {
     missionNamespace setVariable ["COMSPEC_CtabMarkerSync_Lock", false, false];
 };
-// Rien n'a changé (listes, marqueurs de la carte, liaison) : pas de nouveau passage complet, sauf toutes les 30 s
-// (renvoi d'un marqueur en échec). Le passage complet balayait tous les marqueurs de la carte pour chacun.
-private _rawHash = hashValue [_list, _athenaReady, count allMapMarkers];
-if (_rawHash isEqualTo (missionNamespace getVariable ["COMSPEC_CtabRawHash", ""]) && {diag_tickTime - (missionNamespace getVariable ["COMSPEC_CtabRawAt", -1e9]) < 30}) exitWith {
-    missionNamespace setVariable ["COMSPEC_CtabMarkerSync_Lock", false, false];
-};
-missionNamespace setVariable ["COMSPEC_CtabRawHash", _rawHash];
-missionNamespace setVariable ["COMSPEC_CtabRawAt", diag_tickTime];
 
 private _prev = missionNamespace getVariable ["COMSPEC_Athena_CtabMarkerSnap", createHashMap];
 if (!(_prev isEqualType createHashMap)) then { _prev = createHashMap; };
