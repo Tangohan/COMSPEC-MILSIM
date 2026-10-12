@@ -1,5 +1,7 @@
 // Mode avion : pas de synchro (le téléphone reste sur ses dernières données).
 if (missionNamespace getVariable ["COMSPEC_ATAK_Airplane", false]) exitWith {};
+// Service Athéna refusé : ATAK local, aucune requête vers Athena.
+if (([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "on") exitWith {};
 private _nativeAuth = ["GetAuthState",[]] call comspec_atak_native_fnc_extensionCall;
 private _nativeReady = (toUpper _nativeAuth find "READY") >= 0;
 if (!_nativeReady) exitWith {};
