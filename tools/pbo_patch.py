@@ -19,6 +19,7 @@ import sys
 import time
 
 TEXT_EXT = {".sqf", ".hpp", ".cpp", ".ext", ".inc", ".h", ".sqm"}
+SKIP = {"$PBOPREFIX$"}
 
 
 def read_pbo(path):
@@ -76,7 +77,13 @@ def main():
     if len(sys.argv) < 4:
         raise SystemExit(__doc__)
     pbo, src, wanted = sys.argv[1], sys.argv[2], sys.argv[3:]
-    headers, files = read_pbo(pbo)
+    if os.path.exists(pbo):
+        headers, files = read_pbo(pbo)
+    else:
+        # Nouveau PBO : préfixe lu dans $PBOPREFIX$ du dossier source.
+        prefix = open(os.path.join(src, "$PBOPREFIX$"), "rb").read().strip()
+        headers, files = [(b"prefix", prefix)], []
+        print("nouveau PBO, préfixe", prefix.decode("latin1"))
     index = {f[0].decode("latin1").lower(): i for i, f in enumerate(files)}
     if wanted == ["--changed"]:
         wanted = []

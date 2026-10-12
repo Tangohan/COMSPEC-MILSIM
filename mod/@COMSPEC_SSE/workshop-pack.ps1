@@ -65,7 +65,8 @@ $requiredPbos = @(
     'comspec_sse_digital.pbo',
     'comspec_sse_biometrics.pbo',
     'comspec_sse_compat_bii.pbo',
-    'comspec_sse_compat_ace.pbo'
+    'comspec_sse_compat_ace.pbo',
+    'comspec_sse_compat_atak.pbo'
 )
 
 $addonsSrc = Join-Path $SourceMod 'addons'
