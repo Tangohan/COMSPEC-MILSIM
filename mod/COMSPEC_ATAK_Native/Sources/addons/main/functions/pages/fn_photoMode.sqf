@@ -128,6 +128,16 @@ switch (toUpper _mode) do {
             private _r = 0.6;
             _tPos = _eye vectorAdd [_r * (sin _a) * (cos _p), _r * (cos _a) * (cos _p), _r * (sin _p)];
             _tDir = vectorNormalized (_eye vectorDiff _tPos);
+            // Téléphone en main (fn_gestureSelfie) : l'objectif est sur le téléphone (la main ne passe plus devant
+            // l'image), la souris ne fait que tourner la vue autour de lui.
+            private _lens = [player, "lens"] call comspec_atak_native_fnc_gestureSelfie;
+            if (_lens isNotEqualTo []) then {
+                _lens params ["_lp", "_ld"];
+                private _ya = ((_ld select 0) atan2 (_ld select 1)) + (_st getOrDefault ["yaw", 0]);
+                private _pa = (((asin (((_ld select 2) max -1) min 1)) + (_st getOrDefault ["pitch", 10]) - 10) max -80) min 80;
+                _tPos = _lp;
+                _tDir = [(sin _ya) * (cos _pa), (cos _ya) * (cos _pa), sin _pa];
+            };
         } else {
             // Caméra scriptée (zoom) active : la vue du joueur ne suit plus la souris (getCameraViewDirection renvoie
             // la visée figée), d'où un viseur bloqué au zoom. La souris pilote alors un cap et une inclinaison propres

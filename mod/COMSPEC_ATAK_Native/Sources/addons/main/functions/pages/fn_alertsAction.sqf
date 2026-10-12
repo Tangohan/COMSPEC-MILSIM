@@ -1,14 +1,16 @@
-/* Actions de l'app Alertes. Params : [action, argument] */
+/* Actions des apps Alertes et SALUTE. Params : [action, argument] */
 params ["_action", ["_arg", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ALERTS") then { ["ALERTS"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _render = { [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["ALERTS", "SALUTE"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 uiNamespace setVariable ["COMSPEC_ATAK_AlertsRerender", _render];
 private _bridge = [] call comspec_atak_native_fnc_bridge && {!isNil "comspec_overwatch_connect_fnc_sendTacticalAlert"};
 private _me = [player, true] call comspec_atak_native_fnc_unitCallsign;
 private _grid = [getPosASL player, 8] call comspec_atak_native_fnc_gridRef;
 private _saveDraft = {
     private _d = uiNamespace getVariable ["COMSPEC_ATAK_SaluteDraft", createHashMap];
-    { private _c = [_x] call comspec_atak_native_fnc_formValue; if (_c isEqualType "") then { _d set [_x, _c]; }; } forEach ["sS", "sA", "sL", "sU", "sT", "sE"];
+    // Seulement les champs affichés (app SALUTE ouverte) : ailleurs le brouillon reste tel quel.
+    private _form = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
+    { if (!isNull (_form getOrDefault [_x, controlNull])) then { _d set [_x, [_x] call comspec_atak_native_fnc_formValue]; }; } forEach ["sS", "sA", "sL", "sU", "sT", "sE"];
     uiNamespace setVariable ["COMSPEC_ATAK_SaluteDraft", _d];
 };
 switch (_action) do {
@@ -43,7 +45,7 @@ switch (_action) do {
         private _d = uiNamespace getVariable ["COMSPEC_ATAK_SaluteDraft", createHashMap];
         private _parts = [];
         { private _val = trim (_d getOrDefault ["s" + _x, ""]); if (_val isNotEqualTo "") then { _parts pushBack format ["%1=%2", _x, _val]; }; } forEach ["S", "A", "L", "U", "T", "E"];
-        if ((count _parts) < 2) exitWith { ["WARNING", "SALUTE : remplissez au moins la taille ou l'activité", 4, 30] call comspec_atak_native_fnc_notify; };
+        if ((count _parts) < 2) exitWith { _s set ["saluteHint", "Il manque des lettres : remplissez au moins deux champs, dont la taille ou l'activité."]; ["WARNING", "SALUTE : remplissez au moins la taille ou l'activité", 4, 30] call comspec_atak_native_fnc_notify; call _render; };
         // Lieu : la grille saisie sert de position si elle se lit, sinon la mienne.
         private _pos = getPos player;
         private _lg = (_d getOrDefault ["sL", ""]) splitString " ";
@@ -53,7 +55,7 @@ switch (_action) do {
         private _sg = [_pos, 8] call comspec_atak_native_fnc_gridRef;
         [{ ["comspec_atak_native_sideEvent", ["comspec_atak_native_alert", _this, _this select 5]] call CBA_fnc_serverEvent; }, ["SALUTE", _me, ATLToASL [_pos select 0, _pos select 1, 0], _sg, _txt, str side group player], "SALUTE", 1] call comspec_atak_native_fnc_netSend;
         ["SALUTE", "Moi", ATLToASL [_pos select 0, _pos select 1, 0], _sg, _txt] call comspec_atak_native_fnc_alertsLog;
-        _s set ["alertsHint", format ["SALUTE envoyé %1 · %2", ["au camp", "au camp et au poste"] select _bridge, [daytime, "HH:MM"] call BIS_fnc_timeToString]];
+        _s set ["saluteHint", format ["SALUTE envoyé %1 · %2", ["au camp", "au camp et au poste"] select _bridge, [daytime, "HH:MM"] call BIS_fnc_timeToString]];
         uiNamespace setVariable ["COMSPEC_ATAK_SaluteDraft", createHashMap];
         call _render;
     };
@@ -64,6 +66,18 @@ switch (_action) do {
         [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, [(_e select 2) select 0, (_e select 2) select 1]] call CBA_fnc_execNextFrame;
     };
     case "clearLog": { missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", []]; call _render; };
-    case "saluteClear": { uiNamespace setVariable ["COMSPEC_ATAK_SaluteDraft", createHashMap]; _s set ["alertsHint", ""]; call _render; };
+    case "saluteClear": {
+        uiNamespace setVariable ["COMSPEC_ATAK_SaluteDraft", createHashMap];
+        { (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) deleteAt _x; } forEach ["sS", "sA", "sL", "sU", "sT", "sE"];
+        _s set ["saluteHint", ""];
+        call _render;
+    };
+    // Bouton rapide de l'app SALUTE (ICI, VISÉ, MAINTENANT) : la saisie est gardée, puis le champ prend la valeur.
+    case "saluteSet": {
+        call _saveDraft;
+        _arg params ["_k", "_v"];
+        (uiNamespace getVariable ["COMSPEC_ATAK_SaluteDraft", createHashMap]) set [_k, _v];
+        call _render;
+    };
 };
 true

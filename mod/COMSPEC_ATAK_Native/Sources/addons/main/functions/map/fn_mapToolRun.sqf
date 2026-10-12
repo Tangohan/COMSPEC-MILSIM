@@ -54,16 +54,7 @@ switch (_tool) do {
         _s set ["mapFlat", _found];
         ["TACTICAL", ["Aucune zone plate trouvée à 200 m", format ["%1 zone(s) plate(s) trouvée(s)", count _found]] select ((count _found) > 0), 3, 20] call comspec_atak_native_fnc_notify;
     };
-    case "LOS": {
-        private _from = eyePos player;
-        private _to = AGLToASL [_pos select 0, _pos select 1, 1.7];
-        private _hits = lineIntersectsSurfaces [_from, _to, player, vehicle player, true, 1, "VIEW", "FIRE"];
-        private _terrain = terrainIntersectAtASL [_from, _to];
-        private _block = [];
-        if ((count _hits) > 0) then { _block = (_hits select 0) select 0; };
-        if (_terrain isNotEqualTo [0, 0, 0] && {(count _block) isEqualTo 0 || {(_from distance _terrain) < (_from distance _block)}}) then { _block = _terrain; };
-        _s set ["mapLos", [ASLToAGL _from, _pos, _block]];
-        ["TACTICAL", ["Ligne de vue dégagée", format ["Vue bloquée à %1 m", round (_from distance2D _block)]] select ((count _block) > 0), 3, 20] call comspec_atak_native_fnc_notify;
-    };
+    // Même calcul que l'app Relief (profil, nature de l'obstacle), résultat repris dans l'app.
+    case "LOS": { ["los", "pos", _pos] call comspec_atak_native_fnc_reliefAction; };
 };
 true
