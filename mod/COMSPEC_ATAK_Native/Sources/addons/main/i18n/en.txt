@@ -2384,7 +2384,7 @@
 ["La charge choisie est retirée de votre inventaire et fixée sous le drone", "The chosen payload is removed from your inventory and attached under the drone"],
 ["La charge continue entre deux parties", "The charge carries over between sessions"],
 ["La cible reçoit une alerte discrète « activité réseau anormale » quand elle est géolocalisée.", "The target receives a discreet ""abnormal network activity"" alert when geolocated."],
-["La DLL COMSPEC Link ne connaît pas encore la bibliothèque musicale : mettez-la à jour (2.0.72 ou plus).", "The COMSPEC Link DLL does not know the music library yet: update it (2.0.72 or later)."],
+["La DLL COMSPEC Link ne connaît pas encore la bibliothèque musicale : mettez-la à jour (2.0.73 ou plus).", "The COMSPEC Link DLL does not know the music library yet: update it (2.0.73 or later)."],
 ["La DLL COMSPEC Link ne connaît pas encore les avis de recherche : mettez-la à jour.", "The COMSPEC Link DLL does not know wanted notices yet: update it."],
 ["La DLL COMSPEC Link ne connaît pas encore les fiches : mettez-la à jour.", "The COMSPEC Link DLL doesn't support records yet: update it."],
 ["La DLL COMSPEC Link ne connaît pas encore les questions : mettez-la à jour.", "The COMSPEC Link DLL doesn't support questions yet: update it."],

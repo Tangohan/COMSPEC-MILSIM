@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Vague 2026-10-12 — Musique : bibliothèque du site et lecteur refait (ATAK natif 1.19.0, COMSPEC Link 2.0.72)
+## Vague 2026-10-12 — Musique : bibliothèque du site et lecteur refait (ATAK natif 1.19.0, COMSPEC Link 2.0.73)
 
 Non testé en jeu. Migrations à lancer (`music_library`) et DLL à recompiler (COMSPEC Link et COMSPECATAKNativeExtension, `build_mod.bat`).
 - Site, **Mon espace > Musique** (`/back-office/ma-situation/musique`) : chaque membre met en ligne ses MP3, M4A, AAC ou WAV (25 Mo par fichier, 300 Mo par membre), dans la **bibliothèque communautaire** (toute la plateforme) ou celle de **son organisation**. Lecteur intégré (file, avance, volume), recherche titre / artiste / genre.

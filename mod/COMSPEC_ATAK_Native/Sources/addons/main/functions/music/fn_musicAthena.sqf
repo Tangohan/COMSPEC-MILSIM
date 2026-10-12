@@ -1,5 +1,5 @@
 /*
-    App Musique : bibliothèque musicale d'Athena (site), lue par COMSPEC Link (commande AthenaMusic, DLL 2.0.72+).
+    App Musique : bibliothèque musicale d'Athena (site), lue par COMSPEC Link (commande AthenaMusic, DLL 2.0.73+).
       ["load", vue] : vue = "global" (playlist globale de la plateforme), "community" (bibliothèque communautaire,
                       toute la plateforme), "org" (bibliothèque de mon organisation), "mine" (mes envois),
                       "playlists" (playlists publiques, de mon organisation et les miennes), "pl:<id>" (pistes d'une playlist).
@@ -29,7 +29,7 @@ call _render;
     private _now = [dayTime, "HH:MM"] call BIS_fnc_timeToString;
     if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith {
         private _err = switch (true) do {
-            case (_raw isEqualTo "" || {(_raw find "commande inconnue") >= 0} || {(_raw find "unknown") >= 0}): { "La DLL COMSPEC Link ne connaît pas encore la bibliothèque musicale : mettez-la à jour (2.0.72 ou plus)." };
+            case (_raw isEqualTo "" || {(_raw find "commande inconnue") >= 0} || {(_raw find "unknown") >= 0}): { "La DLL COMSPEC Link ne connaît pas encore la bibliothèque musicale : mettez-la à jour (2.0.73 ou plus)." };
             case ((_raw find "not_connected") >= 0 || {(_raw find "unauthorized") >= 0}): { "Connexion Athena requise : liez le téléphone à votre compte (app Athena)." };
             case ((_raw find "migration_required") >= 0): { "Bibliothèque musicale pas encore installée sur Athena (migrations à lancer)." };
             case ((_raw find "not_found") >= 0): { "Playlist introuvable ou privée." };
