@@ -322,6 +322,14 @@ class CfgFunctions {
             class decorateMainMenu {};
             class refreshMainMenuBetaBanner {};
             class ndaTexts {};
+            class athenaMode {};
+            class athenaApply {};
+            class athenaChoiceShow {};
+            class athenaChoiceOnLoad {};
+            class athenaChoiceLanguage {};
+            class athenaChoiceTexts {};
+            class athenaChoicePick {};
+            class athenaOfferLink {};
             class ndaOnLoad {};
             class ndaSetLanguage {};
             class ndaAccept {};
@@ -857,6 +865,7 @@ class CfgFactionClasses
 #include "display_account_link.hpp"
 #include "display_athena_auth.hpp"
 #include "display_nda.hpp"
+#include "display_athena_choice.hpp"
 #include "display_callsign.hpp"
 #include "display_salute.hpp"
 #include "display_sse_person.hpp"
