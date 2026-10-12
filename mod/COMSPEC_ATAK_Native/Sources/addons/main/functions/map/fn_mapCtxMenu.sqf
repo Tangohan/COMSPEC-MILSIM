@@ -36,7 +36,7 @@ switch (_mode) do {
         if (!isNull _d) then {
             uiNamespace setVariable ["COMSPEC_ATAK_MapCtxKey", _d displayAddEventHandler ["KeyDown", {
                 params ["", "_key"];
-                if (_key isNotEqualTo 0x01) exitWith { false };
+                if (_key isNotEqualTo 0x01) exitWith { _this call comspec_atak_native_fnc_keyBlock };
                 ["close"] call comspec_atak_native_fnc_mapCtxMenu;
                 true
             }]];

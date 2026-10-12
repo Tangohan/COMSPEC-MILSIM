@@ -1,10 +1,17 @@
 /*
-    Clichés pris avec la caméra du drone (app Drone, bouton PHOTO), complétés avant l'envoi vers Athena.
+    Clichés pris avec la caméra du drone (app Drone, VISEUR PHOTO), complétés avant l'envoi vers Athena.
+    Viseur photo (vue SHOT de fn_pageDrone) : on vise comme dans la vue caméra (glisser, flèches, molette et + / -),
+    on marque une cible (MARQUER UNE CIBLE, même marquage LOCK), on surligne d'un cadre ou d'un cercle jaune (4 au plus,
+    missionNamespace COMSPEC_ATAK_DroneShotMarks : [[genre, u0, v0, u1, v1]...] en fractions de l'image), puis on prend.
     Arma ne sait capturer que l'écran du joueur (commande screenshot) : l'écran bascule ~0,4 s sur une caméra posée
-    exactement comme la nacelle (même pose, zoom et vision), téléphone et HUD masqués, le PNG est écrit dans
-    Documents\Arma 3\Screenshots (nom COMSPEC_DRONE_…), puis la vue revient. Rien ne part tant que le pilote n'a pas
-    validé la fiche : titre, description, SSE (rattaché au dossier SSE actif), confidentiel.
-      ["take"]               prend le cliché, ouvre sa fiche (onglet PHOTOS de l'app) ;
+    exactement comme la nacelle (même pose, zoom et vision), téléphone et HUD masqués, les surlignages posés sur l'écran
+    (worldToScreen des rayons de leurs coins), le PNG est écrit dans Documents\Arma 3\Screenshots (nom COMSPEC_DRONE_…),
+    puis la vue revient. Rien ne part tant que le pilote n'a pas validé la fiche, ouverte en fenêtre plein écran
+    ("modal") : aperçu en grand, titre, description, SSE (rattaché au dossier SSE actif), confidentiel.
+      ["view"] / ["viewExit"] ouvre / quitte le viseur ; ["tool", "BOX" | "CIRCLE"] outil de surlignage (bascule) ;
+      ["markAdd", [u0, v0, u1, v1]] surlignage tracé ; ["markClear"] les efface ;
+      ["take"]               prend le cliché, ouvre sa fiche (fenêtre de transmission) ;
+      ["modal", [largeur, hauteur]]  dessine la fenêtre de transmission de la fiche ouverte (fn_pageDrone) ;
       ["save"]               garde la fiche en cours (champs du formulaire) ; ["flag", "sse" | "conf"] bascule un drapeau ;
       ["send", n°]           envoie le cliché n° (fiche enregistrée d'abord) au débit simulé du téléphone, par la chaîne
                              recon de COMSPEC Link (fn_captureReconImage, appareil "UAV", flux drone:<netId>) ;
@@ -15,7 +22,7 @@
       ["meta"]               → true si COMSPEC Link (2.0.66+) envoie la fiche en champs réels.
     Entrée (tableau, profil COMSPEC_ATAK_DronePhotos, 40 au plus) :
       [fichier, titre, description, SSE, confidentiel, grille, heure, drone, état, dossier SSE, hauteur sol, cap, date,
-       position ASL du drone]
+       position ASL du drone, pose de la prise de vue [position ASL, direction, haut, champ, vision, surlignages]]
       état : "DRAFT" (fiche ouverte), "LOCAL" (gardé), "SENDING", "SENT", "FAILED".
     COMSPEC Link 2.0.66+ : titre, description, SSE (+ dossier), confidentiel, source « drone » et nom du drone partent
     en champs réels de NotifyNewPhoto (8e paramètre de fn_captureReconImage), avec la position et le cap du drone ;
@@ -77,6 +84,46 @@ private _caption = {
     trim format ["%1 %2 (drone %3, grille %4, %5 m sol, cap %6°, %7)", _tags joinString " ", _head, _drone, _grid, _alt, _hdg, _clock]
 };
 
+// Aperçu de la fiche : une caméra posée là où était celle du cliché (même direction, même champ, même vision) rend
+// sur sa propre cible (anneau de 4 noms comspec_droneprev0..3 : une cible coupée puis relancée donnait une image noire).
+// Elle ne tourne que tant que la fiche est ouverte sur la page Drone (vérifié chaque seconde). "" sans pose connue.
+private _prevTex = {
+    params [["_pose", []]];
+    _pose params [["_pos", []], ["_dir", []], ["_up", []], ["_fov", 0.7], ["_vis", 0]];
+    if ((count _pos) < 3 || {(count _dir) < 3} || {!isPiPEnabled}) exitWith { "" };
+    private _key = str [_pos, _dir];
+    private _pc = missionNamespace getVariable ["COMSPEC_ATAK_DronePrevCam", objNull];
+    if (!isNull _pc && {(_pc getVariable ["key", ""]) isEqualTo _key}) exitWith { _pc getVariable ["tex", ""] };
+    if (!isNull _pc) then { _pc cameraEffect ["Terminate", "Back", _pc getVariable ["r2t", ""]]; camDestroy _pc; };
+    private _n = ((missionNamespace getVariable ["COMSPEC_ATAK_DronePrevN", 0]) + 1) mod 4;
+    missionNamespace setVariable ["COMSPEC_ATAK_DronePrevN", _n];
+    private _name = format ["comspec_droneprev%1", _n];
+    _pc = "camera" camCreate (ASLToAGL _pos);
+    _pc cameraEffect ["Internal", "Back", _name];
+    _pc setPosASL _pos;
+    _pc setVectorDirAndUp [_dir, _up];
+    _pc camSetFov _fov;
+    _pc camCommit 0;
+    _name setPiPEffect [_vis];
+    private _tex = format ["#(argb,1024,512,1)r2t(%1,1.7778)", _name];
+    _pc setVariable ["key", _key];
+    _pc setVariable ["r2t", _name];
+    _pc setVariable ["tex", _tex];
+    missionNamespace setVariable ["COMSPEC_ATAK_DronePrevCam", _pc];
+    if ((missionNamespace getVariable ["COMSPEC_ATAK_DronePrevPfh", -1]) < 0) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_DronePrevPfh", [{
+            private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+            if ((_st getOrDefault ["dronePhEdit", -1]) >= 0 && {(_st getOrDefault ["activePage", ""]) isEqualTo "DRONE"} && {!isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])}) exitWith {};
+            private _c = missionNamespace getVariable ["COMSPEC_ATAK_DronePrevCam", objNull];
+            if (!isNull _c) then { _c cameraEffect ["Terminate", "Back", _c getVariable ["r2t", ""]]; camDestroy _c; };
+            missionNamespace setVariable ["COMSPEC_ATAK_DronePrevCam", objNull];
+            [missionNamespace getVariable ["COMSPEC_ATAK_DronePrevPfh", -1]] call CBA_fnc_removePerFrameHandler;
+            missionNamespace setVariable ["COMSPEC_ATAK_DronePrevPfh", -1];
+        }, 1] call CBA_fnc_addPerFrameHandler];
+    };
+    _tex
+};
+
 switch (_act) do {
     case "list": {
         private _out = [];
@@ -97,6 +144,42 @@ switch (_act) do {
         call _store;
         call _render;
     };
+    // Viseur photo (vue SHOT de l'app Drone) : caméra ouverte au besoin, outils et surlignages remis à zéro.
+    case "view": {
+        private _d = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
+        if (isNull _d) exitWith { ["WARNING", "Aucun drone appairé"] call _say; };
+        if ((["camBind"] call comspec_atak_native_fnc_droneAction) isEqualTo "") exitWith { ["WARNING", "Caméra du drone indisponible"] call _say; };
+        _s set ["droneShotView", true];
+        uiNamespace setVariable ["COMSPEC_ATAK_DroneShotTool", ""];
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneShotMarks", []];
+        call _render;
+    };
+    case "viewExit": {
+        _s set ["droneShotView", false];
+        uiNamespace setVariable ["COMSPEC_ATAK_DroneShotTool", ""];
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneShotMarks", []];
+        call _render;
+    };
+    // Outil de surlignage : "BOX" (cadre) ou "CIRCLE" (cercle), un second appui le repose (la souris tourne la caméra).
+    case "tool": {
+        private _t = uiNamespace getVariable ["COMSPEC_ATAK_DroneShotTool", ""];
+        uiNamespace setVariable ["COMSPEC_ATAK_DroneShotTool", [_arg, ""] select (_t isEqualTo _arg)];
+        // Tracer et marquer au clic ne vont pas ensemble : le marquage s'arrête.
+        if (_t isNotEqualTo _arg) then { uiNamespace setVariable ["COMSPEC_ATAK_DroneMarkMode", false]; };
+        call _render;
+    };
+    // Surlignage tracé : [u0, v0, u1, v1] en fractions de l'image (un simple clic ne trace rien) ; 4 au plus.
+    case "markAdd": {
+        _arg params ["_u0", "_v0", "_u1", "_v1"];
+        private _t = uiNamespace getVariable ["COMSPEC_ATAK_DroneShotTool", ""];
+        if (_t isEqualTo "" || {(abs (_u1 - _u0)) < 0.015 && {(abs (_v1 - _v0)) < 0.015}}) exitWith { call _render; };
+        private _m = missionNamespace getVariable ["COMSPEC_ATAK_DroneShotMarks", []];
+        if ((count _m) < 4) then { _m pushBack [_t, _u0 min _u1, _v0 min _v1, _u0 max _u1, _v0 max _v1]; };
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneShotMarks", _m];
+        if ((count _m) >= 4) then { uiNamespace setVariable ["COMSPEC_ATAK_DroneShotTool", ""]; };
+        call _render;
+    };
+    case "markClear": { missionNamespace setVariable ["COMSPEC_ATAK_DroneShotMarks", []]; call _render; };
     case "take": {
         private _d = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
@@ -105,8 +188,8 @@ switch (_act) do {
         if (missionNamespace getVariable ["COMSPEC_ATAK_DroneShotBusy", false] || {missionNamespace getVariable ["COMSPEC_ReconCaptureBusy", false]} || {missionNamespace getVariable ["COMSPEC_WebUavPhotoBusy", false]}) exitWith { ["INFO", "Cliché déjà en cours"] call _say; };
         call _save;
         missionNamespace setVariable ["COMSPEC_ATAK_DroneShotBusy", true];
-        [_d, _cam] spawn {
-            params ["_d", "_cam"];
+        [_d, _cam, +(missionNamespace getVariable ["COMSPEC_ATAK_DroneShotMarks", []])] spawn {
+            params ["_d", "_cam", "_marks"];
             disableSerialization;
             private _hud = shownHUD;
             if (!isNil "ace_interact_menu_fnc_hideMenu") then { [] call ace_interact_menu_fnc_hideMenu; };
@@ -115,23 +198,66 @@ switch (_act) do {
             private _hidden = [];
             if (!isNull _phone) then { _hidden = (allControls _phone) select { ctrlShown _x }; { _x ctrlShow false; } forEach _hidden; };
             // Caméra plein écran : posée et orientée chaque image comme la nacelle (boucle de fn_droneAction).
+            private _zoom = (missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1]) max 1;
             private _shot = "camera" camCreate (getPosATL _cam);
             _shot attachTo [_d, _cam getVariable ["off", [0, 0.3, -0.3]]];
             _shot setVectorDirAndUp [_d vectorWorldToModelVisual (vectorDirVisual _cam), _d vectorWorldToModelVisual (vectorUpVisual _cam)];
             missionNamespace setVariable ["COMSPEC_ATAK_DroneShotCam", _shot];
             _shot cameraEffect ["Internal", "Back"];
-            _shot camSetFov (0.7 / ((missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1]) max 1));
+            _shot camSetFov (0.7 / _zoom);
             _shot camCommit 0;
             private _vision = missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0];
             if (_vision isEqualTo 1) then { camUseNVG true; };
             if (_vision isEqualTo 2) then { true setCamUseTI 0; };
             showHUD false;
             uiSleep 0.3;
+            // Surlignages du viseur posés sur l'écran capturé : chaque coin est un rayon de la caméra (même champ que
+            // l'image du viseur, 16/9), ramené à l'écran par worldToScreen.
+            private _host = [_phone, findDisplay 46] select (isNull _phone);
+            private _over = [];
+            private _tv = 0.7 / _zoom;
+            {
+                _x params ["_kind", "_u0", "_v0", "_u1", "_v1"];
+                private _pts = [[_u0, _v0], [_u1, _v1]] apply {
+                    _x params ["_u", "_v"];
+                    worldToScreen (_shot modelToWorldVisual [(_u - 0.5) * 2 * _tv * 1.7778 * 100, 100, (0.5 - _v) * 2 * _tv * 100])
+                };
+                if ((_pts select 0) isNotEqualTo [] && {(_pts select 1) isNotEqualTo []} && {!isNull _host}) then {
+                    (_pts select 0) params ["_ax", "_ay"];
+                    (_pts select 1) params ["_bx", "_by"];
+                    private _sx = _ax min _bx;
+                    private _sy = _ay min _by;
+                    private _sw = abs (_bx - _ax);
+                    private _sh = abs (_by - _ay);
+                    private _tw = pixelW * 4;
+                    private _th = pixelH * 4;
+                    private _rects = if (_kind isEqualTo "BOX") then { [[_sx, _sy, _sw, _th], [_sx, _sy + _sh - _th, _sw, _th], [_sx, _sy, _tw, _sh], [_sx + _sw - _tw, _sy, _tw, _sh]] } else { [] };
+                    {
+                        private _c = _host ctrlCreate ["RscText", -1];
+                        _c ctrlSetPosition _x;
+                        _c ctrlSetBackgroundColor [1, 0.85, 0.1, 0.95];
+                        _c ctrlCommit 0;
+                        _over pushBack _c;
+                    } forEach _rects;
+                    if (_kind isEqualTo "CIRCLE") then {
+                        private _c = _host ctrlCreate ["RscPicture", -1];
+                        _c ctrlSetText "\A3\ui_f\data\map\markers\military\circle_CA.paa"; // i18n:brut
+                        _c ctrlSetTextColor [1, 0.85, 0.1, 0.95];
+                        _c ctrlSetPosition [_sx, _sy, _sw, _sh];
+                        _c ctrlCommit 0;
+                        _over pushBack _c;
+                    };
+                };
+            } forEach _marks;
+            if ((count _over) > 0) then { uiSleep 0.05; };
             private _file = format ["COMSPEC_DRONE_%1_%2.png", (floor diag_tickTime) toFixed 0, (floor random 99999) toFixed 0];
+            // Pose de la prise de vue, gardée pour l'aperçu de la fiche (caméra posée au même endroit, même champ).
+            private _pose = [getPosASLVisual _shot, vectorDirVisual _shot, vectorUpVisual _shot, 0.7 / _zoom, _vision, _marks];
             private _r = screenshot _file;
             private _ok = !(_r isEqualType true) || {_r};
             // Le fichier est écrit en fin d'image : on garde la vue deux images de plus.
             uiSleep 0.15;
+            { ctrlDelete _x; } forEach _over;
             camUseNVG false;
             false setCamUseTI 0;
             _shot cameraEffect ["Terminate", "Back"];
@@ -152,21 +278,157 @@ switch (_act) do {
             if !(_lib isEqualType []) then { _lib = []; };
             (date) params ["_yy", "_mo", "_dd"];
             _lib pushBack [_file, "", "", false, false, [getPosASL _d, 8] call comspec_atak_native_fnc_gridRef, [dayTime, "HH:MM:SS"] call BIS_fnc_timeToString,
-                [_d, [], "NAME"] call comspec_atak_native_fnc_droneOsd, "DRAFT", "", round ((getPosATL _d) select 2), round (getDirVisual _d) mod 360, format ["%1-%2-%3", _yy, _mo, _dd], getPosASL _d];
+                [_d, [], "NAME"] call comspec_atak_native_fnc_droneOsd, "DRAFT", "", round ((getPosATL _d) select 2), round (getDirVisual _d) mod 360, format ["%1-%2-%3", _yy, _mo, _dd], getPosASL _d, _pose];
             while { (count _lib) > 40 } do { _lib deleteAt 0; };
             profileNamespace setVariable ["COMSPEC_ATAK_DronePhotos", _lib];
             saveProfileNamespace;
-            // Fiche du cliché : onglet PHOTOS, menus visibles (l'image se réduit au-dessus).
+            // Fiche du cliché : fenêtre de transmission plein écran ; le viseur se referme, surlignages oubliés.
             private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
             _s set ["dronePhEdit", (count _lib) - 1];
-            _s set ["droneTab", "PHOTO"];
-            _s set ["droneCamSplit", true];
-            ["log", format ["Cliché pris en %1 (%2), fiche à compléter avant l'envoi", (_lib select ((count _lib) - 1)) select 5, _file]] call comspec_atak_native_fnc_droneAction;
+            _s set ["droneShotView", false];
+            uiNamespace setVariable ["COMSPEC_ATAK_DroneShotTool", ""];
+            missionNamespace setVariable ["COMSPEC_ATAK_DroneShotMarks", []];
+            ["log", format ["Cliché pris en %1 (%2)%3, fiche à compléter avant l'envoi", (_lib select ((count _lib) - 1)) select 5, _file, ["", format [", %1 surlignage(s)", count _marks]] select ((count _marks) > 0)]] call comspec_atak_native_fnc_droneAction;
             if !(_s getOrDefault ["interactive", false]) then {
                 ["INFO", "Cliché pris : prenez le téléphone en main (Ctrl+Maj+U) pour compléter sa fiche et l'envoyer", 6, 40] call comspec_atak_native_fnc_notify;
             } else { ["SUCCESS", "Cliché pris : complétez sa fiche, puis ENVOYER", 4, 40] call comspec_atak_native_fnc_notify; };
             [{ ["DRONE"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
         };
+    };
+    // Fenêtre de transmission plein écran (à la place de toute la page Drone) : aperçu en grand, champs lisibles,
+    // SSE et confidentiel, puis SUPPRIMER / ANNULER (garder sans envoyer) / ENVOYER. Tient sans défilement.
+    case "modal": {
+        disableSerialization;
+        _arg params ["_bw", "_bh"];
+        if (_cur < 0 || {_cur >= count _lib}) exitWith {};
+        private _e = _lib select _cur;
+        _e params ["_file", "_title", "_desc", "_sse", "_cf", "_grid", "_clock", "_drone", "_state", ["_case", ""], ["_alt", 0], ["_hdg", 0], ["_date", ""], "", ["_pose", []]];
+        private _l = [] call comspec_atak_native_fnc_layoutGet;
+        private _font = _l get "font";
+        private _fs = _l get "fontSmall";
+        private _pad = (_l get "pad") * 2;
+        private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+        private _mk = { params ["_class", "_pos", ["_text", ""]]; [_class, _pos, _text] call comspec_atak_native_fnc_pageCtrl };
+        ([] call comspec_atak_native_fnc_accent) params ["", "_accHex"];
+        private _bgc = ["COMSPEC_RscText", [0, 0, _bw, _bh]] call _mk;
+        _bgc ctrlSetBackgroundColor [0.02, 0.025, 0.022, 0.98];
+        private _w = _bw - 2 * _pad;
+        private _y = _pad / 2;
+        // En-tête : titre de la fenêtre et prise de vue (date, heure, drone, grille, hauteur, cap).
+        private _hd = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _fs * 2.4]] call _mk;
+        _hd ctrlEnable false;
+        _hd ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' size='1.1' color='%1'>TRANSMETTRE LE CLICHÉ</t><br/><t size='0.8' color='#8a9a93'>%2 %3 · %4 · %5 · %6 m sol · cap %7°</t>",
+            _accHex, _date, _clock, _drone, _grid, _alt, _hdg]) call comspec_atak_native_fnc_tr);
+        private _hh = (ctrlTextHeight _hd) max (_fs * 1.2);
+        _hd ctrlSetPosition [_pad, _y, _w, _hh];
+        _hd ctrlCommit 0;
+        _y = _y + _hh + _pad / 3;
+        // Hauteurs : boutons en bas, champs, puis l'aperçu prend ce qui reste (jusqu'à 45 % de l'écran).
+        private _btnH = _font * 1.6;
+        private _yb = _bh - _pad / 2 - _btnH;
+        private _lblH = _fs * 1.15;
+        private _editH = _font * 1.5;
+        private _togH = _font * 1.45;
+        private _capH = _fs * 2.2;
+        private _memoL = 3;
+        private _fieldsH = { 2 * _lblH + _editH + (_font * 1.15 * _memoL + _font * 0.3) + _togH + _capH + _pad * 1.4 };
+        private _avail = _yb - _y - (call _fieldsH);
+        if (_avail < _bh * 0.2) then { _memoL = 2; _avail = _yb - _y - (call _fieldsH); };
+        private _ph = (_avail max (_bh * 0.12)) min (_bh * 0.45);
+        private _pw = _ph / (0.5625 * _ratio);
+        if (_pw > _w) then { _pw = _w; _ph = _pw * 0.5625 * _ratio; };
+        private _px = (_bw - _pw) / 2;
+        private _pf = ["COMSPEC_RscText", [_px - pixelW * 2, _y - pixelH * 2, _pw + pixelW * 4, _ph + pixelH * 4]] call _mk;
+        _pf ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.5];
+        private _pb = ["COMSPEC_RscText", [_px, _y, _pw, _ph]] call _mk;
+        _pb ctrlSetBackgroundColor [0.08, 0.09, 0.085, 1];
+        private _tex = [_pose] call _prevTex;
+        if (_tex isNotEqualTo "") then {
+            ["RscPicture", [_px, _y, _pw, _ph], _tex] call _mk;
+            // Surlignages du cliché redessinés sur l'aperçu.
+            {
+                _x params ["_kind", "_u0", "_v0", "_u1", "_v1"];
+                private _sx = _px + _u0 * _pw;
+                private _sy = _y + _v0 * _ph;
+                private _sw = (_u1 - _u0) * _pw;
+                private _sh = (_v1 - _v0) * _ph;
+                if (_kind isEqualTo "BOX") then {
+                    { private _c = ["COMSPEC_RscText", _x] call _mk; _c ctrlSetBackgroundColor [1, 0.85, 0.1, 0.95]; } forEach [
+                        [_sx, _sy, _sw, pixelH * 2], [_sx, _sy + _sh - pixelH * 2, _sw, pixelH * 2], [_sx, _sy, pixelW * 2, _sh], [_sx + _sw - pixelW * 2, _sy, pixelW * 2, _sh]];
+                } else {
+                    private _c = ["RscPicture", [_sx, _sy, _sw, _sh], "\A3\ui_f\data\map\markers\military\circle_CA.paa"] call _mk;
+                    _c ctrlSetTextColor [1, 0.85, 0.1, 0.95];
+                };
+            } forEach (_pose param [5, []]);
+            private _cap = ["COMSPEC_RscStructuredText", [_px, _y + _ph - _fs * 1.1, _pw, _fs * 1.1]] call _mk;
+            _cap ctrlEnable false;
+            _cap ctrlSetStructuredText parseText (("<t size='0.72' align='right' shadow='2' shadowColor='#000000' color='#e8f0ea'>APERÇU · même cadrage, vue du moment</t>") call comspec_atak_native_fnc_tr);
+        } else {
+            private _na = ["COMSPEC_RscStructuredText", [_px, _y + _ph * 0.38, _pw, _fs * 2.4]] call _mk;
+            _na ctrlEnable false;
+            _na ctrlSetStructuredText parseText ((format ["<t align='center' size='0.85' color='#8a9a93'>Aperçu indisponible pour ce cliché<br/><t size='0.75'>%1</t></t>", _file]) call comspec_atak_native_fnc_tr);
+        };
+        _y = _y + _ph + _pad / 2;
+        // Champs : titre, description (relus par ["save"] avant tout redessin).
+        private _fields = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
+        private _lb1 = ["COMSPEC_RscLabel", [_pad, _y, _w, _lblH], "TITRE (60 caractères)"] call _mk;
+        _lb1 ctrlSetFontHeight (_fs * 0.9);
+        _y = _y + _lblH;
+        private _ed = ["COMSPEC_RscEdit", [_pad, _y, _w, _editH], _title] call _mk;
+        _ed ctrlSetFontHeight _font;
+        _fields set ["dronePhTitle", _ed];
+        _y = _y + _editH + _pad / 3;
+        private _lb2 = ["COMSPEC_RscLabel", [_pad, _y, _w, _lblH], "DESCRIPTION (ce que montre le cliché)"] call _mk;
+        _lb2 ctrlSetFontHeight (_fs * 0.9);
+        _y = _y + _lblH;
+        private _memoH = _font * 1.15 * _memoL + _font * 0.3;
+        private _md = ["COMSPEC_RscEditMulti", [_pad, _y, _w, _memoH], _desc] call _mk;
+        _md ctrlSetFontHeight _font;
+        _fields set ["dronePhDesc", _md];
+        uiNamespace setVariable ["COMSPEC_ATAK_Form", _fields];
+        _y = _y + _memoH + _pad / 3;
+        // SSE et confidentiel : deux bascules côte à côte, vert = oui (rouge pour confidentiel).
+        private _tw = (_w - _pad / 2) / 2;
+        {
+            _x params ["_lbl", "_on", "_flag", "_onCol", "_tip"];
+            private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * (_tw + _pad / 2), _y, _tw, _togH], format ["%1 : %2", _lbl, ["NON", "OUI"] select _on]] call _mk;
+            _b ctrlSetFontHeight (_fs * 0.95);
+            if (_on) then { _b ctrlSetBackgroundColor _onCol; _b ctrlSetTextColor [1, 1, 1, 1]; } else { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; };
+            _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
+            _b ctrlAddEventHandler ["ButtonClick", compile format ["['flag', %1] call comspec_atak_native_fnc_dronePhoto;", str _flag]];
+        } forEach [
+            ["SSE", _sse, "sse", [0.85, 0.55, 0.12, 1], "Exploitation de site : rattache le cliché au dossier SSE actif (app SSE)"],
+            ["CONFIDENTIEL", _cf, "conf", [0.78, 0.2, 0.16, 1], "Marqué [CONFIDENTIEL] en tête de la légende sur Athena"]
+        ];
+        _y = _y + _togH + _pad / 3;
+        private _active = missionNamespace getVariable ["COMSPEC_SSE_ActiveCase", ""];
+        if !(_active isEqualType "") then { _active = ""; };
+        private _sseTxt = if (_sse) then { [format ["Dossier SSE : %1", [_active, _case] select (_case isNotEqualTo "")], "SSE sans dossier (aucun dossier actif dans l'app SSE)"] select (([_active, _case] select (_case isNotEqualTo "")) isEqualTo "") } else { "" };
+        private _cp = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _capH]] call _mk;
+        _cp ctrlEnable false;
+        _cp ctrlSetStructuredText parseText ((format ["<t size='0.75' color='#8a9a93'>%1%2Légende envoyée : %3</t>", _sseTxt, ["", " · "] select (_sseTxt isNotEqualTo ""), ["caption", _e] call comspec_atak_native_fnc_dronePhoto]) call comspec_atak_native_fnc_tr);
+        // Boutons du bas.
+        private _del = _s getOrDefault ["dronePhDel", [-1, -10]];
+        private _delOn = (_del select 0) isEqualTo _cur && {diag_tickTime - (_del select 1) < 4};
+        private _bws = [0.27, 0.27, 0.46] apply { (_w - _pad) * _x };
+        private _bx = _pad;
+        {
+            _x params ["_lbl", "_code", "_cls", "_tip", ["_en", true]];
+            private _b = [_cls, [_bx, _yb, _bws select _forEachIndex, _btnH], _lbl] call _mk;
+            _b ctrlSetFontHeight (_fs * 1.0);
+            _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
+            _b ctrlEnable _en;
+            _b ctrlAddEventHandler ["ButtonClick", _code];
+            if (_forEachIndex isEqualTo 0 && {_delOn}) then { _b ctrlSetBackgroundColor [0.78, 0.2, 0.16, 1]; };
+            _bx = _bx + (_bws select _forEachIndex) + _pad / 2;
+        } forEach [
+            [["SUPPRIMER", "CONFIRMER"] select _delOn, compile format ["['forget', %1] call comspec_atak_native_fnc_dronePhoto;", _cur], "COMSPEC_RscButton", "Supprime le cliché du téléphone (second appui pour confirmer)"],
+            ["ANNULER", { ["keep"] call comspec_atak_native_fnc_dronePhoto; }, "COMSPEC_RscButton", "Ferme la fiche sans envoyer : le cliché reste sur le téléphone (onglet PHOTOS)"],
+            ["ENVOYER À ATHENA", { ['send', -1] call comspec_atak_native_fnc_dronePhoto; }, "COMSPEC_RscButtonPrimary", "Envoie le cliché et sa fiche vers Athena", _state isNotEqualTo "SENDING"]
+        ];
+        // Titre vide : le curseur y est déjà, on peut écrire tout de suite.
+        if (_title isEqualTo "" && {_s getOrDefault ["interactive", false]}) then { ctrlSetFocus _ed; };
+        true
     };
     case "keep": {
         call _save;

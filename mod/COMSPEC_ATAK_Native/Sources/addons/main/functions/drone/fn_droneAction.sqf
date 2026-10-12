@@ -33,7 +33,7 @@
       "" = le téléphone pilote, personne ne peut se connecter au drone avec un terminal UAV ;
       uid = seul ce joueur peut s'y connecter (pilotage manuel) ; absent = drone libre.
       ["tick"]                    surveillance (toutes les secondes tant qu'un drone est appairé) ;
-      ["link"]                    renvoie [barres 0-4, distance, en liaison].
+      ["link"]                    renvoie [barres 0-4, distance, en liaison, qualité 0-1].
     Tâches sur point (onglet TÂCHES) :
       ["tab", "PILOT" | "TASK" | "TARGETS" | "PHOTO" | "LOG"]   onglet de la page ;
       ["task", "GOTO" | "LOITER" | "OBSERVE" | "ESCORT"] / ["taskRad", m]   tâche et rayon choisis ;
@@ -113,8 +113,9 @@ private _payloads = [
     ["DemoCharge_Remote_Mag", "DemoCharge_Remote_Ammo_Scripted", "charge de démolition"],
     ["HandGrenade", "GrenadeHand", "grenade RGO"], ["MiniGrenade", "mini_Grenade", "grenade RGN"]
 ];
+// Liaison : [barres 0-4, distance, en liaison, qualité 0-1] (la qualité règle les défauts TNT de l'image, fn_droneStatic).
 private _link = {
-    if (isNull _d || {!alive _d}) exitWith { [0, 0, false] };
+    if (isNull _d || {!alive _d}) exitWith { [0, 0, false, 0] };
     private _range = missionNamespace getVariable ["comspec_atak_native_drone_range", 2500];
     if (terrainIntersectASL [eyePos player, getPosASL _d]) then { _range = _range * 0.3; };
     if !([player] call comspec_atak_native_fnc_hasDevice) then { _range = 0; };
@@ -125,10 +126,11 @@ private _link = {
         private _sig = [player, _d] call Mavic_fnc_getSignal;
         if !(_sig isEqualType 0) then { _sig = 1; };
         private _okM = _sig >= 0.05;
-        [[0, (ceil (_sig * 4)) max 1 min 4] select _okM, round _dist, _okM]
+        [[0, (ceil (_sig * 4)) max 1 min 4] select _okM, round _dist, _okM, [0, (_sig max 0) min 1] select _okM]
     };
     private _ok = _dist < _range;
-    [[0, ceil (4 * (1 - _dist / (_range max 1))) max 1] select _ok, round _dist, _ok]
+    private _q = [0, ((1 - _dist / (_range max 1)) max 0) min 1] select _ok;
+    [[0, ceil (4 * _q) max 1] select _ok, round _dist, _ok, _q]
 };
 private _needLink = {
     if ((call _link) select 2) exitWith { true };
@@ -238,6 +240,19 @@ private _camOpen = {
         if !(_cam getVariable ["rendering", true]) exitWith {
             ["camBind"] call comspec_atak_native_fnc_droneAction;
             [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call CBA_fnc_execNextFrame;
+        };
+        // Image figée (défaut TNT d'une liaison faible, fn_droneStatic) : la caméra reste où elle est, détachée du drone,
+        // puis se rattache (point « off » oublié) à la fin du gel.
+        if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedFreeze", 0])) exitWith {
+            if (!isNull (attachedTo _cam)) then {
+                private _fp = getPosASLVisual _cam;
+                private _fd = vectorDirVisual _cam;
+                private _fu = vectorUpVisual _cam;
+                detach _cam;
+                _cam setPosASL _fp;
+                _cam setVectorDirAndUp [_fd, _fu];
+                _cam setVariable ["off", nil];
+            };
         };
         // Autre source du flux (sélecteur SOURCE de la vue caméra) : caméra du téléphone, tenue devant le joueur, ou caméra
         // casque (la sienne ou celle d'un équipier), au niveau des yeux et tournée comme la tête. Caméra détachée du drone.
@@ -837,19 +852,20 @@ switch (_act) do {
         private _pts = _s getOrDefault ["droneMapPts", []];
         private _rh = _fs * 1.5;
         private _rows = [];
-        _rows pushBack ([["ALLER ICI", "GOTO"], ["ROUTE", "ROUTE"], ["ZONE", "ZONE"]] apply { [_x select 0, ["mapSub", _x select 1], _sub isEqualTo (_x select 1)] });
+        // [libellé, ordre, actif, aide] : libellés en clair, détail en infobulle.
+        _rows pushBack ([["ALLER ICI", "GOTO", "Touchez la carte : le drone y va, puis reste en stationnaire"], ["TRACER UNE ROUTE", "ROUTE", "Touchez la carte point par point (12 au plus), puis ENVOYER LA ROUTE"], ["ZONE", "ZONE", "Touchez le centre puis le bord (ou deux coins) : orbite, observation ou recherche"]] apply { [_x select 0, ["mapSub", _x select 1], _sub isEqualTo (_x select 1), _x select 2] });
         switch (_sub) do {
             case "ROUTE": {
                 private _rm = _s getOrDefault ["droneRouteMode", "ONCE"];
-                _rows pushBack ([["UNE FOIS", "ONCE"], ["BOUCLE", "LOOP"], ["ALLER-RETOUR", "PINGPONG"]] apply { [_x select 0, ["routeMode", _x select 1], _rm isEqualTo (_x select 1)] });
-                _rows pushBack [[format ["VALIDER (%1)", count _pts], ["routeSend"], true], ["EFFACER", ["mapClear"], false]];
+                _rows pushBack ([["UNE FOIS", "ONCE", "Parcourt la route une fois puis s'arrête"], ["EN BOUCLE", "LOOP", "Recommence la route sans fin"], ["ALLER-RETOUR", "PINGPONG", "Parcourt la route dans un sens puis dans l'autre"]] apply { [_x select 0, ["routeMode", _x select 1], _rm isEqualTo (_x select 1), _x select 2] });
+                _rows pushBack [[format ["ENVOYER LA ROUTE (%1 POINTS)", count _pts], ["routeSend"], true, "Envoie la route tracée au drone"], ["EFFACER LE TRACÉ", ["mapClear"], false, "Efface les points posés"]];
             };
             case "ZONE": {
                 private _zk = _s getOrDefault ["droneZoneKind", "LOITER"];
-                _rows pushBack ([["ORBITE", "LOITER"], ["OBSERVER", "OBSERVE"], ["RECHERCHE", "HUNT"]] apply { [_x select 0, ["zoneKind", _x select 1], _zk isEqualTo (_x select 1)] });
+                _rows pushBack ([["TOURNER AUTOUR", "LOITER", "Le drone tourne autour du point"], ["OBSERVER", "OBSERVE", "Le drone tourne autour du point, caméra fixée dessus"], ["CHERCHER DES ENNEMIS", "HUNT", "Le drone fouille la zone et signale le premier ennemi vu"]] apply { [_x select 0, ["zoneKind", _x select 1], _zk isEqualTo (_x select 1), _x select 2] });
             };
         };
-        _rows pushBack [["STATIONNAIRE", ["mode", "hover"], false], ["RETOUR", ["mode", "home"], false]];
+        _rows pushBack [["S'ARRÊTER ICI", ["mode", "hover"], false, "Le drone s'arrête et reste en vol stationnaire"], ["REVENIR À MOI", ["mode", "home"], false, "Le drone revient au-dessus de vous"]];
         private _h = _rh * 1.1 + (count _rows) * (_rh + _pad / 3) + _pad / 2;
         private _bg = ["COMSPEC_RscMapPanel", [_x0, _y0, _w, _h]] call _mk;
         _bg ctrlSetBackgroundColor [0.025, 0.030, 0.027, 0.92];
@@ -863,9 +879,10 @@ switch (_act) do {
             private _row = _x;
             private _bw = (_w - _pad) / (count _row);
             {
-                _x params ["_lbl", "_a", "_on"];
+                _x params ["_lbl", "_a", "_on", ["_tip", ""]];
                 private _b = ["COMSPEC_RscButton", [_x0 + _pad / 2 + _forEachIndex * _bw, _y, _bw - _pad / 4, _rh], _lbl] call _mk;
-                _b ctrlSetFontHeight (_fs * 0.82);
+                _b ctrlSetFontHeight (_fs * 0.74);
+                if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 if (_on) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
                 _b ctrlAddEventHandler ["ButtonClick", compile format ["%1 call comspec_atak_native_fnc_droneAction;", str _a]];
             } forEach _row;

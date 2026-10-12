@@ -82,15 +82,12 @@ switch (_act) do {
             // Caméra relancée (ou recréée) avant que l'image soit posée : sinon image noire au retour sur la vue.
             private _pic = ["RscPicture", [_rx, _ry, _w, _h], ["camBind"] call comspec_atak_native_fnc_droneAction] call _mk;
             _pic ctrlSetTextColor [1, 1, 1, 1];
-            // Pas de flux (liaison perdue, drone perdu ou en veille) : neige « NO DATA » par-dessus l'image.
-            ["build", [_rx, _ry, _w, _h], _inGroup] call comspec_atak_native_fnc_droneStatic;
+            // Pas de flux (liaison perdue, drone perdu ou en veille, PiP coupée) : neige « NO DATA » et sa raison par-dessus
+            // l'image ; liaison faible : défauts TNT ; image rebranchée si la caméra a été recréée (fn_droneStatic).
+            ["build", [_rx, _ry, _w, _h, _pic], _inGroup] call comspec_atak_native_fnc_droneStatic;
             // Clic sur l'image (téléphone en main) : la nacelle vise le point cliqué.
             private _hit = ["COMSPEC_RscButtonInvisible", [_rx, _ry, _w, _h]] call _mk;
             _hit ctrlAddEventHandler ["MouseButtonDown", { params ["", "_btn", "_mx", "_my"]; if (_btn isEqualTo 0) then { ["click", [_mx, _my]] call comspec_atak_native_fnc_droneFlir; }; }];
-            if !(isPiPEnabled) then {
-                private _w2 = ["COMSPEC_RscStructuredText", [_rx, _ry + _h * 0.4, _w, _fs * 2.6]] call _mk;
-                _w2 ctrlSetStructuredText parseText (("<t align='center' color='#f2ab33'>Image dans l'image (PiP) désactivée :<br/>Options > Vidéo > Image dans l'image</t>") call comspec_atak_native_fnc_tr);
-            };
             // Coins de cadrage.
             private _cl = (_w min (_h / pixelH * pixelW)) * 0.07;
             private _ch = _cl * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
