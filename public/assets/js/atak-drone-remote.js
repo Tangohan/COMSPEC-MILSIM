@@ -2,7 +2,7 @@
  * COMSPEC Athena — télécommande drone sur le vrai téléphone (page /telecommande-drone).
  * Liste les drones appairés à un téléphone ATAK (les siens d'abord), affiche l'état du drone choisi
  * et envoie les mêmes ordres que le poste (POST /api/atak/web-commands/uav) : le téléphone du pilote
- * en jeu les exécute s'il est en liaison. Rôles et essaim : flotte de l'ATAK natif (1.40.0 et plus).
+ * en jeu les exécute s'il est en liaison. Rôles et essaim : flotte de l'ATAK natif (1.44.0 et plus).
  */
 (function () {
   'use strict';
@@ -114,7 +114,7 @@
     out += '<h2>Rôle du drone</h2><div class="grid">' + ROLES.map(function (r) {
       return btn('role', r[1], '', ' data-kind="' + r[0] + '"');
     }).join('') + btn('hunt', 'Recherche ici') + '</div>' +
-      '<p class="hint">Rôles : ATAK natif 1.40.0 et plus. La garde rapprochée doit être autorisée par l’admin (repérage automatique par drone).</p>';
+      '<p class="hint">Rôles : ATAK natif 1.44.0 et plus. La garde rapprochée doit être autorisée par l’admin (repérage automatique par drone).</p>';
     out += '<h2>Altitude</h2><div class="presets">' + [5, 15, 30, 60, 100].map(function (a) {
       return btn('alt', a + ' m', '', ' data-v="' + a + '"');
     }).join('') + '</div>';

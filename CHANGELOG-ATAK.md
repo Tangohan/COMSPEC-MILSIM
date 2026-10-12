@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Télécommande drone sur son vrai téléphone (QR code) (ATAK natif 1.40.0)
+## Télécommande drone sur son vrai téléphone (QR code), caméra de nuit, portée (ATAK natif 1.44.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Addon connect mis à jour (comspec_overwatch_connect.pbo reconstruit). Demande de TTRD : « tu scannes le QR code sur l'ordi ou dans le jeu, et ça ouvre le menu des boutons du drone sur ton téléphone IRL ».
 - Site : nouvelle page **/telecommande-drone**, faite pour un téléphone (connexion Athena demandée la première fois). Choix du drone (les siens d'abord), état (mode, hauteur, vitesse, batterie), gros boutons : décoller, stationnaire, me suivre, retour au pilote, RTB, atterrir ; rôle du drone (me suivre, CQB, garde, recherche, aucun) ; altitude et vitesse ; essaim (tous me suivre, CQB, garde, recherche, stationnaire, RTB, atterrir) ; photo, veille, reprendre, forcer ; journal des ordres. Mêmes ordres que le poste (POST /api/atak/web-commands/uav, nouveaux ordres `role` et `swarm`).
@@ -19,6 +19,24 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration. Addon connect mis
 - Jeu : un ordre web pour un drone de la flotte le prend en main (il devient le drone piloté) ; rôles et essaim passent par la flotte (fn_droneFleet).
 - Pas de pilotage au joystick ni de vidéo en direct : les ordres passent par Athena (quelques secondes) et demandent que le pilote soit en jeu, Overwatch connecté, en liaison avec le drone.
 - À vérifier : scanner le QR en jeu et sur le site, connexion puis page, chaque bouton, rôle et essaim avec deux drones, garde refusée quand le réglage admin est désactivé.
+- **Caméra du drone noire la nuit** (retour de TTRD, 00:49, liaison 4/4 à 10 m) : l'image rendue dans l'écran ne s'adapte pas à l'obscurité comme la vue du joueur. En VISION : JOUR, le gain suit maintenant la lumière autour du drone : normal le jour, éclairci en pénombre, fortement éclairci la nuit (« BASSE LUMIÈRE » ou « MODE NUIT » dans l'incrustation). Même correction que le viseur de l'app Photo. NUIT et THERMIQUE ne changent pas.
+- **Portée de la liaison drone** (retour de TTRD : « la portée est courte, le 4/4 ? ») : réglage admin par défaut 6000 m au lieu de 2500 m (jusqu'à 12 000 m), et la portée maximale du mod Mavic (mavic_setting_maxConnectionDistance) l'emporte si elle est plus grande. Barres plus douces : 4/4 jusqu'à la moitié de la portée (3000 m), 3/4 jusqu'à 71 %, 2/4 jusqu'à 87 %, 1/4 jusqu'au bout (avant : 4/4 seulement jusqu'à 625 m). Derrière le relief, toujours divisée par trois. Même règle pour la flotte et pour le signal des drones Mavic. Un réglage admin déjà enregistré à 2500 m reste à 2500 m : le remonter dans les paramètres CBA.
+
+## Selfie : le téléphone dans la main, l'objectif sur le téléphone (ATAK natif 1.43.0)
+
+Non testé en jeu. Retour de TTRD après essai : « anime OK et manque le S7 dans la main », la main passait aussi devant l'image. Pas de DLL à recompiler, pas de migration.
+- Pendant le selfie, le téléphone du profil (S7 par défaut, coque teintée comme sur le JPC ; autres modèles du profil, la tablette à touches devient un S7) est tenu dans la main droite, en paysage, écran vers le visage. Objet global accroché à l'os de la main : il suit le bras et les autres joueurs le voient. Il redescend avec le bras puis disparaît.
+- La caméra du selfie (app Photo objectif avant et plein écran R) est maintenant posée sur le téléphone, 3 cm devant l'écran, tournée vers les yeux : la main ne masque plus le visage. La souris (ou le glisser dans l'app) tourne la vue autour du téléphone.
+- À vérifier en jeu : téléphone bien dans la paume (ni décalé ni traversant les doigts). Réglage sans recompiler, dans la console : `COMSPEC_ATAK_SelfiePhoneAttach = ["righthand", [x, y, z], vectorDir, vectorUp]` (valeur actuelle `["righthand", [0.013, -0.05, -0.066], [0.941, -0.134, 0.311], [0.293, 0.782, -0.55]]`), puis repasser en selfie.
+
+## ALERTES refaite, SALUTE dans sa propre app (ATAK natif 1.42.0)
+
+Non testé en jeu. Demande de TTRD : reprendre le style de l'app Reco pour les Alertes, bouton panique prioritaire, compte rendu SALUTE hors des Alertes. Pas de DLL à recompiler, pas de migration.
+- **Alertes** : en-tête rouge (heure, ma grille, pastille CAMP + POSTE ou CAMP SEULEMENT selon Athena). **PANIQUE** en tête, sur toute la largeur : grand bouton rouge sombre, rouge vif quand il est armé (« Appuyez encore dans les 5 secondes pour ENVOYER »), toujours deux appuis. Alertes rapides en trois tuiles à icône (CONTACT, FIN DE CONTACT, APPAREIL ABATTU). Journal en cartes de la couleur de l'alerte, bouton CARTE sur chacune.
+- **SALUTE** : nouvelle app (section Renseignement, à côté de Reco), en bleu. Une grande lettre par champ avec exemple ; L avec ICI et VISÉ (point sous mon regard) et la distance et l'azimut ; T avec MAINTENANT ; compteur « x/6 remplis » ; ENVOYER LE SALUTE et EFFACER ; derniers SALUTE de la mission en cartes. Raccourci depuis les Alertes. Même envoi qu'avant (camp et poste Athena).
+- Nouvelles icônes : panique, contact, fin de contact, appareil abattu, SALUTE.
+
+À tester en jeu : PANIQUE (un appui arme, le deuxième envoie, retour au repos après 5 s ; reçue par un autre joueur du camp) ; les trois alertes rapides ; app SALUTE : saisir, ICI / VISÉ / MAINTENANT sans perdre la saisie, envoyer avec moins de deux champs (refusé) puis complet ; le SALUTE apparaît dans les deux journaux ; affichage en portrait et en mode petit.
 
 ## Drone : flotte de 4 drones, rôles, essaim, garde rapprochée ; repérage automatique en réglage admin (ATAK natif 1.39.0)
 

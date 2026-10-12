@@ -39,6 +39,8 @@ use App\Repositories\RoleRepository;
 use App\Repositories\SseCaseRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\ArmaPlaytimeRepository;
+use App\Repositories\AtakRoleTimeCorrectionRepository;
+use App\Services\Audit\AuditService;
 use App\Repositories\PersonnelOrgHistoryRepository;
 use App\Repositories\PersonnelRoleplayTimelineRepository;
 use App\Repositories\PersonnelStageBilanRepository;
@@ -874,6 +876,17 @@ class PersonnelController
             $atakRoleTimes = [];
         }
 
+        // Encadrement : corriger le temps par rôle (déplacer vers le bon rôle) et voir le journal des corrections.
+        $canCorrectRoleTime = $previewAs === null && $this->canCorrectRoleTime();
+        $roleTimeMoves = [];
+        if ($canCorrectRoleTime) {
+            try {
+                $roleTimeMoves = (new AtakRoleTimeCorrectionRepository())->listForUser((int) $tenantId, $uid);
+            } catch (\Throwable) {
+                $roleTimeMoves = [];
+            }
+        }
+
         $phaseChecklist = null;
         $phaseTransitions = [];
         $armaSessionActivity = null;
@@ -1074,6 +1087,9 @@ class PersonnelController
             'seniorityDetailLines' => $seniorityDetailLines,
             'armaPlaytime' => $armaPlaytime,
             'atakRoleTimes' => $atakRoleTimes,
+            'canCorrectRoleTime' => $canCorrectRoleTime,
+            'roleTimeMoves' => $roleTimeMoves,
+            'roleTimePathSegment' => $this->personPathSegment($target),
             'steamProfileSyncOffered' => $steamProfileSyncOffered,
             'personnelOrgHistory' => $personnelOrgHistory,
             'personnelOrgHistorySection' => $personnelOrgHistorySection,
@@ -1246,6 +1262,101 @@ class PersonnelController
         }
 
         return Response::redirect(url('personnel/' . $this->personPathSegment($target)));
+    }
+
+    /**
+     * Encadrement : déplacer le temps d'un rôle en jeu vers un autre sur la fiche d'un membre
+     * (perte de synchro qui a fait tomber le rôle). Réversible, journalisé.
+     */
+    public function moveRoleTime(Request $request, array $params = []): Response
+    {
+        [$tenantId, $target, $deny] = $this->roleTimeCorrectionContext($request, $params);
+        if ($deny !== null) {
+            return $deny;
+        }
+        $back = url('personnel/' . $this->personPathSegment($target)) . '#temps-par-role';
+        $fromKey = trim((string) $request->input('from_key', ''));
+        $toKey = trim((string) $request->input('to_key', ''));
+        $newLabel = trim((string) $request->input('to_label', ''));
+        if ($toKey === '__new') {
+            $toKey = AtakRoleTimeCorrectionRepository::keyForLabel($newLabel);
+        }
+        $minutesRaw = trim((string) $request->input('minutes', ''));
+        $seconds = $minutesRaw === '' ? null : max(0, (int) $minutesRaw) * 60;
+        $reason = trim((string) $request->input('reason', ''));
+        $actorId = (int) Session::get('user_id');
+        $repo = new AtakRoleTimeCorrectionRepository();
+        $result = $repo->move($tenantId, (int) $target['id'], $fromKey, $toKey, $newLabel, $seconds, $actorId, $reason);
+        if (empty($result['ok'])) {
+            Session::flash('error', (string) ($result['error'] ?? 'Échec.'));
+
+            return Response::redirect($back);
+        }
+        try {
+            (new AuditService())->logChange('personnel_role_time_moved', $tenantId, $actorId, 'user', (int) $target['id'],
+                ['role' => $fromKey], ['role' => $toKey, 'seconds' => (int) $result['seconds'], 'move_id' => (int) $result['id'], 'reason' => $reason]);
+        } catch (\Throwable) {
+            // Le journal propre à la correction suffit.
+        }
+        Session::flash('success', 'Temps déplacé (' . intdiv((int) $result['seconds'], 60) . ' min). La correction reste annulable sur la fiche.');
+
+        return Response::redirect($back);
+    }
+
+    public function revertRoleTimeMove(Request $request, array $params = []): Response
+    {
+        [$tenantId, $target, $deny] = $this->roleTimeCorrectionContext($request, $params);
+        if ($deny !== null) {
+            return $deny;
+        }
+        $back = url('personnel/' . $this->personPathSegment($target)) . '#temps-par-role';
+        $actorId = (int) Session::get('user_id');
+        $moveId = (int) ($params['moveId'] ?? 0);
+        $result = (new AtakRoleTimeCorrectionRepository())->revert($tenantId, (int) $target['id'], $moveId, $actorId);
+        if (empty($result['ok'])) {
+            Session::flash('error', (string) ($result['error'] ?? 'Échec.'));
+
+            return Response::redirect($back);
+        }
+        try {
+            (new AuditService())->logChange('personnel_role_time_move_reverted', $tenantId, $actorId, 'user', (int) $target['id'],
+                ['move_id' => $moveId], ['seconds' => (int) $result['seconds']]);
+        } catch (\Throwable) {
+        }
+        Session::flash('success', 'Correction annulée : le temps est revenu à son rôle d’origine.');
+
+        return Response::redirect($back);
+    }
+
+    /** Peut corriger le temps par rôle d'une fiche : encadrement qui édite les fiches, ou gestion de l'organisation. */
+    private function canCorrectRoleTime(): bool
+    {
+        return $this->canStaffEditPersonnel() || Gate::getInstance()->allows('admin.organization');
+    }
+
+    /**
+     * @return array{0: int, 1: array<string, mixed>, 2: ?Response}
+     */
+    private function roleTimeCorrectionContext(Request $request, array $params): array
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if (!$tenantId) {
+            return [0, [], Response::redirect(url('login'))];
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return [0, [], Response::redirect(url('personnel'))];
+        }
+        $target = $this->resolvePersonnelTarget((string) ($params['id'] ?? ''), $tenantId);
+        if (!$target) {
+            return [0, [], $this->personnelMissingResponse(true)];
+        }
+        if (!$this->canCorrectRoleTime()) {
+            return [0, [], $this->personnelForbiddenResponse(true, url('personnel/' . $this->personPathSegment($target)))];
+        }
+
+        return [$tenantId, $target, null];
     }
 
     public function updateNotes(Request $request, array $params = []): Response

@@ -64,6 +64,8 @@ private _under = if ((count _hit) > 0) then { format ["%1 · %2 m", [(_hit selec
 private _rec = round (time - (missionNamespace getVariable ["COMSPEC_ATAK_DroneCamT0", time]));
 private _zoom = missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1];
 private _vis = ["", " · NUIT", " · THERMIQUE"] select (missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0]);
+// VISION JOUR éclaircie selon la lumière (fn_droneAction, _expose).
+if (_vis isEqualTo "") then { _vis = ["", " · BASSE LUMIÈRE", " · MODE NUIT"] select (((missionNamespace getVariable ["COMSPEC_ATAK_DroneCamLvl", 0]) max 0) min 2); };
 private _sh = "shadow='2' shadowColor='#000000'";
 if (_kind isEqualTo "FEEDMINI") exitWith {
     [
