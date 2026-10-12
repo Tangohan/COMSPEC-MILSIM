@@ -76,3 +76,7 @@ Identités livrées :
 - Le code reste écrit en français. Les textes affichés (`ctrlSetText`, `ctrlSetStructuredText`, `ctrlSetTooltip`, `lbAdd`, `hint`…) passent par `comspec_atak_native_fnc_tr`, qui les traduit avec le dictionnaire `Sources/addons/main/i18n/en.txt` (`[["français", "anglais"], ...]`). Les modèles à `%1`, `%2` traduisent aussi les textes formatés. Texte inconnu : reste en français. Les champs de saisie ne sont jamais traduits (`// i18n:brut`).
 - Après un ajout de texte ou un rebase : `python3 tools/i18n.py wrap` (fait passer les nouveaux affichages par `fnc_tr`, sans effet sur ce qui l'est déjà), puis `python3 tools/i18n.py extract` liste dans `tools/i18n/missing.tsv` les textes sans traduction ; une fois traduits (`français<TAB>anglais`), `python3 tools/i18n.py merge fichier.tsv`.
 - Commandes du tchat en anglais acceptées aussi : `/help`, `/priority`, `/order`, `@grid`, `@time`, `@hdg`.
+
+## Envoyer ses logs
+
+Dans le dossier du mod, double-cliquez sur `Envoyer_mes_logs.bat`. Il prépare `COMSPEC_logs_<date>.zip` sur le Bureau avec les deux derniers `.rpt` d'Arma (`%LOCALAPPDATA%\Arma 3`) et les deux derniers journaux COMSPEC Link (`%LOCALAPPDATA%\Arma 3\COMSPEC\logs`). Les mots de passe, jetons et liens de webhook sont masqués dans la copie. Il reste à glisser le .zip dans un sujet bugs ou help du Discord.
