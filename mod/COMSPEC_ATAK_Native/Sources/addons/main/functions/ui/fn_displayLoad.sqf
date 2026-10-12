@@ -67,8 +67,14 @@ if (_interactive) then {
             [{ [] call comspec_atak_native_fnc_hudToggle; }] call CBA_fnc_execNextFrame;
             true
         };
-        false
+        // Saisie dans un champ du téléphone (« a », « e »… faisaient pencher le personnage) : touche gardée (fn_keyBlock).
+        _this call comspec_atak_native_fnc_keyBlock
     }];
+    // Même garde sur le display de mission, si la touche y passe quand même (posée une fois par partie).
+    private _d46 = findDisplay 46;
+    if (!isNull _d46 && {(_d46 getVariable ["COMSPEC_KeyBlockEh", -1]) < 0}) then {
+        _d46 setVariable ["COMSPEC_KeyBlockEh", _d46 displayAddEventHandler ["KeyDown", { _this call comspec_atak_native_fnc_keyBlock }]];
+    };
     _display displayAddEventHandler ["MouseButtonDown", { params ["", "_button"]; ["DOWN", _button] call comspec_atak_native_fnc_phoneDrag; }];
     _display displayAddEventHandler ["MouseMoving", { ["MOVE"] call comspec_atak_native_fnc_phoneDrag; }];
     _display displayAddEventHandler ["MouseButtonUp", { ["UP"] call comspec_atak_native_fnc_phoneDrag; }];
