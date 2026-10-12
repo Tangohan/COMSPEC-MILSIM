@@ -89,7 +89,9 @@ private _routeNext = {
 private _crew = {
     if (!isNull driver _d && {alive driver _d}) exitWith {};
     { if (!alive _x) then { _d deleteVehicleCrew _x; }; } forEach (crew _d);
-    createVehicleCrew _d;
+    // Groupe d'origine supprimé une fois vide (sinon un groupe vide de plus par prise du drone, plafond de 288 par camp).
+    private _cg = createVehicleCrew _d;
+    if (!isNull _cg) then { _cg deleteGroupWhenEmpty true; };
     private _side = _d getVariable ["COMSPEC_DroneSide", sideUnknown];
     if (_side in [west, east, independent] && {(side group driver _d) isNotEqualTo _side}) then { (crew _d) joinSilent (createGroup [_side, true]); };
 };

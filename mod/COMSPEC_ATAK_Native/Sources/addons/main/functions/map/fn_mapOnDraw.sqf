@@ -74,30 +74,40 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_LayerHeat", false]) then {
     private _wy1 = ((_tl select 1) max (_br select 1)) min worldSize;
     private _cell = 50;
     { if (((_wx1 - _wx0) / _x) > 48) then { _cell = _x * 2; }; } forEach [50, 100, 200, 400, 800, 1600];
-    private _cache = uiNamespace getVariable ["COMSPEC_ATAK_HeightCache", createHashMap];
-    if ((count _cache) > 20000) then { _cache = createHashMap; };
-    uiNamespace setVariable ["COMSPEC_ATAK_HeightCache", _cache];
-    private _stops = [[0, [0.15, 0.35, 0.85]], [0.25, [0.2, 0.7, 0.35]], [0.5, [0.9, 0.85, 0.25]], [0.75, [0.6, 0.38, 0.18]], [1, [0.97, 0.97, 0.97]]];
     private _tex = "#(rgb,8,8,3)color(1,1,1,1)";
-    private _half = _cell / 2;
-    for "_gx" from ((floor (_wx0 / _cell)) * _cell) to _wx1 step _cell do {
-        for "_gy" from ((floor (_wy0 / _cell)) * _cell) to _wy1 step _cell do {
-            private _k = [_cell, _gx, _gy];
-            private _h = _cache getOrDefault [_k, -1e9];
-            if (_h < -1e8) then { _h = getTerrainHeightASL [_gx + _half, _gy + _half]; _cache set [_k, _h]; };
-            if (_h <= 0) then { continue };
-            private _t = (((_h - _hLo) / _hSpan) max 0) min 1;
-            private _i = 1;
-            while { _i < 4 && {_t > ((_stops select _i) select 0)} } do { _i = _i + 1; };
-            (_stops select (_i - 1)) params ["_t0", "_c0"];
-            (_stops select _i) params ["_t1", "_c1"];
-            private _f = ((_t - _t0) / ((_t1 - _t0) max 0.001)) min 1;
-            _map drawRectangle [[_gx + _half, _gy + _half, 0], _half, _half, 0, [
-                (_c0 select 0) + ((_c1 select 0) - (_c0 select 0)) * _f,
-                (_c0 select 1) + ((_c1 select 1) - (_c0 select 1)) * _f,
-                (_c0 select 2) + ((_c1 select 2) - (_c0 select 2)) * _f, 0.38], _tex];
+    // Cases calculées une fois par vue (taille de case + cases visibles) puis seulement redessinées :
+    // recalculer couleurs et clés de cache de 2 000 cases à chaque image coûtait cher en HUD.
+    private _hSig = [_cell, floor (_wx0 / _cell), floor (_wx1 / _cell), floor (_wy0 / _cell), floor (_wy1 / _cell), _rng];
+    private _hDraw = uiNamespace getVariable ["COMSPEC_ATAK_HeatDraw", [[], []]];
+    if ((_hDraw select 0) isNotEqualTo _hSig) then {
+        private _cache = uiNamespace getVariable ["COMSPEC_ATAK_HeightCache", createHashMap];
+        if ((count _cache) > 20000) then { _cache = createHashMap; };
+        uiNamespace setVariable ["COMSPEC_ATAK_HeightCache", _cache];
+        private _stops = [[0, [0.15, 0.35, 0.85]], [0.25, [0.2, 0.7, 0.35]], [0.5, [0.9, 0.85, 0.25]], [0.75, [0.6, 0.38, 0.18]], [1, [0.97, 0.97, 0.97]]];
+        private _half = _cell / 2;
+        private _list = [];
+        for "_gx" from ((floor (_wx0 / _cell)) * _cell) to _wx1 step _cell do {
+            for "_gy" from ((floor (_wy0 / _cell)) * _cell) to _wy1 step _cell do {
+                private _k = [_cell, _gx, _gy];
+                private _h = _cache getOrDefault [_k, -1e9];
+                if (_h < -1e8) then { _h = getTerrainHeightASL [_gx + _half, _gy + _half]; _cache set [_k, _h]; };
+                if (_h <= 0) then { continue };
+                private _t = (((_h - _hLo) / _hSpan) max 0) min 1;
+                private _i = 1;
+                while { _i < 4 && {_t > ((_stops select _i) select 0)} } do { _i = _i + 1; };
+                (_stops select (_i - 1)) params ["_t0", "_c0"];
+                (_stops select _i) params ["_t1", "_c1"];
+                private _f = ((_t - _t0) / ((_t1 - _t0) max 0.001)) min 1;
+                _list pushBack [[_gx + _half, _gy + _half, 0], _half, [
+                    (_c0 select 0) + ((_c1 select 0) - (_c0 select 0)) * _f,
+                    (_c0 select 1) + ((_c1 select 1) - (_c0 select 1)) * _f,
+                    (_c0 select 2) + ((_c1 select 2) - (_c0 select 2)) * _f, 0.38]];
+            };
         };
+        _hDraw = [_hSig, _list];
+        uiNamespace setVariable ["COMSPEC_ATAK_HeatDraw", _hDraw];
     };
+    { _map drawRectangle [_x select 0, _x select 1, _x select 1, 0, _x select 2, _tex]; } forEach (_hDraw select 1);
 };
 
 // GPS : itinéraire en trait épais (bordure sombre, bleu à parcourir, gris déjà parcouru), arrivée en drapeau.

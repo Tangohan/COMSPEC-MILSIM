@@ -44,7 +44,7 @@ switch (_action) do {
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoKnown", nil];
         if ((count _lib) isEqualTo 0 || {!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])}) exitWith { false };
         private _names = (_lib apply { _x select 1 }) select [0, 200];
-        private _raw = "COMSPECExtension" callExtension ["ReconImagesKnown", [_names joinString "|"]];
+        private _raw = (["COMSPECExtension", "ReconImagesKnown", [_names joinString "|"]] call comspec_atak_native_fnc_extAwait);
         if (!isNil "comspec_overwatch_connect_fnc_extResult") then { _raw = [_raw] call comspec_overwatch_connect_fnc_extResult; };
         if (_raw isEqualType []) then { _raw = _raw param [0, ""]; };
         if !(_raw isEqualType "") then { _raw = str _raw; };

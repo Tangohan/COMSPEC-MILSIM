@@ -163,7 +163,12 @@ if (!isNull _group) then {
 
 // Envoyer via extension (upsert)
 private _jsonString = [_vehicleData] call comspec_overwatch_connect_fnc_hashMapToJson;
-private _result = "COMSPECExtension" callExtension ["UpdateVehicleTracking", [_jsonString]];
+// Envoi hors du thread de jeu (spawn + extAwait) : appelé depuis un PFH toutes les ~3 s en véhicule,
+// un callExtension synchrone figeait le jeu. Aucun appelant n'utilise le retour.
+[_jsonString] spawn {
+    params ["_json"];
+    ["COMSPECExtension", "UpdateVehicleTracking", [_json]] call comspec_overwatch_connect_fnc_extAwait;
+};
 
 // Vérifier alertes critiques (fuel/ammo)
 if ((fuel _vehicle) < 0.15) then {
@@ -179,7 +184,15 @@ if ((fuel _vehicle) < 0.15) then {
     };
 };
 
-if (!isNull (gunner _vehicle) && {(ammo (gunner _vehicle)) < 0.2}) then {
+// « ammo (gunner _vehicle) » n'est pas du SQF valide (ammo est binaire : unité ammo arme) : erreur de
+// compilation, toute la fonction était inopérante. Ratio munitions restantes / capacité des chargeurs du véhicule.
+private _ammoNow = 0;
+private _ammoMax = 0;
+{
+    _ammoNow = _ammoNow + (_x select 2);
+    _ammoMax = _ammoMax + getNumber (configFile >> "CfgMagazines" >> (_x select 0) >> "count");
+} forEach (magazinesAllTurrets _vehicle);
+if (!isNull (gunner _vehicle) && {_ammoMax > 0} && {(_ammoNow / _ammoMax) < 0.2}) then {
     // Munitions critiques
     private _lastAmmoAlert = _vehicle getVariable ["COMSPEC_LastAmmoAlert", 0];
     if (time - _lastAmmoAlert > 300) then {
@@ -192,4 +205,4 @@ if (!isNull (gunner _vehicle) && {(ammo (gunner _vehicle)) < 0.2}) then {
     };
 };
 
-(_result select 0) isEqualTo "OK"
+true

@@ -110,7 +110,7 @@ if (_noteId > 0 && {(count _pieces) > 0}) then {
             _x params ["_kind", "_path", "_name", "_grid", ["_author", ""], ["_caption", ""]];
             private _target = _path;
             if (_kind isEqualTo "capture" && {!isNil "comspec_overwatch_connect_fnc_extResult"}) then {
-                private _staged = ["COMSPECExtension" callExtension ["StageCapture", [_target]]] call comspec_overwatch_connect_fnc_extResult;
+                private _staged = [(["COMSPECExtension", "StageCapture", [_target]] call comspec_atak_native_fnc_extAwait)] call comspec_overwatch_connect_fnc_extResult;
                 if ((_staged isEqualType "") && {(count _staged) >= 4} && {(_staged select [0, 3]) isEqualTo "OK|"}) then {
                     private _b = trim (_staged select [3, (count _staged) - 3]);
                     if (_b isNotEqualTo "") then { _target = _b; };

@@ -3878,6 +3878,13 @@ $migrationRunner->step('atak_roles', static function () use ($atakRolesMigrate, 
     $atakRolesMigrate($pdo);
 });
 
+// Files d'envoi COMSPEC Link : dernier bilan par joueur ou serveur et historique 48 h (AtakSendQueueRepository).
+$atakSendQueueMigrate = require $root . '/bootstrap/atak_send_queue_migration.php';
+$migrationRunner->step('atak_send_queue', static function () use ($atakSendQueueMigrate, $pdo): void {
+    echo "Migration atak_send_queue_snapshots / atak_send_queue_history (files d'envoi vers Athena)...\n";
+    $atakSendQueueMigrate($pdo);
+});
+
 $missionPlanningMigrate = require $root . '/bootstrap/mission_planning_migration.php';
 try {
     echo "Migration mission_planning (planification / organisation de combat)...\n";

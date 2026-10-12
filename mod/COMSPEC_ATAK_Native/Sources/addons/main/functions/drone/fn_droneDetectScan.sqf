@@ -58,6 +58,8 @@ private _byId = createHashMap;
 { _byId set [_x select 0, _x]; } forEach _list;
 private _alerted = uiNamespace getVariable ["COMSPEC_ATAK_DroneAlerted", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_DroneAlerted", _alerted];
+// Alertes de plus de 2 min oubliées (une entrée par aéronef croisé, jamais retirée sinon).
+if ((count _alerted) > 40) then { { if (_now - _y > 120) then { _alerted deleteAt _x; }; } forEach +_alerted; };
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
 private _heard = 0;
 private _newUnknown = [];

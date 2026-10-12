@@ -10,7 +10,8 @@ params [
     ["_args", [], [[]]]
 ];
 
-private _raw = "COMSPECExtension" callExtension [_command, _args];
+// Envois Athena : appel non bloquant quand le contexte peut attendre (fn_extAwait), sinon appel direct.
+private _raw = if (canSuspend) then { ["COMSPECExtension", _command, _args] call comspec_sse_fnc_extAwait } else { "COMSPECExtension" callExtension [_command, _args] };
 
 // Même normalisation que Overwatch fn_extResult
 if (_raw isEqualType []) then {

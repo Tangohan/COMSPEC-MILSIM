@@ -30,7 +30,8 @@ addMissionEventHandler ["HandleDisconnect", {
     _state set ["time", time];
 
     COMSPEC_DisconnectedAtakState set [_uid, _state];
-    publicVariable "COMSPEC_DisconnectedAtakState";
+    // Plus de publicVariable : seul le serveur lit cette table (restauration JIP via remoteExec) ;
+    // la diffuser envoyait tout l'état ATAK des déconnectés à chaque client à chaque départ.
     false
 }];
 

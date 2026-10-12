@@ -24,6 +24,7 @@ class CfgFunctions {
             class persistQueue {};
             class restoreQueue {};
             class isOnline {};
+            class extAwait {};
             class sendViaOverwatch {};
             class toJsonApprox {};
             class toJsonPerson {};

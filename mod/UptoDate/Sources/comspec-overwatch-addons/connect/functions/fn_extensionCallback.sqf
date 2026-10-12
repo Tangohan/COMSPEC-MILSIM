@@ -9,6 +9,13 @@ if (_name != "comspec") exitWith {};
 if (!(_function isEqualType "")) then { _function = str _function; };
 if (!(_data isEqualType "")) then { _data = str _data; };
 
+// Réponse d'un appel non bloquant (fn_extAwait).
+if ((_function select [0, 6]) isEqualTo "async:") exitWith {
+    private _pending = missionNamespace getVariable ["COMSPEC_ExtPending", createHashMap];
+    private _ticket = _function select [6];
+    if (_ticket in _pending) then { _pending set [_ticket, [_data]]; };
+};
+
 switch (_function) do {
     case "Connected": {
         // N'ecrase pas un echec auth deja constate (race async ancienne DLL).

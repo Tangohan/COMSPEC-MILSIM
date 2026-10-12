@@ -575,8 +575,11 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
         };
     };
     if (isNil "COMSPEC_OutboxFlushPFH") then {
+        // Rejeu en spawn (envois via extAwait, sans figer le jeu), un seul à la fois, et seulement si la file n'est pas vide.
         COMSPEC_OutboxFlushPFH = [{
-            [] call comspec_overwatch_connect_fnc_outboxFlush;
+            if (missionNamespace getVariable ["COMSPEC_OutboxBusy", false]) exitWith {};
+            if ((profileNamespace getVariable ["COMSPEC_Outbox", []]) isEqualTo []) exitWith {};
+            0 spawn { [] call comspec_overwatch_connect_fnc_outboxFlush; };
         }, 10, []] call CBA_fnc_addPerFrameHandler;
     };
 
