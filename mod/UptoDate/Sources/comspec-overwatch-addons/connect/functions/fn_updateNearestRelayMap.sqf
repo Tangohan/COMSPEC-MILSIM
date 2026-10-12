@@ -7,23 +7,22 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
 
 private _mk = "comspec_relay_nearest";
 private _ring = "comspec_relay_range";
-// Existence testée via un index hashmap construit une fois (au lieu de recopier la liste des marqueurs à chaque test).
-private _mkIndex = createHashMapFromArray (allMapMarkers apply { [_x, true] });
+// Existence testée par getMarkerColor ("" = absent) : plus de copie de allMapMarkers toutes les 2 s.
 private _info = createHashMap;
 if (!isNil "comspec_overwatch_connect_fnc_getNearestAtakRelay") then {
     _info = [] call comspec_overwatch_connect_fnc_getNearestAtakRelay;
 };
 if (!(_info isEqualType createHashMap) || {(count (keys _info)) < 1}) exitWith {
-    if (_mk in _mkIndex) then { deleteMarkerLocal _mk; };
-    if (_ring in _mkIndex) then { deleteMarkerLocal _ring; };
+    if ((getMarkerColor _mk) isNotEqualTo "") then { deleteMarkerLocal _mk; };
+    if ((getMarkerColor _ring) isNotEqualTo "") then { deleteMarkerLocal _ring; };
     missionNamespace setVariable ["COMSPEC_RelayWasInRange", nil, false];
     false
 };
 
 private _pos = _info getOrDefault ["pos", []];
 if (!(_pos isEqualType []) || {(count _pos) < 2}) exitWith {
-    if (_mk in _mkIndex) then { deleteMarkerLocal _mk; };
-    if (_ring in _mkIndex) then { deleteMarkerLocal _ring; };
+    if ((getMarkerColor _mk) isNotEqualTo "") then { deleteMarkerLocal _mk; };
+    if ((getMarkerColor _ring) isNotEqualTo "") then { deleteMarkerLocal _ring; };
     false
 };
 private _name = _info getOrDefault ["name", "Relais AT"];
@@ -38,7 +37,7 @@ private _col = if (!_alive) then { "ColorRed" } else {
 private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
 missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
 
-if (!(_mk in _mkIndex)) then {
+if ((getMarkerColor _mk) isEqualTo "") then {
     createMarkerLocal [_mk, _pos];
     _mk setMarkerTypeLocal "mil_box";
     _mk setMarkerSizeLocal [0.9, 0.9];
@@ -47,7 +46,7 @@ _mk setMarkerPosLocal _pos;
 _mk setMarkerColorLocal _col;
 _mk setMarkerTextLocal _name;
 
-if (!(_ring in _mkIndex)) then {
+if ((getMarkerColor _ring) isEqualTo "") then {
     createMarkerLocal [_ring, _pos];
     _ring setMarkerShapeLocal "ELLIPSE";
     _ring setMarkerBrushLocal "Border";

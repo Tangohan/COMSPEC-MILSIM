@@ -19,6 +19,8 @@ if ((_v select [0, 1]) isEqualTo "\" || {(_v find ".paa") > 0}) exitWith { _cach
 private _exact = missionNamespace getVariable ["COMSPEC_ATAK_I18nExact", createHashMap];
 private _tpls = missionNamespace getVariable ["COMSPEC_ATAK_I18nTpl", createHashMap];
 private _nl = toString [10];
+// Modèles sans début fixe : rangés par fn_langApply sous ce repère + leur fin (3 derniers caractères).
+private _gen = toString [1];
 
 // Modèle « … %1 … » : renvoie la traduction ou "".
 private _tplMatch = {
@@ -56,7 +58,7 @@ private _tplMatch = {
             };
         };
         if (_res isNotEqualTo "") exitWith {};
-    } forEach ((_tpls getOrDefault [_core select [0, 3], []]) + (_tpls getOrDefault ["", []]));
+    } forEach ((_tpls getOrDefault [_core select [0, 3], []]) + (_tpls getOrDefault [_gen + (_core select [(_n - 3) max 0]), _tpls getOrDefault [_gen, []]]));
     _res
 };
 
@@ -73,6 +75,9 @@ private _seg = {
         private _lblEn = _exact getOrDefault [_lbl, _lbl];
         if (_lblEn isNotEqualTo _lbl) then { _r = _lblEn + ": " + ([_core select [_k + 3], _depth + 1] call _seg); };
     };
+    // Sans lettre (nombres, heures, grilles, ponctuation) : rien à traduire, on évite le parcours des modèles
+    // (valeurs capturées surtout : le texte du curseur de carte change à chaque mouvement de souris).
+    if (_r isEqualTo "" && {(toLower _core) isEqualTo (toUpper _core)}) exitWith { _text };
     if (_r isEqualTo "") then { _r = [_core, _depth] call _tplMatch; };
     if (_r isEqualTo "" && {(_core find _nl) >= 0}) then {
         _r = ((_core splitString _nl) apply { [_x, _depth] call _seg }) joinString _nl;

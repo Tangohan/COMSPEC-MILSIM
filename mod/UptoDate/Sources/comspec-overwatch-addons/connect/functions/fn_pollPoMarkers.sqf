@@ -72,7 +72,7 @@ private _fnc_clearRings = {
     missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
     {
         if (!(_x in _keep)) then {
-            if (_x in _mkIndex) then { deleteMarkerLocal _x; };
+            if ((getMarkerColor _x) isNotEqualTo "") then { deleteMarkerLocal _x; };
         };
     } forEach _prev;
     private _unmute = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1;
@@ -88,31 +88,51 @@ private _synced = missionNamespace getVariable ["COMSPEC_PoSyncedAt", createHash
 if (!(_synced isEqualType createHashMap)) then { _synced = createHashMap; };
 private _announced = missionNamespace getVariable ["COMSPEC_PoReachedNames", []];
 if (!(_announced isEqualType [])) then { _announced = []; };
-// Index hashmap des marqueurs, construit une fois : « in allMapMarkers » dans la boucle recopiait toute
-// la liste pour chaque marqueur (coût quadratique toutes les 2 s avec beaucoup de marqueurs).
-private _allMk = +allMapMarkers;
-private _mkIndex = createHashMapFromArray (_allMk apply { [_x, true] });
+// Tri des marqueurs (libellé PO / règles) : passage complet sur allMapMarkers toutes les 10 s ou quand
+// leur nombre change ; entre deux, seuls les candidats retenus sont suivis (le tri complet toutes les 2 s,
+// avec chaînes et règles pour chaque marqueur, coûtait cher avec beaucoup de marqueurs).
+// Existence testée par getMarkerColor ("" = absent) : plus d'index hashmap reconstruit à chaque passage.
+private _allMk = allMapMarkers;
+private _cands = missionNamespace getVariable ["COMSPEC_PoCandidates", []];
+if (
+    (diag_tickTime - (missionNamespace getVariable ["COMSPEC_PoScanAt", -1e9])) >= 10
+    || {(count _allMk) != (missionNamespace getVariable ["COMSPEC_PoScanCount", -1])}
+) then {
+    _cands = [];
+    {
+        private _name = _x;
+        if (_name isEqualTo "") then { continue };
+        private _ul = toLower _name;
+        if ((_ul find "_comspec_po_ring_") == 0) then { continue };
+        if ((_ul find "_comspec_det_ring_") == 0) then { continue };
+        if ((_ul find "comspec_gps_wp_") == 0) then { continue };
+        if ((_ul find "comspec_gps_rt_") == 0) then { continue };
+        if ((_ul find "comspec_webmk_") == 0) then { continue };
+
+        private _text = markerText _name;
+        if (_text isEqualTo "" && {!isNil "comspec_overwatch_connect_fnc_resolveBceMarkerText"}) then {
+            _text = [_name] call comspec_overwatch_connect_fnc_resolveBceMarkerText;
+        };
+        private _isPo = [_text] call _fnc_isPoLabel;
+        if (!_isPo) then { _isPo = [_name] call _fnc_isPoLabel; };
+        private _det = [];
+        if (!_isPo) then {
+            _det = [_text, _name, getMarkerType _name] call _fnc_matchDetection;
+            if (_det isEqualTo []) then { continue };
+        };
+        _cands pushBack [_name, _isPo, _det];
+    } forEach _allMk;
+    missionNamespace setVariable ["COMSPEC_PoCandidates", _cands, false];
+    missionNamespace setVariable ["COMSPEC_PoScanAt", diag_tickTime, false];
+    missionNamespace setVariable ["COMSPEC_PoScanCount", count _allMk, false];
+};
 
 {
-    private _name = _x;
-    if (_name isEqualTo "") then { continue };
-    private _ul = toLower _name;
-    if ((_ul find "_comspec_po_ring_") == 0) then { continue };
-    if ((_ul find "_comspec_det_ring_") == 0) then { continue };
-    if ((_ul find "comspec_gps_wp_") == 0) then { continue };
-    if ((_ul find "comspec_gps_rt_") == 0) then { continue };
-    if ((_ul find "comspec_webmk_") == 0) then { continue };
-
+    _x params ["_name", "_isPo", "_det"];
+    if ((getMarkerColor _name) isEqualTo "") then { continue };
     private _text = markerText _name;
     if (_text isEqualTo "" && {!isNil "comspec_overwatch_connect_fnc_resolveBceMarkerText"}) then {
         _text = [_name] call comspec_overwatch_connect_fnc_resolveBceMarkerText;
-    };
-    private _isPo = [_text] call _fnc_isPoLabel;
-    if (!_isPo) then { _isPo = [_name] call _fnc_isPoLabel; };
-    private _det = [];
-    if (!_isPo) then {
-        _det = [_text, _name, getMarkerType _name] call _fnc_matchDetection;
-        if (_det isEqualTo []) then { continue };
     };
 
     private _mkPos = markerPos _name;
@@ -135,7 +155,7 @@ private _mkIndex = createHashMapFromArray (_allMk apply { [_x, true] });
 
     private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
     missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
-    if (_ring in _mkIndex) then {
+    if ((getMarkerColor _ring) isNotEqualTo "") then {
         _ring setMarkerPosLocal _mkPos;
         _ring setMarkerColorLocal _color;
         _ring setMarkerAlphaLocal _alpha;
@@ -147,7 +167,6 @@ private _mkIndex = createHashMapFromArray (_allMk apply { [_x, true] });
         _el setMarkerBrushLocal "Border";
         _el setMarkerColorLocal _color;
         _el setMarkerAlphaLocal _alpha;
-        _mkIndex set [_ring, true];
     };
     private _unmute = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1;
     if (_unmute < 0) then { _unmute = 0; };
@@ -168,11 +187,9 @@ private _mkIndex = createHashMapFromArray (_allMk apply { [_x, true] });
         } else { _text };
         private _msg = if (_isPo) then { "Point d’objectif atteint — " } else { "Point suivi atteint — " };
         [_msg + _lbl, "gps", "info"] call comspec_overwatch_connect_fnc_announce;
-        if (_name in _mkIndex) then {
-            _name setMarkerColorLocal "ColorGrey";
-        };
+        _name setMarkerColorLocal "ColorGrey";
     };
-} forEach _allMk;
+} forEach _cands;
 
 [_seen] call _fnc_clearRings;
 missionNamespace setVariable ["COMSPEC_PoRingIds", _seen, false];

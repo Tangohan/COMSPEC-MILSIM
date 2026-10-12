@@ -47,7 +47,7 @@ if (isNil "COMSPEC_ServerMarkerEHs") then {
             format ["mk_%1_%2", _marker, if (_deleted) then {"d"} else {"u"}],
             {
                 params ["_m", "_del"];
-                if (!_del && {!(_m in allMapMarkers)}) exitWith {};
+                if (!_del && {(getMarkerColor _m) isEqualTo ""}) exitWith {};
                 private _force = if (!isNil "comspec_overwatch_connect_fnc_isSyncableMapMarker") then {
                     [_m] call comspec_overwatch_connect_fnc_isSyncableMapMarker
                 } else {

@@ -1,6 +1,8 @@
 COMSPEC_ATAK_UI_GENERATION = "native-rsc-v1";
-missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION, true];
-missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", "1.11.0", true];
+// Constantes posées par chaque machine (preInit tourne partout) : rien à diffuser. En public, chaque arrivée
+// renvoyait les deux valeurs à tous les joueurs et à la file JIP.
+missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION];
+missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", "1.11.0"];
 diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;

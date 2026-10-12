@@ -35,9 +35,12 @@ _name setMarkerAlphaLocal _alpha;
 _name setMarkerText _text; // dernier appel global : diffuse tout l'état du marqueur
 [_name] call comspec_atak_native_fnc_markerWeb;
 profileNamespace setVariable ["COMSPEC_ATAK_LastMarkerColor", _color];
-private _notes = missionNamespace getVariable ["COMSPEC_ATAK_MarkerNotes", createHashMap];
+// Table copiée : diffusée (à tous et JIP) seulement si elle change ; notes des marqueurs supprimés hors du téléphone retirées.
+private _old = missionNamespace getVariable ["COMSPEC_ATAK_MarkerNotes", createHashMap];
+private _notes = +_old;
+{ if ((markerShape _x) isEqualTo "") then { _notes deleteAt _x; }; } forEach (keys _notes);
 if (_desc isEqualTo "") then { _notes deleteAt _name; } else { _notes set [_name, [_desc, [player] call comspec_atak_native_fnc_unitCallsign]]; };
-missionNamespace setVariable ["COMSPEC_ATAK_MarkerNotes", _notes, true];
+if (_notes isNotEqualTo _old) then { missionNamespace setVariable ["COMSPEC_ATAK_MarkerNotes", _notes, true]; };
 _s set ["markerEdit", createHashMap];
 _s set ["selectedMarker", _name];
 // Confirmation brève : toast Android (notification classique si le téléphone n'est pas affiché).

@@ -44,7 +44,11 @@ private _draftSet = {
     params ["_its"];
     missionNamespace setVariable ["COMSPEC_ATAK_PlanDraft", _its];
     profileNamespace setVariable ["COMSPEC_ATAK_PlanDraftSave", [worldName, _its]];
-    saveProfileNamespace;
+    // Écriture du profil regroupée (5 s) : un dessin à main levée enregistrait tout le profil à chaque trait.
+    if !(missionNamespace getVariable ["COMSPEC_ATAK_PlanSavePending", false]) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_PlanSavePending", true];
+        [{ missionNamespace setVariable ["COMSPEC_ATAK_PlanSavePending", false]; saveProfileNamespace; }, [], 5] call CBA_fnc_waitAndExecute;
+    };
 };
 private _newId = {
     private _n = (uiNamespace getVariable ["COMSPEC_ATAK_PlanSeqLocal", 0]) + 1;

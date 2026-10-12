@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.67";
+    private const string ExtensionVersion = "2.0.68";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -1497,6 +1497,8 @@ public static partial class Extension
         }
     }
 
+    private static long _lastPersistSig;
+
     private static void PersistQueueToDisk()
     {
         try
@@ -1505,6 +1507,15 @@ public static partial class Extension
             if (dir is null) return;
             lock (DiskQueueLock)
             {
+                // Rien n'a changé depuis la dernière sauvegarde : pas d'écriture (le minuteur de vidage
+                // réécrivait queue.jsonl et position.json à chaque passage, même file vide).
+                long sig;
+                lock (CoalescedPositionLock)
+                    sig = HashCode.Combine(PendingPosts.Count, PendingMarkersByName.Count,
+                        _coalescedPosition?.Url, _coalescedPosition?.Body,
+                        PendingPosts.TryPeek(out var head) ? head.Body : null);
+                if (sig == _lastPersistSig && _lastPersistSig != 0) return;
+                _lastPersistSig = sig;
                 var fifo = Path.Combine(dir, "queue.jsonl");
                 var pos = Path.Combine(dir, "position.json");
                 var lines = new List<string>();
@@ -2640,6 +2651,9 @@ public static partial class Extension
             : "ERR|exception:" + ex.GetType().Name;
     }
 
+    private const int AsyncMaxParallel = 6;
+    private static readonly SemaphoreSlim AsyncGate = new(AsyncMaxParallel, AsyncMaxParallel);
+
     private static string? TryGetSyncResponse(string? function, string?[] args)
     {
         // File d'envoi suivie (app Réseau du téléphone) : lue en mémoire, sans réseau.
@@ -2663,8 +2677,11 @@ public static partial class Extension
             var command = args[1]!;
             if (command == "Async") return "ERR|async_nested";
             var rest = args[2..];
-            _ = Task.Run(() =>
+            _ = Task.Run(async () =>
             {
+                // Au plus AsyncMaxParallel appels à la fois : quand Athena ralentit, les suivants attendent
+                // leur tour au lieu d'occuper chacun un fil pendant le délai HTTP (pool de threads saturé).
+                await AsyncGate.WaitAsync().ConfigureAwait(false);
                 string result;
                 try
                 {
@@ -2674,6 +2691,7 @@ public static partial class Extension
                     result = direct;
                 }
                 catch (Exception ex) { result = FormatCaughtError(ex); }
+                finally { AsyncGate.Release(); }
                 InvokeCallback("async:" + ticket, result);
             });
             return "QUEUED|" + ticket;

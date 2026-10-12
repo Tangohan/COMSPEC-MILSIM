@@ -19,6 +19,7 @@ if (!(missionNamespace getVariable ["comspec_overwatch_sync_map_markers", true])
 missionNamespace setVariable ["COMSPEC_Athena_MapMarkerSnap", createHashMap, false];
 missionNamespace setVariable ["COMSPEC_Athena_BceMarkerQuickSnap", createHashMap, false];
 missionNamespace setVariable ["COMSPEC_Athena_CtabMarkerSnap", createHashMap, false];
+missionNamespace setVariable ["COMSPEC_MarkerSentSig", createHashMap, false];
 
 private _count = 0;
 private _markers = allMapMarkers;

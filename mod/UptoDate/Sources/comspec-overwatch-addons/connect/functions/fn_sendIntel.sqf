@@ -80,10 +80,13 @@ switch (_type) do {
         };
         if (_author isEqualTo "") then { _author = name _unit; };
         ["SendPing", "attempt", format ["PING %1", _author], nil, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
-        private _raw = "COMSPECExtension" callExtension ["SendPing", [_author, str (_data select 0), str (_data select 1), _extra]];
-        private _text = [_raw] call comspec_overwatch_connect_fnc_extResult;
-        if (_text isEqualType "" && {_text != ""} && {((toUpper _text) find "ERR") == 0 || {((toUpper _text) find "FAIL") == 0}}) then {
-            ["SendPing", "fail", _text, _raw, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
+        // Envoi HTTP hors du thread de jeu (spawn + extAwait) ; journal d'échec au retour.
+        [_author, str (_data select 0), str (_data select 1), _extra] spawn {
+            private _raw = ["COMSPECExtension", "SendPing", _this] call comspec_overwatch_connect_fnc_extAwait;
+            private _text = [_raw] call comspec_overwatch_connect_fnc_extResult;
+            if (_text isEqualType "" && {_text != ""} && {((toUpper _text) find "ERR") == 0 || {((toUpper _text) find "FAIL") == 0}}) then {
+                ["SendPing", "fail", _text, _raw, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
+            };
         };
     };
     case "CHAT": {
@@ -99,29 +102,37 @@ switch (_type) do {
         if (!(_chKey isEqualType "") || {_chKey isEqualTo ""}) then { _chKey = "general"; };
         private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
         if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
-        private _raw = "COMSPECExtension" callExtension ["SendChat", [_author, _data, _chKey, _mapId]];
-        private _text = [_raw] call comspec_overwatch_connect_fnc_extResult;
-        if (_text isEqualType "" && {_text != ""} && {((toUpper _text) find "ERR") == 0 || {((toUpper _text) find "FAIL") == 0}}) then {
-            ["SendChat", "fail", _text, _raw, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
-        } else {
-            ["SendChat", "ok", format ["CHAT %1", _author], if (_text isEqualType "" && {_text != ""}) then { _text } else { "queued" }, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
-            // Empreinte anti-écho pour fn_pollChatMessages (évite de rejouer son propre envoi).
-            private _dataStr = if (_data isEqualType "") then { _data } else { str _data };
-            private _fpLen = (count _dataStr) min 80;
-            private _fp = toUpper (_author + "|" + (_dataStr select [0, _fpLen]));
-            private _fps = missionNamespace getVariable ["COMSPEC_ChatSentFingerprints", []];
-            if (!(_fps isEqualType [])) then { _fps = []; };
-            if (!(_fp in _fps)) then { _fps pushBack _fp; };
-            while { (count _fps) > 40 } do { _fps deleteAt 0; };
-            missionNamespace setVariable ["COMSPEC_ChatSentFingerprints", _fps, false];
+        // Empreinte anti-écho pour fn_pollChatMessages (évite de rejouer son propre envoi) : posée avant
+        // l'envoi, désormais asynchrone, pour qu'un poll pendant l'envoi ne rejoue pas le message.
+        private _dataStr = if (_data isEqualType "") then { _data } else { str _data };
+        private _fpLen = (count _dataStr) min 80;
+        private _fp = toUpper (_author + "|" + (_dataStr select [0, _fpLen]));
+        private _fps = missionNamespace getVariable ["COMSPEC_ChatSentFingerprints", []];
+        if (!(_fps isEqualType [])) then { _fps = []; };
+        if (!(_fp in _fps)) then { _fps pushBack _fp; };
+        while { (count _fps) > 40 } do { _fps deleteAt 0; };
+        missionNamespace setVariable ["COMSPEC_ChatSentFingerprints", _fps, false];
+        // Envoi HTTP hors du thread de jeu (spawn + extAwait) ; journal ok / échec au retour.
+        [_author, _data, _chKey, _mapId] spawn {
+            private _author = _this select 0;
+            private _raw = ["COMSPECExtension", "SendChat", _this] call comspec_overwatch_connect_fnc_extAwait;
+            private _text = [_raw] call comspec_overwatch_connect_fnc_extResult;
+            if (_text isEqualType "" && {_text != ""} && {((toUpper _text) find "ERR") == 0 || {((toUpper _text) find "FAIL") == 0}}) then {
+                ["SendChat", "fail", _text, _raw, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
+            } else {
+                ["SendChat", "ok", format ["CHAT %1", _author], if (_text isEqualType "" && {_text != ""}) then { _text } else { "queued" }, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
+            };
         };
     };
     case "PHOTO": {
         ["UploadImage", "attempt", "PHOTO", nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-        private _raw = "COMSPECExtension" callExtension ["UploadImage", [_data, _extra]];
-        private _text = [_raw] call comspec_overwatch_connect_fnc_extResult;
-        if (_text isEqualType "" && {_text != ""} && {((toUpper _text) find "OK") != 0}) then {
-            ["UploadImage", "fail", _text, _raw, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+        // Envoi HTTP hors du thread de jeu (spawn + extAwait, délai large pour l'image) ; échec journalisé au retour.
+        [_data, _extra] spawn {
+            private _raw = ["COMSPECExtension", "UploadImage", _this, 45] call comspec_overwatch_connect_fnc_extAwait;
+            private _text = [_raw] call comspec_overwatch_connect_fnc_extResult;
+            if (_text isEqualType "" && {_text != ""} && {((toUpper _text) find "OK") != 0}) then {
+                ["UploadImage", "fail", _text, _raw, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+            };
         };
         if (!isNil "comspec_overwatch_atak_athena_fnc_mapPhotoIntel") then {
             [getPos player, "Photo"] call comspec_overwatch_atak_athena_fnc_mapPhotoIntel;
@@ -136,10 +147,13 @@ switch (_type) do {
         if (_author isEqualTo "") then { _author = name _unit; };
         private _payload = format ["INTEL|%1|%2|%3|%4", _type, _source, _score, _data];
         ["SendChat", "attempt", format ["INTEL %1", _type], nil, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
-        private _raw = "COMSPECExtension" callExtension ["SendChat", [_author, _payload]];
-        private _text = [_raw] call comspec_overwatch_connect_fnc_extResult;
-        if (_text isEqualType "" && {_text != ""} && {((toUpper _text) find "ERR") == 0 || {((toUpper _text) find "FAIL") == 0}}) then {
-            ["SendChat", "fail", _text, _raw, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
+        // Envoi HTTP hors du thread de jeu (spawn + extAwait) ; journal d'échec au retour.
+        [_author, _payload] spawn {
+            private _raw = ["COMSPECExtension", "SendChat", _this] call comspec_overwatch_connect_fnc_extAwait;
+            private _text = [_raw] call comspec_overwatch_connect_fnc_extResult;
+            if (_text isEqualType "" && {_text != ""} && {((toUpper _text) find "ERR") == 0 || {((toUpper _text) find "FAIL") == 0}}) then {
+                ["SendChat", "fail", _text, _raw, false, "liaison"] call comspec_overwatch_connect_fnc_logTransmission;
+            };
         };
     };
 };

@@ -16,6 +16,8 @@ if (!hasInterface) exitWith {};
         _h deleteAt (_a param [0, ""]);
         if (_s isEqualType objNull) then { if (!isNull _s) then { deleteVehicle _s; }; } else { if (_s isEqualType 0) then { stopSound _s; }; };
     };
+    // Sons say3D terminés (source supprimée) retirés : la table ne se vidait qu'à la réception d'un « stop ».
+    { if (_y isEqualType objNull && {isNull _y}) then { _h deleteAt _x; }; } forEach +_h;
     _a params [["_src", objNull], ["_kind", ""], ["_ref", ""], ["_range", 20], ["_id", ""]];
     if (isNull _src || {_ref isEqualTo ""}) exitWith {};
     if (_kind isEqualTo "snd") exitWith {

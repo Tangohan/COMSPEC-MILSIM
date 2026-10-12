@@ -58,8 +58,13 @@ private _fnc_parsePoly = {
 };
 
 private _seen = [];
+// Ligne Athena de chaque zone au dernier passage : zone inchangée = marqueur gardé tel quel. Avant, tous les
+// marqueurs étaient supprimés puis recréés toutes les 8 s (EH MarkerDeleted / MarkerCreated → renvois).
+private _prevSigs = missionNamespace getVariable ["COMSPEC_TacticalZoneSigs", createHashMap];
+private _nextSigs = createHashMap;
 {
     if (_x isEqualTo "") then { continue };
+    private _line = _x;
     private _cols = _x splitString _tab;
     if ((count _cols) < 9) then { continue };
 
@@ -110,7 +115,9 @@ private _seen = [];
         }
     };
 
-    if (_name in allMapMarkers) then { deleteMarkerLocal _name; };
+    _nextSigs set [_id, _line];
+    if ((_prevSigs getOrDefault [_id, ""]) isEqualTo _line && {(getMarkerColor _name) isNotEqualTo ""}) then { continue };
+    if ((getMarkerColor _name) isNotEqualTo "") then { deleteMarkerLocal _name; };
 
     if ((count _poly) >= 3 && {_geomType in ["POLYGON", "POLYLINE", "PATH", "RECTANGLE"]}) then {
         private _flat = [];
@@ -146,11 +153,12 @@ if (!(_prev isEqualType [])) then { _prev = []; };
 {
     if (!(_x in _seen)) then {
         private _n = format ["COMSPEC_TZ_%1", _x];
-        if (_n in allMapMarkers) then { deleteMarkerLocal _n; };
+        if ((getMarkerColor _n) isNotEqualTo "") then { deleteMarkerLocal _n; };
         [_x] call comspec_overwatch_connect_fnc_deleteDangerZone;
     };
 } forEach _prev;
 missionNamespace setVariable ["COMSPEC_TacticalZoneIds", _seen, false];
+missionNamespace setVariable ["COMSPEC_TacticalZoneSigs", _nextSigs, false];
 
 private _hit = [player] call comspec_overwatch_connect_fnc_checkPlayerInDangerZone;
 if ((count _hit) >= 2) then {

@@ -22,7 +22,8 @@ if ((count _callsign) > 40) then {
 
 missionNamespace setVariable ["COMSPEC_Callsign", _callsign, false];
 
-if (_persistProfile) then {
+// Écriture disque seulement si l'indicatif du profil change (saveProfileNamespace est coûteux).
+if (_persistProfile && {(profileNamespace getVariable ["COMSPEC_Callsign", ""]) isNotEqualTo _callsign}) then {
     profileNamespace setVariable ["COMSPEC_Callsign", _callsign];
     saveProfileNamespace;
 };

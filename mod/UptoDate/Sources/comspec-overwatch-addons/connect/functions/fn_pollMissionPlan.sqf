@@ -92,7 +92,7 @@ private _seen = [];
             default { _mkColor = "ColorGrey"; };
         };
         private _txt = if (_label isEqualTo "") then { _code } else { format ["%1 %2", _code, _label] };
-        if (_name in allMapMarkers) then {
+        if ((getMarkerColor _name) isNotEqualTo "") then {
             _name setMarkerPosLocal [_xPos, _yPos];
             _name setMarkerTextLocal _txt;
             _name setMarkerTypeLocal _mkType;
@@ -122,7 +122,7 @@ if (!(_prevIds isEqualType [])) then { _prevIds = []; };
 {
     if (!(_x in _seen)) then {
         private _n = format ["comspec_mpgfx_%1", _x];
-        if (_n in allMapMarkers) then { deleteMarkerLocal _n; };
+        if ((getMarkerColor _n) isNotEqualTo "") then { deleteMarkerLocal _n; };
     };
 } forEach _prevIds;
 
