@@ -174,26 +174,67 @@ def mat_grip(name, color, scale=5.0, strength=0.35):
     return m
 
 
-def label_png(path, back):
+def label_png(path, back, title="COMSPEC VT-10", sub="RUGGED TERMINAL", sn="S/N VT10-2291-0473", power="12-28 V DC  3.5 A",
+              ip="IP65  MIL-STD-810H", nsn="NSN 7010-99-COM-0010"):
     """Étiquette signalétique de la tablette (inversée pour la vue de dos, UV liées à X)."""
     from PIL import Image, ImageDraw, ImageFont, ImageOps
     w, h = 520, 180
     im = Image.new("RGB", (w, h), (206, 204, 192))
     d = ImageDraw.Draw(im)
     d.rectangle((0, 0, w - 1, 44), fill=(28, 30, 26))
-    d.text((16, 22), "COMSPEC VT-10", font=ImageFont.truetype(FONT_B, 30), fill=(222, 220, 205), anchor="lm")
-    d.text((w - 16, 22), "RUGGED TERMINAL", font=ImageFont.truetype(FONT_R, 18), fill=(170, 170, 160), anchor="rm")
+    d.text((16, 22), title, font=ImageFont.truetype(FONT_B, 30), fill=(222, 220, 205), anchor="lm")
+    d.text((w - 16, 22), sub, font=ImageFont.truetype(FONT_R, 18), fill=(170, 170, 160), anchor="rm")
     fm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 18)
-    d.text((16, 66), "S/N VT10-2291-0473", font=fm, fill=(40, 40, 40), anchor="lm")
-    d.text((16, 92), "12-28 V DC  3.5 A", font=fm, fill=(40, 40, 40), anchor="lm")
-    d.text((16, 118), "IP65  MIL-STD-810H", font=fm, fill=(40, 40, 40), anchor="lm")
+    d.text((16, 66), sn, font=fm, fill=(40, 40, 40), anchor="lm")
+    d.text((16, 92), power, font=fm, fill=(40, 40, 40), anchor="lm")
+    d.text((16, 118), ip, font=fm, fill=(40, 40, 40), anchor="lm")
     x, i = 300, 0
     while x < w - 20:
         bw = 2 + (i * 7) % 4
         d.rectangle((x, 58, x + bw, 140), fill=(20, 20, 20))
         x += bw + 2 + (i * 3) % 4
         i += 1
-    d.text((w / 2, 162), "NSN 7010-99-COM-0010", font=ImageFont.truetype(FONT_R, 16), fill=(70, 70, 70), anchor="mm")
+    d.text((w / 2, 162), nsn, font=ImageFont.truetype(FONT_R, 16), fill=(70, 70, 70), anchor="mm")
+    if back:
+        im = ImageOps.mirror(im)
+    im.save(path)
+
+
+def regulatory_png(path, back):
+    """Étiquette des normes (dos de la tablette à touches) : modèle, CE, IP68, MIL-STD-810H, ISO 9001 / 14001,
+    poubelle barrée DEEE. Inversée pour la vue de dos (UV liées à X)."""
+    from PIL import Image, ImageDraw, ImageFont, ImageOps
+    w, h = 680, 248
+    im = Image.new("RGB", (w, h), (214, 210, 198))
+    d = ImageDraw.Draw(im)
+    ink = (34, 34, 32)
+    fb, fr = ImageFont.truetype(FONT_B, 26), ImageFont.truetype(FONT_R, 18)
+    fm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 17)
+    d.text((18, 14), "COMSPEC TX-8  RUGGED EUD", font=fb, fill=ink)
+    for i, t in enumerate(("Model: TX8-JPC   S/N TX8-0412-7731", "7.4 V DC  6800 mAh  Li-ion", "IP68   MIL-STD-810H   ISO 9001:2015   ISO 14001",
+                           "Conforme EN 62368-1 / EN 301 489 / EN 300 328")):
+        d.text((18, 56 + i * 26), t, font=fm if i < 2 else fr, fill=ink)
+    # Marquage CE (deux arcs ouverts et le trait du E).
+    x, y, r = 22, 170, 28
+    d.arc((x, y, x + 2 * r, y + 2 * r), 45, 315, fill=ink, width=7)
+    x2 = x + 2 * r + 8
+    d.arc((x2, y, x2 + 2 * r, y + 2 * r), 45, 315, fill=ink, width=7)
+    d.line((x2 + 14, y + r, x2 + 2 * r - 6, y + r), fill=ink, width=7)
+    # Poubelle barrée (DEEE).
+    bx = 180
+    d.rectangle((bx + 8, y + 10, bx + 40, y + 52), outline=ink, width=4)
+    d.line((bx + 2, y + 8, bx + 46, y + 8), fill=ink, width=4)
+    d.line((bx, y, bx + 48, y + 58), fill=ink, width=4)
+    d.line((bx + 48, y, bx, y + 58), fill=ink, width=4)
+    d.text((250, 178), "IP68", font=fb, fill=ink)
+    d.text((330, 182), "Made in EU  ·  COMSPEC Defence", font=fr, fill=ink)
+    x = 330
+    i = 0
+    while x < w - 20:
+        bw = 2 + (i * 7) % 4
+        d.rectangle((x, 212, x + bw, 238), fill=(20, 20, 20))
+        x += bw + 2 + (i * 3) % 4
+        i += 1
     if back:
         im = ImageOps.mirror(im)
     im.save(path)
@@ -606,27 +647,35 @@ def keys(back):
         for u, v in ((262, 1388), (1788, 1388)):
             V.torx(u, v, 15, 0.12, steel, dark)
     else:
-        # Dos : plaque à motif losange, trappe de batterie à loquets, plaque d'adaptation vissée, charnière du rabat.
-        V.ring((190, 600, 1860, 1440), (300, 700, 1750, 1340), 70, 40, -0.05, 0.12, frame, bevel=0.04)
-        V.box(301, 701, 1749, 1339, 40, -0.05, 0.06, mat_grip("grip", tuple(c * 0.8 for c in KEY_SAND), scale=3.0, strength=0.2), bevel=0.02)
-        V.box(1180, 740, 1700, 1300, 30, 0.04, 0.15, mat_polymer("batt", tuple(c * 0.9 for c in KEY_SAND)), bevel=0.03)
-        for v in (800, 1240):
-            V.box(1380, v - 22, 1520, v + 22, 10, 0.12, 0.21, black, bevel=0.025)
-        V.text("BATTERY", 1440, 1020, 0.151, 30, r3.mat_simple("ink3", (0.30, 0.28, 0.25), 0.5), font=FONT_R)
-        alu = r3.mat_brushed("alu", (0.06, 0.062, 0.06), 0.36)
-        V.box(430, 780, 1000, 1180, 30, 0.06, 0.2, alu, bevel=0.03)
-        for u, v in ((480, 830), (950, 830), (480, 1130), (950, 1130)):
-            V.torx(u, v, 13, 0.2, steel, dark)
-        V.text("COMSPEC TX-8", 715, 980, 0.201, 34, r3.mat_simple("ink_l", (0.62, 0.62, 0.6), 0.5))
-        # Charnière du rabat (bas de la tablette) : charnons alternés et axe.
-        for k in range(6):
-            u = 420 + k * 210
-            V.box(u, 1360, u + 150, 1430, 18, 0.0, 0.28, black, bevel=0.03, name="knuckle")
-        hcyl(V, 400, 1650, 1395, 14, 0.14, steel)
-        for u in (250, 1800):
-            V.cyl(u, 648, 40, 0.0, 0.08, rubber, verts=48, bevel=0.015)
-        for u, v in ((262, 1388), (1788, 1388)):
-            V.torx(u, v, 15, 0.12, steel, dark)
+        # Dos simple : coque lisse, module photo du S7 (verre noir, objectif, flash et capteur), panneau velcro coyote
+        # au centre (patchs), mention MIL-STD-810H moulée et étiquette des normes, charnière discrète du rabat JPC.
+        V.ring((190, 600, 1860, 1440), (300, 700, 1750, 1340), 70, 40, -0.05, 0.10, frame, bevel=0.03)
+        V.box(301, 701, 1749, 1339, 40, -0.05, 0.03, frame, bevel=0.015)
+        # Module photo façon S7 : fenêtre de la coque, îlot en verre noir légèrement bombé, gros objectif à bague,
+        # pilule flash + capteur cardio à côté.
+        V.box(905, 676, 1145, 806, 46, 0.0, 0.06, black, bevel=0.015, name="cam_window")
+        V.box(925, 692, 1085, 790, 44, 0.04, 0.11, mat_glass("camglass", (0.01, 0.01, 0.012), 0.05), bevel=0.02)
+        coat = r3.mat_simple("coat", (0.10, 0.12, 0.30), 0.04, coat=1.0)
+        gun = r3.mat_simple("gun", (0.36, 0.37, 0.38), 0.25, 1.0)
+        V.lens(1005, 741, 38, 0.1, gun, dark, coat, ring_h=0.035)
+        V.box(1098, 700, 1130, 782, 15, 0.04, 0.1, mat_glass("pill", (0.02, 0.02, 0.022), 0.08), bevel=0.01)
+        V.cyl(1114, 722, 10, 0.1, 0.112, r3.mat_simple("flash", (0.93, 0.89, 0.72), 0.3, coat=0.8), verts=32)
+        for v in (752, 766):
+            V.cyl(1114, v, 4, 0.1, 0.108, r3.mat_simple("hrm", (0.25, 0.05, 0.05), 0.2, coat=1.0), verts=16)
+        # Panneau velcro (boucles) coyote cousu au centre.
+        loop = mat_stipple("velcro", (0.42, 0.33, 0.21), scale=150.0, strength=0.7)
+        seam = r3.mat_paint("seam", (0.30, 0.24, 0.15), rough=0.9, grain=2.0)
+        V.box(752, 846, 1298, 1214, 18, 0.02, 0.07, seam, bevel=0.01, name="velcro_edge")
+        V.box(768, 862, 1282, 1198, 12, 0.05, 0.085, loop, bevel=0.006, name="velcro")
+        # Mentions : MIL-STD moulé, étiquette réglementaire (CE, IP68, ISO, DEEE).
+        V.text("MIL-STD-810H", 1025, 1262, 0.03, 34, mat_polymer("emb", tuple(c * 0.8 for c in KEY_SAND), rough=0.8), extrude=0.006)
+        lab = os.path.join(OUT, "_vt10_label.png")
+        regulatory_png(lab, True)
+        V.box(1360, 1190, 1700, 1314, 4, 0.03, 0.034, r3.mat_image("label", lab, 0.5), bevel=0)
+        # Charnière du rabat JPC : deux charnons aux extrémités du bas.
+        for u0 in (430, 1500):
+            V.box(u0, 1370, u0 + 110, 1430, 14, 0.0, 0.2, dsand_hinge := mat_polymer("hinge", tuple(c * 0.86 for c in KEY_SAND)), bevel=0.03, name="hinge_leaf")
+            hcyl(V, u0 + 6, u0 + 104, 1410, 18, 0.19, steel, bevel=0.01)
     return {"power": 3300, "size": 14, "fill": 560}
 
 
