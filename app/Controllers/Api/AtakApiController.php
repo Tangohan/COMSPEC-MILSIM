@@ -1152,6 +1152,47 @@ class AtakApiController
      *
      * @return array<string, string>
      */
+    /**
+     * Unité de l'opérateur sur le site (unité principale, sinon celle de sa fiche personnel), sinon le nom de l'organisation.
+     * Pour les photos du jeu : le nom envoyé par Arma est le pseudo du profil, pas l'unité.
+     */
+    private function operatorSiteUnitName(int $tenantId, int $userId): string
+    {
+        $unitName = '';
+        try {
+            $unitIds = $this->unitRepository->unitIdsForUser($tenantId, $userId);
+            $primaryUnitId = (int) ($unitIds[0] ?? 0);
+            if ($primaryUnitId > 0) {
+                $unit = $this->unitRepository->findById($primaryUnitId, $tenantId);
+                $unitName = $unit ? trim((string) ($unit['name'] ?? '')) : '';
+            }
+            if ($unitName === '') {
+                $personnel = (new \App\Repositories\PersonnelProfileRepository())->getByUserId($userId) ?? [];
+                $profileUnitId = (int) ($personnel['primary_unit_id'] ?? 0);
+                if ($profileUnitId > 0) {
+                    $fromProfile = $this->unitRepository->findById($profileUnitId, $tenantId);
+                    $unitName = $fromProfile ? trim((string) ($fromProfile['name'] ?? '')) : '';
+                }
+            }
+        } catch (\Throwable) {
+            $unitName = '';
+        }
+        $tenantName = '';
+        try {
+            $tenantRow = $this->tenantRepository->findById($tenantId);
+            if (is_array($tenantRow)) {
+                $tenantName = function_exists('community_display_name')
+                    ? community_display_name($tenantRow)
+                    : trim((string) ($tenantRow['name'] ?? ''));
+            }
+        } catch (\Throwable) {
+        }
+
+        $unit = OperatorTacticalIdentity::unitAssignment($unitName, $tenantName, $tenantName);
+
+        return $unit !== '' ? $unit : $tenantName;
+    }
+
     private function reconPhoneIdent(int $tenantId): array
     {
         try {
@@ -11929,6 +11970,17 @@ class AtakApiController
             $unitName = $_POST['unit_name'] ?? $_POST['unitName'] ?? null;
             if (($unitName === null || $unitName === '') && $feedId !== '') {
                 $unitName = $feedId;
+            }
+            // Photo prise avec son propre téléphone ou sa tablette : l'unité vient du site (Arma envoie le pseudo
+            // du profil). Les flux drone et caméra casque d'un autre joueur gardent le nom envoyé.
+            $gameUserId = \App\Support\ComspecApiKeyAuth::matchedTenantId() === $tenantId
+                ? \App\Support\ComspecApiKeyAuth::matchedUserId()
+                : null;
+            if ($feedId === '' && $gameUserId !== null) {
+                $siteUnit = $this->operatorSiteUnitName($tenantId, $gameUserId);
+                if ($siteUnit !== '') {
+                    $unitName = $siteUnit;
+                }
             }
             $data = [
                 'image_path' => $storedImagePath,

@@ -27,6 +27,7 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration (déploiement PHP 
 - Traits et repères du téléphone absents du site : quand l'envoi au site est refusé ou mis en attente, le téléphone l'affiche avec la raison (synchro des marqueurs coupée, liaison Athena pas prête…). COMSPEC Link note maintenant la raison de chaque refus.
 - Discord, photos postées (Quick Picture, drone) : champ « Téléphone » (« Terminal de contrôle » pour le drone) avec appareil et version ATAK, numéro, IMEI, MAC et batterie, chacun en texte masqué (spoiler, cliquer pour lire). Rien pour une photo confidentielle. La version ATAK arrive avec le nouveau connect de COMSPEC Link (`fn_phoneDeviceSync`, repaqueté).
 - Photos : logo de l'unité en filigrane (logo de l'organisation dans les paramètres du site, PNG transparent), avec « © UNITÉ » dessous, dans le coin opposé au bandeau. Désactivable dans Config ATAK > bandeau photo (« Logo de l'unité en filigrane »). Le texte gauche du bandeau ne chevauche plus l'heure.
+- Photos du téléphone et de la tablette (Discord, bandeau, fiche Athena) : « Unité » affichait le pseudo du profil Arma. Le site met maintenant l'unité de l'opérateur (unité principale, sinon celle de sa fiche personnel, sinon le nom de l'organisation) ; le jeu envoie le nom du groupe au lieu du pseudo quand le joueur n'est pas reconnu.
 
 ## Correctif 2026-10-12 — Langue dans l'app Réglages (ATAK natif 1.16.1)
 
