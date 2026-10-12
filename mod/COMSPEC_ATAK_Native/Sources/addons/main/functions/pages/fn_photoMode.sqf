@@ -79,13 +79,19 @@ switch (toUpper _mode) do {
             if (!_quit && {diag_tickTime >= (_st getOrDefault ["nextHud", 0])}) then { _st set ["nextHud", diag_tickTime + 2]; ["HUD"] call comspec_atak_native_fnc_photoMode; };
         };
         if (_quit) exitWith { ["EXIT"] call comspec_atak_native_fnc_photoMode; };
-        // Bras tendu, téléphone devant soi (geste vanilla relancé tant que le mode photo dure).
+        // Bras tendu, téléphone devant soi (geste relancé tant que le mode photo dure ; selfie : fn_gestureSelfie).
         if (diag_tickTime >= (_st getOrDefault ["nextPose", 0])) then {
             _st set ["nextPose", diag_tickTime + 1.2];
             // Animation réglable (CBA « ATAK · Photo ») : action/geste, animation CfgMoves ou fonction.
             private _self = _st getOrDefault ["selfie", false];
             private _anim = trim (missionNamespace getVariable [["comspec_atak_native_photo_anim", "comspec_atak_native_selfie_anim"] select _self, "gesturePoint"]);
             if (_self && {_anim isEqualTo ""}) then { _anim = trim (missionNamespace getVariable ["comspec_atak_native_photo_anim", "gesturePoint"]); };
+            // Passage selfie <-> photo : la fonction de l'animation précédente remet sa pose à zéro.
+            private _prev = _st getOrDefault ["lastAnim", ""];
+            if (_prev isNotEqualTo _anim && {(toLower _prev) find "_fnc_" >= 0}) then {
+                private _fnPrev = missionNamespace getVariable [_prev, {}];
+                if (_fnPrev isEqualType {}) then { [player, "exit"] call _fnPrev; };
+            };
             if (_anim isNotEqualTo "") then {
                 switch (true) do {
                     case ((toLower _anim) find "_fnc_" >= 0): {

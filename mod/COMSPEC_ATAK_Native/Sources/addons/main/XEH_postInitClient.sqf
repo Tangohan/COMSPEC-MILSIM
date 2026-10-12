@@ -83,6 +83,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
     _inHand || {_mode isEqualTo 2 && {!(_st getOrDefault ["texture", false])}}
 }];
 ["COMSPEC ATAK", "PhonePanic", "Bouton PANIQUE (deux appuis)", { if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { false }; ["panic"] call comspec_atak_native_fnc_alertsAction; if (diag_tickTime < ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["panicArmedUntil", -1])) then { ["WARNING", "PANIQUE : appuyez encore pour envoyer", 5, 60] call comspec_atak_native_fnc_notify; }; true }, "", [0, [false,false,false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "GestureFinger", ["Doigt d'honneur", "Geste du bras gauche (marche aussi fusil en main). Aussi dans les actions ACE perso."], { [player] call comspec_atak_native_fnc_gestureFinger }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneNight", "Mode nuit du téléphone (normal / rouge / sombre)", {
     private _m = profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"];
     private _n = ["OFF", "RED", "DIM"] select ((((["OFF", "RED", "DIM"] find _m) max 0) + 1) mod 3);
@@ -313,6 +314,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 }, 2] call CBA_fnc_addPerFrameHandler;
 // Lueur des écrans la nuit (la sienne publiée, celle des joueurs proches dessinée) et filtre JVN (fn_screenGlow).
 [{ ["tick"] call comspec_atak_native_fnc_screenGlow; }, 1] call CBA_fnc_addPerFrameHandler;
+// Action ACE perso : doigt d'honneur, rangé dans le menu Gestes d'ACE quand celui-ci est affiché.
+if (!isNil "ace_interact_menu_fnc_createAction") then {
+    private _act = ["COMSPEC_GestureFinger", "Doigt d'honneur", "", { [player] call comspec_atak_native_fnc_gestureFinger; }, { alive player && {vehicle player isEqualTo player} }] call ace_interact_menu_fnc_createAction;
+    private _path = ["ACE_SelfActions"];
+    if (isClass (configFile >> "CfgPatches" >> "ace_gestures") && {(missionNamespace getVariable ["ace_gestures_showOnInteractionMenu", 2]) isEqualTo 2}) then { _path pushBack "ace_gestures"; };
+    ["CAManBase", 1, _path, _act, true] call ace_interact_menu_fnc_addActionToClass;
+};
 // Action ACE : changer la batterie du téléphone (si une batterie de rechange est portée).
 if (!isNil "ace_interact_menu_fnc_createAction") then {
     private _act = ["COMSPEC_ATAK_BatterySwap", "Changer la batterie", "\z\comspec_atak_native\addons\main\data\item_battery.paa", {

@@ -2,7 +2,7 @@
 class CfgPatches {
     class comspec_atak_native_main {
         name="COMSPEC ATAK Native Standalone"; author="COMSPEC"; requiredVersion=2.14;
-        requiredAddons[]={"A3_UI_F","A3_Weapons_F","A3_Modules_F","cba_main","cba_xeh"};
+        requiredAddons[]={"A3_UI_F","A3_Weapons_F","A3_Modules_F","A3_Anims_F_Config_Sdr","cba_main","cba_xeh"};
         units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
     };
 };
@@ -19,6 +19,9 @@ class CfgFunctions {
         };
         class map { file="z\comspec_atak_native\addons\main\functions\map";
             class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class natoSymbol {}; class mapLabels {}; class mapCtxMenu {}; class mapPing {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class unitGroup {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerWeb {}; class markerWebSweep {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {}; class mapUnfocus {}; class inspToggle {}; class markerPalette {}; class markerPaletteData {}; class markerLabels {}; class sigintPoll {}; class reliefDraw {}; class meshDraw {}; class logisticsDraw {}; class ewDraw {}; class mapSearch {}; class mapStyle {}; class textureKeep {}; class strokeSimplify {}; class strokeDraw {}; class strokeBar {};
+        };
+        class gestures { file="z\comspec_atak_native\addons\main\functions\gestures";
+            class gestureFinger {}; class gestureSelfie {};
         };
         class plan { file="z\comspec_atak_native\addons\main\functions\plan";
             class planCatalog {}; class planGfx {}; class planDraw {}; class planServer {}; class planAction {}; class planMap {}; class pagePlan {};
@@ -426,5 +429,6 @@ class CfgFactionClasses {
 
 class Extended_PreInit_EventHandlers { class comspec_atak_native_main { init="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_preInit.sqf'"; }; };
 class Extended_PostInit_EventHandlers { class comspec_atak_native_main { clientInit="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_postInitClient.sqf'"; serverInit="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_postInitServer.sqf'"; }; };
+#include "gestures.hpp"
 #include "ui/controls.hpp"
 #include "ui/displays.hpp"
