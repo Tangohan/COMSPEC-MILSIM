@@ -22,6 +22,7 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration.
   - En haut : onglets 9-LINE, 5-LINE, APPEL DE FEU, ma grille, mon altitude et le vent. En portrait, les panneaux s'empilent.
 - Alerte plein écran, notification et vibration envoyées depuis le site (Overwatch beta) : elles arrivent de nouveau sur le téléphone natif. COMSPEC Link les passait au module `atak_athena` (ancien téléphone Iceman, livré dans le même mod et donc toujours chargé) au lieu du natif ; `fn_receiveOrder` les donne maintenant au natif quand il est chargé. `atak_athena` n'est pas modifié.
 - Carte, barre TRAIT / DESSIN LIBRE : DÉFAIRE devient ANNULER et FERMÉ devient ZONE.
+- Appareil photo : F (flash) ne ressort plus l'arme. Les touches de l'appareil (Espace, R, F, T, zoom) restent au téléphone ; si le jeu voit quand même F, l'arme est rangée de nouveau.
 - Traits et repères du téléphone absents du site : quand l'envoi au site est refusé ou mis en attente, le téléphone l'affiche avec la raison (synchro des marqueurs coupée, liaison Athena pas prête…). COMSPEC Link note maintenant la raison de chaque refus.
 
 ## Vague 2026-10-12 (suite) — Réseau, drone, photos drone sur Discord, saleté (ATAK natif 1.16.0, COMSPEC Link 2.0.69)
