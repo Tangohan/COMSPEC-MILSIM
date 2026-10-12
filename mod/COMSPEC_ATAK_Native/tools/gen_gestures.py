@@ -251,6 +251,24 @@ def selfie(sway=0.0):
     return p
 
 
+def selfie_phone():
+    """Téléphone tenu au selfie (fn_gestureSelfie, attachTo à l'os de la main droite avec suivi de rotation) :
+    S7 du JPC en paysage, dos sur les doigts, écran vers le visage, bout droit dans la paume. Renvoie le décalage
+    de l'origine du modèle (bas du corps, côté dos) et ses vectorDir / vectorUp dans le repère de la main en pose
+    de référence, convertis en repère Arma d'attachTo (x droite, y avant, z haut)."""
+    p = selfie(0); W = p.world(); M = p.matrices()
+    at = lambda b: PIV[b] @ M[b][:3] + M[b][3]
+    Wh = W["RightHand"]; hand = at("RightHand")
+    n = Wh @ palm_normal("R")
+    D = nrm([0.19, 0.46, -0.87])                      # dos du téléphone : à l'opposé du visage
+    U = nrm(UP - np.dot(UP, D) * D)
+    L = nrm(np.cross(U, D)); L = L if L[0] > 0 else -L  # vers la gauche du joueur
+    grip = (hand + at("RightHandMiddle1")) / 2 + n * 0.025
+    origin = grip + L * (0.15 / 2 - 0.025) - U * 0.041
+    conv = lambda v: [round(float(x), 3) for x in (-v[0], -v[2], v[1])]
+    return conv(Wh.T @ (origin - hand)), conv(Wh.T @ D), conv(Wh.T @ U)
+
+
 # ---- Écriture ---------------------------------------------------------------------------------------
 def ease(t):
     return t * t * (3 - 2 * t)
@@ -332,3 +350,4 @@ if __name__ == "__main__":
     for name, frames in anims.items():
         write_rtm(os.path.join(out, name + ".rtm"), frames); print(name, len(frames), "images")
     if args.preview: preview(anims, args.preview)
+    print("selfie_phone (fn_gestureSelfie) : décalage, vectorDir, vectorUp =", selfie_phone())
