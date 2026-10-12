@@ -211,6 +211,7 @@ $navActive = static function (string $id) use ($activeNav): string {
                 <?= $iwLink(url('atak/sse/maitre-jeu'), $activeNav === 'maitre-jeu' ? 'is-active' : '', '26', 'Maître du jeu', 'Pilotage des identités, listes et histoires lues par le terminal SEEK.', 'prepare') ?>
             <?php endif; ?>
             <?= $iwLink(url('atak/sse/fiches'), $activeNav === 'fiches' ? 'is-active' : '', '27', 'Fiches de renseignement', 'Notes libres remontées du terrain : texte, lieu, thèmes et pièces jointes.', 'note') ?>
+            <?= $iwLink(url('atak/sse/campagnes'), $activeNav === 'campagnes' ? 'is-active' : '', '28', 'Campagnes', 'Personnages récurrents, organisations, connaissances et scellés du mod, partagés entre communautés.', 'org') ?>
 
             <p class="iw-nav-section">Objets</p>
             <?= $iwLink(url('atak/sse/identites'), $navActive('identites'), '06', 'Identités', 'Fiches personnes et indices biométriques.', 'id') ?>

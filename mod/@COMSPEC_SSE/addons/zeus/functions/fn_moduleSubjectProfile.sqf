@@ -43,9 +43,9 @@ if (!isServer && { isMultiplayer }) exitWith {
     true
 };
 
-private _targets = [_logic, _units, 15] call comspec_overwatch_connect_fnc_sseModuleTargets;
+private _targets = [_logic, _units, 15] call comspec_sse_fnc_moduleTargets;
 if (_targets isEqualTo []) exitWith {
-    ["WARN", "SSE", "Module profil SSE : aucun sujet sous le module"] call comspec_overwatch_connect_fnc_log;
+    ["Module profil SSE : aucun sujet sous le module", "WARN"] call comspec_sse_fnc_log;
     deleteVehicle _logic;
     false
 };
@@ -72,7 +72,7 @@ private _preset = [_logic] call {
     _p
 };
 
-private _profile = [_preset] call comspec_overwatch_connect_fnc_sseProfilePreset;
+private _profile = [_preset] call comspec_sse_fnc_profilePreset;
 
 // Les champs saisis à la main complètent le preset et le remplacent en cas de conflit.
 {
@@ -97,14 +97,10 @@ if (!(_seed isEqualType 0) || {_seed <= 0}) then {
 if (_seed isEqualType 0 && { _seed > 0 }) then { _profile pushBack ["seed", _seed]; };
 
 {
-    [_x, _profile] call comspec_overwatch_connect_fnc_sseApplyProfile;
+    [_x, _profile] call comspec_sse_fnc_applyProfile;
 } forEach _targets;
 
-[
-    "INFO",
-    "SSE",
-    format ["Profil SSE « %1 » appliqué à %2 sujet(s)", _preset, count _targets]
-] call comspec_overwatch_connect_fnc_log;
+[format ["Profil SSE « %1 » appliqué à %2 sujet(s)", _preset, count _targets], "INFO"] call comspec_sse_fnc_log;
 
 deleteVehicle _logic;
 true

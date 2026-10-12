@@ -53,7 +53,9 @@ final class AtakZenEdenAssetTest extends TestCase
         $post = (string) file_get_contents($this->connectRoot() . '/XEH_postInit.sqf');
         self::assertStringContainsString('registerZenRoleplayModules', $post);
         self::assertStringContainsString('registerZenAtakPlayerActions', $post);
-        self::assertStringContainsString('registerZenSseModules', $post);
+        // Les modules Zeus SSE vivent dans le mod SSE (addon zeus), plus dans connect.
+        self::assertStringNotContainsString('registerZenSseModules', $post);
+        self::assertStringContainsString('registerZenSseModules', (string) file_get_contents(dirname(__DIR__, 2) . '/mod/@COMSPEC_SSE/addons/zeus/XEH_postInit.sqf'));
         self::assertStringContainsString('registerZenTrackActions', $post);
         self::assertStringContainsString('registerZenTheaterSurvey', $post);
         self::assertStringContainsString('COMSPEC_ZenRegisterDeadline', $post);
@@ -81,7 +83,7 @@ final class AtakZenEdenAssetTest extends TestCase
         self::assertStringContainsString('isNil "zen_custom_modules_fnc_register"', $role);
         self::assertStringContainsString('Brouilleur ATAK actif', $role);
 
-        $sse = (string) file_get_contents($this->connectRoot() . '/functions/fn_registerZenSseModules.sqf');
+        $sse = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/@COMSPEC_SSE/addons/zeus/functions/fn_registerZenSseModules.sqf');
         self::assertStringContainsString('Dossier SSE actif', $sse);
         self::assertStringContainsString('Profil d\'identité SSE', $sse);
     }

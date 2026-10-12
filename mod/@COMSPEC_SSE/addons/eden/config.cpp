@@ -26,6 +26,14 @@ class CfgFunctions {
     };
 };
 
+// Objets, véhicules et caisses marqués dans Eden : l'InitPost ci-dessous ne couvre que
+// les personnes ; un balayage serveur au lancement prend tout le reste.
+class Extended_PostInit_EventHandlers {
+    class comspec_sse_eden {
+        serverInit = "[{ { if (!(_x isKindOf 'CAManBase') && {_x getVariable ['comspec_sse_enabled', false] || {_x getVariable ['comspec_sse_domex_enabled', false]}}) then { [_x] call comspec_sse_fnc_edenInitEntity; }; } forEach (allMissionObjects ''); }, [], 1] call CBA_fnc_waitAndExecute;";
+    };
+};
+
 class Extended_InitPost_EventHandlers {
     class CAManBase {
         class comspec_sse_eden {
@@ -45,13 +53,36 @@ class Cfg3DEN {
                 class Attributes {
                     class comspec_sse_enabled {
                         displayName = "Activer le renseignement SSE";
-                        tooltip = "Active le renseignement SSE sur cette entité.";
+                        tooltip = "Rend cette entité exploitable : personne, véhicule, caisse, arme au sol, ordinateur, téléphone, document ou tout autre objet du jeu.";
                         property = "comspec_sse_enabled";
                         control = "Checkbox";
                         expression = "_this setVariable ['comspec_sse_enabled', _value, isServer];";
                         defaultValue = "false";
                         typeName = "BOOL";
-                        condition = "objectBrain + objectVehicle + objectControllable";
+                        condition = "objectSimulated";
+                    };
+                    class comspec_sse_forcedType {
+                        displayName = "Nature de l'objet";
+                        tooltip = "Automatique : déduite de la classe (téléphone, ordinateur, radio, document, support, arme, caisse…). À forcer pour un objet de décor ou d'un autre mod que le SSE ne reconnaît pas.";
+                        property = "comspec_sse_forcedType";
+                        control = "Combo";
+                        expression = "if (_value isNotEqualTo '') then { _this setVariable ['comspec_sse_forcedType', _value, true]; };";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                        condition = "objectSimulated - objectBrain";
+                        class values {
+                            class Auto { name = "Automatique"; value = ""; default = 1; };
+                            class Phone { name = "Téléphone"; value = "PHONE"; };
+                            class Computer { name = "Ordinateur"; value = "COMPUTER"; };
+                            class Radio { name = "Radio"; value = "RADIO"; };
+                            class Document { name = "Document / papiers"; value = "DOCUMENT"; };
+                            class Media { name = "Support (clé USB, carte, disque)"; value = "MEDIA"; };
+                            class Weapon { name = "Arme"; value = "WEAPON"; };
+                            class Container { name = "Caisse / sac / contenant"; value = "CONTAINER"; };
+                            class Vehicle { name = "Véhicule"; value = "VEHICLE"; };
+                            class Building { name = "Bâtiment / pièce"; value = "BUILDING"; };
+                            class Object { name = "Objet divers"; value = "OBJECT"; };
+                        };
                     };
                     class comspec_sse_profile {
                         displayName = "Profil";
@@ -158,6 +189,38 @@ class Cfg3DEN {
                         expression = "[_this, 'Alias', _value] call comspec_sse_fnc_edenWriteField;";
                         defaultValue = "''";
                         typeName = "STRING";
+                    };
+                    class COMSPEC_SSE_RecordRef
+                    {
+                        displayName = "Référence de dossier antérieur";
+                        tooltip = "Affichée par le terminal en cas de correspondance. Laisser vide pour génération automatique.";
+                        property = "COMSPEC_SSE_RecordRef";
+                        control = "Edit";
+                        expression = "[_this, 'RecordRef', _value] call comspec_sse_fnc_edenWriteField;";
+                        defaultValue = "''";
+                        typeName = "STRING";
+                    };
+                    class COMSPEC_SSE_Confidence
+                    {
+                        displayName = "Indice de confiance imposé (-1 = automatique)";
+                        tooltip = "Pourcentage affiché par le terminal après requête. -1 laisse le calcul dépendre de la qualité réelle des relevés, ce qui est le comportement souhaitable dans la plupart des scénarios.";
+                        property = "COMSPEC_SSE_Confidence";
+                        control = "Edit";
+                        expression = "[_this, 'Confidence', _value] call comspec_sse_fnc_edenWriteField;";
+                        defaultValue = "-1";
+                        validate = "number";
+                        typeName = "NUMBER";
+                    };
+                    class COMSPEC_SSE_Seed
+                    {
+                        displayName = "Graine (0 = automatique)";
+                        tooltip = "Fixer la graine rend le sujet identique d'une session à l'autre — utile pour un scénario rejoué ou une séance de formation. 0 laisse dériver de l'identifiant réseau.";
+                        property = "COMSPEC_SSE_Seed";
+                        control = "Edit";
+                        expression = "[_this, 'Seed', _value] call comspec_sse_fnc_edenWriteField;";
+                        defaultValue = "0";
+                        validate = "number";
+                        typeName = "NUMBER";
                     };
                     class comspec_sse_personRole {
                         displayName = "Rôle déclaré";
@@ -293,6 +356,7 @@ class Cfg3DEN {
             };
             #include "attributes_authored.hpp"
             #include "attributes_domex.hpp"
+            #include "attributes_biometrics.hpp"
         };
     };
 };

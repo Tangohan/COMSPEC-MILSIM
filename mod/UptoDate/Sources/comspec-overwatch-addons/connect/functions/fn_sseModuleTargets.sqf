@@ -14,6 +14,9 @@
 */
 params [["_logic", objNull, [objNull]], ["_units", [], [[]]], ["_radius", 15, [0]]];
 
+// Le pack SSE porte cette logique : Overwatch ne garde qu'un relais.
+if (!isNil "comspec_sse_fnc_moduleTargets") exitWith { _this call comspec_sse_fnc_moduleTargets };
+
 if (isNull _logic) exitWith { [] };
 
 private _out = [];

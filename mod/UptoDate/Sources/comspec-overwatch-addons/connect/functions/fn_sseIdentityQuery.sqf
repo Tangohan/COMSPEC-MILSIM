@@ -39,6 +39,74 @@ private _coverage = (count _samples) min 3;
 uiNamespace setVariable ["COMSPEC_SsePerson_QueryPending", true];
 [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;
 
+// --- Moteur biométrique (pack SSE) : vraie recherche dans la base -----------------
+// Les relevés détaillés (NFIQ par doigt, OD/OG, cliché) sont comparés au dossier
+// réel du sujet, s'il en a un ; hors liaison, seule la base locale répond.
+if (!isNil "comspec_sse_fnc_bioQuery" && {missionNamespace getVariable ["comspec_sse_bio_enabled", true]} && {!isNull _target}) exitWith {
+    private _caps = createHashMapFromArray [["nfiqs", []], ["eyes", []], ["face", -1], ["attempt", 0]];
+    {
+        if ((_x isEqualType []) && {(count _x) >= 4}) then {
+            switch (_x select 0) do {
+                case "empreintes": { _caps set ["nfiqs", _x select 3]; };
+                case "iris": { _caps set ["eyes", _x select 3]; };
+            };
+        };
+    } forEach _samples;
+    private _meta = _target getVariable ["comspec_sse_facePhotoMeta", []];
+    if ((_meta isEqualType []) && {(count _meta) >= 3}) then {
+        private _fq = _meta select 1;
+        private _dry = [_target, player, "visage", "seek", true] call comspec_sse_fnc_bioCapture;
+        _caps set ["face", if (_dry getOrDefault ["ok", false]) then { _fq min (_dry get "quality") } else { -1 }];
+    };
+    private _att = 0;
+    { _att = _att + (_x select 1); } forEach ((_target getVariable ["comspec_sse_bioAttempts", []]) select { _x isEqualType [] && {(count _x) >= 2} });
+    _caps set ["attempt", _att];
+
+    private _disp0 = uiNamespace getVariable ["COMSPEC_SsePerson_Display", displayNull];
+    private _declared = "";
+    if (!isNull _disp0) then { _declared = trim format ["%1 %2", ctrlText (_disp0 displayCtrl 9502), ctrlText (_disp0 displayCtrl 9501)]; };
+    if (_declared isEqualTo "") then {
+        _declared = trim format ["%1 %2", _target getVariable ["COMSPEC_SSE_FirstName", ""], _target getVariable ["COMSPEC_SSE_LastName", ""]];
+    };
+
+    private _online = (toLower (str (missionNamespace getVariable ["COMSPEC_LinkState", "offline"]))) isEqualTo "linked";
+    private _delay = if (_online) then { missionNamespace getVariable ["comspec_sse_bio_delayAbis", 12] } else { missionNamespace getVariable ["comspec_sse_bio_delayLocal", 5] };
+    uiNamespace setVariable ["COMSPEC_SseQueryArgs", [_target, _caps, _declared]];
+    private _fnc_send = {
+        (uiNamespace getVariable ["COMSPEC_SseQueryArgs", []]) params [["_t", objNull], ["_c", createHashMap], ["_d", ""]];
+        [_t, _c, _d, {
+            params ["_res", "_ctx"];
+            _ctx params ["_t"];
+            private _map = createHashMapFromArray [["match", "confirmed"], ["possible", "possible"], ["latent", "none"], ["insufficient", "insufficient"]];
+            private _result = _map getOrDefault [_res getOrDefault ["verdict", "none"], "none"];
+            uiNamespace setVariable ["COMSPEC_SsePerson_QueryPending", false];
+            uiNamespace setVariable ["COMSPEC_SsePerson_Query", [_result, _res getOrDefault ["score", 0], _res getOrDefault ["ref", ""], [_res] call comspec_sse_fnc_bioPack]];
+            [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;
+            if (!isNil "comspec_overwatch_connect_fnc_seekHistoryPush") then {
+                [_t, _result, _res getOrDefault ["score", 0], _res getOrDefault ["ref", ""]] call comspec_overwatch_connect_fnc_seekHistoryPush;
+            };
+            private _lines = [_res] call comspec_sse_fnc_bioDescribe;
+            [(_lines select [0, 3]) joinString " · ", "tactical", ["info", "warn"] select (_result isEqualTo "confirmed" || {_res getOrDefault ["mismatch", false]})] call comspec_overwatch_connect_fnc_announce;
+        }, [_t]] call comspec_sse_fnc_bioQuery;
+    };
+    uiNamespace setVariable ["COMSPEC_SseQuerySend", _fnc_send];
+    if (!isNil "ace_common_fnc_progressBar") exitWith {
+        [
+            _delay, [],
+            { call (uiNamespace getVariable ["COMSPEC_SseQuerySend", {}]); },
+            {
+                uiNamespace setVariable ["COMSPEC_SsePerson_QueryPending", false];
+                [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;
+                ["Interrogation interrompue.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+            },
+            ["Interrogation de la base locale…", "Interrogation de l'ABIS (liaison)…"] select _online,
+            { true },
+            ["isNotInside"]
+        ] call ace_common_fnc_progressBar;
+    };
+    [{ call (uiNamespace getVariable ["COMSPEC_SseQuerySend", {}]); }, [], _delay] call CBA_fnc_waitAndExecute;
+};
+
 private _fnc_resolve = {
     params ["_target", "_avg", "_coverage"];
 

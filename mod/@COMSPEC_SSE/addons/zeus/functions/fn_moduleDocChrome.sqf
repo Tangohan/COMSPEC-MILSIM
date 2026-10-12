@@ -33,7 +33,7 @@ if (!isServer && { isMultiplayer }) exitWith {
 };
 
 if (isNil "comspec_sse_fnc_getDocumentChrome") exitWith {
-    ["WARN", "SSE", "Présentation documents : pack SSE requis"] call comspec_overwatch_connect_fnc_log;
+    ["Présentation documents : pack SSE requis", "WARN"] call comspec_sse_fnc_log;
     deleteVehicle _logic;
     false
 };
@@ -67,11 +67,11 @@ if ((count _overrides) > 0) then {
     _chrome = ["set", _overrides] call comspec_sse_fnc_getDocumentChrome;
 };
 
-["INFO", "SSE", format [
+[format [
     "Présentation documents SSE : modèle %1, papier %2",
     _chrome getOrDefault ["prefab", _prefab],
     _chrome getOrDefault ["paper_style", "clean"]
-]] call comspec_overwatch_connect_fnc_log;
+], "INFO"] call comspec_sse_fnc_log;
 
 deleteVehicle _logic;
 true

@@ -41,7 +41,11 @@ class CfgPatches {
             "COMSPEC_SSE_Module_DomexMark",
             "COMSPEC_SSE_Module_DomexAddIntel",
             "COMSPEC_SSE_Module_DomexSetStage",
-            "COMSPEC_SSE_Module_DomexMapPoint"
+            "COMSPEC_SSE_Module_DomexMapPoint",
+            "COMSPEC_Module_SSE_Case",
+            "COMSPEC_Module_SSE_Profile",
+            "COMSPEC_Module_SSE_Equip",
+            "COMSPEC_Module_SSE_DocChrome"
         };
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
@@ -54,12 +58,12 @@ class CfgPatches {
 class CfgFactionClasses {
     class NO_CATEGORY;
     class COMSPEC_SSE_Tools: NO_CATEGORY {
-        displayName = "COMSPEC — SSE · Outils Zeus";
+        displayName = "COMSPEC SSE · 5. Outils du Zeus";
         priority = 2;
         side = 7;
     };
     class COMSPEC_SSE_Domex: NO_CATEGORY {
-        displayName = "COMSPEC — SSE · Numérique (DOMEX)";
+        displayName = "COMSPEC SSE · 4. Numérique (DOMEX, DL-7)";
         priority = 2;
         side = 7;
     };
@@ -114,6 +118,15 @@ class CfgFunctions {
             class applyGenerateDialog {};
             class openModelDialog {};
             class applyModelDialog {};
+            // Repris du mod Overwatch (tout le SSE passe par ce pack).
+            class moduleTargets {};
+            class profilePreset {};
+            class applyProfile {};
+            class moduleSubjectProfile {};
+            class moduleEquipSeek {};
+            class moduleDocChrome {};
+            class giveSeek {};
+            class registerZenSseModules {};
         };
     };
 };
@@ -584,7 +597,7 @@ class CfgVehicles {
         scope = 2;
         scopeCurator = 2;
         displayName = "Générer depuis un brief / scénario";
-        category = "COMSPEC_SSE";
+        category = "COMSPEC_SSE_Mission";
         function = "comspec_sse_fnc_moduleGenerateBrief";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\meet_ca.paa";
         portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\meet_ca.paa";
@@ -650,7 +663,7 @@ class CfgVehicles {
         scope = 2;
         scopeCurator = 2;
         displayName = "Directeur de scénario (dataset / niveau)";
-        category = "COMSPEC_SSE";
+        category = "COMSPEC_SSE_Mission";
         function = "comspec_sse_fnc_moduleScenarioDirector";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\whiteboard_ca.paa";
         portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\whiteboard_ca.paa";
@@ -778,7 +791,7 @@ class CfgVehicles {
         scope = 2;
         scopeCurator = 2;
         displayName = "Lier des entités SSE";
-        category = "COMSPEC_SSE";
+        category = "COMSPEC_SSE_People";
         function = "comspec_sse_fnc_moduleLinkEntities";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\meet_ca.paa";
         portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\meet_ca.paa";
@@ -839,7 +852,7 @@ class CfgVehicles {
         scope = 2;
         scopeCurator = 2;
         displayName = "Référence de dossier SSE";
-        category = "COMSPEC_SSE";
+        category = "COMSPEC_SSE_Mission";
         function = "comspec_sse_fnc_moduleCaseReference";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
         portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
@@ -1327,6 +1340,20 @@ class CfgVehicles {
         };
     };
 
+
+    // Modules Eden repris du mod Overwatch (Dossier, Identité, SEEK, Documents).
+    #include "modules_seek.hpp"
+};
+
+// Overwatch impose une liste blanche stricte (mode = 1) : sans ces entrées, les appels
+// distants du pack SSE seraient rejetés en silence quand les deux mods sont chargés.
+class CfgRemoteExec {
+    class Functions {
+        class comspec_sse_fnc_setCaseReference { allowedTargets = 0; jip = 1; };
+        class comspec_sse_fnc_applyProfile { allowedTargets = 2; };
+        class comspec_sse_fnc_linkEntities { allowedTargets = 2; };
+        class comspec_sse_fnc_giveSeek { allowedTargets = 0; };
+    };
 };
 
 // Classes de contrôles partagées (addon comspec_sse_ui, dialogs\base.hpp).

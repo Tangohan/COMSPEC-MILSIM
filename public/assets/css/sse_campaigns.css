@@ -1,0 +1,56 @@
+/* Bureau SSE › Campagnes (cmp-*) */
+.cmp-heading-actions { display: flex; gap: .5rem; align-items: flex-start; flex-wrap: wrap; }
+.cmp-sub { color: var(--muted); font-size: .74rem; }
+.cmp-flag { color: var(--green-bright); }
+.cmp-note { font-size: .74rem; margin: .4rem 0 .7rem; }
+.cmp-inline { display: inline-block; margin-left: .5rem; }
+
+.cmp-types { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; margin-top: 12px; }
+.cmp-type { border: 1px solid var(--border); background: var(--surface); padding: .7rem .8rem; }
+.cmp-type p { margin: .45rem 0 0; font-size: .78rem; color: var(--text); }
+
+.cmp-archived { display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; }
+
+.cmp-metrics { margin-top: 12px; }
+.cmp-ids { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin: 12px 0; padding: .6rem .8rem; border: 1px solid var(--border); background: var(--surface); }
+.cmp-ids span { display: block; font-size: .57rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.cmp-ids code, .cmp-events code, .cmp-piece code, td code { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: .76rem; color: var(--text-strong); word-break: break-all; }
+
+.cmp-tabs { display: flex; gap: .25rem; margin: 6px 0 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.cmp-tabs a { padding: .55rem .9rem; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; font-size: .82rem; }
+.cmp-tabs a:hover { color: var(--text-strong); }
+.cmp-tabs a.is-active { color: var(--text-strong); border-bottom-color: var(--green-bright); }
+
+.cmp-orbat { list-style: none; margin: 0; padding: 0 0 0 1.1rem; border-left: 1px solid var(--border); }
+.cmp-orbat--root { padding-left: 0; border-left: 0; }
+.cmp-org { margin: .5rem 0 .9rem; }
+.cmp-org-head { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; padding: .45rem .6rem; border: 1px solid var(--border); background: var(--surface); }
+.cmp-org-head strong { color: var(--text-strong); }
+.cmp-org-desc { margin: .35rem 0 0 .6rem; font-size: .78rem; color: var(--text); }
+.cmp-members { list-style: none; margin: .35rem 0 0 .6rem; padding: 0; }
+.cmp-members li { padding: .22rem 0; font-size: .82rem; display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; }
+.cmp-role { display: inline-block; min-width: 8.5rem; font-size: .66rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+
+.cmp-piece { border: 1px solid var(--border); margin-bottom: .5rem; background: var(--surface); }
+.cmp-piece summary { cursor: pointer; padding: .5rem .7rem; display: flex; flex-wrap: wrap; gap: .45rem; align-items: center; }
+.cmp-piece.is-tampered { border-color: rgba(183, 93, 93, .6); }
+.cmp-events { margin: 0; padding: .2rem .8rem .7rem 2rem; font-size: .8rem; }
+.cmp-events li { margin: .25rem 0; }
+
+.cmp-manage { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem 1.6rem; }
+.cmp-manage h3 { margin: 0 0 .5rem; font-size: .9rem; color: var(--text-strong); }
+.cmp-manage form .btn { margin-top: .7rem; }
+.cmp-danger form { margin-bottom: .6rem; }
+
+.cmp-catalog { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .9rem; }
+.cmp-card { border: 1px solid var(--border); background: var(--surface); padding: .8rem .9rem; display: flex; flex-direction: column; gap: .45rem; }
+.cmp-card header { display: flex; flex-direction: column; gap: .15rem; }
+.cmp-card header strong { color: var(--text-strong); }
+.cmp-card p { margin: 0; font-size: .8rem; }
+.cmp-card-tags { display: flex; gap: .35rem; flex-wrap: wrap; }
+.cmp-card form { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: auto; }
+
+@media (max-width: 760px) {
+    .cmp-types, .cmp-manage { grid-template-columns: 1fr; }
+    .cmp-role { min-width: 0; }
+}
