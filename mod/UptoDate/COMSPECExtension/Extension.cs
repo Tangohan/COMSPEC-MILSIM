@@ -2582,6 +2582,11 @@ public static partial class Extension
         {
             return MusicCommand(function, args);
         }
+        // Presse-papiers Windows (Clipboard.cs) : export / import des plans de l'app Plan, aussi en multijoueur.
+        if (function != null && function.StartsWith("Clip", StringComparison.Ordinal))
+        {
+            return ClipCommand(function, args);
+        }
 #endif
 
         if (function == "MemStats")

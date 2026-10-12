@@ -28,11 +28,13 @@ private _btn = {
 };
 
 // Onglets
-private _tw = (_gw - 2 * _pad) / 3;
+// Quatrième onglet : la carte de briefing (app Plan), à part de la carte qui suit le joueur.
+private _tw = (_gw - 2 * _pad) / 4;
 private _qn = count ((uiNamespace getVariable ["COMSPEC_ATAK_BriefQ", createHashMap]) getOrDefault ["list", []]);
 [[_pad, _pad, _tw - _pad / 6, _rowH], "DIAPOSITIVES", { ["tab", "SLIDES"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "SLIDES"] call _btn;
 [[_pad + _tw, _pad, _tw - _pad / 6, _rowH], ["QUESTIONS", format ["QUESTIONS (%1)", _qn]] select (_qn > 0), { ["tab", "QUESTIONS"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "QUESTIONS"] call _btn;
 [[_pad + 2 * _tw, _pad, _tw - _pad / 6, _rowH], "MISSION", { ["tab", "MISSION"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "MISSION"] call _btn;
+[[_pad + 3 * _tw, _pad, _tw - _pad / 6, _rowH], "CARTE", { [{ ["PLAN"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }] call _btn;
 private _y0 = _pad * 2 + _rowH;
 
 // Questions sur la diapositive en cours : gardées sur Athena (commentaires de la diapositive), le présentateur est prévenu.

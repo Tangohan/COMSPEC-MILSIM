@@ -119,6 +119,8 @@ ICONS = {
     "app_reports": '<rect x="5" y="3.5" width="14" height="18" rx="1.5"/><path d="M9 3.5V2h6v1.5"/><path d="M8.5 9h7M8.5 12.5h7M8.5 16h4"/><path d="M14.5 17l1.3 1.3 2.7-2.8"/>',
     "app_photos": '<path d="M3 7h4l2-2.5h6L17 7h4v12H3z"/><circle cx="12" cy="13" r="3.5"/>',
     "app_briefing": '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M12 16v4M8 21h8M7 12l3-3 2 2 4-4"/>',
+    # Plan (carte de briefing) : cadre de carte, zone ennemie, axe en tirets vers l'objectif, bâtiment nettoyé.
+    "app_plan": '<rect x="3" y="3" width="18" height="18" rx="1.5"/><path d="M6 6.5h5.5v4H6z"/><path d="M6.5 17.5c3-.5 6-2.5 8.5-6.5" stroke-dasharray="2 1.7"/><path d="M12.6 11l2.6-.4.4 2.7"/><path d="M14.5 17l1.6 1.6 3-3.3"/>',
     "app_status": '<path d="M3 20h18M6 20v-6M10 20V9M14 20v-8M18 20V5"/>',
     "app_settings": '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
     "ui_back": '<path d="M15 5l-7 7 7 7"/>',
@@ -1645,6 +1647,10 @@ def main():
                 img = photo_wallpaper(os.path.join(HERE, "src", "wallpaper_athena.jpg"), w, h, 0.85)
                 convert(img.convert("RGB"), f"wall_athena_{suffix}", tmp)
                 convert(blurred(img), f"wall_athena_blur_{suffix}", tmp)
+            return
+        # « planicon » : seulement l'icône de l'app Plan.
+        if len(sys.argv) > 2 and sys.argv[2] == "planicon":
+            convert(icon_png("app_plan", ICONS["app_plan"]), "app_plan", tmp)
             return
         # « camera » : seulement l'image de l'item Caméra IP compacte.
         if len(sys.argv) > 2 and sys.argv[2] == "camera":

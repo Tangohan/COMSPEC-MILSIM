@@ -313,7 +313,7 @@ if (_interactive) then {
         case "ROUTE": { "GPS : clic sur la destination" };
         case "WP": { "POINTS DE PASSAGE : clic pour ajouter une étape" };
         case "LINE": { "TRAIT : clic A puis clic B" };
-        case "DRAW": { "DESSIN : maintenir le clic gauche" };
+        case "DRAW": { "DESSIN : maintenir le clic gauche (lissé au relâchement)" };
         case "DRONE": { switch (_s getOrDefault ["droneMapSub", "GOTO"]) do {
             case "ROUTE": { format ["DRONE : clic pour ajouter un point de route (%1)", count (_s getOrDefault ["droneMapPts", []])] };
             case "ZONE": { [["DRONE : clic au centre de la zone", "DRONE : clic au bord pour le rayon"], ["DRONE : clic sur un coin de la zone", "DRONE : clic sur le coin opposé"]] select ((_s getOrDefault ["droneZoneKind", "LOITER"]) isEqualTo "HUNT") select ((count (_s getOrDefault ["droneMapPts", []])) min 1) };
@@ -328,18 +328,9 @@ if (_interactive) then {
         _hint ctrlSetFontHeight _fs;
     };
     if (_mode in ["LINE", "DRAW"]) then {
-        private _cur = profileNamespace getVariable ["COMSPEC_ATAK_DrawColor", "ColorRed"];
-        private _cols = [["ColorRed", [0.9, 0.1, 0.1, 1]], ["ColorBlue", [0.1, 0.3, 0.9, 1]], ["ColorGreen", [0.1, 0.7, 0.2, 1]], ["ColorYellow", [0.95, 0.85, 0.1, 1]], ["ColorOrange", [0.95, 0.5, 0.1, 1]], ["ColorBlack", [0.05, 0.05, 0.05, 1]], ["ColorWhite", [1, 1, 1, 1]]];
+        // Couleur, épaisseur, flèche, forme fermée, défaire (fn_strokeBar).
         private _hx = _bx + _pad * 2 + ((_mh * 0.24) min (_font * 3.6)) / _ratio;
-        private _cw = _fs * 1.6 / _ratio;
-        {
-            _x params ["_cls", "_rgb"];
-            private _c = ["COMSPEC_RscButton", [_hx + _forEachIndex * (_cw + _pad / 2), _by + _pad * 1.5 + _fs * 1.5, _cw, _fs * 1.6], ["", "●"] select (_cls isEqualTo _cur)] call _mk;
-            _c ctrlSetBackgroundColor _rgb;
-            _c ctrlSetTextColor ([[1, 1, 1, 1], [0, 0, 0, 1]] select (_cls in ["ColorWhite", "ColorYellow"]));
-            _c setVariable ["cls", _cls];
-            _c ctrlAddEventHandler ["ButtonClick", { params ["_c"]; profileNamespace setVariable ["COMSPEC_ATAK_DrawColor", _c getVariable "cls"]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
-        } forEach _cols;
+        [[_hx, _by + _pad * 2 + _fs * 1.5, (_tx - _hx - _pad * 2) max (_font * 6 / _ratio)]] call comspec_atak_native_fnc_strokeBar;
     };
     // Outil DRONE : barre d'ordres sous la consigne (drone appairé et en vie).
     if (_mode isEqualTo "DRONE" && {alive (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])}) then {
