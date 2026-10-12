@@ -182,7 +182,7 @@ private _broken = -1;
 { if (_x isNotEqualTo "" && {_broken < 0}) then { _broken = _forEachIndex; }; } forEach _hopWhy;
 if (_broken >= 0) then { for "_i" from (_broken + 2) to 3 do { (_nodes select _i) set [3, "off"]; }; };
 
-[["Chemin de la liaison", "Du téléphone à Athena : chaque saut, son état"]] call _section;
+["Chemin de la liaison", "Du téléphone à Athena : chaque saut, son état"] call _section;
 private _wide = _cw > _fs * 34;
 private _card = {
     params ["_pos", "_node", ["_active", false]];
@@ -247,7 +247,7 @@ if (_wide) then {
 };
 
 // --- Indicateurs ---
-[["Indicateurs"]] call _section;
+["Indicateurs"] call _section;
 private _cols = [2, 3] select _wide;
 private _tw = ((_cw - 2 * _pad) - (_cols - 1) * _pad * 0.5) / _cols;
 private _th = _fs * 2.9;
@@ -276,7 +276,7 @@ _y = _y + (ceil ((count _tiles) / _cols)) * (_th + _pad * 0.5);
 
 // --- Passerelles, relais et postes de commandement proches ---
 private _sub = format ["Mode %1", [["arcade : le téléphone passe sans relais", "réaliste : relais obligatoire"] select (missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]), "local"] select (!_bridge)];
-[["Passerelles et relais", _sub]] call _section;
+["Passerelles et relais", _sub] call _section;
 private _items = [];
 private _gwLast = uiNamespace getVariable ["COMSPEC_ATAK_GwLast", objNull];
 {
@@ -356,17 +356,20 @@ if ((_mesh getOrDefault ["gwLabel", ""]) isNotEqualTo "") then {
 
 // --- Zone radio et canal (COMSPEC Overwatch) ---
 if (_bridge) then {
-    [["Zone radio"]] call _section;
+    ["Zone radio"] call _section;
     [if ((count _zone) isEqualTo 0) then { "Couverture normale." } else {
         format ["%1 (%2)<br/>Perte minimale %3 %% · latence +%4 ms", _zone getOrDefault ["name", "Zone"], _zone getOrDefault ["type", "?"], _zone getOrDefault ["packet_loss_floor", 0], _zone getOrDefault ["latency_add", 0]]
     }] call _para;
-    ["Simulation de liaison dégradée", ["inactive", "<t color='#f2ab33'>active</t>"] select ([] call comspec_overwatch_connect_fnc_isLinkDegradeSimActive)] call _info;
+    // Fonctions d'Overwatch absentes d'une version plus ancienne : la page continue sans elles.
+    if (!isNil "comspec_overwatch_connect_fnc_isLinkDegradeSimActive") then {
+        ["Simulation de liaison dégradée", ["inactive", "<t color='#f2ab33'>active</t>"] select ([] call comspec_overwatch_connect_fnc_isLinkDegradeSimActive)] call _info;
+    };
     if ((count _relay) > 0) then {
         ["Relais le plus proche", format ["%1 · %2 · %3 Mbit/s", [_relay getOrDefault ["name", "Relais"]] call _esc, [_relay getOrDefault ["dist", 0]] call _dist, (_relay getOrDefault ["throughput_mbps", 0]) toFixed 1]] call _info;
     };
     _y = _y + _pad * 0.3;
     [[
-        ["MESURER LA LATENCE", { [] call comspec_overwatch_connect_fnc_measureLatency; [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+        ["MESURER LA LATENCE", { if (!isNil "comspec_overwatch_connect_fnc_measureLatency") then { [] call comspec_overwatch_connect_fnc_measureLatency; }; [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
         ["ROUVRIR LE CANAL", { ["enter"] call comspec_atak_native_fnc_athenaAction; }, true]
     ]] call _buttons;
 } else {
@@ -375,7 +378,7 @@ if (_bridge) then {
 
 // --- Débit simulé du téléphone (fn_linkQuality) ---
 private _rate = { params ["_kb"]; if (_kb >= 1000) then { format ["%1 Mbit/s", (_kb / 1000) toFixed 1] } else { format ["%1 kbit/s", _kb] } };
-[["Débit du téléphone"]] call _section;
+["Débit du téléphone"] call _section;
 if !(_sim) then {
     ["<t color='#8a9a93'>Simulation de débit coupée par le serveur (réglages CBA).</t>"] call _para;
 } else {
@@ -392,7 +395,7 @@ if !(_sim) then {
 };
 
 // --- État du téléphone (fn_deviceHealth, fn_deviceReport) ---
-[["État du téléphone"]] call _section;
+["État du téléphone"] call _section;
 ["Écran et boîtier", switch (_hp get "state") do {
     case "OK": { "<t color='#5cc76b'>intact</t>" };
     case "OFF": { format ["<t color='#f2ab33'>%1</t>", _hp get "reason"] };

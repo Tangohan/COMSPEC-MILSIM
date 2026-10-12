@@ -139,12 +139,23 @@ private _perso = [
     ["COMSPEC_ATAK_Wallpaper", "topo", "Fond d'écran de l'accueil", [["TOPO", "topo"], ["NUIT", "night"], ["DÉSERT", "desert"], ["OLIVE", "olive"], ["SOMBRE", "dark"]]] call _profSegment,
     ["COMSPEC_ATAK_Wallpaper", "topo", "", [["SOAR", "soar"], ["ATHENA", "athena"], ["OPS", "ops"], ["AUCUN", "none"]]] call _profSegment,
     ["COMSPEC_ATAK_WallBlur", false, "", "Flou du fond", "Fond d'écran flouté et assombri : icônes plus lisibles"] call _profSwitch,
+    // Thèmes rapides : accent, fond d'écran, flou et heure du verrouillage en un appui (chaque réglage reste modifiable).
+    ["text", "<t size='0.9'>Thème rapide</t>  <t size='0.75' color='#8a9a93'>Accent, fond d'écran et heure du verrouillage d'un coup</t>"],
+    ["buttons", [
+        ["OPÉRATIONS", { { profileNamespace setVariable _x; } forEach [["COMSPEC_ATAK_Accent", "GREEN"], ["COMSPEC_ATAK_Wallpaper", "topo"], ["COMSPEC_ATAK_WallBlur", false], ["COMSPEC_ATAK_LockClockStyle", "light"]]; saveProfileNamespace; [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+        ["NUIT", { { profileNamespace setVariable _x; } forEach [["COMSPEC_ATAK_Accent", "RED"], ["COMSPEC_ATAK_Wallpaper", "night"], ["COMSPEC_ATAK_WallBlur", true], ["COMSPEC_ATAK_LockClockStyle", "mil"]]; saveProfileNamespace; [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+        ["DÉSERT", { { profileNamespace setVariable _x; } forEach [["COMSPEC_ATAK_Accent", "SAND"], ["COMSPEC_ATAK_Wallpaper", "desert"], ["COMSPEC_ATAK_WallBlur", false], ["COMSPEC_ATAK_LockClockStyle", "bold"]]; saveProfileNamespace; [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+        ["ATHENA", { { profileNamespace setVariable _x; } forEach [["COMSPEC_ATAK_Accent", "GREEN"], ["COMSPEC_ATAK_Wallpaper", "athena"], ["COMSPEC_ATAK_WallBlur", false], ["COMSPEC_ATAK_LockClockStyle", "light"]]; saveProfileNamespace; [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]
+    ]],
     ["COMSPEC_ATAK_TextScale", 1, "Taille du texte", [["PETIT", 0.9], ["NORMAL", 1], ["GRAND", 1.15]]] call _profSegment,
     ["COMSPEC_ATAK_IconDensity", 0, "Icônes du lanceur", [["GRANDES", -1], ["NORMALES", 0], ["SERRÉES", 1]], "Moins ou plus d'icônes par ligne"] call _profSegment,
     ["section", "Animations et sons", "Un téléphone qui réagit : mouvement, clic et vibration légère, écran de verrouillage"],
     ["COMSPEC_ATAK_Animations", true, "", "Animations", "App qui s'ouvre en zoomant, page qui glisse au retour, onde sous le doigt, volet rapide animé"] call _profSwitch,
     ["COMSPEC_ATAK_TapFeedback", true, "", "Clic et vibration des appuis", "Clic doux et légère vibration de la coque à chaque appui (aucun son en mode discrétion)"] call _profSwitch,
     ["COMSPEC_ATAK_LockScreen", true, "", "Écran de verrouillage", "Heure, date, dernières notifications : à la première sortie, après une minute rangé ou un redémarrage"] call _profSwitch,
+    ["COMSPEC_ATAK_LockClockStyle", "light", "Heure de l'écran de verrouillage", [["FINE", "light"], ["GRASSE", "bold"], ["MILITAIRE", "mil"]], "Militaire : chiffres à chasse fixe, couleur d'accent"] call _profSegment,
+    ["COMSPEC_ATAK_HandHint", true, "", "Raccourci « prendre en main » en mode porté", "Pastille main + Ctrl+Maj+U dans la barre du téléphone porté ; coupée : écran sans indication, plus immersif"] call _profSwitch,
+    ["COMSPEC_ATAK_LauncherSearch", true, "", "Recherche dans le lanceur", "Champ « Rechercher une app » en haut des applications (en main) ; Entrée ouvre la première trouvée"] call _profSwitch,
     ["COMSPEC_ATAK_Brightness", 1, "Luminosité", [["30 %", 0.3], ["50 %", 0.5], ["75 %", 0.75], ["100 %", 1]], "Aussi dans le volet rapide (clic sur l'heure) ; écran moins lumineux : moins visible de nuit, moins de batterie"] call _profSegment,
     ["section", "Dock", format ["%1 app(s) en raccourci en bas de l'écran (6 au plus)", count _dockNow]]
 ];
@@ -153,7 +164,7 @@ private _perso = [
 } forEach (([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible });
 _perso pushBack ["buttons", [["DOCK PAR DÉFAUT", { profileNamespace setVariable ["COMSPEC_ATAK_DockApps", []]; saveProfileNamespace; [{ [] call comspec_atak_native_fnc_dockRender; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
 _perso pushBack ["buttons", [["TOUT RÉINITIALISER (APPARENCE)", {
-    { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Accent", "COMSPEC_ATAK_Shell", "COMSPEC_ATAK_ShellTint", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_Patch", "COMSPEC_ATAK_PatchText", "COMSPEC_ATAK_VestMount", "COMSPEC_ATAK_VestDepth", "COMSPEC_ATAK_VestFace", "COMSPEC_ATAK_PhoneModel", "COMSPEC_ATAK_VehTablet", "COMSPEC_ATAK_Wallpaper", "COMSPEC_ATAK_WallBlur", "COMSPEC_ATAK_TextScale", "COMSPEC_ATAK_IconDensity", "COMSPEC_ATAK_DockApps", "COMSPEC_ATAK_HiddenApps"];
+    { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Accent", "COMSPEC_ATAK_Shell", "COMSPEC_ATAK_ShellTint", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_Patch", "COMSPEC_ATAK_PatchText", "COMSPEC_ATAK_VestMount", "COMSPEC_ATAK_VestDepth", "COMSPEC_ATAK_VestFace", "COMSPEC_ATAK_PhoneModel", "COMSPEC_ATAK_VehTablet", "COMSPEC_ATAK_Wallpaper", "COMSPEC_ATAK_WallBlur", "COMSPEC_ATAK_TextScale", "COMSPEC_ATAK_IconDensity", "COMSPEC_ATAK_DockApps", "COMSPEC_ATAK_HiddenApps", "COMSPEC_ATAK_LockClockStyle", "COMSPEC_ATAK_HandHint", "COMSPEC_ATAK_LauncherSearch"];
     saveProfileNamespace;
     [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }]]];

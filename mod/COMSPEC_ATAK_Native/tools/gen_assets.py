@@ -165,6 +165,8 @@ ICONS = {
     "ui_bell": '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
     "ui_comspec_link": '<path d="M12 2.5l8.2 4.75v9.5L12 21.5l-8.2-4.75v-9.5z"/><path d="M10.4 13.6a2.6 2.6 0 0 0 3.7 0l1.9-1.9a2.6 2.6 0 0 0-3.7-3.7l-.6.6"/><path d="M13.6 10.4a2.6 2.6 0 0 0-3.7 0l-1.9 1.9a2.6 2.6 0 0 0 3.7 3.7l.6-.6"/>',
     "ui_vibrate": '<rect x="8" y="4" width="8" height="16" rx="1.5"/><path d="M4 8v8M20 8v8M2 10v4M22 10v4"/>',
+    # Main ouverte : « prendre en main » (pastille Ctrl+Maj+U du téléphone porté).
+    "ui_hand": '<path d="M9.1 12V5.6a1.3 1.3 0 0 1 2.6 0V11M11.7 11V4.3a1.3 1.3 0 0 1 2.6 0V11M14.3 11V5.6a1.3 1.3 0 0 1 2.6 0V11M16.9 11.2V8.3a1.3 1.3 0 0 1 2.6 0v5.4c0 4.1-2.8 7.3-6.6 7.3-2.7 0-4.3-1.3-5.8-3.5l-2.6-4a1.4 1.4 0 0 1 2.2-1.7l2.4 2.8V8.2"/>',
 }
 
 
@@ -267,10 +269,34 @@ def topo_wallpaper(w, h, seed, hue):
     return out
 
 
+def erase_box(img, box):
+    """Efface un logo incrusté (box en fractions de l'image) : fondu vertical entre les lignes au-dessus et au-dessous,
+    puis flou léger. Le logo ATHENA du coin haut gauche passait sous la barre d'app et chevauchait le lanceur."""
+    W, H = img.size
+    x0, y0, x1, y1 = int(box[0] * W), int(box[1] * H), int(box[2] * W), int(box[3] * H)
+    top, bot = max(0, y0 - 1), min(H - 1, y1)
+    px = img.load()
+    for x in range(x0, x1):
+        a, b = px[x, top], px[x, bot]
+        for y in range(y0, y1):
+            t = (y - y0) / max(1, y1 - y0)
+            px[x, y] = tuple(int(a[i] * (1 - t) + b[i] * t) for i in range(3))
+    m = 12
+    reg = (max(0, x0 - m), max(0, y0 - m), min(W, x1 + m), min(H, y1 + m))
+    img.paste(img.crop(reg).filter(ImageFilter.GaussianBlur(10)), reg[:2])
+    return img
+
+
+# Logo incrusté dans la photo source, effacé avant recadrage (fractions de l'image source).
+WALL_ERASE = {"wallpaper_athena.jpg": (0.0, 0.0, 0.2, 0.135)}
+
+
 def photo_wallpaper(path, w, h, dim):
     """Photo en fond : couvre l'écran sans l'étirer ; en vertical, la photo entière sur un fond flouté."""
     from PIL import ImageFilter
     img = Image.open(path).convert("RGB")
+    if os.path.basename(path) in WALL_ERASE:
+        img = erase_box(img, WALL_ERASE[os.path.basename(path)])
     img = Image.eval(img, lambda v: int(v * dim))
     sw, sh = img.size
     cover = max(w / sw, h / sh)
@@ -1608,6 +1634,17 @@ def main():
         # « accicon » : seulement l'icône de l'app Accessoires.
         if len(sys.argv) > 2 and sys.argv[2] == "accicon":
             convert(icon_png("app_accessories", ICONS["app_accessories"]), "app_accessories", tmp)
+            return
+        # « hand » : seulement l'icône main (pastille « prendre en main » du téléphone porté).
+        if len(sys.argv) > 2 and sys.argv[2] == "hand":
+            convert(icon_png("ui_hand", ICONS["ui_hand"]), "ui_hand", tmp)
+            return
+        # « athena » : seulement le fond ATHENA (logo du coin effacé) et sa variante floutée.
+        if len(sys.argv) > 2 and sys.argv[2] == "athena":
+            for suffix, (w, h) in (("land", (2048, 1024)), ("port", (1024, 2048))):
+                img = photo_wallpaper(os.path.join(HERE, "src", "wallpaper_athena.jpg"), w, h, 0.85)
+                convert(img.convert("RGB"), f"wall_athena_{suffix}", tmp)
+                convert(blurred(img), f"wall_athena_blur_{suffix}", tmp)
             return
         # « camera » : seulement l'image de l'item Caméra IP compacte.
         if len(sys.argv) > 2 and sys.argv[2] == "camera":

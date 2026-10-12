@@ -77,7 +77,13 @@ if (_tab isEqualTo "MISSION") exitWith {
         _t = _t regexReplace ["<font", "<t"];
         _t = _t regexReplace ["</font>", "</t>"];
         _t = _t regexReplace [" face=", " font="];
-        _t = _t regexReplace [" size=['""][0-9.]+['""]", ""];
+        // Tailles du journal : en pixels dans le journal Arma (size='40'), en multiple de la police dans un texte
+        // structuré, d'où un « 0.8% » géant (barre de charge d'un mod de gilet). Toutes retirées, quelle que soit
+        // l'écriture (guillemets ou non, espaces, majuscules, « px »), ainsi que width / height des images.
+        _t = _t regexReplace ["\s[sS][iI][zZ][eE]\s*=\s*(['""][^'""]*['""]|[^\s/>]+)", " "];
+        _t = _t regexReplace ["\s([wW][iI][dD][tT][hH]|[hH][eE][iI][gG][hH][tT])\s*=\s*(['""][^'""]*['""]|[^\s/>]+)", " "];
+        // Barre de remplissage en « | » répétés devant un pourcentage : on garde la valeur, en taille normale.
+        _t = _t regexReplace ["\|{2,}\s*(?=[0-9])", ""];
         _t
     };
     private _date = date;
