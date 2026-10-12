@@ -3871,6 +3871,12 @@ $migrationRunner->step('atak_squads_screen_time', static function () use ($atakS
     $atakSquadsMigrate($pdo);
 });
 
+// Corrections du temps par rôle par l'encadrement (déplacer vers le bon rôle, journal annulable).
+$migrationRunner->step('atak_role_time_moves', static function () use ($pdo): void {
+    echo "Migration atak_role_time_moves (corrections du temps par rôle)...\n";
+    $pdo->exec(\App\Repositories\AtakRoleTimeCorrectionRepository::createTableSql());
+});
+
 // Rôles d'équipe de feu partagés avec le jeu : rôles créés en jeu et rôle mémorisé par joueur (AtakRoleService).
 $atakRolesMigrate = require $root . '/bootstrap/atak_roles_migration.php';
 $migrationRunner->step('atak_roles', static function () use ($atakRolesMigrate, $pdo): void {

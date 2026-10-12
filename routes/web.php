@@ -607,6 +607,8 @@ return function (Router $router) {
     $router->post('/personnel/{id}/member-number/regenerate', [PersonnelController::class, 'regenerateMemberNumber'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/sync-steam', [PersonnelController::class, 'syncSteamProfile'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/notes', [PersonnelController::class, 'updateNotes'], [AuthMiddleware::class]);
+    $router->post('/personnel/{id}/temps-par-role/deplacer', [PersonnelController::class, 'moveRoleTime'], [AuthMiddleware::class]);
+    $router->post('/personnel/{id}/temps-par-role/{moveId}/annuler', [PersonnelController::class, 'revertRoleTimeMove'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/bilans', [PersonnelController::class, 'storeStageBilan'], [AuthMiddleware::class]);
     $router->post('/personnel/{id}/phase', [PersonnelPhaseAdminController::class, 'applyMember'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/orbat', [PersonnelController::class, 'orbat'], [AuthMiddleware::class]);
