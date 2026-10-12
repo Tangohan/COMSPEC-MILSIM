@@ -22,8 +22,9 @@ missionNamespace setVariable ["COMSPEC_MedicalAlertConfirm_cardiac_arrest", 0, f
 missionNamespace setVariable ["COMSPEC_DeathThenRespawn", true, false];
 
 // Éviter anomalie « saut » + flood UpdatePosition / véhicule juste après REAPP
+// (variables locales au client : plus de diffusion réseau, personne d'autre ne les lit)
 if (!isNull player) then {
-    missionNamespace setVariable ["COMSPEC_lastPos", getPosWorld player, true];
+    missionNamespace setVariable ["COMSPEC_lastPos", getPosWorld player, false];
     private _restoreTeam = toUpper (trim (missionNamespace getVariable ["COMSPEC_AssignedTeam", ""]));
     if (_restoreTeam isEqualTo "") then {
         _restoreTeam = toUpper (trim (profileNamespace getVariable ["COMSPEC_AssignedTeam", ""]));
@@ -32,11 +33,11 @@ if (!isNull player) then {
         player assignTeam _restoreTeam;
     };
 };
-missionNamespace setVariable ["COMSPEC_lastSendTime", diag_tickTime, true];
+missionNamespace setVariable ["COMSPEC_lastSendTime", diag_tickTime, false];
 if (!isNull player) then {
-    missionNamespace setVariable ["COMSPEC_lastHeading", getDir player, true];
+    missionNamespace setVariable ["COMSPEC_lastHeading", getDir player, false];
 };
-missionNamespace setVariable ["COMSPEC_lastVehSig", "", true];
+missionNamespace setVariable ["COMSPEC_lastVehSig", "", false];
 missionNamespace setVariable ["COMSPEC_VehTrackLastAt", diag_tickTime, false];
 
 // Hit / Explosion / combat journal sont des EH objet : perdus avec l’ancienne unité

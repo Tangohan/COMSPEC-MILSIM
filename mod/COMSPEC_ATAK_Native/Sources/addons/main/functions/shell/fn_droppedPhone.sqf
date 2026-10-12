@@ -16,6 +16,8 @@ _m setObjectTextureGlobal [1, ""];
 private _yaw = getDir _holder + random 40 - 20;
 _m setVectorDirAndUp [[0, 0, -1], [sin _yaw, cos _yaw, 0]];
 _holder setVariable ["COMSPEC_ATAK_DropModel", _m, true];
+// Repère pour le ménage du serveur (fn_vestMount « sweep ») si le joueur quitte la partie avant le ramassage.
+_m setVariable ["COMSPEC_ATAK_DropOf", [_holder, _item], true];
 [{
     params ["_args", "_pfh"];
     _args params ["_holder", "_m", "_item"];

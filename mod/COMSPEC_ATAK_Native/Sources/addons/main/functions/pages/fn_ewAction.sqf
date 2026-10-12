@@ -121,7 +121,10 @@ switch (_act) do {
         };
         private _list = missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []];
         private _kept = _list select { (_x param [4, 1e9]) >= _now };
-        private _changed = (count _kept) isNotEqualTo (count _list);
+        // Brouilleur expiré : retiré par son propriétaire ou par le serveur seulement (tous les clients republiaient
+        // la liste au même moment).
+        private _changed = (count _kept) isNotEqualTo (count _list)
+            && {isServer || {(_list select { (_x param [4, 1e9]) < _now }) findIf { (_x param [2, ""]) isEqualTo _uid } >= 0}};
         if ((count _mine) > 0 && {(_kept findIf { (_x param [2, ""]) isEqualTo _uid && {(_x param [4, 0]) isEqualTo (_mine select 4)} }) < 0}) then {
             _kept pushBack _mine;
             _changed = true;

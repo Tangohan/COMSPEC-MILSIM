@@ -38,7 +38,7 @@ missionNamespace setVariable ["comspec_sse_logBuffer", _buf];
 // Même dossier qu’Overwatch : %LOCALAPPDATA%\Arma 3\COMSPEC\logs
 if (
     hasInterface
-    && {_level isNotEqualTo "DEBUG" || {_debug}}
+    && {_level in ["WARN", "ERROR"] || {_debug}}
     && {missionNamespace getVariable ["comspec_sse_log_to_file", true]}
 ) then {
     private _res = "COMSPECExtension" callExtension ["LogWrite", [_text]];

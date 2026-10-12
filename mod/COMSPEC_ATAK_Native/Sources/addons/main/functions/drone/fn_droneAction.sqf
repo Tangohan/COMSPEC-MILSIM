@@ -182,6 +182,15 @@ private _camOpen = {
         private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         private _show = !isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])
             && {((_st getOrDefault ["activePage", ""]) isEqualTo "DRONE") || {((_st getOrDefault ["activePage", ""]) isEqualTo "MAP") && {(_st getOrDefault ["droneView", "OFF"]) isNotEqualTo "OFF"}}};
+        // Rendu coupé seulement après 3 s hors de la page (un aller-retour rapide ne recrée pas la cible de rendu :
+        // la recréer à chaque changement d'app faisait gonfler la mémoire vidéo), caméra libérée après 60 s.
+        if (_show) then { _cam setVariable ["hiddenSince", -1]; } else {
+            private _h0 = _cam getVariable ["hiddenSince", -1];
+            if (_h0 < 0) then { _cam setVariable ["hiddenSince", diag_tickTime]; _h0 = diag_tickTime; };
+            if (diag_tickTime - _h0 > 60) exitWith { ["camPark"] call comspec_atak_native_fnc_droneAction; };
+            if (diag_tickTime - _h0 < 3) then { _show = true; };
+        };
+        if (isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull])) exitWith {};
         if (_show isNotEqualTo (_cam getVariable ["rendering", true])) then {
             _cam setVariable ["rendering", _show];
             if (_show) then {
@@ -256,6 +265,7 @@ private _camClose = {
     [missionNamespace getVariable ["COMSPEC_ATAK_DroneCamPfh", -1]] call CBA_fnc_removePerFrameHandler;
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamPfh", -1];
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamDir", []];
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneCamParked", false];
 };
 // Capteur : ce que la caméra voit (vue directe, portée réduite par le brouillard), en 360° ou dans le champ de la nacelle pointée.
 private _scan = {
@@ -723,6 +733,8 @@ switch (_act) do {
         call _mapRender;
     };
     case "camEnsure": { if (!isNull _d) then { call _camOpen; }; };
+    // Caméra restée hors écran (fn_droneAction, boucle de la nacelle) : libérée, rouverte au retour sur la page Drone.
+    case "camPark": { call _camClose; missionNamespace setVariable ["COMSPEC_ATAK_DroneCamParked", true]; };
     // Marquage au viseur de la caméra du drone (appui sur MARQUER ou touche « Marquer la cible »).
     case "lock": {
         if (isNull _d) exitWith {};

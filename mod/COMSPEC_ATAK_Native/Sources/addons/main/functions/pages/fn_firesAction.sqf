@@ -82,7 +82,7 @@ switch (_action) do {
         // DLL à jour : vrai 9-line sur Athena (pilotes et web). Sinon : ordre CAS lisible.
         private _ok = false;
         if (_bridge) then {
-            private _r = "COMSPECExtension" callExtension ["SubmitNineLine", [_json]];
+            private _r = (["COMSPECExtension", "SubmitNineLine", [_json]] call comspec_atak_native_fnc_extAwait);
             if (_r isEqualType []) then { _r = _r param [0, ""]; };
             _ok = (toUpper _r) find "OK" >= 0 && {(toUpper _r) find "ERR" < 0};
         };

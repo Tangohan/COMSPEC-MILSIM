@@ -9,6 +9,11 @@ private _data = createHashMapFromArray [
  ["zones",[]], ["routes",[]], ["events",[]], ["briefing",createHashMapFromArray [["index",0],["total",0],["path",""]]],
  ["revisions",createHashMap], ["signatures",createHashMap], ["lastNetworkUpdate",-1]
 ];
+// uiNamespace survit d'une mission à l'autre, pas les boucles CBA : un numéro de boucle resté d'une partie
+// précédente empêchait de relancer l'animation (ou en retirait une autre). Remis à zéro à chaque mission.
+uiNamespace setVariable ["COMSPEC_ATAK_PhotoMode", false];
+{ uiNamespace setVariable [_x, -1]; } forEach ["COMSPEC_ATAK_AarPfh", "COMSPEC_ATAK_DronePfh", "COMSPEC_ATAK_SpecPfh", "COMSPEC_ATAK_EcgPfh", "COMSPEC_ATAK_PlayerVizPfh", "COMSPEC_ATAK_PhotoPFH", "COMSPEC_ATAK_Vibrating"];
+{ uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_BftLast", "COMSPEC_ATAK_DevCache", "COMSPEC_ATAK_Flir", "COMSPEC_ATAK_MarkerTagPool", "COMSPEC_ATAK_HeightCache"];
 uiNamespace setVariable ["COMSPEC_ATAK_State",_state];
 uiNamespace setVariable ["COMSPEC_ATAK_Data",_data];
 missionNamespace setVariable ["COMSPEC_ATAK_MapTool","SELECT",false];
