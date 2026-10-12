@@ -67,8 +67,8 @@ private _o0 = _map ctrlMapScreenToWorld [_mx, _my];
 private _mpx = (((_map ctrlMapScreenToWorld [_mx + 0.1, _my]) select 0) - (_o0 select 0)) / 0.1;
 private _mpy = ((_o0 select 1) - ((_map ctrlMapScreenToWorld [_mx, _my + 0.1]) select 1)) / 0.1;
 if (_mpx <= 0 || {_mpy <= 0}) exitWith {};
-private _fs1 = 0.021 * _ts;
-private _fs2 = _fs1 * 0.8;
+private _fs1 = 0.025 * _ts;
+private _fs2 = _fs1 * 0.85;
 private _cw1 = _fs1 * 0.58 / _ratio;
 private _cw2 = _fs2 * 0.58 / _ratio;
 private _padX = _fs1 * 0.45 / _ratio;
@@ -143,6 +143,6 @@ private _toW = { params ["_sx", "_sy"]; private _w = _map ctrlMapScreenToWorld [
     private _ty = _y0 + _padY + _fs1 * 0.52;
     _map drawIcon [_none, [[1, 1, 1, _a], [1, 0.45, 0.40, 1]] select _hostile, [_x0 + _padX, _ty] call _toW, 0, 0, 0, _l1, 0, _fs1, "EtelkaMonospaceProBold", "right"];
     if (_two) then {
-        _map drawIcon [_none, [0.64, 0.69, 0.67, _a max 0.7], [_x0 + _padX, _ty + _fs1 * 0.55 + _fs2 * 0.6] call _toW, 0, 0, 0, _l2, 0, _fs2, "EtelkaMonospacePro", "right"];
+        _map drawIcon [_none, [0.82, 0.87, 0.85, _a max 0.8], [_x0 + _padX, _ty + _fs1 * 0.55 + _fs2 * 0.6] call _toW, 0, 0, 0, _l2, 0, _fs2, "EtelkaMonospacePro", "right"];
     };
 } forEach _vis;

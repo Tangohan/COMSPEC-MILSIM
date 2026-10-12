@@ -26,6 +26,8 @@ switch (_ev) do {
         private _selL = _ui get "selLayer";
         [_map, ["shared"] call comspec_atak_native_fnc_planAction, 1, [_sel, ""] select (_selL isNotEqualTo "S")] call comspec_atak_native_fnc_planDraw;
         [_map, ["draft"] call comspec_atak_native_fnc_planAction, 0.8, [_sel, ""] select (_selL isNotEqualTo "D")] call comspec_atak_native_fnc_planDraw;
+        // Envoyés au plan partagé, en attente de la réponse du serveur : ils restent visibles.
+        [_map, ["pending"] call comspec_atak_native_fnc_planAction, 0.7] call comspec_atak_native_fnc_planDraw;
         private _pv = uiNamespace getVariable ["COMSPEC_ATAK_PlanPreview", []];
         if ((count _pv) > 1) then { [_map, _pv select 1, 0.5] call comspec_atak_native_fnc_planDraw; };
         // Tracé en cours, rendu comme l'élément final (plus le point sous le curseur).

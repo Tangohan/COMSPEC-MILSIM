@@ -6,6 +6,8 @@ Sources/addons/main/anim/ :
   comspec_selfie_up.rtm    bras droit qui se lève pour le selfie (GestureComspecSelfieUp)
   comspec_selfie_hold.rtm  bras droit tendu, téléphone face au visage, en boucle (GestureComspecSelfie)
   comspec_selfie_down.rtm  bras qui redescend (GestureComspecSelfieDown)
+  comspec_finger_aim_*.rtm doigt d'honneur libre : bras gauche tendu vers une direction (grille cap x site, en
+                           boucle avec un petit coup sec), plus montée et descente ; écrit aussi gestures_aim.hpp
 
 Usage : python3 gen_gestures.py [--preview dossier]   (numpy + scipy ; matplotlib pour --preview)
 
@@ -251,6 +253,64 @@ def selfie(sway=0.0):
     return p
 
 
+def selfie_phone():
+    """Téléphone tenu au selfie (fn_gestureSelfie, attachTo à l'os de la main droite avec suivi de rotation) :
+    S7 du JPC en paysage, dos sur les doigts, écran vers le visage, bout droit dans la paume. Renvoie le décalage
+    de l'origine du modèle (bas du corps, côté dos) et ses vectorDir / vectorUp dans le repère de la main en pose
+    de référence, convertis en repère Arma d'attachTo (x droite, y avant, z haut)."""
+    p = selfie(0); W = p.world(); M = p.matrices()
+    at = lambda b: PIV[b] @ M[b][:3] + M[b][3]
+    Wh = W["RightHand"]; hand = at("RightHand")
+    n = Wh @ palm_normal("R")
+    D = nrm([0.19, 0.46, -0.87])                      # dos du téléphone : à l'opposé du visage
+    U = nrm(UP - np.dot(UP, D) * D)
+    L = nrm(np.cross(U, D)); L = L if L[0] > 0 else -L  # vers la gauche du joueur
+    grip = (hand + at("RightHandMiddle1")) / 2 + n * 0.025
+    origin = grip + L * (0.15 / 2 - 0.025) - U * 0.041
+    conv = lambda v: [round(float(x), 3) for x in (-v[0], -v[2], v[1])]
+    return conv(Wh.T @ (origin - hand)), conv(Wh.T @ D), conv(Wh.T @ U)
+
+
+# Doigt d'honneur libre (fn_gestureFingerAim) : une pose par case de la grille cap (positif = vers la gauche du
+# joueur) x site, la main gauche suit la cible en passant d'une case à l'autre.
+AIM_YAWS = (-40, -20, 0, 20, 40, 60)
+AIM_PITCHES = (-20, 0, 20, 40)
+
+
+def finger_aim(yaw, pitch, shake=0.0):
+    """Bras gauche tendu vers (cap, site), coude un peu plié, dos de la main vers la cible, majeur levé."""
+    R = axang([0, 1, 0], -yaw) @ axang([1, 0, 0], pitch)
+    p = Pose()
+    arm(p, "L", R @ nrm([0.18, -0.12, -0.98]), R @ nrm([-0.12, 0.6 - 0.15 * shake, -0.8 - 0.1 * shake]),
+        R @ nrm([-0.06, 0.85, -0.45 - 0.2 * shake]), R @ nrm([0, 0.45, 0.9]), clav=12 + 0.15 * max(pitch, 0))
+    fist(p, "L", keep=("Middle",), curl=(95, 100, 70)); thumb(p, "L", 35, 40, 30, across=0.8)
+    return p
+
+
+def aim_tag(v):
+    return ("p" if v >= 0 else "m") + str(abs(v))
+
+
+def aim_name(yaw, pitch):
+    return f"comspec_finger_aim_y{aim_tag(yaw)}_p{aim_tag(pitch)}"
+
+
+def aim_hpp(path):
+    """Classes des gestes visés (inclus par gestures.hpp) : ManActions, NoActions et états CfgGesturesMale."""
+    names = ["GestureComspecFingerAimUp", "GestureComspecFingerAimDown"]
+    states = []
+    for y in AIM_YAWS:
+        for pt in AIM_PITCHES:
+            cls = f"GestureComspecFingerAim_y{aim_tag(y)}_p{aim_tag(pt)}"
+            names.append(cls)
+            states.append(f'class {cls}: GestureComspecFingerAimBase {{ file = "\\z\\comspec_atak_native\\addons\\main\\anim\\{aim_name(y, pt)}.rtm"; }};')
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write("// Généré par tools/gen_gestures.py : ne pas modifier à la main.\n")
+        fh.write("#define COMSPEC_AIM_ACTIONS " + " ".join(f'{n} = "{n}";' for n in names) + "\n")
+        fh.write("#define COMSPEC_AIM_NOACTIONS " + " ".join(f'{n}[] = {{"{n}", "Gesture"}};' for n in names) + "\n")
+        fh.write("#define COMSPEC_AIM_STATES " + " ".join(states) + "\n")
+
+
 # ---- Écriture ---------------------------------------------------------------------------------------
 def ease(t):
     return t * t * (3 - 2 * t)
@@ -279,7 +339,13 @@ def build():
     hl, hr = hang("L"), hang("R")
     f0, f1 = finger_up(0), finger_up(1)
     s0 = selfie(0)
+    a0 = finger_aim(0, 0)
+    aims = {aim_name(y, pt): timeline([(0, finger_aim(y, pt)), (0.5, finger_aim(y, pt, 1)), (1, finger_aim(y, pt))], 0.1)
+            for y in AIM_YAWS for pt in AIM_PITCHES}
     return {
+        **aims,
+        "comspec_finger_aim_up": timeline([(0, hl), (1, a0)], 0.05),
+        "comspec_finger_aim_down": timeline([(0, a0), (1, hl)], 0.05),
         "comspec_finger": timeline([(0, hl), (0.18, f0), (0.3, f1), (0.42, f0), (0.54, f1), (0.66, f0), (0.84, f0), (1, hl)], 0.02),
         "comspec_selfie_up": timeline([(0, hr), (1, s0)], 0.05),
         "comspec_selfie_hold": timeline([(0, s0), (0.5, selfie(1)), (1, s0)], 0.05),
@@ -329,6 +395,8 @@ if __name__ == "__main__":
     args = ap_.parse_args()
     out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Sources", "addons", "main", "anim")
     anims = build()
+    aim_hpp(os.path.join(out, "..", "gestures_aim.hpp"))
     for name, frames in anims.items():
         write_rtm(os.path.join(out, name + ".rtm"), frames); print(name, len(frames), "images")
     if args.preview: preview(anims, args.preview)
+    print("selfie_phone (fn_gestureSelfie) : décalage, vectorDir, vectorUp =", selfie_phone())
