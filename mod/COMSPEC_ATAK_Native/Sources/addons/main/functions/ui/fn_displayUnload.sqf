@@ -3,6 +3,8 @@ private _state = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 // Un autre display du terminal a déjà pris la place (bascule HUD / en main) : rien à nettoyer.
 if ((uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull]) isNotEqualTo _display) exitWith {};
 [] call comspec_atak_native_fnc_livecamStop;
+// Écran 3D du JPC : la caméra de la vue aérienne (fn_jpcMap) ne doit pas survivre au display.
+if (_state getOrDefault ["texture", false]) then { ["close"] call comspec_atak_native_fnc_jpcMap; };
 private _wasInteractive = _state getOrDefault ["interactive", false];
 [] call comspec_atak_native_fnc_schedulerStop;
 _state set ["display", displayNull];

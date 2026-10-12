@@ -20,6 +20,14 @@ Non testé en jeu. Corrige l'app Réseau qui affichait « Athena hors ligne · r
 - Joueur immobile (rien à renvoyer, aucun échec) : Athena reste « en ligne ».
 - Photos drone sur le même webhook Discord que les Quick Pictures (site seulement) : floutées si SSE, sans image si confidentielles (message, lien de lecture sur Athena et note de confidentialité).
 - Saleté de l'écran et de la coque bien plus discrète : poussière fine au lieu de grosses taches floues.
+- Carte de l'app Plan : les clics posent de nouveau les sommets des zones (le focus resté sur un bouton mettait la zone de contenu devant la carte).
+
+## Correctif 2026-10-12 — ATAK sur le JPC : bon modèle et écran vivant (ATAK natif 1.15.1)
+
+Non testé en jeu. Retour de TTRD sur la 1.15.0 : en mode JPC, la tablette A/B s'affichait au lieu du Samsung S7 choisi, et l'écran restait noir.
+- Le terminal ouvert sur le JPC est maintenant celui du profil (Réglages > Personnalisation > Modèle du téléphone) : Samsung S7 par défaut, avec sa teinte de coque, ou Tactique, Premium, Support JPC, Étui multicam, Coque nervurée. La tablette A/B reste disponible. Changer de modèle pendant que l'écran est ouvert le transfère sur le nouveau. Nouveaux modèles 3D `jpc_<modèle>.p3d` (`tools/model_jpc_phones.py`), atlas `jpc_<modèle>_ca.paa` (`tools/gen_assets.py <hemtt> jpc`).
+- Écran noir : la carte d'Arma ne se dessine pas dans une texture d'interface. Sur l'écran 3D, la page Carte affiche à la place une vue aérienne en direct, nord en haut, centrée sur le porteur, avec sa flèche et les alliés à pied proches (`fn_jpcMap`). Il faut l'image dans l'image activée (Options vidéo). Hauteur et champ réglables pour les essais : `COMSPEC_ATAK_JpcMapAlt` (300 m), `COMSPEC_ATAK_JpcMapFov` (0.75).
+- Écran plus lumineux, de jour comme de nuit.
 
 ## Vague 2026-10-12 (suite) — Recherche sur la carte et données remontées au site (ATAK natif 1.15.0)
 
