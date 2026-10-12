@@ -276,3 +276,13 @@ class COMSPEC_ATAK_Module_DataReset: COMSPEC_ATAK_Module_DataBase {
     displayName = "$STR_COMSPEC_ATAK_CFG_CF51DCF204";
     function = "comspec_atak_native_fnc_moduleDataReset";
 };
+// Tinder : une IA devient un profil HVT ou SSE qu'on croise dans l'app (fn_moduleDating, fn_datingSpecials).
+class COMSPEC_ATAK_Module_DatingProfile: COMSPEC_ATAK_Module_DataBase {
+    scope = 1;
+    scopeCurator = 2;
+    category = "COMSPEC_ATAK_Civil";
+    displayName = "$STR_COMSPEC_ATAK_CFG_FA0AF6576A";
+    icon = "\z\comspec_atak_native\addons\main\data\app_dating.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\app_dating.paa";
+    function = "comspec_atak_native_fnc_moduleDating";
+};

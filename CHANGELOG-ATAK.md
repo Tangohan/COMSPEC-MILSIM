@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Retours en jeu 2026-10-12 — Volet rapide, Météo, CAS, Reco refaite (ATAK natif 1.35.0)
+## Retours en jeu 2026-10-12 — Volet rapide, Météo, CAS, Reco refaite (ATAK natif 1.36.0)
 
 Non testé en jeu. Corrections tirées du journal Arma (.rpt) envoyé par TTRD.
 - **Volet rapide** : les tuiles étaient trois fois trop larges et sortaient de l'écran (variable `_tW` de la fiche opérateur qui écrasait `_tw`, SQF ignore la casse). Même défaut corrigé dans l'établi des **Accessoires** (`_bW` / `_bw`).
@@ -22,6 +22,16 @@ Non testé en jeu. Corrections tirées du journal Arma (.rpt) envoyé par TTRD.
 - **Réglages** : icônes propres pour Langue (globe) et Personnalisation (palette).
 - **Téléphone porté** : la carte suit le joueur à chaque image au lieu de sauter chaque seconde ; barre du bas avec ma grille, le MGRS et l'altitude.
 - **Reco** refaite : en-tête façon FRS en ambre, tuiles QUOI à icône, FIABILITÉ, OÙ (MA POSITION, SOUS MON REGARD, distance et azimut), OBSERVATION avec compteur 140, ENVOYER, dernières notes en cartes colorées.
+
+## Vague 2026-10-12 (suite) — Serveur de la communauté, Tinder refait (ATAK natif 1.35.0, COMSPEC Link 2.0.75)
+
+Non testé en jeu. DLL COMSPEC Link à recompiler (build_mod.bat) et `run-migrations.php` à lancer (tables `tenant_game_servers`, `tenant_game_server_presence`).
+- Site, Gestion › Mod ATAK › **Serveurs de jeu** : la communauté déclare ses serveurs (IP ou nom d'hôte, port, nom dans la liste Arma). La page montre où ses joueurs reliés à Athena ont joué sur 72 h et propose d'ajouter en un clic un serveur inconnu.
+- Téléphone : un joueur relié à Athena qui joue ailleurs que sur un serveur de sa communauté reçoit une notification (puis un rappel toutes les 30 min). L'app Réseau affiche le serveur reconnu.
+- Le serveur dédié demande son adresse publique à Athena au lancement (`Server.PublicIp`) et la diffuse ; sans DLL côté serveur (Linux), le nom du serveur sert de repli. Le client se signale avec `Server.Presence` (POST `/api/atak/server-presence`) toutes les 10 min.
+- Tinder : grande carte de profil avec le vrai visage de la personne rendu en direct (3 photos : portrait, buste, en pied), prénom, âge, grade, rôle, distance, bio, centres d'intérêt, compatibilité. PASSER, SUPER LIKE (le nom est donné, 1 toutes les 10 min), J'AIME. Onglet MON PROFIL (aperçu de sa carte, bio, visibilité, likes reçus).
+- Tinder : de temps en temps un profil tiré des IA de la carte à moins de 5 km, HVT ou personne SSE, sans rien qui le signale. Un match ouvre une conversation qui livre le lieu-dit et un carroyage approximatif (300 m HVT, 150 m SSE), « OÙ ES-TU ? » toutes les 3 min, marquage de la zone sur sa carte.
+- Réglage de mission « Tinder : profils HVT et SSE » (Jamais, Rare, Parfois, Souvent) et module Zeus « Tinder : profil HVT / SSE » (type, prénom, bio, chance de match). En Eden : `this setVariable ["COMSPEC_ATAK_TinderKind", "HVT", true];`.
 
 ## Gestes : doigt d'honneur et selfie (ATAK natif 1.34.0)
 

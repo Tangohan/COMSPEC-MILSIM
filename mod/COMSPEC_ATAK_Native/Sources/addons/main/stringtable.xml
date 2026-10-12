@@ -77,6 +77,11 @@
             <English>DL-7 module and USB-C / RJ45 / serial cable for the COMSPEC ATAK phone. Look at a computer, phone or USB stick, "Plug in the ATAK": the Extraction app downloads its data.</English>
             <French>Module DL-7 et câble USB-C / RJ45 / série pour le téléphone COMSPEC ATAK. Regardez un ordinateur, un téléphone ou une clé, « Brancher l'ATAK » : l'app Extraction télécharge ses données.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_1B554EECB0">
+            <Original>COMSPEC — ATAK · Apps civiles</Original>
+            <English>COMSPEC — ATAK · Civilian apps</English>
+            <French>COMSPEC — ATAK · Apps civiles</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_1E0730DF18">
             <Original>Militaire</Original>
             <English>Military</English>
@@ -521,6 +526,11 @@
             <Original>Contenu</Original>
             <English>Content</English>
             <French>Contenu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_FA0AF6576A">
+            <Original>Tinder : profil HVT / SSE</Original>
+            <English>Tinder: HVT / SSE profile</English>
+            <French>Tinder : profil HVT / SSE</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_FA99319986">
             <Original>Texte, document, identifiants, coordonnées, image ou audio.</Original>
