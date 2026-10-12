@@ -80,6 +80,7 @@ switch (_page) do {
     case "RECO": { [] call comspec_atak_native_fnc_pageReco; };
     case "FIRES": { [] call comspec_atak_native_fnc_pageFires; };
     case "ALERTS": { [] call comspec_atak_native_fnc_pageAlerts; };
+    case "SALUTE": { [] call comspec_atak_native_fnc_pageSalute; };
     case "MEDICAL": { [] call comspec_atak_native_fnc_pageMedical; };
     case "PROFILE": { [] call comspec_atak_native_fnc_pageProfile; };
     case "LIVECAM": { [] call comspec_atak_native_fnc_pageLivecam; };
