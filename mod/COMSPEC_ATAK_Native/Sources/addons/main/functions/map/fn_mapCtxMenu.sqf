@@ -100,7 +100,7 @@ switch (_mode) do {
         if (_m isNotEqualTo "") then { _rows pushBack ["DELETE", "Supprimer le marqueur", [markerText _m, ""] select ((markerText _m) isEqualTo ""), _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]]; };
         private _rowH = _font * 1.55;
         private _headH = _font * 2.05;
-        private _w = ((_font * 12.5) / _ratio) min (_bw * 0.9);
+        private _w = ((_font * 15) / _ratio) min (_bw * 0.9); // place pour le raccourci à droite des libellés longs
         private _h = _headH + _rowH * (count _rows) + pixelH * 8;
         private _sp = _map ctrlMapWorldToScreen _pos;
         // Ouvert à droite et sous le curseur, recalé dans la carte s'il déborde (à gauche / au-dessus du point).

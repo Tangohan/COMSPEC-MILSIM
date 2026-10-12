@@ -312,10 +312,12 @@ private _info = ["COMSPEC_RscStructuredText", [_vx + _pad * 2, _vy + _pad * 1.6,
 _info ctrlSetStructuredText parseText format ["<t size='0.8' font='EtelkaMonospacePro' color='#c9d4cf'>%1</t><t size='0.8' align='right' font='EtelkaMonospacePro' color='#c9d4cf'>%2°  %3</t>",
     [getPosASL player, 8] call comspec_atak_native_fnc_gridRef, round getDir player, [dayTime, "HH:MM"] call BIS_fnc_timeToString];
 // Ce que fait le viseur, puis les touches du mode photo.
-private _call = ["COMSPEC_RscStructuredText", [_vx + _pad * 2, _vy + _vh * 0.55, _vw - _pad * 4, _fs * 1.5]] call _mk;
+// Juste au-dessus de la ligne des touches, jamais sur le réticule (évite le chevauchement en paysage).
+private _tipY = _vy + _vh - _pad * 1.6 - _fs * 1.4;
+private _call = ["COMSPEC_RscStructuredText", [_vx + _pad * 2, (_tipY - _fs * 1.6) max (_vy + _vh * 0.5), _vw - _pad * 4, _fs * 1.5]] call _mk;
 _call ctrlSetStructuredText parseText format ["<t align='center' size='0.95' font='RobotoCondensedBold' color='%2'>%1</t>",
     ["CONNECTEZ-VOUS À ATHENA POUR PHOTOGRAPHIER", "TOUCHER POUR OUVRIR LE VISEUR"] select _canShoot, ["#f2ab33", "#eef4f0"] select _canShoot];
-private _tip = ["COMSPEC_RscStructuredText", [_vx + _pad * 2, _vy + _vh - _pad * 1.6 - _fs * 1.4, _vw - _pad * 4, _fs * 1.4]] call _mk;
+private _tip = ["COMSPEC_RscStructuredText", [_vx + _pad * 2, _tipY, _vw - _pad * 4, _fs * 1.4]] call _mk;
 _tip ctrlSetStructuredText parseText "<t size='0.75' align='center' color='#a9b8b1'>Dans le viseur : clic photo · molette zoom · T marquer · F flash · R selfie · Espace retour</t>";
 // Déclencheur sous le viseur, centré comme dans une appli photo : anneau blanc, disque d'accent, icône.
 private _sh = (_font * 3.2) min (_vh * 0.45);

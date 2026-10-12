@@ -296,7 +296,7 @@ private _mk = {
                 _n = _n + _k;
             } forEach _groups;
             if ((count _cur) > 0) then { _lines pushBack _cur; };
-            private _lh = _fs * 0.95;
+            private _lh = _fs * 1.1; // titre de groupe + interligne, sans coupe
             private _bh = _rowH * 0.92;
             private _gw = _pad * 0.8;
             {

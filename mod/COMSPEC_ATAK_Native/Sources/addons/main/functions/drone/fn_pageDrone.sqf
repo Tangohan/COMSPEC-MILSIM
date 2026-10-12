@@ -137,7 +137,7 @@ if (_view isNotEqualTo "") then {
     };
     // Rangées : les groupes se suivent tant que les boutons gardent une largeur lisible, sinon rangée suivante.
     private _btnH = _fs * ([1.5, 1.3] select _mini);
-    private _lh = [0, _fs * 0.85] select _labels;
+    private _lh = [0, _fs * 1.1] select _labels; // titre size 0.72 + interligne
     private _maxN = (floor ((_bw - _pad) / (_fs * ([4.4, 3.6] select _mini)))) max 1;
     private _barRows = [];
     private _cnt = 0;
