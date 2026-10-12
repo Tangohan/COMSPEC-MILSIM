@@ -18,6 +18,8 @@ if (!_canalOk && {!([ ] call comspec_overwatch_connect_fnc_isReady)}) exitWith {
 };
 // Quit jeu / fin mission : ne plus pousser position ni évaluer d’alerte médicale
 if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { if (_force) then { "" } else { nil } };
+// Envoi précédent encore en vol (spawn + extAwait) : tick sauté, la DLL regroupe les positions.
+if (!_force && {(diag_tickTime - (missionNamespace getVariable ["COMSPEC_PosTxBusyAt", -1e9])) < 30}) exitWith { nil };
 
 // Log skip throttlé (RPT) — évite le spam PFH
 private _fnc_skip = {
@@ -666,7 +668,10 @@ if ((count _steamUid) < 15) then {
 };
 
 _unit setVariable ["COMSPEC_PliAt", time, true];
-"COMSPECExtension" callExtension ["UpdatePosition", [
+// POST hors du thread de jeu (spawn + extAwait) : l'appel synchrone du timer 1 s figeait le jeu.
+// Retour inutilisé ; un seul envoi en vol (COMSPEC_PosTxBusyAt, libéré au retour).
+missionNamespace setVariable ["COMSPEC_PosTxBusyAt", diag_tickTime, false];
+[
     [_reportedPos select 0, 2] call _fnc_num,
     [_reportedPos select 1, 2] call _fnc_num,
     [_heading, 2] call _fnc_num,
@@ -674,7 +679,10 @@ _unit setVariable ["COMSPEC_PliAt", time, true];
     [_aslZ, 3] call _fnc_num,
     _modVersion,
     _grid
-]];
+] spawn {
+    ["COMSPECExtension", "UpdatePosition", _this] call comspec_overwatch_connect_fnc_extAwait;
+    missionNamespace setVariable ["COMSPEC_PosTxBusyAt", -1e9, false];
+};
 if (_radioTxFlag) then {
     [_unit, _callSign] call comspec_overwatch_connect_fnc_reportRelaySigint;
 };

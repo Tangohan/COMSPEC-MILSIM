@@ -46,7 +46,11 @@ if (!isNull _cur) then {
                 _g, round (player distance2D _p), (round _az) mod 360, [_az] call _cardinal, _zone select 1, _g8, round _alt, _br]
         }
     };
-    _cur ctrlSetStructuredText parseText ((_text) call comspec_atak_native_fnc_tr);
+    // Texte inchangé (souris immobile) : ni traduction ni texte structuré refaits.
+    if ((_cur getVariable ["txt", ""]) isNotEqualTo _text) then {
+        _cur setVariable ["txt", _text];
+        _cur ctrlSetStructuredText parseText ((_text) call comspec_atak_native_fnc_tr);
+    };
 };
 if (_cursorOnly) exitWith { true };
 

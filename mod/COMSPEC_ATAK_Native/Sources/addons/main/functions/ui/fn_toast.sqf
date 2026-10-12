@@ -42,14 +42,16 @@ private _tx = _d ctrlCreate ["COMSPEC_RscTextCenter", -1];
 _bg ctrlSetBackgroundColor [0.20, 0.22, 0.21, 0.94];
 _tx ctrlSetFontHeight _fs;
 _tx ctrlSetTextColor [0.95, 0.97, 0.95, 1];
-_tx ctrlSetText ((_text) call comspec_atak_native_fnc_tr);
+// Traduit une fois : la coupe se fait sur le texte affiché (chaque morceau coupé passait par fn_tr et son cache).
+private _shown = (_text) call comspec_atak_native_fnc_tr;
+_tx ctrlSetText _shown; // i18n:brut
 private _maxW = _bw * 0.86;
 // Trop long : coupé au dernier caractère qui tient, avec « … ».
 if ((ctrlTextWidth _tx) > _maxW - _pad * 4) then {
-    private _codes = toArray _text;
+    private _codes = toArray _shown;
     private _n = floor ((count _codes) * (_maxW - _pad * 4) / (ctrlTextWidth _tx)) max 1;
     while {_n > 1} do {
-        _tx ctrlSetText ((((toString (_codes select [0, _n])) + "…")) call comspec_atak_native_fnc_tr);
+        _tx ctrlSetText ((toString (_codes select [0, _n])) + "…"); // i18n:brut
         if ((ctrlTextWidth _tx) <= _maxW - _pad * 4) exitWith {};
         _n = _n - 2;
     };

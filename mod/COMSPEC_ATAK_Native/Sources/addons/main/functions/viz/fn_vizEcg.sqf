@@ -98,10 +98,13 @@ private _pfh = [{
     private _n = count _cols;
     private _prev = -1;
     (_e param [9, [true, true]]) params ["_vHr", "_vState"];
-    if (!_vHr) exitWith { { _x ctrlShow false; } forEach _cols; };
+    if (!_vHr) exitWith { { _x ctrlShow false; } forEach _cols; _e set [10, []]; };
     private _rgb = [[0.36, 0.85, 0.42, 1], [0.9, 0.28, 0.23, 1]] select (_vState && {_state in ["cardiac_arrest", "unconscious", "critical"]});
+    // Couleur et visibilité des 72 colonnes posées seulement quand elles changent (25 fois par seconde sinon).
+    private _paint = (_e param [10, []]) isNotEqualTo _rgb;
+    if (_paint) then { _e set [10, _rgb]; };
     {
-        _x ctrlShow true;
+        if (_paint) then { _x ctrlShow true; _x ctrlSetBackgroundColor _rgb; };
         private _t = _t0 + _forEachIndex * _span / _n;
         private _v = if (_hr <= 0) then { [0, (random 0.06) - 0.03] select (_state isEqualTo "cardiac_arrest") } else { [(_t mod _per) / _per] call _wave };
         // Point : 62 % de la hauteur = ligne de base, 1 = haut de la zone.
@@ -110,7 +113,6 @@ private _pfh = [{
         private _top = (_py min _prev) - pixelH;
         private _hh = ((abs (_py - _prev)) + pixelH * 2);
         _x ctrlSetPosition [_gx + _forEachIndex * _cw, _gy + _top, _cw * 1.05, _hh];
-        _x ctrlSetBackgroundColor _rgb;
         _x ctrlCommit 0;
         _prev = _py;
     } forEach _cols;

@@ -48,7 +48,19 @@ if !(_txGate getOrDefault ["can_transmit", true]) exitWith { false };
 private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
 if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
 
-private _raw = ["COMSPECExtension" callExtension ["GetWaypoints", [_mapId, "40", "all"]]] call comspec_overwatch_connect_fnc_extResult;
+// GET HTTP hors du thread de jeu : spawn + extAwait (un seul en vol, libéré au retour), puis relance
+// de cette fonction avec la réponse, traitée en non planifié comme avant (isNil).
+private _raw = _this param [0, nil, [""]];
+if (isNil "_raw") exitWith {
+    if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_GpsWpBusyAt", -1e9])) < 60) exitWith { false };
+    missionNamespace setVariable ["COMSPEC_GpsWpBusyAt", diag_tickTime, false];
+    [_mapId, "40", "all"] spawn {
+        private _r = [["COMSPECExtension", "GetWaypoints", _this] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
+        missionNamespace setVariable ["COMSPEC_GpsWpBusyAt", -1e9, false];
+        isNil { [_r] call comspec_overwatch_connect_fnc_pollGpsNavigation };
+    };
+    false
+};
 if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { false };
 if ((_raw select [0, 3]) != "OK|") exitWith { false };
 

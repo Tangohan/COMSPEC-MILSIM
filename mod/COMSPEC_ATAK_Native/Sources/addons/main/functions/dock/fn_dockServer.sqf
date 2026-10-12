@@ -90,24 +90,37 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_DockTick", _now];
         private _gain = (call _rate) * _dt / 60;
         private _utcNow = call _utc;
+        // Liste des socles : allMissionObjects (parcourt tous les objets de la mission) une fois par minute
+        // seulement ; les socles posés avec le kit y sont ajoutés dès leur création (« deploy »).
+        private _docks = missionNamespace getVariable ["COMSPEC_ATAK_DockObjs", []];
+        if (_now - (missionNamespace getVariable ["COMSPEC_ATAK_DockScan", -1e9]) > 60) then {
+            missionNamespace setVariable ["COMSPEC_ATAK_DockScan", _now];
+            _docks = allMissionObjects _class;
+        };
+        _docks = _docks select { !isNull _x };
+        missionNamespace setVariable ["COMSPEC_ATAK_DockObjs", _docks];
+        // Sauvegarde utile seulement si une charge ou une place a changé.
+        private _dirty = false;
         {
             private _dock = _x;
             private _id = ["id", [_dock]] call comspec_atak_native_fnc_dockServer;
             private _rec = _db get _id;
             private _slots = _rec select 0;
-            { if ((count _x) > 3 && {(_x select 3) < 100}) then { _x set [3, ((_x select 3) + _gain) min 100]; }; } forEach _slots;
+            { if ((count _x) > 3 && {(_x select 3) < 100}) then { _x set [3, ((_x select 3) + _gain) min 100]; _dirty = true; }; } forEach _slots;
             // Socle du kit déplacé par Zeus : nouvelle place mémorisée.
             if (_dock getVariable ["COMSPEC_ATAK_DockKit", false]) then {
                 private _pl = _rec select 1;
                 if ((count _pl) > 1 && {((_pl select 1) distance (getPosASL _dock)) > 0.05}) then {
                     _rec set [1, [worldName, getPosASL _dock, vectorDir _dock, vectorUp _dock, _pl param [4, ""]]];
+                    _dirty = true;
                 };
             };
             _rec set [2, _utcNow];
             ["publish", [_dock, _slots]] call comspec_atak_native_fnc_dockServer;
-        } forEach (allMissionObjects _class);
-        // Sauvegarde du profil serveur toutes les minutes environ (et à chaque dépôt ou retrait).
-        if (_now - (missionNamespace getVariable ["COMSPEC_ATAK_DockSaved", -1e9]) > 60) then { ["save"] call comspec_atak_native_fnc_dockServer; };
+        } forEach _docks;
+        // Sauvegarde du profil serveur (saveProfileNamespace réécrit tout le profil : à-coup sur le serveur) toutes les
+        // 5 min au plus, et seulement si un téléphone charge ou un socle a bougé (sinon à chaque dépôt, retrait et en fin de partie).
+        if (_dirty && {_now - (missionNamespace getVariable ["COMSPEC_ATAK_DockSaved", -1e9]) > 300}) then { ["save"] call comspec_atak_native_fnc_dockServer; };
     };
     // État public du socle (lu par les menus) et textures (téléphones, écrans, voyants).
     case "publish": {
@@ -175,6 +188,7 @@ switch (_act) do {
         _o setVariable ["COMSPEC_ATAK_DockId", _id, true];
         _o setVariable ["COMSPEC_ATAK_DockKit", true, true];
         _db set [_id, [call _empty, [worldName, getPosASL _o, vectorDir _o, vectorUp _o, getPlayerUID _unit], call _utc]];
+        (missionNamespace getVariable ["COMSPEC_ATAK_DockObjs", []]) pushBack _o;
         ["publish", [_o, (_db get _id) select 0]] call comspec_atak_native_fnc_dockServer;
         ["save"] call comspec_atak_native_fnc_dockServer;
         [_unit, "deploy", true, "Socle de recharge posé"] call _reply;

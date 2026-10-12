@@ -264,34 +264,42 @@ private _fnc_addPoll = {
             if (_callsign isEqualTo "") exitWith {};
             private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
             if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
-            private _raw = ["COMSPECExtension" callExtension ["GetCASForCallsign", [_callsign, _mapId]]] call comspec_overwatch_connect_fnc_extResult;
-            if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
-            private _payload = _raw select [3, count _raw - 3];
-            private _trimmed = trim _payload;
-            if (
-                _trimmed isEqualTo ""
-                || {_trimmed isEqualTo "[]"}
-                || {_trimmed isEqualTo "null"}
-                || {_trimmed isEqualTo "{}"}
-            ) exitWith {
-                private _lastEmpty = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
-                if (_payload != _lastEmpty) then {
-                    missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
-                    missionNamespace setVariable ["COMSPEC_CAS_Raw", ""];
-                    missionNamespace setVariable ["COMSPEC_CurrentCASId", ""];
-                    missionNamespace setVariable ["COMSPEC_LastCASOpenedId", ""];
-                };
-            };
-            private _lastPayload = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
-            if (_payload != "" && {_payload != _lastPayload}) then {
-                missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
-                missionNamespace setVariable ["COMSPEC_CAS_Raw", _payload];
-                private _prevId = missionNamespace getVariable ["COMSPEC_LastCASOpenedId", ""];
-                [] call comspec_overwatch_connect_fnc_receiveCASRequest;
-                private _newId = missionNamespace getVariable ["COMSPEC_CurrentCASId", ""];
-                if (_newId != "" && {_newId != _prevId}) then {
-                    ["COMSPEC_Info", ["Nouvelle demande d’appui aérien reçue"]] call comspec_overwatch_connect_fnc_showNotification;
-                    ["[CAS] Nouvelle demande d’appui aérien reçue.", "cas"] call comspec_overwatch_connect_fnc_appendLinkLog;
+            // GET CAS hors du thread de jeu : spawn + extAwait, un seul en vol ; traitement non planifié au retour (isNil).
+            if ((diag_tickTime - (missionNamespace getVariable ["COMSPEC_CasPollBusyAt", -1e9])) < 60) exitWith {};
+            missionNamespace setVariable ["COMSPEC_CasPollBusyAt", diag_tickTime, false];
+            [_callsign, _mapId] spawn {
+                private _raw = [["COMSPECExtension", "GetCASForCallsign", _this] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
+                missionNamespace setVariable ["COMSPEC_CasPollBusyAt", -1e9, false];
+                isNil {
+                    if (_raw isEqualTo "" || {(_raw select [0, 3]) != "OK|"}) exitWith {};
+                    private _payload = _raw select [3, count _raw - 3];
+                    private _trimmed = trim _payload;
+                    if (
+                        _trimmed isEqualTo ""
+                        || {_trimmed isEqualTo "[]"}
+                        || {_trimmed isEqualTo "null"}
+                        || {_trimmed isEqualTo "{}"}
+                    ) exitWith {
+                        private _lastEmpty = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
+                        if (_payload != _lastEmpty) then {
+                            missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
+                            missionNamespace setVariable ["COMSPEC_CAS_Raw", ""];
+                            missionNamespace setVariable ["COMSPEC_CurrentCASId", ""];
+                            missionNamespace setVariable ["COMSPEC_LastCASOpenedId", ""];
+                        };
+                    };
+                    private _lastPayload = missionNamespace getVariable ["COMSPEC_LastCASPayload", ""];
+                    if (_payload != "" && {_payload != _lastPayload}) then {
+                        missionNamespace setVariable ["COMSPEC_LastCASPayload", _payload];
+                        missionNamespace setVariable ["COMSPEC_CAS_Raw", _payload];
+                        private _prevId = missionNamespace getVariable ["COMSPEC_LastCASOpenedId", ""];
+                        [] call comspec_overwatch_connect_fnc_receiveCASRequest;
+                        private _newId = missionNamespace getVariable ["COMSPEC_CurrentCASId", ""];
+                        if (_newId != "" && {_newId != _prevId}) then {
+                            ["COMSPEC_Info", ["Nouvelle demande d’appui aérien reçue"]] call comspec_overwatch_connect_fnc_showNotification;
+                            ["[CAS] Nouvelle demande d’appui aérien reçue.", "cas"] call comspec_overwatch_connect_fnc_appendLinkLog;
+                        };
+                    };
                 };
             };
         }, [], "casPoll"] call comspec_overwatch_connect_fnc_profileWrap;
