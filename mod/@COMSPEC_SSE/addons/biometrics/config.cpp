@@ -40,6 +40,43 @@ class CfgFunctions {
             class seekClose {};
             class compareBiometrics {};
         };
+        // Moteur biométrique : identités biologiques, base ABIS, qualité de capture, recherche 1:N.
+        class bioEngine {
+            file = "z\comspec_sse\addons\biometrics\functions";
+            class bioInitSettings {};
+            class bioHash {};
+            class bioRand {};
+            class bioHex {};
+            class bioPack {};
+            class bioUnpack {};
+            class bioPersonKey {};
+            class bioProfile {};
+            class bioRecord {};
+            class bioCapture {};
+            class bioCaptureLatent {};
+            class bioLatentOwners {};
+            class bioSearch {};
+            class bioEnroll {};
+            class bioDnaLab {};
+            class bioRequest {};
+            class bioServerHandle {};
+            class bioClientResult {};
+            class bioNotify {};
+            class bioWantedCache {};
+            class bioQuery {};
+            class bioDescribe {};
+            class bioCaptureLatentAction {};
+            class bioSetProfile {};
+            class bioApplyCapture {};
+        };
+    };
+};
+
+// Zeus (ZEN) règle la biométrie d'un sujet sur le serveur. Pas de « mode » ici :
+// la liste blanche éventuelle reste celle de la mission ou d'un autre pack.
+class CfgRemoteExec {
+    class Functions {
+        class comspec_sse_fnc_bioSetProfile { allowedTargets = 2; };
     };
 };
 
@@ -51,6 +88,7 @@ class Extended_PreInit_EventHandlers {
 
 class Extended_PostInit_EventHandlers {
     class comspec_sse_biometrics {
+        init = "call compile preprocessFileLineNumbers 'z\comspec_sse\addons\biometrics\XEH_postInit.sqf'";
         clientInit = "call compile preprocessFileLineNumbers 'z\comspec_sse\addons\biometrics\XEH_postInitClient.sqf'";
     };
 };

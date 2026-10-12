@@ -62,6 +62,60 @@ params [
         };
         if (_name isEqualTo "") then { _name = "Sujet"; };
 
+        if (missionNamespace getVariable ["comspec_sse_bio_enabled", true]) exitWith {
+            private _caps = createHashMapFromArray [
+                ["nfiqs", _bio getOrDefault ["fingerprintNfiqs", []]],
+                ["eyes", _bio getOrDefault ["irisEyes", []]],
+                ["face", [-1, _bio getOrDefault ["faceQuality", -1]] select (_bio getOrDefault ["facePhoto", false])],
+                ["attempt", (_bio getOrDefault ["empreintesAttempt", 0]) + (_bio getOrDefault ["irisAttempt", 0]) + (_bio getOrDefault ["visageAttempt", 0])]
+            ];
+            if ((_caps get "nfiqs") isEqualTo [] && {(_caps get "eyes") isEqualTo []} && {(_caps get "face") < 0}) exitWith {
+                hint "Aucun relevé biométrique : prenez empreintes, iris ou photo avant d'identifier.";
+            };
+            [_target, _caps, _name, {
+                params ["_res", "_ctx"];
+                _ctx params ["_target", "_name"];
+                private _bio = [_target, "biometrics"] call comspec_sse_fnc_getSection;
+                if (isNil "_bio" || {!(_bio isEqualType createHashMap)}) then { _bio = createHashMap; };
+                private _lines = [format ["Sujet déclaré : %1", _name]];
+                _lines append ([_res] call comspec_sse_fnc_bioDescribe);
+                _bio set ["matchHint", _lines select 1];
+                _bio set ["watchlistRef", _res getOrDefault ["ref", ""]];
+                _bio set ["matchConfidence", _res getOrDefault ["score", 0]];
+                _bio set ["matchNote", _res getOrDefault ["note", ""]];
+                _bio set ["matchLive", (_res getOrDefault ["scope", "local"]) isEqualTo "abis"];
+                [_target, "biometrics", _bio, true] call comspec_sse_fnc_setSection;
+
+                // Vérification nominative complémentaire sur le registre Athena (en liaison).
+                if ((_res getOrDefault ["scope", "local"]) isEqualTo "abis" && {!isNil "comspec_sse_fnc_extensionCall"}) then {
+                    private _who = [_name, _res getOrDefault ["name", ""]] select ((_res getOrDefault ["name", ""]) isNotEqualTo "");
+                    private _parts = _who splitString " ";
+                    private _raw = ["QuerySseIdentity", [_parts param [0, ""], (_parts select [1, 99]) joinString " ", _res getOrDefault ["alias", ""], _who]] call comspec_sse_fnc_extensionCall;
+                    if (!(_raw isEqualType "")) then { _raw = str _raw; };
+                    if ((_raw find "OK|") == 0) then {
+                        private _cols = (_raw select [3]) splitString toString [9];
+                        if ((_cols param [0, ""]) isEqualTo "1") then {
+                            _lines pushBack format ["Registre Athena (%1) : %2 %3", _who, _cols param [1, ""], _cols param [5, ""]];
+                        } else {
+                            _lines pushBack format ["Registre Athena (%1) : aucune fiche", _who];
+                        };
+                    };
+                };
+                hint (_lines joinString endl);
+                if (!isNil "comspec_sse_fnc_showResult") then {
+                    [createHashMapFromArray [
+                        ["title", "SEEK II — IDENTITY QUERY"],
+                        ["uid", [_res getOrDefault ["ref", ""], "QUERY"] select ((_res getOrDefault ["ref", ""]) isEqualTo "")],
+                        ["type", "IDENTITY"],
+                        ["lines", _lines],
+                        ["quality", _res getOrDefault ["score", 0]],
+                        ["qualityLabel", [_res getOrDefault ["score", 0]] call comspec_sse_fnc_qualityLabel]
+                    ]] call comspec_sse_fnc_showResult;
+                };
+                if (!isNull (findDisplay 93100)) then { [] call comspec_sse_fnc_seekOnLoad; };
+            }, [_target, _name]] call comspec_sse_fnc_bioQuery;
+        };
+
         private _verdict = "Poste injoignable";
         private _recordRef = "";
         private _score = 0;

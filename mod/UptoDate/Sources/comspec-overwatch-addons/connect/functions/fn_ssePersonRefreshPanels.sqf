@@ -66,6 +66,11 @@ private _fingerNames = [
 ];
 private _fp = _byKind getOrDefault ["empreintes", []];
 private _nfiqs = [];
+// Relevé du moteur biométrique : vraies notes par doigt (-1 amputé, -2 main trop blessée).
+private _fpDetail = _fp param [3, []];
+if ((_fpDetail isEqualType []) && {(count _fpDetail) == 10}) then {
+    _nfiqs = +_fpDetail;
+} else {
 if ((count _fp) >= 3) then {
     private _q = _fp select 1;
     // NFIQ : 1 = excellent … 5 = inexploitable. Base tirée de la qualité du relevé,
@@ -81,10 +86,18 @@ if ((count _fp) >= 3) then {
         _nfiqs pushBack (((_base + _j - 1) max 1) min 5);
     };
 };
+};
 private _fpDone = (count _nfiqs) isEqualTo 10;
 {
     private _ctrl = _disp displayCtrl _x;
     if (!isNull _ctrl) then {
+        if (_fpDone && {(_nfiqs select _forEachIndex) < 1}) then {
+            private _n = _nfiqs select _forEachIndex;
+            _ctrl ctrlSetText (switch (_n) do { case -1: { "X" }; case -2: { "B" }; default { "-" }; });
+            _ctrl ctrlSetTextColor [1, 1, 1, 1];
+            _ctrl ctrlSetBackgroundColor (switch (_n) do { case -1: { [0.25, 0.26, 0.28, 0.95] }; case -2: { [0.55, 0.10, 0.10, 0.95] }; default { [0.70, 0.71, 0.72, 0.85] }; });
+            _ctrl ctrlSetTooltip format ["%1 · %2", _fingerNames select _forEachIndex, switch (_n) do { case -1: { "amputé" }; case -2: { "main trop blessée : non relevable" }; default { "non relevé" }; }];
+        } else {
         if (_fpDone) then {
             private _n = _nfiqs select _forEachIndex;
             _ctrl ctrlSetText str _n;
@@ -103,20 +116,26 @@ private _fpDone = (count _nfiqs) isEqualTo 10;
             _ctrl ctrlSetBackgroundColor ([[0.70, 0.71, 0.72, 0.85], [0.08, 0.30, 0.78, 0.95]] select _next);
             _ctrl ctrlSetTooltip format ["%1 · non capturé", _fingerNames select _forEachIndex];
         };
+        };
     };
 } forEach [9610, 9611, 9612, 9613, 9614, 9615, 9616, 9617, 9618, 9619];
 
 private _avgNfiq = 0;
-if (_fpDone) then {
+private _fpUsable = _nfiqs select { _x >= 1 };
+if (_fpDone && {_fpUsable isNotEqualTo []}) then {
     private _s = 0;
-    { _s = _s + _x; } forEach _nfiqs;
-    _avgNfiq = _s / 10;
+    { _s = _s + _x; } forEach _fpUsable;
+    _avgNfiq = _s / (count _fpUsable);
 };
+private _fpFactors = _fp param [4, []];
+if (!(_fpFactors isEqualType [])) then { _fpFactors = []; };
 
 private _fpPrompt = if (_fpDone) then {
     format [
-        "<t size='0.46' font='TahomaB' color='%1'>CAPTURE TERMINÉE</t><t size='0.44' color='%2'>  ·  10/10 doigts  ·  NFIQ moyen %3</t>",
-        _cOk, _cSub, _avgNfiq toFixed 1
+        "<t size='0.46' font='TahomaB' color='%1'>%4</t><t size='0.44' color='%2'>  ·  %5/10 doigts  ·  NFIQ moyen %3</t>",
+        [_cOk, _cWarn] select (_avgNfiq >= 3.5), _cSub, _avgNfiq toFixed 1,
+        ["CAPTURE TERMINÉE", "CAPTURE MÉDIOCRE : RECAPTURER"] select (_avgNfiq >= 3.5),
+        count _fpUsable
     ]
 } else {
     format [
@@ -149,6 +168,7 @@ _fpRows pushBack format [
 ];
 if (_fpDone) then {
     _fpRows pushBack format ["<t size='0.38' color='%1'>Qualité %2%3 · réf. %4</t>", _cMute, _fp select 1, "%", _fp select 2];
+    { _fpRows pushBack format ["<t size='0.38' color='%1'>· %2</t>", _cWarn, _x]; } forEach (_fpFactors select [0, 4]);
 };
 private _fpPanel = _disp displayCtrl 9622;
 if (!isNull _fpPanel) then { _fpPanel ctrlSetStructuredText parseText (_fpRows joinString "<br/>"); };
@@ -159,12 +179,17 @@ if (!isNull _fpPanel) then { _fpPanel ctrlSetStructuredText parseText (_fpRows j
 private _ir = _byKind getOrDefault ["iris", []];
 private _irDone = (count _ir) >= 3;
 private _eyeQ = [-1, -1];
+private _irDetail = _ir param [3, []];
+if (_irDone && {(_irDetail isEqualType [])} && {(count _irDetail) == 2}) then {
+    _eyeQ = +_irDetail;
+} else {
 if (_irDone) then {
     private _q = _ir select 1;
     _eyeQ = [
         ((_q + ((_seed mod 7) - 3)) max 0) min 100,
         ((_q + ((floor (_seed / 7)) mod 7) - 3) max 0) min 100
     ];
+};
 };
 {
     _x params ["_pic", "_txt", "_bg", "_bar"];
@@ -174,7 +199,7 @@ if (_irDone) then {
     private _txtCtrl = _disp displayCtrl _txt;
     if (!isNull _txtCtrl) then {
         _txtCtrl ctrlSetStructuredText parseText (if (_q < 0) then {
-            format ["<t size='0.42' color='%1' align='center'>Non capturé</t>", _cMute]
+            format ["<t size='0.42' color='%1' align='center'>%2</t>", _cMute, ["Non capturé", "Pas d'iris (prothèse)"] select (_irDone && {_q == -1})]
         } else {
             format [
                 "<t size='0.42' color='%1' align='center'>Qualité </t><t size='0.44' font='TahomaB' color='%2' align='center'>%3</t><t size='0.42' color='%2' align='center'>  ·  %4</t>",
@@ -214,7 +239,8 @@ if (!isNull _irPromptCtrl) then { _irPromptCtrl ctrlSetStructuredText parseText 
 private _irNote = _disp displayCtrl 9626;
 if (!isNull _irNote) then {
     _irNote ctrlSetStructuredText parseText (if (_irDone) then {
-        format ["<t size='0.42' color='%1'>Capture double · qualité %2%3 · réf. %4</t>", _cMute, _ir select 1, "%", _ir select 2]
+        format ["<t size='0.42' color='%1'>Capture double · qualité %2%3 · réf. %4%5</t>", _cMute, _ir select 1, "%", _ir select 2,
+            [format ["<br/><t color='%1'>%2</t>", _cWarn, ((_ir param [4, []]) select [0, 3]) joinString " · "], ""] select (((_ir param [4, []]) isEqualTo []))]
     } else {
         format ["<t size='0.42' color='%1'>Capture double (les deux yeux). Ôtez lunettes et couvre-chef.</t>", _cMute]
     });
@@ -233,16 +259,29 @@ if (_queryPending) then {
     _detail = format ["<t size='0.42' color='%1'>Source : %2</t>", _cMute, _source];
 } else {
     if ((count _query) >= 3) then {
-        _query params ["_res", "_conf", "_ref"];
+        _query params ["_res", "_conf", "_ref", ["_xp", []]];
+        // Résultat complet du moteur biométrique (tier réel, dossier, alertes).
+        private _x4 = createHashMap;
+        if (!isNil "comspec_sse_fnc_bioUnpack" && {_xp isNotEqualTo []}) then {
+            _x4 = [_xp] call comspec_sse_fnc_bioUnpack;
+            if (!(_x4 isEqualType createHashMap)) then { _x4 = createHashMap; };
+        };
+        uiNamespace setVariable ["COMSPEC_SsePerson_QueryDetail", _x4];
         switch (_res) do {
+            case "insufficient": {
+                _banColor = [0.42, 0.43, 0.45, 1];
+                _banTxt = "<t size='0.62' font='TahomaB' color='#ffffff'>QUALITÉ INSUFFISANTE</t><br/><t size='0.44' color='#ffffff'>Relevés inexploitables : recapturez (NFIQ 1-4, iris 40+)</t>";
+            };
             case "confirmed": {
-                // Tier 1 ou 2 selon le sujet : conduite à tenir de la liste BEWL.
-                private _tier = 1 + (_seed mod 2);
+                // Tier du dossier (moteur), sinon 1 ou 2 selon le sujet.
+                private _tier = _x4 getOrDefault ["tier", 1 + (_seed mod 2)];
+                if (_tier < 1) then { _tier = 0; };
                 _banColor = [0.72, 0.07, 0.06, 1];
+                if (_tier isEqualTo 0) then { _banColor = [0.06, 0.30, 0.55, 1]; };
                 _banTxt = format [
-                    "<t size='0.62' font='TahomaB' color='#ffffff'>MATCH · TIER %1</t><br/><t size='0.44' font='TahomaB' color='#ffffff'>%2</t>",
-                    _tier,
-                    ["DETAIN : interpeller, retenir le sujet, aviser le PC", "QUESTION / DETAIN : questionner, retenir, aviser le PC"] select (_tier - 1)
+                    "<t size='0.62' font='TahomaB' color='#ffffff'>%1</t><br/><t size='0.44' font='TahomaB' color='#ffffff'>%2</t>",
+                    if (_tier > 0) then { format ["MATCH · TIER %1", _tier] } else { "MATCH · CONNU, NON SIGNALÉ" },
+                    _x4 getOrDefault ["action", ["DETAIN : interpeller, retenir le sujet, aviser le PC", "QUESTION / DETAIN : questionner, retenir, aviser le PC"] select ((_tier - 1) max 0 min 1)]
                 ];
             };
             case "possible": {
@@ -252,12 +291,16 @@ if (_queryPending) then {
             default {
                 _banColor = [0.10, 0.52, 0.20, 1];
                 _banTxt = "<t size='0.62' font='TahomaB' color='#ffffff'>NO MATCH</t><br/><t size='0.44' color='#ffffff'>Aucun signalement : enrôler (Enroll) et poursuivre selon consignes</t>";
+                if ((_x4 getOrDefault ["latents", []]) isNotEqualTo []) then {
+                    _banColor = [0.55, 0.30, 0.04, 1];
+                    _banTxt = "<t size='0.62' font='TahomaB' color='#ffffff'>NO MATCH · LATENTES</t><br/><t size='0.44' color='#ffffff'>Inconnu des bases, mais ses empreintes sont sur des objets saisis</t>";
+                };
             };
         };
         _detail = format [
             "<t size='0.42' color='%1'>Score </t><t size='0.42' font='TahomaB' color='%2'>%3</t><t size='0.42' color='%1'>  ·  dossier </t><t size='0.42' font='TahomaB' color='%2'>%4</t><t size='0.42' color='%1'>  ·  source : %5</t>",
             _cMute, _cInk,
-            if (_res isEqualTo "none") then { "--" } else { _conf toFixed 1 },
+            if (_res in ["none", "insufficient"]) then { "--" } else { _conf toFixed 1 },
             if (_ref isEqualTo "") then { "--" } else { _ref },
             _source
         ];
@@ -299,10 +342,38 @@ if (!(_fmeta isEqualType [])) then { _fmeta = []; };
 private _faceDone = (count _fmeta) >= 3;
 private _dna = _byKind getOrDefault ["adn", []];
 private _rows = [_subj];
-_rows pushBack (["EMPREINTES", _fpDone, if (_fpDone) then { format ["10/10 · NFIQ moy. %1", _avgNfiq toFixed 1] } else { "0/10" }] call _fnc_row);
+_rows pushBack (["EMPREINTES", _fpDone, if (_fpDone) then { format ["%1/10 · NFIQ moy. %2", count _fpUsable, _avgNfiq toFixed 1] } else { "0/10" }] call _fnc_row);
 _rows pushBack (["IRIS", _irDone, if (_irDone) then { format ["OD %1 · OG %2", _eyeQ select 0, _eyeQ select 1] } else { "0/2" }] call _fnc_row);
 _rows pushBack (["VISAGE", _faceDone, if (_faceDone) then { format ["cliché %1 · qualité %2", _fmeta select 2, _fmeta select 1] } else { "aucun cliché" }] call _fnc_row);
 _rows pushBack (["ADN", (count _dna) >= 3, if ((count _dna) >= 3) then { format ["écouvillon · %1", _dna select 2] } else { "optionnel (kit)" }] call _fnc_row);
+// Dossier trouvé par le moteur : identité, motif, rencontres, alertes, concordance.
+private _qd = uiNamespace getVariable ["COMSPEC_SsePerson_QueryDetail", createHashMap];
+if ((count _query) >= 3 && {_qd isEqualType createHashMap} && {(count _qd) > 0}) then {
+    if (_qd getOrDefault ["mismatch", false]) then {
+        _rows pushBack format ["<t size='0.44' font='TahomaB' color='%1'>ALERTE : identité déclarée ≠ dossier (faux papiers ?)</t>", _cBad];
+    };
+    if ((_qd getOrDefault ["name", ""]) isNotEqualTo "") then {
+        _rows pushBack format ["<t size='0.42' color='%1'>Dossier </t><t size='0.42' font='TahomaB' color='%2'>%3</t><t size='0.42' color='%1'>%4  ·  %5</t>",
+            _cMute, _cInk, _qd get "name",
+            [format [" (alias %1)", _qd getOrDefault ["alias", ""]], ""] select ((_qd getOrDefault ["alias", ""]) isEqualTo ""),
+            _qd getOrDefault ["enrolledAt", _qd getOrDefault ["source", ""]]];
+        if ((_qd getOrDefault ["reason", ""]) isNotEqualTo "" && {(_qd getOrDefault ["tier", 0]) > 0}) then {
+            _rows pushBack format ["<t size='0.42' color='%1'>Motif : %2</t>", _cSub, _qd get "reason"];
+        };
+        private _enc = _qd getOrDefault ["encounters", []];
+        if (_enc isNotEqualTo []) then {
+            private _last = _enc select ((count _enc) - 1);
+            _rows pushBack format ["<t size='0.42' color='%1'>Déjà rencontré %2 fois · dernier : %3 %4 %5</t>", _cSub, count _enc, _last param [0, ""], _last param [1, ""], _last param [2, ""]];
+        };
+    };
+    if ((_qd getOrDefault ["fpCompared", 0]) > 0 || {(_qd getOrDefault ["irisCompared", 0]) > 0} || {(_qd getOrDefault ["faceScore", 0]) > 0}) then {
+        _rows pushBack format ["<t size='0.42' color='%1'>Concordance : doigts %2/%3 · iris %4/%5 · visage %6</t>", _cMute,
+            _qd getOrDefault ["fpMatched", 0], _qd getOrDefault ["fpCompared", 0], _qd getOrDefault ["irisMatched", 0], _qd getOrDefault ["irisCompared", 0],
+            [str (_qd getOrDefault ["faceScore", 0]), "--"] select ((_qd getOrDefault ["faceScore", 0]) == 0)];
+    };
+    { _rows pushBack format ["<t size='0.42' color='%1'>Latente %2 : %3 (%4)</t>", _cWarn, _x select 0, _x select 1, _x select 2]; } forEach (_qd getOrDefault ["latents", []]);
+    if ((_qd getOrDefault ["note", ""]) isNotEqualTo "") then { _rows pushBack format ["<t size='0.40' color='%1'>%2</t>", _cMute, _qd get "note"]; };
+};
 if (_bioMsg isNotEqualTo "") then { _rows pushBack _bioMsg; };
 private _bioCtrl = _disp displayCtrl 9522;
 if (!isNull _bioCtrl) then { _bioCtrl ctrlSetStructuredText parseText (_rows joinString "<br/>"); };

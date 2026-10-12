@@ -44,6 +44,7 @@ class CfgFunctions {
             class ssePersonRefreshPanels {};
             class sseCaptureFacePhoto {};
             class sseFaceFraming {};
+            class sseFaceStudio {};
             class sseFaceViewfinder {};
             class sseCollectMedical {};
             class sseBiometricSample {};
@@ -654,6 +655,8 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_giveSeekTerminal { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_sseApplyProfile { allowedTargets = 0; };
+        // Module Zeus « Biométrie du sujet » → serveur (moteur du pack SSE).
+        class comspec_sse_fnc_bioSetProfile { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_sseActiveCase { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_setGpsBeacon { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_setPhoneTrack { allowedTargets = 0; };

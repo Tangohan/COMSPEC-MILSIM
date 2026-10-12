@@ -42,6 +42,8 @@ private _kill = {
         camDestroy _cam;
     };
     _st set ["cam", objNull];
+    // Le double du studio n'a plus lieu d'être sans viseur.
+    ["close"] call comspec_overwatch_connect_fnc_sseFaceStudio;
 };
 
 private _paint = {

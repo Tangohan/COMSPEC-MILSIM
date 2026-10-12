@@ -17,6 +17,10 @@
         "confidence" → 0-100, -1 pour laisser le calcul déterministe
         "record_ref" → référence de dossier affichée par le terminal
         "seed"       → graine ; 0 pour laisser dériver de l'identifiant réseau
+      Biométrie (moteur du pack SSE, voir comspec_sse_fnc_bioSetProfile) :
+        "bio_db" (auto | absent | enrole | bewl1-4), "bio_reason", "bio_id",
+        "true_name", "false_papers", "relative_of", "relation",
+        "missing_fingers", "iris_state"
 
     Returns: Bool
 */
@@ -103,6 +107,20 @@ if (_confidence isEqualType 0) then {
 private _seed = ["seed"] call _get;
 if (_seed isEqualType 0 && { _seed > 0 }) then {
     _unit setVariable ["COMSPEC_SSE_Seed", round _seed, true];
+};
+
+if (!isNil "comspec_sse_fnc_bioSetProfile") then {
+    private _bio = [];
+    {
+        _x params ["_k", "_bk"];
+        private _v = [_k] call _get;
+        if (_v isEqualType "" && { (trim _v) isNotEqualTo "" }) then { _bio pushBack [_bk, _v]; };
+    } forEach [
+        ["bio_db", "db"], ["bio_reason", "reason"], ["bio_id", "bioId"], ["true_name", "trueName"],
+        ["false_papers", "falsePapers"], ["relative_of", "relativeOf"], ["relation", "relation"],
+        ["missing_fingers", "missingFingers"], ["iris_state", "irisState"]
+    ];
+    if (_bio isNotEqualTo []) then { [_unit, _bio] call comspec_sse_fnc_bioSetProfile; };
 };
 
 true

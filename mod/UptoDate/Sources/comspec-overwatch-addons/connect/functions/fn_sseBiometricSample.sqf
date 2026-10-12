@@ -53,16 +53,30 @@ private _fnc_screenMsg = {
     };
 };
 
-// Un seul échantillon par type sur cette fiche.
+// Moteur biométrique (pack SSE) : relevé selon les conditions réelles. Un relevé
+// médiocre se refait (il remplace le précédent) ; sans moteur, un seul par type.
+private _engine = !isNil "comspec_sse_fnc_bioCapture" && {missionNamespace getVariable ["comspec_sse_bio_enabled", true]};
 private _samples = uiNamespace getVariable ["COMSPEC_SsePerson_Samples", []];
 if (!(_samples isEqualType [])) then { _samples = []; };
 private _already = false;
 {
     if ((_x isEqualType []) && {(count _x) > 0} && {(_x select 0) isEqualTo _kind}) exitWith { _already = true; };
 } forEach _samples;
-if (_already) exitWith {
+if (_already && {!_engine}) exitWith {
     [format ["%1 déjà enregistré pour cette personne.", _label], "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
     [format ["%1 déjà enregistré.", _label], "#1d6b34"] call _fnc_screenMsg;
+};
+// Blessures, amputations, prothèse, décès ancien : refus avant de s'agenouiller.
+if (_engine && {!isNull _target}) then {
+    private _dry = [_target, _player, _kind, "terminal", true] call comspec_sse_fnc_bioCapture;
+    if !(_dry getOrDefault ["ok", false]) then { _already = false; uiNamespace setVariable ["COMSPEC_SseSampleBlocked", _dry getOrDefault ["blocked", "Relevé impossible."]]; } else { uiNamespace setVariable ["COMSPEC_SseSampleBlocked", ""]; };
+} else {
+    uiNamespace setVariable ["COMSPEC_SseSampleBlocked", ""];
+};
+private _blockedMsg = uiNamespace getVariable ["COMSPEC_SseSampleBlocked", ""];
+if (_blockedMsg isNotEqualTo "") exitWith {
+    [_blockedMsg, "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+    [_blockedMsg, "#b3261e"] call _fnc_screenMsg;
 };
 
 private _gear = (items _player) + (assignedItems _player);
@@ -154,6 +168,7 @@ if (_kit isEqualTo "") exitWith {
 
 if (
     _takenVar isNotEqualTo ""
+    && {_consume || {!_engine}}
     && {!isNull _target}
     && {_target getVariable [_takenVar, false]}
 ) exitWith {
@@ -171,6 +186,23 @@ uiNamespace setVariable ["COMSPEC_SseSampleReopenPage", switch (_kind) do {
 uiNamespace setVariable ["COMSPEC_SseSampleFinish", {
     params ["_kind", "_label", "_kit", "_consume", "_give", "_takenVar", "_target"];
 
+    // Relevé par le moteur : qualité selon le terrain, NFIQ par doigt, OD/OG, facteurs.
+    private _cap = createHashMap;
+    if (!isNull _target && {!isNil "comspec_sse_fnc_bioCapture"} && {missionNamespace getVariable ["comspec_sse_bio_enabled", true]}) then {
+        private _device = switch (true) do {
+            case (_kit in ["FingerprintScannerKit", "EyeScannerKit"]): { "bii" };
+            case (_kit in ["FingerprintCollectionKit", "DNACollectionKit"]): { "kit" };
+            default { "seek" };
+        };
+        _cap = [_target, player, _kind, _device] call comspec_sse_fnc_bioCapture;
+        if !(_cap getOrDefault ["ok", false]) exitWith {
+            private _why = _cap getOrDefault ["blocked", "Relevé impossible."];
+            uiNamespace setVariable ["COMSPEC_SsePerson_BioMsg", format ["<t size='0.46' color='#b3261e'>%1</t>", _why]];
+            [_why, "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+        };
+    };
+    if ((count _cap) > 0 && {!(_cap getOrDefault ["ok", false])}) exitWith {};
+
     private _player = player;
     if (_consume && {_kit isNotEqualTo ""} && {_kit isNotEqualTo "terminal"}) then {
         _player removeItem _kit;
@@ -187,6 +219,13 @@ uiNamespace setVariable ["COMSPEC_SseSampleFinish", {
         case "iris": { 61 + floor (random 30) };
         default { 70 + floor (random 26) };
     };
+    private _detail = [];
+    private _factors = [];
+    if ((count _cap) > 0) then {
+        _quality = _cap get "quality";
+        _detail = switch (_kind) do { case "iris": { _cap get "eyes" }; case "adn": { [] }; default { _cap get "nfiqs" }; };
+        _factors = _cap getOrDefault ["factors", []];
+    };
     private _prefix = switch (_kind) do {
         case "adn": { "ADN" };
         case "iris": { "IRI" };
@@ -201,7 +240,10 @@ uiNamespace setVariable ["COMSPEC_SseSampleFinish", {
 
     private _samples = uiNamespace getVariable ["COMSPEC_SsePerson_Samples", []];
     if (!(_samples isEqualType [])) then { _samples = []; };
-    _samples pushBack [_kind, _quality, _labRef];
+    if ((count _cap) > 0) then { _labRef = _cap get "labRef"; };
+    // Un nouveau relevé remplace le précédent du même type (recapture).
+    _samples = _samples select { !((_x isEqualType []) && {(count _x) > 0} && {(_x select 0) isEqualTo _kind}) };
+    _samples pushBack [_kind, _quality, _labRef, _detail, _factors];
     uiNamespace setVariable ["COMSPEC_SsePerson_Samples", _samples];
     uiNamespace setVariable ["COMSPEC_SsePerson_BioPending", true];
     uiNamespace setVariable ["COMSPEC_SsePerson_BioMsg", ""];
@@ -210,14 +252,16 @@ uiNamespace setVariable ["COMSPEC_SseSampleFinish", {
         private _onTarget = _target getVariable ["comspec_sse_bioSamples", []];
         if (!(_onTarget isEqualType [])) then { _onTarget = []; };
         _onTarget = _onTarget select { (_x isEqualType []) && {(count _x) >= 3} && {(_x select 0) isNotEqualTo _kind} };
-        _onTarget pushBack [_kind, _quality, _labRef];
+        _onTarget pushBack [_kind, _quality, _labRef, _detail, _factors];
         _target setVariable ["comspec_sse_bioSamples", _onTarget, true];
     };
 
     [
-        format ["%1 : échantillon exploitable (qualité %2%3) — réf. %4", _label, _quality, "%", _labRef],
+        format ["%1 : échantillon %5 (qualité %2%3) — réf. %4%6", _label, _quality, "%", _labRef,
+            ["exploitable", "médiocre, recapture conseillée"] select (_quality < 65),
+            ["", format [" · %1", _factors joinString ", "]] select (_factors isNotEqualTo [])],
         "tactical",
-        "info"
+        ["info", "warn"] select (_quality < 65)
     ] call comspec_overwatch_connect_fnc_announce;
 }];
 

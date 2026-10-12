@@ -63,7 +63,27 @@ private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", creat
 if (!(_cache isEqualType createHashMap)) then { _cache = createHashMap; };
 _cache set ["bioRoot", _bioRoot];
 _cache set ["bioChildren", _bioChildren];
+// Objets : empreintes latentes (armes au sol, objets saisis).
+_cache set ["bioObjectChildren", [
+    ["COMSPEC_SSE_Latent", "Relever des empreintes latentes", "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa",
+        { [_this select 0, _this select 1] call comspec_sse_fnc_bioCaptureLatentAction },
+        { (missionNamespace getVariable ["comspec_sse_bio_latents", true]) && {[_this select 0] call comspec_sse_fnc_canInspect} },
+        _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction
+]];
 missionNamespace setVariable ["comspec_sse_aceMenuCache", _cache];
+
+// Armes et équipements au sol : pas de menu SSE, mais des empreintes à relever.
+if (!isNil "ace_interact_menu_fnc_addActionToClass") then {
+    private _latentHolder = [
+        "COMSPEC_SSE_LatentHolder", "Relever des empreintes latentes", "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa",
+        { [_this select 0, _this select 1] call comspec_sse_fnc_bioCaptureLatentAction },
+        { (missionNamespace getVariable ["comspec_sse_bio_latents", true]) && {(missionNamespace getVariable ["comspec_sse_bio_enabled", true])} },
+        _noChildren, [], {[0,0,0]}, 3, _aceParams
+    ] call ace_interact_menu_fnc_createAction;
+    {
+        [_x, 0, [], _latentHolder, true] call ace_interact_menu_fnc_addActionToClass;
+    } forEach ["WeaponHolderSimulated", "GroundWeaponHolder"];
+};
 
 [_t0, "fn_initBiometricsACE", 0.05] call comspec_debug_fnc_perfWarn;
 ["INFO", "BIO", "INIT", "biometrics cache prêt (insertChildren)"] call comspec_debug_fnc_log;
