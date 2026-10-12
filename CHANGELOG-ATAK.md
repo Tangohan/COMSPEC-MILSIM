@@ -29,6 +29,7 @@ Non testé en jeu. Corrige l'app Réseau qui affichait « Athena hors ligne · r
 - Carte de l'app Plan : les clics posent de nouveau les sommets des zones (le focus resté sur un bouton mettait la zone de contenu devant la carte).
 - Alerte plein écran, notification et vibration envoyées depuis le site (Overwatch beta) : elles arrivent de nouveau sur le téléphone natif. COMSPEC Link les passait au module `atak_athena` (ancien téléphone Iceman, livré dans le même mod et donc toujours chargé) au lieu du natif ; `fn_receiveOrder` les donne maintenant au natif quand il est chargé. `atak_athena` n'est pas modifié.
 - Carte, barre TRAIT / DESSIN LIBRE : DÉFAIRE devient ANNULER et FERMÉ devient ZONE.
+- Traits et repères du téléphone absents du site : quand l'envoi au site est refusé ou mis en attente, le téléphone l'affiche avec la raison (synchro des marqueurs coupée, liaison Athena pas prête…). COMSPEC Link note maintenant la raison de chaque refus.
 
 ## Correctif 2026-10-12 — ATAK sur le JPC : bon modèle et écran vivant (ATAK natif 1.15.1)
 

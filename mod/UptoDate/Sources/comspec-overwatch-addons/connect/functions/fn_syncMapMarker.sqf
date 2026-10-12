@@ -17,8 +17,9 @@ params [
 ];
 
 if (_markerName isEqualTo "") exitWith { false };
-if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
-if (!(missionNamespace getVariable ["comspec_overwatch_sync_map_markers", true])) exitWith { false };
+missionNamespace setVariable ["COMSPEC_LastMarkerSyncSkip", "", false];
+if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { missionNamespace setVariable ["COMSPEC_LastMarkerSyncSkip", "overwatch_off", false]; false };
+if (!(missionNamespace getVariable ["comspec_overwatch_sync_map_markers", true])) exitWith { missionNamespace setVariable ["COMSPEC_LastMarkerSyncSkip", "sync_off", false]; false };
 
 // Joueur Arma / Marker Widget BCE / Dropper TAD — avant le gate téléphone :
 // IceMan compileFinal PlaceMarker, type *Local, coupure simulée.
@@ -37,7 +38,7 @@ if (_isUnderscore) then {
         );
     };
 };
-if (_isUnderscore && {!_underscoreOk}) exitWith { false };
+if (_isUnderscore && {!_underscoreOk}) exitWith { missionNamespace setVariable ["COMSPEC_LastMarkerSyncSkip", "not_syncable", false]; false };
 
 private _isWidget = _isUnderscore && {_underscoreOk};
 if (!_force && {_isWidget}) then { _force = true; };
@@ -81,6 +82,8 @@ if ((_wireName find "#") >= 0) then {
 private _fnc_dispatch = {
     params ["_name", "_body", "_del", "_blocked"];
     if (_blocked || {!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])}) exitWith {
+        // Mis en file : l'appelant peut le dire au joueur (fn_markerWeb du téléphone natif).
+        missionNamespace setVariable ["COMSPEC_LastMarkerSyncSkip", ["queued_not_ready", "queued_tx"] select _blocked, false];
         [_name, _body, _del] call comspec_overwatch_connect_fnc_queueMapMarker;
         true
     };
@@ -120,7 +123,7 @@ if (_type isEqualTo "" && {!(_shape isEqualTo "POLYLINE")}) then {
 if (!(_shape isEqualTo "POLYLINE") && {_type isEqualTo ""}) exitWith { false };
 
 private _pos = markerPos _markerName;
-if ((abs (_pos select 0) < 0.1) && {(abs (_pos select 1) < 0.1)}) exitWith { false };
+if ((abs (_pos select 0) < 0.1) && {(abs (_pos select 1) < 0.1)}) exitWith { missionNamespace setVariable ["COMSPEC_LastMarkerSyncSkip", "no_pos", false]; false };
 
 private _text = markerText _markerName;
 if (_text isEqualTo "" && {_isUnderscore}) then {
