@@ -548,6 +548,7 @@ class CfgFunctions {
             class sendLocalTacticalMarker {};
             class resyncAllMapMarkers {};
             class gridPosition {};
+            class mgrsGrid {};
             class formatHeading {};
             class trackPacketLoss {};
             class recordPacketSent {};

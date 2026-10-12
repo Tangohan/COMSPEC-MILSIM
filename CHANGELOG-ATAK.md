@@ -11,6 +11,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## 2026-10-12 — Photos : vraie grille MGRS et heure Zulu du jeu (ATAK natif 1.30.0, COMSPEC Link 2.0.74)
+
+Non testé en jeu. Demande de TTRD : les photos envoyées doivent porter une vraie grille militaire et l'heure Zulu du jeu, pas celle du PC.
+
+- **Grille MGRS** : nouvelle fonction `fn_mgrsGrid` (connect). Le terrain est placé sur le globe par sa latitude et sa longitude (CfgWorlds), puis converti en UTM WGS84 : zone, bande, carré de 100 km et coordonnées à 1 m, par exemple `35S LC 12345 67890`. Remplace la grille Arma à 6 chiffres sur les photos envoyées.
+- **Heure Zulu du jeu** : la photo transmet la date, l'heure et le terrain de la partie (COMSPEC Link 2.0.74, champs `game_date`, `game_time`, `world_name`). Le bandeau incrusté par Athena et le relais Discord affichent cette heure. Sans ces champs (ancienne DLL), l'heure réelle reste utilisée.
+- À faire par TTRD : reconstruire la DLL avec `build_mod.bat`.
+
 ## Vague 2026-10-12 — Musique : bibliothèque du site et lecteur refait (ATAK natif 1.29.0, COMSPEC Link 2.0.73)
 
 Non testé en jeu. Migrations à lancer (`music_library`) et DLL à recompiler (COMSPEC Link et COMSPECATAKNativeExtension, `build_mod.bat`).
