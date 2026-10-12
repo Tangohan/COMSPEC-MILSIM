@@ -11,6 +11,12 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Correctif 2026-10-12 — Langue dans l'app Réglages (ATAK natif 1.15.2)
+
+Non testé en jeu. TTRD ne trouvait pas où passer le téléphone en anglais.
+- Nouvelle catégorie **Langue / Language** en tête de l'app Réglages du téléphone : FRANÇAIS, ENGLISH ou AUTO (langue du jeu). Même réglage que le menu CBA, la page se redessine aussitôt dans la langue choisie.
+- Le réglage CBA reste dans Échap > Options > Options des addons > COMSPEC, onglet Client, section **ATAK · Langue / Language** (plus bas dans la liste des sections ATAK).
+
 ## Correctif 2026-10-12 — ATAK sur le JPC : bon modèle et écran vivant (ATAK natif 1.15.1)
 
 Non testé en jeu. Retour de TTRD sur la 1.15.0 : en mode JPC, la tablette A/B s'affichait au lieu du Samsung S7 choisi, et l'écran restait noir.
