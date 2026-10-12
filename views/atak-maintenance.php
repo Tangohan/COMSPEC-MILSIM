@@ -465,7 +465,7 @@ $tenantLabel = trim((string) ($tenantName ?? ''));
       <div class="atak-maint__actions">
         <a class="atak-maint__btn atak-maint__btn--primary" href="<?= htmlspecialchars(url('dashboard'), ENT_QUOTES, 'UTF-8') ?>">Retour au tableau de bord</a>
         <?php if ($canAccessAdminAtakConfig): ?>
-          <a class="atak-maint__btn atak-maint__btn--ghost" href="<?= htmlspecialchars(url('back-office/ressources/atak-config'), ENT_QUOTES, 'UTF-8') ?>">Gérer la maintenance</a>
+          <a class="atak-maint__btn atak-maint__btn--ghost" href="<?= htmlspecialchars(url('admin/atak-config'), ENT_QUOTES, 'UTF-8') ?>">Gérer la maintenance</a>
         <?php endif; ?>
       </div>
     </section>

@@ -132,7 +132,7 @@ require base_path('views/partials/alert_banners.php');
                 <p class="atak-dash__module-copy">Collections et tenues partagées de la communauté (arsenal Athena).</p>
             </a>
             <a href="<?= htmlspecialchars(url('back-office/community'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__module">
-                <p class="atak-dash__module-kicker">Gestion</p>
+                <p class="atak-dash__module-kicker">Administration</p>
                 <h2 class="atak-dash__module-title">Paramètres</h2>
                 <p class="atak-dash__module-copy">Identité, invitations<?= $can_manage_invitations && $pending_invitations_count > 0 ? ' (' . $pending_invitations_count . ' en attente)' : '' ?> et profil de la communauté.</p>
             </a>
@@ -154,7 +154,7 @@ require base_path('views/partials/alert_banners.php');
             <a href="<?= htmlspecialchars(url('atak/premiere-liaison'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Première liaison</a>
             <a href="<?= htmlspecialchars(url('tacmap'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">TACMAP</a>
             <a href="<?= htmlspecialchars(url('back-office/atak/fire-teams'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Équipes de feu</a>
-            <a href="<?= htmlspecialchars(url('back-office/ressources/atak-config'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Réglages carte</a>
+            <a href="<?= htmlspecialchars(url('admin/atak-config'), ENT_QUOTES, 'UTF-8') ?>" class="atak-dash__tool">Réglages carte</a>
         </div>
     </section>
 </main>

@@ -6,7 +6,7 @@ $firstLinkUrl = url('atak/premiere-liaison');
 $atakUrl = url('atak');
 $modUrl = url('atak/mod');
 $guideUrl = url('atak/mod/guide');
-$adminConfigUrl = url('back-office/ressources/atak-config');
+$adminConfigUrl = url('admin/atak-config');
 $canAdmin = function_exists('can') && (can('admin.system') || can('admin.organization') || can('admin.access'));
 ?>
 <div class="max-w-3xl mx-auto px-6 py-12">
@@ -90,7 +90,7 @@ $canAdmin = function_exists('can') && (can('admin.system') || can('admin.organiz
         </section>
 
         <section>
-            <h2 class="text-lg font-bold text-slate-900 mb-3">4. Gestionnaires de la communauté : générer la clé d’accès</h2>
+            <h2 class="text-lg font-bold text-slate-900 mb-3">4. Administrateurs — générer la clé d’accès</h2>
             <p class="text-slate-700 text-sm mb-2">
                 Une clé communauté active est nécessaire pour que Appairer et la liaison jeu fonctionnent pleinement.
             </p>
