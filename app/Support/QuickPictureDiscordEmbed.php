@@ -5,17 +5,64 @@ declare(strict_types=1);
 namespace App\Support;
 
 /**
- * Embed Discord d'une photo Quick Picture (téléphone ATAK) : opérateur, grille, carte,
- * date et heure en jeu et réelles, photo affichée dans l'embed. Logique pure (testable).
+ * Embed Discord d'une photo Quick Picture (téléphone ATAK) ou d'un cliché du drone (app Drone) :
+ * opérateur, grille, carte, date et heure en jeu et réelles, photo affichée dans l'embed.
+ * Fiche du cliché (titre, description, SSE, confidentiel) : SSE → image floutée (jointe seulement),
+ * confidentiel → aucune image, message, lien de lecture sur Athena et note de confidentialité.
+ * Logique pure (testable).
  */
 final class QuickPictureDiscordEmbed
 {
     public const COLOR = 0x3B82F6;
+    public const COLOR_SSE = 0xF59E0B;
+    public const COLOR_CONFIDENTIAL = 0xDC2626;
+
+    public const MODE_CLEAR = 'clear';
+    public const MODE_SSE = 'sse';
+    public const MODE_CONFIDENTIAL = 'confidential';
+
+    public const CONFIDENTIAL_NOTE = 'Cliché confidentiel : image non publiée sur Discord. Lecture sur Athena réservée aux personnels habilités (accès SSE « confidentiel » ou plus), ne pas diffuser.';
+
+    /**
+     * Traitement Discord du cliché : confidentiel (aucune image) l'emporte sur SSE (image floutée).
+     * Drapeaux de la fiche (COMSPEC Link 2.0.66+) ou, DLL plus ancienne, étiquettes tassées dans la légende.
+     *
+     * @param array<string, mixed> $meta
+     */
+    public static function mode(array $meta): string
+    {
+        $caption = (string) ($meta['caption'] ?? '');
+        if (!empty($meta['is_confidential']) || preg_match('/\[CONFIDENTIEL\]/iu', $caption) === 1) {
+            return self::MODE_CONFIDENTIAL;
+        }
+        if (!empty($meta['is_sse']) || trim((string) ($meta['sse_case_ref'] ?? '')) !== '' || preg_match('/\[SSE(?:\s[^\]]*)?\]/iu', $caption) === 1) {
+            return self::MODE_SSE;
+        }
+
+        return self::MODE_CLEAR;
+    }
+
+    /**
+     * Cliché pris avec la caméra du drone (fn_dronePhoto : appareil UAV, source « drone », flux drone:<netId>).
+     *
+     * @param array<string, mixed> $meta
+     */
+    public static function isDronePhoto(array $meta): bool
+    {
+        if (strtolower(trim((string) ($meta['photo_source'] ?? ''))) === 'drone') {
+            return true;
+        }
+        if (strtoupper(trim((string) ($meta['device_type'] ?? ''))) === 'DRONE') {
+            return true;
+        }
+
+        return str_starts_with(strtolower(trim((string) ($meta['feed_id'] ?? ''))), 'drone:');
+    }
 
     /**
      * @param array<string, mixed> $meta données de la photo (author_callsign, unit_name, grid_ref, heading, caption…)
      * @param array{
-     *   attachment?:string, image_url?:string, map_label?:string, world_name?:string, location?:string,
+     *   attachment?:string, image_url?:string, read_url?:string, map_label?:string, world_name?:string, location?:string,
      *   game_date?:string, game_time?:string, game_time_approx?:bool, real_unix?:int, timezone?:string
      * } $ctx
      * @return array<string, mixed>
@@ -29,13 +76,23 @@ final class QuickPictureDiscordEmbed
         $unit = self::clean((string) ($meta['unit_name'] ?? ''));
         $grid = self::clean((string) ($meta['grid_ref'] ?? ''));
         $heading = isset($meta['heading']) && is_numeric($meta['heading']) ? (float) $meta['heading'] : null;
-        $caption = self::meaningfulCaption((string) ($meta['caption'] ?? ''), [$author, $unit, $grid]);
+        $mode = self::mode($meta);
+        $drone = self::isDronePhoto($meta);
+        // Étiquettes [CONFIDENTIEL] / [SSE dossier] de l'ancienne légende tassée : reprises par le mode.
+        $rawCaption = trim((string) preg_replace('/\[(?:CONFIDENTIEL|SSE(?:\s[^\]]*)?)\]\s*/iu', '', (string) ($meta['caption'] ?? '')));
+        $photoTitle = self::clean((string) ($meta['title'] ?? ''));
+        $description = self::cleanText((string) ($meta['description'] ?? ''));
+        $caption = $description !== '' ? $description : self::meaningfulCaption($rawCaption, [$author, $unit, $grid, $photoTitle]);
         if ($heading === null) {
-            $heading = self::headingFromCaption((string) ($meta['caption'] ?? ''));
+            $heading = self::headingFromCaption($rawCaption);
         }
 
         $fields = [];
         $fields[] = ['name' => 'Opérateur', 'value' => $author, 'inline' => true];
+        $droneName = self::clean((string) ($meta['drone_name'] ?? ''));
+        if ($drone && $droneName !== '') {
+            $fields[] = ['name' => 'Drone', 'value' => $droneName, 'inline' => true];
+        }
         if ($unit !== '' && strcasecmp($unit, $author) !== 0) {
             $fields[] = ['name' => 'Unité', 'value' => $unit, 'inline' => true];
         }
@@ -84,11 +141,40 @@ final class QuickPictureDiscordEmbed
             ];
         }
 
+        $attachment = trim((string) ($ctx['attachment'] ?? ''));
+        $imageUrl = trim((string) ($ctx['image_url'] ?? ''));
+        if ($mode === self::MODE_SSE) {
+            $ref = self::clean((string) ($meta['sse_case_ref'] ?? ''));
+            $fields[] = [
+                'name' => 'SSE',
+                'value' => ($ref !== '' ? 'Dossier ' . $ref : 'Cliché SSE') . ' · '
+                    . ($attachment !== '' ? 'image floutée sur Discord, version nette sur Athena' : 'image non jointe, à consulter sur Athena'),
+                'inline' => false,
+            ];
+        }
+        if ($mode === self::MODE_CONFIDENTIAL) {
+            $readUrl = trim((string) ($ctx['read_url'] ?? ''));
+            if ($readUrl !== '' && preg_match('#^https?://#i', $readUrl) === 1) {
+                $fields[] = ['name' => 'Lecture sur Athena', 'value' => mb_substr($readUrl, 0, 1000), 'inline' => false];
+            }
+            $fields[] = ['name' => 'Confidentialité', 'value' => self::CONFIDENTIAL_NOTE, 'inline' => false];
+        }
+
+        $label = $drone ? 'Cliché drone' : 'Quick Picture';
+        $tag = match ($mode) {
+            self::MODE_CONFIDENTIAL => '[CONFIDENTIEL] ',
+            self::MODE_SSE => '[SSE] ',
+            default => '',
+        };
         $embed = [
-            'title' => mb_substr('Quick Picture — ' . $author, 0, 256),
-            'color' => self::COLOR,
+            'title' => mb_substr($tag . $label . ' — ' . ($photoTitle !== '' ? $photoTitle : $author), 0, 256),
+            'color' => match ($mode) {
+                self::MODE_CONFIDENTIAL => self::COLOR_CONFIDENTIAL,
+                self::MODE_SSE => self::COLOR_SSE,
+                default => self::COLOR,
+            },
             'fields' => $fields,
-            'footer' => ['text' => 'Athena · Téléphone ATAK'],
+            'footer' => ['text' => $drone ? 'Athena · Drone ATAK' : 'Athena · Téléphone ATAK'],
         ];
         if ($caption !== '') {
             $embed['description'] = mb_substr($caption, 0, 1000);
@@ -96,11 +182,13 @@ final class QuickPictureDiscordEmbed
         if ($realUnix > ReconCapturedAt::MIN_UNIX) {
             $embed['timestamp'] = gmdate('Y-m-d\TH:i:s\Z', $realUnix);
         }
-        $attachment = trim((string) ($ctx['attachment'] ?? ''));
-        $imageUrl = trim((string) ($ctx['image_url'] ?? ''));
+        // Confidentiel : jamais d'image. SSE : seulement la copie floutée jointe (le lien public serait net).
+        if ($mode === self::MODE_CONFIDENTIAL) {
+            return $embed;
+        }
         if ($attachment !== '') {
             $embed['image'] = ['url' => 'attachment://' . $attachment];
-        } elseif ($imageUrl !== '' && str_starts_with($imageUrl, 'https://')) {
+        } elseif ($mode === self::MODE_CLEAR && $imageUrl !== '' && str_starts_with($imageUrl, 'https://')) {
             $embed['image'] = ['url' => $imageUrl];
         }
 
@@ -215,6 +303,17 @@ final class QuickPictureDiscordEmbed
         $v = trim((string) preg_replace('/\s+/u', ' ', $v));
 
         return mb_substr($v, 0, 200);
+    }
+
+    /** Texte libre multi-lignes (description de la fiche) : retours à la ligne gardés, mentions de masse retirées. */
+    private static function cleanText(string $v): string
+    {
+        $v = str_replace(["\r\n", "\r"], "\n", $v);
+        $v = (string) preg_replace('/[\x00-\x09\x0B-\x1F\x7F]/u', ' ', $v);
+        $v = (string) preg_replace('/@(everyone|here)\b/iu', '', $v);
+        $v = trim((string) preg_replace('/[ \t]+/u', ' ', $v));
+
+        return mb_substr($v, 0, 1000);
     }
 
     private static function timezone(string $name): \DateTimeZone
