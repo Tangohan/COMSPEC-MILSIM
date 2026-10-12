@@ -305,7 +305,9 @@ if (_interactive) then {
                 if (_tenant isNotEqualTo "") then { ([_var, _def, _tenant] call comspec_atak_native_fnc_pref) params ["_v", "_lk"]; _on = _v; _locked = _lk; };
                 private _bx0 = _sx + (_forEachIndex mod 2) * (_lw + _pad / 2);
                 private _by0 = _ly0 + (floor (_forEachIndex / 2)) * (_lh + _gap);
-                private _row = ["COMSPEC_RscText", [_bx0, _by0, _lw, _lh]] call _mk;
+                // Dernier calque seul sur sa rangée : toute la largeur (libellé long lisible en entier).
+                private _lwR = [_lw, _lw * 2 + _pad / 2] select (_forEachIndex isEqualTo ((count _layers) - 1) && {(_forEachIndex mod 2) isEqualTo 0});
+                private _row = ["COMSPEC_RscText", [_bx0, _by0, _lwR, _lh]] call _mk;
                 _row ctrlSetBackgroundColor ([[0.065, 0.08, 0.072, 0.96], [0.08, 0.20, 0.11, 0.96]] select _on);
                 // Case (pas de glyphe ✓ : absent des polices Roboto d'Arma) : bordure claire, intérieur vert plein si actif, sombre sinon.
                 private _cx = _bx0 + _boxW * 0.45;
@@ -315,14 +317,14 @@ if (_interactive) then {
                 private _inner = ["COMSPEC_RscText", [_cx + pixelW * 2, _cy + pixelH * 2, _boxW - pixelW * 4, _boxH - pixelH * 4]] call _mk;
                 _inner ctrlSetBackgroundColor ([[0.04, 0.05, 0.045, 1], [0.36, 0.78, 0.42, 1]] select _on);
                 private _tx0 = _cx + _boxW * 1.45;
-                private _t = ["COMSPEC_RscText", [_tx0, _by0, _bx0 + _lw - _tx0, _lh], _lbl + (["", " · imposé"] select _locked)] call _mk;
+                private _t = ["COMSPEC_RscText", [_tx0, _by0, _bx0 + _lwR - _tx0, _lh], _lbl + (["", " · imposé"] select _locked)] call _mk;
                 _t ctrlSetFontHeight _lfs;
                 _t ctrlSetTextColor ([[[0.86, 0.91, 0.88, 1], [1, 1, 1, 1]] select _on, [0.50, 0.54, 0.52, 0.85]] select _locked);
                 if (_locked) then {
                     _row ctrlSetBackgroundColor [0.035, 0.04, 0.037, 0.8];
                     _row ctrlSetTooltip (("Réglé par votre communauté sur Athena (Contrôle serveur)") call comspec_atak_native_fnc_tr);
                 } else {
-                    private _b = ["COMSPEC_RscButtonOverlay", [_bx0, _by0, _lw, _lh]] call _mk;
+                    private _b = ["COMSPEC_RscButtonOverlay", [_bx0, _by0, _lwR, _lh]] call _mk;
                     _b ctrlSetTooltip ((format ["%1 : %2 (cliquer pour %3)", _lbl, ["masqué", "affiché"] select _on, ["afficher", "masquer"] select _on]) call comspec_atak_native_fnc_tr);
                     _b ctrlAddEventHandler ["ButtonClick", compile format ["[%1, %2, %3] call (uiNamespace getVariable 'COMSPEC_ATAK_LayerToggle');", str _ns, str _var, _def]];
                 };
@@ -540,6 +542,65 @@ if (_dv isNotEqualTo "OFF") then {
                 ["FERMER LA VUE", ["view", "OFF"] call _act, [0.08, 0.1, 0.09, 0.9], "Ferme la vue du drone"]
             ];
         };
+    };
+};
+
+// Caméra d'un équipier (BFT > piste > VOIR CAMÉRA, ou clic droit sur un allié) : petite fenêtre en haut à gauche de la
+// carte, à droite de la boussole, avec le flux du Live cam (caméra poitrine, cible de rendu comspec_livecam).
+// pageClear coupe le Live cam à chaque dessin : la caméra est relancée ici à chaque dessin de la carte.
+private _camId = _s getOrDefault ["mapCam", ""];
+if (_camId isNotEqualTo "") then {
+    private _cu = objectFromNetId _camId;
+    if (isNull _cu || {!alive _cu} || {!([_cu] call comspec_atak_native_fnc_hasDevice)}) exitWith {
+        _s set ["mapCam", ""];
+        ["WARNING", "Caméra de l'équipier : flux perdu", 3, 30] call comspec_atak_native_fnc_notify;
+    };
+    private _mini = _l get "mini";
+    private _cmode = _s getOrDefault ["livecamMode", 0];
+    [_cu, _cmode] call comspec_atak_native_fnc_livecamStart;
+    private _cw2 = _mw * ([0.3, 0.46] select _mini);
+    private _ch2 = _cw2 * 0.5625 * _ratio;
+    private _cx2 = _bx + _pad * 2 + ((((_mh * 0.24) min (_font * 3.6)) / _ratio) * ([1, 0] select _mini));
+    private _cy2 = _by + _pad;
+    private _cbg = ["COMSPEC_RscText", [_cx2 - pixelW, _cy2 - pixelH, _cw2 + pixelW * 2, _ch2 + pixelH * 2]] call _mk;
+    _cbg ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.9];
+    private _cblack = ["COMSPEC_RscText", [_cx2, _cy2, _cw2, _ch2]] call _mk;
+    _cblack ctrlSetBackgroundColor [0, 0, 0, 1];
+    ["COMSPEC_RscPhone", [_cx2, _cy2, _cw2, _ch2], "#(argb,1024,512,1)r2t(comspec_livecam,1.7778)"] call _mk;
+    // Incrustation (indicatif, grille, distance, cap) : tenue à jour chaque seconde par la boucle du Live cam.
+    private _cosd = ["COMSPEC_RscStructuredText", [_cx2 + pixelW * 4, _cy2 + pixelH * 3, _cw2 - pixelW * 8, _fs * 2.4]] call _mk;
+    _cosd ctrlSetFontHeight (_fs * ([0.85, 0.7] select _mini));
+    _cosd ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='#e5483a'>● LIVE</t>  <t font='RobotoCondensedBold'>%1</t>",
+        [_cu, true] call comspec_atak_native_fnc_unitCallsign]) call comspec_atak_native_fnc_tr);
+    uiNamespace setVariable ["COMSPEC_ATAK_LivecamOsd", _cosd];
+    if (_interactive) then {
+        private _bh4 = _fs * 1.2;
+        private _b4w = _cw2 / 3;
+        {
+            _x params ["_lbl", "_code", "_tip"];
+            private _b = ["COMSPEC_RscButton", [_cx2 + _forEachIndex * _b4w, _cy2 + _ch2 + pixelH * 2, _b4w - pixelW * 2, _bh4], _lbl] call _mk;
+            _b ctrlSetFontHeight (_fs * 0.66);
+            _b ctrlSetBackgroundColor [0.08, 0.1, 0.09, 0.92];
+            _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
+            _b ctrlAddEventHandler ["ButtonClick", _code];
+        } forEach [
+            [["JOUR", "VISION NOCT.", "THERMIQUE"] select _cmode, {
+                private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+                _s set ["livecamMode", ((_s getOrDefault ["livecamMode", 0]) + 1) mod 3];
+                [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            }, "Change le mode de la caméra : jour → vision nocturne → thermique"],
+            ["GRAND", {
+                private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+                _s set ["livecamTarget", _s getOrDefault ["mapCam", ""]];
+                _s set ["mapCam", ""];
+                [{ ["LIVECAM"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+            }, "Ouvre la caméra de l'équipier en grand (app Vidéo live)"],
+            ["FERMER", {
+                (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["mapCam", ""];
+                [] call comspec_atak_native_fnc_livecamStop;
+                [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            }, "Ferme la caméra de l'équipier"]
+        ];
     };
 };
 

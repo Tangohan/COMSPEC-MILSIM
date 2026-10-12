@@ -6,7 +6,7 @@
     Arma ne sait capturer que l'écran du joueur (commande screenshot) : l'écran bascule ~0,4 s sur une caméra posée
     exactement comme la nacelle (même pose, zoom et vision), téléphone et HUD masqués, les surlignages posés sur l'écran
     (worldToScreen des rayons de leurs coins), le PNG est écrit dans Documents\Arma 3\Screenshots (nom COMSPEC_DRONE_…),
-    puis la vue revient. Rien ne part tant que le pilote n'a pas validé la fiche, ouverte en fenêtre plein écran
+    puis la vue revient. Rien ne part tant que le pilote n'a pas validé la fiche (titre obligatoire), ouverte en fenêtre plein écran
     ("modal") : aperçu en grand, titre, description, SSE (rattaché au dossier SSE actif), confidentiel.
       ["view"] / ["viewExit"] ouvre / quitte le viseur ; ["tool", "BOX" | "CIRCLE"] outil de surlignage (bascule) ;
       ["markAdd", [u0, v0, u1, v1]] surlignage tracé ; ["markClear"] les efface ;
@@ -371,7 +371,7 @@ switch (_act) do {
         _y = _y + _ph + _pad / 2;
         // Champs : titre, description (relus par ["save"] avant tout redessin).
         private _fields = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
-        private _lb1 = ["COMSPEC_RscLabel", [_pad, _y, _w, _lblH], "TITRE (60 caractères)"] call _mk;
+        private _lb1 = ["COMSPEC_RscLabel", [_pad, _y, _w, _lblH], "TITRE (obligatoire, 60 caractères)"] call _mk;
         _lb1 ctrlSetFontHeight (_fs * 0.9);
         _y = _y + _lblH;
         private _ed = ["COMSPEC_RscEdit", [_pad, _y, _w, _editH], _title] call _mk;
@@ -446,6 +446,13 @@ switch (_act) do {
         call _save;
         private _i = [_arg, _cur] select (_arg isEqualTo -1);
         if (_i < 0 || {_i >= count _lib}) exitWith {};
+        // Titre obligatoire : sans lui, la fiche se rouvre au lieu de partir (rien n'arrive sur Athena ni Discord).
+        if (((_lib select _i) select 1) isEqualTo "") exitWith {
+            _s set ["dronePhEdit", _i];
+            _s set ["droneTab", "PHOTO"];
+            ["WARNING", "Donnez un titre au cliché avant de l'envoyer"] call _say;
+            call _render;
+        };
         if !([] call comspec_atak_native_fnc_bridge) exitWith { ["WARNING", "Envoi impossible : COMSPEC Link doit être chargé (le cliché reste sur le téléphone)"] call _say; };
         if !(missionNamespace getVariable ["COMSPEC_AthenaReady", false]) exitWith { ["WARNING", "Envoi impossible : connectez-vous d'abord à Athena (le cliché reste sur le téléphone)"] call _say; };
         private _e = _lib select _i;

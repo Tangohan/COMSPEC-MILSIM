@@ -754,7 +754,7 @@ switch (_tab) do {
         private _q = ((profileNamespace getVariable ["COMSPEC_ATAK_DroneQuality", 1]) max 0) min 2;
         private _dm = profileNamespace getVariable ["COMSPEC_ATAK_DroneDragMode", 0];
         _rows append [
-            ["section", "Caméra", "Image de la nacelle, clichés et marquage des cibles"],
+            ["section", "Caméra", "Image de la caméra, clichés et marquage des cibles"],
             ["buttons", [
                 [["OUVRIR LA CAMÉRA", "FERMER LA CAMÉRA"] select _camOn, ["cam"] call _act, !_camOn],
                 ["VISEUR PHOTO", { ["view"] call comspec_atak_native_fnc_dronePhoto; }, false, true, "Cadrer, zoomer, marquer et surligner avant de prendre la photo"]
@@ -766,8 +766,8 @@ switch (_tab) do {
                 "Téléphone en petit (Ctrl+U) : l'image du drone occupe tout l'écran, incrustations réduites"],
             ["segment", "Glisser sur l'image", [
                 ["SAISIR L'IMAGE", { profileNamespace setVariable ["COMSPEC_ATAK_DroneDragMode", 0]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, _dm isEqualTo 0],
-                ["DIRIGER LA NACELLE", { profileNamespace setVariable ["COMSPEC_ATAK_DroneDragMode", 1]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, _dm isEqualTo 1]
-            ], ["l'image suit la souris, comme sur un écran tactile", "la nacelle tourne du côté où l'on glisse"] select (_dm isEqualTo 1)],
+                ["DIRIGER LA CAMÉRA", { profileNamespace setVariable ["COMSPEC_ATAK_DroneDragMode", 1]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, _dm isEqualTo 1]
+            ], ["l'image suit la souris, comme sur un écran tactile", "la caméra tourne du côté où l'on glisse"] select (_dm isEqualTo 1)],
             ["segment", "Source de l'image", [
                 ["DRONE", ["feedSrc", "DRONE"] call _act, _src isEqualTo "DRONE"],
                 ["CAMÉRA ATAK", ["feedSrc", "PHONE"] call _act, _src isEqualTo "PHONE"],

@@ -30,7 +30,11 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
         if (!alive _u || {!([_u] call comspec_atak_native_fnc_hasDevice)}) exitWith {
             [] call comspec_atak_native_fnc_livecamStop;
             ["WARNING", "Live cam : flux perdu", 3, 30] call comspec_atak_native_fnc_notify;
-            [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            // Page Live cam, ou petite fenêtre de la carte (VOIR CAMÉRA) : seule la page à l'écran est redessinée.
+            private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+            private _pg = _st getOrDefault ["activePage", ""];
+            if (_pg isEqualTo "MAP") then { _st set ["mapCam", ""]; };
+            if (_pg in ["LIVECAM", "MAP"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _pg] call CBA_fnc_execNextFrame; };
         };
         private _osd = uiNamespace getVariable ["COMSPEC_ATAK_LivecamOsd", controlNull];
         if (!isNull _osd) then {

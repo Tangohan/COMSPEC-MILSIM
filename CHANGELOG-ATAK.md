@@ -11,6 +11,17 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Drone : flux réparé, caméra, titre des clichés, caméra d'un équipier sur la carte (ATAK natif 1.22.0)
+
+Non testé en jeu. Retours de TTRD après le test du 12 octobre au soir. Pas de DLL à recompiler, pas de migration.
+- Flux du drone : le filtre NO DATA restait affiché en permanence, avec « true » écrit dessous. La fonction de la neige renvoyait toujours `true` au lieu de la raison de la coupure : n'importe quel flux passait pour coupé. Elle renvoie maintenant la vraie raison (vide quand le flux passe).
+- « Nacelle » devient « caméra » partout à l'écran (CAMÉRA CAP … · SITE …, DIRIGER LA CAMÉRA, aide et infobulles), en français comme en anglais.
+- Clichés du drone : plus rien ne part sur Athena ni sur Discord sans titre. ENVOYER sur une fiche sans titre rouvre la fiche avec un avertissement ; le champ s'appelle TITRE (obligatoire). L'envoi automatique depuis le dossier Screenshots (surveillance disque de COMSPEC Link) ignore désormais les fichiers COMSPEC_DRONE_ : c'est lui qui publiait les clichés aussitôt pris, sans titre, description ni SSE.
+- Panneau SITUATION de la carte : le texte se réduit tout seul tant qu'il ne tient pas au-dessus des calques (plus de ligne coupée ni de texte sous CALQUES) ; la météo tient sur deux lignes (Pluie, Vent) ; le dernier calque seul sur sa rangée prend toute la largeur (« Altitudes (heatmap) » lisible en entier).
+- VOIR CAMÉRA : dans l'app BFT (piste d'un équipier choisie) ou d'un clic droit sur un équipier de la carte (« Voir la caméra »), la carte se centre sur lui et sa caméra poitrine s'affiche en petite fenêtre en haut à gauche, à côté de la boussole (aussi sur la petite carte). Boutons : JOUR / VISION NOCT. / THERMIQUE, GRAND (app Vidéo live), FERMER. Le flux se coupe seul si l'équipier meurt ou perd son téléphone.
+
+À tester en jeu : ouvrir la caméra du drone (plus de NO DATA tant que la liaison passe, NO DATA avec une vraie raison quand on éloigne le drone) ; prendre un cliché et vérifier qu'aucun message n'arrive sur Discord avant ENVOYER, et qu'ENVOYER sans titre est refusé ; VOIR CAMÉRA depuis le BFT et depuis le clic droit, avec un deuxième joueur ; panneau SITUATION ouvert avec un long nom de groupe.
+
 ## Volet rapide redessiné, portrait opérateur du site (ATAK natif 1.17.0)
 
 Non testé en jeu. Demande de TTRD : « Améliore l'UI du menu et affiche l'image de l'opérateur issue du web ».
