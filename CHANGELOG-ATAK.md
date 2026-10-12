@@ -23,6 +23,7 @@ Non testé en jeu. Inclut les correctifs de performance de la PR #629 (même bas
 - Plans nommés (aperçu, chargement, publication en ajout ou remplacement), export/import en texte `COMSPECPLAN1|…`. Onglet CARTE dans Briefing.
 
 ### Amélioré — Dessin libre et carte
+- Unités : cadres OTAN par défaut, cartouche sombre avec l'indicatif puis « distance · azimut » ; contacts ennemis (losange rouge) avec l'heure et l'auteur du signalement ; boussole « 42° NE » ; ligne curseur CURSEUR / MGRS / ALT. Réglages > Carte > « Cartouches des unités » (complet, indicatif seul, aucun). Allègement automatique quand les cartouches se chevauchent ou au dézoom.
 - Traits lissés et allégés, barre couleur / épaisseur / flèche / forme fermée / Défaire / Effacer mes traits ; épaisseur et flèche visibles par tous.
 - Les dessins libres arrivent sur la carte Overwatch beta (le point provisoire est remplacé par le tracé ; décalage de carte appliqué aux polylignes).
 - Clic droit : menu redessiné sans redessiner la page (en-tête grille, altitude, distance, azimut ; Y aller, Centrer ici, Copier la grille).
