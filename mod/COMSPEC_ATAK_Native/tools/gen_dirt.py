@@ -25,29 +25,39 @@ def white(alpha):
 
 
 def dust(seed):
+    """Poussière fine : grains minuscules et quelques débris, un voile à peine visible, deux essuyages légers.
+    Retours de jeu : les grosses taches floues (effet bokeh) noircissaient tout l'écran, c'était laid."""
     rnd = random.Random(seed)
-    w = h = 512
+    w = h = 1024
     a = Image.new("L", (w, h), 0)
     d = ImageDraw.Draw(a)
-    # Voile irrégulier (taches larges et floues).
-    for _ in range(60):
-        x, y, r = rnd.randint(0, w), rnd.randint(0, h), rnd.randint(30, 110)
-        d.ellipse([x - r, y - r, x + r, y + r], fill=rnd.randint(20, 55))
-    a = a.filter(ImageFilter.GaussianBlur(40))
+    # Voile très léger, irrégulier (jamais une tache visible).
+    for _ in range(40):
+        x, y, r = rnd.randint(0, w), rnd.randint(0, h), rnd.randint(80, 220)
+        d.ellipse([x - r, y - r, x + r, y + r], fill=rnd.randint(4, 10))
+    a = a.filter(ImageFilter.GaussianBlur(70))
     d = ImageDraw.Draw(a)
-    # Grains et petits débris.
-    for _ in range(2600):
+    # Grains : un pixel la plupart, rarement deux ; plus denses par plaques (là où la main n'a pas essuyé).
+    for _ in range(9000):
         x, y = rnd.randint(0, w - 1), rnd.randint(0, h - 1)
-        r = rnd.choice([0, 0, 0, 1, 1, 2])
-        d.ellipse([x - r, y - r, x + r, y + r], fill=rnd.randint(90, 220))
-    # Traînées (essuyé du revers de la main).
-    for _ in range(5):
+        d.point((x, y), fill=rnd.randint(70, 170))
+    for _ in range(500):
+        x, y = rnd.randint(0, w - 1), rnd.randint(0, h - 1)
+        r = rnd.choice([1, 1, 1, 2])
+        d.ellipse([x - r, y - r, x + r, y + r], fill=rnd.randint(90, 190))
+    # Fibres et petits débris.
+    for _ in range(25):
+        x, y = rnd.randint(0, w), rnd.randint(0, h)
+        ang, ln = rnd.uniform(0, math.pi), rnd.randint(6, 18)
+        d.line([x, y, x + math.cos(ang) * ln, y + math.sin(ang) * ln], fill=rnd.randint(70, 130), width=1)
+    # Essuyages : traînées fines et pâles.
+    for _ in range(2):
         x, y = rnd.randint(0, w), rnd.randint(0, h)
         ang = rnd.uniform(0, math.pi)
-        for k in range(120):
-            px, py = x + math.cos(ang) * k * 2, y + math.sin(ang) * k * 2
-            d.ellipse([px - 6, py - 2, px + 6, py + 2], fill=rnd.randint(25, 45))
-    return white(a.filter(ImageFilter.GaussianBlur(0.6)))
+        for k in range(200):
+            px, py = x + math.cos(ang) * k * 2.5, y + math.sin(ang) * k * 2.5
+            d.ellipse([px - 10, py - 1, px + 10, py + 1], fill=rnd.randint(8, 16))
+    return white(a.filter(ImageFilter.GaussianBlur(0.4)))
 
 
 def fingerprint(seed):
@@ -149,16 +159,16 @@ def case_dust(src, seed):
     a = Image.new("L", (S, S), 0)
     d = ImageDraw.Draw(a)
     # Taches de boue séchée, surtout près des bords.
-    for _ in range(70):
-        x, y, r = rnd.randint(0, S), rnd.randint(0, S), rnd.randint(4, 22)
-        d.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rnd.randint(60, 150))
+    for _ in range(30):
+        x, y, r = rnd.randint(0, S), rnd.randint(0, S), rnd.randint(2, 8)
+        d.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=rnd.randint(50, 110))
     for _ in range(900):
         x, y = rnd.randint(0, S - 1), rnd.randint(0, S - 1)
-        r = rnd.choice([1, 1, 2, 3])
-        d.ellipse([x - r, y - r, x + r, y + r], fill=rnd.randint(80, 200))
-    a = a.filter(ImageFilter.GaussianBlur(1.5))
+        r = rnd.choice([0, 1, 1, 2])
+        d.ellipse([x - r, y - r, x + r, y + r], fill=rnd.randint(60, 160))
+    a = a.filter(ImageFilter.GaussianBlur(0.8))
     from PIL import ImageChops
-    mix = ImageChops.add(ImageChops.add(base, Image.eval(edge, lambda v: int(v * 0.9))), ImageChops.multiply(a, Image.eval(edge, lambda v: min(255, 90 + v))))
+    mix = ImageChops.add(ImageChops.add(base, Image.eval(edge, lambda v: int(v * 0.35))), ImageChops.multiply(a, Image.eval(edge, lambda v: min(255, 40 + v))))
     return white(ImageChops.multiply(mix, shape))
 
 
@@ -197,6 +207,12 @@ def main():
         if len(sys.argv) > 2 and sys.argv[2] == "prints":
             for i in range(4):
                 convert(fingerprint(21 + i), f"dirt_print_{i}", tmp)
+            return
+        # « dust » : poussière de l'écran et de toutes les coques seulement.
+        if len(sys.argv) > 2 and sys.argv[2] == "dust":
+            for i in range(2):
+                convert(dust(11 + i), f"dirt_dust_{i}", tmp)
+            case_assets(tmp)
             return
         # « case keys » : seulement la poussière de la coque de la tablette à touches.
         if len(sys.argv) > 3 and sys.argv[2] == "case":

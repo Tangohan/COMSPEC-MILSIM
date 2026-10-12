@@ -141,9 +141,10 @@ private _off = (_hp getOrDefault ["state", "OK"]) isEqualTo "OFF";
         case "pix": { _c ctrlShow !_off; };
         case "scratch": { _c ctrlSetTextColor [0.9, 0.95, 1, 0.14 + 0.12 * _scratch]; };
         // Voile progressif : à peine visible au début, épais seulement après une longue exposition.
-        case "dust": { _c ctrlSetTextColor [0.6, 0.53, 0.4, (0.05 + 0.7 * _dust) min 0.75]; };
-        case "caseDust": { _c ctrlSetTextColor [0.55, 0.48, 0.36, (0.1 + 0.85 * _dust) min 0.9]; };
-        case "prints": { _c ctrlSetTextColor [0.82, 0.82, 0.76, 0.1 + 0.25 * _prints]; };
+        // Fine poussière (retours de jeu : la saleté noircissait l'écran et la coque) : discrète même au maximum.
+        case "dust": { _c ctrlSetTextColor [0.62, 0.56, 0.44, (0.04 + 0.4 * _dust) min 0.42]; };
+        case "caseDust": { _c ctrlSetTextColor [0.58, 0.51, 0.39, (0.05 + 0.5 * _dust) min 0.55]; };
+        case "prints": { _c ctrlSetTextColor [0.82, 0.82, 0.76, 0.06 + 0.18 * _prints]; };
         case "blood": { _c ctrlSetTextColor [0.4, 0.02, 0.02, 0.5 + 0.4 * _blood]; };
         case "frame": { _c ctrlSetTextColor [0.33, 0.02, 0.02, 0.55 + 0.4 * _frame]; };
         case "drops": { _c ctrlSetTextColor [0.85, 0.92, 1, 0.35 + 0.3 * _drops]; };
