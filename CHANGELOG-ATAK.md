@@ -11,6 +11,41 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## 2026-10-12 — Photos : vraie grille MGRS et heure Zulu du jeu (ATAK natif 1.30.0, COMSPEC Link 2.0.74)
+
+Non testé en jeu. Demande de TTRD : les photos envoyées doivent porter une vraie grille militaire et l'heure Zulu du jeu, pas celle du PC.
+
+- **Grille MGRS** : nouvelle fonction `fn_mgrsGrid` (connect). Le terrain est placé sur le globe par sa latitude et sa longitude (CfgWorlds), puis converti en UTM WGS84 : zone, bande, carré de 100 km et coordonnées à 1 m, par exemple `35S LC 12345 67890`. Remplace la grille Arma à 6 chiffres sur les photos envoyées.
+- **Heure Zulu du jeu** : la photo transmet la date, l'heure et le terrain de la partie (COMSPEC Link 2.0.74, champs `game_date`, `game_time`, `world_name`). Le bandeau incrusté par Athena et le relais Discord affichent cette heure. Sans ces champs (ancienne DLL), l'heure réelle reste utilisée.
+- À faire par TTRD : reconstruire la DLL avec `build_mod.bat`.
+
+## Vague 2026-10-12 — Musique : bibliothèque du site et lecteur refait (ATAK natif 1.29.0, COMSPEC Link 2.0.73)
+
+Non testé en jeu. Migrations à lancer (`music_library`) et DLL à recompiler (COMSPEC Link et COMSPECATAKNativeExtension, `build_mod.bat`).
+- Site, **Mon espace > Musique** (`/back-office/ma-situation/musique`) : chaque membre met en ligne ses MP3, M4A, AAC ou WAV (25 Mo par fichier, 300 Mo par membre), dans la **bibliothèque communautaire** (toute la plateforme) ou celle de **son organisation**. Lecteur intégré (file, avance, volume), recherche titre / artiste / genre.
+- **Playlists** privées, d'organisation ou publiques ; **playlist globale** unique tenue par l'administrateur de la plateforme (morceaux de la bibliothèque communautaire seulement).
+- Modération : les gestionnaires masquent ou suppriment les morceaux de leur organisation, l'administrateur de la plateforme ceux de la bibliothèque communautaire.
+- Téléphone, app Musique : nouvel onglet **ATHENA** (playlist globale, communauté, mon orga, playlists, mes envois), lu par COMSPEC Link (`AthenaMusic`, API `/api/atak/music`). Morceaux téléchargés par URL signée puis gardés en cache (60 morceaux) ; en haut-parleur, les joueurs proches entendent le même morceau.
+- Lecteur : avance / recul de 10 et 30 s (suivi par les auditeurs du haut-parleur), file d'attente avec MONTER, RETIRER et VIDER LA FILE, **favoris** (bouton FAV sur chaque morceau, section Favoris dans LECTURE).
+- Réglage CBA serveur **Bibliothèque Athena** pour couper l'onglet.
+
+## Traduction 2026-10-12 — Menu CBA, objets et modules en anglais (ATAK natif 1.21.0)
+
+Non testé en jeu.
+- Menu CBA (Échap > Options > Options des addons > COMSPEC) : titres, aides, sections et choix des listes dans la langue du téléphone (`fn_addSetting`). Changer de langue en partie : relancer la mission pour que ce menu suive (le téléphone, lui, change tout de suite).
+- Noms et descriptions des objets (arsenal, inventaire, Zeus) et modules Eden/Zeus d'extraction de données : `stringtable.xml`, dans la langue du jeu (Arma en anglais = anglais). Généré par `tools/i18n.py stringtable`.
+
+## 2026-10-12 — Connexion au compte Athena sans clé ni identifiant (ATAK natif 1.20.0, COMSPEC Link 2.0.72)
+
+Non testé en jeu. Demande de TTRD : celui qui installe le mod se connecte avec son compte Athena et tout se synchronise, sans clé de communauté ni identifiant de communauté dans les options d'addons.
+- App Athena du téléphone, nouvel onglet **COMPTE** (ouvert par défaut) : un code de 8 caractères s'affiche tout seul. Le joueur l'autorise sur **athena.ttrd.fr/lier**, connecté à son compte (bouton OUVRIR LA PAGE : le navigateur s'ouvre avec le code déjà rempli). Le jeu reçoit sa session : profil, communauté, réglages.
+- Le Steam du joueur est associé au compte à cette occasion : aux parties suivantes, la connexion se fait seule.
+- Premier lancement : après « Oui » au service Athéna, la page s'ouvre avec le code. À chaque partie sans session : un code et une notification, sans fenêtre à remplir.
+- Options d'addons : la clé d'accès et l'identifiant de communauté passent dans **COMSPEC > Overwatch · Serveur (optionnel)**, à laisser vides. Un serveur peut encore les imposer.
+- La communauté de la session est reprise par le mod (fiches d'équipe, avatars, diapositives) sans identifiant saisi.
+- Site : nouvelle page **/lier** (Mon compte > Appareils ATAK) qui valide le code du jeu ; le code de l'adresse est gardé si la personne doit d'abord se connecter.
+- COMSPEC Link 2.0.72 (DLL à recompiler) : `OpenAthenaLink` (ouvre la page du portail, refuse tout autre site), `GetSessionTenant`, et `PairStart` renvoie l'adresse avec le code.
+
 ## Vague 2026-10-12 (suite) — App Photo dans le téléphone, nouvelle app Galerie (ATAK natif 1.18.0)
 
 Non testé en jeu. Demande de TTRD : l'app Photo doit s'ouvrir sur l'appareil photo, dans l'écran du téléphone, et non en mode photo plein écran ; le plein écran devient un bouton ; les photos se revoient dans une app Galerie séparée.

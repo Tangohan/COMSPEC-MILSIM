@@ -323,6 +323,7 @@ if ($isOperatorBoNav) {
                     'icon' => 'cert',
                     'active' => str_starts_with($p, 'back-office/ma-situation/coffre'),
                 ],
+                ['label' => 'Musique', 'href' => url('back-office/ma-situation/musique'), 'icon' => 'radio', 'active' => str_starts_with($p, 'back-office/ma-situation/musique')],
                 ['label' => 'Mon compte', 'href' => url('account'), 'icon' => 'users', 'active' => $opMonCompteActive],
             ],
         ],
