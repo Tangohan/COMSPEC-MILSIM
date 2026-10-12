@@ -38,8 +38,12 @@ if (((["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_
     _ring ctrlSetTextColor [1, 1, 1, 1];
     private _needle = ["COMSPEC_RscIcon", [_bx + _pad, _by + _pad, _cw, _ch], _dir + "compass_needle.paa"] call _mk;
     _needle ctrlSetTextColor [1, 1, 1, 1];
-    private _hd = ["COMSPEC_RscTextCenter", [_bx + _pad, _by + _pad + _ch, _cw, _fs * 1.2]] call _mk;
-    _hd ctrlSetFontHeight _fs;
+    // Cap sous la rose, façon ATAK : « 42° NE » en chasse fixe grasse sur une pastille sombre.
+    private _hd = ["COMSPEC_RscTextCenter", [_bx + _pad, _by + _pad + _ch + pixelH * 2, _cw, _fs * 1.15]] call _mk;
+    _hd ctrlSetFont "EtelkaMonospaceProBold";
+    _hd ctrlSetFontHeight (_fs * 0.9);
+    _hd ctrlSetBackgroundColor [0.02, 0.025, 0.03, 0.78];
+    _hd ctrlSetTextColor [0.95, 0.97, 0.96, 1];
     _ov set ["needle", _needle];
     _ov set ["heading", _hd];
 };
@@ -72,10 +76,15 @@ _ov set ["me", _me];
 private _panH = _meH;
 
 if (_interactive) then {
-    // Panneau curseur (bas gauche) + bouton outils
-    ([_bx + _pad, 2, _panW * 0.9] call _panel) params ["_cur", "_curH"];
+    // Ligne curseur (bas gauche, jusqu'à la carte « moi ») en chasse fixe :
+    // « CURSEUR <grille> · <dist> m · <azimut>° E · MGRS <zone> <grille> · ALT <m> » (fn_mapOverlayUpdate).
+    // Trop étroite pour une ligne (petit écran) : MGRS passe sur une seconde ligne.
+    private _curW = ((_bx + _mw - _panW - _pad - _toolCol) - _pad - (_bx + _pad)) max (_panW * 0.9);
+    private _curWrap = (_curW - _panIn / _ratio * 1.2) < (64 * _panFs * 0.58 / _ratio);
+    ([_bx + _pad, [1, 2] select _curWrap, _curW] call _panel) params ["_cur", "_curH"];
     _panH = _curH;
     _ov set ["cursor", _cur];
+    _ov set ["cursorWrap", _curWrap];
     // Bouton « OUTILS » bien visible (icône + libellé) : ouvre le menu des outils carte.
     private _th = _fs * 1.9;
     private _tw = _th / _ratio;

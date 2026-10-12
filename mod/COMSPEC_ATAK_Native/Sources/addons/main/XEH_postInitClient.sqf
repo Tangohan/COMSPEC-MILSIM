@@ -45,6 +45,17 @@ missionNamespace setVariable ["COMSPEC_ATAK_StowDown", {
 }];
 ["ace_unconscious", { params ["_unit", "_state"]; if (_state && {_unit isEqualTo player}) then { call (missionNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }] call CBA_fnc_addEventHandler;
 addMissionEventHandler ["EntityKilled", { params ["_unit"]; if (_unit isEqualTo player) then { call (missionNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }];
+// Cartouches ENI de la carte (fn_mapLabels) : heure de pose et auteur de chaque marqueur, notés à sa création
+// (aucun envoi réseau : chaque client voit l'événement). Table locale bornée, nettoyée à la suppression.
+addMissionEventHandler ["MarkerCreated", {
+    params ["_m", "", ["_owner", objNull]];
+    if (isNull _owner) exitWith {};
+    private _meta = missionNamespace getVariable "COMSPEC_ATAK_MarkerMeta";
+    if (isNil "_meta") then { _meta = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_MarkerMeta", _meta]; };
+    if ((count _meta) > 600) then { { if ((markerShape _x) isEqualTo "") then { _meta deleteAt _x; }; } forEach (keys _meta); };
+    _meta set [_m, [(([dayTime, "HH:MM:SS"] call BIS_fnc_timeToString) splitString ":") joinString "", [_owner] call comspec_atak_native_fnc_unitCallsign]];
+}];
+addMissionEventHandler ["MarkerDeleted", { params ["_m"]; (missionNamespace getVariable ["COMSPEC_ATAK_MarkerMeta", createHashMap]) deleteAt _m; }];
 // Position de la miniature : coin suivant (réglage profil COMSPEC_ATAK_MiniAnchor, aussi dans Réglages).
 missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
     private _list = ["BR", "BL", "TL", "TR", "MR", "ML"];
