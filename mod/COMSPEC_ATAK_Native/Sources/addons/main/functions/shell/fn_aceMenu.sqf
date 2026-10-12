@@ -70,6 +70,39 @@ missionNamespace setVariable ["COMSPEC_ATAK_PersoSet", _set];
     ["COMSPEC_ATAK_VestMount", "off", "COMSPEC_ATAK_PersoVest", "Téléphone sur le gilet", [["Non", "off"], ["Poitrine gauche", "left"], ["Centre", "center"], ["Poitrine droite", "right"]]]
 ];
 
+// Gilet : compatibilité avec les gilets qui ont déjà un ATAK modélisé (fn_vestBuiltin, réglages serveur « ATAK · Gilet »).
+[_root, "COMSPEC_ATAK_Vest", "Gilet", "\z\comspec_atak_native\addons\main\data\item_phone.paa", {}, { vest _player isNotEqualTo "" }] call _add;
+private _vestPath = _root + ["COMSPEC_ATAK_Vest"];
+private _vestUse = {
+    params ["_use"];
+    profileNamespace setVariable ["COMSPEC_ATAK_VestBuiltinUse", _use];
+    if (_use isEqualTo "ours" && {(profileNamespace getVariable ["COMSPEC_ATAK_VestMount", "off"]) isEqualTo "off"}) then { profileNamespace setVariable ["COMSPEC_ATAK_VestMount", "left"]; };
+    saveProfileNamespace;
+    ["tick"] call comspec_atak_native_fnc_vestMount;
+};
+missionNamespace setVariable ["COMSPEC_ATAK_VestUse", _vestUse];
+[_vestPath, "COMSPEC_ATAK_VestOurs", "Mettre aussi notre téléphone sur ce gilet", "", { ["ours"] call (missionNamespace getVariable "COMSPEC_ATAK_VestUse"); },
+    { [_player] call comspec_atak_native_fnc_vestBuiltin && {(profileNamespace getVariable ["COMSPEC_ATAK_VestBuiltinUse", "vest"]) isNotEqualTo "ours"} }] call _add;
+[_vestPath, "COMSPEC_ATAK_VestTheirs", "Garder seulement l'ATAK du gilet", "", { ["vest"] call (missionNamespace getVariable "COMSPEC_ATAK_VestUse"); },
+    { [_player] call comspec_atak_native_fnc_vestBuiltin && {(profileNamespace getVariable ["COMSPEC_ATAK_VestBuiltinUse", "vest"]) isEqualTo "ours"} }] call _add;
+// Gilet non reconnu (ou reconnu à tort) : le joueur le marque lui-même, retenu dans son profil.
+private _vestMark = {
+    params ["_on"];
+    private _v = toLower vest player;
+    private _mine = (profileNamespace getVariable ["COMSPEC_ATAK_VestBuiltinMine", []]) select { (toLower _x) isNotEqualTo _v };
+    private _not = (profileNamespace getVariable ["COMSPEC_ATAK_VestBuiltinNot", []]) select { (toLower _x) isNotEqualTo _v };
+    if (_on) then { _mine pushBack _v; } else { _not pushBack _v; };
+    profileNamespace setVariable ["COMSPEC_ATAK_VestBuiltinMine", _mine];
+    profileNamespace setVariable ["COMSPEC_ATAK_VestBuiltinNot", _not];
+    saveProfileNamespace;
+    ["tick"] call comspec_atak_native_fnc_vestMount;
+};
+missionNamespace setVariable ["COMSPEC_ATAK_VestMark", _vestMark];
+[_vestPath, "COMSPEC_ATAK_VestMarkOn", "Mon gilet a déjà un ATAK", "", { [true] call (missionNamespace getVariable "COMSPEC_ATAK_VestMark"); },
+    { !([_player] call comspec_atak_native_fnc_vestBuiltin) }] call _add;
+[_vestPath, "COMSPEC_ATAK_VestMarkOff", "Mon gilet n'a pas d'ATAK", "", { [false] call (missionNamespace getVariable "COMSPEC_ATAK_VestMark"); },
+    { [_player] call comspec_atak_native_fnc_vestBuiltin }] call _add;
+
 // Entretien : les actions sont posées dans ce sous-menu par XEH_postInitClient. Celles d'Overwatch y sont reprises.
 [_root, "COMSPEC_ATAK_Care", "Entretien", "\z\comspec_atak_native\addons\main\data\item_repairkit.paa"] call _add;
 private _care = _root + ["COMSPEC_ATAK_Care"];
@@ -157,4 +190,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
 [_root, "COMSPEC_ATAK_CableOff", "Débrancher le câble DL-7", "\z\comspec_atak_native\addons\main\data\app_datalink.paa",
     { ["disconnect"] call comspec_atak_native_fnc_dataAction; },
     { ((uiNamespace getVariable ["COMSPEC_ATAK_DataLink", createHashMap]) getOrDefault ["phase", ""]) isNotEqualTo "" }] call _add;
+
+// Caméras IP fixes : « Caméras > Poser une caméra » et actions sur la caméra posée (fn_camAction).
+["aceInit"] call comspec_atak_native_fnc_camAction;
 true

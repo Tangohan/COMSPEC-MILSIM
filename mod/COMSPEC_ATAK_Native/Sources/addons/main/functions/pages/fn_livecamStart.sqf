@@ -15,12 +15,18 @@ if ((attachedTo _cam) isNotEqualTo _unit) then {
     _cam setVectorDirAndUp [[0, 1, 0], [0, 0, 1]];
 };
 "comspec_livecam" setPiPEffect [_mode];
+// Boucle d'une caméra fixe (fn_camView) encore en place : remplacée par celle du porteur.
+if ((missionNamespace getVariable ["COMSPEC_ATAK_LivecamKind", ""]) isEqualTo "fixed" && {!isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }}) then {
+    [missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh"] call CBA_fnc_removePerFrameHandler;
+    missionNamespace setVariable ["COMSPEC_ATAK_LivecamPfh", nil];
+};
+missionNamespace setVariable ["COMSPEC_ATAK_LivecamKind", "unit"];
 // Rafraîchit l'incrustation (grille, distance, cap) et coupe le flux si le porteur meurt ou perd son téléphone.
 if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
     missionNamespace setVariable ["COMSPEC_ATAK_LivecamPfh", [{
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
         private _u = attachedTo _cam;
-        if (isNull _cam || {isNull _u}) exitWith {};
+        if (isNull _cam || {isNull _u} || {_u isKindOf "COMSPEC_ATAK_CameraObj"}) exitWith {};
         if (!alive _u || {!([_u] call comspec_atak_native_fnc_hasDevice)}) exitWith {
             [] call comspec_atak_native_fnc_livecamStop;
             ["WARNING", "Live cam : flux perdu", 3, 30] call comspec_atak_native_fnc_notify;

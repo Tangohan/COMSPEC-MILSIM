@@ -18,7 +18,9 @@ private _q = (_s getOrDefault ["notifications", []]) select {
 _s set ["notifications", _q];
 // Écran éteint, en animation d'arrêt ou de démarrage : pas de toast.
 private _hidden = ((uiNamespace getVariable ["COMSPEC_ATAK_PowerFx", []]) param [1, -1]) > _now
-    || {((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"])};
+    || {((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"])}
+    // Écran de verrouillage affiché (fn_lockScreen) : il montre lui-même les dernières notifications.
+    || {uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]};
 private _show = createHashMap;
 if (!_hidden && {(count _q) > 0}) then {
     private _best = 0;

@@ -8,7 +8,7 @@ Sortie : Sources/addons/main/data/*.paa
 Dépendances : Pillow, CairoSVG, HEMTT (hemtt utils paa convert).
 """
 import io, os, subprocess, sys, tempfile
-from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageOps
 import cairosvg
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -94,6 +94,8 @@ ICONS = {
     "app_tasks": '<rect x="5" y="3" width="14" height="18" rx="1"/><path d="M8.5 9l1.8 1.8L13.5 7.5M8.5 15h7"/>',
     "app_c2": '<path d="M6 21V10M18 21V10"/><path d="M12 13a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM12 13v8"/><path d="M8.5 7.5a5 5 0 0 1 7 0M5.5 4.5a9 9 0 0 1 13 0"/>',
     "app_interteam": '<circle cx="5.5" cy="6" r="2.5"/><circle cx="18.5" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8 6h8M7 8.2l3.6 7.6M17 8.2l-3.6 7.6"/><path d="M10 11.5h4" stroke-dasharray="1.5 1.5"/>',
+    # Accessoires : téléphone vu de dos, antenne vissée en haut, plaque au centre, fixations latérales.
+    "app_accessories": '<rect x="7" y="6" width="10" height="16" rx="2"/><path d="M14.5 6V2"/><circle cx="14.5" cy="2" r="0.6" fill="#fff"/><rect x="9.5" y="11" width="5" height="6" rx="1"/><path d="M3 10h4M3 14h4M17 10h4M17 18h4"/>',
     "app_screentime": '<rect x="6" y="2.5" width="12" height="19" rx="2"/><circle cx="12" cy="12" r="3.8"/><path d="M12 9.8V12l1.6 1.2M10.5 19h3"/>',
     "app_bft": '<circle cx="12" cy="12" r="8"/><path d="M12 6l3.5 9L12 13l-3.5 2z"/>',
     "app_intel": '<path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
@@ -1358,8 +1360,30 @@ def antenna_svg(kind):
     return Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=W, output_height=H))).convert("RGBA")
 
 
+# Antennes photographiées (fond transparent, connecteur SMA en bas) : remplacent le dessin quand le fichier existe.
+ANT_PHOTO_H = {"stub": 450}  # hauteur visible au-dessus du port SMA, en pixels de la texture du téléphone
+
+
+def antenna_img(kind):
+    src = os.path.join(HERE, "src", f"antenna_{kind}_photo.png")
+    if kind not in ANT_PHOTO_H or not os.path.exists(src):
+        return antenna_svg(kind)
+    photo = Image.open(src).convert("RGBA")
+    photo = photo.crop(photo.split()[3].point(lambda v: 255 if v > 40 else 0).getbbox())
+    fx, fy, fw, fh = ANT_FRAME
+    W, H = 256, 1024
+    k = W / fw
+    h = int(ANT_PHOTO_H[kind] * k)
+    w = max(1, int(photo.width * h / photo.height))
+    photo = photo.resize((w, h), Image.LANCZOS)
+    x, y = ANT_BASE
+    out = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    out.alpha_composite(photo, (int((x - fx) * k - w / 2), int((y - fy) * k - h)))
+    return out
+
+
 def antenna_item(kind, size=256):
-    img = antenna_svg(kind)
+    img = antenna_img(kind)
     if kind == "whip":  # fouet couché en diagonale, sinon trop fin dans la case d'inventaire
         img = img.rotate(-38, expand=True, resample=Image.BICUBIC)
     box = img.getbbox()
@@ -1373,7 +1397,7 @@ def antenna_item(kind, size=256):
 
 def antenna_assets(tmp):
     for kind in ("stub", "whip", "patch"):
-        land = antenna_svg(kind)
+        land = antenna_img(kind)
         convert(land, f"antenna_{kind}_land", tmp)
         convert(land.rotate(-90, expand=True), f"antenna_{kind}_port", tmp)
         convert(ImageOps.mirror(land), f"antenna_{kind}_back", tmp)
@@ -1520,9 +1544,75 @@ def convert(img, name, tmp):
     subprocess.run([HEMTT, "utils", "paa", "convert", png, paa], check=True, stdout=subprocess.DEVNULL)
 
 
+def arsenal_assets(tmp):
+    """Item téléphone (item_phone : Samsung S7 écran allumé) et bouton COMSPEC de l'arsenal ACE (arsenal_comspec)."""
+    phone = Image.open(PHONE_SRC).convert("RGBA")
+    wall = Image.open(os.path.join(HERE, "src", "wallpaper_dark.jpg")).convert("RGBA").resize((1546 - 455, 1333 - 716), Image.LANCZOS)
+    under = Image.new("RGBA", phone.size, (0, 0, 0, 0))
+    under.paste(wall, (455, 716))
+    shot = Image.alpha_composite(under, phone).crop(phone.split()[3].getbbox())
+    w, h = shot.size
+    sq = Image.new("RGBA", (w, w), (0, 0, 0, 0))
+    sq.paste(shot, (0, (w - h) // 2))
+    convert(sq.resize((256, 256), Image.LANCZOS), "item_phone", tmp)
+    # Bouton de l'arsenal : téléphone blanc en portrait (écran évidé) et « COMSPEC », comme les icônes d'ACE.
+    S = 4
+    icon = Image.new("RGBA", (128 * S, 128 * S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(icon)
+    W = (255, 255, 255, 255)
+    d.rounded_rectangle((36 * S, 4 * S, 92 * S, 96 * S), radius=10 * S, fill=W)
+    d.rounded_rectangle((42 * S, 14 * S, 86 * S, 82 * S), radius=3 * S, fill=(0, 0, 0, 0))
+    d.ellipse((60 * S, 86 * S, 68 * S, 92 * S), fill=(0, 0, 0, 0))
+    d.rectangle((92 * S, 22 * S, 96 * S, 40 * S), fill=W)
+    f = ImageFont.truetype("DejaVuSans-Bold.ttf", 21 * S)
+    tw = d.textlength("COMSPEC", font=f)
+    d.text(((128 * S - tw) / 2, 100 * S), "COMSPEC", font=f, fill=W)
+    icon = icon.resize((128, 128), Image.LANCZOS)
+    convert(icon, "arsenal_comspec", tmp)
+
+
+def camera_item(size=256):
+    """Caméra IP compacte (item_camera) : boîtier « bullet » sombre, objectif, pare-soleil, patte de fixation, LED."""
+    k = 4
+    S = size * k
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    # Patte murale et rotule
+    d.rounded_rectangle([S * 0.06, S * 0.62, S * 0.20, S * 0.90], radius=S * 0.02, fill=(52, 56, 52, 255), outline=(110, 116, 108, 255), width=int(S * 0.006))
+    d.polygon([(S * 0.18, S * 0.70), (S * 0.40, S * 0.56), (S * 0.44, S * 0.62), (S * 0.20, S * 0.80)], fill=(70, 74, 68, 255))
+    d.ellipse([S * 0.36, S * 0.50, S * 0.48, S * 0.62], fill=(84, 88, 82, 255), outline=(130, 136, 128, 255), width=int(S * 0.006))
+    # Boîtier
+    d.rounded_rectangle([S * 0.20, S * 0.28, S * 0.84, S * 0.54], radius=S * 0.09, fill=(46, 52, 46, 255), outline=(120, 128, 118, 255), width=int(S * 0.008))
+    d.rounded_rectangle([S * 0.24, S * 0.31, S * 0.70, S * 0.36], radius=S * 0.02, fill=(255, 255, 255, 30))
+    # Pare-soleil
+    d.polygon([(S * 0.22, S * 0.26), (S * 0.92, S * 0.20), (S * 0.92, S * 0.26), (S * 0.24, S * 0.31)], fill=(64, 70, 62, 255))
+    # Objectif
+    d.ellipse([S * 0.74, S * 0.29, S * 0.96, S * 0.53], fill=(24, 26, 24, 255), outline=(150, 156, 146, 255), width=int(S * 0.01))
+    d.ellipse([S * 0.79, S * 0.34, S * 0.91, S * 0.48], fill=(20, 60, 90, 255))
+    d.ellipse([S * 0.82, S * 0.36, S * 0.86, S * 0.40], fill=(220, 240, 255, 200))
+    # LED et marquage
+    d.ellipse([S * 0.28, S * 0.44, S * 0.32, S * 0.48], fill=(92, 199, 107, 255))
+    d.text((S * 0.38, S * 0.405), "IP CAM", font=_font(int(S * 0.07)), fill=(170, 200, 176, 230))
+    return img.resize((size, size), Image.LANCZOS)
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmp:
+        if len(sys.argv) > 2 and sys.argv[2] == "antennas":
+            antenna_assets(tmp)
+            return
+        if len(sys.argv) > 2 and sys.argv[2] == "arsenal":
+            arsenal_assets(tmp)
+            return
+        # « accicon » : seulement l'icône de l'app Accessoires.
+        if len(sys.argv) > 2 and sys.argv[2] == "accicon":
+            convert(icon_png("app_accessories", ICONS["app_accessories"]), "app_accessories", tmp)
+            return
+        # « camera » : seulement l'image de l'item Caméra IP compacte.
+        if len(sys.argv) > 2 and sys.argv[2] == "camera":
+            convert(camera_item(), "item_camera", tmp)
+            return
         # Écran abîmé (fêlures, encre, lignes mortes, verre brisé) ; « cracks » ne régénère que ceux-là.
         damage_overlays(tmp)
         if len(sys.argv) > 2 and sys.argv[2] == "cracks":

@@ -16,10 +16,11 @@ private _extra = [missionNamespace getVariable ["comspec_atak_native_device_item
 private _patterns = [missionNamespace getVariable ["comspec_atak_native_device_patterns", "android,atak,smartphone"]] call _split;
 private _tablets = missionNamespace getVariable ["comspec_atak_native_device_tablets", false];
 private _skip = ["hcam", "helmetcam", "helmet_cam", "_base", "battery", "batterie"]; // batterie ATAK : pas un téléphone
-private _out = +_extra;
+// Notre téléphone compte toujours ; nos autres objets (kit, câble, antennes…) contiennent « atak » mais n'en sont pas.
+private _out = ["comspec_atak_phone"] + _extra;
 {
     private _cls = toLower (configName _x);
-    if ((_patterns findIf { (_cls find _x) >= 0 }) >= 0 && {(_skip findIf { (_cls find _x) >= 0 }) < 0} && {(getNumber (_x >> "scope")) >= 2}) then { _out pushBackUnique _cls; };
+    if ((_patterns findIf { (_cls find _x) >= 0 }) >= 0 && {(_skip findIf { (_cls find _x) >= 0 }) < 0} && {(_cls find "comspec_atak_") isNotEqualTo 0} && {(getNumber (_x >> "scope")) >= 2}) then { _out pushBackUnique _cls; };
 } forEach ("isClass _x" configClasses (configFile >> "CfgWeapons"));
 if (_tablets) then {
     { if (isClass (configFile >> "CfgWeapons" >> _x)) then { _out pushBackUnique toLower _x; }; } forEach ["ItemcTab", "ItemMicroDAGR", "ACE_microDAGR"];

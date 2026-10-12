@@ -31,9 +31,9 @@ if (isNull _rec) then {
     _detail = format ["<t color='#8f8'>Journal local</t><br/>%1 entrée(s)", count _journal];
     if (_isSeek) then {
         // Écran du SEEK : trois lignes au plus, police réduite — le texte complet était tronqué.
-        _sum = "<t size='0.5' color='#9ed8b4'>Aucun record ciblé.</t><br/>"
-            + "<t size='0.42' color='#c8eadc'>Visez une cible SSE puis rouvrez le SEEK.</t>";
-        _detail = format ["<t size='0.42' color='#8fb3a6'>Journal local : %1 entrée(s)</t>", count _journal];
+        _sum = "<t size='0.5' color='#1d6b34'>Aucun record ciblé.</t><br/>"
+            + "<t size='0.42' color='#33414c'>Visez une cible SSE puis rouvrez le SEEK.</t>";
+        _detail = format ["<t size='0.42' color='#5a6670'>Journal local : %1 entrée(s)</t>", count _journal];
     };
 } else {
     [_rec] call comspec_sse_fnc_ensureGenerated;
@@ -74,12 +74,12 @@ if (isNull _rec) then {
         // Écran du SEEK : résumé compact sur trois lignes (le détail complet débordait).
         private _who = if (_name isNotEqualTo "") then { _name } else { if (_alias isNotEqualTo "") then { _alias } else { _type } };
         _sum = format [
-            "<t size='0.5' color='#9ed8b4'>%1</t> <t size='0.42' color='#8fb3a6'>· %2 · niv. %3</t><br/>"
-            + "<t size='0.42' color='#c8eadc'>Accès %4  ·  état %5</t>",
+            "<t size='0.5' color='#1d6b34'>%1</t> <t size='0.42' color='#5a6670'>· %2 · niv. %3</t><br/>"
+            + "<t size='0.42' color='#33414c'>Accès %4  ·  état %5</t>",
             _who, _uid, _lvl, _acc, _estate
         ];
         if (_label isNotEqualTo "" && {_label isNotEqualTo _uid}) then { _entries = [format ["LABEL | %1", _label]] + _entries; };
-        _detail = format ["<t size='0.42' color='#8fb3a6'>Transmission %1  ·  intel révélé %2</t>", _tx, count _intel];
+        _detail = format ["<t size='0.42' color='#5a6670'>Transmission %1  ·  intel révélé %2</t>", _tx, count _intel];
     };
 };
 

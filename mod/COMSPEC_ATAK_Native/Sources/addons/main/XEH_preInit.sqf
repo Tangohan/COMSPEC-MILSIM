@@ -34,6 +34,15 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
     ["Les tablettes et DAGR comptent aussi", "ItemcTab, MicroDAGR (cTab) et MicroDAGR (ACE) ouvrent aussi le téléphone."],
     _cat, false, 1, _recompute] call CBA_fnc_addSetting;
 
+// Gilets qui ont déjà un ATAK modélisé (fn_vestBuiltin) : notre téléphone n'y est pas accroché, sauf choix du joueur (menu ACE).
+private _vestReset = { missionNamespace setVariable ["COMSPEC_ATAK_VestBuiltinCache", createHashMap]; };
+["comspec_atak_native_vest_atak_items", "EDITBOX",
+    ["Gilets avec ATAK intégré", "Classes exactes de gilets dont le modèle porte déjà un ATAK, séparées par des virgules. Chaque joueur peut aussi marquer son gilet dans le menu ACE « Téléphone ATAK > Gilet »."],
+    ["COMSPEC", "ATAK · Gilet"], "", 1, _vestReset] call CBA_fnc_addSetting;
+["comspec_atak_native_vest_atak_patterns", "EDITBOX",
+    ["Gilets avec ATAK intégré (motifs)", "Mots cherchés dans la classe, le nom et le modèle du gilet. Séparer par des virgules ; vider pour n'utiliser que la liste."],
+    ["COMSPEC", "ATAK · Gilet"], "atak,eud", 1, _vestReset] call CBA_fnc_addSetting;
+
 private _mus = ["COMSPEC", "ATAK · Musique"];
 ["comspec_atak_native_music_enabled", "CHECKBOX",
     ["App Musique", "Lecture de fichiers locaux, de pistes du serveur (musiques d'Arma, des mods et de la mission) et de liens audio."],

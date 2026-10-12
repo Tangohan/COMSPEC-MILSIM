@@ -96,41 +96,19 @@ private _perso = [
         }), "Antennes d'extension de débit portées dans l'inventaire : courte, fouet ou patch (à l'arrêt)"],
     ["COMSPEC_ATAK_Patch", "none", "Patch au dos", [["AUCUN", "none"], ["FRANCE", "fr"], ["FRANCE BD", "fr_sub"], ["USA", "us"], ["USA BD", "us_ir"]]] call _profSegment,
     ["COMSPEC_ATAK_Patch", "none", "", [["CRÂNE", "skull"], ["CROIX", "crusader"], ["ALIEN", "alien"], ["COMSPEC", "comspec"], ["NOMINATIF", "name"]]] call _profSegment,
-    ["COMSPEC_ATAK_Patch", "none", "", [["INSIGNE DE L'UNIFORME", "uniform"]], "Patch velcro visible avec « Voir l'arrière » ; BD = basse visibilité. Nominatif : votre nom, ou le texte ci-dessous. Insignes : ceux des mods chargés (RHS, 3CB, unités…)"] call _profSegment
-] + (call {
-    // Insignes d'unité des mods chargés et de la mission (CfgUnitInsignia) : on les parcourt un par un avec l'aperçu.
-    private _list = uiNamespace getVariable ["COMSPEC_ATAK_InsList", []];
-    if (_list isEqualTo []) then {
-        {
-            private _t = getText (_x >> "texture");
-            if (_t isNotEqualTo "" && {(_t select [0, 1]) isNotEqualTo "\"}) then { _t = "\" + _t; };
-            if (_t isNotEqualTo "" && {(getNumber (_x >> "scope")) >= 1 || {!isNumber (_x >> "scope")}}) then {
-                _list pushBackUnique [configName _x, [getText (_x >> "displayName"), configName _x] select ((getText (_x >> "displayName")) isEqualTo ""), _t];
-            };
-        } forEach (("true" configClasses (configFile >> "CfgUnitInsignia")) + ("true" configClasses (missionConfigFile >> "CfgUnitInsignia")));
-        _list sort true;
-        uiNamespace setVariable ["COMSPEC_ATAK_InsList", _list];
-    };
-    if (_list isEqualTo []) exitWith { [["text", "<t size='0.8' color='#8a9a93'>Aucun insigne d'unité fourni par les mods chargés.</t>"]] };
-    private _cur = profileNamespace getVariable ["COMSPEC_ATAK_Patch", "none"];
-    private _i = uiNamespace getVariable ["COMSPEC_ATAK_InsIdx", -1];
-    if (_i < 0) then { _i = (_list findIf { ("ins:" + (_x select 0)) isEqualTo _cur }) max 0; };
-    _i = _i mod (count _list);
-    (_list select _i) params ["_cls", "_name", "_tex"];
-    private _on = ("ins:" + _cls) isEqualTo _cur;
-    private _go = { params ["_d"]; format ["private _l = uiNamespace getVariable ['COMSPEC_ATAK_InsList', []]; uiNamespace setVariable ['COMSPEC_ATAK_InsIdx', ((uiNamespace getVariable ['COMSPEC_ATAK_InsIdx', %1]) + %2 + count _l) mod ((count _l) max 1)]; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _i, _d] };
-    [
-        ["hero", _tex, format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>Insigne %2 / %3%4</t>", _name regexReplace ["[<>&]", ""], _i + 1, count _list, ["", " · choisi"] select _on]],
-        ["buttons", [["◀", compile ([-1] call _go)], [["METTRE CET INSIGNE", "INSIGNE CHOISI"] select _on, compile format ["['COMSPEC_ATAK_Patch', 'ins:%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_ProfSet');", _cls], true, !_on], ["▶", compile ([1] call _go)]]]
-    ]
-}) + [
+    ["COMSPEC_ATAK_Patch", "none", "", [["INSIGNE DE L'UNIFORME", "uniform"]], "Patch velcro visible avec « Voir l'arrière » ; BD = basse visibilité. Nominatif : votre nom, ou le texte ci-dessous. Insignes des mods et de la mission (RHS, 3CB, unités…) : « Choisir un insigne » ci-dessous"] call _profSegment,
+    // Tous les patchs (nos patchs, insignes CfgUnitInsignia des mods et de la mission) : page PATCHES dédiée avec
+    // recherche, sources et vignettes (fn_pagePatches), retour aux Réglages par la touche retour.
+    ["person", ([player] call comspec_atak_native_fnc_patchTexture) select 0, format ["<t font='RobotoCondensedBold'>Patch porté : %1</t><br/><t size='0.8' color='#8a9a93'>Recherche, nos patchs, insignes des mods et de la mission</t>",
+        (["name", profileNamespace getVariable ["COMSPEC_ATAK_Patch", "none"]] call comspec_atak_native_fnc_patchCatalog) regexReplace ["[<>&]", ""]], [], [1, 1, 1, 1]],
+    ["buttons", [[format ["CHOISIR UN INSIGNE (%1 disponibles)", count (["list"] call comspec_atak_native_fnc_patchCatalog)], { [{ ["PATCHES"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }, true]]],
     ["COMSPEC_ATAK_VestMount", "off", "Téléphone sur le gilet", [["NON", "off"], ["GAUCHE", "left"], ["CENTRE", "center"], ["DROITE", "right"]], "Le téléphone (notre modèle 3D) est accroché au torse et visible par les autres joueurs, sur tous les gilets"] call _profSegment,
     ["COMSPEC_ATAK_VestDepth", 0.19, "Épaisseur du gilet", [["FIN", 0.15], ["NORMAL", 0.19], ["ÉPAIS", 0.23]], "Écarte le téléphone du torse s'il rentre dans le gilet"] call _profSegment,
     ["COMSPEC_ATAK_VestFace", "back", "Sens sur le gilet", [["DOS ET PATCH", "back"], ["ÉCRAN", "screen"]], "Dos vers l'extérieur (pochette rabattue, patch visible) ou écran vers l'extérieur"] call _profSegment,
     ["edit", "patchText", "Texte du patch nominatif", profileNamespace getVariable ["COMSPEC_ATAK_PatchText", ""]],
     ["buttons", [["ENREGISTRER LE TEXTE", {
         private _t = ["patchText"] call comspec_atak_native_fnc_formValue;
-        if (_t isEqualType "") then { profileNamespace setVariable ["COMSPEC_ATAK_PatchText", (trim _t) select [0, 14]]; saveProfileNamespace; ["INFO", "Patch nominatif enregistré", 3, 10] call comspec_atak_native_fnc_notify; };
+        if (_t isEqualType "") then { profileNamespace setVariable ["COMSPEC_ATAK_PatchText", (trim _t) select [0, 14]]; saveProfileNamespace; ["Patch nominatif enregistré", 2] call comspec_atak_native_fnc_toast; };
     }]]],
     ["buttons", [["VOIR L'ARRIÈRE DU TÉLÉPHONE", { [{ [] call comspec_atak_native_fnc_backView; }] call CBA_fnc_execNextFrame; }]]],
     ["section", "Accessoires", "Batterie externe, balise IR et filtre d'écran JVN (objets de l'inventaire)"],
@@ -145,7 +123,7 @@ private _perso = [
     ["edit", "lockCode", "Code de verrouillage (vide = aucun)", profileNamespace getVariable ["COMSPEC_ATAK_LockCode", ""]],
     ["buttons", [["ENREGISTRER LE CODE", {
         private _t = ["lockCode"] call comspec_atak_native_fnc_formValue;
-        if (_t isEqualType "") then { profileNamespace setVariable ["COMSPEC_ATAK_LockCode", (trim _t) select [0, 12]]; saveProfileNamespace; ["INFO", "Code de verrouillage enregistré", 3, 10] call comspec_atak_native_fnc_notify; };
+        if (_t isEqualType "") then { profileNamespace setVariable ["COMSPEC_ATAK_LockCode", (trim _t) select [0, 12]]; saveProfileNamespace; ["Code de verrouillage enregistré", 2] call comspec_atak_native_fnc_toast; };
     }], [["EFFACEMENT D'URGENCE", "CONFIRMER L'EFFACEMENT"] select (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_WipeArm", -10]) < 5), {
         // Deux appuis en moins de 5 s : rien ne s'efface par erreur.
         if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_WipeArm", -10]) < 5) then {
@@ -163,6 +141,11 @@ private _perso = [
     ["COMSPEC_ATAK_WallBlur", false, "", "Flou du fond", "Fond d'écran flouté et assombri : icônes plus lisibles"] call _profSwitch,
     ["COMSPEC_ATAK_TextScale", 1, "Taille du texte", [["PETIT", 0.9], ["NORMAL", 1], ["GRAND", 1.15]]] call _profSegment,
     ["COMSPEC_ATAK_IconDensity", 0, "Icônes du lanceur", [["GRANDES", -1], ["NORMALES", 0], ["SERRÉES", 1]], "Moins ou plus d'icônes par ligne"] call _profSegment,
+    ["section", "Animations et sons", "Un téléphone qui réagit : mouvement, clic et vibration légère, écran de verrouillage"],
+    ["COMSPEC_ATAK_Animations", true, "", "Animations", "App qui s'ouvre en zoomant, page qui glisse au retour, onde sous le doigt, volet rapide animé"] call _profSwitch,
+    ["COMSPEC_ATAK_TapFeedback", true, "", "Clic et vibration des appuis", "Clic doux et légère vibration de la coque à chaque appui (aucun son en mode discrétion)"] call _profSwitch,
+    ["COMSPEC_ATAK_LockScreen", true, "", "Écran de verrouillage", "Heure, date, dernières notifications : à la première sortie, après une minute rangé ou un redémarrage"] call _profSwitch,
+    ["COMSPEC_ATAK_Brightness", 1, "Luminosité", [["30 %", 0.3], ["50 %", 0.5], ["75 %", 0.75], ["100 %", 1]], "Aussi dans le volet rapide (clic sur l'heure) ; écran moins lumineux : moins visible de nuit, moins de batterie"] call _profSegment,
     ["section", "Dock", format ["%1 app(s) en raccourci en bas de l'écran (6 au plus)", count _dockNow]]
 ];
 {
@@ -191,6 +174,7 @@ private _map = [
     ["COMSPEC_ATAK_Compass", true, "native_compass", "Boussole", "Rose des vents et cap en haut à gauche"] call _profSwitch,
     ["COMSPEC_ATAK_AllyFilter", "ALL", "Alliés affichés", [["TOUS", "ALL"], ["MON GROUPE", "GROUP"], ["MON ORBAT", "ORBAT"]], ["", format ["ORBAT : %1", missionNamespace getVariable ["comspec_profile_unit", ""]]] select ((missionNamespace getVariable ["comspec_profile_unit", ""]) isNotEqualTo "")] call _profSegment,
     ["COMSPEC_ATAK_HideAllyAi", false, "", "Masquer les IA alliées", "Seuls les joueurs alliés restent sur la carte et le BFT"] call _profSwitch,
+    ["COMSPEC_ATAK_UnitSymbols", "DOTS", "Icônes des unités", [["POINTS (ACTUEL)", "DOTS"], ["OTAN MIL-STD", "NATO"]], "OTAN MIL-STD-2525 / APP-6 : cadre et fonction (infanterie, véhicule, sanitaire, PC, reco…), échelon des chefs"] call _profSegment,
     ["COMSPEC_ATAK_AllyColor", "BLUE", "Couleur des alliés", [["BLEU", "BLUE"], ["VERT", "GREEN"], ["BLANC", "WHITE"], ["JAUNE", "YELLOW"], ["ROSE", "PINK"]]] call _profSegment,
     ["COMSPEC_ATAK_SelfColor", "CYAN", "Ma couleur", [["CYAN", "CYAN"], ["BLEU", "BLUE"], ["VERT", "GREEN"], ["BLANC", "WHITE"], ["ORANGE", "ORANGE"]]] call _profSegment,
     ["COMSPEC_ATAK_SelfIcon", "", "Mon icône (vue par tous)", [["FLÈCHE", ""], ["INF", "b_inf"], ["RECO", "b_recon"], ["MÉDIC", "b_med"], ["PC", "b_hq"], ["SOUTIEN", "b_support"]]] call _profSegment,

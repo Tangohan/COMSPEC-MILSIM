@@ -73,7 +73,10 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
     // le pseudo ne sert que sans indicatif ni liaison.
     private _callsign = [_obj,true] call comspec_atak_native_fnc_unitCallsign;
     private _near = "";
-    private _best = 30;
+    // Même indicatif qu'une piste Athena : même personne, une seule piste, même si la position Athena est en retard
+    // de plus de 30 m (en véhicule, liaison lente). Sans ça le BFT montrait « Star 4-1 » deux fois.
+    if (_callsign isNotEqualTo "" && {("athena:" + toLower _callsign) in _athena}) then { _near = "athena:" + toLower _callsign; };
+    private _best = [30, -1] select (_near isNotEqualTo "");
     {
         private _d = (_y getOrDefault ["position",[0,0,0]]) distance2D _obj;
         if (_d < _best) then { _best = _d; _near = _x; };
@@ -106,6 +109,8 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
 
 // Aucune IA ennemie sur la carte, même repérée (choix de la communauté) : ni calcul local, ni contact relayé par Athena.
 { if ((_y getOrDefault ["affiliation", ""]) isEqualTo "hostile") then { _units deleteAt _x; }; } forEach +_units;
+// Filtres du BFT (fn_bftFilter : IA, aériens, véhicules, pistes anciennes ou hors ligne, distance) : masquées sur la carte aussi.
+{ if !([_y] call comspec_atak_native_fnc_bftFilter) then { _units deleteAt _x; }; } forEach +_units;
 ["units",_units] call comspec_atak_native_fnc_storeSet;
 
 // Les marqueurs de la mission sont déjà dessinés par la carte Arma : on les garde pour la sélection

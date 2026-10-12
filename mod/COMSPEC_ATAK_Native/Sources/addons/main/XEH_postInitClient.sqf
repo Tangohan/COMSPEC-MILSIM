@@ -1,5 +1,12 @@
 if (!hasInterface) exitWith {};
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] Client PostInit complete";
+// Arsenal ACE : bouton COMSPEC (colonne de droite) qui regroupe les objets de nos mods (ATAK, Overwatch, SSE).
+if (!isNil "ace_arsenal_fnc_addRightPanelButton") then {
+    private _items = ("getNumber (_x >> 'scope') >= 2 && {((toLower configName _x) find 'comspec_') isEqualTo 0}" configClasses (configFile >> "CfgWeapons")) apply { configName _x };
+    if (_items isNotEqualTo []) then {
+        [_items, "COMSPEC", "\z\comspec_atak_native\addons\main\data\arsenal_comspec.paa", "COMSPEC_Arsenal"] call ace_arsenal_fnc_addRightPanelButton;
+    };
+};
 missionNamespace setVariable ["COMSPEC_ATAK_LegacyBootstrapSuppressed", true, false];
 // Avec COMSPEC Link, sa DLL porte la session Athena : on n'ouvre pas une seconde session avec la DLL native.
 if ([] call comspec_atak_native_fnc_bridge) then {
@@ -63,14 +70,17 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
     private _m = profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"];
     private _n = ["OFF", "RED", "DIM"] select ((((["OFF", "RED", "DIM"] find _m) max 0) + 1) mod 3);
     profileNamespace setVariable ["COMSPEC_ATAK_NightMode", _n];
-    ["INFO", format ["Mode nuit : %1", ["normal", "filtre rouge", "écran sombre"] select (["OFF", "RED", "DIM"] find _n)], 2, 10] call comspec_atak_native_fnc_notify;
+    // Téléphone affiché : toast Android ; rangé : notification classique.
+    private _msg = format ["Mode nuit : %1", ["normal", "filtre rouge", "écran sombre"] select (["OFF", "RED", "DIM"] find _n)];
+    if !(([_msg, 2] call comspec_atak_native_fnc_toast)) then { ["INFO", _msg, 2, 10] call comspec_atak_native_fnc_notify; };
     [] call comspec_atak_native_fnc_deviceOverlay;
     true
 }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneSilent", "Mode discrétion (sons coupés)", {
     private _on = !(profileNamespace getVariable ["COMSPEC_ATAK_Silent", false]);
     profileNamespace setVariable ["COMSPEC_ATAK_Silent", _on];
-    ["INFO", ["Mode discrétion désactivé", "Mode discrétion : aucun son"] select _on, 2, 10] call comspec_atak_native_fnc_notify;
+    private _msg = ["Mode discrétion désactivé", "Mode discrétion : aucun son"] select _on;
+    if !(([_msg, 2] call comspec_atak_native_fnc_toast)) then { ["INFO", _msg, 2, 10] call comspec_atak_native_fnc_notify; };
     true
 }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
 // Marquage au viseur : caméra du drone (vue drone ou app Drone à l'écran), sinon appareil photo du téléphone.
@@ -621,6 +631,8 @@ addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screen
 [{ if ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["nav", false]) then { ["tick"] call comspec_atak_native_fnc_wpAction; }; }, 1] call CBA_fnc_addPerFrameHandler;
 // Breacher : top de brèche reçu du chef de colonne.
 ["comspec_atak_native_breach", { _this call comspec_atak_native_fnc_breachTop; }] call CBA_fnc_addEventHandler;
+// Carte : ping d'un membre de mon camp (menu clic droit, fn_mapPing).
+["comspec_atak_native_mapPing", { ["recv", _this] call comspec_atak_native_fnc_mapPing; }] call CBA_fnc_addEventHandler;
 // App Explosifs : ordre et heure de pose de chaque charge du joueur (minuteries : temps restant).
 ["ace_explosives_place", {
     params ["_e", "", "", "_unit"];

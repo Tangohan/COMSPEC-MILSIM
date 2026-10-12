@@ -7,9 +7,15 @@
       ["mode", "hover" | "me" | "player" | "home" | "land" | "hunt"]
       ["player", uid]             joueur à suivre ;
       ["alt", m] / ["speed", km/h]
-      ["arm"]                     fixe une charge prise dans l'inventaire (drone à moins de 5 m) ;
+      ["arm"(, chargeur)]         fixe une charge prise dans l'inventaire (drone à moins de 5 m ; chargeur choisi, sinon la première) ;
+      ["disarm"]                  retire la charge et la rend à l'inventaire (drone à moins de 5 m) ;
+      ["payloads"]                charges compatibles portées : [[chargeur, libellé, nombre]...] ;
       ["strike", "LASER" | "GRID"]  tir et oublie, à confirmer d'un second appui ;
       ["cam"]                     caméra du drone dans l'app ;
+      Nacelle (vue caméra) : ["gimbal", [cap relatif, site]] vise (site -90 à +20°, cap relatif au cap du drone, lissé) ;
+      ["gimbalNudge", [dcap, dsite]] ; ["recenter"] remet la nacelle devant ; ["zoomBy", facteur] zoom continu x1 à x8 ;
+      ["gimbalGet"] → [cap relatif, site] actuels ; ["markMode"] bascule le mode marquage (clic sur l'image = marquer) ;
+      ["imgClick", [x, y]] clic sur l'image : la nacelle vise le point, puis marque la cible en mode marquage ;
       ["takeoff"]                 démarre et décolle (tout ordre de vol donné au sol le fait aussi) ;
       ["cqb"]                     bascule le profil CQB (vol bas 2 à 8 m, 5 à 15 km/h, boucle de vol à nous) ;
       ["manual"]                  pilotage manuel au terminal UAV ; tout autre ordre du téléphone reprend la main.
@@ -142,9 +148,16 @@ private _camOpen = {
     if (!isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull]) || {isNull _d}) exitWith {};
     // Caméra posée sur la nacelle du drone (point mémoire de la caméra UAV), sous le fuselage à défaut :
     // une caméra au centre du modèle filme l'intérieur de la coque sur les gros drones.
+    // Petits drones (Mavic, quadricoptères de sac) : le point mémoire, quand il existe, est souvent au centre de la coque
+    // et les bras ou hélices entrent dans l'image ; la nacelle est posée sous le fuselage, un peu en avant.
+    // Réglage par mission : COMSPEC_ATAK_DroneCamOffsets = HashMap classe → décalage [x, y, z] du modèle.
     private _mem = getText (configOf _d >> "uavCameraGunnerPos");
     private _off = if (_mem isNotEqualTo "") then { _d selectionPosition [_mem, "Memory"] } else { [0, 0, 0] };
-    if (_off isEqualTo [0, 0, 0]) then { _off = [0, 0.3, -0.3 - ((((boundingBoxReal _d) select 1) select 2) * 0.1)]; };
+    (boundingBoxReal _d) params ["_bb0", "_bb1"];
+    private _small = (_d isKindOf "Mavic_drone_base_F") || {((_bb1 select 0) - (_bb0 select 0)) < 1.6};
+    if (_off isEqualTo [0, 0, 0] || {_small}) then { _off = [0, (_bb1 select 1) * 0.35, (_bb0 select 2) - 0.04]; };
+    private _over = (missionNamespace getVariable ["COMSPEC_ATAK_DroneCamOffsets", createHashMap]) getOrDefault [typeOf _d, []];
+    if (_over isEqualType [] && {(count _over) isEqualTo 3}) then { _off = _over; };
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamOff", _off];
     private _cam = "camera" camCreate (_d modelToWorld _off);
     _cam cameraEffect ["Internal", "Back", "comspec_dronecam"];
@@ -178,6 +191,25 @@ private _camOpen = {
         };
         if (!_show) exitWith {};
         private _k = missionNamespace getVariable ["COMSPEC_ATAK_DroneCamTgt", ""];
+        // Nacelle pilotée à la souris (glisser sur l'image, flèches) : cap relatif au drone et site, lissés,
+        // stabilisés dans le repère du monde (le roulis et le tangage du drone ne bougent pas l'image).
+        if (_k isEqualTo "GIMBAL") exitWith {
+            (missionNamespace getVariable ["COMSPEC_ATAK_DroneGimbal", [0, -37]]) params ["_tp", "_tt"];
+            (missionNamespace getVariable ["COMSPEC_ATAK_DroneGimbalCur", [_tp, _tt]]) params ["_cp", "_ct"];
+            private _a = 1 - exp (-12 * diag_deltaTime);
+            private _dp = ((_tp - _cp + 540) mod 360) - 180;
+            _cp = _cp + _dp * _a;
+            _ct = _ct + (_tt - _ct) * _a;
+            missionNamespace setVariable ["COMSPEC_ATAK_DroneGimbalCur", [_cp, _ct]];
+            private _h = (getDirVisual _d) + _cp;
+            private _dir = [(sin _h) * (cos _ct), (cos _h) * (cos _ct), sin _ct];
+            private _side = _dir vectorCrossProduct [0, 0, 1];
+            if ((vectorMagnitude _side) < 0.01) then { _side = [sin (_h + 90), cos (_h + 90), 0]; };
+            private _up = _side vectorCrossProduct _dir;
+            _cam setVectorDirAndUp [_d vectorWorldToModelVisual _dir, _d vectorWorldToModelVisual _up];
+            _cam setVariable ["aimed", true];
+            missionNamespace setVariable ["COMSPEC_ATAK_DroneCamDir", _dir];
+        };
         private _p = [];
         // Nadir : nacelle à la verticale, sous le drone.
         if (_k isEqualTo "NADIR") then { _p = (getPosASLVisual _d) vectorAdd [0.01, 0.01, -50]; };
@@ -424,14 +456,37 @@ switch (_act) do {
         if ((player distance _d) > 5) exitWith { ["WARNING", "Le drone doit être à moins de 5 m pour fixer une charge"] call _say; };
         if !(missionNamespace getVariable ["comspec_atak_native_drone_strike", true]) exitWith { ["WARNING", "Drones armés interdits sur ce serveur"] call _say; };
         private _mags = magazines player;
-        private _i = _payloads findIf { ((_x select 0) in _mags) && {isClass (configFile >> "CfgAmmo" >> (_x select 1))} };
+        private _i = _payloads findIf { (_x select 0) isEqualTo _arg && {(_x select 0) in _mags} && {isClass (configFile >> "CfgAmmo" >> (_x select 1))} };
+        if (_i < 0) then { _i = _payloads findIf { ((_x select 0) in _mags) && {isClass (configFile >> "CfgAmmo" >> (_x select 1))} }; };
         if (_i < 0) exitWith { ["WARNING", "Aucune charge dans l'inventaire (roquette RPG, charge de démolition ou grenade)"] call _say; };
         (_payloads select _i) params ["_mag", "_ammo", "_label"];
         player removeMagazine _mag;
         _d setVariable ["COMSPEC_DroneArmed", _ammo, true];
         _d setVariable ["COMSPEC_DroneArmedLabel", _label, true];
+        _d setVariable ["COMSPEC_DroneArmedMag", _mag, true];
         ["SUCCESS", format ["Drone armé : %1", _label]] call _say;
         [format ["Armement : %1 fixée", _label], "#f2ab33"] call _log;
+        call _render;
+    };
+    case "payloads": {
+        private _mags = magazines player;
+        (_payloads select { ((_x select 0) in _mags) && {isClass (configFile >> "CfgAmmo" >> (_x select 1))} }) apply {
+            private _m = _x select 0;
+            [_m, _x select 2, { _x isEqualTo _m } count _mags]
+        }
+    };
+    case "disarm": {
+        if (isNull _d || {(_d getVariable ["COMSPEC_DroneArmed", ""]) isEqualTo ""}) exitWith {};
+        if ((player distance _d) > 5) exitWith { ["WARNING", "Le drone doit être à moins de 5 m pour retirer la charge"] call _say; };
+        if ((_d getVariable ["COMSPEC_DroneMode", "HOVER"]) isEqualTo "STRIKE") exitWith { ["WARNING", "Frappe en cours : impossible de désarmer"] call _say; };
+        private _mag = _d getVariable ["COMSPEC_DroneArmedMag", ""];
+        private _label = _d getVariable ["COMSPEC_DroneArmedLabel", "charge"];
+        if (_mag isNotEqualTo "") then { if (player canAdd _mag) then { player addMagazine _mag; } else { (createVehicle ["GroundWeaponHolder", getPosATL player, [], 0, "CAN_COLLIDE"]) addMagazineCargoGlobal [_mag, 1]; }; };
+        _d setVariable ["COMSPEC_DroneArmed", "", true];
+        _d setVariable ["COMSPEC_DroneArmedLabel", nil, true];
+        _d setVariable ["COMSPEC_DroneArmedMag", nil, true];
+        ["INFO", format ["Charge retirée : %1", _label]] call _say;
+        [format ["Désarmement : %1 retirée", _label], "#f2ab33"] call _log;
         call _render;
     };
     case "strike": {
@@ -483,6 +538,69 @@ switch (_act) do {
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
         if (!isNull _cam) then { _cam camSetFov (0.7 / _arg); _cam camCommit 0; };
         call _render;
+    };
+    case "gimbalGet": {
+        if ((missionNamespace getVariable ["COMSPEC_ATAK_DroneCamTgt", ""]) isEqualTo "GIMBAL") exitWith { missionNamespace getVariable ["COMSPEC_ATAK_DroneGimbal", [0, -37]] };
+        if (isNull _d) exitWith { [0, -37] };
+        private _dir = missionNamespace getVariable ["COMSPEC_ATAK_DroneCamDir", []];
+        if (_dir isEqualTo []) then { _dir = _d vectorModelToWorldVisual [0, 0.8, -0.6]; };
+        _dir = vectorNormalized _dir;
+        private _pan = ((((_dir select 0) atan2 (_dir select 1)) - getDirVisual _d + 540) mod 360) - 180;
+        [_pan, asin ((_dir select 2) max -1 min 1)]
+    };
+    case "gimbal": {
+        if (isNull _d) exitWith {};
+        _arg params [["_pan", 0], ["_tilt", -37]];
+        _pan = ((_pan + 540) mod 360) - 180;
+        _tilt = -90 max (_tilt min 20);
+        if ((missionNamespace getVariable ["COMSPEC_ATAK_DroneCamTgt", ""]) isNotEqualTo "GIMBAL") then {
+            // Départ en douceur depuis l'orientation actuelle de la nacelle.
+            missionNamespace setVariable ["COMSPEC_ATAK_DroneGimbalCur", ["gimbalGet"] call comspec_atak_native_fnc_droneAction];
+            missionNamespace setVariable ["COMSPEC_ATAK_DroneCamTgt", "GIMBAL"];
+        };
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneGimbal", [_pan, _tilt]];
+    };
+    case "gimbalNudge": {
+        (["gimbalGet"] call comspec_atak_native_fnc_droneAction) params ["_p0", "_t0"];
+        _arg params [["_dp", 0], ["_dt", 0]];
+        ["gimbal", [_p0 + _dp, _t0 + _dt]] call comspec_atak_native_fnc_droneAction;
+    };
+    case "recenter": {
+        if ((missionNamespace getVariable ["COMSPEC_ATAK_DroneCamTgt", ""]) isEqualTo "GIMBAL") then {
+            missionNamespace setVariable ["COMSPEC_ATAK_DroneGimbal", [0, -37]];
+        } else {
+            missionNamespace setVariable ["COMSPEC_ATAK_DroneCamTgt", ""];
+            call _render;
+        };
+    };
+    case "zoomBy": {
+        private _z = (round (10 * (((missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1]) * _arg) max 1 min 8))) / 10;
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneZoom", _z];
+        private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
+        if (!isNull _cam) then { _cam camSetFov (0.7 / _z); _cam camCommit 0.15; };
+        _z
+    };
+    // Ligne de la vue caméra : angles de la nacelle, zoom, mode marquage.
+    case "gimbalHud": {
+        (uiNamespace getVariable ["COMSPEC_ATAK_DroneGimTxt", [controlNull, ""]]) params [["_c", controlNull], ["_last", ""]];
+        if (isNull _c) exitWith {};
+        (["gimbalGet"] call comspec_atak_native_fnc_droneAction) params ["_gp", "_gt"];
+        private _mk = uiNamespace getVariable ["COMSPEC_ATAK_DroneMarkMode", false];
+        private _t = format ["<t size='0.75' align='center' font='EtelkaMonospacePro' shadow='2' shadowColor='#000000' color='%1'>NACELLE CAP %2%3° · SITE %4° · x%5%6</t>",
+            ["#e8f0ea", "#ff8a7a"] select _mk, ["", "+"] select (_gp > 0.5), round _gp, round _gt, missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1],
+            ["", "<br/>MARQUAGE : CLIQUEZ LA CIBLE"] select _mk];
+        if (_t isNotEqualTo _last) then { _c ctrlSetStructuredText parseText _t; uiNamespace setVariable ["COMSPEC_ATAK_DroneGimTxt", [_c, _t]]; };
+    };
+    case "markMode": {
+        uiNamespace setVariable ["COMSPEC_ATAK_DroneMarkMode", !(uiNamespace getVariable ["COMSPEC_ATAK_DroneMarkMode", false])];
+        call _render;
+    };
+    case "imgClick": {
+        if !(["click", _arg] call comspec_atak_native_fnc_droneFlir) exitWith {};
+        // Mode marquage : la nacelle se pose sur le point (image suivante), puis la cible sous le réticule est marquée.
+        if (uiNamespace getVariable ["COMSPEC_ATAK_DroneMarkMode", false]) then {
+            [{ ["lock"] call comspec_atak_native_fnc_droneAction; }, [], 0.15] call CBA_fnc_waitAndExecute;
+        };
     };
     case "vision": {
         // Jour → nuit (intensification) → thermique → jour.
@@ -962,6 +1080,13 @@ switch (_act) do {
         if ((count _feed) isEqualTo 5 && {!isNull (_feed select 0)}) then {
             private _t = [_d, _l, "FEED"] call comspec_atak_native_fnc_droneOsd;
             { _x ctrlSetStructuredText parseText (_t select _forEachIndex); } forEach _feed;
+        };
+        ["gimbalHud"] call comspec_atak_native_fnc_droneAction;
+        // Onglet TÂCHES, drone non armé : redessiné quand le pilote passe à moins de 5 m du drone (étape 1 de l'armement).
+        if ((_s getOrDefault ["droneTab", "PILOT"]) isEqualTo "TASK" && {(_d getVariable ["COMSPEC_DroneArmed", ""]) isEqualTo ""}) then {
+            private _near = (player distance _d) <= 5;
+            if (_near isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_DroneArmNear", _near])) then { call _saveGrid; call _render; };
+            missionNamespace setVariable ["COMSPEC_ATAK_DroneArmNear", _near];
         };
         // Onglets PISTES et JOURNAL : redessinés quand une ligne arrive.
         private _sig = [count (missionNamespace getVariable ["COMSPEC_ATAK_DroneLog", []]), count (missionNamespace getVariable ["COMSPEC_ATAK_DroneTracks", createHashMap])];

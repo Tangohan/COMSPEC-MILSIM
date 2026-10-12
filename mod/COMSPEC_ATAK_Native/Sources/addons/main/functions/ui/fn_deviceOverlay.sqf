@@ -74,10 +74,15 @@ if (isNull _crack || {isNull _tint} || {isNull _glitch} || {isNull _shatter} || 
 };
 // Filtre d'écran JVN posé (fn_screenGlow) : film sombre légèrement vert, ajouté au mode nuit.
 private _film = ["filter"] call comspec_atak_native_fnc_screenGlow;
+// Luminosité (profil COMSPEC_ATAK_Brightness, Réglages ou volet rapide) : voile sombre ajouté au filtre.
+private _dimA = (1 - ((profileNamespace getVariable ["COMSPEC_ATAK_Brightness", 1]) max 0.2 min 1)) * 0.75;
 switch (profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"]) do {
-    case "RED": { _tint ctrlShow true; _tint ctrlSetBackgroundColor [0.55, 0, 0, [0.42, 0.55] select _film]; };
-    case "DIM": { _tint ctrlShow true; _tint ctrlSetBackgroundColor [0, 0, 0, [0.58, 0.68] select _film]; };
-    default { _tint ctrlShow _film; _tint ctrlSetBackgroundColor [0.02, 0.06, 0.03, 0.42]; };
+    case "RED": { _tint ctrlShow true; _tint ctrlSetBackgroundColor [0.55, 0, 0, (([0.42, 0.55] select _film) + _dimA * 0.4) min 0.9]; };
+    case "DIM": { _tint ctrlShow true; _tint ctrlSetBackgroundColor [0, 0, 0, (([0.58, 0.68] select _film) + _dimA * 0.4) min 0.92]; };
+    default {
+        _tint ctrlShow (_film || {_dimA > 0.01});
+        _tint ctrlSetBackgroundColor ([[0, 0, 0, _dimA], [0.02, 0.06, 0.03, (0.42 + _dimA * 0.5) min 0.9]] select _film);
+    };
 };
 private _state = _hp get "state";
 private _lvl = _hp get "crack";

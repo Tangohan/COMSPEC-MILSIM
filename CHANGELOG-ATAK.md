@@ -11,6 +11,42 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vague 2026-10-11 (suite) — Un téléphone qui réagit (ATAK natif 1.9.0)
+
+### Nouveau — Mouvement, toasts, volet rapide, écran de verrouillage
+- Onde verte sous le doigt à chaque appui sur l'écran, clic doux et légère vibration de la coque (pas de son en mode discrétion ; rien après un glissé de carte ou de curseur).
+- Une app s'ouvre en grandissant depuis l'icône touchée (0,2 s) ; l'accueil revient en fondu ; au retour, la page quittée glisse vers la droite.
+- Toasts Android : petite bulle en bas de l'écran qui s'efface seule (`[texte, durée] call comspec_atak_native_fnc_toast`), utilisée pour les confirmations brèves (code de verrouillage et patch enregistrés, numéro ou journal copiés, marqueur enregistré, étape d'itinéraire ajoutée, raccourcis mode nuit / discrétion).
+- Volet rapide tiré de la barre d'état (clic sur l'heure ou la batterie, petite poignée sous l'heure) : curseur de luminosité, mode nuit, mode avion, silencieux, vibration, Bluetooth, balise IR, état du réseau et batterie (ouvrent les apps Réseau et Statut), accès à tous les réglages. Il reprend les réglages existants (mode nuit, avion, discrétion, vibration, Bluetooth, balise IR).
+- Luminosité de l'écran (nouveau réglage, aussi dans Réglages) : voile sombre, lueur de l'écran vue par les autres réduite, batterie un peu ménagée.
+- Écran de verrouillage : grande heure, date, carte et température, batterie et réseau, trois dernières notifications ; à la première sortie en main de la mission, après une minute rangé ou après un redémarrage, une batterie vide ou un écran détruit. Clic, glissé vers le haut ou touche accueil : l'écran remonte.
+- Réglages > Personnalisation > « Animations et sons » : animations, clic et vibration des appuis, écran de verrouillage, luminosité (chacun désactivable).
+
+### Nouveau — Caméras IP fixes (demande de TTRD)
+- Item « Caméra IP compacte (ATAK) » (`COMSPEC_ATAK_Camera`, arsenal et éditeur). ACE « Téléphone ATAK > Caméras > Poser une caméra » : visez à moins de 3 m un mur, le sol, un objet ou un véhicule (elle y reste accrochée et le suit) ; nommée CAM-1, CAM-2… L'objet est visible de tous et peut être détruit (tirs, explosion, véhicule détruit).
+- ACE sur la caméra posée : « Récupérer la caméra » (rend l'item), « Renommer » (ouvre le téléphone sur la caméra), « Orienter » à gauche / à droite de 45° ; une caméra détruite se retire sans rendre l'item.
+- App Vidéo live : section « Caméras fixes » sous les porteurs (nom, distance, état : en ligne, hors liaison, brouillée, pas de réseau, détruite). Même image que le Live cam (jour, JVN, thermique), panoramique local ◀ ▶ de 30°, bouton Renommer. Liaison : il faut du réseau sur son téléphone et un ATAK du camp à moins de 600 m de la caméra (`comspec_atak_native_camera_range`) ; un brouilleur de mission la coupe.
+
+### Nouveau — Carte : symboles OTAN et menu du clic droit (demandes de TTRD)
+- Réglages > Carte > « Icônes des unités » : POINTS (actuel) ou OTAN MIL-STD (MIL-STD-2525 / APP-6, textures OTAN d'Arma). En OTAN, chaque unité amie (carte, mini-carte, liste BFT) a son cadre bleu et sa fonction : véhicule (drone, avion, hélicoptère, navire, char, VBTT / mécanisé, artillerie, ambulance, véhicule motorisé, mortier ou arme fixe), sinon rôle (sanitaire via ACE / trait / rôle SAN, PC pour les fonctions de commandement, reco pour tireur d'élite / éclaireur, mortier, télépilote, sapeur / EOD) puis infanterie. Les chefs ont leur échelon au-dessus du cadre (équipe, groupe, section). Indicatifs, couleurs et ma propre icône inchangés ; symbole recalculé toutes les 4 s par unité.
+- Clic droit sur la carte (sans glisser : le glisser droit déplace toujours la carte) : petit menu au curseur avec les coordonnées du point en tête. PING (cercles qui s'élargissent et indicatif pendant 10 s sur l'ATAK de tout mon camp, bandeau et vibration chez les autres ; Ctrl + clic envoie aussi ce ping partagé), METTRE UN MARQUEUR (formulaire de nouveau marqueur à cet endroit), SUPPRIMER (seulement sur un marqueur posé par un joueur). Fermeture : clic ailleurs, Échap ou choix d'une ligne.
+
+### Nouveau — BFT en mode ORBAT et filtres
+- App BFT : bouton « VUE : LISTE / ORBAT ». La vue ORBAT range les pistes en arbre repliable : formation (rattachement ORBAT Athena abrégé, sinon préfixe de l'indicatif : « Star 4 » → STAR) › groupe (échelon, effectif, chef marqué, distance au chef, « mon groupe ») › équipe de feu (nom et couleur des équipes) › membres (état, icône, véhicule à bord, distance). Clic sur un en-tête : replier / déplier (mémorisé) ; clic sur un membre : fiche à droite, CARTE / Y ALLER / SMS / VIBRER inchangés.
+- Bouton « FILTRES » (tiroir sous l'en-tête, nombre de filtres actifs) : masquer les IA, les aériens, les véhicules (l'équipage reste dans son groupe), les pistes anciennes et perdues, les pistes hors ligne ; alliés suivis tous / mon groupe / mon unité ; distance max tout / 1 / 3 / 10 km. Réglages du profil, appliqués au BFT et à la carte (`comspec_atak_native_fnc_bftFilter`).
+- Filtre VÉHICULES du BFT : compte aussi les équipiers à bord d'un véhicule.
+
+### Nouveau — App Réseau en schéma, frappe drone guidée, caméra du drone à la taille de l'écran (demandes de TTRD)
+- App Réseau refaite : chemin de la liaison en schéma (Téléphone → porteur → COMSPEC Link → Athena), chaque étape en carte avec sa couleur d'état, sa distance et ses barres de signal, le porteur utilisé marqué ACTIF, la coupure en rouge avec sa raison (mode avion, sous-sol, aucun porteur à portée, Athena hors ligne…). Tuiles d'indicateurs (jauge de stabilité, latence, pertes, paquets, âge de la dernière position et de la dernière réponse Athena). Liste des passerelles de véhicule, postes de commandement et relais radio proches avec distance, portée, signal, badge CONNECTÉ sur celui utilisé et la raison pour les autres (hors portée, relief masquant, détruit, moins bon débit). Zone radio, débit, facteurs, état du téléphone et tous les boutons gardés ; rafraîchie toutes les 5 s, lisible en portrait et en miniature.
+- Drone, frappe : état clair (non armé / armé avec la charge), armement en trois étapes (distance au drone en direct ✓/✗, choix de la charge parmi celles de l'inventaire, ARMER), frappes expliquées (piquer sur le laser, sur une grille, depuis les pistes), nouveau DÉSARMER (charge rendue à l'inventaire), recherche et frappe expliquée selon l'armement.
+- Drone, caméra : la vue tient dans l'écran sans défilement (image 16/9 ajustée, incrustations sur l'image, une barre de commandes, mode LISTE pour garder les onglets dessous). Nacelle pilotée à la souris (glisser : cap et site −90° à +20°, lissée et stabilisée), molette = zoom continu jusqu'à x8, flèches / ZQSD au survol, CENTRER, NADIR ; angles affichés ; clic = viser le point, et en mode MARQ. le marquer ; altitude ± et stationnaire dans la barre. Caméra posée sous le fuselage des petits drones (Mavic) : plus de bras ni d'hélice dans l'image (réglable par mission : COMSPEC_ATAK_DroneCamOffsets).
+
+### Corrigé
+- Réglages (et toutes les pages redessinées sur place) : un clic ne fait plus remonter la page en haut ; le défilement n'est remis à zéro qu'en changeant de page.
+- BFT : « Star 4-1 » n'apparaît plus deux fois. La piste Athena et l'unité en jeu au même indicatif sont fusionnées même quand la position Athena est en retard de plus de 30 m ; des IA d'un même groupe sans indicatif propre sont distinguées par leur rôle.
+
+---
+
 ## Vague 2026-10-11 (retours de test) — ATAK natif 1.8.1, SEEK, Overwatch embarqué
 
 ### Corrigé — Retours de test en jeu
@@ -26,10 +62,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 - Dos du téléphone : dos simple de S7 dans sa coque (plus de plaque de fixation).
 - Le « durci XT » devient le modèle « tactique » : coque EUD vert ranger à cadre fin, rail de fixation à ailettes et molette, dos à pad et double objectif.
 - Patch au dos : en plus de nos patchs, l'insigne porté sur l'uniforme, ou n'importe quel insigne d'unité des mods chargés et de la mission (CfgUnitInsignia : RHS, 3CB, unités…), choisi dans Réglages avec l'aperçu ; visible au dos et sur le téléphone porté au gilet.
+- Réglages : les insignes ne se parcourent plus un par un (chaque clic renvoyait en haut de la page et les flèches ◀ ▶ étaient vides) ; « Choisir un insigne » ouvre la page « Patch au dos » : recherche par nom ou classe (sans accents ni majuscules), sources Tous / Nos patchs / Mods / Mission, vignettes 4 × 3 avec le nom et le patch porté en surbrillance, pages PRÉC. / SUIV. ; un clic met le patch tout de suite sans bouger la page (recherche, source et page gardées, le champ garde son texte pendant la frappe).
 - Téléphone lâché au sol : notre modèle 3D de la coque (couleur choisie) posé à plat, écran vers le haut, au lieu du petit objet générique.
 - Liaison Athena : plus de spam connexion / déconnexion avec son (état tenu quelques secondes avant de changer, sons de perte et de retour limités à un toutes les 30 s, passerelles véhicule comptées comme relais).
 - Alerte médicale Overwatch : erreur `!` (type Tableau) corrigée.
 - SEEK : relevés empreintes, iris et ADN enregistrés avec le terminal seul (hors liaison aussi) et rattachés à la personne ; photo d'un sujet au sol cadrée au-dessus du visage ; textes de la page Terrain et de la barre d'état raccourcis.
+
+### Nouveau — App Accessoires (établi)
+- App « Accessoires » (Système) : un établi visuel au lieu d'une liste. Le dos du téléphone (modèle et coque choisis, antenne et batterie externe montées) au centre, six emplacements reliés à leur point de fixation par un trait fin : antenne (port SMA), balise IR, batterie de rechange, module DL-7, filtre d'écran JVN, batterie externe (plaque). Chaque emplacement montre l'objet monté, son état (débit, charge %, allumée…) ou « vide » ; un toucher ouvre un tiroir avec les objets compatibles de l'inventaire (FIXER / REMPLACER), RETIRER, et les actions propres (allumer la balise IR, changer la batterie comme l'action ACE, ouvrir l'Extraction ou débrancher le câble DL-7).
 
 ---
 

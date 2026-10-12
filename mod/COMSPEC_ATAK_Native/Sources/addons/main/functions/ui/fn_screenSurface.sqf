@@ -96,10 +96,14 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
         ["caseDust", format ["dirt_case_%1_%2", _l getOrDefault ["model", "s7"], ["port", "land"] select (_l getOrDefault ["landscape", true])] call _tex, _px, _py, _pw, _ph] call _pic;
     };
     for "_i" from 1 to _cPrints do {
-        private _h = _rh * (0.09 + 0.05 * call _rnd);
-        private _w = _h * 0.85 / _ratio;
-        // Surtout là où le pouce appuie : bas et milieu de l'écran.
-        ["prints", format ["dirt_print_%1", floor ((call _rnd) * 2)] call _tex, _rx + (_rw - _w) * (call _rnd), _ry + (_rh - _h) * (0.35 + 0.65 * call _rnd), _w, _h, (call _rnd) * 360] call _pic;
+        // Pouce : ovale allongé (texture 128x256, ovale ~200 px de haut), un peu incliné vers la main qui tient le téléphone.
+        private _h = _rh * (0.17 + 0.09 * call _rnd);
+        private _w = _h * 0.5 / _ratio;
+        // Surtout là où l'on touche : barre latérale, boutons du bas, milieu ; rarement en haut.
+        private _zx = selectRandomWeighted [0.04, 3, 0.5, 2, 0.85, 3, call _rnd, 1];
+        private _zy = 0.35 + 0.6 * call _rnd;
+        private _side = [1, -1] select (_zx < 0.5);
+        ["prints", format ["dirt_print_%1", floor ((call _rnd) * 4)] call _tex, _rx + (_rw - _w) * _zx, _ry + (_rh - _h) * _zy, _w, _h, _side * (10 + 35 * call _rnd)] call _pic;
     };
     for "_i" from 1 to _cBlood do {
         private _h = _rh * (0.07 + 0.06 * call _rnd);

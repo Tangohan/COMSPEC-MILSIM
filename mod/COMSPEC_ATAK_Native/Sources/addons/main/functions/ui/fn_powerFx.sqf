@@ -21,6 +21,9 @@ if (isNull _d) exitWith { if (_kind isEqualTo "empty") then { call _stow; }; fal
 if (((uiNamespace getVariable ["COMSPEC_ATAK_PowerFx", []]) param [1, -1]) > diag_tickTime) exitWith { false };
 private _dur = createHashMapFromArray [["empty", 3.7], ["broken", 2.9], ["shutdown", 1.5]] getOrDefault [_kind, 2];
 uiNamespace setVariable ["COMSPEC_ATAK_PowerFx", [_kind, diag_tickTime + _dur + 0.5]];
+// Au rallumage, l'écran de verrouillage s'affiche (fn_lockScreen) ; volet rapide refermé.
+missionNamespace setVariable ["COMSPEC_ATAK_LockPending", true];
+["close"] call comspec_atak_native_fnc_quickSettings;
 
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "device") params ["_rx", "_ry", "_rw", "_rh"];
