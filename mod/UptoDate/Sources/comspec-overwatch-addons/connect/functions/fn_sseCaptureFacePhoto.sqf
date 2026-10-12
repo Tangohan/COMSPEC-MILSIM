@@ -49,6 +49,12 @@ if (!isNull player && {(player distance _target) > 4}) exitWith {
 private _angle = _face getOrDefault ["angle", "face"];
 private _frame = [_target, _angle, _face getOrDefault ["zoom", 1]] call comspec_overwatch_connect_fnc_sseFaceFraming;
 if (_frame isEqualTo []) exitWith { false };
+// Visage trop endommagé (moteur biométrique) : pas de cliché de comparaison.
+if (((_frame select 3) getOrDefault ["qualite", 99]) <= 0 && {!isNil "comspec_sse_fnc_bioCapture"}) exitWith {
+    private _why = ((_frame select 3) getOrDefault ["note", ""]);
+    [format ["Photo du visage impossible : %1", [_why, "visage trop endommagé"] select (_why isEqualTo "")], "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
+    false
+};
 
 missionNamespace setVariable ["COMSPEC_SsePerson_PhotoBusy", true, false];
 
@@ -143,6 +149,9 @@ if (!isNull _disp) then {
 
     call _fnc_restore;
     missionNamespace setVariable ["COMSPEC_SsePerson_PhotoBusy", false, false];
+    if (isNull (uiNamespace getVariable ["COMSPEC_SsePerson_Display", displayNull])) then {
+        ["close"] call comspec_overwatch_connect_fnc_sseFaceStudio;
+    };
 
     if (_shotOk isEqualType true && {!_shotOk}) exitWith {
         [

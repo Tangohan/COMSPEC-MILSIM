@@ -12,6 +12,46 @@
 params [["_t", objNull, [objNull]], ["_angle", "face", [""]], ["_zoom", 1, [0]]];
 if (isNull _t || {!(_t isKindOf "CAManBase")}) exitWith { [] };
 
+// Qualité réelle du visage (moteur biométrique du pack SSE) : masque, nuit, blessures,
+// décès. Un visage trop endommagé ne se photographie pas pour comparaison.
+private _bioQ = -1;
+private _bioNote = "";
+if (!isNil "comspec_sse_fnc_bioCapture" && {missionNamespace getVariable ["comspec_sse_bio_enabled", true]}) then {
+    private _dry = [_t, player, "visage", "seek", true] call comspec_sse_fnc_bioCapture;
+    if (_dry getOrDefault ["ok", false]) then {
+        _bioQ = _dry getOrDefault ["quality", -1];
+        _bioNote = ((_dry getOrDefault ["factors", []]) apply { (_x splitString "(") select 0 }) joinString ", ";
+    } else {
+        _bioQ = 0;
+        _bioNote = _dry getOrDefault ["blocked", ""];
+    };
+};
+
+// Studio : le cadrage se fait sur un double du sujet, droit, éclairé, ciel en fond.
+if (missionNamespace getVariable ["comspec_sse_bio_faceStudio", true]) then {
+    private _s = ["frame", _t, _angle] call comspec_overwatch_connect_fnc_sseFaceStudio;
+    if ((count _s) == 3) then {
+        _s params ["_cam", "_look"];
+        _zoom = (_zoom max 1) min 2.5;
+        private _q = 95 - ([0, 5, 15] select ((["face", "trois_quarts", "profil"] find _angle) max 0)) - ([0, 5] select (_zoom > 1.8));
+        private _notes = [];
+        if (_bioQ >= 0) then {
+            _q = _q min _bioQ;
+            if (_bioNote isNotEqualTo "") then { _notes pushBack _bioNote; };
+        };
+        _notes pushBack "portrait studio";
+        private _opDist = player distance _t;
+        _t setVariable ["comspec_sse_studioFrame", [_cam, _look, 0.36 / _zoom, createHashMapFromArray [
+            ["distance", _opDist], ["couche", "debout"], ["nuit", false], ["masque", false],
+            ["qualite", round ((_q max 5) min 99)], ["note", _notes joinString " · "], ["studio", true]
+        ]]];
+    } else {
+        _t setVariable ["comspec_sse_studioFrame", nil];
+    };
+};
+private _studio = _t getVariable ["comspec_sse_studioFrame", []];
+if ((count _studio) == 4) exitWith { _t setVariable ["comspec_sse_studioFrame", nil]; _studio };
+
 // --- Position de la tête, vérifiée ---
 // « selectionPosition "head" » (LOD de résolution) ne suit pas toujours le ragdoll
 // d'un corps au sol : la tête pouvait tomber sous le terrain, et la caméra avec
@@ -133,6 +173,10 @@ switch (_angle) do {
     case "profil": { _q = _q - 15; };
 };
 if (_zoom > 1.8) then { _q = _q - 5; };
+if (_bioQ >= 0) then {
+    _q = _q min _bioQ;
+    if (_bioNote isNotEqualTo "") then { _notes pushBack _bioNote; };
+};
 _q = (_q max 5) min 99;
 
 [_cam, _look, _fov, createHashMapFromArray [

@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.63";
+    private const string ExtensionVersion = "2.0.64";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2201,6 +2201,8 @@ public static partial class Extension
     }
 
     private const int MaxOutputBytes = 8000;
+    /// <summary>Morceaux de texte de campagne SSE reçus du jeu, par clé de campagne (SseCampaignPush).</summary>
+    private static readonly ConcurrentDictionary<string, string?[]> SseCampaignPushBuffers = new(StringComparer.Ordinal);
 
     /// <summary>Cache détail tenue pour GetWardrobeChunk (évite ERR|too_large).</summary>
     private static string _wardrobeDetailCacheId = "";
@@ -3979,6 +3981,114 @@ public static partial class Extension
                 }
                 catch { return "ERR|bad_json"; }
                 return "OK|" + lines.ToString();
+            }
+            // Campagnes SSE (mod COMSPEC SSE, addon campaign) : le texte exporté par le jeu va et vient
+            // entre le serveur de jeu et Athena. L'entrée et la sortie de callExtension étant limitées,
+            // le texte voyage en morceaux.
+            // SseCampaignPush [clé, n° du morceau (0..), nombre de morceaux, morceau, auteur]
+            //   → "OK|part" tant qu'il manque des morceaux, puis "OK|<created 0/1>|<graines en collision>" ou "ERR|…"
+            if (function == "SseCampaignPush" && args.Length >= 4)
+            {
+                var key = (args[0] ?? "").Trim();
+                if (key.Length == 0 || key.Length > 64
+                    || !int.TryParse(args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var part)
+                    || !int.TryParse(args[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out var parts)
+                    || parts < 1 || parts > 2000 || part < 0 || part >= parts)
+                    return "ERR|bad_args";
+                var buf = SseCampaignPushBuffers.AddOrUpdate(key, _ => new string?[parts], (_, old) => old.Length == parts && part > 0 ? old : new string?[parts]);
+                // callExtension passe chaque argument en chaîne SQF : guillemets extérieurs (déjà retirés
+                // par ArmaString) et guillemets intérieurs doublés, à rétablir ici. Le jeu découpe le texte
+                // avant de l'envoyer, donc chaque morceau est doublé séparément : l'inverse est exact.
+                buf[part] = (args[3] ?? "").Replace("\"\"", "\"");
+                if (part < parts - 1) return "OK|part";
+                SseCampaignPushBuffers.TryRemove(key, out _);
+                if (buf.Any(x => x == null)) return "ERR|missing_part";
+                var text = string.Concat(buf);
+                var actor = args.Length >= 5 ? (args[4] ?? "") : "";
+                var payload = JsonSerializer.Serialize(new Dictionary<string, string> { ["key"] = key, ["text"] = text, ["actor"] = actor });
+                var resp = SendJsonPost(_baseUrl + "/api/sse/campaigns/sync", payload, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 422)
+                    {
+                        try
+                        {
+                            using var errDoc = JsonDocument.Parse(respBody);
+                            if (errDoc.RootElement.TryGetProperty("message", out var m) && m.ValueKind == JsonValueKind.String)
+                                return "ERR|" + (m.GetString() ?? "").Replace("|", "/");
+                        }
+                        catch { }
+                    }
+                    return "ERR|http_" + code;
+                }
+                try
+                {
+                    using var doc = JsonDocument.Parse(respBody);
+                    var created = doc.RootElement.TryGetProperty("created", out var c) && c.ValueKind == JsonValueKind.True;
+                    var collisions = doc.RootElement.TryGetProperty("seed_collisions", out var sc) && sc.ValueKind == JsonValueKind.Number ? sc.GetInt32() : 0;
+                    return "OK|" + (created ? "1" : "0") + "|" + collisions.ToString(CultureInfo.InvariantCulture);
+                }
+                catch { return "OK|0|0"; }
+            }
+            // SseCampaignList [] → "OK|" + une ligne par campagne : clé\tnom\ttype\tmissions\tpersonnes\torganisations\tmise à jour
+            if (function == "SseCampaignList")
+            {
+                var resp = SendGet(_baseUrl + "/api/sse/campaigns", token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    return code == 401 || code == 403 ? "ERR|unauthorized" : "ERR|http_" + code;
+                }
+                var lines = new StringBuilder();
+                try
+                {
+                    using var doc = JsonDocument.Parse(respBody);
+                    if (doc.RootElement.TryGetProperty("campaigns", out var arr) && arr.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var el in arr.EnumerateArray())
+                        {
+                            string C(string k)
+                            {
+                                if (!el.TryGetProperty(k, out var v)) return "";
+                                var t = v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "") : v.ValueKind == JsonValueKind.Number ? v.GetRawText() : "";
+                                return t.Replace("\t", " ").Replace("\r", "").Replace("\n", " ").Replace("|", "/").Trim();
+                            }
+                            var line = string.Join("\t", C("key"), C("name"), C("type"), C("missions"), C("persons"), C("orgs"), C("updated"));
+                            if (Encoding.UTF8.GetByteCount(lines.ToString()) + Encoding.UTF8.GetByteCount(line) + 6 > MaxOutputBytes) break;
+                            lines.Append(line).Append('\n');
+                        }
+                    }
+                }
+                catch { return "ERR|bad_json"; }
+                return "OK|" + lines.ToString();
+            }
+            // SseCampaignPull [clé, position] → "OK|<total>|<position suivante>|<morceau>" ou "ERR|…"
+            if (function == "SseCampaignPull" && args.Length >= 1)
+            {
+                var key = (args[0] ?? "").Trim();
+                var offset = args.Length >= 2 && long.TryParse(args[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var o) ? Math.Max(0, o) : 0;
+                var resp = SendGet(_baseUrl + "/api/sse/campaigns/" + Uri.EscapeDataString(key) + "/text?offset=" + offset.ToString(CultureInfo.InvariantCulture) + "&length=6000", token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 404) return "ERR|not_found";
+                    return code == 401 || code == 403 ? "ERR|unauthorized" : "ERR|http_" + code;
+                }
+                try
+                {
+                    using var doc = JsonDocument.Parse(respBody);
+                    var root = doc.RootElement;
+                    var total = root.TryGetProperty("total", out var t) && t.ValueKind == JsonValueKind.Number ? t.GetInt64() : 0;
+                    var next = root.TryGetProperty("next", out var n) && n.ValueKind == JsonValueKind.Number ? n.GetInt64() : 0;
+                    var chunk = root.TryGetProperty("chunk", out var ch) && ch.ValueKind == JsonValueKind.String ? (ch.GetString() ?? "") : "";
+                    return "OK|" + total.ToString(CultureInfo.InvariantCulture) + "|" + next.ToString(CultureInfo.InvariantCulture) + "|" + chunk;
+                }
+                catch { return "ERR|bad_json"; }
             }
             if (function == "GetWantedNotices")
             {

@@ -25,6 +25,7 @@ if (_mode isEqualTo "get") exitWith {
 
 if (_mode isEqualTo "clear") exitWith {
     missionNamespace setVariable ["COMSPEC_SSE_ActiveCase", "", true];
+    if (!isNil "comspec_sse_fnc_setCaseReference") then { [""] call comspec_sse_fnc_setCaseReference; };
     if (hasInterface) then {
         ["Dossier SSE actif effacé — les prochaines fiches partiront non classées.", "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
     };
@@ -42,6 +43,8 @@ if (_mode isEqualTo "set") exitWith {
     // individuel. On garde la possibilité de le poser localement pour les cas
     // particuliers (opérateur détaché).
     missionNamespace setVariable ["COMSPEC_SSE_ActiveCase", _clean, _share];
+    // Une seule référence active pour le pack SSE (transmissions Athena).
+    if (!isNil "comspec_sse_fnc_setCaseReference") then { [_clean] call comspec_sse_fnc_setCaseReference; };
     profileNamespace setVariable ["COMSPEC_SseLastCaseCode", _clean];
     saveProfileNamespace;
 

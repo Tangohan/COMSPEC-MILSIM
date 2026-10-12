@@ -25,6 +25,7 @@ use App\Controllers\Web\SseIntelligenceWorkspaceController;
 use App\Controllers\Web\JnetPortalController;
 use App\Controllers\Web\SseDigitalLabController;
 use App\Controllers\Web\SseArmaModelsController;
+use App\Controllers\Web\SseCampaignController;
 use App\Controllers\Web\SseFieldNoteController;
 use App\Controllers\Web\AccountController;
 use App\Controllers\Web\AccountPrivacyController;
@@ -766,6 +767,14 @@ return function (Router $router) {
     $router->post('/atak/sse/rapprochements/{id}/rejeter', [SsePortalController::class, 'suggestionReject'], $mwSsePortal);
     $router->post('/atak/sse/moteur/executer', [SsePortalController::class, 'engineRunNow'], $mwSsePortal);
     // Fiches de renseignement simplifiées — rédacteur plein écran (portail et ATAK)
+    // Campagnes du mod COMSPEC SSE : gestion Athena et catalogue partagé entre communautés.
+    $router->get('/atak/sse/campagnes', [SseCampaignController::class, 'index'], $mwSsePortal);
+    $router->post('/atak/sse/campagnes/importer', [SseCampaignController::class, 'import'], $mwSsePortal);
+    $router->get('/atak/sse/campagnes/partagees', [SseCampaignController::class, 'catalog'], $mwSsePortal);
+    $router->post('/atak/sse/campagnes/partagees/{id}/copier', [SseCampaignController::class, 'catalogImport'], $mwSsePortal);
+    $router->get('/atak/sse/campagnes/{id}', [SseCampaignController::class, 'show'], $mwSsePortal);
+    $router->get('/atak/sse/campagnes/{id}/texte', [SseCampaignController::class, 'export'], $mwSsePortal);
+    $router->post('/atak/sse/campagnes/{id}', [SseCampaignController::class, 'action'], $mwSsePortal);
     $router->get('/atak/sse/fiches', [SseFieldNoteController::class, 'index'], $mwSsePortal);
     $router->get('/atak/sse/fiches/nouvelle', [SseFieldNoteController::class, 'composer'], $mwSsePortal);
     $router->post('/atak/sse/fiches', [SseFieldNoteController::class, 'store'], $mwSsePortal);
@@ -2510,6 +2519,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/sse/notes/{id}/pieces', [SseFieldNoteApiController::class, 'attachmentStore']);
     // Avis de recherche (téléphone en jeu).
     $router->get('/api/sse/wanted', [SseApiController::class, 'wanted']);
+    $router->get('/api/sse/campaigns', [\App\Controllers\Api\SseCampaignApiController::class, 'index']);
+    $router->post('/api/sse/campaigns/sync', [\App\Controllers\Api\SseCampaignApiController::class, 'sync']);
+    $router->get('/api/sse/campaigns/{key}/text', [\App\Controllers\Api\SseCampaignApiController::class, 'text']);
     // Avant /{id} : « by-unit » ne doit pas être capté comme identifiant.
     $router->get('/api/sse/persons/by-unit', [SseApiController::class, 'personsByUnit']);
     $router->get('/api/sse/persons/{id}', [SseApiController::class, 'personsShow']);

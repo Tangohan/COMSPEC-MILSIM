@@ -46,27 +46,23 @@ if (_radius isEqualType "") then { _radius = parseNumber _radius; };
 if (!(_radius isEqualType 0) || { _radius <= 0 }) then { _radius = 25; };
 _radius = (_radius max 1) min 500;
 
-private _targets = [_logic, _units, _radius] call comspec_overwatch_connect_fnc_sseModuleTargets;
+private _targets = [_logic, _units, _radius] call comspec_sse_fnc_moduleTargets;
 
 // Seuls les joueurs sont dotés : donner le terminal à un PNJ ne sert à rien et
 // le rend récupérable sur son corps, ce qui n'est pas l'effet recherché.
 private _players = _targets select { isPlayer _x };
 if (_players isEqualTo []) exitWith {
-    ["WARN", "SSE", "Module terminal SEEK : aucun joueur sous le module"] call comspec_overwatch_connect_fnc_log;
+    ["Module terminal SEEK : aucun joueur sous le module", "WARN"] call comspec_sse_fnc_log;
     deleteVehicle _logic;
     false
 };
 
 {
     // L'ajout doit se faire là où l'unité est locale, sinon l'inventaire ne suit pas.
-    [_x, "COMSPEC_Item_SeekTerminal"] remoteExecCall ["comspec_overwatch_connect_fnc_giveSeekTerminal", _x];
+    [_x] remoteExecCall ["comspec_sse_fnc_giveSeek", _x];
 } forEach _players;
 
-[
-    "INFO",
-    "SSE",
-    format ["Terminal SEEK distribué à %1 joueur(s)", count _players]
-] call comspec_overwatch_connect_fnc_log;
+[format ["Terminal SEEK distribué à %1 joueur(s)", count _players], "INFO"] call comspec_sse_fnc_log;
 
 deleteVehicle _logic;
 true

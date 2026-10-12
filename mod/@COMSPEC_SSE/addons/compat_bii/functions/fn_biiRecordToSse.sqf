@@ -87,8 +87,8 @@ _intel set ["family", _fam];
 _intel set ["associates", _assoc];
 _intel set ["leads", _leadsX];
 if (_notes isNotEqualTo "") then {
-    private _plain = _notes replaceString ["<br/>", " | "];
-    _plain = _plain replaceString ["<br>", " | "];
+    private _plain = [_notes, "<br/>", " | "] call CBA_fnc_replace;
+    _plain = [_plain, "<br>", " | "] call CBA_fnc_replace;
     _intel set ["biiNotes", _plain];
 };
 [_entity, "intel", _intel, true] call comspec_sse_fnc_setSection;

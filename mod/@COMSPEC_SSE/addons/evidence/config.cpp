@@ -20,7 +20,8 @@ class CfgPatches {
             "COMSPEC_SSE_DocumentBag",
             "COMSPEC_SSE_Notebook",
             "COMSPEC_SSE_SatPhone",
-            "COMSPEC_SSE_Terminal"
+            "COMSPEC_SSE_Terminal",
+            "COMSPEC_SSE_HeadBag"
         };
         requiredVersion = REQUIRED_VERSION;
         requiredAddons[] = {
@@ -28,7 +29,8 @@ class CfgPatches {
             "A3_Weapons_F",
             "cba_main",
             "cba_common",
-            "ace_common"
+            "ace_common",
+            "A3_Characters_F"
         };
         author = "COMSPEC";
         VERSION_CONFIG;
@@ -161,5 +163,26 @@ class CfgWeapons {
         displayName = "Terminal SSE terrain";
         descriptionShort = "Terminal d'exploitation SSE : dossiers, digital, preuves, graphe et mission intel.";
         class ItemInfo: CBA_MiscItem_ItemInfo { mass = 10; };
+    };
+
+    // Sac de tête (capture) : porté dans l'inventaire, posé sur un prisonnier par action ACE.
+    class COMSPEC_SSE_HeadBag: COMSPEC_SSE_ItemBase {
+        scope = 2;
+        displayName = "Sac de tête (capture)";
+        descriptionShort = "Sac opaque posé sur la tête d'un prisonnier : il ne voit plus, n'identifie plus les lieux ni les personnes. À retirer pour une photo ou un relevé d'iris.";
+        class ItemInfo: CBA_MiscItem_ItemInfo { mass = 2; };
+    };
+};
+
+// Ce que porte le prisonnier. Modèle provisoire (cagoule noire vanilla) : un réglage CBA
+// permet d'utiliser un vrai sac de tête d'un autre mod ou du DLC.
+class CfgGlasses {
+    class G_Balaclava_blk;
+    class COMSPEC_SSE_G_HeadBag: G_Balaclava_blk {
+        author = "COMSPEC";
+        scope = 2;
+        displayName = "Sac de tête (porté)";
+        mass = 2;
+        identityTypes[] = {};
     };
 };

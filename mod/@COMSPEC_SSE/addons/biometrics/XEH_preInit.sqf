@@ -1,6 +1,9 @@
 /*
     Enregistre le raccourci CBA « Ouvrir SEEK II » (Options > Contrôles > Extension Addon).
 */
+// Réglages du moteur biométrique : partout (serveur compris), avant le raccourci.
+[] call comspec_sse_fnc_bioInitSettings;
+
 if (!hasInterface) exitWith {};
 if (!isNil "cba_fnc_addKeybind") then {
     [

@@ -16,7 +16,7 @@ if (_r isEqualTo "") then {
 };
 
 // Normaliser caractères fragiles
-_r = _r replaceString [" ", "_"];
-_r = _r replaceString ["/", "-"];
+_r = [_r, " ", "_"] call CBA_fnc_replace;
+_r = [_r, "/", "-"] call CBA_fnc_replace;
 
 format ["%1-%2", _p, _r]

@@ -4472,6 +4472,7 @@ foreach ([
     'equipment_catalog_extras_migration.php' => 'catalogue d’équipement',
     'atak_recon_images_actions_migration.php' => 'actions sur les images de reconnaissance',
     'account_session_epoch_migration.php' => 'Mon compte : déconnexion des autres sessions',
+    'sse_campaigns_migration.php' => 'campagnes SSE (gestion Athena et partage entre communautés)',
 ] as $lazyFile => $lazyLabel) {
     $migrationRunner->step($lazyFile, static function () use ($root, $lazyFile, $lazyLabel, $pdo): void {
         echo "Migration {$lazyFile} ({$lazyLabel})...\n";
