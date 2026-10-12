@@ -7,7 +7,7 @@ namespace Tests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * ATAK natif 1.42.0 : relais sur la carte, couverture réseau, triangulation par les relais, champs de vision
+ * ATAK natif 1.45.0 : relais sur la carte, couverture réseau, triangulation par les relais, champs de vision
  * (point, équipier, drone, secteur, bâtiments) et calques de la carte qui disent ce qu'ils montrent.
  */
 final class AtakRelayCoverageViewTest extends TestCase
@@ -64,7 +64,7 @@ final class AtakRelayCoverageViewTest extends TestCase
 
     public function testVersionAndEnglish(): void
     {
-        self::assertStringContainsString('#define VERSION_STR "1.42.0"', $this->read(self::MAIN . '/script_component.hpp'));
+        self::assertStringContainsString('#define VERSION_STR "1.45.0"', $this->read(self::MAIN . '/script_component.hpp'));
         $en = $this->read(self::MAIN . '/i18n/en.txt');
         self::assertStringContainsString('"Localiser par relais", "Locate by relays"', $en);
         self::assertStringContainsString('"Champ de vision ici", "Field of view here"', $en);
