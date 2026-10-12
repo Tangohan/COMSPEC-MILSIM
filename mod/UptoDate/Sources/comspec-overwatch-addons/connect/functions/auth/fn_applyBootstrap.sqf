@@ -36,6 +36,11 @@ if (_keptTenant isEqualTo "") then {
     _keptTenant = profileNamespace getVariable ["comspec_overwatch_saved_tenant_id", ""];
     if (!(_keptTenant isEqualType "")) then { _keptTenant = ""; };
 };
+// Rien de saisi : la communauté de la session (compte Athena), donnée par COMSPEC Link 2.0.72+.
+if (_keptTenant isEqualTo "") then {
+    private _st = ["COMSPECExtension" callExtension ["GetSessionTenant", []]] call comspec_overwatch_connect_fnc_extResult;
+    if (_st isEqualType "" && {(_st find "OK|") isEqualTo 0}) then { _keptTenant = _st select [3]; };
+};
 if (_keptTenant isNotEqualTo "") then {
     missionNamespace setVariable ["comspec_overwatch_tenant_id", _keptTenant, false];
 };

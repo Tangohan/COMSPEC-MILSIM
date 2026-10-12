@@ -35,8 +35,8 @@ private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _lib = profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []];
 if !(_lib isEqualType []) then { _lib = []; };
 private _store = { profileNamespace setVariable ["COMSPEC_ATAK_DronePhotos", _lib]; saveProfileNamespace; };
-// Page redessinée : app Drone, ou app Photos (galerie : les clichés du drone y sont envoyés et supprimés aussi).
-private _render = { [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["DRONE", "PHOTOS"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+// Page redessinée : app Drone, ou app Galerie ( : les clichés du drone y sont envoyés et supprimés aussi).
+private _render = { [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["DRONE", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 private _say = { params ["_lvl", "_txt"]; [_lvl, _txt, 4, 40] call comspec_atak_native_fnc_notify; };
 // Texte libre : sans retour à la ligne, barre verticale ni guillemets (légende transmise en champ de la DLL).
 private _clean = { params ["_t", ["_max", 80]]; (trim (toString ((toArray _t) select { !(_x in [10, 13, 34, 124]) }))) select [0, _max] };
@@ -468,7 +468,7 @@ switch (_act) do {
             if (_j >= 0) then { (_lib select _j) set [8, ["FAILED", "SENT"] select (_ok isEqualTo true)]; saveProfileNamespace; };
             [["WARNING", "SUCCESS"] select (_ok isEqualTo true), ["Cliché du drone non envoyé : voir le détail dans Photos", "Cliché du drone en cours d'envoi vers Athena"] select (_ok isEqualTo true), 4, 30] call comspec_atak_native_fnc_notify;
             ["log", format ["Cliché %1 : %2", _file, ["envoi refusé", "envoyé vers Athena"] select (_ok isEqualTo true)], ["#e5483a", "#5cc76b"] select (_ok isEqualTo true)] call comspec_atak_native_fnc_droneAction;
-            [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["DRONE", "PHOTOS"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+            [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["DRONE", "GALLERY"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
         }, [_e select 0, [[_e] call _caption, [_e] call _shortCaption] select _withMeta, _feed, _meta], "Cliché drone", 600] call comspec_atak_native_fnc_netSend;
         ["INFO", "Cliché du drone : envoi lancé"] call _say;
         call _render;

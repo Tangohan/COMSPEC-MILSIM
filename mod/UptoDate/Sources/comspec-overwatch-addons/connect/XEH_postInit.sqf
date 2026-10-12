@@ -362,6 +362,8 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         if !([] call comspec_overwatch_connect_fnc_isReady) then {
             ["WARN", "Boot", "Session Athena absente — attente d’une connexion"] call comspec_overwatch_connect_fnc_log;
+            // ATAK natif : un code de connexion au compte et une notification, à chaque partie sans session.
+            if (!isNil "comspec_atak_native_fnc_athenaLink") then { ["offer", false] call comspec_atak_native_fnc_athenaLink; };
             // « Oui » au service Athéna sans session : proposer tout de suite de lier le compte.
             [] call comspec_overwatch_connect_fnc_athenaOfferLink;
             private _loginUntil = diag_tickTime + 600;

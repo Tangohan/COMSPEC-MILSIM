@@ -10,6 +10,8 @@ Sources/addons/main/i18n/en.txt : un tableau [["français", "anglais"], ...] lu 
   python3 tools/i18n.py extract   écrit tools/i18n/missing.tsv : textes du code sans traduction
   python3 tools/i18n.py merge F   ajoute au dictionnaire les lignes « français<TAB>anglais » du fichier F
   python3 tools/i18n.py stats     couverture du dictionnaire
+  python3 tools/i18n.py stringtable  noms d'objets et modules Eden/Zeus (config.cpp, modules.hpp) -> stringtable.xml
+                                     ($STR_..., langue du jeu ; anglais pris dans en.txt)
 
 Un texte avec %1, %2... est un modèle : « il y a %1 s » -> « %1 s ago » traduit aussi « il y a 12 s ».
 """
@@ -237,6 +239,58 @@ def collect():
     return found
 
 
+CFG_FILES = ["config.cpp", "modules.hpp"]
+CFG_ATTR = re.compile(r'\b(displayName|description|tooltip|name|displayNameShort|descriptionShort)(\s*=\s*)"((?:[^"]|"")*)"')
+STRINGTABLE = os.path.join(ADDON, "stringtable.xml")
+
+
+def cfg_key(fr):
+    import hashlib
+    return "STR_COMSPEC_ATAK_CFG_" + hashlib.sha1(fr.encode("utf-8")).hexdigest()[:10].upper()
+
+
+def stringtable():
+    """Textes de config (noms d'objets, modules Eden/Zeus) -> $STR_ ; stringtable.xml régénéré (français + anglais)."""
+    import html as _h
+    en = dict(load_dict())
+    keys = {}
+    if os.path.exists(STRINGTABLE):
+        for m in re.finditer(r'<Key ID="([^"]+)">\s*<Original>(.*?)</Original>', open(STRINGTABLE, encoding="utf-8").read(), re.S):
+            keys[m.group(1)] = _h.unescape(m.group(2))
+    missing = []
+    for f in CFG_FILES:
+        path = os.path.join(ADDON, f)
+        src = open(path, encoding="utf-8").read()
+
+        def rep(m):
+            fr = m.group(3).replace('""', '"')
+            if not WORD.search(fr) or looks_like_code(fr) or fr.startswith("$STR_"):
+                return m.group(0)
+            # name= : seulement les choix des modules Eden (Values) ; ailleurs c'est une donnée lue par le code.
+            if m.group(1) == "name" and f != "modules.hpp":
+                return m.group(0)
+            k = cfg_key(fr)
+            keys[k] = fr
+            return f'{m.group(1)}{m.group(2)}"${k}"'
+        new = CFG_ATTR.sub(rep, src)
+        if new != src:
+            open(path, "w", encoding="utf-8", newline="").write(new)
+    rows = []
+    for k, fr in sorted(keys.items()):
+        e = en.get(fr)
+        if not e:
+            missing.append(fr)
+            e = fr
+        esc = lambda t: _h.escape(t, quote=False)
+        rows.append(f'        <Key ID="{k}">\n            <Original>{esc(fr)}</Original>\n            <English>{esc(e)}</English>\n            <French>{esc(fr)}</French>\n        </Key>')
+    xml = ('<?xml version="1.0" encoding="utf-8"?>\n<!-- Généré par tools/i18n.py stringtable : traductions dans i18n/en.txt. -->\n'
+           '<Project name="COMSPEC_ATAK_Native">\n    <Package name="main">\n' + "\n".join(rows) + '\n    </Package>\n</Project>\n')
+    open(STRINGTABLE, "w", encoding="utf-8", newline="\n").write(xml)
+    print(f"{len(keys)} textes de config, {len(missing)} sans anglais")
+    for fr in missing:
+        print("  " + fr)
+
+
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "stats"
     if cmd == "wrap":
@@ -250,6 +304,8 @@ def main():
                     f.write(new)
                 total += n
         print(f"{total} affichages passés par {TR}")
+    elif cmd == "stringtable":
+        stringtable()
     elif cmd == "extract":
         have = {fr for fr, _ in load_dict()}
         found = collect()
