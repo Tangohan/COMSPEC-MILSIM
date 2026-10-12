@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.69";
+    private const string ExtensionVersion = "2.0.73";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2782,12 +2782,12 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic";
         }
 
         if (function == "GetCapabilities")
         {
-            return "OK|" + ExtensionVersion + "|PairStart,PairStatus,Recovery,SessionRefresh,SecureStore,Logging,GameAuth,ChatPoll,SetMapId,PersistentQueue,MemStats,GetPendingQueueCount,ReconNote,TelemetryBatch,GetTelemetryMetrics,SetTelemetryMode,EmitTelemetry";
+            return "OK|" + ExtensionVersion + "|PairStart,PairStatus,OpenAthenaLink,GetSessionTenant,Recovery,SessionRefresh,SecureStore,Logging,GameAuth,ChatPoll,SetMapId,PersistentQueue,MemStats,GetPendingQueueCount,ReconNote,TelemetryBatch,GetTelemetryMetrics,SetTelemetryMode,EmitTelemetry";
         }
 
         if (function == "PairStart" && args.Length >= 1)
@@ -2816,13 +2816,41 @@ public static partial class Extension
                 var deviceCode = pairRoot.TryGetProperty("device_code", out var dc) && dc.ValueKind == JsonValueKind.String ? dc.GetString() ?? "" : "";
                 var userCode = pairRoot.TryGetProperty("user_code", out var uc) && uc.ValueKind == JsonValueKind.String ? uc.GetString() ?? "" : "";
                 var verify = pairRoot.TryGetProperty("verification_uri", out var vu) && vu.ValueKind == JsonValueKind.String ? vu.GetString() ?? "" : "";
+                var verifyFull = pairRoot.TryGetProperty("verification_uri_complete", out var vc) && vc.ValueKind == JsonValueKind.String ? vc.GetString() ?? "" : "";
                 var ttl = pairRoot.TryGetProperty("expires_in", out var ei) && ei.ValueKind == JsonValueKind.Number ? ei.GetInt32() : 600;
                 var interval = pairRoot.TryGetProperty("interval", out var intEl) && intEl.ValueKind == JsonValueKind.Number ? intEl.GetInt32() : 2;
                 if (deviceCode.Length < 8 || userCode.Length < 4) return "ERR|invalid_response";
                 _pendingPairDeviceCode = deviceCode;
                 _pendingPairExpiresAt = DateTimeOffset.UtcNow.AddSeconds(Math.Clamp(ttl, 30, 900));
                 _pendingPairPollSeconds = Math.Clamp(interval, 1, 15);
-                return "OK|" + SanitizeIdentityField(userCode) + "|" + Math.Clamp(ttl, 30, 900) + "|" + SanitizeIdentityField(verify) + "|" + _pendingPairPollSeconds;
+                // 6e champ (2.0.72+) : adresse avec le code déjà rempli, ouverte par OpenAthenaLink.
+                return "OK|" + SanitizeIdentityField(userCode) + "|" + Math.Clamp(ttl, 30, 900) + "|" + SanitizeIdentityField(verify) + "|" + _pendingPairPollSeconds + "|" + SanitizeIdentityField(verifyFull);
+            }
+            catch (Exception ex) { return FormatCaughtError(ex); }
+        }
+
+        // Communauté de la session ouverte (compte Athena) : le mod n'a plus besoin qu'on la saisisse.
+        if (function == "GetSessionTenant")
+        {
+            return _tenantId.Length > 0 ? "OK|" + SanitizeIdentityField(_tenantId) : "ERR|none";
+        }
+
+        // Ouvre dans le navigateur la page Athena où le joueur valide le code du jeu (/lier).
+        // Seulement une adresse http(s) du portail configuré : jamais un programme ni un autre site.
+        if (function == "OpenAthenaLink" && args.Length >= 1)
+        {
+            try
+            {
+                var target = ArmaString(args[0]).Trim();
+                if (!Uri.TryCreate(target, UriKind.Absolute, out var targetUri)
+                    || (targetUri.Scheme != Uri.UriSchemeHttps && targetUri.Scheme != Uri.UriSchemeHttp))
+                    return "ERR|invalid_url";
+                if (_baseUrl.Length == 0
+                    || !Uri.TryCreate(_baseUrl, UriKind.Absolute, out var portalUri)
+                    || !string.Equals(portalUri.Host, targetUri.Host, StringComparison.OrdinalIgnoreCase))
+                    return "ERR|foreign_host";
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(targetUri.AbsoluteUri) { UseShellExecute = true });
+                return "OK";
             }
             catch (Exception ex) { return FormatCaughtError(ex); }
         }
@@ -4213,6 +4241,54 @@ public static partial class Extension
                     return "OK|" + total.ToString(CultureInfo.InvariantCulture) + "|" + next.ToString(CultureInfo.InvariantCulture) + "|" + chunk;
                 }
                 catch { return "ERR|bad_json"; }
+            }
+            // Bibliothèque musicale d'Athena (app Musique du téléphone natif).
+            // Args : [vue global|community|org|mine|playlists|pl:<id>, recherche, limite]
+            // → OK|lignes « T\tid\ttitre\tartiste\tdurée s\tURL signée\tenvoyé par » ou « P\tid\tnom\tpropriétaire\tnombre\ttype\tdescription »
+            if (function == "AthenaMusic")
+            {
+                var view = args.Length > 0 ? (args[0] ?? "").Trim() : "global";
+                var q = args.Length > 1 ? (args[1] ?? "").Trim() : "";
+                var lim = args.Length > 2 && int.TryParse((args[2] ?? "").Trim(), out var l) ? Math.Clamp(l, 1, 120) : 80;
+                if (view.Length == 0) view = "global";
+                var url = _baseUrl + "/api/atak/music?view=" + Uri.EscapeDataString(view) + "&limit=" + lim.ToString(CultureInfo.InvariantCulture);
+                if (q.Length > 0) url += "&q=" + Uri.EscapeDataString(q);
+                var resp = SendGet(url, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 503) return "ERR|migration_required";
+                    return "ERR|http_" + code;
+                }
+                var lines = new StringBuilder();
+                try
+                {
+                    using var doc = JsonDocument.Parse(respBody);
+                    if (doc.RootElement.TryGetProperty("items", out var arr) && arr.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var el in arr.EnumerateArray())
+                        {
+                            string C(string k, int max = 160)
+                            {
+                                if (!el.TryGetProperty(k, out var v)) return "";
+                                var t = v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "") : v.ValueKind == JsonValueKind.Number ? v.GetRawText() : "";
+                                t = t.Replace("\t", " ").Replace("\r", "").Replace("\n", " ").Replace("|", "/").Trim();
+                                return t.Length > max ? t.Substring(0, max) + "…" : t;
+                            }
+                            var type = C("type");
+                            var line = type == "P"
+                                ? string.Join("\t", "P", C("id"), C("name", 90), C("owner", 60), C("count"), C("kind"), C("description", 140))
+                                : string.Join("\t", "T", C("id"), C("title", 110), C("artist", 80), C("duration"), C("url", 600), C("by", 60));
+                            if (Encoding.UTF8.GetByteCount(lines.ToString()) + Encoding.UTF8.GetByteCount(line) + 6 > MaxOutputBytes) break;
+                            lines.Append(line).Append('\n');
+                        }
+                    }
+                }
+                catch { return "ERR|bad_json"; }
+                return "OK|" + lines.ToString();
             }
             if (function == "GetWantedNotices")
             {

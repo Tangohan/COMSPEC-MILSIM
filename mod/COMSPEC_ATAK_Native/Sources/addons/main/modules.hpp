@@ -19,12 +19,12 @@ class COMSPEC_ATAK_Module_DataBase: Module_F {
 class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
     scope = 2;
     scopeCurator = 2;
-    displayName = "Données à extraire (câble ATAK)";
+    displayName = "$STR_COMSPEC_ATAK_CFG_38684AA97D";
     function = "comspec_atak_native_fnc_moduleDataNode";
     class Attributes {
             class Name {
-                displayName = "Nom du support";
-                tooltip = "Affiché sur l'ATAK et dans les messages Zeus. Vide = nom de l'objet.";
+                displayName = "$STR_COMSPEC_ATAK_CFG_7D8E20466B";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_0BDED24B7D";
                 property = "COMSPEC_ATAK_Module_DataNode_Name";
                 control = "Edit";
                 expression = "_this setVariable ['Name',_value,true];";
@@ -32,44 +32,44 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
                 typeName = "STRING";
             };
             class Support {
-                displayName = "Support à créer";
-                tooltip = "Si le module n'est synchronisé à aucun objet : objet créé à son emplacement.";
+                displayName = "$STR_COMSPEC_ATAK_CFG_4E549A4E3F";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_4230BFC2CE";
                 property = "COMSPEC_ATAK_Module_DataNode_Support";
                 control = "Combo";
                 expression = "_this setVariable ['Support',_value,true];";
                 defaultValue = "''";
                 typeName = "STRING";
                 class values {
-                    class V0 { name = "(objet synchronisé)"; value = ""; default = 1; };
-                    class V1 { name = "Ordinateur portable"; value = "portable"; };
-                    class V2 { name = "Ordinateur de bureau"; value = "ordinateur"; };
-                    class V3 { name = "Serveur / terminal"; value = "serveur"; };
-                    class V4 { name = "Téléphone"; value = "telephone"; };
-                    class V5 { name = "Tablette"; value = "tablette"; };
-                    class V6 { name = "Clé USB"; value = "usb"; };
-                    class V7 { name = "Radio numérique"; value = "radio"; };
+                    class V0 { name = "$STR_COMSPEC_ATAK_CFG_667838C91A"; value = ""; default = 1; };
+                    class V1 { name = "$STR_COMSPEC_ATAK_CFG_A9AF08EC30"; value = "portable"; };
+                    class V2 { name = "$STR_COMSPEC_ATAK_CFG_8F41F620E8"; value = "ordinateur"; };
+                    class V3 { name = "$STR_COMSPEC_ATAK_CFG_36E5E1C6A8"; value = "serveur"; };
+                    class V4 { name = "$STR_COMSPEC_ATAK_CFG_D3B023EABC"; value = "telephone"; };
+                    class V5 { name = "$STR_COMSPEC_ATAK_CFG_7F73B0F8AB"; value = "tablette"; };
+                    class V6 { name = "$STR_COMSPEC_ATAK_CFG_B972CCAE08"; value = "usb"; };
+                    class V7 { name = "$STR_COMSPEC_ATAK_CFG_1F2BFEDA2D"; value = "radio"; };
                 };
             };
             class Theme {
-                displayName = "Écran de connexion";
-                tooltip = "Apparence de l'écran du support dans l'ATAK.";
+                displayName = "$STR_COMSPEC_ATAK_CFG_2547BF4CA0";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_66CB96FE97";
                 property = "COMSPEC_ATAK_Module_DataNode_Theme";
                 control = "Combo";
                 expression = "_this setVariable ['Theme',_value,true];";
                 defaultValue = "'windows'";
                 typeName = "STRING";
                 class values {
-                    class V0 { name = "Windows (bureau bleu)"; value = "windows"; default = 1; };
-                    class V1 { name = "Linux (terminal vert)"; value = "linux"; };
-                    class V2 { name = "Militaire"; value = "militaire"; };
-                    class V3 { name = "Industriel (SCADA)"; value = "scada"; };
-                    class V4 { name = "Téléphone verrouillé"; value = "telephone"; };
-                    class V5 { name = "Coffre chiffré"; value = "coffre"; };
+                    class V0 { name = "$STR_COMSPEC_ATAK_CFG_6CDE1BE9BE"; value = "windows"; default = 1; };
+                    class V1 { name = "$STR_COMSPEC_ATAK_CFG_0BF36E37B6"; value = "linux"; };
+                    class V2 { name = "$STR_COMSPEC_ATAK_CFG_1E0730DF18"; value = "militaire"; };
+                    class V3 { name = "$STR_COMSPEC_ATAK_CFG_0FAE4CBFA9"; value = "scada"; };
+                    class V4 { name = "$STR_COMSPEC_ATAK_CFG_A92E2B0C4B"; value = "telephone"; };
+                    class V5 { name = "$STR_COMSPEC_ATAK_CFG_2D9AD0EB1E"; value = "coffre"; };
                 };
             };
             class Banner {
-                displayName = "Organisation affichée";
-                tooltip = "Ex. MINISTÈRE DE LA DÉFENSE, Cartel Rojas… En tête de l'écran de connexion.";
+                displayName = "$STR_COMSPEC_ATAK_CFG_F09016E234";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_4BA6A4CA77";
                 property = "COMSPEC_ATAK_Module_DataNode_Banner";
                 control = "Edit";
                 expression = "_this setVariable ['Banner',_value,true];";
@@ -77,8 +77,8 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
                 typeName = "STRING";
             };
             class Password {
-                displayName = "Mot de passe";
-                tooltip = "Vide = accès libre. Jamais diffusé en clair (empreinte seulement).";
+                displayName = "$STR_COMSPEC_ATAK_CFG_94E2F3EE14";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_87AC07610A";
                 property = "COMSPEC_ATAK_Module_DataNode_Password";
                 control = "Edit";
                 expression = "_this setVariable ['Password',_value,true];";
@@ -86,8 +86,8 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
                 typeName = "STRING";
             };
             class Hint {
-                displayName = "Indice";
-                tooltip = "Affiché sous le champ du mot de passe (facultatif).";
+                displayName = "$STR_COMSPEC_ATAK_CFG_C1C0201437";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_ED07A353E4";
                 property = "COMSPEC_ATAK_Module_DataNode_Hint";
                 control = "Edit";
                 expression = "_this setVariable ['Hint',_value,true];";
@@ -95,8 +95,8 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
                 typeName = "STRING";
             };
             class Attempts {
-                displayName = "Essais permis";
-                tooltip = "Mauvais mots de passe avant la sanction ci-dessous. 0 = illimité.";
+                displayName = "$STR_COMSPEC_ATAK_CFG_7139BCD3CB";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_5386009BE8";
                 property = "COMSPEC_ATAK_Module_DataNode_Attempts";
                 control = "Edit";
                 expression = "_this setVariable ['Attempts',_value,true];";
@@ -104,23 +104,23 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
                 typeName = "NUMBER";
             };
             class OnFail {
-                displayName = "Trop d'essais";
-                tooltip = "Sanction quand les essais sont épuisés.";
+                displayName = "$STR_COMSPEC_ATAK_CFG_CED1C585A6";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_5D977D9026";
                 property = "COMSPEC_ATAK_Module_DataNode_OnFail";
                 control = "Combo";
                 expression = "_this setVariable ['OnFail',_value,true];";
                 defaultValue = "'lock'";
                 typeName = "STRING";
                 class values {
-                    class V0 { name = "Verrouiller (forçage seul)"; value = "lock"; default = 1; };
-                    class V1 { name = "Effacer les données"; value = "wipe"; };
-                    class V2 { name = "Déclencher l'alarme"; value = "alarm"; };
-                    class V3 { name = "Rien"; value = "none"; };
+                    class V0 { name = "$STR_COMSPEC_ATAK_CFG_7EC29D9943"; value = "lock"; default = 1; };
+                    class V1 { name = "$STR_COMSPEC_ATAK_CFG_0384948B18"; value = "wipe"; };
+                    class V2 { name = "$STR_COMSPEC_ATAK_CFG_2FA41491DA"; value = "alarm"; };
+                    class V3 { name = "$STR_COMSPEC_ATAK_CFG_107309E51C"; value = "none"; };
                 };
             };
             class Crack {
-                displayName = "Forçage possible";
-                tooltip = "Bouton FORCER L'ACCÈS : contourne le mot de passe après la durée ci-dessous, câble branché.";
+                displayName = "$STR_COMSPEC_ATAK_CFG_13E08E6708";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_7964EED93B";
                 property = "COMSPEC_ATAK_Module_DataNode_Crack";
                 control = "Checkbox";
                 expression = "_this setVariable ['Crack',_value,true];";
@@ -128,8 +128,8 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
                 typeName = "BOOL";
             };
             class CrackTime {
-                displayName = "Durée du forçage (s)";
-                tooltip = "Secondes à rester branché pour forcer l'accès.";
+                displayName = "$STR_COMSPEC_ATAK_CFG_AF7756A553";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_CA316DECF0";
                 property = "COMSPEC_ATAK_Module_DataNode_CrackTime";
                 control = "Edit";
                 expression = "_this setVariable ['CrackTime',_value,true];";
@@ -137,8 +137,8 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
                 typeName = "NUMBER";
             };
             class Duration {
-                displayName = "Durée du transfert (s)";
-                tooltip = "Secondes pour tout télécharger en USB-C (RJ45 plus rapide, série plus lent ; réglage serveur de vitesse).";
+                displayName = "$STR_COMSPEC_ATAK_CFG_C54AECDE5A";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_675368CCFD";
                 property = "COMSPEC_ATAK_Module_DataNode_Duration";
                 control = "Edit";
                 expression = "_this setVariable ['Duration',_value,true];";
@@ -146,8 +146,8 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
                 typeName = "NUMBER";
             };
             class Port {
-                displayName = "Port";
-                tooltip = "Prise du support : change la vitesse et l'écran du module DL-7.";
+                displayName = "$STR_COMSPEC_ATAK_CFG_FE035157CD";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_E9D174F7CC";
                 property = "COMSPEC_ATAK_Module_DataNode_Port";
                 control = "Combo";
                 expression = "_this setVariable ['Port',_value,true];";
@@ -155,28 +155,28 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
                 typeName = "STRING";
                 class values {
                     class V0 { name = "USB-C"; value = "usb"; default = 1; };
-                    class V1 { name = "Ethernet RJ45"; value = "rj45"; };
-                    class V2 { name = "Série RS-232 (lent)"; value = "serie"; };
+                    class V1 { name = "$STR_COMSPEC_ATAK_CFG_8161F144F1"; value = "rj45"; };
+                    class V2 { name = "$STR_COMSPEC_ATAK_CFG_2B264D3E23"; value = "serie"; };
                 };
             };
             class Alarm {
-                displayName = "Alarme";
-                tooltip = "Sirène sur le support, Zeus prévenu et position du joueur révélée aux ennemis à 400 m.";
+                displayName = "$STR_COMSPEC_ATAK_CFG_68C602A962";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_F1388D7224";
                 property = "COMSPEC_ATAK_Module_DataNode_Alarm";
                 control = "Combo";
                 expression = "_this setVariable ['Alarm',_value,true];";
                 defaultValue = "'none'";
                 typeName = "STRING";
                 class values {
-                    class V0 { name = "Aucune"; value = "none"; default = 1; };
-                    class V1 { name = "Au branchement"; value = "connect"; };
-                    class V2 { name = "Mauvais mot de passe"; value = "fail"; };
-                    class V3 { name = "En fin de téléchargement"; value = "download"; };
+                    class V0 { name = "$STR_COMSPEC_ATAK_CFG_E8F8827310"; value = "none"; default = 1; };
+                    class V1 { name = "$STR_COMSPEC_ATAK_CFG_B80BA8ECDA"; value = "connect"; };
+                    class V2 { name = "$STR_COMSPEC_ATAK_CFG_58F66D2E68"; value = "fail"; };
+                    class V3 { name = "$STR_COMSPEC_ATAK_CFG_7DB7C44D86"; value = "download"; };
                 };
             };
             class OneShot {
-                displayName = "Effacé après extraction";
-                tooltip = "Données effacées après le premier téléchargement complet.";
+                displayName = "$STR_COMSPEC_ATAK_CFG_E20F3D8F6F";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_145EE908D8";
                 property = "COMSPEC_ATAK_Module_DataNode_OneShot";
                 control = "Checkbox";
                 expression = "_this setVariable ['OneShot',_value,true];";
@@ -184,8 +184,8 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
                 typeName = "BOOL";
             };
             class Files {
-                displayName = "Fichiers";
-                tooltip = "Un bloc par fichier, séparés par une ligne ---. Première ligne : nom | type (texte, document, identifiants, coord, image, audio). Lignes suivantes : contenu.";
+                displayName = "$STR_COMSPEC_ATAK_CFG_23A9D9FCD3";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_8A3D429939";
                 property = "COMSPEC_ATAK_Module_DataNode_Files";
                 control = "EditMulti5";
                 expression = "_this setVariable ['Files',_value,true];";
@@ -193,7 +193,7 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
                 typeName = "STRING";
             };
             class Accent {
-                displayName = "Couleur de l'écran";
+                displayName = "$STR_COMSPEC_ATAK_CFG_E28A71B1EF";
                 tooltip = "#rrggbb, vide = couleur du thème.";
                 property = "COMSPEC_ATAK_Module_DataNode_Accent";
                 control = "Edit";
@@ -202,7 +202,7 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
                 typeName = "STRING";
             };
             class Wallpaper {
-                displayName = "Image de l'écran";
+                displayName = "$STR_COMSPEC_ATAK_CFG_7FFED89DE0";
                 tooltip = "Image de la mission (ex. images\logo.paa) en tête de l'écran de connexion.";
                 property = "COMSPEC_ATAK_Module_DataNode_Wallpaper";
                 control = "Edit";
@@ -211,7 +211,7 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
                 typeName = "STRING";
             };
             class Code {
-                displayName = "Code serveur en fin";
+                displayName = "$STR_COMSPEC_ATAK_CFG_109E16CA46";
                 tooltip = "Exécuté sur le serveur à la fin d'un téléchargement. params [""_object"", ""_player"", ""_files""]. Aussi : événement CBA comspec_atak_native_dataDownloaded.";
                 property = "COMSPEC_ATAK_Module_DataNode_Code";
                 control = "EditCodeMulti5";
@@ -221,18 +221,18 @@ class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
             };
     };
     class ModuleDescription {
-        description = "Fichiers à télécharger au câble DL-7 depuis l'ATAK, sur n'importe quel objet : écran de connexion, mot de passe, forçage, alarme. Synchronisez des objets (Eden) ou lâchez le module sur l'objet (Zeus) ; sans objet, le support choisi est créé.";
+        description = "$STR_COMSPEC_ATAK_CFG_7A53A95812";
     };
 };
 class COMSPEC_ATAK_Module_DataFile: COMSPEC_ATAK_Module_DataBase {
     scope = 2;
     scopeCurator = 2;
-    displayName = "Ajouter un fichier (câble ATAK)";
+    displayName = "$STR_COMSPEC_ATAK_CFG_60D4B6A0C2";
     function = "comspec_atak_native_fnc_moduleDataFile";
     class Attributes {
             class FileName {
-                displayName = "Nom du fichier";
-                tooltip = "Ex. ordre_operation.pdf";
+                displayName = "$STR_COMSPEC_ATAK_CFG_59A57B9C41";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_3A46E4886A";
                 property = "COMSPEC_ATAK_Module_DataFile_FileName";
                 control = "Edit";
                 expression = "_this setVariable ['FileName',_value,true];";
@@ -240,25 +240,25 @@ class COMSPEC_ATAK_Module_DataFile: COMSPEC_ATAK_Module_DataBase {
                 typeName = "STRING";
             };
             class FileType {
-                displayName = "Type";
-                tooltip = "Texte, document, identifiants, coordonnées, image ou audio.";
+                displayName = "$STR_COMSPEC_ATAK_CFG_3DEB745651";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_FA99319986";
                 property = "COMSPEC_ATAK_Module_DataFile_FileType";
                 control = "Combo";
                 expression = "_this setVariable ['FileType',_value,true];";
                 defaultValue = "'texte'";
                 typeName = "STRING";
                 class values {
-                    class V0 { name = "Texte"; value = "texte"; default = 1; };
-                    class V1 { name = "Document"; value = "document"; };
-                    class V2 { name = "Identifiants"; value = "identifiants"; };
-                    class V3 { name = "Coordonnées"; value = "coord"; };
-                    class V4 { name = "Image (chemin dans la mission)"; value = "image"; };
-                    class V5 { name = "Audio (CfgSounds ou chemin)"; value = "audio"; };
+                    class V0 { name = "$STR_COMSPEC_ATAK_CFG_FF9AFEF1EA"; value = "texte"; default = 1; };
+                    class V1 { name = "$STR_COMSPEC_ATAK_CFG_E214B8A299"; value = "document"; };
+                    class V2 { name = "$STR_COMSPEC_ATAK_CFG_7E7DC904BA"; value = "identifiants"; };
+                    class V3 { name = "$STR_COMSPEC_ATAK_CFG_7C309D77B2"; value = "coord"; };
+                    class V4 { name = "$STR_COMSPEC_ATAK_CFG_21A3E6F5BD"; value = "image"; };
+                    class V5 { name = "$STR_COMSPEC_ATAK_CFG_96A9436FE5"; value = "audio"; };
                 };
             };
             class FileContent {
-                displayName = "Contenu";
-                tooltip = "Texte, carroyage (045123) ou x, y, chemin d'image, classe CfgSounds.";
+                displayName = "$STR_COMSPEC_ATAK_CFG_F3CB82AF6C";
+                tooltip = "$STR_COMSPEC_ATAK_CFG_28BDC3469A";
                 property = "COMSPEC_ATAK_Module_DataFile_FileContent";
                 control = "EditMulti5";
                 expression = "_this setVariable ['FileContent',_value,true];";
@@ -267,12 +267,12 @@ class COMSPEC_ATAK_Module_DataFile: COMSPEC_ATAK_Module_DataBase {
             };
     };
     class ModuleDescription {
-        description = "Ajoute un fichier aux données d'un objet (crée des données en accès libre s'il n'en a pas).";
+        description = "$STR_COMSPEC_ATAK_CFG_E99994D01D";
     };
 };
 class COMSPEC_ATAK_Module_DataReset: COMSPEC_ATAK_Module_DataBase {
     scope = 1;
     scopeCurator = 2;
-    displayName = "Remettre / retirer les données (câble ATAK)";
+    displayName = "$STR_COMSPEC_ATAK_CFG_CF51DCF204";
     function = "comspec_atak_native_fnc_moduleDataReset";
 };

@@ -56,15 +56,19 @@ final class GameAtakPairingService
             return $this->fail('unavailable', 503, 'Impossible de créer le code. Réessayez.');
         }
 
+        $display = substr($userCode, 0, 4) . '-' . substr($userCode, 4, 4);
+
         return [
             'ok' => true,
             'status' => 200,
             'payload' => [
                 'device_code' => $deviceCode,
-                'user_code' => substr($userCode, 0, 4) . '-' . substr($userCode, 4, 4),
+                'user_code' => $display,
                 'expires_in' => GameAtakPairingRepository::TTL_SECONDS,
                 'interval' => 2,
-                'verification_uri' => 'Carte ATAK → Compte → Lier le jeu',
+                // Page courte où le joueur, connecté à Athena, autorise le jeu (AtakQuickLinkController).
+                'verification_uri' => url('lier'),
+                'verification_uri_complete' => url('lier') . '?code=' . $display,
             ],
         ];
     }
