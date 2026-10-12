@@ -25,13 +25,13 @@ switch (_act) do {
         private _icons = [];
         for "_i" from 1 to _iconsMax do {
             private _c = _display ctrlCreate ["COMSPEC_RscSlide", -1];
-            _c ctrlSetText "\A3\ui_f\data\map\markers\military\dot_CA.paa";
+            _c ctrlSetText (("\A3\ui_f\data\map\markers\military\dot_CA.paa") call comspec_atak_native_fnc_tr);
             _c ctrlSetTextColor [0.25, 0.55, 1, 1];
             _c ctrlShow false;
             _icons pushBack _c;
         };
         private _me = _display ctrlCreate ["COMSPEC_RscSlide", -1];
-        _me ctrlSetText "\A3\ui_f\data\igui\cfg\islandmap\iconplayer_ca.paa";
+        _me ctrlSetText (("\A3\ui_f\data\igui\cfg\islandmap\iconplayer_ca.paa") call comspec_atak_native_fnc_tr);
         _me ctrlSetTextColor [0.36, 0.78, 0.42, 1];
         uiNamespace setVariable ["COMSPEC_ATAK_JpcMapCtrls", [_pic, _me, _icons, []]];
     };
@@ -74,7 +74,7 @@ switch (_act) do {
         _cam camCommit 0;
         private _pos = [_mx, _my, _mw, _mh];
         if (_last isNotEqualTo [_pos, _aspect]) then {
-            _pic ctrlSetText format ["#(argb,512,512,1)r2t(%1,%2)", _name, _aspect];
+            _pic ctrlSetText ((format ["#(argb,512,512,1)r2t(%1,%2)", _name, _aspect]) call comspec_atak_native_fnc_tr);
             _pic ctrlSetPosition _pos;
             _pic ctrlCommit 0;
             (uiNamespace getVariable ["COMSPEC_ATAK_JpcMapCtrls", []]) set [3, [_pos, _aspect]];

@@ -30,6 +30,8 @@ private _btn = {
     if (_on) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
     if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
     _b ctrlAddEventHandler ["ButtonClick", _code];
+    // Bouton cliqué : son groupe (zone de contenu) passe devant la carte et prend ses clics (aucun sommet posé).
+    _b ctrlAddEventHandler ["ButtonClick", { [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame; }];
     _b
 };
 private _rowH = (_font * 1.3) min (_bh * 0.075);
@@ -140,6 +142,9 @@ if ((count _view) isEqualTo 2) then { _map ctrlMapAnimAdd [0, _view select 0, _v
 };
 ctrlMapAnimCommit _map;
 if (!_inter) exitWith { true };
+// Page redessinée (choix d'un outil) : le focus resté dans la zone de contenu la mettait devant la carte, qui ne
+// recevait plus les clics. Il revient au bouton invisible hors écran (fn_overlayFront, sauf saisie de texte).
+[{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame;
 
 // Bas : consigne (et aperçu), options du tracé, texte et actions.
 private _yb = _topH + _mapH + _gap;
@@ -172,6 +177,7 @@ private _cx = _pad;
     _c ctrlSetBackgroundColor _rgba;
     _c ctrlSetTextColor ([[1, 1, 1, 1], [0, 0, 0, 1]] select (_x in ["WHITE", "YELLOW", "GREEN", "CYAN"]));
     _c ctrlAddEventHandler ["ButtonClick", ["color", _x] call _act];
+    _c ctrlAddEventHandler ["ButtonClick", { [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame; }];
     _cx = _cx + _sw + _gap / 2;
 } forEach (_cat get "colorOrder");
 _cx = _cx + _gap;
