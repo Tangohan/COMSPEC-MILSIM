@@ -138,6 +138,7 @@ switch (_act) do {
     };
     case "sms": {
         _s set ["chatPeer", _arg];
+        _s set ["chatView", "CONV"];
         ["CHAT"] call comspec_atak_native_fnc_navigate;
     };
     case "reset": {
