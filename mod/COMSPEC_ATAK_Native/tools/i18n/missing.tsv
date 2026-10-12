@@ -454,6 +454,12 @@ Bunker	functions/map/fn_markerLabels.sqf
 Contact	functions/map/fn_markerLabels.sqf
 Destruction	functions/map/fn_markerLabels.sqf
 Fortification	functions/map/fn_markerLabels.sqf
+Point de contrôle	functions/map/fn_markerLabels.sqf
+Point de depart opérationnel	functions/map/fn_markerLabels.sqf
+Point de libération	functions/map/fn_markerLabels.sqf
+Point de ramassage blessés	functions/map/fn_markerLabels.sqf
+Point evacuation médicale	functions/map/fn_markerLabels.sqf
+Point recuperation personnel isolé	functions/map/fn_markerLabels.sqf
 Waypoint	functions/map/fn_markerLabels.sqf
 Mines	functions/map/fn_markerPalette.sqf
 Danger	functions/map/fn_markerPaletteData.sqf
@@ -490,27 +496,41 @@ platoon lead	functions/map/fn_natoSymbol.sqf
 sniper	functions/map/fn_natoSymbol.sqf
 spotter	functions/map/fn_natoSymbol.sqf
 objective	functions/map/fn_symbology.sqf
+community	functions/music/fn_musicAction.sqf
 ended	functions/music/fn_musicAction.sqf
 enqueue	functions/music/fn_musicAction.sqf
 errors	functions/music/fn_musicAction.sqf
+global	functions/music/fn_musicAction.sqf
 hear	functions/music/fn_musicAction.sqf
 idle	functions/music/fn_musicAction.sqf
 jump	functions/music/fn_musicAction.sqf
 loading	functions/music/fn_musicAction.sqf
 next	functions/music/fn_musicAction.sqf
 paused	functions/music/fn_musicAction.sqf
+pl:	functions/music/fn_musicAction.sqf
+playlists	functions/music/fn_musicAction.sqf
 prev	functions/music/fn_musicAction.sqf
 repeat	functions/music/fn_musicAction.sqf
 shuffle	functions/music/fn_musicAction.sqf
 speaker	functions/music/fn_musicAction.sqf
+commande inconnue	functions/music/fn_musicAthena.sqf
 me|%1|%2|%3	functions/music/fn_musicTick.sqf
 skip	functions/music/fn_musicTick.sqf
+%1 playlist(s)%2	functions/music/fn_pageMusic.sqf
++ 10 S	functions/music/fn_pageMusic.sqf
++ 30 S	functions/music/fn_pageMusic.sqf
+- 10 S	functions/music/fn_pageMusic.sqf
+- 30 S	functions/music/fn_pageMusic.sqf
 Genre	functions/music/fn_pageMusic.sqf
+Organisation	functions/music/fn_pageMusic.sqf
+Playlist	functions/music/fn_pageMusic.sqf
+Playlists	functions/music/fn_pageMusic.sqf
 Radio	functions/music/fn_pageMusic.sqf
 audible	functions/music/fn_pageMusic.sqf
 color='%1' font='RobotoCondensedBold'	functions/music/fn_pageMusic.sqf
 file	functions/music/fn_pageMusic.sqf
 local	functions/music/fn_pageMusic.sqf
+public	functions/music/fn_pageMusic.sqf
 radio	functions/music/fn_pageMusic.sqf
 recent	functions/music/fn_pageMusic.sqf
 marker	functions/nav/fn_gpsAction.sqf
@@ -810,7 +830,6 @@ Contacts	functions/pages/fn_pageC2.sqf
 CH:	functions/pages/fn_pageChat.sqf
 CH:general	functions/pages/fn_pageChat.sqf
 custom	functions/pages/fn_pageChat.sqf
-global	functions/pages/fn_pageChat.sqf
 jtac	functions/pages/fn_pageChat.sqf
 Arma 3	functions/pages/fn_pageCredits.sqf
 COMSPEC Link	functions/pages/fn_pageCredits.sqf
@@ -888,11 +907,24 @@ issued	functions/pages/fn_pageProfile.sqf
 missing	functions/pages/fn_pageProfile.sqf
 revoked	functions/pages/fn_pageProfile.sqf
 ≈ %1 h %2 min	functions/pages/fn_pageProfile.sqf
+Carroyage de 6, 8 ou 10 chiffres, ex. 1518 1730	functions/pages/fn_pageReco.sqf
+Ce que vous voyez, combien, ce qu'ils font, vers où. Ex. : 2 pick-up armés, 6 PAX, direction nord, en mouvement.	functions/pages/fn_pageReco.sqf
 Infrastructure	functions/pages/fn_pageReco.sqf
+NOTE D'OBSERVATION	functions/pages/fn_pageReco.sqf
 Obstacle / mine	functions/pages/fn_pageReco.sqf
+Où	functions/pages/fn_pageReco.sqf
+Point visé, jusqu'à 200 m	functions/pages/fn_pageReco.sqf
+Quoi	functions/pages/fn_pageReco.sqf
+RAPPORTÉ	functions/pages/fn_pageReco.sqf
+Repère d'équipe sur la carte et note envoyée à Athena	functions/pages/fn_pageReco.sqf
+SOUS MON REGARD	functions/pages/fn_pageReco.sqf
+VU DIRECTEMENT	functions/pages/fn_pageReco.sqf
 civilian	functions/pages/fn_pageReco.sqf
+grille illisible	functions/pages/fn_pageReco.sqf
 infrastructure	functions/pages/fn_pageReco.sqf
 other	functions/pages/fn_pageReco.sqf
+par moi ou mon équipe	functions/pages/fn_pageReco.sqf
+par un tiers, à confirmer	functions/pages/fn_pageReco.sqf
 static	functions/pages/fn_pageReco.sqf
 1 km	functions/pages/fn_pageRelief.sqf
 2 km	functions/pages/fn_pageRelief.sqf

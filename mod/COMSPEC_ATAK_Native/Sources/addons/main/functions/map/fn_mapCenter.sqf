@@ -23,6 +23,8 @@ if ((count _last) isEqualTo 2) then {
     _aim = [(_pos select 0) + ((_last select 0) - (_vis select 0)) * _k, (_pos select 1) + ((_last select 1) - (_vis select 1)) * _k];
 };
 _map setVariable ["comspec_lastAim", _aim];
+// fn_mapOnDraw (suivi image par image) attend la fin de ce recentrage et de ses corrections.
+_map setVariable ["comspec_centerAt", diag_tickTime];
 // Un seul correctif à la fois : un recentrage plus récent remplace le précédent.
 private _token = (_map getVariable ["comspec_centerToken", 0]) + 1;
 _map setVariable ["comspec_centerToken", _token];

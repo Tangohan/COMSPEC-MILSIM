@@ -38,20 +38,20 @@ for "_i" from 1 to 7 do {
 private _red = ["RscPicture", _logoPos, [1, 0.12, 0.16, 0.75]] call _mk;
 private _cyan = ["RscPicture", _logoPos, [0.1, 0.9, 1, 0.75]] call _mk;
 private _logo = ["RscPicture", _logoPos, [0.93, 0.97, 0.95, 1]] call _mk;
-{ _x ctrlSetText (_data + "intro_logo_ca.paa"); _x ctrlSetFade 1; _x ctrlCommit 0; } forEach [_red, _cyan];
+{ _x ctrlSetText (((_data + "intro_logo_ca.paa")) call comspec_atak_native_fnc_tr); _x ctrlSetFade 1; _x ctrlCommit 0; } forEach [_red, _cyan];
 // État de repli lisible si le script animé ne tourne pas pendant le chargement : emblème et sous-titre fixes.
-_logo ctrlSetText (_data + "intro_logo_ca.paa");
+_logo ctrlSetText (((_data + "intro_logo_ca.paa")) call comspec_atak_native_fnc_tr);
 private _sub = _display ctrlCreate ["RscStructuredText", -1];
 _sub ctrlSetPosition [_x0 + _w * 0.2, _ly + _lh * 0.98, _w * 0.6, _h * 0.06];
 _sub ctrlCommit 0;
-_sub ctrlSetStructuredText parseText "<t align='center' font='PuristaSemibold' size='1.6' color='#5cc76b'>ATAK  ·  TACTICAL ASSAULT KIT</t>";
+_sub ctrlSetStructuredText parseText (("<t align='center' font='PuristaSemibold' size='1.6' color='#5cc76b'>ATAK  ·  TACTICAL ASSAULT KIT</t>") call comspec_atak_native_fnc_tr);
 private _status = _display ctrlCreate ["RscStructuredText", -1];
 _status ctrlSetPosition [_x0 + _w * 0.3, _y0 + _h * 0.84, _w * 0.4, _h * 0.04];
 _status ctrlCommit 0;
 private _track = ["RscText", [_x0 + _w * 0.3, _y0 + _h * 0.885, _w * 0.4, pixelH * 2], [1, 1, 1, 0.12]] call _mk;
 private _fill = ["RscText", [_x0 + _w * 0.3, _y0 + _h * 0.885, 0, pixelH * 2], [0.36, 0.78, 0.42, 1]] call _mk;
 private _scan = ["RscPicture", [_x0, _y0, _w, _h], [1, 1, 1, 1]] call _mk;
-_scan ctrlSetText (_data + "intro_scan_ca.paa");
+_scan ctrlSetText (((_data + "intro_scan_ca.paa")) call comspec_atak_native_fnc_tr);
 private _flash = ["RscText", [_x0, _y0, _w, _h], [0.85, 1, 0.9, 1]] call _mk;
 _flash ctrlSetFade 1; _flash ctrlCommit 0;
 private _all = [_bg, _red, _cyan, _logo, _sub, _status, _track, _fill, _scan, _flash] + _bars;
@@ -93,7 +93,7 @@ playSoundUI ["z\comspec_atak_native\addons\main\data\intro_glitch.ogg", 0.9, 1];
         { _x ctrlSetPosition _logoPos; _x ctrlCommit 0; } forEach [_red, _cyan, _logo];
     };
 
-    _sub ctrlSetStructuredText parseText "";
+    _sub ctrlSetStructuredText parseText (("") call comspec_atak_native_fnc_tr);
     // 0 à 0,9 s : écran noir qui grésille, l'emblème clignote en morceaux.
     private _t = diag_tickTime + 0.9;
     while { call _alive && {diag_tickTime < _t} } do {
@@ -123,18 +123,18 @@ playSoundUI ["z\comspec_atak_native\addons\main\data\intro_glitch.ogg", 0.9, 1];
     _fill ctrlCommit 1.9;
     for "_i" from 1 to (count _txt) do {
         if !(call _alive) exitWith {};
-        _sub ctrlSetStructuredText parseText format ["<t align='center' font='PuristaSemibold' size='1.6' color='#5cc76b'>%1</t>", _txt select [0, _i]];
-        _status ctrlSetStructuredText parseText format ["<t align='center' font='EtelkaMonospacePro' size='0.85' color='#8a9a92'>%1%2</t>", _st select [0, floor (_i * (count _st) / (count _txt))], ["_", " "] select (_i % 2)];
+        _sub ctrlSetStructuredText parseText ((format ["<t align='center' font='PuristaSemibold' size='1.6' color='#5cc76b'>%1</t>", _txt select [0, _i]]) call comspec_atak_native_fnc_tr);
+        _status ctrlSetStructuredText parseText ((format ["<t align='center' font='EtelkaMonospacePro' size='0.85' color='#8a9a92'>%1%2</t>", _st select [0, floor (_i * (count _st) / (count _txt))], ["_", " "] select (_i % 2)]) call comspec_atak_native_fnc_tr);
         uiSleep 0.035;
     };
     _t = diag_tickTime + 1.1;
     while { call _alive && {diag_tickTime < _t} } do {
-        _status ctrlSetStructuredText parseText format ["<t align='center' font='EtelkaMonospacePro' size='0.85' color='#8a9a92'>%1%2</t>", _st, ["_", " "] select ((floor (diag_tickTime * 3)) % 2)];
+        _status ctrlSetStructuredText parseText ((format ["<t align='center' font='EtelkaMonospacePro' size='0.85' color='#8a9a92'>%1%2</t>", _st, ["_", " "] select ((floor (diag_tickTime * 3)) % 2)]) call comspec_atak_native_fnc_tr);
         if (random 1 < 0.12) then { [0.3, 1] call _glitch; uiSleep 0.05; call _clean; { _x ctrlSetFade 1; _x ctrlCommit 0; } forEach [_red, _cyan]; _logo ctrlSetFade 0; _logo ctrlCommit 0; };
         uiSleep 0.1;
     };
     if !(call _alive) exitWith {};
-    _status ctrlSetStructuredText parseText "<t align='center' font='EtelkaMonospacePro' size='0.85' color='#5cc76b'>ATHENA LINK  //  OK</t>";
+    _status ctrlSetStructuredText parseText (("<t align='center' font='EtelkaMonospacePro' size='0.85' color='#5cc76b'>ATHENA LINK  //  OK</t>") call comspec_atak_native_fnc_tr);
     uiSleep 0.6;
     // Sortie (≈ 3,9 s) : glitch fort puis fondu sur les logos d'Arma.
     _t = diag_tickTime + 0.4;

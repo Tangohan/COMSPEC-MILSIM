@@ -334,8 +334,8 @@ private _lang = [
 
 // Catégories, façon Android : liste d'accueil, puis une page par catégorie.
 private _cats = [
-    ["LANG", "Langue / Language", ["Français", "English", "Auto"] select (["fr", "en", "auto"] find _langSet), "app_settings", _lang],
-    ["PERSO", "Personnalisation", "Thème, coque, fond d'écran, texte, dock", "app_settings", _perso],
+    ["LANG", "Langue / Language", ["Français", "English", "Auto"] select (["fr", "en", "auto"] find _langSet), "ui_language", _lang],
+    ["PERSO", "Personnalisation", "Thème, coque, fond d'écran, texte, dock", "ui_palette", _perso],
     ["PLACE", "Emplacement", "Coin, taille et sens du téléphone porté", "ui_rotate", _place],
     ["MAP", "Carte", "Indicatifs, couleurs, grilles, tailles, fond", "app_map", _map],
     ["ALERTS", "Alertes", "Notifications et vibration", "ui_vibrate", _alerts],

@@ -11,6 +11,18 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Retours en jeu 2026-10-12 — Volet rapide, Météo, CAS, Reco refaite (ATAK natif 1.37.0)
+
+Non testé en jeu. Corrections tirées du journal Arma (.rpt) envoyé par TTRD.
+- **Volet rapide** : les tuiles étaient trois fois trop larges et sortaient de l'écran (variable `_tW` de la fiche opérateur qui écrasait `_tw`, SQF ignore la casse). Même défaut corrigé dans l'établi des **Accessoires** (`_bW` / `_bw`).
+- **Météo** : la page s'arrêtait dès l'ouverture avec ACE (`ace_weather_fnc_calculateBarometricPressure` appelé avec un tableau au lieu d'une altitude).
+- **CAS** : APPEL DE FEU envoyait une erreur à chaque image (`find … max 0` sans parenthèses), d'où l'app « buggée » ; écran repassé aux couleurs sombres du téléphone (le thème clair délavait l'écran).
+- **Écran opaque** : fonds du téléphone sans transparence, on ne voit plus le décor à travers selon l'app.
+- **Marqueurs** : la liste Type commence par la palette (tactique, puis Ennemi / Ami / Neutre / Inconnu par type d'unité, avec icônes colorées), puis la bibliothèque sans doublons de libellé. Libellés MarkersPlus mal encodés corrigés.
+- **Réglages** : icônes propres pour Langue (globe) et Personnalisation (palette).
+- **Téléphone porté** : la carte suit le joueur à chaque image au lieu de sauter chaque seconde ; barre du bas avec ma grille, le MGRS et l'altitude.
+- **Reco** refaite : en-tête façon FRS en ambre, tuiles QUOI à icône, FIABILITÉ, OÙ (MA POSITION, SOUS MON REGARD, distance et azimut), OBSERVATION avec compteur 140, ENVOYER, dernières notes en cartes colorées.
+
 ## Drone : zones interdites, app Marquer tracking, raccourcis, journal en fil (ATAK natif 1.36.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Suite des demandes de TTRD sur le drone (après 1.31.0).

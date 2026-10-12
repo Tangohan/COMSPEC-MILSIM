@@ -178,6 +178,18 @@ ICONS = {
     "qs_battery": '<rect x="7" y="4.5" width="10" height="17" rx="1.6"/><path d="M10 2.5h4"/><path d="M9.5 15h5M9.5 18h5" stroke-width="2.2"/>',
     "qs_sun": '<circle cx="12" cy="12" r="4.2"/><path d="M12 1.8v2.6M12 19.6v2.6M1.8 12h2.6M19.6 12h2.6M4.8 4.8l1.8 1.8M17.4 17.4l1.8 1.8M4.8 19.2l1.8-1.8M17.4 6.6l1.8-1.8"/>',
     "qs_sun_low": '<circle cx="12" cy="12" r="3.6"/><path d="M12 5.5v1.2M12 17.3v1.2M5.5 12h1.2M17.3 12h1.2M7.4 7.4l.9.9M15.7 15.7l.9.9M7.4 16.6l.9-.9M15.7 8.3l.9-.9"/>',
+    # Réglages (fn_pageSettings) : langue (globe) et personnalisation (palette), distinctes de l'icône Réglages.
+    "ui_language": '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.6 2.6 15.4 0 18M12 3c-2.6 2.6-2.6 15.4 0 18"/><path d="M5 7.5h14M5 16.5h14"/>',
+    "ui_palette": '<path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.8 1.8-1.7 0-1.3-1.1-1.6-1.1-2.7 0-.9.7-1.6 1.6-1.6h2.2A4.5 4.5 0 0 0 21 10.5C21 6.4 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10" cy="7" r="1.2"/><circle cx="14.5" cy="7" r="1.2"/><circle cx="17" cy="10.8" r="1.2"/>',
+    # App Reco (fn_pageReco) : types de note et « sous mon regard ».
+    "reco_vehicle": '<path d="M2.5 15.5V9.5a1 1 0 0 1 1-1h9.5v7"/><path d="M13 11h4.2l3.3 3.2v1.3H13"/><circle cx="6.5" cy="17" r="2"/><circle cx="16.8" cy="17" r="2"/><path d="M8.5 16.5h6.3"/>',
+    "reco_armed": '<circle cx="8" cy="7" r="2.6"/><circle cx="16" cy="7" r="2.6"/><path d="M3.2 20v-2.6a4.8 4.8 0 0 1 9.6 0V20M11.2 20v-2.6a4.8 4.8 0 0 1 9.6 0V20"/>',
+    "reco_static": '<path d="M2.5 19.5h19"/><path d="M4.5 19.5v-4.5a7.5 7.5 0 0 1 15 0v4.5"/><path d="M8.5 14h7"/><path d="M12 3v4"/>',
+    "reco_mine": '<path d="M3 17.5h18"/><path d="M6.5 17.5a5.5 5.5 0 0 1 11 0"/><path d="M12 8.5V5M7.6 10.1l-2-2M16.4 10.1l2-2"/>',
+    "reco_civil": '<circle cx="12" cy="6.8" r="3.2"/><path d="M5.5 20.5v-2.2a6.5 6.5 0 0 1 13 0v2.2"/>',
+    "reco_infra": '<path d="M3.5 20.5V9l8.5-5.5L20.5 9v11.5"/><path d="M2 20.5h20"/><path d="M9.5 20.5v-6h5v6M7.5 11.5h2.2M14.3 11.5h2.2"/>',
+    "reco_other": '<circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1.1 1-1.1 1.7v.6"/><path d="M12 16.9v.2"/>',
+    "reco_eye": '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     # Main ouverte : « prendre en main » (pastille Ctrl+Maj+U du téléphone porté).
     "ui_hand": '<path d="M9.1 12V5.6a1.3 1.3 0 0 1 2.6 0V11M11.7 11V4.3a1.3 1.3 0 0 1 2.6 0V11M14.3 11V5.6a1.3 1.3 0 0 1 2.6 0V11M16.9 11.2V8.3a1.3 1.3 0 0 1 2.6 0v5.4c0 4.1-2.8 7.3-6.6 7.3-2.7 0-4.3-1.3-5.8-3.5l-2.6-4a1.4 1.4 0 0 1 2.2-1.7l2.4 2.8V8.2"/>',
 }
@@ -1763,6 +1775,11 @@ def main():
         # « hand » : seulement l'icône main (pastille « prendre en main » du téléphone porté).
         if len(sys.argv) > 2 and sys.argv[2] == "hand":
             convert(icon_png("ui_hand", ICONS["ui_hand"]), "ui_hand", tmp)
+            return
+        # « only nom1,nom2 » : seulement ces icônes de ICONS.
+        if len(sys.argv) > 3 and sys.argv[2] == "only":
+            for name in sys.argv[3].split(","):
+                convert(icon_png(name, ICONS[name]), name, tmp)
             return
         # « qsicons » : seulement les icônes du volet rapide.
         if len(sys.argv) > 2 and sys.argv[2] == "qsicons":

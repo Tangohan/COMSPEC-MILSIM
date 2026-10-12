@@ -1,5 +1,5 @@
-#define ATAK_BG0 {0.025,0.030,0.027,0.98}
-#define ATAK_BG1 {0.045,0.055,0.048,0.98}
+#define ATAK_BG0 {0.025,0.030,0.027,1}
+#define ATAK_BG1 {0.045,0.055,0.048,1}
 #define ATAK_BG2 {0.070,0.082,0.072,1}
 #define ATAK_GREEN {0.36,0.78,0.42,1}
 #define ATAK_GREEN_DIM {0.18,0.38,0.21,1}

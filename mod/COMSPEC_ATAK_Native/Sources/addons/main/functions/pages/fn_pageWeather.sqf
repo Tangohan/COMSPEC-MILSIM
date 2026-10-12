@@ -33,7 +33,7 @@ private _from = (((_w select 0) atan2 (_w select 1)) + 180) mod 360;
 private _gust = _spd * (1 + gusts);
 private _hum = if (!isNil "ace_weather_currentHumidity") then { ace_weather_currentHumidity } else { humidity };
 private _alt = (getPosASL player) select 2;
-private _press = if (!isNil "ace_weather_fnc_calculateBarometricPressure") then { [_alt] call ace_weather_fnc_calculateBarometricPressure } else { 1013.25 * (1 - 0.0065 * _alt / 288.15) ^ 5.255 };
+private _press = if (!isNil "ace_weather_fnc_calculateBarometricPressure") then { _alt call ace_weather_fnc_calculateBarometricPressure } else { 1013.25 * (1 - 0.0065 * _alt / 288.15) ^ 5.255 };
 private _aceWx = !isNil "ace_weather_fnc_calculateBarometricPressure";
 // Lever et coucher calculés ici (déclinaison solaire et latitude de la carte) : la fonction BIS
 // n'a pas la même signature selon les versions et cassait la page.
