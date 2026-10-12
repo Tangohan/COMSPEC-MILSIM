@@ -13,7 +13,38 @@ private _rows = [
     ["memo", "desc", "Description", _e get "desc", 2]
 ];
 if !(_poly) then {
-    _rows pushBack ["combo", "type", "Type", _types apply { [_x select 0, _x select 1, _x select 2] }, _e get "type"];
+    // Liste courte d'abord (palette : tactique, puis chaque camp et son type d'unité), puis la bibliothèque des
+    // marqueurs chargés sans doublon de libellé : les mods en déclarent des centaines au même nom (« Inconnu »…).
+    ([] call comspec_atak_native_fnc_markerPaletteData) params ["_affs", "_by"];
+    private _items = [];
+    private _seen = createHashMap;
+    private _add = {
+        params ["_label", "_cls", ["_color", [1, 1, 1, 1]]];
+        if (_cls in _seen) exitWith {};
+        private _icon = getText (configFile >> "CfgMarkers" >> _cls >> "icon");
+        if (_icon isEqualTo "") exitWith {};
+        _seen set [_cls, true];
+        _items pushBack [_label, _cls, _icon, _color];
+    };
+    {
+        _x params ["_k", "_side", "", "_rgba"];
+        if (_k isNotEqualTo "lib") then {
+            private _pre = [format ["%1 · ", _side], ""] select (_k isEqualTo "mil");
+            { [_pre + (_x select 1), _x select 0, [_rgba, [1, 1, 1, 1]] select (_k isEqualTo "mil")] call _add; } forEach (_by getOrDefault [_k, []]);
+        };
+    } forEach _affs;
+    private _labels = createHashMapFromArray (_items apply { [toLower (_x select 0), true] });
+    {
+        _x params ["_lab", "_cls", "", "_grp"];
+        private _key = toLower _lab;
+        // Libellé déjà pris : on le précise par sa catégorie, sinon on l'écarte (sauf le type du marqueur édité).
+        if (_key in _labels) then { _lab = format ["%1 (%2)", _lab, _grp]; _key = toLower _lab; };
+        if (!(_key in _labels) || {_cls isEqualTo (_e get "type")}) then {
+            _labels set [_key, true];
+            [_lab, _cls] call _add;
+        };
+    } forEach _types;
+    _rows pushBack ["combo", "type", "Type", _items, _e get "type"];
 };
 _rows pushBack ["combo", "color", "Couleur", _colors apply { [_x select 0, _x select 1, "#(argb,8,8,3)color(1,1,1,1)", _x select 2] }, _e get "color"];
 if !(_poly) then {

@@ -18,7 +18,7 @@
     fond du formulaire : (contrôle renvoyé) getVariable "bg".
     Les champs sont lisibles ensuite par [clé] call comspec_atak_native_fnc_formValue.
 */
-params ["_rows", "_rect", ["_inContent", true], ["_bgColor", [0.035, 0.045, 0.04, 0.96]]];
+params ["_rows", "_rect", ["_inContent", true], ["_bgColor", [0.035, 0.045, 0.04, 1]]];
 disableSerialization;
 private _d = [] call comspec_atak_native_fnc_display;
 private _l = [] call comspec_atak_native_fnc_layoutGet;

@@ -36,6 +36,14 @@ if (!isNull _cur) then {
         private _az = _a getDir _b;
         format ["<t font='EtelkaMonospacePro'><t color='#f2ab33'>A-B</t> %1 m · %2° %3 · <t color='#8a9a93'>Δ ALT</t> %4 m</t>", round (_a distance2D _b), round _az, [_az] call _cardinal, round ((getTerrainHeightASL _b) - (getTerrainHeightASL _a))]
     } else {
+        if !(_s getOrDefault ["interactive", false]) exitWith {
+            // Téléphone porté : pas de curseur, la barre donne la position du joueur.
+            private _pp = getPosASL (vehicle player);
+            private _dig = profileNamespace getVariable ["COMSPEC_ATAK_GridDigits", 6];
+            private _g8 = [[_pp, 8] call comspec_atak_native_fnc_gridRef, [_pp] call comspec_atak_native_fnc_gridRef] select (_dig isEqualTo 8);
+            format ["<t font='EtelkaMonospacePro'><t color='#5cc76b'>MOI</t> %1%4<t color='#8a9a93'>MGRS</t> %2 %1 · <t color='#8a9a93'>ALT</t> %3 m</t>",
+                _g8, _zone select 1, round (_pp select 2), _br]
+        };
         if ((count _p) < 2) then { "<t font='EtelkaMonospacePro' color='#8a9a93'>CURSEUR · survolez la carte</t>" } else {
             private _az = player getDir _p;
             private _alt = getTerrainHeightASL _p;

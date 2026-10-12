@@ -238,7 +238,7 @@ private _drawStatus = {
         _gunLabel,
         if (_gunId isEqualTo "MAN") then { format [("MANUEL %1") call comspec_atak_native_fnc_tr, [_tgtGrid, "—"] select (_tgtGrid isEqualTo "")] } else { format [("CIBLE %1") call comspec_atak_native_fnc_tr, [_tgtGrid, "—"] select (_tgtGrid isEqualTo "")] },
         [("NON PROGRAMMÉE") call comspec_atak_native_fnc_tr, [("PROGRAMMÉE") call comspec_atak_native_fnc_tr, ("EN COURS") call comspec_atak_native_fnc_tr] select (_f getOrDefault ["active", false])] select ((count _sol) > 0),
-        format [("%1 COUPS %2") call comspec_atak_native_fnc_tr, ["rounds", "3"] call _v, ["HE", "ILM", "FUM"] select (["HE", "ILLUM", "SMOKE"] find _ammo max 0)] + (["", (" · GERBE") call comspec_atak_native_fnc_tr] select _sheaf),
+        format [("%1 COUPS %2") call comspec_atak_native_fnc_tr, ["rounds", "3"] call _v, ["HE", "ILM", "FUM"] select ((["HE", "ILLUM", "SMOKE"] find _ammo) max 0)] + (["", (" · GERBE") call comspec_atak_native_fnc_tr] select _sheaf),
         ([] call comspec_atak_native_fnc_firesWind) select 0
     ];
     private _h = _rowH * 0.9 + _pad * 2 + _fs * 1.25 * (count _lines);

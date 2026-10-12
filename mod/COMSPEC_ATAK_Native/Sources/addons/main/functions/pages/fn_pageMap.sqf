@@ -78,6 +78,16 @@ private _toolCol = [0, ((((_mh - 2 * _pad) / 7) min (_font * 2.1)) / _ratio) + _
 _ov set ["me", _me];
 private _panH = _meH;
 
+// Porté (sans souris) : la même barre en bas à gauche donne la position du joueur (grille, MGRS, altitude).
+if (!_interactive) then {
+    private _curW = ((_bx + _mw - _panW - _pad) - _pad - (_bx + _pad)) max (_panW * 0.9);
+    private _curWrap = (_curW - _panIn / _ratio * 1.2) < (52 * _panFs * 0.58 / _ratio);
+    ([_bx + _pad, [1, 2] select _curWrap, _curW] call _panel) params ["_cur", "_curH"];
+    _panH = _curH;
+    _ov set ["cursor", _cur];
+    _ov set ["cursorWrap", _curWrap];
+};
+
 if (_interactive) then {
     // Ligne curseur (bas gauche, jusqu'à la carte « moi ») en chasse fixe :
     // « CURSEUR <grille> · <dist> m · <azimut>° E · MGRS <zone> <grille> · ALT <m> » (fn_mapOverlayUpdate).
