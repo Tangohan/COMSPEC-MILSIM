@@ -15,7 +15,7 @@ class CfgFunctions {
             class display {}; class open {}; class close {}; class hudToggle {}; class interactToggle {}; class orientationToggle {}; class phoneDrag {}; class formRender {}; class formValue {}; class keyBlock {}; class fullAlert {}; class vibrate {}; class dataBarEnabled {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class navigate {}; class back {}; class modeToggle {};
             class pageRender {}; class pageClear {}; class pageCtrl {}; class tileCreate {}; class appList {}; class appBadge {}; class dockRender {}; class launcherRender {}; class deviceOverlay {}; class appVisible {}; class accent {};
             class statusUpdate {}; class inspectorUpdate {}; class abbrev {}; class notify {}; class notificationsRender {}; class notifCenter {}; class powerFx {}; class overlayFront {}; class screenSurface {};
-            class fx {}; class toast {}; class quickSettings {}; class lockScreen {}; class tr {}; class langApply {};
+            class fx {}; class toast {}; class quickSettings {}; class lockScreen {}; class tr {}; class langApply {}; class addSetting {};
         };
         class map { file="z\comspec_atak_native\addons\main\functions\map";
             class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class natoSymbol {}; class mapLabels {}; class mapCtxMenu {}; class mapPing {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class unitGroup {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerWeb {}; class markerWebSweep {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {}; class mapUnfocus {}; class inspToggle {}; class markerPalette {}; class markerPaletteData {}; class markerLabels {}; class sigintPoll {}; class reliefDraw {}; class meshDraw {}; class logisticsDraw {}; class ewDraw {}; class mapSearch {}; class mapStyle {}; class textureKeep {}; class strokeSimplify {}; class strokeDraw {}; class strokeBar {};
@@ -26,13 +26,13 @@ class CfgFunctions {
         class network { file="z\comspec_atak_native\addons\main\functions\network";
             class extensionCall {}; class extAwait {}; class extensionCallback {}; class remoteSync {}; class importLegacyData {};
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
-            class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {};
+            class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {};
         };
         class viz { file="z\comspec_atak_native\addons\main\functions\viz";
             class vizEcg {}; class vizSpectrum {}; class vizPlayer {};
         };
         class music { file="z\comspec_atak_native\addons\main\functions\music";
-            class musicState {}; class musicAction {}; class musicTick {}; class musicServerList {}; class pageMusic {};
+            class musicState {}; class musicAction {}; class musicTick {}; class musicServerList {}; class musicAthena {}; class pageMusic {};
         };
         class nav { file="z\comspec_atak_native\addons\main\functions\nav";
             class routeCompute {}; class routeGuide {}; class routeBanner {}; class wpAction {}; class pageWaypoints {}; class pageGps {}; class gpsAction {};
@@ -80,7 +80,7 @@ class CfgFunctions {
         };
         class pages { file="z\comspec_atak_native\addons\main\functions\pages";
             class chatSend {}; class taskAction {}; class briefingStep {}; class settingsSave {};
-            class pageMap {}; class pageChat {}; class chatParse {}; class messagesAll {}; class tasksAll {}; class pageGroup {}; class pageTasks {}; class pageText {}; class pageAthena {}; class athenaAction {}; class pageNetwork {}; class pageSettings {}; class pagePhotos {}; class photoTake {}; class photoMode {}; class pageFrs {}; class frsDraftSave {}; class frsToggleTheme {}; class frsSubmit {}; class frsAction {}; class frsLibrary {}; class pageReco {}; class recoDraftSave {}; class recoSubmit {}; class pageFires {}; class firesState {}; class firesGuns {}; class firesSave {}; class firesAction {}; class firesCff {}; class firesWind {}; class pageLivecam {}; class livecamStart {}; class livecamStop {}; class pageAlerts {}; class alertsAction {}; class alertsLog {}; class pageMedical {}; class medicalAction {}; class pageProfile {}; class profileAction {}; class pageBriefing {}; class chatCommand {}; class briefingAction {}; class briefingSignature {}; class briefingLive {}; class photoLibrary {}; class livecamShare {}; class pageBft {}; class bftAction {}; class bftFilter {}; class groupTypes {}; class groupAction {}; class pageRecents {}; class pageNotifs {}; class pageDebug {}; class pageFood {}; class foodAction {}; class pageDating {}; class datingAction {}; class pageOsint {}; class osintAction {}; class pageWeather {}; class pageRelief {}; class reliefAction {}; class pageWaveRelay {}; class waveRelayAction {}; class pageLogistics {}; class logisticsAction {}; class logiWeb {}; class pageEw {}; class ewAction {}; class ewEffects {}; class pageBda {}; class bdaAction {}; class bdaLabels {}; class pageCredits {}; class pageResynch {}; class resynchRun {}; class pageOrderCompose {}; class orderAction {}; class orderAck {}; class pageStatus {}; class pageSse {}; class pageC2 {}; class sseAction {}; class pageWanted {}; class wantedAction {}; class pageLinkAlly {}; class linkAllyAction {}; class linkAllyInit {}; class pageDiscord {}; class discordAction {};
+            class pageMap {}; class pageChat {}; class chatParse {}; class messagesAll {}; class tasksAll {}; class pageGroup {}; class pageTasks {}; class pageText {}; class pageAthena {}; class athenaAction {}; class pageNetwork {}; class pageSettings {}; class pagePhotos {}; class photoTake {}; class photoMode {}; class photoCam {}; class pageGallery {}; class pageFrs {}; class frsDraftSave {}; class frsToggleTheme {}; class frsSubmit {}; class frsAction {}; class frsLibrary {}; class pageReco {}; class recoDraftSave {}; class recoSubmit {}; class pageFires {}; class firesState {}; class firesGuns {}; class firesSave {}; class firesAction {}; class firesCff {}; class firesWind {}; class pageLivecam {}; class livecamStart {}; class livecamStop {}; class pageAlerts {}; class alertsAction {}; class alertsLog {}; class pageMedical {}; class medicalAction {}; class pageProfile {}; class profileAction {}; class pageBriefing {}; class chatCommand {}; class briefingAction {}; class briefingSignature {}; class briefingLive {}; class photoLibrary {}; class livecamShare {}; class pageBft {}; class bftAction {}; class bftFilter {}; class groupTypes {}; class groupAction {}; class pageRecents {}; class pageNotifs {}; class pageDebug {}; class pageFood {}; class foodAction {}; class pageDating {}; class datingAction {}; class pageOsint {}; class osintAction {}; class pageWeather {}; class pageRelief {}; class reliefAction {}; class pageWaveRelay {}; class waveRelayAction {}; class pageLogistics {}; class logisticsAction {}; class logiWeb {}; class pageEw {}; class ewAction {}; class ewEffects {}; class pageBda {}; class bdaAction {}; class bdaLabels {}; class pageCredits {}; class pageResynch {}; class resynchRun {}; class pageOrderCompose {}; class orderAction {}; class orderAck {}; class pageStatus {}; class pageSse {}; class pageC2 {}; class sseAction {}; class pageWanted {}; class wantedAction {}; class pageLinkAlly {}; class linkAllyAction {}; class linkAllyInit {}; class pageDiscord {}; class discordAction {};
         };
     };
 };
@@ -116,7 +116,8 @@ class COMSPEC_ATAK_Apps {
     class DroneDetect { name="Anti-drone"; page="DRONEDETECT"; section="Spécialités"; order=80; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_dronedetect.paa"; };
     class Intel       { name="FRS / FRM"; page="FRS"; section="Renseignement"; order=110; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_intel.paa"; };
     class Reco        { name="Reco"; page="RECO"; section="Renseignement"; order=112; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_reco.paa"; };
-    class Photos      { name="Photos"; page="PHOTOS"; section="Renseignement"; order=114; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_photos.paa"; };
+    class Photos      { name="Photo"; page="PHOTOS"; section="Renseignement"; order=114; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_photos.paa"; };
+    class Gallery     { name="Galerie"; page="GALLERY"; function="comspec_atak_native_fnc_pageGallery"; section="Renseignement"; order=115; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_gallery.paa"; };
     class Livecam     { name="Vidéo live"; page="LIVECAM"; section="Renseignement"; order=116; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_livecam.paa"; };
     class DataLink    { name="Extraction"; page="DATALINK"; function="comspec_atak_native_fnc_pageDataLink"; section="Renseignement"; order=119; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_datalink.paa"; };
     class Sse         { name="SSE"; page="SSE"; section="Renseignement"; order=118; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_sse.paa"; };
@@ -152,8 +153,8 @@ class CfgWeapons {
     class InventoryItem_Base_F;
     class COMSPEC_ATAK_Battery: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Batterie ATAK";
-        descriptionShort="Batterie lithium de rechange du téléphone COMSPEC ATAK. Action ACE « Changer la batterie ATAK » : 100 %, le téléphone redémarre.";
+        displayName="$STR_COMSPEC_ATAK_CFG_9E4D5298F6";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_96B5F49A5D";
         picture="\z\comspec_atak_native\addons\main\data\item_battery.paa";
         model="\A3\Weapons_F\Ammo\mag_univ.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
@@ -162,8 +163,8 @@ class CfgWeapons {
     // Kit de réparation du téléphone (action ACE « Réparer le téléphone ATAK », consommé ; fn_repairStart).
     class COMSPEC_ATAK_RepairKit: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Kit de réparation ATAK";
-        descriptionShort="Écran de rechange, nappe et outils pour le téléphone COMSPEC ATAK. Action ACE « Réparer le téléphone ATAK » (12 s) : écran, alimentation et appareil remis en état, même détruit. Consommé.";
+        displayName="$STR_COMSPEC_ATAK_CFG_814EE34AA5";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_DC496FDDDD";
         picture="\z\comspec_atak_native\addons\main\data\item_repairkit.paa";
         model="\A3\Weapons_F\Items\Toolkit";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
@@ -172,8 +173,8 @@ class CfgWeapons {
     // Câble de données DL-7 (app Extraction) : obligatoire si le réglage serveur « Câble DL-7 obligatoire » est coché.
     class COMSPEC_ATAK_DataCable: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Câble de données DL-7";
-        descriptionShort="Module DL-7 et câble USB-C / RJ45 / série pour le téléphone COMSPEC ATAK. Regardez un ordinateur, un téléphone ou une clé, « Brancher l'ATAK » : l'app Extraction télécharge ses données.";
+        displayName="$STR_COMSPEC_ATAK_CFG_5BC13315C6";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_1707ED67D7";
         picture="\z\comspec_atak_native\addons\main\data\item_datacable.paa";
         model="\A3\Weapons_F\Ammo\mag_univ.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
@@ -182,8 +183,8 @@ class CfgWeapons {
     // Antenne d'extension de débit (fn_antenna) : ACE « Téléphone ATAK > Antenne » ou app Réglages.
     class COMSPEC_ATAK_Antenna_Stub: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Antenne courte SMA (ATAK)";
-        descriptionShort="Antenne courte 2,4 / 5,8 GHz à visser sur le port SMA du téléphone ATAK : débit x1,25 et liaison plus tenace (relief, bâtiments, brouillage). Discrète, efficace en mouvement.";
+        displayName="$STR_COMSPEC_ATAK_CFG_A200DC2D3C";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_B2101F06B2";
         picture="\z\comspec_atak_native\addons\main\data\item_antenna_stub.paa";
         model="\A3\Weapons_F\Ammo\mag_univ.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
@@ -192,8 +193,8 @@ class CfgWeapons {
     // Antenne d'extension de débit (fn_antenna) : ACE « Téléphone ATAK > Antenne » ou app Réglages.
     class COMSPEC_ATAK_Antenna_Whip: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Antenne fouet longue (ATAK)";
-        descriptionShort="Antenne fouet repliable à visser sur le port SMA du téléphone ATAK : débit x1,5, nettement plus tenace derrière le relief et dans les bâtiments.";
+        displayName="$STR_COMSPEC_ATAK_CFG_9EFEB0E683";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_02FF4B66E0";
         picture="\z\comspec_atak_native\addons\main\data\item_antenna_whip.paa";
         model="\A3\Weapons_F\Ammo\mag_univ.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
@@ -202,8 +203,8 @@ class CfgWeapons {
     // Antenne d'extension de débit (fn_antenna) : ACE « Téléphone ATAK > Antenne » ou app Réglages.
     class COMSPEC_ATAK_Antenna_Patch: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Antenne patch 9 dBi (ATAK)";
-        descriptionShort="Antenne patch directionnelle sur coude SMA à 90° : débit x1,7 et meilleure tenue de la liaison, à l'arrêt seulement (mal orientée en mouvement ou en véhicule).";
+        displayName="$STR_COMSPEC_ATAK_CFG_0D7BE9D700";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_FBA3573C81";
         picture="\z\comspec_atak_native\addons\main\data\item_antenna_patch.paa";
         model="\A3\Weapons_F\Ammo\mag_univ.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
@@ -211,8 +212,8 @@ class CfgWeapons {
     };
     class COMSPEC_ATAK_PowerBank: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Batterie externe ATAK 10 000 mAh";
-        descriptionShort="Se fixe sur la plaque au dos du téléphone (menu ACE « Téléphone ATAK »). Recharge le téléphone à 2 % par minute, deux charges complètes. Vide, elle est jetée.";
+        displayName="$STR_COMSPEC_ATAK_CFG_EF53A02082";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_0F70B04FFA";
         picture="\z\comspec_atak_native\addons\main\data\item_powerbank.paa";
         model="\A3\Weapons_F\Ammo\mag_univ.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
@@ -220,8 +221,8 @@ class CfgWeapons {
     };
     class COMSPEC_ATAK_NvgFilter: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Filtre d'écran JVN (ATAK)";
-        descriptionShort="Film à poser sur l'écran du téléphone : coupe le proche infrarouge et assombrit l'écran. De nuit, l'écran allumé ne se voit presque plus de loin, même aux JVN.";
+        displayName="$STR_COMSPEC_ATAK_CFG_9BEF18E007";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_F12FD15D32";
         picture="\z\comspec_atak_native\addons\main\data\item_nvgfilter.paa";
         model="\A3\Weapons_F\Ammo\mag_univ.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
@@ -229,8 +230,8 @@ class CfgWeapons {
     };
     class COMSPEC_ATAK_VehicleKit: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Kit terminal véhicule ATAK";
-        descriptionShort="Tablette durcie et support RAM à installer dans un véhicule (action ACE sur le véhicule) quand le serveur réserve la tablette de bord aux véhicules équipés.";
+        displayName="$STR_COMSPEC_ATAK_CFG_32C19DF5F3";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_DBD1600D8A";
         picture="\z\comspec_atak_native\addons\main\data\item_vehiclekit.paa";
         model="\A3\Weapons_F\Ammo\mag_univ.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
@@ -240,8 +241,8 @@ class CfgWeapons {
     // Caméra IP fixe (fn_camAction) : ACE « Téléphone ATAK > Caméras > Poser une caméra », vue dans l'app Vidéo live.
     class COMSPEC_ATAK_Camera: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Caméra IP compacte (ATAK)";
-        descriptionShort="Petite caméra IP Wi-Fi à coller sur un mur, au sol ou sur un véhicule (ACE « Téléphone ATAK > Caméras »). Le camp la regarde dans l'app Vidéo live (jour, JVN, thermique) tant qu'un ATAK est à portée. Récupérable.";
+        displayName="$STR_COMSPEC_ATAK_CFG_857C44D0D3";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_C98EF6B77B";
         picture="\z\comspec_atak_native\addons\main\data\item_camera.paa";
         model="\A3\Weapons_F\Ammo\mag_univ.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
@@ -250,8 +251,8 @@ class CfgWeapons {
     // Socle de recharge CS-10 plié (fn_dockClient « deploy ») : ACE Équipement > « Poser le socle de recharge ».
     class COMSPEC_ATAK_DockKit: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Socle de recharge CS-10 (10 téléphones)";
-        descriptionShort="Station de charge durcie pour 10 téléphones ATAK. À poser devant soi (sur une table ou au sol) : chacun y met son téléphone, il se recharge, et le reprend plus tard, même à la partie suivante.";
+        displayName="$STR_COMSPEC_ATAK_CFG_5DA6A7ED86";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_C5AF6AC183";
         picture="\z\comspec_atak_native\addons\main\data\item_dock.paa";
         model="\A3\Weapons_F\Ammo\mag_univ.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
@@ -259,8 +260,8 @@ class CfgWeapons {
     };
     class COMSPEC_ATAK_Phone: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Téléphone COMSPEC ATAK (Samsung S7)";
-        descriptionShort="Samsung Galaxy S7 en coque tactique, ATAK COMSPEC installé. Suffit pour ouvrir le téléphone, sans autre mod.";
+        displayName="$STR_COMSPEC_ATAK_CFG_A692CFB580";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_D448798D17";
         picture="\z\comspec_atak_native\addons\main\data\item_phone.paa";
         model="\A3\Weapons_F\Ammo\mag_univ.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
@@ -273,14 +274,14 @@ class CfgVehicles {
     // Téléphone porté sur le gilet (fn_vestMount) : objet simple accroché au torse, non listé dans l'éditeur.
     // Sélections camo (coque : vest_phone{,_od,_black}_co) et patch (velcro du dos : patch_*.paa, vide sans patch).
     class COMSPEC_ATAK_VestPhone: Static {
-        scope=1; scopeCurator=0; author="COMSPEC"; displayName="Téléphone ATAK (gilet)";
+        scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_7B078E6A1E";
         model="\z\comspec_atak_native\addons\main\data\vest_phone.p3d";
         hiddenSelections[]={"camo","patch"};
         hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\vest_phone_co.paa",""};
     };
     // Tablette durcie à touches sur le rabat du JPC (fn_jpcScreen, tools/model_jpc_tablet.py) : coque, écran (texture UI).
     class COMSPEC_ATAK_JpcTablet: Static {
-        scope=1; scopeCurator=0; author="COMSPEC"; displayName="Tablette ATAK (JPC)";
+        scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_2805C17B50";
         model="\z\comspec_atak_native\addons\main\data\jpc_tablet.p3d";
         hiddenSelections[]={"camo","screen"};
         hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_tablet_co.paa","#(argb,8,8,3)color(0,0,0,1)"};
@@ -288,7 +289,7 @@ class CfgVehicles {
     };
     // Téléphone du profil ouvert sur le JPC (fn_jpcScreen, tools/model_jpc_phones.py) : S7 par défaut, coques.
     class COMSPEC_ATAK_JpcPhone_s7: COMSPEC_ATAK_JpcTablet {
-        displayName="Téléphone ATAK (JPC)";
+        displayName="$STR_COMSPEC_ATAK_CFG_0AB5F74BB5";
         model="\z\comspec_atak_native\addons\main\data\jpc_s7.p3d";
         hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_s7_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
     };
@@ -314,73 +315,73 @@ class CfgVehicles {
     };
     class Item_COMSPEC_ATAK_Battery: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Batterie ATAK";
+        displayName="$STR_COMSPEC_ATAK_CFG_9E4D5298F6";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_Battery { name="COMSPEC_ATAK_Battery"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_RepairKit: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Kit de réparation ATAK";
+        displayName="$STR_COMSPEC_ATAK_CFG_814EE34AA5";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_RepairKit { name="COMSPEC_ATAK_RepairKit"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_DataCable: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Câble de données DL-7";
+        displayName="$STR_COMSPEC_ATAK_CFG_5BC13315C6";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_DataCable { name="COMSPEC_ATAK_DataCable"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_Antenna_Stub: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Antenne courte SMA (ATAK)";
+        displayName="$STR_COMSPEC_ATAK_CFG_A200DC2D3C";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_Antenna_Stub { name="COMSPEC_ATAK_Antenna_Stub"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_Antenna_Whip: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Antenne fouet longue (ATAK)";
+        displayName="$STR_COMSPEC_ATAK_CFG_9EFEB0E683";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_Antenna_Whip { name="COMSPEC_ATAK_Antenna_Whip"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_Antenna_Patch: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Antenne patch 9 dBi (ATAK)";
+        displayName="$STR_COMSPEC_ATAK_CFG_0D7BE9D700";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_Antenna_Patch { name="COMSPEC_ATAK_Antenna_Patch"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_PowerBank: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Batterie externe ATAK 10 000 mAh";
+        displayName="$STR_COMSPEC_ATAK_CFG_EF53A02082";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_PowerBank { name="COMSPEC_ATAK_PowerBank"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_NvgFilter: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Filtre d'écran JVN (ATAK)";
+        displayName="$STR_COMSPEC_ATAK_CFG_9BEF18E007";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_NvgFilter { name="COMSPEC_ATAK_NvgFilter"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_VehicleKit: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Kit terminal véhicule ATAK";
+        displayName="$STR_COMSPEC_ATAK_CFG_32C19DF5F3";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_VehicleKit { name="COMSPEC_ATAK_VehicleKit"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_Camera: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Caméra IP compacte (ATAK)";
+        displayName="$STR_COMSPEC_ATAK_CFG_857C44D0D3";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_Camera { name="COMSPEC_ATAK_Camera"; count=1; }; };
     };
     // Caméra IP posée (fn_camAction) : petit objet global, destructible (tirs, explosions), non listé dans l'éditeur.
     class COMSPEC_ATAK_CameraObj: Static {
-        scope=1; scopeCurator=0; author="COMSPEC"; displayName="Caméra IP (ATAK)";
+        scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_A37BF51B41";
         model="\A3\Structures_F\Items\Electronics\HandyCam_F.p3d";
         armor=3;
     };
     class Item_COMSPEC_ATAK_DockKit: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Socle de recharge CS-10 (plié)";
+        displayName="$STR_COMSPEC_ATAK_CFG_EB509FDE34";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_DockKit { name="COMSPEC_ATAK_DockKit"; count=1; }; };
     };
@@ -388,7 +389,7 @@ class CfgVehicles {
     // Sélections : phone1..10 (0-9), screen1..10 (10-19), led1..10 (20-29), pilotées par fn_dockVisual.
     class COMSPEC_ATAK_ChargingDock: Static {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Socle de recharge CS-10 (10 téléphones ATAK)";
+        displayName="$STR_COMSPEC_ATAK_CFG_06C87F1C69";
         model="\z\comspec_atak_native\addons\main\data\charging_dock.p3d";
         editorPreview="\z\comspec_atak_native\addons\main\data\charging_dock_preview.jpg";
         icon="iconObject_1x1"; mapSize=0.6;
@@ -400,11 +401,11 @@ class CfgVehicles {
         hiddenSelectionsTextures[]={"","","","","","","","","","","","","","","","","","","","",
             "#(argb,8,8,3)color(0.03,0.03,0.03,1,co)","#(argb,8,8,3)color(0.03,0.03,0.03,1,co)","#(argb,8,8,3)color(0.03,0.03,0.03,1,co)","#(argb,8,8,3)color(0.03,0.03,0.03,1,co)","#(argb,8,8,3)color(0.03,0.03,0.03,1,co)",
             "#(argb,8,8,3)color(0.03,0.03,0.03,1,co)","#(argb,8,8,3)color(0.03,0.03,0.03,1,co)","#(argb,8,8,3)color(0.03,0.03,0.03,1,co)","#(argb,8,8,3)color(0.03,0.03,0.03,1,co)","#(argb,8,8,3)color(0.03,0.03,0.03,1,co)"};
-        class ACE_Actions { class ACE_MainActions { displayName="Interactions"; selection=""; distance=3; condition="true"; position="[0, 0, 0.12]"; }; };
+        class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_0B3583ECAA"; selection=""; distance=3; condition="true"; position="[0, 0, 0.12]"; }; };
         class Attributes {
             class COMSPEC_ATAK_DockId {
-                displayName="Identifiant du socle";
-                tooltip="Même identifiant d'une mission à l'autre = mêmes téléphones retrouvés (ex. « FOB-Alpha »). Vide : la carte et la position du socle.";
+                displayName="$STR_COMSPEC_ATAK_CFG_6E3B29E2C5";
+                tooltip="$STR_COMSPEC_ATAK_CFG_59CC6174A3";
                 property="COMSPEC_ATAK_DockId"; control="Edit"; typeName="STRING"; defaultValue="''";
                 expression="if (_value isNotEqualTo '') then { _this setVariable ['COMSPEC_ATAK_DockId', _value, true]; };";
             };
@@ -412,7 +413,7 @@ class CfgVehicles {
     };
     class Item_COMSPEC_ATAK_Phone: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
-        displayName="Téléphone COMSPEC ATAK (Samsung S7)";
+        displayName="$STR_COMSPEC_ATAK_CFG_A692CFB580";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_Phone { name="COMSPEC_ATAK_Phone"; count=1; }; };
     };
@@ -421,7 +422,7 @@ class CfgVehicles {
 };
 class CfgFactionClasses {
     class NO_CATEGORY;
-    class COMSPEC_ATAK_Data: NO_CATEGORY { displayName="COMSPEC — ATAK · Données (extraction)"; priority=2; side=7; };
+    class COMSPEC_ATAK_Data: NO_CATEGORY { displayName="$STR_COMSPEC_ATAK_CFG_BC3E09CB53"; priority=2; side=7; };
 };
 
 class Extended_PreInit_EventHandlers { class comspec_atak_native_main { init="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_preInit.sqf'"; }; };

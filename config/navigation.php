@@ -222,6 +222,7 @@ return [
                         ['label' => 'Ma fiche personnelle', 'path' => 'personnel/me'],
                         ['label' => 'Mes démarches', 'path' => 'personnel/mon-espace-rh', 'description' => 'Absences, élévation, souhait d’évolution et documents'],
                         ['label' => 'Mon coffre', 'path' => 'back-office/ma-situation/coffre', 'description' => 'Pièces RH, brevets et attestations qui vous concernent'],
+                        ['label' => 'Musique', 'path' => 'back-office/ma-situation/musique', 'description' => 'Bibliothèque musicale, playlists et playlist globale, écoutées en jeu sur l’ATAK'],
                         ['label' => 'Distinctions', 'path' => 'distinctions', 'description' => 'Reconnaissances et parcours valorisés'],
                         ['label' => 'Paramètres du compte', 'path' => 'account', 'description' => 'Connexion, photo et préférences'],
                         ['label' => 'Préférences', 'path' => 'account/preferences', 'description' => 'Langue, fuseau et affichage'],

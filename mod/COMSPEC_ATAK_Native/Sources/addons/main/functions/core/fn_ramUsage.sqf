@@ -21,6 +21,7 @@ private _weight = {
         case "AAR": { 320 };
         case "RELIEF": { 290 };
         case "PHOTOS": { 260 };
+        case "GALLERY": { 180 };
         case "EW"; case "DRONEDETECT": { 240 };
         case "BRIEFING": { 230 };
         case "ATHENA": { 210 };
