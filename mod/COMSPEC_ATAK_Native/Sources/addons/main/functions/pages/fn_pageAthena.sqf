@@ -149,6 +149,17 @@ if (_logged) then {
                     if (([] call comspec_atak_native_fnc_athenaMode) isEqualTo "on") then { ["start"] call comspec_atak_native_fnc_athenaLink; };
                 };
             };
+            // Ou, sans passer par le site : e-mail et mot de passe du compte Athena (même chemin que l'onglet E-MAIL).
+            if (_ls isNotEqualTo "approved") then {
+                _rows append [
+                    ["gap"],
+                    ["section", "OU AVEC E-MAIL ET MOT DE PASSE", "Les identifiants de votre compte Athena"],
+                    ["edit", "email", "E-mail", _draft getOrDefault ["email", profileNamespace getVariable ["COMSPEC_ATAK_Email", ""]]],
+                    ["password", "password", "Mot de passe"],
+                    ["buttons", [["SE CONNECTER", { profileNamespace setVariable ["COMSPEC_ATAK_Email", ["email"] call comspec_atak_native_fnc_formValue]; ["password"] call comspec_atak_native_fnc_athenaAction; }, true]]],
+                    ["text", "<t color='#8a9a93' size='0.85'>Mot de passe oublié ? Onglet E-MAIL : recevez un code par e-mail.</t>"]
+                ];
+            };
             _rows pushBack ["text", "<t color='#8a9a93' size='0.85'>Votre Steam est associé au compte à cette occasion : aux parties suivantes, la connexion se fait seule.</t>"];
         };
     };
