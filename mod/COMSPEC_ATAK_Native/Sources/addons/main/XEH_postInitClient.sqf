@@ -325,7 +325,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     private _k = [player] call comspec_atak_native_fnc_vehicleTerminal;
     if (_k isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_TermKind", ""])) exitWith {};
     uiNamespace setVariable ["COMSPEC_ATAK_TermKind", _k];
-    if (_k in ["vehicle", "cp"]) then { ["INFO", ["Tablette du véhicule disponible (ATAK)", "Terminal du poste de commandement disponible"] select (_k isEqualTo "cp"), 4, 20] call comspec_atak_native_fnc_notify; };
+    if (_k in ["vehicle", "cp"] && {!([player, true] call comspec_atak_native_fnc_hasDevice)}) then { ["INFO", ["Tablette du véhicule disponible (ATAK)", "Terminal du poste de commandement disponible"] select (_k isEqualTo "cp"), 4, 20] call comspec_atak_native_fnc_notify; };
     if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; };
 }, 2] call CBA_fnc_addPerFrameHandler;
 // Lueur des écrans la nuit (la sienne publiée, celle des joueurs proches dessinée) et filtre JVN (fn_screenGlow).

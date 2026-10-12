@@ -5045,6 +5045,7 @@
 ["Écran de rechange, nappe et outils pour le téléphone COMSPEC ATAK. Action ACE « Réparer le téléphone ATAK » (12 s) : écran, alimentation et appareil remis en état, même détruit. Consommé.", "Spare screen, ribbon cable and tools for the COMSPEC ATAK phone. ACE action ""Repair ATAK phone"" (12 s): screen, power and device restored, even when destroyed. Consumed."],
 ["Écran de verrouillage", "Lock screen"],
 ["écran destructible", "destructible screen"],
+["Écran du JPC : activez « Image dans l'image » (Options > Vidéo) pour la vue aérienne", "Chest screen: enable Picture-in-Picture (Options > Video) for the aerial view"],
 ["Écran en main", "Screen in hand"],
 ["écran en morceaux", "screen in pieces"],
 ["Écran endommagé", "Screen damaged"],
