@@ -7,7 +7,7 @@ horizontal de la face : la silhouette se superpose une fois retournée). Toiles 
 Prérequis : pip install bpy (Blender comme module Python, 5.x) ; réutilise les aides de render_3d.py.
 
     python3 render_phones.py [sortie]      # par défaut tools/render/
-    RENDER_ONLY=rugged|iphone|tablet|all   RENDER_SAMPLES=64
+    RENDER_ONLY=rugged|iphone|tablet|keys|all   RENDER_SAMPLES=64
 
 Sorties : phone_<appareil>_front.png / phone_<appareil>_back.png.
 Contrat de la face : alpha 0 exactement sur x 455..1546, y 716..1333 (inclus, y vers le bas), alpha 255 sur un anneau
@@ -35,9 +35,10 @@ FONT_B, FONT_R = r3.FONT_B, r3.FONT_R
 SIZE = 2048
 HOLE = (455, 716, 1546, 1333)  # rectangle transparent de l'écran (inclus)
 RING = 6  # marge opaque minimale autour du trou
-BOUNDS = {"rugged": (200, 560, 1900, 1560), "iphone": (200, 560, 1900, 1500), "tablet": (150, 480, 1950, 1580)}
+BOUNDS = {"rugged": (200, 560, 1900, 1560), "iphone": (200, 560, 1900, 1500), "tablet": (150, 480, 1950, 1580), "keys": (150, 480, 1900, 1520)}
 TAC_GREEN = (0.33, 0.34, 0.29)  # polymère vert ranger mat de la coque tactique
 TAC_BLACK = (0.055, 0.056, 0.055)  # polymère noir (clip, liseré, patin dorsal)
+KEY_SAND = (0.47, 0.44, 0.39)  # polymère gris sable de la tablette à touches
 
 
 # --- Repère de vue : coordonnées image (px, y vers le bas) -> scène ---
@@ -541,7 +542,95 @@ def tablet(back):
     return {"power": 3600, "size": 14, "fill": 600}
 
 
-DEVICES = {"rugged": rugged, "iphone": iphone, "tablet": tablet}
+# --- 4. Tablette durcie à touches (portée sur le JPC) ---
+def keys(back):
+    """Tablette d'EUD durcie : cadre polymère gris sable, ailes latérales avec un mini-joystick chacune, touches
+    retour / accueil / apps récentes / fn à gauche, A / B / X / Y à droite, épaulements et patte de fixation en haut,
+    molettes de blocage aux coins hauts. Le dos porte la charnière du rabat du JPC (bas) et la plaque d'adaptation."""
+    D = 0.55
+    F, V = View(False, D), View(back, D, 1025)
+    frame = mat_polymer("frame", KEY_SAND, rough=0.7, edge=0.3)
+    shoulder = mat_polymer("shoulder", tuple(c * 0.94 for c in KEY_SAND), rough=0.72, edge=0.35)
+    well = mat_polymer("well", tuple(c * 0.62 for c in KEY_SAND), rough=0.8, edge=0.2)
+    black = mat_polymer("black", TAC_BLACK, rough=0.6, grain=1.0, edge=0.5)
+    rubber = r3.mat_paint("rubber", (0.032, 0.032, 0.034), rough=0.6, grain=0.8)
+    fnkey = r3.mat_paint("fnkey", (0.20, 0.055, 0.045), rough=0.6, grain=0.8)
+    ink = r3.mat_simple("ink", (0.90, 0.90, 0.88), 0.5)
+    steel = r3.mat_simple("steel", (0.55, 0.56, 0.55), 0.32, 1.0)
+    dark = r3.mat_simple("dark", (0.015, 0.015, 0.015), 0.5)
+    knurl = mat_knurl("knurl", (0.045, 0.045, 0.05))
+    # Corps : prisme aux coins arrondis, fenêtre de l'écran évidée côté face.
+    body = F.box(190, 600, 1860, 1440, 70, -2 * D, 0.12, frame, bevel=0, name="body")
+    carve(body, [F.box(425, 690, 1576, 1360, 22, -0.02, 1.0, black, bevel=0, name="win")], 0.06)
+    # Tranche haute : deux épaulements et la patte de fixation centrale (fente noire), comme sur la photo.
+    for u0, u1 in ((372, 870), (1180, 1678)):
+        F.box(u0, 572, u1, 618, 14, -2 * D + 0.12, 0.04, shoulder, bevel=0.04, name="shoulder")
+    F.box(900, 512, 1150, 610, 18, -2 * D + 0.22, -0.04, shoulder, bevel=0.045, name="tab")
+    F.box(950, 540, 1100, 566, 8, -2 * D + 0.18, 0.0, dark, bevel=0.01, name="tab_slot")
+    # Lèvre basse et caches de prises.
+    F.box(390, 1424, 1660, 1462, 14, -2 * D + 0.06, -0.08, shoulder, bevel=0.035, name="lip")
+    for u0, u1 in ((560, 720), (1330, 1490)):
+        F.box(u0, 1450, u1, 1470, 8, -D - 0.3, -D + 0.3, black, bevel=0.03, name="port")
+    if not back:
+        # Molettes de blocage aux coins hauts (de dos : simple pastille caoutchouc, voir plus bas).
+        for u in (250, 1800):
+            V.cyl(u, 648, 44, 0.0, 0.30, knurl, verts=64, bevel=0.02)
+            V.cyl(u, 648, 30, 0.28, 0.36, rubber, verts=48, bevel=0.02)
+        V.box(425, 690, 1576, 1360, 22, -0.05, 0.0, mat_glass("glass", (0.006, 0.007, 0.008), 0.03), bevel=0.006)
+        V.box(447, 708, 1554, 1341, 4, 0.0, 0.002, mat_glass("screen", (0.003, 0.004, 0.006), 0.02))
+        # Caméra frontale et capteur de luminosité dans le liseré haut.
+        V.cyl(1000, 664, 9, 0.10, 0.13, dark)
+        V.dome(1000, 664, 5.5, 0.13, 0.02, r3.mat_simple("flens", (0.06, 0.08, 0.16), 0.05, coat=1.0))
+        V.cyl(1060, 664, 5, 0.10, 0.125, r3.mat_simple("als", (0.08, 0.06, 0.05), 0.1, coat=1.0))
+
+        def stick(u, v):
+            # Mini-joystick : puits sombre, bague moletée, champignon caoutchouc légèrement creusé.
+            V.cyl(u, v, 74, 0.06, 0.14, well, verts=96, bevel=0.02)
+            V.cyl(u, v, 60, 0.12, 0.24, knurl, verts=96, bevel=0.015)
+            V.cyl(u, v, 48, 0.22, 0.46, rubber, verts=96, bevel=0.05)
+            V.cyl(u, v, 36, 0.455, 0.47, r3.mat_paint("stick_top", (0.045, 0.045, 0.047), rough=0.75, grain=2.0), verts=64)
+
+        def key(u, v, label, mat, font=FONT_B, size=44):
+            V.cyl(u, v, 50, 0.06, 0.15, well, verts=64, bevel=0.015)
+            V.cyl(u, v, 41, 0.12, 0.30, mat, verts=64, bevel=0.035)
+            V.text(label, u, v, 0.302, size, ink, font=font)
+
+        rows = (948, 1062, 1176, 1290)
+        stick(318, 800)
+        for v, lab, mat, fs in zip(rows, ("↺", "⌂", "❐", "fn"), (rubber, rubber, rubber, fnkey), (72, 74, 62, 44)):
+            key(318, v, lab, mat, FONT_R if lab in ("↺", "⌂", "❐") else FONT_B, fs)
+        stick(1732, 800)
+        for v, lab in zip(rows, ("A", "B", "X", "Y")):
+            key(1732, v, lab, rubber)
+        V.text("COMSPEC", 1430, 595, 0.045, 22, r3.mat_paint("emb", tuple(c * 0.78 for c in KEY_SAND), rough=0.8), extrude=0.004)
+        for u, v in ((262, 1388), (1788, 1388)):
+            V.torx(u, v, 15, 0.12, steel, dark)
+    else:
+        # Dos : plaque à motif losange, trappe de batterie à loquets, plaque d'adaptation vissée, charnière du rabat.
+        V.ring((190, 600, 1860, 1440), (300, 700, 1750, 1340), 70, 40, -0.05, 0.12, frame, bevel=0.04)
+        V.box(301, 701, 1749, 1339, 40, -0.05, 0.06, mat_grip("grip", tuple(c * 0.8 for c in KEY_SAND), scale=3.0, strength=0.2), bevel=0.02)
+        V.box(1180, 740, 1700, 1300, 30, 0.04, 0.15, mat_polymer("batt", tuple(c * 0.9 for c in KEY_SAND)), bevel=0.03)
+        for v in (800, 1240):
+            V.box(1380, v - 22, 1520, v + 22, 10, 0.12, 0.21, black, bevel=0.025)
+        V.text("BATTERY", 1440, 1020, 0.151, 30, r3.mat_simple("ink3", (0.30, 0.28, 0.25), 0.5), font=FONT_R)
+        alu = r3.mat_brushed("alu", (0.06, 0.062, 0.06), 0.36)
+        V.box(430, 780, 1000, 1180, 30, 0.06, 0.2, alu, bevel=0.03)
+        for u, v in ((480, 830), (950, 830), (480, 1130), (950, 1130)):
+            V.torx(u, v, 13, 0.2, steel, dark)
+        V.text("COMSPEC TX-8", 715, 980, 0.201, 34, r3.mat_simple("ink_l", (0.62, 0.62, 0.6), 0.5))
+        # Charnière du rabat (bas de la tablette) : charnons alternés et axe.
+        for k in range(6):
+            u = 420 + k * 210
+            V.box(u, 1360, u + 150, 1430, 18, 0.0, 0.28, black, bevel=0.03, name="knuckle")
+        hcyl(V, 400, 1650, 1395, 14, 0.14, steel)
+        for u in (250, 1800):
+            V.cyl(u, 648, 40, 0.0, 0.08, rubber, verts=48, bevel=0.015)
+        for u, v in ((262, 1388), (1788, 1388)):
+            V.torx(u, v, 15, 0.12, steel, dark)
+    return {"power": 3300, "size": 14, "fill": 560}
+
+
+DEVICES = {"rugged": rugged, "iphone": iphone, "tablet": tablet, "keys": keys}
 
 
 # --- Post-traitement et contrôle ---

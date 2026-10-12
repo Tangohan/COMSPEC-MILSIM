@@ -64,7 +64,7 @@ if (_tab isEqualTo "LIB") exitWith {
 private _font = _l get "font";
 private _fs = _l get "fontSmall";
 private _pad = (_l get "pad") * 2;
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 private _dir = "\z\comspec_atak_native\addons\main\data\";
 private _mk = { params ["_c", "_p", ["_t", ""]]; [_c, _p, _t] call comspec_atak_native_fnc_pageCtrl };
 private _open = { private _c = ["caption"] call comspec_atak_native_fnc_formValue; [{ ["ENTER", _this] call comspec_atak_native_fnc_photoMode; }, _c] call CBA_fnc_execNextFrame; };

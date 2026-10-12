@@ -103,6 +103,12 @@ missionNamespace setVariable ["COMSPEC_ATAK_VestMark", _vestMark];
 [_vestPath, "COMSPEC_ATAK_VestMarkOff", "Mon gilet n'a pas d'ATAK", "", { [false] call (missionNamespace getVariable "COMSPEC_ATAK_VestMark"); },
     { [_player] call comspec_atak_native_fnc_vestBuiltin }] call _add;
 
+// Tablette durcie sur le rabat du JPC, écran ATAK en 3D (fn_jpcScreen).
+[_root, "COMSPEC_ATAK_JpcOpen", "Ouvrir l'ATAK sur le JPC", "", { ["toggle"] call comspec_atak_native_fnc_jpcScreen; },
+    { vest _player isNotEqualTo "" && {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["texture", false]) || {isNull ([] call comspec_atak_native_fnc_display)}} }] call _add;
+[_root, "COMSPEC_ATAK_JpcClose", "Rabattre la tablette du JPC", "", { ["toggle"] call comspec_atak_native_fnc_jpcScreen; },
+    { !isNull ([] call comspec_atak_native_fnc_display) && {(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["texture", false]} }] call _add;
+
 // Entretien : les actions sont posées dans ce sous-menu par XEH_postInitClient. Celles d'Overwatch y sont reprises.
 [_root, "COMSPEC_ATAK_Care", "Entretien", "\z\comspec_atak_native\addons\main\data\item_repairkit.paa"] call _add;
 private _care = _root + ["COMSPEC_ATAK_Care"];

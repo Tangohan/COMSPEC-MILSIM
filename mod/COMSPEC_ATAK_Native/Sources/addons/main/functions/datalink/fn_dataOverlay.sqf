@@ -62,7 +62,7 @@ _lcd ctrlCommit 0;
 {
     private _cx = _mxx + _mww * ([0.655, 0.77, 0.885] select _forEachIndex);
     private _r = _mww * 0.026;
-    private _rh = _r * pixelH / pixelW;
+    private _rh = _r * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
     _x ctrlSetPosition [_cx - _r, _myy + _mhh * 0.52 - _rh, _r * 2, _rh * 2];
     _x ctrlCommit 0;
 } forEach _leds;

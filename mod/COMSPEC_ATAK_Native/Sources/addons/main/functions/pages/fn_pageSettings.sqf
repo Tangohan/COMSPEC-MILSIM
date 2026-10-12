@@ -86,7 +86,8 @@ private _perso = [
     ["COMSPEC_ATAK_Accent", "GREEN", "Couleur d'accent", [["VERT", "GREEN"], ["BLEU", "BLUE"], ["ORANGE", "ORANGE"], ["ROUGE", "RED"], ["VIOLET", "PURPLE"], ["SABLE", "SAND"]]] call _profSegment,
     ["COMSPEC_ATAK_Shell", "auto", "Coque", [["AUTO", "auto"], ["JOUR", "day"], ["NUIT", "night"]], "auto : nuit après le coucher du soleil"] call _profSegment,
     ["COMSPEC_ATAK_ShellTint", "coyote", "Couleur de la coque", [["COYOTE", "coyote"], ["VERT OD", "od"], ["NOIR", "black"]]] call _profSegment,
-    ["COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone", [["DURCI S7", "s7"], ["TACTIQUE", "rugged"], ["PREMIUM", "iphone"]], "Coque affichée autour de l'écran ; la couleur de coque ne change que le S7"] call _profSegment,
+    ["COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone", [["DURCI S7", "s7"], ["TACTIQUE", "rugged"], ["PREMIUM", "iphone"], ["TABLETTE A/B", "keys"]], "Coque affichée autour de l'écran ; la couleur de coque ne change que le S7. TABLETTE A/B : tablette durcie à touches, celle du JPC"] call _profSegment,
+    ["COMSPEC_ATAK_CarryStyle", "hud", "Terminal porté", [["MINIATURE", "hud"], ["SUR LE JPC", "jpc"]], "SUR LE JPC : la tablette durcie relevée sur le porte-plaques affiche l'ATAK en 3D, on baisse les yeux pour lire (vue libre, arme). Sans gilet ou en véhicule : miniature"] call _profSegment,
     ["COMSPEC_ATAK_VehTablet", true, "", "Tablette dans les véhicules", "Tablette durcie de bord affichée à la place du téléphone dans un véhicule équipé ou au poste de commandement"] call _profSwitch,
     ["COMSPEC_ATAK_ModuleTint", "olive", "Module DL-7", [["OLIVE", "olive"], ["NOIR", "black"], ["TAN", "tan"]], "Couleur du module de l'app Extraction"] call _profSegment,
     ["segment", "Antenne (port SMA)", [["AUCUNE", { ["unmount"] call comspec_atak_native_fnc_antenna; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, (["get"] call comspec_atak_native_fnc_antenna) isEqualTo []]]
@@ -153,7 +154,7 @@ private _perso = [
 } forEach (([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible });
 _perso pushBack ["buttons", [["DOCK PAR DÉFAUT", { profileNamespace setVariable ["COMSPEC_ATAK_DockApps", []]; saveProfileNamespace; [{ [] call comspec_atak_native_fnc_dockRender; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
 _perso pushBack ["buttons", [["TOUT RÉINITIALISER (APPARENCE)", {
-    { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Accent", "COMSPEC_ATAK_Shell", "COMSPEC_ATAK_ShellTint", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_Patch", "COMSPEC_ATAK_PatchText", "COMSPEC_ATAK_VestMount", "COMSPEC_ATAK_VestDepth", "COMSPEC_ATAK_VestFace", "COMSPEC_ATAK_PhoneModel", "COMSPEC_ATAK_VehTablet", "COMSPEC_ATAK_Wallpaper", "COMSPEC_ATAK_WallBlur", "COMSPEC_ATAK_TextScale", "COMSPEC_ATAK_IconDensity", "COMSPEC_ATAK_DockApps", "COMSPEC_ATAK_HiddenApps"];
+    { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Accent", "COMSPEC_ATAK_Shell", "COMSPEC_ATAK_ShellTint", "COMSPEC_ATAK_ModuleTint", "COMSPEC_ATAK_Patch", "COMSPEC_ATAK_PatchText", "COMSPEC_ATAK_VestMount", "COMSPEC_ATAK_VestDepth", "COMSPEC_ATAK_VestFace", "COMSPEC_ATAK_PhoneModel", "COMSPEC_ATAK_CarryStyle", "COMSPEC_ATAK_VehTablet", "COMSPEC_ATAK_Wallpaper", "COMSPEC_ATAK_WallBlur", "COMSPEC_ATAK_TextScale", "COMSPEC_ATAK_IconDensity", "COMSPEC_ATAK_DockApps", "COMSPEC_ATAK_HiddenApps"];
     saveProfileNamespace;
     [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }]]];

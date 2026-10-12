@@ -48,6 +48,13 @@ class COMSPEC_RscDisplayATAK {
     };
 };
 
+// Écran 3D de la tablette sur le JPC : même contenu, rendu dans une texture UI 1024 x 576 posée sur le modèle
+// (fn_jpcScreen : #(rgb,1024,576,1)ui("COMSPEC_RscATAKTexture", nom unique)). Non interactif, comme le HUD.
+class COMSPEC_RscATAKTexture: COMSPEC_RscDisplayATAK {
+    idd=-1;
+    onLoad="[_this select 0, false, true] call comspec_atak_native_fnc_displayLoad";
+};
+
 class RscTitles {
     // Terminal porté (HUD) : visible pendant que l'on joue, sans souris ni clavier.
     class COMSPEC_RscTitleATAK: COMSPEC_RscDisplayATAK {

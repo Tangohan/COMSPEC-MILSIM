@@ -88,9 +88,9 @@ switch (_act) do {
             };
             // Coins de cadrage.
             private _cl = (_w min (_h / pixelH * pixelW)) * 0.07;
-            private _ch = _cl * pixelH / pixelW;
+            private _ch = _cl * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
             private _m = _w * 0.04;
-            private _mv = _m * pixelH / pixelW;
+            private _mv = _m * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
             {
                 _x params ["_cx", "_cy", "_sx", "_sy"];
                 [[[_cx, _cx - _cl] select (_sx < 0), _cy, _cl, _py]] call _bar;
@@ -100,7 +100,7 @@ switch (_act) do {
             private _cx = _rx + _w / 2;
             private _cy = _ry + _h / 2;
             private _rw = _w * 0.045;
-            private _rh = _rw * pixelH / pixelW;
+            private _rh = _rw * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
             {
                 [_x] call _bar;
             } forEach [

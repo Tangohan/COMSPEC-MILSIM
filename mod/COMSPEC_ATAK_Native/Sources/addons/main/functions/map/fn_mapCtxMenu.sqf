@@ -70,7 +70,7 @@ switch (_mode) do {
         (_l get "body") params ["_bx", "_by", "_bw", "_bh"];
         private _font = _l get "font";
         private _fs = _l get "fontSmall";
-        private _ratio = pixelH / pixelW;
+        private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
         private _pos = _c get "pos";
         private _m = _c getOrDefault ["marker", ""];
         if (_m isNotEqualTo "" && {(markerShape _m) isEqualTo ""}) then { _m = ""; _c set ["marker", ""]; };

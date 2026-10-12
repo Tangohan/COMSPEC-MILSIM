@@ -96,9 +96,9 @@ if (_camOn && {_tab isNotEqualTo "LOG"}) then {
     private _perRow = ceil (_nb / _rowsN);
     private _bh2 = _fs * 1.5;
     private _barH = _rowsN * (_bh2 + _pad * 0.3) + _pad * 0.3;
-    private _areaH = if (_camFull) then { _bh - _top - _barH } else { ((_bw * 0.5625 * pixelH / pixelW) min (_bh * 0.45)) };
+    private _areaH = if (_camFull) then { _bh - _top - _barH } else { ((_bw * 0.5625 * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW])) min (_bh * 0.45)) };
     // Image 16/9 ajustée à la place disponible (bandes noires sur les côtés ou dessus / dessous).
-    private _k169 = 0.5625 * pixelH / pixelW;
+    private _k169 = 0.5625 * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
     private _iw = _bw min (_areaH / _k169);
     private _ih = _iw * _k169;
     private _ix = (_bw - _iw) / 2;
@@ -116,7 +116,7 @@ if (_camOn && {_tab isNotEqualTo "LOG"}) then {
     private _cx = _ix + _iw / 2;
     private _cy = _iy + _ih / 2;
     private _rw = _iw * 0.035;
-    private _rh = _rw * pixelH / pixelW;
+    private _rh = _rw * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
     {
         private _r = ["COMSPEC_RscText", _x] call comspec_atak_native_fnc_pageCtrl;
         _r ctrlSetBackgroundColor ([[1, 1, 1, 0.85], [0.95, 0.3, 0.25, 0.95]] select _markMode);

@@ -167,6 +167,7 @@ CASE_SRC = {
     "rugged": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_rugged_front.png"),
     "iphone": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_iphone_front.png"),
     "tablet": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_tablet_front.png"),
+    "keys": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_keys_front.png"),
 }
 
 
@@ -193,6 +194,10 @@ def main():
         if len(sys.argv) > 2 and sys.argv[2] == "prints":
             for i in range(4):
                 convert(fingerprint(21 + i), f"dirt_print_{i}", tmp)
+            return
+        # « case keys » : seulement la poussière de la coque de la tablette à touches.
+        if len(sys.argv) > 3 and sys.argv[2] == "case":
+            case_assets(tmp, only=sys.argv[3:])
             return
         for i in range(2):
             convert(dust(11 + i), f"dirt_dust_{i}", tmp)
