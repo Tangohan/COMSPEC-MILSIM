@@ -15,7 +15,7 @@ switch (_act) do {
     case "open": { _s set ["wantedOpen", _arg]; call _render; };
     case "load": {
         private _now = [dayTime, "HH:MM"] call BIS_fnc_timeToString;
-        private _raw = ["COMSPECExtension" callExtension ["GetWantedNotices", []]] call _res;
+        private _raw = [(["COMSPECExtension", "GetWantedNotices", []] call comspec_atak_native_fnc_extAwait)] call _res;
         if !(_raw isEqualType "") then { _raw = str _raw; };
         if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith {
             private _old = (uiNamespace getVariable ["COMSPEC_ATAK_Wanted", [[]]]) select 0;
@@ -43,7 +43,7 @@ switch (_act) do {
                 _x params ["_kind", "_id", "", "", "", "", "", ["_url", ""]];
                 private _key = format ["%1:%2", _kind, _id];
                 if (_url isNotEqualTo "" && {!(_key in _imgs)}) then {
-                    private _dl = (["COMSPECExtension" callExtension ["DownloadBriefingSlideImage", [_url, format ["wanted_%1_%2", _kind, _id]]]] call _res) splitString "|";
+                    private _dl = ([(["COMSPECExtension", "DownloadBriefingSlideImage", [_url, format ["wanted_%1_%2", _kind, _id]]] call comspec_atak_native_fnc_extAwait)] call _res) splitString "|";
                     private _p = if ((_dl param [0, ""]) isEqualTo "OK") then { ((_dl param [1, ""]) splitString (toString [92])) joinString "/" } else { "" };
                     private _lp = toLower _p;
                     _imgs set [_key, [_p, ""] select !((_lp select [(count _lp) - 4]) in [".jpg", "jpeg", ".paa"])];

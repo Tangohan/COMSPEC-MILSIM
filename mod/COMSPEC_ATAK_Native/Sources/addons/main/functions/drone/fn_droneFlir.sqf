@@ -235,8 +235,11 @@ switch (_act) do {
         {
             private _isAim = _forEachIndex isEqualTo 8;
             if ((_isAim && {_used isNotEqualTo -1}) || {!_isAim && {_forEachIndex >= (_used max 0)}}) then {
-                (_x select 0) apply { _x ctrlShow false };
-                (_x select 1) ctrlShow false;
+                // Déjà masqués : rien à refaire (45 contrôles touchés à chaque image sinon).
+                if (ctrlShown (_x select 1)) then {
+                    { _x ctrlShow false } forEach (_x select 0);
+                    (_x select 1) ctrlShow false;
+                };
             };
         } forEach _boxes;
         // Incrustations : quatre fois par seconde.
@@ -267,7 +270,8 @@ switch (_act) do {
             format ["LOCK %1<br/>%2", count (missionNamespace getVariable ["COMSPEC_ATAK_Locks", createHashMap]), ["<t color='#e5483a'>HORS LIAISON</t>", format ["LIAISON %1/4", _ln select 0]] select (_ln select 2)]
         ];
         {
-            if (ctrlShown _x) then {
+            if (ctrlShown _x && {(_x getVariable ["txt", ""]) isNotEqualTo (_lines select _forEachIndex)}) then {
+                _x setVariable ["txt", _lines select _forEachIndex];
                 _x ctrlSetStructuredText parseText format ["<t font='EtelkaMonospacePro' align='%1' shadow='2' shadowColor='#000000' color='#e8f0ea'>%2</t>", _x getVariable ["al", "left"], _lines select _forEachIndex];
             };
         } forEach _texts;

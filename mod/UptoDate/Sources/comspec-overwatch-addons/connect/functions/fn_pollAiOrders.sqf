@@ -89,15 +89,13 @@ private _n = 0;
             _by = [] call comspec_overwatch_connect_fnc_getCallsign;
             if (_by isEqualTo "") then { _by = name player; };
         };
-        ["COMSPECExtension" callExtension ["UpdateOrderStatus", [_oid, "ACK", _by, _mapId, "Deplacement IA"]]] call comspec_overwatch_connect_fnc_extResult;
-        [
-            {
-                params ["_id", "_by", "_map"];
-                ["COMSPECExtension" callExtension ["UpdateOrderStatus", [_id, "EXEC", _by, _map, "En route"]]] call comspec_overwatch_connect_fnc_extResult;
-            },
-            [_oid, _by, _mapId],
-            0.45
-        ] call CBA_fnc_waitAndExecute;
+        // ACK puis EXEC en spawn via extAwait : deux POST synchrones par ordre figeaient le jeu (retour inutilisé).
+        [_oid, _by, _mapId] spawn {
+            params ["_id", "_by", "_map"];
+            ["COMSPECExtension", "UpdateOrderStatus", [_id, "ACK", _by, _map, "Deplacement IA"]] call comspec_overwatch_connect_fnc_extAwait;
+            sleep 0.45;
+            ["COMSPECExtension", "UpdateOrderStatus", [_id, "EXEC", _by, _map, "En route"]] call comspec_overwatch_connect_fnc_extAwait;
+        };
     };
 } forEach _lines;
 

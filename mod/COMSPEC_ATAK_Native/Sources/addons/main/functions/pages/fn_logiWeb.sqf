@@ -9,7 +9,7 @@ if !([] call comspec_atak_native_fnc_bridge) exitWith { false };
 if (isNil "comspec_overwatch_connect_fnc_hashMapToJson") exitWith { false };
 private _call = {
     params ["_cmd", "_json"];
-    private _r = "COMSPECExtension" callExtension [_cmd, [_json]];
+    private _r = ["COMSPECExtension", _cmd, [_json]] call comspec_atak_native_fnc_extAwait;
     if (_r isEqualType []) then { _r = _r param [0, ""]; };
     _r
 };

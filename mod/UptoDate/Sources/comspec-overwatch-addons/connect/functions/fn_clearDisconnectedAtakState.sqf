@@ -9,4 +9,5 @@ if (_uid isEqualTo "") exitWith {};
 if (isNil "COMSPEC_DisconnectedAtakState") exitWith {};
 
 COMSPEC_DisconnectedAtakState deleteAt _uid;
-publicVariable "COMSPEC_DisconnectedAtakState";
+// Plus de publicVariable : seul le serveur lit cette table (restauration JIP via remoteExec) ;
+// la diffuser envoyait tout l'état ATAK des déconnectés à chaque client à chaque départ.

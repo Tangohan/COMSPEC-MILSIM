@@ -6711,6 +6711,51 @@ class AtakApiController
         return Response::json(['ok' => true, 'matched' => $matched, 'unmatched' => $unmatched, 'recorded' => $recorded]);
     }
 
+    /**
+     * File d'envoi de COMSPEC Link (« SendQueue.Report ») : bilan de la file d'un joueur ou d'un serveur Arma,
+     * envoyé toutes les ~30 s quand quelque chose a changé. Corps : steam_uid, call_sign, client_kind (client|server),
+     * extension_version, mod_version, summary {queued, sending, retry, failed, done, overload…}, items (100 au plus).
+     * Lu par le back-office « Files d'envoi Athena » (/back-office/atak/files-envoi).
+     */
+    public function sendQueueReport(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $max = \App\Repositories\AtakSendQueueRepository::MAX_BODY_BYTES;
+        if ((int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > $max || strlen(HttpJsonBody::rawJson()) > $max) {
+            return Response::json(['ok' => false, 'error' => 'payload_too_large', 'message' => 'Bilan trop gros (256 Ko au plus).'], 413);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $repo = new \App\Repositories\AtakSendQueueRepository();
+        if (!$repo->schemaReady()) {
+            return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+        }
+        $body = $this->jsonBody($request);
+        $steam = isset($actor['steam_uid']) && is_string($actor['steam_uid']) ? $actor['steam_uid'] : null;
+        $report = \App\Repositories\AtakSendQueueRepository::normalizeReport($body, $steam);
+        if ($report === null) {
+            return Response::json(['ok' => false, 'error' => 'invalid_payload', 'message' => 'steam_uid est requis pour un client.'], 400);
+        }
+        try {
+            $repo->record($tenantId, $report);
+        } catch (\Throwable $e) {
+            error_log('[atak send-queue] ' . $e->getMessage());
+
+            return Response::json(['ok' => false, 'error' => 'store_failed'], 500);
+        }
+
+        return Response::json(['ok' => true]);
+    }
+
     public function chatIndex(Request $request, array $params = []): Response
     {
         $r = $this->requireTenant($request);

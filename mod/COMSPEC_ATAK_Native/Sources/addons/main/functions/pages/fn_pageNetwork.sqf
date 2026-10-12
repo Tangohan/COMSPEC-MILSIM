@@ -182,7 +182,7 @@ private _broken = -1;
 { if (_x isNotEqualTo "" && {_broken < 0}) then { _broken = _forEachIndex; }; } forEach _hopWhy;
 if (_broken >= 0) then { for "_i" from (_broken + 2) to 3 do { (_nodes select _i) set [3, "off"]; }; };
 
-[["Chemin de la liaison", "Du téléphone à Athena : chaque saut, son état"]] call _section;
+["Chemin de la liaison", "Du téléphone à Athena : chaque saut, son état"] call _section;
 private _wide = _cw > _fs * 34;
 private _card = {
     params ["_pos", "_node", ["_active", false]];
@@ -247,7 +247,7 @@ if (_wide) then {
 };
 
 // --- Indicateurs ---
-[["Indicateurs"]] call _section;
+["Indicateurs"] call _section;
 private _cols = [2, 3] select _wide;
 private _tw = ((_cw - 2 * _pad) - (_cols - 1) * _pad * 0.5) / _cols;
 private _th = _fs * 2.9;
@@ -276,7 +276,7 @@ _y = _y + (ceil ((count _tiles) / _cols)) * (_th + _pad * 0.5);
 
 // --- Passerelles, relais et postes de commandement proches ---
 private _sub = format ["Mode %1", [["arcade : le téléphone passe sans relais", "réaliste : relais obligatoire"] select (missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]), "local"] select (!_bridge)];
-[["Passerelles et relais", _sub]] call _section;
+["Passerelles et relais", _sub] call _section;
 private _items = [];
 private _gwLast = uiNamespace getVariable ["COMSPEC_ATAK_GwLast", objNull];
 {
@@ -356,7 +356,7 @@ if ((_mesh getOrDefault ["gwLabel", ""]) isNotEqualTo "") then {
 
 // --- Zone radio et canal (COMSPEC Overwatch) ---
 if (_bridge) then {
-    [["Zone radio"]] call _section;
+    ["Zone radio"] call _section;
     [if ((count _zone) isEqualTo 0) then { "Couverture normale." } else {
         format ["%1 (%2)<br/>Perte minimale %3 %% · latence +%4 ms", _zone getOrDefault ["name", "Zone"], _zone getOrDefault ["type", "?"], _zone getOrDefault ["packet_loss_floor", 0], _zone getOrDefault ["latency_add", 0]]
     }] call _para;
@@ -375,7 +375,7 @@ if (_bridge) then {
 
 // --- Débit simulé du téléphone (fn_linkQuality) ---
 private _rate = { params ["_kb"]; if (_kb >= 1000) then { format ["%1 Mbit/s", (_kb / 1000) toFixed 1] } else { format ["%1 kbit/s", _kb] } };
-[["Débit du téléphone"]] call _section;
+["Débit du téléphone"] call _section;
 if !(_sim) then {
     ["<t color='#8a9a93'>Simulation de débit coupée par le serveur (réglages CBA).</t>"] call _para;
 } else {
@@ -391,8 +391,39 @@ if !(_sim) then {
     { _x call _info; } forEach (_lq get "factors");
 };
 
+// --- File d'envoi Athena (journal de COMSPEC Link 2.0.65, lu en mémoire sans réseau) ---
+if (_bridge && {!(missionNamespace getVariable ["COMSPEC_ATAK_SendQNo", false])}) then {
+    private _raw = ("COMSPECExtension" callExtension ["SendQueue.Status", []]) select 0;
+    if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith {
+        // DLL plus ancienne : la section n'est plus redemandée de la mission.
+        if (_raw isEqualTo "" || {(_raw find "unknown") >= 0}) then { missionNamespace setVariable ["COMSPEC_ATAK_SendQNo", true]; };
+    };
+    private _lines = (_raw select [3]) splitString toString [10];
+    private _h = (_lines param [0, ""]) splitString toString [9];
+    _h params [["_q", "0"], ["_sd", "0"], ["_rt", "0"], ["_fl", "0"], ["_dn", "0"], ["_ov", "ok"], ["_avg", "0"], ["_p95", "0"], ["_n429", "0"], ["_n5xx", "0"], ["_nto", "0"]];
+    private _ovTxt = switch (_ov) do {
+        case "offline": { ["bad", "Athena injoignable : envois en pause"] };
+        case "rate_limited": { ["bad", "Athena surchargé : il demande de ralentir"] };
+        case "slow": { ["warn", "Athena ralenti"] };
+        default { ["ok", "Athena répond normalement"] };
+    };
+    ["File d'envoi Athena", format ["Latence moyenne %1 ms · p95 %2 ms · 5 dernières min : %3 surcharge(s), %4 erreur(s) serveur, %5 délai(s)", _avg, _p95, _n429, _n5xx, _nto]] call _section;
+    ["État d'Athena", format ["<t color='%1'>%2</t>", _hex get (_ovTxt select 0), _ovTxt select 1]] call _info;
+    ["Envois", format ["%1 en file · %2 en cours · <t color='#f2ab33'>%3 nouvel essai</t> · <t color='#e5483a'>%4 échec</t> · <t color='#5cc76b'>%5 envoyés</t>", _q, _sd, _rt, _fl, _dn]] call _info;
+    private _stTxt = createHashMapFromArray [["queued", ["off", "en file"]], ["sending", ["warn", "envoi…"]], ["retry", ["warn", "nouvel essai"]], ["failed", ["bad", "échec"]], ["done", ["ok", "envoyé"]]];
+    {
+        (_x splitString toString [9]) params [["_id", ""], ["_lbl", ""], ["_st", ""], ["_try", "0"], ["_age", "0"], ["_err", ""]];
+        private _m = _stTxt getOrDefault [_st, ["off", _st]];
+        private _a = parseNumber _age;
+        [[_lbl] call _esc, format ["<t color='%1'>%2</t> <t color='#8a9a93'>· %3 essai(s) · %4%5</t>", _hex get (_m select 0), _m select 1, _try,
+            [format ["%1 s", _a], format ["%1 min", round (_a / 60)]] select (_a >= 90),
+            ["", format ["<br/>%1", [_err] call _esc]] select (_err isNotEqualTo "" && {_st in ["retry", "failed"]})]] call _info;
+    } forEach ((_lines select [1, 8]));
+    if ((count _lines) <= 1) then { ["<t color='#8a9a93'>Aucun envoi suivi pour l'instant (comptes rendus, demandes, messages…).</t>"] call _para; };
+};
+
 // --- État du téléphone (fn_deviceHealth, fn_deviceReport) ---
-[["État du téléphone"]] call _section;
+["État du téléphone"] call _section;
 ["Écran et boîtier", switch (_hp get "state") do {
     case "OK": { "<t color='#5cc76b'>intact</t>" };
     case "OFF": { format ["<t color='#f2ab33'>%1</t>", _hp get "reason"] };

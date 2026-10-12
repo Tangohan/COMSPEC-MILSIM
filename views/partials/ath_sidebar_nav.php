@@ -515,6 +515,7 @@ if ($isOperatorBoNav) {
                 ['label' => 'Poste de situation', 'href' => url('back-office/atak'), 'icon' => 'ops', 'active' => $navAtakHubActive],
                 ['label' => 'Contrôle de mission', 'href' => url('back-office/atak/controle-serveur'), 'icon' => 'gear', 'active' => $navAtakControlActive],
                 ['label' => 'Réseau de relais', 'href' => url('back-office/atak/relays-network'), 'icon' => 'radio', 'active' => $navAtakRelaysActive],
+                ['label' => 'Files d’envoi Athena', 'href' => url('back-office/atak/files-envoi'), 'icon' => 'chart', 'active' => $navAt('back-office/atak/files-envoi')],
                 [
                     'label' => 'Terminaux',
                     'href' => url('back-office/atak/realisme'),

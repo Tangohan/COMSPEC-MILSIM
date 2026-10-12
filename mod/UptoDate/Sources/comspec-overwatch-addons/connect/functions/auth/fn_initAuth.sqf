@@ -3,6 +3,8 @@
     Pas de fenêtre de connexion ici (menu Connexion Athena en secours).
 */
 if (!hasInterface) exitWith {};
+// Service Athéna : rien tant que le joueur n'a pas répondu « Oui » (fn_athenaChoiceShow).
+if (([] call comspec_overwatch_connect_fnc_athenaMode) isNotEqualTo "on") exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_AuthInitStarted", false]) exitWith {};
 missionNamespace setVariable ["COMSPEC_AuthInitStarted", true, false];
 missionNamespace setVariable ["comspec_overwatch_auth_state", "INITIALIZING", false];

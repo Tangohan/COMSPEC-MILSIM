@@ -343,6 +343,18 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
     if (isNil "COMSPEC_BootHandshakeSpawn") then {
         COMSPEC_BootHandshakeSpawn = true;
         0 spawn {
+        // Service Athéna : attendre la réponse du joueur (écran ouvert par XEH_postInitClient au premier lancement).
+        if (([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "") then {
+            missionNamespace setVariable ["COMSPEC_AthenaChoiceWaiting", true, false];
+            ["INFO", "Athena", "Service Athéna pas encore choisi — attente de la réponse du joueur"] call comspec_overwatch_connect_fnc_log;
+            waitUntil { uiSleep 0.5; ([] call comspec_overwatch_connect_fnc_athenaMode) isNotEqualTo "" };
+            missionNamespace setVariable ["COMSPEC_AthenaChoiceWaiting", false, false];
+        };
+        if (([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "off") exitWith {
+            ["INFO", "Athena", "Service Athéna refusé — ATAK local, aucune connexion"] call comspec_overwatch_connect_fnc_log;
+            missionNamespace setVariable ["COMSPEC_BootHandshakeDone", true, false];
+            missionNamespace setVariable ["COMSPEC_MedicalAlertsArmed", true, false];
+        };
         ["INFO", "Athena", "Handshake démarré"] call comspec_overwatch_connect_fnc_log;
         private _ok = [] call comspec_overwatch_connect_fnc_waitAthenaReady;
         ["INFO", "Athena", format ["Handshake terminé ok=%1", _ok]] call comspec_overwatch_connect_fnc_log;
@@ -350,6 +362,8 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
         if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
         if !([] call comspec_overwatch_connect_fnc_isReady) then {
             ["WARN", "Boot", "Session Athena absente — attente d’une connexion"] call comspec_overwatch_connect_fnc_log;
+            // « Oui » au service Athéna sans session : proposer tout de suite de lier le compte.
+            [] call comspec_overwatch_connect_fnc_athenaOfferLink;
             private _loginUntil = diag_tickTime + 600;
             waitUntil {
                 ([] call comspec_overwatch_connect_fnc_isReady)
@@ -561,8 +575,11 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
         };
     };
     if (isNil "COMSPEC_OutboxFlushPFH") then {
+        // Rejeu en spawn (envois via extAwait, sans figer le jeu), un seul à la fois, et seulement si la file n'est pas vide.
         COMSPEC_OutboxFlushPFH = [{
-            [] call comspec_overwatch_connect_fnc_outboxFlush;
+            if (missionNamespace getVariable ["COMSPEC_OutboxBusy", false]) exitWith {};
+            if ((profileNamespace getVariable ["COMSPEC_Outbox", []]) isEqualTo []) exitWith {};
+            0 spawn { [] call comspec_overwatch_connect_fnc_outboxFlush; };
         }, 10, []] call CBA_fnc_addPerFrameHandler;
     };
 

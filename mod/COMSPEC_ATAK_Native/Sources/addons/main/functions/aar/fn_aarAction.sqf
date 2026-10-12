@@ -34,6 +34,7 @@ switch (_act) do {
     case "follow": { _p set ["follow", !(_p getOrDefault ["follow", false])]; call _render; };
     case "clear": {
         missionNamespace setVariable ["COMSPEC_ATAK_Aar", []];
+        missionNamespace setVariable ["COMSPEC_ATAK_AarStr", createHashMap];
         missionNamespace setVariable ["COMSPEC_ATAK_AarEvents", []];
         _p set ["idx", 0]; _p set ["playing", false];
         ["INFO", "Enregistrement de mission effacé", 3, 10] call comspec_atak_native_fnc_notify;

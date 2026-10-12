@@ -7,7 +7,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Marque cet objet comme nœud de renseignement numérique. Pas un outil de piratage : le contenu est écrit par le scénario.";
             property = "comspec_sse_domex_enabled";
             control = "Checkbox";
-            expression = "_this setVariable ['comspec_sse_domex_enabled', _value, true]; if (_value) then { _this setVariable ['comspec_sse_enabled', true, true]; };";
+            expression = "_this setVariable ['comspec_sse_domex_enabled', _value, isServer]; if (_value) then { _this setVariable ['comspec_sse_enabled', true, isServer]; };";
             defaultValue = "false";
             typeName = "BOOL";
             condition = "objectSimulated - objectBrain";
@@ -17,7 +17,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Référence stable du support (ex. PC-KESTREL-04). Sert de lien entre la mission et le laboratoire.";
             property = "comspec_sse_domex_nodeId";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_domex_nodeId', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_nodeId', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -27,7 +27,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Nature du support numérique.";
             property = "comspec_sse_domex_deviceType";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_deviceType', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_deviceType', _value, isServer];";
             defaultValue = "'ordinateur'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -48,7 +48,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Nom ou fiche déjà connue (ex. HASSAN Karim). Ce n’est pas une preuve d’attribution.";
             property = "comspec_sse_domex_owner";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_domex_owner', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_owner', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -58,7 +58,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Groupe ou structure fictive à laquelle le support semble appartenir.";
             property = "comspec_sse_domex_org";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_domex_org', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_org', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -68,7 +68,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Nom du réseau de scénario (ex. KESTREL-LAN). Aucune technique réelle n’est simulée.";
             property = "comspec_sse_domex_network";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_domex_network', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_network', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -78,7 +78,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Décoché : le support est visible mais ne livre rien.";
             property = "comspec_sse_domex_exploitable";
             control = "Checkbox";
-            expression = "_this setVariable ['comspec_sse_domex_exploitable', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_exploitable', _value, isServer];";
             defaultValue = "true";
             typeName = "BOOL";
             condition = "objectSimulated - objectBrain";
@@ -88,7 +88,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Les joueurs peuvent exploiter le support sur place.";
             property = "comspec_sse_domex_accessPhysical";
             control = "Checkbox";
-            expression = "_this setVariable ['comspec_sse_domex_accessPhysical', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_accessPhysical', _value, isServer];";
             defaultValue = "true";
             typeName = "BOOL";
             condition = "objectSimulated - objectBrain";
@@ -98,7 +98,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Si coché, une partie du contenu peut être révélée sans saisie physique, plus pauvre que l’accès de près.";
             property = "comspec_sse_domex_accessRemote";
             control = "Checkbox";
-            expression = "_this setVariable ['comspec_sse_domex_accessRemote', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_accessRemote', _value, isServer];";
             defaultValue = "false";
             typeName = "BOOL";
             condition = "objectSimulated - objectBrain";
@@ -108,7 +108,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Durée et pauvreté du contenu à distance. Ce n’est pas un vrai chiffrement.";
             property = "comspec_sse_domex_security";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_security', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_security', _value, isServer];";
             defaultValue = "'moyenne'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -123,7 +123,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Oriente les contenus proposés par le laboratoire.";
             property = "comspec_sse_domex_profile";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_profile', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_profile', _value, isServer];";
             defaultValue = "'generique'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -140,7 +140,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Temps d'exploitation scénarisé avant que les contenus arrivent.";
             property = "comspec_sse_domex_duration";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_duration', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_duration', _value, isServer];";
             defaultValue = "'180'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -156,7 +156,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "État de départ. Le chef de mission peut le changer en cours de partie.";
             property = "comspec_sse_domex_stage";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_stage', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_stage', _value, isServer];";
             defaultValue = "'non_identifie'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -173,7 +173,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Nature du premier renseignement contenu.";
             property = "comspec_sse_domex_p1_type";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_p1_type', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_p1_type', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -195,7 +195,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Ce que le joueur lira. Les entités liées se saisissent ci-dessous, une par ligne.";
             property = "comspec_sse_domex_p1_text";
             control = "EditMulti5";
-            expression = "_this setVariable ['comspec_sse_domex_p1_text', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_p1_text', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -205,7 +205,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Un fragment ou un leurre devra être corroboré.";
             property = "comspec_sse_domex_p1_quality";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_p1_quality', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_p1_quality', _value, isServer];";
             defaultValue = "'complet'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -220,7 +220,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Comment le renseignement parvient au bureau.";
             property = "comspec_sse_domex_p1_channel";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_p1_channel', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_p1_channel', _value, isServer];";
             defaultValue = "'physique'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -235,7 +235,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "À quel moment le renseignement rejoint la file.";
             property = "comspec_sse_domex_p1_reveal";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_p1_reveal', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_p1_reveal', _value, isServer];";
             defaultValue = "'immediat'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -250,7 +250,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Format : Nom | type. Types : lieu, personne, organisation, evenement, objectif, frequence, vehicule, support.";
             property = "comspec_sse_domex_p1_entities";
             control = "EditMulti3";
-            expression = "_this setVariable ['comspec_sse_domex_p1_entities', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_p1_entities', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -260,7 +260,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Nature du second renseignement contenu.";
             property = "comspec_sse_domex_p2_type";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_p2_type', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_p2_type', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -282,7 +282,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Renseignement scénarisé. Ce n'est pas une preuve.";
             property = "comspec_sse_domex_p2_text";
             control = "EditMulti5";
-            expression = "_this setVariable ['comspec_sse_domex_p2_text', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_p2_text', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -292,7 +292,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Un fragment ou un leurre devra être corroboré.";
             property = "comspec_sse_domex_p2_quality";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_p2_quality', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_p2_quality', _value, isServer];";
             defaultValue = "'complet'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -307,7 +307,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Comment le renseignement parvient au bureau.";
             property = "comspec_sse_domex_p2_channel";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_p2_channel', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_p2_channel', _value, isServer];";
             defaultValue = "'physique'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -322,7 +322,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "À quel moment le renseignement rejoint la file.";
             property = "comspec_sse_domex_p2_reveal";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_domex_p2_reveal', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_p2_reveal', _value, isServer];";
             defaultValue = "'immediat'";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";
@@ -337,7 +337,7 @@ class COMSPEC_SSE_Domex {
             tooltip = "Format : Nom | type (lieu, personne, organisation…).";
             property = "comspec_sse_domex_p2_entities";
             control = "EditMulti3";
-            expression = "_this setVariable ['comspec_sse_domex_p2_entities', _value, true];";
+            expression = "_this setVariable ['comspec_sse_domex_p2_entities', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectSimulated - objectBrain";

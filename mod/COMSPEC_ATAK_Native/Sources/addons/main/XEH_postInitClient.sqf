@@ -12,12 +12,15 @@ missionNamespace setVariable ["COMSPEC_ATAK_LegacyBootstrapSuppressed", true, fa
 if ([] call comspec_atak_native_fnc_bridge) then {
     diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPEC Link présent : session Athena partagée, DLL native non initialisée";
 } else {
-    private _athenaUrl = profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"];
-    private _extInit = "COMSPECATAKNativeExtension" callExtension ["Init", [_athenaUrl]];
-    missionNamespace setVariable ["COMSPEC_ATAK_NativeExtensionInit", _extInit, false];
-    private _restore = "COMSPECATAKNativeExtension" callExtension ["RestoreSession", [_athenaUrl, "1.0.0-native"]];
-    missionNamespace setVariable ["COMSPEC_ATAK_NativeAuthRestore", _restore, false];
-    diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPECATAKNativeExtension initialization requested";
+    // Sans COMSPEC Link : la DLL native ne contacte Athena qu'une fois « Oui » choisi au service Athéna (Réglages > Service Athéna).
+    [{ ([] call comspec_atak_native_fnc_athenaMode) isEqualTo "on" }, {
+        private _athenaUrl = profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"];
+        private _extInit = "COMSPECATAKNativeExtension" callExtension ["Init", [_athenaUrl]];
+        missionNamespace setVariable ["COMSPEC_ATAK_NativeExtensionInit", _extInit, false];
+        private _restore = "COMSPECATAKNativeExtension" callExtension ["RestoreSession", [_athenaUrl, "1.0.0-native"]];
+        missionNamespace setVariable ["COMSPEC_ATAK_NativeAuthRestore", _restore, false];
+        diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPECATAKNativeExtension initialization requested";
+    }] call CBA_fnc_waitUntilAndExecute;
 };
 // Porté : le téléphone reste affiché dans le coin et l'on continue à jouer. En main : souris et clavier.
 // Raccourcis (Options > Contrôles > Configurer les addons > COMSPEC ATAK), sur le modèle des interfaces principale / secondaire / tertiaire.
@@ -116,6 +119,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 ["comspec_atak_native_medevacStatus", { ["statusRecv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
 private _eh = addMissionEventHandler ["ExtensionCallback", { _this call comspec_atak_native_fnc_extensionCallback }];
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
+// Service Athéna changé (Oui / Non) : apps Athena affichées ou masquées tout de suite.
+["COMSPEC_AthenaModeChanged", { [{ if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_dockRender; }; }] call CBA_fnc_execNextFrame; }] call CBA_fnc_addEventHandler;
 ["COMSPEC_AthenaLinkChanged", { params ["_state"]; private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["networkState", toUpper _state]; }] call CBA_fnc_addEventHandler;
 
 // COMSPEC Link (déjà installé chez les joueurs) n'ouvre ses boucles de synchro que s'il voit « son » terminal.
@@ -270,7 +275,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 }] call CBA_fnc_addEventHandler;
 
 // Goniométrie : émetteurs estimés par Athena, relus toutes les 15 s quand la couche est active.
-[{ if (profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) then { [] spawn comspec_atak_native_fnc_sigintPoll; }; }, 15] call CBA_fnc_addPerFrameHandler;
+// Seulement avec un téléphone et une carte à l'écran (téléphone ou carte Arma) : inutile sinon.
+[{
+    if !(profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) exitWith {};
+    if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
+    if (isNull ([] call comspec_atak_native_fnc_display) && {!visibleMap}) exitWith {};
+    [] call comspec_atak_native_fnc_sigintPoll;
+}, 15] call CBA_fnc_addPerFrameHandler;
 
 // Menu ACE « Téléphone ATAK » (fn_aceMenu) : les actions d'entretien ci-dessous vont dans son sous-menu Entretien.
 [] call comspec_atak_native_fnc_aceMenu;
@@ -309,6 +320,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     _f set ["target", _tgt];
     private _log = _f getOrDefault ["log", []];
     _log pushBack format ["<t color='#f2ab33'>%1</t> REÇU de %2 · %3", [dayTime, "HH:MM"] call BIS_fnc_timeToString, _from, _summary];
+    while { (count _log) > 50 } do { _log deleteAt 0; };
     _f set ["log", _log];
     ["WARNING", format ["MISSION DE TIR : %1", _summary], 8, 80] call comspec_atak_native_fnc_notify;
     [] call comspec_atak_native_fnc_vibrate;
@@ -393,9 +405,12 @@ addMissionEventHandler ["EntityKilled", {
     private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
     if ((count _queue) isEqualTo 0) exitWith {};
     if ((([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0) exitWith {};
-    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", []];
-    ["SUCCESS", format ["Réseau revenu : %1 envoi(s) en attente partent", count _queue], 4, 30] call comspec_atak_native_fnc_notify;
-    { _x call comspec_atak_native_fnc_netSend; } forEach _queue;
+    // Au plus 5 envois toutes les 2 s : vider toute la file d'un coup figeait le jeu au retour du réseau.
+    private _batch = _queue select [0, 5];
+    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue select [5]];
+    if !(missionNamespace getVariable ["COMSPEC_ATAK_NetFlushing", false]) then { ["SUCCESS", format ["Réseau revenu : %1 envoi(s) en attente partent", count _queue], 4, 30] call comspec_atak_native_fnc_notify; };
+    missionNamespace setVariable ["COMSPEC_ATAK_NetFlushing", (count _queue) > 5];
+    { _x call comspec_atak_native_fnc_netSend; } forEach _batch;
 }, 2] call CBA_fnc_addPerFrameHandler;
 
 // Dégâts du téléphone (fn_deviceImpact) : selon où il est porté (main, gilet, poche, sac), la partie du corps touchée,

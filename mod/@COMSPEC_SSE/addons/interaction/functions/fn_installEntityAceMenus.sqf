@@ -21,7 +21,10 @@ _entity setVariable ["comspec_sse_aceInstalling", true];
 private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", createHashMap];
 if (!(_cache isEqualType createHashMap) || {count _cache == 0}) exitWith {
     _entity setVariable ["comspec_sse_aceInstalling", false];
-    if (!isNil "CBA_fnc_waitAndExecute") then {
+    // Dix essais au plus (5 s) : sans menu en cache, l'objet se relançait toutes les 0,5 s sans fin.
+    private _try = (_entity getVariable ["comspec_sse_aceRetry", 0]) + 1;
+    _entity setVariable ["comspec_sse_aceRetry", _try];
+    if (_try <= 10 && {!isNil "CBA_fnc_waitAndExecute"}) then {
         [{
             params ["_e"];
             if (isNull _e) exitWith {};
@@ -48,7 +51,10 @@ private _rootKey = if (_isPerson) then { "personRoot" } else { "objectRoot" };
 private _root = [_cache getOrDefault [_rootKey, []]] call comspec_sse_fnc_acePadAction;
 if (_root isEqualTo []) exitWith {
     _entity setVariable ["comspec_sse_aceInstalling", false];
-    if (!isNil "CBA_fnc_waitAndExecute") then {
+    // Dix essais au plus (5 s) : sans menu en cache, l'objet se relançait toutes les 0,5 s sans fin.
+    private _try = (_entity getVariable ["comspec_sse_aceRetry", 0]) + 1;
+    _entity setVariable ["comspec_sse_aceRetry", _try];
+    if (_try <= 10 && {!isNil "CBA_fnc_waitAndExecute"}) then {
         [{
             params ["_e"];
             if (isNull _e) exitWith {};

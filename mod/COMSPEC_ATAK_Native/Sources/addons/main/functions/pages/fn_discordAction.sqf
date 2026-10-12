@@ -37,7 +37,7 @@ private _post = {
         params ["_id", "_json"];
         [_id, _json] spawn {
             params ["_id", "_json"];
-            private _raw = "COMSPECExtension" callExtension ["DiscordSend", [_json]];
+            private _raw = (["COMSPECExtension", "DiscordSend", [_json]] call comspec_atak_native_fnc_extAwait);
             private _r = [_raw] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
             _r params ["_ok", "_status", "_detail"];
             if (_status isEqualTo "") then { _detail = "COMSPEC Link à mettre à jour (envoi Discord absent de cette version)."; };
