@@ -72,6 +72,21 @@ class EmailTokenRepository
         return $row ?: null;
     }
 
+    /**
+     * Jeton quel que soit son état (consommé, expiré) : permet d'expliquer au membre pourquoi
+     * le lien ne marche plus au lieu d'un « lien invalide » générique.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function findAnyByHash(string $tokenHash): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM email_tokens WHERE token_hash = ? LIMIT 1');
+        $stmt->execute([$tokenHash]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ?: null;
+    }
+
     public function markConsumed(int $id): void
     {
         $this->pdo->prepare('UPDATE email_tokens SET consumed_at = NOW() WHERE id = ?')->execute([$id]);

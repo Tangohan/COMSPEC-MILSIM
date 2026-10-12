@@ -305,6 +305,15 @@ class AuthController
 
             return Response::redirect(url('login/choisir-espace'));
         }
+        if ((string) $request->query('autre-compte', '') === '1') {
+            // Lien « Se connecter avec un autre compte » : sans cela, l'étape en cours
+            // (code de sécurité, choix de communauté) renvoyait en boucle vers elle-même.
+            Session::forget('pending_login_security_otp');
+            Session::forget('pending_community_selection');
+            Session::forget('pending_verification_email');
+
+            return Response::redirect(url('login'));
+        }
         $pendingOtp = Session::get('pending_login_security_otp');
         if (is_array($pendingOtp) && (int) ($pendingOtp['expires_at'] ?? 0) >= time()) {
             return Response::redirect(url('login/otp'));
@@ -317,8 +326,11 @@ class AuthController
         ) {
             return Response::redirect(url('login/select-community'));
         }
+        $oldEmail = Session::getFlash('login_old_email');
+
         return Response::view('auth.login', [
             'title' => __('auth.title_login'),
+            'oldEmail' => is_string($oldEmail) ? $oldEmail : '',
         ]);
     }
 
@@ -368,6 +380,7 @@ class AuthController
                 substr($email, 0, 120)
             );
             $this->loginSecurityNotifications->onFailedLogin($request, $email);
+            Session::flash('login_old_email', $email);
             Session::flash('error', __('auth.flash_invalid_credentials'));
             return Response::redirect(url('login'));
         }
@@ -427,6 +440,7 @@ class AuthController
                 return Response::redirect(url('login'));
             }
             if (($user['status'] ?? '') === 'pending_verification') {
+                Session::set('pending_verification_email', $emailNorm);
                 Session::flash('error', __('auth.flash_confirm_email'));
                 return Response::redirect(url('login'));
             }

@@ -134,7 +134,7 @@ $athena_header_current = 'login';
 
     <div class="ds-alt">
         <p>
-            <a href="<?= htmlspecialchars(url('login'), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('auth.otp_other_account'), ENT_QUOTES, 'UTF-8') ?></a>
+            <a href="<?= htmlspecialchars(url('login') . '?autre-compte=1', ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(__('auth.otp_other_account'), ENT_QUOTES, 'UTF-8') ?></a>
         </p>
     </div>
     </div>

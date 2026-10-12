@@ -7,6 +7,11 @@ namespace App\Services\Email;
 final class EmailTokenPurpose
 {
     public const REGISTER_CONFIRM = 'register_confirm';
+    /**
+     * Durée de validité du lien de confirmation d'inscription (minutes). 15 min était trop court :
+     * beaucoup de membres ouvrent le message plus tard (indésirables, autre appareil).
+     */
+    public const REGISTER_CONFIRM_TTL_MINUTES = 1440;
     public const DEVICE_DENY = 'device_deny';
     /** Code à usage unique pour valider le consentement coopération inter-unités. */
     public const INTERTEAM_CONSENT_OTP = 'interteam_consent_otp';
