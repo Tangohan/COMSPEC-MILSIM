@@ -11,6 +11,17 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vague 2026-10-12 — Socle de recharge CS-10 (ATAK natif 1.13.0, non testé en jeu)
+
+### Nouveau — Socle de recharge 10 téléphones
+- Objet **Socle de recharge CS-10** (`COMSPEC_ATAK_ChargingDock`, éditeur Eden > Objets > Électronique, Zeus) et son kit plié `COMSPEC_ATAK_DockKit` (ACE Équipement > « Poser le socle de recharge » : devant soi, sur une table ou au sol).
+- Modèle 3D : socle anodisé sur deux gradins, berceaux et ailettes en caoutchouc, poignées, prise secteur ; les téléphones posés sont notre Samsung S7 en coque tactique (couleur de coque du propriétaire), écran de charge avec le niveau, voyant par emplacement (rouge, orange, vert) lumineux la nuit.
+- ACE sur le socle : « Poser mon téléphone » (charge et état de l'appareil gardés), « Reprendre mon téléphone · 04 · 87 % », « État du socle », « Replier le socle » (vide). Sans ACE : actions molette en regardant le socle.
+- Serveur : seul le propriétaire (identifiant Steam) reprend son téléphone, Zeus et l'admin toujours. Les emplacements sont mémorisés dans le profil du serveur : un téléphone laissé se retrouve à la partie suivante, chargé du temps écoulé ; les socles posés avec le kit sont recréés à leur place sur la même carte. Attribut Eden « Identifiant du socle » pour retrouver les mêmes téléphones d'une mission à l'autre.
+- Réglages serveur **COMSPEC > ATAK · Socle de recharge** : vitesse de charge (1,5 % par minute), charge entre deux parties, mémoriser les socles posés, tout le monde peut reprendre n'importe quel téléphone.
+
+---
+
 ## Vague 2026-10-12 — Tablette durcie et ATAK ouvert sur le JPC (ATAK natif 1.12.0, non testé en jeu)
 
 ### Nouveau — Tablette durcie à touches (demande de TTRD)
@@ -82,6 +93,8 @@ Non testé en jeu. Inclut les correctifs de performance de la PR #629 (même bas
 - **Non** : l'ATAK reste en local (carte, BFT, messages et apps entre joueurs du serveur). Aucune connexion à Athena, aucune synchro, aucune note bêta ni inscription envoyée ; Overwatch est coupé (`comspec_overwatch_enabled` forcé à faux même si un réglage CBA le rallume). Les apps Athena, Synchro, Discord et Recherchés disparaissent du lanceur et du dock.
 - **Oui** : comportement habituel (COMSPEC Link, restauration de la session, synchro). Sans session, la fenêtre Connexion Athena s'ouvre pour lier le compte tout de suite.
 - Le choix est enregistré dans le profil Arma (`COMSPEC_AthenaMode` = `on` / `off`) et se change à tout moment : téléphone ATAK > Réglages > **Service Athéna** (Oui / Non, revoir la question, lier mon compte) ou menu Échap > bouton **Service Athéna**. Passer à Non garde la clé enregistrée : revenir à Oui ne demande pas de relier le compte.
+
+---
 
 ## Vague 2026-10-11 (suite) — Un téléphone qui réagit (ATAK natif 1.9.0)
 
