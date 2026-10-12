@@ -65,8 +65,9 @@ final class ReconConfidentialStorageAssetTest extends TestCase
         self::assertStringContainsString("'no-store, private, max-age=0'", $ctrl);
         self::assertStringContainsString('canViewConfidentialRecon()', $ctrl);
         self::assertStringNotContainsString('ReconImageStorage::publicUrl(', $ctrl);
-        // Relais Discord : toujours sauté pour un cliché confidentiel.
-        self::assertStringContainsString("if (\$isConfidential) {\n                    return;", $ctrl);
+        // Relais Discord : cliché confidentiel relayé sans image (message, lien de lecture habilité, note).
+        self::assertStringContainsString("'read_url' => (string) (\$row['url'] ?? '')", $ctrl);
+        self::assertStringNotContainsString("if (\$isConfidential) {\n                    return;", $ctrl);
 
         $file = substr($ctrl, (int) strpos($ctrl, 'public function reconImagesFile('), 2400);
         self::assertStringContainsString('return $notFound();', $file);

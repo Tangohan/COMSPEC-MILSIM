@@ -524,6 +524,8 @@ public static partial class Extension
             var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
             var code = (int)response.StatusCode;
             Interlocked.Exchange(ref _telemetryLastLatencyMs, Math.Max(0, Environment.TickCount64 - started));
+            // Lot de positions / télémétrie compté avec les autres requêtes (app Réseau : réponses d'Athena).
+            JournalHttp(DateTime.UtcNow.Ticks - Math.Max(0, Environment.TickCount64 - started) * TimeSpan.TicksPerMillisecond, code);
             Interlocked.Exchange(ref _telemetryLastFlushMs, Environment.TickCount64);
 
             if (code == 429 || code == 503)
@@ -569,6 +571,7 @@ public static partial class Extension
         catch
         {
             Interlocked.Exchange(ref _telemetryLastLatencyMs, Math.Max(0, Environment.TickCount64 - started));
+            JournalHttp(DateTime.UtcNow.Ticks - Math.Max(0, Environment.TickCount64 - started) * TimeSpan.TicksPerMillisecond, -1);
             NoteTransientPostFailure(-1, url, payload, response: null);
             RequeueTelemetryItems(items);
             Interlocked.Increment(ref _telemetryBatchFail);

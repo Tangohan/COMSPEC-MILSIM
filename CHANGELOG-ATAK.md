@@ -11,11 +11,28 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Correctif 2026-10-12 — Langue dans l'app Réglages (ATAK natif 1.15.2)
+## Correctif 2026-10-12 — Langue dans l'app Réglages (ATAK natif 1.16.1)
 
 Non testé en jeu. TTRD ne trouvait pas où passer le téléphone en anglais.
 - Nouvelle catégorie **Langue / Language** en tête de l'app Réglages du téléphone : FRANÇAIS, ENGLISH ou AUTO (langue du jeu). Même réglage que le menu CBA, la page se redessine aussitôt dans la langue choisie.
 - Le réglage CBA reste dans Échap > Options > Options des addons > COMSPEC, onglet Client, section **ATAK · Langue / Language** (plus bas dans la liste des sections ATAK).
+
+## Vague 2026-10-12 (suite) — Réseau, drone, photos drone sur Discord, saleté (ATAK natif 1.16.0, COMSPEC Link 2.0.69)
+
+Non testé en jeu. Corrige l'app Réseau qui affichait « Athena hors ligne · réponse jamais · 0 paquet envoyé » alors que la position arrivait sur le site et que l'icône de liaison était verte.
+- Cause : la page lisait des compteurs que rien ne remplissait (dernière réponse posée seulement à la liaison, paquets jamais comptés).
+- Nouveau `fn_athenaPulse` : lit en mémoire dans COMSPEC Link, sans requête réseau, les lots de positions et de télémétrie réussis (`GetTelemetryMetrics`) et le journal d'envoi. Marche avec la DLL actuelle.
+- COMSPEC Link 2.0.69 (DLL à recompiler) : `SendQueue.Status` ajoute requêtes, réponses, âge de la dernière réponse, latence et perte sur 15 min, lots de télémétrie compris.
+- Joueur immobile (rien à renvoyer, aucun échec) : Athena reste « en ligne ».
+- Photos drone sur le même webhook Discord que les Quick Pictures (site seulement) : floutées si SSE, sans image si confidentielles (message, lien de lecture sur Athena et note de confidentialité).
+- Saleté de l'écran et de la coque bien plus discrète : poussière fine au lieu de grosses taches floues.
+- Drone, flux vidéo : la neige NO DATA ne s'affiche plus que pour une vraie perte (PiP coupée, drone perdu ou en veille, liaison perdue), raison toujours lisible dessous ; caméra libérée ou image sur une ancienne cible de rendu réparée sur place. Neige plus fine.
+- Drone, liaison qui faiblit (dès L 3/4) : effets de perte de flux façon TNT (image figée, macroblocs, bandes déchirées, blocs vert/magenta), de plus en plus fréquents jusqu'au NO DATA.
+- Drone, viseur photo : viser au glisser ou au clavier, zoom molette / + / -, MARQUER UNE CIBLE, cadres et cercles de surbrillance gravés dans la photo.
+- Drone, menus en français clair avec info-bulles, regroupés (CAMÉRA, CIBLES, VOL, AFFICHAGE) ; vue drone de la carte : CAMÉRA DEVANT, OUBLIER LES CIBLES, PETITE FENÊTRE, RETOUR À LA CARTE.
+- Drone, envoi de la photo : fenêtre plein écran (grand aperçu, titre, description, SSE, CONFIDENTIEL, ENVOYER À ATHENA), sans défilement.
+- Saisie dans un champ du téléphone : les touches ne partent plus au jeu (taper « a » ou « e » faisait pencher le personnage).
+- Carte de l'app Plan : les clics posent de nouveau les sommets des zones (le focus resté sur un bouton mettait la zone de contenu devant la carte).
 
 ## Correctif 2026-10-12 — ATAK sur le JPC : bon modèle et écran vivant (ATAK natif 1.15.1)
 

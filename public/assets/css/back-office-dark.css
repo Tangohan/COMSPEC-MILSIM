@@ -191,3 +191,36 @@ html[data-bo-theme="dark"] .account-hub__ov-check.is-todo .account-hub__ov-check
 html[data-bo-theme="dark"] .account-hub__btn--ink { background: #e6ebe8; color: #0c1116; }
 html[data-bo-theme="dark"] .account-hub__btn--ink:hover { background: #fff; color: #0c1116; }
 html[data-bo-theme="dark"] .account-hub__ov-check.is-todo .account-hub__ov-check-mark { color: #3d2903; }
+
+/* ATAK : Escouades en jeu, Temps d'écran et rôles, Files d'envoi Athena (aksq-, sqf-) :
+   jetons de nuit (les --ds-color-* restent clairs) et cellules du tableau sur la même surface. */
+html[data-bo-theme="dark"] .aksq {
+  --aksq-bg: #0d1110;
+  --aksq-surface: #141a18;
+  --aksq-line: #26302c;
+  --aksq-text: #e6ebe8;
+  --aksq-muted: #9aa6a1;
+  --aksq-accent: #12d18e;
+  --aksq-accent-soft: rgba(18, 209, 142, 0.1);
+  color: #e6ebe8;
+}
+html[data-bo-theme="dark"] .aksq__hero { background: linear-gradient(160deg, #141a18, rgba(18, 209, 142, 0.06)); }
+html[data-bo-theme="dark"] .aksq__table th,
+html[data-bo-theme="dark"] .aksq__table td { background: transparent; color: #dbe0de; border-bottom-color: #26302c; }
+html[data-bo-theme="dark"] .aksq__table thead th { background: #18201d; color: #9aa6a1; }
+html[data-bo-theme="dark"] .aksq__table tbody tr:hover th,
+html[data-bo-theme="dark"] .aksq__table tbody tr:hover td { background: #17211d; }
+html[data-bo-theme="dark"] .aksq__period.is-active { color: #04130d; }
+html[data-bo-theme="dark"] .aksq__notice { background: #2a2212; border-color: #4d3c17; color: #f5d48a; }
+html[data-bo-theme="dark"] .sqf { --sqf-none: #5b6763; --sqf-offline: #7c8a99; }
+html[data-bo-theme="dark"] .sqf__table tr.is-stale th,
+html[data-bo-theme="dark"] .sqf__table tr.is-stale td { color: #7f8b86; }
+html[data-bo-theme="dark"] .sqf__table tr.is-current th,
+html[data-bo-theme="dark"] .sqf__table tr.is-current td { background: rgba(18, 209, 142, 0.08); }
+html[data-bo-theme="dark"] .sqf__cell { opacity: 0.35; }
+html[data-bo-theme="dark"] .sqf__cell--ok, html[data-bo-theme="dark"] .sqf__cell--slow,
+html[data-bo-theme="dark"] .sqf__cell--overloaded, html[data-bo-theme="dark"] .sqf__cell--offline { opacity: 1; }
+html[data-bo-theme="dark"] .sqf__step { background: rgba(154, 166, 161, 0.12); }
+html[data-bo-theme="dark"] .sqf__error, html[data-bo-theme="dark"] .sqf__bad, html[data-bo-theme="dark"] .sqf__state--failed { color: #f87171; }
+html[data-bo-theme="dark"] .sqf__state--retry, html[data-bo-theme="dark"] .sqf__state--sending { color: #fbbf24; }
+html[data-bo-theme="dark"] .sqf__state--done { color: #34d399; }

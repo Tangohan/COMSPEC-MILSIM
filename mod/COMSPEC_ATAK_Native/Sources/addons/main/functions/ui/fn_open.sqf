@@ -36,7 +36,8 @@ if (_interactive) exitWith {
             if (["PhoneMain", [0x16, [false, false, true]]] call _hit) exitWith { [{ [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyMain", {}]); }] call CBA_fnc_execNextFrame; true };
             if (["PhoneOrient", [0x16, [false, true, true]]] call _hit) exitWith { [{ [] call comspec_atak_native_fnc_orientationToggle; }] call CBA_fnc_execNextFrame; true };
             if (["PhonePosition", [0x16, [true, false, true]]] call _hit) exitWith { [{ [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyPosition", {}]); }] call CBA_fnc_execNextFrame; true };
-            false
+            // Saisie dans un champ du téléphone : la touche ne part pas au jeu (fn_keyBlock).
+            _this call comspec_atak_native_fnc_keyBlock
         }];
     };
     !isNull _disp

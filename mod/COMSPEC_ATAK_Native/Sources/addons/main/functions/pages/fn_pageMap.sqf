@@ -485,24 +485,36 @@ if (_dv isNotEqualTo "OFF") then {
         ["build", [_vx, _vy, _vw, _vh], "FULL", false] call comspec_atak_native_fnc_droneFlir;
         if (_interactive) then {
             private _zoom = missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1];
+            // Libellés : ce que fait l'appui, en clair ; détail en infobulle. Groupes : cible, caméra, affichage.
+            // [libellé, code, état ("" | "on" vert | "red"), aide, largeur relative]
             private _btns = [
-                ["MARQUER", ["lock"] call _act, true],
-                [["JOUR", "NUIT", "THERM."] select (missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0]), ["vision"] call _act, false],
-                ["x1", ["zoom", 1] call _act, _zoom isEqualTo 1], ["x2", ["zoom", 2] call _act, _zoom isEqualTo 2], ["x4", ["zoom", 4] call _act, _zoom isEqualTo 4],
-                ["DEVANT", ["camAim", ""] call _act, false],
-                ["LIBÉRER", { ["release", ""] call comspec_atak_native_fnc_lockAction; }, false],
-                ["INCRUSTER", ["view", "INSET"] call _act, false],
-                ["CARTE", ["view", "OFF"] call _act, false]
+                ["MARQUER LA CIBLE", ["lock"] call _act, "red", "Marque la cible sous le réticule (touche « Marquer la cible ») : LOCK suivi sur la carte. Clic sur l'image : la caméra vise ce point", 1.4],
+                ["OUBLIER LES CIBLES", { ["release", ""] call comspec_atak_native_fnc_lockAction; }, "", "Retire le marquage de toutes les cibles marquées (LOCK)", 1.4],
+                ["|"],
+                [format ["VISION : %1", ["JOUR", "NUIT", "THERM."] select (missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0])], ["vision"] call _act, "", "Change le mode de la caméra : jour → nuit (intensification de lumière) → thermique", 1.3],
+                ["ZOOM x1", ["zoom", 1] call _act, ["", "on"] select (_zoom isEqualTo 1), "Zoom de la caméra : x1 (champ large)", 0.8],
+                ["x2", ["zoom", 2] call _act, ["", "on"] select (_zoom isEqualTo 2), "Zoom de la caméra : x2", 0.5],
+                ["x4", ["zoom", 4] call _act, ["", "on"] select (_zoom isEqualTo 4), "Zoom de la caméra : x4", 0.5],
+                ["CAMÉRA DEVANT", ["camAim", ""] call _act, "", "Remet la caméra du drone droit devant", 1.2],
+                ["|"],
+                ["PETITE FENÊTRE", ["view", "INSET"] call _act, "", "Réduit la vue du drone dans un coin de la carte", 1.2],
+                ["RETOUR À LA CARTE", ["view", "OFF"] call _act, "", "Ferme la vue du drone et revient à la carte", 1.4]
             ];
-            private _bwid = (_mw - _pad * 2) / (count _btns);
+            private _gap = _pad * 0.8;
+            private _wsum = 0;
+            { if ((count _x) > 1) then { _wsum = _wsum + (_x select 4); }; } forEach _btns;
+            private _unit = (_mw - _pad * 2 - _gap * 2) / _wsum;
             private _byb = _by + _mh - _bh2 - _pad / 2;
+            private _xb = _bx + _pad;
             {
-                _x params ["_lbl", "_code", "_on"];
-                private _b = ["COMSPEC_RscButton", [_bx + _pad + _forEachIndex * _bwid, _byb, _bwid - _pad / 3, _bh2], _lbl] call _mk;
-                _b ctrlSetFontHeight (_fs * 0.78);
-                _b ctrlSetBackgroundColor ([[0.08, 0.1, 0.09, 0.9], [0.36, 0.78, 0.42, 0.9]] select _on);
-                if (_lbl isEqualTo "MARQUER") then { _b ctrlSetBackgroundColor [0.75, 0.18, 0.15, 0.95]; _b ctrlSetTooltip (("Marque la cible sous le réticule (touche « Marquer la cible »). Clic sur l'image : la nacelle vise ce point.") call comspec_atak_native_fnc_tr); };
+                if ((count _x) isEqualTo 1) then { _xb = _xb + _gap; continue; };
+                _x params ["_lbl", "_code", "_state", "_tip", "_wk"];
+                private _b = ["COMSPEC_RscButton", [_xb, _byb, _unit * _wk - _pad / 3, _bh2], _lbl] call _mk;
+                _b ctrlSetFontHeight (_fs * 0.7);
+                _b ctrlSetBackgroundColor (switch (_state) do { case "on": { [0.36, 0.78, 0.42, 0.9] }; case "red": { [0.75, 0.18, 0.15, 0.95] }; default { [0.08, 0.1, 0.09, 0.9] }; });
+                _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
                 _b ctrlAddEventHandler ["ButtonClick", _code];
+                _xb = _xb + _unit * _wk;
             } forEach _btns;
         };
     } else {
@@ -516,15 +528,16 @@ if (_dv isNotEqualTo "OFF") then {
             private _bh3 = _fs * 1.2;
             private _b3w = _iw2 / 3;
             {
-                _x params ["_lbl", "_code", "_col"];
+                _x params ["_lbl", "_code", "_col", "_tip"];
                 private _b = ["COMSPEC_RscButton", [_ix + _forEachIndex * _b3w, _iy + _ih2, _b3w - pixelW * 2, _bh3], _lbl] call _mk;
-                _b ctrlSetFontHeight (_fs * 0.72);
+                _b ctrlSetFontHeight (_fs * 0.66);
                 _b ctrlSetBackgroundColor _col;
+                _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
                 _b ctrlAddEventHandler ["ButtonClick", _code];
             } forEach [
-                ["MARQUER", ["lock"] call _act, [0.75, 0.18, 0.15, 0.95]],
-                ["AGRANDIR", ["view", "FULL"] call _act, [0.08, 0.1, 0.09, 0.9]],
-                ["FERMER", ["view", "OFF"] call _act, [0.08, 0.1, 0.09, 0.9]]
+                ["MARQUER", ["lock"] call _act, [0.75, 0.18, 0.15, 0.95], "Marque la cible sous le réticule (LOCK suivi sur la carte)"],
+                ["GRANDE VUE", ["view", "FULL"] call _act, [0.08, 0.1, 0.09, 0.9], "La vue du drone remplace la carte"],
+                ["FERMER LA VUE", ["view", "OFF"] call _act, [0.08, 0.1, 0.09, 0.9], "Ferme la vue du drone"]
             ];
         };
     };

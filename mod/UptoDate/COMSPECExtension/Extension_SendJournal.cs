@@ -34,6 +34,12 @@ public static partial class Extension
     // (moment, latence ms) des requêtes récentes ; (moment, type) des incidents : "429", "5xx", "timeout".
     private static readonly Queue<(long At, int Ms)> JournalLatency = new();
     private static readonly Queue<(long At, string Kind)> JournalIncidents = new();
+    // Toutes les requêtes vers Athena depuis le lancement (positions comprises) : app Réseau du téléphone
+    // (paquets envoyés, dernière réponse, perte), qui ne voyait aucune réponse aux envois de position.
+    private static long _httpReqTotal;
+    private static long _httpOkTotal;
+    private static long _httpLastOkTicks;
+    private static int _httpLastMs = -1;
     private static long _journalVersion;
     private static long _journalReportedVersion = -1;
     private static long _journalReportAtTicks;
@@ -178,6 +184,13 @@ public static partial class Extension
         {
             var now = DateTime.UtcNow.Ticks;
             var ms = (int)Math.Min(int.MaxValue, (now - startedTicks) / TimeSpan.TicksPerMillisecond);
+            System.Threading.Interlocked.Increment(ref _httpReqTotal);
+            if (code is >= 200 and < 300)
+            {
+                System.Threading.Interlocked.Increment(ref _httpOkTotal);
+                System.Threading.Interlocked.Exchange(ref _httpLastOkTicks, now);
+                _httpLastMs = ms;
+            }
             lock (JournalLock)
             {
                 JournalLatency.Enqueue((now, ms));
@@ -262,6 +275,8 @@ public static partial class Extension
 
     /// <summary>
     /// SendQueue.Status : "OK|en file\tenvoi\tnouvel essai\téchec\tenvoyés\tétat\tlatence moy.\tp95\t429\t5xx\tdélais"
+    /// \trequêtes depuis le lancement\tréponses 2xx\tâge de la dernière réponse 2xx en s (-1 : jamais)\tlatence de cette réponse ms
+    /// \trequêtes sur la fenêtre\tincidents sur la fenêtre (429, 5xx, délais)
     /// puis une ligne par envoi suivi (le plus récent d'abord) : id\tlibellé\tétat\tessais\tâge s\tdernière erreur.
     /// </summary>
     private static string JournalStatusForSqf()
@@ -269,6 +284,13 @@ public static partial class Extension
         var s = JournalSummarize();
         var sb = new StringBuilder("OK|");
         sb.Append(string.Join('\t', s.Queued, s.Sending, s.Retry, s.Failed, s.Done, s.Overload, s.AvgMs, s.P95Ms, s.H429, s.H5xx, s.Timeouts));
+        var lastOk = System.Threading.Interlocked.Read(ref _httpLastOkTicks);
+        var lastOkAge = lastOk <= 0 ? -1 : (long)((DateTime.UtcNow.Ticks - lastOk) / TimeSpan.TicksPerSecond);
+        int winReq;
+        var since = DateTime.UtcNow.Ticks - TimeSpan.FromSeconds(JournalWindowSeconds).Ticks;
+        lock (JournalLock) winReq = JournalLatency.Count(l => l.At >= since);
+        sb.Append('\t').Append(string.Join('\t', System.Threading.Interlocked.Read(ref _httpReqTotal), System.Threading.Interlocked.Read(ref _httpOkTotal),
+            lastOkAge, lastOk <= 0 ? -1 : _httpLastMs, winReq, s.H429 + s.H5xx + s.Timeouts));
         var now = NowUnix();
         List<JournalItem> items;
         lock (JournalLock) items = JournalItems.Values.OrderByDescending(i => i.UpdatedAt).Take(30).ToList();

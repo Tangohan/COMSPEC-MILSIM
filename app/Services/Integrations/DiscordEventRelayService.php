@@ -12,6 +12,7 @@ use App\Services\Tactical\MissionWeatherService;
 use App\Support\DiscordChannelInput;
 use App\Support\DiscordWebhookCatalog;
 use App\Support\QuickPictureDiscordEmbed;
+use App\Support\ReconPhotoBlur;
 use App\Support\ReconImageStorage;
 
 /**
@@ -169,15 +170,19 @@ final class DiscordEventRelayService
      * Appelée une fois la photo enregistrée sur Athena (fin de POST /api/recon/images) :
      * la photo est jointe au message (copie JPEG allégée) et affichée dans un embed avec
      * opérateur, position, zone, date/heure en jeu et réelle. Une même photo n'est publiée qu'une fois.
+     * Clichés du drone (app Drone du téléphone) : même salon. Fiche SSE : image floutée ; fiche confidentielle :
+     * aucune image, seulement le message, le lien de lecture sur Athena (read_url) et une note de confidentialité.
      *
-     * @param array<string, mixed> $meta données de la photo (+ map_id, world_name, location, game_date, game_time facultatifs)
+     * @param array<string, mixed> $meta données de la photo (+ map_id, world_name, location, game_date, game_time, read_url facultatifs)
      */
     public function notifyQuickPicture(int $tenantId, string $filePath, array $meta): void
     {
         $device = strtoupper(trim((string) ($meta['device_type'] ?? '')));
-        if ($device !== '' && !in_array($device, ['CTAB', 'TABLET', 'PHONE', 'ATAK'], true)) {
+        if ($device !== '' && !in_array($device, ['CTAB', 'TABLET', 'PHONE', 'ATAK'], true)
+            && !QuickPictureDiscordEmbed::isDronePhoto($meta)) {
             return;
         }
+        $mode = QuickPictureDiscordEmbed::mode($meta);
         $url = $this->resolveUrl($tenantId, DiscordWebhookCatalog::KEY_QUICK_PICTURE);
         if ($url === null) {
             return;
@@ -207,8 +212,16 @@ final class DiscordEventRelayService
         self::$sentThisRequest[$dedupKey] = true;
 
         $ctx = $this->quickPictureContext($tenantId, $meta);
+        $readUrl = trim((string) ($meta['read_url'] ?? ''));
+        if ($readUrl !== '' && !preg_match('#^https?://#i', $readUrl) && function_exists('url')) {
+            $readUrl = url(ltrim($readUrl, '/'));
+        }
+        $ctx['read_url'] = preg_match('#^https?://#i', $readUrl) === 1 ? $readUrl : '';
         $sent = false;
-        $prepared = $this->prepareDiscordPhoto($filePath);
+        // Confidentiel : aucune image ne part (ni jointe, ni lien public). SSE : copie floutée seulement.
+        $prepared = $mode === QuickPictureDiscordEmbed::MODE_CONFIDENTIAL
+            ? null
+            : $this->prepareDiscordPhoto($filePath, $mode === QuickPictureDiscordEmbed::MODE_SSE);
         if ($prepared !== null) {
             $leaf = 'quick-picture-' . substr(hash('crc32b', $filePath), 0, 8) . '.jpg';
             $embed = QuickPictureDiscordEmbed::build($meta, $ctx + ['attachment' => $leaf]);
@@ -228,7 +241,10 @@ final class DiscordEventRelayService
         }
         if (!$sent) {
             // Repli : embed avec lien public de la photo (si le site est en https), sinon texte seul.
-            $embed = QuickPictureDiscordEmbed::build($meta, $ctx + ['image_url' => $this->publicPhotoUrl($filePath)]);
+            // Jamais pour un cliché SSE ou confidentiel (le lien public montrerait l'image nette).
+            $embed = QuickPictureDiscordEmbed::build($meta, $ctx + [
+                'image_url' => $mode === QuickPictureDiscordEmbed::MODE_CLEAR ? $this->publicPhotoUrl($filePath) : '',
+            ]);
             try {
                 $res = $this->discord->sendRawEmbed($url, $embed, 'Athena');
                 $sent = !empty($res['ok']);
@@ -320,9 +336,12 @@ final class DiscordEventRelayService
      * Copie JPEG allégée (1920 px max) pour rester sous la limite Discord : une capture PNG
      * du jeu dépasse souvent 8 à 10 Mo et Discord la refusait (seul le texte partait).
      *
+     * $blur (cliché SSE) : copie fortement floutée (ReconPhotoBlur) ; sans GD ni Imagick, ou si le flou
+     * échoue, null (le message part sans image, jamais l'original net).
+     *
      * @return array{path:string, temp:bool}|null
      */
-    private function prepareDiscordPhoto(string $filePath): ?array
+    private function prepareDiscordPhoto(string $filePath, bool $blur = false): ?array
     {
         if ($filePath === '' || !is_file($filePath) || !is_readable($filePath)) {
             return null;
@@ -359,6 +378,14 @@ final class DiscordEventRelayService
                         $im = $dst;
                     }
                 }
+                if ($blur) {
+                    $blurred = ReconPhotoBlur::blurGd($im);
+                    imagedestroy($im);
+                    if ($blurred === null) {
+                        return null;
+                    }
+                    $im = $blurred;
+                }
                 $tmp = tempnam(sys_get_temp_dir(), 'qp_');
                 if ($tmp !== false) {
                     $ok = @imagejpeg($im, $tmp, 85);
@@ -371,6 +398,19 @@ final class DiscordEventRelayService
                     imagedestroy($im);
                 }
             }
+        }
+        if ($blur) {
+            // Sans GD (ou image illisible par GD) : Imagick, sinon pas d'image.
+            $tmp = tempnam(sys_get_temp_dir(), 'qp_');
+            if ($tmp === false) {
+                return null;
+            }
+            if (ReconPhotoBlur::blurFileImagick($filePath, $tmp) && (int) @filesize($tmp) <= DiscordWebhookService::MAX_ATTACHMENT_BYTES) {
+                return ['path' => $tmp, 'temp' => true];
+            }
+            @unlink($tmp);
+
+            return null;
         }
         // Sans GD : fichier d'origine s'il tient dans la limite Discord.
         $ext = strtolower((string) pathinfo($filePath, PATHINFO_EXTENSION));
