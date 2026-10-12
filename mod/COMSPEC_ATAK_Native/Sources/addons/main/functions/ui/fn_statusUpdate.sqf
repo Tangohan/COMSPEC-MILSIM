@@ -136,7 +136,7 @@ private _pageSig = switch (_page) do {
         private _last = _all param [(count _all) - 1, createHashMap];
         [count _all, _last getOrDefault ["id", ""], _last getOrDefault ["time", ""], _last getOrDefault ["body", ""], count (_data getOrDefault ["p2p", []])]
     };
-    case "TASK": { [count ([] call comspec_atak_native_fnc_tasksAll), (values ([] call comspec_atak_native_fnc_tasksAll)) apply { _x getOrDefault ["status", ""] }, (simpleTasks player) apply { taskState _x }] };
+    case "TASK": { [count ([] call comspec_atak_native_fnc_tasksAll), (values ([] call comspec_atak_native_fnc_tasksAll)) apply { _x getOrDefault ["status", ""] }, (simpleTasks player) apply { taskState _x }, (values (missionNamespace getVariable ["COMSPEC_ATAK_OrderAcks", createHashMap])) apply { (values _x) apply { _x select 1 } }] };
     // Débit simulé laissé de côté : il varie sans cesse et faisait redessiner toute la page chaque seconde
     // (la page se rafraîchit d'elle-même toutes les 5 s).
     case "NETWORK": { [_lq get "bars", ([] call comspec_atak_native_fnc_deviceHealth) get "state", count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []])] };

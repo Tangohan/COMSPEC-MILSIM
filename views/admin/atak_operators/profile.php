@@ -120,6 +120,17 @@ $certStatus = $statusMeta(is_array($certificate) ? (string) ($certificate['statu
                     </dd></div>
                     <div class="flex justify-between gap-3"><dt class="text-slate-500">Rôle</dt><dd class="text-slate-800"><?= $h(is_array($live) && trim((string) ($live['role_label'] ?? '')) !== '' ? $live['role_label'] : '—') ?></dd></div>
                 </dl>
+                <?php $roleTimes = is_array($atakOperatorRoleTimes ?? null) ? $atakOperatorRoleTimes : []; ?>
+                <?php if ($roleTimes !== []): ?>
+                <div class="border-t border-slate-100 pt-3">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">Temps par rôle</p>
+                    <ul class="mt-2 space-y-1 text-sm">
+                        <?php foreach (array_slice($roleTimes, 0, 8) as $rt): $sec = (int) $rt['seconds']; $hh = intdiv($sec, 3600); $mm = intdiv($sec % 3600, 60); ?>
+                        <li class="flex justify-between gap-3"><span class="text-slate-700"><?= $h((string) $rt['label']) ?></span><span class="font-semibold tabular-nums text-slate-900"><?= $h($hh > 0 ? $hh . ' h ' . str_pad((string) $mm, 2, '0', STR_PAD_LEFT) : max(1, $mm) . ' min') ?></span></li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
             </article>
 
             <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-3">

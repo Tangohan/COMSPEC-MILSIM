@@ -866,6 +866,14 @@ class PersonnelController
             }
         }
 
+        // Temps passé dans chaque rôle en jeu (pilote, chef, médecin, rôle du slot…), relevé par l'ATAK natif.
+        $atakRoleTimes = [];
+        try {
+            $atakRoleTimes = (new \App\Repositories\AtakScreenTimeRepository())->rolesForUser((int) $tenantId, $uid);
+        } catch (\Throwable) {
+            $atakRoleTimes = [];
+        }
+
         $phaseChecklist = null;
         $phaseTransitions = [];
         $armaSessionActivity = null;
@@ -1065,6 +1073,7 @@ class PersonnelController
             'seniorityGlobal' => is_array($seniorityGlobal) ? $seniorityGlobal : null,
             'seniorityDetailLines' => $seniorityDetailLines,
             'armaPlaytime' => $armaPlaytime,
+            'atakRoleTimes' => $atakRoleTimes,
             'steamProfileSyncOffered' => $steamProfileSyncOffered,
             'personnelOrgHistory' => $personnelOrgHistory,
             'personnelOrgHistorySection' => $personnelOrgHistorySection,

@@ -11,6 +11,35 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Drone : zones interdites, app Marquer tracking, raccourcis, journal en fil (ATAK natif 1.35.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Suite des demandes de TTRD sur le drone (après 1.31.0).
+- **Suivi (ME SUIVRE, escorte)** : le drone ne tourne plus en rond autour d'un joueur immobile. Il garde le cap de la dernière marche et, à moins de 15 m de sa place, reste en stationnaire, caméra sur le joueur, jusqu'à ce qu'il reparte.
+- **Raccourcis CBA** (COMSPEC ATAK, non attribués par défaut) : « Drone : RECHERCHE », « Drone : ME SUIVRE », « Drone : RTB », « Drone : ATTERRIR ». Ordre noté au journal.
+- **Cible marquée (LOCK)** : nouveaux boutons EN MARQUEUR (éditeur de marqueur prérempli à sa position), EN FICHE SSE (fiche FRO préremplie) dans l'onglet CIBLES du drone et dans la nouvelle app ; CAMÉRA DU DRONE accroche la caméra dessus et l'affiche en petit sur la carte.
+- **App MARQUER TRACKING** (Renseignement) : toutes les cibles marquées, filtre TOUTES / ACCROCHÉES / PERDUES / NEUTRALISÉES, CARTE, EN MARQUEUR, EN FICHE SSE, CAMÉRA DU DRONE, OUBLIER, OUBLIER TOUTES ; plus la liste des zones interdites (CARTE, RETIRER).
+- **Zones interdites au drone** : clic droit sur la carte > « Zone interdite au drone » (rayon 200 m, partagée avec le camp, cercle rouge hachuré). Un ordre dont le but y tombe est refusé ; un drone qui y entre en ressort par le bord le plus proche (sauf frappe, atterrissage, retour automatique).
+- **Journal du drone en fil de discussion** : ordres du pilote à droite (PILOTE), retours du drone à gauche (DRONE).
+- Pas encore fait : plusieurs drones à la fois, essaim et rôles simultanés (drone 1 en CQB, drone 2 sur un marqueur), IA de proximité. Le téléphone ne pilote qu'un drone appairé ; c'est un chantier à part.
+- À vérifier en jeu : suivi joueur arrêté puis reparti, les 4 touches, zone posée/retirée et vue par un équipier, drone qui ressort d'une zone, ordre refusé, EN MARQUEUR / EN FICHE SSE, app Marquer tracking, journal.
+
+## Gestes : doigt d'honneur et selfie (ATAK natif 1.34.0)
+
+Non testé en jeu. Demande de TTRD : « une animation pour faire des doigts d'honneur et une animation pour le selfie ». Pas de DLL à recompiler, pas de migration.
+- Deux animations maison (fichiers `anim/*.rtm`, générés par `tools/gen_gestures.py`, sans reprise d'un autre mod). Aperçus filaires : `tools/gen_gestures.py --preview dossier`.
+- **Doigt d'honneur** : bras gauche levé devant l'épaule, dos de la main vers la cible, majeur tendu, deux coups secs vers l'avant (~2,4 s), puis retour. La main gauche quitte le garde-main et y revient : marche aussi fusil en main. Touche CBA « Doigt d'honneur » (COMSPEC ATAK, non attribuée par défaut) et action ACE perso (dans le menu Gestes d'ACE quand il est affiché). Pas en véhicule, inconscient, sous l'eau ni pendant l'appareil photo.
+- **Selfie** : bras droit qui se lève (0,6 s), tendu devant le visage à hauteur des yeux, téléphone tourné vers soi, léger balancement tant que dure le selfie, puis redescend. Joué dans l'app Photo (objectif avant : l'arme est rangée et ressortie quand on repasse à l'objectif arrière ou qu'on quitte l'app) et dans le plein écran (R). Réglage CBA « Animation du selfie » : par défaut `comspec_atak_native_fnc_gestureSelfie` (l'ancien `gesturePoint` reste possible).
+- À vérifier en jeu : cadrage du bras sur le perso (fusil, pistolet, mains vides, accroupi), main gauche qui revient bien sur le garde-main, bras visible dans la vue selfie, geste vu par les autres joueurs.
+
+## 2026-10-12 — Tâches et ordres : crash, suivi par joueur, chef pour le groupe ; rejeux datés ; temps par rôle (ATAK natif 1.33.0)
+
+Non testé en jeu. Pas de DLL à recompiler. Côté site : la table `atak_order_responses` se crée toute seule à la première réponse.
+- Crash sur l'app Tâches (`can't resize AutoArray to negative size`, sans erreur de script avant) : les boutons des formulaires (SUIVRE, CARTE, REÇU…) redessinaient la page pendant leur propre clic, ce qui détruisait le bouton en cours d'exécution. Les clics passent maintenant à l'image suivante, et la colonne de texte d'une ligne n'a plus jamais une largeur nulle ou négative.
+- TERMINÉ envoyait DELIVERED (« vu » pour Athena), refusé après REÇU : il envoie DONE. EN COURS ou TERMINÉ sur un ordre pas encore reçu envoie REÇU d'abord. Un ordre « vu » par le site n'est plus affiché TERMINÉ en vert.
+- Suivi par ordre : « Vu x/y · reçu · en cours · terminé » et bouton QUI ? avec la photo, le groupe, le statut et l'heure de chaque destinataire. « Vu » part tout seul à l'affichage.
+- Chef d'un groupe de plusieurs joueurs : sa réponse vaut pour tout le groupe (statut mis à jour sur les téléphones des membres, note « Pour le groupe … » sur le site).
+- Rejeu (app AAR) : date et heure réelles de chaque image, début de la session. Clé de mission avec une date lisible (AAAAMMJJHHMM sur deux chiffres).
+- Site : tâches transmises en cartes (étapes Transmis, Vu, Reçu, En cours, Terminé ; réponses de chaque joueur ; filtre En cours, Créées en jeu, Toutes), tâches créées en jeu listées. Rejeux : jour, début, fin et durée de chaque session, heures locales. Fiche personnel et fiche ATAK : temps passé dans chaque rôle.
 ## Drone : flux réparé, caméra, titre des clichés, caméra d'un équipier sur la carte (ATAK natif 1.31.0)
 
 Non testé en jeu. Retours de TTRD après le test du 12 octobre au soir. Pas de DLL à recompiler, pas de migration.
