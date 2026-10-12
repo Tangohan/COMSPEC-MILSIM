@@ -66,6 +66,9 @@ private _mus = ["COMSPEC", "ATAK · Musique"];
 ["comspec_atak_native_music_urls", "CHECKBOX",
     ["Lecture de liens (URL)", "Autorise la lecture de fichiers audio et webradios par adresse web."],
     _mus, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_music_athena", "CHECKBOX",
+    ["Bibliothèque Athena", "Onglet ATHENA : playlist globale, bibliothèque communautaire, bibliothèque de l'organisation et playlists publiques du site, lues par COMSPEC Link."],
+    _mus, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_music_radio", "EDITBOX",
     ["Radio de la mission", "Liens proposés à tous dans l'onglet SERVEUR, sous la forme Titre|https://...;Titre 2|https://..."],
     _mus, "", 1] call comspec_atak_native_fnc_addSetting;

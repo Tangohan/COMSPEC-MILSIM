@@ -59,6 +59,8 @@ use App\Controllers\Api\AtakPingController;
 use App\Controllers\Api\AthenaDataApiController;
 use App\Controllers\Web\AthenaDataInspectorController;
 use App\Controllers\Api\SseApiController;
+use App\Controllers\Api\MusicLibraryApiController;
+use App\Controllers\Web\MusicLibraryController;
 use App\Controllers\Api\SseFieldNoteApiController;
 use App\Controllers\Api\SseIntelApiController;
 use App\Controllers\Api\FireSupportController;
@@ -1076,6 +1078,20 @@ return function (Router $router) {
     $router->get('/back-office', [OrganizationDashboardController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class, ConfigurationUpdateIntroMiddleware::class]);
     $router->get('/back-office/ma-situation/liaison-atak', [MemberSituationController::class, 'liaisonAtak'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/appareils', [MemberSituationController::class, 'appareils'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Musique (Mon espace) : bibliothèque musicale partagée avec l'app Musique de l'ATAK natif (MusicLibraryController).
+    $router->get('/back-office/ma-situation/musique', [MusicLibraryController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/envoyer', [MusicLibraryController::class, 'upload'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/ma-situation/musique/ecouter/{id}', [MusicLibraryController::class, 'listen'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/morceaux/{id}/modifier', [MusicLibraryController::class, 'trackUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/morceaux/{id}/supprimer', [MusicLibraryController::class, 'trackDelete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/morceaux/{id}/moderer', [MusicLibraryController::class, 'trackModerate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/morceaux/{id}/duree', [MusicLibraryController::class, 'trackDuration'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/playlists/creer', [MusicLibraryController::class, 'playlistCreate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/playlists/{id}/modifier', [MusicLibraryController::class, 'playlistUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/playlists/{id}/supprimer', [MusicLibraryController::class, 'playlistDelete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/playlists/{id}/ajouter', [MusicLibraryController::class, 'playlistAdd'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/playlists/{id}/retirer', [MusicLibraryController::class, 'playlistRemove'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ma-situation/musique/playlists/{id}/deplacer', [MusicLibraryController::class, 'playlistMove'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/appareils/retirer', [MemberSituationController::class, 'revokeAppareil'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/premiere-liaison', [MemberSituationController::class, 'premiereLiaison'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/ma-situation/ma-fiche', [MemberSituationController::class, 'maFiche'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2214,6 +2230,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/game/v1/operations/{uuid}/tactical', [$gameOps, 'tactical']);
 
     $router->get('/api/atak/whoami', [AtakApiController::class, 'whoami']);
+    // App Musique de l'ATAK natif (COMSPEC Link AthenaMusic) ; flux audio par URL signée, sans en-tête Athena.
+    $router->get('/api/atak/music', [MusicLibraryApiController::class, 'index']);
+    $router->get('/api/music/stream/{file}', [MusicLibraryApiController::class, 'stream']);
     $router->post('/api/atak/beta-register', [AtakApiController::class, 'betaRegister']);
     $router->post('/api/atak/mod-report', [AtakApiController::class, 'modReport']);
     $router->post('/api/atak/device-logs', [AtakApiController::class, 'deviceLogsStore']);

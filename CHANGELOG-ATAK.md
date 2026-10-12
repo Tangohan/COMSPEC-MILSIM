@@ -11,13 +11,23 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## 2026-10-12 — Photos : vraie grille MGRS et heure Zulu du jeu (ATAK natif 1.28.0, COMSPEC Link 2.0.74)
+## 2026-10-12 — Photos : vraie grille MGRS et heure Zulu du jeu (ATAK natif 1.30.0, COMSPEC Link 2.0.74)
 
 Non testé en jeu. Demande de TTRD : les photos envoyées doivent porter une vraie grille militaire et l'heure Zulu du jeu, pas celle du PC.
 
 - **Grille MGRS** : nouvelle fonction `fn_mgrsGrid` (connect). Le terrain est placé sur le globe par sa latitude et sa longitude (CfgWorlds), puis converti en UTM WGS84 : zone, bande, carré de 100 km et coordonnées à 1 m, par exemple `35S LC 12345 67890`. Remplace la grille Arma à 6 chiffres sur les photos envoyées.
 - **Heure Zulu du jeu** : la photo transmet la date, l'heure et le terrain de la partie (COMSPEC Link 2.0.74, champs `game_date`, `game_time`, `world_name`). Le bandeau incrusté par Athena et le relais Discord affichent cette heure. Sans ces champs (ancienne DLL), l'heure réelle reste utilisée.
 - À faire par TTRD : reconstruire la DLL avec `build_mod.bat`.
+
+## Vague 2026-10-12 — Musique : bibliothèque du site et lecteur refait (ATAK natif 1.29.0, COMSPEC Link 2.0.73)
+
+Non testé en jeu. Migrations à lancer (`music_library`) et DLL à recompiler (COMSPEC Link et COMSPECATAKNativeExtension, `build_mod.bat`).
+- Site, **Mon espace > Musique** (`/back-office/ma-situation/musique`) : chaque membre met en ligne ses MP3, M4A, AAC ou WAV (25 Mo par fichier, 300 Mo par membre), dans la **bibliothèque communautaire** (toute la plateforme) ou celle de **son organisation**. Lecteur intégré (file, avance, volume), recherche titre / artiste / genre.
+- **Playlists** privées, d'organisation ou publiques ; **playlist globale** unique tenue par l'administrateur de la plateforme (morceaux de la bibliothèque communautaire seulement).
+- Modération : les gestionnaires masquent ou suppriment les morceaux de leur organisation, l'administrateur de la plateforme ceux de la bibliothèque communautaire.
+- Téléphone, app Musique : nouvel onglet **ATHENA** (playlist globale, communauté, mon orga, playlists, mes envois), lu par COMSPEC Link (`AthenaMusic`, API `/api/atak/music`). Morceaux téléchargés par URL signée puis gardés en cache (60 morceaux) ; en haut-parleur, les joueurs proches entendent le même morceau.
+- Lecteur : avance / recul de 10 et 30 s (suivi par les auditeurs du haut-parleur), file d'attente avec MONTER, RETIRER et VIDER LA FILE, **favoris** (bouton FAV sur chaque morceau, section Favoris dans LECTURE).
+- Réglage CBA serveur **Bibliothèque Athena** pour couper l'onglet.
 
 ## Traduction 2026-10-12 — Menu CBA, objets et modules en anglais (ATAK natif 1.21.0)
 
