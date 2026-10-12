@@ -11,6 +11,18 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Relief refaite : champ de vision, heatmap, ligne de vue, bâtiments vus (ATAK natif 1.44.0)
+
+Non testé en jeu. Demande de TTRD : « Relief faut améliorer l'app : LIGNE DE VUE, HEATMAP, BÂTIMENT VISIBLE ». Pas de DLL à recompiler, pas de migration.
+- **Écran** dans la famille de l'app Reco, en turquoise : en-tête (altitude, grille, pastille du calque carte cliquable), quatre tuiles d'outil, réglages en boutons, chiffres en tuiles.
+- **Champ de vision** : obstacles au choix, RELIEF SEUL ou + BÂTIMENTS ET ARBRES (lignes de vue contre les objets, plus lent). Vues par secteur en barres de couleur, point haut sur la carte.
+- **Heatmap** : nouvelle échelle à cinq couleurs (bleu nuit, cyan, vert, jaune, rouge) plus lisible, ou PAR RAPPORT À MOI (bleu en dessous, rouge au-dessus : ce qui me domine), légende avec les altitudes, part du terrain plus haut que moi.
+- **Ligne de vue** : vers un carroyage saisi, le point visé (SOUS MON REGARD) ou un point touché sur la carte (outil LIGNE DE VUE de la carte, qui passe désormais par le même calcul). Verdict VUE DÉGAGÉE / VUE BLOQUÉE, nature de l'obstacle (relief, bâtiment, végétation, véhicule), distance, azimut, dénivelé, profil du terrain avec la ligne de visée.
+- **Bâtiments vus** : bâtiments de plus de 4 m dans 200 m, 500 m ou 1 km, testés depuis mes yeux sur trois hauteurs ; en vert sur la carte s'ils sont vus, contour rouge sinon ; liste des dix plus proches avec CARTE.
+- Nouvelles icônes : ligne de vue, heatmap, bâtiments.
+
+À tester en jeu : chaque outil en ville et en campagne ; champ de vision avec bâtiments et arbres (temps de calcul à 2 km) ; heatmap par rapport à moi sur une colline ; ligne de vue derrière un mur, un arbre et une crête ; outil LIGNE DE VUE de la carte puis retour dans Relief ; bâtiments vus à 1 km (temps de calcul) et leurs couleurs sur la carte.
+
 ## Selfie : le téléphone dans la main, l'objectif sur le téléphone (ATAK natif 1.43.0)
 
 Non testé en jeu. Retour de TTRD après essai : « anime OK et manque le S7 dans la main », la main passait aussi devant l'image. Pas de DLL à recompiler, pas de migration.

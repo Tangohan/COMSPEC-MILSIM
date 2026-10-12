@@ -194,6 +194,9 @@ ICONS = {
     "alert_tic": '<path d="M12 2.5l1.7 5L18.7 5l-2 5 5 1.9-5 1.9 2 5-5-2.4-1.7 5-1.7-5-5 2.4 2-5-5-1.9 5-1.9-2-5 5 2.5z"/>',
     "alert_clear": '<path d="M12 2.5l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10v-6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
     "alert_eagle": '<path d="M12 2.5c.9 0 1.3 1.3 1.3 3v5.2l7.2 3.3v1.7l-7.2-1.6v4l2.2 1.6V21L12 20.2 8.5 21v-1.3l2.2-1.6v-4L3.5 15.7V14l7.2-3.3V5.5c0-1.7.4-3 1.3-3z"/><path d="M3 3l18 18"/>',
+    "relief_los": '<circle cx="4.5" cy="18" r="2"/><path d="M6.3 17l6.2-3.4" /><path d="M14.5 12.5l5-2.8" stroke-dasharray="1.6 1.6"/><path d="M9 21l3.5-6 2.5 3 2-2.5 4 5.5z"/><circle cx="20" cy="9.5" r="1.2"/>',
+    "relief_bld": '<path d="M3 21V9l6-3v15M9 21V4h8v17M17 21v-9h4v9M2 21h20"/><path d="M11.5 7.5h1M14 7.5h1M11.5 10.5h1M14 10.5h1M11.5 13.5h1M14 13.5h1"/>',
+    "relief_heat": '<path d="M2 20l6-10 4 6 3-4 7 8z"/><path d="M5 20h14" stroke-dasharray="2 1.5"/><circle cx="18" cy="5" r="2.5"/>',
     "reco_eye": '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     # Main ouverte : « prendre en main » (pastille Ctrl+Maj+U du téléphone porté).
     "ui_hand": '<path d="M9.1 12V5.6a1.3 1.3 0 0 1 2.6 0V11M11.7 11V4.3a1.3 1.3 0 0 1 2.6 0V11M14.3 11V5.6a1.3 1.3 0 0 1 2.6 0V11M16.9 11.2V8.3a1.3 1.3 0 0 1 2.6 0v5.4c0 4.1-2.8 7.3-6.6 7.3-2.7 0-4.3-1.3-5.8-3.5l-2.6-4a1.4 1.4 0 0 1 2.2-1.7l2.4 2.8V8.2"/>',
