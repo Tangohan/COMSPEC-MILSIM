@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.72";
+    private const string ExtensionVersion = "2.0.73";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2782,7 +2782,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic";
         }
 
         if (function == "GetCapabilities")
@@ -4241,6 +4241,54 @@ public static partial class Extension
                     return "OK|" + total.ToString(CultureInfo.InvariantCulture) + "|" + next.ToString(CultureInfo.InvariantCulture) + "|" + chunk;
                 }
                 catch { return "ERR|bad_json"; }
+            }
+            // Bibliothèque musicale d'Athena (app Musique du téléphone natif).
+            // Args : [vue global|community|org|mine|playlists|pl:<id>, recherche, limite]
+            // → OK|lignes « T\tid\ttitre\tartiste\tdurée s\tURL signée\tenvoyé par » ou « P\tid\tnom\tpropriétaire\tnombre\ttype\tdescription »
+            if (function == "AthenaMusic")
+            {
+                var view = args.Length > 0 ? (args[0] ?? "").Trim() : "global";
+                var q = args.Length > 1 ? (args[1] ?? "").Trim() : "";
+                var lim = args.Length > 2 && int.TryParse((args[2] ?? "").Trim(), out var l) ? Math.Clamp(l, 1, 120) : 80;
+                if (view.Length == 0) view = "global";
+                var url = _baseUrl + "/api/atak/music?view=" + Uri.EscapeDataString(view) + "&limit=" + lim.ToString(CultureInfo.InvariantCulture);
+                if (q.Length > 0) url += "&q=" + Uri.EscapeDataString(q);
+                var resp = SendGet(url, token);
+                var respBody = ReadContentUtf8(resp, token);
+                if (!resp.IsSuccessStatusCode)
+                {
+                    var code = (int)resp.StatusCode;
+                    if (code == 401 || code == 403) return "ERR|unauthorized";
+                    if (code == 404) return "ERR|not_found";
+                    if (code == 503) return "ERR|migration_required";
+                    return "ERR|http_" + code;
+                }
+                var lines = new StringBuilder();
+                try
+                {
+                    using var doc = JsonDocument.Parse(respBody);
+                    if (doc.RootElement.TryGetProperty("items", out var arr) && arr.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var el in arr.EnumerateArray())
+                        {
+                            string C(string k, int max = 160)
+                            {
+                                if (!el.TryGetProperty(k, out var v)) return "";
+                                var t = v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "") : v.ValueKind == JsonValueKind.Number ? v.GetRawText() : "";
+                                t = t.Replace("\t", " ").Replace("\r", "").Replace("\n", " ").Replace("|", "/").Trim();
+                                return t.Length > max ? t.Substring(0, max) + "…" : t;
+                            }
+                            var type = C("type");
+                            var line = type == "P"
+                                ? string.Join("\t", "P", C("id"), C("name", 90), C("owner", 60), C("count"), C("kind"), C("description", 140))
+                                : string.Join("\t", "T", C("id"), C("title", 110), C("artist", 80), C("duration"), C("url", 600), C("by", 60));
+                            if (Encoding.UTF8.GetByteCount(lines.ToString()) + Encoding.UTF8.GetByteCount(line) + 6 > MaxOutputBytes) break;
+                            lines.Append(line).Append('\n');
+                        }
+                    }
+                }
+                catch { return "ERR|bad_json"; }
+                return "OK|" + lines.ToString();
             }
             if (function == "GetWantedNotices")
             {
