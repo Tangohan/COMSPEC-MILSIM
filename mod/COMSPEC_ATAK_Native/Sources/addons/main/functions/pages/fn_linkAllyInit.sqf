@@ -25,9 +25,14 @@ addMissionEventHandler ["EntityKilled", { params ["_unit", "_killer", "_inst"]; 
     params ["_unit", "_container", "_item"];
     if ((toLower _item) in ([] call comspec_atak_native_fnc_deviceCatalog)) then {
         _container setVariable ["COMSPEC_ATAK_PhoneOwner", _unit, true];
-        // Au sol : notre modèle 3D du téléphone à la place du petit objet générique.
+        // Au sol : seul notre S7 couché (un téléphone d'un autre mod est échangé, fn_droppedPhone).
         if (local _unit && {_unit isEqualTo player}) then { [_container, _item] call comspec_atak_native_fnc_droppedPhone; };
     };
+}] call CBA_fnc_addClassEventHandler;
+// Ramassé : on rend l'objet d'origine d'un téléphone échangé au sol.
+["CAManBase", "Take", {
+    params ["_unit", "_container", "_item"];
+    if (local _unit && {(toLower _item) isEqualTo "comspec_atak_phone"}) then { ["take", [_unit, _container, _item]] call comspec_atak_native_fnc_droppedPhone; };
 }] call CBA_fnc_addClassEventHandler;
 
 // Tick : barre de progression, lien coupé si l'on s'éloigne, liste à portée remise à jour.
