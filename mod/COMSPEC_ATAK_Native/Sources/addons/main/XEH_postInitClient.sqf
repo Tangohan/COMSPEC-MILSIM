@@ -149,6 +149,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 ["comspec_atak_native_medevacStatus", { ["statusRecv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
 // Ordres : réponses des joueurs du camp (app Tâches, qui a vu / reçu / exécute).
 ["comspec_atak_native_orderAck", { ["recv", _this] call comspec_atak_native_fnc_orderAck; }] call CBA_fnc_addEventHandler;
+// App JTAC : brief, appels du JTAC et réponses de l'équipage (CAS), envoyés aux seuls intéressés.
+["comspec_atak_native_cas", { ["recv", _this] call comspec_atak_native_fnc_jtacAction; }] call CBA_fnc_addEventHandler;
+// App JTAC ouverte en contrôle (ou vue équipage) : position et géométrie de l'appareil rafraîchies.
+[{ ["tick"] call comspec_atak_native_fnc_jtacAction; }, 3] call CBA_fnc_addPerFrameHandler;
 private _eh = addMissionEventHandler ["ExtensionCallback", { _this call comspec_atak_native_fnc_extensionCallback }];
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 // Service Athéna changé (Oui / Non) : apps Athena affichées ou masquées tout de suite.
