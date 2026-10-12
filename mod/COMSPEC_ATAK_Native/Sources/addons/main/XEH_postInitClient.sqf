@@ -279,6 +279,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 
 // Menu ACE « Téléphone ATAK » (fn_aceMenu) : les actions d'entretien ci-dessous vont dans son sous-menu Entretien.
 [] call comspec_atak_native_fnc_aceMenu;
+// Socle de recharge CS-10 (fn_dockMenu) : poser, reprendre, état, replier, poser le kit.
+[] call comspec_atak_native_fnc_dockMenu;
 // Téléphone visible sur le gilet (fn_vestMount), balise IR (fn_irBeacon), téléphone extractible en cas de capture (fn_phoneSecurity).
 [{ ["tick"] call comspec_atak_native_fnc_vestMount; ["tick"] call comspec_atak_native_fnc_irBeacon; ["tick"] call comspec_atak_native_fnc_phoneSecurity; }, 2] call CBA_fnc_addPerFrameHandler;
 // Terminal de bord (tablette du véhicule, PC mobile) gagné ou perdu : coque redessinée, message à l'arrivée.
