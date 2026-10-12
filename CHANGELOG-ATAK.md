@@ -27,6 +27,7 @@ Non testé en jeu. Corrige l'app Réseau qui affichait « Athena hors ligne · r
 - Drone, envoi de la photo : fenêtre plein écran (grand aperçu, titre, description, SSE, CONFIDENTIEL, ENVOYER À ATHENA), sans défilement.
 - Saisie dans un champ du téléphone : les touches ne partent plus au jeu (taper « a » ou « e » faisait pencher le personnage).
 - Carte de l'app Plan : les clics posent de nouveau les sommets des zones (le focus resté sur un bouton mettait la zone de contenu devant la carte).
+- Alerte plein écran, notification et vibration envoyées depuis le site (Overwatch beta) : elles arrivent de nouveau sur le téléphone natif. COMSPEC Link les passait au module `atak_athena` (ancien téléphone Iceman, livré dans le même mod et donc toujours chargé) au lieu du natif ; `fn_receiveOrder` les donne maintenant au natif quand il est chargé. `atak_athena` n'est pas modifié.
 
 ## Correctif 2026-10-12 — ATAK sur le JPC : bon modèle et écran vivant (ATAK natif 1.15.1)
 
