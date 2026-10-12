@@ -4,7 +4,8 @@ disableSerialization;
 private _d = ([] call comspec_atak_native_fnc_display);
 private _c = if (_inGroup) then { _d ctrlCreate [_class, -1, _d displayCtrl 88531] } else { _d ctrlCreate [_class, -1] };
 _c ctrlSetPosition _pos;
-if (_text isNotEqualTo "") then { _c ctrlSetText _text; };
+// Texte affiché traduit (fn_tr) ; le contenu d'un champ d'édition est une saisie, gardée telle quelle.
+if (_text isNotEqualTo "") then { _c ctrlSetText ([(_text) call comspec_atak_native_fnc_tr, _text] select ((_class find "Edit") >= 0)); }; // i18n:brut
 _c ctrlCommit 0;
 private _list = uiNamespace getVariable ["COMSPEC_ATAK_PageControls", []];
 _list pushBack _c;

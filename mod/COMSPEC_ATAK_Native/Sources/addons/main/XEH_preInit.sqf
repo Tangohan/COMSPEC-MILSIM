@@ -5,6 +5,14 @@ diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
 
+// Langue du téléphone (par joueur). Titre bilingue : ce menu CBA n'est pas traduit. Le code reste en français,
+// fn_tr traduit à l'affichage (dictionnaire i18n/en.txt).
+["comspec_atak_native_language", "LIST",
+    ["Langue du téléphone / Phone language", "Français, English, ou Auto : langue du jeu (français si Arma est en français, anglais sinon). / Auto follows the game language."],
+    ["COMSPEC", "ATAK · Langue / Language"], [["fr", "en", "auto"], ["Français", "English", "Auto (langue du jeu / game language)"], 0], 0,
+    { [true] call comspec_atak_native_fnc_langApply; }] call CBA_fnc_addSetting;
+[] call comspec_atak_native_fnc_langApply;
+
 // Réglages serveur (forçables par l'admin dans les réglages CBA du serveur / de la mission).
 // Tous les mods COMSPEC partagent une seule catégorie CBA « COMSPEC » ; sous-catégories « ATAK · … », « Overwatch · … », « SSE ».
 private _cat = ["COMSPEC", "ATAK · Accès au téléphone"];

@@ -66,7 +66,7 @@ private _edit = _s getOrDefault ["markerEditAfter", false];
 private _eb = ["COMSPEC_RscButton", [_x0 + _w * 0.62, _y + (_ph - _rh) / 2, _w * 0.38, _rh], ["☐  Titre et note après la pose", "☑  Titre et note après la pose"] select _edit] call _mk;
 _eb ctrlSetFontHeight (_fs * 0.82);
 if (_edit) then { _eb ctrlSetTextColor _green; };
-_eb ctrlSetTooltip "Ouvrir l'éditeur (titre, description) juste après la pose";
+_eb ctrlSetTooltip (("Ouvrir l'éditeur (titre, description) juste après la pose") call comspec_atak_native_fnc_tr);
 _eb ctrlAddEventHandler ["ButtonClick", { private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; ['markerEditAfter', !(_s getOrDefault ["markerEditAfter", false])] call (uiNamespace getVariable 'COMSPEC_ATAK_MarkerPick'); }];
 _y = _y + _ph + _pad;
 
@@ -108,7 +108,7 @@ if (_aff isEqualTo "lib") then {
     {
         private _dn = getText (configFile >> "CfgMarkerClasses" >> _x >> "displayName");
         private _c = _x;
-        private _i = _cc lbAdd format ["%1 (%2)", [_dn, _x] select (_dn isEqualTo ""), { (_x select 2) isEqualTo _c } count _all];
+        private _i = _cc lbAdd ((format ["%1 (%2)", [_dn, _x] select (_dn isEqualTo ""), { (_x select 2) isEqualTo _c } count _all]) call comspec_atak_native_fnc_tr);
         _cc lbSetData [_i, _x];
         if (_x isEqualTo _cat) then { _cc lbSetCurSel _i; };
     } forEach _cats;
@@ -146,7 +146,7 @@ if (_aff isEqualTo "lib") then {
     _lt ctrlSetFontHeight (_fs * 0.68);
     _lt ctrlSetTextColor ([[0.05, 0.06, 0.05, 1], [0.92, 0.94, 0.92, 1]] select ((((_iconRgba select 0) + (_iconRgba select 1) + (_iconRgba select 2)) > 2.4)));
     private _b = ["COMSPEC_RscButtonOverlay", [_cx, _cy, _tileW, _tileH]] call _mk;
-    _b ctrlSetTooltip _label;
+    _b ctrlSetTooltip ((_label) call comspec_atak_native_fnc_tr);
     _b ctrlAddEventHandler ["ButtonClick", compile format ["['markerType', '%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_MarkerPick');", _cls]];
 } forEach _types;
 _y = _y + (ceil ((count _types) / _cols)) * (_tileH + _gap) + _pad / 2;
@@ -170,7 +170,7 @@ private _sx = _x0 + _w * 0.12;
     if ((count _rgba) isEqualTo 4) then { _b ctrlSetBackgroundColor _rgba; };
     _b ctrlSetFontHeight (_fs * 0.75);
     _b ctrlSetTextColor [1, 1, 1, 1];
-    _b ctrlSetTooltip _t;
+    _b ctrlSetTooltip ((_t) call comspec_atak_native_fnc_tr);
     _b ctrlAddEventHandler ["ButtonClick", compile format ["['markerColor', '%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_MarkerPick');", _cls]];
 } forEach _swatches;
 private _zx = _sx + (count _swatches) * (_sqW + _pad) + _pad * 2;
@@ -190,12 +190,12 @@ _y = _y + _rh + _pad / 2;
 ["AUTRES", _x0, _w * 0.12] call _lab;
 private _combo = ["COMSPEC_RscCombo", [_x0 + _w * 0.12, _y, _w * 0.88, _rh]] call _mk;
 _combo ctrlSetFontHeight (_fs * 0.85);
-_combo lbAdd "Tous les marqueurs Arma et des mods…";
+_combo lbAdd (("Tous les marqueurs Arma et des mods…") call comspec_atak_native_fnc_tr);
 _combo lbSetData [0, ""];
 private _sel = 0;
 {
     _x params ["_name", "_cls", "_icon"];
-    private _i = _combo lbAdd _name;
+    private _i = _combo lbAdd ((_name) call comspec_atak_native_fnc_tr);
     _combo lbSetData [_i, _cls];
     _combo lbSetPicture [_i, _icon];
     if (_cls isEqualTo _type && {(_types findIf { (_x select 0) isEqualTo _cls }) < 0}) then { _sel = _i; };

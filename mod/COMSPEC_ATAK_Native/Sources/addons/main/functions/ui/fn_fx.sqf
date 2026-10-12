@@ -38,7 +38,7 @@ switch (_act) do {
             private _col = +(([] call comspec_atak_native_fnc_accent) select 0);
             _col set [3, 0.42];
             private _c = _d ctrlCreate ["COMSPEC_RscPhone", -1];
-            _c ctrlSetText "\a3\ui_f\data\map\markers\military\dot_ca.paa";
+            _c ctrlSetText (("\a3\ui_f\data\map\markers\military\dot_ca.paa") call comspec_atak_native_fnc_tr);
             _c ctrlSetTextColor _col;
             _c ctrlEnable false;
             _c ctrlSetPosition [_mx - _r0, _my - _r0 * _ratio, _r0 * 2, _r0 * 2 * _ratio];

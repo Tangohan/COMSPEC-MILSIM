@@ -54,7 +54,7 @@ _peers sort true;
 private _sel = -1;
 {
     _x params ["_key", "_label"];
-    private _i = _combo lbAdd _label;
+    private _i = _combo lbAdd ((_label) call comspec_atak_native_fnc_tr);
     _combo lbSetData [_i, _key];
     _combo lbSetPicture [_i, "\z\comspec_atak_native\addons\main\data\app_chat.paa"];
     if (_key isEqualTo _peer) then { _sel = _i; };
@@ -63,7 +63,7 @@ private _sel = -1;
     private _name = _x;
     private _n = { (_x getOrDefault ["peer", ""]) isEqualTo _name && {(_x getOrDefault ["dir", ""]) isEqualTo "in"} && {!(_x getOrDefault ["read", false])} } count (_data getOrDefault ["p2p", []]);
     // Messages directs (SMS entre téléphones, sans Athena) : libellés « SMS · » pour les distinguer des canaux.
-    private _k = _combo lbAdd ([format ["SMS · %1", _name], format ["SMS · %1 (%2 non lus)", _name, _n]] select (_n > 0));
+    private _k = _combo lbAdd ((([format ["SMS · %1", _name], format ["SMS · %1 (%2 non lus)", _name, _n]] select (_n > 0))) call comspec_atak_native_fnc_tr);
     _combo lbSetPicture [_k, "\z\comspec_atak_native\addons\main\data\app_group.paa"];
     _combo lbSetData [_k, _x];
     if (_x isEqualTo _peer) then { _sel = _k; };
@@ -85,7 +85,7 @@ private _topY = _pad * 2 + _rowH;
 if (_interactiveTop) then {
     private _bClr = ["COMSPEC_RscButton", [_gw - _pad - _nBtn * (_mbw + _pad / 2) + _pad / 2, _pad, _mbw, _rowH], "VIDER"] call comspec_atak_native_fnc_pageCtrl;
     _bClr ctrlSetFontHeight (_l get "fontSmall");
-    _bClr ctrlSetTooltip "Vider l'affichage de cette conversation (sur ce téléphone seulement)";
+    _bClr ctrlSetTooltip (("Vider l'affichage de cette conversation (sur ce téléphone seulement)") call comspec_atak_native_fnc_tr);
     _bClr ctrlAddEventHandler ["ButtonClick", {
         private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         private _cleared = uiNamespace getVariable ["COMSPEC_ATAK_ChatCleared", createHashMap];
@@ -102,7 +102,7 @@ if (_interactiveTop) then {
     private _desc = _s getOrDefault ["chatSortDesc", false];
     private _bSort = ["COMSPEC_RscButton", [_gw - _pad - _nBtn * (_mbw + _pad / 2) + _pad / 2 + (_mbw + _pad / 2), _pad, _mbw, _rowH], ["ANCIENS ↑", "RÉCENTS ↑"] select _desc] call comspec_atak_native_fnc_pageCtrl;
     _bSort ctrlSetFontHeight (_l get "fontSmall");
-    _bSort ctrlSetTooltip "Trier par date : plus anciens ou plus récents en haut";
+    _bSort ctrlSetTooltip (("Trier par date : plus anciens ou plus récents en haut") call comspec_atak_native_fnc_tr);
     _bSort ctrlAddEventHandler ["ButtonClick", { private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["chatSortDesc", !(_s getOrDefault ["chatSortDesc", false])]; [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
 };
 if (_manage) then {
@@ -111,13 +111,13 @@ if (_manage) then {
     private _x0 = _gw - _pad - 2 * _mbw - _pad / 2;
     private _bNew = ["COMSPEC_RscButton", [_x0, _pad, _mbw, _rowH], "+ CANAL"] call comspec_atak_native_fnc_pageCtrl;
     _bNew ctrlSetFontHeight (_l get "fontSmall");
-    _bNew ctrlSetTooltip "Créer un canal sur Athena";
+    _bNew ctrlSetTooltip (("Créer un canal sur Athena") call comspec_atak_native_fnc_tr);
     _bNew ctrlAddEventHandler ["ButtonClick", { private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["chatNewOpen", !(_s getOrDefault ["chatNewOpen", false])]; [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
     private _armed = (_s getOrDefault ["chatDelArm", ""]) isEqualTo _curKey;
     private _bDel = ["COMSPEC_RscButton", [_x0 + _mbw + _pad / 2, _pad, _mbw, _rowH], ["SUPPRIMER", "CONFIRMER ?"] select _armed] call comspec_atak_native_fnc_pageCtrl;
     _bDel ctrlSetFontHeight (_l get "fontSmall");
     _bDel ctrlEnable _custom;
-    _bDel ctrlSetTooltip (["Seuls les canaux créés depuis le web ou le terminal se suppriment", "Supprimer ce canal pour tout le monde"] select _custom);
+    _bDel ctrlSetTooltip (((["Seuls les canaux créés depuis le web ou le terminal se suppriment", "Supprimer ce canal pour tout le monde"] select _custom)) call comspec_atak_native_fnc_tr);
     if (_armed) then { _bDel ctrlSetBackgroundColor [0.70, 0.18, 0.14, 1]; };
     _bDel ctrlAddEventHandler ["ButtonClick", {
         private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -140,7 +140,7 @@ if (_manage) then {
         private _cw = _gw * 0.18;
         private _ne = ["COMSPEC_RscEdit", [_pad, _topY, _gw - 4 * _pad - 2 * _cw, _rowH], uiNamespace getVariable ["COMSPEC_ATAK_ChatNewDraft", ""]] call comspec_atak_native_fnc_pageCtrl;
         _ne ctrlSetFontHeight _font;
-        _ne ctrlSetTooltip "Nom du nouveau canal";
+        _ne ctrlSetTooltip (("Nom du nouveau canal") call comspec_atak_native_fnc_tr);
         uiNamespace setVariable ["COMSPEC_ATAK_ChatNewEdit", _ne];
         private _ok = ["COMSPEC_RscButtonPrimary", [_gw - 2 * _pad - 2 * _cw, _topY, _cw, _rowH], "CRÉER"] call comspec_atak_native_fnc_pageCtrl;
         _ok ctrlSetFontHeight (_l get "fontSmall");
@@ -247,7 +247,7 @@ if (_wiki) then {
     _t ctrlCommit 0;
     private _h = { params ["_x"]; format ["<t color='#5cc76b' font='RobotoCondensedBold'>%1</t>", _x] };
     private _c = { params ["_k", "_v"]; format ["<t font='EtelkaMonospacePro' color='#f2ab33'>%1</t>  %2", _k, _v] };
-    _t ctrlSetStructuredText parseText ([
+    _t ctrlSetStructuredText parseText ((([
         ["AIDE DU TCHAT"] call _h,
         "<t color='#8a9a93'>Tapez une ou plusieurs commandes au début du message, puis le texte. L'aperçu au-dessus de la saisie montre ce qui partira.</t>",
         "", ["Priorité"] call _h,
@@ -273,7 +273,7 @@ if (_wiki) then {
         "<t font='EtelkaMonospacePro'>/u /contact 2 BMP en approche @grille</t>",
         "<t font='EtelkaMonospacePro'>/sitrep RAS sur la position, en attente</t>",
         "", "<t color='#8a9a93'>/aide rouvre cette page. Le bouton ? aussi.</t>"
-    ] joinString "<br/>");
+    ] joinString "<br/>")) call comspec_atak_native_fnc_tr);
     _t ctrlSetPosition [0, 0, _tw, (ctrlTextHeight _t) max _threadH];
     _t ctrlCommit 0;
 };
@@ -281,7 +281,7 @@ if ((count _items) isEqualTo 0 && {!_wiki}) then {
     private _t = _d ctrlCreate ["COMSPEC_RscStructuredText", -1, _thread];
     _t ctrlSetPosition [0, 0, _tw, _threadH];
     _t ctrlCommit 0;
-    _t ctrlSetStructuredText parseText (["<t color='#8a9a93' align='center'>Aucun message. Écrivez ci-dessous pour démarrer la conversation.</t>", "<t color='#8a9a93' align='center'>Aucun message du TOC pour l'instant.</t>"] select _isChannel);
+    _t ctrlSetStructuredText parseText (((["<t color='#8a9a93' align='center'>Aucun message. Écrivez ci-dessous pour démarrer la conversation.</t>", "<t color='#8a9a93' align='center'>Aucun message du TOC pour l'instant.</t>"] select _isChannel)) call comspec_atak_native_fnc_tr);
 };
 // Bulles : les miennes à droite sans photo ; les autres à gauche avec la photo de l'opérateur (TOC : logo Athena).
 // Vue SMS : en-tête du contact, bulles bleues / grises, état de chaque SMS envoyé.
@@ -298,7 +298,7 @@ if (_sms && {!_wiki}) then {
     _hd ctrlSetPosition [0, 0, _tw, _font * 2.2];
     _hd ctrlCommit 0;
     _hd ctrlSetBackgroundColor [0.07, 0.09, 0.12, 1];
-    _hd ctrlSetStructuredText parseText format ["<t align='center' font='RobotoCondensedBold'>%1</t><br/><t align='center' size='0.8' color='#8a9a93'>SMS · %2</t>", [_peer] call _esc, _num];
+    _hd ctrlSetStructuredText parseText ((format ["<t align='center' font='RobotoCondensedBold'>%1</t><br/><t align='center' size='0.8' color='#8a9a93'>SMS · %2</t>", [_peer] call _esc, _num]) call comspec_atak_native_fnc_tr);
     _y = _font * 2.2 + _font * 0.4;
 };
 private _unitCache = createHashMap;
@@ -328,7 +328,7 @@ private _unreadShown = false;
         private _sep = _d ctrlCreate ["COMSPEC_RscStructuredText", -1, _thread];
         _sep ctrlSetPosition [0, _y, _tw, _font * 1.1];
         _sep ctrlCommit 0;
-        _sep ctrlSetStructuredText parseText format ["<t align='center' size='0.75' color='#8a9a93'>— %1 —</t>", [_date] call _dayLabel];
+        _sep ctrlSetStructuredText parseText ((format ["<t align='center' size='0.75' color='#8a9a93'>— %1 —</t>", [_date] call _dayLabel]) call comspec_atak_native_fnc_tr);
         _y = _y + _font * 1.2;
     };
     // Repère « non lus » avant le premier message pas encore lu.
@@ -338,7 +338,7 @@ private _unreadShown = false;
         _nl ctrlSetPosition [0, _y, _tw, _font * 1.1];
         _nl ctrlCommit 0;
         _nl ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.15];
-        _nl ctrlSetStructuredText parseText "<t align='center' size='0.75' color='#5cc76b' font='RobotoCondensedBold'>NON LUS</t>";
+        _nl ctrlSetStructuredText parseText (("<t align='center' size='0.75' color='#5cc76b' font='RobotoCondensedBold'>NON LUS</t>") call comspec_atak_native_fnc_tr);
         _y = _y + _font * 1.2;
     };
     private _bubbleW = _tw * ([0.74, 0.78] select _mine);
@@ -354,7 +354,7 @@ private _unreadShown = false;
                 _c ctrlSetTextColor [0.55, 0.62, 0.58, 1];
                 _c
             };
-            _av ctrlSetText ([[_dir + "app_athena.paa", _dir + "app_group.paa"] select !(isNull _u), _photo] select (_photo isNotEqualTo ""));
+            _av ctrlSetText ((([[_dir + "app_athena.paa", _dir + "app_group.paa"] select !(isNull _u), _photo] select (_photo isNotEqualTo ""))) call comspec_atak_native_fnc_tr);
             _av ctrlSetPosition [0, _y, _avW, _avH];
             _av ctrlCommit 0;
             _bx = _avW + _pad / 2;
@@ -373,7 +373,7 @@ private _unreadShown = false;
         format ["<t size='0.8' font='RobotoCondensedBold' color='#9be3a5'>%1</t> %2<br/>", [_author] call _esc, _chips]
     };
     private _foot = format ["<t align='right' size='0.7' color='#c9d4cf'>%1%2</t>", _time, ["", "  " + _status] select (_status isNotEqualTo "")];
-    _b ctrlSetStructuredText parseText format ["%1%2<br/>%3", _top, _body, _foot];
+    _b ctrlSetStructuredText parseText ((format ["%1%2<br/>%3", _top, _body, _foot]) call comspec_atak_native_fnc_tr);
     private _h = (ctrlTextHeight _b) + _font * 0.2;
     _b ctrlSetPosition [_bx, _y, _bubbleW, _h];
     _b ctrlCommit 0;
@@ -386,7 +386,7 @@ if !(_interactive) exitWith { true };
 private _sendW = _gw * 0.26;
 private _helpW = _rowH / _ratio;
 private _bHelp = ["COMSPEC_RscButton", [_pad, _bh - _rowH - _pad, _helpW, _rowH], ["?", "×"] select _wiki] call comspec_atak_native_fnc_pageCtrl;
-_bHelp ctrlSetTooltip (["Aide du tchat (commandes /)", "Fermer l'aide"] select _wiki);
+_bHelp ctrlSetTooltip (((["Aide du tchat (commandes /)", "Fermer l'aide"] select _wiki)) call comspec_atak_native_fnc_tr);
 if (_wiki) then { _bHelp ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _bHelp ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
 _bHelp ctrlAddEventHandler ["ButtonClick", { private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["chatWiki", !(_s getOrDefault ["chatWiki", false])]; [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
 private _edit = ["COMSPEC_RscEdit", [_pad * 1.5 + _helpW, _bh - _rowH - _pad, _gw - 3.5 * _pad - _sendW - _helpW, _rowH], uiNamespace getVariable ["COMSPEC_ATAK_ChatDraft", ""]] call comspec_atak_native_fnc_pageCtrl;
@@ -399,7 +399,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_ChatPreviewCode", {
     if (isNull _p) exitWith {};
     private _txt = trim _raw;
     if (_txt isEqualTo "" || {!((_txt select [0, 1]) isEqualTo "/") && {(_txt find "@") < 0}}) exitWith {
-        _p ctrlSetStructuredText parseText "<t size='0.8' color='#5b6b63'>Astuce : /urgent, /contact, /sitrep… et @grille. Tapez /aide.</t>";
+        _p ctrlSetStructuredText parseText (("<t size='0.8' color='#5b6b63'>Astuce : /urgent, /contact, /sitrep… et @grille. Tapez /aide.</t>") call comspec_atak_native_fnc_tr);
     };
     private _words = _txt splitString " ";
     private _last = _words select ((count _words) - 1);
@@ -407,13 +407,13 @@ uiNamespace setVariable ["COMSPEC_ATAK_ChatPreviewCode", {
     if (_typing) exitWith {
         private _all = ["routine", "prioritaire", "urgent", "contact", "tic", "sitrep", "salute", "lace", "medevac", "intel", "ordre", "log", "aide"];
         private _m = _all select { (_x select [0, (count _last) - 1]) isEqualTo (toLower (_last select [1])) };
-        _p ctrlSetStructuredText parseText format ["<t size='0.8' color='#8a9a93'>Commandes : </t><t size='0.8' font='EtelkaMonospacePro' color='#f2ab33'>%1</t>", (_m apply { "/" + _x }) joinString "  "];
+        _p ctrlSetStructuredText parseText ((format ["<t size='0.8' color='#8a9a93'>Commandes : </t><t size='0.8' font='EtelkaMonospacePro' color='#f2ab33'>%1</t>", (_m apply { "/" + _x }) joinString "  "]) call comspec_atak_native_fnc_tr);
     };
     ([_txt] call comspec_atak_native_fnc_chatCommand) params ["", "", "_text", "_unknown", "_tags"];
     private _chips = (_tags apply { format ["<t font='RobotoCondensedBold' color='%1'>[%2]</t>", ["#f2ab33", "#e5483a"] select (_x in ["URGENT", "CONTACT", "TIC", "MEDEVAC"]), _x] }) joinString " ";
     private _bad = ["", format ["  <t color='#e5483a'>inconnu : %1</t>", _unknown joinString " "]] select ((count _unknown) > 0);
     private _safe = [[_text, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace;
-    _p ctrlSetStructuredText parseText format ["<t size='0.8' color='#8a9a93'>Aperçu : </t><t size='0.8'>%1 %2</t>%3", _chips, _safe, _bad];
+    _p ctrlSetStructuredText parseText ((format ["<t size='0.8' color='#8a9a93'>Aperçu : </t><t size='0.8'>%1 %2</t>%3", _chips, _safe, _bad]) call comspec_atak_native_fnc_tr);
 }];
 [uiNamespace getVariable ["COMSPEC_ATAK_ChatDraft", ""]] call (uiNamespace getVariable "COMSPEC_ATAK_ChatPreviewCode");
 _edit ctrlAddEventHandler ["KeyUp", { params ["_c"]; [ctrlText _c] call (uiNamespace getVariable ["COMSPEC_ATAK_ChatPreviewCode", {}]); }];
@@ -429,7 +429,7 @@ private _doSend = {
         [] call comspec_atak_native_fnc_chatSend;
     } else {
         if ([_peer, ctrlText _edit] call comspec_atak_native_fnc_p2pSend) then {
-            _edit ctrlSetText "";
+            _edit ctrlSetText (("") call comspec_atak_native_fnc_tr);
             uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ""];
             [{ ["CHAT"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
         };

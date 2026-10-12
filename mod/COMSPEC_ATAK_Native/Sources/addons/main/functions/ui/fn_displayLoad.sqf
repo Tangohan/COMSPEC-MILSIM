@@ -22,6 +22,10 @@ uiNamespace setVariable ["COMSPEC_ATAK_ShadeOpen", false];
 uiNamespace setVariable ["COMSPEC_ATAK_ShadeCtrls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_ShadeHandle", []];
 uiNamespace setVariable ["COMSPEC_ATAK_ToastPill", []];
+// Textes fixes de l'écran (ui/displays.hpp) dans la langue du téléphone (fn_tr ; sans effet en français).
+if ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]) isNotEqualTo "fr") then {
+    { if (ctrlType _x in [0, 1, 16]) then { private _t = ctrlText _x; if (_t isNotEqualTo "") then { _x ctrlSetText (_t call comspec_atak_native_fnc_tr); }; }; } forEach (allControls _display); // i18n:brut
+};
 
 // Les raccourcis CBA ne passent pas quand le téléphone est en main : on reprend ici les touches « porter » et « interagir ».
 if (_interactive) then {

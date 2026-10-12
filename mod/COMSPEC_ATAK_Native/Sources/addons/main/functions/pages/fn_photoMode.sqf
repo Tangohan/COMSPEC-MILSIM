@@ -182,13 +182,13 @@ switch (toUpper _mode) do {
         private _selfie = _st getOrDefault ["selfie", false];
         private _z = _st getOrDefault ["zoom", 1];
         private _fl = _st getOrDefault ["flash", "AUTO"];
-        (_cam displayCtrl 5) ctrlSetText format ["%1     ZOOM x%2     FLASH %3",
+        (_cam displayCtrl 5) ctrlSetText ((format ["%1     ZOOM x%2     FLASH %3",
             ["OBJECTIF ARRIÈRE", "SELFIE"] select _selfie, [_z toFixed 1, str _z] select ((_z mod 1) isEqualTo 0),
-            createHashMapFromArray [["AUTO", "AUTO"], ["ON", "FORCÉ"], ["OFF", "COUPÉ"]] get _fl];
-        (_cam displayCtrl 3) ctrlSetText ([
+            createHashMapFromArray [["AUTO", "AUTO"], ["ON", "FORCÉ"], ["OFF", "COUPÉ"]] get _fl]) call comspec_atak_native_fnc_tr);
+        (_cam displayCtrl 3) ctrlSetText ((([
             "CLIC GAUCHE : photo     T : marquer la cible     MOLETTE ou + / - : zoom     F : flash     R : selfie     ESPACE : quitter",
             "CLIC GAUCHE : photo     SOURIS : cadrer     MOLETTE : zoom     F : flash     R : objectif arrière     ESPACE : quitter"
-        ] select _selfie);
+        ] select _selfie)) call comspec_atak_native_fnc_tr);
         true
     };
     case "SELFIE": {
@@ -210,7 +210,7 @@ switch (toUpper _mode) do {
         if (!_active) exitWith { false };
         if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PhotoLast", -10]) < 3) exitWith {
             private _cam = uiNamespace getVariable ["COMSPEC_ATAK_CameraDisplay", displayNull];
-            if (!isNull _cam) then { (_cam displayCtrl 4) ctrlSetText "Patientez : enregistrement de la photo précédente…"; };
+            if (!isNull _cam) then { (_cam displayCtrl 4) ctrlSetText (("Patientez : enregistrement de la photo précédente…") call comspec_atak_native_fnc_tr); };
             false
         };
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoLast", diag_tickTime];
@@ -261,7 +261,7 @@ switch (toUpper _mode) do {
                 _flash ctrlCommit ([0.35, 0.6] select _fire);
                 private _n = (_ctx param [4, 0]) + ([0, 1] select _ok);
                 _ctx set [4, _n];
-                (_cam displayCtrl 4) ctrlSetText format ["%1%2", ["Photo non envoyée : voir l'app Photos", format ["%1 photo(s) en cours d'envoi vers Athena", _n]] select _ok, ["", " · flash"] select _fire];
+                (_cam displayCtrl 4) ctrlSetText ((format ["%1%2", ["Photo non envoyée : voir l'app Photos", format ["%1 photo(s) en cours d'envoi vers Athena", _n]] select _ok, ["", " · flash"] select _fire]) call comspec_atak_native_fnc_tr);
             };
             playSound "ClickSoft";
         };

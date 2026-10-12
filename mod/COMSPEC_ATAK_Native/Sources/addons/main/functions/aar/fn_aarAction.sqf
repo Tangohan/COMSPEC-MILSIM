@@ -57,7 +57,7 @@ switch (_act) do {
         if (!isNull _label && {(count _f) > 0}) then {
             private _t0 = (_log select 0) select 0;
             private _el = round (((_f select 0) - _t0) / 60);
-            _label ctrlSetStructuredText parseText format ["<t font='RobotoCondensedBold'>%1</t>  <t color='#8a9a93' size='0.85'>H+%2 min · image %3 / %4 · %5 unités</t>", _f select 1, _el, _i + 1, count _log, count (_f select 2)];
+            _label ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold'>%1</t>  <t color='#8a9a93' size='0.85'>H+%2 min · image %3 / %4 · %5 unités</t>", _f select 1, _el, _i + 1, count _log, count (_f select 2)]) call comspec_atak_native_fnc_tr);
         };
         if (!isNull _map && {_p getOrDefault ["follow", false]} && {(count _f) > 0}) then {
             private _me = (_f select 2) select { _x select 5 };

@@ -1,7 +1,7 @@
 /*
     Commandes du tchat (mini wiki : /aide). Une commande en tête de message fixe la priorité ou le type,
     on peut en enchaîner plusieurs : « /urgent /contact 3 BMP au nord ».
-    Raccourcis dans le texte : @grille (ma grille), @heure, @cap, @alt.
+    Raccourcis dans le texte : @grille (ma grille), @heure, @cap, @alt (en anglais : /help, @grid, @time, @hdg).
     Params : [texte saisi]
     Renvoie [priorité, type, texte final, commandes inconnues, liste des préfixes à afficher, aide demandée]
       priorité : "" | ROUTINE | IMPORTANT | URGENT
@@ -16,7 +16,9 @@ private _cmds = createHashMapFromArray [
     ["sitrep", ["kind", "SITREP"]], ["salute", ["kind", "SALUTE"]], ["medevac", ["kind", "MEDEVAC"]],
     ["tic", ["kind", "TIC"]], ["lace", ["kind", "LACE"]], ["intel", ["kind", "INTEL"]],
     ["ordre", ["kind", "ORDRE"]], ["log", ["kind", "LOG"]],
-    ["aide", ["help", ""]], ["wiki", ["help", ""]], ["?", ["help", ""]]
+    ["aide", ["help", ""]], ["wiki", ["help", ""]], ["?", ["help", ""]],
+    // Noms anglais (téléphone en anglais, fn_tr) : mêmes commandes.
+    ["help", ["help", ""]], ["priority", ["prio", "IMPORTANT"]], ["order", ["kind", "ORDRE"]]
 ];
 private _prio = "";
 private _kind = "";
@@ -39,7 +41,10 @@ private _subst = [
     ["@grille", [getPosASL player, 8] call comspec_atak_native_fnc_gridRef],
     ["@heure", [dayTime, "HH:MM"] call BIS_fnc_timeToString],
     ["@cap", format ["%1°", round getDir player]],
-    ["@alt", format ["%1 m", round ((getPosASL player) select 2)]]
+    ["@alt", format ["%1 m", round ((getPosASL player) select 2)]],
+    ["@grid", [getPosASL player, 8] call comspec_atak_native_fnc_gridRef],
+    ["@time", [dayTime, "HH:MM"] call BIS_fnc_timeToString],
+    ["@hdg", format ["%1°", round getDir player]]
 ];
 { _text = [_text, _x select 0, _x select 1] call CBA_fnc_replace; } forEach _subst;
 private _tags = [];

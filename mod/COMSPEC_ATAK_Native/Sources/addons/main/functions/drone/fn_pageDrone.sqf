@@ -46,7 +46,7 @@ if (isNull _d) exitWith {
 private _link = ["link"] call comspec_atak_native_fnc_droneAction;
 // Télémétrie en haut (deux lignes), hauteur ajustée au texte, rafraîchie chaque seconde.
 private _osd = ["COMSPEC_RscMapPanel", [0, 0, _bw, _fs * 2.6]] call comspec_atak_native_fnc_pageCtrl;
-_osd ctrlSetStructuredText parseText ([_d, _link] call comspec_atak_native_fnc_droneOsd);
+_osd ctrlSetStructuredText parseText ((([_d, _link] call comspec_atak_native_fnc_droneOsd)) call comspec_atak_native_fnc_tr);
 private _osdH = ((ctrlTextHeight _osd) + _fs * 0.5) max (_fs * 2.6);
 _osd ctrlSetPosition [0, 0, _bw, _osdH];
 _osd ctrlCommit 0;
@@ -110,7 +110,7 @@ if (_camOn && {_tab isNotEqualTo "LOG"}) then {
     ["RscPicture", [_ix, _iy, _iw, _ih], "#(argb,1024,512,1)r2t(comspec_dronecam,1.7778)"] call comspec_atak_native_fnc_pageCtrl;
     if !(isPiPEnabled) then {
         private _w = ["COMSPEC_RscStructuredText", [_ix, _iy + _ih * 0.4, _iw, _fs * 2.6]] call comspec_atak_native_fnc_pageCtrl;
-        _w ctrlSetStructuredText parseText "<t align='center' color='#f2ab33'>Image dans l'image (PiP) désactivée :<br/>Options > Vidéo > Image dans l'image</t>";
+        _w ctrlSetStructuredText parseText (("<t align='center' color='#f2ab33'>Image dans l'image (PiP) désactivée :<br/>Options > Vidéo > Image dans l'image</t>") call comspec_atak_native_fnc_tr);
     };
     // Réticule fin au centre.
     private _cx = _ix + _iw / 2;
@@ -143,7 +143,7 @@ if (_camOn && {_tab isNotEqualTo "LOG"}) then {
         _t
     };
     private _feed = [_d, _link, "FEED"] call comspec_atak_native_fnc_droneOsd;
-    { _x ctrlSetStructuredText parseText (_feed select _forEachIndex); } forEach _txt;
+    { _x ctrlSetStructuredText parseText (((_feed select _forEachIndex)) call comspec_atak_native_fnc_tr); } forEach _txt;
     uiNamespace setVariable ["COMSPEC_ATAK_DroneFeedTxt", _txt];
     // Angles de la nacelle et aide, au-dessus des incrustations du bas (mis à jour à chaque mouvement).
     private _gim = ["COMSPEC_RscStructuredText", [_ix + _iw * 0.2, _iy + _ih - _fs * 2.5, _iw * 0.6, _fs * 1.2]] call comspec_atak_native_fnc_pageCtrl;
@@ -155,7 +155,7 @@ if (_camOn && {_tab isNotEqualTo "LOG"}) then {
     // Surface de commande de la nacelle (au-dessus de l'image et des cadres).
     private _hit = ["COMSPEC_RscButtonInvisible", [_ix, _iy, _iw, _ih]] call comspec_atak_native_fnc_pageCtrl;
     _hit setVariable ["img", [_iw, _ih]];
-    _hit ctrlSetTooltip "Glisser : orienter la nacelle · molette : zoom · clic : viser le point (MARQ. : le marquer) · flèches / ZQSD : nacelle";
+    _hit ctrlSetTooltip (("Glisser : orienter la nacelle · molette : zoom · clic : viser le point (MARQ. : le marquer) · flèches / ZQSD : nacelle") call comspec_atak_native_fnc_tr);
     _hit ctrlAddEventHandler ["MouseButtonDown", {
         params ["_c", "_btn", "_mx", "_my"];
         if (_btn isNotEqualTo 0) exitWith {};
@@ -226,7 +226,7 @@ if (_camOn && {_tab isNotEqualTo "LOG"}) then {
         private _b = ["COMSPEC_RscButton", [_pad / 2 + _cI * _bwid, _by0 + _r * (_bh2 + _pad * 0.3), _bwid - _pad / 3, _bh2], _lbl] call comspec_atak_native_fnc_pageCtrl;
         _b ctrlSetFontHeight (_fs * 0.78);
         _b ctrlSetBackgroundColor ([[0.12, 0.14, 0.13, 1], [_onCol, [0.36, 0.78, 0.42, 0.85]] select (_onCol isEqualTo [])] select _on);
-        if (_tip isNotEqualTo "") then { _b ctrlSetTooltip _tip; };
+        if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
         _b ctrlEnable _en;
         _b ctrlAddEventHandler ["ButtonClick", _code];
     } forEach _btns;

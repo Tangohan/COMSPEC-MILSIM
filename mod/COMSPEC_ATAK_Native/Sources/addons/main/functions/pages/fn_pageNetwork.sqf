@@ -49,7 +49,7 @@ private _rect = { params ["_pos", "_rgba"]; private _c = ["COMSPEC_RscText", _po
 private _txt = {
     params ["_pos", "_s2", ["_fit", false]];
     private _c = ["COMSPEC_RscStructuredText", _pos] call _mk;
-    _c ctrlSetStructuredText parseText _s2;
+    _c ctrlSetStructuredText parseText ((_s2) call comspec_atak_native_fnc_tr);
     _c ctrlEnable false;
     if (_fit) then { _pos set [3, (ctrlTextHeight _c) max (_pos select 3)]; _c ctrlSetPosition _pos; _c ctrlCommit 0; };
     _c

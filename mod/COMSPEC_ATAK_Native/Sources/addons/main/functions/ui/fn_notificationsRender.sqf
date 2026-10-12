@@ -76,7 +76,7 @@ private _mk = {
     params ["_class", "_pos", ["_text", ""]];
     private _c = _d ctrlCreate [_class, -1];
     _c ctrlSetPosition _pos;
-    if (_text isNotEqualTo "") then { _c ctrlSetText _text; };
+    if (_text isNotEqualTo "") then { _c ctrlSetText ((_text) call comspec_atak_native_fnc_tr); };
     _c ctrlCommit 0;
     _made pushBack _c;
     _c
@@ -111,14 +111,14 @@ if ((ctrlTextWidth _m) > _mw) then {
     private _codes = toArray _plain;
     private _n = floor ((count _codes) * _mw / (ctrlTextWidth _m)) max 1;
     while {_n > 1} do {
-        _m ctrlSetText ((toString (_codes select [0, _n])) + "…");
+        _m ctrlSetText ((((toString (_codes select [0, _n])) + "…")) call comspec_atak_native_fnc_tr);
         if ((ctrlTextWidth _m) <= _mw) exitWith {};
         _n = _n - 2;
     };
 };
 // Bouton invisible sur tout le toast : clic = masquer ; info-bulle = texte complet.
 private _btn = ["COMSPEC_RscButtonInvisible", [_x0, _y, _w, _h]] call _mk;
-_btn ctrlSetTooltip format ["%1 (clic : masquer)", _plain];
+_btn ctrlSetTooltip ((format ["%1 (clic : masquer)", _plain]) call comspec_atak_native_fnc_tr);
 _btn setVariable ["toastId", _show getOrDefault ["id", -1]];
 _btn ctrlAddEventHandler ["ButtonClick", {
     params ["_c"];

@@ -20,7 +20,7 @@ private _set = {
 };
 
 private _phone = [88509, _l get "phone"] call _set;
-_phone ctrlSetText (_l get "phoneTexture");
+_phone ctrlSetText (((_l get "phoneTexture")) call comspec_atak_native_fnc_tr);
 (_l get "device") params ["_dx", "_dy", "_dw", "_dh"];
 (_l get "status") params ["", "_sy", "", "_sh"];
 (_l get "appbar") params ["", "_ay", "", "_ah"];
@@ -60,7 +60,7 @@ private _rx1 = _dx + _dw - _pad * 3 - _iw - ([0, _ih / _ratio] select _interacti
 _ram ctrlSetPosition [_rx0, _sy, (_rx1 - _rx0) max 0, _sh];
 _ram ctrlSetFontHeight (_fontS * 0.9);
 _ram ctrlCommit 0;
-if ((ctrlText _ram) isEqualTo "") then { _ram ctrlSetText "RAM 00%"; };
+if ((ctrlText _ram) isEqualTo "") then { _ram ctrlSetText (("RAM 00%") call comspec_atak_native_fnc_tr); };
 _ram ctrlShow ((ctrlTextWidth _ram) <= (_rx1 - _rx0));
 (_d displayCtrl 88525) ctrlSetFontHeight _font;
 
@@ -78,10 +78,10 @@ private _step = _bw * 1.7;
 [88528, [_dx + _dw * 0.45, _ay, _dw * 0.55 - _pad, _ah]] call _set;
 (_d displayCtrl 88518) ctrlSetFontHeight _font;
 (_d displayCtrl 88528) ctrlSetFontHeight _fontS;
-(_d displayCtrl 88528) ctrlSetText (["Ctrl+Maj+U : prendre en main", ""] select _interactive);
+(_d displayCtrl 88528) ctrlSetText (((["Ctrl+Maj+U : prendre en main", ""] select _interactive)) call comspec_atak_native_fnc_tr);
 { (_d displayCtrl _x) ctrlShow _interactive; } forEach [88517, 88519, 88521, 88522, 88526];
 (_d displayCtrl 88522) ctrlShow (_interactive && {_l get "mini"});
-(_d displayCtrl 88521) ctrlSetText format ["\z\comspec_atak_native\addons\main\data\ui_%1.paa", ["collapse", "expand"] select (_l get "mini")];
+(_d displayCtrl 88521) ctrlSetText ((format ["\z\comspec_atak_native\addons\main\data\ui_%1.paa", ["collapse", "expand"] select (_l get "mini")]) call comspec_atak_native_fnc_tr);
 (_d displayCtrl 88517) ctrlEnable ((count (_s getOrDefault ["history", []])) > 1);
 
 // Touches physiques de la coque (fractions mesurées sur tools/src/android_s7_ca.png, paysage ;
@@ -122,7 +122,7 @@ private _wall = profileNamespace getVariable ["COMSPEC_ATAK_Wallpaper", "topo"];
 private _walls = ["topo", "night", "desert", "olive", "dark", "soar", "athena", "ops"];
 private _blur = ["", "_blur"] select (profileNamespace getVariable ["COMSPEC_ATAK_WallBlur", false]);
 private _wc = [88542, [_bx, _byy, _bww, _bhh]] call _set;
-_wc ctrlSetText (["", format ["\z\comspec_atak_native\addons\main\data\wall_%1%3_%2.paa", _wall, ["port", "land"] select (_l get "landscape"), _blur]] select (_wall in _walls));
+_wc ctrlSetText (((["", format ["\z\comspec_atak_native\addons\main\data\wall_%1%3_%2.paa", _wall, ["port", "land"] select (_l get "landscape"), _blur]] select (_wall in _walls))) call comspec_atak_native_fnc_tr);
 _wc ctrlShow (_page isEqualTo "LAUNCHER" && {_wall in _walls});
 (_d displayCtrl 88530) ctrlShow _isMap;
 (_d displayCtrl 88531) ctrlShow !_isMap;

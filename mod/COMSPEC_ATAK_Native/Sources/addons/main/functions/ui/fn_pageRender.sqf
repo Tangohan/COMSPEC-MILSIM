@@ -33,7 +33,7 @@ if (_page isNotEqualTo "LAUNCHER") then {
 if (_page isEqualTo "RECENTS") then { _title = "APPS RÉCENTES"; };
 if (_page isEqualTo "NOTIFS") then { _title = "NOTIFICATIONS"; };
 if (_page isEqualTo "PATCHES") then { _title = "PATCH AU DOS"; };
-(_d displayCtrl 88518) ctrlSetText _title;
+(_d displayCtrl 88518) ctrlSetText ((_title) call comspec_atak_native_fnc_tr);
 
 switch (_page) do {
     case "LAUNCHER": { [] call comspec_atak_native_fnc_launcherRender; };

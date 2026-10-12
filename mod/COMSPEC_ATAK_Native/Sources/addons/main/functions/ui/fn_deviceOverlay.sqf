@@ -106,12 +106,12 @@ uiNamespace setVariable ["COMSPEC_ATAK_DevLook", _look];
 private _showCrack = _lvl > 0 && {!_broken};
 _crack ctrlShow _showCrack;
 if (_showCrack) then {
-    _crack ctrlSetText (format ["crack_%1_%2", _lvl, _look get "crackVar"] call _tex);
+    _crack ctrlSetText (((format ["crack_%1_%2", _lvl, _look get "crackVar"] call _tex)) call comspec_atak_native_fnc_tr);
     _crack ctrlSetTextColor [1, 1, 1, [0.85, 0.9, 1] select (_lvl - 1)];
 };
 // Verre noir éclaté : appareil détruit.
 _shatter ctrlShow _broken;
-if (_broken) then { _shatter ctrlSetText (format ["shatter_%1", _look get "shatterVar"] call _tex); };
+if (_broken) then { _shatter ctrlSetText (((format ["shatter_%1", _look get "shatterVar"] call _tex)) call comspec_atak_native_fnc_tr); };
 // Lignes mortes : fixes et discrètes au niveau 2, scintillantes (changement de trame ~1 fois/s) quand c'est grave.
 private _showGlitch = (_lvl >= 2 || _broken) && {_state isNotEqualTo "OFF"};
 _glitch ctrlShow _showGlitch;
@@ -120,13 +120,13 @@ if (_showGlitch) then {
     if (_lvl >= 3 || {_dmg >= 0.85} || _broken) then {
         private _frame = ((_look getOrDefault ["frame", 0]) + 1 + floor random 2) mod 3;
         _look set ["frame", _frame];
-        _glitch ctrlSetText (format ["glitch_%1_%2", _gv, _frame] call _tex);
+        _glitch ctrlSetText (((format ["glitch_%1_%2", _gv, _frame] call _tex)) call comspec_atak_native_fnc_tr);
         _glitch ctrlSetTextColor [1, 1, 1, [0.9, 0.55] select _broken];
         // Battement : la trame apparaît d'un coup puis pâlit avant la suivante ; parfois l'écran « décroche ».
         _glitch ctrlSetFade ([0, 0.85] select (random 1 < 0.15)); _glitch ctrlCommit 0;
         _glitch ctrlSetFade (0.25 + random 0.45); _glitch ctrlCommit (0.5 + random 0.4);
     } else {
-        _glitch ctrlSetText (format ["glitch_%1_0", _gv] call _tex);
+        _glitch ctrlSetText (((format ["glitch_%1_0", _gv] call _tex)) call comspec_atak_native_fnc_tr);
         _glitch ctrlSetTextColor [1, 1, 1, 0.35];
         _glitch ctrlSetFade 0; _glitch ctrlCommit 0;
     };
@@ -134,7 +134,7 @@ if (_showGlitch) then {
 private _fx = uiNamespace getVariable ["COMSPEC_ATAK_PowerFx", []];
 private _off = _state isEqualTo "OFF" && {!((_fx param [0, ""]) isEqualTo "shutdown" && {(_fx param [1, -1]) > diag_tickTime})};
 _block ctrlShow (_off || _broken);
-_block ctrlSetTooltip (["Téléphone éteint", "Téléphone détruit"] select _broken);
+_block ctrlSetTooltip (((["Téléphone éteint", "Téléphone détruit"] select _broken)) call comspec_atak_native_fnc_tr);
 // Démarrage : les 5 dernières secondes de l'extinction (ou toute la durée si elle est plus courte).
 private _left = ((_hp getOrDefault ["offUntil", -1]) - time) max 0;
 private _total = [5, ((_hp getOrDefault ["offUntil", -1]) - (_hp getOrDefault ["offFrom", -1])) max 1] select ((_hp getOrDefault ["offFrom", -1]) >= 0);
@@ -146,7 +146,7 @@ if (_off) then {
     _black ctrlShow true; _black ctrlSetFade 0; _black ctrlCommit 0;
     if (_booting) then {
         private _p = (1 - _left / _bootLen) max 0 min 1;
-        _boot ctrlSetText ("boot" call _tex);
+        _boot ctrlSetText ((("boot" call _tex)) call comspec_atak_native_fnc_tr);
         // La barre rejoint la valeur de la seconde suivante en une seconde : progression continue.
         (ctrlPosition _barBg) params ["_bx", "_by", "_bw", "_bh"];
         _bar ctrlSetPosition [_bx, _by, _bw * _p, _bh]; _bar ctrlCommit 0;
@@ -158,14 +158,14 @@ if (_off) then {
             case (_p < 0.9): { "Recherche du réseau" };
             default { "Ouverture de COMSPEC ATAK" };
         };
-        _bootTxt ctrlSetStructuredText parseText format ["<t align='center' size='0.85' color='#c9d4cf'>%1</t><br/><t align='center' size='0.7' color='#5f6f68' font='EtelkaMonospacePro'>COMSPEC ATAK v%2 · %3</t>",
-            _step, missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "1.6.0"], _hp get "reason"];
+        _bootTxt ctrlSetStructuredText parseText ((format ["<t align='center' size='0.85' color='#c9d4cf'>%1</t><br/><t align='center' size='0.7' color='#5f6f68' font='EtelkaMonospacePro'>COMSPEC ATAK v%2 · %3</t>",
+            _step, missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "1.6.0"], _hp get "reason"]) call comspec_atak_native_fnc_tr);
     } else {
-        _txt ctrlSetStructuredText parseText format ["<t align='center' size='1.2' color='#5f6f68' font='RobotoCondensedBold'>ÉCRAN ÉTEINT</t><br/><t align='center' color='#c9d4cf'>%1</t><br/><t align='center' size='0.85' color='#8a9a93'>%2</t>", _hp get "reason", switch (true) do {
+        _txt ctrlSetStructuredText parseText ((format ["<t align='center' size='1.2' color='#5f6f68' font='RobotoCondensedBold'>ÉCRAN ÉTEINT</t><br/><t align='center' color='#c9d4cf'>%1</t><br/><t align='center' size='0.85' color='#8a9a93'>%2</t>", _hp get "reason", switch (true) do {
             case ((_hp get "reason") isEqualTo "Batterie vide"): { "Rechargez en véhicule ou changez la batterie" };
             case ((_hp get "offLeft") > 0): { format ["Redémarrage dans %1 s", _hp get "offLeft"] };
             default { "Redémarrage en cours…" };
-        }];
+        }]) call comspec_atak_native_fnc_tr);
     };
 } else {
     // Écran abîmé : il saute de temps en temps, d'autant plus souvent qu'il est touché.
@@ -194,7 +194,7 @@ if (_sig isNotEqualTo _deadSig) then {
         _x params ["_fx", "_fy", "_fw", "_fh"];
         if (_ori isEqualTo "land") then { private _t = _fx; _fx = 1 - _fy - _fh; _fy = _t; _t = _fw; _fw = _fh; _fh = _t; };
         private _z = ["COMSPEC_RscButtonInvisible", [_rx + _rw * _fx, _ry + _rh * _fy, _rw * _fw, _rh * _fh], "", false] call comspec_atak_native_fnc_pageCtrl;
-        _z ctrlSetTooltip "Zone morte : l'écran ne réagit plus ici";
+        _z ctrlSetTooltip (("Zone morte : l'écran ne réagit plus ici") call comspec_atak_native_fnc_tr);
         _dead pushBack _z;
     } forEach _zones;
     _deadSig = _sig;

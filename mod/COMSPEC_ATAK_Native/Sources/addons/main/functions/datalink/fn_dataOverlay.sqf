@@ -38,7 +38,7 @@ if (_fresh) then {
     _lcd ctrlEnable false;
     _leds = [0, 1, 2] apply {
         private _c = _d ctrlCreate ["COMSPEC_RscPicture", -1];
-        _c ctrlSetText "\z\comspec_atak_native\addons\main\data\ui_disc.paa";
+        _c ctrlSetText (("\z\comspec_atak_native\addons\main\data\ui_disc.paa") call comspec_atak_native_fnc_tr);
         _c ctrlEnable false;
         _c
     };
@@ -49,7 +49,7 @@ _frame params ["_fx", "_fy", "_fw", "_fh"];
 // Couleur du module (réglage Personnaliser) : olive par défaut, noir ou tan.
 private _mt = profileNamespace getVariable ["COMSPEC_ATAK_ModuleTint", "olive"];
 private _tex = _want + (["", "_" + _mt] select (_mt in ["black", "tan"]));
-if (_fresh || {_variant isNotEqualTo _tex}) then { _img ctrlSetText format ["\z\comspec_atak_native\addons\main\data\%1.paa", _tex]; };
+if (_fresh || {_variant isNotEqualTo _tex}) then { _img ctrlSetText ((format ["\z\comspec_atak_native\addons\main\data\%1.paa", _tex]) call comspec_atak_native_fnc_tr); };
 _img ctrlSetPosition [_px + _pw * _fx, _py + _ph * _fy, _pw * _fw, _ph * _fh];
 _img ctrlCommit 0;
 _mod params ["_mx", "_my", "_mw", "_mh"];
@@ -106,7 +106,7 @@ private _line = switch (_phase) do {
     default { "" };
 };
 private _fs = _mhh * 0.15;
-_lcd ctrlSetStructuredText parseText format ["<t font='EtelkaMonospaceProBold' size='%1' color='#7dff9a'>DL-7 %2<br/>%3</t>", _fs / (0.024 * safeZoneH), _port, _line];
+_lcd ctrlSetStructuredText parseText ((format ["<t font='EtelkaMonospaceProBold' size='%1' color='#7dff9a'>DL-7 %2<br/>%3</t>", _fs / (0.024 * safeZoneH), _port, _line]) call comspec_atak_native_fnc_tr);
 if (_fresh) then {
     // Câble qui apparaît au branchement.
     { _x ctrlSetFade 1; _x ctrlCommit 0; _x ctrlSetFade 0; _x ctrlCommit 0.35; } forEach ([_img, _lcd] + _leds);

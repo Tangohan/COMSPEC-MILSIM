@@ -24,8 +24,8 @@ _bar ctrlSetBackgroundColor [1, 1, 1, 0.85];
 _bar ctrlCommit 0;
 private _t = _d ctrlCreate ["RscStructuredText", -1];
 _t ctrlSetPosition [_x0 + _w * 0.08, _y0 + _h * 0.12, _w * 0.84, _h * 0.8];
-_t ctrlSetStructuredText parseText format ["<t align='center' size='3' font='RobotoCondensedBold' color='#ffffff'>%1</t><br/><t align='center' size='1.6' color='#ffffff'>%2</t><br/><br/><t align='center' size='1.1' color='#ffe0d8'>%3 · %4</t>",
-    _title, _msg, _from, [dayTime, "HH:MM"] call BIS_fnc_timeToString];
+_t ctrlSetStructuredText parseText ((format ["<t align='center' size='3' font='RobotoCondensedBold' color='#ffffff'>%1</t><br/><t align='center' size='1.6' color='#ffffff'>%2</t><br/><br/><t align='center' size='1.1' color='#ffe0d8'>%3 · %4</t>",
+    _title, _msg, _from, [dayTime, "HH:MM"] call BIS_fnc_timeToString]) call comspec_atak_native_fnc_tr);
 _t ctrlCommit 0;
 uiNamespace setVariable ["COMSPEC_ATAK_FullAlert", [_bg, _bar, _t]];
 [] call comspec_atak_native_fnc_vibrate;

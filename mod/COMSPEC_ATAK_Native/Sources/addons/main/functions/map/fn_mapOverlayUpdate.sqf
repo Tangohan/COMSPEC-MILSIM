@@ -26,7 +26,7 @@ if (!isNull _cur) then {
                 round (player distance2D _p), round _az, [_az] call _cardinal]
         }
     };
-    _cur ctrlSetStructuredText parseText _text;
+    _cur ctrlSetStructuredText parseText ((_text) call comspec_atak_native_fnc_tr);
 };
 if (_cursorOnly) exitWith { true };
 
@@ -41,34 +41,34 @@ if (!isNull _wa) then {
         private _b = player getDir _p;
         _wa ctrlSetAngle [_b - _h, 0.5, 0.5];
         private _d = player distance2D _p;
-        (_ov getOrDefault ["wpText", controlNull]) ctrlSetStructuredText parseText format ["<t font='RobotoCondensedBold' size='1.1'>%1</t> <t size='0.8' color='#8a9a93'>%2/%3</t><br/><t size='0.95'>%4</t> <t size='0.8' color='#8a9a93'>%5°</t>",
-            _n, (_w getOrDefault ["idx", 0]) + 1, count _pts, [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 1]] select (_d >= 1000), round _b];
+        (_ov getOrDefault ["wpText", controlNull]) ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' size='1.1'>%1</t> <t size='0.8' color='#8a9a93'>%2/%3</t><br/><t size='0.95'>%4</t> <t size='0.8' color='#8a9a93'>%5°</t>",
+            _n, (_w getOrDefault ["idx", 0]) + 1, count _pts, [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 1]] select (_d >= 1000), round _b]) call comspec_atak_native_fnc_tr);
     };
 };
 private _needle = _ov getOrDefault ["needle", controlNull];
 if (!isNull _needle) then { _needle ctrlSetAngle [_h, 0.5, 0.5]; };
 private _hd = _ov getOrDefault ["heading", controlNull];
-if (!isNull _hd) then { _hd ctrlSetText format ["%1° %2", round _h, [_h] call _cardinal]; };
+if (!isNull _hd) then { _hd ctrlSetText ((format ["%1° %2", round _h, [_h] call _cardinal]) call comspec_atak_native_fnc_tr); };
 
 private _me = _ov getOrDefault ["me", controlNull];
 if (!isNull _me) then {
     // Mini : indicatif et cap seulement ; plein écran : avec la grille.
-    _me ctrlSetStructuredText parseText (if (([] call comspec_atak_native_fnc_layoutGet) get "mini") then {
+    _me ctrlSetStructuredText parseText (((if (([] call comspec_atak_native_fnc_layoutGet) get "mini") then {
         format ["<t align='right'><t font='RobotoCondensedBold' color='#5cc76b'>%1</t><br/>%2 %3°</t>", [player] call comspec_atak_native_fnc_unitCallsign, [_h] call _cardinal, round _h]
     } else {
         format ["<t align='right'><t font='RobotoCondensedBold' color='#5cc76b'>%1</t><br/>%2 %3°<br/>%4</t>",
             [player] call comspec_atak_native_fnc_unitCallsign, [_h] call _cardinal, round _h, [player] call comspec_atak_native_fnc_gridRef]
-    });
+    })) call comspec_atak_native_fnc_tr);
 };
 
 private _bar = _ov getOrDefault ["databar", controlNull];
 if (!isNull _bar) then {
     private _v = vehicle player;
-    _bar ctrlSetStructuredText parseText format [
+    _bar ctrlSetStructuredText parseText ((format [
         "<t align='center' size='0.9'>VIT %1 km/h   ALT %2 m   CAP %3°   %4   %5   %6</t>",
         round (speed _v) max 0, round ((getPosASL _v) select 2), round _h, [player] call comspec_atak_native_fnc_gridRef,
         [dayTime, "HH:MM"] call BIS_fnc_timeToString, toUpper (_s getOrDefault ["networkState", "OFFLINE"])
-    ];
+    ]) call comspec_atak_native_fnc_tr);
 };
 
 // Outils bascule : vert quand actifs.

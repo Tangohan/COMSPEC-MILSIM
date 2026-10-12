@@ -53,8 +53,8 @@ switch (_act) do {
                 ["front"] call comspec_atak_native_fnc_fx;
             };
             (uiNamespace getVariable ["COMSPEC_ATAK_LockClock", []]) params [["_clock", controlNull], ["_stat", controlNull]];
-            if (!isNull _clock) then { _clock ctrlSetText ([dayTime, "HH:MM"] call BIS_fnc_timeToString); };
-            if (!isNull _stat) then { _stat ctrlSetStructuredText parseText (call (uiNamespace getVariable ["COMSPEC_ATAK_LockStatus", { "" }])); };
+            if (!isNull _clock) then { _clock ctrlSetText ((([dayTime, "HH:MM"] call BIS_fnc_timeToString)) call comspec_atak_native_fnc_tr); };
+            if (!isNull _stat) then { _stat ctrlSetStructuredText parseText (((call (uiNamespace getVariable ["COMSPEC_ATAK_LockStatus", { "" }]))) call comspec_atak_native_fnc_tr); };
             true
         };
         if (_enabled && {_interactive} && {missionNamespace getVariable ["COMSPEC_ATAK_LockPending", false]} && {call _usable}) then {
@@ -102,7 +102,7 @@ switch (_act) do {
             params ["_class", "_pos", ["_text", ""]];
             private _c = _d ctrlCreate [_class, -1, _grp];
             _c ctrlSetPosition _pos;
-            if (_text isNotEqualTo "") then { _c ctrlSetText _text; };
+            if (_text isNotEqualTo "") then { _c ctrlSetText ((_text) call comspec_atak_native_fnc_tr); };
             _c ctrlCommit 0;
             _made pushBack _c;
             _c
@@ -145,7 +145,7 @@ switch (_act) do {
             format ["<t align='center' size='0.85' color='#a9b8b0'>Batterie <t color='%1'>%2 %%</t>   ·   %3</t>", ["#e8eee9", "#e04038"] select (_bat <= 12), _bat, _net]
         }];
         private _stat = ["COMSPEC_RscStructuredText", [0, _y, _dw, _font * 1.3]] call _mk;
-        _stat ctrlSetStructuredText parseText (call (uiNamespace getVariable "COMSPEC_ATAK_LockStatus"));
+        _stat ctrlSetStructuredText parseText (((call (uiNamespace getVariable "COMSPEC_ATAK_LockStatus"))) call comspec_atak_native_fnc_tr);
         _y = _y + _font * 1.3 + _pad;
         uiNamespace setVariable ["COMSPEC_ATAK_LockClock", [_clock, _stat]];
         // Dernières notifications (3).
@@ -170,8 +170,8 @@ switch (_act) do {
             _plain = (_plain regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"];
             private _card = ["COMSPEC_RscStructuredText", [_cx, _y, _cw, _ch]] call _mk;
             _card ctrlSetBackgroundColor [0.07, 0.085, 0.075, 0.88];
-            _card ctrlSetStructuredText parseText format ["<t size='0.75' color='%1'>%2</t><t size='0.75' color='#8a9a93'>  ·  %3</t><br/><t size='0.85' color='#e8eee9'>%4</t>",
-                _hex, _t, _x getOrDefault ["time", ""], _plain];
+            _card ctrlSetStructuredText parseText ((format ["<t size='0.75' color='%1'>%2</t><t size='0.75' color='#8a9a93'>  ·  %3</t><br/><t size='0.85' color='#e8eee9'>%4</t>",
+                _hex, _t, _x getOrDefault ["time", ""], _plain]) call comspec_atak_native_fnc_tr);
             _y = _y + _ch + _pad * 0.4;
         } forEach _last;
         // Invite en bas.
@@ -183,7 +183,7 @@ switch (_act) do {
         _hint ctrlSetTextColor [0.78, 0.84, 0.80, 1];
         // Tout l'écran déverrouille (clic, ou glissé : le relâchement sur le bouton compte comme un clic).
         private _btn = ["COMSPEC_RscButtonInvisible", [0, 0, _dw, _dh]] call _mk;
-        _btn ctrlSetTooltip "Déverrouiller";
+        _btn ctrlSetTooltip (("Déverrouiller") call comspec_atak_native_fnc_tr);
         _btn ctrlAddEventHandler ["ButtonClick", { [{ ["unlock"] call comspec_atak_native_fnc_lockScreen; }] call CBA_fnc_execNextFrame; }];
         uiNamespace setVariable ["COMSPEC_ATAK_LockCtrls", _made];
         // À l'ouverture : volet rapide refermé, effets d'écran (fêlures, filtre de nuit) remis devant.

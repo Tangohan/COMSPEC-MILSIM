@@ -71,7 +71,7 @@ switch (_act) do {
         // Zone dessinée (gen_assets.py ANT_FRAME) en fractions du carré de la coque ; portrait = paysage tourné d'un quart.
         (if (_land) then { [238, -832, 384, 1536] } else { [1344, 238, 1536, 384] }) params ["_fx", "_fy", "_fw", "_fh"];
         (_l get "phone") params ["_px", "_py", "_pw", "_ph"];
-        _c ctrlSetText format ["\z\comspec_atak_native\addons\main\data\antenna_%1_%2.paa", _cur select 0, ["port", "land"] select _land];
+        _c ctrlSetText ((format ["\z\comspec_atak_native\addons\main\data\antenna_%1_%2.paa", _cur select 0, ["port", "land"] select _land]) call comspec_atak_native_fnc_tr);
         _c ctrlSetPosition [_px + _pw * _fx / 2048, _py + _ph * _fy / 2048, _pw * _fw / 2048, _ph * _fh / 2048];
         _c ctrlCommit 0;
         uiNamespace setVariable ["COMSPEC_ATAK_AntOverlay", [_c]];

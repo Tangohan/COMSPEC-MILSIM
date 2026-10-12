@@ -119,7 +119,7 @@ if (_tab isEqualTo "MISSION") exitWith {
     } forEach _subjects;
     if (_count isEqualTo 0) then { _lines pushBack (["La mission ne contient pas de notes de briefing."] call _dim); };
     private _text = ["COMSPEC_RscStructuredText", [_pad, _y0, _gw - 2 * _pad, _bh - _y0 - _pad]] call comspec_atak_native_fnc_pageCtrl;
-    _text ctrlSetStructuredText parseText (_lines joinString "<br/>");
+    _text ctrlSetStructuredText parseText (((_lines joinString "<br/>")) call comspec_atak_native_fnc_tr);
     _text ctrlSetPosition [_pad, _y0, _gw - 2 * _pad, (ctrlTextHeight _text) max (_bh - _y0 - _pad)];
     _text ctrlCommit 0;
     true
@@ -164,7 +164,7 @@ if (_total > 1) then {
     {
         private _t = _x;
         if (_t isEqualTo "") then { _t = format ["Diapositive %1", _forEachIndex + 1]; };
-        _toc lbAdd format ["%1. %2", _forEachIndex + 1, _t];
+        _toc lbAdd ((format ["%1. %2", _forEachIndex + 1, _t]) call comspec_atak_native_fnc_tr);
     } forEach _titles;
     _toc lbSetCurSel _idx;
     _toc ctrlAddEventHandler ["LBSelChanged", { params ["", "_i"]; ["goto", _i] call comspec_atak_native_fnc_briefingAction; }];
@@ -180,7 +180,7 @@ if (_total < 1 || {_path isEqualTo ""}) then {
         default { "Image indisponible (réseau ou cache).<br/>Touchez ACTUALISER pour réessayer." };
     };
     private _t = ["COMSPEC_RscStructuredText", [_vx + _pad, _vy + _vh * 0.38, _vw - 2 * _pad, _rowH * 3]] call comspec_atak_native_fnc_pageCtrl;
-    _t ctrlSetStructuredText parseText format ["<t align='center' color='#8a9a93'>%1</t>", _msg];
+    _t ctrlSetStructuredText parseText ((format ["<t align='center' color='#8a9a93'>%1</t>", _msg]) call comspec_atak_native_fnc_tr);
 } else {
     ["COMSPEC_RscSlide", [_vx, _vy, _vw, _vh], _path] call comspec_atak_native_fnc_pageCtrl;
 };
@@ -195,14 +195,14 @@ if (_op isNotEqualTo "") then {
     _srcLabel = format ["<t color='#7fb6e6'>Op. %1</t>", _op];
 };
 private _info = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh + _pad / 2, _vw, _fs * 1.6]] call comspec_atak_native_fnc_pageCtrl;
-_info ctrlSetStructuredText parseText format ["<t font='RobotoCondensedBold'>%1</t><t align='right' size='0.85' color='#8a9a93'>%2 · %3 / %4</t>", _title, _srcLabel, [_idx + 1, 0] select (_total < 1), _total];
+_info ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold'>%1</t><t align='right' size='0.85' color='#8a9a93'>%2 · %3 / %4</t>", _title, _srcLabel, [_idx + 1, 0] select (_total < 1), _total]) call comspec_atak_native_fnc_tr);
 
 // Notes de la diapositive (texte saisi sur Athena).
 if (_notesH > 0) then {
     private _nt = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh + _pad / 2 + _fs * 1.6, _vw, _notesH]] call comspec_atak_native_fnc_pageCtrl;
     private _e = _detail;
     { _e = [_e, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&", "&amp;"], ["<", "&lt;"], [">", "&gt;"]];
-    _nt ctrlSetStructuredText parseText format ["<t size='0.85' color='#c9d4cf'>%1</t>", [_e, " ¶ ", "<br/>"] call CBA_fnc_replace];
+    _nt ctrlSetStructuredText parseText ((format ["<t size='0.85' color='#c9d4cf'>%1</t>", [_e, " ¶ ", "<br/>"] call CBA_fnc_replace]) call comspec_atak_native_fnc_tr);
 };
 // Bandeau de présentation : qui présente, présents, PRÉSENTER / SUIVRE.
 if (_liveH > 0) then {
@@ -213,7 +213,7 @@ if (_liveH > 0) then {
         default { "<t size='0.85' color='#8a9a93'>Personne ne présente. PRÉSENTER fait suivre vos diapositives aux téléphones de votre camp.</t>" };
     };
     private _lt = ["COMSPEC_RscStructuredText", [_vx, _ly, _vw * 0.66, _liveH]] call comspec_atak_native_fnc_pageCtrl;
-    _lt ctrlSetStructuredText parseText _txt;
+    _lt ctrlSetStructuredText parseText ((_txt) call comspec_atak_native_fnc_tr);
     private _lw = _vw * 0.34 - _pad / 2;
     if ((count _live) > 0 && {!_iPresent}) then {
         [[_vx + _vw - _lw, _ly, _lw, _fs * 1.5], ["SUIVRE", "SUIVI ✓"] select _follow, { ["follow"] call comspec_atak_native_fnc_briefingAction; }, _follow] call _btn;

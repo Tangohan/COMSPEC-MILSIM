@@ -426,7 +426,7 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
             _pool set [_used, _c];
         };
         _c ctrlSetBackgroundColor [0.02, 0.02, 0.02, 0.86];
-        _c ctrlSetStructuredText parseText format ["<t size='%4' font='RobotoCondensedBold' color='#ffffff'>%1<br/>%2E<br/>%3N</t>", toUpper ([_title, "<", "&lt;"] call CBA_fnc_replace), _e, _n, 1];
+        _c ctrlSetStructuredText parseText ((format ["<t size='%4' font='RobotoCondensedBold' color='#ffffff'>%1<br/>%2E<br/>%3N</t>", toUpper ([_title, "<", "&lt;"] call CBA_fnc_replace), _e, _n, 1]) call comspec_atak_native_fnc_tr);
         _c ctrlSetFontHeight _fs;
         private _w = (_fs * 0.42 * (((count _title) max 9) + 1)) max (_fs * 4);
         private _ringPx = (_map ctrlMapWorldToScreen [(_pos select 0) + _r, _pos select 1]) select 0;

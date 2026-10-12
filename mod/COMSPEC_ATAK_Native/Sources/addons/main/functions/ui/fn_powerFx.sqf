@@ -43,7 +43,7 @@ _dim ctrlSetBackgroundColor [0, 0, 0, 1];
 _dim ctrlSetFade 1; _dim ctrlCommit 0;
 private _ih = _rh * ([0.2, 0.3] select (_l get "landscape"));
 private _icon = ["COMSPEC_RscPhone", [_rx + (_rw - _ih / _ratio) / 2, _ry + _rh * 0.5 - _ih * 0.75, _ih / _ratio, _ih]] call _mk;
-_icon ctrlSetText "\z\comspec_atak_native\addons\main\data\power_bat_empty.paa";
+_icon ctrlSetText (("\z\comspec_atak_native\addons\main\data\power_bat_empty.paa") call comspec_atak_native_fnc_tr);
 _icon ctrlShow false;
 private _txt = ["COMSPEC_RscStructuredText", [_rx, _ry + _rh * 0.5 + _ih * 0.3, _rw, _font * 3]] call _mk;
 _txt ctrlSetFade 1; _txt ctrlCommit 0;
@@ -78,7 +78,7 @@ private _steps = switch (_kind) do {
         [1.3, { params ["_c", "", "_f"];
             (_c select 1) ctrlSetFade 0; (_c select 1) ctrlCommit 0.25;
             (_c select 2) ctrlShow true; (_c select 2) ctrlSetFade 1; (_c select 2) ctrlCommit 0; (_c select 2) ctrlSetFade 0; (_c select 2) ctrlCommit 0.3;
-            (_c select 3) ctrlSetStructuredText parseText "<t align='center' font='RobotoCondensedBold' color='#e5483a'>BATTERIE VIDE</t><br/><t align='center' size='0.8' color='#8a9a93'>Arrêt du téléphone</t>";
+            (_c select 3) ctrlSetStructuredText parseText (("<t align='center' font='RobotoCondensedBold' color='#e5483a'>BATTERIE VIDE</t><br/><t align='center' size='0.8' color='#8a9a93'>Arrêt du téléphone</t>") call comspec_atak_native_fnc_tr);
             (_c select 3) ctrlSetFade 0; (_c select 3) ctrlCommit 0.3;
         }],
         [2.0, { params ["_c"]; (_c select 2) ctrlSetFade 0.7; (_c select 2) ctrlCommit 0.35; }],
@@ -91,7 +91,7 @@ private _steps = switch (_kind) do {
         [0.8, { params ["_c"]; (_c select 1) ctrlSetFade 0; (_c select 1) ctrlCommit 0; (_c select 1) ctrlSetFade 1; (_c select 1) ctrlCommit 0.08; }],
         [1.1, { params ["_c"];
             (_c select 1) ctrlSetFade 0; (_c select 1) ctrlCommit 0;
-            (_c select 3) ctrlSetStructuredText parseText "<t align='center' font='EtelkaMonospacePro' color='#e5483a'>ERREUR MATÉRIELLE</t><br/><t align='center' size='0.8' font='EtelkaMonospacePro' color='#8a9a93'>display_panel: no response</t>";
+            (_c select 3) ctrlSetStructuredText parseText (("<t align='center' font='EtelkaMonospacePro' color='#e5483a'>ERREUR MATÉRIELLE</t><br/><t align='center' size='0.8' font='EtelkaMonospacePro' color='#8a9a93'>display_panel: no response</t>") call comspec_atak_native_fnc_tr);
             (_c select 3) ctrlSetFade 0; (_c select 3) ctrlCommit 0;
         }],
         [1.5, { params ["_c"]; (_c select 3) ctrlSetFade 0.6; (_c select 3) ctrlCommit 0; (_c select 3) ctrlSetFade 0; (_c select 3) ctrlCommit 0.1; }],
@@ -100,7 +100,7 @@ private _steps = switch (_kind) do {
     default {[
         [0, { params ["_c", "", "_f"];
             (_c select 1) ctrlSetFade 0; (_c select 1) ctrlCommit 0.6;
-            (_c select 3) ctrlSetStructuredText parseText "<t align='center' color='#c9d4cf'>Arrêt…</t>";
+            (_c select 3) ctrlSetStructuredText parseText (("<t align='center' color='#c9d4cf'>Arrêt…</t>") call comspec_atak_native_fnc_tr);
             (_c select 3) ctrlSetFade 0; (_c select 3) ctrlCommit 0.2;
         }],
         [0.8, { params ["_c", "_r"]; (_c select 3) ctrlSetFade 1; (_c select 3) ctrlCommit 0; [_c, _r] call (uiNamespace getVariable ["COMSPEC_ATAK_PowerCollapse", {}]); }]

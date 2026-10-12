@@ -102,7 +102,7 @@ switch (_mode) do {
         _hd ctrlSetFont "EtelkaMonospaceProBold";
         _hd ctrlSetFontHeight (_fs * 0.95);
         _hd ctrlSetTextColor [0.62, 0.70, 0.66, 1];
-        if (_m isNotEqualTo "") then { _hd ctrlSetTooltip format ["Marqueur pointé : %1", [markerText _m, _m] select ((markerText _m) isEqualTo "")]; };
+        if (_m isNotEqualTo "") then { _hd ctrlSetTooltip ((format ["Marqueur pointé : %1", [markerText _m, _m] select ((markerText _m) isEqualTo "")]) call comspec_atak_native_fnc_tr); };
         private _ry = _y0 + pixelH * 2 + _headH;
         private _ih = _rowH * 0.62;
         private _iw = _ih / _ratio;
