@@ -250,6 +250,33 @@ if (!isNull _target && {!isNil "comspec_sse_fnc_bioRequest"} && {missionNamespac
     };
 };
 
+// Ce que l'opérateur voit du sujet sans le lui demander : sexe apparent, âge estimé
+// (profil biologique du pack SSE, arrondi à 5 ans) et appartenance déjà connue des
+// joueurs (organisation soupçonnée ou confirmée). Ces champs partaient vides.
+private _sexApparent = "";
+if (!isNull _target) then {
+    _sexApparent = ["Masculin", "Féminin"] select ((getNumber ((configOf _target) >> "woman")) == 1);
+    if (_age < 0 && {!isNil "comspec_sse_fnc_bioProfile"}) then {
+        private _prof = [_target] call comspec_sse_fnc_bioProfile;
+        private _pa = _prof getOrDefault ["age", -1];
+        if (_pa isEqualType 0 && {_pa > 0}) then { _age = 5 * round (_pa / 5); };
+    };
+    if (_affil isEqualTo "" && {!isNil "comspec_sse_fnc_orgOp"} && {!isNil "comspec_sse_orgs"}) then {
+        private _of = ["orgOf", [_target]] call comspec_sse_fnc_orgOp;
+        if ((_of isEqualType []) && {(count _of) >= 1}) then {
+            private _org = comspec_sse_orgs getOrDefault [_of select 0, createHashMap];
+            private _mem = if (isNil "comspec_sse_orgMembers") then { createHashMap } else {
+                comspec_sse_orgMembers getOrDefault [[_target] call comspec_sse_fnc_bioPersonKey, createHashMap]
+            };
+            private _known = (_org getOrDefault ["known", 0]) max (_mem getOrDefault ["known", 0]);
+            if (_known >= 1) then {
+                _affil = _org getOrDefault ["name", ""];
+                if (_known == 1 && {_affil isNotEqualTo ""}) then { _affil = _affil + " (soupçonnée)"; };
+            };
+        };
+    };
+};
+
 // Verdict de la requête d'identité, s'il y en a eu une.
 private _q = uiNamespace getVariable ["COMSPEC_SsePerson_Query", []];
 if (!(_q isEqualType [])) then { _q = []; };
@@ -316,6 +343,7 @@ private _parts = [
     format ['"first_name":"%1"', _eFirst],
     format ['"alias":"%1"', _eAlias],
     format ['"age_estimated":%1', _ageJson],
+    format ['"sex_apparent":"%1"', [_sexApparent] call _escape],
     format ['"nationality":"%1"', [_nat] call _escape],
     format ['"language_spoken":"%1"', [_lang] call _escape],
     format ['"distinguishing_marks":"%1"', [_marks] call _escape],
