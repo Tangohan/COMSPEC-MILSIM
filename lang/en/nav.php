@@ -656,4 +656,6 @@ return [
     'corriger_ce_qu_un_niveau_a_le_droit_de_faire_comme_un_role_discord' => 'Adjust what an access level is allowed to do, like a Discord role',
     'emplois' => 'Jobs',
     'libelles_du_dossier_distincts_des_niveaux_d_acces' => 'File labels, separate from access levels',
+    'files_d_envoi_athena' => 'Athena send queues',
+    'envois_du_jeu_en_attente_ou_en_echec_et_charge_d_athena' => 'Game sends waiting or failed, and Athena load',
 ];
