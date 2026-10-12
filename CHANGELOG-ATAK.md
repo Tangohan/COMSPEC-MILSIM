@@ -23,6 +23,15 @@ Non testé en jeu. Demande de TTRD : « Relief faut améliorer l'app : LIGNE DE 
 
 À tester en jeu : chaque outil en ville et en campagne ; champ de vision avec bâtiments et arbres (temps de calcul à 2 km) ; heatmap par rapport à moi sur une colline ; ligne de vue derrière un mur, un arbre et une crête ; outil LIGNE DE VUE de la carte puis retour dans Relief ; bâtiments vus à 1 km (temps de calcul) et leurs couleurs sur la carte.
 
+## Correctif 2026-10-12 — App Plan : la zone terminée ne disparaît plus ; symboles et étiquettes de la carte lisibles (ATAK natif 1.43.1)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration.
+- Une zone (ou tout élément) envoyée au plan **partagé** disparaissait à la fin du tracé : le téléphone vidait le tracé et attendait que le serveur écrive le plan, et rien ne revenait (serveur sans le mod ATAK natif, ou refus du serveur).
+- L'élément reste affiché pendant l'attente. Sans réponse du serveur au bout de 5 s, il est gardé dans le brouillon, avec un message et une ligne `PLAN` dans le RPT.
+- Le serveur annonce qu'il a le mod (`COMSPEC_ATAK_PlanSrvOn`). Sans lui, le téléphone place tout de suite les éléments dans le brouillon et le dit : le plan partagé avec les coéquipiers demande le mod sur le serveur.
+- Carte du téléphone : les symboles suivent la taille de l'écran de l'ATAK (mini, porté, plein écran, portrait ou paysage) au lieu d'un plancher qui les gardait trop gros sur la petite carte. Les textes suivent aussi, sans descendre sous une taille lisible.
+- Étiquettes de la carte : indicatifs et textes des marqueurs en blanc cerné de noir, un peu plus grands, au lieu de la couleur de l'unité avec une ombre légère. Cartouches plein écran plus grands, deuxième ligne plus claire. Même règle pour l'app Plan.
+
 ## Selfie : le téléphone dans la main, l'objectif sur le téléphone (ATAK natif 1.43.0)
 
 Non testé en jeu. Retour de TTRD après essai : « anime OK et manque le S7 dans la main », la main passait aussi devant l'image. Pas de DLL à recompiler, pas de migration.
