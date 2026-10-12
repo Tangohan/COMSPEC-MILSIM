@@ -549,6 +549,9 @@ return function (Router $router) {
     $router->get('/account/security', [AccountController::class, 'security'], [AuthMiddleware::class]);
     $router->post('/account/security', [AccountController::class, 'security'], [AuthMiddleware::class]);
     $router->get('/account/security/devices', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'index'], [AuthMiddleware::class]);
+    // Liaison du jeu par code affiché dans Arma (connexion au compte Athena, sans clé de communauté).
+    $router->get('/lier', [\App\Controllers\Web\AtakQuickLinkController::class, 'show']);
+    $router->post('/lier', [\App\Controllers\Web\AtakQuickLinkController::class, 'confirm'], [AuthMiddleware::class, AtakModuleSanctionMiddleware::class]);
     $router->post('/account/security/devices/revoke', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'revoke'], [AuthMiddleware::class]);
     $router->get('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->post('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);

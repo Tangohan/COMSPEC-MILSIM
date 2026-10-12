@@ -2787,7 +2787,7 @@ public static partial class Extension
 
         if (function == "GetCapabilities")
         {
-            return "OK|" + ExtensionVersion + "|PairStart,PairStatus,Recovery,SessionRefresh,SecureStore,Logging,GameAuth,ChatPoll,SetMapId,PersistentQueue,MemStats,GetPendingQueueCount,ReconNote,TelemetryBatch,GetTelemetryMetrics,SetTelemetryMode,EmitTelemetry";
+            return "OK|" + ExtensionVersion + "|PairStart,PairStatus,OpenAthenaLink,GetSessionTenant,Recovery,SessionRefresh,SecureStore,Logging,GameAuth,ChatPoll,SetMapId,PersistentQueue,MemStats,GetPendingQueueCount,ReconNote,TelemetryBatch,GetTelemetryMetrics,SetTelemetryMode,EmitTelemetry";
         }
 
         if (function == "PairStart" && args.Length >= 1)
@@ -2816,13 +2816,41 @@ public static partial class Extension
                 var deviceCode = pairRoot.TryGetProperty("device_code", out var dc) && dc.ValueKind == JsonValueKind.String ? dc.GetString() ?? "" : "";
                 var userCode = pairRoot.TryGetProperty("user_code", out var uc) && uc.ValueKind == JsonValueKind.String ? uc.GetString() ?? "" : "";
                 var verify = pairRoot.TryGetProperty("verification_uri", out var vu) && vu.ValueKind == JsonValueKind.String ? vu.GetString() ?? "" : "";
+                var verifyFull = pairRoot.TryGetProperty("verification_uri_complete", out var vc) && vc.ValueKind == JsonValueKind.String ? vc.GetString() ?? "" : "";
                 var ttl = pairRoot.TryGetProperty("expires_in", out var ei) && ei.ValueKind == JsonValueKind.Number ? ei.GetInt32() : 600;
                 var interval = pairRoot.TryGetProperty("interval", out var intEl) && intEl.ValueKind == JsonValueKind.Number ? intEl.GetInt32() : 2;
                 if (deviceCode.Length < 8 || userCode.Length < 4) return "ERR|invalid_response";
                 _pendingPairDeviceCode = deviceCode;
                 _pendingPairExpiresAt = DateTimeOffset.UtcNow.AddSeconds(Math.Clamp(ttl, 30, 900));
                 _pendingPairPollSeconds = Math.Clamp(interval, 1, 15);
-                return "OK|" + SanitizeIdentityField(userCode) + "|" + Math.Clamp(ttl, 30, 900) + "|" + SanitizeIdentityField(verify) + "|" + _pendingPairPollSeconds;
+                // 6e champ (2.0.72+) : adresse avec le code déjà rempli, ouverte par OpenAthenaLink.
+                return "OK|" + SanitizeIdentityField(userCode) + "|" + Math.Clamp(ttl, 30, 900) + "|" + SanitizeIdentityField(verify) + "|" + _pendingPairPollSeconds + "|" + SanitizeIdentityField(verifyFull);
+            }
+            catch (Exception ex) { return FormatCaughtError(ex); }
+        }
+
+        // Communauté de la session ouverte (compte Athena) : le mod n'a plus besoin qu'on la saisisse.
+        if (function == "GetSessionTenant")
+        {
+            return _tenantId.Length > 0 ? "OK|" + SanitizeIdentityField(_tenantId) : "ERR|none";
+        }
+
+        // Ouvre dans le navigateur la page Athena où le joueur valide le code du jeu (/lier).
+        // Seulement une adresse http(s) du portail configuré : jamais un programme ni un autre site.
+        if (function == "OpenAthenaLink" && args.Length >= 1)
+        {
+            try
+            {
+                var target = ArmaString(args[0]).Trim();
+                if (!Uri.TryCreate(target, UriKind.Absolute, out var targetUri)
+                    || (targetUri.Scheme != Uri.UriSchemeHttps && targetUri.Scheme != Uri.UriSchemeHttp))
+                    return "ERR|invalid_url";
+                if (_baseUrl.Length == 0
+                    || !Uri.TryCreate(_baseUrl, UriKind.Absolute, out var portalUri)
+                    || !string.Equals(portalUri.Host, targetUri.Host, StringComparison.OrdinalIgnoreCase))
+                    return "ERR|foreign_host";
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(targetUri.AbsoluteUri) { UseShellExecute = true });
+                return "OK";
             }
             catch (Exception ex) { return FormatCaughtError(ex); }
         }
