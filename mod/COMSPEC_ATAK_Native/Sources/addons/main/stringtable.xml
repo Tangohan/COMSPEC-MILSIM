@@ -1,0 +1,546 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Généré par tools/i18n.py stringtable : traductions dans i18n/en.txt. -->
+<Project name="COMSPEC_ATAK_Native">
+    <Package name="main">
+        <Key ID="STR_COMSPEC_ATAK_CFG_02FF4B66E0">
+            <Original>Antenne fouet repliable à visser sur le port SMA du téléphone ATAK : débit x1,5, nettement plus tenace derrière le relief et dans les bâtiments.</Original>
+            <English>Foldable whip antenna screwed onto the ATAK phone's SMA port: x1.5 throughput, much sturdier behind terrain and inside buildings.</English>
+            <French>Antenne fouet repliable à visser sur le port SMA du téléphone ATAK : débit x1,5, nettement plus tenace derrière le relief et dans les bâtiments.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_0384948B18">
+            <Original>Effacer les données</Original>
+            <English>Wipe data</English>
+            <French>Effacer les données</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_06C87F1C69">
+            <Original>Socle de recharge CS-10 (10 téléphones ATAK)</Original>
+            <English>CS-10 charging dock (10 ATAK phones)</English>
+            <French>Socle de recharge CS-10 (10 téléphones ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_0AB5F74BB5">
+            <Original>Téléphone ATAK (JPC)</Original>
+            <English>ATAK phone (JPC)</English>
+            <French>Téléphone ATAK (JPC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_0B3583ECAA">
+            <Original>Interactions</Original>
+            <English>Interactions</English>
+            <French>Interactions</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_0BDED24B7D">
+            <Original>Affiché sur l'ATAK et dans les messages Zeus. Vide = nom de l'objet.</Original>
+            <English>Shown on the ATAK and in Zeus messages. Empty = object name.</English>
+            <French>Affiché sur l'ATAK et dans les messages Zeus. Vide = nom de l'objet.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_0BF36E37B6">
+            <Original>Linux (terminal vert)</Original>
+            <English>Linux (green terminal)</English>
+            <French>Linux (terminal vert)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_0D7BE9D700">
+            <Original>Antenne patch 9 dBi (ATAK)</Original>
+            <English>9 dBi patch antenna (ATAK)</English>
+            <French>Antenne patch 9 dBi (ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_0F70B04FFA">
+            <Original>Se fixe sur la plaque au dos du téléphone (menu ACE « Téléphone ATAK »). Recharge le téléphone à 2 % par minute, deux charges complètes. Vide, elle est jetée.</Original>
+            <English>Attaches to the plate on the back of the phone (ACE menu "ATAK phone"). Charges the phone at 2% per minute, two full charges. Discarded when empty.</English>
+            <French>Se fixe sur la plaque au dos du téléphone (menu ACE « Téléphone ATAK »). Recharge le téléphone à 2 % par minute, deux charges complètes. Vide, elle est jetée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_0FAE4CBFA9">
+            <Original>Industriel (SCADA)</Original>
+            <English>Industrial (SCADA)</English>
+            <French>Industriel (SCADA)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_107309E51C">
+            <Original>Rien</Original>
+            <English>Nothing</English>
+            <French>Rien</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_109E16CA46">
+            <Original>Code serveur en fin</Original>
+            <English>Server code at end</English>
+            <French>Code serveur en fin</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_13E08E6708">
+            <Original>Forçage possible</Original>
+            <English>Breach possible</English>
+            <French>Forçage possible</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_145EE908D8">
+            <Original>Données effacées après le premier téléchargement complet.</Original>
+            <English>Data wiped after the first complete download.</English>
+            <French>Données effacées après le premier téléchargement complet.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_1707ED67D7">
+            <Original>Module DL-7 et câble USB-C / RJ45 / série pour le téléphone COMSPEC ATAK. Regardez un ordinateur, un téléphone ou une clé, « Brancher l'ATAK » : l'app Extraction télécharge ses données.</Original>
+            <English>DL-7 module and USB-C / RJ45 / serial cable for the COMSPEC ATAK phone. Look at a computer, phone or USB stick, "Plug in the ATAK": the Extraction app downloads its data.</English>
+            <French>Module DL-7 et câble USB-C / RJ45 / série pour le téléphone COMSPEC ATAK. Regardez un ordinateur, un téléphone ou une clé, « Brancher l'ATAK » : l'app Extraction télécharge ses données.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_1E0730DF18">
+            <Original>Militaire</Original>
+            <English>Military</English>
+            <French>Militaire</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_1F2BFEDA2D">
+            <Original>Radio numérique</Original>
+            <English>Digital radio</English>
+            <French>Radio numérique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_21A3E6F5BD">
+            <Original>Image (chemin dans la mission)</Original>
+            <English>Image (path in mission)</English>
+            <French>Image (chemin dans la mission)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_23A9D9FCD3">
+            <Original>Fichiers</Original>
+            <English>Files</English>
+            <French>Fichiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_2547BF4CA0">
+            <Original>Écran de connexion</Original>
+            <English>Login screen</English>
+            <French>Écran de connexion</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_2805C17B50">
+            <Original>Tablette ATAK (JPC)</Original>
+            <English>ATAK tablet (JPC)</English>
+            <French>Tablette ATAK (JPC)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_28BDC3469A">
+            <Original>Texte, carroyage (045123) ou x, y, chemin d'image, classe CfgSounds.</Original>
+            <English>Text, grid (045123) or x, y, image path, CfgSounds class.</English>
+            <French>Texte, carroyage (045123) ou x, y, chemin d'image, classe CfgSounds.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_2B264D3E23">
+            <Original>Série RS-232 (lent)</Original>
+            <English>Serial RS-232 (slow)</English>
+            <French>Série RS-232 (lent)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_2D9AD0EB1E">
+            <Original>Coffre chiffré</Original>
+            <English>Encrypted safe</English>
+            <French>Coffre chiffré</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_2FA41491DA">
+            <Original>Déclencher l'alarme</Original>
+            <English>Trigger alarm</English>
+            <French>Déclencher l'alarme</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_32C19DF5F3">
+            <Original>Kit terminal véhicule ATAK</Original>
+            <English>ATAK vehicle terminal kit</English>
+            <French>Kit terminal véhicule ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_36E5E1C6A8">
+            <Original>Serveur / terminal</Original>
+            <English>Server / terminal</English>
+            <French>Serveur / terminal</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_38684AA97D">
+            <Original>Données à extraire (câble ATAK)</Original>
+            <English>Data to extract (ATAK cable)</English>
+            <French>Données à extraire (câble ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_3A46E4886A">
+            <Original>Ex. ordre_operation.pdf</Original>
+            <English>E.g. operation_order.pdf</English>
+            <French>Ex. ordre_operation.pdf</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_3DEB745651">
+            <Original>Type</Original>
+            <English>Type</English>
+            <French>Type</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_4230BFC2CE">
+            <Original>Si le module n'est synchronisé à aucun objet : objet créé à son emplacement.</Original>
+            <English>If the module is not synced to any object: object created at its position.</English>
+            <French>Si le module n'est synchronisé à aucun objet : objet créé à son emplacement.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_4BA6A4CA77">
+            <Original>Ex. MINISTÈRE DE LA DÉFENSE, Cartel Rojas… En tête de l'écran de connexion.</Original>
+            <English>E.g. MINISTRY OF DEFENSE, Cartel Rojas… At the top of the login screen.</English>
+            <French>Ex. MINISTÈRE DE LA DÉFENSE, Cartel Rojas… En tête de l'écran de connexion.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_4E549A4E3F">
+            <Original>Support à créer</Original>
+            <English>Media to create</English>
+            <French>Support à créer</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_5386009BE8">
+            <Original>Mauvais mots de passe avant la sanction ci-dessous. 0 = illimité.</Original>
+            <English>Wrong passwords before the penalty below. 0 = unlimited.</English>
+            <French>Mauvais mots de passe avant la sanction ci-dessous. 0 = illimité.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_58F66D2E68">
+            <Original>Mauvais mot de passe</Original>
+            <English>Wrong password</English>
+            <French>Mauvais mot de passe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_59A57B9C41">
+            <Original>Nom du fichier</Original>
+            <English>File name</English>
+            <French>Nom du fichier</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_59CC6174A3">
+            <Original>Même identifiant d'une mission à l'autre = mêmes téléphones retrouvés (ex. « FOB-Alpha »). Vide : la carte et la position du socle.</Original>
+            <English>Same ID from one mission to the next = same phones found again (e.g. "FOB-Alpha"). Empty: the map and the dock position.</English>
+            <French>Même identifiant d'une mission à l'autre = mêmes téléphones retrouvés (ex. « FOB-Alpha »). Vide : la carte et la position du socle.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_5BC13315C6">
+            <Original>Câble de données DL-7</Original>
+            <English>DL-7 data cable</English>
+            <French>Câble de données DL-7</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_5D977D9026">
+            <Original>Sanction quand les essais sont épuisés.</Original>
+            <English>Penalty when attempts run out.</English>
+            <French>Sanction quand les essais sont épuisés.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_5DA6A7ED86">
+            <Original>Socle de recharge CS-10 (10 téléphones)</Original>
+            <English>CS-10 charging dock (10 phones)</English>
+            <French>Socle de recharge CS-10 (10 téléphones)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_60D4B6A0C2">
+            <Original>Ajouter un fichier (câble ATAK)</Original>
+            <English>Add a file (ATAK cable)</English>
+            <French>Ajouter un fichier (câble ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_667838C91A">
+            <Original>(objet synchronisé)</Original>
+            <English>(synced object)</English>
+            <French>(objet synchronisé)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_66CB96FE97">
+            <Original>Apparence de l'écran du support dans l'ATAK.</Original>
+            <English>Look of the device screen in the ATAK.</English>
+            <French>Apparence de l'écran du support dans l'ATAK.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_675368CCFD">
+            <Original>Secondes pour tout télécharger en USB-C (RJ45 plus rapide, série plus lent ; réglage serveur de vitesse).</Original>
+            <English>Seconds to download everything over USB-C (RJ45 faster, serial slower; server speed setting).</English>
+            <French>Secondes pour tout télécharger en USB-C (RJ45 plus rapide, série plus lent ; réglage serveur de vitesse).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_68C602A962">
+            <Original>Alarme</Original>
+            <English>Alarm</English>
+            <French>Alarme</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_6CDE1BE9BE">
+            <Original>Windows (bureau bleu)</Original>
+            <English>Windows (blue desktop)</English>
+            <French>Windows (bureau bleu)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_6E3B29E2C5">
+            <Original>Identifiant du socle</Original>
+            <English>Dock ID</English>
+            <French>Identifiant du socle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7139BCD3CB">
+            <Original>Essais permis</Original>
+            <English>Allowed attempts</English>
+            <French>Essais permis</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7964EED93B">
+            <Original>Bouton FORCER L'ACCÈS : contourne le mot de passe après la durée ci-dessous, câble branché.</Original>
+            <English>FORCE ACCESS button: bypasses the password after the time below, with the cable plugged in.</English>
+            <French>Bouton FORCER L'ACCÈS : contourne le mot de passe après la durée ci-dessous, câble branché.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7A53A95812">
+            <Original>Fichiers à télécharger au câble DL-7 depuis l'ATAK, sur n'importe quel objet : écran de connexion, mot de passe, forçage, alarme. Synchronisez des objets (Eden) ou lâchez le module sur l'objet (Zeus) ; sans objet, le support choisi est créé.</Original>
+            <English>Files to download with the DL-7 cable from the ATAK, on any object: login screen, password, forcing, alarm. Sync objects (Eden) or drop the module on the object (Zeus); with no object, the chosen device is created.</English>
+            <French>Fichiers à télécharger au câble DL-7 depuis l'ATAK, sur n'importe quel objet : écran de connexion, mot de passe, forçage, alarme. Synchronisez des objets (Eden) ou lâchez le module sur l'objet (Zeus) ; sans objet, le support choisi est créé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7B078E6A1E">
+            <Original>Téléphone ATAK (gilet)</Original>
+            <English>ATAK phone (vest)</English>
+            <French>Téléphone ATAK (gilet)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7C309D77B2">
+            <Original>Coordonnées</Original>
+            <English>Coordinates</English>
+            <French>Coordonnées</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7D8E20466B">
+            <Original>Nom du support</Original>
+            <English>Media name</English>
+            <French>Nom du support</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7DB7C44D86">
+            <Original>En fin de téléchargement</Original>
+            <English>At end of download</English>
+            <French>En fin de téléchargement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7E7DC904BA">
+            <Original>Identifiants</Original>
+            <English>Credentials</English>
+            <French>Identifiants</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7EC29D9943">
+            <Original>Verrouiller (forçage seul)</Original>
+            <English>Lock (breach only)</English>
+            <French>Verrouiller (forçage seul)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7F73B0F8AB">
+            <Original>Tablette</Original>
+            <English>Tablet</English>
+            <French>Tablette</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7FFED89DE0">
+            <Original>Image de l'écran</Original>
+            <English>Screen image</English>
+            <French>Image de l'écran</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_814EE34AA5">
+            <Original>Kit de réparation ATAK</Original>
+            <English>ATAK repair kit</English>
+            <French>Kit de réparation ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_8161F144F1">
+            <Original>Ethernet RJ45</Original>
+            <English>Ethernet RJ45</English>
+            <French>Ethernet RJ45</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_857C44D0D3">
+            <Original>Caméra IP compacte (ATAK)</Original>
+            <English>Compact IP camera (ATAK)</English>
+            <French>Caméra IP compacte (ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_87AC07610A">
+            <Original>Vide = accès libre. Jamais diffusé en clair (empreinte seulement).</Original>
+            <English>Empty = open access. Never broadcast in clear text (hash only).</English>
+            <French>Vide = accès libre. Jamais diffusé en clair (empreinte seulement).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_8A3D429939">
+            <Original>Un bloc par fichier, séparés par une ligne ---. Première ligne : nom | type (texte, document, identifiants, coord, image, audio). Lignes suivantes : contenu.</Original>
+            <English>One block per file, separated by a --- line. First line: name | type (texte, document, identifiants, coord, image, audio). Following lines: content.</English>
+            <French>Un bloc par fichier, séparés par une ligne ---. Première ligne : nom | type (texte, document, identifiants, coord, image, audio). Lignes suivantes : contenu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_8F41F620E8">
+            <Original>Ordinateur de bureau</Original>
+            <English>Desktop computer</English>
+            <French>Ordinateur de bureau</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_94E2F3EE14">
+            <Original>Mot de passe</Original>
+            <English>Password</English>
+            <French>Mot de passe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_96A9436FE5">
+            <Original>Audio (CfgSounds ou chemin)</Original>
+            <English>Audio (CfgSounds or path)</English>
+            <French>Audio (CfgSounds ou chemin)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_96B5F49A5D">
+            <Original>Batterie lithium de rechange du téléphone COMSPEC ATAK. Action ACE « Changer la batterie ATAK » : 100 %, le téléphone redémarre.</Original>
+            <English>Spare lithium battery for the COMSPEC ATAK phone. ACE action "Swap ATAK battery": 100%, the phone restarts.</English>
+            <French>Batterie lithium de rechange du téléphone COMSPEC ATAK. Action ACE « Changer la batterie ATAK » : 100 %, le téléphone redémarre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_9BEF18E007">
+            <Original>Filtre d'écran JVN (ATAK)</Original>
+            <English>NVG screen filter (ATAK)</English>
+            <French>Filtre d'écran JVN (ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_9E4D5298F6">
+            <Original>Batterie ATAK</Original>
+            <English>ATAK battery</English>
+            <French>Batterie ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_9EFEB0E683">
+            <Original>Antenne fouet longue (ATAK)</Original>
+            <English>Long whip antenna (ATAK)</English>
+            <French>Antenne fouet longue (ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_A200DC2D3C">
+            <Original>Antenne courte SMA (ATAK)</Original>
+            <English>Short SMA antenna (ATAK)</English>
+            <French>Antenne courte SMA (ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_A37BF51B41">
+            <Original>Caméra IP (ATAK)</Original>
+            <English>IP camera (ATAK)</English>
+            <French>Caméra IP (ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_A692CFB580">
+            <Original>Téléphone COMSPEC ATAK (Samsung S7)</Original>
+            <English>COMSPEC ATAK phone (Samsung S7)</English>
+            <French>Téléphone COMSPEC ATAK (Samsung S7)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_A92E2B0C4B">
+            <Original>Téléphone verrouillé</Original>
+            <English>Phone locked</English>
+            <French>Téléphone verrouillé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_A9AF08EC30">
+            <Original>Ordinateur portable</Original>
+            <English>Laptop</English>
+            <French>Ordinateur portable</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AF7756A553">
+            <Original>Durée du forçage (s)</Original>
+            <English>Breach duration (s)</English>
+            <French>Durée du forçage (s)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_B2101F06B2">
+            <Original>Antenne courte 2,4 / 5,8 GHz à visser sur le port SMA du téléphone ATAK : débit x1,25 et liaison plus tenace (relief, bâtiments, brouillage). Discrète, efficace en mouvement.</Original>
+            <English>Short 2.4 / 5.8 GHz antenna screwed onto the ATAK phone's SMA port: x1.25 throughput and a sturdier link (terrain, buildings, jamming). Low profile, works on the move.</English>
+            <French>Antenne courte 2,4 / 5,8 GHz à visser sur le port SMA du téléphone ATAK : débit x1,25 et liaison plus tenace (relief, bâtiments, brouillage). Discrète, efficace en mouvement.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_B80BA8ECDA">
+            <Original>Au branchement</Original>
+            <English>On plug-in</English>
+            <French>Au branchement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_B972CCAE08">
+            <Original>Clé USB</Original>
+            <English>USB drive</English>
+            <French>Clé USB</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_BC3E09CB53">
+            <Original>COMSPEC — ATAK · Données (extraction)</Original>
+            <English>COMSPEC — ATAK · Data (extraction)</English>
+            <French>COMSPEC — ATAK · Données (extraction)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_C1C0201437">
+            <Original>Indice</Original>
+            <English>Hint</English>
+            <French>Indice</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_C54AECDE5A">
+            <Original>Durée du transfert (s)</Original>
+            <English>Transfer duration (s)</English>
+            <French>Durée du transfert (s)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_C5AF6AC183">
+            <Original>Station de charge durcie pour 10 téléphones ATAK. À poser devant soi (sur une table ou au sol) : chacun y met son téléphone, il se recharge, et le reprend plus tard, même à la partie suivante.</Original>
+            <English>Rugged charging station for 10 ATAK phones. Place it in front of you (on a table or the ground): everyone docks their phone, it charges, and they take it back later, even in the next session.</English>
+            <French>Station de charge durcie pour 10 téléphones ATAK. À poser devant soi (sur une table ou au sol) : chacun y met son téléphone, il se recharge, et le reprend plus tard, même à la partie suivante.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_C98EF6B77B">
+            <Original>Petite caméra IP Wi-Fi à coller sur un mur, au sol ou sur un véhicule (ACE « Téléphone ATAK &gt; Caméras »). Le camp la regarde dans l'app Vidéo live (jour, JVN, thermique) tant qu'un ATAK est à portée. Récupérable.</Original>
+            <English>Small Wi-Fi IP camera to stick on a wall, the ground or a vehicle (ACE "ATAK phone &gt; Cameras"). The side watches it in the Live video app (day, NVG, thermal) while an ATAK is in range. Recoverable.</English>
+            <French>Petite caméra IP Wi-Fi à coller sur un mur, au sol ou sur un véhicule (ACE « Téléphone ATAK &gt; Caméras »). Le camp la regarde dans l'app Vidéo live (jour, JVN, thermique) tant qu'un ATAK est à portée. Récupérable.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CA316DECF0">
+            <Original>Secondes à rester branché pour forcer l'accès.</Original>
+            <English>Seconds to stay plugged in to force access.</English>
+            <French>Secondes à rester branché pour forcer l'accès.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CED1C585A6">
+            <Original>Trop d'essais</Original>
+            <English>Too many attempts</English>
+            <French>Trop d'essais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_CF51DCF204">
+            <Original>Remettre / retirer les données (câble ATAK)</Original>
+            <English>Reset / remove data (ATAK cable)</English>
+            <French>Remettre / retirer les données (câble ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_D3B023EABC">
+            <Original>Téléphone</Original>
+            <English>Phone</English>
+            <French>Téléphone</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_D448798D17">
+            <Original>Samsung Galaxy S7 en coque tactique, ATAK COMSPEC installé. Suffit pour ouvrir le téléphone, sans autre mod.</Original>
+            <English>Samsung Galaxy S7 in a tactical case, with COMSPEC ATAK installed. Enough to open the phone, no other mod needed.</English>
+            <French>Samsung Galaxy S7 en coque tactique, ATAK COMSPEC installé. Suffit pour ouvrir le téléphone, sans autre mod.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_DBD1600D8A">
+            <Original>Tablette durcie et support RAM à installer dans un véhicule (action ACE sur le véhicule) quand le serveur réserve la tablette de bord aux véhicules équipés.</Original>
+            <English>Rugged tablet and RAM mount to install in a vehicle (ACE action on the vehicle) when the server limits the dash tablet to equipped vehicles.</English>
+            <French>Tablette durcie et support RAM à installer dans un véhicule (action ACE sur le véhicule) quand le serveur réserve la tablette de bord aux véhicules équipés.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_DC496FDDDD">
+            <Original>Écran de rechange, nappe et outils pour le téléphone COMSPEC ATAK. Action ACE « Réparer le téléphone ATAK » (12 s) : écran, alimentation et appareil remis en état, même détruit. Consommé.</Original>
+            <English>Spare screen, ribbon cable and tools for the COMSPEC ATAK phone. ACE action "Repair ATAK phone" (12 s): screen, power and device restored, even when destroyed. Consumed.</English>
+            <French>Écran de rechange, nappe et outils pour le téléphone COMSPEC ATAK. Action ACE « Réparer le téléphone ATAK » (12 s) : écran, alimentation et appareil remis en état, même détruit. Consommé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_E20F3D8F6F">
+            <Original>Effacé après extraction</Original>
+            <English>Wiped after extraction</English>
+            <French>Effacé après extraction</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_E214B8A299">
+            <Original>Document</Original>
+            <English>Document</English>
+            <French>Document</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_E28A71B1EF">
+            <Original>Couleur de l'écran</Original>
+            <English>Screen color</English>
+            <French>Couleur de l'écran</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_E8F8827310">
+            <Original>Aucune</Original>
+            <English>None</English>
+            <French>Aucune</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_E99994D01D">
+            <Original>Ajoute un fichier aux données d'un objet (crée des données en accès libre s'il n'en a pas).</Original>
+            <English>Adds a file to an object's data (creates open-access data if it has none).</English>
+            <French>Ajoute un fichier aux données d'un objet (crée des données en accès libre s'il n'en a pas).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_E9D174F7CC">
+            <Original>Prise du support : change la vitesse et l'écran du module DL-7.</Original>
+            <English>Device connector: changes the speed and the screen of the DL-7 module.</English>
+            <French>Prise du support : change la vitesse et l'écran du module DL-7.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EB509FDE34">
+            <Original>Socle de recharge CS-10 (plié)</Original>
+            <English>CS-10 charging dock (folded)</English>
+            <French>Socle de recharge CS-10 (plié)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_ED07A353E4">
+            <Original>Affiché sous le champ du mot de passe (facultatif).</Original>
+            <English>Shown under the password field (optional).</English>
+            <French>Affiché sous le champ du mot de passe (facultatif).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EF53A02082">
+            <Original>Batterie externe ATAK 10 000 mAh</Original>
+            <English>ATAK power bank 10,000 mAh</English>
+            <French>Batterie externe ATAK 10 000 mAh</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_F09016E234">
+            <Original>Organisation affichée</Original>
+            <English>Displayed organization</English>
+            <French>Organisation affichée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_F12FD15D32">
+            <Original>Film à poser sur l'écran du téléphone : coupe le proche infrarouge et assombrit l'écran. De nuit, l'écran allumé ne se voit presque plus de loin, même aux JVN.</Original>
+            <English>Film applied to the phone screen: blocks near infrared and dims the screen. At night, the lit screen is barely visible from a distance, even through NVGs.</English>
+            <French>Film à poser sur l'écran du téléphone : coupe le proche infrarouge et assombrit l'écran. De nuit, l'écran allumé ne se voit presque plus de loin, même aux JVN.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_F1388D7224">
+            <Original>Sirène sur le support, Zeus prévenu et position du joueur révélée aux ennemis à 400 m.</Original>
+            <English>Siren on the device, Zeus alerted and the player's position revealed to enemies within 400 m.</English>
+            <French>Sirène sur le support, Zeus prévenu et position du joueur révélée aux ennemis à 400 m.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_F3CB82AF6C">
+            <Original>Contenu</Original>
+            <English>Content</English>
+            <French>Contenu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_FA99319986">
+            <Original>Texte, document, identifiants, coordonnées, image ou audio.</Original>
+            <English>Text, document, credentials, coordinates, image or audio.</English>
+            <French>Texte, document, identifiants, coordonnées, image ou audio.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_FBA3573C81">
+            <Original>Antenne patch directionnelle sur coude SMA à 90° : débit x1,7 et meilleure tenue de la liaison, à l'arrêt seulement (mal orientée en mouvement ou en véhicule).</Original>
+            <English>Directional patch antenna on a 90° SMA elbow: x1.7 throughput and a steadier link, when stationary only (misaligned on the move or in a vehicle).</English>
+            <French>Antenne patch directionnelle sur coude SMA à 90° : débit x1,7 et meilleure tenue de la liaison, à l'arrêt seulement (mal orientée en mouvement ou en véhicule).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_FE035157CD">
+            <Original>Port</Original>
+            <English>Port</English>
+            <French>Port</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_FF9AFEF1EA">
+            <Original>Texte</Original>
+            <English>Text</English>
+            <French>Texte</French>
+        </Key>
+    </Package>
+</Project>

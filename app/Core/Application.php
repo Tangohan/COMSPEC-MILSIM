@@ -95,6 +95,15 @@ class Application
                 ob_end_clean();
             }
         }
+        // Visiteur en anglais : la page HTML (vues écrites en français) est traduite à l'affichage.
+        if (function_exists('locale') && locale() === 'en'
+            && str_starts_with((string) ($response->headerValue('Content-Type') ?? ''), 'text/html')) {
+            try {
+                $response->setBody(\App\Support\HtmlTranslator::translate($response->body()));
+            } catch (\Throwable) {
+                // Page laissée en français plutôt qu'une erreur.
+            }
+        }
         $response->send();
         try {
             \App\Services\Cron\CronWatchdog::maybeKick($this->request->path());

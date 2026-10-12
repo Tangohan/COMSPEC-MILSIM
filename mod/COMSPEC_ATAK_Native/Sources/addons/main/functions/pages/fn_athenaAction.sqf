@@ -55,6 +55,7 @@ switch (_action) do {
     };
     case "logout": {
         if (_bridge) then { [] call comspec_overwatch_connect_fnc_logout; } else { ["Logout", []] call _ext; };
+        ["cancel"] call comspec_atak_native_fnc_athenaLink;
         ["Déconnecté."] call _hint;
     };
 };

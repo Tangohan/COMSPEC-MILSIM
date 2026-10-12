@@ -718,7 +718,7 @@ switch (_tab) do {
         } forEach (_list select [0, 15]);
     };
     case "PHOTO": {
-        _rows pushBack ["section", format ["Clichés du drone : %1", count _photos], "Gardés sur ce poste (dossier Screenshots), aussi visibles dans l'app Photos"];
+        _rows pushBack ["section", format ["Clichés du drone : %1", count _photos], "Gardés sur ce poste (dossier Screenshots), aussi visibles dans l'app Galerie"];
         _rows pushBack ["buttons", [["OUVRIR LE VISEUR PHOTO", { ["view"] call comspec_atak_native_fnc_dronePhoto; }, true, true, "Cadrer, zoomer, marquer et surligner avant de prendre la photo"]]];
         if ((count _photos) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun cliché. Bouton VISEUR PHOTO sous l'image, ou ci-dessus.</t>"]; };
         {
