@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.64";
+    private const string ExtensionVersion = "2.0.63";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2587,6 +2587,11 @@ public static partial class Extension
         {
             return ClipCommand(function, args);
         }
+        // Clichés du drone avec leur fiche (NativePhoto.cs) : titre, description, SSE, confidentiel en champs réels.
+        if (function == "NativePhoto")
+        {
+            return NativePhotoCommand(args);
+        }
 #endif
 
         if (function == "MemStats")
@@ -2661,7 +2666,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,ReconPhotoMeta";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown";
         }
 
         if (function == "GetCapabilities")
@@ -7986,9 +7991,6 @@ public static partial class Extension
     }
 
     /// Alias callExtension : NotifyNewPhoto, EnqueueReconImage, UploadReconImage.
-    /// Arguments : 0 chemin, 1 auteur, 2-4 pos, 5 grille, 6 cap, 7 altitude, 8 légende, 9 unité, 10 camp, 11 mission,
-    /// 12 appareil, 13 heure Unix, 14 flux, 15-16 effet ; facultatifs (2.0.64) : 17 titre, 18 description, 19 SSE,
-    /// 20 dossier SSE, 21 confidentiel, 22 source, 23 nom du drone (GetAtakFeatures annonce ReconPhotoMeta).
     /// </summary>
     private static string EnqueueReconImage(string?[] args)
     {
@@ -8385,15 +8387,6 @@ public static partial class Extension
             AddOptionalForm(multipart, "feed_id", args, 14);
             AddOptionalForm(multipart, "fx_profile", args, 15);
             AddOptionalForm(multipart, "fx_intensity", args, 16);
-            // Fiche du cliché (2.0.64, facultatif) : 17 titre, 18 description, 19 SSE (0/1), 20 dossier SSE,
-            // 21 confidentiel (0/1), 22 source (drone / phone…), 23 nom du drone. Absents : rien n'est envoyé.
-            AddOptionalForm(multipart, "title", args, 17);
-            AddOptionalForm(multipart, "description", args, 18);
-            AddOptionalForm(multipart, "is_sse", args, 19);
-            AddOptionalForm(multipart, "sse_case_ref", args, 20);
-            AddOptionalForm(multipart, "is_confidential", args, 21);
-            AddOptionalForm(multipart, "photo_source", args, 22);
-            AddOptionalForm(multipart, "drone_name", args, 23);
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
             var fileName = Path.GetFileName(resolved) ?? "recon.png";

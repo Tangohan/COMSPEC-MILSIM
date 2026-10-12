@@ -221,7 +221,7 @@ class ReconImageRepository
         if ($this->hasColumn('source_name')) {
             $cols['source_name'] = $data['source_name'] ?? null;
         }
-        // Fiche du cliché (COMSPECExtension 2.0.64) : colonnes ajoutées par atak_recon_images_photo_meta_migration.
+        // Fiche du cliché (commande NativePhoto de la DLL native) : colonnes ajoutées par atak_recon_images_photo_meta_migration.
         foreach (self::PHOTO_META_COLUMNS as $column => $default) {
             if ($this->hasColumn($column)) {
                 $cols[$column] = $data[$column] ?? $default;

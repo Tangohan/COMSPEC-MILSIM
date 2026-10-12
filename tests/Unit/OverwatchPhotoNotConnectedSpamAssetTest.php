@@ -64,11 +64,11 @@ final class OverwatchPhotoNotConnectedSpamAssetTest extends TestCase
         self::assertStringContainsString('_fnc_isConnErr', $capture);
         self::assertStringContainsString('if (!_ok && {[] call _fnc_isConnErr}) exitWith { false };', $capture);
         self::assertStringContainsString(
-            '[_path, _caption, _device, _feedId, true, false, false, _photoMeta] call comspec_overwatch_connect_fnc_captureReconImage',
+            '[_path, _caption, _device, _feedId, true, false, false] call comspec_overwatch_connect_fnc_captureReconImage',
             $capture
         );
         self::assertStringContainsString(
-            '[_png, _caption, _device, _feedId, true, false, false, _photoMeta] call comspec_overwatch_connect_fnc_captureReconImage',
+            '[_png, _caption, _device, _feedId, true, false, false] call comspec_overwatch_connect_fnc_captureReconImage',
             $capture
         );
         self::assertStringNotContainsString(
