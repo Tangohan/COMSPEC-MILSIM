@@ -2125,6 +2125,7 @@
 ["Il y a %1 véhicules militaires qui passent %2, ça roule vite. #%3", "There are %1 military vehicles going by %2, driving fast. #%3"],
 ["il y a %3 s", "%3 s ago"],
 ["il y a %8 min", "%8 min ago"],
+["il y a moins de 15 min", "less than 15 min ago"],
 ["image %3 / %4", "frame %3 / %4"],
 ["Image (chemin dans la mission)", "Image (path in mission)"],
 ["Image affichée : drone → caméra du téléphone (devant vous) → caméra casque (choix du porteur dans l'onglet VOL)", "Displayed image: drone → phone camera (in front of you) → helmet camera (wearer's choice in the FLIGHT tab)"],

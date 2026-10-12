@@ -25,13 +25,12 @@ if (_bridge && {!isNil "comspec_overwatch_connect_fnc_getPacketLossStats"}) then
     private _st = [] call comspec_overwatch_connect_fnc_getPacketLossStats;
     if (_st isEqualType createHashMap) then { _loss = _st getOrDefault ["packet_loss_percent", 0]; _sent = _st getOrDefault ["packets_sent_total", 0]; };
 };
-// Stabilité : même barème que l'app État ATAK d'Overwatch.
-private _stab = 100 - 0.85 * _loss;
-if (_lat > 120) then { _stab = _stab - (((_lat - 120) / 20) min 25); };
-if (_lat > 400) then { _stab = _stab - 10; };
-if (_link isNotEqualTo "linked") then { _stab = _stab - 35; };
-_stab = (round _stab) max 0;
-private _stabLabel = switch (true) do { case (_stab >= 85): { "Excellente" }; case (_stab >= 70): { "Bonne" }; case (_stab >= 50): { "Correcte" }; case (_stab >= 30): { "Faible" }; default { "Critique" }; };
+// Réponses d'Athena aux envois courants (positions comprises), lues en mémoire dans COMSPEC Link (fn_athenaPulse).
+private _pulse = [] call comspec_atak_native_fnc_athenaPulse;
+if ((_pulse get "sent") >= 0) then { _sent = _pulse get "sent"; };
+if ((_pulse get "loss") >= 0) then { _loss = _loss max (_pulse get "loss"); };
+if (_lat < 0) then { _lat = _pulse get "lat"; };
+private _athRecent = _pulse get "recent";
 private _ageS = { params ["_k2"]; private _t = missionNamespace getVariable [_k2, -1]; if (!(_t isEqualType 0) || {_t <= 0}) then { -1 } else { diag_tickTime - _t } };
 private _ageTxt = { params ["_a"]; switch (true) do { case (_a < 0): { "jamais" }; case (_a < 90): { format ["il y a %1 s", round _a] }; default { format ["il y a %1 min", round (_a / 60)] }; } };
 private _lq = [] call comspec_atak_native_fnc_linkQuality;
@@ -163,8 +162,9 @@ _nodes pushBack [["Extension native", "COMSPEC Link"] select _bridge, toUpper _l
     format ["latence %1 · perte %2 %%", [format ["%1 ms", round _lat], "non mesurée"] select (_lat < 0), round _loss], _linkSt, [0, 4, 2, 2, 1] select ((["", "linked", "degraded", "connecting", "offline"] find _link) max 0), "\z\comspec_atak_native\addons\main\data\ui_comspec_link.paa"];
 // 4. Athena : âge de la dernière réponse.
 private _hAge = ["COMSPEC_LastHealthOk"] call _ageS;
-private _athSt = if (_bridge) then { switch (true) do { case (_hAge < 0): { "bad" }; case (_hAge < 90): { "ok" }; case (_hAge < 300): { "warn" }; default { "bad" }; } } else { ["bad", "ok"] select (_link isEqualTo "linked") };
-_nodes pushBack ["Athena", ["hors ligne", "en ligne"] select (_athSt isNotEqualTo "bad"), format ["dernière réponse %1", [_hAge] call _ageTxt], _athSt, [0, 2, 4] select (["bad", "warn", "ok"] find _athSt), "\z\comspec_atak_native\addons\main\data\app_athena.paa"];
+private _athSt = if (_bridge) then { switch (true) do { case (_hAge < 0 && {_athRecent}): { "ok" }; case (_hAge >= 0 && {_pulse get "idle"}): { "ok" }; case (_hAge < 0): { "bad" }; case (_hAge < 90): { "ok" }; case (_hAge < 300): { "warn" }; default { "bad" }; } } else { ["bad", "ok"] select (_link isEqualTo "linked") };
+private _hTxt = ([[_hAge] call _ageTxt, "il y a moins de 15 min"] select (_hAge < 0 && {_athRecent}));
+_nodes pushBack ["Athena", ["hors ligne", "en ligne"] select (_athSt isNotEqualTo "bad"), format ["dernière réponse %1", _hTxt], _athSt, [0, 2, 4] select (["bad", "warn", "ok"] find _athSt), "\z\comspec_atak_native\addons\main\data\app_athena.paa"];
 // Sauts : raison de la coupure sur le premier saut rompu ; au-delà, tout est éteint.
 private _hopWhy = [
     switch (true) do {
@@ -257,7 +257,7 @@ private _tiles = [
     ["Perte de paquets", format ["%1 %%", round _loss], "", switch (true) do { case (_loss < 5): { "ok" }; case (_loss < 20): { "warn" }; default { "bad" }; }, -1],
     ["Paquets envoyés", str _sent, "", "off", -1],
     ["Dernière position", [["COMSPEC_LastPositionSync"] call _ageS] call _ageTxt, "envoyée à Athena", switch (true) do { case ((["COMSPEC_LastPositionSync"] call _ageS) < 0): { "bad" }; case ((["COMSPEC_LastPositionSync"] call _ageS) < 60): { "ok" }; default { "warn" }; }, -1],
-    ["Réponse Athena", [_hAge] call _ageTxt, "", _athSt, -1]
+    ["Réponse Athena", _hTxt, "", _athSt, -1]
 ];
 {
     _x params ["_lbl", "_val", "_sub", "_st", "_gauge"];
@@ -395,12 +395,9 @@ if !(_sim) then {
 };
 
 // --- File d'envoi Athena (journal de COMSPEC Link 2.0.65, lu en mémoire sans réseau) ---
-if (_bridge && {!(missionNamespace getVariable ["COMSPEC_ATAK_SendQNo", false])}) then {
-    private _raw = ("COMSPECExtension" callExtension ["SendQueue.Status", []]) select 0;
-    if ((_raw select [0, 3]) isNotEqualTo "OK|") exitWith {
-        // DLL plus ancienne : la section n'est plus redemandée de la mission.
-        if (_raw isEqualTo "" || {(_raw find "unknown") >= 0}) then { missionNamespace setVariable ["COMSPEC_ATAK_SendQNo", true]; };
-    };
+private _sqRaw = if (_bridge && {!(missionNamespace getVariable ["COMSPEC_ATAK_SendQNo", false])}) then { ("COMSPECExtension" callExtension ["SendQueue.Status", []]) select 0 } else { "" };
+if ((_sqRaw select [0, 3]) isEqualTo "OK|") then {
+    private _raw = _sqRaw;
     private _lines = (_raw select [3]) splitString toString [10];
     private _h = (_lines param [0, ""]) splitString toString [9];
     _h params [["_q", "0"], ["_sd", "0"], ["_rt", "0"], ["_fl", "0"], ["_dn", "0"], ["_ov", "ok"], ["_avg", "0"], ["_p95", "0"], ["_n429", "0"], ["_n5xx", "0"], ["_nto", "0"]];

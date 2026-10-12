@@ -11,6 +11,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vague 2026-10-12 (suite) — Réseau : réponses d'Athena (ATAK natif 1.15.1)
+
+Non testé en jeu. Corrige l'app Réseau qui affichait « Athena hors ligne · réponse jamais · 0 paquet envoyé » alors que la position arrivait sur le site et que l'icône de liaison était verte.
+- Cause : la page lisait des compteurs que rien ne remplissait (dernière réponse posée seulement à la liaison, paquets jamais comptés).
+- Nouveau `fn_athenaPulse` : lit en mémoire dans COMSPEC Link, sans requête réseau, les lots de positions et de télémétrie réussis (`GetTelemetryMetrics`) et le journal d'envoi. Marche avec la DLL actuelle.
+- COMSPEC Link (DLL à recompiler, sans changer de version) : `SendQueue.Status` ajoute requêtes, réponses, âge de la dernière réponse, latence et perte sur 15 min, lots de télémétrie compris.
+- Joueur immobile (rien à renvoyer, aucun échec) : Athena reste « en ligne ».
+
 ## Vague 2026-10-12 (suite) — Recherche sur la carte et données remontées au site (ATAK natif 1.15.0)
 
 Non testé en jeu. `run-migrations.php` à lancer (clé de mission, table des pertes). Pas de DLL à recompiler.
