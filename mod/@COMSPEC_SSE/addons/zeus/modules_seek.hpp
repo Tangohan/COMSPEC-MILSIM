@@ -88,7 +88,7 @@
                 tooltip = "Génération automatique : le sujet reçoit un verdict stable dérivé de sa graine. Les trois autres imposent le résultat de la requête d'identité.";
                 property = "COMSPEC_SSE_Profile_Preset";
                 control = "Combo";
-                expression = "[_this, 'Preset', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
+                expression = "[_this, 'Preset', _value] call comspec_sse_fnc_edenWriteField;";
                 defaultValue = "'auto'";
                 typeName = "STRING";
 
@@ -107,7 +107,7 @@
                 tooltip = "Laisser vide pour laisser le terminal proposer un nom cohérent avec le sujet.";
                 property = "COMSPEC_SSE_Profile_LastName";
                 control = "Edit";
-                expression = "[_this, 'LastName', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
+                expression = "[_this, 'LastName', _value] call comspec_sse_fnc_edenWriteField;";
                 defaultValue = "''";
                 typeName = "STRING";
             };
@@ -118,7 +118,7 @@
                 tooltip = "Laisser vide pour génération automatique.";
                 property = "COMSPEC_SSE_Profile_FirstName";
                 control = "Edit";
-                expression = "[_this, 'FirstName', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
+                expression = "[_this, 'FirstName', _value] call comspec_sse_fnc_edenWriteField;";
                 defaultValue = "''";
                 typeName = "STRING";
             };
@@ -129,7 +129,7 @@
                 tooltip = "Surnom sous lequel le sujet est connu. C'est souvent le seul élément dont dispose le terrain.";
                 property = "COMSPEC_SSE_Profile_Alias";
                 control = "Edit";
-                expression = "[_this, 'Alias', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
+                expression = "[_this, 'Alias', _value] call comspec_sse_fnc_edenWriteField;";
                 defaultValue = "''";
                 typeName = "STRING";
             };
@@ -140,7 +140,7 @@
                 tooltip = "Ce que le sujet déclare, pas ce qui est établi.";
                 property = "COMSPEC_SSE_Profile_Nationality";
                 control = "Edit";
-                expression = "[_this, 'Nationality', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
+                expression = "[_this, 'Nationality', _value] call comspec_sse_fnc_edenWriteField;";
                 defaultValue = "''";
                 typeName = "STRING";
             };
@@ -151,7 +151,7 @@
                 tooltip = "Détermine si un interprète est nécessaire pour l'entretien.";
                 property = "COMSPEC_SSE_Profile_Language";
                 control = "Edit";
-                expression = "[_this, 'Language', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
+                expression = "[_this, 'Language', _value] call comspec_sse_fnc_edenWriteField;";
                 defaultValue = "''";
                 typeName = "STRING";
             };
@@ -162,7 +162,7 @@
                 tooltip = "Affichée par le terminal en cas de correspondance. Laisser vide pour génération automatique.";
                 property = "COMSPEC_SSE_Profile_RecordRef";
                 control = "Edit";
-                expression = "[_this, 'RecordRef', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
+                expression = "[_this, 'RecordRef', _value] call comspec_sse_fnc_edenWriteField;";
                 defaultValue = "''";
                 typeName = "STRING";
             };
@@ -173,7 +173,7 @@
                 tooltip = "Fixer la graine rend le sujet identique d'une session à l'autre — utile pour un scénario rejoué. 0 laisse dériver de l'identifiant réseau.";
                 property = "COMSPEC_SSE_Profile_Seed";
                 control = "Edit";
-                expression = "[_this, 'Seed', _value] call comspec_overwatch_connect_fnc_sseEdenWriteField;";
+                expression = "[_this, 'Seed', _value] call comspec_sse_fnc_edenWriteField;";
                 defaultValue = "0";
                 validate = "number";
                 typeName = "NUMBER";

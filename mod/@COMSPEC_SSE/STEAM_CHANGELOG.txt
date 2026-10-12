@@ -44,6 +44,27 @@ NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 [*] Correctif : appels distants du SSE acceptés quand Overwatch est chargé ; transmissions Athena (échappement JSON) réparées
 [/list]
 
+[h2]Organisations et tableau des liens[/h2]
+[list]
+[*] Organisations : réseau, cellule, groupe armé, milice, clan, entreprise écran... avec hiérarchie, menace et description
+[*] Rôles réalistes dans l'organisation : chef, adjoint, chef de cellule, financier, logisticien, artificier, recruteur, courrier, guetteur, sympathisant...
+[*] Eden : catégorie « Organisation » sur chaque personne, attribut « Rattaché à l'organisation » sur les objets, module Organisation (synchroniser des personnes ou un groupe, rôles saisis ou générés)
+[*] Zeus : affecter, générer un réseau en cellules sur une sélection ou un groupe, rattacher des objets, révéler, retirer
+[*] Les joueurs découvrent le réseau en jouant : personne contrôlée, identification biométrique (appartenance confirmée), exploitation d'une personne (deux contacts soupçonnés), d'un objet lié ou rattaché
+[*] Tableau des liens (ACE, COMSPEC SSE) : graphe ou ORBAT des personnes, organisations, pièces, appareils, documents et lieux, filtres, soupçonné ou confirmé, fiche de chaque nœud
+[*] Vue Zeus du tableau : tout le réseau, ce que les joueurs ignorent en grisé, bouton Révéler
+[/list]
+
+[h2]Traçabilité des preuves[/h2]
+[list]
+[*] Chaque pièce saisie a un numéro (P-dossier-0001), chaque mise sous scellé un numéro de scellé, un nouveau à chaque rescellement
+[*] Journal de la pièce : saisie, collecte, scellé, photo, ouverture du scellé, exploitation, remise ; date, heure, qui, où
+[*] Journal infalsifiable : chaque ligne porte l'empreinte de la précédente, une ligne modifiée est signalée en rouge au registre
+[*] Remise des pièces à un équipier (ACE), inscrite et émargée ; « Pièces que je détiens »
+[*] Registre des scellés dans le terminal ; le journal part avec la fiche transmise
+[*] Zeus : « Scellé : altérer le journal » pour les exercices de contrôle de la chaîne
+[/list]
+
 [h2]Configuration[/h2]
 [list]
 [*] Réglages CBA COMSPEC SSE › Biométrie et Biométrie — population

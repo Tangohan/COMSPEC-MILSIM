@@ -71,6 +71,17 @@ switch (toLower _op) do {
     };
 };
 
+// Tableau des liens : la personne contrôlée y entre ; une identification certaine confirme son appartenance.
+if (!isNil "comspec_sse_fnc_orgOp" && {(toLower _op) in ["search", "enroll"]}) then {
+    private _u = _p getOrDefault ["unit", objNull];
+    if (_u isEqualType objNull && {!isNull _u}) then {
+        ["seen", [_u]] call comspec_sse_fnc_orgOp;
+        if ((_res getOrDefault ["verdict", ""]) isEqualTo "match" && {!(_res getOrDefault ["impostor", false])}) then {
+            ["reveal", [_u, 2, "identification biométrique", _requester]] call comspec_sse_fnc_orgOp;
+        };
+    };
+};
+
 if (isNull _requester || {_requester isEqualTo player && {hasInterface}}) exitWith {
     [_id, [_res] call comspec_sse_fnc_bioPack] call comspec_sse_fnc_bioClientResult;
 };

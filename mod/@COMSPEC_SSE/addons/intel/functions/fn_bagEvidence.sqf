@@ -29,5 +29,7 @@ if (_player canAdd "COMSPEC_SSE_EvidenceBag") then {
 
 [_entity, _player, "bag", _label] call comspec_sse_fnc_registerActionHistory;
 ["SSE_RecordCollected", [_entity, _label]] call comspec_sse_fnc_emitEvent;
+// Registre des scellés : numéro de scellé et ligne au journal de la pièce (le serveur répond).
+if (!isNil "comspec_sse_fnc_custody") exitWith { ["seal", [_entity, _player, ""]] call comspec_sse_fnc_custody; true };
 hint format ["Preuve mise sous scellé\n%1", _label];
 true
