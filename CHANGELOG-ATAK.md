@@ -11,6 +11,17 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## 2026-10-12 — Connexion au compte Athena sans clé ni identifiant (ATAK natif 1.20.0, COMSPEC Link 2.0.72)
+
+Non testé en jeu. Demande de TTRD : celui qui installe le mod se connecte avec son compte Athena et tout se synchronise, sans clé de communauté ni identifiant de communauté dans les options d'addons.
+- App Athena du téléphone, nouvel onglet **COMPTE** (ouvert par défaut) : un code de 8 caractères s'affiche tout seul. Le joueur l'autorise sur **athena.ttrd.fr/lier**, connecté à son compte (bouton OUVRIR LA PAGE : le navigateur s'ouvre avec le code déjà rempli). Le jeu reçoit sa session : profil, communauté, réglages.
+- Le Steam du joueur est associé au compte à cette occasion : aux parties suivantes, la connexion se fait seule.
+- Premier lancement : après « Oui » au service Athéna, la page s'ouvre avec le code. À chaque partie sans session : un code et une notification, sans fenêtre à remplir.
+- Options d'addons : la clé d'accès et l'identifiant de communauté passent dans **COMSPEC > Overwatch · Serveur (optionnel)**, à laisser vides. Un serveur peut encore les imposer.
+- La communauté de la session est reprise par le mod (fiches d'équipe, avatars, diapositives) sans identifiant saisi.
+- Site : nouvelle page **/lier** (Mon compte > Appareils ATAK) qui valide le code du jeu ; le code de l'adresse est gardé si la personne doit d'abord se connecter.
+- COMSPEC Link 2.0.72 (DLL à recompiler) : `OpenAthenaLink` (ouvre la page du portail, refuse tout autre site), `GetSessionTenant`, et `PairStart` renvoie l'adresse avec le code.
+
 ## Vague 2026-10-12 (suite) — App Photo dans le téléphone, nouvelle app Galerie (ATAK natif 1.18.0)
 
 Non testé en jeu. Demande de TTRD : l'app Photo doit s'ouvrir sur l'appareil photo, dans l'écran du téléphone, et non en mode photo plein écran ; le plein écran devient un bouton ; les photos se revoient dans une app Galerie séparée.

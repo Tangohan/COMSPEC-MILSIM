@@ -56,16 +56,18 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
     ["COMSPEC", "Overwatch"], "https://athena.ttrd.fr/public"
 ] call CBA_fnc_addSetting;
 
+// Clé et communauté : plus rien à saisir pour un joueur, la connexion au compte Athena (code ou Steam)
+// donne la communauté. Gardées en option côté serveur (valeur imposée à tous par le serveur ou la mission).
 [
     "comspec_overwatch_api_key", "EDITBOX",
-    ["Clé d’accès communauté", "Fournie par l’administration. Laissez vide en local si le poste n’exige pas de clé. Aussi réglable dans Paramètres ATAK."],
-    ["COMSPEC", "Overwatch"], ""
+    ["Clé d’accès communauté (serveur, optionnel)", "Laissez vide : chaque joueur se connecte avec son compte Athena et sa communauté est retrouvée seule. À remplir seulement si l’administration de votre serveur le demande. Un serveur peut l’imposer à tous (réglages CBA du serveur, forcés)."],
+    ["COMSPEC", "Overwatch · Serveur (optionnel)"], ""
 ] call CBA_fnc_addSetting;
 
 [
     "comspec_overwatch_tenant_id", "EDITBOX",
-    ["Identifiant de communauté", "Numéro ou code de votre communauté. Utile si plusieurs communautés partagent la même adresse. Aussi réglable dans Paramètres ATAK."],
-    ["COMSPEC", "Overwatch"], ""
+    ["Identifiant de communauté (serveur, optionnel)", "Laissez vide : la communauté vient du compte Athena du joueur. À remplir seulement pour imposer une communauté sur ce serveur. Un serveur peut l’imposer à tous (réglages CBA du serveur, forcés)."],
+    ["COMSPEC", "Overwatch · Serveur (optionnel)"], ""
 ] call CBA_fnc_addSetting;
 
 [
