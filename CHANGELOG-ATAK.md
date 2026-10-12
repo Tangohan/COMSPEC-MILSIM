@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## 2026-10-12 — Galerie peaufinée, clichés du drone supprimables, viseur Photo réparé (ATAK natif 1.42.0)
+## 2026-10-12 — Galerie peaufinée, clichés du drone supprimables, viseur Photo réparé (ATAK natif 1.43.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : écran de la Galerie plus propre, mêmes actions.
 
@@ -23,6 +23,15 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD :
 - **Suppression** (retour de TTRD : impossible de supprimer les clichés du drone) : chaque ligne a son bouton SUPPRIMER (second appui sur CONFIRMER, en rouge), photos du téléphone comme clichés du drone. TOUT SUPPRIMER efface aussi les clichés du drone (fichier et fiche), sauf un cliché en cours d'envoi. Une photo déjà reçue reste sur Athena.
 - **App Photo, viseur noir** (retour de TTRD, de nuit) : la caméra rendue dans l'écran ne s'adapte pas à l'obscurité comme la vue du joueur. Le viseur règle maintenant son gain selon la lumière : normal le jour, éclairci en pénombre, fortement éclairci la nuit (« MODE NUIT » affiché sur l'image). Texture du rendu dans le sens du viseur (paysage). Le journal note l'ouverture et l'arrêt du viseur (lumière, PiP, raison de l'arrêt) pour diagnostiquer un écran encore noir.
 - **App Photo, viseur figé** (retour de TTRD : « on dirait que le visu reste sur place ») : la caméra du viseur restait à l'endroit où l'app avait été ouverte, et le joueur s'y voyait de loin. Elle suit maintenant les yeux du joueur à chaque image (même méthode que le plein écran). Un déclenchement interrompu ne fige plus le viseur plus de 5 s.
+
+## ALERTES refaite, SALUTE dans sa propre app (ATAK natif 1.42.0)
+
+Non testé en jeu. Demande de TTRD : reprendre le style de l'app Reco pour les Alertes, bouton panique prioritaire, compte rendu SALUTE hors des Alertes. Pas de DLL à recompiler, pas de migration.
+- **Alertes** : en-tête rouge (heure, ma grille, pastille CAMP + POSTE ou CAMP SEULEMENT selon Athena). **PANIQUE** en tête, sur toute la largeur : grand bouton rouge sombre, rouge vif quand il est armé (« Appuyez encore dans les 5 secondes pour ENVOYER »), toujours deux appuis. Alertes rapides en trois tuiles à icône (CONTACT, FIN DE CONTACT, APPAREIL ABATTU). Journal en cartes de la couleur de l'alerte, bouton CARTE sur chacune.
+- **SALUTE** : nouvelle app (section Renseignement, à côté de Reco), en bleu. Une grande lettre par champ avec exemple ; L avec ICI et VISÉ (point sous mon regard) et la distance et l'azimut ; T avec MAINTENANT ; compteur « x/6 remplis » ; ENVOYER LE SALUTE et EFFACER ; derniers SALUTE de la mission en cartes. Raccourci depuis les Alertes. Même envoi qu'avant (camp et poste Athena).
+- Nouvelles icônes : panique, contact, fin de contact, appareil abattu, SALUTE.
+
+À tester en jeu : PANIQUE (un appui arme, le deuxième envoie, retour au repos après 5 s ; reçue par un autre joueur du camp) ; les trois alertes rapides ; app SALUTE : saisir, ICI / VISÉ / MAINTENANT sans perdre la saisie, envoyer avec moins de deux champs (refusé) puis complet ; le SALUTE apparaît dans les deux journaux ; affichage en portrait et en mode petit.
 
 ## Drone : flotte de 4 drones, rôles, essaim, garde rapprochée ; repérage automatique en réglage admin (ATAK natif 1.39.0)
 
