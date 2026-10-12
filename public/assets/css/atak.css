@@ -9846,6 +9846,26 @@ a.atak-session-hub__btn {
   font-weight: 600;
 }
 
+/* Fiche du cliché : badges SSE (lien vers le dossier) et CONFIDENTIEL. */
+.atak-cam-photo-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.atak-cam-photo-badges .atak-cam-photo-flag {
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  padding: 0 5px;
+  font-size: 0.72em;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+}
+
+.atak-cam-photo-flag--conf {
+  color: #ff8a7a;
+}
+
 .atak-cam-photo-actions {
   display: flex;
   flex-wrap: wrap;

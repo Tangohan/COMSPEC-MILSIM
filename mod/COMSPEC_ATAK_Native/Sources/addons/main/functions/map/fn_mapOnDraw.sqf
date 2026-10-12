@@ -6,6 +6,9 @@ private _state = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _selected = (_state getOrDefault ["selectedEntity",createHashMap]) getOrDefault ["id",""];
 private _labels = (["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 0;
 private _scale = ctrlMapScale _map;
+// Réglages > Carte « Cartouches des unités » : COMPLET (indicatif + distance / azimut), INDICATIF SEUL ou AUCUN.
+private _lblStyle = profileNamespace getVariable ["COMSPEC_ATAK_LabelStyle", "FULL"];
+private _lblOn = _labels && {_lblStyle isNotEqualTo "NONE"};
 // Taille des symboles et textes proportionnelle à la carte (mini = petite carte, petits symboles).
 private _k = ((((ctrlPosition _map) select 3) / (safeZoneH * 0.7)) max 0.5) min 1;
 // Réglages > Carte : taille des textes (indicatifs, grilles, libellés) et des symboles. Défaut 1.25 (plus grand qu'avant).
@@ -14,6 +17,10 @@ private _is = ((profileNamespace getVariable ["COMSPEC_ATAK_MapIconScale", 1.25]
 uiNamespace setVariable ["COMSPEC_ATAK_MapTs", _ts];
 uiNamespace setVariable ["COMSPEC_ATAK_MapIs", _is];
 private _bgStyle = [] call comspec_atak_native_fnc_mapStyle;
+// Cartouches façon ATAK (fn_mapLabels) en carte plein écran ; la petite carte (téléphone en HUD) garde l'indicatif simple.
+private _boxOn = _lblOn && {_k > 0.75} && {_scale < 0.25};
+private _lblCands = [];
+private _myGroup = group player;
 // Couleurs choisies dans les réglages (alliés, moi) ; icône choisie par chaque joueur (variable publique).
 private _palette = uiNamespace getVariable "COMSPEC_ATAK_MapPalette";
 if (isNil "_palette") then {
@@ -144,6 +151,10 @@ if ((count _route) > 0) then {
 [_map] call comspec_atak_native_fnc_meshDraw;
 [_map] call comspec_atak_native_fnc_droneDraw;
 ["draw", _map] call comspec_atak_native_fnc_mapPing;
+// Plan de briefing partagé du camp (app Plan), sous les unités, si le joueur l'a mis sur la carte.
+if (profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap", false]) then {
+    [_map, (missionNamespace getVariable [format ["COMSPEC_ATAK_Plan_%1", side group player], [0, [], ""]]) param [1, []], 0.85] call comspec_atak_native_fnc_planDraw;
+};
 
 // Points de passage : traits pointillés entre étapes, étape active en vert, trait de cap depuis moi en navigation.
 private _wp = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
@@ -164,7 +175,7 @@ if ((count _wpts) > 0) then {
 
 // Guerre électronique : position brouillée (GPS) et pistes BFT dégradées.
 ([] call comspec_atak_native_fnc_ewEffects) params ["_ewGps", "_ewBft", "_ewOff"];
-private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "DOTS"]) isEqualTo "NATO";
+private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) isEqualTo "NATO";
 {
     private _entity = _y;
     private _pos = _entity getOrDefault ["position",[]];
@@ -195,10 +206,22 @@ private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "DOTS
     };
     _map drawIcon [
         _icon,_color,_pos,_size,_size,_dir,
-        if (_labels && {_scale < 0.25}) then {_entity getOrDefault ["callsign",""]} else {""},
+        if (_lblOn && {!_boxOn} && {_scale < 0.25}) then {_entity getOrDefault ["callsign",""]} else {""},
         1,0.022 * _k * _ts,"RobotoCondensedBold","right"
     ];
     if (_ech isNotEqualTo "") then { _map drawIcon [_ech, _color, _pos, _size, _size, 0, "", 0]; };
+    // Candidat au cartouche : pas moi (carte « moi »), et pour les autres groupes seulement le chef (un cartouche par
+    // groupe, pas un par équipier) ; les unités Athena sans objet et l'unité sélectionnée gardent toujours le leur.
+    if (_boxOn && {!_self}) then {
+        private _cs = _entity getOrDefault ["callsign", ""];
+        private _uo = _entity getOrDefault ["object", objNull];
+        private _mine = !isNull _uo && {group _uo isEqualTo _myGroup};
+        if (_cs isNotEqualTo "" && {_x isEqualTo _selected || {isNull _uo} || {_mine} || {leader group _uo isEqualTo _uo}}) then {
+            private _hostile = (_entity getOrDefault ["affiliation", ""]) isEqualTo "hostile";
+            _lblCands pushBack [[[3, 2] select _mine, 1] select _hostile, _x, _pos, toUpper _cs, _hostile, ((_color select 3) max 0.45) min 1];
+            if (_x isEqualTo _selected) then { (_lblCands select ((count _lblCands) - 1)) set [0, 0]; };
+        };
+    };
     if (_x isEqualTo _selected) then {
         _map drawEllipse [_pos,18 * _is,18 * _is,0,[0.36,0.78,0.42,0.9],""];
     };
@@ -241,7 +264,10 @@ private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "DOTS
             };
             private _rgba = [_marker getOrDefault ["color","ColorGreen"], [0.36,0.78,0.42,1]] call _mkRgba;
             _rgba set [3,(_rgba select 3) * (_marker getOrDefault ["alpha",1])];
-            _map drawIcon [_icon,_rgba,_pos,16 * _k * _is,16 * _k * _is,_marker getOrDefault ["dir",0],if (_labels && {_scale < 0.3}) then {_marker getOrDefault ["text",""]} else {""},1,0.02 * _k * _ts,"RobotoCondensed","right"];
+            private _mt = if (_labels && {_scale < 0.3}) then {_marker getOrDefault ["text",""]} else {""};
+            // Contact ENI : son cartouche rouge (fn_mapLabels) remplace le texte.
+            if (_boxOn && {_mt isNotEqualTo ""} && {((toLower _type) select [0, 2]) isEqualTo "o_" || {(toUpper (_mt select [0, 4])) isEqualTo "ENI "}}) then { _mt = ""; };
+            _map drawIcon [_icon,_rgba,_pos,16 * _k * _is,16 * _k * _is,_marker getOrDefault ["dir",0],_mt,1,0.02 * _k * _ts,"RobotoCondensed","right"];
         };
     };
 } forEach (_data getOrDefault ["markers",createHashMap]);
@@ -398,13 +424,8 @@ if (_selM isNotEqualTo "" && {(markerShape _selM) isNotEqualTo ""}) then {
     _map drawEllipse [getMarkerPos _selM,_r,_r,0,[0.36,0.78,0.42,1],""];
 };
 
-// Trait ou dessin en cours
-private _stroke = +(_state getOrDefault ["drawStroke",[]]);
-if ((count _stroke) > 0) then {
-    if ((_state getOrDefault ["mapMode",""]) isEqualTo "LINE" && {(count _cursor) >= 2}) then { _stroke pushBack [_cursor select 0,_cursor select 1,0]; };
-    private _rgba = [profileNamespace getVariable ["COMSPEC_ATAK_DrawColor","ColorRed"], [0.9,0.1,0.1,1]] call _mkRgba;
-    for "_i" from 0 to ((count _stroke) - 2) do { _map drawLine [_stroke select _i,_stroke select (_i + 1),_rgba]; };
-};
+// Traits joueurs épais ou fléchés et trait / dessin en cours (fn_strokeDraw).
+[_map, _cursor] call comspec_atak_native_fnc_strokeDraw;
 
 // App Feux : pièce, cible et ligne de tir.
 private _fires = uiNamespace getVariable ["COMSPEC_ATAK_Fires", createHashMap];
@@ -439,6 +460,8 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
         if (_title isEqualTo "") then { continue };
         if ((_m getOrDefault ["local", false]) && {(_id find "_USER_DEFINED") < 0}) then { continue };
         if ((toUpper (_m getOrDefault ["shape", "ICON"])) in ["POLYLINE", "RECTANGLE", "ELLIPSE"]) then { continue };
+        // Contacts ENI : déjà dans un cartouche rouge (fn_mapLabels).
+        if (_boxOn && {(((toLower (_m getOrDefault ["type", ""])) select [0, 2]) isEqualTo "o_") || {(toUpper (_title select [0, 4])) isEqualTo "ENI "}}) then { continue };
         private _pos = _m getOrDefault ["position", []];
         if ((count _pos) < 2) then { continue };
         private _sp = _map ctrlMapWorldToScreen _pos;
@@ -498,6 +521,9 @@ if (isNil "_ext") then {
     uiNamespace setVariable ["COMSPEC_ATAK_MapLayersExt", _ext];
 };
 { if (!isNil _x) then { [_map] call (missionNamespace getVariable _x); }; } forEach _ext;
+
+// Cartouches des unités et contacts ENI (style ATAK), au-dessus de tout sauf les numéros de grille.
+if (_boxOn) then { [_map, _lblCands, _ts, _scale, _lblStyle] call comspec_atak_native_fnc_mapLabels; };
 
 // Numéros de grille sur les bords haut (abscisses) et gauche (ordonnées), à la taille choisie dans Réglages > Carte.
 // La carte Arma les dessine en tout petit (COMSPEC_RscMapAtak : sizeExGrid minuscule) ; ici une étiquette tous les

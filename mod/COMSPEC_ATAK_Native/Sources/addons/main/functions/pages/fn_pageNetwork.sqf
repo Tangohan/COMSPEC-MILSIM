@@ -360,13 +360,16 @@ if (_bridge) then {
     [if ((count _zone) isEqualTo 0) then { "Couverture normale." } else {
         format ["%1 (%2)<br/>Perte minimale %3 %% · latence +%4 ms", _zone getOrDefault ["name", "Zone"], _zone getOrDefault ["type", "?"], _zone getOrDefault ["packet_loss_floor", 0], _zone getOrDefault ["latency_add", 0]]
     }] call _para;
-    ["Simulation de liaison dégradée", ["inactive", "<t color='#f2ab33'>active</t>"] select ([] call comspec_overwatch_connect_fnc_isLinkDegradeSimActive)] call _info;
+    // Fonctions d'Overwatch absentes d'une version plus ancienne : la page continue sans elles.
+    if (!isNil "comspec_overwatch_connect_fnc_isLinkDegradeSimActive") then {
+        ["Simulation de liaison dégradée", ["inactive", "<t color='#f2ab33'>active</t>"] select ([] call comspec_overwatch_connect_fnc_isLinkDegradeSimActive)] call _info;
+    };
     if ((count _relay) > 0) then {
         ["Relais le plus proche", format ["%1 · %2 · %3 Mbit/s", [_relay getOrDefault ["name", "Relais"]] call _esc, [_relay getOrDefault ["dist", 0]] call _dist, (_relay getOrDefault ["throughput_mbps", 0]) toFixed 1]] call _info;
     };
     _y = _y + _pad * 0.3;
     [[
-        ["MESURER LA LATENCE", { [] call comspec_overwatch_connect_fnc_measureLatency; [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
+        ["MESURER LA LATENCE", { if (!isNil "comspec_overwatch_connect_fnc_measureLatency") then { [] call comspec_overwatch_connect_fnc_measureLatency; }; [{ ["NETWORK"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],
         ["ROUVRIR LE CANAL", { ["enter"] call comspec_atak_native_fnc_athenaAction; }, true]
     ]] call _buttons;
 } else {

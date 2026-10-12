@@ -7184,8 +7184,12 @@ class AtakApiController
             if ($row === null && $cs !== '' && isset($byAuthorAny[$cs])) {
                 $row = $byAuthorAny[$cs];
             }
+            // Cliché confidentiel : pas de vignette ni de légende sans l'habilitation (même règle que les flux photo).
+            if (is_array($row) && !empty($row['is_confidential']) && !$this->canViewConfidentialRecon()) {
+                $row = null;
+            }
             if (is_array($row)) {
-                $feed['snapshot_url'] = \App\Support\ReconImageStorage::publicUrl(basename((string) ($row['image_path'] ?? '')));
+                $feed['snapshot_url'] = \App\Support\ReconImageStorage::urlForRow($row);
                 $feed['snapshot_id'] = (int) ($row['id'] ?? 0);
                 $feed['snapshot_at'] = $row['created_at'] ?? $row['captured_at'] ?? null;
                 $feed['snapshot_caption'] = $row['caption'] ?? null;
@@ -11590,7 +11594,7 @@ class AtakApiController
                 $rows = $this->applyPlayNightFilter($rows, 'all', ['captured_at', 'created_at']);
             }
             foreach ($rows as &$row) {
-                $row['url'] = \App\Support\ReconImageStorage::publicUrl(basename((string) ($row['image_path'] ?? '')));
+                $row['url'] = \App\Support\ReconImageStorage::urlForRow($row);
                 $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
                 $row['captured_at'] = ReconCapturedAt::displayFromRow($row);
                 $row['author'] = (string) ($row['author_callsign'] ?? $row['author'] ?? '');
@@ -11599,6 +11603,7 @@ class AtakApiController
                 $row['age_sec'] = $stamp !== false ? max(0, time() - $stamp) : null;
             }
             unset($row);
+            $rows = $this->presentReconPhotoMeta($tenantId, $rows);
 
             return Response::json($rows);
         } catch (\Throwable $e) {
@@ -11606,6 +11611,176 @@ class AtakApiController
 
             return Response::json([]);
         }
+    }
+
+    /**
+     * Fiche du cliché envoyée par le jeu (NotifyNewPhoto de COMSPEC Link 2.0.66, arguments 17 à 23).
+     * Champs absents (DLL plus ancienne, autres appareils) : valeurs par défaut, la légende reste seule.
+     *
+     * @param array<string, mixed> $post
+     * @return array<string, mixed>
+     */
+    public static function reconPhotoMetaFromPost(array $post): array
+    {
+        $text = static function (string $key, int $max) use ($post): ?string {
+            if (!isset($post[$key]) || !is_scalar($post[$key])) {
+                return null;
+            }
+            $v = trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string) $post[$key]) ?? '');
+
+            return $v !== '' ? mb_substr($v, 0, $max) : null;
+        };
+        $flag = static function (string $key) use ($post): int {
+            $v = strtolower(trim(is_scalar($post[$key] ?? null) ? (string) $post[$key] : ''));
+
+            return in_array($v, ['1', 'true', 'yes', 'oui', 'on'], true) ? 1 : 0;
+        };
+        $caseRef = $text('sse_case_ref', 64);
+        $caseRef = $caseRef !== null ? strtoupper($caseRef) : null;
+        $source = $text('photo_source', 16);
+        $source = $source !== null ? (strtolower(preg_replace('/[^a-zA-Z0-9_-]/', '', $source) ?? '') ?: null) : null;
+
+        return [
+            'title' => $text('title', 120),
+            'description' => $text('description', 2000),
+            'is_sse' => ($flag('is_sse') === 1 || $caseRef !== null) ? 1 : 0,
+            'sse_case_ref' => $caseRef,
+            'is_confidential' => $flag('is_confidential'),
+            'photo_source' => $source,
+            'drone_name' => $text('drone_name', 120),
+        ];
+    }
+
+    /**
+     * Fiche du cliché pour le poste : drapeaux en entiers, lien vers le dossier SSE quand la référence
+     * existe sur le site, et clichés confidentiels réservés à la même audience que le renseignement
+     * confidentiel (habilitation SSE « confidentiel » ou plus, voir IntelRedaction / SseClearanceService).
+     * Les autres lecteurs gardent la carte (auteur, heure, position) sans image ni texte.
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function presentReconPhotoMeta(int $tenantId, array $rows): array
+    {
+        $canConfidential = null;
+        $cases = [];
+        $caseRepo = null;
+        foreach ($rows as &$row) {
+            $row['is_sse'] = (int) !empty($row['is_sse']);
+            $row['is_confidential'] = (int) !empty($row['is_confidential']);
+            $ref = strtoupper(trim((string) ($row['sse_case_ref'] ?? '')));
+            $row['sse_case_url'] = null;
+            $row['sse_case_title'] = null;
+            if ($ref !== '' || !empty($row['sse_case_id'])) {
+                $key = $ref !== '' ? 'ref:' . $ref : 'id:' . (int) $row['sse_case_id'];
+                if (!array_key_exists($key, $cases)) {
+                    $cases[$key] = null;
+                    try {
+                        $caseRepo ??= new \App\Repositories\SseCaseRepository();
+                        $cases[$key] = $ref !== ''
+                            ? $caseRepo->findByReferenceCode($tenantId, $ref)
+                            : $caseRepo->findById((int) $row['sse_case_id'], $tenantId);
+                    } catch (\Throwable) {
+                        $cases[$key] = null;
+                    }
+                }
+                $case = $cases[$key];
+                if (is_array($case) && (int) ($case['id'] ?? 0) > 0) {
+                    $row['sse_case_url'] = url('atak/sse/dossiers/' . (int) $case['id']);
+                    $row['sse_case_title'] = (string) ($case['title'] ?? '');
+                    if ($ref === '') {
+                        $row['sse_case_ref'] = (string) ($case['reference_code'] ?? '');
+                    }
+                }
+            }
+            $row['restricted'] = false;
+            if ($row['is_confidential'] === 1) {
+                $canConfidential ??= $this->canViewConfidentialRecon();
+                if (!$canConfidential) {
+                    $row['restricted'] = true;
+                    $row['url'] = null;
+                    $row['image_path'] = '';
+                    $row['thumb_path'] = null;
+                    $row['source_name'] = null;
+                    $row['caption'] = null;
+                    $row['title'] = null;
+                    $row['description'] = null;
+                    $row['operator_comment'] = null;
+                }
+            }
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    private ?bool $confidentialReconAllowed = null;
+
+    /**
+     * Clichés confidentiels : même audience que le renseignement confidentiel
+     * (habilitation SSE « confidentiel » ou plus). Mémorisé pour la requête.
+     */
+    private function canViewConfidentialRecon(): bool
+    {
+        if ($this->confidentialReconAllowed === null) {
+            try {
+                $this->confidentialReconAllowed = (new \App\Services\Sse\SseClearanceService())
+                    ->allows(\App\Repositories\SseCaseRepository::CLASS_CONFIDENTIAL);
+            } catch (\Throwable) {
+                $this->confidentialReconAllowed = false;
+            }
+        }
+
+        return $this->confidentialReconAllowed;
+    }
+
+    /**
+     * GET /api/recon/images/{id}/file : fichier d'un cliché, seule voie vers un cliché confidentiel
+     * (rangé hors racine web, storage/private/recon). Communauté de la session, même habilitation
+     * que les flux ; 404 (jamais 403) pour qui n'y a pas droit, pour ne pas confirmer l'existence.
+     */
+    public function reconImagesFile(Request $request, array $params = []): Response
+    {
+        $notFound = static fn (): Response => (new Response())
+            ->setStatusCode(404)
+            ->header('Content-Type', 'text/plain; charset=utf-8')
+            ->header('Cache-Control', 'no-store, private, max-age=0')
+            ->setBody('Not found');
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $notFound();
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $row = $id > 0 ? $this->reconImages()->get($r, $id) : null;
+        if ($row === null || !empty($row['deleted_at'])) {
+            return $notFound();
+        }
+        $imagePath = (string) ($row['image_path'] ?? '');
+        $confidential = !empty($row['is_confidential']) || \App\Support\ReconImageStorage::isPrivatePath($imagePath);
+        if ($confidential && !$this->canViewConfidentialRecon()) {
+            return $notFound();
+        }
+        $abs = \App\Support\ReconImageStorage::absoluteReadable($imagePath);
+        if ($abs === null) {
+            return $notFound();
+        }
+        $response = new Response();
+        $response->header('Content-Type', \App\Support\ReconImageStorage::mimeType($abs));
+        $response->header('Content-Length', (string) filesize($abs));
+        $response->header('Content-Disposition', 'inline');
+        $response->header('Cache-Control', 'no-store, private, max-age=0');
+        $response->header('Pragma', 'no-cache');
+        $response->header('X-Content-Type-Options', 'nosniff');
+        $response->header('Referrer-Policy', 'no-referrer');
+        $response->setBodyStream(static function () use ($abs): void {
+            $h = fopen($abs, 'rb');
+            if ($h) {
+                fpassthru($h);
+                fclose($h);
+            }
+        });
+
+        return $response;
     }
 
     private function reconDeviceLabel(string $deviceType): string
@@ -11677,9 +11852,17 @@ class AtakApiController
 
             $ext = pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION) ?: 'jpg';
             $ext = preg_replace('/[^a-zA-Z0-9]/', '', $ext) ?: 'jpg';
-            // Suffixe aléatoire : deux photos du même auteur dans la même seconde ne s'écrasent plus.
-            $filename = 'recon_' . date('YmdHis') . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($_POST['author'] ?? 'unknown')) . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
-            $path = \App\Support\ReconImageStorage::storeFromTemp((string) $file['tmp_name'], $filename);
+            $photoMeta = self::reconPhotoMetaFromPost($_POST);
+            $storeConfidential = !empty($photoMeta['is_confidential']);
+            // Confidentiel : hors racine web, nom aléatoire (32 hex), servi par reconImagesFile seulement.
+            // Sinon suffixe aléatoire : deux photos du même auteur dans la même seconde ne s'écrasent plus.
+            $filename = $storeConfidential
+                ? \App\Support\ReconImageStorage::privateFileName($ext)
+                : 'recon_' . date('YmdHis') . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '', (string) ($_POST['author'] ?? 'unknown')) . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
+            $storedImagePath = $storeConfidential
+                ? \App\Support\ReconImageStorage::privateRelativeImagePath($filename)
+                : \App\Support\ReconImageStorage::relativeImagePath($filename);
+            $path = \App\Support\ReconImageStorage::storeFromTemp((string) $file['tmp_name'], $filename, $storeConfidential);
             if ($path === null) {
                 error_log('[atak/recon-images] store failed for ' . $filename);
 
@@ -11701,7 +11884,7 @@ class AtakApiController
                 $unitName = $feedId;
             }
             $data = [
-                'image_path' => \App\Support\ReconImageStorage::relativeImagePath($filename),
+                'image_path' => $storedImagePath,
                 'source_name' => mb_substr(basename(str_replace('\\', '/', (string) ($file['name'] ?? ''))), 0, 190) ?: null,
                 'author_callsign' => $_POST['author'] ?? $_POST['author_callsign'] ?? 'Unknown',
                 'unit_name' => $unitName,
@@ -11718,7 +11901,7 @@ class AtakApiController
                 'altitude' => isset($_POST['altitude']) && is_numeric($_POST['altitude']) ? (float) $_POST['altitude'] : null,
                 'device_type' => $deviceNorm !== '' ? $deviceNorm : 'CTAB',
                 'captured_at' => ReconCapturedAt::unixFromPosted($_POST['capturedAt'] ?? $_POST['captured_at'] ?? null),
-            ];
+            ] + $photoMeta;
             try {
                 (new \App\Services\Media\ReconPhotoHudService())->applyToFile($tenantId, $path, $data);
             } catch (\Throwable $hudErr) {
@@ -11726,7 +11909,7 @@ class AtakApiController
             }
             $row = $this->reconImages()->create($tenantId, $data);
             if ($row === []) {
-                \App\Support\ReconImageStorage::delete($filename);
+                \App\Support\ReconImageStorage::delete($storedImagePath);
                 error_log('[atak/recon-images] create failed for ' . $filename);
 
                 return Response::json([
@@ -11734,15 +11917,16 @@ class AtakApiController
                     'message' => 'La photo a été reçue mais n’a pas pu être indexée. Réessayez dans un instant.',
                 ], 503);
             }
-            $row['url'] = \App\Support\ReconImageStorage::publicUrl($filename);
+            $row['url'] = \App\Support\ReconImageStorage::urlForRow($row);
             $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
+            $isConfidential = !empty($data['is_confidential']);
             $mapId = (int) ($_POST['mapId'] ?? $_POST['map_id'] ?? self::DEFAULT_MAP_ID);
             try {
                 $this->activityLog->record(
                     $tenantId,
                     $mapId > 0 ? $mapId : self::DEFAULT_MAP_ID,
                     AtakActivityLogService::TYPE_INTEL,
-                    $row['device_label'] . ' reçue — ' . ($data['author_callsign'] ?? 'Inconnu'),
+                    $row['device_label'] . ($isConfidential ? ' confidentielle' : '') . ' reçue — ' . ($data['author_callsign'] ?? 'Inconnu'),
                     (string) ($data['author_callsign'] ?? '')
                 );
             } catch (\Throwable $logErr) {
@@ -11756,7 +11940,11 @@ class AtakApiController
                 'game_date' => mb_substr(trim((string) ($_POST['game_date'] ?? $_POST['gameDate'] ?? '')), 0, 40),
                 'game_time' => mb_substr(trim((string) ($_POST['game_time'] ?? $_POST['gameTime'] ?? $_POST['daytime'] ?? '')), 0, 16),
             ];
-            register_shutdown_function(static function () use ($tenantId, $path, $discordMeta): void {
+            // Cliché confidentiel : jamais relayé sur Discord (salon ouvert à toute la communauté).
+            register_shutdown_function(static function () use ($tenantId, $path, $discordMeta, $isConfidential): void {
+                if ($isConfidential) {
+                    return;
+                }
                 try {
                     // Réponse rendue au jeu d'abord : l'envoi Discord (photo) ne retarde pas l'accusé d'upload.
                     if (function_exists('fastcgi_finish_request')) {
@@ -11791,7 +11979,9 @@ class AtakApiController
         if ($row === null) {
             return Response::json(['error' => 'Not found'], 404);
         }
-        $row['url'] = \App\Support\ReconImageStorage::publicUrl(basename((string) ($row['image_path'] ?? '')));
+        $row['url'] = \App\Support\ReconImageStorage::urlForRow($row);
+        $row = $this->presentReconPhotoMeta($tenantId, [$row])[0] ?? $row;
+
         return Response::json($row);
     }
 
@@ -11911,7 +12101,8 @@ class AtakApiController
                 return Response::json(['error' => 'storage', 'message' => 'Impossible de préparer l’archive SSE.'], 500);
             }
             $ext = pathinfo($srcAbs, PATHINFO_EXTENSION) ?: 'jpg';
-            $destName = sprintf('recon_%d_%d.%s', $id, time(), strtolower((string) preg_replace('/[^a-z0-9]/i', '', $ext)));
+            // Pièce SSE servie sous /uploads/sse : nom imprévisible (un cliché confidentiel y est copié aussi).
+            $destName = sprintf('recon_%d_%d_%s.%s', $id, time(), bin2hex(random_bytes(16)), strtolower((string) preg_replace('/[^a-z0-9]/i', '', $ext)));
             $destAbs = $destDir . DIRECTORY_SEPARATOR . $destName;
             if (!@copy($srcAbs, $destAbs)) {
                 return Response::json(['error' => 'copy_failed', 'message' => 'Impossible de copier la photo vers l’espace SSE.'], 500);
@@ -11945,7 +12136,7 @@ class AtakApiController
             return Response::json(['error' => 'update_failed', 'message' => 'Impossible de mettre à jour la photo.'], 500);
         }
 
-        $updated['url'] = \App\Support\ReconImageStorage::publicUrl(basename((string) ($updated['image_path'] ?? '')));
+        $updated['url'] = \App\Support\ReconImageStorage::urlForRow($updated);
         $updated['device_label'] = $this->reconDeviceLabel((string) ($updated['device_type'] ?? 'CTAB'));
 
         return Response::json(['ok' => true, 'message' => $message, 'photo' => $updated]);

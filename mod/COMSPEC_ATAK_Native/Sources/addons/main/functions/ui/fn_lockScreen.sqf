@@ -1,6 +1,7 @@
 /*
-    Écran de verrouillage Android : grande heure, date (jour, carte, température), batterie et réseau,
-    3 dernières notifications (historique de fn_notify, état « notifHistory »), « Touchez pour déverrouiller ».
+    Écran de verrouillage Android : grande heure, date en accent, pastilles (lieu et météo, batterie, réseau),
+    dernières notifications en cartes (icône de l'app, titre « Source : … », heure, texte ; historique de fn_notify,
+    état « notifHistory »), invite « Touchez pour déverrouiller » qui respire.
     Affiché en main (souris) seulement, quand le téléphone est sorti :
       - pour la première fois de la mission, ou après plus de 60 s sans être affiché (ni en main ni porté) ;
       - après un redémarrage, une batterie vide ou un écran détruit (missionNamespace COMSPEC_ATAK_LockPending) :
@@ -52,9 +53,14 @@ switch (_act) do {
                 ["build"] call comspec_atak_native_fnc_lockScreen;
                 ["front"] call comspec_atak_native_fnc_fx;
             };
-            (uiNamespace getVariable ["COMSPEC_ATAK_LockClock", []]) params [["_clock", controlNull], ["_stat", controlNull]];
+            (uiNamespace getVariable ["COMSPEC_ATAK_LockClock", []]) params [["_clock", controlNull], ["_bat", controlNull], ["_net", controlNull], ["_hint", controlNull], ["_bar", controlNull]];
             if (!isNull _clock) then { _clock ctrlSetText ([dayTime, "HH:MM"] call BIS_fnc_timeToString); };
-            if (!isNull _stat) then { _stat ctrlSetStructuredText parseText (call (uiNamespace getVariable ["COMSPEC_ATAK_LockStatus", { "" }])); };
+            (call (uiNamespace getVariable ["COMSPEC_ATAK_LockStatus", { [] }])) params [["_bt", ""], ["_bc", [1, 1, 1, 1]], ["_nt", ""], ["_nc", [1, 1, 1, 1]]];
+            if (!isNull _bat && {_bt isNotEqualTo ""}) then { _bat ctrlSetText _bt; _bat ctrlSetTextColor _bc; };
+            if (!isNull _net && {_nt isNotEqualTo ""}) then { _net ctrlSetText _nt; _net ctrlSetTextColor _nc; };
+            // Invite qui respire : fondu alterné d'une seconde.
+            private _f = [0, 0.55] select (((floor diag_tickTime) mod 2) isEqualTo 0);
+            { if (!isNull _x) then { _x ctrlSetFade _f; _x ctrlCommit 0.9; }; } forEach [_hint, _bar];
             true
         };
         if (_enabled && {_interactive} && {missionNamespace getVariable ["COMSPEC_ATAK_LockPending", false]} && {call _usable}) then {
@@ -116,13 +122,17 @@ switch (_act) do {
         };
         private _veil = ["COMSPEC_RscText", [0, 0, _dw, _dh]] call _mk;
         _veil ctrlSetBackgroundColor [0, 0, 0, 0.45];
-        // Heure, date, état.
-        private _y = _dh * ([0.07, 0.05] select _land);
-        private _clockH = _font * 3.4;
+        // Hiérarchie : heure (grande, fine), date en accent, pastilles d'état, puis les notifications en cartes.
+        ([] call comspec_atak_native_fnc_accent) params ["_acc", "_accHex"];
+        private _ratio = pixelH / pixelW;
+        private _y = _dh * ([0.08, 0.06] select _land);
+        private _clockH = _font * 3.6;
         private _clock = ["COMSPEC_RscTextCenter", [0, _y, _dw, _clockH], [dayTime, "HH:MM"] call BIS_fnc_timeToString] call _mk;
-        _clock ctrlSetFont "RobotoCondensedLight";
-        _clock ctrlSetFontHeight (_font * 3.2);
-        _clock ctrlSetTextColor [0.96, 0.98, 0.96, 1];
+        // Style de l'heure (Réglages > Personnalisation, COMSPEC_ATAK_LockClockStyle) : fine, grasse, militaire (accent).
+        private _cs = profileNamespace getVariable ["COMSPEC_ATAK_LockClockStyle", "light"];
+        _clock ctrlSetFont (createHashMapFromArray [["bold", "RobotoCondensedBold"], ["mil", "EtelkaMonospaceProBold"]] getOrDefault [_cs, "RobotoCondensedLight"]);
+        _clock ctrlSetFontHeight (_font * ([3.5, 2.9] select (_cs isEqualTo "mil")));
+        _clock ctrlSetTextColor ([[0.97, 0.99, 0.97, 1], _acc] select (_cs isEqualTo "mil"));
         _y = _y + _clockH;
         date params ["_yy", "_mo", "_dd"];
         // Jour de la semaine (Sakamoto).
@@ -130,57 +140,116 @@ switch (_act) do {
         private _wd = (_yk + floor (_yk / 4) - floor (_yk / 100) + floor (_yk / 400) + ([0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4] select (_mo - 1)) + _dd) mod 7;
         private _world = getText (configFile >> "CfgWorlds" >> worldName >> "description");
         if (_world isEqualTo "") then { _world = worldName; };
-        private _dateTxt = format ["%1 %2 %3 · %4 · %5 °C",
+        private _dateTxt = toUpper format ["%1 %2 %3",
             ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"] select _wd, _dd,
-            ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"] select (_mo - 1),
-            _world, ([] call comspec_atak_native_fnc_weather) select 0];
-        private _date = ["COMSPEC_RscTextCenter", [0, _y, _dw, _font * 1.3], _dateTxt] call _mk;
-        _date ctrlSetFontHeight _fs;
-        _date ctrlSetTextColor [0.82, 0.88, 0.84, 1];
-        _y = _y + _font * 1.4;
+            ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"] select (_mo - 1)];
+        private _date = ["COMSPEC_RscTextCenter", [0, _y, _dw, _font * 1.2], _dateTxt] call _mk;
+        _date ctrlSetFont "RobotoCondensedBold";
+        _date ctrlSetFontHeight (_fs * 0.95);
+        _date ctrlSetTextColor _acc;
+        _y = _y + _font * 1.2 + _pad * 0.6;
+        // Pastilles : lieu et météo, batterie, réseau (les deux dernières remises à jour chaque seconde par « tick »).
         uiNamespace setVariable ["COMSPEC_ATAK_LockStatus", {
             private _lq = [] call comspec_atak_native_fnc_linkQuality;
             private _bat = floor (missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]);
-            private _net = if ([] call comspec_atak_native_fnc_airplaneMode) then { "Mode avion" } else { format ["Réseau %1 · %2/4", _lq getOrDefault ["label", "—"], _lq getOrDefault ["bars", 0]] };
-            format ["<t align='center' size='0.85' color='#a9b8b0'>Batterie <t color='%1'>%2 %%</t>   ·   %3</t>", ["#e8eee9", "#e04038"] select (_bat <= 12), _bat, _net]
+            [
+                format ["Batterie %1 %%", _bat], [[0.86, 0.91, 0.88, 1], [0.95, 0.30, 0.25, 1]] select (_bat <= 12),
+                if ([] call comspec_atak_native_fnc_airplaneMode) then { "Mode avion" } else { format ["Réseau %1/4", _lq getOrDefault ["bars", 0]] },
+                [[0.86, 0.91, 0.88, 1], [0.95, 0.67, 0.2, 1]] select ((_lq getOrDefault ["bars", 0]) <= 1)
+            ]
         }];
-        private _stat = ["COMSPEC_RscStructuredText", [0, _y, _dw, _font * 1.3]] call _mk;
-        _stat ctrlSetStructuredText parseText (call (uiNamespace getVariable "COMSPEC_ATAK_LockStatus"));
-        _y = _y + _font * 1.3 + _pad;
-        uiNamespace setVariable ["COMSPEC_ATAK_LockClock", [_clock, _stat]];
-        // Dernières notifications (3).
+        (call (uiNamespace getVariable "COMSPEC_ATAK_LockStatus")) params ["_batTxt", "_batCol", "_netTxt", "_netCol"];
+        private _chipH = _font * 1.25;
+        private _chips = [];
+        {
+            _x params ["_txt", "_col", "_sample"];
+            private _c = ["COMSPEC_RscTextCenter", [0, _y, _dw * 0.3, _chipH], _sample] call _mk;
+            _c ctrlSetFontHeight (_fs * 0.85);
+            private _w = (ctrlTextWidth _c) + _pad * 2.4;
+            _c ctrlSetText _txt;
+            _c ctrlSetTextColor _col;
+            _c ctrlSetBackgroundColor [1, 1, 1, 0.09];
+            _chips pushBack [_c, _w];
+        } forEach [
+            [format ["%1 · %2 °C", _world, ([] call comspec_atak_native_fnc_weather) select 0], [0.86, 0.91, 0.88, 1], format ["%1 · %2 °C", _world, ([] call comspec_atak_native_fnc_weather) select 0]],
+            [_batTxt, _batCol, "Batterie 100 %"],
+            [_netTxt, _netCol, "Mode avion 0/4"]
+        ];
+        private _gap = _pad * 0.6;
+        private _rowW = _gap * ((count _chips) - 1);
+        { _rowW = _rowW + (_x select 1); } forEach _chips;
+        private _cx0 = (_dw - _rowW) / 2;
+        { _x params ["_c", "_w"]; _c ctrlSetPosition [_cx0, _y, _w, _chipH]; _c ctrlCommit 0; _cx0 = _cx0 + _w + _gap; } forEach _chips;
+        _y = _y + _chipH + _pad * 1.6;
+        // Dernières notifications : 3 en paysage, 4 en portrait ; « + n autres » au-delà.
         private _hist = _s getOrDefault ["notifHistory", []];
         uiNamespace setVariable ["COMSPEC_ATAK_LockNotifN", call _notifSig];
+        private _maxN = [4, 3] select _land;
         private _last = [];
-        for "_i" from ((count _hist) - 1) to (((count _hist) - 3) max 0) step -1 do { _last pushBack (_hist select _i); };
-        private _cx = _dw * 0.06;
-        private _cw = _dw * 0.88;
-        private _ch = _font * 2.1;
-        if ((count _last) isEqualTo 0) then {
-            private _none = ["COMSPEC_RscTextCenter", [0, _y, _dw, _ch], "Aucune notification"] call _mk;
-            _none ctrlSetFontHeight _fs;
-            _none ctrlSetTextColor [0.58, 0.64, 0.60, 1];
-        };
+        for "_i" from ((count _hist) - 1) to (((count _hist) - _maxN) max 0) step -1 do { _last pushBack (_hist select _i); };
+        private _cw = _dw * ([0.88, 0.62] select _land);
+        private _cx = (_dw - _cw) / 2;
+        private _ch = _font * 2.5;
+        private _hintY = _dh - _font * 2.4;
+        private _lbl = ["COMSPEC_RscText", [_cx, _y, _cw, _font], ["AUCUNE NOTIFICATION", format ["NOTIFICATIONS · %1", count _hist]] select ((count _hist) > 0)] call _mk;
+        _lbl ctrlSetFont "RobotoCondensedBold";
+        _lbl ctrlSetFontHeight (_fs * 0.75);
+        _lbl ctrlSetTextColor [0.62, 0.69, 0.65, 1];
+        _y = _y + _font * 1.05;
+        // Icône et titre d'une notification : « Source : texte » donne le titre, sinon le type.
+        private _icons = [
+            ["brief", "app_briefing"], ["message", "app_chat"], ["chat", "app_chat"], ["photo", "app_photos"], ["synchro", "app_resynch"],
+            ["drone", "app_drone"], ["athena", "app_athena"], ["réseau", "app_network"], ["batterie", "item_battery"], ["ordre", "app_tasks"],
+            ["tâche", "app_tasks"], ["méd", "app_medical"], ["sse", "app_sse"], ["fiche", "app_reco"], ["musique", "app_music"], ["carte", "app_map"]
+        ];
+        private _shown = 0;
         {
+            if (_y + _ch > _hintY - _font * 0.8) exitWith {};
             private _t = toUpper (_x getOrDefault ["type", "INFO"]);
-            private _hex = switch (_t) do { case "WARNING": { "#f2ab33" }; case "ERROR"; case "TACTICAL": { "#e6614f" }; case "MESSAGE": { "#70b5e8" }; case "SUCCESS": { "#5cc76b" }; default { "#a8c7ba" }; };
+            private _rgb = switch (_t) do { case "WARNING": { [0.95, 0.67, 0.2, 1] }; case "ERROR"; case "TACTICAL": { [0.9, 0.38, 0.31, 1] }; case "MESSAGE": { [0.44, 0.71, 0.91, 1] }; case "SUCCESS": { [0.36, 0.78, 0.42, 1] }; default { [0.66, 0.78, 0.73, 1] }; };
             private _plain = ((_x getOrDefault ["message", ""]) regexReplace ["<[^>]*>", ""]) regexReplace ["[\r\n\t]+", " "];
             { _plain = [_plain, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&lt;", "<"], ["&gt;", ">"], ["&apos;", "'"], ["&quot;", """"], ["&amp;", "&"]];
-            if ((count _plain) > 70) then { _plain = (_plain select [0, 68]) + "…"; };
-            _plain = (_plain regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"];
-            private _card = ["COMSPEC_RscStructuredText", [_cx, _y, _cw, _ch]] call _mk;
-            _card ctrlSetBackgroundColor [0.07, 0.085, 0.075, 0.88];
-            _card ctrlSetStructuredText parseText format ["<t size='0.75' color='%1'>%2</t><t size='0.75' color='#8a9a93'>  ·  %3</t><br/><t size='0.85' color='#e8eee9'>%4</t>",
-                _hex, _t, _x getOrDefault ["time", ""], _plain];
-            _y = _y + _ch + _pad * 0.4;
+            private _title = createHashMapFromArray [["WARNING", "Alerte"], ["ERROR", "Erreur"], ["TACTICAL", "Tactique"], ["MESSAGE", "Message"], ["SUCCESS", "Terminé"]] getOrDefault [_t, "Information"];
+            private _cut = _plain find " : ";
+            if (_cut > 0 && {_cut <= 28}) then { _title = _plain select [0, _cut]; _plain = _plain select [_cut + 3]; };
+            if ((count _plain) > 96) then { _plain = (_plain select [0, 94]) + "…"; };
+            private _icon = "ui_bell";
+            private _lo = toLower (_title + " " + _plain);
+            { if ((_lo find (_x select 0)) >= 0) exitWith { _icon = _x select 1; }; } forEach _icons;
+            if (_icon isEqualTo "ui_bell") then { _icon = createHashMapFromArray [["WARNING", "app_alerts"], ["ERROR", "app_alerts"], ["TACTICAL", "app_alerts"], ["MESSAGE", "app_chat"], ["SUCCESS", "ui_check"]] getOrDefault [_t, "ui_bell"]; };
+            private _e = { params ["_v"]; (_v regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"] };
+            private _bgc = ["COMSPEC_RscText", [_cx, _y, _cw, _ch]] call _mk;
+            _bgc ctrlSetBackgroundColor [0.06, 0.075, 0.068, 0.9];
+            private _strip = ["COMSPEC_RscText", [_cx, _y, pixelW * 3, _ch]] call _mk;
+            _strip ctrlSetBackgroundColor _rgb;
+            // Pastille de l'app : carré teinté, icône blanche.
+            private _ih = _ch * 0.56;
+            private _iw = _ih / _ratio;
+            private _ix = _cx + _pad * 1.2;
+            private _tile = ["COMSPEC_RscText", [_ix, _y + (_ch - _ih) / 2, _iw, _ih]] call _mk;
+            _tile ctrlSetBackgroundColor [_rgb select 0, _rgb select 1, _rgb select 2, 0.22];
+            private _pic = ["COMSPEC_RscPicture", [_ix + _iw * 0.15, _y + (_ch - _ih) / 2 + _ih * 0.15, _iw * 0.7, _ih * 0.7], format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon]] call _mk;
+            _pic ctrlSetTextColor [0.95, 0.98, 0.96, 1];
+            private _tx = _ix + _iw + _pad;
+            private _body = ["COMSPEC_RscStructuredText", [_tx, _y + _ch * 0.1, _cx + _cw - _tx - _pad, _ch * 0.85]] call _mk;
+            _body ctrlSetStructuredText parseText format ["<t size='0.8' font='RobotoCondensedBold' color='#eef3ef'>%1</t><t size='0.72' align='right' color='#8a9a93'>%2</t><br/><t size='0.8' color='#c4cfc9'>%3</t>",
+                [_title] call _e, _x getOrDefault ["time", ""], [_plain] call _e];
+            _y = _y + _ch + _pad * 0.5;
+            _shown = _shown + 1;
         } forEach _last;
-        // Invite en bas.
-        private _hintY = _dh - _font * 2.6;
-        private _bar = ["COMSPEC_RscText", [_dw * 0.42, _hintY - _font * 0.5, _dw * 0.16, pixelH * 3]] call _mk;
-        _bar ctrlSetBackgroundColor [0.85, 0.9, 0.87, 0.7];
-        private _hint = ["COMSPEC_RscTextCenter", [0, _hintY, _dw, _font * 1.3], "Touchez ou glissez vers le haut pour déverrouiller"] call _mk;
-        _hint ctrlSetFontHeight (_fs * 0.9);
-        _hint ctrlSetTextColor [0.78, 0.84, 0.80, 1];
+        private _more = (count _hist) - _shown;
+        if (_shown > 0 && {_more > 0} && {_y + _font < _hintY - _font * 0.5}) then {
+            private _m = ["COMSPEC_RscTextCenter", [_cx, _y, _cw, _font], format ["+ %1 autre(s) dans le centre de notifications", _more]] call _mk;
+            _m ctrlSetFontHeight (_fs * 0.75);
+            _m ctrlSetTextColor [0.55, 0.62, 0.58, 1];
+        };
+        // Invite en bas : poignée et texte qui « respirent » (fondu alterné par « tick »).
+        private _bar = ["COMSPEC_RscText", [_dw * 0.44, _hintY - _font * 0.45, _dw * 0.12, pixelH * 4]] call _mk;
+        _bar ctrlSetBackgroundColor [0.9, 0.94, 0.91, 0.75];
+        private _hint = ["COMSPEC_RscTextCenter", [0, _hintY, _dw, _font * 1.2], "Touchez ou glissez vers le haut pour déverrouiller"] call _mk;
+        _hint ctrlSetFontHeight (_fs * 0.85);
+        _hint ctrlSetTextColor [0.8, 0.86, 0.82, 1];
+        uiNamespace setVariable ["COMSPEC_ATAK_LockClock", [_clock, (_chips select 1) select 0, (_chips select 2) select 0, _hint, _bar]];
         // Tout l'écran déverrouille (clic, ou glissé : le relâchement sur le bouton compte comme un clic).
         private _btn = ["COMSPEC_RscButtonInvisible", [0, 0, _dw, _dh]] call _mk;
         _btn ctrlSetTooltip "Déverrouiller";
