@@ -57,10 +57,13 @@ private _pose = {
 private _place = {
     params ["_cam"];
     (call _pose) params ["_pos", "_dir", "_up", "_fov"];
-    _cam setPosASL _pos;
-    _cam setVectorDirAndUp [_dir, _up];
+    // camCommit ramène la caméra à sa dernière position camSetPos : sans elle, la caméra restait là où le viseur
+    // avait été ouvert (le joueur s'y voyait de loin). Position donnée aux deux, direction posée après le commit.
+    _cam camSetPos (ASLToAGL _pos);
     _cam camSetFov _fov;
     _cam camCommit 0;
+    _cam setPosASL _pos;
+    _cam setVectorDirAndUp [_dir, _up];
 };
 private _stop = {
     private _cam = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCam", objNull];
@@ -123,8 +126,14 @@ switch (_act) do {
                     ["INFO", "PHOTO", format ["Viseur coupé : caméra %1, page %2, écran %3, plein écran %4", !isNull _cam, _s getOrDefault ["activePage", ""], !isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull]), uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]]] call comspec_atak_native_fnc_log;
                     ["stop"] call comspec_atak_native_fnc_photoCam;
                 };
-                // Pendant le déclenchement, la caméra de prise de vue reste figée sur la pose du viseur.
-                if (uiNamespace getVariable ["COMSPEC_ATAK_PhotoShooting", false]) exitWith {};
+                // Pendant le déclenchement, la caméra de prise de vue reste figée sur la pose du viseur. Un cliché
+                // interrompu (erreur pendant l'envoi) ne doit pas la figer pour de bon : au-delà de 5 s, on relâche.
+                if (uiNamespace getVariable ["COMSPEC_ATAK_PhotoShooting", false]) exitWith {
+                    if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PhotoShootAt", 0]) > 5) then {
+                        ["WARNING", "PHOTO", "Déclenchement resté bloqué : viseur relâché"] call comspec_atak_native_fnc_log;
+                        uiNamespace setVariable ["COMSPEC_ATAK_PhotoShooting", false];
+                    };
+                };
                 ["place"] call comspec_atak_native_fnc_photoCam;
                 if (diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamPoseAt", 0])) then {
                     missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamPoseAt", diag_tickTime + 1.2];
@@ -248,6 +257,7 @@ switch (_act) do {
             disableSerialization;
             _pose params ["_pos", "_dir", "_up", "_fov"];
             uiNamespace setVariable ["COMSPEC_ATAK_PhotoShooting", true];
+            uiNamespace setVariable ["COMSPEC_ATAK_PhotoShootAt", diag_tickTime];
             private _hud = shownHUD;
             if (!isNil "ace_interact_menu_fnc_hideMenu") then { [] call ace_interact_menu_fnc_hideMenu; };
             // Écran du téléphone masqué le temps du cliché (il serait capturé par-dessus l'image).
@@ -256,10 +266,11 @@ switch (_act) do {
             if (!isNull _phone) then { _hidden = (allControls _phone) select { ctrlShown _x }; { _x ctrlShow false; } forEach _hidden; };
             private _shot = "camera" camCreate (ASLToAGL _pos);
             _shot cameraEffect ["Internal", "Back"];
-            _shot setPosASL _pos;
-            _shot setVectorDirAndUp [_dir, _up];
+            _shot camSetPos (ASLToAGL _pos);
             _shot camSetFov _fov;
             _shot camCommit 0;
+            _shot setPosASL _pos;
+            _shot setVectorDirAndUp [_dir, _up];
             showHUD false;
             private _light = objNull;
             if (_fire) then {
