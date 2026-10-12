@@ -513,6 +513,8 @@ uiNamespace setVariable ["COMSPEC_ATAK_MarkerTagPool", _pool select { !isNull _x
 // Calques Logistique (points de largage) et guerre électronique (gonio, brouilleurs).
 if (profileNamespace getVariable ["COMSPEC_ATAK_LayerLogi", true]) then { [_map] call comspec_atak_native_fnc_logisticsDraw; };
 if (profileNamespace getVariable ["COMSPEC_ATAK_LayerEw", true]) then { [_map] call comspec_atak_native_fnc_ewDraw; };
+// Résultat du bouton RECHERCHER (fn_mapSearch) : cercle de précision et anneau pulsant, seulement s'il y en a un.
+if ((count ((uiNamespace getVariable ["COMSPEC_ATAK_MapSearch", createHashMap]) getOrDefault ["hit", createHashMap])) > 0) then { ["draw", _map] call comspec_atak_native_fnc_mapSearch; };
 if (profileNamespace getVariable ["COMSPEC_ATAK_LayerDrone", true]) then { [_map] call comspec_atak_native_fnc_droneDetectDraw; };
 // Calques des modules externes : configFile >> "COMSPEC_ATAK_MapLayers" >> classe >> function (reçoit [carte]).
 private _ext = uiNamespace getVariable "COMSPEC_ATAK_MapLayersExt";

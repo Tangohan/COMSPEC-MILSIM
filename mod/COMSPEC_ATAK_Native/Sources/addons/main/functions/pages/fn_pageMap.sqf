@@ -1,7 +1,8 @@
 /*
     Carte façon ATAK : la carte occupe l'écran, les informations flottent par-dessus.
     - Haut gauche : boussole (aiguille = cap du joueur).
-    - Bas gauche : panneau curseur (grille, altitude, distance, azimut) et bouton « Outils carte ».
+    - Bas gauche : panneau curseur (grille, altitude, distance, azimut), boutons « Outils carte » et « RECHERCHER »
+      (IMEI, numéro, balise GPS, indicatif : fn_mapSearch, panneau en haut à gauche, fiche du résultat en bas).
     - Bas droite : carte « moi » (indicatif, cap, grille).
     - Droite (en main) : centrer, suivre, zoom, marqueur, libellés.
     - Bas (réglage « Barre de données sous la carte ») : vitesse, altitude, cap, grille, heure.
@@ -31,7 +32,9 @@ if (_dataBar) then {
 
 // Boussole
 // (masquée tant que le menu Outils est ouvert : le menu prend toute la hauteur à gauche)
-if (((["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_fnc_pref) select 0) && {!(_interactive && {_s getOrDefault ["mapToolsOpen", false]})}) then {
+private _search = uiNamespace getVariable ["COMSPEC_ATAK_MapSearch", createHashMap];
+private _searchOpen = _interactive && {_search getOrDefault ["open", false]} && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0};
+if (((["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_fnc_pref) select 0) && {!(_interactive && {_s getOrDefault ["mapToolsOpen", false]})} && {!_searchOpen}) then {
     private _ch = (_mh * 0.24) min (_font * 3.6);
     private _cw = _ch / _ratio;
     private _ring = ["COMSPEC_RscIcon", [_bx + _pad, _by + _pad, _cw, _ch], _dir + "compass_ring.paa"] call _mk;
@@ -104,9 +107,25 @@ if (_interactive) then {
     _tb ctrlAddEventHandler ["ButtonClick", {
         private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         _s set ["mapToolsOpen", !(_s getOrDefault ["mapToolsOpen", false])];
+        (uiNamespace getVariable ["COMSPEC_ATAK_MapSearch", createHashMap]) set ["open", false];
         [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
     }];
     _ov set ["tool_menu", _tb];
+    // Bouton « RECHERCHER » à côté : localiser un IMEI, un numéro, une balise GPS ou un indicatif (fn_mapSearch).
+    private _sx0 = _bx + _pad + _tbw + _pad / 2;
+    private _sbw = (_tw + _fs * 5.8 / _ratio) min _panW;
+    private _sbg = ["COMSPEC_RscMapPanel", [_sx0, _tby, _sbw, _th]] call _mk;
+    if (_searchOpen) then { _sbg ctrlSetBackgroundColor [0.10, 0.20, 0.12, 0.92]; };
+    private _sic = ["COMSPEC_RscIcon", [_sx0, _tby, _tw, _th], _dir + "app_osint.paa"] call _mk;
+    _sic ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _searchOpen);
+    private _slb = ["COMSPEC_RscText", [_sx0 + _tw, _tby, _sbw - _tw, _th], "RECHERCHER"] call _mk;
+    _slb ctrlSetFont "RobotoCondensedBold";
+    _slb ctrlSetFontHeight _fs;
+    _slb ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _searchOpen);
+    private _sbt = ["COMSPEC_RscButtonOverlay", [_sx0, _tby, _sbw, _th]] call _mk;
+    _sbt ctrlSetTooltip "Rechercher et localiser : IMEI, numéro de téléphone, balise GPS, indicatif ou nom";
+    _sbt ctrlAddEventHandler ["ButtonClick", { ["toggle"] call comspec_atak_native_fnc_mapSearch; }];
+    _ov set ["tool_search", _sbt];
 
     // Menu des outils carte, au-dessus du bouton
     if (_s getOrDefault ["mapToolsOpen", false]) then {
@@ -124,6 +143,7 @@ if (_interactive) then {
             ["FLAT", "map_flat", "Terrain plat"],
             ["ZONES", "map_grid", "Zones tactiques"],
             ["SIGINT", "map_los", "Goniométrie (émetteurs)"],
+            ["SEARCH", "app_osint", "Rechercher (IMEI, numéro, balise)"],
             ["LOS", "map_los", "Ligne de vue"],
             ["CLEAR", "map_clear", "Tout effacer"]
         ];
@@ -352,6 +372,19 @@ if (_interactive) then {
         private _hx = _bx + _pad * 2 + ((_mh * 0.24) min (_font * 3.6)) / _ratio;
         [[_hx, _by + _pad * 2 + _fs * 1.5, (_tx - _hx - _pad * 2) max (_font * 6 / _ratio), _mh * 0.7]] call comspec_atak_native_fnc_markerPalette;
     };
+};
+// Recherche (fn_mapSearch) : panneau en haut à gauche, fiche du résultat en bas au centre (au-dessus du panneau curseur).
+if (_searchOpen) then {
+    private _sw = ((_mw * 0.46) max (_font * 11 / _ratio)) min (_mw - 2 * _pad);
+    ["panel", [_bx + _pad, _by + _pad, _sw, (_mh * 0.72) min (_mh - _panH - _fs * 4)]] call comspec_atak_native_fnc_mapSearch;
+};
+if (_interactive && {(count (_search getOrDefault ["hit", createHashMap])) > 0} && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
+    private _cw = ((_mw * 0.5) max (_font * 11 / _ratio)) min (_mw - 2 * _pad);
+    private _chh = _fs * 4.9;
+    private _selUp = [0, _fs * 4.6 + _pad] select ((_s getOrDefault ["selectedMarker", ""]) isNotEqualTo "");
+    ["card", [_bx + (_mw - _cw) / 2, _by + _mh - _panH - _pad * 2 - _fs * 2 - _chh - _selUp, _cw, _chh]] call comspec_atak_native_fnc_mapSearch;
+} else {
+    uiNamespace setVariable ["COMSPEC_ATAK_MapSearchCard", controlNull];
 };
 // Marqueur sélectionné : titre, description et actions (en main).
 private _sel = _s getOrDefault ["selectedMarker", ""];
