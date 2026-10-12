@@ -45,7 +45,8 @@ if (
 private _unit = player;
 private _pos = getPosASL _unit;
 private _dir = getDir _unit;
-private _grid = mapGridPosition _unit;
+// Grille militaire MGRS (zone, carré de 100 km, 5 + 5 chiffres), comme un vrai GPS.
+private _grid = [_unit] call comspec_overwatch_connect_fnc_mgrsGrid;
 private _overlayCam = objNull;
 private _overlayHost = objNull;
 private _overlayRtt = "";
@@ -62,13 +63,13 @@ if (!isNil "comspec_overwatch_connect_fnc_getActiveCaptureCam") then {
 if (!isNull _overlayCam) then {
     _pos = getPosASL _overlayCam;
     _dir = getDir _overlayCam;
-    _grid = mapGridPosition _overlayCam;
+    _grid = [_overlayCam] call comspec_overwatch_connect_fnc_mgrsGrid;
 };
 // Fiche : position et cap de la prise de vue (drone) à la place de ceux du joueur.
 _photoMeta params ["", "", "", "", "", "", "", ["_mPos", [], [[]]], ["_mDir", -1, [0]]];
 if ((count _mPos) >= 3) then {
     _pos = _mPos select [0, 3];
-    _grid = mapGridPosition (ASLToAGL _pos);
+    _grid = [ASLToAGL _pos] call comspec_overwatch_connect_fnc_mgrsGrid;
 };
 if (_mDir >= 0) then { _dir = _mDir; };
 private _author = [] call comspec_overwatch_connect_fnc_getCallsign;
@@ -318,6 +319,16 @@ private _fnc_notifyPath = {
         private _flag = { params ["_v"]; ["0", "1"] select ((_v isEqualTo true) || {_v isEqualTo 1} || {_v isEqualTo "1"}) };
         _notifyArgs append [[_mTitle] call _txt, [_mDesc] call _txt, [_mSse] call _flag, [_mCase] call _txt, [_mConf] call _flag, [_mSource] call _txt, [_mDrone] call _txt];
     };
+    // Date et heure du jeu (heure Zulu du bandeau de la photo, pas l'horloge du PC) et terrain : arguments 24 à 26
+    // (COMSPEC Link 2.0.74). Arguments vides de la fiche : rien n'est envoyé pour eux, comme avant.
+    while { (count _notifyArgs) < 24 } do { _notifyArgs pushBack ""; };
+    date params ["_gy", "_gmo", "_gd", "_gh", "_gmi"];
+    private _two = { params ["_v"]; [str _v, "0" + str _v] select (_v < 10) };
+    _notifyArgs append [
+        format ["%1-%2-%3", _gy, [_gmo] call _two, [_gd] call _two],
+        format ["%1:%2:%3", [_gh] call _two, [_gmi] call _two, [(floor (dayTime * 3600)) mod 60] call _two],
+        worldName
+    ];
     private _raw = ["COMSPECExtension" callExtension ["NotifyNewPhoto", _notifyArgs]] call comspec_overwatch_connect_fnc_extResult;
     private _ok = [_raw] call _isQueuedOk;
     missionNamespace setVariable ["COMSPEC_LastReconUploadOk", _ok, false];

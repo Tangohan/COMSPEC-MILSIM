@@ -6,7 +6,7 @@
     Chaque piste : symbole, indicatif, distance et gisement, temps de trajet, âge de la dernière position.
     Une piste hors ligne (téléphone éteint, cassé ou sans signal) reste figée à sa dernière position connue,
     et sans réseau toutes les pistes vieillissent.
-    Piste choisie : fiche (trajet, rapprochement, itinéraire GPS) et actions (carte, GPS, SMS, faire vibrer).
+    Piste choisie : fiche (trajet, rapprochement, itinéraire GPS) et actions (carte, GPS, SMS, faire vibrer, voir sa caméra).
     Vues (profil COMSPEC_ATAK_BftView) : LISTE (tableau trié par distance) ou ORBAT (arbre repliable :
     formation (ORBAT Athena abrégé, sinon préfixe de l'indicatif « Star 4 » → STAR) › groupe (chef, échelon, effectif,
     distance au chef) › équipe de feu › membres). Repli mémorisé dans uiNamespace COMSPEC_ATAK_BftOrbatOpen.
@@ -475,7 +475,7 @@ if ((count _sel) isEqualTo 0) then {
         [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 2]] select (_dist >= 1000), round (player getDir _pos), [player getDir _pos] call _card,
         _speed, round (_e getOrDefault ["heading", 0]), round (_pos select 2), _health, _eta, _close, _offTxt, _ftTxt]) call comspec_atak_native_fnc_tr);
 };
-private _bw3 = (_dw - _pad * 3) / 4;
+private _bw3 = (_dw - _pad * 4) / 5;
 {
     _x params ["_t", "_act", "_on"];
     private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_forEachIndex isEqualTo 1), [_dx + _forEachIndex * (_bw3 + _pad), _dy + _dh - _font * 1.5, _bw3, _font * 1.4], _t] call comspec_atak_native_fnc_pageCtrl;
@@ -487,6 +487,8 @@ private _bw3 = (_dw - _pad * 3) / 4;
     ["Y ALLER", "route", (count _sel) > 0],
     ["SMS", "sms", (count _sel) > 0 && {!isNull (_sel select 3)} && {isPlayer (_sel select 3)}],
     [["VIBRER", "HORS LIGNE"] select ((count _sel) > 0 && {((_sel select 2) getOrDefault ["freshness", "LIVE"]) isEqualTo "OFFLINE"}), "buzz",
-        _meOn && {(count _sel) > 0} && {!isNull (_sel select 3)} && {isPlayer (_sel select 3)} && {((_sel select 2) getOrDefault ["freshness", "LIVE"]) isNotEqualTo "OFFLINE"}]
+        _meOn && {(count _sel) > 0} && {!isNull (_sel select 3)} && {isPlayer (_sel select 3)} && {((_sel select 2) getOrDefault ["freshness", "LIVE"]) isNotEqualTo "OFFLINE"}],
+    // Caméra poitrine de l'équipier, en petite fenêtre sur la carte (Live cam).
+    ["VOIR CAMÉRA", "cam", (count _sel) > 0 && {!isNull (_sel select 3)} && {isPlayer (_sel select 3)} && {alive (_sel select 3)} && {(_sel select 3) isNotEqualTo player} && {[_sel select 3] call comspec_atak_native_fnc_hasDevice}]
 ];
 true

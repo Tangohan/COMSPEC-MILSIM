@@ -1,13 +1,13 @@
 /*
-    Menu contextuel de la carte (clic droit sans glisser) : PING, MARQUEUR, Y ALLER, CENTRER ICI, COPIER LA GRILLE,
-    SUPPRIMER (marqueur joueur pointé).
+    Menu contextuel de la carte (clic droit sans glisser) : VOIR LA CAMÉRA (équipier pointé), PING, MARQUEUR, Y ALLER,
+    CENTRER ICI, COPIER LA GRILLE, SUPPRIMER (marqueur joueur pointé).
     ["open", [contrôle carte, position écran]]  ouvre le menu au curseur (en-tête : grille, altitude, distance et azimut)
     ["close"]                                    ferme (clic ailleurs, Échap, choix d'une ligne)
     ["act", clé]                                 exécute une ligne
     ["render"]                                   dessine le menu (fn_pageMap, par-dessus la carte, et l'ouverture)
     Le menu a ses propres contrôles (uiNamespace COMSPEC_ATAK_MapCtxCtrls) : l'ouvrir ou le fermer ne redessine pas
     la page (plus de clignotement de toute la carte au clic droit).
-    État : COMSPEC_ATAK_State mapCtx = HashMap [pos (monde), marker (nom ou ""), at (heure)].
+    État : COMSPEC_ATAK_State mapCtx = HashMap [pos (monde), marker (nom ou ""), unit (netId de l'équipier pointé ou ""), at (heure)].
 */
 params [["_mode", ""], ["_arg", []]];
 disableSerialization;
@@ -30,7 +30,15 @@ switch (_mode) do {
         private _m = [_map, _screen] call comspec_atak_native_fnc_markerAt;
         // Mêmes règles que la suppression (fn_markerDelete) : seuls les marqueurs posés par les joueurs.
         if ((_m find "_USER_DEFINED") isNotEqualTo 0) then { _m = ""; };
-        _s set ["mapCtx", createHashMapFromArray [["pos", [_w select 0, _w select 1, 0]], ["marker", _m], ["at", diag_tickTime]]];
+        // Équipier pointé (joueur du camp avec un téléphone, à moins d'environ un symbole du clic) : ligne VOIR CAMÉRA.
+        private _near = 0.03;
+        private _who = objNull;
+        {
+            private _sp = _map ctrlMapWorldToScreen (getPosASLVisual _x);
+            private _dd2 = [(_sp select 0) - (_screen select 0), (_sp select 1) - (_screen select 1)] distance2D [0, 0];
+            if (_dd2 < _near) then { _near = _dd2; _who = _x; };
+        } forEach (allPlayers select { _x isNotEqualTo player && {alive _x} && {side group _x isEqualTo side group player} && {[_x] call comspec_atak_native_fnc_hasDevice} });
+        _s set ["mapCtx", createHashMapFromArray [["pos", [_w select 0, _w select 1, 0]], ["marker", _m], ["unit", [netId _who, ""] select (isNull _who)], ["at", diag_tickTime]]];
         [] call _unbindEsc;
         private _d = [] call comspec_atak_native_fnc_display;
         if (!isNull _d) then {
@@ -68,6 +76,12 @@ switch (_mode) do {
                 [format ["Grille %1 copiée", _g], 2] call comspec_atak_native_fnc_toast;
             };
             case "DELETE": { if (_m isNotEqualTo "") then { [_m] call comspec_atak_native_fnc_markerDelete; }; };
+            case "CAM": {
+                private _u = objectFromNetId (_c getOrDefault ["unit", ""]);
+                if (isNull _u || {!alive _u}) exitWith {};
+                _s set ["mapCam", netId _u];
+                ["MAP"] call comspec_atak_native_fnc_pageRender;
+            };
         };
     };
     case "render": {
@@ -97,6 +111,8 @@ switch (_mode) do {
             ["CENTER", "Centrer ici", "", _dir + "map_center.paa", [0.86, 0.91, 0.88, 1]],
             ["COPY", "Copier la grille", "10 chiffres", _dir + "map_grid.paa", [0.86, 0.91, 0.88, 1]]
         ];
+        private _cu = objectFromNetId (_c getOrDefault ["unit", ""]);
+        if (!isNull _cu && {alive _cu}) then { _rows insert [0, [["CAM", "Voir la caméra", [_cu, true] call comspec_atak_native_fnc_unitCallsign, _dir + "app_photos.paa", [0.36, 0.78, 0.42, 1]]]]; };
         if (_m isNotEqualTo "") then { _rows pushBack ["DELETE", "Supprimer le marqueur", [markerText _m, ""] select ((markerText _m) isEqualTo ""), _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]]; };
         private _rowH = _font * 1.55;
         private _headH = _font * 2.05;
