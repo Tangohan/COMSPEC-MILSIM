@@ -44,7 +44,7 @@ class CfgFunctions {
             class exploList {}; class exploAction {}; class pageExplo {};
         };
         class tactical { file="z\comspec_atak_native\addons\main\functions\tactical";
-            class sniperBallistics {}; class pageSniper {}; class sniperAction {}; class jtacTarget {}; class pageJtac {}; class jtacAction {};
+            class sniperBallistics {}; class pageSniper {}; class sniperAction {}; class jtacTarget {}; class pageJtac {}; class jtacAction {}; class jtacAir {}; class jtacLines {}; class jtacGeometry {};
             class breachBuilding {}; class pageBreach {}; class breachAction {}; class breachTop {};
         };
         class drone { file="z\comspec_atak_native\addons\main\functions\drone";

@@ -9,6 +9,8 @@ if ("email" in _form || {"pair" in _form} || {"otp" in _form}) then {
     { if (_x in _form) then { _draft set [_x, [_x] call comspec_atak_native_fnc_formValue]; }; } forEach ["email", "otp", "pair"];
     uiNamespace setVariable ["COMSPEC_ATAK_AthenaDraft", _draft];
 };
+// App JTAC : saisie du brief gardée (un appel radio reçu redessine la page).
+if ("j5" in _form || {"jBda" in _form}) then { ["save"] call comspec_atak_native_fnc_jtacAction; };
 // Défilement de la page affichée gardé (par page) : rendu de la même page (rafraîchissement) ou retour arrière
 // (fn_back, fn_navigate sans empilement) le retrouvent au lieu de remonter en haut.
 private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
