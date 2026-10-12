@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.65";
+    private const string ExtensionVersion = "2.0.66";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2687,11 +2687,6 @@ public static partial class Extension
         if (function != null && function.StartsWith("Clip", StringComparison.Ordinal))
         {
             return ClipCommand(function, args);
-        }
-        // Clichés du drone avec leur fiche (NativePhoto.cs) : titre, description, SSE, confidentiel en champs réels.
-        if (function == "NativePhoto")
-        {
-            return NativePhotoCommand(args);
         }
 #endif
 
@@ -8092,6 +8087,10 @@ public static partial class Extension
     }
 
     /// Alias callExtension : NotifyNewPhoto, EnqueueReconImage, UploadReconImage.
+    /// Arguments : 0 chemin, 1 auteur, 2-4 pos, 5 grille, 6 cap, 7 altitude, 8 légende, 9 unité, 10 camp, 11 mission,
+    /// 12 appareil, 13 heure Unix, 14 flux, 15-16 effet ; facultatifs (2.0.66) : 17 titre, 18 description, 19 SSE (0/1),
+    /// 20 dossier SSE, 21 confidentiel (0/1), 22 source (drone, phone…), 23 nom du drone. Envoi suivi dans le journal
+    /// des envois (« Photo drone » / « Photo »).
     /// </summary>
     private static string EnqueueReconImage(string?[] args)
     {
@@ -8186,7 +8185,7 @@ public static partial class Extension
         if (string.IsNullOrWhiteSpace(meta[5]) && _lastPhotoGrid.Length > 0) meta[5] = _lastPhotoGrid;
         if (string.IsNullOrWhiteSpace(meta[6]) && _lastPhotoHeading.Length > 0) meta[6] = _lastPhotoHeading;
 
-        PhotoJobs.Enqueue(new ReconPhotoJob
+        var photoJob = new ReconPhotoJob
         {
             RawPath = trimmedPath,
             Author = author,
@@ -8194,10 +8193,25 @@ public static partial class Extension
             DedupKey = dedupKey,
             NewestFallback = newestFallback,
             EnqueuedUtc = DateTime.UtcNow
-        });
+        };
+        PhotoJobs.Enqueue(photoJob);
+        PhotoJournal(photoJob, "queued");
         EnsureScreenshotWatchers();
         EnsurePhotoWorker();
         return "OK|queued";
+    }
+
+    /// <summary>
+    /// Photo de reconnaissance dans le journal des envois (page « Files d'envoi Athena ») : un suivi par cliché,
+    /// même identifiant aux reprises. Visages SEEK et pièces de fiche : non suivis ici.
+    /// </summary>
+    private static void PhotoJournal(ReconPhotoJob job, string state, string detail = "", int http = 0)
+    {
+        if (!string.Equals(job.UploadKind, "recon", StringComparison.OrdinalIgnoreCase)) return;
+        var meta = job.Meta ?? Array.Empty<string?>();
+        var drone = meta.Length > 22 && string.Equals((meta[22] ?? "").Trim(), "drone", StringComparison.OrdinalIgnoreCase);
+        var key = "photo|" + (job.DedupKey.Length > 0 ? job.DedupKey : job.RawPath);
+        JournalTrack("queued:/api/recon/images", key, state, detail, http, drone ? "Photo drone" : "Photo");
     }
 
     private static string NormalizePhotoDedupKey(string raw)
@@ -8262,9 +8276,11 @@ public static partial class Extension
         if (job.Attempts >= PhotoRetryMax || PhotoJobs.Count >= PhotoQueueMax)
         {
             ReleasePhotoDedup(job.DedupKey);
+            PhotoJournal(job, "failed", errDetail);
             InvokeCallback(cbName, $"ERR|{errDetail}|{fileHint}");
             return;
         }
+        PhotoJournal(job, "queued", errDetail);
         PhotoJobs.Enqueue(job);
         EnsurePhotoWorker();
     }
@@ -8278,9 +8294,11 @@ public static partial class Extension
         if (job.Attempts >= PhotoRetryMax)
         {
             ReleasePhotoDedup(job.DedupKey);
+            PhotoJournal(job, "failed", "fichier vide");
             InvokeCallback(cbName, $"ERR|file_empty|{fileHint}");
             return;
         }
+        PhotoJournal(job, "queued", "fichier pas encore écrit");
         _ = Task.Run(async () =>
         {
             try { await Task.Delay(800).ConfigureAwait(false); }
@@ -8330,6 +8348,7 @@ public static partial class Extension
         if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
         {
             ReleasePhotoDedup(job.DedupKey);
+            PhotoJournal(job, "failed", "pas de session Athena");
             InvokeCallback(cbName, "ERR|not_connected|" + Path.GetFileName(job.RawPath));
             return;
         }
@@ -8398,6 +8417,7 @@ public static partial class Extension
                 : Path.GetFileName(job.RawPath.Replace('/', '\\'));
             if (specificName || isSseFace || isSseNote)
                 ReleasePhotoDedup(job.DedupKey);
+            PhotoJournal(job, "failed", "fichier introuvable");
             InvokeCallback(cbName,
                 $"ERR|file_not_found|{hint}|{DescribeImageLookupFailure(job.RawPath)}");
             return;
@@ -8417,6 +8437,7 @@ public static partial class Extension
             if (!fi.Exists)
             {
                 ReleasePhotoDedup(job.DedupKey);
+                PhotoJournal(job, "failed", "fichier introuvable");
                 InvokeCallback(cbName, "ERR|file_not_found|" + Path.GetFileName(resolved));
                 return;
             }
@@ -8430,6 +8451,7 @@ public static partial class Extension
                 && !TryClaimPhotoDedup(identityKey))
             {
                 // Autre job déjà en cours / récemment traité pour le même fichier.
+                PhotoJournal(job, "done", "doublon");
                 InvokeCallback(cbName, "OK|duplicate|" + Path.GetFileName(resolved));
                 return;
             }
@@ -8441,6 +8463,7 @@ public static partial class Extension
         {
             ReleasePhotoDedup(job.DedupKey);
             ReleasePhotoDedup(identityKey);
+            PhotoJournal(job, "failed", "lecture impossible");
             InvokeCallback(cbName, "ERR|read_failed|" + Path.GetFileName(resolved));
             return;
         }
@@ -8460,6 +8483,7 @@ public static partial class Extension
         if (IsSseIdentityCaptureName(resolved) || IsSseIdentityCaptureName(job.RawPath)
             || IsSseNoteCaptureName(resolved) || IsSseNoteCaptureName(job.RawPath))
         {
+            PhotoJournal(job, "done", "ignorée (fiche SSE)");
             InvokeCallback(cbName, "OK|ignored|" + (Path.GetFileName(resolved) ?? ""));
             return;
         }
@@ -8488,6 +8512,14 @@ public static partial class Extension
             AddOptionalForm(multipart, "feed_id", args, 14);
             AddOptionalForm(multipart, "fx_profile", args, 15);
             AddOptionalForm(multipart, "fx_intensity", args, 16);
+            // Fiche du cliché (2.0.66, facultatif) : absents, rien n'est envoyé (anciens appels inchangés).
+            AddOptionalForm(multipart, "title", args, 17);
+            AddOptionalForm(multipart, "description", args, 18);
+            AddOptionalForm(multipart, "is_sse", args, 19);
+            AddOptionalForm(multipart, "sse_case_ref", args, 20);
+            AddOptionalForm(multipart, "is_confidential", args, 21);
+            AddOptionalForm(multipart, "photo_source", args, 22);
+            AddOptionalForm(multipart, "drone_name", args, 23);
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
             var fileName = Path.GetFileName(resolved) ?? "recon.png";
@@ -8508,6 +8540,7 @@ public static partial class Extension
                 ReleasePhotoDedup(job.DedupKey);
                 ReleasePhotoDedup(identityKey);
                 try { multipart.Dispose(); } catch { /* ignore */ }
+                PhotoJournal(job, "failed", err);
                 InvokeCallback("PhotoUpload", "ERR|" + err + "|" + fileName);
                 return;
             }
@@ -8516,11 +8549,13 @@ public static partial class Extension
             multipart = null;
             req = CreateUploadPost(uri, body);
             AttachApiKeyHeader(req);
+            PhotoJournal(job, "sending");
             using var resp = await UploadHttpClient.SendAsync(req).ConfigureAwait(false);
             var code = (int)resp.StatusCode;
             if (resp.IsSuccessStatusCode)
             {
                 NoteRateLimitCleared();
+                PhotoJournal(job, "done", code.ToString(System.Globalization.CultureInfo.InvariantCulture), code);
                 // Photo prise par le téléphone (COMSPEC_*) bien reçue par Athena : on l'efface du poste du joueur.
                 TryDeleteUploadedPhoto(resolved);
                 InvokeCallback("PhotoUpload", "OK|uploaded|" + fileName);
@@ -8543,6 +8578,7 @@ public static partial class Extension
                 _sessionExpiresAt = DateTimeOffset.MinValue;
             }
             var extra = apiErr.Length > 0 ? "|" + apiErr : "";
+            PhotoJournal(job, "failed", "http_" + code + (apiErr.Length > 0 ? " " + apiErr : ""), code);
             InvokeCallback("PhotoUpload", $"ERR|http_{code}|{fileName}{extra}");
         }
         catch

@@ -11610,7 +11610,7 @@ class AtakApiController
     }
 
     /**
-     * Fiche du cliché envoyée par le jeu (commande NativePhoto de la DLL native COMSPECATAKNativeExtension).
+     * Fiche du cliché envoyée par le jeu (NotifyNewPhoto de COMSPEC Link 2.0.66, arguments 17 à 23).
      * Champs absents (DLL plus ancienne, autres appareils) : valeurs par défaut, la légende reste seule.
      *
      * @param array<string, mixed> $post

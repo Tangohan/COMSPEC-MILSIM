@@ -99,7 +99,7 @@ public static partial class Extension
     }
 
     /// <summary>Étape d'un envoi suivi. "sending" compte un essai de plus.</summary>
-    private static void JournalTrack(string url, string body, string state, string detail = "", int http = 0)
+    private static void JournalTrack(string url, string body, string state, string detail = "", int http = 0, string label = "")
     {
         try
         {
@@ -115,7 +115,7 @@ public static partial class Extension
                     {
                         Id = id,
                         Kind = "POST " + path,
-                        Label = JournalLabel(path),
+                        Label = label.Length > 0 ? label : JournalLabel(path),
                         Bytes = Encoding.UTF8.GetByteCount(body ?? ""),
                         CreatedAt = now
                     };

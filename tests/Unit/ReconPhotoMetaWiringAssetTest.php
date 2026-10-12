@@ -16,29 +16,32 @@ final class ReconPhotoMetaWiringAssetTest extends TestCase
         return (string) file_get_contents(dirname(__DIR__, 2) . '/' . $rel);
     }
 
-    public function testNativeDllSendsPhotoMetaFields(): void
+    public function testComspecLinkSendsPhotoMetaThroughSendJournal(): void
     {
-        $cs = $this->read('mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/NativePhoto.cs');
-        foreach (['"title", a, 21', '"description", a, 22', '"is_sse", a, 23', '"sse_case_ref", a, 24',
-            '"is_confidential", a, 25', '"photo_source", a, 26', '"drone_name", a, 27', '"/api/recon/images"'] as $needle) {
+        $cs = $this->read('mod/UptoDate/COMSPECExtension/Extension.cs');
+        self::assertStringContainsString('private const string ExtensionVersion = "2.0.66";', $cs);
+        foreach (['"title", args, 17', '"description", args, 18', '"is_sse", args, 19', '"sse_case_ref", args, 20',
+            '"is_confidential", args, 21', '"photo_source", args, 22', '"drone_name", args, 23'] as $needle) {
             self::assertStringContainsString($needle, $cs);
         }
-        // Branché seulement dans le bloc de la DLL native : l'ancien chemin NotifyNewPhoto reste intact.
-        $ext = $this->read('mod/UptoDate/COMSPECExtension/Extension.cs');
-        $start = strpos($ext, '#if COMSPEC_ATAK_NATIVE', strpos($ext, 'TryGetSyncResponse'));
-        $hook = strpos($ext, 'return NativePhotoCommand(args);');
-        $end = strpos($ext, '#endif', (int) $start);
-        self::assertNotFalse($hook);
-        self::assertTrue($start < $hook && $hook < $end);
+        self::assertStringContainsString('"Photo drone"', $cs);
+        self::assertStringContainsString('PhotoJournal(job, "sending");', $cs);
+        self::assertStringContainsString('string label = ""', $this->read('mod/UptoDate/COMSPECExtension/Extension_SendJournal.cs'));
+        self::assertFileDoesNotExist(dirname(__DIR__, 2) . '/mod/COMSPEC_ATAK_Native/COMSPECATAKNativeExtension/NativePhoto.cs');
     }
 
-    public function testDronePhotoCallsNativeDllWithOverwatchFallback(): void
+    public function testConnectAndDronePassMetaWithVersionFallback(): void
     {
+        $capture = $this->read('mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_captureReconImage.sqf');
+        self::assertStringContainsString('["_photoMeta", [], [[]]]', $capture);
+        self::assertStringContainsString('_notifyArgs append', $capture);
+        self::assertStringContainsString('["_mPos", [], [[]]]', $capture);
+
         $drone = $this->read('mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/drone/fn_dronePhoto.sqf');
-        self::assertStringContainsString('["NativePhoto", _native] call comspec_atak_native_fnc_extensionCall', $drone);
-        self::assertStringContainsString('["NativePhoto", ["status", _file]]', $drone);
+        self::assertStringContainsString('GetExtensionVersion', $drone);
         self::assertStringContainsString('_shortCaption', $drone);
-        self::assertStringContainsString('[_file, _caption, "UAV", _feed, true, false, true] call comspec_overwatch_connect_fnc_captureReconImage', $drone);
+        self::assertStringContainsString('true, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage', $drone);
+        self::assertStringNotContainsString('NativePhoto', $drone);
     }
 
     public function testSiteStoresAndShowsPhotoMeta(): void

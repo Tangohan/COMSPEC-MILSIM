@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Fiche des clichés de reconnaissance (drone de l'ATAK natif, commande NativePhoto de la DLL native) :
+ * Fiche des clichés de reconnaissance (drone de l'ATAK natif, NotifyNewPhoto de COMSPEC Link 2.0.66) :
  * titre, description, SSE (+ référence du dossier), confidentiel, source et nom du drone.
  * Avant, ces champs étaient tassés dans la légende. Lancée à la demande par ReconImageRepository
  * et par run-migrations.php ; sans effet si les colonnes existent déjà.
