@@ -11,6 +11,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Connexion Athena : e-mail et mot de passe proposés à côté du code (ATAK natif 1.38.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : « propose quand même la connexion par mail et mot de passe ».
+- **App Athena, onglet COMPTE** (celui qui s'ouvre par défaut) : sous le code à autoriser sur le site, une section « Ou avec e-mail et mot de passe » permet de se connecter directement avec les identifiants du compte Athena, sans passer par le site. Même connexion que l'onglet E-MAIL (qui garde le code reçu par e-mail pour un mot de passe oublié).
+- **Message au lancement** : il précise que l'app Athena du téléphone accepte aussi e-mail et mot de passe.
+- Textes traduits en anglais.
+- À vérifier en jeu : connexion e-mail + mot de passe depuis l'onglet COMPTE (bon et mauvais mot de passe), puis profil synchronisé.
+
 ## Retours en jeu 2026-10-12 — Volet rapide, Météo, CAS, Reco refaite (ATAK natif 1.37.0)
 
 Non testé en jeu. Corrections tirées du journal Arma (.rpt) envoyé par TTRD.
