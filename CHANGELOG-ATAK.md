@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## 2026-10-12 — Galerie peaufinée, clichés du drone supprimables, viseur Photo réparé (ATAK natif 1.46.0)
+## 2026-10-12 — Galerie peaufinée, clichés du drone supprimables, viseur Photo réparé (ATAK natif 1.48.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : écran de la Galerie plus propre, mêmes actions.
 
@@ -23,6 +23,15 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD :
 - **Suppression** (retour de TTRD : impossible de supprimer les clichés du drone) : chaque ligne a son bouton SUPPRIMER (second appui sur CONFIRMER, en rouge), photos du téléphone comme clichés du drone. TOUT SUPPRIMER efface aussi les clichés du drone (fichier et fiche), sauf un cliché en cours d'envoi. Une photo déjà reçue reste sur Athena.
 - **App Photo, viseur noir** (retour de TTRD, de nuit) : la caméra rendue dans l'écran ne s'adapte pas à l'obscurité comme la vue du joueur. Le viseur règle maintenant son gain selon la lumière : normal le jour, éclairci en pénombre, fortement éclairci la nuit (« MODE NUIT » affiché sur l'image). Texture du rendu dans le sens du viseur (paysage). Le journal note l'ouverture et l'arrêt du viseur (lumière, PiP, raison de l'arrêt) pour diagnostiquer un écran encore noir.
 - **App Photo, viseur figé** (retour de TTRD : « on dirait que le visu reste sur place ») : la caméra du viseur restait à l'endroit où l'app avait été ouverte, et le joueur s'y voyait de loin. Elle suit maintenant les yeux du joueur à chaque image (même méthode que le plein écran). Un déclenchement interrompu ne fige plus le viseur plus de 5 s.
+## App JTAC refaite : contrôle CAS réaliste du check-in au BDA (ATAK natif 1.47.0)
+
+Non testé en jeu. Demande de TTRD : « JTAC faut une refonte complète, réaliste de l'app ». Pas de DLL à recompiler, pas de migration.
+- Onglet SITUATION : cible verrouillée au laser, à la visée ou pointée sur la carte (grille 10 chiffres, altitude en ft MSL, amis les plus proches) ; appareils amis en station avec leur fiche de check-in lue sur l'appareil (armement restant, carburant, altitude, vitesse, nacelle).
+- Onglet BRIEF : plan d'attaque (type de contrôle 1/2/3, BOT/BOC, armement, marquage, code laser) et 9-LINE calculé (cap et distance IP-cible en NM, altitude, position, marquage, amis) ; remarques FAH, LTL, menaces, DANGER CLOSE avec initiales du chef quand des amis sont sous la distance de risque de l'armement (valeurs indicatives).
+- Onglet CONTRÔLE : frise de la mission (CHECK-IN, BRIEF, READBACK, CORRÉLATION, IN, AUTORISÉ, OFF, BDA), readback attendu et reçu, géométrie de l'appareil (vient d'où, cap, axe final d'attaque respecté ou non), LASER ON/OFF, CLEARED HOT (CLEARED TO ENGAGE en type 3) actif seulement quand la doctrine le permet, CONTINUE DRY, ABORT, BDA et re-attaque. Équipage IA : le JTAC note les appels du pilote entendus à la radio.
+- Vue ÉQUIPAGE : le pilote joueur reçoit le 9-LINE sur son téléphone et répond par boutons (READBACK, CONTACT, TALLY, SPOT, VISUAL, NO JOY, IN, WEAPONS AWAY, OFF, UNABLE). Le 9-LINE part aussi sur Athena quand le téléphone est relié.
+- À vérifier en jeu : à deux joueurs (JTAC au sol, pilote en vol), un passage complet jusqu'au BDA ; fiche de check-in sur plusieurs appareils (avion, hélicoptère, armements de mods) ; DANGER CLOSE avec amis près de la cible ; IP et cible pointées sur la carte ; ABORT puis nouvelle passe ; rafraîchissement de l'onglet CONTRÔLE sans saccade.
+
 ## Relief refaite : champ de vision, heatmap, ligne de vue, bâtiments vus (ATAK natif 1.45.0)
 
 Non testé en jeu. Demande de TTRD : « Relief faut améliorer l'app : LIGNE DE VUE, HEATMAP, BÂTIMENT VISIBLE ». Pas de DLL à recompiler, pas de migration.
