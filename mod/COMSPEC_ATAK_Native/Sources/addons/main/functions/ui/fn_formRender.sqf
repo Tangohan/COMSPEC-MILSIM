@@ -212,6 +212,8 @@ private _mk = {
                 private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + _w - (_nb - _forEachIndex) * (_bwid + _pad / 3), _y + _pad / 4 + _ih * 0.15, _bwid, _ih * 0.7], _label] call _mk;
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlSetFontHeight (_fs * 0.85);
+                // Bouton secondaire au même gris-vert que les barres et onglets (le bleu par défaut détonnait).
+                if !(_primary) then { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor ([[0.45, 0.5, 0.47, 1], [0.92, 0.96, 0.93, 1]] select _enabled); };
                 _b ctrlEnable _enabled;
                 [_b, _code] call _click;
             } forEach _btns;

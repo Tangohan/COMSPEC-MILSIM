@@ -11,6 +11,16 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## 2026-10-12 — Galerie : interface peaufinée (ATAK natif 1.42.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : écran de la Galerie plus propre, mêmes actions.
+
+- Une seule rangée d'onglets : **TOUT**, **TÉLÉPHONE**, **DRONE** et **ENVOIS** (avant : onglets PHOTOS / ENVOIS puis un second filtre « Afficher »).
+- Une ligne d'état de l'envoi au lieu du paragraphe d'explication (l'aide reste en infobulle).
+- Une barre d'actions sans titres de rubrique : PRENDRE UNE PHOTO, ACTUALISER, ENVOYER LES NOUVELLES (en vert quand il y en a), TOUT SUPPRIMER.
+- Lignes de photos : titre en gras, puis état d'envoi, date et grille en petit sur une seconde ligne ; titres de section avec leur nombre entre parenthèses.
+- Boutons des lignes (DÉTAILS, RENVOYER…) au même gris-vert que les autres boutons du téléphone, au lieu du bleu ; vaut pour toutes les listes du téléphone.
+
 ## Drone : flotte de 4 drones, rôles, essaim, garde rapprochée ; repérage automatique en réglage admin (ATAK natif 1.39.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Suite des demandes de TTRD sur le drone.

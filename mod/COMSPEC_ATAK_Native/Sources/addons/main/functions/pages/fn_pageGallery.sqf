@@ -1,15 +1,15 @@
 /*
     App Galerie : photos gardées sur le téléphone et suivi de leur envoi vers Athena. Les photos se prennent dans
     l'app Photo (viseur dans l'écran, fn_pagePhotos) ; la galerie en est séparée, comme sur un vrai téléphone.
-    Deux onglets (clé galTab de l'état), chacun avec une ligne d'explication et l'état de l'envoi :
+    Une rangée d'onglets TOUT / TÉLÉPHONE / DRONE / ENVOIS (clés galTab et photoFilter), puis l'état de l'envoi :
       PHOTOS  (LIB)  : photos du téléphone (dossier COMSPEC et captures Arma, fn_photoLibrary) et clichés du drone
                        (profil COMSPEC_ATAK_DronePhotos, fn_dronePhoto) avec titre, SSE / confidentiel et état d'envoi ;
-                       filtre TOUT / TÉLÉPHONE / DRONE (clé photoFilter). DÉTAILS ouvre la fiche d'une photo
+                       les trois premiers onglets filtrent la liste. DÉTAILS ouvre la fiche d'une photo
                        (clé photoSel = [type, nom en minuscules]) : envoi vers Athena, suppression (second appui) et,
                        pour un cliché du drone, titre, description, SSE et confidentiel modifiables ;
       ENVOIS  (SENT) : compteurs, dernier retour d'Athena, clichés du drone en cours ou refusés, historique.
     Les fichiers des clichés du drone sont aussi dans le dossier Screenshots : ils ne sont montrés qu'une fois, en DRONE.
-    Boutons groupés par rubrique (ligne "bar" de fn_formRender) : choix en cours en vert, aide en infobulle.
+    Actions sur une barre sans titres de groupe (ligne "bar" de fn_formRender), aide en infobulle.
     Params (app déclarée avec function=) : [page, [x, y, largeur, hauteur]]
 */
 disableSerialization;
@@ -67,23 +67,31 @@ private _armed = uiNamespace getVariable ["COMSPEC_ATAK_PhotoDelArm", ["", -10]]
 private _isArmed = { params ["_k"]; (_armed select 0) isEqualTo _k && {diag_tickTime - (_armed select 1) <= 4} };
 private _pending = count (missionNamespace getVariable ["COMSPEC_Athena_PhotoPending", []]);
 
-// En-tête : onglets, ce qu'on y fait, et où partent les photos.
+// En-tête : une seule rangée d'onglets (TOUT / TÉLÉPHONE / DRONE / ENVOIS) et une ligne d'état de l'envoi.
 private _total = (count _phone) + (count _droneList);
+private _flt = _s getOrDefault ["photoFilter", "ALL"];
+if !(_flt in ["ALL", "PHONE", "DRONE"]) then { _flt = "ALL"; };
+private _fTab = {
+    params ["_t", "_k", "_tip"];
+    [_t, compile format ["%1 _st0 set ['galTab', 'LIB']; _st0 set ['photoFilter', '%2']; _st0 set ['photoSel', []]; ['list'] call comspec_atak_native_fnc_photoLibrary; [{ ['GALLERY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _leave, _k], _tab isEqualTo "LIB" && {_flt isEqualTo _k}, _tip]
+};
 private _head = [
     ["segment", "", [
-        [format ["PHOTOS (%1)", _total], ["LIB"] call _go, _tab isEqualTo "LIB", "Revoir, envoyer ou supprimer les photos gardées sur le téléphone et les clichés du drone"],
+        [format ["TOUT (%1)", _total], "ALL", "Photos du téléphone et clichés du drone"] call _fTab,
+        [format ["TÉLÉPHONE (%1)", count _phone], "PHONE", "Photos prises avec le téléphone et captures d'écran"] call _fTab,
+        [format ["DRONE (%1)", count _droneList], "DRONE", "Clichés pris avec la caméra du drone"] call _fTab,
         [["ENVOIS", format ["ENVOIS (%1)", _pending]] select (_pending > 0), ["SENT"] call _go, _tab isEqualTo "SENT", "Suivre la réception des photos par Athena"]
     ]],
-    ["text", format ["<t size='0.78' color='#8a9a93'>%1</t><br/><t size='0.78'>%2</t>", (createHashMapFromArray [
-        ["LIB", "Photos gardées sur ce téléphone et clichés du drone. DÉTAILS : voir la fiche, envoyer à Athena ou supprimer."],
-        ["SENT", "Photos en route vers Athena (ATAK web), reçues ou refusées, et l'historique de la session."]
-    ]) get _tab, switch (true) do {
+    ["text", format ["<t size='0.78'>%1</t>", switch (true) do {
         case (!_bridge): { "<t color='#e5483a'>● COMSPEC Overwatch absent : ni prise de vue ni envoi possibles</t>" };
         case (!_ready): { "<t color='#f2ab33'>● Athena non connecté : connectez-vous dans l'app Athena pour prendre et envoyer des photos</t>" };
         case (!_net): { "<t color='#f2ab33'>● Hors réseau : les photos restent sur le téléphone, à envoyer plus tard d'ici</t>" };
         default { "<t color='#5cc76b'>● Prêt : les photos partent directement vers Athena</t>" };
     }]]
 ];
+// Actions de la galerie : une barre sans titres de groupe, l'action utile en vert.
+private _sendBtn = [format ["ENVOYER LES NOUVELLES (%1)", _newN], { ["sendNew"] call comspec_atak_native_fnc_photoLibrary; }, ["", "main"] select (_newN > 0), "Envoyer les photos du téléphone qu'Athena n'a pas encore (une toutes les 2 s). Les clichés du drone partent avec leur fiche.", _bridge && {_newN > 0}];
+private _shootBtn = ["PRENDRE UNE PHOTO", { ["PHOTOS"] call comspec_atak_native_fnc_navigate; }, "", "Ouvrir l'app Photo (viseur dans l'écran)"];
 
 // Dernier retour d'Athena (onglet ENVOIS).
 private _lastRow = ["text", (missionNamespace getVariable ["COMSPEC_LastReconUploadResult", []]) call {
@@ -102,7 +110,7 @@ private _droneRow = {
     private _st = _dSt getOrDefault [_state, [_state, "#8a9a93"]];
     private _open = ["LIB", ["DRONE", toLower _file]] call _go;
     ["person", "\z\comspec_atak_native\addons\main\data\drone_quad.paa",
-        format ["<t font='RobotoCondensedBold'>%1</t>%2<br/><t size='0.8'><t color='%4'>● %3</t>  <t color='#8a9a93'>%5 %6 · %7</t></t>",
+        format ["<t font='RobotoCondensedBold'>%1</t>%2<br/><t size='0.75'><t color='%4'>● %3</t>   <t color='#8a9a93'>%5 %6   %7</t></t>",
             [[_title] call _esc, "Cliché drone sans titre"] select (_title isEqualTo ""), [_sse, _cf, _case] call _tags, _st select 0, _st select 1, _date, _clock, _grid],
         [["DÉTAILS", _open, false, true, "Fiche du cliché : position du drone, titre, description, SSE, confidentiel ; envoyer ou supprimer"],
          if (_state isEqualTo "DRAFT") then {
@@ -117,7 +125,7 @@ private _phoneRow = {
     _e params ["_path", "_name"];
     private _st = [_path, _name] call _phoneSt;
     ["person", "\z\comspec_atak_native\addons\main\data\ui_gallery.paa",
-        format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='%3'>● %2</t>", [_name] call _esc, _st select 0, _st select 1],
+        format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.75' color='%3'>● %2</t>", [_name] call _esc, _st select 0, _st select 1],
         [["DÉTAILS", ["LIB", ["PHONE", toLower _name]] call _go, false, true, "Fiche de la photo : emplacement, état d'envoi ; envoyer ou supprimer"],
          [["ENVOYER", "RENVOYER"] select ((_st select 2) || {(_st select 0) isEqualTo "ENVOI REFUSÉ"}), compile format ["['send', %1] call comspec_atak_native_fnc_photoLibrary;", _j], !(_st select 2), true, "Envoyer cette photo vers Athena (ATAK web)"]],
         [0.90, 0.94, 0.91, 1]]
@@ -194,28 +202,19 @@ if (_tab isEqualTo "LIB") exitWith {
             ];
         };
         default {
-            private _flt = _s getOrDefault ["photoFilter", "ALL"];
-            private _fBtn = { params ["_t", "_k", "_tip"]; [_t, compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['photoFilter', '%1']; [{ ['GALLERY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _flt isEqualTo _k, _tip] };
-            _rows append [
-                ["segment", "Afficher", [
-                    [format ["TOUT (%1)", _total], "ALL", "Photos du téléphone et clichés du drone"] call _fBtn,
-                    [format ["TÉLÉPHONE (%1)", count _phone], "PHONE", "Photos prises avec le téléphone et captures d'écran"] call _fBtn,
-                    [format ["DRONE (%1)", count _droneList], "DRONE", "Clichés pris avec la caméra du drone"] call _fBtn
-                ]],
-                ["bar", [
-                    ["Appareil", [["PRENDRE UNE PHOTO", { ["PHOTOS"] call comspec_atak_native_fnc_navigate; }, "", "Ouvrir l'app Photo (viseur dans l'écran)"]]],
-                    ["Galerie", [["ACTUALISER", { ["list"] call comspec_atak_native_fnc_photoLibrary; [{ ["GALLERY"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, "", "Relire les photos du téléphone et demander à Athena lesquelles elle a déjà", _bridge]]],
-                    ["Envoi vers Athena", [[format ["ENVOYER LES NOUVELLES (%1)", _newN], { ["sendNew"] call comspec_atak_native_fnc_photoLibrary; }, ["", "main"] select (_newN > 0), "Envoyer les photos du téléphone qu'Athena n'a pas encore (une toutes les 2 s). Les clichés du drone partent avec leur fiche.", _bridge && {_newN > 0}]]],
-                    ["Nettoyage", [[["TOUT SUPPRIMER", "CONFIRMER"] select (["ALL"] call _isArmed), { ["deleteAll"] call comspec_atak_native_fnc_photoLibrary; }, ["", "red"] select (["ALL"] call _isArmed), "Effacer du téléphone toutes ses photos (second appui pour confirmer). Les clichés du drone se suppriment un par un, depuis leur fiche.", _bridge && {(count _phone) > 0}]]]
-                ]]
-            ];
+            _rows pushBack ["bar", [["", [
+                _shootBtn,
+                ["ACTUALISER", { ["list"] call comspec_atak_native_fnc_photoLibrary; [{ ['GALLERY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, "", "Relire les photos du téléphone et demander à Athena lesquelles elle a déjà", _bridge],
+                _sendBtn,
+                [["TOUT SUPPRIMER", "CONFIRMER"] select (["ALL"] call _isArmed), { ["deleteAll"] call comspec_atak_native_fnc_photoLibrary; }, ["", "red"] select (["ALL"] call _isArmed), "Effacer du téléphone toutes ses photos (second appui pour confirmer). Les clichés du drone se suppriment un par un, depuis leur fiche.", _bridge && {(count _phone) > 0}]
+            ]]]];
             if (_flt in ["ALL", "DRONE"]) then {
-                _rows pushBack ["section", format ["Clichés du drone : %1", count _droneList], "Pris avec l'app Drone ; titre, description, SSE et confidentiel partent avec la photo"];
+                _rows pushBack ["section", format ["Clichés du drone (%1)", count _droneList], "Titre, description et marquages partent avec la photo"];
                 if ((count _droneList) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun cliché du drone. App Drone, caméra ouverte : bouton PHOTO sous l'image.</t>"]; };
                 { _rows pushBack (_x call _droneRow); } forEach (_droneList select [0, 20]);
             };
             if (_flt in ["ALL", "PHONE"]) then {
-                _rows pushBack ["section", format ["Photos du téléphone : %1", count _phone], "Dossier COMSPEC et captures d'écran Arma, les plus récentes en premier"];
+                _rows pushBack ["section", format ["Photos du téléphone (%1)", count _phone], "Dossier COMSPEC et captures d'écran Arma, les plus récentes en premier"];
                 if (!_bridge) then {
                     _rows pushBack ["text", "<t color='#e0a030'>Liste disponible avec la liaison Overwatch (mod COMSPEC Overwatch chargé).</t>"];
                 } else {
@@ -245,14 +244,10 @@ if (_tab isEqualTo "SENT") exitWith {
         ["text", format ["<t size='1.3' font='RobotoCondensedBold' color='#e8b84a'>%1</t> <t size='0.8' color='#8a9a93'>en cours</t>      <t size='1.3' font='RobotoCondensedBold' color='#5cc76b'>%2</t> <t size='0.8' color='#8a9a93'>reçues</t>      <t size='1.3' font='RobotoCondensedBold' color='#e5483a'>%3</t> <t size='0.8' color='#8a9a93'>refusées</t>",
             _pending, count (missionNamespace getVariable ["COMSPEC_Athena_PhotoUploaded", []]), count (missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []])]],
         _lastRow,
-        ["bar", [
-            ["Galerie", [["VOIR LES PHOTOS", ["LIB"] call _go, "", "Toutes les photos du téléphone et les clichés du drone"]]],
-            ["Appareil", [["PRENDRE UNE PHOTO", { ["PHOTOS"] call comspec_atak_native_fnc_navigate; }, "", "Ouvrir l'app Photo (viseur dans l'écran)"]]],
-            ["Envoi vers Athena", [[format ["ENVOYER LES NOUVELLES (%1)", _newN], { ["sendNew"] call comspec_atak_native_fnc_photoLibrary; }, ["", "main"] select (_newN > 0), "Envoyer les photos du téléphone qu'Athena n'a pas encore (une toutes les 2 s)", _bridge && {_newN > 0}]]]
-        ]]
+        ["bar", [["", [_shootBtn, _sendBtn]]]]
     ];
     if ((count _watch) > 0) then {
-        _rows pushBack ["section", format ["Clichés du drone à suivre : %1", count _watch], "En cours d'envoi ou refusés par Athena"];
+        _rows pushBack ["section", format ["Clichés du drone à suivre (%1)", count _watch], "En cours d'envoi ou refusés par Athena"];
         { _rows pushBack (_x call _droneRow); } forEach (_watch select [0, 10]);
     };
     _rows pushBack ["section", "Historique", "Photos reçues par Athena pendant cette session, la plus récente en haut"];
