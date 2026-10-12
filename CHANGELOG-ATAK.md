@@ -11,6 +11,30 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Messagerie refaite (ATAK natif 1.46.0)
+
+Non testé en jeu. Demande de TTRD : « améliorer l'UI de la messagerie ». Pas de DLL à recompiler, pas de migration.
+- **Liste des conversations** : canaux Athena puis messages directs, avec icône, initiales ou photo de l'opérateur, dernier message, heure et pastille de non-lus ; + CANAL dans le bandeau d'état (Athena connecté, hors réseau…).
+- **Conversation** : en-tête (retour, nom, sous-titre) et boutons icônes aide, tri, vider, corbeille (confirmation en rouge).
+- **Bulles** ajustées au texte, regroupées par auteur, liseré de couleur par auteur, rouge pour l'urgent, séparateurs de jour en pastille, repère NON LUS.
+- **Saisie** : champ souligné à la couleur d'accent, bouton d'envoi, aperçu des commandes au-dessus.
+- **Paysage en main** : liste et conversation côte à côte. Téléphone porté : la conversation seule.
+- Inchangé : canaux, commandes `/`, raccourcis `@grille`, SMS et accusés, vider, tri, création et suppression de canal.
+
+---
+
+## Relief refaite : champ de vision, heatmap, ligne de vue, bâtiments vus (ATAK natif 1.45.0)
+
+Non testé en jeu. Demande de TTRD : « Relief faut améliorer l'app : LIGNE DE VUE, HEATMAP, BÂTIMENT VISIBLE ». Pas de DLL à recompiler, pas de migration.
+- **Écran** dans la famille de l'app Reco, en turquoise : en-tête (altitude, grille, pastille du calque carte cliquable), quatre tuiles d'outil, réglages en boutons, chiffres en tuiles.
+- **Champ de vision** : obstacles au choix, RELIEF SEUL ou + BÂTIMENTS ET ARBRES (lignes de vue contre les objets, plus lent). Vues par secteur en barres de couleur, point haut sur la carte.
+- **Heatmap** : nouvelle échelle à cinq couleurs (bleu nuit, cyan, vert, jaune, rouge) plus lisible, ou PAR RAPPORT À MOI (bleu en dessous, rouge au-dessus : ce qui me domine), légende avec les altitudes, part du terrain plus haut que moi.
+- **Ligne de vue** : vers un carroyage saisi, le point visé (SOUS MON REGARD) ou un point touché sur la carte (outil LIGNE DE VUE de la carte, qui passe désormais par le même calcul). Verdict VUE DÉGAGÉE / VUE BLOQUÉE, nature de l'obstacle (relief, bâtiment, végétation, véhicule), distance, azimut, dénivelé, profil du terrain avec la ligne de visée.
+- **Bâtiments vus** : bâtiments de plus de 4 m dans 200 m, 500 m ou 1 km, testés depuis mes yeux sur trois hauteurs ; en vert sur la carte s'ils sont vus, contour rouge sinon ; liste des dix plus proches avec CARTE.
+- Nouvelles icônes : ligne de vue, heatmap, bâtiments.
+
+À tester en jeu : chaque outil en ville et en campagne ; champ de vision avec bâtiments et arbres (temps de calcul à 2 km) ; heatmap par rapport à moi sur une colline ; ligne de vue derrière un mur, un arbre et une crête ; outil LIGNE DE VUE de la carte puis retour dans Relief ; bâtiments vus à 1 km (temps de calcul) et leurs couleurs sur la carte.
+
 ## Doigt d'honneur libre, qui suit la cible (ATAK natif 1.44.0)
 
 Non testé en jeu. Demande de TTRD : « un doigt d'honneur libre, qui suit vraiment le curseur et les joueurs, comme GTA ». Pas de DLL à recompiler, pas de migration. Le doigt d'honneur classique (geste de 2,4 s) reste tel quel.
