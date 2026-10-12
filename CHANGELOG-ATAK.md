@@ -11,6 +11,24 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vague 2026-10-12 (suite) — Recherche sur la carte et données remontées au site (ATAK natif 1.11.1)
+
+Non testé en jeu. `run-migrations.php` à lancer (clé de mission, table des pertes). Pas de DLL à recompiler.
+
+### Nouveau — Carte : bouton RECHERCHER
+- À côté d'OUTILS (et dans le menu Outils) : type IMEI, NUMÉRO, BALISE GPS ou INDICATIF, saisie ou choix dans la liste des identifiants connus (mon groupe, historique, GÉOLOC, SMS, fichiers extraits au câble DL-7), Entrée pour lancer.
+- Téléphone : règles GÉOLOC (camps traçables, son propre camp, IA, réservé GE), requête opérateur de quelques secondes, cercle de précision ; il faut du réseau ; échec motivé : « Téléphone éteint », « Hors couverture » (sans signal, mode avion, brouillage), « Inconnu ».
+- Balise GPS (Eden / Zeus d'Overwatch) : position exacte tant qu'elle est alimentée. Indicatif / nom : position du BFT de mon camp.
+- La carte se centre sur le résultat : anneau pulsant, fiche (propriétaire, vu à, précision, grille), SUIVRE (balise et BFT toutes les 2 s, téléphone au rythme GÉOLOC), CENTRER, FERMER.
+
+
+### Nouveau — Données du jeu exploitées par le site
+- Clé de mission (`nom@carte#UTC`) stockée avec les positions, le temps d'écran et les comptes rendus ; onglet Relecture de /atak : sélecteur de mission.
+- Pertes amies envoyées au site (un seul téléphone par mort) : points rouges sur la relecture et total dans la synthèse.
+- Trajets des drones et véhicules (historique déjà stocké) tracés sur la relecture ; temps de vol approximatif par pilote.
+- Pistes et BDA du drone : couche « Contacts vus par drone » sur la carte TOC de /atak (envoi limité : 6 pistes toutes les 5 s, seulement si nouvelles ou déplacées de plus de 50 m).
+- Relèvements GE et détections RF de drones : lignes de relèvement sur la carte sigint.
+
 ## Vague 2026-10-12 — Retours de test en jeu (ATAK natif 1.11.0)
 
 Non testé en jeu. Inclut les correctifs de performance de la PR #629 (même base). DLL à recompiler (`build_mod.bat`) pour le presse-papiers du Plan.
@@ -21,12 +39,6 @@ Non testé en jeu. Inclut les correctifs de performance de la PR #629 (même bas
 - Stylo lissé ou segments clic par clic, pointillés, flèche dans le sens du tracé, épaisseur, couleur, étiquettes.
 - Plan partagé par camp (serveur seul écrivain, JIP) ; droit d'édition par réglage CBA `comspec_atak_native_plan_edit` (tous / chefs de groupe + Zeus + admin par défaut / Zeus + admin).
 - Plans nommés (aperçu, chargement, publication en ajout ou remplacement), export/import en texte `COMSPECPLAN1|…`. Onglet CARTE dans Briefing.
-
-### Nouveau — Carte : bouton RECHERCHER
-- À côté d'OUTILS (et dans le menu Outils) : type IMEI, NUMÉRO, BALISE GPS ou INDICATIF, saisie ou choix dans la liste des identifiants connus (mon groupe, historique, GÉOLOC, SMS, fichiers extraits au câble DL-7), Entrée pour lancer.
-- Téléphone : règles GÉOLOC (camps traçables, son propre camp, IA, réservé GE), requête opérateur de quelques secondes, cercle de précision ; il faut du réseau ; échec motivé : « Téléphone éteint », « Hors couverture » (sans signal, mode avion, brouillage), « Inconnu ».
-- Balise GPS (Eden / Zeus d'Overwatch) : position exacte tant qu'elle est alimentée. Indicatif / nom : position du BFT de mon camp.
-- La carte se centre sur le résultat : anneau pulsant, fiche (propriétaire, vu à, précision, grille), SUIVRE (balise et BFT toutes les 2 s, téléphone au rythme GÉOLOC), CENTRER, FERMER.
 
 ### Amélioré — Dessin libre et carte
 - Unités : cadres OTAN par défaut, cartouche sombre avec l'indicatif puis « distance · azimut » ; contacts ennemis (losange rouge) avec l'heure et l'auteur du signalement ; boussole « 42° NE » ; ligne curseur CURSEUR / MGRS / ALT. Réglages > Carte > « Cartouches des unités » (complet, indicatif seul, aucun). Allègement automatique quand les cartouches se chevauchent ou au dézoom.
