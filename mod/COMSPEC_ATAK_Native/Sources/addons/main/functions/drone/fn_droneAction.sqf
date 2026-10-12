@@ -311,7 +311,8 @@ private _camOpen = {
         };
         // Autre source du flux (sélecteur SOURCE de la vue caméra) : caméra du téléphone, tenue devant le joueur, ou caméra
         // casque (la sienne ou celle d'un équipier), au niveau des yeux et tournée comme la tête. Caméra détachée du drone.
-        private _src = missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedSrc", "DRONE"];
+        // Dans l'app Drone, toujours la caméra du drone (retour de TTRD) ; le choix de source sert à la vue drone de la carte.
+        private _src = ["DRONE", missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedSrc", "DRONE"]] select (_page isEqualTo "MAP");
         if (_src isNotEqualTo "DRONE") exitWith {
             private _u = [player, missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedUnit", objNull]] select (_src isEqualTo "HELMET");
             if (isNull _u || {!alive _u}) exitWith {};
@@ -433,7 +434,8 @@ private _scan = {
     private _rMan = 450 * _k;
     private _rVeh = 700 * _k;
     // Nacelle pointée : capteur dans son champ ; flux pris sur une autre caméra (téléphone, casque) : en 360°.
-    private _cone = [[], missionNamespace getVariable ["COMSPEC_ATAK_DroneCamDir", []]] select ((missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedSrc", "DRONE"]) isEqualTo "DRONE");
+    private _onMap = ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP";
+    private _cone = [[], missionNamespace getVariable ["COMSPEC_ATAK_DroneCamDir", []]] select (!_onMap || {(missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedSrc", "DRONE"]) isEqualTo "DRONE"});
     private _tracks = missionNamespace getVariable ["COMSPEC_ATAK_DroneTracks", createHashMap];
     private _side = side group player;
     private _grp = units group player;
@@ -864,6 +866,7 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneFeedSrc", _arg];
         if (_arg isEqualTo "HELMET" && {!alive (missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedUnit", objNull])}) then { missionNamespace setVariable ["COMSPEC_ATAK_DroneFeedUnit", player]; };
         call _render;
+        call _mapRender;
     };
     case "feedUnit": {
         private _u = [_arg] call _unitOf;
@@ -871,6 +874,7 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneFeedUnit", _u];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneFeedSrc", "HELMET"];
         call _render;
+        call _mapRender;
     };
     case "quality": {
         profileNamespace setVariable ["COMSPEC_ATAK_DroneQuality", ((_arg max 0) min 2)];

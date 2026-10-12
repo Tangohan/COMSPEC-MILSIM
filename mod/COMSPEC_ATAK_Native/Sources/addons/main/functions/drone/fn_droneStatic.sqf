@@ -23,7 +23,8 @@ disableSerialization;
 switch (_act) do {
     case "reason": {
         private _d = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
-        private _src = missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedSrc", "DRONE"];
+        // Source choisie seulement sur la carte : l'app Drone montre toujours le drone.
+        private _src = ["DRONE", missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedSrc", "DRONE"]] select (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP");
         uiNamespace setVariable ["COMSPEC_ATAK_DroneStaticQ", 1];
         if !(isPiPEnabled) exitWith { "IMAGE DANS L'IMAGE (PIP) COUPÉE : OPTIONS > VIDÉO" };
         if (_src isEqualTo "HELMET") exitWith {

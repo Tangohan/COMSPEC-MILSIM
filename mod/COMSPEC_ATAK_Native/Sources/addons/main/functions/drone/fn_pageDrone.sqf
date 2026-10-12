@@ -85,7 +85,8 @@ private _split = _s getOrDefault ["droneCamSplit", false];
 private _locksAll = missionNamespace getVariable ["COMSPEC_ATAK_Locks", createHashMap];
 private _photos = profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []];
 if !(_photos isEqualType []) then { _photos = []; };
-private _src = missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedSrc", "DRONE"];
+// App Drone : toujours la caméra du drone (le choix téléphone / casque est sur la vue drone de la carte).
+private _src = "DRONE";
 // Viseur photo (fn_dronePhoto "view") : seulement caméra ouverte.
 private _shotView = _s getOrDefault ["droneShotView", false];
 if (_shotView && {!_camOn}) then { _shotView = false; _s set ["droneShotView", false]; };
@@ -143,7 +144,6 @@ if (_view isNotEqualTo "") then {
     private _bUp = [[format ["MONTER %1 m", _up], "MONTER"] select (_up < 0), ["alt", _up] call _act, "", format ["Altitude actuelle %1 m : monter au palier suivant", _alt], _up > 0];
     private _bDn = [[format ["DESCENDRE %1 m", _dn], "DESCENDRE"] select (_dn < 0), ["alt", _dn] call _act, "", format ["Altitude actuelle %1 m : descendre au palier précédent", _alt], _dn > 0];
     private _bHover = ["STATIONNAIRE", ["mode", "hover"] call _act, ["", "on"] select (_m isEqualTo "HOVER"), "Le drone s'arrête et reste en vol stationnaire là où il est"];
-    private _bSrc = [format ["VIDÉO DU %1", ["DRONE", "TÉLÉPHONE", "CASQUE"] select (["DRONE", "PHONE", "HELMET"] find _src)], ["feedSrc", ["PHONE", "HELMET", "DRONE"] select (["DRONE", "PHONE", "HELMET"] find _src)] call _act, ["on", ""] select (_src isEqualTo "DRONE"), "Choisit la caméra affichée : drone → caméra du téléphone (devant vous) → caméra casque (porteur choisi dans l'onglet VOL)"];
     private _bQ = [format ["NETTETÉ : %1", ["BASSE", "MOY.", "HAUTE"] select _q], ["quality", (_q + 1) mod 3] call _act, "", "Qualité de l'image : basse (plus fluide) → moyenne → haute (plus nette, plus lourde)"];
     private _bMenus = [["MENUS DU DRONE", "AGRANDIR L'IMAGE"] select _split, { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["droneCamSplit", !(_st getOrDefault ["droneCamSplit", false])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, "", ["Réduit l'image et affiche dessous les onglets du drone (vol, tâches, cibles, photos, journal)", "Image à la taille de l'écran, onglets masqués"] select _split];
     private _bTotal = [["PLEIN ÉCRAN", "QUITTER LE PLEIN ÉCRAN"] select (_view isEqualTo "TOTAL"), { profileNamespace setVariable ["COMSPEC_ATAK_DroneMiniFull", !(profileNamespace getVariable ["COMSPEC_ATAK_DroneMiniFull", true])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, "", "Téléphone en petit format : l'image du drone occupe tout l'écran"];
@@ -157,11 +157,11 @@ if (_view isNotEqualTo "") then {
     private _bTake = ["PRENDRE LA PHOTO", { ["take"] call comspec_atak_native_fnc_dronePhoto; }, "main", "Prend la photo telle que cadrée, avec ses surlignages, puis ouvre la fiche de transmission"];
     // Réglages repliés (retour de TTRD : « pas clair ») : PLUS les déplie sur une rangée à part.
     private _more = _s getOrDefault ["droneCamMore", false];
-    private _bMore = [["RÉGLAGES", "MASQUER"] select _more, { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["droneCamMore", !(_st getOrDefault ["droneCamMore", false])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, ["", "on"] select _more, "Autres réglages de la caméra : vers le sol, recentrer, vidéo affichée (drone, téléphone, casque), netteté, fermer la caméra"];
+    private _bMore = [["RÉGLAGES", "MASQUER"] select _more, { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["droneCamMore", !(_st getOrDefault ["droneCamMore", false])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, ["", "on"] select _more, "Autres réglages de la caméra : vers le sol, recentrer, netteté, fermer la caméra"];
     // Groupes de la barre : [titre, boutons]. Titre "*" : rangée principale, boutons plus grands, sans titre.
     // Vue caméra : rangée principale (photo, marquer, zoom, vision), puis le vol, puis les réglages repliés.
     private _labels = !_mini && {_view isEqualTo "SHOT"};
-    private _moreRow = [[], [["", [_bNadir, _bCenter, _bSrc, _bQ, _bClose]]]] select _more;
+    private _moreRow = [[], [["", [_bNadir, _bCenter, _bQ, _bClose]]]] select _more;
     private _groups = switch (true) do {
         case (_view isEqualTo "SHOT"): { [["CADRAGE", [_bZoomOut, _bZoomIn, _bCenter, _bVis]], ["CIBLE", [_bMark]], ["SURLIGNER", [_bBox, _bCircle, _bErase]], ["PHOTO", [_bCancel, _bTake]]] };
         case (_view isEqualTo "TOTAL"): { [["", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bTotal]]] select [0, [0, 1] select _inter] };
@@ -864,21 +864,8 @@ switch (_tab) do {
             ["segment", "Glisser sur l'image", [
                 ["SAISIR L'IMAGE", { profileNamespace setVariable ["COMSPEC_ATAK_DroneDragMode", 0]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, _dm isEqualTo 0],
                 ["DIRIGER LA CAMÉRA", { profileNamespace setVariable ["COMSPEC_ATAK_DroneDragMode", 1]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, _dm isEqualTo 1]
-            ], ["l'image suit la souris, comme sur un écran tactile", "la caméra tourne du côté où l'on glisse"] select (_dm isEqualTo 1)],
-            ["segment", "Source de l'image", [
-                ["DRONE", ["feedSrc", "DRONE"] call _act, _src isEqualTo "DRONE"],
-                ["CAMÉRA ATAK", ["feedSrc", "PHONE"] call _act, _src isEqualTo "PHONE"],
-                ["CAMÉRA CASQUE", ["feedSrc", "HELMET"] call _act, _src isEqualTo "HELMET"]
-            ], "ATAK : le téléphone filme devant vous · casque : regard du porteur"]
+            ], ["l'image suit la souris, comme sur un écran tactile", "la caméra tourne du côté où l'on glisse"] select (_dm isEqualTo 1)]
         ];
-        if (_src isEqualTo "HELMET") then {
-            // Porteur de la caméra casque : soi-même ou un équipier du groupe à moins de 3 km.
-            private _fu = missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedUnit", player];
-            private _mates = [player] + ((units group player) select { alive _x && {_x isNotEqualTo player} && {(_x distance player) < 3000} });
-            _rows pushBack ["segment", "Caméra casque de", (_mates select [0, 5]) apply {
-                [[name _x, "MOI"] select (_x isEqualTo player), compile format ["['feedUnit', %1] call comspec_atak_native_fnc_droneAction;", str ([netId _x, getPlayerUID _x] select (isPlayer _x))], _x isEqualTo _fu]
-            }];
-        };
         // Vol : ordres immédiats.
         _rows pushBack ["section", "Vol", "Ordres immédiats ; l'altitude et la vitesse servent aussi aux tâches"];
         // Veille : posé ou stationnaire, peu de consommation, capteur coupé ; reprise d'un appui.
