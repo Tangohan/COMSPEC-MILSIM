@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Gestes : doigt d'honneur et selfie (ATAK natif 1.32.0)
+## Gestes : doigt d'honneur et selfie (ATAK natif 1.33.0)
 
 Non testé en jeu. Demande de TTRD : « une animation pour faire des doigts d'honneur et une animation pour le selfie ». Pas de DLL à recompiler, pas de migration.
 - Deux animations maison (fichiers `anim/*.rtm`, générés par `tools/gen_gestures.py`, sans reprise d'un autre mod). Aperçus filaires : `tools/gen_gestures.py --preview dossier`.

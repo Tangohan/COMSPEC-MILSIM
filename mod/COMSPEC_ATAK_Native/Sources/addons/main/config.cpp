@@ -266,7 +266,8 @@ class CfgWeapons {
         displayName="$STR_COMSPEC_ATAK_CFG_A692CFB580";
         descriptionShort="$STR_COMSPEC_ATAK_CFG_D448798D17";
         picture="\z\comspec_atak_native\addons\main\data\item_phone.paa";
-        model="\A3\Weapons_F\Ammo\mag_univ.p3d";
+        // Au sol : le vrai S7 en coque tactique, couché écran vers le ciel (tools/model_ground_phone.py), pas la sacoche.
+        model="\z\comspec_atak_native\addons\main\data\ground_phone.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=3; };
     };
@@ -390,6 +391,7 @@ class CfgVehicles {
     };
     // Socle de recharge CS-10 (fn_dockServer) : 10 téléphones sur deux gradins, recharge, mémoire serveur par joueur.
     // Sélections : phone1..10 (0-9), screen1..10 (10-19), led1..10 (20-29), pilotées par fn_dockVisual.
+    // Socle vide par défaut (éditeur, avant le serveur) : téléphones et écrans transparents, voyants éteints.
     class COMSPEC_ATAK_ChargingDock: Static {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_06C87F1C69";
@@ -401,7 +403,8 @@ class CfgVehicles {
         hiddenSelections[]={"phone1","phone2","phone3","phone4","phone5","phone6","phone7","phone8","phone9","phone10",
             "screen1","screen2","screen3","screen4","screen5","screen6","screen7","screen8","screen9","screen10",
             "led1","led2","led3","led4","led5","led6","led7","led8","led9","led10"};
-        hiddenSelectionsTextures[]={"","","","","","","","","","","","","","","","","","","","",
+        hiddenSelectionsTextures[]={"#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)",
+            "#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)","#(argb,8,8,3)color(0,0,0,0,ca)",
             "#(argb,8,8,3)color(0.03,0.03,0.03,1,co)","#(argb,8,8,3)color(0.03,0.03,0.03,1,co)","#(argb,8,8,3)color(0.03,0.03,0.03,1,co)","#(argb,8,8,3)color(0.03,0.03,0.03,1,co)","#(argb,8,8,3)color(0.03,0.03,0.03,1,co)",
             "#(argb,8,8,3)color(0.03,0.03,0.03,1,co)","#(argb,8,8,3)color(0.03,0.03,0.03,1,co)","#(argb,8,8,3)color(0.03,0.03,0.03,1,co)","#(argb,8,8,3)color(0.03,0.03,0.03,1,co)","#(argb,8,8,3)color(0.03,0.03,0.03,1,co)"};
         class ACE_Actions { class ACE_MainActions { displayName="$STR_COMSPEC_ATAK_CFG_0B3583ECAA"; selection=""; distance=3; condition="true"; position="[0, 0, 0.12]"; }; };
@@ -417,6 +420,7 @@ class CfgVehicles {
     class Item_COMSPEC_ATAK_Phone: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_A692CFB580";
+        model="\z\comspec_atak_native\addons\main\data\ground_phone.p3d";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_Phone { name="COMSPEC_ATAK_Phone"; count=1; }; };
     };
@@ -429,6 +433,8 @@ class CfgFactionClasses {
 };
 
 class Extended_PreInit_EventHandlers { class comspec_atak_native_main { init="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_preInit.sqf'"; }; };
+// Intro du mod sur l'écran de démarrage d'Arma (une fois par lancement du jeu).
+class Extended_DisplayLoad_EventHandlers { class RscDisplayStart { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_introSplash.sqf'"; }; };
 class Extended_PostInit_EventHandlers { class comspec_atak_native_main { clientInit="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_postInitClient.sqf'"; serverInit="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_postInitServer.sqf'"; }; };
 #include "gestures.hpp"
 #include "ui/controls.hpp"
