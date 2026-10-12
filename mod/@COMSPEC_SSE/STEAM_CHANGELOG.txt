@@ -78,6 +78,15 @@ NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 [*] ACE : « Campagne en cours » (type, mission n°, personnages récurrents, journal de campagne)
 [/list]
 
+[h2]Campagnes dans Athena et partage entre communautés[/h2]
+[list]
+[*] Serveur relié (COMSPEC Link 2.0.64) : chaque sauvegarde de campagne est copiée dans Athena, Bureau SSE › Campagnes (réglage CBA, activé par défaut)
+[*] Zeus : « Campagne : envoyer à Athena » et « Campagne : récupérer depuis Athena » (avec chargement immédiat au choix)
+[*] Athena : ORBAT des organisations, personnages, registre des scellés, journal ; renommer, changer de type, dupliquer pour un drill, remettre à zéro, archiver
+[*] Catalogue partagé : chaque communauté choisit de publier une campagne (structure seule ou complète) ; les autres la copient et mettent leur copie à jour
+[*] Graine biométrique unique au monde et identifiant global des personnages : pas de biométrie commune entre deux personnages différents, même d'une communauté à l'autre
+[/list]
+
 [h2]Tutoriels, guide et personnalisation[/h2]
 [list]
 [*] Guide complet du mod en PDF (joueurs, chefs de mission, Zeus) livré avec le mod

@@ -102,6 +102,7 @@
   <tr><td>@COMSPEC_ATAK_Native</td><td>Optionnel</td><td>Câble DL-7, ATAK ; la passerelle se charge seule si l'ATAK est présent</td></tr>
   <tr><td>COMSPEC Overwatch</td><td>Optionnel</td><td>Terminal SEEK en liaison, transmission vers Athena</td></tr>
   <tr><td>BII Identifi</td><td>Optionnel</td><td>Fiches, watchlist et clés biométriques reprises par le SSE</td></tr>
+  <tr><td>COMSPEC Link 2.0.64</td><td>Optionnel</td><td>Sur le serveur : envoi et récupération des campagnes dans Athena</td></tr>
 </table>
 <div class="box warn"><b>Après une mise à jour.</b> Relancez Arma complètement, pas seulement la mission : les fichiers du mod sont chargés au démarrage du jeu. Le serveur et tous les joueurs doivent avoir la même version.</div>
 <p>Tout le SSE passe par <b>@COMSPEC_SSE</b>. Les anciens modules SSE du mod Overwatch ont été repris sous les mêmes noms de classe : les missions déjà faites continuent de fonctionner.</p>
@@ -232,6 +233,16 @@
   <li><b>Zeus</b> : charger ou créer, sauvegarder, état et journal, remettre à zéro, fin de mission, exporter, importer, supprimer.</li>
 </ul>
 <p>Les sauvegardes vivent dans le profil du serveur. « Exporter » copie une campagne sous forme de texte ; « Importer » la recrée sur un autre serveur ou dans une autre communauté.</p>
+<h2>Dans Athena : gérer et partager</h2>
+<p>Quand le serveur est relié à Athena (COMSPEC Link 2.0.64), chaque sauvegarde est copiée dans <b>Bureau SSE › Campagnes</b> (réglage CBA « Copier les sauvegardes dans Athena », activé par défaut). Le module Zeus « Campagne : envoyer à Athena » le fait à la demande. Sans liaison, collez dans Athena le texte du module « Exporter ».</p>
+<ul>
+  <li><b>Lire</b> : ORBAT des organisations avec ce que les joueurs savent, personnages, registre des scellés avec le journal de chaque pièce, journal de campagne.</li>
+  <li><b>Gérer</b> : renommer, changer de type, dupliquer pour un drill (mêmes personnages et même biométrie, rien de découvert), remettre à zéro les découvertes, archiver, supprimer.</li>
+  <li><b>Revenir en jeu</b> : module Zeus « Campagne : récupérer depuis Athena », avec ou sans chargement immédiat.</li>
+</ul>
+<h2>Partager entre communautés</h2>
+<p>Rien n'est partagé par défaut. Sur la fiche d'une campagne, une communauté peut la publier dans le <b>catalogue partagé</b>, soit en structure seule (personnages, organisations, rôles, sans découvertes ni pièces), soit complète. Les autres communautés la copient chez elles en un clic, puis mettent leur copie à jour quand l'original change.</p>
+<p><b>Pas de biométrie en double.</b> La graine d'une campagne est tirée au hasard, unique au monde. Un personnage est identifié partout par sa graine et sa clé (« identifiant global » affiché dans Athena) : une copie garde les mêmes empreintes pour les mêmes personnages, deux campagnes différentes ne peuvent pas produire la même biométrie. Si Athena détecte une graine reprise par une campagne sans lien, la fiche l'affiche en rouge.</p>
 <div class="box"><b>Exemple d'organisation.</b> OP-SABLE (permanente) sur la carte de campagne ; BOOTCAMP (récurrente) sur la carte d'entraînement, avec les mêmes instructeurs-figurants à chaque séance ; un drill SOT (temporaire) qui copie la structure d'OP-SABLE pour s'entraîner sur un réseau réaliste sans toucher à la vraie campagne.</div>
 
 <h1 id="c10">10. Mise en place d'une mission dans Eden</h1>
@@ -315,6 +326,8 @@
   <tr><td>Un personnage récurrent a changé d'empreintes</td><td>Même identifiant biométrique fixé et même campagne chargée dans les deux missions</td></tr>
   <tr><td>Le Zeus est averti d'une identité en double</td><td>Deux personnes portent le même identifiant ou la même graine : corrigez dans Eden</td></tr>
   <tr><td>Rien n'a été sauvegardé</td><td>Campagne temporaire (voulu) ; sinon sauvegarde automatique ou module de sauvegarde</td></tr>
+  <tr><td>« COMSPEC Link 2.0.64 requis »</td><td>Mettez à jour la DLL du serveur ; sans elle, passez par Exporter et le collage dans Athena</td></tr>
+  <tr><td>Envoi à Athena refusé (clé d'accès)</td><td>Le serveur doit être relié à la communauté (clé d'accès Athena dans les réglages du serveur)</td></tr>
   <tr><td>Pas d'extraction DL-7</td><td>ATAK natif chargé, câble DL-7 équipé, objet rendu extractible</td></tr>
 </table>
 

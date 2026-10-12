@@ -25,9 +25,16 @@ class CfgFunctions {
             class campaignDate {};
             class campaignInfo {};
             class campaignZeus {};
+            class campaignAthena {};
             class moduleCampaign {};
             class moduleCampaignSave {};
         };
+    };
+};
+
+class Extended_PreInit_EventHandlers {
+    class comspec_sse_campaign {
+        init = "call compile preprocessFileLineNumbers 'z\comspec_sse\addons\campaign\XEH_preInit.sqf'";
     };
 };
 

@@ -1,7 +1,7 @@
 /*
     Formulaires Zeus (ZEN) des campagnes.
     [_mode] call comspec_sse_fnc_campaignZeus
-      load · save · reset · end · delete · export · import · info
+      load · save · reset · end · delete · export · import · info · athenaPush · athenaPull
 */
 params [["_mode", "info", [""]]];
 if (isNil "zen_dialog_fnc_create") exitWith { ["Zeus Enhanced requis pour ce formulaire.", "warn"] call comspec_sse_fnc_zeusNotify; };
@@ -70,6 +70,15 @@ switch (_mode) do {
             { params ["_v"]; ["import", [_v select 0, _v select 1]] call comspec_sse_fnc_campaignOp; }
         ] call zen_dialog_fnc_create;
     };
+    case "athenaPush": {
+        if (_index isEqualTo []) exitWith { ["Aucune campagne sauvegardée.", "warn"] call comspec_sse_fnc_zeusNotify; };
+        [
+            "Envoyer à Athena",
+            [["COMBO", ["Campagne", "La sauvegarde du serveur part dans Athena (Bureau SSE › Campagnes). Sauvegardez d'abord pour envoyer l'état actuel."], [_ids select [1], _lbls select [1], ((_ids find (_cur getOrDefault ["id", ""])) - 1) max 0]]],
+            { params ["_v"]; ["push", [_v select 0]] call comspec_sse_fnc_campaignAthena; }
+        ] call zen_dialog_fnc_create;
+    };
+    case "athenaPull": { ["list", []] call comspec_sse_fnc_campaignAthena; };
     default {
         hint parseText ([] call comspec_sse_fnc_campaignInfo);
     };

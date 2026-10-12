@@ -41,6 +41,13 @@ private _slug = { params ["_s"]; toUpper (((trim _s) splitString " '/\.,:;") joi
 private _session = (missionNamespace getVariable ["comspec_sse_bioReg", createHashMap]) getOrDefault ["session", "#"];
 // Clé stable d'une mission à l'autre : identifiant fixé, clé BII ou graine Eden ; pas une clé de partie.
 private _stable = { params ["_k"]; _k isEqualType "" && {_k isNotEqualTo ""} && {(_k find ("S" + _session + "-")) != 0} };
+// Graine biométrique unique au monde : deux campagnes (même d'une autre communauté, même avec
+// le même identifiant) ne tirent jamais la même ; Athena signale toute graine reprise.
+private _newSeed = {
+    params ["_prefix"];
+    private _h = hashValue [serverName, missionName, systemTimeUTC, diag_tickTime, random 1e9, _prefix];
+    format ["%1-%2", _prefix, ((_h splitString "+/=") joinString "") select [0, 14]]
+};
 private _publish = {
     missionNamespace setVariable ["comspec_sse_campaign", _cur, true];
     missionNamespace setVariable ["comspec_sse_campIndex", _index, true];
@@ -78,7 +85,7 @@ switch (_op) do {
         if (_isNew) then {
             _saved = createHashMapFromArray [
                 ["id", _id], ["name", [_name, _id] select (_name isEqualTo "")], ["type", toLower _type],
-                ["seed", format ["%1-%2", _id, floor (random 1e6)]], ["created", [systemTimeUTC] call comspec_sse_fnc_campaignDate],
+                ["seed", [_id] call _newSeed], ["created", [systemTimeUTC] call comspec_sse_fnc_campaignDate],
                 ["missions", 0], ["log", []], ["roster", createHashMap]
             ];
         };
@@ -93,7 +100,7 @@ switch (_op) do {
         };
 
         // Graine biométrique : la même pour toute la campagne ; propre à la partie pour un drill jetable.
-        private _seed = if (_type isEqualTo "temporaire") then { format ["TMP-%1-%2", _id, floor (random 1e6)] } else { _saved get "seed" };
+        private _seed = if (_type isEqualTo "temporaire") then { ["TMP-" + _id] call _newSeed } else { _saved get "seed" };
         missionNamespace setVariable ["comspec_sse_bio_campaignSeed", _seed, true];
         missionNamespace setVariable ["comspec_sse_bio_campaignMemory", false, true];
 
@@ -218,6 +225,10 @@ switch (_op) do {
         _cur set ["roster", _roster];
         call _publish;
         [format ["« %1 » sauvegardée (%2).", _cur get "name", _why], _why isNotEqualTo "sauvegarde automatique"] call _note;
+        // Copie dans Athena (Bureau SSE › Campagnes) quand le serveur est relié.
+        if (missionNamespace getVariable ["comspec_sse_camp_athenaSync", true] && {!isNil "comspec_sse_fnc_campaignAthena"} && {!isNil "comspec_sse_fnc_isOnline"} && {[] call comspec_sse_fnc_isOnline}) then {
+            ["push", [_id], [objNull, _req] select (_why isNotEqualTo "sauvegarde automatique")] call comspec_sse_fnc_campaignAthena;
+        };
         true
     };
 
@@ -227,7 +238,7 @@ switch (_op) do {
         // Récurrente : mêmes personnages, tout redevient inconnu. Temporaire : vide (sauf structure copiée), nouvelle graine.
         [(_cur get "type") isEqualTo "recurrente" || {(_cur getOrDefault ["copyFrom", ""]) isNotEqualTo ""}] call _wipe;
         if ((_cur get "type") isEqualTo "temporaire") then {
-            _cur set ["seed", format ["TMP-%1-%2", _cur get "id", floor (random 1e6)]];
+            _cur set ["seed", ["TMP-" + (_cur get "id")] call _newSeed];
             missionNamespace setVariable ["comspec_sse_bio_campaignSeed", _cur get "seed", true];
         };
         call _publish;
