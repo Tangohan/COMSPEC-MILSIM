@@ -4,6 +4,8 @@
     bandes de bruit, lignes de balayage), « ATAK · TACTICAL ASSAULT KIT » tapé, puis sortie en glitch et fondu sur les
     logos d'Arma. Son data\intro_glitch.ogg (tools/gen_intro.py). Pas une fonction CfgFunctions : elles ne sont pas
     encore compilées à ce moment, d'où l'appel par chemin. Le logo fixe d'Overwatch (idc 88001) est masqué.
+    Si l'écran de démarrage passe avant que les addons soient chargés (pas d'intro), elle se joue une fois sur le
+    premier menu principal (Extended_DisplayLoad RscDisplayMain), sans y laisser la marque.
     Params : [display]
 */
 params [["_display", displayNull, [displayNull]]];
@@ -12,6 +14,7 @@ if (uiNamespace getVariable ["COMSPEC_ATAK_IntroDone", false]) exitWith {};
 uiNamespace setVariable ["COMSPEC_ATAK_IntroDone", true];
 
 private _data = "\z\comspec_atak_native\addons\main\data\";
+private _onStart = (ctrlIDD _display) isNotEqualTo 0;
 private _x0 = safeZoneX; private _y0 = safeZoneY; private _w = safeZoneW; private _h = safeZoneH;
 private _mk = {
     params ["_cls", "_pos", ["_color", [0, 0, 0, 1]]];
@@ -44,7 +47,7 @@ _logo ctrlSetText (((_data + "intro_logo_ca.paa")) call comspec_atak_native_fnc_
 private _sub = _display ctrlCreate ["RscStructuredText", -1];
 _sub ctrlSetPosition [_x0 + _w * 0.2, _ly + _lh * 0.98, _w * 0.6, _h * 0.06];
 _sub ctrlCommit 0;
-_sub ctrlSetStructuredText parseText (("<t align='center' font='PuristaSemibold' size='1.6' color='#5cc76b'>ATAK  ·  TACTICAL ASSAULT KIT</t>") call comspec_atak_native_fnc_tr);
+_sub ctrlSetStructuredText parseText (("<t align='center' font='PuristaSemibold' size='1.6' color='#5cc76b'>OVERWATCH  ·  ATAK NATIF</t>") call comspec_atak_native_fnc_tr);
 private _status = _display ctrlCreate ["RscStructuredText", -1];
 _status ctrlSetPosition [_x0 + _w * 0.3, _y0 + _h * 0.84, _w * 0.4, _h * 0.04];
 _status ctrlCommit 0;
@@ -63,8 +66,8 @@ if (!isNull _ow) then { _ow ctrlShow false; };
 
 playSoundUI ["z\comspec_atak_native\addons\main\data\intro_glitch.ogg", 0.9, 1];
 
-[_display, _logoPos, _bars, _red, _cyan, _logo, _sub, _status, _fill, _flash, _all, _w, _h, _x0, _y0] spawn {
-    params ["_display", "_logoPos", "_bars", "_red", "_cyan", "_logo", "_sub", "_status", "_fill", "_flash", "_all", "_w", "_h", "_x0", "_y0"];
+[_display, _logoPos, _bars, _red, _cyan, _logo, _sub, _status, _fill, _flash, _all, _w, _h, _x0, _y0, _onStart] spawn {
+    params ["_display", "_logoPos", "_bars", "_red", "_cyan", "_logo", "_sub", "_status", "_fill", "_flash", "_all", "_w", "_h", "_x0", "_y0", "_onStart"];
     disableSerialization;
     private _alive = { !isNull _display };
     _logoPos params ["_lx", "_ly", "_lw", "_lh"];
@@ -117,7 +120,7 @@ playSoundUI ["z\comspec_atak_native\addons\main\data\intro_glitch.ogg", 0.9, 1];
     { _x ctrlSetFade 0.2; _x ctrlCommit 0; } forEach [_red, _cyan];
     { _x ctrlSetPosition _logoPos; _x ctrlSetFade 1; _x ctrlCommit 0.35; } forEach [_red, _cyan];
     // Sous-titre tapé lettre à lettre, ligne d'état et barre de chargement.
-    private _txt = "ATAK  ·  TACTICAL ASSAULT KIT";
+    private _txt = "OVERWATCH  ·  ATAK NATIF";
     private _st = "ATHENA LINK  //  INITIALISATION";
     _fill ctrlSetPosition [_x0 + _w * 0.3, _y0 + _h * 0.885, _w * 0.4, pixelH * 2];
     _fill ctrlCommit 1.9;
@@ -147,4 +150,6 @@ playSoundUI ["z\comspec_atak_native\addons\main\data\intro_glitch.ogg", 0.9, 1];
     { _x ctrlSetFade 1; _x ctrlCommit 0.5; } forEach _all;
     uiSleep 0.6;
     { ctrlDelete _x; } forEach _all;
+    // La marque COMSPEC reste en bas à droite tant que l'écran de chargement est là (pas sur le menu principal).
+    if (_onStart) then { [_display] call compile preprocessFileLineNumbers "\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf"; };
 };
