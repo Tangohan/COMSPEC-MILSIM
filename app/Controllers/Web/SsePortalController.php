@@ -3835,6 +3835,62 @@ final class SsePortalController
         return $this->personsIndex($request, array_merge($params, ['_nav' => 'identites']));
     }
 
+    /**
+     * Fiabilité de la source, crédibilité de l'information et corroboration d'une fiche
+     * identité (grille OTAN A-F / 1-6), tirées de ce que le terrain a réellement transmis.
+     *
+     * @param array<string, mixed> $person
+     * @param list<array<string, mixed>> $samples
+     * @return array{source: string, credibility: string, technical: ?int, corroboration: ?int, global: ?int}
+     */
+    public static function identityConfidence(array $person, array $samples, ?int $tech): array
+    {
+        $terminal = SseTerrainService::personTerminalLabel($person);
+        $source = match ($terminal) {
+            'Signé depuis le terrain' => 'B — Terrain, terminal signé',
+            'Terminal terrain' => 'C — Terrain, non signé',
+            default => '—',
+        };
+
+        $kinds = [];
+        foreach ($samples as $s) {
+            $k = strtolower((string) ($s['kind'] ?? ''));
+            if ($k !== '') {
+                $kinds[$k] = true;
+            }
+        }
+        $query = is_array($person['identity_query'] ?? null) ? $person['identity_query'] : [];
+        $result = strtolower((string) ($query['result'] ?? ''));
+        $matched = in_array($result, ['confirmed', 'match', 'hit'], true);
+        $tier = strtoupper((string) ($person['identity_tier'] ?? 'DECLARED'));
+        $credibility = match (true) {
+            $tier === 'CONFIRMED' || $matched => '2 — Probable',
+            $tier === 'DOCUMENTARY' || $kinds !== [] => '3 — Possible',
+            $source !== '—' => '4 — Douteuse',
+            default => '—',
+        };
+
+        // Éléments indépendants qui se recoupent : photo, empreintes, iris, ADN, document, ABIS.
+        $elements = [
+            !empty($person['primary_photo']) || !empty($person['primary_photo_id']),
+            isset($kinds['empreintes']) || isset($kinds['fingerprint']) || isset($kinds['fingerprints']),
+            isset($kinds['iris']),
+            isset($kinds['adn']) || isset($kinds['dna']),
+            !empty($person['id_document_present']),
+            $matched,
+        ];
+        $n = count(array_filter($elements));
+        $corroboration = $n > 0 ? (int) round($n / count($elements) * 100) : null;
+
+        return [
+            'source' => $source,
+            'credibility' => $credibility,
+            'technical' => $tech,
+            'corroboration' => $corroboration,
+            'global' => $tech,
+        ];
+    }
+
     public function identityShow(Request $request, array $params = []): Response
     {
         $id = (int) ($params['id'] ?? 0);
@@ -3911,13 +3967,7 @@ final class SsePortalController
                 'Organisations' => !empty($person['affiliation']) ? 1 : 0,
                 'Événements' => count($timeline),
             ],
-            'confidence' => [
-                'source' => '—',
-                'credibility' => '—',
-                'technical' => $tech,
-                'corroboration' => null,
-                'global' => $tech,
-            ],
+            'confidence' => self::identityConfidence($person, $samples, $tech),
             'reasoning' => [
                 'conclusion' => $samples !== [] || !empty($person['primary_photo'])
                     ? 'Éléments transmis par le terrain — à croiser, sans confirmation automatique.'

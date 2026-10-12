@@ -82,13 +82,28 @@ if (isNull _clone) exitWith { [] };
 private _deg = switch (_angle) do { case "trois_quarts": { 38 }; case "profil": { 88 }; default { 0 }; };
 _clone setDir _deg;
 
+// Point de visée : l'œil (point mémoire « pilot »), relevé au centre de la tête. Le LOD de tir
+// (« head », FireGeometry) n'est animé que pour une unité simulée à l'écran : le double, à
+// 1 500 m au-dessus, y gardait sa pose de repos, la tête était visée trop haut et décalée
+// du cou, et le viseur montrait la tête en bas du cadre, à côté de l'ovale.
+private _feet = getPosASLVisual _clone;
+private _fnc_ok = {
+    params ["_p"];
+    ((_p distance2D _feet) < 0.35) && {((_p select 2) - (_feet select 2)) > 1.2} && {((_p select 2) - (_feet select 2)) < 2.0}
+};
 private _head = [];
 {
     private _p = _clone selectionPosition _x;
-    if ((_p isEqualType []) && {(count _p) == 3} && {_p isNotEqualTo [0, 0, 0]}) exitWith { _head = _clone modelToWorldVisualWorld _p; };
-} forEach [["head", "FireGeometry"], ["head", "HitPoints"], ["pilot", "Memory"]];
-if (_head isEqualTo []) then { _head = (getPosASL (_st get "anchor")) vectorAdd [0, 0, 1.65]; };
-_head = _head vectorAdd [0, 0, 0.02];
+    if ((_p isEqualType []) && {(count _p) == 3} && {_p isNotEqualTo [0, 0, 0]}) then {
+        private _w = _clone modelToWorldVisualWorld _p;
+        if ([_w] call _fnc_ok) exitWith { _head = _w vectorAdd [0, 0, 0.03]; };
+    };
+    if (_head isNotEqualTo []) exitWith {};
+} forEach [["pilot", "Memory"], ["head", "Memory"]];
+if (_head isEqualTo []) then {
+    private _e = eyePos _clone;
+    _head = if ([_e] call _fnc_ok) then { _e vectorAdd [0, 0, 0.03] } else { _feet vectorAdd [0, 0, 1.66] };
+};
 
 private _cam = _head vectorAdd [0, 0.85, 0.01];
 private _look = _head vectorAdd [0, 0, -0.06];

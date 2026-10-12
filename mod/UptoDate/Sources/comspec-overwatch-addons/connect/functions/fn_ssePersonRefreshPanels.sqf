@@ -42,7 +42,20 @@ private _queryPending = uiNamespace getVariable ["COMSPEC_SsePerson_QueryPending
 private _query = uiNamespace getVariable ["COMSPEC_SsePerson_Query", []];
 if (!(_query isEqualType [])) then { _query = []; };
 
-private _link = toLower (str (missionNamespace getVariable ["COMSPEC_LinkState", "offline"]));
+private _link = toLower (call {
+    // État de liaison Athena : COMSPEC_LinkState est une chaîne ("linked", "degraded"…). Sans état
+    // COMSPEC Link, on suit la liaison propre de l'ATAK natif (barre d'état verte = en ligne).
+    private _s = missionNamespace getVariable ["COMSPEC_LinkState", ""];
+    if (!(_s isEqualType "")) then { _s = ""; };
+    _s = toLower _s;
+    if (_s isEqualTo "connecting") then { _s = "degraded"; };
+    if (_s isEqualTo "") then {
+        private _n = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        _s = if (_n isEqualType createHashMap) then { toLower (_n getOrDefault ["networkState", "offline"]) } else { "offline" };
+        if (_s isEqualTo "connected") then { _s = "linked"; };
+    };
+    _s
+});
 private _online = _link isEqualTo "linked";
 
 private _st = systemTime;
