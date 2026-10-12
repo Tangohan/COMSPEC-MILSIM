@@ -1,12 +1,13 @@
 /*
-    Vue drone façon nacelle militaire (FLIR) : image de la caméra du drone (texture comspec_dronecam), réticule,
+    Vue drone façon nacelle militaire (FLIR) : image de la caméra du drone (texture de fn_droneAction camBind), réticule,
     coins de cadrage, incrustations (mode de vision, heure, cap, altitude, grille du drone et du point visé, distance)
     et cadres « LOCK » sur les cibles marquées, suivis image par image.
       ["build", [x, y, w, h], style, dans le groupe de page]   style : "FULL" (carte remplacée), "INSET" (incrustation
           sur la carte ou dans la miniature), "FEED" (vue caméra de l'app Drone : cadres seulement, incrustations déjà là) ;
       ["frame"]               mise à jour (gestionnaire par image, retiré seul quand les contrôles disparaissent) ;
       ["project", posASL]     → [u, v] dans l'image (0..1), [] derrière la caméra ;
-      ["click", [x, y]]       clic sur l'image (coordonnées écran) : la nacelle vise ce point.
+      ["click", [x, y]]       clic sur l'image (coordonnées écran) : la nacelle vise ce point ; le rayon du clic est gardé
+                              (uiNamespace COMSPEC_ATAK_DroneClickRay = [œil ASL, direction]) pour le marquage au clic.
     Projection : caméra de rendu en 16/9 (r2t aspect 1.7778), tangente du demi-angle vertical = champ de la caméra
     (camSetFov), horizontal = champ × 16/9.
 */
@@ -57,6 +58,7 @@ switch (_act) do {
         private _ray = vectorNormalized ((_dir vectorAdd (_right vectorMultiply ((_u - 0.5) * 2 * _tv * _aspect))) vectorAdd (_up vectorMultiply ((0.5 - _v) * 2 * _tv)));
         private _hit = lineIntersectsSurfaces [_eye, _eye vectorAdd (_ray vectorMultiply 3000), missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull], objNull, true, 1, "VIEW", "FIRE"];
         private _p = if ((count _hit) > 0) then { (_hit select 0) select 0 } else { _eye vectorAdd (_ray vectorMultiply 800) };
+        uiNamespace setVariable ["COMSPEC_ATAK_DroneClickRay", [_eye, _ray]];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneCamPt", _p];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneCamTgt", "PT"];
         playSound "ClickSoft";
@@ -77,8 +79,11 @@ switch (_act) do {
         if (_style isNotEqualTo "FEED") then {
             private _bg = ["COMSPEC_RscText", [_rx, _ry, _w, _h]] call _mk;
             _bg ctrlSetBackgroundColor [0, 0, 0, 1];
-            private _pic = ["RscPicture", [_rx, _ry, _w, _h], "#(argb,1024,512,1)r2t(comspec_dronecam,1.7778)"] call _mk;
+            // Caméra relancée (ou recréée) avant que l'image soit posée : sinon image noire au retour sur la vue.
+            private _pic = ["RscPicture", [_rx, _ry, _w, _h], ["camBind"] call comspec_atak_native_fnc_droneAction] call _mk;
             _pic ctrlSetTextColor [1, 1, 1, 1];
+            // Pas de flux (liaison perdue, drone perdu ou en veille) : neige « NO DATA » par-dessus l'image.
+            ["build", [_rx, _ry, _w, _h], _inGroup] call comspec_atak_native_fnc_droneStatic;
             // Clic sur l'image (téléphone en main) : la nacelle vise le point cliqué.
             private _hit = ["COMSPEC_RscButtonInvisible", [_rx, _ry, _w, _h]] call _mk;
             _hit ctrlAddEventHandler ["MouseButtonDown", { params ["", "_btn", "_mx", "_my"]; if (_btn isEqualTo 0) then { ["click", [_mx, _my]] call comspec_atak_native_fnc_droneFlir; }; }];
@@ -150,6 +155,8 @@ switch (_act) do {
         true
     };
     case "frame": {
+        // Cliché du drone en cours (fn_dronePhoto) : téléphone masqué, aucun cadre ne doit réapparaître sur l'image.
+        if (missionNamespace getVariable ["COMSPEC_ATAK_DroneShotBusy", false]) exitWith {};
         private _boxes = _f getOrDefault ["boxes", []];
         if ((count _boxes) isEqualTo 0 || {isNull ((_boxes select 0) select 1)}) exitWith {
             [missionNamespace getVariable ["COMSPEC_ATAK_FlirPfh", -1]] call CBA_fnc_removePerFrameHandler;

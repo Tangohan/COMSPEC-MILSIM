@@ -5,7 +5,9 @@
     Le marqueur posé sur la carte suit la cible tant que la source la voit ; sortie du champ, masquée ou
     hors portée, la cible est « perdue » après le délai réglé, puis traitée selon le réglage serveur
     comspec_atak_native_lock_lost (calque retiré, marqueur gardé, effacé après délai, ou tout gardé).
-      ["mark", "DRONE" | "PHONE"]   marque la cible sous le réticule ; renvoie la clé ou "" ;
+      ["mark", "DRONE" | "PHONE"(, objet(, [œil ASL, direction]))]   marque la cible sous le réticule ; renvoie la clé ou "" ;
+                                    objet donné : marque cet objet (détection du drone accrochée depuis l'onglet CIBLES) ;
+                                    rayon donné : celui d'un clic sur l'image de la vue drone, à la place du réticule ;
       ["aimed", "DRONE" | "PHONE"]  cible sous le réticule (objet ou objNull), sans marquer ;
       ["tick"]                      suivi des cibles marquées (toutes les 0,5 s, XEH_postInitClient) ;
       ["release", clé | ""]         libère une cible (ou toutes) et retire son marqueur ;
@@ -14,7 +16,7 @@
     lostAt, clock, name, tag, ghost (cadre gardé à la dernière position).
     État : missionNamespace COMSPEC_ATAK_Locks (clé → entrée), COMSPEC_ATAK_LockN (dernier numéro).
 */
-params [["_act", "tick"], ["_arg", ""]];
+params [["_act", "tick"], ["_arg", ""], ["_obj", objNull], ["_ray", []]];
 if (!hasInterface) exitWith { [] };
 private _locks = missionNamespace getVariable ["COMSPEC_ATAK_Locks", createHashMap];
 missionNamespace setVariable ["COMSPEC_ATAK_Locks", _locks];
@@ -48,32 +50,47 @@ private _source = {
 // Cible sous le réticule : ce que touche le rayon (homme, véhicule), sinon la plus proche du centre dans
 // une tolérance de quelques pour cent du champ, en vue directe et assez visible.
 private _aimed = {
-    params ["_src"];
+    params ["_src", ["_ray", []]];
     private _sv = [_src] call _source;
     if (_sv isEqualTo []) exitWith { objNull };
     _sv params ["_eye", "_dir", "_fov", "_range", "_self"];
+    // Rayon d'un clic sur l'image (vue drone) : il remplace le réticule.
+    if (_ray isEqualType [] && {(count _ray) isEqualTo 2}) then { _eye = _ray select 0; _dir = vectorNormalized (_ray select 1); };
     private _ok = { params ["_o"]; !isNull _o && {alive _o} && {_o isNotEqualTo player} && {_o isNotEqualTo _self} && {_o isNotEqualTo (vehicle player)}
         && {(_o isKindOf "CAManBase") || {_o isKindOf "LandVehicle"} || {_o isKindOf "Air"} || {_o isKindOf "Ship"} || {_o isKindOf "StaticWeapon"}} };
+    // Pièce du drone lui-même (objets attachés au modèle, ex. coque d'un Mavic) ou de la caméra : ignorée.
+    private _mine = { params ["_o"]; !isNull _o && {_o isEqualTo _self || {(attachedTo _o) isEqualTo _self} || {_o in (attachedObjects _self)}} };
     private _hit = objNull;
     {
         _x params ["", "", "_o", "_p"];
         private _c = [_p, _o] select (isNull _p);
+        if ([_c] call _mine) then { continue };
+        // Équipage touché à travers la vitre ou la tourelle : on marque le véhicule.
+        if (!isNull _c && {_c isKindOf "CAManBase"} && {(vehicle _c) isNotEqualTo _c}) then { _c = vehicle _c; };
         if ([_c] call _ok) then { _hit = _c; };
         // Premier obstacle touché (cible, mur, végétation, relief) : rien derrière ne compte.
-        if (true) exitWith {};
-    } forEach (lineIntersectsSurfaces [_eye, _eye vectorAdd (_dir vectorMultiply _range), _self, player, true, 4, "VIEW", "FIRE"]);
+        break;
+    } forEach (lineIntersectsSurfaces [_eye, _eye vectorAdd (_dir vectorMultiply _range), _self, player, true, 6, "VIEW", "FIRE"]);
     if (!isNull _hit) exitWith { _hit };
-    private _tol = cos ((atan (_fov * 0.07)) max 0.6);
+    // Rayon passé à côté (bord d'un véhicule, rotor, homme à contre-jour) : la cible dont le volume frôle le rayon,
+    // dans une tolérance de quelques pour cent du champ, en vue directe et assez visible (deux points essayés).
+    private _tan = (_fov * 0.07) max 0.012;
     private _mid = _eye vectorAdd (_dir vectorMultiply (_range / 2));
     private _best = objNull;
-    private _bestCos = _tol;
+    private _bestScore = 1;
     {
-        private _v = (aimPos _x) vectorDiff _eye;
-        private _c = _dir vectorCos _v;
-        if (_c > _bestCos && {(vectorMagnitude _v) < _range} && {([_self, "VIEW", _x] checkVisibility [_eye, aimPos _x]) > 0.35}) then {
-            _best = _x;
-            _bestCos = _c;
-        };
+        private _o = _x;
+        private _cs = [aimPos _o, _o modelToWorldVisualWorld [0, 0, 0]];
+        private _size = [((boundingBoxReal _o) select 2) * 0.45 max 1, 0.6] select (_o isKindOf "CAManBase");
+        {
+            private _v = _x vectorDiff _eye;
+            private _along = _v vectorDotProduct _dir;
+            if (_along > 1 && {_along < _range}) then {
+                private _perp = vectorMagnitude (_v vectorDiff (_dir vectorMultiply _along));
+                private _score = _perp / (_size + _along * _tan);
+                if (_score < _bestScore && {([_self, "VIEW", _o] checkVisibility [_eye, _x]) > 0.2}) then { _best = _o; _bestScore = _score; };
+            };
+        } forEach _cs;
     } forEach ((_mid nearEntities [["CAManBase", "LandVehicle", "Air", "Ship", "StaticWeapon"], _range / 2 + 5]) select { [_x] call _ok });
     _best
 };
@@ -168,9 +185,9 @@ switch (_act) do {
         if (_src isEqualTo "DRONE" && {!((["link"] call comspec_atak_native_fnc_droneAction) select 2)}) exitWith {
             ["WARNING", "Drone hors liaison : marquage impossible"] call _say; ""
         };
-        private _o = [_src] call _aimed;
+        private _o = if (!isNull _obj && {alive _obj}) then { _obj } else { [_src, _ray] call _aimed };
         if (isNull _o) exitWith {
-            ["WARNING", "Rien sous le réticule : placez le viseur sur la cible (assez visible) et recommencez"] call _say;
+            ["WARNING", ["Rien sous le réticule : placez le viseur sur la cible (assez visible) et recommencez", "Rien sous le clic : cliquez sur la cible (personne ou véhicule assez visible)"] select ((count _ray) isEqualTo 2)] call _say;
             playSound "addItemFailed";
             ""
         };
