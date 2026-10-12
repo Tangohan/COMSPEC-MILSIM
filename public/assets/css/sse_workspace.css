@@ -1307,3 +1307,10 @@ body.sse-iw {
 .iw-palette-actions li[data-action]:hover { border-color: rgba(52,211,153,.3); }
 .iw-palette-actions kbd { font-size: .65rem; opacity: .55; min-width: 1.1rem; }
 
+
+/* Fiche identité : relevés biométriques transmis */
+.iw-bio-table { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: .78rem; }
+.iw-bio-table th { text-align: left; font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted, #8b949e); font-weight: 600; padding: 0 .6rem 6px 0; }
+.iw-bio-table td { padding: 8px .6rem 8px 0; border-top: 1px solid rgba(242, 244, 243, .08); vertical-align: top; }
+.iw-bio-table td:first-child { font-weight: 600; white-space: nowrap; }
+.iw-bio-table td .muted { margin-left: .25rem; }

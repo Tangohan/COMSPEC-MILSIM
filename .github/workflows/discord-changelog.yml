@@ -1,0 +1,28 @@
+name: Discord changelog
+
+# Annonce sur Discord chaque mise à jour livrée (PR fusionnée sur main ou release
+# publiée), sans lien GitHub. Le webhook est le secret DISCORD_RELEASES_WEBHOOK.
+# Pour ne pas annoncer une PR : label « discord:skip » ou « [skip discord] » dans le titre.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  announce:
+    if: github.event_name == 'release' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+      - name: Post to Discord
+        env:
+          DISCORD_RELEASES_WEBHOOK: ${{ secrets.DISCORD_RELEASES_WEBHOOK }}
+        run: python3 .github/scripts/discord_changelog.py

@@ -28,6 +28,12 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration (déploiement PHP 
 - Discord, photos postées (Quick Picture, drone) : champ « Téléphone » (« Terminal de contrôle » pour le drone) avec appareil et version ATAK, numéro, IMEI, MAC et batterie, chacun en texte masqué (spoiler, cliquer pour lire). Rien pour une photo confidentielle. La version ATAK arrive avec le nouveau connect de COMSPEC Link (`fn_phoneDeviceSync`, repaqueté).
 - Photos : logo de l'unité en filigrane (logo de l'organisation dans les paramètres du site, PNG transparent), avec « © UNITÉ » dessous, dans le coin opposé au bandeau. Désactivable dans Config ATAK > bandeau photo (« Logo de l'unité en filigrane »). Le texte gauche du bandeau ne chevauche plus l'heure.
 
+## Correctif 2026-10-12 — Langue dans l'app Réglages (ATAK natif 1.16.1)
+
+Non testé en jeu. TTRD ne trouvait pas où passer le téléphone en anglais.
+- Nouvelle catégorie **Langue / Language** en tête de l'app Réglages du téléphone : FRANÇAIS, ENGLISH ou AUTO (langue du jeu). Même réglage que le menu CBA, la page se redessine aussitôt dans la langue choisie.
+- Le réglage CBA reste dans Échap > Options > Options des addons > COMSPEC, onglet Client, section **ATAK · Langue / Language** (plus bas dans la liste des sections ATAK).
+
 ## Vague 2026-10-12 (suite) — Réseau, drone, photos drone sur Discord, saleté (ATAK natif 1.16.0, COMSPEC Link 2.0.69)
 
 Non testé en jeu. Corrige l'app Réseau qui affichait « Athena hors ligne · réponse jamais · 0 paquet envoyé » alors que la position arrivait sur le site et que l'icône de liaison était verte.
