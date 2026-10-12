@@ -11,9 +11,11 @@ private _kinds = _cat get "kinds";
 private _colors = _cat get "colors";
 private _mpx = ["mpx", _map] call comspec_atak_native_fnc_planGfx;
 if (_mpx <= 0) exitWith {};
-private _k = ((((ctrlPosition _map) select 3) / (safeZoneH * 0.7)) max 0.55) min 1;
+// Symboles proportionnels à l'écran de l'ATAK ; textes jamais sous une taille lisible.
+private _kRaw = ((ctrlPosition _map) select 3) / (safeZoneH * 0.7);
+private _k = (_kRaw max 0.35) min 1.35;
 private _ts = ((profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25]) max 0.8) min 2.2;
-private _tsz = 0.026 * _k * _ts;
+private _tsz = 0.026 * ((_kRaw max 0.8) min 1.25) * _ts;
 private _gfx = comspec_atak_native_fnc_planGfx;
 private _white = [1, 1, 1, 0.9 * _alpha];
 {
