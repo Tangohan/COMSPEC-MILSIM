@@ -193,6 +193,7 @@ private _map = [
     ["COMSPEC_ATAK_AllyColor", "BLUE", "Couleur des alliés", [["BLEU", "BLUE"], ["VERT", "GREEN"], ["BLANC", "WHITE"], ["JAUNE", "YELLOW"], ["ROSE", "PINK"]]] call _profSegment,
     ["COMSPEC_ATAK_SelfColor", "CYAN", "Ma couleur", [["CYAN", "CYAN"], ["BLEU", "BLUE"], ["VERT", "GREEN"], ["BLANC", "WHITE"], ["ORANGE", "ORANGE"]]] call _profSegment,
     ["COMSPEC_ATAK_SelfIcon", "", "Mon icône (vue par tous)", [["FLÈCHE", ""], ["INF", "b_inf"], ["RECO", "b_recon"], ["MÉDIC", "b_med"], ["PC", "b_hq"], ["SOUTIEN", "b_support"]]] call _profSegment,
+    ["COMSPEC_ATAK_MapToolbarScale", 1, "Barre d'outils de la carte", [["PETITE", 0.75], ["NORMALE", 1], ["GRANDE", 1.3]], "Boutons à droite de la carte : centrer, suivre, zoom, marqueur, libellés"] call _profSegment,
     ["COMSPEC_ATAK_GridDigits", 6, "Précision des grilles", [["6 CHIFFRES", 6], ["8 CHIFFRES", 8], ["10 CHIFFRES", 10]], "100 m, 10 m ou 1 m"] call _profSegment,
     ["section", "Lisibilité et fond", "Taille des textes et symboles de la carte, fond de carte"],
     ["COMSPEC_ATAK_MapTextScale", 1.25, "Textes de la carte", [["PETIT", 1], ["NORMAL", 1.25], ["GRAND", 1.5], ["TRÈS GRAND", 1.8]], "Indicatifs, numéros de grille, cartouches, panneaux d'info"] call _profSegment,

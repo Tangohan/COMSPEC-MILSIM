@@ -195,8 +195,12 @@ if (_interactive) then {
         } forEach _items;
     };
 
-    // Barre d'outils à droite
-    private _ih = ((_mh - 2 * _pad) / 7) min (_font * 2.1);
+    // Barre d'outils à droite (taille choisie dans Réglages > Carte : petite, normale, grande)
+    private _tbScale = profileNamespace getVariable ["COMSPEC_ATAK_MapToolbarScale", 1];
+    if !(_tbScale isEqualType 0) then { _tbScale = 1; };
+    private _ihMax = (_mh - 2 * _pad) / 7;
+    // Normale : comme avant. Grande : jamais plus haute que la carte ne le permet.
+    private _ih = (((_ihMax min (_font * 2.1)) * _tbScale) min _ihMax);
     private _iw = _ih / _ratio;
     private _tx = _bx + _mw - _iw - _pad;
     private _tools = [
