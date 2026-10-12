@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Drone : flux réparé, caméra, titre des clichés, caméra d'un équipier sur la carte (ATAK natif 1.22.0)
+## Drone : flux réparé, caméra, titre des clichés, caméra d'un équipier sur la carte (ATAK natif 1.30.0)
 
 Non testé en jeu. Retours de TTRD après le test du 12 octobre au soir. Pas de DLL à recompiler, pas de migration.
 - Flux du drone : le filtre NO DATA restait affiché en permanence, avec « true » écrit dessous. La fonction de la neige renvoyait toujours `true` au lieu de la raison de la coupure : n'importe quel flux passait pour coupé. Elle renvoie maintenant la vraie raison (vide quand le flux passe).
@@ -21,6 +21,16 @@ Non testé en jeu. Retours de TTRD après le test du 12 octobre au soir. Pas de 
 - VOIR CAMÉRA : dans l'app BFT (piste d'un équipier choisie) ou d'un clic droit sur un équipier de la carte (« Voir la caméra »), la carte se centre sur lui et sa caméra poitrine s'affiche en petite fenêtre en haut à gauche, à côté de la boussole (aussi sur la petite carte). Boutons : JOUR / VISION NOCT. / THERMIQUE, GRAND (app Vidéo live), FERMER. Le flux se coupe seul si l'équipier meurt ou perd son téléphone.
 
 À tester en jeu : ouvrir la caméra du drone (plus de NO DATA tant que la liaison passe, NO DATA avec une vraie raison quand on éloigne le drone) ; prendre un cliché et vérifier qu'aucun message n'arrive sur Discord avant ENVOYER, et qu'ENVOYER sans titre est refusé ; VOIR CAMÉRA depuis le BFT et depuis le clic droit, avec un deuxième joueur ; panneau SITUATION ouvert avec un long nom de groupe.
+
+## Vague 2026-10-12 — Musique : bibliothèque du site et lecteur refait (ATAK natif 1.29.0, COMSPEC Link 2.0.73)
+
+Non testé en jeu. Migrations à lancer (`music_library`) et DLL à recompiler (COMSPEC Link et COMSPECATAKNativeExtension, `build_mod.bat`).
+- Site, **Mon espace > Musique** (`/back-office/ma-situation/musique`) : chaque membre met en ligne ses MP3, M4A, AAC ou WAV (25 Mo par fichier, 300 Mo par membre), dans la **bibliothèque communautaire** (toute la plateforme) ou celle de **son organisation**. Lecteur intégré (file, avance, volume), recherche titre / artiste / genre.
+- **Playlists** privées, d'organisation ou publiques ; **playlist globale** unique tenue par l'administrateur de la plateforme (morceaux de la bibliothèque communautaire seulement).
+- Modération : les gestionnaires masquent ou suppriment les morceaux de leur organisation, l'administrateur de la plateforme ceux de la bibliothèque communautaire.
+- Téléphone, app Musique : nouvel onglet **ATHENA** (playlist globale, communauté, mon orga, playlists, mes envois), lu par COMSPEC Link (`AthenaMusic`, API `/api/atak/music`). Morceaux téléchargés par URL signée puis gardés en cache (60 morceaux) ; en haut-parleur, les joueurs proches entendent le même morceau.
+- Lecteur : avance / recul de 10 et 30 s (suivi par les auditeurs du haut-parleur), file d'attente avec MONTER, RETIRER et VIDER LA FILE, **favoris** (bouton FAV sur chaque morceau, section Favoris dans LECTURE).
+- Réglage CBA serveur **Bibliothèque Athena** pour couper l'onglet.
 
 ## Traduction 2026-10-12 — Menu CBA, objets et modules en anglais (ATAK natif 1.21.0)
 
