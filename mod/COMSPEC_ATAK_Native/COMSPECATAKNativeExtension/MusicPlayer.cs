@@ -12,6 +12,7 @@ namespace COMSPECExtension;
 /// Commandes SQF (retour "OK|..." ou "ERR|...") :
 ///   MusicList                     → OK|dossier|fichier1|fichier2...   (Documents\Arma 3\COMSPEC_Music)
 ///   MusicPlay [kind, ref, offsetMs, volume]   kind = file (nom dans le dossier ou chemin complet) | url (http/https)
+///                                             | lib (bibliothèque Athena : URL signée, cache par piste sans la signature)
 ///   MusicPause / MusicResume / MusicStop
 ///   MusicVolume [0-100]
 ///   MusicStatus                   → OK|état|positionMs|duréeMs|titre|erreur   (idle, loading, playing, paused, ended, error)
@@ -207,7 +208,7 @@ public static partial class Extension
                     _musicPosition = 0;
                     return MusicPost(() => MusicStart(gen, path, title, offsetMs), "OK|loading");
                 }
-                if (kind == "url")
+                if (kind == "url" || kind == "lib")
                 {
                     if (!Uri.TryCreate(reference, UriKind.Absolute, out var uri) || (uri.Scheme != "http" && uri.Scheme != "https"))
                         return "ERR|URL invalide (http ou https)";
@@ -222,7 +223,7 @@ public static partial class Extension
                     _ = Task.Run(async () =>
                     {
                         string source;
-                        try { source = await MusicFetchAsync(uri).ConfigureAwait(false); }
+                        try { source = await MusicFetchAsync(uri, kind == "lib").ConfigureAwait(false); }
                         catch (Exception ex)
                         {
                             if (gen == _musicGen) { _musicState = "error"; _musicError = "téléchargement : " + ex.Message; }
@@ -264,14 +265,20 @@ public static partial class Extension
     /// <summary>
     /// Télécharge un fichier audio (mis en cache) ; un flux sans taille connue (webradio) est ouvert directement par MCI.
     /// </summary>
-    private static async Task<string> MusicFetchAsync(Uri uri)
+    private static async Task<string> MusicFetchAsync(Uri uri, bool library = false)
     {
         var cache = MusicCacheFolder();
-        var hash = Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(uri.AbsoluteUri))).Substring(0, 16).ToLowerInvariant();
+        // Bibliothèque Athena : la signature (exp, sig) change à chaque liste ; la piste, elle, est fixée par le chemin.
+        var cacheKey = library ? uri.Host + uri.AbsolutePath : uri.AbsoluteUri;
+        var hash = (library ? "lib_" : "") + Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(cacheKey))).Substring(0, 16).ToLowerInvariant();
         var ext = Path.GetExtension(uri.AbsolutePath).ToLowerInvariant();
         if (!MusicExtensions.Contains(ext)) ext = ".mp3";
         var target = Path.Combine(cache, hash + ext);
-        if (File.Exists(target) && new FileInfo(target).Length > 0) return target;
+        if (File.Exists(target) && new FileInfo(target).Length > 0)
+        {
+            try { File.SetLastWriteTimeUtc(target, DateTime.UtcNow); } catch { /* lecture seule */ }
+            return target;
+        }
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(90));
         using var req = new HttpRequestMessage(HttpMethod.Get, uri);
@@ -281,7 +288,7 @@ public static partial class Extension
         if (type.StartsWith("text/html", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("page web, pas un fichier audio (YouTube, Spotify… ne sont pas lisibles)");
         var len = resp.Content.Headers.ContentLength;
-        if (len == null) return uri.AbsoluteUri; // flux continu : lecture directe
+        if (len == null && !library) return uri.AbsoluteUri; // flux continu : lecture directe
         if (len > MusicMaxDownloadBytes) throw new InvalidOperationException("fichier trop lourd (80 Mo max)");
 
         var tmp = target + ".part";
@@ -299,7 +306,10 @@ public static partial class Extension
     {
         try
         {
-            var files = new DirectoryInfo(cache).GetFiles().OrderByDescending(f => f.LastWriteTimeUtc).Skip(25);
+            // Les morceaux de la bibliothèque Athena (réécoutés souvent) ont leur propre quota.
+            var all = new DirectoryInfo(cache).GetFiles();
+            var files = all.Where(f => !f.Name.StartsWith("lib_", StringComparison.Ordinal)).OrderByDescending(f => f.LastWriteTimeUtc).Skip(25)
+                .Concat(all.Where(f => f.Name.StartsWith("lib_", StringComparison.Ordinal)).OrderByDescending(f => f.LastWriteTimeUtc).Skip(60));
             foreach (var f in files) { try { f.Delete(); } catch { /* fichier en lecture */ } }
         }
         catch { /* best effort */ }

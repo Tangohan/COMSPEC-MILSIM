@@ -6,7 +6,11 @@
       "speaker" / "hear" / "shuffle" : bascule    "repeat" off|all|one
       "files" : relit le dossier local (DLL)    "openFolder"    "url" : lit l'URL saisie    "urlDel" index
       "tab" onglet    "srvCat" catégorie    "srvSearch" : applique la recherche    "srvPage" n
-    Une piste = [kind, ref, titre, durée s] ; kind = file (dossier Documents\Arma 3\COMSPEC_Music), url, srv (CfgMusic).
+      "seek" ±s : avance / recule dans la piste    "qDel" index    "qUp" index    "qClear" : file d'attente
+      "fav" piste : ajoute / retire des favoris (profil)
+      "ath" vue : vue de la bibliothèque Athena    "athSearch"    "athOpen" [id, nom] : ouvre une playlist    "athReload"
+    Une piste = [kind, ref, titre, durée s] ; kind = file (dossier Documents\Arma 3\COMSPEC_Music), url, srv (CfgMusic),
+    lib (bibliothèque musicale d'Athena : URL signée, mise en cache par la DLL).
     Le son lui-même est lancé par comspec_atak_native_fnc_musicTick (aussi pour les haut-parleurs des autres).
 */
 params [["_act", ""], ["_arg", ""]];
@@ -36,6 +40,9 @@ switch (_act) do {
     case "playList": {
         if !(call _usable) exitWith {};
         _arg params [["_items", []], ["_i", 0]];
+        if (!(missionNamespace getVariable ["comspec_atak_native_music_athena", true]) && {(_items findIf { (_x select 0) isEqualTo "lib" }) >= 0}) exitWith {
+            ["WARNING", "Bibliothèque Athena désactivée sur ce serveur", 3, 30] call comspec_atak_native_fnc_notify;
+        };
         if (!(missionNamespace getVariable ["comspec_atak_native_music_urls", true]) && {(_items findIf { (_x select 0) isEqualTo "url" }) >= 0}) exitWith {
             ["WARNING", "Lecture d'URL interdite sur ce serveur", 3, 30] call comspec_atak_native_fnc_notify;
         };
@@ -170,9 +177,95 @@ switch (_act) do {
         profileNamespace setVariable ["COMSPEC_ATAK_MusicUrls", _rec];
         call _rerender;
     };
-    case "tab": { _ui set ["tab", _arg]; if (_arg isEqualTo "LOCAL" && {!("files" in _ui)}) exitWith { ["files"] call comspec_atak_native_fnc_musicAction; }; call _rerender; };
+    case "tab": {
+        _ui set ["tab", _arg];
+        if (_arg isEqualTo "LOCAL" && {!("files" in _ui)}) exitWith { ["files"] call comspec_atak_native_fnc_musicAction; };
+        if (_arg isEqualTo "ATH" && {!((_ui getOrDefault ["ath", "global"]) in (uiNamespace getVariable ["COMSPEC_ATAK_MusicAth", createHashMap]))}) exitWith { ["ath", _ui getOrDefault ["ath", "global"]] call comspec_atak_native_fnc_musicAction; };
+        call _rerender;
+    };
     case "srvCat": { _ui set ["cat", _arg]; _ui set ["page", 0]; call _rerender; };
     case "srvSearch": { _ui set ["q", (["musicSearch"] call comspec_atak_native_fnc_formValue) trim [" ", 0]]; _ui set ["page", 0]; call _rerender; };
     case "srvPage": { _ui set ["page", _arg max 0]; call _rerender; };
+    case "seek": {
+        // Nouveau départ décalé ; le jeton change pour que musicTick relance la piste à la nouvelle position
+        // (et que les auditeurs du haut-parleur suivent).
+        if ((_m get "kind") isEqualTo "") exitWith {};
+        private _len = _m get "len";
+        if (_m get "paused") exitWith {
+            private _p = ((_m get "pausedAt") + _arg) max 0;
+            if (_len > 0) then { _p = _p min (_len - 1); };
+            _m set ["pausedAt", _p];
+            call _rerender;
+        };
+        private _pos = ((_now - (_m get "start")) + _arg) max 0;
+        if (_len > 0 && {_pos >= _len - 1}) exitWith { ["next"] call comspec_atak_native_fnc_musicAction; };
+        _m set ["start", _now - _pos];
+        _m set ["tok", (_m getOrDefault ["tok", 0]) + 1];
+        [] call comspec_atak_native_fnc_musicTick;
+        call _rerender;
+    };
+    case "qDel": {
+        private _q = _m get "queue";
+        if (_arg < 0 || {_arg >= count _q}) exitWith {};
+        private _cur = _m get "qi";
+        private _playing = (_m get "kind") isNotEqualTo "";
+        _q deleteAt _arg;
+        if (_arg < _cur) then { _m set ["qi", _cur - 1]; };
+        if (_arg isEqualTo _cur && {_playing}) then {
+            if ((count _q) isEqualTo 0) then { ["stop"] call comspec_atak_native_fnc_musicAction; } else { [_cur min ((count _q) - 1)] call _start; };
+        };
+        call _rerender;
+    };
+    case "qUp": {
+        private _q = _m get "queue";
+        if (_arg < 1 || {_arg >= count _q}) exitWith {};
+        private _a = _q select (_arg - 1);
+        _q set [_arg - 1, _q select _arg];
+        _q set [_arg, _a];
+        private _cur = _m get "qi";
+        if (_cur isEqualTo _arg) then { _m set ["qi", _arg - 1]; } else { if (_cur isEqualTo (_arg - 1)) then { _m set ["qi", _arg]; }; };
+        call _rerender;
+    };
+    case "qClear": {
+        // Garde la piste en cours, vide le reste.
+        private _q = _m get "queue";
+        if ((_m get "kind") isNotEqualTo "" && {(_m get "qi") < count _q}) then {
+            _m set ["queue", [_q select (_m get "qi")]]; _m set ["qi", 0];
+        } else { _m set ["queue", []]; _m set ["qi", 0]; };
+        call _rerender;
+    };
+    case "fav": {
+        _arg params ["_k", "_r", "_t", ["_len", 0]];
+        // Une URL signée Athena change : un favori Athena est reconnu par son identifiant de piste (6e champ).
+        private _id = _arg param [5, ""];
+        private _favs = profileNamespace getVariable ["COMSPEC_ATAK_MusicFavs", []];
+        private _i = _favs findIf { (_x select 0) isEqualTo _k && {(_x select 1) isEqualTo _r || {_id isNotEqualTo "" && {(_x param [5, ""]) isEqualTo _id}}} };
+        if (_i >= 0) then {
+            _favs deleteAt _i;
+            ["INFO", format ["Retiré des favoris : %1", _t], 2, 20] call comspec_atak_native_fnc_notify;
+        } else {
+            _favs = [+_arg] + _favs;
+            ["INFO", format ["Ajouté aux favoris : %1", _t], 2, 20] call comspec_atak_native_fnc_notify;
+        };
+        profileNamespace setVariable ["COMSPEC_ATAK_MusicFavs", _favs select [0, 100]];
+        call _rerender;
+    };
+    case "ath": {
+        _ui set ["ath", _arg];
+        if !(_arg in (uiNamespace getVariable ["COMSPEC_ATAK_MusicAth", createHashMap])) then { ["load", _arg] call comspec_atak_native_fnc_musicAthena; };
+        call _rerender;
+    };
+    case "athOpen": {
+        _arg params ["_id", ["_name", ""]];
+        _ui set ["athPl", [_id, _name]];
+        ["ath", "pl:" + _id] call comspec_atak_native_fnc_musicAction;
+    };
+    case "athSearch": {
+        _ui set ["athQ", (["musicAthSearch"] call comspec_atak_native_fnc_formValue) trim [" ", 0]];
+        private _v = _ui getOrDefault ["ath", "global"];
+        if (_v isEqualTo "playlists") then { _v = "community"; _ui set ["ath", _v]; };
+        ["load", _v] call comspec_atak_native_fnc_musicAthena;
+    };
+    case "athReload": { ["load", _ui getOrDefault ["ath", "global"]] call comspec_atak_native_fnc_musicAthena; };
 };
 true
