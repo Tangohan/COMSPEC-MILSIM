@@ -1148,6 +1148,84 @@ class AtakApiController
         return $id;
     }
 
+    /**
+     * Téléphone de l'opérateur qui envoie la photo (session jeu) : numéro, IMEI, MAC, modèle et version de l'ATAK,
+     * batterie. Affiché flouté (spoiler) sous la photo publiée sur Discord. Vide si l'opérateur est inconnu.
+     *
+     * @return array<string, string>
+     */
+    /**
+     * Unité de l'opérateur sur le site (unité principale, sinon celle de sa fiche personnel), sinon le nom de l'organisation.
+     * Pour les photos du jeu : le nom envoyé par Arma est le pseudo du profil, pas l'unité.
+     */
+    private function operatorSiteUnitName(int $tenantId, int $userId): string
+    {
+        $unitName = '';
+        try {
+            $unitIds = $this->unitRepository->unitIdsForUser($tenantId, $userId);
+            $primaryUnitId = (int) ($unitIds[0] ?? 0);
+            if ($primaryUnitId > 0) {
+                $unit = $this->unitRepository->findById($primaryUnitId, $tenantId);
+                $unitName = $unit ? trim((string) ($unit['name'] ?? '')) : '';
+            }
+            if ($unitName === '') {
+                $personnel = (new \App\Repositories\PersonnelProfileRepository())->getByUserId($userId) ?? [];
+                $profileUnitId = (int) ($personnel['primary_unit_id'] ?? 0);
+                if ($profileUnitId > 0) {
+                    $fromProfile = $this->unitRepository->findById($profileUnitId, $tenantId);
+                    $unitName = $fromProfile ? trim((string) ($fromProfile['name'] ?? '')) : '';
+                }
+            }
+        } catch (\Throwable) {
+            $unitName = '';
+        }
+        $tenantName = '';
+        try {
+            $tenantRow = $this->tenantRepository->findById($tenantId);
+            if (is_array($tenantRow)) {
+                $tenantName = function_exists('community_display_name')
+                    ? community_display_name($tenantRow)
+                    : trim((string) ($tenantRow['name'] ?? ''));
+            }
+        } catch (\Throwable) {
+        }
+
+        $unit = OperatorTacticalIdentity::unitAssignment($unitName, $tenantName, $tenantName);
+
+        return $unit !== '' ? $unit : $tenantName;
+    }
+
+    private function reconPhoneIdent(int $tenantId): array
+    {
+        try {
+            if (\App\Support\ComspecApiKeyAuth::matchedTenantId() !== $tenantId) {
+                return [];
+            }
+            $userId = \App\Support\ComspecApiKeyAuth::matchedUserId();
+            if ($userId === null || $userId < 1) {
+                return [];
+            }
+            $row = (new \App\Repositories\GamePhoneIdentityRepository())->findRow($tenantId, $userId);
+            if ($row === null) {
+                return [];
+            }
+            $pick = static fn (string ...$keys): string => (string) (array_values(array_filter(
+                array_map(static fn (string $k): string => trim((string) ($row[$k] ?? '')), $keys),
+                static fn (string $v): bool => $v !== ''
+            ))[0] ?? '');
+
+            return array_filter([
+                'number' => $pick('live_number', 'phone_number'),
+                'imei' => $pick('live_imei', 'imei'),
+                'mac' => $pick('live_mac', 'mac'),
+                'model' => $pick('device_model'),
+                'battery' => isset($row['battery_pct']) && $row['battery_pct'] !== null ? (int) $row['battery_pct'] . ' %' : '',
+            ], static fn (string $v): bool => $v !== '');
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
     private function recompressIntelPhotoToJpeg(string $path): string
     {
         return \App\Support\IntelPhotoRecompress::recompressFile($path)['path'];
@@ -11230,6 +11308,10 @@ class AtakApiController
                 'message' => 'La photo n’a pas pu être enregistrée côté poste de commandement. Réessayez.',
             ], 500);
         }
+        try {
+            \App\Support\PhotoAutoLevel::applyFile($path, \App\Support\ReconImageStorage::originalsDir());
+        } catch (\Throwable) {
+        }
         $path = $this->recompressIntelPhotoToJpeg($path);
         $filename = basename($path);
         $relativePath = 'intel/' . $filename;
@@ -11891,6 +11973,17 @@ class AtakApiController
             if (($unitName === null || $unitName === '') && $feedId !== '') {
                 $unitName = $feedId;
             }
+            // Photo prise avec son propre téléphone ou sa tablette : l'unité vient du site (Arma envoie le pseudo
+            // du profil). Les flux drone et caméra casque d'un autre joueur gardent le nom envoyé.
+            $gameUserId = \App\Support\ComspecApiKeyAuth::matchedTenantId() === $tenantId
+                ? \App\Support\ComspecApiKeyAuth::matchedUserId()
+                : null;
+            if ($feedId === '' && $gameUserId !== null) {
+                $siteUnit = $this->operatorSiteUnitName($tenantId, $gameUserId);
+                if ($siteUnit !== '') {
+                    $unitName = $siteUnit;
+                }
+            }
             $data = [
                 'image_path' => $storedImagePath,
                 'source_name' => mb_substr(basename(str_replace('\\', '/', (string) ($file['name'] ?? ''))), 0, 190) ?: null,
@@ -11910,6 +12003,14 @@ class AtakApiController
                 'device_type' => $deviceNorm !== '' ? $deviceNorm : 'CTAB',
                 'captured_at' => ReconCapturedAt::unixFromPosted($_POST['capturedAt'] ?? $_POST['captured_at'] ?? null),
             ] + $photoMeta;
+            // Captures d'Arma délavées : niveaux et tons moyens corrigés avant l'incrustation (original gardé à côté).
+            if (!\App\Support\PhotoAutoLevel::skipsProfile($data['fx_profile'] ?? null, $deviceNorm)) {
+                try {
+                    \App\Support\PhotoAutoLevel::applyFile($path, \App\Support\ReconImageStorage::originalsDir());
+                } catch (\Throwable $lvlErr) {
+                    error_log('[atak/recon-images] auto level ' . $lvlErr->getMessage());
+                }
+            }
             try {
                 (new \App\Services\Media\ReconPhotoHudService())->applyToFile($tenantId, $path, $data);
             } catch (\Throwable $hudErr) {
@@ -11943,6 +12044,7 @@ class AtakApiController
             // Relais Discord après l'enregistrement : photo jointe + carte, lieu, date/heure (champs facultatifs du jeu).
             // Clichés du drone compris (flux drone:<netId>). read_url : lecture sur Athena (route habilitée si confidentiel).
             $discordMeta = $data + [
+                'device_ident' => $this->reconPhoneIdent($tenantId),
                 'feed_id' => mb_substr($feedId, 0, 120),
                 'read_url' => (string) ($row['url'] ?? ''),
                 'map_id' => $mapId > 0 ? $mapId : self::DEFAULT_MAP_ID,

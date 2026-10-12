@@ -20,6 +20,24 @@ Non testé en jeu. Demande de TTRD : « Améliore l'UI du menu et affiche l'imag
 - Site : `/api/atak/player-profile` renvoie le portrait opérateur (jamais la photo de compte ni Steam), en vignette JPEG carrée 256 px recadrée vers le visage (`uploads/portraits/atak/`), car Arma ne lit ni PNG ni WebP. Le même portrait s'affiche donc aussi dans les apps Athena, Profil, Groupe et Chat. Pas de DLL à recompiler, pas de migration.
 - Textes traduits en anglais.
 
+## Correctif 2026-10-12 — App CAS, alertes du poste, barre de dessin (ATAK natif 1.16.2)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration (déploiement PHP pour la correction des photos).
+- App Feux renommée **CAS**. L'onglet APPEL DE FEU reprend l'écran du clip (motion design) : écran clair en panneaux.
+  - POSITION DE TIR : liste des pièces du camp, MAN, PIÈCE À MA POSITION, grille et altitude.
+  - CIBLE : GRILLE ou POLAIRE, depuis OBSERVATEUR (grille saisie) ou MA POS, AZ, DIST, cible calculée, ENNEMI, HE / ILM / FUM, nombre de coups, OFF / GERBE, EFFACER.
+  - Bandeau de solution : unité, charge, dérive, élévation, durée de vol, flèche ; intervalle vertical et dérive du vent indicative. Balistique sans frottement à partir de la vitesse initiale et des charges de l'arme (pièce manuelle : mortier de 82 mm).
+  - ÉTAT DE LA MISSION et JOURNAL (toucher une mission pour la rappeler, NOUVELLE MSN) ; en bas CALCULER, FIN DE MISSION, TIR.
+  - En haut : onglets 9-LINE, 5-LINE, APPEL DE FEU, ma grille, mon altitude et le vent. En portrait, les panneaux s'empilent.
+- Alerte plein écran, notification et vibration envoyées depuis le site (Overwatch beta) : elles arrivent de nouveau sur le téléphone natif. COMSPEC Link les passait au module `atak_athena` (ancien téléphone Iceman, livré dans le même mod et donc toujours chargé) au lieu du natif ; `fn_receiveOrder` les donne maintenant au natif quand il est chargé. `atak_athena` n'est pas modifié.
+- Carte, barre TRAIT / DESSIN LIBRE : DÉFAIRE devient ANNULER et FERMÉ devient ZONE.
+- Site : correction de couleur automatique des photos reçues du jeu (téléphone, tablette, caméra casque ; pas la vision nocturne, la thermique ni le drone). Niveaux étirés, tons moyens plus denses, saturation un peu relevée ; l'original est gardé hors de la racine web (`storage/private/recon/originals`) et supprimé avec la photo (`PhotoAutoLevel`).
+- Appareil photo : F (flash) ne ressort plus l'arme. Les touches de l'appareil (Espace, R, F, T, zoom) restent au téléphone ; si le jeu voit quand même F, l'arme est rangée de nouveau.
+- Traits et repères du téléphone absents du site : quand l'envoi au site est refusé ou mis en attente, le téléphone l'affiche avec la raison (synchro des marqueurs coupée, liaison Athena pas prête…). COMSPEC Link note maintenant la raison de chaque refus.
+- Discord, photos postées (Quick Picture, drone) : champ « Téléphone » (« Terminal de contrôle » pour le drone) avec appareil et version ATAK, numéro, IMEI, MAC et batterie, chacun en texte masqué (spoiler, cliquer pour lire). Rien pour une photo confidentielle. La version ATAK arrive avec le nouveau connect de COMSPEC Link (`fn_phoneDeviceSync`, repaqueté).
+- Photos : logo de l'unité en filigrane (logo de l'organisation dans les paramètres du site, PNG transparent), avec « © UNITÉ » dessous, dans le coin opposé au bandeau. Désactivable dans Config ATAK > bandeau photo (« Logo de l'unité en filigrane »). Le texte gauche du bandeau ne chevauche plus l'heure.
+- Photos du téléphone et de la tablette (Discord, bandeau, fiche Athena) : « Unité » affichait le pseudo du profil Arma. Le site met maintenant l'unité de l'opérateur (unité principale, sinon celle de sa fiche personnel, sinon le nom de l'organisation) ; le jeu envoie le nom du groupe au lieu du pseudo quand le joueur n'est pas reconnu.
+
 ## Correctif 2026-10-12 — Langue dans l'app Réglages (ATAK natif 1.16.1)
 
 Non testé en jeu. TTRD ne trouvait pas où passer le téléphone en anglais.

@@ -85,7 +85,11 @@ private _alreadyConsumed = _orderStatus in ["ACK", "DONE", "EXEC", "CANCELLED", 
 if ((toUpper _type) isEqualTo "VIBRATE") exitWith {
     // Déjà reçu / confirmé : ne pas rejouer à la reconnexion
     if (_alreadyConsumed) exitWith {};
-    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_onVibrate") then {
+    // Téléphone ATAK natif chargé : c'est lui qui vibre. Le crochet du module atak_athena (livré dans le même mod)
+    // est toujours défini et visait l'ancien téléphone Iceman, le natif ne recevait rien.
+    if (!isNil "comspec_atak_native_fnc_athenaSignal") then {
+        ["vibrate", _order] call comspec_atak_native_fnc_athenaSignal;
+    } else { if (!isNil "comspec_overwatch_atak_athena_fnc_athena_onVibrate") then {
         [_order] call comspec_overwatch_atak_athena_fnc_athena_onVibrate;
     } else {
         // Fallback si atak_athena absent — une seule vibration
@@ -96,14 +100,17 @@ if ((toUpper _type) isEqualTo "VIBRATE") exitWith {
         };
         private _msg = format ["Votre terminal vibre — appel de %1", _issuer];
         ["COMSPEC_Warning", [_msg]] call comspec_overwatch_connect_fnc_showNotification;
-    };
+    }; };
     [_id, "Vibration reçue"] call _ackTerminalSignal;
 };
 
 // Notification TOC : entrée cliquable dans Athena — pas un ordre C2
 if ((toUpper _type) in ["NOTIFY", "NOTIFY_FULL"]) exitWith {
     if (_alreadyConsumed) exitWith {};
-    if (!isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
+    // Téléphone ATAK natif chargé : SMS et alerte plein écran sur le natif (même raison que la vibration).
+    if (!isNil "comspec_atak_native_fnc_athenaSignal") then {
+        ["notify", _order] call comspec_atak_native_fnc_athenaSignal;
+    } else { if (!isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
         [_order] call comspec_overwatch_atak_athena_fnc_athena_onNotify;
     } else {
         private _payload = trim (_order getOrDefault ["payload", ""]);
@@ -118,7 +125,7 @@ if ((toUpper _type) in ["NOTIFY", "NOTIFY_FULL"]) exitWith {
         if (_isFull && {!isNil "comspec_overwatch_atak_athena_fnc_athena_showFullscreenAlert"}) then {
             [_issuer, _payload] call comspec_overwatch_atak_athena_fnc_athena_showFullscreenAlert;
         };
-    };
+    }; };
     [_id, if ((toUpper _type) isEqualTo "NOTIFY_FULL") then { "Alerte plein écran reçue" } else { "Notification reçue" }] call _ackTerminalSignal;
 };
 

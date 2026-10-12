@@ -50,7 +50,7 @@ switch (_tab) do {
                 };
             } forEach _types;
             call _flush;
-            _rows pushBack ["text", "<t size='0.8' color='#8a9a93'>Les types suivis de › ouvrent l'app qui les gère déjà (Feux, JTAC, MEDEVAC du Médical, Logistique). Les autres s'envoient d'ici : au camp ou à votre groupe en jeu, et sur Athena quand le téléphone est connecté.</t>"];
+            _rows pushBack ["text", "<t size='0.8' color='#8a9a93'>Les types suivis de › ouvrent l'app qui les gère déjà (CAS, JTAC, MEDEVAC du Médical, Logistique). Les autres s'envoient d'ici : au camp ou à votre groupe en jeu, et sur Athena quand le téléphone est connecté.</t>"];
         } else {
             (_types select _ti) params ["", "_label", "_family", "", "_help", "_fields"];
             _rows pushBack ["section", _label, _family];
