@@ -11,6 +11,17 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Drone : flotte de 4 drones, rôles, essaim, garde rapprochée ; repérage automatique en réglage admin (ATAK natif 1.39.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Suite des demandes de TTRD sur le drone.
+- **Flotte** : jusqu'à 4 drones appairés au même téléphone. Appairer un autre drone garde le premier, qui continue seul son ordre. Un seul est « piloté » (caméra, onglets VOL, TÂCHES, CIBLES) ; PILOTER dans le nouvel onglet FLOTTE change de drone. Désappairer ou perdre le drone piloté passe au suivant.
+- **Rôles par drone** (onglet FLOTTE) : ME SUIVRE, CQB, GARDE, SURVEILLER LE POINT (point de l'onglet TÂCHES), SURVEILLER LE JOUEUR (joueur choisi dans VOL), RECHERCHE ; plus STATIONNAIRE, RTB, LIBÉRER. Exemple : drone 1 en CQB derrière soi, drone 2 qui surveille un point ou un joueur.
+- **Essaim** : TOUS ME SUIVRE, TOUS EN CQB, TOUS EN GARDE, TOUS SUR LE POINT, TOUS EN RECHERCHE, TOUS STATIONNAIRE, TOUS RTB, TOUS ATTERRIR. Chaque drone garde sa place : suivi décalé sur le côté selon son rang, orbites de rayons différents, secteurs de recherche différents.
+- **Garde rapprochée (IA de proximité)** : le drone suit le pilote, repère seul les ennemis à moins de 200 m en vue directe, prévient (notification, vibreur, journal, croix CONTACT sur la carte pendant 1 min), va observer le plus proche s'il passe sous 120 m, puis revient au pilote 20 s après l'avoir perdu.
+- **Drones en arrière-plan** : retour automatique au point de décollage si la liaison ou la batterie lâche, sortie des zones interdites, dessinés sur la carte avec leur rôle.
+- **Réglage admin « Repérage automatique par drone »** (désactivé par défaut, demande de TTRD : « trop pété ») : sans lui, la caméra du drone ne relève plus seule les ennemis (détections automatiques de l'onglet CIBLES, pistes sur la carte) et la garde rapprochée est refusée. Le pilote repère et marque lui-même.
+- À vérifier en jeu : deux drones appairés, PILOTER, rôles mélangés (CQB + surveiller), essaim qui suit sans collision, garde avec le réglage activé, RTB d'un drone en arrière-plan hors liaison.
+
 ## Connexion Athena : e-mail et mot de passe proposés à côté du code (ATAK natif 1.38.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : « propose quand même la connexion par mail et mot de passe ».

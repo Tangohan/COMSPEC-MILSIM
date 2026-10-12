@@ -1,6 +1,6 @@
 #define COMPONENT atak_native
 #define COMPONENT_BEAUTIFIED ATAK Native
 #define PREFIX comspec_atak_native
-#define VERSION 1.38.0
-#define VERSION_STR "1.38.0"
+#define VERSION 1.39.0
+#define VERSION_STR "1.39.0"
 #define UI_GENERATION "native-rsc-v1"
