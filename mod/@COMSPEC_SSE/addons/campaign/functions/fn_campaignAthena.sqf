@@ -1,5 +1,5 @@
 /*
-    Campagnes SSE ⇄ Athena (serveur, COMSPEC Link 2.0.64). Dans Athena : Bureau SSE › Campagnes,
+    Campagnes SSE ⇄ Athena (serveur, COMSPEC Link 2.0.67). Dans Athena : Bureau SSE › Campagnes,
     gestion (copie pour un drill, remise à zéro, archivage) et catalogue partagé entre communautés.
 
     [_mode, _args, _requester] call comspec_sse_fnc_campaignAthena
@@ -23,7 +23,7 @@ private _err = {
     params ["_r"];
     private _code = _r select [4];
     switch (true) do {
-        case (_r isEqualTo ""): { "COMSPEC Link 2.0.64 requis sur le serveur" };
+        case (_r isEqualTo ""): { "COMSPEC Link 2.0.67 requis sur le serveur" };
         case (_code isEqualTo "unauthorized"): { "le serveur n'est pas relié à la communauté dans Athena (clé d'accès)" };
         case (_code isEqualTo "not_found"): { "campagne absente d'Athena" };
         default { _code };

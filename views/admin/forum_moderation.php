@@ -189,7 +189,7 @@ $csrfTokenForumMod = \App\Core\Csrf::token();
           <p class="mt-1 text-sm font-semibold text-slate-800 leading-snug">Quarantaine et analyse automatique</p>
         </div>
       </div>
-      <a href="<?= htmlspecialchars($baseUrl . '/admin/content-moderation', ENT_QUOTES, 'UTF-8') ?>" class="mt-4 inline-flex items-center gap-2 text-sm font-bold text-emerald-800 hover:text-emerald-700 group">
+      <a href="<?= htmlspecialchars($baseUrl . '/back-office/content-moderation', ENT_QUOTES, 'UTF-8') ?>" class="mt-4 inline-flex items-center gap-2 text-sm font-bold text-emerald-800 hover:text-emerald-700 group">
         Ouvrir la file de validation
         <svg class="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg>
       </a>
@@ -704,7 +704,7 @@ $csrfTokenForumMod = \App\Core\Csrf::token();
           <p class="mt-1 text-sm text-slate-600 leading-relaxed max-w-xl">Historique des choix enregistrés lors de la publication des messages (score, motif, lien vers le sujet).</p>
         </div>
       </div>
-      <a href="<?= htmlspecialchars($baseUrl . '/admin/content-moderation', ENT_QUOTES, 'UTF-8') ?>" class="mt-5 sm:mt-0 inline-flex shrink-0 items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-xs font-bold text-white shadow-md shadow-emerald-600/25 hover:bg-emerald-500 transition-colors">
+      <a href="<?= htmlspecialchars($baseUrl . '/back-office/content-moderation', ENT_QUOTES, 'UTF-8') ?>" class="mt-5 sm:mt-0 inline-flex shrink-0 items-center justify-center rounded-xl bg-emerald-600 px-5 py-3 text-xs font-bold text-white shadow-md shadow-emerald-600/25 hover:bg-emerald-500 transition-colors">
         File pièces jointes
       </a>
     </div>

@@ -16,7 +16,7 @@ $formatSize = function ($bytes) {
             <h1 class="text-2xl font-black text-slate-900">Modpacks</h1>
             <p class="mt-1 text-sm text-slate-500">Archives pour vos membres (jusqu’à 2 Go, envoi par morceaux côté admin).</p>
         </div>
-        <a href="<?= url('admin/modpacks/create') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouveau modpack</a>
+        <a href="<?= url('back-office/ressources/modpacks/create') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouveau modpack</a>
     </div>
     <?php if (\App\Core\Session::get('success')): ?>
     <p class="mb-4 text-sm text-emerald-600"><?= htmlspecialchars(\App\Core\Session::get('success')) ?></p>
@@ -25,7 +25,7 @@ $formatSize = function ($bytes) {
     <p class="mb-4 text-sm text-red-600"><?= htmlspecialchars(\App\Core\Session::get('error')) ?></p>
     <?php \App\Core\Session::forget('error'); endif; ?>
     <?php if (empty($modpacks)): ?>
-    <p class="text-slate-500">Aucun modpack. <a href="<?= url('admin/modpacks/create') ?>" class="underline">Créer un modpack</a>.</p>
+    <p class="text-slate-500">Aucun modpack. <a href="<?= url('back-office/ressources/modpacks/create') ?>" class="underline">Créer un modpack</a>.</p>
     <?php else: ?>
     <table class="w-full border border-slate-200 rounded-lg overflow-hidden">
         <thead class="bg-slate-50 border-b border-slate-200">
@@ -46,8 +46,8 @@ $formatSize = function ($bytes) {
                 <td class="p-3"><?= !empty($mp['updated_at']) ? date('d.m.Y', strtotime($mp['updated_at'])) : '—' ?></td>
                 <td class="p-3">
                     <a href="<?= url('modpacks/' . htmlspecialchars($mp['slug'])) ?>" class="text-slate-600 hover:text-slate-900 text-sm underline">Voir</a>
-                    <a href="<?= url('admin/modpacks/' . $mp['id'] . '/edit') ?>" class="text-slate-600 hover:text-slate-900 text-sm underline ml-2">Modifier</a>
-                    <form action="<?= url('admin/modpacks/' . $mp['id'] . '/delete') ?>" method="post" class="inline ml-2" onsubmit="return confirm('Supprimer ce modpack ?');">
+                    <a href="<?= url('back-office/ressources/modpacks/' . $mp['id'] . '/edit') ?>" class="text-slate-600 hover:text-slate-900 text-sm underline ml-2">Modifier</a>
+                    <form action="<?= url('back-office/ressources/modpacks/' . $mp['id'] . '/delete') ?>" method="post" class="inline ml-2" onsubmit="return confirm('Supprimer ce modpack ?');">
                         <?= \App\Core\Csrf::field() ?>
                         <button type="submit" class="text-red-600 hover:text-red-800 text-sm underline">Supprimer</button>
                     </form>
@@ -57,5 +57,5 @@ $formatSize = function ($bytes) {
         </tbody>
     </table>
     <?php endif; ?>
-    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('admin') ?>" class="underline">Retour administration</a></p>
+    <p class="mt-6 text-sm text-slate-500"><a href="<?= url('back-office') ?>" class="underline">Retour au back-office</a></p>
 </div>

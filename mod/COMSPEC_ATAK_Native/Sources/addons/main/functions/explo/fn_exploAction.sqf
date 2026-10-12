@@ -113,8 +113,8 @@ switch (_act) do {
             } forEach _due;
             uiNamespace setVariable ["COMSPEC_ATAK_ExploCache", [-1, []]];
         };
-        // Compte à rebours de la page : deux fois par seconde.
-        if (diag_tickTime >= (_s getOrDefault ["nextDraw", 0])) then { _s set ["nextDraw", diag_tickTime + 0.5]; call _render; };
+        // Compte à rebours de la page : une fois par seconde (page entière reconstruite à chaque fois).
+        if (diag_tickTime >= (_s getOrDefault ["nextDraw", 0])) then { _s set ["nextDraw", diag_tickTime + 1]; call _render; };
         if ((count (_s getOrDefault ["queue", []])) isEqualTo 0) then {
             [_s getOrDefault ["pfh", -1]] call CBA_fnc_removePerFrameHandler;
             _s set ["pfh", -1];

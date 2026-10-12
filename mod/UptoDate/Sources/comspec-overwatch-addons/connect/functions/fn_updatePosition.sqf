@@ -679,7 +679,9 @@ _trail pushBack [_now, _callSign, [_pos select 0, _pos select 1, _aslZ], _speed,
 if (count _trail > 150) then {
     _trail deleteRange [0, (count _trail) - 150];
 };
-missionNamespace setVariable ["COMSPEC_PositionTrail", _trail, true];
+// Variables de suivi locales (lues seulement sur ce client) : diffusées, chaque client écrasait
+// celles des autres et inondait le réseau à chaque envoi de position.
+missionNamespace setVariable ["COMSPEC_PositionTrail", _trail, false];
 
 private _immobileTime = missionNamespace getVariable ["COMSPEC_ImmobileSince", _now];
 if (_distance < 0.5 && {_speed < 0.2}) then {
@@ -688,7 +690,7 @@ if (_distance < 0.5 && {_speed < 0.2}) then {
     _immobileTime = _now;
     missionNamespace setVariable ["COMSPEC_ImmobileAlerted", false, false];
 };
-missionNamespace setVariable ["COMSPEC_ImmobileSince", _immobileTime, true];
+missionNamespace setVariable ["COMSPEC_ImmobileSince", _immobileTime, false];
 
 // Anomalies de suivi = polish UI : coupées en mode milsim / réalisme communauté.
 private _realism = missionNamespace getVariable ["COMSPEC_TenantRealism", false];
@@ -712,15 +714,15 @@ if (!_realism && !_milsimUi) then {
     };
 };
 
-missionNamespace setVariable ["COMSPEC_lastPos", _pos, true];
-missionNamespace setVariable ["COMSPEC_lastName", _callSign, true];
-missionNamespace setVariable ["COMSPEC_lastRole", _role, true];
-missionNamespace setVariable ["COMSPEC_lastRadio", _radioSig, true];
-missionNamespace setVariable ["COMSPEC_lastMedical", _medicalSig, true];
-missionNamespace setVariable ["COMSPEC_lastGroup", _groupName, true];
-missionNamespace setVariable ["COMSPEC_lastHeading", _heading, true];
-missionNamespace setVariable ["COMSPEC_lastVehSig", _vehSig, true];
-missionNamespace setVariable ["COMSPEC_lastSendTime", _now, true];
+missionNamespace setVariable ["COMSPEC_lastPos", _pos, false];
+missionNamespace setVariable ["COMSPEC_lastName", _callSign, false];
+missionNamespace setVariable ["COMSPEC_lastRole", _role, false];
+missionNamespace setVariable ["COMSPEC_lastRadio", _radioSig, false];
+missionNamespace setVariable ["COMSPEC_lastMedical", _medicalSig, false];
+missionNamespace setVariable ["COMSPEC_lastGroup", _groupName, false];
+missionNamespace setVariable ["COMSPEC_lastHeading", _heading, false];
+missionNamespace setVariable ["COMSPEC_lastVehSig", _vehSig, false];
+missionNamespace setVariable ["COMSPEC_lastSendTime", _now, false];
 missionNamespace setVariable ["COMSPEC_LastPositionSync", _now, false];
 
 // Trace session (throttlée) pour diagnostiquer les disparitions au poste sans Resynch.
@@ -735,8 +737,8 @@ if (_atakSync isEqualType createHashMap) then {
     if (_linkState in ["linked", "degraded", "connecting"]) then {
         missionNamespace setVariable ["COMSPEC_LinkState", _linkState, false];
     };
-    player setVariable ["COMSPEC_AtakState", _atakSync, true];
-    player setVariable ["COMSPEC_LinkState", _linkState, true];
+    // Diffusion (Zeus) déléguée à syncPlayerAtakPublicVars, qui ne publie que si la valeur a changé :
+    // ces deux setVariable publics partaient à chaque envoi de position (et étaient aussitôt réécrits par lui).
     [] call comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars;
 };
 

@@ -430,6 +430,7 @@ class CfgFunctions {
             class getUnitRole {};
             class setUnitRole {};
             class extResult {};
+            class extAwait {};
             class parseAtakExtResponse {};
             class atakExtFailMessage {};
             class openAthenaFeature {};

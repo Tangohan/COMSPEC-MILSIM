@@ -23,4 +23,6 @@ if (_idx >= 0) then {
 } else {
     _zones pushBack _entry;
 };
-missionNamespace setVariable ["COMSPEC_DangerZones", _zones, true];
+// Local : chaque client équipé interroge Athena lui-même (poll 8 s) ; la diffusion réseau à chaque
+// passage multipliait le trafic par le nombre de joueurs.
+missionNamespace setVariable ["COMSPEC_DangerZones", _zones, false];

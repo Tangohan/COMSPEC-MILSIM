@@ -74,8 +74,9 @@ if (hasInterface && {missionNamespace getVariable ["comspec_overwatch_log_to_fil
     };
 };
 
-// Remontée Athena (erreurs / alertes uniquement, anti-spam côté reportDiag)
-if (hasInterface && {_levelNum <= 2} && {!isNil "comspec_overwatch_connect_fnc_reportDiag"}) then {
+// Remontée Athena (erreurs uniquement, anti-spam côté reportDiag) : les WARN déclenchaient un appel HTTP
+// à chaque alerte, ce qui saturait la DLL et figeait le jeu.
+if (hasInterface && {_levelNum <= 1} && {!isNil "comspec_overwatch_connect_fnc_reportDiag"}) then {
     [_levelKey, _channel, _message, if (isNil "_detail") then { "" } else { str _detail }, "auto"] spawn {
         params ["_lvl", "_ch", "_msg", "_det", "_src"];
         uiSleep 0.05;

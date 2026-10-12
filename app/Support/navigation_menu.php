@@ -237,7 +237,7 @@ function navigation_path_is_forum(string $path): bool
     if ($p === 'back-office/categories' || str_starts_with($p, 'back-office/forum/')) {
         return true;
     }
-    if ($p === 'admin/forum-config' || $p === 'admin/forum-moderation') {
+    if ($p === 'back-office/ressources/forum-config' || $p === 'admin/forum-moderation') {
         return true;
     }
 

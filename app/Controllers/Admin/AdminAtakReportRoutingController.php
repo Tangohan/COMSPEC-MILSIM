@@ -75,7 +75,7 @@ final class AdminAtakReportRoutingController
     public function store(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
-        $back = url('admin/atak-diffusion-rapports');
+        $back = url('back-office/ressources/atak-diffusion-rapports');
 
         if ($tenantId < 1 || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
@@ -118,7 +118,7 @@ final class AdminAtakReportRoutingController
     public function toggle(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
-        $back = url('admin/atak-diffusion-rapports');
+        $back = url('back-office/ressources/atak-diffusion-rapports');
 
         if ($tenantId < 1 || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');
@@ -140,7 +140,7 @@ final class AdminAtakReportRoutingController
     public function delete(Request $request, array $params = []): Response
     {
         $tenantId = (int) Session::get('tenant_id');
-        $back = url('admin/atak-diffusion-rapports');
+        $back = url('back-office/ressources/atak-diffusion-rapports');
 
         if ($tenantId < 1 || !Csrf::validate((string) $request->input('_csrf_token', ''))) {
             Session::flash('error', 'Session expirée. Réessayez.');

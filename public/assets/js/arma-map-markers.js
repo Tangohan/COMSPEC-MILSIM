@@ -1002,20 +1002,31 @@ window.ArmaMapMarkers = (function () {
     if (shape === 'POLYLINE') {
       var poly = data.polyline || data.points || [];
       var latlngs = [];
+      // Points en coordonnées monde Arma : même décalage carte que le centre déjà converti (latlng ↔ data.pos),
+      // sinon un trait ou un dessin libre du téléphone était décalé sur les cartes à offset.
+      var offLat = 0;
+      var offLng = 0;
+      if (Array.isArray(data.pos) && data.pos.length >= 2 && isFinite(Number(data.pos[0])) && isFinite(Number(data.pos[1]))) {
+        offLng = latlng.lng - Number(data.pos[0]);
+        offLat = latlng.lat - Number(data.pos[1]);
+      }
       if (Array.isArray(poly) && poly.length >= 4 && typeof poly[0] === 'number') {
         for (var i = 0; i + 1 < poly.length; i += 2) {
-          latlngs.push(L.latLng(poly[i + 1], poly[i]));
+          latlngs.push(L.latLng(Number(poly[i + 1]) + offLat, Number(poly[i]) + offLng));
         }
       } else if (Array.isArray(poly)) {
         poly.forEach(function (p) {
-          if (Array.isArray(p) && p.length >= 2) latlngs.push(L.latLng(p[1], p[0]));
+          if (Array.isArray(p) && p.length >= 2) latlngs.push(L.latLng(Number(p[1]) + offLat, Number(p[0]) + offLng));
         });
       }
       if (latlngs.length < 2) return null;
       var line = L.polyline(latlngs, {
         color: color,
-        weight: style.weight,
+        // Traits et dessins libres : un peu plus épais que les contours de zone, lisibles sur l'imagerie.
+        weight: Math.max(style.weight || 2, 3),
         opacity: alpha,
+        lineCap: 'round',
+        lineJoin: 'round',
         dashArray: style.dashArray || undefined
       });
       if (label) line.bindTooltip(label, { sticky: true, direction: 'top', opacity: 0.9 });

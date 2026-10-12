@@ -6,7 +6,8 @@ if (isNil "comspec_sse_txQueue") exitWith { 0 };
 if (count comspec_sse_txQueue == 0) exitWith { 0 };
 
 private _maxAttempts = 5;
-private _batchMax = 8;
+// Trois envois par passage au plus, arrêt au premier échec : avec un Athena lent, huit envois d'affilée figeaient le jeu.
+private _batchMax = 3;
 private _remaining = [];
 private _sent = 0;
 private _dropped = 0;
@@ -40,6 +41,7 @@ private _processed = 0;
                     _x set ["txStatus", "QUEUED"];
                     _x set ["txRetryAfter", time + _delay];
                     _remaining pushBack _x;
+                    _processed = _batchMax;
                 };
             };
         };
@@ -48,6 +50,6 @@ private _processed = 0;
 
 comspec_sse_txQueue = _remaining;
 missionNamespace setVariable ["comspec_sse_txQueue", comspec_sse_txQueue];
-[] call comspec_sse_fnc_persistQueue;
+// Sauvegarde du profil (écriture disque) laissée à la boucle de 3 min (network XEH_postInit).
 [format ["flushQueue sent=%1 remaining=%2 dropped=%3 batch=%4", _sent, count _remaining, _dropped, _processed], "WARN"] call comspec_sse_fnc_log;
 _sent

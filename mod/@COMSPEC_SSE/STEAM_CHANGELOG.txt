@@ -80,7 +80,7 @@ NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 
 [h2]Campagnes dans Athena et partage entre communautés[/h2]
 [list]
-[*] Serveur relié (COMSPEC Link 2.0.64) : chaque sauvegarde de campagne est copiée dans Athena, Bureau SSE › Campagnes (réglage CBA, activé par défaut)
+[*] Serveur relié (COMSPEC Link 2.0.67) : chaque sauvegarde de campagne est copiée dans Athena, Bureau SSE › Campagnes (réglage CBA, activé par défaut)
 [*] Zeus : « Campagne : envoyer à Athena » et « Campagne : récupérer depuis Athena » (avec chargement immédiat au choix)
 [*] Athena : ORBAT des organisations, personnages, registre des scellés, journal ; renommer, changer de type, dupliquer pour un drill, remettre à zéro, archiver
 [*] Catalogue partagé : chaque communauté choisit de publier une campagne (structure seule ou complète) ; les autres la copient et mettent leur copie à jour

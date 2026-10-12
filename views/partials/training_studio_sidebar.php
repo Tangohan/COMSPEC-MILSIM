@@ -80,7 +80,7 @@ $studioCanEditVitrine = $gateStudio->allows('admin.access') || $gateStudio->allo
 
         <a href="<?= htmlspecialchars(training_lms_admin_url()) ?>">
 
-            <span>Tableau de bord admin</span>
+            <span>Pilotage des formations</span>
 
             <span class="ts-meta">·</span>
 

@@ -178,7 +178,16 @@ switch (_action) do {
         if (isNull player) exitWith { false };
         if ((player getVariable ["COMSPEC_ATAK_LinkUid", ""]) isNotEqualTo getPlayerUID player) then { player setVariable ["COMSPEC_ATAK_LinkUid", getPlayerUID player, true]; };
         private _snap = ["snapshot", true] call comspec_atak_native_fnc_linkAllyAction;
-        private _sig = _snap select { (_x select 0) isNotEqualTo "readAt" };
+        // Batterie comptée par tranche de 10 % : la copie (diffusée à tous, gardée pour les arrivants) partait
+        // à chaque point de batterie perdu, soit environ une fois par minute et par joueur.
+        private _sig = (_snap select { (_x select 0) isNotEqualTo "readAt" }) apply {
+            _x params ["_k", "_v"];
+            switch (_k) do {
+                case "battery": { [_k, round (_v / 10)] };
+                case "device": { [_k, _v select { (_x select 0) isNotEqualTo "level" }] };
+                default { _x };
+            }
+        };
         if (_sig isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_LinkMirrorSig", []])) exitWith { false };
         missionNamespace setVariable ["COMSPEC_ATAK_LinkMirrorSig", _sig];
         player setVariable ["COMSPEC_ATAK_LinkMirror", [_snap, [dayTime, "HH:MM"] call BIS_fnc_timeToString], true];

@@ -3878,6 +3878,13 @@ $migrationRunner->step('atak_roles', static function () use ($atakRolesMigrate, 
     $atakRolesMigrate($pdo);
 });
 
+// Files d'envoi COMSPEC Link : dernier bilan par joueur ou serveur et historique 48 h (AtakSendQueueRepository).
+$atakSendQueueMigrate = require $root . '/bootstrap/atak_send_queue_migration.php';
+$migrationRunner->step('atak_send_queue', static function () use ($atakSendQueueMigrate, $pdo): void {
+    echo "Migration atak_send_queue_snapshots / atak_send_queue_history (files d'envoi vers Athena)...\n";
+    $atakSendQueueMigrate($pdo);
+});
+
 $missionPlanningMigrate = require $root . '/bootstrap/mission_planning_migration.php';
 try {
     echo "Migration mission_planning (planification / organisation de combat)...\n";
@@ -4471,6 +4478,8 @@ foreach ([
     'athena_game_auth_migration.php' => 'identité Athena globale, sessions jeu',
     'equipment_catalog_extras_migration.php' => 'catalogue d’équipement',
     'atak_recon_images_actions_migration.php' => 'actions sur les images de reconnaissance',
+    'atak_recon_images_photo_meta_migration.php' => 'fiche des clichés de reconnaissance (titre, SSE, confidentiel)',
+    'atak_recon_images_confidential_storage_migration.php' => 'clichés confidentiels hors racine web (storage/private/recon)',
     'account_session_epoch_migration.php' => 'Mon compte : déconnexion des autres sessions',
     'sse_campaigns_migration.php' => 'campagnes SSE (gestion Athena et partage entre communautés)',
 ] as $lazyFile => $lazyLabel) {

@@ -61,9 +61,9 @@ $statusChoices = \App\Repositories\AtakModReportRepository::STATUS_LABELS;
         <nav class="bo-atak-beta__nav" aria-label="Liens associés">
             <a href="<?= htmlspecialchars(url('admin/atak-beta'), ENT_QUOTES, 'UTF-8') ?>">Accès anticipé</a>
             <span class="bo-atak-beta__nav-sep" aria-hidden="true">·</span>
-            <a href="<?= htmlspecialchars(url('admin/atak-mod'), ENT_QUOTES, 'UTF-8') ?>">Pack Overwatch</a>
+            <a href="<?= htmlspecialchars(url('back-office/ressources/atak-mod'), ENT_QUOTES, 'UTF-8') ?>">Pack Overwatch</a>
             <span class="bo-atak-beta__nav-sep" aria-hidden="true">·</span>
-            <a href="<?= htmlspecialchars(url('admin/atak-config'), ENT_QUOTES, 'UTF-8') ?>">Configuration ATAK</a>
+            <a href="<?= htmlspecialchars(url('back-office/ressources/atak-config'), ENT_QUOTES, 'UTF-8') ?>">Configuration ATAK</a>
         </nav>
     </header>
 

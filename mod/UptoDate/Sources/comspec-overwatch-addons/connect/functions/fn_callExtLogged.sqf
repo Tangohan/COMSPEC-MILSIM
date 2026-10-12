@@ -64,7 +64,8 @@ if (_logAttempt) then {
     [_label, "attempt", "", nil, _moduleLog, _linkCat] call comspec_overwatch_connect_fnc_logTransmission;
 };
 
-private _raw = "COMSPECExtension" callExtension [_cmd, _args];
+// extAwait : en contexte suspendable (spawn), l'appel ne fige plus le jeu ; sinon appel direct comme avant.
+private _raw = ["COMSPECExtension", _cmd, _args] call comspec_overwatch_connect_fnc_extAwait;
 private _parsed = [_raw] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
 _parsed params ["_ok", "_status", "_detail"];
 

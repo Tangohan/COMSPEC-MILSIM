@@ -39,6 +39,12 @@ private _meOn = (([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["ba
 // (résultat gardé 10 s par unité). Les ennemis n'apparaissent (réglage « ennemis ») que repérés par mon camp.
 private _devCache = uiNamespace getVariable ["COMSPEC_ATAK_DevCache", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_DevCache", _devCache];
+// Unités disparues (morts, respawns, IA supprimées) retirées toutes les 30 s : ces deux tables grossissaient toute la partie.
+if (isMultiplayer && {diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_BftPruneAt", 0]) > 30}) then {
+    uiNamespace setVariable ["COMSPEC_ATAK_BftPruneAt", diag_tickTime];
+    { if (isNull (objectFromNetId _x)) then { _devCache deleteAt _x; }; } forEach (keys _devCache);
+    { if (isNull (objectFromNetId _x)) then { _last deleteAt _x; }; } forEach (keys _last);
+};
 private _carries = {
     params ["_u"];
     private _k = netId _u;
@@ -115,6 +121,12 @@ private _showFriends = profileNamespace getVariable ["COMSPEC_ATAK_LayerFriends"
 
 // Les marqueurs de la mission sont déjà dessinés par la carte Arma : on les garde pour la sélection
 // et l'inspecteur (local = true) et on n'ajoute que les marqueurs Athena absents du jeu.
+// Relu au plus toutes les 2 s, ou tout de suite si un marqueur apparaît ou disparaît : refaire une table par
+// marqueur quatre fois par seconde coûtait de plus en plus cher à mesure que les dessins s'accumulaient.
+private _mkSig = [count allMapMarkers, count (_data getOrDefault ["remoteMarkers",createHashMap])];
+private _mkPrev = uiNamespace getVariable ["COMSPEC_ATAK_MkRefresh", [[], -1e9]];
+if ((_mkPrev select 0) isEqualTo _mkSig && {diag_tickTime - (_mkPrev select 1) < 2}) exitWith {};
+uiNamespace setVariable ["COMSPEC_ATAK_MkRefresh", [_mkSig, diag_tickTime]];
 private _markers = createHashMap;
 {
     private _name = _x;

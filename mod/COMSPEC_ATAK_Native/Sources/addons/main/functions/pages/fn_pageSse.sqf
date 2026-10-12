@@ -36,6 +36,14 @@ if (isNull _t) then {
     if (_who isEqualTo "") then { _who = name _t; };
     _rows pushBack ["info", "Sujet", format ["<t font='RobotoCondensedBold'>%1</t>  <t color='%2'>%3 · %4 m</t>", _who, _grey, ["décédé", "vivant"] select (alive _t), round (player distance _t)]];
 };
+// Fiche rapide : ouvre l'app FRS pré-remplie (type, dossier, carroyage, sujet visé) pour rédiger sur place.
+_rows pushBack ["section", "Fiche rapide", "FRS pré-remplie : dossier, lieu, carroyage et sujet visé"];
+_rows pushBack ["buttons", [["CRÉER UNE FICHE FRM", { ['frs', 'FRM'] call comspec_atak_native_fnc_sseAction; }, true]]];
+_rows pushBack ["buttons", [
+    ["CONTACT (FRC)", { ['frs', 'FRC'] call comspec_atak_native_fnc_sseAction; }],
+    ["OBSERVATION (FRO)", { ['frs', 'FRO'] call comspec_atak_native_fnc_sseAction; }],
+    ["TECHNIQUE (FRT)", { ['frs', 'FRT'] call comspec_atak_native_fnc_sseAction; }]
+]];
 // Photo du visage depuis le téléphone : cadrage portrait, jointe à la prochaine fiche SEEK du sujet.
 _rows pushBack ["section", "Photo du visage", "Cadrée de face sur la tête du sujet, jointe à sa fiche SEEK"];
 if (!isNull _t) then {

@@ -61,7 +61,7 @@ while { count comspec_sse_txQueue > _maxQueue } do {
 };
 
 missionNamespace setVariable ["comspec_sse_txQueue", comspec_sse_txQueue];
-[] call comspec_sse_fnc_persistQueue;
+// Sauvegarde du profil (écriture disque) laissée à la boucle de 3 min (network XEH_postInit).
 private _kindLog = _payload getOrDefault ["kind", "?"];
 [format ["queueOffline size=%1 kind=%2 idem=%3", count comspec_sse_txQueue, _kindLog, _idemKey]] call comspec_sse_fnc_log;
 true

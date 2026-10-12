@@ -4,12 +4,17 @@
       "list"    : relit le disque (DLL) et met la liste en cache, renvoie [[chemin, nom]...]
       "send"    : retransmet la photo n° arg de la liste en cache
       "sendAll" : retransmet toutes les photos de la liste en cache (une toutes les 2 s)
+      "sendNew" : envoie seulement celles qui ne sont ni transmises ni visibles sur Athena
+                  (sendAll et sendNew laissent de côté les clichés du drone : ils partent avec leur fiche, fn_dronePhoto)
       "check"   : demande à Athena lesquelles sont visibles (DLL ReconImagesKnown, 2.0.59+) ;
                   uiNamespace COMSPEC_ATAK_PhotoKnown = noms en minuscules, ou nil si Athena n'a pas pu répondre
       "delete"  : supprime du poste la photo n° arg (second appui dans les 4 s pour confirmer)
-      "deleteAll" : supprime du poste toutes les photos listées (second appui dans les 4 s pour confirmer)
+      "deleteAll" : supprime du poste toutes les photos listées, sauf les clichés du drone (second appui dans les 4 s)
 */
 params [["_action", "list"], ["_arg", -1]];
+// Clichés du drone (profil COMSPEC_ATAK_DronePhotos) : fichiers du dossier Screenshots, gérés par leur fiche.
+private _droneFiles = (profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []]) apply { if (_x isEqualType [] && {(_x param [0, ""]) isEqualType ""}) then { toLower (_x select 0) } else { "" } };
+private _phoneOnly = { params ["_l"]; _l select { !((toLower (_x select 1)) in _droneFiles) } };
 private _fnc_send = {
     params ["_path", "_name"];
     // Un renvoi manuel doit repartir même si la photo a déjà été tentée.
@@ -39,7 +44,7 @@ switch (_action) do {
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoKnown", nil];
         if ((count _lib) isEqualTo 0 || {!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])}) exitWith { false };
         private _names = (_lib apply { _x select 1 }) select [0, 200];
-        private _raw = "COMSPECExtension" callExtension ["ReconImagesKnown", [_names joinString "|"]];
+        private _raw = (["COMSPECExtension", "ReconImagesKnown", [_names joinString "|"]] call comspec_atak_native_fnc_extAwait);
         if (!isNil "comspec_overwatch_connect_fnc_extResult") then { _raw = [_raw] call comspec_overwatch_connect_fnc_extResult; };
         if (_raw isEqualType []) then { _raw = _raw param [0, ""]; };
         if !(_raw isEqualType "") then { _raw = str _raw; };
@@ -61,7 +66,7 @@ switch (_action) do {
             true
         };
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoDelArm", ["", -10]];
-        private _todo = if (_action isEqualTo "deleteAll") then { +_lib } else { [_lib select _arg] };
+        private _todo = if (_action isEqualTo "deleteAll") then { [_lib] call _phoneOnly } else { [_lib select _arg] };
         private _done = 0;
         {
             _x params ["_path", "_name"];
@@ -87,9 +92,15 @@ switch (_action) do {
         }, [_lib select _arg, _fnc_send], "Photo", 600] call comspec_atak_native_fnc_netSend;
         true
     };
+    case "sendNew";
     case "sendAll": {
-        private _lib = +(uiNamespace getVariable ["COMSPEC_ATAK_PhotoLib", []]);
-        if ((count _lib) isEqualTo 0) exitWith { false };
+        private _lib = [+(uiNamespace getVariable ["COMSPEC_ATAK_PhotoLib", []])] call _phoneOnly;
+        if (_action isEqualTo "sendNew") then {
+            private _sent = ((missionNamespace getVariable ["COMSPEC_Athena_PhotoUploaded", []]) select { _x isEqualType "" }) apply { toLower _x };
+            private _known = uiNamespace getVariable ["COMSPEC_ATAK_PhotoKnown", []];
+            _lib = _lib select { !((toLower (_x select 0)) in _sent) && {!((toLower (_x select 1)) in _sent)} && {!((toLower (_x select 1)) in _known)} };
+        };
+        if ((count _lib) isEqualTo 0) exitWith { ["INFO", "Aucune photo à envoyer : tout est déjà sur Athena.", 4, 20] call comspec_atak_native_fnc_notify; false };
         ["INFO", format ["%1 photo(s) remises en file, une toutes les 2 s.", count _lib], 4, 20] call comspec_atak_native_fnc_notify;
         [_lib, _fnc_send] spawn {
             params ["_lib", "_fnc_send"];

@@ -45,7 +45,7 @@ final class ReconImageStorageTest extends TestCase
         $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Api/AtakApiController.php');
         self::assertStringContainsString('ReconImageStorage::storeFromTemp', $src);
         self::assertStringContainsString('ReconImageStorage::absoluteReadable', $src);
-        self::assertStringContainsString('ReconImageStorage::publicUrl', $src);
+        self::assertStringContainsString('ReconImageStorage::urlForRow', $src);
         $index = (string) file_get_contents(dirname(__DIR__, 2) . '/public/index.php');
         self::assertStringContainsString("str_starts_with(\$requestPath, '/uploads/')", $index);
         self::assertStringContainsString('storage', $index);

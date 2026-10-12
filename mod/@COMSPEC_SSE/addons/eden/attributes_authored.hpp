@@ -7,7 +7,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "Automatique : le jeu compose les pièces. Personnaliser : seules les pièces remplies ci-dessous sont utilisées. Ne pas inclure : aucun document.";
             property = "comspec_sse_documentsMode";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_documentsMode', _value, true];";
+            expression = "_this setVariable ['comspec_sse_documentsMode', _value, isServer];";
             defaultValue = "'AUTO'";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -22,7 +22,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "Ex. Relevé de comptes, ordre de mission, carte d’identité.";
             property = "comspec_sse_doc1_title";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc1_title', _value, true];";
+            expression = "_this setVariable ['comspec_sse_doc1_title', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -32,7 +32,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "Texte lu sur le document (résumé, fonds, annotations).";
             property = "comspec_sse_doc1_summary";
             control = "EditMulti3";
-            expression = "_this setVariable ['comspec_sse_doc1_summary', _value, true];";
+            expression = "_this setVariable ['comspec_sse_doc1_summary', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -42,7 +42,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "Repère de carte mentionné sur la pièce, s’il y en a un.";
             property = "comspec_sse_doc1_grid";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc1_grid', _value, true];";
+            expression = "_this setVariable ['comspec_sse_doc1_grid', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -52,7 +52,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "Mot de code ou référence interne, s’il figure sur la pièce.";
             property = "comspec_sse_doc1_codeword";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc1_codeword', _value, true];";
+            expression = "_this setVariable ['comspec_sse_doc1_codeword', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -62,7 +62,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "Intitulé affiché de la deuxième pièce (vide = pas de pièce 2).";
             property = "comspec_sse_doc2_title";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc2_title', _value, true];";
+            expression = "_this setVariable ['comspec_sse_doc2_title', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -72,7 +72,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "Texte lu par les joueurs lors de la lecture du document.";
             property = "comspec_sse_doc2_summary";
             control = "EditMulti3";
-            expression = "_this setVariable ['comspec_sse_doc2_summary', _value, true];";
+            expression = "_this setVariable ['comspec_sse_doc2_summary', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -82,7 +82,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "Coordonnée mentionnée dans la pièce (ex. 045 112). Optionnel.";
             property = "comspec_sse_doc2_grid";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc2_grid', _value, true];";
+            expression = "_this setVariable ['comspec_sse_doc2_grid', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -92,7 +92,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "Mot de code cité dans la pièce. Optionnel.";
             property = "comspec_sse_doc2_codeword";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc2_codeword', _value, true];";
+            expression = "_this setVariable ['comspec_sse_doc2_codeword', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -102,7 +102,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "Intitulé affiché de la troisième pièce (vide = pas de pièce 3).";
             property = "comspec_sse_doc3_title";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc3_title', _value, true];";
+            expression = "_this setVariable ['comspec_sse_doc3_title', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -112,7 +112,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "Texte lu par les joueurs lors de la lecture du document.";
             property = "comspec_sse_doc3_summary";
             control = "EditMulti3";
-            expression = "_this setVariable ['comspec_sse_doc3_summary', _value, true];";
+            expression = "_this setVariable ['comspec_sse_doc3_summary', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -122,7 +122,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "Coordonnée mentionnée dans la pièce (ex. 045 112). Optionnel.";
             property = "comspec_sse_doc3_grid";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc3_grid', _value, true];";
+            expression = "_this setVariable ['comspec_sse_doc3_grid', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -132,7 +132,7 @@ class COMSPEC_SSE_Documents {
             tooltip = "Mot de code cité dans la pièce. Optionnel.";
             property = "comspec_sse_doc3_codeword";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_doc3_codeword', _value, true];";
+            expression = "_this setVariable ['comspec_sse_doc3_codeword', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -149,7 +149,7 @@ class COMSPEC_SSE_Phone {
             tooltip = "Automatique : le jeu compose l’appareil. Personnaliser : les champs ci-dessous remplacent le contenu. Ne pas inclure : pas de téléphone.";
             property = "comspec_sse_phoneMode";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_phoneMode', _value, true];";
+            expression = "_this setVariable ['comspec_sse_phoneMode', _value, isServer];";
             defaultValue = "'AUTO'";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -164,7 +164,7 @@ class COMSPEC_SSE_Phone {
             tooltip = "Numéro du téléphone saisi. Vide = généré.";
             property = "comspec_sse_phoneNumber";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_phoneNumber', _value, true];";
+            expression = "_this setVariable ['comspec_sse_phoneNumber', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -174,7 +174,7 @@ class COMSPEC_SSE_Phone {
             tooltip = "Ex. téléphone basique, smartphone usagé.";
             property = "comspec_sse_phoneModel";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_phoneModel', _value, true];";
+            expression = "_this setVariable ['comspec_sse_phoneModel', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -184,7 +184,7 @@ class COMSPEC_SSE_Phone {
             tooltip = "Un nom ou alias par ligne.";
             property = "comspec_sse_phoneContacts";
             control = "EditMulti5";
-            expression = "_this setVariable ['comspec_sse_phoneContacts', _value, true];";
+            expression = "_this setVariable ['comspec_sse_phoneContacts', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -194,7 +194,7 @@ class COMSPEC_SSE_Phone {
             tooltip = "Format : Expéditeur : texte du message";
             property = "comspec_sse_phoneMessages";
             control = "EditMulti5";
-            expression = "_this setVariable ['comspec_sse_phoneMessages', _value, true];";
+            expression = "_this setVariable ['comspec_sse_phoneMessages', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -204,7 +204,7 @@ class COMSPEC_SSE_Phone {
             tooltip = "Notes enregistrées dans le téléphone, une par ligne.";
             property = "comspec_sse_phoneNotes";
             control = "EditMulti3";
-            expression = "_this setVariable ['comspec_sse_phoneNotes', _value, true];";
+            expression = "_this setVariable ['comspec_sse_phoneNotes', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -214,7 +214,7 @@ class COMSPEC_SSE_Phone {
             tooltip = "Format : Libellé | grille  (ex. Dépôt nord | 56032 106032)";
             property = "comspec_sse_phonePlaces";
             control = "EditMulti3";
-            expression = "_this setVariable ['comspec_sse_phonePlaces', _value, true];";
+            expression = "_this setVariable ['comspec_sse_phonePlaces', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -231,7 +231,7 @@ class COMSPEC_SSE_Computer {
             tooltip = "Automatique : un PC peut apparaître selon la richesse. Personnaliser : les champs ci-dessous composent l’ordinateur. Ne pas inclure : pas d’ordinateur.";
             property = "comspec_sse_digitalMode";
             control = "Combo";
-            expression = "_this setVariable ['comspec_sse_digitalMode', _value, true];";
+            expression = "_this setVariable ['comspec_sse_digitalMode', _value, isServer];";
             defaultValue = "'AUTO'";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -246,7 +246,7 @@ class COMSPEC_SSE_Computer {
             tooltip = "Nom affiché sur la machine (ex. PC-BUREAU).";
             property = "comspec_sse_pcHostname";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_pcHostname', _value, true];";
+            expression = "_this setVariable ['comspec_sse_pcHostname', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -256,7 +256,7 @@ class COMSPEC_SSE_Computer {
             tooltip = "Nom du compte utilisateur affiché à l'ouverture de session.";
             property = "comspec_sse_pcOwner";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_pcOwner', _value, true];";
+            expression = "_this setVariable ['comspec_sse_pcOwner', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -266,7 +266,7 @@ class COMSPEC_SSE_Computer {
             tooltip = "Noms de fichiers trouvés sur la machine, un par ligne.";
             property = "comspec_sse_pcFiles";
             control = "EditMulti5";
-            expression = "_this setVariable ['comspec_sse_pcFiles', _value, true];";
+            expression = "_this setVariable ['comspec_sse_pcFiles', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -276,7 +276,7 @@ class COMSPEC_SSE_Computer {
             tooltip = "Objet du courrier le plus récent trouvé sur l'ordinateur.";
             property = "comspec_sse_pcMailSubject";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_pcMailSubject', _value, true];";
+            expression = "_this setVariable ['comspec_sse_pcMailSubject', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -286,7 +286,7 @@ class COMSPEC_SSE_Computer {
             tooltip = "Extrait lisible du courrier (quelques lignes).";
             property = "comspec_sse_pcMailSnippet";
             control = "EditMulti3";
-            expression = "_this setVariable ['comspec_sse_pcMailSnippet', _value, true];";
+            expression = "_this setVariable ['comspec_sse_pcMailSnippet', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -296,7 +296,7 @@ class COMSPEC_SSE_Computer {
             tooltip = "Nom du réseau auquel la machine s’est connectée.";
             property = "comspec_sse_pcWifi";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_pcWifi', _value, true];";
+            expression = "_this setVariable ['comspec_sse_pcWifi', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";
@@ -306,7 +306,7 @@ class COMSPEC_SSE_Computer {
             tooltip = "Mot de passe, mot de code ou indice laissé sur la machine.";
             property = "comspec_sse_pcAccessHint";
             control = "Edit";
-            expression = "_this setVariable ['comspec_sse_pcAccessHint', _value, true];";
+            expression = "_this setVariable ['comspec_sse_pcAccessHint', _value, isServer];";
             defaultValue = "''";
             typeName = "STRING";
             condition = "objectBrain + objectVehicle + objectControllable";

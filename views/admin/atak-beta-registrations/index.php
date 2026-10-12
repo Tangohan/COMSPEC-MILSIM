@@ -59,7 +59,7 @@ foreach ($rows as $countRow) {
 
 $csrfToken = \App\Core\Csrf::token();
 $baseBeta = url('admin/atak-beta');
-$blocksUrl = url('admin/atak-mod-blocks');
+$blocksUrl = url('admin/system/blocklist');
 ?>
 <div class="bo-atak-beta">
     <header class="bo-atak-beta__hero">
@@ -70,13 +70,13 @@ $blocksUrl = url('admin/atak-mod-blocks');
             Le badge « Accepté » confirme la note côté jeu ; pour couper l’accès, créez une restriction Steam.
         </p>
         <nav class="bo-atak-beta__nav" aria-label="Liens associés">
-            <a href="<?= htmlspecialchars(url('admin/atak-mod'), ENT_QUOTES, 'UTF-8') ?>">Pack Overwatch</a>
+            <a href="<?= htmlspecialchars(url('back-office/ressources/atak-mod'), ENT_QUOTES, 'UTF-8') ?>">Pack Overwatch</a>
             <span class="bo-atak-beta__nav-sep" aria-hidden="true">·</span>
             <a href="<?= htmlspecialchars(url('admin/atak-mod-reports'), ENT_QUOTES, 'UTF-8') ?>">Rapports erreurs</a>
             <span class="bo-atak-beta__nav-sep" aria-hidden="true">·</span>
             <a href="<?= htmlspecialchars($blocksUrl, ENT_QUOTES, 'UTF-8') ?>">Restrictions d’accès</a>
             <span class="bo-atak-beta__nav-sep" aria-hidden="true">·</span>
-            <a href="<?= htmlspecialchars(url('admin/atak-config'), ENT_QUOTES, 'UTF-8') ?>">Configuration ATAK</a>
+            <a href="<?= htmlspecialchars(url('back-office/ressources/atak-config'), ENT_QUOTES, 'UTF-8') ?>">Configuration ATAK</a>
         </nav>
     </header>
 
@@ -124,7 +124,7 @@ $blocksUrl = url('admin/atak-mod-blocks');
             <?php else: ?>
                 <form method="post" action="<?= htmlspecialchars($baseBeta . '/bulk', ENT_QUOTES, 'UTF-8') ?>" id="atak-beta-bulk-form"
                       data-confirm-clear="Retirer le marquage « Accepté » pour les inscriptions sélectionnées ? Cela ne coupe pas l’accès au mod."
-                      data-confirm-restrict="Restreindre l’accès Steam pour les inscriptions sélectionnées ? Le pack Overwatch refusera ces joueurs pour votre communauté."
+                      data-confirm-restrict="Restreindre l’accès Steam pour les inscriptions sélectionnées ? Le pack Overwatch refusera ces joueurs sur toute la plateforme."
                       data-confirm-delete="Supprimer définitivement les inscriptions sélectionnées du journal ? Cette action est irréversible.">
                     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
 
@@ -182,7 +182,7 @@ $blocksUrl = url('admin/atak-mod-blocks');
                                     }
                                     $displayName = $playerName !== '' ? $playerName : 'cette inscription';
                                     $confirmClear = 'Retirer le marquage « Accepté » pour « ' . $displayName . ' » ? Cela ne coupe pas l’accès au mod.';
-                                    $confirmRestrict = 'Restreindre l’accès Steam de « ' . $displayName . ' » ? Le pack Overwatch refusera ce joueur pour votre communauté.';
+                                    $confirmRestrict = 'Restreindre l’accès Steam de « ' . $displayName . ' » ? Le pack Overwatch refusera ce joueur sur toute la plateforme.';
                                     $confirmDelete = 'Supprimer définitivement l’inscription de « ' . $displayName . ' » du journal ? Cette action est irréversible.';
                                     $steamMasked = $maskSteam($steamRaw);
                                     $ipMasked = $maskIp($ipRaw);

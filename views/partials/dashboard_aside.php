@@ -278,7 +278,7 @@ $navTiles[] = $tile(
         ['label' => 'Calendrier', 'href' => url('evenements'), 'hint' => 'Prochaines opérations'],
         ['label' => 'Nouvelle manœuvre', 'href' => url('evenements'), 'hint' => 'Ouvrir le planning'],
         $canAdmin
-            ? ['label' => 'Gestion état-major', 'href' => url('back-office/events'), 'hint' => 'Administration des événements']
+            ? ['label' => 'Gestion état-major', 'href' => url('back-office/events'), 'hint' => 'Gestion des événements']
             : null,
     ]),
     'events'

@@ -12,7 +12,7 @@ use App\Support\ComspecApiKeyAuth;
 use App\Support\HttpJsonBody;
 
 /**
- * Campagnes SSE ⇄ jeu (COMSPEC Link 2.0.64 : SseCampaignPush, SseCampaignList, SseCampaignPull).
+ * Campagnes SSE ⇄ jeu (COMSPEC Link 2.0.67 : SseCampaignPush, SseCampaignList, SseCampaignPull).
  *
  * POST /api/sse/campaigns/sync          {key, text}  texte exporté par le jeu → Athena
  * GET  /api/sse/campaigns               campagnes actives de la communauté

@@ -117,14 +117,14 @@ $decode = static function (mixed $raw): array {
                     <td><?= $active ? 'Active' : 'Inactive' ?></td>
                     <td>
                         <form method="post"
-                              action="<?= $h(url('admin/atak-diffusion-rapports/' . (int) $rule['id'] . '/etat')) ?>"
+                              action="<?= $h(url('back-office/ressources/atak-diffusion-rapports/' . (int) $rule['id'] . '/etat')) ?>"
                               style="display:inline">
                             <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
                             <input type="hidden" name="active" value="<?= $active ? '0' : '1' ?>">
                             <button type="submit"><?= $active ? 'Désactiver' : 'Activer' ?></button>
                         </form>
                         <form method="post"
-                              action="<?= $h(url('admin/atak-diffusion-rapports/' . (int) $rule['id'] . '/supprimer')) ?>"
+                              action="<?= $h(url('back-office/ressources/atak-diffusion-rapports/' . (int) $rule['id'] . '/supprimer')) ?>"
                               style="display:inline"
                               onsubmit="return confirm('Supprimer cette règle ? Les diffusions déjà effectuées restent au journal.');">
                             <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
@@ -144,7 +144,7 @@ $decode = static function (mixed $raw): array {
         <h2>Ajouter une règle</h2>
     </div>
     <div class="panel-body">
-        <form method="post" action="<?= $h(url('admin/atak-diffusion-rapports')) ?>">
+        <form method="post" action="<?= $h(url('back-office/ressources/atak-diffusion-rapports')) ?>">
             <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
 
             <label for="rule_name">Nom de la règle</label>
