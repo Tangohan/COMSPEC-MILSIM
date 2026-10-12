@@ -1588,6 +1588,55 @@ def jpc_tablet_atlas(tmp):
     convert(atlas.convert("RGB"), "jpc_tablet_co", tmp)
 
 
+# Téléphones portés ouverts sur le JPC (model_jpc_phones.PHONES : mêmes rectangles) : rectangle recadré.
+JPC_PHONES = {
+    "s7": (206, 569, 1901, 1752),
+    "rugged": (305, 558, 1697, 1555),
+    "iphone": (388, 643, 1614, 1407),
+    "plate": (145, 605, 1903, 1645),
+    "flip": (195, 543, 1853, 1459),
+    "ribbed": (240, 605, 1808, 1435),
+}
+
+
+def jpc_phone_atlas(tmp):
+    """Atlas jpc_<modèle>_ca : face en haut, dos vu de derrière en bas, transparence = silhouette.
+    S7 : coque coyote et variantes de teinte (od, black), dos de phone_back."""
+    def pack(front, rear, crop):
+        x0, y0, x1, y1 = crop
+        hx0, hy0, hx1, hy1 = JPC_HOLE
+        under = Image.new("RGBA", front.size, (0, 0, 0, 0))
+        under.paste(_glass(hx1 - hx0, hy1 - hy0), (hx0, hy0))
+        under.alpha_composite(front)
+        atlas = Image.new("RGBA", (2048, 2048), (0, 0, 0, 0))
+        atlas.paste(under.crop(crop).resize((2048, 1024), Image.LANCZOS), (0, 0))
+        atlas.paste(rear.resize((2048, 1024), Image.LANCZOS), (0, 1024))
+        return atlas
+
+    for m, crop in JPC_PHONES.items():
+        x0, y0, x1, y1 = crop
+        if m == "s7":
+            if not os.path.exists(PHONE_SRC):
+                continue
+            front = Image.open(PHONE_SRC).convert("RGBA")
+            back = phone_back(PHONE_SRC)
+
+            def s7_rear(img):
+                # phone_back est déjà vu de derrière (miroir de la face), comme les rendus des autres modèles.
+                return img.crop((2048 - x1, y0, 2048 - x0, y1))
+
+            convert(pack(front, s7_rear(back), crop), "jpc_s7_ca", tmp)
+            for key, tint in SHELL_TINTS.items():
+                convert(pack(shell_tint(front, tint), s7_rear(shell_tint(back, tint)), crop), f"jpc_s7_{key}_ca", tmp)
+            continue
+        f = os.path.join(RENDER_DIR, f"phone_{m}_front.png")
+        b = os.path.join(RENDER_DIR, f"phone_{m}_back.png")
+        if not (os.path.exists(f) and os.path.exists(b)):
+            continue
+        rear = Image.open(b).convert("RGBA").crop((2048 - x1, y0, 2048 - x0, y1))
+        convert(pack(Image.open(f).convert("RGBA"), rear, crop), f"jpc_{m}_ca", tmp)
+
+
 def jpc_screen_static(tmp):
     """Écran de la tablette vu par les autres joueurs : carte ATAK figée (topo, barre d'état, outils, positions)."""
     img = topo_wallpaper(1024, 576, 11, (120, 170, 120)).convert("RGBA")
@@ -1613,7 +1662,7 @@ def jpc_screen_static(tmp):
 
 def jpc_rvmats():
     """Écran lumineux (émissif) : jour plus fort, nuit atténuée (fn_jpcScreen choisit selon sunOrMoon)."""
-    for name, em in (("jpc_screen", 2.2), ("jpc_screen_night", 0.45)):
+    for name, em in (("jpc_screen", 3.0), ("jpc_screen_night", 1.2)):
         with open(os.path.join(OUT, name + ".rvmat"), "w", newline="\r\n") as fh:
             fh.write("ambient[]={0,0,0,1};\ndiffuse[]={0,0,0,1};\nforcedDiffuse[]={0,0,0,0};\n"
                      f"emmisive[]={{{em},{em},{em},1}};\nspecular[]={{0.05,0.05,0.05,1}};\nspecularPower=80;\n"
@@ -1720,6 +1769,7 @@ def main():
         if len(sys.argv) > 2 and sys.argv[2] == "jpc":
             model_assets(tmp, only=["keys"])
             jpc_tablet_atlas(tmp)
+            jpc_phone_atlas(tmp)
             jpc_screen_static(tmp)
             jpc_rvmats()
             return

@@ -1,6 +1,7 @@
 /*
-    ATAK ouvert sur le JPC : tablette durcie à touches A / B / X / Y (COMSPEC_ATAK_JpcTablet, data/jpc_tablet.p3d,
-    tools/model_jpc_tablet.py) accrochée au rabat du porte-plaques, devant la poitrine.
+    ATAK ouvert sur le JPC : le terminal choisi dans le profil (COMSPEC_ATAK_PhoneModel ; Samsung S7 par défaut,
+    COMSPEC_ATAK_JpcPhone_<modèle>, tools/model_jpc_phones.py ; tablette à touches A / B / X / Y :
+    COMSPEC_ATAK_JpcTablet, tools/model_jpc_tablet.py) accroché au rabat du porte-plaques, devant la poitrine.
     - Style « porté » JPC (profil COMSPEC_ATAK_CarryStyle = "jpc") : la touche « porter » relève la tablette vers le
       visage et l'interface ATAK s'affiche en direct sur son écran 3D (texture UI, display COMSPEC_RscATAKTexture),
       sans miniature à l'écran. Vue libre, déplacement et arme restent disponibles : on baisse les yeux pour lire.
@@ -21,15 +22,21 @@
     COMSPEC_ATAK_JpcRate (images par seconde de l'écran vivant, 6 par défaut).
 */
 params [["_act", "tick"]];
-private _cls = "COMSPEC_ATAK_JpcTablet";
+private _phones = ["s7", "rugged", "iphone", "plate", "flip", "ribbed"];
 if (_act isEqualTo "sweep") exitWith {
-    { if ((_x getVariable ["COMSPEC_ATAK_Jpc", false]) && {isNull attachedTo _x}) then { deleteVehicle _x; }; } forEach (allSimpleObjects [_cls]);
+    { if ((_x getVariable ["COMSPEC_ATAK_Jpc", false]) && {isNull attachedTo _x}) then { deleteVehicle _x; }; } forEach (allSimpleObjects (["COMSPEC_ATAK_JpcTablet"] + (_phones apply { "COMSPEC_ATAK_JpcPhone_" + _x })));
     true
 };
 if (!hasInterface) exitWith { false };
 private _d = "\z\comspec_atak_native\addons\main\data\";
 private _off = "#(argb,8,8,3)color(0,0,0,1)";
 private _style = profileNamespace getVariable ["COMSPEC_ATAK_CarryStyle", "hud"];
+// Modèle du profil (la tablette de bord des véhicules n'est pas portable : S7) ; S7 : teinte de la coque.
+private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
+if !(_model in (_phones + ["keys"])) then { _model = "s7"; };
+private _cls = ["COMSPEC_ATAK_JpcPhone_" + _model, "COMSPEC_ATAK_JpcTablet"] select (_model isEqualTo "keys");
+private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"];
+private _skin = ["", format ["%1jpc_s7_%2_ca.paa", _d, _tint]] select (_model isEqualTo "s7" && {_tint in ["od", "black"]});
 private _usable = { alive player && {vehicle player isEqualTo player} && {vest player isNotEqualTo ""} && {[player] call comspec_atak_native_fnc_hasDevice} };
 private _isOpen = {
     private _disp = [] call comspec_atak_native_fnc_display;
@@ -52,11 +59,19 @@ private _pose = {
 };
 private _ensure = {
     private _cur = missionNamespace getVariable ["COMSPEC_ATAK_JpcObj", objNull];
-    if (isNull _cur || {(attachedTo _cur) isNotEqualTo player}) then {
+    private _key = [_cls, _skin];
+    if (isNull _cur || {(attachedTo _cur) isNotEqualTo player} || {(missionNamespace getVariable ["COMSPEC_ATAK_JpcKey", []]) isNotEqualTo _key}) then {
+        // Changement de modèle pendant que l'écran est ouvert : on le referme et on le rouvre sur le nouveau.
+        if (!isNull _cur && {call _isOpen}) then {
+            ["close"] call comspec_atak_native_fnc_jpcScreen;
+            [{ [false] call comspec_atak_native_fnc_open; }] call CBA_fnc_execNextFrame;
+        };
         if (!isNull _cur) then { deleteVehicle _cur; };
         _cur = createSimpleObject [_cls, getPosASL player, false];
         _cur setVariable ["COMSPEC_ATAK_Jpc", true, true];
+        if (_skin isNotEqualTo "") then { _cur setObjectTextureGlobal [0, _skin]; };
         _cur setObjectTextureGlobal [1, _off];
+        missionNamespace setVariable ["COMSPEC_ATAK_JpcKey", _key];
         [_cur, false] call _pose;
         missionNamespace setVariable ["COMSPEC_ATAK_JpcObj", _cur];
     };
@@ -97,6 +112,7 @@ switch (_act) do {
                 missionNamespace setVariable ["COMSPEC_ATAK_JpcNext", diag_tickTime + 1 / _rate];
                 private _obj = missionNamespace getVariable ["COMSPEC_ATAK_JpcObj", objNull];
                 if (isNull _obj || {(worldToScreen (ASLToAGL getPosASL _obj)) isEqualTo []} || {(positionCameraToWorld [0, 0, 0]) distance _obj > 6}) exitWith {};
+                ["update", _disp] call comspec_atak_native_fnc_jpcMap;
                 displayUpdate _disp;
             }, 0] call CBA_fnc_addPerFrameHandler];
         };
@@ -105,6 +121,7 @@ switch (_act) do {
     case "close": {
         private _disp = [] call comspec_atak_native_fnc_display;
         private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        ["close"] call comspec_atak_native_fnc_jpcMap;
         if (!isNull _disp && {_s getOrDefault ["texture", false]}) then {
             // Nettoyage immédiat (le moteur ne libère le display qu'une fois la texture abandonnée).
             [_disp, 2] call comspec_atak_native_fnc_displayUnload;
