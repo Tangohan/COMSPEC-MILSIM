@@ -42,6 +42,11 @@ Non testé en jeu. Inclut les correctifs de performance de la PR #629 (même bas
 - Galerie filtrable (téléphone / drone) avec titres, étiquettes SSE et CONFIDENTIEL, statut d'envoi et page de détail (modifier, envoyer, supprimer).
 - « Envoyer les nouvelles » n'envoie que les photos absentes d'Athena ; viseur : ligne de destination (direct ou hors réseau) et légende.
 
+### Nouveau — Fiche des clichés drone jusqu'au site (COMSPEC Link 2.0.66)
+- Titre, description, SSE (avec dossier), confidentiel, source et nom du drone partent en vrais champs par NotifyNewPhoto, avec la position et le cap du drone ; chaque envoi apparaît dans « Files d'envoi Athena » comme « Photo drone ».
+- Site : champs stockés (migration `atak_recon_images_photo_meta`, lancée par run-migrations.php), affichés dans les photos Overwatch beta, la galerie caméras et la liste recon (badges SSE avec lien vers le dossier et CONFIDENTIEL) ; photos confidentielles masquées sans habilitation et jamais relayées sur Discord.
+- DLL COMSPEC Link à recompiler (`build_mod.bat`) ; avec une DLL plus ancienne, les champs repartent dans la légende.
+
 ### Corrigé / amélioré — Interface
 - Briefing : texte géant (« ||0.8% ») des fiches du journal de mission ramené à taille normale.
 - Réseau : la page s'ouvre de nouveau.
