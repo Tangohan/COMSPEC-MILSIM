@@ -1,4 +1,6 @@
 [
+["BASSE LUMIÈRE", "LOW LIGHT"],
+["MODE NUIT", "NIGHT MODE"],
 ["%1 %% par minute", "%1 %% per minute"],
 ["%1 %% puis %2 %%", "%1 %% then %2 %%"],
 ["%1 %2 (drone %3, grille %4, %5 m sol, cap %6°, %7)", "%1 %2 (drone %3, grid %4, %5 m AGL, hdg %6°, %7)"],
