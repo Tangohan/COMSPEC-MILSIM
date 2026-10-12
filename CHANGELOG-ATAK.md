@@ -11,6 +11,12 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Traduction 2026-10-12 — Menu CBA, objets et modules en anglais (ATAK natif 1.21.0)
+
+Non testé en jeu.
+- Menu CBA (Échap > Options > Options des addons > COMSPEC) : titres, aides, sections et choix des listes dans la langue du téléphone (`fn_addSetting`). Changer de langue en partie : relancer la mission pour que ce menu suive (le téléphone, lui, change tout de suite).
+- Noms et descriptions des objets (arsenal, inventaire, Zeus) et modules Eden/Zeus d'extraction de données : `stringtable.xml`, dans la langue du jeu (Arma en anglais = anglais). Généré par `tools/i18n.py stringtable`.
+
 ## 2026-10-12 — Connexion au compte Athena sans clé ni identifiant (ATAK natif 1.20.0, COMSPEC Link 2.0.72)
 
 Non testé en jeu. Demande de TTRD : celui qui installe le mod se connecte avec son compte Athena et tout se synchronise, sans clé de communauté ni identifiant de communauté dans les options d'addons.
