@@ -70,6 +70,8 @@ switch (toUpper _mode) do {
         if (diag_tickTime >= (_st getOrDefault ["nextCheck", 0])) then {
             _st set ["nextCheck", diag_tickTime + 0.5];
             _quit = !alive player || {vehicle player isNotEqualTo player} || {!([] call comspec_atak_native_fnc_hasDevice)};
+            // Ligne de destination (réseau) tenue à jour.
+            if (!_quit && {diag_tickTime >= (_st getOrDefault ["nextHud", 0])}) then { _st set ["nextHud", diag_tickTime + 2]; ["HUD"] call comspec_atak_native_fnc_photoMode; };
         };
         if (_quit) exitWith { ["EXIT"] call comspec_atak_native_fnc_photoMode; };
         // Bras tendu, téléphone devant soi (geste vanilla relancé tant que le mode photo dure).
@@ -220,6 +222,13 @@ switch (toUpper _mode) do {
             [["CLIC", "photo"], ["SOURIS", "cadrer"], ["MOLETTE", "zoom"], ["F", "flash"], ["R", "objectif arrière"], ["ESPACE", "quitter"]]
         ] select _selfie;
         (_cam displayCtrl 3) ctrlSetStructuredText parseText format ["<t align='center' size='0.9'>%1</t>", (_keys apply { format ["<t font='RobotoCondensedBold' color='#eef3ef'>%1</t> <t color='#a9b8b0'>%2</t>", _x select 0, _x select 1] }) joinString "     "];
+        // Où part la photo : Athena (réseau présent) ou poste seul, et légende choisie dans l'app.
+        private _net = (([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 0]) > 0;
+        private _cap = (uiNamespace getVariable ["COMSPEC_ATAK_PhotoCtx", []]) param [3, ""];
+        if !(_cap isEqualType "") then { _cap = ""; };
+        _cap = [[[_cap select [0, 40], "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace, "légende automatique (grille, cap)"] select (_cap isEqualTo "");
+        (_cam displayCtrl 9) ctrlSetStructuredText parseText format ["<t align='center'>%1   <t color='#6d7a74'>|</t>   <t color='#a9b8b0'>%2</t></t>",
+            ["<t color='#f2ab33'>HORS RÉSEAU : photo gardée sur le poste</t>", "<t color='#5cc76b'>ENVOI DIRECT VERS ATHENA</t>"] select _net, _cap];
         true
     };
     case "SELFIE": {
@@ -263,7 +272,7 @@ switch (toUpper _mode) do {
             private _cam = uiNamespace getVariable ["COMSPEC_ATAK_CameraDisplay", displayNull];
             // Le viseur ne doit pas apparaître sur la photo (ni les cadres dessinés dans la scène).
             uiNamespace setVariable ["COMSPEC_ATAK_PhotoShooting", true];
-            if (!isNull _cam) then { { (_cam displayCtrl _x) ctrlShow false; } forEach [1, 3, 4, 5, 6, 7, 8]; };
+            if (!isNull _cam) then { { (_cam displayCtrl _x) ctrlShow false; } forEach [1, 3, 4, 5, 6, 7, 8, 9, 10]; };
             // Éclair réel au téléphone, très bref (visible sur la capture).
             private _light = objNull;
             if (_fire) then {
@@ -282,14 +291,14 @@ switch (toUpper _mode) do {
             private _noNet = (([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0;
             private _ok = if (_noNet) then {
                 screenshot format ["comspec_atak_%1.png", floor (diag_tickTime * 10)];
-                ["WARNING", "Pas de réseau : photo gardée sur le poste, à retransmettre depuis Photos > Bibliothèque", 5, 40] call comspec_atak_native_fnc_notify;
+                ["WARNING", "Pas de réseau : photo gardée sur le poste, à envoyer depuis Photos > Galerie", 5, 40] call comspec_atak_native_fnc_notify;
                 false
             } else { ["", _caption, "CTAB", "", false, false, true] call comspec_overwatch_connect_fnc_captureReconImage };
             uiSleep 0.08;
             if (!isNull _light) then { deleteVehicle _light; };
             uiNamespace setVariable ["COMSPEC_ATAK_PhotoShooting", false];
             if (!isNull _cam) then {
-                { (_cam displayCtrl _x) ctrlShow true; } forEach [1, 3, 4, 5, 6, 7, 8];
+                { (_cam displayCtrl _x) ctrlShow true; } forEach [1, 3, 4, 5, 6, 7, 8, 9, 10];
                 private _flash = _cam displayCtrl 2;
                 _flash ctrlSetBackgroundColor [1, 1, 1, [0.55, 0.9] select _fire];
                 _flash ctrlCommit 0;
@@ -297,7 +306,7 @@ switch (toUpper _mode) do {
                 _flash ctrlCommit ([0.35, 0.6] select _fire);
                 private _n = (_ctx param [4, 0]) + ([0, 1] select _ok);
                 _ctx set [4, _n];
-                (_cam displayCtrl 4) ctrlSetText format ["%1%2", ["Photo non envoyée : voir l'app Photos", format ["%1 photo(s) en cours d'envoi vers Athena", _n]] select _ok, ["", " · flash"] select _fire];
+                (_cam displayCtrl 4) ctrlSetText format ["%1%2", ["Photo non envoyée : voir Photos > Envois", format ["%1 photo(s) en cours d'envoi vers Athena", _n]] select _ok, ["", " · flash"] select _fire];
             };
             playSound "ClickSoft";
         };

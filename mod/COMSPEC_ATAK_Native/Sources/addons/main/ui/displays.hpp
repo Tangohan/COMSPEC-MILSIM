@@ -67,6 +67,9 @@ class RscTitles {
             class Info: COMSPEC_RscStructuredText { idc=3; x="safeZoneX + safeZoneW * 0.08"; y="safeZoneY + safeZoneH * 0.843"; w="safeZoneW * 0.84"; h="safeZoneH * 0.035"; colorText[]={0.92,0.95,0.93,1}; shadow=1; size="0.026 * safeZoneH"; text=""; };
             class Count: COMSPEC_RscText { idc=4; style=2; x="safeZoneX + safeZoneW * 0.25"; y="safeZoneY + safeZoneH * 0.876"; w="safeZoneW * 0.5"; h="safeZoneH * 0.03"; colorText[]={0.36,0.78,0.42,1}; shadow=2; sizeEx="0.024 * safeZoneH"; text=""; };
             class Status: COMSPEC_RscStructuredText { idc=5; x="safeZoneX + safeZoneW * 0.3"; y="safeZoneY + safeZoneH * 0.058"; w="safeZoneW * 0.4"; h="safeZoneH * 0.032"; colorText[]={0.92,0.95,0.93,1}; shadow=1; size="0.026 * safeZoneH"; text=""; };
+            // Destination sous l'état : Athena joignable ou photo gardée sur le poste, légende de la photo.
+            class DestBand: COMSPEC_RscText { idc=10; x="safeZoneX + safeZoneW * 0.3"; y="safeZoneY + safeZoneH * 0.096"; w="safeZoneW * 0.4"; h="safeZoneH * 0.03"; colorBackground[]={0,0,0,0.35}; };
+            class Dest: COMSPEC_RscStructuredText { idc=9; x="safeZoneX + safeZoneW * 0.3"; y="safeZoneY + safeZoneH * 0.099"; w="safeZoneW * 0.4"; h="safeZoneH * 0.026"; colorText[]={0.92,0.95,0.93,1}; shadow=1; size="0.02 * safeZoneH"; text=""; };
             // Échelle de zoom (x1 … x8), palier en cours en vert.
             class ZoomScale: COMSPEC_RscStructuredText { idc=6; x="safeZoneX + safeZoneW * 0.85"; y="safeZoneY + safeZoneH * 0.36"; w="safeZoneW * 0.07"; h="safeZoneH * 0.3"; colorText[]={0.92,0.95,0.93,1}; shadow=1; size="0.024 * safeZoneH"; text=""; };
         };
