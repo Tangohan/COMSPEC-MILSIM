@@ -664,6 +664,13 @@ if ($atakMapConfig) {
             <span>Afficher les repères de planification sur la carte</span>
           </span>
         </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-drone-contacts">
+          <span class="atak-sound-pref-key">Contacts vus par drone</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-show-drone-contacts" checked />
+            <span>Pistes de la caméra des drones de l’ATAK natif (losange orange, croix si détruit)</span>
+          </span>
+        </label>
         <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-sse-layer-cases">
           <span class="atak-sound-pref-key">Dossiers</span>
           <span class="atak-sound-pref-check">
@@ -2764,6 +2771,12 @@ if ($atakMapConfig) {
           </label>
           <div class="atak-replay-explore" role="group" aria-label="Filtres de la chronologie">
             <label class="atak-replay-speed-wrap">
+              <span class="atak-replay-speed-label">Mission</span>
+              <select id="atak-replay-mission-filter" class="atak-replay-speed" title="Session jouée à relire (clé de mission de l’ATAK natif)">
+                <option value="all">Toutes les sessions</option>
+              </select>
+            </label>
+            <label class="atak-replay-speed-wrap">
               <span class="atak-replay-speed-label">Date</span>
               <select id="atak-replay-date-filter" class="atak-replay-speed" title="Journée à relire">
                 <option value="all">Toute la période</option>
@@ -3346,6 +3359,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-iff.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-sigint.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-rf-hits.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-drone-contacts.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-sitrep.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-ops-status.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-transmissions.js"></script>

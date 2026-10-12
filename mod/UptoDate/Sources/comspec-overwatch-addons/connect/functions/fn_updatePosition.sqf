@@ -649,6 +649,11 @@ if (_sendBackFlag >= 45) then {
 } else {
     _vehJson = _vehJson + ",""deferred"":false";
 };
+// Clé de la session jouée (ATAK natif, « nom@carte#UTC ») : relecture du site filtrée par mission.
+private _missionKey = missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", ""];
+if (_missionKey isEqualType "" && {_missionKey isNotEqualTo ""}) then {
+    _vehJson = _vehJson + format [",""mission_key"":""%1""", (_missionKey splitString """\" joinString "")];
+};
 private _combatFrag = [] call comspec_overwatch_connect_fnc_combatEventsJson;
 if (_combatFrag isEqualType "" && {_combatFrag isNotEqualTo ""}) then {
     _vehJson = _vehJson + _combatFrag;

@@ -125,13 +125,39 @@ class AtakScreenTimeRepository
 
     /**
      * @param list<array{kind: string, key: string, label: string, seconds: int}> $items
+     * @param string $missionKey clé de la session jouée (« nom@carte#UTC »), gardée par ligne quand la colonne existe
      */
-    public function addItems(int $tenantId, int $userId, array $items, ?string $day = null): int
+    public function addItems(int $tenantId, int $userId, array $items, ?string $day = null, string $missionKey = ''): int
     {
         if ($tenantId < 1 || $userId < 1 || $items === [] || !$this->schemaReady()) {
             return 0;
         }
         $day ??= date('Y-m-d');
+        $st = null;
+        if ($missionKey !== '') {
+            try {
+                $st = $this->pdo()->prepare(
+                    'INSERT INTO atak_screen_time (tenant_id, user_id, day, mission_key, kind, item_key, item_label, seconds)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                     ON DUPLICATE KEY UPDATE seconds = seconds + VALUES(seconds), item_label = VALUES(item_label)'
+                );
+                $first = $items[0];
+                $st->execute([$tenantId, $userId, $day, $missionKey, $first['kind'], $first['key'], $first['label'], $first['seconds']]);
+            } catch (\PDOException $e) {
+                if (!\App\Support\AtakMissionKey::isMissingSchema($e)) {
+                    throw $e;
+                }
+                \App\Support\AtakMissionKey::ensureSchema($this->pdo());
+                $st = null;
+            }
+            if ($st !== null) {
+                foreach (array_slice($items, 1) as $it) {
+                    $st->execute([$tenantId, $userId, $day, $missionKey, $it['kind'], $it['key'], $it['label'], $it['seconds']]);
+                }
+
+                return count($items);
+            }
+        }
         $st = $this->pdo()->prepare(
             'INSERT INTO atak_screen_time (tenant_id, user_id, day, kind, item_key, item_label, seconds)
              VALUES (?, ?, ?, ?, ?, ?, ?)

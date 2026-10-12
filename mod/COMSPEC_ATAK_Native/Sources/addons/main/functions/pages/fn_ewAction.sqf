@@ -156,24 +156,32 @@ switch (_act) do {
             if (alive _x && {_x isNotEqualTo player} && {(side group _x) isNotEqualTo _mySide} && {(_x distance2D _from) < 3000} && {[_x] call comspec_atak_native_fnc_hasDevice}) then {
                 private _loud = (_x getVariable ["COMSPEC_ATAK_EwScanUntil", -1]) > _now;
                 // Un téléphone au repos n'émet que par intermittence : 70 % de chances de le relever.
-                if (_loud || {(random 1) < 0.7}) then { _hits pushBack [getPosATL _x, ["TÉLÉPHONE", "GONIO"] select _loud]; };
+                if (_loud || {(random 1) < 0.7}) then { _hits pushBack [getPosATL _x, ["TÉLÉPHONE", "GONIO"] select _loud, getPlayerUID _x]; };
             };
         } forEach allPlayers;
         {
             _x params [["_pos", [0, 0, 0]], ["_rad", 500], ["_owner", ""], ["_side", ""], ["_until", 1e9]];
             if (_pos isEqualType objNull) then { _pos = if (isNull _pos) then { [] } else { getPosATL _pos }; };
-            if ((count _pos) >= 2 && {_owner isNotEqualTo _uid} && {_until >= _now} && {(_from distance2D _pos) < (3000 + _rad)}) then { _hits pushBack [_pos, "BROUILLEUR"]; };
+            if ((count _pos) >= 2 && {_owner isNotEqualTo _uid} && {_until >= _now} && {(_from distance2D _pos) < (3000 + _rad)}) then { _hits pushBack [_pos, "BROUILLEUR", _owner]; };
         } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
         private _bearings = missionNamespace getVariable ["COMSPEC_ATAK_EwBearings", []];
         private _hour = [dayTime, "HH:MM"] call BIS_fnc_timeToString;
+        // Relèvements envoyés au poste (SendSigint : position du goniomètre + gisement, 8 au plus par balayage) :
+        // lignes de relèvement de la carte SIGINT d'Athena, recoupées par émetteur (indicatif anonyme stable).
+        private _tx = [] call comspec_atak_native_fnc_bridge;
         {
-            _x params ["_pos", "_kind"];
+            _x params ["_pos", "_kind", ["_id", ""]];
             private _d = _from distance2D _pos;
             // Erreur angulaire croissante avec la distance (2 à 12 degrés), distance donnée par bande seulement.
             private _err = 2 + 10 * ((_d / 3000) min 1.5);
             private _brg = ((_from getDir _pos) + (random [-_err, 0, _err]) + 360) mod 360;
             private _band = switch (true) do { case (_d < 500): { [0, 500] }; case (_d < 1000): { [500, 1000] }; case (_d < 2000): { [1000, 2000] }; case (_d < 3000): { [2000, 3000] }; default { [3000, 4500] }; };
             _bearings pushBack [_from, _brg, _band select 0, _band select 1, _kind, time, _err, _hour];
+            if (_tx && {_forEachIndex < 8}) then {
+                private _code = 0;
+                { _code = (_code * 31 + _x) mod 9973; } forEach (toArray _id);
+                "COMSPECExtension" callExtension ["SendSigint", [format ["GE %1-%2", ["EMETTEUR", "BROUILLEUR"] select (_kind isEqualTo "BROUILLEUR"), _code], str round (_from select 0), str round (_from select 1), str round _brg]];
+            };
         } forEach _hits;
         while { (count _bearings) > 15 } do { _bearings deleteAt 0; };
         missionNamespace setVariable ["COMSPEC_ATAK_EwBearings", _bearings];

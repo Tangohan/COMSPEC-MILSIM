@@ -17,18 +17,55 @@ class ReplayService
 
     /**
      * Build timeline grouped by timestamp for GET /api/replay/mission/{missionId}.
+     * Avec une clé de mission (session jouée de l'ATAK natif) : positions de cette session seulement,
+     * et pertes amies / trajets des véhicules et drones sur sa fenêtre.
      */
-    public function getTimeline(string $missionId, ?string $from, ?string $to): array
+    public function getTimeline(string $missionId, ?string $from, ?string $to, string $missionKey = ''): array
     {
-        $rows = $this->repository->getTimeline($missionId, $from, $to, 15000);
+        $rows = $this->repository->getTimeline($missionId, $from, $to, 15000, $missionKey);
+        [$from, $to] = $this->sessionWindow($missionId, $from, $to, $missionKey);
+        $vehicles = $this->repository->getVehicleTracks($missionId, $from, $to);
 
         return [
             'missionId' => $missionId,
+            'missionKey' => $missionKey !== '' ? $missionKey : null,
             'timeline' => ReplayTimelineBuilder::framesFromRows($rows),
+            'casualties' => $this->repository->getCasualties($missionId, $from, $to, $missionKey),
+            'vehicleTracks' => $vehicles['tracks'],
+            'flightTime' => $vehicles['flightTime'],
         ];
     }
 
-    public function logPosition(string $missionId, string $unitId, string $callsign, float $posX, float $posY, ?float $posZ = null, ?float $heading = null, ?string $unitType = null, ?string $side = null, ?float $speed = null, ?array $state = null): void
+    /**
+     * Sessions jouées de la carte (sélecteur « Mission » de l'onglet Relecture).
+     */
+    public function getSessions(string $missionId): array
+    {
+        return [
+            'missionId' => $missionId,
+            'sessions' => $this->repository->listSessions($missionId),
+        ];
+    }
+
+    /**
+     * Fenêtre de la session quand aucune borne n'est donnée.
+     *
+     * @return array{0: ?string, 1: ?string}
+     */
+    private function sessionWindow(string $missionId, ?string $from, ?string $to, string $missionKey): array
+    {
+        if ($missionKey === '' || ($from !== null && $to !== null)) {
+            return [$from, $to];
+        }
+        $w = $this->repository->sessionWindow($missionId, $missionKey);
+        if ($w === null) {
+            return [$from, $to];
+        }
+
+        return [$from ?? $w[0], $to ?? $w[1]];
+    }
+
+    public function logPosition(string $missionId, string $unitId, string $callsign, float $posX, float $posY, ?float $posZ = null, ?float $heading = null, ?string $unitType = null, ?string $side = null, ?float $speed = null, ?array $state = null, string $missionKey = ''): void
     {
         $kind = ReplayTimelineBuilder::inferKind($callsign, $unitType, $state);
         $this->repository->insertLog(
@@ -42,15 +79,17 @@ class ReplayService
             $posZ,
             $heading,
             $speed,
-            $state !== null ? json_encode($state) : null
+            $state !== null ? json_encode($state) : null,
+            $missionKey
         );
     }
 
     /**
      * Chronologie opérationnelle (contacts, MEDEVAC, ordres, marqueurs) pour le replay / AAR.
      */
-    public function getEvents(string $missionId, ?string $from, ?string $to): array
+    public function getEvents(string $missionId, ?string $from, ?string $to, string $missionKey = ''): array
     {
+        [$from, $to] = $this->sessionWindow($missionId, $from, $to, $missionKey);
         $events = $this->repository->getOperationalEvents($missionId, $from, $to);
 
         return [
@@ -62,9 +101,12 @@ class ReplayService
     /**
      * Synthèse automatique AAR (erreurs + délais de réaction + chronologie intel).
      */
-    public function buildAfterActionReview(string $missionId, ?string $from, ?string $to): array
+    public function buildAfterActionReview(string $missionId, ?string $from, ?string $to, string $missionKey = ''): array
     {
-        $timelineRows = $this->repository->getTimeline($missionId, $from, $to, 12000);
+        $timelineRows = $this->repository->getTimeline($missionId, $from, $to, 12000, $missionKey);
+        [$from, $to] = $this->sessionWindow($missionId, $from, $to, $missionKey);
+        $casualties = $this->repository->getCasualties($missionId, $from, $to, $missionKey);
+        $flightTime = $this->repository->getVehicleTracks($missionId, $from, $to)['flightTime'];
         $intelRows = $this->repository->getIntelEvents($missionId, $from, $to, 4000);
 
         $unitTracks = [];
@@ -252,6 +294,7 @@ class ReplayService
 
         return [
             'missionId' => $missionId,
+            'missionKey' => $missionKey !== '' ? $missionKey : null,
             'window' => ['from' => $from, 'to' => $to],
             'summary' => [
                 'missionStart' => $missionStart,
@@ -268,7 +311,10 @@ class ReplayService
                 'orderEvents' => $counts['order'],
                 'markerEvents' => $counts['marker'],
                 'medianReactionDelaySeconds' => $medianReaction,
+                'friendlyKia' => count($casualties),
             ],
+            'casualties' => $casualties,
+            'flightTime' => $flightTime,
             'unitTracks' => $unitSummaries,
             'intelTimeline' => $intelTimeline,
             'operationalEvents' => array_slice($opsEvents, 0, 80),

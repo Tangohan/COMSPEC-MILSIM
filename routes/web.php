@@ -2630,6 +2630,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     // API C2 — Replay
     $router->get('/api/replay/mission/{missionId}', [ReplayController::class, 'mission']);
     $router->get('/api/replay/events/{missionId}', [ReplayController::class, 'events']);
+    $router->get('/api/replay/sessions/{missionId}', [ReplayController::class, 'sessions']);
     $router->get('/api/replay/aar/{missionId}', [ReplayController::class, 'aar']);
     $router->get('/api/replay/aar/{missionId}/export.pdf', [ReplayController::class, 'aarExportPdf']);
 

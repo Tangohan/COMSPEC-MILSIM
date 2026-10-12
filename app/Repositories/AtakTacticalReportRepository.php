@@ -104,6 +104,20 @@ class AtakTacticalReportRepository
     }
 
     /**
+     * Rattache le rapport à la session jouée (clé de mission de l'ATAK natif). Colonne posée à la demande.
+     */
+    public function setMissionKey(int $reportId, string $missionKey): void
+    {
+        try {
+            $this->db->execute('UPDATE atak_tactical_reports SET mission_key = ? WHERE id = ?', [$missionKey, $reportId]);
+        } catch (\Throwable $e) {
+            if (\App\Support\AtakMissionKey::isMissingSchema($e)) {
+                \App\Support\AtakMissionKey::ensureSchema(Database::getPdo());
+            }
+        }
+    }
+
+    /**
      * Liste les rapports pour un tenant et contexte
      */
     public function listForContext(int $tenantId, int $contextId, array $filters = []): array

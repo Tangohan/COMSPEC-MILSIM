@@ -30,6 +30,7 @@ window.ATAKRFHITS = (function () {
     if (b === 'tracker') return 'Tracker';
     if (b === 'camera') return 'Caméra';
     if (b === 'phone') return 'Téléphone';
+    if (b === 'drone') return 'Liaison drone';
     return 'RF';
   }
 

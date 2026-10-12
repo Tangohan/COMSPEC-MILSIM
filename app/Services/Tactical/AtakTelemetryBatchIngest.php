@@ -464,6 +464,9 @@ final class AtakTelemetryBatchIngest
         $kind = strtolower(trim((string) ($ev['kind'] ?? $data['kind'] ?? $ev['t'] ?? 'fire')));
         $cs = trim((string) ($ev['call_sign'] ?? $ev['cs'] ?? $actorCallSign ?? ''));
         $n = isset($ev['n']) && is_numeric($ev['n']) ? (int) $ev['n'] : (isset($data['n']) && is_numeric($data['n']) ? (int) $data['n'] : 0);
+        if ($kind === 'kia') {
+            return $this->handleCasualty($tenantId, $mapId, array_merge($data, $ev), $actorCallSign);
+        }
         $label = match ($kind) {
             'hit' => 'Impact reçu',
             'missile' => 'Tir missile',
@@ -491,6 +494,44 @@ final class AtakTelemetryBatchIngest
             return ['ok' => true, 'call_sign' => $cs];
         } catch (\Throwable) {
             return ['ok' => false, 'error' => 'combat_exception', 'http' => 500];
+        }
+    }
+
+    /**
+     * Mort ami vu par un téléphone de l'ATAK natif (combat / kind kia) : couche des pertes de la relecture
+     * (atak_casualties, un seul enregistrement par mort même si plusieurs téléphones le signalent) et journal TOC.
+     *
+     * @param array<string, mixed> $ev
+     * @return array{ok:bool, error?:string, http?:int, call_sign?:string}
+     */
+    private function handleCasualty(int $tenantId, int $mapId, array $ev, ?string $actorCallSign): array
+    {
+        $victim = trim((string) ($ev['victim'] ?? $ev['call_sign'] ?? ''));
+        $x = (float) ($ev['x'] ?? $ev['pos_x'] ?? 0);
+        $y = (float) ($ev['y'] ?? $ev['pos_y'] ?? 0);
+        if ($victim === '') {
+            return ['ok' => false, 'error' => 'victim_required', 'http' => 422];
+        }
+        $missionKey = \App\Support\AtakMissionKey::normalize($ev['mission_key'] ?? null);
+        try {
+            $isNew = (new \App\Repositories\AtakCasualtyRepository())->record($tenantId, $mapId, $missionKey, $victim, $x, $y, 'kia', $actorCallSign);
+            if ($isNew) {
+                try {
+                    $this->activityLog->record(
+                        $tenantId,
+                        $mapId,
+                        AtakActivityLogService::TYPE_TACTICAL_ALERT,
+                        'Perte amie — ' . $victim,
+                        $victim,
+                        ['source' => 'telemetry', 'combat_kind' => 'kia', 'x' => $x, 'y' => $y, 'mission_key' => $missionKey]
+                    );
+                } catch (\Throwable) {
+                }
+            }
+
+            return ['ok' => true, 'call_sign' => $victim];
+        } catch (\Throwable) {
+            return ['ok' => false, 'error' => 'casualty_exception', 'http' => 500];
         }
     }
 

@@ -404,6 +404,21 @@ addMissionEventHandler ["EntityKilled", {
     _ev pushBack [time, round (_p select 0), round (_p select 1), name _unit];
     if ((count _ev) > 300) then { _ev deleteAt 0; };
     missionNamespace setVariable ["COMSPEC_ATAK_AarEvents", _ev];
+    // Couche des pertes de la relecture Athena (télémétrie combat / kia). Un seul téléphone signale chaque mort :
+    // le sien, le chef de groupe pour ses IA, sinon les témoins à moins de 300 m (doublons écartés par le site).
+    private _lead = leader group _unit;
+    private _mine = _unit isEqualTo player
+        || {!isPlayer _unit && {_lead isEqualTo player || {!isPlayer _lead && {(player distance2D _unit) < 300}}}};
+    if (_mine && {[] call comspec_atak_native_fnc_bridge} && {!(missionNamespace getVariable ["COMSPEC_DisconnectSent", false])}) then {
+        private _cs = [_unit] call comspec_atak_native_fnc_unitCallsign;
+        private _pay = createHashMapFromArray [
+            ["t", "combat"], ["kind", "kia"], ["victim", [_cs, name _unit] select (_cs isEqualTo "")], ["name", name _unit],
+            ["x", round (_p select 0)], ["y", round (_p select 1)], ["call_sign", [player] call comspec_atak_native_fnc_unitCallsign],
+            ["mission_key", missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", ""]]
+        ];
+        // Clé de regroupement propre à ce mort : deux pertes dans la même seconde ne s'écrasent pas dans la file.
+        "COMSPECExtension" callExtension ["EmitTelemetry", ["1", "combat", format ["kia:%1:%2", name _unit, round time], [_pay] call comspec_atak_native_fnc_json]];
+    };
 }];
 
 // Débit simulé : la file d'envoi part dès que le réseau revient, et les SMS restés chez l'opérateur arrivent.
