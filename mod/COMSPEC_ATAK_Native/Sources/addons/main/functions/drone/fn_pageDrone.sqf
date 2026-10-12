@@ -60,6 +60,8 @@ private _spd = _s getOrDefault ["droneSpd", 40];
 private _rad = _s getOrDefault ["droneHuntRad", 250];
 private _armed = (_d getVariable ["COMSPEC_DroneArmed", ""]) isNotEqualTo "";
 private _strikeOk = missionNamespace getVariable ["comspec_atak_native_drone_strike", true];
+// Caméra libérée après un long moment hors écran : rouverte en revenant sur l'app.
+if (missionNamespace getVariable ["COMSPEC_ATAK_DroneCamParked", false]) then { ["camEnsure"] call comspec_atak_native_fnc_droneAction; };
 private _camOn = !isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull]);
 private _ground = ((getPosATL _d) select 2) < 1 && {_m isNotEqualTo "STRIKE"};
 private _conf = _s getOrDefault ["droneConfirm", ["", 0]];

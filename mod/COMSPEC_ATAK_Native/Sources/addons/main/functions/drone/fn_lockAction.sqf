@@ -277,6 +277,14 @@ switch (_act) do {
                 if ((time - (_e get "lostAt")) > (_keep max 60)) then { _drop pushBack [_key, ""]; };
                 continue;
             };
+            // Cible perdue : retentée toutes les 2 s seulement (le test de vue coûte un calcul de liaison et de visibilité),
+            // jamais si la reprise est désactivée. Sinon les cibles perdues gardées (modes 0 et 3) alourdissaient
+            // le suivi un peu plus à chaque marquage, toute la partie.
+            if ((_e get "state") isEqualTo "LOST") then {
+                if (_mode isEqualTo 1 && {(time - (_e get "lostAt")) > _keep}) then { _drop pushBack [_key, "marqueur effacé (perdue depuis trop longtemps)"]; continue; };
+                if (!_reacq || {diag_tickTime < (_e getOrDefault ["nextTry", 0])}) then { continue; };
+                _e set ["nextTry", diag_tickTime + 2];
+            };
             private _sees = [_e] call _seesIt;
             if (_sees) then {
                 private _p = getPosASL _o;
@@ -314,6 +322,12 @@ switch (_act) do {
             if ((_e get "state") isEqualTo "LOST" && {_mode isEqualTo 1} && {(time - (_e get "lostAt")) > _keep}) then { _drop pushBack [_key, "marqueur effacé (perdue depuis trop longtemps)"]; };
         } forEach _locks;
         { _x call _release; } forEach _drop;
+        // Au plus 24 cibles suivies : au-delà, les plus anciennes perdues ou neutralisées sont libérées.
+        if ((count _locks) > 24) then {
+            private _old = ((keys _locks) apply { [_x, _locks get _x] }) select { ((_x select 1) get "state") isNotEqualTo "TRACK" };
+            _old = [_old, [], { (_x select 1) get "num" }, "ASCEND"] call BIS_fnc_sortBy;
+            { if ((count _locks) <= 24) exitWith {}; [_x select 0, "libérée (trop de cibles suivies)"] call _release; } forEach _old;
+        };
     };
     default { [] };
 };

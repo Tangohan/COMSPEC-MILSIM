@@ -39,9 +39,14 @@ switch (_act) do {
         // Présence vue sur Athena (page briefing) : toutes les 30 s pour qui suit ou présente, téléphone ouvert sur le briefing.
         if (_onPage && {_follow || {_pres isEqualTo player}} && {!isNil "comspec_overwatch_connect_fnc_extResult"} && {time - (uiNamespace getVariable ["COMSPEC_ATAK_BriefBeat", -100]) > 30}) then {
             uiNamespace setVariable ["COMSPEC_ATAK_BriefBeat", time];
-            [format ["%1 · %2", [player, true] call comspec_atak_native_fnc_unitCallsign, name player], getPlayerUID player] spawn {
-                params ["_label", "_key"];
-                ["COMSPECExtension" callExtension ["BriefingPresence", [_label, _key]]] call comspec_overwatch_connect_fnc_extResult;
+            // Un seul envoi en cours : l'appel DLL est bloquant, un Athena lent ne doit pas en empiler.
+            if !(missionNamespace getVariable ["COMSPEC_ATAK_BriefPresBusy", false]) then {
+                missionNamespace setVariable ["COMSPEC_ATAK_BriefPresBusy", true];
+                [format ["%1 · %2", [player, true] call comspec_atak_native_fnc_unitCallsign, name player], getPlayerUID player] spawn {
+                    params ["_label", "_key"];
+                    ["COMSPECExtension" callExtension ["BriefingPresence", [_label, _key]]] call comspec_overwatch_connect_fnc_extResult;
+                    missionNamespace setVariable ["COMSPEC_ATAK_BriefPresBusy", false];
+                };
             };
         };
         if (!_follow) exitWith {};

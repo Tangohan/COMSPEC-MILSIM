@@ -309,6 +309,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     _f set ["target", _tgt];
     private _log = _f getOrDefault ["log", []];
     _log pushBack format ["<t color='#f2ab33'>%1</t> REÇU de %2 · %3", [dayTime, "HH:MM"] call BIS_fnc_timeToString, _from, _summary];
+    while { (count _log) > 50 } do { _log deleteAt 0; };
     _f set ["log", _log];
     ["WARNING", format ["MISSION DE TIR : %1", _summary], 8, 80] call comspec_atak_native_fnc_notify;
     [] call comspec_atak_native_fnc_vibrate;
@@ -393,9 +394,12 @@ addMissionEventHandler ["EntityKilled", {
     private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
     if ((count _queue) isEqualTo 0) exitWith {};
     if ((([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0) exitWith {};
-    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", []];
-    ["SUCCESS", format ["Réseau revenu : %1 envoi(s) en attente partent", count _queue], 4, 30] call comspec_atak_native_fnc_notify;
-    { _x call comspec_atak_native_fnc_netSend; } forEach _queue;
+    // Au plus 5 envois toutes les 2 s : vider toute la file d'un coup figeait le jeu au retour du réseau.
+    private _batch = _queue select [0, 5];
+    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue select [5]];
+    if !(missionNamespace getVariable ["COMSPEC_ATAK_NetFlushing", false]) then { ["SUCCESS", format ["Réseau revenu : %1 envoi(s) en attente partent", count _queue], 4, 30] call comspec_atak_native_fnc_notify; };
+    missionNamespace setVariable ["COMSPEC_ATAK_NetFlushing", (count _queue) > 5];
+    { _x call comspec_atak_native_fnc_netSend; } forEach _batch;
 }, 2] call CBA_fnc_addPerFrameHandler;
 
 // Dégâts du téléphone (fn_deviceImpact) : selon où il est porté (main, gilet, poche, sac), la partie du corps touchée,

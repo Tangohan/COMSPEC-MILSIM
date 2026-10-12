@@ -13,38 +13,48 @@ private _cache = uiNamespace getVariable ["COMSPEC_ATAK_Avatars", createHashMap]
 (_cache getOrDefault [_uid, ["", -1e9]]) params ["_path", "_triedAt"];
 if (_path isNotEqualTo "") exitWith { _path };
 if (diag_tickTime - _triedAt < 120) exitWith { "" };
+// Un seul téléchargement à la fois : les appels à la DLL bloquent le jeu le temps de la requête (même en spawn),
+// et une page de groupe lançait un appel par joueur à chaque rendu.
+if (missionNamespace getVariable ["COMSPEC_ATAK_AvatarBusy", false]) exitWith { "" };
+missionNamespace setVariable ["COMSPEC_ATAK_AvatarBusy", true];
 _cache set [_uid, ["", diag_tickTime]];
 uiNamespace setVariable ["COMSPEC_ATAK_Avatars", _cache];
 [_uid] spawn {
     params ["_uid"];
-    private _res = { params ["_r"]; if (_r isEqualType []) then { _r param [0, ""] } else { _r } };
-    private _tenant = missionNamespace getVariable ["comspec_overwatch_tenant_id", ""];
-    private _info = (["COMSPECExtension" callExtension ["GetPlayerAvatarInfo", [_uid, _tenant]]] call _res) splitString "|";
-    if ((_info param [0, ""]) isNotEqualTo "OK") exitWith {};
-    private _cols = (_info param [1, ""]) splitString (toString [9]);
-    // Qualifications (colonne « Q: », DLL récente) : [[nom, niveau, état, expiration], ...] ; absente = DLL ancienne.
-    private _q = _cols findIf { (_x select [0, 2]) isEqualTo "Q:" };
-    private _quals = uiNamespace getVariable ["COMSPEC_ATAK_Quals", createHashMap];
-    _quals set [_uid, if (_q < 0) then { "olddll" } else { (((_cols select _q) select [2]) splitString ";") apply { private _f = _x splitString "~"; [_f param [0, ""], _f param [1, ""], _f param [2, ""], _f param [3, ""]] } }];
-    uiNamespace setVariable ["COMSPEC_ATAK_Quals", _quals];
-    private _url = _cols param [2, ""];
-    if (_url isEqualTo "" || {(_url select [0, 2]) isEqualTo "Q:"}) exitWith {
-        private _page = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
-        if (_page isEqualTo "PROFILE") then { [{ ["PROFILE"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+    call {
+        private _res = { params ["_r"]; if (_r isEqualType []) then { _r param [0, ""] } else { _r } };
+        private _tenant = missionNamespace getVariable ["comspec_overwatch_tenant_id", ""];
+        private _info = (["COMSPECExtension" callExtension ["GetPlayerAvatarInfo", [_uid, _tenant]]] call _res) splitString "|";
+        if ((_info param [0, ""]) isNotEqualTo "OK") exitWith {};
+        private _cols = (_info param [1, ""]) splitString (toString [9]);
+        // Qualifications (colonne « Q: », DLL récente) : [[nom, niveau, état, expiration], ...] ; absente = DLL ancienne.
+        private _q = _cols findIf { (_x select [0, 2]) isEqualTo "Q:" };
+        private _quals = uiNamespace getVariable ["COMSPEC_ATAK_Quals", createHashMap];
+        _quals set [_uid, if (_q < 0) then { "olddll" } else { (((_cols select _q) select [2]) splitString ";") apply { private _f = _x splitString "~"; [_f param [0, ""], _f param [1, ""], _f param [2, ""], _f param [3, ""]] } }];
+        uiNamespace setVariable ["COMSPEC_ATAK_Quals", _quals];
+        private _url = _cols param [2, ""];
+        if (_url isEqualTo "" || {(_url select [0, 2]) isEqualTo "Q:"}) exitWith {
+            // Pas de photo sur le profil : nouvel essai dans 10 min seulement (toutes les 2 min sinon, toute la partie).
+            private _cache = uiNamespace getVariable ["COMSPEC_ATAK_Avatars", createHashMap];
+            _cache set [_uid, ["", diag_tickTime + 480]];
+            private _page = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
+            if (_page isEqualTo "PROFILE") then { [{ ["PROFILE"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
+        };
+        private _dl = (["COMSPECExtension" callExtension ["DownloadBriefingSlideImage", [_url, "avatar_" + _uid]]] call _res) splitString "|";
+        if ((_dl param [0, ""]) isNotEqualTo "OK" || {(_dl param [1, ""]) isEqualTo ""}) exitWith {};
+        // Chemin local normalisé (\ → /) comme pour les diapositives ; Arma n'affiche que .jpg / .paa :
+        // sinon on garde le logo (une photo PNG laissait un cadre vide).
+        private _p = ((_dl select 1) splitString (toString [92])) joinString "/";
+        private _lp = toLower _p;
+        if !((_lp select [(count _lp) - 4]) in [".jpg", "jpeg", ".paa"]) exitWith {};
+        private _cache = uiNamespace getVariable ["COMSPEC_ATAK_Avatars", createHashMap];
+        _cache set [_uid, [_p, diag_tickTime]];
+        uiNamespace setVariable ["COMSPEC_ATAK_Avatars", _cache];
+        // Redessiner la page qui attend l'image.
+        private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        private _page = _s getOrDefault ["activePage", ""];
+        if (_page in ["ATHENA", "GROUP", "PROFILE", "CHAT"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call CBA_fnc_execNextFrame; };
     };
-    private _dl = (["COMSPECExtension" callExtension ["DownloadBriefingSlideImage", [_url, "avatar_" + _uid]]] call _res) splitString "|";
-    if ((_dl param [0, ""]) isNotEqualTo "OK" || {(_dl param [1, ""]) isEqualTo ""}) exitWith {};
-    // Chemin local normalisé (\ → /) comme pour les diapositives ; Arma n'affiche que .jpg / .paa :
-    // sinon on garde le logo (une photo PNG laissait un cadre vide).
-    private _p = ((_dl select 1) splitString (toString [92])) joinString "/";
-    private _lp = toLower _p;
-    if !((_lp select [(count _lp) - 4]) in [".jpg", "jpeg", ".paa"]) exitWith {};
-    private _cache = uiNamespace getVariable ["COMSPEC_ATAK_Avatars", createHashMap];
-    _cache set [_uid, [_p, diag_tickTime]];
-    uiNamespace setVariable ["COMSPEC_ATAK_Avatars", _cache];
-    // Redessiner la page qui attend l'image.
-    private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-    private _page = _s getOrDefault ["activePage", ""];
-    if (_page in ["ATHENA", "GROUP", "PROFILE", "CHAT"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call CBA_fnc_execNextFrame; };
+    missionNamespace setVariable ["COMSPEC_ATAK_AvatarBusy", false];
 };
 ""
