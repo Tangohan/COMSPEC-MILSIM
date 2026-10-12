@@ -2688,6 +2688,11 @@ public static partial class Extension
         {
             return ClipCommand(function, args);
         }
+        // Clichés du drone avec leur fiche (NativePhoto.cs) : titre, description, SSE, confidentiel en champs réels.
+        if (function == "NativePhoto")
+        {
+            return NativePhotoCommand(args);
+        }
 #endif
 
         if (function == "MemStats")

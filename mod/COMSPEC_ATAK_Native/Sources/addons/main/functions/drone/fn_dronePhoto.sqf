@@ -6,18 +6,23 @@
     validé la fiche : titre, description, SSE (rattaché au dossier SSE actif), confidentiel.
       ["take"]               prend le cliché, ouvre sa fiche (onglet PHOTOS de l'app) ;
       ["save"]               garde la fiche en cours (champs du formulaire) ; ["flag", "sse" | "conf"] bascule un drapeau ;
-      ["send", n°]           envoie le cliché n° (fiche enregistrée d'abord), par la chaîne recon d'Overwatch
-                             (fn_captureReconImage, appareil "UAV", flux drone:<netId>) au débit simulé du téléphone ;
+      ["send", n°]           envoie le cliché n° (fiche enregistrée d'abord) au débit simulé du téléphone, par la DLL
+                             native (commande NativePhoto, appareil "UAV", flux drone:<netId>), sinon par la chaîne
+                             recon d'Overwatch (fn_captureReconImage) ;
       ["keep"]               garde le cliché en cours sur le téléphone sans l'envoyer ;
       ["edit", n°]           rouvre la fiche d'un cliché ; ["forget", n°] l'oublie (second appui) et supprime le fichier ;
       ["list"]               → clichés, le plus récent d'abord : [[n°, entrée]...] ;
-      ["caption", entrée]    → légende envoyée à Athena.
+      ["caption", entrée]    → légende envoyée à Athena ;
+      ["meta"]               → true si la DLL native peut envoyer la fiche en champs réels.
     Entrée (tableau, profil COMSPEC_ATAK_DronePhotos, 40 au plus) :
-      [fichier, titre, description, SSE, confidentiel, grille, heure, drone, état, dossier SSE, hauteur sol, cap, date]
+      [fichier, titre, description, SSE, confidentiel, grille, heure, drone, état, dossier SSE, hauteur sol, cap, date,
+       position ASL du drone]
       état : "DRAFT" (fiche ouverte), "LOCAL" (gardé), "SENDING", "SENT", "FAILED".
-    La commande NotifyNewPhoto de la DLL ne porte ni titre, ni description, ni drapeaux : ils partent dans la légende
-    ([CONFIDENTIEL] [SSE dossier] Titre : description (drone, grille, hauteur, cap, heure)) et restent sur le poste.
-    La position enregistrée par la DLL est celle du pilote ; la grille du drone est dans la légende.
+    DLL native (COMSPECATAKNativeExtension, NativePhoto.cs) : titre, description, SSE (+ dossier), confidentiel, source
+    « drone » et nom du drone partent en champs réels, avec la position et le cap du drone ; légende courte.
+    Repli (DLL native plus ancienne : réponse vide, ou pas de session Athena utilisable par elle) : chaîne recon
+    d'Overwatch, dont NotifyNewPhoto ne porte que la légende : la fiche y est tassée
+    ([CONFIDENTIEL] [SSE dossier] Titre : description (drone, grille, hauteur, cap, heure)), position du pilote.
 */
 params [["_act", "list"], ["_arg", -1]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -40,6 +45,29 @@ private _save = {
     if (_dsc isNotEqualTo "§") then { _e set [2, [_dsc, 400] call _clean]; };
     call _store;
 };
+// Identifiants Athena pour la DLL native : servent seulement si elle n'a pas sa propre session (avec COMSPEC Link,
+// la session est dans la DLL d'Overwatch ; une clé communauté connue est alors transmise, sinon repli).
+private _auth = {
+    private _pick = { params ["_m", "_p"]; private _v = missionNamespace getVariable [_m, ""]; if (!(_v isEqualType "") || {_v isEqualTo ""}) then { _v = profileNamespace getVariable [_p, ""]; }; [_v, ""] select !(_v isEqualType "") };
+    private _url = ["comspec_overwatch_api_url", "comspec_overwatch_saved_api_url"] call _pick;
+    if (_url isEqualTo "") then { _url = profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"]; };
+    private _map = missionNamespace getVariable ["COMSPEC_MapId", missionNamespace getVariable ["comspec_overwatch_map_id", 1]];
+    [_url, ["comspec_overwatch_api_key", "comspec_overwatch_saved_api_key"] call _pick, ["comspec_overwatch_tenant_id", "comspec_overwatch_saved_tenant_id"] call _pick, getPlayerUID player, str (round ([_map, 1] select !(_map isEqualType 0)))]
+};
+// DLL native prête pour NativePhoto ? (vide : DLL plus ancienne). Relu au plus toutes les 20 s.
+private _metaOk = {
+    private _c = missionNamespace getVariable ["COMSPEC_ATAK_NativePhotoOk", [false, -100]];
+    if (diag_tickTime - (_c select 1) < 20) exitWith { _c select 0 };
+    private _ok = ((["NativePhoto", ["probe"] + (call _auth)] call comspec_atak_native_fnc_extensionCall) select [0, 8]) isEqualTo "OK|ready";
+    missionNamespace setVariable ["COMSPEC_ATAK_NativePhotoOk", [_ok, diag_tickTime]];
+    _ok
+};
+// Légende courte (fiche en champs réels) : prise de vue seulement.
+private _shortCaption = {
+    params ["_e"];
+    _e params ["", "", "", "", "", "_grid", "_clock", "_drone", "", "", ["_alt", 0], ["_hdg", 0]];
+    format ["Drone %1, grille %2, %3 m sol, cap %4°, %5", _drone, _grid, _alt, _hdg, _clock]
+};
 private _caption = {
     params ["_e"];
     _e params ["", "_title", "_desc", "_sse", "_conf", "_grid", "_clock", "_drone", "", ["_case", ""], ["_alt", 0], ["_hdg", 0]];
@@ -57,7 +85,8 @@ switch (_act) do {
         for "_i" from ((count _lib) - 1) to 0 step -1 do { _out pushBack [_i, _lib select _i]; };
         _out
     };
-    case "caption": { [_arg] call _caption };
+    case "caption": { [[_arg] call _caption, [_arg] call _shortCaption] select (call _metaOk) };
+    case "meta": { call _metaOk };
     case "save": { call _save; };
     case "flag": {
         call _save;
@@ -125,7 +154,7 @@ switch (_act) do {
             if !(_lib isEqualType []) then { _lib = []; };
             (date) params ["_yy", "_mo", "_dd"];
             _lib pushBack [_file, "", "", false, false, [getPosASL _d, 8] call comspec_atak_native_fnc_gridRef, [dayTime, "HH:MM:SS"] call BIS_fnc_timeToString,
-                [_d, [], "NAME"] call comspec_atak_native_fnc_droneOsd, "DRAFT", "", round ((getPosATL _d) select 2), round (getDirVisual _d) mod 360, format ["%1-%2-%3", _yy, _mo, _dd]];
+                [_d, [], "NAME"] call comspec_atak_native_fnc_droneOsd, "DRAFT", "", round ((getPosATL _d) select 2), round (getDirVisual _d) mod 360, format ["%1-%2-%3", _yy, _mo, _dd], getPosASL _d];
             while { (count _lib) > 40 } do { _lib deleteAt 0; };
             profileNamespace setVariable ["COMSPEC_ATAK_DronePhotos", _lib];
             saveProfileNamespace;
@@ -157,8 +186,10 @@ switch (_act) do {
         call _save;
         private _i = [_arg, _cur] select (_arg isEqualTo -1);
         if (_i < 0 || {_i >= count _lib}) exitWith {};
-        if !([] call comspec_atak_native_fnc_bridge) exitWith { ["WARNING", "Envoi impossible : COMSPEC Overwatch doit être chargé (le cliché reste sur le téléphone)"] call _say; };
-        if !(missionNamespace getVariable ["COMSPEC_AthenaReady", false]) exitWith { ["WARNING", "Envoi impossible : connectez-vous d'abord à Athena (le cliché reste sur le téléphone)"] call _say; };
+        // DLL native prête : envoi direct. Sinon la chaîne d'Overwatch doit être chargée et connectée.
+        private _nativeOk = call _metaOk;
+        if (!_nativeOk && {!([] call comspec_atak_native_fnc_bridge)}) exitWith { ["WARNING", "Envoi impossible : connectez-vous d'abord à Athena (le cliché reste sur le téléphone)"] call _say; };
+        if (!_nativeOk && {!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])}) exitWith { ["WARNING", "Envoi impossible : connectez-vous d'abord à Athena (le cliché reste sur le téléphone)"] call _say; };
         private _e = _lib select _i;
         _e set [8, "SENDING"];
         call _store;
@@ -166,16 +197,48 @@ switch (_act) do {
         private _d = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
         private _feed = format ["drone:%1", [netId _d, "phone"] select (isNull _d)];
         // Environ 600 Ko : avec un débit faible, l'envoi prend du temps (file du téléphone si aucun réseau).
+        // Fiche en champs réels par la DLL native : ["send", identifiants (5), fichier, auteur, x, y, z, grille, cap,
+        // altitude, légende, unité, camp, mission, appareil, heure, flux, titre, description, SSE, dossier, confidentiel,
+        // source, drone] (voir NativePhoto.cs). Heure vide : la DLL met l'heure réelle.
+        _e params ["_f", "_title", "_desc", "_sse", "_conf", "_grid", "", "_drone", "", ["_case", ""], ["_alt", 0], ["_hdg", 0], "", ["_pos", []]];
+        private _author = if (!isNil "comspec_overwatch_connect_fnc_getCallsign") then { [] call comspec_overwatch_connect_fnc_getCallsign } else { "" };
+        if !(_author isEqualType "" && {_author isNotEqualTo ""}) then { _author = name player; };
+        private _side = switch (side group player) do { case east: { "EAST" }; case independent: { "GUER" }; case civilian: { "CIV" }; default { "WEST" }; };
+        private _xyz = if ((count _pos) >= 3) then { [str (_pos select 0), str (_pos select 1), str (_pos select 2)] } else { ["", "", ""] };
+        private _native = ["send"] + (call _auth) + [_f, _author] + _xyz + [_grid, str _hdg, str _alt, [_e] call _shortCaption, _feed, _side,
+            missionNamespace getVariable ["COMSPEC_MissionId", "op_1"], "UAV", "", _feed,
+            [_title, "Cliché drone"] select (_title isEqualTo ""), _desc, ["0", "1"] select _sse, ["", _case] select _sse, ["0", "1"] select _conf, "drone", _drone];
         [{
-            params ["_file", "_caption", "_feed"];
-            private _ok = [_file, _caption, "UAV", _feed, true, false, true] call comspec_overwatch_connect_fnc_captureReconImage;
+            params ["_file", "_caption", "_feed", "_native"];
+            // DLL native d'abord ; réponse vide (DLL plus ancienne) ou refus : repli sur Overwatch, fiche dans la légende.
+            private _r = ["NativePhoto", _native] call comspec_atak_native_fnc_extensionCall;
+            private _viaNative = (_r select [0, 3]) isEqualTo "OK|";
+            private _ok = _viaNative || {!isNil "comspec_overwatch_connect_fnc_captureReconImage" && {[_file, _caption, "UAV", _feed, true, false, true] call comspec_overwatch_connect_fnc_captureReconImage}};
             private _lib = profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []];
             private _j = _lib findIf { (_x select 0) isEqualTo _file };
-            if (_j >= 0) then { (_lib select _j) set [8, ["FAILED", "SENT"] select (_ok isEqualTo true)]; saveProfileNamespace; };
+            if (_j >= 0) then { (_lib select _j) set [8, ["FAILED", ["SENT", "SENDING"] select _viaNative] select (_ok isEqualTo true)]; saveProfileNamespace; };
+            // Envoi natif : état réel relu auprès de la DLL (fichier trouvé, POST accepté) pendant 2 min au plus.
+            if (_viaNative) then {
+                [_file] spawn {
+                    params ["_file"];
+                    private _st = "OK|queued";
+                    private _until = diag_tickTime + 120;
+                    while { diag_tickTime < _until && {(_st select [0, 9]) isEqualTo "OK|queued"} } do {
+                        uiSleep 2;
+                        _st = ["NativePhoto", ["status", _file]] call comspec_atak_native_fnc_extensionCall;
+                    };
+                    private _done = (_st select [0, 11]) isEqualTo "OK|uploaded" || {(_st select [0, 12]) isEqualTo "OK|duplicate"};
+                    private _lib = profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []];
+                    private _j = _lib findIf { (_x select 0) isEqualTo _file };
+                    if (_j >= 0) then { (_lib select _j) set [8, ["FAILED", "SENT"] select _done]; saveProfileNamespace; };
+                    if (!_done) then { ["WARNING", format ["Cliché du drone non reçu par Athena (%1)", (_st splitString "|") param [1, "délai dépassé"]], 5, 40] call comspec_atak_native_fnc_notify; };
+                    [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["DRONE", "PHOTOS"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
+                };
+            };
             [["WARNING", "SUCCESS"] select (_ok isEqualTo true), ["Cliché du drone non envoyé : voir le détail dans Photos", "Cliché du drone en cours d'envoi vers Athena"] select (_ok isEqualTo true), 4, 30] call comspec_atak_native_fnc_notify;
             ["log", format ["Cliché %1 : %2", _file, ["envoi refusé", "envoyé vers Athena"] select (_ok isEqualTo true)], ["#e5483a", "#5cc76b"] select (_ok isEqualTo true)] call comspec_atak_native_fnc_droneAction;
             [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["DRONE", "PHOTOS"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
-        }, [_e select 0, [_e] call _caption, _feed], "Cliché drone", 600] call comspec_atak_native_fnc_netSend;
+        }, [_e select 0, [_e] call _caption, _feed, _native], "Cliché drone", 600] call comspec_atak_native_fnc_netSend;
         ["INFO", "Cliché du drone : envoi lancé"] call _say;
         call _render;
     };

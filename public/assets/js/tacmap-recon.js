@@ -51,6 +51,16 @@
       var caption = p.caption || '';
       var grid = p.grid_ref || p.grid || '';
       var clickable = hasPos(p);
+      // Fiche du cliché : titre, description, SSE (lien vers le dossier), confidentiel.
+      var photoTitle = String(p.title || '').trim();
+      var photoDesc = String(p.description || '').trim();
+      var caseRef = String(p.sse_case_ref || '').trim();
+      var caseUrl = String(p.sse_case_url || '').trim();
+      var sseLabel = 'SSE' + (caseRef ? ' ' + caseRef : '');
+      var badges = (Number(p.is_confidential || 0) ? '<span class="tacmap-recon-badge tacmap-recon-badge--conf">CONFIDENTIEL</span> ' : '') +
+        (Number(p.is_sse || 0) ? (caseUrl
+          ? '<a class="tacmap-recon-badge" href="' + escapeHtml(caseUrl) + '" target="_blank" rel="noopener">' + escapeHtml(sseLabel) + '</a>'
+          : '<span class="tacmap-recon-badge">' + escapeHtml(sseLabel) + '</span>') : '');
       return (
         '<article class="tacmap-recon-item' + (clickable ? ' tacmap-recon-item--locate' : '') + '"' +
           (p.id != null ? ' data-photo-id="' + escapeHtml(p.id) + '"' : '') +
@@ -60,6 +70,10 @@
           '<div class="tacmap-recon-meta">' +
             '<strong>' + escapeHtml(author || 'Recon') + '</strong>' +
             (grid ? '<span>Grille ' + escapeHtml(grid) + '</span>' : '') +
+            (badges ? '<span>' + badges + '</span>' : '') +
+            (p.restricted ? '<p>Cliché confidentiel — habilitation requise.</p>' : '') +
+            (photoTitle ? '<p><strong>' + escapeHtml(photoTitle) + '</strong></p>' : '') +
+            (photoDesc ? '<p>' + escapeHtml(photoDesc) + '</p>' : '') +
             (caption ? '<p>' + escapeHtml(caption) + '</p>' : '') +
           '</div>' +
         '</article>'
