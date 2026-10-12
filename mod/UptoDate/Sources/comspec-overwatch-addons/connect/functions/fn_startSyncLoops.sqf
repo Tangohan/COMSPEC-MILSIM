@@ -150,7 +150,7 @@ if (isNil "COMSPEC_MapMarkerEHs") then {
                 params ["_m"];
                 if ((missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) > 0) exitWith {};
                 if ([_m] call (missionNamespace getVariable ["COMSPEC_fnc_isOwnedMapMarker", { false }])) exitWith {};
-                if (!(_m in allMapMarkers)) exitWith {};
+                if ((getMarkerColor _m) isEqualTo "") exitWith {};
                 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
                 if (!(["markers"] call comspec_overwatch_connect_fnc_diagIsolateAllows)) exitWith {};
                 private _forceLater = [_m] call comspec_overwatch_connect_fnc_isSyncableMapMarker;

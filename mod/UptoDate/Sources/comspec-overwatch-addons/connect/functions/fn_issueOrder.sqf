@@ -68,6 +68,8 @@ _orderLog pushBack [
     _target,
     "PENDING"
 ];
+// Journal local borné à 200 entrées (il grossissait à chaque ordre / changement de statut, toute la partie).
+if ((count _orderLog) > 200) then { _orderLog deleteRange [0, (count _orderLog) - 200]; };
 missionNamespace setVariable ["COMSPEC_OrderLog", _orderLog, false];
 
 // "TT:<type>|" en tête du payload : rétrocompatible (un payload sans ce préfixe se comporte

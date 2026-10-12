@@ -119,7 +119,11 @@ if (_prev isNotEqualTo _state) then {
     ["COMSPEC_AthenaLinkChanged", [_state]] call CBA_fnc_localEvent;
 };
 
-player setVariable ["COMSPEC_LinkState", _state, true];
+// Diffusion seulement si la valeur change : appelé toutes les 2 s (effets de zone), le setVariable public
+// partait à chaque fois vers tous les clients (+ JIP) même identique. Lu par Zeus sur l'unité.
+if ((player getVariable ["COMSPEC_LinkState", ""]) isNotEqualTo _state) then {
+    player setVariable ["COMSPEC_LinkState", _state, true];
+};
 if (_prev isNotEqualTo _state) then {
     [] call comspec_overwatch_connect_fnc_updateStatusBadges;
     [] call comspec_overwatch_connect_fnc_updateDeviceOverlay;

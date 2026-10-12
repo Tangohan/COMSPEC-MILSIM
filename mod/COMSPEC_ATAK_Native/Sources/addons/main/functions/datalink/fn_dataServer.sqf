@@ -38,9 +38,11 @@ private _alarm = {
 };
 switch (_act) do {
     case "reg": {
-        private _nodes = (missionNamespace getVariable ["COMSPEC_ATAK_DataNodes", []]) select { !isNull _x };
+        private _old = missionNamespace getVariable ["COMSPEC_ATAK_DataNodes", []];
+        private _nodes = _old select { !isNull _x };
         _nodes pushBackUnique _obj;
-        missionNamespace setVariable ["COMSPEC_ATAK_DataNodes", _nodes, true];
+        // Liste rediffusée à tous (et JIP) seulement si elle change : un téléphone exposé se réenregistre à chaque chute.
+        if (_nodes isNotEqualTo _old) then { missionNamespace setVariable ["COMSPEC_ATAK_DataNodes", _nodes, true]; };
     };
     case "connect": {
         [format ["%1 branche son ATAK sur %2", _whoName, _label]] call _note;

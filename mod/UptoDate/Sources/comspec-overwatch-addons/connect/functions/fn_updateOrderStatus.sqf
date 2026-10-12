@@ -44,6 +44,8 @@ missionNamespace setVariable ["COMSPEC_Orders", _orders, false];
 private _by = [] call comspec_overwatch_connect_fnc_orderIssuerLabel;
 private _orderLog = missionNamespace getVariable ["COMSPEC_OrderLog", []];
 _orderLog pushBack [serverTime, _orderId, _by, "STATUS", _status, _note];
+// Journal local borné à 200 entrées (il grossissait à chaque ordre / changement de statut, toute la partie).
+if ((count _orderLog) > 200) then { _orderLog deleteRange [0, (count _orderLog) - 200]; };
 missionNamespace setVariable ["COMSPEC_OrderLog", _orderLog, false];
 
 private _payload = createHashMapFromArray [["id", _orderId], ["status", _status], ["note", _note], ["by", _by]];

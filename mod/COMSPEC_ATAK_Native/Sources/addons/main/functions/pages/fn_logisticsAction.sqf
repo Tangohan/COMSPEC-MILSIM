@@ -31,7 +31,7 @@ private _push = {
     params ["_id", "_st", ["_pos", []]];
     [{
         params ["_side", "_id", "_st", "_by", "_pos"];
-        ["comspec_atak_native_logi", ["STATUS", _side, [_id, _st, _by, _pos]]] call CBA_fnc_globalEvent;
+        ["comspec_atak_native_sideEvent", ["comspec_atak_native_logi", ["STATUS", _side, [_id, _st, _by, _pos]], _side]] call CBA_fnc_serverEvent;
         ["status", [_id, _st, _by]] call comspec_atak_native_fnc_logiWeb;
     }, [str side group player, _id, _st, call _me, _pos], format ["Logistique %1", _id], 1] call comspec_atak_native_fnc_netSend;
 };
@@ -139,7 +139,7 @@ switch (_act) do {
         _s set ["logiTab", "MINE"];
         [{
             params ["_pairs", "_side"];
-            ["comspec_atak_native_logi", ["NEW", _side, _pairs]] call CBA_fnc_globalEvent;
+            ["comspec_atak_native_sideEvent", ["comspec_atak_native_logi", ["NEW", _side, _pairs], _side]] call CBA_fnc_serverEvent;
             // Liaison Overwatch : la demande part aussi au poste web, avec son suivi d'état.
             ["new", _pairs] call comspec_atak_native_fnc_logiWeb;
             ["SUCCESS", "Demande logistique transmise au camp", 4, 40] call comspec_atak_native_fnc_notify;

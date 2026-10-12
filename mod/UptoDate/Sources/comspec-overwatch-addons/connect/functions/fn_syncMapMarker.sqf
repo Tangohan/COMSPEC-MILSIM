@@ -85,6 +85,19 @@ private _fnc_dispatch = {
         true
     };
     private _flag = if (_del) then { "1" } else { "0" };
+    // Même contenu déjà envoyé il y a moins de 60 s : pas de renvoi. Le rattrapage 8 s (repères joueur),
+    // le PO 45 s et les EH en double renvoyaient chaque marqueur inchangé (un POST par marqueur).
+    private _sentMap = missionNamespace getVariable ["COMSPEC_MarkerSentSig", createHashMap];
+    private _sentPrev = _sentMap getOrDefault [_name, []];
+    if (!_del && {(_sentPrev param [0, ""]) isEqualTo _body} && {(diag_tickTime - (_sentPrev param [1, -1e9])) < 60}) exitWith { true };
+    if (_del) then {
+        _sentMap deleteAt _name;
+    } else {
+        // Mémoire bornée : repart à zéro au-delà de 1500 marqueurs.
+        if ((count _sentMap) > 1500) then { _sentMap = createHashMap; };
+        _sentMap set [_name, [_body, diag_tickTime]];
+    };
+    missionNamespace setVariable ["COMSPEC_MarkerSentSig", _sentMap, false];
     "COMSPECExtension" callExtension ["SendMarker", [_name, _body, "1", _flag]];
     missionNamespace setVariable ["COMSPEC_LastMarkerSyncName", _name, false];
     missionNamespace setVariable ["COMSPEC_LastMarkerSyncAt", diag_tickTime, false];

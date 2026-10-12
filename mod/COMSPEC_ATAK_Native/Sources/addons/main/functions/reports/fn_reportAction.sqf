@@ -118,7 +118,7 @@ switch (_act) do {
         ];
         _list set [_r get "id", _r];
         if (_dest isNotEqualTo "AUCUNE") then {
-            [{ params ["_r", "_side"]; ["comspec_atak_native_report", [_r, _side]] call CBA_fnc_globalEvent; }, [_r, str side group player], _label, 2] call comspec_atak_native_fnc_netSend;
+            [{ params ["_r", "_side"]; ["comspec_atak_native_sideEvent", ["comspec_atak_native_report", [_r, _side], _side]] call CBA_fnc_serverEvent; }, [_r, str side group player], _label, 2] call comspec_atak_native_fnc_netSend;
         };
         _r set ["web", [_r] call _toWeb];
         ["SUCCESS", format ["%1 transmis%2", _label, switch (_r get "web") do {
