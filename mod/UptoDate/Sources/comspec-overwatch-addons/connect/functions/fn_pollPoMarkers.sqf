@@ -72,7 +72,7 @@ private _fnc_clearRings = {
     missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
     {
         if (!(_x in _keep)) then {
-            if (_x in allMapMarkers) then { deleteMarkerLocal _x; };
+            if (_x in _mkIndex) then { deleteMarkerLocal _x; };
         };
     } forEach _prev;
     private _unmute = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1;
@@ -88,6 +88,10 @@ private _synced = missionNamespace getVariable ["COMSPEC_PoSyncedAt", createHash
 if (!(_synced isEqualType createHashMap)) then { _synced = createHashMap; };
 private _announced = missionNamespace getVariable ["COMSPEC_PoReachedNames", []];
 if (!(_announced isEqualType [])) then { _announced = []; };
+// Index hashmap des marqueurs, construit une fois : « in allMapMarkers » dans la boucle recopiait toute
+// la liste pour chaque marqueur (coût quadratique toutes les 2 s avec beaucoup de marqueurs).
+private _allMk = +allMapMarkers;
+private _mkIndex = createHashMapFromArray (_allMk apply { [_x, true] });
 
 {
     private _name = _x;
@@ -131,7 +135,7 @@ if (!(_announced isEqualType [])) then { _announced = []; };
 
     private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
     missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
-    if (_ring in allMapMarkers) then {
+    if (_ring in _mkIndex) then {
         _ring setMarkerPosLocal _mkPos;
         _ring setMarkerColorLocal _color;
         _ring setMarkerAlphaLocal _alpha;
@@ -143,6 +147,7 @@ if (!(_announced isEqualType [])) then { _announced = []; };
         _el setMarkerBrushLocal "Border";
         _el setMarkerColorLocal _color;
         _el setMarkerAlphaLocal _alpha;
+        _mkIndex set [_ring, true];
     };
     private _unmute = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1;
     if (_unmute < 0) then { _unmute = 0; };
@@ -163,11 +168,11 @@ if (!(_announced isEqualType [])) then { _announced = []; };
         } else { _text };
         private _msg = if (_isPo) then { "Point d’objectif atteint — " } else { "Point suivi atteint — " };
         [_msg + _lbl, "gps", "info"] call comspec_overwatch_connect_fnc_announce;
-        if (_name in allMapMarkers) then {
+        if (_name in _mkIndex) then {
             _name setMarkerColorLocal "ColorGrey";
         };
     };
-} forEach (+allMapMarkers);
+} forEach _allMk;
 
 [_seen] call _fnc_clearRings;
 missionNamespace setVariable ["COMSPEC_PoRingIds", _seen, false];

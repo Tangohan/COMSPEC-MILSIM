@@ -34,6 +34,8 @@ private _created = 0;
 private _nl = toString [10];
 private _tab = toString [9];
 private _lines = _body splitString _nl;
+// Index des marqueurs existants (hashmap) : « in allMapMarkers » dans la boucle recopiait toute la liste à chaque ligne.
+private _mkIndex = createHashMapFromArray (allMapMarkers apply { [_x, true] });
 private _bootMk = missionNamespace getVariable ["COMSPEC_WebMarkersBootstrapped", false];
 if (!_bootMk) then {
     missionNamespace setVariable ["COMSPEC_WebMarkersBootstrapped", true, false];
@@ -67,23 +69,29 @@ if (!_bootMk) then {
     };
     if (_text isEqualTo "") then { _text = "Repère poste"; };
 
-    if (!(_name in allMapMarkers) && {_created >= 25}) then { continue };
+    if (!(_name in _mkIndex) && {_created >= 25}) then { continue };
 
     private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
     missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
-    if (_name in allMapMarkers) then {
-        _name setMarkerPos [_xPos, _yPos];
-        _name setMarkerText _text;
-        _name setMarkerType _type;
-        _name setMarkerColor _color;
+    if (_name in _mkIndex) then {
+        // Marqueurs globaux conservés (visibles aussi des joueurs sans terminal, qui ne font pas ce poll),
+        // mais seuls les champs qui diffèrent sont réécrits : chaque setMarker* global partait sur le réseau,
+        // répété par chaque client équipé ; le premier à mettre à jour suffit, les autres ne voient plus d'écart.
+        if (((getMarkerPos _name) distance2D [_xPos, _yPos]) > 0.5) then { _name setMarkerPos [_xPos, _yPos]; };
+        if ((markerText _name) isNotEqualTo _text) then { _name setMarkerText _text; };
+        if ((markerType _name) isNotEqualTo _type) then { _name setMarkerType _type; };
+        if ((markerColor _name) isNotEqualTo _color) then { _name setMarkerColor _color; };
     } else {
         private _mk = createMarker [_name, [_xPos, _yPos]];
         if (_mk isEqualTo "") then { _mk = _name; };
-        _mk setMarkerType _type;
-        _mk setMarkerColor _color;
-        _mk setMarkerText _text;
-        _mk setMarkerSize [0.85, 0.85];
+        // Champs posés en local puis un seul setter global final : il diffuse l'état complet en un message
+        // au lieu de cinq.
+        _mk setMarkerTypeLocal _type;
+        _mk setMarkerColorLocal _color;
+        _mk setMarkerTextLocal _text;
+        _mk setMarkerSizeLocal [0.85, 0.85];
         _mk setMarkerAlpha 1;
+        _mkIndex set [_mk, true];
         _created = _created + 1;
     };
     private _unmute = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 1]) - 1;
@@ -103,7 +111,7 @@ if ((count _raw) < 7990) then {
     {
         if (!(_x in _seen)) then {
             private _n = format ["comspec_webmk_%1", _x];
-            if (_n in allMapMarkers) then {
+            if (_n in _mkIndex) then {
                 private _muted = (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1;
                 missionNamespace setVariable ["COMSPEC_MarkerEhMuted", _muted, false];
                 deleteMarker _n;

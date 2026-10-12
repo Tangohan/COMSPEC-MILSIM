@@ -42,6 +42,8 @@ if (_cardiac || {_health == "cardiac_arrest"}) then {
 if (_kind != "") then {
     private _streakKey = "COMSPEC_MedicalAlertConfirm_" + _kind;
     private _streak = missionNamespace getVariable [_streakKey, 0];
+    // Nouvelle alerte : la prochaine clôture (rétablissement) part sans attendre la fenêtre de 30 s.
+    missionNamespace setVariable ["COMSPEC_MedicalCancelLastTry", -1e9, false];
     _streak = _streak + 1;
     missionNamespace setVariable [_streakKey, _streak, false];
     // Autre kind : reset l’autre compteur
@@ -60,7 +62,10 @@ if (_kind != "") then {
     if (_health in ["stable", "wounded", "critical"] && {!_cardiac}) then {
         private _last = missionNamespace getVariable ["COMSPEC_lastMedicalAlertKind", ""];
         private _own = [] call comspec_overwatch_connect_fnc_hasOwnActiveMedicalAlert;
-        if (!(_last isEqualTo "") || {count _own > 0}) then {
+        // Clôture auto au plus une fois / 30 s : sur réponse non-OK elle était retentée à chaque tick (1 s).
+        private _lastTry = missionNamespace getVariable ["COMSPEC_MedicalCancelLastTry", -1e9];
+        if ((!(_last isEqualTo "") || {count _own > 0}) && {diag_tickTime - _lastTry >= 30}) then {
+            missionNamespace setVariable ["COMSPEC_MedicalCancelLastTry", diag_tickTime, false];
             [true] call comspec_overwatch_connect_fnc_selfCancelMedicalAlert;
         };
     };

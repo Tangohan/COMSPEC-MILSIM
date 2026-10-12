@@ -145,7 +145,8 @@ if (_prefix == "OK") then {
     private _ipPrefix = if (count _ipParts >= 1) then { _ipParts select 0 } else { "" };
     private _userIp = if (count _ipParts >= 2) then { _ipParts select 1 } else { "—" };
     if (_ipPrefix == "OK") then {
-        missionNamespace setVariable ["COMSPEC_userIp", _userIp, true];
+        // IP du joueur : locale (affichage journal) — la diffuser l'envoyait à tous les clients (trafic + vie privée).
+        missionNamespace setVariable ["COMSPEC_userIp", _userIp, false];
         missionNamespace setVariable ["COMSPEC_LastHealthOk", diag_tickTime, false];
         if (_key isEqualTo "") then {
             missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
@@ -173,7 +174,7 @@ if (_prefix == "OK") then {
         };
     } else {
         // Auth Connect OK mais whoami KO : on garde linked si cle presente (whoami n'est pas l'auth).
-        missionNamespace setVariable ["COMSPEC_userIp", "—", true];
+        missionNamespace setVariable ["COMSPEC_userIp", "—", false];
         if (_key isEqualTo "") then {
             missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
             missionNamespace setVariable ["COMSPEC_LinkDetail", "Portail injoignable", false];

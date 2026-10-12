@@ -51,6 +51,33 @@ private _payload = createHashMapFromArray [["id", _orderId], ["status", _status]
 
 // Sync Athena (ordres web) — le motif est transmis pour refus / proposition
 private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 1]);
-["COMSPECExtension" callExtension ["UpdateOrderStatus", [_orderId, _status, _by, _mapId, _note]]] call comspec_overwatch_connect_fnc_extResult;
+// POST hors du thread de jeu : file + un seul spawn qui envoie dans l'ordre via extAwait (le retour
+// de l'extension n'était pas utilisé ; l'appel synchrone figeait le jeu à chaque changement de statut).
+private _statusQueue = missionNamespace getVariable ["COMSPEC_OrderStatusQueue", []];
+_statusQueue pushBack [_orderId, _status, _by, _mapId, _note];
+missionNamespace setVariable ["COMSPEC_OrderStatusQueue", _statusQueue, false];
+if !(missionNamespace getVariable ["COMSPEC_OrderStatusBusy", false]) then {
+    missionNamespace setVariable ["COMSPEC_OrderStatusBusy", true, false];
+    0 spawn {
+        private _done = false;
+        while { !_done } do {
+            private _job = [];
+            // Bloc atomique : pas de fenêtre où une entrée ajoutée resterait sans envoi.
+            isNil {
+                private _q = missionNamespace getVariable ["COMSPEC_OrderStatusQueue", []];
+                if (_q isEqualTo []) then {
+                    missionNamespace setVariable ["COMSPEC_OrderStatusBusy", false, false];
+                } else {
+                    _job = _q deleteAt 0;
+                };
+            };
+            if (_job isEqualTo []) then {
+                _done = true;
+            } else {
+                ["COMSPECExtension", "UpdateOrderStatus", _job] call comspec_overwatch_connect_fnc_extAwait;
+            };
+        };
+    };
+};
 
 true

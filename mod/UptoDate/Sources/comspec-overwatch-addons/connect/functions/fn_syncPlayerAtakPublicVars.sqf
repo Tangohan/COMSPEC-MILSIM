@@ -22,14 +22,32 @@ private _cert = missionNamespace getVariable ["COMSPEC_CertStatus", ""];
 private _link = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
 private _atakState = missionNamespace getVariable ["COMSPEC_AtakState", createHashMap];
 
-player setVariable ["COMSPEC_TerminalUid", _terminal, true];
-player setVariable ["COMSPEC_AtakId", _atakId, true];
-player setVariable ["COMSPEC_MilitaryId", _mid, true];
-player setVariable ["COMSPEC_CallsignPublic", _callsign, true];
-player setVariable ["COMSPEC_CertStatus", _cert, true];
-player setVariable ["COMSPEC_LinkState", _link, true];
+// Diffusion réseau seulement si la valeur a changé : appelé à chaque envoi de position et toutes les 60 s,
+// chaque setVariable public partait vers tous les clients (+ file JIP) même identique.
+// Empreinte (str) gardée en local sur l'unité : une nouvelle unité (respawn) rediffuse tout ; l'empreinte évite
+// le piège du hashmap AtakState partagé par référence (toujours « égal » à lui-même une fois modifié sur place).
+private _changed = false;
+private _fnc_pub = {
+    params ["_key", "_val"];
+    private _sigKey = "COMSPEC_PubSig_" + _key;
+    private _sig = str _val;
+    // Valeur courante comparée aussi : d'autres scripts (refreshLinkState, effets Zeus) écrivent la même clé.
+    private _cur = player getVariable _key;
+    if (!isNil "_cur" && {(str _cur) isEqualTo _sig} && {(player getVariable [_sigKey, ""]) isEqualTo _sig}) exitWith {};
+    player setVariable [_sigKey, _sig, false];
+    player setVariable [_key, _val, true];
+    _changed = true;
+};
+["COMSPEC_TerminalUid", _terminal] call _fnc_pub;
+["COMSPEC_AtakId", _atakId] call _fnc_pub;
+["COMSPEC_MilitaryId", _mid] call _fnc_pub;
+["COMSPEC_CallsignPublic", _callsign] call _fnc_pub;
+["COMSPEC_CertStatus", _cert] call _fnc_pub;
+["COMSPEC_LinkState", _link] call _fnc_pub;
 if (_atakState isEqualType createHashMap) then {
-    player setVariable ["COMSPEC_AtakState", _atakState, true];
+    ["COMSPEC_AtakState", _atakState] call _fnc_pub;
 };
 // Marqueur de fraîcheur : le panneau Zeus sait ainsi si une synchro a déjà abouti.
-player setVariable ["COMSPEC_AtakSyncAt", diag_tickTime, true];
+if (_changed || {(player getVariable ["COMSPEC_AtakSyncAt", -1]) < 0}) then {
+    player setVariable ["COMSPEC_AtakSyncAt", diag_tickTime, true];
+};
