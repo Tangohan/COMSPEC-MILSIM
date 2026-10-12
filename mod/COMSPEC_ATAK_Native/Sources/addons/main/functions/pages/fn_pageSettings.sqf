@@ -285,6 +285,29 @@ private _access = [
     ["text", "<t size='0.8' color='#8a9a93'>En main, glissez la coque pour l'ajuster à partir du coin choisi. Touches modifiables dans les réglages CBA.</t>"]
 ];
 
+// Service Athéna : la question du premier lancement (Oui : COMSPEC Link et synchro ; Non : ATAK local).
+private _athMode = [] call comspec_atak_native_fnc_athenaMode;
+private _athReady = _bridge && {[] call comspec_overwatch_connect_fnc_isReady};
+private _athState = switch (true) do {
+    case (_athMode isEqualTo "off"): { "<t color='#8a9a93'>ATAK local · aucune connexion ni donnée envoyée</t>" };
+    case (_athMode isEqualTo ""): { "<t color='#e8b84a'>pas encore choisi</t>" };
+    case (_athReady): { format ["<t color='#5cc76b'>compte lié</t>%1", ["", format [" · %1", missionNamespace getVariable ["comspec_tenant_name", ""]]] select ((missionNamespace getVariable ["comspec_tenant_name", ""]) isNotEqualTo "")] };
+    default { "<t color='#f2ab33'>compte pas encore lié</t>" };
+};
+private _athena = [
+    ["section", "Service Athéna", "Votre unité utilise-t-elle Athéna ?"],
+    ["segment", "Mon unité utilise Athéna", [
+        ["OUI", { ["on"] call comspec_atak_native_fnc_athenaChoice; }, _athMode isEqualTo "on"],
+        ["NON", { ["off"] call comspec_atak_native_fnc_athenaChoice; }, _athMode isEqualTo "off"]
+    ], "Oui : COMSPEC Link, synchro avec le poste, compte lié. Non : ATAK local sur le serveur, rien n'est envoyé."],
+    ["info", "État", _athState],
+    ["buttons", [
+        ["REVOIR LA QUESTION", { ["show"] call comspec_atak_native_fnc_athenaChoice; }, false, _bridge],
+        ["LIER MON COMPTE", { ["link"] call comspec_atak_native_fnc_athenaChoice; }, true, _bridge && {_athMode isEqualTo "on"} && {!_athReady}]
+    ]],
+    ["text", "<t size='0.8' color='#8a9a93'>Aussi dans le menu Échap, bouton Service Athéna.</t>"]
+];
+
 // Catégories, façon Android : liste d'accueil, puis une page par catégorie.
 private _cats = [
     ["PERSO", "Personnalisation", "Thème, coque, fond d'écran, texte, dock", "app_settings", _perso],
@@ -294,7 +317,8 @@ private _cats = [
     ["APPS", "Applications", format ["%1 app(s) cachée(s)", count (profileNamespace getVariable ["COMSPEC_ATAK_HiddenApps", []])], "ui_apps", _appsRows],
     ["HW", "Matériel et réseau", "Mode avion, Bluetooth, dégâts, débit simulé, Live cam", "app_network", _hw + _live],
     ["REAL", "Réalisme", ["Données médicales, saleté de l'écran", "Roleplay d'Overwatch, données médicales, réglages imposés"] select _bridge, "app_status", _real],
-    ["ACCESS", "Accès et touches", "Objet requis, raccourcis clavier", "ui_link", _access]
+    ["ACCESS", "Accès et touches", "Objet requis, raccourcis clavier", "ui_link", _access],
+    ["ATHENA", "Service Athéna", ["Non : ATAK local, aucune synchro", "Oui : COMSPEC Link et synchro", "Pas encore choisi"] select (["off", "on", ""] find _athMode), "app_athena", _athena]
 ];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _cat = _s getOrDefault ["setCat", ""];

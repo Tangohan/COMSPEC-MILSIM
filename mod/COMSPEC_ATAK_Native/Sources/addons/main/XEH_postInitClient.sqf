@@ -12,12 +12,15 @@ missionNamespace setVariable ["COMSPEC_ATAK_LegacyBootstrapSuppressed", true, fa
 if ([] call comspec_atak_native_fnc_bridge) then {
     diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPEC Link présent : session Athena partagée, DLL native non initialisée";
 } else {
-    private _athenaUrl = profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"];
-    private _extInit = "COMSPECATAKNativeExtension" callExtension ["Init", [_athenaUrl]];
-    missionNamespace setVariable ["COMSPEC_ATAK_NativeExtensionInit", _extInit, false];
-    private _restore = "COMSPECATAKNativeExtension" callExtension ["RestoreSession", [_athenaUrl, "1.0.0-native"]];
-    missionNamespace setVariable ["COMSPEC_ATAK_NativeAuthRestore", _restore, false];
-    diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPECATAKNativeExtension initialization requested";
+    // Sans COMSPEC Link : la DLL native ne contacte Athena qu'une fois « Oui » choisi au service Athéna (Réglages > Service Athéna).
+    [{ ([] call comspec_atak_native_fnc_athenaMode) isEqualTo "on" }, {
+        private _athenaUrl = profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"];
+        private _extInit = "COMSPECATAKNativeExtension" callExtension ["Init", [_athenaUrl]];
+        missionNamespace setVariable ["COMSPEC_ATAK_NativeExtensionInit", _extInit, false];
+        private _restore = "COMSPECATAKNativeExtension" callExtension ["RestoreSession", [_athenaUrl, "1.0.0-native"]];
+        missionNamespace setVariable ["COMSPEC_ATAK_NativeAuthRestore", _restore, false];
+        diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPECATAKNativeExtension initialization requested";
+    }] call CBA_fnc_waitUntilAndExecute;
 };
 // Porté : le téléphone reste affiché dans le coin et l'on continue à jouer. En main : souris et clavier.
 // Raccourcis (Options > Contrôles > Configurer les addons > COMSPEC ATAK), sur le modèle des interfaces principale / secondaire / tertiaire.
@@ -119,6 +122,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 ["comspec_atak_native_medevacStatus", { ["statusRecv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
 private _eh = addMissionEventHandler ["ExtensionCallback", { _this call comspec_atak_native_fnc_extensionCallback }];
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
+// Service Athéna changé (Oui / Non) : apps Athena affichées ou masquées tout de suite.
+["COMSPEC_AthenaModeChanged", { [{ if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_dockRender; }; }] call CBA_fnc_execNextFrame; }] call CBA_fnc_addEventHandler;
 ["COMSPEC_AthenaLinkChanged", { params ["_state"]; private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["networkState", toUpper _state]; }] call CBA_fnc_addEventHandler;
 
 // COMSPEC Link (déjà installé chez les joueurs) n'ouvre ses boucles de synchro que s'il voit « son » terminal.

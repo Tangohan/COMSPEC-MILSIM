@@ -5,6 +5,22 @@ if (!hasInterface) exitWith {};
 if (!isNil "COMSPEC_Overwatch_PostInitClientDone") exitWith {};
 COMSPEC_Overwatch_PostInitClientDone = true;
 
+// Service Athéna (fn_athenaApply) : « Non » coupe Overwatch pour toute la partie, même si un réglage CBA le rallume.
+if (([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "off") then {
+    missionNamespace setVariable ["comspec_overwatch_enabled", false];
+};
+[{
+    if (([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "off" && {missionNamespace getVariable ["comspec_overwatch_enabled", true]}) then {
+        missionNamespace setVariable ["comspec_overwatch_enabled", false];
+    };
+}, 5] call CBA_fnc_addPerFrameHandler;
+// Premier lancement sans passer par le menu principal (connexion directe au serveur) : on pose la question en mission.
+[{ !isNull player && {!isNull findDisplay 46} }, {
+    if (([] call comspec_overwatch_connect_fnc_athenaMode) isEqualTo "") then {
+        [] call comspec_overwatch_connect_fnc_athenaChoiceShow;
+    };
+}] call CBA_fnc_waitUntilAndExecute;
+
 [] call comspec_overwatch_connect_fnc_superPingInstall;
 [{ [] call comspec_overwatch_connect_fnc_superPingInstall; }, [], 3] call CBA_fnc_waitAndExecute;
 
