@@ -38,7 +38,7 @@ foreach ($relays as $r) {
                 <div class="mt-5 flex flex-wrap gap-2">
                     <a href="<?= $h(url('back-office/atak/roleplay')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Simulation réseau et capteurs</a>
                     <a href="<?= $h(url('back-office/atak/relays-network')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Réseau de relais</a>
-                    <a href="<?= $h(url('admin/atak-config')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Liaison technique</a>
+                    <a href="<?= $h(url('back-office/ressources/atak-config')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Liaison technique</a>
                     <a href="<?= $h(url('back-office/atak/realisme')) ?>" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50">Parc de terminaux</a>
                 </div>
             </div>

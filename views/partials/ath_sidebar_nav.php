@@ -68,7 +68,7 @@ $navAtakSessionsActive = $boNavAtakOperators;
 $navAtakOpActive = str_starts_with($p, 'back-office/atak/fiche-operateur');
 $navAtakControlActive = str_starts_with($p, 'back-office/atak/controle-serveur');
 $navAtakRelaysActive = str_starts_with($p, 'back-office/atak/relays-network');
-$navAtakRoleplayActive = str_starts_with($p, 'back-office/atak/roleplay') || str_starts_with($p, 'admin/atak/roleplay');
+$navAtakRoleplayActive = str_starts_with($p, 'back-office/atak/roleplay') || str_starts_with($p, 'back-office/atak/roleplay');
 $navRolesActive = $boNavRolesPermissions;
 $navRolesTableActive = $boNavRoles;
 $navProfilsActive = $boNavRolesPresets;
@@ -229,14 +229,12 @@ $atakDeviceChildren = [
 ];
 
 $atakResChildren = [
-    ['label' => 'Configuration ATAK', 'href' => url('admin/atak-config'), 'active' => $navAt('admin/atak-config')],
-    ['label' => 'Mod ATAK', 'href' => url('admin/atak-mod'), 'active' => $navAt('admin/atak-mod')],
-    ['label' => 'Modpacks', 'href' => url('admin/modpacks'), 'active' => $navAt('admin/modpacks')],
-    ['label' => 'Réglages réalisme', 'href' => url('admin/atak/realism/config'), 'active' => $navAt('admin/atak/realism')],
-    ['label' => 'Accès anticipé au mod', 'href' => url('admin/atak-beta'), 'active' => $navAt('admin/atak-beta')],
-    ['label' => 'Signalements du mod', 'href' => url('admin/atak-mod-reports'), 'active' => $navAt('admin/atak-mod-reports')],
-    ['label' => 'Restrictions d’accès au mod', 'href' => url('admin/atak-mod-blocks'), 'active' => $navAt('admin/atak-mod-blocks')],
-    ['label' => 'Diffusion des rapports', 'href' => url('admin/atak-diffusion-rapports'), 'active' => $navAt('admin/atak-diffusion-rapports')],
+    ['label' => 'Configuration ATAK', 'href' => url('back-office/ressources/atak-config'), 'active' => $navAt('back-office/ressources/atak-config')],
+    ['label' => 'Mod ATAK', 'href' => url('back-office/ressources/atak-mod'), 'active' => $navAt('back-office/ressources/atak-mod')],
+    ['label' => 'Modpacks', 'href' => url('back-office/ressources/modpacks'), 'active' => $navAt('back-office/ressources/modpacks')],
+    ['label' => 'Réglages réalisme', 'href' => url('back-office/ressources/atak-realism/config'), 'active' => $navAt('back-office/ressources/atak-realism')],
+    ['label' => 'Restrictions d’accès au mod', 'href' => url('back-office/ressources/atak-mod-blocks'), 'active' => $navAt('back-office/ressources/atak-mod-blocks')],
+    ['label' => 'Diffusion des rapports', 'href' => url('back-office/ressources/atak-diffusion-rapports'), 'active' => $navAt('back-office/ressources/atak-diffusion-rapports')],
 ];
 
 $jnetChildren = [
@@ -527,7 +525,7 @@ if ($isOperatorBoNav) {
                 ],
                 [
                     'label' => 'Configuration et mods',
-                    'href' => url('admin/atak-config'),
+                    'href' => url('back-office/ressources/atak-config'),
                     'icon' => 'plug',
                     'active' => $anyActive($atakResChildren),
                     'children' => $atakResChildren,
@@ -568,7 +566,8 @@ if ($isOperatorBoNav) {
                     'badge' => $forumModBadge,
                     'warn' => $forumModBadge !== null,
                 ],
-                ['label' => 'Configuration du forum', 'href' => url('admin/forum-config'), 'icon' => 'gear', 'active' => $navAt('admin/forum-config')],
+                ['label' => 'Fichiers en quarantaine', 'href' => url('back-office/content-moderation'), 'icon' => 'shield', 'active' => $navAt('back-office/content-moderation')],
+                ['label' => 'Configuration du forum', 'href' => url('back-office/ressources/forum-config'), 'icon' => 'gear', 'active' => $navAt('back-office/ressources/forum-config')],
             ], static fn (?array $row): bool => is_array($row))),
         ],
         [

@@ -79,7 +79,7 @@ $organizationSettingsUrl = (string) ($organizationSettingsUrl ?? url('back-offic
                     <a class="bo-atak-mod__btn bo-atak-mod__btn--ghost" href="<?= htmlspecialchars($memberDownloadUrl, ENT_QUOTES, 'UTF-8') ?>">
                         Voir la page membre
                     </a>
-                    <form action="<?= htmlspecialchars($baseUrl . '/admin/atak-mod/delete', ENT_QUOTES, 'UTF-8') ?>" method="post" onsubmit="return confirm('Retirer le pack actuel ? Les membres ne pourront plus le télécharger.');">
+                    <form action="<?= htmlspecialchars($baseUrl . '/back-office/ressources/atak-mod/delete', ENT_QUOTES, 'UTF-8') ?>" method="post" onsubmit="return confirm('Retirer le pack actuel ? Les membres ne pourront plus le télécharger.');">
                         <?= \App\Core\Csrf::field() ?>
                         <button type="submit" class="bo-atak-mod__btn bo-atak-mod__btn--danger">Retirer le pack</button>
                     </form>
@@ -93,7 +93,7 @@ $organizationSettingsUrl = (string) ($organizationSettingsUrl ?? url('back-offic
                 Archive ZIP du pack Overwatch (50&nbsp;Mo max). Glissez le fichier dans la zone ci-dessous
                 ou cliquez pour le sélectionner.
             </p>
-            <form action="<?= htmlspecialchars($baseUrl . '/admin/atak-mod/upload', ENT_QUOTES, 'UTF-8') ?>" method="post" enctype="multipart/form-data" id="bo-atak-mod-upload-form">
+            <form action="<?= htmlspecialchars($baseUrl . '/back-office/ressources/atak-mod/upload', ENT_QUOTES, 'UTF-8') ?>" method="post" enctype="multipart/form-data" id="bo-atak-mod-upload-form">
                 <?= \App\Core\Csrf::field() ?>
                 <div class="bo-atak-mod__drop" id="bo-atak-mod-drop">
                     <input type="file" name="mod_zip" id="bo-atak-mod-file" accept=".zip,application/zip" required aria-label="Archive ZIP du pack Overwatch" />
@@ -145,11 +145,10 @@ $organizationSettingsUrl = (string) ($organizationSettingsUrl ?? url('back-offic
 
                 <div class="bo-atak-mod__actions">
                     <button type="submit" class="bo-atak-mod__btn bo-atak-mod__btn--primary">Vérifier et publier</button>
-                    <a class="bo-atak-mod__btn bo-atak-mod__btn--ghost" href="<?= htmlspecialchars($baseUrl . '/admin/atak-config', ENT_QUOTES, 'UTF-8') ?>">Réglages ATAK</a>
-                    <a class="bo-atak-mod__btn bo-atak-mod__btn--ghost" href="<?= htmlspecialchars($baseUrl . '/admin/atak-mod-blocks', ENT_QUOTES, 'UTF-8') ?>">Restrictions mod</a>
-                    <a class="bo-atak-mod__btn bo-atak-mod__btn--ghost" href="<?= htmlspecialchars($baseUrl . '/admin/atak-beta', ENT_QUOTES, 'UTF-8') ?>">Accès anticipé</a>
+                    <a class="bo-atak-mod__btn bo-atak-mod__btn--ghost" href="<?= htmlspecialchars($baseUrl . '/back-office/ressources/atak-config', ENT_QUOTES, 'UTF-8') ?>">Réglages ATAK</a>
+                    <a class="bo-atak-mod__btn bo-atak-mod__btn--ghost" href="<?= htmlspecialchars($baseUrl . '/back-office/ressources/atak-mod-blocks', ENT_QUOTES, 'UTF-8') ?>">Restrictions mod</a>
                     <a class="bo-atak-mod__btn bo-atak-mod__btn--ghost" href="<?= htmlspecialchars($baseUrl . '/atak', ENT_QUOTES, 'UTF-8') ?>">Ouvrir ATAK</a>
-                    <a class="bo-atak-mod__btn bo-atak-mod__btn--ghost" href="<?= htmlspecialchars($baseUrl . '/admin', ENT_QUOTES, 'UTF-8') ?>">Retour admin</a>
+                    <a class="bo-atak-mod__btn bo-atak-mod__btn--ghost" href="<?= htmlspecialchars($baseUrl . '/back-office', ENT_QUOTES, 'UTF-8') ?>">Retour au back-office</a>
                 </div>
             </form>
         </section>

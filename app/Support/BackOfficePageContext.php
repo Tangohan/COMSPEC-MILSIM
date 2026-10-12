@@ -20,16 +20,6 @@ final class BackOfficePageContext
             'back-office',
             'formation',
             'documents/gestion',
-            'admin/atak-config',
-            'admin/modpacks',
-            'admin/forum-config',
-            'admin/content-moderation',
-            'admin/atak-mod',
-            'admin/atak-beta',
-            'admin/atak-mod-reports',
-            'admin/atak-mod-blocks',
-            'admin/atak-diffusion-rapports',
-            'admin/atak/realism',
             'tableau-operationnel',
             'jnet',
         ];
@@ -79,7 +69,7 @@ final class BackOfficePageContext
             unset($match['subtitle']);
         }
         if (empty($vars['boPageTitle'])) {
-            $vars['boPageTitle'] = !empty($match['title']) ? (string) $match['title'] : ($title !== '' ? $title : 'Administration');
+            $vars['boPageTitle'] = !empty($match['title']) ? (string) $match['title'] : ($title !== '' ? $title : 'Gestion');
         }
         if (empty($vars['boPageKicker']) && !empty($match['kicker'])) {
             $vars['boPageKicker'] = (string) $match['kicker'];

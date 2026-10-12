@@ -88,7 +88,7 @@ final class SystemOpsCenterController
                 'priority' => $contentPendingTotal > 10 ? 'high' : 'low',
                 'title' => 'Valider la file de modération de contenu',
                 'description' => sprintf('%d élément(s) en quarantaine fichier/contenu.', $contentPendingTotal),
-                'link' => url('admin/content-moderation'),
+                'link' => url('back-office/content-moderation'),
                 'link_label' => 'Ouvrir la quarantaine',
             ],
             [
