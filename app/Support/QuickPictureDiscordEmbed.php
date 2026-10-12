@@ -141,6 +141,13 @@ final class QuickPictureDiscordEmbed
             ];
         }
 
+        // Téléphone de l'opérateur (IMEI, numéro, modèle et version de l'ATAK…), masqué : spoiler Discord
+        // à cliquer pour lire. Pas pour un cliché confidentiel (message, lien et note seulement).
+        $ident = self::identLines(is_array($meta['device_ident'] ?? null) ? $meta['device_ident'] : []);
+        if ($ident !== '' && $mode !== self::MODE_CONFIDENTIAL) {
+            $fields[] = ['name' => $drone ? 'Terminal de contrôle' : 'Téléphone', 'value' => $ident, 'inline' => false];
+        }
+
         $attachment = trim((string) ($ctx['attachment'] ?? ''));
         $imageUrl = trim((string) ($ctx['image_url'] ?? ''));
         if ($mode === self::MODE_SSE) {
@@ -294,6 +301,28 @@ final class QuickPictureDiscordEmbed
         }
 
         return '';
+    }
+
+    /**
+     * Lignes masquées (||…||) de l'identité du téléphone.
+     *
+     * @param array<string, mixed> $ident
+     */
+    public static function identLines(array $ident): string
+    {
+        $labels = ['model' => 'Appareil', 'number' => 'Numéro', 'imei' => 'IMEI', 'mac' => 'MAC', 'battery' => 'Batterie'];
+        $out = [];
+        foreach ($labels as $key => $label) {
+            $v = self::clean((string) ($ident[$key] ?? ''));
+            if ($v === '') {
+                continue;
+            }
+            // Le texte ne doit pas fermer le spoiler lui-même.
+            $v = str_replace('|', '/', $v);
+            $out[] = $label . ' ||' . mb_substr($v, 0, 80) . '||';
+        }
+
+        return mb_substr(implode("\n", $out), 0, 1000);
     }
 
     private static function clean(string $v): string
