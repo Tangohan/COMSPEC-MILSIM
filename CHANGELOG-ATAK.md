@@ -11,6 +11,19 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Correctif 2026-10-12 — App CAS, alertes du poste, barre de dessin (ATAK natif 1.16.2)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration.
+- App Feux renommée **CAS**. L'onglet APPEL DE FEU reprend l'écran du clip (motion design) : écran clair en panneaux.
+  - POSITION DE TIR : liste des pièces du camp, MAN, PIÈCE À MA POSITION, grille et altitude.
+  - CIBLE : GRILLE ou POLAIRE, depuis OBSERVATEUR (grille saisie) ou MA POS, AZ, DIST, cible calculée, ENNEMI, HE / ILM / FUM, nombre de coups, OFF / GERBE, EFFACER.
+  - Bandeau de solution : unité, charge, dérive, élévation, durée de vol, flèche ; intervalle vertical et dérive du vent indicative. Balistique sans frottement à partir de la vitesse initiale et des charges de l'arme (pièce manuelle : mortier de 82 mm).
+  - ÉTAT DE LA MISSION et JOURNAL (toucher une mission pour la rappeler, NOUVELLE MSN) ; en bas CALCULER, FIN DE MISSION, TIR.
+  - En haut : onglets 9-LINE, 5-LINE, APPEL DE FEU, ma grille, mon altitude et le vent. En portrait, les panneaux s'empilent.
+- Alerte plein écran, notification et vibration envoyées depuis le site (Overwatch beta) : elles arrivent de nouveau sur le téléphone natif. COMSPEC Link les passait au module `atak_athena` (ancien téléphone Iceman, livré dans le même mod et donc toujours chargé) au lieu du natif ; `fn_receiveOrder` les donne maintenant au natif quand il est chargé. `atak_athena` n'est pas modifié.
+- Carte, barre TRAIT / DESSIN LIBRE : DÉFAIRE devient ANNULER et FERMÉ devient ZONE.
+- Traits et repères du téléphone absents du site : quand l'envoi au site est refusé ou mis en attente, le téléphone l'affiche avec la raison (synchro des marqueurs coupée, liaison Athena pas prête…). COMSPEC Link note maintenant la raison de chaque refus.
+
 ## Vague 2026-10-12 (suite) — Réseau, drone, photos drone sur Discord, saleté (ATAK natif 1.16.0, COMSPEC Link 2.0.69)
 
 Non testé en jeu. Corrige l'app Réseau qui affichait « Athena hors ligne · réponse jamais · 0 paquet envoyé » alors que la position arrivait sur le site et que l'icône de liaison était verte.
@@ -27,9 +40,6 @@ Non testé en jeu. Corrige l'app Réseau qui affichait « Athena hors ligne · r
 - Drone, envoi de la photo : fenêtre plein écran (grand aperçu, titre, description, SSE, CONFIDENTIEL, ENVOYER À ATHENA), sans défilement.
 - Saisie dans un champ du téléphone : les touches ne partent plus au jeu (taper « a » ou « e » faisait pencher le personnage).
 - Carte de l'app Plan : les clics posent de nouveau les sommets des zones (le focus resté sur un bouton mettait la zone de contenu devant la carte).
-- Alerte plein écran, notification et vibration envoyées depuis le site (Overwatch beta) : elles arrivent de nouveau sur le téléphone natif. COMSPEC Link les passait au module `atak_athena` (ancien téléphone Iceman, livré dans le même mod et donc toujours chargé) au lieu du natif ; `fn_receiveOrder` les donne maintenant au natif quand il est chargé. `atak_athena` n'est pas modifié.
-- Carte, barre TRAIT / DESSIN LIBRE : DÉFAIRE devient ANNULER et FERMÉ devient ZONE.
-- Traits et repères du téléphone absents du site : quand l'envoi au site est refusé ou mis en attente, le téléphone l'affiche avec la raison (synchro des marqueurs coupée, liaison Athena pas prête…). COMSPEC Link note maintenant la raison de chaque refus.
 
 ## Correctif 2026-10-12 — ATAK sur le JPC : bon modèle et écran vivant (ATAK natif 1.15.1)
 

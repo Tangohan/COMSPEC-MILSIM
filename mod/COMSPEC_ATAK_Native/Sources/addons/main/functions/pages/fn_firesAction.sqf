@@ -1,6 +1,7 @@
 /*
-    Actions de l'app Feux. Params : [action, argument]
+    Actions de l'app CAS. Params : [action, argument]
     tab, mode, sheaf, pick, clear, prefill9, prefill5, send9, send5, gunHere, compute, shot, eom
+    Écran APPEL DE FEU (fn_firesCff) : gun, ammo, from, clearTgt, newMsn, recall.
 */
 params [["_action", ""], ["_arg", ""]];
 [] call comspec_atak_native_fnc_firesSave;
@@ -29,6 +30,33 @@ private _order = {
 switch (_action) do {
     case "tab": { _f set ["tab", _arg]; _f set ["hint", ["", false]]; };
     case "mode": { _f set ["mode", _arg]; };
+    case "gun": { _f set ["gun", _arg]; _f deleteAt "solution"; };
+    case "ammo": { _f set ["ammo", _arg]; _f deleteAt "solution"; };
+    case "from": { _f set ["from", _arg]; _f deleteAt "solution"; };
+    case "clearTgt": {
+        { _f deleteAt _x; } forEach ["tgtGrid", "target", "solution", "enemy"];
+        _f set ["clearing", true];
+        ["Cible effacée."] call _say;
+    };
+    case "newMsn": {
+        { _f deleteAt _x; } forEach ["tgtGrid", "target", "solution", "enemy", "active"];
+        _f set ["clearing", true];
+        ["Nouvelle mission."] call _say;
+    };
+    case "recall": {
+        // Mission du journal : cible, munition, coups et pièce remis dans le formulaire.
+        private _m = (_f getOrDefault ["missions", []]) param [_arg, []];
+        if ((count _m) < 6) exitWith {};
+        _m params ["", "_g", "", "_r", "", "_k", ["_gun", ""]];
+        _f set ["mode", "GRID"];
+        _f set ["tgtGrid", _g];
+        _f set ["rounds", str _r];
+        _f set ["ammo", _k];
+        if (_gun isNotEqualTo "") then { _f set ["gun", _gun]; };
+        _f deleteAt "solution";
+        _f set ["clearing", true];
+        [format ["Mission rappelée : %1", _g]] call _say;
+    };
     case "sheaf": { _f set ["sheaf", !(_f getOrDefault ["sheaf", false])]; };
     case "clear": {
         { _f deleteAt _x; } forEach ([["n1","n2","n3","n4","n5","n6","n7","n8","n9","nr"], ["f1","f2","f3","f4","f5"]] select (_arg isEqualTo "five"));
@@ -121,7 +149,10 @@ switch (_action) do {
         // Cible
         private _tgt = if ((_f getOrDefault ["mode", "GRID"]) isEqualTo "POLAR") then {
             private _az = (parseNumber (_f getOrDefault ["az", "0"])) * 360 / 6400;
-            player getPos [parseNumber (_f getOrDefault ["dist", "0"]), _az]
+            // Depuis l'observateur (grille saisie) ou depuis ma position.
+            private _org = if ((_f getOrDefault ["from", "ME"]) isEqualTo "OBS") then { [_f getOrDefault ["obsGrid", ""]] call _gridPos } else { getPosATL player };
+            if ((count _org) < 2) then { _org = getPosATL player; };
+            _org getPos [parseNumber (_f getOrDefault ["dist", "0"]), _az]
         } else { [_f getOrDefault ["tgtGrid", ""]] call _gridPos };
         if ((count _tgt) < 2) exitWith { ["Cible invalide : grille de 8 ou 10 chiffres, ou pointez-la sur la carte.", true] call _say; };
         _tgt = [_tgt select 0, _tgt select 1, 0];
@@ -140,17 +171,58 @@ switch (_action) do {
                 _eta = _gun getArtilleryETA [_tgt, _mag];
             };
         };
+        // Charge, élévation (tir courbe), durée de vol et flèche : balistique sans frottement à partir de la vitesse
+        // initiale de la munition et des charges de l'arme (pièce manuelle : mortier de 82 mm, 3 charges).
+        private _g = 9.81;
+        private _d = _gunPos distance2D _tgt;
+        private _gunAsl = if (isNull _gun) then { AGLToASL [_gunPos select 0, _gunPos select 1, 0] } else { getPosASL _gun };
+        private _vi = (getTerrainHeightASL _tgt) - (_gunAsl select 2);
+        private _v0 = 200;
+        private _charges = [0.35, 0.7, 1];
+        if (!isNull _gun && {_mag isNotEqualTo ""}) then {
+            _v0 = getNumber (configFile >> "CfgMagazines" >> _mag >> "initSpeed");
+            // Arme de la tourelle qui tire cette munition (sinon la première).
+            private _ws = weapons _gun;
+            private _wi = _ws findIf { ((getArray (configFile >> "CfgWeapons" >> _x >> "magazines")) findIf { _x == _mag }) >= 0 };
+            private _wpn = _ws param [_wi max 0, ""];
+            private _cs = [];
+            { private _c = getNumber (configFile >> "CfgWeapons" >> _wpn >> _x >> "artilleryCharge"); if (_c > 0) then { _cs pushBackUnique _c; }; } forEach (getArray (configFile >> "CfgWeapons" >> _wpn >> "modes"));
+            if ((count _cs) > 0) then { _cs sort true; _charges = _cs; };
+        };
+        private _charge = -1;
+        private _elev = -1;
+        private _tof = -1;
+        private _maxOrd = -1;
+        {
+            private _v = _v0 * _x;
+            private _disc = _v ^ 4 - _g * (_g * _d ^ 2 + 2 * _vi * _v ^ 2);
+            if (_v > 0 && {_disc >= 0} && {_d > 1}) exitWith {
+                private _th = atan ((_v ^ 2 + sqrt _disc) / (_g * _d));
+                _charge = _forEachIndex + 1;
+                _elev = _th * 6400 / 360;
+                _tof = _d / (_v * cos _th);
+                _maxOrd = ((_v * sin _th) ^ 2) / (2 * _g);
+            };
+        } forEach _charges;
+        if (_eta <= 0 && {_tof > 0}) then { _eta = _tof; };
+        // Dérive du vent indicative : vent de travers sur la durée de vol (obus peu sensible).
+        private _wv = ([] call comspec_atak_native_fnc_firesWind) select 3;
+        private _brg = _gunPos getDir _tgt;
+        private _cross = abs (((_wv select 0) * cos _brg) - ((_wv select 1) * sin _brg));
         private _sol = createHashMapFromArray [
+            ["charge", _charge], ["elev", _elev], ["maxOrd", _maxOrd], ["vi", _vi], ["drift", _cross * (_tof max 0) * 0.08], ["gunAlt", str round (_gunAsl select 2)],
             ["gunName", if (isNull _gun) then { "Pièce manuelle" } else { _gun getVariable ["COMSPEC_ATAK_GunName", getText (configOf _gun >> "displayName")] }],
             ["dist", _gunPos distance2D _tgt], ["mils", (_gunPos getDir _tgt) * 6400 / 360], ["eta", _eta],
-            ["inRange", if (isNull _gun) then { true } else { _inRange }], ["grid", [_tgt, 8] call comspec_atak_native_fnc_gridRef], ["mag", _mag]
+            ["inRange", if (isNull _gun) then { _charge > 0 } else { _inRange }], ["grid", [_tgt, 8] call comspec_atak_native_fnc_gridRef], ["mag", _mag]
         ];
         _f set ["solution", _sol];
         if (_action isEqualTo "compute") exitWith { ["Solution calculée."] call _say; };
         // TIR
         private _rounds = (round parseNumber (_f getOrDefault ["rounds", "3"])) max 1 min 12;
         private _sheaf = _f getOrDefault ["sheaf", false];
-        private _summary = format ["APPEL DE FEU %1 | pièce %2 | cible %3 | %4 x%5%6 | az %7 mil | %8 m", [] call _me, _sol get "gunName", _sol get "grid", _ammo, _rounds, ["", " gerbe"] select _sheaf, round (_sol get "mils"), round (_sol get "dist")];
+        private _enemy = trim (_f getOrDefault ["enemy", ""]);
+        private _summary = format ["APPEL DE FEU %1 | pièce %2 | cible %3%9 | %4 x%5%6 | az %7 mil | %8 m", [] call _me, _sol get "gunName", _sol get "grid", _ammo, _rounds, ["", " gerbe"] select _sheaf, round (_sol get "mils"), round (_sol get "dist"),
+            ["", format [" (%1)", _enemy]] select (_enemy isNotEqualTo "")];
         private _how = "ordre";
         if (!isNull _gun && {!isNull gunner _gun}) then {
             if (isPlayer gunner _gun) then {
@@ -176,6 +248,9 @@ switch (_action) do {
         private _log = _f getOrDefault ["log", []];
         _log pushBack format ["<t color='#e5483a'>%1</t> TIR · %2 · %3 x%4 · %5", [] call _time, _sol get "grid", _ammo, _rounds, _how];
         _f set ["log", _log];
+        private _msn = _f getOrDefault ["missions", []];
+        _msn pushBack [[] call _time, _sol get "grid", ["HE", "ILM", "FUM"] select ((["HE", "ILLUM", "SMOKE"] find _ammo) max 0), _rounds, _how, _ammo, _gunId];
+        _f set ["missions", _msn select [((count _msn) - 20) max 0]];
         [format ["Tir demandé (%1).%2", _how, ["", format [" Impact dans %1 s.", round _eta]] select (_eta > 0)]] call _say;
         playSound "ClickSoft";
     };
