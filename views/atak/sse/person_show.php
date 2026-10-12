@@ -129,20 +129,24 @@ $pid = (int) ($person['id'] ?? 0);
             $bioSamples = is_array($terrain['biometric_samples'] ?? null) ? $terrain['biometric_samples'] : [];
             if ($bioSamples !== []):
             ?>
-                <ul class="iw-feed" style="margin-top:12px">
+                <table class="iw-bio-table">
+                    <thead><tr><th>Relevé</th><th>Qualité</th><th>Détail</th></tr></thead>
+                    <tbody>
                     <?php foreach ($bioSamples as $sample): ?>
-                        <li>
-                            <span>
-                                <strong><?= $h($sample['kind_label'] ?? 'Relevé') ?></strong>
-                                — qualité <?= $h((string) ($sample['quality'] ?? '—')) ?> %
-                                (<?= $h($sample['quality_label'] ?? 'Non mesurée') ?>)
-                                <?php if (!empty($sample['laterality_label']) && ($sample['laterality_label'] ?? '—') !== '—'): ?>
-                                    · <?= $h($sample['laterality_label']) ?>
-                                <?php endif; ?>
-                            </span>
-                        </li>
+                        <?php
+                        $sq = $sample['quality'] ?? null;
+                        $lat = (string) ($sample['laterality_label'] ?? '');
+                        $ref = trim((string) ($sample['lab_reference'] ?? ''));
+                        $detail = implode(' · ', array_filter([$lat !== '—' ? $lat : '', $ref]));
+                        ?>
+                        <tr>
+                            <td><?= $h($sample['kind_label'] ?? 'Relevé') ?></td>
+                            <td><?= $sq !== null && $sq !== '' ? (int) $sq . ' %' : '—' ?> <span class="muted"><?= $h($sample['quality_label'] ?? 'Non mesurée') ?></span></td>
+                            <td><?= $h($detail !== '' ? $detail : '—') ?></td>
+                        </tr>
                     <?php endforeach; ?>
-                </ul>
+                    </tbody>
+                </table>
             <?php endif; ?>
         </div>
     </section>

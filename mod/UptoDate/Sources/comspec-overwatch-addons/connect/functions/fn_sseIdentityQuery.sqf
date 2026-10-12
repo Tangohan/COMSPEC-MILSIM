@@ -69,7 +69,20 @@ if (!isNil "comspec_sse_fnc_bioQuery" && {missionNamespace getVariable ["comspec
         _declared = trim format ["%1 %2", _target getVariable ["COMSPEC_SSE_FirstName", ""], _target getVariable ["COMSPEC_SSE_LastName", ""]];
     };
 
-    private _online = (toLower (str (missionNamespace getVariable ["COMSPEC_LinkState", "offline"]))) isEqualTo "linked";
+    private _online = (toLower (call {
+        // État de liaison Athena : COMSPEC_LinkState est une chaîne ("linked", "degraded"…). Sans état
+        // COMSPEC Link, on suit la liaison propre de l'ATAK natif (barre d'état verte = en ligne).
+        private _s = missionNamespace getVariable ["COMSPEC_LinkState", ""];
+        if (!(_s isEqualType "")) then { _s = ""; };
+        _s = toLower _s;
+        if (_s isEqualTo "connecting") then { _s = "degraded"; };
+        if (_s isEqualTo "") then {
+            private _n = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+            _s = if (_n isEqualType createHashMap) then { toLower (_n getOrDefault ["networkState", "offline"]) } else { "offline" };
+            if (_s isEqualTo "connected") then { _s = "linked"; };
+        };
+        _s
+    })) isEqualTo "linked";
     private _delay = if (_online) then { missionNamespace getVariable ["comspec_sse_bio_delayAbis", 12] } else { missionNamespace getVariable ["comspec_sse_bio_delayLocal", 5] };
     uiNamespace setVariable ["COMSPEC_SseQueryArgs", [_target, _caps, _declared]];
     private _fnc_send = {
