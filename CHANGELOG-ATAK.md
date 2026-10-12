@@ -11,6 +11,15 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Volet rapide redessiné, portrait opérateur du site (ATAK natif 1.17.0)
+
+Non testé en jeu. Demande de TTRD : « Améliore l'UI du menu et affiche l'image de l'opérateur issue du web ».
+- Volet Réglages rapides (tiré de la barre d'état) : en tête, la fiche de l'opérateur avec son portrait Athena encadré (couleur d'accent quand Athena est en ligne), indicatif, grade et nom, unité et communauté ; à droite l'heure en grand, la date du jour et l'état de la liaison Athena.
+- Sans portrait (hors ligne, pas encore reçu ou aucun sur le site) : les initiales de l'indicatif à la place. Le portrait apparaît tout seul dès qu'il arrive.
+- Tuiles avec icône (lune, avion, cloche barrée, vibreur, Bluetooth, balise IR, réseau, batterie) ; allumée = fond teinté de l'accent et liseré en haut. Luminosité avec deux soleils et la valeur en %, mise à jour pendant le glissé. TOUS LES RÉGLAGES en accent, FERMER discret.
+- Site : `/api/atak/player-profile` renvoie le portrait opérateur (jamais la photo de compte ni Steam), en vignette JPEG carrée 256 px recadrée vers le visage (`uploads/portraits/atak/`), car Arma ne lit ni PNG ni WebP. Le même portrait s'affiche donc aussi dans les apps Athena, Profil, Groupe et Chat. Pas de DLL à recompiler, pas de migration.
+- Textes traduits en anglais.
+
 ## Vague 2026-10-12 (suite) — Réseau, drone, photos drone sur Discord, saleté (ATAK natif 1.16.0, COMSPEC Link 2.0.69)
 
 Non testé en jeu. Corrige l'app Réseau qui affichait « Athena hors ligne · réponse jamais · 0 paquet envoyé » alors que la position arrivait sur le site et que l'icône de liaison était verte.

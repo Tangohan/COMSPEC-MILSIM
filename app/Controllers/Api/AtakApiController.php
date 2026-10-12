@@ -18,6 +18,7 @@ use App\Repositories\AtakOrderTemplateRepository;
 use App\Repositories\AtakOrderTypeRepository;
 use App\Repositories\FireTeamRepository;
 use App\Support\AtakPlanAccess;
+use App\Support\OperatorPortraits;
 use App\Support\ComspecApiKeyAuth;
 use App\Repositories\CasNineLineRepository;
 use App\Repositories\ReconImageRepository;
@@ -501,7 +502,7 @@ class AtakApiController
     }
 
     /**
-     * Profil public d'un joueur (nom d'affichage, callsign, photo) identifié par son SteamUID,
+     * Profil public d'un joueur (nom d'affichage, callsign, portrait opérateur) identifié par son SteamUID,
      * consommé par l'extension Arma (fonction native GetPlayerAvatarInfo) pour affichage en jeu.
      * Ne renvoie jamais l'état civil (prénom/nom légal) — uniquement l'identité de jeu.
      */
@@ -586,7 +587,8 @@ class AtakApiController
             'ok' => true,
             'display_name' => (string) ($user['display_name'] ?? ''),
             'callsign' => $callsign,
-            'avatar_url' => (string) ($user['avatar_url'] ?? ''),
+            // Portrait opérateur seulement (règle du site), en vignette JPEG carrée lisible par Arma.
+            'avatar_url' => (string) (OperatorPortraits::gameThumbnailUrl($tenantId, $userId) ?? ''),
             'unit_name' => $unitName,
             'unit_short' => $unitName !== '' ? \App\Support\UnitAbbreviation::standalone($unitName, $tenantId) : '',
             'atak_id' => $atakId,
