@@ -143,6 +143,7 @@ private _perso = [
     ["COMSPEC_ATAK_IconDensity", 0, "Icônes du lanceur", [["GRANDES", -1], ["NORMALES", 0], ["SERRÉES", 1]], "Moins ou plus d'icônes par ligne"] call _profSegment,
     ["section", "Animations et sons", "Un téléphone qui réagit : mouvement, clic et vibration légère, écran de verrouillage"],
     ["COMSPEC_ATAK_Animations", true, "", "Animations", "App qui s'ouvre en zoomant, page qui glisse au retour, onde sous le doigt, volet rapide animé"] call _profSwitch,
+    ["COMSPEC_ATAK_PageFx", false, "", "Transitions entre les pages", "Voile qui grandit à l'ouverture d'une app, fondu de l'accueil, glissé au retour (désactivé : aucun clignotement sombre)"] call _profSwitch,
     ["COMSPEC_ATAK_TapFeedback", true, "", "Clic et vibration des appuis", "Clic doux et légère vibration de la coque à chaque appui (aucun son en mode discrétion)"] call _profSwitch,
     ["COMSPEC_ATAK_LockScreen", true, "", "Écran de verrouillage", "Heure, date, dernières notifications : à la première sortie, après une minute rangé ou un redémarrage"] call _profSwitch,
     ["COMSPEC_ATAK_Brightness", 1, "Luminosité", [["30 %", 0.3], ["50 %", 0.5], ["75 %", 0.75], ["100 %", 1]], "Aussi dans le volet rapide (clic sur l'heure) ; écran moins lumineux : moins visible de nuit, moins de batterie"] call _profSegment,

@@ -134,6 +134,10 @@ if ((count _route) > 0) then {
 [_map] call comspec_atak_native_fnc_meshDraw;
 [_map] call comspec_atak_native_fnc_droneDraw;
 ["draw", _map] call comspec_atak_native_fnc_mapPing;
+// Plan de briefing partagé du camp (app Plan), sous les unités, si le joueur l'a mis sur la carte.
+if (profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap", false]) then {
+    [_map, (missionNamespace getVariable [format ["COMSPEC_ATAK_Plan_%1", side group player], [0, [], ""]]) param [1, []], 0.85] call comspec_atak_native_fnc_planDraw;
+};
 
 // Points de passage : traits pointillés entre étapes, étape active en vert, trait de cap depuis moi en navigation.
 private _wp = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
@@ -388,13 +392,8 @@ if (_selM isNotEqualTo "" && {(markerShape _selM) isNotEqualTo ""}) then {
     _map drawEllipse [getMarkerPos _selM,_r,_r,0,[0.36,0.78,0.42,1],""];
 };
 
-// Trait ou dessin en cours
-private _stroke = +(_state getOrDefault ["drawStroke",[]]);
-if ((count _stroke) > 0) then {
-    if ((_state getOrDefault ["mapMode",""]) isEqualTo "LINE" && {(count _cursor) >= 2}) then { _stroke pushBack [_cursor select 0,_cursor select 1,0]; };
-    private _rgba = [profileNamespace getVariable ["COMSPEC_ATAK_DrawColor","ColorRed"], [0.9,0.1,0.1,1]] call _mkRgba;
-    for "_i" from 0 to ((count _stroke) - 2) do { _map drawLine [_stroke select _i,_stroke select (_i + 1),_rgba]; };
-};
+// Traits joueurs épais ou fléchés et trait / dessin en cours (fn_strokeDraw).
+[_map, _cursor] call comspec_atak_native_fnc_strokeDraw;
 
 // App Feux : pièce, cible et ligne de tir.
 private _fires = uiNamespace getVariable ["COMSPEC_ATAK_Fires", createHashMap];

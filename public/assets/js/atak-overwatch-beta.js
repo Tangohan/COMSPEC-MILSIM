@@ -1413,6 +1413,15 @@
         return;
       }
       seen[id] = true;
+      // Forme (zone, trait, dessin libre du téléphone) : si elle change, la couche est refaite. Le téléphone pose
+      // parfois d'abord un point puis la polyligne sous le même nom : sans cela le point restait affiché.
+      var shapeSig = (helper.isAreaShape && helper.isAreaShape(data))
+        ? JSON.stringify([data.shape, data.polyline || data.points || null, data.size || null, data.dir || 0, data.color || '', data.brush || '', data.alpha])
+        : 'icon';
+      if (armaMarkerLayers[id] && armaMarkerLayers[id]._owShapeSig !== shapeSig) {
+        map.removeLayer(armaMarkerLayers[id]);
+        delete armaMarkerLayers[id];
+      }
       var title = helper.displayLabelOf ? helper.displayLabelOf(data) : (data.label || data.text || 'Repère');
       if (buildingLike) title = '';
       var desc = String(data.description || '').trim();
@@ -1440,6 +1449,7 @@
       if (!layer) return;
       if (tip && layer.bindTooltip) layer.bindTooltip(tip, { permanent: false, direction: 'top' });
       else if (layer.unbindTooltip) layer.unbindTooltip();
+      layer._owShapeSig = shapeSig;
       layer.addTo(map);
       armaMarkerLayers[id] = layer;
       bindLayerContext(layer, 'arma', id, title);
