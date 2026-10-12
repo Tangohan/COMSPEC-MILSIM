@@ -21,6 +21,16 @@ Non testé en jeu. Migrations à lancer (`music_library`) et DLL à recompiler (
 - Lecteur : avance / recul de 10 et 30 s (suivi par les auditeurs du haut-parleur), file d'attente avec MONTER, RETIRER et VIDER LA FILE, **favoris** (bouton FAV sur chaque morceau, section Favoris dans LECTURE).
 - Réglage CBA serveur **Bibliothèque Athena** pour couper l'onglet.
 
+## Vague 2026-10-12 (suite) — App Photo dans le téléphone, nouvelle app Galerie (ATAK natif 1.18.0)
+
+Non testé en jeu. Demande de TTRD : l'app Photo doit s'ouvrir sur l'appareil photo, dans l'écran du téléphone, et non en mode photo plein écran ; le plein écran devient un bouton ; les photos se revoient dans une app Galerie séparée.
+
+- **App Photo** : s'ouvre sur le viseur en direct, dans l'écran du téléphone (caméra rendue dans l'écran, comme Live cam et Drone). L'image suit la vue du joueur ; glisser sur l'image décale l'objectif, la molette zoome (x1 à x8), un double clic recentre. Grille des tiers, réticule, grille MGRS, cap et heure incrustés.
+- Boutons sur l'image : FLASH (AUTO / FORCÉ / COUPÉ), PLEIN ÉCRAN (l'ancien mode photo, inchangé) et zoom − / +. Sous l'image : GALERIE, déclencheur, SELFIE (objectif avant). Légende facultative en bas.
+- Au déclenchement, l'écran bascule un instant sur une caméra posée comme le viseur (même zoom), téléphone et HUD masqués, puis la photo part vers Athena (gardée sur le téléphone hors réseau).
+- **Nouvelle app Galerie** (section Renseignement, à côté de Photo) : onglets PHOTOS (photos du téléphone et clichés du drone, filtres, fiches, envoi, suppression) et ENVOIS (suivi de réception par Athena). C'est l'ancienne partie GALERIE / ENVOIS de l'app Photos, déplacée.
+- Sans « Image dans l'image » (PiP) dans les options vidéo d'Arma, le viseur l'indique et propose le plein écran.
+
 ## Volet rapide redessiné, portrait opérateur du site (ATAK natif 1.17.0)
 
 Non testé en jeu. Demande de TTRD : « Améliore l'UI du menu et affiche l'image de l'opérateur issue du web ».
