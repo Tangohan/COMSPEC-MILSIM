@@ -17,6 +17,8 @@ private _apply = {
     missionNamespace setVariable ["comspec_sse_debugInspector", _enable];
     missionNamespace setVariable ["comspec_sse_drawLinks", _drawLinks];
     if (!_enable) exitWith {
+        // Gestionnaire par image retiré (il restait actif toute la mission une fois l'inspecteur ouvert).
+        if (!isNil "comspec_sse_debugEh") then { removeMissionEventHandler ["EachFrame", comspec_sse_debugEh]; comspec_sse_debugEh = nil; };
         ["Inspecteur SSE désactivé."] call comspec_sse_fnc_zeusNotify;
     };
     missionNamespace setVariable ["comspec_sse_debug", true];

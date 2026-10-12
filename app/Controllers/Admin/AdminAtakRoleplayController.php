@@ -34,7 +34,7 @@ class AdminAtakRoleplayController
     }
 
     /**
-     * URL canonique back-office (l’ancien chemin /admin/atak/roleplay redirige ici).
+     * URL canonique back-office (l’ancien chemin /back-office/atak/roleplay redirige ici).
      */
     private function roleplayPath(string $suffix = ''): string
     {

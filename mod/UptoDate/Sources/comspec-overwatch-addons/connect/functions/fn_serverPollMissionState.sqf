@@ -7,16 +7,27 @@ if (!isServer) exitWith { false };
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 if (!(missionNamespace getVariable ["comspec_overwatch_server_hub", true])) exitWith { false };
 
+// Diffusion seulement si la valeur change : ces setVariable publics partaient à chaque poll vers tous les clients (+ JIP).
+// On compare à la dernière valeur diffusée (pas à la valeur locale du serveur, qui peut venir d'un réglage CBA).
+private _fnc_setPub = {
+    params ["_key", "_val"];
+    private _sent = missionNamespace getVariable ["COMSPEC_ServerPubSent", createHashMap];
+    missionNamespace setVariable ["COMSPEC_ServerPubSent", _sent, false];
+    if (_key in _sent && {(_sent get _key) isEqualTo _val}) exitWith {};
+    _sent set [_key, _val];
+    missionNamespace setVariable [_key, _val, true];
+};
+
 private _raw = ["COMSPECExtension" callExtension ["GetRoleplayConfig", []]] call comspec_overwatch_connect_fnc_extResult;
 if (!(_raw isEqualType "") || {_raw isEqualTo ""}) exitWith { false };
 if ((_raw select [0, 3]) != "OK|") exitWith {
-    missionNamespace setVariable ["COMSPEC_ServerHubOwnsMissionPoll", false, true];
+    ["COMSPEC_ServerHubOwnsMissionPoll", false] call _fnc_setPub;
     false
 };
 
 // Uplink serveur OK → les clients peuvent laisser le hub porter ce poll.
 missionNamespace setVariable ["COMSPEC_ServerUplinkOk", true, false];
-missionNamespace setVariable ["COMSPEC_ServerHubOwnsMissionPoll", true, true];
+["COMSPEC_ServerHubOwnsMissionPoll", true] call _fnc_setPub;
 // Les gates AthenaReady côté serveur (sync marqueurs / relais) suivent l’uplink hub.
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) then {
     missionNamespace setVariable ["COMSPEC_AthenaReady", true, false];
@@ -58,18 +69,18 @@ private _zonesEnabled = (_map getOrDefault ["zones_enabled", "0"]) isEqualTo "1"
 private _intelScramble = (_map getOrDefault ["intel_scramble_enabled", "0"]) isEqualTo "1";
 private _viaRelays = (_map getOrDefault ["link_via_relays", "0"]) isEqualTo "1";
 
-missionNamespace setVariable ["COMSPEC_IntelScramble", _intelScramble, true];
-missionNamespace setVariable ["COMSPEC_LinkViaRelays", _viaRelays, true];
+["COMSPEC_IntelScramble", _intelScramble] call _fnc_setPub;
+["COMSPEC_LinkViaRelays", _viaRelays] call _fnc_setPub;
 
 if (_netEnabled) then {
-    missionNamespace setVariable ["comspec_overwatch_roleplay_enabled", true, true];
-    missionNamespace setVariable ["comspec_overwatch_roleplay_network_failures", true, true];
+    ["comspec_overwatch_roleplay_enabled", true] call _fnc_setPub;
+    ["comspec_overwatch_roleplay_network_failures", true] call _fnc_setPub;
 };
 
 if (_zonesEnabled) then {
-    missionNamespace setVariable ["comspec_overwatch_roleplay_enabled", true, true];
-    missionNamespace setVariable ["comspec_overwatch_roleplay_visual_effects", true, true];
-    missionNamespace setVariable ["comspec_overwatch_roleplay_network_failures", true, true];
+    ["comspec_overwatch_roleplay_enabled", true] call _fnc_setPub;
+    ["comspec_overwatch_roleplay_visual_effects", true] call _fnc_setPub;
+    ["comspec_overwatch_roleplay_network_failures", true] call _fnc_setPub;
     [] call comspec_overwatch_connect_fnc_syncRoleplayZonesFromPortal;
 };
 

@@ -38,7 +38,8 @@ private _detail = "";
 
 if (_prefix == "OK") then {
     if (!(_payload isEqualTo "") && {!(_payload isEqualTo "—")}) then {
-        missionNamespace setVariable ["COMSPEC_userIp", _payload, true];
+        // Locale : lue seulement par ce client (la diffusion écrasait l'IP des autres et l'exposait à tous).
+        missionNamespace setVariable ["COMSPEC_userIp", _payload, false];
     };
     // whoami public ≠ auth : sans clé, portail joignable seulement.
     if ((count _key) < 4) then {

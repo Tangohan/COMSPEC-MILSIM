@@ -1,0 +1,7 @@
+# Clichés confidentiels et autres fichiers privés : jamais servis en direct.
+# VPS nginx : root = public/, ce dossier est déjà hors racine web ; ce fichier couvre
+# un Apache dont la racine serait le dépôt entier (ancien hébergement).
+Require all denied
+<IfModule !mod_authz_core.c>
+    Deny from all
+</IfModule>

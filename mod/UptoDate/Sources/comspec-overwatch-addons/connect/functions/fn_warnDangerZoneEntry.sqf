@@ -9,7 +9,8 @@ params [
 private _entered = missionNamespace getVariable ["COMSPEC_EnteredZones", []];
 if (_zoneId in _entered) exitWith {};
 _entered pushBack _zoneId;
-missionNamespace setVariable ["COMSPEC_EnteredZones", _entered, true];
+// Liste propre à ce joueur : diffusée, elle marquait la zone « déjà entrée » chez tout le monde (trafic + alertes perdues).
+missionNamespace setVariable ["COMSPEC_EnteredZones", _entered, false];
 
 private _kind = switch (_zoneType) do {
     case "DANGER_ZONE": { "zone dangereuse" };
@@ -30,9 +31,7 @@ private _mapId = str (missionNamespace getVariable ["comspec_overwatch_map_id", 
 if (_mapId isEqualTo "" || {_mapId isEqualTo "0"}) then { _mapId = "1"; };
 private _p = getPos player;
 private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
-["COMSPECExtension" callExtension ["CheckZonePosition", [
-    _mapId,
-    str (_p select 0),
-    str (_p select 1),
-    _cs
-]]] call comspec_overwatch_connect_fnc_extResult;
+// Retour inutilisé : envoi en spawn via extAwait (appelé depuis le poll des zones, l'appel synchrone figeait le jeu).
+[_mapId, str (_p select 0), str (_p select 1), _cs] spawn {
+    ["COMSPECExtension", "CheckZonePosition", _this] call comspec_overwatch_connect_fnc_extAwait;
+};

@@ -137,7 +137,9 @@ private _seen = [];
 
 private _zones = missionNamespace getVariable ["COMSPEC_DangerZones", []];
 _zones = _zones select { (_x select 0) in _seen };
-missionNamespace setVariable ["COMSPEC_DangerZones", _zones, true];
+// Local : chaque client équipé interroge Athena lui-même (poll 8 s) ; la diffusion réseau à chaque
+// passage multipliait le trafic par le nombre de joueurs.
+missionNamespace setVariable ["COMSPEC_DangerZones", _zones, false];
 
 private _prev = missionNamespace getVariable ["COMSPEC_TacticalZoneIds", []];
 if (!(_prev isEqualType [])) then { _prev = []; };

@@ -1,0 +1,9 @@
+// Écrans et voyants du socle de recharge CS-10 : lumineux (texture choisie par fn_dockVisual).
+ambient[]={1,1,1,1};
+diffuse[]={1,1,1,1};
+forcedDiffuse[]={0,0,0,0};
+emmisive[]={0.85,0.85,0.85,1};
+specular[]={0.15,0.15,0.15,1};
+specularPower=60;
+PixelShaderID="Normal";
+VertexShaderID="Basic";

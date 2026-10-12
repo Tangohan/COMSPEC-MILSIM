@@ -28,6 +28,7 @@ if ([] call comspec_atak_native_fnc_bridge) then {
 // PhoneMain, PhoneOrient et PhonePosition par le gestionnaire de touches ajouté dans fn_open.
 ["COMSPEC ATAK", "PhoneMain", ["Prendre en main / interagir avec l'ATAK (principal)", "Miniature ou rangé : le téléphone passe en grand (souris). En grand : il redevient la miniature."], { [] call (missionNamespace getVariable ["COMSPEC_ATAK_KeyMain", {}]); true }, "", [0x16, [false, false, true]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneCarry", ["Porter l'ATAK en miniature (secondaire)", "Affiche ou range la miniature dans un coin de l'écran (on continue à jouer). En grand : réduit en miniature."], { [] call comspec_atak_native_fnc_hudToggle; true }, "", [0x16, [false,true,false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "PhoneJpc", ["Tablette sur le JPC (ouvrir / rabattre)", "Relève la tablette durcie du porte-plaques et affiche l'ATAK sur son écran 3D : on baisse les yeux pour lire, vue libre, déplacement et arme disponibles. Choisit aussi le style « porté » JPC."], { ["toggle"] call comspec_atak_native_fnc_jpcScreen; true }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneHold", ["Prendre en main / interagir (touche alternative)", "Même effet que la touche principale : miniature -> grand, grand -> miniature."], { [] call comspec_atak_native_fnc_interactToggle; true }, "", [0x16, [true,true,false]]] call CBA_fnc_addKeybind;
 // Zoom de la carte sans prendre le téléphone en main (aussi en marchant ou en conduisant).
 ["COMSPEC ATAK", "PhoneZoomIn", ["Zoomer (carte du téléphone)", "Zoom avant sur la carte, aussi téléphone porté en marchant ou en conduisant."], { if (isNull ([] call comspec_atak_native_fnc_display)) exitWith { false }; [0.7] call comspec_atak_native_fnc_mapZoom; true }, "", [0xC9, [false, true, false]]] call CBA_fnc_addKeybind;
@@ -45,6 +46,17 @@ missionNamespace setVariable ["COMSPEC_ATAK_StowDown", {
 }];
 ["ace_unconscious", { params ["_unit", "_state"]; if (_state && {_unit isEqualTo player}) then { call (missionNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }] call CBA_fnc_addEventHandler;
 addMissionEventHandler ["EntityKilled", { params ["_unit"]; if (_unit isEqualTo player) then { call (missionNamespace getVariable ["COMSPEC_ATAK_StowDown", {}]); }; }];
+// Cartouches ENI de la carte (fn_mapLabels) : heure de pose et auteur de chaque marqueur, notés à sa création
+// (aucun envoi réseau : chaque client voit l'événement). Table locale bornée, nettoyée à la suppression.
+addMissionEventHandler ["MarkerCreated", {
+    params ["_m", "", ["_owner", objNull]];
+    if (isNull _owner) exitWith {};
+    private _meta = missionNamespace getVariable "COMSPEC_ATAK_MarkerMeta";
+    if (isNil "_meta") then { _meta = createHashMap; missionNamespace setVariable ["COMSPEC_ATAK_MarkerMeta", _meta]; };
+    if ((count _meta) > 600) then { { if ((markerShape _x) isEqualTo "") then { _meta deleteAt _x; }; } forEach (keys _meta); };
+    _meta set [_m, [(([dayTime, "HH:MM:SS"] call BIS_fnc_timeToString) splitString ":") joinString "", [_owner] call comspec_atak_native_fnc_unitCallsign]];
+}];
+addMissionEventHandler ["MarkerDeleted", { params ["_m"]; (missionNamespace getVariable ["COMSPEC_ATAK_MarkerMeta", createHashMap]) deleteAt _m; }];
 // Position de la miniature : coin suivant (réglage profil COMSPEC_ATAK_MiniAnchor, aussi dans Réglages).
 missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
     private _list = ["BR", "BL", "TL", "TR", "MR", "ML"];
@@ -64,9 +76,11 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
     params [["_activate", false]];
     private _mode = missionNamespace getVariable ["comspec_atak_native_action_menu", 2];
     if (_mode isEqualTo 0 || {isNull ([] call comspec_atak_native_fnc_display)}) exitWith { false };
-    private _inHand = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false];
+    private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+    private _inHand = _st getOrDefault ["interactive", false];
     if (_activate) exitWith { _inHand };
-    _inHand || {_mode isEqualTo 2}
+    // Écran sur le JPC : le joueur garde son arme et son menu d'actions.
+    _inHand || {_mode isEqualTo 2 && {!(_st getOrDefault ["texture", false])}}
 }];
 ["COMSPEC ATAK", "PhonePanic", "Bouton PANIQUE (deux appuis)", { if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { false }; ["panic"] call comspec_atak_native_fnc_alertsAction; if (diag_tickTime < ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["panicArmedUntil", -1])) then { ["WARNING", "PANIQUE : appuyez encore pour envoyer", 5, 60] call comspec_atak_native_fnc_notify; }; true }, "", [0, [false,false,false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneNight", "Mode nuit du téléphone (normal / rouge / sombre)", {
@@ -275,12 +289,20 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 }] call CBA_fnc_addEventHandler;
 
 // Goniométrie : émetteurs estimés par Athena, relus toutes les 15 s quand la couche est active.
-[{ if (profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) then { [] spawn comspec_atak_native_fnc_sigintPoll; }; }, 15] call CBA_fnc_addPerFrameHandler;
+// Seulement avec un téléphone et une carte à l'écran (téléphone ou carte Arma) : inutile sinon.
+[{
+    if !(profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) exitWith {};
+    if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
+    if (isNull ([] call comspec_atak_native_fnc_display) && {!visibleMap}) exitWith {};
+    [] call comspec_atak_native_fnc_sigintPoll;
+}, 15] call CBA_fnc_addPerFrameHandler;
 
 // Menu ACE « Téléphone ATAK » (fn_aceMenu) : les actions d'entretien ci-dessous vont dans son sous-menu Entretien.
 [] call comspec_atak_native_fnc_aceMenu;
+// Socle de recharge CS-10 (fn_dockMenu) : poser, reprendre, état, replier, poser le kit.
+[] call comspec_atak_native_fnc_dockMenu;
 // Téléphone visible sur le gilet (fn_vestMount), balise IR (fn_irBeacon), téléphone extractible en cas de capture (fn_phoneSecurity).
-[{ ["tick"] call comspec_atak_native_fnc_vestMount; ["tick"] call comspec_atak_native_fnc_irBeacon; ["tick"] call comspec_atak_native_fnc_phoneSecurity; }, 2] call CBA_fnc_addPerFrameHandler;
+[{ ["tick"] call comspec_atak_native_fnc_vestMount; ["tick"] call comspec_atak_native_fnc_jpcScreen; ["tick"] call comspec_atak_native_fnc_irBeacon; ["tick"] call comspec_atak_native_fnc_phoneSecurity; }, 2] call CBA_fnc_addPerFrameHandler;
 // Terminal de bord (tablette du véhicule, PC mobile) gagné ou perdu : coque redessinée, message à l'arrivée.
 [{
     private _k = [player] call comspec_atak_native_fnc_vehicleTerminal;
@@ -314,6 +336,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     _f set ["target", _tgt];
     private _log = _f getOrDefault ["log", []];
     _log pushBack format ["<t color='#f2ab33'>%1</t> REÇU de %2 · %3", [dayTime, "HH:MM"] call BIS_fnc_timeToString, _from, _summary];
+    while { (count _log) > 50 } do { _log deleteAt 0; };
     _f set ["log", _log];
     ["WARNING", format ["MISSION DE TIR : %1", _summary], 8, 80] call comspec_atak_native_fnc_notify;
     [] call comspec_atak_native_fnc_vibrate;
@@ -398,9 +421,12 @@ addMissionEventHandler ["EntityKilled", {
     private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
     if ((count _queue) isEqualTo 0) exitWith {};
     if ((([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0) exitWith {};
-    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", []];
-    ["SUCCESS", format ["Réseau revenu : %1 envoi(s) en attente partent", count _queue], 4, 30] call comspec_atak_native_fnc_notify;
-    { _x call comspec_atak_native_fnc_netSend; } forEach _queue;
+    // Au plus 5 envois toutes les 2 s : vider toute la file d'un coup figeait le jeu au retour du réseau.
+    private _batch = _queue select [0, 5];
+    missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue select [5]];
+    if !(missionNamespace getVariable ["COMSPEC_ATAK_NetFlushing", false]) then { ["SUCCESS", format ["Réseau revenu : %1 envoi(s) en attente partent", count _queue], 4, 30] call comspec_atak_native_fnc_notify; };
+    missionNamespace setVariable ["COMSPEC_ATAK_NetFlushing", (count _queue) > 5];
+    { _x call comspec_atak_native_fnc_netSend; } forEach _batch;
 }, 2] call CBA_fnc_addPerFrameHandler;
 
 // Dégâts du téléphone (fn_deviceImpact) : selon où il est porté (main, gilet, poche, sac), la partie du corps touchée,

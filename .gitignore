@@ -16,6 +16,8 @@ config/cdn_libraries.local.php
 !/storage/uploads/.gitkeep
 !/storage/uploads/recon/
 !/storage/uploads/recon/.gitkeep
+/storage/private/*
+!/storage/private/.htaccess
 /storage/atak-mod/*
 !/storage/atak-mod/.gitkeep
 /storage/intel/*

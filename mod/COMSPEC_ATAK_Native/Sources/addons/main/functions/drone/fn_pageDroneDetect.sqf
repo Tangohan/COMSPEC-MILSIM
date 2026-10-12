@@ -13,7 +13,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "body") params ["", "", "_bw", "_bh"];
 private _fs = _l get "fontSmall";
 private _pad = (_l get "pad") * 2;
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 private _now = time;
 private _auto = profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false];
 private _layer = profileNamespace getVariable ["COMSPEC_ATAK_LayerDrone", true];

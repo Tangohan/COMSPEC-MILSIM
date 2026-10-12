@@ -27,7 +27,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_LockPending", true];
 
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 (_l get "device") params ["_rx", "_ry", "_rw", "_rh"];
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 private _font = _l get "font";
 private _mk = {
     params ["_class", "_pos"];

@@ -27,15 +27,15 @@ $limitsJson = htmlspecialchars(json_encode($limits, JSON_UNESCAPED_UNICODE | JSO
         Astuce : laissez l’onglet ouvert jusqu’à la fin de l’envoi. Ne rechargez pas la page pendant la progression.
     </div>
     <form
-        action="<?= url('admin/modpacks/store') ?>"
+        action="<?= url('back-office/ressources/modpacks/store') ?>"
         method="post"
         enctype="multipart/form-data"
         class="space-y-4"
         data-modpack-upload
         data-upload-limits="<?= $limitsJson ?>"
-        data-upload-init="<?= htmlspecialchars(url('admin/modpacks/upload/init'), ENT_QUOTES, 'UTF-8') ?>"
-        data-upload-chunk="<?= htmlspecialchars(url('admin/modpacks/upload/chunk'), ENT_QUOTES, 'UTF-8') ?>"
-        data-upload-finalize="<?= htmlspecialchars(url('admin/modpacks/upload/finalize'), ENT_QUOTES, 'UTF-8') ?>"
+        data-upload-init="<?= htmlspecialchars(url('back-office/ressources/modpacks/upload/init'), ENT_QUOTES, 'UTF-8') ?>"
+        data-upload-chunk="<?= htmlspecialchars(url('back-office/ressources/modpacks/upload/chunk'), ENT_QUOTES, 'UTF-8') ?>"
+        data-upload-finalize="<?= htmlspecialchars(url('back-office/ressources/modpacks/upload/finalize'), ENT_QUOTES, 'UTF-8') ?>"
     >
         <?= \App\Core\Csrf::field() ?>
         <input type="hidden" name="staged_upload_id" value="">
@@ -94,7 +94,7 @@ $limitsJson = htmlspecialchars(json_encode($limits, JSON_UNESCAPED_UNICODE | JSO
         </div>
         <div class="flex gap-3 pt-2">
             <button type="submit" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Créer</button>
-            <a href="<?= url('admin/modpacks') ?>" class="px-4 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Annuler</a>
+            <a href="<?= url('back-office/ressources/modpacks') ?>" class="px-4 py-2 border border-slate-200 text-slate-700 text-sm rounded hover:bg-slate-50">Annuler</a>
         </div>
     </form>
 </div>

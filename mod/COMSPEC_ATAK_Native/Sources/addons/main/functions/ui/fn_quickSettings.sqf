@@ -87,7 +87,7 @@ switch (_act) do {
         private _pad = (_l get "pad") * 2;
         private _font = _l get "font";
         private _fs = _l get "fontSmall";
-        private _ratio = pixelH / pixelW;
+        private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
         private _acc = ([] call comspec_atak_native_fnc_accent) select 0;
         private _made = [];
         // Voile sur le reste de l'écran : un clic dessus referme le volet.

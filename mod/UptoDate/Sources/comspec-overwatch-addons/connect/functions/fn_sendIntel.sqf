@@ -64,9 +64,11 @@ missionNamespace setVariable ["COMSPEC_IntelStore", _intelStore, true];
 if (_record getOrDefault ["x", -1] >= 0) then {
     private _key = format ["%1:%2", floor ((_record get "x") / 100), floor ((_record get "y") / 100)];
     private _heat = missionNamespace getVariable ["COMSPEC_IntelHeatmap", createHashMap];
+    // Heatmap locale (lue nulle part ailleurs) : plus de diffusion, et bornée à ~500 cellules (mémoire).
+    if (count _heat > 500) then { _heat = createHashMap; };
     private _cell = _heat getOrDefault [_key, 0];
     _heat set [_key, _cell + (_record getOrDefault ["score", 0.5])];
-    missionNamespace setVariable ["COMSPEC_IntelHeatmap", _heat, true];
+    missionNamespace setVariable ["COMSPEC_IntelHeatmap", _heat, false];
 };
 
 switch (_type) do {

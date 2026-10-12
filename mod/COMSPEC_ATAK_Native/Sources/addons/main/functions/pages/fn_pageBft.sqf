@@ -264,7 +264,7 @@ private _addMember = {
     private _f = _e getOrDefault ["freshness", "LIVE"];
     private _age = round (diag_tickTime - (_e getOrDefault ["updated", diag_tickTime]));
     ([_e] call comspec_atak_native_fnc_symbology) params ["_icon", "_color"];
-    if ((profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "DOTS"]) isEqualTo "NATO") then { _icon = ([_e] call comspec_atak_native_fnc_natoSymbol) select 0; };
+    if ((profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO"]) isEqualTo "NATO") then { _icon = ([_e] call comspec_atak_native_fnc_natoSymbol) select 0; };
     // État médical masqué (Réglages > Réalisme, fn_medShow) : seul le décès compte.
     private _dead = !isNull _obj && {!alive _obj || {lifeState _obj isEqualTo "INCAPACITATED" && {["state", "allies"] call comspec_atak_native_fnc_medShow}}};
     // Équipe de feu (camp ami) : couleur de l'icône et nom de l'équipe après l'indicatif.

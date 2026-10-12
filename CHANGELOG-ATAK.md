@@ -11,6 +11,90 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vague 2026-10-12 — Anglais en option (ATAK natif 1.14.0, non testé en jeu)
+
+### Nouveau — Langue du téléphone
+- Réglage CBA par joueur « Langue du téléphone » : Français (par défaut), English, ou Auto (langue du jeu).
+- Le code reste en français ; les textes affichés passent par `comspec_atak_native_fnc_tr` et le dictionnaire `i18n/en.txt` (modèles %1, %2… traduits aussi).
+- Textes des apps Plan, Drone, Photo, socle CS-10, tablette du JPC et files d'envoi traduits ; `tools/i18n.py wrap` puis `extract` à relancer après chaque fusion.
+
+---
+
+## Vague 2026-10-12 — Socle de recharge CS-10 (ATAK natif 1.13.0, non testé en jeu)
+
+### Nouveau — Socle de recharge 10 téléphones
+- Objet **Socle de recharge CS-10** (`COMSPEC_ATAK_ChargingDock`, éditeur Eden > Objets > Électronique, Zeus) et son kit plié `COMSPEC_ATAK_DockKit` (ACE Équipement > « Poser le socle de recharge » : devant soi, sur une table ou au sol).
+- Modèle 3D : socle anodisé sur deux gradins, berceaux et ailettes en caoutchouc, poignées, prise secteur ; les téléphones posés sont notre Samsung S7 en coque tactique (couleur de coque du propriétaire), écran de charge avec le niveau, voyant par emplacement (rouge, orange, vert) lumineux la nuit.
+- ACE sur le socle : « Poser mon téléphone » (charge et état de l'appareil gardés), « Reprendre mon téléphone · 04 · 87 % », « État du socle », « Replier le socle » (vide). Sans ACE : actions molette en regardant le socle.
+- Serveur : seul le propriétaire (identifiant Steam) reprend son téléphone, Zeus et l'admin toujours. Les emplacements sont mémorisés dans le profil du serveur : un téléphone laissé se retrouve à la partie suivante, chargé du temps écoulé ; les socles posés avec le kit sont recréés à leur place sur la même carte. Attribut Eden « Identifiant du socle » pour retrouver les mêmes téléphones d'une mission à l'autre.
+- Réglages serveur **COMSPEC > ATAK · Socle de recharge** : vitesse de charge (1,5 % par minute), charge entre deux parties, mémoriser les socles posés, tout le monde peut reprendre n'importe quel téléphone.
+
+---
+
+## Vague 2026-10-12 — Tablette durcie et ATAK ouvert sur le JPC (ATAK natif 1.12.0, non testé en jeu)
+
+### Nouveau — Tablette durcie à touches (demande de TTRD)
+- Nouveau modèle de terminal « TABLETTE A/B » (Réglages > Personnalisation > Modèle du téléphone) : tablette durcie gris sable, mini-joystick de chaque côté, touches retour / accueil / apps récentes / fn à gauche, A / B / X / Y à droite, patte de fixation en haut, charnière au dos. Rendus 3D Blender (`tools/render_phones.py`, appareil `keys`), coques jour et nuit, dos (« Voir l'arrière ») et poussière de coque.
+
+### Nouveau — ATAK ouvert sur le JPC, en 3D (demande de TTRD)
+- Réglage « Terminal porté » : MINIATURE (comme avant) ou SUR LE JPC. Sur le JPC, la touche « porter » (Ctrl+U) relève la tablette du rabat du porte-plaques vers le visage et l'interface ATAK s'affiche en direct sur son écran 3D (texture UI). Rien n'est affiché à l'écran du joueur : vue libre, déplacement, arme et menu d'actions restent disponibles, on baisse les yeux pour lire.
+- La touche principale prend toujours le terminal en main (plein écran, souris) ; le reposer rouvre l'écran sur le JPC. Ctrl+U à nouveau : la tablette se rabat.
+- ACE « Téléphone ATAK > Ouvrir l'ATAK sur le JPC » / « Rabattre la tablette du JPC », et raccourci « Tablette sur le JPC » (sans touche par défaut).
+- Les autres joueurs voient la tablette ouverte sur le gilet avec un écran ATAK figé ; rabattue, ils voient son dos. Sans gilet, en véhicule ou sans terminal : retour automatique à la miniature. Le téléphone du gilet n'est pas accroché en plus.
+- Écran rafraîchi 6 fois par seconde, seulement s'il est visible et à moins de 6 m de la caméra ; un seul display par ouverture. Écran émissif plus doux la nuit.
+- Réglages fins pour les essais (missionNamespace) : `COMSPEC_ATAK_JpcOffset` (position sur le torse), `COMSPEC_ATAK_JpcTilt` (inclinaison, 50° par défaut), `COMSPEC_ATAK_JpcRate` (images par seconde).
+- Modèle `data/jpc_tablet.p3d` (`tools/model_jpc_tablet.py`), atlas `jpc_tablet_co.paa`, écran figé `jpc_screen_static_co.paa`, matériaux `jpc_screen*.rvmat` (`tools/gen_assets.py <hemtt> jpc`).
+
+### Nouveau — Trois coques de référence (demande de TTRD)
+- Trois nouveaux modèles dans Réglages > Personnalisation > Modèle du téléphone, à côté du S7 qui reste le modèle par défaut : SUPPORT JPC (coque sable sur platine de gilet, équerres noires aux coins, velcro central, patte crantée avec levier, triple objectif), ÉTUI MULTICAM (étui à rabat camouflage, charnières en haut et en bas, velcro en L, îlot double objectif) et COQUE NERVURÉE (coque fine vert-gris, nervures verticales, îlot triple objectif vertical). Géométrie modélisée par nos soins d'après les photos, sans logo de marque. Coques jour et nuit, dos et poussière.
+- Tablette A/B : dos simplifié, caméra déplacée dans le coin façon S7, velcro au centre, mentions MIL-STD-810H et étiquette réglementaire.
+
+## Vague 2026-10-12 — Retours de test en jeu (ATAK natif 1.11.0)
+
+Non testé en jeu. Inclut les correctifs de performance de la PR #629 (même base). DLL à recompiler (`build_mod.bat`) pour le presse-papiers du Plan.
+
+### Nouveau — App Plan (carte de briefing)
+- Carte fixe nord en haut, indépendante du joueur et de la caméra ISR ; le plan est stocké en coordonnées monde, identique pour tous.
+- Zones ENY, INFIL, EXFIL, OBJ, AO, NAI, EA, AA, HLZ, NFA ; lignes PL, LD, LOA, limite, itinéraire, axe d'effort, attaques principale et secondaire, stylo ; points CLEARED n / UNCLEARED n, unités amie/ennemie, note, CP, RP, TRP, OBJ, SBF, ABF.
+- Stylo lissé ou segments clic par clic, pointillés, flèche dans le sens du tracé, épaisseur, couleur, étiquettes.
+- Plan partagé par camp (serveur seul écrivain, JIP) ; droit d'édition par réglage CBA `comspec_atak_native_plan_edit` (tous / chefs de groupe + Zeus + admin par défaut / Zeus + admin).
+- Plans nommés (aperçu, chargement, publication en ajout ou remplacement), export/import en texte `COMSPECPLAN1|…`. Onglet CARTE dans Briefing.
+
+### Amélioré — Dessin libre et carte
+- Unités : cadres OTAN par défaut, cartouche sombre avec l'indicatif puis « distance · azimut » ; contacts ennemis (losange rouge) avec l'heure et l'auteur du signalement ; boussole « 42° NE » ; ligne curseur CURSEUR / MGRS / ALT. Réglages > Carte > « Cartouches des unités » (complet, indicatif seul, aucun). Allègement automatique quand les cartouches se chevauchent ou au dézoom.
+- Traits lissés et allégés, barre couleur / épaisseur / flèche / forme fermée / Défaire / Effacer mes traits ; épaisseur et flèche visibles par tous.
+- Les dessins libres arrivent sur la carte Overwatch beta (le point provisoire est remplacé par le tracé ; décalage de carte appliqué aux polylignes).
+- Clic droit : menu redessiné sans redessiner la page (en-tête grille, altitude, distance, azimut ; Y aller, Centrer ici, Copier la grille).
+- Le léger voile noir des transitions de page est désactivé par défaut (Réglages > Animations et sons > « Transitions entre les pages »).
+
+### Refonte — App Drone
+- Onglets VOL / TÂCHES / CIBLES / PHOTOS / JOURNAL ; barre de boutons par groupes (Caméra, Cibles, Vol, Affichage) avec libellés clairs ; « Pistes » devient CIBLES (cibles marquées + détections automatiques).
+- Suivi des cibles marquées : une ou plusieurs, dans l'ordre choisi, en filature ou en orbite, temps par cible réglable.
+- Clichés photo depuis le drone, avec formulaire avant envoi : titre, description, SSE oui/non, confidentiel oui/non.
+- La caméra ne voit plus le drone lui-même ; qualité du flux Basse / Moyenne / Haute ; nacelle plus douce.
+- Mode petit : vue totale de la caméra ; plus d'écran noir à la réouverture ; neige grise « NO DATA » sans flux.
+- Source du flux : drone, caméra ATAK ou caméra casque (soi ou un membre du groupe).
+- Marquage corrigé sur les véhicules (« Rien sous le réticule »).
+
+### Refonte — App Photo
+- Onglets APPAREIL / GALERIE / ENVOIS, groupes de boutons libellés, état de la liaison Athena.
+- Galerie filtrable (téléphone / drone) avec titres, étiquettes SSE et CONFIDENTIEL, statut d'envoi et page de détail (modifier, envoyer, supprimer).
+- « Envoyer les nouvelles » n'envoie que les photos absentes d'Athena ; viseur : ligne de destination (direct ou hors réseau) et légende.
+
+### Nouveau — Fiche des clichés drone jusqu'au site (COMSPEC Link 2.0.66)
+- Titre, description, SSE (avec dossier), confidentiel, source et nom du drone partent en vrais champs par NotifyNewPhoto, avec la position et le cap du drone ; chaque envoi apparaît dans « Files d'envoi Athena » comme « Photo drone ».
+- Site : champs stockés (migration `atak_recon_images_photo_meta`, lancée par run-migrations.php), affichés dans les photos Overwatch beta, la galerie caméras et la liste recon (badges SSE avec lien vers le dossier et CONFIDENTIEL) ; photos confidentielles masquées sans habilitation et jamais relayées sur Discord.
+- DLL COMSPEC Link à recompiler (`build_mod.bat`) ; avec une DLL plus ancienne, les champs repartent dans la légende.
+
+### Corrigé / amélioré — Interface
+- Briefing : texte géant (« ||0.8% ») des fiches du journal de mission ramené à taille normale.
+- Réseau : la page s'ouvre de nouveau.
+- Écran de verrouillage redessiné (heure, puces d'état, cartes de notification avec icône).
+- Applications V2 : logo du fond qui chevauchait la première section retiré, en-têtes de section, recherche.
+- SSE : bouton « Fiche rapide » (FRM, FRC, FRO, FRT) qui ouvre une FRS préremplie.
+- Photo : la souris vise de nouveau en zoom, flash moins violent (rendu délavé), cadres de visée retirés du cliché, interface revue.
+- Mode porté : pastille main + « Ctrl+Maj+U » au lieu de la phrase, masquable.
+- Personnalisation : style d'horloge, thèmes rapides (Opérations, Nuit, Désert, Athena), interrupteurs pastille et recherche.
 ## Vague 2026-10-12 — Service Athéna au premier lancement (ATAK natif 1.10.0, Overwatch connect)
 
 ### Nouveau — « Votre unité utilise-t-elle le service Athéna ? »
@@ -18,6 +102,8 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 - **Non** : l'ATAK reste en local (carte, BFT, messages et apps entre joueurs du serveur). Aucune connexion à Athena, aucune synchro, aucune note bêta ni inscription envoyée ; Overwatch est coupé (`comspec_overwatch_enabled` forcé à faux même si un réglage CBA le rallume). Les apps Athena, Synchro, Discord et Recherchés disparaissent du lanceur et du dock.
 - **Oui** : comportement habituel (COMSPEC Link, restauration de la session, synchro). Sans session, la fenêtre Connexion Athena s'ouvre pour lier le compte tout de suite.
 - Le choix est enregistré dans le profil Arma (`COMSPEC_AthenaMode` = `on` / `off`) et se change à tout moment : téléphone ATAK > Réglages > **Service Athéna** (Oui / Non, revoir la question, lier mon compte) ou menu Échap > bouton **Service Athéna**. Passer à Non garde la clé enregistrée : revenir à Oui ne demande pas de relier le compte.
+
+---
 
 ## Vague 2026-10-11 (suite) — Un téléphone qui réagit (ATAK natif 1.9.0)
 

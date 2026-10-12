@@ -636,14 +636,27 @@ final class AtakOverwatchIntelController
         }
 
         if ($want('photo')) {
+            // Clichés confidentiels : absents du fil sans l'habilitation « confidentiel » (comme /api/recon/images).
+            $confCol = in_array('is_confidential', $this->repo->columns('recon_images'), true);
+            $confClause = '';
+            if ($confCol) {
+                try {
+                    $canConf = (new \App\Services\Sse\SseClearanceService())
+                        ->allows(\App\Repositories\SseCaseRepository::CLASS_CONFIDENTIAL);
+                } catch (\Throwable) {
+                    $canConf = false;
+                }
+                $confClause = $canConf ? '' : ' AND COALESCE(is_confidential, 0) = 0';
+            }
             foreach ($this->repo->safeFetch(
-                "SELECT id, author_callsign, caption, image_path, grid_ref, pos_x, pos_y, device_type, captured_at, created_at
+                "SELECT id, author_callsign, caption, image_path, grid_ref, pos_x, pos_y, device_type, captured_at, created_at"
+                 . ($confCol ? ', is_confidential' : '') . "
                  FROM recon_images WHERE tenant_id = :t AND caption IS NOT NULL AND caption <> ''
-                   AND UPPER(COALESCE(device_type, '')) <> 'HELMET'
+                   AND UPPER(COALESCE(device_type, '')) <> 'HELMET'" . $confClause . "
                  ORDER BY created_at DESC LIMIT " . $limit,
                 ['t' => $tenantId]
             ) as $r) {
-                $url = ReconImageStorage::publicUrl(basename((string) ($r['image_path'] ?? '')));
+                $url = (string) (ReconImageStorage::urlForRow($r) ?? '');
                 $items[] = [
                     'key' => 'photo:' . (int) $r['id'],
                     'type' => 'photo',

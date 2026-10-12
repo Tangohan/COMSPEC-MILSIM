@@ -209,7 +209,7 @@ if (_lsig isNotEqualTo _lineSig) then {
     _lineSig = _lsig;
     if (_lvl > 0 || _broken) then {
         _rect params ["_rx", "_ry", "_rw", "_rh"];
-        private _ratio = pixelH / pixelW;
+        private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
         private _seed = _look getOrDefault ["seed", 0];
         private _n = 0;
         // Pseudo-aléatoire reproductible (même graine, même dessin).

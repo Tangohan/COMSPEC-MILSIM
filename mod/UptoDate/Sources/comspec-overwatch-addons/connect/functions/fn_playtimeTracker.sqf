@@ -1,4 +1,7 @@
 if (!hasInterface) exitWith {};
+// Une seule boucle while par partie : un 2e lancement doublait les envois de temps de jeu.
+if (!isNil "COMSPEC_PlaytimeTrackerRunning") exitWith {};
+COMSPEC_PlaytimeTrackerRunning = true;
 
 /*
     Cumul mission → portail (serveur / Zeus / éditeur).
@@ -36,7 +39,8 @@ private _flush = {
     };
     private _tenantId = missionNamespace getVariable ["comspec_overwatch_tenant_id", ""];
     if (!(_tenantId isEqualType "")) then { _tenantId = ""; };
-    "COMSPECExtension" callExtension ["ReportPlaytime", [_uid, str _secs, _callsign, _tenantId, _flushCtx]];
+    // Boucle en spawn : extAwait évite de figer le jeu pendant l'appel HTTP.
+    ["COMSPECExtension", "ReportPlaytime", [_uid, str _secs, _callsign, _tenantId, _flushCtx]] call comspec_overwatch_connect_fnc_extAwait;
     missionNamespace setVariable ["COMSPEC_LastPlaytimeSent", diag_tickTime, false];
 };
 

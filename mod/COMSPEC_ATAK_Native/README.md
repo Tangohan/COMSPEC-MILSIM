@@ -22,6 +22,7 @@ Identités livrées :
 - **Marqueurs** : clic avec l'outil marqueur pour un marqueur rapide, double clic pour l'éditeur complet (titre, description partagée, type, couleur, taille, orientation, opacité, canal), clic pour sélectionner, double clic pour modifier, `Suppr` sur le marqueur pointé pour l'effacer. Traits et dessins en polylignes. Fonctionne en mini comme en plein écran.
 - **Messagerie** : canaux Général / Commandement / Groupe / Alertes TOC et messages directs, en bulles. Le téléphone vibre à l'arrivée d'un message.
 - **Musique** : fichiers du dossier `Documents\Arma 3\COMSPEC_Music`, pistes du serveur (musiques d'Arma, des mods et de la mission, radio de la mission en réglage CBA) et liens audio (MP3, WAV, WMA, M4A, AAC, webradio). Volume, file d'attente, répétition, aléatoire, et **haut-parleur** : les joueurs proches entendent la même musique au même moment, plus fort en s'approchant. Fichiers et liens passent par la DLL (lecteur Windows), les pistes serveur par le moteur d'Arma.
+- **Plan** (carte de briefing) : carte fixe nord en haut, graphismes APP-6A (zones ENY/INFIL/OBJ…, lignes, CLEARED/UNCLEARED), stylo, plan partagé par camp (réglage CBA `comspec_atak_native_plan_edit`), plans nommés, export/import `COMSPECPLAN1|…`.
 - **Réseau** : stabilité, latence, perte, relais, zone radio. **Réglages** : réglages du téléphone et réglages roleplay d'Overwatch. **Photos** : photo rapide envoyée sur ATAK web.
 - **Extraction** (câble DL-7) : regarder un support de données (ordinateur, téléphone, clé USB, caisse, corps…) et « Brancher l'ATAK » (molette ou ACE). Le câble et le module DL-7 apparaissent autour du téléphone (écran LCD, voyants PWR / AUTH / DATA) ; l'app montre l'écran du support (Windows, Linux, militaire, SCADA, téléphone, coffre), demande le mot de passe ou force l'accès, puis télécharge les fichiers choisis. S'éloigner arrache le câble (les fichiers déjà reçus restent). Données récupérées : lecture, coordonnées sur la carte, audio, partage au groupe.
 
@@ -39,6 +40,12 @@ Identités livrées :
 - Modèles de téléphone (`COMSPEC_ATAK_PhoneModel` : `s7`, `rugged`, `iphone`) et tablette de bord (`tablet`) : rendus par `tools/render_phones.py`, même ouverture d'écran que le S7.
 - Accessoires : `COMSPEC_ATAK_PowerBank` (`fn_powerBank`), balise IR (`fn_irBeacon`), `COMSPEC_ATAK_NvgFilter` et lueur des écrans (`fn_screenGlow`, réglage serveur « Lueur des écrans la nuit »). Effacement d'urgence et téléphone extractible en cas de capture : `fn_phoneSecurity`.
 - Véhicules : `fn_vehicleTerminal` (tablette de bord, réglage serveur « Tablette des véhicules », objet `COMSPEC_ATAK_VehicleKit`), `fn_vehicleGateway` (passerelle, PC mobile ; portées par mission `COMSPEC_ATAK_GwRange = [4000, 10000]`).
+
+## Socle de recharge CS-10
+
+- Objet `COMSPEC_ATAK_ChargingDock` (Eden, Zeus) ou kit `COMSPEC_ATAK_DockKit` à poser (ACE Équipement). Dix emplacements : 1 à 5 en bas de gauche à droite vu de face, 6 à 10 sur le gradin.
+- Logique : `functions/dock` (`fn_dockServer` état, recharge et mémoire serveur ; `fn_dockVisual` textures ; `fn_dockClient` et `fn_dockMenu` actions). Mémoire : `profileNamespace` du serveur, `COMSPEC_ATAK_DockDb_v1`.
+- Modèle `data/charging_dock.p3d` : `tools/model_charging_dock.py` (Blender, Arma 3 Object Builder ; reprend le maillage du téléphone du gilet), images 2D par `tools/gen_dock_assets.py`. Sélections `phone1..10`, `screen1..10`, `led1..10`.
 
 ## Données à extraire (mission makers)
 

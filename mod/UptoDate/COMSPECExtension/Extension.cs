@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.63";
+    private const string ExtensionVersion = "2.0.66";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -568,14 +568,19 @@ public static partial class Extension
         // Ne plus envoyer le jeton mort pendant le client-init / les posts suivants.
         _sessionToken = "";
         _sessionExpiresAt = DateTimeOffset.MinValue;
-        try
+        // Renouvellement en arrière-plan : appelé avant chaque requête (souvent sur le thread du jeu),
+        // le client-init synchrone pouvait figer la partie jusqu'à SyncTimeoutSeconds.
+        _ = Task.Run(() =>
         {
-            VerifyClientInitSync();
-        }
-        catch
-        {
-            // La clé communauté / Bearer suffit ; le prochain cycle retentera.
-        }
+            try
+            {
+                VerifyClientInitSync();
+            }
+            catch
+            {
+                // La clé communauté / Bearer suffit ; le prochain cycle retentera.
+            }
+        });
     }
 
     private static void TryRememberSessionFromInitBody(string respBody)
@@ -872,14 +877,19 @@ public static partial class Extension
     /// Retry après échec / backoff. Positions = slot unique (dernière gagne) ;
     /// marqueurs = slot par arma_name ; autres posts = FIFO bornée.
     /// </summary>
+    private static int _queueDirty;
+
     private static void EnqueueForRetry(string url, string jsonBody)
     {
+        System.Threading.Interlocked.Exchange(ref _queueDirty, 1);
+        // Pas d'écriture disque ici : appelé depuis le thread du jeu à chaque envoi en échec, réécrire queue.jsonl
+        // (jusqu'à 500 envois en attente) figeait la partie pendant une coupure d'Athena. Le minuteur de vidage
+        // (DrainQueue) sauvegarde la file à chaque passage.
         if (IsPositionEndpoint(url))
         {
             lock (CoalescedPositionLock)
                 _coalescedPosition = (url, jsonBody);
             EnsureDrainTimer();
-            PersistQueueToDisk();
             return;
         }
         if (IsMarkerEndpoint(url))
@@ -887,17 +897,20 @@ public static partial class Extension
             var key = ExtractMarkerArmaName(jsonBody);
             if (key.Length == 0)
                 key = "anon:" + (PendingMarkersByName.Count + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            // Marqueurs en attente bornés (une coupure longue en accumulait sans limite).
+            if (PendingMarkersByName.Count >= 1000 && !PendingMarkersByName.ContainsKey(key)) return;
             PendingMarkersByName[key] = (url, jsonBody);
             EnsureDrainTimer();
-            PersistQueueToDisk();
             return;
         }
         if (PendingPosts.Count < MaxQueueSize)
         {
             PendingPosts.Enqueue((url, jsonBody));
-            EnsureDrainTimer();
+            JournalTrack(url, jsonBody, "queued");
         }
-        PersistQueueToDisk();
+        else
+            JournalTrack(url, jsonBody, "failed", "file d'envoi pleine");
+        EnsureDrainTimer();
     }
 
     private static string ExtractMarkerArmaName(string jsonBody)
@@ -1302,6 +1315,8 @@ public static partial class Extension
     /// <summary>Envoi synchrone d’un item de file. false = stop drain (429).</summary>
     private static bool TrySendQueuedPost((string Url, string Body) item)
     {
+        var started = DateTime.UtcNow.Ticks;
+        JournalTrack(item.Url, item.Body, "sending");
         try
         {
             using var req = new HttpRequestMessage(HttpMethod.Post, item.Url)
@@ -1310,40 +1325,51 @@ public static partial class Extension
             };
             AttachApiKeyHeader(req);
             var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
-            if ((int)response.StatusCode == 429)
+            var sentCode = (int)response.StatusCode;
+            JournalHttp(started, sentCode);
+            // Issue notée après la remise en file éventuelle (finally) pour distinguer nouvel essai et échec.
+            try
             {
-                NoteRateLimited(response);
-                EnqueueForRetry(item.Url, item.Body);
-                return false;
-            }
-            if ((int)response.StatusCode == 403)
-            {
-                NoteAccessDenied(response, item.Url);
-                if (!IsBestEffortEndpoint(item.Url))
-                    EnqueueForRetry(item.Url, item.Body);
-                return false;
-            }
-            if (!response.IsSuccessStatusCode)
-            {
-                var code = (int)response.StatusCode;
-                NotePostError(code, item.Url);
-                if (code == 503)
+                if ((int)response.StatusCode == 429)
                 {
                     NoteRateLimited(response);
+                    EnqueueForRetry(item.Url, item.Body);
+                    return false;
+                }
+                if ((int)response.StatusCode == 403)
+                {
+                    NoteAccessDenied(response, item.Url);
                     if (!IsBestEffortEndpoint(item.Url))
                         EnqueueForRetry(item.Url, item.Body);
                     return false;
                 }
-                if (ShouldRetryStatusCode(code))
-                    EnqueueForRetry(item.Url, item.Body);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var code = (int)response.StatusCode;
+                    NotePostError(code, item.Url);
+                    if (code == 503)
+                    {
+                        NoteRateLimited(response);
+                        if (!IsBestEffortEndpoint(item.Url))
+                            EnqueueForRetry(item.Url, item.Body);
+                        return false;
+                    }
+                    if (ShouldRetryStatusCode(code))
+                        EnqueueForRetry(item.Url, item.Body);
+                }
+                else
+                {
+                    NoteRateLimitCleared();
+                }
             }
-            else
+            finally
             {
-                NoteRateLimitCleared();
+                JournalOutcome(item.Url, item.Body, sentCode, started);
             }
         }
         catch
         {
+            JournalHttp(started, -1);
             if (IsBestEffortEndpoint(item.Url))
             {
                 NotePostError(-1, item.Url);
@@ -1351,6 +1377,7 @@ public static partial class Extension
                 return true;
             }
             NoteTransientPostFailure(-1, item.Url, item.Body, response: null);
+            JournalOutcome(item.Url, item.Body, -1, started);
             return false;
         }
         return true;
@@ -1358,6 +1385,12 @@ public static partial class Extension
 
     private static void DrainQueue()
     {
+        // File modifiée depuis la dernière sauvegarde (EnqueueForRetry) : sauvegardée ici, hors du thread du jeu,
+        // même pendant une coupure ou un ralentissement imposé par Athena.
+        if (System.Threading.Interlocked.Exchange(ref _queueDirty, 0) == 1)
+            PersistQueueToDisk();
+        // État de la file remonté au site (page admin « Files d'envoi Athena »), même en pause.
+        JournalMaybeReport();
         if (string.IsNullOrEmpty(_baseUrl)) return;
         if (IsRateLimitedNow() || IsNetworkBackoffNow()) return;
         lock (QueueDrainLock)
@@ -1525,7 +1558,10 @@ public static partial class Extension
                         var u = doc.RootElement.TryGetProperty("u", out var up) ? up.GetString() ?? "" : "";
                         var b = doc.RootElement.TryGetProperty("b", out var bp) ? bp.GetString() ?? "" : "";
                         if (u.Length > 0 && b.Length > 0 && PendingPosts.Count < MaxQueueSize)
+                        {
                             PendingPosts.Enqueue((u, b));
+                            JournalTrack(u, b, "queued", "repris du disque");
+                        }
                     }
                     catch { /* ligne illisible */ }
                 }
@@ -1901,6 +1937,8 @@ public static partial class Extension
                 Content = JsonContent(jsonBody)
             };
             AttachApiKeyHeader(req);
+            var started = DateTime.UtcNow.Ticks;
+            JournalTrack(url, jsonBody, "sending");
             _ = HttpClient.SendAsync(req).ContinueWith(t =>
             {
                 HttpResponseMessage? resp = null;
@@ -1908,7 +1946,10 @@ public static partial class Extension
                 {
                     if (t.Status == TaskStatus.RanToCompletion)
                         resp = t.Result;
+                    var code = resp == null ? -1 : (int)resp.StatusCode;
+                    JournalHttp(started, code);
                     HandlePostResponse(resp, url, jsonBody);
+                    JournalOutcome(url, jsonBody, code, started);
                 }
                 finally
                 {
@@ -1941,14 +1982,31 @@ public static partial class Extension
     {
         using var req = new HttpRequestMessage(HttpMethod.Get, uri);
         AttachApiKeyHeader(req);
-        return HttpClient.SendAsync(req, token).GetAwaiter().GetResult();
+        return SendTimed(req, token);
     }
 
     private static HttpResponseMessage SendGet(string url, CancellationToken token)
     {
         using var req = new HttpRequestMessage(HttpMethod.Get, url);
         AttachApiKeyHeader(req);
-        return HttpClient.SendAsync(req, token).GetAwaiter().GetResult();
+        return SendTimed(req, token);
+    }
+
+    /// <summary>Envoi synchrone mesuré (latence, 429/5xx, délais) pour l'indicateur de surcharge d'Athena.</summary>
+    private static HttpResponseMessage SendTimed(HttpRequestMessage req, CancellationToken token)
+    {
+        var started = DateTime.UtcNow.Ticks;
+        try
+        {
+            var resp = HttpClient.SendAsync(req, token).GetAwaiter().GetResult();
+            JournalHttp(started, (int)resp.StatusCode);
+            return resp;
+        }
+        catch
+        {
+            JournalHttp(started, -1);
+            throw;
+        }
     }
 
     /// <summary>
@@ -2032,7 +2090,19 @@ public static partial class Extension
             Content = JsonContent(jsonBody)
         };
         AttachApiKeyHeader(req);
-        return HttpClient.SendAsync(req, token).GetAwaiter().GetResult();
+        var started = DateTime.UtcNow.Ticks;
+        JournalTrack(url, jsonBody, "sending");
+        try
+        {
+            var resp = SendTimed(req, token);
+            JournalOutcome(url, jsonBody, (int)resp.StatusCode, started);
+            return resp;
+        }
+        catch
+        {
+            JournalOutcome(url, jsonBody, -1, started);
+            throw;
+        }
     }
 
     // --- MessageBox Win32 (alerte liaison Athena / note bêta) ---
@@ -2570,10 +2640,41 @@ public static partial class Extension
 
     private static string? TryGetSyncResponse(string? function, string?[] args)
     {
+        // File d'envoi suivie (app Réseau du téléphone) : lue en mémoire, sans réseau.
+        if (function == "SendQueue.Status")
+            return JournalStatusForSqf();
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
             return "OK|" + ExtensionProductName + " " + CurrentExtensionVersion();
+        }
+
+        // Appel non bloquant : ["Async", [ticket, commande, args...]] répond tout de suite « QUEUED|ticket »,
+        // exécute la commande sur un thread à part et renvoie son résultat par le rappel ("comspec", "async:<ticket>", résultat).
+        // callExtension bloque le thread du jeu, même lancé depuis un spawn : une requête HTTP lente (jusqu'à
+        // SyncTimeoutSeconds) figeait la partie. Une DLL plus ancienne répond "" et le SQF retombe sur l'appel direct.
+        if (function == "Async")
+        {
+            if (args.Length < 2 || string.IsNullOrEmpty(args[0]) || string.IsNullOrEmpty(args[1])) return "ERR|async_args";
+            if (_callback == null) return "ERR|no_callback";
+            var ticket = args[0]!;
+            var command = args[1]!;
+            if (command == "Async") return "ERR|async_nested";
+            var rest = args[2..];
+            _ = Task.Run(() =>
+            {
+                string result;
+                try
+                {
+                    // Même chemin que RVExtensionArgs : réponse directe, sinon commande « tire et oublie ».
+                    var direct = TryGetSyncResponse(command, rest);
+                    if (direct == null) { RvExtensionArgsImpl(command, rest); direct = ""; }
+                    result = direct;
+                }
+                catch (Exception ex) { result = FormatCaughtError(ex); }
+                InvokeCallback("async:" + ticket, result);
+            });
+            return "QUEUED|" + ticket;
         }
 
 #if COMSPEC_ATAK_NATIVE
@@ -2581,6 +2682,11 @@ public static partial class Extension
         if (function != null && function.StartsWith("Music", StringComparison.Ordinal))
         {
             return MusicCommand(function, args);
+        }
+        // Presse-papiers Windows (Clipboard.cs) : export / import des plans de l'app Plan, aussi en multijoueur.
+        if (function != null && function.StartsWith("Clip", StringComparison.Ordinal))
+        {
+            return ClipCommand(function, args);
         }
 #endif
 
@@ -7981,6 +8087,10 @@ public static partial class Extension
     }
 
     /// Alias callExtension : NotifyNewPhoto, EnqueueReconImage, UploadReconImage.
+    /// Arguments : 0 chemin, 1 auteur, 2-4 pos, 5 grille, 6 cap, 7 altitude, 8 légende, 9 unité, 10 camp, 11 mission,
+    /// 12 appareil, 13 heure Unix, 14 flux, 15-16 effet ; facultatifs (2.0.66) : 17 titre, 18 description, 19 SSE (0/1),
+    /// 20 dossier SSE, 21 confidentiel (0/1), 22 source (drone, phone…), 23 nom du drone. Envoi suivi dans le journal
+    /// des envois (« Photo drone » / « Photo »).
     /// </summary>
     private static string EnqueueReconImage(string?[] args)
     {
@@ -8075,7 +8185,7 @@ public static partial class Extension
         if (string.IsNullOrWhiteSpace(meta[5]) && _lastPhotoGrid.Length > 0) meta[5] = _lastPhotoGrid;
         if (string.IsNullOrWhiteSpace(meta[6]) && _lastPhotoHeading.Length > 0) meta[6] = _lastPhotoHeading;
 
-        PhotoJobs.Enqueue(new ReconPhotoJob
+        var photoJob = new ReconPhotoJob
         {
             RawPath = trimmedPath,
             Author = author,
@@ -8083,10 +8193,25 @@ public static partial class Extension
             DedupKey = dedupKey,
             NewestFallback = newestFallback,
             EnqueuedUtc = DateTime.UtcNow
-        });
+        };
+        PhotoJobs.Enqueue(photoJob);
+        PhotoJournal(photoJob, "queued");
         EnsureScreenshotWatchers();
         EnsurePhotoWorker();
         return "OK|queued";
+    }
+
+    /// <summary>
+    /// Photo de reconnaissance dans le journal des envois (page « Files d'envoi Athena ») : un suivi par cliché,
+    /// même identifiant aux reprises. Visages SEEK et pièces de fiche : non suivis ici.
+    /// </summary>
+    private static void PhotoJournal(ReconPhotoJob job, string state, string detail = "", int http = 0)
+    {
+        if (!string.Equals(job.UploadKind, "recon", StringComparison.OrdinalIgnoreCase)) return;
+        var meta = job.Meta ?? Array.Empty<string?>();
+        var drone = meta.Length > 22 && string.Equals((meta[22] ?? "").Trim(), "drone", StringComparison.OrdinalIgnoreCase);
+        var key = "photo|" + (job.DedupKey.Length > 0 ? job.DedupKey : job.RawPath);
+        JournalTrack("queued:/api/recon/images", key, state, detail, http, drone ? "Photo drone" : "Photo");
     }
 
     private static string NormalizePhotoDedupKey(string raw)
@@ -8151,9 +8276,11 @@ public static partial class Extension
         if (job.Attempts >= PhotoRetryMax || PhotoJobs.Count >= PhotoQueueMax)
         {
             ReleasePhotoDedup(job.DedupKey);
+            PhotoJournal(job, "failed", errDetail);
             InvokeCallback(cbName, $"ERR|{errDetail}|{fileHint}");
             return;
         }
+        PhotoJournal(job, "queued", errDetail);
         PhotoJobs.Enqueue(job);
         EnsurePhotoWorker();
     }
@@ -8167,9 +8294,11 @@ public static partial class Extension
         if (job.Attempts >= PhotoRetryMax)
         {
             ReleasePhotoDedup(job.DedupKey);
+            PhotoJournal(job, "failed", "fichier vide");
             InvokeCallback(cbName, $"ERR|file_empty|{fileHint}");
             return;
         }
+        PhotoJournal(job, "queued", "fichier pas encore écrit");
         _ = Task.Run(async () =>
         {
             try { await Task.Delay(800).ConfigureAwait(false); }
@@ -8219,6 +8348,7 @@ public static partial class Extension
         if (string.IsNullOrEmpty(_baseUrl) || !HasPortalAuth())
         {
             ReleasePhotoDedup(job.DedupKey);
+            PhotoJournal(job, "failed", "pas de session Athena");
             InvokeCallback(cbName, "ERR|not_connected|" + Path.GetFileName(job.RawPath));
             return;
         }
@@ -8287,6 +8417,7 @@ public static partial class Extension
                 : Path.GetFileName(job.RawPath.Replace('/', '\\'));
             if (specificName || isSseFace || isSseNote)
                 ReleasePhotoDedup(job.DedupKey);
+            PhotoJournal(job, "failed", "fichier introuvable");
             InvokeCallback(cbName,
                 $"ERR|file_not_found|{hint}|{DescribeImageLookupFailure(job.RawPath)}");
             return;
@@ -8306,6 +8437,7 @@ public static partial class Extension
             if (!fi.Exists)
             {
                 ReleasePhotoDedup(job.DedupKey);
+                PhotoJournal(job, "failed", "fichier introuvable");
                 InvokeCallback(cbName, "ERR|file_not_found|" + Path.GetFileName(resolved));
                 return;
             }
@@ -8319,6 +8451,7 @@ public static partial class Extension
                 && !TryClaimPhotoDedup(identityKey))
             {
                 // Autre job déjà en cours / récemment traité pour le même fichier.
+                PhotoJournal(job, "done", "doublon");
                 InvokeCallback(cbName, "OK|duplicate|" + Path.GetFileName(resolved));
                 return;
             }
@@ -8330,6 +8463,7 @@ public static partial class Extension
         {
             ReleasePhotoDedup(job.DedupKey);
             ReleasePhotoDedup(identityKey);
+            PhotoJournal(job, "failed", "lecture impossible");
             InvokeCallback(cbName, "ERR|read_failed|" + Path.GetFileName(resolved));
             return;
         }
@@ -8349,6 +8483,7 @@ public static partial class Extension
         if (IsSseIdentityCaptureName(resolved) || IsSseIdentityCaptureName(job.RawPath)
             || IsSseNoteCaptureName(resolved) || IsSseNoteCaptureName(job.RawPath))
         {
+            PhotoJournal(job, "done", "ignorée (fiche SSE)");
             InvokeCallback(cbName, "OK|ignored|" + (Path.GetFileName(resolved) ?? ""));
             return;
         }
@@ -8377,6 +8512,14 @@ public static partial class Extension
             AddOptionalForm(multipart, "feed_id", args, 14);
             AddOptionalForm(multipart, "fx_profile", args, 15);
             AddOptionalForm(multipart, "fx_intensity", args, 16);
+            // Fiche du cliché (2.0.66, facultatif) : absents, rien n'est envoyé (anciens appels inchangés).
+            AddOptionalForm(multipart, "title", args, 17);
+            AddOptionalForm(multipart, "description", args, 18);
+            AddOptionalForm(multipart, "is_sse", args, 19);
+            AddOptionalForm(multipart, "sse_case_ref", args, 20);
+            AddOptionalForm(multipart, "is_confidential", args, 21);
+            AddOptionalForm(multipart, "photo_source", args, 22);
+            AddOptionalForm(multipart, "drone_name", args, 23);
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
             var fileName = Path.GetFileName(resolved) ?? "recon.png";
@@ -8397,6 +8540,7 @@ public static partial class Extension
                 ReleasePhotoDedup(job.DedupKey);
                 ReleasePhotoDedup(identityKey);
                 try { multipart.Dispose(); } catch { /* ignore */ }
+                PhotoJournal(job, "failed", err);
                 InvokeCallback("PhotoUpload", "ERR|" + err + "|" + fileName);
                 return;
             }
@@ -8405,11 +8549,13 @@ public static partial class Extension
             multipart = null;
             req = CreateUploadPost(uri, body);
             AttachApiKeyHeader(req);
+            PhotoJournal(job, "sending");
             using var resp = await UploadHttpClient.SendAsync(req).ConfigureAwait(false);
             var code = (int)resp.StatusCode;
             if (resp.IsSuccessStatusCode)
             {
                 NoteRateLimitCleared();
+                PhotoJournal(job, "done", code.ToString(System.Globalization.CultureInfo.InvariantCulture), code);
                 // Photo prise par le téléphone (COMSPEC_*) bien reçue par Athena : on l'efface du poste du joueur.
                 TryDeleteUploadedPhoto(resolved);
                 InvokeCallback("PhotoUpload", "OK|uploaded|" + fileName);
@@ -8432,6 +8578,7 @@ public static partial class Extension
                 _sessionExpiresAt = DateTimeOffset.MinValue;
             }
             var extra = apiErr.Length > 0 ? "|" + apiErr : "";
+            PhotoJournal(job, "failed", "http_" + code + (apiErr.Length > 0 ? " " + apiErr : ""), code);
             InvokeCallback("PhotoUpload", $"ERR|http_{code}|{fileName}{extra}");
         }
         catch

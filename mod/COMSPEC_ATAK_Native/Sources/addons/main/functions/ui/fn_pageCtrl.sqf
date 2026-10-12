@@ -9,5 +9,8 @@ if (_text isNotEqualTo "") then { _c ctrlSetText ([(_text) call comspec_atak_nat
 _c ctrlCommit 0;
 private _list = uiNamespace getVariable ["COMSPEC_ATAK_PageControls", []];
 _list pushBack _c;
+// Incrustations recréées sans rendu de page (pixels morts, fissures, effets) : les contrôles déjà supprimés sont retirés
+// de la liste de temps en temps, sinon elle grossit tant que la page reste affichée (carte en HUD).
+if ((count _list) > 600) then { _list = _list select { !isNull _x }; };
 uiNamespace setVariable ["COMSPEC_ATAK_PageControls", _list];
 _c

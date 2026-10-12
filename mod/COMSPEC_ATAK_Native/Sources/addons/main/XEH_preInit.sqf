@@ -1,6 +1,6 @@
 COMSPEC_ATAK_UI_GENERATION = "native-rsc-v1";
 missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION, true];
-missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", "1.10.0", true];
+missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", "1.11.0", true];
 diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
@@ -175,6 +175,20 @@ private _med = ["COMSPEC", "ATAK · Données médicales"];
         _med, true, 1] call CBA_fnc_addSetting;
 } forEach ((["fields"] call comspec_atak_native_fnc_medShow) + (["contexts"] call comspec_atak_native_fnc_medShow));
 
+// Socle de recharge CS-10 (fn_dockServer).
+private _dock = ["COMSPEC", "ATAK · Socle de recharge"];
+["comspec_atak_native_dock_rate", "SLIDER",
+    ["Vitesse de charge (% par minute)", "Charge rendue à chaque téléphone posé sur un socle CS-10. 1,5 % par minute : un téléphone vide est plein en un peu plus d'une heure."],
+    _dock, [0.5, 10, 1.5, 1], 1] call CBA_fnc_addSetting;
+["comspec_atak_native_dock_offline", "CHECKBOX",
+    ["La charge continue entre deux parties", "Un téléphone laissé sur un socle se charge aussi pendant que le serveur est éteint (temps réel écoulé)."],
+    _dock, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_dock_persist", "CHECKBOX",
+    ["Mémoriser les socles posés", "Les socles posés avec le kit sont recréés à leur place au lancement suivant sur la même carte, avec leurs téléphones. Les téléphones des socles de la mission (Eden, Zeus) sont toujours mémorisés."],
+    _dock, true, 1] call CBA_fnc_addSetting;
+["comspec_atak_native_dock_anyone", "CHECKBOX",
+    ["Tout le monde peut reprendre n'importe quel téléphone", "Sinon seul le propriétaire (identifiant Steam) reprend son téléphone ; Zeus et l'admin le peuvent toujours."],
+    _dock, false, 1] call CBA_fnc_addSetting;
 private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 ["comspec_atak_native_aircrew", "CHECKBOX",
     ["ATAK pour les équipages d'aéronef", "Pilote, copilote et postes de tourelle d'un hélicoptère ou d'un avion ont l'ATAK par la tablette de bord, même sans téléphone porté, téléphone vide ou cassé. Il se range en quittant l'appareil."],
@@ -188,6 +202,11 @@ private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 ["comspec_atak_native_screen_time", "CHECKBOX",
     ["Temps d'écran et temps par rôle", "Compte le temps du téléphone allumé (en main, porté, par app) et le temps de jeu par rôle (pilote, chef d'équipe…). Visible dans l'app Temps d'écran et envoyé à Athena (fiche du membre, back-office)."],
     _team, true, 1] call CBA_fnc_addSetting;
+// App Plan (carte de briefing) : qui modifie le plan partagé du camp ; le serveur seul l'écrit (fn_planServer).
+["comspec_atak_native_plan_edit", "LIST",
+    ["Plan de briefing : édition", "Qui peut dessiner sur le plan partagé du camp (app Plan). Les autres le voient et préparent leur brouillon, ajouté ensuite par un chef."],
+    _team, [[0, 1, 2], ["Tout le monde", "Chefs de groupe, Zeus et admins", "Zeus et admins seulement"], 1], 1] call CBA_fnc_addSetting;
+if (isServer) then { ["comspec_atak_native_planSrv", { _this call comspec_atak_native_fnc_planServer; }] call CBA_fnc_addEventHandler; };
 
 // Interface (réglage propre à chaque joueur).
 ["comspec_atak_native_action_menu", "LIST",

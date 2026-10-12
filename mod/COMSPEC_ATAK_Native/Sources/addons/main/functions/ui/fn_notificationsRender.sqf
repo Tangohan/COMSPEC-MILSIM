@@ -39,7 +39,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_ToastControls", []];
 if ((count _show) isEqualTo 0) exitWith {};
 
 // Place : la barre d'app, sans couvrir le bouton retour ni les boutons de droite quand on a la souris.
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 (_l get "appbar") params ["_ax", "_ay", "_aw", "_ah"];
 private _pad = _l get "pad";
 private _fs = _l get "fontSmall";

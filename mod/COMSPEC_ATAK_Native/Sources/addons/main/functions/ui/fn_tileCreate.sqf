@@ -18,7 +18,7 @@ private _mk = {
 
 ["COMSPEC_RscTile", [_x0, _y0, _w, _h]] call _mk;
 private _labelH = [_font * 1.35, 0] select (_label isEqualTo "");
-private _iconH = ((_h - _labelH) * 0.58) min (_w * pixelH / pixelW * 0.7);
+private _iconH = ((_h - _labelH) * 0.58) min (_w * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]) * 0.7);
 private _iconW = _iconH * pixelW / pixelH;
 private _pic = ["COMSPEC_RscPicture", [_x0 + (_w - _iconW) / 2, _y0 + (_h - _labelH - _iconH) / 2, _iconW, _iconH]] call _mk;
 _pic ctrlSetText ((_icon) call comspec_atak_native_fnc_tr);

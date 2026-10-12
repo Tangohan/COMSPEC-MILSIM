@@ -71,7 +71,7 @@ $totalSettings = max($totalSettings, 5);
                     <a href="<?= url('atak') ?>" class="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-950 shadow-sm hover:bg-blue-50/80 transition-colors">
                         🗺️ Carte tactique ATAK
                     </a>
-                    <a href="<?= url('admin/atak/realism/config') ?>" class="inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-950 shadow-sm hover:bg-violet-100 transition-colors">
+                    <a href="<?= url('back-office/ressources/atak-realism/config') ?>" class="inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-950 shadow-sm hover:bg-violet-100 transition-colors">
                         ⚙️ Config réalisme centralisée
                     </a>
                     <button onclick="runServerTests()" class="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-950 shadow-sm hover:bg-amber-100 transition-colors">

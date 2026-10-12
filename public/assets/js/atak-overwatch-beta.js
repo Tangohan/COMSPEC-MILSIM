@@ -1413,6 +1413,15 @@
         return;
       }
       seen[id] = true;
+      // Forme (zone, trait, dessin libre du téléphone) : si elle change, la couche est refaite. Le téléphone pose
+      // parfois d'abord un point puis la polyligne sous le même nom : sans cela le point restait affiché.
+      var shapeSig = (helper.isAreaShape && helper.isAreaShape(data))
+        ? JSON.stringify([data.shape, data.polyline || data.points || null, data.size || null, data.dir || 0, data.color || '', data.brush || '', data.alpha])
+        : 'icon';
+      if (armaMarkerLayers[id] && armaMarkerLayers[id]._owShapeSig !== shapeSig) {
+        map.removeLayer(armaMarkerLayers[id]);
+        delete armaMarkerLayers[id];
+      }
       var title = helper.displayLabelOf ? helper.displayLabelOf(data) : (data.label || data.text || 'Repère');
       if (buildingLike) title = '';
       var desc = String(data.description || '').trim();
@@ -1440,6 +1449,7 @@
       if (!layer) return;
       if (tip && layer.bindTooltip) layer.bindTooltip(tip, { permanent: false, direction: 'top' });
       else if (layer.unbindTooltip) layer.unbindTooltip();
+      layer._owShapeSig = shapeSig;
       layer.addTo(map);
       armaMarkerLayers[id] = layer;
       bindLayerContext(layer, 'arma', id, title);
@@ -5650,7 +5660,7 @@
 
   function photosSignature(list) {
     return (list || []).map(function (row) {
-      return [row.id, row.is_blurred, row.sse_case_id || row.sse_transferred_at || '', row.caption || ''].join(':');
+      return [row.id, row.is_blurred, row.sse_case_id || row.sse_transferred_at || '', row.caption || '', row.title || '', row.is_sse || 0, row.is_confidential || 0].join(':');
     }).join('|');
   }
 
@@ -6247,7 +6257,7 @@
 
   function camTileHtml(row, index) {
     var url = resolvePhotoUrl(row.url || row.path || '');
-    if (!url && row.image_path) url = resolvePhotoUrl('/uploads/recon/' + String(row.image_path).split('/').pop());
+    if (!url && row.image_path && String(row.image_path).indexOf('recon-private/') !== 0) url = resolvePhotoUrl('/uploads/recon/' + String(row.image_path).split('/').pop());
     var age = camAgeSec(row);
     var stale = age != null && age > CAM_STALE_SEC;
     var grid = String(row.grid_ref || '').trim();
@@ -6321,7 +6331,8 @@
       '<button class="ow-primary" type="submit">Déposer la photo</button></form>' +
       photos.slice(0, 24).map(function (row) {
         var url = resolvePhotoUrl(row.url || row.path || '');
-        if (!url && row.image_path) {
+        // recon-private/… : cliché confidentiel servi seulement par /api/recon/images/{id}/file.
+        if (!url && row.image_path && String(row.image_path).indexOf('recon-private/') !== 0) {
           url = resolvePhotoUrl('/uploads/recon/' + String(row.image_path).split('/').pop());
         }
         var id = String(row.id || '');
@@ -6330,6 +6341,23 @@
         var caption = String(row.caption || '').trim();
         var blurred = !!Number(row.is_blurred || 0);
         var transferred = !!(row.sse_case_id || row.sse_transferred_at);
+        // Fiche du cliché (drone de l'ATAK natif) : titre, description, SSE, confidentiel.
+        var photoTitle = String(row.title || '').trim();
+        var photoDesc = String(row.description || '').trim();
+        var isSse = !!Number(row.is_sse || 0);
+        var isConf = !!Number(row.is_confidential || 0);
+        var restricted = !!row.restricted;
+        var caseRef = String(row.sse_case_ref || '').trim();
+        var caseUrl = String(row.sse_case_url || '').trim();
+        var badges = '';
+        if (isConf) badges += '<span class="ow-tag red" title="' + (restricted ? 'Habilitation confidentiel requise' : 'Cliché confidentiel') + '">CONFIDENTIEL</span> ';
+        if (isSse) {
+          var sseLabel = 'SSE' + (caseRef ? ' ' + caseRef : '');
+          badges += caseUrl
+            ? '<a class="ow-tag" href="' + escapeHtml(caseUrl) + '" target="_blank" rel="noopener" title="' + escapeHtml(row.sse_case_title || 'Ouvrir le dossier SSE') + '">' + escapeHtml(sseLabel) + '</a> '
+            : '<span class="ow-tag">' + escapeHtml(sseLabel) + '</span> ';
+        }
+        if (row.drone_name) badges += '<span class="ow-tag">' + escapeHtml(row.drone_name) + '</span> ';
         return '<div class="ow-card' + (blurred ? ' is-blurred' : '') + '" data-photo-card="' + escapeHtml(id) + '">' +
           '<div class="ow-card-head"><span>' + escapeHtml(title) +
           '</span><span class="ow-tag">' + escapeHtml(clean(row.device_label, 'PHOTO')) + '</span></div>' +
@@ -6337,8 +6365,13 @@
             ? '<div class="ow-thumb" style="background-image:url(\'' + escapeHtml(url) + '\')" data-photo-op="open" data-photo-id="' + escapeHtml(id) + '" data-photo-url="' + escapeHtml(url) + '" role="button" tabindex="0" title="Ouvrir en grand"></div>'
             : '') +
           '<div class="ow-card-body">' +
+          (badges ? '<p class="ow-photo-badges">' + badges + '</p>' : '') +
+          (restricted ? '<p class="ow-help">Cliché confidentiel : image et fiche réservées aux habilitations « confidentiel » et plus.</p>' : '') +
+          (photoTitle ? '<p><strong>' + escapeHtml(photoTitle) + '</strong></p>' : '') +
+          (photoDesc ? '<p class="ow-help">' + escapeHtml(photoDesc) + '</p>' : '') +
           (caption ? '<p class="ow-help">' + escapeHtml(caption) + '</p>' : '') +
-          (transferred ? '<p class="ow-help">Classée dans un dossier SSE</p>' : '') +
+          (transferred && !caseUrl ? '<p class="ow-help">Classée dans un dossier SSE</p>' : '') +
+          (transferred && caseUrl && !isSse ? '<p class="ow-help"><a href="' + escapeHtml(caseUrl) + '" target="_blank" rel="noopener">Classée dans le dossier SSE ' + escapeHtml(caseRef) + '</a></p>' : '') +
           '<div class="ow-event"><span>' + escapeHtml(stamp) + '</span></div>' +
           '<div class="ow-photo-actions">' +
           '<button type="button" class="ow-tag" data-send-photo="' + escapeHtml(id) + '">Envoyer</button>' +

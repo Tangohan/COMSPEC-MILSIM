@@ -130,9 +130,16 @@ if (_badges isNotEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BadgeSig", []])
 
 // Pages vivantes : re-rendu quand leurs données changent (le brouillon de message est conservé).
 private _pageSig = switch (_page) do {
-    case "CHAT": { [count ([] call comspec_atak_native_fnc_messagesAll), count (_data getOrDefault ["p2p", []])] };
+    // Dernier message compris : la liste est plafonnée, son nombre seul ne bouge plus une fois pleine.
+    case "CHAT": {
+        private _all = [] call comspec_atak_native_fnc_messagesAll;
+        private _last = _all param [(count _all) - 1, createHashMap];
+        [count _all, _last getOrDefault ["id", ""], _last getOrDefault ["time", ""], _last getOrDefault ["body", ""], count (_data getOrDefault ["p2p", []])]
+    };
     case "TASK": { [count ([] call comspec_atak_native_fnc_tasksAll), (values ([] call comspec_atak_native_fnc_tasksAll)) apply { _x getOrDefault ["status", ""] }, (simpleTasks player) apply { taskState _x }] };
-    case "NETWORK": { [_lq get "bars", round ((_lq get "kbps") / 100), ([] call comspec_atak_native_fnc_deviceHealth) get "state", count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []])] };
+    // Débit simulé laissé de côté : il varie sans cesse et faisait redessiner toute la page chaque seconde
+    // (la page se rafraîchit d'elle-même toutes les 5 s).
+    case "NETWORK": { [_lq get "bars", ([] call comspec_atak_native_fnc_deviceHealth) get "state", count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []])] };
     case "DEBUG": { [count (missionNamespace getVariable ["COMSPEC_ATAK_Log", []]), count (missionNamespace getVariable ["COMSPEC_DiagLog", []]), count (missionNamespace getVariable ["COMSPEC_ATAK_NetLog", []])] };
     case "BFT": { ((values (_data getOrDefault ["units", createHashMap])) select { (_x getOrDefault ["affiliation", ""]) isEqualTo "friend" }) apply { [_x getOrDefault ["freshness", ""], round (((_x getOrDefault ["position", [0,0,0]]) distance2D player) / 50), alive (_x getOrDefault ["object", objNull])] } };
     case "GPS": {
@@ -144,7 +151,12 @@ private _pageSig = switch (_page) do {
     case "GROUP": { (units group player) apply { [name _x, alive _x, lifeState _x, round ((damage _x) * 4)] } };
     default { [] };
 };
+// BFT et GPS changent presque chaque seconde dans une grosse mission : au plus un rendu complet toutes les 3 s
+// (la signature n'est retenue qu'une fois la page redessinée, le changement n'est donc pas perdu).
+private _sigWait = _page in ["BFT", "GPS"] && {diag_tickTime - (_state getOrDefault ["sigRenderAt", 0]) < 3};
 if ((_state getOrDefault ["pageSigPage", ""]) isEqualTo _page && {_pageSig isNotEqualTo (_state getOrDefault ["pageSig", []])}) then {
+    if (_sigWait) exitWith { _pageSig = _state getOrDefault ["pageSig", []]; };
+    _state set ["sigRenderAt", diag_tickTime];
     [_page] call comspec_atak_native_fnc_pageRender;
 };
 _state set ["pageSig", _pageSig];

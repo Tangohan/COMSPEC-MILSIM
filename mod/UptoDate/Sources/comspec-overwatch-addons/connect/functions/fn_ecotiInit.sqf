@@ -9,8 +9,9 @@ if (_prev isEqualType 0 && {_prev >= 0}) then {
     removeMissionEventHandler ["Draw3D", _prev];
 };
 
+// Draw3D ne fait que dessiner le cache préparé par le PFH ci-dessous (sortie immédiate si inactif).
 COMSPEC_EcotiDrawEH = addMissionEventHandler ["Draw3D", {
-    call comspec_overwatch_connect_fnc_ecotiDraw;
+    [false] call comspec_overwatch_connect_fnc_ecotiDraw;
 }];
 missionNamespace setVariable ["COMSPEC_EcotiDrawEH", COMSPEC_EcotiDrawEH, false];
 
@@ -20,6 +21,8 @@ if (_pfh isEqualType 0 && {_pfh >= 0}) then {
 };
 private _newPfh = [{
     [] call comspec_overwatch_connect_fnc_ecotiTickPostFX;
+    // Scans lourds (unités / véhicules / marqueurs) ici à ~8 Hz plutôt qu'à chaque image dans Draw3D.
+    [true] call comspec_overwatch_connect_fnc_ecotiDraw;
 }, 0.12] call CBA_fnc_addPerFrameHandler;
 missionNamespace setVariable ["COMSPEC_EcotiPostFxPFH", _newPfh, false];
 

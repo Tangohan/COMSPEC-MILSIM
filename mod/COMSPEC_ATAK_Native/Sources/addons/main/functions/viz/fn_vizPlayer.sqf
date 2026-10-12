@@ -9,7 +9,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _fs = _l get "fontSmall";
 private _font = _l get "font";
 private _pad = (_l get "pad") * 2;
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 ([] call comspec_atak_native_fnc_accent) params ["_acc"];
 private _mk = { params ["_c", "_p", ["_t", ""]]; [_c, _p, _t] call comspec_atak_native_fnc_pageCtrl };
 private _bg = ["COMSPEC_RscPanel", _rect] call _mk;

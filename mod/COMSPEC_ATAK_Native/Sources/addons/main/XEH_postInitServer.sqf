@@ -5,8 +5,10 @@
     Un client demande la synchro à son arrivée (comspec_atak_native_syncReq) ; le serveur répond par comspec_atak_native_syncData.
 */
 if (!isServer) exitWith {};
+// Socles de recharge CS-10 : mémoire, recharge et emplacements (fn_dockServer).
+["init"] call comspec_atak_native_fnc_dockServer;
 // Téléphones accrochés aux gilets (fn_vestMount) restés seuls après une déconnexion.
-[{ ["sweep"] call comspec_atak_native_fnc_vestMount; }, 30] call CBA_fnc_addPerFrameHandler;
+[{ ["sweep"] call comspec_atak_native_fnc_vestMount; ["sweep"] call comspec_atak_native_fnc_jpcScreen; }, 30] call CBA_fnc_addPerFrameHandler;
 // Passerelles de véhicule : véhicules détruits retirés, PC mobile qui repart replié (fn_vehicleGateway).
 [{ ["sweep"] call comspec_atak_native_fnc_vehicleGateway; }, 5] call CBA_fnc_addPerFrameHandler;
 COMSPEC_ATAK_SrvLog = createHashMap;      // camp -> [[événement, arguments]...] (200 au plus)
@@ -27,6 +29,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_SrvKeep", _keep];
 ["comspec_atak_native_wpStore", {
     params ["_grp", "_pts", "_who"];
     COMSPEC_ATAK_SrvRoutes set [_grp, [_pts, _who]];
+    // Groupes disparus retirés (une entrée par groupe ayant reçu un itinéraire, jamais supprimée sinon).
+    { if (isNull (groupFromNetId _x)) then { COMSPEC_ATAK_SrvRoutes deleteAt _x; }; } forEach (keys COMSPEC_ATAK_SrvRoutes);
 }] call CBA_fnc_addEventHandler;
 // Équipes de feu : seul le serveur écrit l'état partagé (fn_ftServer), puis le diffuse au camp.
 ["comspec_atak_native_ft", { _this call comspec_atak_native_fnc_ftServer; }] call CBA_fnc_addEventHandler;
@@ -68,5 +72,18 @@ COMSPEC_ATAK_FtCheck = {
     missionNamespace setVariable ["COMSPEC_ATAK_SrvPlayOK", (_r select [0, 3]) isEqualTo "OK|", true];
     ["INFO", "PLAYTIME", format ["Sonde ScreenTime.Batch : %1", [_r, "COMSPEC Link 2.0.63 requis"] select (_r isEqualTo "")]] call comspec_atak_native_fnc_log;
 }, [], 15] call CBA_fnc_waitAndExecute;
-addMissionEventHandler ["HandleDisconnect", { params ["", "", "_uid"]; ["leave", _uid] call comspec_atak_native_fnc_playTimeServer; false }];
+// Ménage différé demandé par un client (caisses larguées...) : fait ici pour survivre à son départ.
+["comspec_atak_native_deleteLater", {
+    params [["_objs", []], ["_delay", 1800]];
+    [{ { if (!isNull _x) then { deleteVehicle _x; }; } forEach _this; }, _objs, _delay] call CBA_fnc_waitAndExecute;
+}] call CBA_fnc_addEventHandler;
+addMissionEventHandler ["HandleDisconnect", {
+    params [["_unit", objNull], "", "_uid"];
+    ["leave", _uid] call comspec_atak_native_fnc_playTimeServer;
+    // Téléphone de gilet et balise IR accrochés au joueur qui part : retirés (ils restaient dans la partie).
+    if (!isNull _unit) then {
+        { if ((typeOf _x) in ["COMSPEC_ATAK_VestPhone", "B_IRStrobe", "ACE_IR_Strobe_Effect"]) then { deleteVehicle _x; }; } forEach (attachedObjects _unit);
+    };
+    false
+}];
 addMissionEventHandler ["MPEnded", { ["flush"] call comspec_atak_native_fnc_playTimeServer; }];

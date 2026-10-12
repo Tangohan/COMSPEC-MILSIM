@@ -174,14 +174,14 @@ final class ContentModerationController
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('admin/content-moderation'));
+            return Response::redirect(url('back-office/content-moderation'));
         }
         $id = (int) ($params['id'] ?? 0);
         $artifact = $this->artifactRepository->findById($id, $tenantId);
         if (!$artifact || ($artifact['state'] ?? '') !== ModerationArtifactState::QUARANTINED) {
             Session::flash('error', 'Artefact introuvable ou déjà traité.');
 
-            return Response::redirect(url('admin/content-moderation'));
+            return Response::redirect(url('back-office/content-moderation'));
         }
         $type = (string) ($artifact['source_type'] ?? '');
         try {
@@ -197,7 +197,7 @@ final class ContentModerationController
             } else {
                 Session::flash('error', 'Type d\'artefact non géré pour approbation automatique.');
 
-                return Response::redirect(url('admin/content-moderation'));
+                return Response::redirect(url('back-office/content-moderation'));
             }
             $this->decisionRepository->insert($id, $userId, 'approve_override', 'moderator_ok', null);
             Session::flash('success', 'Contenu approuvé.');
@@ -205,7 +205,7 @@ final class ContentModerationController
             Session::flash('error', 'Erreur : ' . $e->getMessage());
         }
 
-        return Response::redirect(url('admin/content-moderation'));
+        return Response::redirect(url('back-office/content-moderation'));
     }
 
     public function reject(Request $request, array $params = []): Response
@@ -218,14 +218,14 @@ final class ContentModerationController
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 
-            return Response::redirect(url('admin/content-moderation'));
+            return Response::redirect(url('back-office/content-moderation'));
         }
         $id = (int) ($params['id'] ?? 0);
         $artifact = $this->artifactRepository->findById($id, $tenantId);
         if (!$artifact) {
             Session::flash('error', 'Artefact introuvable.');
 
-            return Response::redirect(url('admin/content-moderation'));
+            return Response::redirect(url('back-office/content-moderation'));
         }
         $note = trim((string) $request->input('note', ''));
         $rel = (string) ($artifact['file_path'] ?? '');
@@ -239,7 +239,7 @@ final class ContentModerationController
         $this->decisionRepository->insert($id, $userId, 'reject', 'moderator_reject', $note !== '' ? $note : null);
         Session::flash('success', 'Contenu rejeté.');
 
-        return Response::redirect(url('admin/content-moderation'));
+        return Response::redirect(url('back-office/content-moderation'));
     }
 
     public function warnUploader(Request $request, array $params = []): Response
@@ -254,7 +254,7 @@ final class ContentModerationController
 
     private function applyMemberSanction(Request $request, array $params, string $mode): Response
     {
-        $redirect = Response::redirect(url('admin/content-moderation'));
+        $redirect = Response::redirect(url('back-office/content-moderation'));
         if (!Csrf::validate((string) $request->input('_csrf_token'))) {
             Session::flash('error', 'Session expirée.');
 

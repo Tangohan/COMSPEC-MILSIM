@@ -1,7 +1,8 @@
 /*
     Mode photo : viseur plein écran, on se déplace comme à pied (arme rangée, téléphone tenu devant soi).
     Clic gauche : photo envoyée sur ATAK web (plusieurs possibles). R : selfie (téléphone à bout de bras, tourné vers soi,
-    cadrage à la souris dans la limite du bras). Molette ou + / - : zoom numérique x1 à x8. F : flash AUTO / OUI / NON.
+    cadrage à la souris dans la limite du bras). Molette ou + / - : zoom numérique x1 à x8, visée à la souris pendant
+    le zoom (caméra scriptée). F : flash AUTO / OUI / NON (AUTO : nuit ou intérieur très sombre).
     Espace : quitter et reprendre le téléphone.
     Params : ["ENTER" | "SHOOT" | "SELFIE" | "ZOOM" | "FLASH" | "MOUSE" | "FRAME" | "HUD" | "EXIT", légende, argument]
 */
@@ -52,6 +53,8 @@ switch (toUpper _mode) do {
         // Cadres des cibles marquées et de la cible visée, dessinés dans la scène.
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoDraw", addMissionEventHandler ["Draw3D", {
             if !(uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) exitWith {};
+            // Pas de cadres dans la scène pendant la capture (ils sortaient en traits blancs sur la photo).
+            if (uiNamespace getVariable ["COMSPEC_ATAK_PhotoShooting", false]) exitWith {};
             if !(missionNamespace getVariable ["comspec_atak_native_lock_enabled", true]) exitWith {};
             ["draw3d"] call comspec_atak_native_fnc_lockAction;
         }]];
@@ -67,6 +70,8 @@ switch (toUpper _mode) do {
         if (diag_tickTime >= (_st getOrDefault ["nextCheck", 0])) then {
             _st set ["nextCheck", diag_tickTime + 0.5];
             _quit = !alive player || {vehicle player isNotEqualTo player} || {!([] call comspec_atak_native_fnc_hasDevice)};
+            // Ligne de destination (réseau) tenue à jour.
+            if (!_quit && {diag_tickTime >= (_st getOrDefault ["nextHud", 0])}) then { _st set ["nextHud", diag_tickTime + 2]; ["HUD"] call comspec_atak_native_fnc_photoMode; };
         };
         if (_quit) exitWith { ["EXIT"] call comspec_atak_native_fnc_photoMode; };
         // Bras tendu, téléphone devant soi (geste vanilla relancé tant que le mode photo dure).
@@ -113,7 +118,19 @@ switch (toUpper _mode) do {
             _tPos = _eye vectorAdd [_r * (sin _a) * (cos _p), _r * (cos _a) * (cos _p), _r * (sin _p)];
             _tDir = vectorNormalized (_eye vectorDiff _tPos);
         } else {
-            _tDir = getCameraViewDirection player;
+            // Caméra scriptée (zoom) active : la vue du joueur ne suit plus la souris (getCameraViewDirection renvoie
+            // la visée figée), d'où un viseur bloqué au zoom. La souris pilote alors un cap et une inclinaison propres
+            // (MOUSE), le corps suit le cap ; sans caméra, on recopie la vue du joueur pour repartir de là.
+            if (isNull (_st getOrDefault ["cam", objNull])) then {
+                _tDir = getCameraViewDirection player;
+                _st set ["aimYaw", (((_tDir select 0) atan2 (_tDir select 1)) + 360) mod 360];
+                _st set ["aimPitch", asin (((_tDir select 2) max -1) min 1)];
+            } else {
+                private _ay = _st getOrDefault ["aimYaw", getDir player];
+                private _ap = _st getOrDefault ["aimPitch", 0];
+                if ((abs ((((getDir player) - _ay) + 540) mod 360 - 180)) > 0.5) then { player setDir _ay; };
+                _tDir = [(sin _ay) * (cos _ap), (cos _ay) * (cos _ap), sin _ap];
+            };
             _tPos = _eye vectorAdd (_tDir vectorMultiply 0.25);
         };
         // Transition douce (passage selfie / objectif arrière).
@@ -151,9 +168,17 @@ switch (toUpper _mode) do {
         _cam setVectorDirAndUp [_tDir, _up];
     };
     case "MOUSE": {
-        // Cadrage du selfie : le bras tourne autour de la tête, dans la limite de ce qu'un bras atteint.
-        if (!_active || {!(_st getOrDefault ["selfie", false])}) exitWith { false };
+        if (!_active) exitWith { false };
         _arg params [["_dx", 0], ["_dy", 0]];
+        // Zoom (caméra scriptée) : visée à la souris, plus lente quand le champ se resserre.
+        if (!(_st getOrDefault ["selfie", false])) exitWith {
+            if (isNull (_st getOrDefault ["cam", objNull])) exitWith { false };
+            private _k = 2.2 * ((_st getOrDefault ["fov", 0.75]) / 0.75);
+            _st set ["aimYaw", ((_st getOrDefault ["aimYaw", getDir player]) + _dx * _k + 360) mod 360];
+            _st set ["aimPitch", (((_st getOrDefault ["aimPitch", 0]) - _dy * _k) max -80) min 80];
+            true
+        };
+        // Cadrage du selfie : le bras tourne autour de la tête, dans la limite de ce qu'un bras atteint.
         _st set ["yaw", (((_st getOrDefault ["yaw", 0]) - _dx * 2.5) max -75) min 75];
         _st set ["pitch", (((_st getOrDefault ["pitch", 10]) - _dy * 2.5) max -20) min 45];
         true
@@ -182,13 +207,28 @@ switch (toUpper _mode) do {
         private _selfie = _st getOrDefault ["selfie", false];
         private _z = _st getOrDefault ["zoom", 1];
         private _fl = _st getOrDefault ["flash", "AUTO"];
-        (_cam displayCtrl 5) ctrlSetText ((format ["%1     ZOOM x%2     FLASH %3",
-            ["OBJECTIF ARRIÈRE", "SELFIE"] select _selfie, [_z toFixed 1, str _z] select ((_z mod 1) isEqualTo 0),
+        private _zs = { params ["_v"]; [_v toFixed 1, str _v] select ((_v mod 1) isEqualTo 0) };
+        (_cam displayCtrl 5) ctrlSetStructuredText parseText ((format ["<t align='center' font='RobotoCondensedBold'><t color='#f2d36b'>%1</t>   <t color='#6d7a74'>|</t>   ZOOM <t color='#5cc76b'>x%2</t>   <t color='#6d7a74'>|</t>   FLASH <t color='%3'>%4</t></t>",
+            ["OBJECTIF ARRIÈRE", "SELFIE"] select _selfie, [_z] call _zs, ["#e8eadf", "#f2ab33"] select (_fl isEqualTo "ON"),
             createHashMapFromArray [["AUTO", "AUTO"], ["ON", "FORCÉ"], ["OFF", "COUPÉ"]] get _fl]) call comspec_atak_native_fnc_tr);
-        (_cam displayCtrl 3) ctrlSetText ((([
-            "CLIC GAUCHE : photo     T : marquer la cible     MOLETTE ou + / - : zoom     F : flash     R : selfie     ESPACE : quitter",
-            "CLIC GAUCHE : photo     SOURIS : cadrer     MOLETTE : zoom     F : flash     R : objectif arrière     ESPACE : quitter"
-        ] select _selfie)) call comspec_atak_native_fnc_tr);
+        // Échelle de zoom à droite : palier en cours en vert.
+        (_cam displayCtrl 6) ctrlSetStructuredText parseText ((((_zoomSteps apply {
+            private _on = abs (_x - _z) < 0.01;
+            format ["<t align='right' size='%1' color='%2'>x%3</t>", [0.8, 1.05] select _on, ["#8a9a93", "#5cc76b"] select _on, [_x] call _zs]
+        }) joinString "<br/>")) call comspec_atak_native_fnc_tr);
+        // Aide en touches : touche en clair, action en gris.
+        private _keys = [
+            [["CLIC", "photo"], ["T", "marquer"], ["MOLETTE", "zoom"], ["SOURIS", "viser"], ["F", "flash"], ["R", "selfie"], ["ESPACE", "quitter"]],
+            [["CLIC", "photo"], ["SOURIS", "cadrer"], ["MOLETTE", "zoom"], ["F", "flash"], ["R", "objectif arrière"], ["ESPACE", "quitter"]]
+        ] select _selfie;
+        (_cam displayCtrl 3) ctrlSetStructuredText parseText ((format ["<t align='center' size='0.9'>%1</t>", (_keys apply { format ["<t font='RobotoCondensedBold' color='#eef3ef'>%1</t> <t color='#a9b8b0'>%2</t>", _x select 0, _x select 1] }) joinString "     "]) call comspec_atak_native_fnc_tr);
+        // Où part la photo : Athena (réseau présent) ou poste seul, et légende choisie dans l'app.
+        private _net = (([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 0]) > 0;
+        private _cap = (uiNamespace getVariable ["COMSPEC_ATAK_PhotoCtx", []]) param [3, ""];
+        if !(_cap isEqualType "") then { _cap = ""; };
+        _cap = [[[_cap select [0, 40], "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace, "légende automatique (grille, cap)"] select (_cap isEqualTo "");
+        (_cam displayCtrl 9) ctrlSetStructuredText parseText ((format ["<t align='center'>%1   <t color='#6d7a74'>|</t>   <t color='#a9b8b0'>%2</t></t>",
+            ["<t color='#f2ab33'>HORS RÉSEAU : photo gardée sur le poste</t>", "<t color='#5cc76b'>ENVOI DIRECT VERS ATHENA</t>"] select _net, _cap]) call comspec_atak_native_fnc_tr);
         true
     };
     case "SELFIE": {
@@ -216,9 +256,10 @@ switch (toUpper _mode) do {
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoLast", diag_tickTime];
         // Flash : forcé, coupé, ou automatique la nuit et dans un intérieur sombre (toit au-dessus, peu de lumière).
         private _eye = eyePos player;
+        // Intérieur : seulement vraiment sombre (sous un hangar en plein jour, l'ancien seuil 40 déclenchait le flash).
         private _dark = (sunOrMoon < 0.5) || {
             ((lineIntersectsSurfaces [_eye, _eye vectorAdd [0, 0, 15], player, objNull, true, 1, "GEOM", "NONE"]) isNotEqualTo [])
-            && {((getLightingAt player) select 1) < 40}
+            && {((getLightingAt player) select 1) < 8}
         };
         private _fire = switch (_st getOrDefault ["flash", "AUTO"]) do { case "ON": { true }; case "OFF": { false }; default { _dark }; };
         ((call _curView) select 0) params ["_px", "_py", "_pz"];
@@ -229,31 +270,35 @@ switch (toUpper _mode) do {
             private _caption = _ctx param [3, ""];
             if (_caption isEqualTo "") then { _caption = format ["%1 · %2 · %3°", [player] call comspec_atak_native_fnc_unitCallsign, [player] call comspec_atak_native_fnc_gridRef, round getDir player]; };
             private _cam = uiNamespace getVariable ["COMSPEC_ATAK_CameraDisplay", displayNull];
-            // Le viseur ne doit pas apparaître sur la photo.
-            if (!isNull _cam) then { { (_cam displayCtrl _x) ctrlShow false; } forEach [1, 3, 4, 5]; };
+            // Le viseur ne doit pas apparaître sur la photo (ni les cadres dessinés dans la scène).
+            uiNamespace setVariable ["COMSPEC_ATAK_PhotoShooting", true];
+            if (!isNull _cam) then { { (_cam displayCtrl _x) ctrlShow false; } forEach [1, 3, 4, 5, 6, 7, 8, 9, 10]; };
             // Éclair réel au téléphone, très bref (visible sur la capture).
             private _light = objNull;
             if (_fire) then {
                 _light = "#lightpoint" createVehicleLocal (ASLToAGL _phone);
                 _light setPosASL _phone;
-                _light setLightColor [1, 0.98, 0.95];
-                _light setLightAmbient [1, 0.98, 0.95];
-                _light setLightBrightness 6;
-                _light setLightAttenuation [0.5, 0, 0, 0.6, 12, 15];
-                _light setLightDayLight true;
+                // Éclair modéré : l'ancien (luminosité 6, lumière ambiante pleine, de jour aussi) éclairait toute la
+                // scène à plat et l'adaptation HDR rendait la photo délavée.
+                _light setLightColor [1, 0.97, 0.92];
+                _light setLightAmbient [0.12, 0.12, 0.11];
+                _light setLightBrightness ([0.9, 2.2] select (sunOrMoon < 0.5));
+                _light setLightAttenuation [0.5, 0, 0, 1.4, 8, 10];
+                _light setLightDayLight (sunOrMoon >= 0.5);
             };
             uiSleep 0.12;
             // Débit simulé : sans réseau, la photo reste sur le poste (Photos > Bibliothèque pour la retransmettre).
             private _noNet = (([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0;
             private _ok = if (_noNet) then {
                 screenshot format ["comspec_atak_%1.png", floor (diag_tickTime * 10)];
-                ["WARNING", "Pas de réseau : photo gardée sur le poste, à retransmettre depuis Photos > Bibliothèque", 5, 40] call comspec_atak_native_fnc_notify;
+                ["WARNING", "Pas de réseau : photo gardée sur le poste, à envoyer depuis Photos > Galerie", 5, 40] call comspec_atak_native_fnc_notify;
                 false
             } else { ["", _caption, "CTAB", "", false, false, true] call comspec_overwatch_connect_fnc_captureReconImage };
             uiSleep 0.08;
             if (!isNull _light) then { deleteVehicle _light; };
+            uiNamespace setVariable ["COMSPEC_ATAK_PhotoShooting", false];
             if (!isNull _cam) then {
-                { (_cam displayCtrl _x) ctrlShow true; } forEach [1, 3, 4, 5];
+                { (_cam displayCtrl _x) ctrlShow true; } forEach [1, 3, 4, 5, 6, 7, 8, 9, 10];
                 private _flash = _cam displayCtrl 2;
                 _flash ctrlSetBackgroundColor [1, 1, 1, [0.55, 0.9] select _fire];
                 _flash ctrlCommit 0;
@@ -261,7 +306,7 @@ switch (toUpper _mode) do {
                 _flash ctrlCommit ([0.35, 0.6] select _fire);
                 private _n = (_ctx param [4, 0]) + ([0, 1] select _ok);
                 _ctx set [4, _n];
-                (_cam displayCtrl 4) ctrlSetText ((format ["%1%2", ["Photo non envoyée : voir l'app Photos", format ["%1 photo(s) en cours d'envoi vers Athena", _n]] select _ok, ["", " · flash"] select _fire]) call comspec_atak_native_fnc_tr);
+                (_cam displayCtrl 4) ctrlSetText ((format ["%1%2", ["Photo non envoyée : voir Photos > Envois", format ["%1 photo(s) en cours d'envoi vers Athena", _n]] select _ok, ["", " · flash"] select _fire]) call comspec_atak_native_fnc_tr);
             };
             playSound "ClickSoft";
         };

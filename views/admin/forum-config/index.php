@@ -681,7 +681,7 @@ function forumConfigPage() {
                 body.append('scope', this.fcForm.scope || 'global');
             }
             try {
-                const r = await fetch(BASE + '/api/admin/forum-categories', { method: 'POST', body });
+                const r = await fetch(BASE + '/api/back-office/forum-categories', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));
                 if (r.ok && (j.success || j.ok)) { this.fcModalOpen = false; location.reload(); return; }
                 this.showBanner('error', j.message || 'Impossible d’enregistrer le canal.');
@@ -694,7 +694,7 @@ function forumConfigPage() {
             body.append('id', id);
             body.append('locked', locked ? '1' : '0');
             try {
-                const r = await fetch(BASE + '/api/admin/forum-categories', { method: 'POST', body });
+                const r = await fetch(BASE + '/api/back-office/forum-categories', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));
                 if (r.ok && (j.success || j.ok)) { location.reload(); return; }
                 this.showBanner('error', j.message || 'Action impossible.');
@@ -707,7 +707,7 @@ function forumConfigPage() {
             body.append('action', 'delete');
             body.append('id', id);
             try {
-                const r = await fetch(BASE + '/api/admin/forum-categories', { method: 'POST', body });
+                const r = await fetch(BASE + '/api/back-office/forum-categories', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));
                 if (r.ok && (j.success || j.ok)) { location.reload(); return; }
                 this.showBanner('error', j.message || 'Suppression impossible.');
@@ -733,7 +733,7 @@ function forumConfigPage() {
             body.append('_csrf_token', CSRF);
             body.append('settings', JSON.stringify(settings));
             try {
-                const r = await fetch(BASE + '/api/admin/site-settings', { method: 'POST', body });
+                const r = await fetch(BASE + '/api/back-office/forum-settings', { method: 'POST', body });
                 const j = await r.json().catch(() => ({}));
                 if (r.ok && (j.success || j.ok)) {
                     this.showBanner('success', 'Réglages enregistrés.');

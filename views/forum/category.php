@@ -252,8 +252,8 @@ $forumContextMenuEnabled = !empty($forumContextMenuEnabled);
 $forumFullCategoryAdmin = !empty($forumFullCategoryAdmin);
 $forumCanDeleteCategoryMenu = !empty($forumCanDeleteCategoryMenu);
 $forumCsrfToken = $forumCsrfToken ?? \App\Core\Csrf::token();
-$forumCategoriesApiUrl = $forumCategoriesApiUrl ?? url('api/admin/forum-categories');
-$forumAdminForumConfigUrl = $forumAdminForumConfigUrl ?? url('admin/forum-config');
+$forumCategoriesApiUrl = $forumCategoriesApiUrl ?? url('api/back-office/forum-categories');
+$forumAdminForumConfigUrl = $forumAdminForumConfigUrl ?? url('back-office/ressources/forum-config');
 $forumContextTenantId = (int) ($forumContextTenantId ?? \App\Core\Session::get('tenant_id') ?? 0);
 ?>
 <?php if ($forumContextMenuEnabled): ?>

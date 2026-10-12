@@ -9,6 +9,7 @@ private _bus = missionNamespace getVariable ["COMSPEC_EventBus", createHashMap];
 private _handlers = _bus getOrDefault [_eventName, []];
 _handlers pushBack _handler;
 _bus set [_eventName, _handlers];
-missionNamespace setVariable ["COMSPEC_EventBus", _bus, true];
+// Bus local (cf. en-tête) : diffusé, il envoyait du code à tous les clients et écrasait leurs propres abonnés.
+missionNamespace setVariable ["COMSPEC_EventBus", _bus, false];
 
 true

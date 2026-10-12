@@ -302,9 +302,11 @@ if (missionNamespace getVariable ["COMSPEC_ZeusAtakPlayerActionsRegistered", fal
 }] call CBA_fnc_addEventHandler;
 
 [{
+    params ["_args", "_pfhId"];
     private _disp = findDisplay 46;
     if (isNull _disp) exitWith {};
-    if !(isNil "COMSPEC_ZeusCtrlKeyEH") exitWith {};
+    // Installation faite : retirer ce PFH (il tournait toutes les secondes jusqu'à la fin de la partie).
+    if !(isNil "COMSPEC_ZeusCtrlKeyEH") exitWith { [_pfhId] call CBA_fnc_removePerFrameHandler; };
     COMSPEC_ZeusCtrlKeyEH = _disp displayAddEventHandler ["KeyDown", {
         params ["", "_key"];
         if (_key in [29, 157]) then {
@@ -319,6 +321,7 @@ if (missionNamespace getVariable ["COMSPEC_ZeusAtakPlayerActionsRegistered", fal
         };
         false
     }];
+    [_pfhId] call CBA_fnc_removePerFrameHandler;
 }, 1, []] call CBA_fnc_addPerFrameHandler;
 
 missionNamespace setVariable ["COMSPEC_ZeusAtakPlayerActionsRegistered", true];
