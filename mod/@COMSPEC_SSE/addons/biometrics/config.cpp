@@ -70,6 +70,8 @@ class CfgFunctions {
             class bioApplyCapture {};
             class bioRegistry {};
             class bioTemplates {};
+            class headBag {};
+            class bioAnimate {};
         };
     };
 };
@@ -79,6 +81,7 @@ class CfgFunctions {
 class CfgRemoteExec {
     class Functions {
         class comspec_sse_fnc_bioSetProfile { allowedTargets = 2; };
+        class comspec_sse_fnc_headBag { allowedTargets = 0; };
     };
 };
 

@@ -12,6 +12,7 @@ if !([_player, "fingerprint"] call comspec_sse_fnc_hasEquipment) exitWith {
     false
 };
 
+[player, _obj, "latente", "start"] call comspec_sse_fnc_bioAnimate;
 [
     (missionNamespace getVariable ["comspec_sse_timeFingerprint", 8]) max 10,
     "Relevé de latentes (poudre, ruban)...",

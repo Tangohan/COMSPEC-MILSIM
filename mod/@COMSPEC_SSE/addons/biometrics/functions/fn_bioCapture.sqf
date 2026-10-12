@@ -180,6 +180,9 @@ switch (_modality) do {
     // ===================================================================== IRIS
     case "iris": {
         // Capté en proche infrarouge : la nuit ne gêne pas, les lunettes et la mort si.
+        if (["is", _target] call comspec_sse_fnc_headBag) exitWith {
+            _out set ["blocked", "Sac de tête en place : retirez-le pour relever l'iris."];
+        };
         if (_sevHead >= _block * 1.25) exitWith {
             _out set ["blocked", "Visage et yeux trop endommagés : iris non relevable."];
         };
@@ -220,6 +223,9 @@ switch (_modality) do {
 
     // ===================================================================== VISAGE
     case "visage": {
+        if (["is", _target] call comspec_sse_fnc_headBag) exitWith {
+            _out set ["blocked", "Sac de tête en place : retirez-le pour photographier le visage."];
+        };
         if (_sevHead >= _block) exitWith {
             _out set ["blocked", "Visage trop endommagé pour une comparaison faciale."];
         };

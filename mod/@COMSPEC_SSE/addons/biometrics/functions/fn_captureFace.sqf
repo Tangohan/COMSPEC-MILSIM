@@ -8,6 +8,7 @@ if !([_player, "face"] call comspec_sse_fnc_hasEquipment) exitWith {
     false
 };
 
+[player, _target, "visage", "start"] call comspec_sse_fnc_bioAnimate;
 [
     3,
     "Photo faciale...",

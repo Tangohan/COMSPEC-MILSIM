@@ -8,6 +8,7 @@ if !([_player, "iris"] call comspec_sse_fnc_hasEquipment) exitWith {
     false
 };
 
+[player, _target, "iris", "start"] call comspec_sse_fnc_bioAnimate;
 [
     5,
     "Capture iris...",

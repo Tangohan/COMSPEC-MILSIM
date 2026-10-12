@@ -9,6 +9,7 @@ if !([_player, "fingerprint"] call comspec_sse_fnc_hasEquipment) exitWith {
 };
 
 private _time = missionNamespace getVariable ["comspec_sse_timeFingerprint", 8];
+[player, _target, "empreintes", "start"] call comspec_sse_fnc_bioAnimate;
 [
     _time,
     "Relevé d'empreintes...",

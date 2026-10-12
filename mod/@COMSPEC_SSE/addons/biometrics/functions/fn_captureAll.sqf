@@ -18,6 +18,7 @@ if (!_hasSeek) then {
     };
 };
 
+[player, _target, "complet", "start"] call comspec_sse_fnc_bioAnimate;
 [
     25,
     "SEEK II — capture complète...",

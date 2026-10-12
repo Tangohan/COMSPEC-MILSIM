@@ -4,6 +4,8 @@
     Un dossier n'existe que si la personne a réellement été enrôlée quelque part :
       - choix du chef de mission (COMSPEC_SSE_BioDb : absent | enrole | bewl1..bewl4,
         ou ancien verdict imposé COMSPEC_SSE_MatchResult) ;
+      - fiche BII Identifi de l'unité : watchlist ou menace Black → tier 1, Red → 2,
+        Orange → 3, Green → connu non signalé ; motif = organisation et notes BII ;
       - sinon population : part enrôlée et part en watchlist selon le camp (réglages) ;
       - avis de recherche Athena importés (nom ou alias réels) ;
       - rencontres de la mission (sujets transmis par un SEEK), latentes exclues.
@@ -46,6 +48,22 @@ if (_db in ["", "auto"]) then {
         case "possible": { "partiel" };
         case "none": { "absent" };
         default { "auto" };
+    };
+};
+
+// Fiche BII Identifi sur l'unité (mod BII) : sa menace et sa watchlist décident du dossier.
+private _bii = false;
+if (_db isEqualTo "auto" && {!isNull _unit}) then {
+    private _thr = toUpper (_unit getVariable ["BII_Identifi_threat", ""]);
+    private _wl = _unit getVariable ["BII_Identifi_watchlist", false];
+    if (_thr isNotEqualTo "" || {_wl isEqualTo true}) then {
+        _bii = true;
+        _db = switch (true) do {
+            case (_wl isEqualTo true || {_thr isEqualTo "BLACK"}): { "bewl1" };
+            case (_thr isEqualTo "RED"): { "bewl2" };
+            case (_thr isEqualTo "ORANGE"): { "bewl3" };
+            default { "enrole" };
+        };
     };
 };
 
@@ -123,6 +141,11 @@ private _reason = "";
 if (!isNull _unit) then {
     private _rv = _unit getVariable ["COMSPEC_SSE_BioReason", ""];
     if (_rv isEqualType "") then { _reason = trim _rv; };
+};
+if (_bii && {_reason isEqualTo ""}) then {
+    private _bn = _unit getVariable ["BII_Identifi_notes", ""];
+    private _bo = _unit getVariable ["BII_Identifi_org", ""];
+    _reason = trim (format ["%1%2", [format ["Membre de %1. ", _bo], ""] select (_bo isEqualTo ""), _bn]);
 };
 if (_tier > 0 && {_reason isEqualTo ""}) then {
     private _pool = switch (_tier) do {

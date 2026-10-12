@@ -53,6 +53,8 @@ if (_have isNotEqualTo "" && {(_owners getOrDefault [_have, objNull]) isEqualTo 
 private _base = "";
 private _fixed = false;
 private _id = _unit getVariable ["COMSPEC_SSE_BioId", ""];
+// Clé biométrique BII Identifi : le même personnage d'une mission à l'autre.
+if (!(_id isEqualType "") || {(trim _id) isEqualTo ""}) then { _id = _unit getVariable ["BII_Identifi_bioKey", ""]; };
 if (_id isEqualType "" && {(trim _id) isNotEqualTo ""}) then {
     _base = toUpper (trim _id);
     _fixed = true;

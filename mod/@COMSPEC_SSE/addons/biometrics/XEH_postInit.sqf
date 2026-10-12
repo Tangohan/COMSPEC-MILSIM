@@ -26,6 +26,14 @@ if (isServer) then {
         missionNamespace setVariable ["comspec_sse_bioRuntime", _runtime];
     };
 };
+// Sujet d'un relevé : il regarde l'opérateur, tend la main (exécuté là où il est local).
+["comspec_sse_bioAnimSubject", {
+    params ["_t", "_op", "_gesture"];
+    if (isNull _t || {!local _t}) exitWith {};
+    _t doWatch _op;
+    if (_gesture isNotEqualTo "") then { _t playActionNow _gesture; };
+}] call CBA_fnc_addEventHandler;
+
 if (hasInterface) then {
     ["comspec_sse_bioRes", { _this call comspec_sse_fnc_bioClientResult }] call CBA_fnc_addEventHandler;
     ["comspec_sse_bioNotify", { _this call comspec_sse_fnc_bioNotify }] call CBA_fnc_addEventHandler;

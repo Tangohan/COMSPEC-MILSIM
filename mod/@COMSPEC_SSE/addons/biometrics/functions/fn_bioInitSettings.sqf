@@ -28,6 +28,7 @@ private _add = {
 ["comspec_sse_bio_latents", "CHECKBOX", ["Empreintes latentes", "Armes au sol près d'un corps et objets liés à un sujet portent ses empreintes, relevables et recherchables."], _cat, true] call _add;
 ["comspec_sse_bio_athena", "CHECKBOX", ["Avis de recherche Athena", "En liaison, les avis de recherche de la communauté entrent dans la base (correspondance faciale et nominative)."], _cat, true] call _add;
 ["comspec_sse_bio_faceStudio", "CHECKBOX", ["Photo du visage en studio", "Le SEEK cadre un double du sujet, droit et éclairé, sur fond de ciel : fini les clichés dans le sol, dans un mur ou de nuit noire. La qualité reste celle du vrai sujet (masque, blessures, décès)."], _cat, true] call _add;
+["comspec_sse_headBagGoggles", "EDITBOX", ["Modèle du sac de tête", "Classe de lunettes (CfgGlasses) portée par le prisonnier. Vide = cagoule COMSPEC provisoire. Ex. : G_Blindfold_01_black_F (bandeau du DLC Laws of War) ou le sac d'un autre mod."], _cat, ""] call _add;
 ["comspec_sse_bio_campaignMemory", "CHECKBOX", ["Mémoriser les rencontres entre missions", "Le serveur conserve les rencontres des personnages dont l'identifiant biométrique est fixé (profil serveur)."], _cat, false] call _add;
 
 ["comspec_sse_bio_enrolled_civ", "SLIDER", ["Civils déjà enrôlés (%)", "Part des civils présents dans une base (carte d'identité biométrique, recensement, employés locaux)."], _catPop, [0, 100, 35, 0]] call _add;

@@ -267,8 +267,12 @@ uiNamespace setVariable ["COMSPEC_SseSampleFinish", {
 
 uiNamespace setVariable ["COMSPEC_SseSampleReopen", {
     params [["_page", 3, [0]]];
-    if (vehicle player == player) then {
-        player playMoveNow "AmovPknlMstpSnonWnonDnon";
+    if (!isNil "comspec_sse_fnc_bioAnimate") then {
+        [player, objNull, "", "stop"] call comspec_sse_fnc_bioAnimate;
+    } else {
+        if (vehicle player == player) then {
+            player playMoveNow "AmovPknlMstpSnonWnonDnon";
+        };
     };
     uiNamespace setVariable ["COMSPEC_SsePerson_ResumeCollect", true];
     [{
@@ -297,8 +301,14 @@ if (!isNull _disp) then {
     _disp closeDisplay 2;
 };
 
-if (vehicle _player == _player) then {
-    _player playMoveNow "AinvPknlMstpSnonWnonDnon_medicUp1";
+// Animation du relevé (pack SSE) : à genoux sur un corps, debout face à un sujet coopérant,
+// appareil en main, sujet qui tend la main ou regarde le SEEK ; sinon l'ancienne posture.
+if (!isNil "comspec_sse_fnc_bioAnimate") then {
+    [_player, _target, _kind, "start"] call comspec_sse_fnc_bioAnimate;
+} else {
+    if (vehicle _player == _player) then {
+        _player playMoveNow "AinvPknlMstpSnonWnonDnon_medicUp1";
+    };
 };
 if (_sound isNotEqualTo "" && {isClass (configFile >> "CfgSounds" >> _sound)}) then {
     playSound _sound;
@@ -316,8 +326,12 @@ if (!isNil "ace_common_fnc_progressBar") exitWith {
             [uiNamespace getVariable ["COMSPEC_SseSampleReopenPage", 3]] call (uiNamespace getVariable ["COMSPEC_SseSampleReopen", {}]);
         },
         {
-            if (vehicle player == player) then {
-                player playMoveNow "AmovPknlMstpSnonWnonDnon";
+            if (!isNil "comspec_sse_fnc_bioAnimate") then {
+                [player, objNull, "", "stop"] call comspec_sse_fnc_bioAnimate;
+            } else {
+                if (vehicle player == player) then {
+                    player playMoveNow "AmovPknlMstpSnonWnonDnon";
+                };
             };
             ["Relevé interrompu.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
             uiNamespace setVariable ["COMSPEC_SsePerson_BioMsg", "<t size='0.46' color='#9a5b00'>Relevé interrompu : restez à moins de 5 m du sujet.</t>"];

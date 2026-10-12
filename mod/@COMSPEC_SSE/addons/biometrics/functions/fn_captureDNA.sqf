@@ -8,6 +8,7 @@ if !([_player, "dna"] call comspec_sse_fnc_hasEquipment) exitWith {
     false
 };
 
+[player, _target, "adn", "start"] call comspec_sse_fnc_bioAnimate;
 [
     12,
     "Prélèvement ADN...",
