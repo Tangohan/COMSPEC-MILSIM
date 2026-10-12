@@ -11228,6 +11228,10 @@ class AtakApiController
                 'message' => 'La photo n’a pas pu être enregistrée côté poste de commandement. Réessayez.',
             ], 500);
         }
+        try {
+            \App\Support\PhotoAutoLevel::applyFile($path, \App\Support\ReconImageStorage::originalsDir());
+        } catch (\Throwable) {
+        }
         $path = $this->recompressIntelPhotoToJpeg($path);
         $filename = basename($path);
         $relativePath = 'intel/' . $filename;
@@ -11908,6 +11912,14 @@ class AtakApiController
                 'device_type' => $deviceNorm !== '' ? $deviceNorm : 'CTAB',
                 'captured_at' => ReconCapturedAt::unixFromPosted($_POST['capturedAt'] ?? $_POST['captured_at'] ?? null),
             ] + $photoMeta;
+            // Captures d'Arma délavées : niveaux et tons moyens corrigés avant l'incrustation (original gardé à côté).
+            if (!\App\Support\PhotoAutoLevel::skipsProfile($data['fx_profile'] ?? null, $deviceNorm)) {
+                try {
+                    \App\Support\PhotoAutoLevel::applyFile($path, \App\Support\ReconImageStorage::originalsDir());
+                } catch (\Throwable $lvlErr) {
+                    error_log('[atak/recon-images] auto level ' . $lvlErr->getMessage());
+                }
+            }
             try {
                 (new \App\Services\Media\ReconPhotoHudService())->applyToFile($tenantId, $path, $data);
             } catch (\Throwable $hudErr) {
