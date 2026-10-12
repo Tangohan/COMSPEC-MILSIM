@@ -732,7 +732,7 @@ switch (_act) do {
         if (isNull _c) exitWith {};
         (["gimbalGet"] call comspec_atak_native_fnc_droneAction) params ["_gp", "_gt"];
         private _mk = uiNamespace getVariable ["COMSPEC_ATAK_DroneMarkMode", false];
-        private _t = format ["<t size='0.75' align='center' font='EtelkaMonospacePro' shadow='2' shadowColor='#000000' color='%1'>NACELLE CAP %2%3° · SITE %4° · x%5%6</t>",
+        private _t = format ["<t size='0.75' align='center' font='EtelkaMonospacePro' shadow='2' shadowColor='#000000' color='%1'>CAMÉRA CAP %2%3° · SITE %4° · x%5%6</t>",
             ["#e8f0ea", "#ff8a7a"] select _mk, ["", "+"] select (_gp > 0.5), round _gp, round _gt, missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1],
             ["", "<br/>MARQUAGE : CLIQUEZ LA CIBLE"] select _mk];
         if (_t isNotEqualTo _last) then { _c ctrlSetStructuredText parseText ((_t) call comspec_atak_native_fnc_tr); uiNamespace setVariable ["COMSPEC_ATAK_DroneGimTxt", [_c, _t]]; };
