@@ -436,7 +436,14 @@ class CfgFactionClasses {
 
 class Extended_PreInit_EventHandlers { class comspec_atak_native_main { init="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_preInit.sqf'"; }; };
 // Intro du mod sur l'écran de démarrage d'Arma (une fois par lancement du jeu).
-class Extended_DisplayLoad_EventHandlers { class RscDisplayStart { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_introSplash.sqf'"; }; };
+// Repli sur le premier menu principal si l'écran de démarrage est passé avant le chargement des addons.
+// Marque COMSPEC (emblème, « OVERWATCH · ATAK NATIF », version) sur les chargements de mission.
+class Extended_DisplayLoad_EventHandlers {
+    class RscDisplayStart { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_introSplash.sqf'"; };
+    class RscDisplayMain { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_introSplash.sqf'"; };
+    class RscDisplayLoadMission { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf'"; };
+    class RscDisplayLoading { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf'"; };
+};
 class Extended_PostInit_EventHandlers { class comspec_atak_native_main { clientInit="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_postInitClient.sqf'"; serverInit="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_postInitServer.sqf'"; }; };
 #include "gestures.hpp"
 #include "ui/controls.hpp"
