@@ -27,6 +27,7 @@
                                   (COMSPEC_ATAK_DroneFeedUnit, le joueur par défaut) ;
       Clichés de la caméra : fn_dronePhoto ; suivi des cibles marquées dans l'ordre : fn_droneSeq ; neige NO DATA : fn_droneStatic.
       ["takeoff"]                 démarre et décolle (tout ordre de vol donné au sol le fait aussi) ;
+      ["quick", "hunt" | "me" | "rth" | "land"]   touches rapides des options CBA (RECHERCHE, ME SUIVRE, RTB, ATTERRIR) ;
       ["cqb"]                     bascule le profil CQB (vol bas 2 à 8 m, 5 à 15 km/h, boucle de vol à nous) ;
       ["manual"]                  pilotage manuel au terminal UAV ; tout autre ordre du téléphone reprend la main.
     Verrou (variable publique COMSPEC_DroneLock du drone, appliqué par XEH_postInitClient sur chaque client) :
@@ -96,6 +97,21 @@ private _unitOf = {
 private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "DRONE") then { ["DRONE"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 private _send = {
     params ["_cmd", ["_args", []]];
+    // Zones interdites au drone (fn_noFly) : un ordre dont le but y tombe est refusé (le retour automatique passe toujours).
+    private _goal = switch (_cmd) do {
+        case "goto"; case "loiter"; case "observe"; case "strike": { [_args param [0, []]] };
+        case "route": { _args param [0, []] };
+        default { [] };
+    };
+    private _bad = _goal findIf {
+        private _gp = [_x, getPosASL _x] select (_x isEqualType objNull);
+        (_gp isEqualType []) && {(count _gp) >= 2} && {(_gp select 0) isEqualType 0} && {(count (["inside", _gp] call comspec_atak_native_fnc_noFly)) > 0}
+    };
+    if (_bad >= 0) exitWith {
+        ["WARNING", "Drone : le but est dans une zone interdite, ordre refusé"] call _say;
+        [format ["Ordre refusé (%1) : but en zone interdite", _cmd], "#e5483a"] call _log;
+        false
+    };
     // Tout ordre du téléphone (sauf le passage en manuel) verrouille le terminal UAV : une seule main sur le drone.
     if (_cmd isNotEqualTo "manual" && {(_d getVariable ["COMSPEC_DroneLock", ""]) isNotEqualTo ""}) then { _d setVariable ["COMSPEC_DroneLock", "", true]; };
     // Dernier ordre de vol : [ordre, arguments, envoyé à, compteur d'ordres reçus du drone à l'envoi, reçu, reprise auto faite,
@@ -568,6 +584,19 @@ switch (_act) do {
         };
         if (_arg isEqualTo "hunt") then { [format ["Ordre : recherche, rayon %1 m", _s getOrDefault ["droneHuntRad", 250]]] call _log; };
         call _render;
+    };
+    // Touches rapides (options CBA) : RECHERCHE, ME SUIVRE, RTB, ATTERRIR, avec une confirmation à l'écran.
+    case "quick": {
+        if (isNull _d || {!(call _needLink)}) exitWith {};
+        if (_arg isEqualTo "rth") then {
+            ["rth", [missionNamespace getVariable ["COMSPEC_ATAK_DroneHome", getPosASL player]]] call _send;
+            ["Ordre (touche) : RTB, retour au point de décollage"] call _log;
+            call _render;
+        } else {
+            ["mode", _arg] call comspec_atak_native_fnc_droneAction;
+            if (_arg in ["me", "land"]) then { [format ["Ordre (touche) : %1", ["atterrissage sur place", "me suivre"] select (_arg isEqualTo "me")]] call _log; };
+        };
+        ["INFO", format ["Drone : %1", createHashMapFromArray [["hunt", "RECHERCHE"], ["me", "ME SUIVRE"], ["rth", "RTB"], ["land", "ATTERRIR"]] getOrDefault [_arg, _arg]], 2, 20] call comspec_atak_native_fnc_notify;
     };
     case "takeoff": {
         if (isNull _d || {!(call _needLink)}) exitWith {};
@@ -1216,6 +1245,19 @@ switch (_act) do {
             };
         };
         if (!_was && {_l select 2}) then { ["SUCCESS", "Drone : liaison rétablie"] call _say; ["Liaison rétablie", "#5cc76b"] call _log; };
+        // Zone interdite : un drone qui y entre (vent, suivi, pilotage) en ressort aussitôt par le bord le plus proche.
+        private _nfz = ["inside", getPosASL _d] call comspec_atak_native_fnc_noFly;
+        private _nfWas = missionNamespace getVariable ["COMSPEC_ATAK_DroneNoFlyIn", ""];
+        private _nfId = _nfz param [0, ""];
+        if (_nfId isNotEqualTo _nfWas) then {
+            missionNamespace setVariable ["COMSPEC_ATAK_DroneNoFlyIn", _nfId];
+            if (_nfId isNotEqualTo "" && {_l select 2} && {((getPosATL _d) select 2) > 3} && {!(_m in ["STRIKE", "LAND", "RTH"])} && {!_parked}) then {
+                private _out = ["exit", getPosASL _d] call comspec_atak_native_fnc_noFly;
+                ["WARNING", "Drone : zone interdite, sortie de la zone"] call _say;
+                [format ["Entrée en zone interdite (%1) : sortie vers %2", [_nfz select 1, 8] call comspec_atak_native_fnc_gridRef, [_out, 8] call comspec_atak_native_fnc_gridRef], "#e5483a"] call _log;
+                ["goto", [[_out select 0, _out select 1, 0]]] call _send;
+            };
+        };
         // Le mode affiché est celui que le drone renvoie : le journal note chaque changement (ordre exécuté, arrivée, repli...).
         private _lm = missionNamespace getVariable ["COMSPEC_ATAK_DroneLastMode", ""];
         if (_m isNotEqualTo _lm) then {

@@ -297,13 +297,33 @@ switch (_cmd) do {
             params ["_d", "_t", "_loop", "_cmd"];
             // Escorte : plus loin en arrière, pour voir le convoi et ce qui l'attend devant.
             private _off = [15, 30] select (_cmd isEqualTo "escort");
+            // Cap de référence : celui du déplacement de la cible, gardé quand elle s'arrête (sinon le point visé tournait
+            // avec son regard et l'IA de vol décrivait des cercles sans fin autour d'un joueur immobile).
+            private _ref = getDir (vehicle _t);
+            private _held = false;
             while { alive _d && {local _d} && {alive _t} && {(_d getVariable ["COMSPEC_DroneLoop", 0]) isEqualTo _loop} } do {
-                private _dir = getDir (vehicle _t);
-                private _p = (getPosASL _t) vectorAdd [-_off * sin _dir, -_off * cos _dir, 0];
+                private _vt = velocity (vehicle _t);
+                private _moving = (vectorMagnitude [_vt select 0, _vt select 1, 0]) > 1;
+                if (_moving) then { _ref = (_vt select 0) atan2 (_vt select 1); };
+                private _p = (getPosASL _t) vectorAdd [-_off * sin _ref, -_off * cos _ref, 0];
                 if (_cmd isEqualTo "home" && {(_d distance2D _t) < 25}) exitWith { _d setVariable ["COMSPEC_DroneMode", "LAND", true]; _d land "LAND"; };
                 _d flyInHeight [_d getVariable ["COMSPEC_DroneAlt", 40], true];
                 _d limitSpeed (_d getVariable ["COMSPEC_DroneSpd", 40]);
-                _d doMove (ASLToAGL _p);
+                // Cible immobile et drone déjà près de son point : stationnaire sur place, nez vers elle, au lieu d'un
+                // nouveau doMove (que l'IA d'un hélicoptère transforme en orbite autour du point).
+                if (!_moving && {_cmd isNotEqualTo "home"} && {(_d distance2D _p) < 15}) then {
+                    if (!_held) then {
+                        _held = true;
+                        doStop _d;
+                        _d doMove (getPosATL _d);
+                    };
+                    _d doWatch _t;
+                    private _vd = velocity _d;
+                    if ((vectorMagnitude [_vd select 0, _vd select 1, 0]) > 1.5) then { _d setVelocity [(_vd select 0) * 0.6, (_vd select 1) * 0.6, _vd select 2]; };
+                } else {
+                    _held = false;
+                    _d doMove (ASLToAGL _p);
+                };
                 sleep 1;
             };
         };

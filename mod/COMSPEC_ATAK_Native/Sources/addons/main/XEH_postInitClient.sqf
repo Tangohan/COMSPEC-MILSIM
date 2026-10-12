@@ -119,6 +119,20 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
     ["view"] call comspec_atak_native_fnc_droneAction;
     true
 }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
+// Ordres rapides au drone appairé (sans ouvrir le téléphone) : touches libres par défaut, à choisir dans les options CBA.
+{
+    _x params ["_id", "_lbl", "_tip", "_mode"];
+    ["COMSPEC ATAK", _id, [_lbl, _tip], compile format ["
+        if (isNull (missionNamespace getVariable ['COMSPEC_ATAK_Drone', objNull])) exitWith { ['WARNING', 'Aucun drone appairé', 3, 20] call comspec_atak_native_fnc_notify; true };
+        ['quick', %1] call comspec_atak_native_fnc_droneAction;
+        true
+    ", str _mode], "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
+} forEach [
+    ["DroneHunt", "Drone : RECHERCHE", "Le drone appairé passe en recherche autour de lui (rayon réglé dans l'app Drone).", "hunt"],
+    ["DroneFollowMe", "Drone : ME SUIVRE", "Le drone appairé vous suit.", "me"],
+    ["DroneRtb", "Drone : RTB", "Le drone appairé revient à son point de décollage et s'y pose.", "rth"],
+    ["DroneLand", "Drone : ATTERRIR", "Le drone appairé se pose sur place.", "land"]
+];
 // Suivi des cibles marquées : en vue, perdues, neutralisées (deux fois par seconde).
 [{ ["tick"] call comspec_atak_native_fnc_lockAction; }, 0.5] call CBA_fnc_addPerFrameHandler;
 // Batterie : consommation aussi téléphone rangé (la barre d'état la met à jour chaque seconde quand il est ouvert).

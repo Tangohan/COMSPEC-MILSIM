@@ -11,7 +11,10 @@
       ["aimed", "DRONE" | "PHONE"]  cible sous le réticule (objet ou objNull), sans marquer ;
       ["tick"]                      suivi des cibles marquées (toutes les 0,5 s, XEH_postInitClient) ;
       ["release", clé | ""]         libère une cible (ou toutes) et retire son marqueur ;
-      ["list"]                      cibles marquées, les plus récentes d'abord : [[clé, entrée]...].
+      ["list"]                      cibles marquées, les plus récentes d'abord : [[clé, entrée]...] ;
+      ["toMarker", clé]             marqueur permanent à sa position (éditeur de marqueur ouvert, texte prérempli) ;
+      ["toSse", clé]                fiche SSE d'observation (FRO) préremplie avec la cible, ouverte dans l'app FRS ;
+      ["droneCam", clé]             caméra du drone appairé pointée et gardée sur la cible, vue drone incrustée sur la carte.
     Entrée (hashmap) : obj, num, src, marker, seen (time), pos (ASL), state ("TRACK" | "LOST" | "DOWN"),
     lostAt, clock, name, tag, ghost (cadre gardé à la dernière position).
     État : missionNamespace COMSPEC_ATAK_Locks (clé → entrée), COMSPEC_ATAK_LockN (dernier numéro).
@@ -259,6 +262,49 @@ switch (_act) do {
         if (!isNull _a && {alive _a} && {!((hashValue _a) in _locks)}) then {
             [_a, getPosASLVisual _a, [0.98, 0.82, 0.2, 1], format ["VISÉ %1m · T : marquer", round (_eye distance _a)]] call _box;
         };
+    };
+    // Depuis une cible marquée : marqueur permanent (éditeur de marqueur ouvert, texte prérempli), fiche SSE
+    // d'observation (FRO) préremplie, ou caméra du drone accrochée dessus (vue drone incrustée sur la carte).
+    case "toMarker": {
+        private _e = _locks getOrDefault [_arg, createHashMap];
+        if ((count _e) isEqualTo 0) exitWith { [] };
+        private _p = _e get "pos";
+        ["MAP"] call comspec_atak_native_fnc_navigate;
+        [[_p select 0, _p select 1, 0]] call comspec_atak_native_fnc_mapCenter;
+        ["", [_p select 0, _p select 1, 0]] call comspec_atak_native_fnc_markerEditOpen;
+        private _ed = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["markerEdit", createHashMap];
+        _ed set ["text", format ["%1 LOCK %2", ["ENI", "AMI"] select ((_e get "tag") isEqualTo "AMI"), [_e get "num", 3] call CBA_fnc_formatNumber] select [0, 40]];
+        _ed set ["desc", format ["%1, marqué à %2 en %3", _e get "name", _e get "clock", [_p, 8] call comspec_atak_native_fnc_gridRef]];
+        if ((_e get "tag") isNotEqualTo "AMI") then { _ed set ["color", "ColorRed"]; };
+        []
+    };
+    case "toSse": {
+        private _e = _locks getOrDefault [_arg, createHashMap];
+        if ((count _e) isEqualTo 0) exitWith { [] };
+        ["frs", "FRO"] call comspec_atak_native_fnc_sseAction;
+        private _draft = uiNamespace getVariable ["COMSPEC_ATAK_FrsDraft", createHashMap];
+        if ((count _draft) isEqualTo 0) exitWith { [] };
+        private _nl = toString [10];
+        private _line = format ["Cible LOCK %1 : %2 (%3), marquée à %4 en %5, %6 (dernière vue il y a %7 s).",
+            [_e get "num", 3] call CBA_fnc_formatNumber, _e get "name", toLower (_e get "tag"), _e get "clock",
+            [_e get "pos", 8] call comspec_atak_native_fnc_gridRef,
+            (createHashMapFromArray [["TRACK", "toujours en vue"], ["LOST", "perdue de vue"], ["DOWN", "neutralisée"]]) getOrDefault [_e get "state", ""],
+            round (time - (_e get "seen"))];
+        private _body = _draft getOrDefault ["body", ""];
+        _draft set ["body", [_body + _nl + _line, _line + _nl] select ((trim _body) isEqualTo "")];
+        []
+    };
+    case "droneCam": {
+        private _e = _locks getOrDefault [_arg, createHashMap];
+        if ((count _e) isEqualTo 0) exitWith { [] };
+        if (isNull (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])) exitWith { ["WARNING", "Aucun drone appairé"] call _say; [] };
+        ["camAim", format ["LOCK:%1", _arg]] call comspec_atak_native_fnc_droneAction;
+        private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        if ((_s getOrDefault ["droneView", "OFF"]) isEqualTo "OFF") then { ["view", "INSET"] call comspec_atak_native_fnc_droneAction; };
+        ["MAP"] call comspec_atak_native_fnc_navigate;
+        [[(_e get "pos") select 0, (_e get "pos") select 1, 0]] call comspec_atak_native_fnc_mapCenter;
+        ["INFO", format ["Caméra du drone sur LOCK %1", [_e get "num", 3] call CBA_fnc_formatNumber]] call _say;
+        []
     };
     case "release": {
         if (_arg isEqualTo "") then {
