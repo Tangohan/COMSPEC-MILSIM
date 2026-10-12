@@ -907,11 +907,15 @@ if ($personnelFileIsRhFull) {
                                 return $h > 0 ? $h . ' h ' . str_pad((string) $m, 2, '0', STR_PAD_LEFT) : max(1, $m) . ' min';
                             };
                             ?>
-                            <?php if ($atakRoleTimes !== []): ?>
-                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:col-span-2 xl:col-span-1">
+                            <?php
+                            $canCorrectRoleTime = !empty($canCorrectRoleTime);
+                            $roleTimeMoves = is_array($roleTimeMoves ?? null) ? $roleTimeMoves : [];
+                            ?>
+                            <?php if ($atakRoleTimes !== [] || ($canCorrectRoleTime && $roleTimeMoves !== [])): ?>
+                            <div id="temps-par-role" class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:col-span-2 xl:col-span-1">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Temps par rôle en jeu</p>
                                 <ul class="mt-2 space-y-1.5">
-                                    <?php $roleMax = max(1, (int) $atakRoleTimes[0]['seconds']); ?>
+                                    <?php $roleMax = max(1, (int) ($atakRoleTimes[0]['seconds'] ?? 1)); ?>
                                     <?php foreach (array_slice($atakRoleTimes, 0, 8) as $rt): ?>
                                     <li>
                                         <div class="flex items-baseline justify-between gap-3 text-xs">
@@ -926,6 +930,69 @@ if ($personnelFileIsRhFull) {
                                     <?php endforeach; ?>
                                 </ul>
                                 <p class="mt-2 text-[10px] text-slate-500">Relevé par le téléphone ATAK en partie (rôle tenu et slot joué).</p>
+                                <?php if ($canCorrectRoleTime): ?>
+                                <?php $personSeg = rawurlencode((string) ($roleTimePathSegment ?? '')); ?>
+                                <details class="mt-3 rounded-lg border border-slate-200 bg-white/70 px-3 py-2 text-xs text-slate-700">
+                                    <summary class="cursor-pointer font-semibold text-slate-800">Corriger le temps par rôle</summary>
+                                    <p class="mt-2 text-[11px] text-slate-500">Après une perte de synchro, déplacez le temps vers le bon rôle. Rien n’est perdu, chaque correction est journalisée et peut être annulée.</p>
+                                    <?php if ($atakRoleTimes !== []): ?>
+                                    <form method="post" action="<?= htmlspecialchars(url('personnel/' . $personSeg . '/temps-par-role/deplacer'), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 space-y-2">
+                                        <?= \App\Core\Csrf::field() ?>
+                                        <label class="block">
+                                            <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Déplacer le temps de</span>
+                                            <select name="from_key" required class="mt-0.5 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs">
+                                                <?php foreach ($atakRoleTimes as $rt): ?>
+                                                <option value="<?= htmlspecialchars((string) $rt['key'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $rt['label'] . ' (' . $roleDur((int) $rt['seconds']) . ')', ENT_QUOTES, 'UTF-8') ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </label>
+                                        <label class="block">
+                                            <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Vers le rôle</span>
+                                            <select name="to_key" required class="mt-0.5 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs">
+                                                <?php foreach ($atakRoleTimes as $rt): ?>
+                                                <option value="<?= htmlspecialchars((string) $rt['key'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $rt['label'], ENT_QUOTES, 'UTF-8') ?></option>
+                                                <?php endforeach; ?>
+                                                <option value="__new">Autre rôle (saisir ci-dessous)…</option>
+                                            </select>
+                                        </label>
+                                        <label class="block">
+                                            <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Nom du rôle, si autre</span>
+                                            <input type="text" name="to_label" maxlength="60" placeholder="ex. TACP" class="mt-0.5 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs">
+                                        </label>
+                                        <label class="block">
+                                            <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Minutes à déplacer</span>
+                                            <input type="number" name="minutes" min="1" step="1" placeholder="vide = tout" class="mt-0.5 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs">
+                                        </label>
+                                        <label class="block">
+                                            <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Motif</span>
+                                            <input type="text" name="reason" maxlength="255" placeholder="ex. perte de synchro, rôle tombé" class="mt-0.5 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs">
+                                        </label>
+                                        <button type="submit" class="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white">Déplacer le temps</button>
+                                    </form>
+                                    <?php endif; ?>
+                                    <?php if ($roleTimeMoves !== []): ?>
+                                    <p class="mt-3 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Journal des corrections</p>
+                                    <ul class="mt-1 space-y-1.5">
+                                        <?php foreach ($roleTimeMoves as $mv): ?>
+                                        <?php $mvTs = strtotime((string) ($mv['created_at'] ?? '')); ?>
+                                        <li class="rounded-md border border-slate-200 bg-white px-2 py-1.5 <?= $mv['reverted_at'] !== null ? 'opacity-60' : '' ?>">
+                                            <p><span class="font-semibold"><?= htmlspecialchars($roleDur((int) $mv['seconds']), ENT_QUOTES, 'UTF-8') ?></span> de <?= htmlspecialchars((string) $mv['from_label'], ENT_QUOTES, 'UTF-8') ?> vers <?= htmlspecialchars((string) $mv['to_label'], ENT_QUOTES, 'UTF-8') ?></p>
+                                            <p class="text-[10px] text-slate-500">Par <?= htmlspecialchars((string) ($mv['actor_name'] ?? '') !== '' ? (string) $mv['actor_name'] : 'inconnu', ENT_QUOTES, 'UTF-8') ?><?= $mvTs ? ' le ' . date('d/m/Y \à H:i', $mvTs) : '' ?><?php if (trim((string) ($mv['reason'] ?? '')) !== ''): ?> · <?= htmlspecialchars((string) $mv['reason'], ENT_QUOTES, 'UTF-8') ?><?php endif; ?></p>
+                                            <?php if ($mv['reverted_at'] !== null): ?>
+                                            <?php $rvTs = strtotime((string) $mv['reverted_at']); ?>
+                                            <p class="text-[10px] text-slate-500">Annulée<?= trim((string) ($mv['reverted_by_name'] ?? '')) !== '' ? ' par ' . htmlspecialchars((string) $mv['reverted_by_name'], ENT_QUOTES, 'UTF-8') : '' ?><?= $rvTs ? ' le ' . date('d/m/Y \à H:i', $rvTs) : '' ?></p>
+                                            <?php else: ?>
+                                            <form method="post" action="<?= htmlspecialchars(url('personnel/' . $personSeg . '/temps-par-role/' . (int) $mv['id'] . '/annuler'), ENT_QUOTES, 'UTF-8') ?>" class="mt-1">
+                                                <?= \App\Core\Csrf::field() ?>
+                                                <button type="submit" class="text-[11px] font-semibold text-sky-700 underline">Annuler cette correction</button>
+                                            </form>
+                                            <?php endif; ?>
+                                        </li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                    <?php endif; ?>
+                                </details>
+                                <?php endif; ?>
                             </div>
                             <?php endif; ?>
                             <?php if ($accountCreatedDisplay !== null): ?>
