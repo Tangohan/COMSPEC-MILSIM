@@ -65,6 +65,8 @@ private _tags = {
 private _newN = { !(((_x select 1) call _phoneSt) select 2) } count _phone;
 private _armed = uiNamespace getVariable ["COMSPEC_ATAK_PhotoDelArm", ["", -10]];
 private _isArmed = { params ["_k"]; (_armed select 0) isEqualTo _k && {diag_tickTime - (_armed select 1) <= 4} };
+private _dArm = _s getOrDefault ["dronePhDel", [-1, -10]];
+private _droneArmed = { params ["_k"]; (_dArm select 0) isEqualTo _k && {diag_tickTime - (_dArm select 1) <= 4} };
 private _pending = count (missionNamespace getVariable ["COMSPEC_Athena_PhotoPending", []]);
 
 // En-tête : une seule rangée d'onglets (TOUT / TÉLÉPHONE / DRONE / ENVOIS) et une ligne d'état de l'envoi.
@@ -117,7 +119,10 @@ private _droneRow = {
             ["COMPLÉTER", _open, true, true, "Donner un titre et une description avant l'envoi"]
          } else {
             [["ENVOYER", "RENVOYER"] select (_state in ["SENT", "FAILED"]), compile format ["['send', %1] call comspec_atak_native_fnc_dronePhoto;", _i], _state in ["LOCAL", "FAILED"], _state isNotEqualTo "SENDING", "Envoyer ce cliché vers Athena avec son titre, sa description et ses marquages"]
-         }],
+         },
+         [["SUPPRIMER", "CONFIRMER"] select ([_i] call _droneArmed),
+            compile format ["private _n = count (profileNamespace getVariable ['COMSPEC_ATAK_DronePhotos', []]); ['forget', %1] call comspec_atak_native_fnc_dronePhoto; if ((count (profileNamespace getVariable ['COMSPEC_ATAK_DronePhotos', []])) < _n) then { ['list'] call comspec_atak_native_fnc_photoLibrary; };", _i],
+            ["", "red"] select ([_i] call _droneArmed), _state isNotEqualTo "SENDING", "Effacer ce cliché et son fichier du téléphone (second appui pour confirmer). Une photo déjà reçue reste sur Athena."]],
         [0.36, 0.78, 0.42, 1]]
 };
 private _phoneRow = {
@@ -127,7 +132,8 @@ private _phoneRow = {
     ["person", "\z\comspec_atak_native\addons\main\data\ui_gallery.paa",
         format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.75' color='%3'>● %2</t>", [_name] call _esc, _st select 0, _st select 1],
         [["DÉTAILS", ["LIB", ["PHONE", toLower _name]] call _go, false, true, "Fiche de la photo : emplacement, état d'envoi ; envoyer ou supprimer"],
-         [["ENVOYER", "RENVOYER"] select ((_st select 2) || {(_st select 0) isEqualTo "ENVOI REFUSÉ"}), compile format ["['send', %1] call comspec_atak_native_fnc_photoLibrary;", _j], !(_st select 2), true, "Envoyer cette photo vers Athena (ATAK web)"]],
+         [["ENVOYER", "RENVOYER"] select ((_st select 2) || {(_st select 0) isEqualTo "ENVOI REFUSÉ"}), compile format ["['send', %1] call comspec_atak_native_fnc_photoLibrary;", _j], !(_st select 2), true, "Envoyer cette photo vers Athena (ATAK web)"],
+         [["SUPPRIMER", "CONFIRMER"] select ([str _j] call _isArmed), compile format ["['delete', %1] call comspec_atak_native_fnc_photoLibrary;", _j], ["", "red"] select ([str _j] call _isArmed), true, "Effacer le fichier du téléphone (second appui pour confirmer). Une photo déjà reçue reste sur Athena."]],
         [0.90, 0.94, 0.91, 1]]
 };
 
@@ -206,7 +212,7 @@ if (_tab isEqualTo "LIB") exitWith {
                 _shootBtn,
                 ["ACTUALISER", { ["list"] call comspec_atak_native_fnc_photoLibrary; [{ ['GALLERY'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, "", "Relire les photos du téléphone et demander à Athena lesquelles elle a déjà", _bridge],
                 _sendBtn,
-                [["TOUT SUPPRIMER", "CONFIRMER"] select (["ALL"] call _isArmed), { ["deleteAll"] call comspec_atak_native_fnc_photoLibrary; }, ["", "red"] select (["ALL"] call _isArmed), "Effacer du téléphone toutes ses photos (second appui pour confirmer). Les clichés du drone se suppriment un par un, depuis leur fiche.", _bridge && {(count _phone) > 0}]
+                [["TOUT SUPPRIMER", "CONFIRMER"] select (["ALL"] call _isArmed), { ["deleteAll"] call comspec_atak_native_fnc_photoLibrary; }, ["", "red"] select (["ALL"] call _isArmed), "Effacer du téléphone toutes ses photos et tous les clichés du drone (second appui pour confirmer). Les photos déjà reçues restent sur Athena.", _bridge && {_total > 0}]
             ]]]];
             if (_flt in ["ALL", "DRONE"]) then {
                 _rows pushBack ["section", format ["Clichés du drone (%1)", count _droneList], "Titre, description et marquages partent avec la photo"];
