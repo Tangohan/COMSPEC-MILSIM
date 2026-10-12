@@ -11939,18 +11939,19 @@ class AtakApiController
                 error_log('[atak/recon-images] activity ' . $logErr->getMessage());
             }
             // Relais Discord après l'enregistrement : photo jointe + carte, lieu, date/heure (champs facultatifs du jeu).
+            // Clichés du drone compris (flux drone:<netId>). read_url : lecture sur Athena (route habilitée si confidentiel).
             $discordMeta = $data + [
+                'feed_id' => mb_substr($feedId, 0, 120),
+                'read_url' => (string) ($row['url'] ?? ''),
                 'map_id' => $mapId > 0 ? $mapId : self::DEFAULT_MAP_ID,
                 'world_name' => mb_substr(trim((string) ($_POST['world_name'] ?? $_POST['worldName'] ?? '')), 0, 64),
                 'location' => mb_substr(trim((string) ($_POST['location'] ?? $_POST['nearest_location'] ?? $_POST['place'] ?? '')), 0, 120),
                 'game_date' => mb_substr(trim((string) ($_POST['game_date'] ?? $_POST['gameDate'] ?? '')), 0, 40),
                 'game_time' => mb_substr(trim((string) ($_POST['game_time'] ?? $_POST['gameTime'] ?? $_POST['daytime'] ?? '')), 0, 16),
             ];
-            // Cliché confidentiel : jamais relayé sur Discord (salon ouvert à toute la communauté).
-            register_shutdown_function(static function () use ($tenantId, $path, $discordMeta, $isConfidential): void {
-                if ($isConfidential) {
-                    return;
-                }
+            // Cliché confidentiel : message, lien de lecture et note seulement, jamais l'image (salon ouvert à
+            // toute la communauté) ; cliché SSE : image floutée. Voir DiscordEventRelayService::notifyQuickPicture.
+            register_shutdown_function(static function () use ($tenantId, $path, $discordMeta): void {
                 try {
                     // Réponse rendue au jeu d'abord : l'envoi Discord (photo) ne retarde pas l'accusé d'upload.
                     if (function_exists('fastcgi_finish_request')) {
