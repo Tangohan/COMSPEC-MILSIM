@@ -794,6 +794,13 @@ switch (_tab) do {
                 ]]
             ];
         };
+        // Télécommande sur le vrai téléphone du joueur : page Athena /telecommande-drone (QR code fixe de l'adresse du site
+        // de production, tools/gen_remote_qr.py ; l'adresse écrite suit celle réglée pour Athena).
+        _rows append [
+            ["section", "Télécommande sur votre téléphone", "Scannez avec votre vrai téléphone, connecté à votre compte Athena : boutons du drone, rôles et essaim, ordres transmis par Athena en quelques secondes."],
+            ["image", "\z\comspec_atak_native\addons\main\data\drone_remote_qr_ca.paa"],
+            ["text", format ["<t size='0.85' color='#8a9a93'>%1/telecommande-drone</t>", profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"]]]
+        ];
         // Ajout d'un drone : posé à moins de 15 m, libre.
         private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {!(_x in _fleet)} && {(_x getVariable ["COMSPEC_DroneOwner", ""]) in ["", getPlayerUID player]} };
         _rows pushBack ["section", "Ajouter un drone", ["Posez un autre drone à vos pieds : le drone piloté continue seul, le nouveau est pris en main.", "Flotte complète (4 drones)."] select ((count _fleet) >= 4)];

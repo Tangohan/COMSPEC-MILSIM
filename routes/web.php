@@ -552,6 +552,9 @@ return function (Router $router) {
     // Liaison du jeu par code affiché dans Arma (connexion au compte Athena, sans clé de communauté).
     $router->get('/lier', [\App\Controllers\Web\AtakQuickLinkController::class, 'show']);
     $router->post('/lier', [\App\Controllers\Web\AtakQuickLinkController::class, 'confirm'], [AuthMiddleware::class, AtakModuleSanctionMiddleware::class]);
+    // Télécommande drone sur le vrai téléphone (QR code de l'app Drone en jeu ou du panneau Drones d'Overwatch).
+    $router->get('/telecommande-drone', [\App\Controllers\Web\AtakDroneRemoteController::class, 'show']);
+    $router->get('/telecommande-drone/qr.png', [\App\Controllers\Web\AtakDroneRemoteController::class, 'qr']);
     $router->post('/account/security/devices/revoke', [\App\Controllers\Web\AtakDeviceSecurityController::class, 'revoke'], [AuthMiddleware::class]);
     $router->get('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
     $router->post('/account/image', [AccountController::class, 'image'], [AuthMiddleware::class]);
