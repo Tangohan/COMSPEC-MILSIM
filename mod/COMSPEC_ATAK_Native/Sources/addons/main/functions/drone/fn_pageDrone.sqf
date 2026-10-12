@@ -1,6 +1,6 @@
 /*
     App Drone : pilotage d'un drone posé par le joueur (quadricoptère ou drone de sac à dos).
-    Appairage au pied du pilote, puis cinq onglets (clé droneTab de l'état) :
+    Appairage au pied du pilote, puis six onglets (clé droneTab de l'état) :
       VOL      (PILOT)   : caméra (qualité, vue totale, sens du glisser, source du flux), décollage, stationnaire, suivi,
                            retour, atterrissage, altitude, vitesse, profil CQB, veille, dépannage, identité, transfert ;
       TÂCHES   (TASK)    : tâche sur point (grille ou carte) : aller, orbite, observer, escorte ; frappe ; recherche ;
@@ -9,6 +9,7 @@
       PHOTOS   (PHOTO)   : clichés pris (fn_dronePhoto) ; la fiche d'un cliché (titre, description, SSE, confidentiel,
                            envoi) s'ouvre en fenêtre plein écran (fn_dronePhoto "modal") à la place de toute la page ;
       JOURNAL  (LOG)     : chaque événement daté.
+      FLOTTE   (FLEET)   : drones appairés au téléphone (fn_droneFleet) : rôle de chacun, PILOTER, ordres à l'essaim, ajout d'un drone.
     Vue caméra (camBind de fn_droneAction : la caméra rend avant que l'image soit posée) :
       PLEIN        : télémétrie, image 16/9, barre de commandes groupée (CAMÉRA, CIBLES, VOL, AFFICHAGE) ;
       MENUS        : image réduite en haut, barre compacte, onglets dessous (clé droneCamSplit) ;
@@ -474,6 +475,7 @@ _rows pushBack ["segment", "", [
     ["TÂCHES", ["tab", "TASK"] call _act, _tab isEqualTo "TASK"],
     [format ["CIBLES (%1)", count _locksAll], ["tab", "TARGETS"] call _act, _tab isEqualTo "TARGETS"],
     [format ["PHOTOS (%1)", count _photos], ["tab", "PHOTO"] call _act, _tab isEqualTo "PHOTO"],
+    [format ["FLOTTE (%1)", count (["list"] call comspec_atak_native_fnc_droneFleet)], ["tab", "FLEET"] call _act, _tab isEqualTo "FLEET"],
     ["JOURNAL", ["tab", "LOG"] call _act, _tab isEqualTo "LOG"]
 ]];
 _rows pushBack ["text", format ["<t size='0.78' color='#8a9a93'>%1%2</t>", (createHashMapFromArray [
@@ -481,7 +483,8 @@ _rows pushBack ["text", format ["<t size='0.78' color='#8a9a93'>%1%2</t>", (crea
     ["TASK", "Tâches sur un point de la carte, frappe d'un drone armé, recherche d'ennemis."],
     ["TARGETS", "Cibles marquées au viseur, à faire suivre par le drone dans l'ordre choisi ; détections automatiques de la caméra."],
     ["PHOTO", "Clichés pris avec la caméra du drone : fiche (titre, description, SSE, confidentiel) puis envoi vers Athena."],
-    ["LOG", "Tout ce qui s'est passé pendant le vol, daté."]
+    ["LOG", "Tout ce qui s'est passé pendant le vol, daté."],
+    ["FLEET", "Plusieurs drones au même téléphone : rôle de chacun (suivi, CQB, surveillance, garde rapprochée), ordres à tout l'essaim."]
 ]) getOrDefault [_tab, ""], ["", "  <t color='#4da3ff'>· Suivi des cibles en cours</t>"] select _seqOn]];
 if (!_camOn && {_tab isNotEqualTo "LOG"}) then {
     _rows pushBack ["buttons", [["OUVRIR LA CAMÉRA", ["cam"] call _act, true]]];
@@ -680,7 +683,7 @@ switch (_tab) do {
 
         // Détections automatiques : ce que la caméra relève seule en vol (ex-onglet PISTES).
         _rows append [
-            ["section", format ["Détections automatiques : %1", count _tracks], "Ce que la caméra du drone repère seule en vol : personnel jusqu'à 450 m, véhicules jusqu'à 700 m. MARQUER (LOCK) en fait une cible marquée."],
+            ["section", format ["Détections automatiques : %1", count _tracks], ["Désactivé sur ce serveur (réglage admin « Repérage automatique par drone ») : repérez et marquez vous-même à la caméra.", "Ce que la caméra du drone repère seule en vol : personnel jusqu'à 450 m, véhicules jusqu'à 700 m. MARQUER (LOCK) en fait une cible marquée."] select (missionNamespace getVariable ["comspec_atak_native_drone_autospot", false])],
             ["buttons", [
                 ["CAMÉRA DEVANT", ["camAim", ""] call _act, false, _camOn && {_aim isNotEqualTo ""}, "Remet la caméra du drone droit devant"],
                 ["EFFACER LES DÉTECTIONS", ["tracksClear"] call _act, false, (count _tracks) > 0, "Vide la liste des détections automatiques"]
@@ -738,6 +741,70 @@ switch (_tab) do {
                 [["SUPPRIMER", "CONFIRMER LA SUPPRESSION"] select (((_s getOrDefault ["dronePhDel", [-1, -10]]) select 0) isEqualTo _i && {diag_tickTime - ((_s getOrDefault ["dronePhDel", [-1, -10]]) select 1) < 4}), compile format ["['forget', %1] call comspec_atak_native_fnc_dronePhoto;", _i], false, true, "Supprime le cliché du téléphone (second appui pour confirmer)"]
             ]];
         } forEach ((["list"] call comspec_atak_native_fnc_dronePhoto) select [0, 12]);
+    };
+    case "FLEET": {
+        private _fleet = ["list"] call comspec_atak_native_fnc_droneFleet;
+        private _fc = { params ["_a", "_x"]; compile format ["%1 call comspec_atak_native_fnc_droneFleet;", str _a] };
+        private _roles = createHashMapFromArray [["", "aucun rôle"], ["ME", "me suit"], ["CQB", "me suit en CQB"], ["POINT", "surveille le point"], ["PLAYER", "surveille le joueur"], ["GUARD", "garde rapprochée"], ["HUNT", "recherche"]];
+        _rows pushBack ["section", format ["Flotte : %1 drone%2", count _fleet, ["", "s"] select ((count _fleet) > 1)], "Jusqu'à 4 drones par téléphone. Un seul est piloté (caméra, onglets VOL, TÂCHES, CIBLES) ; les autres tiennent seuls leur rôle ou leur dernier ordre, et rentrent seuls si la liaison ou la batterie lâche."];
+        {
+            private _x0 = _x;
+            private _nid = netId _x0;
+            private _lk = ["link", _x0] call comspec_atak_native_fnc_droneFleet;
+            private _r = _x0 getVariable ["COMSPEC_DroneRole", ""];
+            private _isA = _x0 isEqualTo _d;
+            private _rc = { params ["_role"]; compile format ["['role', [objectFromNetId %1, %2]] call comspec_atak_native_fnc_droneFleet;", str _nid, str _role] };
+            _rows pushBack ["text", format ["<t font='RobotoCondensedBold'>%1</t>%2  <t size='0.8' color='%3'>%4</t><br/><t size='0.8' color='#8a9a93'>%5 · %6 m sol · batterie %7 %% · à %8 m · liaison %9/4</t>",
+                [_x0, [], "NAME"] call comspec_atak_native_fnc_droneOsd, ["", "  <t size='0.75' color='#4da3ff'>PILOTÉ</t>"] select _isA,
+                ["#c9d4cf", "#5cc76b"] select (_r isNotEqualTo ""), toUpper (_roles getOrDefault [_r, _r]),
+                toLower (_x0 getVariable ["COMSPEC_DroneMode", "HOVER"]), round ((getPosATL _x0) select 2), round (100 * fuel _x0), _lk select 1, _lk select 0]];
+            _rows pushBack ["buttons", [
+                ["ME SUIVRE", ["ME"] call _rc, _r isEqualTo "ME", true, "Suit le pilote, décalé sur le côté selon son rang dans la flotte"],
+                ["CQB", ["CQB"] call _rc, _r isEqualTo "CQB", true, "Me suit en CQB : vol bas à 3 m, 10 km/h, arrêt devant obstacle"],
+                ["GARDE", ["GUARD"] call _rc, _r isEqualTo "GUARD", missionNamespace getVariable ["comspec_atak_native_drone_autospot", false], "Garde rapprochée : suit le pilote, repère seul les ennemis proches, prévient et va observer le plus proche"]
+            ]];
+            _rows pushBack ["buttons", [
+                ["SURVEILLER LE POINT", ["POINT"] call _rc, _r isEqualTo "POINT", true, "Orbite caméra sur le point choisi dans l'onglet TÂCHES (grille ou carte)"],
+                ["SURVEILLER LE JOUEUR", ["PLAYER"] call _rc, _r isEqualTo "PLAYER", true, "Escorte le joueur choisi dans l'onglet VOL (30 m derrière)"],
+                ["RECHERCHE", ["HUNT"] call _rc, _r isEqualTo "HUNT", true, "Cherche des ennemis autour du pilote (chaque drone son secteur)"]
+            ]];
+            private _b = [];
+            if (!_isA) then { _b pushBack ["PILOTER", compile format ["['switch', objectFromNetId %1] call comspec_atak_native_fnc_droneFleet;", str _nid], true, true, "Prend ce drone en main (caméra, onglets) ; le drone piloté passe en arrière-plan et continue seul"]; };
+            _b pushBack ["STATIONNAIRE", compile format ["(objectFromNetId %1) setVariable ['COMSPEC_DroneRole', '', true]; ['send', [objectFromNetId %1, 'hover', []]] call comspec_atak_native_fnc_droneFleet;", str _nid], false, true];
+            _b pushBack ["RTB", compile format ["private _x = objectFromNetId %1; _x setVariable ['COMSPEC_DroneRole', '', true]; ['send', [_x, 'rth', [[_x getVariable ['COMSPEC_DroneHomePos', getPosASL player], missionNamespace getVariable ['COMSPEC_ATAK_DroneHome', getPosASL player]] select (_x isEqualTo (missionNamespace getVariable ['COMSPEC_ATAK_Drone', objNull]))]]] call comspec_atak_native_fnc_droneFleet;", str _nid], false, true, "Retour au point de décollage de ce drone"];
+            _b pushBack ["LIBÉRER", compile format ["['drop', objectFromNetId %1] call comspec_atak_native_fnc_droneFleet;", str _nid], false, !_isA || {(count _fleet) > 1}, "Désappaire ce drone du téléphone"];
+            _rows pushBack ["buttons", _b];
+        } forEach _fleet;
+        if ((count _fleet) > 1) then {
+            _rows append [
+                ["section", "Essaim", "Un appui, tous les drones de la flotte : chacun garde sa place (décalé sur le côté, orbites et secteurs de recherche différents)."],
+                ["buttons", [
+                    ["TOUS ME SUIVRE", [["swarm", "ME"]] call _fc, false, true],
+                    ["TOUS EN CQB", [["swarm", "CQB"]] call _fc, false, true],
+                    ["TOUS EN GARDE", [["swarm", "GUARD"]] call _fc, false, missionNamespace getVariable ["comspec_atak_native_drone_autospot", false]]
+                ]],
+                ["buttons", [
+                    ["TOUS SUR LE POINT", [["swarm", "POINT"]] call _fc, false, true],
+                    ["TOUS EN RECHERCHE", [["swarm", "HUNT"]] call _fc, false, true]
+                ]],
+                ["buttons", [
+                    ["TOUS STATIONNAIRE", [["swarm", "HOVER"]] call _fc, false, true],
+                    ["TOUS RTB", [["swarm", "RTH"]] call _fc, false, true],
+                    ["TOUS ATTERRIR", [["swarm", "LAND"]] call _fc, false, true]
+                ]]
+            ];
+        };
+        // Ajout d'un drone : posé à moins de 15 m, libre.
+        private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {!(_x in _fleet)} && {(_x getVariable ["COMSPEC_DroneOwner", ""]) in ["", getPlayerUID player]} };
+        _rows pushBack ["section", "Ajouter un drone", ["Posez un autre drone à vos pieds : le drone piloté continue seul, le nouveau est pris en main.", "Flotte complète (4 drones)."] select ((count _fleet) >= 4)];
+        if ((count _near) isEqualTo 0 && {(count _fleet) < 4}) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun drone libre à moins de 15 m.</t>"]; };
+        if ((count _fleet) < 4) then {
+            {
+                _rows pushBack ["person", getText (configOf _x >> "picture"),
+                    format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>À %2 m · batterie %3 %%</t>", [_x, [], "NAME"] call comspec_atak_native_fnc_droneOsd, round (player distance _x), round (100 * fuel _x)],
+                    [["APPAIRER", compile format ["['pair', objectFromNetId %1] call comspec_atak_native_fnc_droneAction;", str netId _x], true]]];
+            } forEach _near;
+        };
     };
     case "LOG": {
         private _lg = missionNamespace getVariable ["COMSPEC_ATAK_DroneLog", []];

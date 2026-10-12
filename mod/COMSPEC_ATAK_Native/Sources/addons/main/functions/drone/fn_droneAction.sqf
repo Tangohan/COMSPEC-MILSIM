@@ -3,7 +3,9 @@
     ensuite la liaison radio porte comspec_atak_native_drone_range mètres, réduite par le relief.
     Liaison perdue : le drone rentre seul à son point de décollage, comme un DJI.
     Drones du mod Mavic (Mavic_drone_base_F) : appairage identique, signal repris de Mavic_fnc_getSignal.
-      ["pair", drone] / ["unpair"]
+      ["pair", drone] / ["unpair"]   un drone de plus s'ajoute à la flotte (fn_droneFleet, 4 au plus), le drone piloté
+                                  d'avant continue seul ; désappairer passe au drone suivant de la flotte ;
+      ["fleetAdopt", drone]       ce drone de la flotte devient le drone piloté (fn_droneFleet "switch" / "promote") ;
       ["mode", "hover" | "me" | "player" | "home" | "land" | "hunt"]
       ["player", uid]             joueur à suivre ;
       ["alt", m] / ["speed", km/h]
@@ -119,6 +121,8 @@ private _send = {
     if (_cmd in _flight) then { missionNamespace setVariable ["COMSPEC_ATAK_DroneOrder", [_cmd, _args, time, _d getVariable ["COMSPEC_DroneAckN", 0], false, false, -1, 1e9, time]]; };
     // Un ordre de vol du pilote reprend la main sur le suivi des cibles marquées.
     if (_cmd in _flight && {!(missionNamespace getVariable ["COMSPEC_ATAK_DroneSeqSending", false])}) then { ["stop", "", true] call comspec_atak_native_fnc_droneSeq; };
+    // Un ordre du pilote remplace le rôle tenu seul par le drone (fn_droneFleet : garde, surveillance...).
+    if (_cmd in _flight && {!(missionNamespace getVariable ["COMSPEC_ATAK_DroneRoleSending", false])} && {(_d getVariable ["COMSPEC_DroneRole", ""]) isNotEqualTo ""}) then { _d setVariable ["COMSPEC_DroneRole", "", true]; };
     ["comspec_atak_native_droneCmd", [_d, _cmd, _args], _d] call CBA_fnc_targetEvent;
 };
 private _mapRender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
@@ -535,7 +539,7 @@ private _adopt = {
     missionNamespace setVariable ["COMSPEC_ATAK_DroneLinked", true];
     missionNamespace setVariable ["COMSPEC_ATAK_DroneOrder", []];
     if ((missionNamespace getVariable ["COMSPEC_ATAK_DronePfh", -1]) < 0) then {
-        missionNamespace setVariable ["COMSPEC_ATAK_DronePfh", [{ ["tick"] call comspec_atak_native_fnc_droneAction; }, 1] call CBA_fnc_addPerFrameHandler];
+        missionNamespace setVariable ["COMSPEC_ATAK_DronePfh", [{ ["tick"] call comspec_atak_native_fnc_droneAction; ["tick"] call comspec_atak_native_fnc_droneFleet; }, 1] call CBA_fnc_addPerFrameHandler];
     };
 };
 switch (_act) do {
@@ -546,7 +550,17 @@ switch (_act) do {
         if (isNull _new || {!alive _new} || {(player distance _new) > 15}) exitWith { ["WARNING", "Posez le drone à vos pieds pour l'appairer"] call _say; };
         private _owner = _new getVariable ["COMSPEC_DroneOwner", ""];
         if (_owner isNotEqualTo "" && {_owner isNotEqualTo getPlayerUID player}) exitWith { ["WARNING", "Ce drone est déjà appairé à un autre téléphone"] call _say; };
-        if (!isNull _d && {_d isNotEqualTo _new}) then { ["unpair"] call comspec_atak_native_fnc_droneAction; };
+        // Flotte : un drone déjà appairé devient le drone piloté ; un nouveau drone s'ajoute, celui d'avant continue seul.
+        if (_new in (missionNamespace getVariable ["COMSPEC_ATAK_DroneFleet", []])) exitWith { ["switch", _new] call comspec_atak_native_fnc_droneFleet; };
+        if (_new isEqualTo _d) exitWith { call _render; };
+        if (!isNull _d && {alive _d}) then {
+            if ((count (["list"] call comspec_atak_native_fnc_droneFleet)) >= 4) exitWith { ["WARNING", "Flotte complète : 4 drones au plus par téléphone"] call _say; _new = objNull; };
+            ["keep", _d] call comspec_atak_native_fnc_droneFleet;
+            call _camClose;
+            missionNamespace setVariable ["COMSPEC_ATAK_DroneCamTgt", ""];
+            [format ["Flotte : %1 continue seul, nouveau drone appairé", [_d, [], "NAME"] call comspec_atak_native_fnc_droneOsd], "#4da3ff"] call _log;
+        };
+        if (isNull _new) exitWith {};
         _new setVariable ["COMSPEC_DroneAlt", _s getOrDefault ["droneAlt", 40], true];
         _new setVariable ["COMSPEC_DroneSpd", _s getOrDefault ["droneSpd", 40], true];
         [_new] call _adopt;
@@ -564,8 +578,27 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneCamTgt", ""];
         missionNamespace setVariable ["COMSPEC_ATAK_Drone", objNull];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneOrder", []];
-        [missionNamespace getVariable ["COMSPEC_ATAK_DronePfh", -1]] call CBA_fnc_removePerFrameHandler;
-        missionNamespace setVariable ["COMSPEC_ATAK_DronePfh", -1];
+        // Flotte : le drone suivant devient le drone piloté (la surveillance continue).
+        ["promote"] call comspec_atak_native_fnc_droneFleet;
+        if (isNull (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])) then {
+            [missionNamespace getVariable ["COMSPEC_ATAK_DronePfh", -1]] call CBA_fnc_removePerFrameHandler;
+            missionNamespace setVariable ["COMSPEC_ATAK_DronePfh", -1];
+        };
+        call _render;
+    };
+    // Flotte (fn_droneFleet) : ce drone devient le drone piloté ; celui d'avant, vivant, reste dans la flotte et continue seul.
+    case "fleetAdopt": {
+        private _new = _arg;
+        if (isNull _new || {!alive _new}) exitWith {};
+        call _camClose;
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneCamTgt", ""];
+        ["stop", "", true] call comspec_atak_native_fnc_droneSeq;
+        if (!isNull _d && {alive _d} && {_d isNotEqualTo _new}) then { ["keep", _d] call comspec_atak_native_fnc_droneFleet; };
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneFleet", (missionNamespace getVariable ["COMSPEC_ATAK_DroneFleet", []]) - [_new]];
+        _s set ["droneAlt", _new getVariable ["COMSPEC_DroneAlt", 40]];
+        _s set ["droneSpd", _new getVariable ["COMSPEC_DroneSpd", 40]];
+        [_new, _new getVariable ["COMSPEC_DroneHomePos", []]] call _adopt;
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneLastMode", _new getVariable ["COMSPEC_DroneMode", ""]];
         call _render;
     };
     case "mode": {
@@ -1295,7 +1328,8 @@ switch (_act) do {
             };
         };
         // Capteur : seulement en vol et avec le retour vidéo.
-        if ((_l select 2) && {((getPosATL _d) select 2) > 3} && {_m isNotEqualTo "STANDBY"}) then { call _scan; };
+        // Réglage serveur « Repérage automatique par drone » (désactivé par défaut) : sinon le pilote repère lui-même.
+        if ((_l select 2) && {((getPosATL _d) select 2) > 3} && {_m isNotEqualTo "STANDBY"} && {missionNamespace getVariable ["comspec_atak_native_drone_autospot", false]}) then { call _scan; };
         // Ordre qui n'avance pas : reprise automatique, une fois (pas en pilotage manuel ni en veille).
         if ((_l select 2) && {!(_m in ["MANUAL", "STANDBY"])}) then { call _watch; };
         private _osd = uiNamespace getVariable ["COMSPEC_ATAK_DroneOsd", controlNull];

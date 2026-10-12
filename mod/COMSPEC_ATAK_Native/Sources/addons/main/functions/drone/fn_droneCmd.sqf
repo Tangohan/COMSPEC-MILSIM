@@ -42,6 +42,7 @@
     COMSPEC_DroneTask ([tâche, position ASL, rayon] de la tâche en cours, [] sinon),
     COMSPEC_DroneRoute ([positions, mode, étape en cours] de la route, pour la carte),
     COMSPEC_DroneEvt ([n°, type, position ASL, quoi] : dernier événement de la recherche, lu par le journal du pilote),
+    COMSPEC_DroneSlot (rang dans la flotte du pilote, fn_droneFleet : suivi décalé sur le côté), COMSPEC_DroneRole (rôle tenu seul),
     COMSPEC_DroneAckN (compteur d'ordres traités), COMSPEC_DroneStandby ("LAND" | "HOVER" en veille), COMSPEC_DroneForced (time du
     dernier FORCER L'EXÉCUTION). Posées par le téléphone : COMSPEC_DroneOwner, COMSPEC_DroneLock, COMSPEC_DroneName, COMSPEC_DroneIcon.
 */
@@ -183,7 +184,10 @@ if (_cqb && {_cmd in ["takeoff", "hover", "follow", "escort", "goto", "home", "r
                 if (!alive _goal) then { _pos } else {
                     private _dir = getDir (vehicle _goal);
                     private _off = [5, 0] select (_kind isEqualTo "HOME");
-                    (getPosASL _goal) vectorAdd [-_off * sin _dir, -_off * cos _dir, 0]
+                    // Flotte : chaque drone de rang > 0 se tient sur le côté (2,5 m par rang, alternativement à droite et à gauche).
+                    private _sl = _d getVariable ["COMSPEC_DroneSlot", 0];
+                    private _lat = [0, 2.5 * ceil (_sl / 2) * ([-1, 1] select ((_sl mod 2) isEqualTo 1))] select (_kind isNotEqualTo "HOME");
+                    (getPosASL _goal) vectorAdd [-_off * sin _dir + _lat * cos _dir, -_off * cos _dir - _lat * sin _dir, 0]
                 }
             } else { _goal };
             private _h = [(_g select 0) - (_pos select 0), (_g select 1) - (_pos select 1), 0];
@@ -305,7 +309,10 @@ switch (_cmd) do {
                 private _vt = velocity (vehicle _t);
                 private _moving = (vectorMagnitude [_vt select 0, _vt select 1, 0]) > 1;
                 if (_moving) then { _ref = (_vt select 0) atan2 (_vt select 1); };
-                private _p = (getPosASL _t) vectorAdd [-_off * sin _ref, -_off * cos _ref, 0];
+                // Flotte : rang > 0 décalé sur le côté (8 m par rang, alternativement à droite et à gauche) pour ne pas se gêner.
+                private _sl = _d getVariable ["COMSPEC_DroneSlot", 0];
+                private _lat = [0, 8 * ceil (_sl / 2) * ([-1, 1] select ((_sl mod 2) isEqualTo 1))] select (_cmd isNotEqualTo "home");
+                private _p = (getPosASL _t) vectorAdd [-_off * sin _ref + _lat * cos _ref, -_off * cos _ref - _lat * sin _ref, 0];
                 if (_cmd isEqualTo "home" && {(_d distance2D _t) < 25}) exitWith { _d setVariable ["COMSPEC_DroneMode", "LAND", true]; _d land "LAND"; };
                 _d flyInHeight [_d getVariable ["COMSPEC_DroneAlt", 40], true];
                 _d limitSpeed (_d getVariable ["COMSPEC_DroneSpd", 40]);

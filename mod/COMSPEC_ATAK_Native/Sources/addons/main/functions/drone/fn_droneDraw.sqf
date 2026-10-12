@@ -1,6 +1,6 @@
 /*
     Carte : drone appairé (icône et nom choisis par le pilote, position, mode, ligne vers la cible d'une frappe), sa tâche en cours (point, orbite,
-    zone de recherche, route numérotée), le tracé en cours de l'outil DRONE de la carte et les pistes capteur
+    zone de recherche, route numérotée), les autres drones de la flotte et les contacts de la garde rapprochée, le tracé en cours de l'outil DRONE de la carte et les pistes capteur
     (carrés rouges : ennemis, jaunes : inconnus, bleus : amis ; estompés quand la piste n'est plus vue).
     Appelé depuis fn_mapOnDraw. Params : [contrôle carte]
 */
@@ -43,6 +43,8 @@ if ((_s getOrDefault ["mapMode", "SELECT"]) isEqualTo "DRONE") then {
     };
 };
 
+// Flotte : drones en arrière-plan et contacts de la garde rapprochée (fn_droneFleet).
+["draw", _map] call comspec_atak_native_fnc_droneFleet;
 private _d = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
 if (isNull _d || {!alive _d}) exitWith {};
 // Sans liaison, la carte garde la dernière position reçue.
