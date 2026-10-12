@@ -39,6 +39,7 @@ class CfgFunctions {
         tag = "comspec_sse";
         class analysis {
             file = "z\comspec_sse\addons\analysis\functions";
+            class anaInitSettings {};
             class orgTables {};
             class anaLabel {};
             class orgOp {};
@@ -59,6 +60,12 @@ class CfgFunctions {
             class chartPick {};
             class chartDetail {};
         };
+    };
+};
+
+class Extended_PreInit_EventHandlers {
+    class comspec_sse_analysis {
+        init = "call compile preprocessFileLineNumbers 'z\comspec_sse\addons\analysis\XEH_preInit.sqf'";
     };
 };
 

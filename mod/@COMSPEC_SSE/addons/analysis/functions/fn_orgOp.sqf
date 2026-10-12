@@ -207,7 +207,7 @@ switch (_op) do {
             } forEach _mem;
             {
                 ["reveal", [_x, 1, format ["contact de %1", _m get "name"], _by]] call comspec_sse_fnc_orgOp;
-            } forEach ((_pool call BIS_fnc_arrayShuffle) select [0, 2]);
+            } forEach ((_pool call BIS_fnc_arrayShuffle) select [0, round (missionNamespace getVariable ["comspec_sse_ana_contactsPerExploit", 2])]);
         };
         // Un objet lié à une personne dans le graphe la fait soupçonner.
         if (!(_e isKindOf "CAManBase") && {!isNil "comspec_sse_linkGraph"}) then {

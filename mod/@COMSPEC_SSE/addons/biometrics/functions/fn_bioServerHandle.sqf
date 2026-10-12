@@ -77,7 +77,7 @@ if (!isNil "comspec_sse_fnc_orgOp" && {(toLower _op) in ["search", "enroll"]}) t
     if (_u isEqualType objNull && {!isNull _u}) then {
         ["seen", [_u]] call comspec_sse_fnc_orgOp;
         if ((_res getOrDefault ["verdict", ""]) isEqualTo "match" && {!(_res getOrDefault ["impostor", false])}) then {
-            ["reveal", [_u, 2, "identification biométrique", _requester]] call comspec_sse_fnc_orgOp;
+            ["reveal", [_u, [1, 2] select (missionNamespace getVariable ["comspec_sse_ana_bioConfirms", true]), "identification biométrique", _requester]] call comspec_sse_fnc_orgOp;
         };
     };
 };

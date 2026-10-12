@@ -86,7 +86,7 @@ private _create = {
     if (!(_case isEqualType "") || {_case isEqualTo ""}) then { _case = missionNamespace getVariable ["comspec_sse_missionId", "OP"]; };
     private _n = str comspec_sse_custodyN;
     while { count _n < 4 } do { _n = "0" + _n; };
-    private _id = format ["P-%1-%2", _case, _n];
+    private _id = format ["%1-%2-%3", missionNamespace getVariable ["comspec_sse_ana_piecePrefix", "P"], _case, _n];
     private _label = "";
     if (!isNil "comspec_sse_fnc_makeEvidenceLabel") then { _label = [_e] call comspec_sse_fnc_makeEvidenceLabel; };
     private _data = [_e] call comspec_sse_fnc_getData;
@@ -122,7 +122,7 @@ switch (_op) do {
         private _p = [_e, _by] call _create;
         if ((_p get "state") isEqualTo "SCELLÉE") exitWith { [_by, format ["Pièce %1 déjà sous scellé n° %2.", _p get "id", _p get "seal"]] call _note; _p get "id" };
         comspec_sse_custodySealN = comspec_sse_custodySealN + 1;
-        private _seal = format ["SC-%1", comspec_sse_custodySealN];
+        private _seal = format ["%1-%2", missionNamespace getVariable ["comspec_sse_ana_sealPrefix", "SC"], comspec_sse_custodySealN];
         private _again = (_p get "seals") isNotEqualTo [];
         (_p get "seals") pushBack _seal;
         _p set ["seal", _seal];

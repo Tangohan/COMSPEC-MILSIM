@@ -78,6 +78,14 @@ NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 [*] ACE : « Campagne en cours » (type, mission n°, personnages récurrents, journal de campagne)
 [/list]
 
+[h2]Tutoriels, guide et personnalisation[/h2]
+[list]
+[*] Guide complet du mod en PDF (joueurs, chefs de mission, Zeus) livré avec le mod
+[*] Manuel de terrain Arma « COMSPEC SSE » : 10 fiches, ouvrables depuis le menu ACE (« Guide SSE »), la barre de menus d'Eden et Zeus
+[*] Zeus : « Tutoriel : poser un exercice ici » pose une cellule complète (un sujet qui se rend, un corps, téléphone et documents du chef, cache d'armes) pour un drill immédiat
+[*] Réglages CBA « Organisations et scellés » : rôles et natures d'organisation en plus, noms de code, contacts révélés par exploitation, préfixes des pièces et des scellés, niveau atteint par une identification biométrique
+[/list]
+
 [h2]Configuration[/h2]
 [list]
 [*] Réglages CBA COMSPEC SSE › Biométrie et Biométrie — population
