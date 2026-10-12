@@ -406,6 +406,36 @@ private _scan = {
         _tracks deleteAt ((_old select 0) select 1);
     };
     missionNamespace setVariable ["COMSPEC_ATAK_DroneTracks", _tracks];
+    // Remontée au poste (couche « contacts vus par drone » de la carte TOC) : pistes ennemies ou inconnues nouvelles,
+    // déplacées de plus de 50 m ou constatées détruites (BDA). Toutes les 5 s au plus, 6 pistes par passage.
+    if (diag_tickTime >= (uiNamespace getVariable ["COMSPEC_ATAK_DroneTrkTx", 0]) && {[] call comspec_atak_native_fnc_bridge}) then {
+        uiNamespace setVariable ["COMSPEC_ATAK_DroneTrkTx", diag_tickTime + 5];
+        private _sent = missionNamespace getVariable ["COMSPEC_ATAK_DroneTrkSent", createHashMap];
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneTrkSent", _sent];
+        private _n = 0;
+        private _me = [player] call comspec_atak_native_fnc_unitCallsign;
+        {
+            _y params ["_o", "_name", "_pos", "_seen", "", "_tag", "", "_num", "_state"];
+            private _bda = _state isEqualTo "DÉTRUIT";
+            private _prev = _sent getOrDefault [_x, []];
+            if (_n >= 6) exitWith {};
+            if (_tag isEqualTo "AMI" || {!_bda && {time - _seen > 10}}) then { continue; };
+            // Déjà envoyée : BDA envoyé une fois, piste vivante renvoyée seulement si elle a bougé.
+            if ((count _prev) > 0 && {(_prev select 0) || {!_bda && {((_prev select 1) distance2D _pos) < 50}}}) then { continue; };
+            _sent set [_x, [_bda, _pos]];
+            _n = _n + 1;
+            private _type = switch (true) do { case (isNull _o): { "UNKNOWN" }; case (_o isKindOf "CAManBase"): { "INFANTRY" }; case (_o isKindOf "Air"): { "AIR" }; default { "VEHICLE" }; };
+            private _pay = createHashMapFromArray [
+                ["t", ["obs", "bda"] select _bda], ["track_id", "DRN-" + (_x select [0, 12])], ["source", "drone"],
+                ["label", format ["Drone %1 · %2", [_num, 2] call CBA_fnc_formatNumber, _name]], ["track_type", _type],
+                ["affiliation", ["UNKNOWN", "HOSTILE"] select (_tag isEqualTo "ENNEMI")], ["x", round (_pos select 0)], ["y", round (_pos select 1)],
+                ["call_sign", _me], ["mission_key", missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", ""]]
+            ];
+            if (_bda) then { _pay set ["assessment", "DESTROYED"]; };
+            "COMSPECExtension" callExtension ["EmitTelemetry", [["2", "1"] select _bda, ["obs", "bda"] select _bda, "drntrk:" + _x, [_pay] call comspec_atak_native_fnc_json]];
+        } forEach _tracks;
+        if ((count _sent) > 60) then { { if !(_x in _tracks) then { _sent deleteAt _x; }; } forEach (keys _sent); };
+    };
 };
 // Reprise : renvoie le dernier ordre de vol en mode forcé (IA remise d'aplomb là où le drone est local, équipage recollé par le serveur).
 private _recover = {

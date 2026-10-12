@@ -62,6 +62,14 @@ uiNamespace setVariable ["COMSPEC_ATAK_DroneAlerted", _alerted];
 if ((count _alerted) > 40) then { { if (_now - _y > 120) then { _alerted deleteAt _x; }; } forEach +_alerted; };
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
 private _heard = 0;
+// Remontée au poste : drones non amis, au plus un envoi toutes les 20 s par drone et 4 par balayage.
+// Position envoyée = celle du récepteur (jamais celle du drone) ; le gisement trace la ligne de relèvement.
+private _tx = [] call comspec_atak_native_fnc_bridge;
+private _rfSent = uiNamespace getVariable ["COMSPEC_ATAK_DroneRfTx", createHashMap];
+uiNamespace setVariable ["COMSPEC_ATAK_DroneRfTx", _rfSent];
+if ((count _rfSent) > 40) then { { if (_now - _y > 120) then { _rfSent deleteAt _x; }; } forEach +_rfSent; };
+private _txN = 0;
+private _me = [player] call comspec_atak_native_fnc_unitCallsign;
 private _newUnknown = [];
 private _alerts = [];
 
@@ -109,6 +117,18 @@ private _alerts = [];
     private _first = [_now, _old param [6, _now]] select ((count _old) > 0);
     if ((count _old) isEqualTo 0 && {!_friend}) then { _newUnknown pushBack [_brg, _err, _band]; };
     _byId set [_nid, [_nid, _band, _bars, _brg, _err, _rangeBand, _first, _now, _friend, _from, round _rx, _range]];
+    if (_tx && {!_friend} && {_txN < 4} && {(_now - (_rfSent getOrDefault [_nid, -1e9])) >= 20}) then {
+        _rfSent set [_nid, _now];
+        _txN = _txN + 1;
+        private _code = 0;
+        { _code = (_code * 31 + _x) mod 9973; } forEach (toArray _nid);
+        private _tag = format ["DRONE-%1", _code];
+        "COMSPECExtension" callExtension ["SendRfHit", [
+            "uav_" + str _code, format ["%1 · %2° ±%3°%4", _tag, round _brg, round _err, ["", " · " + _rangeBand] select (_rangeBand isNotEqualTo "")],
+            "drone", _band, str round (_from select 0), str round (_from select 1), str round _rx, _me
+        ]];
+        "COMSPECExtension" callExtension ["SendSigint", [_tag, str round (_from select 0), str round (_from select 1), str round _brg]];
+    };
     if (!_friend && {_rangeBand in ["< 300 m", "300-800 m"]} && {(_now - (_alerted getOrDefault [_nid, -1e9])) > 60}) then {
         _alerted set [_nid, _now];
         _alerts pushBack [_brg, _err, _rangeBand, _band];

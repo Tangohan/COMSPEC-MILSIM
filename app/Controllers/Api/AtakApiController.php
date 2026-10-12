@@ -6146,7 +6146,8 @@ class AtakApiController
         $limit = min(300, max(1, (int) ($request->query('limit') ?: 100)));
         try {
             $repo = new \App\Repositories\TacticalTrackRepository();
-            $tracks = $repo->listTracks($tenantId, $mapId, $limit, $layer !== '' ? $layer : null);
+            $prefix = strtoupper(trim((string) ($request->query('prefix') ?? '')));
+            $tracks = $repo->listTracks($tenantId, $mapId, $limit, $layer !== '' ? $layer : null, $prefix !== '' ? $prefix : null);
         } catch (\Throwable) {
             $tracks = [];
         }
@@ -6499,7 +6500,9 @@ class AtakApiController
             try {
                 $replay = \App\Core\Container::get(\App\Services\Replay\ReplayService::class);
                 $speed = isset($extra['speed']) && is_numeric($extra['speed']) ? (float) $extra['speed'] : null;
-                $replay->logPosition($missionId, $callSign, $callSign, $posX, $posY, $posZ, $heading, null, null, $speed, $extra);
+                // Clé de la session jouée (ATAK natif, via le JSON véhicule de fn_updatePosition) : relecture par mission.
+                $missionKey = \App\Support\AtakMissionKey::normalize($extra['mission_key'] ?? $body['mission_key'] ?? null);
+                $replay->logPosition($missionId, $callSign, $callSign, $posX, $posY, $posZ, $heading, null, null, $speed, $extra, $missionKey);
             } catch (\Throwable) {
             }
         }
@@ -6667,7 +6670,9 @@ class AtakApiController
             return Response::json(['ok' => true, 'matched' => false, 'recorded' => 0]);
         }
 
-        return Response::json(['ok' => true, 'matched' => true, 'recorded' => $repo->addItems($tenantId, (int) $user['id'], $items)]);
+        $missionKey = \App\Support\AtakMissionKey::normalize($body['mission_key'] ?? null);
+
+        return Response::json(['ok' => true, 'matched' => true, 'recorded' => $repo->addItems($tenantId, (int) $user['id'], $items, null, $missionKey)]);
     }
 
     /**
@@ -6694,6 +6699,7 @@ class AtakApiController
             return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
         }
         $body = $this->jsonBody($request);
+        $missionKey = \App\Support\AtakMissionKey::normalize($body['mission_key'] ?? null);
         $matched = 0;
         $recorded = 0;
         $unmatched = 0;
@@ -6705,7 +6711,7 @@ class AtakApiController
                 continue;
             }
             $matched++;
-            $recorded += $repo->addItems($tenantId, (int) $user['id'], $p['items']);
+            $recorded += $repo->addItems($tenantId, (int) $user['id'], $p['items'], null, $missionKey);
         }
 
         return Response::json(['ok' => true, 'matched' => $matched, 'unmatched' => $unmatched, 'recorded' => $recorded]);
@@ -12570,6 +12576,10 @@ class AtakApiController
         }
 
         $reportId = $repo->create($data);
+        $reportMissionKey = \App\Support\AtakMissionKey::normalize($body['mission_key'] ?? null);
+        if ($reportMissionKey !== '' && $reportId > 0) {
+            $repo->setMissionKey($reportId, $reportMissionKey);
+        }
         $routing = [
             'enabled' => false,
             'rules_applied' => 0,

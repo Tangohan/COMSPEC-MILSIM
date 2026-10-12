@@ -50,6 +50,9 @@ _reportData set ["grid_reference", mapGridPosition _position];
 _reportData set ["summary", _summary];
 _reportData set ["details", _details];
 _reportData set ["report_timestamp", [systemTime] call comspec_overwatch_connect_fnc_formatTimestamp];
+// Clé de la session jouée (ATAK natif) : comptes rendus rattachés à la mission sur le site.
+private _missionKey = missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", ""];
+if (_missionKey isEqualType "" && {_missionKey isNotEqualTo ""}) then { _reportData set ["mission_key", _missionKey]; };
 
 if (count keys _structuredData > 0) then {
     _reportData set ["structured_data", _structuredData];
