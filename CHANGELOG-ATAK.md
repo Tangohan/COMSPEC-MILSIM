@@ -11,6 +11,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Gestes : doigt d'honneur et selfie (ATAK natif 1.34.0)
+
+Non testé en jeu. Demande de TTRD : « une animation pour faire des doigts d'honneur et une animation pour le selfie ». Pas de DLL à recompiler, pas de migration.
+- Deux animations maison (fichiers `anim/*.rtm`, générés par `tools/gen_gestures.py`, sans reprise d'un autre mod). Aperçus filaires : `tools/gen_gestures.py --preview dossier`.
+- **Doigt d'honneur** : bras gauche levé devant l'épaule, dos de la main vers la cible, majeur tendu, deux coups secs vers l'avant (~2,4 s), puis retour. La main gauche quitte le garde-main et y revient : marche aussi fusil en main. Touche CBA « Doigt d'honneur » (COMSPEC ATAK, non attribuée par défaut) et action ACE perso (dans le menu Gestes d'ACE quand il est affiché). Pas en véhicule, inconscient, sous l'eau ni pendant l'appareil photo.
+- **Selfie** : bras droit qui se lève (0,6 s), tendu devant le visage à hauteur des yeux, téléphone tourné vers soi, léger balancement tant que dure le selfie, puis redescend. Joué dans l'app Photo (objectif avant : l'arme est rangée et ressortie quand on repasse à l'objectif arrière ou qu'on quitte l'app) et dans le plein écran (R). Réglage CBA « Animation du selfie » : par défaut `comspec_atak_native_fnc_gestureSelfie` (l'ancien `gesturePoint` reste possible).
+- À vérifier en jeu : cadrage du bras sur le perso (fusil, pistolet, mains vides, accroupi), main gauche qui revient bien sur le garde-main, bras visible dans la vue selfie, geste vu par les autres joueurs.
+
 ## 2026-10-12 — Tâches et ordres : crash, suivi par joueur, chef pour le groupe ; rejeux datés ; temps par rôle (ATAK natif 1.33.0)
 
 Non testé en jeu. Pas de DLL à recompiler. Côté site : la table `atak_order_responses` se crée toute seule à la première réponse.
