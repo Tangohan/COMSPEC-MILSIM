@@ -281,7 +281,7 @@ class COMSPEC_ATAK_Module_DatingProfile: COMSPEC_ATAK_Module_DataBase {
     scope = 1;
     scopeCurator = 2;
     category = "COMSPEC_ATAK_Civil";
-    displayName = "Tinder : profil HVT / SSE";
+    displayName = "$STR_COMSPEC_ATAK_CFG_FA0AF6576A";
     icon = "\z\comspec_atak_native\addons\main\data\app_dating.paa";
     portrait = "\z\comspec_atak_native\addons\main\data\app_dating.paa";
     function = "comspec_atak_native_fnc_moduleDating";

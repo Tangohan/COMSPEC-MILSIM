@@ -2,7 +2,7 @@
     Serveur de la communauté : prévient le joueur relié à Athena qui joue sur un autre serveur que ceux déclarés
     par sa communauté (site : Gestion › Mod ATAK › Serveurs de jeu). Ses positions et comptes rendus partent quand
     même vers sa communauté, d'où l'avertissement.
-      ["serverInit"]  serveur dédié ou hôte : demande à Athena son adresse publique (COMSPEC Link 2.0.74,
+      ["serverInit"]  serveur dédié ou hôte : demande à Athena son adresse publique (COMSPEC Link 2.0.75,
                       Server.PublicIp) et la diffuse (COMSPEC_ATAK_ServerIp). Sans DLL côté serveur (Linux) : le nom
                       du serveur sert de repli côté Athena.
       ["check"]       client : envoie adresse, nom du serveur, mission et carte (Server.Presence) ; toutes les 10 min.
@@ -61,7 +61,7 @@ switch (_act) do {
             if (_r isEqualType []) then { _r = _r param [0, ""]; };
             missionNamespace setVariable ["COMSPEC_ATAK_ServerPresenceBusy", false];
             if !(_r isEqualType "") exitWith {};
-            // COMSPEC Link plus ancien que 2.0.74 : plus redemandé de la partie.
+            // COMSPEC Link plus ancien que 2.0.75 : plus redemandé de la partie.
             if (_r isEqualTo "" || {(_r find "unknown") >= 0}) exitWith { missionNamespace setVariable ["COMSPEC_ATAK_ServerPresenceNo", true]; };
             if ((_r select [0, 3]) isNotEqualTo "OK|") exitWith {};
             missionNamespace setVariable ["COMSPEC_ATAK_ServerPresenceAt", diag_tickTime];

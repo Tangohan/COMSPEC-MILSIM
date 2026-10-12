@@ -423,7 +423,7 @@ class CfgVehicles {
 class CfgFactionClasses {
     class NO_CATEGORY;
     class COMSPEC_ATAK_Data: NO_CATEGORY { displayName="$STR_COMSPEC_ATAK_CFG_BC3E09CB53"; priority=2; side=7; };
-    class COMSPEC_ATAK_Civil: NO_CATEGORY { displayName="COMSPEC — ATAK · Apps civiles"; priority=2; side=7; };
+    class COMSPEC_ATAK_Civil: NO_CATEGORY { displayName="$STR_COMSPEC_ATAK_CFG_1B554EECB0"; priority=2; side=7; };
 };
 
 class Extended_PreInit_EventHandlers { class comspec_atak_native_main { init="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_preInit.sqf'"; }; };
