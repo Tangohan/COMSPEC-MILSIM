@@ -1,6 +1,6 @@
 /*
     Barre des outils TRAIT et DESSIN LIBRE de la carte (fn_pageMap, sous la consigne) : couleur, épaisseur,
-    flèche, forme fermée (dessin libre), DÉFAIRE (mon dernier trait) et EFFACER MES TRAITS.
+    flèche, ZONE (forme fermée, dessin libre), ANNULER (mon dernier trait) et EFFACER MES TRAITS.
     Réglages gardés dans le profil (lus par fn_markerStroke et fn_strokeDraw).
     Params : [[x, y, largeur disponible]]
 */
@@ -51,9 +51,9 @@ private _closed = profileNamespace getVariable ["COMSPEC_ATAK_DrawClosed", false
 private _btns = [
     ["FLÈCHE", ["COMSPEC_ATAK_DrawArrow", str !_arrow] call _set, _arrow, "Pointe de flèche au bout du trait, dans le sens du tracé"]
 ];
-if (_draw) then { _btns pushBack ["FERMÉ", ["COMSPEC_ATAK_DrawClosed", str !_closed] call _set, _closed, "Forme fermée : le dessin revient à son point de départ"]; };
+if (_draw) then { _btns pushBack ["ZONE", ["COMSPEC_ATAK_DrawClosed", str !_closed] call _set, _closed, "Forme fermée : le dessin revient à son point de départ"]; };
 _btns append [
-    ["DÉFAIRE", { ["UNDO"] call comspec_atak_native_fnc_markerStroke; }, false, "Efface mon dernier trait"],
+    ["ANNULER", { ["UNDO"] call comspec_atak_native_fnc_markerStroke; }, false, "Efface mon dernier trait"],
     ["EFF. MES TRAITS", { ["CLEARMINE"] call comspec_atak_native_fnc_markerStroke; }, false, "Efface tous mes traits et dessins"]
 ];
 private _bw = (((_row1W min _wMax) - _gap * ((count _btns) - 1)) / (count _btns)) max (_fs * 2 / _ratio);

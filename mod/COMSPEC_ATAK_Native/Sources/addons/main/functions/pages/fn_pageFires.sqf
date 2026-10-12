@@ -1,5 +1,5 @@
 /*
-    App Feux : 9-LINE (appui aérien), 5-LINE (hélico / gunship) et APPEL DE FEU (mortier, artillerie).
+    App CAS : 9-LINE (appui aérien), 5-LINE (hélico / gunship) et APPEL DE FEU (mortier, artillerie, écran fn_firesCff).
     - 9-line : envoyé à Athena (/api/cas, vu par le pilote et le web) ; sinon en ordre CAS.
     - Appel de feu : pièce du camp (calculateur d'Arma), cible en grille, en polaire ou pointée sur la carte,
       munition, nombre de coups, gerbe ; calcul (distance, azimut en millièmes, durée de vol, portée),
@@ -13,6 +13,33 @@ private _tab = _f getOrDefault ["tab", "cff"];
 private _tabBtn = {
     params ["_label", "_key"];
     [_label, compile format ["['tab', '%1'] call comspec_atak_native_fnc_firesAction;", _key], _tab isEqualTo _key]
+};
+// APPEL DE FEU : écran du clip (fn_firesCff), sous un bandeau d'onglets et de position façon « Call for Fire ».
+if !(_tab in ["nine", "five"]) exitWith {
+    private _fl = [] call comspec_atak_native_fnc_layoutGet;
+    private _font = _fl get "font";
+    private _fs = _fl get "fontSmall";
+    private _pad = (_fl get "pad") * 1.6;
+    private _hh = _font * 1.6;
+    private _top = ["COMSPEC_RscText", [0, 0, _bw, _hh]] call comspec_atak_native_fnc_pageCtrl;
+    _top ctrlSetBackgroundColor [0.42, 0.49, 0.56, 1];
+    private _tw = (_bw * 0.13) max (_fs * 5 * pixelH / pixelW);
+    {
+        _x params ["_t", "_k"];
+        private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * (_tw + _pad / 2), _hh * 0.12, _tw, _hh * 0.76], _t] call comspec_atak_native_fnc_pageCtrl;
+        _b ctrlSetFontHeight (_fs * 0.95);
+        _b ctrlSetBackgroundColor ([[0.36, 0.42, 0.48, 1], [0.49, 0.69, 0.88, 1]] select (_tab isEqualTo _k || {_k isEqualTo "cff" && {!(_tab in ["nine", "five"])}}));
+        _b ctrlSetTextColor [1, 1, 1, 1];
+        _b ctrlAddEventHandler ["ButtonClick", compile format ["['tab', '%1'] call comspec_atak_native_fnc_firesAction;", _k]];
+    } forEach [["9-LINE", "nine"], ["5-LINE", "five"], ["APPEL DE FEU", "cff"]];
+    // À droite : ma grille, mon altitude, le vent.
+    private _info = ["COMSPEC_RscTextRight", [_pad + 3 * (_tw + _pad / 2), 0, _bw - _pad * 2 - 3 * (_tw + _pad / 2), _hh]] call comspec_atak_native_fnc_pageCtrl;
+    _info ctrlSetFontHeight (_fs * 0.95);
+    _info ctrlSetTextColor [1, 1, 1, 1];
+    _info ctrlSetText ((format ["%1   %2   %3", [player, 10] call comspec_atak_native_fnc_gridRef,
+        format [("ÉLÉV %1 m") call comspec_atak_native_fnc_tr, round ((getPosASL player) select 2)], ([] call comspec_atak_native_fnc_firesWind) select 0]) call comspec_atak_native_fnc_tr);
+    [[0, _hh, _bw, _bh - _hh]] call comspec_atak_native_fnc_firesCff;
+    true
 };
 private _rows = [["buttons", [["9-LINE", "nine"] call _tabBtn, ["5-LINE", "five"] call _tabBtn, ["APPEL DE FEU", "cff"] call _tabBtn]]];
 private _hint = _f getOrDefault ["hint", ["", false]];
@@ -51,54 +78,7 @@ switch (_tab) do {
             ["buttons", [["ENVOYER LE 5-LINE", { ["send5"] call comspec_atak_native_fnc_firesAction; }, true], ["EFFACER", { ["clear", "five"] call comspec_atak_native_fnc_firesAction; }]]]
         ];
     };
-    default {
-        // Position de tir : pièces du camp ou position manuelle.
-        private _guns = [] call comspec_atak_native_fnc_firesGuns;
-        private _gunItems = (_guns apply { [format ["%1 · %2 · %3", _x getVariable ["COMSPEC_ATAK_GunName", getText (configOf _x >> "displayName")], [_x, 8] call comspec_atak_native_fnc_gridRef, ["IA", "joueur"] select (isPlayer gunner _x)], netId _x] }) + [["Position manuelle (grille ci-dessous)", "MAN"]];
-        private _sel = ["gun", (_gunItems select 0) select 1] call _v;
-        _rows append [
-            ["title", "Position de tir"],
-            ["combo", "gun", "Pièce", _gunItems, _sel],
-            ["edit", "gunGrid", "Grille de la pièce (manuel)", ["gunGrid"] call _v],
-            ["buttons", [["PIÈCE À MA POSITION", { ["gunHere"] call comspec_atak_native_fnc_firesAction; }]]],
-            ["title", "Cible"],
-            ["buttons", [
-                [["GRILLE", "● GRILLE"] select ((["mode", "GRID"] call _v) isEqualTo "GRID"), { ["mode", "GRID"] call comspec_atak_native_fnc_firesAction; }, (["mode", "GRID"] call _v) isEqualTo "GRID"],
-                [["POLAIRE", "● POLAIRE"] select ((["mode", "GRID"] call _v) isEqualTo "POLAR"), { ["mode", "POLAR"] call comspec_atak_native_fnc_firesAction; }, (["mode", "GRID"] call _v) isEqualTo "POLAR"],
-                ["SUR LA CARTE", { ["pick", "cff"] call comspec_atak_native_fnc_firesAction; }]
-            ]]
-        ];
-        if ((["mode", "GRID"] call _v) isEqualTo "POLAR") then {
-            _rows append [
-                ["edit", "az", "Azimut depuis ma position (millièmes)", ["az", str round ((getDir player) * 6400 / 360)] call _v],
-                ["edit", "dist", "Distance (m)", ["dist", "600"] call _v]
-            ];
-        } else {
-            _rows pushBack ["edit", "tgtGrid", "Grille de la cible (8 ou 10 chiffres)", ["tgtGrid", _tgtGrid] call _v];
-        };
-        _rows append [
-            ["combo", "ammo", "Munition", [["Explosif (HE)", "HE"], ["Éclairant", "ILLUM"], ["Fumigène", "SMOKE"]], ["ammo", "HE"] call _v],
-            ["edit", "rounds", "Nombre de coups", ["rounds", "3"] call _v],
-            ["buttons", [[["GERBE : NON", "● GERBE : OUI"] select (["sheaf", false] call _v), { ["sheaf"] call comspec_atak_native_fnc_firesAction; }, ["sheaf", false] call _v]]]
-        ];
-        private _sol = _f getOrDefault ["solution", createHashMap];
-        if ((count _sol) > 0) then {
-            _rows pushBack ["text", format [
-                "<t color='#5cc76b' font='RobotoCondensedBold'>%1</t>   <t color='#8a9a93'>Distance</t> %2 m   <t color='#8a9a93'>Azimut</t> %3 mil<br/><t color='#8a9a93'>Durée de vol</t> %4   <t color='#8a9a93'>Portée</t> %5   <t color='#8a9a93'>Cible</t> %6",
-                _sol getOrDefault ["gunName", "?"], round (_sol getOrDefault ["dist", 0]), round (_sol getOrDefault ["mils", 0]),
-                if ((_sol getOrDefault ["eta", -1]) > 0) then { format ["%1 s", (_sol get "eta") toFixed 1] } else { "—" },
-                ["<t color='#e5483a'>HORS PORTÉE</t>", "<t color='#5cc76b'>OK</t>"] select (_sol getOrDefault ["inRange", false]), _sol getOrDefault ["grid", ""]]];
-        };
-        _rows pushBack ["buttons", [
-            ["CALCULER", { ["compute"] call comspec_atak_native_fnc_firesAction; }],
-            ["FIN DE MISSION", { ["eom"] call comspec_atak_native_fnc_firesAction; }],
-            ["TIR", { ["shot"] call comspec_atak_native_fnc_firesAction; }, true]
-        ]];
-        _rows pushBack ["title", "Journal des missions"];
-        private _log = _f getOrDefault ["log", []];
-        if ((count _log) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucune mission pour l'instant.</t>"]; };
-        { _rows pushBack ["text", _x]; } forEach (+_log call { reverse _this; _this select [0, 8] });
-    };
+    default {};
 };
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 true
