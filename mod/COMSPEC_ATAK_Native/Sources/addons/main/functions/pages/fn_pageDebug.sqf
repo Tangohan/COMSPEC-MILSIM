@@ -82,7 +82,8 @@ switch (_tab) do {
             ["BriefingPresence", "Présence au briefing sur Athena"],
             ["BriefingComments", "Questions sur les diapositives"],
             ["PhoneIdentity", "Numéro de téléphone Athena"],
-            ["DownloadBriefingSlideImage", "Images (diapositives, fiches, photos)"]
+            ["DownloadBriefingSlideImage", "Images (diapositives, fiches, photos)"],
+            ["ReconPhotoMeta", "Fiche des clichés du drone (titre, SSE, confidentiel)"]
         ];
         private _missing = _want select { !((_x select 0) in _have) };
         private _ok = { params ["_b"]; ["<t color='#e5483a'>MANQUANT</t>", "<t color='#5cc76b'>OK</t>"] select _b };
@@ -101,7 +102,7 @@ switch (_tab) do {
         } forEach _want;
         _rows pushBack ["text", [
             "<t color='#5cc76b'>La DLL est à jour pour cette version de COMSPEC ATAK.</t>",
-            "<t color='#f2ab33'>Recompilez la DLL COMSPECExtension (version 2.0.58 ou plus) et relancez Arma : les écrans concernés affichent sinon « mettez la DLL à jour ».</t>"
+            "<t color='#f2ab33'>Recompilez la DLL COMSPECExtension (version 2.0.64 ou plus) et relancez Arma : les écrans concernés affichent sinon « mettez la DLL à jour ».</t>"
         ] select ((count _missing) > 0)];
         _rows pushBack ["buttons", [["RELANCER LE TEST", { [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true]]];
     };

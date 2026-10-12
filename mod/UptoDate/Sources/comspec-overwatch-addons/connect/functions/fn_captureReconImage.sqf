@@ -1,7 +1,10 @@
 /*
     Capture recon : signal « nouvelle photo » vers la DLL (queue async).
-    Params: [path, caption, deviceType, feedId, skipArmaShot, alignDevicePov, jpegRetryOnce]
+    Params: [path, caption, deviceType, feedId, skipArmaShot, alignDevicePov, jpegRetryOnce, photoMeta]
     jpegRetryOnce : un seul report JPEG différé si le fichier n’est pas encore sur disque.
+    photoMeta (facultatif) : fiche du cliché, champs réels côté DLL (2.0.64, GetAtakFeatures « ReconPhotoMeta ») :
+      [titre, description, SSE (bool), dossier SSE, confidentiel (bool), source ("drone", "phone"…), nom du drone].
+      [] (défaut) : rien de plus n’est envoyé, comme avant. Une DLL plus ancienne ignore ces arguments.
     Retour: true si l’extension a accepté (OK|queued), false sinon
     (OK|duplicate n’est plus traité comme un succès d’envoi).
 */
@@ -12,7 +15,8 @@ params [
     ["_feedId", ""],
     ["_skipArmaShot", false],
     ["_alignDevicePov", true],
-    ["_jpegRetryOnce", true]
+    ["_jpegRetryOnce", true],
+    ["_photoMeta", [], [[]]]
 ];
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith { false };
 if (!hasInterface) exitWith { false };
@@ -279,28 +283,33 @@ private _fnc_notifyPath = {
         if (_staged isNotEqualTo "") then { _uploadPath = _staged; };
     };
     ["NotifyNewPhoto", "attempt", [_uploadPath] call _fnc_basename, nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-    private _raw = ["COMSPECExtension" callExtension [
-        "NotifyNewPhoto",
-        [
-            _uploadPath,
-            _author,
-            str (_pos select 0),
-            str (_pos select 1),
-            str (_pos select 2),
-            _grid,
-            str _dir,
-            str (_pos select 2),
-            _caption,
-            _unitName,
-            _sideStr,
-            _missionId,
-            _device,
-            _capturedAt,
-            _feedId,
-            _fxProfile,
-            str _fxIntensity
-        ]
-    ]] call comspec_overwatch_connect_fnc_extResult;
+    private _notifyArgs = [
+        _uploadPath,
+        _author,
+        str (_pos select 0),
+        str (_pos select 1),
+        str (_pos select 2),
+        _grid,
+        str _dir,
+        str (_pos select 2),
+        _caption,
+        _unitName,
+        _sideStr,
+        _missionId,
+        _device,
+        _capturedAt,
+        _feedId,
+        _fxProfile,
+        str _fxIntensity
+    ];
+    // Fiche du cliché : arguments 17 à 23 de NotifyNewPhoto (texte, drapeaux en "1" / "0").
+    if (_photoMeta isNotEqualTo []) then {
+        _photoMeta params [["_mTitle", ""], ["_mDesc", ""], ["_mSse", false], ["_mCase", ""], ["_mConf", false], ["_mSource", ""], ["_mDrone", ""]];
+        private _txt = { params ["_v"]; [format ["%1", _v], _v] select (_v isEqualType "") };
+        private _flag = { params ["_v"]; ["0", "1"] select ((_v isEqualTo true) || {_v isEqualTo 1} || {_v isEqualTo "1"}) };
+        _notifyArgs append [[_mTitle] call _txt, [_mDesc] call _txt, [_mSse] call _flag, [_mCase] call _txt, [_mConf] call _flag, [_mSource] call _txt, [_mDrone] call _txt];
+    };
+    private _raw = ["COMSPECExtension" callExtension ["NotifyNewPhoto", _notifyArgs]] call comspec_overwatch_connect_fnc_extResult;
     private _ok = [_raw] call _isQueuedOk;
     missionNamespace setVariable ["COMSPEC_LastReconUploadOk", _ok, false];
     missionNamespace setVariable ["COMSPEC_LastReconUploadDetail", _raw, false];
@@ -326,8 +335,8 @@ if (
 ) exitWith {
     if (missionNamespace getVariable ["COMSPEC_ReconCaptureBusy", false]) exitWith { false };
     missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", true, false];
-    [_caption, _device, _feedId] spawn {
-        params ["_caption", "_device", "_feedId"];
+    [_caption, _device, _feedId, _photoMeta] spawn {
+        params ["_caption", "_device", "_feedId", "_photoMeta"];
 
         if (!isNil "ace_interact_menu_fnc_hideMenu") then {
             [] call ace_interact_menu_fnc_hideMenu;
@@ -342,7 +351,7 @@ if (
 
         uiSleep 0.16;
 
-        ["", _caption, _device, _feedId, false, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
+        ["", _caption, _device, _feedId, false, false, false, _photoMeta] call comspec_overwatch_connect_fnc_captureReconImage;
 
         showHUD true;
         if ((count _restore) >= 3 && {!isNil "comspec_overwatch_connect_fnc_restoreCaptureCam"}) then {
@@ -367,8 +376,8 @@ if (
 ) exitWith {
     if (missionNamespace getVariable ["COMSPEC_ReconCaptureBusy", false]) exitWith { false };
     missionNamespace setVariable ["COMSPEC_ReconCaptureBusy", true, false];
-    [_caption, _device, _feedId] spawn {
-        params ["_caption", "_device", "_feedId"];
+    [_caption, _device, _feedId, _photoMeta] spawn {
+        params ["_caption", "_device", "_feedId", "_photoMeta"];
         private _prevView = cameraView;
 
         if (!isNil "ace_interact_menu_fnc_hideMenu") then {
@@ -396,7 +405,7 @@ if (
 
         uiSleep 0.16;
 
-        ["", _caption, _device, _feedId, false, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
+        ["", _caption, _device, _feedId, false, false, false, _photoMeta] call comspec_overwatch_connect_fnc_captureReconImage;
 
         showHUD true;
         if (_prevView isEqualType "" && {_prevView isNotEqualTo ""}) then {
@@ -426,18 +435,18 @@ if (_path isNotEqualTo "") exitWith {
     // not_connected / unauthorized : ne pas reclicher ni relancer — ça inonde le journal.
     if (!_ok && {[] call _fnc_isConnErr}) exitWith { false };
     if (!_ok && {_skipArmaShot} && {_jpegRetryOnce} && {!_isJpeg}) then {
-        [_path, _caption, _device, _feedId] spawn {
-            params ["_path", "_caption", "_device", "_feedId"];
+        [_path, _caption, _device, _feedId, _photoMeta] spawn {
+            params ["_path", "_caption", "_device", "_feedId", "_photoMeta"];
             uiSleep 0.45;
-            [_path, _caption, _device, _feedId, true, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
+            [_path, _caption, _device, _feedId, true, false, false, _photoMeta] call comspec_overwatch_connect_fnc_captureReconImage;
         };
         true
     } else {
         if (!_ok && {!_skipArmaShot}) then {
-            [_png, _caption, _device, _feedId] spawn {
-                params ["_png", "_caption", "_device", "_feedId"];
+            [_png, _caption, _device, _feedId, _photoMeta] spawn {
+                params ["_png", "_caption", "_device", "_feedId", "_photoMeta"];
                 uiSleep 2.5;
-                [_png, _caption, _device, _feedId, true, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
+                [_png, _caption, _device, _feedId, true, false, false, _photoMeta] call comspec_overwatch_connect_fnc_captureReconImage;
             };
         };
         if (_ok) then {
@@ -491,10 +500,10 @@ if (_path isEqualTo "") exitWith {
     };
     private _ok = [_png] call _fnc_notifyPath;
     if (!_ok && {!_skipArmaShot} && {!([ ] call _fnc_isConnErr)}) then {
-        [_png, _caption, _device, _feedId] spawn {
-            params ["_png", "_caption", "_device", "_feedId"];
+        [_png, _caption, _device, _feedId, _photoMeta] spawn {
+            params ["_png", "_caption", "_device", "_feedId", "_photoMeta"];
             uiSleep 2.4;
-            [_png, _caption, _device, _feedId, true, false, false] call comspec_overwatch_connect_fnc_captureReconImage;
+            [_png, _caption, _device, _feedId, true, false, false, _photoMeta] call comspec_overwatch_connect_fnc_captureReconImage;
         };
     };
     _ok

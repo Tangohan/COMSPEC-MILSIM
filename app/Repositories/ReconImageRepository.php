@@ -13,6 +13,17 @@ class ReconImageRepository
     use LazyDatabaseConnection;
 
 
+    /** Fiche du cliché : colonne => valeur par défaut. */
+    public const PHOTO_META_COLUMNS = [
+        'title' => null,
+        'description' => null,
+        'is_sse' => 0,
+        'sse_case_ref' => null,
+        'is_confidential' => 0,
+        'photo_source' => null,
+        'drone_name' => null,
+    ];
+
     /** @var array<string, bool> */
     private array $columnCache = [];
 
@@ -32,8 +43,12 @@ class ReconImageRepository
         if ($done) {
             return;
         }
-        $path = base_path('bootstrap/atak_recon_images_actions_migration.php');
-        if (is_file($path)) {
+        // Actions de l'opérateur, puis fiche du cliché (titre, description, SSE, confidentiel, drone).
+        foreach (['atak_recon_images_actions_migration.php', 'atak_recon_images_photo_meta_migration.php'] as $file) {
+            $path = base_path('bootstrap/' . $file);
+            if (!is_file($path)) {
+                continue;
+            }
             $migrate = require $path;
             if (is_callable($migrate)) {
                 try {
@@ -205,6 +220,12 @@ class ReconImageRepository
         }
         if ($this->hasColumn('source_name')) {
             $cols['source_name'] = $data['source_name'] ?? null;
+        }
+        // Fiche du cliché (COMSPECExtension 2.0.64) : colonnes ajoutées par atak_recon_images_photo_meta_migration.
+        foreach (self::PHOTO_META_COLUMNS as $column => $default) {
+            if ($this->hasColumn($column)) {
+                $cols[$column] = $data[$column] ?? $default;
+            }
         }
 
         $names = array_keys($cols);

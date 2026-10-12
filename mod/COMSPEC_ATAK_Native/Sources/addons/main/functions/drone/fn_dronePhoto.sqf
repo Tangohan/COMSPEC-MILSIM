@@ -11,12 +11,16 @@
       ["keep"]               garde le cliché en cours sur le téléphone sans l'envoyer ;
       ["edit", n°]           rouvre la fiche d'un cliché ; ["forget", n°] l'oublie (second appui) et supprime le fichier ;
       ["list"]               → clichés, le plus récent d'abord : [[n°, entrée]...] ;
-      ["caption", entrée]    → légende envoyée à Athena.
+      ["caption", entrée]    → légende envoyée à Athena ;
+      ["meta"]               → true si la fiche part en champs réels (DLL 2.0.64 + connect qui les transmet).
     Entrée (tableau, profil COMSPEC_ATAK_DronePhotos, 40 au plus) :
       [fichier, titre, description, SSE, confidentiel, grille, heure, drone, état, dossier SSE, hauteur sol, cap, date]
       état : "DRAFT" (fiche ouverte), "LOCAL" (gardé), "SENDING", "SENT", "FAILED".
-    La commande NotifyNewPhoto de la DLL ne porte ni titre, ni description, ni drapeaux : ils partent dans la légende
-    ([CONFIDENTIEL] [SSE dossier] Titre : description (drone, grille, hauteur, cap, heure)) et restent sur le poste.
+    Fiche : titre, description, SSE (+ dossier), confidentiel, source « drone » et nom du drone partent en champs
+    de NotifyNewPhoto (arguments 17 à 23, COMSPECExtension 2.0.64, annoncés par GetAtakFeatures « ReconPhotoMeta »,
+    passés par fn_captureReconImage en 8e paramètre) ; la légende reste courte (drone, grille, hauteur, cap, heure).
+    Repli (DLL ou connect plus anciens, ou argument refusé par la DLL) : tout part dans la légende
+    ([CONFIDENTIEL] [SSE dossier] Titre : description (drone, grille, hauteur, cap, heure)).
     La position enregistrée par la DLL est celle du pilote ; la grille du drone est dans la légende.
 */
 params [["_act", "list"], ["_arg", -1]];
@@ -40,6 +44,36 @@ private _save = {
     if (_dsc isNotEqualTo "§") then { _e set [2, [_dsc, 400] call _clean]; };
     call _store;
 };
+// Champs réels possibles ? DLL qui annonce ReconPhotoMeta et connect qui accepte le 8e paramètre (relu une fois par partie).
+private _metaOk = {
+    private _k = missionNamespace getVariable "COMSPEC_ATAK_PhotoMetaOk";
+    if (!isNil "_k") exitWith { _k };
+    if (isNil "comspec_overwatch_connect_fnc_captureReconImage") exitWith { false };
+    private _ok = false;
+    private _known = true;
+    if (((str comspec_overwatch_connect_fnc_captureReconImage) find "_photoMeta") >= 0) then {
+        private _f = "COMSPECExtension" callExtension ["GetAtakFeatures", []];
+        if (!isNil "comspec_overwatch_connect_fnc_extResult") then { _f = [_f] call comspec_overwatch_connect_fnc_extResult; };
+        if !(_f isEqualType "") then { _f = str _f; };
+        // Réponse vide : DLL pas encore prête ou trop ancienne pour GetAtakFeatures, on redemandera.
+        _known = _f isNotEqualTo "";
+        _ok = (_f select [0, 3]) isEqualTo "OK|" && {"ReconPhotoMeta" in (((_f splitString "|") param [2, ""]) splitString ",")};
+    };
+    if (_known) then { missionNamespace setVariable ["COMSPEC_ATAK_PhotoMetaOk", _ok]; };
+    _ok
+};
+// Légende courte (fiche en champs réels) : prise de vue seulement.
+private _shortCaption = {
+    params ["_e"];
+    _e params ["", "", "", "", "", "_grid", "_clock", "_drone", "", "", ["_alt", 0], ["_hdg", 0]];
+    format ["Drone %1, grille %2, %3 m sol, cap %4°, %5", _drone, _grid, _alt, _hdg, _clock]
+};
+// Fiche transmise à fn_captureReconImage : [titre, description, SSE, dossier, confidentiel, source, drone].
+private _meta = {
+    params ["_e"];
+    _e params ["", "_title", "_desc", "_sse", "_conf", "", "", "_drone", "", ["_case", ""]];
+    [[_title, "Cliché drone"] select (_title isEqualTo ""), _desc, _sse, ["", _case] select _sse, _conf, "drone", _drone]
+};
 private _caption = {
     params ["_e"];
     _e params ["", "_title", "_desc", "_sse", "_conf", "_grid", "_clock", "_drone", "", ["_case", ""], ["_alt", 0], ["_hdg", 0]];
@@ -57,7 +91,8 @@ switch (_act) do {
         for "_i" from ((count _lib) - 1) to 0 step -1 do { _out pushBack [_i, _lib select _i]; };
         _out
     };
-    case "caption": { [_arg] call _caption };
+    case "caption": { [[_arg] call _caption, [_arg] call _shortCaption] select (call _metaOk) };
+    case "meta": { call _metaOk };
     case "save": { call _save; };
     case "flag": {
         call _save;
@@ -166,16 +201,25 @@ switch (_act) do {
         private _d = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
         private _feed = format ["drone:%1", [netId _d, "phone"] select (isNull _d)];
         // Environ 600 Ko : avec un débit faible, l'envoi prend du temps (file du téléphone si aucun réseau).
+        private _withMeta = call _metaOk;
         [{
-            params ["_file", "_caption", "_feed"];
-            private _ok = [_file, _caption, "UAV", _feed, true, false, true] call comspec_overwatch_connect_fnc_captureReconImage;
+            params ["_file", "_caption", "_feed", "_meta", "_packed"];
+            private _ok = [_file, _caption, "UAV", _feed, true, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage;
+            // Argument refusé par la DLL (unknown / argument) : nouvel essai avec la fiche dans la légende.
+            if ((_ok isNotEqualTo true) && {_meta isNotEqualTo []}) then {
+                private _d = toLower (format ["%1", missionNamespace getVariable ["COMSPEC_LastReconUploadDetail", ""]]);
+                if ((_d find "unknown") >= 0 || {(_d find "argument") >= 0} || {(_d find "invalid_arg") >= 0}) then {
+                    missionNamespace setVariable ["COMSPEC_ATAK_PhotoMetaOk", false];
+                    _ok = [_file, _packed, "UAV", _feed, true, false, true] call comspec_overwatch_connect_fnc_captureReconImage;
+                };
+            };
             private _lib = profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []];
             private _j = _lib findIf { (_x select 0) isEqualTo _file };
             if (_j >= 0) then { (_lib select _j) set [8, ["FAILED", "SENT"] select (_ok isEqualTo true)]; saveProfileNamespace; };
             [["WARNING", "SUCCESS"] select (_ok isEqualTo true), ["Cliché du drone non envoyé : voir le détail dans Photos", "Cliché du drone en cours d'envoi vers Athena"] select (_ok isEqualTo true), 4, 30] call comspec_atak_native_fnc_notify;
             ["log", format ["Cliché %1 : %2", _file, ["envoi refusé", "envoyé vers Athena"] select (_ok isEqualTo true)], ["#e5483a", "#5cc76b"] select (_ok isEqualTo true)] call comspec_atak_native_fnc_droneAction;
             [{ private _pg = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]; if (_pg in ["DRONE", "PHOTOS"]) then { [_pg] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame;
-        }, [_e select 0, [_e] call _caption, _feed], "Cliché drone", 600] call comspec_atak_native_fnc_netSend;
+        }, [_e select 0, [[_e] call _caption, [_e] call _shortCaption] select _withMeta, _feed, [[], [_e] call _meta] select _withMeta, [_e] call _caption], "Cliché drone", 600] call comspec_atak_native_fnc_netSend;
         ["INFO", "Cliché du drone : envoi lancé"] call _say;
         call _render;
     };
