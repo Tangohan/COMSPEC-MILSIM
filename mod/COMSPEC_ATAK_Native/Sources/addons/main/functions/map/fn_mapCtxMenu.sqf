@@ -84,7 +84,7 @@ switch (_mode) do {
         (_l get "body") params ["_bx", "_by", "_bw", "_bh"];
         private _font = _l get "font";
         private _fs = _l get "fontSmall";
-        private _ratio = pixelH / pixelW;
+        private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
         private _pos = _c get "pos";
         private _m = _c getOrDefault ["marker", ""];
         if (_m isNotEqualTo "" && {(markerShape _m) isEqualTo ""}) then { _m = ""; _c set ["marker", ""]; };
@@ -115,7 +115,7 @@ switch (_mode) do {
             params ["_class", "_p", ["_text", ""]];
             private _ctl = _d ctrlCreate [_class, -1];
             _ctl ctrlSetPosition _p;
-            if (_text isNotEqualTo "") then { _ctl ctrlSetText _text; };
+            if (_text isNotEqualTo "") then { _ctl ctrlSetText ((_text) call comspec_atak_native_fnc_tr); };
             _ctl ctrlCommit 0;
             _list pushBack _ctl;
             _ctl
@@ -135,11 +135,11 @@ switch (_mode) do {
         private _dist = _me distance2D _pos;
         private _az = round (_me getDir _pos);
         private _hd = ["COMSPEC_RscStructuredText", [_x0 + pixelW * 8, _y0 + pixelH * 5, _w - pixelW * 16, _headH]] call _mk;
-        _hd ctrlSetStructuredText parseText format ["<t font='EtelkaMonospaceProBold' size='0.95' color='#e6efe9'>%1</t><br/><t size='0.78' color='#8a9a93'>%2 m · %3 · %4°</t>",
+        _hd ctrlSetStructuredText parseText ((format ["<t font='EtelkaMonospaceProBold' size='0.95' color='#e6efe9'>%1</t><br/><t size='0.78' color='#8a9a93'>%2 m · %3 · %4°</t>",
             [_pos, 8] call comspec_atak_native_fnc_gridRef, round (getTerrainHeightASL _pos),
-            [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 1]] select (_dist >= 1000), _az];
+            [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 1]] select (_dist >= 1000), _az]) call comspec_atak_native_fnc_tr);
         _hd ctrlSetFontHeight (_fs * 0.95);
-        if (_m isNotEqualTo "") then { _hd ctrlSetTooltip format ["Marqueur pointé : %1", [markerText _m, _m] select ((markerText _m) isEqualTo "")]; };
+        if (_m isNotEqualTo "") then { _hd ctrlSetTooltip ((format ["Marqueur pointé : %1", [markerText _m, _m] select ((markerText _m) isEqualTo "")]) call comspec_atak_native_fnc_tr); };
         private _ry = _y0 + pixelH * 6 + _headH;
         private _ih = _rowH * 0.56;
         private _iw = _ih / _ratio;
@@ -153,8 +153,8 @@ switch (_mode) do {
             private _ic = ["COMSPEC_RscIcon", [_x0 + pixelW * 8 + _iw * 0.225, _ry + (_rowH - _ih) / 2, _iw, _ih], _icon] call _mk;
             _ic ctrlSetTextColor _col;
             private _t = ["COMSPEC_RscStructuredText", [_x0 + pixelW * 16 + _iw * 1.45, _ry + (_rowH - _font * 0.95) / 2, _w - _iw * 1.45 - pixelW * 24, _rowH]] call _mk;
-            _t ctrlSetStructuredText parseText format ["<t font='RobotoCondensedBold' size='0.95' color='%1'>%2</t><t size='0.75' color='#7d8c85' align='right'>%3</t>",
-                ["#e6efe9", "#f2685c"] select (_key isEqualTo "DELETE"), _label, (_sub regexReplace ["[<>&]", ""]) select [0, 22]];
+            _t ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' size='0.95' color='%1'>%2</t><t size='0.75' color='#7d8c85' align='right'>%3</t>",
+                ["#e6efe9", "#f2685c"] select (_key isEqualTo "DELETE"), _label, (_sub regexReplace ["[<>&]", ""]) select [0, 22]]) call comspec_atak_native_fnc_tr);
             _t ctrlSetFontHeight _font;
             private _b = ["COMSPEC_RscButtonOverlay", [_x0, _ry, _w, _rowH]] call _mk;
             _b ctrlAddEventHandler ["ButtonClick", compile format ["['act', '%1'] call comspec_atak_native_fnc_mapCtxMenu;", _key]];

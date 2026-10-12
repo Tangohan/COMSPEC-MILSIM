@@ -73,7 +73,7 @@ if ((count _e) isEqualTo 0) then {
 };
 // Deux lignes vides : le bandeau « SITUATION · REPLIER » recouvre le haut du panneau.
 private _ctl = _d displayCtrl 88541;
-_ctl ctrlSetStructuredText parseText ("<t size='1.1'> </t><br/><br/>" + _text);
+_ctl ctrlSetStructuredText parseText ((("<t size='1.1'> </t><br/><br/>" + _text)) call comspec_atak_native_fnc_tr);
 // Le texte s'arrête au-dessus des calques (posés en bas du panneau par fn_pageMap) au lieu de passer dessous.
 private _bottom = uiNamespace getVariable ["COMSPEC_ATAK_InspTextBottom", -1];
 if (_bottom > 0) then {

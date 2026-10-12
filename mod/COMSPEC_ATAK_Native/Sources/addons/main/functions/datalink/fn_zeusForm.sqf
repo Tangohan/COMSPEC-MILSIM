@@ -35,12 +35,12 @@ private _bg = ["COMSPEC_RscPanel", [_x0, _y0, _w, _h]] call _mk;
 _bg ctrlSetBackgroundColor [0.035, 0.045, 0.04, 0.97];
 private _head = ["COMSPEC_RscText", [_x0, _y0, _w, _rowH * 1.3]] call _mk;
 _head ctrlSetBackgroundColor [0.10, 0.20, 0.12, 1];
-_head ctrlSetText ("  " + _title);
+_head ctrlSetText ((("  " + _title)) call comspec_atak_native_fnc_tr);
 _head ctrlSetFont "RobotoCondensedBold";
 private _y = _y0 + _rowH * 1.3;
 if (_help isNotEqualTo "") then {
     private _hc = ["COMSPEC_RscStructuredText", [_x0 + _gap, _y + _gap / 2, _w - 2 * _gap, _helpH]] call _mk;
-    _hc ctrlSetStructuredText parseText format ["<t size='0.85' color='#8a9a93'>%1</t>", _help];
+    _hc ctrlSetStructuredText parseText ((format ["<t size='0.85' color='#8a9a93'>%1</t>", _help]) call comspec_atak_native_fnc_tr);
     _y = _y + _helpH;
 };
 private _grp = ["COMSPEC_RscControlsGroup", [_x0, _y, _w, _bodyH]] call _mk;
@@ -51,17 +51,17 @@ private _ctrls = [];
     // Même piège que plus haut : COMBO range sa donnée (texte) en 4e élément, « max » ne doit voir que MEMO.
     private _lh = if (_kind isEqualTo "MEMO") then { _rowH * (_extra max 2) } else { _rowH };
     private _lb = ["COMSPEC_RscText", [_gap, _gy, _labW, _rowH], _grp] call _mk;
-    _lb ctrlSetText _label;
+    _lb ctrlSetText ((_label) call comspec_atak_native_fnc_tr);
     private _ix = _labW + _gap;
     private _iw = _w - _ix - _gap * 3;
     private _c = controlNull;
     switch (_kind) do {
-        case "EDIT": { _c = ["COMSPEC_RscEdit", [_ix, _gy, _iw, _rowH], _grp] call _mk; _c ctrlSetText ([str _val, _val] select (_val isEqualType "")); };
-        case "MEMO": { _c = ["COMSPEC_RscEditMulti", [_ix, _gy, _iw, _lh], _grp] call _mk; _c ctrlSetText _val; };
+        case "EDIT": { _c = ["COMSPEC_RscEdit", [_ix, _gy, _iw, _rowH], _grp] call _mk; _c ctrlSetText ([str _val, _val] select (_val isEqualType "")); }; // i18n:brut
+        case "MEMO": { _c = ["COMSPEC_RscEditMulti", [_ix, _gy, _iw, _lh], _grp] call _mk; _c ctrlSetText _val; }; // i18n:brut
         case "COMBO": {
             _c = ["COMSPEC_RscCombo", [_ix, _gy, _iw, _rowH], _grp] call _mk;
             private _sel = 0;
-            { _x params ["_t", "_v"]; private _i = _c lbAdd _t; _c lbSetData [_i, str _v]; if (_v isEqualTo _extra) then { _sel = _i; }; } forEach _val;
+            { _x params ["_t", "_v"]; private _i = _c lbAdd ((_t) call comspec_atak_native_fnc_tr); _c lbSetData [_i, str _v]; if (_v isEqualTo _extra) then { _sel = _i; }; } forEach _val;
             _c lbSetCurSel _sel;
             _c setVariable ["values", _val apply { _x select 1 }];
         };
@@ -73,9 +73,9 @@ private _ctrls = [];
             _c sliderSetSpeed [1, 10];
             _c sliderSetPosition _cur;
             private _t = ["COMSPEC_RscTextRight", [_ix + _iw * 0.8, _gy, _iw * 0.2, _rowH], _grp] call _mk;
-            _t ctrlSetText str round _cur;
+            _t ctrlSetText ((str round _cur) call comspec_atak_native_fnc_tr);
             _c setVariable ["out", _t];
-            _c ctrlAddEventHandler ["SliderPosChanged", { params ["_c", "_v"]; (_c getVariable "out") ctrlSetText str round _v; }];
+            _c ctrlAddEventHandler ["SliderPosChanged", { params ["_c", "_v"]; (_c getVariable "out") ctrlSetText ((str round _v) call comspec_atak_native_fnc_tr); }];
         };
     };
     _c setVariable ["kind", _kind];
@@ -84,9 +84,9 @@ private _ctrls = [];
 } forEach _fields;
 private _by = _y0 + _h - _rowH * 1.3;
 private _ok = ["COMSPEC_RscButtonPrimary", [_x0 + _w - _gap - _w * 0.22, _by, _w * 0.22, _rowH]] call _mk;
-_ok ctrlSetText "VALIDER";
+_ok ctrlSetText (("VALIDER") call comspec_atak_native_fnc_tr);
 private _no = ["COMSPEC_RscButton", [_x0 + _w - 2 * _gap - _w * 0.44, _by, _w * 0.22, _rowH]] call _mk;
-_no ctrlSetText "ANNULER";
+_no ctrlSetText (("ANNULER") call comspec_atak_native_fnc_tr);
 _d setVariable ["form", [_ctrls, _code, _args]];
 _no ctrlAddEventHandler ["ButtonClick", { (ctrlParent (_this select 0)) closeDisplay 2; }];
 _ok ctrlAddEventHandler ["ButtonClick", {

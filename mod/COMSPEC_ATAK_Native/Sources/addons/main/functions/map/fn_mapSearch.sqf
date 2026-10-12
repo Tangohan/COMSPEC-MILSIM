@@ -260,8 +260,8 @@ private _fillList = {
         _items = _items select { (_qn isNotEqualTo "" && {([_x select 1] call _norm) find _qn >= 0}) || {(toLower (_x select 0)) find _ql >= 0} };
     };
     lbClear _combo;
-    _combo lbSetData [_combo lbAdd format ["Identifiants connus (%1)", count _items], ""];
-    { _combo lbSetData [_combo lbAdd (_x select 0), _x select 1]; } forEach (_items select [0, 40]);
+    _combo lbSetData [_combo lbAdd ((format ["Identifiants connus (%1)", count _items]) call comspec_atak_native_fnc_tr), ""];
+    { _combo lbSetData [_combo lbAdd (((_x select 0)) call comspec_atak_native_fnc_tr), _x select 1]; } forEach (_items select [0, 40]);
     _combo lbSetCurSel 0;
     uiNamespace setVariable ["COMSPEC_ATAK_MapSearchFilling", false];
 };
@@ -303,7 +303,7 @@ switch (_act) do {
         if (isNull _c) exitWith {};
         private _v = _c lbData (lbCurSel _c);
         if (_v isEqualTo "") exitWith {};
-        _e ctrlSetText _v;
+        _e ctrlSetText ((_v) call comspec_atak_native_fnc_tr);
         _st set ["q", _v];
         ["go"] call comspec_atak_native_fnc_mapSearch;
     };
@@ -458,7 +458,7 @@ switch (_act) do {
         };
         // Fiche : texte relu sans reconstruire la page.
         private _card = uiNamespace getVariable ["COMSPEC_ATAK_MapSearchCard", controlNull];
-        if (!isNull _card) then { _card ctrlSetStructuredText parseText (["cardText"] call comspec_atak_native_fnc_mapSearch); };
+        if (!isNull _card) then { _card ctrlSetStructuredText parseText (((["cardText"] call comspec_atak_native_fnc_mapSearch)) call comspec_atak_native_fnc_tr); };
     };
     case "cardText": {
         private _ok = (_hit getOrDefault ["status", ""]) isEqualTo "OK";
@@ -532,7 +532,7 @@ switch (_act) do {
         private _bh = _fs * 1.4;
         private _t = ["COMSPEC_RscStructuredText", [_px + _pad / 2, _py + _pad / 3, _pw - _pad, _ph - _bh - _pad], "", false] call comspec_atak_native_fnc_pageCtrl;
         _t ctrlSetFontHeight (_fs * 0.95);
-        _t ctrlSetStructuredText parseText (["cardText"] call comspec_atak_native_fnc_mapSearch);
+        _t ctrlSetStructuredText parseText (((["cardText"] call comspec_atak_native_fnc_mapSearch)) call comspec_atak_native_fnc_tr);
         uiNamespace setVariable ["COMSPEC_ATAK_MapSearchCard", _t];
         private _btns = [
             [["SUIVRE", "ARRÊTER LE SUIVI"] select (_hit getOrDefault ["follow", false]), { ["follow"] call comspec_atak_native_fnc_mapSearch; }, !(_hit getOrDefault ["follow", false])],

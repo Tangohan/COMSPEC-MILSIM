@@ -23,7 +23,7 @@ private _mk = { params ["_cls", "_pos", ["_txt", ""]]; [_cls, _pos, _txt] call c
 private _txt = {
     params ["_pos", "_s"];
     private _c = ["COMSPEC_RscStructuredText", _pos] call _mk;
-    _c ctrlSetStructuredText parseText _s;
+    _c ctrlSetStructuredText parseText ((_s) call comspec_atak_native_fnc_tr);
     _c ctrlEnable false;
     _c
 };
@@ -41,7 +41,7 @@ private _bg = ["COMSPEC_RscText", [0, 0, _bw, _bh]] call _mk;
 _bg ctrlSetBackgroundColor [0.028, 0.034, 0.031, 1];
 private _gs = _bw / 12;
 for "_i" from 1 to 11 do { [_gs * _i, 0, _gs * _i, _bh, [1, 1, 1, 0.035]] call _line; };
-private _gy = _gs * pixelH / pixelW;
+private _gy = _gs * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 for "_i" from 1 to (floor (_bh / (_gy max 0.001))) do { [0, _gy * _i, _bw, _gy * _i, [1, 1, 1, 0.035]] call _line; };
 
 // En-tête et aide.
@@ -61,7 +61,7 @@ private _hintH = _fs * 1.5;
 private _portrait = _bh > _bw * 1.1;
 private _top = _pad * 0.5 + _headH + _pad * 0.5;
 private _bottom = _bh - _hintH - _pad * 0.5;
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 private _boxes = [];   // [x, y, w, h] par emplacement, dans l'ordre de _order
 private _attach = [];  // point de départ du trait sur l'emplacement
 private _order = [];
@@ -111,8 +111,8 @@ private _tex = { params ["_p"]; [_ix + _iw * (_p select 0) / 2048, _iy + _ih * (
 
 // Téléphone vu de dos, et ses accessoires en calque (comme fn_backView).
 private _back = ["COMSPEC_RscPicture", [_ix, _iy, _iw, _ih]] call _mk;
-_back ctrlSetText (["\z\comspec_atak_native\addons\main\data\phone_back_" + _model + ".paa",
-    format ["\z\comspec_atak_native\addons\main\data\phone_back%1.paa", ["", "_" + _tint] select (_tint in ["od", "black"])]] select _s7);
+_back ctrlSetText (((["\z\comspec_atak_native\addons\main\data\phone_back_" + _model + ".paa",
+    format ["\z\comspec_atak_native\addons\main\data\phone_back%1.paa", ["", "_" + _tint] select (_tint in ["od", "black"])]] select _s7)) call comspec_atak_native_fnc_tr);
 _back ctrlSetTextColor [1, 1, 1, 1];
 _back ctrlEnable false;
 if (_s7 && {missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false]}) then {
@@ -189,7 +189,7 @@ if (_s7 && {_ant isNotEqualTo []}) then {
         _bd ctrlEnable false;
     };
     private _btn = ["COMSPEC_RscButtonOverlay", [_bx, _by, _bw2, _bh2]] call _mk;
-    _btn ctrlSetTooltip format ["%1 : %2", _s get "title", ["vide", _s get "name"] select _on];
+    _btn ctrlSetTooltip ((format ["%1 : %2", _s get "title", ["vide", _s get "name"] select _on]) call comspec_atak_native_fnc_tr);
     _btn ctrlAddEventHandler ["ButtonClick", compile format [
         "private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['accSlot', [%1, ''] select ((_s getOrDefault ['accSlot', '']) isEqualTo %1)]; playSound 'ClickSoft'; ['refresh'] call comspec_atak_native_fnc_accessoriesAction;",
         str _id]];

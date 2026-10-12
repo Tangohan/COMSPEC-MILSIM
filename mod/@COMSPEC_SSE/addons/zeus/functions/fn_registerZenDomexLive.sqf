@@ -228,7 +228,7 @@ uiNamespace setVariable ["COMSPEC_SSE_DomexInvokeOpener", _invokeOpener];
 if (!isNil "zen_custom_modules_fnc_register") then {
     private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
     [
-        "COMSPEC SSE",
+        "COMSPEC SSE · Numérique",
         "Ajouter un renseignement",
         {
             (["COMSPEC_SSE_DomexOpenAddIntel"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
@@ -237,7 +237,7 @@ if (!isNil "zen_custom_modules_fnc_register") then {
     ] call zen_custom_modules_fnc_register;
 
     [
-        "COMSPEC SSE",
+        "COMSPEC SSE · Numérique",
         "Fixer le palier d’accès",
         {
             (["COMSPEC_SSE_DomexOpenStage"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);
@@ -246,7 +246,7 @@ if (!isNil "zen_custom_modules_fnc_register") then {
     ] call zen_custom_modules_fnc_register;
 
     [
-        "COMSPEC SSE",
+        "COMSPEC SSE · Numérique",
         "Poser un point carte",
         {
             (["COMSPEC_SSE_DomexOpenMapPoint"] + _this) call (uiNamespace getVariable ["COMSPEC_SSE_DomexInvokeOpener", {}]);

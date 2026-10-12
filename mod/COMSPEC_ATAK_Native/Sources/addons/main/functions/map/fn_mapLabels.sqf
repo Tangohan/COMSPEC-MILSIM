@@ -62,7 +62,7 @@ if (_now > (_eni select 0)) then {
 
 // Géométrie de la carte : passage écran -> monde une fois par image.
 (ctrlPosition _map) params ["_mx", "_my", "_mw", "_mh"];
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 private _o0 = _map ctrlMapScreenToWorld [_mx, _my];
 private _mpx = (((_map ctrlMapScreenToWorld [_mx + 0.1, _my]) select 0) - (_o0 select 0)) / 0.1;
 private _mpy = ((_o0 select 1) - ((_map ctrlMapScreenToWorld [_mx, _my + 0.1]) select 1)) / 0.1;

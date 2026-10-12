@@ -1258,7 +1258,7 @@ def nvgfilter_item(size=256):
 
 
 # --- Autres modèles (render_phones.py) : même ouverture d'écran que le S7 (x 455..1546, y 716..1333) ---
-PHONE_MODELS = ["rugged", "iphone", "tablet"]
+PHONE_MODELS = ["rugged", "iphone", "tablet", "keys", "plate", "flip", "ribbed"]
 
 
 def _night(img):
@@ -1270,8 +1270,10 @@ def _night(img):
     return out
 
 
-def model_assets(tmp):
+def model_assets(tmp, only=None):
     for m in PHONE_MODELS:
+        if only and m not in only:
+            continue
         f = os.path.join(RENDER_DIR, f"phone_{m}_front.png")
         if not os.path.exists(f):
             continue
@@ -1557,6 +1559,67 @@ def patch_img(kind, size=512):
     return out.resize((size, size), Image.LANCZOS)
 
 
+# --- Tablette à touches sur le JPC (jpc_tablet.p3d, model_jpc_tablet.py) : atlas face en haut, dos en bas ---
+JPC_CROP = (186, 508, 1864, 1474)  # même rectangle que model_jpc_tablet.CROP
+JPC_HOLE = (455, 716, 1547, 1334)
+
+
+def jpc_tablet_atlas(tmp):
+    f = os.path.join(RENDER_DIR, "phone_keys_front.png")
+    b = os.path.join(RENDER_DIR, "phone_keys_back.png")
+    if not (os.path.exists(f) and os.path.exists(b)):
+        print("rendus keys absents : python3 render_phones.py (RENDER_ONLY=keys)")
+        return
+    x0, y0, x1, y1 = JPC_CROP
+    front = Image.open(f).convert("RGBA")
+    # Écran éteint dans le trou (l'écran vivant est une sélection à part, posée devant).
+    hx0, hy0, hx1, hy1 = JPC_HOLE
+    under = Image.new("RGBA", front.size, (0, 0, 0, 0))
+    under.paste(_glass(hx1 - hx0, hy1 - hy0), (hx0, hy0))
+    under.alpha_composite(front)
+    front = under.crop(JPC_CROP)
+    rear = Image.open(b).convert("RGBA").crop((2048 - x1, y0, 2048 - x0, y1))
+    rim = front.getpixel((1000 - x0, 1400 - y0))
+    atlas = Image.new("RGBA", (2048, 2048), rim[:3] + (255,))
+    for img, top in ((front, 0), (rear, 1024)):
+        bg = Image.new("RGBA", img.size, rim[:3] + (255,))
+        bg.alpha_composite(img)
+        atlas.paste(bg.resize((2048, 1024), Image.LANCZOS), (0, top))
+    convert(atlas.convert("RGB"), "jpc_tablet_co", tmp)
+
+
+def jpc_screen_static(tmp):
+    """Écran de la tablette vu par les autres joueurs : carte ATAK figée (topo, barre d'état, outils, positions)."""
+    img = topo_wallpaper(1024, 576, 11, (120, 170, 120)).convert("RGBA")
+    d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, 1023, 26), fill=(0, 0, 0, 255))
+    d.text((10, 5), "13:46", font=_font(16), fill=(230, 230, 230, 255))
+    d.rectangle((960, 7, 1004, 19), outline=(230, 230, 230, 255), width=2)
+    d.rectangle((962, 9, 994, 17), fill=(92, 199, 107, 255))
+    d.rectangle((0, 27, 1023, 70), fill=(24, 30, 26, 235))
+    for i in range(7):
+        d.rounded_rectangle((640 + i * 52, 33, 680 + i * 52, 64), radius=6, fill=(70, 90, 76, 255))
+    d.text((14, 38), "CARTE", font=_font(22), fill=(230, 235, 230, 255))
+    for x, y in ((300, 260), (360, 300), (330, 340), (420, 280)):
+        d.rectangle((x - 9, y - 9, x + 9, y + 9), fill=(40, 120, 230, 255), outline=(255, 255, 255, 255), width=2)
+    for x, y in ((700, 200), (760, 240)):
+        d.polygon([(x, y - 12), (x + 12, y), (x, y + 12), (x - 12, y)], fill=(220, 50, 40, 255), outline=(255, 255, 255, 255))
+    d.ellipse((470, 390, 494, 414), fill=(92, 199, 107, 255), outline=(255, 255, 255, 255), width=2)
+    d.rectangle((0, 520, 1023, 575), fill=(18, 22, 20, 230))
+    d.text((14, 532), "31U DQ 12345 67890   ALT 112 m", font=_font(20), fill=(210, 220, 210, 255))
+    # PAA : côtés en puissances de deux (l'écran étire la texture sur toute sa surface).
+    convert(img.convert("RGB").resize((1024, 512), Image.LANCZOS), "jpc_screen_static_co", tmp)
+
+
+def jpc_rvmats():
+    """Écran lumineux (émissif) : jour plus fort, nuit atténuée (fn_jpcScreen choisit selon sunOrMoon)."""
+    for name, em in (("jpc_screen", 2.2), ("jpc_screen_night", 0.45)):
+        with open(os.path.join(OUT, name + ".rvmat"), "w", newline="\r\n") as fh:
+            fh.write("ambient[]={0,0,0,1};\ndiffuse[]={0,0,0,1};\nforcedDiffuse[]={0,0,0,0};\n"
+                     f"emmisive[]={{{em},{em},{em},1}};\nspecular[]={{0.05,0.05,0.05,1}};\nspecularPower=80;\n"
+                     "PixelShaderID=\"Normal\";\nVertexShaderID=\"Basic\";\n")
+
+
 def patch_assets(tmp):
     for kind in PATCHES:
         convert(patch_img(kind), f"patch_{kind}", tmp)
@@ -1653,6 +1716,17 @@ def main():
             convert(icon_png("app_plan", ICONS["app_plan"]), "app_plan", tmp)
             return
         # « camera » : seulement l'image de l'item Caméra IP compacte.
+        # « jpc » : tablette à touches (coques 2D, dos, atlas du modèle 3D, écran figé, rvmat de l'écran).
+        if len(sys.argv) > 2 and sys.argv[2] == "jpc":
+            model_assets(tmp, only=["keys"])
+            jpc_tablet_atlas(tmp)
+            jpc_screen_static(tmp)
+            jpc_rvmats()
+            return
+        # « cases » : coques de référence (support JPC, étui multicam, coque nervurée).
+        if len(sys.argv) > 2 and sys.argv[2] == "cases":
+            model_assets(tmp, only=["plate", "flip", "ribbed"])
+            return
         if len(sys.argv) > 2 and sys.argv[2] == "camera":
             convert(camera_item(), "item_camera", tmp)
             return
@@ -1668,6 +1742,9 @@ def main():
         patch_assets(tmp)
         accessory_assets(tmp)
         model_assets(tmp)
+        jpc_tablet_atlas(tmp)
+        jpc_screen_static(tmp)
+        jpc_rvmats()
         back_variants(tmp)
         shell_variants(tmp)
         if len(sys.argv) > 2 and sys.argv[2] == "datalink":

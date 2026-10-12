@@ -12,7 +12,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _fs = _l get "fontSmall";
 private _pad = (_l get "pad") * 2;
 private _k = _fs / (0.024 * safeZoneH);
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 private _cw = _bw - 0.012;
 private _bridge = [] call comspec_atak_native_fnc_bridge;
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -49,7 +49,7 @@ private _rect = { params ["_pos", "_rgba"]; private _c = ["COMSPEC_RscText", _po
 private _txt = {
     params ["_pos", "_s2", ["_fit", false]];
     private _c = ["COMSPEC_RscStructuredText", _pos] call _mk;
-    _c ctrlSetStructuredText parseText _s2;
+    _c ctrlSetStructuredText parseText ((_s2) call comspec_atak_native_fnc_tr);
     _c ctrlEnable false;
     if (_fit) then { _pos set [3, (ctrlTextHeight _c) max (_pos select 3)]; _c ctrlSetPosition _pos; _c ctrlCommit 0; };
     _c

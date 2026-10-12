@@ -13,7 +13,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _cols = _l get "cols";
 private _pad = (_l get "pad") * 2;
 private _font = _l get "fontSmall";
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 ([] call comspec_atak_native_fnc_accent) params ["_acc", "_accHex"];
 private _tw = (_bw - 0.012 - _pad * (_cols + 1)) / _cols;
 private _th = _tw * _ratio * 0.92;
@@ -73,7 +73,7 @@ if (_interactive && {profileNamespace getVariable ["COMSPEC_ATAK_LauncherSearch"
     if (_filter isNotEqualTo "") then {
         private _clr = ["COMSPEC_RscButtonOverlay", [_pad + _gw - _sh * 1.1, _y, _sh * 1.1, _sh], "×"] call comspec_atak_native_fnc_pageCtrl;
         _clr ctrlSetFontHeight _font;
-        _clr ctrlSetTooltip "Effacer la recherche";
+        _clr ctrlSetTooltip (("Effacer la recherche") call comspec_atak_native_fnc_tr);
         _clr ctrlAddEventHandler ["ButtonClick", { uiNamespace setVariable ["COMSPEC_ATAK_LauncherFilter", ""]; [{ ["LAUNCHER"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
     };
     _y = _y + _sh + _pad;
@@ -99,7 +99,7 @@ if (_filter isNotEqualTo "") then {
     _bar ctrlSetBackgroundColor _acc;
     _bar ctrlEnable false;
     private _lbl = ["COMSPEC_RscStructuredText", [_pad * 1.6, _y + _secH * 0.12, _gw - _pad, _secH]] call comspec_atak_native_fnc_pageCtrl;
-    _lbl ctrlSetStructuredText parseText format ["<t size='0.85' font='RobotoCondensedBold' color='#e8eee9'>%1</t>  <t size='0.75' color='#8a9a93'>%2</t>", toUpper _sec, count _items];
+    _lbl ctrlSetStructuredText parseText ((format ["<t size='0.85' font='RobotoCondensedBold' color='#e8eee9'>%1</t>  <t size='0.75' color='#8a9a93'>%2</t>", toUpper _sec, count _items]) call comspec_atak_native_fnc_tr);
     _lbl ctrlEnable false;
     private _line = ["COMSPEC_RscText", [_pad, _y + _secH - pixelH, _gw, pixelH]] call comspec_atak_native_fnc_pageCtrl;
     _line ctrlSetBackgroundColor [1, 1, 1, 0.08];

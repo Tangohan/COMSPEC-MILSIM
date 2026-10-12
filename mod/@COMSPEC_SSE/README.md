@@ -2,7 +2,7 @@
 
 Addon Arma 3 autonome — **Sensitive Site Exploitation** (CBA + ACE3).
 
-Version actuelle : **V0.8.0**
+Version actuelle : **V0.9.0**
 
 ## Contenu
 

@@ -544,7 +544,6 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
     [{
         [] call comspec_overwatch_connect_fnc_registerZenRoleplayModules;
         [] call comspec_overwatch_connect_fnc_registerZenAtakPlayerActions;
-        [] call comspec_overwatch_connect_fnc_registerZenSseModules;
         [] call comspec_overwatch_connect_fnc_registerZenTrackActions;
         [] call comspec_overwatch_connect_fnc_registerZenTheaterSurvey;
         [] call comspec_overwatch_connect_fnc_registerZeusAttributeButtons;
@@ -556,7 +555,6 @@ COMSPEC_CbaSettingsEhArmed = ["CBA_settingsInitialized", {
     }, {
         [] call comspec_overwatch_connect_fnc_registerZenRoleplayModules;
         [] call comspec_overwatch_connect_fnc_registerZenAtakPlayerActions;
-        [] call comspec_overwatch_connect_fnc_registerZenSseModules;
         [] call comspec_overwatch_connect_fnc_registerZenTrackActions;
         [] call comspec_overwatch_connect_fnc_registerZenTheaterSurvey;
     }, [], 60] call CBA_fnc_waitUntilAndExecute;

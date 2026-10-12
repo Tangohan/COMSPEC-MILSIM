@@ -30,7 +30,9 @@ private _depth = profileNamespace getVariable ["COMSPEC_ATAK_VestDepth", 0.19];
 private _cur = missionNamespace getVariable ["COMSPEC_ATAK_VestObj", objNull];
 // Gilet qui porte déjà un ATAK modélisé : le sien suffit, sauf si le joueur veut aussi le nôtre (menu ACE « Gilet »).
 private _builtinOnly = [player] call comspec_atak_native_fnc_vestBuiltin && {(profileNamespace getVariable ["COMSPEC_ATAK_VestBuiltinUse", "vest"]) isNotEqualTo "ours"};
-private _want = _mount in ["left", "center", "right"] && {!_builtinOnly} && {alive player} && {vehicle player isEqualTo player} && {[player] call comspec_atak_native_fnc_hasDevice};
+// Tablette sur le JPC (fn_jpcScreen) : c'est elle le terminal visible, le téléphone n'est pas accroché en plus.
+private _jpc = (profileNamespace getVariable ["COMSPEC_ATAK_CarryStyle", "hud"]) isEqualTo "jpc" && {vest player isNotEqualTo ""};
+private _want = _mount in ["left", "center", "right"] && {!_builtinOnly} && {!_jpc} && {alive player} && {vehicle player isEqualTo player} && {[player] call comspec_atak_native_fnc_hasDevice};
 if (!_want) exitWith {
     if (!isNull _cur) then { deleteVehicle _cur; missionNamespace setVariable ["COMSPEC_ATAK_VestObj", objNull]; };
     false

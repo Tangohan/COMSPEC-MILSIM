@@ -60,6 +60,7 @@ private _hasKit = [_player, "camera"] call comspec_sse_fnc_hasEquipment;
         if (isNil "_photos" || {!(_photos isEqualType [])}) then { _photos = []; };
         _photos pushBack _photoMeta;
         [_target, "photos", _photos, true] call comspec_sse_fnc_setSection;
+        if (!isNil "comspec_sse_fnc_custody") then { ["event", [_target, "PHOTOGRAPHIE", _player, format ["cap %1°, qualité %2", _heading, [_quality] call comspec_sse_fnc_qualityLabel]]] call comspec_sse_fnc_custody; };
 
         hint format ["Photo prise — qualité %1%% (%2)", _quality, [_quality] call comspec_sse_fnc_qualityLabel];
         [

@@ -39,6 +39,7 @@ if !([_player, "evidence_bag"] call comspec_sse_fnc_hasEquipment) exitWith {
         ];
 
         ["collect", _target, [_quality, _entry]] call comspec_sse_fnc_requestServerOp;
+        if (!isNil "comspec_sse_fnc_custody") then { ["open", [_target, _player, format ["collecte, qualité %1 %%", _quality]]] call comspec_sse_fnc_custody; };
 
         hint format [
             "Preuve collectée\n%1\nPar : %2\nHeure : %3\nGrid : %4\nQualité : %5%%",

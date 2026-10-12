@@ -219,6 +219,37 @@ private _sampleArr = [];
     };
 } forEach _samples;
 
+// Enrôlement dans la base biométrique de la mission (moteur du pack SSE) : le sujet
+// sera reconnu au prochain contrôle. L'écouvillon ADN part au laboratoire.
+if (!isNull _target && {!isNil "comspec_sse_fnc_bioRequest"} && {missionNamespace getVariable ["comspec_sse_bio_enabled", true]}) then {
+    private _lastEnroll = _target getVariable ["comspec_sse_bioEnrolledAt", -1e9];
+    private _probe = createHashMapFromArray [
+        ["unit", _target], ["key", [_target] call comspec_sse_fnc_bioPersonKey],
+        ["nfiqs", []], ["eyes", []], ["face", -1], ["by", _callsign], ["grid", _grid]
+    ];
+    {
+        if ((_x isEqualType []) && {(count _x) >= 4}) then {
+            switch (_x select 0) do {
+                case "empreintes": { _probe set ["nfiqs", _x select 3]; };
+                case "iris": { _probe set ["eyes", _x select 3]; };
+                case "adn": { _probe set ["dna", _x select 1]; _probe set ["dnaRef", _x select 2]; };
+            };
+        };
+    } forEach _samples;
+    private _meta = _target getVariable ["comspec_sse_facePhotoMeta", []];
+    if ((_meta isEqualType []) && {(count _meta) >= 3}) then { _probe set ["face", _meta select 1]; };
+    // Une seule rencontre par contrôle (une retransmission ne compte pas double).
+    if ((time - _lastEnroll) > 300 || {(_probe getOrDefault ["dna", -1]) >= 0}) then {
+        _target setVariable ["comspec_sse_bioEnrolledAt", time];
+        ["enroll", _probe, {
+            params ["_res"];
+            if (_res getOrDefault ["dnaPending", false]) then {
+                ["ADN expédié au laboratoire : le résultat vous parviendra.", "tactical", "info"] call comspec_overwatch_connect_fnc_announce;
+            };
+        }] call comspec_sse_fnc_bioRequest;
+    };
+};
+
 // Verdict de la requête d'identité, s'il y en a eu une.
 private _q = uiNamespace getVariable ["COMSPEC_SsePerson_Query", []];
 if (!(_q isEqualType [])) then { _q = []; };

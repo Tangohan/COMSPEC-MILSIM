@@ -21,12 +21,12 @@ private _made = [];
         [_x0 + _forEachIndex * _cw + _cw * 0.08, _y0 + _h * 0.1, _cw * 0.84, _h * 0.8]
     } else {
         (_l get "rail") params ["_x0", "_y0", "_w", "_h"];
-        private _ch = (_w * pixelH / pixelW * 0.8) min (_h / _n * 0.9);
+        private _ch = (_w * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]) * 0.8) min (_h / _n * 0.9);
         [_x0 + _w * 0.1, _y0 + _w * 0.1 + _forEachIndex * (_ch + _w * 0.1), _w * 0.8, _ch]
     };
     private _tile = [_d, controlNull, _pos, _app get "icon", "", [_app get "page"] call comspec_atak_native_fnc_appBadge, _app get "page", _l get "fontSmall"] call comspec_atak_native_fnc_tileCreate;
     if ((_app get "page") isEqualTo _active) then { (_tile select 0) ctrlSetBackgroundColor ((((([] call comspec_atak_native_fnc_accent) select 0) select [0, 3]) apply { _x * 0.45 }) + [1]); };
-    (_tile select (count _tile - 1)) ctrlSetTooltip (_app get "name");
+    (_tile select (count _tile - 1)) ctrlSetTooltip (((_app get "name")) call comspec_atak_native_fnc_tr);
     _made append _tile;
 } forEach _apps;
 

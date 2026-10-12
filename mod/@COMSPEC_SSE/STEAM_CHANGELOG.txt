@@ -2,35 +2,105 @@
 NOTES DE CETTE MISE À JOUR — coller dans Steam (Change Notes)
 ================================================================================
 
-[h1]COMSPEC SSE 0.8.0[/h1]
-[b]06/10/2026[/b] — Relancer Arma complètement après la mise à jour (pas seulement la mission).
+[h1]COMSPEC SSE 0.9.0[/h1]
+[b]12/10/2026[/b] — Relancer Arma complètement après la mise à jour (pas seulement la mission).
 
-[h2]Zeus[/h2]
+[h2]Biométrie : un vrai moteur[/h2]
 [list]
-[*] Chaque module ouvre un formulaire à la pose (profil, richesse, rayon…), sans avoir besoin de Zeus Enhanced
-[*] Messages clairs pour le Zeus : ce qui a été fait, ou pourquoi rien ne s’est passé
-[*] Les modules ne s’exécutent plus chez tous les joueurs : plus de générations en double ni de fenêtres ouvertes chez les autres
-[*] Les menus SSE des objets apparaissent aussi chez les autres joueurs après une génération Zeus
-[*] Modules rangés en trois catégories : SSE, SSE · Outils Zeus, SSE · Numérique (DOMEX)
-[*] Nouveaux modules : Poser un objet de renseignement, Réinitialiser un site, Lier des entités, Référence de dossier
-[*] L’inspecteur debug se désactive en reposant le module ; le site d’entraînement se crée autour du module (plus autour du joueur)
+[*] Chaque personnage a ses propres empreintes (10 doigts), iris, visage et ADN, générés et toujours identiques pour une même graine de campagne
+[*] Vraie base de données : population enrôlée par camp, watchlist BEWL (tiers 1 à 4), faux papiers, avis de recherche Athena en liaison
+[*] Vraie recherche 1:N : MATCH, correspondance possible, NO MATCH, fausses alertes réalistes, alerte d'identité déclarée différente
+[*] Qualité de capture réelle (NFIQ par doigt) : nuit, pluie, masque, sujet non maîtrisé, mort depuis longtemps, compétence de l'opérateur
+[*] Blessures ACE prises en compte : main, bras ou visage trop abîmés = relevé impossible ; doigts amputés, prothèse oculaire
+[*] Hors liaison, le terminal ne connaît que sa base locale ; en liaison, la recherche part sur l'ABIS
+[*] ADN envoyé au laboratoire : résultat différé, avec recherche familiale (parents du sujet)
+[*] Empreintes latentes sur les armes au sol près d'un corps et les objets liés à un sujet
+[*] Les rencontres sont enregistrées (et mémorisables entre missions)
+[*] Photo du visage en studio : le SEEK photographie un double du sujet, droit et éclairé
 [/list]
 
-[h2]Éditeur (Eden)[/h2]
+[h2]Identités uniques et biométrie complète[/h2]
 [list]
-[*] Tous les modules ont des attributs en français avec aide au survol, listes déroulantes et cases à cocher
-[*] Profils supplémentaires sur les personnes (courrier, financier, technicien, renseignement, logistique)
-[*] Aide au survol sur tous les champs Documents, Téléphone, Ordinateur et Numérique
+[*] Le serveur attribue une identité unique à chaque personne : deux personnages différents ne partagent jamais d'empreintes, d'iris ni d'ADN, même d'une mission à l'autre
+[*] Seuls les personnages à identifiant biométrique fixé (ou clé BII Identifi) se retrouvent entre missions ; un doublon de préparation est séparé et signalé au Zeus
+[*] Minuties par doigt, classification de Henry, code NCIC, texture de l'iris ; le SEEK affiche minuties retrouvées, distance de Hamming de l'iris et similarité du visage
+[*] Une fausse alerte apparaît comme « candidat à confirmer », scores sous le seuil
+[*] Fiches BII Identifi reprises : watchlist et menace décident du dossier, organisation et notes donnent le motif
 [/list]
 
-[h2]Interface[/h2]
+[h2]Sur le terrain[/h2]
 [list]
-[*] Début de refonte de l’interface SSE : terminal, numérique, site, graphe, preuves, mission et panneau Zeus
-[*] Thème sombre unifié, titres et sections lisibles, boutons d’action en pied d’écran
-[*] Les fenêtres s’adaptent à la taille d’interface et au format d’écran
+[*] Animations de relevé : à genoux sur un corps, debout face à un sujet qui tend la main ou regarde l'appareil, appareil en main, bips de lecture
+[*] Sac de tête (capture) : posé sur un prisonnier maîtrisé par action ACE, écran noir pour un joueur capturé, empêche photo et iris jusqu'au retrait
 [/list]
 
-Prérequis : CBA A3 + ACE3. Overwatch optionnel pour remonter vers Athena.
+[h2]Un seul mod pour tout le SSE[/h2]
+[list]
+[*] Les modules et attributs SSE quittent le mod Overwatch : plus de catégorie Eden en double ; les missions existantes gardent leurs modules
+[*] Modules rangés en 5 catégories : Sites et objets, Personnes et liens, Mission et scénario, Numérique (DOMEX, DL-7), Outils du Zeus
+[*] Tout objet du jeu peut être rendu exploitable dans Eden, avec sa nature (téléphone, ordinateur, document, support, caisse…) ; les objets et véhicules marqués dans Eden sont enfin initialisés au lancement
+[*] Câble DL-7 configurable depuis le SSE (avec l'ATAK natif) : catégorie Eden « Extraction DL-7 » sur tout objet, action Zeus, contenu SSE généré extractible sans saisie
+[*] Une seule référence de dossier active pour le SEEK et les transmissions
+[*] Correctif : appels distants du SSE acceptés quand Overwatch est chargé ; transmissions Athena (échappement JSON) réparées
+[/list]
+
+[h2]Organisations et tableau des liens[/h2]
+[list]
+[*] Organisations : réseau, cellule, groupe armé, milice, clan, entreprise écran... avec hiérarchie, menace et description
+[*] Rôles réalistes dans l'organisation : chef, adjoint, chef de cellule, financier, logisticien, artificier, recruteur, courrier, guetteur, sympathisant...
+[*] Eden : catégorie « Organisation » sur chaque personne, attribut « Rattaché à l'organisation » sur les objets, module Organisation (synchroniser des personnes ou un groupe, rôles saisis ou générés)
+[*] Zeus : affecter, générer un réseau en cellules sur une sélection ou un groupe, rattacher des objets, révéler, retirer
+[*] Les joueurs découvrent le réseau en jouant : personne contrôlée, identification biométrique (appartenance confirmée), exploitation d'une personne (deux contacts soupçonnés), d'un objet lié ou rattaché
+[*] Tableau des liens (ACE, COMSPEC SSE) : graphe ou ORBAT des personnes, organisations, pièces, appareils, documents et lieux, filtres, soupçonné ou confirmé, fiche de chaque nœud
+[*] Vue Zeus du tableau : tout le réseau, ce que les joueurs ignorent en grisé, bouton Révéler
+[/list]
+
+[h2]Traçabilité des preuves[/h2]
+[list]
+[*] Chaque pièce saisie a un numéro (P-dossier-0001), chaque mise sous scellé un numéro de scellé, un nouveau à chaque rescellement
+[*] Journal de la pièce : saisie, collecte, scellé, photo, ouverture du scellé, exploitation, remise ; date, heure, qui, où
+[*] Journal infalsifiable : chaque ligne porte l'empreinte de la précédente, une ligne modifiée est signalée en rouge au registre
+[*] Remise des pièces à un équipier (ACE), inscrite et émargée ; « Pièces que je détiens »
+[*] Registre des scellés dans le terminal ; le journal part avec la fiche transmise
+[*] Zeus : « Scellé : altérer le journal » pour les exercices de contrôle de la chaîne
+[/list]
+
+[h2]Campagnes[/h2]
+[list]
+[*] Une campagne garde sa graine biométrique, ses personnages récurrents, ses organisations, ce que les joueurs savent, les rencontres et le registre des scellés
+[*] Permanente : la vraie campagne, tout est gardé d'une mission à l'autre (pièces des missions précédentes archivées au registre)
+[*] Récurrente : le bootcamp, mêmes personnages et organisations à chaque drill, tout redevient inconnu au chargement
+[*] Temporaire : drill SOT jetable, graine propre, rien n'est sauvegardé, vidé à la fin ; peut copier la structure d'une autre campagne
+[*] Personnages récurrents (identifiant biométrique fixé ou clé BII) : même nom, même alias, mêmes empreintes, même appartenance d'une carte à l'autre
+[*] Eden : module Campagne SSE (identifiant, type, sauvegarde automatique, sauvegarde en fin de mission) et module de sauvegarde sur déclencheur
+[*] Zeus : charger ou créer, sauvegarder, état et journal, remettre à zéro, fin de mission, exporter, importer, supprimer
+[*] Export et import en texte : une campagne passe d'un serveur ou d'une communauté à l'autre
+[*] ACE : « Campagne en cours » (type, mission n°, personnages récurrents, journal de campagne)
+[/list]
+
+[h2]Campagnes dans Athena et partage entre communautés[/h2]
+[list]
+[*] Serveur relié (COMSPEC Link 2.0.67) : chaque sauvegarde de campagne est copiée dans Athena, Bureau SSE › Campagnes (réglage CBA, activé par défaut)
+[*] Zeus : « Campagne : envoyer à Athena » et « Campagne : récupérer depuis Athena » (avec chargement immédiat au choix)
+[*] Athena : ORBAT des organisations, personnages, registre des scellés, journal ; renommer, changer de type, dupliquer pour un drill, remettre à zéro, archiver
+[*] Catalogue partagé : chaque communauté choisit de publier une campagne (structure seule ou complète) ; les autres la copient et mettent leur copie à jour
+[*] Graine biométrique unique au monde et identifiant global des personnages : pas de biométrie commune entre deux personnages différents, même d'une communauté à l'autre
+[/list]
+
+[h2]Tutoriels, guide et personnalisation[/h2]
+[list]
+[*] Guide complet du mod en PDF (joueurs, chefs de mission, Zeus) livré avec le mod
+[*] Manuel de terrain Arma « COMSPEC SSE » : 10 fiches, ouvrables depuis le menu ACE (« Guide SSE »), la barre de menus d'Eden et Zeus
+[*] Zeus : « Tutoriel : poser un exercice ici » pose une cellule complète (un sujet qui se rend, un corps, téléphone et documents du chef, cache d'armes) pour un drill immédiat
+[*] Réglages CBA « Organisations et scellés » : rôles et natures d'organisation en plus, noms de code, contacts révélés par exploitation, préfixes des pièces et des scellés, niveau atteint par une identification biométrique
+[/list]
+
+[h2]Configuration[/h2]
+[list]
+[*] Réglages CBA COMSPEC SSE › Biométrie et Biométrie — population
+[*] Eden : catégorie Biométrie sur chaque unité (dossier, motif, faux papiers, vraie identité, parenté, doigts manquants, iris, objets portant ses empreintes)
+[*] Zeus : module Biométrie du sujet
+[/list]
 
 ================================================================================
 HISTORIQUE

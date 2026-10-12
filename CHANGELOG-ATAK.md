@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Vague 2026-10-12 (suite) — Recherche sur la carte et données remontées au site (ATAK natif 1.11.1)
+## Vague 2026-10-12 (suite) — Recherche sur la carte et données remontées au site (ATAK natif 1.15.0)
 
 Non testé en jeu. `run-migrations.php` à lancer (clé de mission, table des pertes). Pas de DLL à recompiler.
 
@@ -28,6 +28,43 @@ Non testé en jeu. `run-migrations.php` à lancer (clé de mission, table des pe
 - Trajets des drones et véhicules (historique déjà stocké) tracés sur la relecture ; temps de vol approximatif par pilote.
 - Pistes et BDA du drone : couche « Contacts vus par drone » sur la carte TOC de /atak (envoi limité : 6 pistes toutes les 5 s, seulement si nouvelles ou déplacées de plus de 50 m).
 - Relèvements GE et détections RF de drones : lignes de relèvement sur la carte sigint.
+## Vague 2026-10-12 — Anglais en option (ATAK natif 1.14.0, non testé en jeu)
+
+### Nouveau — Langue du téléphone
+- Réglage CBA par joueur « Langue du téléphone » : Français (par défaut), English, ou Auto (langue du jeu).
+- Le code reste en français ; les textes affichés passent par `comspec_atak_native_fnc_tr` et le dictionnaire `i18n/en.txt` (modèles %1, %2… traduits aussi).
+- Textes des apps Plan, Drone, Photo, socle CS-10, tablette du JPC et files d'envoi traduits ; `tools/i18n.py wrap` puis `extract` à relancer après chaque fusion.
+
+---
+
+## Vague 2026-10-12 — Socle de recharge CS-10 (ATAK natif 1.13.0, non testé en jeu)
+
+### Nouveau — Socle de recharge 10 téléphones
+- Objet **Socle de recharge CS-10** (`COMSPEC_ATAK_ChargingDock`, éditeur Eden > Objets > Électronique, Zeus) et son kit plié `COMSPEC_ATAK_DockKit` (ACE Équipement > « Poser le socle de recharge » : devant soi, sur une table ou au sol).
+- Modèle 3D : socle anodisé sur deux gradins, berceaux et ailettes en caoutchouc, poignées, prise secteur ; les téléphones posés sont notre Samsung S7 en coque tactique (couleur de coque du propriétaire), écran de charge avec le niveau, voyant par emplacement (rouge, orange, vert) lumineux la nuit.
+- ACE sur le socle : « Poser mon téléphone » (charge et état de l'appareil gardés), « Reprendre mon téléphone · 04 · 87 % », « État du socle », « Replier le socle » (vide). Sans ACE : actions molette en regardant le socle.
+- Serveur : seul le propriétaire (identifiant Steam) reprend son téléphone, Zeus et l'admin toujours. Les emplacements sont mémorisés dans le profil du serveur : un téléphone laissé se retrouve à la partie suivante, chargé du temps écoulé ; les socles posés avec le kit sont recréés à leur place sur la même carte. Attribut Eden « Identifiant du socle » pour retrouver les mêmes téléphones d'une mission à l'autre.
+- Réglages serveur **COMSPEC > ATAK · Socle de recharge** : vitesse de charge (1,5 % par minute), charge entre deux parties, mémoriser les socles posés, tout le monde peut reprendre n'importe quel téléphone.
+
+---
+
+## Vague 2026-10-12 — Tablette durcie et ATAK ouvert sur le JPC (ATAK natif 1.12.0, non testé en jeu)
+
+### Nouveau — Tablette durcie à touches (demande de TTRD)
+- Nouveau modèle de terminal « TABLETTE A/B » (Réglages > Personnalisation > Modèle du téléphone) : tablette durcie gris sable, mini-joystick de chaque côté, touches retour / accueil / apps récentes / fn à gauche, A / B / X / Y à droite, patte de fixation en haut, charnière au dos. Rendus 3D Blender (`tools/render_phones.py`, appareil `keys`), coques jour et nuit, dos (« Voir l'arrière ») et poussière de coque.
+
+### Nouveau — ATAK ouvert sur le JPC, en 3D (demande de TTRD)
+- Réglage « Terminal porté » : MINIATURE (comme avant) ou SUR LE JPC. Sur le JPC, la touche « porter » (Ctrl+U) relève la tablette du rabat du porte-plaques vers le visage et l'interface ATAK s'affiche en direct sur son écran 3D (texture UI). Rien n'est affiché à l'écran du joueur : vue libre, déplacement, arme et menu d'actions restent disponibles, on baisse les yeux pour lire.
+- La touche principale prend toujours le terminal en main (plein écran, souris) ; le reposer rouvre l'écran sur le JPC. Ctrl+U à nouveau : la tablette se rabat.
+- ACE « Téléphone ATAK > Ouvrir l'ATAK sur le JPC » / « Rabattre la tablette du JPC », et raccourci « Tablette sur le JPC » (sans touche par défaut).
+- Les autres joueurs voient la tablette ouverte sur le gilet avec un écran ATAK figé ; rabattue, ils voient son dos. Sans gilet, en véhicule ou sans terminal : retour automatique à la miniature. Le téléphone du gilet n'est pas accroché en plus.
+- Écran rafraîchi 6 fois par seconde, seulement s'il est visible et à moins de 6 m de la caméra ; un seul display par ouverture. Écran émissif plus doux la nuit.
+- Réglages fins pour les essais (missionNamespace) : `COMSPEC_ATAK_JpcOffset` (position sur le torse), `COMSPEC_ATAK_JpcTilt` (inclinaison, 50° par défaut), `COMSPEC_ATAK_JpcRate` (images par seconde).
+- Modèle `data/jpc_tablet.p3d` (`tools/model_jpc_tablet.py`), atlas `jpc_tablet_co.paa`, écran figé `jpc_screen_static_co.paa`, matériaux `jpc_screen*.rvmat` (`tools/gen_assets.py <hemtt> jpc`).
+
+### Nouveau — Trois coques de référence (demande de TTRD)
+- Trois nouveaux modèles dans Réglages > Personnalisation > Modèle du téléphone, à côté du S7 qui reste le modèle par défaut : SUPPORT JPC (coque sable sur platine de gilet, équerres noires aux coins, velcro central, patte crantée avec levier, triple objectif), ÉTUI MULTICAM (étui à rabat camouflage, charnières en haut et en bas, velcro en L, îlot double objectif) et COQUE NERVURÉE (coque fine vert-gris, nervures verticales, îlot triple objectif vertical). Géométrie modélisée par nos soins d'après les photos, sans logo de marque. Coques jour et nuit, dos et poussière.
+- Tablette A/B : dos simplifié, caméra déplacée dans le coin façon S7, velcro au centre, mentions MIL-STD-810H et étiquette réglementaire.
 
 ## Vague 2026-10-12 — Retours de test en jeu (ATAK natif 1.11.0)
 
@@ -82,6 +119,8 @@ Non testé en jeu. Inclut les correctifs de performance de la PR #629 (même bas
 - **Non** : l'ATAK reste en local (carte, BFT, messages et apps entre joueurs du serveur). Aucune connexion à Athena, aucune synchro, aucune note bêta ni inscription envoyée ; Overwatch est coupé (`comspec_overwatch_enabled` forcé à faux même si un réglage CBA le rallume). Les apps Athena, Synchro, Discord et Recherchés disparaissent du lanceur et du dock.
 - **Oui** : comportement habituel (COMSPEC Link, restauration de la session, synchro). Sans session, la fenêtre Connexion Athena s'ouvre pour lier le compte tout de suite.
 - Le choix est enregistré dans le profil Arma (`COMSPEC_AthenaMode` = `on` / `off`) et se change à tout moment : téléphone ATAK > Réglages > **Service Athéna** (Oui / Non, revoir la question, lier mon compte) ou menu Échap > bouton **Service Athéna**. Passer à Non garde la clé enregistrée : revenir à Oui ne demande pas de relier le compte.
+
+---
 
 ## Vague 2026-10-11 (suite) — Un téléphone qui réagit (ATAK natif 1.9.0)
 

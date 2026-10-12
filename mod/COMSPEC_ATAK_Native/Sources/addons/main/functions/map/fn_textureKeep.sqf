@@ -25,7 +25,7 @@ _tex = (_tex select { _x isNotEqualTo "" }) arrayIntersect (_tex select { _x isN
 {
     private _c = _d ctrlCreate ["RscPicture", -1];
     _c ctrlSetPosition [safeZoneX - 1, safeZoneY - 1, 0.001, 0.001];
-    _c ctrlSetText _x;
+    _c ctrlSetText ((_x) call comspec_atak_native_fnc_tr);
     _c ctrlSetTextColor [1, 1, 1, 0.01];
     _c ctrlEnable false;
     _c ctrlCommit 0;

@@ -42,7 +42,7 @@ switch (_act) do {
             _pill ctrlEnable false;
             _pill ctrlSetBackgroundColor [0.62, 0.68, 0.65, 0.75];
             _btn = _d ctrlCreate ["COMSPEC_RscButtonOverlay", -1];
-            _btn ctrlSetTooltip "Volet rapide : luminosité, mode nuit, avion, silencieux…";
+            _btn ctrlSetTooltip (("Volet rapide : luminosité, mode nuit, avion, silencieux…") call comspec_atak_native_fnc_tr);
             _btn ctrlAddEventHandler ["ButtonClick", { [{ ["toggle"] call comspec_atak_native_fnc_quickSettings; }] call CBA_fnc_execNextFrame; }];
             uiNamespace setVariable ["COMSPEC_ATAK_ShadeHandle", [_btn, _pill]];
         };
@@ -87,7 +87,7 @@ switch (_act) do {
         private _pad = (_l get "pad") * 2;
         private _font = _l get "font";
         private _fs = _l get "fontSmall";
-        private _ratio = pixelH / pixelW;
+        private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
         private _acc = ([] call comspec_atak_native_fnc_accent) select 0;
         private _made = [];
         // Voile sur le reste de l'écran : un clic dessus referme le volet.
@@ -98,7 +98,7 @@ switch (_act) do {
         _dim ctrlCommit 0;
         private _dimB = _d ctrlCreate ["COMSPEC_RscButtonInvisible", -1];
         _dimB ctrlSetPosition [_dx, _dy + _sth, _dw, _dh - _sth];
-        _dimB ctrlSetTooltip "Fermer le volet";
+        _dimB ctrlSetTooltip (("Fermer le volet") call comspec_atak_native_fnc_tr);
         _dimB ctrlAddEventHandler ["ButtonClick", { [{ ["close"] call comspec_atak_native_fnc_quickSettings; }] call CBA_fnc_execNextFrame; }];
         _dimB ctrlCommit 0;
         _made append [_dim, _dimB];
@@ -108,7 +108,7 @@ switch (_act) do {
             params ["_class", "_pos", ["_text", ""]];
             private _c = _d ctrlCreate [_class, -1, _grp];
             _c ctrlSetPosition _pos;
-            if (_text isNotEqualTo "") then { _c ctrlSetText _text; };
+            if (_text isNotEqualTo "") then { _c ctrlSetText ((_text) call comspec_atak_native_fnc_tr); };
             _c ctrlCommit 0;
             _made pushBack _c;
             _c
@@ -187,7 +187,7 @@ switch (_act) do {
             while { (ctrlTextWidth _st) > _tw * 0.94 && {_fh > _fs * 0.55} } do { _fh = _fh * 0.92; _st ctrlSetFontHeight _fh; };
             private _b = ["COMSPEC_RscButtonOverlay", [_x0, _y0, _tw, _th]] call _mk;
             _b setVariable ["key", _key];
-            _b ctrlSetTooltip format ["%1 : %2", _label, _state];
+            _b ctrlSetTooltip ((format ["%1 : %2", _label, _state]) call comspec_atak_native_fnc_tr);
             _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [{ ["act", _this] call comspec_atak_native_fnc_quickSettings; }, _c getVariable ["key", ""]] call CBA_fnc_execNextFrame; }];
         } forEach _tiles;
         _y = _y + _rows * (_th + _gap);

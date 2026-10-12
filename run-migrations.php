@@ -4482,6 +4482,7 @@ foreach ([
     'atak_recon_images_confidential_storage_migration.php' => 'clichés confidentiels hors racine web (storage/private/recon)',
     'account_session_epoch_migration.php' => 'Mon compte : déconnexion des autres sessions',
     'atak_mission_key_migration.php' => 'clé de mission ATAK natif (relecture, temps d’écran, comptes rendus) et pertes amies',
+    'sse_campaigns_migration.php' => 'campagnes SSE (gestion Athena et partage entre communautés)',
 ] as $lazyFile => $lazyLabel) {
     $migrationRunner->step($lazyFile, static function () use ($root, $lazyFile, $lazyLabel, $pdo): void {
         echo "Migration {$lazyFile} ({$lazyLabel})...\n";

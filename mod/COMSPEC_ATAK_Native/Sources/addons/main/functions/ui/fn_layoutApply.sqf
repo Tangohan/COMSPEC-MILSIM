@@ -9,7 +9,7 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _page = _s getOrDefault ["activePage", "LAUNCHER"];
 private _interactive = _l get "interactive";
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 
 private _set = {
     params ["_idc", "_pos"];
@@ -20,7 +20,7 @@ private _set = {
 };
 
 private _phone = [88509, _l get "phone"] call _set;
-_phone ctrlSetText (_l get "phoneTexture");
+_phone ctrlSetText (((_l get "phoneTexture")) call comspec_atak_native_fnc_tr);
 (_l get "device") params ["_dx", "_dy", "_dw", "_dh"];
 (_l get "status") params ["", "_sy", "", "_sh"];
 (_l get "appbar") params ["", "_ay", "", "_ah"];
@@ -60,7 +60,7 @@ private _rx1 = _dx + _dw - _pad * 3 - _iw - ([0, _ih / _ratio] select _interacti
 _ram ctrlSetPosition [_rx0, _sy, (_rx1 - _rx0) max 0, _sh];
 _ram ctrlSetFontHeight (_fontS * 0.9);
 _ram ctrlCommit 0;
-if ((ctrlText _ram) isEqualTo "") then { _ram ctrlSetText "RAM 00%"; };
+if ((ctrlText _ram) isEqualTo "") then { _ram ctrlSetText (("RAM 00%") call comspec_atak_native_fnc_tr); };
 _ram ctrlShow ((ctrlTextWidth _ram) <= (_rx1 - _rx0));
 (_d displayCtrl 88525) ctrlSetFontHeight _font;
 
@@ -80,17 +80,17 @@ private _step = _bw * 1.7;
 (_d displayCtrl 88528) ctrlSetFontHeight _fontS;
 // Téléphone porté : pastille « main + Ctrl+Maj+U » à droite de la barre d'app au lieu de la phrase ;
 // coupée dans Réglages > Personnalisation (profil COMSPEC_ATAK_HandHint) pour un écran sans indication.
-(_d displayCtrl 88528) ctrlSetText "";
+(_d displayCtrl 88528) ctrlSetText (("") call comspec_atak_native_fnc_tr);
 (uiNamespace getVariable ["COMSPEC_ATAK_HandHintCtrls", []]) params [["_hBg", controlNull], ["_hIc", controlNull], ["_hKey", controlNull]];
 if (isNull _hBg || {(ctrlParent _hBg) isNotEqualTo _d}) then {
     _hBg = _d ctrlCreate ["COMSPEC_RscText", -1];
     _hBg ctrlSetBackgroundColor [0, 0, 0, 0.55];
     _hIc = _d ctrlCreate ["COMSPEC_RscPicture", -1];
-    _hIc ctrlSetText "\z\comspec_atak_native\addons\main\data\ui_hand.paa";
+    _hIc ctrlSetText (("\z\comspec_atak_native\addons\main\data\ui_hand.paa") call comspec_atak_native_fnc_tr);
     _hIc ctrlSetTextColor [0.88, 0.93, 0.9, 0.95];
     _hKey = _d ctrlCreate ["COMSPEC_RscTextCenter", -1];
     _hKey ctrlSetFont "RobotoCondensedBold";
-    _hKey ctrlSetText "Ctrl+Maj+U";
+    _hKey ctrlSetText (("Ctrl+Maj+U") call comspec_atak_native_fnc_tr);
     _hKey ctrlSetBackgroundColor [1, 1, 1, 0.13];
     _hKey ctrlSetTextColor [0.92, 0.96, 0.93, 1];
     uiNamespace setVariable ["COMSPEC_ATAK_HandHintCtrls", [_hBg, _hIc, _hKey]];
@@ -109,7 +109,7 @@ _hKey ctrlSetPosition [_hX + _pad * 2 + _hIcH / _ratio, _hY + _hh * 0.14, _hKw, 
 { _x ctrlCommit 0; _x ctrlShow _hShow; _x ctrlEnable false; } forEach [_hBg, _hIc, _hKey];
 { (_d displayCtrl _x) ctrlShow _interactive; } forEach [88517, 88519, 88521, 88522, 88526];
 (_d displayCtrl 88522) ctrlShow (_interactive && {_l get "mini"});
-(_d displayCtrl 88521) ctrlSetText format ["\z\comspec_atak_native\addons\main\data\ui_%1.paa", ["collapse", "expand"] select (_l get "mini")];
+(_d displayCtrl 88521) ctrlSetText ((format ["\z\comspec_atak_native\addons\main\data\ui_%1.paa", ["collapse", "expand"] select (_l get "mini")]) call comspec_atak_native_fnc_tr);
 (_d displayCtrl 88517) ctrlEnable ((count (_s getOrDefault ["history", []])) > 1);
 
 // Touches physiques de la coque (fractions mesurées sur tools/src/android_s7_ca.png, paysage ;
@@ -150,7 +150,7 @@ private _wall = profileNamespace getVariable ["COMSPEC_ATAK_Wallpaper", "topo"];
 private _walls = ["topo", "night", "desert", "olive", "dark", "soar", "athena", "ops"];
 private _blur = ["", "_blur"] select (profileNamespace getVariable ["COMSPEC_ATAK_WallBlur", false]);
 private _wc = [88542, [_bx, _byy, _bww, _bhh]] call _set;
-_wc ctrlSetText (["", format ["\z\comspec_atak_native\addons\main\data\wall_%1%3_%2.paa", _wall, ["port", "land"] select (_l get "landscape"), _blur]] select (_wall in _walls));
+_wc ctrlSetText (((["", format ["\z\comspec_atak_native\addons\main\data\wall_%1%3_%2.paa", _wall, ["port", "land"] select (_l get "landscape"), _blur]] select (_wall in _walls))) call comspec_atak_native_fnc_tr);
 _wc ctrlShow (_page isEqualTo "LAUNCHER" && {_wall in _walls});
 (_d displayCtrl 88530) ctrlShow _isMap;
 (_d displayCtrl 88531) ctrlShow !_isMap;

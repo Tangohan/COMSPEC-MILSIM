@@ -56,8 +56,8 @@ if (_name isEqualTo "Preset") exitWith {
     _obj setVariable ["COMSPEC_SSE_Preset", _preset, true];
     if (_person) then {
         _obj setVariable ["comspec_sse_enabled", true, true];
-        if (!isNil "comspec_overwatch_connect_fnc_sseProfilePreset" && {!isNil "comspec_overwatch_connect_fnc_sseApplyProfile"} && {_preset isNotEqualTo "auto"}) then {
-            [_obj, ([_preset] call comspec_overwatch_connect_fnc_sseProfilePreset)] call comspec_overwatch_connect_fnc_sseApplyProfile;
+        if (!isNil "comspec_sse_fnc_applyProfile" && {_preset isNotEqualTo "auto"}) then {
+            [_obj, ([_preset] call comspec_sse_fnc_profilePreset)] call comspec_sse_fnc_applyProfile;
         } else {
             switch (_preset) do {
                 case "inconnu": {
@@ -88,6 +88,7 @@ if (_name isEqualTo "Seed") exitWith {
     private _seed = round _value;
     if (!_person) then { _obj setVariable ["Seed", _seed, true]; };
     _obj setVariable ["COMSPEC_SSE_Seed", _seed, true];
+    _obj setVariable ["COMSPEC_SSE_SeedAuthored", true, true];
     true
 };
 

@@ -7,7 +7,7 @@ horizontal de la face : la silhouette se superpose une fois retournée). Toiles 
 Prérequis : pip install bpy (Blender comme module Python, 5.x) ; réutilise les aides de render_3d.py.
 
     python3 render_phones.py [sortie]      # par défaut tools/render/
-    RENDER_ONLY=rugged|iphone|tablet|all   RENDER_SAMPLES=64
+    RENDER_ONLY=rugged|iphone|tablet|keys|plate|flip|ribbed|all   RENDER_SAMPLES=64
 
 Sorties : phone_<appareil>_front.png / phone_<appareil>_back.png.
 Contrat de la face : alpha 0 exactement sur x 455..1546, y 716..1333 (inclus, y vers le bas), alpha 255 sur un anneau
@@ -35,9 +35,11 @@ FONT_B, FONT_R = r3.FONT_B, r3.FONT_R
 SIZE = 2048
 HOLE = (455, 716, 1546, 1333)  # rectangle transparent de l'écran (inclus)
 RING = 6  # marge opaque minimale autour du trou
-BOUNDS = {"rugged": (200, 560, 1900, 1560), "iphone": (200, 560, 1900, 1500), "tablet": (150, 480, 1950, 1580)}
+BOUNDS = {"rugged": (200, 560, 1900, 1560), "iphone": (200, 560, 1900, 1500), "tablet": (150, 480, 1950, 1580), "keys": (150, 480, 1900, 1520),
+          "plate": (130, 480, 1920, 1700), "flip": (150, 480, 1900, 1520), "ribbed": (200, 560, 1850, 1480)}
 TAC_GREEN = (0.33, 0.34, 0.29)  # polymère vert ranger mat de la coque tactique
 TAC_BLACK = (0.055, 0.056, 0.055)  # polymère noir (clip, liseré, patin dorsal)
+KEY_SAND = (0.47, 0.44, 0.39)  # polymère gris sable de la tablette à touches
 
 
 # --- Repère de vue : coordonnées image (px, y vers le bas) -> scène ---
@@ -173,26 +175,67 @@ def mat_grip(name, color, scale=5.0, strength=0.35):
     return m
 
 
-def label_png(path, back):
+def label_png(path, back, title="COMSPEC VT-10", sub="RUGGED TERMINAL", sn="S/N VT10-2291-0473", power="12-28 V DC  3.5 A",
+              ip="IP65  MIL-STD-810H", nsn="NSN 7010-99-COM-0010"):
     """Étiquette signalétique de la tablette (inversée pour la vue de dos, UV liées à X)."""
     from PIL import Image, ImageDraw, ImageFont, ImageOps
     w, h = 520, 180
     im = Image.new("RGB", (w, h), (206, 204, 192))
     d = ImageDraw.Draw(im)
     d.rectangle((0, 0, w - 1, 44), fill=(28, 30, 26))
-    d.text((16, 22), "COMSPEC VT-10", font=ImageFont.truetype(FONT_B, 30), fill=(222, 220, 205), anchor="lm")
-    d.text((w - 16, 22), "RUGGED TERMINAL", font=ImageFont.truetype(FONT_R, 18), fill=(170, 170, 160), anchor="rm")
+    d.text((16, 22), title, font=ImageFont.truetype(FONT_B, 30), fill=(222, 220, 205), anchor="lm")
+    d.text((w - 16, 22), sub, font=ImageFont.truetype(FONT_R, 18), fill=(170, 170, 160), anchor="rm")
     fm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 18)
-    d.text((16, 66), "S/N VT10-2291-0473", font=fm, fill=(40, 40, 40), anchor="lm")
-    d.text((16, 92), "12-28 V DC  3.5 A", font=fm, fill=(40, 40, 40), anchor="lm")
-    d.text((16, 118), "IP65  MIL-STD-810H", font=fm, fill=(40, 40, 40), anchor="lm")
+    d.text((16, 66), sn, font=fm, fill=(40, 40, 40), anchor="lm")
+    d.text((16, 92), power, font=fm, fill=(40, 40, 40), anchor="lm")
+    d.text((16, 118), ip, font=fm, fill=(40, 40, 40), anchor="lm")
     x, i = 300, 0
     while x < w - 20:
         bw = 2 + (i * 7) % 4
         d.rectangle((x, 58, x + bw, 140), fill=(20, 20, 20))
         x += bw + 2 + (i * 3) % 4
         i += 1
-    d.text((w / 2, 162), "NSN 7010-99-COM-0010", font=ImageFont.truetype(FONT_R, 16), fill=(70, 70, 70), anchor="mm")
+    d.text((w / 2, 162), nsn, font=ImageFont.truetype(FONT_R, 16), fill=(70, 70, 70), anchor="mm")
+    if back:
+        im = ImageOps.mirror(im)
+    im.save(path)
+
+
+def regulatory_png(path, back):
+    """Étiquette des normes (dos de la tablette à touches) : modèle, CE, IP68, MIL-STD-810H, ISO 9001 / 14001,
+    poubelle barrée DEEE. Inversée pour la vue de dos (UV liées à X)."""
+    from PIL import Image, ImageDraw, ImageFont, ImageOps
+    w, h = 680, 248
+    im = Image.new("RGB", (w, h), (214, 210, 198))
+    d = ImageDraw.Draw(im)
+    ink = (34, 34, 32)
+    fb, fr = ImageFont.truetype(FONT_B, 26), ImageFont.truetype(FONT_R, 18)
+    fm = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 17)
+    d.text((18, 14), "COMSPEC TX-8  RUGGED EUD", font=fb, fill=ink)
+    for i, t in enumerate(("Model: TX8-JPC   S/N TX8-0412-7731", "7.4 V DC  6800 mAh  Li-ion", "IP68   MIL-STD-810H   ISO 9001:2015   ISO 14001",
+                           "Conforme EN 62368-1 / EN 301 489 / EN 300 328")):
+        d.text((18, 56 + i * 26), t, font=fm if i < 2 else fr, fill=ink)
+    # Marquage CE (deux arcs ouverts et le trait du E).
+    x, y, r = 22, 170, 28
+    d.arc((x, y, x + 2 * r, y + 2 * r), 45, 315, fill=ink, width=7)
+    x2 = x + 2 * r + 8
+    d.arc((x2, y, x2 + 2 * r, y + 2 * r), 45, 315, fill=ink, width=7)
+    d.line((x2 + 14, y + r, x2 + 2 * r - 6, y + r), fill=ink, width=7)
+    # Poubelle barrée (DEEE).
+    bx = 180
+    d.rectangle((bx + 8, y + 10, bx + 40, y + 52), outline=ink, width=4)
+    d.line((bx + 2, y + 8, bx + 46, y + 8), fill=ink, width=4)
+    d.line((bx, y, bx + 48, y + 58), fill=ink, width=4)
+    d.line((bx + 48, y, bx, y + 58), fill=ink, width=4)
+    d.text((250, 178), "IP68", font=fb, fill=ink)
+    d.text((330, 182), "Made in EU  ·  COMSPEC Defence", font=fr, fill=ink)
+    x = 330
+    i = 0
+    while x < w - 20:
+        bw = 2 + (i * 7) % 4
+        d.rectangle((x, 212, x + bw, 238), fill=(20, 20, 20))
+        x += bw + 2 + (i * 3) % 4
+        i += 1
     if back:
         im = ImageOps.mirror(im)
     im.save(path)
@@ -541,7 +584,281 @@ def tablet(back):
     return {"power": 3600, "size": 14, "fill": 600}
 
 
-DEVICES = {"rugged": rugged, "iphone": iphone, "tablet": tablet}
+# --- 4. Tablette durcie à touches (portée sur le JPC) ---
+def keys(back):
+    """Tablette d'EUD durcie : cadre polymère gris sable, ailes latérales avec un mini-joystick chacune, touches
+    retour / accueil / apps récentes / fn à gauche, A / B / X / Y à droite, épaulements et patte de fixation en haut,
+    molettes de blocage aux coins hauts. Le dos porte la charnière du rabat du JPC (bas) et la plaque d'adaptation."""
+    D = 0.55
+    F, V = View(False, D), View(back, D, 1025)
+    frame = mat_polymer("frame", KEY_SAND, rough=0.7, edge=0.3)
+    shoulder = mat_polymer("shoulder", tuple(c * 0.94 for c in KEY_SAND), rough=0.72, edge=0.35)
+    well = mat_polymer("well", tuple(c * 0.62 for c in KEY_SAND), rough=0.8, edge=0.2)
+    black = mat_polymer("black", TAC_BLACK, rough=0.6, grain=1.0, edge=0.5)
+    rubber = r3.mat_paint("rubber", (0.032, 0.032, 0.034), rough=0.6, grain=0.8)
+    fnkey = r3.mat_paint("fnkey", (0.20, 0.055, 0.045), rough=0.6, grain=0.8)
+    ink = r3.mat_simple("ink", (0.90, 0.90, 0.88), 0.5)
+    steel = r3.mat_simple("steel", (0.55, 0.56, 0.55), 0.32, 1.0)
+    dark = r3.mat_simple("dark", (0.015, 0.015, 0.015), 0.5)
+    knurl = mat_knurl("knurl", (0.045, 0.045, 0.05))
+    # Corps : prisme aux coins arrondis, fenêtre de l'écran évidée côté face.
+    body = F.box(190, 600, 1860, 1440, 70, -2 * D, 0.12, frame, bevel=0, name="body")
+    carve(body, [F.box(425, 690, 1576, 1360, 22, -0.02, 1.0, black, bevel=0, name="win")], 0.06)
+    # Tranche haute : deux épaulements et la patte de fixation centrale (fente noire), comme sur la photo.
+    for u0, u1 in ((372, 870), (1180, 1678)):
+        F.box(u0, 572, u1, 618, 14, -2 * D + 0.12, 0.04, shoulder, bevel=0.04, name="shoulder")
+    F.box(900, 512, 1150, 610, 18, -2 * D + 0.22, -0.04, shoulder, bevel=0.045, name="tab")
+    F.box(950, 540, 1100, 566, 8, -2 * D + 0.18, 0.0, dark, bevel=0.01, name="tab_slot")
+    # Lèvre basse et caches de prises.
+    F.box(390, 1424, 1660, 1462, 14, -2 * D + 0.06, -0.08, shoulder, bevel=0.035, name="lip")
+    for u0, u1 in ((560, 720), (1330, 1490)):
+        F.box(u0, 1450, u1, 1470, 8, -D - 0.3, -D + 0.3, black, bevel=0.03, name="port")
+    if not back:
+        # Molettes de blocage aux coins hauts (de dos : simple pastille caoutchouc, voir plus bas).
+        for u in (250, 1800):
+            V.cyl(u, 648, 44, 0.0, 0.30, knurl, verts=64, bevel=0.02)
+            V.cyl(u, 648, 30, 0.28, 0.36, rubber, verts=48, bevel=0.02)
+        V.box(425, 690, 1576, 1360, 22, -0.05, 0.0, mat_glass("glass", (0.006, 0.007, 0.008), 0.03), bevel=0.006)
+        V.box(447, 708, 1554, 1341, 4, 0.0, 0.002, mat_glass("screen", (0.003, 0.004, 0.006), 0.02))
+        # Caméra frontale et capteur de luminosité dans le liseré haut.
+        V.cyl(1000, 664, 9, 0.10, 0.13, dark)
+        V.dome(1000, 664, 5.5, 0.13, 0.02, r3.mat_simple("flens", (0.06, 0.08, 0.16), 0.05, coat=1.0))
+        V.cyl(1060, 664, 5, 0.10, 0.125, r3.mat_simple("als", (0.08, 0.06, 0.05), 0.1, coat=1.0))
+
+        def stick(u, v):
+            # Mini-joystick : puits sombre, bague moletée, champignon caoutchouc légèrement creusé.
+            V.cyl(u, v, 74, 0.06, 0.14, well, verts=96, bevel=0.02)
+            V.cyl(u, v, 60, 0.12, 0.24, knurl, verts=96, bevel=0.015)
+            V.cyl(u, v, 48, 0.22, 0.46, rubber, verts=96, bevel=0.05)
+            V.cyl(u, v, 36, 0.455, 0.47, r3.mat_paint("stick_top", (0.045, 0.045, 0.047), rough=0.75, grain=2.0), verts=64)
+
+        def key(u, v, label, mat, font=FONT_B, size=44):
+            V.cyl(u, v, 50, 0.06, 0.15, well, verts=64, bevel=0.015)
+            V.cyl(u, v, 41, 0.12, 0.30, mat, verts=64, bevel=0.035)
+            V.text(label, u, v, 0.302, size, ink, font=font)
+
+        rows = (948, 1062, 1176, 1290)
+        stick(318, 800)
+        for v, lab, mat, fs in zip(rows, ("↺", "⌂", "❐", "fn"), (rubber, rubber, rubber, fnkey), (72, 74, 62, 44)):
+            key(318, v, lab, mat, FONT_R if lab in ("↺", "⌂", "❐") else FONT_B, fs)
+        stick(1732, 800)
+        for v, lab in zip(rows, ("A", "B", "X", "Y")):
+            key(1732, v, lab, rubber)
+        V.text("COMSPEC", 1430, 595, 0.045, 22, r3.mat_paint("emb", tuple(c * 0.78 for c in KEY_SAND), rough=0.8), extrude=0.004)
+        for u, v in ((262, 1388), (1788, 1388)):
+            V.torx(u, v, 15, 0.12, steel, dark)
+    else:
+        # Dos simple : coque lisse, module photo du S7 (verre noir, objectif, flash et capteur), panneau velcro coyote
+        # au centre (patchs), mention MIL-STD-810H moulée et étiquette des normes, charnière discrète du rabat JPC.
+        V.ring((190, 600, 1860, 1440), (300, 700, 1750, 1340), 70, 40, -0.05, 0.10, frame, bevel=0.03)
+        V.box(301, 701, 1749, 1339, 40, -0.05, 0.03, frame, bevel=0.015)
+        # Module photo façon S7 : fenêtre de la coque, îlot en verre noir légèrement bombé, gros objectif à bague,
+        # pilule flash + capteur cardio à côté.
+        V.box(1425, 676, 1665, 806, 46, 0.0, 0.06, black, bevel=0.015, name="cam_window")
+        V.box(1445, 692, 1605, 790, 44, 0.04, 0.11, mat_glass("camglass", (0.01, 0.01, 0.012), 0.05), bevel=0.02)
+        coat = r3.mat_simple("coat", (0.10, 0.12, 0.30), 0.04, coat=1.0)
+        gun = r3.mat_simple("gun", (0.36, 0.37, 0.38), 0.25, 1.0)
+        V.lens(1525, 741, 38, 0.1, gun, dark, coat, ring_h=0.035)
+        V.box(1618, 700, 1650, 782, 15, 0.04, 0.1, mat_glass("pill", (0.02, 0.02, 0.022), 0.08), bevel=0.01)
+        V.cyl(1634, 722, 10, 0.1, 0.112, r3.mat_simple("flash", (0.93, 0.89, 0.72), 0.3, coat=0.8), verts=32)
+        for v in (752, 766):
+            V.cyl(1634, v, 4, 0.1, 0.108, r3.mat_simple("hrm", (0.25, 0.05, 0.05), 0.2, coat=1.0), verts=16)
+        # Panneau velcro (boucles) coyote cousu au centre.
+        loop = mat_stipple("velcro", (0.42, 0.33, 0.21), scale=150.0, strength=0.7)
+        seam = r3.mat_paint("seam", (0.30, 0.24, 0.15), rough=0.9, grain=2.0)
+        V.box(752, 846, 1298, 1214, 18, 0.02, 0.07, seam, bevel=0.01, name="velcro_edge")
+        V.box(768, 862, 1282, 1198, 12, 0.05, 0.085, loop, bevel=0.006, name="velcro")
+        # Mentions : MIL-STD moulé, étiquette réglementaire (CE, IP68, ISO, DEEE).
+        V.text("MIL-STD-810H", 1025, 1262, 0.03, 34, mat_polymer("emb", tuple(c * 0.8 for c in KEY_SAND), rough=0.8), extrude=0.006)
+        lab = os.path.join(OUT, "_vt10_label.png")
+        regulatory_png(lab, True)
+        V.box(1360, 1190, 1700, 1314, 4, 0.03, 0.034, r3.mat_image("label", lab, 0.5), bevel=0)
+        # Charnière du rabat JPC : deux charnons aux extrémités du bas.
+        for u0 in (430, 1500):
+            V.box(u0, 1370, u0 + 110, 1430, 14, 0.0, 0.2, dsand_hinge := mat_polymer("hinge", tuple(c * 0.86 for c in KEY_SAND)), bevel=0.03, name="hinge_leaf")
+            hcyl(V, u0 + 6, u0 + 104, 1410, 18, 0.19, steel, bevel=0.01)
+    return {"power": 3300, "size": 14, "fill": 560}
+
+
+# --- Coques de référence (photos de TTRD), géométrie modélisée par nous, sans logos de marque ---
+CASE_TAN = (0.40, 0.37, 0.29)
+CASE_GREEN = (0.43, 0.44, 0.39)
+
+
+def mirror_u(view, u):
+    """Abscisse donnée dans l'image de dos -> coordonnée de la vue courante (identique de dos, miroir de face)."""
+    return u if view.back else SIZE - u
+
+
+def camo_png(path, seed=7):
+    """Camouflage multi-environnement générique (taches douces beige, vert, brun, fines branches sombres)."""
+    import random
+    from PIL import Image, ImageDraw, ImageFilter
+    rnd = random.Random(seed)
+    W = 1024
+    im = Image.new("RGB", (W, W), (150, 136, 102))
+    for col, n, rmin, rmax, blur in (((172, 158, 120), 70, 30, 90, 10), ((112, 118, 80), 80, 25, 80, 8),
+                                     ((128, 104, 72), 60, 20, 70, 6), ((84, 92, 62), 50, 15, 50, 5)):
+        layer = Image.new("L", (W, W), 0)
+        d = ImageDraw.Draw(layer)
+        for _ in range(n):
+            x, y, r = rnd.uniform(0, W), rnd.uniform(0, W), rnd.uniform(rmin, rmax)
+            pts = [(x + r * rnd.uniform(0.5, 1.1) * __import__("math").cos(a / 9 * 6.283), y + r * rnd.uniform(0.4, 1.0) * __import__("math").sin(a / 9 * 6.283)) for a in range(9)]
+            d.polygon(pts, fill=255)
+        layer = layer.filter(ImageFilter.GaussianBlur(blur)).point(lambda v: 255 if v > 110 else 0).filter(ImageFilter.GaussianBlur(2))
+        im.paste(Image.new("RGB", (W, W), col), (0, 0), layer)
+    # Grain de tissu enduit : léger bruit, pas de motif net.
+    import numpy as np
+    a = np.asarray(im).astype(np.float32)
+    a += np.random.default_rng(seed).normal(0, 5, a.shape[:2])[..., None]
+    Image.fromarray(np.clip(a, 0, 255).astype("uint8")).save(path)
+
+
+def phone_front(V, u0, v0, u1, v1, r, top_left=True):
+    """Face de smartphone dans sa coque : verre noir laqué, dalle, caméra frontale et écouteur côté haut (gauche)."""
+    V.box(u0, v0, u1, v1, r, -0.06, 0.0, mat_glass("glass", (0.006, 0.007, 0.008), 0.03), bevel=0.008)
+    V.box(447, 708, 1554, 1341, 4, 0.0, 0.002, mat_glass("screen", (0.003, 0.004, 0.006), 0.02))
+    cu = 425 if top_left else 1576
+    V.cyl(cu, 1025, 8, 0.0, 0.004, r3.mat_simple("fcam", (0.0, 0.0, 0.0), 0.1, coat=1.0))
+    V.dome(cu, 1025, 4.5, 0.004, 0.02, r3.mat_simple("flens", (0.06, 0.08, 0.16), 0.05, coat=1.0))
+    V.box(cu - 6, 1060, cu + 6, 1140, 4, 0.0, 0.003, r3.mat_simple("spk", (0.03, 0.03, 0.03), 0.6), bevel=0)
+
+
+def plate(back):
+    """Coque porte-plaques (support MOLLE / JPC) couleur tan : ailes à pads suédés, équerres caoutchouc noires aux
+    bords, plaque centrale surélevée avec velcro, îlot photo triple objectif, pied de fixation à crans et levier."""
+    D = 0.55
+    F, V = View(False, D), View(back, D)
+    tan = mat_polymer("tan", CASE_TAN, rough=0.72, edge=0.28)
+    tan2 = mat_polymer("tan2", tuple(c * 1.06 for c in CASE_TAN), rough=0.7, edge=0.32)
+    suede = r3.mat_paint("suede", tuple(c * 0.92 for c in CASE_TAN), rough=0.95, grain=4.0)
+    rubber = mat_polymer("rubber", (0.045, 0.045, 0.047), rough=0.75, grain=1.2, edge=0.25)
+    dark = r3.mat_simple("dark", (0.015, 0.015, 0.015), 0.5)
+    M = lambda u: SIZE - u  # noqa: E731  (cotes de l'image de dos -> repère de la face, pour les pièces communes F)
+    # Coque : corps commun aux deux vues, équerres caoutchouc sur les bords courts (traversantes).
+    F.box(170, 610, 1878, 1430, 60, -2 * D - 0.04, 0.10, tan, bevel=0.05, name="body")
+    for u0, u1 in ((150, 236), (1812, 1898)):
+        F.box(u0, 630, u1, 1410, 26, -2 * D - 0.12, 0.22, rubber, bevel=0.04, name="bracket")
+    for u0, u1 in ((154, 320), (1728, 1894)):
+        for v0, v1 in ((612, 676), (1364, 1428)):
+            F.box(u0, v0, u1, v1, 30, -2 * D - 0.12, 0.22, rubber, bevel=0.04, name="corner")
+    # Pied de fixation (sous la coque) : bloc à crans et levier de verrouillage, poignée côté gauche de dos.
+    F.box(M(1330), 1400, M(718), 1530, 22, -2 * D - 0.3, -0.10, tan, bevel=0.04, name="foot")
+    for k in range(10):
+        u = 745 + k * 56
+        a, b = sorted((M(u), M(u + 30)))
+        F.box(a, 1500, b, 1604, 8, -2 * D - 0.34, -0.14, tan2, bevel=0.03, name="crenel")
+    a, b = sorted((M(330), M(1390)))
+    F.box(a, 1540, b, 1610, 28, -2 * D - 0.26, -0.40, tan, bevel=0.04, name="lever")
+    a, b = sorted((M(240), M(360)))
+    F.box(a, 1508, b, 1640, 40, -2 * D - 0.30, -0.36, tan2, bevel=0.05, name="lever_grip")
+    if not back:
+        # Face : lèvre de coque tan autour du verre, équerres et coins noirs visibles.
+        V.ring((236, 640, 1812, 1400), (392, 676, 1656, 1372), 40, 40, -0.05, 0.16, tan2, bevel=0.04)
+        phone_front(V, 392, 676, 1656, 1372, 40)
+    else:
+        # Dos : ailes en retrait à pads suédés, plaque centrale surélevée, velcro, emblème, îlot photo.
+        V.box(270, 690, 560, 1360, 26, 0.04, 0.12, suede, bevel=0.02, name="pad_l")
+        V.box(1470, 1080, 1760, 1360, 26, 0.04, 0.12, suede, bevel=0.02, name="pad_r")
+        V.box(560, 600, 1470, 1200, 30, 0.08, 0.30, tan2, bevel=0.05, name="plate")
+        V.box(700, 1180, 1330, 1420, 40, 0.08, 0.30, tan2, bevel=0.05, name="plate_low")
+        loop = mat_stipple("velcro", (0.34, 0.29, 0.21), scale=150.0, strength=0.7)
+        V.box(733, 745, 1278, 1255, 10, 0.28, 0.335, loop, bevel=0.006, name="velcro")
+        V.text("COMSPEC", 1015, 680, 0.30, 34, mat_polymer("emb", tuple(c * 0.85 for c in CASE_TAN), rough=0.8), extrude=0.006)
+        ring = mat_polymer("emblem", tuple(c * 0.85 for c in CASE_TAN), rough=0.8)
+        V.cyl(1005, 1330, 46, 0.29, 0.33, ring, verts=64, bevel=0.01)
+        V.cyl(1005, 1330, 34, 0.32, 0.335, tan2, verts=64)
+        V.box(1001, 1300, 1009, 1360, 2, 0.33, 0.345, ring, bevel=0)
+        V.box(975, 1326, 1035, 1334, 2, 0.33, 0.345, ring, bevel=0)
+        # Îlot photo (coin haut droit de dos) : cadre noir, verre, trois objectifs et flash.
+        V.box(1334, 677, 1797, 1051, 70, 0.04, 0.24, rubber, bevel=0.03, name="cam_frame")
+        V.box(1360, 700, 1772, 1028, 60, 0.20, 0.27, mat_glass("camglass", (0.012, 0.012, 0.014), 0.06), bevel=0.02)
+        coat = r3.mat_simple("coat", (0.10, 0.12, 0.30), 0.04, coat=1.0)
+        gun = r3.mat_simple("gun", (0.10, 0.10, 0.11), 0.3, 1.0)
+        for u, v in ((1478, 800), (1650, 800), (1564, 935)):
+            V.lens(u, v, 60, 0.27, gun, dark, coat, ring_h=0.08)
+        V.cyl(1690, 950, 18, 0.27, 0.29, r3.mat_simple("flash", (0.93, 0.89, 0.72), 0.3, coat=0.8), verts=32)
+    return {"power": 3300, "size": 14, "fill": 560}
+
+
+def flip(back):
+    """Étui à rabat multicam : charnières en haut et en bas, grand velcro coyote en L, îlot photo double objectif."""
+    D = 0.55
+    F, V = View(False, D), View(back, D)
+    camo = os.path.join(OUT, "_camo.png")
+    camo_png(camo)
+    cam = r3.mat_image("camo", camo, 0.75)
+    tanp = mat_polymer("tanp", (0.48, 0.42, 0.31), rough=0.72, edge=0.3)
+    dark = r3.mat_simple("dark", (0.015, 0.015, 0.015), 0.5)
+    steel = r3.mat_simple("steel", (0.40, 0.40, 0.38), 0.35, 1.0)
+    F.box(200, 620, 1848, 1420, 46, -2 * D - 0.04, 0.10, cam, bevel=0.05, name="body")
+    # Charnière haute : barre ronde à charnons, zones crantées aux extrémités, goupilles aux coins.
+    hcyl(F, 330, 1720, 600, 34, -D, tanp, bevel=0.01)
+    for u0 in (330, 760, 1190, 1560):
+        hcyl(F, u0, u0 + 130, 600, 40, -D, tanp, bevel=0.02)
+    for u0 in (470, 1400):
+        for k in range(6):
+            F.box(u0 + k * 26, 548, u0 + k * 26 + 14, 600, 4, -D - 0.2, -D + 0.2, tanp, bevel=0.01, name="fin")
+    for u in (300, 1750):
+        F.cyl(u, 612, 16, -2 * D - 0.06, 0.16, steel, verts=32)
+    # Charnière basse : charnons et fûts, ailettes aux extrémités.
+    for u0, u1 in ((340, 650), (1400, 1710)):
+        hcyl(F, u0, u1, 1418, 36, -D, tanp, bevel=0.02)
+    hcyl(F, 650, 1400, 1418, 26, -D, dark)
+    for u0 in (230, 1720):
+        for k in range(4):
+            F.box(u0 + k * 26, 1400, u0 + k * 26 + 14, 1448, 4, -D - 0.3, -D + 0.3, tanp, bevel=0.01, name="fin")
+    if not back:
+        V.ring((200, 620, 1848, 1420), (380, 680, 1668, 1370), 46, 34, -0.05, 0.16, cam, bevel=0.04)
+        phone_front(V, 380, 680, 1668, 1370, 34)
+    else:
+        loop = mat_stipple("velcro", (0.45, 0.36, 0.23), scale=150.0, strength=0.7)
+        V.box(274, 733, 1123, 1342, 30, 0.08, 0.15, loop, bevel=0.006, name="velcro_a")
+        V.box(1040, 1098, 1690, 1342, 30, 0.078, 0.148, loop, bevel=0.006, name="velcro_b")
+        # Îlot photo : bordure camo surélevée, plaque gris foncé, deux objectifs côte à côte, flash.
+        V.box(1150, 725, 1740, 1170, 70, 0.04, 0.22, cam, bevel=0.04, name="cam_border")
+        V.box(1186, 759, 1703, 1142, 56, 0.18, 0.25, r3.mat_paint("camplate", (0.13, 0.13, 0.14), rough=0.55), bevel=0.02)
+        coat = r3.mat_simple("coat", (0.10, 0.12, 0.30), 0.04, coat=1.0)
+        gun = r3.mat_simple("gun", (0.08, 0.08, 0.09), 0.3, 1.0)
+        for u in (1405, 1590):
+            V.lens(u, 846, 92, 0.25, gun, dark, coat, ring_h=0.09)
+        V.cyl(1504, 977, 28, 0.25, 0.27, r3.mat_simple("flash", (0.85, 0.85, 0.82), 0.3, coat=0.8), verts=32)
+    return {"power": 3300, "size": 14, "fill": 560}
+
+
+def ribbed(back):
+    """Coque fine vert-gris à bandes horizontales en relief (bourrelets), îlot photo vertical triple objectif."""
+    D = 0.42
+    F, V = View(False, D), View(back, D)
+    green = mat_polymer("green", CASE_GREEN, rough=0.7, edge=0.28)
+    green2 = mat_polymer("green2", tuple(c * 1.05 for c in CASE_GREEN), rough=0.68, edge=0.34)
+    island = r3.mat_paint("island", (0.10, 0.10, 0.105), rough=0.6, grain=0.8)
+    dark = r3.mat_simple("dark", (0.015, 0.015, 0.015), 0.5)
+    F.box(245, 610, 1803, 1430, 90, -2 * D - 0.04, 0.10, green, bevel=0.06, name="body", seg=14)
+    if not back:
+        V.ring((245, 610, 1803, 1430), (300, 662, 1748, 1378), 90, 60, -0.05, 0.14, green2, bevel=0.04)
+        phone_front(V, 300, 662, 1748, 1378, 60)
+    else:
+        # Haut du téléphone à droite de dos : îlot photo en L, objectifs en colonne (ici en ligne), flash.
+        V.box(1295, 684, 1737, 987, 40, 0.04, 0.14, island, bevel=0.03, name="island_a")
+        V.box(1541, 900, 1737, 1282, 40, 0.035, 0.138, island, bevel=0.03, name="island_b")
+        coat = r3.mat_simple("coat", (0.10, 0.12, 0.30), 0.04, coat=1.0)
+        gun = r3.mat_simple("gun", (0.30, 0.31, 0.32), 0.3, 1.0)
+        for u in (1645, 1515, 1385):
+            V.lens(u, 800, 58, 0.13, gun, dark, coat, ring_h=0.06)
+        V.cyl(1645, 892, 16, 0.13, 0.15, r3.mat_simple("flash", (0.93, 0.89, 0.72), 0.3, coat=0.8), verts=32)
+        V.text("COMSPEC", 1640, 1130, 0.141, 20, r3.mat_simple("ink", (0.30, 0.30, 0.30), 0.5), font=FONT_R, rot=math.pi / 2, extrude=0.003)
+        # Bandes en relief, de la caméra vers le bas du téléphone (à gauche de dos).
+        edges = (1213, 1057, 918, 770, 622, 475, 300)
+        for i in range(len(edges) - 1):
+            a, b = edges[i + 1] + 6, edges[i] - 6
+            V.box(a, 650, b, 1390, 30, 0.04, 0.16 + 0.02 * (i % 2), green2, bevel=0.07, name="band")
+        for v0 in (905, 1167):
+            V.box(266, v0, 282, v0 + 98, 6, 0.0, 0.11, dark, bevel=0.01, name="slot")
+    return {"power": 3300, "size": 14, "fill": 560}
+
+
+DEVICES = {"rugged": rugged, "iphone": iphone, "tablet": tablet, "keys": keys, "plate": plate, "flip": flip, "ribbed": ribbed}
 
 
 # --- Post-traitement et contrôle ---
@@ -594,9 +911,10 @@ def render(name, back):
     bpy.ops.render.render(write_still=True)
     if not back:
         punch(path)
-    tmp = os.path.join(OUT, "_vt10_label.png")
-    if os.path.exists(tmp):
-        os.remove(tmp)
+    for t in ("_vt10_label.png", "_camo.png"):
+        tmp = os.path.join(OUT, t)
+        if os.path.exists(tmp):
+            os.remove(tmp)
     return check(path, name, not back)
 
 

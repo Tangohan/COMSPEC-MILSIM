@@ -11,9 +11,12 @@ private _mode = toUpper (profileNamespace getVariable ["COMSPEC_ATAK_Mode", "MIN
 if (!_interactive || {!(_mode in ["MINI", "FULL"])}) then { _mode = "MINI"; };
 private _orient = toUpper (profileNamespace getVariable ["COMSPEC_ATAK_Orientation", "PORTRAIT"]);
 if (_mode isEqualTo "FULL" || {!(_orient in ["PORTRAIT", "LANDSCAPE"])}) then { _orient = ["PORTRAIT", "LANDSCAPE"] select (_mode isEqualTo "FULL"); };
+// Écran 3D de la tablette sur le JPC (fn_jpcScreen) : texture UI 1024 x 576, toujours horizontale, l'écran la remplit.
+private _texture = _s getOrDefault ["texture", false];
+if (_texture) then { _orient = "LANDSCAPE"; };
 private _mini = _mode isEqualTo "MINI";
 private _land = _orient isEqualTo "LANDSCAPE";
-private _ratio = pixelH / pixelW; // hauteur (unités écran) d'un carré de largeur 1
+private _ratio = [pixelH / pixelW, 1024 / 576] select _texture; // hauteur (unités écran) d'un carré de largeur 1
 
 // Coque S7 : texture carrée 2048 px. Fractions mesurées dans tools/src/android_s7_ca.png.
 // _vis = boîte visible de la coque (avec la fixation), _scr = écran transparent.
@@ -23,7 +26,11 @@ private _term = [player] call comspec_atak_native_fnc_vehicleTerminal;
 private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
 if (_term in ["vehicle", "cp"] && {profileNamespace getVariable ["COMSPEC_ATAK_VehTablet", true]}) then { _model = "tablet"; };
 private _visLand = (createHashMapFromArray [
-    ["s7", [0.1025, 0.2798, 0.9263, 0.8535]], ["rugged", [0.1509, 0.2744, 0.8267, 0.7573]], ["iphone", [0.1914, 0.3159, 0.7861, 0.6851]], ["tablet", [0.0850, 0.2510, 0.9258, 0.7549]]
+    ["s7", [0.1025, 0.2798, 0.9263, 0.8535]], ["rugged", [0.1509, 0.2744, 0.8267, 0.7573]], ["iphone", [0.1914, 0.3159, 0.7861, 0.6851]], ["tablet", [0.0850, 0.2510, 0.9258, 0.7549]],
+    ["keys", [0.0923, 0.2495, 0.9083, 0.7178]],
+    ["plate", [0.0728, 0.2974, 0.9272, 0.8013]],
+    ["flip", [0.0972, 0.2671, 0.9028, 0.7104]],
+    ["ribbed", [0.1191, 0.2974, 0.8809, 0.6987]]
 ]) getOrDefault [_model, []];
 if (_visLand isEqualTo []) then { _model = "s7"; _visLand = [0.1025, 0.2798, 0.9263, 0.8535]; };
 // Vertical : texture tournée d'un quart de tour horaire.
@@ -63,13 +70,21 @@ private _offKey = format ["COMSPEC_ATAK_Offset_%1_%2", _mode, _orient];
 (profileNamespace getVariable [_offKey, [0, 0]]) params [["_ox", 0], ["_oy", 0]];
 _dx = _dx + _ox;
 _dy = _dy + _oy;
+// Texture UI : coordonnées 0..1 sur toute la texture ; la coque est le modèle 3D, l'écran occupe tout.
+if (_texture) then {
+    _scr = [0.2222, 0.3496, 0.7549, 0.6509];
+    _dw = 1 / ((_scr select 2) - (_scr select 0));
+    _dh = 1 / ((_scr select 3) - (_scr select 1));
+    _dx = -_dw * (_scr select 0);
+    _dy = -_dh * (_scr select 1);
+};
 
 private _sx = _dx + _dw * (_scr select 0);
 private _sy = _dy + _dh * (_scr select 1);
 private _sw = _dw * ((_scr select 2) - (_scr select 0));
 private _sh = _dh * ((_scr select 3) - (_scr select 1));
 
-private _font = ((_sh * ([[0.040, 0.060] select _land, 0.036] select !_mini)) max (safeZoneH * 0.015)) * ((profileNamespace getVariable ["COMSPEC_ATAK_TextScale", 1]) max 0.8 min 1.25);
+private _font = ((_sh * ([[[0.040, 0.060] select _land, 0.036] select !_mini, 0.052] select _texture)) max ([safeZoneH * 0.015, 0.03] select _texture)) * ((profileNamespace getVariable ["COMSPEC_ATAK_TextScale", 1]) max 0.8 min 1.25);
 private _statusH = _font * 1.45;
 private _appH = _font * 1.9;
 private _dock = !_land;
@@ -87,8 +102,8 @@ private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"
 private _shellSfx = if (_night) then { "_night" } else { ["", "_" + _tint] select (_tint in ["od", "black"]) };
 createHashMapFromArray [
     ["mode", _mode], ["offsetKey", _offKey], ["visible", [_dx + _dw * _vx0, _dy + _dh * _vy0, _dw * (_vx1 - _vx0), _dh * (_vy1 - _vy0)]], ["mini", _mini], ["orientation", _orient], ["landscape", _land], ["interactive", _interactive], ["dock", _dock],
-    ["phone", [_dx, _dy, _dw, _dh]], ["phoneTexture", if (_model isEqualTo "s7") then { format ["\z\comspec_atak_native\addons\main\data\phone_%1%2.paa", ["portrait", "landscape"] select _land, _shellSfx] } else {
-        format ["\z\comspec_atak_native\addons\main\data\phone_%1_%2%3.paa", ["portrait", "landscape"] select _land, _model, ["", "_night"] select _night] }],
+    ["phone", [_dx, _dy, _dw, _dh]], ["texture", _texture], ["phoneTexture", if (_texture) then { "" } else { if (_model isEqualTo "s7") then { format ["\z\comspec_atak_native\addons\main\data\phone_%1%2.paa", ["portrait", "landscape"] select _land, _shellSfx] } else {
+        format ["\z\comspec_atak_native\addons\main\data\phone_%1_%2%3.paa", ["portrait", "landscape"] select _land, _model, ["", "_night"] select _night] } }],
     ["model", _model], ["terminal", _term],
     ["device", [_sx, _sy, _sw, _sh]],
     ["status", [_sx, _sy, _sw, _statusH]],

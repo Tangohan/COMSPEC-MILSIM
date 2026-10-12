@@ -44,6 +44,7 @@ class CfgFunctions {
             class ssePersonRefreshPanels {};
             class sseCaptureFacePhoto {};
             class sseFaceFraming {};
+            class sseFaceStudio {};
             class sseFaceViewfinder {};
             class sseCollectMedical {};
             class sseBiometricSample {};
@@ -79,11 +80,6 @@ class CfgFunctions {
             class intelNoteSubmit {};
             class intelNoteClose {};
             class intelNoteApplyGeometry {};
-            class moduleSseCase {};
-            class moduleSseProfile {};
-            class moduleSseEquip {};
-            class moduleSseDocChrome {};
-            class registerZenSseModules {};
             class giveSeekTerminal {};
             class medevacDialogShow {};
             class medevacDialogSubmit {};
@@ -663,6 +659,8 @@ class CfgRemoteExec {
         class comspec_overwatch_connect_fnc_syncPlayerAtakPublicVars { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_giveSeekTerminal { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_sseApplyProfile { allowedTargets = 0; };
+        // Module Zeus « Biométrie du sujet » → serveur (moteur du pack SSE).
+        class comspec_sse_fnc_bioSetProfile { allowedTargets = 2; };
         class comspec_overwatch_connect_fnc_sseActiveCase { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_setGpsBeacon { allowedTargets = 0; };
         class comspec_overwatch_connect_fnc_setPhoneTrack { allowedTargets = 0; };
@@ -833,12 +831,6 @@ class CfgFactionClasses
         priority = 2;
         side = 7;
     };
-    class COMSPEC_SSE : NO_CATEGORY
-    {
-        displayName = "COMSPEC SSE";
-        priority = 2;
-        side = 7;
-    };
     class COMSPEC_Outils : NO_CATEGORY
     {
         displayName = "COMSPEC Outils";
@@ -893,8 +885,7 @@ class CfgVehicles
     // Zones roleplay (sans couverture, brouillage, etc.)
     #include "modules\module_roleplay_zone.hpp"
 
-    // Exploitation SSE
-    #include "modules\module_sse.hpp"
+    // Exploitation SSE : modules Eden et Zeus dans le pack COMSPEC SSE (zeus\modules_seek.hpp).
 
     // Relevé de carte (Eden)
     #include "modules\module_theater_survey.hpp"

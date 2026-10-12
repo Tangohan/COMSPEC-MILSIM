@@ -60,7 +60,7 @@ switch (_page) do {
 
 private _textH = _bh - 2 * _pad - ([0, _rowH + _pad] select ((count _buttons) > 0));
 private _text = ["COMSPEC_RscStructuredText", [_pad, _pad, _bw - 2 * _pad - 0.012, _textH]] call comspec_atak_native_fnc_pageCtrl;
-_text ctrlSetStructuredText parseText _body;
+_text ctrlSetStructuredText parseText ((_body) call comspec_atak_native_fnc_tr);
 _text ctrlSetPosition [_pad, _pad, _bw - 2 * _pad - 0.012, (ctrlTextHeight _text) max _textH];
 _text ctrlCommit 0;
 

@@ -89,13 +89,13 @@ switch (_act) do {
             _hit ctrlAddEventHandler ["MouseButtonDown", { params ["", "_btn", "_mx", "_my"]; if (_btn isEqualTo 0) then { ["click", [_mx, _my]] call comspec_atak_native_fnc_droneFlir; }; }];
             if !(isPiPEnabled) then {
                 private _w2 = ["COMSPEC_RscStructuredText", [_rx, _ry + _h * 0.4, _w, _fs * 2.6]] call _mk;
-                _w2 ctrlSetStructuredText parseText "<t align='center' color='#f2ab33'>Image dans l'image (PiP) désactivée :<br/>Options > Vidéo > Image dans l'image</t>";
+                _w2 ctrlSetStructuredText parseText (("<t align='center' color='#f2ab33'>Image dans l'image (PiP) désactivée :<br/>Options > Vidéo > Image dans l'image</t>") call comspec_atak_native_fnc_tr);
             };
             // Coins de cadrage.
             private _cl = (_w min (_h / pixelH * pixelW)) * 0.07;
-            private _ch = _cl * pixelH / pixelW;
+            private _ch = _cl * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
             private _m = _w * 0.04;
-            private _mv = _m * pixelH / pixelW;
+            private _mv = _m * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
             {
                 _x params ["_cx", "_cy", "_sx", "_sy"];
                 [[[_cx, _cx - _cl] select (_sx < 0), _cy, _cl, _py]] call _bar;
@@ -105,7 +105,7 @@ switch (_act) do {
             private _cx = _rx + _w / 2;
             private _cy = _ry + _h / 2;
             private _rw = _w * 0.045;
-            private _rh = _rw * pixelH / pixelW;
+            private _rh = _rw * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
             {
                 [_x] call _bar;
             } forEach [
@@ -186,7 +186,7 @@ switch (_act) do {
                 _x ctrlCommit 0;
             } forEach _edges;
             _lbl ctrlSetPosition [_bx, _by - (ctrlPosition _lbl select 3), (_w * 0.4), ctrlPosition _lbl select 3];
-            _lbl ctrlSetText _txt;
+            _lbl ctrlSetText ((_txt) call comspec_atak_native_fnc_tr);
             _lbl ctrlSetTextColor _c;
             _lbl ctrlShow true;
             _lbl ctrlCommit 0;
@@ -279,7 +279,7 @@ switch (_act) do {
         {
             if (ctrlShown _x && {(_x getVariable ["txt", ""]) isNotEqualTo (_lines select _forEachIndex)}) then {
                 _x setVariable ["txt", _lines select _forEachIndex];
-                _x ctrlSetStructuredText parseText format ["<t font='EtelkaMonospacePro' align='%1' shadow='2' shadowColor='#000000' color='#e8f0ea'>%2</t>", _x getVariable ["al", "left"], _lines select _forEachIndex];
+                _x ctrlSetStructuredText parseText ((format ["<t font='EtelkaMonospacePro' align='%1' shadow='2' shadowColor='#000000' color='#e8f0ea'>%2</t>", _x getVariable ["al", "left"], _lines select _forEachIndex]) call comspec_atak_native_fnc_tr);
             };
         } forEach _texts;
     };

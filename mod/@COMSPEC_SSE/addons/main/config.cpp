@@ -39,8 +39,19 @@ class CfgMods {
 
 class CfgFactionClasses {
     class NO_CATEGORY;
+    // Une famille de catégories, numérotées dans l'ordre d'une préparation de mission.
     class COMSPEC_SSE: NO_CATEGORY {
-        displayName = "COMSPEC — SSE";
+        displayName = "COMSPEC SSE · 1. Sites et objets";
+        priority = 2;
+        side = 7;
+    };
+    class COMSPEC_SSE_People: NO_CATEGORY {
+        displayName = "COMSPEC SSE · 2. Personnes et liens";
+        priority = 2;
+        side = 7;
+    };
+    class COMSPEC_SSE_Mission: NO_CATEGORY {
+        displayName = "COMSPEC SSE · 3. Mission et scénario";
         priority = 2;
         side = 7;
     };

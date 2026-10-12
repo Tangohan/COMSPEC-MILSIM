@@ -19,7 +19,10 @@ final class ReconPhotoMetaWiringAssetTest extends TestCase
     public function testComspecLinkSendsPhotoMetaThroughSendJournal(): void
     {
         $cs = $this->read('mod/UptoDate/COMSPECExtension/Extension.cs');
-        self::assertStringContainsString('private const string ExtensionVersion = "2.0.66";', $cs);
+        // NotifyNewPhoto avec métadonnées depuis 2.0.66 ; les versions suivantes le gardent.
+        self::assertMatchesRegularExpression('/private const string ExtensionVersion = "(\\d+\\.\\d+\\.\\d+)";/', $cs);
+        preg_match('/private const string ExtensionVersion = "(\\d+\\.\\d+\\.\\d+)";/', $cs, $m);
+        self::assertTrue(version_compare($m[1], '2.0.66', '>='), 'COMSPEC Link >= 2.0.66 attendu, trouvé ' . $m[1]);
         foreach (['"title", args, 17', '"description", args, 18', '"is_sse", args, 19', '"sse_case_ref", args, 20',
             '"is_confidential", args, 21', '"photo_source", args, 22', '"drone_name", args, 23'] as $needle) {
             self::assertStringContainsString($needle, $cs);

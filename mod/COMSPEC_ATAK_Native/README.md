@@ -41,6 +41,12 @@ Identités livrées :
 - Accessoires : `COMSPEC_ATAK_PowerBank` (`fn_powerBank`), balise IR (`fn_irBeacon`), `COMSPEC_ATAK_NvgFilter` et lueur des écrans (`fn_screenGlow`, réglage serveur « Lueur des écrans la nuit »). Effacement d'urgence et téléphone extractible en cas de capture : `fn_phoneSecurity`.
 - Véhicules : `fn_vehicleTerminal` (tablette de bord, réglage serveur « Tablette des véhicules », objet `COMSPEC_ATAK_VehicleKit`), `fn_vehicleGateway` (passerelle, PC mobile ; portées par mission `COMSPEC_ATAK_GwRange = [4000, 10000]`).
 
+## Socle de recharge CS-10
+
+- Objet `COMSPEC_ATAK_ChargingDock` (Eden, Zeus) ou kit `COMSPEC_ATAK_DockKit` à poser (ACE Équipement). Dix emplacements : 1 à 5 en bas de gauche à droite vu de face, 6 à 10 sur le gradin.
+- Logique : `functions/dock` (`fn_dockServer` état, recharge et mémoire serveur ; `fn_dockVisual` textures ; `fn_dockClient` et `fn_dockMenu` actions). Mémoire : `profileNamespace` du serveur, `COMSPEC_ATAK_DockDb_v1`.
+- Modèle `data/charging_dock.p3d` : `tools/model_charging_dock.py` (Blender, Arma 3 Object Builder ; reprend le maillage du téléphone du gilet), images 2D par `tools/gen_dock_assets.py`. Sélections `phone1..10`, `screen1..10`, `led1..10`.
+
 ## Données à extraire (mission makers)
 
 - **Eden** : module **COMSPEC — ATAK · Données > Données à extraire (câble ATAK)** synchronisé à un ou plusieurs objets (sans objet : le support choisi est créé à l'emplacement du module). **Ajouter un fichier** pour compléter.
@@ -63,3 +69,10 @@ Identités livrées :
 - Sans Arma 3 Tools (Linux ou Windows) : `hemtt build` depuis `Sources/`, puis copier
   `Sources/.hemttout/build/addons/comspec_atak_native_main.pbo` vers `@COMSPEC_ATAK_Native/addons/main.pbo`.
   `hemtt check` vérifie la config et le SQF.
+
+## Langue (français / anglais)
+
+- Réglage CBA **COMSPEC > ATAK · Langue / Language** (par joueur) : Français (défaut), English, ou Auto (langue du jeu). Changer en cours de partie redessine la page ouverte.
+- Le code reste écrit en français. Les textes affichés (`ctrlSetText`, `ctrlSetStructuredText`, `ctrlSetTooltip`, `lbAdd`, `hint`…) passent par `comspec_atak_native_fnc_tr`, qui les traduit avec le dictionnaire `Sources/addons/main/i18n/en.txt` (`[["français", "anglais"], ...]`). Les modèles à `%1`, `%2` traduisent aussi les textes formatés. Texte inconnu : reste en français. Les champs de saisie ne sont jamais traduits (`// i18n:brut`).
+- Après un ajout de texte ou un rebase : `python3 tools/i18n.py wrap` (fait passer les nouveaux affichages par `fnc_tr`, sans effet sur ce qui l'est déjà), puis `python3 tools/i18n.py extract` liste dans `tools/i18n/missing.tsv` les textes sans traduction ; une fois traduits (`français<TAB>anglais`), `python3 tools/i18n.py merge fichier.tsv`.
+- Commandes du tchat en anglais acceptées aussi : `/help`, `/priority`, `/order`, `@grid`, `@time`, `@hdg`.

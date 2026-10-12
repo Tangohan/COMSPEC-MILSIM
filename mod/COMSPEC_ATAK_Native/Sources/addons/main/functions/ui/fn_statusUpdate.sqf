@@ -7,7 +7,7 @@ private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
 private _dir = "\z\comspec_atak_native\addons\main\data\";
 // Coque jour / nuit selon l'heure de la mission.
 private _shell = ([] call comspec_atak_native_fnc_layoutGet) get "phoneTexture";
-if ((ctrlText (_d displayCtrl 88509)) isNotEqualTo _shell) then { (_d displayCtrl 88509) ctrlSetText _shell; };
+if ((ctrlText (_d displayCtrl 88509)) isNotEqualTo _shell) then { (_d displayCtrl 88509) ctrlSetText ((_shell) call comspec_atak_native_fnc_tr); };
 
 private _legacy = missionNamespace getVariable ["COMSPEC_LinkState", ""];
 private _net = switch (toLower _legacy) do {
@@ -30,14 +30,14 @@ private _sig = _d displayCtrl 88527;
 // Barres : débit simulé (fn_linkQuality), qui tient compte de la liaison Athena quand Overwatch est là.
 private _lq = [] call comspec_atak_native_fnc_linkQuality;
 private _bars = if (_lq get "sim") then { _lq get "bars" } else { switch (_net) do { case "CONNECTED": { 4 }; case "DEGRADED": { 2 }; default { 0 }; } };
-_sig ctrlSetText (_dir + format ["sig_%1.paa", _bars]);
+_sig ctrlSetText (((_dir + format ["sig_%1.paa", _bars])) call comspec_atak_native_fnc_tr);
 _sig ctrlSetTextColor (switch (true) do { case (_bars >= 3): { [0.36, 0.78, 0.42, 1] }; case (_bars >= 1): { [0.95, 0.67, 0.20, 1] }; default { [0.88, 0.25, 0.22, 1] }; });
-_sig ctrlSetTooltip format ["%1 · %2 · %3 kbit/s · %4 ms · perte %5 %%", switch (_net) do { case "CONNECTED": { "Athena connecté" }; case "DEGRADED": { "Athena dégradé" }; default { "Athena hors ligne" }; }, _lq get "label", _lq get "kbps", _lq get "latency", _lq get "loss"];
+_sig ctrlSetTooltip ((format ["%1 · %2 · %3 kbit/s · %4 ms · perte %5 %%", switch (_net) do { case "CONNECTED": { "Athena connecté" }; case "DEGRADED": { "Athena dégradé" }; default { "Athena hors ligne" }; }, _lq get "label", _lq get "kbps", _lq get "latency", _lq get "loss"]) call comspec_atak_native_fnc_tr);
 // Mode avion : icône d'avion à la place des barres.
 if (_lq getOrDefault ["airplane", false]) then {
-    _sig ctrlSetText "\a3\ui_f\data\map\vehicleicons\iconplane_ca.paa";
+    _sig ctrlSetText (("\a3\ui_f\data\map\vehicleicons\iconplane_ca.paa") call comspec_atak_native_fnc_tr);
     _sig ctrlSetTextColor [0.95, 0.67, 0.20, 1];
-    _sig ctrlSetTooltip "Mode avion : réseau coupé (Bluetooth disponible)";
+    _sig ctrlSetTooltip (("Mode avion : réseau coupé (Bluetooth disponible)") call comspec_atak_native_fnc_tr);
 };
 [] call comspec_atak_native_fnc_deviceOverlay;
 // Écran de verrouillage (heure, batterie, verrouillage au rallumage) et volet rapide (batterie, réseau).
@@ -46,28 +46,28 @@ if (_lq getOrDefault ["airplane", false]) then {
 
 private _bat = [] call comspec_atak_native_fnc_battery;
 private _batCtrl = _d displayCtrl 88512;
-_batCtrl ctrlSetText (_dir + format ["bat_%1.paa", switch (true) do { case (_bat > 80): { 100 }; case (_bat > 55): { 75 }; case (_bat > 30): { 50 }; case (_bat > 12): { 25 }; default { 10 }; }]);
+_batCtrl ctrlSetText (((_dir + format ["bat_%1.paa", switch (true) do { case (_bat > 80): { 100 }; case (_bat > 55): { 75 }; case (_bat > 30): { 50 }; case (_bat > 12): { 25 }; default { 10 }; }])) call comspec_atak_native_fnc_tr);
 _batCtrl ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.88, 0.25, 0.22, 1]] select (_bat <= 12));
-(_d displayCtrl 88513) ctrlSetText ((str floor _bat) + "%");
+(_d displayCtrl 88513) ctrlSetText ((((str floor _bat) + "%")) call comspec_atak_native_fnc_tr);
 // Mémoire vive simulée (fn_ramUsage) : pastille de la barre d'état, détail en info-bulle.
 private _ram = [] call comspec_atak_native_fnc_ramUsage;
 private _ramCtrl = uiNamespace getVariable ["COMSPEC_ATAK_RamCtrl", controlNull];
 if (!isNull _ramCtrl) then {
     private _pct = _ram get "pct";
-    _ramCtrl ctrlSetText ("RAM " + (str _pct) + "%");
+    _ramCtrl ctrlSetText ((("RAM " + (str _pct) + "%")) call comspec_atak_native_fnc_tr);
     _ramCtrl ctrlSetTextColor (switch (true) do { case (_pct >= 90): { [0.88, 0.25, 0.22, 1] }; case (_pct >= 75): { [0.95, 0.67, 0.20, 1] }; default { [0.62, 0.70, 0.66, 1] }; });
-    _ramCtrl ctrlSetTooltip format ["Mémoire vive : %1 / %2 Mo · %3 app(s) en mémoire", _ram get "used", _ram get "total", _ram get "apps"];
+    _ramCtrl ctrlSetTooltip ((format ["Mémoire vive : %1 / %2 Mo · %3 app(s) en mémoire", _ram get "used", _ram get "total", _ram get "apps"]) call comspec_atak_native_fnc_tr);
 };
 
 ([] call comspec_atak_native_fnc_weather) params ["_temp", "_speed", "_card"];
-(_d displayCtrl 88524) ctrlSetText format ["%1°C   %2 %3", _temp, _card, round _speed];
-(_d displayCtrl 88524) ctrlSetTooltip format ["Vent du %1, %2 m/s", _card, round _speed];
-(_d displayCtrl 88525) ctrlSetText ([dayTime, "HH:MM"] call BIS_fnc_timeToString);
+(_d displayCtrl 88524) ctrlSetText ((format ["%1°C   %2 %3", _temp, _card, round _speed]) call comspec_atak_native_fnc_tr);
+(_d displayCtrl 88524) ctrlSetTooltip ((format ["Vent du %1, %2 m/s", _card, round _speed]) call comspec_atak_native_fnc_tr);
+(_d displayCtrl 88525) ctrlSetText ((([dayTime, "HH:MM"] call BIS_fnc_timeToString)) call comspec_atak_native_fnc_tr);
 // Cloche : orange tant qu'il reste des notifications non lues. Logo COMSPEC Link : affiché quand la liaison est établie.
 private _unread = _state getOrDefault ["notifUnread", 0];
 private _bell = _d displayCtrl 88548;
 _bell ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.95, 0.67, 0.20, 1]] select (_unread > 0));
-_bell ctrlSetTooltip (["Centre de notifications", format ["Centre de notifications : %1 non lue(s)", _unread]] select (_unread > 0));
+_bell ctrlSetTooltip (((["Centre de notifications", format ["Centre de notifications : %1 non lue(s)", _unread]] select (_unread > 0))) call comspec_atak_native_fnc_tr);
 private _linkOk = if ([] call comspec_atak_native_fnc_bridge) then {
     _net isEqualTo "CONNECTED" && {missionNamespace getVariable ["COMSPEC_AthenaReady", false]}
 } else {

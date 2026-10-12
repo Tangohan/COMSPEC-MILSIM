@@ -62,6 +62,7 @@ private _insertObject = {
     private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", createHashMap];
     if (!(_cache isEqualType createHashMap)) exitWith { [] };
     private _raw = +(_cache getOrDefault ["objectChildren", []]);
+    _raw append (_cache getOrDefault ["bioObjectChildren", []]);
     private _dig = _cache getOrDefault ["digitalRoot", []];
     if (_dig isNotEqualTo []) then { _raw pushBack _dig; };
     private _wrapped = [_target, _raw] call comspec_sse_fnc_aceWrapMenuChildren;

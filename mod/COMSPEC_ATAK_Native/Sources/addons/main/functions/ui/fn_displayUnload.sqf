@@ -15,6 +15,7 @@ uiNamespace setVariable ["COMSPEC_ATAK_ToastControls", []];
 profileNamespace setVariable ["COMSPEC_ATAK_LastPage", _state getOrDefault ["activePage", "MAP"]];
 saveProfileNamespace;
 uiNamespace setVariable ["COMSPEC_ATAK_Display", displayNull];
+uiNamespace setVariable ["COMSPEC_ATAK_Ratio", nil];
 ["INFO", "UI", format ["Display closed (%1); handlers cleaned", _exitCode]] call comspec_atak_native_fnc_log;
 
 // Téléphone reposé (Échap ou Ctrl+Maj+U) : il revient en HUD s'il était sorti.

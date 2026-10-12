@@ -24,9 +24,12 @@ if (isNil "ace_common_fnc_progressBar") exitWith {
     {
         params ["_params"];
         _params params ["_code", "_a"];
+        // Fin d'un relevé biométrique animé (sans effet pour les autres actions).
+        if (!isNil "comspec_sse_fnc_bioAnimate") then { [player, objNull, "", "stop"] call comspec_sse_fnc_bioAnimate; };
         _a call _code;
     },
     {
+        if (!isNil "comspec_sse_fnc_bioAnimate") then { [player, objNull, "", "stop"] call comspec_sse_fnc_bioAnimate; };
         hint "Action SSE interrompue.";
     },
     _label

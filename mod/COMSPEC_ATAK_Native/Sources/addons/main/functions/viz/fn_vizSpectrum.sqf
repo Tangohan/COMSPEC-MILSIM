@@ -10,14 +10,14 @@ _rect params ["_x0", "_y0", "_w", "_h"];
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _fs = _l get "fontSmall";
 private _pad = (_l get "pad") * 2;
-private _ratio = pixelH / pixelW;
+private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 private _mk = { params ["_c", "_p", ["_t", ""]]; [_c, _p, _t] call comspec_atak_native_fnc_pageCtrl };
 private _dir = "\z\comspec_atak_native\addons\main\data\";
 private _bg = ["COMSPEC_RscPanel", _rect] call _mk;
 _bg ctrlSetBackgroundColor [0.02, 0.03, 0.025, 0.98];
 private _sw = _w * 0.6;
 private _head = ["COMSPEC_RscStructuredText", [_x0 + _pad, _y0 + _pad / 2, _sw - _pad, _fs * 1.4]] call _mk;
-_head ctrlSetStructuredText parseText "<t size='0.75' color='#8a9a93'>SPECTRE · 30 MHz à 2,4 GHz</t>";
+_head ctrlSetStructuredText parseText (("<t size='0.75' color='#8a9a93'>SPECTRE · 30 MHz à 2,4 GHz</t>") call comspec_atak_native_fnc_tr);
 private _gy = _y0 + _fs * 1.8;
 private _gh = _h - _fs * 1.8 - _pad * 1.5;
 private _n = 48;
@@ -34,14 +34,14 @@ for "_i" from 0 to 23 do {
     _c ctrlSetBackgroundColor [0.95, 0.67, 0.2, 0.9];
 };
 private _thl = ["COMSPEC_RscText", [_x0 + _sw - _pad - _fs * 3 / _ratio * 0.5, _thY - _fs * 1.1, _fs * 3 / _ratio * 0.5, _fs]] call _mk;
-_thl ctrlSetText "SEUIL"; _thl ctrlSetFontHeight (_fs * 0.75); _thl ctrlSetTextColor [0.95, 0.67, 0.2, 1];
+_thl ctrlSetText (("SEUIL") call comspec_atak_native_fnc_tr); _thl ctrlSetFontHeight (_fs * 0.75); _thl ctrlSetTextColor [0.95, 0.67, 0.2, 1];
 // Boussole du relèvement
 private _cx = _x0 + _sw + (_w - _sw) / 2;
 private _ch = (_h * 0.58) min ((_w - _sw) * 0.8 * _ratio);
 private _cwid = _ch / _ratio;
 private _cy = _y0 + _fs * 1.6;
 private _lab = ["COMSPEC_RscStructuredText", [_x0 + _sw, _y0 + _pad / 2, _w - _sw, _fs * 1.4]] call _mk;
-_lab ctrlSetStructuredText parseText "<t size='0.75' color='#8a9a93' align='center'>GONIOMÉTRIE</t>";
+_lab ctrlSetStructuredText parseText (("<t size='0.75' color='#8a9a93' align='center'>GONIOMÉTRIE</t>") call comspec_atak_native_fnc_tr);
 private _ring = ["COMSPEC_RscIcon", [_cx - _cwid / 2, _cy, _cwid, _ch], _dir + "compass_ring.paa"] call _mk;
 _ring ctrlSetTextColor [0.75, 0.8, 0.77, 0.8];
 private _needle = ["COMSPEC_RscIcon", [_cx - _cwid / 2, _cy, _cwid, _ch], _dir + "compass_needle.paa"] call _mk;
@@ -101,7 +101,7 @@ private _pfh = [{
         _x ctrlCommit 0.2;
     } forEach _bars;
     _e set [5, _smooth];
-    _alarm ctrlSetStructuredText parseText (["", "<t size='0.8' color='#e5483a' align='right' font='RobotoCondensedBold'>BROUILLAGE DÉTECTÉ</t>"] select _jam);
+    _alarm ctrlSetStructuredText parseText (((["", "<t size='0.8' color='#e5483a' align='right' font='RobotoCondensedBold'>BROUILLAGE DÉTECTÉ</t>"] select _jam)) call comspec_atak_native_fnc_tr);
     // Dernier relèvement
     private _b = (missionNamespace getVariable ["COMSPEC_ATAK_EwBearings", []]) param [((count (missionNamespace getVariable ["COMSPEC_ATAK_EwBearings", []])) - 1) max 0, []];
     if ((count _b) >= 5) then {
@@ -111,12 +111,12 @@ private _pfh = [{
         private _mhz = 30 + 2370 * ((round (_deg * 7.3)) mod 100) / 100;
         private _d3 = str ((round _deg) mod 360);
         while { (count _d3) < 3 } do { _d3 = "0" + _d3; };
-        _brgC ctrlSetStructuredText parseText format ["<t align='center' size='2' font='RobotoCondensedBold' color='#e5483a'>%1°</t><br/><t align='center' size='0.75' color='#c9d4cf'>%2 · %3</t>",
+        _brgC ctrlSetStructuredText parseText ((format ["<t align='center' size='2' font='RobotoCondensedBold' color='#e5483a'>%1°</t><br/><t align='center' size='0.75' color='#c9d4cf'>%2 · %3</t>",
             _d3, ["Émetteur hostile", "Brouilleur"] select (_kind isEqualTo "BROUILLEUR"),
-            [format ["%1 MHz", round _mhz], format ["%1 GHz", (_mhz / 1000) toFixed 2]] select (_mhz >= 1000)];
+            [format ["%1 MHz", round _mhz], format ["%1 GHz", (_mhz / 1000) toFixed 2]] select (_mhz >= 1000)]) call comspec_atak_native_fnc_tr);
     } else {
         _needle ctrlShow false;
-        _brgC ctrlSetStructuredText parseText "<t align='center' size='0.8' color='#8a9a93'>Aucun relèvement<br/>BALAYER pour chercher</t>";
+        _brgC ctrlSetStructuredText parseText (("<t align='center' size='0.8' color='#8a9a93'>Aucun relèvement<br/>BALAYER pour chercher</t>") call comspec_atak_native_fnc_tr);
     };
 }, 0.25] call CBA_fnc_addPerFrameHandler;
 uiNamespace setVariable ["COMSPEC_ATAK_SpecPfh", _pfh];
