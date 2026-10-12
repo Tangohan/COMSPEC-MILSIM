@@ -11,6 +11,16 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vague 2026-10-12 — Musique : bibliothèque du site et lecteur refait (ATAK natif 1.19.0, COMSPEC Link 2.0.72)
+
+Non testé en jeu. Migrations à lancer (`music_library`) et DLL à recompiler (COMSPEC Link et COMSPECATAKNativeExtension, `build_mod.bat`).
+- Site, **Mon espace > Musique** (`/back-office/ma-situation/musique`) : chaque membre met en ligne ses MP3, M4A, AAC ou WAV (25 Mo par fichier, 300 Mo par membre), dans la **bibliothèque communautaire** (toute la plateforme) ou celle de **son organisation**. Lecteur intégré (file, avance, volume), recherche titre / artiste / genre.
+- **Playlists** privées, d'organisation ou publiques ; **playlist globale** unique tenue par l'administrateur de la plateforme (morceaux de la bibliothèque communautaire seulement).
+- Modération : les gestionnaires masquent ou suppriment les morceaux de leur organisation, l'administrateur de la plateforme ceux de la bibliothèque communautaire.
+- Téléphone, app Musique : nouvel onglet **ATHENA** (playlist globale, communauté, mon orga, playlists, mes envois), lu par COMSPEC Link (`AthenaMusic`, API `/api/atak/music`). Morceaux téléchargés par URL signée puis gardés en cache (60 morceaux) ; en haut-parleur, les joueurs proches entendent le même morceau.
+- Lecteur : avance / recul de 10 et 30 s (suivi par les auditeurs du haut-parleur), file d'attente avec MONTER, RETIRER et VIDER LA FILE, **favoris** (bouton FAV sur chaque morceau, section Favoris dans LECTURE).
+- Réglage CBA serveur **Bibliothèque Athena** pour couper l'onglet.
+
 ## Correctif 2026-10-12 — Langue dans l'app Réglages (ATAK natif 1.16.1)
 
 Non testé en jeu. TTRD ne trouvait pas où passer le téléphone en anglais.
