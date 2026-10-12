@@ -3,6 +3,7 @@
     Collecte : Steam / UID, nom, build Arma, version mod — l’IP est capturée côté serveur.
 */
 if (!hasInterface) exitWith { false };
+if (([] call comspec_overwatch_connect_fnc_athenaMode) isNotEqualTo "on") exitWith { false };
 
 private _url = missionNamespace getVariable ["comspec_overwatch_api_url", ""];
 if (!(_url isEqualType "")) then { _url = ""; };

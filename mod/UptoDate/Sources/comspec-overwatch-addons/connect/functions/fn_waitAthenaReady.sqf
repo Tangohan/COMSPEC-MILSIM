@@ -5,6 +5,7 @@
     Comportement aligné Workshop 06-09-2026.
 */
 if (!hasInterface) exitWith { false };
+if (([] call comspec_overwatch_connect_fnc_athenaMode) isNotEqualTo "on") exitWith { false };
 
 missionNamespace setVariable ["COMSPEC_AthenaReady", false, false];
 missionNamespace setVariable ["COMSPEC_LinkState", "connecting", false];
