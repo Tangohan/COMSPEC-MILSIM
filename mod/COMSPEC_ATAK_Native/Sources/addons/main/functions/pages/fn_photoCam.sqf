@@ -42,6 +42,15 @@ private _pose = {
         private _r = 0.6;
         _pos = _eye vectorAdd [_r * (sin _a) * (cos _p), _r * (cos _a) * (cos _p), _r * (sin _p)];
         _dir = vectorNormalized (_eye vectorDiff _pos);
+        // Téléphone en main (fn_gestureSelfie) : l'objectif est sur le téléphone, glisser ne fait que tourner la vue.
+        private _lens = [player, "lens"] call comspec_atak_native_fnc_gestureSelfie;
+        if (_lens isNotEqualTo []) then {
+            _lens params ["_lp", "_ld"];
+            private _ya = ((_ld select 0) atan2 (_ld select 1)) + _oy;
+            private _pa = (((asin (((_ld select 2) max -1) min 1)) + _op) max -80) min 80;
+            _pos = _lp;
+            _dir = [(sin _ya) * (cos _pa), (cos _ya) * (cos _pa), sin _pa];
+        };
     } else {
         // Vue du joueur, décalée du geste de visée dans le téléphone.
         private _v = getCameraViewDirection player;

@@ -5,6 +5,7 @@
       "shared" / "draft"          -> éléments du plan partagé du camp / du brouillon local
       "can"                       -> droit de modifier le plan partagé (fn_planServer « can »)
       "tab" cat | "tool" type | "color" clé | "width" n | "dash" | "arrow" | "pen" | "target" | "view" vue | "layer"
+      "toDraft" [éléments]        ajoute au brouillon (plan partagé sans réponse du serveur) ; "pending" -> éléments en attente du serveur
       "commit" [points]           crée un élément avec l'outil actif (texte, couleur, tirets, flèche, épaisseur choisis)
       "finish" / "cancel"         termine / abandonne le tracé en cours (clic droit, double clic, boutons)
       "undo"                      défait le dernier élément (brouillon : le dernier ; partagé : le dernier posé par moi)
@@ -62,10 +63,27 @@ private _lib = { +(profileNamespace getVariable ["COMSPEC_ATAK_PlanLib", []]) };
 private _addItems = {
     params ["_list", ["_toShared", true], ["_replace", false], ["_name", ""]];
     if ((count _list) isEqualTo 0) exitWith {};
-    if (_toShared && {call _can}) then {
+    // Serveur sans le mod natif (mod chargé seulement chez les joueurs) : personne n'écrit le plan partagé.
+    private _srvOn = missionNamespace getVariable ["COMSPEC_ATAK_PlanSrvOn", false];
+    if (_toShared && {_srvOn} && {call _can}) then {
+        private _rev = (missionNamespace getVariable [_sharedVar, [0, [], ""]]) param [0, 0];
         [["merge", "replace"] select _replace, [_list, _name]] call _srv;
+        // Affichés en attente jusqu'à la réponse du serveur ; sans réponse (refus, serveur muet), gardés dans le brouillon.
+        private _pend = uiNamespace getVariable ["COMSPEC_ATAK_PlanPending", []];
+        _pend append _list;
+        uiNamespace setVariable ["COMSPEC_ATAK_PlanPending", _pend];
+        [{ ((missionNamespace getVariable [_this select 0, [0]]) param [0, 0]) isNotEqualTo (_this select 1) }, {
+            uiNamespace setVariable ["COMSPEC_ATAK_PlanPending", []];
+        }, [_sharedVar, _rev, _list], 5, {
+            uiNamespace setVariable ["COMSPEC_ATAK_PlanPending", []];
+            ["WARN", "PLAN", format ["Plan partagé : pas de réponse du serveur (%1 éléments gardés dans le brouillon)", count (_this select 2)]] call comspec_atak_native_fnc_log;
+            ["Plan partagé : pas de réponse du serveur, gardé dans votre brouillon", 4] call comspec_atak_native_fnc_toast;
+            ["toDraft", _this select 2] call comspec_atak_native_fnc_planAction;
+        }] call CBA_fnc_waitUntilAndExecute;
     } else {
-        if (_toShared) then { ["Édition du plan partagé réservée : éléments placés dans votre brouillon", 4] call comspec_atak_native_fnc_toast; };
+        if (_toShared) then {
+            [["Édition du plan partagé réservée : éléments placés dans votre brouillon", "Serveur sans le mod ATAK natif : plan partagé indisponible, éléments placés dans votre brouillon"] select !_srvOn, 5] call comspec_atak_native_fnc_toast;
+        };
         private _d = [[], +(call _draftGet)] select !_replace;
         { private _c = +_x; _c set [0, call _newId]; if ((_c select 9) isEqualTo "") then { _c set [9, name player]; }; _d pushBack _c; } forEach _list;
         [_d] call _draftSet;
@@ -145,6 +163,8 @@ switch (_act) do {
         saveProfileNamespace;
         call _rerender;
     };
+    case "toDraft": { [_arg, false] call _addItems; call _rerender; };
+    case "pending": { uiNamespace getVariable ["COMSPEC_ATAK_PlanPending", []] };
     case "text": { _ui set ["text", (trim _arg) select [0, 40]]; };
     case "commit": {
         private _kind = _ui get "tool";
