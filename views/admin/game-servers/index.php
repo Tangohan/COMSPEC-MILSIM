@@ -181,7 +181,7 @@ $home = count($presence) - count($away);
     <section class="space-y-4">
         <h2 class="text-sm font-bold text-slate-900">Joueurs reliés à Athena (72 h)</h2>
         <?php if ($presence === []): ?>
-            <p class="text-sm text-slate-500">Aucun joueur vu pour l’instant. Le téléphone ATAK natif (1.31.0 et plus, COMSPEC Link 2.0.75) se signale peu après l’arrivée en partie, puis toutes les 10 minutes.</p>
+            <p class="text-sm text-slate-500">Aucun joueur vu pour l’instant. Le téléphone ATAK natif (1.34.0 et plus, COMSPEC Link 2.0.75) se signale peu après l’arrivée en partie, puis toutes les 10 minutes.</p>
         <?php else: ?>
             <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
                 <table class="w-full text-sm">

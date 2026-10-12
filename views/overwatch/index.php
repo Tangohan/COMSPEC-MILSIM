@@ -2145,7 +2145,17 @@ function setWorkspace(mapId) {
             var slider = document.getElementById('replay-slider');
             if (slider) { slider.max = Math.max(0, (data.timeline || []).length - 1); slider.value = 0; }
             var info = document.getElementById('replay-info');
-            if (info) info.textContent = (data.timeline || []).length + ' instant(s)';
+            // Période relue en heure locale (jour compris) : l'heure seule ne disait pas de quelle partie il s'agit.
+            var tl = data.timeline || [];
+            var fmtDate = function (ts) {
+              if (!ts) return '';
+              var s = String(ts).trim().replace(' ', 'T');
+              if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(s)) s += 'Z';
+              var d = new Date(s);
+              return isNaN(d.getTime()) ? String(ts) : d.toLocaleString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            };
+            var span = tl.length ? (' · du ' + fmtDate(tl[0].timestamp) + ' au ' + fmtDate(tl[tl.length - 1].timestamp)) : '';
+            if (info) info.textContent = tl.length + ' instant(s)' + span;
             loadReplayAar();
           })
           .catch(function () { overwatchHealthStatus.replay = 'Erreur'; if (window.refreshHealthPanel) refreshHealthPanel(); var el = document.getElementById('replay-info'); if (el) el.textContent = 'Erreur chargement.'; });

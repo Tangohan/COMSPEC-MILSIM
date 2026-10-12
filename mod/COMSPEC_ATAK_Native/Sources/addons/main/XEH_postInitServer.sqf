@@ -28,11 +28,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_SrvKeep", _keep];
 ["comspec_atak_native_bda", { [_this param [1, ""], "comspec_atak_native_bda", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_report", { [_this param [1, ""], "comspec_atak_native_report", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_medevacStatus", { [_this param [3, ""], "comspec_atak_native_medevacStatus", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
+// Réponses aux ordres (qui a vu, reçu, exécute) : rejouées aux arrivants comme les comptes rendus.
+["comspec_atak_native_orderAck", { [_this param [2, ""], "comspec_atak_native_orderAck", _this] call COMSPEC_ATAK_SrvKeep; }] call CBA_fnc_addEventHandler;
 // Événements de camp (logistique, MEDEVAC, BDA, comptes rendus, alertes) : relayés par le serveur aux seuls joueurs du camp.
 // CBA_fnc_globalEvent les envoyait aussi au camp adverse, qui les jetait. Le serveur les reçoit comme avant (journal ci-dessus).
 ["comspec_atak_native_sideEvent", {
     params [["_ev", ""], ["_args", []], ["_side", ""]];
-    if !(_ev in ["comspec_atak_native_logi", "comspec_atak_native_medevac", "comspec_atak_native_medevacStatus", "comspec_atak_native_bda", "comspec_atak_native_report", "comspec_atak_native_alert"]) exitWith {};
+    if !(_ev in ["comspec_atak_native_logi", "comspec_atak_native_medevac", "comspec_atak_native_medevacStatus", "comspec_atak_native_bda", "comspec_atak_native_report", "comspec_atak_native_alert", "comspec_atak_native_orderAck"]) exitWith {};
     [_ev, _args] call CBA_fnc_localEvent;
     private _to = allPlayers select { !local _x && {(str side group _x) isEqualTo _side} };
     if (_to isNotEqualTo []) then { [_ev, _args, _to] call CBA_fnc_targetEvent; };
@@ -46,7 +48,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_SrvKeep", _keep];
 // Équipes de feu : seul le serveur écrit l'état partagé (fn_ftServer), puis le diffuse au camp.
 ["comspec_atak_native_ft", { _this call comspec_atak_native_fnc_ftServer; }] call CBA_fnc_addEventHandler;
 // Clé de la session (Athena range les escouades et équipes envoyées par mission jouée).
-missionNamespace setVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2#%3", missionName, worldName, (systemTimeUTC select [0, 5]) joinString ""], true];
+// Date sur deux chiffres (AAAAMMJJHHMM) : sans zéro, 9 h 03 donnait « 93 » et la date de la session était illisible.
+missionNamespace setVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2#%3", missionName, worldName, ((systemTimeUTC select [0, 5]) apply { [str _x, "0" + str _x] select (_x < 10) }) joinString ""], true];
 // Contrôle de cohérence : unités dont l'équipe n'existe plus dans leur groupe (changement de groupe hors téléphone,
 // équipe dissoute) remises sans équipe. Toutes les 10 s, et à la demande (Inter-team > RESYNCHRONISER, arrivée d'un joueur).
 COMSPEC_ATAK_FtCheck = {

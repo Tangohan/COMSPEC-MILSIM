@@ -8895,6 +8895,15 @@ class AtakApiController
             }
         }
 
+        // Web : réponses par joueur jointes à chaque ordre (le jeu n’en a pas besoin, la DLL ne lit que ses colonnes).
+        if (!$forGame && $orders !== []) {
+            $responses = $this->orderRepository->responsesForOrders($r, array_map(static fn (array $o): int => (int) ($o['db_id'] ?? 0), $orders));
+            foreach ($orders as &$serialized) {
+                $serialized['responses'] = $responses[(int) ($serialized['db_id'] ?? 0)] ?? [];
+            }
+            unset($serialized);
+        }
+
         $serverTime = date('Y-m-d H:i:s');
         $cursor = $maxUpdated !== '' ? $maxUpdated : ($isDelta ? $since : $serverTime);
         $orders = $this->applyIntelScramble($request, $r, $mapId, 'order', $orders);
@@ -9645,10 +9654,19 @@ class AtakApiController
             }
         }
 
+        // Réponse de ce joueur gardée à part (qui a reçu, exécute, terminé), même si l’ordre est déjà plus avancé.
+        $this->orderRepository->recordResponse($r, (int) ($existing['id'] ?? 0), $by, $normalized, $note);
+
         $row = null;
         try {
             $row = $this->orderRepository->updateStatus($r, $orderMapId, $externalId, $normalized, $by, $note);
         } catch (\InvalidArgumentException $e) {
+            if ($e->getMessage() === 'invalid_transition'
+                && $normalized !== 'CANCELLED'
+                && $this->orderRepository->statusRank((string) ($existing['status'] ?? '')) >= $this->orderRepository->statusRank($normalized)) {
+                // Un autre membre est déjà plus loin (ex. REÇU après EN COURS) : réponse notée, ordre inchangé.
+                return Response::json(['ok' => true, 'order' => $this->serializeOrder($existing), 'response_only' => true]);
+            }
             if ($e->getMessage() === 'invalid_transition') {
                 return Response::json([
                     'error' => 'invalid_transition',
