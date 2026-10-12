@@ -2107,6 +2107,11 @@ class Container
                 self::get(\App\Services\Integrations\DiscordWebhookService::class),
                 self::get(\App\Repositories\TenantRepository::class),
             ),
+            \App\Repositories\TenantGameServerRepository::class => new \App\Repositories\TenantGameServerRepository(),
+            \App\Controllers\Admin\AdminGameServersController::class => new \App\Controllers\Admin\AdminGameServersController(
+                self::get(\App\Repositories\TenantGameServerRepository::class),
+                self::get(AuthService::class),
+            ),
             \App\Controllers\Admin\AdminAtakModBlocklistController::class => new \App\Controllers\Admin\AdminAtakModBlocklistController(
                 self::get(AuthService::class),
                 self::get(\App\Services\Moderation\IndicatorBlocklistService::class),

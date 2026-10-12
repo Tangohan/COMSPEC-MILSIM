@@ -3,7 +3,7 @@ class CfgPatches {
     class comspec_atak_native_main {
         name="COMSPEC ATAK Native Standalone"; author="COMSPEC"; requiredVersion=2.14;
         requiredAddons[]={"A3_UI_F","A3_Weapons_F","A3_Modules_F","A3_Anims_F_Config_Sdr","cba_main","cba_xeh"};
-        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
+        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset","COMSPEC_ATAK_Module_DatingProfile"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
     };
 };
 class CfgFunctions {
@@ -27,7 +27,7 @@ class CfgFunctions {
             class planCatalog {}; class planGfx {}; class planDraw {}; class planServer {}; class planAction {}; class planMap {}; class pagePlan {};
         };
         class network { file="z\comspec_atak_native\addons\main\functions\network";
-            class extensionCall {}; class extAwait {}; class extensionCallback {}; class remoteSync {}; class importLegacyData {};
+            class extensionCall {}; class extAwait {}; class extensionCallback {}; class serverPresence {}; class remoteSync {}; class importLegacyData {};
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
             class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {};
         };
@@ -60,7 +60,7 @@ class CfgFunctions {
             class vehicleTerminal {}; class vehicleGateway {};
         };
         class datalink { file="z\comspec_atak_native\addons\main\functions\datalink";
-            class dataSetup {}; class dataParseFiles {}; class dataServer {}; class dataAction {}; class dataInit {}; class dataOverlay {}; class pageDataLink {}; class zeusForm {}; class moduleContext {}; class moduleDataNode {}; class moduleDataFile {}; class moduleDataReset {};
+            class dataSetup {}; class dataParseFiles {}; class dataServer {}; class dataAction {}; class dataInit {}; class dataOverlay {}; class pageDataLink {}; class zeusForm {}; class moduleContext {}; class moduleDataNode {}; class moduleDataFile {}; class moduleDataReset {}; class moduleDating {};
         };
         class reports { file="z\comspec_atak_native\addons\main\functions\reports";
             class reportTypes {}; class reportAction {}; class pageReports {};
@@ -83,7 +83,7 @@ class CfgFunctions {
         };
         class pages { file="z\comspec_atak_native\addons\main\functions\pages";
             class chatSend {}; class taskAction {}; class briefingStep {}; class settingsSave {};
-            class pageMap {}; class pageChat {}; class chatParse {}; class messagesAll {}; class tasksAll {}; class pageGroup {}; class pageTasks {}; class pageText {}; class pageAthena {}; class athenaAction {}; class pageNetwork {}; class pageSettings {}; class pagePhotos {}; class photoTake {}; class photoMode {}; class photoCam {}; class pageGallery {}; class pageFrs {}; class frsDraftSave {}; class frsToggleTheme {}; class frsSubmit {}; class frsAction {}; class frsLibrary {}; class pageReco {}; class recoDraftSave {}; class recoSubmit {}; class pageFires {}; class firesState {}; class firesGuns {}; class firesSave {}; class firesAction {}; class firesCff {}; class firesWind {}; class pageLivecam {}; class livecamStart {}; class livecamStop {}; class pageAlerts {}; class alertsAction {}; class alertsLog {}; class pageMedical {}; class medicalAction {}; class pageProfile {}; class profileAction {}; class pageBriefing {}; class chatCommand {}; class briefingAction {}; class briefingSignature {}; class briefingLive {}; class photoLibrary {}; class livecamShare {}; class pageBft {}; class bftAction {}; class bftFilter {}; class groupTypes {}; class groupAction {}; class pageRecents {}; class pageNotifs {}; class pageDebug {}; class pageFood {}; class foodAction {}; class pageDating {}; class datingAction {}; class pageOsint {}; class osintAction {}; class pageWeather {}; class pageRelief {}; class reliefAction {}; class pageWaveRelay {}; class waveRelayAction {}; class pageLogistics {}; class logisticsAction {}; class logiWeb {}; class pageEw {}; class ewAction {}; class ewEffects {}; class pageBda {}; class bdaAction {}; class bdaLabels {}; class pageCredits {}; class pageResynch {}; class resynchRun {}; class pageOrderCompose {}; class orderAction {}; class orderAck {}; class pageStatus {}; class pageSse {}; class pageC2 {}; class sseAction {}; class pageWanted {}; class wantedAction {}; class pageLinkAlly {}; class linkAllyAction {}; class linkAllyInit {}; class pageDiscord {}; class discordAction {};
+            class pageMap {}; class pageChat {}; class chatParse {}; class messagesAll {}; class tasksAll {}; class pageGroup {}; class pageTasks {}; class pageText {}; class pageAthena {}; class athenaAction {}; class pageNetwork {}; class pageSettings {}; class pagePhotos {}; class photoTake {}; class photoMode {}; class photoCam {}; class pageGallery {}; class pageFrs {}; class frsDraftSave {}; class frsToggleTheme {}; class frsSubmit {}; class frsAction {}; class frsLibrary {}; class pageReco {}; class recoDraftSave {}; class recoSubmit {}; class pageFires {}; class firesState {}; class firesGuns {}; class firesSave {}; class firesAction {}; class firesCff {}; class firesWind {}; class pageLivecam {}; class livecamStart {}; class livecamStop {}; class pageAlerts {}; class alertsAction {}; class alertsLog {}; class pageMedical {}; class medicalAction {}; class pageProfile {}; class profileAction {}; class pageBriefing {}; class chatCommand {}; class briefingAction {}; class briefingSignature {}; class briefingLive {}; class photoLibrary {}; class livecamShare {}; class pageBft {}; class bftAction {}; class bftFilter {}; class groupTypes {}; class groupAction {}; class pageRecents {}; class pageNotifs {}; class pageDebug {}; class pageFood {}; class foodAction {}; class pageDating {}; class datingAction {}; class datingCam {}; class datingSpecials {}; class pageOsint {}; class osintAction {}; class pageWeather {}; class pageRelief {}; class reliefAction {}; class pageWaveRelay {}; class waveRelayAction {}; class pageLogistics {}; class logisticsAction {}; class logiWeb {}; class pageEw {}; class ewAction {}; class ewEffects {}; class pageBda {}; class bdaAction {}; class bdaLabels {}; class pageCredits {}; class pageResynch {}; class resynchRun {}; class pageOrderCompose {}; class orderAction {}; class orderAck {}; class pageStatus {}; class pageSse {}; class pageC2 {}; class sseAction {}; class pageWanted {}; class wantedAction {}; class pageLinkAlly {}; class linkAllyAction {}; class linkAllyInit {}; class pageDiscord {}; class discordAction {};
         };
     };
 };
@@ -430,6 +430,7 @@ class CfgVehicles {
 class CfgFactionClasses {
     class NO_CATEGORY;
     class COMSPEC_ATAK_Data: NO_CATEGORY { displayName="$STR_COMSPEC_ATAK_CFG_BC3E09CB53"; priority=2; side=7; };
+    class COMSPEC_ATAK_Civil: NO_CATEGORY { displayName="$STR_COMSPEC_ATAK_CFG_1B554EECB0"; priority=2; side=7; };
 };
 
 class Extended_PreInit_EventHandlers { class comspec_atak_native_main { init="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_preInit.sqf'"; }; };
