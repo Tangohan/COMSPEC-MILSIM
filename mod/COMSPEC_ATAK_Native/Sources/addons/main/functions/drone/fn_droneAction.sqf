@@ -81,8 +81,38 @@
     vu à (time), vu à (HH:MM:SS), camp vu, distance, n°, état]), COMSPEC_ATAK_DroneLog ([[HH:MM:SS, texte, couleur]...]).
 */
 params [["_act", "tick"], ["_arg", ""]];
-private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _d = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
+// Liaison : [barres 0-4, distance, en liaison, qualité 0-1] (la qualité règle les défauts TNT de l'image, fn_droneStatic).
+// Demandée plusieurs fois par seconde (suivi des cibles marquées, une fois par cible ; incrustations ; neige ; flotte) :
+// calcul gardé 0,2 s, et réponse avant de préparer le reste de ce fichier (tables d'ordres refaites à chaque appel sinon).
+if (_act isEqualTo "link") exitWith {
+    private _lc = missionNamespace getVariable ["COMSPEC_ATAK_DroneLinkC", []];
+    if ((count _lc) isEqualTo 3 && {(_lc select 0) isEqualTo _d} && {diag_tickTime < (_lc select 1)}) exitWith { +(_lc select 2) };
+    private _r = call {
+        if (isNull _d || {!alive _d}) exitWith { [0, 0, false, 0] };
+        private _range = call comspec_atak_native_fnc_droneRange;
+        if (terrainIntersectASL [eyePos player, getPosASL _d]) then { _range = _range * 0.3; };
+        if !([player] call comspec_atak_native_fnc_hasDevice) then { _range = 0; };
+        if ((missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) <= 0) then { _range = 0; };
+        private _dist = player distance _d;
+        // Drone du mod Mavic (DJI) : on reprend son propre calcul de signal (0-1, perdu sous 0,05).
+        if (_range > 0 && {_d isKindOf "Mavic_drone_base_F"} && {!isNil "Mavic_fnc_getSignal"}) exitWith {
+            private _sig = [player, _d] call Mavic_fnc_getSignal;
+            if !(_sig isEqualType 0) then { _sig = 1; };
+            private _okM = _sig >= 0.05;
+            private _qM = [0, 1 - (1 - ((_sig max 0) min 1)) ^ 2] select _okM;
+            [[0, (ceil (_qM * 4)) max 1 min 4] select _okM, round _dist, _okM, _qM]
+        };
+        // Qualité 1 - (d/portée)² : 4/4 jusqu'à la moitié de la portée, 3/4 jusqu'à 71 %, 2/4 jusqu'à 87 %, 1/4 au-delà.
+        // Avant (1 - d/portée) : 4/4 s'arrêtait au quart de la portée (625 m sur 2500 m, retour de TTRD).
+        private _ok = _dist < _range;
+        private _q = [0, ((1 - (_dist / (_range max 1)) ^ 2) max 0) min 1] select _ok;
+        [[0, ceil (4 * _q) max 1] select _ok, round _dist, _ok, _q]
+    };
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneLinkC", [_d, diag_tickTime + 0.2, _r]];
+    +_r
+};
+private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 // Ordres de vol suivis (FORCER L'EXÉCUTION, surveillance) et mode que le drone doit afficher une fois l'ordre reçu.
 private _flight = ["takeoff", "hover", "follow", "home", "land", "hunt", "goto", "loiter", "observe", "escort", "route", "rth", "strike", "manual", "standby"];
 private _expect = createHashMapFromArray [["takeoff", "HOVER"], ["hover", "HOVER"], ["follow", "FOLLOW"], ["home", "HOME"], ["land", "LAND"], ["hunt", "HUNT"], ["goto", "GOTO"], ["loiter", "LOITER"], ["observe", "OBSERVE"], ["escort", "ESCORT"], ["route", "ROUTE"], ["rth", "RTH"], ["strike", "STRIKE"], ["manual", "MANUAL"], ["standby", "STANDBY"]];
@@ -133,28 +163,7 @@ private _payloads = [
     ["DemoCharge_Remote_Mag", "DemoCharge_Remote_Ammo_Scripted", "charge de démolition"],
     ["HandGrenade", "GrenadeHand", "grenade RGO"], ["MiniGrenade", "mini_Grenade", "grenade RGN"]
 ];
-// Liaison : [barres 0-4, distance, en liaison, qualité 0-1] (la qualité règle les défauts TNT de l'image, fn_droneStatic).
-private _link = {
-    if (isNull _d || {!alive _d}) exitWith { [0, 0, false, 0] };
-    private _range = call comspec_atak_native_fnc_droneRange;
-    if (terrainIntersectASL [eyePos player, getPosASL _d]) then { _range = _range * 0.3; };
-    if !([player] call comspec_atak_native_fnc_hasDevice) then { _range = 0; };
-    if ((missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) <= 0) then { _range = 0; };
-    private _dist = player distance _d;
-    // Drone du mod Mavic (DJI) : on reprend son propre calcul de signal (0-1, perdu sous 0,05).
-    if (_range > 0 && {_d isKindOf "Mavic_drone_base_F"} && {!isNil "Mavic_fnc_getSignal"}) exitWith {
-        private _sig = [player, _d] call Mavic_fnc_getSignal;
-        if !(_sig isEqualType 0) then { _sig = 1; };
-        private _okM = _sig >= 0.05;
-        private _qM = [0, 1 - (1 - ((_sig max 0) min 1)) ^ 2] select _okM;
-        [[0, (ceil (_qM * 4)) max 1 min 4] select _okM, round _dist, _okM, _qM]
-    };
-    // Qualité 1 - (d/portée)² : 4/4 jusqu'à la moitié de la portée, 3/4 jusqu'à 71 %, 2/4 jusqu'à 87 %, 1/4 au-delà.
-    // Avant (1 - d/portée) : 4/4 s'arrêtait au quart de la portée (625 m sur 2500 m, retour de TTRD).
-    private _ok = _dist < _range;
-    private _q = [0, ((1 - (_dist / (_range max 1)) ^ 2) max 0) min 1] select _ok;
-    [[0, ceil (4 * _q) max 1] select _ok, round _dist, _ok, _q]
-};
+private _link = { ["link"] call comspec_atak_native_fnc_droneAction };
 private _needLink = {
     if ((call _link) select 2) exitWith { true };
     ["WARNING", "Drone hors liaison : ordre non transmis"] call _say;
@@ -167,6 +176,8 @@ private _log = {
     _lg pushBack [[dayTime, "HH:MM:SS"] call BIS_fnc_timeToString, _t, _c];
     while { (count _lg) > 100 } do { _lg deleteAt 0; };
     missionNamespace setVariable ["COMSPEC_ATAK_DroneLog", _lg];
+    // Lignes écrites depuis le début (le journal plafonné à 100 lignes ne change plus de taille ; voir "tick").
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneLogN", (missionNamespace getVariable ["COMSPEC_ATAK_DroneLogN", 0]) + 1];
 };
 private _modeName = { params ["_m"]; (createHashMapFromArray [["ROUTE", "route"], ["STANDBY", "veille"], ["HOVER", "stationnaire"], ["FOLLOW", "suivi"], ["HOME", "retour au pilote"], ["LAND", "atterrissage"], ["RTH", "retour automatique au point de décollage"], ["STRIKE", "frappe"], ["HUNT", "recherche"], ["MANUAL", "pilotage manuel"], ["GOTO", "vers le point"], ["LOITER", "orbite"], ["OBSERVE", "observation"], ["ESCORT", "escorte"]]) getOrDefault [_m, toLower _m] };
 // Grille saisie (6, 8 ou 10 chiffres) → centre de la case, position ASL ; [] si invalide.
@@ -257,7 +268,7 @@ private _camOpen = {
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamParked", false];
     call _camMake;
     // Nacelle : chaque image, la caméra vise la cible choisie ou le point observé, sinon regarde devant et en bas.
-    missionNamespace setVariable ["COMSPEC_ATAK_DroneCamPfh", [{
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneCamPfh", [{ private _perfT = diag_tickTime; call {
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
         private _d = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
         if (isNull _cam || {isNull _d}) exitWith {};
@@ -400,7 +411,7 @@ private _camOpen = {
         // Cliché en cours (fn_dronePhoto) : la caméra plein écran prend la même pose.
         private _shot = missionNamespace getVariable ["COMSPEC_ATAK_DroneShotCam", objNull];
         if (!isNull _shot) then { _shot attachTo [_d, _off]; _shot setVectorDirAndUp [_mDir, _mUp]; };
-    }, 0] call CBA_fnc_addPerFrameHandler];
+    }; ["nacelle (image)", _perfT] call comspec_atak_native_fnc_perfAcc; }, 0] call CBA_fnc_addPerFrameHandler];
 };
 private _camClose = {
     private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
@@ -576,7 +587,7 @@ private _adopt = {
     missionNamespace setVariable ["COMSPEC_ATAK_DroneLinked", true];
     missionNamespace setVariable ["COMSPEC_ATAK_DroneOrder", []];
     if ((missionNamespace getVariable ["COMSPEC_ATAK_DronePfh", -1]) < 0) then {
-        missionNamespace setVariable ["COMSPEC_ATAK_DronePfh", [{ ["tick"] call comspec_atak_native_fnc_droneAction; ["tick"] call comspec_atak_native_fnc_droneFleet; }, 1] call CBA_fnc_addPerFrameHandler];
+        missionNamespace setVariable ["COMSPEC_ATAK_DronePfh", [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_droneAction; ["drone suivi", _t] call comspec_atak_native_fnc_perfAcc; _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_droneFleet; ["flotte suivi", _t] call comspec_atak_native_fnc_perfAcc; }, 1] call CBA_fnc_addPerFrameHandler];
     };
 };
 switch (_act) do {
@@ -1401,8 +1412,9 @@ switch (_act) do {
             if (_near isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_DroneArmNear", _near])) then { call _saveGrid; call _render; };
             missionNamespace setVariable ["COMSPEC_ATAK_DroneArmNear", _near];
         };
-        // Onglets CIBLES et JOURNAL : redessinés quand une ligne arrive (pas quand l'image seule est à l'écran).
-        private _sig = [count (missionNamespace getVariable ["COMSPEC_ATAK_DroneLog", []]), count (missionNamespace getVariable ["COMSPEC_ATAK_DroneTracks", createHashMap])];
+        // Onglets CIBLES et JOURNAL : redessinés quand une ligne arrive (pas quand l'image seule est à l'écran). Compteur de
+        // lignes écrites, pas taille du journal : plafonné à 100 lignes, il ne se redessinait plus une fois plein.
+        private _sig = [missionNamespace getVariable ["COMSPEC_ATAK_DroneLogN", 0], count (missionNamespace getVariable ["COMSPEC_ATAK_DroneTracks", createHashMap])];
         if (_sig isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_DroneSig", []])) then {
             missionNamespace setVariable ["COMSPEC_ATAK_DroneSig", _sig];
             if ((_s getOrDefault ["droneTab", "PILOT"]) in ["TARGETS", "LOG"] && {uiNamespace getVariable ["COMSPEC_ATAK_DroneMenusShown", false]}) then { call _render; };

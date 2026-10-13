@@ -86,7 +86,7 @@ switch (_act) do {
             ["tex", [ctrlText _pic, ""] select (isNull _pic)], ["rect", [_px, _py, _pw, _ph]], ["fs", _fs], ["blocks", _blocks], ["bands", _bands], ["smears", _smears], ["fx", false]]);
         uiNamespace setVariable ["COMSPEC_ATAK_DroneStatic", _all];
         if ((missionNamespace getVariable ["COMSPEC_ATAK_DroneStaticPfh", -1]) < 0) then {
-            missionNamespace setVariable ["COMSPEC_ATAK_DroneStaticPfh", [{ ["frame"] call comspec_atak_native_fnc_droneStatic; }, 0.066] call CBA_fnc_addPerFrameHandler];
+            missionNamespace setVariable ["COMSPEC_ATAK_DroneStaticPfh", [{ private _t = diag_tickTime; ["frame"] call comspec_atak_native_fnc_droneStatic; ["neige et défauts", _t] call comspec_atak_native_fnc_perfAcc; }, 0.066] call CBA_fnc_addPerFrameHandler];
         };
         // Raison relue tout de suite (une raison gardée d'un autre écran ne doit pas s'afficher).
         uiNamespace setVariable ["COMSPEC_ATAK_DroneStaticNext", 0];
