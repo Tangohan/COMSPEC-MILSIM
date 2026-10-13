@@ -69,4 +69,19 @@ final class MusicLibraryTest extends TestCase
         self::assertStringNotContainsString("'/api/atak/music/stream", $routes);
         self::assertFileExists($root . '/views/admin/member_situation/musique.php');
     }
+
+    public function testAdminPagesArePlatformOrManagerOnly(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $routes = (string) file_get_contents($root . '/routes/web.php');
+        foreach (['/admin/musique', '/admin/musique/actions', '/admin/musique/playlists/{id}/supprimer'] as $path) {
+            self::assertMatchesRegularExpression("#router->(get|post)\\('" . preg_quote($path, '#') . "', \\[MusicAdminController::class, '[a-zA-Z]+'\\], \\[AuthMiddleware::class, SystemAdminMiddleware::class\\]#", $routes, $path);
+        }
+        foreach (['/back-office/ressources/musique', '/back-office/ressources/musique/actions', '/back-office/ressources/musique/playlists/{id}/supprimer'] as $path) {
+            self::assertMatchesRegularExpression("#router->(get|post)\\('" . preg_quote($path, '#') . "', \\[MusicAdminController::class, '[a-zA-Z]+'\\], \\[AuthMiddleware::class, TenantResourceAdminMiddleware::class\\]#", $routes, $path);
+        }
+        self::assertStringContainsString("'admin/musique'", (string) file_get_contents($root . '/views/partials/platform_admin_sidebar.php'));
+        self::assertStringContainsString("url('back-office/ressources/musique')", (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php'));
+        self::assertFileExists($root . '/views/admin/music/index.php');
+    }
 }

@@ -314,3 +314,31 @@
   .msc-player__vol { display: none; }
   .msc-search input { min-width: 0; width: 100%; }
 }
+
+/* Administration : /admin/musique (plateforme) et /back-office/ressources/musique (gestionnaires) */
+.msca-hero__title { margin: 0.1rem 0 0.3rem; font-size: 1.6rem; font-weight: 800; }
+.msca-hero__lead { margin: 0; max-width: 62rem; color: var(--msc-muted); font-size: 0.92rem; }
+.msca-flash { padding: 0.7rem 0.9rem; border-radius: 4px; border: 1px solid var(--msc-line); font-size: 0.9rem; }
+.msca-flash--ok { border-color: #b7dfc9; background: #eef8f2; color: #0b6b47; }
+.msca-flash--err { border-color: #efc2c2; background: #fdf1f1; color: #9b2222; }
+.msca-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 0.6rem; }
+.msca-kpi { display: grid; gap: 0.15rem; padding: 0.75rem 0.9rem; border: 1px solid var(--msc-line); border-radius: 6px; background: var(--msc-surface); }
+.msca-kpi__label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--msc-muted); }
+.msca-kpi__value { font-size: 1.45rem; font-weight: 800; }
+.msca-kpi__sub { font-size: 0.74rem; color: var(--msc-muted); }
+.msca-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 0.6rem; align-items: end; margin-bottom: 1rem; }
+.msca-filters__actions { display: flex; gap: 0.4rem; }
+.msca-bulk { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; padding: 0.6rem; margin-bottom: 0.6rem; border-radius: 4px; background: var(--msc-subtle); }
+.msca-bulk select, .msca-bulk__note { width: auto; min-width: 12rem; }
+.msca-table-wrap { overflow-x: auto; }
+.msca-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+.msca-table th { text-align: left; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--msc-muted); padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--msc-line); white-space: nowrap; }
+.msca-table td { padding: 0.5rem; border-bottom: 1px solid var(--msc-line); vertical-align: top; }
+.msca-table tr.is-hidden td { opacity: 0.6; }
+.msca-table a { color: var(--msc-acc); font-weight: 650; }
+.msca-sub { display: block; font-size: 0.76rem; color: var(--msc-muted); }
+.msca-actions { display: flex; gap: 0.4rem; justify-content: flex-end; }
+.msca-actions form { margin: 0; }
+.msca-pager { display: flex; gap: 0.6rem; align-items: center; justify-content: center; margin: 0.8rem 0; }
+.msca-meter { display: inline-block; width: 4rem; height: 0.4rem; border-radius: 2px; background: var(--msc-subtle); border: 1px solid var(--msc-line); vertical-align: middle; overflow: hidden; }
+.msca-meter span { display: block; height: 100%; background: var(--msc-acc); }

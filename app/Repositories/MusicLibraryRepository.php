@@ -143,6 +143,9 @@ final class MusicLibraryRepository
                 in_array($data['scope'] ?? '', self::SCOPES, true) ? $data['scope'] : 'org', $id,
             ]
         );
+        if (($data['scope'] ?? '') !== 'community') {
+            $this->setTrackScope($id, 'org');
+        }
     }
 
     public function setTrackStatus(int $id, string $status, int $moderatorId, string $note = ''): void
@@ -338,6 +341,119 @@ final class MusicLibraryRepository
     public function playlistIdsContaining(int $trackId): array
     {
         return array_map(static fn (array $r): int => (int) $r['playlist_id'], $this->db->fetchAll('SELECT playlist_id FROM music_playlist_tracks WHERE track_id = ?', [$trackId]));
+    }
+
+    // ----- Administration (plateforme : $tenantId null ; gestion d'une organisation : son id) -----
+
+    /**
+     * @param array{q?: string, scope?: string, status?: string, tenant?: int} $f
+     * @return array{rows: list<array<string, mixed>>, total: int}
+     */
+    public function adminTracks(?int $tenantId, array $f, int $limit = 50, int $offset = 0): array
+    {
+        $where = ['1 = 1'];
+        $params = [];
+        if ($tenantId !== null) {
+            $where[] = 't.tenant_id = ?';
+            $params[] = $tenantId;
+        } elseif ((int) ($f['tenant'] ?? 0) > 0) {
+            $where[] = 't.tenant_id = ?';
+            $params[] = (int) $f['tenant'];
+        }
+        if (in_array($f['scope'] ?? '', self::SCOPES, true)) {
+            $where[] = 't.scope = ?';
+            $params[] = $f['scope'];
+        }
+        if (in_array($f['status'] ?? '', ['active', 'hidden'], true)) {
+            $where[] = 't.status = ?';
+            $params[] = $f['status'];
+        }
+        $q = trim((string) ($f['q'] ?? ''));
+        if ($q !== '') {
+            $where[] = '(t.title LIKE ? OR t.artist LIKE ? OR t.genre LIKE ? OR u.callsign LIKE ? OR u.display_name LIKE ?)';
+            $like = self::like($q);
+            array_push($params, $like, $like, $like, $like, $like);
+        }
+        $from = ' FROM music_tracks t LEFT JOIN users u ON u.id = t.uploader_user_id LEFT JOIN tenants tn ON tn.id = t.tenant_id WHERE ' . implode(' AND ', $where);
+        $total = (int) (($this->db->fetchOne('SELECT COUNT(*) AS n' . $from, $params))['n'] ?? 0);
+        $limit = max(1, min(200, $limit));
+        $offset = max(0, $offset);
+        $rows = $this->db->fetchAll(
+            'SELECT ' . self::TRACK_COLS . ', t.moderation_note, t.updated_at,
+                (SELECT COUNT(*) FROM music_playlist_tracks pt WHERE pt.track_id = t.id) AS playlist_count' . $from
+            . ' ORDER BY t.created_at DESC, t.id DESC LIMIT ' . $limit . ' OFFSET ' . $offset,
+            $params
+        );
+
+        return ['rows' => $rows, 'total' => $total];
+    }
+
+    /** @return array<string, int> */
+    public function adminStats(?int $tenantId): array
+    {
+        $w = $tenantId !== null ? ' WHERE tenant_id = ?' : '';
+        $p = $tenantId !== null ? [$tenantId] : [];
+        $t = $this->db->fetchOne(
+            "SELECT COUNT(*) AS tracks, COALESCE(SUM(status = 'hidden'), 0) AS hidden, COALESCE(SUM(scope = 'community'), 0) AS community,
+                    COALESCE(SUM(size_bytes), 0) AS bytes, COALESCE(SUM(play_count), 0) AS plays, COUNT(DISTINCT uploader_user_id) AS uploaders,
+                    COALESCE(SUM(created_at >= NOW() - INTERVAL 7 DAY), 0) AS week
+             FROM music_tracks" . $w,
+            $p
+        ) ?? [];
+        $pl = $this->db->fetchOne(
+            "SELECT COUNT(*) AS n FROM music_playlists" . ($tenantId !== null ? ' WHERE tenant_id = ?' : " WHERE visibility <> 'global'"),
+            $p
+        ) ?? [];
+
+        return array_map('intval', $t + ['playlists' => (int) ($pl['n'] ?? 0)]);
+    }
+
+    /** Par organisation (plateforme). @return list<array<string, mixed>> */
+    public function adminTenantBreakdown(): array
+    {
+        return $this->db->fetchAll(
+            "SELECT t.tenant_id, tn.name AS tenant_name, COUNT(*) AS tracks, COALESCE(SUM(t.status = 'hidden'), 0) AS hidden,
+                    COALESCE(SUM(t.scope = 'community'), 0) AS community, COALESCE(SUM(t.size_bytes), 0) AS bytes, COALESCE(SUM(t.play_count), 0) AS plays
+             FROM music_tracks t LEFT JOIN tenants tn ON tn.id = t.tenant_id GROUP BY t.tenant_id, tn.name ORDER BY bytes DESC LIMIT 100"
+        );
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function adminTopUploaders(?int $tenantId, int $limit = 10): array
+    {
+        return $this->db->fetchAll(
+            "SELECT t.uploader_user_id, COALESCE(NULLIF(u.callsign, ''), NULLIF(u.display_name, ''), 'Membre') AS name, tn.name AS tenant_name,
+                    COUNT(*) AS tracks, COALESCE(SUM(t.size_bytes), 0) AS bytes, COALESCE(SUM(t.play_count), 0) AS plays
+             FROM music_tracks t LEFT JOIN users u ON u.id = t.uploader_user_id LEFT JOIN tenants tn ON tn.id = t.tenant_id"
+            . ($tenantId !== null ? ' WHERE t.tenant_id = ?' : '')
+            . ' GROUP BY t.uploader_user_id, u.callsign, u.display_name, tn.name ORDER BY bytes DESC LIMIT ' . max(1, min(50, $limit)),
+            $tenantId !== null ? [$tenantId] : []
+        );
+    }
+
+    /** Toutes les playlists (plateforme) ou celles d'une organisation. @return list<array<string, mixed>> */
+    public function adminPlaylists(?int $tenantId): array
+    {
+        $this->globalPlaylist();
+
+        return $this->db->fetchAll(
+            'SELECT ' . self::PL_COLS . ' FROM music_playlists p LEFT JOIN users u ON u.id = p.owner_user_id LEFT JOIN tenants tn ON tn.id = p.tenant_id'
+            . ($tenantId !== null ? ' WHERE p.tenant_id = ?' : '')
+            . " ORDER BY (p.visibility = 'global') DESC, p.updated_at DESC, p.id DESC LIMIT 300",
+            $tenantId !== null ? [$tenantId] : []
+        );
+    }
+
+    public function setTrackScope(int $id, string $scope): void
+    {
+        $this->db->execute('UPDATE music_tracks SET scope = ?, updated_at = NOW() WHERE id = ?', [in_array($scope, self::SCOPES, true) ? $scope : 'org', $id]);
+        // Un morceau qui redevient « organisation » ne peut plus rester dans la playlist globale.
+        if ($scope === 'org') {
+            $this->db->execute(
+                "DELETE pt FROM music_playlist_tracks pt JOIN music_playlists p ON p.id = pt.playlist_id WHERE pt.track_id = ? AND p.visibility = 'global'",
+                [$id]
+            );
+        }
     }
 
     private static function nullable(mixed $v, int $max): ?string

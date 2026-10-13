@@ -61,6 +61,7 @@ use App\Controllers\Web\AthenaDataInspectorController;
 use App\Controllers\Api\SseApiController;
 use App\Controllers\Api\MusicLibraryApiController;
 use App\Controllers\Web\MusicLibraryController;
+use App\Controllers\Admin\MusicAdminController;
 use App\Controllers\Api\SseFieldNoteApiController;
 use App\Controllers\Api\SseIntelApiController;
 use App\Controllers\Api\FireSupportController;
@@ -1094,6 +1095,13 @@ return function (Router $router) {
     $router->post('/back-office/ma-situation/musique/playlists/creer', [MusicLibraryController::class, 'playlistCreate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/playlists/{id}/modifier', [MusicLibraryController::class, 'playlistUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/playlists/{id}/supprimer', [MusicLibraryController::class, 'playlistDelete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Administration de la musique : plateforme (toutes organisations) et gestionnaires (leur organisation).
+    $router->get('/admin/musique', [MusicAdminController::class, 'platform'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/musique/actions', [MusicAdminController::class, 'platformBulk'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/musique/playlists/{id}/supprimer', [MusicAdminController::class, 'platformPlaylistDelete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/back-office/ressources/musique', [MusicAdminController::class, 'tenant'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/musique/actions', [MusicAdminController::class, 'tenantBulk'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/musique/playlists/{id}/supprimer', [MusicAdminController::class, 'tenantPlaylistDelete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/playlists/{id}/ajouter', [MusicLibraryController::class, 'playlistAdd'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/playlists/{id}/retirer', [MusicLibraryController::class, 'playlistRemove'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/playlists/{id}/deplacer', [MusicLibraryController::class, 'playlistMove'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

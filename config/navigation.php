@@ -372,6 +372,7 @@ return [
                         ['label' => 'Files d’envoi Athena', 'path' => 'back-office/atak/files-envoi', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access'], 'description' => 'Envois du jeu en attente ou en échec, et charge d’Athena'],
                         ['label' => 'Mod ATAK', 'path' => 'back-office/ressources/atak-mod', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
                         ['label' => 'Configuration forum', 'path' => 'back-office/ressources/forum-config', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
+                        ['label' => 'Musique', 'path' => 'back-office/ressources/musique', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
                         ['label' => 'Formations (LMS)', 'path' => 'formation', 'any_permissions' => ['admin.access', 'training.manage', 'training.assign', 'training.create', 'training.update', 'training.publish', 'training.delete']],
                         ['label' => 'Publications formation', 'path' => 'formation/publications', 'any_permissions' => ['training.publications.manage', 'training.manage', 'training.publish', 'admin.access'], 'description' => 'Back-office publications, versionning et change log'],
                         ['label' => 'Gestion documentaire', 'path' => 'documents/gestion', 'any_permissions' => ['admin.system', 'documents.upload', 'admin.access']],
