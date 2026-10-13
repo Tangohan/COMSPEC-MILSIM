@@ -11,12 +11,24 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Taille du téléphone en plein écran réglable (ATAK natif 1.65.0)
+## Taille du téléphone en plein écran réglable (ATAK natif 1.66.0)
 
 Non testé en jeu. Demande de TTRD : le téléphone ouvert en plein écran est trop gros pour certains.
 - Nouveau réglage par joueur « Taille du téléphone en plein écran », de 60 à 100 % (100 % par défaut = taille actuelle), dans le menu CBA (COMSPEC > ATAK · Affichage) et dans l'app Réglages > Emplacement (60, 70, 80, 90, 100 %). Les deux sont le même réglage.
 - Le téléphone reste centré ; l'écran, le texte, les boutons, les touches de la coque et la carte sont recalculés depuis cette taille. Le mode mini et sa taille ne changent pas.
 - À vérifier en jeu : prendre le téléphone en main, passer en plein écran, essayer 60 % et 80 %, cliquer sur les apps, le dock, la carte et les touches de la coque ; changer la valeur téléphone ouvert (elle s'applique tout de suite).
+---
+
+## Pylônes relais 3D destructibles (ATAK natif 1.65.0)
+
+Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : de vrais pylônes radio en 3D, hauts, variés et destructibles.
+- Trois modèles dans Eden et Zeus (Structures > Relais ATAK) : pylône treillis 30 m anthracite à panneaux et RRU, tour triangulaire galvanisée 40 m à tête à bras, faisceaux hertziens et fouets, pylône élancé 50 m à paliers, échelle et feu de balisage rouge. Massifs béton, armoire technique et passerelle de câbles au pied. LOD visuelles 1 / 4 / 12 / 30, ombre, géométrie et géométrie de tir.
+- Rendu Arma complet : shader Super avec relief (_nohq) et reflets (_smdi) pour l'acier galvanisé ou peint, les radômes, les coffrets, le béton et le caillebotis ; deux LOD d'ombre (treillis presque complet de près, silhouette de loin).
+- Chaque pylône posé est un relais du réseau ATAK (tour : 6, 9 ou 12 km, antennes à 28, 38 ou 48 m, sur secteur). Attributs Eden : nom, camp, raccordé ou répéteur, allumé, indestructible. Un module « ATAK · Relais » synchronisé passe avant.
+- Destructible : abattu (charges, obus, véhicules), le pylône est remplacé par sa ruine (plié au-dessus d'un tronçon debout, couché au sol, panneaux et paraboles arrachés). Le relais passe « détruit » et les téléphones qui l'utilisaient reçoivent « Relais perdu ».
+- Module « ATAK · Relais », type Tour fixe sans objet synchronisé : crée la tour 3D de 40 m (hauteur d'antenne réelle du pylône si la hauteur est laissée au type).
+- Nouveau PBO `@COMSPEC_ATAK_Native/addons/towers.pbo` (modèles MLOD trop lourds pour main.pbo) : le copier avec main.pbo. `build_mod.bat` le construit.
+- Outils : `tools/gen_tower_textures.py` (textures raccordables) et `tools/model_relay_towers.py` (modèles, ruines, aperçus).
 
 ## Connexion Athena : « invalid_url » mieux géré (ATAK natif 1.64.0, COMSPEC Link 2.0.77)
 
