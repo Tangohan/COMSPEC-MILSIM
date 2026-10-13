@@ -105,6 +105,32 @@ final class HtmlTranslator
         return $out;
     }
 
+    /**
+     * Texte brut (version texte d'un e-mail, objet) : chaque ligne est cherchée comme un texte de page ; une ligne
+     * inconnue reste en français.
+     */
+    public static function translateText(string $text): string
+    {
+        if ($text === '' || !self::load()) {
+            return $text;
+        }
+        $lines = explode("\n", $text);
+        foreach ($lines as $i => $line) {
+            if (trim($line) === '' || !preg_match('/\p{L}/u', $line)) {
+                continue;
+            }
+            $lead = strlen($line) - strlen(ltrim($line));
+            $trail = strlen($line) - strlen(rtrim($line));
+            $core = substr($line, $lead, strlen($line) - $lead - $trail);
+            $en = self::lookup((string) preg_replace('/\s+/u', ' ', $core), 0);
+            if ($en !== null) {
+                $lines[$i] = substr($line, 0, $lead) . $en . substr($line, strlen($line) - $trail);
+            }
+        }
+
+        return implode("\n", $lines);
+    }
+
     private static function attributes(string $tag, string $name): string
     {
         $tag = (string) preg_replace_callback(self::ATTRS, static function (array $m): string {
