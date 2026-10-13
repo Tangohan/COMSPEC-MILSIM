@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Regroupement : images dans le téléphone, ordres au drone, plan de briefing, véhicules (ATAK natif 1.91.0, COMSPEC Link 2.0.84)
+## Regroupement : images dans le téléphone, ordres au drone, plan de briefing, app Groupe, mode PETIT (ATAK natif 1.91.0, COMSPEC Link 2.0.84)
 
 ### Résumé joueur
 Type : nouveauté
@@ -46,16 +46,16 @@ FR : Images du drone enfin visibles, ordres au drone sur la carte, plan de brief
 - La caméra du drone, le viseur de l'app Photo et les diapositives du Briefing s'affichent dans le téléphone au lieu de rester noirs. Sur la carte, un clic droit donne des ordres au drone : aller, rechercher, stationnaire, atterrir.
 - Le plan de briefing de l'app Plan apparaît sur la carte du site Athena et, par défaut, sur la carte du téléphone.
 - En véhicule, la molette et le menu d'actions marchent de nouveau avec le téléphone en miniature. Le HUD des autres mods (boussole, heure…) ne passe plus par-dessus le téléphone.
-- Mode PETIT plus lisible : carte sur toute la largeur, plus d'apps sur l'accueil, messagerie en une vue, barre du haut allégée, et fini le bandeau « indicatif · grille » en boucle. Le selfie peut aussi inverser les axes de la souris.
+- Nouvelle interface de l'app Groupe, et mode PETIT plus lisible : carte sur toute la largeur, plus d'apps sur l'accueil, messagerie en une vue, barre du haut allégée, fini le bandeau « indicatif · grille » en boucle. Le selfie peut aussi inverser les axes de la souris.
 EN : Drone pictures finally visible, drone orders from the map, shared briefing plan
 - The drone camera, the Photo app viewfinder and Briefing slides show in the phone instead of staying black. On the map, a right-click gives orders to the drone: go to, search, hover, land.
 - The briefing plan from the Plan app shows on the Athena website map and, by default, on the phone map.
 - In a vehicle, the scroll wheel and action menu work again with the phone as a miniature. Other mods' HUD (compass, time…) no longer draws over the phone.
-- Clearer SMALL mode: full-width map, more apps on the home screen, messages in one view, lighter top bar, and no more repeating "callsign · grid" banner. The selfie can also invert the mouse axes.
+- A new Group app interface, and a clearer SMALL mode: full-width map, more apps on the home screen, messages in one view, lighter top bar, no more repeating "callsign · grid" banner. The selfie can also invert the mouse axes.
 
 ### Détail technique
 
-Une seule version pour 7 PR regroupées (#782, #783, #785, #786, #787, #788, #789) : ATAK natif 1.91.0, COMSPEC Link 2.0.84 (la DLL change avec l'app Plan #787 : recompiler avec build_mod.bat ; migration du plan de briefing à lancer côté site). main.pbo reconstruit avec HEMTT ; i18n/en.txt fusionné à trois voies et localisation/template/xx.txt régénéré (tools/i18n.py community) ; dictionnaire JS du site régénéré. Non testé en jeu.
+Une seule version pour 8 PR regroupées (#782, #783, #785, #786, #787, #788, #789, #791) : ATAK natif 1.91.0, COMSPEC Link 2.0.84 (la DLL change avec l'app Plan #787 : recompiler avec build_mod.bat ; migration du plan de briefing à lancer côté site). main.pbo reconstruit avec HEMTT ; i18n/en.txt fusionné à trois voies et localisation/template/xx.txt régénéré (tools/i18n.py community) ; dictionnaire JS du site régénéré. Non testé en jeu.
 
 #### Drone, Photo et Briefing : les images s'affichent enfin dans le téléphone (#783)
 
@@ -95,6 +95,13 @@ Une seule version pour 7 PR regroupées (#782, #783, #785, #786, #787, #788, #78
 - Réglage CBA client `comspec_atak_native_hide_foreign_hud` (ATAK · Affichage, activé par défaut). Écran 3D du JPC non concerné.
 - Limite : un texte posé par `cutText` / `titleText` ou dessiné par `drawIcon3D` n'a pas de display accessible et ne peut pas être masqué.
 
+#### App Groupe : nouvelle interface (#791)
+
+- fn_pageGroup réécrit : hero (symbole OTAN, nom, type, effectif, équipes, chef, accès), strip de bilan (respecte medShow allies), membres triés chef > moi > distance, fold « perso » (clés COMSPEC_ATAK_State grpFold_<clé>, fn_groupAction "fold"), QUITTER désactivé si seul, onglet GROUPES avec état vide.
+- fn_ftRows : strip « VOUS », folds « role » et « place », grille de rôles 4 par rangée en mini portrait et 6 sinon (infobulle = libellé complet), boutons d'édition d'équipe sur deux rangées, APPLIQUER MON RÔLE remplacé par le bouton PRENDRE de la liste complète.
+- fn_formRender : nouvelle ligne `field` (champ + bouton sur la même ligne) et 6e paramètre facultatif de `combo` ([libellé, code] : bouton intégré, code appelé avec la donnée choisie). Pas d'application au simple choix : la molette sur une liste fermée en change la ligne.
+- 46 textes ajoutés à i18n/en.txt. Aucune nouvelle fonction de jeu. Non testé en jeu.
+
 #### Mode PETIT : carte, accueil et messagerie plus lisibles, fin de la notification en boucle (#786)
 
 - Retour de TTRD (13/10) : « INFO · TA1 · 1519 1729 » en boucle en mode PETIT. fn_inspectorUpdate envoyait la notification à chaque rendu en mode mini avec une unité sélectionnée ; fn_statusUpdate le rappelle chaque seconde et la grille change quand l'unité bouge, donc l'anti-doublon de fn_notify ne jouait pas. La notification part désormais de fn_mapSelect, une fois par clic.
@@ -109,26 +116,6 @@ Une seule version pour 7 PR regroupées (#782, #783, #785, #786, #787, #788, #78
 - Demande de TTRD (13/10) : inverser gauche / droite à la souris en mode selfie.
 - Réglages CBA client (non forcés par le serveur) comspec_atak_native_selfie_invert_x / _y, lus dans fn_photoMode "MOUSE" (branche selfie uniquement ; le zoom de l'objectif arrière et le glisser de l'app Photo ne changent pas). Traductions ajoutées à en.txt.
 - Non testé en jeu.
-## App Groupe : nouvelle interface (ATAK natif 1.94.0)
-
-### Résumé joueur
-Type : nouveauté
-FR : L'app Groupe a une nouvelle interface, plus claire et plus compacte
-- MON GROUPE : la fiche du groupe en haut, un bandeau aptes / blessés / hors de combat, puis la liste des membres (le chef d'abord). Les réglages du chef (nom, type, groupe fermé) sont rangés dans une section repliable.
-- Renommer et changer de type se font sur une seule ligne, avec le bouton à côté du champ.
-- ÉQUIPES : votre équipe et votre rôle en un coup d'œil, et les sections Mon rôle et Placer un membre se replient. Les boutons de modification d'une équipe ne sont plus coupés en mini.
-- GROUPES : les groupes fermés sont signalés, et un écran clair s'affiche quand il n'y en a aucun. Tout est traduit en anglais.
-EN : The Group app has a new, clearer and more compact interface
-- MY GROUP: the group card on top, a fit / wounded / out of action strip, then the member list (leader first). The leader's settings (name, type, closed group) sit in a collapsible section.
-- Renaming and changing the type happen on a single line, with the button next to the field.
-- TEAMS: your team and role at a glance, and the My role and Assign a member sections collapse. A team's edit buttons are no longer cut off in mini mode.
-- GROUPS: closed groups are flagged, and a clear screen shows when there are none. Everything is translated into English.
-
-### Détail technique
-- fn_pageGroup réécrit : hero (symbole OTAN, nom, type, effectif, équipes, chef, accès), strip de bilan (respecte medShow allies), membres triés chef > moi > distance, fold « perso » (clés COMSPEC_ATAK_State grpFold_<clé>, fn_groupAction "fold"), QUITTER désactivé si seul, onglet GROUPES avec état vide.
-- fn_ftRows : strip « VOUS », folds « role » et « place », grille de rôles 4 par rangée en mini portrait et 6 sinon (infobulle = libellé complet), boutons d'édition d'équipe sur deux rangées, APPLIQUER MON RÔLE remplacé par le bouton PRENDRE de la liste complète.
-- fn_formRender : nouvelle ligne `field` (champ + bouton sur la même ligne) et 6e paramètre facultatif de `combo` ([libellé, code] : bouton intégré, code appelé avec la donnée choisie). Pas d'application au simple choix : la molette sur une liste fermée en change la ligne.
-- 46 textes ajoutés à i18n/en.txt. Aucune nouvelle fonction de jeu. Non testé en jeu.
 
 ## Drone : bouton TEST VIDÉO pour l'image noire du téléphone (ATAK natif 1.90.0)
 
