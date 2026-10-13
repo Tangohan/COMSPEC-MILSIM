@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Vue caméra noire : explication claire et vue directe du drone (ATAK natif 1.74.0)
+## Vue caméra noire : explication claire et vue directe du drone (ATAK natif 1.77.0)
 
 ### Résumé joueur
 Type : correctif
@@ -56,6 +56,58 @@ EN : Black drone camera and photo viewfinder: a clear reason, and a backup drone
 - Nouveau `fn_pipCheck` (dossier camera) : `check` (PiP coupée → raison affichée sous NO DATA + notification + RPT ; distance de vue PiP < 300 m remontée), `watch` (RPT `[CAMERA]` étapes 1 à 5 : PiP, caméra et hauteur au-dessus du terrain, cible de rendu, texture, image ; `getVideoOptions` ; relevé à 2 s) et `rebind` (texture reposée sur l'image une image, deux images et 0,6 s après la création de la caméra).
 - Drone : noms de cible de rendu par qualité (`comspec_dronecam<q>_<n>`), plus jamais un même nom avec une autre taille de texture ; `feedWatch` appelé par la page ; `direct` / `directEnd` : caméra plein écran sans r2t attachée au drone, pose recopiée par la boucle de la nacelle (`COMSPEC_ATAK_DroneShotCam`), téléphone rangé, Échap (KeyDown du display 46) rouvre l'app Drone ; coupée si joueur mort, drone perdu, liaison perdue ou téléphone ouvert.
 - Photo : même contrôle et même journal à l'ouverture du viseur.
+
+## App JTAC plus réaliste : terminal, fiche 9-LINE et carte tactique (ATAK natif 1.76.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : L'app JTAC ressemble à un vrai terminal de contrôleur air
+- En haut, un bandeau de terminal (indicatif, code et état du laser, heure) et la frise de la mission en cases, de CHECK-IN à BDA, avec l'étape en cours en orange et le tir autorisé en rouge.
+- Un bandeau en gros caractères dit ce qu'on attend (READBACK, IN…) ou la décision à prendre ; CLEARED HOT, CONTINUE DRY et ABORT sont de gros boutons.
+- Le 9-LINE est une fiche dense, lignes numérotées, valeurs calculées en vert, remarques et restrictions en dessous.
+- Nouvel onglet CARTE : cible, IP et axe d'entrée, cône de l'axe final d'attaque, distance de risque, amis, ligne laser et appareils en vol. On peut y poser la cible ou l'IP du doigt. En paysage, la carte reste à gauche des autres onglets, côté JTAC comme côté équipage.
+EN : The JTAC app now looks like a real air controller terminal
+- At the top, a terminal bar (callsign, laser code and state, time) and the mission tape from CHECK-IN to BDA, with the current step in orange and cleared hot in red.
+- A large banner says what you are waiting for (READBACK, IN…) or the decision to make; CLEARED HOT, CONTINUE DRY and ABORT are big buttons.
+- The 9-LINE is a dense card with numbered lines, computed values in green, remarks and restrictions below.
+- New MAP tab: target, IP and run-in, final attack heading cone, risk distance, friendlies, laser line and airborne aircraft. You can set the target or IP with a tap. In landscape the map stays on the left of the other tabs, for the JTAC and for the aircrew.
+
+### Détail technique
+
+Non testé en jeu. Demande de TTRD : « JTAC l'app a une UI pas encore assez réaliste ». Mécanique de mission inchangée (fn_jtacAction), présentation refondue.
+- fn_pageJtac : bandeau terminal (`strip`), frise d'étapes (`steps`), bandeau d'état (`banner`), gros boutons (`big`), 9-LINE et données cible en lignes « mono » (police à chasse fixe), journal radio horodaté avec appels critiques en rouge, onglets SITU / 9-LINE / CARTE / CTRL / LOG. Paysage hors mini : carte tactique à 44 % à gauche.
+- fn_jtacDraw (nouveau) : dessin de la carte tactique (cône FAH, flèche IP → cible, cercle RED, ami le plus proche, LTL, appareils avec vecteur de cap). Vue gardée entre deux rendus. fn_jtacFah (nouveau) : lecture de la fenêtre FAH, partagée avec fn_jtacGeometry.
+- fn_jtacAction : pickIn / mapPick / mapSet (pose sur la carte de l'app), center ; le brief transmet aussi la position de l'IP et la distance de risque (fin du tableau, ignorés par un ancien client).
+- fn_formRender : nouvelles lignes `strip`, `steps`, `banner`, `big`, fond facultatif pour `text`, style « mono » pour `line` ; les autres apps ne changent pas.
+- i18n : textes ajoutés à en.txt.
+- À tester en jeu : onglets JTAC en portrait et paysage (mini et plein écran, échelle réglable), pose cible/IP sur la carte, cône FAH et cercle RED, vue équipage avec brief reçu, rafraîchissement CTRL toutes les 3 s (la carte garde sa vue), langue anglaise.
+
+## Ligne de vue : de ma position vers le point (ATAK natif 1.75.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Ligne de vue : de ta position vers un point dont tu entres les coordonnées
+- Dans l'app Relief, onglet LIGNE DE VUE, tu entres les coordonnées du point (carroyage de 4 à 10 chiffres) puis TRACER : la ligne part de ta position.
+- Le bouton SOUS MON REGARD disparaît ; SUR LA CARTE reste pour toucher le point.
+- L'en-tête rappelle ta position, et un carroyage court vise le centre de sa case.
+EN : Line of sight: from your position to a point whose coordinates you enter
+- In the Relief app, LINE OF SIGHT tab, enter the point's coordinates (4 to 10-digit grid) then DRAW: the line starts from your position.
+- The UNDER MY GAZE button is gone; ON THE MAP still lets you tap the point.
+- The header shows your position, and a short grid aims at the centre of its square.
+
+### Détail technique
+
+Non testé en jeu. Demande de TTRD : remplacer « SOUS MON REGARD » par « de ma position vers le point », en entrant les coordonnées.
+- App Relief, onglet LIGNE DE VUE : le bouton SOUS MON REGARD est retiré. L'en-tête devient « DE MA POSITION VERS LE POINT : » et rappelle ma position (carroyage 8 chiffres). On entre les coordonnées du point (carroyage de 4, 6, 8 ou 10 chiffres, espaces acceptés) puis TRACER, ou on touche le point avec SUR LA CARTE.
+- Un carroyage court vise le centre de sa case (avant : le coin sud-ouest). La ligne part toujours de mes yeux, point à 1,7 m du sol. Tracé, profil, VOIR SUR LA CARTE et EFFACER inchangés.
+
+## Langue du mod en tête des options CBA (ATAK natif 1.74.0)
+
+Non testé en jeu. Demande de TTRD : la sélection de langue dans Options des addons > COMSPEC.
+- Le réglage **Langue / Language** (Auto, Français, English) est maintenant tout en haut de la liste COMSPEC, onglet Client, au-dessus des sections « ATAK · … ». Il était rangé dans la section « ATAK · Langue / Language », au milieu de la liste, où on ne le trouvait pas.
+- Défaut : Auto (suit la langue du jeu : français si Arma est en français, anglais sinon). Un joueur qui avait déjà choisi Français ou English garde son choix.
+- Un seul réglage pour tout le mod : téléphone, menus CBA COMSPEC (ATAK natif, Overwatch, SSE) et écrans du SSE. Le choix dans le téléphone (Réglages > Langue / Language) est le même réglage.
+- Changer de langue en cours de partie : le téléphone se redessine et les menus CBA COMSPEC sont retraduits à leur prochaine ouverture, sans relancer la mission (avant, il fallait relancer la mission).
 
 ## Texte du bouton PANIQUE (ATAK natif 1.73.0)
 
