@@ -7,7 +7,7 @@
       Mode nuit   : profil COMSPEC_ATAK_NightMode (NORMAL / ROUGE / SOMBRE)
       Mode avion  : fn_airplaneMode             Silencieux : profil COMSPEC_ATAK_Silent
       Vibration   : profil COMSPEC_ATAK_Vibrate (verrouillable par la communauté, fn_pref)
-      Bluetooth   : fn_btAction                 Balise IR  : fn_irBeacon (pas de lampe sur la coque : c'est la « lampe » IR)
+      Bluetooth   : fn_btAction
       Réseau      : fn_linkQuality (ouvre l'app Réseau)   Batterie : COMSPEC_ATAK_Battery (ouvre l'app Statut)
     Params : [action, argument]
       "handle" : pose la zone cliquable de la barre d'état et la poignée (fn_layoutApply)
@@ -32,7 +32,6 @@ private _sig = {
     [floor (missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]), _lq getOrDefault ["bars", 0], _lq getOrDefault ["label", ""], [] call comspec_atak_native_fnc_airplaneMode,
         profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"], profileNamespace getVariable ["COMSPEC_ATAK_Silent", false],
         profileNamespace getVariable ["COMSPEC_ATAK_Vibrate", true], (missionNamespace getVariable ["COMSPEC_ATAK_Bt", createHashMap]) getOrDefault ["on", false],
-        ["state"] call comspec_atak_native_fnc_irBeacon,
         // Fiche opérateur : portrait reçu du site, liaison Athena, heure à la minute.
         [player] call comspec_atak_native_fnc_avatarPath, missionNamespace getVariable ["COMSPEC_AthenaReady", false], floor (dayTime * 60)]
 };
@@ -137,7 +136,6 @@ switch (_act) do {
             ["silent", "Silencieux", ["SONS", "AUCUN SON"] select (profileNamespace getVariable ["COMSPEC_ATAK_Silent", false]), profileNamespace getVariable ["COMSPEC_ATAK_Silent", false], "qs_silent"],
             ["vibrate", "Vibration", (["DÉSACTIVÉE", "ACTIVÉE"] select (_vib select 0)) + (["", " · IMPOSÉ"] select (_vib select 1)), _vib select 0, "ui_vibrate"],
             ["bt", "Bluetooth", ["DÉSACTIVÉ", "ACTIVÉ"] select ((missionNamespace getVariable ["COMSPEC_ATAK_Bt", createHashMap]) getOrDefault ["on", false]), (missionNamespace getVariable ["COMSPEC_ATAK_Bt", createHashMap]) getOrDefault ["on", false], "qs_bt"],
-            ["ir", "Balise IR", ["ÉTEINTE", "ALLUMÉE"] select (["state"] call comspec_atak_native_fnc_irBeacon), ["state"] call comspec_atak_native_fnc_irBeacon, "qs_ir"],
             ["net", "Réseau", if (_air) then { "MODE AVION" } else { format ["%1 · %2/4", toUpper (_lq getOrDefault ["label", "—"]), _lq getOrDefault ["bars", 0]] }, !_air && {(_lq getOrDefault ["bars", 0]) >= 1}, "app_network"],
             ["battery", "Batterie", format ["%1 %%", _bat], _bat > 20, "qs_battery"]
         ];
@@ -373,7 +371,6 @@ switch (_act) do {
                 if (_on) then { [] call comspec_atak_native_fnc_vibrate; };
             };
             case "bt": { ["toggle"] call comspec_atak_native_fnc_btAction; };
-            case "ir": { ["toggle"] call comspec_atak_native_fnc_irBeacon; };
             case "net": { ["close"] call comspec_atak_native_fnc_quickSettings; ["NETWORK"] call comspec_atak_native_fnc_navigate; };
             case "battery": { ["close"] call comspec_atak_native_fnc_quickSettings; ["STATUS"] call comspec_atak_native_fnc_navigate; };
         };

@@ -1,6 +1,6 @@
 /*
     « Voir l'arrière » : le téléphone retourné au centre de l'écran (coque à la couleur choisie, plaque de fixation,
-    appareil photo, étiquette, balise IR, antenne vissée, batterie externe fixée, patch). Clic, touche ou 12 s : fermé.
+    appareil photo, étiquette, antenne vissée, batterie externe fixée, patch). Clic, touche ou 12 s : fermé.
     Modèles « tactique » et « premium » (profil COMSPEC_ATAK_PhoneModel) : leur dos seul, sans la coque S7 et ses ajouts.
 */
 disableSerialization;
@@ -72,10 +72,9 @@ private _cap = _d ctrlCreate ["COMSPEC_RscStructuredText", -1];
 _cap ctrlSetPosition [safeZoneX, safeZoneY + safeZoneH * 0.86, safeZoneW, safeZoneH * 0.1];
 _cap ctrlCommit 0;
 _cap ctrlSetStructuredText parseText ((format [
-    "<t align='center' size='1.1' color='#e8eadf'>Dos du téléphone ATAK</t><br/><t align='center' size='0.85' color='#9aa59f'>%1 · IMEI %2 · Antenne : %3<br/>Balise IR %4 · Batterie externe : %5<br/>Clic ou touche pour fermer</t>",
+    "<t align='center' size='1.1' color='#e8eadf'>Dos du téléphone ATAK</t><br/><t align='center' size='0.85' color='#9aa59f'>%1 · IMEI %2 · Antenne : %3<br/>Batterie externe : %4<br/>Clic ou touche pour fermer</t>",
     [createHashMapFromArray [["rugged", "Tactique EUD"], ["iphone", "Premium"]] getOrDefault [_model, ""], "Coque " + (createHashMapFromArray [["coyote", "coyote"], ["od", "vert OD"], ["black", "noire"]] getOrDefault [_tint, "coyote"])] select _s7,
     _ident param [1, "?"], [_ant param [2, ""], "aucune (port SMA bouché)"] select (_ant isEqualTo []),
-    ["éteinte", "allumée"] select (["state"] call comspec_atak_native_fnc_irBeacon),
     ["aucune", (["label"] call comspec_atak_native_fnc_powerBank) select [17]] select (missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false])
 ]) call comspec_atak_native_fnc_tr);
 // Apparition en fondu.

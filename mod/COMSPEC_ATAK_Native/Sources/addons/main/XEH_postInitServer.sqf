@@ -98,9 +98,9 @@ COMSPEC_ATAK_FtCheck = {
 addMissionEventHandler ["HandleDisconnect", {
     params [["_unit", objNull], "", "_uid"];
     ["leave", _uid] call comspec_atak_native_fnc_playTimeServer;
-    // Téléphone de gilet et balise IR accrochés au joueur qui part : retirés (ils restaient dans la partie).
+    // Téléphone de gilet accroché au joueur qui part : retirés (ils restaient dans la partie).
     if (!isNull _unit) then {
-        { if ((typeOf _x) in ["COMSPEC_ATAK_VestPhone", "B_IRStrobe", "ACE_IR_Strobe_Effect"]) then { deleteVehicle _x; }; } forEach (attachedObjects _unit);
+        { if ((typeOf _x) isEqualTo "COMSPEC_ATAK_VestPhone") then { deleteVehicle _x; }; } forEach (attachedObjects _unit);
     };
     false
 }];

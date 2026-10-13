@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Relais du réseau ATAK : module Eden/Zeus, tutoriel, passerelles de véhicule coupées (ATAK natif 1.56.0)
+## Relais du réseau ATAK : module Eden/Zeus, tutoriel, passerelles de véhicule coupées (ATAK natif 1.57.0)
 
 Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : améliorer les relais, un tuto dans Eden, couper par défaut les relais véhicule / mât de commandement.
 - Passerelles de véhicule et PC mobile à mât : nouveau réglage serveur « Passerelles de véhicule et PC mobile », **désactivé par défaut** (plus d'action ACE, celles ouvertes se referment). Un véhicule relais voulu par la mission se fait avec le module synchronisé au véhicule.
@@ -29,6 +29,13 @@ Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : améliorer les re
 - Batterie 1 h choisie : la charge baisse, à vide le relais tombe ; « Changer la batterie » le relance.
 - Couper (ACE) le relais qu'on utilise : toast sur le téléphone.
 - Plus de joueurs que de places : débit partagé dans l'app Réseau et l'app Wave Relay.
+
+## Réalisme 2026-10-13 — Balise IR du téléphone supprimée (ATAK natif 1.56.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : la balise IR intégrée à la coque n'était pas réaliste, à enlever complètement.
+- Plus de balise IR sur le téléphone : tuile du volet rapide, interrupteur des Réglages, actions ACE « Allumer / Éteindre la balise IR », emplacement de l'établi (Accessoires) et consommation sur la batterie retirés. Pour marquer un joueur aux JVN : la balise IR d'ACE ou les grenades IR du jeu, comme avant le téléphone.
+- Dos du téléphone (Voir l'arrière, établi, gilet, tablette JPC) redessiné sans le boîtier IR.
+- Établi : cinq emplacements (3 + 2) au lieu de six.
 
 ## Traduction 2026-10-13 — Mod SSE et menus CBA d'Overwatch connect en anglais (ATAK natif 1.55.0)
 

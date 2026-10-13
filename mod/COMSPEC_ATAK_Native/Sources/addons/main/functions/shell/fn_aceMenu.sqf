@@ -5,7 +5,7 @@
       Personnaliser ▸ Coque (coyote, vert OD, noir) ▸ Module DL-7 (olive, noir, tan) ▸ Patch au dos
       Entretien ▸ batterie, nettoyage, réparation, téléphone de rechange (posés par XEH_postInitClient)
                   + rallumer, réparer l'écran, diagnostic d'Overwatch (repris ici et retirés de « Équipement »)
-      Accessoires ▸ batterie externe, balise IR, filtre d'écran JVN
+      Accessoires ▸ batterie externe, filtre d'écran JVN
       Passerelle du véhicule ▸ relais, poste de commandement, couper (équipage) ; aussi sur les véhicules (dehors)
       Relais ATAK (sur l'objet relais) ▸ état, couper, allumer, changer la batterie
       Effacement d'urgence
@@ -138,15 +138,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_OwRepair", _ow];
     } forEach ["COMSPEC_RepairAtakPower", "COMSPEC_RepairAtakScreen", "COMSPEC_DiagnosticAtak"];
 }, [], 120] call CBA_fnc_waitUntilAndExecute;
 
-// Accessoires : batterie externe sur la plaque, balise IR de la coque, filtre d'écran JVN.
+// Accessoires : batterie externe sur la plaque, filtre d'écran JVN.
 [_root, "COMSPEC_ATAK_Acc", "Accessoires", "\z\comspec_atak_native\addons\main\data\item_powerbank.paa"] call _add;
 private _acc = _root + ["COMSPEC_ATAK_Acc"];
 [_acc, "COMSPEC_ATAK_PbOn", "Fixer la batterie externe", "\z\comspec_atak_native\addons\main\data\item_powerbank.paa", { ["attach"] call comspec_atak_native_fnc_powerBank; },
     { !(missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false]) && {["has"] call comspec_atak_native_fnc_powerBank} }] call _add;
 [_acc, "COMSPEC_ATAK_PbOff", "Retirer la batterie externe", "", { ["detach"] call comspec_atak_native_fnc_powerBank; },
     { missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false] }] call _add;
-[_acc, "COMSPEC_ATAK_IrOnA", "Allumer la balise IR", "", { ["on"] call comspec_atak_native_fnc_irBeacon; }, { !(["state"] call comspec_atak_native_fnc_irBeacon) }] call _add;
-[_acc, "COMSPEC_ATAK_IrOffA", "Éteindre la balise IR", "", { ["off"] call comspec_atak_native_fnc_irBeacon; }, { ["state"] call comspec_atak_native_fnc_irBeacon }] call _add;
 [_acc, "COMSPEC_ATAK_FilterOn", "Poser le filtre d'écran JVN", "\z\comspec_atak_native\addons\main\data\item_nvgfilter.paa", { ["toggle"] call comspec_atak_native_fnc_screenGlow; },
     { !(profileNamespace getVariable ["COMSPEC_ATAK_NvgFilter", false]) && {"COMSPEC_ATAK_NvgFilter" in (items _player)} }] call _add;
 [_acc, "COMSPEC_ATAK_FilterOff", "Retirer le filtre d'écran JVN", "", { ["toggle"] call comspec_atak_native_fnc_screenGlow; },
