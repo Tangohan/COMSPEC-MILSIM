@@ -29,6 +29,19 @@ final class TotpServiceTest extends TestCase
         $this->assertFalse($svc->verify($secret, '000000', 0, 1_700_000_000));
     }
 
+    public function testDefaultWindowToleratesOneMinuteOfClockDrift(): void
+    {
+        $svc = new TotpService();
+        $secret = $svc->generateSecret();
+        $now = 1_700_000_010;
+        foreach ([-60, -30, 0, 30, 60] as $drift) {
+            $this->assertTrue($svc->verify($secret, $svc->currentCode($secret, $now + $drift), atTimestamp: $now), 'drift ' . $drift);
+        }
+        foreach ([-120, 120] as $drift) {
+            $this->assertFalse($svc->verify($secret, $svc->currentCode($secret, $now + $drift), atTimestamp: $now), 'drift ' . $drift);
+        }
+    }
+
     public function testProvisioningUriContainsIssuerAndSecret(): void
     {
         $svc = new TotpService();
