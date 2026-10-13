@@ -20,18 +20,26 @@ if (!(_pfh isEqualType 0) || {_pfh < 0}) then {
     _pfh = [{
         if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith {};
         if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith {};
+        if ([] call comspec_overwatch_connect_fnc_arsenalOpen) exitWith {};
         ["periodic"] call comspec_overwatch_connect_fnc_operatorProfileTick;
     }, 8] call CBA_fnc_addPerFrameHandler;
     missionNamespace setVariable ["COMSPEC_OperatorProfilePfh", _pfh, false];
 };
 
 if (isNil "COMSPEC_OperatorLoadoutEH") then {
+    // Arsenal : chaque clic change le loadout. Un seul envoi en attente (anti-rafale), rien tant que l'arsenal
+    // est ouvert : sa fermeture (ace_arsenal_displayClosed ci-dessous) envoie la fiche une fois.
     COMSPEC_OperatorLoadoutEH = ["loadout", {
         params ["_unit"];
         if (_unit isNotEqualTo player) exitWith {};
+        if ([] call comspec_overwatch_connect_fnc_arsenalOpen) exitWith {};
+        if (missionNamespace getVariable ["COMSPEC_OperatorLoadoutPending", false]) exitWith {};
+        missionNamespace setVariable ["COMSPEC_OperatorLoadoutPending", true, false];
         [{
+            missionNamespace setVariable ["COMSPEC_OperatorLoadoutPending", false, false];
+            if ([] call comspec_overwatch_connect_fnc_arsenalOpen) exitWith {};
             ["loadout_changed"] call comspec_overwatch_connect_fnc_operatorProfileTick;
-        }, [], 1.5] call CBA_fnc_waitAndExecute;
+        }, [], 3] call CBA_fnc_waitAndExecute;
     }] call CBA_fnc_addPlayerEventHandler;
 };
 

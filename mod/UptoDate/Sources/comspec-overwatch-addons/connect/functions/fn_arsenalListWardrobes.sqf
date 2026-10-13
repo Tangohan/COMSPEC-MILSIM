@@ -8,7 +8,8 @@ private _guard = 0;
 
 while {_guard < 64} do {
     _guard = _guard + 1;
-    private _raw = ["COMSPECExtension" callExtension ["ListWardrobes", [str _start]]] call comspec_overwatch_connect_fnc_extResult;
+    // extAwait : lancé depuis un spawn (fn_arsenalOverlayRefresh), la page arrive sans figer l'arsenal.
+    private _raw = [["COMSPECExtension", "ListWardrobes", [str _start]] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
     if (!(_raw isEqualType "") || {_raw find "OK|" != 0}) exitWith {};
     private _body = _raw select [3];
     private _nl = _body find toString [10];

@@ -15,16 +15,14 @@ private _split = {
 private _extra = [missionNamespace getVariable ["comspec_atak_native_device_items", ""]] call _split;
 private _patterns = [missionNamespace getVariable ["comspec_atak_native_device_patterns", "android,atak,smartphone"]] call _split;
 private _tablets = missionNamespace getVariable ["comspec_atak_native_device_tablets", false];
-private _skip = ["hcam", "helmetcam", "helmet_cam", "_base", "battery", "batterie"]; // batterie ATAK : pas un téléphone
 // Notre téléphone compte toujours ; nos autres objets (kit, câble, antennes…) contiennent « atak » mais n'en sont pas.
 private _out = ["comspec_atak_phone"] + _extra;
-{
-    private _cls = toLower (configName _x);
-    if ((_patterns findIf { (_cls find _x) >= 0 }) >= 0 && {(_skip findIf { (_cls find _x) >= 0 }) < 0} && {(_cls find "comspec_atak_") isNotEqualTo 0} && {(getNumber (_x >> "scope")) >= 2}) then { _out pushBackUnique _cls; };
-} forEach ("isClass _x" configClasses (configFile >> "CfgWeapons"));
+{ _out pushBackUnique _x; } forEach ([_patterns] call comspec_atak_native_fnc_deviceScan);
 if (_tablets) then {
     { if (isClass (configFile >> "CfgWeapons" >> _x)) then { _out pushBackUnique toLower _x; }; } forEach ["ItemcTab", "ItemMicroDAGR", "ACE_microDAGR"];
 };
 missionNamespace setVariable ["COMSPEC_ATAK_DeviceCatalog", _out];
+// Même liste en table : fn_hasDevice la consulte plusieurs fois par seconde (recherche directe au lieu d'un parcours).
+missionNamespace setVariable ["COMSPEC_ATAK_DeviceCatalogSet", createHashMapFromArray (_out apply { [_x, true] })];
 ["INFO", "DEVICE", format ["Terminaux reconnus : %1", _out]] call comspec_atak_native_fnc_log;
 _out

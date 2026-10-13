@@ -1,4 +1,6 @@
 #include "script_component.hpp"
+private _perfT0 = diag_tickTime;
+uiNamespace setVariable ["COMSPEC_ATAK_PerfPreInitAt", diag_tickTime];
 COMSPEC_ATAK_UI_GENERATION = "native-rsc-v1";
 // Constantes posées par chaque machine (preInit tourne partout) : rien à diffuser. En public, chaque arrivée
 // renvoyait les deux valeurs à tous les joueurs et à la file JIP.
@@ -276,3 +278,4 @@ if (isServer) then { ["comspec_atak_native_planSrv", { _this call comspec_atak_n
     ["WARNING", format ["Drone : %1 %2 en %3", ["ennemi repéré,", "frappe sur"] select (_kind isEqualTo "ENGAGE"), _what, [_pos, 8] call comspec_atak_native_fnc_gridRef], 6, 60] call comspec_atak_native_fnc_notify;
     [] call comspec_atak_native_fnc_vibrate;
 }] call CBA_fnc_addEventHandler;
+diag_log format ["[COMSPEC ATAK NATIVE][PERF] %1 : %2 ms", "preInit", round ((diag_tickTime - _perfT0) * 1000)];

@@ -11,6 +11,17 @@ params [
 ];
 
 if (!hasInterface) exitWith { false };
+// Hors spawn, l'envoi (callExtension OperatorRegister / OperatorSync) figeait le jeu le temps de la requête :
+// relancé dans un spawn, où extAwait attend la réponse de la DLL sans bloquer. Un seul envoi à la fois.
+if (!canSuspend) exitWith {
+    if (missionNamespace getVariable ["COMSPEC_OperatorSyncBusy", false]) exitWith { false };
+    missionNamespace setVariable ["COMSPEC_OperatorSyncBusy", true, false];
+    _this spawn {
+        _this call comspec_overwatch_connect_fnc_syncOperatorProfile;
+        missionNamespace setVariable ["COMSPEC_OperatorSyncBusy", false, false];
+    };
+    true
+};
 if (isNull player || {!alive player}) exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_DisconnectSent", false]) exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_HandshakeQuiet", false]) exitWith { false };

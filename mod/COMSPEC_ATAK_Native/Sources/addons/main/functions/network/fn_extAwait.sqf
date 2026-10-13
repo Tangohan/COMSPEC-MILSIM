@@ -9,7 +9,8 @@
 */
 params [["_ext", "COMSPECExtension"], ["_cmd", ""], ["_args", []], ["_timeout", 20]];
 private _noAsync = missionNamespace getVariable ["COMSPEC_ATAK_ExtNoAsync", []];
-if (!canSuspend || {_ext in _noAsync}) exitWith { _ext callExtension [_cmd, _args] };
+// Sans gestionnaire de rappel (menu principal, avant le postInit) la réponse ne reviendrait jamais : appel direct.
+if (!canSuspend || {_ext in _noAsync} || {isNil {missionNamespace getVariable "COMSPEC_ATAK_ExtensionEH"}}) exitWith { _ext callExtension [_cmd, _args] };
 private _n = (missionNamespace getVariable ["COMSPEC_ATAK_ExtTicketN", 0]) + 1;
 missionNamespace setVariable ["COMSPEC_ATAK_ExtTicketN", _n];
 private _ticket = format ["%1_%2", round diag_tickTime, _n];

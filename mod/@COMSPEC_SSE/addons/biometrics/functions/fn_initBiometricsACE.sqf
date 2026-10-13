@@ -17,10 +17,10 @@ if !(["COMSPEC_SSE_INIT_BIO_ACE_DONE", "initBiometricsACE"] call comspec_debug_f
     ["comspec_sse_fnc_initBiometricsACE"] call comspec_debug_fnc_exit;
 };
 
-if (uiNamespace getVariable ["comspec_sse_bioAceReady", false]) exitWith {
+if (missionNamespace getVariable ["comspec_sse_bioAceReady", false]) exitWith {
     ["comspec_sse_fnc_initBiometricsACE"] call comspec_debug_fnc_exit;
 };
-uiNamespace setVariable ["comspec_sse_bioAceReady", true];
+missionNamespace setVariable ["comspec_sse_bioAceReady", true]; // par mission : ACE vide ses actions de classe à chaque mission
 
 if (isNil "ace_interact_menu_fnc_createAction") exitWith {
     ["comspec_sse_fnc_initBiometricsACE"] call comspec_debug_fnc_exit;

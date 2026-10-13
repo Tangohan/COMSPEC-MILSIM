@@ -56,10 +56,7 @@ if ((count _extParts) >= 2 && {(_extParts select 0) isEqualTo "OK"}) then {
 };
 
 private _raw = [
-    "COMSPECExtension" callExtension [
-        "RegisterBeta",
-        [_url, _steamUid, _playerUid, _playerName, _modVersion, _armaBuild, _armaBranch, _extVersion, "1"]
-    ]
+    ["COMSPECExtension", "RegisterBeta", [_url, _steamUid, _playerUid, _playerName, _modVersion, _armaBuild, _armaBranch, _extVersion, "1"]] call comspec_overwatch_connect_fnc_extAwait
 ] call comspec_overwatch_connect_fnc_extResult;
 
 private _parts = _raw splitString "|";

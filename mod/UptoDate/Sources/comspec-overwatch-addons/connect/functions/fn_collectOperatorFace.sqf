@@ -39,10 +39,18 @@ private _direct = configFile >> "CfgFaces" >> "Man_A3" >> _face;
 if (isClass _direct) then {
     _cfg = _direct;
 } else {
-    {
-        private _c = _x >> _face;
-        if (isClass _c) exitWith { _cfg = _c };
-    } forEach ("true" configClasses (configFile >> "CfgFaces"));
+    // Visage d'un mod (hors Man_A3) : la recherche dans tout CfgFaces est gardée par visage pour la partie.
+    private _faceCache = uiNamespace getVariable ["COMSPEC_OperatorFaceCfg", createHashMap];
+    uiNamespace setVariable ["COMSPEC_OperatorFaceCfg", _faceCache];
+    private _hit = _faceCache getOrDefault [_face, ""];
+    if (_hit isEqualTo "") then {
+        _hit = "-";
+        {
+            if (isClass (_x >> _face)) exitWith { _hit = configName _x };
+        } forEach ("true" configClasses (configFile >> "CfgFaces"));
+        _faceCache set [_face, _hit];
+    };
+    if (_hit isNotEqualTo "-") then { _cfg = configFile >> "CfgFaces" >> _hit >> _face; };
 };
 
 if (isClass _cfg) then {

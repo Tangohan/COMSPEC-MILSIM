@@ -20,4 +20,5 @@ if ((count _catalog) isEqualTo 0) exitWith {
     if (isNil "COMSPEC_ATAK_NoDeviceWarned") then { COMSPEC_ATAK_NoDeviceWarned = true; ["WARN", "DEVICE", "Item obligatoire mais aucun objet téléphone chargé : accès laissé libre."] call comspec_atak_native_fnc_log; };
     true
 };
-(((assignedItems _unit) + (items _unit)) findIf { (toLower _x) in _catalog }) >= 0
+private _set = missionNamespace getVariable ["COMSPEC_ATAK_DeviceCatalogSet", createHashMap];
+(((assignedItems _unit) + (items _unit)) findIf { (toLower _x) in _set }) >= 0

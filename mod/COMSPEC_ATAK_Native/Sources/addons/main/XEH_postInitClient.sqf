@@ -1,10 +1,16 @@
 if (!hasInterface) exitWith {};
+private _perfT0 = diag_tickTime;
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] Client PostInit complete";
 // PBO ou DLL périmés, versions plus récentes sur Athena : signalés dans les notifications du téléphone.
 ["start"] call comspec_atak_native_fnc_integrityCheck;
 // Arsenal ACE : bouton COMSPEC (colonne de droite) qui regroupe les objets de nos mods (ATAK, Overwatch, SSE).
 if (!isNil "ace_arsenal_fnc_addRightPanelButton") then {
-    private _items = ("getNumber (_x >> 'scope') >= 2 && {((toLower configName _x) find 'comspec_') isEqualTo 0}" configClasses (configFile >> "CfgWeapons")) apply { configName _x };
+    // Liste faite au lancement du jeu (XEH_preStart) : plus de parcours de tout CfgWeapons à l'arrivée.
+    private _items = uiNamespace getVariable "COMSPEC_ATAK_ArsenalItems";
+    if (isNil "_items") then {
+        _items = ("getNumber (_x >> 'scope') >= 2 && {((toLower configName _x) find 'comspec_') isEqualTo 0}" configClasses (configFile >> "CfgWeapons")) apply { configName _x };
+        uiNamespace setVariable ["COMSPEC_ATAK_ArsenalItems", _items];
+    };
     if (_items isNotEqualTo []) then {
         [_items, "COMSPEC", "\z\comspec_atak_native\addons\main\data\arsenal_comspec.paa", "COMSPEC_Arsenal"] call ace_arsenal_fnc_addRightPanelButton;
     };
@@ -15,13 +21,18 @@ if ([] call comspec_atak_native_fnc_bridge) then {
     diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPEC Link présent : session Athena partagée, DLL native non initialisée";
 } else {
     // Sans COMSPEC Link : la DLL native ne contacte Athena qu'une fois « Oui » choisi au service Athéna (Réglages > Service Athéna).
+    // Dans un spawn, par extAwait : la reprise de session (jusqu'à trois requêtes HTTP) figeait l'arrivée en jeu.
     [{ ([] call comspec_atak_native_fnc_athenaMode) isEqualTo "on" }, {
-        private _athenaUrl = profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"];
-        private _extInit = "COMSPECATAKNativeExtension" callExtension ["Init", [_athenaUrl]];
-        missionNamespace setVariable ["COMSPEC_ATAK_NativeExtensionInit", _extInit, false];
-        private _restore = "COMSPECATAKNativeExtension" callExtension ["RestoreSession", [_athenaUrl, "1.0.0-native"]];
-        missionNamespace setVariable ["COMSPEC_ATAK_NativeAuthRestore", _restore, false];
-        diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPECATAKNativeExtension initialization requested";
+        [] spawn {
+            private _t0 = diag_tickTime;
+            private _athenaUrl = profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"];
+            private _extInit = ["COMSPECATAKNativeExtension", "Init", [_athenaUrl]] call comspec_atak_native_fnc_extAwait;
+            missionNamespace setVariable ["COMSPEC_ATAK_NativeExtensionInit", _extInit, false];
+            private _restore = ["COMSPECATAKNativeExtension", "RestoreSession", [_athenaUrl, "1.0.0-native"]] call comspec_atak_native_fnc_extAwait;
+            missionNamespace setVariable ["COMSPEC_ATAK_NativeAuthRestore", _restore, false];
+            diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPECATAKNativeExtension initialization requested";
+            diag_log format ["[COMSPEC ATAK NATIVE][PERF] Init + reprise de session DLL native : %1 ms", round ((diag_tickTime - _t0) * 1000)];
+        };
     }] call CBA_fnc_waitUntilAndExecute;
 };
 // Porté : le téléphone reste affiché dans le coin et l'on continue à jouer. En main : souris et clavier.
@@ -739,3 +750,17 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 [] call comspec_atak_native_fnc_dataInit;
 // Icônes PAA gardées en mémoire (sinon elles disparaissent un instant à chaque rafraîchissement de page).
 [{ !isNull (findDisplay 46) }, { [] call comspec_atak_native_fnc_textureKeep; }] call CBA_fnc_waitUntilAndExecute;
+// Mesures pour le journal ([PERF]) : durée de l'arrivée (preInit -> première image de jeu) et images figées
+// (plus de 400 ms) avec ce qui était ouvert, pour retrouver ce qui fait ramer en jeu.
+[{ time > 0 && {!isNull (findDisplay 46)} }, {
+    diag_log format ["[COMSPEC ATAK NATIVE][PERF] Arrivée en jeu : %1 ms depuis le preInit", round ((diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PerfPreInitAt", diag_tickTime])) * 1000)];
+    [{
+        private _dt = diag_deltaTime;
+        if (_dt < 0.4) exitWith {};
+        private _arsenal = !isNull (uiNamespace getVariable ["ace_arsenal_display", displayNull]) || {!isNull (uiNamespace getVariable ["BIS_fnc_arsenal_display", displayNull])};
+        diag_log format ["[COMSPEC ATAK NATIVE][PERF] Image figée : %1 ms (arsenal %2, téléphone %3, carte %4)", round (_dt * 1000), ["non", "ouvert"] select _arsenal, ["rangé", "affiché"] select !isNull ([] call comspec_atak_native_fnc_display), ["non", "ouverte"] select visibleMap];
+    }, 0] call CBA_fnc_addPerFrameHandler;
+}] call CBA_fnc_waitUntilAndExecute;
+// Arsenal ACE ouvert : repère dans le journal (l'ouverture elle-même apparaît en « Image figée … arsenal ouvert »).
+["ace_arsenal_displayOpened", { diag_log format ["[COMSPEC ATAK NATIVE][PERF] Arsenal ACE ouvert (%1 FPS)", round diag_fps]; }] call CBA_fnc_addEventHandler;
+diag_log format ["[COMSPEC ATAK NATIVE][PERF] %1 : %2 ms", "postInit client", round ((diag_tickTime - _perfT0) * 1000)];
