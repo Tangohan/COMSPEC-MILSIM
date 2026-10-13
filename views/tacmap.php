@@ -55,6 +55,7 @@ $pageTitle = $title ?? 'TACMAP — Athena';
   <script src="<?= htmlspecialchars($base) ?>/assets/js/atak-route-planner.js?v=202608282030"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-route-tools.js?v=202608282030"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-tactical-alerts.js?v=202607282040"></script>
+  <script src="<?= htmlspecialchars($base) ?>/assets/js/recon-viewer.js?v=<?= htmlspecialchars((string) (int) @filemtime(dirname(__DIR__) . '/public/assets/js/recon-viewer.js')) ?>"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-recon.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-recon-notes.js"></script>
   <script src="<?= htmlspecialchars($base) ?>/assets/js/tacmap-weather.js"></script>

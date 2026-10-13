@@ -2445,6 +2445,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/recon/images/known', [AtakApiController::class, 'reconImagesKnown']);
     $router->get('/api/recon/images/{id}', [AtakApiController::class, 'reconImagesShow']);
     $router->get('/api/recon/images/{id}/file', [AtakApiController::class, 'reconImagesFile']);
+    // Lecteur d'un cliché (zoom, plein écran, fiche, album) ; …/file reste le fichier brut.
+    $router->get('/recon/images/{id}', [AtakApiController::class, 'reconImagesViewer']);
     $router->post('/api/recon/images/{id}/ops', [AtakApiController::class, 'reconImagesOps']);
     $router->post('/api/recon/images/{id}/link-cas', [AtakApiController::class, 'reconImagesLinkCas']);
     // Map shapes (live drawing)
