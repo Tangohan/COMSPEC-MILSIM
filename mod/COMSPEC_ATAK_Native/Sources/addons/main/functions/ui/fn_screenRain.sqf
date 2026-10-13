@@ -6,7 +6,8 @@
       - assez grosse : tient un instant, puis glisse vers le bas en accélérant, trajectoire un peu irrégulière et
         à-coups (le verre accroche), perd de l'eau dans sa traînée et s'arrête si elle devient trop petite, absorbe les
         gouttes posées qu'elle croise, sort par le bas ; la traînée mouillée sèche en quelques secondes.
-    Translucide : textures gen_dirt.py (corps presque transparent, bord fin, reflet), le contenu reste lisible.
+    Rendu d'eau sur du verre (tools/gen_rain.py) : corps un peu assombri, liseré net, croissant clair dans le bas,
+    reflet ; quatre formes de goutte posée. Bruine fine sur tout l'écran (une image), qui suit l'humidité.
     Coût : au plus 18 gouttes (9 en « Réduit », 12 images par seconde), deux contrôles chacune, créés une fois et
     déplacés ; rien tant que le téléphone est rangé, l'écran sec ou le réglage client comspec_atak_native_rain_fx
     sur « Désactivé » ; 2 mises à jour par seconde quand rien ne glisse (séchage). Géométrie de l'écran relevée par
@@ -19,6 +20,7 @@ private _st = uiNamespace getVariable ["COMSPEC_ATAK_Rain", createHashMap];
 private _slots = _st getOrDefault ["slots", []];
 private _clear = {
     { ctrlDelete (_x select 9); ctrlDelete (_x select 10); } forEach _slots;
+    ctrlDelete (_st getOrDefault ["mist", controlNull]);
     _slots = [];
     uiNamespace setVariable ["COMSPEC_ATAK_Rain", createHashMap];
 };
@@ -59,20 +61,34 @@ private _mk = {
 };
 // Emplacements : [0 phase (0 libre, 1 posée, 2 glisse, 3 traînée seule), 1 u, 2 v (fractions de l'écran),
 // 3 taille (fraction de la hauteur), 4 attente avant de glisser, 5 vitesse, 6 u0, 7 v0 (haut de la traînée),
-// 8 traînée (opacité 0-1), 9 contrôle goutte, 10 contrôle traînée, 11 phase d'ondulation, 12 texture, 13 largeur traînée]
+// 8 traînée (opacité 0-1), 9 contrôle goutte, 10 contrôle traînée, 11 phase d'ondulation, 12 texture, 13 largeur traînée,
+// 14 forme (0-3)]
 if ((count _slots) isNotEqualTo _max) then {
     call _clear;
-    for "_i" from 1 to _max do { _slots pushBack [0, 0, 0, 0, 0, 0, 0, 0, 0, controlNull, controlNull, random 360, "", 0]; };
+    for "_i" from 1 to _max do { _slots pushBack [0, 0, 0, 0, 0, 0, 0, 0, 0, controlNull, controlNull, random 360, "", 0, floor random 4]; };
     _st = createHashMapFromArray [["last", _now]];
 };
 // Contrôles supprimés avec la page (fn_pageClear) : recréés par-dessus la nouvelle page, l'état des gouttes est gardé.
+// La bruine est créée d'abord : sous les gouttes.
 if (isNull ((_slots select 0) select 9)) then {
+    ctrlDelete (_st getOrDefault ["mist", controlNull]);
+    _st set ["mist", ("rain_mist_land" call _tex) call _mk];
+    _st set ["mistKey", ""];
     {
-        _x set [9, ("dirt_drop" call _tex) call _mk];
-        _x set [10, (format ["dirt_rain_trail_%1", _forEachIndex mod 2] call _tex) call _mk];
-        _x set [12, "dirt_drop"];
+        _x set [9, ("rain_bead_0" call _tex) call _mk];
+        _x set [10, (format ["rain_trail_%1", _forEachIndex mod 2] call _tex) call _mk];
+        _x set [12, "rain_bead_0"];
     } forEach _slots;
 };
+_rect params ["_rx", "_ry", "_rw", "_rh"];
+// Bruine : fines gouttelettes partout, plus visibles quand l'écran est trempé ; image paysage ou portrait.
+private _mist = _st get "mist";
+private _mk2 = ["rain_mist_port", "rain_mist_land"] select ((_rw * _ratio) >= _rh);
+if (_mk2 isNotEqualTo (_st getOrDefault ["mistKey", ""])) then { _mist ctrlSetText (_mk2 call _tex); _st set ["mistKey", _mk2]; };
+_mist ctrlSetPosition _rect;
+_mist ctrlSetTextColor [1, 1, 1, ((_wet * 1.6) min 1) * 0.6];
+_mist ctrlShow true;
+_mist ctrlCommit 0;
 // Pluie sur l'écran : nouvelles gouttes, ou une goutte posée qui grossit. Sortie de l'eau (fn_screenDirt "water") :
 // l'écran se couvre d'un coup.
 private _acc = (_st getOrDefault ["acc", 0]) + _dt * _hit * ([3, 6] select _full);
@@ -95,6 +111,7 @@ if (_acc >= 1) then {
                 _s set [4, 0.4 + random 2.5];
                 _s set [5, 0];
                 _s set [8, 0];
+                _s set [14, floor random 4];
             };
         };
     };
@@ -103,13 +120,12 @@ _st set ["acc", _acc];
 private _thr = 0.028; // taille à partir de laquelle une goutte glisse
 private _minSlide = 0.016; // en dessous, elle s'arrête
 private _dry = [0, _dt * 0.00035] select (_hit <= 0);
-private _alpha = (0.6 + 0.3 * ((_wet * 2) min 1)) * ((_wet * 4) min 1);
+private _alpha = 0.95 * ((_wet * 4) min 1);
 private _busy = _hit > 0;
-_rect params ["_rx", "_ry", "_rw", "_rh"];
 {
     private _slot = _x;
     private _i = _forEachIndex;
-    _slot params ["_ph", "_u", "_v", "_s", "_hold", "_vy", "_u0", "_v0", "_ta", "_cd", "_ct", "_wp", "_tk", "_tw"];
+    _slot params ["_ph", "_u", "_v", "_s", "_hold", "_vy", "_u0", "_v0", "_ta", "_cd", "_ct", "_wp", "_tk", "_tw", "_var"];
     if (_ph isEqualTo 1) then {
         _s = _s - _dry;
         if (_s < 0.005) then { _ph = [0, 3] select (_ta > 0); } else {
@@ -156,15 +172,15 @@ _rect params ["_rx", "_ry", "_rw", "_rh"];
         private _cx = _rx + _u * _rw;
         private _cy = _ry + _v * _rh;
         if (_ph isEqualTo 3) then { _cd ctrlShow false; } else {
-            private _k = ["dirt_drop", "dirt_drop_run"] select (_ph isEqualTo 2);
+            private _k = [format ["rain_bead_%1", _var], format ["rain_run_%1", _var mod 2]] select (_ph isEqualTo 2);
             if (_k isNotEqualTo _tk) then { _cd ctrlSetText (_k call _tex); _tk = _k; };
             if (_ph isEqualTo 2) then {
-                // Texture 64 x 128 : tête ronde (78 % de la largeur) centrée à 75 % de la hauteur, queue vers le haut.
-                private _h = _s * _rh / 0.78;
+                // Texture 128 x 256 : tête (72 % de la largeur) centrée à 75 % de la hauteur, corps court vers le haut.
+                private _h = _s * _rh / 0.72;
                 _cd ctrlSetPosition [_cx - _h / _ratio / 2, _cy - _h * 1.5, _h / _ratio, _h * 2];
             } else {
-                // Texture 64 x 64 : goutte de 81 % du cadre.
-                private _h = _s * _rh / 0.81;
+                // Texture 128 x 128 : goutte de ~78 % du cadre.
+                private _h = _s * _rh / 0.78;
                 _cd ctrlSetPosition [_cx - _h / _ratio / 2, _cy - _h / 2, _h / _ratio, _h];
             };
             _cd ctrlSetTextColor [1, 1, 1, _alpha];
@@ -179,10 +195,11 @@ _rect params ["_rx", "_ry", "_rw", "_rh"];
             private _dy = _cy - _ya;
             private _len = sqrt (_dx ^ 2 + _dy ^ 2);
             if (_len < 0.003) then { _ct ctrlShow false; } else {
-                private _w = _tw * _rh * 0.6 / _ratio;
+                // Texture 64 x 256 : chapelet large d'environ 60 % du cadre en bas.
+                private _w = _tw * _rh * 1.4 / _ratio;
                 _ct ctrlSetPosition [(_cx + _xa) / 2 - _w / 2, (_cy + _ya) / 2 - _len / 2, _w, _len];
                 _ct ctrlSetAngle [-(_dx atan2 _dy), 0.5, 0.5];
-                _ct ctrlSetTextColor [1, 1, 1, _ta * 0.8 * ((_wet * 4) min 1)];
+                _ct ctrlSetTextColor [1, 1, 1, _ta * 0.9 * ((_wet * 4) min 1)];
                 _ct ctrlShow true;
                 _ct ctrlCommit 0;
             };
@@ -190,7 +207,7 @@ _rect params ["_rx", "_ry", "_rw", "_rh"];
             _ct ctrlShow false;
         };
     };
-    _slots set [_i, [_ph, _u, _v, _s, _hold, _vy, _u0, _v0, _ta, _cd, _ct, _wp, _tk, _tw]];
+    _slots set [_i, [_ph, _u, _v, _s, _hold, _vy, _u0, _v0, _ta, _cd, _ct, _wp, _tk, _tw, _var]];
 } forEach _slots;
 _st set ["slots", _slots];
 _st set ["busy", _busy];

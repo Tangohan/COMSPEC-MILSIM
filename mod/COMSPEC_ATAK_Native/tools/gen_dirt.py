@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Textures de saleté de l'écran du téléphone (poussière, traces de doigts, sang, gouttes d'eau).
+"""Textures de saleté de l'écran du téléphone (poussière, traces de doigts, sang).
+Les gouttes de pluie sont dans gen_rain.py.
 
-Usage : python3 gen_dirt.py <hemtt> [prints|dust|rain|case <modèles>]
+Usage : python3 gen_dirt.py <hemtt>
 Sortie : Sources/addons/main/data/dirt_*.paa (blanches sur fond transparent, teintées en jeu par ctrlSetTextColor).
 Dépendances : Pillow, HEMTT (hemtt utils paa convert).
 """
@@ -135,110 +136,6 @@ def splat(seed):
     return white(a.filter(ImageFilter.GaussianBlur(1.0)))
 
 
-def _lens(shape, w, h, head):
-    """Goutte posée sur le verre, vue de face (couleurs réelles, teintée en jeu par l'opacité seulement) :
-    corps presque transparent, bord sombre fin (la réfraction renvoie le noir du bord), croissant lumineux en
-    bas (la lentille concentre la lumière), petit reflet net en haut à gauche, ombre légère décalée vers le bas.
-    shape : masque L de la goutte ; head : (cx, cy, r) de la tête ronde."""
-    cx, cy, r = head
-    body = shape.filter(ImageFilter.GaussianBlur(0.8))
-    inner = shape.filter(ImageFilter.MinFilter(5)).filter(ImageFilter.GaussianBlur(1.5))
-    from PIL import ImageChops
-    rim = ImageChops.subtract(body, inner)
-    # Ombre : la goutte décalée de quelques pixels, floutée, hors du corps.
-    sh = Image.new("L", (w, h), 0)
-    sh.paste(shape, (2, 4))
-    sh = ImageChops.subtract(sh.filter(ImageFilter.GaussianBlur(2.5)), body)
-    # Croissant lumineux dans le bas de la tête.
-    cr = Image.new("L", (w, h), 0)
-    ImageDraw.Draw(cr).ellipse([cx - r * 0.72, cy - r * 0.05, cx + r * 0.72, cy + r * 0.8], fill=150)
-    cut = Image.new("L", (w, h), 0)
-    ImageDraw.Draw(cut).ellipse([cx - r * 0.8, cy - r * 0.55, cx + r * 0.8, cy + r * 0.5], fill=255)
-    cr = ImageChops.multiply(ImageChops.subtract(cr, cut), inner).filter(ImageFilter.GaussianBlur(2))
-    # Reflet net en haut à gauche, et un second, minuscule, en bas à droite.
-    hl = Image.new("L", (w, h), 0)
-    dh = ImageDraw.Draw(hl)
-    dh.ellipse([cx - r * 0.55, cy - r * 0.62, cx - r * 0.12, cy - r * 0.28], fill=245)
-    dh.ellipse([cx + r * 0.28, cy + r * 0.38, cx + r * 0.42, cy + r * 0.5], fill=120)
-    hl = hl.filter(ImageFilter.GaussianBlur(1.1))
-    out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    # Corps : voile clair à peine visible (le contenu de l'écran reste lisible au travers).
-    out = Image.alpha_composite(out, Image.merge("RGBA", (*[Image.new("L", (w, h), 255)] * 3, Image.eval(inner, lambda v: v * 22 // 255))))
-    out = Image.alpha_composite(out, Image.merge("RGBA", (*[Image.new("L", (w, h), 0)] * 3, Image.eval(sh, lambda v: v * 70 // 255))))
-    out = Image.alpha_composite(out, Image.merge("RGBA", (*[Image.new("L", (w, h), 10)] * 3, Image.eval(rim, lambda v: min(255, v * 150 // 255)))))
-    out = Image.alpha_composite(out, Image.merge("RGBA", (Image.new("L", (w, h), 225), Image.new("L", (w, h), 240), Image.new("L", (w, h), 255), cr)))
-    out = Image.alpha_composite(out, Image.merge("RGBA", (*[Image.new("L", (w, h), 255)] * 3, hl)))
-    return out
-
-
-def drop():
-    """Goutte ronde immobile (tension de surface), 64 x 64, diamètre 52 px."""
-    s = 64
-    a = Image.new("L", (s, s), 0)
-    ImageDraw.Draw(a).ellipse([6, 5, s - 6, s - 7], fill=255)
-    return _lens(a, s, s, (32, 31, 26))
-
-
-def drop_run():
-    """Goutte qui glisse, 64 x 128 : tête ronde en bas (centre à 75 % de la hauteur), queue effilée vers le haut."""
-    w, h = 64, 128
-    a = Image.new("L", (w, h), 0)
-    d = ImageDraw.Draw(a)
-    d.ellipse([7, 72, w - 7, 120], fill=255)
-    pts = []
-    for i in range(41):
-        t = i / 40
-        y = 96 - t * 86
-        half = 25 * (1 - t) ** 1.35
-        pts.append((32 + half, y))
-    pts += [(64 - x, y) for (x, y) in reversed(pts)]
-    d.polygon(pts, fill=255)
-    return _lens(a, w, h, (32, 96, 25))
-
-
-def rain_trail(seed):
-    """Traînée mouillée laissée par une goutte, 32 x 256 (verticale, s'affine et s'efface vers le haut) :
-    film d'eau à peine visible aux bords irréguliers, liseré sombre, quelques gouttelettes restées en chemin."""
-    rnd = random.Random(seed)
-    w, h = 32, 256
-    a = Image.new("L", (w, h), 0)
-    d = ImageDraw.Draw(a)
-    ph = rnd.random() * 6
-    for y in range(h):
-        t = y / (h - 1)
-        half = (3 + 8 * t ** 0.7) * (0.85 + 0.15 * math.sin(y * 0.11 + ph))
-        off = 1.5 * math.sin(y * 0.045 + ph * 2)
-        d.line([(16 + off - half, y), (16 + off + half, y)], fill=255)
-    a = a.filter(ImageFilter.GaussianBlur(1))
-    fade = Image.linear_gradient("L").resize((w, h))
-    from PIL import ImageChops
-    a = ImageChops.multiply(a, Image.eval(fade, lambda v: min(255, 40 + v)))
-    inner = a.filter(ImageFilter.MinFilter(3))
-    rim = ImageChops.subtract(a, inner)
-    out = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    out = Image.alpha_composite(out, Image.merge("RGBA", (*[Image.new("L", (w, h), 235)] * 3, Image.eval(a, lambda v: v * 30 // 255))))
-    out = Image.alpha_composite(out, Image.merge("RGBA", (*[Image.new("L", (w, h), 10)] * 3, Image.eval(rim, lambda v: v * 110 // 255))))
-    # Gouttelettes résiduelles le long de la traînée.
-    for _ in range(rnd.randint(3, 6)):
-        y = rnd.randint(20, h - 30)
-        r = rnd.uniform(1.6, 3.2)
-        x = 16 + rnd.uniform(-3, 3)
-        m = Image.new("L", (w, h), 0)
-        ImageDraw.Draw(m).ellipse([x - r, y - r, x + r, y + r], fill=255)
-        out = Image.alpha_composite(out, Image.merge("RGBA", (*[Image.new("L", (w, h), 10)] * 3, Image.eval(m.filter(ImageFilter.GaussianBlur(0.6)), lambda v: v * 90 // 255))))
-        hl = Image.new("L", (w, h), 0)
-        ImageDraw.Draw(hl).ellipse([x - r * 0.6, y - r * 0.7, x - r * 0.05, y - r * 0.15], fill=140)
-        out = Image.alpha_composite(out, Image.merge("RGBA", (*[Image.new("L", (w, h), 255)] * 3, hl)))
-    return out
-
-
-def rain_assets(tmp):
-    convert(drop(), "dirt_drop", tmp)
-    convert(drop_run(), "dirt_drop_run", tmp)
-    for i in range(2):
-        convert(rain_trail(51 + i), f"dirt_rain_trail_{i}", tmp)
-
-
 def case_dust(src, seed):
     """Saleté de la coque d'un modèle (même cadre que sa texture) : poussière plus dense vers les bords et les
     creux, éclaboussures de boue ; masquée par la silhouette de la coque (l'ouverture de l'écran reste propre)."""
@@ -302,10 +199,6 @@ def main():
             for i in range(4):
                 convert(fingerprint(21 + i), f"dirt_print_{i}", tmp)
             return
-        # « rain » : gouttes de pluie (immobile, qui glisse, traînées).
-        if len(sys.argv) > 2 and sys.argv[2] == "rain":
-            rain_assets(tmp)
-            return
         # « dust » : poussière de l'écran et de toutes les coques seulement.
         if len(sys.argv) > 2 and sys.argv[2] == "dust":
             for i in range(2):
@@ -323,7 +216,6 @@ def main():
         for i in range(3):
             convert(smear(31 + i), f"dirt_smear_{i}", tmp)
         convert(splat(41), "dirt_splat", tmp)
-        rain_assets(tmp)
         case_assets(tmp)
 
 
