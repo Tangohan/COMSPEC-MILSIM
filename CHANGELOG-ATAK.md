@@ -38,6 +38,23 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Retour à la police du jeu sur le téléphone (ATAK natif 1.84.0)
+
+### Résumé joueur
+Type : correctif
+FR : Le téléphone retrouve sa police habituelle
+- La nouvelle police de la 1.83.0 s'affichait mal : textes coupés et lettres décalées. Le téléphone repasse en Roboto Condensed, la police du jeu.
+- Dans Réglages > Police, il reste Roboto (par défaut) et Purista. Les autres polices reviendront une fois corrigées.
+EN : The phone gets its usual font back
+- The new font from 1.83.0 rendered badly, with cut-off text and misplaced letters. The phone is back to Roboto Condensed, the game's font.
+- Settings > Font now offers Roboto (default) and Purista. The other fonts will come back once fixed.
+
+### Détail technique
+- Test de TTRD en jeu sur la 1.83.0 : libellés coupés en hauteur, petits textes illisibles, caractères mal placés. Cause probable : les polices converties par `tools/gen_fonts.py` (métriques `.fxy` ou planches `.paa`) ne sont pas lues comme prévu par Arma.
+- `ui/fonts.hpp` : `COMSPEC_Barlow`, `COMSPEC_BarlowBold` et `COMSPEC_BarlowLight` pointent sur les fichiers Roboto Condensed du jeu (mêmes chemins que BCE), donc toutes les classes et balises `<t font=…>` du téléphone sont de nouveau en Roboto. Les familles B612, Rajdhani et Share Tech restent dans le pbo mais ne sont plus proposées.
+- Réglage `comspec_atak_native_font` réduit à `roboto` (défaut) et `purista` ; une ancienne valeur `barlow` retombe sur Roboto.
+- À vérifier en jeu : textes du téléphone nets et entiers (écran d'accueil, notifications, tuiles), choix Purista dans Réglages > Police.
+
 ## Nouvelle police du téléphone, au choix (ATAK natif 1.83.0)
 
 ### Résumé joueur

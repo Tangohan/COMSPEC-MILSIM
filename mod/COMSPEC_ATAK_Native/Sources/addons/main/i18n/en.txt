@@ -10288,7 +10288,7 @@
 ["📡 Tableau de bord relais ATAK", "📡 ATAK relay dashboard"],
 ["🔄 RESYNC TOUS", "🔄 RESYNC ALL"],
 ["Police", "Font"],
-["Police de tout le téléphone. Barlow Condensed par défaut ; Roboto et Purista sont celles du jeu.", "Font for the whole phone. Barlow Condensed by default; Roboto and Purista are the game's own."],
+["Police de tout le téléphone : Roboto Condensed par défaut, ou Purista.", "Font for the whole phone: Roboto Condensed by default, or Purista."],
 ["Portrait opérateur non affiché : %1", "Operator portrait not shown: %1"],
 ["aucun compte Athena lié à ce SteamID", "no Athena account linked to this SteamID"],
 ["accès refusé par Athena", "access denied by Athena"],
