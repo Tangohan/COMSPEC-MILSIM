@@ -141,7 +141,7 @@ def palm_normal(side):
     S = SIDE[side]; h0 = dirb(S + "Hand", S + "HandMiddle1")
     across = nrm(PIV[S + "HandPinky1"] - PIV[S + "HandIndex1"])
     n = np.cross(across, h0) if side == "L" else np.cross(h0, across)
-    return nrm(-n if n[1] > 0 else n)  # pose de référence : paume vers le bas et vers le corps
+    return nrm(n if n[1] > 0 else -n)  # pose de référence (bras en A) : paume vers le haut et l'extérieur (doigts repliés vers +y)
 
 
 class Pose:

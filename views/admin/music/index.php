@@ -74,9 +74,9 @@ $tabs = [
 
   <nav class="msc-tabs" aria-label="Administration de la musique">
     <?php foreach ($tabs as $k => $label) : ?>
-      <a class="msc-tab<?= $tab === $k ? ' is-active' : '' ?>" href="<?= $h($base . '?onglet=' . $k) ?>"><span class="msc-tab__label"><?= $h($label) ?></span></a>
+      <a class="msc-tab<?= $tab === $k ? ' is-active' : '' ?>" href="<?= $h($base . '?onglet=' . $k) ?>"<?= $tab === $k ? ' aria-current="page"' : '' ?>><span class="msc-tab__icon" aria-hidden="true"><?= ['morceaux' => '♪', 'playlists' => '≡', 'stats' => '▤'][$k] ?></span><span class="msc-tab__label"><?= $h($label) ?></span></a>
     <?php endforeach; ?>
-    <a class="msc-tab" href="<?= $h($libraryUrl . '?vue=global') ?>"><span class="msc-tab__label">Ouvrir la bibliothèque</span><span class="msc-tab__sub"><?= $platform ? 'Composer la playlist globale' : 'Écouter, mettre en ligne' ?></span></a>
+    <a class="msc-tab" href="<?= $h($libraryUrl . '?vue=global') ?>"><span class="msc-tab__icon" aria-hidden="true">★</span><span class="msc-tab__label">Ouvrir la bibliothèque</span><span class="msc-tab__sub"><?= $platform ? 'Composer la playlist globale' : 'Écouter, mettre en ligne' ?></span></a>
   </nav>
 
   <?php if ($tab === 'morceaux') : ?>
@@ -90,7 +90,9 @@ $tabs = [
         <input type="hidden" name="durations" value="" data-msca-durations>
         <label class="msc-drop" data-msca-drop>
           <input type="file" name="audio[]" accept="audio/mpeg,audio/mp4,audio/aac,audio/wav,audio/x-wav,.mp3,.m4a,.aac,.wav" multiple required data-msca-file>
-          <span class="msc-drop__text" data-msca-drop-text>Déposez des fichiers audio ici ou cliquez pour choisir (plusieurs à la fois possible)</span>
+          <span class="msc-drop__icon" aria-hidden="true">♫</span>
+          <span class="msc-drop__text" data-msca-drop-text>Déposez des fichiers audio ici ou cliquez pour choisir </span>
+          <span class="msc-drop__hint">Plusieurs fichiers à la fois · MP3, M4A, AAC ou WAV · 25 Mo maximum chacun</span>
         </label>
         <div class="ath-form__grid">
           <label class="ath-field"><span class="ath-field__label">Titre</span><input class="ath-field__input" name="title" maxlength="160" placeholder="Nom du fichier si vide ou si plusieurs fichiers"></label>

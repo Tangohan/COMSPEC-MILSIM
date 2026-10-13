@@ -1,5 +1,6 @@
 /*
-    Doigt d'honneur libre : tant que la touche est maintenue (ou 6 s par l'action ACE), le bras gauche reste tendu,
+    Doigt d'honneur libre : tant que la touche est maintenue (ou 6 s avec "timed"), si le réglage
+    comspec_atak_native_gesture_finger est coché (désactivé par défaut), le bras gauche reste tendu,
     majeur levé, et suit sa cible comme dans GTA.
     Cible, revue toutes les 0,12 s : l'homme sous le curseur (100 m), sinon le joueur le plus proche du centre de
     l'écran (moins de 30° et 60 m, IA comprises), sinon simplement la direction du curseur.
@@ -16,6 +17,7 @@ private _ok = {
 };
 switch (toLower _mode) do {
     case "start": {
+        if !(missionNamespace getVariable ["comspec_atak_native_gesture_finger", false]) exitWith { false };
         if (missionNamespace getVariable ["COMSPEC_ATAK_FingerAim", false]) exitWith { false };
         if !(call _ok) exitWith { false };
         missionNamespace setVariable ["COMSPEC_ATAK_FingerAim", true];
