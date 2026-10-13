@@ -1,6 +1,6 @@
 /*
-    App Musique : onglets LECTURE (lecteur : fn_vizPlayer ; curseurs de volume, haut-parleur, file d'attente, favoris,
-    haut-parleurs proches ; aléatoire et répéter sont des icônes du lecteur),
+    App Musique : onglets LECTURE (lecteur : fn_vizPlayer ; sections repliables Son, File d'attente, Favoris,
+    Haut-parleurs autour de moi ; aléatoire et répéter sont des icônes du lecteur),
     ATHENA (bibliothèque musicale du site : playlist globale, communauté, organisation, playlists, mes envois),
     FICHIERS (dossier local Documents\Arma 3\COMSPEC_Music), SERVEUR (pistes Arma, mods, mission et radio de la mission)
     et LIEN (fichier audio ou webradio par URL).
@@ -189,35 +189,40 @@ switch (_tab) do {
         private _vol = _m get "vol";
         private _spkVol = _m getOrDefault ["spkVol", 70];
         private _spk = _m get "speaker";
-        _rows append [
-            ["section", "Son", ["Écouteurs : vous seul entendez", format ["Haut-parleur : vous et les joueurs à moins de %1 m", _range]] select _spk],
-            ["slider", "Volume des écouteurs", _vol, { params ["_v"]; ["vol", _v, false] call comspec_atak_native_fnc_musicAction; }, "Haut-parleur coupé", !_spk,
-                "ui_headphones", ["vol", [0, profileNamespace getVariable ["COMSPEC_ATAK_MusicVolBack", 60]] select (_vol isEqualTo 0)] call _act, "Couper / rétablir le son des écouteurs"],
-            ["slider", "Volume du haut-parleur", _spkVol, { params ["_v"]; ["spkVol", _v, false] call comspec_atak_native_fnc_musicAction; }, "Haut-parleur activé", _spk,
-                ["ui_speaker", "ui_mute"] select (_spkVol isEqualTo 0), ["spkVol", [0, profileNamespace getVariable ["COMSPEC_ATAK_MusicSpkVolBack", 70]] select (_spkVol isEqualTo 0)] call _act, "Couper / rétablir le son du haut-parleur"],
-            ["switch", "Haut-parleur", _spk, ["speaker"] call _act, format ["Les joueurs à moins de %1 m entendent votre musique, plus fort en s'approchant (atténué entre l'intérieur et l'extérieur d'un véhicule).", _range], !(missionNamespace getVariable ["comspec_atak_native_music_speaker", true])],
-            ["switch", "Entendre les haut-parleurs proches", _m get "hear", ["hear"] call _act, "Quand vous n'écoutez rien, la musique d'un téléphone voisin passe dans votre casque."]
-        ];
-        private _q = _m get "queue";
-        _rows pushBack ["section", "File d'attente", format ["%1 morceau(x)", count _q]];
-        if ((count _q) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Vide. Lancez un morceau depuis ATHENA, FICHIERS, SERVEUR ou LIEN.</t>"]; };
-        if ((count _q) > 1) then { _rows pushBack ["buttons", [["VIDER LA FILE", ["qClear"] call _act, false, true, "Garde le morceau en cours"]]]; };
-        private _src = createHashMapFromArray [["file", "Fichier local"], ["url", "Lien web"], ["srv", "Serveur"], ["lib", "Athena"]];
-        for "_i" from 0 to (((count _q) min 40) - 1) do {
-            (_q select _i) params ["_k", "_r", "_t", ["_len", 0]];
-            private _isCur = _i isEqualTo (_m get "qi") && {_mine};
-            _rows pushBack ["person", _icon, format ["<t %1>%2. %3</t><br/><t size='0.75' color='#8a9a93'>%4%5</t>", ["", format ["color='%1' font='COMSPEC_BarlowBold'", _accHex]] select _isCur, _i + 1, [_t] call _esc,
-                _src getOrDefault [_k, ""], ["", format [" · %1", [_len] call _fmt]] select (_len > 0)],
-                [[["JOUER", "EN COURS"] select _isCur, ["jump", _i] call _act, !_isCur, !_isCur], ["MONTER", ["qUp", _i] call _act, false, _i > 0], ["RETIRER", ["qDel", _i] call _act]], [[0.55, 0.6, 0.58, 1], _acc] select _isCur];
+        // Sections repliables en accordéon (une seule ouverte, « Son » par défaut) : moins de défilement sous le lecteur.
+        private _openKey = _ui getOrDefault ["fold", "son"];
+        private _fold = { params ["_k", "_t", "_sub"]; _rows pushBack ["fold", _t, _sub, _openKey isEqualTo _k, ["fold", _k] call _act]; _openKey isEqualTo _k };
+        if (["son", "Son", [format ["Écouteurs %1", [(str _vol) + " %", "MUET"] select (_vol isEqualTo 0)], format ["Haut-parleur %1", [(str _spkVol) + " %", "MUET"] select (_spkVol isEqualTo 0)]] select _spk] call _fold) then {
+            _rows append [
+                ["slider", "Volume des écouteurs", _vol, { params ["_v"]; ["vol", _v, false] call comspec_atak_native_fnc_musicAction; }, "Vous seul entendez (haut-parleur coupé)", !_spk,
+                    "ui_headphones", ["vol", [0, profileNamespace getVariable ["COMSPEC_ATAK_MusicVolBack", 60]] select (_vol isEqualTo 0)] call _act, "Couper / rétablir le son des écouteurs"],
+                ["slider", "Volume du haut-parleur", _spkVol, { params ["_v"]; ["spkVol", _v, false] call comspec_atak_native_fnc_musicAction; }, format ["Vous et les joueurs à moins de %1 m", _range], _spk,
+                    ["ui_speaker", "ui_mute"] select (_spkVol isEqualTo 0), ["spkVol", [0, profileNamespace getVariable ["COMSPEC_ATAK_MusicSpkVolBack", 70]] select (_spkVol isEqualTo 0)] call _act, "Couper / rétablir le son du haut-parleur"],
+                ["switch", "Haut-parleur", _spk, ["speaker"] call _act, format ["Les joueurs à moins de %1 m entendent votre musique, plus fort en s'approchant (atténué entre l'intérieur et l'extérieur d'un véhicule).", _range], !(missionNamespace getVariable ["comspec_atak_native_music_speaker", true])],
+                ["switch", "Entendre les haut-parleurs proches", _m get "hear", ["hear"] call _act, "Quand vous n'écoutez rien, la musique d'un téléphone voisin passe dans votre casque."]
+            ];
         };
-        // Favoris
-        _rows pushBack ["section", "Favoris", format ["%1 morceau(x)", count _favs]];
-        if ((count _favs) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Touchez FAV sur un morceau pour le retrouver ici.</t>"]; } else {
-            _lists set ["fav", +_favs];
-            _rows pushBack ["buttons", [["TOUT LIRE", compile format ["['playList', [%1, 0]] call comspec_atak_native_fnc_musicAction;", ["fav"] call _listRef], true]]];
-            for "_i" from 0 to (((count _favs) min 30) - 1) do {
-                private _f = _favs select _i;
-                _rows pushBack (["fav", _i, _src getOrDefault [_f select 0, ""]] call _trackRow);
+        private _q = _m get "queue";
+        private _src = createHashMapFromArray [["file", "Fichier local"], ["url", "Lien web"], ["srv", "Serveur"], ["lib", "Athena"]];
+        if (["queue", "File d'attente", format ["%1 morceau(x)", count _q]] call _fold) then {
+            if ((count _q) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Vide. Lancez un morceau depuis ATHENA, FICHIERS, SERVEUR ou LIEN.</t>"]; };
+            if ((count _q) > 1) then { _rows pushBack ["buttons", [["VIDER LA FILE", ["qClear"] call _act, false, true, "Garde le morceau en cours"]]]; };
+            for "_i" from 0 to (((count _q) min 40) - 1) do {
+                (_q select _i) params ["_k", "_r", "_t", ["_len", 0]];
+                private _isCur = _i isEqualTo (_m get "qi") && {_mine};
+                _rows pushBack ["person", _icon, format ["<t %1>%2. %3</t><br/><t size='0.75' color='#8a9a93'>%4%5</t>", ["", format ["color='%1' font='COMSPEC_BarlowBold'", _accHex]] select _isCur, _i + 1, [_t] call _esc,
+                    _src getOrDefault [_k, ""], ["", format [" · %1", [_len] call _fmt]] select (_len > 0)],
+                    [[["JOUER", "EN COURS"] select _isCur, ["jump", _i] call _act, !_isCur, !_isCur], ["MONTER", ["qUp", _i] call _act, false, _i > 0], ["RETIRER", ["qDel", _i] call _act]], [[0.55, 0.6, 0.58, 1], _acc] select _isCur];
+            };
+        };
+        if (["favs", "Favoris", format ["%1 morceau(x)", count _favs]] call _fold) then {
+            if ((count _favs) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Touchez FAV sur un morceau pour le retrouver ici.</t>"]; } else {
+                _lists set ["fav", +_favs];
+                _rows pushBack ["buttons", [["TOUT LIRE", compile format ["['playList', [%1, 0]] call comspec_atak_native_fnc_musicAction;", ["fav"] call _listRef], true]]];
+                for "_i" from 0 to (((count _favs) min 30) - 1) do {
+                    private _f = _favs select _i;
+                    _rows pushBack (["fav", _i, _src getOrDefault [_f select 0, ""]] call _trackRow);
+                };
             };
         };
         // Haut-parleurs autour de moi
@@ -227,14 +232,15 @@ switch (_tab) do {
             if ((count _s) >= 6 && {alive _x} && {(_x distance player) < 150}) then { _near pushBack [_x distance player, _x, _s]; };
         } forEach (allPlayers - [player]);
         _near sort true;
-        _rows pushBack ["section", "Haut-parleurs autour de moi", format ["Audibles à moins de %1 m", _range]];
-        if ((count _near) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun téléphone en haut-parleur à proximité.</t>"]; };
-        {
-            _x params ["_d", "_u", "_s"];
-            private _in = _d < _range;
-            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='#8a9a93'>%2 m</t>  <t color='%3'>%4</t><br/><t size='0.8'>%5</t>",
-                [name _u] call _esc, round _d, ["#8a9a93", _accHex] select _in, ["hors de portée", "audible"] select _in, [_s select 2] call _esc]];
-        } forEach (_near select [0, 8]);
+        if (["near", "Haut-parleurs autour de moi", format ["%1 audible(s) à moins de %2 m", { (_x select 0) < _range } count _near, _range]] call _fold) then {
+            if ((count _near) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun téléphone en haut-parleur à proximité.</t>"]; };
+            {
+                _x params ["_d", "_u", "_s"];
+                private _in = _d < _range;
+                _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='#8a9a93'>%2 m</t>  <t color='%3'>%4</t><br/><t size='0.8'>%5</t>",
+                    [name _u] call _esc, round _d, ["#8a9a93", _accHex] select _in, ["hors de portée", "audible"] select _in, [_s select 2] call _esc]];
+            } forEach (_near select [0, 8]);
+        };
         [_rows, [0, _vizH, _bw, _bh - _vizH]] call comspec_atak_native_fnc_formRender;
     };
 };

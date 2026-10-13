@@ -211,7 +211,42 @@ private _keepScroll = {
     // Encore à l'image suivante : la hauteur du contenu n'est connue qu'une fois les contrôles posés.
     [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_grp, _v]] call CBA_fnc_execNextFrame;
 };
-private _open = { params ["_key"]; compile format ["private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['chatPeer', %1]; _s set ['chatView', 'CONV']; _s set ['chatDelArm', '']; _s set ['chatWiki', false]; %2", str _key, _rr] };
+private _open = { params ["_key"]; compile format ["private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['chatPeer', %1]; _s set ['chatView', 'CONV']; _s set ['chatDelArm', '']; _s set ['chatWiki', false]; _s set ['chatPick', false]; %2", str _key, _rr] };
+// Molette de la souris : les groupes défilants imbriqués dans la page ne la reçoivent pas d'Arma (retour de TTRD).
+// La page enregistre [groupe, hauteur du contenu] ; un gestionnaire de l'écran (posé une fois) fait défiler celui
+// qui est sous la souris, d'environ un cinquième de sa hauteur par cran.
+uiNamespace setVariable ["COMSPEC_ATAK_WheelGroups", []];
+private _wheel = {
+    params ["_grp", "_contentH"];
+    (uiNamespace getVariable ["COMSPEC_ATAK_WheelGroups", []]) pushBack [_grp, _contentH];
+};
+if ((_d getVariable ["COMSPEC_ATAK_WheelEh", -1]) < 0) then {
+    _d setVariable ["COMSPEC_ATAK_WheelEh", _d displayAddEventHandler ["MouseZChanged", {
+        params ["", "_z"];
+        if (_z isEqualTo 0) exitWith { false };
+        if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isNotEqualTo "CHAT") exitWith { false };
+        private _disp = [] call comspec_atak_native_fnc_display;
+        if (isNull _disp) exitWith { false };
+        getMousePosition params ["_mx", "_my"];
+        (ctrlPosition (_disp displayCtrl 88531)) params ["_rx", "_ry"];
+        {
+            _x params ["_g", "_ch"];
+            if (isNull _g) then { continue };
+            (ctrlPosition _g) params ["_gx", "_gy", "_gw", "_gh"];
+            if (_mx >= _rx + _gx && {_mx <= _rx + _gx + _gw} && {_my >= _ry + _gy} && {_my <= _ry + _gy + _gh}) exitWith {
+                private _range = _ch - _gh;
+                if (_range <= 0) exitWith {};
+                private _v = ((ctrlScrollValues _g) select 0) max 0;
+                private _step = ((_gh * 0.2) / _range) * ((abs _z) min 3);
+                _g ctrlSetScrollValues [((_v - _step * ([1, -1] select (_z < 0))) max 0) min 1, -1];
+            };
+        } forEach (uiNamespace getVariable ["COMSPEC_ATAK_WheelGroups", []]);
+        false
+    }]];
+};
+// Premier chargement des canaux par COMSPEC Link pas encore fait : « Chargement… » plutôt que « Aucun message ».
+private _booting = _bridge && {!(missionNamespace getVariable ["COMSPEC_ChatPollBootstrapped", false])} && {missionNamespace getVariable ["COMSPEC_AthenaReady", false]};
+private _pick = _interactive && {_s getOrDefault ["chatPick", false]};
 private _today = [] call comspec_atak_native_fnc_p2pDate;
 
 // Rectangles : liste à gauche et conversation à droite en paysage ; une seule vue sinon.
@@ -286,8 +321,19 @@ private _drawList = {
         ctrlSetFocus _ne;
         _y0 = _y0 + _ch;
     };
-    private _grp = ["COMSPEC_RscControlsGroup", [_lx, _y0, _lw, _bh - _y0]] call _mk;
-    ["chatList", _grp, -1] call _keepScroll;
+    // Pied de liste : bouton NOUVEAU SMS (choisir un destinataire) ou ANNULER pendant le choix.
+    private _footH = [0, _rowH + _pad] select _interactive;
+    if (_interactive) then {
+        private _fy = _bh - _footH;
+        [[_lx, _fy, _lw, _footH], _cHdr] call _box;
+        [[_lx, _fy, _lw, pixelH], _cLine] call _box;
+        private _r = [_lx + _pad * 0.6, _fy + _pad / 2, _lw - _pad * 1.2, _rowH];
+        [_r, [_cBlue, [1, 1, 1, 0.08]] select _pick] call _box;
+        ["COMSPEC_RscTextCenter", _r, ["+ NOUVEAU SMS", "ANNULER"] select _pick, _fs, _cText, true] call _lbl;
+        [_r, "private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['chatPick', !(_s getOrDefault ['chatPick', false])]; _s set ['chatView', 'LIST']; " + _rr,
+            ["Écrire un SMS à un joueur de votre camp", "Revenir à la liste des conversations"] select _pick] call _hit;
+    };
+    private _grp = ["COMSPEC_RscControlsGroup", [_lx, _y0, _lw, _bh - _y0 - _footH]] call _mk;
     private _gw = _lw - 0.012;
     private _rh = _font * 2.75;
     private _avH = _rh * 0.68;
@@ -324,8 +370,8 @@ private _drawList = {
         [[0, _y, _gw, _rh], [_key] call _open, _name, _grp] call _hit;
         _y = _y + _rh;
     };
-    // Canaux
-    [["Canaux", "TOC"] select !_bridge, ["", "Athena"] select _bridge] call _section;
+    // Canaux (masqués pendant le choix d'un destinataire de SMS)
+    if (!_pick) then { [["Canaux", "TOC"] select !_bridge, ["", "Athena"] select _bridge] call _section; };
     {
         _x params ["_key", "_label"];
         private _ck = [_key select [3], ""] select (_key isEqualTo "ATHENA");
@@ -341,11 +387,11 @@ private _drawList = {
         };
         private _alert = _ck isEqualTo "alertes";
         [_key, (_label) call comspec_atak_native_fnc_tr, _dir + (["ui_hash.paa", "app_alerts.paa"] select _alert), [_acc, [0.95, 0.55, 0.20, 1]] select _alert, objNull,
-            _lastTxt, _lastTime, _unread, ["Aucun message", "Alertes et notifications du TOC"] select _alert] call _row;
-    } forEach _channels;
+            _lastTxt, _lastTime, _unread, [["Aucun message", "Chargement…"] select _booting, "Alertes et notifications du TOC"] select _alert] call _row;
+    } forEach ([_channels, []] select _pick);
     // Messages directs
     _y = _y + _fs * 0.4;
-    ["Messages directs", "SMS"] call _section;
+    [["Messages directs", "Nouveau SMS · choisir un destinataire"] select _pick, "SMS"] call _section;
     if ((count _peers) isEqualTo 0) then {
         private _t = ["COMSPEC_RscStructuredText", [_pad, _y, _gw - 2 * _pad, _font * 2.4], "", _fs, _cText, false, _grp] call _lbl;
         _t ctrlSetStructuredText parseText (("<t color='#8a9a93' size='0.9'>Aucun autre joueur de votre camp en ligne. Les SMS passent de téléphone à téléphone, sans Athena.</t>") call comspec_atak_native_fnc_tr);
@@ -368,10 +414,12 @@ private _drawList = {
             format ["En ligne · %1", ([_u] call comspec_atak_native_fnc_phoneIdent) param [0, ""]]
         };
         [_name, _name, _dir + "app_group.paa", [_name] call _authorCol, _u, _lastTxt, _lastTime, _n, (_sub) call comspec_atak_native_fnc_tr, [_name] call _initials] call _row;
-    } forEach _peers;
+    } forEach ([_peers, _peers select { !isNull ([_x] call _unitFor) }] select _pick);
     _y = _y + _pad;
     // Fond cliquable de fin de liste (rien) : la hauteur fixe le défilement.
     [[0, _y, _gw, pixelH], [0, 0, 0, 0], _grp] call _box;
+    ["chatList", _grp, -1] call _keepScroll;
+    [_grp, _y + pixelH] call _wheel;
 };
 
 // ================================================================ CONVERSATION
@@ -564,7 +612,7 @@ private _drawConv = {
         [[_cx + (_cw - _eh * 1.6 / _ratio) / 2, _threadY + _threadH * 0.28, _eh * 1.6 / _ratio, _eh * 1.6], [_dir + "app_chat.paa", _dir + "app_group.paa"] select !_isChannel, [_cDim select 0, _cDim select 1, _cDim select 2, 0.45], 0.9] call _icon;
         private _t = ["COMSPEC_RscStructuredText", [_cx + _pad, _threadY + _threadH * 0.28 + _eh * 1.8, _cw - 2 * _pad, _font * 3]] call _mk;
         _t ctrlSetFontHeight _fs;
-        _t ctrlSetStructuredText parseText (((["<t color='#8a9a93' align='center'>Aucun message. Écrivez ci-dessous pour démarrer la conversation.</t>", "<t color='#8a9a93' align='center'>Aucun message du TOC pour l'instant.</t>"] select _isChannel)) call comspec_atak_native_fnc_tr);
+        _t ctrlSetStructuredText parseText (((["<t color='#8a9a93' align='center'>Aucun message. Écrivez ci-dessous pour démarrer la conversation.</t>", ["<t color='#8a9a93' align='center'>Aucun message du TOC pour l'instant.</t>", "<t color='#8a9a93' align='center'>Chargement des messages…</t>"] select _booting] select _isChannel)) call comspec_atak_native_fnc_tr);
     };
     // Bulles : les miennes à droite ; les autres à gauche avec la photo de l'opérateur (TOC : logo Athena),
     // une seule fois par série du même auteur. SMS : bulles bleues pour les miennes.
@@ -672,6 +720,7 @@ private _drawConv = {
     } forEach _items;
     _y = _y + _pad;
     [[0, _y, _tw, pixelH], [0, 0, 0, 0], _thread] call _box;
+    [_thread, _y + pixelH] call _wheel;
     // Fil : en bas (derniers messages) sauf si on était remonté lire plus haut ; en haut pour l'aide ou le tri inverse.
     private _was = ((_scrollMem getOrDefault ["chatThread:" + _peer, []]) param [0, -1]);
     private _target = switch (true) do {

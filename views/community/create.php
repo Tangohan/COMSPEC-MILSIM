@@ -94,7 +94,7 @@ $wizardSteps = [
                             </div>
                             <div class="md:col-span-2">
                                 <label class="cc-checkrow">
-                                    <input type="checkbox" name="wizard_custom_community_slug" value="1" id="wizard-custom-community-slug" class="h-4 w-4 rounded border-slate-300 text-emerald-600">
+                                    <input type="checkbox" name="wizard_custom_community_slug" value="1" id="wizard-custom-community-slug">
                                     <span>
                                         <strong>Choisir une adresse web personnalisée</strong>
                                         <span>Sinon, Athena dérive l’adresse du nom affiché (lettres minuscules et tirets).</span>
@@ -423,7 +423,7 @@ $wizardSteps = [
 
                         <label class="cc-checkrow mt-5">
                             <input type="hidden" name="wizard_founder_commands_root" value="0">
-                            <input type="checkbox" name="wizard_founder_commands_root" value="1" id="wizard-founder-commands-root" class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600" checked>
+                            <input type="checkbox" name="wizard_founder_commands_root" value="1" id="wizard-founder-commands-root" checked>
                             <span>
                                 <strong>Vous êtes le chef de l’unité principale</strong>
                                 <span>Les autres postes restent vacants jusqu’à ce que vous les attribuiez dans Effectifs.</span>
@@ -431,14 +431,14 @@ $wizardSteps = [
                         </label>
 
                         <label class="cc-checkrow mt-3">
-                            <input type="checkbox" name="wizard_quick_fill" value="1" id="wizard-quick-fill" class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600">
+                            <input type="checkbox" name="wizard_quick_fill" value="1" id="wizard-quick-fill">
                             <span>
                                 <strong>Insérer une structure de départ</strong>
                                 <span>Un groupe racine, une section et une équipe — modifiables ci-dessous.</span>
                             </span>
                         </label>
                         <label class="cc-checkrow mt-3">
-                            <input type="checkbox" name="wizard_orbat_custom_slug" value="1" id="wizard-orbat-custom-slug" class="h-4 w-4 rounded border-slate-300 text-emerald-600">
+                            <input type="checkbox" name="wizard_orbat_custom_slug" value="1" id="wizard-orbat-custom-slug">
                             <span>
                                 <strong>Adresses courtes par unité</strong>
                                 <span>Sinon, chaque adresse est dérivée du nom de l’unité.</span>
@@ -610,21 +610,21 @@ $wizardSteps = [
 
                         <div class="mt-5 grid gap-3 md:grid-cols-2">
                             <label class="cc-checkrow">
-                                <input type="checkbox" name="community_locked" value="1" class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600">
+                                <input type="checkbox" name="community_locked" value="1">
                                 <span>
                                     <strong>Fermer le recrutement</strong>
                                     <span>Les nouvelles candidatures ne sont pas acceptées pour le moment.</span>
                                 </span>
                             </label>
                             <label class="cc-checkrow">
-                                <input type="checkbox" name="require_ai_ack" value="1" checked class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600">
+                                <input type="checkbox" name="require_ai_ack" value="1" checked>
                                 <span>
                                     <strong>Exiger la confirmation « sans IA »</strong>
                                     <span>Le candidat atteste avoir rédigé sa candidature lui-même.</span>
                                 </span>
                             </label>
                             <label class="cc-checkrow md:col-span-2">
-                                <input type="checkbox" name="refuse_other_community_members" value="1" class="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600">
+                                <input type="checkbox" name="refuse_other_community_members" value="1">
                                 <span>
                                     <strong>Refuser les comptes déjà rattachés à une autre communauté</strong>
                                     <span>Un compte Athena déjà membre d’une autre communauté ne pourra pas candidater ici. Les visiteurs sans compte, et les comptes sans communauté (espace « Pas d’organisation »), restent acceptés.</span>

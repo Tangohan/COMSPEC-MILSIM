@@ -20,6 +20,18 @@ final class LoginSecurityOtpService
 {
     public const TTL_MINUTES = 10;
 
+    /**
+     * Durée de l'étape « application d'authentification » : le code TOTP change toutes les
+     * 30 s de lui-même, l'étape n'a donc pas besoin d'expirer aussi vite qu'un code e-mail.
+     */
+    public const TOTP_CHALLENGE_TTL_MINUTES = 30;
+
+    /**
+     * Codes e-mail encore acceptés après un renvoi : un premier e-mail arrivé en retard
+     * reste valable au lieu de produire « code invalide ou expiré ».
+     */
+    public const MAX_LIVE_EMAIL_CODES = 3;
+
     public const RESEND_INTERVAL_SEC = 60;
 
     public const CHANNEL_EMAIL = 'email';
@@ -170,7 +182,7 @@ final class LoginSecurityOtpService
             'tenant_id' => $tenantId,
             'channel' => self::CHANNEL_TOTP,
             'email_masked' => $this->maskEmailForDisplay(trim((string) ($user['email'] ?? ''))),
-            'expires_at' => time() + (self::TTL_MINUTES * 60),
+            'expires_at' => time() + (self::TOTP_CHALLENGE_TTL_MINUTES * 60),
             'generated_at' => time(),
             'attempts' => 0,
             'can_fallback_email' => $this->canUseEmailFallback($user),
@@ -197,8 +209,9 @@ final class LoginSecurityOtpService
         $nonce = bin2hex(random_bytes(16));
         $tokenHash = hash('sha256', $code . '|' . $nonce);
         $expires = new \DateTimeImmutable('+' . self::TTL_MINUTES . ' minutes');
-        $this->emailTokenRepository->deletePendingForUserPurpose($userId, EmailTokenPurpose::LOGIN_SECURITY_OTP);
-        $this->emailTokenRepository->create(
+        // Les codes envoyés juste avant restent valables (e-mail lent puis « Renvoyer »),
+        // dans la limite de MAX_LIVE_EMAIL_CODES.
+        $tokenId = $this->emailTokenRepository->create(
             $tenantId,
             $userId,
             EmailTokenPurpose::LOGIN_SECURITY_OTP,
@@ -206,6 +219,11 @@ final class LoginSecurityOtpService
             $nonce,
             $expires,
             ['channel' => 'login_security_otp']
+        );
+        $this->emailTokenRepository->deleteOlderPendingBeyond(
+            $userId,
+            EmailTokenPurpose::LOGIN_SECURITY_OTP,
+            self::MAX_LIVE_EMAIL_CODES
         );
 
         $tenant = $this->tenantRepository->findById($tenantId);
@@ -221,7 +239,7 @@ final class LoginSecurityOtpService
             $tenantId
         );
         if (!$ok) {
-            $this->emailTokenRepository->deletePendingForUserPurpose($userId, EmailTokenPurpose::LOGIN_SECURITY_OTP);
+            $this->emailTokenRepository->deleteById($tokenId);
             Session::flash('error', 'Impossible d’envoyer le code par e-mail pour le moment.');
 
             return Response::redirect(url('login'));
@@ -405,20 +423,23 @@ final class LoginSecurityOtpService
      */
     private function verifyEmailPending(array $pending, string $code, int $userId): array
     {
-        $stored = (string) ($pending['token_hash'] ?? '');
-        if ($stored === '') {
+        $rows = $this->emailTokenRepository->findPendingForUserPurpose($userId, EmailTokenPurpose::LOGIN_SECURITY_OTP);
+        if ($rows === []) {
             return ['ok' => false, 'message' => 'Code invalide ou expiré.'];
         }
-        $row = $this->emailTokenRepository->findValidByHash($stored);
-        if (!$row || (string) ($row['purpose'] ?? '') !== EmailTokenPurpose::LOGIN_SECURITY_OTP || (int) ($row['user_id'] ?? 0) !== $userId) {
-            return ['ok' => false, 'message' => 'Code invalide ou expiré.'];
+        $match = null;
+        foreach ($rows as $row) {
+            $candidateHash = hash('sha256', $code . '|' . (string) ($row['nonce'] ?? ''));
+            if (hash_equals((string) ($row['token_hash'] ?? ''), $candidateHash)) {
+                $match = $row;
+                break;
+            }
         }
-        $nonce = (string) ($row['nonce'] ?? '');
-        $candidateHash = hash('sha256', $code . '|' . $nonce);
-        if (!hash_equals((string) $row['token_hash'], $candidateHash)) {
+        if ($match === null) {
             return ['ok' => false, 'message' => 'Code incorrect.'];
         }
-        $this->emailTokenRepository->markConsumed((int) $row['id']);
+        $this->emailTokenRepository->markConsumed((int) $match['id']);
+        $this->emailTokenRepository->deletePendingForUserPurpose($userId, EmailTokenPurpose::LOGIN_SECURITY_OTP);
         Session::forget('pending_login_security_otp');
         $tenantId = (int) ($pending['tenant_id'] ?? 0);
         $user = $this->userRepository->findById($userId, $tenantId);

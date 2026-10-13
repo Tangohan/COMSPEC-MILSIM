@@ -386,28 +386,82 @@
 }
 
 .community-create .cc-checkrow {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
+  display: grid;
+  grid-template-columns: 1.15rem minmax(0, 1fr);
+  align-items: start;
+  column-gap: 0.8rem;
   border: 1px solid #e2e8f0;
   border-radius: 1rem;
   background: #f8fafc;
   padding: 0.95rem 1rem;
   cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease;
 }
 
-.community-create .cc-checkrow input {
-  margin-top: 0.15rem;
+.community-create .cc-checkrow:hover {
+  border-color: #a7f3d0;
+}
+
+.community-create .cc-checkrow:has(input[type="checkbox"]:checked) {
+  border-color: #6ee7b7;
+  background: #ecfdf5;
+}
+
+/* Case à cocher dessinée : même taille que la ligne du titre, centrée dessus. */
+.community-create .cc-checkrow input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  display: grid;
+  place-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 0.35rem;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.community-create .cc-checkrow input[type="checkbox"]::after {
+  content: "";
+  width: 0.62rem;
+  height: 0.62rem;
+  background: #fff;
+  clip-path: polygon(14% 52%, 0 66%, 38% 100%, 100% 22%, 86% 8%, 38% 72%);
+  transform: scale(0);
+  transition: transform 0.12s ease;
+}
+
+.community-create .cc-checkrow input[type="checkbox"]:checked {
+  border-color: #059669;
+  background: #059669;
+}
+
+.community-create .cc-checkrow input[type="checkbox"]:checked::after {
+  transform: scale(1);
+}
+
+.community-create .cc-checkrow input[type="checkbox"]:focus-visible,
+.community-create .cc-choice:has(input:focus-visible) {
+  outline: 3px solid rgba(16, 185, 129, 0.35);
+  outline-offset: 2px;
+}
+
+.community-create .cc-checkrow > span {
+  display: block;
+  margin: 0;
 }
 
 .community-create .cc-checkrow strong {
   display: block;
   font-size: 0.9rem;
   font-weight: 700;
+  line-height: 1.15rem;
   color: var(--cc-text);
 }
 
-.community-create .cc-checkrow span {
+.community-create .cc-checkrow > span > span {
   display: block;
   margin-top: 0.2rem;
   font-size: 0.8rem;

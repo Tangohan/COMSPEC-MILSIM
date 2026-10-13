@@ -3,9 +3,22 @@
     ou ses alertes pour le canal "alertes". Sans : GetChatMessages, la boîte d'alertes et les envois locaux.
     Params : [canal ("" = tous)]
     Renvoie des HashMaps normalisées : id, time, author, body, tags, kind, mine, status, stamp (date et heure d'origine).
+    Résultat gardé par canal tant que les sources n'ont pas changé (au plus 5 s) : la messagerie, ses pastilles et la
+    barre d'état le demandent plusieurs fois par seconde, chaque canal à part ; tout relire à chaque fois la faisait
+    ramer avec beaucoup de canaux. Le tableau rendu est partagé : ne pas le modifier.
 */
 params [["_channel", ""]];
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
+private _bridge = [] call comspec_atak_native_fnc_bridge;
+private _lastOf = { params ["_a"]; if (_a isEqualType [] && {_a isNotEqualTo []}) then { _a select -1 } else { 0 } };
+private _srcs = if (_bridge) then { [missionNamespace getVariable ["COMSPEC_Comms_Messages", []], _data getOrDefault ["inbox", []]] } else {
+    [_data getOrDefault ["messages", []], _data getOrDefault ["inbox", []], _data getOrDefault ["outbox", []]]
+};
+private _sig = [_bridge, name player] + (_srcs apply { [count _x, [_x] call _lastOf] });
+private _memo = uiNamespace getVariable ["COMSPEC_ATAK_MsgMemo", createHashMap];
+uiNamespace setVariable ["COMSPEC_ATAK_MsgMemo", _memo];
+private _hit = _memo getOrDefault [_channel, []];
+if ((count _hit) isEqualTo 3 && {(_hit select 0) isEqualTo _sig} && {diag_tickTime - (_hit select 1) < 5}) exitWith { _hit select 2 };
 private _me = [] call comspec_atak_native_fnc_unitCallsign;
 private _names = [toLower _me, toLower name player];
 private _out = [];
@@ -48,4 +61,6 @@ if ([] call comspec_atak_native_fnc_bridge) then {
 private _keyed = [];
 { _keyed pushBack [_x get "time", _forEachIndex, _x]; } forEach _out;
 _keyed sort true;
-_keyed apply { _x select 2 }
+private _res = _keyed apply { _x select 2 };
+_memo set [_channel, [_sig, diag_tickTime, _res]];
+_res

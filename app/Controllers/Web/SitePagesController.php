@@ -27,6 +27,7 @@ final class SitePagesController
             'title' => __('site.about_meta_title'),
             'meta_description' => __('site.about_meta_description'),
             'marketingActive' => 'about',
+            'marketingStyles' => [asset_url('assets/css/site-about.css')],
         ]);
     }
 

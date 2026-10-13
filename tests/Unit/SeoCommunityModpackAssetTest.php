@@ -21,10 +21,11 @@ final class SeoCommunityModpackAssetTest extends TestCase
     {
         $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/SeoController.php');
         self::assertStringContainsString("'/medias'", $src);
-        self::assertStringContainsString("'/reels'", $src);
         self::assertStringContainsString('listPublicForTenant', $src);
-        self::assertStringContainsString("Disallow: /admin/", $src);
-        self::assertStringContainsString("Disallow: /modpacks/", $src);
+        self::assertStringContainsString('Seo::PRIVATE_PREFIXES', $src);
+        self::assertStringContainsString('xhtml:link', $src);
+        self::assertContains('/admin/', \App\Support\Seo::PRIVATE_PREFIXES);
+        self::assertContains('/modpacks/', \App\Support\Seo::PRIVATE_PREFIXES);
     }
 
     public function testCommunityShowcaseCtaLabelsAreDistinct(): void
@@ -44,7 +45,8 @@ final class SeoCommunityModpackAssetTest extends TestCase
         self::assertStringContainsString('buildCommunityPublicJsonLd', $src);
         self::assertStringContainsString("'@type' => 'FAQPage'", $src);
         self::assertStringContainsString("'@type' => 'CollectionPage'", $src);
-        self::assertStringContainsString("'@type' => 'JobPosting'", $src);
+        self::assertStringNotContainsString("'@type' => 'JobPosting'", $src);
+        self::assertStringContainsString('tenantIndexable', $src);
         self::assertStringContainsString("'meta_description' => \$unitDesc", $src);
         self::assertStringContainsString("'meta_description' => \$mediaDesc", $src);
     }

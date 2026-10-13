@@ -8,7 +8,9 @@
       9 dégagement (saisie)
     Remarques : axe final d'attaque (FAH), ligne laser-cible (LTL), DANGER CLOSE et initiales, menaces, armement,
     type de contrôle et méthode d'attaque.
-    Complétion automatique (« tout compléter ») : tout ce qui peut se déduire de la cible, de la position du joueur,
+    Complétion automatique (« tout compléter »), seulement si l'admin l'active sur Athena (Contrôle serveur, clé
+    native_jtac_autofill = "on") ; par défaut, réalisme : le JTAC saisit lui-même IP, lignes 5 et 9 et remarques.
+    Quand elle est active, tout ce qui peut se déduire de la cible, de la position du joueur,
     de l'appareil et de la carte est proposé sans saisie, et la saisie du joueur l'emporte toujours :
       appareil (le plus proche en station s'il n'y en a pas de choisi), cible (point laser du joueur s'il désigne),
       IP (5 NM de la cible du côté de l'appareil, ou à l'opposé des amis ; nommé d'après le lieu-dit le plus proche),
@@ -24,17 +26,18 @@ private _card = { params ["_deg"]; ["NORTH", "NORTHEAST", "EAST", "SOUTHEAST", "
 private _cardFr = { params ["_deg"]; ["NORD", "NORD-EST", "EST", "SUD-EST", "SUD", "SUD-OUEST", "OUEST", "NORD-OUEST"] select ((round (_deg / 45)) mod 8) };
 private _h = createHashMap;
 private _side = side group player;
+private _autoOn = (["native_jtac_autofill"] call comspec_atak_native_fnc_tenantRule) isEqualTo "on";
 // Appareil : le plus proche en station quand aucun n'est choisi.
 private _air = _s getOrDefault ["air", objNull];
 if (!isNull _air && {!alive _air}) then { _air = objNull; };
-if (isNull _air) then {
+if (isNull _air && {_autoOn}) then {
     private _airs = (vehicles select { _x isKindOf "Air" && {alive _x} && {crew _x isNotEqualTo []} && {side group (effectiveCommander _x) isEqualTo _side} && {!(_x isKindOf "UAV_01_base_F")} && {(_x distance2D player) < 40000} }) apply { [_x distance2D player, _x] };
     _airs sort true;
     if (_airs isNotEqualTo []) then { _air = (_airs select 0) select 1; _s set ["air", _air]; _s set ["airAuto", true]; };
 };
 // Cible : point laser du joueur quand rien n'est verrouillé.
 private _tgt = _s getOrDefault ["target", []];
-if ((count _tgt) < 2) then {
+if ((count _tgt) < 2 && {_autoOn}) then {
     private _t = [] call comspec_atak_native_fnc_jtacTarget;
     if (_t isNotEqualTo [] && {(_t select 1) isEqualTo "laser"}) then {
         _tgt = _t select 0;
@@ -53,8 +56,10 @@ if (_hasT) then {
 };
 // IP : posé par le joueur, sinon proposé à 5 NM de la cible (côté appareil, sinon à l'opposé des amis, sinon à l'ouest).
 private _ip = _s getOrDefault ["ip", []];
+// Complétion coupée : un IP proposé plus tôt (complétion active à ce moment-là) n'est pas gardé.
+if (!_autoOn && {_s getOrDefault ["ipAuto", false]}) then { _ip = []; _s set ["ip", []]; };
 private _auto = createHashMap;
-if (_hasT && {(_s getOrDefault ["ipAuto", true]) || {(count _ip) < 2}}) then {
+if (_autoOn && {_hasT} && {(_s getOrDefault ["ipAuto", true]) || {(count _ip) < 2}}) then {
     private _brg = switch (true) do {
         case (!isNull _air): { _tgt getDir _air };
         case (!isNull _frU): { (_tgt getDir _frU) + 180 };
@@ -84,12 +89,12 @@ private _o = if (_oi >= 0) then { _ords select _oi } else { [] };
 private _risk = if ((count _o) > 0) then { _o select 2 } else { selectMax ((_ords apply { _x select 2 }) + [0]) };
 if ((count _o) isEqualTo 0) then { _ordName = ""; };
 // Rien de choisi : le premier armement air-sol de la fiche de check-in (la distance de risque reste la plus grande).
-if (_ordName isEqualTo "" && {_ords isNotEqualTo []}) then { _ordName = (_ords select 0) select 0; };
+if (_autoOn && {_ordName isEqualTo ""} && {_ords isNotEqualTo []}) then { _ordName = (_ords select 0) select 0; };
 
 private _dc = _hasT && {(count _friend) > 0} && {_risk > 0} && {(_friend select 0) < _risk};
 
 // Ennemis connus près de la cible (ligne 5) et menaces à 5 km (remarques).
-if (_hasT) then {
+if (_autoOn && {_hasT}) then {
     private _known = { params ["_u"]; ((group player) knowsAbout _u) > 0.2 || {(player knowsAbout _u) > 0.2} };
     private _en = (_tgt nearEntities [["Man", "LandVehicle", "StaticWeapon", "Ship"], 150]) select { alive _x && {[_side, side group _x] call BIS_fnc_sideIsEnemy} && {[_x] call _known} };
     private _veh = _en select { !(_x isKindOf "Man") };
@@ -135,9 +140,9 @@ if (_hasT) then {
     _auto set ["jThreat", [(_tt select [0, 4]) joinString " · ", "AUCUNE MENACE SOL-AIR CONNUE"] select (_tt isEqualTo [])];
 };
 // FAH proposé : l'axe IP → cible, ± 20°.
-if (_hasT && {(count _ip) >= 2}) then { _auto set ["jFah", format ["%1 ± 20", [round (_ip getDir _tgt), 3] call CBA_fnc_formatNumber]]; };
+if (_autoOn && {_hasT} && {(count _ip) >= 2}) then { _auto set ["jFah", format ["%1 ± 20", [round (_ip getDir _tgt), 3] call CBA_fnc_formatNumber]]; };
 // Dégagement proposé : vers l'IP, à l'altitude actuelle de l'appareil (arrondie à 1000 ft, 500 ft pour un hélicoptère).
-if (_hasT && {(count _ip) >= 2}) then {
+if (_autoOn && {_hasT} && {(count _ip) >= 2}) then {
     private _alt = if (isNull _air) then { "" } else {
         private _ft = ((getPosASL _air) select 2) * 3.28084;
         if (_air isKindOf "Helicopter") then { ", BAS" } else { format [", %1 ft", (round (_ft / 1000) * 1000) max 10000] }
@@ -202,4 +207,5 @@ _h set ["risk", _risk];
 _h set ["ltl", _ltl];
 _h set ["missing", _missing joinString ", "];
 _h set ["auto", _auto];
+_h set ["autoOn", _autoOn];
 _h

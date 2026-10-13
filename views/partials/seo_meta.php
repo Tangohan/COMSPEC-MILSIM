@@ -12,7 +12,10 @@ declare(strict_types=1);
  * - $seo_robots : contenu de meta robots (défaut index,follow…).
  * - $seo_og_type : og:type (défaut website).
  * - $seo_json_ld : graphe(s) schema.org supplémentaires (array associatif ou liste de graphes).
- * - $seo_canonical : URL canonique forcée (sinon dérivée de la requête).
+ * - $seo_canonical : URL canonique forcée (sinon dérivée de la requête, sans paramètre de suivi ni de filtre).
+ *
+ * Pages publiques indexables : liens hreflang fr / en / x-default (?lang=…, voir App\Support\Seo).
+ * Chemins privés (Seo::PRIVATE_PREFIXES) : toujours noindex.
  *
  * Si $meta_description est vide, une phrase par défaut du portail est utilisée.
  */
@@ -23,12 +26,18 @@ $desc = isset($meta_description) && trim((string) $meta_description) !== ''
 $ogDesc = isset($og_description) && trim((string) $og_description) !== ''
     ? trim((string) $og_description)
     : $desc;
+// Les layouts passent le titre déjà échappé : on le remet en texte brut pour ne pas l'échapper deux fois.
 $ogTitle = isset($seo_og_title) && trim((string) $seo_og_title) !== ''
-    ? trim((string) $seo_og_title)
+    ? html_entity_decode(trim((string) $seo_og_title), ENT_QUOTES | ENT_HTML5, 'UTF-8')
     : 'Athena';
 $robots = isset($seo_robots) && trim((string) $seo_robots) !== ''
     ? trim((string) $seo_robots)
     : 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1';
+$seoPath = \App\Support\Seo::requestPath();
+if (\App\Support\Seo::isPrivatePath($seoPath)) {
+    $robots = 'noindex,nofollow';
+}
+$seoIndexable = !str_contains(strtolower($robots), 'noindex');
 $ogType = isset($seo_og_type) && trim((string) $seo_og_type) !== ''
     ? trim((string) $seo_og_type)
     : 'website';
@@ -38,12 +47,15 @@ $ogImageAlt = isset($og_image_alt) && trim((string) $og_image_alt) !== ''
 
 $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host = (string) ($_SERVER['HTTP_HOST'] ?? '');
-$requestUri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
-$canonicalUrl = isset($seo_canonical) && trim((string) $seo_canonical) !== ''
-    ? trim((string) $seo_canonical)
-    : ($host !== '' ? $scheme . '://' . $host . $requestUri : '');
-$canonicalUrl = preg_replace('/([?&])(utm_[^&]+|fbclid|gclid)=[^&]*/i', '$1', (string) $canonicalUrl) ?: $canonicalUrl;
-$canonicalUrl = rtrim((string) preg_replace('/[?&]+$/', '', (string) $canonicalUrl), '?');
+// Canonique sans paramètre de suivi, de filtre ni de langue ; la version d'une langue précise (?lang=en) pointe sur elle-même.
+$canonicalBase = isset($seo_canonical) && trim((string) $seo_canonical) !== ''
+    ? \App\Support\Seo::withoutLang(trim((string) $seo_canonical))
+    : \App\Support\Seo::canonicalUrl();
+$seoLangParam = \App\Services\I18n\LocaleService::fromQuery();
+$canonicalUrl = ($canonicalBase !== '' && $seoLangParam !== null)
+    ? \App\Support\Seo::withLang($canonicalBase, $seoLangParam)
+    : $canonicalBase;
+$seoAlternates = ($seoIndexable && $canonicalBase !== '') ? \App\Support\Seo::alternates($canonicalBase) : [];
 $siteUrl = rtrim((string) url(''), '/');
 if ($siteUrl === '' && $host !== '') {
     $siteUrl = $scheme . '://' . $host;
@@ -79,6 +91,10 @@ if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
     <link rel="canonical" href="<?= htmlspecialchars($canonicalUrl, ENT_QUOTES, 'UTF-8') ?>">
     <meta property="og:url" content="<?= htmlspecialchars($canonicalUrl, ENT_QUOTES, 'UTF-8') ?>">
 <?php endif; ?>
+<?php foreach ($seoAlternates as $hrefLang => $hrefUrl): ?>
+    <link rel="alternate" hreflang="<?= htmlspecialchars($hrefLang, ENT_QUOTES, 'UTF-8') ?>" href="<?= htmlspecialchars($hrefUrl, ENT_QUOTES, 'UTF-8') ?>">
+<?php endforeach; ?>
+    <meta property="og:locale:alternate" content="<?= $ogLocale === 'en_US' ? 'fr_FR' : 'en_US' ?>">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="<?= htmlspecialchars($ogTitle, ENT_QUOTES, 'UTF-8') ?>">
     <meta name="twitter:description" content="<?= htmlspecialchars($ogDesc, ENT_QUOTES, 'UTF-8') ?>">
@@ -94,6 +110,7 @@ if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
             '@type' => 'Organization',
             'name' => 'Athena Comspec',
             'url' => $siteUrl !== '' ? $siteUrl : '/',
+            'logo' => $siteUrl . '/assets/icons/athena-512.png',
         ],
     ], $jsonFlags) ?></script>
 <?php

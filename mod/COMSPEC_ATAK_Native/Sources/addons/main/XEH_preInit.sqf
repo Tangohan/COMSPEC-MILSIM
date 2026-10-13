@@ -21,9 +21,11 @@ diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 // range ces réglages en tête de la liste COMSPEC, au-dessus des sections « ATAK · … ». Titre bilingue, jamais traduit.
 // Le code reste en français, fn_tr traduit à l'affichage (dictionnaire i18n/en.txt) ; changer la langue redessine le
 // téléphone et retraduit les menus CBA COMSPEC (fn_menuRelang), sans relancer la mission.
+// Langues : Auto, Français, puis l'anglais et celles des mods de traduction chargés (CfgComspecLanguages, fn_langList).
+private _langs = [] call comspec_atak_native_fnc_langList;
 ["comspec_atak_native_language", "LIST",
-    ["Langue / Language", "Langue du mod COMSPEC : téléphone ATAK, menus CBA COMSPEC et SSE. Auto suit la langue du jeu (français si Arma est en français, anglais sinon). / COMSPEC mod language: ATAK phone, COMSPEC CBA menus and SSE. Auto follows the game language."],
-    ["COMSPEC", ""], [["auto", "fr", "en"], ["Auto (langue du jeu / game language)", "Français", "English"], 0], 0,
+    ["Langue / Language", "Langue du mod COMSPEC : téléphone ATAK, menus CBA COMSPEC et SSE. Auto suit la langue du jeu (français si Arma est en français, anglais sinon). D'autres langues apparaissent ici quand un mod de traduction COMSPEC est chargé. / COMSPEC mod language: ATAK phone, COMSPEC CBA menus and SSE. Auto follows the game language. More languages appear here when a COMSPEC translation mod is loaded."],
+    ["COMSPEC", ""], [["auto", "fr"] + (_langs apply { _x select 0 }), ["Auto (langue du jeu / game language)", "Français"] + (_langs apply { _x select 1 }), 0], 0,
     { [true] call comspec_atak_native_fnc_langApply; }] call CBA_fnc_addSetting;
 [] call comspec_atak_native_fnc_langApply;
 // Police du téléphone (par joueur), aussi dans le téléphone (Réglages > Affichage > Police). Réglage CBA, lisible dans
@@ -165,6 +167,38 @@ private _geo = ["COMSPEC", "ATAK · Géolocalisation (GEOLOC)"];
 ["comspec_atak_native_geoloc_warn", "CHECKBOX",
     ["Prévenir la cible", "La cible reçoit une alerte discrète « activité réseau anormale » quand elle est géolocalisée."],
     _geo, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_sim_sos", "CHECKBOX",
+    ["Mode secours de la carte SIM", "Batterie vide : le téléphone s'éteint mais sa carte SIM s'annonce encore aux relais. On peut le localiser par son numéro ou son IMEI (GÉOLOC de l'app GE, RECHERCHER de la carte), avec une précision qui dépend du nombre de relais qui l'entendent."],
+    _geo, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_sim_sos_own", "CHECKBOX",
+    ["Secours SIM : retrouver un allié", "Coché : on peut localiser le téléphone d'un allié en mode secours SIM, même si « Tracer son propre camp » est décoché."],
+    _geo, true, 1] call comspec_atak_native_fnc_addSetting;
+// IA ennemie qui ramasse les téléphones des joueurs et s'en sert pour les traquer (fn_captureServer, fn_compromise).
+private _cap = ["COMSPEC", "ATAK · Capture par l'ennemi"];
+["comspec_atak_native_capture_enabled", "CHECKBOX",
+    ["L'IA ennemie ramasse les ATAK", "Une IA ennemie proche d'un téléphone de joueur (corps, joueur à terre ou menotté, téléphone posé au sol) va le chercher et le prend. Tant que la compromission n'est pas validée, elle voit sur le BFT les joueurs dont la balise est active."],
+    _cap, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_capture_radius", "SLIDER",
+    ["Distance de ramassage (m)", "Une IA ennemie à moins de cette distance d'un téléphone va le chercher."],
+    _cap, [10, 500, 100, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_capture_crack", "SLIDER",
+    ["Forçage du code (s)", "Temps qu'il faut à l'IA pour déverrouiller un téléphone protégé par un code avant de s'en servir."],
+    _cap, [0, 900, 120, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_capture_hunt", "CHECKBOX",
+    ["Traque", "Coché : le groupe qui a le téléphone, et jusqu'à 3 groupes voisins, partent chercher et détruire le joueur le plus proche. Décoché : ils connaissent seulement les positions."],
+    _cap, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_capture_hunt_radius", "SLIDER",
+    ["Portée de la traque (m)", "Seuls les joueurs à moins de cette distance du téléphone volé sont révélés et traqués."],
+    _cap, [200, 10000, 3000, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_capture_share", "SLIDER",
+    ["Partage aux groupes voisins (m)", "Les groupes IA du même camp à moins de cette distance du téléphone volé reçoivent aussi les positions (0 = seulement le groupe qui l'a)."],
+    _cap, [0, 5000, 1500, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_capture_refresh", "SLIDER",
+    ["Rafraîchissement des positions (s)", "Intervalle entre deux lectures du BFT par le téléphone volé."],
+    _cap, [5, 300, 30, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_capture_validate", "LIST",
+    ["Qui valide une compromission", "Valider coupe le téléphone volé du réseau et demande à Athena de révoquer son certificat."],
+    _cap, [[0, 1], ["Chefs de groupe, propriétaire et Zeus", "Tout le camp"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_battery_sim", "CHECKBOX",
     ["Batterie simulée", "La batterie du téléphone se vide selon l'usage (écran, appareil photo, live cam, GPS, envois de données, recherche de réseau, brouilleur) et se recharge en véhicule moteur allumé. À 0 % le téléphone s'éteint et passe hors ligne dans le BFT."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
@@ -251,6 +285,10 @@ private _data = ["COMSPEC", "ATAK · Extraction de données"];
 if (isServer) then { ["comspec_atak_native_dataSrv", { _this call comspec_atak_native_fnc_dataServer; }] call CBA_fnc_addEventHandler; };
 // Passerelles de véhicule (fn_vehicleGateway) et messages courts du serveur vers des joueurs.
 if (isServer) then { ["comspec_atak_native_gwSrv", { _this call comspec_atak_native_fnc_vehicleGateway; }] call CBA_fnc_addEventHandler; };
+// Téléphones ramassés par l'IA ennemie : actions là où l'unité est locale, état au serveur, alertes aux clients.
+["comspec_atak_native_capLocal", { ["local", _this] call comspec_atak_native_fnc_captureServer; }] call CBA_fnc_addEventHandler;
+if (isServer) then { ["comspec_atak_native_captureSrv", { params [["_a", ""], ["_args", []]]; if (_a in ["dropped", "validate", "dismiss", "athena"]) then { [_a, _args] call comspec_atak_native_fnc_captureServer; }; }] call CBA_fnc_addEventHandler; };
+if (hasInterface) then { ["comspec_atak_native_compromise", { params [["_k", ""], ["_v", []]]; if (_k in ["revoke", "ownerReset"]) then { [_k, _v] call comspec_atak_native_fnc_compromise; } else { ["event", [_k, _v]] call comspec_atak_native_fnc_compromise; }; }] call CBA_fnc_addEventHandler; };
 if (hasInterface) then { ["comspec_atak_native_note", { params [["_t", ""]]; ["INFO", _t, 5, 40] call comspec_atak_native_fnc_notify; }] call CBA_fnc_addEventHandler; };
 
 // Données médicales affichées par l'ATAK : décocher masque la donnée (ou l'endroit) pour tous, sans choix possible (fn_medShow).

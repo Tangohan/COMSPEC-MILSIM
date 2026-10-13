@@ -148,7 +148,30 @@ final class LocaleService
 
     public function boot(): void
     {
+        // ?lang=fr|en (liens hreflang, partage) : impose la langue de la page et la garde pour la suite de la visite.
+        $fromQuery = self::fromQuery();
+        if ($fromQuery !== null) {
+            if ($this->readCookie() !== $fromQuery) {
+                $this->setUserLocale($fromQuery, false);
+            } else {
+                $this->apply($fromQuery);
+            }
+
+            return;
+        }
         $this->apply($this->resolve());
+    }
+
+    /** Langue demandée par le paramètre d'URL `lang` (null si absent ou non pris en charge). */
+    public static function fromQuery(): ?string
+    {
+        $raw = $_GET['lang'] ?? null;
+        if (!is_string($raw)) {
+            return null;
+        }
+        $raw = strtolower(trim($raw));
+
+        return in_array($raw, self::SUPPORTED, true) ? $raw : null;
     }
 
     private function readCookie(): ?string

@@ -338,6 +338,17 @@ final class AtakRealismApiController
             return Response::json(['ok' => false, 'error' => 'Terminal introuvable.'], 404);
         }
 
+        // Compromission validée (sur le terrain ou par le Zeus) : la clé du terminal n'est plus sûre,
+        // ses certificats encore valides sont révoqués (motif RFC 5280 keyCompromise).
+        $revoked = 0;
+        if ($state === 'compromised' && (int) ($terminal['id'] ?? 0) > 0) {
+            try {
+                $revoked = $this->realismRepository->revokeCertificatesForTerminal($tenantId, (int) $terminal['id'], 'keyCompromise');
+            } catch (\Throwable) {
+                $revoked = 0;
+            }
+        }
+
         try {
             $activity = new \App\Services\Tactical\AtakActivityLogService();
             $mapId = max(1, (int) ($body['map_id'] ?? $request->input('map_id', 1)));
@@ -346,6 +357,9 @@ final class AtakRealismApiController
                 'compromised' => 'Appareil compromis — données illisibles',
                 default => 'Contrôle appareil rétabli',
             };
+            if ($revoked > 0) {
+                $label .= ' · certificat révoqué';
+            }
             $activity->record(
                 $tenantId,
                 $mapId,
@@ -355,13 +369,14 @@ final class AtakRealismApiController
                 [
                     'terminal_uid' => $terminalUid,
                     'compromise_state' => $state,
+                    'certificates_revoked' => $revoked,
                     'source' => $this->isGameClient() ? 'game' : 'web',
                 ]
             );
         } catch (\Throwable) {
         }
 
-        return Response::json(['ok' => true, 'terminal' => $terminal]);
+        return Response::json(['ok' => true, 'terminal' => $terminal, 'certificates_revoked' => $revoked]);
     }
 
     public function regenerateCertificate(Request $request, array $params = []): Response

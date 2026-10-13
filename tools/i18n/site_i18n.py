@@ -199,7 +199,9 @@ def js_unescape(s):
     return re.sub(r"\\(.)", lambda m: {"n": "\n", "t": " "}.get(m.group(1), m.group(1)), s)
 
 
-def js_segments(code):
+def js_segments(code, french_only=True):
+    # french_only=False (bundle) : garde aussi les textes courts sans indice de français (« Retour », « Barre de
+    # navigation ») ; le bundle ne retient de toute façon que les textes présents dans le dictionnaire.
     raw = set()
     for m in JS_CONCAT.finditer(code):
         n = 0
@@ -226,26 +228,26 @@ def js_segments(code):
     for s in raw:
         for chunk in TAG.split(s):
             for seg in segments_from_text(chunk):
-                if len(seg) >= 4 and FRENCH_HINT.search(seg) and not JS_CODE.search(seg) \
+                if len(seg) >= 4 and (not french_only or FRENCH_HINT.search(seg)) and not JS_CODE.search(seg) \
                         and not re.search(r"\w%\d|%\d\w", seg):
                     out.add(seg)
     return out
 
 
-def js_found():
+def js_found(french_only=True):
     found = {}
     for base, _dirs, files in os.walk(JS_DIR):
         for name in files:
             path = os.path.join(base, name)
             if not name.endswith(".js") or ".min." in name or path == JS_BUNDLE or "vendor" in path:
                 continue
-            for seg in js_segments(open(path, encoding="utf-8", errors="replace").read()):
+            for seg in js_segments(open(path, encoding="utf-8", errors="replace").read(), french_only):
                 found.setdefault(seg, os.path.relpath(path, ROOT))
     for path in view_files([]):
         src = open(path, encoding="utf-8", errors="replace").read()
         for m in re.finditer(r"<script\b(?![^>]*\bsrc=)[^>]*>(.*?)</script>", src, re.S):
             code = re.sub(r"<\?(?:php|=).*?\?>", "0", m.group(1), flags=re.S)
-            for seg in js_segments(code):
+            for seg in js_segments(code, french_only):
                 found.setdefault(seg, os.path.relpath(path, ROOT))
     return found
 
@@ -255,7 +257,7 @@ def write_js_bundle():
     d = load_dict()
     exact = {}
     tpl = []
-    for s in sorted(js_found()):
+    for s in sorted(js_found(french_only=False)):
         en = d.get(s)
         if not en:
             continue

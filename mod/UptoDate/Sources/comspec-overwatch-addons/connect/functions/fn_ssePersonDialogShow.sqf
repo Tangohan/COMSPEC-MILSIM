@@ -37,7 +37,8 @@ if (!_resume) then {
     if (!isNull _target) then {
         // Cliché déjà pris sur ce sujet (SEEK ou app SSE de l'ATAK) : il partira avec la fiche.
         private _priorStem = _target getVariable ["comspec_sse_facePhotoStem", ""];
-        if (_priorStem isEqualType "" && {_priorStem isNotEqualTo ""}) then {
+        // Un cliché déjà joint à la fiche (fn_sseUploadFacePhoto) ne repart pas à chaque réouverture.
+        if (_priorStem isEqualType "" && {_priorStem isNotEqualTo ""} && {_priorStem isNotEqualTo (_target getVariable ["comspec_sse_facePhotoSentStem", ""])}) then {
             uiNamespace setVariable ["COMSPEC_SsePerson_PhotoPending", true];
             uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", _priorStem];
             private _meta = _target getVariable ["comspec_sse_facePhotoMeta", []];
