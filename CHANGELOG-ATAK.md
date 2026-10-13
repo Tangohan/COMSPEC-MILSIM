@@ -109,6 +109,26 @@ Une seule version pour 7 PR regroupées (#782, #783, #785, #786, #787, #788, #78
 - Demande de TTRD (13/10) : inverser gauche / droite à la souris en mode selfie.
 - Réglages CBA client (non forcés par le serveur) comspec_atak_native_selfie_invert_x / _y, lus dans fn_photoMode "MOUSE" (branche selfie uniquement ; le zoom de l'objectif arrière et le glisser de l'app Photo ne changent pas). Traductions ajoutées à en.txt.
 - Non testé en jeu.
+## App Groupe : nouvelle interface (ATAK natif 1.94.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : L'app Groupe a une nouvelle interface, plus claire et plus compacte
+- MON GROUPE : la fiche du groupe en haut, un bandeau aptes / blessés / hors de combat, puis la liste des membres (le chef d'abord). Les réglages du chef (nom, type, groupe fermé) sont rangés dans une section repliable.
+- Renommer et changer de type se font sur une seule ligne, avec le bouton à côté du champ.
+- ÉQUIPES : votre équipe et votre rôle en un coup d'œil, et les sections Mon rôle et Placer un membre se replient. Les boutons de modification d'une équipe ne sont plus coupés en mini.
+- GROUPES : les groupes fermés sont signalés, et un écran clair s'affiche quand il n'y en a aucun. Tout est traduit en anglais.
+EN : The Group app has a new, clearer and more compact interface
+- MY GROUP: the group card on top, a fit / wounded / out of action strip, then the member list (leader first). The leader's settings (name, type, closed group) sit in a collapsible section.
+- Renaming and changing the type happen on a single line, with the button next to the field.
+- TEAMS: your team and role at a glance, and the My role and Assign a member sections collapse. A team's edit buttons are no longer cut off in mini mode.
+- GROUPS: closed groups are flagged, and a clear screen shows when there are none. Everything is translated into English.
+
+### Détail technique
+- fn_pageGroup réécrit : hero (symbole OTAN, nom, type, effectif, équipes, chef, accès), strip de bilan (respecte medShow allies), membres triés chef > moi > distance, fold « perso » (clés COMSPEC_ATAK_State grpFold_<clé>, fn_groupAction "fold"), QUITTER désactivé si seul, onglet GROUPES avec état vide.
+- fn_ftRows : strip « VOUS », folds « role » et « place », grille de rôles 4 par rangée en mini portrait et 6 sinon (infobulle = libellé complet), boutons d'édition d'équipe sur deux rangées, APPLIQUER MON RÔLE remplacé par le bouton PRENDRE de la liste complète.
+- fn_formRender : nouvelle ligne `field` (champ + bouton sur la même ligne) et 6e paramètre facultatif de `combo` ([libellé, code] : bouton intégré, code appelé avec la donnée choisie). Pas d'application au simple choix : la molette sur une liste fermée en change la ligne.
+- 46 textes ajoutés à i18n/en.txt. Aucune nouvelle fonction de jeu. Non testé en jeu.
 
 ## Drone : bouton TEST VIDÉO pour l'image noire du téléphone (ATAK natif 1.90.0)
 
