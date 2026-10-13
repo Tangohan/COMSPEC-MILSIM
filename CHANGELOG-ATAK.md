@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Pylônes relais 3D destructibles (ATAK natif 1.62.0)
+## Pylônes relais 3D destructibles (ATAK natif 1.63.0)
 
 Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : de vrais pylônes radio en 3D, hauts, variés et destructibles.
 - Trois modèles dans Eden et Zeus (Structures > Relais ATAK) : pylône treillis 30 m anthracite à panneaux et RRU, tour triangulaire galvanisée 40 m à tête à bras, faisceaux hertziens et fouets, pylône élancé 50 m à paliers, échelle et feu de balisage rouge. Massifs béton, armoire technique et passerelle de câbles au pied. LOD visuelles 1 / 4 / 12 / 30, ombre, géométrie et géométrie de tir.
@@ -20,6 +20,14 @@ Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : de vrais pylônes
 - Module « ATAK · Relais », type Tour fixe sans objet synchronisé : crée la tour 3D de 40 m (hauteur d'antenne réelle du pylône si la hauteur est laissée au type).
 - Nouveau PBO `@COMSPEC_ATAK_Native/addons/towers.pbo` (modèles MLOD trop lourds pour main.pbo) : le copier avec main.pbo. `build_mod.bat` le construit.
 - Outils : `tools/gen_tower_textures.py` (textures raccordables) et `tools/model_relay_towers.py` (modèles, ruines, aperçus).
+
+## Intro au démarrage : plus de conflit avec le menu, nouveau son (ATAK natif 1.62.0)
+
+- L'intro ne pose plus de fond noir plein écran : l'écran de démarrage d'Arma ou d'un pack d'unité reste visible. La marque COMSPEC apparaît en bas à droite avec un trait de balayage, en animations moteur (plus rien ne reste figé à l'écran pendant le chargement).
+- Le menu principal n'est plus jamais recouvert (l'ancienne version y rejouait l'intro sur fond noir, par-dessus le menu et la fenêtre « service Athéna »).
+- Nouveau son : carillon synthétique court (1,6 s), volume bas, coupé par une touche ou un clic. Réglage CBA **COMSPEC > ATAK · Intro > Son d'intro au démarrage** pour le désactiver (pris en compte au lancement suivant).
+- Marque des écrans de chargement : textes affichés même quand les fonctions ne sont pas encore compilées.
+
 ## Musique : l'onglet ATHENA ne reste plus bloqué sur « Chargement » (ATAK natif 1.61.0)
 
 Non testé en jeu. Pas de DLL à recompiler. Signalé par TTRD : onglet ATHENA, playlist globale, « Chargement depuis Athena… » sans fin et boutons grisés.
