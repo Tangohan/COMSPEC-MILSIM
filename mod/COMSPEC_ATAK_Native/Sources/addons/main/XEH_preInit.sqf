@@ -15,6 +15,12 @@ diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
     { [true] call comspec_atak_native_fnc_langApply; }] call CBA_fnc_addSetting;
 [] call comspec_atak_native_fnc_langApply;
 
+// Son d'intro au démarrage du jeu (fn_introSplash). Recopié dans le profil : l'intro joue avant que CBA lise ses réglages.
+["comspec_atak_native_intro_sound", "CHECKBOX",
+    ["Son d'intro au démarrage", "Carillon court joué avec la marque COMSPEC sur l'écran de démarrage d'Arma. Pris en compte au prochain lancement du jeu."],
+    ["COMSPEC", "ATAK · Intro"], true, 0,
+    { profileNamespace setVariable ["COMSPEC_ATAK_IntroSound", _this]; saveProfileNamespace; }] call comspec_atak_native_fnc_addSetting;
+
 // Réglages serveur (forçables par l'admin dans les réglages CBA du serveur / de la mission).
 // Tous les mods COMSPEC partagent une seule catégorie CBA « COMSPEC » ; sous-catégories « ATAK · … », « Overwatch · … », « SSE ».
 private _cat = ["COMSPEC", "ATAK · Accès au téléphone"];

@@ -11,6 +11,13 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Intro au démarrage : plus de conflit avec le menu, nouveau son (ATAK natif 1.60.0)
+
+- L'intro ne pose plus de fond noir plein écran : l'écran de démarrage d'Arma ou d'un pack d'unité reste visible. La marque COMSPEC apparaît en bas à droite avec un trait de balayage, en animations moteur (plus rien ne reste figé à l'écran pendant le chargement).
+- Le menu principal n'est plus jamais recouvert (l'ancienne version y rejouait l'intro sur fond noir, par-dessus le menu et la fenêtre « service Athéna »).
+- Nouveau son : carillon synthétique court (1,6 s), volume bas, coupé par une touche ou un clic. Réglage CBA **COMSPEC > ATAK · Intro > Son d'intro au démarrage** pour le désactiver (pris en compte au lancement suivant).
+- Marque des écrans de chargement : textes affichés même quand les fonctions ne sont pas encore compilées.
+
 ## Musique : les morceaux mis en ligne sur le site apparaissent sans redémarrer (ATAK natif 1.59.0)
 
 Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : un morceau envoyé sur le site doit être visible et lisible en jeu sans redémarrer.
