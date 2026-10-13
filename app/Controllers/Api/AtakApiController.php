@@ -2540,6 +2540,27 @@ class AtakApiController
             ], 503);
         }
 
+        // Signalement joueur (Échap > Signaler un problème) : e-mail à l'exploitation, jamais bloquant.
+        if ($result['created'] && str_starts_with(strtolower($source), 'player')) {
+            try {
+                (new \App\Services\Monitoring\AtakModReportMailer($this->modReports()))->notify([
+                    'id' => $result['id'],
+                    'channel' => $channel,
+                    'message' => $message,
+                    'detail' => $detail,
+                    'source' => $source,
+                    'steam_uid' => $steam,
+                    'player_name' => $playerName,
+                    'callsign' => $callsign,
+                    'client_ip' => $ip,
+                    'mod_version' => $modVersion,
+                    'extension_version' => $extVersion,
+                    'arma_build' => $armaBuild,
+                ]);
+            } catch (\Throwable) {
+            }
+        }
+
         return Response::json([
             'ok' => true,
             'created' => $result['created'],

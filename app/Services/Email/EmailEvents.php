@@ -134,6 +134,9 @@ final class EmailEvents
     /** Annonce plateforme diffusée par e-mail aux membres. */
     public const PLATFORM_ALERT_BROADCAST = 'PLATFORM_ALERT_BROADCAST';
 
+    /** Signalement joueur envoyé depuis le mod (Échap > Signaler un problème) — alerte à l'exploitation. */
+    public const ATAK_MOD_PLAYER_REPORT = 'ATAK_MOD_PLAYER_REPORT';
+
     /** Nouvelle communauté créée — alerte à la boîte technique des incidents. */
     public const PLATFORM_NEW_COMMUNITY = 'PLATFORM_NEW_COMMUNITY';
 
