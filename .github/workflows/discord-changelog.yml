@@ -1,7 +1,8 @@
 name: Discord changelog
 
 # Annonce sur Discord chaque mise à jour livrée (PR fusionnée sur main ou release
-# publiée), sans lien GitHub. Le webhook est le secret DISCORD_RELEASES_WEBHOOK.
+# publiée), sans lien GitHub. La carte reprend seulement le « Résumé joueur »
+# de la version dans CHANGELOG-ATAK.md (règle en tête de ce fichier). Le webhook est le secret DISCORD_RELEASES_WEBHOOK.
 # Pour ne pas annoncer une PR : label « discord:skip » ou « [skip discord] » dans le titre.
 
 on:
@@ -21,7 +22,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: .github/scripts
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+          sparse-checkout: |
+            .github/scripts
+            CHANGELOG-ATAK.md
+          sparse-checkout-cone-mode: false
       - name: Post to Discord
         env:
           DISCORD_RELEASES_WEBHOOK: ${{ secrets.DISCORD_RELEASES_WEBHOOK }}
