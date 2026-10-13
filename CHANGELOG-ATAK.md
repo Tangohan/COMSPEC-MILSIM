@@ -56,6 +56,7 @@ EN : Black drone camera and photo viewfinder: a clear reason, and a backup drone
 - Nouveau `fn_pipCheck` (dossier camera) : `check` (PiP coupée → raison affichée sous NO DATA + notification + RPT ; distance de vue PiP < 300 m remontée), `watch` (RPT `[CAMERA]` étapes 1 à 5 : PiP, caméra et hauteur au-dessus du terrain, cible de rendu, texture, image ; `getVideoOptions` ; relevé à 2 s) et `rebind` (texture reposée sur l'image une image, deux images et 0,6 s après la création de la caméra).
 - Drone : noms de cible de rendu par qualité (`comspec_dronecam<q>_<n>`), plus jamais un même nom avec une autre taille de texture ; `feedWatch` appelé par la page ; `direct` / `directEnd` : caméra plein écran sans r2t attachée au drone, pose recopiée par la boucle de la nacelle (`COMSPEC_ATAK_DroneShotCam`), téléphone rangé, Échap (KeyDown du display 46) rouvre l'app Drone ; coupée si joueur mort, drone perdu, liaison perdue ou téléphone ouvert.
 - Photo : même contrôle et même journal à l'ouverture du viseur.
+- Live cam, caméra Tinder et vue aérienne du JPC : même contrôle PiP (journal RPT et notification au lieu d'une image noire).
 
 ## Menu Échap et Dépannage liaison refondus (ATAK natif 1.77.0)
 
