@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Nouvelle police du téléphone, au choix (ATAK natif 1.82.0)
+## Nouvelle police du téléphone, au choix (ATAK natif 1.83.0)
 
 ### Résumé joueur
 Type : nouveauté
@@ -62,6 +62,21 @@ Non testé en jeu. Demandes de TTRD : « T'as pas du tout changé les font », �
 À tester en jeu
 - Premier point : le texte du téléphone s'affiche bien en Barlow Condensed (format de police généré sans l'outil de Bohemia). Si le texte est illisible ou absent : Échap > Options > Options des addons > COMSPEC > Police du téléphone > Roboto Condensed remet la police du jeu.
 - Les 6 polices, en mode mini (portrait, paysage) et plein écran ; aucun libellé qui déborde (BFT, Alertes, Réglages, Drone, CFF, tuiles du lanceur) ; textes de la carte.
+
+## Gouttes de pluie sur l'écran désactivées (ATAK natif 1.82.0)
+
+### Résumé joueur
+Type : patch
+FR : Plus de gouttes de pluie sur l'écran du téléphone pour le moment
+- Sous la pluie, l'écran du téléphone ne se couvre plus de petites bulles.
+- L'effet revient plus tard, refait avec des gouttes qui glissent.
+EN : No more raindrops on the phone screen for now
+- In the rain, the phone screen no longer gets covered in small bubbles.
+- The effect will come back later, redone with sliding drops.
+
+### Détail technique
+- Demande de TTRD : effet de pluie mis de côté (W.I.P). fn_screenSurface ne dessine plus aucune goutte ; la saleté, le sang, les traces de doigts et le nettoyage sont inchangés. La refonte animée reste en brouillon (PR #728).
+- À vérifier en jeu : sous la pluie, téléphone sorti, plus aucune goutte ; poussière et traces toujours visibles.
 
 ## Grande mise à jour regroupée : téléphone, vidéo par relais, Athena (ATAK natif 1.81.0, COMSPEC Link 2.0.82, site)
 
