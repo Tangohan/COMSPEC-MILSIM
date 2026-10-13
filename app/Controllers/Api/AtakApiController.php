@@ -12326,6 +12326,12 @@ class AtakApiController
         $status = 200;
         try {
             if ($this->resolveTenantId($request) === null) {
+                // Pas connecté (lien Discord, navigateur intégré) : connexion, puis retour sur ce cliché.
+                if (!\App\Core\Session::get('user_id') && $id > 0) {
+                    \App\Support\LoginIntendedDestination::rememberFromRequest($request);
+
+                    return Response::redirect(url('login'))->header('Cache-Control', 'no-store, private, max-age=0');
+                }
                 $data['error'] = 'tenant';
                 $status = 403;
             } else {

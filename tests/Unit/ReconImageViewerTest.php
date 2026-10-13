@@ -53,6 +53,37 @@ final class ReconImageViewerTest extends TestCase
         self::assertNull($this->request([])->header('Sec-Fetch-Dest'));
     }
 
+    /** @param array<string, string> $headers */
+    private function linkId(string $uri, array $headers, string $method = 'GET'): ?int
+    {
+        $_SERVER = ['REQUEST_METHOD' => $method, 'REQUEST_URI' => $uri] + $headers;
+        $request = new Request();
+
+        return \App\Middleware\ComspecTacticalApiMiddleware::reconImageBrowserLinkId($request, $request->path());
+    }
+
+    public function testKeylessBrowserLinkGoesToViewerInsteadOfKeyError(): void
+    {
+        $doc = ['HTTP_SEC_FETCH_DEST' => 'document'];
+        self::assertSame(98, $this->linkId('/api/recon/images/98/file', $doc));
+        self::assertSame(98, $this->linkId('/api/recon/images/98/file?raw=1', $doc));
+        self::assertSame(98, $this->linkId('/api/recon/images/98', $doc));
+        // Navigateur intégré sans Sec-Fetch-Dest : Accept HTML n'importe où dans la liste.
+        self::assertSame(98, $this->linkId('/api/recon/images/98/file', ['HTTP_ACCEPT' => 'application/xhtml+xml,text/html;q=0.9']));
+        // <img>, fetch, jeu, POST et autres routes : le 401 de la clé reste.
+        self::assertNull($this->linkId('/api/recon/images/98/file', ['HTTP_SEC_FETCH_DEST' => 'image', 'HTTP_ACCEPT' => 'text/html']));
+        self::assertNull($this->linkId('/api/recon/images/98/file', []));
+        self::assertNull($this->linkId('/api/recon/images/98/file', $doc, 'POST'));
+        self::assertNull($this->linkId('/api/recon/images/98/ops', $doc));
+        self::assertNull($this->linkId('/api/recon/images', $doc));
+        self::assertNull($this->linkId('/api/recon/images/known', $doc));
+
+        $mw = $this->read('app/Middleware/ComspecTacticalApiMiddleware.php');
+        self::assertStringContainsString("Response::redirect(url('recon/images/' . \$reconId))", $mw);
+        // Lecteur sans session : connexion puis retour sur le cliché.
+        self::assertMatchesRegularExpression('/function reconImagesViewer[\s\S]*?LoginIntendedDestination::rememberFromRequest\(\$request\)[\s\S]*?redirect\(url\(\'login\'\)\)/', $this->read('app/Controllers/Api/AtakApiController.php'));
+    }
+
     public function testRoutesAndControllerRules(): void
     {
         $routes = $this->read('routes/web.php');
