@@ -51,6 +51,7 @@ $tabs = [
 if ($isOrgManager || $isPlatformAdmin) {
     $tabs['moderation'] = ['Modération', 'Morceaux masqués'];
 }
+$tabIcons = ['global' => '★', 'community' => '◎', 'org' => '⌂', 'playlists' => '≡', 'mine' => '↑', 'moderation' => '⚑'];
 $titles = [
     'community' => ['Bibliothèque communautaire', 'Morceaux partagés avec toute la plateforme.'],
     'org' => ['Bibliothèque de mon organisation', 'Morceaux réservés aux membres de votre organisation.'],
@@ -62,7 +63,8 @@ $titles = [
 
   <nav class="msc-tabs" aria-label="Bibliothèque musicale">
     <?php foreach ($tabs as $k => [$label, $sub]) : ?>
-      <a class="msc-tab<?= $view === $k ? ' is-active' : '' ?>" href="<?= $h($base . '?vue=' . $k) ?>">
+      <a class="msc-tab<?= $view === $k ? ' is-active' : '' ?>" href="<?= $h($base . '?vue=' . $k) ?>"<?= $view === $k ? ' aria-current="page"' : '' ?>>
+        <span class="msc-tab__icon" aria-hidden="true"><?= $h($tabIcons[$k] ?? '♪') ?></span>
         <span class="msc-tab__label"><?= $h($label) ?></span>
         <?php if ($sub !== '') : ?><span class="msc-tab__sub"><?= $h($sub) ?></span><?php endif; ?>
       </a>
@@ -72,7 +74,7 @@ $titles = [
   <details class="msc-upload ath-form"<?= $view === 'mine' && $tracks === [] ? ' open' : '' ?>>
     <summary class="msc-upload__summary">
       <span class="msc-upload__plus" aria-hidden="true">+</span>
-      <span><strong>Mettre un morceau en ligne</strong> <span class="msc-muted">MP3, M4A, AAC ou WAV, <?= $h($mb((int) ($maxBytes ?? 0))) ?> maximum. Écoutable sur le site et en jeu.</span></span>
+      <span><strong>Mettre un morceau en ligne</strong> <span class="msc-muted">écoutable sur le site et en jeu</span></span>
     </summary>
     <form method="post" action="<?= $h($base . '/envoyer') ?>" enctype="multipart/form-data" class="msc-upload__form" data-music-upload>
       <?= $csrf ?>
@@ -80,7 +82,9 @@ $titles = [
       <input type="hidden" name="duration" value="0" data-music-duration>
       <label class="msc-drop" data-music-drop>
         <input type="file" name="audio" accept=".mp3,.m4a,.aac,.wav,audio/mpeg,audio/mp4,audio/aac,audio/wav" required data-music-file>
+        <span class="msc-drop__icon" aria-hidden="true">♫</span>
         <span class="msc-drop__text" data-music-drop-text>Déposez un fichier audio ici ou cliquez pour choisir</span>
+        <span class="msc-drop__hint">MP3, M4A, AAC ou WAV · <?= $h($mb((int) ($maxBytes ?? 0))) ?> maximum</span>
       </label>
       <div class="ath-form__grid">
         <label class="ath-field"><span class="ath-field__label">Titre</span><input class="ath-field__input" name="title" maxlength="160" placeholder="Repris du nom du fichier si vide" data-music-title></label>
@@ -249,7 +253,7 @@ $titles = [
               <div class="msc-track__actions">
                 <?php if ($editablePlaylists !== [] && !$hidden) : ?>
                   <details class="msc-pop">
-                    <summary class="ath-btn">+ Playlist</summary>
+                    <summary class="ath-btn" title="Ajouter à une playlist">+ Playlist</summary>
                     <div class="msc-pop__panel">
                       <?php foreach ($editablePlaylists as $p) : ?>
                         <?php if (($p['visibility'] ?? '') === 'global' && ($t['scope'] ?? '') !== 'community') {

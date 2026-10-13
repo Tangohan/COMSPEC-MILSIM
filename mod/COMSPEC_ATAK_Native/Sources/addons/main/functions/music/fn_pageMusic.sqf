@@ -67,6 +67,8 @@ switch (_tab) do {
             _rows pushBack ["text", "<t color='#f2ab33'>Bibliothèque Athena désactivée sur ce serveur.</t>"];
         };
         (_ath getOrDefault [_view, [[], "", "", false]]) params ["_items", "_at", "_err", "_busy"];
+        // Un chargement perdu (fin de mission, DLL muette) ne bloque plus l'onglet : voir fn_musicAthena.
+        _busy = ["busy", _view] call comspec_atak_native_fnc_musicAthena;
         if (_view isEqualTo "playlists") then {
             _rows pushBack ["section", "Playlists", format ["%1 playlist(s)%2", count _items, ["", format [" · synchro %1", _at]] select (_at isNotEqualTo "")]];
             _rows pushBack ["buttons", [["ACTUALISER", ["athReload"] call _act, false, !_busy]]];

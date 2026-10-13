@@ -41,7 +41,7 @@ switch (_mode) do {
             _phone setVariable ["COMSPEC_ATAK_Jpc", true, true];
             _phone setObjectTextureGlobal [1, "#(argb,8,8,3)color(0.02,0.03,0.03,1)"];
             (missionNamespace getVariable ["COMSPEC_ATAK_SelfiePhoneAttach",
-                ["righthand", [0.013, -0.05, -0.066], [0.941, -0.134, 0.311], [0.293, 0.782, -0.55]]]) params ["_bone", "_off", "_vd", "_vu"];
+                ["righthand", [0.054, 0.064, 0.001], [-0.311, 0.261, -0.914], [0.706, -0.58, -0.406]]]) params ["_bone", "_off", "_vd", "_vu"];
             _phone attachTo [_unit, _off, _bone, true];
             _phone setVectorDirAndUp [_vd, _vu];
             missionNamespace setVariable ["COMSPEC_ATAK_SelfiePhone", _phone];

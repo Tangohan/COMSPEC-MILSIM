@@ -1,10 +1,12 @@
 /*
     Doigt d'honneur (geste GestureComspecFinger, anim/comspec_finger.rtm) : bras gauche levé, dos de la main
     vers la cible, majeur tendu, deux coups secs, ~2,4 s. Main gauche libre : marche aussi fusil en main.
-    Touche CBA « Doigt d'honneur » (COMSPEC ATAK, non attribuée par défaut) et action ACE perso (Gestes).
+    Touche CBA « Doigt d'honneur » (COMSPEC ATAK, non attribuée par défaut), seulement si le réglage
+    comspec_atak_native_gesture_finger est coché (désactivé par défaut).
     Params : [unité (défaut player)] ; renvoie true si le geste est joué.
 */
 params [["_unit", player]];
+if !(missionNamespace getVariable ["comspec_atak_native_gesture_finger", false]) exitWith { false };
 if (!local _unit || {!alive _unit}) exitWith { false };
 if (vehicle _unit isNotEqualTo _unit) exitWith { false };
 if (_unit getVariable ["ACE_isUnconscious", false]) exitWith { false };

@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Pylônes relais 3D destructibles (ATAK natif 1.60.0)
+## Pylônes relais 3D destructibles (ATAK natif 1.62.0)
 
 Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : de vrais pylônes radio en 3D, hauts, variés et destructibles.
 - Trois modèles dans Eden et Zeus (Structures > Relais ATAK) : pylône treillis 30 m anthracite à panneaux et RRU, tour triangulaire galvanisée 40 m à tête à bras, faisceaux hertziens et fouets, pylône élancé 50 m à paliers, échelle et feu de balisage rouge. Massifs béton, armoire technique et passerelle de câbles au pied. LOD visuelles 1 / 4 / 12 / 30, ombre, géométrie et géométrie de tir.
@@ -20,6 +20,25 @@ Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : de vrais pylônes
 - Module « ATAK · Relais », type Tour fixe sans objet synchronisé : crée la tour 3D de 40 m (hauteur d'antenne réelle du pylône si la hauteur est laissée au type).
 - Nouveau PBO `@COMSPEC_ATAK_Native/addons/towers.pbo` (modèles MLOD trop lourds pour main.pbo) : le copier avec main.pbo. `build_mod.bat` le construit.
 - Outils : `tools/gen_tower_textures.py` (textures raccordables) et `tools/model_relay_towers.py` (modèles, ruines, aperçus).
+## Musique : l'onglet ATHENA ne reste plus bloqué sur « Chargement » (ATAK natif 1.61.0)
+
+Non testé en jeu. Pas de DLL à recompiler. Signalé par TTRD : onglet ATHENA, playlist globale, « Chargement depuis Athena… » sans fin et boutons grisés.
+- Cause : l'état « chargement en cours » est gardé dans uiNamespace, qui survit à la fin de mission, alors que le script qui attendait la réponse d'Athena est arrêté. Revenu en jeu, l'onglet attendait une réponse qui ne viendrait jamais.
+- Un chargement de plus de 35 s est maintenant considéré comme perdu : un garde-fou affiche « Athena n'a pas répondu à temps », ACTUALISER redevient actif et la vue se recharge seule 20 s après une erreur. La liste déjà reçue reste affichée pendant un nouveau chargement ; une réponse arrivée trop tard est ignorée.
+- Messages plus justes : une erreur 503 d'Athena (surcharge, maintenance) n'est plus présentée comme « migrations à lancer ».
+
+---
+
+## Gestes : doigt d'honneur corrigé, désactivé par défaut (ATAK natif 1.60.0)
+
+### Modifié
+- **Main du doigt d'honneur** : l'orientation de la paume était inversée (les doigts se repliaient vers le dos de la main). Toutes les poses du doigt d'honneur, du doigt d'honneur libre et du selfie sont régénérées par `tools/gen_gestures.py`, et la position du téléphone dans la main au selfie est recalculée.
+- **Réglage d'addon « Gestes doigt d'honneur »** (COMSPEC · ATAK · Gestes), **désactivé par défaut** : tant qu'il n'est pas coché, les touches « Doigt d'honneur » et « Doigt d'honneur libre (maintenir) » ne font rien.
+
+### Retiré
+- Les actions ACE perso « Doigt d'honneur » et « Doigt d'honneur libre (6 s) ».
+
+---
 
 ## Musique : les morceaux mis en ligne sur le site apparaissent sans redémarrer (ATAK natif 1.59.0)
 

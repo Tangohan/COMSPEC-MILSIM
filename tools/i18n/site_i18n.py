@@ -9,6 +9,8 @@ dictionnaire lang/en/site_auto.php : ['texte français' => 'English text', ...].
 
   python3 tools/i18n/site_i18n.py extract [dossier de views ...]   textes sans traduction -> tools/i18n/site_missing.tsv
   python3 tools/i18n/site_i18n.py extract-app                     textes du code PHP (app/) -> tools/i18n/site_missing.tsv
+  python3 tools/i18n/site_i18n.py extract-js                      textes des scripts (assets/js, <script> des vues) -> site_missing.tsv
+  python3 tools/i18n/site_i18n.py js-bundle                       régénère public/assets/js/i18n_en_dict.js (à relancer après merge)
   python3 tools/i18n/site_i18n.py merge fichier.tsv                ajoute les lignes « français<TAB>anglais »
   python3 tools/i18n/site_i18n.py stats
 
@@ -182,6 +184,92 @@ def app_segments():
     return found
 
 
+# JavaScript des pages : textes posés par les scripts, traduits dans le navigateur par public/assets/js/i18n_dom.js
+# avec le sous-dictionnaire public/assets/js/i18n_en_dict.js (« 'Texte ' + x + ' fin' » et `Texte ${x}` -> %1).
+JS_DIR = os.path.join(ROOT, "public", "assets", "js")
+JS_BUNDLE = os.path.join(JS_DIR, "i18n_en_dict.js")
+JS_STR = r"'(?:[^'\\\n]|\\.)*'" + "|" + r'"(?:[^"\\\n]|\\.)*"'
+JS_TOK = re.compile(r"""'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)"|`((?:[^`\\]|\\.)*)`""")
+JS_CONCAT = re.compile(r"(?:(?:" + JS_STR + r")\s*\+\s*[^;'\"\n+]{1,60}?\s*\+\s*)+(?:" + JS_STR + r")")
+JS_CODE = re.compile(r"[{};]|=>|\bfunction\b|\$\(|document\.|querySelector")
+
+
+def js_unescape(s):
+    s = re.sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)), s)
+    return re.sub(r"\\(.)", lambda m: {"n": "\n", "t": " "}.get(m.group(1), m.group(1)), s)
+
+
+def js_segments(code):
+    raw = set()
+    for m in JS_CONCAT.finditer(code):
+        n = 0
+        buf = ""
+        for part in re.split(r"\s*\+\s*", m.group(0)):
+            part = part.strip()
+            if len(part) >= 2 and part[0] in "'\"" and part[-1] == part[0]:
+                buf += js_unescape(part[1:-1])
+            else:
+                n += 1
+                buf += f"%{n}"
+        raw.add(buf)
+    for m in JS_TOK.finditer(code):
+        if m.group(3) is not None:
+            n = [0]
+
+            def rep(_m):
+                n[0] += 1
+                return f"%{n[0]}"
+            raw.add(re.sub(r"\$\{[^}]*\}", rep, m.group(3)))
+        else:
+            raw.add(js_unescape(m.group(1) if m.group(1) is not None else m.group(2)))
+    out = set()
+    for s in raw:
+        for chunk in TAG.split(s):
+            for seg in segments_from_text(chunk):
+                if len(seg) >= 4 and FRENCH_HINT.search(seg) and not JS_CODE.search(seg) \
+                        and not re.search(r"\w%\d|%\d\w", seg):
+                    out.add(seg)
+    return out
+
+
+def js_found():
+    found = {}
+    for base, _dirs, files in os.walk(JS_DIR):
+        for name in files:
+            path = os.path.join(base, name)
+            if not name.endswith(".js") or ".min." in name or path == JS_BUNDLE or "vendor" in path:
+                continue
+            for seg in js_segments(open(path, encoding="utf-8", errors="replace").read()):
+                found.setdefault(seg, os.path.relpath(path, ROOT))
+    for path in view_files([]):
+        src = open(path, encoding="utf-8", errors="replace").read()
+        for m in re.finditer(r"<script\b(?![^>]*\bsrc=)[^>]*>(.*?)</script>", src, re.S):
+            code = re.sub(r"<\?(?:php|=).*?\?>", "0", m.group(1), flags=re.S)
+            for seg in js_segments(code):
+                found.setdefault(seg, os.path.relpath(path, ROOT))
+    return found
+
+
+def write_js_bundle():
+    import json
+    d = load_dict()
+    exact = {}
+    tpl = []
+    for s in sorted(js_found()):
+        en = d.get(s)
+        if not en:
+            continue
+        if re.search(r"%\d", s):
+            tpl.append([s, en])
+        else:
+            exact[s] = en
+    body = json.dumps({"exact": exact, "tpl": tpl}, ensure_ascii=False, separators=(",", ":"))
+    with open(JS_BUNDLE, "w", encoding="utf-8") as f:
+        f.write("/* Généré par tools/i18n/site_i18n.py js-bundle : ne pas modifier à la main. */\n")
+        f.write("window.ATHENA_I18N_EN=" + body + ";\n")
+    return len(exact) + len(tpl)
+
+
 def view_files(dirs):
     roots = [os.path.join(VIEWS, d) for d in dirs] if dirs else [VIEWS]
     for r in roots:
@@ -222,10 +310,12 @@ def save_dict(d):
 
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "stats"
-    if cmd in ("extract", "extract-app"):
+    if cmd == "js-bundle":
+        print(f"{write_js_bundle()} traductions dans {os.path.relpath(JS_BUNDLE, ROOT)}")
+    elif cmd in ("extract", "extract-app", "extract-js"):
         have = load_dict()
-        found = app_segments() if cmd == "extract-app" else {}
-        for path in ([] if cmd == "extract-app" else view_files(sys.argv[2:])):
+        found = {"extract-app": app_segments, "extract-js": js_found}.get(cmd, dict)()
+        for path in ([] if cmd != "extract" else view_files(sys.argv[2:])):
             rel = os.path.relpath(path, VIEWS)
             for s in extract_view(open(path, encoding="utf-8", errors="replace").read()):
                 found.setdefault(s, rel)
