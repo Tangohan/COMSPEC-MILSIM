@@ -113,7 +113,7 @@ private _perso = [
         if (_t isEqualType "") then { profileNamespace setVariable ["COMSPEC_ATAK_PatchText", (trim _t) select [0, 14]]; saveProfileNamespace; ["Patch nominatif enregistré", 2] call comspec_atak_native_fnc_toast; };
     }]]],
     ["buttons", [["VOIR L'ARRIÈRE DU TÉLÉPHONE", { [{ [] call comspec_atak_native_fnc_backView; }] call CBA_fnc_execNextFrame; }]]],
-    ["section", "Accessoires", "Batterie externe, balise IR et filtre d'écran JVN (objets de l'inventaire)"],
+    ["section", "Accessoires", "Batterie externe, balise IR clipsable et filtre d'écran JVN (objets de l'inventaire)"],
     ["switch", format ["Batterie externe sur la plaque%1", ["", format [" (%1 %%)", round (missionNamespace getVariable ["COMSPEC_ATAK_PowerBankCharge", 100])]] select (missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false])],
         missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false],
         { [["attach", "detach"] select (missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false])] call comspec_atak_native_fnc_powerBank; [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }],

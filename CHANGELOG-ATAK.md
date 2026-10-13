@@ -11,6 +11,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Réalisme 2026-10-13 — Balise IR clipsable à part (ATAK natif 1.55.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : la balise IR du téléphone n'était pas réaliste.
+- La balise IR n'est plus intégrée à la coque : c'est un objet d'inventaire, « Balise IR clipsable (pile CR123) » (`COMSPEC_ATAK_IrMarker`, type MS-2000 / Manta). La balise IR d'ACE (`ACE_IR_Strobe_Item`) convient aussi.
+- Clipsée sur la plaque MOLLE du téléphone porté sur le gilet, sinon sur l'épaule gauche. Allumée à la main : menu ACE « Téléphone ATAK » > Accessoires, ou établi (app Accessoires).
+- Pile propre : environ 8 h de clignotement, jetée vide. Elle ne consomme plus la batterie du téléphone et marche téléphone éteint, rangé ou absent.
+- Tuile « Balise IR » retirée du volet rapide (un téléphone ne pilote pas un marqueur IR).
+
 ## Traduction 2026-10-13 — Fenêtres Overwatch connect et actions ACE/ZEN en anglais (ATAK natif 1.54.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : continuer de traduire le mod.

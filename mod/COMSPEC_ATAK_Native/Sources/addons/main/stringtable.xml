@@ -82,6 +82,11 @@
             <English>COMSPEC — ATAK · Civilian apps</English>
             <French>COMSPEC — ATAK · Apps civiles</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_1D96793571">
+            <Original>Marqueur infrarouge à part, clipsé sur la plaque MOLLE du téléphone ou sur l'épaule (menu ACE « Téléphone ATAK » &gt; Accessoires). Clignote aux JVN, environ 8 h par pile, indépendant du téléphone. Vide, elle est jetée.</Original>
+            <English>Separate infrared marker, clipped to the phone's MOLLE plate or the shoulder (ACE menu "ATAK phone" &gt; Accessories). Flashes on NVGs, about 8 h per battery, independent of the phone. Discarded when empty.</English>
+            <French>Marqueur infrarouge à part, clipsé sur la plaque MOLLE du téléphone ou sur l'épaule (menu ACE « Téléphone ATAK » &gt; Accessoires). Clignote aux JVN, environ 8 h par pile, indépendant du téléphone. Vide, elle est jetée.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_1E0730DF18">
             <Original>Militaire</Original>
             <English>Military</English>
@@ -346,6 +351,11 @@
             <Original>Filtre d'écran JVN (ATAK)</Original>
             <English>NVG screen filter (ATAK)</English>
             <French>Filtre d'écran JVN (ATAK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_9C7C064247">
+            <Original>Balise IR clipsable (pile CR123)</Original>
+            <English>Clip-on IR marker (CR123 battery)</English>
+            <French>Balise IR clipsable (pile CR123)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_9E4D5298F6">
             <Original>Batterie ATAK</Original>

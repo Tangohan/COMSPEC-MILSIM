@@ -1,18 +1,29 @@
 /*
-    Balise IR intégrée à la coque : clignotant infrarouge, invisible à l'œil nu, vu par tous aux JVN (identification
-    ami). Alimentée par le téléphone (fn_battery). Accrochée au téléphone du gilet s'il y est, sinon à l'épaule gauche.
+    Balise IR clipsable (objet COMSPEC_ATAK_IrMarker, type MS-2000 / Manta ; la balise IR d'ACE convient aussi) :
+    boîtier à part avec sa propre pile CR123, allumé à la main (menu ACE « Accessoires » ou établi), jamais depuis
+    le téléphone. Clignotant infrarouge invisible à l'œil nu, vu par tous aux JVN (identification ami).
+    Clipsée sur la plaque MOLLE du téléphone s'il est porté sur le gilet, sinon sur l'épaule gauche.
+    Pile : environ 8 h de clignotement (12,5 % / h) ; vide, la balise est jetée. Fonctionne téléphone éteint ou absent.
     Effet : stroboscope IR d'ACE si chargé, sinon celui du jeu (B_IRStrobe), recréé s'il s'éteint.
-    Params : [action]  "toggle" | "on" | "off" | "tick" (client, toutes les 2 s) | "state"
+    État (joueur) : missionNamespace COMSPEC_ATAK_IrOn, COMSPEC_ATAK_IrCharge (0-100).
+    Params : [action]  "toggle" | "on" | "off" | "tick" (client, toutes les 2 s) | "state" | "has" | "charge"
 */
 params [["_act", "tick"]];
+private _items = ["COMSPEC_ATAK_IrMarker", "ACE_IR_Strobe_Item"];
 private _on = missionNamespace getVariable ["COMSPEC_ATAK_IrOn", false];
 private _cur = missionNamespace getVariable ["COMSPEC_ATAK_IrObj", objNull];
 private _kill = { if (!isNull _cur) then { deleteVehicle _cur; }; missionNamespace setVariable ["COMSPEC_ATAK_IrObj", objNull]; };
+private _owned = { private _inv = items player; _items select { _x in _inv } };
 switch (_act) do {
     case "state": { _on };
+    case "has": { (call _owned) isNotEqualTo [] };
+    case "charge": { missionNamespace getVariable ["COMSPEC_ATAK_IrCharge", 100] };
     case "toggle": { [["on", "off"] select _on] call comspec_atak_native_fnc_irBeacon };
     case "on": {
+        if ((call _owned) isEqualTo []) exitWith { ["WARNING", "Aucune balise IR dans l'inventaire", 3, 20] call comspec_atak_native_fnc_notify; false };
+        if ((missionNamespace getVariable ["COMSPEC_ATAK_IrCharge", 100]) <= 0) then { missionNamespace setVariable ["COMSPEC_ATAK_IrCharge", 100]; };
         missionNamespace setVariable ["COMSPEC_ATAK_IrOn", true];
+        missionNamespace setVariable ["COMSPEC_ATAK_IrLast", time];
         playSound "ClickSoft";
         ["INFO", "Balise IR allumée (visible aux JVN)", 3, 20] call comspec_atak_native_fnc_notify;
         ["tick"] call comspec_atak_native_fnc_irBeacon;
@@ -26,9 +37,27 @@ switch (_act) do {
         false
     };
     case "tick": {
-        private _want = _on && {alive player} && {isNull objectParent player} && {[player] call comspec_atak_native_fnc_hasDevice}
-            && {(missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) > 0};
-        if (!_want) exitWith { call _kill; false };
+        if (!_on) exitWith { call _kill; false };
+        private _own = call _owned;
+        if (_own isEqualTo []) exitWith {
+            missionNamespace setVariable ["COMSPEC_ATAK_IrOn", false];
+            call _kill;
+            ["WARNING", "Balise IR perdue", 3, 30] call comspec_atak_native_fnc_notify;
+            false
+        };
+        // Pile CR123 : 12,5 % par heure de clignotement, décomptée même en véhicule (la balise reste allumée).
+        private _dt = (time - (missionNamespace getVariable ["COMSPEC_ATAK_IrLast", time])) max 0;
+        missionNamespace setVariable ["COMSPEC_ATAK_IrLast", time];
+        private _charge = 0 max ((missionNamespace getVariable ["COMSPEC_ATAK_IrCharge", 100]) - 12.5 * _dt / 3600);
+        missionNamespace setVariable ["COMSPEC_ATAK_IrCharge", _charge];
+        if (_charge <= 0) exitWith {
+            player removeItem (_own select 0);
+            missionNamespace setVariable ["COMSPEC_ATAK_IrOn", false];
+            call _kill;
+            ["WARNING", "Pile de la balise IR vide : balise jetée", 5, 40] call comspec_atak_native_fnc_notify;
+            false
+        };
+        if (!alive player || {!isNull objectParent player}) exitWith { call _kill; false };
         private _vest = !isNull (missionNamespace getVariable ["COMSPEC_ATAK_VestObj", objNull]);
         private _key = [player, _vest];
         if (isNull _cur || {(missionNamespace getVariable ["COMSPEC_ATAK_IrKey", []]) isNotEqualTo _key}) then {

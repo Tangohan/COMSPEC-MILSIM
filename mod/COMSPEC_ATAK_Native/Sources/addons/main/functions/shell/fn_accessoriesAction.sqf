@@ -50,15 +50,20 @@ switch (_act) do {
         }];
         _out pushBack _s;
 
-        // Balise IR intégrée à la coque (fn_irBeacon).
-        _s = ["ir", "Balise IR", "coque", [1327, 776]] call _mk;
+        // Balise IR clipsable sur la plaque (fn_irBeacon) : boîtier à part, pile CR123 propre.
+        _s = ["ir", "Balise IR", "plaque MOLLE", [1327, 776]] call _mk;
         private _irOn = ["state"] call comspec_atak_native_fnc_irBeacon;
-        _s set ["mounted", true];
-        _s set ["icon", "\a3\ui_f\data\igui\cfg\simpletasks\types\target_ca.paa"];
-        _s set ["name", "Balise IR intégrée"];
-        _s set ["state", ["éteinte", "allumée · visible aux JVN"] select _irOn];
-        _s set ["stateHex", ["#8a9a93", "#f2ab33"] select _irOn];
-        _s set ["verbs", [[["ALLUMER", "ÉTEINDRE"] select _irOn, "toggle"]]];
+        _s set ["icon", _dir + "item_irmarker.paa"];
+        if (["has"] call comspec_atak_native_fnc_irBeacon) then {
+            private _irPile = round (["charge"] call comspec_atak_native_fnc_irBeacon);
+            _s set ["mounted", true];
+            _s set ["name", "Balise IR clipsable"];
+            _s set ["state", format [["éteinte · pile %1 %%", "clignote · visible aux JVN · pile %1 %%"] select _irOn, _irPile]];
+            _s set ["stateHex", ["#8a9a93", "#f2ab33"] select _irOn];
+            _s set ["verbs", [[["ALLUMER", "ÉTEINDRE"] select _irOn, "toggle"]]];
+        } else {
+            _s set ["state", "aucune balise dans l'équipement"];
+        };
         _out pushBack _s;
 
         // Batterie de rechange (même recherche que l'action ACE « Changer la batterie » : fn_batteryItem).

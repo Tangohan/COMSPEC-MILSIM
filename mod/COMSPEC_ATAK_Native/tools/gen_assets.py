@@ -1339,6 +1339,32 @@ def nvgfilter_item(size=256):
     return img.resize((size, size), Image.LANCZOS)
 
 
+def irmarker_item(size=256):
+    """Balise IR clipsable (type MS-2000 / Manta) : boîtier noir, dôme IR, clip MOLLE, marquage."""
+    k = 4
+    S = size * k
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    sh = Image.new("L", (S, S), 0)
+    ImageDraw.Draw(sh).rounded_rectangle([S * 0.30, S * 0.20, S * 0.76, S * 0.90], radius=S * 0.08, fill=140)
+    sh = sh.filter(ImageFilter.GaussianBlur(S * 0.025))
+    shadow = Image.new("RGBA", (S, S), (0, 0, 0, 0)); shadow.putalpha(sh)
+    img.alpha_composite(shadow)
+    d = ImageDraw.Draw(img)
+    # Clip MOLLE derrière le boîtier.
+    d.rounded_rectangle([S * 0.40, S * 0.10, S * 0.60, S * 0.86], radius=S * 0.03, fill=(52, 50, 44, 255), outline=(20, 20, 18, 255), width=int(S * 0.006))
+    # Boîtier.
+    d.rounded_rectangle([S * 0.27, S * 0.30, S * 0.73, S * 0.86], radius=S * 0.08, fill=(34, 36, 34, 255), outline=(12, 12, 12, 255), width=int(S * 0.008))
+    d.rounded_rectangle([S * 0.30, S * 0.33, S * 0.42, S * 0.83], radius=S * 0.05, fill=(48, 50, 48, 255))
+    # Dôme IR (diffuseur sombre légèrement violet) et LED.
+    d.ellipse([S * 0.33, S * 0.14, S * 0.67, S * 0.42], fill=(40, 26, 44, 245), outline=(14, 10, 16, 255), width=int(S * 0.008))
+    d.ellipse([S * 0.38, S * 0.18, S * 0.50, S * 0.27], fill=(78, 64, 84, 255))
+    d.ellipse([S * 0.47, S * 0.25, S * 0.53, S * 0.31], fill=(120, 60, 110, 255))
+    # Bouton et marquage.
+    d.ellipse([S * 0.44, S * 0.70, S * 0.56, S * 0.80], fill=(70, 72, 66, 255), outline=(10, 10, 10, 255), width=int(S * 0.006))
+    d.text((S * 0.355, S * 0.50), "IR", font=_font(int(S * 0.13)), fill=(170, 176, 160, 235))
+    return img.resize((size, size), Image.LANCZOS)
+
+
 # --- Autres modèles (render_phones.py) : même ouverture d'écran que le S7 (x 455..1546, y 716..1333) ---
 PHONE_MODELS = ["rugged", "iphone", "tablet", "keys", "plate", "flip", "ribbed"]
 
@@ -1374,6 +1400,7 @@ def accessory_assets(tmp):
     if os.path.exists(pb):
         convert(_icon_from(_soft_edges(Image.open(pb).convert("RGBA"))), "item_powerbank", tmp)
     convert(nvgfilter_item(), "item_nvgfilter", tmp)
+    convert(irmarker_item(), "item_irmarker", tmp)
     tab = os.path.join(RENDER_DIR, "phone_tablet_front.png")
     if os.path.exists(tab):
         t = Image.open(tab).convert("RGBA")

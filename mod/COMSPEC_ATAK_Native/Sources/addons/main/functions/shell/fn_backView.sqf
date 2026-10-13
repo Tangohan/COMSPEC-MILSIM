@@ -75,7 +75,7 @@ _cap ctrlSetStructuredText parseText ((format [
     "<t align='center' size='1.1' color='#e8eadf'>Dos du téléphone ATAK</t><br/><t align='center' size='0.85' color='#9aa59f'>%1 · IMEI %2 · Antenne : %3<br/>Balise IR %4 · Batterie externe : %5<br/>Clic ou touche pour fermer</t>",
     [createHashMapFromArray [["rugged", "Tactique EUD"], ["iphone", "Premium"]] getOrDefault [_model, ""], "Coque " + (createHashMapFromArray [["coyote", "coyote"], ["od", "vert OD"], ["black", "noire"]] getOrDefault [_tint, "coyote"])] select _s7,
     _ident param [1, "?"], [_ant param [2, ""], "aucune (port SMA bouché)"] select (_ant isEqualTo []),
-    ["éteinte", "allumée"] select (["state"] call comspec_atak_native_fnc_irBeacon),
+    [["éteinte", "allumée"] select (["state"] call comspec_atak_native_fnc_irBeacon), "absente"] select !(["has"] call comspec_atak_native_fnc_irBeacon),
     ["aucune", (["label"] call comspec_atak_native_fnc_powerBank) select [17]] select (missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false])
 ]) call comspec_atak_native_fnc_tr);
 // Apparition en fondu.
