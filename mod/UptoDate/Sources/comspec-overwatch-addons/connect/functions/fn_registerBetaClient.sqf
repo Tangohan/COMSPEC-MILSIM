@@ -5,15 +5,7 @@
 if (!hasInterface) exitWith { false };
 if (([] call comspec_overwatch_connect_fnc_athenaMode) isNotEqualTo "on") exitWith { false };
 
-private _url = missionNamespace getVariable ["comspec_overwatch_api_url", ""];
-if (!(_url isEqualType "")) then { _url = ""; };
-_url = trim _url;
-if (_url isEqualTo "") then {
-    _url = trim (profileNamespace getVariable ["comspec_overwatch_saved_api_url", ""]);
-};
-if (_url isEqualTo "") then {
-    _url = "https://athena.ttrd.fr/public";
-};
+private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
 
 private _steamUid = "";
 if (!isNull player) then {

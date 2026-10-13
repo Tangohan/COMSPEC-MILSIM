@@ -535,14 +535,6 @@ foreach ($dataSummary as $k => $v) {
                         </div>
                         <p class="text-xs text-slate-500 mt-1.5">Réglage avancé dans Paramètres Athena / Options Extensions, si plusieurs communautés partagent la même adresse.</p>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Adresse du portail (mod)</label>
-                        <div class="flex gap-2">
-                            <input type="text" readonly id="atak-portal-url" class="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-white font-mono" value="<?= htmlspecialchars($portalBaseUrl, ENT_QUOTES, 'UTF-8') ?>" />
-                            <button type="button" class="shrink-0 px-3 py-2 text-xs font-semibold rounded-lg border border-slate-200 bg-white hover:bg-slate-50" onclick="navigator.clipboard.writeText(document.getElementById('atak-portal-url').value); this.textContent='OK';">Copier</button>
-                        </div>
-                        <p class="text-xs text-slate-500 mt-1.5">Sans slash final. Exemple&nbsp;: https://<?= $hostHint ?>/public</p>
-                    </div>
                 </div>
                 <div class="rounded-lg border border-slate-200 bg-white p-4 mb-4">
                     <div class="flex flex-wrap items-start justify-between gap-3">

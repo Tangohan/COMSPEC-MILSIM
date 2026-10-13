@@ -4,13 +4,7 @@
 */
 if (!hasInterface) exitWith {};
 
-private _url = trim (missionNamespace getVariable ["comspec_overwatch_api_url", ""]);
-if (_url isEqualTo "") then {
-    _url = trim (profileNamespace getVariable ["comspec_overwatch_saved_api_url", ""]);
-};
-if (_url isEqualTo "") then {
-    _url = "https://athena.ttrd.fr/public";
-};
+private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
 
 while {(_url select [(count _url) - 1, 1]) isEqualTo "/"} do {
     _url = _url select [0, (count _url) - 1];

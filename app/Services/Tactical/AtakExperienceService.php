@@ -452,7 +452,7 @@ final class AtakExperienceService
         $lines[] = '';
         $lines[] = '1. Lier votre compte';
         $lines[] = '   • Ouvrez la Tacmap sur le portail et utilisez « Connexion en jeu », ou';
-        $lines[] = '   • Saisissez l’adresse du portail, la clé d’accès et l’identifiant de communauté dans Options → Mods → COMSPEC Overwatch → Connexion.';
+        $lines[] = '   • Saisissez la clé d’accès et l’identifiant de communauté dans Options → Mods → COMSPEC Overwatch → Connexion.';
         $lines[] = '';
         $lines[] = '2. Tablette en mission';
         $lines[] = '   • Touche K : ouvrir la tablette Athena.';

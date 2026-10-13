@@ -16,7 +16,6 @@
     <h3>Briefing joueurs</h3>
     <p>Indiquez explicitement :</p>
     <ul>
-        <li>Adresse du portail Athena de votre communauté</li>
         <li>Indicatif libre ou imposé par groupe</li>
         <li>Terminal requis ou non (tablette / item)</li>
         <li>Niveau de réalisme liaison prévu</li>

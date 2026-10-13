@@ -34380,7 +34380,7 @@ return [
     '• Moins de messages « confort » à l’écran : restez concentré sur le terrain.' => '• Fewer "comfort" on-screen messages: stay focused on the field.',
     '• Options → Mods → COMSPEC Overwatch : sons, notifications, équipement requis.' => '• Options → Mods → COMSPEC Overwatch: sounds, notifications, required equipment.',
     '• Ouvrez la Tacmap sur le portail et utilisez « Connexion en jeu », ou' => '• Open the Tacmap on the portal and use "In-game login", or',
-    '• Saisissez l’adresse du portail, la clé d’accès et l’identifiant de communauté dans Options → Mods → COMSPEC Overwatch → Connexion.' => '• Enter the portal address, access key and community ID in Options → Mods → COMSPEC Overwatch → Connection.',
+    '• Saisissez la clé d’accès et l’identifiant de communauté dans Options → Mods → COMSPEC Overwatch → Connexion.' => '• Enter the access key and community ID in Options → Mods → COMSPEC Overwatch → Connection.',
     '• Session décontractée — ne pas utiliser pour un exercice sérieux.' => '• Relaxed session — do not use for a serious exercise.',
     '• Touche K : ouvrir la tablette Athena.' => '• K key: open the Athena tablet.',
     '• Vous pouvez désactiver les bandeaux à l’écran dans Options → Mods si besoin.' => '• You can disable on-screen banners in Options → Mods if needed.',
