@@ -14,8 +14,7 @@ use PHPUnit\Framework\TestCase;
 final class SseSeekLinkStateAssetTest extends TestCase
 {
     private const FILES = [
-        'mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_ssePersonRefreshPanels.sqf',
-        'mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_sseIdentityQuery.sqf',
+        'mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_sseLinkState.sqf',
         'mod/@COMSPEC_SSE/addons/biometrics/functions/fn_bioQuery.sqf',
         'mod/@COMSPEC_SSE/addons/biometrics/functions/fn_bioCaptureLatentAction.sqf',
     ];
@@ -29,6 +28,17 @@ final class SseSeekLinkStateAssetTest extends TestCase
             self::assertStringContainsString('missionNamespace getVariable ["COMSPEC_LinkState", ""]', $src, $rel);
             self::assertStringContainsString('"networkState"', $src, $rel);
         }
+    }
+
+    /** Le SEEK suit le même verdict que la barre d'état du téléphone (un seul calcul partagé). */
+    public function testSeekUsesTheSharedLinkVerdict(): void
+    {
+        $root = dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/';
+        foreach (['fn_ssePersonRefreshPanels.sqf', 'fn_sseIdentityQuery.sqf'] as $f) {
+            self::assertStringContainsString('comspec_overwatch_connect_fnc_sseLinkState', (string) file_get_contents($root . $f), $f);
+        }
+        $state = (string) file_get_contents($root . 'fn_sseLinkState.sqf');
+        self::assertStringContainsString('if (_net isEqualTo "CONNECTED") exitWith { "linked" };', $state);
     }
 
     public function testStudioAimsAtTheAnimatedEyePoint(): void
