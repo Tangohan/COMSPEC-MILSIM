@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Services\Atak\GameServerAddressLookup;
 use PDO;
 
 /**
@@ -41,8 +42,44 @@ final class TenantGameServerRepository
                     $this->pdo->exec($stmt);
                 }
             }
+            // Table de présence créée avant l'ajout du port.
+            $col = $this->pdo->query("SHOW COLUMNS FROM tenant_game_server_presence LIKE 'server_port'");
+            if ($col !== false && $col->fetch() === false) {
+                $this->pdo->exec('ALTER TABLE tenant_game_server_presence ADD COLUMN server_port INT UNSIGNED NULL AFTER server_name');
+            }
         } catch (\Throwable) {
             // Droits DDL absents : run-migrations.php s'en charge.
+        }
+    }
+
+    /** Recherche d'adresse par nom de serveur, avec le cache en base. */
+    public function addressLookup(): GameServerAddressLookup
+    {
+        return new GameServerAddressLookup($this->pdo);
+    }
+
+    /** Complète l'adresse d'un serveur déclaré sans IP (retrouvée par son nom ou vue par les joueurs). */
+    public function fillAddress(int $tenantId, int $id, string $ip, ?int $port): void
+    {
+        try {
+            $st = $this->pdo->prepare(
+                "UPDATE tenant_game_servers SET ip_address = ?, port = COALESCE(port, ?)
+                 WHERE tenant_id = ? AND id = ? AND (ip_address IS NULL OR ip_address = '')"
+            );
+            $st->execute([$ip, $port, $tenantId, $id]);
+        } catch (\Throwable) {
+        }
+    }
+
+    /** Complète l'adresse d'une ligne de présence et le serveur reconnu. */
+    public function updatePresenceServer(int $presenceId, ?string $ip, ?int $port, ?int $matchedServerId): void
+    {
+        try {
+            $st = $this->pdo->prepare(
+                'UPDATE tenant_game_server_presence SET server_ip = COALESCE(?, server_ip), server_port = COALESCE(?, server_port), matched_server_id = ? WHERE id = ?'
+            );
+            $st->execute([$ip, $port, $matchedServerId, $presenceId]);
+        } catch (\Throwable) {
         }
     }
 
@@ -109,17 +146,30 @@ final class TenantGameServerRepository
         ?string $serverName,
         ?string $mission,
         ?string $world,
-        ?int $matchedServerId
+        ?int $matchedServerId,
+        ?int $serverPort = null
     ): void {
         try {
             $st = $this->pdo->prepare(
-                'INSERT INTO tenant_game_server_presence (tenant_id, steam_uid, player_name, server_ip, server_name, mission, world, matched_server_id, seen_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
-                 ON DUPLICATE KEY UPDATE player_name = VALUES(player_name), server_ip = VALUES(server_ip), server_name = VALUES(server_name),
-                   mission = VALUES(mission), world = VALUES(world), matched_server_id = VALUES(matched_server_id), seen_at = NOW()'
+                'INSERT INTO tenant_game_server_presence (tenant_id, steam_uid, player_name, server_ip, server_port, server_name, mission, world, matched_server_id, seen_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                 ON DUPLICATE KEY UPDATE player_name = VALUES(player_name), server_ip = VALUES(server_ip), server_port = VALUES(server_port),
+                   server_name = VALUES(server_name), mission = VALUES(mission), world = VALUES(world),
+                   matched_server_id = VALUES(matched_server_id), seen_at = NOW()'
             );
-            $st->execute([$tenantId, $steamUid, $playerName, $serverIp, $serverName, $mission, $world, $matchedServerId]);
+            $st->execute([$tenantId, $steamUid, $playerName, $serverIp, $serverPort, $serverName, $mission, $world, $matchedServerId]);
         } catch (\Throwable) {
+            // Colonne server_port pas encore ajoutée (droits DDL) : sans le port.
+            try {
+                $st = $this->pdo->prepare(
+                    'INSERT INTO tenant_game_server_presence (tenant_id, steam_uid, player_name, server_ip, server_name, mission, world, matched_server_id, seen_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                     ON DUPLICATE KEY UPDATE player_name = VALUES(player_name), server_ip = VALUES(server_ip), server_name = VALUES(server_name),
+                       mission = VALUES(mission), world = VALUES(world), matched_server_id = VALUES(matched_server_id), seen_at = NOW()'
+                );
+                $st->execute([$tenantId, $steamUid, $playerName, $serverIp, $serverName, $mission, $world, $matchedServerId]);
+            } catch (\Throwable) {
+            }
         }
     }
 

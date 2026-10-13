@@ -89,7 +89,7 @@ $home = count($presence) - count($away);
                 <label for="gs_name" class="block text-xs font-semibold text-slate-600 mb-1">Nom du serveur dans Arma</label>
                 <input type="text" name="server_name" id="gs_name" maxlength="190" value="<?= $e($editServer['server_name'] ?? '') ?>"
                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Ex. [FR] COMSPEC | Opérations">
-                <p class="mt-1 text-xs text-slate-500">Reconnu même si le serveur y ajoute la mission ou le nombre de places.</p>
+                <p class="mt-1 text-xs text-slate-500">Reconnu même si le serveur y ajoute la mission ou le nombre de places. Sans adresse, Athena la retrouve dans la liste publique des serveurs Arma.</p>
             </div>
             <div class="md:col-span-2 flex flex-wrap gap-3">
                 <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">
@@ -156,16 +156,16 @@ $home = count($presence) - count($away);
                     <tr><th class="px-4 py-3">Nom dans Arma</th><th class="px-4 py-3">Adresse</th><th class="px-4 py-3">Joueurs</th><th class="px-4 py-3">Vu</th><th class="px-4 py-3 text-right"></th></tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
-                <?php foreach ($unknownServers as $u): ?>
+                <?php foreach ($unknownServers as $u): $uAddr = ($u['server_ip'] ?? '') !== '' ? (str_contains((string) $u['server_ip'], ':') ? '[' . $u['server_ip'] . ']' : (string) $u['server_ip']) . (!empty($u['server_port']) ? ':' . (int) $u['server_port'] : '') : ''; ?>
                     <tr>
                         <td class="px-4 py-3 text-slate-800"><?= $e(($u['server_name'] ?? '') ?: '—') ?></td>
-                        <td class="px-4 py-3 font-mono text-xs text-slate-700"><?= $e(($u['server_ip'] ?? '') ?: 'inconnue') ?></td>
+                        <td class="px-4 py-3 font-mono text-xs text-slate-700"><?= $e($uAddr ?: 'introuvable') ?></td>
                         <td class="px-4 py-3 text-slate-700"><?= (int) $u['players'] ?></td>
                         <td class="px-4 py-3 text-slate-500"><?= $e($when($u['last_seen'] ?? '')) ?></td>
                         <td class="px-4 py-3 text-right">
                             <form method="post" action="<?= $e(url('back-office/ressources/serveurs-de-jeu/enregistrer')) ?>">
                                 <input type="hidden" name="_csrf_token" value="<?= $e($csrf) ?>">
-                                <input type="hidden" name="ip_address" value="<?= $e($u['server_ip'] ?? '') ?>">
+                                <input type="hidden" name="ip_address" value="<?= $e($uAddr) ?>">
                                 <input type="hidden" name="server_name" value="<?= $e($u['server_name'] ?? '') ?>">
                                 <button type="submit" class="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">C’est notre serveur</button>
                             </form>

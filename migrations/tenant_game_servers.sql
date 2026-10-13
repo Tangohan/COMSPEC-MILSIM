@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS `tenant_game_server_presence` (
   `player_name` VARCHAR(120) NULL,
   `server_ip` VARCHAR(64) NULL,
   `server_name` VARCHAR(190) NULL,
+  `server_port` INT UNSIGNED NULL,
   `mission` VARCHAR(190) NULL,
   `world` VARCHAR(64) NULL,
   `matched_server_id` INT UNSIGNED NULL,
@@ -31,4 +32,14 @@ CREATE TABLE IF NOT EXISTS `tenant_game_server_presence` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_tgsp_player` (`tenant_id`, `steam_uid`),
   KEY `idx_tgsp_seen` (`tenant_id`, `seen_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Adresse d'un serveur retrouvée par son nom (liste Steam ou BattleMetrics) quand il ne diffuse pas la sienne.
+CREATE TABLE IF NOT EXISTS `game_server_address_lookup` (
+  `name_key` VARCHAR(190) NOT NULL COMMENT 'Nom du serveur en minuscules, espaces réduits',
+  `ip` VARCHAR(64) NULL COMMENT 'Vide : introuvable lors de la dernière recherche',
+  `port` INT UNSIGNED NULL,
+  `source` VARCHAR(20) NULL,
+  `looked_up_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`name_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
