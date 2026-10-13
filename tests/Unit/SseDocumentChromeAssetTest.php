@@ -72,12 +72,15 @@ final class SseDocumentChromeAssetTest extends TestCase
         // Modules SSE repris par le mod SSE (addon zeus), mêmes noms de classe.
         $module = (string) file_get_contents($root . '/mod/@COMSPEC_SSE/addons/zeus/modules_seek.hpp');
         $zen = (string) file_get_contents($root . '/mod/@COMSPEC_SSE/addons/zeus/functions/fn_registerZenSseModules.sqf');
+        // Noms affichés des modules : clés $STR_ résolues dans le stringtable du SSE.
+        $strings = (string) file_get_contents($root . '/mod/@COMSPEC_SSE/addons/main/stringtable.xml');
 
         self::assertStringContainsString('getDocumentChrome', $fill);
         self::assertStringContainsString('footer', $fill);
         self::assertStringContainsString('terrain_tache', $chrome);
         self::assertStringContainsString('idc = 93019', $dialog);
-        self::assertStringContainsString('Présentation des documents SSE', $module);
+        self::assertStringContainsString('$STR_COMSPEC_SSE_CFG_', $module);
+        self::assertStringContainsString('Présentation des documents SSE', $strings);
         self::assertStringContainsString('Présentation des documents', $zen);
         self::assertFileExists($root . '/mod/@COMSPEC_SSE/addons/zeus/functions/fn_moduleDocChrome.sqf');
     }
