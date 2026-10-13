@@ -20,7 +20,7 @@ final class PlatformAdminSkinAssetTest extends TestCase
         self::assertStringContainsString('.pa-skin > :not(.pa)', $css);
 
         // Chaque page plateforme écrite en utilitaires marque son en-tête pour le bandeau commun.
-        $paShell = ['dashboard', 'plan_gifts', 'platform_review_index', 'tenant_recovery', 'tenants_index', 'tenants_plan_form', 'ux_feedback_index'];
+        $paShell = ['dashboard', 'name_filter', 'plan_gifts', 'platform_review_index', 'tenant_recovery', 'tenants_index', 'tenants_plan_form', 'ux_feedback_index'];
         foreach (glob($root . '/views/admin/system/*.php') ?: [] as $file) {
             $view = (string) file_get_contents($file);
             if (!str_contains($view, '<h1') || in_array(basename($file, '.php'), $paShell, true)) {
