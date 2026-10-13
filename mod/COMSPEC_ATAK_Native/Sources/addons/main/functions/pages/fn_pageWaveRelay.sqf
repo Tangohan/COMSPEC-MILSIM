@@ -81,7 +81,8 @@ switch (_tab) do {
             if ((player distance2D _center) > _cell * 3) then { _rows pushBack ["text", "<t size='0.8' color='#f2ab33'>Vous avez bougé depuis le calcul : relancez-le pour la zone où vous êtes.</t>"]; };
         };
         _rows pushBack ["text", "<t size='0.8'><t color='#33d94d'>●</t> 4 Mbit/s et plus  <t color='#bfd933'>●</t> 1,5  <t color='#ff9926'>●</t> 0,5  <t color='#e5332a'>●</t> faible  <t color='#777777'>●</t> zone blanche</t>"];
-        _rows pushBack ["switch", "Relais et couverture sur la carte", profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false], { ["mapLinks"] call comspec_atak_native_fnc_waveRelayAction; }, "Calque Wave Relay : relais, portées, couverture, liens"];
+        _rows pushBack ["switch", "Couverture et liens sur la carte", profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false], { ["mapLinks"] call comspec_atak_native_fnc_waveRelayAction; }, "Calque Wave Relay : couverture calculée, liens du maillage"];
+        _rows pushBack ["switch", "Relais sur la carte", profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true], { ["mapRelays"] call comspec_atak_native_fnc_waveRelayAction; }, "Calque Relais : pastilles, portée du relais utilisé (aussi dans CALQUES)"];
         _rows pushBack ["section", format ["Relais et passerelles (%1)", count _relays], "État, portée, débit, places, distance"];
         {
             _x params ["_o", "_ap", "_name", "_kind", "_rng", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "_root"];

@@ -149,12 +149,73 @@ _st ctrlSetFontHeight _fs;
 [[_pad, _y, _w, _rh], { ["SALUTE"] call comspec_atak_native_fnc_navigate; }, "Ouvrir l'app SALUTE"] call _hit;
 _y = _y + _rh + _pad;
 
+// ---------- COMPROMISSIONS ----------
+// ATAK du camp ramassés par l'ennemi (fn_captureServer) : à valider par un chef de groupe, le propriétaire ou un Zeus.
+private _caps = ["mine"] call comspec_atak_native_fnc_compromise;
+if ((count _caps) > 0) then {
+    private _open = { (_x select 7) isEqualTo "suspected" } count _caps;
+    _y = [_pad, _y, _w, "Compromissions", [format ["%1 à valider", _open], "traitées"] select (_open isEqualTo 0), [_cDim, [0.95, 0.55, 0.15, 1]] select (_open > 0)] call _sec;
+    private _bwBtn = (_font * 4.2) min (_w * 0.3);
+    {
+        _x params ["_id", "", "_cs", "_num", "_imei", "_grid", "_hour", "_state", "_by", "_ath", "_ouid", "_lastGrid", "", "_wiped", "_live"];
+        private _col = switch (_state) do { case "validated": { [0.36, 0.78, 0.42, 1] }; case "dismissed": { [0.55, 0.61, 0.58, 1] }; default { [0.95, 0.55, 0.15, 1] }; };
+        private _stTxt = switch (_state) do {
+            case "validated": { format ["VALIDÉE par %1", _by] };
+            case "dismissed": { format ["REJETÉE par %1", _by] };
+            default { "SUSPECTÉE" };
+        };
+        private _l2 = format ["IMEI %1 · n° %2", _imei, _num];
+        private _l3 = switch (true) do {
+            case (_wiped): { format ["Ramassé vers %1 · effacé avant la capture, rien d'exploitable", _grid] };
+            case (_state isEqualTo "validated"): {
+                format ["Exclu du réseau · Athena : %1", switch (_ath) do {
+                    case "ok": { "certificat révoqué" };
+                    case "offline": { "hors ligne, révoquer depuis le poste" };
+                    default { "révocation demandée…" };
+                }]
+            };
+            case (_lastGrid isNotEqualTo ""): { format ["Ramassé vers %1 · <t color='#f2ab33'>vu sur le réseau vers %2</t>%3", _grid, _lastGrid, ["", " (porteur neutralisé)"] select !_live] };
+            default { format ["Ramassé vers %1 à %2", _grid, _hour] };
+        };
+        private _can = ["can", _x] call comspec_atak_native_fnc_compromise;
+        private _nb = [1, 3] select _can;
+        private _ch2 = _fs * 4.1;
+        [[_pad, _y, _w, _ch2], _cTile] call _box;
+        [[_pad, _y, pixelW * 4, _ch2], _col] call _box;
+        private _cx = _pad * 1.8;
+        private _c = ["COMSPEC_RscStructuredText", [_cx, _y + _fs * 0.15, _w - (_cx - _pad) - _bwBtn - _pad, _ch2 - _fs * 0.2]] call _mk;
+        _c ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t color='#c9d2cd'>%3</t>  <t font='EtelkaMonospacePro' size='0.8' color='#8a9a93'>%4</t><br/><t size='0.85' font='EtelkaMonospacePro'>%5</t><br/><t size='0.85'>%6</t>",
+            (_col select [0, 3]) call BIS_fnc_colorRGBtoHTML, _stTxt, [[_cs, "Votre ATAK"] select (_ouid isEqualTo getPlayerUID player)] call _esc, _hour, _l2, _l3]) call comspec_atak_native_fnc_tr);
+        _c ctrlSetFontHeight _fs;
+        // Boutons à droite : VALIDER, REJETER (si permis), CARTE.
+        private _bx = _pad + _w - _bwBtn - _pad * 0.4;
+        private _bh1 = (_ch2 - _pad * 0.3 * (_nb + 1)) / _nb;
+        private _btns = [["CARTE", compile format ["['map', %1] call comspec_atak_native_fnc_compromise;", str _id], "Centrer la carte sur la dernière position connue", [0.10, 0.12, 0.11, 1], _cText]];
+        if (_can) then {
+            _btns = [
+                ["VALIDER", compile format ["['validate', %1] call comspec_atak_native_fnc_compromise;", str _id], "Confirmer la compromission : téléphone exclu du réseau, certificat révoqué sur Athena", [0.86, 0.47, 0.10, 1], _cInk],
+                ["REJETER", compile format ["['dismiss', %1] call comspec_atak_native_fnc_compromise;", str _id], "Fausse alerte : le téléphone reste sur le réseau", [0.10, 0.12, 0.11, 1], _cDim]
+            ] + _btns;
+        };
+        {
+            _x params ["_bt", "_code", "_tip", "_bg2", "_fg"];
+            private _by2 = _y + _pad * 0.3 + _forEachIndex * (_bh1 + _pad * 0.3);
+            [[_bx, _by2, _bwBtn, _bh1], _bg2] call _box;
+            ["COMSPEC_RscTextCenter", [_bx, _by2, _bwBtn, _bh1], _bt, _fs * 0.8, _fg, true] call _lbl;
+            [[_bx, _by2, _bwBtn, _bh1], _code, _tip] call _hit;
+        } forEach _btns;
+        _y = _y + _ch2 + _pad * 0.4;
+    } forEach (_caps select [0, 5]);
+    ["COMSPEC_RscText", [_pad, _y, _w, _fs * 1.2], "Retrouver un ATAK volé : app GE > GÉOLOC, avec son IMEI ou son numéro.", _fs * 0.75, _cDim] call _lbl;
+    _y = _y + _fs * 1.2 + _pad;
+};
+
 // ---------- JOURNAL ----------
 private _log = missionNamespace getVariable ["COMSPEC_ATAK_AlertLog", []];
 private _lab = createHashMapFromArray [
     ["PANIC", ["PANIQUE", [0.90, 0.24, 0.20, 1], "alert_panic"]], ["TIC", ["CONTACT", [0.95, 0.67, 0.20, 1], "alert_tic"]],
     ["TIC_CLEAR", ["FIN DE CONTACT", [0.36, 0.78, 0.42, 1], "alert_clear"]], ["EAGLE_DOWN", ["APPAREIL ABATTU", [0.90, 0.28, 0.23, 1], "alert_eagle"]],
-    ["SALUTE", ["SALUTE", [0.30, 0.62, 0.98, 1], "app_salute"]]
+    ["SALUTE", ["SALUTE", [0.30, 0.62, 0.98, 1], "app_salute"]], ["COMPROMISE", ["COMPROMISSION", [0.95, 0.55, 0.15, 1], "app_ew"]]
 ];
 _y = [_pad, _y, _w, "Journal", str (count _log)] call _sec;
 if ((count _log) isEqualTo 0) then {

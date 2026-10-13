@@ -38,6 +38,73 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Regroupement : IA ennemie et ATAK perdus, drone, pylônes relais, SEEK, Zeus (ATAK natif 1.88.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Un ATAK perdu peut trahir ton équipe, drone armé plus fiable, nouveaux pylônes relais
+- L'IA ennemie ramasse les ATAK sur les corps et au sol et s'en sert pour te traquer. Le camp reçoit l'alerte « Compromission suspectée » ; un chef de groupe, le propriétaire ou le Zeus la valide dans Alertes pour couper le téléphone. Batterie vide, la SIM reste localisable par les relais.
+- Drone : toutes les grenades, roquettes et charges se fixent dessous, la charge explose au contact de la cible, et la recherche balaie la zone en bandes au lieu de tourner en rond.
+- Pylônes relais : vraies collisions, ruine au sol quand ils sont détruits, deux nouveaux monopoles de 12 et 20 m, et un calque « Relais » sur la carte de l'ATAK.
+- Terminal SEEK : le clavier ne fait plus bouger ton personnage et une même personne n'est plus enregistrée en double. Zeus : le relevé des routes et villes dit s'il a démarré, et les noms de villes sont lisibles sur la carte.
+EN : A lost ATAK can betray your team, more reliable armed drone, new relay towers
+- Enemy AI picks up ATAKs from bodies and the ground and uses them to hunt you. The side gets a "Suspected compromise" alert; a group leader, the owner or the Zeus confirms it in Alerts to cut the phone off. With a dead battery, the SIM can still be located by the relays.
+- Drone: every grenade, rocket and charge can be attached underneath, the charge explodes on contact with the target, and search sweeps the area in lanes instead of circling.
+- Relay towers: real collisions, a ruin on the ground when destroyed, two new 12 m and 20 m monopoles, and a "Relays" layer on the ATAK map.
+- SEEK terminal: the keyboard no longer moves your character and the same person is no longer recorded twice. Zeus: the roads and towns survey says whether it started, and town names are readable on the map.
+
+### Détail technique
+
+Une seule version pour 5 PR regroupées (#771, #773, #774, #775, #778) : ATAK natif 1.88.0. COMSPEC Link reste en 2.0.83 (aucune DLL modifiée). main.pbo et towers.pbo reconstruits avec HEMTT ; comspec_overwatch_connect.pbo repatché depuis les sources fusionnées (SEEK #773, Zeus #775, relais #778, tools/pbo_patch.py --changed) ; comspec_sse_biometrics.pbo (#773) et comspec_sse_guide.pbo (#775) repris tels quels. i18n/en.txt fusionné à trois voies. Non testé en jeu.
+
+#### Pylônes relais : collisions, rendu, ruine, monopoles, calque Relais et tableau TBR (#778)
+
+- Modèles (`tools/model_relay_towers.py`, régénérés) : boîtes et cornières à facettes, tubes lissés (les normales moyennées des massifs les éclairaient à contre-jour, d'où les bandes claires). Ombres : une enveloppe convexe fermée par pièce, rentrée de 6 mm (avant : 32 arêtes ouvertes par LOD d'ombre, paraboles et révolutions à pointe, et volumes collés aux faces visibles). Géométrie : enveloppe de chaque pièce du pylône simplifié (fini la boîte invisible de 4 m en tête et les croisillons traversables), géométrie de tir sur le treillis presque complet, nouvelles LOD vue (le plein seulement) et chemin praticable (massifs, dalles, paliers). Ruines : tronçons fermés séparés pliés avec le pylône.
+- Matières (`tower_*.rvmat`) : reflets 0,9 → 0,2 environ, puissance 60 → 28, Fresnel métal poli (4,7) → acier patiné (1,4), diffus 0,82 pour l'acier galvanisé (trop blanc).
+- Ruine : `fn_relayTowerRuin` (événement Killed posé par `fn_relayTower`, aussi sur les tours créées par le module) pose `COMSPEC_ATAK_RelayTower_XX_ruins` si le moteur n'a laissé aucune ruine au bout de 8 s.
+- Monopoles `COMSPEC_ATAK_RelayTower_M12` (3 km, 10 Mbit/s, 32 places) et `_M20` (4,5 km, 15 Mbit/s, 48 places), ruines comprises, aperçus Eden.
+- Fréquences (base) : attribut « Bande de fréquence » sur les pylônes et le module relais (formulaire Zeus aussi), variable `COMSPEC_AtakRelayFreq` (MHz, 0 = automatique), affichée sur la carte et dans le TBR ; pas encore utilisée dans les calculs de liaison.
+- Eden : menu COMSPEC ATAK (TBR · tableau des relais : nom, type, camp, portée, bande, liaison, état, position, répéteurs isolés signalés ; Aller, Sélectionner ; aide relais). Module relais de type Tour fixe sans objet synchronisé : la tour de 40 m apparaît à sa place dans l'éditeur (objet local, non sauvé). `fn_relayEden`, `Cfg3DEN` (ouverture / nouvelle mission), `3DEN` ajouté aux dépendances de main.
+- Carte ATAK : calque « Relais » (`COMSPEC_ATAK_RelaysLayer`, affiché par défaut) séparé du calque Wave Relay (couverture, liens) ; interrupteur aussi dans l'app Wave Relay. COMSPEC Link : avec l'ATAK natif chargé, le carré « Relais … » et son cercle (`fn_updateNearestRelayMap`) ne sont plus posés, l'alerte de sortie de portée reste.
+- À tester en jeu : collisions au pied (marcher contre les massifs, les croisillons, l'armoire), tirs dans le treillis, sélection dans Eden ; ombres et reflets en plein soleil ; destruction (ruine qui reste, pas de doublon) ; monopoles 12 et 20 m ; module Tour fixe dans Eden (aperçu qui suit, disparaît à la suppression) ; menu COMSPEC ATAK > TBR ; calque Relais masqué / affiché sur la carte du téléphone.
+
+#### Drone : charge qui explose, grenades acceptées, recherche en balayage (#771)
+
+- fn_droneAction : charges reconnues par la simulation de la munition (shotGrenade, shotSmoke(X), shotIlluminating, shotRocket, shotMissile, shotMine, shotDirectionalBomb, shotShell à un coup…), variante `_Scripted` prise si elle existe ; liste de l'onglet TÂCHES par lignes de deux.
+- fn_droneCmd « strike » : piqué final dans un CBA PFH (chaque image) au lieu d'une boucle planifiée à 0,05 s ; fusée de proximité 3,5 m, point le plus proche dépassé, cible tuée à moins de 25 m ; gestionnaires Killed et Dammaged qui déclenchent la charge en mode STRIKE ; charge retirée avant setDamage (pas de double explosion).
+- fn_droneCmd « hunt » : vol piloté par notre boucle (IA MOVE coupée), montée 6 m/s en avançant, 50 km/h au moins, hauteur tenue sur le relief 60 m devant, montée devant un obstacle ; balayage en bandes (écart selon la hauteur), puis bandes croisées ; détection deux fois par seconde.
+- XEH_postInitClient (ace_medical_woundReceived), fn_pageLinkAlly, fn_pageNetwork : `params` avec `["", défaut]` remplacé par `""` (erreur « Variable locale dans espace global »).
+- Caméra du drone noire : pas de changement, cause toujours non confirmée.
+
+#### Terminal SEEK : clavier gardé, plus de doublons, dossiers automatiques, photo et liaison (#773)
+
+- Overwatch connect (embarqué) : `fn_sseKeyBlock` + `fn_sseTerminalGuard` (KeyDown sur le SEEK idd 9991 et sur le display 46, arme rangée à l'ouverture, rafraîchissement de la barre d'état quand la liaison change).
+- `fn_sseLinkState` : même verdict que `fn_statusUpdate` du téléphone (COMSPEC_LinkState « offline » ne masque plus la liaison du téléphone). Repris par `fn_sseIdentityQuery`, `fn_ssePersonRefreshPanels` et le pack SSE (`fn_bioQuery`, `fn_bioCaptureLatentAction`).
+- `fn_sseIdentityQuery` : même sujet + mêmes relevés = verdict repris, pas de nouvelle requête. `fn_seekHistoryPush` : une ligne par sujet (clé netId [9], compteur [10]) ; `fn_pageSse` additionne les compteurs.
+- `fn_sseUploadFacePhoto` (extrait de la transmission) : appelé aussi par `fn_sseCaptureFacePhoto` quand le sujet a déjà un id Athena ; un cliché déjà joint ne repart plus à chaque réouverture.
+- Site : `POST /api/sse/persons` en doublon complète la fiche existante (`mergeRetransmission`), classe au dossier sans nouvelle ligne de journal si rien ne change ; code de dossier inconnu → dossier créé (`findOrCreateByReference`) ; A1 sans dossier ouvert unique → dossier du jour `AUTO-AAMMJJ`.
+- PBO reconstruits : main.pbo, comspec_overwatch_connect.pbo, comspec_sse_biometrics.pbo.
+
+#### L'IA ennemie ramasse les ATAK et traque les joueurs ; secours SIM à batterie vide (#774)
+
+- `fn_captureServer` (serveur, PFH 3 s et 5 s) : sources = corps (`allDeadMen`) et joueurs à terre portant l'étiquette `COMSPEC_ATAK_PhoneTag`, porte-objets au sol signalés par l'événement Put (`fn_linkAllyInit`), corps d'une IA porteuse (`COMSPEC_ATAK_CapOf`). L'IA ennemie la plus proche dans `capture_radius` reçoit `doMove`, prend le téléphone à 4 m (`unlinkItem`/`removeItem` là où le corps est local, cargo reconstruit pour un porte-objet) et garde l'identité du téléphone (`COMSPEC_ATAK_Ident`), donc GÉOLOC le retrouve.
+- Exploitation : après `capture_crack` s si le propriétaire avait un code, rien si le téléphone était effacé. Toutes les `capture_refresh` s, le groupe porteur et jusqu'à 3 groupes du même camp à moins de `capture_share` m reçoivent `reveal` des joueurs du camp à balise BFT active à moins de `capture_hunt_radius` m, puis un point SAD sur le plus proche (`capture_hunt`). Variables de mission `COMSPEC_ATAK_NoPickup` / `COMSPEC_ATAK_NoHunt` sur une unité ou un groupe.
+- `fn_compromise` (client) : étiquette publiée toutes les 5 s (UID, camp, indicatif, numéro, IMEI, terminal Athena, code, effacé), alertes (notification, alerte plein écran, journal), section « Compromissions » de l'app Alertes (VALIDER / REJETER / CARTE). État partagé `COMSPEC_ATAK_CaptureList`. Validée : l'exploitation s'arrête, le valideur appelle COMSPEC Link `CompromiseTerminal` (état `compromised`) ; sans liaison Athena, le serveur passe au propriétaire puis à un chef du camp. Le propriétaire reçoit `COMSPEC_ATAK_PhoneGen + 1` (nouvel IMEI).
+- Site : `/api/atak/terminals/compromise` avec l'état `compromised` révoque les certificats encore valides du terminal (motif `keyCompromise`, `AtakRealismRepository::revokeCertificatesForTerminal`) et le note dans le journal d'activité.
+- `fn_simSos` : `COMSPEC_ATAK_SimSos` publié quand la batterie simulée est à 0 ; GÉOLOC (`fn_ewAction`) et RECHERCHER (`fn_mapSearch`) répondent « secours SIM » avec une position tirée des relais qui entendent le téléphone (1 relais : cellule large, 2 : moyenne, 3+ : triangulation ; mission sans relais : antennes fictives, rayon doublé). Allié traçable en secours SIM même si « Tracer son propre camp » est décoché.
+- Réglages CBA serveur : « ATAK · Capture par l'ennemi » (activé, distance, forçage, traque, portée, partage, rafraîchissement, qui valide) et dans « ATAK · Géolocalisation (GEOLOC) » : mode secours SIM, retrouver un allié.
+- Pas de changement de DLL (COMSPEC Link 2.0.82 sait déjà envoyer `CompromiseTerminal`). Pas de migration.
+- À tester en jeu (serveur dédié de préférence) : mourir près d'une IA ennemie avec son ATAK, la voir ramasser le téléphone ; alerte sur les ATAK du camp ; IA qui vient vers les joueurs à balise active ; mode avion ; VALIDER par un chef de groupe puis fin de la traque et certificat révoqué sur Athena ; GÉOLOC de l'IMEI volé ; batterie à 0 puis GÉOLOC du numéro par un allié, avec et sans relais dans la mission.
+
+#### Zeus : relevé routes et villes qui répond, tutoriel SSE visible, villes lisibles sur la carte (#775)
+
+Non testé en jeu. Retours de TTRD : « le tuto zeus et le module relever route et ville ne marchent pas », « mauvais placements » (app SSE), « les villes c'est trop laid, juste le titre de la ville avec un fond ».
+- Relevé routes et villes (Overwatch connect embarqué) : le relevé partait bien mais n'écrivait que dans le journal du téléphone, invisible dans Zeus. Nouveau `fn_zeusFeedback` (bandeau ZEN, sinon message Zeus vanilla, sinon notification) appelé au lancement, en cas de refus et à la fin (`COMSPEC_GeoZeusNotify`). Module Eden : le Zeus / l'admin n'étaient testés qu'à l'initialisation (souvent pas encore connus, jamais vrais sur serveur dédié sans admin) ; ils sont maintenant testés une fois lié, avec repli sur n'importe quel joueur lié après 60 s et un seul envoi par serveur (`COMSPEC_GeoNetworkRunner`).
+- SSE : `comspec_sse_fnc_openGuide` affiche le chapitre du manuel dans une fenêtre posée sur l'écran Zeus (display 312) ; hors Zeus, manuel de terrain comme avant. « Poser un exercice ici » confirme dans Zeus.
+- Carte web (`atak-geo-network.js`, Overwatch beta, carte opérationnelle, tacmap) : localités en étiquettes `divIcon` (ville, bourg, village, lieu-dit), rang affiché selon le zoom et chevauchements retirés ; styles injectés par le script.
+- App SSE du téléphone : bandeau, tuiles d'indicateurs, en-têtes de panneau et cases d'attributs prennent la hauteur mesurée de leur texte.
+- À tester en jeu : poser « Relever routes et villes » dans Zeus (message attendu), « Tutoriel : manuel du Zeus » (fenêtre au-dessus de Zeus), l'app SSE en portrait et paysage.
+
 ## Regroupement : JTAC, Messages, Musique, Signaler un problème (ATAK natif 1.87.0, COMSPEC Link 2.0.83)
 
 ### Résumé joueur

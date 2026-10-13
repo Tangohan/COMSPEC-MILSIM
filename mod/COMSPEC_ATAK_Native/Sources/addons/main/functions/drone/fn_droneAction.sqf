@@ -9,7 +9,7 @@
       ["mode", "hover" | "me" | "player" | "home" | "land" | "hunt"]
       ["player", uid]             joueur à suivre ;
       ["alt", m] / ["speed", km/h]
-      ["arm"(, chargeur)]         fixe une charge prise dans l'inventaire (drone à moins de 5 m ; chargeur choisi, sinon la première) ;
+      ["arm"(, chargeur)]         fixe une charge prise dans l'inventaire (grenade, roquette, missile ou explosif, tout mod) (drone à moins de 5 m ; chargeur choisi, sinon la première) ;
       ["disarm"]                  retire la charge et la rend à l'inventaire (drone à moins de 5 m) ;
       ["payloads"]                charges compatibles portées : [[chargeur, libellé, nombre]...] ;
       ["strike", "LASER" | "GRID"]  tir et oublie, à confirmer d'un second appui ;
@@ -170,12 +170,39 @@ private _send = {
 };
 private _mapRender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 private _say = { params ["_lvl", "_txt"]; [_lvl, _txt, 4, 40] call comspec_atak_native_fnc_notify; };
-// Charges acceptées : chargeur de l'inventaire → munition déclenchée à l'impact.
-private _payloads = [
-    ["RPG7_F", "R_PG7_F", "roquette RPG-7"], ["RPG32_F", "R_PG32V_F", "roquette RPG-42"],
-    ["DemoCharge_Remote_Mag", "DemoCharge_Remote_Ammo_Scripted", "charge de démolition"],
-    ["HandGrenade", "GrenadeHand", "grenade RGO"], ["MiniGrenade", "mini_Grenade", "grenade RGN"]
-];
+// Charges acceptées : toute grenade (à main, fumigène, assourdissante, 40 mm), roquette, missile ou charge explosive
+// de l'inventaire, quel que soit le mod qui l'apporte (vanilla, ACE, RHS, CUP…), reconnue par la simulation de sa
+// munition. Retour de TTRD (13/10) : les grenades M67, M84, M18… de son inventaire étaient refusées (liste fixe de
+// cinq chargeurs vanilla). Chargeur → [chargeur, munition déclenchée à l'impact, libellé] ; [] si non compatible.
+private _payloadOf = {
+    params ["_mag"];
+    private _cm = configFile >> "CfgMagazines" >> _mag;
+    private _ammo = getText (_cm >> "ammo");
+    private _ca = configFile >> "CfgAmmo" >> _ammo;
+    if (_ammo isEqualTo "" || {!isClass _ca}) exitWith { [] };
+    private _sim = toLower getText (_ca >> "simulation");
+    private _ok = _sim in ["shotgrenade", "shotsmoke", "shotsmokex", "shotilluminating", "shotnvgmarker", "shotrocket", "shotmissile", "shotsubmunitions", "shotmine", "shotboundingmine", "shotdirectionalbomb"]
+        // Obus de 40 mm (M433, VOG…) : un seul coup par chargeur ; jamais les chargeurs de balles.
+        || {_sim isEqualTo "shotshell" && {(getNumber (_cm >> "count")) <= 1}};
+    if (!_ok) exitWith { [] };
+    // Charges commandées (démolition, sacoche, claymore) : variante « _Scripted », seule à partir sur triggerAmmo.
+    if (isClass (configFile >> "CfgAmmo" >> (_ammo + "_Scripted"))) then { _ammo = _ammo + "_Scripted"; };
+    private _lbl = getText (_cm >> "displayName");
+    [_mag, _ammo, [_lbl, _mag] select (_lbl isEqualTo "")]
+};
+// Charges compatibles portées par le joueur, une ligne par chargeur : [chargeur, munition, libellé].
+private _payloadsHave = {
+    private _seen = createHashMap;
+    private _out = [];
+    {
+        if !(_x in _seen) then {
+            _seen set [_x, true];
+            private _p = [_x] call _payloadOf;
+            if ((count _p) > 0) then { _out pushBack _p; };
+        };
+    } forEach (magazines player);
+    _out
+};
 private _link = { ["link"] call comspec_atak_native_fnc_droneAction };
 private _needLink = {
     if ((call _link) select 2) exitWith { true };
@@ -727,11 +754,11 @@ switch (_act) do {
         if (isNull _d) exitWith {};
         if ((player distance _d) > 5) exitWith { ["WARNING", "Le drone doit être à moins de 5 m pour fixer une charge"] call _say; };
         if !(missionNamespace getVariable ["comspec_atak_native_drone_strike", true]) exitWith { ["WARNING", "Drones armés interdits sur ce serveur"] call _say; };
-        private _mags = magazines player;
-        private _i = _payloads findIf { (_x select 0) isEqualTo _arg && {(_x select 0) in _mags} && {isClass (configFile >> "CfgAmmo" >> (_x select 1))} };
-        if (_i < 0) then { _i = _payloads findIf { ((_x select 0) in _mags) && {isClass (configFile >> "CfgAmmo" >> (_x select 1))} }; };
-        if (_i < 0) exitWith { ["WARNING", "Aucune charge dans l'inventaire (roquette RPG, charge de démolition ou grenade)"] call _say; };
-        (_payloads select _i) params ["_mag", "_ammo", "_label"];
+        private _have = call _payloadsHave;
+        private _i = _have findIf { (_x select 0) isEqualTo _arg };
+        if (_i < 0) then { _i = [-1, 0] select ((count _have) > 0); };
+        if (_i < 0) exitWith { ["WARNING", "Aucune charge dans l'inventaire (grenade, roquette ou charge explosive)"] call _say; };
+        (_have select _i) params ["_mag", "_ammo", "_label"];
         player removeMagazine _mag;
         _d setVariable ["COMSPEC_DroneArmed", _ammo, true];
         _d setVariable ["COMSPEC_DroneArmedLabel", _label, true];
@@ -742,7 +769,7 @@ switch (_act) do {
     };
     case "payloads": {
         private _mags = magazines player;
-        (_payloads select { ((_x select 0) in _mags) && {isClass (configFile >> "CfgAmmo" >> (_x select 1))} }) apply {
+        (call _payloadsHave) apply {
             private _m = _x select 0;
             [_m, _x select 2, { _x isEqualTo _m } count _mags]
         }

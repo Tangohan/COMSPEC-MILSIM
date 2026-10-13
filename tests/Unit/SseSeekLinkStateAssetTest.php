@@ -14,8 +14,7 @@ use PHPUnit\Framework\TestCase;
 final class SseSeekLinkStateAssetTest extends TestCase
 {
     private const FILES = [
-        'mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_ssePersonRefreshPanels.sqf',
-        'mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_sseIdentityQuery.sqf',
+        'mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_sseLinkState.sqf',
         'mod/@COMSPEC_SSE/addons/biometrics/functions/fn_bioQuery.sqf',
         'mod/@COMSPEC_SSE/addons/biometrics/functions/fn_bioCaptureLatentAction.sqf',
     ];
@@ -28,6 +27,15 @@ final class SseSeekLinkStateAssetTest extends TestCase
             self::assertStringNotContainsString('str (missionNamespace getVariable ["COMSPEC_LinkState"', $src, $rel);
             self::assertStringContainsString('missionNamespace getVariable ["COMSPEC_LinkState", ""]', $src, $rel);
             self::assertStringContainsString('"networkState"', $src, $rel);
+        }
+    }
+
+    public function testSeekPanelsUseTheSharedLinkVerdict(): void
+    {
+        // Le terminal SEEK et ses requêtes d'identité partagent le verdict de fn_sseLinkState.
+        foreach (['fn_ssePersonRefreshPanels.sqf', 'fn_sseIdentityQuery.sqf'] as $file) {
+            $src = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/' . $file);
+            self::assertStringContainsString('call comspec_overwatch_connect_fnc_sseLinkState', $src, $file);
         }
     }
 

@@ -93,6 +93,8 @@ private _reasonTxt = {
         case "BFTGONE": { "Inconnu (hors du suivi BFT)" };
         case "MYNET": { "Pas de réseau sur votre téléphone" };
         case "PENDING": { "Requête opérateur en cours…" };
+        case "SOS": { "Batterie vide : secours SIM, localisé par les relais" };
+        case "SOSNOREL": { "Batterie vide : aucun relais n'entend sa carte SIM" };
         default { "" };
     }
 };
@@ -112,11 +114,19 @@ private _fix = {
                 case (isNull _o || {!alive _o}): { "LOST" };
                 case !((_h get "qn") in ([_o, "norm"] call comspec_atak_native_fnc_phoneIdent)): { "LOST" };
                 case !([_o] call comspec_atak_native_fnc_hasDevice): { "OFF" };
+                // Batterie vide : la carte SIM en mode secours s'annonce encore aux relais (fn_simSos).
+                case ((["active", _o] call comspec_atak_native_fnc_simSos) && {!([getPosATL _o, str side group _o] call _jammedAt)}): { "SOS" };
                 case (isPlayer _o && {_o getVariable ["COMSPEC_ATAK_Airplane", false]}): { "AIR" };
                 case (isPlayer _o && {((_o getVariable ["COMSPEC_ATAK_Pub", []]) param [2, ""]) in ["OFF", "BROKEN"]}): { "OFF" };
                 case ([getPosATL _o, str side group _o] call _jammedAt): { "JAM" };
                 case (isPlayer _o && {_bars = (_o getVariable ["COMSPEC_ATAK_Pub", []]) param [1, 4]; _bars <= 0 || {!(_o getVariable ["COMSPEC_ATAK_Beacon", true])}}): { "NOSIG" };
                 default { "OK" };
+            };
+            if (_code isEqualTo "SOS") then {
+                private _fx = ["fix", _o] call comspec_atak_native_fnc_simSos;
+                if (_fx isEqualTo []) exitWith { _code = "SOSNOREL"; };
+                _pos = _fx select 0;
+                _rad = _fx select 1;
             };
             if (_code isEqualTo "OK") then {
                 // Triangulation par antennes : position décalée dans le rayon d'incertitude, plus large à 1 barre.
@@ -158,7 +168,7 @@ private _fix = {
     _h set ["status", _code];
     _h set ["why", [_code] call _reasonTxt];
     _h set ["checked", time];
-    if (_code isNotEqualTo "OK") exitWith { false };
+    if !(_code in ["OK", "SOS"]) exitWith { false };
     _h set ["pos", _pos];
     _h set ["rad", _rad];
     _h set ["t", time];
@@ -343,7 +353,7 @@ switch (_act) do {
                 if (isNull _target || {!(_target getVariable ["COMSPEC_ATAK_Traceable", true])}) exitWith { [format ["Inconnu : aucun abonné ne correspond à %1", _q]] call _setMsg; };
                 private _ts = side group _target;
                 private _mine = _ts isEqualTo (side group player);
-                if (_mine && {_target isNotEqualTo player} && {!(missionNamespace getVariable ["comspec_atak_native_geoloc_own", false])}) exitWith { ["Numéro de votre camp : traçage non autorisé sur cette mission (cherchez par INDICATIF)"] call _setMsg; };
+                if (_mine && {_target isNotEqualTo player} && {!(missionNamespace getVariable ["comspec_atak_native_geoloc_own", false])} && {!(["ownOk", _target] call comspec_atak_native_fnc_simSos)}) exitWith { ["Numéro de votre camp : traçage non autorisé sur cette mission (cherchez par INDICATIF)"] call _setMsg; };
                 private _sideKey = switch (_ts) do { case west: { "west" }; case east: { "east" }; case resistance: { "guer" }; default { "civ" }; };
                 if !(missionNamespace getVariable [format ["comspec_atak_native_geoloc_%1", _sideKey], true]) exitWith { ["Opérateur hors d'atteinte : ce camp n'est pas traçable sur cette mission"] call _setMsg; };
                 if (_mine) then { _h set ["owner", [_target] call comspec_atak_native_fnc_unitCallsign]; };
@@ -448,8 +458,8 @@ switch (_act) do {
                     [_hit get "pos"] call comspec_atak_native_fnc_mapCenter;
                 };
                 if ((_hit get "status") isNotEqualTo _was) then {
-                    if ((_hit get "status") isEqualTo "OK") then {
-                        ["INFO", format ["%1 %2 : de nouveau localisé", _hit get "sub", _hit get "q"], 4, 30] call comspec_atak_native_fnc_notify;
+                    if ((_hit get "status") in ["OK", "SOS"]) then {
+                        ["INFO", [format ["%1 %2 : de nouveau localisé", _hit get "sub", _hit get "q"], format ["%1 %2 : %3", _hit get "sub", _hit get "q", _hit get "why"]] select ((_hit get "status") isEqualTo "SOS"), 4, 30] call comspec_atak_native_fnc_notify;
                     } else {
                         ["WARNING", format ["%1 %2 : %3, dernière position conservée", _hit get "sub", _hit get "q", _hit get "why"], 5, 30] call comspec_atak_native_fnc_notify;
                     };
@@ -461,8 +471,8 @@ switch (_act) do {
         if (!isNull _card) then { _card ctrlSetStructuredText parseText (((["cardText"] call comspec_atak_native_fnc_mapSearch)) call comspec_atak_native_fnc_tr); };
     };
     case "cardText": {
-        private _ok = (_hit getOrDefault ["status", ""]) isEqualTo "OK";
-        private _col = ["#9aa39e", "#5cc76b"] select _ok;
+        private _ok = (_hit getOrDefault ["status", ""]) in ["OK", "SOS"];
+        private _col = ["#9aa39e", ["#5cc76b", "#f2ab33"] select ((_hit getOrDefault ["status", ""]) isEqualTo "SOS")] select _ok;
         private _age = if ((_hit getOrDefault ["t", -1]) < 0) then { "jamais" } else {
             private _a = round (time - (_hit get "t"));
             format ["%1 (il y a %2)", _hit get "hour", [format ["%1 s", _a], format ["%1 min", floor (_a / 60)]] select (_a >= 120)]
@@ -470,7 +480,7 @@ switch (_act) do {
         private _p = _hit getOrDefault ["pos", []];
         _ret = format ["<t font='COMSPEC_BarlowBold' color='#e9a53a'>%1</t> <t font='EtelkaMonospacePro' size='0.9'>%2</t>  <t size='0.85' color='%3'>%4</t><br/><t size='0.85'>Propriétaire : %5</t><br/><t size='0.85' color='#cfd8d3'>Vu à %6 · ± %7 m%8</t>",
             _hit getOrDefault ["sub", ""], _hit getOrDefault ["q", ""], _col,
-            [_hit getOrDefault ["why", ""], ["Suivi actif", "Localisé"] select !(_hit getOrDefault ["follow", false])] select _ok,
+            [_hit getOrDefault ["why", ""], ["Suivi actif", "Localisé"] select !(_hit getOrDefault ["follow", false])] select (_ok && {(_hit getOrDefault ["status", ""]) isEqualTo "OK"}),
             [_hit get "owner", "Inconnu"] select ((_hit getOrDefault ["owner", ""]) isEqualTo ""),
             _age, _hit getOrDefault ["rad", 0],
             ["", format [" · %1", [_p, 8] call comspec_atak_native_fnc_gridRef]] select ((count _p) >= 2)];
@@ -552,7 +562,7 @@ switch (_act) do {
         if ((count _hit) isEqualTo 0 || {isNull _map}) exitWith {};
         private _p = _hit getOrDefault ["pos", []];
         if ((count _p) < 2) exitWith {};
-        private _ok = (_hit getOrDefault ["status", ""]) isEqualTo "OK";
+        private _ok = (_hit getOrDefault ["status", ""]) in ["OK", "SOS"];
         private _rgb = if (_ok) then { switch (_hit get "kind") do { case "GPS": { [0.20, 0.90, 0.95] }; case "CS": { [0.28, 0.70, 1] }; default { [0.95, 0.67, 0.20] }; } } else { [0.62, 0.64, 0.63] };
         private _r = (_hit getOrDefault ["rad", 10]) max 5;
         private _fill = "#(rgb,8,8,3)color(1,1,1,1)";

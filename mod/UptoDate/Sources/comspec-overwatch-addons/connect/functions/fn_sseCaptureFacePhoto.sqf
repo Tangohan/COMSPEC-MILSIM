@@ -187,11 +187,31 @@ if (!isNull _disp) then {
         [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;
     };
 
-    [
-        format ["Photo du visage capturée (qualité %1) — elle sera jointe à la transmission de la fiche.", _q],
-        "tactical",
-        "info"
-    ] call comspec_overwatch_connect_fnc_announce;
+    // Sujet déjà au registre (fiche transmise par ce poste) : la photo part tout de suite sur sa
+    // fiche. Avant, elle n'était jointe qu'à une nouvelle transmission, que le terminal refusait
+    // justement parce que la personne était déjà enregistrée : la photo ne remontait jamais.
+    private _pid = if (isNull _target) then { "" } else { _target getVariable ["comspec_sse_athenaPersonId", ""] };
+    if (_pid isEqualType "" && {_pid isNotEqualTo ""}) then {
+        private _cs = [] call comspec_overwatch_connect_fnc_getCallsign;
+        if (_cs isEqualTo "") then { _cs = groupId (group player); };
+        private _p = getPosASL _target;
+        [
+            _pid, _png, _cs,
+            (_p select 0) toFixed 2, (_p select 1) toFixed 2, (_p select 2) toFixed 2,
+            mapGridPosition _target, format ["%1@portrait,q=%2", _angle, _q], _target
+        ] call comspec_overwatch_connect_fnc_sseUploadFacePhoto;
+        [
+            format ["Photo du visage capturée (qualité %1) — envoyée sur la fiche déjà au registre.", _q],
+            "tactical",
+            "info"
+        ] call comspec_overwatch_connect_fnc_announce;
+    } else {
+        [
+            format ["Photo du visage capturée (qualité %1) — elle sera jointe à la transmission de la fiche.", _q],
+            "tactical",
+            "info"
+        ] call comspec_overwatch_connect_fnc_announce;
+    };
 
     // Recopie hors fil jeu dans Documents\Arma 3 - COMSPEC\Captures (même dossier que le téléphone).
     [_png] spawn {

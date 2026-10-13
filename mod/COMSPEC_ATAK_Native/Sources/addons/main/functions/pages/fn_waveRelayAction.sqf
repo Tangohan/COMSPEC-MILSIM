@@ -11,6 +11,7 @@
       "talkgroup" : choisit le talkgroup data (variable publique COMSPEC_ATAK_Talkgroup) quand ACRE2 est absent.
       "channel"   : [id radio ACRE, canal] change le canal d'une radio ACRE2.
       "mapLinks"  : affiche / masque les liens du maillage sur la carte.
+      "mapRelays" : affiche / masque le calque Relais (pastilles des relais) sur la carte.
 */
 params [["_act", "scan"], ["_k", ""], ["_v", 0]];
 private _render = { if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "WAVERELAY") then { [{ ["WAVERELAY"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }; };
@@ -93,6 +94,11 @@ switch (_act) do {
     };
     case "mapLinks": {
         profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", !(profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false])];
+        call _render;
+    };
+    case "mapRelays": {
+        profileNamespace setVariable ["COMSPEC_ATAK_RelaysLayer", !(profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true])];
+        saveProfileNamespace;
         call _render;
     };
 };
