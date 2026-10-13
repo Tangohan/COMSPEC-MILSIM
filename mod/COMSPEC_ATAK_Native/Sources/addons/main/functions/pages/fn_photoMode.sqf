@@ -283,9 +283,16 @@ switch (toUpper _mode) do {
             && {((getLightingAt player) select 1) < 8}
         };
         private _fire = switch (_st getOrDefault ["flash", "AUTO"]) do { case "ON": { true }; case "OFF": { false }; default { _dark }; };
-        ((call _curView) select 0) params ["_px", "_py", "_pz"];
-        [_fire, [_px, _py, _pz]] spawn {
-            params ["_fire", "_phone"];
+        (call _curView) params ["_viewPos", "_viewDir"];
+        _viewPos params ["_px", "_py", "_pz"];
+        // Fiche du cliché (relais Discord) : position et axe de l'objectif, objectif, zoom, flash, modèle, version.
+        private _meta = ["", "", false, "", false, "phone", "", _viewPos, (((_viewDir select 0) atan2 (_viewDir select 1)) + 360) mod 360,
+            [["lens", ["rear", "selfie"] select (_st getOrDefault ["selfie", false])], ["zoom", _st getOrDefault ["zoom", 1]],
+             ["flash", ["off", "on"] select _fire], ["model", profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"]],
+             ["atak", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]]],
+            _viewDir];
+        [_fire, [_px, _py, _pz], _meta] spawn {
+            params ["_fire", "_phone", "_meta"];
             disableSerialization;
             private _ctx = uiNamespace getVariable ["COMSPEC_ATAK_PhotoCtx", []];
             private _caption = _ctx param [3, ""];
@@ -314,7 +321,7 @@ switch (toUpper _mode) do {
                 screenshot format ["comspec_atak_%1.png", floor (diag_tickTime * 10)];
                 ["WARNING", "Pas de réseau : photo gardée sur le poste, à envoyer depuis l'app Galerie", 5, 40] call comspec_atak_native_fnc_notify;
                 false
-            } else { ["", _caption, "CTAB", "", false, false, true] call comspec_overwatch_connect_fnc_captureReconImage };
+            } else { ["", _caption, "CTAB", "", false, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage };
             uiSleep 0.08;
             if (!isNull _light) then { deleteVehicle _light; };
             uiNamespace setVariable ["COMSPEC_ATAK_PhotoShooting", false];

@@ -4,7 +4,11 @@
     jpegRetryOnce : un seul report JPEG différé si le fichier n’est pas encore sur disque.
     photoMeta (facultatif) : fiche du cliché, champs réels côté DLL (COMSPEC Link 2.0.66, NotifyNewPhoto 17 à 23) :
       [titre, description, SSE (bool), dossier SSE, confidentiel (bool), source ("drone", "phone"…), nom du drone,
-       position ASL de la prise de vue, cap] — position et cap (facultatifs) remplacent ceux du joueur (drone).
+       position ASL de la prise de vue, cap, détails, direction visée] — position et cap (facultatifs) remplacent ceux
+       du joueur (drone, viseur du téléphone). Détails : [[clé, valeur]...] (objectif, zoom, flash, vision, modèle…) ;
+       direction visée : vecteur 3D de l'objectif (sinon direction de la vue du joueur).
+      Détails de la prise de vue (argument 27 de NotifyNewPhoto, COMSPEC Link 2.0.81, relais Discord) : ceux de la
+      fiche, plus mission, serveur, météo, hauteur sol, site, point visé (distance et grille) calculés ici.
       [] (défaut) : rien de plus n’est envoyé, comme avant. Une DLL plus ancienne ignore ces arguments.
     Retour: true si l’extension a accepté (OK|queued), false sinon
     (OK|duplicate n’est plus traité comme un succès d’envoi).
@@ -66,12 +70,18 @@ if (!isNull _overlayCam) then {
     _grid = [_overlayCam] call comspec_overwatch_connect_fnc_mgrsGrid;
 };
 // Fiche : position et cap de la prise de vue (drone) à la place de ceux du joueur.
-_photoMeta params ["", "", "", "", "", "", "", ["_mPos", [], [[]]], ["_mDir", -1, [0]]];
+_photoMeta params ["", "", "", "", "", "", "", ["_mPos", [], [[]]], ["_mDir", -1, [0]], ["_mExtra", [], [[]]], ["_mAim", [], [[]]]];
 if ((count _mPos) >= 3) then {
     _pos = _mPos select [0, 3];
     _grid = [ASLToAGL _pos] call comspec_overwatch_connect_fnc_mgrsGrid;
 };
 if (_mDir >= 0) then { _dir = _mDir; };
+// Direction visée : celle de l'objectif (fiche), sinon de la caméra active ou de la vue du joueur.
+private _aim = if ((count _mAim) >= 3) then { _mAim select [0, 3] } else {
+    [getCameraViewDirection _unit, vectorDir _overlayCam] select (!isNull _overlayCam)
+};
+if ((vectorMagnitude _aim) < 0.01) then { _aim = [sin _dir, cos _dir, 0]; };
+_aim = vectorNormalized _aim;
 private _author = [] call comspec_overwatch_connect_fnc_getCallsign;
 if (_author isEqualTo "") then { _author = name _unit };
 private _sideStr = "WEST";
@@ -319,6 +329,38 @@ private _fnc_notifyPath = {
         private _flag = { params ["_v"]; ["0", "1"] select ((_v isEqualTo true) || {_v isEqualTo 1} || {_v isEqualTo "1"}) };
         _notifyArgs append [[_mTitle] call _txt, [_mDesc] call _txt, [_mSse] call _flag, [_mCase] call _txt, [_mConf] call _flag, [_mSource] call _txt, [_mDrone] call _txt];
     };
+    // Détails de la prise de vue (argument 27, COMSPEC Link 2.0.81) : « clé=valeur|clé=valeur », lus par Athena
+    // pour le relais Discord. Une DLL plus ancienne ignore l'argument.
+    private _extra = [];
+    {
+        if (_x isEqualType [] && {(count _x) >= 2}) then { _extra pushBack [_x select 0, _x select 1]; };
+    } forEach _mExtra;
+    _extra pushBack ["mission", briefingName];
+    if (isMultiplayer) then { _extra pushBack ["server", serverName]; };
+    _extra pushBack ["agl", ((ASLToAGL _pos) select 2) toFixed 1];
+    // Prise de vue déplacée (drone) sans son axe : la vue du joueur ne dit rien de l'objectif, pas de visée.
+    if ((count _mAim) >= 3 || {(count _mPos) < 3}) then {
+        _extra pushBack ["pitch", (asin (((_aim select 2) max -1) min 1)) toFixed 0];
+        // Point visé : premier obstacle ou sol dans l'axe de l'objectif (5 km au plus), départ à 2 m de l'objectif.
+        private _from = _pos vectorAdd (_aim vectorMultiply 2);
+        private _to = _pos vectorAdd (_aim vectorMultiply 5000);
+        private _hits = lineIntersectsSurfaces [_from, _to, _unit, vehicle _unit, true, 1, "VIEW", "FIRE"];
+        private _hit = if (_hits isNotEqualTo []) then { (_hits select 0) select 0 } else { terrainIntersectAtASL [_from, _to] };
+        if ((_hit isEqualType []) && {(count _hit) >= 3} && {(_hit select [0, 2]) isNotEqualTo [0, 0]}) then {
+            _extra pushBack ["target_dist", (_pos vectorDistance _hit) toFixed 0];
+            _extra pushBack ["target_grid", [ASLToAGL _hit] call comspec_overwatch_connect_fnc_mgrsGrid];
+        };
+    };
+    // Cliché pris à distance (drone) : éloignement de l'opérateur.
+    if ((count _mPos) >= 3 && {(_photoMeta param [5, ""]) isEqualTo "drone"}) then { _extra pushBack ["operator_dist", ((getPosASL _unit) vectorDistance _pos) toFixed 0]; };
+    _extra pushBack ["overcast", (overcast * 100) toFixed 0];
+    _extra pushBack ["rain", (rain * 100) toFixed 0];
+    _extra pushBack ["fog", (fog * 100) toFixed 0];
+    _extra pushBack ["wind", (vectorMagnitude wind) toFixed 1];
+    // Sens vers lequel souffle le vent (vecteur wind) ; Athena affiche d'où il vient.
+    _extra pushBack ["wind_dir", ((((wind select 0) atan2 (wind select 1)) + 360) mod 360) toFixed 0];
+    private _clean = { params ["_v"]; ((([format ["%1", _v], _v] select (_v isEqualType "")) splitString ("|=" + toString [34])) joinString " ") select [0, 120] };
+    private _extraStr = (_extra apply { format ["%1=%2", [_x select 0] call _clean, [_x select 1] call _clean] }) joinString "|";
     // Date et heure du jeu (heure Zulu du bandeau de la photo, pas l'horloge du PC) et terrain : arguments 24 à 26
     // (COMSPEC Link 2.0.74). Arguments vides de la fiche : rien n'est envoyé pour eux, comme avant.
     while { (count _notifyArgs) < 24 } do { _notifyArgs pushBack ""; };
@@ -327,7 +369,8 @@ private _fnc_notifyPath = {
     _notifyArgs append [
         format ["%1-%2-%3", _gy, [_gmo] call _two, [_gd] call _two],
         format ["%1:%2:%3", [_gh] call _two, [_gmi] call _two, [(floor (dayTime * 3600)) mod 60] call _two],
-        worldName
+        worldName,
+        _extraStr
     ];
     private _raw = ["COMSPECExtension" callExtension ["NotifyNewPhoto", _notifyArgs]] call comspec_overwatch_connect_fnc_extResult;
     private _ok = [_raw] call _isQueuedOk;

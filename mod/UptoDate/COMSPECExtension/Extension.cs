@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.80";
+    private const string ExtensionVersion = "2.0.81";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -9021,6 +9021,10 @@ public static partial class Extension
             AddOptionalForm(multipart, "game_date", args, 24);
             AddOptionalForm(multipart, "game_time", args, 25);
             AddOptionalForm(multipart, "world_name", args, 26);
+            // Détails de la prise de vue (2.0.81, facultatif) : « clé=valeur|… » (visée, distance, météo, mission, zoom…),
+            // lus par Athena pour le relais Discord ; version de COMSPEC Link affichée avec.
+            AddOptionalForm(multipart, "photo_extra", args, 27);
+            multipart.Add(new StringContent(ExtensionVersion), "link_version");
             if (_steamUid.Length > 0) multipart.Add(new StringContent(_steamUid), "steam_uid");
             if (_sessionToken.Length > 0) multipart.Add(new StringContent(_sessionToken), "session_token");
             var fileName = Path.GetFileName(resolved) ?? "recon.png";

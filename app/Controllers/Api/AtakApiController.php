@@ -1195,13 +1195,12 @@ class AtakApiController
         return $unit !== '' ? $unit : $tenantName;
     }
 
-    private function reconPhoneIdent(int $tenantId): array
+    private function reconPhoneIdent(int $tenantId, ?int $userId = null): array
     {
         try {
-            if (\App\Support\ComspecApiKeyAuth::matchedTenantId() !== $tenantId) {
-                return [];
+            if ($userId === null && \App\Support\ComspecApiKeyAuth::matchedTenantId() === $tenantId) {
+                $userId = \App\Support\ComspecApiKeyAuth::matchedUserId();
             }
-            $userId = \App\Support\ComspecApiKeyAuth::matchedUserId();
             if ($userId === null || $userId < 1) {
                 return [];
             }
@@ -1223,6 +1222,28 @@ class AtakApiController
             ], static fn (string $v): bool => $v !== '');
         } catch (\Throwable) {
             return [];
+        }
+    }
+
+    /** Grade court de l'auteur d'un cliché (fiche du personnel), pour l'embed Discord. */
+    private function reconAuthorGrade(int $tenantId, int $userId): string
+    {
+        try {
+            $st = \App\Core\Database::getPdo()->prepare(
+                'SELECT COALESCE(NULLIF(g.label_short, \'\'), g.label_long, \'\') AS grade
+                 FROM users u LEFT JOIN grades g ON g.id = u.grade_id
+                 WHERE u.id = ? AND u.tenant_id = ? LIMIT 1'
+            );
+            $st->execute([$userId, $tenantId]);
+            $grade = trim((string) ($st->fetchColumn() ?: ''));
+            if ($grade === '') {
+                $personnel = (new \App\Repositories\PersonnelProfileRepository())->getByUserId($userId) ?? [];
+                $grade = trim((string) ($personnel['rank_display_override'] ?? '') ?: (string) ($personnel['rank_display'] ?? ''));
+            }
+
+            return mb_substr($grade, 0, 40);
+        } catch (\Throwable) {
+            return '';
         }
     }
 
@@ -11996,6 +12017,15 @@ class AtakApiController
             $gameUserId = \App\Support\ComspecApiKeyAuth::matchedTenantId() === $tenantId
                 ? \App\Support\ComspecApiKeyAuth::matchedUserId()
                 : null;
+            // Session de jeu sans clé API (cas courant) : compte retrouvé par le Steam vérifié de la session.
+            if ($gameUserId === null && is_array($actor) && is_string($actor['steam_uid'] ?? null) && $actor['steam_uid'] !== '') {
+                try {
+                    $steamUser = $this->userRepository->findBySteamIdForTenant($tenantId, $actor['steam_uid']);
+                    $gameUserId = $steamUser ? ((int) ($steamUser['id'] ?? 0) ?: null) : null;
+                } catch (\Throwable) {
+                    $gameUserId = null;
+                }
+            }
             if ($feedId === '' && $gameUserId !== null) {
                 $siteUnit = $this->operatorSiteUnitName($tenantId, $gameUserId);
                 if ($siteUnit !== '') {
@@ -12065,8 +12095,15 @@ class AtakApiController
             }
             // Relais Discord après l'enregistrement : photo jointe + carte, lieu, date/heure (champs facultatifs du jeu).
             // Clichés du drone compris (flux drone:<netId>). read_url : lecture sur Athena (route habilitée si confidentiel).
+            // Détails de la prise de vue (COMSPEC Link 2.0.81) : visée, distance, météo, mission, zoom… (Discord seulement).
             $discordMeta = $data + [
-                'device_ident' => $this->reconPhoneIdent($tenantId),
+                'photo_id' => (int) ($row['id'] ?? 0),
+                'author_grade' => $gameUserId !== null && ($feedId === '' || str_starts_with(strtolower($feedId), 'drone:'))
+                    ? $this->reconAuthorGrade($tenantId, $gameUserId)
+                    : '',
+                'extra' => \App\Support\QuickPictureDiscordEmbed::parseExtra((string) ($_POST['photo_extra'] ?? '')),
+                'link_version' => mb_substr(trim((string) ($_POST['link_version'] ?? '')), 0, 16),
+                'device_ident' => $this->reconPhoneIdent($tenantId, $gameUserId),
                 'feed_id' => mb_substr($feedId, 0, 120),
                 'read_url' => (string) ($row['url'] ?? ''),
                 'map_id' => $mapId > 0 ? $mapId : self::DEFAULT_MAP_ID,
