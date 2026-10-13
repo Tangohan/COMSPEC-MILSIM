@@ -2226,6 +2226,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/ping', [AtakPingController::class, 'ping']);
     // Dernières versions de l'ATAK natif et de COMSPEC Link (contrôle de mise à jour du mod, public).
     $router->get('/api/atak/version', [\App\Controllers\Api\AtakVersionController::class, 'latest']);
+    // Check de démarrage du mod relayé dans le salon Discord de debug (public, rate-limité, rien n'est enregistré).
+    $router->post('/api/atak/startup-check', [\App\Controllers\Api\AtakStartupCheckController::class, 'store']);
     $router->get('/map-data/{world}/{z}/{x}/{file}', [\App\Controllers\Api\AtakMapDataController::class, 'tile']);
     $router->get('/api/atak/tiles', [\App\Controllers\Api\AtakMapDataController::class, 'proxy']);
     $tacticalApi = \App\Controllers\Api\AthenaTacticalApiController::class;

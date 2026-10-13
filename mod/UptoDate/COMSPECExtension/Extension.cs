@@ -472,6 +472,55 @@ public static partial class Extension
         }
     }
 
+    /// <summary>Champs « clé=valeur » du SQF en JSON (chaînes échappées ici : le JSON écrit en SQF cassait les envois).</summary>
+    private static string StartupCheck(string?[] args)
+    {
+        var baseUrl = NormalizeBaseUrl(args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0] : _baseUrl);
+        if (!TryBuildRequestUri(baseUrl, "/api/atak/startup-check", out var uri, out var err) || uri is null)
+            return "ERR|" + err;
+        var json = new StringBuilder("{\"extension_version\":\"").Append(EscapeJson(CurrentExtensionVersion())).Append('"');
+        var fields = 0;
+        for (var i = 1; i < args.Length && fields < 48; i++)
+        {
+            var pair = args[i] ?? "";
+            var eq = pair.IndexOf('=');
+            if (eq <= 0 || eq > 40) continue;
+            var key = pair[..eq];
+            var keyOk = key != "extension_version";
+            foreach (var c in key)
+                if (!(c is >= 'a' and <= 'z' or >= '0' and <= '9' or '_')) keyOk = false;
+            if (!keyOk) continue;
+            var value = pair[(eq + 1)..];
+            if (value.Length > 600) value = value[..600];
+            json.Append(",\"").Append(key).Append("\":\"").Append(EscapeJson(value)).Append('"');
+            fields++;
+        }
+        json.Append('}');
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+            using var req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = JsonContent(json.ToString()) };
+            using var response = SendTimed(req, cts.Token);
+            if ((int)response.StatusCode == 429) return "ERR|rate_limited";
+            var body = ReadContentUtf8(response, cts.Token);
+            string status = "";
+            try
+            {
+                using var doc = JsonDocument.Parse(body);
+                if (doc.RootElement.TryGetProperty("status", out var s) && s.ValueKind == JsonValueKind.String)
+                    status = (s.GetString() ?? "").Replace("|", "");
+            }
+            catch (JsonException) { }
+            if (!response.IsSuccessStatusCode)
+                return "ERR|" + (status.Length > 0 ? status : "http_" + (int)response.StatusCode);
+            return "OK|" + (status.Length > 0 ? status : "sent");
+        }
+        catch (Exception ex)
+        {
+            return FormatCaughtError(ex);
+        }
+    }
+
     private static string? _currentExtensionVersion;
 
     /// <summary>Version de la DLL, lue une fois (réflexion appelée à chaque requête HTTP auparavant).</summary>
@@ -2950,6 +2999,12 @@ public static partial class Extension
         {
             return LatestVersions(args.Length > 0 ? args[0] : null);
         }
+        // Check de démarrage du mod (fn_startupCheck) : POST /api/atak/startup-check, public, sans session ni clé.
+        // ["StartupCheck", [adresse du portail, "clé=valeur", ...]] -> « OK|posted », « OK|duplicate », « OK|no_channel »… ou « ERR|… ».
+        if (function == "StartupCheck")
+        {
+            return StartupCheck(args);
+        }
 
         // Appel non bloquant : ["Async", [ticket, commande, args...]] répond tout de suite « QUEUED|ticket »,
         // exécute la commande sur un thread à part et renvoie son résultat par le rappel ("comspec", "async:<ticket>", résultat).
@@ -3116,7 +3171,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck";
         }
 
         if (function == "GetCapabilities")

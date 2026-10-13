@@ -185,6 +185,25 @@ EN : Line of sight: from your position to a point whose coordinates you enter
 Non testé en jeu. Demande de TTRD : remplacer « SOUS MON REGARD » par « de ma position vers le point », en entrant les coordonnées.
 - App Relief, onglet LIGNE DE VUE : le bouton SOUS MON REGARD est retiré. L'en-tête devient « DE MA POSITION VERS LE POINT : » et rappelle ma position (carroyage 8 chiffres). On entre les coordonnées du point (carroyage de 4, 6, 8 ou 10 chiffres, espaces acceptés) puis TRACER, ou on touche le point avec SUR LA CARTE.
 - Un carroyage court vise le centre de sa case (avant : le coin sud-ouest). La ligne part toujours de mes yeux, point à 1,7 m du sol. Tracé, profil, VOIR SUR LA CARTE et EFFACER inchangés.
+## Check de démarrage posté dans le Discord Athena (ATAK natif 1.75.0, COMSPEC Link 2.0.81, site)
+
+### Résumé joueur
+Type : nouveauté
+FR : Ton check de démarrage s'affiche dans le Discord Athena
+- Au début de chaque mission, le mod vérifie son installation et poste un court résumé dans le salon de debug du Discord Athena : version du mod, DLL, connexion Athena, mods détectés, FPS et erreurs.
+- Chaque étape est marquée bon, à surveiller ou en erreur : tout le monde voit tout de suite ce qui ne va pas et peut t'aider.
+- Seuls ton pseudo et ton indicatif apparaissent. Pour ne rien envoyer, décoche « Envoyer le check de démarrage » dans les options COMSPEC, rubrique ATAK · Debug.
+EN : Your startup check shows up in the Athena Discord
+- At the start of each mission, the mod checks its install and posts a short summary in the debug channel of the Athena Discord: mod version, DLL, Athena link, detected mods, FPS and errors.
+- Each step is marked good, to watch or failed: everyone sees straight away what is wrong and can help you.
+- Only your name and callsign are shown. To send nothing, untick "Send the startup check" in the COMSPEC options, ATAK · Debug section.
+
+### Détail technique
+Non testé en jeu. Il faut recompiler la DLL (build_mod.bat) et déployer le site ; pas de migration. Le salon et son webhook sont à créer : sans `DISCORD_DEBUG_WEBHOOK` dans le `.env` du VPS, Athena accepte le rapport et ne poste rien.
+- Nouveau `fn_startupCheck` (appelé par le postInit client, une fois par mission) : 45 s après l'arrivée en jeu, après le contrôle de l'installation (`fn_integrityCheck`), il évalue 11 étapes (main.pbo unique et cohérent, téléphone initialisé, DLL chargée et de la version attendue, extension qui répond et appels Async, portail Athena joignable, compte lié, mise à jour disponible, CBA/ACE/ACRE/TFAR, Overwatch connect/SSE/pylônes, FPS et ping, erreurs du journal) et les envoie par la commande DLL `StartupCheck`. Rien n'est envoyé avec le service Athéna sur « Non » ou le nouveau réglage CBA client `comspec_atak_native_startup_report` décoché. Trois essais en cas d'échec réseau. Résultat dans le journal (`[STARTUP]`) et dans l'app Debug, onglet DLL.
+- Données envoyées : pseudo, indicatif, versions (mod, config, DLL, Arma), carte et nom de mission, étapes. L'UID Steam n'est envoyé que haché (`hashValue`, pour le dédoublonnage), aucune adresse IP ni jeton.
+- COMSPEC Link 2.0.81 : commande `StartupCheck` (champs `clé=valeur` mis en JSON par la DLL), `POST /api/atak/startup-check` sans clé API.
+- Site : `POST /api/atak/startup-check` (public, 20 requêtes / 10 min par adresse, rien en base) poste un embed par joueur et par session dans le webhook `DISCORD_DEBUG_WEBHOOK` : ✅/⚠️/❌ par étape, libellés FR / EN, joueur, versions, carte, date. Anti-spam : un message par session, 6 par joueur et par heure, 20 par minute au total. Textes du jeu nettoyés avant Discord (liens retirés, adresses IP tronquées, dossier utilisateur Windows masqué, mentions neutralisées). Aucun lien dans le message.
 
 ## Langue du mod en tête des options CBA (ATAK natif 1.74.0)
 

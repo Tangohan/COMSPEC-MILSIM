@@ -3,6 +3,8 @@ private _perfT0 = diag_tickTime;
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] Client PostInit complete";
 // PBO ou DLL périmés, versions plus récentes sur Athena : signalés dans les notifications du téléphone.
 ["start"] call comspec_atak_native_fnc_integrityCheck;
+// Check de démarrage posté dans le salon Discord de debug d'Athena (une fois par mission, réglage CBA pour refuser).
+[] call comspec_atak_native_fnc_startupCheck;
 // Arsenal ACE : bouton COMSPEC (colonne de droite) qui regroupe les objets de nos mods (ATAK, Overwatch, SSE).
 if (!isNil "ace_arsenal_fnc_addRightPanelButton") then {
     // Liste faite au lancement du jeu (XEH_preStart) : plus de parcours de tout CfgWeapons à l'arrivée.
