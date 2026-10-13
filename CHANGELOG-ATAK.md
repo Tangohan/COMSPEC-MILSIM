@@ -11,6 +11,13 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Taille du téléphone en plein écran réglable (ATAK natif 1.65.0)
+
+Non testé en jeu. Demande de TTRD : le téléphone ouvert en plein écran est trop gros pour certains.
+- Nouveau réglage par joueur « Taille du téléphone en plein écran », de 60 à 100 % (100 % par défaut = taille actuelle), dans le menu CBA (COMSPEC > ATAK · Affichage) et dans l'app Réglages > Emplacement (60, 70, 80, 90, 100 %). Les deux sont le même réglage.
+- Le téléphone reste centré ; l'écran, le texte, les boutons, les touches de la coque et la carte sont recalculés depuis cette taille. Le mode mini et sa taille ne changent pas.
+- À vérifier en jeu : prendre le téléphone en main, passer en plein écran, essayer 60 % et 80 %, cliquer sur les apps, le dock, la carte et les touches de la coque ; changer la valeur téléphone ouvert (elle s'applique tout de suite).
+
 ## Connexion Athena : « invalid_url » mieux géré (ATAK natif 1.64.0, COMSPEC Link 2.0.77)
 
 Non testé en jeu. Capture de TTRD : l'onglet COMPTE affichait « Athena n'a pas donné de code (invalid_url) ». Il faut recompiler la DLL (build_mod.bat) ; pas de migration.
