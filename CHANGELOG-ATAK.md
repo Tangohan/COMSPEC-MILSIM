@@ -53,6 +53,30 @@ EN : A test to fix the black drone picture in the phone
 - Retour de TTRD (13/10) : la PiP s'affiche partout ailleurs dans le jeu, sauf dans le téléphone. fn_pipCheck "test" / "testEnd" : caméra devant le joueur, texture carrée `#(argb,512,512,1)r2t(comspecpiptest,1.0)` à 4 endroits (1 groupe de contenu, 2 display du téléphone, 3 RscDisplayEmpty par-dessus, 4 calque cutRsc RscTitleDisplayEmpty), journal [CAMERA] ; bouton dans la rangée RÉGLAGES de la vue caméra.
 - fn_tr : les textures commençant par « #( » ne sont jamais traduites.
 - Seul commit de la PR #771 resté hors du regroupement #777. Non testé en jeu.
+## Langues ajoutées par la communauté (ATAK natif 1.89.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le téléphone peut être traduit dans d'autres langues par la communauté
+- Une traduction du téléphone dans une autre langue peut maintenant être publiée sur le Workshop comme un petit mod séparé, par n'importe qui.
+- Une fois ce mod chargé, sa langue apparaît dans Réglages > Langue du téléphone et dans les options COMSPEC, à côté de Français et English. En Auto, elle est choisie toute seule si ton jeu est dans cette langue.
+- Une phrase pas encore traduite s'affiche en anglais.
+- Le guide pour les traducteurs est fourni avec le mod.
+EN : The phone can be translated into other languages by the community
+- Anyone can now publish a translation of the phone into another language as a small separate mod on the Workshop.
+- Once that mod is loaded, its language appears in Settings > Language on the phone and in the COMSPEC options, next to Français and English. On Auto, it is picked automatically when your game runs in that language.
+- A sentence that is not translated yet is shown in English.
+- A guide for translators ships with the mod.
+
+### Détail technique
+
+- Registre `CfgComspecLanguages` (config.cpp) : une classe par code de langue avec `name`, `file` (dictionnaire `[["français", "traduction"], ...]`, 3e colonne ignorée) et `gameLanguage[]`. L'ATAK natif y déclare `en` (i18n/en.txt) ; un mod de traduction ajoute la sienne sans toucher au code.
+- Nouveaux `fn_langList` (langues déclarées, gardées dans uiNamespace) et `fn_langResolve` (valeur du réglage -> code ; Auto : français, sinon la langue dont `gameLanguage` correspond au jeu, sinon anglais ; langue d'un mod déchargé : comme Auto).
+- `fn_langApply` charge l'anglais puis la langue choisie par-dessus (phrase manquante = anglais), garde un dictionnaire préparé par langue dans uiNamespace (`COMSPEC_ATAK_I18nUi_<code>`) et recharge quand la langue change (`COMSPEC_ATAK_I18nLoaded`). `fn_trMenu` (menus CBA Overwatch connect et SSE) suit le même chemin.
+- Réglage CBA `comspec_atak_native_language` et Réglages > Langue du téléphone : Auto, Français, puis chaque langue de `fn_langList` (quatre boutons par ligne au plus).
+- Kit traducteurs : `mod/COMSPEC_ATAK_Native/localisation/` (README EN/FR, `template/xx.txt` à trois colonnes, exemple d'addon `comspec_atak_lang_es`). `python3 tools/i18n.py community [fichier]` met à jour un fichier de traduction (ou régénère le modèle) et signale les `%1` perdus.
+- Hors champ : noms d'objets et modules Eden/Zeus (stringtable, langue du jeu), fenêtres d'accord et de choix Athéna de la connexion Overwatch (textes FR/EN propres).
+- main.pbo reconstruit avec HEMTT. COMSPEC Link reste en 2.0.83. Non testé en jeu : à vérifier, le choix de langue (Français, English, Auto) marche comme avant, et un mod de test construit depuis l'exemple ajoute bien sa langue.
 
 ## Regroupement : IA ennemie et ATAK perdus, drone, pylônes relais, SEEK, Zeus (ATAK natif 1.88.0)
 
