@@ -144,7 +144,8 @@ class HomeController
                         }
                     }
                     $end = $decoded['founder_trial_ends_at'] ?? null;
-                    if ($owner && ! $paid && is_string($end) && $end !== '') {
+                    $gifted = \App\Support\PlanGift::activeFromSettings($decoded) !== null;
+                    if ($owner && ! $paid && ! $gifted && is_string($end) && $end !== '') {
                         $ts = strtotime($end);
                         if ($ts !== false && $ts > time()) {
                             $founderTrialEndsAt = $end;
