@@ -11,6 +11,7 @@ class CfgPatches {
             "COMSPEC_Module_SSE_Profile",
             "COMSPEC_Module_SSE_Equip",
             "COMSPEC_Module_TheaterSurvey",
+            "COMSPEC_Module_GeoNetwork",
             "COMSPEC_Module_AtakShowEnemyAi"
         };
         weapons[] = {};
@@ -108,6 +109,8 @@ class CfgFunctions {
             class diagIsolateStop {};
             class diagIsolateShow {};
             class diagIsolateOnLoad {};
+            class diagChecks {};
+            class diagAction {};
             class collectBugReportLog {};
             class disconnect {};
             class playtimeTracker {};
@@ -128,6 +131,7 @@ class CfgFunctions {
             class theaterSurveyResend {};
             class moduleTheaterSurvey {};
             class registerZenTheaterSurvey {};
+            class moduleGeoNetwork {};
             class forceSyncData {};
             class arsenalLocalLoadouts {};
             class arsenalNormalizeLoadout {};
@@ -898,6 +902,9 @@ class CfgVehicles
     // Relevé de carte (Eden)
     #include "modules\module_theater_survey.hpp"
 
+    // Routes et villes seulement (Eden ; Zeus via ZEN / ACE Zeus)
+    #include "modules\module_geo_network.hpp"
+
     // Contacts ennemis sur le poste ATAK (Eden)
     #include "modules\module_atak_show_enemy_ai.hpp"
 
@@ -1016,33 +1023,70 @@ class RscTitles
         name = "COMSPEC_DiagIsolateHud";
         onLoad = "uiNamespace setVariable ['COMSPEC_DiagIsolateHudDisp', _this select 0];";
         onUnload = "uiNamespace setVariable ['COMSPEC_DiagIsolateHudDisp', displayNull];";
+        // Bandeau du pas à pas (fn_diagIsolateHud) : haut centre, couleurs de l'ATAK natif.
         class controls
         {
             class Bg: RscText
             {
                 idc = -1;
-                x = 0.28 * safezoneW + safezoneX;
-                y = 0.03 * safezoneH + safezoneY;
-                w = 0.44 * safezoneW;
-                h = 0.36 * safezoneH;
-                colorBackground[] = {0.02, 0.06, 0.08, 0.92};
+                x = 0.33 * safezoneW + safezoneX;
+                y = 0.025 * safezoneH + safezoneY;
+                w = 0.34 * safezoneW;
+                h = 0.16 * safezoneH;
+                colorBackground[] = {0.025, 0.030, 0.027, 0.93};
+            };
+            class Accent: RscText
+            {
+                idc = -1;
+                x = 0.33 * safezoneW + safezoneX;
+                y = 0.025 * safezoneH + safezoneY;
+                w = 0.34 * safezoneW;
+                h = 0.003 * safezoneH;
+                colorBackground[] = {0.95, 0.67, 0.20, 1};
             };
             class Title: RscStructuredText
             {
                 idc = 10;
-                x = 0.29 * safezoneW + safezoneX;
-                y = 0.035 * safezoneH + safezoneY;
-                w = 0.42 * safezoneW;
-                h = 0.028 * safezoneH;
+                x = 0.338 * safezoneW + safezoneX;
+                y = 0.032 * safezoneH + safezoneY;
+                w = 0.324 * safezoneW;
+                h = 0.03 * safezoneH;
                 text = "";
             };
             class Body: RscStructuredText
             {
                 idc = 11;
-                x = 0.29 * safezoneW + safezoneX;
+                x = 0.338 * safezoneW + safezoneX;
                 y = 0.062 * safezoneH + safezoneY;
-                w = 0.42 * safezoneW;
-                h = 0.318 * safezoneH;
+                w = 0.324 * safezoneW;
+                h = 0.07 * safezoneH;
+                text = "";
+            };
+            class ProgressBg: RscText
+            {
+                idc = 13;
+                x = 0.338 * safezoneW + safezoneX;
+                y = 0.135 * safezoneH + safezoneY;
+                w = 0.324 * safezoneW;
+                h = 0.006 * safezoneH;
+                colorBackground[] = {0.070, 0.082, 0.072, 1};
+            };
+            class ProgressFill: RscText
+            {
+                idc = 12;
+                x = 0.338 * safezoneW + safezoneX;
+                y = 0.135 * safezoneH + safezoneY;
+                w = 0;
+                h = 0.006 * safezoneH;
+                colorBackground[] = {0.95, 0.67, 0.20, 1};
+            };
+            class Foot: RscStructuredText
+            {
+                idc = 14;
+                x = 0.338 * safezoneW + safezoneX;
+                y = 0.145 * safezoneH + safezoneY;
+                w = 0.324 * safezoneW;
+                h = 0.036 * safezoneH;
                 text = "";
             };
         };

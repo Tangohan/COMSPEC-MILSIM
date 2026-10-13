@@ -1,5 +1,6 @@
 /*
-    Affiche / met à jour le bandeau de dépannage (reste à l’écran même en pause).
+    Affiche / met à jour le bandeau du pas à pas (reste à l’écran même en pause) :
+    étape, fonction en cours, temps restant, barre de progression, dernier essai, état de la liaison.
 */
 params [
     ["_label", "", [""]],
@@ -18,27 +19,46 @@ if (isNull (uiNamespace getVariable ["COMSPEC_DiagIsolateHudDisp", displayNull])
 private _disp = uiNamespace getVariable ["COMSPEC_DiagIsolateHudDisp", displayNull];
 if (isNull _disp) exitWith {};
 
-private _title = _disp displayCtrl 10;
-private _body = _disp displayCtrl 11;
+private _T = { _this call comspec_overwatch_connect_fnc_tr };
 private _step = (_index + 1) min _total;
-private _remainTxt = if (_remain < 0) then { "—" } else { format ["%1 s", round _remain] };
-private _titleTxt = "<t align='center' font='PuristaBold' size='1.05' color='#e8f4f0'>Dépannage liaison</t>";
-private _bodyTxt = format [
-    "<t align='center' size='0.88' color='#2dd4a8'>Étape %1 / %2</t><br/><t align='center' font='PuristaBold' size='1.15' color='#ffffff'>%3</t><br/><t align='center' size='0.82' color='#ffd27a'>Encore %4</t><br/><t align='center' size='0.68' color='#8aa0b4'>Si le jeu s’arrête, c’est cette fonction. Relancez Arma : le dernier essai est mémorisé.</t>",
-    _step,
-    _total,
-    _label,
+private _delay = missionNamespace getVariable ["COMSPEC_DiagIsolateDelay", 55];
+private _remainTxt = if (_remain < 0) then { "—" } else { (format ["encore %1 s", round _remain]) call _T };
+
+(_disp displayCtrl 10) ctrlSetStructuredText parseText ((format [
+    "<t font='PuristaSemibold' size='0.95' color='#E6F0E8'>%1</t><t align='right' font='PuristaMedium' size='0.85' color='#F2AB33'>%2</t>",
+    "Dépannage liaison · pas à pas" call _T,
+    (format ["Étape %1 / %2", _step, _total]) call _T
+]) call comspec_overwatch_connect_fnc_tr);
+
+private _body = format [
+    "<t font='PuristaSemibold' size='1.15' color='#FFFFFF'>%1</t><t align='right' font='PuristaMedium' size='0.9' color='#F2AB33'>%2</t>",
+    _label call _T,
     _remainTxt
 ];
 private _probe = missionNamespace getVariable ["COMSPEC_DiagIsolateProbeNote", ""];
 if ((_probe isEqualType "") && {_probe isNotEqualTo ""}) then {
-    _bodyTxt = _bodyTxt + format ["<br/><t align='center' size='0.78' color='#7dffb3'>%1</t>", _probe];
+    _body = _body + format ["<br/><t font='PuristaMedium' size='0.78' color='#5CC76B'>%1</t>", _probe call _T];
 };
-if (!isNil "comspec_overwatch_connect_fnc_diagStatusSnapshot") then {
-    private _snap = [] call comspec_overwatch_connect_fnc_diagStatusSnapshot;
-    if ((_snap isEqualType createHashMap) && {(_snap getOrDefault ["hudHtml", ""]) isNotEqualTo ""}) then {
-        _bodyTxt = _bodyTxt + "<br/>" + (_snap get "hudHtml");
-    };
+(_disp displayCtrl 11) ctrlSetStructuredText parseText ((_body) call comspec_overwatch_connect_fnc_tr);
+
+// Progression sur l'ensemble du pas à pas.
+private _bg = _disp displayCtrl 13;
+private _fill = _disp displayCtrl 12;
+if (!isNull _bg && {!isNull _fill}) then {
+    private _done = (_index + ((1 - ((_remain max 0) / (_delay max 1))) max 0 min 1)) / (_total max 1);
+    private _p = ctrlPosition _bg;
+    _fill ctrlSetPosition [_p select 0, _p select 1, (_p select 2) * (_done max 0 min 1), _p select 3];
+    _fill ctrlCommit 0;
 };
-if (!isNull _title) then { _title ctrlSetStructuredText parseText ((_titleTxt) call comspec_overwatch_connect_fnc_tr); };
-if (!isNull _body) then { _body ctrlSetStructuredText parseText ((_bodyTxt) call comspec_overwatch_connect_fnc_tr); };
+
+private _link = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
+private _linkTxt = switch (_link) do {
+    case "linked": { "<t color='#5CC76B'>" + ("liaison OK" call _T) + "</t>" };
+    case "connecting": { "<t color='#F2AB33'>" + ("connexion…" call _T) + "</t>" };
+    default { "<t color='#94A399'>" + ("liaison coupée" call _T) + "</t>" };
+};
+(_disp displayCtrl 14) ctrlSetStructuredText parseText ((format [
+    "<t font='PuristaLight' size='0.72' color='#94A399'>%1 · %2</t>",
+    _linkTxt,
+    "si le jeu s'arrête, cette fonction est en cause · Échap > Arrêter le pas à pas" call _T
+]) call comspec_overwatch_connect_fnc_tr);

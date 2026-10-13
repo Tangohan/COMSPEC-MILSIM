@@ -1,12 +1,14 @@
 /*
     Coupe Overwatch, puis rallume chaque brique de liaison une par une,
-    55 secondes entre chaque. Le bandeau affiche la fonction en cours :
-    si le jeu s’arrête, c’est celle-là.
+    _delay secondes entre chaque (20 rapide, 55 complet). Le bandeau affiche la fonction en cours :
+    si le jeu s’arrête, c’est celle-là (étape mémorisée dans le profil, effacée quand le pas à pas finit ou est arrêté).
 */
+params [["_delay", 55, [0]]];
+_delay = (round _delay) max 10 min 120;
 if (!hasInterface) exitWith { false };
 if (isNull player) exitWith { false };
 if (missionNamespace getVariable ["COMSPEC_DiagIsolateActive", false]) exitWith {
-    ["COMSPEC_Warning", ["Un dépannage est déjà en cours."]] call comspec_overwatch_connect_fnc_showNotification;
+    ["COMSPEC_Warning", ["Un pas à pas est déjà en cours." call comspec_overwatch_connect_fnc_tr]] call comspec_overwatch_connect_fnc_showNotification;
     false
 };
 
@@ -21,10 +23,9 @@ missionNamespace setVariable ["COMSPEC_DiagIsolateProbeNote", "", false];
 missionNamespace setVariable ["COMSPEC_DiagIsolatePrevEnabled", missionNamespace getVariable ["comspec_overwatch_enabled", true], false];
 missionNamespace setVariable ["comspec_overwatch_enabled", false, false];
 
-private _delay = 55;
 missionNamespace setVariable ["COMSPEC_DiagIsolateDelay", _delay, false];
 
-["WARN", "Diag", format ["Dépannage liaison démarré — %1 étapes, %2 s chacune", count _steps, _delay]] call comspec_overwatch_connect_fnc_log;
+["WARN", "Diag", format ["Pas à pas démarré — %1 étapes, %2 s chacune", count _steps, _delay]] call comspec_overwatch_connect_fnc_log;
 
 [_token, _steps, _delay] spawn {
     params ["_token", "_steps", "_delay"];
@@ -68,8 +69,8 @@ missionNamespace setVariable ["COMSPEC_DiagIsolateDelay", _delay, false];
     if ((missionNamespace getVariable ["COMSPEC_DiagIsolateToken", -1]) isNotEqualTo _token) exitWith {};
 
     ["INFO", "Diag", "Dépannage liaison : toutes les étapes ont tenu"] call comspec_overwatch_connect_fnc_log;
-    ["COMSPEC_Info", ["Dépannage terminé : aucune étape n’a arrêté le jeu."]] call comspec_overwatch_connect_fnc_showNotification;
-    [] call comspec_overwatch_connect_fnc_diagIsolateStop;
+    [true] call comspec_overwatch_connect_fnc_diagIsolateStop;
+    ["COMSPEC_Info", ["Pas à pas terminé : aucune étape n’a arrêté le jeu." call comspec_overwatch_connect_fnc_tr]] call comspec_overwatch_connect_fnc_showNotification;
 };
 
 closeDialog 0;

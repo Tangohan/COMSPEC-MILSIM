@@ -15,15 +15,10 @@ private _brg = _air getDir _tgt;
 private _off = [_hdg, _brg] call _diff;
 private _ok = _off <= 30;
 private _txt = format ["IN FROM THE %1, cap %2°, cible à %3° de son nez", [_tgt getDir _air] call _card, round _hdg, round _off];
-// Axe final d'attaque : nombres de la saisie.
+// Axe final d'attaque : fenêtre lue dans la saisie (fn_jtacFah).
 private _fah = _b getOrDefault ["fah", ""];
-private _nums = ((_fah splitString " -±+/°abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") apply { parseNumber _x }) select { _x >= 0 && {_x <= 360} };
-if ((count _nums) > 0) then {
-    private _win = switch (true) do {
-        case ((count _nums) >= 2 && {(_fah find "±") >= 0 || {(_fah find "+/-") >= 0}}): { [(_nums select 0) - (_nums select 1), (_nums select 0) + (_nums select 1)] };
-        case ((count _nums) >= 2): { [_nums select 0, _nums select 1] };
-        default { [(_nums select 0) - 20, (_nums select 0) + 20] };
-    };
+private _win = [_fah] call comspec_atak_native_fnc_jtacFah;
+if ((count _win) isEqualTo 2) then {
     _win params ["_lo", "_hi"];
     private _center = _lo + ((((_hi - _lo) + 360) mod 360) / 2);
     private _half = ((((_hi - _lo) + 360) mod 360) / 2) max 1;
