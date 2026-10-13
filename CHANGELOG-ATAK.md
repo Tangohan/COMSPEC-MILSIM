@@ -11,12 +11,25 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Musique : l'onglet ATHENA ne reste plus bloqué sur « Chargement » (ATAK natif 1.60.0)
+## Musique : l'onglet ATHENA ne reste plus bloqué sur « Chargement » (ATAK natif 1.61.0)
 
 Non testé en jeu. Pas de DLL à recompiler. Signalé par TTRD : onglet ATHENA, playlist globale, « Chargement depuis Athena… » sans fin et boutons grisés.
 - Cause : l'état « chargement en cours » est gardé dans uiNamespace, qui survit à la fin de mission, alors que le script qui attendait la réponse d'Athena est arrêté. Revenu en jeu, l'onglet attendait une réponse qui ne viendrait jamais.
 - Un chargement de plus de 35 s est maintenant considéré comme perdu : un garde-fou affiche « Athena n'a pas répondu à temps », ACTUALISER redevient actif et la vue se recharge seule 20 s après une erreur. La liste déjà reçue reste affichée pendant un nouveau chargement ; une réponse arrivée trop tard est ignorée.
 - Messages plus justes : une erreur 503 d'Athena (surcharge, maintenance) n'est plus présentée comme « migrations à lancer ».
+
+---
+
+## Gestes : doigt d'honneur corrigé, désactivé par défaut (ATAK natif 1.60.0)
+
+### Modifié
+- **Main du doigt d'honneur** : l'orientation de la paume était inversée (les doigts se repliaient vers le dos de la main). Toutes les poses du doigt d'honneur, du doigt d'honneur libre et du selfie sont régénérées par `tools/gen_gestures.py`, et la position du téléphone dans la main au selfie est recalculée.
+- **Réglage d'addon « Gestes doigt d'honneur »** (COMSPEC · ATAK · Gestes), **désactivé par défaut** : tant qu'il n'est pas coché, les touches « Doigt d'honneur » et « Doigt d'honneur libre (maintenir) » ne font rien.
+
+### Retiré
+- Les actions ACE perso « Doigt d'honneur » et « Doigt d'honneur libre (6 s) ».
+
+---
 
 ## Musique : les morceaux mis en ligne sur le site apparaissent sans redémarrer (ATAK natif 1.59.0)
 
