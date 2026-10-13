@@ -69,7 +69,7 @@ Une seule version pour 17 PR regroupées (#720, #721, #724, #727, #731 à #736, 
 
 #### Lecteur d'images de reconnaissance (zoom, plein écran, fiche, album) (#739)
 
-- Site seul : lecteur d'images de reconnaissance (zoom, plein écran, fiche de la prise de vue, album) sur la carte ATAK, la tacmap et les remontées ; vue recon-viewer, route et API associées, test ReconImageViewerTest.
+- Site seul : lecteur d'images de reconnaissance (zoom, plein écran, fiche de la prise de vue, album) sur la carte ATAK, la tacmap et les remontées ; vue recon-viewer, route et API associées, test ReconImageViewerTest. Le lien « Ouvrir la photo sur Athena » des photos Discord (#744) ouvre maintenant ce lecteur (ReconImageStorage::viewerUrl).
 
 #### Véhicules refusés par Athena (HTTP 400) : JSON réparé, motif gardé dans le journal (#731)
 
