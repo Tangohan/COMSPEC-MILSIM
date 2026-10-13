@@ -149,10 +149,10 @@ private _perso = [
     ]],
     ["COMSPEC_ATAK_TextScale", 1, "Taille du texte", [["PETIT", 0.9], ["NORMAL", 1], ["GRAND", 1.15], ["TRÈS GRAND", 1.3]]] call _profSegment,
     // Police : réglage CBA comspec_atak_native_font (aussi dans Options des addons > COMSPEC).
-    ["segment", "Police", [["ROBOTO", "roboto"], ["PURISTA", "purista"]] apply {
+    ["segment", "Police", [["ROBOTO", "roboto"], ["PURISTA", "purista"], ["BARLOW (TEST)", "barlow2"]] apply {
         _x params ["_t", "_v"];
         [_t, compile format ["['comspec_atak_native_font', '%1', false, 'client'] call CBA_settings_fnc_set;", _v], _v isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_FontFam", "roboto"])]
-    }, "Police de tout le téléphone : Roboto Condensed par défaut, ou Purista."],
+    }, "Police de tout le téléphone : Roboto Condensed par défaut, ou Purista. Barlow est en test."],
     ["COMSPEC_ATAK_IconDensity", 0, "Icônes du lanceur", [["GRANDES", -1], ["NORMALES", 0], ["SERRÉES", 1]], "Moins ou plus d'icônes par ligne"] call _profSegment,
     ["section", "Animations et sons", "Un téléphone qui réagit : mouvement, clic et vibration légère, écran de verrouillage"],
     ["COMSPEC_ATAK_Animations", true, "", "Animations", "App qui s'ouvre en zoomant, page qui glisse au retour, onde sous le doigt, volet rapide animé"] call _profSwitch,
