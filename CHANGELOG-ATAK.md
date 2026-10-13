@@ -212,6 +212,14 @@ Non testé en jeu. Demande de TTRD : la sélection de langue dans Options des ad
 - Défaut : Auto (suit la langue du jeu : français si Arma est en français, anglais sinon). Un joueur qui avait déjà choisi Français ou English garde son choix.
 - Un seul réglage pour tout le mod : téléphone, menus CBA COMSPEC (ATAK natif, Overwatch, SSE) et écrans du SSE. Le choix dans le téléphone (Réglages > Langue / Language) est le même réglage.
 - Changer de langue en cours de partie : le téléphone se redessine et les menus CBA COMSPEC sont retraduits à leur prochaine ouverture, sans relancer la mission (avant, il fallait relancer la mission).
+## Photos sur Discord : détails de la prise de vue (ATAK natif 1.74.0, COMSPEC Link 2.0.81)
+
+Non testé en jeu. Demande de TTRD : l'embed Discord des photos manquait de données.
+- L'embed Quick Picture et Cliché drone affiche maintenant le grade de l'auteur, la mission et le serveur, l'altitude (mer et sol), la visée (site, point visé avec sa distance et sa grille, éloignement de l'opérateur pour le drone), la prise de vue (objectif arrière ou selfie, zoom, flash ; vision jour, nocturne ou thermique du drone), la météo (couverture, pluie, brouillard, vent), le terminal (modèle, versions ATAK et Link) et un lien vers la photo sur Athena.
+- Le cap et la position d'une photo du téléphone sont ceux de l'objectif (viseur), plus ceux du joueur.
+- Unité, grade et téléphone de l'auteur retrouvés aussi par le Steam de la session de jeu (avant : seulement avec une clé API).
+- Cliché confidentiel : ni visée ni lien public.
+- COMSPEC Link envoie ces détails à Athena (champ photo_extra) avec sa version. connect.pbo et main.pbo reconditionnés.
 
 ## Texte du bouton PANIQUE (ATAK natif 1.73.0)
 

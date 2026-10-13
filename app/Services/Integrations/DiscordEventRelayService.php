@@ -169,7 +169,8 @@ final class DiscordEventRelayService
      *
      * Appelée une fois la photo enregistrée sur Athena (fin de POST /api/recon/images) :
      * la photo est jointe au message (copie JPEG allégée) et affichée dans un embed avec
-     * opérateur, position, zone, date/heure en jeu et réelle. Une même photo n'est publiée qu'une fois.
+     * opérateur, mission, position, altitude, visée, prise de vue, zone, date/heure en jeu et réelle, météo, terminal
+     * et lien vers la photo sur Athena. Une même photo n'est publiée qu'une fois.
      * Clichés du drone (app Drone du téléphone) : même salon. Fiche SSE : image floutée ; fiche confidentielle :
      * aucune image, seulement le message, le lien de lecture sur Athena (read_url) et une note de confidentialité.
      *
@@ -217,6 +218,7 @@ final class DiscordEventRelayService
             $readUrl = url(ltrim($readUrl, '/'));
         }
         $ctx['read_url'] = preg_match('#^https?://#i', $readUrl) === 1 ? $readUrl : '';
+        $ctx['viewer_url'] = $this->photoViewerUrl($meta, $mode, $ctx['read_url']);
         $sent = false;
         // Confidentiel : aucune image ne part (ni jointe, ni lien public). SSE : copie floutée seulement.
         $prepared = $mode === QuickPictureDiscordEmbed::MODE_CONFIDENTIAL
@@ -258,6 +260,34 @@ final class DiscordEventRelayService
                 $limiter->clear($dedupKey);
             }
         }
+    }
+
+    /**
+     * Lien « Ouvrir la photo sur Athena » de l'embed : lecteur d'images du site quand il existe
+     * (ReconImageStorage::viewerUrl), sinon la photo elle-même, seulement pour un cliché sans restriction
+     * (l'adresse publique d'un cliché SSE montrerait l'image nette). Toujours en https.
+     *
+     * @param array<string, mixed> $meta
+     */
+    private function photoViewerUrl(array $meta, string $mode, string $readUrl): string
+    {
+        if ($mode !== QuickPictureDiscordEmbed::MODE_CLEAR) {
+            return '';
+        }
+        $id = (int) ($meta['photo_id'] ?? 0);
+        $url = '';
+        if ($id > 0 && method_exists(ReconImageStorage::class, 'viewerUrl')) {
+            try {
+                $url = trim((string) ReconImageStorage::viewerUrl($id));
+            } catch (\Throwable) {
+                $url = '';
+            }
+        }
+        if ($url === '') {
+            $url = $readUrl;
+        }
+
+        return str_starts_with(strtolower($url), 'https://') ? $url : '';
     }
 
     /**
