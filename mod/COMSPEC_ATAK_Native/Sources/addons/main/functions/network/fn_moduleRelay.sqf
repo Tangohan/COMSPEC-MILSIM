@@ -4,10 +4,11 @@
     véhicule qui devient relais mobile). Sans objet synchronisé, le module crée l'objet du type choisi à sa place.
     Zeus : formulaire à la pose, module lâché sur un objet ou un véhicule pour l'équiper.
     Types (préréglages, chaque valeur à 0 ou « préréglage » prend celle du type) :
-      portable  : radio relais au sol, 1,5 km, 4 Mbit/s, antenne à 2,5 m, 8 places, 6 h de batterie
-      mat       : mât tactique, 3 km, 8 Mbit/s, antenne à 10 m, 24 places, 12 h de batterie
-      tour      : tour fixe sur secteur, 6 km, 20 Mbit/s, antenne à 25 m, 64 places
-      satellite : terminal satellite, 1 km, 10 Mbit/s, antenne à 2 m, 16 places, 8 h de batterie
+      portable  : radio relais au sol, 1,5 km, 4 Mbit/s, antenne à 2,5 m, 8 places
+      mat       : mât tactique, 3 km, 8 Mbit/s, antenne à 10 m, 24 places
+      tour      : tour fixe, 6 km, 20 Mbit/s, antenne à 25 m, 64 places
+      satellite : terminal satellite, 1 km, 10 Mbit/s, antenne à 2 m, 16 places
+    Alimentation : secteur par défaut (relais réel posé sur la carte) ; batterie seulement si la mission la choisit.
     Liaison : « raccordé » (satellite, fibre : porte le réseau seul) ou « répéteur » (doit voir un relais raccordé,
     de proche en proche, fn_relayNet). Variables posées sur l'objet : voir fn_relayNet "list".
 */
@@ -17,7 +18,7 @@ if !(_ctx get "run") exitWith { true };
 
 private _kinds = [["Radio relais portable", "portable"], ["Mât tactique", "mat"], ["Tour fixe", "tour"], ["Terminal satellite", "satellite"]];
 private _sides = [["Tous les camps", ""], ["BLUFOR", "WEST"], ["OPFOR", "EAST"], ["Indépendants", "GUER"], ["Civils", "CIV"]];
-private _auts = [["Préréglage du type", -1], ["Secteur / groupe électrogène", 0], ["1 h", 60], ["2 h", 120], ["4 h", 240], ["8 h", 480], ["12 h", 720], ["24 h", 1440]];
+private _auts = [["Secteur / groupe électrogène", 0], ["Batterie 1 h", 60], ["Batterie 2 h", 120], ["Batterie 4 h", 240], ["Batterie 8 h", 480], ["Batterie 12 h", 720], ["Batterie 24 h", 1440]];
 private _ups = [["Raccordé (satellite ou fibre)", "root"], ["Répéteur (passe par un relais raccordé)", "repeater"]];
 // Portée Eden : le cercle du module (le plus grand des deux axes).
 private _area = _logic getVariable ["objectArea", []];
@@ -27,7 +28,7 @@ private _cur = [
     _logic getVariable ["Name", ""], _logic getVariable ["Kind", "mat"], _logic getVariable ["Side", ""],
     [_logic getVariable ["Range", 0], _eden] select (_eden > 0),
     _logic getVariable ["Throughput", 0], _logic getVariable ["Height", 0], _logic getVariable ["Slots", 0],
-    _logic getVariable ["Autonomy", -1], _logic getVariable ["Uplink", "root"],
+    _logic getVariable ["Autonomy", 0], _logic getVariable ["Uplink", "root"],
     _logic getVariable ["StartOn", true], _logic getVariable ["Indestructible", false], _logic getVariable ["Required", false]
 ];
 
@@ -36,11 +37,11 @@ private _apply = {
     _args params ["_ctx", "_logicPos", "_logicDir"];
     _vals params ["_name", "_kind", "_side", "_range", "_mb", "_h", "_slots", "_aut", "_up", "_on", "_indes", "_req"];
     private _preset = createHashMapFromArray [
-        ["portable", [1500, 4, 2.5, 8, 360, ["Land_PortableLongRangeRadio_F", "Land_SurvivalRadio_F"]]],
-        ["mat", [3000, 8, 10, 24, 720, ["Land_Antenna_01_F", "Land_TTowerSmall_1_F"]]],
+        ["portable", [1500, 4, 2.5, 8, 0, ["Land_PortableLongRangeRadio_F", "Land_SurvivalRadio_F"]]],
+        ["mat", [3000, 8, 10, 24, 0, ["Land_Antenna_01_F", "Land_TTowerSmall_1_F"]]],
         ["tour", [6000, 20, 25, 64, 0, ["Land_TTowerBig_2_F", "Land_TTowerBig_1_F", "Land_TTowerSmall_2_F"]]],
-        ["satellite", [1000, 10, 2, 16, 480, ["Land_SatelliteAntenna_01_F", "Land_Antenna_01_F"]]]
-    ] getOrDefault [_kind, [3000, 8, 10, 24, 720, ["Land_Antenna_01_F"]]];
+        ["satellite", [1000, 10, 2, 16, 0, ["Land_SatelliteAntenna_01_F", "Land_Antenna_01_F"]]]
+    ] getOrDefault [_kind, [3000, 8, 10, 24, 0, ["Land_Antenna_01_F"]]];
     _preset params ["_pR", "_pMb", "_pH", "_pSl", "_pAut", "_cls"];
     if (_range <= 0) then { _range = _pR; };
     if (_mb <= 0) then { _mb = _pMb; };

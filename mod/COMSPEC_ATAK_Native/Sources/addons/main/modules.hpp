@@ -314,7 +314,7 @@ class COMSPEC_ATAK_Module_Relay: COMSPEC_ATAK_Module_DataBase {
         };
         class Kind {
             displayName = "$STR_COMSPEC_ATAK_CFG_3DEB745651";
-            tooltip = "$STR_COMSPEC_ATAK_CFG_2B673563D4";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_7DC59FCF07";
             property = "COMSPEC_ATAK_Module_Relay_Kind";
             control = "Combo";
             expression = "_this setVariable ['Kind',_value,true];";
@@ -372,15 +372,14 @@ class COMSPEC_ATAK_Module_Relay: COMSPEC_ATAK_Module_DataBase {
         };
         class Autonomy {
             displayName = "$STR_COMSPEC_ATAK_CFG_FA6170F4DD";
-            tooltip = "$STR_COMSPEC_ATAK_CFG_5BF842B57E";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_44DB25404A";
             property = "COMSPEC_ATAK_Module_Relay_Autonomy";
             control = "Combo";
             expression = "_this setVariable ['Autonomy',_value,true];";
-            defaultValue = "-1";
+            defaultValue = "0";
             typeName = "NUMBER";
             class values {
-                class V0 { name = "$STR_COMSPEC_ATAK_CFG_24B845D2A1"; value = -1; default = 1; };
-                class V1 { name = "$STR_COMSPEC_ATAK_CFG_498C64B386"; value = 0; };
+                class V1 { name = "$STR_COMSPEC_ATAK_CFG_498C64B386"; value = 0; default = 1; };
                 class V2 { name = "$STR_COMSPEC_ATAK_CFG_B67393853B"; value = 60; };
                 class V3 { name = "$STR_COMSPEC_ATAK_CFG_71B0559CE2"; value = 120; };
                 class V4 { name = "$STR_COMSPEC_ATAK_CFG_6133B4D4F9"; value = 240; };

@@ -222,6 +222,11 @@
             <English>If the module is not synced to any object: object created at its position.</English>
             <French>Si le module n'est synchronisé à aucun objet : objet créé à son emplacement.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_44DB25404A">
+            <Original>Un relais posé sur la carte est sur secteur. Batterie seulement pour un relais de campagne voulu : il s'éteint à vide et les joueurs changent la batterie par ACE.</Original>
+            <English>A relay placed on the map runs on mains. Battery only for an intended field relay: it shuts down when empty and players replace the battery via ACE.</English>
+            <French>Un relais posé sur la carte est sur secteur. Batterie seulement pour un relais de campagne voulu : il s'éteint à vide et les joueurs changent la batterie par ACE.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_47E44D31D4">
             <Original>Batterie 8 h</Original>
             <English>Battery 8 h</English>
@@ -401,6 +406,11 @@
             <Original>En fin de téléchargement</Original>
             <English>At end of download</English>
             <French>En fin de téléchargement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7DC59FCF07">
+            <Original>Préréglage : objet créé sans objet synchronisé, débit, hauteur d'antenne et places. Portable 1,5 km · mât tactique 3 km · tour 6 km · terminal satellite 1 km. Tous sur secteur.</Original>
+            <English>Preset: object created when nothing is synced, throughput, antenna height and slots. Portable 1.5 km · tactical mast 3 km · tower 6 km · satellite terminal 1 km. All on mains.</English>
+            <French>Préréglage : objet créé sans objet synchronisé, débit, hauteur d'antenne et places. Portable 1,5 km · mât tactique 3 km · tour 6 km · terminal satellite 1 km. Tous sur secteur.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_7E7DC904BA">
             <Original>Identifiants</Original>
