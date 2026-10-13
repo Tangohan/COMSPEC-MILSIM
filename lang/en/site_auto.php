@@ -403,6 +403,8 @@ return [
     '%1 étape(s) exécutée(s). Relancez l’opération pour poursuivre vers les environnements restants.' => '%1 step(s) executed. Run the operation again to continue with the remaining environments.',
     '%1 évacuation(s)' => '%1 evacuation(s)',
     '%1 événement%2' => '%1 event%2',
+    '%1 événements enregistrés, par %2 membres de la communauté et %3 visiteurs d’autres communautés, non nommés.' => '%1 events recorded, by %2 community members and %3 unnamed visitors from other communities.',
+    '%1 événements enregistrés, par %2 membres de la communauté.' => '%1 events recorded, by %2 community members.',
     '%1 événements enregistrés, par %2 personnes distinctes.' => '%1 events recorded, by %2 distinct people.',
     '%1 — %2 (modifier via' => '%1 — %2 (edit via',
     '%1 — %2 : %3 pièce(s) fouillée(s) sur %4.%5' => '%1 — %2: %3 item(s) searched out of %4.%5',

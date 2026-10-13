@@ -397,7 +397,7 @@ final class OperationalBoardController
             return Response::redirect(url('back-office/tableau-operationnel/fiche/' . $entryId));
         }
 
-        $payload = $this->payloadFromRequest($request);
+        $payload = $this->payloadFromRequest($request, $tenantId);
         $payload['title'] = $title;
         $visErr = $this->validateVisibilityTargets(
             (string) $payload['visibility_scope'],
@@ -608,9 +608,9 @@ final class OperationalBoardController
             'security_level' => $this->enum($request->input('security_level', 'unit_public'), ['unit_public', 'command_restricted', 'confidential', 'secret_ops'], 'unit_public'),
             'operational_status' => $this->enum($request->input('operational_status', 'planned'), ['planned', 'in_progress', 'suspended', 'completed', 'cancelled'], 'planned'),
             'phase_current' => $this->enum($request->input('phase_current', 'phase_1'), ['phase_1', 'phase_2', 'phase_3'], 'phase_1'),
-            'chief_user_id' => $this->nullableInt($request->input('chief_user_id', '')),
-            'deputy_user_id' => $this->nullableInt($request->input('deputy_user_id', '')),
-            'replacement_user_id' => $this->nullableInt($request->input('replacement_user_id', '')),
+            'chief_user_id' => $this->memberUserIdOrNull($request->input('chief_user_id', ''), $tenantId),
+            'deputy_user_id' => $this->memberUserIdOrNull($request->input('deputy_user_id', ''), $tenantId),
+            'replacement_user_id' => $this->memberUserIdOrNull($request->input('replacement_user_id', ''), $tenantId),
             'replacement_auto_activate' => (int) $request->input('replacement_auto_activate', 0),
             'command_chain' => trim((string) $request->input('command_chain', '')),
             'accountability_note' => trim((string) $request->input('accountability_note', '')),
@@ -894,6 +894,17 @@ final class OperationalBoardController
         $value = trim((string) $value);
 
         return in_array($value, $allowed, true) ? $value : $fallback;
+    }
+
+    /**
+     * Chef, adjoint, remplaçant : uniquement un membre de la communauté. Un identifiant saisi à la main
+     * d’un compte d’une autre communauté afficherait son nom, son indicatif ou son e-mail sur le tableau.
+     */
+    private function memberUserIdOrNull(mixed $value, int $tenantId): ?int
+    {
+        $id = $this->nullableInt($value);
+
+        return $id !== null && $this->users->isMemberOfTenant($id, $tenantId) ? $id : null;
     }
 
     private function nullableInt(mixed $value): ?int
@@ -1236,7 +1247,7 @@ final class OperationalBoardController
     }
 
     /** @return array<string, mixed> */
-    private function payloadFromRequest(Request $request): array
+    private function payloadFromRequest(Request $request, int $tenantId): array
     {
         $scope = $this->enum($request->input('visibility_scope', 'tenant'), ['tenant', 'unit', 'role', 'private'], 'tenant');
         $vis = $this->visibilityTargetsFromRequest($request, $scope);
@@ -1259,9 +1270,9 @@ final class OperationalBoardController
             'security_level' => $this->enum($request->input('security_level', 'unit_public'), ['unit_public', 'command_restricted', 'confidential', 'secret_ops'], 'unit_public'),
             'operational_status' => $this->enum($request->input('operational_status', 'planned'), ['planned', 'in_progress', 'suspended', 'completed', 'cancelled'], 'planned'),
             'phase_current' => $this->enum($request->input('phase_current', 'phase_1'), ['phase_1', 'phase_2', 'phase_3'], 'phase_1'),
-            'chief_user_id' => $this->nullableInt($request->input('chief_user_id', '')),
-            'deputy_user_id' => $this->nullableInt($request->input('deputy_user_id', '')),
-            'replacement_user_id' => $this->nullableInt($request->input('replacement_user_id', '')),
+            'chief_user_id' => $this->memberUserIdOrNull($request->input('chief_user_id', ''), $tenantId),
+            'deputy_user_id' => $this->memberUserIdOrNull($request->input('deputy_user_id', ''), $tenantId),
+            'replacement_user_id' => $this->memberUserIdOrNull($request->input('replacement_user_id', ''), $tenantId),
             'replacement_auto_activate' => (int) $request->input('replacement_auto_activate', 0),
             'command_chain' => trim((string) $request->input('command_chain', '')),
             'accountability_note' => trim((string) $request->input('accountability_note', '')),
@@ -1285,7 +1296,7 @@ final class OperationalBoardController
         if (is_array($pUser)) {
             foreach ($pUser as $i => $uid) {
                 $uid = (int) $uid;
-                if ($uid < 1) {
+                if ($uid < 1 || !$this->users->isMemberOfTenant($uid, $tenantId)) {
                     continue;
                 }
                 $role = is_array($pRole) && isset($pRole[$i]) ? trim((string) $pRole[$i]) : '';
