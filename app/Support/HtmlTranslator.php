@@ -223,6 +223,10 @@ final class HtmlTranslator
 
             return $m[1] . '=' . $quote . $tr . $quote;
         }, $tag);
+        // Description et titres de partage (moteurs de recherche, Discord, réseaux) : même dictionnaire que la page.
+        if ($name === 'meta' && preg_match('~\b(?:name|property)\s*=\s*["\'](?:description|og:title|og:description|og:image:alt|twitter:title|twitter:description)["\']~i', $tag)) {
+            $tag = (string) preg_replace_callback('~\bcontent\s*=\s*"([^"]*)"~i', static fn (array $m): string => 'content="' . self::text($m[1], true) . '"', $tag);
+        }
         // value des boutons (pas des champs saisis).
         if ($name === 'input' && preg_match('~\btype\s*=\s*["\']?(submit|button|reset)\b~i', $tag)) {
             $tag = (string) preg_replace_callback('~\bvalue\s*=\s*"([^"]*)"~i', static fn (array $m): string => 'value="' . self::text($m[1], true) . '"', $tag);
