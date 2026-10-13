@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * Bandeau de pilotage : événements, articles, ATAK et leviers déjà présents.
+ * Outils liés au mur (bas du tableau opérationnel) : événements, articles, ATAK et autres pages de pilotage.
  *
  * @var array<string, mixed> $boardCockpit
  */
@@ -33,27 +33,26 @@ $formatWhen = static function (mixed $raw): string {
 
 $showCockpit = $canEvents || $canArticles || $canAtak || $canEffectifs || $canMissions || $canAlerts || $canOpsCenter;
 ?>
-<section id="ops-zone-pilotage" class="ops-board__cockpit" aria-labelledby="ops-zone-pilotage-title">
-    <header class="ops-board__cockpit-head">
-        <p class="ops-board__zone-kicker">Poste de commandement</p>
-        <h2 id="ops-zone-pilotage-title">Piloter depuis cet écran</h2>
-        <p><?= $showCockpit
-            ? 'Ouvrez les événements, les articles et le poste ATAK sans quitter le tableau. Le mur de consignes reste plus bas.'
-            : 'Le mur de consignes se trouve plus bas. Les événements, articles et le poste ATAK s’affichent ici lorsque votre rôle le permet.' ?></p>
+<?php if ($showCockpit): ?>
+<section id="ops-zone-pilotage" class="bo-tbo-section bo-tbo-tools" aria-labelledby="ops-zone-pilotage-title">
+    <header class="bo-tbo-section__head">
+        <div>
+            <h2 id="ops-zone-pilotage-title">Outils liés</h2>
+            <p>Les autres contenus que voient les membres ont leur propre page. Voici un aperçu et un accès direct.</p>
+        </div>
     </header>
-
-    <?php if ($showCockpit): ?>
-    <div class="ops-board__cockpit-grid">
+    <div class="bo-tbo-tools__grid">
         <?php if ($canEvents): ?>
-        <article class="ops-board__cockpit-card">
+        <article class="bo-tbo-panel bo-tbo-tool">
             <header>
                 <h3>Événements</h3>
-                <span><?= count($events) ?> à venir</span>
+                <span class="bo-tbo-group__count"><?= count($events) ?> à venir</span>
             </header>
+            <p class="bo-tbo-muted">Les créneaux auxquels les membres s’inscrivent (opérations, entraînements).</p>
             <?php if ($events === []): ?>
-                <p class="ops-board__cockpit-empty">Aucun événement à venir. Créez un créneau dans le registre pour le suivre ici.</p>
+                <p class="bo-tbo-tool__empty">Aucun événement à venir.</p>
             <?php else: ?>
-                <ul>
+                <ul class="bo-tbo-tool__list">
                     <?php foreach ($events as $event):
                         $eid = (int) ($event['id'] ?? 0);
                         if ($eid < 1) {
@@ -62,7 +61,7 @@ $showCockpit = $canEvents || $canArticles || $canAtak || $canEffectifs || $canMi
                         $when = $formatWhen($event['starts_at'] ?? null);
                         ?>
                     <li>
-                        <a href="<?= $h(url('back-office/events/' . $eid)) ?>">
+                        <a class="bo-tbo-tool__item" href="<?= $h(url('back-office/events/' . $eid)) ?>">
                             <strong><?= $h((string) ($event['title'] ?? 'Événement')) ?></strong>
                             <?php if ($when !== ''): ?><em><?= $h($when) ?></em><?php endif; ?>
                         </a>
@@ -71,34 +70,34 @@ $showCockpit = $canEvents || $canArticles || $canAtak || $canEffectifs || $canMi
                 </ul>
             <?php endif; ?>
             <footer>
-                <a href="<?= $h(url('back-office/events')) ?>" class="ath-btn ath-btn--solid">Ouvrir le registre</a>
-                <a href="<?= $h(url('back-office/events') . '?vue=calendrier') ?>" class="ath-btn">Agenda</a>
+                <a href="<?= $h(url('back-office/events')) ?>" class="bo-tbo-btn bo-tbo-btn--sm">Ouvrir le registre</a>
+                <a href="<?= $h(url('back-office/events') . '?vue=calendrier') ?>" class="bo-tbo-btn bo-tbo-btn--ghost bo-tbo-btn--sm">Agenda</a>
             </footer>
         </article>
         <?php endif; ?>
 
         <?php if ($canArticles): ?>
-        <article class="ops-board__cockpit-card">
+        <article class="bo-tbo-panel bo-tbo-tool">
             <header>
                 <h3>Articles</h3>
-                <span><?= count($articles) ?> récent<?= count($articles) > 1 ? 's' : '' ?></span>
+                <span class="bo-tbo-group__count"><?= count($articles) ?> récent<?= count($articles) > 1 ? 's' : '' ?></span>
             </header>
+            <p class="bo-tbo-muted">Les textes longs publiés pour les membres (nouvelles, comptes rendus, règlements).</p>
             <?php if (empty($cockpit['articles_ready'])): ?>
-                <p class="ops-board__cockpit-empty">Les articles ne sont pas encore disponibles sur cet environnement.</p>
+                <p class="bo-tbo-tool__empty">Les articles ne sont pas encore installés sur ce serveur.</p>
             <?php elseif ($articles === []): ?>
-                <p class="ops-board__cockpit-empty">Aucun article pour le moment. Rédigez-en un pour le publier auprès des membres.</p>
+                <p class="bo-tbo-tool__empty">Aucun article pour le moment.</p>
             <?php else: ?>
-                <ul>
+                <ul class="bo-tbo-tool__list">
                     <?php foreach ($articles as $row):
                         $aid = (int) ($row['id'] ?? 0);
                         if ($aid < 1) {
                             continue;
                         }
-                        $status = (string) ($row['status'] ?? 'draft');
-                        $statusLabel = $status === 'published' ? 'Publié' : 'Brouillon';
+                        $statusLabel = (string) ($row['status'] ?? 'draft') === 'published' ? 'Publié' : 'Brouillon';
                         ?>
                     <li>
-                        <a href="<?= $h(url('back-office/articles/' . $aid . '/edit')) ?>">
+                        <a class="bo-tbo-tool__item" href="<?= $h(url('back-office/articles/' . $aid . '/edit')) ?>">
                             <strong><?= $h((string) ($row['title'] ?? 'Article')) ?></strong>
                             <em><?= $h($statusLabel) ?><?= !empty($row['pinned']) ? ' · Épinglé' : '' ?></em>
                         </a>
@@ -107,56 +106,58 @@ $showCockpit = $canEvents || $canArticles || $canAtak || $canEffectifs || $canMi
                 </ul>
             <?php endif; ?>
             <footer>
-                <a href="<?= $h(url('back-office/articles')) ?>" class="ath-btn ath-btn--solid">Ouvrir les articles</a>
-                <a href="<?= $h(url('back-office/articles/create')) ?>" class="ath-btn">Nouvel article</a>
+                <a href="<?= $h(url('back-office/articles')) ?>" class="bo-tbo-btn bo-tbo-btn--sm">Ouvrir les articles</a>
+                <a href="<?= $h(url('back-office/articles/create')) ?>" class="bo-tbo-btn bo-tbo-btn--ghost bo-tbo-btn--sm">Nouvel article</a>
             </footer>
         </article>
         <?php endif; ?>
 
         <?php if ($canAtak): ?>
-        <article class="ops-board__cockpit-card">
+        <article class="bo-tbo-panel bo-tbo-tool">
             <header>
                 <h3>ATAK</h3>
-                <span>Poste et carte</span>
+                <span class="bo-tbo-group__count">Terrain</span>
             </header>
-            <ul class="ops-board__cockpit-links">
-                <li><a href="<?= $h(url('back-office/atak')) ?>">Poste de situation</a></li>
-                <li><a href="<?= $h(url('back-office/atak/operateurs')) ?>">Sessions et liaisons</a></li>
-                <li><a href="<?= $h(url('tacmap')) ?>">Carte tactique</a></li>
-                <li><a href="<?= $h(url('back-office/atak/cycle-mission')) ?>">Cycle de mission</a></li>
-                <li><a href="<?= $h(url('back-office/atak/comptes-rendus')) ?>">Comptes rendus</a></li>
+            <p class="bo-tbo-muted">Ce qui se passe en jeu : positions, liaisons et comptes rendus des joueurs.</p>
+            <ul class="bo-tbo-tool__list">
+                <li><a class="bo-tbo-tool__item" href="<?= $h(url('back-office/atak')) ?>"><strong>Poste de situation</strong><em>Vue d’ensemble en direct</em></a></li>
+                <li><a class="bo-tbo-tool__item" href="<?= $h(url('tacmap')) ?>"><strong>Carte tactique</strong><em>Positions et marqueurs</em></a></li>
+                <li><a class="bo-tbo-tool__item" href="<?= $h(url('back-office/atak/operateurs')) ?>"><strong>Sessions et liaisons</strong><em>Qui est connecté</em></a></li>
+                <li><a class="bo-tbo-tool__item" href="<?= $h(url('back-office/atak/cycle-mission')) ?>"><strong>Cycle de mission</strong><em>Préparation et suivi</em></a></li>
+                <li><a class="bo-tbo-tool__item" href="<?= $h(url('back-office/atak/comptes-rendus')) ?>"><strong>Comptes rendus</strong><em>Remontés depuis le jeu</em></a></li>
             </ul>
             <footer>
-                <a href="<?= $h(url('back-office/atak')) ?>" class="ath-btn ath-btn--solid">Ouvrir le poste ATAK</a>
+                <a href="<?= $h(url('back-office/atak')) ?>" class="bo-tbo-btn bo-tbo-btn--sm">Ouvrir le poste ATAK</a>
             </footer>
         </article>
         <?php endif; ?>
     </div>
 
     <?php if ($canMissions || $canAlerts || $canEffectifs || $canOpsCenter): ?>
-    <nav class="ops-board__cockpit-levers" aria-label="Autres leviers de pilotage">
+    <nav class="bo-tbo-levers" aria-label="Autres pages de pilotage">
+        <span class="bo-tbo-levers__label">Aussi :</span>
         <?php if ($canMissions): ?>
-            <a href="<?= $h(url('back-office/missions')) ?>">Portail missions<?php if ($missions !== []): ?> <strong><?= count($missions) ?></strong><?php endif; ?></a>
+            <a class="bo-tbo-lever" href="<?= $h(url('back-office/missions')) ?>">Portail missions<?php if ($missions !== []): ?> <strong><?= count($missions) ?></strong><?php endif; ?></a>
             <?php
             $firstMissionId = $missions !== [] ? (int) ($missions[0]['id'] ?? 0) : 0;
             if ($firstMissionId > 0): ?>
-                <a href="<?= $h(url('back-office/cooperation/missions/' . $firstMissionId)) ?>">Coopération en cours</a>
+                <a class="bo-tbo-lever" href="<?= $h(url('back-office/cooperation/missions/' . $firstMissionId)) ?>">Coopération en cours</a>
             <?php else: ?>
-                <a href="<?= $h(url('back-office/cooperation')) ?>">Coopération</a>
+                <a class="bo-tbo-lever" href="<?= $h(url('back-office/cooperation')) ?>">Coopération</a>
             <?php endif; ?>
         <?php endif; ?>
         <?php if ($canAlerts): ?>
-            <a href="<?= $h(url('back-office/alerts')) ?>"<?= $alertsCount > 0 ? ' class="is-alert"' : '' ?>>Annonces<?php if ($alertsCount > 0): ?> <strong><?= $alertsCount ?></strong><?php endif; ?></a>
+            <a class="bo-tbo-lever<?= $alertsCount > 0 ? ' is-alert' : '' ?>" href="<?= $h(url('back-office/alerts')) ?>">Annonces<?php if ($alertsCount > 0): ?> <strong><?= $alertsCount ?></strong><?php endif; ?></a>
         <?php endif; ?>
         <?php if ($canEffectifs): ?>
-            <a href="<?= $h(effectifs_workspace_url()) ?>">Effectifs</a>
+            <a class="bo-tbo-lever" href="<?= $h(effectifs_workspace_url()) ?>">Effectifs</a>
         <?php endif; ?>
         <?php if ($canOpsCenter): ?>
-            <a href="<?= $h(url('back-office/centre-operations')) ?>">Centre d’opérations</a>
-            <a href="<?= $h(url('back-office/courrier/traceabilite')) ?>">Courrier</a>
-            <a href="<?= $h(url('back-office/planification')) ?>">Planification</a>
+            <a class="bo-tbo-lever" href="<?= $h(url('back-office/centre-operations')) ?>">Centre d’opérations</a>
+            <a class="bo-tbo-lever" href="<?= $h(url('back-office/courrier/traceabilite')) ?>">Courrier</a>
+            <a class="bo-tbo-lever" href="<?= $h(url('back-office/planification')) ?>">Planification</a>
         <?php endif; ?>
     </nav>
     <?php endif; ?>
-    <?php endif; ?>
 </section>
+<?php endif; ?>

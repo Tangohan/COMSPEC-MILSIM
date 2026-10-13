@@ -21,7 +21,7 @@ return [
         ['path' => 'back-office', 'group' => 'Pilotage', 'kicker' => 'PILOTAGE', 'title' => 'Tableau de bord', 'subtitle' => 'Synthèse de la communauté, indicateurs et accès rapides.'],
         ['path' => 'back-office/centre-operations', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Centre d’opérations', 'subtitle' => 'Les demandes qui attendent une décision, les incidents en cours et l’historique des actions.'],
         ['path' => 'back-office/operations-admin', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Centre d’opérations', 'subtitle' => 'Les demandes qui attendent une décision, les incidents en cours et l’historique des actions.'],
-        ['path' => 'back-office/tableau-operationnel', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Tableau opérationnel', 'subtitle' => 'Événements, articles, poste ATAK et annonces : tout ce que voient les membres, sur un seul écran.', 'css' => ['operational-board.css'], 'quick' => [
+        ['path' => 'back-office/tableau-operationnel', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Tableau opérationnel', 'subtitle' => 'Préparez et publiez les fiches que vos membres lisent sur leur mur : permanences, consignes, événements et messages urgents.', 'css' => ['operational-board.css', 'back-office-tableau-operationnel.css'], 'quick' => [
             ['label' => 'Événements', 'href' => 'back-office/events'],
             ['label' => 'Articles', 'href' => 'back-office/articles'],
             ['label' => 'Poste ATAK', 'href' => 'back-office/atak'],
