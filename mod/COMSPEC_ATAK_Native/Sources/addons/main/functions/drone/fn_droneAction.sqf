@@ -260,11 +260,9 @@ private _expose = {
     if ([_name, _v, _lvl] isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_DroneExp", []])) then {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneExp", [_name, _v, _lvl]];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneCamLvl", _lvl];
-        _name setPiPEffect ([
-            [_v],
-            [3, 1, 1.6, 1.05, 0.01, [0, 0, 0, 0], [1, 1, 1, 0.9], [0.299, 0.587, 0.114, 0]],
-            [3, 1, 3.2, 1.1, 0.03, [0, 0, 0, 0], [1, 1, 1, 0.55], [0.299, 0.587, 0.114, 0]]
-        ] select _lvl);
+        // Rendu normal à tous les niveaux : la correction de couleurs (type 3) rendait l'image noire dans le téléphone
+        // (TEST VIDÉO de TTRD, 13/10 à 21:20 : la même caméra sans effet, texture carrée, s'affiche nette de nuit).
+        _name setPiPEffect [_v];
     };
     _lvl
 };
@@ -276,7 +274,8 @@ private _expose = {
 private _camMake = {
     private _n = ((missionNamespace getVariable ["COMSPEC_ATAK_DroneR2TN", 0]) + 1) mod 8;
     missionNamespace setVariable ["COMSPEC_ATAK_DroneR2TN", _n];
-    private _name = format ["comspec_dronecam%1_%2", call _camQ, _n];
+    // Nom sans tiret bas ni chiffre collé, comme celui du TEST VIDÉO qui s'affiche (comspecpiptest).
+    private _name = format ["comspecdronecam%1n%2", ["a", "b", "c"] select (call _camQ), ["a", "b", "c", "d", "e", "f", "g", "h"] select _n];
     private _bc = (missionNamespace getVariable ["COMSPEC_ATAK_DroneCamBox", [[0, 0, 0], [0.3, 0.3, 0.15]]]) select 0;
     private _cam = "camera" camCreate (_d modelToWorld _bc);
     _cam cameraEffect ["Internal", "Back", _name];
@@ -479,7 +478,8 @@ private _camBind = {
         _cam = call _camMake;
     };
     _cam setVariable ["hiddenSince", -1];
-    ([[512, 256], [1024, 512], [2048, 1024]] select (call _camQ)) params ["_tw", "_th"];
+    // Texture carrée (comme le TEST VIDÉO qui s'affiche) ; le 16/9 vient du rapport passé à r2t.
+    ([[512, 512], [1024, 1024], [2048, 2048]] select (call _camQ)) params ["_tw", "_th"];
     format ["#(argb,%1,%2,1)r2t(%3,1.7778)", _tw, _th, _cam getVariable ["r2t", "comspec_dronecam"]]
 };
 // Capteur : ce que la caméra voit (vue directe, portée réduite par le brouillard), en 360° ou dans le champ de la nacelle pointée.

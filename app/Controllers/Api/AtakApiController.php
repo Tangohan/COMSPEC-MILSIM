@@ -19,6 +19,7 @@ use App\Repositories\AtakOrderTypeRepository;
 use App\Repositories\FireTeamRepository;
 use App\Support\AtakPlanAccess;
 use App\Support\OperatorPortraits;
+use App\Support\BriefingSlideGameImage;
 use App\Support\ComspecApiKeyAuth;
 use App\Repositories\CasNineLineRepository;
 use App\Repositories\ReconImageRepository;
@@ -312,7 +313,7 @@ class AtakApiController
                 'title' => trim((string) ($row['title'] ?? '')),
                 'detail' => trim((string) ($row['detail_text'] ?? '')),
                 'sort_order' => (int) ($row['sort_order'] ?? 0),
-                'image_url' => url($imagePath),
+                'image_url' => url(BriefingSlideGameImage::path($imagePath)),
                 'updated_at' => (string) ($row['updated_at'] ?? $row['created_at'] ?? ''),
                 'operation' => $operation,
             ];

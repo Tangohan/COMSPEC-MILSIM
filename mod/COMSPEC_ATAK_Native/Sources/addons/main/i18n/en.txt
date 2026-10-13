@@ -9313,6 +9313,8 @@
 ["TEST DE DÉBIT", "THROUGHPUT TEST"],
 ["Test de débit : %1 kbit/s, %2 ms, perte %3 %%", "Throughput test: %1 kbit/s, %2 ms, %3 %% loss"],
 ["TEST VIDÉO", "VIDEO TEST"],
+["CAMÉRA PLEIN ÉCRAN", "FULL-SCREEN CAMERA"],
+["Fermer la caméra (le drone continue ce qu'il fait)", "Close the camera (the drone carries on with its task)"],
 ["TEST VIDÉO : notez les numéros qui montrent une image (fermeture dans 20 s, Échap ferme la fenêtre 3)", "VIDEO TEST: note the numbers that show a picture (closes in 20 s, Esc closes window 3)"],
 ["TESTER LE LIEN", "TEST LINK"],
 ["Texte", "Text"],

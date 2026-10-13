@@ -53,6 +53,29 @@ EN : Selfie mode can invert the mouse axes
 - Demande de TTRD (13/10) : inverser gauche / droite à la souris en mode selfie.
 - Réglages CBA client (non forcés par le serveur) comspec_atak_native_selfie_invert_x / _y, lus dans fn_photoMode "MOUSE" (branche selfie uniquement ; le zoom de l'objectif arrière et le glisser de l'app Photo ne changent pas). Traductions ajoutées à en.txt.
 - Non testé en jeu.
+## Drone, Photo et Briefing : les images s'affichent enfin dans le téléphone (ATAK natif 1.91.0)
+
+### Résumé joueur
+Type : correctif
+FR : Les images du drone, de l'app Photo et du Briefing s'affichent dans le téléphone
+- La vue caméra du drone et le viseur de l'app Photo ne restent plus noirs dans le téléphone, de jour comme de nuit : il n'est plus nécessaire de passer en plein écran.
+- Une croix rouge en haut à droite de l'image du drone ferme la caméra d'un clic.
+- Le bouton CAMÉRA PLEIN ÉCRAN passe dans la rangée principale de la vue drone (Échap pour revenir au téléphone).
+- Briefing > Diapositives : les diapositives publiées sur Athena s'affichent au lieu d'une zone noire.
+- Les boutons de la vue drone sur la carte (MARQUER LA CIBLE, OUBLIER LES CIBLES, RETOUR À LA CARTE…) et de l'app Drone ne coupent plus leur texte.
+EN : Drone, Photo app and Briefing pictures show in the phone
+- The drone camera view and the Photo app viewfinder no longer stay black in the phone, by day or night: you no longer need to switch to full screen.
+- A red cross at the top right of the drone picture closes the camera in one click.
+- The FULL-SCREEN CAMERA button moves to the main row of the drone view (Esc to go back to the phone).
+- Briefing > Slides: slides published on Athena show instead of a black area.
+- The drone view buttons on the map (MARK TARGET, FORGET TARGETS, BACK TO MAP…) and in the Drone app no longer cut their text.
+
+### Détail technique
+- Résultat du TEST VIDÉO (TTRD, 21:20 en jeu, nuit) : les 4 cadres, dont les 2 dans le téléphone, montrent une image nette, alors que la vue drone (même en THERMIQUE) et le viseur Photo restent noirs. Différences supprimées : textures r2t désormais carrées (512/1024/2048, le 16/9 vient du rapport r2t), noms de cibles sans tiret bas ni chiffre (comspecdronecam<a-c>n<a-h>, comspecphotocam<a-d>), plus de correction de couleurs setPiPEffect type 3 (« BASSE LUMIÈRE » / « MODE NUIT » retirés de l'incrustation) ; incrustation Live cam de la carte et cliché drone en texture carrée.
+- fn_pageDrone : bouton « X » rouge en haut à droite de l'image (droneAction "cam") ; VUE DIRECTE renommée CAMÉRA PLEIN ÉCRAN et placée dans la rangée principale.
+- Briefing : Arma n'affiche pas les PNG (même cause que les portraits opérateur, #724) et la plupart des diapositives envoyées sur Athena sont des PNG. /api/atak/briefing-slides sert désormais une copie JPEG 2048 x 1024 (App\Support\BriefingSlideGameImage, image entière centrée sur fond noir), écrite une fois dans uploads/briefing-slides/<tenant>/atak/. Côté serveur seulement : le site doit être mis à jour sur le VPS. Les présentations Google Slides chargées par l'engrenage restent en PNG (DLL) : non corrigé ici.
+- Textes coupés (captures TTRD) : fn_pageMap, rangée de la grande vue drone, largeur de chaque bouton mesurée sur son texte traduit (ctrlTextWidth), police réduite pour toute la rangée si elle déborde ; boutons de la petite fenêtre et barre de l'app Drone (fn_pageDrone) : police réduite tant que le libellé dépasse.
+- Suite de la PR #780 (fusionnée avec seulement le TEST VIDÉO). Non testé en jeu.
 
 ## Drone : bouton TEST VIDÉO pour l'image noire du téléphone (ATAK natif 1.90.0)
 
