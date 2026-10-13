@@ -38,7 +38,7 @@ final class TenantTypeModuleAccessMiddleware
     public function __invoke(Request $request, callable $next): Response
     {
         $path = $request->path();
-        if ($path === '/api/atak/ping' || $path === '/api/atak/version' || $path === '/api/health') {
+        if ($path === '/api/atak/ping' || $path === '/api/atak/version' || $path === '/api/atak/startup-check' || $path === '/api/health') {
             return $next($request);
         }
 

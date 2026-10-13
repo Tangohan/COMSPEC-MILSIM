@@ -34,7 +34,7 @@ switch (_tab) do {
         private _date = (systemTime select [0, 3]) joinString "-";
         if (_day isNotEqualTo _date) then { _list = []; };
         private _tot = ((_list select { (_x select 0) isEqualTo "screen|total" }) param [0, ["", "", 0]]) select 2;
-        _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_screentime.paa", format ["<t size='1.6' font='RobotoCondensedBold'>%1</t><br/><t color='#8a9a93'>d'écran aujourd'hui sur ce PC, toutes missions</t>", [_tot] call _dur]];
+        _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_screentime.paa", format ["<t size='1.6' font='COMSPEC_BarlowBold'>%1</t><br/><t color='#8a9a93'>d'écran aujourd'hui sur ce PC, toutes missions</t>", [_tot] call _dur]];
         private _apps = (_list select { ((_x select 0) select [0, 4]) isEqualTo "app|" }) apply { [_x select 2, _x select 1] };
         _apps sort false;
         _rows pushBack ["section", "Apps", ""];
@@ -44,7 +44,7 @@ switch (_tab) do {
     case "ROLES": {
         private _roles = ["role"] call _of;
         ([player] call comspec_atak_native_fnc_roleKey) params ["", "_now"];
-        _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_screentime.paa", format ["<t size='1.2' font='RobotoCondensedBold'>%1</t><br/><t color='#8a9a93'>rôle tenu en ce moment</t>", [_now, "—"] select (_now isEqualTo "")]];
+        _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_screentime.paa", format ["<t size='1.2' font='COMSPEC_BarlowBold'>%1</t><br/><t color='#8a9a93'>rôle tenu en ce moment</t>", [_now, "—"] select (_now isEqualTo "")]];
         _rows pushBack ["section", "Temps par rôle (cette mission)", "Poste d'équipage, sinon rôle d'équipe de feu, sinon spécialité ou slot"];
         private _max = (_roles param [0, [1]]) select 0;
         { _x params ["_sec", "_label"]; _rows pushBack ["info", _label, format ["%1  %2", [_sec, _max, "#7fb6e6"] call _bar, [_sec] call _dur]]; } forEach _roles;
@@ -55,7 +55,7 @@ switch (_tab) do {
         private _scr = ["screen"] call _of;
         private _get = { params ["_c"]; ((_scr select { (_x select 2) isEqualTo _c }) param [0, [0]]) select 0 };
         private _tot = ["total"] call _get;
-        _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_screentime.paa", format ["<t size='1.6' font='RobotoCondensedBold'>%1</t><br/><t color='#8a9a93'>d'écran pendant cette mission</t><br/><t size='0.85'>En main %2 · porté %3</t>",
+        _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_screentime.paa", format ["<t size='1.6' font='COMSPEC_BarlowBold'>%1</t><br/><t color='#8a9a93'>d'écran pendant cette mission</t><br/><t size='0.85'>En main %2 · porté %3</t>",
             [_tot] call _dur, [["hand"] call _get] call _dur, [["carry"] call _get] call _dur]];
         _rows pushBack ["info", "Temps de jeu", [(["play"] call _of) param [0, [0]] select 0] call _dur];
         private _apps = ["app"] call _of;

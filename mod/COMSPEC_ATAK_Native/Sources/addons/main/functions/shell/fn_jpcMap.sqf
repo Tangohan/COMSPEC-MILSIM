@@ -58,7 +58,7 @@ switch (_act) do {
         };
         // Image dans l'image coupée (Options vidéo) : la vue aérienne serait noire, on montre la carte d'ensemble du
         // terrain (pictureMap) avec un rappel, sans caméra.
-        if !(isPiPEnabled) exitWith {
+        if ((["check", "JPC"] call comspec_atak_native_fnc_pipCheck) isNotEqualTo "") exitWith {
             if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", _name]; camDestroy _cam; missionNamespace setVariable ["COMSPEC_ATAK_JpcMapCam", objNull]; };
             private _pm = getText (configFile >> "CfgWorlds" >> worldName >> "pictureMap");
             if (_last isNotEqualTo ["pip", _mx, _my, _mw, _mh]) then {

@@ -115,13 +115,13 @@ switch (_op) do {
         if (_text isEqualTo "") exitWith {};
         private _p = [(_pos select 0) + (_off select 0) * _mpx, (_pos select 1) - (_off select 1) * _mpx, 0];
         if (_boxed) then {
-            // Largeur estimée : ~0,52 hauteur par caractère (RobotoCondensedBold).
+            // Largeur estimée : ~0,52 hauteur par caractère (COMSPEC_BarlowBold).
             private _hPx = _tsz / pixelH;
             private _wPx = (count _text) * 0.52 * _hPx;
             _map drawRectangle [_p, (_wPx / 2 + 5) * _mpx, (_hPx / 2 + 1.5) * _mpx, 0, [0.03, 0.04, 0.035, 0.80], _tex];
             private _bc = +_c; _bc set [3, (_c select 3) * 0.85];
             _map drawRectangle [_p, (_wPx / 2 + 5) * _mpx, (_hPx / 2 + 1.5) * _mpx, 0, _bc, ""];
         };
-        _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)", _c, _p, 0, 0, 0, _text, [0, 2] select !_boxed, _tsz, "RobotoCondensedBold", "center"];
+        _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)", _c, _p, 0, 0, 0, _text, [0, 2] select !_boxed, _tsz, (COMSPEC_ATAK_FontSet select 1), "center"];
     };
 };

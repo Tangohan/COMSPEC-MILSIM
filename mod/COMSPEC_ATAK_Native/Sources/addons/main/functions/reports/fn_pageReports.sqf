@@ -103,7 +103,7 @@ switch (_tab) do {
             };
             private _meta = [_r getOrDefault ["by", "?"], _r getOrDefault ["time", ""], _r getOrDefault ["grid", ""]];
             if ((_r getOrDefault ["dest", "CAMP"]) isNotEqualTo "CAMP") then { _meta pushBack toLower (_r getOrDefault ["dest", ""]); };
-            _rows pushBack ["text", format ["<t font='RobotoCondensedBold' color='%1'>%2</t>  <t font='RobotoCondensedBold'>%3</t>  <t color='#8a9a93'>%4</t>%5<br/><t size='0.9'>%6</t>",
+            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t font='COMSPEC_BarlowBold'>%3</t>  <t color='#8a9a93'>%4</t>%5<br/><t size='0.9'>%6</t>",
                 _col, _prio, [_r getOrDefault ["label", "C.R."]] call _esc, [_meta joinString " · "] call _esc,
                 ["", "  " + _webTxt] select (_tab isEqualTo "SENT" && {_webTxt isNotEqualTo ""}), [_r getOrDefault ["summary", ""]] call _esc]];
             if (_open isEqualTo _id) then {

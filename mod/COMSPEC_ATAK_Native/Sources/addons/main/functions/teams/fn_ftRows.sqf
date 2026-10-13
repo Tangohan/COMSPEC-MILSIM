@@ -21,7 +21,7 @@ private _roleShort = { params ["_u"]; private _r = _u getVariable ["COMSPEC_FTRo
 private _rows = [];
 
 // Moi
-private _mine = if ((_me get "id") isEqualTo "") then { "<t color='#8a9a93'>sans équipe</t>" } else { format ["<t color='%1' font='RobotoCondensedBold'>● %2</t>", _me get "hex", [_me get "name"] call _esc] };
+private _mine = if ((_me get "id") isEqualTo "") then { "<t color='#8a9a93'>sans équipe</t>" } else { format ["<t color='%1' font='COMSPEC_BarlowBold'>● %2</t>", _me get "hex", [_me get "name"] call _esc] };
 _rows pushBack ["text", format ["<t size='0.9'>Vous : %1 · %2</t>", _mine, ["<t color='#8a9a93'>aucun rôle</t>", _me get "roleLabel"] select ((_me get "role") isNotEqualTo "")]];
 _rows pushBack ["section", format ["Équipes de feu (%1)", count _teams], "Couleur, icône et rôles visibles par tout le camp : Groupe, BFT, carte et Inter-team"];
 
@@ -39,7 +39,7 @@ _rows pushBack ["section", format ["Équipes de feu (%1)", count _teams], "Coule
         _btns pushBack [["REJOINDRE", "FERMÉE"] select ((_t get "locked") && {!_isGL}), compile format ["['join', '%1'] call comspec_atak_native_fnc_ftAction;", _tid], true, !(_t get "locked") || {_isGL}];
     };
     if (_canEdit) then { _btns pushBack ["MODIFIER", compile format ["['editOpen', '%1'] call comspec_atak_native_fnc_ftAction;", _tid]]; };
-    _rows pushBack ["person", _t get "icon", format ["<t font='RobotoCondensedBold' color='%1'>%2</t>  <t size='0.8' color='#8a9a93'>%3 · %4 membre(s)%5%6</t>%7<br/><t size='0.8'>%8</t>",
+    _rows pushBack ["person", _t get "icon", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t size='0.8' color='#8a9a93'>%3 · %4 membre(s)%5%6</t>%7<br/><t size='0.8'>%8</t>",
         _t get "hex", [_t get "name"] call _esc, _t get "colorLabel", count _m,
         ["", format [" · chef %1", [name _lead] call _esc]] select !isNull _lead,
         ["", " · <t color='#f2ab33'>fermée</t>"] select (_t get "locked"),
@@ -62,7 +62,7 @@ _rows pushBack ["section", format ["Équipes de feu (%1)", count _teams], "Coule
 } forEach _teams;
 if ((count _teams) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucune équipe de feu dans ce groupe. Créez la première : Alpha, Bravo…</t>"]; };
 if ((count _free) > 0) then {
-    _rows pushBack ["person", "\A3\ui_f\data\map\vehicleicons\iconMan_ca.paa", format ["<t font='RobotoCondensedBold'>Sans équipe</t>  <t size='0.8' color='#8a9a93'>%1</t><br/><t size='0.8'>%2</t>",
+    _rows pushBack ["person", "\A3\ui_f\data\map\vehicleicons\iconMan_ca.paa", format ["<t font='COMSPEC_BarlowBold'>Sans équipe</t>  <t size='0.8' color='#8a9a93'>%1</t><br/><t size='0.8'>%2</t>",
         count _free, (_free apply { [name _x] call _esc }) joinString " · "], [], [0.55, 0.6, 0.58, 1]];
 };
 

@@ -3,6 +3,8 @@
     - DIAPOSITIVES : deck Google Slides partagé par le présentateur (synchronisé pour tous par Overwatch)
       ou diapositives publiées sur Athena ; sommaire cliquable, précédente / suivante, actualiser.
     - MISSION : nom, carte, date et heure, météo, puis les notes du briefing de la mission (journal Arma).
+    - Engrenage (à droite des onglets) : lien Google Slides, source des diapositives, actualisation automatique
+      (fn_briefingSettings, actions fn_briefingCfg).
     La page se redessine seule quand la diapositive change (voir le PFH de XEH_postInitClient).
 */
 disableSerialization;
@@ -29,13 +31,29 @@ private _btn = {
 
 // Onglets
 // Quatrième onglet : la carte de briefing (app Plan), à part de la carte qui suit le joueur.
-private _tw = (_gw - 2 * _pad) / 4;
+// Engrenage carré au bout de la rangée : paramètres du briefing (liens des présentations).
+private _gearW = _rowH / (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
+private _tw = (_gw - 2 * _pad - _gearW - _pad / 2) / 4;
 private _qn = count ((uiNamespace getVariable ["COMSPEC_ATAK_BriefQ", createHashMap]) getOrDefault ["list", []]);
 [[_pad, _pad, _tw - _pad / 6, _rowH], "DIAPOSITIVES", { ["tab", "SLIDES"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "SLIDES"] call _btn;
 [[_pad + _tw, _pad, _tw - _pad / 6, _rowH], ["QUESTIONS", format ["QUESTIONS (%1)", _qn]] select (_qn > 0), { ["tab", "QUESTIONS"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "QUESTIONS"] call _btn;
 [[_pad + 2 * _tw, _pad, _tw - _pad / 6, _rowH], "MISSION", { ["tab", "MISSION"] call comspec_atak_native_fnc_briefingAction; }, _tab isEqualTo "MISSION"] call _btn;
 [[_pad + 3 * _tw, _pad, _tw - _pad / 6, _rowH], "CARTE", { [{ ["PLAN"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }] call _btn;
+private _gx = _gw - _pad - _gearW;
+private _gearOn = _tab isEqualTo "SETTINGS";
+private _gbg = ["COMSPEC_RscText", [_gx, _pad, _gearW, _rowH]] call comspec_atak_native_fnc_pageCtrl;
+_gbg ctrlSetBackgroundColor ([[0.05, 0.12, 0.16, 1], [0.36, 0.78, 0.42, 0.95]] select _gearOn);
+private _gi = ["COMSPEC_RscPicture", [_gx + _gearW * 0.18, _pad + _rowH * 0.18, _gearW * 0.64, _rowH * 0.64], "\z\comspec_atak_native\addons\main\data\ui_gear.paa"] call comspec_atak_native_fnc_pageCtrl;
+_gi ctrlSetTextColor ([[0.92, 0.96, 0.93, 1], [0.03, 0.05, 0.04, 1]] select _gearOn);
+private _gb = ["COMSPEC_RscButtonOverlay", [_gx, _pad, _gearW, _rowH]] call comspec_atak_native_fnc_pageCtrl;
+_gb ctrlSetTooltip (("Paramètres du briefing : lien Google Slides, source des diapositives") call comspec_atak_native_fnc_tr);
+_gb ctrlAddEventHandler ["ButtonClick", { [{ [["open", "close"] select (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["briefTab", "SLIDES"]) isEqualTo "SETTINGS")] call comspec_atak_native_fnc_briefingCfg; }] call CBA_fnc_execNextFrame; }];
 private _y0 = _pad * 2 + _rowH;
+
+if (_tab isEqualTo "SETTINGS") exitWith {
+    [[0, _y0, _bw, _bh - _y0]] call comspec_atak_native_fnc_briefingSettings;
+    true
+};
 
 // Questions sur la diapositive en cours : gardées sur Athena (commentaires de la diapositive), le présentateur est prévenu.
 if (_tab isEqualTo "QUESTIONS") exitWith {
@@ -56,7 +74,7 @@ if (_tab isEqualTo "QUESTIONS") exitWith {
         private _list = _q getOrDefault ["list", []];
         if ((_q getOrDefault ["err", ""]) isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='#e0a040'>%1</t>", _q get "err"]]; };
         if ((count _list) isEqualTo 0 && {(_q getOrDefault ["err", ""]) isEqualTo ""}) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucune question sur cette diapositive.</t>"]; };
-        { _x params ["", "_author", "_when", "_body"]; _rows pushBack ["text", format ["<t font='RobotoCondensedBold' color='#9be3a5'>%1</t> <t size='0.75' color='#8a9a93'>%2</t><br/>%3", [_author] call _esc, (_when splitString " ") param [1, _when], [_body] call _esc]]; } forEach _list;
+        { _x params ["", "_author", "_when", "_body"]; _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='#9be3a5'>%1</t> <t size='0.75' color='#8a9a93'>%2</t><br/>%3", [_author] call _esc, (_when splitString " ") param [1, _when], [_body] call _esc]]; } forEach _list;
         _rows append [
             ["memo", "briefQ", "Votre question", uiNamespace getVariable ["COMSPEC_ATAK_BriefQDraft", ""]],
             ["buttons", [["ENVOYER", { ["ask"] call comspec_atak_native_fnc_briefingAction; }, true], ["ACTUALISER", { ["questions", -1] call comspec_atak_native_fnc_briefingAction; }]]]
@@ -67,7 +85,7 @@ if (_tab isEqualTo "QUESTIONS") exitWith {
 };
 
 if (_tab isEqualTo "MISSION") exitWith {
-    private _h = { params ["_t"]; format ["<t color='#5cc76b' size='0.85' font='RobotoCondensedBold'>%1</t>", toUpper _t] };
+    private _h = { params ["_t"]; format ["<t color='#5cc76b' size='0.85' font='COMSPEC_BarlowBold'>%1</t>", toUpper _t] };
     private _dim = { params ["_t"]; format ["<t color='#8a9a93' size='0.85'>%1</t>", _t] };
     // Texte du journal Arma → texte structuré lisible par parseText.
     private _clean = {
@@ -96,7 +114,7 @@ if (_tab isEqualTo "MISSION") exitWith {
     private _windDir = round (((wind select 0) atan2 (wind select 1)) + 360) mod 360;
     private _lines = [
         ["Situation"] call _h,
-        format ["<t font='RobotoCondensedBold' size='1.1'>%1</t>", _mission],
+        format ["<t font='COMSPEC_BarlowBold' size='1.1'>%1</t>", _mission],
         format ["%1 · %2", [_world, worldName] select (_world isEqualTo ""), ["Opération en cours", format ["%1 joueur(s)", count allPlayers]] select isMultiplayer] call _dim,
         format ["Date  %1/%2/%3   Heure  %4", (_date select 2) toFixed 0, (_date select 1) toFixed 0, (_date select 0) toFixed 0, [daytime, "HH:MM"] call BIS_fnc_timeToString],
         format ["Météo  %1 · brouillard %2 %% · vent %3 m/s du %4°", _sky, round (fog * 100), round (vectorMagnitude wind * 10) / 10, (_windDir + 180) mod 360],
@@ -118,7 +136,7 @@ if (_tab isEqualTo "MISSION") exitWith {
         if ((count _recs) > 0) then {
             _lines pushBack ([_name] call _h);
             {
-                _lines pushBack format ["<t font='RobotoCondensedBold'>%1</t>", _x param [1, ""]];
+                _lines pushBack format ["<t font='COMSPEC_BarlowBold'>%1</t>", _x param [1, ""]];
                 _lines pushBack ([_x param [2, ""]] call _clean);
                 _lines pushBack "";
                 _count = _count + 1;
@@ -135,6 +153,13 @@ if (_tab isEqualTo "MISSION") exitWith {
 
 // DIAPOSITIVES
 ([] call comspec_atak_native_fnc_briefingSignature) params ["_src", "_idx", "_total", "_path", "_titles"];
+// Source « Google Slides » de l'engrenage : le lien enregistré est chargé une fois à l'ouverture.
+private _pref = profileNamespace getVariable ["COMSPEC_ATAK_BriefSource", "AUTO"];
+private _gUrl = profileNamespace getVariable ["COMSPEC_ATAK_BriefGoogleUrl", ""];
+if (_pref isEqualTo "GOOGLE" && {_bridge} && {_gUrl isNotEqualTo ""} && {_src isNotEqualTo "GOOGLE"} && {(uiNamespace getVariable ["COMSPEC_ATAK_BriefAutoTried", ""]) isNotEqualTo _gUrl}) then {
+    uiNamespace setVariable ["COMSPEC_ATAK_BriefAutoTried", _gUrl];
+    [{ ["load", [_this, false]] call comspec_atak_native_fnc_briefingCfg; }, _gUrl] call CBA_fnc_execNextFrame;
+};
 if (_src isEqualTo "ATHENA" && {_total > 0}) then {
     // Image en cache local (téléchargée une fois par diapositive).
     private _cache = uiNamespace getVariable ["COMSPEC_ATAK_SlideCache", createHashMap];
@@ -182,7 +207,8 @@ private _bg = ["COMSPEC_RscPanel", [_vx, _vy, _vw, _vh]] call comspec_atak_nativ
 _bg ctrlSetBackgroundColor [0, 0, 0, 1];
 if (_total < 1 || {_path isEqualTo ""}) then {
     private _msg = switch (true) do {
-        case (_total < 1 && {_bridge}): { "Aucune diapositive pour l'instant.<br/>Le présentateur partage un Google Slides depuis le tableau de briefing, ou publiez des diapositives sur Athena puis touchez ACTUALISER." };
+        case (_total < 1 && {_bridge} && {_pref isEqualTo "GOOGLE"}): { ["Aucune présentation Google enregistrée.<br/>Touchez l'engrenage en haut à droite pour coller le lien Google Slides.", "Chargement de la présentation Google…<br/>En cas d'échec, l'engrenage en haut à droite explique pourquoi."] select (_gUrl isNotEqualTo "") };
+        case (_total < 1 && {_bridge}): { "Aucune diapositive pour l'instant.<br/>Le présentateur partage un Google Slides depuis le tableau de briefing, ou publiez des diapositives sur Athena puis touchez ACTUALISER.<br/>Votre propre lien Google Slides : touchez l'engrenage en haut à droite." };
         case (_total < 1): { "Aucun briefing reçu.<br/>Les diapositives Athena demandent COMSPEC Link." };
         case (_src isEqualTo "GOOGLE"): { "Chargement de la diapositive…" };
         default { "Image indisponible (réseau ou cache).<br/>Touchez ACTUALISER pour réessayer." };
@@ -203,7 +229,7 @@ if (_op isNotEqualTo "") then {
     _srcLabel = format ["<t color='#7fb6e6'>Op. %1</t>", _op];
 };
 private _info = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh + _pad / 2, _vw, _fs * 1.6]] call comspec_atak_native_fnc_pageCtrl;
-_info ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold'>%1</t><t align='right' size='0.85' color='#8a9a93'>%2 · %3 / %4</t>", _title, _srcLabel, [_idx + 1, 0] select (_total < 1), _total]) call comspec_atak_native_fnc_tr);
+_info ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold'>%1</t><t align='right' size='0.85' color='#8a9a93'>%2 · %3 / %4</t>", _title, _srcLabel, [_idx + 1, 0] select (_total < 1), _total]) call comspec_atak_native_fnc_tr);
 
 // Notes de la diapositive (texte saisi sur Athena).
 if (_notesH > 0) then {
@@ -216,8 +242,8 @@ if (_notesH > 0) then {
 if (_liveH > 0) then {
     private _ly = _bh - _btnH - _pad - _liveH;
     private _txt = switch (true) do {
-        case (_iPresent): { private _a = ["attendees"] call comspec_atak_native_fnc_briefingLive; format ["<t color='#5cc76b' font='RobotoCondensedBold'>● VOUS PRÉSENTEZ</t>  <t size='0.85' color='#8a9a93'>%1 présent(s)%2</t>", count _a, ["", format [" : %1", ((_a select [0, 6]) apply { name _x }) joinString ", "]] select ((count _a) > 0)] };
-        case ((count _live) > 0): { format ["<t color='#f2ab33' font='RobotoCondensedBold'>● %1 présente</t>  <t size='0.85' color='#8a9a93'>%2</t>", _live select 1, ["lecture libre", "vous suivez"] select _follow] };
+        case (_iPresent): { private _a = ["attendees"] call comspec_atak_native_fnc_briefingLive; format ["<t color='#5cc76b' font='COMSPEC_BarlowBold'>● VOUS PRÉSENTEZ</t>  <t size='0.85' color='#8a9a93'>%1 présent(s)%2</t>", count _a, ["", format [" : %1", ((_a select [0, 6]) apply { name _x }) joinString ", "]] select ((count _a) > 0)] };
+        case ((count _live) > 0): { format ["<t color='#f2ab33' font='COMSPEC_BarlowBold'>● %1 présente</t>  <t size='0.85' color='#8a9a93'>%2</t>", _live select 1, ["lecture libre", "vous suivez"] select _follow] };
         default { "<t size='0.85' color='#8a9a93'>Personne ne présente. PRÉSENTER fait suivre vos diapositives aux téléphones de votre camp.</t>" };
     };
     private _lt = ["COMSPEC_RscStructuredText", [_vx, _ly, _vw * 0.66, _liveH]] call comspec_atak_native_fnc_pageCtrl;
@@ -232,7 +258,7 @@ if (_liveH > 0) then {
 
 // Navigation
 private _by = _bh - _btnH - _pad;
-private _canRefresh = _bridge && {_src isNotEqualTo "GOOGLE"};
+private _canRefresh = _bridge && {_src isNotEqualTo "GOOGLE" || {_pref isEqualTo "GOOGLE"}};
 private _n = [2, 3] select _canRefresh;
 private _w = (_vw - (_n - 1) * _pad / 2) / _n;
 private _bx = _vx;

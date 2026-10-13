@@ -99,7 +99,7 @@ if (_filter isNotEqualTo "") then {
     _bar ctrlSetBackgroundColor _acc;
     _bar ctrlEnable false;
     private _lbl = ["COMSPEC_RscStructuredText", [_pad * 1.6, _y + _secH * 0.12, _gw - _pad, _secH]] call comspec_atak_native_fnc_pageCtrl;
-    _lbl ctrlSetStructuredText parseText ((format ["<t size='0.85' font='RobotoCondensedBold' color='#e8eee9'>%1</t>  <t size='0.75' color='#8a9a93'>%2</t>", toUpper _sec, count _items]) call comspec_atak_native_fnc_tr);
+    _lbl ctrlSetStructuredText parseText ((format ["<t size='0.85' font='COMSPEC_BarlowBold' color='#e8eee9'>%1</t>  <t size='0.75' color='#8a9a93'>%2</t>", toUpper _sec, count _items]) call comspec_atak_native_fnc_tr);
     _lbl ctrlEnable false;
     private _line = ["COMSPEC_RscText", [_pad, _y + _secH - pixelH, _gw, pixelH]] call comspec_atak_native_fnc_pageCtrl;
     _line ctrlSetBackgroundColor [1, 1, 1, 0.08];

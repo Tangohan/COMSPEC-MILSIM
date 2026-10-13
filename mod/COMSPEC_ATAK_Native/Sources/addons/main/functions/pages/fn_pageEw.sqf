@@ -36,7 +36,7 @@ switch (_tab) do {
         for "_i" from ((count _b) - 1) to 0 step -1 do {
             (_b select _i) params ["_from", "_brg", "_b0", "_b1", "_kind", "_t", "_err", ["_hour", ""]];
             private _col = createHashMapFromArray [["BROUILLEUR", "#d940f2"], ["GONIO", "#e5483a"]] getOrDefault [_kind, "#f2ab33"];
-            _rows pushBack ["text", format ["<t font='RobotoCondensedBold' color='%1'>%2</t>  <t size='1.1'>%3° %4</t>  <t color='#8a9a93'>à %5° près</t><br/><t size='0.8' color='#8a9a93'>%6 · relevé à %7 · il y a %8 min</t>",
+            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t size='1.1'>%3° %4</t>  <t color='#8a9a93'>à %5° près</t><br/><t size='0.8' color='#8a9a93'>%6 · relevé à %7 · il y a %8 min</t>",
                 _col, _kind, round _brg, [_brg] call _card, round _err,
                 [format ["moins de %1", [_b1] call _km], format ["entre %1 et %2", [_b0] call _km, [_b1] call _km]] select (_b0 > 0),
                 _hour, floor ((time - _t) / 60)]];
@@ -70,7 +70,7 @@ switch (_tab) do {
                     [format ["%1 m", round (player distance2D _p)], format ["%1 km", ((player distance2D _p) / 1000) toFixed 1]] select ((player distance2D _p) >= 1000),
                     _e get "hour", floor ((time - (_e get "t")) / 60)]
             };
-            _rows pushBack ["text", format ["<t font='RobotoCondensedBold' color='#f2ab33'>%1</t>  <t size='1.05'>%2</t>  %3%4<br/><t size='0.85'>%5</t>",
+            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='#f2ab33'>%1</t>  <t size='1.05'>%2</t>  %3%4<br/><t size='0.85'>%5</t>",
                 _e get "kind", _e get "q", _stTxt, ["", "  <t color='#5cc76b'>● SUIVI</t>"] select (_e getOrDefault ["track", false]), _where]];
             _rows pushBack ["buttons", [
                 ["CARTE", compile format ["['geoMap', %1] call comspec_atak_native_fnc_ewAction;", _i]],
@@ -106,7 +106,7 @@ switch (_tab) do {
         } forEach _own;
     };
     default {
-        _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_ew.paa", "<t size='1.2' font='RobotoCondensedBold'>Brouilleur</t><br/><t color='#8a9a93'>Coupe le réseau des téléphones dans le rayon et fausse leur GPS. Visible à la goniométrie ennemie tant qu'il émet.</t>"];
+        _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_ew.paa", "<t size='1.2' font='COMSPEC_BarlowBold'>Brouilleur</t><br/><t color='#8a9a93'>Coupe le réseau des téléphones dans le rayon et fausse leur GPS. Visible à la goniométrie ennemie tant qu'il émet.</t>"];
         if !(_allowed) exitWith { _rows pushBack ["text", _locked]; };
         if (_active) then {
             _mine params ["_pos", "_rad", "", "", "_until", "_exempt"];

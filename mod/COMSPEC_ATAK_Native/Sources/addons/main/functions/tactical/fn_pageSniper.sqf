@@ -71,10 +71,10 @@ private _elev = -([_y, _hRange] call _mil);
 private _dr = [[_hRange, _tof] call _drift, _hRange] call _mil;
 private _side = ["balle à droite, corrigez à GAUCHE", "balle à gauche, corrigez à DROITE"] select (_dr < 0);
 if ((abs _dr) < 0.05) then { _side = "aucune"; };
-_rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_sniper.paa", format ["<t size='1.15' font='RobotoCondensedBold'>%1</t><br/><t size='0.85' color='%2'>%3 · V0 %4 m/s · zéro %5 m</t>",
+_rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_sniper.paa", format ["<t size='1.15' font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.85' color='%2'>%3 · V0 %4 m/s · zéro %5 m</t>",
     getText (configFile >> "CfgWeapons" >> _wpn >> "displayName"), _grey, getText (configFile >> "CfgMagazines" >> _mag >> "displayName"), round _v0, _zero]];
 _rows pushBack ["section", "Solution", format ["Cible à %1 m%2", round _range, ["", format [" · site %1°", round _incl]] select ((abs _incl) >= 1)]];
-_rows pushBack ["text", format ["<t size='1.6' font='RobotoCondensedBold' color='#5cc76b'>%1%2 MRAD</t><t color='%3'>  élévation · %4 MOA</t><br/><t size='1.6' font='RobotoCondensedBold' color='#f2ab33'>%5 MRAD</t><t color='%3'>  dérive : %6 · %7 MOA</t><br/><t color='%3'>Temps de vol </t>%8 s<t color='%3'> · vitesse à l'impact </t>%9 m/s",
+_rows pushBack ["text", format ["<t size='1.6' font='COMSPEC_BarlowBold' color='#5cc76b'>%1%2 MRAD</t><t color='%3'>  élévation · %4 MOA</t><br/><t size='1.6' font='COMSPEC_BarlowBold' color='#f2ab33'>%5 MRAD</t><t color='%3'>  dérive : %6 · %7 MOA</t><br/><t color='%3'>Temps de vol </t>%8 s<t color='%3'> · vitesse à l'impact </t>%9 m/s",
     ["", "+"] select (_elev >= 0), _elev toFixed 1, _grey, (_elev * 3.438) toFixed 1, (abs _dr) toFixed 1, _side, ((abs _dr) * 3.438) toFixed 1, _tof toFixed 2, round _vi]];
 _rows pushBack ["edit", "sniRange", "Distance de la cible (m)", str round _range];
 _rows pushBack ["buttons", [

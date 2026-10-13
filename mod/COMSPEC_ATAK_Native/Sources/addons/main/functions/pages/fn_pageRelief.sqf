@@ -42,9 +42,9 @@ private _box = { params ["_rect", "_rgba"]; private _c = ["COMSPEC_RscText", _re
 private _lbl = {
     params ["_cls", "_rect", "_t", ["_fh", _fs], ["_col", _cText], ["_bold", false]];
     private _c = [_cls, _rect, _t] call _mk;
-    _c ctrlSetFontHeight _fh;
+    _c ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin);
     _c ctrlSetTextColor _col;
-    if (_bold) then { _c ctrlSetFont "RobotoCondensedBold"; };
+    if (_bold) then { _c ctrlSetFont (COMSPEC_ATAK_FontSet select 1); };
     _c
 };
 private _hit = {
@@ -65,7 +65,7 @@ private _sec = {
 private _fit = {
     params ["_c", "_w", "_fh", ["_min", 0.6]];
     private _f = _fh;
-    while { (ctrlTextWidth _c) > _w && {_f > _fh * _min} } do { _f = _f * 0.92; _c ctrlSetFontHeight _f; };
+    while { (ctrlTextWidth _c) > _w && {_f > _fh * _min} } do { _f = _f * 0.92; _c ctrlSetFontHeight ((_f) max COMSPEC_ATAK_FontMin); };
 };
 // Bouton plein : [rect, texte, code, accent ?, aide].
 private _btn = {
@@ -298,7 +298,7 @@ switch (_tool) do {
                 [[_pad, _y, _w, _ch], _cTile] call _box;
                 [[_pad, _y, pixelW * 4, _ch], _cAmber] call _box;
                 private _c = ["COMSPEC_RscStructuredText", [_pad * 2, _y + _ch * 0.08, _w * 0.7, _ch * 0.9]] call _mk;
-                _c ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='#f2ab33'>POINT HAUT %1 m</t><br/><t size='0.85' color='#c9d2cd'>%2 · %3 %4 (%5°)</t>",
+                _c ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#f2ab33'>POINT HAUT %1 m</t><br/><t size='0.85' color='#c9d2cd'>%2 · %3 %4 (%5°)</t>",
                     round (_bp select 2), [_bp, 8] call comspec_atak_native_fnc_gridRef, [player distance2D _bp] call _dist, [player getDir _bp] call _card, round (player getDir _bp)]) call comspec_atak_native_fnc_tr);
                 _c ctrlSetFontHeight _fs;
                 private _mw = (_font * 3.6) min (_w * 0.25);
@@ -351,7 +351,7 @@ switch (_tool) do {
             [[_pad, _y, _w, _vh], [[0.22, 0.05, 0.04, 1], [0.05, 0.18, 0.08, 1]] select _ok] call _box;
             [[_pad, _y, pixelW * 4, _vh], _vc] call _box;
             private _vt = ["COMSPEC_RscStructuredText", [_pad * 2, _y + _vh * 0.1, _w - _pad * 2, _vh * 0.9]] call _mk;
-            _vt ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' size='1.25' color='%1'>%2</t><br/><t size='0.85' color='#c9d2cd'>%3</t>", [_vc] call _html,
+            _vt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.25' color='%1'>%2</t><br/><t size='0.85' color='#c9d2cd'>%3</t>", [_vc] call _html,
                 ["VUE BLOQUÉE", "VUE DÉGAGÉE"] select _ok,
                 [format ["Obstacle : %1, à %2 de moi (%3 avant la cible)", _what, [_bd] call _dist, [_len - _bd] call _dist], "Rien ne coupe la ligne entre mes yeux et la cible."] select _ok]) call comspec_atak_native_fnc_tr);
             _vt ctrlSetFontHeight _fs;
@@ -443,7 +443,7 @@ switch (_tool) do {
                 _ic ctrlSetTextColor _cGreen;
                 private _cx = _pad * 2.2 + _ch * 0.6 / _ratio;
                 private _c = ["COMSPEC_RscStructuredText", [_cx, _y + _ch * 0.08, _w - (_cx - _pad) - _mw - _pad, _ch * 0.9]] call _mk;
-                _c ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.85' color='#8a9a93'>%2 · %3° %4 · %5</t>",
+                _c ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.85' color='#8a9a93'>%2 · %3° %4 · %5</t>",
                     _name, [_d] call _dist, _az, [_az] call _card, [getPosASL _b, 8] call comspec_atak_native_fnc_gridRef]) call comspec_atak_native_fnc_tr);
                 _c ctrlSetFontHeight _fs;
                 [[_pad + _w - _mw - _pad * 0.4, _y + _ch * 0.2, _mw, _ch * 0.6], "CARTE", compile format ["['focus', %1] call comspec_atak_native_fnc_reliefAction;", str ((getPosASL _b) select [0, 2])]] call _btn;

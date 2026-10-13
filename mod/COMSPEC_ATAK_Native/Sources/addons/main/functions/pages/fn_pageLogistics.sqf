@@ -39,7 +39,7 @@ private _progress = {
 private _card = {
     params ["_r", "_showWho"];
     private _p = _prioLab getOrDefault [_r get "prio", ["ROUTINE", "#8a9a93"]];
-    format ["<t font='RobotoCondensedBold'>%1 x%2</t>  <t size='0.75' color='%3'>%4</t><br/><t size='0.8' color='#8a9a93'>%5%6 · %7 · %8</t><br/><t size='0.75'>%9</t>%10",
+    format ["<t font='COMSPEC_BarlowBold'>%1 x%2</t>  <t size='0.75' color='%3'>%4</t><br/><t size='0.8' color='#8a9a93'>%5%6 · %7 · %8</t><br/><t size='0.75'>%9</t>%10",
         [_r get "label"] call _esc, _r get "qty", _p select 1, _p select 0,
         ["", format ["%1 · ", [_r get "cs"] call _esc]] select _showWho, _r get "id", _modeLab getOrDefault [_r get "mode", ""], _r get "grid",
         [_r get "status"] call _progress,
@@ -89,7 +89,7 @@ switch (_tab) do {
         };
         private _cat = ["cat", "AMMO"] call _cur;
         _rows append [
-            ["hero", _icon, "<t size='1.2' font='RobotoCondensedBold'>Demande de ravitaillement</t><br/><t color='#8a9a93'>Envoyée à tous les porteurs de téléphone du camp.</t>"],
+            ["hero", _icon, "<t size='1.2' font='COMSPEC_BarlowBold'>Demande de ravitaillement</t><br/><t color='#8a9a93'>Envoyée à tous les porteurs de téléphone du camp.</t>"],
             ["Besoin", "cat", "AMMO", [["MUNITIONS", "AMMO"], ["SANTÉ", "MED"], ["VIVRES", "FOOD"]]] call _seg,
             ["", "cat", "AMMO", [["BATTERIES", "BATT"], ["VÉHICULE", "VEH"], ["AUTRE", "CUSTOM"]]] call _seg
         ];

@@ -34,9 +34,9 @@ private _box = { params ["_rect", "_rgba"]; private _c = ["COMSPEC_RscText", _re
 private _lbl = {
     params ["_cls", "_rect", "_t", ["_fh", _fs], ["_col", _cText], ["_bold", false]];
     private _c = [_cls, _rect, _t] call _mk;
-    _c ctrlSetFontHeight _fh;
+    _c ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin);
     _c ctrlSetTextColor _col;
-    if (_bold) then { _c ctrlSetFont "RobotoCondensedBold"; };
+    if (_bold) then { _c ctrlSetFont (COMSPEC_ATAK_FontSet select 1); };
     _c
 };
 private _hit = {
@@ -58,7 +58,7 @@ private _sec = {
 private _fit = {
     params ["_c", "_w", "_fh", ["_min", 0.6]];
     private _f = _fh;
-    while { (ctrlTextWidth _c) > _w && {_f > _fh * _min} } do { _f = _f * 0.92; _c ctrlSetFontHeight _f; };
+    while { (ctrlTextWidth _c) > _w && {_f > _fh * _min} } do { _f = _f * 0.92; _c ctrlSetFontHeight ((_f) max COMSPEC_ATAK_FontMin); };
 };
 
 private _bg = [[0, 0, _bw, _bh], _cBg] call _box;
@@ -99,7 +99,7 @@ private _pt = ["COMSPEC_RscText", [_tx, _y + _ph * 0.12, _tw, _ph * 0.42], ["PAN
 [_pt, _tw, _ph * 0.36, 0.5] call _fit;
 private _ps = ["COMSPEC_RscStructuredText", [_tx, _y + _ph * 0.56, _tw, _ph * 0.42]] call _mk;
 _ps ctrlSetStructuredText parseText ((["<t color='#d7b0aa'>Alerte l'ensemble des opérateurs de votre détresse. Il est nécessaire d'appuyer deux fois d'affilée pour valider l'envoi.</t>",
-    "<t color='#ffffff' font='RobotoCondensedBold'>Appuyez encore dans les 5 secondes pour ENVOYER.</t>"] select _armed) call comspec_atak_native_fnc_tr);
+    "<t color='#ffffff' font='COMSPEC_BarlowBold'>Appuyez encore dans les 5 secondes pour ENVOYER.</t>"] select _armed) call comspec_atak_native_fnc_tr);
 _ps ctrlSetFontHeight (_fs * 0.95);
 [[_pad, _y, _w, _ph], { ["panic"] call comspec_atak_native_fnc_alertsAction; }, "Deux appuis : alerte de détresse à tout le camp"] call _hit;
 _y = _y + _ph + _pad * 0.4;
@@ -144,7 +144,7 @@ private _rh = _font * 1.6;
 private _si = ["COMSPEC_RscPicture", [_pad * 1.8, _y + _rh * 0.2, _rh * 0.6 / _ratio, _rh * 0.6], _dir + "app_salute.paa"] call _mk;
 _si ctrlSetTextColor [0.30, 0.62, 0.98, 1];
 private _st = ["COMSPEC_RscStructuredText", [_pad * 2.6 + _rh * 0.6 / _ratio, _y + _rh * 0.18, _w * 0.8, _rh]] call _mk;
-_st ctrlSetStructuredText parseText (("<t font='RobotoCondensedBold'>COMPTE RENDU SALUTE</t>  <t color='#8a9a93' size='0.85'>dans l'app SALUTE ›</t>") call comspec_atak_native_fnc_tr);
+_st ctrlSetStructuredText parseText (("<t font='COMSPEC_BarlowBold'>COMPTE RENDU SALUTE</t>  <t color='#8a9a93' size='0.85'>dans l'app SALUTE ›</t>") call comspec_atak_native_fnc_tr);
 _st ctrlSetFontHeight _fs;
 [[_pad, _y, _w, _rh], { ["SALUTE"] call comspec_atak_native_fnc_navigate; }, "Ouvrir l'app SALUTE"] call _hit;
 _y = _y + _rh + _pad;
@@ -172,7 +172,7 @@ for "_i" from ((count _log) - 1) to (((count _log) - 12) max 0) step -1 do {
     _ci ctrlSetTextColor _col;
     private _cx = _pad * 2.2 + _ch * 0.56 / _ratio;
     private _c = ["COMSPEC_RscStructuredText", [_cx, _y + _ch * 0.08, _w - (_cx - _pad) - _bwMap - _pad, _ch * 0.9]] call _mk;
-    _c ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='%1'>%2</t>  <t color='#c9d2cd'>%3</t>  <t font='EtelkaMonospacePro' size='0.8' color='#8a9a93'>%4 · %5</t><br/><t size='0.85'>%6</t>",
+    _c ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t color='#c9d2cd'>%3</t>  <t font='EtelkaMonospacePro' size='0.8' color='#8a9a93'>%4 · %5</t><br/><t size='0.85'>%6</t>",
         (_col select [0, 3]) call BIS_fnc_colorRGBtoHTML, _t, [_who] call _esc, _hour, [_lg] call _esc, [[_text, "—"] select (_text isEqualTo "")] call _esc]) call comspec_atak_native_fnc_tr);
     _c ctrlSetFontHeight _fs;
     // CARTE : centre la carte sur l'alerte.

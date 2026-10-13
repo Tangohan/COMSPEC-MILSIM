@@ -44,14 +44,8 @@ private _raise = {
     if (_level isEqualTo "ERROR") then { systemChat format ["[COMSPEC ATAK] %1", _text call comspec_atak_native_fnc_tr]; };
 };
 // Version de la DLL chargée, "" si elle ne répond pas. « OK|COMSPECExtension 2.0.78 ».
-private _dllVersion = {
-    private _v = "COMSPECExtension" callExtension ["GetExtensionVersion", []];
-    if (_v isEqualType []) then { _v = _v param [0, ""]; };
-    if !(_v isEqualType "") then { _v = str _v; };
-    if ((_v select [0, 3]) isNotEqualTo "OK|") exitWith { "" };
-    private _w = _v splitString " |";
-    _w param [(count _w) - 1, ""]
-};
+// Version de la DLL chargée, "" si elle ne répond pas (fn_extVersion, relue à chaque contrôle).
+private _dllVersion = { [true] call comspec_atak_native_fnc_extVersion };
 private _code = missionNamespace getVariable ["COMSPEC_ATAK_CodeVersion", ""];
 
 switch (toLower _mode) do {

@@ -67,7 +67,7 @@
           (p.id != null ? ' data-photo-id="' + escapeHtml(p.id) + '"' : '') +
           (clickable ? ' data-pos-x="' + escapeHtml(p.pos_x) + '" data-pos-y="' + escapeHtml(p.pos_y) + '" tabindex="0" role="button"' : '') +
           '>' +
-          (src ? '<img src="' + escapeHtml(src) + '" alt="" loading="lazy" />' : '') +
+          (src ? '<img src="' + escapeHtml(src) + '" alt="" loading="lazy" data-recon-open="' + escapeHtml(p.id != null ? p.id : '') + '" title="Agrandir" />' : '') +
           '<div class="tacmap-recon-meta">' +
             '<strong>' + escapeHtml(author || 'Recon') + '</strong>' +
             (grid ? '<span>Grille ' + escapeHtml(grid) + '</span>' : '') +
@@ -80,6 +80,34 @@
         '</article>'
       );
     }).join('');
+
+    el._reconPhotos = list.slice(0, 24);
+    el._reconApiBase = apiBase;
+    el._reconOpts = opts;
+    if (!el.getAttribute('data-recon-viewer-bound')) {
+      el.setAttribute('data-recon-viewer-bound', '1');
+      // Clic sur la vignette : lecteur d'images (assets/js/recon-viewer.js) ; ailleurs sur la carte : localiser.
+      el.addEventListener('click', function (ev) {
+        var img = ev.target && ev.target.closest ? ev.target.closest('[data-recon-open]') : null;
+        if (!img || !global.ReconViewer) return;
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        var photos = el._reconPhotos || [];
+        var id = img.getAttribute('data-recon-open');
+        var index = 0;
+        for (var i = 0; i < photos.length; i++) {
+          if (String(photos[i].id) === id) { index = i; break; }
+        }
+        var o = el._reconOpts || {};
+        global.ReconViewer.open(photos, index, {
+          recon: true,
+          resolveUrl: function (u, p) { return resolveUrl(el._reconApiBase, p); },
+          onLocate: typeof o.onLocate === 'function'
+            ? function (x, y, p) { o.onLocate(x, y, p && p.id != null ? String(p.id) : null); }
+            : null
+        });
+      });
+    }
 
     if (typeof opts.onLocate === 'function' && !el.getAttribute('data-recon-bound')) {
       el.setAttribute('data-recon-bound', '1');

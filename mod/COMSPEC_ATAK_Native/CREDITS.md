@@ -24,6 +24,15 @@ La coque du téléphone (S7 en coque olive, `tools/src/android_s7_ca.png`) est f
 Les outils carte (bâtiments, hauteur, terrain plat, ligne de vue) sont réécrits d'après le comportement de Simple Map Tools (POLPOX), sans reprise de code.
 Les symboles de carte et certaines icônes restent celles d'Arma 3, référencées et non redistribuées.
 
+## Polices embarquées (SIL Open Font License 1.1)
+
+Converties au format police d'Arma par `tools/gen_fonts.py` (dossier `Sources/addons/main/fonts/`, licence jointe dans chaque dossier) :
+
+- Barlow Condensed — Jeremy Tribby (police par défaut du téléphone) ;
+- B612 — Airbus, Intactile Design, PolarSys ;
+- Rajdhani — Indian Type Foundry ;
+- Share Tech — Carrois Apostrophe.
+
 ## ATAK Enhancements — Iceman
 
 Aucun code Iceman n'est repris dans ce mod. Sa licence n'est pas documentée dans ce dépôt ; ses fonctionnalités

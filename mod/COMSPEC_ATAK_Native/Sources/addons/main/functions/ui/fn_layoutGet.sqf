@@ -90,7 +90,24 @@ private _sy = _dy + _dh * (_scr select 1);
 private _sw = _dw * ((_scr select 2) - (_scr select 0));
 private _sh = _dh * ((_scr select 3) - (_scr select 1));
 
-private _font = ((_sh * ([[[0.040, 0.060] select _land, 0.036] select !_mini, 0.052] select _texture)) max ([safeZoneH * 0.015, 0.03] select _texture)) * ((profileNamespace getVariable ["COMSPEC_ATAK_TextScale", 1]) max 0.8 min 1.25);
+// Échelle typographique du téléphone (une seule source pour toutes les apps) :
+//   font        corps de texte (champs, listes, titre de l'app) ;
+//   fontSmall   texte courant des pages (lignes, boutons, tuiles) ;
+//   fontCaption légendes, en-têtes de section, aides : la plus petite taille autorisée ;
+//   fontTitle / fontDisplay  titres de carte et grands chiffres (heure, valeurs mises en avant).
+// Les tailles suivent la taille de l'écran du téléphone (mini, plein écran, échelle #709) et le réglage
+// Réglages > Taille du texte, avec un plancher en pixels réels : sur un écran 1080p en mode mini, les libellés
+// descendaient à 10 px de haut (« _fs * 0.7 »), illisibles. COMSPEC_ATAK_FontMin (plancher des légendes) sert aux
+// pages qui calculent leurs tailles à la main : (_fs * 0.7) max COMSPEC_ATAK_FontMin.
+// Police choisie dans Réglages > Police : familles remises à jour dès que le réglage change.
+private _fontFam = missionNamespace getVariable ["comspec_atak_native_font", "barlow"];
+if (_fontFam isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_FontFam", ""])) then { [_fontFam] call comspec_atak_native_fnc_fontSet; };
+private _textScale = (profileNamespace getVariable ["COMSPEC_ATAK_TextScale", 1]) max 0.8 min 1.35;
+private _px = [pixelH, 0] select _texture; // texture UI (JPC) : coordonnées de texture, pas de plancher en pixels
+private _font = (((_sh * ([[[0.040, 0.060] select _land, 0.036] select !_mini, 0.052] select _texture)) max ([safeZoneH * 0.015, 0.03] select _texture)) * _textScale) max (_px * 16);
+private _fontSmall = (_font * 0.82) max (_px * 15);
+private _fontCaption = (_font * 0.68) max (_px * 13);
+COMSPEC_ATAK_FontMin = [_fontCaption, 0] select _texture; // texture : coordonnées propres, pas de plancher
 private _statusH = _font * 1.45;
 private _appH = _font * 1.9;
 private _dock = !_land;
@@ -119,7 +136,10 @@ createHashMapFromArray [
     ["body", [_sx + _railW, _bodyY, _sw - _railW, _bodyH]],
     ["inspW", _inspW],
     ["font", _font],
-    ["fontSmall", _font * 0.78],
+    ["fontSmall", _fontSmall],
+    ["fontCaption", _fontCaption],
+    ["fontTitle", _font * 1.2],
+    ["fontDisplay", _font * 1.9],
     ["cols", (([[6, 4] select _mini, 3] select (!_land)) + (profileNamespace getVariable ["COMSPEC_ATAK_IconDensity", 0])) max 2],
     ["pad", _pad]
 ]

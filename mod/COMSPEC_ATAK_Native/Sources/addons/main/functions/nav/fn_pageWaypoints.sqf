@@ -11,7 +11,7 @@ private _fmt = { params ["_m"]; [format ["%1 m", round _m], format ["%1 km", (_m
 private _rows = [["section", "Points de passage", [format ["%1 étape(s)%2", count _pts, ["", format [" · reçu de %1", _w getOrDefault ["from", ""]]] select ((_w getOrDefault ["from", ""]) isNotEqualTo "")], "Ajoutez des étapes avec l'outil carte « Points de passage »"] select ((count _pts) isEqualTo 0)]];
 if ((count _pts) > 0) then {
     (_pts select _idx) params ["_ap", "_an"];
-    _rows pushBack ["text", format ["<t size='1.2' font='RobotoCondensedBold' color='%1'>%2 %3</t><br/>%4 · %5° %6 · <t font='EtelkaMonospacePro'>%7</t>",
+    _rows pushBack ["text", format ["<t size='1.2' font='COMSPEC_BarlowBold' color='%1'>%2 %3</t><br/>%4 · %5° %6 · <t font='EtelkaMonospacePro'>%7</t>",
         ["#8a9a93", "#5cc76b"] select _nav, ["EN PAUSE :", "CAP SUR"] select _nav, _an, [player distance2D _ap] call _fmt, round (player getDir _ap), [player getDir _ap] call _card, [_ap, 8] call comspec_atak_native_fnc_gridRef]];
     _rows pushBack ["buttons", [
         ["<", { ["prev"] call comspec_atak_native_fnc_wpAction; }],
@@ -27,7 +27,7 @@ if ((count _pts) > 0) then {
     {
         _x params ["_p", "_n"];
         private _prevP = if (_forEachIndex isEqualTo 0) then { getPosATL player } else { (_pts select (_forEachIndex - 1)) select 0 };
-        _rows pushBack ["person", "\A3\ui_f\data\map\markers\military\flag_CA.paa", format ["<t font='RobotoCondensedBold' color='%1'>%2</t>  <t size='0.8' color='#8a9a93'>%3</t><br/><t size='0.8'>%4 depuis l'étape précédente · %5°</t>",
+        _rows pushBack ["person", "\A3\ui_f\data\map\markers\military\flag_CA.paa", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t size='0.8' color='#8a9a93'>%3</t><br/><t size='0.8'>%4 depuis l'étape précédente · %5°</t>",
             ["#c9d4cf", "#5cc76b"] select (_forEachIndex isEqualTo _idx), _n, [_p, 8] call comspec_atak_native_fnc_gridRef, [_prevP distance2D _p] call _fmt, round (_prevP getDir _p)],
             [["ALLER", compile format ["['goto', %1] call comspec_atak_native_fnc_wpAction;", _forEachIndex]], ["X", compile format ["['del', %1] call comspec_atak_native_fnc_wpAction;", _forEachIndex]]],
             [[0.95, 0.75, 0.18, 1], [0.36, 0.78, 0.42, 1]] select (_forEachIndex isEqualTo _idx)];

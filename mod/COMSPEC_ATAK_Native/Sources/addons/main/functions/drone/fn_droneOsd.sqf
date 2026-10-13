@@ -1,6 +1,6 @@
 /*
     Télémétrie du drone affichée dans l'app (et rafraîchie chaque seconde par fn_droneAction "tick").
-    Params : [drone, liaison [barres, distance, ok], "HEAD" | "FEED" | "NAME" | "ICON" | "ICONID"]
+    Params : [drone, liaison [barres, distance, ok, qualité, flux vidéo], "HEAD" | "FEED" | "NAME" | "ICON" | "ICONID"]
       "HEAD" : en-tête de la page, deux lignes compactes (texte structuré) ;
       "FEED" : incrustations de la vue caméra, à la façon d'un DJI : [haut gauche, haut centre, haut droite, bas gauche, bas droite] ;
       "FEEDMINI" : mêmes cinq places pour une petite image (téléphone en petit format) : une ligne en haut à gauche
@@ -8,6 +8,8 @@
       "NAME" : nom donné par le pilote (variable publique COMSPEC_DroneName), sinon le nom du modèle ;
       "ICONID" / "ICON" : icône choisie (variable publique COMSPEC_DroneIcon : quad, fixed, hexa, nano, fpv),
                  sinon devinée d'après le modèle ; "ICON" renvoie le chemin de la texture (data\drone_<id>.paa).
+    Flux vidéo par les relais (fn_videoLink, absent en mode arcade) : palier adaptatif, débit, relais utilisé et latence
+    en deuxième ligne du haut centre dans "FEED", palier et relais dans "HEAD", palier seul dans "FEEDMINI".
 */
 params ["_d", ["_l", [0, 0, false]], ["_kind", "HEAD"]];
 if (isNull _d) exitWith { ["", ["", "", "", "", ""]] select (_kind in ["FEED", "FEEDMINI"]) };
@@ -46,12 +48,20 @@ private _bat = round (100 * fuel _d);
 private _batHex = ["#c9d4cf", "#f2ab33", "#e5483a"] select ([_bat > 20, _bat > 10 && {_bat <= 20}, _bat <= 10] find true);
 private _link = ["<t color='#e5483a'>Hors liaison</t>", format ["Liaison %1/4", _l select 0]] select (_l select 2);
 private _armed = (_d getVariable ["COMSPEC_DroneArmed", ""]) isNotEqualTo "";
+// Flux vidéo par les relais : palier retenu par le débit adaptatif (fn_droneStatic), sinon celui visé.
+private _vp = _l param [4, createHashMap];
+if !(_vp isEqualType createHashMap) then { _vp = createHashMap; };
+private _vOn = _vp getOrDefault ["active", false];
+private _vt = ((uiNamespace getVariable ["COMSPEC_ATAK_VideoTier", createHashMap]) getOrDefault ["DRONE", [-1]]) select 0;
+if (_vt < 0) then { _vt = _vp getOrDefault ["target", 4]; };
+(["tier", _vt] call comspec_atak_native_fnc_videoLink) params ["_vLb", "", "_vHex"];
 private _stateHex = switch (true) do { case (_m in ["STRIKE", "RTH"]): { "#e5483a" }; case (_m isEqualTo "STANDBY"): { "#8fb3c9" }; default { "#5cc76b" }; };
 private _name = [_d, _l, "NAME"] call comspec_atak_native_fnc_droneOsd;
 if (_kind isEqualTo "HEAD") exitWith {
-    format ["<img image='%14' size='1.05' color='#5cc76b'/> <t font='RobotoCondensedBold'>%1</t>  <t color='%2'>%3</t>%4%5<br/><t size='0.82' color='#c9d4cf'>H %6 m · %7 km/h · <t color='%8'>Batterie %9 %%</t> · à %10 m · %11 · Grille %12%13</t>",
+    format ["<img image='%14' size='1.05' color='#5cc76b'/> <t font='COMSPEC_BarlowBold'>%1</t>  <t color='%2'>%3</t>%4%5<br/><t size='0.82' color='#c9d4cf'>H %6 m · %7 km/h · <t color='%8'>Batterie %9 %%</t> · à %10 m · %11 · Grille %12%13</t>",
         _name, _stateHex, _state, ["", " <t color='#f2ab33'>· CQB</t>"] select _cqb, _who,
-        _h, round speed _d, _batHex, _bat, _l select 1, _link, [getPosASL _d, 8] call comspec_atak_native_fnc_gridRef,
+        _h, round speed _d, _batHex, _bat, _l select 1, _link + (["", format [" · <t color='%1'>Flux %2</t>%3", _vHex, _vLb,
+            ["", format [" via %1", _vp getOrDefault ["via", ""]]] select ((_vp getOrDefault ["hops", 0]) > 0)]] select _vOn), [getPosASL _d, 8] call comspec_atak_native_fnc_gridRef,
         ["", format [" · <t color='#e5483a'>Armé : %1</t>", _d getVariable ["COMSPEC_DroneArmedLabel", "charge"]]] select _armed, [_d, _l, "ICON"] call comspec_atak_native_fnc_droneOsd]
 };
 // Vue caméra : point du sol sous le réticule (là où regarde la nacelle).
@@ -69,15 +79,16 @@ if (_vis isEqualTo "") then { _vis = ["", " · BASSE LUMIÈRE", " · MODE NUIT"]
 private _sh = "shadow='2' shadowColor='#000000'";
 if (_kind isEqualTo "FEEDMINI") exitWith {
     [
-        format ["<t size='0.7' %1><t color='%2'>%3</t> · H %4 m · <t color='%5'>%6 %%</t> · %7</t>", _sh, _stateHex, _state, _h, _batHex, _bat, ["<t color='#e5483a'>HORS LIAISON</t>", format ["L %1/4", _l select 0]] select (_l select 2)],
+        format ["<t size='0.7' %1><t color='%2'>%3</t> · H %4 m · <t color='%5'>%6 %%</t> · %7</t>", _sh, _stateHex, _state, _h, _batHex, _bat, ["<t color='#e5483a'>HORS LIAISON</t>", format ["L %1/4", _l select 0]] select (_l select 2)] + (["", format [" · <t color='%1'>%2</t>", _vHex, _vLb]] select (_vOn && {_l select 2})),
         "", "", "",
         format ["<t size='0.7' align='right' %1>x%2%3 · %4</t>", _sh, _zoom, _vis, _under]
     ]
 };
 [
     format ["<t size='0.8' %1><t color='#e5483a'>●</t> REC %2:%3<br/>%4</t>", _sh, [floor (_rec / 60), 2] call CBA_fnc_formatNumber, [_rec mod 60, 2] call CBA_fnc_formatNumber, _name],
-    format ["<t size='0.8' align='center' %1>CAP %2° · <t color='%3'>%4</t>%5 · x%6%7</t>", _sh, [round (getDirVisual _d) mod 360, 3] call CBA_fnc_formatNumber, _stateHex, _state, ["", " · CQB"] select _cqb, _zoom, _vis],
-    format ["<t size='0.8' align='right' %1>%2<br/><t color='%3'>BAT %4 %%</t>%5</t>", _sh, _link, _batHex, _bat, ["", "<br/><t color='#e5483a' font='RobotoCondensedBold'>ARMÉ</t>"] select _armed],
+    format ["<t size='0.8' align='center' %1>CAP %2° · <t color='%3'>%4</t>%5 · x%6%7%8</t>", _sh, [round (getDirVisual _d) mod 360, 3] call CBA_fnc_formatNumber, _stateHex, _state, ["", " · CQB"] select _cqb, _zoom, _vis,
+        ["", "<br/>" + (["osd", [_vp, _vt]] call comspec_atak_native_fnc_videoLink)] select (_vOn && {_l select 2})],
+    format ["<t size='0.8' align='right' %1>%2<br/><t color='%3'>BAT %4 %%</t>%5</t>", _sh, _link, _batHex, _bat, ["", "<br/><t color='#e5483a' font='COMSPEC_BarlowBold'>ARMÉ</t>"] select _armed],
     format ["<t size='0.8' %1>H %2 m · D %3 m · %4 km/h</t>", _sh, _h, _l select 1, round speed _d],
     format ["<t size='0.8' align='right' %1>%2</t>", _sh, _under]
 ]

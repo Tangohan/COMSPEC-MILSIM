@@ -78,7 +78,7 @@ private _steps = switch (_kind) do {
         [1.3, { params ["_c", "", "_f"];
             (_c select 1) ctrlSetFade 0; (_c select 1) ctrlCommit 0.25;
             (_c select 2) ctrlShow true; (_c select 2) ctrlSetFade 1; (_c select 2) ctrlCommit 0; (_c select 2) ctrlSetFade 0; (_c select 2) ctrlCommit 0.3;
-            (_c select 3) ctrlSetStructuredText parseText (("<t align='center' font='RobotoCondensedBold' color='#e5483a'>BATTERIE VIDE</t><br/><t align='center' size='0.8' color='#8a9a93'>Arrêt du téléphone</t>") call comspec_atak_native_fnc_tr);
+            (_c select 3) ctrlSetStructuredText parseText (("<t align='center' font='COMSPEC_BarlowBold' color='#e5483a'>BATTERIE VIDE</t><br/><t align='center' size='0.8' color='#8a9a93'>Arrêt du téléphone</t>") call comspec_atak_native_fnc_tr);
             (_c select 3) ctrlSetFade 0; (_c select 3) ctrlCommit 0.3;
         }],
         [2.0, { params ["_c"]; (_c select 2) ctrlSetFade 0.7; (_c select 2) ctrlCommit 0.35; }],

@@ -36,7 +36,7 @@ _bg ctrlSetBackgroundColor [0.035, 0.045, 0.04, 0.97];
 private _head = ["COMSPEC_RscText", [_x0, _y0, _w, _rowH * 1.3]] call _mk;
 _head ctrlSetBackgroundColor [0.10, 0.20, 0.12, 1];
 _head ctrlSetText ((("  " + _title)) call comspec_atak_native_fnc_tr);
-_head ctrlSetFont "RobotoCondensedBold";
+_head ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
 private _y = _y0 + _rowH * 1.3;
 if (_help isNotEqualTo "") then {
     private _hc = ["COMSPEC_RscStructuredText", [_x0 + _gap, _y + _gap / 2, _w - 2 * _gap, _helpH]] call _mk;

@@ -38,14 +38,218 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Photos sur Discord : détails de la prise de vue (ATAK natif 1.80.0, COMSPEC Link 2.0.81)
+## Nouvelle police du téléphone, au choix (ATAK natif 1.83.0)
 
-Non testé en jeu. Demande de TTRD : l'embed Discord des photos manquait de données.
-- L'embed Quick Picture et Cliché drone affiche maintenant le grade de l'auteur, la mission et le serveur, l'altitude (mer et sol), la visée (site, point visé avec sa distance et sa grille, éloignement de l'opérateur pour le drone), la prise de vue (objectif arrière ou selfie, zoom, flash ; vision jour, nocturne ou thermique du drone), la météo (couverture, pluie, brouillard, vent), le terminal (modèle, versions ATAK et Link) et un lien vers la photo sur Athena.
-- Le cap et la position d'une photo du téléphone sont ceux de l'objectif (viseur), plus ceux du joueur.
-- Unité, grade et téléphone de l'auteur retrouvés aussi par le Steam de la session de jeu (avant : seulement avec une clé API).
-- Cliché confidentiel : ni visée ni lien public.
-- COMSPEC Link envoie ces détails à Athena (champ photo_extra) avec sa version. connect.pbo et main.pbo reconditionnés.
+### Résumé joueur
+Type : nouveauté
+FR : Nouvelle police du téléphone, au choix
+- Le téléphone passe en Barlow Condensed, une police condensée plus nette sur le petit écran.
+- Réglages > Police permet d'en choisir une autre : B612, Rajdhani, Share Tech, ou celles du jeu (Roboto, Purista).
+- Le même choix est dans Options des addons > COMSPEC > Police du téléphone.
+EN : New phone font, your choice
+- The phone now uses Barlow Condensed, a condensed font that stays sharp on the small screen.
+- Settings > Font lets you pick another one: B612, Rajdhani, Share Tech, or the game's own (Roboto, Purista).
+- The same choice is in Addon Options > COMSPEC > Phone font.
+
+### Détail technique
+
+Non testé en jeu. Demandes de TTRD : « T'as pas du tout changé les font », « Va pour Barlow Condensed, et mets un paramètre dans les settings pour le font et permet de choisir les autres ».
+- Polices OFL converties au format Arma par `tools/gen_fonts.py` (sans FontToTga) : `.fxy` = « BIFo » + 01 01 00 00 puis 7 entiers 16 bits par caractère (code, page, x, y, largeur, hauteur, avance), format relevé sur les polices d'ACE3 ; planche `-01.paa` (DXT5, comme ACE3). 12 tailles (8 à 46) pour Barlow Condensed Medium/Bold/Regular, B612 Regular/Bold, Rajdhani Medium/Bold, Share Tech : 5,4 Mo. Familles `COMSPEC_Barlow`, `COMSPEC_BarlowBold`, `COMSPEC_BarlowLight`, `COMSPEC_B612(Bold)`, `COMSPEC_Rajdhani(Bold)`, `COMSPEC_ShareTech` dans `ui/fonts.hpp`, chaque taille appariée à Roboto Condensed du jeu pour les caractères absents (symboles). Licences dans `fonts/*/OFL.txt`, crédits dans CREDITS.md.
+- Classes `COMSPEC_Rsc…` et balises `<t font=…>` des apps en `COMSPEC_Barlow…` ; police par défaut des balises `<t>` posée dans `COMSPEC_RscStructuredText >> Attributes`.
+- Réglage CBA client `comspec_atak_native_font` (en tête de la liste COMSPEC, dans la police du jeu), repris dans Réglages > Affichage > Police : `fn_fontSet` pose `COMSPEC_ATAK_FontSet` [courant, gras, léger] ; `fn_fontApply` l'applique aux contrôles créés par `fn_pageCtrl`, `fn_formRender`, `fn_tileCreate` et aux textes fixes du display (`fn_layoutApply`) ; `fn_fontText` (appelée par `fn_tr`) remplace les familles dans le texte structuré et l'enveloppe dans la police choisie ; les `ctrlSetFont` et `drawIcon` des apps et de la carte lisent `COMSPEC_ATAK_FontSet`. Les rares contrôles créés par `ctrlCreate` hors de ces fonctions restent en Barlow.
+- Règle pour les prochaines PR du téléphone : écrire `COMSPEC_Barlow`/`COMSPEC_BarlowBold` dans les balises `<t font=…>` et `(COMSPEC_ATAK_FontSet select 0|1|2)` pour `ctrlSetFont` et `drawIcon`, jamais `RobotoCondensed…`.
+
+À tester en jeu
+- Premier point : le texte du téléphone s'affiche bien en Barlow Condensed (format de police généré sans l'outil de Bohemia). Si le texte est illisible ou absent : Échap > Options > Options des addons > COMSPEC > Police du téléphone > Roboto Condensed remet la police du jeu.
+- Les 6 polices, en mode mini (portrait, paysage) et plein écran ; aucun libellé qui déborde (BFT, Alertes, Réglages, Drone, CFF, tuiles du lanceur) ; textes de la carte.
+
+## Gouttes de pluie sur l'écran désactivées (ATAK natif 1.82.0)
+
+### Résumé joueur
+Type : patch
+FR : Plus de gouttes de pluie sur l'écran du téléphone pour le moment
+- Sous la pluie, l'écran du téléphone ne se couvre plus de petites bulles.
+- L'effet revient plus tard, refait avec des gouttes qui glissent.
+EN : No more raindrops on the phone screen for now
+- In the rain, the phone screen no longer gets covered in small bubbles.
+- The effect will come back later, redone with sliding drops.
+
+### Détail technique
+- Demande de TTRD : effet de pluie mis de côté (W.I.P). fn_screenSurface ne dessine plus aucune goutte ; la saleté, le sang, les traces de doigts et le nettoyage sont inchangés. La refonte animée reste en brouillon (PR #728).
+- À vérifier en jeu : sous la pluie, téléphone sorti, plus aucune goutte ; poussière et traces toujours visibles.
+
+## Grande mise à jour regroupée : téléphone, vidéo par relais, Athena (ATAK natif 1.81.0, COMSPEC Link 2.0.82, site)
+
+### Résumé joueur
+Type : nouveauté
+FR : Grosse mise à jour : messagerie réparée, vidéo par relais, applis refaites
+- Applis du téléphone refaites : Musique (grande pochette, barre de progression), centre de notifications (cartes par urgence, filtres), appareil photo plein écran (raccourcis lisibles, ISO et vitesse qui suivent la lumière) et Briefing (un engrenage pour coller le lien Google Slides). Les textes sont plus lisibles, avec une taille « Très grand ».
+- Messages fonctionne à nouveau (canaux, défilement, non-lus) et les SMS sont plus fiables. Ton portrait opérateur Athena s'affiche dans le téléphone et dans Tinder.
+- Le drone, la caméra casque, le Live cam et les caméras fixes passent par les relais de la mission : la qualité de l'image suit la liaison. Une caméra noire est expliquée, le drone a un bouton VUE DIRECTE, et le drone comme le marquage de cibles font moins ramer le jeu.
+- Côté Athena : véhicules et drones de nouveau sur la carte web, check de démarrage posté dans le Discord (désactivable), et sur le site une page Configuration refaite et un lecteur d'images de reconnaissance avec zoom et plein écran.
+EN : Big update: messaging fixed, video through relays, apps redone
+- Phone apps redone: Music (big cover, progress bar), notification centre (cards by urgency, filters), full-screen camera (readable shortcuts, ISO and shutter speed that follow the light) and Briefing (a gear to paste the Google Slides link). Text is easier to read, with a "Very large" size.
+- Messages works again (channels, scrolling, unread counts) and SMS are more reliable. Your Athena operator portrait shows on the phone and in Tinder.
+- The drone, helmet camera, Live cam and fixed cameras go through the mission's relays: image quality follows the link. A black camera is explained, the drone has a DIRECT VIEW button, and both the drone and target marking slow the game down less.
+- On Athena: vehicles and drones are back on the web map, the startup check is posted to the Discord (can be turned off), and on the site a redone Configuration page and a recon image viewer with zoom and full screen.
+
+### Détail technique
+
+Une seule version pour 17 PR regroupées (#720, #721, #724, #727, #731 à #736, #738 à #743, #745) : ATAK natif 1.81.0, COMSPEC Link 2.0.82 (la DLL change : cache des portraits, JSON des véhicules, check de démarrage). main.pbo reconstruit avec HEMTT, comspec_overwatch_connect.pbo repatché (fn_extensionCallback, fn_hashMapToJson). Les photos Discord (#744) sont arrivées sur main avant, en 1.80.0. Gouttes de pluie (#728) non incluse : rendu en attente de validation. Non testé en jeu.
+- Conflits résolus : liste des fonctions de config.cpp (union), nacelle « link » de fn_droneAction (cache 0,2 s de #732 + chemin par relais de #734), fn_droneStatic (palier adaptatif de #734 + diagnostic PiP de #736), incrustation Live cam de la carte (hauteur #734 + police mini #740).
+- Live cam : #734 (fn_videoLink, utilisé par le drone, la caméra casque et les caméras fixes) et #743 (fn_feedLink, définition et décrochages de la page Live cam) coexistent ; le changement de palier n'est plus notifié qu'une fois (boucle fn_livecamStart). À unifier plus tard.
+
+#### Fiche personnel : marges des encarts Avancement et Visibilité (#735)
+
+- Site seul : encarts Avancement et Visibilité de la fiche personnel espacés et alignés (bureau, mobile, mode nuit) ; feuille personnel-file-refresh.css.
+
+#### Back-office : refonte complète de la page Configuration (#738)
+
+- Site seul : page Configuration du back-office refaite (sections, recherche, repérage des réglages modifiés, mode nuit, mobile) ; nouveaux back-office-configuration.css/js, test ConfigurationPageAssetTest.
+
+#### Lecteur d'images de reconnaissance (zoom, plein écran, fiche, album) (#739)
+
+- Site seul : lecteur d'images de reconnaissance (zoom, plein écran, fiche de la prise de vue, album) sur la carte ATAK, la tacmap et les remontées ; vue recon-viewer, route et API associées, test ReconImageViewerTest. Le lien « Ouvrir la photo sur Athena » des photos Discord (#744) ouvre maintenant ce lecteur (ReconImageStorage::viewerUrl).
+
+#### Véhicules refusés par Athena (HTTP 400) : JSON réparé, motif gardé dans le journal (#731)
+
+Non testé en jeu. Signalé par TTRD : `HTTP POST code 400 /public/api/atak/vehicles` en boucle juste après la connexion, alors que fiche opérateur, position et chat passaient. Il faut recompiler la DLL (build_mod.bat) ; pas de migration. La partie site n'est active qu'après déploiement sur le VPS.
+- Cause : Athena répond 400 quand le corps du véhicule est illisible ou sans indicatif. Le sérialiseur JSON d'Overwatch connect laissait passer des sauts de ligne bruts, des nombres non finis (« nan », « 1.#INF ») et un guillemet seul pour un tableau imbriqué : tout le corps devenait illisible, donc sans indicatif. Le motif exact n'était pas journalisé, la cause précise de ces trois 400 reste déduite.
+- Overwatch connect : chaînes échappées (sauts de ligne, tabulations, autres caractères de contrôle), nombres non finis envoyés à 0, tableaux imbriqués et camps/objets/groupes sérialisés proprement.
+- COMSPEC Link 2.0.81 : un corps encore illisible est réparé avant l'envoi (caractères de contrôle, nan/inf, virgule décimale). Pour un refus 4xx (hors 401/403/429), le journal du jeu garde désormais le motif renvoyé par Athena, et pour un 400/422 le début du corps envoyé : `ÉCHEC · HTTP POST — code 400 · /public/api/atak/vehicles (il y a 0 s) — réponse : … · envoyé : {…}`.
+- Site : même réparation du JSON côté Athena, indicatif repris aussi de `vehicle_id` ou `vehicle_type`, et le 400 dit pourquoi (JSON illisible ou clés reçues), avec une ligne `[atak/vehicles]` dans error_log.
+- À vérifier en jeu : après connexion, plus de 400 sur /api/atak/vehicles en montant dans un véhicule ou en pilotant un drone ; si un 400 revient, copier la ligne ÉCHEC complète du RPT (elle contient maintenant le motif).
+
+#### Portrait opérateur dans le téléphone (#724)
+
+Non testé en jeu. Signalé par TTRD : le volet rapide n'affichait que les initiales au lieu du portrait opérateur. DLL à recompiler (build_mod.bat), site à déployer sur le VPS, pas de migration.
+- Site : la vignette JPEG du portrait (uploads/portraits/atak) est faite aussi quand le portrait n'existe que dans storage/uploads (repli déjà servi par le site), et écrite dans storage/uploads si public/uploads n'est pas inscriptible. Un portrait JPEG reste envoyé tel quel si la conversion échoue.
+- Site : /api/atak/player-profile renvoie `avatar_status` (no_portrait, source_missing, unsupported_format, write_failed) et l'écrit dans le journal PHP (`[atak/player-profile]`) quand une image existe mais ne peut pas partir.
+- COMSPEC Link 2.0.81 : GetPlayerAvatarInfo transmet cette raison (colonne « S: »).
+- Téléphone : la réponse est découpée sans fusionner les colonnes vides (un nom ou un indicatif vide décalait l'adresse de l'image). Chaque échec (profil, téléchargement, format) est écrit en français dans le journal (RPT et app Debug, module PORTRAIT) avec sa raison, et le joueur reçoit une notification pour son propre portrait, une fois par raison.
+- Cache des portraits (demande de TTRD) : l'image téléchargée reste sur le disque et le profil Arma retient laquelle va avec quel joueur. D'une partie à l'autre, le portrait (le sien, équipiers, groupe, chat) s'affiche tout de suite, même hors ligne ; une seule vérification par partie demande l'adresse au site, et l'image n'est retéléchargée que si le portrait a changé ou si le fichier manque (COMSPEC Link 2.0.81 rend le fichier déjà présent sans requête). Pendant un échec, l'image en cache reste affichée.
+- Traduction : un chemin d'image téléchargée (C:/…/x.jpg) n'est plus passé au dictionnaire anglais.
+
+#### Check de démarrage posté dans le Discord Athena (#742)
+
+Non testé en jeu. Il faut recompiler la DLL (build_mod.bat) et déployer le site ; pas de migration. Le salon et son webhook sont à créer : sans `DISCORD_DEBUG_WEBHOOK` dans le `.env` du VPS, Athena accepte le rapport et ne poste rien.
+- Nouveau `fn_startupCheck` (appelé par le postInit client, une fois par mission) : 45 s après l'arrivée en jeu, après le contrôle de l'installation (`fn_integrityCheck`), il évalue 11 étapes (main.pbo unique et cohérent, téléphone initialisé, DLL chargée et de la version attendue, extension qui répond et appels Async, portail Athena joignable, compte lié, mise à jour disponible, CBA/ACE/ACRE/TFAR, Overwatch connect/SSE/pylônes, FPS et ping, erreurs du journal) et les envoie par la commande DLL `StartupCheck`. Rien n'est envoyé avec le service Athéna sur « Non » ou le nouveau réglage CBA client `comspec_atak_native_startup_report` décoché. Trois essais en cas d'échec réseau. Résultat dans le journal (`[STARTUP]`) et dans l'app Debug, onglet DLL.
+- Données envoyées : pseudo, indicatif, versions (mod, config, DLL, Arma), carte et nom de mission, étapes. L'UID Steam n'est envoyé que haché (`hashValue`, pour le dédoublonnage), aucune adresse IP ni jeton.
+- COMSPEC Link 2.0.81 : commande `StartupCheck` (champs `clé=valeur` mis en JSON par la DLL), `POST /api/atak/startup-check` sans clé API.
+- Site : `POST /api/atak/startup-check` (public, 20 requêtes / 10 min par adresse, rien en base) poste un embed par joueur et par session dans le webhook `DISCORD_DEBUG_WEBHOOK` : ✅/⚠️/❌ par étape, libellés FR / EN, joueur, versions, carte, date. Anti-spam : un message par session, 6 par joueur et par heure, 20 par minute au total. Textes du jeu nettoyés avant Discord (liens retirés, adresses IP tronquées, dossier utilisateur Windows masqué, mentions neutralisées). Aucun lien dans le message.
+
+#### Version de la DLL affichée dans « À propos » (#720)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Capture de TTRD : « Extension (DLL) : inconnue », « COMSPEC Link 1.6.16 », « COMSPEC ATAK 1.11.0 ».
+- « Extension (DLL) » restait « inconnue » : la valeur lue n'était jamais remplie. La version est maintenant demandée à la DLL chargée (GetExtensionVersion, nouvelle fonction fn_extVersion) ; DLL muette : « absente ou trop ancienne : relancez build_mod.bat » ; autre version que celle attendue : affichée en orange avec la version attendue.
+- La ligne « COMSPEC Link 1.6.16 » montrait la version de l'addon Overwatch connect, pas celle de la DLL : renommée « Addon Overwatch connect ».
+- « COMSPEC ATAK » passe en rouge si le code et la config du main.pbo n'ont pas la même version (deux main.pbo chargés).
+- Le contrôle d'installation et le journal Debug lisent la même version de DLL.
+- À vérifier en jeu : « 1.11.0 » sur la capture veut dire que le main.pbo chargé date d'avant la 1.69.0 (vieux main.pbo encore chargé, ou mod pas mis à jour).
+
+#### Centre de notifications refondu (#721)
+
+Non testé en jeu. Demande de TTRD : améliorer l'UI des notifications. Pas de DLL à recompiler, pas de migration.
+- Une carte par notification : liseré et pastille d'icône à la couleur de gravité (info, message, attention, erreur), source en titre (« Drone », « Synchronisation »…), texte dessous, heure relative (« à l'instant », « il y a 4 min ») et pastille verte sur les non lues.
+- Un texte répété ne s'empile plus : il remonte en tête avec un compteur « ×3 ».
+- Croix sur chaque carte pour l'effacer seule ; clic sur la carte : ouvre l'app concernée quand elle est connue (Drone, Messagerie, Photos, Synchronisation…).
+- Filtres Toutes / Alertes / Infos / Messages avec leur nombre ; « Tout effacer » efface ce que le filtre affiche.
+- État du mod épinglé en tête (PBO en double, DLL périmée, mise à jour disponible, 1.69.0) en rouge ou orange, clic vers Debug > DLL ; ces cartes restent tant que l'anomalie existe.
+- Réglages rapides en une barre compacte : mode avion, Bluetooth, silencieux, et accès au volet rapide complet.
+- État vide soigné (« Tout est calme ») ; textes traduits en anglais. L'écran de verrouillage partage les mêmes icônes et titres.
+
+#### App Musique : lecteur refait (#727)
+
+Non testé en jeu. Demande de TTRD : améliorer l'UI de l'onglet LECTURE. Pas de DLL à recompiler, pas de migration ; la lecture elle-même (fichiers, liens, serveur, Athena, haut-parleur de proximité) ne change pas.
+- Lecteur : grande pochette avec l'égaliseur animé dedans, titre plus gros, ligne « artiste · source · Piste 1 / 4 » avec les états EN PAUSE, CHARGEMENT, ERREUR et HAUT-PARLEUR. Les pistes Athena affichaient « · piste 1/4 » sans source : corrigé (source « Athena », artiste quand il n'est pas déjà dans le titre).
+- Barre de progression plus épaisse, avec un curseur rond et les temps aux deux bouts ; un clic sur la barre va à ce passage de la piste (haut-parleur : les joueurs proches suivent).
+- Commandes en icônes centrées : aléatoire, précédent, lecture / pause (grosse pastille), suivant, répéter (non, la file, le morceau, au clic). Sauts -30 / -10 / +10 / +30 s et STOP en petits boutons dessous.
+- Volumes : curseurs 0-100 au cran de 1 au lieu de - / valeur / +, son appliqué pendant le glissé ; l'icône (casque, haut-parleur) coupe et rétablit. Le volume en service (écouteurs ou haut-parleur) est surligné.
+- Les lignes « Répéter » et « Lecture aléatoire » sont remplacées par les icônes du lecteur ; file d'attente, favoris et haut-parleurs proches restent dessous.
+- À vérifier en jeu : téléphone en main plein écran (et taille réduite), portrait mini, clic sur la barre (fichier local, lien, piste serveur), glissé des deux curseurs avec et sans haut-parleur, icônes aléatoire / répéter, traduction anglaise.
+
+#### Drone et marquage de cibles plus légers (#732)
+
+Non testé en jeu. Retour de TTRD : « le drone fait lag, ou le marquage ? » (capture : alerte « LOCK 093 perdu »).
+- `fn_droneAction` ["link"] répond avant le reste du fichier (tables d'ordres refaites à chaque appel) et garde son résultat 0,2 s : il était appelé une fois par cible marquée et par passage du suivi (2 fois/s), plus incrustations FLIR (4/s), neige (2/s) et flotte.
+- `fn_lockAction` tick : source (œil, direction, liaison) calculée une fois par passage et par source, pas par cible. Visée (["aimed"], 4/s caméra ouverte) : tri grossier par position avant `isKindOf`, `aimPos`, boîte englobante et `checkVisibility` (caméra zoomée, `nearEntities` couvre plus d'un kilomètre).
+- Bandeaux : cibles perdues dans le même passage regroupées (« 3 cibles perdues : LOCK 093, 094, 095 »), 30 s au plus souvent par cible ; « raccroché » seulement si la perte a été annoncée. Le journal du drone note toujours tout. Traduction « LOCK %1 raccroché » corrigée (reacquired, pas released).
+- Marqueur suivi : `setMarkerPosLocal` à chaque déplacement, `setMarkerPos` (réseau et file JIP) toutes les 3 s au plus par cible, au lieu de chaque seconde.
+- Cadres LOCK de la caméra (`fn_droneFlir`, chaque image) : liste des cibles relue 4 fois par seconde au lieu de chaque image (elle était triée à chaque lecture).
+- Carte : la flotte reprend la liaison relevée par le suivi (`COMSPEC_DroneBgLinked`) au lieu d'un calcul de relief par drone et par image.
+- Journal du drone : redessin des onglets CIBLES/JOURNAL sur un compteur de lignes (`COMSPEC_ATAK_DroneLogN`) ; plafonné à 100 lignes, il ne se redessinait plus.
+- Mesures : nouvelle `fn_perfAcc`. Toutes les 30 s, ligne RPT `[PERF] Boucles 30 s` : img/s, images lentes (plus de 50 ms) et la pire, drone, cibles marquées, page, puis pour chaque boucle (suivi drone, flotte, nacelle, cadres caméra, neige, marquage suivi et visée, carte, carte drone, dessin de chaque page) appels, moyenne et pire en ms, les plus coûteuses d'abord. « Image figée » indique aussi drone, cibles marquées et page.
+
+À mesurer en jeu : envoyer le RPT après une séance drone + marquage (Envoyer_mes_logs.bat) ; les lignes `[PERF] Boucles 30 s` disent quelle boucle pèse. Si aucune ne dépasse quelques ms, le coût vient du rendu de la caméra elle-même (régler QUALITÉ dans l'app Drone).
+
+#### Tinder : portrait opérateur à la place du cœur (#733)
+
+- `fn_pageDating` : photo 0 = portrait opérateur (`fn_avatarPath`, caméra r2t coupée) quand il existe ; photos 1 et 2 (et 0 sans portrait) en direct comme avant.
+- Image sous la vue en direct (PiP coupé ou rendu en retard) : portrait, sinon `editorPreview` de la classe de l'unité, sinon aperçu Eden du soldat de base de son camp. Profils IA HVT / SSE compris.
+- Lignes MATCHS (joueurs et IA) : portrait, sinon insigne de grade (`BIS_fnc_rankParams`). Le cœur reste l'icône de l'app et des écrans vides.
+- Sous-titre « Ma carte » mis à jour, traduction anglaise dans i18n/en.txt. main.pbo (HEMTT) reconstruit.
+
+#### Flux vidéo selon les relais (#734)
+
+Non testé en jeu. Demande de TTRD : « Améliore la gestion des flux vidéo suivant les relais ».
+- Nouveau `fn_videoLink` (functions/network) : chemin radio du flux, meilleur débit entre direct, un relais (source → relais → téléphone) et réseau (relais A → cœur de réseau → relais B, -20 %, +60 ms). Chaque bond suit la règle de `fn_relayNet "link"` (1 - (d/portée)², relief à 35 %), les répéteurs, brouilleurs, batteries et saturation déjà comptés par `fn_relayNet "list"`, la réception du téléphone bornée par `fn_linkQuality`. Paliers : 1080p dès 7 Mbit/s, 720p dès 3,5, 480p dès 1,2, image par image dès 0,15. Cache 1 s par flux.
+- Débit adaptatif (`"adapt"`) : baisse après 2 s, remontée après 6 s, perte immédiate ; raison en français au journal du drone (Live cam et caméras fixes : notification).
+- Drone : `["link"]` de `fn_droneAction` prend le meilleur chemin (direct ou relais) et renvoie le flux en 5e élément ; le retour automatique ne part que si aucun chemin ne passe. Drones Mavic : signal direct du mod Mavic inchangé, relais en plus.
+- `fn_droneStatic` : 480p à 6 i/s et image par image à 1,5 i/s (la caméra se fige entre deux images, même mécanisme que le gel TNT), grain de compression en 480p et moins, qualité du chemin pour les défauts TNT. Caméra casque d'un équipier : même calcul (maillage 3 km ou relais). Rendu de base (r2t, camBind) non touché.
+- Incrustations : palier, débit, relais et latence (vue caméra du drone, Live cam, caméra fixe, petite fenêtre de la carte), « Flux 720p via … » dans l'en-tête de l'app Drone.
+- Caméras fixes : « Hors réseau des relais » quand aucun chemin ; Live cam : flux coupé quand le porteur sort du réseau.
+- Réglage CBA serveur « Flux vidéo selon les relais » (coché par défaut). Aucun relais du camp dans la mission : mode arcade, comportement d'avant. Coût : quelques `terrainIntersectASL` par seconde, rien par image.
+
+#### Vue caméra noire : explication claire et vue directe du drone (#736)
+
+- Retour de TTRD (13/10, 12:35 en jeu) : vue caméra de l'app Drone noire, puis viseur de l'app Photo noir aussi, en plein jour, PiP déclarée active (aucun NO DATA ni VISEUR INDISPONIBLE). Cause commune aux deux rendus r2t, non confirmée : rien n'est testé en jeu.
+- Nouveau `fn_pipCheck` (dossier camera) : `check` (PiP coupée → raison affichée sous NO DATA + notification + RPT ; distance de vue PiP < 300 m remontée), `watch` (RPT `[CAMERA]` étapes 1 à 5 : PiP, caméra et hauteur au-dessus du terrain, cible de rendu, texture, image ; `getVideoOptions` ; relevé à 2 s) et `rebind` (texture reposée sur l'image une image, deux images et 0,6 s après la création de la caméra).
+- Drone : noms de cible de rendu par qualité (`comspec_dronecam<q>_<n>`), plus jamais un même nom avec une autre taille de texture ; `feedWatch` appelé par la page ; `direct` / `directEnd` : caméra plein écran sans r2t attachée au drone, pose recopiée par la boucle de la nacelle (`COMSPEC_ATAK_DroneShotCam`), téléphone rangé, Échap (KeyDown du display 46) rouvre l'app Drone ; coupée si joueur mort, drone perdu, liaison perdue ou téléphone ouvert.
+- Photo : même contrôle et même journal à l'ouverture du viseur.
+- Live cam, caméra Tinder et vue aérienne du JPC : même contrôle PiP (journal RPT et notification au lieu d'une image noire).
+
+#### Textes du téléphone plus lisibles (#740)
+
+Non testé en jeu. Demande de TTRD : « Améliore le font de notre application ».
+- Échelle typographique unique dans `fn_layoutGet` : `font` (corps), `fontSmall` (0,78 → 0,82 × corps), nouvelles clés `fontCaption` (0,68 × corps), `fontTitle` (1,2 ×), `fontDisplay` (1,9 ×). Planchers en pixels réels (corps 16 px, courant 15 px, légende 13 px), hors écran-texture de la tablette JPC.
+- `COMSPEC_ATAK_FontMin` (plancher des légendes, posé par `fn_layoutGet`, 0 au preInit) : les 83 `ctrlSetFontHeight` calculés sous ce seuil (`_fs * 0.66` à `_fs * 0.85`, tailles passées aux helpers, boucles d'ajustement des tuiles) sont bornés par `max COMSPEC_ATAK_FontMin`. Avant : jusqu'à ~10 px de haut sur un écran 1080p en mode mini.
+- Réglages > Taille du texte : option TRÈS GRAND (1,3), borne haute 1,25 → 1,35.
+- `ui/controls.hpp` : macros `ATAK_FONT`, `ATAK_FONT_BOLD`, `ATAK_FONT_LIGHT`, `ATAK_FONT_MONO`, `ATAK_FONT_MONO_BOLD` ; `COMSPEC_RscLabel` passe de EtelkaMonospacePro à RobotoCondensedBold ; nouvelles classes `COMSPEC_RscMono` / `COMSPEC_RscMonoRight` (en-tête de colonnes du BFT, valeurs de la solution CFF). Établi (accessoires) : PuristaBold → RobotoCondensedBold.
+- Polices du jeu uniquement (rien d'embarqué, pas de question de licence).
+- À tester en jeu : mode mini portrait et paysage en 1080p, plein écran à 60 % (#709), Réglages > Taille du texte sur les 4 valeurs ; vérifier qu'aucun libellé ne déborde (BFT, Alertes, Réglages, Drone, CFF, tuiles du lanceur).
+
+#### Viseur photo plein écran : raccourcis et affichage refaits (#741)
+
+Non testé en jeu. Demande de TTRD : « Améliore l'UI stp encore, surtout le bas avec les raccourcis » (vue plein écran de l'appareil photo, pas le viseur dans le téléphone).
+- `fn_photoMode` « HUD » : barre de raccourcis faite de 8 emplacements (pastille + socle + action, idc 20-27 / 80-87 / 40-47) et 4 séparateurs (60-63), mesurés par `ctrlTextWidth` et centrés ; bandeau ajusté au contenu, espacements resserrés si la largeur dépasse 90 % de l'écran. CLIC en vert, H et ESPACE en gris. Repliée 8 s après l'ouverture (5 s après un passage selfie) en « CLIC photo | H aide, ESPACE quitter » ; nouveau mode « HELP » (touches H 0x23 et F1 0x3B) qui l'épingle ouverte ou la replie.
+- Haut : un seul panneau sombre avec filet vert (envoi vers Athena) ou orange (hors réseau) et séparateur entre les deux lignes.
+- Exposition en direct (idc 12-13) : ISO 100 à 6400 et vitesse 1/250 à 1/8 s d'après `getLightingAt` (ambiante + dynamique), f/1.7 ; ISO 1600 et plus en orange. Seuils choisis à l'estime, à vérifier en jeu. L'ancien bloc « ISO 100 / F1.8 1/200 » fixe est retiré de `camera_overlay.paa` (`tools/src/camera_overlay.png`).
+- Échelle de zoom sur fond discret, palier en cours en gras.
+- Prise de vue : tout le viseur affiché est masqué pendant la capture puis réaffiché tel quel (liste `allControls`), le HUD ne se redessine pas pendant la capture.
+- `fn_lockAction` « draw3d » : cadre fin à 35 % d'opacité, coins épais (`drawLine3D` largeur 4), étiquette RobotoCondensedBold éclaircie, décalée au-dessus du cadre.
+- L'avertissement « ACRE n'est pas connecté à TeamSpeak » est affiché par ACRE lui-même : il n'est pas déplacé, les éléments du viseur évitent sa zone (haut droite, sous l'exposition).
+- Traductions anglaises : CLIC, MOLETTE, SOURIS, ESPACE, aide.
+
+#### Messagerie réparée, SMS plus fiables, Live cam selon les relais (#743)
+
+Non testé en jeu. Demandes de TTRD : clics sur les canaux sans effet, pas de défilement, pas de pastilles de non-lus ; améliorer les SMS ; améliorer les flux vidéo suivant les relais.
+- Cause probable du volet de conversation vide : les initiales d'un nom d'un seul mot (« CH:general ») lisaient un deuxième mot absent, ce qui interrompait le dessin de l'en-tête et de toute la conversation. Corrigé.
+- Non-lus : nouvelle fonction `fn_chatUnread` (canaux, comptes par conversation, « lu ») partagée par la liste et l'icône d'app (`fn_appBadge`). Un message est mémorisé par identifiant ou auteur|heure|texte ; l'historique présent dans les 90 premières secondes compte comme lu.
+- Défilement : `fn_pageRender` relève la position des groupes défilants nommés (`COMSPEC_ATAK_ScrollGroups`) avant d'effacer la page ; la liste et le fil la retrouvent (le fil reste en bas sauf si on était remonté).
+- SMS : brouillon par conversation, compteur 400 caractères, bandeau « pas de réseau », relais affiché, contacts triés par dernier SMS, accusé « HELD » quand le destinataire est hors réseau (`fn_p2pReceive`, `fn_p2pAck`), « non transmis » enregistré après 60 s et renvoi au clic.
+- Live cam : nouvelle fonction `fn_feedLink` (liaison montante publiée toutes les 10 s par chaque client, liaison descendante du téléphone, caméra fixe via l'ATAK le plus proche) ; texture 512/256/128/64 px selon le débit, voile « signal instable » selon les pertes, palier réévalué toutes les 3 s, flux coupé avec sa raison.
+
+#### Briefing : engrenage pour le lien des présentations (#745)
+
+Non testé en jeu. Demande de TTRD : « un engrenage paramétrage pour pouvoir modifier les URL d'accès ». L'adresse du portail Athena reste fixe (1.72.0) : seuls les liens de présentation se règlent.
+- Nouveau : `fn_briefingSettings` (panneau, onglet interne `SETTINGS`), `fn_briefingCfg` (actions), `fn_briefingUrl` (nettoyage et diagnostic du lien, sans réseau), icône `ui_gear.paa` (gen_assets.py).
+- Réglages dans le profil du joueur : `COMSPEC_ATAK_BriefSource` (AUTO / ATHENA / GOOGLE), `COMSPEC_ATAK_BriefGoogleUrl`, `COMSPEC_ATAK_BriefAuto`.
+- Chargement Google par COMSPEC Link (`LoadGoogleDeck` / `LoadGoogleSlide`) sans passer par `fn_loadGoogleBriefing` d'Overwatch, qui ouvrait l'ancien tableau par-dessus le téléphone. Un chargement local ne diffuse pas sa navigation ; DIFFUSER réutilise `broadcastGoogleBriefingState`.
+- `fn_extensionCallback` garde le code de `google_deck_error` d'un chargement lancé par l'engrenage et referme le tableau 9970 ouvert par Overwatch sur `google_deck_ready` quand le téléphone est ouvert. Overwatch traite toujours les rappels ensuite.
+- Source « Athena » : le deck Google partagé est ignoré par `fn_briefingSignature`. Source « Google Slides » : le lien enregistré est chargé à l'ouverture de l'app et par ACTUALISER.
+- Pas de DLL à recompiler, pas de migration.
+
+---
 
 ## App Réseau : stabilité calculée, passerelles lisibles (ATAK natif 1.79.0)
 
@@ -68,7 +272,6 @@ Non testé en jeu. Capture de TTRD : tuile Stabilité « any % » et section Pas
 - Passerelles et relais : l'état vide tient sur une ligne, sans répéter le maillage collé à la ligne « Maillage Wave Relay » ; celle-ci est espacée et indique « aucune passerelle » quand il n'y en a pas.
 - Zone radio : « Simulation de liaison dégradée » affiche « désactivée » ou « active : pertes et délais simulés » ; le type de zone n'est plus remplacé par « ? » quand il est inconnu.
 - Paquets envoyés affichés en entier (plus de notation 1e+06). Textes traduits en anglais.
-
 ## Module Zeus et Eden « Relever routes et villes » (ATAK natif 1.78.0)
 
 ### Résumé joueur
@@ -85,7 +288,6 @@ Non testé en jeu. Demande de TTRD : un module Zeus et Eden dédié aux routes e
 - Eden : `COMSPEC_Module_GeoNetwork` (catégorie COMSPEC Outils), options « Au début de la mission » (défaut : oui) et « Renvoyer ». Exécuté par le Zeus ou le chef de mission (admin connecté, ou solo), qui attend la liaison Athena jusqu'à 3 minutes.
 - Zeus : module « Relever routes et villes » par Zeus Enhanced et ACE Zeus, envoi immédiat même si la carte a déjà été transmise.
 - Les réglages de communauté « Lieux » et « Routes » (modules du mod) restent respectés.
-
 
 ## Menu Échap et Dépannage liaison refondus (ATAK natif 1.77.0)
 
@@ -109,7 +311,6 @@ Non testé en jeu. Demande de TTRD : boutons du menu Échap en haut à droite, s
 - « Copier le rapport » met le diagnostic et les versions dans le presse-papiers ; « Signaler un problème » ouvre le signalement existant.
 - Pas à pas (recherche de ce qui arrête le jeu) : au choix rapide (20 s par fonction) ou complet (55 s), lancé depuis la fenêtre. Nouveau bandeau compact en haut au centre avec barre de progression, temps restant et état de la liaison. L'étape mémorisée est effacée quand le pas à pas se termine ou est arrêté : elle ne reste affichée comme suspecte qu'après un vrai arrêt du jeu.
 - Textes traduits en anglais (dictionnaire i18n/en.txt).
-
 ## App JTAC plus réaliste : terminal, fiche 9-LINE et carte tactique (ATAK natif 1.76.0)
 
 ### Résumé joueur
@@ -134,7 +335,6 @@ Non testé en jeu. Demande de TTRD : « JTAC l'app a une UI pas encore assez ré
 - fn_formRender : nouvelles lignes `strip`, `steps`, `banner`, `big`, fond facultatif pour `text`, style « mono » pour `line` ; les autres apps ne changent pas.
 - i18n : textes ajoutés à en.txt.
 - À tester en jeu : onglets JTAC en portrait et paysage (mini et plein écran, échelle réglable), pose cible/IP sur la carte, cône FAH et cercle RED, vue équipage avec brief reçu, rafraîchissement CTRL toutes les 3 s (la carte garde sa vue), langue anglaise.
-
 ## Ligne de vue : de ma position vers le point (ATAK natif 1.75.0)
 
 ### Résumé joueur
@@ -153,7 +353,6 @@ EN : Line of sight: from your position to a point whose coordinates you enter
 Non testé en jeu. Demande de TTRD : remplacer « SOUS MON REGARD » par « de ma position vers le point », en entrant les coordonnées.
 - App Relief, onglet LIGNE DE VUE : le bouton SOUS MON REGARD est retiré. L'en-tête devient « DE MA POSITION VERS LE POINT : » et rappelle ma position (carroyage 8 chiffres). On entre les coordonnées du point (carroyage de 4, 6, 8 ou 10 chiffres, espaces acceptés) puis TRACER, ou on touche le point avec SUR LA CARTE.
 - Un carroyage court vise le centre de sa case (avant : le coin sud-ouest). La ligne part toujours de mes yeux, point à 1,7 m du sol. Tracé, profil, VOIR SUR LA CARTE et EFFACER inchangés.
-
 ## Langue du mod en tête des options CBA (ATAK natif 1.74.0)
 
 Non testé en jeu. Demande de TTRD : la sélection de langue dans Options des addons > COMSPEC.
@@ -175,7 +374,6 @@ EN : PANIC button: clearer instructions
 
 Non testé en jeu. Demande de TTRD : nouveau texte sous PANIQUE, écran Détresse et contact.
 - Le bloc PANIQUE affiche « Alerte l'ensemble des opérateurs de votre détresse. Il est nécessaire d'appuyer deux fois d'affilée pour valider l'envoi. » (anglais : « Alerts all operators of your distress. You must press twice in a row to confirm sending. »).
-
 ## Adresse du portail Athena fixe (ATAK natif 1.72.0)
 
 ### Résumé joueur
@@ -286,7 +484,6 @@ Non testé en jeu. Il faut recompiler la DLL (build_mod.bat) ; pas de migration.
 - La version affichée du mod (Réglages, Crédits, Debug) vient maintenant du main.pbo (elle restait figée à 1.11.0).
 - COMSPEC Link 2.0.78 : commande `LatestVersions`. La DLL annonçait encore 2.0.76 (csproj non monté en 1.64.0) ; csproj, constante et main.pbo sont alignés, un test PHP le vérifie.
 - `build_mod.bat` supprime une sortie HEMTT `comspec_atak_native_main.pbo` / `_towers.pbo` copiée par erreur à côté de main.pbo.
-
 
 ## Carte : effacer le champ de vision et les zones interdites au drone (ATAK natif 1.68.0)
 
@@ -577,7 +774,6 @@ Non testé en jeu. Demande de TTRD : « améliorer l'UI de la messagerie ». Pas
 ### À reconstruire
 - DLL COMSPEC Link (`mod/UptoDate/COMSPECExtension`, NativeAOT) : `build_mod.bat`.
 
-
 ## Correctif 2026-10-12 — ATAK sur le JPC et tablette du véhicule (ATAK natif 1.51.0)
 
 Non testé en jeu. Retours de TTRD. Pas de DLL à recompiler, pas de migration.
@@ -859,7 +1055,6 @@ Non testé en jeu. `run-migrations.php` à lancer (clé de mission, table des pe
 - Téléphone : règles GÉOLOC (camps traçables, son propre camp, IA, réservé GE), requête opérateur de quelques secondes, cercle de précision ; il faut du réseau ; échec motivé : « Téléphone éteint », « Hors couverture » (sans signal, mode avion, brouillage), « Inconnu ».
 - Balise GPS (Eden / Zeus d'Overwatch) : position exacte tant qu'elle est alimentée. Indicatif / nom : position du BFT de mon camp.
 - La carte se centre sur le résultat : anneau pulsant, fiche (propriétaire, vu à, précision, grille), SUIVRE (balise et BFT toutes les 2 s, téléphone au rythme GÉOLOC), CENTRER, FERMER.
-
 
 ### Nouveau — Batterie et mémoire réglables par l'admin
 - Réglages serveur CBA « COMSPEC › ATAK · Batterie et mémoire » :

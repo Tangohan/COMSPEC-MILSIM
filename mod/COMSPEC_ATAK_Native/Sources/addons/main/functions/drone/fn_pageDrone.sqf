@@ -52,7 +52,7 @@ if (isNull _d) exitWith {
     if ((count _near) isEqualTo 0) then { _rows pushBack ["text", "<t color='#f2ab33'>Aucun drone posé à moins de 15 m de vous.</t>"]; };
     {
         _rows pushBack ["person", getText (configOf _x >> "picture"),
-            format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>À %2 m · batterie %3 %%</t>", [_x, [], "NAME"] call comspec_atak_native_fnc_droneOsd, round (player distance _x), round (100 * fuel _x)],
+            format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>À %2 m · batterie %3 %%</t>", [_x, [], "NAME"] call comspec_atak_native_fnc_droneOsd, round (player distance _x), round (100 * fuel _x)],
             [["APPAIRER", compile format ["['pair', objectFromNetId %1] call comspec_atak_native_fnc_droneAction;", str netId _x], true]]];
     } forEach _near;
     _rows pushBack ["buttons", [["ACTUALISER", { [{ ["DRONE"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
@@ -147,6 +147,8 @@ if (_view isNotEqualTo "") then {
     private _bQ = [format ["NETTETÉ : %1", ["BASSE", "MOY.", "HAUTE"] select _q], ["quality", (_q + 1) mod 3] call _act, "", "Qualité de l'image : basse (plus fluide) → moyenne → haute (plus nette, plus lourde)"];
     private _bMenus = [["MENUS DU DRONE", "AGRANDIR L'IMAGE"] select _split, { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["droneCamSplit", !(_st getOrDefault ["droneCamSplit", false])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, "", ["Réduit l'image et affiche dessous les onglets du drone (vol, tâches, cibles, photos, journal)", "Image à la taille de l'écran, onglets masqués"] select _split];
     private _bTotal = [["PLEIN ÉCRAN", "QUITTER LE PLEIN ÉCRAN"] select (_view isEqualTo "TOTAL"), { profileNamespace setVariable ["COMSPEC_ATAK_DroneMiniFull", !(profileNamespace getVariable ["COMSPEC_ATAK_DroneMiniFull", true])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, "", "Téléphone en petit format : l'image du drone occupe tout l'écran"];
+    // Secours si l'image reste noire (PiP qui ne rend rien) : la vue du jeu passe sur la caméra du drone (fn_droneAction "direct").
+    private _bDirect = ["VUE DIRECTE", ["direct"] call _act, "", "Plein écran sur la caméra du drone, sans passer par l'image du téléphone (utile si elle reste noire). Échap pour revenir au téléphone"];
     private _bClose = ["FERMER", ["cam"] call _act, "", "Coupe l'image du drone (le drone continue ce qu'il fait)"];
     // Viseur photo.
     private _toolCode = { params ["_k"]; compile format ["['tool', %1] call comspec_atak_native_fnc_dronePhoto;", str _k] };
@@ -165,9 +167,9 @@ if (_view isNotEqualTo "") then {
     private _groups = switch (true) do {
         case (_view isEqualTo "SHOT"): { [["CADRAGE", [_bZoomOut, _bZoomIn, _bCenter, _bVis]], ["CIBLE", [_bMark]], ["SURLIGNER", [_bBox, _bCircle, _bErase]], ["PHOTO", [_bCancel, _bTake]]] };
         case (_view isEqualTo "TOTAL"): { [["", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bTotal]]] select [0, [0, 1] select _inter] };
-        case (_mini): { [["", [_bShot, _bMark, _bZoomOut, _bZoomIn]], ["", [_bVis, _bTotal, _bMenus, _bClose]]] };
-        case (_view isEqualTo "SPLIT"): { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bVis]], ["", [_bUp, _bDn, _bHover, _bMenus, _bMore]]] + _moreRow };
-        default { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bVis]], ["", [_bUp, _bDn, _bHover, _bTargets, _bMenus, _bMore]]] + _moreRow };
+        case (_mini): { [["", [_bShot, _bMark, _bZoomOut, _bZoomIn]], ["", [_bVis, _bTotal, _bDirect, _bMenus, _bClose]]] };
+        case (_view isEqualTo "SPLIT"): { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bVis]], ["", [_bUp, _bDn, _bHover, _bDirect, _bMenus, _bMore]]] + _moreRow };
+        default { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bVis]], ["", [_bUp, _bDn, _bHover, _bTargets, _bDirect, _bMenus, _bMore]]] + _moreRow };
     };
     // Rangées : largeur de chaque bouton selon la longueur de son libellé ; un groupe passe à la rangée suivante quand
     // la rangée serait trop chargée pour rester lisible.
@@ -219,7 +221,11 @@ if (_view isNotEqualTo "") then {
     private _bg = ["COMSPEC_RscText", [0, _top, _bw, _areaH + _barH]] call comspec_atak_native_fnc_pageCtrl;
     _bg ctrlSetBackgroundColor [0, 0, 0, 1];
     // Texture de la caméra : rendu lancé (caméra recréée au besoin) avant que l'image soit posée.
-    private _pic = ["RscPicture", [_ix, _iy, _iw, _ih], ["camBind"] call comspec_atak_native_fnc_droneAction] call comspec_atak_native_fnc_pageCtrl;
+    private _tex = ["camBind"] call comspec_atak_native_fnc_droneAction;
+    private _pic = ["RscPicture", [_ix, _iy, _iw, _ih], _tex] call comspec_atak_native_fnc_pageCtrl;
+    // Journal RPT de l'ouverture du flux (fn_pipCheck : pourquoi la vue resterait noire) et texture rebranchée sur
+    // l'image après le premier rendu de la caméra.
+    ["feedWatch", [_pic, _tex]] call comspec_atak_native_fnc_droneAction;
     // Pas de flux : neige « NO DATA » ; liaison faible : défauts TNT (fn_droneStatic, image rebranchée au besoin).
     ["build", [_ix, _iy, _iw, _ih, _pic]] call comspec_atak_native_fnc_droneStatic;
     // Réticule fin au centre.
@@ -290,7 +296,7 @@ if (_view isNotEqualTo "") then {
         // Bandeau du viseur : ce que fait la souris maintenant.
         private _hd = ["COMSPEC_RscStructuredText", [_ix, _iy + _mv + _ch * 0.2, _iw, _fs * 1.2]] call comspec_atak_native_fnc_pageCtrl;
         _hd ctrlEnable false;
-        _hd ctrlSetStructuredText parseText ((format ["<t align='center' size='0.8' font='RobotoCondensedBold' shadow='2' shadowColor='#000000' color='#ffd84d'>VISEUR PHOTO · %1</t>", [
+        _hd ctrlSetStructuredText parseText ((format ["<t align='center' size='0.8' font='COMSPEC_BarlowBold' shadow='2' shadowColor='#000000' color='#ffd84d'>VISEUR PHOTO · %1</t>", [
             "glisser : cadrer · molette : zoom · clic : viser le point",
             "glissez sur l'image pour tracer le cadre", "glissez sur l'image pour tracer le cercle"] select ((["", "BOX", "CIRCLE"] find _tool) max 0)]) call comspec_atak_native_fnc_tr);
     };
@@ -451,7 +457,7 @@ if (_view isNotEqualTo "") then {
             { _span = _span + _unit * ([_x select 0] call _weight); } forEach _btns;
             if (_lh > 0 && {!(_glabel in ["", "*"])}) then {
                 private _t = ["COMSPEC_RscStructuredText", [_x0, _y, _span, _lh]] call comspec_atak_native_fnc_pageCtrl;
-                _t ctrlSetStructuredText parseText ((format ["<t size='0.72' font='RobotoCondensedBold' color='#8a9a93'>%1</t>", _glabel]) call comspec_atak_native_fnc_tr);
+                _t ctrlSetStructuredText parseText ((format ["<t size='0.72' font='COMSPEC_BarlowBold' color='#8a9a93'>%1</t>", _glabel]) call comspec_atak_native_fnc_tr);
                 _t ctrlEnable false;
                 private _ln = ["COMSPEC_RscText", [_x0, _y + _lh - pixelH * 3, _span - _pad / 3, pixelH * 2]] call comspec_atak_native_fnc_pageCtrl;
                 _ln ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.45];
@@ -461,7 +467,7 @@ if (_view isNotEqualTo "") then {
                 _x params ["_lbl", "_code", ["_state", ""], ["_tip", ""], ["_en", true]];
                 private _bwid = _unit * ([_lbl] call _weight);
                 private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_state isEqualTo "main"), [_bx, _y + ([_lh, 0] select _big), _bwid - _pad / 3, [_btnH, _btnH * 1.45] select _big], _lbl] call comspec_atak_native_fnc_pageCtrl;
-                _b ctrlSetFontHeight (_bfs * ([1, 1.25] select _big));
+                _b ctrlSetFontHeight ((_bfs * ([1, 1.25] select _big)) max COMSPEC_ATAK_FontMin);
                 switch (_state) do {
                     case "on": { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
                     case "red": { _b ctrlSetBackgroundColor [0.78, 0.2, 0.16, 0.95]; _b ctrlSetTextColor [1, 1, 1, 1]; };
@@ -522,7 +528,7 @@ private _playerRow = {
     private _pic = [_u] call comspec_atak_native_fnc_avatarPath;
     private _veh = ["", format [" · à bord : %1", getText (configOf vehicle _u >> "displayName")]] select ((vehicle _u) isNotEqualTo _u);
     ["person", [_pic, "\z\comspec_atak_native\addons\main\data\app_profile.paa"] select (_pic isEqualTo ""),
-        format ["<t font='RobotoCondensedBold'>%1</t>%5<br/><t size='0.8' color='#8a9a93'>%2 · à %3 m du drone%4</t>", name _u, [_u, true] call comspec_atak_native_fnc_unitGroup, round _dist, _veh, ["  <t size='0.75' color='#8a9a93'>IA</t>", ""] select (isPlayer _u)],
+        format ["<t font='COMSPEC_BarlowBold'>%1</t>%5<br/><t size='0.8' color='#8a9a93'>%2 · à %3 m du drone%4</t>", name _u, [_u, true] call comspec_atak_native_fnc_unitGroup, round _dist, _veh, ["  <t size='0.75' color='#8a9a93'>IA</t>", ""] select (isPlayer _u)],
         [[_label, _code, !_on]]]
 };
 switch (_tab) do {
@@ -574,8 +580,8 @@ switch (_tab) do {
         } else {
             private _armLabel = _d getVariable ["COMSPEC_DroneArmedLabel", "charge"];
             _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_drone.paa", [
-                "<t size='1.15' font='RobotoCondensedBold' color='#8a9a93'>DRONE NON ARMÉ</t><br/><t size='0.85' color='#8a9a93'>Aucune charge fixée : frappe impossible, la recherche ne fait que signaler.</t>",
-                format ["<t size='1.15' font='RobotoCondensedBold' color='#e5483a'>ARMÉ · %1</t><br/><t size='0.85' color='#c9d4cf'>Prêt à frapper. La charge part avec le drone.</t>", toUpper _armLabel]
+                "<t size='1.15' font='COMSPEC_BarlowBold' color='#8a9a93'>DRONE NON ARMÉ</t><br/><t size='0.85' color='#8a9a93'>Aucune charge fixée : frappe impossible, la recherche ne fait que signaler.</t>",
+                format ["<t size='1.15' font='COMSPEC_BarlowBold' color='#e5483a'>ARMÉ · %1</t><br/><t size='0.85' color='#c9d4cf'>Prêt à frapper. La charge part avec le drone.</t>", toUpper _armLabel]
             ] select _armed];
             if (!_armed) then {
                 private _dist = round (player distance _d);
@@ -584,11 +590,11 @@ switch (_tab) do {
                 private _pick = _s getOrDefault ["droneArmMag", ""];
                 if ((_pl findIf { (_x select 0) isEqualTo _pick }) < 0) then { _pick = (_pl param [0, [""]]) select 0; };
                 private _pickLbl = ((_pl select { (_x select 0) isEqualTo _pick }) param [0, ["", ""]]) select 1;
-                private _ok = "<t color='#5cc76b' font='RobotoCondensedBold'>✓</t>";
-                private _no = "<t color='#e5483a' font='RobotoCondensedBold'>✗</t>";
-                _rows pushBack ["text", format ["%1 <t font='RobotoCondensedBold'>1. Approchez-vous du drone à moins de 5 m</t><br/><t size='0.85' color='%2'>Vous êtes à %3 m du drone%4</t>",
+                private _ok = "<t color='#5cc76b' font='COMSPEC_BarlowBold'>✓</t>";
+                private _no = "<t color='#e5483a' font='COMSPEC_BarlowBold'>✗</t>";
+                _rows pushBack ["text", format ["%1 <t font='COMSPEC_BarlowBold'>1. Approchez-vous du drone à moins de 5 m</t><br/><t size='0.85' color='%2'>Vous êtes à %3 m du drone%4</t>",
                     [_no, _ok] select _near, ["#f2ab33", "#5cc76b"] select _near, _dist, ["", " : posez-le au sol près de vous (ATTERRIR, ou RETOUR puis ATTERRIR)"] select (!_near)]];
-                _rows pushBack ["text", format ["%1 <t font='RobotoCondensedBold'>2. Choisissez la charge</t>", [_no, _ok] select ((count _pl) > 0)]];
+                _rows pushBack ["text", format ["%1 <t font='COMSPEC_BarlowBold'>2. Choisissez la charge</t>", [_no, _ok] select ((count _pl) > 0)]];
                 if ((count _pl) isEqualTo 0) then {
                     _rows pushBack ["text", "<t size='0.85' color='#f2ab33'>Aucune charge compatible dans votre inventaire.</t><br/><t size='0.8' color='#8a9a93'>Acceptées : roquette RPG-7 ou RPG-42, charge de démolition, grenade RGO ou RGN.</t>"];
                 } else {
@@ -598,18 +604,18 @@ switch (_tab) do {
                     }, "La charge choisie est retirée de votre inventaire et fixée sous le drone"];
                 };
                 private _can = _near && {_pick isNotEqualTo ""};
-                _rows pushBack ["text", format ["%1 <t font='RobotoCondensedBold'>3. Armez</t>%2", [_no, _ok] select _can,
+                _rows pushBack ["text", format ["%1 <t font='COMSPEC_BarlowBold'>3. Armez</t>%2", [_no, _ok] select _can,
                     ["", format ["<br/><t size='0.85' color='#8a9a93'>%1</t>", ["Terminez d'abord l'étape 1.", "Terminez d'abord l'étape 2."] select _near]] select (!_can)]];
                 _rows pushBack ["buttons", [[[format ["ARMER : %1", toUpper _pickLbl], "ARMER"] select (_pickLbl isEqualTo ""), ["arm", _pick] call _act, true, _can]]];
             } else {
                 _rows append [
-                    ["text", "<t font='RobotoCondensedBold'>Laser</t><br/><t size='0.85' color='#8a9a93'>Le drone pique sur le point laser allumé par un membre de votre groupe (désignateur, pointeur IR). Tir et oublie : si le laser s'éteint, il garde la dernière position.</t>"],
+                    ["text", "<t font='COMSPEC_BarlowBold'>Laser</t><br/><t size='0.85' color='#8a9a93'>Le drone pique sur le point laser allumé par un membre de votre groupe (désignateur, pointeur IR). Tir et oublie : si le laser s'éteint, il garde la dernière position.</t>"],
                     ["buttons", [[["PIQUER SUR LE LASER", "CONFIRMER : LASER"] select (["LASER"] call _confirming), ["strike", "LASER"] call _act, true]]],
-                    ["text", "<t font='RobotoCondensedBold'>Grille</t><br/><t size='0.85' color='#8a9a93'>Le drone pique sur le centre de la case saisie.</t>"],
+                    ["text", "<t font='COMSPEC_BarlowBold'>Grille</t><br/><t size='0.85' color='#8a9a93'>Le drone pique sur le centre de la case saisie.</t>"],
                     ["edit", "droneGrid", "Grille de la cible (8 ou 10 chiffres)", _s getOrDefault ["droneGridVal", ""]],
                     ["buttons", [[["PIQUER SUR LA GRILLE", "CONFIRMER : GRILLE"] select (["GRID"] call _confirming), { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["droneGridVal", ["droneGrid", ""] call comspec_atak_native_fnc_formValue]; ["strike", "GRID"] call comspec_atak_native_fnc_droneAction; }, true]]],
                     ["text", "<t size='0.85' color='#8a9a93'>Chaque frappe demande un second appui dans les 5 s pour confirmer. Une cible vue par la caméra se frappe aussi depuis l'onglet CIBLES (FRAPPER).</t>"],
-                    ["text", format ["<t font='RobotoCondensedBold'>Désarmer</t><br/><t size='0.85' color='#8a9a93'>Retire la charge et la remet dans votre inventaire. Drone à moins de 5 m (vous êtes à %1 m).</t>", round (player distance _d)]],
+                    ["text", format ["<t font='COMSPEC_BarlowBold'>Désarmer</t><br/><t size='0.85' color='#8a9a93'>Retire la charge et la remet dans votre inventaire. Drone à moins de 5 m (vous êtes à %1 m).</t>", round (player distance _d)]],
                     ["buttons", [["DÉSARMER", ["disarm"] call _act, false, (player distance _d) <= 5 && {_m isNotEqualTo "STRIKE"}]]]
                 ];
             };
@@ -642,7 +648,7 @@ switch (_tab) do {
             private _cur = (_locksAll getOrDefault [_sk, createHashMap]);
             _rows pushBack ["section", "Suivi par le drone", "Choisissez les cibles (AJOUTER) : le drone les suit l'une après l'autre, dans l'ordre de la liste, puis recommence"];
             _rows pushBack ["text", if (_on && {(count _cur) > 0}) then {
-                format ["<t color='#4da3ff' font='RobotoCondensedBold'>EN COURS · cible %1 sur %2 : LOCK %3 %4</t><br/><t size='0.8' color='#8a9a93'>%5</t>", _si + 1, count _seq, [_cur get "num", 3] call CBA_fnc_formatNumber, _cur get "name",
+                format ["<t color='#4da3ff' font='COMSPEC_BarlowBold'>EN COURS · cible %1 sur %2 : LOCK %3 %4</t><br/><t size='0.8' color='#8a9a93'>%5</t>", _si + 1, count _seq, [_cur get "num", 3] call CBA_fnc_formatNumber, _cur get "name",
                     [format ["Cible suivante dans %1 s, ou plus tôt si celle-ci est neutralisée ou perdue 20 s", _left], "Cible suivante quand vous appuyez sur CIBLE SUIVANTE (ou si celle-ci est neutralisée ou perdue 20 s)"] select (_left < 0)]
             } else {
                 format ["<t color='#8a9a93'>%1</t>", ["Aucune cible choisie : AJOUTER sur chaque cible à suivre.", format ["%1 cible(s) choisie(s), suivi arrêté.", count _seq]] select ((count _seq) > 0)]
@@ -670,11 +676,11 @@ switch (_tab) do {
             private _ago = round (time - (_e get "seen"));
             private _n = _seq find _lk;
             private _now = _on && {_lk isEqualTo _sk};
-            _rows pushBack ["text", format ["%8<t font='RobotoCondensedBold'>LOCK %1 · %2</t>  <t size='0.8' color='%3'>%4</t><br/><t size='0.8' color='#8a9a93'>%5 · %6 · marqué à %7</t>",
+            _rows pushBack ["text", format ["%8<t font='COMSPEC_BarlowBold'>LOCK %1 · %2</t>  <t size='0.8' color='%3'>%4</t><br/><t size='0.8' color='#8a9a93'>%5 · %6 · marqué à %7</t>",
                 [_e get "num", 3] call CBA_fnc_formatNumber, _e get "name", _hex,
                 (createHashMapFromArray [["TRACK", "ACCROCHÉ"], ["LOST", "PERDU"], ["DOWN", "NEUTRALISÉ"]]) getOrDefault [_st, _st],
                 [_e get "pos", 8] call comspec_atak_native_fnc_gridRef, [format ["vu il y a %1 s", _ago], "en vue"] select (_ago < 2), _e get "clock",
-                ["", format ["<t font='RobotoCondensedBold' color='%1'>N° %2%3</t>  ", ["#c9d4cf", "#4da3ff"] select _now, _n + 1, ["", " · EN COURS"] select _now]] select (_n >= 0)]];
+                ["", format ["<t font='COMSPEC_BarlowBold' color='%1'>N° %2%3</t>  ", ["#c9d4cf", "#4da3ff"] select _now, _n + 1, ["", " · EN COURS"] select _now]] select (_n >= 0)]];
             // Suivi : ajouter / retirer, et place dans l'ordre.
             private _lb = [[["AJOUTER AU SUIVI", "RETIRER DU SUIVI"] select (_n >= 0), compile format ["['toggle', %1] call comspec_atak_native_fnc_droneSeq;", str _lk], _n < 0, _st isNotEqualTo "DOWN" || {_n >= 0}]];
             if (_n >= 0) then {
@@ -721,7 +727,7 @@ switch (_tab) do {
                 default { "\A3\ui_f\data\map\vehicleicons\iconCar_ca.paa" };
             };
             _rows pushBack ["person", _icon,
-                format ["<t font='RobotoCondensedBold'>%1 · %2</t>  <t size='0.8' color='%3'>%4</t>%5<br/><t size='0.8' color='#8a9a93'>%6 · à %7 m du drone · %8</t>",
+                format ["<t font='COMSPEC_BarlowBold'>%1 · %2</t>  <t size='0.8' color='%3'>%4</t>%5<br/><t size='0.8' color='#8a9a93'>%6 · à %7 m du drone · %8</t>",
                     [_num, 2] call CBA_fnc_formatNumber, _name, _hex, _tag,
                     ["", "  <t size='0.8' color='#5cc76b'>DÉTRUIT</t>"] select (_state isNotEqualTo ""),
                     [_pos, 8] call comspec_atak_native_fnc_gridRef, round (_d distance _pos),
@@ -746,7 +752,7 @@ switch (_tab) do {
             _x params ["_i", "_e"];
             _e params ["_file", "_title", "", "_sse", "_cf", "_grid", "_clock", "_drone", "_state"];
             private _stTxt = (createHashMapFromArray [["DRAFT", ["FICHE À COMPLÉTER", "#f2ab33"]], ["LOCAL", ["NON ENVOYÉ", "#8a9a93"]], ["SENDING", ["ENVOI EN COURS", "#4da3ff"]], ["SENT", ["ENVOYÉ", "#5cc76b"]], ["FAILED", ["ÉCHEC D'ENVOI", "#e5483a"]]]) getOrDefault [_state, [_state, "#8a9a93"]];
-            _rows pushBack ["text", format ["<t font='RobotoCondensedBold'>%1</t>%2%3  <t size='0.8' color='%5'>%4</t><br/><t size='0.8' color='#8a9a93'>%6 · %7 · %8</t>",
+            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>%2%3  <t size='0.8' color='%5'>%4</t><br/><t size='0.8' color='#8a9a93'>%6 · %7 · %8</t>",
                 [_title, "Sans titre"] select (_title isEqualTo ""), ["", "  <t size='0.75' color='#e5483a'>CONFIDENTIEL</t>"] select _cf, ["", "  <t size='0.75' color='#f2ab33'>SSE</t>"] select _sse,
                 _stTxt select 0, _stTxt select 1, _grid, _clock, _drone]];
             _rows pushBack ["buttons", [
@@ -768,7 +774,7 @@ switch (_tab) do {
             private _r = _x0 getVariable ["COMSPEC_DroneRole", ""];
             private _isA = _x0 isEqualTo _d;
             private _rc = { params ["_role"]; compile format ["['role', [objectFromNetId %1, %2]] call comspec_atak_native_fnc_droneFleet;", str _nid, str _role] };
-            _rows pushBack ["text", format ["<t font='RobotoCondensedBold'>%1</t>%2  <t size='0.8' color='%3'>%4</t><br/><t size='0.8' color='#8a9a93'>%5 · %6 m sol · batterie %7 %% · à %8 m · liaison %9/4</t>",
+            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>%2  <t size='0.8' color='%3'>%4</t><br/><t size='0.8' color='#8a9a93'>%5 · %6 m sol · batterie %7 %% · à %8 m · liaison %9/4</t>",
                 [_x0, [], "NAME"] call comspec_atak_native_fnc_droneOsd, ["", "  <t size='0.75' color='#4da3ff'>PILOTÉ</t>"] select _isA,
                 ["#c9d4cf", "#5cc76b"] select (_r isNotEqualTo ""), toUpper (_roles getOrDefault [_r, _r]),
                 toLower (_x0 getVariable ["COMSPEC_DroneMode", "HOVER"]), round ((getPosATL _x0) select 2), round (100 * fuel _x0), _lk select 1, _lk select 0]];
@@ -822,7 +828,7 @@ switch (_tab) do {
         if ((count _fleet) < 4) then {
             {
                 _rows pushBack ["person", getText (configOf _x >> "picture"),
-                    format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>À %2 m · batterie %3 %%</t>", [_x, [], "NAME"] call comspec_atak_native_fnc_droneOsd, round (player distance _x), round (100 * fuel _x)],
+                    format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>À %2 m · batterie %3 %%</t>", [_x, [], "NAME"] call comspec_atak_native_fnc_droneOsd, round (player distance _x), round (100 * fuel _x)],
                     [["APPAIRER", compile format ["['pair', objectFromNetId %1] call comspec_atak_native_fnc_droneAction;", str netId _x], true]]];
             } forEach _near;
         };
@@ -924,7 +930,7 @@ switch (_tab) do {
             private _ck = format ["XFER:%1", getPlayerUID _u];
             private _pic = [_u] call comspec_atak_native_fnc_avatarPath;
             _rows pushBack ["person", [_pic, "\z\comspec_atak_native\addons\main\data\app_profile.paa"] select (_pic isEqualTo ""),
-                format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · à %3 m de vous</t>", name _u, [_u, true] call comspec_atak_native_fnc_unitGroup, round _dist],
+                format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · à %3 m de vous</t>", name _u, [_u, true] call comspec_atak_native_fnc_unitGroup, round _dist],
                 [[["TRANSFÉRER", "CONFIRMER"] select ([_ck] call _confirming), ["transfer", getPlayerUID _u] call _act, [_ck] call _confirming]]];
         } forEach (_mates select [0, 6]);
         _rows pushBack ["buttons", [["DÉSAPPAIRER", ["unpair"] call _act]]];

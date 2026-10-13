@@ -2226,6 +2226,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/atak/ping', [AtakPingController::class, 'ping']);
     // Dernières versions de l'ATAK natif et de COMSPEC Link (contrôle de mise à jour du mod, public).
     $router->get('/api/atak/version', [\App\Controllers\Api\AtakVersionController::class, 'latest']);
+    // Check de démarrage du mod relayé dans le salon Discord de debug (public, rate-limité, rien n'est enregistré).
+    $router->post('/api/atak/startup-check', [\App\Controllers\Api\AtakStartupCheckController::class, 'store']);
     $router->get('/map-data/{world}/{z}/{x}/{file}', [\App\Controllers\Api\AtakMapDataController::class, 'tile']);
     $router->get('/api/atak/tiles', [\App\Controllers\Api\AtakMapDataController::class, 'proxy']);
     $tacticalApi = \App\Controllers\Api\AthenaTacticalApiController::class;
@@ -2445,6 +2447,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/api/recon/images/known', [AtakApiController::class, 'reconImagesKnown']);
     $router->get('/api/recon/images/{id}', [AtakApiController::class, 'reconImagesShow']);
     $router->get('/api/recon/images/{id}/file', [AtakApiController::class, 'reconImagesFile']);
+    // Lecteur d'un cliché (zoom, plein écran, fiche, album) ; …/file reste le fichier brut.
+    $router->get('/recon/images/{id}', [AtakApiController::class, 'reconImagesViewer']);
     $router->post('/api/recon/images/{id}/ops', [AtakApiController::class, 'reconImagesOps']);
     $router->post('/api/recon/images/{id}/link-cas', [AtakApiController::class, 'reconImagesLinkCas']);
     // Map shapes (live drawing)

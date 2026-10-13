@@ -178,7 +178,7 @@ switch (_act) do {
         private _ini = toUpper (if ((count _words) > 1) then { ((_words select 0) select [0, 1]) + ((_words select 1) select [0, 1]) } else { (_cs select [0, 2]) });
         private _in = ["COMSPEC_RscTextCenter", [_pad, _py, _pw, _ph]] call _mk;
         _in ctrlSetText ((_ini) call comspec_atak_native_fnc_tr);
-        _in ctrlSetFont "RobotoCondensedBold";
+        _in ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
         _in ctrlSetFontHeight (_font * 1.5);
         _in ctrlSetTextColor _accHi;
         private _photo = [player] call comspec_atak_native_fnc_avatarPath;
@@ -190,7 +190,7 @@ switch (_act) do {
         private _txW = _w * 0.62 - _tx;
         private _l1 = ["COMSPEC_RscText", [_tx, _py - _font * 0.1, _txW, _font * 1.35]] call _mk;
         _l1 ctrlSetText ((_cs) call comspec_atak_native_fnc_tr);
-        _l1 ctrlSetFont "RobotoCondensedBold";
+        _l1 ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
         _l1 ctrlSetFontHeight (_font * 1.2);
         _l1 ctrlSetTextColor _acc;
         private _l2 = ["COMSPEC_RscText", [_tx, _py + _font * 1.2, _txW, _font * 1.1]] call _mk;
@@ -210,7 +210,7 @@ switch (_act) do {
         private _J = floor (_zy / 100);
         private _wd = (_dd + floor (13 * (_zm + 1) / 5) + _K + floor (_K / 4) + floor (_J / 4) + 5 * _J) mod 7;
         private _hr = ["COMSPEC_RscTextRight", [_w * 0.5, _py - _font * 0.25, _w * 0.5 - _pad, _font * 1.7], [dayTime, "HH:MM"] call BIS_fnc_timeToString] call _mk;
-        _hr ctrlSetFont "RobotoCondensedBold";
+        _hr ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
         _hr ctrlSetFontHeight (_font * 1.55);
         _hr ctrlSetTextColor [0.95, 0.98, 0.96, 1];
         private _dt = ["COMSPEC_RscTextRight", [_w * 0.5, _py + _font * 1.4, _w * 0.5 - _pad, _font * 1.0],
@@ -219,8 +219,8 @@ switch (_act) do {
         _dt ctrlSetFontHeight (_fs * 0.88);
         _dt ctrlSetTextColor _dimTxt;
         private _st = ["COMSPEC_RscTextRight", [_w * 0.5, _py + _font * 2.25, _w * 0.5 - _pad, _font * 1.1], ["●  ATHENA HORS LIGNE", "●  ATHENA EN LIGNE"] select _online] call _mk;
-        _st ctrlSetFont "RobotoCondensedBold";
-        _st ctrlSetFontHeight (_fs * 0.82);
+        _st ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
+        _st ctrlSetFontHeight ((_fs * 0.82) max COMSPEC_ATAK_FontMin);
         _st ctrlSetTextColor ([_dimTxt, _acc] select _online);
         private _y = _py + _cardH + _pad * 0.75;
         private _div = ["COMSPEC_RscText", [_pad, _y, _w - _pad * 2, pixelH]] call _mk;
@@ -243,7 +243,7 @@ switch (_act) do {
         private _s2 = ["COMSPEC_RscPicture", [_sx + _sw + _gap, _y + (_rowH - _is) / 2, _isw, _is], "qs_sun" call _ico] call _mk;
         _s2 ctrlSetTextColor _accHi;
         private _bv = ["COMSPEC_RscTextRight", [_w - _pad - _vw, _y, _vw, _rowH], format ["%1 %%", round (((profileNamespace getVariable ["COMSPEC_ATAK_Brightness", 1]) max 0.2 min 1) * 100)]] call _mk;
-        _bv ctrlSetFont "RobotoCondensedBold";
+        _bv ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
         _bv ctrlSetFontHeight _fs;
         uiNamespace setVariable ["COMSPEC_ATAK_ShadeBright", _bv];
         _sl ctrlAddEventHandler ["SliderPosChanged", {
@@ -276,16 +276,16 @@ switch (_act) do {
             private _ic = ["COMSPEC_RscPicture", [_x0 + (_tw - _iw) / 2, _y0 + _th * 0.13, _iw, _ih], _icon call _ico] call _mk;
             _ic ctrlSetTextColor ([[0.66, 0.72, 0.69, 1], _accHi] select _on);
             private _lb = ["COMSPEC_RscTextCenter", [_x0, _y0 + _th * 0.47, _tw, _th * 0.24], _label] call _mk;
-            _lb ctrlSetFont "RobotoCondensedBold";
+            _lb ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
             _lb ctrlSetFontHeight _fs;
             _lb ctrlSetTextColor ([[0.84, 0.88, 0.86, 1], [1, 1, 1, 1]] select _on);
             private _fh = _fs;
-            while { (ctrlTextWidth _lb) > _tw * 0.94 && {_fh > _fs * 0.7} } do { _fh = _fh * 0.92; _lb ctrlSetFontHeight _fh; };
+            while { (ctrlTextWidth _lb) > _tw * 0.94 && {_fh > _fs * 0.7} } do { _fh = _fh * 0.92; _lb ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin); };
             private _stt = ["COMSPEC_RscTextCenter", [_x0, _y0 + _th * 0.71, _tw, _th * 0.2], _state] call _mk;
-            _stt ctrlSetFontHeight (_fs * 0.78);
+            _stt ctrlSetFontHeight ((_fs * 0.78) max COMSPEC_ATAK_FontMin);
             _stt ctrlSetTextColor ([_dimTxt, _accHi] select _on);
             _fh = _fs * 0.78;
-            while { (ctrlTextWidth _stt) > _tw * 0.94 && {_fh > _fs * 0.55} } do { _fh = _fh * 0.92; _stt ctrlSetFontHeight _fh; };
+            while { (ctrlTextWidth _stt) > _tw * 0.94 && {_fh > _fs * 0.55} } do { _fh = _fh * 0.92; _stt ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin); };
             private _b = ["COMSPEC_RscButtonOverlay", [_x0, _y0, _tw, _th]] call _mk;
             _b setVariable ["key", _key];
             _b ctrlSetTooltip ((format ["%1 : %2", _label, _state]) call comspec_atak_native_fnc_tr);
@@ -305,13 +305,13 @@ switch (_act) do {
             _p2 = [_bx, _by + _bh + _gap * 0.5, _bwr, _bh];
         };
         private _b1 = ["COMSPEC_RscButton", _p1, "TOUS LES RÉGLAGES"] call _mk;
-        _b1 ctrlSetFont "RobotoCondensedBold";
+        _b1 ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
         _b1 ctrlSetFontHeight _fs;
         _b1 ctrlSetBackgroundColor _accDim;
         _b1 ctrlSetTextColor _accHi;
         _b1 ctrlAddEventHandler ["ButtonClick", { [{ ["close"] call comspec_atak_native_fnc_quickSettings; ["SETTINGS"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }];
         private _b2 = ["COMSPEC_RscButton", _p2, "FERMER"] call _mk;
-        _b2 ctrlSetFont "RobotoCondensedBold";
+        _b2 ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
         _b2 ctrlSetFontHeight _fs;
         _b2 ctrlSetBackgroundColor [0.075, 0.090, 0.083, 1];
         _b2 ctrlSetTextColor [0.84, 0.88, 0.86, 1];

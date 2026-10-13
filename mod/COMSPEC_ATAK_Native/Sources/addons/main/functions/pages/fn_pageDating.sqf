@@ -33,6 +33,26 @@ private _matches = _pool select { private _u = getPlayerUID _x; _u in _likes && 
 private _aiMatches = (missionNamespace getVariable ["COMSPEC_ATAK_RencardAiMatches", []]) select { !isNull (["unit", _x] call comspec_atak_native_fnc_datingSpecials) };
 private _pink = "#ff5b7f";
 
+// Image fixe d'une personne, jamais le cœur de l'app à la place d'une photo : portrait opérateur Athena (fn_avatarPath,
+// joueurs), sinon rendu du personnage Arma (aperçu Eden de sa classe, à défaut celui du soldat de base de son camp).
+private _figure = {
+    params ["_u"];
+    private _pic = [_u] call comspec_atak_native_fnc_avatarPath;
+    if (_pic isNotEqualTo "") exitWith { _pic };
+    _pic = getText (configOf _u >> "editorPreview");
+    if (_pic isEqualTo "" || {!fileExists _pic}) then {
+        _pic = format ["\A3\EditorPreviews_F\Data\CfgVehicles\%1.jpg", ["C_man_1", "B_Soldier_F", "O_Soldier_F", "I_soldier_F"] select (([civilian, west, east, resistance] find (side group _u)) max 0)];
+    };
+    _pic
+};
+// Vignette carrée des listes : portrait opérateur, sinon insigne de grade (l'aperçu Eden, en 16/9, serait déformé).
+private _thumb = {
+    params ["_u"];
+    private _pic = [_u] call comspec_atak_native_fnc_avatarPath;
+    if (_pic isEqualTo "") then { _pic = [_u, "texture"] call BIS_fnc_rankParams; };
+    _pic
+};
+
 // Profil d'un joueur : bio choisie (ou tirée de lui), âge, métier (rôle du lobby ou classe), grade, compatibilité.
 private _bios = ["Cherche binôme pour patrouilles au coucher du soleil.", "Fan de rations au poulet, allergique aux mines.", "Je connais toutes les grilles par cœur.", "Toujours le premier dans la pièce, le dernier à la pause.", "Ici pour la camaraderie et les MRE.", "Mon ex m'a laissé tomber en plein FRAGO.", "Le genre à vérifier deux fois sa radio.", "Je fais d'excellents cafés en bivouac.", "Pas de prise de tête, juste de la prise d'objectif.", "Je ne lis jamais le briefing, j'improvise."];
 private _tags = ["Marches de nuit", "Café soluble", "Grilles 8 chiffres", "Feux de camp", "Parachutisme", "Tir longue distance", "Topographie", "Musique radio", "Cuisine de ration", "Sport en tenue", "Mécanique", "Premiers secours"];
@@ -55,7 +75,7 @@ private _playerProfile = {
         ["bio", _bios select ([[_k, count _bios] call _seed, _bi mod (count _bios)] select (_bi >= 0))],
         ["tags", [_tags select _t1, _tags select ((_t1 + 4) mod count _tags), _tags select ((_t1 + 7) mod count _tags)]],
         ["compat", 55 + ([(([getPlayerUID player, getPlayerUID _u] apply { _x }) call { _this sort true; _this joinString "" }), 45] call _seed)],
-        ["fallback", [_avatar, _icon] select (_avatar isEqualTo "")],
+        ["portrait", _avatar], ["fallback", [_u] call _figure],
         ["likedMe", (getPlayerUID _u) in _likedBy], ["superMe", (getPlayerUID _u) in _superBy]
     ]
 };
@@ -65,7 +85,7 @@ private _aiProfile = {
     private _k = ["key", _u] call comspec_atak_native_fnc_datingSpecials;
     createHashMapFromArray [
         ["key", _k], ["unit", _u], ["name", _p get "name"], ["age", _p get "age"], ["sub", ""], ["dist", _p get "dist"],
-        ["bio", _p get "bio"], ["tags", _p get "tags"], ["compat", 60 + ([_k, 39] call _seed)], ["fallback", _icon],
+        ["bio", _p get "bio"], ["tags", _p get "tags"], ["compat", 60 + ([_k, 39] call _seed)], ["portrait", ""], ["fallback", [_u] call _figure],
         ["likedMe", false], ["superMe", false]
     ]
 };
@@ -84,15 +104,21 @@ private _tw = (_bw - _pad * 2) / 3;
 private _cy = _pad / 2 + _tabH + _pad / 2;
 private _ch = _bh - _cy - _pad / 2;
 
-// Carte de profil : photo en direct, repères des 3 photos, bandeau prénom / âge / distance.
+// Carte de profil : 1re photo = portrait opérateur Athena s'il existe (sinon visage en direct), puis buste et en pied en
+// direct ; sous la vue en direct, l'image fixe (portrait ou rendu du personnage) ; repères des 3 photos, bandeau du bas.
 private _card = {
     params ["_p", "_rect"];
     _rect params ["_cx0", "_cy0", "_w", "_h"];
     private _bg = ["COMSPEC_RscText", [_cx0, _cy0, _w, _h]] call _mk;
     _bg ctrlSetBackgroundColor [0, 0, 0, 1];
-    private _fb = ["COMSPEC_RscSlide", [_cx0, _cy0, _w, _h], _p get "fallback"] call _mk;
-    private _tex = ["bind", [_p get "unit", _shot, _w / (_h * _ratio)]] call comspec_atak_native_fnc_datingCam;
-    if (_tex isNotEqualTo "") then { ["COMSPEC_RscPhone", [_cx0, _cy0, _w, _h], _tex] call _mk; };
+    if (_shot isEqualTo 0 && {(_p get "portrait") isNotEqualTo ""}) then {
+        ["stop"] call comspec_atak_native_fnc_datingCam;
+        ["COMSPEC_RscSlide", [_cx0, _cy0, _w, _h], _p get "portrait"] call _mk;
+    } else {
+        ["COMSPEC_RscSlide", [_cx0, _cy0, _w, _h], _p get "fallback"] call _mk;
+        private _tex = ["bind", [_p get "unit", _shot, _w / (_h * _ratio)]] call comspec_atak_native_fnc_datingCam;
+        if (_tex isNotEqualTo "") then { ["COMSPEC_RscPhone", [_cx0, _cy0, _w, _h], _tex] call _mk; };
+    };
     // Repères des photos.
     private _dw = (_w - _pad * 2) / 3;
     for "_i" from 0 to 2 do {
@@ -119,7 +145,7 @@ private _card = {
         default { "" };
     };
     _t ctrlSetStructuredText parseText ((format [
-        "<t size='1.45' font='RobotoCondensedBold' color='#ffffff' shadow='2'>%1</t><t size='1.25' color='#ffffff' shadow='2'>  %2</t>%3<br/><t size='0.8' color='#e8eee9' shadow='2'>%4%5</t>",
+        "<t size='1.45' font='COMSPEC_BarlowBold' color='#ffffff' shadow='2'>%1</t><t size='1.25' color='#ffffff' shadow='2'>  %2</t>%3<br/><t size='0.8' color='#e8eee9' shadow='2'>%4%5</t>",
         [_p get "name"] call _esc, _p get "age", _badge, _p get "dist", ["", " · " + (_p get "sub")] select ((_p get "sub") isNotEqualTo "")
     ]) call comspec_atak_native_fnc_tr);
 };
@@ -129,7 +155,7 @@ private _details = {
     _rect params ["_cx0", "_cy0", "_w", "_h"];
     private _t = ["COMSPEC_RscStructuredText", [_cx0, _cy0, _w, _h]] call _mk;
     _t ctrlSetStructuredText parseText ((format [
-        "<t color='#e8eee9'>« %1 »</t><br/><t size='0.85' color='#8a9a93'>Aime : </t><t size='0.85' color='%5'>%2 · %3 · %4</t><br/><t size='0.85' color='#8a9a93'>Compatibilité </t><t size='0.85' font='RobotoCondensedBold' color='%5'>%6 %%</t>",
+        "<t color='#e8eee9'>« %1 »</t><br/><t size='0.85' color='#8a9a93'>Aime : </t><t size='0.85' color='%5'>%2 · %3 · %4</t><br/><t size='0.85' color='#8a9a93'>Compatibilité </t><t size='0.85' font='COMSPEC_BarlowBold' color='%5'>%6 %%</t>",
         [_p get "bio"] call _esc, (_p get "tags") select 0, (_p get "tags") select 1, (_p get "tags") select 2, _pink, _p get "compat"
     ]) call comspec_atak_native_fnc_tr);
 };
@@ -151,7 +177,7 @@ switch (_tab) do {
             ["stop"] call comspec_atak_native_fnc_datingCam;
             private _rows = [];
             if !(_visible) then { _rows pushBack ["text", "<t color='#f2ab33'>Votre profil est caché : les autres ne vous voient pas (onglet MON PROFIL).</t>"]; };
-            _rows pushBack ["hero", _icon, "<t size='1.2' font='RobotoCondensedBold'>Plus personne autour de vous</t><br/><t color='#8a9a93'>Revenez plus tard : de nouveaux profils arrivent avec les joueurs, et parfois d'ailleurs.</t>"];
+            _rows pushBack ["hero", _icon, "<t size='1.2' font='COMSPEC_BarlowBold'>Plus personne autour de vous</t><br/><t color='#8a9a93'>Revenez plus tard : de nouveaux profils arrivent avec les joueurs, et parfois d'ailleurs.</t>"];
             if ((count _passed) > 0) then { _rows pushBack ["buttons", [["REVOIR LES PROFILS PASSÉS", { ["reset"] call comspec_atak_native_fnc_datingAction; }]]]; };
             [_rows, [0, _cy, _bw, _ch]] call comspec_atak_native_fnc_formRender;
         };
@@ -171,7 +197,7 @@ switch (_tab) do {
         {
             _x params ["_txt", "_act", "_col", "_txtCol", "_tip"];
             private _b = ["COMSPEC_RscButton", [_rx + _forEachIndex * (_bw3 + _pad / 2), _btnY, _bw3, _btnH], _txt] call _mk;
-            _b ctrlSetFont "RobotoCondensedBold";
+            _b ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
             _b ctrlSetBackgroundColor _col;
             _b ctrlSetTextColor _txtCol;
             _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
@@ -188,7 +214,7 @@ switch (_tab) do {
         private _cardW = if (_land) then { (_bw - _pad * 3) * 0.42 } else { _bw - _pad * 2 };
         [_p, [_pad, _cy, _cardW, _cardH]] call _card;
         private _rows = [
-            ["section", "Ma carte", "Ce que les autres voient (votre visage en direct)"],
+            ["section", "Ma carte", "Ce que les autres voient (portrait opérateur Athena, puis votre visage en direct)"],
             ["text", format ["<t color='#e8eee9'>« %1 »</t>", [_p get "bio"] call _esc]],
             ["buttons", [["CHANGER DE BIO", { ["bio"] call comspec_atak_native_fnc_datingAction; }]]],
             ["switch", "Apparaître sur Tinder", _visible, { ["visible"] call comspec_atak_native_fnc_datingAction; }, "Décochez pour cacher votre profil"],
@@ -227,19 +253,18 @@ switch (_tab) do {
             ["stop"] call comspec_atak_native_fnc_datingCam;
             private _rows = [];
             {
-                private _avatar = [_x] call comspec_atak_native_fnc_avatarPath;
-                _rows pushBack ["person", [_avatar, _icon] select (_avatar isEqualTo ""), format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='%2'>Match · %3</t>", [name _x] call _esc, _pink, [groupId group _x] call _esc],
+                _rows pushBack ["person", [_x] call _thumb, format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='%2'>Match · %3</t>", [name _x] call _esc, _pink, [groupId group _x] call _esc],
                     [["SMS", compile format ["['sms', %1] call comspec_atak_native_fnc_datingAction;", str name _x], true]]];
             } forEach _matches;
             {
                 private _u = ["unit", _x] call comspec_atak_native_fnc_datingSpecials;
                 private _p = ["profile", _u] call comspec_atak_native_fnc_datingSpecials;
                 private _n = count ((missionNamespace getVariable ["COMSPEC_ATAK_RencardAiChat", createHashMap]) getOrDefault [_x, []]);
-                _rows pushBack ["person", _icon, format ["<t font='RobotoCondensedBold'>%1, %2</t><br/><t size='0.8' color='%3'>Match · %4 message(s)%5</t>",
+                _rows pushBack ["person", [_u] call _thumb, format ["<t font='COMSPEC_BarlowBold'>%1, %2</t><br/><t size='0.8' color='%3'>Match · %4 message(s)%5</t>",
                     [_p get "name"] call _esc, _p get "age", _pink, _n, ["", " · <t color='#e5483a'>profil supprimé</t>"] select (!alive _u)],
                     [["MESSAGES", compile format ["['open', %1] call comspec_atak_native_fnc_datingAction;", str _x], true]]];
             } forEach _aiMatches;
-            if (_rows isEqualTo []) then { _rows pushBack ["hero", _icon, "<t font='RobotoCondensedBold'>Pas encore de match</t><br/><t color='#8a9a93'>Likez, et attendez qu'on vous like en retour.</t>"]; };
+            if (_rows isEqualTo []) then { _rows pushBack ["hero", _icon, "<t font='COMSPEC_BarlowBold'>Pas encore de match</t><br/><t color='#8a9a93'>Likez, et attendez qu'on vous like en retour.</t>"]; };
             [_rows, [0, _cy, _bw, _ch]] call comspec_atak_native_fnc_formRender;
         };
     };

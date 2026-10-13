@@ -26,7 +26,7 @@ private _act = { params ["_a", ["_v", ""]]; compile format ["[%1, %2] call comsp
 private _btn = {
     params ["_rect", "_label", "_code", ["_on", false], ["_tip", ""]];
     private _b = ["COMSPEC_RscButton", _rect, _label] call comspec_atak_native_fnc_pageCtrl;
-    _b ctrlSetFontHeight (_fs * 0.86);
+    _b ctrlSetFontHeight ((_fs * 0.86) max COMSPEC_ATAK_FontMin);
     if (_on) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
     if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
     _b ctrlAddEventHandler ["ButtonClick", _code];
@@ -57,7 +57,7 @@ if (_inter && {(_ui get "view") isEqualTo "LIB"}) exitWith {
     ];
     {
         _x params ["_n", "_w", "_its", ["_when", ""]];
-        _rows pushBack ["text", format ["<t font='RobotoCondensedBold'>%1</t> <t size='0.8' color='#8a9a93'>%2 · %3 élément(s) · %4</t>", [_n] call _esc, _w, count _its, _when]];
+        _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t> <t size='0.8' color='#8a9a93'>%2 · %3 élément(s) · %4</t>", [_n] call _esc, _w, count _its, _when]];
         private _i = _forEachIndex;
         _rows pushBack ["buttons", [
             ["APERÇU", compile format ["['preview', %1] call comspec_atak_native_fnc_planAction;", _i]],

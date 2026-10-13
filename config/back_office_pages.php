@@ -27,8 +27,8 @@ return [
             ['label' => 'Poste ATAK', 'href' => 'back-office/atak'],
             ['label' => 'Vue membres', 'href' => 'tableau-operationnel'],
         ]],
-        ['path' => 'back-office/analytics/conversion', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Conversion des communautés', 'subtitle' => 'Combien de visiteurs deviennent candidats, puis membres.'],
-        ['path' => 'back-office/analytics', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Indicateurs d’usage', 'subtitle' => 'Qui se connecte, quand, et quelles pages sont réellement utilisées.'],
+        ['path' => 'back-office/analytics/conversion', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Conversion des communautés', 'subtitle' => 'Combien de visiteurs deviennent candidats, puis membres.', 'css' => ['back-office-analytics.css']],
+        ['path' => 'back-office/analytics', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Indicateurs d’usage', 'subtitle' => 'Qui se connecte, quand, et quelles pages sont réellement utilisées.', 'css' => ['back-office-analytics.css']],
         ['path' => 'back-office/configuration-initiale', 'group' => 'Communauté', 'kicker' => 'PREMIERS PAS', 'title' => 'Configuration initiale', 'subtitle' => 'Votre communauté est en ligne. Il reste cinq réglages essentiels : identité, contact, mode d’inscription, modules visibles et rôle attribué aux nouveaux membres.', 'css' => ['back-office-initial-setup.css'], 'quick' => [
             ['label' => 'Enregistrer', 'href' => 'back-office/configuration-initiale#initial-setup-actions'],
             ['label' => 'Besoin d’aide ?', 'href' => 'back-office/onboarding-recovery'],
@@ -70,7 +70,7 @@ return [
             ['label' => 'Nouvel article', 'href' => 'back-office/articles/create'],
             ['label' => 'Voir côté membres', 'href' => 'articles'],
         ]],
-        ['path' => 'back-office/configuration', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres avancés', 'subtitle' => 'Réglages techniques de la plateforme. Modifiez-les seulement si vous savez ce qu’ils font.'],
+        ['path' => 'back-office/configuration', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Configuration', 'subtitle' => 'Tous les réglages de votre communauté au même endroit : identité, structure, accès, recrutement, contenu et modération.', 'css' => ['back-office-configuration.css']],
         ['path' => 'back-office/integrations', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégrations externes', 'subtitle' => 'Reliez Discord et les autres services : choix des salons, envoi des photos et des transmissions, clés d’accès.'],
         ['path' => 'back-office/dashboard-pins', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Raccourcis du portail', 'subtitle' => 'Les liens épinglés sur le tableau de bord des membres.'],
         ['path' => 'back-office/dashboard-tenues/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · TABLEAU DE BORD', 'title' => 'Mettre une tenue en avant', 'css' => ['dashboard-impact.css'], 'quick' => [
@@ -137,6 +137,11 @@ return [
         ['path' => 'back-office/organisation/catalogue/modele', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Modèle d’organisation', 'css' => ['back-office-catalog.css']],
         ['path' => 'back-office/organisation/catalogue/apercu', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Aperçu du modèle', 'css' => ['back-office-catalog.css']],
         ['path' => 'back-office/organisation/structure', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Organigramme', 'subtitle' => 'Unités, sections et postes de votre communauté. Glissez un poste pour le déplacer.'],
+        ['path' => 'back-office/organisation/qualite-donnees', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Qualité des données', 'subtitle' => 'Postes vacants, titulaires en trop, qualifications manquantes : ce qui ne colle pas dans votre organigramme, et l’historique pour le corriger.', 'css' => ['back-office-data-quality.css'], 'quick' => [
+            ['label' => 'ORBAT', 'href' => 'orbat'],
+            ['label' => 'Organigramme', 'href' => 'back-office/organisation/structure'],
+            ['label' => 'Effectifs', 'href' => 'back-office/ressources/effectifs'],
+        ]],
         ['path' => 'back-office/organisation/anciennete', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EFFECTIFS', 'title' => 'Ancienneté', 'subtitle' => 'Comment l’ancienneté est calculée et affichée sur les fiches des membres.', 'css' => ['back-office-seniority.css']],
         ['path' => 'back-office/organisation/progression', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CARRIÈRE', 'title' => 'Progression & carrière', 'subtitle' => 'Comment un membre progresse : étapes, validations et qualifications requises.'],
         ['path' => 'back-office/organisation/passes', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · PASS', 'title' => 'PASS RH', 'subtitle' => 'Des lots de conditions réutilisables pour ouvrir un poste, accorder une promotion ou noter un membre.', 'quick' => [

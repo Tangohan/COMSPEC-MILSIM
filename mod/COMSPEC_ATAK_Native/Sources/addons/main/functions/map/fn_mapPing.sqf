@@ -54,7 +54,7 @@ switch (_mode) do {
                 private _sz = (14 + 46 * _ph) * _is;
                 _map drawIcon [_ring, [1, 0.85, 0.15, (1 - _ph) * 0.95 * _fade], _pos, _sz, _sz, 0, "", 0];
             } forEach [0, 0.75];
-            _map drawIcon [_dot, [1, 0.85, 0.15, _fade], _pos, 14 * _is, 14 * _is, 0, format ["PING %1", _cs], 2, 0.026 * _ts, "RobotoCondensedBold", "right"];
+            _map drawIcon [_dot, [1, 0.85, 0.15, _fade], _pos, 14 * _is, 14 * _is, 0, format ["PING %1", _cs], 2, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
         } forEach _pings;
         if ((count _alive) isNotEqualTo (count _pings)) then { missionNamespace setVariable ["COMSPEC_ATAK_Pings", _alive]; };
     };

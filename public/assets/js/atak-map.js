@@ -941,6 +941,7 @@ window.ATAKMap = (function () {
     airAssetsById = {};
 
     map.setView(config.center, config.defaultZoom);
+    focusFromQuery();
     L.control.scale({ maxWidth: 160, imperial: false, metric: true, position: 'bottomleft' }).addTo(map);
 
     // Actions popup (suppression marqueur / retrait charge)
@@ -1045,6 +1046,21 @@ window.ATAKMap = (function () {
       window.dispatchEvent(new CustomEvent('atak:mapready', { detail: { map: map, mapId: mapId } }));
     } catch (e) {}
     return map;
+  }
+
+  /** /atak?focus=X,Y (lien « Voir sur la carte » du lecteur d'images) : centre la carte et marque le point. */
+  function focusFromQuery() {
+    var m = null;
+    try {
+      m = /^(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/.exec(new URLSearchParams(window.location.search).get('focus') || '');
+    } catch (e) {}
+    if (!m || !map) return;
+    var a = applyOffset(parseFloat(m[2]), parseFloat(m[1]));
+    var ll = L.latLng(a[0], a[1]);
+    map.setView(ll, Math.max(config.defaultZoom || 3, (config.maxNativeZoom || 6) - 1));
+    L.circleMarker(ll, { radius: 10, color: '#f59e0b', weight: 3, fillColor: '#f59e0b', fillOpacity: 0.2 })
+      .bindTooltip('Position du cliché', { direction: 'top' })
+      .addTo(map);
   }
 
   function getMap() { return map; }
@@ -1554,7 +1570,9 @@ window.ATAKMap = (function () {
           iconAnchor: [5, 5]
         });
     var marker = L.marker(latlng, { icon: icon });
-    marker.bindPopup('<img src="' + fullUrl + '" alt="Intel" style="max-width:280px;max-height:200px;display:block;" />');
+    // Clic sur l'aperçu : lecteur d'images (atak-cams.js, data-atak-cam-full).
+    var safeUrl = String(fullUrl).replace(/"/g, '&quot;');
+    marker.bindPopup('<img src="' + safeUrl + '" alt="Intel" style="max-width:280px;max-height:200px;display:block;cursor:zoom-in;" data-atak-cam-full="' + safeUrl + '" data-recon-id="' + String(id).replace(/[^\w-]/g, '') + '" title="Agrandir" />');
     bindMarkerChrome(marker, 'Photo terrain', []);
     marker._atakIntelId = id;
     marker.addTo(layer);

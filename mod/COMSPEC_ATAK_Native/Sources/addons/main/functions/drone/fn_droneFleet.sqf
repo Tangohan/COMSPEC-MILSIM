@@ -288,7 +288,8 @@ switch (_act) do {
         private _map = _arg;
         if (isNull _map) exitWith {};
         {
-            private _ok = ([_x] call _linkOf) select 2;
+            // Liaison relevée par le suivi (une fois par seconde) : pas de calcul de relief à chaque image de la carte.
+            private _ok = _x getVariable ["COMSPEC_DroneBgLinked", true];
             private _p = getPosASL _x;
             private _c = [[0.45, 0.75, 1, 1], [0.6, 0.6, 0.6, 0.8]] select !_ok;
             (_x getVariable ["COMSPEC_DroneTask", []]) params [["_k", ""], ["_tp", []], ["_tr", 0]];
@@ -298,14 +299,14 @@ switch (_act) do {
             private _r = _x getVariable ["COMSPEC_DroneRole", ""];
             _map drawIcon [[_x, [], "ICON"] call comspec_atak_native_fnc_droneOsd, _c, _p, 22, 22, getDir _x,
                 format [" %1 %2 m%3%4", [_x] call _name, round ((getPosATL _x) select 2), ["", format [" · %1", toUpper ([_r] call _roleName)]] select (_r isNotEqualTo ""), ["", " (hors liaison)"] select !_ok],
-                1, 0.028, "RobotoCondensedBold", "right"];
+                1, 0.028, (COMSPEC_ATAK_FontSet select 1), "right"];
         } forEach (_bg select { alive _x });
         // Contacts de la garde rapprochée : croix rouge à la dernière position vue, une minute.
         private _gc = missionNamespace getVariable ["COMSPEC_ATAK_GuardContacts", createHashMap];
         {
             _y params ["_p", "_t"];
             if ((time - _t) > 60) then { _gc deleteAt _x; continue; };
-            _map drawIcon ["\A3\ui_f\data\map\markers\military\destroy_CA.paa", [0.95, 0.25, 0.2, 1 - ((time - _t) / 80)], _p, 16, 16, 0, " CONTACT", 1, 0.026, "RobotoCondensedBold", "right"];
+            _map drawIcon ["\A3\ui_f\data\map\markers\military\destroy_CA.paa", [0.95, 0.25, 0.2, 1 - ((time - _t) / 80)], _p, 16, 16, 0, " CONTACT", 1, 0.026, (COMSPEC_ATAK_FontSet select 1), "right"];
         } forEach (+_gc);
     };
 };

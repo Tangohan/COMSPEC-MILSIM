@@ -1281,7 +1281,8 @@ class Container
                 self::get(UserRepository::class)
             ),
             \App\Controllers\Admin\Organization\OrganizationDataQualityController::class => new \App\Controllers\Admin\Organization\OrganizationDataQualityController(
-                self::get(\App\Services\Organization\OrbatBilletService::class)
+                self::get(\App\Services\Organization\OrbatBilletService::class),
+                self::get(UserRepository::class)
             ),
             \App\Controllers\Admin\Organization\OrganizationPositionsController::class => new \App\Controllers\Admin\Organization\OrganizationPositionsController(
                 self::get(\App\Repositories\PositionRepository::class),

@@ -41,7 +41,8 @@ private _stop = {
 switch (_act) do {
     case "bind": {
         _arg params [["_u", objNull], ["_shot", 0], ["_aspect", 1]];
-        if (isNull _u || {!isPiPEnabled}) exitWith { call _stop; "" };
+        // PiP coupée : journal RPT et notification (fn_pipCheck), photo du profil à la place du direct.
+        if (isNull _u || {(["check", "TINDER"] call comspec_atak_native_fnc_pipCheck) isNotEqualTo ""}) exitWith { call _stop; "" };
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DateCam", objNull];
         if (isNull _cam) then {
             private _n = ((missionNamespace getVariable ["COMSPEC_ATAK_DateCamN", 0]) + 1) mod 4;

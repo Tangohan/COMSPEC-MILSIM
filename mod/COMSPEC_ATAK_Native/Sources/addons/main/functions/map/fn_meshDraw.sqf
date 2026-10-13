@@ -47,7 +47,7 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
         _x params ["_o", "_ap", "_name", "_kind", "_rng", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "", "_up"];
         private _p = getPosASLVisual _o;
         if (!_ok) then {
-            _map drawIcon ["\A3\ui_f\data\map\mapcontrol\transmitter_CA.paa", [0.5, 0.5, 0.5, 0.9], _p, 20, 20, 0, format ["%1 (%2)", _name, _st], 1, 0.026 * _ts, "RobotoCondensed", "right"];
+            _map drawIcon ["\A3\ui_f\data\map\mapcontrol\transmitter_CA.paa", [0.5, 0.5, 0.5, 0.9], _p, 20, 20, 0, format ["%1 (%2)", _name, _st], 1, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 0), "right"];
             if (_st isEqualTo "détruit") then { _map drawLine [_p getPos [_r * 1.5, 45], _p getPos [_r * 1.5, 225], [0.9, 0.25, 0.2, 0.9]]; };
             if (_st in ["éteint", "batterie vide", "brouillé", "sans liaison"]) then { _map drawEllipse [_p, _rng, _rng, 0, [0.5, 0.5, 0.5, 0.35], ""]; };
             continue;
@@ -71,7 +71,7 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
         private _extra = "";
         if (_sat) then { _extra = _extra + format [" · saturé %1/%2", _u, _sl]; };
         if (_bt >= 0) then { _extra = _extra + format [" · batt. %1 %%", round _bt]; };
-        _map drawIcon [_icon, _col, _p, 22, 22, 0, format ["%1 · %2 km · %3 Mbit/s%4", _name, (_rng / 1000) toFixed 1, _mb toFixed 1, _extra], 1, 0.026 * _ts, "RobotoCondensedBold", "right"];
+        _map drawIcon [_icon, _col, _p, 22, 22, 0, format ["%1 · %2 km · %3 Mbit/s%4", _name, (_rng / 1000) toFixed 1, _mb toFixed 1, _extra], 1, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
     } forEach _rl;
     // Le calcul (lignes de vue entre antennes) est mis en cache 3 s par l'action « scan ».
     private _mesh = ["scan"] call comspec_atak_native_fnc_waveRelayAction;
@@ -108,8 +108,8 @@ private _now = [time, serverTime] select isMultiplayer;
     if (_est isNotEqualTo []) then {
         _map drawEllipse [_est, _rad, _rad, 0, [1, 0.55, 0.1, 0.25 * _al], _fill];
         _map drawEllipse [_est, _rad, _rad, 0, [1, 0.55, 0.1, _al], ""];
-        _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa", [1, 0.55, 0.1, _al], _est, 20, 20, 0, format ["%1 ± %2 m", _name, _rad], 1, 0.028 * _ts, "RobotoCondensedBold", "right"];
+        _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa", [1, 0.55, 0.1, _al], _est, 20, 20, 0, format ["%1 ± %2 m", _name, _rad], 1, 0.028 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
     } else {
-        _map drawIcon [_none, [1, 0.75, 0.2, _al], (_src select 0) select 0, 0, 0, 0, format ["%1 : cercle %2 m", _name, round ((_src select 0) select 1)], 1, 0.026 * _ts, "RobotoCondensedBold", "right"];
+        _map drawIcon [_none, [1, 0.75, 0.2, _al], (_src select 0) select 0, 0, 0, 0, format ["%1 : cercle %2 m", _name, round ((_src select 0) select 1)], 1, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
     };
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Trilat", []]);

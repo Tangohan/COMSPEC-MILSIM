@@ -80,7 +80,7 @@ private _hOf = { (ctrlPosition _this) select 3 };
 private _btn = {
     params ["_pos", "_label", "_code", ["_style", ""], ["_en", true], ["_tip", ""]];
     private _b = ["COMSPEC_RscButton", _pos, _label] call _mk;
-    _b ctrlSetFontHeight (_fs * 0.82);
+    _b ctrlSetFontHeight ((_fs * 0.82) max COMSPEC_ATAK_FontMin);
     switch (true) do {
         case (!_en): { _b ctrlSetBackgroundColor [0.06, 0.075, 0.095, 1]; _b ctrlSetTextColor [0.36, 0.42, 0.48, 1]; };
         case (_style isEqualTo "main"): { _b ctrlSetBackgroundColor [0.16, 0.42, 0.78, 1]; _b ctrlSetTextColor [1, 1, 1, 1]; };
@@ -213,10 +213,10 @@ private _pEntity = {
     private _tx = _ox + _aw + _pad * 0.6;
     private _tw = _ow - _aw - _pad * 0.6;
     if (isNull _t) exitWith {
-        private _c = [[_tx, _oy, _tw, _ah], format ["<t font='%1' size='0.62' color='%2'>ENTITÉ · PERSONNE</t><br/><t font='RobotoCondensedBold' color='%3'>Aucune entité en vue</t><br/><t size='0.78' color='%2'>Regardez une personne à moins de 6 m. Le terminal s'ouvrira sans sujet.</t>", _mono, _hDim, _hMute]] call _st;
+        private _c = [[_tx, _oy, _tw, _ah], format ["<t font='%1' size='0.62' color='%2'>ENTITÉ · PERSONNE</t><br/><t font='COMSPEC_BarlowBold' color='%3'>Aucune entité en vue</t><br/><t size='0.78' color='%2'>Regardez une personne à moins de 6 m. Le terminal s'ouvrira sans sujet.</t>", _mono, _hDim, _hMute]] call _st;
         (_c call _hOf) max _ah
     };
-    [[_tx, _oy, _tw, _ah], format ["<t font='%1' size='0.62' color='%2'>ENTITÉ · PERSONNE</t><br/><t font='RobotoCondensedBold' size='1.15'>%3</t><br/><t font='%1' size='0.62' color='%2'>%4 · %5 M · GR %6</t>",
+    [[_tx, _oy, _tw, _ah], format ["<t font='%1' size='0.62' color='%2'>ENTITÉ · PERSONNE</t><br/><t font='COMSPEC_BarlowBold' size='1.15'>%3</t><br/><t font='%1' size='0.62' color='%2'>%4 · %5 M · GR %6</t>",
         _mono, _hDim, _whoT, ["<t color='#e5483a'>DÉCÉDÉ</t>", "<t color='#34d399'>VIVANT</t>"] select (alive _t), _dist, [_t, 8] call comspec_atak_native_fnc_gridRef]] call _st;
     private _yy = _oy + _ah + _pad * 0.5;
     // Attributs, deux par ligne.
@@ -298,7 +298,7 @@ private _pGraph = {
         private _right = if (_n > 0) then {
             format ["<t color='%1'>%2 REQ</t>%3", _hDim, _n, ["", format ["  <t color='%1'>%2 %3</t>", _hex, _conf, "%"]] select (_res isNotEqualTo "none")]
         } else { format ["<t color='%1'>NOUVEAU</t>", _hMute] };
-        [[_cx + _pad * 0.5, _ny + _nh * 0.2, (_ox + _ow - _cx) * 0.6, _nh], format ["<t size='0.82' font='RobotoCondensedBold'>%1</t> <t font='%2' size='0.5' color='%3'>%4</t>", _lab, _mono, _hex, _tag], false] call _st;
+        [[_cx + _pad * 0.5, _ny + _nh * 0.2, (_ox + _ow - _cx) * 0.6, _nh], format ["<t size='0.82' font='COMSPEC_BarlowBold'>%1</t> <t font='%2' size='0.5' color='%3'>%4</t>", _lab, _mono, _hex, _tag], false] call _st;
         [[_cx + (_ox + _ow - _cx) * 0.55, _ny + _nh * 0.28, (_ox + _ow - _cx) * 0.45 - _pad * 0.4, _nh], format ["<t align='right' font='%1' size='0.58'>%2</t>", _mono, _right], false] call _st;
     } forEach _nodes;
     private _h = _yLast + _nh / 2 - _oy;
@@ -366,7 +366,7 @@ private _pTimeline = {
     private _lastMid = _oy;
     {
         _x params [["_tick", 0], ["_clock", ""], ["_who", "?"], ["_alias", ""], ["_status", ""], ["_conf", 0], ["_ref", ""], ["_grid", ""], ["_res", "none"]];
-        private _c = [[_ex, _yy, _ox + _ow - _ex, _fs], format ["<t size='0.82' font='RobotoCondensedBold'>%1</t>%2  <t size='0.78' color='%3'>%4%5</t><br/><t font='%6' size='0.55' color='%7'>GR %8%9</t>",
+        private _c = [[_ex, _yy, _ox + _ow - _ex, _fs], format ["<t size='0.82' font='COMSPEC_BarlowBold'>%1</t>%2  <t size='0.78' color='%3'>%4%5</t><br/><t font='%6' size='0.55' color='%7'>GR %8%9</t>",
             _who, ["", format [" <t color='%1'>« %2 »</t>", _hDim, _alias]] select (_alias isNotEqualTo ""), _res call _resHex, _status, ["", format [" %1 %2", _conf, "%"]] select (_res isNotEqualTo "none"),
             _mono, _hMute, [_grid, "—"] select (_grid isEqualTo ""), ["", format [" · %1", _ref]] select (_ref isNotEqualTo "")], true, _fs * 1.6] call _st;
         [[_ox, _yy + _fs * 0.1, _tcw - _pad * 0.3, _fs], format ["<t font='%1' size='0.6' color='%2'>%3</t>", _mono, _hDim, _clock], false] call _st;

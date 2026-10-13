@@ -63,9 +63,9 @@ private _box = { params ["_rect", "_rgba"]; private _c = ["COMSPEC_RscText", _re
 private _lbl = {
     params ["_cls", "_rect", "_t", ["_fh", _fs], ["_col", _cText], ["_bold", false]];
     private _c = [_cls, _rect, _t] call _mk;
-    _c ctrlSetFontHeight _fh;
+    _c ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin);
     _c ctrlSetTextColor _col;
-    if (_bold) then { _c ctrlSetFont "RobotoCondensedBold"; };
+    if (_bold) then { _c ctrlSetFont (COMSPEC_ATAK_FontSet select 1); };
     _c
 };
 private _hit = {
@@ -137,7 +137,7 @@ private _th = ((_tw * _ratio * 0.8) max (_font * 2.6)) min (_font * 3.8);
     _ic ctrlSetTextColor ([[0.70, 0.76, 0.73, 1], _rgba] select _on);
     private _c = ["COMSPEC_RscTextCenter", [_tx, _ty + _th * 0.60, _tw, _th * 0.3], _t, _fs * 0.8, [_cDim, _cText] select _on, _on] call _lbl;
     private _fh = _fs * 0.8;
-    while { (ctrlTextWidth _c) > _tw * 0.94 && {_fh > _fs * 0.55} } do { _fh = _fh * 0.92; _c ctrlSetFontHeight _fh; };
+    while { (ctrlTextWidth _c) > _tw * 0.94 && {_fh > _fs * 0.55} } do { _fh = _fh * 0.92; _c ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin); };
     [[_tx, _ty, _tw, _th], compile format [_redo, format ["(uiNamespace getVariable ['COMSPEC_ATAK_RecoDraft', createHashMap]) set ['tag', '%1'];", _k]], _t] call _hit;
 } forEach _types;
 _y = _y + 2 * (_th + _gap) + _pad * 0.4;
@@ -153,7 +153,7 @@ private _bh2 = _font * 1.7;
     [[_bx, _y, _bww, _bh2], [_cTile, [0.30, 0.21, 0.06, 1]] select _on] call _box;
     [[_bx, _y + _bh2 - pixelH * 2, _bww, pixelH * 2], [[1, 1, 1, 0.05], _cAmber] select _on] call _box;
     private _c = ["COMSPEC_RscStructuredText", [_bx, _y + _bh2 * 0.1, _bww, _bh2 * 0.9]] call _mk;
-    _c ctrlSetStructuredText parseText ((format ["<t align='center' font='RobotoCondensedBold' color='%1'>%2 %3</t><br/><t align='center' size='0.75' color='#8a9a93'>%4</t>",
+    _c ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' color='%1'>%2 %3</t><br/><t align='center' size='0.75' color='#8a9a93'>%4</t>",
         ["#c9d2cd", "#f2a92e"] select _on, ["○", "●"] select _on, _t, _sub]) call comspec_atak_native_fnc_tr);
     _c ctrlSetFontHeight _fs;
     [[_bx, _y, _bww, _bh2], compile format [_redo, format ["(uiNamespace getVariable ['COMSPEC_ATAK_RecoDraft', createHashMap]) set ['confidence', '%1'];", _k]], _t] call _hit;
@@ -192,7 +192,7 @@ private _qb = (_wR - _gap) / 2;
     _ic ctrlSetTextColor _cAmber;
     private _c = ["COMSPEC_RscText", [_bx + _pad + _ih / _ratio, _y, _qb - _pad * 1.5 - _ih / _ratio, _rowH], _t, _fs * 0.85, _cText, true] call _lbl;
     private _fh = _fs * 0.85;
-    while { (ctrlTextWidth _c) > (_qb - _pad * 1.5 - _ih / _ratio) && {_fh > _fs * 0.6} } do { _fh = _fh * 0.92; _c ctrlSetFontHeight _fh; };
+    while { (ctrlTextWidth _c) > (_qb - _pad * 1.5 - _ih / _ratio) && {_fh > _fs * 0.6} } do { _fh = _fh * 0.92; _c ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin); };
     [[_bx, _y, _qb, _rowH], compile format [_redo, _set], _tip] call _hit;
 } forEach [
     ["MA POSITION", "ui_gps", "(uiNamespace getVariable ['COMSPEC_ATAK_RecoDraft', createHashMap]) set ['grid', [getPosASL player, 8] call comspec_atak_native_fnc_gridRef];", "Ma position"],
@@ -261,7 +261,7 @@ if ((count _log) isEqualTo 0) then {
     private _ic = ["COMSPEC_RscPicture", [_pad * 1.6, _y + _ch * 0.22, _ch * 0.56 / _ratio, _ch * 0.56], _dir + (_ty select 3) + ".paa"] call _mk;
     _ic ctrlSetTextColor _col;
     private _c = ["COMSPEC_RscStructuredText", [_pad * 2.2 + _ch * 0.56 / _ratio, _y + _ch * 0.08, _bw - _pad * 4 - _ch * 0.56 / _ratio, _ch * 0.9]] call _mk;
-    _c ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='%1'>%2</t>  <t font='EtelkaMonospacePro' size='0.8' color='#8a9a93'>%3</t><br/><t size='0.85'>%4</t>",
+    _c ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t font='EtelkaMonospacePro' size='0.8' color='#8a9a93'>%3</t><br/><t size='0.85'>%4</t>",
         (_col select [0, 3]) call BIS_fnc_colorRGBtoHTML, [toUpper _lab] call _esc, [_g] call _esc, [[_tx, "—"] select (_tx isEqualTo "")] call _esc]) call comspec_atak_native_fnc_tr);
     _c ctrlSetFontHeight _fs;
     _y = _y + _ch + _pad * 0.4;

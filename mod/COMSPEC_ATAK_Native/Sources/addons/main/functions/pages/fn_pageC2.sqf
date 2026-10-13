@@ -18,11 +18,11 @@ private _open = [];
 private _card = { params ["_deg"]; ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_deg / 45)) mod 8) };
 private _dist = { params ["_m"]; [format ["%1 m", round _m], format ["%1 km", (_m / 1000) toFixed 1]] select (_m >= 1000) };
 private _posOf = { private _o = _this getOrDefault ["object", objNull]; if (isNull _o) then { _this getOrDefault ["position", []] } else { getPosASL _o } };
-private _tile = { params ["_n", "_lab", "_col"]; format ["<t size='1.5' font='RobotoCondensedBold' color='%3'>%1</t><t size='0.8' color='#8a9a93'> %2</t>", _n, _lab, _col] };
+private _tile = { params ["_n", "_lab", "_col"]; format ["<t size='1.5' font='COMSPEC_BarlowBold' color='%3'>%1</t><t size='0.8' color='#8a9a93'> %2</t>", _n, _lab, _col] };
 private _canOrder = ([] call comspec_atak_native_fnc_bridge) && { [] call comspec_overwatch_connect_fnc_canIssueOrder };
 private _grp = group player;
 private _rows = [
-    ["hero", "\z\comspec_atak_native\addons\main\data\app_c2.paa", format ["<t size='1.3' font='RobotoCondensedBold'>%1</t><br/><t size='0.85' color='%2'>Chef : %3 · %4 · %5</t>",
+    ["hero", "\z\comspec_atak_native\addons\main\data\app_c2.paa", format ["<t size='1.3' font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.85' color='%2'>Chef : %3 · %4 · %5</t>",
         groupId _grp, _grey, name leader _grp, [dayTime, "HH:MM"] call BIS_fnc_timeToString, worldName]],
     ["text", format ["%1     %2     %3     %4",
         [count _friends, "alliés", "#47b3ff"] call _tile,

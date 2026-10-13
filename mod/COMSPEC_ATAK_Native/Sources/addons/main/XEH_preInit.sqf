@@ -2,6 +2,10 @@
 private _perfT0 = diag_tickTime;
 uiNamespace setVariable ["COMSPEC_ATAK_PerfPreInitAt", diag_tickTime];
 COMSPEC_ATAK_UI_GENERATION = "native-rsc-v1";
+// Plancher des petites tailles de texte, recalculé par fn_layoutGet (0 tant qu'aucun écran n'est dessiné).
+COMSPEC_ATAK_FontMin = 0;
+// Police du téléphone (Réglages > Police) : familles courante, grasse et légère, avant tout dessin.
+[] call comspec_atak_native_fnc_fontSet;
 // Constantes posées par chaque machine (preInit tourne partout) : rien à diffuser. En public, chaque arrivée
 // renvoyait les deux valeurs à tous les joueurs et à la file JIP.
 missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION];
@@ -22,6 +26,20 @@ diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
     ["COMSPEC", ""], [["auto", "fr", "en"], ["Auto (langue du jeu / game language)", "Français", "English"], 0], 0,
     { [true] call comspec_atak_native_fnc_langApply; }] call CBA_fnc_addSetting;
 [] call comspec_atak_native_fnc_langApply;
+// Police du téléphone (par joueur), aussi dans le téléphone (Réglages > Affichage > Police). Réglage CBA, lisible dans
+// la police du jeu : si une police embarquée s'affichait mal, Roboto Condensed se remet d'ici.
+["comspec_atak_native_font", "LIST",
+    ["Police du téléphone / Phone font", "Police de tout le téléphone ATAK. Barlow Condensed par défaut ; Roboto Condensed et Purista sont les polices du jeu. / Font for the whole ATAK phone."],
+    ["COMSPEC", ""], [["barlow", "b612", "rajdhani", "sharetech", "roboto", "purista"], ["Barlow Condensed", "B612", "Rajdhani", "Share Tech", "Roboto Condensed (jeu / game)", "Purista (jeu / game)"], 0], 0,
+    {
+        params ["_v"];
+        [_v] call comspec_atak_native_fnc_fontSet;
+        // Téléphone ouvert : redessiné dans la nouvelle police.
+        [{
+            private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""];
+            if (_p isNotEqualTo "" && {!isNull ([] call comspec_atak_native_fnc_display)}) then { [] call comspec_atak_native_fnc_layoutApply; [_p] call comspec_atak_native_fnc_pageRender; };
+        }] call CBA_fnc_execNextFrame;
+    }] call CBA_fnc_addSetting;
 // Langue dans laquelle les menus CBA COMSPEC sont déclarés (fn_addSetting, fn_trMenu) : fn_menuRelang ne retraduit
 // que si elle change.
 missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]];
@@ -36,6 +54,11 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["Son d'intro au démarrage", "Carillon court joué avec la marque COMSPEC sur l'écran de démarrage d'Arma. Pris en compte au prochain lancement du jeu."],
     ["COMSPEC", "ATAK · Intro"], true, 0,
     { profileNamespace setVariable ["COMSPEC_ATAK_IntroSound", _this]; saveProfileNamespace; }] call comspec_atak_native_fnc_addSetting;
+
+// Check de démarrage (fn_startupCheck), par joueur : résultat du contrôle du mod posté dans le salon de debug du Discord Athena.
+["comspec_atak_native_startup_report", "CHECKBOX",
+    ["Envoyer le check de démarrage", "Coché par défaut : au début de chaque mission, le résultat du contrôle du mod (versions, DLL, connexion Athena, FPS, erreurs) est posté avec votre pseudo et votre indicatif dans le salon de debug du Discord Athena, pour aider au dépannage. Ni UID Steam, ni adresse IP. Décocher pour ne rien envoyer."],
+    ["COMSPEC", "ATAK · Debug"], true, 0] call comspec_atak_native_fnc_addSetting;
 
 // Taille du téléphone en plein écran (par joueur) : 60 à 100 %, centré. Aussi dans Réglages > Emplacement du téléphone.
 ["comspec_atak_native_full_scale", "SLIDER",
@@ -172,6 +195,9 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
     ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s (et les pertes amies) pour l'app Rejeu. Décocher pour ne rien enregistrer."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_drone_range", "SLIDER", ["Portée de la liaison drone", "Distance en mètres entre le téléphone du pilote et son drone (divisée par trois derrière le relief). Au-delà, le drone rentre seul à son point de décollage. Avec le mod Mavic, sa portée maximale (mavic_setting_maxConnectionDistance) l'emporte si elle est plus grande."], _sim, [500, 12000, 6000, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_video_relays", "CHECKBOX",
+    ["Flux vidéo selon les relais", "Quand la mission pose des relais ATAK, les flux vidéo (drone, caméra casque, Live cam, caméras fixes) passent par eux : débit, définition (1080p à image par image), images par seconde, latence et défauts d'image suivent la distance aux relais, le nombre de bonds et la perte d'un relais. Sans relais dans la mission, rien ne change. Décocher pour garder les flux comme avant."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_drone_strike", "CHECKBOX",
     ["Drones armés", "Permet de fixer une charge (roquette RPG, charge de démolition, grenade) sur un drone et de l'envoyer en tir et oublie ou en recherche et frappe."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
