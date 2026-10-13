@@ -16,16 +16,16 @@ private _fncFallback = {
     params ["_disp"];
     private _hint = _disp displayCtrl 9602;
     if (!isNull _hint) then {
-        _hint ctrlSetStructuredText parseText "<t align='right' size='0.5' color='#ff8a7a'>Écran intégré indisponible</t>";
+        _hint ctrlSetStructuredText parseText (("<t align='right' size='0.5' color='#ff8a7a'>Écran intégré indisponible</t>") call comspec_overwatch_connect_fnc_tr);
     };
     private _help = _disp displayCtrl 9603;
     if (!isNull _help) then {
         _help ctrlShow true;
-        _help ctrlSetStructuredText parseText (
+        _help ctrlSetStructuredText parseText (((
             "<t align='center' size='0.8' color='#e8f4f0' font='RobotoCondensedBold'>Gestion du mod</t><br/><br/>" +
             "<t align='center' size='0.6' color='#c5d4de'>L’écran intégré ne peut pas démarrer sur cette session Arma.<br/>" +
             "Vérifiez qu’Arma est à jour (2.14 ou plus).</t>"
-        );
+        )) call comspec_overwatch_connect_fnc_tr);
     };
 };
 
@@ -43,7 +43,7 @@ _ctrl ctrlAddEventHandler ["JSDialog", {
 
 private _hint = _display displayCtrl 9602;
 if (!isNull _hint) then {
-    _hint ctrlSetStructuredText parseText "<t align='right' size='0.5' color='#8aa0b4'>Ouverture…</t>";
+    _hint ctrlSetStructuredText parseText (("<t align='right' size='0.5' color='#8aa0b4'>Ouverture…</t>") call comspec_overwatch_connect_fnc_tr);
 };
 
 // Token de boucle : invalidé à la fermeture (onUnload) pour éviter les tentatives fantômes.

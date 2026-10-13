@@ -30,7 +30,7 @@ if (_cs isEqualTo "") exitWith {
 
     if (!isNull _status) then {
 
-        _status ctrlSetStructuredText parseText "<t align='center' size='0.55' color='#ff8a7a'>Indiquez un indicatif (ex. ALPHA-1).</t>";
+        _status ctrlSetStructuredText parseText (("<t align='center' size='0.55' color='#ff8a7a'>Indiquez un indicatif (ex. ALPHA-1).</t>") call comspec_overwatch_connect_fnc_tr);
 
     };
 

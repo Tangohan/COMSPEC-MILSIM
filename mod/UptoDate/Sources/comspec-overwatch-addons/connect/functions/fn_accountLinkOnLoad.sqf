@@ -21,7 +21,7 @@ if (((_urlLower find "https://") != 0) && {(_urlLower find "http://") != 0}) the
 };
 
 private _urlCtrl = _display displayCtrl 9201;
-if (!isNull _urlCtrl) then { _urlCtrl ctrlSetText _url; };
+if (!isNull _urlCtrl) then { _urlCtrl ctrlSetText _url; }; // i18n:brut
 
 private _steam = profileNamespace getVariable ["comspec_overwatch_saved_steam_uid", ""];
 if (_steam isEqualTo "") then {
@@ -29,7 +29,7 @@ if (_steam isEqualTo "") then {
     if ((count _uid) >= 15) then { _steam = _uid; };
 };
 private _steamCtrl = _display displayCtrl 9206;
-if (!isNull _steamCtrl) then { _steamCtrl ctrlSetText _steam; };
+if (!isNull _steamCtrl) then { _steamCtrl ctrlSetText _steam; }; // i18n:brut
 
 private _status = _display displayCtrl 9203;
 if (!isNull _status) then {

@@ -16,10 +16,10 @@ if ((_last isEqualType []) && {(count _last) >= 2}) then {
 
 private _hint = _display displayCtrl 20;
 if (!isNull _hint) then {
-    _hint ctrlSetStructuredText parseText format [
+    _hint ctrlSetStructuredText parseText ((format [
         "<t align='center' size='0.72' color='#c8d8e0'>Gardez le téléphone. Overwatch est coupé, puis chaque fonction revient une par une, 55 secondes d’écart. Trois essais partent vers le poste : un message, un repère, une photo. Un bandeau reste à l’écran. Si le jeu s’arrête, la fonction affichée est en cause.</t><br/><br/><t align='center' size='0.78' color='#ffd27a'>%1</t>",
         _lastTxt
-    ];
+    ]) call comspec_overwatch_connect_fnc_tr);
 };
 
 private _run = missionNamespace getVariable ["COMSPEC_DiagIsolateActive", false];

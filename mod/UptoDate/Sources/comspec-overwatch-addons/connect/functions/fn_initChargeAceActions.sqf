@@ -30,7 +30,7 @@ if (!(missionNamespace getVariable ["COMSPEC_ChargeAceClassReady", false])) then
             && { (_player distance _target) < 4 }
         },
         _noChildren
-    ] call ace_interact_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_aceAction;
     _armAtak = [_armAtak] call comspec_overwatch_connect_fnc_acePadAction;
 
     if (_armAtak isNotEqualTo [] && {isClass (configFile >> "CfgVehicles" >> "ACE_Explosives_Place")}) then {
@@ -59,7 +59,7 @@ if (!(missionNamespace getVariable ["COMSPEC_ChargeAceClassReady", false])) then
             }
         },
         _noChildren
-    ] call ace_interact_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_aceAction;
     _modeAtak = [_modeAtak] call comspec_overwatch_connect_fnc_acePadAction;
 
     private _modeLocal = [
@@ -82,7 +82,7 @@ if (!(missionNamespace getVariable ["COMSPEC_ChargeAceClassReady", false])) then
             }
         },
         _noChildren
-    ] call ace_interact_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_aceAction;
     _modeLocal = [_modeLocal] call comspec_overwatch_connect_fnc_acePadAction;
 
     private _fireOne = [
@@ -124,13 +124,13 @@ if (!(missionNamespace getVariable ["COMSPEC_ChargeAceClassReady", false])) then
                     },
                     { true },
                     { [] }
-                ] call ace_interact_menu_fnc_createAction;
+                ] call comspec_overwatch_connect_fnc_aceAction;
                 [[_a, [], _target]]
             } else {
                 []
             };
         }
-    ] call ace_interact_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_aceAction;
     _fireOne = [_fireOne] call comspec_overwatch_connect_fnc_acePadAction;
 
     {
@@ -173,7 +173,7 @@ private _root = [
                 {},
                 { true },
                 _noChildren
-            ] call ace_interact_menu_fnc_createAction;
+            ] call comspec_overwatch_connect_fnc_aceAction;
             _actions pushBack [_empty, [], player];
         } else {
             {
@@ -196,7 +196,7 @@ private _root = [
                     { [player] call comspec_overwatch_connect_fnc_hasTerminal },
                     _noChildren,
                     [_cid, _needConfirm]
-                ] call ace_interact_menu_fnc_createAction;
+                ] call comspec_overwatch_connect_fnc_aceAction;
                 _actions pushBack [_a, [], player];
             } forEach _list;
 
@@ -216,13 +216,13 @@ private _root = [
                 { [player] call comspec_overwatch_connect_fnc_hasTerminal },
                 _noChildren,
                 _pendingAll
-            ] call ace_interact_menu_fnc_createAction;
+            ] call comspec_overwatch_connect_fnc_aceAction;
             _actions pushBack [_all, [], player];
         };
 
         _actions
     }
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 
 [_root, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 

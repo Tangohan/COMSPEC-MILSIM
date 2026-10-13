@@ -72,10 +72,10 @@ private _fnc_plain = {
     params ["_idc", "_align", "_text"];
     private _c = _disp displayCtrl _idc;
     if (isNull _c) exitWith {};
-    _c ctrlSetStructuredText parseText format [
+    _c ctrlSetStructuredText parseText ((format [
         "<t align='%1' font='PuristaMedium' size='0.72' color='#C5D8CC' shadow='1'>%2</t>",
         _align, _text
-    ];
+    ]) call comspec_overwatch_connect_fnc_tr);
 };
 
 private _compassOnly = missionNamespace getVariable ["comspec_overwatch_ecoti_compass_only", false];
@@ -84,7 +84,7 @@ if (!(_compassOnly isEqualType true)) then { _compassOnly = false; };
 private _cComp = _disp displayCtrl 77401;
 if (!isNull _cComp) then {
     _cComp ctrlShow true;
-    _cComp ctrlSetStructuredText parseText _comp;
+    _cComp ctrlSetStructuredText parseText ((_comp) call comspec_overwatch_connect_fnc_tr);
 };
 
 private _fnc_extra = {
@@ -93,9 +93,9 @@ private _fnc_extra = {
     if (isNull _c) exitWith {};
     _c ctrlShow _show;
     if (_show) then {
-        _c ctrlSetStructuredText parseText _text;
+        _c ctrlSetStructuredText parseText ((_text) call comspec_overwatch_connect_fnc_tr);
     } else {
-        _c ctrlSetStructuredText parseText "";
+        _c ctrlSetStructuredText parseText (("") call comspec_overwatch_connect_fnc_tr);
     };
 };
 

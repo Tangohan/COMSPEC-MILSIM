@@ -13,7 +13,7 @@ private _display = ctrlParent _ctrl;
 if (!isNull _display) then {
     private _hint = _display displayCtrl 9602;
     if (!isNull _hint) then {
-        _hint ctrlSetStructuredText parseText "<t align='right' size='0.55' color='#7dffb3'>Prêt</t>";
+        _hint ctrlSetStructuredText parseText (("<t align='right' size='0.55' color='#7dffb3'>Prêt</t>") call comspec_overwatch_connect_fnc_tr);
     };
 };
 

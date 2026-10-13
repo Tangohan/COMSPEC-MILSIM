@@ -55,19 +55,19 @@ uiNamespace setVariable ["COMSPEC_ReconNote_Pos", _pos];
 
     private _edit = _disp displayCtrl 9762;
     if (!isNull _edit) then {
-        _edit ctrlSetText "";
+        _edit ctrlSetText ""; // i18n:brut
         _edit ctrlAddEventHandler ["KeyUp", {
             private _d = uiNamespace getVariable ["COMSPEC_ReconNote_Display", displayNull];
             if (isNull _d) exitWith {};
             private _t = ctrlText (_d displayCtrl 9762);
             if ((count _t) > 140) then {
                 _t = _t select [0, 140];
-                (_d displayCtrl 9762) ctrlSetText _t;
+                (_d displayCtrl 9762) ctrlSetText ((_t) call comspec_overwatch_connect_fnc_tr);
             };
-            (_d displayCtrl 9763) ctrlSetStructuredText parseText format [
+            (_d displayCtrl 9763) ctrlSetStructuredText parseText ((format [
                 "<t align='right' size='0.5' color='#6a8498'>%1 / 140</t>",
                 count _t
-            ];
+            ]) call comspec_overwatch_connect_fnc_tr);
         }];
     };
 
@@ -75,10 +75,10 @@ uiNamespace setVariable ["COMSPEC_ReconNote_Pos", _pos];
     if (!isNull _hint) then {
         private _p = uiNamespace getVariable ["COMSPEC_ReconNote_Pos", getPosASL player];
         private _grid = if (_p isEqualType [] && {(count _p) >= 2}) then { mapGridPosition _p } else { mapGridPosition player };
-        _hint ctrlSetStructuredText parseText format [
+        _hint ctrlSetStructuredText parseText ((format [
             "<t align='center' size='0.55' color='#8aa0b4'>Grille %1 · 140 caractères max.</t>",
             _grid
-        ];
+        ]) call comspec_overwatch_connect_fnc_tr);
     };
 
     private _tags = [
@@ -117,7 +117,7 @@ uiNamespace setVariable ["COMSPEC_ReconNote_Pos", _pos];
 
     private _conf = _disp displayCtrl 9771;
     if (!isNull _conf) then {
-        _conf ctrlSetText "Confiance : vu direct";
+        _conf ctrlSetText (("Confiance : vu direct") call comspec_overwatch_connect_fnc_tr);
         _conf ctrlAddEventHandler ["ButtonClick", {
             params ["_ctrl"];
             private _d = ctrlParent _ctrl;
@@ -125,7 +125,7 @@ uiNamespace setVariable ["COMSPEC_ReconNote_Pos", _pos];
             private _cur = _d getVariable ["COMSPEC_ReconConfidence", "vu_direct"];
             private _next = if (_cur isEqualTo "vu_direct") then { "rapporte" } else { "vu_direct" };
             _d setVariable ["COMSPEC_ReconConfidence", _next];
-            _ctrl ctrlSetText (if (_next isEqualTo "vu_direct") then { "Confiance : vu direct" } else { "Confiance : rapporté" });
+            _ctrl ctrlSetText (((if (_next isEqualTo "vu_direct") then { "Confiance : vu direct" } else { "Confiance : rapporté" })) call comspec_overwatch_connect_fnc_tr);
         }];
     };
 };

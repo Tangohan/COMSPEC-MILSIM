@@ -3,7 +3,7 @@ class COMSPEC_NDA_Dialog {
     idd = 9978;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_NDA_Display', _this select 0]; (_this select 0) call comspec_overwatch_connect_fnc_ndaOnLoad;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_NDA_Display', _this select 0]; (_this select 0) call comspec_overwatch_connect_fnc_ndaOnLoad;";
     onUnload = "uiNamespace setVariable ['COMSPEC_NDA_Display', displayNull];";
 
     class ControlsBackground {

@@ -25,4 +25,4 @@ private _labels = createHashMapFromArray [
     ["medical", "Médical"]
 ];
 private _label = _labels getOrDefault [_category, _category];
-_ctrl ctrlSetText format ["%1 : %2", _label, if (_muted) then { "hidden" } else { "shown" }];
+_ctrl ctrlSetText ((format ["%1 : %2", _label, if (_muted) then { "hidden" } else { "shown" }]) call comspec_overwatch_connect_fnc_tr);

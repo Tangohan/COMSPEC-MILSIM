@@ -11,6 +11,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Traduction 2026-10-13 — Fenêtres Overwatch connect et actions ACE/ZEN en anglais (ATAK natif 1.54.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : continuer de traduire le mod.
+- Addon Overwatch connect embarqué (connexion Athena, hub, CAS, MEDEVAC, SALUTE, ordres, notes de renseignement, fiche SSE, NDA…) : textes affichés et textes fixes des fenêtres dans la langue du téléphone (même réglage et même dictionnaire que l'ATAK natif). Sans l'ATAK natif, rien ne change.
+- Actions ACE (menu perso, objets), menu contextuel ZEN et modules Zeus ZEN des deux addons : noms traduits.
+- Environ 2 000 nouvelles traductions (dictionnaire `i18n/en.txt`). `tools/i18n.py --connect wrap|extract` pour l'addon connect.
+- Reste en français : réglages CBA de l'addon connect, journaux techniques, mod SSE.
+
 ## Relais : couverture réseau, triangulation, champs de vision ; calques de la carte qui disent ce qu'ils montrent (ATAK natif 1.53.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : triangulation par les relais, portée et couverture des relais, perte de réseau et débit, aperçu des champs de vision, et les relais invisibles sur la carte.

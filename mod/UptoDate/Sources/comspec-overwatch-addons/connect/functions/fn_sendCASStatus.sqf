@@ -9,5 +9,5 @@ missionNamespace setVariable ["COMSPEC_CurrentCASStatus", _status];
 ["COMSPEC_Info", [format ["Statut CAS : %1", _status]]] call comspec_overwatch_connect_fnc_showNotification;
 private _disp = uiNamespace getVariable ["COMSPEC_CAS_Display", displayNull];
 if (!isNull _disp) then {
-    (_disp displayCtrl 8003) ctrlSetText ("Status: " + _status);
+    (_disp displayCtrl 8003) ctrlSetText ((("Status: " + _status)) call comspec_overwatch_connect_fnc_tr);
 };

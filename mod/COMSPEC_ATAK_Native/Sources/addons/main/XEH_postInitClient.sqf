@@ -337,11 +337,11 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 [{ ["tick"] call comspec_atak_native_fnc_screenGlow; }, 1] call CBA_fnc_addPerFrameHandler;
 // Action ACE perso : doigt d'honneur, rangé dans le menu Gestes d'ACE quand celui-ci est affiché.
 if (!isNil "ace_interact_menu_fnc_createAction") then {
-    private _act = ["COMSPEC_GestureFinger", "Doigt d'honneur", "", { [player] call comspec_atak_native_fnc_gestureFinger; }, { alive player && {vehicle player isEqualTo player} }] call ace_interact_menu_fnc_createAction;
+    private _act = ["COMSPEC_GestureFinger", "Doigt d'honneur", "", { [player] call comspec_atak_native_fnc_gestureFinger; }, { alive player && {vehicle player isEqualTo player} }] call comspec_atak_native_fnc_aceAction;
     private _path = ["ACE_SelfActions"];
     if (isClass (configFile >> "CfgPatches" >> "ace_gestures") && {(missionNamespace getVariable ["ace_gestures_showOnInteractionMenu", 2]) isEqualTo 2}) then { _path pushBack "ace_gestures"; };
     ["CAManBase", 1, _path, _act, true] call ace_interact_menu_fnc_addActionToClass;
-    private _act2 = ["COMSPEC_GestureFingerAim", "Doigt d'honneur libre (6 s)", "", { ["timed", 6] call comspec_atak_native_fnc_gestureFingerAim; }, { alive player && {vehicle player isEqualTo player} }] call ace_interact_menu_fnc_createAction;
+    private _act2 = ["COMSPEC_GestureFingerAim", "Doigt d'honneur libre (6 s)", "", { ["timed", 6] call comspec_atak_native_fnc_gestureFingerAim; }, { alive player && {vehicle player isEqualTo player} }] call comspec_atak_native_fnc_aceAction;
     ["CAManBase", 1, _path, _act2, true] call ace_interact_menu_fnc_addActionToClass;
 };
 // Action ACE : changer la batterie du téléphone (si une batterie de rechange est portée).
@@ -352,7 +352,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     }, {
         [player] call comspec_atak_native_fnc_hasDevice && {(missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) < 95}
         && {([player] call comspec_atak_native_fnc_batteryItem) isNotEqualTo ""}
-    }] call ace_interact_menu_fnc_createAction;
+    }] call comspec_atak_native_fnc_aceAction;
     ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"], _act, true] call ace_interact_menu_fnc_addActionToClass;
 } else {
     // Sans ACE : action de la molette (visible seulement avec une batterie de rechange et le téléphone sous 95 %).
@@ -562,7 +562,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         [{ ["start"] call comspec_atak_native_fnc_screenClean; }] call CBA_fnc_execNextFrame;
     }, {
         ["can"] call comspec_atak_native_fnc_screenClean
-    }] call ace_interact_menu_fnc_createAction;
+    }] call comspec_atak_native_fnc_aceAction;
     ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"], _clean, true] call ace_interact_menu_fnc_addActionToClass;
 };
 
@@ -573,7 +573,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         [{ ["start"] call comspec_atak_native_fnc_repairStart; }] call CBA_fnc_execNextFrame;
     }, {
         ["can"] call comspec_atak_native_fnc_repairStart
-    }] call ace_interact_menu_fnc_createAction;
+    }] call comspec_atak_native_fnc_aceAction;
     ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"], _fix, true] call ace_interact_menu_fnc_addActionToClass;
     private _swap = ["COMSPEC_ATAK_Swap", "Passer au téléphone de rechange", "", {
         private _cat = [] call comspec_atak_native_fnc_deviceCatalog;
@@ -582,7 +582,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     }, {
         ((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["damage", 0]) >= 0.45
         && {private _cat = [] call comspec_atak_native_fnc_deviceCatalog; ((((assignedItems player) + (items player)) select { (toLower _x) in _cat }) param [1, ""]) isNotEqualTo "" && {((items player) findIf { (toLower _x) in _cat }) >= 0}}
-    }] call ace_interact_menu_fnc_createAction;
+    }] call comspec_atak_native_fnc_aceAction;
     ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"], _swap, true] call ace_interact_menu_fnc_addActionToClass;
 };
 
@@ -596,10 +596,10 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         params ["_t"];
         if (isNil "ace_common_fnc_progressBar") exitWith { ["pair", _t] call comspec_atak_native_fnc_droneAction; };
         [4, [_t], { ["pair", (_this select 0) select 0] call comspec_atak_native_fnc_droneAction; }, {}, "Appairage du drone…"] call ace_common_fnc_progressBar;
-    }, { [_target] call (missionNamespace getVariable ["COMSPEC_ATAK_DroneCan", { false }]) }] call ace_interact_menu_fnc_createAction;
+    }, { [_target] call (missionNamespace getVariable ["COMSPEC_ATAK_DroneCan", { false }]) }] call comspec_atak_native_fnc_aceAction;
     ["Air", 0, ["ACE_MainActions"], _con, true] call ace_interact_menu_fnc_addActionToClass;
     private _dis = ["COMSPEC_ATAK_DroneUnpair", "Déconnecter l'ATAK du drone", "", { ["unpair"] call comspec_atak_native_fnc_droneAction; },
-        { [_target] call (missionNamespace getVariable ["COMSPEC_ATAK_DroneIsMine", { false }]) }] call ace_interact_menu_fnc_createAction;
+        { [_target] call (missionNamespace getVariable ["COMSPEC_ATAK_DroneIsMine", { false }]) }] call comspec_atak_native_fnc_aceAction;
     ["Air", 0, ["ACE_MainActions"], _dis, true] call ace_interact_menu_fnc_addActionToClass;
 };
 // Molette : les actions sont posées sur chaque drone proche, une seule fois par drone.

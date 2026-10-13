@@ -102,7 +102,7 @@ if (_ok) then {
     };
 
     if ([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) then {
-        hint parseText format [
+        hint ((parseText format [
             "<t color='#ff3333' size='1.5' align='center'>ÉVACUATION DEMANDÉE</t><br/>" +
             "<t size='1.1'>Marquez la zone avec %1 %2</t><br/>" +
             "<t size='1.1'>Sécurisez le périmètre</t><br/>" +
@@ -112,7 +112,7 @@ if (_ok) then {
             _patientsT1,
             _patientsT2,
             _patientsT3
-        ];
+        ]) call comspec_overwatch_connect_fnc_tr);
     };
 
     playSound "RadioAmbient1";

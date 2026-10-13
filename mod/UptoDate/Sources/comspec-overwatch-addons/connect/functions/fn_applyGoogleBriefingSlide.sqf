@@ -38,7 +38,7 @@ if (!isNil "comspec_overwatch_atak_athena_fnc_athena_applyBriefingSlide") then {
 
         private _ctrlPic = _display displayCtrl 9001;
 
-        if (!isNull _ctrlPic) then { _ctrlPic ctrlSetText _path; };
+        if (!isNull _ctrlPic) then { _ctrlPic ctrlSetText ((_path) call comspec_overwatch_connect_fnc_tr); };
 
         private _ctrlTitle = _display displayCtrl 9002;
 
@@ -54,7 +54,7 @@ if (!isNil "comspec_overwatch_atak_athena_fnc_athena_applyBriefingSlide") then {
 
             };
 
-            _ctrlTitle ctrlSetText _label;
+            _ctrlTitle ctrlSetText ((_label) call comspec_overwatch_connect_fnc_tr);
 
         };
 
@@ -62,7 +62,7 @@ if (!isNil "comspec_overwatch_atak_athena_fnc_athena_applyBriefingSlide") then {
 
         if (!isNull _ctrlIndex) then {
 
-            _ctrlIndex ctrlSetText format ["%1 / %2", _index + 1, _total max 1];
+            _ctrlIndex ctrlSetText ((format ["%1 / %2", _index + 1, _total max 1]) call comspec_overwatch_connect_fnc_tr);
 
         };
 

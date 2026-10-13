@@ -2,7 +2,7 @@
 class COMSPEC_Medevac_Dialog {
     idd = 9987;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_Medevac_Display', _this select 0];";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_Medevac_Display', _this select 0];";
     onUnload = "uiNamespace setVariable ['COMSPEC_Medevac_Display', displayNull];";
 
     class Controls {

@@ -121,4 +121,4 @@ private _txt = format [
     (_loss toFixed 1)
 ];
 
-_ctrl ctrlSetStructuredText parseText _txt;
+_ctrl ctrlSetStructuredText parseText ((_txt) call comspec_overwatch_connect_fnc_tr);

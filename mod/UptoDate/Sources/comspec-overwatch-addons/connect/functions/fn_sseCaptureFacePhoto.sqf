@@ -70,7 +70,7 @@ if (isNull _disp) then { _disp = findDisplay 9991; };
 if (!isNull _disp) then {
     private _lcd = _disp displayCtrl 9525;
     if (!isNull _lcd) then {
-        _lcd ctrlSetStructuredText parseText "<t size='0.52' color='#e0c56e' align='center'>CAPTURE EN COURS</t>";
+        _lcd ctrlSetStructuredText parseText (("<t size='0.52' color='#e0c56e' align='center'>CAPTURE EN COURS</t>") call comspec_overwatch_connect_fnc_tr);
     };
 };
 

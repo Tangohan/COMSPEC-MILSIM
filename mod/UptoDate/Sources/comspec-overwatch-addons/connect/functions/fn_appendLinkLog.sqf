@@ -28,5 +28,5 @@ missionNamespace setVariable ["COMSPEC_Log", _log, false];
 private _display = uiNamespace getVariable ["COMSPEC_Chat_Display", displayNull];
 if (!isNull _display) then {
     private _ctrl = _display displayCtrl 1402;
-    if (!isNull _ctrl) then { _ctrl ctrlSetText _log; };
+    if (!isNull _ctrl) then { _ctrl ctrlSetText ((_log) call comspec_overwatch_connect_fnc_tr); };
 };

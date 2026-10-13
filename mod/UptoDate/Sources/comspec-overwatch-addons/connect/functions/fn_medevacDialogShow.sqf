@@ -30,15 +30,15 @@ if (!_ok || {isNull _disp}) exitWith {
 uiNamespace setVariable ["COMSPEC_Medevac_Display", _disp];
 
 private _grid = mapGridPosition player;
-(_disp displayCtrl 9601) ctrlSetText "";
-(_disp displayCtrl 9603) ctrlSetText format ["Grille %1", _grid];
-(_disp displayCtrl 9604) ctrlSetText "";
+(_disp displayCtrl 9601) ctrlSetText (("") call comspec_overwatch_connect_fnc_tr);
+(_disp displayCtrl 9603) ctrlSetText ((format ["Grille %1", _grid]) call comspec_overwatch_connect_fnc_tr);
+(_disp displayCtrl 9604) ctrlSetText (("") call comspec_overwatch_connect_fnc_tr);
 
 private _combo = _disp displayCtrl 9602;
 lbClear _combo;
 {
     _x params ["_label", "_code"];
-    private _i = _combo lbAdd _label;
+    private _i = _combo lbAdd ((_label) call comspec_overwatch_connect_fnc_tr);
     _combo lbSetData [_i, _code];
 } forEach [
     ["Urgent — extraction immédiate", "URGENT"],

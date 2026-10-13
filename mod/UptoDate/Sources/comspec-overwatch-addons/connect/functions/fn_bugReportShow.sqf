@@ -43,13 +43,13 @@ missionNamespace setVariable ["COMSPEC_BugReportOpening", true, false];
     };
 
     uiNamespace setVariable ["COMSPEC_BugReport_Display", _disp];
-    (_disp displayCtrl 9802) ctrlSetText "";
+    (_disp displayCtrl 9802) ctrlSetText (("") call comspec_overwatch_connect_fnc_tr);
 
     private _combo = _disp displayCtrl 9801;
     lbClear _combo;
     {
         _x params ["_label", "_code"];
-        private _i = _combo lbAdd _label;
+        private _i = _combo lbAdd ((_label) call comspec_overwatch_connect_fnc_tr);
         _combo lbSetData [_i, _code];
     } forEach [
         ["Liaison / connexion Athena", "Liaison"],
@@ -64,6 +64,6 @@ missionNamespace setVariable ["COMSPEC_BugReportOpening", true, false];
     private _chk = _disp displayCtrl 9805;
     if (!isNull _chk) then {
         _chk setVariable ["COMSPEC_LogAttach", true];
-        _chk ctrlSetText "Joindre le journal de session : oui";
+        _chk ctrlSetText (("Joindre le journal de session : oui") call comspec_overwatch_connect_fnc_tr);
     };
 };

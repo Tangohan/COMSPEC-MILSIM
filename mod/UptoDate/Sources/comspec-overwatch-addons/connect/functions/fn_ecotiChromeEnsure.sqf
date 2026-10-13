@@ -17,7 +17,7 @@ private _vig = _disp displayCtrl 77400;
 if (isNull _vig) then {
     _vig = _disp ctrlCreate ["RscPicture", 77400];
 };
-_vig ctrlSetText "\z\comspec_overwatch\addons\connect\img\ecoti\ecoti_vignette_ca.png";
+_vig ctrlSetText (("\z\comspec_overwatch\addons\connect\img\ecoti\ecoti_vignette_ca.png") call comspec_overwatch_connect_fnc_tr);
 _vig ctrlSetPosition [safeZoneX, safeZoneY, safeZoneW, safeZoneH];
 _vig ctrlSetTextColor [1, 1, 1, 1];
 _vig ctrlCommit 0;

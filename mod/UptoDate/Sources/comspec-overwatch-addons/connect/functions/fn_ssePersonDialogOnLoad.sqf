@@ -11,7 +11,7 @@ private _status = _disp displayCtrl 9505;
 lbClear _status;
 {
     _x params ["_code", "_label"];
-    private _i = _status lbAdd _label;
+    private _i = _status lbAdd ((_label) call comspec_overwatch_connect_fnc_tr);
     _status lbSetData [_i, _code];
 } forEach [
     ["civil", "Civil"],
@@ -25,7 +25,7 @@ private _circ = _disp displayCtrl 9506;
 lbClear _circ;
 {
     _x params ["_code", "_label"];
-    private _i = _circ lbAdd _label;
+    private _i = _circ lbAdd ((_label) call comspec_overwatch_connect_fnc_tr);
     _circ lbSetData [_i, _code];
 } forEach [
     ["controle", "Contrôle"],
@@ -95,12 +95,12 @@ if (!isNull _target) then {
             };
         };
     };
-    (_disp displayCtrl 9501) ctrlSetText _edenLast;
-    (_disp displayCtrl 9502) ctrlSetText _edenFirst;
-    (_disp displayCtrl 9503) ctrlSetText _edenAlias;
+    (_disp displayCtrl 9501) ctrlSetText ((_edenLast) call comspec_overwatch_connect_fnc_tr);
+    (_disp displayCtrl 9502) ctrlSetText ((_edenFirst) call comspec_overwatch_connect_fnc_tr);
+    (_disp displayCtrl 9503) ctrlSetText ((_edenAlias) call comspec_overwatch_connect_fnc_tr);
 
-    (_disp displayCtrl 9507) ctrlSetText _nat;
-    (_disp displayCtrl 9508) ctrlSetText _lang;
+    (_disp displayCtrl 9507) ctrlSetText ((_nat) call comspec_overwatch_connect_fnc_tr);
+    (_disp displayCtrl 9508) ctrlSetText ((_lang) call comspec_overwatch_connect_fnc_tr);
 
     private _primary = primaryWeapon _target;
     private _handgun = handgunWeapon _target;
@@ -142,12 +142,12 @@ if (!isNull _target) then {
     if (_cible isEqualTo "") then { _cible = _edenAlias; };
     if (_cible isEqualTo "") then { _cible = name _target; };
     if (_cible isEqualTo "" || {_cible find "Error:" >= 0}) then { _cible = "personne visée"; };
-    (_disp displayCtrl 9500) ctrlSetStructuredText parseText format [
+    (_disp displayCtrl 9500) ctrlSetStructuredText parseText ((format [
         // Une seule ligne sous les tuiles : la suite (« inventaire et statut préremplis… ») était coupée.
         "<t align='center' size='0.56' color='#33414c'>Cible : %1%2</t>",
         _cible,
         _etat
-    ];
+    ]) call comspec_overwatch_connect_fnc_tr);
 };
 
 for "_i" from 0 to (lbSize _status) - 1 do {
@@ -167,7 +167,7 @@ private _eTxt = if ((count _equipmentLines) > 0) then {
 } else {
     ""
 };
-(_disp displayCtrl 9511) ctrlSetStructuredText parseText (_wTxt + _eTxt);
+(_disp displayCtrl 9511) ctrlSetStructuredText parseText (((_wTxt + _eTxt)) call comspec_overwatch_connect_fnc_tr);
 
 uiNamespace setVariable ["COMSPEC_SsePerson_WeaponsCache", _weaponsLines];
 uiNamespace setVariable ["COMSPEC_SsePerson_EquipmentCache", _equipmentLines];
@@ -213,11 +213,11 @@ if (_med isEqualType createHashMap && {(count _med) > 0}) then {
     if ((_les isEqualType []) && {(count _les) > 0}) then {
         private _marksCtrl = _disp displayCtrl 9509;
         if ((trim (ctrlText _marksCtrl)) isEqualTo "") then {
-            _marksCtrl ctrlSetText format ["Blessures apparentes : %1", _les joinString ", "];
+            _marksCtrl ctrlSetText ((format ["Blessures apparentes : %1", _les joinString ", "]) call comspec_overwatch_connect_fnc_tr);
         };
     };
 };
-(_disp displayCtrl 9521) ctrlSetStructuredText parseText _medTxt;
+(_disp displayCtrl 9521) ctrlSetStructuredText parseText ((_medTxt) call comspec_overwatch_connect_fnc_tr);
 
 // Nouvelle fiche : aucun échantillon, aucune signature — sauf reprise après un relevé.
 private _resume = uiNamespace getVariable ["COMSPEC_SsePerson_ResumeCollect", false];
@@ -236,7 +236,7 @@ private _active = ["get"] call comspec_overwatch_connect_fnc_sseActiveCase;
 if (_active isEqualTo "") then {
     _active = profileNamespace getVariable ["COMSPEC_SseLastCaseCode", ""];
 };
-(_disp displayCtrl 9518) ctrlSetText _active;
+(_disp displayCtrl 9518) ctrlSetText ((_active) call comspec_overwatch_connect_fnc_tr);
 
 // Snapshot identité dès le préremplissage (avant masquage par l’accueil).
 private _idCache = uiNamespace getVariable ["COMSPEC_SsePerson_IdentityCache", []];
@@ -244,7 +244,7 @@ if (_resume && {_idCache isEqualType []} && {(count _idCache) >= 6}) then {
     {
         _x params ["_idc", "_idx"];
         private _ctrl = _disp displayCtrl _idc;
-        if (!isNull _ctrl) then { _ctrl ctrlSetText (_idCache select _idx); };
+        if (!isNull _ctrl) then { _ctrl ctrlSetText (((_idCache select _idx)) call comspec_overwatch_connect_fnc_tr); };
     } forEach [[9501, 0], [9502, 1], [9503, 2], [9504, 3], [9507, 4], [9508, 5]];
 } else {
     uiNamespace setVariable ["COMSPEC_SsePerson_IdentityCache", [

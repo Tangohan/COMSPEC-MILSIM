@@ -15,15 +15,15 @@ uiNamespace setVariable ["COMSPEC_NDA_Lang", _lang];
 private _pack = [_lang] call comspec_overwatch_connect_fnc_ndaTexts;
 _pack params ["_title", "_subtitle", "_body", "_accept", "_decline", "_footer", "_legal"];
 
-(_display displayCtrl 9510) ctrlSetStructuredText parseText _title;
-(_display displayCtrl 9511) ctrlSetStructuredText parseText _subtitle;
-(_display displayCtrl 9512) ctrlSetStructuredText parseText _footer;
-(_display displayCtrl 9513) ctrlSetStructuredText parseText _legal;
-(_display displayCtrl 9501) ctrlSetText _accept;
-(_display displayCtrl 9502) ctrlSetText _decline;
+(_display displayCtrl 9510) ctrlSetStructuredText parseText ((_title) call comspec_overwatch_connect_fnc_tr);
+(_display displayCtrl 9511) ctrlSetStructuredText parseText ((_subtitle) call comspec_overwatch_connect_fnc_tr);
+(_display displayCtrl 9512) ctrlSetStructuredText parseText ((_footer) call comspec_overwatch_connect_fnc_tr);
+(_display displayCtrl 9513) ctrlSetStructuredText parseText ((_legal) call comspec_overwatch_connect_fnc_tr);
+(_display displayCtrl 9501) ctrlSetText ((_accept) call comspec_overwatch_connect_fnc_tr);
+(_display displayCtrl 9502) ctrlSetText ((_decline) call comspec_overwatch_connect_fnc_tr);
 
 private _bodyCtrl = _display displayCtrl 9500;
-_bodyCtrl ctrlSetStructuredText parseText _body;
+_bodyCtrl ctrlSetStructuredText parseText ((_body) call comspec_overwatch_connect_fnc_tr);
 
 private _h = ctrlTextHeight _bodyCtrl;
 if (_h < 0.5) then { _h = 2.5 * safezoneH; };

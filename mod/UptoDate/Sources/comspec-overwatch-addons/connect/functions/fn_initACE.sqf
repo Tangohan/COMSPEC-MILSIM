@@ -112,7 +112,7 @@ private _root = ["ACE_SelfActions", "COMSPEC_Main"];
 
 private _fnc_folder = {
     params ["_id", "_label", "_path", ["_cond", { missionNamespace getVariable ["comspec_overwatch_enabled", true] }]];
-    private _a = [_id, _label, "", {}, _cond, { [] }] call ace_interact_menu_fnc_createAction;
+    private _a = [_id, _label, "", {}, _cond, { [] }] call comspec_overwatch_connect_fnc_aceAction;
     [_a, _path] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 };
 
@@ -121,11 +121,11 @@ private _fnc_leaf = {
         (missionNamespace getVariable ["comspec_overwatch_enabled", true])
         && { [player] call comspec_overwatch_connect_fnc_hasTerminal }
     }]];
-    private _a = [_id, _label, "", _stmt, _cond, { [] }] call ace_interact_menu_fnc_createAction;
+    private _a = [_id, _label, "", _stmt, _cond, { [] }] call comspec_overwatch_connect_fnc_aceAction;
     [_a, _path] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 };
 
-private _mainAction = ["COMSPEC_Main", "COMSPEC Athena", "", {}, _condEnabled, _noChildren] call ace_interact_menu_fnc_createAction;
+private _mainAction = ["COMSPEC_Main", "COMSPEC Athena", "", {}, _condEnabled, _noChildren] call comspec_overwatch_connect_fnc_aceAction;
 [_mainAction, ["ACE_SelfActions"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 ["COMSPEC_Account", "Connexion Athena", {
@@ -374,7 +374,7 @@ private _ord = _sup + ["COMSPEC_OrderMenu"];
         _condCommander,
         _noChildren,
         [_type, _announce]
-    ] call ace_interact_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_aceAction;
     [_a, _ord] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 } forEach [
     ["COMSPEC_OrderMove", "Déplacement (rapide)", "MOVE", "déplacement"],
@@ -446,7 +446,7 @@ private _captureAtakAction = [
         }
     },
     _noChildren
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 _captureAtakAction = [_captureAtakAction] call comspec_overwatch_connect_fnc_acePadAction;
 if (
     _captureAtakAction isNotEqualTo []
@@ -478,7 +478,7 @@ private _disablePhoneAction = [
         && { [_target, "COMSPEC_PhoneTrack"] call comspec_overwatch_connect_fnc_isObjectFlag }
     },
     _noChildren
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 _disablePhoneAction = [_disablePhoneAction] call comspec_overwatch_connect_fnc_acePadAction;
 if (
     _disablePhoneAction isNotEqualTo []

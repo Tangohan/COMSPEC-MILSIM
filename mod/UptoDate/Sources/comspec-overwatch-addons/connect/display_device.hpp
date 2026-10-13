@@ -15,7 +15,7 @@
 class COMSPEC_Device_Dialog {
     idd = 9973;
     movingEnable = 1;
-    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_showDeviceView;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; (_this select 0) call comspec_overwatch_connect_fnc_showDeviceView;";
 
     class Controls {
         // Fond tablette — AR 2:1 (w et h sur la même base safezoneW).

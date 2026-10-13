@@ -30,6 +30,11 @@ class CfgFunctions {
         class connect {
             file = "z\comspec_overwatch\addons\connect\functions";
             class connect {};
+            class tr {};
+            class trDisplay {};
+            class aceAction {};
+            class zenAction {};
+            class zenModule {};
             class waitAthenaReady {};
             class setPlainText {};
             class startSyncLoops {};

@@ -54,24 +54,24 @@ if (_started >= 0) then {
     };
 };
 
-(_disp displayCtrl 1101) ctrlSetStructuredText parseText format [
+(_disp displayCtrl 1101) ctrlSetStructuredText parseText ((format [
     "<t size='0.85' color='#e8f4f0'>%1</t>",
     _durTxt
-];
+]) call comspec_overwatch_connect_fnc_tr);
 
-(_disp displayCtrl 1102) ctrlSetStructuredText parseText format [
+(_disp displayCtrl 1102) ctrlSetStructuredText parseText ((format [
     "<t size='0.64' color='#e8f4f0'>Bâtiments %1 · Forêts %2 · Relief %3<br/>Villes %4 · Routes %5</t>",
     _buildings,
     _forests,
     _terrain,
     _places,
     _roads
-];
+]) call comspec_overwatch_connect_fnc_tr);
 
-(_disp displayCtrl 1103) ctrlSetStructuredText parseText format [
+(_disp displayCtrl 1103) ctrlSetStructuredText parseText ((format [
     "<t size='0.68' color='#c8ddd6'>%1</t>",
     _current
-];
+]) call comspec_overwatch_connect_fnc_tr);
 
 private _pct = 0;
 if (_total > 0) then { _pct = (_done / _total) min 1; };
@@ -96,10 +96,10 @@ if (_phase isEqualTo "geo") then {
         _progTxt = format ["%1 / %2 secteurs — %3 %", _done, _total, round (_pct * 100)];
     };
 };
-(_disp displayCtrl 1105) ctrlSetStructuredText parseText format [
+(_disp displayCtrl 1105) ctrlSetStructuredText parseText ((format [
     "<t size='0.55' color='#8aa0b4'>%1</t>",
     _progTxt
-];
+]) call comspec_overwatch_connect_fnc_tr);
 
 private _lastKey = format ["COMSPEC_TheaterSurveyLast_%1", worldName];
 private _last = profileNamespace getVariable [_lastKey, ""];
@@ -109,19 +109,19 @@ if (!(_last isEqualType "") || {_last isEqualTo ""}) then {
 if (!(_last isEqualType "") || {_last isEqualTo ""}) then {
     _last = "Aucun relevé enregistré pour cette carte";
 };
-(_disp displayCtrl 1104) ctrlSetStructuredText parseText format [
+(_disp displayCtrl 1104) ctrlSetStructuredText parseText ((format [
     "<t size='0.62' color='#c8ddd6'>%1</t>",
     _last
-];
+]) call comspec_overwatch_connect_fnc_tr);
 
 private _btn = _disp displayCtrl 1106;
 if (!isNull _btn) then {
     if (_busy) then {
-        _btn ctrlSetText "Interrompre";
-        _btn ctrlSetTooltip "Arrête le relevé en cours. Les données déjà transmises restent au poste.";
+        _btn ctrlSetText (("Interrompre") call comspec_overwatch_connect_fnc_tr);
+        _btn ctrlSetTooltip (("Arrête le relevé en cours. Les données déjà transmises restent au poste.") call comspec_overwatch_connect_fnc_tr);
     } else {
-        _btn ctrlSetText "Lancer le relevé";
-        _btn ctrlSetTooltip "Parcourt tout le théâtre et transmet bâtiments, forêts, relief, villes et routes au poste.";
+        _btn ctrlSetText (("Lancer le relevé") call comspec_overwatch_connect_fnc_tr);
+        _btn ctrlSetTooltip (("Parcourt tout le théâtre et transmet bâtiments, forêts, relief, villes et routes au poste.") call comspec_overwatch_connect_fnc_tr);
     };
 };
 
@@ -129,20 +129,20 @@ private _tx = missionNamespace getVariable ["COMSPEC_TheaterVerifyText", ""];
 if (!(_tx isEqualType "") || {_tx isEqualTo ""}) then {
     _tx = "Pas encore vérifié. La comparaison avec le poste se lance à la fin du relevé.";
 };
-(_disp displayCtrl 1108) ctrlSetStructuredText parseText format [
+(_disp displayCtrl 1108) ctrlSetStructuredText parseText ((format [
     "<t size='0.56' color='#c8ddd6'>%1</t>",
     _tx
-];
+]) call comspec_overwatch_connect_fnc_tr);
 
 private _vBusy = missionNamespace getVariable ["COMSPEC_TheaterVerifyBusy", false];
 private _btnV = _disp displayCtrl 1111;
 if (!isNull _btnV) then {
     if (_busy || {_vBusy}) then {
         _btnV ctrlEnable false;
-        _btnV ctrlSetTooltip "Attendez la fin du relevé ou de la vérification.";
+        _btnV ctrlSetTooltip (("Attendez la fin du relevé ou de la vérification.") call comspec_overwatch_connect_fnc_tr);
     } else {
         _btnV ctrlEnable true;
-        _btnV ctrlSetTooltip "Compare le relevé local avec ce qui est arrivé au poste, sans rien renvoyer.";
+        _btnV ctrlSetTooltip (("Compare le relevé local avec ce qui est arrivé au poste, sans rien renvoyer.") call comspec_overwatch_connect_fnc_tr);
     };
 };
 
@@ -153,12 +153,12 @@ if (!isNull _btnR) then {
     if (_busy || {_vBusy} || {!_canResend}) then {
         _btnR ctrlEnable false;
         if (_canResend) then {
-            _btnR ctrlSetTooltip "Attendez la fin du relevé ou de la vérification.";
+            _btnR ctrlSetTooltip (("Attendez la fin du relevé ou de la vérification.") call comspec_overwatch_connect_fnc_tr);
         } else {
-            _btnR ctrlSetTooltip "Lancez d’abord une vérification d’intégrité. Le bouton s’active s’il manque des données.";
+            _btnR ctrlSetTooltip (("Lancez d’abord une vérification d’intégrité. Le bouton s’active s’il manque des données.") call comspec_overwatch_connect_fnc_tr);
         };
     } else {
         _btnR ctrlEnable true;
-        _btnR ctrlSetTooltip "Renvoie uniquement ce que la vérification a trouvé manquant au poste.";
+        _btnR ctrlSetTooltip (("Renvoie uniquement ce que la vérification a trouvé manquant au poste.") call comspec_overwatch_connect_fnc_tr);
     };
 };

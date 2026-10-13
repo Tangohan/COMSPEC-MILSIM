@@ -56,7 +56,7 @@ switch (toLower _mode) do {
             if ((ctrlText _ctrl) isNotEqualTo "") then { continue };
             private _value = _cache getOrDefault [_k, ""];
             if ((_value isEqualType "") && {_value isNotEqualTo ""}) then {
-                _ctrl ctrlSetText _value;
+                _ctrl ctrlSetText ((_value) call comspec_overwatch_connect_fnc_tr);
             };
         } forEach _fields;
         ""

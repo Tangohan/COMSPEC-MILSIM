@@ -52,7 +52,7 @@ if (_avatarUrl != "") then {
 if (isNull _display) exitWith {}; // le joueur a pu fermer le dialog pendant le téléchargement
 
 private _picCtrl = _display displayCtrl _picIdc;
-if (!isNull _picCtrl && {_localPath != ""}) then { _picCtrl ctrlSetText _localPath; };
+if (!isNull _picCtrl && {_localPath != ""}) then { _picCtrl ctrlSetText ((_localPath) call comspec_overwatch_connect_fnc_tr); };
 
 private _nameCtrl = _display displayCtrl _nameIdc;
 if (!isNull _nameCtrl) then {
@@ -71,5 +71,5 @@ if (!isNull _nameCtrl) then {
         "Activity not tracked"
     };
     _lines pushBack format ["<t size='0.42' color='#5a6c7e'>%1</t>", _activityLabel];
-    _nameCtrl ctrlSetStructuredText parseText (_lines joinString "<br/>");
+    _nameCtrl ctrlSetStructuredText parseText (((_lines joinString "<br/>")) call comspec_overwatch_connect_fnc_tr);
 };

@@ -30,13 +30,13 @@ lbClear _comboTarget;
 
 {
     _x params ["_code", "_label"];
-    private _i = _comboKind lbAdd _label;
+    private _i = _comboKind lbAdd ((_label) call comspec_overwatch_connect_fnc_tr);
     _comboKind lbSetData [_i, _code];
 } forEach _kinds;
 
 {
     _x params ["_code", "_label"];
-    private _i = _comboPrio lbAdd _label;
+    private _i = _comboPrio lbAdd ((_label) call comspec_overwatch_connect_fnc_tr);
     _comboPrio lbSetData [_i, _code];
 } forEach _prios;
 _comboPrio lbSetCurSel 1; // Important
@@ -45,16 +45,16 @@ private _g = group player;
 private _gid = trim (groupId _g);
 if (_gid isEqualTo "") then { _gid = name player; };
 
-private _iAll = _comboTarget lbAdd "Toute l’équipe (diffusion)";
+private _iAll = _comboTarget lbAdd (("Toute l’équipe (diffusion)") call comspec_overwatch_connect_fnc_tr);
 _comboTarget lbSetData [_iAll, "all||"];
-private _iGrp = _comboTarget lbAdd format ["Mon groupe — %1", _gid];
+private _iGrp = _comboTarget lbAdd ((format ["Mon groupe — %1", _gid]) call comspec_overwatch_connect_fnc_tr);
 _comboTarget lbSetData [_iGrp, format ["group|%1|%1", _gid]];
 _comboTarget lbSetCurSel _iGrp;
 
 {
     if (_x != player && {alive _x}) then {
         private _nm = name _x;
-        private _ix = _comboTarget lbAdd format ["Opérateur — %1", _nm];
+        private _ix = _comboTarget lbAdd ((format ["Opérateur — %1", _nm]) call comspec_overwatch_connect_fnc_tr);
         _comboTarget lbSetData [_ix, format ["solo|%1|%1", _nm]];
     };
 } forEach (units _g);

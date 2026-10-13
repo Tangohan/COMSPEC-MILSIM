@@ -37,12 +37,12 @@ private _fncFallback = {
     params ["_disp"];
     private _hint = _disp displayCtrl 9403;
     if (!isNull _hint) then {
-        _hint ctrlSetStructuredText parseText "<t align='right' size='0.5' color='#ff8a7a'>Écran intégré indisponible</t>";
+        _hint ctrlSetStructuredText parseText (("<t align='right' size='0.5' color='#ff8a7a'>Écran intégré indisponible</t>") call comspec_overwatch_connect_fnc_tr);
     };
     private _help = _disp displayCtrl 9430;
     if (!isNull _help) then {
         _help ctrlShow true;
-        _help ctrlSetStructuredText parseText (
+        _help ctrlSetStructuredText parseText (((
             "<t align='center' size='0.85' color='#e8f4f0' font='RobotoCondensedBold'>Tablette Athena</t><br/><br/>" +
             "<t align='center' size='0.62' color='#c5d4de'>" +
             "L’écran intégré ne peut pas démarrer sur cette session Arma.<br/><br/>" +
@@ -50,7 +50,7 @@ private _fncFallback = {
             "ou <t color='#7dffb3'>Carte terrain</t> pour la carte en jeu.<br/><br/>" +
             "Vérifiez aussi qu’Arma est à jour (2.14 ou plus)." +
             "</t>"
-        );
+        )) call comspec_overwatch_connect_fnc_tr);
     };
     [] spawn {
         uiSleep 0.35;
@@ -117,7 +117,7 @@ if (!isNull _map) then {
 
 private _hint = _display displayCtrl 9403;
 if (!isNull _hint) then {
-    _hint ctrlSetStructuredText parseText "<t align='right' size='0.5' color='#8aa0b4'>Ouverture de l’écran tactique…</t>";
+    _hint ctrlSetStructuredText parseText (("<t align='right' size='0.5' color='#8aa0b4'>Ouverture de l’écran tactique…</t>") call comspec_overwatch_connect_fnc_tr);
 };
 
 // Token de boucle : invalidé à la fermeture (onUnload) pour éviter les doubles spawns
@@ -170,13 +170,13 @@ _ctrl ctrlWebBrowserAction ["LoadFile", _htmlPath];
         [_disp] call _fncFallback;
         private _hint2 = _disp displayCtrl 9403;
         if (!isNull _hint2) then {
-            _hint2 ctrlSetStructuredText parseText "<t align='right' size='0.5' color='#ff8a7a'>Contenu tablette introuvable</t>";
+            _hint2 ctrlSetStructuredText parseText (("<t align='right' size='0.5' color='#ff8a7a'>Contenu tablette introuvable</t>") call comspec_overwatch_connect_fnc_tr);
         };
     };
 
     private _hint = _disp displayCtrl 9403;
     if (!isNull _hint) then {
-        _hint ctrlSetStructuredText parseText "<t align='right' size='0.5' color='#ffd27a'>Nouvelle tentative de chargement…</t>";
+        _hint ctrlSetStructuredText parseText (("<t align='right' size='0.5' color='#ffd27a'>Nouvelle tentative de chargement…</t>") call comspec_overwatch_connect_fnc_tr);
     };
 
     private _b64 = controlNull ctrlWebBrowserAction ["ToBase64", _html];
@@ -191,6 +191,6 @@ _ctrl ctrlWebBrowserAction ["LoadFile", _htmlPath];
     if !((missionNamespace getVariable ["COMSPEC_WebBrowser_RefreshToken", -1]) isEqualTo _tok) exitWith {};
     if (missionNamespace getVariable ["COMSPEC_WebBrowser_PageReady", false]) exitWith {};
     if (!isNull _hint) then {
-        _hint ctrlSetStructuredText parseText "<t align='right' size='0.5' color='#ffd27a'>Chargement long — essayez « Ouvrir sur le PC »</t>";
+        _hint ctrlSetStructuredText parseText (("<t align='right' size='0.5' color='#ffd27a'>Chargement long — essayez « Ouvrir sur le PC »</t>") call comspec_overwatch_connect_fnc_tr);
     };
 };

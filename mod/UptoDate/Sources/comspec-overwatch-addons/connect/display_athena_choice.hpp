@@ -18,7 +18,7 @@ class COMSPEC_AthenaChoice_Dialog {
     idd = 9990;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_AthenaChoice_Display', _this select 0]; (_this select 0) call comspec_overwatch_connect_fnc_athenaChoiceOnLoad;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_AthenaChoice_Display', _this select 0]; (_this select 0) call comspec_overwatch_connect_fnc_athenaChoiceOnLoad;";
     onUnload = "uiNamespace setVariable ['COMSPEC_AthenaChoice_Display', displayNull];";
 
     class ControlsBackground {

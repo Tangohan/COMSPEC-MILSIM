@@ -26,21 +26,21 @@ private _noChildren = { [] };
 
 private _mainAction = [
     "COMSPEC_Main", "COMSPEC Athena", "", {}, _condEnabled, _noChildren
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 [_mainAction, ["ACE_SelfActions"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _accountAction = [
     "COMSPEC_Account", "Connexion Athena", "", {
         [] call comspec_overwatch_connect_fnc_openLogin;
     }, _condEnabled, _noChildren
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 [_accountAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 private _tabletAction = [
     "COMSPEC_Tablet", "Ouvrir téléphone ATAK", "", {
         ["all"] call comspec_overwatch_connect_fnc_openAthenaFeature;
     }, _condPhone, _noChildren
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 [_tabletAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
 uiNamespace setVariable ["COMSPEC_ACEAthenaClassReady", true];

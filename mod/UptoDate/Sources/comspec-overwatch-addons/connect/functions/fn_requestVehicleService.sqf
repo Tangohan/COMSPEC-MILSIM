@@ -52,13 +52,13 @@ if (_ok) then {
 
     if (_priority in ["HIGH", "CRITICAL"] && {[] call comspec_overwatch_connect_fnc_shouldShowScreenNotification}) then {
         private _prioLabel = if (_priority isEqualTo "CRITICAL") then { "critique" } else { "haute" };
-        hint parseText format [
+        hint ((parseText format [
             "<t color='#ff9900' size='1.3'>SERVICE VÉHICULE</t><br/>" +
             "<t size='1.1'>%1 — priorité %2</t><br/>" +
             "<t size='1'>Restez à proximité du véhicule</t>",
             _serviceLabel,
             _prioLabel
-        ];
+        ]) call comspec_overwatch_connect_fnc_tr);
     };
 
     if (_priority isEqualTo "CRITICAL") then {

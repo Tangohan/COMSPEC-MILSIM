@@ -65,7 +65,7 @@ if (_last isEqualTo "" && {_first isEqualTo ""} && {_alias isEqualTo ""}) then {
 
 if (_last isEqualTo "" && {_first isEqualTo ""} && {_alias isEqualTo ""}) exitWith {
     ["Indiquez au moins un nom, un prénom ou un alias — page Sujet.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
-    (_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.44' color='#b3261e' align='center'>Nom, prénom ou alias requis.</t>";
+    (_disp displayCtrl 9513) ctrlSetStructuredText parseText (("<t size='0.44' color='#b3261e' align='center'>Nom, prénom ou alias requis.</t>") call comspec_overwatch_connect_fnc_tr);
     [1] call comspec_overwatch_connect_fnc_sseTerminalPage;
 };
 
@@ -321,7 +321,7 @@ if (_alreadySent) then {
 };
 if (_alreadySent && {!_hasNewKind} && {!_photoPending}) exitWith {
     (_disp displayCtrl 9513) ctrlSetStructuredText parseText
-        "<t size='0.44' color='#9a5b00' align='center'>Déjà au registre — transmettez un iris, des empreintes ou de l’ADN pour enrichir la fiche.</t>";
+        (("<t size='0.44' color='#9a5b00' align='center'>Déjà au registre — transmettez un iris, des empreintes ou de l’ADN pour enrichir la fiche.</t>") call comspec_overwatch_connect_fnc_tr);
     [
         "Cette personne est déjà au registre. Ajoutez un iris, des empreintes ou de l’ADN avant de retransmettre.",
         "tactical",
@@ -329,7 +329,7 @@ if (_alreadySent && {!_hasNewKind} && {!_photoPending}) exitWith {
     ] call comspec_overwatch_connect_fnc_announce;
 };
 
-(_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.44' color='#44515c' align='center'>Transmission en cours…</t>";
+(_disp displayCtrl 9513) ctrlSetStructuredText parseText (("<t size='0.44' color='#44515c' align='center'>Transmission en cours…</t>") call comspec_overwatch_connect_fnc_tr);
 
 // Construction par morceaux (%1 seul) : un seul format à 26 args peut corrompre
 // le JSON (ambiguïté %10/%2, guillemets), et le serveur répond alors identity_required.
@@ -390,7 +390,7 @@ private _json = "{" + (_parts joinString ",") + "}";
 // Garde-fou : ne jamais poster un corps sans identité exploitable.
 if (_eLast isEqualTo "" && {_eFirst isEqualTo ""} && {_eAlias isEqualTo ""}) exitWith {
     ["Indiquez au moins un nom, un prénom ou un alias — page Sujet.", "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
-    (_disp displayCtrl 9513) ctrlSetStructuredText parseText "<t size='0.44' color='#b3261e' align='center'>Nom, prénom ou alias requis.</t>";
+    (_disp displayCtrl 9513) ctrlSetStructuredText parseText (("<t size='0.44' color='#b3261e' align='center'>Nom, prénom ou alias requis.</t>") call comspec_overwatch_connect_fnc_tr);
     [1] call comspec_overwatch_connect_fnc_sseTerminalPage;
 };
 
@@ -413,7 +413,7 @@ _parsed params ["_ok", "_status", "_detail"];
 // comme doublon.
 if (!_ok && { _status isEqualTo "QUEUED" }) exitWith {
     (_disp displayCtrl 9513) ctrlSetStructuredText parseText
-        "<t size='0.44' color='#9a5b00' align='center'>Liaison coupée — fiche conservée, elle partira au rétablissement. Ne la ressaisissez pas.</t>";
+        (("<t size='0.44' color='#9a5b00' align='center'>Liaison coupée — fiche conservée, elle partira au rétablissement. Ne la ressaisissez pas.</t>") call comspec_overwatch_connect_fnc_tr);
     [
         "Fiche SSE conservée hors ligne — transmission au rétablissement de la liaison.",
         "tactical",
@@ -439,10 +439,10 @@ if (!_ok) exitWith {
     if ((_d find "http 5") >= 0) then {
         _reason = "Le poste de commandement est en erreur — signalez-le à l’administrateur.";
     };
-    (_disp displayCtrl 9513) ctrlSetStructuredText parseText format [
+    (_disp displayCtrl 9513) ctrlSetStructuredText parseText ((format [
         "<t size='0.44' color='#b3261e' align='center'>%1</t>",
         _reason
-    ];
+    ]) call comspec_overwatch_connect_fnc_tr);
     [([
         _detail,
         "Impossible d’enregistrer la personne — vérifiez la liaison Athena."

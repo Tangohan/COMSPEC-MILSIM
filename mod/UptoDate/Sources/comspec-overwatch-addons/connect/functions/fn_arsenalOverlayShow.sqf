@@ -29,8 +29,8 @@ private _btnX = safeZoneX + (safeZoneW - _btnW) / 2;
 private _btnY = safeZoneY + 0.008;
 private _tog = _display ctrlCreate ["RscButton", 884400];
 _tog ctrlSetPosition [_btnX, _btnY, _btnW, _btnH];
-_tog ctrlSetText "ATHENA · TENUES";
-_tog ctrlSetTooltip "Tenues de votre organisation : importer, partager, enfiler. Rien n'est synchronisé tant que le panneau est fermé.";
+_tog ctrlSetText (("ATHENA · TENUES") call comspec_overwatch_connect_fnc_tr);
+_tog ctrlSetTooltip (("Tenues de votre organisation : importer, partager, enfiler. Rien n'est synchronisé tant que le panneau est fermé.") call comspec_overwatch_connect_fnc_tr);
 _tog ctrlSetFont "PuristaSemibold";
 _tog ctrlSetFontHeight _fs;
 _tog ctrlSetBackgroundColor [0.09, 0.30, 0.25, 0.96];
@@ -62,12 +62,12 @@ private _mk = {
 private _btn = {
     params ["_pos", "_text", "_act", "_rgba", ["_tip", ""], ["_font", "PuristaMedium"]];
     private _b = ["RscButton", _pos] call _mk;
-    _b ctrlSetText _text;
+    _b ctrlSetText ((_text) call comspec_overwatch_connect_fnc_tr);
     _b ctrlSetFont _font;
     _b ctrlSetFontHeight _fsS;
     _b ctrlSetBackgroundColor _rgba;
     _b ctrlSetTextColor [0.92, 0.97, 0.95, 1];
-    if (_tip isNotEqualTo "") then { _b ctrlSetTooltip _tip; };
+    if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_overwatch_connect_fnc_tr); };
     _b setVariable ["act", _act];
     _b ctrlAddEventHandler ["ButtonClick", { params ["_c"]; [_c getVariable "act"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
     _b
@@ -81,7 +81,7 @@ _acc ctrlSetBackgroundColor [0.32, 0.78, 0.66, 1];
 // En-tête : titre, état, actualiser, fermer.
 private _rowH = _guiH * 1.1;
 private _title = ["RscStructuredText", [_pad, _pad * 0.6, _w * 0.6, _guiH * 1.6]] call _mk;
-_title ctrlSetStructuredText parseText "<t size='1.15' font='PuristaBold' color='#e2f7ef'>TENUES ATHENA</t><br/><t size='0.8' color='#7f9c94'>Collection de votre organisation</t>";
+_title ctrlSetStructuredText parseText (("<t size='1.15' font='PuristaBold' color='#e2f7ef'>TENUES ATHENA</t><br/><t size='0.8' color='#7f9c94'>Collection de votre organisation</t>") call comspec_overwatch_connect_fnc_tr);
 private _status = ["RscStructuredText", [_w * 0.45, _pad * 0.6, _w * 0.55 - _pad - 2 * (_rowH * _pxW / _pxH) - _pad * 2 - 0.09, _guiH * 1.6]] call _mk;
 _grp setVariable ["COMSPEC_ArsenalStatus", _status];
 private _sq = _rowH * _pxW / _pxH;
@@ -101,11 +101,11 @@ private _sbg = ["RscText", [_sx, _tabY, _searchW, _rowH]] call _mk;
 _sbg ctrlSetBackgroundColor [0.02, 0.026, 0.03, 1];
 private _search = ["RscEdit", [_sx + 0.004, _tabY, _searchW - 0.008, _rowH], 884420] call _mk;
 _search ctrlSetFontHeight _fsS;
-_search ctrlSetTooltip "Rechercher une tenue (nom, collection, auteur)";
+_search ctrlSetTooltip (("Rechercher une tenue (nom, collection, auteur)") call comspec_overwatch_connect_fnc_tr);
 _search ctrlAddEventHandler ["KeyUp", { ["filter"] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
 _grp setVariable ["COMSPEC_ArsenalSearch", _search];
 private _ph = ["RscText", [_sx + 0.006, _tabY, _searchW - 0.012, _rowH]] call _mk;
-_ph ctrlSetText "Rechercher…";
+_ph ctrlSetText (("Rechercher…") call comspec_overwatch_connect_fnc_tr);
 _ph ctrlSetFontHeight _fsS;
 _ph ctrlSetTextColor [0.5, 0.6, 0.57, 1];
 _ph ctrlEnable false;
@@ -170,11 +170,11 @@ private _nbg = ["RscText", [_pad + _fw + 0.008, _fy, _fw * 0.6, _rowH]] call _mk
 _nbg ctrlSetBackgroundColor [0.02, 0.026, 0.03, 1];
 private _nameEdit = ["RscEdit", [_pad + _fw + 0.012, _fy, _fw * 0.6 - 0.008, _rowH], 884422] call _mk;
 _nameEdit ctrlSetFontHeight _fsS;
-_nameEdit ctrlSetText (profileNamespace getVariable ["COMSPEC_ArsenalLastSaveName", ""]);
-_nameEdit ctrlSetTooltip "Nom de la tenue à enregistrer (ex. SOAR - Breacher). Le préfixe avant « - » sert de collection.";
+_nameEdit ctrlSetText (profileNamespace getVariable ["COMSPEC_ArsenalLastSaveName", ""]); // i18n:brut
+_nameEdit ctrlSetTooltip (("Nom de la tenue à enregistrer (ex. SOAR - Breacher). Le préfixe avant « - » sert de collection.") call comspec_overwatch_connect_fnc_tr);
 _grp setVariable ["COMSPEC_ArsenalSaveName", _nameEdit];
 private _nph = ["RscText", [_pad + _fw + 0.014, _fy, _fw * 0.6 - 0.012, _rowH]] call _mk;
-_nph ctrlSetText "Nom de la tenue à enregistrer…";
+_nph ctrlSetText (("Nom de la tenue à enregistrer…") call comspec_overwatch_connect_fnc_tr);
 _nph ctrlSetFontHeight _fsS;
 _nph ctrlSetTextColor [0.5, 0.6, 0.57, 1];
 _nph ctrlEnable false;
@@ -187,7 +187,7 @@ _grp setVariable ["COMSPEC_ArsenalHint", _help];
 _grp setVariable ["COMSPEC_ArsenalSetHint", {
     params ["_g", "_text"];
     private _c = _g getVariable ["COMSPEC_ArsenalHint", controlNull];
-    if (!isNull _c) then { _c ctrlSetStructuredText parseText format ["<t size='0.78' color='#8aa8a0'>%1</t>", _text]; };
+    if (!isNull _c) then { _c ctrlSetStructuredText parseText ((format ["<t size='0.78' color='#8aa8a0'>%1</t>", _text]) call comspec_overwatch_connect_fnc_tr); };
 }];
 _grp setVariable ["COMSPEC_ArsenalTab", profileNamespace getVariable ["COMSPEC_ArsenalTab", "cloud"]];
 [_display, [], ""] call comspec_overwatch_connect_fnc_arsenalOverlayPreview;
