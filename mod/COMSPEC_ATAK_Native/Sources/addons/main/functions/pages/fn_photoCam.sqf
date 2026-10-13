@@ -17,6 +17,7 @@
       ["aim", [dx, dy]]      décale l'objectif (fractions de l'image glissées) ; ["aimReset"] le recentre
       ["shoot", légende]     prend la photo et l'envoie vers Athena (gardée sur le téléphone hors réseau)
       ["osd"]                rafraîchit l'incrustation du viseur (grille, cap, heure, zoom)
+      ["expose"]             règle le gain du rendu selon la lumière (jour, pénombre, nuit)
 */
 params [["_act", "bind"], ["_arg", 0]];
 if (!hasInterface) exitWith { false };
@@ -65,10 +66,13 @@ private _pose = {
 private _place = {
     params ["_cam"];
     (call _pose) params ["_pos", "_dir", "_up", "_fov"];
-    _cam setPosASL _pos;
-    _cam setVectorDirAndUp [_dir, _up];
+    // camCommit ramène la caméra à sa dernière position camSetPos : sans elle, la caméra restait là où le viseur
+    // avait été ouvert (le joueur s'y voyait de loin). Position donnée aux deux, direction posée après le commit.
+    _cam camSetPos (ASLToAGL _pos);
     _cam camSetFov _fov;
     _cam camCommit 0;
+    _cam setPosASL _pos;
+    _cam setVectorDirAndUp [_dir, _up];
 };
 private _stop = {
     private _cam = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCam", objNull];
@@ -78,6 +82,29 @@ private _stop = {
     private _pfh = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamPfh", -1];
     if (_pfh >= 0) then { [_pfh] call CBA_fnc_removePerFrameHandler; };
     missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamPfh", -1];
+};
+// Exposition du viseur. Une caméra rendue dans une texture ne s'adapte pas à la lumière comme la vue du joueur :
+// la nuit ou dans un intérieur sombre, l'image restait noire alors que la vue du joueur était éclaircie par le moteur.
+// Correction de couleurs du rendu (setPiPEffect type 3) : gain fort la nuit, comme le mode nuit d'un téléphone.
+// Renvoie le niveau choisi (0 jour, 1 pénombre, 2 nuit).
+private _expose = {
+    params ["_name"];
+    private _lux = (getLightingAt player) param [1, 0];
+    private _lvl = switch (true) do {
+        case (sunOrMoon < 0.5 && {_lux < 15}): { 2 };
+        case (sunOrMoon < 0.5 || {_lux < 40}): { 1 };
+        default { 0 };
+    };
+    if (_lvl isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamLvl", -1]) || {_name isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamLvlFor", ""])}) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamLvl", _lvl];
+        missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamLvlFor", _name];
+        _name setPiPEffect ([
+            [0],
+            [3, 1, 1.6, 1.05, 0.01, [0, 0, 0, 0], [1, 1, 1, 0.9], [0.299, 0.587, 0.114, 0]],
+            [3, 1, 3.2, 1.1, 0.03, [0, 0, 0, 0], [1, 1, 1, 0.55], [0.299, 0.587, 0.114, 0]]
+        ] select _lvl);
+    };
+    _lvl
 };
 private _redraw = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "PHOTOS") then { ["PHOTOS"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 
@@ -91,11 +118,12 @@ switch (_act) do {
             missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamN", _n];
             private _name = format ["comspec_photocam%1", _n];
             _cam = "camera" camCreate (ASLToAGL (eyePos player));
+            [_cam] call _place;
             _cam cameraEffect ["Internal", "Back", _name];
-            _name setPiPEffect [0];
             _cam setVariable ["r2t", _name];
             missionNamespace setVariable ["COMSPEC_ATAK_PhotoCam", _cam];
-            [_cam] call _place;
+            private _lvl = [_name] call _expose;
+            ["INFO", "PHOTO", format ["Viseur : caméra %1, PiP %2, lumière %3 (soleil/lune %4), exposition %5", _name, isPiPEnabled, (getLightingAt player) param [1, 0], sunOrMoon, _lvl]] call comspec_atak_native_fnc_log;
         };
         if ((missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamPfh", -1]) < 0) then {
             missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamPfh", [{
@@ -103,9 +131,18 @@ switch (_act) do {
                 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
                 // Hors de l'app Photo, téléphone fermé, joueur mort ou plein écran ouvert : caméra coupée.
                 if (isNull _cam || {(_s getOrDefault ["activePage", ""]) isNotEqualTo "PHOTOS"} || {isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])}
-                    || {!alive player} || {uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]}) exitWith { ["stop"] call comspec_atak_native_fnc_photoCam; };
-                // Pendant le déclenchement, la caméra de prise de vue reste figée sur la pose du viseur.
-                if (uiNamespace getVariable ["COMSPEC_ATAK_PhotoShooting", false]) exitWith {};
+                    || {!alive player} || {uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]}) exitWith {
+                    ["INFO", "PHOTO", format ["Viseur coupé : caméra %1, page %2, écran %3, plein écran %4", !isNull _cam, _s getOrDefault ["activePage", ""], !isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull]), uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]]] call comspec_atak_native_fnc_log;
+                    ["stop"] call comspec_atak_native_fnc_photoCam;
+                };
+                // Pendant le déclenchement, la caméra de prise de vue reste figée sur la pose du viseur. Un cliché
+                // interrompu (erreur pendant l'envoi) ne doit pas la figer pour de bon : au-delà de 5 s, on relâche.
+                if (uiNamespace getVariable ["COMSPEC_ATAK_PhotoShooting", false]) exitWith {
+                    if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PhotoShootAt", 0]) > 5) then {
+                        ["WARNING", "PHOTO", "Déclenchement resté bloqué : viseur relâché"] call comspec_atak_native_fnc_log;
+                        uiNamespace setVariable ["COMSPEC_ATAK_PhotoShooting", false];
+                    };
+                };
                 ["place"] call comspec_atak_native_fnc_photoCam;
                 if (diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamPoseAt", 0])) then {
                     missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamPoseAt", diag_tickTime + 1.2];
@@ -113,13 +150,20 @@ switch (_act) do {
                 };
                 if (diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamOsdAt", 0])) then {
                     missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamOsdAt", diag_tickTime + 0.5];
+                    ["expose"] call comspec_atak_native_fnc_photoCam;
                     ["osd"] call comspec_atak_native_fnc_photoCam;
                 };
             }, 0] call CBA_fnc_addPerFrameHandler];
         };
-        format ["#(argb,512,1024,1)r2t(%1,%2)", _cam getVariable ["r2t", "comspec_photocam0"], _aspect]
+        // Largeur et hauteur en puissances de 2, dans le sens du viseur.
+        format ["#(argb,%3,%4,1)r2t(%1,%2)", _cam getVariable ["r2t", "comspec_photocam0"], _aspect, [512, 1024] select (_aspect >= 1), [1024, 512] select (_aspect >= 1)]
     };
     case "stop": { call _stop; true };
+    case "expose": {
+        private _cam = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCam", objNull];
+        if (isNull _cam) exitWith { -1 };
+        [_cam getVariable ["r2t", ""]] call _expose
+    };
     // Boucle par image : la caméra suit la vue du joueur (même pose que la prise de vue).
     case "place": {
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCam", objNull];
@@ -197,7 +241,7 @@ switch (_act) do {
         (call _pose) params ["", "_dir"];
         _osd ctrlSetStructuredText parseText ((format ["<t size='0.8' font='EtelkaMonospacePro' color='#e8eee9' shadow='2'>%1</t><t size='0.8' align='right' font='EtelkaMonospacePro' color='#e8eee9' shadow='2'>%2°  %3</t><br/><t size='0.8' font='RobotoCondensedBold' color='%5' shadow='2'>%4</t><t size='0.8' align='right' font='RobotoCondensedBold' color='#5cc76b' shadow='2'>x%6</t>",
             [getPosASL player, 8] call comspec_atak_native_fnc_gridRef, round ((((_dir select 0) atan2 (_dir select 1)) + 360) mod 360), [dayTime, "HH:MM"] call BIS_fnc_timeToString,
-            ["OBJECTIF ARRIÈRE", "SELFIE"] select _selfie, ["#c9d4cf", "#f2d36b"] select _selfie, [_st getOrDefault ["camZoom", 1]] call _zs]) call comspec_atak_native_fnc_tr);
+            (["OBJECTIF ARRIÈRE", "SELFIE"] select _selfie) + (["", "  · BASSE LUMIÈRE", "  · MODE NUIT"] select ((missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamLvl", 0]) max 0 min 2)), ["#c9d4cf", "#f2d36b"] select _selfie, [_st getOrDefault ["camZoom", 1]] call _zs]) call comspec_atak_native_fnc_tr);
         true
     };
     case "shoot": {
@@ -222,6 +266,7 @@ switch (_act) do {
             disableSerialization;
             _pose params ["_pos", "_dir", "_up", "_fov"];
             uiNamespace setVariable ["COMSPEC_ATAK_PhotoShooting", true];
+            uiNamespace setVariable ["COMSPEC_ATAK_PhotoShootAt", diag_tickTime];
             private _hud = shownHUD;
             if (!isNil "ace_interact_menu_fnc_hideMenu") then { [] call ace_interact_menu_fnc_hideMenu; };
             // Écran du téléphone masqué le temps du cliché (il serait capturé par-dessus l'image).
@@ -230,10 +275,11 @@ switch (_act) do {
             if (!isNull _phone) then { _hidden = (allControls _phone) select { ctrlShown _x }; { _x ctrlShow false; } forEach _hidden; };
             private _shot = "camera" camCreate (ASLToAGL _pos);
             _shot cameraEffect ["Internal", "Back"];
-            _shot setPosASL _pos;
-            _shot setVectorDirAndUp [_dir, _up];
+            _shot camSetPos (ASLToAGL _pos);
             _shot camSetFov _fov;
             _shot camCommit 0;
+            _shot setPosASL _pos;
+            _shot setVectorDirAndUp [_dir, _up];
             showHUD false;
             private _light = objNull;
             if (_fire) then {

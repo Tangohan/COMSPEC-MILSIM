@@ -35,7 +35,14 @@ final class AtakWebCommandApiController
         'hover' => 90, 'home' => 90, 'rth' => 90, 'land' => 90, 'takeoff' => 90, 'standby' => 90,
         'follow_me' => 90, 'follow_unit' => 90, 'goto' => 90, 'loiter' => 90, 'observe' => 90,
         'hunt' => 90, 'alt' => 90, 'speed' => 90, 'resume' => 90, 'force' => 90, 'photo' => 60,
+        'role' => 90, 'swarm' => 90,
     ];
+
+    /** Rôles d'un drone de la flotte du pilote (ATAK natif, fn_droneFleet) ; NONE = aucun. */
+    private const UAV_ROLES = ['NONE', 'ME', 'CQB', 'GUARD', 'HUNT'];
+
+    /** Ordres à tout l'essaim du pilote (ATAK natif, fn_droneFleet « swarm »). */
+    private const UAV_SWARM = ['ME', 'CQB', 'GUARD', 'HUNT', 'HOVER', 'RTH', 'LAND'];
 
     private const EXPLO_ACTIONS = ['arm', 'disarm', 'fire', 'sequence'];
 
@@ -223,6 +230,14 @@ final class AtakWebCommandApiController
                 $wire['k'] = $k;
                 $args['kind'] = $k;
             }
+        }
+        if ($cmd === 'role' || $cmd === 'swarm') {
+            $k = strtoupper(trim((string) ($body['kind'] ?? '')));
+            if (!in_array($k, $cmd === 'role' ? self::UAV_ROLES : self::UAV_SWARM, true)) {
+                return $this->fail($cmd === 'role' ? 'Rôle inconnu.' : 'Ordre d’essaim inconnu.', 422);
+            }
+            $wire['k'] = $k;
+            $args['kind'] = $k;
         }
         if ($cmd === 'alt') {
             $v = (int) round($this->num($body['value'] ?? null) ?? 0);

@@ -24,7 +24,8 @@ private _ratio = [pixelH / pixelW, 1024 / 576] select _texture; // hauteur (unit
 // Toutes les coques gardent la même ouverture d'écran ; seule la boîte visible change (paysage, mesurée sur les rendus).
 private _term = [player] call comspec_atak_native_fnc_vehicleTerminal;
 private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
-if (_term in ["vehicle", "cp"] && {profileNamespace getVariable ["COMSPEC_ATAK_VehTablet", true]}) then { _model = "tablet"; };
+// La tablette du véhicule est commune, pour qui n'a pas son ATAK : avec son téléphone, on garde son téléphone.
+if (_term in ["vehicle", "cp"] && {profileNamespace getVariable ["COMSPEC_ATAK_VehTablet", true]} && {!([player, true] call comspec_atak_native_fnc_hasDevice)}) then { _model = "tablet"; };
 private _visLand = (createHashMapFromArray [
     ["s7", [0.1025, 0.2798, 0.9263, 0.8535]], ["rugged", [0.1509, 0.2744, 0.8267, 0.7573]], ["iphone", [0.1914, 0.3159, 0.7861, 0.6851]], ["tablet", [0.0850, 0.2510, 0.9258, 0.7549]],
     ["keys", [0.0923, 0.2495, 0.9083, 0.7178]],

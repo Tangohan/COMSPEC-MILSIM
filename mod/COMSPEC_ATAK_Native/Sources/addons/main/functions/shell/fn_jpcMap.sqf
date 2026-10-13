@@ -56,6 +56,21 @@ switch (_act) do {
             // Hors page Carte : la caméra ne rend plus rien (pas de coût).
             if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", _name]; camDestroy _cam; missionNamespace setVariable ["COMSPEC_ATAK_JpcMapCam", objNull]; };
         };
+        // Image dans l'image coupée (Options vidéo) : la vue aérienne serait noire, on montre la carte d'ensemble du
+        // terrain (pictureMap) avec un rappel, sans caméra.
+        if !(isPiPEnabled) exitWith {
+            if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", _name]; camDestroy _cam; missionNamespace setVariable ["COMSPEC_ATAK_JpcMapCam", objNull]; };
+            private _pm = getText (configFile >> "CfgWorlds" >> worldName >> "pictureMap");
+            if (_last isNotEqualTo ["pip", _mx, _my, _mw, _mh]) then {
+                _pic ctrlSetText ((_pm) call comspec_atak_native_fnc_tr);
+                _pic ctrlSetPosition [_mx, _my, _mw, _mh];
+                _pic ctrlCommit 0;
+                (uiNamespace getVariable ["COMSPEC_ATAK_JpcMapCtrls", []]) set [3, ["pip", _mx, _my, _mw, _mh]];
+                ["WARNING", "Écran du JPC : activez « Image dans l'image » (Options > Vidéo) pour la vue aérienne", 6, 120] call comspec_atak_native_fnc_notify;
+            };
+            _pic ctrlShow (_pm isNotEqualTo "");
+            { _x ctrlShow false; } forEach ([_me] + _icons);
+        };
         // Proportions de la vue en pixels de la texture (1024 x 576).
         private _aspect = (_mw * 1024) / (_mh * 576);
         if (isNull _cam) then {

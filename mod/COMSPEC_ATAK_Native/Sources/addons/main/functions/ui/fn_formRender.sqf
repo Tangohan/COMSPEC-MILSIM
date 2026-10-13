@@ -8,7 +8,8 @@
       ["toggle", libellé, actif, code]        ["buttons", [[libellé, code, principal, actif, aide]...]]
       ["password", clé, libellé]              ["hero", image, texte structuré]
       ["gap"]
-      ["person", image, texte structuré, [[libellé, code, principal, actif, aide]...], couleur image]  (ligne compacte : vignette, texte, boutons à droite)
+      ["person", image, texte structuré, [[libellé, code, principal, actif, aide]...], couleur image]  (ligne compacte : vignette, texte, boutons à droite ;
+          principal = true, false ou "red" pour un bouton de confirmation)
       ["section", titre, sous-titre]        ["switch", libellé, actif, code, aide, imposé]
       ["segment", libellé, [[texte, code, actif, aide]...], aide]   ["info", libellé, valeur]   ["image", chemin]
       ["bar", [[titre de groupe, [[libellé, code, état, aide, actif]...]]...]]
@@ -196,7 +197,8 @@ private _mk = {
             private _p = ["COMSPEC_RscPicture", [_pad * 1.3, _y + _pad / 4, _iw, _ih], _pic] call _mk;
             _p ctrlSetTextColor _picColor;
             private _nb = count _btns;
-            private _bwid = _w * 0.2;
+            // Trois boutons ou plus (DÉTAILS, ENVOYER, SUPPRIMER) : plus étroits pour laisser de la place au texte.
+            private _bwid = _w * ([0.2, 0.14] select (_nb >= 3));
             // Jamais de largeur nulle ou négative (même famille d'arrêt moteur que plus haut).
             private _tw = (_w - _iw - _pad * 1.5 - _nb * (_bwid + _pad / 3)) max (_w * 0.2);
             private _t = ["COMSPEC_RscStructuredText", [_pad * 2 + _iw, _y + _pad / 4, _tw, _ih]] call _mk;
@@ -209,9 +211,15 @@ private _mk = {
             };
             {
                 _x params ["_label", "_code", ["_primary", false], ["_enabled", true], ["_tip", ""]];
+                // « red » à la place de principal : bouton de confirmation (second appui pour supprimer).
+                private _red = _primary isEqualTo "red";
+                if !(_primary isEqualType true) then { _primary = false; };
                 private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + _w - (_nb - _forEachIndex) * (_bwid + _pad / 3), _y + _pad / 4 + _ih * 0.15, _bwid, _ih * 0.7], _label] call _mk;
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlSetFontHeight (_fs * 0.85);
+                // Bouton secondaire au même gris-vert que les barres et onglets (le bleu par défaut détonnait).
+                if !(_primary) then { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor ([[0.45, 0.5, 0.47, 1], [0.92, 0.96, 0.93, 1]] select _enabled); };
+                if (_red) then { _b ctrlSetBackgroundColor [0.78, 0.2, 0.16, 0.95]; _b ctrlSetTextColor [1, 1, 1, 1]; };
                 _b ctrlEnable _enabled;
                 [_b, _code] call _click;
             } forEach _btns;

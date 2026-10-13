@@ -13806,6 +13806,10 @@ class AtakApiController
             'tenant_id' => $tenantId,
             'context_id' => $mapId,
         ]);
+        // Corps vide ou JSON illisible, ou véhicule sans indicatif : refus clair plutôt qu'une erreur 500.
+        if (\App\Repositories\AtakVehicleTrackingRepository::resolveCallsign($data) === '') {
+            return Response::json(['error' => 'vehicle_callsign requis'], 400);
+        }
 
         $vehicleId = $repo->upsert($data);
         $vehicle = $repo->findById($vehicleId);

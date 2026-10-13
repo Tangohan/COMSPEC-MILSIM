@@ -228,6 +228,50 @@ def compass_needle(size=256):
     return Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=size, output_height=size))).convert("RGBA")
 
 
+def compass_card(size=256):
+    """Cadran façon HSI (style CADRAN de la boussole) : il tourne avec le cap, le haut reste l'avant.
+    Graduations tous les 5°, N rouge, puis les dizaines de degrés (3, 6, 9… 33) : rien à traduire."""
+    import math
+    s = 4
+    S = size * s
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    c = S / 2
+    R = c - 6 * s
+    d.ellipse((c - R, c - R, c + R, c + R), fill=(10, 14, 12, 200), outline=(255, 255, 255, 230), width=3 * s)
+    for a in range(0, 360, 5):
+        ln = 20 if a % 30 == 0 else (13 if a % 10 == 0 else 8)
+        r0, r1 = R - ln * s, R - 2 * s
+        sa, ca = math.sin(math.radians(a)), math.cos(math.radians(a))
+        d.line((c + r0 * sa, c - r0 * ca, c + r1 * sa, c - r1 * ca), fill=(255, 255, 255, 230), width=(4 if a % 30 == 0 else 2) * s)
+    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 21 * s)
+    for a in range(0, 360, 30):
+        txt = "N" if a == 0 else str(a // 10)
+        col = (229, 72, 58, 255) if a == 0 else (255, 255, 255, 240)
+        lab = Image.new("RGBA", (70 * s, 44 * s), (0, 0, 0, 0))
+        ld = ImageDraw.Draw(lab)
+        w = ld.textlength(txt, font=font)
+        ld.text(((70 * s - w) / 2, 2 * s), txt, font=font, fill=col)
+        lab = lab.rotate(-a, resample=Image.BICUBIC, expand=True)
+        rl = R - 36 * s
+        x, y = c + rl * math.sin(math.radians(a)), c - rl * math.cos(math.radians(a))
+        img.alpha_composite(lab, (int(x - lab.width / 2), int(y - lab.height / 2)))
+    return img.resize((size, size), Image.LANCZOS)
+
+
+def compass_lubber(size=256):
+    """Repère fixe du style CADRAN : index vert en haut (le cap lu) et silhouette « moi » au centre."""
+    s = 4
+    S = size * s
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    c = S / 2
+    green, dark = (92, 199, 107, 255), (11, 15, 12, 255)
+    d.polygon([(c, 30 * s), (c - 12 * s, 2 * s), (c + 12 * s, 2 * s)], fill=green, outline=dark)
+    d.polygon([(c, c - 34 * s), (c + 22 * s, c + 26 * s), (c, c + 14 * s), (c - 22 * s, c + 26 * s)], fill=green, outline=dark, width=2 * s)
+    return img.resize((size, size), Image.LANCZOS)
+
+
 def icon_png(name, body, size=128):
     svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="{size}" height="{size}" fill="none" stroke="#ffffff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">{body}</svg>'
     return Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=size, output_height=size))).convert("RGBA")
@@ -1634,13 +1678,10 @@ def jpc_phone_atlas(tmp):
     """Atlas jpc_<modèle>_ca : face en haut, dos vu de derrière en bas, transparence = silhouette.
     S7 : coque coyote et variantes de teinte (od, black), dos de phone_back."""
     def pack(front, rear, crop):
-        x0, y0, x1, y1 = crop
-        hx0, hy0, hx1, hy1 = JPC_HOLE
-        under = Image.new("RGBA", front.size, (0, 0, 0, 0))
-        under.paste(_glass(hx1 - hx0, hy1 - hy0), (hx0, hy0))
-        under.alpha_composite(front)
+        # Ouverture de l'écran laissée transparente : la face (texture à transparence, dessinée après les surfaces
+        # opaques) ne doit jamais recouvrir l'écran vivant posé juste devant elle.
         atlas = Image.new("RGBA", (2048, 2048), (0, 0, 0, 0))
-        atlas.paste(under.crop(crop).resize((2048, 1024), Image.LANCZOS), (0, 0))
+        atlas.paste(front.crop(crop).resize((2048, 1024), Image.LANCZOS), (0, 0))
         atlas.paste(rear.resize((2048, 1024), Image.LANCZOS), (0, 1024))
         return atlas
 
@@ -1790,6 +1831,10 @@ def main():
                 convert(icon_png(name, ICONS[name]), name, tmp)
             return
         # « qsicons » : seulement les icônes du volet rapide.
+        if len(sys.argv) > 2 and sys.argv[2] == "compass":
+            convert(compass_card(), "compass_card", tmp)
+            convert(compass_lubber(), "compass_lubber", tmp)
+            return
         if len(sys.argv) > 2 and sys.argv[2] == "qsicons":
             for name, body in ICONS.items():
                 if name.startswith("qs_"):
@@ -1860,6 +1905,8 @@ def main():
             convert(night.rotate(-90, expand=True), "phone_portrait_night", tmp)
         convert(compass_ring(), "compass_ring", tmp)
         convert(compass_needle(), "compass_needle", tmp)
+        convert(compass_card(), "compass_card", tmp)
+        convert(compass_lubber(), "compass_lubber", tmp)
         for name, body in ICONS.items():
             convert(icon_png(name, body), name, tmp)
         for lvl in (100, 75, 50, 25, 10):
