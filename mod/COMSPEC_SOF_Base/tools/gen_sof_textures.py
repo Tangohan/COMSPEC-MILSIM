@@ -9,6 +9,9 @@ Textures du mod COMSPEC Base SOF (PNG dans tools/render/, à convertir en .paa) 
   sof_red_co              tôle laquée rouge (servante)
   sof_sign_co             pancarte vierge (à personnaliser dans Eden)
   sof_flag_co             drapeau vierge (à personnaliser dans Eden)
+  sof_stone_co, sof_brick_co, sof_plaster_co, sof_vinyl_co, sof_concrete_co, sof_roof_co, sof_door_co
+                          bâtiments explorables (façade pierre, soubassement brique, intérieur, toit, portes)
+  sof_glass_broken_ca     restes de vitre brisée (affichés quand une vitre est cassée)
 
     python3 gen_sof_textures.py
     puis  for f in render/*.png; do hemtt utils paa convert $f ../Sources/addons/main/data/$(basename ${f%.png}).paa; done
@@ -108,6 +111,71 @@ def flag(path, size=(1024, 512)):
     im.save(path)
 
 
+def stone(path, size=512):
+    """Panneaux de pierre calcaire claire (joints 1,2 x 0,6 m à l'échelle 2,4 m par tuile)."""
+    im = shade((206, 194, 170), size, [(128, 7), (16, 5), (2, 3)], 51)
+    d = ImageDraw.Draw(im)
+    for j in range(4):
+        y = j * size // 4
+        d.line([0, y, size, y], fill=(150, 140, 122), width=2)
+        off = (size // 4) if j % 2 else 0
+        for i in range(2):
+            x = (i * size // 2 + off) % size
+            d.line([x, y, x, y + size // 4], fill=(150, 140, 122), width=2)
+    im.save(path)
+
+
+def brick(path, size=512):
+    r = random.Random(61)
+    im = Image.new("RGB", (size, size), (120, 112, 104))
+    d = ImageDraw.Draw(im)
+    rows, cols = 24, 6
+    bh, bw = size // rows, size // cols
+    for j in range(rows):
+        off = bw // 2 if j % 2 else 0
+        for i in range(-1, cols + 1):
+            c = r.randint(-18, 18)
+            col = (148 + c, 82 + c // 2, 60 + c // 3)
+            x0 = i * bw + off
+            d.rectangle([x0 + 2, j * bh + 2, x0 + bw - 2, j * bh + bh - 2], fill=col)
+    n = noise(size, 32, 10, 62).load()
+    px = im.load()
+    for y in range(size):
+        for x in range(size):
+            dd = n[x, y] - 128
+            px[x, y] = tuple(max(0, min(255, c + dd)) for c in px[x, y])
+    im.save(path)
+
+
+def door_tex(path, size=(256, 512)):
+    im = shade((122, 120, 112), 512, [(128, 5), (4, 3)], 71).crop((0, 0, *size))
+    d = ImageDraw.Draw(im)
+    d.rectangle([6, 6, size[0] - 7, size[1] - 7], outline=(90, 88, 82), width=4)
+    d.rectangle([40, 40, size[0] - 40, 150], outline=(100, 98, 92), width=3)
+    im.save(path)
+
+
+def broken_glass(path, size=512):
+    """Restes de vitre brisée : verre accroché au cadre, grand trou central irrégulier, fissures."""
+    import math
+    r = random.Random(81)
+    im = Image.new("RGBA", (size, size), (110, 150, 155, 120))
+    d = ImageDraw.Draw(im)
+    cx, cy = size * 0.5, size * 0.52
+    pts = []
+    for k in range(28):
+        a = 2 * math.pi * k / 28
+        rr = size * r.uniform(0.28, 0.46)
+        pts.append((cx + rr * math.cos(a), cy + rr * math.sin(a)))
+    d.polygon(pts, fill=(0, 0, 0, 0))
+    for k in range(18):
+        a = r.uniform(0, 2 * math.pi)
+        x0, y0 = cx + size * 0.3 * math.cos(a), cy + size * 0.3 * math.sin(a)
+        x1, y1 = cx + size * 0.75 * math.cos(a), cy + size * 0.75 * math.sin(a)
+        d.line([x0, y0, x1, y1], fill=(220, 235, 235, 220), width=2)
+    im.save(path)
+
+
 RVMATS = {
     # nom : (specular, specularPower, smdi (spec, gloss) procédural)
     "sof_frame": ((0.5, 0.5, 0.5), 40, (0.6, 0.5)),
@@ -117,6 +185,7 @@ RVMATS = {
     "sof_wood": ((0.08, 0.08, 0.08), 8, (0.08, 0.15)),
     "sof_paint": ((0.6, 0.6, 0.6), 70, (0.7, 0.75)),
     "sof_matte": ((0.05, 0.05, 0.05), 5, (0.05, 0.1)),
+    "sof_glass": ((1.0, 1.0, 1.0), 120, (1.0, 0.95)),
 }
 
 UVT = "class uvTransform { aside[]={1,0,0}; up[]={0,1,0}; dir[]={0,0,0}; pos[]={0,0,0}; };"
@@ -156,6 +225,14 @@ def main():
     pegboard(os.path.join(RENDER, "sof_pegboard_co.png"))
     sign(os.path.join(RENDER, "sof_sign_co.png"))
     flag(os.path.join(RENDER, "sof_flag_co.png"))
+    stone(os.path.join(RENDER, "sof_stone_co.png"))
+    brick(os.path.join(RENDER, "sof_brick_co.png"))
+    shade((222, 220, 212), 512, [(128, 4), (8, 2)], 91).save(os.path.join(RENDER, "sof_plaster_co.png"))
+    shade((124, 128, 130), 512, [(64, 6), (4, 4)], 92).save(os.path.join(RENDER, "sof_vinyl_co.png"))
+    shade((150, 148, 142), 512, [(128, 10), (8, 6), (2, 4)], 93).save(os.path.join(RENDER, "sof_concrete_co.png"))
+    shade((96, 94, 90), 512, [(32, 10), (2, 10)], 94).save(os.path.join(RENDER, "sof_roof_co.png"))
+    door_tex(os.path.join(RENDER, "sof_door_co.png"))
+    broken_glass(os.path.join(RENDER, "sof_glass_broken_ca.png"))
     for k, v in RVMATS.items():
         rvmat(k, *v)
     print("ok")
