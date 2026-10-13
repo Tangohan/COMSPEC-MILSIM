@@ -16,27 +16,34 @@
     var tpls = [];
     (dict.tpl || []).forEach(function (pair) {
         var ids = [];
-        var src = pair[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/%(\d)/g, function (_m, d) {
-            ids.push(d);
-            return '(.+?)';
-        });
         var letters = pair[0].replace(/%\d/g, '').replace(/[^A-Za-zÀ-ÿ]/g, '').length;
-        // Valeur collée à un mot (« %1 membre%2 ») : seulement quelques lettres (marque du pluriel).
+        // Valeur collée à un mot (« %1 membre%2 ») : seulement quelques lettres (marque du pluriel), éventuellement aucune.
         var glued = [];
         pair[0].replace(/(.?)%\d(.?)/g, function (_m, before, after) {
             glued.push(/[A-Za-zÀ-ÿ]/.test(before) || /[A-Za-zÀ-ÿ]/.test(after));
             return '';
         });
+        var src = pair[0].replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/%(\d)/g, function (_m, d) {
+            ids.push(d);
+            return glued[ids.length - 1] ? '(.*?)' : '(.+?)';
+        });
+        // Accord français sur un participe (« affiché%2 ») : rien en anglais.
+        var en = pair[1];
+        ids.forEach(function (id, j) {
+            if (glued[j]) {
+                en = en.replace(new RegExp('([a-z](?:ed|wn))%' + id + '(?!\\d)', 'g'), '$1');
+            }
+        });
         try {
-            tpls.push({ re: new RegExp('^' + src + '$'), ids: ids, en: pair[1], weak: letters < 5, glued: glued });
+            tpls.push({ re: new RegExp('^' + src + '$'), ids: ids, fr: pair[0], en: en, weak: letters < 5, glued: glued });
         } catch (e) { /* modèle ignoré */ }
     });
     tpls.sort(function (a, b) { return b.re.source.length - a.re.source.length; });
 
     var SENTENCE = /^(?:\S+\s+){7}|^(?:le|la|les|de|du|des|à|au|aux|un|une|en|et|pour|par|sur|avec)\s|^(?:l|d)['’][A-Za-zÀ-ÿ]/i;
     var FRWORD = /[àâçéèêëîïôûùœ]|(?:^|[^A-Za-zÀ-ÿ])(?:le|la|les|des|du|de|et|aux|au|pour|une|un|sur|avec|dans|par)(?![A-Za-zÀ-ÿ])/i;
-    function sentenceLike(c) {
-        return SENTENCE.test(c) || (!/\d/.test(c) && FRWORD.test(c));
+    function sentenceLike(c, frenchWords) {
+        return SENTENCE.test(c) || (frenchWords !== false && !/\d/.test(c) && FRWORD.test(c));
     }
     var memo = Object.create(null);
     function lookup(s, depth) {
@@ -72,7 +79,7 @@
             }
             var vals = caps.map(function (c) { return lookup(c.trim(), depth + 1); });
             // Valeur non traduite qui ressemble à un bout de phrase : on laisse tout en français.
-            if (caps.some(function (c, j) { return vals[j] === null && (sentenceLike(c.trim()) || ((depth > 0 || t.weak) && /[A-Za-zÀ-ÿ]{2}/.test(c) && !/\d/.test(c))); })) {
+            if (caps.some(function (c, j) { return vals[j] === null && (sentenceLike(c.trim(), j === 0 && /^%\d/.test(t.fr)) || ((depth > 0 || t.weak) && /[A-Za-zÀ-ÿ]{2}/.test(c) && !/\d/.test(c))); })) {
                 continue;
             }
             var out = t.en;
