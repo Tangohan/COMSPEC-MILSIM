@@ -11,6 +11,12 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Taille de la barre d'outils et style de boussole au choix (ATAK natif 1.49.0)
+
+- Réglages de la carte : taille de la barre d'outils et style de la boussole au choix. Non testé en jeu.
+
+---
+
 ## 2026-10-12 — Galerie peaufinée, clichés du drone supprimables, viseur Photo réparé (ATAK natif 1.48.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : écran de la Galerie plus propre, mêmes actions.

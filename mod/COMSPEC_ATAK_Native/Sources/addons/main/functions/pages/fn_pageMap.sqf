@@ -35,19 +35,46 @@ if (_dataBar) then {
 private _search = uiNamespace getVariable ["COMSPEC_ATAK_MapSearch", createHashMap];
 private _searchOpen = _interactive && {_search getOrDefault ["open", false]} && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0};
 if (((["COMSPEC_ATAK_Compass", true, "native_compass"] call comspec_atak_native_fnc_pref) select 0) && {!(_interactive && {_s getOrDefault ["mapToolsOpen", false]})} && {!_searchOpen}) then {
+    // Style choisi dans Réglages > Carte : CLASSIC (rose fixe, aiguille qui tourne, défaut), CARD (cadran
+    // qui tourne, le haut reste l'avant), ARROW (aiguille seule), TAPE (bandeau de cap gradué).
+    private _cStyle = profileNamespace getVariable ["COMSPEC_ATAK_CompassStyle", "CLASSIC"];
     private _ch = (_mh * 0.24) min (_font * 3.6);
+    if (_cStyle isEqualTo "ARROW") then { _ch = _ch * 0.7; };
     private _cw = _ch / _ratio;
-    private _ring = ["COMSPEC_RscIcon", [_bx + _pad, _by + _pad, _cw, _ch], _dir + "compass_ring.paa"] call _mk;
-    _ring ctrlSetTextColor [1, 1, 1, 1];
-    private _needle = ["COMSPEC_RscIcon", [_bx + _pad, _by + _pad, _cw, _ch], _dir + "compass_needle.paa"] call _mk;
-    _needle ctrlSetTextColor [1, 1, 1, 1];
-    // Cap sous la rose, façon ATAK : « 42° NE » en chasse fixe grasse sur une pastille sombre.
-    private _hd = ["COMSPEC_RscTextCenter", [_bx + _pad, _by + _pad + _ch + pixelH * 2, _cw, _fs * 1.15]] call _mk;
+    if (_cStyle isEqualTo "TAPE") then { _ch = _fs * 1.5; _cw = ((_font * 3.6 / _ratio) * 1.9) min (_mw * 0.5); };
+    switch (_cStyle) do {
+        case "CARD": {
+            private _card = ["COMSPEC_RscIcon", [_bx + _pad, _by + _pad, _cw, _ch], _dir + "compass_card.paa"] call _mk;
+            _card ctrlSetTextColor [1, 1, 1, 1];
+            private _lub = ["COMSPEC_RscIcon", [_bx + _pad, _by + _pad, _cw, _ch], _dir + "compass_lubber.paa"] call _mk;
+            _lub ctrlSetTextColor [1, 1, 1, 1];
+            _ov set ["compassCard", _card];
+        };
+        case "TAPE": {
+            private _tape = ["COMSPEC_RscStructuredText", [_bx + _pad, _by + _pad, _cw, _ch]] call _mk;
+            _tape ctrlSetBackgroundColor [0.02, 0.025, 0.03, 0.78];
+            _ov set ["compassTape", _tape];
+        };
+        case "ARROW": {
+            private _needle = ["COMSPEC_RscIcon", [_bx + _pad, _by + _pad, _cw, _ch], _dir + "compass_needle.paa"] call _mk;
+            _needle ctrlSetTextColor [1, 1, 1, 1];
+            _ov set ["needle", _needle];
+        };
+        default {
+            private _ring = ["COMSPEC_RscIcon", [_bx + _pad, _by + _pad, _cw, _ch], _dir + "compass_ring.paa"] call _mk;
+            _ring ctrlSetTextColor [1, 1, 1, 1];
+            private _needle = ["COMSPEC_RscIcon", [_bx + _pad, _by + _pad, _cw, _ch], _dir + "compass_needle.paa"] call _mk;
+            _needle ctrlSetTextColor [1, 1, 1, 1];
+            _ov set ["needle", _needle];
+        };
+    };
+    // Cap sous la rose, façon ATAK : « 42° NE » en chasse fixe grasse sur une pastille sombre (le bandeau l'affiche déjà).
+    if (_cStyle isEqualTo "TAPE") exitWith {};
+    private _hd = ["COMSPEC_RscTextCenter", [_bx + _pad, _by + _pad + _ch + pixelH * 2, _cw max (_font * 3.6 * 0.7 / _ratio), _fs * 1.15]] call _mk;
     _hd ctrlSetFont "EtelkaMonospaceProBold";
     _hd ctrlSetFontHeight (_fs * 0.9);
     _hd ctrlSetBackgroundColor [0.02, 0.025, 0.03, 0.78];
     _hd ctrlSetTextColor [0.95, 0.97, 0.96, 1];
-    _ov set ["needle", _needle];
     _ov set ["heading", _hd];
 };
 
@@ -195,8 +222,12 @@ if (_interactive) then {
         } forEach _items;
     };
 
-    // Barre d'outils à droite
-    private _ih = ((_mh - 2 * _pad) / 7) min (_font * 2.1);
+    // Barre d'outils à droite (taille choisie dans Réglages > Carte : petite, normale, grande)
+    private _tbScale = profileNamespace getVariable ["COMSPEC_ATAK_MapToolbarScale", 1];
+    if !(_tbScale isEqualType 0) then { _tbScale = 1; };
+    private _ihMax = (_mh - 2 * _pad) / 7;
+    // Normale : comme avant. Grande : jamais plus haute que la carte ne le permet.
+    private _ih = (((_ihMax min (_font * 2.1)) * _tbScale) min _ihMax);
     private _iw = _ih / _ratio;
     private _tx = _bx + _mw - _iw - _pad;
     private _tools = [
