@@ -45,12 +45,17 @@ _vis params ["_vx0", "_vy0", "_vx1", "_vy1"];
 // Côté du carré en unités verticales (_dh) ; largeur = _dh / _ratio pour rester carré à l'écran.
 // Taille du mini choisie dans les réglages (petit, normal, grand).
 private _miniScale = [1, (profileNamespace getVariable ["COMSPEC_ATAK_MiniScale", 1]) max 0.7 min 1.3] select _mini;
+// Taille du plein écran (réglage CBA « Taille du téléphone en plein écran », aussi dans Réglages > Emplacement) :
+// 60 à 100 %, toujours centré ; toutes les zones (écran, touches, carte) sont recalculées depuis cette taille.
+private _fullScale = missionNamespace getVariable ["comspec_atak_native_full_scale", 1];
+if (_mini || {!(_fullScale isEqualType 0)}) then { _fullScale = 1; };
+_fullScale = _fullScale max 0.6 min 1;
 private _dh = if (_land) then {
-    private _wantW = [safeZoneW * 0.94, safeZoneW * 0.40 * _miniScale] select _mini;
+    private _wantW = [safeZoneW * 0.94 * _fullScale, safeZoneW * 0.40 * _miniScale] select _mini;
     private _h = _wantW / (_vx1 - _vx0) * _ratio;
-    _h min (([safeZoneH * 0.96, (safeZoneH * 0.50 * _miniScale) min (safeZoneH * 0.9)] select _mini) / (_vy1 - _vy0))
+    _h min (([safeZoneH * 0.96 * _fullScale, (safeZoneH * 0.50 * _miniScale) min (safeZoneH * 0.9)] select _mini) / (_vy1 - _vy0))
 } else {
-    ([safeZoneH * 0.94, (safeZoneH * 0.62 * _miniScale) min (safeZoneH * 0.94)] select _mini) / (_vy1 - _vy0)
+    ([safeZoneH * 0.94 * _fullScale, (safeZoneH * 0.62 * _miniScale) min (safeZoneH * 0.94)] select _mini) / (_vy1 - _vy0)
 };
 private _dw = _dh / _ratio;
 // Emplacement du mini choisi dans les réglages : coin ou milieu de bord (T/M/B + L/R), bas droit par défaut.

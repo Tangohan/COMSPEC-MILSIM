@@ -6,7 +6,8 @@
     Types (préréglages, chaque valeur à 0 ou « préréglage » prend celle du type) :
       portable  : radio relais au sol, 1,5 km, 4 Mbit/s, antenne à 2,5 m, 8 places
       mat       : mât tactique, 3 km, 8 Mbit/s, antenne à 10 m, 24 places
-      tour      : tour fixe, 6 km, 20 Mbit/s, antenne à 25 m, 64 places
+      tour      : tour fixe, 6 km, 20 Mbit/s, antenne à 25 m (hauteur réelle sur un pylône COMSPEC), 64 places ;
+                  sans objet synchronisé, crée la tour relais 3D de 40 m (COMSPEC_ATAK_RelayTower_40)
       satellite : terminal satellite, 1 km, 10 Mbit/s, antenne à 2 m, 16 places
     Alimentation : secteur par défaut (relais réel posé sur la carte) ; batterie seulement si la mission la choisit.
     Liaison : « raccordé » (satellite, fibre : porte le réseau seul) ou « répéteur » (doit voir un relais raccordé,
@@ -39,10 +40,11 @@ private _apply = {
     private _preset = createHashMapFromArray [
         ["portable", [1500, 4, 2.5, 8, 0, ["Land_PortableLongRangeRadio_F", "Land_SurvivalRadio_F"]]],
         ["mat", [3000, 8, 10, 24, 0, ["Land_Antenna_01_F", "Land_TTowerSmall_1_F"]]],
-        ["tour", [6000, 20, 25, 64, 0, ["Land_TTowerBig_2_F", "Land_TTowerBig_1_F", "Land_TTowerSmall_2_F"]]],
+        ["tour", [6000, 20, 25, 64, 0, ["COMSPEC_ATAK_RelayTower_40", "Land_TTowerBig_2_F", "Land_TTowerBig_1_F", "Land_TTowerSmall_2_F"]]],
         ["satellite", [1000, 10, 2, 16, 0, ["Land_SatelliteAntenna_01_F", "Land_Antenna_01_F"]]]
     ] getOrDefault [_kind, [3000, 8, 10, 24, 0, ["Land_Antenna_01_F"]]];
     _preset params ["_pR", "_pMb", "_pH", "_pSl", "_pAut", "_cls"];
+    private _hUser = _h;
     if (_range <= 0) then { _range = _pR; };
     if (_mb <= 0) then { _mb = _pMb; };
     if (_h <= 0) then { _h = _pH; };
@@ -75,7 +77,9 @@ private _apply = {
         _x setVariable ["COMSPEC_AtakRelayKind", _kind, true];
         _x setVariable ["COMSPEC_AtakRelayRange", _range, true];
         _x setVariable ["COMSPEC_AtakRelayThroughput", _mb, true];
-        _x setVariable ["COMSPEC_AtakRelayHeight", _h, true];
+        // Pylône relais 3D : hauteur réelle de ses antennes quand le module laisse la hauteur au type.
+        private _hc = getNumber (configOf _x >> "comspec_atak_relayHeight");
+        _x setVariable ["COMSPEC_AtakRelayHeight", [_h, _hc] select (_hUser <= 0 && {_hc > 0}), true];
         _x setVariable ["COMSPEC_AtakRelaySlots", round _slots, true];
         _x setVariable ["COMSPEC_AtakRelaySide", _side, true];
         _x setVariable ["COMSPEC_AtakRelayRoot", _up isNotEqualTo "repeater", true];
