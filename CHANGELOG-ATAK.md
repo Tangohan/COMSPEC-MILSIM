@@ -38,6 +38,11 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Texte du bouton PANIQUE (ATAK natif 1.73.0)
+
+Non testé en jeu. Demande de TTRD : nouveau texte sous PANIQUE, écran Détresse et contact.
+- Le bloc PANIQUE affiche « Alerte l'ensemble des opérateurs de votre détresse. Il est nécessaire d'appuyer deux fois d'affilée pour valider l'envoi. » (anglais : « Alerts all operators of your distress. You must press twice in a row to confirm sending. »).
+
 ## Adresse du portail Athena fixe (ATAK natif 1.72.0)
 
 ### Résumé joueur
