@@ -51,6 +51,9 @@
       ["mapSub", "GOTO" | "ROUTE" | "ZONE"]   sous-outil ; ["routeMode", "ONCE" | "LOOP" | "PINGPONG"] ; ["zoneKind", "LOITER" | "OBSERVE" | "HUNT"] ;
       ["mapClick", position]      clic sur la carte (aller ici, point de route, centre puis bord / coins de la zone) ;
       ["routeSend"] / ["mapClear"]   envoie la route tracée / efface le tracé en cours ;
+      ["mapOrder", ["GOTO" | "HUNT" | "HOVER" | "LAND", position]]   ordre au point du clic droit de la carte (fn_mapCtxMenu) :
+                                  aller, recherche en bandes autour du point (rayon choisi), stationnaire au-dessus caméra
+                                  à la verticale, ou atterrissage sur le point ;
       ["mapBar", [x, y, largeur]] dessine la barre drone de la carte (appelé par fn_pageMap).
     Journal : ["log", texte, couleur] ; tout événement y est daté HH:MM:SS (100 lignes au plus).
     Identité : ["rename", texte] (variable publique COMSPEC_DroneName, 24 caractères, vide = nom du modèle) ;
@@ -167,6 +170,7 @@ private _send = {
     // Un ordre du pilote remplace le rôle tenu seul par le drone (fn_droneFleet : garde, surveillance...).
     if (_cmd in _flight && {!(missionNamespace getVariable ["COMSPEC_ATAK_DroneRoleSending", false])} && {(_d getVariable ["COMSPEC_DroneRole", ""]) isNotEqualTo ""}) then { _d setVariable ["COMSPEC_DroneRole", "", true]; };
     ["comspec_atak_native_droneCmd", [_d, _cmd, _args], _d] call CBA_fnc_targetEvent;
+    true
 };
 private _mapRender = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP") then { ["MAP"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
 private _say = { params ["_lvl", "_txt"]; [_lvl, _txt, 4, 40] call comspec_atak_native_fnc_notify; };
@@ -260,11 +264,9 @@ private _expose = {
     if ([_name, _v, _lvl] isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_DroneExp", []])) then {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneExp", [_name, _v, _lvl]];
         missionNamespace setVariable ["COMSPEC_ATAK_DroneCamLvl", _lvl];
-        _name setPiPEffect ([
-            [_v],
-            [3, 1, 1.6, 1.05, 0.01, [0, 0, 0, 0], [1, 1, 1, 0.9], [0.299, 0.587, 0.114, 0]],
-            [3, 1, 3.2, 1.1, 0.03, [0, 0, 0, 0], [1, 1, 1, 0.55], [0.299, 0.587, 0.114, 0]]
-        ] select _lvl);
+        // Rendu normal à tous les niveaux : la correction de couleurs (type 3) rendait l'image noire dans le téléphone
+        // (TEST VIDÉO de TTRD, 13/10 à 21:20 : la même caméra sans effet, texture carrée, s'affiche nette de nuit).
+        _name setPiPEffect [_v];
     };
     _lvl
 };
@@ -276,7 +278,8 @@ private _expose = {
 private _camMake = {
     private _n = ((missionNamespace getVariable ["COMSPEC_ATAK_DroneR2TN", 0]) + 1) mod 8;
     missionNamespace setVariable ["COMSPEC_ATAK_DroneR2TN", _n];
-    private _name = format ["comspec_dronecam%1_%2", call _camQ, _n];
+    // Nom sans tiret bas ni chiffre collé, comme celui du TEST VIDÉO qui s'affiche (comspecpiptest).
+    private _name = format ["comspecdronecam%1n%2", ["a", "b", "c"] select (call _camQ), ["a", "b", "c", "d", "e", "f", "g", "h"] select _n];
     private _bc = (missionNamespace getVariable ["COMSPEC_ATAK_DroneCamBox", [[0, 0, 0], [0.3, 0.3, 0.15]]]) select 0;
     private _cam = "camera" camCreate (_d modelToWorld _bc);
     _cam cameraEffect ["Internal", "Back", _name];
@@ -479,7 +482,8 @@ private _camBind = {
         _cam = call _camMake;
     };
     _cam setVariable ["hiddenSince", -1];
-    ([[512, 256], [1024, 512], [2048, 1024]] select (call _camQ)) params ["_tw", "_th"];
+    // Texture carrée (comme le TEST VIDÉO qui s'affiche) ; le 16/9 vient du rapport passé à r2t.
+    ([[512, 512], [1024, 1024], [2048, 2048]] select (call _camQ)) params ["_tw", "_th"];
     format ["#(argb,%1,%2,1)r2t(%3,1.7778)", _tw, _th, _cam getVariable ["r2t", "comspec_dronecam"]]
 };
 // Capteur : ce que la caméra voit (vue directe, portée réduite par le brouillard), en 360° ou dans le champ de la nacelle pointée.
@@ -986,6 +990,45 @@ switch (_act) do {
             };
         };
         call _mapRender;
+    };
+    // Ordre donné depuis le menu du clic droit de la carte (fn_mapCtxMenu), au point cliqué.
+    case "mapOrder": {
+        _arg params [["_kind", "GOTO"], ["_at", []]];
+        if ((count _at) < 2 || {isNull _d} || {!alive _d}) exitWith { false };
+        if !(call _needLink) exitWith { false };
+        private _p = [_at select 0, _at select 1, getTerrainHeightASL [_at select 0, _at select 1]];
+        private _g = [_p, 8] call comspec_atak_native_fnc_gridRef;
+        private _ok = switch (_kind) do {
+            case "HUNT": {
+                private _r = _s getOrDefault ["droneHuntRad", 250];
+                private _sent = ["hunt", [_r, player, _p]] call _send;
+                if _sent then { [format ["Ordre : recherche en %1, rayon %2 m (clic droit)", _g, round _r]] call _log; };
+                _sent
+            };
+            case "HOVER": {
+                private _sent = ["goto", [_p, "HOVER"]] call _send;
+                if _sent then {
+                    // Caméra à la verticale du point : on voit ce qu'il y a dessous une fois sur place.
+                    ["gimbal", [0, -90]] call comspec_atak_native_fnc_droneAction;
+                    [format ["Ordre : stationnaire au-dessus de %1 (clic droit)", _g]] call _log;
+                };
+                _sent
+            };
+            case "LAND": {
+                private _sent = ["goto", [_p, "LAND"]] call _send;
+                if _sent then { [format ["Ordre : atterrir en %1 (clic droit)", _g]] call _log; };
+                _sent
+            };
+            default {
+                private _sent = ["goto", [_p]] call _send;
+                if _sent then { [format ["Ordre : aller en %1 (clic droit)", _g]] call _log; };
+                _sent
+            };
+        };
+        if (!_ok) exitWith { false };
+        ["INFO", format [(createHashMapFromArray [["GOTO", "Drone : aller en %1"], ["HUNT", "Drone : recherche en %1"], ["HOVER", "Drone : stationnaire en %1"], ["LAND", "Drone : atterrissage en %1"]]) getOrDefault [_kind, "Drone : aller en %1"], _g]] call _say;
+        call _render;
+        true
     };
     case "routeSend": {
         private _pts = _s getOrDefault ["droneMapPts", []];

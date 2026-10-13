@@ -2367,6 +2367,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/operator/sync', [AtakApiController::class, 'operatorSync']);
     $router->post('/api/atak/playtime', [AtakApiController::class, 'playtime']);
     $router->post('/api/atak/squads/sync', [AtakApiController::class, 'squadSync']);
+    $router->get('/api/atak/briefing-plan', [AtakApiController::class, 'briefingPlanIndex']);
+    $router->post('/api/atak/briefing-plan', [AtakApiController::class, 'briefingPlanStore']);
     $router->post('/api/atak/screen-time', [AtakApiController::class, 'screenTime']);
     $router->post('/api/atak/screen-time/batch', [AtakApiController::class, 'screenTimeBatch']);
     $router->post('/api/atak/send-queue/report', [AtakApiController::class, 'sendQueueReport']);

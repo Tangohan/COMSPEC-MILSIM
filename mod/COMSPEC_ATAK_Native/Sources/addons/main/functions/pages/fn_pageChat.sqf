@@ -9,7 +9,7 @@
       - CONVERSATION (chatView = "CONV") : en-tête (retour, icône, nom, sous-titre ; aide, tri, vider, supprimer),
         fil en bulles regroupées par auteur, séparateurs de jour, repère des non-lus, puis l'aperçu des commandes
         et la barre de saisie (? , champ, envoi).
-      - En main et en paysage : les deux côte à côte. Porté (sans souris) : la conversation seule, sans saisie.
+      - En main, en paysage et en plein écran : les deux côte à côte (mode PETIT : une vue à la fois). Porté (sans souris) : la conversation seule, sans saisie.
     Comportement inchangé : canaux, commandes /, raccourcis @grille, SMS et leurs accusés, VIDER, tri, création et
     suppression de canal. Les apps qui ouvrent une conversation posent chatPeer et chatView = "CONV".
 */
@@ -29,7 +29,8 @@ private _d = [] call comspec_atak_native_fnc_display;
 
 private _bridge = [] call comspec_atak_native_fnc_bridge;
 private _interactive = _l get "interactive";
-private _split = _interactive && {_l get "landscape"};
+// Liste et conversation côte à côte en paysage plein écran seulement : en mode PETIT, une vue à la fois.
+private _split = _interactive && {_l get "landscape"} && {!(_l get "mini")};
 private _view = if (_interactive) then { _s getOrDefault ["chatView", "LIST"] } else { "CONV" };
 if !(_view in ["LIST", "CONV"]) then { _view = "LIST"; };
 

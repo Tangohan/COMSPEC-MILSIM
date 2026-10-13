@@ -148,7 +148,8 @@ if (_view isNotEqualTo "") then {
     private _bMenus = [["MENUS DU DRONE", "AGRANDIR L'IMAGE"] select _split, { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["droneCamSplit", !(_st getOrDefault ["droneCamSplit", false])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, "", ["Réduit l'image et affiche dessous les onglets du drone (vol, tâches, cibles, photos, journal)", "Image à la taille de l'écran, onglets masqués"] select _split];
     private _bTotal = [["PLEIN ÉCRAN", "QUITTER LE PLEIN ÉCRAN"] select (_view isEqualTo "TOTAL"), { profileNamespace setVariable ["COMSPEC_ATAK_DroneMiniFull", !(profileNamespace getVariable ["COMSPEC_ATAK_DroneMiniFull", true])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, "", "Téléphone en petit format : l'image du drone occupe tout l'écran"];
     // Secours si l'image reste noire (PiP qui ne rend rien) : la vue du jeu passe sur la caméra du drone (fn_droneAction "direct").
-    private _bDirect = ["VUE DIRECTE", ["direct"] call _act, "", "Plein écran sur la caméra du drone, sans passer par l'image du téléphone (utile si elle reste noire). Échap pour revenir au téléphone"];
+    // Mis dans la rangée principale (retour de TTRD, 13/10 : « permets le plein écran pour compenser le bug »).
+    private _bDirect = ["CAMÉRA PLEIN ÉCRAN", ["direct"] call _act, "", "Plein écran sur la caméra du drone, sans passer par l'image du téléphone (utile si elle reste noire). Échap pour revenir au téléphone"];
     private _bClose = ["FERMER", ["cam"] call _act, "", "Coupe l'image du drone (le drone continue ce qu'il fait)"];
     // Diagnostic de l'image noire : la même image vidéo montrée à 4 endroits (fn_pipCheck "test").
     private _bPipTest = ["TEST VIDÉO", { ["test"] call comspec_atak_native_fnc_pipCheck; }, "", "Image noire ? Affiche 20 s la même vidéo à 4 endroits numérotés : dites-nous lesquels montrent une image"];
@@ -169,9 +170,9 @@ if (_view isNotEqualTo "") then {
     private _groups = switch (true) do {
         case (_view isEqualTo "SHOT"): { [["CADRAGE", [_bZoomOut, _bZoomIn, _bCenter, _bVis]], ["CIBLE", [_bMark]], ["SURLIGNER", [_bBox, _bCircle, _bErase]], ["PHOTO", [_bCancel, _bTake]]] };
         case (_view isEqualTo "TOTAL"): { [["", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bTotal]]] select [0, [0, 1] select _inter] };
-        case (_mini): { [["", [_bShot, _bMark, _bZoomOut, _bZoomIn]], ["", [_bVis, _bTotal, _bDirect, _bMenus, _bClose]]] };
-        case (_view isEqualTo "SPLIT"): { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bVis]], ["", [_bUp, _bDn, _bHover, _bDirect, _bMenus, _bMore]]] + _moreRow };
-        default { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bVis]], ["", [_bUp, _bDn, _bHover, _bTargets, _bDirect, _bMenus, _bMore]]] + _moreRow };
+        case (_mini): { [["", [_bShot, _bMark, _bDirect, _bZoomOut, _bZoomIn]], ["", [_bVis, _bTotal, _bMenus, _bClose]]] };
+        case (_view isEqualTo "SPLIT"): { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bVis, _bDirect]], ["", [_bUp, _bDn, _bHover, _bMenus, _bMore]]] + _moreRow };
+        default { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bVis, _bDirect]], ["", [_bUp, _bDn, _bHover, _bTargets, _bMenus, _bMore]]] + _moreRow };
     };
     // Rangées : largeur de chaque bouton selon la longueur de son libellé ; un groupe passe à la rangée suivante quand
     // la rangée serait trop chargée pour rester lisible.
@@ -249,6 +250,16 @@ if (_view isNotEqualTo "") then {
             _r ctrlSetBackgroundColor [0.9, 0.25, 0.2, 0.9];
         } forEach [[_ix, _iy, _iw, pixelH * 3], [_ix, _iy + _ih - pixelH * 3, _iw, pixelH * 3], [_ix, _iy, pixelW * 3, _ih], [_ix + _iw - pixelW * 3, _iy, pixelW * 3, _ih]];
     };
+    // Croix rouge en haut à droite de l'image : ferme la caméra d'un clic (retour de TTRD, 13/10), comme FERMER en bas.
+    private _xs = _iw * 0.06;
+    private _xh = _xs * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
+    private _bx = ["COMSPEC_RscButton", [_ix + _iw - _xs - pixelW * 6, _iy + pixelH * 6, _xs, _xh], "X"] call comspec_atak_native_fnc_pageCtrl;
+    _bx ctrlSetFont "COMSPEC_BarlowBold";
+    _bx ctrlSetFontHeight (_xh * 0.8);
+    _bx ctrlSetBackgroundColor [0.85, 0.16, 0.14, 0.95];
+    _bx ctrlSetTextColor [1, 1, 1, 1];
+    _bx ctrlSetTooltip ("Fermer la caméra (le drone continue ce qu'il fait)" call comspec_atak_native_fnc_tr);
+    _bx ctrlAddEventHandler ["ButtonClick", ["cam"] call _act];
     // Viseur photo : coins de cadrage blancs, tiers de l'image en pointillé léger, surlignages déjà tracés.
     // Surlignage : [genre "BOX" | "CIRCLE", u0, v0, u1, v1] en fractions de l'image ; contrôles : 4 bords et un anneau.
     private _place = {
@@ -469,7 +480,10 @@ if (_view isNotEqualTo "") then {
                 _x params ["_lbl", "_code", ["_state", ""], ["_tip", ""], ["_en", true]];
                 private _bwid = _unit * ([_lbl] call _weight);
                 private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_state isEqualTo "main"), [_bx, _y + ([_lh, 0] select _big), _bwid - _pad / 3, [_btnH, _btnH * 1.45] select _big], _lbl] call comspec_atak_native_fnc_pageCtrl;
-                _b ctrlSetFontHeight ((_bfs * ([1, 1.25] select _big)) max COMSPEC_ATAK_FontMin);
+                private _f = (_bfs * ([1, 1.25] select _big)) max COMSPEC_ATAK_FontMin;
+                _b ctrlSetFontHeight _f;
+                // Libellé plus large que le bouton (traduction, petit écran) : police réduite jusqu'à ce qu'il tienne.
+                while { (ctrlTextWidth _b) > (_bwid - _pad / 3) * 0.92 && {_f > _bfs * 0.55} } do { _f = _f * 0.92; _b ctrlSetFontHeight _f; };
                 switch (_state) do {
                     case "on": { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
                     case "red": { _b ctrlSetBackgroundColor [0.78, 0.2, 0.16, 0.95]; _b ctrlSetTextColor [1, 1, 1, 1]; };

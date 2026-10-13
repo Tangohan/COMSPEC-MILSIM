@@ -7,6 +7,7 @@ if ((uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull]) isNotEqualTo
 if (_state getOrDefault ["texture", false]) then { ["close"] call comspec_atak_native_fnc_jpcMap; };
 private _wasInteractive = _state getOrDefault ["interactive", false];
 [] call comspec_atak_native_fnc_schedulerStop;
+["stop"] call comspec_atak_native_fnc_foreignHud;
 _state set ["display", displayNull];
 private _chat = uiNamespace getVariable ["COMSPEC_ATAK_ChatEdit", controlNull];
 if (!isNull _chat) then { uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", ctrlText _chat]; };

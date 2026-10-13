@@ -19,6 +19,7 @@ use App\Repositories\AtakOrderTypeRepository;
 use App\Repositories\FireTeamRepository;
 use App\Support\AtakPlanAccess;
 use App\Support\OperatorPortraits;
+use App\Support\BriefingSlideGameImage;
 use App\Support\ComspecApiKeyAuth;
 use App\Repositories\CasNineLineRepository;
 use App\Repositories\ReconImageRepository;
@@ -312,7 +313,7 @@ class AtakApiController
                 'title' => trim((string) ($row['title'] ?? '')),
                 'detail' => trim((string) ($row['detail_text'] ?? '')),
                 'sort_order' => (int) ($row['sort_order'] ?? 0),
-                'image_url' => url($imagePath),
+                'image_url' => url(BriefingSlideGameImage::path($imagePath)),
                 'updated_at' => (string) ($row['updated_at'] ?? $row['created_at'] ?? ''),
                 'operation' => $operation,
             ];
@@ -6786,6 +6787,65 @@ class AtakApiController
         }
 
         return Response::json(['ok' => true] + $result);
+    }
+
+    /**
+     * Plan de briefing partagé d'un camp (app Plan de l'ATAK natif, COMSPEC Link « BriefingPlan.Push »), envoyé en entier.
+     * Corps : side, owner (brouillon d'un joueur quand le serveur n'a pas le mod, vide sinon), rev, mission_key, world, name, reported_by, items [{id, kind, pts, text, color, dashed, arrow, width, num, author}].
+     */
+    public function briefingPlanStore(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $body = $this->jsonBody($request);
+        $side = strtoupper(trim((string) ($body['side'] ?? '')));
+        if (!in_array($side, \App\Repositories\AtakBriefingPlanRepository::SIDES, true)) {
+            return Response::json(['ok' => false, 'error' => 'invalid_side'], 400);
+        }
+        $repo = new \App\Repositories\AtakBriefingPlanRepository();
+        $items = \App\Repositories\AtakBriefingPlanRepository::normalizeItems($body['items'] ?? []);
+        $clean = static fn (mixed $v, int $max): string => mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]/u', ' ', is_scalar($v) ? (string) $v : '') ?? ''), 0, $max);
+        $saved = $repo->save(
+            $tenantId,
+            (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID),
+            $side,
+            preg_replace('/[^0-9A-Za-z_:-]/', '', $clean($body['owner'] ?? '', 32)) ?? '',
+            $clean($body['mission_key'] ?? '', 190),
+            $clean($body['world'] ?? '', 64),
+            max(0, (int) ($body['rev'] ?? 0)),
+            $clean($body['name'] ?? '', 64),
+            $items,
+            $clean($body['reported_by'] ?? '', 64),
+            ComspecApiKeyAuth::matchedUserId()
+        );
+
+        return Response::json(['ok' => true, 'saved' => $saved, 'items' => count($items)]);
+    }
+
+    /** Plans de briefing récents de la carte, un par camp (calque en lecture seule de la carte du site). */
+    public function briefingPlanIndex(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        try {
+            $plans = (new \App\Repositories\AtakBriefingPlanRepository())->recent($r, $this->mapId($request));
+        } catch (\Throwable) {
+            return Response::json(['ok' => false, 'error' => 'database_unavailable'], 503);
+        }
+
+        return Response::json(['ok' => true, 'plans' => $plans]);
     }
 
     /**

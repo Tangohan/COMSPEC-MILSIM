@@ -2,15 +2,17 @@
     Menu contextuel de la carte (clic droit sans glisser) : VOIR LA CAMÉRA (équipier pointé), PING, MARQUEUR, Y ALLER,
     CENTRER ICI, COPIER LA GRILLE, CHAMP DE VISION ICI (fn_reliefAction depuis le point), EFFACER LE CHAMP DE VISION
     et EFFACER LA LIGNE DE VUE (quand il y en a un sur la carte), ZONE INTERDITE AU DRONE (poser, ou retirer celle
-    sous le clic), RETIRER TOUTES LES ZONES (camp), SUPPRIMER (marqueur joueur pointé). Équipier pointé : aussi CHAMP DE VISION de l'équipier
+    sous le clic), RETIRER TOUTES LES ZONES (camp), SUPPRIMER (marqueur joueur pointé). Drone appairé et en vie : ORDRE AU DRONE
+    ouvre un sous-menu ALLER, RECHERCHER, STATIONNAIRE, ATTERRIR au point cliqué (fn_droneAction "mapOrder"), et RETOUR. Équipier pointé : aussi CHAMP DE VISION de l'équipier
     et LOCALISER PAR RELAIS (triangulation, fn_relayNet).
     ["open", [contrôle carte, position écran]]  ouvre le menu au curseur (en-tête : grille, altitude, distance et azimut)
     ["close"]                                    ferme (clic ailleurs, Échap, choix d'une ligne)
-    ["act", clé]                                 exécute une ligne
+    ["act", clé]                                 exécute une ligne (DRONE / BACK : ouvre / referme le sous-menu drone)
     ["render"]                                   dessine le menu (fn_pageMap, par-dessus la carte, et l'ouverture)
     Le menu a ses propres contrôles (uiNamespace COMSPEC_ATAK_MapCtxCtrls) : l'ouvrir ou le fermer ne redessine pas
     la page (plus de clignotement de toute la carte au clic droit).
-    État : COMSPEC_ATAK_State mapCtx = HashMap [pos (monde), marker (nom ou ""), unit (netId de l'équipier pointé ou ""), at (heure)].
+    État : COMSPEC_ATAK_State mapCtx = HashMap [pos (monde), marker (nom ou ""), unit (netId de l'équipier pointé ou ""), at (heure),
+    sub ("" ou "DRONE" : sous-menu affiché)].
 */
 params [["_mode", ""], ["_arg", []]];
 disableSerialization;
@@ -64,6 +66,13 @@ switch (_mode) do {
     case "act": {
         private _c = _s getOrDefault ["mapCtx", createHashMap];
         if ((count _c) isEqualTo 0) exitWith {};
+        // Sous-menu drone : le menu reste ouvert et se redessine (à l'image suivante, hors du clic du bouton qu'on efface).
+        if (_arg in ["DRONE", "BACK"]) exitWith {
+            _c set ["sub", ["", "DRONE"] select (_arg isEqualTo "DRONE")];
+            _c set ["at", diag_tickTime];
+            playSound "ClickSoft";
+            [{ ["render"] call comspec_atak_native_fnc_mapCtxMenu; }] call CBA_fnc_execNextFrame;
+        };
         private _pos = _c get "pos";
         private _m = _c getOrDefault ["marker", ""];
         ["close"] call comspec_atak_native_fnc_mapCtxMenu;
@@ -99,6 +108,10 @@ switch (_mode) do {
                 profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", true];
                 ["locate", _c getOrDefault ["unit", ""]] call comspec_atak_native_fnc_relayNet;
             };
+            case "DGOTO": { ["mapOrder", ["GOTO", _pos]] call comspec_atak_native_fnc_droneAction; };
+            case "DHUNT": { ["mapOrder", ["HUNT", _pos]] call comspec_atak_native_fnc_droneAction; };
+            case "DHOVER": { ["mapOrder", ["HOVER", _pos]] call comspec_atak_native_fnc_droneAction; };
+            case "DLAND": { ["mapOrder", ["LAND", _pos]] call comspec_atak_native_fnc_droneAction; };
             case "CAM": {
                 private _u = objectFromNetId (_c getOrDefault ["unit", ""]);
                 if (isNull _u || {!alive _u}) exitWith {};
@@ -163,6 +176,24 @@ switch (_mode) do {
             _rows pushBack ["NOFLYALL", "Retirer toutes les zones", format ["%1 zones, tout le camp", _nf], _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
         };
         if (_m isNotEqualTo "") then { _rows pushBack ["DELETE", "Supprimer le marqueur", [markerText _m, ""] select ((markerText _m) isEqualTo ""), _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]]; };
+        // Drone appairé (fn_droneAction) : une ligne ouvre le sous-menu des ordres au point cliqué.
+        private _dr = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
+        private _drOk = !isNull _dr && {alive _dr};
+        private _drCol = [0.30, 0.85, 0.95, 1];
+        if (_drOk) then {
+            private _dn = _dr getVariable ["COMSPEC_DroneName", ""];
+            if (_dn isEqualTo "") then { _dn = getText (configOf _dr >> "displayName"); };
+            _rows insert [0, [["DRONE", "Ordre au drone", _dn, _dir + "app_drone.paa", _drCol]]];
+        };
+        if (_drOk && {(_c getOrDefault ["sub", ""]) isEqualTo "DRONE"}) then {
+            _rows = [
+                ["DGOTO", "Aller", "puis stationnaire", _dir + "map_route.paa", _drCol],
+                ["DHUNT", "Rechercher", format ["bandes, rayon %1 m", _s getOrDefault ["droneHuntRad", 250]], "\A3\ui_f\data\igui\cfg\simpletasks\types\search_ca.paa", _drCol],
+                ["DHOVER", "Stationnaire", "caméra à la verticale", _dir + "app_drone.paa", _drCol],
+                ["DLAND", "Atterrir", "se pose sur le point", "\A3\ui_f\data\igui\cfg\simpletasks\types\land_ca.paa", _drCol],
+                ["BACK", "Retour", "", _dir + "ui_close.paa", [0.86, 0.91, 0.88, 1]]
+            ];
+        };
         private _rowH = _font * 1.55;
         private _headH = _font * 2.05;
         private _w = ((_font * 15) / _ratio) min (_bw * 0.9); // place pour le raccourci à droite des libellés longs

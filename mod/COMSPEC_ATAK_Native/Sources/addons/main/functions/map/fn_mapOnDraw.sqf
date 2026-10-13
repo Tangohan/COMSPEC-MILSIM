@@ -177,9 +177,11 @@ private _perfT = diag_tickTime;
 [_map] call comspec_atak_native_fnc_droneDraw;
 ["carte drone (image)", _perfT] call comspec_atak_native_fnc_perfAcc;
 ["draw", _map] call comspec_atak_native_fnc_mapPing;
-// Plan de briefing partagé du camp (app Plan), sous les unités, si le joueur l'a mis sur la carte.
-if (profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap", false]) then {
+// Plan de briefing (app Plan) sous les unités : plan partagé du camp et mon brouillon (plus pâle). Affiché par défaut.
+if (profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true]) then {
     [_map, (missionNamespace getVariable [format ["COMSPEC_ATAK_Plan_%1", side group player], [0, [], ""]]) param [1, []], 0.85] call comspec_atak_native_fnc_planDraw;
+    private _planDraft = missionNamespace getVariable ["COMSPEC_ATAK_PlanDraft", []];
+    if ((count _planDraft) > 0) then { [_map, _planDraft, 0.55] call comspec_atak_native_fnc_planDraw; };
 };
 
 // Points de passage : traits pointillés entre étapes, étape active en vert, trait de cap depuis moi en navigation.

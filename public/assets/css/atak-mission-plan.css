@@ -323,3 +323,52 @@ body.atak-placing-mission {
     padding-left: 8px;
   }
 }
+
+/* Calque « Plan de briefing » (app Plan de l'ATAK natif, lecture seule). */
+.atak-briefing-plan-label span {
+  display: inline-block;
+  background: rgba(8, 12, 18, 0.78);
+  border: 1px solid currentColor;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0 5px;
+  border-radius: 2px;
+  white-space: nowrap;
+  transform: translate(-50%, 0);
+}
+.atak-briefing-plan-point {
+  background: none;
+  border: 0;
+}
+.atak-briefing-plan-point i {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid;
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+.atak-briefing-plan-point--rect i {
+  border-radius: 1px;
+  width: 16px;
+  height: 11px;
+  margin-top: 2px;
+}
+.atak-briefing-plan-point--diamond i {
+  border-radius: 1px;
+  transform: rotate(45deg) scale(0.85);
+}
+.atak-briefing-plan-point span {
+  position: absolute;
+  left: 18px;
+  top: -1px;
+  background: rgba(8, 12, 18, 0.78);
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0 4px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
