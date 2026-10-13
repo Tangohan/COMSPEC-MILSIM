@@ -25,6 +25,10 @@ final class HtmlTranslatorTest extends TestCase
             'le %1' => 'on %1',
             '%1 le %2' => '%1 on %2',
             'Équipe %1-%2-%3' => 'Team %1-%2-%3',
+            '%1 personne%2' => '%1 person%2',
+            'Présence' => 'Attendance',
+            '%1 sur la carte' => '%1 on the map',
+            'Ouvrir %1' => 'Open %1',
         ]);
     }
 
@@ -100,5 +104,28 @@ final class HtmlTranslatorTest extends TestCase
         // restait en français.
         self::assertSame('<p>Équipe A-</p>', HtmlTranslator::translate('<p>Équipe A-</p>'));
         self::assertSame('<p>Team A-B-C</p>', HtmlTranslator::translate('<p>Équipe A-B-C</p>'));
+    }
+
+    public function testPluralSuffixTemplatesDoNotCutWords(): void
+    {
+        self::assertSame('<p>3 persons</p>', HtmlTranslator::translate('<p>3 personnes</p>'));
+        $sentence = '<p>compte personnel, espaces de communauté</p>';
+        self::assertSame($sentence, HtmlTranslator::translate($sentence));
+    }
+
+    public function testDecoratedAndUppercaseTexts(): void
+    {
+        self::assertSame('<b>ATTENDANCE</b><i>🇫🇷 Members</i>', HtmlTranslator::translate('<b>PRÉSENCE</b><i>🇫🇷 Membres</i>'));
+    }
+
+    public function testTemplatesDoNotCutFrenchSentences(): void
+    {
+        $long = 'Refermer le tiroir ne laisse plus un panneau sombre affiché sur la carte';
+        self::assertSame('<p>' . $long . '</p>', HtmlTranslator::translate('<p>' . $long . '</p>'));
+        self::assertSame('<p>Ouvrir le dossier</p>', HtmlTranslator::translate('<p>Ouvrir le dossier</p>'));
+        self::assertSame('<p>Open Bravo-2</p>', HtmlTranslator::translate('<p>Ouvrir Bravo-2</p>'));
+        self::assertSame('<p>Présence : voir et annuler une demande</p>', HtmlTranslator::translate('<p>Présence : voir et annuler une demande</p>'));
+        self::assertSame('<p>Attendance: Bravo-2</p>', HtmlTranslator::translate('<p>Présence : Bravo-2</p>'));
+        self::assertSame('<p>Alpha on the map</p>', HtmlTranslator::translate('<p>Alpha sur la carte</p>'));
     }
 }
