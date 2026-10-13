@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## App Musique : sections repliables et lecteur côte à côte (ATAK natif 1.84.0)
+
+### Résumé joueur
+Type : correctif
+FR : L'app Musique se lit sans faire défiler
+- En paysage, la pochette est à gauche et les commandes à droite : le lecteur prend moins de place.
+- Sous le lecteur, Son, File d'attente, Favoris et Haut-parleurs autour de moi sont des menus qui s'ouvrent d'un clic sur leur barre ; un seul reste ouvert à la fois.
+- Chaque barre affiche l'essentiel même repliée : le volume en service, le nombre de morceaux, les haut-parleurs audibles.
+EN : The Music app no longer needs scrolling
+- In landscape, the cover sits on the left and the controls on the right: the player takes less room.
+- Below the player, Sound, Queue, Favourites and Speakers around me are menus you open with a click on their bar; only one stays open at a time.
+- Each bar shows the key information even when closed: the active volume, the number of tracks, the speakers you can hear.
+
+### Détail technique
+Non testé en jeu. Retour de TTRD : défilement pénible en bas de l'onglet LECTURE. Pas de DLL à recompiler, pas de migration.
+- fn_vizPlayer : conversion largeur / hauteur corrigée (COMSPEC_ATAK_Ratio = pixelH / pixelW : largeur d'un carré = hauteur / ratio). En paysage le test « écran étroit » se trompait et empilait la pochette au-dessus ; pochette carrée, icônes, boutons et sauts à la bonne largeur.
+- fn_formRender : nouvelle ligne « fold » (en-tête repliable pleine largeur, chevron, résumé à droite) ; icône des curseurs à la bonne largeur.
+- fn_pageMusic : sections en accordéon (clé « fold » de l'état d'interface, « Son » ouverte par défaut), action « fold » dans fn_musicAction.
+- Icônes ui_chevron_down / ui_chevron_up (gen_assets.py) ; icônes du lecteur gardées chargées (fn_textureKeep).
+- À vérifier en jeu : onglet LECTURE en plein écran paysage (pochette carrée à gauche), ouverture / fermeture des 4 sections, curseurs de volume dans « Son », portrait mini.
+
 ## Nouvelle police du téléphone, au choix (ATAK natif 1.83.0)
 
 ### Résumé joueur

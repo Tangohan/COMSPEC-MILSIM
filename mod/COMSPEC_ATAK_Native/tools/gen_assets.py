@@ -218,6 +218,9 @@ ICONS = {
     "ui_headphones": '<path d="M4.5 15.5V12a7.5 7.5 0 0 1 15 0v3.5"/><rect x="3" y="14" width="4.6" height="6.8" rx="1.6" fill="#fff"/><rect x="16.4" y="14" width="4.6" height="6.8" rx="1.6" fill="#fff"/>',
     "ui_speaker": '<path d="M3.5 9.3h3.6L11.8 5v14l-4.7-4.3H3.5z" fill="#fff"/><path d="M15.2 9a4.2 4.2 0 0 1 0 6M17.9 6.3a8 8 0 0 1 0 11.4"/>',
     "ui_mute": '<path d="M3.5 9.3h3.6L11.8 5v14l-4.7-4.3H3.5z" fill="#fff"/><path d="M15.5 9.5l5 5M20.5 9.5l-5 5"/>',
+    # Sections repliables (app Musique) : chevron bas = repliée, haut = dépliée.
+    "ui_chevron_down": '<path d="M6 9.5l6 6 6-6" stroke-width="2.4"/>',
+    "ui_chevron_up": '<path d="M6 14.5l6-6 6 6" stroke-width="2.4"/>',
     "ui_dot": '<circle cx="12" cy="12" r="10" fill="#fff" stroke="none"/>',
     "ui_hand": '<path d="M9.1 12V5.6a1.3 1.3 0 0 1 2.6 0V11M11.7 11V4.3a1.3 1.3 0 0 1 2.6 0V11M14.3 11V5.6a1.3 1.3 0 0 1 2.6 0V11M16.9 11.2V8.3a1.3 1.3 0 0 1 2.6 0v5.4c0 4.1-2.8 7.3-6.6 7.3-2.7 0-4.3-1.3-5.8-3.5l-2.6-4a1.4 1.4 0 0 1 2.2-1.7l2.4 2.8V8.2"/>',
 }

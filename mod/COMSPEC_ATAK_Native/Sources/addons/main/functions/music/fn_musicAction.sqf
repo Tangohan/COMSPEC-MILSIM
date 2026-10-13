@@ -5,7 +5,7 @@
       "vol" n (0-100) : écouteurs    "volStep" ±n    "spkVol" n / "spkVolStep" ±n : haut-parleur
       "speaker" / "hear" / "shuffle" : bascule    "repeat" off|all|one    "repeatCycle" : non -> la file -> le morceau
       "files" : relit le dossier local (DLL)    "openFolder"    "url" : lit l'URL saisie    "urlDel" index
-      "tab" onglet    "srvCat" catégorie    "srvSearch" : applique la recherche    "srvPage" n
+      "tab" onglet    "fold" clé : section repliable de LECTURE    "srvCat" catégorie    "srvSearch" : applique la recherche    "srvPage" n
       "seek" ±s : avance / recule dans la piste    "seekFrac" 0-1 : va à ce point de la piste (barre de progression)
       "qDel" index    "qUp" index    "qClear" : file d'attente
       "fav" piste : ajoute / retire des favoris (profil)
@@ -193,6 +193,11 @@ switch (_act) do {
         _ui set ["tab", _arg];
         if (_arg isEqualTo "LOCAL" && {!("files" in _ui)}) exitWith { ["files"] call comspec_atak_native_fnc_musicAction; };
         if (_arg isEqualTo "ATH" && {!((_ui getOrDefault ["ath", "global"]) in (uiNamespace getVariable ["COMSPEC_ATAK_MusicAth", createHashMap]))}) exitWith { ["ath", _ui getOrDefault ["ath", "global"]] call comspec_atak_native_fnc_musicAction; };
+        call _rerender;
+    };
+    case "fold": {
+        // Sections repliables de l'onglet LECTURE, en accordéon : ouvre celle-ci (et ferme l'autre), ou la referme.
+        _ui set ["fold", [_arg, ""] select ((_ui getOrDefault ["fold", "son"]) isEqualTo _arg)];
         call _rerender;
     };
     case "srvCat": { _ui set ["cat", _arg]; _ui set ["page", 0]; call _rerender; };
