@@ -132,6 +132,7 @@ class CfgFunctions {
             class moduleTheaterSurvey {};
             class registerZenTheaterSurvey {};
             class moduleGeoNetwork {};
+            class zeusFeedback {};
             class forceSyncData {};
             class arsenalLocalLoadouts {};
             class arsenalNormalizeLoadout {};

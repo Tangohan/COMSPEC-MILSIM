@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Zeus : relevé routes et villes qui répond, tutoriel SSE visible, villes lisibles sur la carte (ATAK natif 1.87.0)
+
+### Résumé joueur
+Type : correctif
+FR : Les modules Zeus répondent enfin, et les villes sont lisibles sur la carte
+- Le module Zeus « Relever routes et villes » affiche maintenant un message dans Zeus : lancé, terminé avec le nombre de villes et de routes, ou pourquoi il ne peut pas partir (Athena pas liée, modules coupés).
+- Posé dans l'éditeur, le relevé part même sur un serveur sans admin connecté : un seul joueur lié s'en charge.
+- Le tutoriel « Manuel du Zeus » du SSE s'affiche par-dessus l'écran Zeus au lieu de s'ouvrir derrière.
+- Sur la carte Overwatch, les villes et villages sont des noms sur un fond, sans pastilles, et les noms ne se chevauchent plus. Dans l'app SSE du téléphone, les libellés ne sont plus coupés.
+EN : Zeus modules finally respond, and towns are readable on the map
+- The "Survey roads and towns" Zeus module now shows a message in Zeus: started, finished with the number of towns and roads, or why it cannot run (Athena not linked, modules turned off).
+- Placed in the editor, the survey runs even on a server with no admin logged in: a single linked player takes care of it.
+- The SSE "Zeus manual" tutorial shows on top of the Zeus screen instead of opening behind it.
+- On the Overwatch map, towns and villages are names on a background, with no dots, and names no longer overlap. In the phone's SSE app, labels are no longer cut off.
+
+### Détail technique
+Non testé en jeu. Retours de TTRD : « le tuto zeus et le module relever route et ville ne marchent pas », « mauvais placements » (app SSE), « les villes c'est trop laid, juste le titre de la ville avec un fond ».
+- Relevé routes et villes (Overwatch connect embarqué) : le relevé partait bien mais n'écrivait que dans le journal du téléphone, invisible dans Zeus. Nouveau `fn_zeusFeedback` (bandeau ZEN, sinon message Zeus vanilla, sinon notification) appelé au lancement, en cas de refus et à la fin (`COMSPEC_GeoZeusNotify`). Module Eden : le Zeus / l'admin n'étaient testés qu'à l'initialisation (souvent pas encore connus, jamais vrais sur serveur dédié sans admin) ; ils sont maintenant testés une fois lié, avec repli sur n'importe quel joueur lié après 60 s et un seul envoi par serveur (`COMSPEC_GeoNetworkRunner`).
+- SSE : `comspec_sse_fnc_openGuide` affiche le chapitre du manuel dans une fenêtre posée sur l'écran Zeus (display 312) ; hors Zeus, manuel de terrain comme avant. « Poser un exercice ici » confirme dans Zeus.
+- Carte web (`atak-geo-network.js`, Overwatch beta, carte opérationnelle, tacmap) : localités en étiquettes `divIcon` (ville, bourg, village, lieu-dit), rang affiché selon le zoom et chevauchements retirés ; styles injectés par le script.
+- App SSE du téléphone : bandeau, tuiles d'indicateurs, en-têtes de panneau et cases d'attributs prennent la hauteur mesurée de leur texte.
+- À tester en jeu : poser « Relever routes et villes » dans Zeus (message attendu), « Tutoriel : manuel du Zeus » (fenêtre au-dessus de Zeus), l'app SSE en portrait et paysage.
+
 ## Barlow Condensed revient en test dans Réglages > Police (ATAK natif 1.86.0)
 
 ### Résumé joueur

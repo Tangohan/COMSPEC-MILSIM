@@ -111,10 +111,12 @@ private _panel = {
     private _bg = [[_px, _py, _pw, _font], _cPanel] call _box;
     [[_px, _py, _pw, _hairH], _tone] call _box;
     private _ip = _pad * 0.7;
-    private _hh = _fs * 1.5;
-    [[_px + _ip, _py + _hairH + _fs * 0.15, _pw * 0.62, _hh], format ["<t font='%1' size='0.68' color='%2'>%3</t>", _monoB, _hDim, toUpper _title], false] call _st;
+    // Hauteur de l'en-tête mesurée sur le titre : un titre long passe à la ligne sans être coupé par le filet.
+    private _tw = if (_meta isEqualTo "") then { _pw - 2 * _ip } else { _pw * 0.7 - _ip };
+    private _tc = [[_px + _ip, _py + _hairH + _fs * 0.15, _tw, _fs], format ["<t font='%1' size='0.68' color='%2'>%3</t>", _monoB, _hDim, toUpper _title]] call _st;
+    private _hh = ((_tc call _hOf) + _hairH + _fs * 0.3) max (_fs * 1.5);
     if (_meta isNotEqualTo "") then {
-        [[_px + _pw * 0.38, _py + _hairH + _fs * 0.15, _pw * 0.62 - _ip, _hh], format ["<t font='%1' size='0.64' align='right' color='%2'>%3</t>", _mono, _hMute, toUpper _meta], false] call _st;
+        [[_px + _pw * 0.5, _py + _hairH + _fs * 0.15, _pw * 0.5 - _ip, _fs], format ["<t font='%1' size='0.64' align='right' color='%2'>%3</t>", _mono, _hMute, toUpper _meta]] call _st;
     };
     [[_px, _py + _hh, _pw, pixelH], _cLine] call _box;
     private _h = [_px + _ip, _py + _hh + _ip, _pw - 2 * _ip] call _body;
@@ -135,13 +137,19 @@ if (_okMod) then {
     _item = [] call comspec_overwatch_connect_fnc_sseHasTerminalItem;
 };
 private _chip = { params ["_on", "_yes", "_no", ["_onHex", _hGreen]]; format ["<t font='%1' size='0.62' color='%2'>■ %3</t>", _monoB, [_hMute, _onHex] select _on, [_no, _yes] select _on] };
+// Bandeau : fond et filet posés d'abord (derrière), puis recalés sur la hauteur réelle du texte.
 private _hdH = _font * 2.15;
 private _hdBg = [[0, 0, _bw, _hdH], _cPanel] call _box;
-[[0, _hdH - _hairH, _bw, _hairH], _cBlue] call _box;
-[[_pad, _hdH * 0.1, _bw * 0.62, _hdH], format ["<t font='PuristaBold' size='1.05'>SSE</t><t font='PuristaSemibold' size='0.8' color='%1'>  //  EXPLOITATION DE SITE</t><br/><t font='%2' size='0.62' color='%1'>OPS %3 · GR %4 · %5</t>",
-    _hDim, _mono, [format ["<t color='%1'>%2</t>", _hGreen, toUpper _case], "NON CLASSÉ"] select (_case isEqualTo ""), [player, 8] call comspec_atak_native_fnc_gridRef, [dayTime, "HH:MM"] call BIS_fnc_timeToString], false] call _st;
-[[_bw * 0.55, _hdH * 0.12, _bw * 0.45 - _pad, _hdH], format ["<t align='right'>%1<br/>%2</t>",
-    [_item, "SEEK PRÊT", "SEEK ABSENT", _hGreen] call _chip, [!isNull _t, "CIBLE ACQUISE", "AUCUNE CIBLE", _hBlue] call _chip], false] call _st;
+private _hdLine = [[0, _hdH - _hairH, _bw, _hairH], _cBlue] call _box;
+private _hdA = [[_pad, _font * 0.15, _bw * 0.6 - _pad, _font], format ["<t font='PuristaBold' size='1.05'>SSE</t><t font='PuristaSemibold' size='0.8' color='%1'>  //  EXPLOITATION DE SITE</t><br/><t font='%2' size='0.62' color='%1'>OPS %3 · GR %4 · %5</t>",
+    _hDim, _mono, [format ["<t color='%1'>%2</t>", _hGreen, toUpper _case], "NON CLASSÉ"] select (_case isEqualTo ""), [player, 8] call comspec_atak_native_fnc_gridRef, [dayTime, "HH:MM"] call BIS_fnc_timeToString]] call _st;
+private _hdB = [[_bw * 0.6, _font * 0.2, _bw * 0.4 - _pad, _font], format ["<t align='right'>%1<br/>%2</t>",
+    [_item, "SEEK PRÊT", "SEEK ABSENT", _hGreen] call _chip, [!isNull _t, "CIBLE ACQUISE", "AUCUNE CIBLE", _hBlue] call _chip]] call _st;
+_hdH = (((_hdA call _hOf) max (_hdB call _hOf)) + _font * 0.4) max _hdH;
+_hdBg ctrlSetPosition [0, 0, _bw, _hdH];
+_hdBg ctrlCommit 0;
+_hdLine ctrlSetPosition [0, _hdH - _hairH, _bw, _hairH];
+_hdLine ctrlCommit 0;
 private _y = _hdH + _gap;
 
 if (!_okMod) exitWith {
@@ -188,14 +196,20 @@ private _kpis = [
 ];
 private _kg = _pad * 0.35;
 private _kw = (_bw - 2 * _pad - 3 * _kg) / 4;
+// Tuiles mesurées sur leur texte (chiffre + libellé) : le libellé n'est plus coupé en bas.
 private _kh = _font * 2.05;
+private _kBoxes = [];
+private _kTxtH = 0;
 {
     _x params ["_n", "_lab", "_hex", "_col"];
     private _kx = _pad + _forEachIndex * (_kw + _kg);
-    [[_kx, _y, _kw, _kh], _cPanel] call _box;
+    _kBoxes pushBack ([[_kx, _y, _kw, _kh], _cPanel] call _box);
     [[_kx, _y, _kw, _hairH], _col] call _box;
-    [[_kx, _y + _kh * 0.1, _kw, _kh], format ["<t align='center' font='PuristaBold' size='1.45' color='%1'>%2</t><br/><t align='center' font='%3' size='0.55' color='%4'>%5</t>", _hex, _n, _mono, _hDim, _lab], false] call _st;
+    private _kt = [[_kx, _y + _font * 0.2, _kw, _font], format ["<t align='center' font='PuristaBold' size='1.45' color='%1'>%2</t><br/><t align='center' font='%3' size='0.55' color='%4'>%5</t>", _hex, _n, _mono, _hDim, _lab]] call _st;
+    _kTxtH = _kTxtH max (_kt call _hOf);
 } forEach _kpis;
+_kh = (_kTxtH + _font * 0.45) max _kh;
+{ private _p = ctrlPosition _x; _p set [3, _kh]; _x ctrlSetPosition _p; _x ctrlCommit 0; } forEach _kBoxes;
 _y = _y + _kh + _gap;
 
 // ─── Panneaux ──────────────────────────────────────────────────────────────────────────────────────────
@@ -238,13 +252,26 @@ private _pEntity = {
     private _cg = _pad * 0.35;
     private _cw = (_ow - _cg) / 2;
     private _ch = _fs * 2.3;
+    // Cases posées puis recalées sur le texte le plus haut (valeur sur deux lignes : plus de débordement).
+    private _cells = [];
+    private _cTxt = [];
     {
         _x params ["_lab", "_val"];
         private _cx = _ox + (_forEachIndex mod 2) * (_cw + _cg);
-        private _cy = _yy + (floor (_forEachIndex / 2)) * (_ch + _cg);
-        [[_cx, _cy, _cw, _ch], _cElev] call _box;
-        [[_cx + _pad * 0.4, _cy + _fs * 0.1, _cw - _pad * 0.5, _ch], format ["<t font='%1' size='0.55' color='%2'>%3</t><br/><t size='0.82'>%4</t>", _mono, _hMute, _lab, _val], false] call _st;
+        _cells pushBack ([[_cx, _yy, _cw, _ch], _cElev] call _box);
+        private _ct = [[_cx + _pad * 0.4, _yy + _fs * 0.15, _cw - _pad * 0.5, _fs], format ["<t font='%1' size='0.55' color='%2'>%3</t><br/><t size='0.82'>%4</t>", _mono, _hMute, _lab, _val]] call _st;
+        _cTxt pushBack _ct;
+        _ch = _ch max ((_ct call _hOf) + _fs * 0.3);
     } forEach _attrs;
+    {
+        private _row = floor (_forEachIndex / 2);
+        private _p = ctrlPosition _x;
+        _x ctrlSetPosition [_p select 0, _yy + _row * (_ch + _cg), _p select 2, _ch];
+        _x ctrlCommit 0;
+        private _q = ctrlPosition (_cTxt select _forEachIndex);
+        (_cTxt select _forEachIndex) ctrlSetPosition [_q select 0, _yy + _row * (_ch + _cg) + _fs * 0.15, _q select 2, _q select 3];
+        (_cTxt select _forEachIndex) ctrlCommit 0;
+    } forEach _cells;
     _yy = _yy + 2 * (_ch + _cg) + _pad * 0.2;
     if (_dist > 4) then {
         _yy = _yy + (([[_ox, _yy, _ow, _fs], format ["<t size='0.78' color='%1'>▲ Approchez-vous à 4 m au plus pour photographier le visage.</t>", _hAmber]] call _st) call _hOf) + _pad * 0.2;
