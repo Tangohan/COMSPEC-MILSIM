@@ -1,11 +1,11 @@
 /*
-    Langue du téléphone (réglage CBA « Langue du téléphone / Phone language » : Auto, Français, English).
+    Langue du mod (réglage CBA COMSPEC « Langue / Language », en tête de la liste : Auto, Français, English).
     Auto suit la langue du jeu (français si Arma est en français, anglais sinon). En anglais, charge une fois le
     dictionnaire i18n/en.txt (tableau [["français", "anglais"], ...], tenu par tools/i18n.py) et prépare les modèles
     à %1, %2… pour fn_tr. Params : [redessiner la page ouverte (changement en cours de partie), langue imposée].
 */
 params [["_redraw", false], ["_force", ""]];
-private _set = missionNamespace getVariable ["comspec_atak_native_language", "fr"];
+private _set = missionNamespace getVariable ["comspec_atak_native_language", "auto"];
 // _force : langue imposée (fn_trMenu charge le dictionnaire pour les menus CBA des autres addons).
 if (_force isNotEqualTo "") then { _set = _force; };
 private _lang = switch (_set) do {
@@ -83,6 +83,8 @@ if (_lang isEqualTo "en" && {isNil {missionNamespace getVariable "COMSPEC_ATAK_I
     diag_log format ["[COMSPEC ATAK NATIVE][PERF] Dictionnaire anglais préparé : %1 ms", round ((diag_tickTime - _perfT0) * 1000)];
 };
 missionNamespace setVariable ["COMSPEC_ATAK_Lang", _lang];
+// Changement en cours de partie : les menus CBA COMSPEC suivent (fn_menuRelang ne fait rien si la langue est la même).
+if (_redraw) then { [] call comspec_atak_native_fnc_menuRelang; };
 if (_redraw && {hasInterface}) then {
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     private _page = _s getOrDefault ["activePage", ""];

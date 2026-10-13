@@ -11,7 +11,7 @@
       "clear"     : efface la grille.
       "show"      : affiche / masque les calques Relief sur la carte.
       "locate"    : centre la carte sur le point le plus haut (ou sur le centre du calcul avec "center").
-      "los"       : ligne de vue de mes yeux vers un point ("grid" : carroyage saisi, "look" : point visé, "pos" : position donnée),
+      "los"       : ligne de vue de mes yeux vers un point ("grid" : coordonnées saisies, "pos" : point touché sur la carte),
                     profil du terrain sur 64 points, premier obstacle (terrain, bâtiment, végétation, véhicule).
       "losMap"    : outil LIGNE DE VUE de la carte (clic sur la carte), puis ouvre la carte.
       "losClear"  : efface la ligne de vue.
@@ -169,21 +169,21 @@ switch (_act) do {
         [{ _this call comspec_atak_native_fnc_mapCenter; }, [_k, 0.04]] call CBA_fnc_execNextFrame;
     };
     case "los": {
-        // Cible : carroyage saisi (gardé dans rlGrid) ou point sous mon regard.
+        // Ligne de vue de ma position (mes yeux) vers le point : coordonnées saisies (gardées dans rlGrid) ou point touché sur la carte.
         private _target = [];
         if (_k isEqualTo "pos") then { _target = _v; _s set ["rlGrid", [_target, 8] call comspec_atak_native_fnc_gridRef]; };
-        if (_k isEqualTo "look") then {
-            _target = if (isNil "comspec_overwatch_connect_fnc_reconLookPos") then { screenToWorld [0.5, 0.5] } else { [] call comspec_overwatch_connect_fnc_reconLookPos };
-            _s set ["rlGrid", [_target, 8] call comspec_atak_native_fnc_gridRef];
-        };
         if (_k isEqualTo "grid") then {
             private _g = ["rlGrid", _s getOrDefault ["rlGrid", ""]] call comspec_atak_native_fnc_formValue;
             _s set ["rlGrid", _g];
-            private _gc = (_g splitString " ") joinString "";
-            if (_gc regexMatch "^[0-9]{6,10}$" && {((count _gc) mod 2) isEqualTo 0}) then { _target = ([_gc] call BIS_fnc_gridToPos) param [0, []]; };
+            private _gc = (_g splitString " ,.-") joinString "";
+            if (_gc regexMatch "^[0-9]{4,10}$" && {((count _gc) mod 2) isEqualTo 0}) then {
+                ([_gc] call BIS_fnc_gridToPos) params [["_gp", []], ["_gs", [0, 0]]];
+                // Centre de la case : un carroyage court désigne un carré, pas son coin.
+                if ((count _gp) >= 2) then { _target = [(_gp select 0) + (_gs select 0) / 2, (_gp select 1) + (_gs select 1) / 2]; };
+            };
         };
         if ((count _target) < 2) exitWith {
-            ["WARNING", "Ligne de vue : carroyage illisible (6 à 10 chiffres)", 4, 30] call comspec_atak_native_fnc_notify;
+            ["WARNING", "Ligne de vue : coordonnées illisibles (4 à 10 chiffres)", 4, 30] call comspec_atak_native_fnc_notify;
             call _render;
         };
         private _from = eyePos player;
