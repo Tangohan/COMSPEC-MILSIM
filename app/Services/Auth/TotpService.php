@@ -15,6 +15,13 @@ final class TotpService
 
     public const SECRET_BYTES = 20;
 
+    /**
+     * Pas de 30 s acceptés de part et d'autre du pas courant (2 = ±60 s).
+     * Avec ±30 s seulement, un téléphone ou un serveur légèrement décalé, ou un code saisi
+     * en fin de période sur un réseau mobile lent, était refusé (« code incorrect »).
+     */
+    public const DEFAULT_WINDOW = 2;
+
     private const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
     public function generateSecret(): string
@@ -22,7 +29,7 @@ final class TotpService
         return $this->base32Encode(random_bytes(self::SECRET_BYTES));
     }
 
-    public function verify(string $secretBase32, string $code, int $window = 1, ?int $atTimestamp = null): bool
+    public function verify(string $secretBase32, string $code, int $window = self::DEFAULT_WINDOW, ?int $atTimestamp = null): bool
     {
         $code = preg_replace('/\D+/', '', $code) ?? '';
         if (strlen($code) !== self::DIGITS) {
