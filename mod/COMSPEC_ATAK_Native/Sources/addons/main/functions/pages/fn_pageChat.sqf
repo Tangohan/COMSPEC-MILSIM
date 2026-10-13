@@ -57,32 +57,33 @@ if (_bridge && {!isNil "comspec_overwatch_connect_fnc_pollChatChannels"} && {dia
         };
     };
 };
-// Canaux système (non supprimables), comme dans COMSPEC Link.
-private _system = ["groupe", "commandement", "general", "jtac", "air", "squad", "global", "hq", "c2", "command", "group", "alertes"];
-// Canaux Athena (fil COMSPEC Link quand il est chargé), puis messages directs.
-private _channelRows = []; // [clé, libellé, personnalisé]
-if (_bridge) then {
-    {
-        _x params [["_k", ""], ["_lbl", ""], ["_kind", "custom"]];
-        if (_k isNotEqualTo "" && {_k isNotEqualTo "alertes"}) then { _channelRows pushBack [_k, [_lbl, _k] select (_lbl isEqualTo ""), _kind isEqualTo "custom" && {!(_k in _system)}]; };
-    } forEach (missionNamespace getVariable ["COMSPEC_Comms_Channels", []]);
-    if ((count _channelRows) isEqualTo 0) then { _channelRows = [["general", "Général", false], ["commandement", "Commandement", false], ["groupe", "Groupe", false]]; };
-    _channelRows pushBack ["alertes", "Alertes TOC", false];
-};
-private _channels = if (_bridge) then { _channelRows apply { ["CH:" + (_x select 0), _x select 1] } } else { [["ATHENA", "TOC — canal Athena"]] };
+// Canaux Athena (fil COMSPEC Link quand il est chargé) puis messages directs ; non-lus par conversation (fn_chatUnread,
+// mêmes chiffres que la pastille de l'icône).
+private _channelRows = ["channels"] call comspec_atak_native_fnc_chatUnread; // [clé, libellé, personnalisé]
+private _channels = _channelRows apply { [_x select 0, _x select 1] };
+private _unreadMap = ["counts"] call comspec_atak_native_fnc_chatUnread;
 private _peers = (allPlayers select { _x isNotEqualTo player && {side group _x isEqualTo side group player} }) apply { name _x };
 { if ((_x getOrDefault ["peer", ""]) isNotEqualTo "") then { _peers pushBackUnique (_x get "peer"); }; } forEach (_data getOrDefault ["p2p", []]);
-_peers sort true;
+// Contacts : conversations les plus récentes d'abord (date et heure du dernier SMS), puis les autres par nom.
+private _lastAt = createHashMap;
+{ _lastAt set [_x getOrDefault ["peer", ""], format ["%1 %2", _x getOrDefault ["date", ""], _x getOrDefault ["time", ""]]]; } forEach (_data getOrDefault ["p2p", []]);
+private _withConv = _peers select { _x in _lastAt };
+private _others = _peers select { !(_x in _lastAt) };
+_others sort true;
+private _keyedPeers = _withConv apply { [_lastAt get _x, _x] };
+_keyedPeers sort false;
+_peers = (_keyedPeers apply { _x select 1 }) + _others;
+// Réseau du téléphone (rappel dans la liste et la conversation) : les SMS passent par le réseau et ses relais.
+private _netQ = [] call comspec_atak_native_fnc_linkQuality;
+private _netBars = _netQ getOrDefault ["bars", 0];
+private _relay = if ((_netQ getOrDefault ["sim", false]) && {_netBars > 0}) then { (["best"] call comspec_atak_native_fnc_relayNet) param [1, ""] } else { "" };
 if !((_channels findIf { (_x select 0) isEqualTo _peer }) >= 0 || {_peer in _peers}) then { _peer = (_channels select 0) select 0; };
 private _isChannel = _peer isEqualTo "ATHENA" || {(_peer select [0, 3]) isEqualTo "CH:"};
 _s set ["chatChannel", [_peer select [3], ""] select (_peer isEqualTo "ATHENA")];
 _s set ["chatPeer", _peer];
 private _manage = _bridge && {_interactive};
 private _curKey = _peer select [3];
-// Non-lus par canal (affichage de la liste) : nombre de messages vus à la dernière ouverture.
-private _seenMap = _s getOrDefault ["chatSeen", createHashMap];
-_s set ["chatSeen", _seenMap];
-private _custom = _isChannel && {(_channelRows findIf { (_x select 0) isEqualTo _curKey && {_x select 2} }) >= 0};
+private _custom = _isChannel && {(_channelRows findIf { (_x select 0) isEqualTo _peer && {_x select 2} }) >= 0};
 
 // ---------------------------------------------------------------- Outils de dessin
 private _esc = {
@@ -164,8 +165,11 @@ private _unitFor = {
 // Initiales d'un nom ou indicatif (« HAWK 6 » → H6, « Tango-2 » → T2).
 private _initials = {
     params ["_n"];
-    private _w = (_n splitString " -_.") select { _x isNotEqualTo "" };
-    toUpper ([_n select [0, 2], ((_w select 0) select [0, 1]) + ((_w select 1) select [0, 1])] select ((count _w) > 1))
+    private _w = (_n splitString " -_.:") select { _x isNotEqualTo "" };
+    // Un seul mot : ses deux premières lettres. (L'ancienne version lisait le 2e mot même absent : erreur de script
+    // qui interrompait l'en-tête de la conversation, d'où le volet vide et les clics « sans effet ».)
+    if ((count _w) < 2) exitWith { toUpper ((_w param [0, _n]) select [0, 2]) };
+    toUpper (((_w select 0) select [0, 1]) + ((_w select 1) select [0, 1]))
 };
 // Vignette d'une conversation ou d'un auteur : photo de l'opérateur si connue, sinon initiales (personne)
 // ou icône (canal, TOC) sur une tuile teintée.
@@ -184,6 +188,29 @@ private _avatar = {
     [_rect, _iconPath, _tint, 0.62, _grp] call _icon
 };
 private _rr = "[{ ['CHAT'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;";
+// Brouillon par conversation : le texte en cours (gardé par fn_pageClear) appartient à la conversation affichée avant.
+private _drafts = uiNamespace getVariable ["COMSPEC_ATAK_ChatDrafts", createHashMap];
+private _dPeer = uiNamespace getVariable ["COMSPEC_ATAK_ChatDraftPeer", ""];
+if (_dPeer isNotEqualTo "") then { _drafts set [_dPeer, uiNamespace getVariable ["COMSPEC_ATAK_ChatDraft", ""]]; };
+uiNamespace setVariable ["COMSPEC_ATAK_ChatDrafts", _drafts];
+uiNamespace setVariable ["COMSPEC_ATAK_ChatDraft", _drafts getOrDefault [_peer, ""]];
+uiNamespace setVariable ["COMSPEC_ATAK_ChatDraftPeer", _peer];
+// Défilement de la liste et du fil gardé d'un rendu à l'autre (fn_pageRender le relève avant d'effacer la page) :
+// un message reçu ou le rafraîchissement des canaux ne ramène plus la liste en haut. Params : [nom, groupe, position
+// imposée 0-1 (-1 : celle d'avant)].
+private _scrollMem = _s getOrDefault ["scrollGroups", createHashMap];
+private _keepScroll = {
+    params ["_name", "_grp", ["_set", -1]];
+    private _groups = uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []];
+    _groups pushBack [_name, _grp];
+    uiNamespace setVariable ["COMSPEC_ATAK_ScrollGroups", _groups];
+    private _v = (_scrollMem getOrDefault [_name, []]) param [0, -1];
+    if (_set >= 0) then { _v = _set; };
+    if (_v <= 0) exitWith {};
+    _grp ctrlSetScrollValues [_v, -1];
+    // Encore à l'image suivante : la hauteur du contenu n'est connue qu'une fois les contrôles posés.
+    [{ params ["_g", "_v"]; if (!isNull _g) then { _g ctrlSetScrollValues [_v, -1]; }; }, [_grp, _v]] call CBA_fnc_execNextFrame;
+};
 private _open = { params ["_key"]; compile format ["private _s = uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]; _s set ['chatPeer', %1]; _s set ['chatView', 'CONV']; _s set ['chatDelArm', '']; _s set ['chatWiki', false]; %2", str _key, _rr] };
 private _today = [] call comspec_atak_native_fnc_p2pDate;
 
@@ -208,6 +235,8 @@ private _drawList = {
         case (!_net): { ["Hors réseau · envoi différé", "#f2ab33"] };
         default { ["Athena connecté", _accHex] };
     };
+    if (!_bridge && {_netBars isEqualTo 0}) then { _state = ["Hors réseau · SMS en attente du signal", "#f2ab33"]; };
+    if (_relay isNotEqualTo "") then { _state set [0, format ["%1 · via %2", _state select 0, _relay]]; };
     private _nbW = [0, (_font * 4.2 / _ratio) min (_lw * 0.36)] select _manage;
     private _st = ["COMSPEC_RscStructuredText", [_lx + _pad * 0.6, _sh * 0.18, _lw - _nbW - _pad * 1.6, _sh * 0.8]] call _mk;
     _st ctrlSetFontHeight (_fs * 0.95);
@@ -258,11 +287,11 @@ private _drawList = {
         _y0 = _y0 + _ch;
     };
     private _grp = ["COMSPEC_RscControlsGroup", [_lx, _y0, _lw, _bh - _y0]] call _mk;
+    ["chatList", _grp, -1] call _keepScroll;
     private _gw = _lw - 0.012;
     private _rh = _font * 2.75;
     private _avH = _rh * 0.68;
     private _avW = _avH / _ratio;
-    private _seen = _seenMap;
     private _y = 0;
     private _section = {
         params ["_t", ["_right", ""]];
@@ -302,8 +331,7 @@ private _drawList = {
         private _ck = [_key select [3], ""] select (_key isEqualTo "ATHENA");
         private _msgs = [_ck] call comspec_atak_native_fnc_messagesAll;
         private _n = count _msgs;
-        if !(_key in _seen) then { _seen set [_key, _n]; };
-        private _unread = (_n - (_seen get _key)) max 0;
+        private _unread = _unreadMap getOrDefault [_key, 0];
         private _lastTxt = "";
         private _lastTime = "";
         if (_n > 0) then {
@@ -336,8 +364,10 @@ private _drawList = {
             _lastTime = _m getOrDefault ["time", ""];
             _lastTxt = [_ptext, format ["%1 : %2", ("Vous") call comspec_atak_native_fnc_tr, _ptext]] select ((_m getOrDefault ["dir", ""]) isEqualTo "out");
         };
-        [_name, _name, _dir + "app_group.paa", [_name] call _authorCol, _u, _lastTxt, _lastTime, _n,
-            (["Hors ligne", "Écrire un SMS"] select !(isNull _u)) call comspec_atak_native_fnc_tr, [_name] call _initials] call _row;
+        private _sub = if (isNull _u) then { "Hors ligne · le SMS partira à son retour" } else {
+            format ["En ligne · %1", ([_u] call comspec_atak_native_fnc_phoneIdent) param [0, ""]]
+        };
+        [_name, _name, _dir + "app_group.paa", [_name] call _authorCol, _u, _lastTxt, _lastTime, _n, (_sub) call comspec_atak_native_fnc_tr, [_name] call _initials] call _row;
     } forEach _peers;
     _y = _y + _pad;
     // Fond cliquable de fin de liste (rien) : la hauteur fixe le défilement.
@@ -395,7 +425,7 @@ private _drawConv = {
     // Titre et sous-titre.
     private _title = if (_isChannel) then { ((_channels select { (_x select 0) isEqualTo _peer }) param [0, ["", _peer]]) select 1 } else { _peer };
     private _sub = switch (true) do {
-        case (!_isChannel): { format ["SMS · %1", if (isNull _u) then { "hors ligne" } else { ([_u] call comspec_atak_native_fnc_phoneIdent) select 0 }] };
+        case (!_isChannel): { format ["SMS · %1%2", if (isNull _u) then { "hors ligne" } else { ([_u] call comspec_atak_native_fnc_phoneIdent) select 0 }, ["", format [" · via %1", _relay]] select (_relay isNotEqualTo "")] };
         case (_alert): { "Alertes et notifications du TOC" };
         case (_peer isEqualTo "ATHENA"): { "Canal TOC · Athena" };
         default { ["Canal Athena", "Canal Athena · créé sur le web ou au terminal"] select _custom };
@@ -412,9 +442,18 @@ private _drawConv = {
         _bn ctrlSetStructuredText parseText ((format ["<t align='center'>Supprimer « %1 » pour tout le monde ? Cliquez encore sur la corbeille.</t>", [(_title) call comspec_atak_native_fnc_tr] call _esc]) call comspec_atak_native_fnc_tr);
         _topY = _topY + _fs * 1.6;
     };
+    // Rappel de portée : sans réseau (relais hors de portée, bâtiment, brouillage), rien ne part ni n'arrive.
+    if (_netBars isEqualTo 0 && {_netQ getOrDefault ["sim", false]}) then {
+        private _bn = ["COMSPEC_RscStructuredText", [_cx, _topY, _cw, _fs * 1.6]] call _mk;
+        _bn ctrlSetBackgroundColor [0.30, 0.20, 0.04, 1];
+        _bn ctrlSetFontHeight (_fs * 0.95);
+        _bn ctrlSetStructuredText parseText ((["<t align='center'>Pas de réseau : vos SMS partiront au retour du signal (rapprochez-vous d'un relais).</t>",
+            "<t align='center'>Pas de réseau : vos messages partiront au retour du signal (rapprochez-vous d'un relais).</t>"] select _isChannel) call comspec_atak_native_fnc_tr);
+        _topY = _topY + _fs * 1.6;
+    };
 
     // --- Messages de la conversation
-    private _items = []; // [moi, auteur, heure, date, texte, puces, clé, état, non lu, urgent, texte brut]
+    private _items = []; // [moi, auteur, heure, date, texte, puces, clé, état, non lu, urgent, texte brut, id à renvoyer]
     if (_isChannel) then {
         private _msgs = [_s getOrDefault ["chatChannel", ""]] call comspec_atak_native_fnc_messagesAll;
         {
@@ -428,7 +467,7 @@ private _drawConv = {
                 toLower format ["%1|%2|%3", _x get "author", _x get "time", _x get "body"], _status, false, _urgent, _x get "body"];
         } forEach (_msgs select [((count _msgs) - 60) max 0]);
         _s set ["seenAthena", count ([] call comspec_atak_native_fnc_messagesAll)];
-        _seenMap set [_peer, count _msgs];
+        ["read", _peer] call comspec_atak_native_fnc_chatUnread;
     } else {
         {
             if ((_x getOrDefault ["peer", ""]) isEqualTo _peer) then {
@@ -438,19 +477,20 @@ private _drawConv = {
                 private _chips = (_ptags apply { format ["<t font='RobotoCondensedBold' color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select (_x in _hot), [_x] call _esc] }) joinString " ";
                 // État d'un SMS envoyé : en attente de réseau, envoi, distribué, lu, non transmis (60 s sans accusé).
                 private _st = _x getOrDefault ["status", ""];
-                if (_st isEqualTo "SENDING" && {time - (_x getOrDefault ["sentAt", time]) > 60}) then { _st = "FAILED"; };
+                if (_st isEqualTo "SENDING" && {time - (_x getOrDefault ["sentAt", time]) > 60}) then { _st = "FAILED"; _x set ["status", "FAILED"]; };
                 private _status = if (_out) then { switch (_st) do {
                     case "READ": { format ["<t color='#7fd0ff'>Lu %1</t>", _x getOrDefault ["statusTime", ""]] };
                     case "DELIVERED": { "<t color='#c9d4cf'>Distribué</t>" };
+                    case "HELD": { "<t color='#f2ab33'>Destinataire hors réseau · remis à son retour</t>" };
                     case "QUEUED": { "<t color='#f2ab33'>Non transmis · en attente de réseau</t>" };
-                    case "FAILED": { "<t color='#e5483a'>Non transmis</t>" };
+                    case "FAILED": { "<t color='#e5483a'>Non transmis · cliquer pour renvoyer</t>" };
                     case "SENDING": { "<t color='#8a9a93'>Envoi…</t>" };
                     default { "" };
                 } } else { "" };
                 private _unread = !_out && {!(_x getOrDefault ["read", false])};
                 _items pushBack [_out, _peer, _x getOrDefault ["time", "--:--"], _x getOrDefault ["date", _today], [_ptext] call _esc, _chips,
                     toLower format ["%1|%2|%3", _x getOrDefault ["dir", ""], _x getOrDefault ["time", ""], _x getOrDefault ["body", ""]], _status, _unread,
-                    (_ptags findIf { _x in _hot }) >= 0, _ptext];
+                    (_ptags findIf { _x in _hot }) >= 0, _ptext, ["", _x getOrDefault ["id", ""]] select (_out && {_st isEqualTo "FAILED"})];
                 // Conversation ouverte : les SMS reçus passent à « lu », l'expéditeur en est informé.
                 if (_unread) then {
                     _x set ["read", true];
@@ -461,6 +501,7 @@ private _drawConv = {
                 };
             };
         } forEach (_data getOrDefault ["p2p", []]);
+        ["read", _peer] call comspec_atak_native_fnc_chatUnread;
     };
     // Tri par date et heure (ordre d'arrivée à égalité), puis sens choisi.
     private _keyed = [];
@@ -545,7 +586,7 @@ private _drawConv = {
     private _lastAuthor = "";
     private _unreadShown = false;
     {
-        _x params ["_mine", "_author", "_time", "_date", "_body", "_chips", "", "_status", "_unread", "_urgent", "_raw"];
+        _x params ["_mine", "_author", "_time", "_date", "_body", "_chips", "", "_status", "_unread", "_urgent", "_raw", ["_retry", ""]];
         // Séparateur de jour : pastille centrée.
         if (_date isNotEqualTo _lastDay) then {
             _lastDay = _date;
@@ -617,11 +658,28 @@ private _drawConv = {
         // Liseré : accent (moi), couleur de l'auteur, rouge si urgent.
         private _edge = switch (true) do { case (_urgent): { _cRed }; case (_mine): { [_acc, [0.45, 0.70, 1, 1]] select _sms }; default { _aCol } };
         [[[_bx, _bx + _bubbleW - pixelW * 2] select _mine, _y, pixelW * 2, _h], _edge, _thread] call _box;
+        // SMS non transmis : un clic le renvoie (l'ancien est retiré de la conversation).
+        if (_retry isNotEqualTo "" && {_interactive}) then {
+            [[_bx, _y, _bubbleW, _h], compile format ["
+                private _p2p = (uiNamespace getVariable ['COMSPEC_ATAK_Data', createHashMap]) getOrDefault ['p2p', []];
+                private _i = _p2p findIf { (_x getOrDefault ['id', '']) isEqualTo %1 };
+                if (_i < 0) exitWith {};
+                private _m = _p2p deleteAt _i;
+                [_m getOrDefault ['peer', ''], _m getOrDefault ['body', '']] call comspec_atak_native_fnc_p2pSend;
+                %2", str _retry, _rr], "Renvoyer ce SMS", _thread] call _hit;
+        };
         _y = _y + (_h max ([0, _avH] select (_showAv && {_first}))) + _font * 0.18;
     } forEach _items;
     _y = _y + _pad;
     [[0, _y, _tw, pixelH], [0, 0, 0, 0], _thread] call _box;
-    _thread ctrlSetScrollValues [[[1, 0] select _desc, 0] select _wiki, -1];
+    // Fil : en bas (derniers messages) sauf si on était remonté lire plus haut ; en haut pour l'aide ou le tri inverse.
+    private _was = ((_scrollMem getOrDefault ["chatThread:" + _peer, []]) param [0, -1]);
+    private _target = switch (true) do {
+        case (_wiki || {_desc}): { 0 };
+        case (_was >= 0 && {_was < 0.97}): { _was };
+        default { 1 };
+    };
+    ["chatThread:" + _peer, _thread, _target] call _keepScroll;
     if !(_interactive) exitWith {};
 
     // --- Aperçu des commandes : type détecté, puces et texte final ; suggestions pendant qu'on tape une commande.
@@ -666,7 +724,20 @@ private _drawConv = {
     _edit ctrlSetBackgroundColor [0, 0, 0, 0];
     _edit ctrlSetFontHeight _font;
     _edit ctrlSetTooltip ((["Message au canal (Entrée pour envoyer, /aide pour les commandes)", "SMS (Entrée pour envoyer, /aide pour les commandes)"] select _sms) call comspec_atak_native_fnc_tr);
-    _edit ctrlAddEventHandler ["KeyUp", { params ["_c"]; [ctrlText _c] call (uiNamespace getVariable ["COMSPEC_ATAK_ChatPreviewCode", {}]); }];
+    // SMS : compteur de caractères (400 au plus, coupé au-delà par fn_p2pSend).
+    private _cnt = ["COMSPEC_RscTextRight", [_cx + _cw - _pad - (_font * 3 / _ratio), _by - _prevH, _font * 3 / _ratio, _prevH], "", _fs * 0.8, _cDim] call _lbl;
+    uiNamespace setVariable ["COMSPEC_ATAK_ChatCounter", [controlNull, _cnt] select _sms];
+    private _count = {
+        params ["_txt"];
+        private _c = uiNamespace getVariable ["COMSPEC_ATAK_ChatCounter", controlNull];
+        if (isNull _c) exitWith {};
+        private _n = count _txt;
+        _c ctrlSetText ([format ["%1/400", _n], ""] select (_n isEqualTo 0)); // i18n:brut
+        _c ctrlSetTextColor ([[0.55, 0.61, 0.58, 1], [0.95, 0.67, 0.20, 1], [0.90, 0.28, 0.23, 1]] select ((parseNumber (_n > 360)) + (parseNumber (_n >= 400))));
+    };
+    uiNamespace setVariable ["COMSPEC_ATAK_ChatCountCode", _count];
+    [uiNamespace getVariable ["COMSPEC_ATAK_ChatDraft", ""]] call _count;
+    _edit ctrlAddEventHandler ["KeyUp", { params ["_c"]; [ctrlText _c] call (uiNamespace getVariable ["COMSPEC_ATAK_ChatPreviewCode", {}]); [ctrlText _c] call (uiNamespace getVariable ["COMSPEC_ATAK_ChatCountCode", {}]); }];
     uiNamespace setVariable ["COMSPEC_ATAK_ChatEdit", _edit];
     private _sr = [_cx + _cw - _sendW - _pad * 0.6, _ey, _sendW, _rowH];
     [_sr, [_acc, _cBlue] select _sms] call _box;

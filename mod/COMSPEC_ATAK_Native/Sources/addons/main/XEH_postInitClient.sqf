@@ -407,6 +407,8 @@ addMissionEventHandler ["Ended", { ["MusicStop"] call comspec_atak_native_fnc_ex
 
 // Live cam partagé vers COMSPEC Overwatch : une image toutes les N s si le joueur l'a activé.
 [{ [] call comspec_atak_native_fnc_livecamShare; }, 2] call CBA_fnc_addPerFrameHandler;
+// Liaison montante publiée (débit, perte, relais) : les autres téléphones en déduisent la qualité de mon Live cam.
+[{ ["publish"] call comspec_atak_native_fnc_feedLink; }, 10] call CBA_fnc_addPerFrameHandler;
 
 // Détecteur de drones : balayage automatique en fond (réglage de l'app).
 [{ if (profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false]) then { ["auto"] call comspec_atak_native_fnc_droneDetectScan; }; }, 5] call CBA_fnc_addPerFrameHandler;

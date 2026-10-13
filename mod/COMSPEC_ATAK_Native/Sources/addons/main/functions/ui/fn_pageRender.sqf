@@ -18,6 +18,11 @@ private _scrollMem = _st getOrDefault ["scrollMem", createHashMap];
 private _drawn = _st getOrDefault ["pageDrawn", ""];
 if (_drawn isNotEqualTo "") then { _scrollMem set [_drawn, ctrlScrollValues (_d displayCtrl 88531)]; };
 _st set ["scrollMem", _scrollMem];
+// Groupes défilants internes d'une page (liste et fil de la messagerie) : position relevée par nom avant l'effacement.
+private _grpMem = _st getOrDefault ["scrollGroups", createHashMap];
+{ _x params ["_n", "_c"]; if (!isNull _c) then { _grpMem set [_n, ctrlScrollValues _c]; }; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []]);
+uiNamespace setVariable ["COMSPEC_ATAK_ScrollGroups", []];
+_st set ["scrollGroups", _grpMem];
 private _restore = (_drawn isEqualTo _page || {_st getOrDefault ["scrollRestore", false]}) && {!(_page in ["MAP", "CHAT"])};
 _st set ["scrollRestore", false];
 _st set ["pageDrawn", _page];

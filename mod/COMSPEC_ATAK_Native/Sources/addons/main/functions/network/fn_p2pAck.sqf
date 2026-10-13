@@ -1,10 +1,10 @@
 /*
-    Accusé d'un SMS envoyé : ["DELIVERED" | "READ", heure]. Ne fait jamais reculer l'état (lu reste lu).
+    Accusé d'un SMS envoyé : ["HELD" (destinataire hors réseau, gardé par l'opérateur) | "DELIVERED" | "READ", heure]. Ne fait jamais reculer l'état (lu reste lu).
     Params : [id, état, heure]
 */
 params [["_id", ""], ["_state", ""], ["_time", ""]];
 if (_id isEqualTo "") exitWith {};
-private _rank = createHashMapFromArray [["QUEUED", 0], ["SENDING", 1], ["DELIVERED", 2], ["READ", 3]];
+private _rank = createHashMapFromArray [["QUEUED", 0], ["FAILED", 0], ["SENDING", 1], ["HELD", 2], ["DELIVERED", 3], ["READ", 4]];
 private _p2p = (uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["p2p", []];
 private _i = _p2p findIf { (_x getOrDefault ["id", ""]) isEqualTo _id && {(_x getOrDefault ["dir", ""]) isEqualTo "out"} };
 if (_i < 0) exitWith {};
