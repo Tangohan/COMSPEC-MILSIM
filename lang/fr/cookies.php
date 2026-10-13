@@ -25,4 +25,6 @@ return [
     'ttl_hint' => 'Pour renforcer la confidentialité, un nouveau consentement pourra vous être demandé après 180 jours ou après un changement majeur de politique.',
     'reset' => 'Réinitialiser',
     'save' => 'Enregistrer mes choix',
+    'language_title' => 'Langue des communications',
+    'language_desc' => 'Pages du site et e-mails. Enregistrée sur votre profil quand vous êtes connecté.',
 ];
