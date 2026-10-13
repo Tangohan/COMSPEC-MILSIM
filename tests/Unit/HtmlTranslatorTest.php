@@ -22,6 +22,9 @@ final class HtmlTranslatorTest extends TestCase
             'Fermer' => 'Close',
             'il y a %1 min' => '%1 min ago',
             'Membres' => 'Members',
+            'le %1' => 'on %1',
+            '%1 le %2' => '%1 on %2',
+            'Équipe %1-%2-%3' => 'Team %1-%2-%3',
         ]);
     }
 
@@ -82,5 +85,20 @@ final class HtmlTranslatorTest extends TestCase
         );
         self::assertSame('{"message":"Texte inconnu"}', HtmlTranslator::translateJson('{"message":"Texte inconnu"}'));
         self::assertSame('pas du json', HtmlTranslator::translateJson('pas du json'));
+    }
+
+    public function testWeakTemplatesOnlyWrapShortValues(): void
+    {
+        self::assertSame('<p>on 12 mars 2026</p>', HtmlTranslator::translate('<p>le 12 mars 2026</p>'));
+        $sentence = '<p>Organisation fictive pour presenter le portail en conditions réalistes.</p>';
+        self::assertSame($sentence, HtmlTranslator::translate($sentence));
+    }
+
+    public function testTemplateWhoseMiddlePartWouldStartPastTheEndDoesNotThrow(): void
+    {
+        // Ancienne erreur : strpos() avec un décalage hors de la chaîne levait une ValueError et toute la page
+        // restait en français.
+        self::assertSame('<p>Équipe A-</p>', HtmlTranslator::translate('<p>Équipe A-</p>'));
+        self::assertSame('<p>Team A-B-C</p>', HtmlTranslator::translate('<p>Équipe A-B-C</p>'));
     }
 }

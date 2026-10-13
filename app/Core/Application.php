@@ -101,7 +101,8 @@ class Application
             $type = (string) ($response->headerValue('Content-Type') ?? '');
             try {
                 if (str_starts_with($type, 'text/html')) {
-                    $response->setBody(\App\Support\HtmlTranslator::translate($response->body()));
+                    $html = \App\Support\HtmlTranslator::translate($response->body());
+                    $response->setBody(\App\Support\HtmlTranslator::withDomScripts($html));
                 } elseif (str_starts_with($type, 'application/json')) {
                     $response->setBody(\App\Support\HtmlTranslator::translateJson($response->body()));
                 }
