@@ -176,7 +176,7 @@ switch (_act) do {
         private _lines = _b get "lines";
         private _data = [_lines, _b get "remarks", _b get "type", _b get "method", _b get "ord", _b get "code", _b get "target", _b get "fah", _b get "dc"];
         private _sent = [(crew _air), ["brief", _m get "id", _data, [] call _me, player]] call _emit;
-        [_m, "JTAC", format ["9-LINE → %1 : %2 | %3 | %4", groupId group _air, _lines select 3, _lines select 5, _lines select 6]] call _log;
+        [_m, "JTAC", format ["9-LINE pour %1 : %2 | %3 | %4", groupId group _air, _lines select 3, _lines select 5, _lines select 6]] call _log;
         // Athena (pilotes et web) quand le téléphone est relié : même chemin que l'app CAS.
         if ([] call comspec_atak_native_fnc_bridge) then {
             private _f = [] call comspec_atak_native_fnc_firesState;
