@@ -12,6 +12,9 @@ if errorlevel 1 exit /b 1
 copy /Y "%ROOT%COMSPECATAKNativeExtension\bin\publish\COMSPECATAKNativeExtension_x64.dll" "%OUT%\COMSPECATAKNativeExtension_x64.dll" >nul
 "%BUILDER%" "%ADDON%" "%OUT%\addons" -packonly -prefix=z\comspec_atak_native\addons\main
 if errorlevel 1 exit /b 1
+:: Pylones relais 3D (modeles MLOD volumineux) : PBO a part.
+"%BUILDER%" "%ROOT%Sources\addons\towers" "%OUT%\addons" -packonly -prefix=z\comspec_atak_native\addons\towers
+if errorlevel 1 exit /b 1
 :: Overwatch connect est embarque : connexion Athena, synchro, FRS, Reco... sans charger @COMSPECOverwatch.
 set "OW=%ROOT%..\UptoDate"
 if "%ProgramFiles(x86)%"=="" set "ProgramFiles(x86)=C:\Program Files (x86)"

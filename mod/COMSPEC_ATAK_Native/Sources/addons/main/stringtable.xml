@@ -147,6 +147,11 @@
             <English>Login screen</English>
             <French>Écran de connexion</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_2669F78090">
+            <Original>Nom affiché sur les téléphones (vide : Pylône et la case de la carte).</Original>
+            <English>Name shown on phones (empty: Tower and the map grid).</English>
+            <French>Nom affiché sur les téléphones (vide : Pylône et la case de la carte).</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_2805C17B50">
             <Original>Tablette ATAK (JPC)</Original>
             <English>ATAK tablet (JPC)</English>
@@ -197,6 +202,11 @@
             <English>ATAK vehicle terminal kit</English>
             <French>Kit terminal véhicule ATAK</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_357E475CDC">
+            <Original>Camp qui peut utiliser ce relais (tous par défaut).</Original>
+            <English>Side that can use this relay (all by default).</English>
+            <French>Camp qui peut utiliser ce relais (tous par défaut).</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_36E5E1C6A8">
             <Original>Serveur / terminal</Original>
             <English>Server / terminal</English>
@@ -211,6 +221,11 @@
             <Original>Ex. ordre_operation.pdf</Original>
             <English>E.g. operation_order.pdf</English>
             <French>Ex. ordre_operation.pdf</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_3C55341417">
+            <Original>Relais en service au début de la mission.</Original>
+            <English>Relay in service at mission start.</English>
+            <French>Relais en service au début de la mission.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_3DEB745651">
             <Original>Type</Original>
@@ -302,6 +317,11 @@
             <English>CS-10 charging dock (10 phones)</English>
             <French>Socle de recharge CS-10 (10 téléphones)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_5EE2379472">
+            <Original>Le pylône ne peut pas être abattu.</Original>
+            <English>The tower cannot be brought down.</English>
+            <French>Le pylône ne peut pas être abattu.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_60D4B6A0C2">
             <Original>Ajouter un fichier (câble ATAK)</Original>
             <English>Add a file (ATAK cable)</English>
@@ -336,6 +356,11 @@
             <Original>Alarme</Original>
             <English>Alarm</English>
             <French>Alarme</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_69F7129E3B">
+            <Original>Tour relais 40 m (ruine)</Original>
+            <English>Relay tower 40 m (ruin)</English>
+            <French>Tour relais 40 m (ruine)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_6CDE1BE9BE">
             <Original>Windows (bureau bleu)</Original>
@@ -427,6 +452,11 @@
             <English>Tablet</English>
             <French>Tablette</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_7FACF53561">
+            <Original>Tour relais 40 m (faisceaux hertziens)</Original>
+            <English>Relay tower 40 m (microwave links)</English>
+            <French>Tour relais 40 m (faisceaux hertziens)</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_7FF20370C8">
             <Original>Nom</Original>
             <English>Name</English>
@@ -446,6 +476,11 @@
             <Original>Ethernet RJ45</Original>
             <English>Ethernet RJ45</English>
             <French>Ethernet RJ45</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_83983FCE7E">
+            <Original>Pylône relais 50 m (balisé)</Original>
+            <English>Relay tower 50 m (lit)</English>
+            <French>Pylône relais 50 m (balisé)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_857C44D0D3">
             <Original>Caméra IP compacte (ATAK)</Original>
@@ -527,6 +562,11 @@
             <English>IP camera (ATAK)</English>
             <French>Caméra IP (ATAK)</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_A54A861193">
+            <Original>Allumé</Original>
+            <English>On</English>
+            <French>Allumé</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_A692CFB580">
             <Original>Téléphone COMSPEC ATAK (Samsung S7)</Original>
             <English>COMSPEC ATAK phone (Samsung S7)</English>
@@ -537,6 +577,11 @@
             <English>All sides</English>
             <French>Tous les camps</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_A820F0E110">
+            <Original>Pylône relais 30 m (panneaux)</Original>
+            <English>Relay tower 30 m (panels)</English>
+            <French>Pylône relais 30 m (panneaux)</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_A92E2B0C4B">
             <Original>Téléphone verrouillé</Original>
             <English>Phone locked</English>
@@ -546,6 +591,11 @@
             <Original>Ordinateur portable</Original>
             <English>Laptop</English>
             <French>Ordinateur portable</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_ACB975B116">
+            <Original>Nom du relais</Original>
+            <English>Relay name</English>
+            <French>Nom du relais</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_AF7756A553">
             <Original>Durée du forçage (s)</Original>
@@ -591,6 +641,11 @@
             <Original>Le réseau ATAK passe par des relais posés par la mission.%1%3Dans Eden%4%2Modules &gt; COMSPEC — ATAK · Réseau &gt; ATAK · Relais, posé là où doit être l'antenne.%2Le cercle du module est la portée : étirez-le. Relief et bâtiments la réduisent en jeu.%2Type : radio portable, mât tactique, tour fixe, terminal satellite. 0 dans un champ = valeur du type.%2Synchronisez un objet (mât, toit, véhicule) pour l'équiper ; sinon l'objet du type est créé.%2Raccordé : porte le réseau seul. Répéteur : doit être à portée d'un relais raccordé ou d'un répéteur qui l'est.%2Relais obligatoires : hors couverture, le téléphone n'a presque plus de réseau.%1%3En Zeus%4%2Même module, formulaire à la pose ; lâché sur un véhicule, il en fait un relais mobile.%1%3En jeu%4%2App Wave Relay, onglet COUVERTURE : carte du débit, relais, places, batterie.%2ACE sur le relais : état, couper, allumer, changer la batterie.%2Au-delà de ses places, le débit d'un relais se partage ; brouilleurs et dégâts le réduisent.%2Les passerelles de véhicule et le PC mobile improvisés sont coupés par défaut (réglage serveur Passerelles de véhicule et PC mobile).</Original>
             <English>The ATAK network runs through relays placed by the mission.%1%3In Eden%4%2Modules &gt; COMSPEC — ATAK · Network &gt; ATAK · Relay, placed where the antenna should be.%2The module's circle is the range: stretch it. Terrain and buildings reduce it in game.%2Type: portable radio, tactical mast, fixed tower, satellite terminal. 0 in a field = the type's value.%2Sync an object (mast, roof, vehicle) to equip it; otherwise the type's object is created.%2Connected: carries the network on its own. Repeater: must be within range of a connected relay or of a repeater that is.%2Relays required: out of coverage, the phone has almost no network.%1%3In Zeus%4%2Same module, form on placement; dropped on a vehicle, it makes it a mobile relay.%1%3In game%4%2Wave Relay app, COVERAGE tab: throughput map, relays, slots, battery.%2ACE on the relay: status, switch off, switch on, replace the battery.%2Beyond its slots, a relay's throughput is shared; jammers and damage reduce it.%2Improvised vehicle gateways and mobile CP are off by default (server setting Vehicle gateways and mobile CP).</English>
             <French>Le réseau ATAK passe par des relais posés par la mission.%1%3Dans Eden%4%2Modules &gt; COMSPEC — ATAK · Réseau &gt; ATAK · Relais, posé là où doit être l'antenne.%2Le cercle du module est la portée : étirez-le. Relief et bâtiments la réduisent en jeu.%2Type : radio portable, mât tactique, tour fixe, terminal satellite. 0 dans un champ = valeur du type.%2Synchronisez un objet (mât, toit, véhicule) pour l'équiper ; sinon l'objet du type est créé.%2Raccordé : porte le réseau seul. Répéteur : doit être à portée d'un relais raccordé ou d'un répéteur qui l'est.%2Relais obligatoires : hors couverture, le téléphone n'a presque plus de réseau.%1%3En Zeus%4%2Même module, formulaire à la pose ; lâché sur un véhicule, il en fait un relais mobile.%1%3En jeu%4%2App Wave Relay, onglet COUVERTURE : carte du débit, relais, places, batterie.%2ACE sur le relais : état, couper, allumer, changer la batterie.%2Au-delà de ses places, le débit d'un relais se partage ; brouilleurs et dégâts le réduisent.%2Les passerelles de véhicule et le PC mobile improvisés sont coupés par défaut (réglage serveur Passerelles de véhicule et PC mobile).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_BFA2360137">
+            <Original>Pylône relais 50 m (ruine)</Original>
+            <English>Relay tower 50 m (ruin)</English>
+            <French>Pylône relais 50 m (ruine)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_C126739753">
             <Original>Hauteur d'antenne (m)</Original>
@@ -662,6 +717,11 @@
             <English>Side that uses the relay. Others don't see it in the ATAK, but can switch it off or destroy it in the field.</English>
             <French>Camp qui se sert du relais. Les autres ne le voient pas dans l'ATAK, mais peuvent le couper ou le détruire sur le terrain.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_DB4BE04D53">
+            <Original>Pylône relais 30 m (ruine)</Original>
+            <English>Relay tower 30 m (ruin)</English>
+            <French>Pylône relais 30 m (ruine)</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_DBD1600D8A">
             <Original>Tablette durcie et support RAM à installer dans un véhicule (action ACE sur le véhicule) quand le serveur réserve la tablette de bord aux véhicules équipés.</Original>
             <English>Rugged tablet and RAM mount to install in a vehicle (ACE action on the vehicle) when the server limits the dash tablet to equipped vehicles.</English>
@@ -671,6 +731,11 @@
             <Original>Écran de rechange, nappe et outils pour le téléphone COMSPEC ATAK. Action ACE « Réparer le téléphone ATAK » (12 s) : écran, alimentation et appareil remis en état, même détruit. Consommé.</Original>
             <English>Spare screen, ribbon cable and tools for the COMSPEC ATAK phone. ACE action "Repair ATAK phone" (12 s): screen, power and device restored, even when destroyed. Consumed.</English>
             <French>Écran de rechange, nappe et outils pour le téléphone COMSPEC ATAK. Action ACE « Réparer le téléphone ATAK » (12 s) : écran, alimentation et appareil remis en état, même détruit. Consommé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_DF1600163F">
+            <Original>Raccordé : relié au réseau par fibre ou satellite. Répéteur : doit voir un relais raccordé.</Original>
+            <English>Connected: linked to the network by fibre or satellite. Repeater: must see a connected relay.</English>
+            <French>Raccordé : relié au réseau par fibre ou satellite. Répéteur : doit voir un relais raccordé.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_DFE8C58442">
             <Original>Radio relais portable</Original>
@@ -694,7 +759,7 @@
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_E4E74278CD">
             <Original>Relais ATAK</Original>
-            <English>ATAK relay</English>
+            <English>ATAK relays</English>
             <French>Relais ATAK</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_E8F8827310">
