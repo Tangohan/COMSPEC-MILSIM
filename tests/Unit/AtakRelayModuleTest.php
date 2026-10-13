@@ -61,6 +61,7 @@ final class AtakRelayModuleTest extends TestCase
         self::assertStringContainsString('["sweep"] call comspec_atak_native_fnc_relayNet;', $this->read(self::MAIN . '/XEH_postInitServer.sqf'));
         $lq = $this->read(self::MAIN . '/functions/core/fn_linkQuality.sqf');
         self::assertStringContainsString('COMSPEC_ATAK_RelaysRequired', $lq);
+        self::assertStringContainsString('comspec_atak_native_fnc_toast', $net);
         self::assertStringNotContainsString('getNearestAtakRelay', $lq);
         $ace = $this->read(self::MAIN . '/functions/shell/fn_aceMenu.sqf');
         foreach (['COMSPEC_ATAK_RelayInfo', 'COMSPEC_ATAK_RelayOff', 'COMSPEC_ATAK_RelayOn', 'COMSPEC_ATAK_RelayBatt'] as $id) {

@@ -18,6 +18,7 @@ Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : améliorer les re
 - Nouveau module Eden et Zeus **ATAK · Relais** (catégorie COMSPEC — ATAK · Réseau) : le cercle du module dans Eden est la portée ; types radio portable, mât tactique, tour fixe, terminal satellite ; camp, débit, hauteur d'antenne, places, alimentation (secteur par défaut : un relais posé sur la carte n'a pas de batterie ; batterie seulement si la mission la choisit), liaison raccordée ou répéteur, allumé, indestructible, relais obligatoires. Objet synchronisé ou lâché dessus en Zeus = équipé, sinon l'objet du type est créé.
 - Tutoriel : description du module dans Eden, infobulles des attributs et page « Relais du réseau ATAK » du manuel de terrain (Aide > Manuel de terrain).
 - Relais plus réalistes : hauteur d'antenne pour le relief, répéteurs qui doivent voir un relais raccordé (sinon « sans liaison »), débit partagé au-delà des places, batterie qui se vide, brouilleurs, relais réservés à un camp. Le téléphone prend le meilleur relais reçu (plus le seul plus proche).
+- Perte du relais utilisé (détruit, coupé, batterie vide, brouillé, sans liaison, hors de portée) : toast sur le téléphone « Relais perdu : X (raison), liaison dégradée » ou « bascule sur Y » (notification si le téléphone est fermé).
 - ACE sur le relais : état, couper, allumer, changer la batterie. Carte et app Wave Relay : état de chaque relais (éteint, batterie vide, brouillé, sans liaison, saturé), répéteurs reliés en pointillé à leur relais.
 
 À vérifier en jeu :
@@ -26,6 +27,7 @@ Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : améliorer les re
 - Un raccordé et deux répéteurs en chaîne : le dernier s'éteint quand on coupe celui du milieu (ACE), la carte le dit.
 - Relais posé sans toucher à l'alimentation : sur secteur, pas de batterie ni d'action « Changer la batterie ».
 - Batterie 1 h choisie : la charge baisse, à vide le relais tombe ; « Changer la batterie » le relance.
+- Couper (ACE) le relais qu'on utilise : toast sur le téléphone.
 - Plus de joueurs que de places : débit partagé dans l'app Réseau et l'app Wave Relay.
 
 ## Traduction 2026-10-13 — Mod SSE et menus CBA d'Overwatch connect en anglais (ATAK natif 1.55.0)

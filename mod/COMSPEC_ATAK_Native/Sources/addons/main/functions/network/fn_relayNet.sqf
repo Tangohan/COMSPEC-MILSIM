@@ -8,7 +8,8 @@
                    Variables d'un relais : COMSPEC_AtakRelayRange, Throughput, Name, Height (m, défaut 4), Slots, Side,
                    On (défaut vrai), Batt et Autonomy (minutes), Root (raccordé par satellite ou fibre, défaut vrai ; sinon
                    répéteur qui doit voir un relais raccordé). Débit : dégâts, brouilleurs, chaîne des répéteurs, saturation.
-      "best"     : meilleur relais reçu par le téléphone (fn_linkQuality, page Réseau).
+      "best"     : meilleur relais reçu par le téléphone (fn_linkQuality, page Réseau). Relais utilisé perdu : toast
+                   « Relais perdu : X (raison), liaison dégradée » ou « bascule sur Y ».
       "power"    : [relais, "on" | "off" | "battery"] ; "info" : [relais] fiche en notification ; "sweep" : batteries (serveur).
       "link"     : [position antenne ASL, portée, Mbit/s, position ASL visée] -> [qualité 0-1, Mbit/s, perte %] ;
                    portée réduite à 35 % quand le relief coupe la ligne (même règle que le maillage Wave Relay).
@@ -134,7 +135,23 @@ switch (_act) do {
                 _best = [_o, _n, _ant distance _eye, _l select 1, _l select 2, _k, _eff, _u, _sl, _bt];
             };
         } forEach (["list"] call comspec_atak_native_fnc_relayNet);
-        uiNamespace setVariable ["COMSPEC_ATAK_RelayLast", _best param [0, objNull]];
+        // Relais perdu (détruit, coupé, batterie vide, brouillé, sans liaison, ou hors de portée) : toast sur le téléphone,
+        // ou notification s'il est fermé, avec le relais de repli s'il y en a un.
+        private _now0 = _best param [0, objNull];
+        private _lastN = uiNamespace getVariable ["COMSPEC_ATAK_RelayLastName", ""];
+        if (_lastN isNotEqualTo "" && {_now0 isNotEqualTo _last}) then {
+            private _old = ((["list"] call comspec_atak_native_fnc_relayNet) select { (_x select 0) isEqualTo _last }) param [0, []];
+            private _why = [_old param [7, ""], "hors service"] select (_old isEqualTo []);
+            // Simple passage à un relais meilleur, l'ancien encore reçu : pas de toast.
+            private _still = _why isEqualTo "" && {((["link", [_old select 1, (_old select 4) * 1.2, _old select 5, _eye]] call comspec_atak_native_fnc_relayNet) select 1) > 0};
+            if (!_still) then {
+                private _msg = if (_why isNotEqualTo "") then { format ["Relais perdu : %1 (%2)", _lastN, _why] } else { format ["Hors de portée : %1", _lastN] };
+                _msg = _msg + ([", liaison dégradée", format [", bascule sur %1", _best select 1]] select (_best isNotEqualTo []));
+                if !([_msg, 4] call comspec_atak_native_fnc_toast) then { ["WARNING", _msg, 4, 30] call comspec_atak_native_fnc_notify; };
+            };
+        };
+        uiNamespace setVariable ["COMSPEC_ATAK_RelayLast", _now0];
+        uiNamespace setVariable ["COMSPEC_ATAK_RelayLastName", _best param [1, ""]];
         _best
     };
     case "power": {
