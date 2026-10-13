@@ -21,6 +21,7 @@ _st set ["scrollMem", _scrollMem];
 private _restore = (_drawn isEqualTo _page || {_st getOrDefault ["scrollRestore", false]}) && {!(_page in ["MAP", "CHAT"])};
 _st set ["scrollRestore", false];
 _st set ["pageDrawn", _page];
+_st set ["pagePrev", _drawn]; // page dessinée juste avant (centre de notifications : « nouveau » à l'entrée seulement)
 [] call comspec_atak_native_fnc_frsDraftSave;
 [] call comspec_atak_native_fnc_recoDraftSave;
 [] call comspec_atak_native_fnc_firesSave;

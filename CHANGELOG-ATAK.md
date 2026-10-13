@@ -11,6 +11,17 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Centre de notifications refondu (ATAK natif 1.73.0)
+
+Non testé en jeu. Demande de TTRD : améliorer l'UI des notifications. Pas de DLL à recompiler, pas de migration.
+- Une carte par notification : liseré et pastille d'icône à la couleur de gravité (info, message, attention, erreur), source en titre (« Drone », « Synchronisation »…), texte dessous, heure relative (« à l'instant », « il y a 4 min ») et pastille verte sur les non lues.
+- Un texte répété ne s'empile plus : il remonte en tête avec un compteur « ×3 ».
+- Croix sur chaque carte pour l'effacer seule ; clic sur la carte : ouvre l'app concernée quand elle est connue (Drone, Messagerie, Photos, Synchronisation…).
+- Filtres Toutes / Alertes / Infos / Messages avec leur nombre ; « Tout effacer » efface ce que le filtre affiche.
+- État du mod épinglé en tête (PBO en double, DLL périmée, mise à jour disponible, 1.69.0) en rouge ou orange, clic vers Debug > DLL ; ces cartes restent tant que l'anomalie existe.
+- Réglages rapides en une barre compacte : mode avion, Bluetooth, silencieux, et accès au volet rapide complet.
+- État vide soigné (« Tout est calme ») ; textes traduits en anglais. L'écran de verrouillage partage les mêmes icônes et titres.
+
 ## Adresse du portail Athena fixe (ATAK natif 1.72.0)
 
 Non testé en jeu. Demande de TTRD : personne n'héberge son propre Athena, l'adresse du portail ne doit plus être modifiable. Pas de DLL à recompiler, pas de migration.
