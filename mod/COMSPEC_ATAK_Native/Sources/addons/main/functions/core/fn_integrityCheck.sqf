@@ -86,7 +86,7 @@ switch (toLower _mode) do {
         // 2. Code et config d'âges différents : fichiers lus dans un PBO, config dans un autre.
         private _cfg = getText (configFile >> "CfgPatches" >> "comspec_atak_native_main" >> "versionStr");
         if (_code isEqualTo "") then {
-            ["code", "ERROR", format ["Le main.pbo chargé (config %1) n'a pas d'empreinte de version : il date d'avant la 1.66.0. Remplacez-le par le main.pbo à jour.", _cfg]] call _raise;
+            ["code", "ERROR", format ["Le main.pbo chargé (config %1) n'a pas d'empreinte de version : il est trop ancien. Remplacez-le par le main.pbo à jour.", _cfg]] call _raise;
         } else {
             if (_cfg isNotEqualTo _code) then {
                 ["code", "ERROR", format ["main.pbo incohérent : code %1, config %2. Deux versions du mod sont mélangées : gardez un seul main.pbo à jour et relancez Arma.", _code, _cfg]] call _raise;

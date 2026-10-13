@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Mod ou DLL périmés signalés dans le téléphone, dernière version publiée sur Athena (ATAK natif 1.66.0, COMSPEC Link 2.0.78)
+## Mod ou DLL périmés signalés dans le téléphone, dernière version publiée sur Athena (ATAK natif 1.68.0, COMSPEC Link 2.0.78)
 
 Non testé en jeu. Il faut recompiler la DLL (build_mod.bat) ; pas de migration. Cause d'origine : un ancien `Addons\comspec_atak_native_main.pbo` était chargé à la place du main.pbo à jour, sans aucun message (plus de journal ni de connexion).
 - Au démarrage, le téléphone contrôle l'installation et prévient dans ses notifications (et dans le chat pour les erreurs), une fois par lancement : deux PBO du même addon chargés, code et config du main.pbo de versions différentes, DLL COMSPEC Link absente ou d'une autre version que celle attendue par le main.pbo.
@@ -20,6 +20,22 @@ Non testé en jeu. Il faut recompiler la DLL (build_mod.bat) ; pas de migration.
 - La version affichée du mod (Réglages, Crédits, Debug) vient maintenant du main.pbo (elle restait figée à 1.11.0).
 - COMSPEC Link 2.0.78 : commande `LatestVersions`. La DLL annonçait encore 2.0.76 (csproj non monté en 1.64.0) ; csproj, constante et main.pbo sont alignés, un test PHP le vérifie.
 - `build_mod.bat` supprime une sortie HEMTT `comspec_atak_native_main.pbo` / `_towers.pbo` copiée par erreur à côté de main.pbo.
+
+## Intro au démarrage désactivée (ATAK natif 1.67.0)
+
+Non testé en jeu. TTRD : l'intro du mod est buggée. Pas de DLL à recompiler, pas de migration.
+- L'intro sur l'écran de démarrage d'Arma (marque COMSPEC, trait vert, carillon) ne se lance plus : ni affichage ni son.
+- Le code est gardé. Nouveau réglage CBA « COMSPEC > ATAK · Intro > Intro au démarrage », décoché par défaut, pour la réactiver (pris en compte au lancement suivant).
+- La marque COMSPEC sur les écrans de chargement de mission reste inchangée.
+- À vérifier en jeu : lancer Arma, rien de COMSPEC sur l'écran de démarrage, menu principal normal.
+
+## Taille du téléphone en plein écran réglable (ATAK natif 1.66.0)
+
+Non testé en jeu. Demande de TTRD : le téléphone ouvert en plein écran est trop gros pour certains.
+- Nouveau réglage par joueur « Taille du téléphone en plein écran », de 60 à 100 % (100 % par défaut = taille actuelle), dans le menu CBA (COMSPEC > ATAK · Affichage) et dans l'app Réglages > Emplacement (60, 70, 80, 90, 100 %). Les deux sont le même réglage.
+- Le téléphone reste centré ; l'écran, le texte, les boutons, les touches de la coque et la carte sont recalculés depuis cette taille. Le mode mini et sa taille ne changent pas.
+- À vérifier en jeu : prendre le téléphone en main, passer en plein écran, essayer 60 % et 80 %, cliquer sur les apps, le dock, la carte et les touches de la coque ; changer la valeur téléphone ouvert (elle s'applique tout de suite).
+---
 
 ## Pylônes relais 3D destructibles (ATAK natif 1.65.0)
 
