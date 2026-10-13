@@ -38,24 +38,35 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Regroupement : IA ennemie et ATAK perdus, drone, SEEK, Zeus (ATAK natif 1.88.0)
+## Regroupement : IA ennemie et ATAK perdus, drone, pylônes relais, SEEK, Zeus (ATAK natif 1.88.0)
 
 ### Résumé joueur
 Type : nouveauté
-FR : Un ATAK perdu peut trahir ton équipe, drone armé plus fiable, SEEK et Zeus corrigés
+FR : Un ATAK perdu peut trahir ton équipe, drone armé plus fiable, nouveaux pylônes relais
 - L'IA ennemie ramasse les ATAK sur les corps et au sol et s'en sert pour te traquer. Le camp reçoit l'alerte « Compromission suspectée » ; un chef de groupe, le propriétaire ou le Zeus la valide dans Alertes pour couper le téléphone. Batterie vide, la SIM reste localisable par les relais.
 - Drone : toutes les grenades, roquettes et charges se fixent dessous, la charge explose au contact de la cible, et la recherche balaie la zone en bandes au lieu de tourner en rond.
-- Terminal SEEK : le clavier ne fait plus bouger ton personnage, plus de doublons quand on interroge plusieurs fois la même personne, dossiers créés automatiquement, photo du visage envoyée directement.
-- Zeus : le relevé des routes et villes dit s'il a démarré ou pourquoi il ne peut pas, le tutoriel SSE s'affiche par-dessus Zeus, et les noms de villes sont lisibles sur la carte.
-EN : A lost ATAK can betray your team, more reliable armed drone, SEEK and Zeus fixed
+- Pylônes relais : vraies collisions, ruine au sol quand ils sont détruits, deux nouveaux monopoles de 12 et 20 m, et un calque « Relais » sur la carte de l'ATAK.
+- Terminal SEEK : le clavier ne fait plus bouger ton personnage et une même personne n'est plus enregistrée en double. Zeus : le relevé des routes et villes dit s'il a démarré, et les noms de villes sont lisibles sur la carte.
+EN : A lost ATAK can betray your team, more reliable armed drone, new relay towers
 - Enemy AI picks up ATAKs from bodies and the ground and uses them to hunt you. The side gets a "Suspected compromise" alert; a group leader, the owner or the Zeus confirms it in Alerts to cut the phone off. With a dead battery, the SIM can still be located by the relays.
 - Drone: every grenade, rocket and charge can be attached underneath, the charge explodes on contact with the target, and search sweeps the area in lanes instead of circling.
-- SEEK terminal: the keyboard no longer moves your character, no more duplicates when the same person is queried several times, cases are created automatically, face photos are sent straight away.
-- Zeus: the roads and towns survey says whether it started or why it cannot, the SSE tutorial shows on top of Zeus, and town names are readable on the map.
+- Relay towers: real collisions, a ruin on the ground when destroyed, two new 12 m and 20 m monopoles, and a "Relays" layer on the ATAK map.
+- SEEK terminal: the keyboard no longer moves your character and the same person is no longer recorded twice. Zeus: the roads and towns survey says whether it started, and town names are readable on the map.
 
 ### Détail technique
 
-Une seule version pour 4 PR regroupées (#771, #773, #774, #775) : ATAK natif 1.88.0. COMSPEC Link reste en 2.0.83 (aucune DLL modifiée). main.pbo reconstruit avec HEMTT ; comspec_overwatch_connect.pbo repatché depuis les sources fusionnées (SEEK #773 + Zeus #775, tools/pbo_patch.py --changed) ; comspec_sse_biometrics.pbo (#773) et comspec_sse_guide.pbo (#775) repris tels quels. i18n/en.txt fusionné à trois voies. Non testé en jeu.
+Une seule version pour 5 PR regroupées (#771, #773, #774, #775, #778) : ATAK natif 1.88.0. COMSPEC Link reste en 2.0.83 (aucune DLL modifiée). main.pbo et towers.pbo reconstruits avec HEMTT ; comspec_overwatch_connect.pbo repatché depuis les sources fusionnées (SEEK #773, Zeus #775, relais #778, tools/pbo_patch.py --changed) ; comspec_sse_biometrics.pbo (#773) et comspec_sse_guide.pbo (#775) repris tels quels. i18n/en.txt fusionné à trois voies. Non testé en jeu.
+
+#### Pylônes relais : collisions, rendu, ruine, monopoles, calque Relais et tableau TBR (#778)
+
+- Modèles (`tools/model_relay_towers.py`, régénérés) : boîtes et cornières à facettes, tubes lissés (les normales moyennées des massifs les éclairaient à contre-jour, d'où les bandes claires). Ombres : une enveloppe convexe fermée par pièce, rentrée de 6 mm (avant : 32 arêtes ouvertes par LOD d'ombre, paraboles et révolutions à pointe, et volumes collés aux faces visibles). Géométrie : enveloppe de chaque pièce du pylône simplifié (fini la boîte invisible de 4 m en tête et les croisillons traversables), géométrie de tir sur le treillis presque complet, nouvelles LOD vue (le plein seulement) et chemin praticable (massifs, dalles, paliers). Ruines : tronçons fermés séparés pliés avec le pylône.
+- Matières (`tower_*.rvmat`) : reflets 0,9 → 0,2 environ, puissance 60 → 28, Fresnel métal poli (4,7) → acier patiné (1,4), diffus 0,82 pour l'acier galvanisé (trop blanc).
+- Ruine : `fn_relayTowerRuin` (événement Killed posé par `fn_relayTower`, aussi sur les tours créées par le module) pose `COMSPEC_ATAK_RelayTower_XX_ruins` si le moteur n'a laissé aucune ruine au bout de 8 s.
+- Monopoles `COMSPEC_ATAK_RelayTower_M12` (3 km, 10 Mbit/s, 32 places) et `_M20` (4,5 km, 15 Mbit/s, 48 places), ruines comprises, aperçus Eden.
+- Fréquences (base) : attribut « Bande de fréquence » sur les pylônes et le module relais (formulaire Zeus aussi), variable `COMSPEC_AtakRelayFreq` (MHz, 0 = automatique), affichée sur la carte et dans le TBR ; pas encore utilisée dans les calculs de liaison.
+- Eden : menu COMSPEC ATAK (TBR · tableau des relais : nom, type, camp, portée, bande, liaison, état, position, répéteurs isolés signalés ; Aller, Sélectionner ; aide relais). Module relais de type Tour fixe sans objet synchronisé : la tour de 40 m apparaît à sa place dans l'éditeur (objet local, non sauvé). `fn_relayEden`, `Cfg3DEN` (ouverture / nouvelle mission), `3DEN` ajouté aux dépendances de main.
+- Carte ATAK : calque « Relais » (`COMSPEC_ATAK_RelaysLayer`, affiché par défaut) séparé du calque Wave Relay (couverture, liens) ; interrupteur aussi dans l'app Wave Relay. COMSPEC Link : avec l'ATAK natif chargé, le carré « Relais … » et son cercle (`fn_updateNearestRelayMap`) ne sont plus posés, l'alerte de sortie de portée reste.
+- À tester en jeu : collisions au pied (marcher contre les massifs, les croisillons, l'armoire), tirs dans le treillis, sélection dans Eden ; ombres et reflets en plein soleil ; destruction (ruine qui reste, pas de doublon) ; monopoles 12 et 20 m ; module Tour fixe dans Eden (aperçu qui suit, disparaît à la suppression) ; menu COMSPEC ATAK > TBR ; calque Relais masqué / affiché sur la carte du téléphone.
 
 #### Drone : charge qui explose, grenades acceptées, recherche en balayage (#771)
 
@@ -144,31 +155,6 @@ Non testé en jeu. Retour de TTRD : défilement pénible en bas de l'onglet LECT
 - fn_pageMusic : sections en accordéon (clé « fold » de l'état d'interface, « Son » ouverte par défaut), action « fold » dans fn_musicAction.
 - Icônes ui_chevron_down / ui_chevron_up (gen_assets.py) ; icônes du lecteur gardées chargées (fn_textureKeep).
 - À vérifier en jeu : onglet LECTURE en plein écran paysage (pochette carrée à gauche), ouverture / fermeture des 4 sections, curseurs de volume dans « Son », portrait mini.
-## Pylônes relais : collisions, rendu, ruine, monopoles, calque Relais et tableau TBR (ATAK natif 1.87.0)
-
-### Résumé joueur
-Type : nouveauté
-FR : Pylônes relais plus réalistes, et deux monopoles
-- Les pylônes relais ont de vraies collisions : on ne traverse plus les croisillons ni les massifs, les balles touchent le treillis. Ils brillent beaucoup moins, les ombres n'ont plus de bandes et le treillis scintille moins au loin.
-- Un pylône détruit laisse sa ruine au sol : pylône plié et couché, antennes arrachées.
-- Nouveaux relais plus petits dans Eden et Zeus : mât monopole de 12 m et pylône monopole de 20 m.
-- Carte de l'ATAK : les relais ont un nouveau calque « Relais » (CALQUES) qu'on peut masquer ; le relais utilisé est en vert avec sa portée et un trait vers toi. Dans Eden, le menu COMSPEC ATAK ouvre le tableau des relais (TBR).
-EN : More realistic relay towers, and two monopoles
-- Relay towers now have real collisions: you no longer walk through the bracing or the footings, and bullets hit the lattice. They shine much less, shadows no longer show stripes and the lattice flickers less at a distance.
-- A destroyed tower leaves its ruin on the ground: the bent, fallen tower and torn-off antennas.
-- New smaller relays in Eden and Zeus: a 12 m monopole mast and a 20 m monopole tower.
-- ATAK map: relays have a new "Relays" layer (LAYERS) you can hide; the relay in use is green with its range and a line to you. In Eden, the COMSPEC ATAK menu opens the relay table (TBR).
-
-### Détail technique
-- Modèles (`tools/model_relay_towers.py`, régénérés) : boîtes et cornières à facettes, tubes lissés (les normales moyennées des massifs les éclairaient à contre-jour, d'où les bandes claires). Ombres : une enveloppe convexe fermée par pièce, rentrée de 6 mm (avant : 32 arêtes ouvertes par LOD d'ombre, paraboles et révolutions à pointe, et volumes collés aux faces visibles). Géométrie : enveloppe de chaque pièce du pylône simplifié (fini la boîte invisible de 4 m en tête et les croisillons traversables), géométrie de tir sur le treillis presque complet, nouvelles LOD vue (le plein seulement) et chemin praticable (massifs, dalles, paliers). Ruines : tronçons fermés séparés pliés avec le pylône.
-- Matières (`tower_*.rvmat`) : reflets 0,9 → 0,2 environ, puissance 60 → 28, Fresnel métal poli (4,7) → acier patiné (1,4), diffus 0,82 pour l'acier galvanisé (trop blanc).
-- Ruine : `fn_relayTowerRuin` (événement Killed posé par `fn_relayTower`, aussi sur les tours créées par le module) pose `COMSPEC_ATAK_RelayTower_XX_ruins` si le moteur n'a laissé aucune ruine au bout de 8 s.
-- Monopoles `COMSPEC_ATAK_RelayTower_M12` (3 km, 10 Mbit/s, 32 places) et `_M20` (4,5 km, 15 Mbit/s, 48 places), ruines comprises, aperçus Eden.
-- Fréquences (base) : attribut « Bande de fréquence » sur les pylônes et le module relais (formulaire Zeus aussi), variable `COMSPEC_AtakRelayFreq` (MHz, 0 = automatique), affichée sur la carte et dans le TBR ; pas encore utilisée dans les calculs de liaison.
-- Eden : menu COMSPEC ATAK (TBR · tableau des relais : nom, type, camp, portée, bande, liaison, état, position, répéteurs isolés signalés ; Aller, Sélectionner ; aide relais). Module relais de type Tour fixe sans objet synchronisé : la tour de 40 m apparaît à sa place dans l'éditeur (objet local, non sauvé). `fn_relayEden`, `Cfg3DEN` (ouverture / nouvelle mission), `3DEN` ajouté aux dépendances de main.
-- Carte ATAK : calque « Relais » (`COMSPEC_ATAK_RelaysLayer`, affiché par défaut) séparé du calque Wave Relay (couverture, liens) ; interrupteur aussi dans l'app Wave Relay. COMSPEC Link : avec l'ATAK natif chargé, le carré « Relais … » et son cercle (`fn_updateNearestRelayMap`) ne sont plus posés, l'alerte de sortie de portée reste.
-- À tester en jeu : collisions au pied (marcher contre les massifs, les croisillons, l'armoire), tirs dans le treillis, sélection dans Eden ; ombres et reflets en plein soleil ; destruction (ruine qui reste, pas de doublon) ; monopoles 12 et 20 m ; module Tour fixe dans Eden (aperçu qui suit, disparaît à la suppression) ; menu COMSPEC ATAK > TBR ; calque Relais masqué / affiché sur la carte du téléphone.
-
 ## Barlow Condensed revient en test dans Réglages > Police (ATAK natif 1.86.0)
 
 ### Résumé joueur
