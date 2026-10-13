@@ -47,18 +47,20 @@ FR : Drone armé plus fiable et recherche plus rapide
 - En frappe, la charge explose au contact ou au passage au ras de la cible : le drone ne se contente plus de la toucher avec ses hélices. S'il est abattu ou percute un obstacle en piqué, la charge part aussi.
 - En recherche, le drone part tout de suite en avançant et en montant, puis balaie la zone en bandes parallèles, puis croisées, au lieu de grimper à la verticale avant de tourner en rond.
 - Une erreur de script qui pouvait s'afficher quand vous étiez blessé avec ACE est corrigée.
+- Image du drone noire dans le téléphone : nouveau bouton TEST VIDÉO (app Drone, RÉGLAGES) pour trouver la cause.
 EN : More reliable armed drone and faster search
 - Every grenade in your inventory (M67, M84, smoke, 40 mm…), rocket, missile and explosive charge can now be attached under the drone, from any mod.
 - In a strike, the charge explodes on contact or when passing right next to the target: the drone no longer just hits it with its propellers. If it is shot down or hits an obstacle during the dive, the charge goes off too.
 - In search mode, the drone sets off straight away, climbing while it moves, then sweeps the area in parallel lanes, then crossed lanes, instead of climbing vertically before circling.
 - A script error that could appear when you were wounded with ACE is fixed.
+- Black drone picture in the phone: new VIDEO TEST button (Drone app, SETTINGS) to find the cause.
 
 ### Détail technique
 - fn_droneAction : charges reconnues par la simulation de la munition (shotGrenade, shotSmoke(X), shotIlluminating, shotRocket, shotMissile, shotMine, shotDirectionalBomb, shotShell à un coup…), variante `_Scripted` prise si elle existe ; liste de l'onglet TÂCHES par lignes de deux.
 - fn_droneCmd « strike » : piqué final dans un CBA PFH (chaque image) au lieu d'une boucle planifiée à 0,05 s ; fusée de proximité 3,5 m, point le plus proche dépassé, cible tuée à moins de 25 m ; gestionnaires Killed et Dammaged qui déclenchent la charge en mode STRIKE ; charge retirée avant setDamage (pas de double explosion).
 - fn_droneCmd « hunt » : vol piloté par notre boucle (IA MOVE coupée), montée 6 m/s en avançant, 50 km/h au moins, hauteur tenue sur le relief 60 m devant, montée devant un obstacle ; balayage en bandes (écart selon la hauteur), puis bandes croisées ; détection deux fois par seconde.
 - XEH_postInitClient (ace_medical_woundReceived), fn_pageLinkAlly, fn_pageNetwork : `params` avec `["", défaut]` remplacé par `""` (erreur « Variable locale dans espace global »).
-- Caméra du drone noire : pas de changement, cause toujours non confirmée.
+- Caméra du drone noire (la PiP marche partout ailleurs dans le jeu, retour de TTRD) : fn_pipCheck "test" (bouton TEST VIDÉO) montre 20 s une caméra devant le joueur (texture carrée 512, nom simple) à 4 endroits : groupe de contenu, display du téléphone, RscDisplayEmpty par-dessus, calque cutRsc. fn_tr ne traite plus les textures « #( » (une image vidéo ne doit jamais passer dans la traduction anglaise).
 
 ## Barlow Condensed revient en test dans Réglages > Police (ATAK natif 1.86.0)
 
