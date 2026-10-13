@@ -14,6 +14,9 @@ if (_button isEqualTo 0) exitWith {
     if ((_s getOrDefault ["dronePick", ""]) isNotEqualTo "") exitWith { _s set ["dronePick", ""]; ["picked", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_droneAction; true };
     private _lp = _s getOrDefault ["logiPick", ""];
     if (_lp isNotEqualTo "") exitWith { _s set ["logiPick", ""]; ["picked", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_logisticsAction; true };
+    // App JTAC : cible ou IP pointés sur la carte.
+    private _jp = _s getOrDefault ["jtacPick", ""];
+    if (_jp isNotEqualTo "") exitWith { _s set ["jtacPick", ""]; ["picked", [_jp, [_world select 0, _world select 1, 0]]] call comspec_atak_native_fnc_jtacAction; true };
     private _pick = _s getOrDefault ["firePick", ""];
     if (_pick isNotEqualTo "") exitWith {
         _s set ["firePick", ""];

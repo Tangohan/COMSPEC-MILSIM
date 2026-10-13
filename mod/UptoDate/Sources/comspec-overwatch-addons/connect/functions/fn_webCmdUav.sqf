@@ -17,7 +17,7 @@ if (isNil "comspec_atak_native_fnc_droneAction") exitWith { ["Téléphone COMSPE
 private _d = objectFromNetId _ref;
 if (isNull _d || {!alive _d}) exitWith { ["Drone introuvable ou détruit"] call _fail };
 if ((_d getVariable ["COMSPEC_DroneOwner", ""]) isNotEqualTo (getPlayerUID player)) exitWith { ["Ce drone n'est plus appairé au téléphone du pilote"] call _fail };
-// Flotte (ATAK natif 1.44.0+) : un drone de la flotte du pilote qui reçoit un ordre devient le drone piloté ; l'essaim vise toute la flotte.
+// Flotte (ATAK natif 1.49.0+) : un drone de la flotte du pilote qui reçoit un ordre devient le drone piloté ; l'essaim vise toute la flotte.
 private _fleetOk = !isNil "comspec_atak_native_fnc_droneFleet";
 if ((missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull]) isNotEqualTo _d) then {
     if (_fleetOk && {_cmd isNotEqualTo "swarm"} && {_d in (missionNamespace getVariable ["COMSPEC_ATAK_DroneFleet", []])}) then { ["switch", _d] call comspec_atak_native_fnc_droneFleet; };
@@ -37,7 +37,7 @@ private _say = { params ["_t"]; ["INFO", _t, 4, 30] call comspec_atak_native_fnc
 
 // Rôle d'un drone et ordres à l'essaim (fn_droneFleet) : NONE ME CQB GUARD HUNT / ME CQB GUARD HUNT HOVER RTH LAND.
 if (_cmd in ["role", "swarm"]) exitWith {
-    if (!_fleetOk) exitWith { ["Téléphone ATAK trop ancien : pas de flotte de drones (1.44.0 ou plus)"] call _fail };
+    if (!_fleetOk) exitWith { ["Téléphone ATAK trop ancien : pas de flotte de drones (1.49.0 ou plus)"] call _fail };
     private _k = toUpper (_a getOrDefault ["k", ""]);
     if (_cmd isEqualTo "swarm") exitWith {
         if !(_k in ["ME", "CQB", "GUARD", "HUNT", "HOVER", "RTH", "LAND"]) exitWith { ["Ordre d'essaim inconnu"] call _fail };

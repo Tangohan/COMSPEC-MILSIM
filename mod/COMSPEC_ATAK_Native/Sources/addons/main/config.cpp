@@ -21,7 +21,7 @@ class CfgFunctions {
             class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class natoSymbol {}; class mapLabels {}; class mapCtxMenu {}; class mapPing {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class unitGroup {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerWeb {}; class markerWebSweep {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {}; class mapUnfocus {}; class inspToggle {}; class markerPalette {}; class markerPaletteData {}; class markerLabels {}; class sigintPoll {}; class reliefDraw {}; class meshDraw {}; class logisticsDraw {}; class ewDraw {}; class mapSearch {}; class mapStyle {}; class textureKeep {}; class strokeSimplify {}; class strokeDraw {}; class strokeBar {};
         };
         class gestures { file="z\comspec_atak_native\addons\main\functions\gestures";
-            class gestureFinger {}; class gestureSelfie {};
+            class gestureFinger {}; class gestureFingerAim {}; class gestureSelfie {};
         };
         class plan { file="z\comspec_atak_native\addons\main\functions\plan";
             class planCatalog {}; class planGfx {}; class planDraw {}; class planServer {}; class planAction {}; class planMap {}; class pagePlan {};
@@ -44,7 +44,7 @@ class CfgFunctions {
             class exploList {}; class exploAction {}; class pageExplo {};
         };
         class tactical { file="z\comspec_atak_native\addons\main\functions\tactical";
-            class sniperBallistics {}; class pageSniper {}; class sniperAction {}; class jtacTarget {}; class pageJtac {}; class jtacAction {};
+            class sniperBallistics {}; class pageSniper {}; class sniperAction {}; class jtacTarget {}; class pageJtac {}; class jtacAction {}; class jtacAir {}; class jtacLines {}; class jtacGeometry {};
             class breachBuilding {}; class pageBreach {}; class breachAction {}; class breachTop {};
         };
         class drone { file="z\comspec_atak_native\addons\main\functions\drone";
