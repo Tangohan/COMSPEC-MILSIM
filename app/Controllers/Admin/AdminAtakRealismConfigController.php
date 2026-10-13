@@ -78,8 +78,6 @@ final class AdminAtakRealismConfigController
             ],
             'history' => $history,
             'csrfToken' => Csrf::token(),
-            'success' => Session::flash('success'),
-            'error' => Session::flash('error'),
         ]);
     }
 
