@@ -95,13 +95,18 @@ class Application
                 ob_end_clean();
             }
         }
-        // Visiteur en anglais : la page HTML (vues écrites en français) est traduite à l'affichage.
-        if (function_exists('locale') && locale() === 'en'
-            && str_starts_with((string) ($response->headerValue('Content-Type') ?? ''), 'text/html')) {
+        // Visiteur en anglais : la page HTML (vues écrites en français) et les messages JSON des API sont traduits
+        // à l'affichage.
+        if (function_exists('locale') && locale() === 'en') {
+            $type = (string) ($response->headerValue('Content-Type') ?? '');
             try {
-                $response->setBody(\App\Support\HtmlTranslator::translate($response->body()));
+                if (str_starts_with($type, 'text/html')) {
+                    $response->setBody(\App\Support\HtmlTranslator::translate($response->body()));
+                } elseif (str_starts_with($type, 'application/json')) {
+                    $response->setBody(\App\Support\HtmlTranslator::translateJson($response->body()));
+                }
             } catch (\Throwable) {
-                // Page laissée en français plutôt qu'une erreur.
+                // Réponse laissée en français plutôt qu'une erreur.
             }
         }
         $response->send();

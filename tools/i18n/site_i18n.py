@@ -8,6 +8,7 @@ dictionnaire lang/en/site_auto.php : ['texte français' => 'English text', ...].
 (« Bienvenue, %1 ! » traduit « Bienvenue, Jean ! ») ; dans les vues, chaque <?= ... ?> au milieu d'un texte devient %N.
 
   python3 tools/i18n/site_i18n.py extract [dossier de views ...]   textes sans traduction -> tools/i18n/site_missing.tsv
+  python3 tools/i18n/site_i18n.py extract-app                     textes du code PHP (app/) -> tools/i18n/site_missing.tsv
   python3 tools/i18n/site_i18n.py merge fichier.tsv                ajoute les lignes « français<TAB>anglais »
   python3 tools/i18n/site_i18n.py stats
 
@@ -136,6 +137,51 @@ def email_segments():
     return out
 
 
+# Code PHP (app/) : messages flash, erreurs de formulaire, libellés, champs error/message des réponses JSON.
+# Restent en français : journaux, exceptions, requêtes SQL, filtres de modération, PDF.
+APP = os.path.join(ROOT, "app")
+APP_SKIP_LINE = re.compile(r"error_log|->log\w*\(|Logger|::log\w*\(|->(debug|info|notice|warning|error|critical|alert|emergency)\("
+                           r"|throw\s|Exception\(|audit|journal|syslog|trigger_error|logEvent|logAction|->record\(", re.I)
+APP_SKIP_SQL = re.compile(r"\b(SELECT|INSERT|UPDATE|DELETE|WHERE|JOIN|CREATE|ALTER)\b")
+APP_SKIP_FILE = re.compile(r"Scanner|Log\w*Service|Pdf|Moderation|Logger|Journal")
+
+
+def app_segments():
+    found = {}
+    for base, _dirs, files in os.walk(APP):
+        for name in files:
+            if not name.endswith(".php"):
+                continue
+            path = os.path.join(base, name)
+            rel = os.path.relpath(path, APP)
+            if APP_SKIP_FILE.search(rel):
+                continue
+            pending = False
+            for line in open(path, encoding="utf-8", errors="replace").read().split("\n"):
+                st = line.strip()
+                if st.startswith(("//", "*", "/*", "#")):
+                    continue
+                if APP_SKIP_LINE.search(line):
+                    pending = not line.rstrip().endswith(";")
+                    continue
+                if pending:
+                    pending = not line.rstrip().endswith(";")
+                    continue
+                if APP_SKIP_SQL.search(line):
+                    continue
+                for m in PHP_STR.finditer(line):
+                    s = m.group(1) if m.group(1) is not None else m.group(2)
+                    n = [0]
+
+                    def rep(_m):
+                        n[0] += 1
+                        return f"%{n[0]}"
+                    s = norm(re.sub(r"%(\d+\$)?[sdfu]", rep, s.replace("\\'", "'")))
+                    if len(s) >= 4 and is_text(s) and FRENCH_HINT.search(s) and not re.search(r"\w%\d|%\d\w", s):
+                        found.setdefault(s, rel)
+    return found
+
+
 def view_files(dirs):
     roots = [os.path.join(VIEWS, d) for d in dirs] if dirs else [VIEWS]
     for r in roots:
@@ -176,14 +222,14 @@ def save_dict(d):
 
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "stats"
-    if cmd == "extract":
+    if cmd in ("extract", "extract-app"):
         have = load_dict()
-        found = {}
-        for path in view_files(sys.argv[2:]):
+        found = app_segments() if cmd == "extract-app" else {}
+        for path in ([] if cmd == "extract-app" else view_files(sys.argv[2:])):
             rel = os.path.relpath(path, VIEWS)
             for s in extract_view(open(path, encoding="utf-8", errors="replace").read()):
                 found.setdefault(s, rel)
-        if not sys.argv[2:]:
+        if cmd == "extract" and not sys.argv[2:]:
             for s, r in email_segments().items():
                 found.setdefault(s, r)
         missing = sorted(((s, r) for s, r in found.items() if s not in have), key=lambda p: (p[1], p[0]))

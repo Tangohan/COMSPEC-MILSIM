@@ -131,6 +131,66 @@ final class HtmlTranslator
         return implode("\n", $lines);
     }
 
+    /** Champs d'une réponse JSON montrés tels quels par les pages (erreurs, confirmations, libellés). */
+    private const JSON_KEYS = ['error', 'message', 'msg', 'warning', 'notice', 'hint', 'label', 'title', 'detail', 'reason', 'status_label'];
+
+    /**
+     * Réponse JSON des API appelées par les pages : seuls les champs de JSON_KEYS (à toute profondeur) sont cherchés
+     * dans le dictionnaire, comme un texte de page ; les autres valeurs (données, identifiants) ne bougent pas.
+     */
+    public static function translateJson(string $json): string
+    {
+        if ($json === '' || !self::load()) {
+            return $json;
+        }
+        try {
+            $data = json_decode($json, false, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return $json;
+        }
+        if (!is_array($data) && !is_object($data)) {
+            return $json;
+        }
+        $changed = false;
+        $data = self::jsonWalk($data, null, $changed);
+        if (!$changed) {
+            return $json;
+        }
+        $out = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
+
+        return $out === false ? $json : $out;
+    }
+
+    private static function jsonWalk(mixed $node, ?string $key, bool &$changed): mixed
+    {
+        if (is_array($node) || is_object($node)) {
+            foreach ($node as $k => $v) {
+                $name = is_string($k) ? $k : $key;
+                $nv = self::jsonWalk($v, $name, $changed);
+                if ($nv !== $v) {
+                    if (is_object($node)) {
+                        $node->{$k} = $nv;
+                    } else {
+                        $node[$k] = $nv;
+                    }
+                }
+            }
+
+            return $node;
+        }
+        if (!is_string($node) || $key === null || !in_array(strtolower($key), self::JSON_KEYS, true)
+            || !preg_match('/\p{L}/u', $node)) {
+            return $node;
+        }
+        $en = self::lookup((string) preg_replace('/\s+/u', ' ', trim($node)), 0);
+        if ($en === null) {
+            return $node;
+        }
+        $changed = true;
+
+        return $en;
+    }
+
     private static function attributes(string $tag, string $name): string
     {
         $tag = (string) preg_replace_callback(self::ATTRS, static function (array $m): string {

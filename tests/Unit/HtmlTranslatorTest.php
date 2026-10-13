@@ -72,4 +72,15 @@ final class HtmlTranslatorTest extends TestCase
         $text = "Bienvenue, Jean !\n\n  Statut : Actif\nLigne inconnue\n";
         self::assertSame("Welcome, Jean!\n\n  Status: Active\nLigne inconnue\n", HtmlTranslator::translateText($text));
     }
+
+    public function testTranslatesJsonMessagesButNotData(): void
+    {
+        $json = '{"ok":false,"error":"Fermer","data":{"name":"Fermer","items":[{"label":"Statut : Actif","n":1.0}]},"empty":{}}';
+        self::assertSame(
+            '{"ok":false,"error":"Close","data":{"name":"Fermer","items":[{"label":"Status: Active","n":1.0}]},"empty":{}}',
+            HtmlTranslator::translateJson($json)
+        );
+        self::assertSame('{"message":"Texte inconnu"}', HtmlTranslator::translateJson('{"message":"Texte inconnu"}'));
+        self::assertSame('pas du json', HtmlTranslator::translateJson('pas du json'));
+    }
 }
