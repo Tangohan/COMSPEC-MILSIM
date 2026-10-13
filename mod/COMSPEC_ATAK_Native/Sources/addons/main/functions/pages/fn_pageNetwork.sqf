@@ -154,7 +154,8 @@ private _bearer = switch (true) do {
 _nodes pushBack _bearer;
 // 3. COMSPEC Link (Overwatch) ou extension native.
 private _linkSt = switch (_link) do { case "linked": { "ok" }; case "degraded"; case "connecting": { "warn" }; default { "bad" }; };
-_nodes pushBack [["Extension native", "COMSPEC Link"] select _bridge, toUpper _link,
+private _linkTxt = createHashMapFromArray [["linked", "Connecté"], ["degraded", "Dégradé"], ["connecting", "Connexion…"], ["offline", "Hors ligne"]] getOrDefault [_link, "Hors ligne"];
+_nodes pushBack [["Extension native", "COMSPEC Link"] select _bridge, _linkTxt,
     format ["latence %1 · perte %2 %%", [format ["%1 ms", round _lat], "non mesurée"] select (_lat < 0), round _loss], _linkSt, [0, 4, 2, 2, 1] select ((["", "linked", "degraded", "connecting", "offline"] find _link) max 0), "\z\comspec_atak_native\addons\main\data\ui_comspec_link.paa"];
 // 4. Athena : âge de la dernière réponse.
 private _hAge = ["COMSPEC_LastHealthOk"] call _ageS;
@@ -243,15 +244,30 @@ if (_wide) then {
 };
 
 // --- Indicateurs ---
+// Stabilité (0-100) : perte de paquets (mesurée et simulée), latence, état de COMSPEC Link et réponses d'Athena.
+// Sans aucune mesure (rien envoyé, latence inconnue, liaison pas encore établie) : « — », pas un chiffre inventé.
+private _lossAll = _loss max ([0, _lq get "loss"] select _sim);
+private _stab = -1;
+private _stabLabel = "pas encore de mesure";
+switch (true) do {
+    case (_air || {_linkSt isEqualTo "bad"} || {(_lq get "kbps") <= 0}): { _stab = 0; _stabLabel = "liaison coupée"; };
+    case (_sent <= 0 && {_lat < 0} && {_link isNotEqualTo "linked"}): {};
+    default {
+        _stab = 100 - ((_lossAll * 2.5) min 60) - ([0, ((_lat - 150) / 15) min 30] select (_lat > 150))
+            - ([0, 20] select (_linkSt isEqualTo "warn")) - ([0, 15, 40] select ((["warn", "bad"] find _athSt) + 1));
+        _stab = round ((_stab max 0) min 100);
+        _stabLabel = switch (true) do { case (_stab >= 85): { "stable" }; case (_stab >= 70): { "correcte" }; case (_stab >= 40): { "instable" }; default { "très instable" }; };
+    };
+};
 ["Indicateurs"] call _section;
 private _cols = [2, 3] select _wide;
 private _tw = ((_cw - 2 * _pad) - (_cols - 1) * _pad * 0.5) / _cols;
 private _th = _fs * 2.9;
 private _tiles = [
-    ["Stabilité", format ["%1 %%", _stab], _stabLabel, switch (true) do { case (_stab >= 70): { "ok" }; case (_stab >= 40): { "warn" }; default { "bad" }; }, _stab / 100],
+    ["Stabilité", [format ["%1 %%", _stab], "—"] select (_stab < 0), _stabLabel, switch (true) do { case (_stab < 0): { "off" }; case (_stab >= 70): { "ok" }; case (_stab >= 40): { "warn" }; default { "bad" }; }, [_stab / 100, -1] select (_stab < 0)],
     ["Latence", [format ["%1 ms", round _lat], "—"] select (_lat < 0), ["non mesurée", ""] select (_lat >= 0), switch (true) do { case (_lat < 0): { "off" }; case (_lat < 150): { "ok" }; case (_lat < 400): { "warn" }; default { "bad" }; }, -1],
     ["Perte de paquets", format ["%1 %%", round _loss], "", switch (true) do { case (_loss < 5): { "ok" }; case (_loss < 20): { "warn" }; default { "bad" }; }, -1],
-    ["Paquets envoyés", str _sent, "", "off", -1],
+    ["Paquets envoyés", [str _sent, _sent toFixed 0] select (_sent isEqualType 0), "", "off", -1],
     ["Dernière position", [["COMSPEC_LastPositionSync"] call _ageS] call _ageTxt, "envoyée à Athena", switch (true) do { case ((["COMSPEC_LastPositionSync"] call _ageS) < 0): { "bad" }; case ((["COMSPEC_LastPositionSync"] call _ageS) < 60): { "ok" }; default { "warn" }; }, -1],
     ["Réponse Athena", _hTxt, "", _athSt, -1]
 ];
@@ -293,8 +309,7 @@ private _items = [];
 } forEach (["list"] call comspec_atak_native_fnc_relayNet);
 _items sort true;
 if ((count _items) isEqualTo 0) then {
-    [format ["<t color='#8a9a93'>Aucune passerelle de véhicule, aucun poste de commandement ni relais déclaré pour votre camp.%1</t>",
-        ["", format ["<br/>Maillage : %1", [[_mesh getOrDefault ["gwLabel", ""]] call _esc, "aucune passerelle"] select ((_mesh getOrDefault ["gwLabel", ""]) isEqualTo "")]] select (_hops >= 0)]] call _para;
+    ["<t color='#8a9a93'>Aucune passerelle de véhicule, aucun poste de commandement ni relais déclaré pour votre camp.</t>"] call _para;
 };
 private _rowH = _fs * 2.5;
 {
@@ -328,18 +343,21 @@ private _rowH = _fs * 2.5;
     _y = _y + _rowH + _pad * 0.3;
 } forEach (_items select [0, 10]);
 if ((_mesh getOrDefault ["gwLabel", ""]) isNotEqualTo "") then {
+    _y = _y + _pad * 0.2;
     ["Maillage Wave Relay", format ["%1 · %2", [_mesh get "gwLabel"] call _esc, switch (true) do { case (_hops < 0): { "<t color='#e5483a'>coupé</t>" }; case (_hops <= 1): { "en direct" }; default { format ["%1 sauts", _hops] }; }]] call _info;
+} else {
+    if (_hops >= 0) then { _y = _y + _pad * 0.2; ["Maillage Wave Relay", "<t color='#8a9a93'>aucune passerelle</t>"] call _info; };
 };
 
 // --- Zone radio et canal (COMSPEC Overwatch) ---
 if (_bridge) then {
     ["Zone radio"] call _section;
     [if ((count _zone) isEqualTo 0) then { "Couverture normale." } else {
-        format ["%1 (%2)<br/>Perte minimale %3 %% · latence +%4 ms", _zone getOrDefault ["name", "Zone"], _zone getOrDefault ["type", "?"], _zone getOrDefault ["packet_loss_floor", 0], _zone getOrDefault ["latency_add", 0]]
+        format ["%1%2<br/>Perte minimale %3 %% · latence +%4 ms", _zone getOrDefault ["name", "Zone"], ["", format [" (%1)", _zone getOrDefault ["type", ""]]] select ((_zone getOrDefault ["type", ""]) isNotEqualTo ""), _zone getOrDefault ["packet_loss_floor", 0], _zone getOrDefault ["latency_add", 0]]
     }] call _para;
     // Fonctions d'Overwatch absentes d'une version plus ancienne : la page continue sans elles.
     if (!isNil "comspec_overwatch_connect_fnc_isLinkDegradeSimActive") then {
-        ["Simulation de liaison dégradée", ["inactive", "<t color='#f2ab33'>active</t>"] select ([] call comspec_overwatch_connect_fnc_isLinkDegradeSimActive)] call _info;
+        ["Simulation de liaison dégradée", ["<t color='#8a9a93'>désactivée</t>", "<t color='#f2ab33'>active : pertes et délais simulés</t>"] select ([] call comspec_overwatch_connect_fnc_isLinkDegradeSimActive)] call _info;
     };
     if (_best isNotEqualTo []) then {
         ["Relais utilisé", format ["%1 · %2 · %3 Mbit/s", [_best select 1] call _esc, [_best select 2] call _dist, (_best select 3) toFixed 1]] call _info;

@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Textes du téléphone plus lisibles (ATAK natif 1.75.0)
+## Textes du téléphone plus lisibles (ATAK natif 1.80.0)
 
 ### Résumé joueur
 Type : nouveauté
@@ -62,6 +62,112 @@ Non testé en jeu. Demande de TTRD : « Améliore le font de notre application �
 - `ui/controls.hpp` : macros `ATAK_FONT`, `ATAK_FONT_BOLD`, `ATAK_FONT_LIGHT`, `ATAK_FONT_MONO`, `ATAK_FONT_MONO_BOLD` ; `COMSPEC_RscLabel` passe de EtelkaMonospacePro à RobotoCondensedBold ; nouvelles classes `COMSPEC_RscMono` / `COMSPEC_RscMonoRight` (en-tête de colonnes du BFT, valeurs de la solution CFF). Établi (accessoires) : PuristaBold → RobotoCondensedBold.
 - Polices du jeu uniquement (rien d'embarqué, pas de question de licence).
 - À tester en jeu : mode mini portrait et paysage en 1080p, plein écran à 60 % (#709), Réglages > Taille du texte sur les 4 valeurs ; vérifier qu'aucun libellé ne déborde (BFT, Alertes, Réglages, Drone, CFF, tuiles du lanceur).
+## App Réseau : stabilité calculée, passerelles lisibles (ATAK natif 1.79.0)
+
+### Résumé joueur
+Type : correctif
+FR : App Réseau : la stabilité s'affiche enfin
+- La tuile Stabilité montre un vrai pourcentage (stable, correcte, instable, très instable) calculé à partir des pertes, de la latence et des réponses d'Athena, ou « — » tant que rien n'a été mesuré.
+- La carte COMSPEC Link indique Connecté, Dégradé, Connexion… ou Hors ligne.
+- La section Passerelles et relais ne répète plus le maillage et ses lignes ne se collent plus.
+EN : Network app: stability is finally shown
+- The Stability tile shows a real percentage (stable, fair, unstable, very unstable) based on packet loss, latency and Athena replies, or "—" until something has been measured.
+- The COMSPEC Link card reads Connected, Degraded, Connecting… or Offline.
+- The Gateways and relays section no longer repeats the mesh line and its rows no longer run together.
+
+### Détail technique
+
+Non testé en jeu. Capture de TTRD : tuile Stabilité « any % » et section Passerelles et relais confuse.
+- Stabilité : la valeur n'était jamais calculée (affichage « any % »). Elle vient maintenant de la perte de paquets (mesurée par COMSPEC Link et simulée par le téléphone), de la latence, de l'état de COMSPEC Link et des réponses d'Athena : stable, correcte, instable, très instable, ou « liaison coupée ». Sans aucune mesure, la tuile affiche « — » et « pas encore de mesure ».
+- Chemin de la liaison : la carte COMSPEC Link affiche Connecté, Dégradé, Connexion… ou Hors ligne au lieu de LINKED.
+- Passerelles et relais : l'état vide tient sur une ligne, sans répéter le maillage collé à la ligne « Maillage Wave Relay » ; celle-ci est espacée et indique « aucune passerelle » quand il n'y en a pas.
+- Zone radio : « Simulation de liaison dégradée » affiche « désactivée » ou « active : pertes et délais simulés » ; le type de zone n'est plus remplacé par « ? » quand il est inconnu.
+- Paquets envoyés affichés en entier (plus de notation 1e+06). Textes traduits en anglais.
+
+## Module Zeus et Eden « Relever routes et villes » (ATAK natif 1.78.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Nouveau module Zeus et Eden pour envoyer routes et villes à Athena
+- Le module « Relever routes et villes » (COMSPEC Outils) envoie à Athena les routes, pistes, villes et villages de la carte, sans attendre le relevé complet des bâtiments et du relief.
+- Posé dans l'éditeur, il part tout seul au début de la mission dès qu'Athena est liée ; dans Zeus, il part immédiatement.
+EN : New Zeus and Eden module to send roads and towns to Athena
+- The "Survey roads and towns" module (COMSPEC Tools) sends the map's roads, tracks, towns and villages to Athena, without waiting for the full survey of buildings and terrain.
+- Placed in the editor, it runs on its own at mission start once Athena is linked; in Zeus, it runs right away.
+
+### Détail technique
+Non testé en jeu. Demande de TTRD : un module Zeus et Eden dédié aux routes et villes. Le relevé existait déjà (`fn_sampleGeoNetwork`, Geo.Ingest) mais seulement au bout du relevé complet du théâtre ou par le menu ACE.
+- Eden : `COMSPEC_Module_GeoNetwork` (catégorie COMSPEC Outils), options « Au début de la mission » (défaut : oui) et « Renvoyer ». Exécuté par le Zeus ou le chef de mission (admin connecté, ou solo), qui attend la liaison Athena jusqu'à 3 minutes.
+- Zeus : module « Relever routes et villes » par Zeus Enhanced et ACE Zeus, envoi immédiat même si la carte a déjà été transmise.
+- Les réglages de communauté « Lieux » et « Routes » (modules du mod) restent respectés.
+
+
+## Menu Échap et Dépannage liaison refondus (ATAK natif 1.77.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Menu Échap et dépannage de la liaison refaits
+- Les boutons COMSPEC du menu Échap sont maintenant en haut à droite, avec l'état de ta liaison, et ne cachent plus le titre du menu.
+- « Dépannage liaison » vérifie tout de suite ta liaison Athena, ton compte, ton téléphone et la version du mod, explique ce qui ne va pas et propose la bonne correction en un clic.
+- « Copier le rapport » copie le diagnostic pour le coller sur Discord ou dans un signalement.
+- Le test pas à pas (pour trouver ce qui fait planter le jeu) se lance au choix en rapide ou en complet, avec une barre de progression.
+EN : Escape menu and link troubleshooting redesigned
+- The COMSPEC buttons in the Escape menu are now at the top right, with your link status, and no longer hide the menu title.
+- "Link troubleshooting" instantly checks your Athena link, account, phone and mod version, explains what is wrong and offers the right fix in one click.
+- "Copy report" copies the diagnosis so you can paste it on Discord or in a bug report.
+- The step-by-step test (to find what makes the game crash) can run quick or full, with a progress bar.
+
+### Détail technique
+Non testé en jeu. Demande de TTRD : boutons du menu Échap en haut à droite, service de dépannage amélioré et UI refaite. Changements dans l'addon Overwatch connect embarqué (`comspec_overwatch_connect.pbo` repaqueté) ; pas de changement de DLL.
+- Menu Échap : les deux boutons quittent le haut gauche (ils couvraient le titre du menu) pour une barre COMSPEC en haut à droite, aux couleurs du téléphone : état de la liaison (Liaison OK, Hors ligne, ATAK local, Overwatch coupé…), « Dépannage liaison » et « Service Athéna : oui / non ». Pendant un pas à pas, le bouton devient « Arrêter le pas à pas ».
+- Dépannage liaison : le bouton ne coupe plus Overwatch pour 22 minutes d'office. Il ouvre une fenêtre de diagnostic immédiat : DLL COMSPEC Link, installation du mod (contrôles de #714 : PBO en double, versions mélangées, DLL périmée, mise à jour publiée), service Athéna, Overwatch, adresse Athena, liaison, compte et session, terminal ATAK porté, pertes, dernier pas à pas interrompu. Chaque problème donne sa cause probable et l'action à faire ; la correction proposée passe en vert (Reconnecter Athena, Lier mon compte, Rallumer Overwatch, Service Athéna).
+- « Copier le rapport » met le diagnostic et les versions dans le presse-papiers ; « Signaler un problème » ouvre le signalement existant.
+- Pas à pas (recherche de ce qui arrête le jeu) : au choix rapide (20 s par fonction) ou complet (55 s), lancé depuis la fenêtre. Nouveau bandeau compact en haut au centre avec barre de progression, temps restant et état de la liaison. L'étape mémorisée est effacée quand le pas à pas se termine ou est arrêté : elle ne reste affichée comme suspecte qu'après un vrai arrêt du jeu.
+- Textes traduits en anglais (dictionnaire i18n/en.txt).
+
+## App JTAC plus réaliste : terminal, fiche 9-LINE et carte tactique (ATAK natif 1.76.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : L'app JTAC ressemble à un vrai terminal de contrôleur air
+- En haut, un bandeau de terminal (indicatif, code et état du laser, heure) et la frise de la mission en cases, de CHECK-IN à BDA, avec l'étape en cours en orange et le tir autorisé en rouge.
+- Un bandeau en gros caractères dit ce qu'on attend (READBACK, IN…) ou la décision à prendre ; CLEARED HOT, CONTINUE DRY et ABORT sont de gros boutons.
+- Le 9-LINE est une fiche dense, lignes numérotées, valeurs calculées en vert, remarques et restrictions en dessous.
+- Nouvel onglet CARTE : cible, IP et axe d'entrée, cône de l'axe final d'attaque, distance de risque, amis, ligne laser et appareils en vol. On peut y poser la cible ou l'IP du doigt. En paysage, la carte reste à gauche des autres onglets, côté JTAC comme côté équipage.
+EN : The JTAC app now looks like a real air controller terminal
+- At the top, a terminal bar (callsign, laser code and state, time) and the mission tape from CHECK-IN to BDA, with the current step in orange and cleared hot in red.
+- A large banner says what you are waiting for (READBACK, IN…) or the decision to make; CLEARED HOT, CONTINUE DRY and ABORT are big buttons.
+- The 9-LINE is a dense card with numbered lines, computed values in green, remarks and restrictions below.
+- New MAP tab: target, IP and run-in, final attack heading cone, risk distance, friendlies, laser line and airborne aircraft. You can set the target or IP with a tap. In landscape the map stays on the left of the other tabs, for the JTAC and for the aircrew.
+
+### Détail technique
+
+Non testé en jeu. Demande de TTRD : « JTAC l'app a une UI pas encore assez réaliste ». Mécanique de mission inchangée (fn_jtacAction), présentation refondue.
+- fn_pageJtac : bandeau terminal (`strip`), frise d'étapes (`steps`), bandeau d'état (`banner`), gros boutons (`big`), 9-LINE et données cible en lignes « mono » (police à chasse fixe), journal radio horodaté avec appels critiques en rouge, onglets SITU / 9-LINE / CARTE / CTRL / LOG. Paysage hors mini : carte tactique à 44 % à gauche.
+- fn_jtacDraw (nouveau) : dessin de la carte tactique (cône FAH, flèche IP → cible, cercle RED, ami le plus proche, LTL, appareils avec vecteur de cap). Vue gardée entre deux rendus. fn_jtacFah (nouveau) : lecture de la fenêtre FAH, partagée avec fn_jtacGeometry.
+- fn_jtacAction : pickIn / mapPick / mapSet (pose sur la carte de l'app), center ; le brief transmet aussi la position de l'IP et la distance de risque (fin du tableau, ignorés par un ancien client).
+- fn_formRender : nouvelles lignes `strip`, `steps`, `banner`, `big`, fond facultatif pour `text`, style « mono » pour `line` ; les autres apps ne changent pas.
+- i18n : textes ajoutés à en.txt.
+- À tester en jeu : onglets JTAC en portrait et paysage (mini et plein écran, échelle réglable), pose cible/IP sur la carte, cône FAH et cercle RED, vue équipage avec brief reçu, rafraîchissement CTRL toutes les 3 s (la carte garde sa vue), langue anglaise.
+
+## Ligne de vue : de ma position vers le point (ATAK natif 1.75.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Ligne de vue : de ta position vers un point dont tu entres les coordonnées
+- Dans l'app Relief, onglet LIGNE DE VUE, tu entres les coordonnées du point (carroyage de 4 à 10 chiffres) puis TRACER : la ligne part de ta position.
+- Le bouton SOUS MON REGARD disparaît ; SUR LA CARTE reste pour toucher le point.
+- L'en-tête rappelle ta position, et un carroyage court vise le centre de sa case.
+EN : Line of sight: from your position to a point whose coordinates you enter
+- In the Relief app, LINE OF SIGHT tab, enter the point's coordinates (4 to 10-digit grid) then DRAW: the line starts from your position.
+- The UNDER MY GAZE button is gone; ON THE MAP still lets you tap the point.
+- The header shows your position, and a short grid aims at the centre of its square.
+
+### Détail technique
+
+Non testé en jeu. Demande de TTRD : remplacer « SOUS MON REGARD » par « de ma position vers le point », en entrant les coordonnées.
+- App Relief, onglet LIGNE DE VUE : le bouton SOUS MON REGARD est retiré. L'en-tête devient « DE MA POSITION VERS LE POINT : » et rappelle ma position (carroyage 8 chiffres). On entre les coordonnées du point (carroyage de 4, 6, 8 ou 10 chiffres, espaces acceptés) puis TRACER, ou on touche le point avec SUR LA CARTE.
+- Un carroyage court vise le centre de sa case (avant : le coin sud-ouest). La ligne part toujours de mes yeux, point à 1,7 m du sol. Tracé, profil, VOIR SUR LA CARTE et EFFACER inchangés.
 
 ## Langue du mod en tête des options CBA (ATAK natif 1.74.0)
 

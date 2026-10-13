@@ -4,7 +4,7 @@
       - CHAMP DE VISION : grille autour de moi, vue ou cachée (relief seul, ou relief + bâtiments et arbres),
         part visible, vues par secteur (barres), point haut ;
       - HEATMAP : la même grille en couleurs d'altitude, absolue ou par rapport à moi (ce qui me domine), légende ;
-      - LIGNE DE VUE : de mes yeux vers un carroyage, le point visé ou un point touché sur la carte ;
+      - LIGNE DE VUE : de ma position (mes yeux) vers un point dont on entre les coordonnées ou touché sur la carte ;
         verdict, nature de l'obstacle, profil du terrain ;
       - BÂTIMENTS VUS : bâtiments à portée de vue dans un rayon, liste des plus proches.
     Calculs : fn_reliefAction. Calques sur l'app Carte : fn_reliefDraw (et la ligne de vue des outils de la carte).
@@ -151,7 +151,7 @@ private _y = _hdrH + _pad;
 private _tools = [
     ["VIS", "CHAMP DE VISION", "vu / caché autour de moi", "reco_eye"],
     ["ALT", "HEATMAP", "altitudes en couleurs", "relief_heat"],
-    ["LOS", "LIGNE DE VUE", "vers un point précis", "relief_los"],
+    ["LOS", "LIGNE DE VUE", "de ma position vers un point", "relief_los"],
     ["BLD", "BÂTIMENTS VUS", "à portée de vue", "relief_bld"]
 ];
 private _gap = _pad * 0.5;
@@ -314,34 +314,29 @@ switch (_tool) do {
     };
     // ---------- LIGNE DE VUE ----------
     case "LOS": {
-        _y = [_pad, _y, _w, "Cible", "depuis mes yeux, cible à 1,7 m du sol"] call _sec;
+        // Toujours depuis ma position (mes yeux) vers le point dont on entre les coordonnées.
+        _y = [_pad, _y, _w, "De ma position vers le point :", format ["ma position %1 · point à 1,7 m du sol", [getPosATL player, 8] call comspec_atak_native_fnc_gridRef]] call _sec;
         private _rowH = _font * 1.6;
-        private _ew = _w * 0.42;
+        private _ew = _w * 0.62;
         [[_pad, _y, _ew, _rowH], _cField] call _box;
         [[_pad, _y + _rowH - pixelH, _ew, pixelH], [_cAcc select 0, _cAcc select 1, _cAcc select 2, 0.6]] call _box;
         private _gE = ["COMSPEC_RscEdit", [_pad, _y, _ew, _rowH], _s getOrDefault ["rlGrid", ""]] call _mk;
         _gE ctrlSetBackgroundColor [0, 0, 0, 0];
         _gE ctrlSetFont "EtelkaMonospacePro";
         _gE ctrlSetFontHeight (_font * 0.95);
-        _gE ctrlSetTooltip (("Carroyage de 6, 8 ou 10 chiffres, ex. 1518 1730") call comspec_atak_native_fnc_tr);
+        _gE ctrlSetTooltip (("Coordonnées du point : carroyage de 4, 6, 8 ou 10 chiffres, ex. 1518 1730") call comspec_atak_native_fnc_tr);
         _form set ["rlGrid", _gE];
-        private _qb = (_w - _ew - 2 * _gap) / 2;
-        {
-            _x params ["_t", "_icon", "_code", "_tip"];
-            private _bx = _pad + _ew + _gap + _forEachIndex * (_qb + _gap);
-            [[_bx, _y, _qb, _rowH], _cTile] call _box;
-            private _ih = _rowH * 0.55;
-            private _ic = ["COMSPEC_RscPicture", [_bx + _pad * 0.5, _y + _rowH * 0.22, _ih / _ratio, _ih], _dir + _icon + ".paa"] call _mk;
-            _ic ctrlSetTextColor _cAcc;
-            private _c = ["COMSPEC_RscText", [_bx + _pad + _ih / _ratio, _y, _qb - _pad * 1.5 - _ih / _ratio, _rowH], _t, _fs * 0.85, _cText, true] call _lbl;
-            [_c, _qb - _pad * 1.5 - _ih / _ratio, _fs * 0.85] call _fit;
-            [[_bx, _y, _qb, _rowH], _code, _tip] call _hit;
-        } forEach [
-            ["SOUS MON REGARD", "reco_eye", { ["los", "look"] call comspec_atak_native_fnc_reliefAction; }, "Point visé (où je regarde)"],
-            ["SUR LA CARTE", "app_map", { ["losMap"] call comspec_atak_native_fnc_reliefAction; }, "Touchez un point de la carte"]
-        ];
+        private _qb = _w - _ew - _gap;
+        private _bx = _pad + _ew + _gap;
+        [[_bx, _y, _qb, _rowH], _cTile] call _box;
+        private _ih = _rowH * 0.55;
+        private _ic = ["COMSPEC_RscPicture", [_bx + _pad * 0.5, _y + _rowH * 0.22, _ih / _ratio, _ih], _dir + "app_map.paa"] call _mk;
+        _ic ctrlSetTextColor _cAcc;
+        private _c = ["COMSPEC_RscText", [_bx + _pad + _ih / _ratio, _y, _qb - _pad * 1.5 - _ih / _ratio, _rowH], "SUR LA CARTE", _fs * 0.85, _cText, true] call _lbl;
+        [_c, _qb - _pad * 1.5 - _ih / _ratio, _fs * 0.85] call _fit;
+        [[_bx, _y, _qb, _rowH], { ["losMap"] call comspec_atak_native_fnc_reliefAction; }, "Ou touchez le point sur la carte"] call _hit;
         _y = _y + _rowH + _pad * 0.6;
-        [[_pad, _y, _half, _bh2], "TRACER", { ["los", "grid"] call comspec_atak_native_fnc_reliefAction; }, true, "Ligne de vue vers le carroyage saisi"] call _btn;
+        [[_pad, _y, _half, _bh2], "TRACER", { ["los", "grid"] call comspec_atak_native_fnc_reliefAction; }, true, "Ligne de vue de ma position vers le point saisi"] call _btn;
         [[_pad + _half + _gap, _y, _half, _bh2], "EFFACER", { ["losClear"] call comspec_atak_native_fnc_reliefAction; }] call _btn;
         _y = _y + _bh2 + _pad;
         private _los = missionNamespace getVariable ["COMSPEC_ATAK_ReliefLos", []];
@@ -397,7 +392,7 @@ switch (_tool) do {
             [[_pad, _y, _w, _bh2], "VOIR SUR LA CARTE", compile format ["['focus', %1] call comspec_atak_native_fnc_reliefAction;", str [((_from select 0) + (_to select 0)) / 2, ((_from select 1) + (_to select 1)) / 2]]] call _btn;
             _y = _y + _bh2 + _pad;
         } else {
-            ["COMSPEC_RscText", [_pad, _y, _w, _fs * 1.4], "Saisissez un carroyage, visez un point ou touchez la carte.", _fs * 0.85, _cDim] call _lbl;
+            ["COMSPEC_RscText", [_pad, _y, _w, _fs * 1.4], "Entrez les coordonnées du point puis TRACER, ou touchez-le sur la carte.", _fs * 0.85, _cDim] call _lbl;
             _y = _y + _fs * 1.4 + _pad;
         };
     };

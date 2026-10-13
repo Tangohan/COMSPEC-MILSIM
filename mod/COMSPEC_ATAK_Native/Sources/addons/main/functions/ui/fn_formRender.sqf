@@ -19,6 +19,13 @@
       ["bar", [[titre de groupe, [[libellé, code, état, aide, actif]...]]...]]
           barre de boutons par groupes titrés (façon app Drone) ; état "" | "on" (vert, actif) | "red" (confirmation)
           | "main" (bouton principal) ; les groupes passent à la ligne quand les boutons deviendraient trop étroits.
+      ["line", ..., "mono"]  8e paramètre « mono » : ligne de fiche dense (carte CAS), libellé en capitales grises,
+          valeur en police à chasse fixe, hauteur réduite.
+      ["strip", texte gauche, texte droit, couleur du fond]   bandeau de terminal pleine largeur (texte structuré).
+      ["steps", [[libellé, état]...]]   frise d'étapes en cases : état "done" | "now" | "hot" | "abort" | "todo".
+      ["banner", texte structuré, couleur du fond]   bandeau d'état en gros caractères, centré.
+      ["big", [[libellé, code, couleur, actif, aide]...]]   gros boutons tactiles ; couleur "red" | "amber" | "green" | "".
+      ["text", texte, couleur du fond]   la couleur du fond (facultative) pose le texte sur une carte.
     L'aide (facultative) s'affiche en infobulle. Hauteur occupée par le contenu : uiNamespace COMSPEC_ATAK_FormH ;
     fond du formulaire : (contrôle renvoyé) getVariable "bg".
     Les champs sont lisibles ensuite par [clé] call comspec_atak_native_fnc_formValue.
@@ -69,12 +76,97 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _y = _y + _rowH;
         };
         case "text": {
-            private _t = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _rowH]] call _mk;
-            _t ctrlSetStructuredText parseText (((_row select 1)) call comspec_atak_native_fnc_tr);
+            _row params ["", "_txt", ["_tbg", []]];
+            private _card = (count _tbg) isEqualTo 4;
+            private _ix = [0, _pad / 2] select _card;
+            private _cb = controlNull;
+            if (_card) then { _cb = ["COMSPEC_RscText", [_pad, _y, _w, _rowH]] call _mk; _cb ctrlSetBackgroundColor _tbg; };
+            private _t = ["COMSPEC_RscStructuredText", [_pad + _ix, _y + _ix / 2, _w - 2 * _ix, _rowH]] call _mk;
+            _t ctrlSetStructuredText parseText ((_txt) call comspec_atak_native_fnc_tr);
             private _h = (ctrlTextHeight _t) max (_fs * 1.2);
-            _t ctrlSetPosition [_pad, _y, _w, _h];
+            _t ctrlSetPosition [_pad + _ix, _y + _ix / 2, _w - 2 * _ix, _h];
             _t ctrlCommit 0;
-            _y = _y + _h + _pad / 2;
+            if (_card) then { _cb ctrlSetPosition [_pad, _y, _w, _h + _ix]; _cb ctrlCommit 0; _h = _h + _ix; };
+            _y = _y + _h + ([_pad / 2, pixelH * 2] select _card);
+        };
+        case "strip": {
+            // Bandeau de terminal : fond sombre pleine largeur, texte à gauche et à droite.
+            _row params ["", "_left", ["_right", ""], ["_sbg", [0.02, 0.028, 0.024, 1]]];
+            private _sh = _fs * 1.45;
+            private _sb = ["COMSPEC_RscText", [_pad, _y, _w, _sh]] call _mk;
+            _sb ctrlSetBackgroundColor _sbg;
+            private _lt = ["COMSPEC_RscStructuredText", [_pad * 1.4, _y, _w * 0.62, _sh]] call _mk;
+            _lt ctrlSetStructuredText parseText ((_left) call comspec_atak_native_fnc_tr);
+            private _rt = ["COMSPEC_RscStructuredText", [_pad + _w * 0.3, _y, _w * 0.7 - _pad * 0.4, _sh]] call _mk;
+            _rt ctrlSetStructuredText parseText ((format ["<t align='right'>%1</t>", _right]) call comspec_atak_native_fnc_tr);
+            { private _th = (ctrlTextHeight _x) min _sh; _x ctrlSetPositionY (_y + (_sh - _th) / 2); _x ctrlSetPositionH _th; _x ctrlCommit 0; } forEach [_lt, _rt];
+            _y = _y + _sh + pixelH * 2;
+        };
+        case "steps": {
+            // Frise de la mission en cases accolées (deux rangées si les cases deviennent trop étroites).
+            private _st = _row select 1;
+            private _n = count _st;
+            private _minW = _fs * 4.6 * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
+            private _per = ((floor (_w / _minW)) max 1) min _n;
+            if (_per < _n) then { _per = ceil (_n / (ceil (_n / _per))); };
+            private _cw = _w / (_per max 1);
+            private _ch = _fs * 1.35;
+            {
+                _x params ["_lbl", ["_state", "todo"]];
+                private _cx = _pad + (_forEachIndex mod _per) * _cw;
+                private _cy = _y + (floor (_forEachIndex / _per)) * (_ch + pixelH * 2);
+                private _c = ["COMSPEC_RscTextCenter", [_cx, _cy, _cw - pixelW * 2, _ch], _lbl] call _mk;
+                _c ctrlSetFont (["EtelkaMonospacePro", "EtelkaMonospaceProBold"] select (_state in ["now", "hot", "abort"]));
+                _c ctrlSetFontHeight (_fs * 0.72);
+                switch (_state) do {
+                    case "done": { _c ctrlSetBackgroundColor [0.12, 0.30, 0.16, 1]; _c ctrlSetTextColor [0.55, 0.88, 0.6, 1]; };
+                    case "now": { _c ctrlSetBackgroundColor [0.95, 0.67, 0.2, 1]; _c ctrlSetTextColor [0.05, 0.04, 0.02, 1]; };
+                    case "hot";
+                    case "abort": { _c ctrlSetBackgroundColor [0.85, 0.2, 0.16, 1]; _c ctrlSetTextColor [1, 1, 1, 1]; };
+                    default { _c ctrlSetBackgroundColor [0.07, 0.085, 0.078, 1]; _c ctrlSetTextColor [0.36, 0.42, 0.39, 1]; };
+                };
+            } forEach _st;
+            _y = _y + (ceil (_n / (_per max 1))) * (_ch + pixelH * 2) + _pad / 3;
+        };
+        case "banner": {
+            // Bandeau d'état : la situation de la mission en gros, centrée, sur la couleur de l'état.
+            _row params ["", "_txt", ["_bbg", [0.07, 0.085, 0.078, 1]]];
+            private _bb = ["COMSPEC_RscText", [_pad, _y, _w, _rowH]] call _mk;
+            _bb ctrlSetBackgroundColor _bbg;
+            private _t = ["COMSPEC_RscStructuredText", [_pad * 1.5, _y + _pad / 3, _w - _pad, _rowH]] call _mk;
+            _t ctrlSetStructuredText parseText ((format ["<t align='center'>%1</t>", _txt]) call comspec_atak_native_fnc_tr);
+            private _h = (ctrlTextHeight _t) max (_fs * 1.3);
+            _t ctrlSetPosition [_pad * 1.5, _y + _pad / 3, _w - _pad, _h];
+            _t ctrlCommit 0;
+            _bb ctrlSetPosition [_pad, _y, _w, _h + _pad * 0.66];
+            _bb ctrlCommit 0;
+            _y = _y + _h + _pad * 0.66 + _pad / 2;
+        };
+        case "big": {
+            // Gros boutons tactiles (gants) : décision de tir, appels principaux.
+            private _btns = _row select 1;
+            private _n = count _btns;
+            private _bh2 = _rowH * 1.55;
+            private _bw2 = (_w - (_n - 1) * _pad / 2) / (_n max 1);
+            {
+                _x params ["_label", "_code", ["_col", ""], ["_enabled", true], ["_tip", ""]];
+                private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * (_bw2 + _pad / 2), _y, _bw2, _bh2], _label] call _mk;
+                _b ctrlSetFont "EtelkaMonospaceProBold";
+                _b ctrlSetFontHeight (_fs * 1.05);
+                private _bgc = switch (_col) do {
+                    case "red": { [0.78, 0.17, 0.13, 1] };
+                    case "amber": { [0.85, 0.58, 0.16, 1] };
+                    case "green": { [0.30, 0.68, 0.36, 1] };
+                    default { [0.12, 0.145, 0.13, 1] };
+                };
+                if (!_enabled) then { _bgc = [(_bgc select 0) * 0.35 + 0.04, (_bgc select 1) * 0.35 + 0.05, (_bgc select 2) * 0.35 + 0.045, 1]; };
+                _b ctrlSetBackgroundColor _bgc;
+                _b ctrlSetTextColor ([[0.45, 0.5, 0.47, 1], [[1, 1, 1, 1], [0.05, 0.04, 0.02, 1]] select (_col isEqualTo "amber")] select _enabled);
+                if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
+                _b ctrlEnable _enabled;
+                [_b, _code] call _click;
+            } forEach _btns;
+            _y = _y + _bh2 + _pad / 2;
         };
         case "edit";
         case "memo": {
@@ -193,8 +285,9 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _y = _y + _ih2;
         };
         case "line": {
-            _row params ["", "_num", "_label", ["_value", ""], ["_kind", "auto"], ["_key", ""], ["_help", ""]];
-            private _h = _rowH * 1.25;
+            _row params ["", "_num", "_label", ["_value", ""], ["_kind", "auto"], ["_key", ""], ["_help", ""], ["_style", ""]];
+            private _mono = _style isEqualTo "mono";
+            private _h = _rowH * ([1.25, 1.02] select _mono);
             private _odd = (_lineIdx mod 2) isEqualTo 1;
             _lineIdx = _lineIdx + 1;
             private _bgL = ["COMSPEC_RscText", [_pad, _y, _w, _h - pixelH * 2]] call _mk;
@@ -204,7 +297,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             private _nb = ["COMSPEC_RscText", [_pad * 1.5, _y + _h * 0.15, _nw, _h * 0.7 - pixelH * 2]] call _mk;
             _nb ctrlSetBackgroundColor [_acc select 0, _acc select 1, _acc select 2, [0.9, 0.25] select (_num isEqualTo "")];
             private _nt = ["COMSPEC_RscStructuredText", [_pad * 1.5, _y + (_h - _fs * 1.25) / 2, _nw, _fs * 1.25]] call _mk;
-            _nt ctrlSetStructuredText parseText format ["<t align='center' font='RobotoCondensedBold' color='#08100c'>%1</t>", _num];
+            _nt ctrlSetStructuredText parseText ((format ["<t align='center' font='%2' color='#08100c'>%1</t>", _num, ["RobotoCondensedBold", "EtelkaMonospaceProBold"] select _mono]) call comspec_atak_native_fnc_tr);
             private _lx = _pad * 2.5 + _nw;
             private _lw = (_w * 0.46) - _nw - _pad;
             private _vx = _pad + _w * 0.46;
@@ -212,22 +305,24 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             private _isEdit = _kind isEqualTo "edit";
             // Libellé (et, pour un champ, l'aide en dessous) centré verticalement.
             private _lt = ["COMSPEC_RscStructuredText", [_lx, _y, _lw, _h]] call _mk;
-            _lt ctrlSetStructuredText parseText ((format ["<t color='#e3ebe7'>%1</t>%2", _label,
-                ["", format ["<br/><t size='0.72' color='#93a39c'>%1</t>", _help]] select (_isEdit && {_help isNotEqualTo ""})]) call comspec_atak_native_fnc_tr);
+            _lt ctrlSetStructuredText parseText ((format ["<t color='%3' size='%4'>%1</t>%2", [_label, toUpper _label] select _mono,
+                ["", format ["<br/><t size='0.72' color='#93a39c'>%1</t>", _help]] select (_isEdit && {_help isNotEqualTo ""} && {!_mono}), ["#e3ebe7", "#9fb0a8"] select _mono, [1, 0.82] select _mono]) call comspec_atak_native_fnc_tr);
             private _th = (ctrlTextHeight _lt) min _h;
             _lt ctrlSetPosition [_lx, _y + (_h - _th) / 2, _lw, _th];
             _lt ctrlCommit 0;
             if (_isEdit) then {
-                private _e = ["COMSPEC_RscEdit", [_vx, _y + _h * 0.14, _vw, _h * 0.72], _value] call _mk;
+                private _e = ["COMSPEC_RscEdit", [_vx, _y + _h * 0.12, _vw, _h * 0.76], _value] call _mk;
                 _e ctrlSetFontHeight _font;
+                if (_mono) then { _e ctrlSetFont "EtelkaMonospacePro"; _e ctrlSetFontHeight (_font * 0.85); };
                 if (_help isNotEqualTo "") then { _e ctrlSetTooltip ((_help) call comspec_atak_native_fnc_tr); };
                 _fields set [_key, _e];
             } else {
                 private _empty = _value in ["", "-"];
                 private _col = switch (true) do { case _empty: { "#93a39c" }; case (_kind isEqualTo "warn"): { "#ff6a5c" }; default { _accHex } };
                 private _vt = ["COMSPEC_RscStructuredText", [_vx, _y, _vw, _h]] call _mk;
-                _vt ctrlSetStructuredText parseText ((format ["<t align='right' color='%1' font='%2'>%3</t>", _col, ["RobotoCondensedBold", "RobotoCondensed"] select _empty,
-                    [_value, _help] select _empty]) call comspec_atak_native_fnc_tr);
+                _vt ctrlSetStructuredText parseText ((format ["<t align='right' color='%1' font='%2' size='%4'>%3</t>", _col,
+                    [["RobotoCondensedBold", "RobotoCondensed"] select _empty, ["EtelkaMonospaceProBold", "RobotoCondensed"] select _empty] select _mono,
+                    [_value, _help] select _empty, [1, 0.9] select _mono]) call comspec_atak_native_fnc_tr);
                 private _vh = (ctrlTextHeight _vt) min _h;
                 _vt ctrlSetPosition [_vx, _y + (_h - _vh) / 2, _vw, _vh];
                 _vt ctrlCommit 0;
