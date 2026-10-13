@@ -26,6 +26,10 @@
       ["banner", texte structuré, couleur du fond]   bandeau d'état en gros caractères, centré.
       ["big", [[libellé, code, couleur, actif, aide]...]]   gros boutons tactiles ; couleur "red" | "amber" | "green" | "".
       ["text", texte, couleur du fond]   la couleur du fond (facultative) pose le texte sur une carte.
+      ["notif", icône, couleur, titre, à droite, texte, code ouvrir, code fermer, aide]   carte de notification : liseré
+          et pastille d'icône à la couleur de gravité, titre en gras, heure / compteur à droite, texte en dessous ;
+          clic sur la carte = code ouvrir ({} : rien), croix à droite = code fermer ({} : pas de croix)
+      ["empty", icône, titre, sous-titre]   état vide centré : grande icône pâle, titre et explication
     L'aide (facultative) s'affiche en infobulle. Hauteur occupée par le contenu : uiNamespace COMSPEC_ATAK_FormH ;
     fond du formulaire : (contrôle renvoyé) getVariable "bg".
     Les champs sont lisibles ensuite par [clé] call comspec_atak_native_fnc_formValue.
@@ -328,6 +332,65 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 _vt ctrlCommit 0;
             };
             _y = _y + _h;
+        };
+        case "notif": {
+            _row params ["", "_icon", "_rgb", "_title", ["_meta", ""], ["_body", ""], ["_open", {}], ["_close", {}], ["_tip", ""]];
+            private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+            private _e = { params ["_v"]; (_v regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"] };
+            private _hasClose = _close isNotEqualTo {};
+            private _ih = _font * 1.75;
+            private _iw = _ih * _ratio;
+            private _cbw = [0, _font * 1.6 * _ratio] select _hasClose;
+            private _card = ["COMSPEC_RscText", [_pad, _y, _w, _rowH]] call _mk;
+            _card ctrlSetBackgroundColor [0.07, 0.088, 0.08, 1];
+            private _strip = ["COMSPEC_RscText", [_pad, _y, pixelW * 4, _rowH]] call _mk;
+            _strip ctrlSetBackgroundColor _rgb;
+            private _tx = _pad * 2.2 + _iw;
+            private _tw = (_w - _iw - _cbw - _pad * 2.6) max (_w * 0.3);
+            private _t = ["COMSPEC_RscStructuredText", [_tx, _y + _pad / 3, _tw, _rowH]] call _mk;
+            _t ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='#eef4f0'>%1</t><t size='0.75' align='right' color='#8a9a93'>%2</t>%3",
+                [_title] call _e, _meta, ["", format ["<br/><t size='0.85' color='#c6d2cc'>%1</t>", [_body] call _e]] select (_body isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+            private _h = ((ctrlTextHeight _t) + _pad * 0.8) max (_ih + _pad * 0.8);
+            _t ctrlSetPosition [_tx, _y + _pad * 0.4, _tw, _h - _pad * 0.8];
+            _t ctrlCommit 0;
+            { _x ctrlSetPosition [ctrlPosition _x select 0, _y, ctrlPosition _x select 2, _h]; _x ctrlCommit 0; } forEach [_card, _strip];
+            // Pastille d'icône : carré teinté à la couleur de gravité, icône blanche.
+            private _iy = _y + _pad * 0.4;
+            private _tile = ["COMSPEC_RscText", [_pad * 1.6, _iy, _iw, _ih]] call _mk;
+            _tile ctrlSetBackgroundColor [_rgb select 0, _rgb select 1, _rgb select 2, 0.22];
+            private _p = ["COMSPEC_RscPicture", [_pad * 1.6 + _iw * 0.17, _iy + _ih * 0.17, _iw * 0.66, _ih * 0.66], _icon] call _mk;
+            _p ctrlSetTextColor [0.95, 0.98, 0.96, 1];
+            if (_open isNotEqualTo {}) then {
+                private _b = ["COMSPEC_RscButtonOverlay", [_pad, _y, _w - _cbw, _h]] call _mk;
+                if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
+                [_b, _open] call _click;
+            };
+            if (_hasClose) then {
+                private _cx = _pad + _w - _cbw;
+                private _cs = _font * 0.9;
+                private _ci = ["COMSPEC_RscPicture", [_cx + (_cbw - _cs * _ratio) / 2, _y + (_h - _cs) / 2, _cs * _ratio, _cs], "\z\comspec_atak_native\addons\main\data\ui_close.paa"] call _mk;
+                _ci ctrlSetTextColor [0.62, 0.69, 0.65, 1];
+                private _cb = ["COMSPEC_RscButtonOverlay", [_cx, _y, _cbw, _h]] call _mk;
+                _cb ctrlSetTooltip (("Effacer cette notification") call comspec_atak_native_fnc_tr);
+                [_cb, _close] call _click;
+            };
+            _y = _y + _h + _pad / 3;
+        };
+        case "empty": {
+            _row params ["", "_icon", "_title", ["_sub", ""]];
+            private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+            _y = _y + _pad * 2;
+            private _is = _font * 3.2;
+            private _p = ["COMSPEC_RscPicture", [_pad + (_w - _is * _ratio) / 2, _y, _is * _ratio, _is], _icon] call _mk;
+            _p ctrlSetTextColor [0.36, 0.45, 0.41, 1];
+            _y = _y + _is + _pad;
+            private _t = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _rowH]] call _mk;
+            _t ctrlSetStructuredText parseText ((format ["<t align='center' font='RobotoCondensedBold' color='#dfe8e3'>%1</t>%2", _title,
+                ["", format ["<br/><t align='center' size='0.85' color='#8a9a93'>%1</t>", _sub]] select (_sub isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+            private _h = (ctrlTextHeight _t) max _rowH;
+            _t ctrlSetPosition [_pad, _y, _w, _h];
+            _t ctrlCommit 0;
+            _y = _y + _h + _pad * 2;
         };
         case "gap": { _y = _y + _pad; };
         case "person": {

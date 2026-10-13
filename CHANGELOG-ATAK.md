@@ -220,6 +220,30 @@ Non testé en jeu. Demande de TTRD : l'embed Discord des photos manquait de donn
 - Unité, grade et téléphone de l'auteur retrouvés aussi par le Steam de la session de jeu (avant : seulement avec une clé API).
 - Cliché confidentiel : ni visée ni lien public.
 - COMSPEC Link envoie ces détails à Athena (champ photo_extra) avec sa version. connect.pbo et main.pbo reconditionnés.
+## Centre de notifications refondu (ATAK natif 1.74.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le centre de notifications du téléphone fait peau neuve
+- Chaque notification devient une carte avec l'icône de l'app, une couleur selon l'urgence et l'heure (« il y a 4 min ») ; les non lues ont une pastille verte.
+- Un message répété ne s'empile plus : il remonte en tête avec un compteur. Une croix efface une notification, et un appui ouvre l'app concernée.
+- Des filtres Toutes, Alertes, Infos et Messages, et une barre de réglages rapides (mode avion, Bluetooth, silencieux).
+- Si ton installation du mod a un souci ou qu'une mise à jour est disponible, c'est affiché en haut, en rouge ou orange.
+EN : The phone's notification centre gets a makeover
+- Each notification is now a card with the app icon, a colour for its urgency and the time ("4 min ago"); unread ones show a green dot.
+- A repeated message no longer piles up: it moves back to the top with a counter. A cross clears a notification, and a tap opens the related app.
+- Filters for All, Alerts, Info and Messages, plus a quick-settings bar (airplane mode, Bluetooth, silent).
+- If your mod install has a problem or an update is available, it shows at the top in red or orange.
+
+### Détail technique
+Non testé en jeu. Demande de TTRD : améliorer l'UI des notifications. Pas de DLL à recompiler, pas de migration.
+- Une carte par notification : liseré et pastille d'icône à la couleur de gravité (info, message, attention, erreur), source en titre (« Drone », « Synchronisation »…), texte dessous, heure relative (« à l'instant », « il y a 4 min ») et pastille verte sur les non lues.
+- Un texte répété ne s'empile plus : il remonte en tête avec un compteur « ×3 ».
+- Croix sur chaque carte pour l'effacer seule ; clic sur la carte : ouvre l'app concernée quand elle est connue (Drone, Messagerie, Photos, Synchronisation…).
+- Filtres Toutes / Alertes / Infos / Messages avec leur nombre ; « Tout effacer » efface ce que le filtre affiche.
+- État du mod épinglé en tête (PBO en double, DLL périmée, mise à jour disponible, 1.69.0) en rouge ou orange, clic vers Debug > DLL ; ces cartes restent tant que l'anomalie existe.
+- Réglages rapides en une barre compacte : mode avion, Bluetooth, silencieux, et accès au volet rapide complet.
+- État vide soigné (« Tout est calme ») ; textes traduits en anglais. L'écran de verrouillage partage les mêmes icônes et titres.
 
 ## Texte du bouton PANIQUE (ATAK natif 1.73.0)
 

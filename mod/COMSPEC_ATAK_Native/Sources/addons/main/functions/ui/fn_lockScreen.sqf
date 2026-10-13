@@ -196,27 +196,16 @@ switch (_act) do {
         _lbl ctrlSetFontHeight (_fs * 0.75);
         _lbl ctrlSetTextColor [0.62, 0.69, 0.65, 1];
         _y = _y + _font * 1.05;
-        // Icône et titre d'une notification : « Source : texte » donne le titre, sinon le type.
-        private _icons = [
-            ["brief", "app_briefing"], ["message", "app_chat"], ["chat", "app_chat"], ["photo", "app_photos"], ["synchro", "app_resynch"],
-            ["drone", "app_drone"], ["athena", "app_athena"], ["réseau", "app_network"], ["batterie", "item_battery"], ["ordre", "app_tasks"],
-            ["tâche", "app_tasks"], ["méd", "app_medical"], ["sse", "app_sse"], ["fiche", "app_reco"], ["musique", "app_music"], ["carte", "app_map"]
-        ];
         private _shown = 0;
         {
             if (_y + _ch > _hintY - _font * 0.8) exitWith {};
-            private _t = toUpper (_x getOrDefault ["type", "INFO"]);
-            private _rgb = switch (_t) do { case "WARNING": { [0.95, 0.67, 0.2, 1] }; case "ERROR"; case "TACTICAL": { [0.9, 0.38, 0.31, 1] }; case "MESSAGE": { [0.44, 0.71, 0.91, 1] }; case "SUCCESS": { [0.36, 0.78, 0.42, 1] }; default { [0.66, 0.78, 0.73, 1] }; };
-            private _plain = ((_x getOrDefault ["message", ""]) regexReplace ["<[^>]*>", ""]) regexReplace ["[\r\n\t]+", " "];
-            { _plain = [_plain, _x select 0, _x select 1] call CBA_fnc_replace; } forEach [["&lt;", "<"], ["&gt;", ">"], ["&apos;", "'"], ["&quot;", """"], ["&amp;", "&"]];
-            private _title = createHashMapFromArray [["WARNING", "Alerte"], ["ERROR", "Erreur"], ["TACTICAL", "Tactique"], ["MESSAGE", "Message"], ["SUCCESS", "Terminé"]] getOrDefault [_t, "Information"];
-            private _cut = _plain find " : ";
-            if (_cut > 0 && {_cut <= 28}) then { _title = _plain select [0, _cut]; _plain = _plain select [_cut + 3]; };
+            // Icône, titre (« Source : texte » ou le type), texte et couleur : mêmes règles que le centre de notifications.
+            private _meta = [_x] call comspec_atak_native_fnc_notifMeta;
+            private _rgb = _meta get "rgb";
+            private _title = _meta get "title";
+            private _plain = _meta get "body";
             if ((count _plain) > 96) then { _plain = (_plain select [0, 94]) + "…"; };
-            private _icon = "ui_bell";
-            private _lo = toLower (_title + " " + _plain);
-            { if ((_lo find (_x select 0)) >= 0) exitWith { _icon = _x select 1; }; } forEach _icons;
-            if (_icon isEqualTo "ui_bell") then { _icon = createHashMapFromArray [["WARNING", "app_alerts"], ["ERROR", "app_alerts"], ["TACTICAL", "app_alerts"], ["MESSAGE", "app_chat"], ["SUCCESS", "ui_check"]] getOrDefault [_t, "ui_bell"]; };
+            private _icon = _meta get "icon";
             private _e = { params ["_v"]; (_v regexReplace ["&", "&amp;"]) regexReplace ["<", "&lt;"] };
             private _bgc = ["COMSPEC_RscText", [_cx, _y, _cw, _ch]] call _mk;
             _bgc ctrlSetBackgroundColor [0.06, 0.075, 0.068, 0.9];
@@ -228,7 +217,7 @@ switch (_act) do {
             private _ix = _cx + _pad * 1.2;
             private _tile = ["COMSPEC_RscText", [_ix, _y + (_ch - _ih) / 2, _iw, _ih]] call _mk;
             _tile ctrlSetBackgroundColor [_rgb select 0, _rgb select 1, _rgb select 2, 0.22];
-            private _pic = ["COMSPEC_RscPicture", [_ix + _iw * 0.15, _y + (_ch - _ih) / 2 + _ih * 0.15, _iw * 0.7, _ih * 0.7], format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon]] call _mk;
+            private _pic = ["COMSPEC_RscPicture", [_ix + _iw * 0.15, _y + (_ch - _ih) / 2 + _ih * 0.15, _iw * 0.7, _ih * 0.7], _icon] call _mk;
             _pic ctrlSetTextColor [0.95, 0.98, 0.96, 1];
             private _tx = _ix + _iw + _pad;
             private _body = ["COMSPEC_RscStructuredText", [_tx, _y + _ch * 0.1, _cx + _cw - _tx - _pad, _ch * 0.85]] call _mk;
