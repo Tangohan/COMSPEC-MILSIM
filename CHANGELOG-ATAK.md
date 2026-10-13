@@ -121,6 +121,34 @@ Non testé en jeu. Signalé par TTRD : le volet rapide n'affichait que les initi
 - Téléphone : la réponse est découpée sans fusionner les colonnes vides (un nom ou un indicatif vide décalait l'adresse de l'image). Chaque échec (profil, téléchargement, format) est écrit en français dans le journal (RPT et app Debug, module PORTRAIT) avec sa raison, et le joueur reçoit une notification pour son propre portrait, une fois par raison.
 - Cache des portraits (demande de TTRD) : l'image téléchargée reste sur le disque et le profil Arma retient laquelle va avec quel joueur. D'une partie à l'autre, le portrait (le sien, équipiers, groupe, chat) s'affiche tout de suite, même hors ligne ; une seule vérification par partie demande l'adresse au site, et l'image n'est retéléchargée que si le portrait a changé ou si le fichier manque (COMSPEC Link 2.0.81 rend le fichier déjà présent sans requête). Pendant un échec, l'image en cache reste affichée.
 - Traduction : un chemin d'image téléchargée (C:/…/x.jpg) n'est plus passé au dictionnaire anglais.
+## Drone et marquage de cibles plus légers (ATAK natif 1.77.0)
+
+### Résumé joueur
+Type : performance
+FR : Le drone et le marquage de cibles font moins ramer le jeu
+- Le suivi des cibles marquées et l'image de la caméra du drone demandent moins de calculs à chaque seconde.
+- Quand plusieurs cibles sortent du champ en même temps, une seule alerte les regroupe, et une même cible n'est plus annoncée perdue plus d'une fois toutes les 30 secondes.
+- Les marqueurs des cibles suivies sont envoyés aux équipiers moins souvent, ce qui allège le réseau.
+- L'onglet JOURNAL du drone se met de nouveau à jour une fois plein.
+EN : The drone and target marking slow the game down less
+- Tracking marked targets and the drone camera picture need less work every second.
+- When several targets leave the frame at once, a single alert groups them, and the same target is no longer reported lost more than once every 30 seconds.
+- Markers of tracked targets are sent to teammates less often, which lightens the network.
+- The drone LOG tab updates again once it is full.
+
+### Détail technique
+
+Non testé en jeu. Retour de TTRD : « le drone fait lag, ou le marquage ? » (capture : alerte « LOCK 093 perdu »).
+- `fn_droneAction` ["link"] répond avant le reste du fichier (tables d'ordres refaites à chaque appel) et garde son résultat 0,2 s : il était appelé une fois par cible marquée et par passage du suivi (2 fois/s), plus incrustations FLIR (4/s), neige (2/s) et flotte.
+- `fn_lockAction` tick : source (œil, direction, liaison) calculée une fois par passage et par source, pas par cible. Visée (["aimed"], 4/s caméra ouverte) : tri grossier par position avant `isKindOf`, `aimPos`, boîte englobante et `checkVisibility` (caméra zoomée, `nearEntities` couvre plus d'un kilomètre).
+- Bandeaux : cibles perdues dans le même passage regroupées (« 3 cibles perdues : LOCK 093, 094, 095 »), 30 s au plus souvent par cible ; « raccroché » seulement si la perte a été annoncée. Le journal du drone note toujours tout. Traduction « LOCK %1 raccroché » corrigée (reacquired, pas released).
+- Marqueur suivi : `setMarkerPosLocal` à chaque déplacement, `setMarkerPos` (réseau et file JIP) toutes les 3 s au plus par cible, au lieu de chaque seconde.
+- Cadres LOCK de la caméra (`fn_droneFlir`, chaque image) : liste des cibles relue 4 fois par seconde au lieu de chaque image (elle était triée à chaque lecture).
+- Carte : la flotte reprend la liaison relevée par le suivi (`COMSPEC_DroneBgLinked`) au lieu d'un calcul de relief par drone et par image.
+- Journal du drone : redessin des onglets CIBLES/JOURNAL sur un compteur de lignes (`COMSPEC_ATAK_DroneLogN`) ; plafonné à 100 lignes, il ne se redessinait plus.
+- Mesures : nouvelle `fn_perfAcc`. Toutes les 30 s, ligne RPT `[PERF] Boucles 30 s` : img/s, images lentes (plus de 50 ms) et la pire, drone, cibles marquées, page, puis pour chaque boucle (suivi drone, flotte, nacelle, cadres caméra, neige, marquage suivi et visée, carte, carte drone, dessin de chaque page) appels, moyenne et pire en ms, les plus coûteuses d'abord. « Image figée » indique aussi drone, cibles marquées et page.
+
+À mesurer en jeu : envoyer le RPT après une séance drone + marquage (Envoyer_mes_logs.bat) ; les lignes `[PERF] Boucles 30 s` disent quelle boucle pèse. Si aucune ne dépasse quelques ms, le coût vient du rendu de la caméra elle-même (régler QUALITÉ dans l'app Drone).
 
 ## App JTAC plus réaliste : terminal, fiche 9-LINE et carte tactique (ATAK natif 1.76.0)
 

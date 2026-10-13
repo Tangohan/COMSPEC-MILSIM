@@ -151,7 +151,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
     ["DroneLand", "Drone : ATTERRIR", "Le drone appairé se pose sur place.", "land"]
 ];
 // Suivi des cibles marquées : en vue, perdues, neutralisées (deux fois par seconde).
-[{ ["tick"] call comspec_atak_native_fnc_lockAction; }, 0.5] call CBA_fnc_addPerFrameHandler;
+[{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_lockAction; ["marquage suivi", _t] call comspec_atak_native_fnc_perfAcc; }, 0.5] call CBA_fnc_addPerFrameHandler;
 // Batterie : consommation aussi téléphone rangé (la barre d'état la met à jour chaque seconde quand il est ouvert).
 [{ if (isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_battery; }; }, 10] call CBA_fnc_addPerFrameHandler;
 ["comspec_atak_native_p2p", { _this call comspec_atak_native_fnc_p2pReceive }] call CBA_fnc_addEventHandler;
@@ -758,10 +758,19 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
     diag_log format ["[COMSPEC ATAK NATIVE][PERF] Arrivée en jeu : %1 ms depuis le preInit", round ((diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PerfPreInitAt", diag_tickTime])) * 1000)];
     [{
         private _dt = diag_deltaTime;
+        // Images lentes (plus de 50 ms, moins de 20 img/s) : comptées pour le bilan des 30 s (fn_perfAcc).
+        if (_dt > 0.05) then {
+            private _sl = missionNamespace getVariable ["COMSPEC_ATAK_PerfSlow", [0, 0]];
+            missionNamespace setVariable ["COMSPEC_ATAK_PerfSlow", [(_sl select 0) + 1, (_sl select 1) max _dt]];
+        };
         if (_dt < 0.4) exitWith {};
         private _arsenal = !isNull (uiNamespace getVariable ["ace_arsenal_display", displayNull]) || {!isNull (uiNamespace getVariable ["BIS_fnc_arsenal_display", displayNull])};
-        diag_log format ["[COMSPEC ATAK NATIVE][PERF] Image figée : %1 ms (arsenal %2, téléphone %3, carte %4)", round (_dt * 1000), ["non", "ouvert"] select _arsenal, ["rangé", "affiché"] select !isNull ([] call comspec_atak_native_fnc_display), ["non", "ouverte"] select visibleMap];
+        diag_log format ["[COMSPEC ATAK NATIVE][PERF] Image figée : %1 ms (arsenal %2, téléphone %3, carte %4, drone %5, cibles marquées %6, page %7)", round (_dt * 1000), ["non", "ouvert"] select _arsenal, ["rangé", "affiché"] select !isNull ([] call comspec_atak_native_fnc_display), ["non", "ouverte"] select visibleMap,
+            ["aucun", "appairé"] select !isNull (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull]), count (missionNamespace getVariable ["COMSPEC_ATAK_Locks", createHashMap]),
+            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]];
     }, 0] call CBA_fnc_addPerFrameHandler;
+    // Bilan des boucles du téléphone (drone, marquage, carte, pages) et des images lentes, toutes les 30 s.
+    [{ ["report"] call comspec_atak_native_fnc_perfAcc; }, 30] call CBA_fnc_addPerFrameHandler;
 }] call CBA_fnc_waitUntilAndExecute;
 // Arsenal ACE ouvert : repère dans le journal (l'ouverture elle-même apparaît en « Image figée … arsenal ouvert »).
 ["ace_arsenal_displayOpened", { diag_log format ["[COMSPEC ATAK NATIVE][PERF] Arsenal ACE ouvert (%1 FPS)", round diag_fps]; }] call CBA_fnc_addEventHandler;

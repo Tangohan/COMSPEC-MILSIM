@@ -146,7 +146,7 @@ switch (_act) do {
         _f2 set ["px", [_px, _py]];
         uiNamespace setVariable ["COMSPEC_ATAK_Flir", _f2];
         if ((missionNamespace getVariable ["COMSPEC_ATAK_FlirPfh", -1]) < 0) then {
-            missionNamespace setVariable ["COMSPEC_ATAK_FlirPfh", [{ ["frame"] call comspec_atak_native_fnc_droneFlir; }, 0] call CBA_fnc_addPerFrameHandler];
+            missionNamespace setVariable ["COMSPEC_ATAK_FlirPfh", [{ private _t = diag_tickTime; ["frame"] call comspec_atak_native_fnc_droneFlir; ["cadres caméra (image)", _t] call comspec_atak_native_fnc_perfAcc; }, 0] call CBA_fnc_addPerFrameHandler];
         };
         ["frame"] call comspec_atak_native_fnc_droneFlir;
         true
@@ -210,6 +210,12 @@ switch (_act) do {
                 private _hu = _hv * ((_size select 0) / ((_size select 1) max 0.1)) * (_h / pixelH) / (_w / pixelW);
                 [(_uv select 0), (_uv select 1) - _hv / 2, _hu, _hv]
             };
+            // Liste des cibles marquées relue quatre fois par seconde, pas à chaque image (elle est triée à chaque lecture) ;
+            // les entrées sont partagées : état et position suivent quand même à chaque image.
+            if (diag_tickTime >= (_f getOrDefault ["nextList", 0])) then {
+                _f set ["nextList", diag_tickTime + 0.25];
+                _f set ["locks", ["list"] call comspec_atak_native_fnc_lockAction];
+            };
             {
                 _x params ["_key", "_e"];
                 if (_used >= 8) exitWith {};
@@ -224,7 +230,7 @@ switch (_act) do {
                 [_boxes select _used, _fr select 0, _fr select 1, _fr select 2, _fr select 3, _c,
                     format ["LOCK_%1 %2m%3", [_e get "num", 3] call CBA_fnc_formatNumber, round (_eye distance _p), ["", " PERDU", " NEUTR."] select ((["TRACK", "LOST", "DOWN"] find _state) max 0)]] call _show;
                 _used = _used + 1;
-            } forEach (["list"] call comspec_atak_native_fnc_lockAction);
+            } forEach (_f getOrDefault ["locks", []]);
             // Cible sous le réticule (pas encore marquée) : cadre jaune, relevé quatre fois par seconde.
             if (diag_tickTime >= (_f getOrDefault ["nextAim", 0])) then {
                 _f set ["nextAim", diag_tickTime + 0.25];

@@ -1,4 +1,5 @@
 params [["_page", "LAUNCHER"]];
+private _perfT = diag_tickTime;
 disableSerialization;
 private _d = ([] call comspec_atak_native_fnc_display);
 if (isNull _d) exitWith { false };
@@ -121,4 +122,5 @@ if (_restore && {_sv isEqualType []} && {(count _sv) isEqualTo 2} && {(_sv selec
 [] call comspec_atak_native_fnc_notificationsRender;
 // Écran de verrouillage, volet rapide et toast Android remis devant la page redessinée (fn_fx).
 ["raise"] call comspec_atak_native_fnc_fx;
+[format ["page %1 (dessin)", _page], _perfT] call comspec_atak_native_fnc_perfAcc;
 true
