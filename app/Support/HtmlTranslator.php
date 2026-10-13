@@ -272,7 +272,11 @@ final class HtmlTranslator
             $label = $exact[substr($s, 0, $k)] ?? null;
             if ($label !== null) {
                 $rest = substr($s, $k + 3);
-                $r = $label . ': ' . (self::lookup($rest, $depth + 1) ?? $rest);
+                $tr = self::lookup($rest, $depth + 1);
+                // « Libellé : phrase française » : pas de libellé anglais devant une phrase restée en français.
+                if ($tr !== null || (!self::looksLikeSentence($rest) && substr_count($rest, ' ') < 3)) {
+                    $r = $label . ': ' . ($tr ?? $rest);
+                }
             }
         }
         if ($r === null) {
@@ -318,6 +322,12 @@ final class HtmlTranslator
      */
     private static function looksLikeSentence(string $cap): bool
     {
+        // Mot français (accent, article, préposition) dans une valeur sans chiffre (les dates gardent leur mois).
+        if (preg_match('/\d/', $cap) !== 1
+            && preg_match('/[àâçéèêëîïôûùœ]|\b(?:le|la|les|des|du|de|et|aux|au|pour|une|un|sur|avec|dans|par)\b/iu', $cap) === 1) {
+            return true;
+        }
+
         return substr_count($cap, ' ') >= 7
             || preg_match("/^(?:le|la|les|l’|l'|de|du|des|d’|d'|à|au|aux|un|une|en|et|pour|par|sur|avec)(?:\\s|(?<=[’'])\\p{L})/iu", $cap) === 1;
     }

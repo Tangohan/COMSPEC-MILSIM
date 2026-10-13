@@ -124,6 +124,8 @@ final class HtmlTranslatorTest extends TestCase
         self::assertSame('<p>' . $long . '</p>', HtmlTranslator::translate('<p>' . $long . '</p>'));
         self::assertSame('<p>Ouvrir le dossier</p>', HtmlTranslator::translate('<p>Ouvrir le dossier</p>'));
         self::assertSame('<p>Open Bravo-2</p>', HtmlTranslator::translate('<p>Ouvrir Bravo-2</p>'));
+        self::assertSame('<p>Présence : voir et annuler une demande</p>', HtmlTranslator::translate('<p>Présence : voir et annuler une demande</p>'));
+        self::assertSame('<p>Attendance: Bravo-2</p>', HtmlTranslator::translate('<p>Présence : Bravo-2</p>'));
         self::assertSame('<p>Alpha on the map</p>', HtmlTranslator::translate('<p>Alpha sur la carte</p>'));
     }
 }
