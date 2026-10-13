@@ -476,6 +476,13 @@ public static partial class Extension
             if (items.Count == 0)
                 return false;
         }
+        // Lot en pause après une erreur du serveur : envois unitaires, chaque adresse garde sa propre pause
+        // (un véhicule en échec ne retient plus la position).
+        if (IsEndpointCoolingNow("/api/atak/telemetry/batch"))
+        {
+            FallbackTelemetryUnitary(items);
+            return true;
+        }
 
         var seq = Interlocked.Increment(ref _telemetrySeq);
         var ts = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -528,6 +535,13 @@ public static partial class Extension
             JournalHttp(DateTime.UtcNow.Ticks - Math.Max(0, Environment.TickCount64 - started) * TimeSpan.TicksPerMillisecond, code);
             Interlocked.Exchange(ref _telemetryLastFlushMs, Environment.TickCount64);
 
+            if (TryNoteEndpointServerError(url, response))
+            {
+                NotePostError(code, url);
+                FallbackTelemetryUnitary(items);
+                Interlocked.Increment(ref _telemetryBatchFail);
+                return true;
+            }
             if (code == 429 || code == 503)
             {
                 NoteRateLimited(response);
@@ -562,6 +576,7 @@ public static partial class Extension
                 return true;
             }
 
+            NoteEndpointOk(url);
             NoteRateLimitCleared();
             Interlocked.Increment(ref _telemetryBatchOk);
             Interlocked.Exchange(ref _telemetryOldestEnqueueMs, 0);

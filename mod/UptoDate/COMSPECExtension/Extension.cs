@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.75";
+    private const string ExtensionVersion = "2.0.76";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -796,6 +796,73 @@ public static partial class Extension
     }
 
     /// <summary>
+    /// Pause par adresse après une erreur du serveur (5xx hors maintenance) : Athena renvoie 503 + Retry-After 30
+    /// pour toute exception d'une route /api/atak/*. Ce n'est pas une saturation : seule l'adresse fautive attend
+    /// (30, 60, 120 puis 300 s), la position, les photos et le reste de la liaison continuent (2.0.76).
+    /// Clé : (dernière pause, palier).
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, (long Until, int Step)> EndpointCooldowns =
+        new(StringComparer.OrdinalIgnoreCase);
+    private static readonly int[] EndpointCooldownLadderSec = { 30, 60, 120, 300 };
+
+    private static string EndpointKey(string url)
+    {
+        string path;
+        try { path = new Uri(url).AbsolutePath; }
+        catch
+        {
+            path = url;
+            var q = path.IndexOf('?');
+            if (q >= 0) path = path[..q];
+        }
+        var api = path.IndexOf("/api/", StringComparison.OrdinalIgnoreCase);
+        return (api >= 0 ? path[api..] : path).TrimEnd('/').ToLowerInvariant();
+    }
+
+    private static bool IsEndpointCoolingNow(string url)
+    {
+        if (string.IsNullOrEmpty(url) || EndpointCooldowns.IsEmpty) return false;
+        return EndpointCooldowns.TryGetValue(EndpointKey(url), out var c) && DateTime.UtcNow.Ticks < c.Until;
+    }
+
+    /// <summary>503 « maintenance » (site entier en pause) : reste une pause globale.</summary>
+    private static bool LooksLikeMaintenance(HttpResponseMessage response)
+    {
+        try
+        {
+            var body = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            return body.Contains("maintenance", StringComparison.OrdinalIgnoreCase);
+        }
+        catch { return false; }
+    }
+
+    /// <summary>
+    /// Erreur du serveur propre à une adresse (5xx sauf 503 maintenance) : pause de cette adresse seulement,
+    /// sans RateLimited ni SendBackoff vers le jeu. false = à traiter comme avant (saturation globale).
+    /// </summary>
+    private static bool TryNoteEndpointServerError(string url, HttpResponseMessage? response)
+    {
+        if (response == null || string.IsNullOrEmpty(url)) return false;
+        var code = (int)response.StatusCode;
+        if (code < 500 || code > 599) return false;
+        if (code == 503 && LooksLikeMaintenance(response)) return false;
+        var key = EndpointKey(url);
+        var now = DateTime.UtcNow.Ticks;
+        var step = 0;
+        if (EndpointCooldowns.TryGetValue(key, out var prev))
+            step = Math.Min(prev.Step + 1, EndpointCooldownLadderSec.Length - 1);
+        var sec = Math.Max(EndpointCooldownLadderSec[step], Math.Min(ParseRetryAfterSeconds(response, 0), 300));
+        EndpointCooldowns[key] = (now + TimeSpan.FromSeconds(sec).Ticks, step);
+        return true;
+    }
+
+    private static void NoteEndpointOk(string url)
+    {
+        if (string.IsNullOrEmpty(url) || EndpointCooldowns.IsEmpty) return;
+        EndpointCooldowns.TryRemove(EndpointKey(url), out _);
+    }
+
+    /// <summary>
     /// 403 site-wide (anti-miroir / WAF) : compte dans l’échelle partagée, un WARN, pas de martelage.
     /// Position coalescée : un retry après la pause. Caméras : filet best-effort.
     /// </summary>
@@ -1213,6 +1280,8 @@ public static partial class Extension
             NoteBestEffortCooldown();
         else if (code == 403)
             NoteAccessDenied(response, url);
+        else if (code >= 500 && TryNoteEndpointServerError(url, response))
+            NoteBestEffortCooldown();
         else if (code == 429 || code == 503)
             NoteRateLimited(response);
     }
@@ -1253,6 +1322,7 @@ public static partial class Extension
         }
         if (response.IsSuccessStatusCode)
         {
+            NoteEndpointOk(url);
             NoteRateLimitCleared();
             return;
         }
@@ -1278,6 +1348,13 @@ public static partial class Extension
                 System.Threading.Interlocked.Exchange(
                     ref _terrainChunkBlockedUntilTicks,
                     DateTime.UtcNow.AddSeconds(90).Ticks);
+        }
+        // Erreur du serveur sur cette adresse (exception → 503) : elle seule attend, pas toute la liaison.
+        if (TryNoteEndpointServerError(url, response))
+        {
+            if (!IsBestEffortEndpoint(url))
+                EnqueueForRetry(url, jsonBody);
+            return;
         }
         if (code == 503)
         {
@@ -1347,6 +1424,13 @@ public static partial class Extension
                 {
                     var code = (int)response.StatusCode;
                     NotePostError(code, item.Url);
+                    if (TryNoteEndpointServerError(item.Url, response))
+                    {
+                        // Cette adresse attend ; le vidage continue avec les autres envois.
+                        if (!IsBestEffortEndpoint(item.Url))
+                            EnqueueForRetry(item.Url, item.Body);
+                        return true;
+                    }
                     if (code == 503)
                     {
                         NoteRateLimited(response);
@@ -1359,6 +1443,7 @@ public static partial class Extension
                 }
                 else
                 {
+                    NoteEndpointOk(item.Url);
                     NoteRateLimitCleared();
                 }
             }
@@ -1409,13 +1494,19 @@ public static partial class Extension
             var networkPause = IsNetworkBackoffNow();
             // Toujours la position coalescée en premier (freshness > ordre FIFO).
             var hadCoalesced = TryTakeCoalescedPosition(out var posItem);
-            if (hadCoalesced)
+            if (hadCoalesced && IsEndpointCoolingNow(posItem.Url))
+            {
+                EnqueueForRetry(posItem.Url, posItem.Body);
+            }
+            else if (hadCoalesced)
             {
                 if (!TrySendQueuedPost(posItem))
                     return;
                 sent++;
             }
-            while (sent < maxPerTick && PendingPosts.TryDequeue(out var item))
+            // Un tour de file au plus : les envois remis en file (adresse en pause) ne sont pas relus.
+            var scanLeft = PendingPosts.Count;
+            while (sent < maxPerTick && scanLeft-- > 0 && PendingPosts.TryDequeue(out var item))
             {
                 if (!TryResolveQueuedUrl(ref item))
                 {
@@ -1437,6 +1528,12 @@ public static partial class Extension
                 }
                 if (IsBestEffortEndpoint(item.Url) && (networkPause || IsBestEffortCoolingNow()))
                     continue;
+                if (IsEndpointCoolingNow(item.Url))
+                {
+                    if (!IsBestEffortEndpoint(item.Url))
+                        EnqueueForRetry(item.Url, item.Body);
+                    continue;
+                }
                 if (!TrySendQueuedPost(item))
                     break;
                 sent++;
@@ -1453,6 +1550,11 @@ public static partial class Extension
                         EnqueueForRetry(mk.Url, mk.Body);
                         break;
                     }
+                    if (IsEndpointCoolingNow(mk.Url))
+                    {
+                        EnqueueForRetry(mk.Url, mk.Body);
+                        break;
+                    }
                     if (!TrySendQueuedPost(mk))
                         break;
                     sent++;
@@ -1460,7 +1562,12 @@ public static partial class Extension
             }
             // Flush d’une position uniquement issue du balayage FIFO (si budget restant).
             if (!hadCoalesced && sent < maxPerTick && TryTakeCoalescedPosition(out var fromFifo))
-                TrySendQueuedPost(fromFifo);
+            {
+                if (IsEndpointCoolingNow(fromFifo.Url))
+                    EnqueueForRetry(fromFifo.Url, fromFifo.Body);
+                else
+                    TrySendQueuedPost(fromFifo);
+            }
             PersistQueueToDisk();
         }
     }
@@ -1936,7 +2043,7 @@ public static partial class Extension
         {
             return;
         }
-        if (IsRateLimitedNow() || IsNetworkBackoffNow())
+        if (IsRateLimitedNow() || IsNetworkBackoffNow() || IsEndpointCoolingNow(url))
         {
             EnqueueForRetry(url, jsonBody);
             return;
@@ -8569,7 +8676,7 @@ public static partial class Extension
             {
                 while (PhotoJobs.TryDequeue(out var job))
                 {
-                    while (IsRateLimitedNow())
+                    while (IsRateLimitedNow() || IsReconPhotoEndpointCooling(job))
                         await Task.Delay(500).ConfigureAwait(false);
                     try { await ProcessReconPhotoJobAsync(job).ConfigureAwait(false); }
                     catch { /* ne jamais tuer le worker */ }
@@ -8583,6 +8690,15 @@ public static partial class Extension
                     EnsurePhotoWorker();
             }
         });
+    }
+
+    /// <summary>Photo de reconnaissance : attendre la fin de la pause de /api/recon/images (erreur du serveur).</summary>
+    private static bool IsReconPhotoEndpointCooling(ReconPhotoJob job)
+    {
+        if (string.Equals(job.UploadKind, "sse_face", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(job.UploadKind, "sse_note", StringComparison.OrdinalIgnoreCase))
+            return false;
+        return IsEndpointCoolingNow("/api/recon/images");
     }
 
     /// <summary>
@@ -8809,6 +8925,7 @@ public static partial class Extension
             var code = (int)resp.StatusCode;
             if (resp.IsSuccessStatusCode)
             {
+                NoteEndpointOk(uri.AbsoluteUri);
                 NoteRateLimitCleared();
                 PhotoJournal(job, "done", code.ToString(System.Globalization.CultureInfo.InvariantCulture), code);
                 // Photo prise par le téléphone (COMSPEC_*) bien reçue par Athena : on l'efface du poste du joueur.
@@ -8819,6 +8936,12 @@ public static partial class Extension
 
             var apiErr = JsonErrorToken(await ReadUtf8SnippetAsync(resp).ConfigureAwait(false));
             NotePostError(code, uri.AbsoluteUri);
+            // Enregistrement en échec côté Athena (5xx) : seule cette adresse attend, pas la position ni la liaison.
+            if (TryNoteEndpointServerError(uri.AbsoluteUri, resp))
+            {
+                RequeuePhotoAfterTransient(job, identityKey, "PhotoUpload", $"http_{code}", fileName);
+                return;
+            }
             if (code == 503 || code == 429)
             {
                 NoteRateLimited(resp);
@@ -9136,6 +9259,7 @@ public static partial class Extension
             var code = (int)resp.StatusCode;
             if (resp.IsSuccessStatusCode)
             {
+                NoteEndpointOk(uri.AbsoluteUri);
                 NoteRateLimitCleared();
                 InvokeCallback("SsePhotoUpload", "OK|uploaded|" + fileName);
                 return;
@@ -9143,6 +9267,12 @@ public static partial class Extension
 
             var apiErr = JsonErrorToken(await ReadUtf8SnippetAsync(resp).ConfigureAwait(false));
             NotePostError(code, uri.AbsoluteUri);
+            // Enregistrement en échec côté Athena (5xx) : seule cette adresse attend, pas la position ni la liaison.
+            if (TryNoteEndpointServerError(uri.AbsoluteUri, resp))
+            {
+                RequeuePhotoAfterTransient(job, identityKey, "SsePhotoUpload", $"http_{code}", fileName);
+                return;
+            }
             if (code == 503 || code == 429)
             {
                 NoteRateLimited(resp);
@@ -9283,6 +9413,7 @@ public static partial class Extension
             var code = (int)resp.StatusCode;
             if (resp.IsSuccessStatusCode)
             {
+                NoteEndpointOk(uri.AbsoluteUri);
                 NoteRateLimitCleared();
                 InvokeCallback("SseNoteAttachment", "OK|uploaded|" + fileName);
                 return;
@@ -9290,6 +9421,12 @@ public static partial class Extension
 
             var apiErr = JsonErrorToken(await ReadUtf8SnippetAsync(resp).ConfigureAwait(false));
             NotePostError(code, uri.AbsoluteUri);
+            // Enregistrement en échec côté Athena (5xx) : seule cette adresse attend, pas la position ni la liaison.
+            if (TryNoteEndpointServerError(uri.AbsoluteUri, resp))
+            {
+                RequeuePhotoAfterTransient(job, identityKey, "SseNoteAttachment", $"http_{code}", fileName);
+                return;
+            }
             if (code == 503 || code == 429)
             {
                 NoteRateLimited(resp);

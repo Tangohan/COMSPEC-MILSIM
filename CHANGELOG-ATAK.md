@@ -11,6 +11,17 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Correctif 2026-10-13 — Liaison : une adresse en erreur ne bloque plus tout (COMSPEC Link 2.0.76)
+
+### Corrigé
+- **Position et photos bloquées par « Rate limit — pause »** : Athena répond 503 (Retry-After 30) à toute exception d'une route `/api/atak/*`. Le DLL prenait ce 503 pour une saturation et mettait toute la liaison en pause (position « api_backoff », photos de drone retenues jusqu'à 150 s) dès que `/api/atak/vehicles` plantait.
+- Désormais une erreur du serveur (5xx, hors 503 « maintenance ») ne met en pause que **l'adresse fautive** (30, 60, 120 puis 300 s), sans prévenir le jeu d'une saturation : la position, les autres envois et les photos continuent. Le lot de télémétrie en erreur repasse en envois unitaires pour que chaque adresse garde sa propre pause. Le vrai 429 (limiteur d'Athena) et le 503 de maintenance gardent la pause globale.
+- La cause du 503 sur `/api/atak/vehicles` (clé `vehicle_callsign` absente) est corrigée côté site dans la PR #677.
+
+### À reconstruire
+- DLL COMSPEC Link (`mod/UptoDate/COMSPECExtension`, NativeAOT) : `build_mod.bat`.
+
+
 ## Correctif 2026-10-12 — ATAK sur le JPC et tablette du véhicule (ATAK natif 1.51.0)
 
 Non testé en jeu. Retours de TTRD. Pas de DLL à recompiler, pas de migration.
