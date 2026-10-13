@@ -120,6 +120,15 @@ final class ActivityHubPresentationService
                 'unread' => $unread,
                 'at' => $at,
             ],
+            'atak_mod_report_reply' => [
+                'title' => 'Réponse à votre signalement du mod',
+                'detail' => trim((string) ($payload['summary'] ?? '')) !== ''
+                    ? trim((string) $payload['summary'])
+                    : trim((string) ($payload['report'] ?? 'L’équipe COMSPEC a traité votre signalement.')),
+                'href' => url('activite'),
+                'unread' => $unread,
+                'at' => $at,
+            ],
             default => [
                 'title' => 'Forum',
                 'detail' => 'Notification',
