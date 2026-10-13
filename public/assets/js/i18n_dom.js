@@ -33,6 +33,7 @@
     });
     tpls.sort(function (a, b) { return b.re.source.length - a.re.source.length; });
 
+    var SENTENCE = /^(?:\S+\s+){7}|^(?:le|la|les|de|du|des|à|au|aux|un|une|en|et|pour|par|sur|avec)\s|^(?:l|d)['’][A-Za-zÀ-ÿ]/i;
     var memo = Object.create(null);
     function lookup(s, depth) {
         if (!s || depth > 2) {
@@ -62,10 +63,14 @@
             if (t.weak && caps.some(function (c) { return c.trim().split(/\s+/).length > 3; })) {
                 continue;
             }
+            var vals = caps.map(function (c) { return lookup(c.trim(), depth + 1); });
+            // Valeur non traduite qui ressemble à un bout de phrase : on laisse tout en français.
+            if (caps.some(function (c, j) { return vals[j] === null && (SENTENCE.test(c.trim()) || ((depth > 0 || t.weak) && /[A-Za-zÀ-ÿ]{2}/.test(c) && !/\d/.test(c))); })) {
+                continue;
+            }
             var out = t.en;
             t.ids.forEach(function (id, j) {
-                var c = caps[j];
-                out = out.split('%' + id).join(lookup(c.trim(), depth + 1) || c);
+                out = out.split('%' + id).join(vals[j] === null ? caps[j] : vals[j]);
             });
             r = out;
         }

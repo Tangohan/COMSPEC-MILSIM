@@ -312,6 +312,16 @@ final class HtmlTranslator
         return $r;
     }
 
+    /**
+     * Valeur non traduite qui ressemble à un bout de phrase (long, ou commençant par un article ou une
+     * préposition) : le modèle qui l'a capturée coupe une phrase et donnerait un texte mi-français mi-anglais.
+     */
+    private static function looksLikeSentence(string $cap): bool
+    {
+        return substr_count($cap, ' ') >= 7
+            || preg_match("/^(?:le|la|les|l’|l'|de|du|des|d’|d'|à|au|aux|un|une|en|et|pour|par|sur|avec)(?:\\s|(?<=[’'])\\p{L})/iu", $cap) === 1;
+    }
+
     private static function template(string $s, int $depth): ?string
     {
         $n = strlen($s);
@@ -362,7 +372,13 @@ final class HtmlTranslator
             $repl = [];
             foreach ($ids as $k => $id) {
                 $cap = $caps[$k];
-                $repl['%' . $id] = self::lookup(trim($cap), $depth + 1) ?? $cap;
+                $tr = self::lookup(trim($cap), $depth + 1);
+                // Dans une valeur déjà capturée, un modèle ne laisse pas de mots français autour de sa traduction.
+                if ($tr === null && (self::looksLikeSentence(trim($cap)) || (($depth > 0 || $weak) && preg_match('/\p{L}{2}/u', $cap) === 1 && preg_match('/\d/', $cap) !== 1))) {
+                    // Morceau de phrase française, pas une valeur : mieux vaut tout laisser en français.
+                    continue 2;
+                }
+                $repl['%' . $id] = $tr ?? $cap;
             }
             // Remplacement simultané (%1 ne doit pas toucher %10).
             krsort($repl, SORT_NATURAL);
