@@ -11,6 +11,15 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Adresse du portail Athena fixe (ATAK natif 1.72.0)
+
+Non testé en jeu. Demande de TTRD : personne n'héberge son propre Athena, l'adresse du portail ne doit plus être modifiable. Pas de DLL à recompiler, pas de migration.
+- Le téléphone et Overwatch connect utilisent toujours https://athena.ttrd.fr/public : plus de réglage CBA « Adresse du portail », plus de champ d'adresse dans la fenêtre Connexion Athena.
+- Une ancienne adresse enregistrée chez un joueur (profil Arma, réglage CBA, tablette web) est ignorée, et celle du profil est effacée au lancement.
+- Le second essai sur « invalid_url » (1.64.0) disparaît : l'adresse ne peut plus être fausse.
+- Site : l'adresse du portail n'est plus présentée comme un réglage (première liaison, tutoriel ATAK, guide chef de mission, Configuration ATAK, guide Overwatch).
+- À vérifier en jeu : onglet COMPTE du téléphone (code et Steam), fenêtre Connexion Athena d'Overwatch (code, Steam), et que la liaison reste active après un redémarrage d'Arma.
+
 ## Performance : arrivée en mission, arsenal et DLL (ATAK natif 1.71.0, COMSPEC Link 2.0.80)
 
 Non testé en jeu. Demande de TTRD : gros lag en rejoignant un serveur et en ouvrant l'arsenal. Il faut recompiler les DLL (build_mod.bat) ; pas de migration.
