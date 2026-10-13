@@ -1,6 +1,6 @@
 /*
     App Accessoires (établi, fn_pageAccessories) : état des emplacements et actions.
-    Aucun état propre : tout est lu et modifié par les fonctions existantes (fn_antenna, fn_powerBank, fn_irBeacon,
+    Aucun état propre : tout est lu et modifié par les fonctions existantes (fn_antenna, fn_powerBank,
     fn_screenGlow, fn_batteryItem / fn_batterySwap, fn_dataAction pour le câble DL-7).
     Params : [action, arguments]
       "slots"                     -> liste de hashmaps, une par emplacement :
@@ -48,22 +48,6 @@ switch (_act) do {
         _s set ["cand", ((["owned"] call comspec_atak_native_fnc_antenna) select { (_x select 0) isNotEqualTo _cur }) apply {
             [_x select 2, format ["%1item_antenna_%2.paa", _dir, _x select 0], [_x select 1] call _cnt, _x select 0]
         }];
-        _out pushBack _s;
-
-        // Balise IR clipsable sur la plaque (fn_irBeacon) : boîtier à part, pile CR123 propre.
-        _s = ["ir", "Balise IR", "plaque MOLLE", [1327, 776]] call _mk;
-        private _irOn = ["state"] call comspec_atak_native_fnc_irBeacon;
-        _s set ["icon", _dir + "item_irmarker.paa"];
-        if (["has"] call comspec_atak_native_fnc_irBeacon) then {
-            private _irPile = round (["charge"] call comspec_atak_native_fnc_irBeacon);
-            _s set ["mounted", true];
-            _s set ["name", "Balise IR clipsable"];
-            _s set ["state", format [["éteinte · pile %1 %%", "clignote · visible aux JVN · pile %1 %%"] select _irOn, _irPile]];
-            _s set ["stateHex", ["#8a9a93", "#f2ab33"] select _irOn];
-            _s set ["verbs", [[["ALLUMER", "ÉTEINDRE"] select _irOn, "toggle"]]];
-        } else {
-            _s set ["state", "aucune balise dans l'équipement"];
-        };
         _out pushBack _s;
 
         // Batterie de rechange (même recherche que l'action ACE « Changer la batterie » : fn_batteryItem).
@@ -152,7 +136,6 @@ switch (_act) do {
                     ["INFO", "Antenne dévissée : port SMA bouché", 3, 10] call comspec_atak_native_fnc_notify;
                 };
             };
-            case "ir": { if (_verb isEqualTo "toggle") then { ["toggle"] call comspec_atak_native_fnc_irBeacon; }; };
             case "spare": {
                 if (_verb isEqualTo "swap") then {
                     // Même code que l'action ACE « Changer la batterie » (XEH_postInitClient).

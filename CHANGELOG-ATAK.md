@@ -11,13 +11,12 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Réalisme 2026-10-13 — Balise IR clipsable à part (ATAK natif 1.56.0)
+## Réalisme 2026-10-13 — Balise IR du téléphone supprimée (ATAK natif 1.56.0)
 
-Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : la balise IR du téléphone n'était pas réaliste.
-- La balise IR n'est plus intégrée à la coque : c'est un objet d'inventaire, « Balise IR clipsable (pile CR123) » (`COMSPEC_ATAK_IrMarker`, type MS-2000 / Manta). La balise IR d'ACE (`ACE_IR_Strobe_Item`) convient aussi.
-- Clipsée sur la plaque MOLLE du téléphone porté sur le gilet, sinon sur l'épaule gauche. Allumée à la main : menu ACE « Téléphone ATAK » > Accessoires, ou établi (app Accessoires).
-- Pile propre : environ 8 h de clignotement, jetée vide. Elle ne consomme plus la batterie du téléphone et marche téléphone éteint, rangé ou absent.
-- Tuile « Balise IR » retirée du volet rapide (un téléphone ne pilote pas un marqueur IR).
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : la balise IR intégrée à la coque n'était pas réaliste, à enlever complètement.
+- Plus de balise IR sur le téléphone : tuile du volet rapide, interrupteur des Réglages, actions ACE « Allumer / Éteindre la balise IR », emplacement de l'établi (Accessoires) et consommation sur la batterie retirés. Pour marquer un joueur aux JVN : la balise IR d'ACE ou les grenades IR du jeu, comme avant le téléphone.
+- Dos du téléphone (Voir l'arrière, établi, gilet, tablette JPC) redessiné sans le boîtier IR.
+- Établi : cinq emplacements (3 + 2) au lieu de six.
 
 ## Traduction 2026-10-13 — Mod SSE et menus CBA d'Overwatch connect en anglais (ATAK natif 1.55.0)
 

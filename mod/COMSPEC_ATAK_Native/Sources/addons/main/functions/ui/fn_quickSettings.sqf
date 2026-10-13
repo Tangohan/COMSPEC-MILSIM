@@ -7,7 +7,7 @@
       Mode nuit   : profil COMSPEC_ATAK_NightMode (NORMAL / ROUGE / SOMBRE)
       Mode avion  : fn_airplaneMode             Silencieux : profil COMSPEC_ATAK_Silent
       Vibration   : profil COMSPEC_ATAK_Vibrate (verrouillable par la communauté, fn_pref)
-      Bluetooth   : fn_btAction   (pas de balise IR ici : boîtier à part, allumé à la main, fn_irBeacon)
+      Bluetooth   : fn_btAction
       Réseau      : fn_linkQuality (ouvre l'app Réseau)   Batterie : COMSPEC_ATAK_Battery (ouvre l'app Statut)
     Params : [action, argument]
       "handle" : pose la zone cliquable de la barre d'état et la poignée (fn_layoutApply)
