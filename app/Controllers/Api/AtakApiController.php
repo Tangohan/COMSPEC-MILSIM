@@ -583,12 +583,19 @@ class AtakApiController
             }
         }
 
+        // Portrait opérateur seulement (règle du site), en vignette JPEG carrée lisible par Arma.
+        // Sans image, la raison part au jeu (avatar_status) et dans le journal du serveur.
+        $portrait = OperatorPortraits::gameThumbnail($tenantId, $userId);
+        if (!in_array($portrait['status'], ['ok', 'no_portrait'], true)) {
+            error_log(sprintf('[atak/player-profile] portrait opérateur indisponible pour le jeu (user=%d, tenant=%d) : %s', $userId, $tenantId, $portrait['status']));
+        }
+
         return Response::json([
             'ok' => true,
             'display_name' => (string) ($user['display_name'] ?? ''),
             'callsign' => $callsign,
-            // Portrait opérateur seulement (règle du site), en vignette JPEG carrée lisible par Arma.
-            'avatar_url' => (string) (OperatorPortraits::gameThumbnailUrl($tenantId, $userId) ?? ''),
+            'avatar_url' => (string) ($portrait['url'] ?? ''),
+            'avatar_status' => $portrait['status'],
             'unit_name' => $unitName,
             'unit_short' => $unitName !== '' ? \App\Support\UnitAbbreviation::standalone($unitName, $tenantId) : '',
             'atak_id' => $atakId,

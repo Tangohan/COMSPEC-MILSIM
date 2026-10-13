@@ -5427,6 +5427,26 @@ public static partial class Extension
                 if (safeKey.Length == 0) safeKey = "slide";
                 var ext = imageUrl.ToLowerInvariant().Contains(".png") ? ".png" : ".jpg";
 
+                // Portraits (clé avatar_<uid>_<empreinte de l'adresse>) : le fichier déjà téléchargé pour cette
+                // adresse est rendu sans requête ; il n'est retéléchargé que s'il manque (adresse changée = autre clé).
+                if (safeKey.StartsWith("avatar_", StringComparison.Ordinal) && safeKey.Count(c => c == '_') >= 2)
+                {
+                    var dir = GetWritableCacheDir();
+                    if (dir != null)
+                    {
+                        foreach (var cachedExt in new[] { ".jpg", ".png" })
+                        {
+                            var cached = Path.Combine(dir, "briefing_" + safeKey + cachedExt);
+                            try
+                            {
+                                if (File.Exists(cached) && new FileInfo(cached).Length > 0)
+                                    return "OK|" + cached.Replace('\\', '/');
+                            }
+                            catch { /* téléchargement normal */ }
+                        }
+                    }
+                }
+
                 // URL relatives : conserver le préfixe /public de _baseUrl (ne pas utiliser Uri(base, /abs)).
                 if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out _)
                     && !string.IsNullOrEmpty(_baseUrl))
@@ -7898,8 +7918,14 @@ public static partial class Extension
                     if (quals.Count >= 12) break;
                 }
             }
+            // 10e colonne « S: » : pourquoi il n'y a pas de portrait (avatar_status du site : no_portrait,
+            // source_missing, unsupported_format, write_failed), affichée et journalisée par le téléphone.
+            var avatarStatus = root.TryGetProperty("avatar_status", out var ast) && ast.ValueKind == JsonValueKind.String
+                ? (ast.GetString() ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "/")
+                : "";
             return displayName + "\t" + callsign + "\t" + avatarUrl + "\t" + unitName + "\t" + atakId
-                + "\t" + playtimeHours + "\t" + lastSeenAt + "\t" + militaryId + "\tQ:" + string.Join(";", quals);
+                + "\t" + playtimeHours + "\t" + lastSeenAt + "\t" + militaryId + "\tQ:" + string.Join(";", quals)
+                + "\tS:" + avatarStatus;
         }
         catch { return ""; }
     }

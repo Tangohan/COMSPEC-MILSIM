@@ -100,6 +100,27 @@ Non testé en jeu. Demande de TTRD : boutons du menu Échap en haut à droite, s
 - « Copier le rapport » met le diagnostic et les versions dans le presse-papiers ; « Signaler un problème » ouvre le signalement existant.
 - Pas à pas (recherche de ce qui arrête le jeu) : au choix rapide (20 s par fonction) ou complet (55 s), lancé depuis la fenêtre. Nouveau bandeau compact en haut au centre avec barre de progression, temps restant et état de la liaison. L'étape mémorisée est effacée quand le pas à pas se termine ou est arrêté : elle ne reste affichée comme suspecte qu'après un vrai arrêt du jeu.
 - Textes traduits en anglais (dictionnaire i18n/en.txt).
+## Portrait opérateur dans le téléphone (ATAK natif 1.77.0, COMSPEC Link 2.0.81)
+
+### Résumé joueur
+Type : correctif
+FR : Ton portrait opérateur s'affiche dans le téléphone
+- Le volet rapide, ta fiche, le groupe et le chat montrent le portrait opérateur de ta fiche Athena au lieu des initiales.
+- Les portraits sont gardés sur ton PC : d'une partie à l'autre ils s'affichent tout de suite, et ne sont retéléchargés que si le joueur change de portrait.
+- Si ton portrait ne peut pas s'afficher, une notification du téléphone dit pourquoi (par exemple : aucun portrait sur ta fiche Athena).
+EN : Your operator portrait shows on the phone
+- The quick settings panel, your profile, the group and the chat show the operator portrait from your Athena record instead of initials.
+- Portraits are kept on your PC: from one game to the next they show at once, and are downloaded again only when the player changes portrait.
+- If your portrait cannot be shown, a phone notification tells you why (for example: no portrait on your Athena record).
+
+### Détail technique
+Non testé en jeu. Signalé par TTRD : le volet rapide n'affichait que les initiales au lieu du portrait opérateur. DLL à recompiler (build_mod.bat), site à déployer sur le VPS, pas de migration.
+- Site : la vignette JPEG du portrait (uploads/portraits/atak) est faite aussi quand le portrait n'existe que dans storage/uploads (repli déjà servi par le site), et écrite dans storage/uploads si public/uploads n'est pas inscriptible. Un portrait JPEG reste envoyé tel quel si la conversion échoue.
+- Site : /api/atak/player-profile renvoie `avatar_status` (no_portrait, source_missing, unsupported_format, write_failed) et l'écrit dans le journal PHP (`[atak/player-profile]`) quand une image existe mais ne peut pas partir.
+- COMSPEC Link 2.0.81 : GetPlayerAvatarInfo transmet cette raison (colonne « S: »).
+- Téléphone : la réponse est découpée sans fusionner les colonnes vides (un nom ou un indicatif vide décalait l'adresse de l'image). Chaque échec (profil, téléchargement, format) est écrit en français dans le journal (RPT et app Debug, module PORTRAIT) avec sa raison, et le joueur reçoit une notification pour son propre portrait, une fois par raison.
+- Cache des portraits (demande de TTRD) : l'image téléchargée reste sur le disque et le profil Arma retient laquelle va avec quel joueur. D'une partie à l'autre, le portrait (le sien, équipiers, groupe, chat) s'affiche tout de suite, même hors ligne ; une seule vérification par partie demande l'adresse au site, et l'image n'est retéléchargée que si le portrait a changé ou si le fichier manque (COMSPEC Link 2.0.81 rend le fichier déjà présent sans requête). Pendant un échec, l'image en cache reste affichée.
+- Traduction : un chemin d'image téléchargée (C:/…/x.jpg) n'est plus passé au dictionnaire anglais.
 
 ## App JTAC plus réaliste : terminal, fiche 9-LINE et carte tactique (ATAK natif 1.76.0)
 
