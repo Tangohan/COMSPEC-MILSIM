@@ -38,6 +38,32 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Viseur photo plein écran : raccourcis et affichage refaits (ATAK natif 1.78.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Appareil photo plein écran plus lisible
+- La barre des raccourcis en bas montre chaque touche dans une pastille claire, groupée par usage (prise de vue, visée, options, sortie), avec l'état du flash.
+- Elle se replie toute seule après quelques secondes pour dégager l'image : H (ou F1) la rouvre ou la referme.
+- L'ISO et la vitesse affichés en haut à droite suivent maintenant la lumière, et l'échelle de zoom est plus lisible.
+- Le cadre LOCK d'une cible marquée a des coins épais et une étiquette claire, visibles sur ciel clair comme de nuit.
+EN : Clearer full-screen camera
+- The shortcut bar at the bottom shows each key in a light keycap, grouped by use (shooting, aiming, options, exit), with the flash state.
+- It folds away on its own after a few seconds to free the image: H (or F1) opens or closes it again.
+- The ISO and shutter speed at the top right now follow the light, and the zoom scale is easier to read.
+- The LOCK box of a marked target has thick corners and a clear label, visible against a bright sky as well as at night.
+
+### Détail technique
+Non testé en jeu. Demande de TTRD : « Améliore l'UI stp encore, surtout le bas avec les raccourcis » (vue plein écran de l'appareil photo, pas le viseur dans le téléphone).
+- `fn_photoMode` « HUD » : barre de raccourcis faite de 8 emplacements (pastille + socle + action, idc 20-27 / 80-87 / 40-47) et 4 séparateurs (60-63), mesurés par `ctrlTextWidth` et centrés ; bandeau ajusté au contenu, espacements resserrés si la largeur dépasse 90 % de l'écran. CLIC en vert, H et ESPACE en gris. Repliée 8 s après l'ouverture (5 s après un passage selfie) en « CLIC photo | H aide, ESPACE quitter » ; nouveau mode « HELP » (touches H 0x23 et F1 0x3B) qui l'épingle ouverte ou la replie.
+- Haut : un seul panneau sombre avec filet vert (envoi vers Athena) ou orange (hors réseau) et séparateur entre les deux lignes.
+- Exposition en direct (idc 12-13) : ISO 100 à 6400 et vitesse 1/250 à 1/8 s d'après `getLightingAt` (ambiante + dynamique), f/1.7 ; ISO 1600 et plus en orange. Seuils choisis à l'estime, à vérifier en jeu. L'ancien bloc « ISO 100 / F1.8 1/200 » fixe est retiré de `camera_overlay.paa` (`tools/src/camera_overlay.png`).
+- Échelle de zoom sur fond discret, palier en cours en gras.
+- Prise de vue : tout le viseur affiché est masqué pendant la capture puis réaffiché tel quel (liste `allControls`), le HUD ne se redessine pas pendant la capture.
+- `fn_lockAction` « draw3d » : cadre fin à 35 % d'opacité, coins épais (`drawLine3D` largeur 4), étiquette RobotoCondensedBold éclaircie, décalée au-dessus du cadre.
+- L'avertissement « ACRE n'est pas connecté à TeamSpeak » est affiché par ACRE lui-même : il n'est pas déplacé, les éléments du viseur évitent sa zone (haut droite, sous l'exposition).
+- Traductions anglaises : CLIC, MOLETTE, SOURIS, ESPACE, aide.
+
 ## Menu Échap et Dépannage liaison refondus (ATAK natif 1.77.0)
 
 ### Résumé joueur
