@@ -531,6 +531,7 @@ return function (Router $router) {
     $router->get('/formations/creer', [TrainingWizardController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account', [AccountController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account/acces', [AccountController::class, 'access'], [AuthMiddleware::class]);
+    $router->post('/compte/formule-offerte/{id}/vu', [\App\Controllers\Web\PlanGiftNoticeController::class, 'dismiss'], [AuthMiddleware::class]);
     $router->post('/account/quitter-communaute', [AccountController::class, 'leaveCommunity'], [AuthMiddleware::class]);
     $router->post('/account/sessions/fermer-les-autres', [AccountController::class, 'revokeOtherSessions'], [AuthMiddleware::class]);
     $router->get('/account/donnees', [AccountPrivacyController::class, 'index'], [AuthMiddleware::class]);
@@ -1041,6 +1042,9 @@ return function (Router $router) {
     $router->post('/admin/tenants/{id}/identity', [SystemTenantsController::class, 'updateIdentity'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/profil', [SystemTenantsController::class, 'updateType'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/plan', [SystemTenantsController::class, 'updatePlan'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/formules-offertes', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/formules-offertes', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/formules-offertes/{id}/retirer', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/tenant-recovery', [SystemTenantRecoveryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/tenant-recovery/parse-dump', [SystemTenantRecoveryController::class, 'parseDump'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/tenant-recovery/restore', [SystemTenantRecoveryController::class, 'restore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

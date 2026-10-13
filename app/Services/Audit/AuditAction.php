@@ -93,6 +93,12 @@ final class AuditAction
     /** Affectation manuelle d’une formule à une communauté (opérateur plateforme). */
     public const TENANT_PLAN_ASSIGNED = 'platform.tenant_plan_assigned';
 
+    /** Formule offerte à une communauté (durée ou sans limite, e-mail + fenêtre aux gestionnaires). */
+    public const TENANT_PLAN_GIFTED = 'platform.tenant_plan_gifted';
+
+    /** Formule offerte retirée avant son terme. */
+    public const TENANT_PLAN_GIFT_REVOKED = 'platform.tenant_plan_gift_revoked';
+
     /** Identité d’une communauté (nom, adresse publique) depuis l’administration du site. */
     public const TENANT_IDENTITY_UPDATED = 'platform.tenant_identity_updated';
 
