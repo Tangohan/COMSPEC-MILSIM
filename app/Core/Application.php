@@ -110,6 +110,14 @@ class Application
                 // Réponse laissée en français plutôt qu'une erreur.
             }
         }
+        // Toutes les pages HTML : fenêtre « Mise à jour disponible » + CSS/JS versionnés par déploiement.
+        try {
+            $pageType = (string) ($response->headerValue('Content-Type') ?? '');
+            if ($pageType === '' || str_starts_with($pageType, 'text/html')) {
+                $response->setBody(\App\Support\SiteUpdateInjector::apply($response->body()));
+            }
+        } catch (\Throwable) {
+        }
         $response->send();
         try {
             \App\Services\Cron\CronWatchdog::maybeKick($this->request->path());

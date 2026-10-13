@@ -480,7 +480,7 @@ $athTableShowCheckbox = true;
     <?php endif; ?>
 </div>
 
-<script src="<?= $h(asset_url('assets/js/roles-graph.js')) ?>?v=<?= $h(platform_app_version()) ?>"></script>
+<script src="<?= $h(asset_url('assets/js/roles-graph.js')) ?>"></script>
 <script>
 (function () {
   var dataEl = document.getElementById('s1-assign-roles-data');

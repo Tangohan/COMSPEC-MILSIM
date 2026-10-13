@@ -53,7 +53,7 @@ final class AtakDroneRemoteController
             'mapId' => $mapId > 0 ? $mapId : 1,
             'steamUid' => $this->sessionSteam((int) Session::get('user_id')),
             'apiBase' => rtrim((string) url(''), '/'),
-            'assetVer' => function_exists('platform_app_version') ? platform_app_version() : '1',
+            'assetVer' => \App\Support\BuildVersion::id(),
         ]);
     }
 

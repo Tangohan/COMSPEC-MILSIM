@@ -510,7 +510,7 @@ if (!$requiredRoleDefinitionsFeature) {
     <?php endif; ?>
 </div>
 </div>
-<script src="<?= htmlspecialchars(asset_url('assets/js/roles-graph.js'), ENT_QUOTES, 'UTF-8') ?>?v=<?= htmlspecialchars(platform_app_version(), ENT_QUOTES, 'UTF-8') ?>"></script>
+<script src="<?= htmlspecialchars(asset_url('assets/js/roles-graph.js'), ENT_QUOTES, 'UTF-8') ?>"></script>
 <script>
 (function () {
   var dataEl = document.getElementById('s1-assign-roles-data');

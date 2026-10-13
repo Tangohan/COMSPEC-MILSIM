@@ -15,8 +15,13 @@ final class SystemVersionController
 {
     public function index(Request $request, array $params = []): Response
     {
-        return ApiResponder::success([
+        $response = ApiResponder::success([
             'version' => platform_app_version(),
+            'build' => \App\Support\BuildVersion::id(),
+            'label' => \App\Support\BuildVersion::label(),
         ]);
+        $response->header('Cache-Control', 'no-store, max-age=0');
+
+        return $response;
     }
 }
