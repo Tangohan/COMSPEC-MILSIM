@@ -3846,32 +3846,18 @@ html[data-bo-theme="dark"] .bo-mportal__btn--ghost {
 html[data-bo-theme="dark"] .msc {
   --msc-line: var(--ath-line, #2b3530);
   --msc-surface: var(--ath-surface, #111513);
-  --msc-muted: var(--ath-muted, #aebdb6);
+  --msc-bg: var(--ath-bg, #151917);
+  --msc-muted: var(--ath-muted, #b9c5bf);
   --msc-ink: var(--ath-ink, #e0e6e3);
 }
-html[data-bo-theme="dark"] .msc-badge--community, html[data-bo-theme="dark"] .msc-badge--public {
-  color: #76a9da;
-  border-color: #2e363e;
-}
-html[data-bo-theme="dark"] .msc-badge--org {
-  color: #f2ba5e;
-  border-color: #423b30;
-}
 html[data-bo-theme="dark"] .msc-hiddenflag {
-  color: var(--ath-danger, #df7c72);
+  color: var(--ath-danger, #e07b7b);
 }
-html[data-bo-theme="dark"] .msc-danger {
-  color: var(--ath-danger, #df7c72);
-}
-html[data-bo-theme="dark"] .msca-flash--ok {
-  border-color: #304138;
-  background: #171c19;
-  color: #62efba;
+html[data-bo-theme="dark"] .msc-danger, html[data-bo-theme="dark"] .msc .ath-btn.msc-danger {
+  color: var(--ath-danger, #e07b7b);
 }
 html[data-bo-theme="dark"] .msca-flash--err {
-  border-color: #3c2c2c;
-  background: #2a1818;
-  color: #e07171;
+  background: var(--ath-danger-bg, #2c1919);
 }
 
 /* ——— back-office-onboarding-recovery.css ——— */
@@ -9347,6 +9333,26 @@ html[data-bo-theme="dark"] .personnel-sheets__section {
 }
 html[data-bo-theme="dark"] .personnel-sheets__meta {
   color: #9da8b8;
+}
+
+/* ——— views/partials/plan_gift_notice_modal.php (<style> de la vue) ——— */
+html[data-bo-theme="dark"] .plan-gift-card {
+  background:#111513;
+  color:#dae1de;
+}
+html[data-bo-theme="dark"] .plan-gift-kicker {
+  color:#57f9cb;
+}
+html[data-bo-theme="dark"] .plan-gift-label {
+  color:#9da8b8;
+}
+html[data-bo-theme="dark"] .plan-gift-message {
+  background:#161b18;
+}
+html[data-bo-theme="dark"] .plan-gift-btn {
+  border:1px solid #303a35;
+  background:#111513;
+  color:#dae1de;
 }
 
 /* ——— views/personnel/deployment.php (<style> de la vue) ——— */
