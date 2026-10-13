@@ -1678,13 +1678,10 @@ def jpc_phone_atlas(tmp):
     """Atlas jpc_<modèle>_ca : face en haut, dos vu de derrière en bas, transparence = silhouette.
     S7 : coque coyote et variantes de teinte (od, black), dos de phone_back."""
     def pack(front, rear, crop):
-        x0, y0, x1, y1 = crop
-        hx0, hy0, hx1, hy1 = JPC_HOLE
-        under = Image.new("RGBA", front.size, (0, 0, 0, 0))
-        under.paste(_glass(hx1 - hx0, hy1 - hy0), (hx0, hy0))
-        under.alpha_composite(front)
+        # Ouverture de l'écran laissée transparente : la face (texture à transparence, dessinée après les surfaces
+        # opaques) ne doit jamais recouvrir l'écran vivant posé juste devant elle.
         atlas = Image.new("RGBA", (2048, 2048), (0, 0, 0, 0))
-        atlas.paste(under.crop(crop).resize((2048, 1024), Image.LANCZOS), (0, 0))
+        atlas.paste(front.crop(crop).resize((2048, 1024), Image.LANCZOS), (0, 0))
         atlas.paste(rear.resize((2048, 1024), Image.LANCZOS), (0, 1024))
         return atlas
 
