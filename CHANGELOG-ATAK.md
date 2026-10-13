@@ -11,12 +11,20 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Carte : effacer le champ de vision et les zones interdites au drone (ATAK natif 1.67.0)
+## Carte : effacer le champ de vision et les zones interdites au drone (ATAK natif 1.68.0)
 
 Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : un champ de vision posé depuis la carte ne pouvait plus être retiré.
 - Menu de la carte (appui long / clic droit) : « Effacer le champ de vision » apparaît dès qu'un champ de vision est affiché (le bouton EFFACER n'existait que dans l'app Relief). Même chose pour la ligne de vue : « Effacer la ligne de vue ».
 - Zones interdites au drone : « Retirer la zone interdite » (clic dans la zone) existait déjà ; ajout de « Retirer toutes les zones » dans le menu de la carte et de RETIRER TOUTES LES ZONES dans l'app Marquer Tracking (toutes les zones du camp).
 - Un seul champ de vision existe à la fois par joueur : en poser un nouveau remplace le précédent.
+## Intro au démarrage désactivée (ATAK natif 1.67.0)
+
+Non testé en jeu. TTRD : l'intro du mod est buggée. Pas de DLL à recompiler, pas de migration.
+- L'intro sur l'écran de démarrage d'Arma (marque COMSPEC, trait vert, carillon) ne se lance plus : ni affichage ni son.
+- Le code est gardé. Nouveau réglage CBA « COMSPEC > ATAK · Intro > Intro au démarrage », décoché par défaut, pour la réactiver (pris en compte au lancement suivant).
+- La marque COMSPEC sur les écrans de chargement de mission reste inchangée.
+- À vérifier en jeu : lancer Arma, rien de COMSPEC sur l'écran de démarrage, menu principal normal.
+
 ## Taille du téléphone en plein écran réglable (ATAK natif 1.66.0)
 
 Non testé en jeu. Demande de TTRD : le téléphone ouvert en plein écran est trop gros pour certains.
