@@ -349,6 +349,9 @@ if (isServer) then { ["comspec_atak_native_planSrv", { _this call comspec_atak_n
 ["comspec_atak_native_action_menu", "LIST",
     ["Masquer le menu d'actions", "Le menu d'actions d'Arma (liste en haut à gauche, molette) ne s'ouvre plus tant que le téléphone est affiché. « En main » : seulement quand on a la souris sur le téléphone. Téléphone rangé : rien ne change (ACE et actions normales)."],
     ["COMSPEC", "ATAK · Interface"], [[0, 1, 2], ["Jamais", "En main seulement", "En main et porté"], 2], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_action_menu_vehicle", "CHECKBOX",
+    ["Menu d'actions libre en véhicule", "Dans un véhicule (conducteur, passager, tireur), la molette et le menu d'actions d'Arma restent disponibles quand le téléphone est porté en miniature : démarrer le moteur, changer de place, descendre. Téléphone en main, la molette reste au téléphone."],
+    ["COMSPEC", "ATAK · Interface"], true, 0] call comspec_atak_native_fnc_addSetting;
 
 // Mode drone : les ordres s'exécutent là où le drone est local (pilote, serveur ou client qui l'a posé).
 ["comspec_atak_native_droneCmd", { _this call comspec_atak_native_fnc_droneCmd; }] call CBA_fnc_addEventHandler;
