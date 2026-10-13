@@ -288,7 +288,8 @@ switch (_act) do {
         private _map = _arg;
         if (isNull _map) exitWith {};
         {
-            private _ok = ([_x] call _linkOf) select 2;
+            // Liaison relevée par le suivi (une fois par seconde) : pas de calcul de relief à chaque image de la carte.
+            private _ok = _x getVariable ["COMSPEC_DroneBgLinked", true];
             private _p = getPosASL _x;
             private _c = [[0.45, 0.75, 1, 1], [0.6, 0.6, 0.6, 0.8]] select !_ok;
             (_x getVariable ["COMSPEC_DroneTask", []]) params [["_k", ""], ["_tp", []], ["_tr", 0]];

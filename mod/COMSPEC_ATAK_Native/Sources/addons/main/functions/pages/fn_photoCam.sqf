@@ -111,7 +111,7 @@ private _redraw = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", crea
 switch (_act) do {
     case "bind": {
         private _aspect = [_arg, 1] select (!(_arg isEqualType 0) || {_arg <= 0});
-        if !(isPiPEnabled) exitWith { "" };
+        if ((["check", "PHOTO"] call comspec_atak_native_fnc_pipCheck) isNotEqualTo "") exitWith { "" };
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCam", objNull];
         if (isNull _cam) then {
             private _n = ((missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamN", 0]) + 1) mod 4;
@@ -261,8 +261,16 @@ switch (_act) do {
             && {((getLightingAt player) select 1) < 8}
         };
         private _fire = switch (_st getOrDefault ["flash", "AUTO"]) do { case "ON": { true }; case "OFF": { false }; default { _dark }; };
-        [_caption, _fire, call _pose] spawn {
-            params ["_caption", "_fire", "_pose"];
+        private _shotPose = call _pose;
+        // Fiche du cliché (relais Discord) : position et axe de l'objectif, objectif, zoom, flash, modèle, version.
+        private _meta = ["", "", false, "", false, "phone", "", _shotPose select 0,
+            (((_shotPose select 1 select 0) atan2 (_shotPose select 1 select 1)) + 360) mod 360,
+            [["lens", ["rear", "selfie"] select (_st getOrDefault ["camSelfie", false])], ["zoom", _st getOrDefault ["camZoom", 1]],
+             ["flash", ["off", "on"] select _fire], ["model", profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"]],
+             ["atak", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]]],
+            _shotPose select 1];
+        [_caption, _fire, _shotPose, _meta] spawn {
+            params ["_caption", "_fire", "_pose", "_meta"];
             disableSerialization;
             _pose params ["_pos", "_dir", "_up", "_fov"];
             uiNamespace setVariable ["COMSPEC_ATAK_PhotoShooting", true];
@@ -297,7 +305,7 @@ switch (_act) do {
             private _ok = if (_noNet) then {
                 screenshot format ["comspec_atak_%1.png", floor (diag_tickTime * 10)];
                 false
-            } else { ["", _caption, "CTAB", "", false, false, true] call comspec_overwatch_connect_fnc_captureReconImage };
+            } else { ["", _caption, "CTAB", "", false, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage };
             // Le fichier est écrit en fin d'image : on garde la vue un instant.
             uiSleep 0.15;
             if (!isNull _light) then { deleteVehicle _light; };

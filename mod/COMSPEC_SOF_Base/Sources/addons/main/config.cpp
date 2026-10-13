@@ -13,7 +13,8 @@ class CfgPatches {
             "COMSPEC_SOF_CagePanel_Blue","COMSPEC_SOF_CagePanel_Black","COMSPEC_SOF_CageDoor_Blue","COMSPEC_SOF_CageDoor_Black",
             "COMSPEC_SOF_Cage4x3_Blue","COMSPEC_SOF_Cage4x3_Black","COMSPEC_SOF_MeshLocker","COMSPEC_SOF_TeamBay",
             "COMSPEC_SOF_TeamBay_x5","COMSPEC_SOF_GunRack","COMSPEC_SOF_Workbench","COMSPEC_SOF_ToolChest","COMSPEC_SOF_Shelf",
-            "COMSPEC_SOF_SignLarge","COMSPEC_SOF_SignSmall","COMSPEC_SOF_SignStand","COMSPEC_SOF_WallFlag"
+            "COMSPEC_SOF_SignLarge","COMSPEC_SOF_SignSmall","COMSPEC_SOF_SignStand","COMSPEC_SOF_WallFlag",
+            "COMSPEC_SOF_HQ","COMSPEC_SOF_Annex"
         };
         weapons[]={};
     };
@@ -27,10 +28,13 @@ class CfgEditorSubcategories {
     class COMSPEC_SOF_EdSub_Storage { displayName="$STR_COMSPEC_SOF_SUB_STORAGE"; };
     class COMSPEC_SOF_EdSub_Workshop { displayName="$STR_COMSPEC_SOF_SUB_WORKSHOP"; };
     class COMSPEC_SOF_EdSub_Signs { displayName="$STR_COMSPEC_SOF_SUB_SIGNS"; };
+    class COMSPEC_SOF_EdSub_Buildings { displayName="$STR_COMSPEC_SOF_SUB_BUILDINGS"; };
 };
 
 class CfgVehicles {
-    class House_F;
+    class House;
+    class House_F: House { class DestructionEffects; };
+    class Ruins_F;
     class COMSPEC_SOF_Base: House_F {
         scope=0; scopeCurator=0; author="COMSPEC";
         vehicleClass="Structures"; editorCategory="COMSPEC_SOF_EdCat"; editorSubcategory="COMSPEC_SOF_EdSub_Storage";
@@ -169,4 +173,13 @@ class CfgVehicles {
         editorPreview="\z\comspec_sof\addons\main\data\sof_wall_flag_preview.jpg";
         hiddenSelections[]={"flag"}; hiddenSelectionsTextures[]={"\z\comspec_sof\addons\main\data\sof_flag_co.paa"};
     };
+
+    // ---- Bâtiments explorables (tools/model_sof_buildings.py) : étages, portes animées, vitres cassables, ruine.
+    class COMSPEC_SOF_BuildingBase: House_F {
+        scope=0; scopeCurator=0; author="COMSPEC";
+        vehicleClass="Structures"; editorCategory="COMSPEC_SOF_EdCat"; editorSubcategory="COMSPEC_SOF_EdSub_Buildings";
+        icon="iconObject_4x2"; cost=500000; armor=3000; destrType="DestructBuilding";
+        class DestructionEffects: DestructionEffects {};
+    };
+    #include "buildings.hpp"
 };

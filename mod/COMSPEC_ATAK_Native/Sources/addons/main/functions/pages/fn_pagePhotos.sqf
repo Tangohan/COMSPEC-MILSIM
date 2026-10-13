@@ -62,7 +62,15 @@ if (_tex isEqualTo "") then {
     private _t = ["COMSPEC_RscStructuredText", [_vx + _pad, _vy + _vh * 0.4, _vw - _pad * 2, _font * 3]] call _mk;
     _t ctrlSetStructuredText parseText (("<t align='center' font='COMSPEC_BarlowBold' color='#f2ab33'>VISEUR INDISPONIBLE</t><br/><t align='center' size='0.8' color='#a9b8b1'>Activez « Image dans l'image » (PiP) dans Options > Vidéo d'Arma, ou passez en PLEIN ÉCRAN.</t>") call comspec_atak_native_fnc_tr);
 } else {
-    ["COMSPEC_RscPhone", [_vx, _vy, _vw, _vh], _tex] call _mk;
+    private _vf = ["COMSPEC_RscPhone", [_vx, _vy, _vw, _vh], _tex] call _mk;
+    // Journal RPT de l'ouverture du viseur (fn_pipCheck, une fois par caméra) et texture rebranchée après son premier rendu.
+    private _pc = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCam", objNull];
+    if ((_pc getVariable ["r2t", ""]) isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_PhotoWatched", ""])) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_PhotoWatched", _pc getVariable ["r2t", ""]];
+        ["watch", ["PHOTO", _pc, _pc getVariable ["r2t", ""], _tex, _vf]] call comspec_atak_native_fnc_pipCheck;
+    } else {
+        [{ ["rebind", _this] call comspec_atak_native_fnc_pipCheck; }, [_vf, _tex]] call CBA_fnc_execNextFrame;
+    };
 };
 // Grille des tiers, discrète, et réticule.
 private _thin = pixelH;

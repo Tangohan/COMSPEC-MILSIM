@@ -464,9 +464,14 @@ switch (_act) do {
         // Environ 600 Ko : avec un débit faible, l'envoi prend du temps (file du téléphone si aucun réseau).
         // Fiche en champs réels (COMSPEC Link 2.0.66+) : [titre, description, SSE, dossier, confidentiel, source, drone,
         // position ASL, cap] ; sinon légende tassée.
-        _e params ["", "_title", "_desc", "_sse", "_conf", "", "", "_drone", "", ["_case", ""], "", ["_hdg", -1], "", ["_pos", []]];
+        _e params ["", "_title", "_desc", "_sse", "_conf", "", "", "_drone", "", ["_case", ""], "", ["_hdg", -1], "", ["_pos", []], ["_shotPose", []]];
         private _withMeta = call _metaOk;
-        private _meta = [[], [[_title, "Cliché drone"] select (_title isEqualTo ""), _desc, _sse, ["", _case] select _sse, _conf, "drone", _drone, _pos, _hdg]] select _withMeta;
+        // Détails de la prise de vue (relais Discord) : vision, zoom de la nacelle, axe visé, version de l'ATAK.
+        _shotPose params [["_spPos", []], ["_spDir", []], "", ["_spFov", 0.7], ["_spVision", 0]];
+        private _extra = [["vision", ["normal", "nv", "ti"] select ((_spVision max 0) min 2)], ["zoom", (0.7 / (_spFov max 0.01)) toFixed 1],
+            ["atak", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]]];
+        private _meta = [[], [[_title, "Cliché drone"] select (_title isEqualTo ""), _desc, _sse, ["", _case] select _sse, _conf, "drone", _drone,
+            [_pos, _spPos] select ((count _pos) < 3 && {(count _spPos) >= 3}), _hdg, _extra, _spDir]] select _withMeta;
         [{
             params ["_file", "_caption", "_feed", "_meta"];
             private _ok = [_file, _caption, "UAV", _feed, true, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage;

@@ -658,7 +658,7 @@ if (_camId isNotEqualTo "") then {
     _cblack ctrlSetBackgroundColor [0, 0, 0, 1];
     ["COMSPEC_RscPhone", [_cx2, _cy2, _cw2, _ch2], "#(argb,1024,512,1)r2t(comspec_livecam,1.7778)"] call _mk;
     // Incrustation (indicatif, grille, distance, cap) : tenue à jour chaque seconde par la boucle du Live cam.
-    private _cosd = ["COMSPEC_RscStructuredText", [_cx2 + pixelW * 4, _cy2 + pixelH * 3, _cw2 - pixelW * 8, _fs * 2.4]] call _mk;
+    private _cosd = ["COMSPEC_RscStructuredText", [_cx2 + pixelW * 4, _cy2 + pixelH * 3, _cw2 - pixelW * 8, _fs * 3.2]] call _mk;
     _cosd ctrlSetFontHeight ((_fs * ([0.85, 0.7] select _mini)) max COMSPEC_ATAK_FontMin);
     _cosd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t>",
         [_cu, true] call comspec_atak_native_fnc_unitCallsign]) call comspec_atak_native_fnc_tr);

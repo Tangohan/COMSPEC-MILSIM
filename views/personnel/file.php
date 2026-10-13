@@ -709,15 +709,17 @@ if ($personnelFileIsRhFull) {
         </div>
     </section>
 
+    <div class="personnel-file-lead">
     <?php
     $personnelFileNoticesIncludeRhSwitcher = false;
     $personnelFileNoticesIncludeOperatorTabs = false;
+    $personnelFileNoticesBare = true;
     require base_path('views/partials/personnel/file_page_notices.php');
     require base_path('views/partials/personnel/advancement_panel.php');
     ?>
 
     <?php if (!empty($visibilityPreviewAs)): ?>
-    <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status">
+    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status">
       <p class="font-semibold">Aperçu de visibilité actif</p>
       <p class="mt-1">
         Affichage simulé en tant que
@@ -732,15 +734,14 @@ if ($personnelFileIsRhFull) {
     <?php endif; ?>
 
     <?php if (!empty($canManageVisibility)): ?>
-    <div class="mb-6">
       <?php
         $visibilityTargetUserId = (int) ($targetUser['id'] ?? 0);
         $visibilityStandaloneForm = true;
         $visibilityPreviewBaseUrl = url('personnel/' . $visibilityTargetUserId);
         require base_path('views/partials/personnel/visibility_admin_block.php');
       ?>
-    </div>
     <?php endif; ?>
+    </div>
 
     <div class="personnel-file-hub" data-file-hub x-data="personnelFileTabs('<?= htmlspecialchars($personnelFileInitialTab, ENT_QUOTES, 'UTF-8') ?>')">
 

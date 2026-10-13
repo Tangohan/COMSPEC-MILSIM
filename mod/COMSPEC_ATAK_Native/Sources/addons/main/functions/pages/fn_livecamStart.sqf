@@ -1,6 +1,8 @@
 /* Démarre (ou retarget) la caméra poitrine du Live cam. Params : [porteur, mode 0 jour / 1 NV / 2 thermique] */
 params ["_unit", ["_mode", 0]];
 if (isNull _unit) exitWith { false };
+// PiP coupée (Options > Vidéo) : le direct serait noir ; journal RPT et notification claire (fn_pipCheck).
+["check", "LIVE CAM"] call comspec_atak_native_fnc_pipCheck;
 private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
 if (isNull _cam) then {
     _cam = "camera" camCreate (getPosATL _unit);
@@ -27,9 +29,17 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
         private _u = attachedTo _cam;
         if (isNull _cam || {isNull _u} || {_u isKindOf "COMSPEC_ATAK_CameraObj"}) exitWith {};
-        if (!alive _u || {!([_u] call comspec_atak_native_fnc_hasDevice)}) exitWith {
+        // Relais dans la mission (fn_videoLink) : le flux du porteur passe en direct (maillage, 3 km) ou par les relais.
+        private _v = createHashMap;
+        if (_u isNotEqualTo player) then {
+            private _dd = player distance _u;
+            private _mr = missionNamespace getVariable ["COMSPEC_ATAK_MeshRange", 3000];
+            _v = ["path", ["LIVECAM", eyePos _u, [0, 1 - (_dd / _mr) ^ 2] select (_dd < _mr), 8]] call comspec_atak_native_fnc_videoLink;
+        };
+        private _noPath = (_v getOrDefault ["active", false]) && {!(_v getOrDefault ["ok", true])};
+        if (!alive _u || {!([_u] call comspec_atak_native_fnc_hasDevice)} || _noPath) exitWith {
             [] call comspec_atak_native_fnc_livecamStop;
-            ["WARNING", "Live cam : flux perdu", 3, 30] call comspec_atak_native_fnc_notify;
+            ["WARNING", ["Live cam : flux perdu", "Live cam : flux perdu, porteur hors du réseau des relais"] select _noPath, 3, 30] call comspec_atak_native_fnc_notify;
             // Page Live cam, ou petite fenêtre de la carte (VOIR CAMÉRA) : seule la page à l'écran est redessinée.
             private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
             private _pg = _st getOrDefault ["activePage", ""];
@@ -38,8 +48,11 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
         };
         private _osd = uiNamespace getVariable ["COMSPEC_ATAK_LivecamOsd", controlNull];
         if (!isNull _osd) then {
-            _osd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m · cap %4° · %5</t>",
-                [_u, true] call comspec_atak_native_fnc_unitCallsign, [getPosASL _u, 8] call comspec_atak_native_fnc_gridRef, round (player distance _u), round getDir _u, [daytime, "HH:MM:SS"] call BIS_fnc_timeToString]) call comspec_atak_native_fnc_tr);
+            (["adapt", ["LIVECAM", _v]] call comspec_atak_native_fnc_videoLink) params ["_vt", "_vtxt"];
+            if (_vtxt isNotEqualTo "") then { ["INFO", _vtxt, 3, 30] call comspec_atak_native_fnc_notify; };
+            _osd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m · cap %4° · %5%6</t>",
+                [_u, true] call comspec_atak_native_fnc_unitCallsign, [getPosASL _u, 8] call comspec_atak_native_fnc_gridRef, round (player distance _u), round getDir _u, [daytime, "HH:MM:SS"] call BIS_fnc_timeToString,
+                ["", "<br/>" + (["osd", [_v, _vt]] call comspec_atak_native_fnc_videoLink)] select (_v getOrDefault ["active", false])]) call comspec_atak_native_fnc_tr);
         };
     }, 1] call CBA_fnc_addPerFrameHandler];
 };

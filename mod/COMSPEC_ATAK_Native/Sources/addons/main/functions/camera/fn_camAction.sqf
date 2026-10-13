@@ -19,6 +19,9 @@
       ["list"]                    caméras du camp du joueur
       ["dead", obj]               bool : détruite
       ["status", obj]             [code, libellé, couleur RGBA] ; code OK, DEAD, JAM, NONET, LINK
+                                  Relais dans la mission (fn_videoLink) : la caméra doit aussi joindre le téléphone, en
+                                  direct (Wi-Fi, comspec_atak_native_camera_range) ou par les relais, sinon LINK.
+      ["video", obj]              chemin du flux (HashMap de fn_videoLink "path", clé "CAM:<hashValue>")
 */
 params [["_mode", ""], ["_a", objNull], ["_b", 0]];
 #define CAM_ITEM "COMSPEC_ATAK_Camera"
@@ -63,7 +66,16 @@ switch (_mode) do {
         private _side = _a getVariable ["COMSPEC_ATAK_CamSide", ""];
         private _near = (allPlayers findIf { alive _x && {(_x distance _a) < _range} && {str side group _x isEqualTo _side} && {[_x] call comspec_atak_native_fnc_hasDevice} }) >= 0;
         if (!_near) exitWith { ["LINK", "Hors liaison", [0.88, 0.64, 0.23, 1]] };
+        private _v = ["video", _a] call _fn;
+        if ((_v getOrDefault ["active", false]) && {!(_v getOrDefault ["ok", true])}) exitWith { ["LINK", "Hors réseau des relais", [0.88, 0.64, 0.23, 1]] };
         ["OK", "En ligne", [0.36, 0.78, 0.42, 1]]
+    };
+    case "video": {
+        if (isNull _a) exitWith { createHashMap };
+        private _range = missionNamespace getVariable ["comspec_atak_native_camera_range", 600];
+        if !(_range isEqualType 0) then { _range = 600; };
+        private _dd = player distance _a;
+        ["path", [format ["CAM:%1", hashValue _a], (getPosASL _a) vectorAdd [0, 0, 0.5], [0, 1 - (_dd / _range) ^ 2] select (_dd < _range), 8]] call comspec_atak_native_fnc_videoLink
     };
     case "place": {
         if !(CAM_ITEM in (items player)) exitWith { ["WARNING", "Aucune caméra IP dans l'inventaire", 3, 20] call comspec_atak_native_fnc_notify; false };

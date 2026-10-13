@@ -55,6 +55,11 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["COMSPEC", "ATAK · Intro"], true, 0,
     { profileNamespace setVariable ["COMSPEC_ATAK_IntroSound", _this]; saveProfileNamespace; }] call comspec_atak_native_fnc_addSetting;
 
+// Check de démarrage (fn_startupCheck), par joueur : résultat du contrôle du mod posté dans le salon de debug du Discord Athena.
+["comspec_atak_native_startup_report", "CHECKBOX",
+    ["Envoyer le check de démarrage", "Coché par défaut : au début de chaque mission, le résultat du contrôle du mod (versions, DLL, connexion Athena, FPS, erreurs) est posté avec votre pseudo et votre indicatif dans le salon de debug du Discord Athena, pour aider au dépannage. Ni UID Steam, ni adresse IP. Décocher pour ne rien envoyer."],
+    ["COMSPEC", "ATAK · Debug"], true, 0] call comspec_atak_native_fnc_addSetting;
+
 // Taille du téléphone en plein écran (par joueur) : 60 à 100 %, centré. Aussi dans Réglages > Emplacement du téléphone.
 ["comspec_atak_native_full_scale", "SLIDER",
     ["Taille du téléphone en plein écran", "Réduit le téléphone ouvert en plein écran (en main), qui reste centré : 100 % = taille d'origine. Le texte et les boutons suivent."],
@@ -190,6 +195,9 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
     ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s (et les pertes amies) pour l'app Rejeu. Décocher pour ne rien enregistrer."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_drone_range", "SLIDER", ["Portée de la liaison drone", "Distance en mètres entre le téléphone du pilote et son drone (divisée par trois derrière le relief). Au-delà, le drone rentre seul à son point de décollage. Avec le mod Mavic, sa portée maximale (mavic_setting_maxConnectionDistance) l'emporte si elle est plus grande."], _sim, [500, 12000, 6000, 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_video_relays", "CHECKBOX",
+    ["Flux vidéo selon les relais", "Quand la mission pose des relais ATAK, les flux vidéo (drone, caméra casque, Live cam, caméras fixes) passent par eux : débit, définition (1080p à image par image), images par seconde, latence et défauts d'image suivent la distance aux relais, le nombre de bonds et la perte d'un relais. Sans relais dans la mission, rien ne change. Décocher pour garder les flux comme avant."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_drone_strike", "CHECKBOX",
     ["Drones armés", "Permet de fixer une charge (roquette RPG, charge de démolition, grenade) sur un drone et de l'envoyer en tir et oublie ou en recherche et frappe."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;

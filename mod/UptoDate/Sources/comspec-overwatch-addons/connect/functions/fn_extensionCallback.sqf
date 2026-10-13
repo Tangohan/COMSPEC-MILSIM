@@ -545,11 +545,13 @@ switch (_function) do {
     };
     case "PostError": {
         // DLL → échec HTTP fire-and-forget (position, marqueurs, chat async…)
-        // data = "code|path|ageSec"
+        // data = "code|path|ageSec[|détail]" — détail (COMSPEC Link 2.0.82) : motif du refus renvoyé par Athena
+        // et début du corps envoyé pour un 400 / 422.
         private _parts = _data splitString "|";
         private _code = if ((count _parts) > 0) then { _parts select 0 } else { "?" };
         private _path = if ((count _parts) > 1) then { _parts select 1 } else { "" };
         private _age = if ((count _parts) > 2) then { _parts select 2 } else { "0" };
+        private _detail = if ((count _parts) > 3) then { (_parts select [3]) joinString "/" } else { "" };
         private _label = if (_path isEqualTo "") then { "POST" } else { _path };
         if ((_path find "terrain") >= 0) then {
             missionNamespace setVariable ["COMSPEC_TerrainAbort", true, false];
@@ -558,7 +560,9 @@ switch (_function) do {
         private _phase = if (
             (_code in ["0", "-1", "401", "403", "429", "503"])
         ) then { "warn" } else { "fail" };
-        ["HTTP POST", _phase, format ["code %1 · %2 (il y a %3 s)", _code, _label, _age], _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+        private _summary = format ["code %1 · %2 (il y a %3 s)", _code, _label, _age];
+        if (_detail isNotEqualTo "") then { _summary = format ["%1 — %2", _summary, _detail]; };
+        ["HTTP POST", _phase, _summary, (_parts select [0, 3]) joinString "|", true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
         if ((_path find "weather") >= 0) then {
             missionNamespace setVariable ["COMSPEC_Athena_LastWeatherSig", "", false];
         };

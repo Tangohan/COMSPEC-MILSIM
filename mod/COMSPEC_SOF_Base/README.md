@@ -17,6 +17,19 @@ catégorie **COMSPEC · Base SOF**. Aucune arme ni équipement modélisé : le d
 | `COMSPEC_SOF_SignLarge` / `SignSmall` / `SignStand` | Pancartes vierges personnalisables |
 | `COMSPEC_SOF_WallFlag` | Drapeau mural vierge personnalisable |
 
+## Bâtiments explorables
+
+| Classe | Bâtiment |
+|---|---|
+| `COMSPEC_SOF_HQ` | QG 3 niveaux 24 x 14 m : hall vitré, couloir central et bureaux à chaque étage, escalier jusqu'au toit |
+| `COMSPEC_SOF_Annex` | Annexe 2 niveaux 18 x 14 m, même plan intérieur sans hall vitré |
+
+- **Portes animées** (action Ouvrir / Fermer, portes vitrées du hall en double battant).
+- **Vitres cassables** : chaque vitre a son point de vie, une balle la remplace par du verre brisé.
+- **Étages praticables** : LOD roadway sur les dalles, escaliers et toit, collisions par pièce.
+- **Destruction** : le bâtiment détruit laisse une ruine (`COMSPEC_SOF_HQ_ruins`, `COMSPEC_SOF_Annex_ruins`).
+- Pas encore de LOD *Paths* : l'IA ne connaît pas les positions intérieures.
+
 **Personnaliser une pancarte ou le drapeau** : attribut Eden « Image » = chemin d'une image `.paa` ou `.jpg`
 (format 2:1 conseillé), par exemple `images\panneau.paa` dans le dossier de la mission. En script :
 `_obj setObjectTextureGlobal [0, "images\panneau.paa"]`.
@@ -29,6 +42,7 @@ catégorie **COMSPEC · Base SOF**. Aucune arme ni équipement modélisé : le d
     cd tools
     python3 gen_sof_textures.py            # textures PNG + rvmats
     python3 model_sof_base.py              # p3d MLOD + vignettes d'éditeur (Blender bpy + Arma 3 Object Builder)
+    python3 model_sof_buildings.py         # bâtiments + ruines, data/model.cfg et buildings.hpp générés
     for f in render/*.png; do hemtt utils paa convert $f ../Sources/addons/main/data/$(basename ${f%.png}).paa; done
     python3 ../../COMSPEC_ATAK_Native/tools/pack_pbo.py ../Sources/addons/main ../@COMSPEC_SOF_Base/addons/comspec_sof_main.pbo
 

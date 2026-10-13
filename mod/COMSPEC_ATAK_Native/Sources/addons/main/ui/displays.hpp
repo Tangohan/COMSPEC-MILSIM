@@ -19,7 +19,7 @@ class COMSPEC_RscDisplayATAK {
         class WeatherBg: COMSPEC_RscPanel { idc=COMSPEC_ATAK_IDC_WEATHER_BG; ATAK_POS; colorBackground[]={0.55,0.38,0.08,1}; };
     };
     class controls {
-        class Map: COMSPEC_RscMapAtak { idc=COMSPEC_ATAK_IDC_MAP; ATAK_POS; onDraw="_this call comspec_atak_native_fnc_mapOnDraw"; onMouseButtonDown="_this call comspec_atak_native_fnc_mapMouseButtonDown"; onMouseMoving="_this call comspec_atak_native_fnc_mapMouseMoving"; onMouseButtonUp="_this call comspec_atak_native_fnc_mapMouseButtonUp"; onMouseButtonDblClick="_this call comspec_atak_native_fnc_mapDblClick"; };
+        class Map: COMSPEC_RscMapAtak { idc=COMSPEC_ATAK_IDC_MAP; ATAK_POS; onDraw="private _perfT = diag_tickTime; _this call comspec_atak_native_fnc_mapOnDraw; ['carte (image)', _perfT] call comspec_atak_native_fnc_perfAcc"; onMouseButtonDown="_this call comspec_atak_native_fnc_mapMouseButtonDown"; onMouseMoving="_this call comspec_atak_native_fnc_mapMouseMoving"; onMouseButtonUp="_this call comspec_atak_native_fnc_mapMouseButtonUp"; onMouseButtonDblClick="_this call comspec_atak_native_fnc_mapDblClick"; };
         class Content: COMSPEC_RscControlsGroup { idc=COMSPEC_ATAK_IDC_CONTENT; ATAK_POS; };
         class InspectorText: COMSPEC_RscStructuredText { idc=COMSPEC_ATAK_IDC_INSPECTOR_TEXT; ATAK_POS; text=""; };
         class Battery: COMSPEC_RscIcon { idc=COMSPEC_ATAK_IDC_BATTERY; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\bat_100.paa"; };
@@ -68,17 +68,54 @@ class RscTitles {
         class controls {
             class Overlay: COMSPEC_RscPhone { idc=1; style=48; x="safeZoneX"; y="safeZoneY"; w="safeZoneW"; h="safeZoneH"; text="\z\comspec_atak_native\addons\main\data\camera_overlay.paa"; };
             class Flash: COMSPEC_RscText { idc=2; x="safeZoneX"; y="safeZoneY"; w="safeZoneW"; h="safeZoneH"; colorBackground[]={1,1,1,0}; };
-            // Bandeaux sombres derrière l'état (haut) et l'aide (bas) : lisibles sur ciel clair comme de nuit.
-            class TopBand: COMSPEC_RscText { idc=8; x="safeZoneX + safeZoneW * 0.3"; y="safeZoneY + safeZoneH * 0.052"; w="safeZoneW * 0.4"; h="safeZoneH * 0.042"; colorBackground[]={0,0,0,0.45}; };
-            class BottomBand: COMSPEC_RscText { idc=7; x="safeZoneX + safeZoneW * 0.08"; y="safeZoneY + safeZoneH * 0.835"; w="safeZoneW * 0.84"; h="safeZoneH * 0.075"; colorBackground[]={0,0,0,0.45}; };
-            class Info: COMSPEC_RscStructuredText { idc=3; x="safeZoneX + safeZoneW * 0.08"; y="safeZoneY + safeZoneH * 0.843"; w="safeZoneW * 0.84"; h="safeZoneH * 0.035"; colorText[]={0.92,0.95,0.93,1}; shadow=1; size="0.026 * safeZoneH"; text=""; };
-            class Count: COMSPEC_RscText { idc=4; style=2; x="safeZoneX + safeZoneW * 0.25"; y="safeZoneY + safeZoneH * 0.876"; w="safeZoneW * 0.5"; h="safeZoneH * 0.03"; colorText[]={0.36,0.78,0.42,1}; shadow=2; sizeEx="0.024 * safeZoneH"; text=""; };
+            // Haut : un seul panneau sombre, filet de couleur (vert : envoi vers Athena, orange : hors réseau),
+            // état de l'objectif sur la première ligne, destination et légende sur la seconde.
+            class TopBand: COMSPEC_RscText { idc=8; x="safeZoneX + safeZoneW * 0.3"; y="safeZoneY + safeZoneH * 0.05"; w="safeZoneW * 0.4"; h="safeZoneH * 0.074"; colorBackground[]={0.02,0.03,0.025,0.62}; };
+            class TopAccent: COMSPEC_RscText { idc=11; x="safeZoneX + safeZoneW * 0.3"; y="safeZoneY + safeZoneH * 0.05"; w="safeZoneW * 0.4"; h="safeZoneH * 0.003"; colorBackground[]={0.36,0.78,0.42,0.9}; };
             class Status: COMSPEC_RscStructuredText { idc=5; x="safeZoneX + safeZoneW * 0.3"; y="safeZoneY + safeZoneH * 0.058"; w="safeZoneW * 0.4"; h="safeZoneH * 0.032"; colorText[]={0.92,0.95,0.93,1}; shadow=1; size="0.026 * safeZoneH"; text=""; };
-            // Destination sous l'état : Athena joignable ou photo gardée sur le poste, légende de la photo.
-            class DestBand: COMSPEC_RscText { idc=10; x="safeZoneX + safeZoneW * 0.3"; y="safeZoneY + safeZoneH * 0.096"; w="safeZoneW * 0.4"; h="safeZoneH * 0.03"; colorBackground[]={0,0,0,0.35}; };
-            class Dest: COMSPEC_RscStructuredText { idc=9; x="safeZoneX + safeZoneW * 0.3"; y="safeZoneY + safeZoneH * 0.099"; w="safeZoneW * 0.4"; h="safeZoneH * 0.026"; colorText[]={0.92,0.95,0.93,1}; shadow=1; size="0.02 * safeZoneH"; text=""; };
-            // Échelle de zoom (x1 … x8), palier en cours en vert.
-            class ZoomScale: COMSPEC_RscStructuredText { idc=6; x="safeZoneX + safeZoneW * 0.85"; y="safeZoneY + safeZoneH * 0.36"; w="safeZoneW * 0.07"; h="safeZoneH * 0.3"; colorText[]={0.92,0.95,0.93,1}; shadow=1; size="0.024 * safeZoneH"; text=""; };
+            class DestBand: COMSPEC_RscText { idc=10; x="safeZoneX + safeZoneW * 0.32"; y="safeZoneY + safeZoneH * 0.092"; w="safeZoneW * 0.36"; h="safeZoneH * 0.0015"; colorBackground[]={1,1,1,0.1}; };
+            class Dest: COMSPEC_RscStructuredText { idc=9; x="safeZoneX + safeZoneW * 0.3"; y="safeZoneY + safeZoneH * 0.096"; w="safeZoneW * 0.4"; h="safeZoneH * 0.026"; colorText[]={0.92,0.95,0.93,1}; shadow=1; size="0.02 * safeZoneH"; text=""; };
+            // Exposition en direct (ISO et vitesse suivent la lumière), en haut à droite, au-dessus de la zone
+            // où ACRE affiche ses avertissements.
+            class ExpoBand: COMSPEC_RscText { idc=13; x="safeZoneX + safeZoneW * 0.835"; y="safeZoneY + safeZoneH * 0.045"; w="safeZoneW * 0.115"; h="safeZoneH * 0.068"; colorBackground[]={0.02,0.03,0.025,0.62}; };
+            class Expo: COMSPEC_RscStructuredText { idc=12; x="safeZoneX + safeZoneW * 0.835"; y="safeZoneY + safeZoneH * 0.049"; w="safeZoneW * 0.115"; h="safeZoneH * 0.064"; colorText[]={0.92,0.95,0.93,1}; shadow=1; size="0.024 * safeZoneH"; text=""; };
+            // Échelle de zoom (x1 … x8) sur fond discret, palier en cours en vert.
+            class ZoomBand: COMSPEC_RscText { idc=14; x="safeZoneX + safeZoneW * 0.885"; y="safeZoneY + safeZoneH * 0.365"; w="safeZoneW * 0.045"; h="safeZoneH * 0.27"; colorBackground[]={0.02,0.03,0.025,0.45}; };
+            class ZoomScale: COMSPEC_RscStructuredText { idc=6; x="safeZoneX + safeZoneW * 0.885"; y="safeZoneY + safeZoneH * 0.372"; w="safeZoneW * 0.04"; h="safeZoneH * 0.26"; colorText[]={0.92,0.95,0.93,1}; shadow=1; size="0.024 * safeZoneH"; text=""; };
+            // Bas : barre de raccourcis en touches (pastilles claires), groupées et ajustée à son contenu par
+            // fn_photoMode « HUD » ; repliée après quelques secondes (H : réafficher).
+            class BottomBand: COMSPEC_RscText { idc=7; x=0; y=0; w=0; h=0; colorBackground[]={0.02,0.03,0.025,0.6}; };
+            class Info: COMSPEC_RscStructuredText { idc=3; x=0; y=0; w=0; h=0; text=""; };
+            class KeyBase0: COMSPEC_RscText { idc=80; x=0; y=0; w=0; h=0; colorBackground[]={0.5,0.55,0.52,0.95}; };
+            class KeyCap0: COMSPEC_RscTextCenter { idc=20; x=0; y=0; w=0; h=0; font="COMSPEC_BarlowBold"; sizeEx="0.021 * safeZoneH"; colorText[]={0.06,0.08,0.07,1}; colorBackground[]={0.92,0.95,0.93,0.97}; text=""; };
+            class KeyLabel0: COMSPEC_RscText { idc=40; x=0; y=0; w=0; h=0; sizeEx="0.023 * safeZoneH"; colorText[]={0.86,0.91,0.88,1}; shadow=2; text=""; };
+            class KeyBase1: COMSPEC_RscText { idc=81; x=0; y=0; w=0; h=0; colorBackground[]={0.5,0.55,0.52,0.95}; };
+            class KeyCap1: COMSPEC_RscTextCenter { idc=21; x=0; y=0; w=0; h=0; font="COMSPEC_BarlowBold"; sizeEx="0.021 * safeZoneH"; colorText[]={0.06,0.08,0.07,1}; colorBackground[]={0.92,0.95,0.93,0.97}; text=""; };
+            class KeyLabel1: COMSPEC_RscText { idc=41; x=0; y=0; w=0; h=0; sizeEx="0.023 * safeZoneH"; colorText[]={0.86,0.91,0.88,1}; shadow=2; text=""; };
+            class KeyBase2: COMSPEC_RscText { idc=82; x=0; y=0; w=0; h=0; colorBackground[]={0.5,0.55,0.52,0.95}; };
+            class KeyCap2: COMSPEC_RscTextCenter { idc=22; x=0; y=0; w=0; h=0; font="COMSPEC_BarlowBold"; sizeEx="0.021 * safeZoneH"; colorText[]={0.06,0.08,0.07,1}; colorBackground[]={0.92,0.95,0.93,0.97}; text=""; };
+            class KeyLabel2: COMSPEC_RscText { idc=42; x=0; y=0; w=0; h=0; sizeEx="0.023 * safeZoneH"; colorText[]={0.86,0.91,0.88,1}; shadow=2; text=""; };
+            class KeyBase3: COMSPEC_RscText { idc=83; x=0; y=0; w=0; h=0; colorBackground[]={0.5,0.55,0.52,0.95}; };
+            class KeyCap3: COMSPEC_RscTextCenter { idc=23; x=0; y=0; w=0; h=0; font="COMSPEC_BarlowBold"; sizeEx="0.021 * safeZoneH"; colorText[]={0.06,0.08,0.07,1}; colorBackground[]={0.92,0.95,0.93,0.97}; text=""; };
+            class KeyLabel3: COMSPEC_RscText { idc=43; x=0; y=0; w=0; h=0; sizeEx="0.023 * safeZoneH"; colorText[]={0.86,0.91,0.88,1}; shadow=2; text=""; };
+            class KeyBase4: COMSPEC_RscText { idc=84; x=0; y=0; w=0; h=0; colorBackground[]={0.5,0.55,0.52,0.95}; };
+            class KeyCap4: COMSPEC_RscTextCenter { idc=24; x=0; y=0; w=0; h=0; font="COMSPEC_BarlowBold"; sizeEx="0.021 * safeZoneH"; colorText[]={0.06,0.08,0.07,1}; colorBackground[]={0.92,0.95,0.93,0.97}; text=""; };
+            class KeyLabel4: COMSPEC_RscText { idc=44; x=0; y=0; w=0; h=0; sizeEx="0.023 * safeZoneH"; colorText[]={0.86,0.91,0.88,1}; shadow=2; text=""; };
+            class KeyBase5: COMSPEC_RscText { idc=85; x=0; y=0; w=0; h=0; colorBackground[]={0.5,0.55,0.52,0.95}; };
+            class KeyCap5: COMSPEC_RscTextCenter { idc=25; x=0; y=0; w=0; h=0; font="COMSPEC_BarlowBold"; sizeEx="0.021 * safeZoneH"; colorText[]={0.06,0.08,0.07,1}; colorBackground[]={0.92,0.95,0.93,0.97}; text=""; };
+            class KeyLabel5: COMSPEC_RscText { idc=45; x=0; y=0; w=0; h=0; sizeEx="0.023 * safeZoneH"; colorText[]={0.86,0.91,0.88,1}; shadow=2; text=""; };
+            class KeyBase6: COMSPEC_RscText { idc=86; x=0; y=0; w=0; h=0; colorBackground[]={0.5,0.55,0.52,0.95}; };
+            class KeyCap6: COMSPEC_RscTextCenter { idc=26; x=0; y=0; w=0; h=0; font="COMSPEC_BarlowBold"; sizeEx="0.021 * safeZoneH"; colorText[]={0.06,0.08,0.07,1}; colorBackground[]={0.92,0.95,0.93,0.97}; text=""; };
+            class KeyLabel6: COMSPEC_RscText { idc=46; x=0; y=0; w=0; h=0; sizeEx="0.023 * safeZoneH"; colorText[]={0.86,0.91,0.88,1}; shadow=2; text=""; };
+            class KeyBase7: COMSPEC_RscText { idc=87; x=0; y=0; w=0; h=0; colorBackground[]={0.5,0.55,0.52,0.95}; };
+            class KeyCap7: COMSPEC_RscTextCenter { idc=27; x=0; y=0; w=0; h=0; font="COMSPEC_BarlowBold"; sizeEx="0.021 * safeZoneH"; colorText[]={0.06,0.08,0.07,1}; colorBackground[]={0.92,0.95,0.93,0.97}; text=""; };
+            class KeyLabel7: COMSPEC_RscText { idc=47; x=0; y=0; w=0; h=0; sizeEx="0.023 * safeZoneH"; colorText[]={0.86,0.91,0.88,1}; shadow=2; text=""; };
+            class KeySep0: COMSPEC_RscText { idc=60; x=0; y=0; w=0; h=0; colorBackground[]={1,1,1,0.16}; };
+            class KeySep1: COMSPEC_RscText { idc=61; x=0; y=0; w=0; h=0; colorBackground[]={1,1,1,0.16}; };
+            class KeySep2: COMSPEC_RscText { idc=62; x=0; y=0; w=0; h=0; colorBackground[]={1,1,1,0.16}; };
+            class KeySep3: COMSPEC_RscText { idc=63; x=0; y=0; w=0; h=0; colorBackground[]={1,1,1,0.16}; };
+            // Messages (photo envoyée, patientez…) juste au-dessus de la barre.
+            class Count: COMSPEC_RscText { idc=4; style=2; x="safeZoneX + safeZoneW * 0.25"; y="safeZoneY + safeZoneH * 0.812"; w="safeZoneW * 0.5"; h="safeZoneH * 0.03"; colorText[]={0.36,0.78,0.42,1}; shadow=2; sizeEx="0.024 * safeZoneH"; text=""; };
         };
     };
 };

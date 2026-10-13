@@ -17,8 +17,8 @@ if (!(_v isEqualType "") || {_v isEqualTo ""} || {(missionNamespace getVariable 
 private _cache = missionNamespace getVariable ["COMSPEC_ATAK_I18nCache", createHashMap];
 private _hit = _cache getOrDefault [_v, nil];
 if (!isNil "_hit") exitWith { _hit };
-// Chemin d'image ou de son : jamais traduit.
-if ((_v select [0, 1]) isEqualTo "\" || {(_v find ".paa") > 0}) exitWith { _cache set [_v, _v]; _v };
+// Chemin d'image ou de son (dont les images téléchargées par la DLL, C:/…/x.jpg) : jamais traduit.
+if ((_v select [0, 1]) isEqualTo "\" || {(_v find ".paa") > 0} || {(_v select [1, 2]) isEqualTo ":/"} || {(count _v) > 4 && {((toLower _v) select [(count _v) - 4]) in [".jpg", "jpeg", ".png", ".ogg"]}}) exitWith { _cache set [_v, _v]; _v };
 
 private _exact = missionNamespace getVariable ["COMSPEC_ATAK_I18nExact", createHashMap];
 private _tpls = missionNamespace getVariable ["COMSPEC_ATAK_I18nTpl", createHashMap];

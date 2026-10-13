@@ -6261,6 +6261,31 @@
     });
   }
 
+  /** Lecteur d'images (assets/js/recon-viewer.js) sur une liste de /api/recon/images ; repli : simple agrandissement. */
+  function openReconViewer(list, match, fallbackSrc, blurred) {
+    if (!window.ReconViewer || !list || !list.length) {
+      openPhotoLightbox(fallbackSrc, blurred);
+      return;
+    }
+    var index = 0;
+    list.forEach(function (row, i) { if (match(row, i)) index = i; });
+    window.ReconViewer.open(list, index, {
+      recon: true,
+      theme: 'dark',
+      resolveUrl: function (u, row) {
+        var url = resolvePhotoUrl(row.url || row.path || '');
+        if (!url && row.image_path && String(row.image_path).indexOf('recon-private/') !== 0) {
+          url = resolvePhotoUrl('/uploads/recon/' + String(row.image_path).split('/').pop());
+        }
+        return url;
+      },
+      onLocate: function (x, y, row) {
+        var loc = point(row || {});
+        if (loc && map) map.setView(loc, Math.max(map.getZoom(), 4));
+      }
+    });
+  }
+
   // Live cam : dernière image de chaque flux caméra (téléphone ATAK « chest: », casque, drone) des 10 dernières minutes.
   var camFeeds = [];
   var camFetchedAt = 0;
@@ -6954,7 +6979,7 @@
         var photo = photos.filter(function (row) { return String(row.id) === id; })[0] || {};
         if (!url) url = String(photo.url || '');
         if (op === 'open') {
-          openPhotoLightbox(url, !!(card && card.classList.contains('is-blurred')) || !!Number(photo.is_blurred || 0));
+          openReconViewer(photos, function (row) { return String(row.id) === id; }, url, !!(card && card.classList.contains('is-blurred')) || !!Number(photo.is_blurred || 0));
           return;
         }
         if (!id) return;
@@ -7907,7 +7932,9 @@
     camDrawer.addEventListener('click', function (event) {
       var open = event.target.closest('[data-cam-open]');
       if (open) {
-        openPhotoLightbox(open.getAttribute('data-cam-open'), false);
+        var camTile = open.closest('[data-cam-index]');
+        var camIndex = camTile ? Number(camTile.getAttribute('data-cam-index')) : -1;
+        openReconViewer(camFeeds, function (row, i) { return i === camIndex; }, open.getAttribute('data-cam-open'), false);
         return;
       }
       var locate = event.target.closest('[data-cam-locate]');
