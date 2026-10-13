@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project name="COMSPEC_SOF_Base">
+    <Package name="main">
+        <Key ID="STR_COMSPEC_SOF_CAT"><Original>COMSPEC · Base SOF</Original><English>COMSPEC · SOF Base</English><French>COMSPEC · Base SOF</French></Key>
+        <Key ID="STR_COMSPEC_SOF_SUB_CAGES"><Original>Cages grillagées</Original><English>Mesh cages</English><French>Cages grillagées</French></Key>
+        <Key ID="STR_COMSPEC_SOF_SUB_STORAGE"><Original>Rangement</Original><English>Storage</English><French>Rangement</French></Key>
+        <Key ID="STR_COMSPEC_SOF_SUB_WORKSHOP"><Original>Atelier</Original><English>Workshop</English><French>Atelier</French></Key>
+        <Key ID="STR_COMSPEC_SOF_SUB_SIGNS"><Original>Pancartes et drapeaux</Original><English>Signs and flags</English><French>Pancartes et drapeaux</French></Key>
+        <Key ID="STR_COMSPEC_SOF_OPEN"><Original>Ouvrir</Original><English>Open</English><French>Ouvrir</French></Key>
+        <Key ID="STR_COMSPEC_SOF_CLOSE"><Original>Fermer</Original><English>Close</English><French>Fermer</French></Key>
+        <Key ID="STR_COMSPEC_SOF_CAGE_PANEL_BLUE"><Original>Panneau de cage 1 m (bleu)</Original><English>Cage panel 1 m (blue)</English><French>Panneau de cage 1 m (bleu)</French></Key>
+        <Key ID="STR_COMSPEC_SOF_CAGE_PANEL_BLACK"><Original>Panneau de cage 1 m (noir)</Original><English>Cage panel 1 m (black)</English><French>Panneau de cage 1 m (noir)</French></Key>
+        <Key ID="STR_COMSPEC_SOF_CAGE_DOOR_BLUE"><Original>Panneau de cage avec porte (bleu)</Original><English>Cage door panel (blue)</English><French>Panneau de cage avec porte (bleu)</French></Key>
+        <Key ID="STR_COMSPEC_SOF_CAGE_DOOR_BLACK"><Original>Panneau de cage avec porte (noir)</Original><English>Cage door panel (black)</English><French>Panneau de cage avec porte (noir)</French></Key>
+        <Key ID="STR_COMSPEC_SOF_CAGE_4X3_BLUE"><Original>Cage grillagée 4 x 3 m (bleue)</Original><English>Mesh cage 4 x 3 m (blue)</English><French>Cage grillagée 4 x 3 m (bleue)</French></Key>
+        <Key ID="STR_COMSPEC_SOF_CAGE_4X3_BLACK"><Original>Cage grillagée 4 x 3 m (noire)</Original><English>Mesh cage 4 x 3 m (black)</English><French>Cage grillagée 4 x 3 m (noire)</French></Key>
+        <Key ID="STR_COMSPEC_SOF_LOCKER"><Original>Casier grillagé double porte</Original><English>Mesh locker (double door)</English><French>Casier grillagé double porte</French></Key>
+        <Key ID="STR_COMSPEC_SOF_TEAMBAY"><Original>Alvéole team room (contreplaqué)</Original><English>Team room bay (plywood)</English><French>Alvéole team room (contreplaqué)</French></Key>
+        <Key ID="STR_COMSPEC_SOF_TEAMBAY_X5"><Original>Rangée de 5 alvéoles team room</Original><English>Team room bays (row of 5)</English><French>Rangée de 5 alvéoles team room</French></Key>
+        <Key ID="STR_COMSPEC_SOF_GUNRACK"><Original>Râtelier d'armes bois (8 places)</Original><English>Wooden gun rack (8 slots)</English><French>Râtelier d'armes bois (8 places)</French></Key>
+        <Key ID="STR_COMSPEC_SOF_SHELF"><Original>Étagère acier 4 niveaux</Original><English>Steel shelf (4 levels)</English><French>Étagère acier 4 niveaux</French></Key>
+        <Key ID="STR_COMSPEC_SOF_WORKBENCH"><Original>Établi avec panneau perforé</Original><English>Workbench with pegboard</English><French>Établi avec panneau perforé</French></Key>
+        <Key ID="STR_COMSPEC_SOF_TOOLCHEST"><Original>Servante d'atelier</Original><English>Tool chest</English><French>Servante d'atelier</French></Key>
+        <Key ID="STR_COMSPEC_SOF_SIGN_LARGE"><Original>Pancarte murale 1,6 m (personnalisable)</Original><English>Wall sign 1.6 m (customisable)</English><French>Pancarte murale 1,6 m (personnalisable)</French></Key>
+        <Key ID="STR_COMSPEC_SOF_SIGN_SMALL"><Original>Plaque 0,6 m (personnalisable)</Original><English>Plate 0.6 m (customisable)</English><French>Plaque 0,6 m (personnalisable)</French></Key>
+        <Key ID="STR_COMSPEC_SOF_SIGN_STAND"><Original>Pancarte sur pieds (personnalisable)</Original><English>Standing sign (customisable)</English><French>Pancarte sur pieds (personnalisable)</French></Key>
+        <Key ID="STR_COMSPEC_SOF_FLAG"><Original>Drapeau mural (personnalisable)</Original><English>Wall flag (customisable)</English><French>Drapeau mural (personnalisable)</French></Key>
+        <Key ID="STR_COMSPEC_SOF_ATTR_TEX"><Original>Image</Original><English>Image</English><French>Image</French></Key>
+        <Key ID="STR_COMSPEC_SOF_ATTR_TEX_TIP"><Original>Chemin d'une image .paa ou .jpg (2:1 conseillé, ex. images\panneau.paa dans le dossier de la mission). Vide : pancarte vierge.</Original><English>Path of a .paa or .jpg image (2:1 recommended, e.g. images\sign.paa in the mission folder). Empty: blank sign.</English><French>Chemin d'une image .paa ou .jpg (2:1 conseillé, ex. images\panneau.paa dans le dossier de la mission). Vide : pancarte vierge.</French></Key>
+    </Package>
+</Project>
