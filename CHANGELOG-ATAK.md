@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Vue caméra noire : explication claire et vue directe du drone (ATAK natif 1.78.0)
+## Vue caméra noire : explication claire et vue directe du drone (ATAK natif 1.79.0)
 
 ### Résumé joueur
 Type : correctif
@@ -57,6 +57,23 @@ EN : Black drone camera and photo viewfinder: a clear reason, and a backup drone
 - Drone : noms de cible de rendu par qualité (`comspec_dronecam<q>_<n>`), plus jamais un même nom avec une autre taille de texture ; `feedWatch` appelé par la page ; `direct` / `directEnd` : caméra plein écran sans r2t attachée au drone, pose recopiée par la boucle de la nacelle (`COMSPEC_ATAK_DroneShotCam`), téléphone rangé, Échap (KeyDown du display 46) rouvre l'app Drone ; coupée si joueur mort, drone perdu, liaison perdue ou téléphone ouvert.
 - Photo : même contrôle et même journal à l'ouverture du viseur.
 - Live cam, caméra Tinder et vue aérienne du JPC : même contrôle PiP (journal RPT et notification au lieu d'une image noire).
+
+## Module Zeus et Eden « Relever routes et villes » (ATAK natif 1.78.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Nouveau module Zeus et Eden pour envoyer routes et villes à Athena
+- Le module « Relever routes et villes » (COMSPEC Outils) envoie à Athena les routes, pistes, villes et villages de la carte, sans attendre le relevé complet des bâtiments et du relief.
+- Posé dans l'éditeur, il part tout seul au début de la mission dès qu'Athena est liée ; dans Zeus, il part immédiatement.
+EN : New Zeus and Eden module to send roads and towns to Athena
+- The "Survey roads and towns" module (COMSPEC Tools) sends the map's roads, tracks, towns and villages to Athena, without waiting for the full survey of buildings and terrain.
+- Placed in the editor, it runs on its own at mission start once Athena is linked; in Zeus, it runs right away.
+
+### Détail technique
+Non testé en jeu. Demande de TTRD : un module Zeus et Eden dédié aux routes et villes. Le relevé existait déjà (`fn_sampleGeoNetwork`, Geo.Ingest) mais seulement au bout du relevé complet du théâtre ou par le menu ACE.
+- Eden : `COMSPEC_Module_GeoNetwork` (catégorie COMSPEC Outils), options « Au début de la mission » (défaut : oui) et « Renvoyer ». Exécuté par le Zeus ou le chef de mission (admin connecté, ou solo), qui attend la liaison Athena jusqu'à 3 minutes.
+- Zeus : module « Relever routes et villes » par Zeus Enhanced et ACE Zeus, envoi immédiat même si la carte a déjà été transmise.
+- Les réglages de communauté « Lieux » et « Routes » (modules du mod) restent respectés.
 
 ## Menu Échap et Dépannage liaison refondus (ATAK natif 1.77.0)
 
