@@ -12,6 +12,10 @@ Sources/addons/main/i18n/en.txt : un tableau [["français", "anglais"], ...] lu 
   python3 tools/i18n.py stats     couverture du dictionnaire
   python3 tools/i18n.py --connect|--sse wrap|extract|stats   même chose pour l'addon Overwatch connect embarqué / le mod SSE
                                      (UptoDate/.../connect ; même dictionnaire, via comspec_overwatch_connect_fnc_tr)
+  python3 tools/i18n.py community F  crée ou met à jour le fichier F d'un mod de traduction communautaire (autre langue,
+                                     localisation/README.md) : lignes ["français", "traduction", "anglais"], traductions
+                                     gardées, phrases nouvelles ajoutées vides, phrases disparues retirées ; écrit aussi
+                                     localisation/template/xx.txt quand F est omis
   python3 tools/i18n.py stringtable  noms d'objets et modules Eden/Zeus (config.cpp, modules.hpp) -> stringtable.xml
                                      ($STR_..., langue du jeu ; anglais pris dans en.txt)
 
@@ -258,6 +262,35 @@ def save_dict(pairs):
     return len(lines)
 
 
+def load_community(path):
+    """Fichier d'un mod de traduction : {français: traduction}, lignes à 2 ou 3 colonnes (la 3e, l'anglais, ignorée)."""
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8-sig") as f:
+        txt = f.read()
+    out = {}
+    for m in re.finditer(r'\[\s*"((?:[^"]|"")*)"\s*,\s*"((?:[^"]|"")*)"\s*(?:,\s*"(?:[^"]|"")*"\s*)?\]', txt):
+        out[m.group(1).replace('""', '"')] = m.group(2).replace('""', '"')
+    return out
+
+
+def save_community(path, pairs):
+    """Écrit [["français", "traduction", "anglais"], ...] dans l'ordre du dictionnaire anglais ; renvoie (total, traduites)."""
+    old = load_community(path)
+    q = lambda s: '"' + s.replace('"', '""') + '"'
+    lines, done = [], 0
+    for fr, en in pairs:
+        tr = old.get(fr, "")
+        done += 1 if tr else 0
+        if tr and sorted(PLACEHOLDER.findall(fr)) != sorted(PLACEHOLDER.findall(tr)):
+            print("%1, %2... différents de l'original (la phrase s'affichera mal) :", fr, "->", tr, file=sys.stderr)
+        lines.append(f"[{q(fr)}, {q(tr)}, {q(en)}]")
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write("[\n" + ",\n".join(lines) + "\n]\n")
+    return len(lines), done
+
+
 def collect():
     found = {}
     for path in sqf_files():
@@ -383,6 +416,13 @@ def main():
             for s, src in sorted(missing, key=lambda p: (p[1], p[0])):
                 f.write(f"{s}\t{src}\n")
         print(f"{len(found)} textes, {len(missing)} sans traduction -> {os.path.relpath(MISSING, ROOT)}")
+    elif cmd == "community":
+        pairs = load_dict()
+        path = sys.argv[2] if len(sys.argv) > 2 else os.path.join(ROOT, "localisation", "template", "xx.txt")
+        if len(sys.argv) <= 2 and os.path.exists(path):
+            os.remove(path)
+        total, done = save_community(path, pairs)
+        print(f"{path} : {done}/{total} phrases traduites ({total - done} restent en anglais)")
     elif cmd == "merge":
         pairs = load_dict()
         with open(sys.argv[2], encoding="utf-8") as f:
