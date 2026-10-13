@@ -3,6 +3,10 @@
     Une entrée vide signifie « non chargé / non lisible », jamais une valeur inventée.
     Retour: HashMap
 */
+// Fixes pendant toute la partie (mods chargés, DLL) : calculées une fois. La DLL était interrogée
+// (callExtension GetExtensionVersion) à chaque construction de la fiche, donc à chaque clic dans l'arsenal.
+private _cached = missionNamespace getVariable "COMSPEC_OperatorVersionsCache";
+if (!isNil "_cached" && {_cached isEqualType createHashMap}) exitWith { +_cached };
 private _fncPatch = {
     params ["_patch"];
     if (!isClass (configFile >> "CfgPatches" >> _patch)) exitWith { "" };
@@ -58,4 +62,5 @@ _out set ["arma", _arma];
 _out set ["arma_build", _armaBuild];
 _out set ["arma_branch", _armaBranch];
 
+if ((_out get "dll") isNotEqualTo "") then { missionNamespace setVariable ["COMSPEC_OperatorVersionsCache", +_out, false]; };
 _out

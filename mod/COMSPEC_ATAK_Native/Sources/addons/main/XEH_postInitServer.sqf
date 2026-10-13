@@ -1,3 +1,4 @@
+private _perfT0 = diag_tickTime;
 /*
     Mémoire serveur de l'état partagé du téléphone, pour les joueurs qui rejoignent en cours de partie :
     demandes logistiques, MEDEVAC et comptes rendus (journal des événements par camp, rejoué chez le nouveau venu)
@@ -105,3 +106,4 @@ addMissionEventHandler ["HandleDisconnect", {
     false
 }];
 addMissionEventHandler ["MPEnded", { ["flush"] call comspec_atak_native_fnc_playTimeServer; }];
+diag_log format ["[COMSPEC ATAK NATIVE][PERF] %1 : %2 ms", "postInit serveur", round ((diag_tickTime - _perfT0) * 1000)];

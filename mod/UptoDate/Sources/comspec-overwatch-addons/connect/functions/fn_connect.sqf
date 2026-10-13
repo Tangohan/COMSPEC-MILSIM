@@ -135,14 +135,14 @@ _mapId = round _mapId;
 if (_mapId < 1) then { _mapId = 1; };
 missionNamespace setVariable ["comspec_overwatch_map_id", _mapId];
 missionNamespace setVariable ["COMSPEC_MapId", _mapId];
-private _result = ["COMSPECExtension" callExtension ["Connect", [_url, _key, _tenant, _steamForConnect, _modVersion, _bloodType, str _mapId]]] call comspec_overwatch_connect_fnc_extResult;
+private _result = [["COMSPECExtension", "Connect", [_url, _key, _tenant, _steamForConnect, _modVersion, _bloodType, str _mapId], 40] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _result splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 private _payload = if (count _parts >= 2) then { _parts select 1 } else { _result };
 
 if (_prefix == "OK") then {
     // whoami = IP publique uniquement ; le vrai succes auth est deja dans Connect (si cle presente).
-    private _ipResult = ["COMSPECExtension" callExtension ["GetClientIp", []]] call comspec_overwatch_connect_fnc_extResult;
+    private _ipResult = [["COMSPECExtension", "GetClientIp", []] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
     private _ipParts = _ipResult splitString "|";
     private _ipPrefix = if (count _ipParts >= 1) then { _ipParts select 0 } else { "" };
     private _userIp = if (count _ipParts >= 2) then { _ipParts select 1 } else { "—" };

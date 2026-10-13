@@ -14,7 +14,14 @@ private _lang = switch (_set) do {
     default { "fr" };
 };
 missionNamespace setVariable ["COMSPEC_ATAK_I18nCache", createHashMap];
+// Dictionnaire déjà préparé pendant cette session de jeu (mission précédente) : gardé dans uiNamespace, il
+// n'est pas relu (740 Ko, 10 000 paires, plusieurs centaines de ms à chaque arrivée en mission en anglais).
+if (_lang isEqualTo "en" && {isNil {missionNamespace getVariable "COMSPEC_ATAK_I18nExact"}} && {!isNil {uiNamespace getVariable "COMSPEC_ATAK_I18nExactUi"}}) then {
+    missionNamespace setVariable ["COMSPEC_ATAK_I18nExact", uiNamespace getVariable "COMSPEC_ATAK_I18nExactUi"];
+    missionNamespace setVariable ["COMSPEC_ATAK_I18nTpl", uiNamespace getVariable "COMSPEC_ATAK_I18nTplUi"];
+};
 if (_lang isEqualTo "en" && {isNil {missionNamespace getVariable "COMSPEC_ATAK_I18nExact"}}) then {
+    private _perfT0 = diag_tickTime;
     private _pairs = parseSimpleArray (loadFile "\z\comspec_atak_native\addons\main\i18n\en.txt");
     private _exact = createHashMap;
     private _tpls = createHashMap;
@@ -70,7 +77,10 @@ if (_lang isEqualTo "en" && {isNil {missionNamespace getVariable "COMSPEC_ATAK_I
     { _tpls set [_x, [_tpls get _x, [], { -(count ((_x select 0) joinString "")) }] call BIS_fnc_sortBy]; } forEach (keys _tpls);
     missionNamespace setVariable ["COMSPEC_ATAK_I18nExact", _exact];
     missionNamespace setVariable ["COMSPEC_ATAK_I18nTpl", _tpls];
+    uiNamespace setVariable ["COMSPEC_ATAK_I18nExactUi", _exact];
+    uiNamespace setVariable ["COMSPEC_ATAK_I18nTplUi", _tpls];
     diag_log format ["[COMSPEC ATAK NATIVE][INFO][I18N] English dictionary: %1 entries", count _pairs];
+    diag_log format ["[COMSPEC ATAK NATIVE][PERF] Dictionnaire anglais préparé : %1 ms", round ((diag_tickTime - _perfT0) * 1000)];
 };
 missionNamespace setVariable ["COMSPEC_ATAK_Lang", _lang];
 if (_redraw && {hasInterface}) then {
