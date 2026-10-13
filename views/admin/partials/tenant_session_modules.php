@@ -37,20 +37,22 @@ if ($links === []) {
     return;
 }
 ?>
-<section class="rounded-2xl border border-emerald-200/90 bg-gradient-to-b from-emerald-50/50 to-white p-5 sm:p-6 shadow-sm" aria-labelledby="tenant-mod-heading">
-    <h2 id="tenant-mod-heading" class="text-lg font-bold text-slate-900 mb-1">Raccourcis · modules de la communauté active</h2>
-    <p class="text-sm text-slate-600 mb-4 max-w-3xl">
-        Ces outils s’appliquent à la <strong class="font-semibold text-slate-800">communauté de votre session</strong>, pas à la plateforme entière.
-        Ce n’est <strong class="font-semibold text-slate-800">pas</strong> l’administration globale du site (rôles système, communautés, journal d’activité — voir la section « Modules plateforme » ci-dessus lorsque vous avez ces droits).
-        Ouvrez plutôt le <strong class="font-semibold text-slate-800">back-office</strong>, rubrique <strong class="font-semibold text-slate-800">Ressources</strong>, pour retrouver ces modules avec le même périmètre.
-    </p>
-    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<section class="pa-card" aria-labelledby="tenant-mod-heading">
+    <div class="pa-card__head">
+        <span class="pa-icon pa-icon--slate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+        <div>
+            <p class="pa-card__kicker">Communauté de votre session</p>
+            <h2 id="tenant-mod-heading" class="pa-card__title">Raccourcis vers le back-office</h2>
+            <p class="pa-card__help">Ces outils ne s’appliquent qu’à la communauté sélectionnée, pas au site entier.</p>
+        </div>
+    </div>
+    <ul class="pa-tiles">
         <?php foreach ($links as $row): ?>
             <li>
-                <a href="<?= htmlspecialchars($row['href'], ENT_QUOTES, 'UTF-8') ?>" class="group flex flex-col rounded-xl border border-emerald-100 bg-white/90 px-4 py-3 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all">
-                    <span class="font-semibold text-emerald-950 group-hover:underline"><?= htmlspecialchars($row['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                <a class="pa-tiles__a" href="<?= htmlspecialchars($row['href'], ENT_QUOTES, 'UTF-8') ?>">
+                    <strong><?= htmlspecialchars($row['label'], ENT_QUOTES, 'UTF-8') ?></strong>
                     <?php if (($row['desc'] ?? '') !== ''): ?>
-                        <span class="text-xs text-slate-500 mt-1"><?= htmlspecialchars((string) $row['desc'], ENT_QUOTES, 'UTF-8') ?></span>
+                        <span><?= htmlspecialchars((string) $row['desc'], ENT_QUOTES, 'UTF-8') ?></span>
                     <?php endif; ?>
                 </a>
             </li>
