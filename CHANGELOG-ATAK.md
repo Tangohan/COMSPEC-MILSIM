@@ -46,12 +46,12 @@ FR : Images du drone enfin visibles, ordres au drone sur la carte, plan de brief
 - La caméra du drone, le viseur de l'app Photo et les diapositives du Briefing s'affichent dans le téléphone au lieu de rester noirs. Sur la carte, un clic droit donne des ordres au drone : aller, rechercher, stationnaire, atterrir.
 - Le plan de briefing de l'app Plan apparaît sur la carte du site Athena et, par défaut, sur la carte du téléphone.
 - En véhicule, la molette et le menu d'actions marchent de nouveau avec le téléphone en miniature. Le HUD des autres mods (boussole, heure…) ne passe plus par-dessus le téléphone.
-- Sur la carte, le bandeau « indicatif · grille » ne revient plus en boucle, et le selfie peut inverser les axes de la souris (réglages ATAK · Photo).
+- Mode PETIT plus lisible : carte sur toute la largeur, plus d'apps sur l'accueil, messagerie en une vue, barre du haut allégée, et fini le bandeau « indicatif · grille » en boucle. Le selfie peut aussi inverser les axes de la souris.
 EN : Drone pictures finally visible, drone orders from the map, shared briefing plan
 - The drone camera, the Photo app viewfinder and Briefing slides show in the phone instead of staying black. On the map, a right-click gives orders to the drone: go to, search, hover, land.
 - The briefing plan from the Plan app shows on the Athena website map and, by default, on the phone map.
 - In a vehicle, the scroll wheel and action menu work again with the phone as a miniature. Other mods' HUD (compass, time…) no longer draws over the phone.
-- On the map, the "callsign · grid" banner no longer repeats, and the selfie can invert the mouse axes (ATAK · Photo settings).
+- Clearer SMALL mode: full-width map, more apps on the home screen, messages in one view, lighter top bar, and no more repeating "callsign · grid" banner. The selfie can also invert the mouse axes.
 
 ### Détail technique
 
@@ -95,10 +95,14 @@ Une seule version pour 7 PR regroupées (#782, #783, #785, #786, #787, #788, #78
 - Réglage CBA client `comspec_atak_native_hide_foreign_hud` (ATAK · Affichage, activé par défaut). Écran 3D du JPC non concerné.
 - Limite : un texte posé par `cutText` / `titleText` ou dessiné par `drawIcon3D` n'a pas de display accessible et ne peut pas être masqué.
 
-#### Carte : la notification « indicatif · grille » ne tourne plus en boucle (#786)
+#### Mode PETIT : carte, accueil et messagerie plus lisibles, fin de la notification en boucle (#786)
 
-- Retour de TTRD (13/10) : « INFO · TA1 · 1519 1729 » en boucle. fn_inspectorUpdate envoyait la notification à chaque rendu en mode mini avec une unité sélectionnée ; fn_statusUpdate le rappelle chaque seconde (panneau SITUATION ouvert) et la grille change quand l'unité bouge, donc l'anti-doublon de fn_notify ne jouait pas.
-- La notification part désormais de fn_mapSelect, une fois par clic. Non testé en jeu.
+- Retour de TTRD (13/10) : « INFO · TA1 · 1519 1729 » en boucle en mode PETIT. fn_inspectorUpdate envoyait la notification à chaque rendu en mode mini avec une unité sélectionnée ; fn_statusUpdate le rappelle chaque seconde et la grille change quand l'unité bouge, donc l'anti-doublon de fn_notify ne jouait pas. La notification part désormais de fn_mapSelect, une fois par clic.
+- fn_layoutGet : page MAP en mini (hors texture JPC) sans dock ni rail ; fn_dockRender ne dessine rien quand les deux sont nuls. Paysage mini : 5 colonnes au lanceur (au lieu de 4).
+- fn_launcherRender : pas de recherche en mini, tuiles à 0,8 de hauteur relative (0,92 en plein écran).
+- fn_pageChat : vue partagée liste + conversation réservée au plein écran paysage.
+- fn_layoutApply : en mini, météo (88514, 88523, 88524) et RAM masquées.
+- Calculs de place (1080p, paysage mini) : écran 502 × 286 px, barre d'état + barre d'app 58 px, rail 49 px. Non testé en jeu.
 
 #### Selfie : axes de la souris inversables (#782)
 
