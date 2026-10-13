@@ -38,6 +38,25 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Téléphone : le HUD des autres mods ne passe plus par-dessus (ATAK natif 1.93.0)
+
+### Résumé joueur
+Type : correctif
+FR : Le HUD des autres mods ne recouvre plus le téléphone
+- Les textes que d'autres mods dessinent à l'écran (boussole F-PANO / ECOTI, température, heure, distance...) sont cachés à l'endroit du téléphone tant qu'il est affiché, en mini comme en plein écran.
+- Ils reviennent dès que le téléphone est rangé, et seulement là où ils gênaient.
+- Pour les garder visibles : Options > Options des addons > COMSPEC > ATAK · Affichage, décocher « Masquer le HUD des autres mods sous le téléphone ».
+EN : Other mods' HUD no longer covers the phone
+- Texts that other mods draw on screen (F-PANO / ECOTI compass, temperature, time, distance...) are hidden where the phone is while it is shown, in mini and full screen.
+- They come back as soon as the phone is put away, and only where they were in the way.
+- To keep them visible: Options > Addon Options > COMSPEC > ATAK · Display, untick "Hide other mods' HUD under the phone".
+
+### Détail technique
+- Arma dessine les calques cutRsc (RscTitles) de tous les mods au-dessus des fenêtres createDisplay : le téléphone en main passait sous le HUD F-PANO ECOTI (Workshop), et le téléphone porté sous les calques créés après le sien.
+- Nouveau `fn_foreignHud` : tant que le téléphone est affiché, un per-frame CBA scanne chaque seconde les displays rangés dans `uiNamespace` et absents de `allDisplays` (les calques), hors téléphone (`COMSPEC_ATAK_*`) et HUD du jeu (`IGUI_displays`), et masque (`ctrlShow false`) leurs contrôles de premier niveau qui chevauchent la coque (`layoutGet` « visible »). Remasqués à chaque image si le mod les réaffiche, réaffichés à la fermeture ou quand ils ne chevauchent plus la coque. Aucun mod tiers modifié.
+- Réglage CBA client `comspec_atak_native_hide_foreign_hud` (ATAK · Affichage, activé par défaut). Écran 3D du JPC non concerné.
+- Limite : un texte posé par `cutText` / `titleText` ou dessiné par `drawIcon3D` n'a pas de display accessible et ne peut pas être masqué.
+
 ## Drone : bouton TEST VIDÉO pour l'image noire du téléphone (ATAK natif 1.90.0)
 
 ### Résumé joueur
