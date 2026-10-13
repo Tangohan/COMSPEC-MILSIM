@@ -36,7 +36,7 @@ $shortcuts = [
     <header class="bo-recovery__hero">
         <div class="bo-recovery__hero-inner">
             <div class="bo-recovery__hero-main">
-                <a href="<?= htmlspecialchars(url('back-office/configuration'), ENT_QUOTES, 'UTF-8') ?>" class="bo-recovery__back">← Paramètres avancés</a>
+                <a href="<?= htmlspecialchars(url('back-office/configuration'), ENT_QUOTES, 'UTF-8') ?>" class="bo-recovery__back">← Configuration</a>
                 <p class="bo-recovery__eyebrow">Communauté · Premiers pas</p>
                 <h1 class="bo-recovery__title">Aide après inscription</h1>
                 <?php if ($communityName !== ''): ?>

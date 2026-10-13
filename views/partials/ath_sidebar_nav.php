@@ -582,7 +582,7 @@ if ($isOperatorBoNav) {
                     : null,
                 ['label' => 'Traçabilité du courrier', 'href' => url('back-office/courrier/traceabilite'), 'icon' => 'mail', 'active' => $navAt('back-office/courrier/traceabilite')],
                 ['label' => 'Mises à jour', 'href' => url('back-office/mise-a-niveau'), 'icon' => 'rocket', 'active' => $navAt('back-office/mise-a-niveau')],
-                ['label' => 'Paramètres avancés', 'href' => url('back-office/configuration'), 'icon' => 'gear', 'active' => $boNavConfig],
+                ['label' => 'Configuration', 'href' => url('back-office/configuration'), 'icon' => 'gear', 'active' => $boNavConfig],
             ], static fn (?array $row): bool => is_array($row))),
         ],
     ];
