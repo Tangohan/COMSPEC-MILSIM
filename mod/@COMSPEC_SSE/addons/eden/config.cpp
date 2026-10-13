@@ -47,13 +47,13 @@ class Cfg3DEN {
     class Object {
         class AttributeCategories {
             class COMSPEC_SSE {
-                displayName = "COMSPEC SSE — Renseignement";
+                displayName = "$STR_COMSPEC_SSE_CFG_B6E32D0967";
                 collapsed = 1;
 
                 class Attributes {
                     class comspec_sse_enabled {
-                        displayName = "Activer le renseignement SSE";
-                        tooltip = "Rend cette entité exploitable : personne, véhicule, caisse, arme au sol, ordinateur, téléphone, document ou tout autre objet du jeu.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_1E06839F94";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_4225900977";
                         property = "comspec_sse_enabled";
                         control = "Checkbox";
                         expression = "_this setVariable ['comspec_sse_enabled', _value, isServer];";
@@ -62,8 +62,8 @@ class Cfg3DEN {
                         condition = "objectSimulated";
                     };
                     class comspec_sse_forcedType {
-                        displayName = "Nature de l'objet";
-                        tooltip = "Automatique : déduite de la classe (téléphone, ordinateur, radio, document, support, arme, caisse…). À forcer pour un objet de décor ou d'un autre mod que le SSE ne reconnaît pas.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_C7EB9F3AAD";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_6844285EAD";
                         property = "comspec_sse_forcedType";
                         control = "Combo";
                         expression = "if (_value isNotEqualTo '') then { _this setVariable ['comspec_sse_forcedType', _value, true]; };";
@@ -85,8 +85,8 @@ class Cfg3DEN {
                         };
                     };
                     class comspec_sse_profile {
-                        displayName = "Profil";
-                        tooltip = "Profil narratif utilisé pour la génération.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_669FE25A32";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_D3ABEFFAC9";
                         property = "comspec_sse_profile";
                         control = "Combo";
                         expression = "_this setVariable ['comspec_sse_profile', _value, isServer];";
@@ -107,8 +107,8 @@ class Cfg3DEN {
                         };
                     };
                     class comspec_sse_generation {
-                        displayName = "Moment de la génération";
-                        tooltip = "Automatique : le contenu est généré au premier examen. Manuel : seulement par un module ou un script.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_629B240053";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_1BBEEE7974";
                         property = "comspec_sse_generation";
                         control = "Combo";
                         expression = "_this setVariable ['comspec_sse_generation', _value, isServer];";
@@ -120,8 +120,8 @@ class Cfg3DEN {
                         };
                     };
                     class comspec_sse_complexity {
-                        displayName = "Richesse";
-                        tooltip = "Quantité d'éléments exploitables générés (légère → haute valeur).";
+                        displayName = "$STR_COMSPEC_SSE_CFG_684A67E212";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_40DD5E3E2E";
                         property = "comspec_sse_complexity";
                         control = "Combo";
                         expression = "_this setVariable ['comspec_sse_complexity', _value, isServer];";
@@ -135,8 +135,8 @@ class Cfg3DEN {
                         };
                     };
                     class comspec_sse_identityMode {
-                        displayName = "Identité";
-                        tooltip = "Automatique : SEEK reprend le nom du panneau Identité Eden (ou Nom/Prénom COMSPEC s’ils sont remplis). Inventer : ignore l’identité Eden. Forcer : même effet que automatique, nom Eden imposé.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_3138BE1C28";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_FA27128D8A";
                         property = "comspec_sse_identityMode";
                         control = "Combo";
                         expression = "_this setVariable ['comspec_sse_identityMode', _value, isServer];";
@@ -149,8 +149,8 @@ class Cfg3DEN {
                         };
                     };
                     class COMSPEC_SSE_Profile_Preset {
-                        displayName = "Ce que la base doit répondre";
-                        tooltip = "Génération automatique : verdict stable dérivé de la graine du sujet. Les trois autres imposent le résultat de la requête d’identité du terminal SEEK.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_144C58520E";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_D2616FDA97";
                         property = "COMSPEC_SSE_Profile_Preset";
                         control = "Combo";
                         expression = "[_this, 'Preset', _value] call comspec_sse_fnc_edenWriteField;";
@@ -164,8 +164,8 @@ class Cfg3DEN {
                         };
                     };
                     class COMSPEC_SSE_LastName {
-                        displayName = "Nom";
-                        tooltip = "Si renseigné, SEEK et les fiches utilisent ce nom. Vide = nom de l’identité Eden (panneau Identité), sinon génération automatique.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_7FF20370C8";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_54288020C7";
                         property = "COMSPEC_SSE_LastName";
                         control = "Edit";
                         expression = "[_this, 'LastName', _value] call comspec_sse_fnc_edenWriteField;";
@@ -173,8 +173,8 @@ class Cfg3DEN {
                         typeName = "STRING";
                     };
                     class COMSPEC_SSE_FirstName {
-                        displayName = "Prénom";
-                        tooltip = "Si renseigné, SEEK et les fiches utilisent ce prénom. Vide = prénom de l’identité Eden, sinon génération automatique.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_E4387ADE0F";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_031E829D33";
                         property = "COMSPEC_SSE_FirstName";
                         control = "Edit";
                         expression = "[_this, 'FirstName', _value] call comspec_sse_fnc_edenWriteField;";
@@ -182,8 +182,8 @@ class Cfg3DEN {
                         typeName = "STRING";
                     };
                     class COMSPEC_SSE_Alias {
-                        displayName = "Alias connu";
-                        tooltip = "Surnom sous lequel le sujet est connu. C’est souvent le seul élément dont dispose le terrain.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_A48482A2F9";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_D0836A23B9";
                         property = "COMSPEC_SSE_Alias";
                         control = "Edit";
                         expression = "[_this, 'Alias', _value] call comspec_sse_fnc_edenWriteField;";
@@ -192,8 +192,8 @@ class Cfg3DEN {
                     };
                     class COMSPEC_SSE_RecordRef
                     {
-                        displayName = "Référence de dossier antérieur";
-                        tooltip = "Affichée par le terminal en cas de correspondance. Laisser vide pour génération automatique.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_437A61441B";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_7FAF9B4872";
                         property = "COMSPEC_SSE_RecordRef";
                         control = "Edit";
                         expression = "[_this, 'RecordRef', _value] call comspec_sse_fnc_edenWriteField;";
@@ -202,8 +202,8 @@ class Cfg3DEN {
                     };
                     class COMSPEC_SSE_Confidence
                     {
-                        displayName = "Indice de confiance imposé (-1 = automatique)";
-                        tooltip = "Pourcentage affiché par le terminal après requête. -1 laisse le calcul dépendre de la qualité réelle des relevés, ce qui est le comportement souhaitable dans la plupart des scénarios.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_9E7DD41778";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_21B7336A80";
                         property = "COMSPEC_SSE_Confidence";
                         control = "Edit";
                         expression = "[_this, 'Confidence', _value] call comspec_sse_fnc_edenWriteField;";
@@ -213,8 +213,8 @@ class Cfg3DEN {
                     };
                     class COMSPEC_SSE_Seed
                     {
-                        displayName = "Graine (0 = automatique)";
-                        tooltip = "Fixer la graine rend le sujet identique d'une session à l'autre — utile pour un scénario rejoué ou une séance de formation. 0 laisse dériver de l'identifiant réseau.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_15D618B854";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_BA0ADC5959";
                         property = "COMSPEC_SSE_Seed";
                         control = "Edit";
                         expression = "[_this, 'Seed', _value] call comspec_sse_fnc_edenWriteField;";
@@ -223,8 +223,8 @@ class Cfg3DEN {
                         typeName = "NUMBER";
                     };
                     class comspec_sse_personRole {
-                        displayName = "Rôle déclaré";
-                        tooltip = "Fonction ou rôle connu (courrier, financier, habitant…). Vide = génération automatique.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_3C5727F957";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_3E775A5872";
                         property = "comspec_sse_personRole";
                         control = "Edit";
                         expression = "_this setVariable ['comspec_sse_personRole', _value, isServer];";
@@ -232,8 +232,8 @@ class Cfg3DEN {
                         typeName = "STRING";
                     };
                     class comspec_sse_personNationality {
-                        displayName = "Nationalité déclarée";
-                        tooltip = "Ce que la personne déclare, pas ce qui est établi. Vide = génération automatique.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_E3E921B379";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_F16B0327CA";
                         property = "comspec_sse_personNationality";
                         control = "Edit";
                         expression = "[_this, 'Nationality', _value] call comspec_sse_fnc_edenWriteField;";
@@ -241,8 +241,8 @@ class Cfg3DEN {
                         typeName = "STRING";
                     };
                     class comspec_sse_personLanguage {
-                        displayName = "Langue parlée";
-                        tooltip = "Détermine si un interprète est nécessaire. Vide = génération automatique.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_8CED3222ED";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_8F6B5DD607";
                         property = "comspec_sse_personLanguage";
                         control = "Edit";
                         expression = "[_this, 'Language', _value] call comspec_sse_fnc_edenWriteField;";
@@ -250,8 +250,8 @@ class Cfg3DEN {
                         typeName = "STRING";
                     };
                     class comspec_sse_personPhone {
-                        displayName = "Numéro connu";
-                        tooltip = "Numéro associé à la personne (indépendant du téléphone saisi). Vide = génération automatique.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_03B3FBA455";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_8F9A093B0E";
                         property = "comspec_sse_personPhone";
                         control = "Edit";
                         expression = "_this setVariable ['comspec_sse_personPhone', _value, isServer];";
@@ -259,8 +259,8 @@ class Cfg3DEN {
                         typeName = "STRING";
                     };
                     class comspec_sse_bioMode {
-                        displayName = "Biométrie";
-                        tooltip = "Empreintes, iris et ADN consultables avec le terminal SEEK.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_5427FD158C";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_DA1DD9E7AC";
                         property = "comspec_sse_bioMode";
                         control = "Combo";
                         expression = "_this setVariable ['comspec_sse_bioMode', _value, isServer];";
@@ -272,8 +272,8 @@ class Cfg3DEN {
                         };
                     };
                     class comspec_sse_zeusNotes {
-                        displayName = "Notes Zeus";
-                        tooltip = "Notes libres visibles uniquement côté préparation / Zeus.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_BBF1B1F6C6";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_C23ACC81C0";
                         property = "comspec_sse_zeusNotes";
                         control = "Edit";
                         expression = "_this setVariable ['comspec_sse_zeusNotes', _value, isServer];";
@@ -281,8 +281,8 @@ class Cfg3DEN {
                         typeName = "STRING";
                     };
                     class comspec_sse_networkId {
-                        displayName = "ID réseau";
-                        tooltip = "Identifiant de cluster / réseau relationnel partagé.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_847E74EACA";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_279BBE8E2C";
                         property = "comspec_sse_networkId";
                         control = "Edit";
                         expression = "_this setVariable ['comspec_sse_networkId', _value, isServer];";
@@ -290,8 +290,8 @@ class Cfg3DEN {
                         typeName = "STRING";
                     };
                     class comspec_sse_modelId {
-                        displayName = "Modèle SSE (identifiant)";
-                        tooltip = "ID d'un modèle (ex. builtin_chef_hvt). Prioritaire sur le profil si renseigné.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_4508276612";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_8FB8E11D7C";
                         property = "comspec_sse_modelId";
                         control = "Edit";
                         expression = "_this setVariable ['comspec_sse_modelId', _value, isServer];";
@@ -299,8 +299,8 @@ class Cfg3DEN {
                         typeName = "STRING";
                     };
                     class comspec_sse_datasetId {
-                        displayName = "Dataset mission";
-                        tooltip = "Pack narratif (ex. falcon). Prioritaire sur le modèle seul si un rôle est aussi renseigné.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_71849A3505";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_4743916477";
                         property = "comspec_sse_datasetId";
                         control = "Edit";
                         expression = "_this setVariable ['comspec_sse_datasetId', _value, isServer];";
@@ -308,8 +308,8 @@ class Cfg3DEN {
                         typeName = "STRING";
                     };
                     class comspec_sse_datasetRole {
-                        displayName = "Rôle dans le dataset";
-                        tooltip = "Ex. falcon_hvt, falcon_courier, falcon_ied…";
+                        displayName = "$STR_COMSPEC_SSE_CFG_DA8AB2FFDC";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_244DC42347";
                         property = "comspec_sse_datasetRole";
                         control = "Edit";
                         expression = "_this setVariable ['comspec_sse_datasetRole', _value, isServer];";
@@ -317,8 +317,8 @@ class Cfg3DEN {
                         typeName = "STRING";
                     };
                     class comspec_sse_missionSeed {
-                        displayName = "Graine mission (affichage)";
-                        tooltip = "Référence stable (ex. FALCON-IQ-2012-A). Renseignée auto par le dataset si vide.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_F4D438D348";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_6C242C62CF";
                         property = "comspec_sse_missionSeed";
                         control = "Edit";
                         expression = "_this setVariable ['comspec_sse_missionSeed', _value, isServer];";
@@ -326,8 +326,8 @@ class Cfg3DEN {
                         typeName = "STRING";
                     };
                     class comspec_sse_region {
-                        displayName = "Région / théâtre";
-                        tooltip = "Oriente noms, lieux, langues et documents générés.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_E3357CD7D5";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_2C6DC8BE22";
                         property = "comspec_sse_region";
                         control = "Combo";
                         expression = "_this setVariable ['comspec_sse_region', _value, isServer];";
@@ -344,8 +344,8 @@ class Cfg3DEN {
                         };
                     };
                     class comspec_sse_advancedData {
-                        displayName = "Complément d’identité (usage avancé)";
-                        tooltip = "Réservé à un besoin ponctuel. Préférez les catégories Documents, Téléphone et Ordinateur pour le contenu saisi.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_BFFE9D485C";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_FCA5FECEA4";
                         property = "comspec_sse_advancedData";
                         control = "Edit";
                         expression = "_this setVariable ['comspec_sse_advancedData', _value, isServer];";

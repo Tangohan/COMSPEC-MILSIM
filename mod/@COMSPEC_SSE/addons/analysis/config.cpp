@@ -90,7 +90,7 @@ class CfgVehicles {
         scope = 2;
         scopeCurator = 0;
         category = "COMSPEC_SSE_People";
-        displayName = "Organisation (réseau, cellule, clan...)";
+        displayName = "$STR_COMSPEC_SSE_CFG_B0F0414D47";
         function = "comspec_sse_fnc_moduleOrganisation";
         functionPriority = 3;
         isGlobal = 0;
@@ -103,14 +103,14 @@ class CfgVehicles {
         class Attributes: AttributesBase {
             class Name: Edit {
                 property = "COMSPEC_SSE_OrgModule_Name";
-                displayName = "Nom";
-                tooltip = "Nom de l'organisation. Vide : nom de code généré.";
+                displayName = "$STR_COMSPEC_SSE_CFG_7FF20370C8";
+                tooltip = "$STR_COMSPEC_SSE_CFG_D2964B732C";
                 typeName = "STRING";
                 defaultValue = "''";
             };
             class Kind: Combo {
                 property = "COMSPEC_SSE_OrgModule_Kind";
-                displayName = "Nature";
+                displayName = "$STR_COMSPEC_SSE_CFG_BDDC7ADB12";
                 typeName = "STRING";
                 defaultValue = "'reseau'";
                 class Values {
@@ -127,14 +127,14 @@ class CfgVehicles {
             };
             class Parent: Edit {
                 property = "COMSPEC_SSE_OrgModule_Parent";
-                displayName = "Rattachée à";
-                tooltip = "Nom de l'organisation mère (une cellule sous son réseau). Vide : aucune.";
+                displayName = "$STR_COMSPEC_SSE_CFG_F203020200";
+                tooltip = "$STR_COMSPEC_SSE_CFG_E0024277D7";
                 typeName = "STRING";
                 defaultValue = "''";
             };
             class Threat: Combo {
                 property = "COMSPEC_SSE_OrgModule_Threat";
-                displayName = "Menace";
+                displayName = "$STR_COMSPEC_SSE_CFG_E39BBE2519";
                 typeName = "STRING";
                 defaultValue = "'moyenne'";
                 class Values {
@@ -147,15 +147,15 @@ class CfgVehicles {
             class Description: Edit {
                 control = "EditMulti3";
                 property = "COMSPEC_SSE_OrgModule_Description";
-                displayName = "Description";
-                tooltip = "Ce que les joueurs liront une fois l'organisation repérée.";
+                displayName = "$STR_COMSPEC_SSE_CFG_55F8EBC805";
+                tooltip = "$STR_COMSPEC_SSE_CFG_AED4789BAC";
                 typeName = "STRING";
                 defaultValue = "''";
             };
             class Distribution: Combo {
                 property = "COMSPEC_SSE_OrgModule_Distribution";
-                displayName = "Rôles des personnes synchronisées";
-                tooltip = "Saisis : chaque personne garde le rôle de ses attributs (catégorie Organisation). Générés : cellules et rôles répartis d'après la graine.";
+                displayName = "$STR_COMSPEC_SSE_CFG_E40C27961A";
+                tooltip = "$STR_COMSPEC_SSE_CFG_6344F70286";
                 typeName = "STRING";
                 defaultValue = "'manual'";
                 class Values {
@@ -165,14 +165,14 @@ class CfgVehicles {
             };
             class Seed: Edit {
                 property = "COMSPEC_SSE_OrgModule_Seed";
-                displayName = "Graine";
-                tooltip = "Même graine, mêmes personnes : même organisation. 0 = aléatoire.";
+                displayName = "$STR_COMSPEC_SSE_CFG_24FFB3949F";
+                tooltip = "$STR_COMSPEC_SSE_CFG_8CEE6A1955";
                 typeName = "NUMBER";
                 defaultValue = "0";
             };
             class Known: Combo {
                 property = "COMSPEC_SSE_OrgModule_Known";
-                displayName = "Au départ, les joueurs savent";
+                displayName = "$STR_COMSPEC_SSE_CFG_01CE550E6F";
                 typeName = "NUMBER";
                 defaultValue = "0";
                 class Values {
@@ -185,7 +185,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription: ModuleDescription {
-            description = "Déclare une organisation. Synchronisez des personnes (ou le chef d'un groupe, pour tout le groupe) : elles en deviennent membres. Synchronisez des objets (documents, caches, véhicules) : les exploiter révèle l'organisation. Les joueurs la découvrent en jeu : contrôles, identifications, exploitation.";
+            description = "$STR_COMSPEC_SSE_CFG_8CBD195789";
             sync[] = {"AnyBrain", "AnyStaticObject"};
         };
     };
@@ -196,12 +196,12 @@ class Cfg3DEN {
     class Object {
         class AttributeCategories {
             class COMSPEC_SSE_Org {
-                displayName = "COMSPEC SSE — Organisation";
+                displayName = "$STR_COMSPEC_SSE_CFG_071DE35685";
                 collapsed = 1;
                 class Attributes {
                     class COMSPEC_SSE_Org_Name {
-                        displayName = "Organisation";
-                        tooltip = "Réseau, groupe, clan... dont la personne est membre. Créé s'il n'existe pas.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_6E99C1D3B1";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_7AC6F20F4B";
                         property = "COMSPEC_SSE_Org_Name";
                         control = "Edit";
                         expression = "_this setVariable ['COMSPEC_SSE_Org_Name', _value, true];";
@@ -210,8 +210,8 @@ class Cfg3DEN {
                         condition = "objectBrain";
                     };
                     class COMSPEC_SSE_Org_Cell {
-                        displayName = "Cellule";
-                        tooltip = "Facultatif : cellule sous l'organisation.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_B8C77BEB16";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_42B778C200";
                         property = "COMSPEC_SSE_Org_Cell";
                         control = "Edit";
                         expression = "_this setVariable ['COMSPEC_SSE_Org_Cell', _value, true];";
@@ -220,7 +220,7 @@ class Cfg3DEN {
                         condition = "objectBrain";
                     };
                     class COMSPEC_SSE_Org_Role {
-                        displayName = "Rôle";
+                        displayName = "$STR_COMSPEC_SSE_CFG_8B82479022";
                         property = "COMSPEC_SSE_Org_Role";
                         control = "Combo";
                         expression = "_this setVariable ['COMSPEC_SSE_Org_Role', _value, true];";
@@ -246,8 +246,8 @@ class Cfg3DEN {
                         };
                     };
                     class COMSPEC_SSE_Org_Alias {
-                        displayName = "Nom de guerre";
-                        tooltip = "Alias sous lequel les services le connaissent.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_D2BF4CB656";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_B481F13022";
                         property = "COMSPEC_SSE_Org_Alias";
                         control = "Edit";
                         expression = "_this setVariable ['COMSPEC_SSE_Org_Alias', _value, true];";
@@ -256,7 +256,7 @@ class Cfg3DEN {
                         condition = "objectBrain";
                     };
                     class COMSPEC_SSE_Org_Known {
-                        displayName = "Au départ, les joueurs savent";
+                        displayName = "$STR_COMSPEC_SSE_CFG_01CE550E6F";
                         property = "COMSPEC_SSE_Org_Known";
                         control = "Combo";
                         expression = "_this setVariable ['COMSPEC_SSE_Org_Known', _value, true];";
@@ -270,8 +270,8 @@ class Cfg3DEN {
                         };
                     };
                     class COMSPEC_SSE_OrgLinked {
-                        displayName = "Rattaché à l'organisation";
-                        tooltip = "Objet appartenant à une organisation (document, cache, véhicule) : l'exploiter la révèle aux joueurs.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_7E2991EECF";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_5AB4C2B5CC";
                         property = "COMSPEC_SSE_OrgLinked";
                         control = "Edit";
                         expression = "_this setVariable ['COMSPEC_SSE_OrgLinked', _value, true];";

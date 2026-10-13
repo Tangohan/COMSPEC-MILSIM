@@ -11,6 +11,12 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Traduction 2026-10-13 — Noms d'objets et modules Eden/Zeus du SSE en anglais (ATAK natif 1.58.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : tout traduire sauf les journaux.
+- Mod SSE : 570 textes de config (noms d'objets, modules et attributs Eden, modules Zeus SEEK, catégories) passent par `addons/main/stringtable.xml` (clés `$STR_COMSPEC_SSE_CFG_*`, anglais et français). Ces textes suivent la langue du jeu, comme tout texte de config Arma.
+- `tools/i18n.py --sse stringtable` ; dictionnaire partagé enrichi (environ 370 traductions). PBO du SSE concernés repaquetés.
+- Les journaux techniques restent en français.
 ## Relais du réseau ATAK : module Eden/Zeus, tutoriel, passerelles de véhicule coupées (ATAK natif 1.57.0)
 
 Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : améliorer les relais, un tuto dans Eden, couper par défaut les relais véhicule / mât de commandement.
