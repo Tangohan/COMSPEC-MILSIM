@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Performance : arrivée en mission, arsenal et DLL (ATAK natif 1.66.0, COMSPEC Link 2.0.78)
+## Performance : arrivée en mission, arsenal et DLL (ATAK natif 1.68.0, COMSPEC Link 2.0.78)
 
 Non testé en jeu. Demande de TTRD : gros lag en rejoignant un serveur et en ouvrant l'arsenal. Il faut recompiler les DLL (build_mod.bat) ; pas de migration.
 - Arsenal : la fiche opérateur n'est plus reconstruite et envoyée à Athena à chaque clic. Rien tant que l'arsenal (ACE ou BIS) est ouvert ; un seul envoi à la fermeture, et au plus un toutes les 3 s hors arsenal. L'envoi part dans un spawn (requête HTTP hors du thread du jeu) au lieu de figer l'image jusqu'à 8 s.
@@ -23,6 +23,21 @@ Non testé en jeu. Demande de TTRD : gros lag en rejoignant un serveur et en ouv
 - Menus ACE d'Overwatch et du SSE : les gardes « déjà installé » sont par mission (elles restaient dans uiNamespace : à la mission suivante sans relancer Arma, les menus manquaient).
 - COMSPEC Link 2.0.78 : le minuteur de vidage n'est plus relancé à chaque mise en file (il pouvait ne jamais partir), un seul vidage à la fois, file sur disque écrite au plus toutes les 3 s, journaux d'appareil renvoyés avec une pause croissante hors ligne, version lue une fois, et préchauffage au chargement (file sur disque relue et connexion TLS vers Athena ouverte en tâche de fond).
 - Journal : lignes `[PERF]` (durées du preInit, du postInit client et serveur, arrivée en jeu, parcours de config, dictionnaire, fiche opérateur, reprise de session) et `Image figée : N ms` pour toute image de plus de 400 ms, avec arsenal, téléphone et carte ouverts ou non.
+## Intro au démarrage désactivée (ATAK natif 1.67.0)
+
+Non testé en jeu. TTRD : l'intro du mod est buggée. Pas de DLL à recompiler, pas de migration.
+- L'intro sur l'écran de démarrage d'Arma (marque COMSPEC, trait vert, carillon) ne se lance plus : ni affichage ni son.
+- Le code est gardé. Nouveau réglage CBA « COMSPEC > ATAK · Intro > Intro au démarrage », décoché par défaut, pour la réactiver (pris en compte au lancement suivant).
+- La marque COMSPEC sur les écrans de chargement de mission reste inchangée.
+- À vérifier en jeu : lancer Arma, rien de COMSPEC sur l'écran de démarrage, menu principal normal.
+
+## Taille du téléphone en plein écran réglable (ATAK natif 1.66.0)
+
+Non testé en jeu. Demande de TTRD : le téléphone ouvert en plein écran est trop gros pour certains.
+- Nouveau réglage par joueur « Taille du téléphone en plein écran », de 60 à 100 % (100 % par défaut = taille actuelle), dans le menu CBA (COMSPEC > ATAK · Affichage) et dans l'app Réglages > Emplacement (60, 70, 80, 90, 100 %). Les deux sont le même réglage.
+- Le téléphone reste centré ; l'écran, le texte, les boutons, les touches de la coque et la carte sont recalculés depuis cette taille. Le mode mini et sa taille ne changent pas.
+- À vérifier en jeu : prendre le téléphone en main, passer en plein écran, essayer 60 % et 80 %, cliquer sur les apps, le dock, la carte et les touches de la coque ; changer la valeur téléphone ouvert (elle s'applique tout de suite).
+---
 
 ## Pylônes relais 3D destructibles (ATAK natif 1.65.0)
 
