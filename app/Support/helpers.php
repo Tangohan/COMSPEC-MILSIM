@@ -42,7 +42,7 @@ if (!function_exists('platform_app_version')) {
 
 if (!function_exists('asset_url')) {
     /**
-     * URL d’asset avec cache-busting ?v=version applicative.
+     * URL d’asset avec cache-busting ?v=identifiant du déploiement (commit Git) : change à chaque mise à jour du site.
      */
     function asset_url(string $path): string
     {
@@ -50,7 +50,7 @@ if (!function_exists('asset_url')) {
         $base = function_exists('url') ? rtrim(url(''), '/') : '';
         $sep = str_contains($path, '?') ? '&' : '?';
 
-        return $base . $path . $sep . 'v=' . rawurlencode(platform_app_version());
+        return $base . $path . $sep . 'v=' . rawurlencode(\App\Support\BuildVersion::id());
     }
 }
 

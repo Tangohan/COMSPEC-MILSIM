@@ -1,6 +1,6 @@
 <?php
 $base = url('');
-$assetVer = platform_app_version();
+$assetVer = \App\Support\BuildVersion::id(); // cache-busting : change à chaque déploiement
 $atakToken = $atakToken ?? '';
 $atakWorkspaces = $atakWorkspaces ?? [['mapId' => 1, 'label' => 'Principal']];
 $atakDefaultMapId = (int) ($atakDefaultMapId ?? 1);

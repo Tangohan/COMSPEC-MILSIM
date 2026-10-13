@@ -12,7 +12,7 @@ $chooseUrl = (string) ($chooseUrl ?? url('connect'));
 $atakDeviceMode = trim((string) ($atakDeviceMode ?? 'BFT'));
 $atakDeviceHint = trim((string) ($atakDeviceHint ?? 'Carte Arma dans le terminal ATAK Android — même liaison que sur Athena.'));
 $base = rtrim((string) url(''), '/');
-$assetVer = platform_app_version();
+$assetVer = \App\Support\BuildVersion::id(); // cache-busting : change à chaque déploiement
 $bezelUrl = $base . '/assets/img/connect-device/comspec_phone_bg_ca.png?v=' . rawurlencode($assetVer);
 $batteryUrl = $base . '/assets/img/connect-device/comspec_icon_battery_ca.png?v=' . rawurlencode($assetVer);
 $signalUrl = $base . '/assets/img/connect-device/comspec_icon_signal_ca.png?v=' . rawurlencode($assetVer);

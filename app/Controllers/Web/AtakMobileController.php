@@ -110,7 +110,7 @@ final class AtakMobileController
             'phoneSession' => $phoneSession,
             'user' => $currentUser,
             'apiBase' => rtrim((string) url(''), '/'),
-            'assetVer' => function_exists('platform_app_version') ? platform_app_version() : '1',
+            'assetVer' => \App\Support\BuildVersion::id(),
         ]);
     }
 
