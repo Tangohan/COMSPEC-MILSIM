@@ -18,6 +18,9 @@
       "radio", code                   appel du pilote reçu à la radio (READBACK, CONTACT, TALLY, SPOT, VISUAL, NOJOY, IN, AWAY, OFF, UNABLE)
       "bda", résultat                 bilan transmis, mission terminée      "new" : nouvelle mission
       "pilot", code                   (équipage) appel envoyé au JTAC       "map" / "pmap" : carte centrée sur la cible
+      "pickIn", "tgt" | "ip"          onglet CARTE, prochain appui sur la carte tactique = cible ou IP
+      "mapPick", "tgt" | "ip"         (onglet CARTE) arme ou désarme la pose ; "mapSet", [genre, position] : position posée
+      "center", "tgt" | "ip" | "me" | "air"   carte tactique centrée sur la cible, l'IP, le JTAC ou l'appareil
       "recv", [genre, id, données, indicatif, unité]   réception (XEH_postInitClient)
 */
 params [["_act", ""], ["_arg", ""]];
@@ -120,6 +123,48 @@ switch (_act) do {
         call _render;
     };
     case "unlock": { _s set ["target", []]; call _render; };
+    case "pickIn": {
+        _s set ["mapPick", _arg];
+        _s set ["pickBack", _s getOrDefault ["tab", "SIT"]];
+        _s set ["tab", "MAP"];
+        call _render;
+    };
+    case "mapPick": {
+        _s set ["mapPick", ["", _arg] select ((_s getOrDefault ["mapPick", ""]) isNotEqualTo _arg)];
+        _s set ["pickBack", ""];
+        call _render;
+    };
+    case "mapSet": {
+        _arg params ["_kind", "_pos"];
+        private _asl = [_pos select 0, _pos select 1, getTerrainHeightASL _pos];
+        if (_kind isEqualTo "tgt") then {
+            _s set ["target", _asl];
+            _s set ["source", format ["carte · %1", [dayTime, "HH:MM"] call BIS_fnc_timeToString]];
+        } else {
+            _s set ["ip", _asl];
+            if ((_s getOrDefault ["jIp", ""]) isEqualTo "") then { _s set ["jIp", format ["IP %1", [_asl, 6] call comspec_atak_native_fnc_gridRef]]; };
+        };
+        _s set ["mapPick", ""];
+        // Pose demandée depuis un autre onglet : on y revient.
+        private _back = _s getOrDefault ["pickBack", ""];
+        if (_back isNotEqualTo "") then { _s set ["tab", _back]; _s set ["pickBack", ""]; };
+        ["SUCCESS", [format ["IP posé : %1", [_asl, 6] call comspec_atak_native_fnc_gridRef], format ["Cible posée : %1", [_asl, 10] call comspec_atak_native_fnc_gridRef]] select (_kind isEqualTo "tgt"), 3, 20] call comspec_atak_native_fnc_notify;
+        call _render;
+    };
+    case "center": {
+        private _map = uiNamespace getVariable ["COMSPEC_ATAK_JtacMap", controlNull];
+        if (isNull _map) exitWith {};
+        private _m = _s getOrDefault ["msn", createHashMap];
+        private _pos = switch (_arg) do {
+            case "tgt": { ((_m getOrDefault ["brief", createHashMap]) getOrDefault ["target", _s getOrDefault ["target", []]]) };
+            case "ip": { _s getOrDefault ["ip", []] };
+            case "air": { private _a = _m getOrDefault ["air", _s getOrDefault ["air", objNull]]; [getPosASL _a, []] select (isNull _a) };
+            default { getPosASL player };
+        };
+        if ((count _pos) < 2) exitWith {};
+        _map ctrlMapAnimAdd [0.3, ctrlMapScale _map, [_pos select 0, _pos select 1]];
+        ctrlMapAnimCommit _map;
+    };
     case "pick": {
         private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         _st set ["jtacPick", _arg];
@@ -174,7 +219,8 @@ switch (_act) do {
         _m set ["readback", ""];
         [_m, "BRIEF"] call _apply;
         private _lines = _b get "lines";
-        private _data = [_lines, _b get "remarks", _b get "type", _b get "method", _b get "ord", _b get "code", _b get "target", _b get "fah", _b get "dc"];
+        // IP et distance de risque en fin de liste : la carte tactique de l'équipage les dessine (un ancien client les ignore).
+        private _data = [_lines, _b get "remarks", _b get "type", _b get "method", _b get "ord", _b get "code", _b get "target", _b get "fah", _b get "dc", _s getOrDefault ["ip", []], _b get "risk"];
         private _sent = [(crew _air), ["brief", _m get "id", _data, [] call _me, player]] call _emit;
         [_m, "JTAC", format ["9-LINE pour %1 : %2 | %3 | %4", groupId group _air, _lines select 3, _lines select 5, _lines select 6]] call _log;
         // Athena (pilotes et web) quand le téléphone est relié : même chemin que l'app CAS.
