@@ -69,6 +69,13 @@ final class ReconImageViewerTest extends TestCase
         self::assertMatchesRegularExpression("/function reconImagesViewer[\\s\\S]*?'Cache-Control', 'no-store, private, max-age=0'/", $ctrl);
     }
 
+    public function testViewerUrlIsHttpsOnly(): void
+    {
+        self::assertNull(\App\Support\ReconImageStorage::viewerUrl(0));
+        $u = \App\Support\ReconImageStorage::viewerUrl(98);
+        self::assertTrue($u === null || (str_starts_with($u, 'https://') && str_ends_with($u, '/recon/images/98')));
+    }
+
     public function testViewerAssetsAreWired(): void
     {
         $js = $this->read('public/assets/js/recon-viewer.js');

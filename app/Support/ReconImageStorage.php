@@ -78,6 +78,20 @@ final class ReconImageStorage
         return self::publicUrl(basename(str_replace('\\', '/', $path)));
     }
 
+    /**
+     * Lien du lecteur d'images d'un cliché (GET /recon/images/{id}), absolu et en https seulement ; null sinon.
+     * Utilisé par l'embed Discord (DiscordEventRelayService::photoViewerUrl) pour les clichés ni SSE ni confidentiels.
+     */
+    public static function viewerUrl(int $id): ?string
+    {
+        if ($id < 1 || !function_exists('url')) {
+            return null;
+        }
+        $u = url('recon/images/' . $id);
+
+        return str_starts_with($u, 'https://') ? $u : null;
+    }
+
     public static function publicUrl(string $filename): string
     {
         $filename = basename(str_replace('\\', '/', $filename));
