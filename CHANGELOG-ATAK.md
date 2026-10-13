@@ -38,20 +38,28 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Carte : la notification « indicatif · grille » ne tourne plus en boucle (ATAK natif 1.92.0)
+## Mode PETIT : carte, accueil et messagerie plus lisibles, fin de la notification en boucle (ATAK natif 1.92.0)
 
 ### Résumé joueur
 Type : correctif
-FR : Fini le bandeau INFO qui revenait sans arrêt sur la carte
-- Sur la carte en écran réduit, cliquer une unité affiche son indicatif et sa grille une seule fois.
-- Le bandeau ne revient plus toutes les secondes tant que l'unité reste sélectionnée.
-EN : No more INFO banner repeating on the map
-- On the map in the small screen, clicking a unit shows its callsign and grid once.
-- The banner no longer comes back every second while the unit stays selected.
+FR : Le téléphone en mode PETIT respire
+- Carte : la barre d'apps sur le côté disparaît, la carte prend toute la largeur du téléphone. Le bouton apps en haut y mène toujours.
+- Accueil : plus de champ de recherche en mode PETIT, des icônes un peu plus petites, et plus d'apps visibles d'un coup.
+- Messagerie : en mode PETIT, la liste des conversations et la conversation s'affichent l'une après l'autre au lieu d'être serrées côte à côte.
+- Barre du haut allégée (batterie, heure, notifications, réseau) et fini le bandeau INFO « indicatif · grille » qui revenait toutes les secondes.
+EN : The phone breathes in SMALL mode
+- Map: the app bar on the side is gone, the map uses the whole width of the phone. The apps button at the top still opens your apps.
+- Home: no search field in SMALL mode, slightly smaller icons, and more apps visible at once.
+- Messages: in SMALL mode, the conversation list and the conversation show one after the other instead of squeezed side by side.
+- Lighter top bar (battery, time, notifications, network), and no more INFO "callsign · grid" banner coming back every second.
 
 ### Détail technique
-- Retour de TTRD (13/10) : « INFO · TA1 · 1519 1729 » en boucle. fn_inspectorUpdate envoyait la notification à chaque rendu en mode mini avec une unité sélectionnée ; fn_statusUpdate le rappelle chaque seconde (panneau SITUATION ouvert) et la grille change quand l'unité bouge, donc l'anti-doublon de fn_notify ne jouait pas.
-- La notification part désormais de fn_mapSelect, une fois par clic. Non testé en jeu.
+- Retour de TTRD (13/10) : « INFO · TA1 · 1519 1729 » en boucle en mode PETIT. fn_inspectorUpdate envoyait la notification à chaque rendu en mode mini avec une unité sélectionnée ; fn_statusUpdate le rappelle chaque seconde et la grille change quand l'unité bouge, donc l'anti-doublon de fn_notify ne jouait pas. La notification part désormais de fn_mapSelect, une fois par clic.
+- fn_layoutGet : page MAP en mini (hors texture JPC) sans dock ni rail ; fn_dockRender ne dessine rien quand les deux sont nuls. Paysage mini : 5 colonnes au lanceur (au lieu de 4).
+- fn_launcherRender : pas de recherche en mini, tuiles à 0,8 de hauteur relative (0,92 en plein écran).
+- fn_pageChat : vue partagée liste + conversation réservée au plein écran paysage.
+- fn_layoutApply : en mini, météo (88514, 88523, 88524) et RAM masquées.
+- Calculs de place (1080p, paysage mini) : écran 502 × 286 px, barre d'état + barre d'app 58 px, rail 49 px. Non testé en jeu.
 
 ## Drone : bouton TEST VIDÉO pour l'image noire du téléphone (ATAK natif 1.90.0)
 

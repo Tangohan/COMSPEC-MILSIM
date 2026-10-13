@@ -1,5 +1,5 @@
 /*
-    Lanceur (V2) : champ de recherche (en main seulement), puis grille d'icônes par section, 3 colonnes en mini, 6 en plein écran.
+    Lanceur (V2) : champ de recherche (en main, plein écran), puis grille d'icônes par section : 3 colonnes en portrait, 5 en paysage PETIT, 6 en plein écran.
     En-tête de section : barre d'accent, titre, nombre d'apps et filet, sur un bandeau léger (lisible sur tout fond d'écran).
     Recherche : filtre sur le nom de l'app (uiNamespace COMSPEC_ATAK_LauncherFilter), redessin 0,25 s après la frappe,
     le champ garde le focus et le curseur en fin de texte. Entrée ouvre la première app trouvée.
@@ -16,16 +16,19 @@ private _font = _l get "fontSmall";
 private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 ([] call comspec_atak_native_fnc_accent) params ["_acc", "_accHex"];
 private _tw = (_bw - 0.012 - _pad * (_cols + 1)) / _cols;
-private _th = _tw * _ratio * 0.92;
+private _th = _tw * _ratio * ([0.92, 0.8] select (_l get "mini")); // mode PETIT : tuiles moins hautes, une rangée de plus visible
 private _secH = _font * 1.6;
 private _gw = _bw - 0.012 - 2 * _pad;
 private _apps = ([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible };
 private _interactive = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false];
-private _filter = [uiNamespace getVariable ["COMSPEC_ATAK_LauncherFilter", ""], ""] select (!_interactive || {!(profileNamespace getVariable ["COMSPEC_ATAK_LauncherSearch", true])});
+// Mode PETIT : pas de champ de recherche (il prenait le sixième de l'écran), les icônes remontent.
+private _mini = _l get "mini";
+private _searchOn = _interactive && {!_mini} && {profileNamespace getVariable ["COMSPEC_ATAK_LauncherSearch", true]};
+private _filter = [uiNamespace getVariable ["COMSPEC_ATAK_LauncherFilter", ""], ""] select !_searchOn;
 private _y = _pad;
 
 // Recherche
-if (_interactive && {profileNamespace getVariable ["COMSPEC_ATAK_LauncherSearch", true]}) then {
+if (_searchOn) then {
     private _sh = _font * 1.7;
     private _sbg = ["COMSPEC_RscText", [_pad, _y, _gw, _sh]] call comspec_atak_native_fnc_pageCtrl;
     _sbg ctrlSetBackgroundColor [0.05, 0.06, 0.055, 0.82];

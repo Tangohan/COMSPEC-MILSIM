@@ -111,8 +111,10 @@ COMSPEC_ATAK_FontMin = [_fontCaption, 0] select _texture; // texture : coordonn�
 private _statusH = _font * 1.45;
 private _appH = _font * 1.9;
 private _dock = !_land;
-private _dockH = [0, _font * 2.9] select _dock;
-private _railW = [_font * 2.9 / _ratio, 0] select _dock;
+// Carte en mode PETIT : ni dock ni rail (le bouton « apps » de la barre d'app y mène), la carte prend toute la largeur.
+private _slim = _mini && {!_texture} && {(_s getOrDefault ["activePage", ""]) isEqualTo "MAP"};
+private _dockH = [0, _font * 2.9] select (_dock && {!_slim});
+private _railW = [_font * 2.9 / _ratio, 0] select (_dock || _slim);
 // Panneau SITUATION repliable (réglage profil).
 private _inspW = [0, _sw * 0.24] select (!_mini && {missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false]});
 private _pad = _sw * 0.012;
@@ -140,6 +142,6 @@ createHashMapFromArray [
     ["fontCaption", _fontCaption],
     ["fontTitle", _font * 1.2],
     ["fontDisplay", _font * 1.9],
-    ["cols", (([[6, 4] select _mini, 3] select (!_land)) + (profileNamespace getVariable ["COMSPEC_ATAK_IconDensity", 0])) max 2],
+    ["cols", (([[6, 5] select _mini, 3] select (!_land)) + (profileNamespace getVariable ["COMSPEC_ATAK_IconDensity", 0])) max 2],
     ["pad", _pad]
 ]

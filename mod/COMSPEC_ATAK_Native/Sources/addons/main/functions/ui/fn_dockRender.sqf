@@ -5,6 +5,8 @@ if (isNull _d) exitWith { false };
 { ctrlDelete _x; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_DockControls", []]);
 
 private _l = [] call comspec_atak_native_fnc_layoutGet;
+// Carte en mode PETIT : dock et rail retirés (fn_layoutGet).
+if (((_l get "dockRect") select 3) <= 0 && {((_l get "rail") select 2) <= 0}) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []]; true };
 private _active = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", "LAUNCHER"];
 // Dock choisi par le joueur (Réglages > Personnalisation), sinon celui des apps déclarées « dock ».
 private _mine = profileNamespace getVariable ["COMSPEC_ATAK_DockApps", []];
