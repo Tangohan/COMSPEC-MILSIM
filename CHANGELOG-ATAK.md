@@ -109,6 +109,28 @@ EN : More reliable armed drone and faster search
 - fn_droneCmd « hunt » : vol piloté par notre boucle (IA MOVE coupée), montée 6 m/s en avançant, 50 km/h au moins, hauteur tenue sur le relief 60 m devant, montée devant un obstacle ; balayage en bandes (écart selon la hauteur), puis bandes croisées ; détection deux fois par seconde.
 - XEH_postInitClient (ace_medical_woundReceived), fn_pageLinkAlly, fn_pageNetwork : `params` avec `["", défaut]` remplacé par `""` (erreur « Variable locale dans espace global »).
 - Caméra du drone noire : pas de changement, cause toujours non confirmée.
+## Terminal SEEK : clavier gardé, plus de doublons, dossiers automatiques, photo et liaison (ATAK natif 1.89.0)
+
+### Résumé joueur
+Type : correctif
+FR : Le terminal SEEK ne fait plus bouger ton personnage et ne spamme plus le poste
+- Quand le SEEK est ouvert, l'arme est rangée et le clavier reste au terminal : écrire un nom ne fait plus marcher, pencher, tirer ni ressortir l'arme.
+- Transmettre ou interroger plusieurs fois la même personne ne crée plus de doublons : tout est regroupé sur sa fiche, et l'app SSE affiche une ligne par personne avec le nombre d'interrogations.
+- Un code de dossier inconnu crée le dossier, et les fiches sans dossier vont dans un dossier du jour ouvert par le système.
+- La photo du visage prise sur une personne déjà enregistrée part tout de suite sur sa fiche, et le SEEK affiche la même liaison que le téléphone.
+EN : The SEEK terminal no longer moves your character or spams the command post
+- While the SEEK is open, your weapon is holstered and the keyboard stays on the terminal: typing a name no longer walks, leans, fires or draws your weapon.
+- Sending or querying the same person several times no longer creates duplicates: everything is grouped on their record, and the SSE app shows one line per person with the number of queries.
+- An unknown case code now creates the case, and records without a case go into a daily case opened by the system.
+- A face photo taken of a person already on record is sent straight to their record, and the SEEK shows the same link status as the phone.
+
+### Détail technique
+- Overwatch connect (embarqué) : `fn_sseKeyBlock` + `fn_sseTerminalGuard` (KeyDown sur le SEEK idd 9991 et sur le display 46, arme rangée à l'ouverture, rafraîchissement de la barre d'état quand la liaison change).
+- `fn_sseLinkState` : même verdict que `fn_statusUpdate` du téléphone (COMSPEC_LinkState « offline » ne masque plus la liaison du téléphone). Repris par `fn_sseIdentityQuery`, `fn_ssePersonRefreshPanels` et le pack SSE (`fn_bioQuery`, `fn_bioCaptureLatentAction`).
+- `fn_sseIdentityQuery` : même sujet + mêmes relevés = verdict repris, pas de nouvelle requête. `fn_seekHistoryPush` : une ligne par sujet (clé netId [9], compteur [10]) ; `fn_pageSse` additionne les compteurs.
+- `fn_sseUploadFacePhoto` (extrait de la transmission) : appelé aussi par `fn_sseCaptureFacePhoto` quand le sujet a déjà un id Athena ; un cliché déjà joint ne repart plus à chaque réouverture.
+- Site : `POST /api/sse/persons` en doublon complète la fiche existante (`mergeRetransmission`), classe au dossier sans nouvelle ligne de journal si rien ne change ; code de dossier inconnu → dossier créé (`findOrCreateByReference`) ; A1 sans dossier ouvert unique → dossier du jour `AUTO-AAMMJJ`.
+- PBO reconstruits : main.pbo, comspec_overwatch_connect.pbo, comspec_sse_biometrics.pbo.
 
 ## Barlow Condensed revient en test dans Réglages > Police (ATAK natif 1.86.0)
 

@@ -2,6 +2,10 @@
     Ajoute une interrogation SEEK au journal (téléphone BII-10).
     Params: [_target, _result, _confidence, _ref]
     _result : "none" | "possible" | "confirmed"
+
+    Une seule ligne par sujet : interroger plusieurs fois la même personne met sa ligne à jour
+    (dernier verdict, remontée en tête, compteur [10]) au lieu d'empiler des doublons dans
+    le journal partagé du groupe.
 */
 params [
     ["_target", objNull, [objNull]],
@@ -46,6 +50,9 @@ private _status = switch (toLower _result) do {
 if (!(_confidence isEqualType 0)) then { _confidence = 0; };
 if (!(_ref isEqualType "")) then { _ref = ""; };
 
+// Clé du sujet : son netId (stable pendant la mission), à défaut le nom affiché.
+private _key = if (isNull _target) then { "who:" + toLower _who } else { "net:" + netId _target };
+
 private _entry = [
     diag_tickTime,
     _clock,
@@ -55,13 +62,23 @@ private _entry = [
     round _confidence,
     _ref,
     _grid,
-    toLower _result
+    toLower _result,
+    _key,
+    1
 ];
 
 private _fnc_store = {
     params ["_arr", "_entry"];
     if (!(_arr isEqualType [])) then { _arr = []; };
-    _arr = [_entry] + _arr;
+    private _k = _entry select 9;
+    private _i = _arr findIf { (_x isEqualType []) && {(_x param [9, ""]) isEqualTo _k} };
+    private _e = +_entry;
+    if (_i >= 0) then {
+        _e set [10, (((_arr select _i) param [10, 1]) max 1) + 1];
+        _arr = +_arr;
+        _arr deleteAt _i;
+    };
+    _arr = [_e] + _arr;
     if ((count _arr) > 40) then { _arr = _arr select [0, 40]; };
     _arr
 };

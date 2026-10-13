@@ -164,10 +164,41 @@ final class SseApiController
         );
 
         if ($existing !== null && $newModalities === []) {
+            // Même personne retransmise (même contrôle, même requête, même dossier) :
+            // tout est regroupé sur la fiche existante, sans nouvelle entrée de journal
+            // tant que rien de neuf n'arrive. C'est ce qui évite le spam du poste.
+            $existingId = (int) $existing['id'];
+            $filled = $this->persons->mergeRetransmission($existingId, $tenantId, $data);
+            $filing = $this->fileOnCase(
+                $tenantId,
+                $mapId,
+                $existingId,
+                (string) ($body['case_code'] ?? ''),
+                $actor,
+                (string) ($data['submitter_callsign'] ?? 'Terrain')
+            );
+            $completed = array_values(array_filter($filled, static fn (string $c) => $c !== 'identity_query'));
+            if ($completed !== [] || !empty($filing['newly_linked'])) {
+                $this->activityLog->record(
+                    $tenantId,
+                    $mapId,
+                    'SSE_PERSON',
+                    sprintf(
+                        'Fiche complétée : %s%s',
+                        $existing['display_name'] ?? 'sans nom',
+                        !empty($filing['newly_linked']) ? ' (classée au dossier ' . $filing['code'] . ')' : ''
+                    ),
+                    (string) ($data['submitter_callsign'] ?? 'Terrain')
+                );
+            }
+            $existing = $this->persons->findById($existingId, $tenantId) ?? $existing;
             $existing['duplicate'] = true;
-            $existing['updated'] = false;
+            $existing['updated'] = $filled !== [] || !empty($filing['newly_linked']);
+            $existing['filing'] = $filing;
             $existing['biometric_samples'] = $existingSamples;
-            $existing['message'] = 'Cette personne est déjà au registre. Transmettez un nouvel iris, des empreintes ou de l’ADN pour enrichir la fiche.';
+            $existing['message'] = $existing['updated']
+                ? 'Cette personne est déjà au registre : la fiche existante a été complétée.'
+                : 'Cette personne est déjà au registre. Transmettez un nouvel iris, des empreintes ou de l’ADN pour enrichir la fiche.';
 
             return Response::json($existing, 200);
         }
@@ -208,29 +239,19 @@ final class SseApiController
             );
         }
 
-        // Classement : code dossier saisi sur le terrain.
-        $caseCode = strtoupper(trim((string) ($body['case_code'] ?? '')));
-        $filing = ['code' => $caseCode, 'linked' => false, 'case' => null];
-        $filedCaseId = null;
-        if ($caseCode !== '') {
-            $case = $this->cases->findByReferenceCode($tenantId, $caseCode);
-            if ($case !== null) {
-                $this->cases->linkPerson(
-                    (int) $case['id'],
-                    $id,
-                    $tenantId,
-                    isset($actor['user_id']) ? (int) $actor['user_id'] : null,
-                    'Classement depuis le terminal SEEK'
-                );
-                $filing['linked'] = true;
-                $filedCaseId = (int) $case['id'];
-                $filing['case'] = [
-                    'id' => (int) $case['id'],
-                    'reference_code' => (string) ($case['reference_code'] ?? ''),
-                    'title' => (string) ($case['title'] ?? ''),
-                ];
-            }
+        // Classement : code dossier saisi sur le terrain (créé s'il n'existe pas).
+        if ($merged) {
+            $this->persons->mergeRetransmission($id, $tenantId, $data);
         }
+        $filing = $this->fileOnCase(
+            $tenantId,
+            $mapId,
+            $id,
+            (string) ($body['case_code'] ?? ''),
+            $actor,
+            (string) ($data['submitter_callsign'] ?? 'Terrain')
+        );
+        $filedCaseId = !empty($filing['case']['id']) ? (int) $filing['case']['id'] : null;
 
         $person = $this->persons->findById($id, $tenantId);
         if (is_array($person)) {
@@ -395,6 +416,55 @@ final class SseApiController
         }
 
         return Response::json(['person' => $person]);
+    }
+
+    /**
+     * Classe une fiche au dossier désigné par le terrain. Un code inconnu crée le
+     * dossier : le système ouvre lui-même ses dossiers au lieu de laisser la fiche
+     * sans classement. Rattacher deux fois la même personne ne fait rien.
+     *
+     * @param array<string, mixed>|mixed $actor
+     * @return array{code: string, linked: bool, case: array<string, mixed>|null, created?: bool, newly_linked?: bool}
+     */
+    private function fileOnCase(int $tenantId, int $mapId, int $personId, string $caseCode, mixed $actor, string $callsign): array
+    {
+        $caseCode = mb_substr(strtoupper(trim($caseCode)), 0, 32);
+        $filing = ['code' => $caseCode, 'linked' => false, 'case' => null];
+        if ($caseCode === '' || $personId < 1) {
+            return $filing;
+        }
+        $found = $this->cases->findOrCreateByReference(
+            $tenantId,
+            $mapId,
+            $caseCode,
+            'Dossier ' . $caseCode,
+            'Ouvert automatiquement à la première fiche transmise sous ce code par ' . $callsign . '.'
+        );
+        if ($found === null) {
+            return $filing;
+        }
+        $case = $found['case'];
+        $caseId = (int) ($case['id'] ?? 0);
+        if ($found['created']) {
+            $filing['created'] = true;
+            $this->activityLog->record(
+                $tenantId,
+                $mapId,
+                'SSE_AUTO',
+                sprintf('Dossier %s ouvert automatiquement : code inconnu saisi sur le terrain.', $caseCode),
+                $callsign
+            );
+        }
+        $userId = is_array($actor) && isset($actor['user_id']) ? (int) $actor['user_id'] : null;
+        $filing['newly_linked'] = $this->cases->linkPerson($caseId, $personId, $tenantId, $userId, 'Classement depuis le terminal SEEK');
+        $filing['linked'] = true;
+        $filing['case'] = [
+            'id' => $caseId,
+            'reference_code' => (string) ($case['reference_code'] ?? ''),
+            'title' => (string) ($case['title'] ?? ''),
+        ];
+
+        return $filing;
     }
 
     public function personsPhotoStore(Request $request, array $params = []): Response
