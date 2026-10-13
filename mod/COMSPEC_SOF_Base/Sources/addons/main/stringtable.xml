@@ -27,5 +27,8 @@
         <Key ID="STR_COMSPEC_SOF_FLAG"><Original>Drapeau mural (personnalisable)</Original><English>Wall flag (customisable)</English><French>Drapeau mural (personnalisable)</French></Key>
         <Key ID="STR_COMSPEC_SOF_ATTR_TEX"><Original>Image</Original><English>Image</English><French>Image</French></Key>
         <Key ID="STR_COMSPEC_SOF_ATTR_TEX_TIP"><Original>Chemin d'une image .paa ou .jpg (2:1 conseillé, ex. images\panneau.paa dans le dossier de la mission). Vide : pancarte vierge.</Original><English>Path of a .paa or .jpg image (2:1 recommended, e.g. images\sign.paa in the mission folder). Empty: blank sign.</English><French>Chemin d'une image .paa ou .jpg (2:1 conseillé, ex. images\panneau.paa dans le dossier de la mission). Vide : pancarte vierge.</French></Key>
+        <Key ID="STR_COMSPEC_SOF_SUB_BUILDINGS"><Original>Bâtiments</Original><English>Buildings</English><French>Bâtiments</French></Key>
+        <Key ID="STR_COMSPEC_SOF_HQ"><Original>QG de commandement (3 niveaux)</Original><English>Command HQ (3 storeys)</English><French>QG de commandement (3 niveaux)</French></Key>
+        <Key ID="STR_COMSPEC_SOF_ANNEX"><Original>Annexe de bureaux (2 niveaux)</Original><English>Office annex (2 storeys)</English><French>Annexe de bureaux (2 niveaux)</French></Key>
     </Package>
 </Project>
