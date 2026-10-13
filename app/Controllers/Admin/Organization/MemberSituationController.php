@@ -99,21 +99,9 @@ final class MemberSituationController
         [$user, $tenantId, $userId] = $ctx;
 
         $devices = $this->realism->listPhysicalTerminalsForUser($tenantId, $userId);
-        $gamePhone = $this->gamePhoneFor($tenantId, $userId);
         // Journal (modules, erreurs) par terminal et apps qui transmettent sous l'indicatif de l'opérateur.
-        $activity = new \App\Services\Atak\OperatorDeviceActivityService();
-        $digests = [];
-        $callsign = trim((string) ($gamePhone['callsign'] ?? $user['callsign'] ?? ''));
-        foreach ($devices as $device) {
-            $uid = trim((string) ($device['terminal_uid'] ?? ''));
-            if ($uid !== '') {
-                $digests[$uid] = \App\Services\Atak\OperatorDeviceActivityService::digestLogs($activity->recentLogs($tenantId, $uid));
-            }
-            if ($callsign === '') {
-                $callsign = trim((string) ($device['operator_callsign'] ?? ''));
-            }
-        }
-        $apps = $activity->appActivity($tenantId, $callsign);
+        $overview = (new \App\Services\Atak\OperatorDeviceActivityService())
+            ->overviewForUser($tenantId, $userId, $devices, (string) ($user['callsign'] ?? ''));
 
         return Response::view('layout.main', $this->boShell([
             'title' => 'Mes appareils ATAK',
@@ -124,9 +112,9 @@ final class MemberSituationController
             'backOfficePageCss' => ['back-office-member-situation.css', 'back-office-atak-devices.css'],
             'user' => $user,
             'devices' => $devices,
-            'gamePhone' => $gamePhone,
-            'deviceLogDigests' => $digests,
-            'appActivity' => $apps,
+            'gamePhone' => $overview['gamePhone'],
+            'deviceLogDigests' => $overview['deviceLogDigests'],
+            'appActivity' => $overview['appActivity'],
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]));
@@ -139,11 +127,7 @@ final class MemberSituationController
      */
     private function gamePhoneFor(int $tenantId, int $userId): ?array
     {
-        try {
-            return (new \App\Repositories\GamePhoneIdentityRepository())->findRow($tenantId, $userId);
-        } catch (\Throwable) {
-            return null;
-        }
+        return \App\Services\Atak\OperatorDeviceActivityService::gamePhoneFor($tenantId, $userId);
     }
 
     public function revokeAppareil(Request $request, array $params = []): Response
