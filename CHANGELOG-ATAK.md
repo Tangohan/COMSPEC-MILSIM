@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## App Réseau : stabilité calculée, passerelles lisibles (ATAK natif 1.76.0)
+## App Réseau : stabilité calculée, passerelles lisibles (ATAK natif 1.77.0)
 
 ### Résumé joueur
 Type : correctif
@@ -59,6 +59,31 @@ Non testé en jeu. Capture de TTRD : tuile Stabilité « any % » et section Pas
 - Passerelles et relais : l'état vide tient sur une ligne, sans répéter le maillage collé à la ligne « Maillage Wave Relay » ; celle-ci est espacée et indique « aucune passerelle » quand il n'y en a pas.
 - Zone radio : « Simulation de liaison dégradée » affiche « désactivée » ou « active : pertes et délais simulés » ; le type de zone n'est plus remplacé par « ? » quand il est inconnu.
 - Paquets envoyés affichés en entier (plus de notation 1e+06). Textes traduits en anglais.
+
+## App JTAC plus réaliste : terminal, fiche 9-LINE et carte tactique (ATAK natif 1.76.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : L'app JTAC ressemble à un vrai terminal de contrôleur air
+- En haut, un bandeau de terminal (indicatif, code et état du laser, heure) et la frise de la mission en cases, de CHECK-IN à BDA, avec l'étape en cours en orange et le tir autorisé en rouge.
+- Un bandeau en gros caractères dit ce qu'on attend (READBACK, IN…) ou la décision à prendre ; CLEARED HOT, CONTINUE DRY et ABORT sont de gros boutons.
+- Le 9-LINE est une fiche dense, lignes numérotées, valeurs calculées en vert, remarques et restrictions en dessous.
+- Nouvel onglet CARTE : cible, IP et axe d'entrée, cône de l'axe final d'attaque, distance de risque, amis, ligne laser et appareils en vol. On peut y poser la cible ou l'IP du doigt. En paysage, la carte reste à gauche des autres onglets, côté JTAC comme côté équipage.
+EN : The JTAC app now looks like a real air controller terminal
+- At the top, a terminal bar (callsign, laser code and state, time) and the mission tape from CHECK-IN to BDA, with the current step in orange and cleared hot in red.
+- A large banner says what you are waiting for (READBACK, IN…) or the decision to make; CLEARED HOT, CONTINUE DRY and ABORT are big buttons.
+- The 9-LINE is a dense card with numbered lines, computed values in green, remarks and restrictions below.
+- New MAP tab: target, IP and run-in, final attack heading cone, risk distance, friendlies, laser line and airborne aircraft. You can set the target or IP with a tap. In landscape the map stays on the left of the other tabs, for the JTAC and for the aircrew.
+
+### Détail technique
+
+Non testé en jeu. Demande de TTRD : « JTAC l'app a une UI pas encore assez réaliste ». Mécanique de mission inchangée (fn_jtacAction), présentation refondue.
+- fn_pageJtac : bandeau terminal (`strip`), frise d'étapes (`steps`), bandeau d'état (`banner`), gros boutons (`big`), 9-LINE et données cible en lignes « mono » (police à chasse fixe), journal radio horodaté avec appels critiques en rouge, onglets SITU / 9-LINE / CARTE / CTRL / LOG. Paysage hors mini : carte tactique à 44 % à gauche.
+- fn_jtacDraw (nouveau) : dessin de la carte tactique (cône FAH, flèche IP → cible, cercle RED, ami le plus proche, LTL, appareils avec vecteur de cap). Vue gardée entre deux rendus. fn_jtacFah (nouveau) : lecture de la fenêtre FAH, partagée avec fn_jtacGeometry.
+- fn_jtacAction : pickIn / mapPick / mapSet (pose sur la carte de l'app), center ; le brief transmet aussi la position de l'IP et la distance de risque (fin du tableau, ignorés par un ancien client).
+- fn_formRender : nouvelles lignes `strip`, `steps`, `banner`, `big`, fond facultatif pour `text`, style « mono » pour `line` ; les autres apps ne changent pas.
+- i18n : textes ajoutés à en.txt.
+- À tester en jeu : onglets JTAC en portrait et paysage (mini et plein écran, échelle réglable), pose cible/IP sur la carte, cône FAH et cercle RED, vue équipage avec brief reçu, rafraîchissement CTRL toutes les 3 s (la carte garde sa vue), langue anglaise.
 
 ## Ligne de vue : de ma position vers le point (ATAK natif 1.75.0)
 
