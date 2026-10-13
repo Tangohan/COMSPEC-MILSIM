@@ -269,6 +269,11 @@ if (!(missionNamespace getVariable ["COMSPEC_TheaterSampling", false])) then {
         format ["Relevé géographique terminé — %1 lieu(x), %2 segment(s) routier(s).", count _places, count _roads]
     };
     [_geoMsg, "system", "info"] call comspec_overwatch_connect_fnc_announce;
+    // Lancé depuis Zeus : le bilan doit se voir dans l'interface Zeus.
+    if (missionNamespace getVariable ["COMSPEC_GeoZeusNotify", false]) then {
+        missionNamespace setVariable ["COMSPEC_GeoZeusNotify", false, false];
+        [format ["%1 %2", _geoMsg call comspec_overwatch_connect_fnc_tr, ("Visibles sur la carte Overwatch (calques Villes et Routes).") call comspec_overwatch_connect_fnc_tr], _abortedGeo] call comspec_overwatch_connect_fnc_zeusFeedback;
+    };
     [] call comspec_overwatch_connect_fnc_theaterSurveyRefresh;
     if (_ownsBusy && {!_abortedGeo}) then {
         [] call comspec_overwatch_connect_fnc_theaterSurveyVerify;

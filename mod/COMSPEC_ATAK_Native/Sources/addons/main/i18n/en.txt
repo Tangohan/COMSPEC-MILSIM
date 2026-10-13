@@ -10661,4 +10661,12 @@
 ["Validez dans Alertes pour révoquer son certificat.", "Confirm in Alerts to revoke its certificate."],
 ["Votre ATAK capturé est exclu du réseau. Votre prochain téléphone aura un nouvel IMEI.", "Your captured ATAK is cut off the network. Your next phone will have a new IMEI."],
 ["votre téléphone", "your phone"]
+["COMSPEC Overwatch est désactivé sur ce poste : routes et villes ne peuvent pas partir.", "COMSPEC Overwatch is disabled on this machine: roads and towns cannot be sent."],
+["Athena n'est pas liée sur ce poste : routes et villes ne peuvent pas partir. Liez Athena (menu Échap > Dépannage liaison) puis reposez le module.", "Athena is not linked on this machine: roads and towns cannot be sent. Link Athena (Esc menu > Link troubleshooting), then place the module again."],
+["Les modules « Lieux » et « Routes » sont désactivés pour cette communauté (réglages Athena).", "The ""Places"" and ""Roads"" modules are disabled for this community (Athena settings)."],
+["Un relevé des routes et villes est déjà en cours : il se termine tout seul.", "A roads and towns survey is already running: it will finish on its own."],
+["Relevé des routes et villes lancé : les villes partent tout de suite, les routes suivent bande par bande.", "Roads and towns survey started: towns are sent right away, roads follow strip by strip."],
+["Visibles sur la carte Overwatch (calques Villes et Routes).", "Shown on the Overwatch map (Towns and Roads layers)."],
+["Manuel complet : Échap › Manuel de terrain › COMSPEC SSE.", "Full manual: Esc › Field Manual › COMSPEC SSE."],
+["Exercice en cours de pose : 5 civils, téléphone, documents et caisse.", "Placing the exercise: 5 civilians, a phone, documents and a crate."]
 ]
