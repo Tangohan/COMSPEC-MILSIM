@@ -98,7 +98,7 @@ private _tw = _w - (_tx - _pad) - _pad;
 private _pt = ["COMSPEC_RscText", [_tx, _y + _ph * 0.12, _tw, _ph * 0.42], ["PANIQUE", "CONFIRMER LA PANIQUE"] select _armed, _ph * 0.36, [1, 1, 1, 1], true] call _lbl;
 [_pt, _tw, _ph * 0.36, 0.5] call _fit;
 private _ps = ["COMSPEC_RscStructuredText", [_tx, _y + _ph * 0.56, _tw, _ph * 0.42]] call _mk;
-_ps ctrlSetStructuredText parseText ((["<t color='#d7b0aa'>Alerte tout le camp et le poste avec ma position · deux appuis pour éviter les fausses alertes</t>",
+_ps ctrlSetStructuredText parseText ((["<t color='#d7b0aa'>Alerte l'ensemble des opérateurs de votre détresse. Il est nécessaire d'appuyer deux fois d'affilée pour valider l'envoi.</t>",
     "<t color='#ffffff' font='RobotoCondensedBold'>Appuyez encore dans les 5 secondes pour ENVOYER.</t>"] select _armed) call comspec_atak_native_fnc_tr);
 _ps ctrlSetFontHeight (_fs * 0.95);
 [[_pad, _y, _w, _ph], { ["panic"] call comspec_atak_native_fnc_alertsAction; }, "Deux appuis : alerte de détresse à tout le camp"] call _hit;

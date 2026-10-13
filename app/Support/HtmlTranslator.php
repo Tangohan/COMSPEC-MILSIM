@@ -319,11 +319,12 @@ final class HtmlTranslator
     /**
      * Valeur non traduite qui ressemble à un bout de phrase (long, ou commençant par un article ou une
      * préposition) : le modèle qui l'a capturée coupe une phrase et donnerait un texte mi-français mi-anglais.
+     * $frenchWords : un mot français suffit (valeur en tête de texte, suivie d'une fin de phrase du modèle).
      */
-    private static function looksLikeSentence(string $cap): bool
+    private static function looksLikeSentence(string $cap, bool $frenchWords = true): bool
     {
         // Mot français (accent, article, préposition) dans une valeur sans chiffre (les dates gardent leur mois).
-        if (preg_match('/\d/', $cap) !== 1
+        if ($frenchWords && preg_match('/\d/', $cap) !== 1
             && preg_match('/[àâçéèêëîïôûùœ]|\b(?:le|la|les|des|du|de|et|aux|au|pour|une|un|sur|avec|dans|par)\b/iu', $cap) === 1) {
             return true;
         }
@@ -349,12 +350,13 @@ final class HtmlTranslator
                 $pi = $parts[$i];
                 if ($i === $last) {
                     $at = $n - strlen($pi);
-                    if ($at <= $pos || ($pi !== '' && substr($s, $at) !== $pi)) {
+                    if ($at < $pos || ($at === $pos && !($glued[$i - 1] ?? false)) || ($pi !== '' && substr($s, $at) !== $pi)) {
                         $ok = false;
                         break;
                     }
                 } else {
-                    $f = $pos + 1 < $n ? strpos($s, $pi, $pos + 1) : false;
+                    $from = ($glued[$i - 1] ?? false) ? $pos : $pos + 1;
+                    $f = $from < $n ? strpos($s, $pi, $from) : false;
                     if ($f === false) {
                         $ok = false;
                         break;
@@ -384,11 +386,17 @@ final class HtmlTranslator
                 $cap = $caps[$k];
                 $tr = self::lookup(trim($cap), $depth + 1);
                 // Dans une valeur déjà capturée, un modèle ne laisse pas de mots français autour de sa traduction.
-                if ($tr === null && (self::looksLikeSentence(trim($cap)) || (($depth > 0 || $weak) && preg_match('/\p{L}{2}/u', $cap) === 1 && preg_match('/\d/', $cap) !== 1))) {
+                if ($tr === null && (self::looksLikeSentence(trim($cap), $k === 0 && $parts[0] === '') || (($depth > 0 || $weak) && preg_match('/\p{L}{2}/u', $cap) === 1 && preg_match('/\d/', $cap) !== 1))) {
                     // Morceau de phrase française, pas une valeur : mieux vaut tout laisser en français.
                     continue 2;
                 }
                 $repl['%' . $id] = $tr ?? $cap;
+            }
+            // Accord français (« affiché%2 ») : un participe anglais ne prend pas de « s ».
+            foreach ($ids as $k => $id) {
+                if ($glued[$k] ?? false) {
+                    $en = preg_replace('/(?<=[a-z]ed|[a-z]wn)%' . $id . '(?!\d)/', '', $en) ?? $en;
+                }
             }
             // Remplacement simultané (%1 ne doit pas toucher %10).
             krsort($repl, SORT_NATURAL);
