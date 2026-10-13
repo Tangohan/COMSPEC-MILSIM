@@ -38,6 +38,25 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Tinder : portrait opérateur à la place du cœur (ATAK natif 1.74.0)
+
+### Résumé joueur
+Type : correctif
+FR : Tinder montre enfin une vraie photo de profil
+- La première photo de chaque profil est ton portrait opérateur du site Athena.
+- Sans portrait, la carte montre ton personnage Arma au lieu du grand cœur blanc.
+- Les listes de matchs affichent le portrait, ou ton insigne de grade en attendant.
+EN : Tinder finally shows a real profile picture
+- The first photo of every profile is your operator portrait from the Athena site.
+- Without a portrait, the card shows your Arma character instead of the big white heart.
+- Match lists show the portrait, or your rank insignia until it arrives.
+
+### Détail technique
+- `fn_pageDating` : photo 0 = portrait opérateur (`fn_avatarPath`, caméra r2t coupée) quand il existe ; photos 1 et 2 (et 0 sans portrait) en direct comme avant.
+- Image sous la vue en direct (PiP coupé ou rendu en retard) : portrait, sinon `editorPreview` de la classe de l'unité, sinon aperçu Eden du soldat de base de son camp. Profils IA HVT / SSE compris.
+- Lignes MATCHS (joueurs et IA) : portrait, sinon insigne de grade (`BIS_fnc_rankParams`). Le cœur reste l'icône de l'app et des écrans vides.
+- Sous-titre « Ma carte » mis à jour, traduction anglaise dans i18n/en.txt. main.pbo (HEMTT) reconstruit.
+
 ## Texte du bouton PANIQUE (ATAK natif 1.73.0)
 
 ### Résumé joueur
