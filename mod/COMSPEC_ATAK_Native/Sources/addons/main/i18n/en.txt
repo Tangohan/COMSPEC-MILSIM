@@ -10052,5 +10052,10 @@
 ["❌ Échec de resynchronisation de %1", "❌ Failed to resync %1"],
 ["📍 TÉLÉPORTER", "📍 TELEPORT"],
 ["📡 Tableau de bord relais ATAK", "📡 ATAK relay dashboard"],
-["🔄 RESYNC TOUS", "🔄 RESYNC ALL"]
+["🔄 RESYNC TOUS", "🔄 RESYNC ALL"],
+["CLIC", "CLICK"],
+["MOLETTE", "WHEEL"],
+["SOURIS", "MOUSE"],
+["ESPACE", "SPACE"],
+["aide", "help"]
 ]
