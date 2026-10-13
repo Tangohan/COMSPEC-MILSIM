@@ -11,6 +11,19 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Performance : arrivée en mission, arsenal et DLL (ATAK natif 1.66.0, COMSPEC Link 2.0.78)
+
+Non testé en jeu. Demande de TTRD : gros lag en rejoignant un serveur et en ouvrant l'arsenal. Il faut recompiler les DLL (build_mod.bat) ; pas de migration.
+- Arsenal : la fiche opérateur n'est plus reconstruite et envoyée à Athena à chaque clic. Rien tant que l'arsenal (ACE ou BIS) est ouvert ; un seul envoi à la fermeture, et au plus un toutes les 3 s hors arsenal. L'envoi part dans un spawn (requête HTTP hors du thread du jeu) au lieu de figer l'image jusqu'à 8 s.
+- Fiche opérateur : versions des mods et de la DLL lues une fois par partie (la DLL était interrogée à chaque construction), visage d'un mod cherché une fois dans CfgFaces.
+- Tenues de l'arsenal Athena : liste paginée lue par la DLL sans bloquer l'arsenal.
+- Arrivée en mission : la recherche des téléphones dans tout CfgWeapons et la liste du bouton COMSPEC de l'arsenal sont faites une fois au lancement du jeu (preStart), plus à chaque mission. Le dictionnaire anglais (10 000 paires) est gardé pour toute la session de jeu. fn_hasDevice cherche dans une table au lieu de parcourir la liste.
+- Connexion Athena (COMSPEC Link et DLL native) : Init, reprise de session, Connect, IP et inscription bêta passent par extAwait, sans figer le jeu pendant les requêtes.
+- Aéronefs occupés : un seul client remonte chaque aéronef (le joueur relié à bord, sinon le joueur relié de plus petit UID) au lieu de tous les clients.
+- Menus ACE d'Overwatch et du SSE : les gardes « déjà installé » sont par mission (elles restaient dans uiNamespace : à la mission suivante sans relancer Arma, les menus manquaient).
+- COMSPEC Link 2.0.78 : le minuteur de vidage n'est plus relancé à chaque mise en file (il pouvait ne jamais partir), un seul vidage à la fois, file sur disque écrite au plus toutes les 3 s, journaux d'appareil renvoyés avec une pause croissante hors ligne, version lue une fois, et préchauffage au chargement (file sur disque relue et connexion TLS vers Athena ouverte en tâche de fond).
+- Journal : lignes `[PERF]` (durées du preInit, du postInit client et serveur, arrivée en jeu, parcours de config, dictionnaire, fiche opérateur, reprise de session) et `Image figée : N ms` pour toute image de plus de 400 ms, avec arsenal, téléphone et carte ouverts ou non.
+
 ## Pylônes relais 3D destructibles (ATAK natif 1.65.0)
 
 Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : de vrais pylônes radio en 3D, hauts, variés et destructibles.
