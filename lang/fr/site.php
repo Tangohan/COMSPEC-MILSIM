@@ -459,6 +459,7 @@ return [
     'atakn_lead' => 'Un vrai terminal tactique dans la poche de chaque opérateur : carte BFT, guidage GPS, marqueurs, messagerie, appui feu, médical et guerre électronique. Tout est relié à Athena, et c’est gratuit.',
     'atakn_cta_download' => 'Télécharger le mod',
     'atakn_cta_clip' => 'Voir le clip',
+    'atakn_latest_version' => 'Dernière version : ATAK natif %s · COMSPEC Link %s. Le mod la compare à la sienne et prévient dans les notifications du téléphone.',
     'atakn_cta_support' => 'Soutenir ATAK',
     'atakn_clip_label' => 'Clip de présentation de l’ATAK natif (42 secondes)',
     'atakn_clip_note' => 'Plans « capture en jeu » tournés pendant les tests de l’équipe ; écrans Feux, Médical, Guerre électronique et Logistique reconstitués d’après le mod.',
