@@ -150,6 +150,7 @@ $kpisShown = array_values(array_filter($kpis, static fn (array $k): bool => $k['
 ?>
     <meta name="theme-color" content="#050505">
     <link rel="apple-touch-icon" href="<?= $e($base) ?>/assets/icons/athena-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="<?= $e($base) ?>/assets/icons/athena-192.png">
     <link rel="preload" as="image" href="<?= $e($heroPosterUrl) ?>" fetchpriority="high">
     <script type="application/ld+json"><?= json_encode([
         '@context' => 'https://schema.org',

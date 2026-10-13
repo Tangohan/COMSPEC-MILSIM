@@ -67,7 +67,7 @@ class TenantRepository
     public function listForRegistry(): array
     {
         $stmt = $this->pdo()->query(
-            'SELECT id, name, slug, community_code, logo_url, settings FROM tenants ORDER BY name ASC'
+            'SELECT * FROM tenants ORDER BY name ASC'
         );
         if ($stmt === false) {
             return [];

@@ -53,6 +53,7 @@ if (_pilot) then {
     if (isNull _air) then { _air = _s getOrDefault ["air", objNull]; };
     _ip = _s getOrDefault ["ip", []];
     _ipName = _s getOrDefault ["jIp", ""];
+    if ((trim _ipName) isEqualTo "") then { _ipName = _s getOrDefault ["auto_jIp", ""]; };
     _fah = _s getOrDefault ["jFah", ""];
     if (_live && {(_b getOrDefault ["fah", ""]) isNotEqualTo ""}) then { _fah = _b get "fah"; };
     _laser = (_s getOrDefault ["mark", "LASER"]) isEqualTo "LASER";

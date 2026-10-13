@@ -323,6 +323,10 @@ if (_interactive) then {
                             if (_ok > 0 && {(count (missionNamespace getVariable ["COMSPEC_ATAK_Coverage", []])) < 8}) then { ["coverage"] call comspec_atak_native_fnc_relayNet; };
                             [format ["Wave Relay : %1 relais / passerelle(s), calcul de la couverture", _ok], "Wave Relay : aucun relais ni passerelle de véhicule dans votre camp, seuls les liens entre téléphones s'affichent"] select (_ok isEqualTo 0)
                         };
+                        case "COMSPEC_ATAK_RelaysLayer": {
+                            private _rl = ["list"] call comspec_atak_native_fnc_relayNet;
+                            [format ["Relais : %1 relais / passerelle(s) dans votre camp, %2 en service", count _rl, { _x select 6 } count _rl], "Relais : aucun relais ni passerelle dans votre camp"] select (_rl isEqualTo [])
+                        };
                         default { "" };
                     };
                     if (_msg isNotEqualTo "") then { ["INFO", _msg, 4, 20] call comspec_atak_native_fnc_notify; };
@@ -339,6 +343,7 @@ if (_interactive) then {
                 ["Logistique", "P", "COMSPEC_ATAK_LayerLogi", true, ""],
                 ["Relief", "M", "COMSPEC_ATAK_ViewshedShow", true, ""],
                 ["Wave Relay", "P", "COMSPEC_ATAK_MeshOnMap", false, ""],
+                ["Relais", "P", "COMSPEC_ATAK_RelaysLayer", true, ""],
                 ["Altitudes (heatmap)", "P", "COMSPEC_ATAK_LayerHeat", false, ""]
             ];
             // Liste en deux colonnes : case à cocher À GAUCHE du libellé complet (aligné à gauche).

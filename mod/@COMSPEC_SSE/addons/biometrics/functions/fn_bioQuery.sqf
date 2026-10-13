@@ -20,6 +20,8 @@ params [
 private _link = toLower (call {
     // État de liaison Athena : COMSPEC_LinkState est une chaîne ("linked", "degraded"…). Sans état
     // COMSPEC Link, on suit la liaison propre de l'ATAK natif (barre d'état verte = en ligne).
+    // Même verdict que la barre d'état du téléphone et le terminal SEEK (connect fn_sseLinkState).
+    if (!isNil "comspec_overwatch_connect_fnc_sseLinkState") exitWith { [] call comspec_overwatch_connect_fnc_sseLinkState };
     private _s = missionNamespace getVariable ["COMSPEC_LinkState", ""];
     if (!(_s isEqualType "")) then { _s = ""; };
     _s = toLower _s;

@@ -95,6 +95,9 @@ $navActive = static function (string $id) use ($activeNav): string {
     <?php if (!empty($sseNeedLeaflet)): ?>
         <link rel="stylesheet" href="<?= $h(asset_url('assets/vendor/leaflet-1.9.4/leaflet.css')) ?>">
     <?php endif; ?>
+    <?php if (!empty($sseExtraStyles)): ?>
+        <?= $sseExtraStyles ?>
+    <?php endif; ?>
 </head>
 <body class="sse-theme-bureau sse-iw">
 

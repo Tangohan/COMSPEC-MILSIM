@@ -38,6 +38,207 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Langues ajoutées par la communauté (ATAK natif 1.89.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le téléphone peut être traduit dans d'autres langues par la communauté
+- Une traduction du téléphone dans une autre langue peut maintenant être publiée sur le Workshop comme un petit mod séparé, par n'importe qui.
+- Une fois ce mod chargé, sa langue apparaît dans Réglages > Langue du téléphone et dans les options COMSPEC, à côté de Français et English. En Auto, elle est choisie toute seule si ton jeu est dans cette langue.
+- Une phrase pas encore traduite s'affiche en anglais.
+- Le guide pour les traducteurs est fourni avec le mod.
+EN : The phone can be translated into other languages by the community
+- Anyone can now publish a translation of the phone into another language as a small separate mod on the Workshop.
+- Once that mod is loaded, its language appears in Settings > Language on the phone and in the COMSPEC options, next to Français and English. On Auto, it is picked automatically when your game runs in that language.
+- A sentence that is not translated yet is shown in English.
+- A guide for translators ships with the mod.
+
+### Détail technique
+
+- Registre `CfgComspecLanguages` (config.cpp) : une classe par code de langue avec `name`, `file` (dictionnaire `[["français", "traduction"], ...]`, 3e colonne ignorée) et `gameLanguage[]`. L'ATAK natif y déclare `en` (i18n/en.txt) ; un mod de traduction ajoute la sienne sans toucher au code.
+- Nouveaux `fn_langList` (langues déclarées, gardées dans uiNamespace) et `fn_langResolve` (valeur du réglage -> code ; Auto : français, sinon la langue dont `gameLanguage` correspond au jeu, sinon anglais ; langue d'un mod déchargé : comme Auto).
+- `fn_langApply` charge l'anglais puis la langue choisie par-dessus (phrase manquante = anglais), garde un dictionnaire préparé par langue dans uiNamespace (`COMSPEC_ATAK_I18nUi_<code>`) et recharge quand la langue change (`COMSPEC_ATAK_I18nLoaded`). `fn_trMenu` (menus CBA Overwatch connect et SSE) suit le même chemin.
+- Réglage CBA `comspec_atak_native_language` et Réglages > Langue du téléphone : Auto, Français, puis chaque langue de `fn_langList` (quatre boutons par ligne au plus).
+- Kit traducteurs : `mod/COMSPEC_ATAK_Native/localisation/` (README EN/FR, `template/xx.txt` à trois colonnes, exemple d'addon `comspec_atak_lang_es`). `python3 tools/i18n.py community [fichier]` met à jour un fichier de traduction (ou régénère le modèle) et signale les `%1` perdus.
+- Hors champ : noms d'objets et modules Eden/Zeus (stringtable, langue du jeu), fenêtres d'accord et de choix Athéna de la connexion Overwatch (textes FR/EN propres).
+- main.pbo reconstruit avec HEMTT. COMSPEC Link reste en 2.0.83. Non testé en jeu : à vérifier, le choix de langue (Français, English, Auto) marche comme avant, et un mod de test construit depuis l'exemple ajoute bien sa langue.
+
+## Regroupement : IA ennemie et ATAK perdus, drone, pylônes relais, SEEK, Zeus (ATAK natif 1.88.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Un ATAK perdu peut trahir ton équipe, drone armé plus fiable, nouveaux pylônes relais
+- L'IA ennemie ramasse les ATAK sur les corps et au sol et s'en sert pour te traquer. Le camp reçoit l'alerte « Compromission suspectée » ; un chef de groupe, le propriétaire ou le Zeus la valide dans Alertes pour couper le téléphone. Batterie vide, la SIM reste localisable par les relais.
+- Drone : toutes les grenades, roquettes et charges se fixent dessous, la charge explose au contact de la cible, et la recherche balaie la zone en bandes au lieu de tourner en rond.
+- Pylônes relais : vraies collisions, ruine au sol quand ils sont détruits, deux nouveaux monopoles de 12 et 20 m, et un calque « Relais » sur la carte de l'ATAK.
+- Terminal SEEK : le clavier ne fait plus bouger ton personnage et une même personne n'est plus enregistrée en double. Zeus : le relevé des routes et villes dit s'il a démarré, et les noms de villes sont lisibles sur la carte.
+EN : A lost ATAK can betray your team, more reliable armed drone, new relay towers
+- Enemy AI picks up ATAKs from bodies and the ground and uses them to hunt you. The side gets a "Suspected compromise" alert; a group leader, the owner or the Zeus confirms it in Alerts to cut the phone off. With a dead battery, the SIM can still be located by the relays.
+- Drone: every grenade, rocket and charge can be attached underneath, the charge explodes on contact with the target, and search sweeps the area in lanes instead of circling.
+- Relay towers: real collisions, a ruin on the ground when destroyed, two new 12 m and 20 m monopoles, and a "Relays" layer on the ATAK map.
+- SEEK terminal: the keyboard no longer moves your character and the same person is no longer recorded twice. Zeus: the roads and towns survey says whether it started, and town names are readable on the map.
+
+### Détail technique
+
+Une seule version pour 5 PR regroupées (#771, #773, #774, #775, #778) : ATAK natif 1.88.0. COMSPEC Link reste en 2.0.83 (aucune DLL modifiée). main.pbo et towers.pbo reconstruits avec HEMTT ; comspec_overwatch_connect.pbo repatché depuis les sources fusionnées (SEEK #773, Zeus #775, relais #778, tools/pbo_patch.py --changed) ; comspec_sse_biometrics.pbo (#773) et comspec_sse_guide.pbo (#775) repris tels quels. i18n/en.txt fusionné à trois voies. Non testé en jeu.
+
+#### Pylônes relais : collisions, rendu, ruine, monopoles, calque Relais et tableau TBR (#778)
+
+- Modèles (`tools/model_relay_towers.py`, régénérés) : boîtes et cornières à facettes, tubes lissés (les normales moyennées des massifs les éclairaient à contre-jour, d'où les bandes claires). Ombres : une enveloppe convexe fermée par pièce, rentrée de 6 mm (avant : 32 arêtes ouvertes par LOD d'ombre, paraboles et révolutions à pointe, et volumes collés aux faces visibles). Géométrie : enveloppe de chaque pièce du pylône simplifié (fini la boîte invisible de 4 m en tête et les croisillons traversables), géométrie de tir sur le treillis presque complet, nouvelles LOD vue (le plein seulement) et chemin praticable (massifs, dalles, paliers). Ruines : tronçons fermés séparés pliés avec le pylône.
+- Matières (`tower_*.rvmat`) : reflets 0,9 → 0,2 environ, puissance 60 → 28, Fresnel métal poli (4,7) → acier patiné (1,4), diffus 0,82 pour l'acier galvanisé (trop blanc).
+- Ruine : `fn_relayTowerRuin` (événement Killed posé par `fn_relayTower`, aussi sur les tours créées par le module) pose `COMSPEC_ATAK_RelayTower_XX_ruins` si le moteur n'a laissé aucune ruine au bout de 8 s.
+- Monopoles `COMSPEC_ATAK_RelayTower_M12` (3 km, 10 Mbit/s, 32 places) et `_M20` (4,5 km, 15 Mbit/s, 48 places), ruines comprises, aperçus Eden.
+- Fréquences (base) : attribut « Bande de fréquence » sur les pylônes et le module relais (formulaire Zeus aussi), variable `COMSPEC_AtakRelayFreq` (MHz, 0 = automatique), affichée sur la carte et dans le TBR ; pas encore utilisée dans les calculs de liaison.
+- Eden : menu COMSPEC ATAK (TBR · tableau des relais : nom, type, camp, portée, bande, liaison, état, position, répéteurs isolés signalés ; Aller, Sélectionner ; aide relais). Module relais de type Tour fixe sans objet synchronisé : la tour de 40 m apparaît à sa place dans l'éditeur (objet local, non sauvé). `fn_relayEden`, `Cfg3DEN` (ouverture / nouvelle mission), `3DEN` ajouté aux dépendances de main.
+- Carte ATAK : calque « Relais » (`COMSPEC_ATAK_RelaysLayer`, affiché par défaut) séparé du calque Wave Relay (couverture, liens) ; interrupteur aussi dans l'app Wave Relay. COMSPEC Link : avec l'ATAK natif chargé, le carré « Relais … » et son cercle (`fn_updateNearestRelayMap`) ne sont plus posés, l'alerte de sortie de portée reste.
+- À tester en jeu : collisions au pied (marcher contre les massifs, les croisillons, l'armoire), tirs dans le treillis, sélection dans Eden ; ombres et reflets en plein soleil ; destruction (ruine qui reste, pas de doublon) ; monopoles 12 et 20 m ; module Tour fixe dans Eden (aperçu qui suit, disparaît à la suppression) ; menu COMSPEC ATAK > TBR ; calque Relais masqué / affiché sur la carte du téléphone.
+
+#### Drone : charge qui explose, grenades acceptées, recherche en balayage (#771)
+
+- fn_droneAction : charges reconnues par la simulation de la munition (shotGrenade, shotSmoke(X), shotIlluminating, shotRocket, shotMissile, shotMine, shotDirectionalBomb, shotShell à un coup…), variante `_Scripted` prise si elle existe ; liste de l'onglet TÂCHES par lignes de deux.
+- fn_droneCmd « strike » : piqué final dans un CBA PFH (chaque image) au lieu d'une boucle planifiée à 0,05 s ; fusée de proximité 3,5 m, point le plus proche dépassé, cible tuée à moins de 25 m ; gestionnaires Killed et Dammaged qui déclenchent la charge en mode STRIKE ; charge retirée avant setDamage (pas de double explosion).
+- fn_droneCmd « hunt » : vol piloté par notre boucle (IA MOVE coupée), montée 6 m/s en avançant, 50 km/h au moins, hauteur tenue sur le relief 60 m devant, montée devant un obstacle ; balayage en bandes (écart selon la hauteur), puis bandes croisées ; détection deux fois par seconde.
+- XEH_postInitClient (ace_medical_woundReceived), fn_pageLinkAlly, fn_pageNetwork : `params` avec `["", défaut]` remplacé par `""` (erreur « Variable locale dans espace global »).
+- Caméra du drone noire : pas de changement, cause toujours non confirmée.
+
+#### Terminal SEEK : clavier gardé, plus de doublons, dossiers automatiques, photo et liaison (#773)
+
+- Overwatch connect (embarqué) : `fn_sseKeyBlock` + `fn_sseTerminalGuard` (KeyDown sur le SEEK idd 9991 et sur le display 46, arme rangée à l'ouverture, rafraîchissement de la barre d'état quand la liaison change).
+- `fn_sseLinkState` : même verdict que `fn_statusUpdate` du téléphone (COMSPEC_LinkState « offline » ne masque plus la liaison du téléphone). Repris par `fn_sseIdentityQuery`, `fn_ssePersonRefreshPanels` et le pack SSE (`fn_bioQuery`, `fn_bioCaptureLatentAction`).
+- `fn_sseIdentityQuery` : même sujet + mêmes relevés = verdict repris, pas de nouvelle requête. `fn_seekHistoryPush` : une ligne par sujet (clé netId [9], compteur [10]) ; `fn_pageSse` additionne les compteurs.
+- `fn_sseUploadFacePhoto` (extrait de la transmission) : appelé aussi par `fn_sseCaptureFacePhoto` quand le sujet a déjà un id Athena ; un cliché déjà joint ne repart plus à chaque réouverture.
+- Site : `POST /api/sse/persons` en doublon complète la fiche existante (`mergeRetransmission`), classe au dossier sans nouvelle ligne de journal si rien ne change ; code de dossier inconnu → dossier créé (`findOrCreateByReference`) ; A1 sans dossier ouvert unique → dossier du jour `AUTO-AAMMJJ`.
+- PBO reconstruits : main.pbo, comspec_overwatch_connect.pbo, comspec_sse_biometrics.pbo.
+
+#### L'IA ennemie ramasse les ATAK et traque les joueurs ; secours SIM à batterie vide (#774)
+
+- `fn_captureServer` (serveur, PFH 3 s et 5 s) : sources = corps (`allDeadMen`) et joueurs à terre portant l'étiquette `COMSPEC_ATAK_PhoneTag`, porte-objets au sol signalés par l'événement Put (`fn_linkAllyInit`), corps d'une IA porteuse (`COMSPEC_ATAK_CapOf`). L'IA ennemie la plus proche dans `capture_radius` reçoit `doMove`, prend le téléphone à 4 m (`unlinkItem`/`removeItem` là où le corps est local, cargo reconstruit pour un porte-objet) et garde l'identité du téléphone (`COMSPEC_ATAK_Ident`), donc GÉOLOC le retrouve.
+- Exploitation : après `capture_crack` s si le propriétaire avait un code, rien si le téléphone était effacé. Toutes les `capture_refresh` s, le groupe porteur et jusqu'à 3 groupes du même camp à moins de `capture_share` m reçoivent `reveal` des joueurs du camp à balise BFT active à moins de `capture_hunt_radius` m, puis un point SAD sur le plus proche (`capture_hunt`). Variables de mission `COMSPEC_ATAK_NoPickup` / `COMSPEC_ATAK_NoHunt` sur une unité ou un groupe.
+- `fn_compromise` (client) : étiquette publiée toutes les 5 s (UID, camp, indicatif, numéro, IMEI, terminal Athena, code, effacé), alertes (notification, alerte plein écran, journal), section « Compromissions » de l'app Alertes (VALIDER / REJETER / CARTE). État partagé `COMSPEC_ATAK_CaptureList`. Validée : l'exploitation s'arrête, le valideur appelle COMSPEC Link `CompromiseTerminal` (état `compromised`) ; sans liaison Athena, le serveur passe au propriétaire puis à un chef du camp. Le propriétaire reçoit `COMSPEC_ATAK_PhoneGen + 1` (nouvel IMEI).
+- Site : `/api/atak/terminals/compromise` avec l'état `compromised` révoque les certificats encore valides du terminal (motif `keyCompromise`, `AtakRealismRepository::revokeCertificatesForTerminal`) et le note dans le journal d'activité.
+- `fn_simSos` : `COMSPEC_ATAK_SimSos` publié quand la batterie simulée est à 0 ; GÉOLOC (`fn_ewAction`) et RECHERCHER (`fn_mapSearch`) répondent « secours SIM » avec une position tirée des relais qui entendent le téléphone (1 relais : cellule large, 2 : moyenne, 3+ : triangulation ; mission sans relais : antennes fictives, rayon doublé). Allié traçable en secours SIM même si « Tracer son propre camp » est décoché.
+- Réglages CBA serveur : « ATAK · Capture par l'ennemi » (activé, distance, forçage, traque, portée, partage, rafraîchissement, qui valide) et dans « ATAK · Géolocalisation (GEOLOC) » : mode secours SIM, retrouver un allié.
+- Pas de changement de DLL (COMSPEC Link 2.0.82 sait déjà envoyer `CompromiseTerminal`). Pas de migration.
+- À tester en jeu (serveur dédié de préférence) : mourir près d'une IA ennemie avec son ATAK, la voir ramasser le téléphone ; alerte sur les ATAK du camp ; IA qui vient vers les joueurs à balise active ; mode avion ; VALIDER par un chef de groupe puis fin de la traque et certificat révoqué sur Athena ; GÉOLOC de l'IMEI volé ; batterie à 0 puis GÉOLOC du numéro par un allié, avec et sans relais dans la mission.
+
+#### Zeus : relevé routes et villes qui répond, tutoriel SSE visible, villes lisibles sur la carte (#775)
+
+Non testé en jeu. Retours de TTRD : « le tuto zeus et le module relever route et ville ne marchent pas », « mauvais placements » (app SSE), « les villes c'est trop laid, juste le titre de la ville avec un fond ».
+- Relevé routes et villes (Overwatch connect embarqué) : le relevé partait bien mais n'écrivait que dans le journal du téléphone, invisible dans Zeus. Nouveau `fn_zeusFeedback` (bandeau ZEN, sinon message Zeus vanilla, sinon notification) appelé au lancement, en cas de refus et à la fin (`COMSPEC_GeoZeusNotify`). Module Eden : le Zeus / l'admin n'étaient testés qu'à l'initialisation (souvent pas encore connus, jamais vrais sur serveur dédié sans admin) ; ils sont maintenant testés une fois lié, avec repli sur n'importe quel joueur lié après 60 s et un seul envoi par serveur (`COMSPEC_GeoNetworkRunner`).
+- SSE : `comspec_sse_fnc_openGuide` affiche le chapitre du manuel dans une fenêtre posée sur l'écran Zeus (display 312) ; hors Zeus, manuel de terrain comme avant. « Poser un exercice ici » confirme dans Zeus.
+- Carte web (`atak-geo-network.js`, Overwatch beta, carte opérationnelle, tacmap) : localités en étiquettes `divIcon` (ville, bourg, village, lieu-dit), rang affiché selon le zoom et chevauchements retirés ; styles injectés par le script.
+- App SSE du téléphone : bandeau, tuiles d'indicateurs, en-têtes de panneau et cases d'attributs prennent la hauteur mesurée de leur texte.
+- À tester en jeu : poser « Relever routes et villes » dans Zeus (message attendu), « Tutoriel : manuel du Zeus » (fenêtre au-dessus de Zeus), l'app SSE en portrait et paysage.
+
+## Regroupement : JTAC, Messages, Musique, Signaler un problème (ATAK natif 1.87.0, COMSPEC Link 2.0.83)
+
+### Résumé joueur
+Type : nouveauté
+FR : JTAC plus réaliste, Messages, Musique et Signaler un problème plus pratiques
+- JTAC : par défaut, c'est toi qui remplis le 9-LINE (IP, description de la cible, dégagement, remarques) et qui choisis ton appareil et ta cible ; les lignes calculées le restent. L'administrateur de ta communauté peut réactiver la complétion automatique dans Contrôle de mission.
+- Messages : la molette fait défiler la liste et la conversation, un bouton « Nouveau SMS » montre les joueurs de ton camp en ligne, et l'app reste fluide avec beaucoup de canaux.
+- Musique : en paysage, la pochette est à gauche et les commandes à droite ; Son, File d'attente, Favoris et Haut-parleurs s'ouvrent d'un clic, un seul à la fois, avec l'essentiel visible même fermés.
+- Signaler un problème : nouvelle fenêtre avec six types de problème, une case pour joindre ton journal (clés et mots de passe retirés), et un message clair « transmis » ou la raison du refus. L'envoi ne fige plus le jeu.
+EN : More realistic JTAC, easier Messages, Music and Report a problem
+- JTAC: by default you fill in the 9-LINE yourself (IP, target description, egress, remarks) and pick your aircraft and target; computed lines stay computed. Your community administrator can turn automatic completion back on in Mission control.
+- Messages: the mouse wheel scrolls the list and the conversation, a "New SMS" button shows the players on your side who are online, and the app stays smooth with many channels.
+- Music: in landscape, the cover sits on the left and the controls on the right; Sound, Queue, Favourites and Speakers open with a click, one at a time, with the key information visible even when closed.
+- Report a problem: a new window with six kinds of problem, a box to attach your log (keys and passwords removed), and a clear "sent" message or the reason it was refused. Sending no longer freezes the game.
+
+### Détail technique
+
+Une seule version pour 4 PR regroupées (#760, #761, #766, #768) : ATAK natif 1.87.0, COMSPEC Link 2.0.83 (la DLL change : nouveau réglage JTAC autorisé, recompiler avec build_mod.bat). main.pbo reconstruit avec HEMTT, comspec_overwatch_connect.pbo repatché (fenêtre Signaler un problème). i18n/en.txt fusionné à trois voies. Non testé en jeu.
+
+#### JTAC : saisie manuelle par défaut, complétion automatique en réglage admin (#768)
+
+- Nouveau réglage communauté `native_jtac_autofill` (catalogue AtakExperienceService, groupe réalisme, surface Contrôle de mission), défaut `off`. Ajouté à la liste blanche de COMSPEC Link (2.0.83) ; sans DLL à jour, la clé n'arrive pas et le mod reste en saisie manuelle.
+- fn_jtacLines : toute la complétion de 1.85.0 (appareil le plus proche, cible laser, IP à 5 NM, ligne 5, menaces, FAH, dégagement, armement) n'agit que si la règle vaut `on`. Un IP proposé avant la coupure est effacé. Expose `autoOn`.
+- fn_pageJtac : bouton IP AUTO masqué et textes d'aide adaptés quand la complétion est coupée.
+
+#### Fenêtre « Signaler un problème » refaite, envoi et journal fiables (#766)
+
+- `display_bug_report.hpp` (idd 9992) refait aux couleurs de l'ATAK natif : catégories en 6 boutons (`fn_bugReportPick`, code envoyé dans `channel`), champ multi-lignes 1500 caractères, `RscCheckBox` 9805 (cochée par défaut) avec explication, statut 9820, boutons « Envoyer le signalement » (primaire) / « Annuler ».
+- `fn_bugReportSubmit` : lancé en `spawn` (extAwait asynchrone, plus de gel), message ≥ 10 caractères, résultat dans la fenêtre (succès : bouton « Fermer » ; échec : raison selon `rate_limited`, `invalid_url`, `http_503`, `timeout`, `invalid`, extension absente, bouton « Réessayer »).
+- Journal : avant, le détail était coupé aux 1800 premiers caractères (les lignes les plus anciennes) et, au-dessus de 800, la DLL n'ajoutait pas la fin du journal. Désormais instantané court (< 800 : liaison, mode Athena, DLL, verdict du dépannage, fin du tampon session) + source `player` : la DLL joint les 3500 derniers caractères du journal fichier, lignes de secrets retirées. Case décochée : source `player-nolog`, rien de joint.
+- `fn_reportDiag` : toute source commençant par `player` échappe à l'anti-spam automatique.
+- Site : rien à changer, `/admin/atak-mod-reports` affiche déjà le détail (journal compris).
+
+#### Messages : molette, bouton Nouveau SMS, chargement plus léger (#760)
+
+Non testé en jeu. Retours de TTRD en jeu sur 1.83.0 : molette sans effet, bouton SMS manquant en bas de page, chargement lourd de tous les canaux.
+- Molette : les groupes défilants imbriqués dans le contenu de la page ne recevaient pas la molette. `fn_pageChat` enregistre [groupe, hauteur du contenu] (`COMSPEC_ATAK_WheelGroups`) et pose une fois un `MouseZChanged` sur l'écran du téléphone qui fait défiler le groupe sous la souris.
+- Bouton « + NOUVEAU SMS » en pied de liste (en main) : état `chatPick`, liste réduite aux contacts en ligne, ANNULER pour revenir.
+- `fn_messagesAll` garde son résultat par canal tant que ses sources n'ont pas changé (au plus 5 s) : la liste, les pastilles (`fn_chatUnread`) et la barre d'état ne relisent plus chaque canal plusieurs fois par seconde.
+- « Chargement… » tant que COMSPEC Link n'a pas fait son premier relevé (`COMSPEC_ChatPollBootstrapped`).
+- Textes anglais des ajouts de 1.78.0 et 1.84.0 dans i18n/en.txt.
+
+#### App Musique : sections repliables et lecteur côte à côte (#761)
+
+Non testé en jeu. Retour de TTRD : défilement pénible en bas de l'onglet LECTURE. Pas de DLL à recompiler, pas de migration.
+- fn_vizPlayer : conversion largeur / hauteur corrigée (COMSPEC_ATAK_Ratio = pixelH / pixelW : largeur d'un carré = hauteur / ratio). En paysage le test « écran étroit » se trompait et empilait la pochette au-dessus ; pochette carrée, icônes, boutons et sauts à la bonne largeur.
+- fn_formRender : nouvelle ligne « fold » (en-tête repliable pleine largeur, chevron, résumé à droite) ; icône des curseurs à la bonne largeur.
+- fn_pageMusic : sections en accordéon (clé « fold » de l'état d'interface, « Son » ouverte par défaut), action « fold » dans fn_musicAction.
+- Icônes ui_chevron_down / ui_chevron_up (gen_assets.py) ; icônes du lecteur gardées chargées (fn_textureKeep).
+- À vérifier en jeu : onglet LECTURE en plein écran paysage (pochette carrée à gauche), ouverture / fermeture des 4 sections, curseurs de volume dans « Son », portrait mini.
+## Barlow Condensed revient en test dans Réglages > Police (ATAK natif 1.86.0)
+
+### Résumé joueur
+Type : patch
+FR : Barlow Condensed à l'essai
+- Réglages > Police propose « Barlow (test) », une version corrigée de la police de la 1.83.0. Roboto reste la police par défaut.
+- Si le texte s'affiche mal avec Barlow, il suffit de repasser sur Roboto.
+EN : Barlow Condensed on trial
+- Settings > Font offers "Barlow (test)", a fixed version of the 1.83.0 font. Roboto stays the default.
+- If text looks wrong with Barlow, just switch back to Roboto.
+
+### Détail technique
+- Cause probable des lettres décalées de la 1.83.0 (« RÉGLAGES » lu « 2ÉGLAGES ») : la table `.fxy` générée avait des trous (code 0 puis 32…, puis des codes isolés). Les `.fxy` d'ACE3 n'en ont aucun dans un bloc de 32 codes alignés (0-351, 992-1087, 8176-8191). `tools/gen_fonts.py` écrit maintenant des blocs complets de 32, les codes absents en entrée vide. Polices régénérées.
+- Familles embarquées renommées `COMSPEC_BarlowC`, `COMSPEC_BarlowCBold`, `COMSPEC_BarlowCLight` ; `COMSPEC_Barlow*` (classes et balises) restent sur Roboto Condensed du jeu, écrites par le script. Valeur de réglage `barlow2` : un ancien choix `barlow` ne réactive pas la police.
+- `fn_fontText` remplace les noms suivis de leur guillemet (sinon `COMSPEC_Barlow` remplacé dans `COMSPEC_BarlowCBold`).
+- Non vérifiable hors du jeu : la troncature en hauteur vue en 1.83.0 peut venir d'une autre cause (hauteur de ligne). Si Barlow (test) est encore cassée, il faudra passer par FontToTGA (Arma 3 Tools) sur un PC Windows.
+- À tester en jeu : Réglages > Police > BARLOW (TEST) ; accueil, notifications, Réglages, petits textes sous les valeurs ; retour ROBOTO.
+
+## JTAC : la fiche 9-LINE se complète toute seule (ATAK natif 1.85.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : JTAC : la fiche 9-LINE se remplit toute seule
+- Dès qu'il y a une cible, toute la fiche se complète : point initial (nommé d'après le lieu-dit le plus proche), cap, distance, altitude, description des ennemis vus, marquage, amis, dégagement, axe d'attaque et menaces sol-air.
+- Les valeurs proposées apparaissent en vert et restent modifiables ; ce que tu tapes l'emporte toujours. IP AUTO remet le point initial proposé.
+- Ton laser allumé sert de cible automatiquement, et l'appareil le plus proche est choisi s'il n'y en a pas.
+- Quand il manque quelque chose, l'app dit exactement quoi et comment le faire.
+EN : JTAC: the 9-LINE card fills itself in
+- As soon as there is a target, the whole card fills in: initial point (named after the nearest place), heading, distance, elevation, description of the enemies seen, mark, friendlies, egress, attack heading and surface-to-air threats.
+- Proposed values show in green and stay editable; what you type always wins. AUTO IP brings back the proposed initial point.
+- Your laser, when on, becomes the target automatically, and the nearest aircraft is picked if none is.
+- When something is missing, the app says exactly what and how to provide it.
+
+### Détail technique
+
+Non testé en jeu. Demande de TTRD : « On peut pas tout compléter ? » (capture de la fiche CAS BRIEF vide).
+- fn_jtacLines : appareil le plus proche si aucun choisi, cible = point laser du joueur si rien n'est verrouillé, IP proposé à 5 NM côté appareil (sinon à l'opposé des amis) nommé d'après nearestLocations, ligne 5 (ennemis connus à 150 m : nombre × type, à l'arrêt / en mouvement), ligne 9 (direction vers l'IP, altitude de l'appareil), FAH (IP → cible ± 20), menaces (SAM / MANPADS / AAA par airLock des munitions, blindés, armes légères), armement par défaut. Propositions rangées sous auto_<clé> ; la saisie l'emporte.
+- fn_jtacAction : « save » n'enregistre pas une proposition laissée telle quelle ; IP posé à la main = ipAuto faux, action ipAuto pour revenir à l'IP proposé ; NOUVELLE MISSION remet l'IP en automatique.
+- fn_pageJtac : champs proposés en vert (nouveau genre de ligne autoedit dans fn_formRender), consigne explicite sans cible, « Il manque : … » détaillé, bouton IP AUTO.
+- fn_formRender : le bandeau strip ne fait plus chevaucher ses deux textes (colonnes, passage à la ligne).
+- À tester en jeu : fiche avec cible verrouillée, laser allumé sans verrouiller, IP posé à la main puis IP AUTO, description et menaces avec ennemis connus ou non, saisie d'une valeur puis changement de cible (la saisie reste, les propositions suivent).
+
+## Retour à la police du jeu sur le téléphone (ATAK natif 1.84.0)
+
+### Résumé joueur
+Type : correctif
+FR : Le téléphone retrouve sa police habituelle
+- La nouvelle police de la 1.83.0 s'affichait mal : textes coupés et lettres décalées. Le téléphone repasse en Roboto Condensed, la police du jeu.
+- Dans Réglages > Police, il reste Roboto (par défaut) et Purista. Les autres polices reviendront une fois corrigées.
+EN : The phone gets its usual font back
+- The new font from 1.83.0 rendered badly, with cut-off text and misplaced letters. The phone is back to Roboto Condensed, the game's font.
+- Settings > Font now offers Roboto (default) and Purista. The other fonts will come back once fixed.
+
+### Détail technique
+- Test de TTRD en jeu sur la 1.83.0 : libellés coupés en hauteur, petits textes illisibles, caractères mal placés. Cause probable : les polices converties par `tools/gen_fonts.py` (métriques `.fxy` ou planches `.paa`) ne sont pas lues comme prévu par Arma.
+- `ui/fonts.hpp` : `COMSPEC_Barlow`, `COMSPEC_BarlowBold` et `COMSPEC_BarlowLight` pointent sur les fichiers Roboto Condensed du jeu (mêmes chemins que BCE), donc toutes les classes et balises `<t font=…>` du téléphone sont de nouveau en Roboto. Les familles B612, Rajdhani et Share Tech restent dans le pbo mais ne sont plus proposées.
+- Réglage `comspec_atak_native_font` réduit à `roboto` (défaut) et `purista` ; une ancienne valeur `barlow` retombe sur Roboto.
+- À vérifier en jeu : textes du téléphone nets et entiers (écran d'accueil, notifications, tuiles), choix Purista dans Réglages > Police.
+
 ## Nouvelle police du téléphone, au choix (ATAK natif 1.83.0)
 
 ### Résumé joueur
@@ -272,6 +473,7 @@ Non testé en jeu. Capture de TTRD : tuile Stabilité « any % » et section Pas
 - Passerelles et relais : l'état vide tient sur une ligne, sans répéter le maillage collé à la ligne « Maillage Wave Relay » ; celle-ci est espacée et indique « aucune passerelle » quand il n'y en a pas.
 - Zone radio : « Simulation de liaison dégradée » affiche « désactivée » ou « active : pertes et délais simulés » ; le type de zone n'est plus remplacé par « ? » quand il est inconnu.
 - Paquets envoyés affichés en entier (plus de notation 1e+06). Textes traduits en anglais.
+
 ## Module Zeus et Eden « Relever routes et villes » (ATAK natif 1.78.0)
 
 ### Résumé joueur
@@ -311,6 +513,7 @@ Non testé en jeu. Demande de TTRD : boutons du menu Échap en haut à droite, s
 - « Copier le rapport » met le diagnostic et les versions dans le presse-papiers ; « Signaler un problème » ouvre le signalement existant.
 - Pas à pas (recherche de ce qui arrête le jeu) : au choix rapide (20 s par fonction) ou complet (55 s), lancé depuis la fenêtre. Nouveau bandeau compact en haut au centre avec barre de progression, temps restant et état de la liaison. L'étape mémorisée est effacée quand le pas à pas se termine ou est arrêté : elle ne reste affichée comme suspecte qu'après un vrai arrêt du jeu.
 - Textes traduits en anglais (dictionnaire i18n/en.txt).
+
 ## App JTAC plus réaliste : terminal, fiche 9-LINE et carte tactique (ATAK natif 1.76.0)
 
 ### Résumé joueur
@@ -335,6 +538,7 @@ Non testé en jeu. Demande de TTRD : « JTAC l'app a une UI pas encore assez ré
 - fn_formRender : nouvelles lignes `strip`, `steps`, `banner`, `big`, fond facultatif pour `text`, style « mono » pour `line` ; les autres apps ne changent pas.
 - i18n : textes ajoutés à en.txt.
 - À tester en jeu : onglets JTAC en portrait et paysage (mini et plein écran, échelle réglable), pose cible/IP sur la carte, cône FAH et cercle RED, vue équipage avec brief reçu, rafraîchissement CTRL toutes les 3 s (la carte garde sa vue), langue anglaise.
+
 ## Ligne de vue : de ma position vers le point (ATAK natif 1.75.0)
 
 ### Résumé joueur
@@ -353,6 +557,7 @@ EN : Line of sight: from your position to a point whose coordinates you enter
 Non testé en jeu. Demande de TTRD : remplacer « SOUS MON REGARD » par « de ma position vers le point », en entrant les coordonnées.
 - App Relief, onglet LIGNE DE VUE : le bouton SOUS MON REGARD est retiré. L'en-tête devient « DE MA POSITION VERS LE POINT : » et rappelle ma position (carroyage 8 chiffres). On entre les coordonnées du point (carroyage de 4, 6, 8 ou 10 chiffres, espaces acceptés) puis TRACER, ou on touche le point avec SUR LA CARTE.
 - Un carroyage court vise le centre de sa case (avant : le coin sud-ouest). La ligne part toujours de mes yeux, point à 1,7 m du sol. Tracé, profil, VOIR SUR LA CARTE et EFFACER inchangés.
+
 ## Langue du mod en tête des options CBA (ATAK natif 1.74.0)
 
 Non testé en jeu. Demande de TTRD : la sélection de langue dans Options des addons > COMSPEC.
@@ -374,6 +579,7 @@ EN : PANIC button: clearer instructions
 
 Non testé en jeu. Demande de TTRD : nouveau texte sous PANIQUE, écran Détresse et contact.
 - Le bloc PANIQUE affiche « Alerte l'ensemble des opérateurs de votre détresse. Il est nécessaire d'appuyer deux fois d'affilée pour valider l'envoi. » (anglais : « Alerts all operators of your distress. You must press twice in a row to confirm sending. »).
+
 ## Adresse du portail Athena fixe (ATAK natif 1.72.0)
 
 ### Résumé joueur
@@ -423,6 +629,7 @@ Non testé en jeu. Demande de TTRD : gros lag en rejoignant un serveur et en ouv
 - Menus ACE d'Overwatch et du SSE : les gardes « déjà installé » sont par mission (elles restaient dans uiNamespace : à la mission suivante sans relancer Arma, les menus manquaient).
 - COMSPEC Link 2.0.80 : le minuteur de vidage n'est plus relancé à chaque mise en file (il pouvait ne jamais partir), un seul vidage à la fois, file sur disque écrite au plus toutes les 3 s, journaux d'appareil renvoyés avec une pause croissante hors ligne, version lue une fois, et préchauffage au chargement (file sur disque relue et connexion TLS vers Athena ouverte en tâche de fond).
 - Journal : lignes `[PERF]` (durées du preInit, du postInit client et serveur, arrivée en jeu, parcours de config, dictionnaire, fiche opérateur, reprise de session) et `Image figée : N ms` pour toute image de plus de 400 ms, avec arsenal, téléphone et carte ouverts ou non.
+
 ## Correctif « Include file ...\ui\controls.hpp not found » au lancement (ATAK natif 1.70.0)
 
 ### Résumé joueur
@@ -504,6 +711,7 @@ Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : un champ de visio
 - Menu de la carte (appui long / clic droit) : « Effacer le champ de vision » apparaît dès qu'un champ de vision est affiché (le bouton EFFACER n'existait que dans l'app Relief). Même chose pour la ligne de vue : « Effacer la ligne de vue ».
 - Zones interdites au drone : « Retirer la zone interdite » (clic dans la zone) existait déjà ; ajout de « Retirer toutes les zones » dans le menu de la carte et de RETIRER TOUTES LES ZONES dans l'app Marquer Tracking (toutes les zones du camp).
 - Un seul champ de vision existe à la fois par joueur : en poser un nouveau remplace le précédent.
+
 ## Intro au démarrage désactivée (ATAK natif 1.67.0)
 
 ### Résumé joueur
@@ -701,6 +909,7 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD :
 - Mod SSE : 570 textes de config (noms d'objets, modules et attributs Eden, modules Zeus SEEK, catégories) passent par `addons/main/stringtable.xml` (clés `$STR_COMSPEC_SSE_CFG_*`, anglais et français). Ces textes suivent la langue du jeu, comme tout texte de config Arma.
 - `tools/i18n.py --sse stringtable` ; dictionnaire partagé enrichi (environ 370 traductions). PBO du SSE concernés repaquetés.
 - Les journaux techniques restent en français.
+
 ## Relais du réseau ATAK : module Eden/Zeus, tutoriel, passerelles de véhicule coupées (ATAK natif 1.57.0)
 
 Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : améliorer les relais, un tuto dans Eden, couper par défaut les relais véhicule / mât de commandement.
@@ -752,6 +961,7 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD :
 - **Champs de vision** : clic droit sur la carte, « Champ de vision ici » (observateur posé au point), ou sur un équipier, « Son champ de vision » (depuis ses yeux, dans la direction où il regarde). App Relief : hauteur d'œil ajoutée (toit 10 m, mât 50 m, drone 150 m), secteur 360°, 120° ou 60°, DEPUIS LE DRONE ; avec l'option « + bâtiments et arbres », les cases cachées par un mur, une maison ou des arbres sont en orange (rouge : par le relief) quand un drone est appairé. L'observateur et son secteur sont tracés sur la carte.
 - **Calques de la carte** : allumer un calque dit ce qu'il montre ou pourquoi il est vide (aucune zone reçue d'Athena, aucun relevé EW, aucune demande logistique, Athena injoignable pour SIGINT...). Relief sans calcul lance le champ de vision depuis soi ; Wave Relay lance la couverture s'il y a des relais.
 - À vérifier en jeu : relais et portées visibles sur la carte, couverture sur une mission avec relais (et brouilleur), LOCALISER un équipier balise coupée, champ de vision depuis un point, un équipier et le drone, chaque calque allumé puis éteint.
+
 ## Messagerie refaite (ATAK natif 1.52.0)
 
 Non testé en jeu. Demande de TTRD : « améliorer l'UI de la messagerie ». Pas de DLL à recompiler, pas de migration.
@@ -780,6 +990,7 @@ Non testé en jeu. Retours de TTRD. Pas de DLL à recompiler, pas de migration.
 - **Téléphone entre les jambes (vue à la première personne)** : le terminal du JPC n'est plus accroché à l'os de la poitrine (dont la position n'était pas fiable en vue à la première personne) mais au corps, à 22 cm devant et 40 cm sous les yeux, recalé quand la posture change (debout, accroupi, couché). Réglage pour les essais : `COMSPEC_ATAK_JpcOffset` (depuis les yeux).
 - **Écran noir** : la face des coques à transparence recouvrait l'écran vivant (le verre éteint de la texture passait devant) ; l'ouverture est maintenant transparente. Les premières images de l'écran sont dessinées tout de suite, même sans le regarder. Sans « Image dans l'image » (Options > Vidéo), la page Carte montre la carte d'ensemble du terrain au lieu d'un rectangle noir, avec un rappel.
 - **Tablette du véhicule** : c'est une tablette commune pour ceux qui n'ont pas d'ATAK. Un joueur qui a son téléphone garde son téléphone en montant dans un véhicule équipé (plus de bascule vers la tablette VT-10 ni de message « Tablette du véhicule disponible »). Sans téléphone, rien ne change.
+
 ## Télécommande drone sur son vrai téléphone (QR code), caméra de nuit, portée (ATAK natif 1.50.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Addon connect mis à jour (comspec_overwatch_connect.pbo reconstruit). Demande de TTRD : « tu scannes le QR code sur l'ordi ou dans le jeu, et ça ouvre le menu des boutons du drone sur ton téléphone IRL ».
@@ -792,6 +1003,7 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration. Addon connect mis
 - **Portée de la liaison drone** (retour de TTRD : « la portée est courte, le 4/4 ? ») : réglage admin par défaut 6000 m au lieu de 2500 m (jusqu'à 12 000 m), et la portée maximale du mod Mavic (mavic_setting_maxConnectionDistance) l'emporte si elle est plus grande. Barres plus douces : 4/4 jusqu'à la moitié de la portée (3000 m), 3/4 jusqu'à 71 %, 2/4 jusqu'à 87 %, 1/4 jusqu'au bout (avant : 4/4 seulement jusqu'à 625 m). Derrière le relief, toujours divisée par trois. Même règle pour la flotte et pour le signal des drones Mavic. Un réglage admin déjà enregistré à 2500 m reste à 2500 m : le remonter dans les paramètres CBA.
 - **Boutons sous l'image du drone plus clairs** (retour de TTRD : « pas clair ») : une rangée principale en grands boutons, **PHOTO**, **MARQUER**, **ZOOM -**, **ZOOM +** et **VISION JOUR / NUIT / THERMIQUE**. Une rangée de vol : MONTER, DESCENDRE, STATIONNAIRE, CIBLES, MENUS DU DRONE. Le reste est replié sous **RÉGLAGES** : caméra vers le sol, recentrer, netteté et fermer. Le choix de la vidéo affichée (ex-« IMAGE : DRONE ») quitte l'app Drone, qui montre toujours le drone (retour de TTRD : « c'est pour la carte ») : il est sur la vue drone de la carte (**VIDÉO DU DRONE / DU TÉLÉPHONE / DU CASQUE**, puis **CASQUE DE …** pour choisir le porteur). Plus de titres de groupe CAMÉRA / CIBLES / VOL / AFFICHAGE. Le viseur photo ne change pas.
 - **Performances du flux drone** (retour de TTRD : « le jeu rame ») : l'image du drone arrête d'être rendue 1,5 s après avoir quitté l'écran (avant 3 s), et la caméra est libérée après 20 s (avant 60 s). Toutes les 30 s, le journal Arma (RPT, ligne `[PERF]`) note les images par seconde et les caméras qui rendent dans une texture (drone, aperçu du cliché, viseur photo, live cam, carte JPC) : de quoi voir laquelle coûte, avec Envoyer_mes_logs.bat.
+
 ## Taille de la barre d'outils et style de boussole au choix (ATAK natif 1.49.0)
 
 - Réglages de la carte : taille de la barre d'outils et style de la boussole au choix. Non testé en jeu.
@@ -810,6 +1022,7 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD :
 - **Suppression** (retour de TTRD : impossible de supprimer les clichés du drone) : chaque ligne a son bouton SUPPRIMER (second appui sur CONFIRMER, en rouge), photos du téléphone comme clichés du drone. TOUT SUPPRIMER efface aussi les clichés du drone (fichier et fiche), sauf un cliché en cours d'envoi. Une photo déjà reçue reste sur Athena.
 - **App Photo, viseur noir** (retour de TTRD, de nuit) : la caméra rendue dans l'écran ne s'adapte pas à l'obscurité comme la vue du joueur. Le viseur règle maintenant son gain selon la lumière : normal le jour, éclairci en pénombre, fortement éclairci la nuit (« MODE NUIT » affiché sur l'image). Texture du rendu dans le sens du viseur (paysage). Le journal note l'ouverture et l'arrêt du viseur (lumière, PiP, raison de l'arrêt) pour diagnostiquer un écran encore noir.
 - **App Photo, viseur figé** (retour de TTRD : « on dirait que le visu reste sur place ») : la caméra du viseur restait à l'endroit où l'app avait été ouverte, et le joueur s'y voyait de loin. Elle suit maintenant les yeux du joueur à chaque image (même méthode que le plein écran). Un déclenchement interrompu ne fige plus le viseur plus de 5 s.
+
 ## App JTAC refaite : contrôle CAS réaliste du check-in au BDA (ATAK natif 1.47.0)
 
 Non testé en jeu. Demande de TTRD : « JTAC faut une refonte complète, réaliste de l'app ». Pas de DLL à recompiler, pas de migration.
@@ -933,6 +1146,7 @@ Non testé en jeu. Pas de DLL à recompiler. Côté site : la table `atak_order_
 - Chef d'un groupe de plusieurs joueurs : sa réponse vaut pour tout le groupe (statut mis à jour sur les téléphones des membres, note « Pour le groupe … » sur le site).
 - Rejeu (app AAR) : date et heure réelles de chaque image, début de la session. Clé de mission avec une date lisible (AAAAMMJJHHMM sur deux chiffres).
 - Site : tâches transmises en cartes (étapes Transmis, Vu, Reçu, En cours, Terminé ; réponses de chaque joueur ; filtre En cours, Créées en jeu, Toutes), tâches créées en jeu listées. Rejeux : jour, début, fin et durée de chaque session, heures locales. Fiche personnel et fiche ATAK : temps passé dans chaque rôle.
+
 ## Drone : flux réparé, caméra, titre des clichés, caméra d'un équipier sur la carte (ATAK natif 1.31.0)
 
 Non testé en jeu. Retours de TTRD après le test du 12 octobre au soir. Pas de DLL à recompiler, pas de migration.
@@ -1072,6 +1286,7 @@ Non testé en jeu. `run-migrations.php` à lancer (clé de mission, table des pe
 - Trajets des drones et véhicules (historique déjà stocké) tracés sur la relecture ; temps de vol approximatif par pilote.
 - Pistes et BDA du drone : couche « Contacts vus par drone » sur la carte TOC de /atak (envoi limité : 6 pistes toutes les 5 s, seulement si nouvelles ou déplacées de plus de 50 m).
 - Relèvements GE et détections RF de drones : lignes de relèvement sur la carte sigint.
+
 ## Vague 2026-10-12 — Anglais en option (ATAK natif 1.14.0, non testé en jeu)
 
 ### Nouveau — Langue du téléphone
@@ -1156,6 +1371,7 @@ Non testé en jeu. Inclut les correctifs de performance de la PR #629 (même bas
 - Photo : la souris vise de nouveau en zoom, flash moins violent (rendu délavé), cadres de visée retirés du cliché, interface revue.
 - Mode porté : pastille main + « Ctrl+Maj+U » au lieu de la phrase, masquable.
 - Personnalisation : style d'horloge, thèmes rapides (Opérations, Nuit, Désert, Athena), interrupteurs pastille et recherche.
+
 ## Vague 2026-10-12 — Service Athéna au premier lancement (ATAK natif 1.10.0, Overwatch connect)
 
 ### Nouveau — « Votre unité utilise-t-elle le service Athéna ? »

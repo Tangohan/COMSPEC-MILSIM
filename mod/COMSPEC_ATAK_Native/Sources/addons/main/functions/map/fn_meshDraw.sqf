@@ -1,9 +1,13 @@
 /*
     Calque Wave Relay sur la carte (appelé depuis mapOnDraw), réglage profil COMSPEC_ATAK_MeshOnMap :
     - couverture réseau calculée (fn_relayNet "coverage") : vert débit fort, jaune, orange, rouge faible, gris zone blanche ;
-    - relais (antenne, nom, portée, débit, saturation, batterie) et passerelles de véhicule ou PC mobiles ; relais hors
-      service en gris avec la raison (détruit barré) ; répéteurs reliés en pointillé au relais qui les raccorde ;
     - liens du maillage entre téléphones, vert au-dessus de 60 %, orange au-dessus de 30 %, rouge en dessous.
+    Calque « Relais » (réglage profil COMSPEC_ATAK_RelaysLayer, affiché par défaut, masquable dans CALQUES) : relais et
+    passerelles de véhicule ou PC mobiles en pastille (anneau de couleur sur fond sombre, antenne), nom puis
+    « portée · débit · places » en dessous ; vert : relais utilisé par mon téléphone (trait pointillé vers moi, portée
+    tracée), bleu : disponible, orange : saturé ou batterie faible, gris : hors service avec la raison, rouge barré :
+    détruit ; répéteurs reliés en pointillé au relais qui les raccorde ; portées des autres relais en léger quand on zoome,
+    textes masqués en vue très large.
     Toujours affichées (même calque masqué) : les triangulations récentes (fn_relayNet "locate"), cercles de distance
     estimée depuis chaque source et zone d'incertitude autour de la position trouvée, pâlissant sur 10 min.
     Params : [contrôle carte]
@@ -39,40 +43,6 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
             _map drawRectangle [_p, _a, _a, 0, _col, _fill];
         } forEach _cells;
     };
-    // Relais et passerelles, même hors du maillage (aucun téléphone à portée) : icône, nom, portée, état.
-    // Hors service (détruit, éteint, batterie vide, brouillé, sans liaison) : gris, raison en clair, détruit barré.
-    // Répéteur : trait pointillé vers le relais qui le raccorde au réseau.
-    private _rl = ["list"] call comspec_atak_native_fnc_relayNet;
-    {
-        _x params ["_o", "_ap", "_name", "_kind", "_rng", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "", "_up"];
-        private _p = getPosASLVisual _o;
-        if (!_ok) then {
-            _map drawIcon ["\A3\ui_f\data\map\mapcontrol\transmitter_CA.paa", [0.5, 0.5, 0.5, 0.9], _p, 20, 20, 0, format ["%1 (%2)", _name, _st], 1, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 0), "right"];
-            if (_st isEqualTo "détruit") then { _map drawLine [_p getPos [_r * 1.5, 45], _p getPos [_r * 1.5, 225], [0.9, 0.25, 0.2, 0.9]]; };
-            if (_st in ["éteint", "batterie vide", "brouillé", "sans liaison"]) then { _map drawEllipse [_p, _rng, _rng, 0, [0.5, 0.5, 0.5, 0.35], ""]; };
-            continue;
-        };
-        if (!isNull _up) then {
-            private _q = getPosASLVisual _up;
-            private _len = _p distance2D _q;
-            private _dir = _p getDir _q;
-            for "_k" from 0 to (floor (_len / (_r * 3))) step 2 do {
-                _map drawLine [_p getPos [_k * _r * 3, _dir], _p getPos [((_k + 1) * _r * 3) min _len, _dir], [0.28, 0.70, 1, 0.8]];
-            };
-        };
-        private _sat = _sl > 0 && {_u > _sl};
-        private _col = [[0.28, 0.70, 1, 1], [1, 0.65, 0.2, 1]] select (_sat || {_bt >= 0 && {_bt < 20}});
-        _map drawEllipse [_p, _rng, _rng, 0, [0.28, 0.70, 1, 0.45], ""];
-        private _icon = switch (_kind) do {
-            case "cp": { "\A3\ui_f\data\map\markers\nato\b_hq.paa" };
-            case "gw": { "\A3\ui_f\data\map\markers\nato\b_motor_inf.paa" };
-            default { "\A3\ui_f\data\map\mapcontrol\transmitter_CA.paa" };
-        };
-        private _extra = "";
-        if (_sat) then { _extra = _extra + format [" · saturé %1/%2", _u, _sl]; };
-        if (_bt >= 0) then { _extra = _extra + format [" · batt. %1 %%", round _bt]; };
-        _map drawIcon [_icon, _col, _p, 22, 22, 0, format ["%1 · %2 km · %3 Mbit/s%4", _name, (_rng / 1000) toFixed 1, _mb toFixed 1, _extra], 1, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
-    } forEach _rl;
     // Le calcul (lignes de vue entre antennes) est mis en cache 3 s par l'action « scan ».
     private _mesh = ["scan"] call comspec_atak_native_fnc_waveRelayAction;
     private _nodes = _mesh getOrDefault ["nodes", []];
@@ -93,6 +63,80 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
         // Chef de groupe servant de passerelle faute de relais.
         if (_forEachIndex isEqualTo (_mesh getOrDefault ["gw", -1])) then { _map drawEllipse [_p, _r * 2.2, _r * 2.2, 0, [0.28, 0.70, 1, 1], ""]; };
     } forEach _nodes;
+};
+if (profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true]) then {
+    private _scale = ctrlMapScale _map;
+    private _txt = _scale < 0.25;
+    private _mine = uiNamespace getVariable ["COMSPEC_ATAK_RelayLast", objNull];
+    private _font = COMSPEC_ATAK_FontSet select 0;
+    private _fontB = COMSPEC_ATAK_FontSet select 1;
+    // Ligne sous l'étiquette : même point décalé d'une hauteur de texte à l'écran.
+    private _below = { params ["_p", "_k"]; _map ctrlMapScreenToWorld ((_map ctrlMapWorldToScreen _p) vectorAdd [0, 0.024 * _ts * _k]) };
+    {
+        _x params ["_o", "_ap", "_name", "_kind", "_rng", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "", "_up"];
+        private _p = getPosASLVisual _o;
+        private _use = _ok && {_o isEqualTo _mine};
+        private _sat = _sl > 0 && {_u > _sl};
+        private _col = switch (true) do {
+            case (_st isEqualTo "détruit"): { [0.92, 0.30, 0.25, 1] };
+            case (!_ok): { [0.62, 0.66, 0.64, 1] };
+            case (_use): { [0.36, 0.85, 0.42, 1] };
+            case (_sat || {_bt >= 0 && {_bt < 20}}): { [1, 0.65, 0.2, 1] };
+            default { [0.28, 0.70, 1, 1] };
+        };
+        // Portée : celle du relais utilisé toujours, les autres en léger quand on zoome.
+        if (_ok && {_use || {_scale < 0.12}}) then {
+            _map drawEllipse [_p, _rng, _rng, 0, [_col select 0, _col select 1, _col select 2, [0.18, 0.45] select _use], ""];
+        };
+        if (_st in ["éteint", "batterie vide", "brouillé", "sans liaison"] && {_scale < 0.12}) then {
+            _map drawEllipse [_p, _rng, _rng, 0, [0.5, 0.5, 0.5, 0.25], ""];
+        };
+        // Répéteur : pointillé vers le relais qui le raccorde.
+        if (_ok && {!isNull _up}) then {
+            private _q = getPosASLVisual _up;
+            private _len = _p distance2D _q;
+            private _dir = _p getDir _q;
+            for "_k" from 0 to (floor (_len / (_r * 3))) step 2 do {
+                _map drawLine [_p getPos [_k * _r * 3, _dir], _p getPos [((_k + 1) * _r * 3) min _len, _dir], [0.28, 0.70, 1, 0.7]];
+            };
+        };
+        // Relais utilisé : pointillé de mon téléphone à son antenne.
+        if (_use) then {
+            private _me = getPosASLVisual (vehicle player);
+            private _len = _me distance2D _p;
+            private _dir = _me getDir _p;
+            for "_k" from 0 to (floor (_len / (_r * 2))) step 2 do {
+                _map drawLine [_me getPos [_k * _r * 2, _dir], _me getPos [((_k + 1) * _r * 2) min _len, _dir], [0.36, 0.85, 0.42, 0.75]];
+            };
+        };
+        // Pastille : fond sombre, anneau de couleur (double si utilisé), antenne ou symbole OTAN du véhicule / PC.
+        _map drawEllipse [_p, _r * 1.6, _r * 1.6, 0, [0.04, 0.06, 0.05, 0.82], _fill];
+        _map drawEllipse [_p, _r * 1.6, _r * 1.6, 0, _col, ""];
+        if (_use) then { _map drawEllipse [_p, _r * 2.1, _r * 2.1, 0, _col, ""]; };
+        private _icon = switch (_kind) do {
+            case "cp": { "\A3\ui_f\data\map\markers\nato\b_hq.paa" };
+            case "gw": { "\A3\ui_f\data\map\markers\nato\b_motor_inf.paa" };
+            default { "\A3\ui_f\data\map\mapcontrol\transmitter_CA.paa" };
+        };
+        _map drawIcon [_icon, _col, _p, 15, 15, 0, "", 0, 0, _font, "center"];
+        if (_st isEqualTo "détruit") then {
+            _map drawLine [_p getPos [_r * 2.2, 45], _p getPos [_r * 2.2, 225], _col];
+            _map drawLine [_p getPos [_r * 2.2, 135], _p getPos [_r * 2.2, 315], _col];
+        };
+        if (!_txt) then { continue };
+        // Étiquette : nom (gras), puis « portée · débit · places » ou la raison de la panne.
+        private _lp = _p getPos [_r * 2.4, 90];
+        _map drawIcon [_none, [1, 1, 1, [0.75, 1] select _ok], _lp, 0, 0, 0, _name + (["", "  (utilisé)"] select _use), 2, 0.026 * _ts, _fontB, "right"];
+        private _sub = if (_ok) then {
+            private _e = format ["%1 km · %2 Mbit/s", (_rng / 1000) toFixed 1, _mb toFixed 1];
+            if (_sl > 0) then { _e = _e + format [" · %1/%2", _u, _sl]; };
+            if (_bt >= 0) then { _e = _e + format [" · batt. %1 %%", round _bt]; };
+            private _f = _o getVariable ["COMSPEC_AtakRelayFreq", 0];
+            if (_f isEqualType 0 && {_f > 0}) then { _e = _e + format [" · %1 MHz", _f]; };
+            _e
+        } else { _st };
+        _map drawIcon [_none, [_col select 0, _col select 1, _col select 2, 0.95], [_lp, 1] call _below, 0, 0, 0, _sub, 2, 0.022 * _ts, _font, "right"];
+    } forEach (["list"] call comspec_atak_native_fnc_relayNet);
 };
 private _now = [time, serverTime] select isMultiplayer;
 {

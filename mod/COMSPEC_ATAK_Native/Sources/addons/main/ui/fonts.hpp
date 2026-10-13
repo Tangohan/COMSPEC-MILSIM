@@ -1,7 +1,104 @@
 // Généré par tools/gen_fonts.py (ne pas modifier à la main) : polices embarquées du téléphone (OFL, voir fonts/*/OFL.txt).
 // Chaque taille est appariée à Roboto Condensed du jeu, qui dessine les caractères absents de la police.
 class CfgFontFamilies {
+    // Police par défaut du téléphone : fichiers Roboto Condensed du jeu (mêmes chemins que BCE). Les familles
+    // embarquées plus bas ne servent que si le joueur les choisit (Réglages > Police).
     class COMSPEC_Barlow {
+        fonts[] = {
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed8",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed9",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed10",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed11",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed12",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed13",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed14",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed15",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed16",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed17",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed18",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed19",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed20",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed21",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed22",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed23",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed24",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed25",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed26",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed27",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed28",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed29",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed30",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed31",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed34",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed35",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed37",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed46"
+        };
+    };
+    class COMSPEC_BarlowBold {
+        fonts[] = {
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold9",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold10",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold11",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold12",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold13",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold14",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold15",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold16",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold17",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold18",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold19",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold20",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold21",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold22",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold23",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold24",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold25",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold26",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold27",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold28",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold29",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold30",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold31",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold34",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold35",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold37",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold46"
+        };
+    };
+    class COMSPEC_BarlowLight {
+        fonts[] = {
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed8",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed9",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed10",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed11",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed12",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed13",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed14",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed15",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed16",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed17",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed18",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed19",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed20",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed21",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed22",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed23",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed24",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed25",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed26",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed27",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed28",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed29",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed30",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed31",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed34",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed35",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed37",
+            "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed46"
+        };
+    };
+    class COMSPEC_BarlowC {
         fonts[] = {
             {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Medium8", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed8"},
             {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Medium10", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed10"},
@@ -19,7 +116,7 @@ class CfgFontFamilies {
         spaceWidth = 0.5;
         spacing = 0.065;
     };
-    class COMSPEC_BarlowBold {
+    class COMSPEC_BarlowCBold {
         fonts[] = {
             {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Bold8", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold9"},
             {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Bold10", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold10"},
@@ -37,7 +134,7 @@ class CfgFontFamilies {
         spaceWidth = 0.5;
         spacing = 0.065;
     };
-    class COMSPEC_BarlowLight {
+    class COMSPEC_BarlowCLight {
         fonts[] = {
             {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Regular8", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed8"},
             {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Regular10", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed10"},

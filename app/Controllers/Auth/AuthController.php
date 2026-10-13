@@ -596,8 +596,11 @@ class AuthController
     {
         if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
             Session::flash('error', __('auth.flash_session_expired'));
+            // Plus d'étape en cours : renvoyer directement à la connexion plutôt que
+            // d'enchaîner « Session expirée » puis « Ce code a expiré ».
+            $pending = Session::get('pending_login_security_otp');
 
-            return Response::redirect(url('login/otp'));
+            return Response::redirect(url(is_array($pending) ? 'login/otp' : 'login'));
         }
         $pending = Session::get('pending_login_security_otp');
         if (!is_array($pending) || (int) ($pending['expires_at'] ?? 0) < time()) {

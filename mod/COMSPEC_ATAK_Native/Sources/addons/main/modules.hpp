@@ -317,7 +317,7 @@ class COMSPEC_ATAK_Module_Relay: COMSPEC_ATAK_Module_DataBase {
             tooltip = "$STR_COMSPEC_ATAK_CFG_7DC59FCF07";
             property = "COMSPEC_ATAK_Module_Relay_Kind";
             control = "Combo";
-            expression = "_this setVariable ['Kind',_value,true];";
+            expression = "_this setVariable ['Kind',_value,true]; if (is3DEN) then { ['watch'] call comspec_atak_native_fnc_relayEden; };";
             defaultValue = "'mat'";
             typeName = "STRING";
             class values {
@@ -399,6 +399,22 @@ class COMSPEC_ATAK_Module_Relay: COMSPEC_ATAK_Module_DataBase {
             class values {
                 class V0 { name = "$STR_COMSPEC_ATAK_CFG_0167FC858D"; value = "root"; default = 1; };
                 class V1 { name = "$STR_COMSPEC_ATAK_CFG_92D4E717EB"; value = "repeater"; };
+            };
+        };
+        class Freq {
+            displayName = "$STR_COMSPEC_ATAK_CFG_FREQ_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_FREQ_TIP";
+            property = "COMSPEC_ATAK_Module_Relay_Freq";
+            control = "Combo";
+            expression = "_this setVariable ['Freq',_value,true];";
+            defaultValue = "0";
+            typeName = "NUMBER";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_FREQ_AUTO"; value = 0; default = 1; };
+                class V1 { name = "UHF 400 MHz"; value = 400; };
+                class V2 { name = "L 1,4 GHz"; value = 1400; };
+                class V3 { name = "S 2,4 GHz"; value = 2400; };
+                class V4 { name = "C 4,9 GHz"; value = 4900; };
             };
         };
         class StartOn {

@@ -26,7 +26,14 @@ addMissionEventHandler ["EntityKilled", { params ["_unit", "_killer", "_inst"]; 
     if ((toLower _item) in ([] call comspec_atak_native_fnc_deviceCatalog)) then {
         _container setVariable ["COMSPEC_ATAK_PhoneOwner", _unit, true];
         // Au sol : seul notre S7 couché (un téléphone d'un autre mod est échangé, fn_droppedPhone).
-        if (local _unit && {_unit isEqualTo player}) then { [_container, _item] call comspec_atak_native_fnc_droppedPhone; };
+        if (local _unit && {_unit isEqualTo player}) then {
+            [_container, _item] call comspec_atak_native_fnc_droppedPhone;
+            // Posé au sol : l'IA ennemie peut venir le ramasser (fn_captureServer).
+            if (_container isKindOf "WeaponHolder" || {_container isKindOf "WeaponHolderSimulated"}) then {
+                _container setVariable ["COMSPEC_ATAK_PhoneTag", _unit getVariable ["COMSPEC_ATAK_PhoneTag", []], true];
+                ["comspec_atak_native_captureSrv", ["dropped", [_container]]] call CBA_fnc_serverEvent;
+            };
+        };
     };
 }] call CBA_fnc_addClassEventHandler;
 // Ramassé : on rend l'objet d'origine d'un téléphone échangé au sol.
