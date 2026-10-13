@@ -12,6 +12,7 @@ class RscWebBrowser;
 class RscMapControl;
 class RscHTML;
 class RscControlsGroup;
+class RscCheckBox;
 
 class COMSPEC_RscButton: RscButton {
     access = 0;

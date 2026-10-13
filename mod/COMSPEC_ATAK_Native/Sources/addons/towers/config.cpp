@@ -4,7 +4,7 @@ class CfgPatches {
     class comspec_atak_native_towers {
         name="COMSPEC ATAK Native - Pylônes relais"; author="COMSPEC"; requiredVersion=2.14;
         requiredAddons[]={"comspec_atak_native_main","A3_Structures_F","cba_xeh"};
-        units[]={"COMSPEC_ATAK_RelayTower_30","COMSPEC_ATAK_RelayTower_40","COMSPEC_ATAK_RelayTower_50"}; weapons[]={};
+        units[]={"COMSPEC_ATAK_RelayTower_M12","COMSPEC_ATAK_RelayTower_M20","COMSPEC_ATAK_RelayTower_30","COMSPEC_ATAK_RelayTower_40","COMSPEC_ATAK_RelayTower_50"}; weapons[]={};
     };
 };
 class CfgVehicles {
@@ -47,6 +47,20 @@ class CfgVehicles {
                     class V1 { name="$STR_COMSPEC_ATAK_CFG_92D4E717EB"; value="repeater"; };
                 };
             };
+            // Bande de fréquence (préparation des fréquences par relais : retenue sur le relais, pas encore de brouillage
+            // ni de compatibilité entre bandes). 0 = automatique.
+            class COMSPEC_TowerFreq {
+                displayName="$STR_COMSPEC_ATAK_CFG_FREQ_NAME"; tooltip="$STR_COMSPEC_ATAK_CFG_FREQ_TIP";
+                property="COMSPEC_TowerFreq"; control="Combo"; typeName="NUMBER"; defaultValue="0";
+                expression="_this setVariable ['COMSPEC_TowerFreq', _value, true];";
+                class values {
+                    class V0 { name="$STR_COMSPEC_ATAK_CFG_FREQ_AUTO"; value=0; default=1; };
+                    class V1 { name="UHF 400 MHz"; value=400; };
+                    class V2 { name="L 1,4 GHz"; value=1400; };
+                    class V3 { name="S 2,4 GHz"; value=2400; };
+                    class V4 { name="C 4,9 GHz"; value=4900; };
+                };
+            };
             class COMSPEC_TowerOn {
                 displayName="$STR_COMSPEC_ATAK_CFG_A54A861193"; tooltip="$STR_COMSPEC_ATAK_CFG_3C55341417";
                 property="COMSPEC_TowerOn"; control="Checkbox"; typeName="BOOL"; defaultValue="true";
@@ -57,6 +71,29 @@ class CfgVehicles {
                 property="COMSPEC_TowerIndestructible"; control="Checkbox"; typeName="BOOL"; defaultValue="false";
                 expression="_this setVariable ['COMSPEC_TowerIndestructible', _value, true];";
             };
+        };
+    };
+    // Monopoles (plus petits) : 12 m et 20 m.
+    class COMSPEC_ATAK_RelayTower_M12: COMSPEC_ATAK_RelayTower_Base {
+        scope=2; scopeCurator=2;
+        displayName="$STR_COMSPEC_ATAK_CFG_M12_NAME";
+        model="\z\comspec_atak_native\addons\towers\data\relay_tower_m12.p3d";
+        editorPreview="\z\comspec_atak_native\addons\towers\data\relay_tower_m12_preview.jpg";
+        comspec_atak_relayRange=3000; comspec_atak_relayHeight=11; comspec_atak_relayThroughput=10; comspec_atak_relaySlots=32;
+        armor=300; mapSize=2;
+        class DestructionEffects: DestructionEffects {
+            class Ruin1 { simulation="ruin"; type="\z\comspec_atak_native\addons\towers\data\relay_tower_m12_ruin.p3d"; position=""; intensity=1; interval=1; lifeTime=1; };
+        };
+    };
+    class COMSPEC_ATAK_RelayTower_M20: COMSPEC_ATAK_RelayTower_Base {
+        scope=2; scopeCurator=2;
+        displayName="$STR_COMSPEC_ATAK_CFG_M20_NAME";
+        model="\z\comspec_atak_native\addons\towers\data\relay_tower_m20.p3d";
+        editorPreview="\z\comspec_atak_native\addons\towers\data\relay_tower_m20_preview.jpg";
+        comspec_atak_relayRange=4500; comspec_atak_relayHeight=18; comspec_atak_relayThroughput=15; comspec_atak_relaySlots=48;
+        armor=400; mapSize=3;
+        class DestructionEffects: DestructionEffects {
+            class Ruin1 { simulation="ruin"; type="\z\comspec_atak_native\addons\towers\data\relay_tower_m20_ruin.p3d"; position=""; intensity=1; interval=1; lifeTime=1; };
         };
     };
     class COMSPEC_ATAK_RelayTower_30: COMSPEC_ATAK_RelayTower_Base {
@@ -92,6 +129,8 @@ class CfgVehicles {
             class Ruin1 { simulation="ruin"; type="\z\comspec_atak_native\addons\towers\data\relay_tower_50_ruin.p3d"; position=""; intensity=1; interval=1; lifeTime=1; };
         };
     };
+    class COMSPEC_ATAK_RelayTower_M12_ruins: Ruins_F { scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_M12_RUIN"; model="\z\comspec_atak_native\addons\towers\data\relay_tower_m12_ruin.p3d"; };
+    class COMSPEC_ATAK_RelayTower_M20_ruins: Ruins_F { scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_M20_RUIN"; model="\z\comspec_atak_native\addons\towers\data\relay_tower_m20_ruin.p3d"; };
     class COMSPEC_ATAK_RelayTower_30_ruins: Ruins_F { scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_DB4BE04D53"; model="\z\comspec_atak_native\addons\towers\data\relay_tower_30_ruin.p3d"; };
     class COMSPEC_ATAK_RelayTower_40_ruins: Ruins_F { scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_69F7129E3B"; model="\z\comspec_atak_native\addons\towers\data\relay_tower_40_ruin.p3d"; };
     class COMSPEC_ATAK_RelayTower_50_ruins: Ruins_F { scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_BFA2360137"; model="\z\comspec_atak_native\addons\towers\data\relay_tower_50_ruin.p3d"; };

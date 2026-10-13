@@ -4,7 +4,8 @@ Polices du téléphone au format Arma 3 (.fxy + .paa), sans FontToTga.
 
 Le format a été relevé sur les polices d'ACE3 (addons/fonts) :
   .fxy  = "BIFo" + 01 01 00 00, puis une entrée de 7 entiers 16 bits (petit-boutiste) par caractère, triées par code :
-          code, page (1 = <nom>-01.paa), x, y, largeur, hauteur, avance (pas du curseur)
+          code, page (1 = <nom>-01.paa), x, y, largeur, hauteur, avance (pas du curseur) ; codes sans trou par blocs
+          de 32 alignés (0-31, 32-63…), les absents en entrée vide
   .paa  = planche de glyphes blancs sur fond transparent, côtés en puissances de deux.
 Chaque glyphe occupe une case de la hauteur de ligne (ascendante + descendante), alignée en haut : la ligne de base
 est la même pour tous. Les caractères absents d'une police sont laissés à Roboto Condensed (repli déclaré dans
@@ -72,11 +73,16 @@ def build(name, ttf, size, outdir, hemtt):
     img = Image.new("RGBA", (side, side), (255, 255, 255, 0))
     mask = Image.new("L", (side, side), 0)
     d = ImageDraw.Draw(mask)
-    recs = [(0, 1, 1, 1, 0, 0, 0)]
+    drawn = {}
     for (code, ch, w, adv, lft), (gx, gy) in zip(glyphs, pos):
         if code != 32:
             d.text((gx - lft, gy), ch, font=font, fill=255, anchor="la")
-        recs.append((code, 1, gx, gy, w, lh, adv))
+        drawn[code] = (code, 1, gx, gy, w, lh, adv)
+    # Table continue par blocs de 32 codes alignés, comme les .fxy d'ACE3 (0-351, 992-1087, 8176-8191 : aucun trou
+    # dans un bloc). Une table à trous (0 puis 32…) décale les caractères en jeu (« RÉGLAGES » lu « 2ÉGLAGES », 1.83.0).
+    # Codes absents : entrée vide (largeur et hauteur 0), comme les minuscules de la police d'ACE3.
+    blocks = sorted({c // 32 for c in drawn} | {0})
+    recs = [drawn.get(c, (c, 1, 1, 1, 0, 0, 0)) for b in blocks for c in range(b * 32, b * 32 + 32)]
     img.putalpha(mask)
     base = os.path.join(outdir, f"{name}{size}")
     with open(base + ".fxy", "wb") as f:
@@ -95,17 +101,29 @@ def build(name, ttf, size, outdir, hemtt):
 
 
 # Classes CfgFontFamilies (ui/fonts.hpp) : famille -> (dossier, nom Arma, gras pour le repli Roboto).
-CLASSES = [("COMSPEC_Barlow", "barlow", "BarlowCondensed-Medium", False), ("COMSPEC_BarlowBold", "barlow", "BarlowCondensed-Bold", True),
-           ("COMSPEC_BarlowLight", "barlow", "BarlowCondensed-Regular", False),
+# COMSPEC_Barlow* (classes de config et balises <t font=…>) restent sur Roboto Condensed du jeu (ROBOTO ci-dessous) :
+# la police embarquée ne s'affiche que si le joueur la choisit (Réglages > Police).
+CLASSES = [("COMSPEC_BarlowC", "barlow", "BarlowCondensed-Medium", False), ("COMSPEC_BarlowCBold", "barlow", "BarlowCondensed-Bold", True),
+           ("COMSPEC_BarlowCLight", "barlow", "BarlowCondensed-Regular", False),
            ("COMSPEC_B612", "b612", "B612-Regular", False), ("COMSPEC_B612Bold", "b612", "B612-Bold", True),
            ("COMSPEC_Rajdhani", "rajdhani", "Rajdhani-Medium", False), ("COMSPEC_RajdhaniBold", "rajdhani", "Rajdhani-Bold", True),
            ("COMSPEC_ShareTech", "sharetech", "ShareTech-Regular", False)]
 
 
+ROBOTO_R = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 34, 35, 37, 46]
+ROBOTO = [("COMSPEC_Barlow", "Roboto-Condensed", ROBOTO_R), ("COMSPEC_BarlowBold", "Roboto-Condensed-Bold", ROBOTO_R[1:]),
+          ("COMSPEC_BarlowLight", "Roboto-Condensed", ROBOTO_R)]
+
+
 def write_hpp():
     out = ["// Généré par tools/gen_fonts.py (ne pas modifier à la main) : polices embarquées du téléphone (OFL, voir fonts/*/OFL.txt).",
            "// Chaque taille est appariée à Roboto Condensed du jeu, qui dessine les caractères absents de la police.",
-           "class CfgFontFamilies {"]
+           "class CfgFontFamilies {",
+           "    // Police par défaut du téléphone : fichiers Roboto Condensed du jeu (mêmes chemins que BCE). Les familles",
+           "    // embarquées plus bas ne servent que si le joueur les choisit (Réglages > Police)."]
+    for cls, d, sizes in ROBOTO:
+        rows = [f'"A3\\Uifonts_f\\Data\\Fonts\\{d}\\{d}{n}"' for n in sizes]
+        out.append(f"    class {cls} {{\n        fonts[] = {{\n            " + ",\n            ".join(rows) + "\n        };\n    };")
     for cls, d, name, bold in CLASSES:
         rows = []
         for s in SIZES:

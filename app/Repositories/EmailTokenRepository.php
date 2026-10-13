@@ -61,6 +61,36 @@ class EmailTokenRepository
         return (int) $this->pdo->lastInsertId();
     }
 
+    /**
+     * Jetons encore valides (non consommés, non expirés) d'un utilisateur pour un usage, du plus récent au plus ancien.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function findPendingForUserPurpose(int $userId, string $purpose): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM email_tokens
+             WHERE user_id = ? AND purpose = ? AND consumed_at IS NULL AND expires_at > NOW()
+             ORDER BY id DESC'
+        );
+        $stmt->execute([$userId, $purpose]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /** Ne garde que les `$keep` jetons en attente les plus récents pour cet usage. */
+    public function deleteOlderPendingBeyond(int $userId, string $purpose, int $keep): void
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id FROM email_tokens WHERE user_id = ? AND purpose = ? AND consumed_at IS NULL ORDER BY id DESC'
+        );
+        $stmt->execute([$userId, $purpose]);
+        $ids = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
+        foreach (array_slice($ids, max(0, $keep)) as $id) {
+            $this->deleteById($id);
+        }
+    }
+
     public function findValidByHash(string $tokenHash): ?array
     {
         $stmt = $this->pdo->prepare(

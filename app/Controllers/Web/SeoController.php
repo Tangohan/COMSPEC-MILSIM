@@ -7,15 +7,18 @@ namespace App\Controllers\Web;
 use App\Core\Container;
 use App\Core\Request;
 use App\Core\Response;
+use App\Repositories\CommunityMediaRepository;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\TenantRepository;
 use App\Repositories\UnitRepository;
+use App\Support\Seo;
 
 final class SeoController
 {
     public function robots(Request $request, array $params = []): Response
     {
         $base = rtrim((string) url(''), '/');
+        $prefix = rtrim((string) (parse_url($base, PHP_URL_PATH) ?: ''), '/');
         // Bots de mirroring : Disallow total (complément ; non contraignant pour les scrapers malhonnêtes).
         $mirrorAgents = [
             'HTTrack',
@@ -34,16 +37,21 @@ final class SeoController
             $mirrorBlock .= "User-agent: {$agent}\nDisallow: /\n\n";
         }
 
+        // Espaces membres et outils (même liste que la balise robots des pages, App\Support\Seo).
+        $disallow = '';
+        foreach (Seo::PRIVATE_PREFIXES as $path) {
+            $disallow .= 'Disallow: ' . $prefix . $path . "\n";
+        }
+        $disallow .= 'Disallow: ' . $prefix . "/c/*/forum\n"
+            . 'Disallow: ' . $prefix . "/c/*/enlistment\n"
+            . 'Disallow: ' . $prefix . "/c/*/setup\n"
+            . 'Disallow: ' . $prefix . "/*?*imprimer=\n";
+
         $body = $mirrorBlock
             . "User-agent: *\n"
-            . "Allow: /\n"
-            . "Disallow: /back-office/\n"
-            . "Disallow: /admin/\n"
-            . "Disallow: /api/\n"
-            . "Disallow: /account/\n"
-            . "Disallow: /offline-archive/\n"
-            . "Disallow: /modpacks/\n"
-            . "Sitemap: {$base}/sitemap.xml\n";
+            . 'Allow: ' . $prefix . "/\n"
+            . $disallow
+            . "\nSitemap: {$base}/sitemap.xml\n";
 
         return (new Response())
             ->header('Content-Type', 'text/plain; charset=utf-8')
@@ -54,30 +62,30 @@ final class SeoController
     {
         $base = rtrim((string) url(''), '/');
         $today = gmdate('Y-m-d');
+        // Pages fixes : pas de lastmod (une date « aujourd'hui » à chaque passage fait ignorer le champ par Google).
         $paths = [
             ['/', 'daily', '1.0'],
             ['/communities', 'daily', '0.9'],
             ['/a-propos', 'monthly', '0.8'],
             ['/sse', 'monthly', '0.85'],
             ['/atak-natif', 'monthly', '0.85'],
+            ['/soutenir-atak', 'monthly', '0.6'],
             ['/contact', 'monthly', '0.7'],
             ['/nouveautes', 'weekly', '0.8'],
             ['/register', 'monthly', '0.6'],
-            ['/login', 'monthly', '0.5'],
-            ['/join', 'monthly', '0.6'],
-            ['/recrutement', 'monthly', '0.55'],
+            ['/join', 'monthly', '0.5'],
             ['/mentions-legales', 'yearly', '0.3'],
             ['/donnees-personnelles', 'yearly', '0.3'],
             ['/cookies', 'yearly', '0.3'],
             ['/cgu', 'yearly', '0.3'],
             ['/cgv', 'yearly', '0.3'],
             ['/legal/site', 'yearly', '0.3'],
-            ['/demande-donnees', 'yearly', '0.4'],
+            ['/demande-donnees', 'yearly', '0.3'],
         ];
 
         $urls = [];
         foreach ($paths as [$p, $freq, $prio]) {
-            $urls[] = $this->urlEntry($base . $p, $today, $freq, $prio);
+            $urls[] = $this->urlEntry($p === '/' ? $base . '/' : $base . $p, null, $freq, $prio);
         }
 
         try {
@@ -92,25 +100,44 @@ final class SeoController
             } catch (\Throwable) {
                 $openings = null;
             }
+            $media = null;
+            try {
+                /** @var CommunityMediaRepository $media */
+                $media = Container::get(CommunityMediaRepository::class);
+            } catch (\Throwable) {
+                $media = null;
+            }
 
+            // listForRegistry exclut déjà les communautés masquées de l'annuaire : seules les pages publiques sont listées.
             foreach ($tenants->listForRegistry() as $row) {
                 $slug = trim((string) ($row['slug'] ?? ''));
                 if ($slug === '') {
                     continue;
                 }
                 $enc = rawurlencode($slug);
-                $lastmod = $this->normalizeLastmod($row['updated_at'] ?? $row['created_at'] ?? null) ?? $today;
+                $lastmod = $this->normalizeLastmod($row['updated_at'] ?? $row['created_at'] ?? null);
                 $prio = !empty($row['registry_featured']) ? '0.85' : '0.7';
                 $urls[] = $this->urlEntry($base . '/c/' . $enc, $lastmod, 'weekly', $prio);
-                $urls[] = $this->urlEntry($base . '/c/' . $enc . '/medias', $lastmod, 'weekly', '0.55');
-                $urls[] = $this->urlEntry($base . '/c/' . $enc . '/reels', $lastmod, 'weekly', '0.5');
 
                 $tid = (int) ($row['id'] ?? 0);
                 if ($tid < 1) {
                     continue;
                 }
+                if ($media !== null) {
+                    try {
+                        if ($media->listPublicPageItems($tid) !== []) {
+                            $urls[] = $this->urlEntry($base . '/c/' . $enc . '/medias', $lastmod, 'weekly', '0.55');
+                        }
+                    } catch (\Throwable) {
+                        // Médias indisponibles : continuer.
+                    }
+                }
                 try {
+                    // Unités dont la page publique est activée (show_on_public_page) uniquement.
                     foreach ($units->listPublicForTenant($tid) as $unit) {
+                        if (array_key_exists('show_on_public_page', $unit) && empty($unit['show_on_public_page'])) {
+                            continue;
+                        }
                         $unitSlug = trim((string) ($unit['slug'] ?? ''));
                         if ($unitSlug === '') {
                             continue;
@@ -120,7 +147,7 @@ final class SeoController
                             $base . '/c/' . $enc . '/unite/' . rawurlencode($unitSlug),
                             $unitMod,
                             'weekly',
-                            '0.6'
+                            '0.65'
                         );
                     }
                 } catch (\Throwable) {
@@ -152,7 +179,7 @@ final class SeoController
         }
 
         $xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
-            . "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n"
+            . "<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xhtml=\"http://www.w3.org/1999/xhtml\">\n"
             . implode("\n", $urls)
             . "\n</urlset>";
 
@@ -162,14 +189,19 @@ final class SeoController
             ->setBody($xml);
     }
 
-    private function urlEntry(string $loc, string $lastmod, string $freq, string $prio): string
+    /** Une entrée du sitemap avec ses variantes de langue (fr, en, x-default). */
+    private function urlEntry(string $loc, ?string $lastmod, string $freq, string $prio): string
     {
-        $safeLoc = htmlspecialchars($loc, ENT_QUOTES, 'UTF-8');
-        $safeMod = htmlspecialchars($lastmod, ENT_QUOTES, 'UTF-8');
-        $safeFreq = htmlspecialchars($freq, ENT_QUOTES, 'UTF-8');
-        $safePrio = htmlspecialchars($prio, ENT_QUOTES, 'UTF-8');
+        $esc = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES | ENT_XML1, 'UTF-8');
+        $out = '  <url><loc>' . $esc($loc) . '</loc>';
+        foreach (Seo::alternates($loc) as $lang => $href) {
+            $out .= '<xhtml:link rel="alternate" hreflang="' . $esc($lang) . '" href="' . $esc($href) . '"/>';
+        }
+        if ($lastmod !== null && $lastmod !== '') {
+            $out .= '<lastmod>' . $esc($lastmod) . '</lastmod>';
+        }
 
-        return "  <url><loc>{$safeLoc}</loc><lastmod>{$safeMod}</lastmod><changefreq>{$safeFreq}</changefreq><priority>{$safePrio}</priority></url>";
+        return $out . '<changefreq>' . $esc($freq) . '</changefreq><priority>' . $esc($prio) . '</priority></url>';
     }
 
     private function normalizeLastmod(mixed $value): ?string

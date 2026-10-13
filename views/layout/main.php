@@ -93,6 +93,8 @@ $backOfficeHoverRail = (!empty($isBackOfficeShell) || !empty($isFormationWorkspa
 ?>
 <?php if ($tenantFaviconUrl !== null): ?>
     <link rel="icon" href="<?= htmlspecialchars($tenantFaviconUrl, ENT_QUOTES, 'UTF-8') ?>">
+<?php else: ?>
+    <link rel="icon" type="image/png" sizes="192x192" href="<?= htmlspecialchars($baseUrl) ?>/assets/icons/athena-192.png">
 <?php endif; ?>
 <?php
     $tailwindBaseUrl = $baseUrl;

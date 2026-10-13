@@ -28,6 +28,49 @@
     return '';
   }
 
+  // Localités : le nom sur un fond, sans pastille. Styles injectés ici car la page
+  // Overwatch beta ne charge pas atak.css (même rendu sur toutes les cartes).
+  var PLACE_RANK = { CITY: 0, TOWN: 1, VILLAGE: 2, LANDMARK: 3, OTHER: 3, INTERSECTION: 4 };
+  // Niveaux de zoom au-dessus du minimum de la carte à partir desquels chaque rang s'affiche.
+  var PLACE_MIN_REL_ZOOM = [0, 0, 1, 3, 5];
+
+  function ensurePlaceStyles() {
+    var doc = global.document;
+    if (!doc || doc.getElementById('atak-geo-place-styles')) return;
+    var css = [
+      '.leaflet-marker-icon.atak-geo-place{background:none;border:0;width:0!important;height:0!important;overflow:visible;}',
+      '.atak-geo-place__name{position:absolute;left:0;top:0;transform:translate(-50%,-50%);white-space:nowrap;',
+      'font:600 11px/1.25 "Barlow Condensed","Roboto Condensed","Arial Narrow",system-ui,sans-serif;letter-spacing:.04em;',
+      'color:#eef3f8;background:rgba(10,15,22,.84);border:1px solid rgba(255,255,255,.14);border-radius:3px;',
+      'padding:1px 6px;box-shadow:0 1px 3px rgba(0,0,0,.45);cursor:pointer;pointer-events:auto;}',
+      '.atak-geo-place--city .atak-geo-place__name{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;',
+      'padding:2px 8px;border-color:rgba(244,197,66,.55);color:#fff4cf;}',
+      '.atak-geo-place--town .atak-geo-place__name{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;',
+      'border-color:rgba(232,168,56,.45);color:#fbe9c2;}',
+      '.atak-geo-place--village .atak-geo-place__name{font-size:11.5px;}',
+      '.atak-geo-place--landmark .atak-geo-place__name,.atak-geo-place--other .atak-geo-place__name{font-size:10.5px;font-weight:500;',
+      'font-style:italic;color:#cfe3f2;background:rgba(10,15,22,.66);border-color:rgba(102,204,255,.22);}',
+      '.atak-geo-place.is-culled{display:none!important;}'
+    ].join('');
+    var el = doc.createElement('style');
+    el.id = 'atak-geo-place-styles';
+    el.textContent = css;
+    (doc.head || doc.documentElement).appendChild(el);
+  }
+
+  function placeKind(type) {
+    var t = String(type || 'OTHER').toUpperCase();
+    return PLACE_RANK.hasOwnProperty(t) ? t : 'OTHER';
+  }
+
+  function placeLabelSize(p) {
+    var kind = placeKind(p.type);
+    var name = String(p.name || '');
+    var charW = kind === 'CITY' ? 9.6 : (kind === 'TOWN' ? 8.2 : 6.6);
+    var h = kind === 'CITY' ? 22 : (kind === 'TOWN' ? 19 : 17);
+    return { w: Math.max(24, name.length * charW + 16), h: h };
+  }
+
   function roadStyle(cls) {
     switch (String(cls || 'OTHER').toUpperCase()) {
       case 'HIGHWAY':
@@ -66,6 +109,8 @@
       if (global.ATAKMap && typeof global.ATAKMap.getMap === 'function') {
         state.map = global.ATAKMap.getMap();
       }
+      // Overwatch beta et carte opérationnelle : pas d'ATAKMap, la carte est celle du calque.
+      if (!state.map && layerGroup && layerGroup._map) state.map = layerGroup._map;
       return state.map;
     }
 
@@ -117,23 +162,6 @@
       ).then(function (data) {
         return (data && data.places) || [];
       });
-    }
-
-    function placeColor(type) {
-      switch (type) {
-        case 'CITY': return '#f4c542';
-        case 'TOWN': return '#e8a838';
-        case 'VILLAGE': return '#c9a227';
-        case 'LANDMARK': return '#6cf';
-        case 'INTERSECTION': return '#aaa';
-        default: return '#ccc';
-      }
-    }
-
-    function placeRadius(type) {
-      if (type === 'CITY') return 9;
-      if (type === 'TOWN') return 7;
-      return 5;
     }
 
     function roadDisplayName(seg) {
@@ -224,31 +252,32 @@
       });
     }
 
+    // Rangs visibles selon le zoom, puis on retire les noms qui se chevauchent
+    // (villes d'abord, lieux-dits en dernier) : la carte reste lisible à tout zoom.
     function syncPlaceLabels() {
       var map = resolveMap();
-      var z = map && typeof map.getZoom === 'function' ? map.getZoom() : 0;
-      state.placeMarkers.forEach(function (entry) {
-        var marker = entry.marker;
+      if (!map || typeof map.getZoom !== 'function') return;
+      var rel = map.getZoom() - (typeof map.getMinZoom === 'function' ? (map.getMinZoom() || 0) : 0);
+      var taken = [];
+      var entries = state.placeMarkers.slice().sort(function (a, b) {
+        return PLACE_RANK[placeKind(a.place.type)] - PLACE_RANK[placeKind(b.place.type)];
+      });
+      entries.forEach(function (entry) {
+        var el = entry.marker.getElement ? entry.marker.getElement() : null;
+        if (!el) return;
         var p = entry.place;
-        var showPermanent = z >= PLACE_LABEL_ZOOM && (p.type === 'CITY' || p.type === 'TOWN') && p.name;
-        if (showPermanent) {
-          if (!entry.permanent) {
-            marker.unbindTooltip();
-            marker.bindTooltip(escapeHtml(p.name), {
-              permanent: true,
-              direction: 'top',
-              className: 'atak-geo-place-label',
-              opacity: 0.95,
-            });
-            entry.permanent = true;
+        var show = rel >= PLACE_MIN_REL_ZOOM[PLACE_RANK[placeKind(p.type)]];
+        if (show) {
+          var pt = map.latLngToContainerPoint([p.y, p.x]);
+          var sz = placeLabelSize(p);
+          var box = [pt.x - sz.w / 2 - 3, pt.y - sz.h / 2 - 2, pt.x + sz.w / 2 + 3, pt.y + sz.h / 2 + 2];
+          for (var i = 0; i < taken.length; i++) {
+            var o = taken[i];
+            if (box[0] < o[2] && box[2] > o[0] && box[1] < o[3] && box[3] > o[1]) { show = false; break; }
           }
-        } else if (entry.permanent) {
-          marker.unbindTooltip();
-          if (p.name) {
-            marker.bindTooltip(escapeHtml(p.name), { direction: 'top', opacity: 0.9 });
-          }
-          entry.permanent = false;
+          if (show) taken.push(box);
         }
+        if (show) el.classList.remove('is-culled'); else el.classList.add('is-culled');
       });
       if (state.roadsLayer && typeof state.roadsLayer.eachLayer === 'function') {
         state.roadsLayer.eachLayer(function (layer) {
@@ -271,6 +300,7 @@
       state.roadsLayer.clearLayers();
       state.placeMarkers = [];
       ensureZoomHook();
+      ensurePlaceStyles();
 
       if (state.visible.roads && data.roads && data.roads.length) {
         data.roads.forEach(function (seg) {
@@ -297,19 +327,21 @@
 
       if (state.visible.places && data.places && data.places.length) {
         data.places.forEach(function (p) {
-          var marker = global.L.circleMarker([p.y, p.x], {
-            radius: placeRadius(p.type),
-            color: '#111',
-            fillColor: placeColor(p.type),
-            fillOpacity: 0.85,
-            weight: 1,
+          if (!p.name) return;
+          var kind = placeKind(p.type);
+          var marker = global.L.marker([p.y, p.x], {
+            icon: global.L.divIcon({
+              className: 'atak-geo-place atak-geo-place--' + kind.toLowerCase(),
+              html: '<span class="atak-geo-place__name">' + escapeHtml(p.name) + '</span>',
+              iconSize: [0, 0],
+            }),
+            keyboard: false,
+            riseOnHover: true,
+            zIndexOffset: (4 - PLACE_RANK[kind]) * 10,
           });
-          marker.bindPopup('<strong>' + escapeHtml(p.name || p.type) + '</strong><br>' + escapeHtml(p.type));
-          if (p.name) {
-            marker.bindTooltip(escapeHtml(p.name), { direction: 'top', opacity: 0.9 });
-          }
+          marker.bindPopup('<strong>' + escapeHtml(p.name) + '</strong><br>' + escapeHtml(p.type));
           marker.addTo(state.placesLayer);
-          state.placeMarkers.push({ marker: marker, place: p, permanent: false });
+          state.placeMarkers.push({ marker: marker, place: p });
         });
         if (!mapHasLayer(state.placesLayer)) state.placesLayer.addTo(layerGroup);
         syncPlaceLabels();

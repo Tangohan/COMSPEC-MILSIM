@@ -149,10 +149,10 @@ private _perso = [
     ]],
     ["COMSPEC_ATAK_TextScale", 1, "Taille du texte", [["PETIT", 0.9], ["NORMAL", 1], ["GRAND", 1.15], ["TRÈS GRAND", 1.3]]] call _profSegment,
     // Police : réglage CBA comspec_atak_native_font (aussi dans Options des addons > COMSPEC).
-    ["segment", "Police", [["ROBOTO", "roboto"], ["PURISTA", "purista"]] apply {
+    ["segment", "Police", [["ROBOTO", "roboto"], ["PURISTA", "purista"], ["BARLOW (TEST)", "barlow2"]] apply {
         _x params ["_t", "_v"];
         [_t, compile format ["['comspec_atak_native_font', '%1', false, 'client'] call CBA_settings_fnc_set;", _v], _v isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_FontFam", "roboto"])]
-    }, "Police de tout le téléphone : Roboto Condensed par défaut, ou Purista."],
+    }, "Police de tout le téléphone : Roboto Condensed par défaut, ou Purista. Barlow est en test."],
     ["COMSPEC_ATAK_IconDensity", 0, "Icônes du lanceur", [["GRANDES", -1], ["NORMALES", 0], ["SERRÉES", 1]], "Moins ou plus d'icônes par ligne"] call _profSegment,
     ["section", "Animations et sons", "Un téléphone qui réagit : mouvement, clic et vibration légère, écran de verrouillage"],
     ["COMSPEC_ATAK_Animations", true, "", "Animations", "App qui s'ouvre en zoomant, page qui glisse au retour, onde sous le doigt, volet rapide animé"] call _profSwitch,
@@ -339,19 +339,30 @@ private _athena = [
 ];
 
 // Langue du mod : même réglage que CBA (COMSPEC > Langue / Language, en tête), libellés bilingues ; le changer redessine la page et les menus CBA (fn_langApply).
+// Langues des mods de traduction chargés (fn_langList) : un bouton chacune, entre ENGLISH et AUTO.
 private _langSet = missionNamespace getVariable ["comspec_atak_native_language", "auto"];
-private _lang = [
-    ["section", "Langue / Language", "Langue du téléphone / Phone language"],
-    ["segment", "Langue / Language", [
-        ["FRANÇAIS", { ["comspec_atak_native_language", "fr", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "fr"],
-        ["ENGLISH", { ["comspec_atak_native_language", "en", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "en"],
-        ["AUTO", { ["comspec_atak_native_language", "auto", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "auto"]
-    ], "Auto : langue du jeu / game language. Aussi dans Échap > Options > Options des addons > COMSPEC, en tête de la liste / also at the top of the COMSPEC addon options."]
-];
+private _langs = [] call comspec_atak_native_fnc_langList;
+private _langBtns = [["FRANÇAIS", { ["comspec_atak_native_language", "fr", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "fr"]];
+{
+    _x params ["_code", "_name"];
+    _langBtns pushBack [toUpper _name, compile format ["['comspec_atak_native_language', '%1', 0, 'client'] call CBA_settings_fnc_set;", _code], _langSet isEqualTo _code];
+} forEach _langs;
+_langBtns pushBack ["AUTO", { ["comspec_atak_native_language", "auto", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "auto"];
+// Quatre boutons par ligne au plus (plusieurs mods de traduction chargés) : lignes suivantes sans libellé.
+private _lang = [["section", "Langue / Language", "Langue du téléphone / Phone language"]];
+for "_i" from 0 to ((count _langBtns) - 1) step 4 do {
+    _lang pushBack ["segment", ["", "Langue / Language"] select (_i isEqualTo 0), _langBtns select [_i, 4],
+        ["", "Auto : langue du jeu / game language. Aussi dans Échap > Options > Options des addons > COMSPEC, en tête de la liste / also at the top of the COMSPEC addon options."] select (_i isEqualTo 0)];
+};
+private _langName = switch (true) do {
+    case (_langSet isEqualTo "fr"): { "Français" };
+    case ((_langs findIf { (_x select 0) isEqualTo _langSet }) >= 0): { (_langs select (_langs findIf { (_x select 0) isEqualTo _langSet })) select 1 };
+    default { "Auto" };
+};
 
 // Catégories, façon Android : liste d'accueil, puis une page par catégorie.
 private _cats = [
-    ["LANG", "Langue / Language", ["Français", "English", "Auto"] select (["fr", "en", "auto"] find _langSet), "ui_language", _lang],
+    ["LANG", "Langue / Language", _langName, "ui_language", _lang],
     ["PERSO", "Personnalisation", "Thème, coque, fond d'écran, texte, dock", "ui_palette", _perso],
     ["PLACE", "Emplacement", "Coin, taille et sens du téléphone porté", "ui_rotate", _place],
     ["MAP", "Carte", "Indicatifs, couleurs, grilles, tailles, fond", "app_map", _map],

@@ -25,6 +25,7 @@ class CfgFunctions {
         class guide {
             file = "z\comspec_sse\addons\guide\functions";
             class guideExercise {};
+            class openGuide {};
         };
     };
 };

@@ -1,9 +1,8 @@
-// Généré par tools/gen_fonts.py, puis COMSPEC_Barlow* remis à la main sur Roboto (1.84.0) : polices embarquées du téléphone (OFL, voir fonts/*/OFL.txt).
+// Généré par tools/gen_fonts.py (ne pas modifier à la main) : polices embarquées du téléphone (OFL, voir fonts/*/OFL.txt).
 // Chaque taille est appariée à Roboto Condensed du jeu, qui dessine les caractères absents de la police.
 class CfgFontFamilies {
-    // 1.84.0 : les polices converties (Barlow, B612, Rajdhani, Share Tech) s'affichent mal en jeu (textes coupés,
-    // caractères décalés). En attendant une conversion corrigée, les familles COMSPEC_Barlow* des classes et des
-    // balises <t font=…> pointent sur les fichiers Roboto Condensed du jeu (mêmes chemins que BCE), et seules Roboto et Purista sont proposées.
+    // Police par défaut du téléphone : fichiers Roboto Condensed du jeu (mêmes chemins que BCE). Les familles
+    // embarquées plus bas ne servent que si le joueur les choisit (Réglages > Police).
     class COMSPEC_Barlow {
         fonts[] = {
             "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed8",
@@ -98,6 +97,60 @@ class CfgFontFamilies {
             "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed37",
             "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed46"
         };
+    };
+    class COMSPEC_BarlowC {
+        fonts[] = {
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Medium8", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed8"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Medium10", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed10"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Medium12", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed12"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Medium14", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed14"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Medium16", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed16"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Medium18", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed18"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Medium20", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed20"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Medium22", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed22"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Medium24", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed24"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Medium28", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed28"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Medium34", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed34"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Medium46", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed46"}
+        };
+        spaceWidth = 0.5;
+        spacing = 0.065;
+    };
+    class COMSPEC_BarlowCBold {
+        fonts[] = {
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Bold8", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold9"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Bold10", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold10"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Bold12", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold12"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Bold14", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold14"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Bold16", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold16"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Bold18", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold18"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Bold20", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold20"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Bold22", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold22"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Bold24", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold24"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Bold28", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold28"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Bold34", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold34"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Bold46", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed-Bold\Roboto-Condensed-Bold46"}
+        };
+        spaceWidth = 0.5;
+        spacing = 0.065;
+    };
+    class COMSPEC_BarlowCLight {
+        fonts[] = {
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Regular8", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed8"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Regular10", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed10"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Regular12", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed12"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Regular14", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed14"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Regular16", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed16"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Regular18", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed18"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Regular20", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed20"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Regular22", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed22"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Regular24", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed24"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Regular28", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed28"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Regular34", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed34"},
+            {"\z\comspec_atak_native\addons\main\fonts\barlow\BarlowCondensed-Regular46", "A3\Uifonts_f\Data\Fonts\Roboto-Condensed\Roboto-Condensed46"}
+        };
+        spaceWidth = 0.5;
+        spacing = 0.065;
     };
     class COMSPEC_B612 {
         fonts[] = {

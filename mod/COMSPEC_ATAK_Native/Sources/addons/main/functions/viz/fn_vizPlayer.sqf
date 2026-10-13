@@ -13,6 +13,8 @@ private _l = [] call comspec_atak_native_fnc_layoutGet;
 private _fs = _l get "fontSmall";
 private _font = _l get "font";
 private _pad = (_l get "pad") * 2;
+// COMSPEC_ATAK_Ratio = pixelH / pixelW : largeur (x) d'un carré de hauteur h = h / ratio ; largeur w vue en unités
+// verticales = w * ratio (le jeu donnait une pochette 1,8 fois trop large et le lecteur passait en colonne en paysage).
 private _ratio = (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
 ([] call comspec_atak_native_fnc_accent) params ["_acc"];
 private _m = [] call comspec_atak_native_fnc_musicState;
@@ -43,23 +45,23 @@ private _bigD = _font * 2.3;
 private _skH = _font * 1.2;
 private _infoH = _tH + _sH + _g + _pgH + _tmH + _g + _bigD + _g * 0.7 + _skH;
 // Écran étroit : pochette au-dessus, centrée ; sinon à gauche, à la hauteur du bloc.
-private _stack = (_w / _ratio) < (_hMax * 1.25);
+private _stack = (_w * _ratio) < (_hMax * 1.25);
 private _side = 0;
 private _h = 0;
 if (_stack) then {
-    _side = ((_w * 0.42) / _ratio) min (_hMax * 0.3);
+    _side = ((_w * 0.42) * _ratio) min (_hMax * 0.3);
     if ((_pad * 2 + _side + _g + _infoH) > _hMax * 0.75) then { _side = (_hMax * 0.75 - _pad * 2 - _g - _infoH) max 0; };
     if (_side < _font * 2.5) then { _side = 0; };
     _h = _pad * 2 + ([0, _side + _g] select (_side > 0)) + _infoH;
 } else {
     _h = _infoH + _pad * 2;
-    _side = (_h - _pad * 2) min ((_w * 0.34) / _ratio);
+    _side = (_h - _pad * 2) min ((_w * 0.34) * _ratio);
 };
 private _bg = ["COMSPEC_RscPanel", [_x0, _y0, _w, _h]] call _mk;
 _bg ctrlSetBackgroundColor [0.025, 0.035, 0.03, 0.98];
 
 // Pochette : carré teinté de l'accent, liseré en haut, note au centre, égaliseur en bas.
-private _cw = _side * _ratio;
+private _cw = _side / _ratio;
 private _cx = [_x0 + _pad, _x0 + (_w - _cw) / 2] select _stack;
 private _cy = [_y0 + (_h - _side) / 2, _y0 + _pad] select _stack;
 private _eq = [];
@@ -100,7 +102,7 @@ _track ctrlSetBackgroundColor [0.2, 0.23, 0.22, 1];
 private _fill = ["COMSPEC_RscText", [_rx, _trY, 0, _trH]] call _mk;
 _fill ctrlSetBackgroundColor _acc;
 private _kH = _fs * 0.85;
-private _knob = ["COMSPEC_RscPicture", [_rx - _kH * _ratio / 2, _y + (_pgH - _kH) / 2, _kH * _ratio, _kH], _dir + "ui_dot.paa"] call _mk;
+private _knob = ["COMSPEC_RscPicture", [_rx - _kH / _ratio / 2, _y + (_pgH - _kH) / 2, _kH / _ratio, _kH], _dir + "ui_dot.paa"] call _mk;
 _knob ctrlSetTextColor [0.95, 0.98, 0.96, 1];
 private _segN = 40;
 private _segW = _rw / _segN;
@@ -118,7 +120,7 @@ private _rep = _m get "repeat";
 private _shuffle = _m get "shuffle";
 private _sS = _font * 1.15;
 private _sM = _font * 1.45;
-private _gap = _font * 1.1 * _ratio;
+private _gap = _font * 1.1 / _ratio;
 private _btns = [
     [_sS, ["ui_shuffle", [_dim, _acc] select _shuffle], ["shuffle"] call _act, ["Lecture aléatoire : non", "Lecture aléatoire : oui"] select _shuffle],
     [_sM, ["ui_prev", [0.92, 0.96, 0.93, 1]], ["prev"] call _act, "Précédent (au début du morceau après 5 s)"],
@@ -128,24 +130,24 @@ private _btns = [
         ((createHashMapFromArray [["off", "Répéter : non"], ["all", "Répéter : la file"], ["one", "Répéter : le morceau"]]) getOrDefault [_rep, ""])]
 ];
 private _totW = (count _btns - 1) * _gap;
-{ _totW = _totW + (_x select 0) * _ratio; } forEach _btns;
+{ _totW = _totW + (_x select 0) / _ratio; } forEach _btns;
 private _bx = _rx + (_rw - _totW) / 2;
 private _playPic = controlNull;
 {
     _x params ["_s", "_pic", "_code", "_tip"];
     _pic params ["_img", "_col"];
     private _py = _y + (_bigD - _s) / 2;
-    private _p = ["COMSPEC_RscPicture", [_bx, _py, _s * _ratio, _s], _dir + _img + ".paa"] call _mk;
+    private _p = ["COMSPEC_RscPicture", [_bx, _py, _s / _ratio, _s], _dir + _img + ".paa"] call _mk;
     _p ctrlSetTextColor _col;
     if (_forEachIndex isEqualTo 2) then { _playPic = _p; };
-    private _b = [["COMSPEC_RscButtonOverlay", "COMSPEC_RscButtonInvisible"] select (_forEachIndex isEqualTo 2), [_bx, _py, _s * _ratio, _s]] call _mk;
+    private _b = [["COMSPEC_RscButtonOverlay", "COMSPEC_RscButtonInvisible"] select (_forEachIndex isEqualTo 2), [_bx, _py, _s / _ratio, _s]] call _mk;
     [_b, _code, _tip] call _click;
-    _bx = _bx + _s * _ratio + _gap;
+    _bx = _bx + _s / _ratio + _gap;
 } forEach _btns;
 _y = _y + _bigD + _g * 0.7;
 
 // Sauts et STOP : petits boutons discrets, centrés.
-private _skW = _font * 2.7 * _ratio;
+private _skW = _font * 2.7 / _ratio;
 private _skGap = _pad * 0.4;
 private _sk = [["- 30 S", ["seek", -30] call _act], ["- 10 S", ["seek", -10] call _act], ["STOP", ["stop"] call _act], ["+ 10 S", ["seek", 10] call _act], ["+ 30 S", ["seek", 30] call _act]];
 private _sx = _rx + (_rw - (count _sk) * _skW - ((count _sk) - 1) * _skGap) / 2;

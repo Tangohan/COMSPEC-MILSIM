@@ -6,7 +6,8 @@
                      en service, état ("" | "détruit" | "éteint" | "batterie vide" | "brouillé" | "sans liaison"),
                      téléphones à portée, places (0 = illimité), batterie % (-1 = secteur), raccordé, relais amont du répéteur]...]
                    Variables d'un relais : COMSPEC_AtakRelayRange, Throughput, Name, Height (m, défaut 4), Slots, Side,
-                   On (défaut vrai), Batt et Autonomy (minutes), Root (raccordé par satellite ou fibre, défaut vrai ; sinon
+                   On (défaut vrai), Freq (bande en MHz, 0 = automatique ; retenue pour les fréquences à venir, pas
+                   encore utilisée dans les calculs), Batt et Autonomy (minutes), Root (raccordé par satellite ou fibre, défaut vrai ; sinon
                    répéteur qui doit voir un relais raccordé). Débit : dégâts, brouilleurs, chaîne des répéteurs, saturation.
       "best"     : meilleur relais reçu par le téléphone (fn_linkQuality, page Réseau). Relais utilisé perdu : toast
                    « Relais perdu : X (raison), liaison dégradée » ou « bascule sur Y ».

@@ -45,11 +45,34 @@ private _geoFix = {
         case (isNull _u || {!alive _u}): { "LOST" };
         case !((_e get "qn") in ([_u, "norm"] call comspec_atak_native_fnc_phoneIdent)): { "LOST" };
         case !([_u] call comspec_atak_native_fnc_hasDevice): { "OFF" };
+        // Batterie vide : la carte SIM en mode secours s'annonce encore aux relais (fn_simSos).
+        case (["active", _u] call comspec_atak_native_fnc_simSos): { "SOS" };
         case (isPlayer _u && {!(_u getVariable ["COMSPEC_ATAK_Beacon", true])}): { "OFF" };
         default { "OK" };
     };
     _e set ["status", _st];
     _e set ["checked", time];
+    if (_st isEqualTo "SOS") exitWith {
+        private _fx = ["fix", _u] call comspec_atak_native_fnc_simSos;
+        if (_fx isEqualTo []) exitWith {
+            if (_prev isNotEqualTo "SOSNOREL") then {
+                ["WARNING", format ["GÉOLOC %1 : batterie vide, aucun relais n'entend sa carte SIM. Dernière position conservée", _e get "q"], 5, 40] call comspec_atak_native_fnc_notify;
+            };
+            _e set ["status", "SOSNOREL"];
+            false
+        };
+        _fx params ["_p", "_r", "_n"];
+        _e set ["pos", _p];
+        _e set ["rad", _r];
+        _e set ["t", time];
+        _e set ["hour", _hour];
+        _e set ["relays", _n];
+        if (_prev isNotEqualTo "SOS") then {
+            ["WARNING", format ["GÉOLOC %1 : batterie vide, localisé par la carte SIM en mode secours (%2)", _e get "q",
+                [format ["%1 relais", _n], "antennes"] select (_n isEqualTo 0)], 6, 50] call comspec_atak_native_fnc_notify;
+        };
+        true
+    };
     if (_st isNotEqualTo "OK") exitWith {
         if (_prev isNotEqualTo _st) then {
             ["WARNING", format ["GÉOLOC %1 : %2", _e get "q", ["téléphone éteint ou hors réseau, dernière position conservée", "abonné introuvable (appareil changé ou détruit)"] select (_st isEqualTo "LOST")], 5, 40] call comspec_atak_native_fnc_notify;
@@ -219,7 +242,7 @@ switch (_act) do {
         };
         private _ts = side group _target;
         private _sideKey = switch (_ts) do { case west: { "west" }; case east: { "east" }; case resistance: { "guer" }; default { "civ" }; };
-        if (_ts isEqualTo (side group player) && {_target isNotEqualTo player} && {!(missionNamespace getVariable ["comspec_atak_native_geoloc_own", false])}) exitWith {
+        if (_ts isEqualTo (side group player) && {_target isNotEqualTo player} && {!(missionNamespace getVariable ["comspec_atak_native_geoloc_own", false])} && {!(["ownOk", _target] call comspec_atak_native_fnc_simSos)}) exitWith {
             ["WARNING", "GÉOLOC : numéro de votre camp, traçage non autorisé", 4, 30] call comspec_atak_native_fnc_notify;
         };
         if !(missionNamespace getVariable [format ["comspec_atak_native_geoloc_%1", _sideKey], true]) exitWith {

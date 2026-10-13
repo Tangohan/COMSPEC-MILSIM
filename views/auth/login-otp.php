@@ -153,6 +153,22 @@ $athena_header_current = 'login';
         return;
     }
 
+    // Un seul envoi : l'envoi automatique au 6e chiffre suivi d'un clic sur « Continuer »
+    // (ou de la touche Entrée) postait deux fois le code. Le premier envoi connectait et
+    // renouvelait la session ; le second, parti avec l'ancien cookie, tombait sur
+    // « Session expirée » puis « Ce code a expiré », et le navigateur n'affichait que lui.
+    var submitting = false;
+    var submitBtn = form.querySelector('button[type="submit"]');
+
+    function submitOnce() {
+        if (submitting) return;
+        if (form.requestSubmit) {
+            form.requestSubmit();
+        } else if (form.dispatchEvent(new Event('submit', { cancelable: true }))) {
+            form.submit();
+        }
+    }
+
     function syncHidden() {
         hidden.value = cells.map(function (c) { return (c.value || '').replace(/\D/g, '').slice(0, 1); }).join('');
     }
@@ -175,7 +191,7 @@ $athena_header_current = 'login';
                 syncHidden();
                 focusIndex(digits.length >= 6 ? 5 : Math.max(0, digits.length - 1));
                 if (digits.length === 6) {
-                    form.requestSubmit ? form.requestSubmit() : form.submit();
+                    submitOnce();
                 }
                 return;
             }
@@ -183,7 +199,7 @@ $athena_header_current = 'login';
             syncHidden();
             if (v && idx < 5) focusIndex(idx + 1);
             if (v && idx === 5 && hidden.value.length === 6) {
-                form.requestSubmit ? form.requestSubmit() : form.submit();
+                submitOnce();
             }
         });
 
@@ -214,16 +230,37 @@ $athena_header_current = 'login';
             syncHidden();
             focusIndex(digits.length >= 6 ? 5 : Math.max(0, digits.length - 1));
             if (digits.length === 6) {
-                form.requestSubmit ? form.requestSubmit() : form.submit();
+                submitOnce();
             }
         });
     });
 
     form.addEventListener('submit', function (e) {
         syncHidden();
+        if (submitting) {
+            e.preventDefault();
+            return;
+        }
         if (!/^\d{6}$/.test(hidden.value)) {
             e.preventDefault();
             focusIndex(0);
+            return;
+        }
+        submitting = true;
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.setAttribute('aria-busy', 'true');
+        }
+    });
+
+    // Retour arrière du navigateur (page restaurée depuis le cache) : réautoriser l'envoi.
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted) {
+            submitting = false;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.removeAttribute('aria-busy');
+            }
         }
     });
 

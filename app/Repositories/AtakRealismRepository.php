@@ -1340,6 +1340,28 @@ final class AtakRealismRepository
         return $this->findCertificateById($tenantId, $certificateId);
     }
 
+    /**
+     * Révoque les certificats encore valides d’un terminal (compromission validée sur le terrain).
+     * Retourne le nombre de certificats révoqués.
+     */
+    public function revokeCertificatesForTerminal(int $tenantId, int $terminalId, string $reason = 'keyCompromise'): int
+    {
+        if (!$this->tablesReady() || $tenantId < 1 || $terminalId < 1) {
+            return 0;
+        }
+        $st = $this->pdo->prepare(
+            "UPDATE atak_certificates
+             SET status = 'revoked',
+                 revoked_at = UTC_TIMESTAMP(),
+                 revoked_reason = ?,
+                 updated_at = UTC_TIMESTAMP()
+             WHERE tenant_id = ? AND terminal_id = ? AND status IN ('active', 'issued')"
+        );
+        $st->execute([$this->nullableString($reason, 255), $tenantId, $terminalId]);
+
+        return $st->rowCount();
+    }
+
     public function deleteCertificate(int $tenantId, int $certificateId): bool
     {
         if (!$this->tablesReady() || $tenantId < 1 || $certificateId < 1) {

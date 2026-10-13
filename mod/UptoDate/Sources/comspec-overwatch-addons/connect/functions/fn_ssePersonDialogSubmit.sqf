@@ -497,52 +497,16 @@ if (_photoPending && { _personId isNotEqualTo "" }) then {
         screenshot _stem;
         uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", _stem];
     };
-    ["UploadSsePhoto", "attempt", format ["personne %1 stem=%2", _personId, _stem], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-    // File async : la DLL attend le PNG (jusqu’à ~12 s) hors thread jeu.
     // « face@portrait,q=88 » : le site recadre la capture en portrait et garde la qualité.
     private _angle = uiNamespace getVariable ["COMSPEC_SsePerson_PhotoAngle", "face"];
     if (!(_angle isEqualType "") || {_angle isEqualTo ""}) then { _angle = "face"; };
-    [_personId, _stem, _callsign, _posX, _posY, _posZ, _grid, _angle] spawn {
-        params ["_pid", "_stem", "_cs", "_px", "_py", "_pz", "_gridRef", "_angle"];
-        uiSleep 0.35;
-        if (!isNil "comspec_overwatch_connect_fnc_extResult") then {
-            private _staged = ["COMSPECExtension" callExtension ["StageCapture", [_stem]]] call comspec_overwatch_connect_fnc_extResult;
-            if ((_staged isEqualType "") && {(count _staged) >= 4} && {(_staged select [0, 3]) isEqualTo "OK|"}) then {
-                private _body = trim (_staged select [3, (count _staged) - 3]);
-                if (_body isNotEqualTo "") then { _stem = _body; };
-            };
-        };
-        private _shot = [
-            "COMSPECExtension" callExtension ["UploadSsePhoto", [
-                _pid,
-                _stem,
-                _cs,
-                _angle,
-                _px,
-                _py,
-                _pz,
-                "Photo du visage",
-                _gridRef
-            ]]
-        ] call comspec_overwatch_connect_fnc_extResult;
-        private _parsed = [_shot] call comspec_overwatch_connect_fnc_parseAtakExtResponse;
-        _parsed params ["_ok", "_status", "_detail"];
-        private _u = toUpper (str _shot);
-        if (!_ok && { ((_u find "OK|QUEUED") == 0) || {(_u find "OK|DUPLICATE") == 0} }) then { _ok = true; };
-        if (!_ok) then {
-            ["UploadSsePhoto", "fail", _shot, _shot, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-            [
-                "Fiche enregistrée, mais la photo du visage n’a pas pu être mise en file — refaites PHOTO DU VISAGE puis retransmettez si besoin.",
-                "tactical",
-                "warn"
-            ] call comspec_overwatch_connect_fnc_announce;
-        } else {
-            ["UploadSsePhoto", "ok", format ["personne %1 · %2", _pid, _detail], nil, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
-        };
-        uiNamespace setVariable ["COMSPEC_SsePerson_PhotoPending", false];
-        uiNamespace setVariable ["COMSPEC_SsePerson_PhotoStem", ""];
-        uiNamespace setVariable ["COMSPEC_SsePerson_PhotoAngle", "face"];
-    };
+    [_personId, _stem, _callsign, _posX, _posY, _posZ, _grid, _angle, _target] call comspec_overwatch_connect_fnc_sseUploadFacePhoto;
+};
+
+// Identifiant Athena de la fiche : une photo prise plus tard sur ce sujet part tout de suite
+// sur la même fiche (fn_sseCaptureFacePhoto), sans retransmettre la fiche entière.
+if (!isNull _target && {_personId isNotEqualTo ""}) then {
+    _target setVariable ["comspec_sse_athenaPersonId", _personId];
 };
 
 ["Personne enregistrée — fiche transmise au poste de commandement.", "tactical", "info"] call comspec_overwatch_connect_fnc_announce;

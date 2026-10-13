@@ -9,7 +9,9 @@ params [["_fam", missionNamespace getVariable ["comspec_atak_native_font", "robo
 // COMSPEC_Barlow* = Roboto Condensed du jeu (ui/fonts.hpp), comme les classes de config.
 private _sets = createHashMapFromArray [
     ["roboto", ["COMSPEC_Barlow", "COMSPEC_BarlowBold", "COMSPEC_BarlowLight"]],
-    ["purista", ["PuristaMedium", "PuristaSemibold", "PuristaLight"]]
+    ["purista", ["PuristaMedium", "PuristaSemibold", "PuristaLight"]],
+    // Barlow Condensed embarquée (tools/gen_fonts.py), en test sous un nouveau nom (barlow2) : un ancien choix « barlow » de la 1.83.0, mal affichée en jeu, ne la réactive pas.
+    ["barlow2", ["COMSPEC_BarlowC", "COMSPEC_BarlowCBold", "COMSPEC_BarlowCLight"]]
 ];
 if !(_fam in _sets) then { _fam = "roboto"; };
 COMSPEC_ATAK_FontFam = _fam;
