@@ -108,6 +108,30 @@ EN : No more INFO banner repeating on the map
 ### Détail technique
 - Retour de TTRD (13/10) : « INFO · TA1 · 1519 1729 » en boucle. fn_inspectorUpdate envoyait la notification à chaque rendu en mode mini avec une unité sélectionnée ; fn_statusUpdate le rappelle chaque seconde (panneau SITUATION ouvert) et la grille change quand l'unité bouge, donc l'anti-doublon de fn_notify ne jouait pas.
 - La notification part désormais de fn_mapSelect, une fois par clic. Non testé en jeu.
+## App Plan : le plan de briefing visible sur le site et sur la carte du téléphone (ATAK natif 1.92.0, COMSPEC Link 2.0.84)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le plan de briefing s'affiche sur le site et sur la carte du téléphone
+- Les zones, lignes et points du plan partagé de l'app Plan apparaissent sur la carte Athena du site, dans un nouveau calque « Plan de briefing » (lecture seule, réglable dans les préférences de la carte).
+- Sur le téléphone, le plan partagé et votre brouillon sont maintenant affichés par défaut sur l'app Carte, sous les unités (réglage dans Plan, vue PLANS).
+- Sur un serveur sans le mod ATAK natif (pas de plan partagé), votre brouillon apparaît sur le site comme plan personnel.
+- Clic droit dans la carte du Plan : termine le trait ou la zone en cours, quitte l'outil, ou retire la sélection.
+EN : The briefing plan now shows on the website and on the phone's map
+- Areas, lines and points of the shared plan from the Plan app appear on the Athena website map, in a new "Briefing plan" layer (read only, can be turned off in the map preferences).
+- On the phone, the shared plan and your draft now show by default on the Map app, under the units (setting in Plan, PLANS view).
+- The PLANS view tells you whether the plan reached the website.
+- On a server without the native ATAK mod (no shared plan), your draft shows on the website as a personal plan.
+- Right click on the Plan map: finishes the line or area being drawn, leaves the tool, or clears the selection.
+
+### Détail technique
+- Le serveur note dans `COMSPEC_ATAK_Plan_<camp>` l'UID de l'auteur de chaque modification (4e champ). `fn_planWeb` (toutes les 5 s) : l'auteur envoie tout le plan à Athena par COMSPEC Link `BriefingPlan.Push` (POST `/api/atak/briefing-plan`) ; sans confirmation après 30 à 60 s, un autre téléphone du camp relié l'envoie. Révision confirmée partagée (`COMSPEC_ATAK_PlanWeb_<camp>`) : un seul envoi par révision. Tracés à main levée allégés à 6000 sommets pour tout le plan.
+- Site : table `atak_briefing_plans` (une ligne par carte et par camp, créée aussi à la première écriture), GET `/api/atak/briefing-plan` (plans des 12 dernières heures), calque Leaflet `atak-briefing-plan.js` (zones remplies, lignes de phase étiquetées, flèches, points), préférence `showBriefingPlan`.
+- Calque Plan de la carte du téléphone : nouvelle préférence `COMSPEC_ATAK_PlanOnMap2`, active par défaut, avec le brouillon local plus pâle.
+- Brouillons et plans enregistrés restent personnels : ils arrivent sur le site une fois publiés dans le plan partagé. Exception : serveur sans le mod natif (`COMSPEC_ATAK_PlanSrvOn` absent), chaque joueur envoie son brouillon (`owner` = UID, une ligne par joueur).
+- Clic droit de la carte du Plan : le relâchement n'arrivait pas toujours à la carte ; il est aussi détecté par `inputMouse 1` (premier des deux, traité une fois, événement `rclick`).
+
+---
 
 ## Drone : bouton TEST VIDÉO pour l'image noire du téléphone (ATAK natif 1.90.0)
 

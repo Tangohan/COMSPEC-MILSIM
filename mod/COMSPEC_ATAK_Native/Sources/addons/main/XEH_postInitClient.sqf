@@ -653,6 +653,8 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 }] call CBA_fnc_addEventHandler;
 // Escouades et équipes de feu vers Athena (rapporteur du groupe seulement, si quelque chose a changé).
 [{ [] call comspec_atak_native_fnc_squadSync; }, 30] call CBA_fnc_addPerFrameHandler;
+// Plan de briefing partagé vers la carte du site (auteur de la modification, sinon un autre téléphone relié).
+[{ ["tick"] call comspec_atak_native_fnc_planWeb; }, 5] call CBA_fnc_addPerFrameHandler;
 // Temps d'écran et temps par rôle (envoi à Athena toutes les 5 min et en fin de mission).
 [{ ["tick"] call comspec_atak_native_fnc_screenTime; }, 5] call CBA_fnc_addPerFrameHandler;
 addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; }];
