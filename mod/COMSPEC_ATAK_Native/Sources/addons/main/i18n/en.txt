@@ -519,6 +519,8 @@
 ["@cap", "@hdg"],
 ["@grille", "@grid"],
 ["@heure", "@time"],
+["Désactivée par défaut. Cochée : la marque COMSPEC et un trait vert s'affichent sur l'écran de démarrage d'Arma. Pris en compte au prochain lancement du jeu.", "Off by default. When ticked, the COMSPEC mark and a green line show on the Arma startup screen. Applies from the next game launch."],
+["Intro au démarrage", "Startup intro"],
 ["[ATAK] Message de %1", "[ATAK] Message from %1"],
 ["[COMSPEC ATAK NATIVE][INFO][EXT] COMSPEC Link présent : session Athena partagée, DLL native non initialisée", "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPEC Link present: Athena session shared, native DLL not initialized"],
 ["[CONFIDENTIEL]", "[CONFIDENTIAL]"],
