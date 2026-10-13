@@ -11,6 +11,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## App JTAC : formulaire 9-LINE lisible (ATAK natif 1.63.0)
+
+Non testé en jeu. Demande de TTRD : « Ça faut améliorer le JTAC » (capture du 9-LINE). Pas de DLL à recompiler, pas de migration.
+- Les neuf lignes et les remarques sont des rangées de même hauteur : numéro en pastille, libellé lisible à gauche, valeur à droite. Les valeurs calculées sont en couleur d'accent, une valeur manquante dit quoi faire (« pointez l'IP », « verrouillez la cible »), les amis passent en rouge en DANGER CLOSE.
+- Les champs à saisir (IP, description, dégagement, axe final, menaces, initiales) sont dans la colonne valeur, avec l'aide en gris sous le libellé, au lieu des grandes cases vides sous des légendes en petite police.
+- « IP → cible » s'affichait barré (la police du jeu n'a pas la flèche) : « IP vers cible ». Le 9-LINE reçu côté équipage a la même mise en page.
+- À vérifier en jeu : onglet BRIEF en portrait et en paysage, saisie dans les champs (texte gardé après un redessin), lisibilité de nuit, vue ÉQUIPAGE.
+
 ## Intro au démarrage : plus de conflit avec le menu, nouveau son (ATAK natif 1.62.0)
 
 - L'intro ne pose plus de fond noir plein écran : l'écran de démarrage d'Arma ou d'un pack d'unité reste visible. La marque COMSPEC apparaît en bas à droite avec un trait de balayage, en animations moteur (plus rien ne reste figé à l'écran pendant le chargement).

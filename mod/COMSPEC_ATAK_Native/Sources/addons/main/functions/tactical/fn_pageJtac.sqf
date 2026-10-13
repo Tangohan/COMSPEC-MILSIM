@@ -70,8 +70,8 @@ if (_view isEqualTo "PILOT") exitWith {
     _rows pushBack ["text", format ["<t size='0.8'>%1</t>", [_p] call _chips]];
     _rows pushBack ["section", "9-LINE reçu", ""];
     {
-        _rows pushBack ["info", _x, format ["<t font='EtelkaMonospacePro'>%1</t>", _lines param [_forEachIndex, "-"]]];
-    } forEach ["1. IP / BP", "2. Cap", "3. Distance", "4. Altitude", "5. Description", "6. Position", "7. Marquage", "8. Amis", "9. Dégagement"];
+        _rows pushBack ["line", str (_forEachIndex + 1), _x, _lines param [_forEachIndex, "-"], "auto", "", "-"];
+    } forEach ["IP / BP", "Cap IP vers cible", "Distance IP vers cible", "Altitude cible", "Description", "Position", "Marquage", "Amis", "Dégagement"];
     if (_rem isNotEqualTo "") then { _rows pushBack ["text", format ["<t size='0.85' color='%1'>Remarques : </t><t size='0.85'>%2</t>", _grey, _rem]]; };
     if ((count _tpos) >= 2) then {
         private _dd = _veh distance2D _tpos;
@@ -138,24 +138,25 @@ switch (_tab) do {
         // 9-LINE.
         private _ln = _b get "lines";
         _rows pushBack ["section", "9-LINE", ["Lignes 2, 3, 4, 6, 7 et 8 calculées", "Verrouillez d'abord une cible (SITUATION)"] select (!_hasT)];
-        _rows pushBack ["edit", "jIp", "1. IP / BP (nom du point initial)", _s getOrDefault ["jIp", ""]];
-        _rows pushBack ["buttons", [["IP SUR LA CARTE", ["pick", "ip"] call _act]]];
-        _rows pushBack ["info", "2. Cap IP → cible", _ln select 1];
-        _rows pushBack ["info", "3. Distance IP → cible", _ln select 2];
-        _rows pushBack ["info", "4. Altitude de la cible", _ln select 3];
-        _rows pushBack ["edit", "j5", "5. Description (nombre, type, posture)", _s getOrDefault ["j5", ""]];
-        _rows pushBack ["info", "6. Position", format ["<t font='EtelkaMonospacePro'>%1</t>", _ln select 5]];
-        _rows pushBack ["info", "7. Marquage", _ln select 6];
-        _rows pushBack ["info", "8. Amis", format ["<t color='%1'>%2</t>", [_green, _red] select (_b get "dc"), _ln select 7]];
-        _rows pushBack ["edit", "j9", "9. Dégagement (direction, altitude, point de retour)", _s getOrDefault ["j9", ""]];
+        private _dcOn = _b get "dc";
+        _rows pushBack ["line", "1", "IP / BP", _s getOrDefault ["jIp", ""], "edit", "jIp", "nom du point initial"];
+        _rows pushBack ["buttons", [["POINTER L'IP SUR LA CARTE", ["pick", "ip"] call _act]]];
+        _rows pushBack ["line", "2", "Cap IP vers cible", _ln select 1, "auto", "", "pointez l'IP"];
+        _rows pushBack ["line", "3", "Distance IP vers cible", _ln select 2, "auto", "", "pointez l'IP"];
+        _rows pushBack ["line", "4", "Altitude cible", _ln select 3, "auto", "", "verrouillez la cible"];
+        _rows pushBack ["line", "5", "Description", _s getOrDefault ["j5", ""], "edit", "j5", "nombre, type, posture"];
+        _rows pushBack ["line", "6", "Position", _ln select 5, "auto", "", "verrouillez la cible"];
+        _rows pushBack ["line", "7", "Marquage", _ln select 6, "auto", "", ""];
+        _rows pushBack ["line", "8", "Amis", _ln select 7, ["auto", "warn"] select _dcOn, "", "verrouillez la cible"];
+        _rows pushBack ["line", "9", "Dégagement", _s getOrDefault ["j9", ""], "edit", "j9", "direction, altitude, point de retour"];
         // Remarques et restrictions.
-        _rows pushBack ["section", "Remarques et restrictions", ""];
-        _rows pushBack ["edit", "jFah", "Axe final d'attaque (FAH), ex. 270, 250-290 ou 270 ± 15", _s getOrDefault ["jFah", ""]];
-        if ((_b get "ltl") isNotEqualTo "") then { _rows pushBack ["info", "Ligne laser-cible (LTL)", _b get "ltl"]; };
-        _rows pushBack ["edit", "jThreat", "Menaces (sol-air, armes légères…)", _s getOrDefault ["jThreat", ""]];
-        if (_b get "dc") then {
+        _rows pushBack ["section", "Remarques et restrictions", "Valeurs en couleur : calculées"];
+        _rows pushBack ["line", "", "Axe final (FAH)", _s getOrDefault ["jFah", ""], "edit", "jFah", "270, 250-290 ou 270 ± 15"];
+        if ((_b get "ltl") isNotEqualTo "") then { _rows pushBack ["line", "", "Ligne laser-cible", _b get "ltl", "auto", "", ""]; };
+        _rows pushBack ["line", "", "Menaces", _s getOrDefault ["jThreat", ""], "edit", "jThreat", "sol-air, armes légères"];
+        if (_dcOn) then {
             _rows pushBack ["text", format ["<t color='%1' font='RobotoCondensedBold'>DANGER CLOSE</t><t size='0.85'> : amis à %2 m de la cible, sous la distance de risque de l'armement (%3 m, indicatif). Le chef au sol accepte le risque et donne ses initiales.</t>", _red, (_b get "friend") select 0, _b get "risk"]];
-            _rows pushBack ["edit", "jDc", "Initiales du chef qui accepte le risque", _s getOrDefault ["jDc", ""]];
+            _rows pushBack ["line", "", "Initiales du chef", _s getOrDefault ["jDc", ""], "edit", "jDc", "accepte le risque"];
         };
         _rows pushBack ["text", format ["<t size='0.85' color='%1'>Remarques transmises : </t><t size='0.85'>%2</t>", _grey, _b get "remarks"]];
         private _miss = _b get "missing";
