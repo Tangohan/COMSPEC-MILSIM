@@ -664,6 +664,13 @@ if ($atakMapConfig) {
             <span>Afficher les repères de planification sur la carte</span>
           </span>
         </label>
+        <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-briefing-plan">
+          <span class="atak-sound-pref-key">Plan de briefing</span>
+          <span class="atak-sound-pref-check">
+            <input type="checkbox" id="atak-show-briefing-plan" checked />
+            <span>Afficher les zones, lignes et points dessinés dans l'app Plan du téléphone</span>
+          </span>
+        </label>
         <label class="atak-sound-pref-label atak-sound-pref-label--check" for="atak-show-drone-contacts">
           <span class="atak-sound-pref-key">Contacts vus par drone</span>
           <span class="atak-sound-pref-check">
@@ -3322,6 +3329,7 @@ if ($atakMapConfig) {
   <script src="<?= $base ?>/assets/js/atak-sse-layers.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-mission-plan.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-mission-overlay.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
+  <script src="<?= $base ?>/assets/js/atak-briefing-plan.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-map-tools.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-socket.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>
   <script src="<?= $base ?>/assets/js/atak-web-log.js?v=<?= htmlspecialchars($assetVer, ENT_QUOTES, 'UTF-8') ?>"></script>

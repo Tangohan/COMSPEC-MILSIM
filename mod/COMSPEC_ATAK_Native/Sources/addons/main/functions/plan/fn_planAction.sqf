@@ -159,7 +159,7 @@ switch (_act) do {
     case "target": { _ui set ["target", ["S", "D"] select ((_ui get "target") isEqualTo "S")]; call _rerender; };
     case "view": { _ui set ["view", _arg]; call _rerender; };
     case "layer": {
-        profileNamespace setVariable ["COMSPEC_ATAK_PlanOnMap", !(profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap", false])];
+        profileNamespace setVariable ["COMSPEC_ATAK_PlanOnMap2", !(profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true])];
         saveProfileNamespace;
         call _rerender;
     };
