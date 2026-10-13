@@ -5,7 +5,7 @@
     de contrôles dans dialogs\base.hpp. Les anciens alias SSE_UI_* restent
     définis pour les écrans tiers qui les utiliseraient encore.
 */
-#include "\z\comspec_sse\addons\ui\ui_macros.hpp"
+#include "..\ui_macros.hpp"
 
 #define SSE_UI_BG SSE_C_BG
 #define SSE_UI_HDR SSE_C_HEADER

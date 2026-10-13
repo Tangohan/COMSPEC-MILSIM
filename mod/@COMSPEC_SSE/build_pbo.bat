@@ -25,6 +25,9 @@ if not exist "%BUILDER_PATH%" (
 if exist "%TMP_DIR%" rd /s /q "%TMP_DIR%"
 mkdir "%TMP_DIR%"
 
+REM Copies locales des en-tetes partages (pas d'#include entre PBO dans les config.cpp)
+where python >nul 2>&1 && python "%PROJECT_DIR%tools\sync_headers.py"
+
 set "COMPONENTS=main core generator evidence intel interaction zeus eden ui network digital biometrics analysis campaign guide compat_bii compat_ace compat_atak"
 REM debug optionnel : build_pbo.bat debug
 if /I "%~1"=="debug" set "COMPONENTS=main debug core generator evidence intel interaction zeus eden ui network digital biometrics analysis campaign guide compat_bii compat_ace compat_atak"

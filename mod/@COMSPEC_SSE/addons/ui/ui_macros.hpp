@@ -3,8 +3,9 @@
 
     Inclus par :
       - addons\ui\dialogs\base.hpp      (classes de contrôles COMSPEC_SSE_Rsc*)
-      - addons\zeus\config.cpp          (dialogues Zeus)
-    Chemin absolu : #include "\z\comspec_sse\addons\ui\ui_macros.hpp"
+      - addons\zeus\config.cpp, addons\analysis\config.cpp (copies locales)
+    Pas d'#include vers un autre PBO dans un config.cpp : zeus et analysis
+    embarquent une copie, régénérée par tools\sync_headers.py.
 
     Grille : 40 x 25 cases centrées dans la safeZone, largeur bornée à 1.2
     (même principe que GUI_GRID_CENTER de BI). Elle suit la taille d'interface
