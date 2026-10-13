@@ -11,12 +11,37 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Traduction 2026-10-13 — Noms d'objets et modules Eden/Zeus du SSE en anglais (ATAK natif 1.57.0)
+## Traduction 2026-10-13 — Noms d'objets et modules Eden/Zeus du SSE en anglais (ATAK natif 1.58.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : tout traduire sauf les journaux.
 - Mod SSE : 570 textes de config (noms d'objets, modules et attributs Eden, modules Zeus SEEK, catégories) passent par `addons/main/stringtable.xml` (clés `$STR_COMSPEC_SSE_CFG_*`, anglais et français). Ces textes suivent la langue du jeu, comme tout texte de config Arma.
 - `tools/i18n.py --sse stringtable` ; dictionnaire partagé enrichi (environ 370 traductions). PBO du SSE concernés repaquetés.
 - Les journaux techniques restent en français.
+## Relais du réseau ATAK : module Eden/Zeus, tutoriel, passerelles de véhicule coupées (ATAK natif 1.57.0)
+
+Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : améliorer les relais, un tuto dans Eden, couper par défaut les relais véhicule / mât de commandement.
+- Passerelles de véhicule et PC mobile à mât : nouveau réglage serveur « Passerelles de véhicule et PC mobile », **désactivé par défaut** (plus d'action ACE, celles ouvertes se referment). Un véhicule relais voulu par la mission se fait avec le module synchronisé au véhicule.
+- Nouveau module Eden et Zeus **ATAK · Relais** (catégorie COMSPEC — ATAK · Réseau) : le cercle du module dans Eden est la portée ; types radio portable, mât tactique, tour fixe, terminal satellite ; camp, débit, hauteur d'antenne, places, alimentation (secteur par défaut : un relais posé sur la carte n'a pas de batterie ; batterie seulement si la mission la choisit), liaison raccordée ou répéteur, allumé, indestructible, relais obligatoires. Objet synchronisé ou lâché dessus en Zeus = équipé, sinon l'objet du type est créé.
+- Tutoriel : description du module dans Eden, infobulles des attributs et page « Relais du réseau ATAK » du manuel de terrain (Aide > Manuel de terrain).
+- Relais plus réalistes : hauteur d'antenne pour le relief, répéteurs qui doivent voir un relais raccordé (sinon « sans liaison »), débit partagé au-delà des places, batterie qui se vide, brouilleurs, relais réservés à un camp. Le téléphone prend le meilleur relais reçu (plus le seul plus proche).
+- Perte du relais utilisé (détruit, coupé, batterie vide, brouillé, sans liaison, hors de portée) : toast sur le téléphone « Relais perdu : X (raison), liaison dégradée » ou « bascule sur Y » (notification si le téléphone est fermé).
+- ACE sur le relais : état, couper, allumer, changer la batterie. Carte et app Wave Relay : état de chaque relais (éteint, batterie vide, brouillé, sans liaison, saturé), répéteurs reliés en pointillé à leur relais.
+
+À vérifier en jeu :
+- Eden : module ATAK · Relais visible, cercle étirable, description et infobulles lisibles ; manuel de terrain.
+- Mission sans module : ACE « Passerelle ATAK » absent sur les véhicules ; avec le réglage coché, il revient.
+- Un raccordé et deux répéteurs en chaîne : le dernier s'éteint quand on coupe celui du milieu (ACE), la carte le dit.
+- Relais posé sans toucher à l'alimentation : sur secteur, pas de batterie ni d'action « Changer la batterie ».
+- Batterie 1 h choisie : la charge baisse, à vide le relais tombe ; « Changer la batterie » le relance.
+- Couper (ACE) le relais qu'on utilise : toast sur le téléphone.
+- Plus de joueurs que de places : débit partagé dans l'app Réseau et l'app Wave Relay.
+
+## Réalisme 2026-10-13 — Balise IR du téléphone supprimée (ATAK natif 1.56.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : la balise IR intégrée à la coque n'était pas réaliste, à enlever complètement.
+- Plus de balise IR sur le téléphone : tuile du volet rapide, interrupteur des Réglages, actions ACE « Allumer / Éteindre la balise IR », emplacement de l'établi (Accessoires) et consommation sur la batterie retirés. Pour marquer un joueur aux JVN : la balise IR d'ACE ou les grenades IR du jeu, comme avant le téléphone.
+- Dos du téléphone (Voir l'arrière, établi, gilet, tablette JPC) redessiné sans le boîtier IR.
+- Établi : cinq emplacements (3 + 2) au lieu de six.
 
 ## Traduction 2026-10-13 — Mod SSE et menus CBA d'Overwatch connect en anglais (ATAK natif 1.55.0)
 

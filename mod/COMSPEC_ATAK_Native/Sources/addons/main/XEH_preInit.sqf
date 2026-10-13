@@ -134,6 +134,9 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_net_sim", "CHECKBOX",
     ["Débit réseau simulé", "Bâtiments, relief, véhicule, météo, brouilleurs, relais et dégâts réduisent le débit : messages et photos partent avec un délai, se perdent et repartent, ou attendent le retour du réseau."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_vehicle_gateways", "CHECKBOX",
+    ["Passerelles de véhicule et PC mobile", "Permet à l'équipage de faire de n'importe quel véhicule un relais ATAK (4 km) ou un poste de commandement à mât (10 km). Désactivé par défaut, peu réaliste : seuls les relais posés par la mission (module Eden ou Zeus « ATAK · Relais ») portent le réseau."],
+    _sim, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_aar", "CHECKBOX",
     ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s (et les pertes amies) pour l'app Rejeu. Décocher pour ne rien enregistrer."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;

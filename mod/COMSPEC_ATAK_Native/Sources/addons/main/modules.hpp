@@ -286,3 +286,150 @@ class COMSPEC_ATAK_Module_DatingProfile: COMSPEC_ATAK_Module_DataBase {
     portrait = "\z\comspec_atak_native\addons\main\data\app_dating.paa";
     function = "comspec_atak_native_fnc_moduleDating";
 };
+// Réseau : relais ATAK posé par la mission (fn_moduleRelay). Le cercle du module dans Eden est la portée.
+class COMSPEC_ATAK_Module_Relay: COMSPEC_ATAK_Module_DataBase {
+    scope = 2;
+    scopeCurator = 2;
+    category = "COMSPEC_ATAK_Network";
+    displayName = "$STR_COMSPEC_ATAK_CFG_FF947AEE42";
+    icon = "\z\comspec_atak_native\addons\main\data\app_waverelay.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\app_waverelay.paa";
+    function = "comspec_atak_native_fnc_moduleRelay";
+    canSetArea = 1;
+    canSetAreaShape = 0;
+    canSetAreaHeight = 0;
+    class AttributeValues {
+        size3[] = {3000, 3000, -1};
+        isRectangle = 0;
+    };
+    class Attributes {
+        class Name {
+            displayName = "$STR_COMSPEC_ATAK_CFG_7FF20370C8";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_727D92D89D";
+            property = "COMSPEC_ATAK_Module_Relay_Name";
+            control = "Edit";
+            expression = "_this setVariable ['Name',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+        };
+        class Kind {
+            displayName = "$STR_COMSPEC_ATAK_CFG_3DEB745651";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_7DC59FCF07";
+            property = "COMSPEC_ATAK_Module_Relay_Kind";
+            control = "Combo";
+            expression = "_this setVariable ['Kind',_value,true];";
+            defaultValue = "'mat'";
+            typeName = "STRING";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_DFE8C58442"; value = "portable"; };
+                class V1 { name = "$STR_COMSPEC_ATAK_CFG_5BC6A1AEA4"; value = "mat"; default = 1; };
+                class V2 { name = "$STR_COMSPEC_ATAK_CFG_00D3BD7A04"; value = "tour"; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_541695C92F"; value = "satellite"; };
+            };
+        };
+        class Side {
+            displayName = "$STR_COMSPEC_ATAK_CFG_7AB7D995F3";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_D70CADC0E8";
+            property = "COMSPEC_ATAK_Module_Relay_Side";
+            control = "Combo";
+            expression = "_this setVariable ['Side',_value,true];";
+            defaultValue = "''";
+            typeName = "STRING";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_A79E887C37"; value = ""; default = 1; };
+                class V1 { name = "BLUFOR"; value = "WEST"; };
+                class V2 { name = "OPFOR"; value = "EAST"; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_621714C49D"; value = "GUER"; };
+                class V4 { name = "$STR_COMSPEC_ATAK_CFG_7AA3BFB0ED"; value = "CIV"; };
+            };
+        };
+        class Throughput {
+            displayName = "$STR_COMSPEC_ATAK_CFG_89210072F1";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_70D61E6EE6";
+            property = "COMSPEC_ATAK_Module_Relay_Throughput";
+            control = "Edit";
+            expression = "_this setVariable ['Throughput',_value,true];";
+            defaultValue = "0";
+            typeName = "NUMBER";
+        };
+        class Height {
+            displayName = "$STR_COMSPEC_ATAK_CFG_C126739753";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_C3601BD34B";
+            property = "COMSPEC_ATAK_Module_Relay_Height";
+            control = "Edit";
+            expression = "_this setVariable ['Height',_value,true];";
+            defaultValue = "0";
+            typeName = "NUMBER";
+        };
+        class Slots {
+            displayName = "$STR_COMSPEC_ATAK_CFG_0CD3597453";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_88209FC249";
+            property = "COMSPEC_ATAK_Module_Relay_Slots";
+            control = "Edit";
+            expression = "_this setVariable ['Slots',_value,true];";
+            defaultValue = "0";
+            typeName = "NUMBER";
+        };
+        class Autonomy {
+            displayName = "$STR_COMSPEC_ATAK_CFG_FA6170F4DD";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_44DB25404A";
+            property = "COMSPEC_ATAK_Module_Relay_Autonomy";
+            control = "Combo";
+            expression = "_this setVariable ['Autonomy',_value,true];";
+            defaultValue = "0";
+            typeName = "NUMBER";
+            class values {
+                class V1 { name = "$STR_COMSPEC_ATAK_CFG_498C64B386"; value = 0; default = 1; };
+                class V2 { name = "$STR_COMSPEC_ATAK_CFG_B67393853B"; value = 60; };
+                class V3 { name = "$STR_COMSPEC_ATAK_CFG_71B0559CE2"; value = 120; };
+                class V4 { name = "$STR_COMSPEC_ATAK_CFG_6133B4D4F9"; value = 240; };
+                class V5 { name = "$STR_COMSPEC_ATAK_CFG_47E44D31D4"; value = 480; };
+                class V6 { name = "$STR_COMSPEC_ATAK_CFG_872C4C0E01"; value = 720; };
+                class V7 { name = "$STR_COMSPEC_ATAK_CFG_FF5C921332"; value = 1440; };
+            };
+        };
+        class Uplink {
+            displayName = "$STR_COMSPEC_ATAK_CFG_30DE5E847C";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_C3C6B0F083";
+            property = "COMSPEC_ATAK_Module_Relay_Uplink";
+            control = "Combo";
+            expression = "_this setVariable ['Uplink',_value,true];";
+            defaultValue = "'root'";
+            typeName = "STRING";
+            class values {
+                class V0 { name = "$STR_COMSPEC_ATAK_CFG_0167FC858D"; value = "root"; default = 1; };
+                class V1 { name = "$STR_COMSPEC_ATAK_CFG_92D4E717EB"; value = "repeater"; };
+            };
+        };
+        class StartOn {
+            displayName = "$STR_COMSPEC_ATAK_CFG_BCCEF47A72";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_1F9EA27C24";
+            property = "COMSPEC_ATAK_Module_Relay_StartOn";
+            control = "Checkbox";
+            expression = "_this setVariable ['StartOn',_value,true];";
+            defaultValue = "true";
+            typeName = "BOOL";
+        };
+        class Indestructible {
+            displayName = "$STR_COMSPEC_ATAK_CFG_29CF136691";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_B94A8EF536";
+            property = "COMSPEC_ATAK_Module_Relay_Indestructible";
+            control = "Checkbox";
+            expression = "_this setVariable ['Indestructible',_value,true];";
+            defaultValue = "false";
+            typeName = "BOOL";
+        };
+        class Required {
+            displayName = "$STR_COMSPEC_ATAK_CFG_5D68EBED29";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_1CF29F9BF4";
+            property = "COMSPEC_ATAK_Module_Relay_Required";
+            control = "Checkbox";
+            expression = "_this setVariable ['Required',_value,true];";
+            defaultValue = "false";
+            typeName = "BOOL";
+        };
+    };
+    class ModuleDescription {
+        description = "$STR_COMSPEC_ATAK_CFG_22558DD904";
+    };
+};

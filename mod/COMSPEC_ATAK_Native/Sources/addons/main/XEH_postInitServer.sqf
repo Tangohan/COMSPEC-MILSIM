@@ -15,6 +15,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 [{ ["sweep"] call comspec_atak_native_fnc_vestMount; ["sweep"] call comspec_atak_native_fnc_jpcScreen; }, 30] call CBA_fnc_addPerFrameHandler;
 // Passerelles de véhicule : véhicules détruits retirés, PC mobile qui repart replié (fn_vehicleGateway).
 [{ ["sweep"] call comspec_atak_native_fnc_vehicleGateway; }, 5] call CBA_fnc_addPerFrameHandler;
+// Relais de mission sur batterie (module « ATAK · Relais ») : charge qui baisse toutes les 30 s (fn_relayNet "sweep").
+[{ ["sweep"] call comspec_atak_native_fnc_relayNet; }, 30] call CBA_fnc_addPerFrameHandler;
 COMSPEC_ATAK_SrvLog = createHashMap;      // camp -> [[événement, arguments]...] (200 au plus)
 COMSPEC_ATAK_SrvRoutes = createHashMap;   // netId du groupe -> [points, auteur]
 private _keep = {
@@ -96,9 +98,9 @@ COMSPEC_ATAK_FtCheck = {
 addMissionEventHandler ["HandleDisconnect", {
     params [["_unit", objNull], "", "_uid"];
     ["leave", _uid] call comspec_atak_native_fnc_playTimeServer;
-    // Téléphone de gilet et balise IR accrochés au joueur qui part : retirés (ils restaient dans la partie).
+    // Téléphone de gilet accroché au joueur qui part : retirés (ils restaient dans la partie).
     if (!isNull _unit) then {
-        { if ((typeOf _x) in ["COMSPEC_ATAK_VestPhone", "B_IRStrobe", "ACE_IR_Strobe_Effect"]) then { deleteVehicle _x; }; } forEach (attachedObjects _unit);
+        { if ((typeOf _x) isEqualTo "COMSPEC_ATAK_VestPhone") then { deleteVehicle _x; }; } forEach (attachedObjects _unit);
     };
     false
 }];
