@@ -11,6 +11,12 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Ligne de vue : de ma position vers le point (ATAK natif 1.74.0)
+
+Non testé en jeu. Demande de TTRD : remplacer « SOUS MON REGARD » par « de ma position vers le point », en entrant les coordonnées.
+- App Relief, onglet LIGNE DE VUE : le bouton SOUS MON REGARD est retiré. L'en-tête devient « DE MA POSITION VERS LE POINT : » et rappelle ma position (carroyage 8 chiffres). On entre les coordonnées du point (carroyage de 4, 6, 8 ou 10 chiffres, espaces acceptés) puis TRACER, ou on touche le point avec SUR LA CARTE.
+- Un carroyage court vise le centre de sa case (avant : le coin sud-ouest). La ligne part toujours de mes yeux, point à 1,7 m du sol. Tracé, profil, VOIR SUR LA CARTE et EFFACER inchangés.
+
 ## Texte du bouton PANIQUE (ATAK natif 1.73.0)
 
 Non testé en jeu. Demande de TTRD : nouveau texte sous PANIQUE, écran Détresse et contact.
