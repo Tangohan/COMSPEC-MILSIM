@@ -25,6 +25,8 @@ final class HtmlTranslatorTest extends TestCase
             'le %1' => 'on %1',
             '%1 le %2' => '%1 on %2',
             'Équipe %1-%2-%3' => 'Team %1-%2-%3',
+            '%1 personne%2' => '%1 person%2',
+            'Présence' => 'Attendance',
         ]);
     }
 
@@ -100,5 +102,17 @@ final class HtmlTranslatorTest extends TestCase
         // restait en français.
         self::assertSame('<p>Équipe A-</p>', HtmlTranslator::translate('<p>Équipe A-</p>'));
         self::assertSame('<p>Team A-B-C</p>', HtmlTranslator::translate('<p>Équipe A-B-C</p>'));
+    }
+
+    public function testPluralSuffixTemplatesDoNotCutWords(): void
+    {
+        self::assertSame('<p>3 persons</p>', HtmlTranslator::translate('<p>3 personnes</p>'));
+        $sentence = '<p>compte personnel, espaces de communauté</p>';
+        self::assertSame($sentence, HtmlTranslator::translate($sentence));
+    }
+
+    public function testDecoratedAndUppercaseTexts(): void
+    {
+        self::assertSame('<b>ATTENDANCE</b><i>🇫🇷 Members</i>', HtmlTranslator::translate('<b>PRÉSENCE</b><i>🇫🇷 Membres</i>'));
     }
 }
