@@ -113,6 +113,13 @@ switch (_tab) do {
         ];
         { _integrity pushBack ["text", format ["<t color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select ((_x select 1) isEqualTo "ERROR"), [_x select 2] call _esc]]; } forEach _issues;
         _rows append _integrity;
+        // Check de démarrage (fn_startupCheck) : étapes envoyées au salon Discord de debug et réponse d'Athena.
+        private _check = missionNamespace getVariable ["COMSPEC_ATAK_StartupCheck", []];
+        _rows pushBack ["section", "Check de démarrage", [format ["%1 étape(s)", count _check], "pas encore fait"] select (_check isEqualTo [])];
+        if (_check isNotEqualTo []) then {
+            _rows pushBack ["info", "Envoi au Discord", [missionNamespace getVariable ["COMSPEC_ATAK_StartupCheckSent", "en cours"]] call _esc];
+            { if ((_x select 1) in ["warn", "fail"]) then { _rows pushBack ["text", format ["<t color='%1'>%2 : %3</t>", ["#f2ab33", "#e5483a"] select ((_x select 1) isEqualTo "fail"), _x select 0, [_x select 2] call _esc]]; }; } forEach _check;
+        };
         _rows pushBack ["buttons", [["RELANCER LE TEST", { [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true]]];
     };
     case "TOOLS": {

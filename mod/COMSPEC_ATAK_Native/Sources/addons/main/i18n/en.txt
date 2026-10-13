@@ -1,4 +1,11 @@
 [
+["Envoyer le check de démarrage", "Send the startup check"],
+["Coché par défaut : au début de chaque mission, le résultat du contrôle du mod (versions, DLL, connexion Athena, FPS, erreurs) est posté avec votre pseudo et votre indicatif dans le salon de debug du Discord Athena, pour aider au dépannage. Ni UID Steam, ni adresse IP. Décocher pour ne rien envoyer.", "On by default: at the start of each mission, the result of the mod check (versions, DLL, Athena link, FPS, errors) is posted with your name and callsign in the debug channel of the Athena Discord, to help troubleshooting. No Steam UID, no IP address. Untick to send nothing."],
+["ATAK · Debug", "ATAK · Debug"],
+["Check de démarrage", "Startup check"],
+["%1 étape(s)", "%1 step(s)"],
+["pas encore fait", "not done yet"],
+["Envoi au Discord", "Sent to Discord"],
 ["Taille du téléphone en plein écran", "Phone size in full screen"],
 ["Réduit le téléphone ouvert en plein écran (en main), qui reste centré : 100 % = taille d'origine. Le texte et les boutons suivent.", "Shrinks the phone opened in full screen (in hand); it stays centred: 100 % = original size. Text and buttons follow."],
 ["ATAK · Affichage", "ATAK · Display"],

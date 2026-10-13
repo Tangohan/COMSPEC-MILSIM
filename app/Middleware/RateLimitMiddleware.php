@@ -107,6 +107,7 @@ final class RateLimitMiddleware
             '/api/atak/client-init' => [60, 300],
             '/api/atak/beta-register' => [20, 3600],
             '/api/atak/mod-report' => [40, 600],
+            '/api/atak/startup-check' => [20, 600],
             '/api/atak/device-logs' => [90, 60],
             '/api/atak/position' => [200, 60],
             '/connect/code' => [30, 3600],
