@@ -29,6 +29,8 @@ final class HtmlTranslatorTest extends TestCase
             'Présence' => 'Attendance',
             '%1 sur la carte' => '%1 on the map',
             'Ouvrir %1' => 'Open %1',
+            '%1 personne%2 listée%3' => '%1 person%2 listed%3',
+            'Vous postulez pour : %1' => 'You are applying for: %1',
         ]);
     }
 
@@ -127,5 +129,12 @@ final class HtmlTranslatorTest extends TestCase
         self::assertSame('<p>Présence : voir et annuler une demande</p>', HtmlTranslator::translate('<p>Présence : voir et annuler une demande</p>'));
         self::assertSame('<p>Attendance: Bravo-2</p>', HtmlTranslator::translate('<p>Présence : Bravo-2</p>'));
         self::assertSame('<p>Alpha on the map</p>', HtmlTranslator::translate('<p>Alpha sur la carte</p>'));
+    }
+
+    public function testValuesAfterTheTemplateTextAndParticipleAgreement(): void
+    {
+        self::assertSame('<p>You are applying for: [Démo] Cadre de section</p>', HtmlTranslator::translate('<p>Vous postulez pour : [Démo] Cadre de section</p>'));
+        self::assertSame('<p>1 person listed</p>', HtmlTranslator::translate('<p>1 personne listée</p>'));
+        self::assertSame('<p>3 persons listed</p>', HtmlTranslator::translate('<p>3 personnes listées</p>'));
     }
 }
