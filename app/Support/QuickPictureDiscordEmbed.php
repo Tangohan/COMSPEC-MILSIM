@@ -6,7 +6,9 @@ namespace App\Support;
 
 /**
  * Embed Discord d'une photo Quick Picture (téléphone ATAK) ou d'un cliché du drone (app Drone) :
- * opérateur, grille, carte, date et heure en jeu et réelles, photo affichée dans l'embed.
+ * opérateur (grade), mission et serveur, grille, altitude, visée (site, point visé, distance), prise de vue
+ * (objectif, zoom, flash, vision), carte, date et heure en jeu et réelles, météo, terminal et versions,
+ * lien vers la photo sur Athena, photo affichée dans l'embed.
  * Fiche du cliché (titre, description, SSE, confidentiel) : SSE → image floutée (jointe seulement),
  * confidentiel → aucune image, message, lien de lecture sur Athena et note de confidentialité.
  * Logique pure (testable).
@@ -63,7 +65,7 @@ final class QuickPictureDiscordEmbed
      * @param array<string, mixed> $meta données de la photo (author_callsign, unit_name, grid_ref, heading, caption…)
      * @param array{
      *   attachment?:string, image_url?:string, read_url?:string, map_label?:string, world_name?:string, location?:string,
-     *   game_date?:string, game_time?:string, game_time_approx?:bool, real_unix?:int, timezone?:string
+     *   game_date?:string, game_time?:string, game_time_approx?:bool, real_unix?:int, timezone?:string, viewer_url?:string
      * } $ctx
      * @return array<string, mixed>
      */
@@ -73,6 +75,8 @@ final class QuickPictureDiscordEmbed
         if ($author === '' || strcasecmp($author, 'Unknown') === 0) {
             $author = 'Opérateur';
         }
+        $grade = self::clean((string) ($meta['author_grade'] ?? ''));
+        $extra = is_array($meta['extra'] ?? null) ? $meta['extra'] : [];
         $unit = self::clean((string) ($meta['unit_name'] ?? ''));
         $grid = self::clean((string) ($meta['grid_ref'] ?? ''));
         $heading = isset($meta['heading']) && is_numeric($meta['heading']) ? (float) $meta['heading'] : null;
@@ -88,13 +92,23 @@ final class QuickPictureDiscordEmbed
         }
 
         $fields = [];
-        $fields[] = ['name' => 'Opérateur', 'value' => $author, 'inline' => true];
+        $authorValue = $grade !== '' && stripos($author, $grade) === false ? $grade . ' ' . $author : $author;
+        $fields[] = ['name' => 'Opérateur', 'value' => $authorValue, 'inline' => true];
         $droneName = self::clean((string) ($meta['drone_name'] ?? ''));
         if ($drone && $droneName !== '') {
             $fields[] = ['name' => 'Drone', 'value' => $droneName, 'inline' => true];
         }
         if ($unit !== '' && strcasecmp($unit, $author) !== 0) {
             $fields[] = ['name' => 'Unité', 'value' => $unit, 'inline' => true];
+        }
+        $mission = self::clean((string) ($extra['mission'] ?? ''));
+        $server = self::clean((string) ($extra['server'] ?? ''));
+        if ($mission !== '' || $server !== '') {
+            $fields[] = [
+                'name' => 'Mission',
+                'value' => implode(' · ', array_filter([$mission, $server !== '' ? 'Serveur ' . $server : ''], static fn (string $v): bool => $v !== '')),
+                'inline' => false,
+            ];
         }
         $pos = [];
         if ($grid !== '') {
@@ -105,6 +119,11 @@ final class QuickPictureDiscordEmbed
         }
         if ($pos !== []) {
             $fields[] = ['name' => 'Position', 'value' => implode(' · ', $pos), 'inline' => true];
+        }
+
+        $altitude = self::altitudeLine($meta['altitude'] ?? null, $extra['agl'] ?? null);
+        if ($altitude !== '') {
+            $fields[] = ['name' => 'Altitude', 'value' => $altitude, 'inline' => true];
         }
 
         $mapLabel = self::clean((string) ($ctx['map_label'] ?? ''));
@@ -120,6 +139,16 @@ final class QuickPictureDiscordEmbed
                 'value' => $location !== '' && $zone !== '' ? $location . ' — ' . $zone : ($location !== '' ? $location : $zone),
                 'inline' => true,
             ];
+        }
+
+        // Confidentiel : le point visé désignerait ce qui a été photographié.
+        $aim = $mode === self::MODE_CONFIDENTIAL ? '' : self::aimLine($extra);
+        if ($aim !== '') {
+            $fields[] = ['name' => 'Visée', 'value' => $aim, 'inline' => false];
+        }
+        $shot = self::shotLine($extra, $drone);
+        if ($shot !== '') {
+            $fields[] = ['name' => 'Prise de vue', 'value' => $shot, 'inline' => true];
         }
 
         $gameDate = self::formatGameDate((string) ($ctx['game_date'] ?? ''));
@@ -139,6 +168,15 @@ final class QuickPictureDiscordEmbed
                 'value' => '<t:' . $realUnix . ':f> (' . $local->format('d/m/Y H:i') . ')',
                 'inline' => true,
             ];
+        }
+
+        $weather = self::weatherLine($extra);
+        if ($weather !== '') {
+            $fields[] = ['name' => 'Météo', 'value' => $weather, 'inline' => false];
+        }
+        $terminal = self::terminalLine($extra, (string) ($meta['link_version'] ?? ''), $drone);
+        if ($terminal !== '') {
+            $fields[] = ['name' => 'Terminal', 'value' => $terminal, 'inline' => true];
         }
 
         // Téléphone de l'opérateur (IMEI, numéro, modèle et version de l'ATAK…), masqué : spoiler Discord
@@ -167,6 +205,14 @@ final class QuickPictureDiscordEmbed
             $fields[] = ['name' => 'Confidentialité', 'value' => self::CONFIDENTIAL_NOTE, 'inline' => false];
         }
 
+        // Lecteur d'images d'Athena (pas pour un cliché confidentiel : lien de lecture habilité ci-dessus).
+        $viewerUrl = trim((string) ($ctx['viewer_url'] ?? ''));
+        if ($mode !== self::MODE_CONFIDENTIAL && $viewerUrl !== '' && preg_match('#^https://#i', $viewerUrl) === 1) {
+            $fields[] = ['name' => 'Athena', 'value' => '[Ouvrir la photo sur Athena](' . mb_substr($viewerUrl, 0, 900) . ')', 'inline' => false];
+        } else {
+            $viewerUrl = '';
+        }
+
         $label = $drone ? 'Cliché drone' : 'Quick Picture';
         $tag = match ($mode) {
             self::MODE_CONFIDENTIAL => '[CONFIDENTIEL] ',
@@ -183,6 +229,9 @@ final class QuickPictureDiscordEmbed
             'fields' => $fields,
             'footer' => ['text' => $drone ? 'Athena · Drone ATAK' : 'Athena · Téléphone ATAK'],
         ];
+        if ($viewerUrl !== '') {
+            $embed['url'] = $viewerUrl;
+        }
         if ($caption !== '') {
             $embed['description'] = mb_substr($caption, 0, 1000);
         }
@@ -301,6 +350,185 @@ final class QuickPictureDiscordEmbed
         }
 
         return '';
+    }
+
+    /** Clés lues dans les détails de la prise de vue (argument photo_extra de COMSPEC Link 2.0.81). */
+    public const EXTRA_KEYS = [
+        'mission', 'server', 'agl', 'pitch', 'target_dist', 'target_grid', 'operator_dist',
+        'overcast', 'rain', 'fog', 'wind', 'wind_dir', 'lens', 'zoom', 'flash', 'vision', 'model', 'atak',
+    ];
+
+    /** Modèles de téléphone de l'ATAK natif (profil COMSPEC_ATAK_PhoneModel). */
+    private const PHONE_MODELS = ['s7' => 'Samsung Galaxy S7', 'rugged' => 'Tactique EUD', 'iphone' => 'Premium'];
+
+    /**
+     * « clé=valeur|clé=valeur » envoyé par le jeu → tableau des clés connues (valeurs nettoyées, 120 caractères).
+     *
+     * @return array<string, string>
+     */
+    public static function parseExtra(string $raw): array
+    {
+        $out = [];
+        foreach (array_slice(explode('|', mb_substr($raw, 0, 4000)), 0, 40) as $pair) {
+            $eq = strpos($pair, '=');
+            if ($eq === false) {
+                continue;
+            }
+            $key = strtolower(trim(substr($pair, 0, $eq)));
+            if (!in_array($key, self::EXTRA_KEYS, true) || isset($out[$key])) {
+                continue;
+            }
+            $value = mb_substr(self::clean(substr($pair, $eq + 1)), 0, 120);
+            if ($value !== '') {
+                $out[$key] = $value;
+            }
+        }
+
+        return $out;
+    }
+
+    /** Altitude de la prise de vue (ASL) et hauteur au-dessus du sol : « 123 m · sol +1,7 m ». */
+    public static function altitudeLine(mixed $asl, mixed $agl): string
+    {
+        $parts = [];
+        if (is_numeric($asl)) {
+            $parts[] = number_format((float) $asl, 0, ',', ' ') . ' m';
+        }
+        if (is_numeric($agl)) {
+            $h = (float) $agl;
+            $parts[] = 'sol ' . ($h >= 0 ? '+' : '−') . number_format(abs($h), abs($h) < 10 ? 1 : 0, ',', ' ') . ' m';
+        }
+
+        return implode(' · ', $parts);
+    }
+
+    /**
+     * Site de l'objectif et point visé : « site −3° · point visé à 145 m · Grille 33S XU 51200 93250 ».
+     *
+     * @param array<string, string> $extra
+     */
+    public static function aimLine(array $extra): string
+    {
+        $parts = [];
+        if (is_numeric($extra['pitch'] ?? null)) {
+            $p = (int) round((float) $extra['pitch']);
+            $parts[] = 'site ' . ($p > 0 ? '+' : ($p < 0 ? '−' : '')) . abs($p) . '°';
+        }
+        if (is_numeric($extra['target_dist'] ?? null)) {
+            $parts[] = 'point visé à ' . self::distance((float) $extra['target_dist']);
+        }
+        $tg = self::clean((string) ($extra['target_grid'] ?? ''));
+        if ($tg !== '') {
+            $parts[] = 'Grille ' . $tg;
+        }
+        if (is_numeric($extra['operator_dist'] ?? null)) {
+            $parts[] = 'opérateur à ' . self::distance((float) $extra['operator_dist']);
+        }
+
+        return implode(' · ', $parts);
+    }
+
+    /**
+     * Objectif, zoom, flash (téléphone) ou vision et zoom (nacelle du drone).
+     *
+     * @param array<string, string> $extra
+     */
+    public static function shotLine(array $extra, bool $drone): string
+    {
+        $parts = [];
+        $lens = strtolower((string) ($extra['lens'] ?? ''));
+        if ($lens !== '') {
+            $parts[] = $lens === 'selfie' ? 'Selfie (objectif avant)' : 'Objectif arrière';
+        }
+        $vision = strtolower((string) ($extra['vision'] ?? ''));
+        if ($vision !== '') {
+            $parts[] = match ($vision) {
+                'nv' => 'Vision nocturne',
+                'ti' => 'Thermique',
+                default => $drone ? 'Caméra jour' : 'Vision normale',
+            };
+        }
+        if (is_numeric($extra['zoom'] ?? null)) {
+            $z = (float) $extra['zoom'];
+            $parts[] = 'zoom x' . rtrim(rtrim(number_format($z, 1, ',', ''), '0'), ',');
+        }
+        if (strtolower((string) ($extra['flash'] ?? '')) === 'on') {
+            $parts[] = 'flash';
+        }
+
+        return implode(' · ', $parts);
+    }
+
+    /**
+     * Météo au moment du cliché : « couvert 60 % · pluie 20 % · brouillard 5 % · vent 4,2 m/s du 270° ».
+     *
+     * @param array<string, string> $extra
+     */
+    public static function weatherLine(array $extra): string
+    {
+        $pct = static fn (string $k): ?int => is_numeric($extra[$k] ?? null) ? max(0, min(100, (int) round((float) $extra[$k]))) : null;
+        $parts = [];
+        $overcast = $pct('overcast');
+        if ($overcast !== null) {
+            $parts[] = $overcast < 15 ? 'ciel dégagé' : 'couvert ' . $overcast . ' %';
+        }
+        $rain = $pct('rain');
+        if ($rain !== null && $rain > 0) {
+            $parts[] = 'pluie ' . $rain . ' %';
+        }
+        $fog = $pct('fog');
+        if ($fog !== null && $fog > 0) {
+            $parts[] = 'brouillard ' . $fog . ' %';
+        }
+        if (is_numeric($extra['wind'] ?? null)) {
+            $w = (float) $extra['wind'];
+            if ($w < 0.5) {
+                $parts[] = 'vent nul';
+            } else {
+                $line = 'vent ' . number_format($w, 1, ',', '') . ' m/s';
+                if (is_numeric($extra['wind_dir'] ?? null)) {
+                    // windDir d'Arma : direction vers laquelle souffle le vent ; on affiche d'où il vient.
+                    $from = ((int) round((float) $extra['wind_dir']) + 180) % 360;
+                    $line .= ' du ' . str_pad((string) $from, 3, '0', STR_PAD_LEFT) . '°';
+                }
+                $parts[] = $line;
+            }
+        }
+
+        return implode(' · ', $parts);
+    }
+
+    /**
+     * Modèle du téléphone et versions : « Samsung Galaxy S7 · ATAK 1.74.0 · Link 2.0.81 ».
+     *
+     * @param array<string, string> $extra
+     */
+    public static function terminalLine(array $extra, string $linkVersion, bool $drone): string
+    {
+        $parts = [];
+        $model = strtolower(self::clean((string) ($extra['model'] ?? '')));
+        if ($model !== '' && !$drone) {
+            $parts[] = self::PHONE_MODELS[$model] ?? $model;
+        }
+        $atak = self::clean((string) ($extra['atak'] ?? ''));
+        if ($atak !== '' && preg_match('/^\d+(?:\.\d+){1,3}$/', $atak) === 1) {
+            $parts[] = 'ATAK ' . $atak;
+        }
+        $link = self::clean($linkVersion);
+        if ($link !== '' && preg_match('/^\d+(?:\.\d+){1,3}$/', $link) === 1) {
+            $parts[] = 'Link ' . $link;
+        }
+
+        return implode(' · ', $parts);
+    }
+
+    private static function distance(float $m): string
+    {
+        $m = max(0.0, $m);
+
+        return $m >= 1000
+            ? number_format($m / 1000, $m >= 10000 ? 0 : 1, ',', ' ') . ' km'
+            : number_format($m, 0, ',', ' ') . ' m';
     }
 
     /**

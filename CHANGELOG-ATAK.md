@@ -11,6 +11,15 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Photos sur Discord : détails de la prise de vue (ATAK natif 1.74.0, COMSPEC Link 2.0.81)
+
+Non testé en jeu. Demande de TTRD : l'embed Discord des photos manquait de données.
+- L'embed Quick Picture et Cliché drone affiche maintenant le grade de l'auteur, la mission et le serveur, l'altitude (mer et sol), la visée (site, point visé avec sa distance et sa grille, éloignement de l'opérateur pour le drone), la prise de vue (objectif arrière ou selfie, zoom, flash ; vision jour, nocturne ou thermique du drone), la météo (couverture, pluie, brouillard, vent), le terminal (modèle, versions ATAK et Link) et un lien vers la photo sur Athena.
+- Le cap et la position d'une photo du téléphone sont ceux de l'objectif (viseur), plus ceux du joueur.
+- Unité, grade et téléphone de l'auteur retrouvés aussi par le Steam de la session de jeu (avant : seulement avec une clé API).
+- Cliché confidentiel : ni visée ni lien public.
+- COMSPEC Link envoie ces détails à Athena (champ photo_extra) avec sa version. connect.pbo et main.pbo reconditionnés.
+
 ## Texte du bouton PANIQUE (ATAK natif 1.73.0)
 
 Non testé en jeu. Demande de TTRD : nouveau texte sous PANIQUE, écran Détresse et contact.
