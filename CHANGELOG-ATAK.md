@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## App Réseau : stabilité calculée, passerelles lisibles (ATAK natif 1.79.0)
+
+### Résumé joueur
+Type : correctif
+FR : App Réseau : la stabilité s'affiche enfin
+- La tuile Stabilité montre un vrai pourcentage (stable, correcte, instable, très instable) calculé à partir des pertes, de la latence et des réponses d'Athena, ou « — » tant que rien n'a été mesuré.
+- La carte COMSPEC Link indique Connecté, Dégradé, Connexion… ou Hors ligne.
+- La section Passerelles et relais ne répète plus le maillage et ses lignes ne se collent plus.
+EN : Network app: stability is finally shown
+- The Stability tile shows a real percentage (stable, fair, unstable, very unstable) based on packet loss, latency and Athena replies, or "—" until something has been measured.
+- The COMSPEC Link card reads Connected, Degraded, Connecting… or Offline.
+- The Gateways and relays section no longer repeats the mesh line and its rows no longer run together.
+
+### Détail technique
+
+Non testé en jeu. Capture de TTRD : tuile Stabilité « any % » et section Passerelles et relais confuse.
+- Stabilité : la valeur n'était jamais calculée (affichage « any % »). Elle vient maintenant de la perte de paquets (mesurée par COMSPEC Link et simulée par le téléphone), de la latence, de l'état de COMSPEC Link et des réponses d'Athena : stable, correcte, instable, très instable, ou « liaison coupée ». Sans aucune mesure, la tuile affiche « — » et « pas encore de mesure ».
+- Chemin de la liaison : la carte COMSPEC Link affiche Connecté, Dégradé, Connexion… ou Hors ligne au lieu de LINKED.
+- Passerelles et relais : l'état vide tient sur une ligne, sans répéter le maillage collé à la ligne « Maillage Wave Relay » ; celle-ci est espacée et indique « aucune passerelle » quand il n'y en a pas.
+- Zone radio : « Simulation de liaison dégradée » affiche « désactivée » ou « active : pertes et délais simulés » ; le type de zone n'est plus remplacé par « ? » quand il est inconnu.
+- Paquets envoyés affichés en entier (plus de notation 1e+06). Textes traduits en anglais.
+
 ## Module Zeus et Eden « Relever routes et villes » (ATAK natif 1.78.0)
 
 ### Résumé joueur
@@ -54,6 +76,7 @@ Non testé en jeu. Demande de TTRD : un module Zeus et Eden dédié aux routes e
 - Eden : `COMSPEC_Module_GeoNetwork` (catégorie COMSPEC Outils), options « Au début de la mission » (défaut : oui) et « Renvoyer ». Exécuté par le Zeus ou le chef de mission (admin connecté, ou solo), qui attend la liaison Athena jusqu'à 3 minutes.
 - Zeus : module « Relever routes et villes » par Zeus Enhanced et ACE Zeus, envoi immédiat même si la carte a déjà été transmise.
 - Les réglages de communauté « Lieux » et « Routes » (modules du mod) restent respectés.
+
 
 ## Menu Échap et Dépannage liaison refondus (ATAK natif 1.77.0)
 
@@ -77,6 +100,7 @@ Non testé en jeu. Demande de TTRD : boutons du menu Échap en haut à droite, s
 - « Copier le rapport » met le diagnostic et les versions dans le presse-papiers ; « Signaler un problème » ouvre le signalement existant.
 - Pas à pas (recherche de ce qui arrête le jeu) : au choix rapide (20 s par fonction) ou complet (55 s), lancé depuis la fenêtre. Nouveau bandeau compact en haut au centre avec barre de progression, temps restant et état de la liaison. L'étape mémorisée est effacée quand le pas à pas se termine ou est arrêté : elle ne reste affichée comme suspecte qu'après un vrai arrêt du jeu.
 - Textes traduits en anglais (dictionnaire i18n/en.txt).
+
 ## App JTAC plus réaliste : terminal, fiche 9-LINE et carte tactique (ATAK natif 1.76.0)
 
 ### Résumé joueur
