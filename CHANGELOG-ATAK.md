@@ -11,6 +11,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Connexion Athena : « invalid_url » mieux géré (ATAK natif 1.64.0, COMSPEC Link 2.0.77)
+
+Non testé en jeu. Capture de TTRD : l'onglet COMPTE affichait « Athena n'a pas donné de code (invalid_url) ». Il faut recompiler la DLL (build_mod.bat) ; pas de migration.
+- L'adresse du portail est nettoyée avant la demande de code ; si elle est vide ou sans http, le portail par défaut (athena.ttrd.fr/public) est utilisé.
+- Si la DLL refuse quand même l'adresse, le jeu refait un essai sur le portail par défaut.
+- COMSPEC Link 2.0.77 : en cas d'invalid_url, la cause exacte (type d'exception et message) est ajoutée à la réponse et écrite dans le journal ATHENA (« PairStart invalid_url sur <adresse> : ... »), pour lire la vraie cause si le problème revient.
+- À vérifier en jeu : onglet COMPTE, un code s'affiche. Sinon, envoyer la ligne « PairStart ... » du journal COMSPEC.
+
 ## App JTAC : formulaire 9-LINE lisible (ATAK natif 1.63.0)
 
 Non testé en jeu. Demande de TTRD : « Ça faut améliorer le JTAC » (capture du 9-LINE). Pas de DLL à recompiler, pas de migration.
