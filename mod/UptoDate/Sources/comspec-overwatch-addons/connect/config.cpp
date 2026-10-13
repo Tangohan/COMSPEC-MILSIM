@@ -11,6 +11,7 @@ class CfgPatches {
             "COMSPEC_Module_SSE_Profile",
             "COMSPEC_Module_SSE_Equip",
             "COMSPEC_Module_TheaterSurvey",
+            "COMSPEC_Module_GeoNetwork",
             "COMSPEC_Module_AtakShowEnemyAi"
         };
         weapons[] = {};
@@ -130,6 +131,7 @@ class CfgFunctions {
             class theaterSurveyResend {};
             class moduleTheaterSurvey {};
             class registerZenTheaterSurvey {};
+            class moduleGeoNetwork {};
             class forceSyncData {};
             class arsenalLocalLoadouts {};
             class arsenalNormalizeLoadout {};
@@ -899,6 +901,9 @@ class CfgVehicles
 
     // Relevé de carte (Eden)
     #include "modules\module_theater_survey.hpp"
+
+    // Routes et villes seulement (Eden ; Zeus via ZEN / ACE Zeus)
+    #include "modules\module_geo_network.hpp"
 
     // Contacts ennemis sur le poste ATAK (Eden)
     #include "modules\module_atak_show_enemy_ai.hpp"
