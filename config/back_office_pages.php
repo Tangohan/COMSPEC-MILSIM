@@ -27,8 +27,8 @@ return [
             ['label' => 'Poste ATAK', 'href' => 'back-office/atak'],
             ['label' => 'Vue membres', 'href' => 'tableau-operationnel'],
         ]],
-        ['path' => 'back-office/analytics/conversion', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Conversion des communautés', 'subtitle' => 'Combien de visiteurs deviennent candidats, puis membres.'],
-        ['path' => 'back-office/analytics', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Indicateurs d’usage', 'subtitle' => 'Qui se connecte, quand, et quelles pages sont réellement utilisées.'],
+        ['path' => 'back-office/analytics/conversion', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Conversion des communautés', 'subtitle' => 'Combien de visiteurs deviennent candidats, puis membres.', 'css' => ['back-office-analytics.css']],
+        ['path' => 'back-office/analytics', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Indicateurs d’usage', 'subtitle' => 'Qui se connecte, quand, et quelles pages sont réellement utilisées.', 'css' => ['back-office-analytics.css']],
         ['path' => 'back-office/configuration-initiale', 'group' => 'Communauté', 'kicker' => 'PREMIERS PAS', 'title' => 'Configuration initiale', 'subtitle' => 'Votre communauté est en ligne. Il reste cinq réglages essentiels : identité, contact, mode d’inscription, modules visibles et rôle attribué aux nouveaux membres.', 'css' => ['back-office-initial-setup.css'], 'quick' => [
             ['label' => 'Enregistrer', 'href' => 'back-office/configuration-initiale#initial-setup-actions'],
             ['label' => 'Besoin d’aide ?', 'href' => 'back-office/onboarding-recovery'],
