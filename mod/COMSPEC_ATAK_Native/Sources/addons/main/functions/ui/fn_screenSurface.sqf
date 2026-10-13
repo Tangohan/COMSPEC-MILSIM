@@ -2,7 +2,8 @@
     Surface de l'écran, par-dessus l'app et les fêlures (appelé à la fin de fn_deviceOverlay, chaque seconde) :
       - dégâts : rayures (fines lignes claires), pixels morts (points fixes), lignes verticales colorées ;
       - saleté (fn_screenDirt, réglage serveur comspec_atak_native_dirt_sim et réglage Réalisme du joueur) :
-        voile de poussière, traces de doigts, traînées et gouttes de sang sur l'écran, sang sur la coque, gouttes de pluie.
+        voile de poussière, traces de doigts, traînées et gouttes de sang sur l'écran, sang sur la coque.
+      Les gouttes de pluie sont animées à part (fn_screenRain), avec la géométrie relevée ici (COMSPEC_ATAK_RainRect).
     Disposition tirée d'une graine propre à l'appareil (COMSPEC_ATAK_Device dirtSeed) : même dessin d'une seconde à l'autre,
     les contrôles ne sont recréés que si le nombre de taches change ; sinon seule l'opacité suit l'état.
     Contrôles de page hors zone de contenu, inactifs (les clics passent au travers). Écran éteint : pixels et lignes cachés.
@@ -23,15 +24,15 @@ private _dust = ["dust"] call _g;
 private _prints = ["prints"] call _g;
 private _blood = ["blood"] call _g;
 private _frame = ["frameBlood"] call _g;
-private _drops = ["drops"] call _g;
 private _scratch = _parts getOrDefault ["scratch", 0];
 private _pix = _parts getOrDefault ["pixels", 0];
 private _counts = [
     parseNumber (_dust > 0.08),
-    ceil (_prints * 6), ceil (_blood * 5), ceil (_frame * 4), round (_drops * 12),
+    ceil (_prints * 6), ceil (_blood * 5), ceil (_frame * 4),
     ceil (_scratch * 8), ceil (_pix * 14), [0, 1 + floor ((_pix - 0.5) * 4)] select (_pix >= 0.5)
 ];
 private _seed = _n getOrDefault ["dirtSeed", 1];
+uiNamespace setVariable ["COMSPEC_ATAK_RainRect", [_rect, uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]]];
 private _sig = format ["%1|%2|%3|%4|%5", _counts, _seed, _rect, _phone, _l get "model"];
 (uiNamespace getVariable ["COMSPEC_ATAK_SurfOverlay", ["", []]]) params ["_oldSig", "_ctrls"];
 if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}) then {
@@ -57,7 +58,7 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
         _c ctrlSetBackgroundColor _col;
         _ctrls pushBack [_kind, _c];
     };
-    _counts params ["_cDust", "_cPrints", "_cBlood", "_cFrame", "_cDrops", "_cScratch", "_cPix", "_cLines"];
+    _counts params ["_cDust", "_cPrints", "_cBlood", "_cFrame", "_cScratch", "_cPix", "_cLines"];
     // Pixels morts et lignes (sous la saleté, qui est sur le verre). Visibles à l'écran du jeu : amas de pixels de
     // 2 à 6 px plutôt qu'un point isolé, taches noires (dalle morte) et lignes de 2 à 4 px quand l'écran est très abîmé.
     for "_i" from 1 to _cPix do {
@@ -128,10 +129,6 @@ if (_sig isNotEqualTo _oldSig || {(_ctrls findIf { isNull (_x select 1) }) >= 0}
         private _fy = [_ry + (_rh - _h) * (call _rnd), _ry + (_rh - _h) * (call _rnd), _ry - _by - _h / 2, _ry + _rh + _by - _h / 2] select _side;
         ["frame", format ["dirt_smear_%1", floor ((call _rnd) * 3)] call _tex, _fx, _fy, _w, _h, [90, 90, 0, 0] select _side] call _pic;
     };
-    for "_i" from 1 to _cDrops do {
-        private _s = _rh * (0.012 + 0.022 * call _rnd);
-        ["drops", "dirt_drop" call _tex, _rx + (_rw - _s / _ratio) * (call _rnd), _ry + (_rh - _s) * (call _rnd), _s / _ratio, _s] call _pic;
-    };
 };
 // Opacité selon l'état (chaque seconde, sans recréer).
 private _off = (_hp getOrDefault ["state", "OK"]) isEqualTo "OFF";
@@ -147,7 +144,6 @@ private _off = (_hp getOrDefault ["state", "OK"]) isEqualTo "OFF";
         case "prints": { _c ctrlSetTextColor [0.82, 0.82, 0.76, 0.06 + 0.18 * _prints]; };
         case "blood": { _c ctrlSetTextColor [0.4, 0.02, 0.02, 0.5 + 0.4 * _blood]; };
         case "frame": { _c ctrlSetTextColor [0.33, 0.02, 0.02, 0.55 + 0.4 * _frame]; };
-        case "drops": { _c ctrlSetTextColor [0.85, 0.92, 1, 0.35 + 0.3 * _drops]; };
     };
 } forEach _ctrls;
 uiNamespace setVariable ["COMSPEC_ATAK_SurfOverlay", [_sig, _ctrls]];

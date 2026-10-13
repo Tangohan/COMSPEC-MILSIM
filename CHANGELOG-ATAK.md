@@ -11,6 +11,17 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Gouttes de pluie qui glissent sur l'écran (ATAK natif 1.73.0)
+
+Non testé en jeu. Demande de TTRD : les gouttes de pluie faisaient des bulles immobiles sur l'écran du téléphone. Pas de DLL à recompiler, pas de migration.
+- Sous la pluie, téléphone sorti et à découvert : les gouttes se posent au hasard sur le verre, au rythme de la pluie, ou font grossir une goutte déjà posée.
+- Les petites restent posées (tension de surface). Assez grosses, elles tiennent un instant puis glissent vers le bas en accélérant, avec une trajectoire un peu irrégulière et des à-coups, perdent de l'eau dans une traînée mouillée qui sèche en quelques secondes, absorbent les gouttes qu'elles croisent et sortent par le bas.
+- Pluie arrêtée ou à l'abri : plus de nouvelles gouttes, celles qui restent rapetissent et s'effacent en une minute environ. Le nettoyage de l'écran les enlève tout de suite ; sortir de l'eau couvre l'écran d'un coup.
+- Nouvelles textures translucides (corps presque transparent, bord fin, reflet, croissant lumineux) : le contenu de l'écran reste lisible.
+- Léger : au plus 18 gouttes, deux contrôles chacune, créés une fois puis déplacés, 25 images par seconde seulement quand une goutte glisse, 2 sinon ; rien quand le téléphone est rangé ou sec. Suit la taille du téléphone en plein écran.
+- Nouveau réglage CBA par joueur, ATAK · Affichage > « Gouttes de pluie sur l'écran » : Complet, Réduit (9 gouttes, 12 images par seconde) ou Désactivé. Le réglage Réalisme « Saleté et sang sur l'écran » les coupe aussi.
+- À vérifier en jeu : sous une forte pluie, dehors, téléphone en main (plein écran et petit) puis porté ; passer sous un toit ; nettoyer l'écran ; changer d'app pendant que des gouttes glissent ; FPS avec et sans l'effet ; les trois valeurs du réglage.
+
 ## Adresse du portail Athena fixe (ATAK natif 1.72.0)
 
 Non testé en jeu. Demande de TTRD : personne n'héberge son propre Athena, l'adresse du portail ne doit plus être modifiable. Pas de DLL à recompiler, pas de migration.

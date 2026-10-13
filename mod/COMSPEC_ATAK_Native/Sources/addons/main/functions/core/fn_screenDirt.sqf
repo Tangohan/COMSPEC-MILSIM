@@ -1,7 +1,7 @@
 /*
     Saleté de l'écran et de la coque (état de l'appareil, missionNamespace COMSPEC_ATAK_Device, valeurs 0-1) :
       dust (poussière), prints (traces de doigts), blood (sang sur l'écran), frameBlood (sang sur la coque),
-      drops (gouttes de pluie). Mains en sang : missionNamespace COMSPEC_ATAK_HandsBlood (0-1).
+      drops (gouttes de pluie), rainHit (pluie qui touche l'écran sorti en ce moment, 0-1, pour fn_screenRain). Mains en sang : missionNamespace COMSPEC_ATAK_HandsBlood (0-1).
     Params : [mode, valeur]
       "enabled" : la saleté est-elle active ? (réglage serveur comspec_atak_native_dirt_sim et réglage Réalisme du joueur)
       "tick"    : toutes les 5 s (XEH) : poussière dehors (plus vite couché, sur un sol sableux, en véhicule ouvert,
@@ -49,7 +49,9 @@ switch (_mode) do {
             ["dust", _r] call _add;
         };
         // Pluie : gouttes sur l'écran sorti, qui sèchent ensuite ; la pluie rince un peu la poussière et étale le sang.
-        if (!_roof && {_veh isEqualTo player || _openVeh} && {rain > 0.1}) then {
+        private _rainOn = !_roof && {_veh isEqualTo player || _openVeh} && {rain > 0.1};
+        _n set ["rainHit", [0, rain] select (_rainOn && _open)];
+        if (_rainOn) then {
             if (_open) then { ["drops", 0.25 * rain] call _add; };
             ["dust", -0.004 * rain] call _add;
             if ((_n getOrDefault ["blood", 0]) > 0) then { ["blood", -0.004 * rain] call _add; ["prints", 0.003 * rain] call _add; };
@@ -84,6 +86,7 @@ switch (_mode) do {
     case "water": {
         _n set ["dust", (_n getOrDefault ["dust", 0]) * 0.5];
         _n set ["drops", 1];
+        _n set ["splash", 1];
         private _b = _n getOrDefault ["blood", 0];
         if (_b > 0) then { _n set ["blood", _b * 0.75]; ["prints", _b * 0.15] call _add; };
         _hands = _hands * 0.3;
@@ -104,6 +107,8 @@ switch (_mode) do {
         private _dirty = _hands > 0.3;
         _n set ["dust", [0, (_n getOrDefault ["dust", 0]) * 0.3] select _dirty];
         _n set ["drops", 0];
+        _n set ["rainHit", 0];
+        ["clear"] call comspec_atak_native_fnc_screenRain;
         _n set ["prints", [0, (_n getOrDefault ["prints", 0]) * 0.6] select _dirty];
         private _b = _n getOrDefault ["blood", 0];
         _n set ["blood", [_b * 0.25, _b * 0.8] select _dirty];
