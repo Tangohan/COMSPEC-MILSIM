@@ -27,10 +27,10 @@ diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
     { [true] call comspec_atak_native_fnc_langApply; }] call CBA_fnc_addSetting;
 [] call comspec_atak_native_fnc_langApply;
 // Police du téléphone (par joueur), aussi dans le téléphone (Réglages > Affichage > Police). Réglage CBA, lisible dans
-// la police du jeu : si une police embarquée s'affichait mal, Roboto Condensed se remet d'ici.
+// la police du jeu. Polices embarquées retirées en 1.84.0 (mal affichées en jeu) : Roboto Condensed par défaut.
 ["comspec_atak_native_font", "LIST",
-    ["Police du téléphone / Phone font", "Police de tout le téléphone ATAK. Barlow Condensed par défaut ; Roboto Condensed et Purista sont les polices du jeu. / Font for the whole ATAK phone."],
-    ["COMSPEC", ""], [["barlow", "b612", "rajdhani", "sharetech", "roboto", "purista"], ["Barlow Condensed", "B612", "Rajdhani", "Share Tech", "Roboto Condensed (jeu / game)", "Purista (jeu / game)"], 0], 0,
+    ["Police du téléphone / Phone font", "Police de tout le téléphone ATAK : Roboto Condensed (par défaut) ou Purista, polices du jeu. / Font for the whole ATAK phone: Roboto Condensed (default) or Purista, the game's own fonts."],
+    ["COMSPEC", ""], [["roboto", "purista"], ["Roboto Condensed", "Purista"], 0], 0,
     {
         params ["_v"];
         [_v] call comspec_atak_native_fnc_fontSet;

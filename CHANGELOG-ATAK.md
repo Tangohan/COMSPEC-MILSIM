@@ -38,6 +38,47 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## JTAC : la fiche 9-LINE se complète toute seule (ATAK natif 1.85.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : JTAC : la fiche 9-LINE se remplit toute seule
+- Dès qu'il y a une cible, toute la fiche se complète : point initial (nommé d'après le lieu-dit le plus proche), cap, distance, altitude, description des ennemis vus, marquage, amis, dégagement, axe d'attaque et menaces sol-air.
+- Les valeurs proposées apparaissent en vert et restent modifiables ; ce que tu tapes l'emporte toujours. IP AUTO remet le point initial proposé.
+- Ton laser allumé sert de cible automatiquement, et l'appareil le plus proche est choisi s'il n'y en a pas.
+- Quand il manque quelque chose, l'app dit exactement quoi et comment le faire.
+EN : JTAC: the 9-LINE card fills itself in
+- As soon as there is a target, the whole card fills in: initial point (named after the nearest place), heading, distance, elevation, description of the enemies seen, mark, friendlies, egress, attack heading and surface-to-air threats.
+- Proposed values show in green and stay editable; what you type always wins. AUTO IP brings back the proposed initial point.
+- Your laser, when on, becomes the target automatically, and the nearest aircraft is picked if none is.
+- When something is missing, the app says exactly what and how to provide it.
+
+### Détail technique
+
+Non testé en jeu. Demande de TTRD : « On peut pas tout compléter ? » (capture de la fiche CAS BRIEF vide).
+- fn_jtacLines : appareil le plus proche si aucun choisi, cible = point laser du joueur si rien n'est verrouillé, IP proposé à 5 NM côté appareil (sinon à l'opposé des amis) nommé d'après nearestLocations, ligne 5 (ennemis connus à 150 m : nombre × type, à l'arrêt / en mouvement), ligne 9 (direction vers l'IP, altitude de l'appareil), FAH (IP → cible ± 20), menaces (SAM / MANPADS / AAA par airLock des munitions, blindés, armes légères), armement par défaut. Propositions rangées sous auto_<clé> ; la saisie l'emporte.
+- fn_jtacAction : « save » n'enregistre pas une proposition laissée telle quelle ; IP posé à la main = ipAuto faux, action ipAuto pour revenir à l'IP proposé ; NOUVELLE MISSION remet l'IP en automatique.
+- fn_pageJtac : champs proposés en vert (nouveau genre de ligne autoedit dans fn_formRender), consigne explicite sans cible, « Il manque : … » détaillé, bouton IP AUTO.
+- fn_formRender : le bandeau strip ne fait plus chevaucher ses deux textes (colonnes, passage à la ligne).
+- À tester en jeu : fiche avec cible verrouillée, laser allumé sans verrouiller, IP posé à la main puis IP AUTO, description et menaces avec ennemis connus ou non, saisie d'une valeur puis changement de cible (la saisie reste, les propositions suivent).
+
+## Retour à la police du jeu sur le téléphone (ATAK natif 1.84.0)
+
+### Résumé joueur
+Type : correctif
+FR : Le téléphone retrouve sa police habituelle
+- La nouvelle police de la 1.83.0 s'affichait mal : textes coupés et lettres décalées. Le téléphone repasse en Roboto Condensed, la police du jeu.
+- Dans Réglages > Police, il reste Roboto (par défaut) et Purista. Les autres polices reviendront une fois corrigées.
+EN : The phone gets its usual font back
+- The new font from 1.83.0 rendered badly, with cut-off text and misplaced letters. The phone is back to Roboto Condensed, the game's font.
+- Settings > Font now offers Roboto (default) and Purista. The other fonts will come back once fixed.
+
+### Détail technique
+- Test de TTRD en jeu sur la 1.83.0 : libellés coupés en hauteur, petits textes illisibles, caractères mal placés. Cause probable : les polices converties par `tools/gen_fonts.py` (métriques `.fxy` ou planches `.paa`) ne sont pas lues comme prévu par Arma.
+- `ui/fonts.hpp` : `COMSPEC_Barlow`, `COMSPEC_BarlowBold` et `COMSPEC_BarlowLight` pointent sur les fichiers Roboto Condensed du jeu (mêmes chemins que BCE), donc toutes les classes et balises `<t font=…>` du téléphone sont de nouveau en Roboto. Les familles B612, Rajdhani et Share Tech restent dans le pbo mais ne sont plus proposées.
+- Réglage `comspec_atak_native_font` réduit à `roboto` (défaut) et `purista` ; une ancienne valeur `barlow` retombe sur Roboto.
+- À vérifier en jeu : textes du téléphone nets et entiers (écran d'accueil, notifications, tuiles), choix Purista dans Réglages > Police.
+
 ## Nouvelle police du téléphone, au choix (ATAK natif 1.83.0)
 
 ### Résumé joueur

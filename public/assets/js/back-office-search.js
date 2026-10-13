@@ -41,14 +41,32 @@
       if (input) {
         input.value = seed || '';
         input.focus();
-        input.select();
+        var end = input.value.length;
+        try {
+          input.setSelectionRange(end, end);
+        } catch (e) { /* ignore */ }
         run();
       }
     }
 
     function closeDlg() {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      if (abortCtl) {
+        try {
+          abortCtl.abort();
+        } catch (e) { /* ignore */ }
+        abortCtl = null;
+      }
       if (dlg.open) {
         dlg.close();
+      }
+      // Le navigateur rend le focus au champ du bandeau : on le retire pour
+      // qu'il ne rouvre pas la recherche et qu'un 2e clic la rouvre bien.
+      if (topSearch && document.activeElement === topSearch) {
+        topSearch.blur();
       }
     }
 
@@ -153,8 +171,39 @@
         closeDlg();
       });
     });
+    // Échap : géré nous-mêmes (le champ de type « search » avale le 1er Échap
+    // pour se vider, et Chrome ignore parfois un 2e « cancel » d'affilée).
+    dlg.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        e.preventDefault();
+        e.stopPropagation();
+        closeDlg();
+      }
+    });
+    dlg.addEventListener('cancel', function (e) {
+      e.preventDefault();
+      closeDlg();
+    });
+
+    // Clic à l'extérieur : seulement si le clic commence ET finit hors de la
+    // boîte (une sélection de texte qui déborde ne ferme pas la recherche).
+    function outside(e) {
+      var r = dlg.getBoundingClientRect();
+      return (
+        e.clientX < r.left ||
+        e.clientX > r.right ||
+        e.clientY < r.top ||
+        e.clientY > r.bottom
+      );
+    }
+    var downOutside = false;
+    dlg.addEventListener('pointerdown', function (e) {
+      downOutside = e.target === dlg && outside(e);
+    });
     dlg.addEventListener('click', function (e) {
-      if (e.target === dlg) closeDlg();
+      var wasOutside = downOutside;
+      downOutside = false;
+      if (e.target === dlg && wasOutside && outside(e)) closeDlg();
     });
 
     document.addEventListener('keydown', function (e) {
@@ -167,13 +216,18 @@
     if (topSearch) {
       topSearch.setAttribute('aria-label', 'Rechercher dans le back-office');
       topSearch.setAttribute('placeholder', 'Pages, membres, documents…');
-      topSearch.addEventListener('focus', function () {
+      // Ouverture au clic, pas au focus : à la fermeture, le navigateur rend
+      // le focus à ce champ, ce qui rouvrait aussitôt la recherche.
+      topSearch.addEventListener('click', function () {
         openDlg(topSearch.value);
       });
       topSearch.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           openDlg(topSearch.value);
+        } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          e.preventDefault();
+          openDlg(e.key);
         }
       });
     }
