@@ -68,6 +68,12 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["COMSPEC", "ATAK · Affichage"], [0.6, 1, 1, 0, true], 0,
     { if !(isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; }; }] call comspec_atak_native_fnc_addSetting;
 
+// HUD des autres mods (boussole F-PANO / ECOTI, température, heure...) masqué sous le téléphone (par joueur, fn_foreignHud).
+["comspec_atak_native_hide_foreign_hud", "CHECKBOX",
+    ["Masquer le HUD des autres mods sous le téléphone", "Activé par défaut : tant que le téléphone est affiché (mini ou plein écran), les textes et boussoles que d'autres mods dessinent par-dessus (F-PANO / ECOTI, températures, heure, distance...) sont cachés à l'endroit du téléphone, puis reviennent quand il est rangé. Décocher pour les laisser visibles."],
+    ["COMSPEC", "ATAK · Affichage"], true, 0,
+    { missionNamespace setVariable ["COMSPEC_ATAK_ForeignNext", 0]; }] call comspec_atak_native_fnc_addSetting;
+
 // Réglages serveur (forçables par l'admin dans les réglages CBA du serveur / de la mission).
 // Tous les mods COMSPEC partagent une seule catégorie CBA « COMSPEC » ; sous-catégories « ATAK · … », « Overwatch · … », « SSE ».
 private _cat = ["COMSPEC", "ATAK · Accès au téléphone"];

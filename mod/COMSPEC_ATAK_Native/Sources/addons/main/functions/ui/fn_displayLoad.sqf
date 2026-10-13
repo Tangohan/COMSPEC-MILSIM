@@ -105,6 +105,8 @@ if (_interactive) then {
 };
 
 [] call comspec_atak_native_fnc_schedulerStart;
+// HUD des autres mods (F-PANO / ECOTI...) masqué sous le téléphone tant qu'il est affiché (fn_foreignHud).
+["start"] call comspec_atak_native_fnc_foreignHud;
 [profileNamespace getVariable ["COMSPEC_ATAK_LastPage", "MAP"]] call comspec_atak_native_fnc_navigate;
 // Écran de verrouillage : première sortie de la mission, après une minute rangé ou un redémarrage (fn_lockScreen).
 // Avant fn_statusUpdate, qui note l'heure du dernier affichage.
