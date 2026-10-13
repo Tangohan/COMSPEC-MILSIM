@@ -26,9 +26,10 @@ private _frame = ["frameBlood"] call _g;
 private _drops = ["drops"] call _g;
 private _scratch = _parts getOrDefault ["scratch", 0];
 private _pix = _parts getOrDefault ["pixels", 0];
+// Gouttes de pluie sur l'écran désactivées (TTRD, 1.82.0) : effet en cours de refonte (W.I.P), plus aucune goutte dessinée.
 private _counts = [
     parseNumber (_dust > 0.08),
-    ceil (_prints * 6), ceil (_blood * 5), ceil (_frame * 4), round (_drops * 12),
+    ceil (_prints * 6), ceil (_blood * 5), ceil (_frame * 4), 0,
     ceil (_scratch * 8), ceil (_pix * 14), [0, 1 + floor ((_pix - 0.5) * 4)] select (_pix >= 0.5)
 ];
 private _seed = _n getOrDefault ["dirtSeed", 1];
