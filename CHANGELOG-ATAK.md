@@ -11,12 +11,69 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Correctif 2026-10-12 — ATAK sur le JPC et tablette du véhicule (ATAK natif 1.45.0)
+## Correctif 2026-10-12 — ATAK sur le JPC et tablette du véhicule (ATAK natif 1.51.0)
 
 Non testé en jeu. Retours de TTRD. Pas de DLL à recompiler, pas de migration.
 - **Téléphone entre les jambes (vue à la première personne)** : le terminal du JPC n'est plus accroché à l'os de la poitrine (dont la position n'était pas fiable en vue à la première personne) mais au corps, à 22 cm devant et 40 cm sous les yeux, recalé quand la posture change (debout, accroupi, couché). Réglage pour les essais : `COMSPEC_ATAK_JpcOffset` (depuis les yeux).
 - **Écran noir** : la face des coques à transparence recouvrait l'écran vivant (le verre éteint de la texture passait devant) ; l'ouverture est maintenant transparente. Les premières images de l'écran sont dessinées tout de suite, même sans le regarder. Sans « Image dans l'image » (Options > Vidéo), la page Carte montre la carte d'ensemble du terrain au lieu d'un rectangle noir, avec un rappel.
 - **Tablette du véhicule** : c'est une tablette commune pour ceux qui n'ont pas d'ATAK. Un joueur qui a son téléphone garde son téléphone en montant dans un véhicule équipé (plus de bascule vers la tablette VT-10 ni de message « Tablette du véhicule disponible »). Sans téléphone, rien ne change.
+## Télécommande drone sur son vrai téléphone (QR code), caméra de nuit, portée (ATAK natif 1.50.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Addon connect mis à jour (comspec_overwatch_connect.pbo reconstruit). Demande de TTRD : « tu scannes le QR code sur l'ordi ou dans le jeu, et ça ouvre le menu des boutons du drone sur ton téléphone IRL ».
+- Site : nouvelle page **/telecommande-drone**, faite pour un téléphone (connexion Athena demandée la première fois). Choix du drone (les siens d'abord), état (mode, hauteur, vitesse, batterie), gros boutons : décoller, stationnaire, me suivre, retour au pilote, RTB, atterrir ; rôle du drone (me suivre, CQB, garde, recherche, aucun) ; altitude et vitesse ; essaim (tous me suivre, CQB, garde, recherche, stationnaire, RTB, atterrir) ; photo, veille, reprendre, forcer ; journal des ordres. Mêmes ordres que le poste (POST /api/atak/web-commands/uav, nouveaux ordres `role` et `swarm`).
+- QR code : dans l'app Drone, onglet FLOTTE (« Télécommande sur votre téléphone », adresse du site de production) et dans le panneau Drones d'Overwatch sur le site (QR généré par le site, /telecommande-drone/qr.png).
+- Jeu : un ordre web pour un drone de la flotte le prend en main (il devient le drone piloté) ; rôles et essaim passent par la flotte (fn_droneFleet).
+- Pas de pilotage au joystick ni de vidéo en direct : les ordres passent par Athena (quelques secondes) et demandent que le pilote soit en jeu, Overwatch connecté, en liaison avec le drone.
+- À vérifier : scanner le QR en jeu et sur le site, connexion puis page, chaque bouton, rôle et essaim avec deux drones, garde refusée quand le réglage admin est désactivé.
+- **Caméra du drone noire la nuit** (retour de TTRD, 00:49, liaison 4/4 à 10 m) : l'image rendue dans l'écran ne s'adapte pas à l'obscurité comme la vue du joueur. En VISION : JOUR, le gain suit maintenant la lumière autour du drone : normal le jour, éclairci en pénombre, fortement éclairci la nuit (« BASSE LUMIÈRE » ou « MODE NUIT » dans l'incrustation). Même correction que le viseur de l'app Photo. NUIT et THERMIQUE ne changent pas.
+- **Portée de la liaison drone** (retour de TTRD : « la portée est courte, le 4/4 ? ») : réglage admin par défaut 6000 m au lieu de 2500 m (jusqu'à 12 000 m), et la portée maximale du mod Mavic (mavic_setting_maxConnectionDistance) l'emporte si elle est plus grande. Barres plus douces : 4/4 jusqu'à la moitié de la portée (3000 m), 3/4 jusqu'à 71 %, 2/4 jusqu'à 87 %, 1/4 jusqu'au bout (avant : 4/4 seulement jusqu'à 625 m). Derrière le relief, toujours divisée par trois. Même règle pour la flotte et pour le signal des drones Mavic. Un réglage admin déjà enregistré à 2500 m reste à 2500 m : le remonter dans les paramètres CBA.
+- **Boutons sous l'image du drone plus clairs** (retour de TTRD : « pas clair ») : une rangée principale en grands boutons, **PHOTO**, **MARQUER**, **ZOOM -**, **ZOOM +** et **VISION JOUR / NUIT / THERMIQUE**. Une rangée de vol : MONTER, DESCENDRE, STATIONNAIRE, CIBLES, MENUS DU DRONE. Le reste est replié sous **RÉGLAGES** : caméra vers le sol, recentrer, netteté et fermer. Le choix de la vidéo affichée (ex-« IMAGE : DRONE ») quitte l'app Drone, qui montre toujours le drone (retour de TTRD : « c'est pour la carte ») : il est sur la vue drone de la carte (**VIDÉO DU DRONE / DU TÉLÉPHONE / DU CASQUE**, puis **CASQUE DE …** pour choisir le porteur). Plus de titres de groupe CAMÉRA / CIBLES / VOL / AFFICHAGE. Le viseur photo ne change pas.
+- **Performances du flux drone** (retour de TTRD : « le jeu rame ») : l'image du drone arrête d'être rendue 1,5 s après avoir quitté l'écran (avant 3 s), et la caméra est libérée après 20 s (avant 60 s). Toutes les 30 s, le journal Arma (RPT, ligne `[PERF]`) note les images par seconde et les caméras qui rendent dans une texture (drone, aperçu du cliché, viseur photo, live cam, carte JPC) : de quoi voir laquelle coûte, avec Envoyer_mes_logs.bat.
+## Taille de la barre d'outils et style de boussole au choix (ATAK natif 1.49.0)
+
+- Réglages de la carte : taille de la barre d'outils et style de la boussole au choix. Non testé en jeu.
+
+---
+
+## 2026-10-12 — Galerie peaufinée, clichés du drone supprimables, viseur Photo réparé (ATAK natif 1.48.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : écran de la Galerie plus propre, mêmes actions.
+
+- Une seule rangée d'onglets : **TOUT**, **TÉLÉPHONE**, **DRONE** et **ENVOIS** (avant : onglets PHOTOS / ENVOIS puis un second filtre « Afficher »).
+- Une ligne d'état de l'envoi au lieu du paragraphe d'explication (l'aide reste en infobulle).
+- Une barre d'actions sans titres de rubrique : PRENDRE UNE PHOTO, ACTUALISER, ENVOYER LES NOUVELLES (en vert quand il y en a), TOUT SUPPRIMER.
+- Lignes de photos : titre en gras, puis état d'envoi, date et grille en petit sur une seconde ligne ; titres de section avec leur nombre entre parenthèses.
+- Boutons des lignes (DÉTAILS, RENVOYER…) au même gris-vert que les autres boutons du téléphone, au lieu du bleu ; vaut pour toutes les listes du téléphone.
+- **Suppression** (retour de TTRD : impossible de supprimer les clichés du drone) : chaque ligne a son bouton SUPPRIMER (second appui sur CONFIRMER, en rouge), photos du téléphone comme clichés du drone. TOUT SUPPRIMER efface aussi les clichés du drone (fichier et fiche), sauf un cliché en cours d'envoi. Une photo déjà reçue reste sur Athena.
+- **App Photo, viseur noir** (retour de TTRD, de nuit) : la caméra rendue dans l'écran ne s'adapte pas à l'obscurité comme la vue du joueur. Le viseur règle maintenant son gain selon la lumière : normal le jour, éclairci en pénombre, fortement éclairci la nuit (« MODE NUIT » affiché sur l'image). Texture du rendu dans le sens du viseur (paysage). Le journal note l'ouverture et l'arrêt du viseur (lumière, PiP, raison de l'arrêt) pour diagnostiquer un écran encore noir.
+- **App Photo, viseur figé** (retour de TTRD : « on dirait que le visu reste sur place ») : la caméra du viseur restait à l'endroit où l'app avait été ouverte, et le joueur s'y voyait de loin. Elle suit maintenant les yeux du joueur à chaque image (même méthode que le plein écran). Un déclenchement interrompu ne fige plus le viseur plus de 5 s.
+## App JTAC refaite : contrôle CAS réaliste du check-in au BDA (ATAK natif 1.47.0)
+
+Non testé en jeu. Demande de TTRD : « JTAC faut une refonte complète, réaliste de l'app ». Pas de DLL à recompiler, pas de migration.
+- Onglet SITUATION : cible verrouillée au laser, à la visée ou pointée sur la carte (grille 10 chiffres, altitude en ft MSL, amis les plus proches) ; appareils amis en station avec leur fiche de check-in lue sur l'appareil (armement restant, carburant, altitude, vitesse, nacelle).
+- Onglet BRIEF : plan d'attaque (type de contrôle 1/2/3, BOT/BOC, armement, marquage, code laser) et 9-LINE calculé (cap et distance IP-cible en NM, altitude, position, marquage, amis) ; remarques FAH, LTL, menaces, DANGER CLOSE avec initiales du chef quand des amis sont sous la distance de risque de l'armement (valeurs indicatives).
+- Onglet CONTRÔLE : frise de la mission (CHECK-IN, BRIEF, READBACK, CORRÉLATION, IN, AUTORISÉ, OFF, BDA), readback attendu et reçu, géométrie de l'appareil (vient d'où, cap, axe final d'attaque respecté ou non), LASER ON/OFF, CLEARED HOT (CLEARED TO ENGAGE en type 3) actif seulement quand la doctrine le permet, CONTINUE DRY, ABORT, BDA et re-attaque. Équipage IA : le JTAC note les appels du pilote entendus à la radio.
+- Vue ÉQUIPAGE : le pilote joueur reçoit le 9-LINE sur son téléphone et répond par boutons (READBACK, CONTACT, TALLY, SPOT, VISUAL, NO JOY, IN, WEAPONS AWAY, OFF, UNABLE). Le 9-LINE part aussi sur Athena quand le téléphone est relié.
+- À vérifier en jeu : à deux joueurs (JTAC au sol, pilote en vol), un passage complet jusqu'au BDA ; fiche de check-in sur plusieurs appareils (avion, hélicoptère, armements de mods) ; DANGER CLOSE avec amis près de la cible ; IP et cible pointées sur la carte ; ABORT puis nouvelle passe ; rafraîchissement de l'onglet CONTRÔLE sans saccade.
+
+## Relief refaite : champ de vision, heatmap, ligne de vue, bâtiments vus (ATAK natif 1.45.0)
+
+Non testé en jeu. Demande de TTRD : « Relief faut améliorer l'app : LIGNE DE VUE, HEATMAP, BÂTIMENT VISIBLE ». Pas de DLL à recompiler, pas de migration.
+- **Écran** dans la famille de l'app Reco, en turquoise : en-tête (altitude, grille, pastille du calque carte cliquable), quatre tuiles d'outil, réglages en boutons, chiffres en tuiles.
+- **Champ de vision** : obstacles au choix, RELIEF SEUL ou + BÂTIMENTS ET ARBRES (lignes de vue contre les objets, plus lent). Vues par secteur en barres de couleur, point haut sur la carte.
+- **Heatmap** : nouvelle échelle à cinq couleurs (bleu nuit, cyan, vert, jaune, rouge) plus lisible, ou PAR RAPPORT À MOI (bleu en dessous, rouge au-dessus : ce qui me domine), légende avec les altitudes, part du terrain plus haut que moi.
+- **Ligne de vue** : vers un carroyage saisi, le point visé (SOUS MON REGARD) ou un point touché sur la carte (outil LIGNE DE VUE de la carte, qui passe désormais par le même calcul). Verdict VUE DÉGAGÉE / VUE BLOQUÉE, nature de l'obstacle (relief, bâtiment, végétation, véhicule), distance, azimut, dénivelé, profil du terrain avec la ligne de visée.
+- **Bâtiments vus** : bâtiments de plus de 4 m dans 200 m, 500 m ou 1 km, testés depuis mes yeux sur trois hauteurs ; en vert sur la carte s'ils sont vus, contour rouge sinon ; liste des dix plus proches avec CARTE.
+- Nouvelles icônes : ligne de vue, heatmap, bâtiments.
+
+À tester en jeu : chaque outil en ville et en campagne ; champ de vision avec bâtiments et arbres (temps de calcul à 2 km) ; heatmap par rapport à moi sur une colline ; ligne de vue derrière un mur, un arbre et une crête ; outil LIGNE DE VUE de la carte puis retour dans Relief ; bâtiments vus à 1 km (temps de calcul) et leurs couleurs sur la carte.
+
+## Doigt d'honneur libre, qui suit la cible (ATAK natif 1.44.0)
+
+Non testé en jeu. Demande de TTRD : « un doigt d'honneur libre, qui suit vraiment le curseur et les joueurs, comme GTA ». Pas de DLL à recompiler, pas de migration. Le doigt d'honneur classique (geste de 2,4 s) reste tel quel.
+- Nouvelle touche CBA « Doigt d'honneur libre (maintenir) » (COMSPEC ATAK, non attribuée par défaut) : tant qu'elle est maintenue, bras gauche tendu, dos de la main vers la cible, majeur levé, petit coup sec en boucle. Action ACE perso « Doigt d'honneur libre (6 s) ».
+- Cible revue 8 fois par seconde : l'homme sous le curseur (100 m), sinon le joueur ou l'IA le plus proche du centre de l'écran (moins de 30°, 60 m), sinon la direction du curseur. Le bras suit sur une grille de 24 poses (cap de -40° à +60° côté gauche, site de -20° à +40°, par pas de 20°) ; au-delà il reste au bord. Arma ne permet pas de tourner un os librement par script, d'où la grille.
+- À vérifier en jeu : passage d'une case à l'autre (fluide ou saccadé), bras qui suit bien un joueur qui se déplace, cibles au-dessus et en dessous, fusil en main (la main gauche quitte puis retrouve le garde-main), geste vu par les autres.
 
 ## Correctif 2026-10-12 — App Plan : la zone terminée ne disparaît plus ; symboles et étiquettes de la carte lisibles (ATAK natif 1.43.1)
 

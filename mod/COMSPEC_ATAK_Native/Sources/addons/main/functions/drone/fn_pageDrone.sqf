@@ -85,7 +85,8 @@ private _split = _s getOrDefault ["droneCamSplit", false];
 private _locksAll = missionNamespace getVariable ["COMSPEC_ATAK_Locks", createHashMap];
 private _photos = profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []];
 if !(_photos isEqualType []) then { _photos = []; };
-private _src = missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedSrc", "DRONE"];
+// App Drone : toujours la caméra du drone (le choix téléphone / casque est sur la vue drone de la carte).
+private _src = "DRONE";
 // Viseur photo (fn_dronePhoto "view") : seulement caméra ouverte.
 private _shotView = _s getOrDefault ["droneShotView", false];
 if (_shotView && {!_camOn}) then { _shotView = false; _s set ["droneShotView", false]; };
@@ -132,22 +133,21 @@ if (_view isNotEqualTo "") then {
     private _zoomBy = { params ["_f"]; compile format ["['zoomBy', %1] call comspec_atak_native_fnc_droneAction; ['gimbalHud'] call comspec_atak_native_fnc_droneAction;", _f] };
     // Boutons : [libellé, code, état ("" | "on" vert | "red" rouge | "main" principal), aide (infobulle), actif].
     // Libellés : ce que fait l'appui, en clair ; le détail est dans l'infobulle.
-    private _bShot = ["VISEUR PHOTO", { ["view"] call comspec_atak_native_fnc_dronePhoto; }, "", "Ouvre le viseur photo : cadrer (glisser sur l'image), zoomer (molette, + / -), marquer une cible, surligner un cadre ou un cercle, puis PRENDRE LA PHOTO"];
+    private _bShot = ["PHOTO", { ["view"] call comspec_atak_native_fnc_dronePhoto; }, "", "Ouvre le viseur photo : cadrer (glisser sur l'image), zoomer (molette, + / -), marquer une cible, surligner un cadre ou un cercle, puis PRENDRE LA PHOTO"];
     private _bZoomOut = ["ZOOM -", [1 / 1.5] call _zoomBy, "", "Dézoomer (molette vers vous, touche -) ; zoom actuel affiché sur l'image", _zoom > 1];
     private _bZoomIn = ["ZOOM +", [1.5] call _zoomBy, "", "Zoomer jusqu'à x8 (molette vers l'avant, touche +)", _zoom < 8];
-    private _bVis = [format ["VISION : %1", ["JOUR", "NUIT", "THERMIQUE"] select _vis], ["vision"] call _act, ["", "on"] select (_vis > 0), "Change le mode de la caméra : jour → nuit (intensification de lumière) → thermique"];
-    private _bNadir = [["VISER SOUS LE DRONE", "VISER DEVANT"] select (_aim isEqualTo "NADIR"), ["camAim", ["NADIR", ""] select (_aim isEqualTo "NADIR")] call _act, "", ["Tourne la caméra à la verticale, vers le sol sous le drone", "Remet la caméra devant le drone"] select (_aim isEqualTo "NADIR"), _src isEqualTo "DRONE"];
+    private _bVis = [["VISION JOUR", "VISION NUIT", "THERMIQUE"] select _vis, ["vision"] call _act, ["", "on"] select (_vis > 0), "Change le mode de la caméra : jour → nuit (intensification de lumière) → thermique"];
+    private _bNadir = [["CAMÉRA VERS LE SOL", "CAMÉRA DEVANT"] select (_aim isEqualTo "NADIR"), ["camAim", ["NADIR", ""] select (_aim isEqualTo "NADIR")] call _act, "", ["Tourne la caméra à la verticale, vers le sol sous le drone", "Remet la caméra devant le drone"] select (_aim isEqualTo "NADIR"), _src isEqualTo "DRONE"];
     private _bCenter = ["RECENTRER", { ["recenter"] call comspec_atak_native_fnc_droneAction; ["gimbalHud"] call comspec_atak_native_fnc_droneAction; }, "", "Remet la caméra droit devant le drone, 37° vers le bas", _src isEqualTo "DRONE"];
-    private _bMark = [["MARQUER UNE CIBLE", "MARQUAGE ACTIF"] select _markMode, ["markMode"] call _act, ["", "red"] select _markMode, "Appuyez, puis cliquez sur une personne ou un véhicule dans l'image : il est marqué (LOCK) et suivi sur la carte. Rappuyez pour arrêter de marquer"];
-    private _bTargets = [format ["CIBLES MARQUÉES (%1)", count _locksAll], ["TARGETS"] call _toTab, ["", "on"] select ((["status"] call comspec_atak_native_fnc_droneSeq) select 0), "Ouvre la liste des cibles marquées : les faire suivre par le drone, dans l'ordre choisi"];
-    private _bUp = [[format ["MONTER À %1 m", _up], "MONTER"] select (_up < 0), ["alt", _up] call _act, "", format ["Altitude actuelle %1 m : monter au palier suivant", _alt], _up > 0];
-    private _bDn = [[format ["DESCENDRE À %1 m", _dn], "DESCENDRE"] select (_dn < 0), ["alt", _dn] call _act, "", format ["Altitude actuelle %1 m : descendre au palier précédent", _alt], _dn > 0];
-    private _bHover = ["S'ARRÊTER ICI", ["mode", "hover"] call _act, ["", "on"] select (_m isEqualTo "HOVER"), "Le drone s'arrête et reste en vol stationnaire là où il est"];
-    private _bSrc = [format ["IMAGE : %1", ["DRONE", "TÉLÉPHONE", "CASQUE"] select (["DRONE", "PHONE", "HELMET"] find _src)], ["feedSrc", ["PHONE", "HELMET", "DRONE"] select (["DRONE", "PHONE", "HELMET"] find _src)] call _act, ["on", ""] select (_src isEqualTo "DRONE"), "Choisit la caméra affichée : drone → caméra du téléphone (devant vous) → caméra casque (porteur choisi dans l'onglet VOL)"];
+    private _bMark = [["MARQUER", "CLIQUEZ LA CIBLE"] select _markMode, ["markMode"] call _act, ["", "red"] select _markMode, "Appuyez, puis cliquez sur une personne ou un véhicule dans l'image : il est marqué (LOCK) et suivi sur la carte. Rappuyez pour arrêter de marquer"];
+    private _bTargets = [format ["CIBLES (%1)", count _locksAll], ["TARGETS"] call _toTab, ["", "on"] select ((["status"] call comspec_atak_native_fnc_droneSeq) select 0), "Ouvre la liste des cibles marquées : les faire suivre par le drone, dans l'ordre choisi"];
+    private _bUp = [[format ["MONTER %1 m", _up], "MONTER"] select (_up < 0), ["alt", _up] call _act, "", format ["Altitude actuelle %1 m : monter au palier suivant", _alt], _up > 0];
+    private _bDn = [[format ["DESCENDRE %1 m", _dn], "DESCENDRE"] select (_dn < 0), ["alt", _dn] call _act, "", format ["Altitude actuelle %1 m : descendre au palier précédent", _alt], _dn > 0];
+    private _bHover = ["STATIONNAIRE", ["mode", "hover"] call _act, ["", "on"] select (_m isEqualTo "HOVER"), "Le drone s'arrête et reste en vol stationnaire là où il est"];
     private _bQ = [format ["NETTETÉ : %1", ["BASSE", "MOY.", "HAUTE"] select _q], ["quality", (_q + 1) mod 3] call _act, "", "Qualité de l'image : basse (plus fluide) → moyenne → haute (plus nette, plus lourde)"];
-    private _bMenus = [["AFFICHER LES MENUS", "AGRANDIR L'IMAGE"] select _split, { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["droneCamSplit", !(_st getOrDefault ["droneCamSplit", false])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, "", ["Réduit l'image et affiche dessous les onglets du drone (vol, tâches, cibles, photos, journal)", "Image à la taille de l'écran, onglets masqués"] select _split];
+    private _bMenus = [["MENUS DU DRONE", "AGRANDIR L'IMAGE"] select _split, { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["droneCamSplit", !(_st getOrDefault ["droneCamSplit", false])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, "", ["Réduit l'image et affiche dessous les onglets du drone (vol, tâches, cibles, photos, journal)", "Image à la taille de l'écran, onglets masqués"] select _split];
     private _bTotal = [["PLEIN ÉCRAN", "QUITTER LE PLEIN ÉCRAN"] select (_view isEqualTo "TOTAL"), { profileNamespace setVariable ["COMSPEC_ATAK_DroneMiniFull", !(profileNamespace getVariable ["COMSPEC_ATAK_DroneMiniFull", true])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, "", "Téléphone en petit format : l'image du drone occupe tout l'écran"];
-    private _bClose = ["FERMER LA CAMÉRA", ["cam"] call _act, "", "Coupe l'image du drone (le drone continue ce qu'il fait)"];
+    private _bClose = ["FERMER", ["cam"] call _act, "", "Coupe l'image du drone (le drone continue ce qu'il fait)"];
     // Viseur photo.
     private _toolCode = { params ["_k"]; compile format ["['tool', %1] call comspec_atak_native_fnc_dronePhoto;", str _k] };
     private _bBox = [["CADRE", "CADRE : TRACEZ"] select (_tool isEqualTo "BOX"), ["BOX"] call _toolCode, ["", "on"] select (_tool isEqualTo "BOX"), "Surligner d'un cadre jaune : appuyez, puis glissez sur l'image (4 surlignages au plus). Rappuyez pour reprendre la main sur la caméra", (count _shapes) < 4 || {_tool isEqualTo "BOX"}];
@@ -155,14 +155,19 @@ if (_view isNotEqualTo "") then {
     private _bErase = [format ["EFFACER (%1)", count _shapes], { ["markClear"] call comspec_atak_native_fnc_dronePhoto; }, "", "Efface les cadres et cercles tracés", (count _shapes) > 0];
     private _bCancel = ["QUITTER LE VISEUR", { ["viewExit"] call comspec_atak_native_fnc_dronePhoto; }, "", "Revient à l'image du drone sans prendre de photo"];
     private _bTake = ["PRENDRE LA PHOTO", { ["take"] call comspec_atak_native_fnc_dronePhoto; }, "main", "Prend la photo telle que cadrée, avec ses surlignages, puis ouvre la fiche de transmission"];
-    // Groupes de la barre : [titre, boutons] ; titres affichés en grand format seulement.
-    private _labels = !_mini && {_view in ["FULL", "SPLIT", "SHOT"]};
+    // Réglages repliés (retour de TTRD : « pas clair ») : PLUS les déplie sur une rangée à part.
+    private _more = _s getOrDefault ["droneCamMore", false];
+    private _bMore = [["RÉGLAGES", "MASQUER"] select _more, { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["droneCamMore", !(_st getOrDefault ["droneCamMore", false])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, ["", "on"] select _more, "Autres réglages de la caméra : vers le sol, recentrer, netteté, fermer la caméra"];
+    // Groupes de la barre : [titre, boutons]. Titre "*" : rangée principale, boutons plus grands, sans titre.
+    // Vue caméra : rangée principale (photo, marquer, zoom, vision), puis le vol, puis les réglages repliés.
+    private _labels = !_mini && {_view isEqualTo "SHOT"};
+    private _moreRow = [[], [["", [_bNadir, _bCenter, _bQ, _bClose]]]] select _more;
     private _groups = switch (true) do {
         case (_view isEqualTo "SHOT"): { [["CADRAGE", [_bZoomOut, _bZoomIn, _bCenter, _bVis]], ["CIBLE", [_bMark]], ["SURLIGNER", [_bBox, _bCircle, _bErase]], ["PHOTO", [_bCancel, _bTake]]] };
         case (_view isEqualTo "TOTAL"): { [["", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bTotal]]] select [0, [0, 1] select _inter] };
         case (_mini): { [["", [_bShot, _bMark, _bZoomOut, _bZoomIn]], ["", [_bVis, _bTotal, _bMenus, _bClose]]] };
-        case (_view isEqualTo "SPLIT"): { [["CAMÉRA", [_bShot, _bZoomOut, _bZoomIn, _bVis, _bSrc]], ["CIBLES", [_bMark]], ["VOL", [_bUp, _bDn, _bHover]], ["AFFICHAGE", [_bMenus, _bClose]]] };
-        default { [["CAMÉRA", [_bShot, _bZoomOut, _bZoomIn, _bVis, _bNadir, _bCenter]], ["CIBLES", [_bMark, _bTargets]], ["VOL", [_bUp, _bDn, _bHover]], ["AFFICHAGE", [_bSrc, _bQ, _bMenus, _bClose]]] };
+        case (_view isEqualTo "SPLIT"): { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bVis]], ["", [_bUp, _bDn, _bHover, _bMenus, _bMore]]] + _moreRow };
+        default { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bVis]], ["", [_bUp, _bDn, _bHover, _bTargets, _bMenus, _bMore]]] + _moreRow };
     };
     // Rangées : largeur de chaque bouton selon la longueur de son libellé ; un groupe passe à la rangée suivante quand
     // la rangée serait trop chargée pour rester lisible.
@@ -179,23 +184,31 @@ if (_view isNotEqualTo "") then {
         private _n = 0;
         {
             private _wt = ([_x select 0] call _weight) + 2;
-            if ((count _part) > 0 && {_n + _wt > _cap}) then { _cut pushBack [_gl, _part]; _gl = ""; _part = []; _n = 0; };
+            if ((count _part) > 0 && {_n + _wt > _cap}) then { _cut pushBack [_gl, _part]; _gl = ["", "*"] select (_gl isEqualTo "*"); _part = []; _n = 0; };
             _part pushBack _x;
             _n = _n + _wt;
         } forEach _gb;
         if ((count _part) > 0) then { _cut pushBack [_gl, _part]; };
     } forEach _groups;
     _groups = _cut;
+    // Une rangée principale (titre "*") ne partage pas sa rangée avec un groupe ordinaire.
     private _barRows = [];
     private _cnt = 0;
+    private _bigPrev = false;
     {
         private _n = 0;
         { _n = _n + ([_x select 0] call _weight) + 2; } forEach (_x select 1);
-        if ((count _barRows) isEqualTo 0 || {_cnt > 0 && {_cnt + _n > _cap}}) then { _barRows pushBack []; _cnt = 0; };
+        private _big = (_x select 0) isEqualTo "*";
+        if ((count _barRows) isEqualTo 0 || {_big isNotEqualTo _bigPrev} || {_cnt > 0 && {_cnt + _n > _cap}}) then { _barRows pushBack []; _cnt = 0; };
         (_barRows select ((count _barRows) - 1)) pushBack _x;
         _cnt = _cnt + _n;
+        _bigPrev = _big;
     } forEach _groups;
-    private _barH = [0, (count _barRows) * (_lh + _btnH + _pad * 0.3) + _pad * 0.3] select ((count _barRows) > 0);
+    private _rowBig = { params ["_row"]; ((_row param [0, ["", []]]) select 0) isEqualTo "*" };
+    private _rowH = { params ["_row"]; [_lh + _btnH, _btnH * 1.45] select ([_row] call _rowBig) };
+    private _barH = 0;
+    { _barH = _barH + ([_x] call _rowH) + _pad * 0.3; } forEach _barRows;
+    if ((count _barRows) > 0) then { _barH = _barH + _pad * 0.3; };
     private _k169 = 0.5625 * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
     private _areaH = if (_view isEqualTo "SPLIT") then { (_bw * _k169) min (_bh * 0.45) } else { _bh - _top - _barH };
     // Image 16/9 ajustée à la place disponible (bandes noires sur les côtés ou dessus / dessous).
@@ -426,6 +439,7 @@ if (_view isNotEqualTo "") then {
     private _y = _top + _areaH + _pad * 0.3;
     {
         private _row = _x;
+        private _big = [_row] call _rowBig;
         private _wsum = 0;
         { { _wsum = _wsum + ([_x select 0] call _weight); } forEach (_x select 1); } forEach _row;
         private _gw = _pad * 0.8;
@@ -435,7 +449,7 @@ if (_view isNotEqualTo "") then {
             _x params ["_glabel", "_btns"];
             private _span = 0;
             { _span = _span + _unit * ([_x select 0] call _weight); } forEach _btns;
-            if (_lh > 0 && {_glabel isNotEqualTo ""}) then {
+            if (_lh > 0 && {!(_glabel in ["", "*"])}) then {
                 private _t = ["COMSPEC_RscStructuredText", [_x0, _y, _span, _lh]] call comspec_atak_native_fnc_pageCtrl;
                 _t ctrlSetStructuredText parseText ((format ["<t size='0.72' font='RobotoCondensedBold' color='#8a9a93'>%1</t>", _glabel]) call comspec_atak_native_fnc_tr);
                 _t ctrlEnable false;
@@ -446,8 +460,8 @@ if (_view isNotEqualTo "") then {
             {
                 _x params ["_lbl", "_code", ["_state", ""], ["_tip", ""], ["_en", true]];
                 private _bwid = _unit * ([_lbl] call _weight);
-                private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_state isEqualTo "main"), [_bx, _y + _lh, _bwid - _pad / 3, _btnH], _lbl] call comspec_atak_native_fnc_pageCtrl;
-                _b ctrlSetFontHeight _bfs;
+                private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_state isEqualTo "main"), [_bx, _y + ([_lh, 0] select _big), _bwid - _pad / 3, [_btnH, _btnH * 1.45] select _big], _lbl] call comspec_atak_native_fnc_pageCtrl;
+                _b ctrlSetFontHeight (_bfs * ([1, 1.25] select _big));
                 switch (_state) do {
                     case "on": { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
                     case "red": { _b ctrlSetBackgroundColor [0.78, 0.2, 0.16, 0.95]; _b ctrlSetTextColor [1, 1, 1, 1]; };
@@ -461,7 +475,7 @@ if (_view isNotEqualTo "") then {
             } forEach _btns;
             _x0 = _x0 + _span + _gw;
         } forEach _row;
-        _y = _y + _lh + _btnH + _pad * 0.3;
+        _y = _y + ([_row] call _rowH) + _pad * 0.3;
     } forEach _barRows;
     _top = _top + _areaH + _barH;
 };
@@ -727,7 +741,7 @@ switch (_tab) do {
     case "PHOTO": {
         _rows pushBack ["section", format ["Clichés du drone : %1", count _photos], "Gardés sur ce poste (dossier Screenshots), aussi visibles dans l'app Galerie"];
         _rows pushBack ["buttons", [["OUVRIR LE VISEUR PHOTO", { ["view"] call comspec_atak_native_fnc_dronePhoto; }, true, true, "Cadrer, zoomer, marquer et surligner avant de prendre la photo"]]];
-        if ((count _photos) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun cliché. Bouton VISEUR PHOTO sous l'image, ou ci-dessus.</t>"]; };
+        if ((count _photos) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun cliché. Bouton PHOTO sous l'image, ou ci-dessus.</t>"]; };
         {
             _x params ["_i", "_e"];
             _e params ["_file", "_title", "", "_sse", "_cf", "_grid", "_clock", "_drone", "_state"];
@@ -794,6 +808,13 @@ switch (_tab) do {
                 ]]
             ];
         };
+        // Télécommande sur le vrai téléphone du joueur : page Athena /telecommande-drone (QR code fixe de l'adresse du site
+        // de production, tools/gen_remote_qr.py ; l'adresse écrite suit celle réglée pour Athena).
+        _rows append [
+            ["section", "Télécommande sur votre téléphone", "Scannez avec votre vrai téléphone, connecté à votre compte Athena : boutons du drone, rôles et essaim, ordres transmis par Athena en quelques secondes."],
+            ["image", "\z\comspec_atak_native\addons\main\data\drone_remote_qr_ca.paa"],
+            ["text", format ["<t size='0.85' color='#8a9a93'>%1/telecommande-drone</t>", profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"]]]
+        ];
         // Ajout d'un drone : posé à moins de 15 m, libre.
         private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {!(_x in _fleet)} && {(_x getVariable ["COMSPEC_DroneOwner", ""]) in ["", getPlayerUID player]} };
         _rows pushBack ["section", "Ajouter un drone", ["Posez un autre drone à vos pieds : le drone piloté continue seul, le nouveau est pris en main.", "Flotte complète (4 drones)."] select ((count _fleet) >= 4)];
@@ -843,21 +864,8 @@ switch (_tab) do {
             ["segment", "Glisser sur l'image", [
                 ["SAISIR L'IMAGE", { profileNamespace setVariable ["COMSPEC_ATAK_DroneDragMode", 0]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, _dm isEqualTo 0],
                 ["DIRIGER LA CAMÉRA", { profileNamespace setVariable ["COMSPEC_ATAK_DroneDragMode", 1]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, _dm isEqualTo 1]
-            ], ["l'image suit la souris, comme sur un écran tactile", "la caméra tourne du côté où l'on glisse"] select (_dm isEqualTo 1)],
-            ["segment", "Source de l'image", [
-                ["DRONE", ["feedSrc", "DRONE"] call _act, _src isEqualTo "DRONE"],
-                ["CAMÉRA ATAK", ["feedSrc", "PHONE"] call _act, _src isEqualTo "PHONE"],
-                ["CAMÉRA CASQUE", ["feedSrc", "HELMET"] call _act, _src isEqualTo "HELMET"]
-            ], "ATAK : le téléphone filme devant vous · casque : regard du porteur"]
+            ], ["l'image suit la souris, comme sur un écran tactile", "la caméra tourne du côté où l'on glisse"] select (_dm isEqualTo 1)]
         ];
-        if (_src isEqualTo "HELMET") then {
-            // Porteur de la caméra casque : soi-même ou un équipier du groupe à moins de 3 km.
-            private _fu = missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedUnit", player];
-            private _mates = [player] + ((units group player) select { alive _x && {_x isNotEqualTo player} && {(_x distance player) < 3000} });
-            _rows pushBack ["segment", "Caméra casque de", (_mates select [0, 5]) apply {
-                [[name _x, "MOI"] select (_x isEqualTo player), compile format ["['feedUnit', %1] call comspec_atak_native_fnc_droneAction;", str ([netId _x, getPlayerUID _x] select (isPlayer _x))], _x isEqualTo _fu]
-            }];
-        };
         // Vol : ordres immédiats.
         _rows pushBack ["section", "Vol", "Ordres immédiats ; l'altitude et la vitesse servent aussi aux tâches"];
         // Veille : posé ou stationnaire, peu de consommation, capteur coupé ; reprise d'un appui.

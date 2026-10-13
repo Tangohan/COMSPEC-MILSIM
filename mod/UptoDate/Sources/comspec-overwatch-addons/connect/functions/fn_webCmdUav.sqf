@@ -6,6 +6,7 @@
     (comspec_atak_native_fnc_droneAction ["webCmd", [ordre, arguments]]), donc à portée de liaison seulement.
       hover land home rth takeoff resume force | standby (k=LAND|HOVER) | follow_me | follow_unit (cs=indicatif)
       goto (x, y) | loiter / observe (x, y, r) | hunt (x, y, r) | alt (v=m) | speed (v=km/h) | photo
+      role (k=NONE|ME|CQB|GUARD|HUNT) | swarm (k=ME|CQB|GUARD|HUNT|HOVER|RTH|LAND)   flotte du pilote (fn_droneFleet)
     Photo : voir fn_webCmdUavPhoto. Compte rendu au poste par fn_webCmdAck.
     Retour : true (la commande visait ce joueur).
 */
@@ -16,7 +17,12 @@ if (isNil "comspec_atak_native_fnc_droneAction") exitWith { ["Téléphone COMSPE
 private _d = objectFromNetId _ref;
 if (isNull _d || {!alive _d}) exitWith { ["Drone introuvable ou détruit"] call _fail };
 if ((_d getVariable ["COMSPEC_DroneOwner", ""]) isNotEqualTo (getPlayerUID player)) exitWith { ["Ce drone n'est plus appairé au téléphone du pilote"] call _fail };
-if ((missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull]) isNotEqualTo _d) exitWith { ["Ce drone n'est pas le drone actif du téléphone"] call _fail };
+// Flotte (ATAK natif 1.49.0+) : un drone de la flotte du pilote qui reçoit un ordre devient le drone piloté ; l'essaim vise toute la flotte.
+private _fleetOk = !isNil "comspec_atak_native_fnc_droneFleet";
+if ((missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull]) isNotEqualTo _d) then {
+    if (_fleetOk && {_cmd isNotEqualTo "swarm"} && {_d in (missionNamespace getVariable ["COMSPEC_ATAK_DroneFleet", []])}) then { ["switch", _d] call comspec_atak_native_fnc_droneFleet; };
+};
+if (_cmd isNotEqualTo "swarm" && {(missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull]) isNotEqualTo _d}) exitWith { ["Ce drone n'est pas le drone actif du téléphone"] call _fail };
 if (!alive player) exitWith { ["Pilote hors de combat"] call _fail };
 
 // Liaison radio téléphone ↔ drone : [barres, distance, en liaison] (relief, batterie et téléphone compris).
@@ -28,6 +34,25 @@ if (!(_ln isEqualType []) || {!(_ln param [2, false])}) exitWith {
 private _num = { params ["_k", "_def"]; private _v = _a getOrDefault [_k, ""]; if (_v isEqualTo "") then { _def } else { parseNumber _v } };
 private _pos = { [["x", -1] call _num, ["y", -1] call _num] };
 private _say = { params ["_t"]; ["INFO", _t, 4, 30] call comspec_atak_native_fnc_notify; };
+
+// Rôle d'un drone et ordres à l'essaim (fn_droneFleet) : NONE ME CQB GUARD HUNT / ME CQB GUARD HUNT HOVER RTH LAND.
+if (_cmd in ["role", "swarm"]) exitWith {
+    if (!_fleetOk) exitWith { ["Téléphone ATAK trop ancien : pas de flotte de drones (1.49.0 ou plus)"] call _fail };
+    private _k = toUpper (_a getOrDefault ["k", ""]);
+    if (_cmd isEqualTo "swarm") exitWith {
+        if !(_k in ["ME", "CQB", "GUARD", "HUNT", "HOVER", "RTH", "LAND"]) exitWith { ["Ordre d'essaim inconnu"] call _fail };
+        ["swarm", _k] call comspec_atak_native_fnc_droneFleet;
+        [format ["Télécommande : essaim, %1", toLower _k]] call _say;
+        [_id, "done", format ["Essaim : %1", toLower _k], createHashMapFromArray [["mode", _d getVariable ["COMSPEC_DroneMode", ""]]]] call comspec_overwatch_connect_fnc_webCmdAck;
+        true
+    };
+    if !(_k in ["NONE", "ME", "CQB", "GUARD", "HUNT"]) exitWith { ["Rôle inconnu"] call _fail };
+    private _ok = ["role", [_d, ["", _k] select (_k isNotEqualTo "NONE")]] call comspec_atak_native_fnc_droneFleet;
+    if !(_ok isEqualTo true) exitWith { ["Rôle refusé par le téléphone (hors liaison, ou garde désactivée sur le serveur)"] call _fail };
+    [format ["Télécommande : drone, rôle %1", toLower _k]] call _say;
+    [_id, "done", format ["Rôle : %1", toLower _k], createHashMapFromArray [["mode", _d getVariable ["COMSPEC_DroneMode", ""]]]] call comspec_overwatch_connect_fnc_webCmdAck;
+    true
+};
 
 if (_cmd isEqualTo "photo") exitWith {
     [_id, _d] call comspec_overwatch_connect_fnc_webCmdUavPhoto;

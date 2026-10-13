@@ -194,6 +194,9 @@ ICONS = {
     "alert_tic": '<path d="M12 2.5l1.7 5L18.7 5l-2 5 5 1.9-5 1.9 2 5-5-2.4-1.7 5-1.7-5-5 2.4 2-5-5-1.9 5-1.9-2-5 5 2.5z"/>',
     "alert_clear": '<path d="M12 2.5l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10v-6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
     "alert_eagle": '<path d="M12 2.5c.9 0 1.3 1.3 1.3 3v5.2l7.2 3.3v1.7l-7.2-1.6v4l2.2 1.6V21L12 20.2 8.5 21v-1.3l2.2-1.6v-4L3.5 15.7V14l7.2-3.3V5.5c0-1.7.4-3 1.3-3z"/><path d="M3 3l18 18"/>',
+    "relief_los": '<circle cx="4.5" cy="18" r="2"/><path d="M6.3 17l6.2-3.4" /><path d="M14.5 12.5l5-2.8" stroke-dasharray="1.6 1.6"/><path d="M9 21l3.5-6 2.5 3 2-2.5 4 5.5z"/><circle cx="20" cy="9.5" r="1.2"/>',
+    "relief_bld": '<path d="M3 21V9l6-3v15M9 21V4h8v17M17 21v-9h4v9M2 21h20"/><path d="M11.5 7.5h1M14 7.5h1M11.5 10.5h1M14 10.5h1M11.5 13.5h1M14 13.5h1"/>',
+    "relief_heat": '<path d="M2 20l6-10 4 6 3-4 7 8z"/><path d="M5 20h14" stroke-dasharray="2 1.5"/><circle cx="18" cy="5" r="2.5"/>',
     "reco_eye": '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     # Main ouverte : « prendre en main » (pastille Ctrl+Maj+U du téléphone porté).
     "ui_hand": '<path d="M9.1 12V5.6a1.3 1.3 0 0 1 2.6 0V11M11.7 11V4.3a1.3 1.3 0 0 1 2.6 0V11M14.3 11V5.6a1.3 1.3 0 0 1 2.6 0V11M16.9 11.2V8.3a1.3 1.3 0 0 1 2.6 0v5.4c0 4.1-2.8 7.3-6.6 7.3-2.7 0-4.3-1.3-5.8-3.5l-2.6-4a1.4 1.4 0 0 1 2.2-1.7l2.4 2.8V8.2"/>',
@@ -223,6 +226,50 @@ def compass_needle(size=256):
     svg = f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="{size}" height="{size}">
 <path d="M12 4.5l3.2 10L12 12.6l-3.2 1.9z" fill="#5cc76b" stroke="#0b0f0c" stroke-width="0.5"/></svg>'''
     return Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=size, output_height=size))).convert("RGBA")
+
+
+def compass_card(size=256):
+    """Cadran façon HSI (style CADRAN de la boussole) : il tourne avec le cap, le haut reste l'avant.
+    Graduations tous les 5°, N rouge, puis les dizaines de degrés (3, 6, 9… 33) : rien à traduire."""
+    import math
+    s = 4
+    S = size * s
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    c = S / 2
+    R = c - 6 * s
+    d.ellipse((c - R, c - R, c + R, c + R), fill=(10, 14, 12, 200), outline=(255, 255, 255, 230), width=3 * s)
+    for a in range(0, 360, 5):
+        ln = 20 if a % 30 == 0 else (13 if a % 10 == 0 else 8)
+        r0, r1 = R - ln * s, R - 2 * s
+        sa, ca = math.sin(math.radians(a)), math.cos(math.radians(a))
+        d.line((c + r0 * sa, c - r0 * ca, c + r1 * sa, c - r1 * ca), fill=(255, 255, 255, 230), width=(4 if a % 30 == 0 else 2) * s)
+    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 21 * s)
+    for a in range(0, 360, 30):
+        txt = "N" if a == 0 else str(a // 10)
+        col = (229, 72, 58, 255) if a == 0 else (255, 255, 255, 240)
+        lab = Image.new("RGBA", (70 * s, 44 * s), (0, 0, 0, 0))
+        ld = ImageDraw.Draw(lab)
+        w = ld.textlength(txt, font=font)
+        ld.text(((70 * s - w) / 2, 2 * s), txt, font=font, fill=col)
+        lab = lab.rotate(-a, resample=Image.BICUBIC, expand=True)
+        rl = R - 36 * s
+        x, y = c + rl * math.sin(math.radians(a)), c - rl * math.cos(math.radians(a))
+        img.alpha_composite(lab, (int(x - lab.width / 2), int(y - lab.height / 2)))
+    return img.resize((size, size), Image.LANCZOS)
+
+
+def compass_lubber(size=256):
+    """Repère fixe du style CADRAN : index vert en haut (le cap lu) et silhouette « moi » au centre."""
+    s = 4
+    S = size * s
+    img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    c = S / 2
+    green, dark = (92, 199, 107, 255), (11, 15, 12, 255)
+    d.polygon([(c, 30 * s), (c - 12 * s, 2 * s), (c + 12 * s, 2 * s)], fill=green, outline=dark)
+    d.polygon([(c, c - 34 * s), (c + 22 * s, c + 26 * s), (c, c + 14 * s), (c - 22 * s, c + 26 * s)], fill=green, outline=dark, width=2 * s)
+    return img.resize((size, size), Image.LANCZOS)
 
 
 def icon_png(name, body, size=128):
@@ -1784,6 +1831,10 @@ def main():
                 convert(icon_png(name, ICONS[name]), name, tmp)
             return
         # « qsicons » : seulement les icônes du volet rapide.
+        if len(sys.argv) > 2 and sys.argv[2] == "compass":
+            convert(compass_card(), "compass_card", tmp)
+            convert(compass_lubber(), "compass_lubber", tmp)
+            return
         if len(sys.argv) > 2 and sys.argv[2] == "qsicons":
             for name, body in ICONS.items():
                 if name.startswith("qs_"):
@@ -1854,6 +1905,8 @@ def main():
             convert(night.rotate(-90, expand=True), "phone_portrait_night", tmp)
         convert(compass_ring(), "compass_ring", tmp)
         convert(compass_needle(), "compass_needle", tmp)
+        convert(compass_card(), "compass_card", tmp)
+        convert(compass_lubber(), "compass_lubber", tmp)
         for name, body in ICONS.items():
             convert(icon_png(name, body), name, tmp)
         for lvl in (100, 75, 50, 25, 10):

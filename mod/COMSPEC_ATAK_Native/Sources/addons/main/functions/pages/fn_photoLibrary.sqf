@@ -9,7 +9,8 @@
       "check"   : demande à Athena lesquelles sont visibles (DLL ReconImagesKnown, 2.0.59+) ;
                   uiNamespace COMSPEC_ATAK_PhotoKnown = noms en minuscules, ou nil si Athena n'a pas pu répondre
       "delete"  : supprime du poste la photo n° arg (second appui dans les 4 s pour confirmer)
-      "deleteAll" : supprime du poste toutes les photos listées, sauf les clichés du drone (second appui dans les 4 s)
+      "deleteAll" : supprime du poste toutes les photos listées et les clichés du drone (fichier et fiche), sauf un cliché
+                    en cours d'envoi (second appui dans les 4 s)
 */
 params [["_action", "list"], ["_arg", -1]];
 // Clichés du drone (profil COMSPEC_ATAK_DronePhotos) : fichiers du dossier Screenshots, gérés par leur fiche.
@@ -66,7 +67,27 @@ switch (_action) do {
             true
         };
         uiNamespace setVariable ["COMSPEC_ATAK_PhotoDelArm", ["", -10]];
-        private _todo = if (_action isEqualTo "deleteAll") then { [_lib] call _phoneOnly } else { [_lib select _arg] };
+        private _todo = if (_action isEqualTo "deleteAll") then { +_lib } else { [_lib select _arg] };
+        // Tout supprimer : les clichés du drone partent aussi (fichier et fiche), sauf un envoi en cours.
+        if (_action isEqualTo "deleteAll") then {
+            private _dl = profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []];
+            if !(_dl isEqualType []) then { _dl = []; };
+            private _onDisk = _lib apply { toLower (_x select 1) };
+            private _keep = [];
+            {
+                if (_x isEqualType [] && {(_x param [8, ""]) isEqualTo "SENDING"}) then {
+                    _keep pushBack _x;
+                    private _f = toLower (_x param [0, ""]);
+                    _todo = _todo select { (toLower (_x select 1)) isNotEqualTo _f };
+                } else {
+                    private _f = if (_x isEqualType []) then { _x param [0, ""] } else { "" };
+                    if (_f isEqualType "" && {_f isNotEqualTo ""} && {!((toLower _f) in _onDisk)}) then { "COMSPECExtension" callExtension ["DeleteLocalFile", [_f]]; };
+                };
+            } forEach _dl;
+            profileNamespace setVariable ["COMSPEC_ATAK_DronePhotos", _keep];
+            saveProfileNamespace;
+            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["dronePhEdit", -1];
+        };
         private _done = 0;
         {
             _x params ["_path", "_name"];

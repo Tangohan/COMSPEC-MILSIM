@@ -84,6 +84,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 }];
 ["COMSPEC ATAK", "PhonePanic", "Bouton PANIQUE (deux appuis)", { if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { false }; ["panic"] call comspec_atak_native_fnc_alertsAction; if (diag_tickTime < ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["panicArmedUntil", -1])) then { ["WARNING", "PANIQUE : appuyez encore pour envoyer", 5, 60] call comspec_atak_native_fnc_notify; }; true }, "", [0, [false,false,false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "GestureFinger", ["Doigt d'honneur", "Geste du bras gauche (marche aussi fusil en main). Aussi dans les actions ACE perso."], { [player] call comspec_atak_native_fnc_gestureFinger }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "GestureFingerAim", ["Doigt d'honneur libre (maintenir)", "Tant que la touche est maintenue : bras gauche tendu, majeur levé, qui suit le joueur visé ou le plus proche du centre de l'écran, sinon le curseur."], { ["start"] call comspec_atak_native_fnc_gestureFingerAim; true }, { ["stop"] call comspec_atak_native_fnc_gestureFingerAim; true }, [0, [false, false, false]], false] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneNight", "Mode nuit du téléphone (normal / rouge / sombre)", {
     private _m = profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"];
     private _n = ["OFF", "RED", "DIM"] select ((((["OFF", "RED", "DIM"] find _m) max 0) + 1) mod 3);
@@ -148,6 +149,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 ["comspec_atak_native_medevacStatus", { ["statusRecv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
 // Ordres : réponses des joueurs du camp (app Tâches, qui a vu / reçu / exécute).
 ["comspec_atak_native_orderAck", { ["recv", _this] call comspec_atak_native_fnc_orderAck; }] call CBA_fnc_addEventHandler;
+// App JTAC : brief, appels du JTAC et réponses de l'équipage (CAS), envoyés aux seuls intéressés.
+["comspec_atak_native_cas", { ["recv", _this] call comspec_atak_native_fnc_jtacAction; }] call CBA_fnc_addEventHandler;
+// App JTAC ouverte en contrôle (ou vue équipage) : position et géométrie de l'appareil rafraîchies.
+[{ ["tick"] call comspec_atak_native_fnc_jtacAction; }, 3] call CBA_fnc_addPerFrameHandler;
 private _eh = addMissionEventHandler ["ExtensionCallback", { _this call comspec_atak_native_fnc_extensionCallback }];
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 // Service Athéna changé (Oui / Non) : apps Athena affichées ou masquées tout de suite.
@@ -336,6 +341,8 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
     private _path = ["ACE_SelfActions"];
     if (isClass (configFile >> "CfgPatches" >> "ace_gestures") && {(missionNamespace getVariable ["ace_gestures_showOnInteractionMenu", 2]) isEqualTo 2}) then { _path pushBack "ace_gestures"; };
     ["CAManBase", 1, _path, _act, true] call ace_interact_menu_fnc_addActionToClass;
+    private _act2 = ["COMSPEC_GestureFingerAim", "Doigt d'honneur libre (6 s)", "", { ["timed", 6] call comspec_atak_native_fnc_gestureFingerAim; }, { alive player && {vehicle player isEqualTo player} }] call ace_interact_menu_fnc_createAction;
+    ["CAManBase", 1, _path, _act2, true] call ace_interact_menu_fnc_addActionToClass;
 };
 // Action ACE : changer la batterie du téléphone (si une batterie de rechange est portée).
 if (!isNil "ace_interact_menu_fnc_createAction") then {
