@@ -38,6 +38,21 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Drone : bouton TEST VIDÉO pour l'image noire du téléphone (ATAK natif 1.90.0)
+
+### Résumé joueur
+Type : patch
+FR : Un test pour réparer l'image noire du drone dans le téléphone
+- Nouveau bouton TEST VIDÉO dans l'app Drone (RÉGLAGES) : pendant 20 s, la même vidéo s'affiche à 4 endroits numérotés. Dites-nous lesquels montrent une image : on saura où le téléphone bloque la vidéo.
+- En anglais, l'image vidéo ne passe plus dans la traduction du téléphone.
+EN : A test to fix the black drone picture in the phone
+- New VIDEO TEST button in the Drone app (SETTINGS): for 20 s, the same video shows in 4 numbered places. Tell us which ones show a picture: we will know where the phone blocks the video.
+- In English, the video picture no longer goes through the phone's translation.
+
+### Détail technique
+- Retour de TTRD (13/10) : la PiP s'affiche partout ailleurs dans le jeu, sauf dans le téléphone. fn_pipCheck "test" / "testEnd" : caméra devant le joueur, texture carrée `#(argb,512,512,1)r2t(comspecpiptest,1.0)` à 4 endroits (1 groupe de contenu, 2 display du téléphone, 3 RscDisplayEmpty par-dessus, 4 calque cutRsc RscTitleDisplayEmpty), journal [CAMERA] ; bouton dans la rangée RÉGLAGES de la vue caméra.
+- fn_tr : les textures commençant par « #( » ne sont jamais traduites.
+- Seul commit de la PR #771 resté hors du regroupement #777. Non testé en jeu.
 ## Langues ajoutées par la communauté (ATAK natif 1.89.0)
 
 ### Résumé joueur

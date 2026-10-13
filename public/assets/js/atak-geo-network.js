@@ -37,19 +37,19 @@
   function ensurePlaceStyles() {
     var doc = global.document;
     if (!doc || doc.getElementById('atak-geo-place-styles')) return;
+    // Thème Athena / Overwatch : fond noir mat, filet fin, Inter / IBM Plex Mono, hiérarchie par la taille seulement.
     var css = [
       '.leaflet-marker-icon.atak-geo-place{background:none;border:0;width:0!important;height:0!important;overflow:visible;}',
-      '.atak-geo-place__name{position:absolute;left:0;top:0;transform:translate(-50%,-50%);white-space:nowrap;',
-      'font:600 11px/1.25 "Barlow Condensed","Roboto Condensed","Arial Narrow",system-ui,sans-serif;letter-spacing:.04em;',
-      'color:#eef3f8;background:rgba(10,15,22,.84);border:1px solid rgba(255,255,255,.14);border-radius:3px;',
-      'padding:1px 6px;box-shadow:0 1px 3px rgba(0,0,0,.45);cursor:pointer;pointer-events:auto;}',
-      '.atak-geo-place--city .atak-geo-place__name{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;',
-      'padding:2px 8px;border-color:rgba(244,197,66,.55);color:#fff4cf;}',
-      '.atak-geo-place--town .atak-geo-place__name{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;',
-      'border-color:rgba(232,168,56,.45);color:#fbe9c2;}',
-      '.atak-geo-place--village .atak-geo-place__name{font-size:11.5px;}',
-      '.atak-geo-place--landmark .atak-geo-place__name,.atak-geo-place--other .atak-geo-place__name{font-size:10.5px;font-weight:500;',
-      'font-style:italic;color:#cfe3f2;background:rgba(10,15,22,.66);border-color:rgba(102,204,255,.22);}',
+      '.atak-geo-place__name{position:absolute;left:0;top:0;transform:translate(-50%,-50%);white-space:nowrap;cursor:pointer;pointer-events:auto;',
+      'font:500 10.5px/1.3 Inter,"IBM Plex Sans","Segoe UI",system-ui,sans-serif;letter-spacing:.02em;',
+      'color:var(--athena-soft,#c5cbc8);background:rgba(5,5,5,.72);border:1px solid var(--athena-line-2,#27302d);border-radius:2px;padding:1px 5px;}',
+      '.atak-geo-place--city .atak-geo-place__name{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;',
+      'color:var(--athena-text,#e4e8e8);padding:2px 7px;}',
+      '.atak-geo-place--town .atak-geo-place__name{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--athena-text,#e4e8e8);}',
+      '.atak-geo-place--landmark .atak-geo-place__name,.atak-geo-place--other .atak-geo-place__name{',
+      'font:400 9.5px/1.3 "IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;color:var(--athena-soft,#c5cbc8);opacity:.85;',
+      'background:none;border-color:transparent;text-shadow:0 0 3px #000,0 0 2px #000;}',
+      '.atak-geo-place__name:hover{border-color:var(--athena-green,#00d69a);color:#fff;}',
       '.atak-geo-place.is-culled{display:none!important;}'
     ].join('');
     var el = doc.createElement('style');
@@ -66,9 +66,9 @@
   function placeLabelSize(p) {
     var kind = placeKind(p.type);
     var name = String(p.name || '');
-    var charW = kind === 'CITY' ? 9.6 : (kind === 'TOWN' ? 8.2 : 6.6);
-    var h = kind === 'CITY' ? 22 : (kind === 'TOWN' ? 19 : 17);
-    return { w: Math.max(24, name.length * charW + 16), h: h };
+    var charW = kind === 'CITY' ? 9.4 : (kind === 'TOWN' ? 8.2 : 6.2);
+    var h = kind === 'CITY' ? 20 : 17;
+    return { w: Math.max(24, name.length * charW + 14), h: h };
   }
 
   function roadStyle(cls) {

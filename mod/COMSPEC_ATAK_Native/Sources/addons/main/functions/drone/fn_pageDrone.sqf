@@ -150,6 +150,8 @@ if (_view isNotEqualTo "") then {
     // Secours si l'image reste noire (PiP qui ne rend rien) : la vue du jeu passe sur la caméra du drone (fn_droneAction "direct").
     private _bDirect = ["VUE DIRECTE", ["direct"] call _act, "", "Plein écran sur la caméra du drone, sans passer par l'image du téléphone (utile si elle reste noire). Échap pour revenir au téléphone"];
     private _bClose = ["FERMER", ["cam"] call _act, "", "Coupe l'image du drone (le drone continue ce qu'il fait)"];
+    // Diagnostic de l'image noire : la même image vidéo montrée à 4 endroits (fn_pipCheck "test").
+    private _bPipTest = ["TEST VIDÉO", { ["test"] call comspec_atak_native_fnc_pipCheck; }, "", "Image noire ? Affiche 20 s la même vidéo à 4 endroits numérotés : dites-nous lesquels montrent une image"];
     // Viseur photo.
     private _toolCode = { params ["_k"]; compile format ["['tool', %1] call comspec_atak_native_fnc_dronePhoto;", str _k] };
     private _bBox = [["CADRE", "CADRE : TRACEZ"] select (_tool isEqualTo "BOX"), ["BOX"] call _toolCode, ["", "on"] select (_tool isEqualTo "BOX"), "Surligner d'un cadre jaune : appuyez, puis glissez sur l'image (4 surlignages au plus). Rappuyez pour reprendre la main sur la caméra", (count _shapes) < 4 || {_tool isEqualTo "BOX"}];
@@ -159,11 +161,11 @@ if (_view isNotEqualTo "") then {
     private _bTake = ["PRENDRE LA PHOTO", { ["take"] call comspec_atak_native_fnc_dronePhoto; }, "main", "Prend la photo telle que cadrée, avec ses surlignages, puis ouvre la fiche de transmission"];
     // Réglages repliés (retour de TTRD : « pas clair ») : PLUS les déplie sur une rangée à part.
     private _more = _s getOrDefault ["droneCamMore", false];
-    private _bMore = [["RÉGLAGES", "MASQUER"] select _more, { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["droneCamMore", !(_st getOrDefault ["droneCamMore", false])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, ["", "on"] select _more, "Autres réglages de la caméra : vers le sol, recentrer, netteté, fermer la caméra"];
+    private _bMore = [["RÉGLAGES", "MASQUER"] select _more, { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["droneCamMore", !(_st getOrDefault ["droneCamMore", false])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, ["", "on"] select _more, "Autres réglages de la caméra : vers le sol, recentrer, netteté, test vidéo, fermer la caméra"];
     // Groupes de la barre : [titre, boutons]. Titre "*" : rangée principale, boutons plus grands, sans titre.
     // Vue caméra : rangée principale (photo, marquer, zoom, vision), puis le vol, puis les réglages repliés.
     private _labels = !_mini && {_view isEqualTo "SHOT"};
-    private _moreRow = [[], [["", [_bNadir, _bCenter, _bQ, _bClose]]]] select _more;
+    private _moreRow = [[], [["", [_bNadir, _bCenter, _bQ, _bPipTest, _bClose]]]] select _more;
     private _groups = switch (true) do {
         case (_view isEqualTo "SHOT"): { [["CADRAGE", [_bZoomOut, _bZoomIn, _bCenter, _bVis]], ["CIBLE", [_bMark]], ["SURLIGNER", [_bBox, _bCircle, _bErase]], ["PHOTO", [_bCancel, _bTake]]] };
         case (_view isEqualTo "TOTAL"): { [["", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bTotal]]] select [0, [0, 1] select _inter] };

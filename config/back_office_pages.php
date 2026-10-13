@@ -247,6 +247,11 @@ return [
         ['path' => 'back-office/atak/files-envoi', 'group' => 'ATAK', 'kicker' => 'ATAK · SUIVI', 'title' => 'Files d’envoi Athena', 'subtitle' => 'Envois du jeu vers Athena en attente, réessayés ou en échec, et état de charge d’Athena.', 'css' => ['back-office-atak-squads.css', 'back-office-atak-send-queue.css'], 'flags' => ['boSkipPageHead' => true]],
         ['path' => 'back-office/atak/fire-teams', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · TACTIQUE', 'title' => 'Équipes de feu', 'subtitle' => 'La composition de chaque équipe de feu pour la session.', 'css' => ['back-office-fire-teams.css']],
         ['path' => 'back-office/atak', 'group' => 'ATAK', 'kicker' => 'ATAK · POSTE', 'title' => 'Poste de situation', 'subtitle' => 'La situation en direct : qui est connecté, où, et les dossiers de renseignement en cours.'],
+        ['path' => 'back-office/atak/roleplay', 'group' => 'ATAK', 'kicker' => 'ATAK · ROLEPLAY', 'title' => 'Mode roleplay', 'subtitle' => 'Les contraintes réalistes imposées aux téléphones de votre communauté : réseau dégradé, relais, capteurs, données chiffrées et zones de brouillage.', 'css' => ['back-office-atak-roleplay.css'], 'quick' => [
+            ['label' => 'Contrôle de mission', 'href' => 'back-office/atak/controle-serveur'],
+            ['label' => 'Réseau de relais', 'href' => 'back-office/atak/relays-network'],
+            ['label' => 'Configuration réalisme', 'href' => 'back-office/ressources/atak-realism/config'],
+        ]],
         ['path' => 'back-office/atak/controle-serveur', 'group' => 'ATAK', 'kicker' => 'ATAK · MISSION', 'title' => 'Contrôle de mission', 'subtitle' => 'Les règles de la mission en cours, les fonctions activées et les relais de liaison.'],
         ['path' => 'back-office/atak/relays-network', 'group' => 'ATAK', 'kicker' => 'ATAK · RELAIS', 'title' => 'Réseau de relais', 'subtitle' => 'Les relais radio sur le terrain : état, portée, places disponibles et fiabilité.', 'css' => ['back-office-atak-devices.css'], 'quick' => [
             ['label' => 'Contrôle de mission', 'href' => 'back-office/atak/controle-serveur'],
