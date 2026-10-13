@@ -1,12 +1,14 @@
 // Gestes du joueur (ATAK natif 1.34.0) : doigt d'honneur (bras gauche, compatible fusil en main) et selfie
 // (bras droit tendu, téléphone face au visage). Animations maison : anim/*.rtm, générées par
 // tools/gen_gestures.py (non binarisées, le jeu les lit telles quelles).
+#include "gestures_aim.hpp"
 class CfgMovesBasic {
     class ManActions {
         GestureComspecFinger = "GestureComspecFinger";
         GestureComspecSelfieUp = "GestureComspecSelfieUp";
         GestureComspecSelfie = "GestureComspecSelfie";
         GestureComspecSelfieDown = "GestureComspecSelfieDown";
+        COMSPEC_AIM_ACTIONS
     };
     class Actions {
         class NoActions: ManActions {
@@ -14,6 +16,7 @@ class CfgMovesBasic {
             GestureComspecSelfieUp[] = {"GestureComspecSelfieUp", "Gesture"};
             GestureComspecSelfie[] = {"GestureComspecSelfie", "Gesture"};
             GestureComspecSelfieDown[] = {"GestureComspecSelfieDown", "Gesture"};
+            COMSPEC_AIM_NOACTIONS
         };
     };
 };
@@ -79,6 +82,28 @@ class CfgGesturesMale {
         };
         // Doigt d'honneur : bras gauche levé, dos de la main vers la cible, deux coups secs, ~2,4 s.
         class GestureComspecFinger: GestureComspecBase {};
+        // Doigt d'honneur libre (fn_gestureFingerAim, touche maintenue) : bras gauche tendu vers la cible, une pose
+        // en boucle par case de la grille cap x site (gestures_aim.hpp), montée et descente par la pose centrale.
+        class GestureComspecFingerAimBase: GestureComspecBase {
+            file = "\z\comspec_atak_native\addons\main\anim\comspec_finger_aim_yp0_pp0.rtm";
+            looped = 1;
+            speed = 0.6;
+            minPlayTime = 0;
+            leftHandIKCurve[] = {0};
+        };
+        class GestureComspecFingerAimUp: GestureComspecFingerAimBase {
+            file = "\z\comspec_atak_native\addons\main\anim\comspec_finger_aim_up.rtm";
+            looped = 0;
+            speed = 2.8;
+            leftHandIKCurve[] = {0, 1, 0.5, 0};
+        };
+        class GestureComspecFingerAimDown: GestureComspecFingerAimBase {
+            file = "\z\comspec_atak_native\addons\main\anim\comspec_finger_aim_down.rtm";
+            looped = 0;
+            speed = 2.5;
+            leftHandIKCurve[] = {0, 0, 0.6, 0, 1, 1};
+        };
+        COMSPEC_AIM_STATES
         // Selfie (mode selfie de l'appareil photo, arme rangée) : bras droit tendu devant le visage.
         class GestureComspecSelfieBase: GestureComspecBase {
             mask = "comspec_rightArm";

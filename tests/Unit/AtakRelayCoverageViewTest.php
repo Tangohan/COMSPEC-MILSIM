@@ -7,7 +7,7 @@ namespace Tests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * ATAK natif 1.45.0 : relais sur la carte, couverture réseau, triangulation par les relais, champs de vision
+ * ATAK natif : relais sur la carte, couverture réseau, triangulation par les relais, champs de vision
  * (point, équipier, drone, secteur, bâtiments) et calques de la carte qui disent ce qu'ils montrent.
  */
 final class AtakRelayCoverageViewTest extends TestCase
@@ -47,7 +47,7 @@ final class AtakRelayCoverageViewTest extends TestCase
     public function testFieldOfViewOptions(): void
     {
         $act = $this->read(self::MAIN . '/functions/pages/fn_reliefAction.sqf');
-        foreach (['rlHeight', 'rlSector', 'rlObjects', 'lineIntersectsSurfaces'] as $k) {
+        foreach (['rlHeight', 'rlSector', 'rlObst', '_byObj', 'lineIntersectsSurfaces'] as $k) {
             self::assertStringContainsString($k, $act, $k);
         }
         self::assertStringContainsString('DEPUIS LE DRONE', $this->read(self::MAIN . '/functions/pages/fn_pageRelief.sqf'));
@@ -62,9 +62,8 @@ final class AtakRelayCoverageViewTest extends TestCase
         self::assertStringContainsString('["compute"] call comspec_atak_native_fnc_reliefAction;', $map);
     }
 
-    public function testVersionAndEnglish(): void
+    public function testEnglish(): void
     {
-        self::assertStringContainsString('#define VERSION_STR "1.45.0"', $this->read(self::MAIN . '/script_component.hpp'));
         $en = $this->read(self::MAIN . '/i18n/en.txt');
         self::assertStringContainsString('"Localiser par relais", "Locate by relays"', $en);
         self::assertStringContainsString('"Champ de vision ici", "Field of view here"', $en);

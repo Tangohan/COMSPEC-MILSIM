@@ -11,15 +11,85 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Relais : couverture réseau, triangulation, champs de vision ; calques de la carte qui disent ce qu'ils montrent (ATAK natif 1.45.0)
+## Relais : couverture réseau, triangulation, champs de vision ; calques de la carte qui disent ce qu'ils montrent (ATAK natif 1.51.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : triangulation par les relais, portée et couverture des relais, perte de réseau et débit, aperçu des champs de vision, et les relais invisibles sur la carte.
 - **Relais sur la carte** (calque Wave Relay) : tous les relais Overwatch de la mission (plus seulement le plus proche) avec leur nom, leur portée en cercle et leur débit, les relais détruits barrés en gris, les passerelles de véhicule et PC mobiles. Le maillage se raccroche à n'importe quel relais (un équipier près d'un autre relais n'est plus « isolé »).
 - **Couverture réseau** (Wave Relay, nouvel onglet COUVERTURE) : carte du débit reçu à hauteur d'homme sur 2, 5 ou 10 km autour de soi, relief et brouilleurs compris : vert 4 Mbit/s et plus, jaune, orange, rouge faible, gris zone blanche. Part du terrain couvert, débit moyen, débit à ma position, liste des relais avec ce qu'on en reçoit. Au survol de la carte, la barre du curseur donne le débit et la perte au point pointé.
 - **Triangulation par les relais** : LOCALISER sur un équipier (onglet RÉSEAU ou clic droit sur lui dans la carte, « Localiser par relais »). Chaque relais ou téléphone du camp qui entend son appareil donne une distance estimée (plus le lien est faible, plus l'erreur est grande) ; la carte trace ces cercles et la zone trouvée « ± N m » pendant 10 min. Une seule source : un cercle ; deux : position ambiguë ; trois et plus : un point.
-- **Champs de vision** : clic droit sur la carte, « Champ de vision ici » (observateur posé au point), ou sur un équipier, « Son champ de vision » (depuis ses yeux, dans la direction où il regarde). App Relief : hauteur d'œil ajoutée (toit 10 m, mât 50 m, drone 150 m), secteur 360°, 120° ou 60°, bâtiments et végétation pris en compte (orange : vue coupée par un mur, une maison, des arbres ; rouge : par le relief), et DEPUIS LE DRONE quand un drone est appairé. L'observateur et son secteur sont tracés sur la carte.
+- **Champs de vision** : clic droit sur la carte, « Champ de vision ici » (observateur posé au point), ou sur un équipier, « Son champ de vision » (depuis ses yeux, dans la direction où il regarde). App Relief : hauteur d'œil ajoutée (toit 10 m, mât 50 m, drone 150 m), secteur 360°, 120° ou 60°, DEPUIS LE DRONE ; avec l'option « + bâtiments et arbres », les cases cachées par un mur, une maison ou des arbres sont en orange (rouge : par le relief) quand un drone est appairé. L'observateur et son secteur sont tracés sur la carte.
 - **Calques de la carte** : allumer un calque dit ce qu'il montre ou pourquoi il est vide (aucune zone reçue d'Athena, aucun relevé EW, aucune demande logistique, Athena injoignable pour SIGINT...). Relief sans calcul lance le champ de vision depuis soi ; Wave Relay lance la couverture s'il y a des relais.
 - À vérifier en jeu : relais et portées visibles sur la carte, couverture sur une mission avec relais (et brouilleur), LOCALISER un équipier balise coupée, champ de vision depuis un point, un équipier et le drone, chaque calque allumé puis éteint.
+## Taille de la barre d'outils et style de boussole au choix (ATAK natif 1.49.0)
+
+- Réglages de la carte : taille de la barre d'outils et style de la boussole au choix. Non testé en jeu.
+
+---
+
+## 2026-10-12 — Galerie peaufinée, clichés du drone supprimables, viseur Photo réparé (ATAK natif 1.48.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : écran de la Galerie plus propre, mêmes actions.
+
+- Une seule rangée d'onglets : **TOUT**, **TÉLÉPHONE**, **DRONE** et **ENVOIS** (avant : onglets PHOTOS / ENVOIS puis un second filtre « Afficher »).
+- Une ligne d'état de l'envoi au lieu du paragraphe d'explication (l'aide reste en infobulle).
+- Une barre d'actions sans titres de rubrique : PRENDRE UNE PHOTO, ACTUALISER, ENVOYER LES NOUVELLES (en vert quand il y en a), TOUT SUPPRIMER.
+- Lignes de photos : titre en gras, puis état d'envoi, date et grille en petit sur une seconde ligne ; titres de section avec leur nombre entre parenthèses.
+- Boutons des lignes (DÉTAILS, RENVOYER…) au même gris-vert que les autres boutons du téléphone, au lieu du bleu ; vaut pour toutes les listes du téléphone.
+- **Suppression** (retour de TTRD : impossible de supprimer les clichés du drone) : chaque ligne a son bouton SUPPRIMER (second appui sur CONFIRMER, en rouge), photos du téléphone comme clichés du drone. TOUT SUPPRIMER efface aussi les clichés du drone (fichier et fiche), sauf un cliché en cours d'envoi. Une photo déjà reçue reste sur Athena.
+- **App Photo, viseur noir** (retour de TTRD, de nuit) : la caméra rendue dans l'écran ne s'adapte pas à l'obscurité comme la vue du joueur. Le viseur règle maintenant son gain selon la lumière : normal le jour, éclairci en pénombre, fortement éclairci la nuit (« MODE NUIT » affiché sur l'image). Texture du rendu dans le sens du viseur (paysage). Le journal note l'ouverture et l'arrêt du viseur (lumière, PiP, raison de l'arrêt) pour diagnostiquer un écran encore noir.
+- **App Photo, viseur figé** (retour de TTRD : « on dirait que le visu reste sur place ») : la caméra du viseur restait à l'endroit où l'app avait été ouverte, et le joueur s'y voyait de loin. Elle suit maintenant les yeux du joueur à chaque image (même méthode que le plein écran). Un déclenchement interrompu ne fige plus le viseur plus de 5 s.
+## App JTAC refaite : contrôle CAS réaliste du check-in au BDA (ATAK natif 1.47.0)
+
+Non testé en jeu. Demande de TTRD : « JTAC faut une refonte complète, réaliste de l'app ». Pas de DLL à recompiler, pas de migration.
+- Onglet SITUATION : cible verrouillée au laser, à la visée ou pointée sur la carte (grille 10 chiffres, altitude en ft MSL, amis les plus proches) ; appareils amis en station avec leur fiche de check-in lue sur l'appareil (armement restant, carburant, altitude, vitesse, nacelle).
+- Onglet BRIEF : plan d'attaque (type de contrôle 1/2/3, BOT/BOC, armement, marquage, code laser) et 9-LINE calculé (cap et distance IP-cible en NM, altitude, position, marquage, amis) ; remarques FAH, LTL, menaces, DANGER CLOSE avec initiales du chef quand des amis sont sous la distance de risque de l'armement (valeurs indicatives).
+- Onglet CONTRÔLE : frise de la mission (CHECK-IN, BRIEF, READBACK, CORRÉLATION, IN, AUTORISÉ, OFF, BDA), readback attendu et reçu, géométrie de l'appareil (vient d'où, cap, axe final d'attaque respecté ou non), LASER ON/OFF, CLEARED HOT (CLEARED TO ENGAGE en type 3) actif seulement quand la doctrine le permet, CONTINUE DRY, ABORT, BDA et re-attaque. Équipage IA : le JTAC note les appels du pilote entendus à la radio.
+- Vue ÉQUIPAGE : le pilote joueur reçoit le 9-LINE sur son téléphone et répond par boutons (READBACK, CONTACT, TALLY, SPOT, VISUAL, NO JOY, IN, WEAPONS AWAY, OFF, UNABLE). Le 9-LINE part aussi sur Athena quand le téléphone est relié.
+- À vérifier en jeu : à deux joueurs (JTAC au sol, pilote en vol), un passage complet jusqu'au BDA ; fiche de check-in sur plusieurs appareils (avion, hélicoptère, armements de mods) ; DANGER CLOSE avec amis près de la cible ; IP et cible pointées sur la carte ; ABORT puis nouvelle passe ; rafraîchissement de l'onglet CONTRÔLE sans saccade.
+
+## Relief refaite : champ de vision, heatmap, ligne de vue, bâtiments vus (ATAK natif 1.45.0)
+
+Non testé en jeu. Demande de TTRD : « Relief faut améliorer l'app : LIGNE DE VUE, HEATMAP, BÂTIMENT VISIBLE ». Pas de DLL à recompiler, pas de migration.
+- **Écran** dans la famille de l'app Reco, en turquoise : en-tête (altitude, grille, pastille du calque carte cliquable), quatre tuiles d'outil, réglages en boutons, chiffres en tuiles.
+- **Champ de vision** : obstacles au choix, RELIEF SEUL ou + BÂTIMENTS ET ARBRES (lignes de vue contre les objets, plus lent). Vues par secteur en barres de couleur, point haut sur la carte.
+- **Heatmap** : nouvelle échelle à cinq couleurs (bleu nuit, cyan, vert, jaune, rouge) plus lisible, ou PAR RAPPORT À MOI (bleu en dessous, rouge au-dessus : ce qui me domine), légende avec les altitudes, part du terrain plus haut que moi.
+- **Ligne de vue** : vers un carroyage saisi, le point visé (SOUS MON REGARD) ou un point touché sur la carte (outil LIGNE DE VUE de la carte, qui passe désormais par le même calcul). Verdict VUE DÉGAGÉE / VUE BLOQUÉE, nature de l'obstacle (relief, bâtiment, végétation, véhicule), distance, azimut, dénivelé, profil du terrain avec la ligne de visée.
+- **Bâtiments vus** : bâtiments de plus de 4 m dans 200 m, 500 m ou 1 km, testés depuis mes yeux sur trois hauteurs ; en vert sur la carte s'ils sont vus, contour rouge sinon ; liste des dix plus proches avec CARTE.
+- Nouvelles icônes : ligne de vue, heatmap, bâtiments.
+
+À tester en jeu : chaque outil en ville et en campagne ; champ de vision avec bâtiments et arbres (temps de calcul à 2 km) ; heatmap par rapport à moi sur une colline ; ligne de vue derrière un mur, un arbre et une crête ; outil LIGNE DE VUE de la carte puis retour dans Relief ; bâtiments vus à 1 km (temps de calcul) et leurs couleurs sur la carte.
+
+## Doigt d'honneur libre, qui suit la cible (ATAK natif 1.44.0)
+
+Non testé en jeu. Demande de TTRD : « un doigt d'honneur libre, qui suit vraiment le curseur et les joueurs, comme GTA ». Pas de DLL à recompiler, pas de migration. Le doigt d'honneur classique (geste de 2,4 s) reste tel quel.
+- Nouvelle touche CBA « Doigt d'honneur libre (maintenir) » (COMSPEC ATAK, non attribuée par défaut) : tant qu'elle est maintenue, bras gauche tendu, dos de la main vers la cible, majeur levé, petit coup sec en boucle. Action ACE perso « Doigt d'honneur libre (6 s) ».
+- Cible revue 8 fois par seconde : l'homme sous le curseur (100 m), sinon le joueur ou l'IA le plus proche du centre de l'écran (moins de 30°, 60 m), sinon la direction du curseur. Le bras suit sur une grille de 24 poses (cap de -40° à +60° côté gauche, site de -20° à +40°, par pas de 20°) ; au-delà il reste au bord. Arma ne permet pas de tourner un os librement par script, d'où la grille.
+- À vérifier en jeu : passage d'une case à l'autre (fluide ou saccadé), bras qui suit bien un joueur qui se déplace, cibles au-dessus et en dessous, fusil en main (la main gauche quitte puis retrouve le garde-main), geste vu par les autres.
+
+## Correctif 2026-10-12 — App Plan : la zone terminée ne disparaît plus ; symboles et étiquettes de la carte lisibles (ATAK natif 1.43.1)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration.
+- Une zone (ou tout élément) envoyée au plan **partagé** disparaissait à la fin du tracé : le téléphone vidait le tracé et attendait que le serveur écrive le plan, et rien ne revenait (serveur sans le mod ATAK natif, ou refus du serveur).
+- L'élément reste affiché pendant l'attente. Sans réponse du serveur au bout de 5 s, il est gardé dans le brouillon, avec un message et une ligne `PLAN` dans le RPT.
+- Le serveur annonce qu'il a le mod (`COMSPEC_ATAK_PlanSrvOn`). Sans lui, le téléphone place tout de suite les éléments dans le brouillon et le dit : le plan partagé avec les coéquipiers demande le mod sur le serveur.
+- Carte du téléphone : les symboles suivent la taille de l'écran de l'ATAK (mini, porté, plein écran, portrait ou paysage) au lieu d'un plancher qui les gardait trop gros sur la petite carte. Les textes suivent aussi, sans descendre sous une taille lisible.
+- Étiquettes de la carte : indicatifs et textes des marqueurs en blanc cerné de noir, un peu plus grands, au lieu de la couleur de l'unité avec une ombre légère. Cartouches plein écran plus grands, deuxième ligne plus claire. Même règle pour l'app Plan.
+
+## Selfie : le téléphone dans la main, l'objectif sur le téléphone (ATAK natif 1.43.0)
+
+Non testé en jeu. Retour de TTRD après essai : « anime OK et manque le S7 dans la main », la main passait aussi devant l'image. Pas de DLL à recompiler, pas de migration.
+- Pendant le selfie, le téléphone du profil (S7 par défaut, coque teintée comme sur le JPC ; autres modèles du profil, la tablette à touches devient un S7) est tenu dans la main droite, en paysage, écran vers le visage. Objet global accroché à l'os de la main : il suit le bras et les autres joueurs le voient. Il redescend avec le bras puis disparaît.
+- La caméra du selfie (app Photo objectif avant et plein écran R) est maintenant posée sur le téléphone, 3 cm devant l'écran, tournée vers les yeux : la main ne masque plus le visage. La souris (ou le glisser dans l'app) tourne la vue autour du téléphone.
+- À vérifier en jeu : téléphone bien dans la paume (ni décalé ni traversant les doigts). Réglage sans recompiler, dans la console : `COMSPEC_ATAK_SelfiePhoneAttach = ["righthand", [x, y, z], vectorDir, vectorUp]` (valeur actuelle `["righthand", [0.013, -0.05, -0.066], [0.941, -0.134, 0.311], [0.293, 0.782, -0.55]]`), puis repasser en selfie.
+
+## ALERTES refaite, SALUTE dans sa propre app (ATAK natif 1.42.0)
+
+Non testé en jeu. Demande de TTRD : reprendre le style de l'app Reco pour les Alertes, bouton panique prioritaire, compte rendu SALUTE hors des Alertes. Pas de DLL à recompiler, pas de migration.
+- **Alertes** : en-tête rouge (heure, ma grille, pastille CAMP + POSTE ou CAMP SEULEMENT selon Athena). **PANIQUE** en tête, sur toute la largeur : grand bouton rouge sombre, rouge vif quand il est armé (« Appuyez encore dans les 5 secondes pour ENVOYER »), toujours deux appuis. Alertes rapides en trois tuiles à icône (CONTACT, FIN DE CONTACT, APPAREIL ABATTU). Journal en cartes de la couleur de l'alerte, bouton CARTE sur chacune.
+- **SALUTE** : nouvelle app (section Renseignement, à côté de Reco), en bleu. Une grande lettre par champ avec exemple ; L avec ICI et VISÉ (point sous mon regard) et la distance et l'azimut ; T avec MAINTENANT ; compteur « x/6 remplis » ; ENVOYER LE SALUTE et EFFACER ; derniers SALUTE de la mission en cartes. Raccourci depuis les Alertes. Même envoi qu'avant (camp et poste Athena).
+- Nouvelles icônes : panique, contact, fin de contact, appareil abattu, SALUTE.
+
+À tester en jeu : PANIQUE (un appui arme, le deuxième envoie, retour au repos après 5 s ; reçue par un autre joueur du camp) ; les trois alertes rapides ; app SALUTE : saisir, ICI / VISÉ / MAINTENANT sans perdre la saisie, envoyer avec moins de deux champs (refusé) puis complet ; le SALUTE apparaît dans les deux journaux ; affichage en portrait et en mode petit.
 
 ## Drone : flotte de 4 drones, rôles, essaim, garde rapprochée ; repérage automatique en réglage admin (ATAK natif 1.39.0)
 

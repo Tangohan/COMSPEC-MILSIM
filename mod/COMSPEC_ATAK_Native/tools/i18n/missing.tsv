@@ -6,6 +6,8 @@ COMSPEC_ALERT_%1_%2	XEH_postInitClient.sqf
 COMSPEC_PANIC_%1_%2	XEH_postInitClient.sqf
 Dammaged	XEH_postInitClient.sqf
 Doigt d'honneur	XEH_postInitClient.sqf
+Doigt d'honneur libre (6 s)	XEH_postInitClient.sqf
+Doigt d'honneur libre (maintenir)	XEH_postInitClient.sqf
 Ended	XEH_postInitClient.sqf
 Explosion	XEH_postInitClient.sqf
 Geste du bras gauche (marche aussi fusil en main). Aussi dans les actions ACE perso.	XEH_postInitClient.sqf
@@ -13,6 +15,7 @@ HH:MM	XEH_postInitClient.sqf
 HH:MM:SS	XEH_postInitClient.sqf
 Init	XEH_postInitClient.sqf
 Respawn	XEH_postInitClient.sqf
+Tant que la touche est maintenue : bras gauche tendu, majeur levé, qui suit le joueur visé ou le plus proche du centre de l'écran, sinon le curseur.	XEH_postInitClient.sqf
 Unload	XEH_postInitClient.sqf
 [COMSPEC ATAK NATIVE][INFO][BOOT] Client PostInit complete	XEH_postInitClient.sqf
 [COMSPEC ATAK NATIVE][INFO][EXT] COMSPECATAKNativeExtension initialization requested	XEH_postInitClient.sqf
@@ -58,10 +61,12 @@ rightleg	XEH_postInitClient.sqf
 slide	XEH_postInitClient.sqf
 start	XEH_postInitClient.sqf
 state	XEH_postInitClient.sqf
+stop	XEH_postInitClient.sqf
 swap	XEH_postInitClient.sqf
 target	XEH_postInitClient.sqf
 texture	XEH_postInitClient.sqf
 tick	XEH_postInitClient.sqf
+timed	XEH_postInitClient.sqf
 toggle	XEH_postInitClient.sqf
 treat	XEH_postInitClient.sqf
 true	XEH_postInitClient.sqf
@@ -105,7 +110,6 @@ follow	functions/aar/fn_aarAction.sqf
 image %4 / %5	functions/aar/fn_aarAction.sqf
 seek	functions/aar/fn_aarAction.sqf
 speed	functions/aar/fn_aarAction.sqf
-step	functions/aar/fn_aarAction.sqf
 trails	functions/aar/fn_aarAction.sqf
 10 s ▶	functions/aar/fn_pageAar.sqf
 ◀ 10 s	functions/aar/fn_pageAar.sqf
@@ -123,7 +127,6 @@ refuse	functions/bluetooth/fn_btAction.sqf
 search	functions/bluetooth/fn_btAction.sqf
 send	functions/bluetooth/fn_btAction.sqf
 sent	functions/bluetooth/fn_btAction.sqf
-stop	functions/bluetooth/fn_btAction.sqf
 unpaired	functions/bluetooth/fn_btAction.sqf
 sound	functions/bluetooth/fn_btInit.sqf
 Mission	functions/bluetooth/fn_btSounds.sqf
@@ -264,7 +267,6 @@ take	functions/dock/fn_dockClient.sqf
 COMSPEC_ATAK_DockTake%1	functions/dock/fn_dockMenu.sqf
 cursorObject isKindOf 'COMSPEC_ATAK_ChargingDock' && {(player distance cursorObject) < 3}	functions/dock/fn_dockMenu.sqf
 kit|%1|%2|%3	functions/dock/fn_dockServer.sqf
-save	functions/dock/fn_dockServer.sqf
 %1 %2 (drone %3)	functions/drone/fn_droneAction.sqf
 Drone %1	functions/drone/fn_droneAction.sqf
 H %3 m%4	functions/drone/fn_droneAction.sqf
@@ -292,7 +294,6 @@ observation	functions/drone/fn_droneAction.sqf
 observe	functions/drone/fn_droneAction.sqf
 observer	functions/drone/fn_droneAction.sqf
 payloads	functions/drone/fn_droneAction.sqf
-picked	functions/drone/fn_droneAction.sqf
 promote	functions/drone/fn_droneAction.sqf
 quad	functions/drone/fn_droneAction.sqf
 quality	functions/drone/fn_droneAction.sqf
@@ -391,7 +392,6 @@ PHOTOS (%1)	functions/drone/fn_pageDrone.sqf
 TRK:%1	functions/drone/fn_pageDrone.sqf
 ZOOM +	functions/drone/fn_pageDrone.sqf
 ZOOM -	functions/drone/fn_pageDrone.sqf
-picture	functions/drone/fn_pageDrone.sqf
 place	functions/drone/fn_pageDrone.sqf
 %1 min %2 s	functions/drone/fn_pageDroneDetect.sqf
 %7  %8 dBm	functions/drone/fn_pageDroneDetect.sqf
@@ -410,10 +410,14 @@ remaining	functions/explo/fn_exploList.sqf
 C%1	functions/explo/fn_pageExplo.sqf
 T-%1 s	functions/explo/fn_pageExplo.sqf
 charge	functions/explo/fn_pageExplo.sqf
+GestureComspecFingerAim_y%1_p%2	functions/gestures/fn_gestureFingerAim.sqf
+comspecfingeraim	functions/gestures/fn_gestureFingerAim.sqf
 comspecselfie	functions/gestures/fn_gestureSelfie.sqf
 comspecselfieup	functions/gestures/fn_gestureSelfie.sqf
 down	functions/gestures/fn_gestureSelfie.sqf
 exit	functions/gestures/fn_gestureSelfie.sqf
+lens	functions/gestures/fn_gestureSelfie.sqf
+righthand	functions/gestures/fn_gestureSelfie.sqf
 selfie	functions/gestures/fn_gestureSelfie.sqf
 hour	functions/map/fn_ewDraw.sqf
 track	functions/map/fn_ewDraw.sqf
@@ -556,7 +560,6 @@ color='%1' font='RobotoCondensedBold'	functions/music/fn_pageMusic.sqf
 file	functions/music/fn_pageMusic.sqf
 local	functions/music/fn_pageMusic.sqf
 public	functions/music/fn_pageMusic.sqf
-radio	functions/music/fn_pageMusic.sqf
 recent	functions/music/fn_pageMusic.sqf
 marker	functions/nav/fn_gpsAction.sqf
 %3 min	functions/nav/fn_pageGps.sqf
@@ -630,7 +633,6 @@ locate	functions/network/fn_relayNet.sqf
 relay	functions/network/fn_relayNet.sqf
 Server.Presence	functions/network/fn_serverPresence.sqf
 [COMSPEC ATAK] Adresse publique du serveur : %1	functions/network/fn_serverPresence.sqf
-away	functions/network/fn_serverPresence.sqf
 mission	functions/network/fn_serverPresence.sqf
 world	functions/network/fn_serverPresence.sqf
 salute	functions/pages/fn_alertsAction.sqf
@@ -699,7 +701,6 @@ sigint	functions/pages/fn_ewAction.sqf
 APPEL DE FEU %1 | pièce %2 | cible %3%9 | %4 x%5%6 | az %7 mil | %8 m	functions/pages/fn_firesAction.sqf
 IR strobe	functions/pages/fn_firesAction.sqf
 Laser %1	functions/pages/fn_firesAction.sqf
-clearing	functions/pages/fn_firesAction.sqf
 drift	functions/pages/fn_firesAction.sqf
 elev	functions/pages/fn_firesAction.sqf
 five	functions/pages/fn_firesAction.sqf
@@ -709,10 +710,10 @@ mils	functions/pages/fn_firesAction.sqf
 missions	functions/pages/fn_firesAction.sqf
 modes	functions/pages/fn_firesAction.sqf
 prefill5	functions/pages/fn_firesAction.sqf
+prefill9	functions/pages/fn_firesAction.sqf
 recall	functions/pages/fn_firesAction.sqf
 rounds	functions/pages/fn_firesAction.sqf
 send5	functions/pages/fn_firesAction.sqf
-send9	functions/pages/fn_firesAction.sqf
 sheaf	functions/pages/fn_firesAction.sqf
 shells	functions/pages/fn_firesAction.sqf
 smoke	functions/pages/fn_firesAction.sqf
@@ -771,7 +772,6 @@ candidates	functions/pages/fn_linkAllyAction.sqf
 cardiac	functions/pages/fn_linkAllyAction.sqf
 contusion	functions/pages/fn_linkAllyAction.sqf
 crush	functions/pages/fn_linkAllyAction.sqf
-data	functions/pages/fn_linkAllyAction.sqf
 fatal	functions/pages/fn_linkAllyAction.sqf
 flushed	functions/pages/fn_linkAllyAction.sqf
 grade	functions/pages/fn_linkAllyAction.sqf
@@ -845,7 +845,6 @@ taxi	functions/pages/fn_osintAction.sqf
 ô	functions/pages/fn_osintAction.sqf
 ù	functions/pages/fn_osintAction.sqf
 û	functions/pages/fn_osintAction.sqf
-CONTACT (TIC)	functions/pages/fn_pageAlerts.sqf
 Steam : %1	functions/pages/fn_pageAthena.sqf
 account	functions/pages/fn_pageAthena.sqf
 EKIA %1	functions/pages/fn_pageBda.sqf
@@ -877,7 +876,6 @@ Contacts	functions/pages/fn_pageC2.sqf
 CH:	functions/pages/fn_pageChat.sqf
 CH:general	functions/pages/fn_pageChat.sqf
 custom	functions/pages/fn_pageChat.sqf
-jtac	functions/pages/fn_pageChat.sqf
 Arma 3	functions/pages/fn_pageCredits.sqf
 COMSPEC Link	functions/pages/fn_pageCredits.sqf
 Extension (DLL)	functions/pages/fn_pageCredits.sqf
@@ -903,7 +901,7 @@ OW·	functions/pages/fn_pageDebug.sqf
 300 m	functions/pages/fn_pageEw.sqf
 5 min	functions/pages/fn_pageEw.sqf
 600 m	functions/pages/fn_pageEw.sqf
-1. IP / BP	functions/pages/fn_pageFires.sqf
+nine	functions/pages/fn_pageFires.sqf
 %3 min %4 s	functions/pages/fn_pageFood.sqf
 canteen	functions/pages/fn_pageFood.sqf
 humanitarian	functions/pages/fn_pageFood.sqf
@@ -954,7 +952,6 @@ captured	functions/pages/fn_pageProfile.sqf
 cert	functions/pages/fn_pageProfile.sqf
 compromised	functions/pages/fn_pageProfile.sqf
 issued	functions/pages/fn_pageProfile.sqf
-missing	functions/pages/fn_pageProfile.sqf
 revoked	functions/pages/fn_pageProfile.sqf
 ≈ %1 h %2 min	functions/pages/fn_pageProfile.sqf
 Infrastructure	functions/pages/fn_pageReco.sqf
@@ -967,9 +964,12 @@ static	functions/pages/fn_pageReco.sqf
 10 m	functions/pages/fn_pageRelief.sqf
 150 m	functions/pages/fn_pageRelief.sqf
 2 km	functions/pages/fn_pageRelief.sqf
+200 m	functions/pages/fn_pageRelief.sqf
 50 m	functions/pages/fn_pageRelief.sqf
 500 m	functions/pages/fn_pageRelief.sqf
-Altitude %1 m	functions/pages/fn_pageRelief.sqf
+Obstacles	functions/pages/fn_pageRelief.sqf
+distance	functions/pages/fn_pageRelief.sqf
+look	functions/pages/fn_pageRelief.sqf
 10 S	functions/pages/fn_pageSettings.sqf
 15 S	functions/pages/fn_pageSettings.sqf
 30 S	functions/pages/fn_pageSettings.sqf
@@ -983,8 +983,15 @@ Dock	functions/pages/fn_pageSettings.sqf
 FRANÇAIS	functions/pages/fn_pageSettings.sqf
 Langue / Language.	functions/pages/fn_pageSettings.sqf
 client	functions/pages/fn_pageSettings.sqf
+05 PHOTO	functions/pages/fn_pageSse.sqf
 CONTACT (FRC)	functions/pages/fn_pageSse.sqf
+GR %4	functions/pages/fn_pageSse.sqf
+GR %6	functions/pages/fn_pageSse.sqf
+GR %8%9	functions/pages/fn_pageSse.sqf
 OBSERVATION (FRO)	functions/pages/fn_pageSse.sqf
+OPS %3	functions/pages/fn_pageSse.sqf
+Production	functions/pages/fn_pageSse.sqf
+Q%4	functions/pages/fn_pageSse.sqf
 confirmed	functions/pages/fn_pageSse.sqf
 possible	functions/pages/fn_pageSse.sqf
 Signal	functions/pages/fn_pageStatus.sqf
@@ -1018,7 +1025,11 @@ node	functions/pages/fn_pageWaveRelay.sqf
 ACE Weather	functions/pages/fn_pageWeather.sqf
 Aviation	functions/pages/fn_pageWeather.sqf
 Conditions	functions/pages/fn_pageWeather.sqf
+Déclenchement resté bloqué : viseur relâché	functions/pages/fn_photoCam.sqf
+Viseur : caméra %1, PiP %2, lumière %3 (soleil/lune %4), exposition %5	functions/pages/fn_photoCam.sqf
+Viseur coupé : caméra %1, page %2, écran %3, plein écran %4	functions/pages/fn_photoCam.sqf
 comspec_photocam%1	functions/pages/fn_photoCam.sqf
+expose	functions/pages/fn_photoCam.sqf
 pose	functions/pages/fn_photoCam.sqf
 shoot	functions/pages/fn_photoCam.sqf
 x%6	functions/pages/fn_photoCam.sqf
@@ -1030,6 +1041,8 @@ internal	functions/pages/fn_photoMode.sqf
 pitch	functions/pages/fn_photoMode.sqf
 terminate	functions/pages/fn_photoMode.sqf
 x%2	functions/pages/fn_photoMode.sqf
+^(t_|b_|str_|d_|bush|tree).*	functions/pages/fn_reliefAction.sqf
+focus	functions/pages/fn_reliefAction.sqf
 ATAK Native	functions/pages/fn_taskAction.sqf
 Ordre %1%2	functions/pages/fn_taskAction.sqf
 wanted_%1_%2	functions/pages/fn_wantedAction.sqf
@@ -1079,7 +1092,6 @@ drawing	functions/plan/fn_planMap.sqf
 s%1	functions/plan/fn_planServer.sqf
 Athena ✓	functions/reports/fn_pageReports.sqf
 here	functions/reports/fn_pageReports.sqf
-lines	functions/reports/fn_pageReports.sqf
 summary	functions/reports/fn_pageReports.sqf
 vals	functions/reports/fn_pageReports.sqf
 location	functions/reports/fn_reportAction.sqf
@@ -1117,7 +1129,6 @@ equip	functions/reports/fn_reportTypes.sqf
 equipment	functions/reports/fn_reportTypes.sqf
 execution	functions/reports/fn_reportTypes.sqf
 friendly	functions/reports/fn_reportTypes.sqf
-fuel	functions/reports/fn_reportTypes.sqf
 impact	functions/reports/fn_reportTypes.sqf
 mechanism	functions/reports/fn_reportTypes.sqf
 medevac	functions/reports/fn_reportTypes.sqf
@@ -1133,7 +1144,6 @@ rations	functions/reports/fn_reportTypes.sqf
 reattack	functions/reports/fn_reportTypes.sqf
 recommendations	functions/reports/fn_reportTypes.sqf
 reference	functions/reports/fn_reportTypes.sqf
-remarks	functions/reports/fn_reportTypes.sqf
 situation	functions/reports/fn_reportTypes.sqf
 symptoms	functions/reports/fn_reportTypes.sqf
 threatened	functions/reports/fn_reportTypes.sqf
@@ -1146,7 +1156,6 @@ Apps	functions/screen/fn_pageScreenTime.sqf
 app|	functions/screen/fn_pageScreenTime.sqf
 screen|total	functions/screen/fn_pageScreenTime.sqf
 items	functions/screen/fn_playTimeServer.sqf
-players	functions/screen/fn_playTimeServer.sqf
 play|total	functions/screen/fn_playTimeServer.sqf
 role|%1	functions/screen/fn_playTimeServer.sqf
 seconds	functions/screen/fn_playTimeServer.sqf
@@ -1250,21 +1259,80 @@ House	functions/tactical/fn_breachBuilding.sqf
 Memory	functions/tactical/fn_breachBuilding.sqf
 contact	functions/tactical/fn_breachBuilding.sqf
 near	functions/tactical/fn_breachBuilding.sqf
-[JTAC] ABORT ABORT ABORT.	functions/tactical/fn_jtacAction.sqf
-abort	functions/tactical/fn_jtacAction.sqf
-continue	functions/tactical/fn_jtacAction.sqf
-nine	functions/tactical/fn_jtacAction.sqf
-prefill9	functions/tactical/fn_jtacAction.sqf
+%1 (radio)	functions/tactical/fn_jtacAction.sqf
+, FAH %1	functions/tactical/fn_jtacAction.sqf
+9-LINE → %1 : %2 | %3 | %4	functions/tactical/fn_jtacAction.sqf
+ABORT ABORT ABORT	functions/tactical/fn_jtacAction.sqf
+CLEARED HOT	functions/tactical/fn_jtacAction.sqf
+CLEARED TO ENGAGE	functions/tactical/fn_jtacAction.sqf
+CONTINUE DRY	functions/tactical/fn_jtacAction.sqf
+IN FROM THE %1	functions/tactical/fn_jtacAction.sqf
+IP %1	functions/tactical/fn_jtacAction.sqf
+LASER OFF / TERMINATE	functions/tactical/fn_jtacAction.sqf
+LASER ON	functions/tactical/fn_jtacAction.sqf
+LASER ON, code %1	functions/tactical/fn_jtacAction.sqf
+NO JOY	functions/tactical/fn_jtacAction.sqf
+OFF %1	functions/tactical/fn_jtacAction.sqf
+READBACK CORRECT	functions/tactical/fn_jtacAction.sqf
+WEAPONS AWAY	functions/tactical/fn_jtacAction.sqf
+aborted	functions/tactical/fn_jtacAction.sqf
+away	functions/tactical/fn_jtacAction.sqf
+clearing	functions/tactical/fn_jtacAction.sqf
+corr	functions/tactical/fn_jtacAction.sqf
+data	functions/tactical/fn_jtacAction.sqf
+jtac	functions/tactical/fn_jtacAction.sqf
+laser	functions/tactical/fn_jtacAction.sqf
+lines	functions/tactical/fn_jtacAction.sqf
+method	functions/tactical/fn_jtacAction.sqf
+missing	functions/tactical/fn_jtacAction.sqf
+n%1	functions/tactical/fn_jtacAction.sqf
+picked	functions/tactical/fn_jtacAction.sqf
+pilot	functions/tactical/fn_jtacAction.sqf
+pmap	functions/tactical/fn_jtacAction.sqf
+radio	functions/tactical/fn_jtacAction.sqf
+readback	functions/tactical/fn_jtacAction.sqf
+remarks	functions/tactical/fn_jtacAction.sqf
+resp	functions/tactical/fn_jtacAction.sqf
+send9	functions/tactical/fn_jtacAction.sqf
 source	functions/tactical/fn_jtacAction.sqf
-laser	functions/tactical/fn_jtacTarget.sqf
+step	functions/tactical/fn_jtacAction.sqf
+ammo	functions/tactical/fn_jtacAir.sqf
+fuel	functions/tactical/fn_jtacAir.sqf
+laserdesignator	functions/tactical/fn_jtacAir.sqf
+players	functions/tactical/fn_jtacAir.sqf
+shotbomb	functions/tactical/fn_jtacAir.sqf
+shotbullet	functions/tactical/fn_jtacAir.sqf
+shotmissile	functions/tactical/fn_jtacAir.sqf
+shotrocket	functions/tactical/fn_jtacAir.sqf
+shotshell	functions/tactical/fn_jtacAir.sqf
+simulation	functions/tactical/fn_jtacAir.sqf
+FAH %1	functions/tactical/fn_jtacGeometry.sqf
+%1 ft MSL	functions/tactical/fn_jtacLines.sqf
+DANGER CLOSE%1	functions/tactical/fn_jtacLines.sqf
+IR POINTER	functions/tactical/fn_jtacLines.sqf
+LASER %1	functions/tactical/fn_jtacLines.sqf
+LTL %1	functions/tactical/fn_jtacLines.sqf
+TYPE %1, %2	functions/tactical/fn_jtacLines.sqf
+risk	functions/tactical/fn_jtacLines.sqf
 Charge	functions/tactical/fn_pageBreach.sqf
 Door_%1_rot	functions/tactical/fn_pageBreach.sqf
 armed	functions/tactical/fn_pageBreach.sqf
+%1 ft MSL (%2 m)	functions/tactical/fn_pageJtac.sqf
 %2° (%3 mils) %4	functions/tactical/fn_pageJtac.sqf
+1. IP / BP	functions/tactical/fn_pageJtac.sqf
+3. Distance	functions/tactical/fn_pageJtac.sqf
+5. Description	functions/tactical/fn_pageJtac.sqf
+6. Position	functions/tactical/fn_pageJtac.sqf
 Altitude	functions/tactical/fn_pageJtac.sqf
-CLEARED HOT	functions/tactical/fn_pageJtac.sqf
+Brief	functions/tactical/fn_pageJtac.sqf
+Code laser %5	functions/tactical/fn_pageJtac.sqf
 DANGER CLOSE	functions/tactical/fn_pageJtac.sqf
+JTAC %1	functions/tactical/fn_pageJtac.sqf
+LASER OFF	functions/tactical/fn_pageJtac.sqf
+Readback	functions/tactical/fn_pageJtac.sqf
 TYPE %1	functions/tactical/fn_pageJtac.sqf
+TYPE %4	functions/tactical/fn_pageJtac.sqf
+picture	functions/tactical/fn_pageJtac.sqf
 %1%2 MRAD	functions/tactical/fn_pageSniper.sqf
 %4 MOA	functions/tactical/fn_pageSniper.sqf
 %5 MRAD	functions/tactical/fn_pageSniper.sqf
@@ -1272,7 +1340,6 @@ TYPE %1	functions/tactical/fn_pageJtac.sqf
 Solution	functions/tactical/fn_pageSniper.sqf
 Source	functions/tactical/fn_pageSniper.sqf
 V0 %4 m/s	functions/tactical/fn_pageSniper.sqf
-ammo	functions/tactical/fn_pageSniper.sqf
 from	functions/tactical/fn_pageSniper.sqf
 incl	functions/tactical/fn_pageSniper.sqf
 magazines	functions/tactical/fn_pageSniper.sqf
@@ -1430,7 +1497,6 @@ affiliation	functions/ui/fn_inspectorUpdate.sqf
 contacts	functions/ui/fn_inspectorUpdate.sqf
 friend	functions/ui/fn_inspectorUpdate.sqf
 hostile	functions/ui/fn_inspectorUpdate.sqf
-mini	functions/ui/fn_inspectorUpdate.sqf
 neutral	functions/ui/fn_inspectorUpdate.sqf
 object	functions/ui/fn_inspectorUpdate.sqf
 position	functions/ui/fn_inspectorUpdate.sqf
@@ -1497,6 +1563,7 @@ No parent display	functions/ui/fn_open.sqf
 active	functions/ui/fn_open.sqf
 Edit	functions/ui/fn_pageCtrl.sqf
 email	functions/ui/fn_pageRender.sqf
+save	functions/ui/fn_pageRender.sqf
 broken	functions/ui/fn_powerFx.sqf
 display_panel: no response	functions/ui/fn_powerFx.sqf
 empty	functions/ui/fn_powerFx.sqf
