@@ -13,13 +13,18 @@ diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
 
-// Langue du téléphone (par joueur). Titre bilingue : ce menu CBA n'est pas traduit. Le code reste en français,
-// fn_tr traduit à l'affichage (dictionnaire i18n/en.txt).
+// Langue du mod (par joueur) : téléphone, menus CBA COMSPEC (ATAK, Overwatch, SSE) et SSE. Sans sous-catégorie : CBA
+// range ces réglages en tête de la liste COMSPEC, au-dessus des sections « ATAK · … ». Titre bilingue, jamais traduit.
+// Le code reste en français, fn_tr traduit à l'affichage (dictionnaire i18n/en.txt) ; changer la langue redessine le
+// téléphone et retraduit les menus CBA COMSPEC (fn_menuRelang), sans relancer la mission.
 ["comspec_atak_native_language", "LIST",
-    ["Langue du téléphone / Phone language", "Français, English, ou Auto : langue du jeu (français si Arma est en français, anglais sinon). / Auto follows the game language."],
-    ["COMSPEC", "ATAK · Langue / Language"], [["fr", "en", "auto"], ["Français", "English", "Auto (langue du jeu / game language)"], 0], 0,
+    ["Langue / Language", "Langue du mod COMSPEC : téléphone ATAK, menus CBA COMSPEC et SSE. Auto suit la langue du jeu (français si Arma est en français, anglais sinon). / COMSPEC mod language: ATAK phone, COMSPEC CBA menus and SSE. Auto follows the game language."],
+    ["COMSPEC", ""], [["auto", "fr", "en"], ["Auto (langue du jeu / game language)", "Français", "English"], 0], 0,
     { [true] call comspec_atak_native_fnc_langApply; }] call CBA_fnc_addSetting;
 [] call comspec_atak_native_fnc_langApply;
+// Langue dans laquelle les menus CBA COMSPEC sont déclarés (fn_addSetting, fn_trMenu) : fn_menuRelang ne retraduit
+// que si elle change.
+missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]];
 
 // Intro au démarrage du jeu (fn_introSplash), désactivée par défaut (TTRD, 1.67.0 : buggée). Les deux réglages sont
 // recopiés dans le profil : l'intro joue avant que CBA lise ses réglages.
