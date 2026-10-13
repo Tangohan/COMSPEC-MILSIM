@@ -131,6 +131,30 @@ EN : The SEEK terminal no longer moves your character or spams the command post
 - `fn_sseUploadFacePhoto` (extrait de la transmission) : appelé aussi par `fn_sseCaptureFacePhoto` quand le sujet a déjà un id Athena ; un cliché déjà joint ne repart plus à chaque réouverture.
 - Site : `POST /api/sse/persons` en doublon complète la fiche existante (`mergeRetransmission`), classe au dossier sans nouvelle ligne de journal si rien ne change ; code de dossier inconnu → dossier créé (`findOrCreateByReference`) ; A1 sans dossier ouvert unique → dossier du jour `AUTO-AAMMJJ`.
 - PBO reconstruits : main.pbo, comspec_overwatch_connect.pbo, comspec_sse_biometrics.pbo.
+## L'IA ennemie ramasse les ATAK et traque les joueurs ; secours SIM à batterie vide (ATAK natif 1.90.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Un ATAK perdu peut trahir ton équipe
+- L'IA ennemie ramasse les téléphones sur les corps, les joueurs à terre ou menottés et au sol. Tant que personne ne réagit, elle voit votre BFT et vient vous chercher.
+- Tous les ATAK du camp reçoivent l'alerte « Compromission suspectée » avec l'IMEI et le numéro du téléphone. Un chef de groupe, le propriétaire ou le Zeus la valide dans l'app Alertes : le téléphone est coupé du réseau et son certificat est révoqué sur Athena.
+- Tu peux retrouver un ATAK volé avec GÉOLOC (app GE) grâce à son IMEI ou son numéro. Passer en mode avion te retire du BFT.
+- Batterie vide : la carte SIM passe en mode secours et le téléphone reste localisable par les relais avec son numéro ou son IMEI, même pour un allié.
+EN : A lost ATAK can betray your team
+- Enemy AI picks up phones from bodies, from downed or handcuffed players and from the ground. Until someone reacts, it sees your BFT and comes after you.
+- Every ATAK of the side gets a "Suspected compromise" alert with the phone's IMEI and number. A group leader, the owner or the Zeus confirms it in the Alerts app: the phone is cut off the network and its certificate is revoked on Athena.
+- You can find a stolen ATAK with GEOLOC (EW app) using its IMEI or number. Airplane mode takes you off the BFT.
+- Dead battery: the SIM card goes into emergency mode and the phone can still be located by the relays from its number or IMEI, even by a friendly.
+
+### Détail technique
+- `fn_captureServer` (serveur, PFH 3 s et 5 s) : sources = corps (`allDeadMen`) et joueurs à terre portant l'étiquette `COMSPEC_ATAK_PhoneTag`, porte-objets au sol signalés par l'événement Put (`fn_linkAllyInit`), corps d'une IA porteuse (`COMSPEC_ATAK_CapOf`). L'IA ennemie la plus proche dans `capture_radius` reçoit `doMove`, prend le téléphone à 4 m (`unlinkItem`/`removeItem` là où le corps est local, cargo reconstruit pour un porte-objet) et garde l'identité du téléphone (`COMSPEC_ATAK_Ident`), donc GÉOLOC le retrouve.
+- Exploitation : après `capture_crack` s si le propriétaire avait un code, rien si le téléphone était effacé. Toutes les `capture_refresh` s, le groupe porteur et jusqu'à 3 groupes du même camp à moins de `capture_share` m reçoivent `reveal` des joueurs du camp à balise BFT active à moins de `capture_hunt_radius` m, puis un point SAD sur le plus proche (`capture_hunt`). Variables de mission `COMSPEC_ATAK_NoPickup` / `COMSPEC_ATAK_NoHunt` sur une unité ou un groupe.
+- `fn_compromise` (client) : étiquette publiée toutes les 5 s (UID, camp, indicatif, numéro, IMEI, terminal Athena, code, effacé), alertes (notification, alerte plein écran, journal), section « Compromissions » de l'app Alertes (VALIDER / REJETER / CARTE). État partagé `COMSPEC_ATAK_CaptureList`. Validée : l'exploitation s'arrête, le valideur appelle COMSPEC Link `CompromiseTerminal` (état `compromised`) ; sans liaison Athena, le serveur passe au propriétaire puis à un chef du camp. Le propriétaire reçoit `COMSPEC_ATAK_PhoneGen + 1` (nouvel IMEI).
+- Site : `/api/atak/terminals/compromise` avec l'état `compromised` révoque les certificats encore valides du terminal (motif `keyCompromise`, `AtakRealismRepository::revokeCertificatesForTerminal`) et le note dans le journal d'activité.
+- `fn_simSos` : `COMSPEC_ATAK_SimSos` publié quand la batterie simulée est à 0 ; GÉOLOC (`fn_ewAction`) et RECHERCHER (`fn_mapSearch`) répondent « secours SIM » avec une position tirée des relais qui entendent le téléphone (1 relais : cellule large, 2 : moyenne, 3+ : triangulation ; mission sans relais : antennes fictives, rayon doublé). Allié traçable en secours SIM même si « Tracer son propre camp » est décoché.
+- Réglages CBA serveur : « ATAK · Capture par l'ennemi » (activé, distance, forçage, traque, portée, partage, rafraîchissement, qui valide) et dans « ATAK · Géolocalisation (GEOLOC) » : mode secours SIM, retrouver un allié.
+- Pas de changement de DLL (COMSPEC Link 2.0.82 sait déjà envoyer `CompromiseTerminal`). Pas de migration.
+- À tester en jeu (serveur dédié de préférence) : mourir près d'une IA ennemie avec son ATAK, la voir ramasser le téléphone ; alerte sur les ATAK du camp ; IA qui vient vers les joueurs à balise active ; mode avion ; VALIDER par un chef de groupe puis fin de la traque et certificat révoqué sur Athena ; GÉOLOC de l'IMEI volé ; batterie à 0 puis GÉOLOC du numéro par un allié, avec et sans relais dans la mission.
 
 ## Barlow Condensed revient en test dans Réglages > Police (ATAK natif 1.86.0)
 

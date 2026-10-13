@@ -231,6 +231,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
         ([] call comspec_atak_native_fnc_deviceHealth) get "state"
     ];
     if ((player getVariable ["COMSPEC_ATAK_Pub", []]) isNotEqualTo _pub) then { player setVariable ["COMSPEC_ATAK_Pub", _pub, true]; };
+    // Batterie vide : carte SIM en mode secours, encore localisable par les relais (fn_simSos).
+    ["publish"] call comspec_atak_native_fnc_simSos;
+    // Étiquette du téléphone (numéro, IMEI, terminal Athena) : lue par le serveur si l'IA ennemie le ramasse (fn_captureServer).
+    ["publish"] call comspec_atak_native_fnc_compromise;
 }, 5] call CBA_fnc_addPerFrameHandler;
 
 // Tous les marqueurs de la carte vers le web (relais unique par camp).
