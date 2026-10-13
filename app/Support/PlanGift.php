@@ -61,6 +61,38 @@ final class PlanGift
     }
 
     /**
+     * Formule réellement appliquée à une communauté (ligne tenants) : formule offerte en cours, sinon abonnement
+     * actif ou en essai, sinon essai fondateur Pro, sinon formule de base. Seule source pour l'affichage et les accès.
+     *
+     * @param array<string, mixed> $tenant
+     */
+    public static function effectivePlanSlug(array $tenant, ?int $now = null): string
+    {
+        $gift = self::activeFromSettings($tenant['settings'] ?? null, $now);
+        if ($gift !== null) {
+            return $gift['plan_slug'];
+        }
+        $base = (string) ($tenant['plan_slug'] ?? 'free');
+        $base = $base !== '' ? $base : 'free';
+        if (in_array((string) ($tenant['subscription_status'] ?? 'none'), ['active', 'trialing'], true)) {
+            return $base;
+        }
+        $settings = $tenant['settings'] ?? null;
+        if (is_string($settings)) {
+            $settings = trim($settings) !== '' ? json_decode($settings, true) : [];
+        }
+        $end = is_array($settings) ? ($settings['founder_trial_ends_at'] ?? null) : null;
+        if (is_string($end) && $end !== '') {
+            $ts = strtotime($end);
+            if ($ts !== false && $ts > ($now ?? time())) {
+                return 'pro';
+            }
+        }
+
+        return $base;
+    }
+
+    /**
      * Date de fin à partir d'une durée en jours, ou d'une date saisie (AAAA-MM-JJ) qui prime. null = sans limite.
      * Retourne false si la date saisie est invalide ou passée.
      */

@@ -68,6 +68,8 @@ Identités livrées :
 - Windows avec Arma 3 Tools et le SDK .NET 8 : `build_mod.bat` (DLL + PBO).
 - Sans Arma 3 Tools (Linux ou Windows) : `hemtt build` depuis `Sources/`, puis copier
   `Sources/.hemttout/build/addons/comspec_atak_native_main.pbo` vers `@COMSPEC_ATAK_Native/addons/main.pbo`.
+  Les pylônes relais 3D sont dans un PBO à part : `comspec_atak_native_towers.pbo` vers `@COMSPEC_ATAK_Native/addons/towers.pbo`
+  (modèles et textures : `tools/gen_tower_textures.py`, `tools/model_relay_towers.py`).
   `hemtt check` vérifie la config et le SQF.
 
 ## Langue (français / anglais)

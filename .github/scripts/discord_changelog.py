@@ -210,7 +210,8 @@ def main() -> int:
     if args.dry_run:
         print(json.dumps(message, ensure_ascii=False, indent=2))
         return 0
-    webhook = os.environ.get("DISCORD_RELEASES_WEBHOOK", "").strip()
+    # Un copier-coller laisse parfois un BOM ou un caractère invisible devant « https » : on les retire.
+    webhook = os.environ.get("DISCORD_RELEASES_WEBHOOK", "").strip().strip("\ufeff\u200b\u200c\u200d\u2060\u200e\u200f").strip()
     if not webhook:
         print("Secret DISCORD_RELEASES_WEBHOOK absent : aucun message envoyé.")
         return 0

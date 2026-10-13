@@ -16,6 +16,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 [{ ["sweep"] call comspec_atak_native_fnc_vestMount; ["sweep"] call comspec_atak_native_fnc_jpcScreen; }, 30] call CBA_fnc_addPerFrameHandler;
 // Passerelles de véhicule : véhicules détruits retirés, PC mobile qui repart replié (fn_vehicleGateway).
 [{ ["sweep"] call comspec_atak_native_fnc_vehicleGateway; }, 5] call CBA_fnc_addPerFrameHandler;
+// Pylônes relais 3D posés dans Eden dont l'init étendue n'aurait pas tourné : enregistrés comme relais (fn_relayTower).
+[{ ["sweep"] call comspec_atak_native_fnc_relayTower; }, [], 2] call CBA_fnc_waitAndExecute;
 // Relais de mission sur batterie (module « ATAK · Relais ») : charge qui baisse toutes les 30 s (fn_relayNet "sweep").
 [{ ["sweep"] call comspec_atak_native_fnc_relayNet; }, 30] call CBA_fnc_addPerFrameHandler;
 COMSPEC_ATAK_SrvLog = createHashMap;      // camp -> [[événement, arguments]...] (200 au plus)

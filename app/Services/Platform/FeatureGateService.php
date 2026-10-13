@@ -226,32 +226,8 @@ final class FeatureGateService
      */
     public function effectivePlanSlug(array $tenant): string
     {
-        // Formule offerte par l'administration de la plateforme : prime tant qu'elle court.
-        $gift = PlanGift::activeFromSettings($tenant['settings'] ?? null);
-        if ($gift !== null) {
-            return $gift['plan_slug'];
-        }
-        $status = (string) ($tenant['subscription_status'] ?? 'none');
-        if (in_array($status, ['active', 'trialing'], true)) {
-            return (string) ($tenant['plan_slug'] ?? 'free');
-        }
-        $raw = $tenant['settings'] ?? null;
-        $decoded = [];
-        if (is_string($raw) && trim($raw) !== '') {
-            $decoded = json_decode($raw, true);
-            if (!is_array($decoded)) {
-                $decoded = [];
-            }
-        }
-        $end = $decoded['founder_trial_ends_at'] ?? null;
-        if (is_string($end) && $end !== '') {
-            $ts = strtotime($end);
-            if ($ts !== false && $ts > time()) {
-                return 'pro';
-            }
-        }
-
-        return (string) ($tenant['plan_slug'] ?? 'free');
+        // Formule offerte en cours > abonnement actif > essai fondateur Pro > formule de base (voir PlanGift).
+        return PlanGift::effectivePlanSlug($tenant);
     }
 
     /** Paiement en retard : accès réduit, sauf si une formule offerte court. */
