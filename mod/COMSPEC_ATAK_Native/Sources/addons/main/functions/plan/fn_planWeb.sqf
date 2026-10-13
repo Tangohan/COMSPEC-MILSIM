@@ -4,6 +4,7 @@
     Envoie le téléphone qui a fait la dernière modification (UID écrit par fn_planServer). Si personne n'a confirmé
     l'envoi après 30 à 60 s (auteur sans liaison Athena, déconnecté), un autre téléphone du camp relié le fait.
     Révision arrivée au site : missionNamespace COMSPEC_ATAK_PlanWeb_<camp> (publique, une seule remontée par révision).
+    Serveur sans le mod natif (pas de plan partagé) : chaque joueur envoie son brouillon, affiché comme plan personnel.
     Params : ["tick"] (toutes les 5 s, XEH_postInitClient) | ["force"] envoi immédiat | ["state"] -> texte pour l'app Plan
     État : missionNamespace COMSPEC_ATAK_PlanWebLast = [heure, état, révision, nombre d'éléments].
 */
@@ -15,25 +16,46 @@ if (_op isEqualTo "state") exitWith {
 };
 if (!hasInterface || {isNull player}) exitWith { false };
 private _side = side group player;
-private _plan = missionNamespace getVariable [format ["COMSPEC_ATAK_Plan_%1", _side], []];
-// Plan jamais écrit dans cette mission : rien à envoyer (le site garde le dernier, daté).
-if ((count _plan) isEqualTo 0) exitWith { false };
-_plan params [["_rev", 0], ["_items", []], ["_name", ""], ["_actor", ""]];
-private _webVar = format ["COMSPEC_ATAK_PlanWeb_%1", _side];
 private _force = _op isEqualTo "force";
-if (!_force && {(missionNamespace getVariable [_webVar, 0]) >= _rev}) exitWith { false };
-(missionNamespace getVariable ["COMSPEC_ATAK_PlanWebSeen", [-1, 0, -1e9]]) params ["_seenRev", "_seenAt", "_triedAt"];
-if (_seenRev isNotEqualTo _rev) then { _seenAt = diag_tickTime; _triedAt = -1e9; };
-missionNamespace setVariable ["COMSPEC_ATAK_PlanWebSeen", [_rev, _seenAt, _triedAt]];
-if (isNil { missionNamespace getVariable "COMSPEC_ATAK_PlanWebDelay" }) then { missionNamespace setVariable ["COMSPEC_ATAK_PlanWebDelay", 30 + random 30]; };
-private _mine = _actor isEqualTo (getPlayerUID player);
-if (!_force && {!_mine} && {(diag_tickTime - _seenAt) < (missionNamespace getVariable ["COMSPEC_ATAK_PlanWebDelay", 45])}) exitWith { false };
-// Une tentative par révision toutes les 30 s au plus (envoi en file chez COMSPEC Link).
-if (!_force && {(diag_tickTime - _triedAt) < 30}) exitWith { false };
-missionNamespace setVariable ["COMSPEC_ATAK_PlanWebSeen", [_rev, _seenAt, diag_tickTime]];
+private _webVar = "";
+private _owner = "";
+private _rev = 0;
+private _items = [];
+private _name = "";
+private _mine = true;
+if !(missionNamespace getVariable ["COMSPEC_ATAK_PlanSrvOn", false]) then {
+    // Serveur sans le mod natif : pas de plan partagé, chaque joueur envoie son brouillon (plan personnel sur le site).
+    _items = missionNamespace getVariable ["COMSPEC_ATAK_PlanDraft", []];
+    _owner = getPlayerUID player;
+    (missionNamespace getVariable ["COMSPEC_ATAK_PlanDraftWeb", [0, "", -1e9]]) params ["_dRev", "_dSig", "_dAt"];
+    private _sig = hashValue _items;
+    if (!_force && {_sig isEqualTo _dSig || {(diag_tickTime - _dAt) < 10}}) exitWith { _rev = -1; };
+    // Brouillon jamais touché dans cette mission : rien à envoyer (le site garde le dernier, daté).
+    if (!_force && {_dRev isEqualTo 0} && {(count _items) isEqualTo 0}) exitWith { _rev = -1; };
+    _rev = _dRev + 1;
+    missionNamespace setVariable ["COMSPEC_ATAK_PlanDraftWeb", [_rev, _sig, diag_tickTime]];
+} else {
+    private _plan = missionNamespace getVariable [format ["COMSPEC_ATAK_Plan_%1", _side], []];
+    // Plan jamais écrit dans cette mission : rien à envoyer (le site garde le dernier, daté).
+    if ((count _plan) isEqualTo 0) exitWith { _rev = -1; };
+    _plan params [["_pRev", 0], ["_pItems", []], ["_pName", ""], ["_actor", ""]];
+    _rev = _pRev; _items = _pItems; _name = _pName;
+    _webVar = format ["COMSPEC_ATAK_PlanWeb_%1", _side];
+    if (!_force && {(missionNamespace getVariable [_webVar, 0]) >= _rev}) exitWith { _rev = -1; };
+    (missionNamespace getVariable ["COMSPEC_ATAK_PlanWebSeen", [-1, 0, -1e9]]) params ["_seenRev", "_seenAt", "_triedAt"];
+    if (_seenRev isNotEqualTo _rev) then { _seenAt = diag_tickTime; _triedAt = -1e9; };
+    missionNamespace setVariable ["COMSPEC_ATAK_PlanWebSeen", [_rev, _seenAt, _triedAt]];
+    if (isNil { missionNamespace getVariable "COMSPEC_ATAK_PlanWebDelay" }) then { missionNamespace setVariable ["COMSPEC_ATAK_PlanWebDelay", 30 + random 30]; };
+    _mine = _actor isEqualTo (getPlayerUID player);
+    if (!_force && {!_mine} && {(diag_tickTime - _seenAt) < (missionNamespace getVariable ["COMSPEC_ATAK_PlanWebDelay", 45])}) exitWith { _rev = -1; };
+    // Une tentative par révision toutes les 30 s au plus (envoi en file chez COMSPEC Link).
+    if (!_force && {(diag_tickTime - _triedAt) < 30}) exitWith { _rev = -1; };
+    missionNamespace setVariable ["COMSPEC_ATAK_PlanWebSeen", [_rev, _seenAt, diag_tickTime]];
+};
+if (_rev < 0) exitWith { false };
 private _n = count _items;
 if !([] call comspec_atak_native_fnc_bridge) exitWith {
-    if (_mine || _force) then { missionNamespace setVariable ["COMSPEC_ATAK_PlanWebLast", [dayTime, "pas de liaison Athena, un autre téléphone l'enverra", _rev, _n]]; };
+    if (_mine || _force) then { missionNamespace setVariable ["COMSPEC_ATAK_PlanWebLast", [dayTime, ["pas de liaison Athena, un autre téléphone l'enverra", "pas de liaison Athena"] select (_owner isNotEqualTo ""), _rev, _n]]; };
     false
 };
 // Tracés à main levée allégés : 6000 sommets au plus pour tout le plan (premier et dernier gardés).
@@ -54,9 +76,9 @@ private _parts = _items apply {
         + (str (_keep apply { [round (_x select 0), round (_x select 1)] })) + "}"
 };
 // Concaténation (et non format, borné à quelques milliers de caractères) : le plan peut peser plusieurs dizaines de Ko.
-private _json = format ['{"mission_key":%1,"world":%2,"side":%3,"rev":%4,"name":%5,"reported_by":%6,"items":[',
+private _json = format ['{"mission_key":%1,"world":%2,"side":%3,"rev":%4,"name":%5,"reported_by":%6,"owner":%7,"items":[',
     [missionNamespace getVariable ["COMSPEC_ATAK_MissionKey", format ["%1@%2", missionName, worldName]]] call _js,
-    [worldName] call _js, [str _side] call _js, _rev, [_name] call _js, [[player] call comspec_atak_native_fnc_unitCallsign] call _js]
+    [worldName] call _js, [str _side] call _js, _rev, [_name] call _js, [[player] call comspec_atak_native_fnc_unitCallsign] call _js, [_owner] call _js]
     + (_parts joinString ",") + "]}";
 [_json, _rev, _n, _webVar] spawn {
     params ["_json", "_rev", "_n", "_webVar"];
@@ -70,7 +92,7 @@ private _json = format ['{"mission_key":%1,"world":%2,"side":%3,"rev":%4,"name":
         case ((_r find "unauthorized") >= 0): { "non connecté à Athena" };
         default { "erreur " + (_r select [4]) };
     };
-    if (_ok && {(missionNamespace getVariable [_webVar, 0]) < _rev}) then { missionNamespace setVariable [_webVar, _rev, true]; };
+    if (_ok && {_webVar isNotEqualTo ""} && {(missionNamespace getVariable [_webVar, 0]) < _rev}) then { missionNamespace setVariable [_webVar, _rev, true]; };
     missionNamespace setVariable ["COMSPEC_ATAK_PlanWebLast", [dayTime, _state, _rev, _n]];
     ["INFO", "PLAN", format ["BriefingPlan.Push rév. %1, %2 élément(s), %3 octets : %4", _rev, _n, count _json, _state]] call comspec_atak_native_fnc_log;
 };

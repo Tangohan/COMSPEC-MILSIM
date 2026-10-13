@@ -62,7 +62,11 @@
   function popupHtml(item, plan) {
     var def = KINDS[item.kind] || ['', item.kind];
     var bits = ['<strong>' + esc(def[1]) + (item.text ? ' · ' + esc(item.text) : '') + '</strong>'];
-    bits.push('Plan de briefing ' + esc(SIDES[plan.side] || plan.side) + (plan.name ? ' « ' + esc(plan.name) + ' »' : ''));
+    if (plan.personal) {
+      bits.push('Brouillon de ' + esc(plan.reported_by || '?') + ' (' + esc(SIDES[plan.side] || plan.side) + ')');
+    } else {
+      bits.push('Plan de briefing ' + esc(SIDES[plan.side] || plan.side) + (plan.name ? ' « ' + esc(plan.name) + ' »' : ''));
+    }
     if (item.author) bits.push('Posé par ' + esc(item.author));
     return bits.join('<br>');
   }
@@ -169,7 +173,7 @@
       })
       .then(function (payload) {
         if (!payload || !Array.isArray(payload.plans)) return;
-        var sig = JSON.stringify(payload.plans.map(function (p) { return [p.side, p.rev, p.updated_at]; }));
+        var sig = JSON.stringify(payload.plans.map(function (p) { return [p.side, p.personal, p.reported_by, p.rev, p.updated_at]; }));
         if (sig === lastSig) return;
         lastSig = sig;
         lastPlans = payload.plans;

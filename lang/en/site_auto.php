@@ -5604,6 +5604,7 @@ return [
     'Brouillon créé et lié à la source. Complétez la fiche puis validez la publication.' => 'Draft created and linked to the source. Complete the record, then confirm publication.',
     'Brouillon créé — vous pouvez maintenant le retravailler avant validation.' => 'Draft created — you can now rework it before approval.',
     'Brouillon créé.' => 'Draft created.',
+    'Brouillon de' => 'Draft by',
     'brouillon de document' => 'document draft',
     'brouillon de publication' => 'publication draft',
     'Brouillon du Plan d’Exécution enregistré.' => 'Execution Plan draft saved.',

@@ -341,13 +341,13 @@ switch (_act) do {
         private _def = (_cat get "kinds") getOrDefault [_kind, []];
         private _n = count (_ui get "draft");
         private _t = if ((count _def) isEqualTo 0) then {
-            ["Clic : sélectionner · glisser droit : déplacer la carte", "Élément sélectionné : SUPPR pour l'effacer"] select ((_ui get "sel") isNotEqualTo "")
+            ["Clic : sélectionner · glisser droit : déplacer la carte", "Élément sélectionné : SUPPR pour l'effacer · clic droit : désélectionner"] select ((_ui get "sel") isNotEqualTo "")
         } else {
             switch (_def select 3) do {
-                case "POINT": { "Clic : poser" };
-                case "DIR": { ["Clic : position", "Clic : direction de tir"] select (_n > 0) };
+                case "POINT": { "Clic : poser · clic droit : quitter l'outil" };
+                case "DIR": { ["Clic : position · clic droit : quitter l'outil", "Clic : direction de tir · clic droit : annuler"] select (_n > 0) };
                 case "AREA": { format ["Clic : sommets (%1) · clic sur le 1er ou clic droit : fermer · 2 points = rectangle", _n] };
-                default { if (_ui get "pen") then { "Maintenir le clic gauche et dessiner" } else { format ["Clic : points (%1) · double clic ou clic droit : terminer", _n] } };
+                default { if (_ui get "pen") then { "Maintenir le clic gauche et dessiner · clic droit : quitter l'outil" } else { format ["Clic : points (%1) · double clic ou clic droit : terminer", _n] } };
             }
         };
         format ["<t size='0.8' color='#8a9a93'>%1</t>", _t]

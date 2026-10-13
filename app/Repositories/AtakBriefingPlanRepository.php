@@ -11,6 +11,7 @@ use PDO;
  * Plan de briefing partagé de chaque camp (app Plan de l'ATAK natif : zones, lignes, points), envoyé en entier
  * par les téléphones (COMSPEC Link « BriefingPlan.Push », POST /api/atak/briefing-plan) et affiché en lecture
  * seule sur la carte du site (calque « Plan de briefing »). Une ligne par carte et par camp, remplacée à chaque envoi.
+ * Serveur Arma sans le mod natif (pas de plan partagé) : chaque joueur envoie son brouillon, une ligne par joueur (owner).
  */
 class AtakBriefingPlanRepository
 {
@@ -59,6 +60,7 @@ class AtakBriefingPlanRepository
                 tenant_id INT UNSIGNED NOT NULL,
                 map_id INT UNSIGNED NOT NULL DEFAULT 1,
                 side VARCHAR(8) NOT NULL,
+                owner VARCHAR(32) NOT NULL DEFAULT '',
                 mission_key VARCHAR(190) NOT NULL DEFAULT '',
                 world VARCHAR(64) NOT NULL DEFAULT '',
                 rev INT UNSIGNED NOT NULL DEFAULT 0,
@@ -69,7 +71,7 @@ class AtakBriefingPlanRepository
                 reported_by_user_id INT UNSIGNED DEFAULT NULL,
                 updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
-                UNIQUE KEY uniq_atak_briefing_plans_side (tenant_id, map_id, side)
+                UNIQUE KEY uniq_atak_briefing_plans_side (tenant_id, map_id, side, owner)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
     }
 
@@ -131,31 +133,31 @@ class AtakBriefingPlanRepository
      *
      * @param list<array<string, mixed>> $items
      */
-    public function save(int $tenantId, int $mapId, string $side, string $missionKey, string $world, int $rev, string $name, array $items, string $reportedBy, ?int $userId): bool
+    public function save(int $tenantId, int $mapId, string $side, string $owner, string $missionKey, string $world, int $rev, string $name, array $items, string $reportedBy, ?int $userId): bool
     {
         if (!$this->ensureSchema()) {
             return false;
         }
-        $st = $this->pdo()->prepare('SELECT mission_key, rev FROM atak_briefing_plans WHERE tenant_id = ? AND map_id = ? AND side = ? LIMIT 1');
-        $st->execute([$tenantId, $mapId, $side]);
+        $st = $this->pdo()->prepare('SELECT mission_key, rev FROM atak_briefing_plans WHERE tenant_id = ? AND map_id = ? AND side = ? AND owner = ? LIMIT 1');
+        $st->execute([$tenantId, $mapId, $side, $owner]);
         $prev = $st->fetch(PDO::FETCH_ASSOC);
         if (is_array($prev) && (string) $prev['mission_key'] === $missionKey && (int) $prev['rev'] > $rev) {
             return false;
         }
         $json = json_encode($items, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         $up = $this->pdo()->prepare(
-            'INSERT INTO atak_briefing_plans (tenant_id, map_id, side, mission_key, world, rev, name, items_json, item_count, reported_by, reported_by_user_id, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            'INSERT INTO atak_briefing_plans (tenant_id, map_id, side, owner, mission_key, world, rev, name, items_json, item_count, reported_by, reported_by_user_id, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
              ON DUPLICATE KEY UPDATE mission_key = VALUES(mission_key), world = VALUES(world), rev = VALUES(rev), name = VALUES(name),
                 items_json = VALUES(items_json), item_count = VALUES(item_count), reported_by = VALUES(reported_by),
                 reported_by_user_id = VALUES(reported_by_user_id), updated_at = NOW()'
         );
 
-        return $up->execute([$tenantId, $mapId, $side, $missionKey, $world, $rev, $name, $json === false ? '[]' : $json, count($items), $reportedBy, $userId]);
+        return $up->execute([$tenantId, $mapId, $side, $owner, $missionKey, $world, $rev, $name, $json === false ? '[]' : $json, count($items), $reportedBy, $userId]);
     }
 
     /**
-     * Plans récents (non vides) d'une carte, un par camp.
+     * Plans récents (non vides) d'une carte : plan partagé de chaque camp, ou brouillons des joueurs (serveur sans le mod).
      *
      * @return list<array<string, mixed>>
      */
@@ -165,9 +167,9 @@ class AtakBriefingPlanRepository
             return [];
         }
         $st = $this->pdo()->prepare(
-            'SELECT side, world, rev, name, items_json, reported_by, updated_at FROM atak_briefing_plans
+            'SELECT side, owner, world, rev, name, items_json, reported_by, updated_at FROM atak_briefing_plans
              WHERE tenant_id = ? AND map_id = ? AND item_count > 0 AND updated_at >= (NOW() - INTERVAL ' . self::MAX_AGE_HOURS . ' HOUR)
-             ORDER BY side'
+             ORDER BY side, owner'
         );
         $st->execute([$tenantId, $mapId]);
         $out = [];
@@ -175,6 +177,7 @@ class AtakBriefingPlanRepository
             $items = json_decode((string) $row['items_json'], true);
             $out[] = [
                 'side' => (string) $row['side'],
+                'personal' => (string) $row['owner'] !== '',
                 'world' => (string) $row['world'],
                 'rev' => (int) $row['rev'],
                 'name' => (string) $row['name'],

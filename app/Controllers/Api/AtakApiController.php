@@ -6769,7 +6769,7 @@ class AtakApiController
 
     /**
      * Plan de briefing partagé d'un camp (app Plan de l'ATAK natif, COMSPEC Link « BriefingPlan.Push »), envoyé en entier.
-     * Corps : side, rev, mission_key, world, name, reported_by, items [{id, kind, pts, text, color, dashed, arrow, width, num, author}].
+     * Corps : side, owner (brouillon d'un joueur quand le serveur n'a pas le mod, vide sinon), rev, mission_key, world, name, reported_by, items [{id, kind, pts, text, color, dashed, arrow, width, num, author}].
      */
     public function briefingPlanStore(Request $request, array $params = []): Response
     {
@@ -6797,6 +6797,7 @@ class AtakApiController
             $tenantId,
             (int) ($body['mapId'] ?? $body['map_id'] ?? self::DEFAULT_MAP_ID),
             $side,
+            preg_replace('/[^0-9A-Za-z_:-]/', '', $clean($body['owner'] ?? '', 32)) ?? '',
             $clean($body['mission_key'] ?? '', 190),
             $clean($body['world'] ?? '', 64),
             max(0, (int) ($body['rev'] ?? 0)),
