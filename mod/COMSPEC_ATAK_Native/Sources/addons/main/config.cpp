@@ -462,5 +462,5 @@ class Extended_DisplayLoad_EventHandlers {
 };
 class Extended_PostInit_EventHandlers { class comspec_atak_native_main { clientInit="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_postInitClient.sqf'"; serverInit="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_postInitServer.sqf'"; }; };
 #include "gestures.hpp"
-#include "ui/controls.hpp"
-#include "ui/displays.hpp"
+#include "ui\controls.hpp"
+#include "ui\displays.hpp"

@@ -23,6 +23,11 @@ Non testé en jeu. Demande de TTRD : gros lag en rejoignant un serveur et en ouv
 - Menus ACE d'Overwatch et du SSE : les gardes « déjà installé » sont par mission (elles restaient dans uiNamespace : à la mission suivante sans relancer Arma, les menus manquaient).
 - COMSPEC Link 2.0.80 : le minuteur de vidage n'est plus relancé à chaque mise en file (il pouvait ne jamais partir), un seul vidage à la fois, file sur disque écrite au plus toutes les 3 s, journaux d'appareil renvoyés avec une pause croissante hors ligne, version lue une fois, et préchauffage au chargement (file sur disque relue et connexion TLS vers Athena ouverte en tâche de fond).
 - Journal : lignes `[PERF]` (durées du preInit, du postInit client et serveur, arrivée en jeu, parcours de config, dictionnaire, fiche opérateur, reprise de session) et `Image figée : N ms` pour toute image de plus de 400 ms, avec arsenal, téléphone et carte ouverts ou non.
+## Correctif « Include file ...\ui\controls.hpp not found » au lancement (ATAK natif 1.70.0)
+
+- `config.cpp` incluait `ui/controls.hpp` et `ui/displays.hpp` avec une barre oblique. HEMTT (main.pbo du dépôt) l'accepte, mais `build_mod.bat` empaquette avec Addon Builder en `-packonly` : la config reste en texte et c'est Arma qui la lit au démarrage, sans trouver le fichier. Les deux includes utilisent maintenant une barre oblique inverse (`ui\controls.hpp`), lue par les deux chaînes de build.
+- `LINK_VERSION_STR` passe à 2.0.79 pour suivre la DLL de #710 (sinon le téléphone signalait la DLL comme périmée).
+
 ## Serveurs de jeu : l'adresse du serveur est retrouvée (COMSPEC Link 2.0.79, site)
 
 Non testé en jeu. DLL COMSPEC Link à recompiler (build_mod.bat) ; pas de main.pbo à refaire. Côté site, la colonne `server_port` et la table `game_server_address_lookup` se créent toutes seules (ou `run-migrations.php`).
