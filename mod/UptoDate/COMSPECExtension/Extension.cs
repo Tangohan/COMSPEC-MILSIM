@@ -5341,6 +5341,26 @@ public static partial class Extension
                 if (safeKey.Length == 0) safeKey = "slide";
                 var ext = imageUrl.ToLowerInvariant().Contains(".png") ? ".png" : ".jpg";
 
+                // Portraits (clé avatar_<uid>_<empreinte de l'adresse>) : le fichier déjà téléchargé pour cette
+                // adresse est rendu sans requête ; il n'est retéléchargé que s'il manque (adresse changée = autre clé).
+                if (safeKey.StartsWith("avatar_", StringComparison.Ordinal) && safeKey.Count(c => c == '_') >= 2)
+                {
+                    var dir = GetWritableCacheDir();
+                    if (dir != null)
+                    {
+                        foreach (var cachedExt in new[] { ".jpg", ".png" })
+                        {
+                            var cached = Path.Combine(dir, "briefing_" + safeKey + cachedExt);
+                            try
+                            {
+                                if (File.Exists(cached) && new FileInfo(cached).Length > 0)
+                                    return "OK|" + cached.Replace('\\', '/');
+                            }
+                            catch { /* téléchargement normal */ }
+                        }
+                    }
+                }
+
                 // URL relatives : conserver le préfixe /public de _baseUrl (ne pas utiliser Uri(base, /abs)).
                 if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out _)
                     && !string.IsNullOrEmpty(_baseUrl))

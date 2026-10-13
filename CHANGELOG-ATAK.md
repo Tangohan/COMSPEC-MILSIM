@@ -18,6 +18,7 @@ Non testé en jeu. Signalé par TTRD : le volet rapide n'affichait que les initi
 - Site : /api/atak/player-profile renvoie `avatar_status` (no_portrait, source_missing, unsupported_format, write_failed) et l'écrit dans le journal PHP (`[atak/player-profile]`) quand une image existe mais ne peut pas partir.
 - COMSPEC Link 2.0.81 : GetPlayerAvatarInfo transmet cette raison (colonne « S: »).
 - Téléphone : la réponse est découpée sans fusionner les colonnes vides (un nom ou un indicatif vide décalait l'adresse de l'image). Chaque échec (profil, téléchargement, format) est écrit en français dans le journal (RPT et app Debug, module PORTRAIT) avec sa raison, et le joueur reçoit une notification pour son propre portrait, une fois par raison.
+- Cache des portraits (demande de TTRD) : l'image téléchargée reste sur le disque et le profil Arma retient laquelle va avec quel joueur. D'une partie à l'autre, le portrait (le sien, équipiers, groupe, chat) s'affiche tout de suite, même hors ligne ; une seule vérification par partie demande l'adresse au site, et l'image n'est retéléchargée que si le portrait a changé ou si le fichier manque (COMSPEC Link 2.0.81 rend le fichier déjà présent sans requête). Pendant un échec, l'image en cache reste affichée.
 - Traduction : un chemin d'image téléchargée (C:/…/x.jpg) n'est plus passé au dictionnaire anglais.
 
 ## Adresse du portail Athena fixe (ATAK natif 1.72.0)
