@@ -29,6 +29,41 @@ final class PlanGiftTest extends TestCase
         self::assertNull(PlanGift::activeFromSettings(null, $now));
     }
 
+    public function testEffectivePlanPrefersRunningGiftThenFallsBackToBasePlan(): void
+    {
+        $now = strtotime('2026-10-13 12:00:00');
+        $gift = ['gift_id' => 3, 'plan_slug' => 'pro', 'ends_at' => '2026-11-12 23:59:59'];
+        $free = ['plan_slug' => 'free', 'subscription_status' => 'none', 'settings' => json_encode(['plan_gift' => $gift])];
+        self::assertSame('pro', PlanGift::effectivePlanSlug($free, $now), 'formule offerte en cours');
+        self::assertSame('free', PlanGift::effectivePlanSlug($free, strtotime('2026-11-13 00:00:00')), 'offre expirée');
+
+        $revoked = ['plan_slug' => 'free', 'subscription_status' => 'none', 'settings' => json_encode(['plan_gift' => null])];
+        self::assertSame('free', PlanGift::effectivePlanSlug($revoked, $now), 'offre retirée');
+
+        $paid = ['plan_slug' => 'standard', 'subscription_status' => 'active', 'settings' => json_encode(['plan_gift' => $gift])];
+        self::assertSame('pro', PlanGift::effectivePlanSlug($paid, $now), 'l’offre prime sur l’abonnement payant');
+        $paid['settings'] = null;
+        self::assertSame('standard', PlanGift::effectivePlanSlug($paid, $now));
+
+        $trial = ['plan_slug' => 'free', 'subscription_status' => 'none', 'settings' => json_encode(['founder_trial_ends_at' => '2026-10-20'])];
+        self::assertSame('pro', PlanGift::effectivePlanSlug($trial, $now), 'essai fondateur');
+        self::assertSame('free', PlanGift::effectivePlanSlug(['plan_slug' => ''], $now));
+    }
+
+    public function testDirectoryAndFicheShowTheEffectivePlan(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $repo = (string) file_get_contents($root . '/app/Repositories/TenantRepository.php');
+        self::assertStringContainsString("'effective_plan_slug' => \\App\\Support\\PlanGift::effectivePlanSlug(\$row)", $repo);
+        self::assertStringContainsString('t.settings,', $repo);
+        $index = (string) file_get_contents($root . '/views/admin/system/tenants_index.php');
+        self::assertStringContainsString("\$t['effective_plan_slug']", $index);
+        $fiche = (string) file_get_contents($root . '/views/admin/system/tenants_plan_form.php');
+        self::assertStringContainsString('PlanGift::effectivePlanSlug($tenant)', $fiche);
+        $gate = (string) file_get_contents($root . '/app/Services/Platform/FeatureGateService.php');
+        self::assertStringContainsString('return PlanGift::effectivePlanSlug($tenant);', $gate);
+    }
+
     public function testEndDateFromDurationOrCustomDate(): void
     {
         $now = strtotime('2026-10-13 12:00:00');

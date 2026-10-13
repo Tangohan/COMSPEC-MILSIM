@@ -72,8 +72,10 @@ $err = \App\Core\Session::getFlash('error');
                                 $name = (string) ($t['name'] ?? '');
                                 $slug = (string) ($t['slug'] ?? '');
                                 $uc = (int) ($t['user_count'] ?? 0);
-                                $planSlug = (string) ($t['plan_slug'] ?? 'free');
+                                $basePlanSlug = (string) ($t['plan_slug'] ?? 'free');
+                                $planSlug = (string) ($t['effective_plan_slug'] ?? $basePlanSlug);
                                 $planLabel = (string) ($planNameBySlug[$planSlug] ?? $planSlug);
+                                $planGift = is_array($t['plan_gift'] ?? null) ? $t['plan_gift'] : null;
                                 $status = (string) ($t['subscription_status'] ?? 'none');
                                 $statusLabel = (string) ($statusLabels[$status] ?? 'Statut inconnu');
                                 $publicUrl = $slug !== '' ? url('c/' . rawurlencode($slug)) : '';
@@ -95,7 +97,15 @@ $err = \App\Core\Session::getFlash('error');
                                         <?php endif; ?>
                                     </td>
                                     <td><span class="pa-pill pa-pill--<?= $h((string) $typeInfo['pill']) ?>"><?= $h((string) $typeInfo['label']) ?></span></td>
-                                    <td><span class="pa-pill pa-pill--mint"><?= $h($planLabel) ?></span></td>
+                                    <td>
+                                        <span class="pa-pill pa-pill--mint"><?= $h($planLabel) ?></span>
+                                        <?php if ($planGift !== null): ?>
+                                            <p class="pa-sub">Offerte <?= !empty($planGift['ends_at']) ? 'jusqu’au ' . $h($fmt($planGift['ends_at'])) : 'sans limite' ?></p>
+                                        <?php endif; ?>
+                                        <?php if ($planSlug !== $basePlanSlug): ?>
+                                            <p class="pa-sub">Formule de base : <?= $h((string) ($planNameBySlug[$basePlanSlug] ?? $basePlanSlug)) ?></p>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?= $h($statusLabel) ?></td>
                                     <td><?= $h($fmt($t['created_at'] ?? null)) ?></td>
                                     <td style="text-align:right;font-weight:800;"><?= $uc ?></td>

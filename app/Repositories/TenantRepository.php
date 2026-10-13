@@ -529,7 +529,9 @@ class TenantRepository
      *   plan_slug: string,
      *   subscription_status: string,
      *   subscription_current_period_end: string|null,
-     *   stripe_subscription_id: string|null
+     *   stripe_subscription_id: string|null,
+     *   effective_plan_slug: string,
+     *   plan_gift: array{gift_id: int, plan_slug: string, ends_at: ?string}|null
      * }>
      */
     public function listOverviewForPlatform(): array
@@ -546,6 +548,7 @@ SELECT t.id,
        t.subscription_status,
        t.subscription_current_period_end,
        t.stripe_subscription_id,
+       t.settings,
        (SELECT COUNT(*) FROM users u WHERE u.tenant_id = t.id AND {$humanUsers}) AS user_count
 FROM tenants t
 WHERE t.id > 1
@@ -577,6 +580,9 @@ SQL;
                     ? (string) $row['subscription_current_period_end']
                     : null,
                 'stripe_subscription_id' => $stripeSub !== '' ? $stripeSub : null,
+                // Formule réellement appliquée (formule offerte, essai fondateur) : c'est elle que l'annuaire affiche.
+                'effective_plan_slug' => \App\Support\PlanGift::effectivePlanSlug($row),
+                'plan_gift' => \App\Support\PlanGift::activeFromSettings($row['settings'] ?? null),
             ];
         }
 
