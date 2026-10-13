@@ -139,6 +139,13 @@ ICONS = {
     "ui_rotate": '<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M2 14a8 8 0 0 0 5 6M22 10a8 8 0 0 0-5-6"/>',
     "ui_send": '<path d="M3 11l18-8-7 18-3-7z"/><path d="M11 14l10-11"/>',
     "ui_close": '<path d="M6 6l12 12M18 6L6 18"/>',
+    # Messagerie : canal (#), aide, tri (plus anciens / plus récents en haut), vider l'affichage, supprimer un canal.
+    "ui_hash": '<path d="M9.5 3.5L7.5 20.5M16.5 3.5l-2 17M4 8.5h16.5M3.5 15.5H20" stroke-width="2"/>',
+    "ui_help": '<circle cx="12" cy="12" r="9.2"/><path d="M9.3 9.4a2.8 2.8 0 1 1 3.9 2.6c-.8.4-1.2 1-1.2 1.9v.6" stroke-width="2"/><circle cx="12" cy="17.4" r="1.1" fill="#fff" stroke="none"/>',
+    "ui_sort_up": '<path d="M8 20V5M4.5 8.5L8 5l3.5 3.5" stroke-width="2"/><path d="M14 7h6M14 12h4.5M14 17h3"/>',
+    "ui_sort_down": '<path d="M8 4v15M4.5 15.5L8 19l3.5-3.5" stroke-width="2"/><path d="M14 7h3M14 12h4.5M14 17h6"/>',
+    "ui_erase": '<path d="M14.2 4.6l5.2 5.2a1.5 1.5 0 0 1 0 2.1L12 19.3H8.3l-3.7-3.7a1.5 1.5 0 0 1 0-2.1l7.5-8.9a1.5 1.5 0 0 1 2.1 0z"/><path d="M9.2 9.2l5.6 5.6M12 19.3h8"/>',
+    "ui_trash": '<path d="M4 6.5h16M9.5 6.5V4h5v2.5M6.3 6.5l1 13.5h9.4l1-13.5M10 10.5v6M14 10.5v6"/>',
     "ui_gps": '<path d="M12 21s-6-6.2-6-11a6 6 0 0 1 12 0c0 4.8-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/><path d="M5 21h14"/>',
     "ui_weather": '<path d="M7 18a4 4 0 0 1-.4-8 5.5 5.5 0 0 1 10.6 1.5A3.3 3.3 0 0 1 17 18z"/>',
     "ui_wind": '<path d="M3 9h11a2.5 2.5 0 1 0-2.5-2.5M3 13h15a2.5 2.5 0 1 1-2.5 2.5M3 17h8"/>',
@@ -1678,13 +1685,10 @@ def jpc_phone_atlas(tmp):
     """Atlas jpc_<modèle>_ca : face en haut, dos vu de derrière en bas, transparence = silhouette.
     S7 : coque coyote et variantes de teinte (od, black), dos de phone_back."""
     def pack(front, rear, crop):
-        x0, y0, x1, y1 = crop
-        hx0, hy0, hx1, hy1 = JPC_HOLE
-        under = Image.new("RGBA", front.size, (0, 0, 0, 0))
-        under.paste(_glass(hx1 - hx0, hy1 - hy0), (hx0, hy0))
-        under.alpha_composite(front)
+        # Ouverture de l'écran laissée transparente : la face (texture à transparence, dessinée après les surfaces
+        # opaques) ne doit jamais recouvrir l'écran vivant posé juste devant elle.
         atlas = Image.new("RGBA", (2048, 2048), (0, 0, 0, 0))
-        atlas.paste(under.crop(crop).resize((2048, 1024), Image.LANCZOS), (0, 0))
+        atlas.paste(front.crop(crop).resize((2048, 1024), Image.LANCZOS), (0, 0))
         atlas.paste(rear.resize((2048, 1024), Image.LANCZOS), (0, 1024))
         return atlas
 

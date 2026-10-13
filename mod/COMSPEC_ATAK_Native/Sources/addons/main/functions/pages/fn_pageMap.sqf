@@ -566,6 +566,11 @@ if (_dv isNotEqualTo "OFF") then {
         ["build", [_vx, _vy, _vw, _vh], "FULL", false] call comspec_atak_native_fnc_droneFlir;
         if (_interactive) then {
             private _zoom = missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1];
+            private _fsrc = missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedSrc", "DRONE"];
+            private _fu = missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedUnit", player];
+            if (isNull _fu) then { _fu = player; };
+            private _mates = [player] + ((units group player) select { alive _x && {_x isNotEqualTo player} && {(_x distance player) < 3000} });
+            private _fn = _mates select (((_mates find _fu) + 1) mod (count _mates));
             // Libellés : ce que fait l'appui, en clair ; détail en infobulle. Groupes : cible, caméra, affichage.
             // [libellé, code, état ("" | "on" vert | "red"), aide, largeur relative]
             private _btns = [
@@ -578,13 +583,19 @@ if (_dv isNotEqualTo "OFF") then {
                 ["x4", ["zoom", 4] call _act, ["", "on"] select (_zoom isEqualTo 4), "Zoom de la caméra : x4", 0.5],
                 ["CAMÉRA DEVANT", ["camAim", ""] call _act, "", "Remet la caméra du drone droit devant", 1.2],
                 ["|"],
+                // Vidéo affichée : drone → caméra du téléphone → caméra casque (ici seulement : l'app Drone montre toujours le drone).
+                [["VIDÉO DU DRONE", "VIDÉO DU TÉLÉPHONE", "VIDÉO DU CASQUE"] select ((["DRONE", "PHONE", "HELMET"] find _fsrc) max 0), ["feedSrc", ["PHONE", "HELMET", "DRONE"] select ((["DRONE", "PHONE", "HELMET"] find _fsrc) max 0)] call _act, ["on", ""] select (_fsrc isEqualTo "DRONE"), "Choisit la vidéo affichée : drone → caméra du téléphone (devant vous) → caméra casque", 1.5]
+            ] + ([[], [
+                [format ["CASQUE DE %1", [name _fu, "MOI"] select (_fu isEqualTo player)], compile format ["['feedUnit', %1] call comspec_atak_native_fnc_droneAction;", str ([netId _fn, getPlayerUID _fn] select (isPlayer _fn))], "", "Porteur de la caméra casque : vous, puis les équipiers du groupe à moins de 3 km (appui suivant)", 1.4]
+            ]] select (_fsrc isEqualTo "HELMET")) + [
+                ["|"],
                 ["PETITE FENÊTRE", ["view", "INSET"] call _act, "", "Réduit la vue du drone dans un coin de la carte", 1.2],
                 ["RETOUR À LA CARTE", ["view", "OFF"] call _act, "", "Ferme la vue du drone et revient à la carte", 1.4]
             ];
             private _gap = _pad * 0.8;
             private _wsum = 0;
             { if ((count _x) > 1) then { _wsum = _wsum + (_x select 4); }; } forEach _btns;
-            private _unit = (_mw - _pad * 2 - _gap * 2) / _wsum;
+            private _unit = (_mw - _pad * 2 - _gap * ({ (count _x) isEqualTo 1 } count _btns)) / _wsum;
             private _byb = _by + _mh - _bh2 - _pad / 2;
             private _xb = _bx + _pad;
             {

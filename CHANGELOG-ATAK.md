@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Relais : couverture réseau, triangulation, champs de vision ; calques de la carte qui disent ce qu'ils montrent (ATAK natif 1.51.0)
+## Relais : couverture réseau, triangulation, champs de vision ; calques de la carte qui disent ce qu'ils montrent (ATAK natif 1.53.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : triangulation par les relais, portée et couverture des relais, perte de réseau et débit, aperçu des champs de vision, et les relais invisibles sur la carte.
 - **Relais sur la carte** (calque Wave Relay) : tous les relais Overwatch de la mission (plus seulement le plus proche) avec leur nom, leur portée en cercle et leur débit, les relais détruits barrés en gris, les passerelles de véhicule et PC mobiles. Le maillage se raccroche à n'importe quel relais (un équipier près d'un autre relais n'est plus « isolé »).
@@ -20,6 +20,47 @@ Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD :
 - **Champs de vision** : clic droit sur la carte, « Champ de vision ici » (observateur posé au point), ou sur un équipier, « Son champ de vision » (depuis ses yeux, dans la direction où il regarde). App Relief : hauteur d'œil ajoutée (toit 10 m, mât 50 m, drone 150 m), secteur 360°, 120° ou 60°, DEPUIS LE DRONE ; avec l'option « + bâtiments et arbres », les cases cachées par un mur, une maison ou des arbres sont en orange (rouge : par le relief) quand un drone est appairé. L'observateur et son secteur sont tracés sur la carte.
 - **Calques de la carte** : allumer un calque dit ce qu'il montre ou pourquoi il est vide (aucune zone reçue d'Athena, aucun relevé EW, aucune demande logistique, Athena injoignable pour SIGINT...). Relief sans calcul lance le champ de vision depuis soi ; Wave Relay lance la couverture s'il y a des relais.
 - À vérifier en jeu : relais et portées visibles sur la carte, couverture sur une mission avec relais (et brouilleur), LOCALISER un équipier balise coupée, champ de vision depuis un point, un équipier et le drone, chaque calque allumé puis éteint.
+## Messagerie refaite (ATAK natif 1.52.0)
+
+Non testé en jeu. Demande de TTRD : « améliorer l'UI de la messagerie ». Pas de DLL à recompiler, pas de migration.
+- **Liste des conversations** : canaux Athena puis messages directs, avec icône, initiales ou photo de l'opérateur, dernier message, heure et pastille de non-lus ; + CANAL dans le bandeau d'état (Athena connecté, hors réseau…).
+- **Conversation** : en-tête (retour, nom, sous-titre) et boutons icônes aide, tri, vider, corbeille (confirmation en rouge).
+- **Bulles** ajustées au texte, regroupées par auteur, liseré de couleur par auteur, rouge pour l'urgent, séparateurs de jour en pastille, repère NON LUS.
+- **Saisie** : champ souligné à la couleur d'accent, bouton d'envoi, aperçu des commandes au-dessus.
+- **Paysage en main** : liste et conversation côte à côte. Téléphone porté : la conversation seule.
+- Inchangé : canaux, commandes `/`, raccourcis `@grille`, SMS et accusés, vider, tri, création et suppression de canal.
+
+---
+
+## Correctif 2026-10-13 — Liaison : une adresse en erreur ne bloque plus tout (COMSPEC Link 2.0.76)
+
+### Corrigé
+- **Position et photos bloquées par « Rate limit — pause »** : Athena répond 503 (Retry-After 30) à toute exception d'une route `/api/atak/*`. Le DLL prenait ce 503 pour une saturation et mettait toute la liaison en pause (position « api_backoff », photos de drone retenues jusqu'à 150 s) dès que `/api/atak/vehicles` plantait.
+- Désormais une erreur du serveur (5xx, hors 503 « maintenance ») ne met en pause que **l'adresse fautive** (30, 60, 120 puis 300 s), sans prévenir le jeu d'une saturation : la position, les autres envois et les photos continuent. Le lot de télémétrie en erreur repasse en envois unitaires pour que chaque adresse garde sa propre pause. Le vrai 429 (limiteur d'Athena) et le 503 de maintenance gardent la pause globale.
+- La cause du 503 sur `/api/atak/vehicles` (clé `vehicle_callsign` absente) est corrigée côté site dans la PR #677.
+
+### À reconstruire
+- DLL COMSPEC Link (`mod/UptoDate/COMSPECExtension`, NativeAOT) : `build_mod.bat`.
+
+
+## Correctif 2026-10-12 — ATAK sur le JPC et tablette du véhicule (ATAK natif 1.51.0)
+
+Non testé en jeu. Retours de TTRD. Pas de DLL à recompiler, pas de migration.
+- **Téléphone entre les jambes (vue à la première personne)** : le terminal du JPC n'est plus accroché à l'os de la poitrine (dont la position n'était pas fiable en vue à la première personne) mais au corps, à 22 cm devant et 40 cm sous les yeux, recalé quand la posture change (debout, accroupi, couché). Réglage pour les essais : `COMSPEC_ATAK_JpcOffset` (depuis les yeux).
+- **Écran noir** : la face des coques à transparence recouvrait l'écran vivant (le verre éteint de la texture passait devant) ; l'ouverture est maintenant transparente. Les premières images de l'écran sont dessinées tout de suite, même sans le regarder. Sans « Image dans l'image » (Options > Vidéo), la page Carte montre la carte d'ensemble du terrain au lieu d'un rectangle noir, avec un rappel.
+- **Tablette du véhicule** : c'est une tablette commune pour ceux qui n'ont pas d'ATAK. Un joueur qui a son téléphone garde son téléphone en montant dans un véhicule équipé (plus de bascule vers la tablette VT-10 ni de message « Tablette du véhicule disponible »). Sans téléphone, rien ne change.
+## Télécommande drone sur son vrai téléphone (QR code), caméra de nuit, portée (ATAK natif 1.50.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Addon connect mis à jour (comspec_overwatch_connect.pbo reconstruit). Demande de TTRD : « tu scannes le QR code sur l'ordi ou dans le jeu, et ça ouvre le menu des boutons du drone sur ton téléphone IRL ».
+- Site : nouvelle page **/telecommande-drone**, faite pour un téléphone (connexion Athena demandée la première fois). Choix du drone (les siens d'abord), état (mode, hauteur, vitesse, batterie), gros boutons : décoller, stationnaire, me suivre, retour au pilote, RTB, atterrir ; rôle du drone (me suivre, CQB, garde, recherche, aucun) ; altitude et vitesse ; essaim (tous me suivre, CQB, garde, recherche, stationnaire, RTB, atterrir) ; photo, veille, reprendre, forcer ; journal des ordres. Mêmes ordres que le poste (POST /api/atak/web-commands/uav, nouveaux ordres `role` et `swarm`).
+- QR code : dans l'app Drone, onglet FLOTTE (« Télécommande sur votre téléphone », adresse du site de production) et dans le panneau Drones d'Overwatch sur le site (QR généré par le site, /telecommande-drone/qr.png).
+- Jeu : un ordre web pour un drone de la flotte le prend en main (il devient le drone piloté) ; rôles et essaim passent par la flotte (fn_droneFleet).
+- Pas de pilotage au joystick ni de vidéo en direct : les ordres passent par Athena (quelques secondes) et demandent que le pilote soit en jeu, Overwatch connecté, en liaison avec le drone.
+- À vérifier : scanner le QR en jeu et sur le site, connexion puis page, chaque bouton, rôle et essaim avec deux drones, garde refusée quand le réglage admin est désactivé.
+- **Caméra du drone noire la nuit** (retour de TTRD, 00:49, liaison 4/4 à 10 m) : l'image rendue dans l'écran ne s'adapte pas à l'obscurité comme la vue du joueur. En VISION : JOUR, le gain suit maintenant la lumière autour du drone : normal le jour, éclairci en pénombre, fortement éclairci la nuit (« BASSE LUMIÈRE » ou « MODE NUIT » dans l'incrustation). Même correction que le viseur de l'app Photo. NUIT et THERMIQUE ne changent pas.
+- **Portée de la liaison drone** (retour de TTRD : « la portée est courte, le 4/4 ? ») : réglage admin par défaut 6000 m au lieu de 2500 m (jusqu'à 12 000 m), et la portée maximale du mod Mavic (mavic_setting_maxConnectionDistance) l'emporte si elle est plus grande. Barres plus douces : 4/4 jusqu'à la moitié de la portée (3000 m), 3/4 jusqu'à 71 %, 2/4 jusqu'à 87 %, 1/4 jusqu'au bout (avant : 4/4 seulement jusqu'à 625 m). Derrière le relief, toujours divisée par trois. Même règle pour la flotte et pour le signal des drones Mavic. Un réglage admin déjà enregistré à 2500 m reste à 2500 m : le remonter dans les paramètres CBA.
+- **Boutons sous l'image du drone plus clairs** (retour de TTRD : « pas clair ») : une rangée principale en grands boutons, **PHOTO**, **MARQUER**, **ZOOM -**, **ZOOM +** et **VISION JOUR / NUIT / THERMIQUE**. Une rangée de vol : MONTER, DESCENDRE, STATIONNAIRE, CIBLES, MENUS DU DRONE. Le reste est replié sous **RÉGLAGES** : caméra vers le sol, recentrer, netteté et fermer. Le choix de la vidéo affichée (ex-« IMAGE : DRONE ») quitte l'app Drone, qui montre toujours le drone (retour de TTRD : « c'est pour la carte ») : il est sur la vue drone de la carte (**VIDÉO DU DRONE / DU TÉLÉPHONE / DU CASQUE**, puis **CASQUE DE …** pour choisir le porteur). Plus de titres de groupe CAMÉRA / CIBLES / VOL / AFFICHAGE. Le viseur photo ne change pas.
+- **Performances du flux drone** (retour de TTRD : « le jeu rame ») : l'image du drone arrête d'être rendue 1,5 s après avoir quitté l'écran (avant 3 s), et la caméra est libérée après 20 s (avant 60 s). Toutes les 30 s, le journal Arma (RPT, ligne `[PERF]`) note les images par seconde et les caméras qui rendent dans une texture (drone, aperçu du cliché, viseur photo, live cam, carte JPC) : de quoi voir laquelle coûte, avec Envoyer_mes_logs.bat.
 ## Taille de la barre d'outils et style de boussole au choix (ATAK natif 1.49.0)
 
 - Réglages de la carte : taille de la barre d'outils et style de la boussole au choix. Non testé en jeu.
