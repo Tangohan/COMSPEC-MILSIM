@@ -5,15 +5,6 @@ Toutes les modifications notables des features ATAK sont documentées ici.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Véhicules refusés par Athena (HTTP 400) : JSON réparé, motif gardé dans le journal (ATAK natif 1.75.0, COMSPEC Link 2.0.81)
-
-Non testé en jeu. Signalé par TTRD : `HTTP POST code 400 /public/api/atak/vehicles` en boucle juste après la connexion, alors que fiche opérateur, position et chat passaient. Il faut recompiler la DLL (build_mod.bat) ; pas de migration. La partie site n'est active qu'après déploiement sur le VPS.
-- Cause : Athena répond 400 quand le corps du véhicule est illisible ou sans indicatif. Le sérialiseur JSON d'Overwatch connect laissait passer des sauts de ligne bruts, des nombres non finis (« nan », « 1.#INF ») et un guillemet seul pour un tableau imbriqué : tout le corps devenait illisible, donc sans indicatif. Le motif exact n'était pas journalisé, la cause précise de ces trois 400 reste déduite.
-- Overwatch connect : chaînes échappées (sauts de ligne, tabulations, autres caractères de contrôle), nombres non finis envoyés à 0, tableaux imbriqués et camps/objets/groupes sérialisés proprement.
-- COMSPEC Link 2.0.81 : un corps encore illisible est réparé avant l'envoi (caractères de contrôle, nan/inf, virgule décimale). Pour un refus 4xx (hors 401/403/429), le journal du jeu garde désormais le motif renvoyé par Athena, et pour un 400/422 le début du corps envoyé : `ÉCHEC · HTTP POST — code 400 · /public/api/atak/vehicles (il y a 0 s) — réponse : … · envoyé : {…}`.
-- Site : même réparation du JSON côté Athena, indicatif repris aussi de `vehicle_id` ou `vehicle_type`, et le 400 dit pourquoi (JSON illisible ou clés reçues), avec une ligne `[atak/vehicles]` dans error_log.
-- À vérifier en jeu : après connexion, plus de 400 sur /api/atak/vehicles en montant dans un véhicule ou en pilotant un drone ; si un 400 revient, copier la ligne ÉCHEC complète du RPT (elle contient maintenant le motif).
-
 ## Règle : chaque version a un « Résumé joueur » (annonce Discord)
 
 À chaque fusion sur main, l'action « Discord changelog » poste dans le salon releases une carte écrite pour les **joueurs**. Elle ne publie **que** le bloc « Résumé joueur » de l'entrée dont le titre contient la version du titre de la PR (sinon une section « Résumé joueur » dans la description de la PR). Le détail technique n'est jamais posté. **Sans résumé, rien n'est annoncé.**
@@ -46,6 +37,46 @@ Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.m
 Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-2026-09-22-overwatch-1.6.12.md) · [Overwatch 1.6.9](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.9.md) · [Overwatch 1.6.8](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.8.md) · [Overwatch 1.6.7](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.7.md) · [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.3.md) · [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-2026-09-15-overwatch-1.5.78.md) · [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
 
 ---
+
+## Véhicules refusés par Athena (HTTP 400) : JSON réparé, motif gardé dans le journal (ATAK natif 1.76.0, COMSPEC Link 2.0.81)
+
+### Résumé joueur
+Type : correctif
+FR : Les véhicules et drones remontent de nouveau sur la carte Athena
+- Certains véhicules ou drones étaient refusés par Athena juste après la connexion et n'apparaissaient pas sur la carte web.
+- Les informations envoyées sont maintenant toujours lisibles par Athena, même avec un nom de véhicule inhabituel.
+- Si un envoi est encore refusé, le journal du jeu indique désormais pourquoi, ce qui aide l'équipe à corriger.
+EN : Vehicles and drones show up on the Athena map again
+- Some vehicles or drones were rejected by Athena right after connecting and did not appear on the web map.
+- The data sent is now always readable by Athena, even with an unusual vehicle name.
+- If a send is still rejected, the game log now says why, which helps the team fix it.
+
+### Détail technique
+Non testé en jeu. Signalé par TTRD : `HTTP POST code 400 /public/api/atak/vehicles` en boucle juste après la connexion, alors que fiche opérateur, position et chat passaient. Il faut recompiler la DLL (build_mod.bat) ; pas de migration. La partie site n'est active qu'après déploiement sur le VPS.
+- Cause : Athena répond 400 quand le corps du véhicule est illisible ou sans indicatif. Le sérialiseur JSON d'Overwatch connect laissait passer des sauts de ligne bruts, des nombres non finis (« nan », « 1.#INF ») et un guillemet seul pour un tableau imbriqué : tout le corps devenait illisible, donc sans indicatif. Le motif exact n'était pas journalisé, la cause précise de ces trois 400 reste déduite.
+- Overwatch connect : chaînes échappées (sauts de ligne, tabulations, autres caractères de contrôle), nombres non finis envoyés à 0, tableaux imbriqués et camps/objets/groupes sérialisés proprement.
+- COMSPEC Link 2.0.81 : un corps encore illisible est réparé avant l'envoi (caractères de contrôle, nan/inf, virgule décimale). Pour un refus 4xx (hors 401/403/429), le journal du jeu garde désormais le motif renvoyé par Athena, et pour un 400/422 le début du corps envoyé : `ÉCHEC · HTTP POST — code 400 · /public/api/atak/vehicles (il y a 0 s) — réponse : … · envoyé : {…}`.
+- Site : même réparation du JSON côté Athena, indicatif repris aussi de `vehicle_id` ou `vehicle_type`, et le 400 dit pourquoi (JSON illisible ou clés reçues), avec une ligne `[atak/vehicles]` dans error_log.
+- À vérifier en jeu : après connexion, plus de 400 sur /api/atak/vehicles en montant dans un véhicule ou en pilotant un drone ; si un 400 revient, copier la ligne ÉCHEC complète du RPT (elle contient maintenant le motif).
+
+## Ligne de vue : de ma position vers le point (ATAK natif 1.75.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Ligne de vue : de ta position vers un point dont tu entres les coordonnées
+- Dans l'app Relief, onglet LIGNE DE VUE, tu entres les coordonnées du point (carroyage de 4 à 10 chiffres) puis TRACER : la ligne part de ta position.
+- Le bouton SOUS MON REGARD disparaît ; SUR LA CARTE reste pour toucher le point.
+- L'en-tête rappelle ta position, et un carroyage court vise le centre de sa case.
+EN : Line of sight: from your position to a point whose coordinates you enter
+- In the Relief app, LINE OF SIGHT tab, enter the point's coordinates (4 to 10-digit grid) then DRAW: the line starts from your position.
+- The UNDER MY GAZE button is gone; ON THE MAP still lets you tap the point.
+- The header shows your position, and a short grid aims at the centre of its square.
+
+### Détail technique
+
+Non testé en jeu. Demande de TTRD : remplacer « SOUS MON REGARD » par « de ma position vers le point », en entrant les coordonnées.
+- App Relief, onglet LIGNE DE VUE : le bouton SOUS MON REGARD est retiré. L'en-tête devient « DE MA POSITION VERS LE POINT : » et rappelle ma position (carroyage 8 chiffres). On entre les coordonnées du point (carroyage de 4, 6, 8 ou 10 chiffres, espaces acceptés) puis TRACER, ou on touche le point avec SUR LA CARTE.
+- Un carroyage court vise le centre de sa case (avant : le coin sud-ouest). La ligne part toujours de mes yeux, point à 1,7 m du sol. Tracé, profil, VOIR SUR LA CARTE et EFFACER inchangés.
 
 ## Langue du mod en tête des options CBA (ATAK natif 1.74.0)
 
