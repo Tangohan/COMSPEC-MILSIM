@@ -23,7 +23,9 @@ private _rev = 0;
 private _items = [];
 private _name = "";
 private _mine = true;
-if !(missionNamespace getVariable ["COMSPEC_ATAK_PlanSrvOn", false]) then {
+// Plan partagé possible : serveur avec le mod (drapeau), machine serveur (solo, hébergé) ou plan déjà écrit.
+private _srvOn = isServer || {missionNamespace getVariable ["COMSPEC_ATAK_PlanSrvOn", false]} || {!isNil { missionNamespace getVariable (format ["COMSPEC_ATAK_Plan_%1", _side]) }};
+if (!_srvOn) then {
     // Serveur sans le mod natif : pas de plan partagé, chaque joueur envoie son brouillon (plan personnel sur le site).
     _items = missionNamespace getVariable ["COMSPEC_ATAK_PlanDraft", []];
     _owner = getPlayerUID player;

@@ -64,8 +64,12 @@ private _addItems = {
     params ["_list", ["_toShared", true], ["_replace", false], ["_name", ""]];
     if ((count _list) isEqualTo 0) exitWith {};
     // Serveur sans le mod natif (mod chargé seulement chez les joueurs) : personne n'écrit le plan partagé.
-    private _srvOn = missionNamespace getVariable ["COMSPEC_ATAK_PlanSrvOn", false];
-    if (_toShared && {_srvOn} && {call _can}) then {
+    // Le drapeau du serveur peut manquer (solo, partie hébergée, drapeau pas encore reçu) : on essaie quand même
+    // le serveur, et seulement sans réponse sous 5 s les éléments vont au brouillon.
+    private _srvOn = isServer || {missionNamespace getVariable ["COMSPEC_ATAK_PlanSrvOn", false]} || {!isNil { missionNamespace getVariable _sharedVar }};
+    // Serveur déjà resté muet sans drapeau dans cette mission : directement au brouillon.
+    private _noSrv = !_srvOn && {missionNamespace getVariable ["COMSPEC_ATAK_PlanNoSrv", false]};
+    if (_toShared && {!_noSrv} && {call _can}) then {
         private _rev = (missionNamespace getVariable [_sharedVar, [0, [], ""]]) param [0, 0];
         [["merge", "replace"] select _replace, [_list, _name]] call _srv;
         // Affichés en attente jusqu'à la réponse du serveur ; sans réponse (refus, serveur muet), gardés dans le brouillon.
@@ -74,15 +78,16 @@ private _addItems = {
         uiNamespace setVariable ["COMSPEC_ATAK_PlanPending", _pend];
         [{ ((missionNamespace getVariable [_this select 0, [0]]) param [0, 0]) isNotEqualTo (_this select 1) }, {
             uiNamespace setVariable ["COMSPEC_ATAK_PlanPending", []];
-        }, [_sharedVar, _rev, _list], 5, {
+        }, [_sharedVar, _rev, _list, _srvOn], 5, {
             uiNamespace setVariable ["COMSPEC_ATAK_PlanPending", []];
             ["WARN", "PLAN", format ["Plan partagé : pas de réponse du serveur (%1 éléments gardés dans le brouillon)", count (_this select 2)]] call comspec_atak_native_fnc_log;
-            ["Plan partagé : pas de réponse du serveur, gardé dans votre brouillon", 4] call comspec_atak_native_fnc_toast;
+            [["Serveur sans le mod ATAK natif : plan partagé indisponible, éléments placés dans votre brouillon", "Plan partagé : pas de réponse du serveur, gardé dans votre brouillon"] select (_this select 3), 5] call comspec_atak_native_fnc_toast;
+            if !(_this select 3) then { missionNamespace setVariable ["COMSPEC_ATAK_PlanNoSrv", true]; };
             ["toDraft", _this select 2] call comspec_atak_native_fnc_planAction;
         }] call CBA_fnc_waitUntilAndExecute;
     } else {
         if (_toShared) then {
-            [["Édition du plan partagé réservée : éléments placés dans votre brouillon", "Serveur sans le mod ATAK natif : plan partagé indisponible, éléments placés dans votre brouillon"] select !_srvOn, 5] call comspec_atak_native_fnc_toast;
+            [["Édition du plan partagé réservée : éléments placés dans votre brouillon", "Serveur sans le mod ATAK natif : plan partagé indisponible, éléments placés dans votre brouillon"] select _noSrv, 5] call comspec_atak_native_fnc_toast;
         };
         private _d = [[], +(call _draftGet)] select !_replace;
         { private _c = +_x; _c set [0, call _newId]; if ((_c select 9) isEqualTo "") then { _c set [9, name player]; }; _d pushBack _c; } forEach _list;

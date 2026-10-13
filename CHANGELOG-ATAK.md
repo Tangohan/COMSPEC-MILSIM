@@ -46,12 +46,14 @@ FR : Le plan de briefing s'affiche sur le site et sur la carte du téléphone
 - Les zones, lignes et points du plan partagé de l'app Plan apparaissent sur la carte Athena du site, dans un nouveau calque « Plan de briefing » (lecture seule, réglable dans les préférences de la carte).
 - Sur le téléphone, le plan partagé et votre brouillon sont maintenant affichés par défaut sur l'app Carte, sous les unités (réglage dans Plan, vue PLANS).
 - Sur un serveur sans le mod ATAK natif (pas de plan partagé), votre brouillon apparaît sur le site comme plan personnel.
+- Le message « Serveur sans le mod ATAK natif » n'apparaît plus à tort en solo ou en partie hébergée : vos éléments vont bien dans le plan partagé.
 - Clic droit dans la carte du Plan : termine le trait ou la zone en cours, quitte l'outil, ou retire la sélection.
 EN : The briefing plan now shows on the website and on the phone's map
 - Areas, lines and points of the shared plan from the Plan app appear on the Athena website map, in a new "Briefing plan" layer (read only, can be turned off in the map preferences).
 - On the phone, the shared plan and your draft now show by default on the Map app, under the units (setting in Plan, PLANS view).
 - The PLANS view tells you whether the plan reached the website.
 - On a server without the native ATAK mod (no shared plan), your draft shows on the website as a personal plan.
+- The "Server without the native ATAK mod" message no longer shows by mistake in single player or hosted games: your items go to the shared plan.
 - Right click on the Plan map: finishes the line or area being drawn, leaves the tool, or clears the selection.
 
 ### Détail technique
@@ -59,6 +61,7 @@ EN : The briefing plan now shows on the website and on the phone's map
 - Site : table `atak_briefing_plans` (une ligne par carte et par camp, créée aussi à la première écriture), GET `/api/atak/briefing-plan` (plans des 12 dernières heures), calque Leaflet `atak-briefing-plan.js` (zones remplies, lignes de phase étiquetées, flèches, points), préférence `showBriefingPlan`.
 - Calque Plan de la carte du téléphone : nouvelle préférence `COMSPEC_ATAK_PlanOnMap2`, active par défaut, avec le brouillon local plus pâle.
 - Brouillons et plans enregistrés restent personnels : ils arrivent sur le site une fois publiés dans le plan partagé. Exception : serveur sans le mod natif (`COMSPEC_ATAK_PlanSrvOn` absent), chaque joueur envoie son brouillon (`owner` = UID, une ligne par joueur).
+- Détection du serveur avec le mod : drapeau `COMSPEC_ATAK_PlanSrvOn` posé dès le preInit serveur ; côté client, `isServer` ou plan déjà écrit suffisent ; sans drapeau, le serveur est quand même essayé (5 s) avant le brouillon, puis `COMSPEC_ATAK_PlanNoSrv` évite d'attendre aux ajouts suivants.
 - Clic droit de la carte du Plan : le relâchement n'arrivait pas toujours à la carte ; il est aussi détecté par `inputMouse 1` (premier des deux, traité une fois, événement `rclick`).
 
 ---
