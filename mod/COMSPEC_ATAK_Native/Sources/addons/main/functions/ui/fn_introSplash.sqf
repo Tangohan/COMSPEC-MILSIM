@@ -10,10 +10,13 @@
     ne sont pas encore compilées ici, d'où l'appel par chemin.
     Son : réglage CBA « Son d'intro au démarrage » (XEH_preInit), recopié dans profileNamespace parce que les
     réglages CBA ne sont pas lus à ce moment. Une touche ou un clic coupe le son.
+    Désactivée par défaut depuis 1.65.0 (TTRD : buggée) : rien ne s'affiche ni ne joue tant que le réglage CBA
+    « Intro au démarrage » (recopié dans profileNamespace COMSPEC_ATAK_IntroEnabled) n'est pas coché.
     Params : [display]
 */
 params [["_display", displayNull, [displayNull]]];
 if (isNull _display) exitWith {};
+if !(profileNamespace getVariable ["COMSPEC_ATAK_IntroEnabled", false]) exitWith {};
 if (uiNamespace getVariable ["COMSPEC_ATAK_IntroDone", false]) exitWith {};
 uiNamespace setVariable ["COMSPEC_ATAK_IntroDone", true];
 

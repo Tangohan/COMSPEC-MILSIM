@@ -11,6 +11,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Intro au démarrage désactivée (ATAK natif 1.65.0)
+
+Non testé en jeu. TTRD : l'intro du mod est buggée. Pas de DLL à recompiler, pas de migration.
+- L'intro sur l'écran de démarrage d'Arma (marque COMSPEC, trait vert, carillon) ne se lance plus : ni affichage ni son.
+- Le code est gardé. Nouveau réglage CBA « COMSPEC > ATAK · Intro > Intro au démarrage », décoché par défaut, pour la réactiver (pris en compte au lancement suivant).
+- La marque COMSPEC sur les écrans de chargement de mission reste inchangée.
+- À vérifier en jeu : lancer Arma, rien de COMSPEC sur l'écran de démarrage, menu principal normal.
+
 ## Connexion Athena : « invalid_url » mieux géré (ATAK natif 1.64.0, COMSPEC Link 2.0.77)
 
 Non testé en jeu. Capture de TTRD : l'onglet COMPTE affichait « Athena n'a pas donné de code (invalid_url) ». Il faut recompiler la DLL (build_mod.bat) ; pas de migration.
