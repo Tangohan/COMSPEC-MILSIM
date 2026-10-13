@@ -333,15 +333,15 @@ private _athena = [
     ["text", "<t size='0.8' color='#8a9a93'>Aussi dans le menu Échap, bouton Service Athéna.</t>"]
 ];
 
-// Langue du téléphone : même réglage que CBA (COMSPEC > ATAK · Langue / Language), libellés bilingues ; le changer redessine la page (fn_langApply).
-private _langSet = missionNamespace getVariable ["comspec_atak_native_language", "fr"];
+// Langue du mod : même réglage que CBA (COMSPEC > Langue / Language, en tête), libellés bilingues ; le changer redessine la page et les menus CBA (fn_langApply).
+private _langSet = missionNamespace getVariable ["comspec_atak_native_language", "auto"];
 private _lang = [
     ["section", "Langue / Language", "Langue du téléphone / Phone language"],
     ["segment", "Langue / Language", [
         ["FRANÇAIS", { ["comspec_atak_native_language", "fr", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "fr"],
         ["ENGLISH", { ["comspec_atak_native_language", "en", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "en"],
         ["AUTO", { ["comspec_atak_native_language", "auto", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "auto"]
-    ], "Auto : langue du jeu / game language. Aussi dans Échap > Options > Options des addons > COMSPEC > ATAK · Langue / Language."]
+    ], "Auto : langue du jeu / game language. Aussi dans Échap > Options > Options des addons > COMSPEC, en tête de la liste / also at the top of the COMSPEC addon options."]
 ];
 
 // Catégories, façon Android : liste d'accueil, puis une page par catégorie.
