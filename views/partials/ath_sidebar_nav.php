@@ -570,6 +570,7 @@ if ($isOperatorBoNav) {
                 ],
                 ['label' => 'Fichiers en quarantaine', 'href' => url('back-office/content-moderation'), 'icon' => 'shield', 'active' => $navAt('back-office/content-moderation')],
                 ['label' => 'Configuration du forum', 'href' => url('back-office/ressources/forum-config'), 'icon' => 'gear', 'active' => $navAt('back-office/ressources/forum-config')],
+                ['label' => 'Musique', 'href' => url('back-office/ressources/musique'), 'icon' => 'radio', 'active' => $navAt('back-office/ressources/musique')],
             ], static fn (?array $row): bool => is_array($row))),
         ],
         [

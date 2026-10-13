@@ -289,6 +289,7 @@ return [
         ['path' => 'back-office/ressources/atak-config', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · TACTIQUE', 'title' => 'Configuration ATAK', 'subtitle' => 'Cartes, calques et réglages de l’application ATAK pour vos membres.'],
         ['path' => 'back-office/ressources/modpacks', 'group' => 'Ressources', 'kicker' => 'RESSOURCES', 'title' => 'Modpacks', 'subtitle' => 'Les listes de mods à installer pour rejoindre vos sessions.'],
         ['path' => 'back-office/ressources/forum-config', 'group' => 'Ressources', 'kicker' => 'RESSOURCES · FORUM', 'title' => 'Réglages du forum', 'subtitle' => 'Rubriques, briefings et règles de publication du forum.'],
+        ['path' => 'back-office/ressources/musique', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · MUSIQUE', 'title' => 'Musique de l\'organisation', 'subtitle' => 'Morceaux et playlists de vos membres, écoutés sur le site et en jeu dans l\'app Musique de l\'ATAK.'],
         ['path' => 'back-office/content-moderation', 'group' => 'Système', 'kicker' => 'SYSTÈME · MODÉRATION', 'title' => 'Fichiers et pièces jointes', 'subtitle' => 'Les fichiers déposés par les membres, à vérifier ou supprimer.'],
         ['path' => 'tableau-operationnel', 'group' => 'Opérations', 'kicker' => 'OPÉRATIONS', 'title' => 'Mur opérationnel', 'subtitle' => 'Ce que voient les membres : prochaines opérations, articles et annonces.'],
     ],
