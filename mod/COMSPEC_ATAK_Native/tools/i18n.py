@@ -288,13 +288,21 @@ def collect():
 
 
 CFG_FILES = ["config.cpp", "modules.hpp"]
-CFG_ATTR = re.compile(r'\b(displayName|description|tooltip|name|displayNameShort|descriptionShort)(\s*=\s*)"((?:[^"]|"")*)"')
+CFG_PREFIX = "STR_COMSPEC_ATAK_CFG_"
 STRINGTABLE = os.path.join(ADDON, "stringtable.xml")
+if SSE:
+    # SSE : config.cpp et .hpp de tous les addons (hors écrans, traduits au chargement) ; une seule stringtable dans main.
+    CFG_FILES = sorted(os.path.relpath(os.path.join(b, f), ADDON) for b, _, fs in os.walk(ADDON) for f in fs
+                       if f.endswith((".cpp", ".hpp")) and "dialogs" not in b and not f.startswith("script_")
+                       and not b.startswith(os.path.join(ADDON, "debug")))
+    CFG_PREFIX = "STR_COMSPEC_SSE_CFG_"
+    STRINGTABLE = os.path.join(ADDON, "main", "stringtable.xml")
+CFG_ATTR = re.compile(r'\b(displayName|description|tooltip|name|displayNameShort|descriptionShort)(\s*=\s*)"((?:[^"]|"")*)"')
 
 
 def cfg_key(fr):
     import hashlib
-    return "STR_COMSPEC_ATAK_CFG_" + hashlib.sha1(fr.encode("utf-8")).hexdigest()[:10].upper()
+    return CFG_PREFIX + hashlib.sha1(fr.encode("utf-8")).hexdigest()[:10].upper()
 
 
 def stringtable():
@@ -315,7 +323,7 @@ def stringtable():
             if not WORD.search(fr) or looks_like_code(fr) or fr.startswith("$STR_"):
                 return m.group(0)
             # name= : seulement les choix des modules Eden (Values) ; ailleurs c'est une donnée lue par le code.
-            if m.group(1) == "name" and f != "modules.hpp":
+            if m.group(1) == "name" and not re.match(r"(modules|attributes)\w*\.hpp$", os.path.basename(f)):
                 return m.group(0)
             k = cfg_key(fr)
             keys[k] = fr
@@ -332,7 +340,7 @@ def stringtable():
         esc = lambda t: _h.escape(t, quote=False)
         rows.append(f'        <Key ID="{k}">\n            <Original>{esc(fr)}</Original>\n            <English>{esc(e)}</English>\n            <French>{esc(fr)}</French>\n        </Key>')
     xml = ('<?xml version="1.0" encoding="utf-8"?>\n<!-- Généré par tools/i18n.py stringtable : traductions dans i18n/en.txt. -->\n'
-           '<Project name="COMSPEC_ATAK_Native">\n    <Package name="main">\n' + "\n".join(rows) + '\n    </Package>\n</Project>\n')
+           '<Project name="' + ("COMSPEC_SSE" if SSE else "COMSPEC_ATAK_Native") + '">\n    <Package name="main">\n' + "\n".join(rows) + '\n    </Package>\n</Project>\n')
     open(STRINGTABLE, "w", encoding="utf-8", newline="\n").write(xml)
     print(f"{len(keys)} textes de config, {len(missing)} sans anglais")
     for fr in missing:

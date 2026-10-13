@@ -61,15 +61,15 @@ class CfgVehicles {
     class COMSPEC_ATAK_Module_DataBase: Module_F {};
     class COMSPEC_ATAK_Module_DataNode: COMSPEC_ATAK_Module_DataBase {
         category = "COMSPEC_SSE_Domex";
-        displayName = "DL-7 · Données à extraire au câble";
+        displayName = "$STR_COMSPEC_SSE_CFG_B019C6DD4A";
     };
     class COMSPEC_ATAK_Module_DataFile: COMSPEC_ATAK_Module_DataBase {
         category = "COMSPEC_SSE_Domex";
-        displayName = "DL-7 · Ajouter un fichier";
+        displayName = "$STR_COMSPEC_SSE_CFG_30F2887289";
     };
     class COMSPEC_ATAK_Module_DataReset: COMSPEC_ATAK_Module_DataBase {
         category = "COMSPEC_SSE_Domex";
-        displayName = "DL-7 · Remettre un support à zéro";
+        displayName = "$STR_COMSPEC_SSE_CFG_AA363E785D";
     };
 };
 
@@ -79,12 +79,12 @@ class Cfg3DEN {
     class Object {
         class AttributeCategories {
             class COMSPEC_SSE_Dl7 {
-                displayName = "COMSPEC SSE — Extraction DL-7";
+                displayName = "$STR_COMSPEC_SSE_CFG_5FA316DD74";
                 collapsed = 1;
                 class Attributes {
                     class COMSPEC_SSE_Dl7_Enabled {
-                        displayName = "Extractible au câble DL-7";
-                        tooltip = "Un opérateur équipé de l'ATAK et du câble DL-7 peut se brancher sur cet objet et en télécharger les données.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_8A5DE7627B";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_29AE468CF2";
                         property = "COMSPEC_SSE_Dl7_Enabled";
                         control = "Checkbox";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Enabled', _value];";
@@ -93,8 +93,8 @@ class Cfg3DEN {
                         DL7_COND;
                     };
                     class COMSPEC_SSE_Dl7_Content {
-                        displayName = "Contenu";
-                        tooltip = "Données SSE : ce que le générateur SSE a mis dans l'appareil (fichiers, courriels, messages, identifiants, lieux). Fichiers saisis : seulement le champ ci-dessous. Les deux : l'ensemble.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_F3CB82AF6C";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_F153B82AB4";
                         property = "COMSPEC_SSE_Dl7_Content";
                         control = "Combo";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Content', _value];";
@@ -108,8 +108,8 @@ class Cfg3DEN {
                         };
                     };
                     class COMSPEC_SSE_Dl7_Files {
-                        displayName = "Fichiers saisis";
-                        tooltip = "Blocs séparés par une ligne « --- ». Première ligne : « nom | type | taille Ko » (texte, document, identifiants, coord, image, audio), puis le contenu.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_F92DB9F07D";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_AC66EEB9F9";
                         property = "COMSPEC_SSE_Dl7_Files";
                         control = "EditMulti5";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Files', _value];";
@@ -118,8 +118,8 @@ class Cfg3DEN {
                         DL7_COND;
                     };
                     class COMSPEC_SSE_Dl7_Name {
-                        displayName = "Nom du support";
-                        tooltip = "Affiché dans l'app Extraction. Vide = nom de l'objet ou de l'appareil SSE.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_7D8E20466B";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_F2D33E352D";
                         property = "COMSPEC_SSE_Dl7_Name";
                         control = "Edit";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Name', _value];";
@@ -128,7 +128,7 @@ class Cfg3DEN {
                         DL7_COND;
                     };
                     class COMSPEC_SSE_Dl7_Theme {
-                        displayName = "Écran de connexion";
+                        displayName = "$STR_COMSPEC_SSE_CFG_2547BF4CA0";
                         property = "COMSPEC_SSE_Dl7_Theme";
                         control = "Combo";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Theme', _value];";
@@ -146,7 +146,7 @@ class Cfg3DEN {
                         };
                     };
                     class COMSPEC_SSE_Dl7_Banner {
-                        displayName = "Organisation affichée";
+                        displayName = "$STR_COMSPEC_SSE_CFG_F09016E234";
                         property = "COMSPEC_SSE_Dl7_Banner";
                         control = "Edit";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Banner', _value];";
@@ -155,8 +155,8 @@ class Cfg3DEN {
                         DL7_COND;
                     };
                     class COMSPEC_SSE_Dl7_Password {
-                        displayName = "Mot de passe";
-                        tooltip = "Vide = accès libre. Pensez à le cacher ailleurs : document, autre appareil, interrogatoire.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_94E2F3EE14";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_B72C6C2193";
                         property = "COMSPEC_SSE_Dl7_Password";
                         control = "Edit";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Password', _value];";
@@ -165,7 +165,7 @@ class Cfg3DEN {
                         DL7_COND;
                     };
                     class COMSPEC_SSE_Dl7_Hint {
-                        displayName = "Indice";
+                        displayName = "$STR_COMSPEC_SSE_CFG_C1C0201437";
                         property = "COMSPEC_SSE_Dl7_Hint";
                         control = "Edit";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Hint', _value];";
@@ -174,7 +174,7 @@ class Cfg3DEN {
                         DL7_COND;
                     };
                     class COMSPEC_SSE_Dl7_Attempts {
-                        displayName = "Essais permis (0 = illimité)";
+                        displayName = "$STR_COMSPEC_SSE_CFG_F3FEFB2906";
                         property = "COMSPEC_SSE_Dl7_Attempts";
                         control = "Edit";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Attempts', _value];";
@@ -184,7 +184,7 @@ class Cfg3DEN {
                         DL7_COND;
                     };
                     class COMSPEC_SSE_Dl7_OnFail {
-                        displayName = "Trop d'essais";
+                        displayName = "$STR_COMSPEC_SSE_CFG_CED1C585A6";
                         property = "COMSPEC_SSE_Dl7_OnFail";
                         control = "Combo";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_OnFail', _value];";
@@ -199,7 +199,7 @@ class Cfg3DEN {
                         };
                     };
                     class COMSPEC_SSE_Dl7_Crack {
-                        displayName = "Forçage possible";
+                        displayName = "$STR_COMSPEC_SSE_CFG_13E08E6708";
                         property = "COMSPEC_SSE_Dl7_Crack";
                         control = "Checkbox";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Crack', _value];";
@@ -208,7 +208,7 @@ class Cfg3DEN {
                         DL7_COND;
                     };
                     class COMSPEC_SSE_Dl7_CrackTime {
-                        displayName = "Durée du forçage (s)";
+                        displayName = "$STR_COMSPEC_SSE_CFG_AF7756A553";
                         property = "COMSPEC_SSE_Dl7_CrackTime";
                         control = "Edit";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_CrackTime', _value];";
@@ -218,7 +218,7 @@ class Cfg3DEN {
                         DL7_COND;
                     };
                     class COMSPEC_SSE_Dl7_Duration {
-                        displayName = "Durée du transfert (s)";
+                        displayName = "$STR_COMSPEC_SSE_CFG_C54AECDE5A";
                         property = "COMSPEC_SSE_Dl7_Duration";
                         control = "Edit";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Duration', _value];";
@@ -228,7 +228,7 @@ class Cfg3DEN {
                         DL7_COND;
                     };
                     class COMSPEC_SSE_Dl7_Port {
-                        displayName = "Port";
+                        displayName = "$STR_COMSPEC_SSE_CFG_FE035157CD";
                         property = "COMSPEC_SSE_Dl7_Port";
                         control = "Combo";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Port', _value];";
@@ -242,8 +242,8 @@ class Cfg3DEN {
                         };
                     };
                     class COMSPEC_SSE_Dl7_Alarm {
-                        displayName = "Alarme";
-                        tooltip = "Sirène, Zeus prévenu, position du pirate révélée aux ennemis proches.";
+                        displayName = "$STR_COMSPEC_SSE_CFG_68C602A962";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_BA85DC89ED";
                         property = "COMSPEC_SSE_Dl7_Alarm";
                         control = "Combo";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Alarm', _value];";
@@ -258,7 +258,7 @@ class Cfg3DEN {
                         };
                     };
                     class COMSPEC_SSE_Dl7_OneShot {
-                        displayName = "Effacé après le premier téléchargement";
+                        displayName = "$STR_COMSPEC_SSE_CFG_4275ED3369";
                         property = "COMSPEC_SSE_Dl7_OneShot";
                         control = "Checkbox";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_OneShot', _value];";

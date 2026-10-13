@@ -32,7 +32,7 @@ class CfgMods {
         actionName = "Website";
         action = "https://athena.ttrd.fr";
         overview = "Sensitive Site Exploitation — Zeus, Eden, ACE, génération déterministe et liaison Athena.";
-        tooltip = "COMSPEC SSE";
+        tooltip = "$STR_COMSPEC_SSE_CFG_25ECDF92AF";
         author = "COMSPEC";
     };
 };
@@ -41,17 +41,17 @@ class CfgFactionClasses {
     class NO_CATEGORY;
     // Une famille de catégories, numérotées dans l'ordre d'une préparation de mission.
     class COMSPEC_SSE: NO_CATEGORY {
-        displayName = "COMSPEC SSE · 1. Sites et objets";
+        displayName = "$STR_COMSPEC_SSE_CFG_378C13828D";
         priority = 2;
         side = 7;
     };
     class COMSPEC_SSE_People: NO_CATEGORY {
-        displayName = "COMSPEC SSE · 2. Personnes et liens";
+        displayName = "$STR_COMSPEC_SSE_CFG_206D673475";
         priority = 2;
         side = 7;
     };
     class COMSPEC_SSE_Mission: NO_CATEGORY {
-        displayName = "COMSPEC SSE · 3. Mission et scénario";
+        displayName = "$STR_COMSPEC_SSE_CFG_5E9801F32C";
         priority = 2;
         side = 7;
     };
@@ -59,21 +59,21 @@ class CfgFactionClasses {
 
 class CfgEditorCategories {
     class COMSPEC_SSE {
-        displayName = "COMSPEC SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_25ECDF92AF";
     };
 };
 
 class CfgEditorSubcategories {
     class COMSPEC_SSE_Items {
-        displayName = "Matériel SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_69DCC1CC45";
     };
     class COMSPEC_SSE_Modules {
-        displayName = "Modules SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_85359FF17D";
     };
 };
 
 class CfgVehicleClasses {
     class COMSPEC_SSE_Items {
-        displayName = "COMSPEC SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_25ECDF92AF";
     };
 };

@@ -58,12 +58,12 @@ class CfgPatches {
 class CfgFactionClasses {
     class NO_CATEGORY;
     class COMSPEC_SSE_Tools: NO_CATEGORY {
-        displayName = "COMSPEC SSE · 5. Outils du Zeus";
+        displayName = "$STR_COMSPEC_SSE_CFG_543C09E508";
         priority = 2;
         side = 7;
     };
     class COMSPEC_SSE_Domex: NO_CATEGORY {
-        displayName = "COMSPEC SSE · 4. Numérique (DOMEX, DL-7)";
+        displayName = "$STR_COMSPEC_SSE_CFG_722625B3ED";
         priority = 2;
         side = 7;
     };
@@ -153,7 +153,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_GenerateData: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Générer un profil SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_7F2A68EF59";
         category = "COMSPEC_SSE";
         function = "comspec_sse_fnc_moduleGenerateData";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
@@ -161,8 +161,8 @@ class CfgVehicles {
 
         class Attributes {
             class Profile {
-                displayName = "Profil";
-                tooltip = "Rôle narratif du sujet : oriente contacts, messages et documents.";
+                displayName = "$STR_COMSPEC_SSE_CFG_669FE25A32";
+                tooltip = "$STR_COMSPEC_SSE_CFG_7A901D689B";
                 property = "COMSPEC_SSE_Module_GenerateData_Profile";
                 control = "Combo";
                 expression = "_this setVariable ['Profile',_value,true];";
@@ -182,8 +182,8 @@ class CfgVehicles {
                 };
             };
             class Complexity {
-                displayName = "Richesse";
-                tooltip = "Quantité d'éléments exploitables générés.";
+                displayName = "$STR_COMSPEC_SSE_CFG_684A67E212";
+                tooltip = "$STR_COMSPEC_SSE_CFG_E25C26010F";
                 property = "COMSPEC_SSE_Module_GenerateData_Complexity";
                 control = "Combo";
                 expression = "_this setVariable ['Complexity',_value,true];";
@@ -197,8 +197,8 @@ class CfgVehicles {
                 };
             };
             class WantIdentity {
-                displayName = "Identité réelle (Arma / Eden)";
-                tooltip = "Décoché : le terminal invente un nom SSE au lieu de reprendre l'identité de l'unité.";
+                displayName = "$STR_COMSPEC_SSE_CFG_755A7A62F0";
+                tooltip = "$STR_COMSPEC_SSE_CFG_F17D6914A9";
                 property = "COMSPEC_SSE_Module_GenerateData_WantIdentity";
                 control = "Checkbox";
                 expression = "_this setVariable ['WantIdentity',_value,true];";
@@ -206,8 +206,8 @@ class CfgVehicles {
                 typeName = "BOOL";
             };
             class WantPhone {
-                displayName = "Téléphone";
-                tooltip = "Décoché : aucun téléphone généré.";
+                displayName = "$STR_COMSPEC_SSE_CFG_D3B023EABC";
+                tooltip = "$STR_COMSPEC_SSE_CFG_0FA3A18743";
                 property = "COMSPEC_SSE_Module_GenerateData_WantPhone";
                 control = "Checkbox";
                 expression = "_this setVariable ['WantPhone',_value,true];";
@@ -215,8 +215,8 @@ class CfgVehicles {
                 typeName = "BOOL";
             };
             class WantDocuments {
-                displayName = "Documents";
-                tooltip = "Décoché : aucun document papier généré.";
+                displayName = "$STR_COMSPEC_SSE_CFG_687C82861C";
+                tooltip = "$STR_COMSPEC_SSE_CFG_7D1E33E915";
                 property = "COMSPEC_SSE_Module_GenerateData_WantDocuments";
                 control = "Checkbox";
                 expression = "_this setVariable ['WantDocuments',_value,true];";
@@ -224,8 +224,8 @@ class CfgVehicles {
                 typeName = "BOOL";
             };
             class WantBio {
-                displayName = "Biométrie";
-                tooltip = "Décoché : pas d'empreintes / iris / ADN pour SEEK.";
+                displayName = "$STR_COMSPEC_SSE_CFG_5427FD158C";
+                tooltip = "$STR_COMSPEC_SSE_CFG_ED79F964B5";
                 property = "COMSPEC_SSE_Module_GenerateData_WantBio";
                 control = "Checkbox";
                 expression = "_this setVariable ['WantBio',_value,true];";
@@ -233,8 +233,8 @@ class CfgVehicles {
                 typeName = "BOOL";
             };
             class WantNetwork {
-                displayName = "Lier les cibles entre elles";
-                tooltip = "Crée des liens « associé » entre les entités synchronisées.";
+                displayName = "$STR_COMSPEC_SSE_CFG_C8549ECACC";
+                tooltip = "$STR_COMSPEC_SSE_CFG_11767A27F9";
                 property = "COMSPEC_SSE_Module_GenerateData_WantNetwork";
                 control = "Checkbox";
                 expression = "_this setVariable ['WantNetwork',_value,true];";
@@ -242,8 +242,8 @@ class CfgVehicles {
                 typeName = "BOOL";
             };
             class NoisePct {
-                displayName = "Données inutiles (%)";
-                tooltip = "Probabilité d'ajouter des messages sans intérêt, pour masquer les vrais indices (0–100).";
+                displayName = "$STR_COMSPEC_SSE_CFG_A77A7789A1";
+                tooltip = "$STR_COMSPEC_SSE_CFG_23EE930FE8";
                 property = "COMSPEC_SSE_Module_GenerateData_NoisePct";
                 control = "Combo";
                 expression = "_this setVariable ['NoisePct',_value,true];";
@@ -260,7 +260,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Génère un profil SSE (identité, téléphone, documents, biométrie) sur la personne ou l'objet ciblé. Zeus : posez le module sur la cible, un formulaire s'ouvre. Eden : synchronisez les cibles au module.";
+            description = "$STR_COMSPEC_SSE_CFG_3C0774D059";
             sync[] = {"AnyPerson", "AnyVehicle", "Anything"};
         };
     };
@@ -268,7 +268,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_GenerateSite: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Créer un site SSE complet";
+        displayName = "$STR_COMSPEC_SSE_CFG_742F4979BD";
         category = "COMSPEC_SSE";
         function = "comspec_sse_fnc_moduleGenerateSite";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\search_ca.paa";
@@ -279,8 +279,8 @@ class CfgVehicles {
 
         class Attributes {
             class Radius {
-                displayName = "Rayon";
-                tooltip = "Tout ce qui se trouve dans ce rayon est intégré au site.";
+                displayName = "$STR_COMSPEC_SSE_CFG_3D06EC48BE";
+                tooltip = "$STR_COMSPEC_SSE_CFG_C77C2BCB7D";
                 property = "COMSPEC_SSE_Module_GenerateSite_Radius";
                 control = "Combo";
                 expression = "_this setVariable ['Radius',_value,true];";
@@ -297,8 +297,8 @@ class CfgVehicles {
                 };
             };
             class Profile {
-                displayName = "Type de site";
-                tooltip = "Oriente le réseau, les thèmes et les documents.";
+                displayName = "$STR_COMSPEC_SSE_CFG_477589B159";
+                tooltip = "$STR_COMSPEC_SSE_CFG_EB90E9A8BB";
                 property = "COMSPEC_SSE_Module_GenerateSite_Profile";
                 control = "Combo";
                 expression = "_this setVariable ['Profile',_value,true];";
@@ -316,8 +316,8 @@ class CfgVehicles {
                 };
             };
             class Complexity {
-                displayName = "Richesse";
-                tooltip = "Quantité d'indices par entité.";
+                displayName = "$STR_COMSPEC_SSE_CFG_684A67E212";
+                tooltip = "$STR_COMSPEC_SSE_CFG_73FCB9DB05";
                 property = "COMSPEC_SSE_Module_GenerateSite_Complexity";
                 control = "Combo";
                 expression = "_this setVariable ['Complexity',_value,true];";
@@ -331,8 +331,8 @@ class CfgVehicles {
                 };
             };
             class MaxObjects {
-                displayName = "Objets exploitables (max)";
-                tooltip = "Nombre maximum d'objets (caisses, sacs…) intégrés au site.";
+                displayName = "$STR_COMSPEC_SSE_CFG_BC5DE8C5EA";
+                tooltip = "$STR_COMSPEC_SSE_CFG_640278ED98";
                 property = "COMSPEC_SSE_Module_GenerateSite_MaxObjects";
                 control = "Combo";
                 expression = "_this setVariable ['MaxObjects',_value,true];";
@@ -348,8 +348,8 @@ class CfgVehicles {
                 };
             };
             class WantDigital {
-                displayName = "Supports numériques";
-                tooltip = "Téléphones / ordinateurs sur le site.";
+                displayName = "$STR_COMSPEC_SSE_CFG_DAF2ABC7B8";
+                tooltip = "$STR_COMSPEC_SSE_CFG_7A072D2DDB";
                 property = "COMSPEC_SSE_Module_GenerateSite_WantDigital";
                 control = "Checkbox";
                 expression = "_this setVariable ['WantDigital',_value,true];";
@@ -357,8 +357,8 @@ class CfgVehicles {
                 typeName = "BOOL";
             };
             class WantDocuments {
-                displayName = "Documents";
-                tooltip = "Documents papier liés au réseau.";
+                displayName = "$STR_COMSPEC_SSE_CFG_687C82861C";
+                tooltip = "$STR_COMSPEC_SSE_CFG_9CF741A9FE";
                 property = "COMSPEC_SSE_Module_GenerateSite_WantDocuments";
                 control = "Checkbox";
                 expression = "_this setVariable ['WantDocuments',_value,true];";
@@ -366,8 +366,8 @@ class CfgVehicles {
                 typeName = "BOOL";
             };
             class WantNetwork {
-                displayName = "Liens réseau";
-                tooltip = "Relie les personnes du site entre elles.";
+                displayName = "$STR_COMSPEC_SSE_CFG_039B2618BD";
+                tooltip = "$STR_COMSPEC_SSE_CFG_86CCB1FDFD";
                 property = "COMSPEC_SSE_Module_GenerateSite_WantNetwork";
                 control = "Checkbox";
                 expression = "_this setVariable ['WantNetwork',_value,true];";
@@ -377,7 +377,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Relie au même réseau les personnes, véhicules et objets du rayon (téléphones, documents, liens). Placez d'abord le décor, puis le module au centre. Eden : la zone du module peut remplacer le rayon.";
+            description = "$STR_COMSPEC_SSE_CFG_F5D5D6B3DF";
             position = 1;
         };
     };
@@ -385,7 +385,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_InitTarget: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Rendre exploitable (SSE)";
+        displayName = "$STR_COMSPEC_SSE_CFG_6E5970A28A";
         category = "COMSPEC_SSE";
         function = "comspec_sse_fnc_moduleInitTarget";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\use_ca.paa";
@@ -393,8 +393,8 @@ class CfgVehicles {
 
         class Attributes {
             class EntityType {
-                displayName = "Nature de l'objet";
-                tooltip = "Automatique : déduit de la classe de l'objet (téléphone, ordinateur, document…).";
+                displayName = "$STR_COMSPEC_SSE_CFG_C7EB9F3AAD";
+                tooltip = "$STR_COMSPEC_SSE_CFG_6323D66FED";
                 property = "COMSPEC_SSE_Module_InitTarget_EntityType";
                 control = "Combo";
                 expression = "_this setVariable ['EntityType',_value,true];";
@@ -413,8 +413,8 @@ class CfgVehicles {
                 };
             };
             class Profile {
-                displayName = "Profil";
-                tooltip = "Profil narratif du contenu.";
+                displayName = "$STR_COMSPEC_SSE_CFG_669FE25A32";
+                tooltip = "$STR_COMSPEC_SSE_CFG_1EB4119497";
                 property = "COMSPEC_SSE_Module_InitTarget_Profile";
                 control = "Combo";
                 expression = "_this setVariable ['Profile',_value,true];";
@@ -434,8 +434,8 @@ class CfgVehicles {
                 };
             };
             class Complexity {
-                displayName = "Richesse";
-                tooltip = "Quantité d'indices.";
+                displayName = "$STR_COMSPEC_SSE_CFG_684A67E212";
+                tooltip = "$STR_COMSPEC_SSE_CFG_1ED5C5DECE";
                 property = "COMSPEC_SSE_Module_InitTarget_Complexity";
                 control = "Combo";
                 expression = "_this setVariable ['Complexity',_value,true];";
@@ -451,7 +451,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Rend la cible exploitable SSE ; le contenu détaillé est généré au premier examen (léger). Zeus : posez le module sur l'objet. Eden : synchronisez les objets.";
+            description = "$STR_COMSPEC_SSE_CFG_103464D011";
             sync[] = {"Anything"};
         };
     };
@@ -459,7 +459,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_PlaceEvidence: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Poser un objet de renseignement";
+        displayName = "$STR_COMSPEC_SSE_CFG_D51F236499";
         category = "COMSPEC_SSE";
         function = "comspec_sse_fnc_modulePlaceEvidence";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
@@ -467,8 +467,8 @@ class CfgVehicles {
 
         class Attributes {
             class ObjectClass {
-                displayName = "Objet";
-                tooltip = "Objet vanilla créé à la position du module.";
+                displayName = "$STR_COMSPEC_SSE_CFG_3DE621C50D";
+                tooltip = "$STR_COMSPEC_SSE_CFG_33CF4A0F55";
                 property = "COMSPEC_SSE_Module_PlaceEvidence_ObjectClass";
                 control = "Combo";
                 expression = "_this setVariable ['ObjectClass',_value,true];";
@@ -487,8 +487,8 @@ class CfgVehicles {
                 };
             };
             class Profile {
-                displayName = "Profil";
-                tooltip = "Profil narratif du contenu.";
+                displayName = "$STR_COMSPEC_SSE_CFG_669FE25A32";
+                tooltip = "$STR_COMSPEC_SSE_CFG_1EB4119497";
                 property = "COMSPEC_SSE_Module_PlaceEvidence_Profile";
                 control = "Combo";
                 expression = "_this setVariable ['Profile',_value,true];";
@@ -508,8 +508,8 @@ class CfgVehicles {
                 };
             };
             class Complexity {
-                displayName = "Richesse";
-                tooltip = "Quantité d'indices.";
+                displayName = "$STR_COMSPEC_SSE_CFG_684A67E212";
+                tooltip = "$STR_COMSPEC_SSE_CFG_1ED5C5DECE";
                 property = "COMSPEC_SSE_Module_PlaceEvidence_Complexity";
                 control = "Combo";
                 expression = "_this setVariable ['Complexity',_value,true];";
@@ -523,8 +523,8 @@ class CfgVehicles {
                 };
             };
             class GenerateNow {
-                displayName = "Générer le contenu au lancement";
-                tooltip = "Décoché : le contenu est généré au premier examen (plus léger).";
+                displayName = "$STR_COMSPEC_SSE_CFG_120CFD1431";
+                tooltip = "$STR_COMSPEC_SSE_CFG_82929654C4";
                 property = "COMSPEC_SSE_Module_PlaceEvidence_GenerateNow";
                 control = "Checkbox";
                 expression = "_this setVariable ['GenerateNow',_value,true];";
@@ -534,7 +534,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Crée un objet (ordinateur, téléphone, dossier, radio, caisse…) à la position du module et le rend exploitable SSE. L'objet devient éditable par les Zeus.";
+            description = "$STR_COMSPEC_SSE_CFG_7DFD48AFCC";
             position = 1;
         };
     };
@@ -542,7 +542,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_ApplyModel: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Appliquer un modèle SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_0EBEB492CC";
         category = "COMSPEC_SSE";
         function = "comspec_sse_fnc_moduleApplyModel";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\upload_ca.paa";
@@ -550,8 +550,8 @@ class CfgVehicles {
 
         class Attributes {
             class ModelId {
-                displayName = "Identifiant du modèle";
-                tooltip = "Ex. builtin_chef_hvt, builtin_cellule_insurgee_irak. Vide en Zeus = choisir dans la liste.";
+                displayName = "$STR_COMSPEC_SSE_CFG_15B300AEF1";
+                tooltip = "$STR_COMSPEC_SSE_CFG_BFA1E8BF60";
                 property = "COMSPEC_SSE_Module_ApplyModel_ModelId";
                 control = "Edit";
                 expression = "_this setVariable ['ModelId',_value,true];";
@@ -561,7 +561,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Applique un modèle SSE (intégré, mission ou local) sur la cible. Zeus : sans identifiant, la liste des modèles s'ouvre.";
+            description = "$STR_COMSPEC_SSE_CFG_91F500D4DD";
             sync[] = {"Anything"};
         };
     };
@@ -569,7 +569,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_SaveModel: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "Enregistrer comme modèle SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_105C4BC7ED";
         category = "COMSPEC_SSE_Tools";
         function = "comspec_sse_fnc_moduleSaveModel";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
@@ -577,8 +577,8 @@ class CfgVehicles {
 
         class Attributes {
             class ModelName {
-                displayName = "Nom du modèle";
-                tooltip = "Nom affiché dans la liste des modèles.";
+                displayName = "$STR_COMSPEC_SSE_CFG_68D49F6742";
+                tooltip = "$STR_COMSPEC_SSE_CFG_6C1449490C";
                 property = "COMSPEC_SSE_Module_SaveModel_ModelName";
                 control = "Edit";
                 expression = "_this setVariable ['ModelName',_value,true];";
@@ -588,7 +588,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Capture la cible (générée au besoin) et l'enregistre comme modèle réutilisable (mission + profil local du Zeus).";
+            description = "$STR_COMSPEC_SSE_CFG_D08DE436A5";
             sync[] = {"Anything"};
         };
     };
@@ -596,7 +596,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_GenerateBrief: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Générer depuis un brief / scénario";
+        displayName = "$STR_COMSPEC_SSE_CFG_D70012B745";
         category = "COMSPEC_SSE_Mission";
         function = "comspec_sse_fnc_moduleGenerateBrief";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\meet_ca.paa";
@@ -604,8 +604,8 @@ class CfgVehicles {
 
         class Attributes {
             class Brief {
-                displayName = "Brief narratif";
-                tooltip = "Ex. « cellule de 3 financiers », « atelier IED », « chef et courrier ». Ignoré si un pack est choisi.";
+                displayName = "$STR_COMSPEC_SSE_CFG_693EE04D82";
+                tooltip = "$STR_COMSPEC_SSE_CFG_9D0EA0FAAD";
                 property = "COMSPEC_SSE_Module_GenerateBrief_Brief";
                 control = "Edit";
                 expression = "_this setVariable ['Brief',_value,true];";
@@ -613,8 +613,8 @@ class CfgVehicles {
                 typeName = "STRING";
             };
             class ScenarioPack {
-                displayName = "Pack scénario";
-                tooltip = "Scénario prédéfini (prioritaire sur le brief).";
+                displayName = "$STR_COMSPEC_SSE_CFG_7EEBB29A47";
+                tooltip = "$STR_COMSPEC_SSE_CFG_A23CBDE313";
                 property = "COMSPEC_SSE_Module_GenerateBrief_ScenarioPack";
                 control = "Combo";
                 expression = "_this setVariable ['ScenarioPack',_value,true];";
@@ -634,8 +634,8 @@ class CfgVehicles {
                 };
             };
             class Radius {
-                displayName = "Rayon";
-                tooltip = "Les personnes et objets dans ce rayon forment le réseau.";
+                displayName = "$STR_COMSPEC_SSE_CFG_3D06EC48BE";
+                tooltip = "$STR_COMSPEC_SSE_CFG_BA9C7D1B15";
                 property = "COMSPEC_SSE_Module_GenerateBrief_Radius";
                 control = "Combo";
                 expression = "_this setVariable ['Radius',_value,true];";
@@ -654,7 +654,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Génère un réseau SSE cohérent autour du module à partir d'un brief libre ou d'un pack scénario prédéfini.";
+            description = "$STR_COMSPEC_SSE_CFG_3FF683EADD";
             position = 1;
         };
     };
@@ -662,7 +662,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_ScenarioDirector: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Directeur de scénario (dataset / niveau)";
+        displayName = "$STR_COMSPEC_SSE_CFG_B528BC522D";
         category = "COMSPEC_SSE_Mission";
         function = "comspec_sse_fnc_moduleScenarioDirector";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\whiteboard_ca.paa";
@@ -670,8 +670,8 @@ class CfgVehicles {
 
         class Attributes {
             class Action {
-                displayName = "Action";
-                tooltip = "Appliquer : pose le dataset. Niveau seul : ne change que le niveau. Lister : affiche les datasets.";
+                displayName = "$STR_COMSPEC_SSE_CFG_97C89A4D66";
+                tooltip = "$STR_COMSPEC_SSE_CFG_E3E778434F";
                 property = "COMSPEC_SSE_Module_ScenarioDirector_Action";
                 control = "Combo";
                 expression = "_this setVariable ['Action',_value,true];";
@@ -684,8 +684,8 @@ class CfgVehicles {
                 };
             };
             class DatasetId {
-                displayName = "Dataset";
-                tooltip = "Identifiant du dataset (falcon recommandé).";
+                displayName = "$STR_COMSPEC_SSE_CFG_1052689464";
+                tooltip = "$STR_COMSPEC_SSE_CFG_BAC6C711FD";
                 property = "COMSPEC_SSE_Module_ScenarioDirector_DatasetId";
                 control = "Edit";
                 expression = "_this setVariable ['DatasetId',_value,true];";
@@ -693,8 +693,8 @@ class CfgVehicles {
                 typeName = "STRING";
             };
             class ScenarioLevel {
-                displayName = "Niveau de révélation";
-                tooltip = "0 Surface · 1 Tactique · 2 Terrain · 3 Vérité complète.";
+                displayName = "$STR_COMSPEC_SSE_CFG_F734A5538E";
+                tooltip = "$STR_COMSPEC_SSE_CFG_07268DE10F";
                 property = "COMSPEC_SSE_Module_ScenarioDirector_ScenarioLevel";
                 control = "Combo";
                 expression = "_this setVariable ['ScenarioLevel',_value,true];";
@@ -708,8 +708,8 @@ class CfgVehicles {
                 };
             };
             class Radius {
-                displayName = "Rayon";
-                tooltip = "Personnes concernées autour du module.";
+                displayName = "$STR_COMSPEC_SSE_CFG_3D06EC48BE";
+                tooltip = "$STR_COMSPEC_SSE_CFG_AC5486390A";
                 property = "COMSPEC_SSE_Module_ScenarioDirector_Radius";
                 control = "Combo";
                 expression = "_this setVariable ['Radius',_value,true];";
@@ -728,7 +728,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Applique un dataset narratif (ex. FALCON) autour du module et règle le niveau de révélation : ce que les joueurs peuvent apprendre.";
+            description = "$STR_COMSPEC_SSE_CFG_67A844368D";
             position = 1;
         };
     };
@@ -736,7 +736,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_SandboxSite: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Site d'entraînement SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_AE206F9F36";
         category = "COMSPEC_SSE";
         function = "comspec_sse_fnc_moduleSandboxSite";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\box_ca.paa";
@@ -744,8 +744,8 @@ class CfgVehicles {
 
         class Attributes {
             class Pack {
-                displayName = "Scénario";
-                tooltip = "Aléatoire : cellule, planque, atelier IED, dépôt ou nœud financier.";
+                displayName = "$STR_COMSPEC_SSE_CFG_8B9A2A34FE";
+                tooltip = "$STR_COMSPEC_SSE_CFG_EB355E382D";
                 property = "COMSPEC_SSE_Module_SandboxSite_Pack";
                 control = "Combo";
                 expression = "_this setVariable ['Pack',_value,true];";
@@ -764,8 +764,8 @@ class CfgVehicles {
                 };
             };
             class Radius {
-                displayName = "Rayon";
-                tooltip = "Personnes et objets dans ce rayon.";
+                displayName = "$STR_COMSPEC_SSE_CFG_3D06EC48BE";
+                tooltip = "$STR_COMSPEC_SSE_CFG_C682317A51";
                 property = "COMSPEC_SSE_Module_SandboxSite_Radius";
                 control = "Combo";
                 expression = "_this setVariable ['Radius',_value,true];";
@@ -782,7 +782,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Génère un site SSE d'entraînement (pack aléatoire ou choisi) autour du module.";
+            description = "$STR_COMSPEC_SSE_CFG_D34AD31703";
             position = 1;
         };
     };
@@ -790,7 +790,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_LinkEntities: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Lier des entités SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_5FA266FD79";
         category = "COMSPEC_SSE_People";
         function = "comspec_sse_fnc_moduleLinkEntities";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\meet_ca.paa";
@@ -798,8 +798,8 @@ class CfgVehicles {
 
         class Attributes {
             class Relation {
-                displayName = "Relation";
-                tooltip = "Nature du lien affiché dans le graphe.";
+                displayName = "$STR_COMSPEC_SSE_CFG_33A5A7571B";
+                tooltip = "$STR_COMSPEC_SSE_CFG_5F2CB33B4C";
                 property = "COMSPEC_SSE_Module_LinkEntities_Relation";
                 control = "Combo";
                 expression = "_this setVariable ['Relation',_value,true];";
@@ -813,8 +813,8 @@ class CfgVehicles {
                 };
             };
             class Confidence {
-                displayName = "Confiance";
-                tooltip = "0 = rumeur · 1 = établi.";
+                displayName = "$STR_COMSPEC_SSE_CFG_7B2239F605";
+                tooltip = "$STR_COMSPEC_SSE_CFG_179B7D437F";
                 property = "COMSPEC_SSE_Module_LinkEntities_Confidence";
                 control = "Combo";
                 expression = "_this setVariable ['Confidence',_value,true];";
@@ -828,8 +828,8 @@ class CfgVehicles {
                 };
             };
             class Mode {
-                displayName = "Disposition";
-                tooltip = "Chaîne : A-B, B-C… · Étoile : la première entité reliée à toutes les autres.";
+                displayName = "$STR_COMSPEC_SSE_CFG_009CE48F70";
+                tooltip = "$STR_COMSPEC_SSE_CFG_4404F84D2B";
                 property = "COMSPEC_SSE_Module_LinkEntities_Mode";
                 control = "Combo";
                 expression = "_this setVariable ['Mode',_value,true];";
@@ -843,7 +843,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Crée des liens dans le graphe de renseignement. Eden : synchronisez au moins deux entités. Zeus : sélectionnez-les puis posez le module sur l'une d'elles.";
+            description = "$STR_COMSPEC_SSE_CFG_A0BDD5B10B";
             sync[] = {"Anything"};
         };
     };
@@ -851,7 +851,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_CaseReference: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Référence de dossier SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_EA0F6EC944";
         category = "COMSPEC_SSE_Mission";
         function = "comspec_sse_fnc_moduleCaseReference";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
@@ -859,8 +859,8 @@ class CfgVehicles {
 
         class Attributes {
             class Reference {
-                displayName = "Référence du dossier";
-                tooltip = "Dossier ouvert côté portail, par exemple SSE-2026-0007.";
+                displayName = "$STR_COMSPEC_SSE_CFG_B37A519E31";
+                tooltip = "$STR_COMSPEC_SSE_CFG_352194D9FC";
                 property = "COMSPEC_SSE_Module_CaseReference_Reference";
                 control = "Edit";
                 expression = "_this setVariable ['Reference',_value,true];";
@@ -870,21 +870,21 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Fixe la référence de dossier (ex. SSE-2026-0007) utilisée pour toutes les fiches transmises vers Athena.";
+            description = "$STR_COMSPEC_SSE_CFG_9B8BFED207";
         };
     };
 
     class COMSPEC_SSE_Module_ZeusControl: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "Panneau Zeus SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_EC5E30D840";
         category = "COMSPEC_SSE_Tools";
         function = "comspec_sse_fnc_moduleZeusControl";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\interact_ca.paa";
         portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\interact_ca.paa";
 
         class ModuleDescription {
-            description = "Ouvre le panneau Zeus SSE (vérité / connu des joueurs, génération, liens, AAR) sur l'entité ciblée.";
+            description = "$STR_COMSPEC_SSE_CFG_1F0DF0186D";
             sync[] = {"Anything"};
         };
     };
@@ -892,14 +892,14 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_ViewData: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "Consulter les données SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_8ECD3BB5A9";
         category = "COMSPEC_SSE_Tools";
         function = "comspec_sse_fnc_moduleViewData";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\scout_ca.paa";
         portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\scout_ca.paa";
 
         class ModuleDescription {
-            description = "Affiche les données SSE complètes de la cible (UID, profil, état, nom, liens).";
+            description = "$STR_COMSPEC_SSE_CFG_7543C45D49";
             sync[] = {"Anything"};
         };
     };
@@ -907,14 +907,14 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_SpoilView: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "Connu des joueurs / vérité";
+        displayName = "$STR_COMSPEC_SSE_CFG_F0B768C43B";
         category = "COMSPEC_SSE_Tools";
         function = "comspec_sse_fnc_moduleSpoilView";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\scout_ca.paa";
         portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\scout_ca.paa";
 
         class ModuleDescription {
-            description = "Compare ce que les joueurs ont découvert sur la cible à la vérité complète.";
+            description = "$STR_COMSPEC_SSE_CFG_576B2E731F";
             sync[] = {"Anything"};
         };
     };
@@ -922,7 +922,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_SiteManager: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "Gestionnaire de site SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_A881B9C0E8";
         category = "COMSPEC_SSE_Tools";
         function = "comspec_sse_fnc_moduleSiteManager";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\whiteboard_ca.paa";
@@ -930,8 +930,8 @@ class CfgVehicles {
 
         class Attributes {
             class Radius {
-                displayName = "Rayon";
-                tooltip = "Zone analysée autour du module.";
+                displayName = "$STR_COMSPEC_SSE_CFG_3D06EC48BE";
+                tooltip = "$STR_COMSPEC_SSE_CFG_D488CDA57E";
                 property = "COMSPEC_SSE_Module_SiteManager_Radius";
                 control = "Combo";
                 expression = "_this setVariable ['Radius',_value,true];";
@@ -949,7 +949,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Complétude et triage des éléments SSE autour du module, sans révéler de position aux joueurs.";
+            description = "$STR_COMSPEC_SSE_CFG_785535508F";
             position = 1;
         };
     };
@@ -957,7 +957,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_AfterAction: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "Compte rendu SSE (AAR) + graphe";
+        displayName = "$STR_COMSPEC_SSE_CFG_FAE0B0104A";
         category = "COMSPEC_SSE_Tools";
         function = "comspec_sse_fnc_moduleAfterAction";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\whiteboard_ca.paa";
@@ -965,8 +965,8 @@ class CfgVehicles {
 
         class Attributes {
             class Radius {
-                displayName = "Rayon";
-                tooltip = "Zone prise en compte.";
+                displayName = "$STR_COMSPEC_SSE_CFG_3D06EC48BE";
+                tooltip = "$STR_COMSPEC_SSE_CFG_4C9DC478FA";
                 property = "COMSPEC_SSE_Module_AfterAction_Radius";
                 control = "Combo";
                 expression = "_this setVariable ['Radius',_value,true];";
@@ -982,8 +982,8 @@ class CfgVehicles {
                 };
             };
             class ExportGraph {
-                displayName = "Exporter le graphe";
-                tooltip = "Exporte le graphe de renseignement de la mission.";
+                displayName = "$STR_COMSPEC_SSE_CFG_1114F6FB9B";
+                tooltip = "$STR_COMSPEC_SSE_CFG_D5DD1C5D78";
                 property = "COMSPEC_SSE_Module_AfterAction_ExportGraph";
                 control = "Checkbox";
                 expression = "_this setVariable ['ExportGraph',_value,true];";
@@ -993,7 +993,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Compte rendu de fin de mission (complétude, éléments exploités) et export du graphe de renseignement.";
+            description = "$STR_COMSPEC_SSE_CFG_A3244D7CD1";
             position = 1;
         };
     };
@@ -1001,28 +1001,28 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_ListModels: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "Lister les modèles SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_3D7D0F8FD5";
         category = "COMSPEC_SSE_Tools";
         function = "comspec_sse_fnc_moduleListModels";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
         portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa";
 
         class ModuleDescription {
-            description = "Affiche les modèles SSE disponibles (intégrés, mission, locaux).";
+            description = "$STR_COMSPEC_SSE_CFG_A709CD819D";
         };
     };
 
     class COMSPEC_SSE_Module_ClearData: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Effacer les données SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_54550F2C93";
         category = "COMSPEC_SSE_Tools";
         function = "comspec_sse_fnc_moduleClearData";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\danger_ca.paa";
         portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\danger_ca.paa";
 
         class ModuleDescription {
-            description = "Supprime les données SSE de la cible (confirmation demandée en Zeus).";
+            description = "$STR_COMSPEC_SSE_CFG_10588B91D2";
             sync[] = {"Anything"};
         };
     };
@@ -1030,7 +1030,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_ResetSite: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "Réinitialiser un site SSE";
+        displayName = "$STR_COMSPEC_SSE_CFG_11BBF23CE8";
         category = "COMSPEC_SSE_Tools";
         function = "comspec_sse_fnc_moduleResetSite";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\danger_ca.paa";
@@ -1038,8 +1038,8 @@ class CfgVehicles {
 
         class Attributes {
             class Radius {
-                displayName = "Rayon";
-                tooltip = "Toutes les entités SSE de ce rayon perdent leurs données.";
+                displayName = "$STR_COMSPEC_SSE_CFG_3D06EC48BE";
+                tooltip = "$STR_COMSPEC_SSE_CFG_A009479765";
                 property = "COMSPEC_SSE_Module_ResetSite_Radius";
                 control = "Combo";
                 expression = "_this setVariable ['Radius',_value,true];";
@@ -1057,7 +1057,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Retire les données SSE de toutes les entités du rayon, pour rejouer un site. Confirmation demandée en Zeus.";
+            description = "$STR_COMSPEC_SSE_CFG_2787839EAF";
             position = 1;
         };
     };
@@ -1065,7 +1065,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_DebugInspector: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "Inspecteur SSE (debug)";
+        displayName = "$STR_COMSPEC_SSE_CFG_24401FD1CC";
         category = "COMSPEC_SSE_Tools";
         function = "comspec_sse_fnc_moduleDebugInspector";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\target_ca.paa";
@@ -1073,8 +1073,8 @@ class CfgVehicles {
 
         class Attributes {
             class DrawLinks {
-                displayName = "Afficher les liens 3D";
-                tooltip = "Trace les relations du graphe vers les autres entités.";
+                displayName = "$STR_COMSPEC_SSE_CFG_A83AA8FE95";
+                tooltip = "$STR_COMSPEC_SSE_CFG_078A7F324F";
                 property = "COMSPEC_SSE_Module_DebugInspector_DrawLinks";
                 control = "Checkbox";
                 expression = "_this setVariable ['DrawLinks',_value,true];";
@@ -1084,14 +1084,14 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Affiche UID, profil et état de l'entité survolée en Zeus, avec ses liens en 3D. Reposer le module pour le désactiver.";
+            description = "$STR_COMSPEC_SSE_CFG_E697BC97A6";
         };
     };
 
     class COMSPEC_SSE_Module_DomexMark: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Intelligence numérique (DOMEX)";
+        displayName = "$STR_COMSPEC_SSE_CFG_BE09B59B17";
         category = "COMSPEC_SSE_Domex";
         function = "comspec_sse_fnc_moduleDomexMark";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
@@ -1099,8 +1099,8 @@ class CfgVehicles {
 
         class Attributes {
             class NodeId {
-                displayName = "Identifiant";
-                tooltip = "Ex. PC-KESTREL-04. Vide = identifiant automatique.";
+                displayName = "$STR_COMSPEC_SSE_CFG_68E546FCE7";
+                tooltip = "$STR_COMSPEC_SSE_CFG_997405DE96";
                 property = "COMSPEC_SSE_Module_DomexMark_NodeId";
                 control = "Edit";
                 expression = "_this setVariable ['NodeId',_value,true];";
@@ -1108,8 +1108,8 @@ class CfgVehicles {
                 typeName = "STRING";
             };
             class DeviceType {
-                displayName = "Type de support";
-                tooltip = "Nature du support numérique.";
+                displayName = "$STR_COMSPEC_SSE_CFG_3E882DE7BA";
+                tooltip = "$STR_COMSPEC_SSE_CFG_69403D5D82";
                 property = "COMSPEC_SSE_Module_DomexMark_DeviceType";
                 control = "Combo";
                 expression = "_this setVariable ['DeviceType',_value,true];";
@@ -1125,8 +1125,8 @@ class CfgVehicles {
                 };
             };
             class Owner {
-                displayName = "Propriétaire apparent";
-                tooltip = "Ce que le support laisse croire, pas forcément la vérité.";
+                displayName = "$STR_COMSPEC_SSE_CFG_64155AAEA0";
+                tooltip = "$STR_COMSPEC_SSE_CFG_1B4C72A7DE";
                 property = "COMSPEC_SSE_Module_DomexMark_Owner";
                 control = "Edit";
                 expression = "_this setVariable ['Owner',_value,true];";
@@ -1134,8 +1134,8 @@ class CfgVehicles {
                 typeName = "STRING";
             };
             class Organization {
-                displayName = "Organisation";
-                tooltip = "Groupe ou structure fictive.";
+                displayName = "$STR_COMSPEC_SSE_CFG_6E99C1D3B1";
+                tooltip = "$STR_COMSPEC_SSE_CFG_AB02ADDCB1";
                 property = "COMSPEC_SSE_Module_DomexMark_Organization";
                 control = "Edit";
                 expression = "_this setVariable ['Organization',_value,true];";
@@ -1143,8 +1143,8 @@ class CfgVehicles {
                 typeName = "STRING";
             };
             class Network {
-                displayName = "Réseau fictif";
-                tooltip = "Nom du réseau / SSID / canal.";
+                displayName = "$STR_COMSPEC_SSE_CFG_0D324E2BD2";
+                tooltip = "$STR_COMSPEC_SSE_CFG_5AD6252BF7";
                 property = "COMSPEC_SSE_Module_DomexMark_Network";
                 control = "Edit";
                 expression = "_this setVariable ['Network',_value,true];";
@@ -1152,8 +1152,8 @@ class CfgVehicles {
                 typeName = "STRING";
             };
             class Security {
-                displayName = "Sécurité scénarisée";
-                tooltip = "Plus élevée = accès plus long.";
+                displayName = "$STR_COMSPEC_SSE_CFG_86BC4AF6AC";
+                tooltip = "$STR_COMSPEC_SSE_CFG_5F03624271";
                 property = "COMSPEC_SSE_Module_DomexMark_Security";
                 control = "Combo";
                 expression = "_this setVariable ['Security',_value,true];";
@@ -1166,8 +1166,8 @@ class CfgVehicles {
                 };
             };
             class Profile {
-                displayName = "Profil de contenu";
-                tooltip = "Oriente les contenus proposés.";
+                displayName = "$STR_COMSPEC_SSE_CFG_3F9713E6BC";
+                tooltip = "$STR_COMSPEC_SSE_CFG_E74A5AAC3E";
                 property = "COMSPEC_SSE_Module_DomexMark_Profile";
                 control = "Combo";
                 expression = "_this setVariable ['Profile',_value,true];";
@@ -1182,8 +1182,8 @@ class CfgVehicles {
                 };
             };
             class Duration {
-                displayName = "Durée d'accès (s)";
-                tooltip = "Temps d'exploitation scénarisé, en secondes.";
+                displayName = "$STR_COMSPEC_SSE_CFG_45C89A4C43";
+                tooltip = "$STR_COMSPEC_SSE_CFG_485EA85006";
                 property = "COMSPEC_SSE_Module_DomexMark_Duration";
                 control = "Combo";
                 expression = "_this setVariable ['Duration',_value,true];";
@@ -1199,8 +1199,8 @@ class CfgVehicles {
                 };
             };
             class AccessRemote {
-                displayName = "Accès distant scénarisé";
-                tooltip = "Le laboratoire peut poursuivre l'exploitation à distance.";
+                displayName = "$STR_COMSPEC_SSE_CFG_F3D9E18AC0";
+                tooltip = "$STR_COMSPEC_SSE_CFG_0D162D8671";
                 property = "COMSPEC_SSE_Module_DomexMark_AccessRemote";
                 control = "Checkbox";
                 expression = "_this setVariable ['AccessRemote',_value,true];";
@@ -1208,8 +1208,8 @@ class CfgVehicles {
                 typeName = "BOOL";
             };
             class PacketType {
-                displayName = "Paquet — type";
-                tooltip = "Premier renseignement contenu (optionnel).";
+                displayName = "$STR_COMSPEC_SSE_CFG_12DBF14B8D";
+                tooltip = "$STR_COMSPEC_SSE_CFG_6D917739B8";
                 property = "COMSPEC_SSE_Module_DomexMark_PacketType";
                 control = "Combo";
                 expression = "_this setVariable ['PacketType',_value,true];";
@@ -1225,8 +1225,8 @@ class CfgVehicles {
                 };
             };
             class PacketText {
-                displayName = "Paquet — texte";
-                tooltip = "Renseignement scénarisé. Ce n'est pas une preuve.";
+                displayName = "$STR_COMSPEC_SSE_CFG_1F34553EEA";
+                tooltip = "$STR_COMSPEC_SSE_CFG_58AC927D81";
                 property = "COMSPEC_SSE_Module_DomexMark_PacketText";
                 control = "Edit";
                 expression = "_this setVariable ['PacketText',_value,true];";
@@ -1234,8 +1234,8 @@ class CfgVehicles {
                 typeName = "STRING";
             };
             class PacketQuality {
-                displayName = "Paquet — qualité";
-                tooltip = "Un fragment ou un leurre devra être corroboré.";
+                displayName = "$STR_COMSPEC_SSE_CFG_FCED55D4BB";
+                tooltip = "$STR_COMSPEC_SSE_CFG_91AFA678C0";
                 property = "COMSPEC_SSE_Module_DomexMark_PacketQuality";
                 control = "Combo";
                 expression = "_this setVariable ['PacketQuality',_value,true];";
@@ -1248,8 +1248,8 @@ class CfgVehicles {
                 };
             };
             class PacketEntities {
-                displayName = "Paquet — entités";
-                tooltip = "Format : Nom | type (lieu, personne, organisation…).";
+                displayName = "$STR_COMSPEC_SSE_CFG_D664532674";
+                tooltip = "$STR_COMSPEC_SSE_CFG_FAFD121A5A";
                 property = "COMSPEC_SSE_Module_DomexMark_PacketEntities";
                 control = "Edit";
                 expression = "_this setVariable ['PacketEntities',_value,true];";
@@ -1259,7 +1259,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Pose le contrat d'intelligence numérique sur l'objet (ordinateur, téléphone, radio…). Même schéma que les attributs Eden. Aucun moteur technique : le laboratoire lit ce que vous saisissez.";
+            description = "$STR_COMSPEC_SSE_CFG_B1BF2043C0";
             sync[] = {"Anything"};
         };
     };
@@ -1267,14 +1267,14 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_DomexAddIntel: COMSPEC_SSE_Module_Base {
         scope = 1;
         scopeCurator = 2;
-        displayName = "Ajouter un renseignement";
+        displayName = "$STR_COMSPEC_SSE_CFG_32A649EB94";
         category = "COMSPEC_SSE_Domex";
         function = "comspec_sse_fnc_moduleDomexAddIntel";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
         portrait = "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa";
 
         class ModuleDescription {
-            description = "Ajoute un renseignement scénarisé pendant la mission. Posez le module sur un objet (pas une personne).";
+            description = "$STR_COMSPEC_SSE_CFG_B27FD8908E";
             sync[] = {"Anything"};
         };
     };
@@ -1282,7 +1282,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_DomexSetStage: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Fixer le palier d'accès";
+        displayName = "$STR_COMSPEC_SSE_CFG_123BDC155F";
         category = "COMSPEC_SSE_Domex";
         function = "comspec_sse_fnc_moduleDomexSetStage";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\use_ca.paa";
@@ -1290,8 +1290,8 @@ class CfgVehicles {
 
         class Attributes {
             class Stage {
-                displayName = "Palier";
-                tooltip = "Palier appliqué au support synchronisé.";
+                displayName = "$STR_COMSPEC_SSE_CFG_7564CB6E0C";
+                tooltip = "$STR_COMSPEC_SSE_CFG_20D11F30C0";
                 property = "COMSPEC_SSE_Module_DomexSetStage_Stage";
                 control = "Combo";
                 expression = "_this setVariable ['Stage',_value,true];";
@@ -1308,7 +1308,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Change le palier d'accès du support. Au palier « accès établi », les contenus prévus pour ce palier rejoignent la file.";
+            description = "$STR_COMSPEC_SSE_CFG_AB286255D9";
             sync[] = {"Anything"};
         };
     };
@@ -1316,7 +1316,7 @@ class CfgVehicles {
     class COMSPEC_SSE_Module_DomexMapPoint: COMSPEC_SSE_Module_Base {
         scope = 2;
         scopeCurator = 2;
-        displayName = "Poser un point carte";
+        displayName = "$STR_COMSPEC_SSE_CFG_A847407C06";
         category = "COMSPEC_SSE_Domex";
         function = "comspec_sse_fnc_moduleDomexMapPoint";
         icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa";
@@ -1324,8 +1324,8 @@ class CfgVehicles {
 
         class Attributes {
             class Label {
-                displayName = "Libellé";
-                tooltip = "Ce que le bureau verra. Vide en Zeus = formulaire.";
+                displayName = "$STR_COMSPEC_SSE_CFG_F5485BBAE8";
+                tooltip = "$STR_COMSPEC_SSE_CFG_CE784579DC";
                 property = "COMSPEC_SSE_Module_DomexMapPoint_Label";
                 control = "Edit";
                 expression = "_this setVariable ['Label',_value,true];";
@@ -1335,7 +1335,7 @@ class CfgVehicles {
         };
 
         class ModuleDescription {
-            description = "Pose un point de renseignement sur la carte du bureau, invisible sur la carte des joueurs.";
+            description = "$STR_COMSPEC_SSE_CFG_5C295E49B3";
             position = 1;
         };
     };

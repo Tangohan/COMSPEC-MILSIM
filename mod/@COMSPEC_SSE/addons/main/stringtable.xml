@@ -1,0 +1,2856 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Généré par tools/i18n.py stringtable : traductions dans i18n/en.txt. -->
+<Project name="COMSPEC_SSE">
+    <Package name="main">
+        <Key ID="STR_COMSPEC_SSE_CFG_0093EDC3AB">
+            <Original>Zeus</Original>
+            <English>Zeus</English>
+            <French>Zeus</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_009CE48F70">
+            <Original>Disposition</Original>
+            <English>Disposition</English>
+            <French>Disposition</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_00DFF861D0">
+            <Original>Permanente : tout est gardé. Récurrente : mêmes personnages et organisations à chaque drill, rien de connu au départ. Temporaire : drill SOT jetable, rien n'est gardé.</Original>
+            <English>Permanente : tout est gardé. Récurrente : mêmes personnages et organisations à chaque drill, rien de connu au départ. Temporaire : drill SOT jetable, rien n'est gardé.</English>
+            <French>Permanente : tout est gardé. Récurrente : mêmes personnages et organisations à chaque drill, rien de connu au départ. Temporaire : drill SOT jetable, rien n'est gardé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_010090159B">
+            <Original>Standard — diffusion restreinte</Original>
+            <English>Standard - restricted distribution</English>
+            <French>Standard — diffusion restreinte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_01CE550E6F">
+            <Original>Au départ, les joueurs savent</Original>
+            <English>Players initially know</English>
+            <French>Au départ, les joueurs savent</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_02E1A2A4CC">
+            <Original>0 = jamais. Sans effet sur un drill temporaire.</Original>
+            <English>0 = jamais. Sans effet sur un drill temporaire.</English>
+            <French>0 = jamais. Sans effet sur un drill temporaire.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_031E829D33">
+            <Original>Si renseigné, SEEK et les fiches utilisent ce prénom. Vide = prénom de l’identité Eden, sinon génération automatique.</Original>
+            <English>Si renseigné, SEEK et les fiches utilisent ce prénom. Vide = prénom de l’identité Eden, sinon génération automatique.</English>
+            <French>Si renseigné, SEEK et les fiches utilisent ce prénom. Vide = prénom de l’identité Eden, sinon génération automatique.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0323FC1D81">
+            <Original>Charge la campagne au lancement (sur le serveur). Une campagne garde sa graine biométrique (les mêmes personnages ont les mêmes empreintes), ses personnages récurrents (identifiant biométrique fixé), ses organisations, ce que les joueurs savent et le registre des scellés. Un seul module par mission.</Original>
+            <English>Charge la campagne au lancement (sur le serveur). Une campagne garde sa graine biométrique (les mêmes personnages ont les mêmes empreintes), ses personnages récurrents (identifiant biométrique fixé), ses organisations, ce que les joueurs savent et le registre des scellés. Un seul module par mission.</English>
+            <French>Charge la campagne au lancement (sur le serveur). Une campagne garde sa graine biométrique (les mêmes personnages ont les mêmes empreintes), ses personnages récurrents (identifiant biométrique fixé), ses organisations, ce que les joueurs savent et le registre des scellés. Un seul module par mission.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_032C76A969">
+            <Original>Téléphone saisi</Original>
+            <English>Téléphone saisi</English>
+            <French>Téléphone saisi</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_039B2618BD">
+            <Original>Liens réseau</Original>
+            <English>Network links</English>
+            <French>Liens réseau</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_03B3FBA455">
+            <Original>Numéro connu</Original>
+            <English>Numéro connu</English>
+            <French>Numéro connu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_03C897BAC7">
+            <Original>Sac opaque posé sur la tête d'un prisonnier : il ne voit plus, n'identifie plus les lieux ni les personnes. À retirer pour une photo ou un relevé d'iris.</Original>
+            <English>Sac opaque posé sur la tête d'un prisonnier : il ne voit plus, n'identifie plus les lieux ni les personnes. À retirer pour une photo ou un relevé d'iris.</English>
+            <French>Sac opaque posé sur la tête d'un prisonnier : il ne voit plus, n'identifie plus les lieux ni les personnes. À retirer pour une photo ou un relevé d'iris.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_04014B10EE">
+            <Original>Pièce 2 — grille</Original>
+            <English>Pièce 2 — grille</English>
+            <French>Pièce 2 — grille</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_04599608E2">
+            <Original>Titre en tête de la fiche d'un sujet contrôlé. Vide = texte du modèle.</Original>
+            <English>Titre en tête de la fiche d'un sujet contrôlé. Vide = texte du modèle.</English>
+            <French>Titre en tête de la fiche d'un sujet contrôlé. Vide = texte du modèle.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_05E0AFA220">
+            <Original>Libellé du bouton qui transmet la fiche au poste de commandement. Vide = TRANSMETTRE.</Original>
+            <English>Libellé du bouton qui transmet la fiche au poste de commandement. Vide = TRANSMETTRE.</English>
+            <French>Libellé du bouton qui transmet la fiche au poste de commandement. Vide = TRANSMETTRE.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_071DE35685">
+            <Original>COMSPEC SSE — Organisation</Original>
+            <English>COMSPEC SSE — Organisation</English>
+            <French>COMSPEC SSE — Organisation</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_07268DE10F">
+            <Original>0 Surface · 1 Tactique · 2 Terrain · 3 Vérité complète.</Original>
+            <English>0 Surface · 1 Tactique · 2 Terrain · 3 Vérité complète.</English>
+            <French>0 Surface · 1 Tactique · 2 Terrain · 3 Vérité complète.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_072AA07E5B">
+            <Original>Numéro du téléphone saisi. Vide = généré.</Original>
+            <English>Numéro du téléphone saisi. Vide = généré.</English>
+            <French>Numéro du téléphone saisi. Vide = généré.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_075D1DAA9C">
+            <Original>Palier d’accès (départ)</Original>
+            <English>Palier d’accès (départ)</English>
+            <French>Palier d’accès (départ)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_078A7F324F">
+            <Original>Trace les relations du graphe vers les autres entités.</Original>
+            <English>Traces graph relationships to other entities.</English>
+            <French>Trace les relations du graphe vers les autres entités.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_08315E4DF9">
+            <Original>Terminal d'exploitation SSE : dossiers, digital, preuves, graphe et mission intel.</Original>
+            <English>Terminal d'exploitation SSE : dossiers, digital, preuves, graphe et mission intel.</English>
+            <French>Terminal d'exploitation SSE : dossiers, digital, preuves, graphe et mission intel.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_087971B5AB">
+            <Original>Sac de tête (porté)</Original>
+            <English>Sac de tête (porté)</English>
+            <French>Sac de tête (porté)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_08EFE8648A">
+            <Original>Dossier SSE actif</Original>
+            <English>Active SSE case</English>
+            <French>Dossier SSE actif</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_09EAEE23DA">
+            <Original>Pied de page (optionnel)</Original>
+            <English>Pied de page (optionnel)</English>
+            <French>Pied de page (optionnel)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0A410DAD21">
+            <Original>Extrait lisible du courrier (quelques lignes).</Original>
+            <English>Extrait lisible du courrier (quelques lignes).</English>
+            <French>Extrait lisible du courrier (quelques lignes).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0BF3305EBB">
+            <Original>Sachet de preuve SSE</Original>
+            <English>Sachet de preuve SSE</English>
+            <French>Sachet de preuve SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0D162D8671">
+            <Original>Le laboratoire peut poursuivre l'exploitation à distance.</Original>
+            <English>The lab can continue exploitation remotely.</English>
+            <French>Le laboratoire peut poursuivre l'exploitation à distance.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0D324E2BD2">
+            <Original>Réseau fictif</Original>
+            <English>Fictional network</English>
+            <French>Réseau fictif</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0D432BE534">
+            <Original>Campagne SSE : sauvegarder (déclencheur)</Original>
+            <English>Campagne SSE : sauvegarder (déclencheur)</English>
+            <French>Campagne SSE : sauvegarder (déclencheur)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0D9D231C7A">
+            <Original>État de départ. Le chef de mission peut le changer en cours de partie.</Original>
+            <English>État de départ. Le chef de mission peut le changer en cours de partie.</English>
+            <French>État de départ. Le chef de mission peut le changer en cours de partie.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0DA4135C9F">
+            <Original>Une campagne garde d'une mission à l'autre sa graine biométrique, ses personnages récurrents, ses organisations, ce que les joueurs savent et le registre des scellés.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Permanente&lt;/t&gt; la vraie campagne : tout est gardé.&lt;br/&gt;&lt;t color='#7fd08a'&gt;Récurrente&lt;/t&gt; le bootcamp : mêmes personnages et organisations à chaque drill, tout redevient inconnu au chargement.&lt;br/&gt;&lt;t color='#7fd08a'&gt;Temporaire&lt;/t&gt; drill SOT : bac à sable jetable, rien n'est gardé, vidé à la fin ; il peut copier la structure d'une autre campagne.&lt;br/&gt;&lt;br/&gt;Un personnage récurrent a un identifiant biométrique fixé (attribut Eden) ou une clé BII : même nom, même alias, mêmes empreintes, même appartenance sur n'importe quelle carte.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Athena&lt;/t&gt; Serveur relié : chaque sauvegarde part dans Bureau SSE › Campagnes (copie pour un drill, remise à zéro, partage entre communautés). Retour en jeu : Zeus, « Campagne : récupérer depuis Athena ».</Original>
+            <English>Une campagne garde d'une mission à l'autre sa graine biométrique, ses personnages récurrents, ses organisations, ce que les joueurs savent et le registre des scellés.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Permanente&lt;/t&gt; la vraie campagne : tout est gardé.&lt;br/&gt;&lt;t color='#7fd08a'&gt;Récurrente&lt;/t&gt; le bootcamp : mêmes personnages et organisations à chaque drill, tout redevient inconnu au chargement.&lt;br/&gt;&lt;t color='#7fd08a'&gt;Temporaire&lt;/t&gt; drill SOT : bac à sable jetable, rien n'est gardé, vidé à la fin ; il peut copier la structure d'une autre campagne.&lt;br/&gt;&lt;br/&gt;Un personnage récurrent a un identifiant biométrique fixé (attribut Eden) ou une clé BII : même nom, même alias, mêmes empreintes, même appartenance sur n'importe quelle carte.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Athena&lt;/t&gt; Serveur relié : chaque sauvegarde part dans Bureau SSE › Campagnes (copie pour un drill, remise à zéro, partage entre communautés). Retour en jeu : Zeus, « Campagne : récupérer depuis Athena ».</English>
+            <French>Une campagne garde d'une mission à l'autre sa graine biométrique, ses personnages récurrents, ses organisations, ce que les joueurs savent et le registre des scellés.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Permanente&lt;/t&gt; la vraie campagne : tout est gardé.&lt;br/&gt;&lt;t color='#7fd08a'&gt;Récurrente&lt;/t&gt; le bootcamp : mêmes personnages et organisations à chaque drill, tout redevient inconnu au chargement.&lt;br/&gt;&lt;t color='#7fd08a'&gt;Temporaire&lt;/t&gt; drill SOT : bac à sable jetable, rien n'est gardé, vidé à la fin ; il peut copier la structure d'une autre campagne.&lt;br/&gt;&lt;br/&gt;Un personnage récurrent a un identifiant biométrique fixé (attribut Eden) ou une clé BII : même nom, même alias, mêmes empreintes, même appartenance sur n'importe quelle carte.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Athena&lt;/t&gt; Serveur relié : chaque sauvegarde part dans Bureau SSE › Campagnes (copie pour un drill, remise à zéro, partage entre communautés). Retour en jeu : Zeus, « Campagne : récupérer depuis Athena ».</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0EBEB492CC">
+            <Original>Appliquer un modèle SSE</Original>
+            <English>Appliquer un modèle SSE</English>
+            <French>Appliquer un modèle SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0F425AF2E9">
+            <Original>Watchlist tier 2 · QUESTION / DETAIN</Original>
+            <English>Watchlist tier 2 · QUESTION / DETAIN</English>
+            <French>Watchlist tier 2 · QUESTION / DETAIN</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0F926D953A">
+            <Original>Conduite au Zeus</Original>
+            <English>Conduite au Zeus</English>
+            <French>Conduite au Zeus</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0FA3A18743">
+            <Original>Décoché : aucun téléphone généré.</Original>
+            <English>Décoché : aucun téléphone généré.</English>
+            <French>Décoché : aucun téléphone généré.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_0FDAC35723">
+            <Original>Paquet 1 — type</Original>
+            <English>Paquet 1 — type</English>
+            <French>Paquet 1 — type</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_103464D011">
+            <Original>Rend la cible exploitable SSE ; le contenu détaillé est généré au premier examen (léger). Zeus : posez le module sur l'objet. Eden : synchronisez les objets.</Original>
+            <English>Rend la cible exploitable SSE ; le contenu détaillé est généré au premier examen (léger). Zeus : posez le module sur l'objet. Eden : synchronisez les objets.</English>
+            <French>Rend la cible exploitable SSE ; le contenu détaillé est généré au premier examen (léger). Zeus : posez le module sur l'objet. Eden : synchronisez les objets.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1052689464">
+            <Original>Dataset</Original>
+            <English>Dataset</English>
+            <French>Dataset</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_10588B91D2">
+            <Original>Supprime les données SSE de la cible (confirmation demandée en Zeus).</Original>
+            <English>Supprime les données SSE de la cible (confirmation demandée en Zeus).</English>
+            <French>Supprime les données SSE de la cible (confirmation demandée en Zeus).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_105C4BC7ED">
+            <Original>Enregistrer comme modèle SSE</Original>
+            <English>Save as SSE template</English>
+            <French>Enregistrer comme modèle SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_106A1FD778">
+            <Original>(aucun)</Original>
+            <English>(none)</English>
+            <French>(aucun)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1114F6FB9B">
+            <Original>Exporter le graphe</Original>
+            <English>Export graph</English>
+            <French>Exporter le graphe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_11767A27F9">
+            <Original>Crée des liens « associé » entre les entités synchronisées.</Original>
+            <English>Crée des liens « associé » entre les entités synchronisées.</English>
+            <French>Crée des liens « associé » entre les entités synchronisées.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_11891A3D5B">
+            <Original>Exploitable</Original>
+            <English>Exploitable</English>
+            <French>Exploitable</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_11BBF23CE8">
+            <Original>Réinitialiser un site SSE</Original>
+            <English>Reset an SSE site</English>
+            <French>Réinitialiser un site SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_11D30DD9B9">
+            <Original>Intitulé affiché de la troisième pièce (vide = pas de pièce 3).</Original>
+            <English>Intitulé affiché de la troisième pièce (vide = pas de pièce 3).</English>
+            <French>Intitulé affiché de la troisième pièce (vide = pas de pièce 3).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_120CFD1431">
+            <Original>Générer le contenu au lancement</Original>
+            <English>Générer le contenu au lancement</English>
+            <French>Générer le contenu au lancement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_123BDC155F">
+            <Original>Fixer le palier d'accès</Original>
+            <English>Fixer le palier d'accès</English>
+            <French>Fixer le palier d'accès</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_12DBF14B8D">
+            <Original>Paquet — type</Original>
+            <English>Packet - type</English>
+            <French>Paquet — type</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_13E08E6708">
+            <Original>Forçage possible</Original>
+            <English>Breach possible</English>
+            <French>Forçage possible</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_144C58520E">
+            <Original>Ce que la base doit répondre</Original>
+            <English>What the database should answer</English>
+            <French>Ce que la base doit répondre</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_157CE773F2">
+            <Original>Fichier biométrique</Original>
+            <English>Biometric file</English>
+            <French>Fichier biométrique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_15B300AEF1">
+            <Original>Identifiant du modèle</Original>
+            <English>Identifiant du modèle</English>
+            <French>Identifiant du modèle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_15D618B854">
+            <Original>Graine (0 = automatique)</Original>
+            <English>Graine (0 = automatique)</English>
+            <French>Graine (0 = automatique)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_15E73DB01A">
+            <Original>Numéro</Original>
+            <English>Number</English>
+            <French>Numéro</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_164973B5AB">
+            <Original>Kit de relevé d'empreintes digitales.</Original>
+            <English>Kit de relevé d'empreintes digitales.</English>
+            <French>Kit de relevé d'empreintes digitales.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_171489A891">
+            <Original>Oriente les contenus proposés par le laboratoire.</Original>
+            <English>Oriente les contenus proposés par le laboratoire.</English>
+            <French>Oriente les contenus proposés par le laboratoire.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_176F12A61A">
+            <Original>Watchlist tier 1 · DETAIN</Original>
+            <English>Watchlist tier 1 · DETAIN</English>
+            <French>Watchlist tier 1 · DETAIN</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_17890A8F23">
+            <Original>Décide de ce que le terminal SEEK trouvera sur ce sujet. Posez le module sur la personne, ou synchronisez-le avec plusieurs sujets.</Original>
+            <English>Décide de ce que le terminal SEEK trouvera sur ce sujet. Posez le module sur la personne, ou synchronisez-le avec plusieurs sujets.</English>
+            <French>Décide de ce que le terminal SEEK trouvera sur ce sujet. Posez le module sur la personne, ou synchronisez-le avec plusieurs sujets.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_179B7D437F">
+            <Original>0 = rumeur · 1 = établi.</Original>
+            <English>0 = rumeur · 1 = établi.</English>
+            <French>0 = rumeur · 1 = établi.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1941DB564B">
+            <Original>Aspect et textes de base. Les champs ci-dessous remplacent le modèle s’ils sont remplis.</Original>
+            <English>Aspect et textes de base. Les champs ci-dessous remplacent le modèle s’ils sont remplis.</English>
+            <French>Aspect et textes de base. Les champs ci-dessous remplacent le modèle s’ils sont remplis.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1A05DB15DF">
+            <Original>Mention RP / preuve</Original>
+            <English>Mention RP / preuve</English>
+            <French>Mention RP / preuve</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1B4C72A7DE">
+            <Original>Ce que le support laisse croire, pas forcément la vérité.</Original>
+            <English>What the medium suggests, not necessarily the truth.</English>
+            <French>Ce que le support laisse croire, pas forcément la vérité.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1BBEEE7974">
+            <Original>Automatique : le contenu est généré au premier examen. Manuel : seulement par un module ou un script.</Original>
+            <English>Automatique : le contenu est généré au premier examen. Manuel : seulement par un module ou un script.</English>
+            <French>Automatique : le contenu est généré au premier examen. Manuel : seulement par un module ou un script.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1D121FA27C">
+            <Original>Ne pas inclure d’ordinateur</Original>
+            <English>Ne pas inclure d’ordinateur</English>
+            <French>Ne pas inclure d’ordinateur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1D6C2F3BA3">
+            <Original>Papier jauni / usé</Original>
+            <English>Yellowed / worn paper</English>
+            <French>Papier jauni / usé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1DD3E663DF">
+            <Original>2 minutes</Original>
+            <English>2 minutes</English>
+            <French>2 minutes</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1E06839F94">
+            <Original>Activer le renseignement SSE</Original>
+            <English>Activer le renseignement SSE</English>
+            <French>Activer le renseignement SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1E9CD8A636">
+            <Original>Laptop collecté pour exploitation SSE.</Original>
+            <English>Laptop collecté pour exploitation SSE.</English>
+            <French>Laptop collecté pour exploitation SSE.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1EB4119497">
+            <Original>Profil narratif du contenu.</Original>
+            <English>Narrative profile of the content.</English>
+            <French>Profil narratif du contenu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1ED5C5DECE">
+            <Original>Quantité d'indices.</Original>
+            <English>Number of clues.</English>
+            <French>Quantité d'indices.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1F0DF0186D">
+            <Original>Ouvre le panneau Zeus SSE (vérité / connu des joueurs, génération, liens, AAR) sur l'entité ciblée.</Original>
+            <English>Ouvre le panneau Zeus SSE (vérité / connu des joueurs, génération, liens, AAR) sur l'entité ciblée.</English>
+            <French>Ouvre le panneau Zeus SSE (vérité / connu des joueurs, génération, liens, AAR) sur l'entité ciblée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1F2AC7594A">
+            <Original>Comment le renseignement parvient au bureau.</Original>
+            <English>Comment le renseignement parvient au bureau.</English>
+            <French>Comment le renseignement parvient au bureau.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1F34553EEA">
+            <Original>Paquet — texte</Original>
+            <English>Packet - text</English>
+            <French>Paquet — texte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_1FC4EAC8DB">
+            <Original>Surnom sous lequel le sujet est connu. C'est souvent le seul élément dont dispose le terrain.</Original>
+            <English>Surnom sous lequel le sujet est connu. C'est souvent le seul élément dont dispose le terrain.</English>
+            <French>Surnom sous lequel le sujet est connu. C'est souvent le seul élément dont dispose le terrain.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_206D673475">
+            <Original>COMSPEC SSE · 2. Personnes et liens</Original>
+            <English>COMSPEC SSE · 2. Personnes et liens</English>
+            <French>COMSPEC SSE · 2. Personnes et liens</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_20D11F30C0">
+            <Original>Palier appliqué au support synchronisé.</Original>
+            <English>Palier appliqué au support synchronisé.</English>
+            <French>Palier appliqué au support synchronisé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_20DC301AE7">
+            <Original>Décoché : le support est visible mais ne livre rien.</Original>
+            <English>Décoché : le support est visible mais ne livre rien.</English>
+            <French>Décoché : le support est visible mais ne livre rien.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_21931F02FE">
+            <Original>Support exploitable (DOMEX)</Original>
+            <English>Support exploitable (DOMEX)</English>
+            <French>Support exploitable (DOMEX)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_21B7336A80">
+            <Original>Pourcentage affiché par le terminal après requête. -1 laisse le calcul dépendre de la qualité réelle des relevés, ce qui est le comportement souhaitable dans la plupart des scénarios.</Original>
+            <English>Pourcentage affiché par le terminal après requête. -1 laisse le calcul dépendre de la qualité réelle des relevés, ce qui est le comportement souhaitable dans la plupart des scénarios.</English>
+            <French>Pourcentage affiché par le terminal après requête. -1 laisse le calcul dépendre de la qualité réelle des relevés, ce qui est le comportement souhaitable dans la plupart des scénarios.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_235268B0C2">
+            <Original>Téléphone satellitaire collecté pour exploitation.</Original>
+            <English>Téléphone satellitaire collecté pour exploitation.</English>
+            <French>Téléphone satellitaire collecté pour exploitation.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_23D692F07A">
+            <Original>Parent</Original>
+            <English>Parent</English>
+            <French>Parent</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_23EE930FE8">
+            <Original>Probabilité d'ajouter des messages sans intérêt, pour masquer les vrais indices (0–100).</Original>
+            <English>Probabilité d'ajouter des messages sans intérêt, pour masquer les vrais indices (0–100).</English>
+            <French>Probabilité d'ajouter des messages sans intérêt, pour masquer les vrais indices (0–100).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_24401FD1CC">
+            <Original>Inspecteur SSE (debug)</Original>
+            <English>SSE Inspector (debug)</English>
+            <French>Inspecteur SSE (debug)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_244DC42347">
+            <Original>Ex. falcon_hvt, falcon_courier, falcon_ied…</Original>
+            <English>Ex. falcon_hvt, falcon_courier, falcon_ied…</English>
+            <French>Ex. falcon_hvt, falcon_courier, falcon_ied…</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_24E46784CB">
+            <Original>3 minutes</Original>
+            <English>3 minutes</English>
+            <French>3 minutes</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_24FFB3949F">
+            <Original>Graine</Original>
+            <English>Graine</English>
+            <French>Graine</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2526F9BC57">
+            <Original>Paquet 2 — entités (une par ligne)</Original>
+            <English>Paquet 2 — entités (une par ligne)</English>
+            <French>Paquet 2 — entités (une par ligne)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2547BF4CA0">
+            <Original>Écran de connexion</Original>
+            <English>Login screen</English>
+            <French>Écran de connexion</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_259CC6EAC4">
+            <Original>Modèle d’appareil</Original>
+            <English>Modèle d’appareil</English>
+            <French>Modèle d’appareil</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_25C0AE9942">
+            <Original>Un prisonnier menotté, rendu, inconscient ou mort peut recevoir un sac de tête (objet « Sac de tête », menu ACE, SSE). Il ne voit plus rien, entend étouffé ; son visage et ses iris ne peuvent plus être relevés tant que le sac est en place.&lt;br/&gt;&lt;br/&gt;Ordre conseillé : relevés d'abord (visage, iris, empreintes), puis sac de tête, puis transfert.</Original>
+            <English>Un prisonnier menotté, rendu, inconscient ou mort peut recevoir un sac de tête (objet « Sac de tête », menu ACE, SSE). Il ne voit plus rien, entend étouffé ; son visage et ses iris ne peuvent plus être relevés tant que le sac est en place.&lt;br/&gt;&lt;br/&gt;Ordre conseillé : relevés d'abord (visage, iris, empreintes), puis sac de tête, puis transfert.</English>
+            <French>Un prisonnier menotté, rendu, inconscient ou mort peut recevoir un sac de tête (objet « Sac de tête », menu ACE, SSE). Il ne voit plus rien, entend étouffé ; son visage et ses iris ne peuvent plus être relevés tant que le sac est en place.&lt;br/&gt;&lt;br/&gt;Ordre conseillé : relevés d'abord (visage, iris, empreintes), puis sac de tête, puis transfert.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_25ECDF92AF">
+            <Original>COMSPEC SSE</Original>
+            <English>COMSPEC SSE</English>
+            <French>COMSPEC SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_26275EBD66">
+            <Original>Complet</Original>
+            <English>Complete</English>
+            <French>Complet</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2787839EAF">
+            <Original>Retire les données SSE de toutes les entités du rayon, pour rejouer un site. Confirmation demandée en Zeus.</Original>
+            <English>Retire les données SSE de toutes les entités du rayon, pour rejouer un site. Confirmation demandée en Zeus.</English>
+            <French>Retire les données SSE de toutes les entités du rayon, pour rejouer un site. Confirmation demandée en Zeus.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_279BBE8E2C">
+            <Original>Identifiant de cluster / réseau relationnel partagé.</Original>
+            <English>Identifiant de cluster / réseau relationnel partagé.</English>
+            <French>Identifiant de cluster / réseau relationnel partagé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_28D07A4B05">
+            <Original>Terminal SSE terrain</Original>
+            <English>Terminal SSE terrain</English>
+            <French>Terminal SSE terrain</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_29AE468CF2">
+            <Original>Un opérateur équipé de l'ATAK et du câble DL-7 peut se brancher sur cet objet et en télécharger les données.</Original>
+            <English>Un opérateur équipé de l'ATAK et du câble DL-7 peut se brancher sur cet objet et en télécharger les données.</English>
+            <French>Un opérateur équipé de l'ATAK et du câble DL-7 peut se brancher sur cet objet et en télécharger les données.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2A78F654E6">
+            <Original>Texte lu sur le document (résumé, fonds, annotations).</Original>
+            <English>Texte lu sur le document (résumé, fonds, annotations).</English>
+            <French>Texte lu sur le document (résumé, fonds, annotations).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2A815E91A6">
+            <Original>Noms de fichiers trouvés sur la machine, un par ligne.</Original>
+            <English>Noms de fichiers trouvés sur la machine, un par ligne.</English>
+            <French>Noms de fichiers trouvés sur la machine, un par ligne.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2AAFBA4D6B">
+            <Original>Commandement</Original>
+            <English>Command</English>
+            <French>Commandement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2B8561B169">
+            <Original>Automatique : le jeu compose l’appareil. Personnaliser : les champs ci-dessous remplacent le contenu. Ne pas inclure : pas de téléphone.</Original>
+            <English>Automatique : le jeu compose l’appareil. Personnaliser : les champs ci-dessous remplacent le contenu. Ne pas inclure : pas de téléphone.</English>
+            <French>Automatique : le jeu compose l’appareil. Personnaliser : les champs ci-dessous remplacent le contenu. Ne pas inclure : pas de téléphone.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2C0BC4D5A7">
+            <Original>Un nom ou alias par ligne.</Original>
+            <English>Un nom ou alias par ligne.</English>
+            <French>Un nom ou alias par ligne.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2C5469EC6E">
+            <Original>Notes enregistrées dans le téléphone, une par ligne.</Original>
+            <English>Notes enregistrées dans le téléphone, une par ligne.</English>
+            <French>Notes enregistrées dans le téléphone, une par ligne.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2C6DC8BE22">
+            <Original>Oriente noms, lieux, langues et documents générés.</Original>
+            <English>Oriente noms, lieux, langues et documents générés.</English>
+            <French>Oriente noms, lieux, langues et documents générés.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2D4912CAFF">
+            <Original>Lésion œil droit</Original>
+            <English>Right eye injury</English>
+            <French>Lésion œil droit</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2D8C8F1C55">
+            <Original>Identité d'un sujet (requête SEEK)</Original>
+            <English>Identité d'un sujet (requête SEEK)</English>
+            <French>Identité d'un sujet (requête SEEK)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_2E7337892A">
+            <Original>Pièce 3 — mot de code</Original>
+            <English>Pièce 3 — mot de code</English>
+            <French>Pièce 3 — mot de code</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_306540C0B4">
+            <Original>Autre support</Original>
+            <English>Autre support</English>
+            <French>Autre support</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_30F2887289">
+            <Original>DL-7 · Ajouter un fichier</Original>
+            <English>DL-7 · Ajouter un fichier</English>
+            <French>DL-7 · Ajouter un fichier</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3138BE1C28">
+            <Original>Identité</Original>
+            <English>Identity</English>
+            <French>Identité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_32A649EB94">
+            <Original>Ajouter un renseignement</Original>
+            <English>Add intelligence</English>
+            <French>Ajouter un renseignement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3343043971">
+            <Original>Tableau des liens</Original>
+            <English>Link chart</English>
+            <French>Tableau des liens</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_33A5A7571B">
+            <Original>Relation</Original>
+            <English>Relation</English>
+            <French>Relation</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_33BD4A53AC">
+            <Original>Mot de code ou référence interne, s’il figure sur la pièce.</Original>
+            <English>Mot de code ou référence interne, s’il figure sur la pièce.</English>
+            <French>Mot de code ou référence interne, s’il figure sur la pièce.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_33CF4A0F55">
+            <Original>Objet vanilla créé à la position du module.</Original>
+            <English>Vanilla object created at the module's position.</English>
+            <French>Objet vanilla créé à la position du module.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_342833114E">
+            <Original>Lieux enregistrés (un par ligne)</Original>
+            <English>Lieux enregistrés (un par ligne)</English>
+            <French>Lieux enregistrés (un par ligne)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3484725616">
+            <Original>Libellé bouton consultation (optionnel)</Original>
+            <English>Libellé bouton consultation (optionnel)</English>
+            <French>Libellé bouton consultation (optionnel)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_34DF732954">
+            <Original>Non identifié</Original>
+            <English>Unidentified</English>
+            <French>Non identifié</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_352194D9FC">
+            <Original>Dossier ouvert côté portail, par exemple SSE-2026-0007.</Original>
+            <English>Dossier ouvert côté portail, par exemple SSE-2026-0007.</English>
+            <French>Dossier ouvert côté portail, par exemple SSE-2026-0007.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_359E99272E">
+            <Original>Ne pas inclure de téléphone</Original>
+            <English>Ne pas inclure de téléphone</English>
+            <French>Ne pas inclure de téléphone</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_35AFDEE848">
+            <Original>Physique et distant</Original>
+            <English>Physique et distant</English>
+            <French>Physique et distant</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_378C13828D">
+            <Original>COMSPEC SSE · 1. Sites et objets</Original>
+            <English>COMSPEC SSE · 1. Sites et objets</English>
+            <French>COMSPEC SSE · 1. Sites et objets</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3795655AA9">
+            <Original>Si coché, une partie du contenu peut être révélée sans saisie physique, plus pauvre que l’accès de près.</Original>
+            <English>Si coché, une partie du contenu peut être révélée sans saisie physique, plus pauvre que l’accès de près.</English>
+            <French>Si coché, une partie du contenu peut être révélée sans saisie physique, plus pauvre que l’accès de près.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_385FD78DF8">
+            <Original>Personnalisation</Original>
+            <English>Customization</English>
+            <French>Personnalisation</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_38621FCCC6">
+            <Original>Nom du réseau de scénario (ex. KESTREL-LAN). Aucune technique réelle n’est simulée.</Original>
+            <English>Nom du réseau de scénario (ex. KESTREL-LAN). Aucune technique réelle n’est simulée.</English>
+            <French>Nom du réseau de scénario (ex. KESTREL-LAN). Aucune technique réelle n’est simulée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_38EF9DD8EF">
+            <Original>Aspect du papier (optionnel)</Original>
+            <English>Aspect du papier (optionnel)</English>
+            <French>Aspect du papier (optionnel)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3A745C983B">
+            <Original>Accès établi</Original>
+            <English>Access established</English>
+            <French>Accès établi</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3B68E1E3A6">
+            <Original>Terminal biométrique SEEK II (identité, empreintes, iris, photo).</Original>
+            <English>Terminal biométrique SEEK II (identité, empreintes, iris, photo).</English>
+            <French>Terminal biométrique SEEK II (identité, empreintes, iris, photo).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3B9E13ED84">
+            <Original>Accès physique uniquement</Original>
+            <English>Accès physique uniquement</English>
+            <French>Accès physique uniquement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3C0774D059">
+            <Original>Génère un profil SSE (identité, téléphone, documents, biométrie) sur la personne ou l'objet ciblé. Zeus : posez le module sur la cible, un formulaire s'ouvre. Eden : synchronisez les cibles au module.</Original>
+            <English>Génère un profil SSE (identité, téléphone, documents, biométrie) sur la personne ou l'objet ciblé. Zeus : posez le module sur la cible, un formulaire s'ouvre. Eden : synchronisez les cibles au module.</English>
+            <French>Génère un profil SSE (identité, téléphone, documents, biométrie) sur la personne ou l'objet ciblé. Zeus : posez le module sur la cible, un formulaire s'ouvre. Eden : synchronisez les cibles au module.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3C5727F957">
+            <Original>Rôle déclaré</Original>
+            <English>Rôle déclaré</English>
+            <French>Rôle déclaré</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3C674C54E0">
+            <Original>Automatique : le jeu compose les pièces. Personnaliser : seules les pièces remplies ci-dessous sont utilisées. Ne pas inclure : aucun document.</Original>
+            <English>Automatique : le jeu compose les pièces. Personnaliser : seules les pièces remplies ci-dessous sont utilisées. Ne pas inclure : aucun document.</English>
+            <French>Automatique : le jeu compose les pièces. Personnaliser : seules les pièces remplies ci-dessous sont utilisées. Ne pas inclure : aucun document.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3CBCBC1C17">
+            <Original>Motif (journal de campagne)</Original>
+            <English>Motif (journal de campagne)</English>
+            <French>Motif (journal de campagne)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3D06EC48BE">
+            <Original>Rayon</Original>
+            <English>Radius</English>
+            <French>Rayon</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3D7AF5EC00">
+            <Original>Sac de tête</Original>
+            <English>Sac de tête</English>
+            <French>Sac de tête</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3D7D0F8FD5">
+            <Original>Lister les modèles SSE</Original>
+            <English>Lister les modèles SSE</English>
+            <French>Lister les modèles SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3DE621C50D">
+            <Original>Objet</Original>
+            <English>Object</English>
+            <French>Objet</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3DEB745651">
+            <Original>Type</Original>
+            <English>Type</English>
+            <French>Type</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3DF7A6B1E1">
+            <Original>Faible</Original>
+            <English>Weak</English>
+            <French>Faible</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3E775A5872">
+            <Original>Fonction ou rôle connu (courrier, financier, habitant…). Vide = génération automatique.</Original>
+            <English>Fonction ou rôle connu (courrier, financier, habitant…). Vide = génération automatique.</English>
+            <French>Fonction ou rôle connu (courrier, financier, habitant…). Vide = génération automatique.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3E882DE7BA">
+            <Original>Type de support</Original>
+            <English>Medium type</English>
+            <French>Type de support</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3F5EE77F7B">
+            <Original>Parent de (nom de variable)</Original>
+            <English>Parent de (nom de variable)</English>
+            <French>Parent de (nom de variable)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3F9713E6BC">
+            <Original>Profil de contenu</Original>
+            <English>Content profile</English>
+            <French>Profil de contenu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3FE9D437FE">
+            <Original>Appareil photo SSE</Original>
+            <English>Appareil photo SSE</English>
+            <French>Appareil photo SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_3FF683EADD">
+            <Original>Génère un réseau SSE cohérent autour du module à partir d'un brief libre ou d'un pack scénario prédéfini.</Original>
+            <English>Génère un réseau SSE cohérent autour du module à partir d'un brief libre ou d'un pack scénario prédéfini.</English>
+            <French>Génère un réseau SSE cohérent autour du module à partir d'un brief libre ou d'un pack scénario prédéfini.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_402DCBB9A9">
+            <Original>Appareil photo</Original>
+            <English>Camera</English>
+            <French>Appareil photo</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4039481832">
+            <Original>Pièce 3 — intitulé</Original>
+            <English>Pièce 3 — intitulé</English>
+            <French>Pièce 3 — intitulé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_40DD5E3E2E">
+            <Original>Quantité d'éléments exploitables générés (légère → haute valeur).</Original>
+            <English>Quantité d'éléments exploitables générés (légère → haute valeur).</English>
+            <French>Quantité d'éléments exploitables générés (légère → haute valeur).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_41A38A621D">
+            <Original>À quel moment le renseignement rejoint la file.</Original>
+            <English>À quel moment le renseignement rejoint la file.</English>
+            <French>À quel moment le renseignement rejoint la file.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_41C483829B">
+            <Original>Accès physique possible</Original>
+            <English>Accès physique possible</English>
+            <French>Accès physique possible</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_422505A418">
+            <Original>Iris</Original>
+            <English>Iris</English>
+            <French>Iris</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4225900977">
+            <Original>Rend cette entité exploitable : personne, véhicule, caisse, arme au sol, ordinateur, téléphone, document ou tout autre objet du jeu.</Original>
+            <English>Rend cette entité exploitable : personne, véhicule, caisse, arme au sol, ordinateur, téléphone, document ou tout autre objet du jeu.</English>
+            <French>Rend cette entité exploitable : personne, véhicule, caisse, arme au sol, ordinateur, téléphone, document ou tout autre objet du jeu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4275ED3369">
+            <Original>Effacé après le premier téléchargement</Original>
+            <English>Wiped after first download</English>
+            <French>Effacé après le premier téléchargement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_42B778C200">
+            <Original>Facultatif : cellule sous l'organisation.</Original>
+            <English>Facultatif : cellule sous l'organisation.</English>
+            <French>Facultatif : cellule sous l'organisation.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_434D4780BA">
+            <Original>Automatique (taux du camp)</Original>
+            <English>Automatique (taux du camp)</English>
+            <French>Automatique (taux du camp)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_437A61441B">
+            <Original>Référence de dossier antérieur</Original>
+            <English>Prior case reference</English>
+            <French>Référence de dossier antérieur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_438E4536B9">
+            <Original>Nom du réseau auquel la machine s’est connectée.</Original>
+            <English>Nom du réseau auquel la machine s’est connectée.</English>
+            <French>Nom du réseau auquel la machine s’est connectée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_43C9CA349C">
+            <Original>Recherché — correspondance confirmée</Original>
+            <English>Wanted — match confirmed</English>
+            <French>Recherché — correspondance confirmée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_43E48B8E9C">
+            <Original>Aspect et textes de base</Original>
+            <English>Aspect et textes de base</English>
+            <French>Aspect et textes de base</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4404F84D2B">
+            <Original>Chaîne : A-B, B-C… · Étoile : la première entité reliée à toutes les autres.</Original>
+            <English>Chaîne : A-B, B-C… · Étoile : la première entité reliée à toutes les autres.</English>
+            <French>Chaîne : A-B, B-C… · Étoile : la première entité reliée à toutes les autres.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4462C38458">
+            <Original>Papier propre (bureau)</Original>
+            <English>Clean paper (office)</English>
+            <French>Papier propre (bureau)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4463EFBA0C">
+            <Original>auto | inconnu | signale | recherche</Original>
+            <English>auto | inconnu | signale | recherche</English>
+            <French>auto | inconnu | signale | recherche</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4508276612">
+            <Original>Modèle SSE (identifiant)</Original>
+            <English>Modèle SSE (identifiant)</English>
+            <French>Modèle SSE (identifiant)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_45581DDE0C">
+            <Original>Libellé du bouton qui affiche la feuille. Vide = FEUILLE.</Original>
+            <English>Libellé du bouton qui affiche la feuille. Vide = FEUILLE.</English>
+            <French>Libellé du bouton qui affiche la feuille. Vide = FEUILLE.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_45C89A4C43">
+            <Original>Durée d'accès (s)</Original>
+            <English>Access duration (s)</English>
+            <French>Durée d'accès (s)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_46DF178EF6">
+            <Original>Format : Nom | type. Types : lieu, personne, organisation, evenement, objectif, frequence, vehicule, support.</Original>
+            <English>Format : Nom | type. Types : lieu, personne, organisation, evenement, objectif, frequence, vehicule, support.</English>
+            <French>Format : Nom | type. Types : lieu, personne, organisation, evenement, objectif, frequence, vehicule, support.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_46E7D52BE6">
+            <Original>Gants d'examen SSE</Original>
+            <English>Gants d'examen SSE</English>
+            <French>Gants d'examen SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_46F719D58D">
+            <Original>Sauvegarde automatique (minutes)</Original>
+            <English>Sauvegarde automatique (minutes)</English>
+            <French>Sauvegarde automatique (minutes)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4743916477">
+            <Original>Pack narratif (ex. falcon). Prioritaire sur le modèle seul si un rôle est aussi renseigné.</Original>
+            <English>Pack narratif (ex. falcon). Prioritaire sur le modèle seul si un rôle est aussi renseigné.</English>
+            <French>Pack narratif (ex. falcon). Prioritaire sur le modèle seul si un rôle est aussi renseigné.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_476B4E4107">
+            <Original>Ne pas inclure de documents</Original>
+            <English>Ne pas inclure de documents</English>
+            <French>Ne pas inclure de documents</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_477589B159">
+            <Original>Type de site</Original>
+            <English>Site type</English>
+            <French>Type de site</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_47D1C260DC">
+            <Original>Objectif</Original>
+            <English>Objective</English>
+            <French>Objectif</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4811ECDA45">
+            <Original>COMSPEC SSE — Documents</Original>
+            <English>COMSPEC SSE — Documents</English>
+            <French>COMSPEC SSE — Documents</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_485EA85006">
+            <Original>Temps d'exploitation scénarisé, en secondes.</Original>
+            <English>Temps d'exploitation scénarisé, en secondes.</English>
+            <French>Temps d'exploitation scénarisé, en secondes.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4AC6A99CA2">
+            <Original>Automatique (selon le camp)</Original>
+            <English>Automatic (by faction)</English>
+            <French>Automatique (selon le camp)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4B1188BA94">
+            <Original>Papier taché (terrain)</Original>
+            <English>Stained paper (field)</English>
+            <French>Papier taché (terrain)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4B3C750225">
+            <Original>Carnet saisi</Original>
+            <English>Carnet saisi</English>
+            <French>Carnet saisi</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4BF6C06DD9">
+            <Original>Paquet 1 — révélation</Original>
+            <English>Paquet 1 — révélation</English>
+            <French>Paquet 1 — révélation</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4C4DE74821">
+            <Original>Élevée</Original>
+            <English>High</English>
+            <French>Élevée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4C9DC478FA">
+            <Original>Zone prise en compte.</Original>
+            <English>Zone prise en compte.</English>
+            <French>Zone prise en compte.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4D03EE89F4">
+            <Original>Texte lu par les joueurs lors de la lecture du document.</Original>
+            <English>Texte lu par les joueurs lors de la lecture du document.</English>
+            <French>Texte lu par les joueurs lors de la lecture du document.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_4ECFD04A93">
+            <Original>Sous-titre affiché sous le titre du compte rendu. Vide = texte du modèle.</Original>
+            <English>Sous-titre affiché sous le titre du compte rendu. Vide = texte du modèle.</English>
+            <French>Sous-titre affiché sous le titre du compte rendu. Vide = texte du modèle.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_50149D262E">
+            <Original>Carnet / notes manuscrites collectées.</Original>
+            <English>Carnet / notes manuscrites collectées.</English>
+            <French>Carnet / notes manuscrites collectées.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_50EB4CF8B0">
+            <Original>Titre fiche personne (optionnel)</Original>
+            <English>Titre fiche personne (optionnel)</English>
+            <French>Titre fiche personne (optionnel)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_510609F529">
+            <Original>Titre en tête d'un dossier documentaire (téléphone, papiers, support numérique). Vide = texte du modèle.</Original>
+            <English>Titre en tête d'un dossier documentaire (téléphone, papiers, support numérique). Vide = texte du modèle.</English>
+            <French>Titre en tête d'un dossier documentaire (téléphone, papiers, support numérique). Vide = texte du modèle.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_517F2D54EE">
+            <Original>Disque dur extrait pour exploitation numérique.</Original>
+            <English>Disque dur extrait pour exploitation numérique.</English>
+            <French>Disque dur extrait pour exploitation numérique.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5427FD158C">
+            <Original>Biométrie</Original>
+            <English>Biometrics</English>
+            <French>Biométrie</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_54288020C7">
+            <Original>Si renseigné, SEEK et les fiches utilisent ce nom. Vide = nom de l’identité Eden (panneau Identité), sinon génération automatique.</Original>
+            <English>Si renseigné, SEEK et les fiches utilisent ce nom. Vide = nom de l’identité Eden (panneau Identité), sinon génération automatique.</English>
+            <French>Si renseigné, SEEK et les fiches utilisent ce nom. Vide = nom de l’identité Eden (panneau Identité), sinon génération automatique.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5433C0536D">
+            <Original>Compte / propriétaire</Original>
+            <English>Compte / propriétaire</English>
+            <French>Compte / propriétaire</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_543C09E508">
+            <Original>COMSPEC SSE · 5. Outils du Zeus</Original>
+            <English>COMSPEC SSE · 5. Outils du Zeus</English>
+            <French>COMSPEC SSE · 5. Outils du Zeus</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_54550F2C93">
+            <Original>Effacer les données SSE</Original>
+            <English>Clear SSE data</English>
+            <French>Effacer les données SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_54676EF14E">
+            <Original>Mention du type « Ne constitue pas une preuve… ». Vide = texte du modèle.</Original>
+            <English>Statement such as "Does not constitute evidence...". Empty = template text.</English>
+            <French>Mention du type « Ne constitue pas une preuve… ». Vide = texte du modèle.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_54F61CC779">
+            <Original>Les personnages appartiennent à des organisations : réseau, cellule, clan, milice... avec un chef, des cellules et des rôles (financier, artificier, courrier, guetteur...).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Découvrir le réseau&lt;/t&gt;&lt;br/&gt;Rien n'est connu au départ. Une personne contrôlée entre au tableau. Une identification biométrique confirme son appartenance. Exploiter une personne (téléphone, carnet) fait soupçonner des membres de sa cellule. Exploiter un objet rattaché à une organisation la révèle.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Le tableau&lt;/t&gt;&lt;br/&gt;Menu personnel, Tableau des liens. GRAPHE : tout ce qui est relié. ORBAT : organigramme, du chef au sympathisant. Filtres : personnes, organisations, objets et données, confirmé seul. Clic : fiche du nœud ; double-clic : zoom. Un « ? » signale ce qui n'est que soupçonné.</Original>
+            <English>Les personnages appartiennent à des organisations : réseau, cellule, clan, milice... avec un chef, des cellules et des rôles (financier, artificier, courrier, guetteur...).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Découvrir le réseau&lt;/t&gt;&lt;br/&gt;Rien n'est connu au départ. Une personne contrôlée entre au tableau. Une identification biométrique confirme son appartenance. Exploiter une personne (téléphone, carnet) fait soupçonner des membres de sa cellule. Exploiter un objet rattaché à une organisation la révèle.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Le tableau&lt;/t&gt;&lt;br/&gt;Menu personnel, Tableau des liens. GRAPHE : tout ce qui est relié. ORBAT : organigramme, du chef au sympathisant. Filtres : personnes, organisations, objets et données, confirmé seul. Clic : fiche du nœud ; double-clic : zoom. Un « ? » signale ce qui n'est que soupçonné.</English>
+            <French>Les personnages appartiennent à des organisations : réseau, cellule, clan, milice... avec un chef, des cellules et des rôles (financier, artificier, courrier, guetteur...).&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Découvrir le réseau&lt;/t&gt;&lt;br/&gt;Rien n'est connu au départ. Une personne contrôlée entre au tableau. Une identification biométrique confirme son appartenance. Exploiter une personne (téléphone, carnet) fait soupçonner des membres de sa cellule. Exploiter un objet rattaché à une organisation la révèle.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Le tableau&lt;/t&gt;&lt;br/&gt;Menu personnel, Tableau des liens. GRAPHE : tout ce qui est relié. ORBAT : organigramme, du chef au sympathisant. Filtres : personnes, organisations, objets et données, confirmé seul. Clic : fiche du nœud ; double-clic : zoom. Un « ? » signale ce qui n'est que soupçonné.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_55A168F759">
+            <Original>Selon le modèle</Original>
+            <English>Per template</English>
+            <French>Selon le modèle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_55F8EBC805">
+            <Original>Description</Original>
+            <English>Description</English>
+            <French>Description</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_576B2E731F">
+            <Original>Compare ce que les joueurs ont découvert sur la cible à la vérité complète.</Original>
+            <English>Compare ce que les joueurs ont découvert sur la cible à la vérité complète.</English>
+            <French>Compare ce que les joueurs ont découvert sur la cible à la vérité complète.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_579AC7FBD5">
+            <Original>Référence communiquée par le poste de commandement, par exemple SSE-2026-0007. Toutes les fiches transmises ensuite y seront classées.</Original>
+            <English>Référence communiquée par le poste de commandement, par exemple SSE-2026-0007. Toutes les fiches transmises ensuite y seront classées.</English>
+            <French>Référence communiquée par le poste de commandement, par exemple SSE-2026-0007. Toutes les fiches transmises ensuite y seront classées.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_57D0313941">
+            <Original>Pièce 2 — intitulé</Original>
+            <English>Pièce 2 — intitulé</English>
+            <French>Pièce 2 — intitulé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_58AC927D81">
+            <Original>Renseignement scénarisé. Ce n'est pas une preuve.</Original>
+            <English>Scripted intelligence. This is not evidence.</English>
+            <French>Renseignement scénarisé. Ce n'est pas une preuve.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_58F212F6D8">
+            <Original>Nom de l’ordinateur</Original>
+            <English>Nom de l’ordinateur</English>
+            <French>Nom de l’ordinateur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_591CD4CAED">
+            <Original>Les joueurs peuvent exploiter le support sur place.</Original>
+            <English>Les joueurs peuvent exploiter le support sur place.</English>
+            <French>Les joueurs peuvent exploiter le support sur place.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_59AC04E471">
+            <Original>Même identifiant dans chaque mission de la campagne, par exemple OP-SABLE (vraie carte) ou BOOTCAMP (drills). Créée au premier lancement.</Original>
+            <English>Même identifiant dans chaque mission de la campagne, par exemple OP-SABLE (vraie carte) ou BOOTCAMP (drills). Créée au premier lancement.</English>
+            <French>Même identifiant dans chaque mission de la campagne, par exemple OP-SABLE (vraie carte) ou BOOTCAMP (drills). Créée au premier lancement.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5AB4C2B5CC">
+            <Original>Objet appartenant à une organisation (document, cache, véhicule) : l'exploiter la révèle aux joueurs.</Original>
+            <English>Objet appartenant à une organisation (document, cache, véhicule) : l'exploiter la révèle aux joueurs.</English>
+            <French>Objet appartenant à une organisation (document, cache, véhicule) : l'exploiter la révèle aux joueurs.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5AD6252BF7">
+            <Original>Nom du réseau / SSID / canal.</Original>
+            <English>Network name / SSID / channel.</English>
+            <French>Nom du réseau / SSID / canal.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5B3CD43C74">
+            <Original>Pièce 1 — grille</Original>
+            <English>Pièce 1 — grille</English>
+            <French>Pièce 1 — grille</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5B8C197248">
+            <Original>Format : Libellé | grille  (ex. Dépôt nord | 56032 106032)</Original>
+            <English>Format : Libellé | grille  (ex. Dépôt nord | 56032 106032)</English>
+            <French>Format : Libellé | grille  (ex. Dépôt nord | 56032 106032)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5C295E49B3">
+            <Original>Pose un point de renseignement sur la carte du bureau, invisible sur la carte des joueurs.</Original>
+            <English>Pose un point de renseignement sur la carte du bureau, invisible sur la carte des joueurs.</English>
+            <French>Pose un point de renseignement sur la carte du bureau, invisible sur la carte des joueurs.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5CAC4AD624">
+            <Original>Dossier ouvert côté portail (ex. SSE-2026-0007)</Original>
+            <English>Dossier ouvert côté portail (ex. SSE-2026-0007)</English>
+            <French>Dossier ouvert côté portail (ex. SSE-2026-0007)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5CE9A82831">
+            <Original>Ce que le sujet déclare, pas ce qui est établi.</Original>
+            <English>What the subject states, not what is established.</English>
+            <French>Ce que le sujet déclare, pas ce qui est établi.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5CFBE37779">
+            <Original>Fragment (à croiser)</Original>
+            <English>Fragment (to cross-check)</English>
+            <French>Fragment (à croiser)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5D66D947AD">
+            <Original>Personnaliser l’ordinateur ci-dessous</Original>
+            <English>Personnaliser l’ordinateur ci-dessous</English>
+            <French>Personnaliser l’ordinateur ci-dessous</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5D6D8F519B">
+            <Original>Durée d’exploitation</Original>
+            <English>Durée d’exploitation</English>
+            <French>Durée d’exploitation</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5D73893C27">
+            <Original>Nature du premier renseignement contenu.</Original>
+            <English>Nature du premier renseignement contenu.</English>
+            <French>Nature du premier renseignement contenu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5E9801F32C">
+            <Original>COMSPEC SSE · 3. Mission et scénario</Original>
+            <English>COMSPEC SSE · 3. Mission et scénario</English>
+            <French>COMSPEC SSE · 3. Mission et scénario</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5E9A3CF066">
+            <Original>Mot de code cité dans la pièce. Optionnel.</Original>
+            <English>Mot de code cité dans la pièce. Optionnel.</English>
+            <French>Mot de code cité dans la pièce. Optionnel.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5ED1396E71">
+            <Original>COMSPEC SSE — Biométrie</Original>
+            <English>COMSPEC SSE — Biométrie</English>
+            <French>COMSPEC SSE — Biométrie</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5F03624271">
+            <Original>Plus élevée = accès plus long.</Original>
+            <English>Higher = longer access.</English>
+            <French>Plus élevée = accès plus long.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5F2CB33B4C">
+            <Original>Nature du lien affiché dans le graphe.</Original>
+            <English>Type of link shown in the graph.</English>
+            <French>Nature du lien affiché dans le graphe.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5F3D250E41">
+            <Original>Pochette pour documents papier saisis.</Original>
+            <English>Pochette pour documents papier saisis.</English>
+            <French>Pochette pour documents papier saisis.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5FA266FD79">
+            <Original>Lier des entités SSE</Original>
+            <English>Link SSE entities</English>
+            <French>Lier des entités SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_5FA316DD74">
+            <Original>COMSPEC SSE — Extraction DL-7</Original>
+            <English>COMSPEC SSE — Extraction DL-7</English>
+            <French>COMSPEC SSE — Extraction DL-7</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_61097AFA92">
+            <Original>Empreintes latentes de (objets)</Original>
+            <English>Empreintes latentes de (objets)</English>
+            <French>Empreintes latentes de (objets)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_61E290C4C3">
+            <Original>Personnaliser le téléphone ci-dessous</Original>
+            <English>Personnaliser le téléphone ci-dessous</English>
+            <French>Personnaliser le téléphone ci-dessous</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_62652263FE">
+            <Original>Impose le dossier SSE de rattachement pour tout l'élément. Le dossier doit exister côté portail ; ce module ne le crée pas.</Original>
+            <English>Impose le dossier SSE de rattachement pour tout l'élément. Le dossier doit exister côté portail ; ce module ne le crée pas.</English>
+            <French>Impose le dossier SSE de rattachement pour tout l'élément. Le dossier doit exister côté portail ; ce module ne le crée pas.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_62957ECFDC">
+            <Original>1 minute</Original>
+            <English>1 minute</English>
+            <French>1 minute</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_629B240053">
+            <Original>Moment de la génération</Original>
+            <English>Moment de la génération</English>
+            <French>Moment de la génération</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6323D66FED">
+            <Original>Automatique : déduit de la classe de l'objet (téléphone, ordinateur, document…).</Original>
+            <English>Automatic: inferred from the object's class (phone, computer, document...).</English>
+            <French>Automatique : déduit de la classe de l'objet (téléphone, ordinateur, document…).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6344F70286">
+            <Original>Saisis : chaque personne garde le rôle de ses attributs (catégorie Organisation). Générés : cellules et rôles répartis d'après la graine.</Original>
+            <English>Saisis : chaque personne garde le rôle de ses attributs (catégorie Organisation). Générés : cellules et rôles répartis d'après la graine.</English>
+            <French>Saisis : chaque personne garde le rôle de ses attributs (catégorie Organisation). Générés : cellules et rôles répartis d'après la graine.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_63F20CBF0F">
+            <Original>Nom du réseau</Original>
+            <English>Nom du réseau</English>
+            <French>Nom du réseau</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_640278ED98">
+            <Original>Nombre maximum d'objets (caisses, sacs…) intégrés au site.</Original>
+            <English>Maximum number of objects (crates, bags...) included in the site.</English>
+            <French>Nombre maximum d'objets (caisses, sacs…) intégrés au site.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_640F95F149">
+            <Original>Paquet 1 — texte</Original>
+            <English>Paquet 1 — texte</English>
+            <French>Paquet 1 — texte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_64155AAEA0">
+            <Original>Propriétaire apparent</Original>
+            <English>Apparent owner</English>
+            <French>Propriétaire apparent</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_65874AF125">
+            <Original>Marque cet objet comme nœud de renseignement numérique. Pas un outil de piratage : le contenu est écrit par le scénario.</Original>
+            <English>Marque cet objet comme nœud de renseignement numérique. Pas un outil de piratage : le contenu est écrit par le scénario.</English>
+            <French>Marque cet objet comme nœud de renseignement numérique. Pas un outil de piratage : le contenu est écrit par le scénario.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_669FE25A32">
+            <Original>Profil</Original>
+            <English>Profile</English>
+            <French>Profil</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_674BBBD83C">
+            <Original>Exploité</Original>
+            <English>Exploited</English>
+            <French>Exploité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_67A844368D">
+            <Original>Applique un dataset narratif (ex. FALCON) autour du module et règle le niveau de révélation : ce que les joueurs peuvent apprendre.</Original>
+            <English>Applique un dataset narratif (ex. FALCON) autour du module et règle le niveau de révélation : ce que les joueurs peuvent apprendre.</English>
+            <French>Applique un dataset narratif (ex. FALCON) autour du module et règle le niveau de révélation : ce que les joueurs peuvent apprendre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6806BC5723">
+            <Original>Manifeste</Original>
+            <English>Manifest</English>
+            <French>Manifeste</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6844285EAD">
+            <Original>Automatique : déduite de la classe (téléphone, ordinateur, radio, document, support, arme, caisse…). À forcer pour un objet de décor ou d'un autre mod que le SSE ne reconnaît pas.</Original>
+            <English>Automatique : déduite de la classe (téléphone, ordinateur, radio, document, support, arme, caisse…). À forcer pour un objet de décor ou d'un autre mod que le SSE ne reconnaît pas.</English>
+            <French>Automatique : déduite de la classe (téléphone, ordinateur, radio, document, support, arme, caisse…). À forcer pour un objet de décor ou d'un autre mod que le SSE ne reconnaît pas.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_684A67E212">
+            <Original>Richesse</Original>
+            <English>Richness</English>
+            <French>Richesse</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_687C82861C">
+            <Original>Documents</Original>
+            <English>Documents</English>
+            <French>Documents</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_68BFBFB778">
+            <Original>Nature du second renseignement contenu.</Original>
+            <English>Nature du second renseignement contenu.</English>
+            <French>Nature du second renseignement contenu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_68C602A962">
+            <Original>Alarme</Original>
+            <English>Alarm</English>
+            <French>Alarme</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_68D49F6742">
+            <Original>Nom du modèle</Original>
+            <English>Template name</English>
+            <French>Nom du modèle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_68E546FCE7">
+            <Original>Identifiant</Original>
+            <English>Identifier</English>
+            <French>Identifiant</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_68F4145FEE">
+            <Original>Message</Original>
+            <English>Message</English>
+            <French>Message</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_69383F7A32">
+            <Original>Temps d'exploitation scénarisé avant que les contenus arrivent.</Original>
+            <English>Temps d'exploitation scénarisé avant que les contenus arrivent.</English>
+            <French>Temps d'exploitation scénarisé avant que les contenus arrivent.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_693EE04D82">
+            <Original>Brief narratif</Original>
+            <English>Narrative brief</English>
+            <French>Brief narratif</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_69403D5D82">
+            <Original>Nature du support numérique.</Original>
+            <English>Type of digital medium.</English>
+            <French>Nature du support numérique.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_69DCC1CC45">
+            <Original>Matériel SSE</Original>
+            <English>Matériel SSE</English>
+            <French>Matériel SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6A3B88669A">
+            <Original>Clé USB saisie</Original>
+            <English>Clé USB saisie</English>
+            <French>Clé USB saisie</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6A673B4425">
+            <Original>Support numérique USB collecté sur site.</Original>
+            <English>Support numérique USB collecté sur site.</English>
+            <French>Support numérique USB collecté sur site.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6ABCDD2502">
+            <Original>Sous-titre compte rendu (optionnel)</Original>
+            <English>Sous-titre compte rendu (optionnel)</English>
+            <French>Sous-titre compte rendu (optionnel)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6C1099D135">
+            <Original>Sac de tête (capture)</Original>
+            <English>Sac de tête (capture)</English>
+            <French>Sac de tête (capture)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6C1449490C">
+            <Original>Nom affiché dans la liste des modèles.</Original>
+            <English>Nom affiché dans la liste des modèles.</English>
+            <French>Nom affiché dans la liste des modèles.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6C242C62CF">
+            <Original>Référence stable (ex. FALCON-IQ-2012-A). Renseignée auto par le dataset si vide.</Original>
+            <English>Référence stable (ex. FALCON-IQ-2012-A). Renseignée auto par le dataset si vide.</English>
+            <French>Référence stable (ex. FALCON-IQ-2012-A). Renseignée auto par le dataset si vide.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6C68FEA85E">
+            <Original>Coordonnée / point</Original>
+            <English>Coordinate / point</English>
+            <French>Coordonnée / point</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6D51BE0AA5">
+            <Original>Libellé du bouton de fermeture. Vide = FERMER.</Original>
+            <English>Libellé du bouton de fermeture. Vide = FERMER.</English>
+            <French>Libellé du bouton de fermeture. Vide = FERMER.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6D917739B8">
+            <Original>Premier renseignement contenu (optionnel).</Original>
+            <English>First intelligence item contained (optional).</English>
+            <French>Premier renseignement contenu (optionnel).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6E5970A28A">
+            <Original>Rendre exploitable (SSE)</Original>
+            <English>Make exploitable (SSE)</English>
+            <French>Rendre exploitable (SSE)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6E79CF4CEF">
+            <Original>Modules ZEN « COMSPEC SSE » :&lt;br/&gt;&lt;t color='#7fd08a'&gt;Mission&lt;/t&gt; campagne (charger, sauvegarder, état, remise à zéro, fin, export, import), dossier actif, présentation des documents, altérer un scellé (exercice).&lt;br/&gt;&lt;t color='#7fd08a'&gt;Personnes&lt;/t&gt; identité d'un sujet, biométrie, organisations (affecter, générer un réseau sur une sélection ou un groupe, rattacher des objets, révéler, retirer), tableau des liens vue Zeus.&lt;br/&gt;&lt;t color='#7fd08a'&gt;Numérique&lt;/t&gt; DOMEX, rendre extractible au DL-7.&lt;br/&gt;&lt;t color='#7fd08a'&gt;Outils&lt;/t&gt; ce manuel, et « poser un exercice ici » : une cellule complète prête à exploiter.&lt;br/&gt;&lt;br/&gt;Le tableau des liens vue Zeus montre tout, ce que les joueurs ignorent en gris ; RÉVÉLER rend un nœud connu des joueurs.</Original>
+            <English>Modules ZEN « COMSPEC SSE » :&lt;br/&gt;&lt;t color='#7fd08a'&gt;Mission&lt;/t&gt; campagne (charger, sauvegarder, état, remise à zéro, fin, export, import), dossier actif, présentation des documents, altérer un scellé (exercice).&lt;br/&gt;&lt;t color='#7fd08a'&gt;Personnes&lt;/t&gt; identité d'un sujet, biométrie, organisations (affecter, générer un réseau sur une sélection ou un groupe, rattacher des objets, révéler, retirer), tableau des liens vue Zeus.&lt;br/&gt;&lt;t color='#7fd08a'&gt;Numérique&lt;/t&gt; DOMEX, rendre extractible au DL-7.&lt;br/&gt;&lt;t color='#7fd08a'&gt;Outils&lt;/t&gt; ce manuel, et « poser un exercice ici » : une cellule complète prête à exploiter.&lt;br/&gt;&lt;br/&gt;Le tableau des liens vue Zeus montre tout, ce que les joueurs ignorent en gris ; RÉVÉLER rend un nœud connu des joueurs.</English>
+            <French>Modules ZEN « COMSPEC SSE » :&lt;br/&gt;&lt;t color='#7fd08a'&gt;Mission&lt;/t&gt; campagne (charger, sauvegarder, état, remise à zéro, fin, export, import), dossier actif, présentation des documents, altérer un scellé (exercice).&lt;br/&gt;&lt;t color='#7fd08a'&gt;Personnes&lt;/t&gt; identité d'un sujet, biométrie, organisations (affecter, générer un réseau sur une sélection ou un groupe, rattacher des objets, révéler, retirer), tableau des liens vue Zeus.&lt;br/&gt;&lt;t color='#7fd08a'&gt;Numérique&lt;/t&gt; DOMEX, rendre extractible au DL-7.&lt;br/&gt;&lt;t color='#7fd08a'&gt;Outils&lt;/t&gt; ce manuel, et « poser un exercice ici » : une cellule complète prête à exploiter.&lt;br/&gt;&lt;br/&gt;Le tableau des liens vue Zeus montre tout, ce que les joueurs ignorent en gris ; RÉVÉLER rend un nœud connu des joueurs.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6E99C1D3B1">
+            <Original>Organisation</Original>
+            <English>Organization</English>
+            <French>Organisation</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_6F8F4AE415">
+            <Original>Papier froissé</Original>
+            <English>Crumpled paper</English>
+            <French>Papier froissé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_705F78D09E">
+            <Original>Indice d’accès</Original>
+            <English>Indice d’accès</English>
+            <French>Indice d’accès</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_71849A3505">
+            <Original>Dataset mission</Original>
+            <English>Dataset mission</English>
+            <French>Dataset mission</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_71D3057E17">
+            <Original>Kit d'empreintes SSE</Original>
+            <English>Kit d'empreintes SSE</English>
+            <French>Kit d'empreintes SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_722625B3ED">
+            <Original>COMSPEC SSE · 4. Numérique (DOMEX, DL-7)</Original>
+            <English>COMSPEC SSE · 4. Numérique (DOMEX, DL-7)</English>
+            <French>COMSPEC SSE · 4. Numérique (DOMEX, DL-7)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_73BF33117C">
+            <Original>Ex. HVT-ABU-HAMZA. Avec la même graine de campagne, ce personnage garde les mêmes empreintes, iris et ADN d'une mission à l'autre.</Original>
+            <English>Ex. HVT-ABU-HAMZA. Avec la même graine de campagne, ce personnage garde les mêmes empreintes, iris et ADN d'une mission à l'autre.</English>
+            <French>Ex. HVT-ABU-HAMZA. Avec la même graine de campagne, ce personnage garde les mêmes empreintes, iris et ADN d'une mission à l'autre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_73FCB9DB05">
+            <Original>Quantité d'indices par entité.</Original>
+            <English>Quantité d'indices par entité.</English>
+            <French>Quantité d'indices par entité.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_742F4979BD">
+            <Original>Créer un site SSE complet</Original>
+            <English>Create a full SSE site</English>
+            <French>Créer un site SSE complet</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_748B65B7BD">
+            <Original>Kit de prélèvement ADN terrain.</Original>
+            <English>Kit de prélèvement ADN terrain.</English>
+            <French>Kit de prélèvement ADN terrain.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_74968C997F">
+            <Original>Doter en terminal SEEK</Original>
+            <English>Issue SEEK terminal</English>
+            <French>Doter en terminal SEEK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7543C45D49">
+            <Original>Affiche les données SSE complètes de la cible (UID, profil, état, nom, liens).</Original>
+            <English>Affiche les données SSE complètes de la cible (UID, profil, état, nom, liens).</English>
+            <French>Affiche les données SSE complètes de la cible (UID, profil, état, nom, liens).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7549FAA67C">
+            <Original>Prise en main</Original>
+            <English>Prise en main</English>
+            <French>Prise en main</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_755A7A62F0">
+            <Original>Identité réelle (Arma / Eden)</Original>
+            <English>Real identity (Arma / Eden)</English>
+            <French>Identité réelle (Arma / Eden)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7564CB6E0C">
+            <Original>Palier</Original>
+            <English>Tier</English>
+            <French>Palier</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_763969454F">
+            <Original>Réglages CBA (Échap, Options, Réglages de l'addon, COMSPEC SSE) :&lt;br/&gt;· Biométrie : seuils, qualité, population, graine de campagne, modèle du sac de tête ;&lt;br/&gt;· Organisations et scellés : rôles et natures d'organisation en plus (identifiant:Libellé:rang), noms de code des cellules, nombre de contacts révélés par exploitation, confirmation par la biométrie, préfixes des pièces et des scellés.&lt;br/&gt;&lt;br/&gt;Les profils et thèmes de génération (insurgé, criminel, étatique...) se choisissent dans chaque module.</Original>
+            <English>Réglages CBA (Échap, Options, Réglages de l'addon, COMSPEC SSE) :&lt;br/&gt;· Biométrie : seuils, qualité, population, graine de campagne, modèle du sac de tête ;&lt;br/&gt;· Organisations et scellés : rôles et natures d'organisation en plus (identifiant:Libellé:rang), noms de code des cellules, nombre de contacts révélés par exploitation, confirmation par la biométrie, préfixes des pièces et des scellés.&lt;br/&gt;&lt;br/&gt;Les profils et thèmes de génération (insurgé, criminel, étatique...) se choisissent dans chaque module.</English>
+            <French>Réglages CBA (Échap, Options, Réglages de l'addon, COMSPEC SSE) :&lt;br/&gt;· Biométrie : seuils, qualité, population, graine de campagne, modèle du sac de tête ;&lt;br/&gt;· Organisations et scellés : rôles et natures d'organisation en plus (identifiant:Libellé:rang), noms de code des cellules, nombre de contacts révélés par exploitation, confirmation par la biométrie, préfixes des pièces et des scellés.&lt;br/&gt;&lt;br/&gt;Les profils et thèmes de génération (insurgé, criminel, étatique...) se choisissent dans chaque module.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_767FD5BDDA">
+            <Original>Libellé bouton fermer (optionnel)</Original>
+            <English>Libellé bouton fermer (optionnel)</English>
+            <French>Libellé bouton fermer (optionnel)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_770CB7BEB2">
+            <Original>Eden</Original>
+            <English>Eden</English>
+            <French>Eden</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_771988E23B">
+            <Original>Temporaire : le bac à sable est vidé à la place.</Original>
+            <English>Temporaire : le bac à sable est vidé à la place.</English>
+            <French>Temporaire : le bac à sable est vidé à la place.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_785535508F">
+            <Original>Complétude et triage des éléments SSE autour du module, sans révéler de position aux joueurs.</Original>
+            <English>Complétude et triage des éléments SSE autour du module, sans révéler de position aux joueurs.</English>
+            <French>Complétude et triage des éléments SSE autour du module, sans révéler de position aux joueurs.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7A072D2DDB">
+            <Original>Téléphones / ordinateurs sur le site.</Original>
+            <English>Phones / computers on the site.</English>
+            <French>Téléphones / ordinateurs sur le site.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7A901D689B">
+            <Original>Rôle narratif du sujet : oriente contacts, messages et documents.</Original>
+            <English>Rôle narratif du sujet : oriente contacts, messages et documents.</English>
+            <French>Rôle narratif du sujet : oriente contacts, messages et documents.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7AC6F20F4B">
+            <Original>Réseau, groupe, clan... dont la personne est membre. Créé s'il n'existe pas.</Original>
+            <English>Réseau, groupe, clan... dont la personne est membre. Créé s'il n'existe pas.</English>
+            <French>Réseau, groupe, clan... dont la personne est membre. Créé s'il n'existe pas.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7B2239F605">
+            <Original>Confiance</Original>
+            <English>Confidence</English>
+            <French>Confiance</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7B4C88CB3D">
+            <Original>Coordonnée mentionnée dans la pièce (ex. 045 112). Optionnel.</Original>
+            <English>Coordonnée mentionnée dans la pièce (ex. 045 112). Optionnel.</English>
+            <French>Coordonnée mentionnée dans la pièce (ex. 045 112). Optionnel.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7C7ECA35F0">
+            <Original>Personnalise l’apparence des fiches SSE en jeu : modèle de papier, bandeau, titres et mention de pied de page. Un seul module suffit pour toute la mission.</Original>
+            <English>Personnalise l’apparence des fiches SSE en jeu : modèle de papier, bandeau, titres et mention de pied de page. Un seul module suffit pour toute la mission.</English>
+            <French>Personnalise l’apparence des fiches SSE en jeu : modèle de papier, bandeau, titres et mention de pied de page. Un seul module suffit pour toute la mission.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7D10F4C0B7">
+            <Original>Nom ou fiche déjà connue (ex. HASSAN Karim). Ce n’est pas une preuve d’attribution.</Original>
+            <English>Nom ou fiche déjà connue (ex. HASSAN Karim). Ce n’est pas une preuve d’attribution.</English>
+            <French>Nom ou fiche déjà connue (ex. HASSAN Karim). Ce n’est pas une preuve d’attribution.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7D1E33E915">
+            <Original>Décoché : aucun document papier généré.</Original>
+            <English>Unchecked: no paper documents generated.</English>
+            <French>Décoché : aucun document papier généré.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7D8E20466B">
+            <Original>Nom du support</Original>
+            <English>Media name</English>
+            <French>Nom du support</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7DFD48AFCC">
+            <Original>Crée un objet (ordinateur, téléphone, dossier, radio, caisse…) à la position du module et le rend exploitable SSE. L'objet devient éditable par les Zeus.</Original>
+            <English>Crée un objet (ordinateur, téléphone, dossier, radio, caisse…) à la position du module et le rend exploitable SSE. L'objet devient éditable par les Zeus.</English>
+            <French>Crée un objet (ordinateur, téléphone, dossier, radio, caisse…) à la position du module et le rend exploitable SSE. L'objet devient éditable par les Zeus.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7E2991EECF">
+            <Original>Rattaché à l'organisation</Original>
+            <English>Rattaché à l'organisation</English>
+            <French>Rattaché à l'organisation</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7E91360C00">
+            <Original>Nom de variable d'une autre unité (ou son identifiant biométrique). Leurs ADN partageront des allèles : le laboratoire signalera la parenté.</Original>
+            <English>Nom de variable d'une autre unité (ou son identifiant biométrique). Leurs ADN partageront des allèles : le laboratoire signalera la parenté.</English>
+            <French>Nom de variable d'une autre unité (ou son identifiant biométrique). Leurs ADN partageront des allèles : le laboratoire signalera la parenté.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7EA2B3769C">
+            <Original>Référence stable du support (ex. PC-KESTREL-04). Sert de lien entre la mission et le laboratoire.</Original>
+            <English>Référence stable du support (ex. PC-KESTREL-04). Sert de lien entre la mission et le laboratoire.</English>
+            <French>Référence stable du support (ex. PC-KESTREL-04). Sert de lien entre la mission et le laboratoire.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7EEBB29A47">
+            <Original>Pack scénario</Original>
+            <English>Scenario pack</English>
+            <French>Pack scénario</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7F2A68EF59">
+            <Original>Générer un profil SSE</Original>
+            <English>Générer un profil SSE</English>
+            <French>Générer un profil SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7F73B0F8AB">
+            <Original>Tablette</Original>
+            <English>Tablet</English>
+            <French>Tablette</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7FAF9B4872">
+            <Original>Affichée par le terminal en cas de correspondance. Laisser vide pour génération automatique.</Original>
+            <English>Affichée par le terminal en cas de correspondance. Laisser vide pour génération automatique.</English>
+            <French>Affichée par le terminal en cas de correspondance. Laisser vide pour génération automatique.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_7FF20370C8">
+            <Original>Nom</Original>
+            <English>Name</English>
+            <French>Nom</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_808251D98E">
+            <Original>Paquet 1 — entités (une par ligne)</Original>
+            <English>Paquet 1 — entités (une par ligne)</English>
+            <French>Paquet 1 — entités (une par ligne)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_81740FA951">
+            <Original>Détermine si un interprète est nécessaire pour l'entretien.</Original>
+            <English>Détermine si un interprète est nécessaire pour l'entretien.</English>
+            <French>Détermine si un interprète est nécessaire pour l'entretien.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_824AA3F775">
+            <Original>Intitulé affiché de la deuxième pièce (vide = pas de pièce 2).</Original>
+            <English>Intitulé affiché de la deuxième pièce (vide = pas de pièce 2).</English>
+            <French>Intitulé affiché de la deuxième pièce (vide = pas de pièce 2).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8285B56EE8">
+            <Original>Brouillon — papier froissé</Original>
+            <English>Draft - crumpled paper</English>
+            <French>Brouillon — papier froissé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_82929654C4">
+            <Original>Décoché : le contenu est généré au premier examen (plus léger).</Original>
+            <English>Unticked: content is generated on first examination (lighter).</English>
+            <French>Décoché : le contenu est généré au premier examen (plus léger).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_82C181917F">
+            <Original>Enrôlé, non signalé</Original>
+            <English>Enrolled, not flagged</English>
+            <French>Enrôlé, non signalé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_847E74EACA">
+            <Original>ID réseau</Original>
+            <English>ID réseau</English>
+            <French>ID réseau</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_85244C0B91">
+            <Original>Contacts (un par ligne)</Original>
+            <English>Contacts (un par ligne)</English>
+            <French>Contacts (un par ligne)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_85359FF17D">
+            <Original>Modules SSE</Original>
+            <English>Modules SSE</English>
+            <French>Modules SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_865E727F4F">
+            <Original>Titre dossier documentaire (optionnel)</Original>
+            <English>Titre dossier documentaire (optionnel)</English>
+            <French>Titre dossier documentaire (optionnel)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_866CA02F45">
+            <Original>Smartphone saisi</Original>
+            <English>Smartphone saisi</English>
+            <French>Smartphone saisi</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_86BC4AF6AC">
+            <Original>Sécurité scénarisée</Original>
+            <English>Scripted security</English>
+            <French>Sécurité scénarisée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_86CCB1FDFD">
+            <Original>Relie les personnes du site entre elles.</Original>
+            <English>Relie les personnes du site entre elles.</English>
+            <French>Relie les personnes du site entre elles.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_87EECD7729">
+            <Original>Personnel</Original>
+            <English>Personal</English>
+            <French>Personnel</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8A5DE7627B">
+            <Original>Extractible au câble DL-7</Original>
+            <English>Extractible au câble DL-7</English>
+            <French>Extractible au câble DL-7</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8AF850AA39">
+            <Original>Nom affiché sur la machine (ex. PC-BUREAU).</Original>
+            <English>Nom affiché sur la machine (ex. PC-BUREAU).</English>
+            <French>Nom affiché sur la machine (ex. PC-BUREAU).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8B82479022">
+            <Original>Rôle</Original>
+            <English>Role</English>
+            <French>Rôle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8B9A2A34FE">
+            <Original>Scénario</Original>
+            <English>Scenario</English>
+            <French>Scénario</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8BB01ACE3F">
+            <Original>Téléphone sur cette personne</Original>
+            <English>Téléphone sur cette personne</English>
+            <French>Téléphone sur cette personne</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8C266B946B">
+            <Original>Logistique</Original>
+            <English>Logistics</English>
+            <French>Logistique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8CBD195789">
+            <Original>Déclare une organisation. Synchronisez des personnes (ou le chef d'un groupe, pour tout le groupe) : elles en deviennent membres. Synchronisez des objets (documents, caches, véhicules) : les exploiter révèle l'organisation. Les joueurs la découvrent en jeu : contrôles, identifications, exploitation.</Original>
+            <English>Déclare une organisation. Synchronisez des personnes (ou le chef d'un groupe, pour tout le groupe) : elles en deviennent membres. Synchronisez des objets (documents, caches, véhicules) : les exploiter révèle l'organisation. Les joueurs la découvrent en jeu : contrôles, identifications, exploitation.</English>
+            <French>Déclare une organisation. Synchronisez des personnes (ou le chef d'un groupe, pour tout le groupe) : elles en deviennent membres. Synchronisez des objets (documents, caches, véhicules) : les exploiter révèle l'organisation. Les joueurs la découvrent en jeu : contrôles, identifications, exploitation.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8CED3222ED">
+            <Original>Langue parlée</Original>
+            <English>Spoken language</English>
+            <French>Langue parlée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8CEE6A1955">
+            <Original>Même graine, mêmes personnes : même organisation. 0 = aléatoire.</Original>
+            <English>Même graine, mêmes personnes : même organisation. 0 = aléatoire.</English>
+            <French>Même graine, mêmes personnes : même organisation. 0 = aléatoire.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8E786C76A8">
+            <Original>COMSPEC SSE — Téléphone</Original>
+            <English>COMSPEC SSE — Téléphone</English>
+            <French>COMSPEC SSE — Téléphone</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8ECD3BB5A9">
+            <Original>Consulter les données SSE</Original>
+            <English>Consulter les données SSE</English>
+            <French>Consulter les données SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8EF80BA73D">
+            <Original>Kit ADN SSE</Original>
+            <English>Kit ADN SSE</English>
+            <French>Kit ADN SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8F6B5DD607">
+            <Original>Détermine si un interprète est nécessaire. Vide = génération automatique.</Original>
+            <English>Détermine si un interprète est nécessaire. Vide = génération automatique.</English>
+            <French>Détermine si un interprète est nécessaire. Vide = génération automatique.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8F9A093B0E">
+            <Original>Numéro associé à la personne (indépendant du téléphone saisi). Vide = génération automatique.</Original>
+            <English>Numéro associé à la personne (indépendant du téléphone saisi). Vide = génération automatique.</English>
+            <French>Numéro associé à la personne (indépendant du téléphone saisi). Vide = génération automatique.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_8FB8E11D7C">
+            <Original>ID d'un modèle (ex. builtin_chef_hvt). Prioritaire sur le profil si renseigné.</Original>
+            <English>ID d'un modèle (ex. builtin_chef_hvt). Prioritaire sur le profil si renseigné.</English>
+            <French>ID d'un modèle (ex. builtin_chef_hvt). Prioritaire sur le profil si renseigné.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_91AFA678C0">
+            <Original>Un fragment ou un leurre devra être corroboré.</Original>
+            <English>A fragment or decoy will need to be corroborated.</English>
+            <French>Un fragment ou un leurre devra être corroboré.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_91B1EF61F7">
+            <Original>Sauvegarder à la fin de la mission</Original>
+            <English>Sauvegarder à la fin de la mission</English>
+            <French>Sauvegarder à la fin de la mission</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_91F500D4DD">
+            <Original>Applique un modèle SSE (intégré, mission ou local) sur la cible. Zeus : sans identifiant, la liste des modèles s'ouvre.</Original>
+            <English>Applique un modèle SSE (intégré, mission ou local) sur la cible. Zeus : sans identifiant, la liste des modèles s'ouvre.</English>
+            <French>Applique un modèle SSE (intégré, mission ou local) sur la cible. Zeus : sans identifiant, la liste des modèles s'ouvre.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9260BC8B10">
+            <Original>Documents sur cette personne</Original>
+            <English>Documents sur cette personne</English>
+            <French>Documents sur cette personne</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9399696D1F">
+            <Original>Cataracte</Original>
+            <English>Cataract</English>
+            <French>Cataracte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_93B9028CAE">
+            <Original>Sans unité synchronisée ni attachée, seuls les joueurs dans ce rayon autour du module reçoivent le terminal. Garder court (25 m par défaut) pour ne pas doter toute une compagnie.</Original>
+            <English>Sans unité synchronisée ni attachée, seuls les joueurs dans ce rayon autour du module reçoivent le terminal. Garder court (25 m par défaut) pour ne pas doter toute une compagnie.</English>
+            <French>Sans unité synchronisée ni attachée, seuls les joueurs dans ce rayon autour du module reçoivent le terminal. Garder court (25 m par défaut) pour ne pas doter toute une compagnie.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_94E2F3EE14">
+            <Original>Mot de passe</Original>
+            <English>Password</English>
+            <French>Mot de passe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_97231AC7E7">
+            <Original>Immédiat</Original>
+            <English>Immédiat</English>
+            <French>Immédiat</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9749BC9270">
+            <Original>Inconnu de toute base</Original>
+            <English>Unknown to any database</English>
+            <French>Inconnu de toute base</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_975C7AF748">
+            <Original>Watchlist tier 3 · QUESTION / DENY ACCESS</Original>
+            <English>Watchlist tier 3 · QUESTION / DENY ACCESS</English>
+            <French>Watchlist tier 3 · QUESTION / DENY ACCESS</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_97C89A4D66">
+            <Original>Action</Original>
+            <English>Action</English>
+            <French>Action</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_97F6976933">
+            <Original>Enfant</Original>
+            <English>Child</English>
+            <French>Enfant</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_99035C61FD">
+            <Original>Notes du téléphone (une par ligne)</Original>
+            <English>Notes du téléphone (une par ligne)</English>
+            <French>Notes du téléphone (une par ligne)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_997405DE96">
+            <Original>Ex. PC-KESTREL-04. Vide = identifiant automatique.</Original>
+            <English>E.g. PC-KESTREL-04. Empty = automatic ID.</English>
+            <French>Ex. PC-KESTREL-04. Vide = identifiant automatique.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_99FA083267">
+            <Original>Ce que ce sujet est pour l'unité désignée ci-dessus.</Original>
+            <English>Ce que ce sujet est pour l'unité désignée ci-dessus.</English>
+            <French>Ce que ce sujet est pour l'unité désignée ci-dessus.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9A36AFA781">
+            <Original>Faux papiers</Original>
+            <English>False papers</English>
+            <French>Faux papiers</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9A715CB0F1">
+            <Original>Le SSE (Sensitive Site Exploitation) exploite tout ce qu'on trouve sur un objectif : personnes, corps, documents, téléphones, ordinateurs, caches.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Où sont les actions&lt;/t&gt;&lt;br/&gt;Menu ACE (touche Windows) sur une personne ou un objet : COMSPEC SSE. Menu ACE personnel (Ctrl+Windows) : COMSPEC SSE pour le journal, le terminal, le tableau des liens, le registre des scellés, la campagne et ce guide.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Le matériel&lt;/t&gt;&lt;br/&gt;Terminal SEEK II (relevés biométriques), kit d'empreintes, kit ADN, appareil photo, sachets de preuve, gants, sac de tête. « Équiper le kit SSE » dans le menu personnel donne le kit de base.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Raccourci&lt;/t&gt;&lt;br/&gt;Ctrl+Maj+S ouvre le terminal SEEK.</Original>
+            <English>Le SSE (Sensitive Site Exploitation) exploite tout ce qu'on trouve sur un objectif : personnes, corps, documents, téléphones, ordinateurs, caches.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Où sont les actions&lt;/t&gt;&lt;br/&gt;Menu ACE (touche Windows) sur une personne ou un objet : COMSPEC SSE. Menu ACE personnel (Ctrl+Windows) : COMSPEC SSE pour le journal, le terminal, le tableau des liens, le registre des scellés, la campagne et ce guide.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Le matériel&lt;/t&gt;&lt;br/&gt;Terminal SEEK II (relevés biométriques), kit d'empreintes, kit ADN, appareil photo, sachets de preuve, gants, sac de tête. « Équiper le kit SSE » dans le menu personnel donne le kit de base.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Raccourci&lt;/t&gt;&lt;br/&gt;Ctrl+Maj+S ouvre le terminal SEEK.</English>
+            <French>Le SSE (Sensitive Site Exploitation) exploite tout ce qu'on trouve sur un objectif : personnes, corps, documents, téléphones, ordinateurs, caches.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Où sont les actions&lt;/t&gt;&lt;br/&gt;Menu ACE (touche Windows) sur une personne ou un objet : COMSPEC SSE. Menu ACE personnel (Ctrl+Windows) : COMSPEC SSE pour le journal, le terminal, le tableau des liens, le registre des scellés, la campagne et ce guide.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Le matériel&lt;/t&gt;&lt;br/&gt;Terminal SEEK II (relevés biométriques), kit d'empreintes, kit ADN, appareil photo, sachets de preuve, gants, sac de tête. « Équiper le kit SSE » dans le menu personnel donne le kit de base.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Raccourci&lt;/t&gt;&lt;br/&gt;Ctrl+Maj+S ouvre le terminal SEEK.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9B8BFED207">
+            <Original>Fixe la référence de dossier (ex. SSE-2026-0007) utilisée pour toutes les fiches transmises vers Athena.</Original>
+            <English>Fixe la référence de dossier (ex. SSE-2026-0007) utilisée pour toutes les fiches transmises vers Athena.</English>
+            <French>Fixe la référence de dossier (ex. SSE-2026-0007) utilisée pour toutes les fiches transmises vers Athena.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9BC060EDCD">
+            <Original>Numérotation FBI : 1 pouce D … 5 auriculaire D, 6 pouce G … 10 auriculaire G. Ex. 2,7</Original>
+            <English>FBI numbering: 1 right thumb ... 5 right little finger, 6 left thumb ... 10 left little finger. E.g. 2,7</English>
+            <French>Numérotation FBI : 1 pouce D … 5 auriculaire D, 6 pouce G … 10 auriculaire G. Ex. 2,7</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9C82969A84">
+            <Original>30 secondes</Original>
+            <English>30 secondes</English>
+            <French>30 secondes</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9CF741A9FE">
+            <Original>Documents papier liés au réseau.</Original>
+            <English>Paper documents linked to the network.</English>
+            <French>Documents papier liés au réseau.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9D0EA0FAAD">
+            <Original>Ex. « cellule de 3 financiers », « atelier IED », « chef et courrier ». Ignoré si un pack est choisi.</Original>
+            <English>E.g. "3-financier cell", "IED workshop", "leader and courier". Ignored if a pack is chosen.</English>
+            <French>Ex. « cellule de 3 financiers », « atelier IED », « chef et courrier ». Ignoré si un pack est choisi.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9D41DC238C">
+            <Original>Carte SD / microSD collectée sur site.</Original>
+            <English>Carte SD / microSD collectée sur site.</English>
+            <French>Carte SD / microSD collectée sur site.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9E7DD41778">
+            <Original>Indice de confiance imposé (-1 = automatique)</Original>
+            <English>Indice de confiance imposé (-1 = automatique)</English>
+            <French>Indice de confiance imposé (-1 = automatique)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_9FA7DC4B0C">
+            <Original>Numérique et câble DL-7</Original>
+            <English>Numérique et câble DL-7</English>
+            <French>Numérique et câble DL-7</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A009479765">
+            <Original>Toutes les entités SSE de ce rayon perdent leurs données.</Original>
+            <English>All SSE entities within this radius lose their data.</English>
+            <French>Toutes les entités SSE de ce rayon perdent leurs données.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A0995A97B3">
+            <Original>Paquet 2 — qualité</Original>
+            <English>Paquet 2 — qualité</English>
+            <French>Paquet 2 — qualité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A0BDD5B10B">
+            <Original>Crée des liens dans le graphe de renseignement. Eden : synchronisez au moins deux entités. Zeus : sélectionnez-les puis posez le module sur l'une d'elles.</Original>
+            <English>Crée des liens dans le graphe de renseignement. Eden : synchronisez au moins deux entités. Zeus : sélectionnez-les puis posez le module sur l'une d'elles.</English>
+            <French>Crée des liens dans le graphe de renseignement. Eden : synchronisez au moins deux entités. Zeus : sélectionnez-les puis posez le module sur l'une d'elles.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A0C18D0B0C">
+            <Original>Gants jetables pour manipulation de preuves.</Original>
+            <English>Gants jetables pour manipulation de preuves.</English>
+            <French>Gants jetables pour manipulation de preuves.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A17E72E6BD">
+            <Original>Fichiers (un nom par ligne)</Original>
+            <English>Fichiers (un nom par ligne)</English>
+            <French>Fichiers (un nom par ligne)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A22EE63F5C">
+            <Original>Pièce 2 — contenu</Original>
+            <English>Pièce 2 — contenu</English>
+            <French>Pièce 2 — contenu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A23CBDE313">
+            <Original>Scénario prédéfini (prioritaire sur le brief).</Original>
+            <English>Scénario prédéfini (prioritaire sur le brief).</English>
+            <French>Scénario prédéfini (prioritaire sur le brief).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A2556E2679">
+            <Original>Peut être un leurre</Original>
+            <English>May be a decoy</English>
+            <French>Peut être un leurre</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A2950F421E">
+            <Original>Pièce 3 — grille</Original>
+            <English>Pièce 3 — grille</English>
+            <French>Pièce 3 — grille</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A3244D7CD1">
+            <Original>Compte rendu de fin de mission (complétude, éléments exploités) et export du graphe de renseignement.</Original>
+            <English>Compte rendu de fin de mission (complétude, éléments exploités) et export du graphe de renseignement.</English>
+            <French>Compte rendu de fin de mission (complétude, éléments exploités) et export du graphe de renseignement.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A351AF061A">
+            <Original>Modèle préfait</Original>
+            <English>Prefab template</English>
+            <French>Modèle préfait</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A355663EEA">
+            <Original>Présence dans la base et niveau de watchlist (BEWL). Automatique : selon le camp.</Original>
+            <English>Présence dans la base et niveau de watchlist (BEWL). Automatique : selon le camp.</English>
+            <French>Présence dans la base et niveau de watchlist (BEWL). Automatique : selon le camp.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A3D3991651">
+            <Original>Génération automatique (défaut)</Original>
+            <English>Automatic generation (default)</English>
+            <French>Génération automatique (défaut)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A48482A2F9">
+            <Original>Alias connu</Original>
+            <English>Known alias</English>
+            <French>Alias connu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A545BBF213">
+            <Original>Automatique : un PC peut apparaître selon la richesse. Personnaliser : les champs ci-dessous composent l’ordinateur. Ne pas inclure : pas d’ordinateur.</Original>
+            <English>Automatique : un PC peut apparaître selon la richesse. Personnaliser : les champs ci-dessous composent l’ordinateur. Ne pas inclure : pas d’ordinateur.</English>
+            <French>Automatique : un PC peut apparaître selon la richesse. Personnaliser : les champs ci-dessous composent l’ordinateur. Ne pas inclure : pas d’ordinateur.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A56250A2F0">
+            <Original>Durée et pauvreté du contenu à distance. Ce n’est pas un vrai chiffrement.</Original>
+            <English>Durée et pauvreté du contenu à distance. Ce n’est pas un vrai chiffrement.</English>
+            <French>Durée et pauvreté du contenu à distance. Ce n’est pas un vrai chiffrement.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A709CD819D">
+            <Original>Affiche les modèles SSE disponibles (intégrés, mission, locaux).</Original>
+            <English>Affiche les modèles SSE disponibles (intégrés, mission, locaux).</English>
+            <French>Affiche les modèles SSE disponibles (intégrés, mission, locaux).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A70A7140C5">
+            <Original>Carte mémoire saisie</Original>
+            <English>Carte mémoire saisie</English>
+            <French>Carte mémoire saisie</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A7112BB3C2">
+            <Original>Synchronisez un déclencheur : à son activation, la campagne est sauvegardée (ou le drill temporaire vidé).</Original>
+            <English>Synchronisez un déclencheur : à son activation, la campagne est sauvegardée (ou le drill temporaire vidé).</English>
+            <French>Synchronisez un déclencheur : à son activation, la campagne est sauvegardée (ou le drill temporaire vidé).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A721993901">
+            <Original>Non</Original>
+            <English>No</English>
+            <French>Non</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A773143115">
+            <Original>Disque dur</Original>
+            <English>Disque dur</English>
+            <French>Disque dur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A77A7789A1">
+            <Original>Données inutiles (%)</Original>
+            <English>Données inutiles (%)</English>
+            <French>Données inutiles (%)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A83AA8FE95">
+            <Original>Afficher les liens 3D</Original>
+            <English>Show 3D links</English>
+            <French>Afficher les liens 3D</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A847407C06">
+            <Original>Poser un point carte</Original>
+            <English>Place a map point</English>
+            <French>Poser un point carte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A873796D42">
+            <Original>Téléphones, ordinateurs, clés USB et radios contiennent des fichiers, des messages, des contacts, des identifiants et des lieux générés par le SSE.&lt;br/&gt;&lt;br/&gt;Avec l'ATAK natif et le câble DL-7, un opérateur se branche sur un appareil et en télécharge le contenu : mot de passe, indice, forçage, alarme, effacement selon ce que le chef de mission a prévu.</Original>
+            <English>Téléphones, ordinateurs, clés USB et radios contiennent des fichiers, des messages, des contacts, des identifiants et des lieux générés par le SSE.&lt;br/&gt;&lt;br/&gt;Avec l'ATAK natif et le câble DL-7, un opérateur se branche sur un appareil et en télécharge le contenu : mot de passe, indice, forçage, alarme, effacement selon ce que le chef de mission a prévu.</English>
+            <French>Téléphones, ordinateurs, clés USB et radios contiennent des fichiers, des messages, des contacts, des identifiants et des lieux générés par le SSE.&lt;br/&gt;&lt;br/&gt;Avec l'ATAK natif et le câble DL-7, un opérateur se branche sur un appareil et en télécharge le contenu : mot de passe, indice, forçage, alarme, effacement selon ce que le chef de mission a prévu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A881B9C0E8">
+            <Original>Gestionnaire de site SSE</Original>
+            <English>SSE site manager</English>
+            <French>Gestionnaire de site SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A96C9B7E3A">
+            <Original>Ce que le joueur lira. Les entités liées se saisissent ci-dessous, une par ligne.</Original>
+            <English>Ce que le joueur lira. Les entités liées se saisissent ci-dessous, une par ligne.</English>
+            <French>Ce que le joueur lira. Les entités liées se saisissent ci-dessous, une par ligne.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_A9FFF95001">
+            <Original>Pièce 3 — contenu</Original>
+            <English>Pièce 3 — contenu</English>
+            <French>Pièce 3 — contenu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_AA363E785D">
+            <Original>DL-7 · Remettre un support à zéro</Original>
+            <English>DL-7 · Remettre un support à zéro</English>
+            <French>DL-7 · Remettre un support à zéro</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_AB02ADDCB1">
+            <Original>Groupe ou structure fictive.</Original>
+            <English>Fictional group or structure.</English>
+            <French>Groupe ou structure fictive.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_AB286255D9">
+            <Original>Change le palier d'accès du support. Au palier « accès établi », les contenus prévus pour ce palier rejoignent la file.</Original>
+            <English>Change le palier d'accès du support. Au palier « accès établi », les contenus prévus pour ce palier rejoignent la file.</English>
+            <French>Change le palier d'accès du support. Au palier « accès établi », les contenus prévus pour ce palier rejoignent la file.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_AC5486390A">
+            <Original>Personnes concernées autour du module.</Original>
+            <English>People affected around the module.</English>
+            <French>Personnes concernées autour du module.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_AC66EEB9F9">
+            <Original>Blocs séparés par une ligne « --- ». Première ligne : « nom | type | taille Ko » (texte, document, identifiants, coord, image, audio), puis le contenu.</Original>
+            <English>Blocs séparés par une ligne « --- ». Première ligne : « nom | type | taille Ko » (texte, document, identifiants, coord, image, audio), puis le contenu.</English>
+            <French>Blocs séparés par une ligne « --- ». Première ligne : « nom | type | taille Ko » (texte, document, identifiants, coord, image, audio), puis le contenu.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_ACDEF74322">
+            <Original>Chaque personnage a ses propres empreintes (dix doigts, minuties, classification de Henry), ses iris, son visage et son ADN. Deux personnages différents ne partagent jamais une biométrie.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Relever&lt;/t&gt;&lt;br/&gt;Sur le sujet, menu ACE, SSE : empreintes, iris, visage, ADN, ou tout. Sur un corps, l'opérateur s'agenouille ; un sujet debout et coopérant tend la main.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;La qualité compte&lt;/t&gt;&lt;br/&gt;Nuit, pluie, sujet agité, corps ancien, mains ou visage blessés (ACE) dégradent la qualité ; trop abîmé, le relevé est impossible. Un mauvais relevé peut rater la bonne personne ou sortir un faux candidat « à confirmer ».&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Interroger la base&lt;/t&gt;&lt;br/&gt;Hors liaison, le terminal ne connaît que sa base locale. En liaison, la recherche part sur l'ABIS. Résultats : MATCH, correspondance possible, NO MATCH, alerte de faux papiers. L'ADN part au laboratoire : résultat différé.</Original>
+            <English>Chaque personnage a ses propres empreintes (dix doigts, minuties, classification de Henry), ses iris, son visage et son ADN. Deux personnages différents ne partagent jamais une biométrie.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Relever&lt;/t&gt;&lt;br/&gt;Sur le sujet, menu ACE, SSE : empreintes, iris, visage, ADN, ou tout. Sur un corps, l'opérateur s'agenouille ; un sujet debout et coopérant tend la main.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;La qualité compte&lt;/t&gt;&lt;br/&gt;Nuit, pluie, sujet agité, corps ancien, mains ou visage blessés (ACE) dégradent la qualité ; trop abîmé, le relevé est impossible. Un mauvais relevé peut rater la bonne personne ou sortir un faux candidat « à confirmer ».&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Interroger la base&lt;/t&gt;&lt;br/&gt;Hors liaison, le terminal ne connaît que sa base locale. En liaison, la recherche part sur l'ABIS. Résultats : MATCH, correspondance possible, NO MATCH, alerte de faux papiers. L'ADN part au laboratoire : résultat différé.</English>
+            <French>Chaque personnage a ses propres empreintes (dix doigts, minuties, classification de Henry), ses iris, son visage et son ADN. Deux personnages différents ne partagent jamais une biométrie.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Relever&lt;/t&gt;&lt;br/&gt;Sur le sujet, menu ACE, SSE : empreintes, iris, visage, ADN, ou tout. Sur un corps, l'opérateur s'agenouille ; un sujet debout et coopérant tend la main.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;La qualité compte&lt;/t&gt;&lt;br/&gt;Nuit, pluie, sujet agité, corps ancien, mains ou visage blessés (ACE) dégradent la qualité ; trop abîmé, le relevé est impossible. Un mauvais relevé peut rater la bonne personne ou sortir un faux candidat « à confirmer ».&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Interroger la base&lt;/t&gt;&lt;br/&gt;Hors liaison, le terminal ne connaît que sa base locale. En liaison, la recherche part sur l'ABIS. Résultats : MATCH, correspondance possible, NO MATCH, alerte de faux papiers. L'ADN part au laboratoire : résultat différé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_AE206F9F36">
+            <Original>Site d'entraînement SSE</Original>
+            <English>SSE training site</English>
+            <French>Site d'entraînement SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_AED4789BAC">
+            <Original>Ce que les joueurs liront une fois l'organisation repérée.</Original>
+            <English>Ce que les joueurs liront une fois l'organisation repérée.</English>
+            <French>Ce que les joueurs liront une fois l'organisation repérée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_AF7756A553">
+            <Original>Durée du forçage (s)</Original>
+            <English>Breach duration (s)</English>
+            <French>Durée du forçage (s)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_AFED6653E7">
+            <Original>Prothèse œil gauche</Original>
+            <English>Left eye prosthesis</English>
+            <French>Prothèse œil gauche</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B019C6DD4A">
+            <Original>DL-7 · Données à extraire au câble</Original>
+            <English>DL-7 · Données à extraire au câble</English>
+            <French>DL-7 · Données à extraire au câble</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B0F0414D47">
+            <Original>Organisation (réseau, cellule, clan...)</Original>
+            <English>Organisation (réseau, cellule, clan...)</English>
+            <French>Organisation (réseau, cellule, clan...)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B11BF19E3F">
+            <Original>Radio</Original>
+            <English>Radio</English>
+            <French>Radio</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B1BF2043C0">
+            <Original>Pose le contrat d'intelligence numérique sur l'objet (ordinateur, téléphone, radio…). Même schéma que les attributs Eden. Aucun moteur technique : le laboratoire lit ce que vous saisissez.</Original>
+            <English>Pose le contrat d'intelligence numérique sur l'objet (ordinateur, téléphone, radio…). Même schéma que les attributs Eden. Aucun moteur technique : le laboratoire lit ce que vous saisissez.</English>
+            <French>Pose le contrat d'intelligence numérique sur l'objet (ordinateur, téléphone, radio…). Même schéma que les attributs Eden. Aucun moteur technique : le laboratoire lit ce que vous saisissez.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B27FD8908E">
+            <Original>Ajoute un renseignement scénarisé pendant la mission. Posez le module sur un objet (pas une personne).</Original>
+            <English>Ajoute un renseignement scénarisé pendant la mission. Posez le module sur un objet (pas une personne).</English>
+            <French>Ajoute un renseignement scénarisé pendant la mission. Posez le module sur un objet (pas une personne).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B2EF3D8634">
+            <Original>Relevés biométriques</Original>
+            <English>Relevés biométriques</English>
+            <French>Relevés biométriques</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B37456C453">
+            <Original>Contact</Original>
+            <English>Contact</English>
+            <French>Contact</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B37A519E31">
+            <Original>Référence du dossier</Original>
+            <English>File reference</English>
+            <French>Référence du dossier</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B3D29703D1">
+            <Original>Texte du bandeau rouge en tête de feuille. Vide = texte du modèle.</Original>
+            <English>Texte du bandeau rouge en tête de feuille. Vide = texte du modèle.</English>
+            <French>Texte du bandeau rouge en tête de feuille. Vide = texte du modèle.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B481F13022">
+            <Original>Alias sous lequel les services le connaissent.</Original>
+            <English>Alias sous lequel les services le connaissent.</English>
+            <French>Alias sous lequel les services le connaissent.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B4AB955A65">
+            <Original>Paquet 2 — type</Original>
+            <English>Paquet 2 — type</English>
+            <French>Paquet 2 — type</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B528BC522D">
+            <Original>Directeur de scénario (dataset / niveau)</Original>
+            <English>Directeur de scénario (dataset / niveau)</English>
+            <French>Directeur de scénario (dataset / niveau)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B59B00E2C9">
+            <Original>&lt;t color='#7fd08a'&gt;La chaîne de possession&lt;/t&gt;&lt;br/&gt;Collecter un objet ouvre une pièce (numéro P-dossier-0001). La mettre sous scellé lui donne un numéro de scellé (SC-...). Chaque geste s'inscrit au journal de la pièce : date, heure, qui, où.&lt;br/&gt;&lt;br/&gt;Exploiter une pièce scellée brise d'abord le scellé (inscrit) ; pensez à la resceller : nouveau numéro, l'ancien reste au journal.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Remettre les pièces&lt;/t&gt;&lt;br/&gt;Menu ACE sur un équipier : « Remettre mes pièces scellées ». La remise est inscrite et le détenteur change.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Un journal infalsifiable&lt;/t&gt;&lt;br/&gt;Chaque ligne porte l'empreinte de la précédente. Une ligne modifiée après coup apparaît en rouge au registre (menu personnel, Registre des scellés).</Original>
+            <English>&lt;t color='#7fd08a'&gt;La chaîne de possession&lt;/t&gt;&lt;br/&gt;Collecter un objet ouvre une pièce (numéro P-dossier-0001). La mettre sous scellé lui donne un numéro de scellé (SC-...). Chaque geste s'inscrit au journal de la pièce : date, heure, qui, où.&lt;br/&gt;&lt;br/&gt;Exploiter une pièce scellée brise d'abord le scellé (inscrit) ; pensez à la resceller : nouveau numéro, l'ancien reste au journal.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Remettre les pièces&lt;/t&gt;&lt;br/&gt;Menu ACE sur un équipier : « Remettre mes pièces scellées ». La remise est inscrite et le détenteur change.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Un journal infalsifiable&lt;/t&gt;&lt;br/&gt;Chaque ligne porte l'empreinte de la précédente. Une ligne modifiée après coup apparaît en rouge au registre (menu personnel, Registre des scellés).</English>
+            <French>&lt;t color='#7fd08a'&gt;La chaîne de possession&lt;/t&gt;&lt;br/&gt;Collecter un objet ouvre une pièce (numéro P-dossier-0001). La mettre sous scellé lui donne un numéro de scellé (SC-...). Chaque geste s'inscrit au journal de la pièce : date, heure, qui, où.&lt;br/&gt;&lt;br/&gt;Exploiter une pièce scellée brise d'abord le scellé (inscrit) ; pensez à la resceller : nouveau numéro, l'ancien reste au journal.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Remettre les pièces&lt;/t&gt;&lt;br/&gt;Menu ACE sur un équipier : « Remettre mes pièces scellées ». La remise est inscrite et le détenteur change.&lt;br/&gt;&lt;br/&gt;&lt;t color='#7fd08a'&gt;Un journal infalsifiable&lt;/t&gt;&lt;br/&gt;Chaque ligne porte l'empreinte de la précédente. Une ligne modifiée après coup apparaît en rouge au registre (menu personnel, Registre des scellés).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B5D15CFC78">
+            <Original>Découvert</Original>
+            <English>Discovered</English>
+            <French>Découvert</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B6A1DA696E">
+            <Original>Paquet 1 — canal</Original>
+            <English>Paquet 1 — canal</English>
+            <French>Paquet 1 — canal</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B6C099B1B7">
+            <Original>Pièce 2 — mot de code</Original>
+            <English>Pièce 2 — mot de code</English>
+            <French>Pièce 2 — mot de code</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B6E32D0967">
+            <Original>COMSPEC SSE — Renseignement</Original>
+            <English>COMSPEC SSE — Renseignement</English>
+            <French>COMSPEC SSE — Renseignement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B72C6C2193">
+            <Original>Vide = accès libre. Pensez à le cacher ailleurs : document, autre appareil, interrogatoire.</Original>
+            <English>Vide = accès libre. Pensez à le cacher ailleurs : document, autre appareil, interrogatoire.</English>
+            <French>Vide = accès libre. Pensez à le cacher ailleurs : document, autre appareil, interrogatoire.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B80CA83E9F">
+            <Original>Saisie et scellés</Original>
+            <English>Saisie et scellés</English>
+            <French>Saisie et scellés</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B8C77BEB16">
+            <Original>Cellule</Original>
+            <English>Cell</English>
+            <French>Cellule</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B8FDDCC5A5">
+            <Original>Ordinateur portable saisi</Original>
+            <English>Ordinateur portable saisi</English>
+            <French>Ordinateur portable saisi</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B91825801A">
+            <Original>Prothèse œil droit</Original>
+            <English>Right eye prosthesis</English>
+            <French>Prothèse œil droit</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_B972CCAE08">
+            <Original>Clé USB</Original>
+            <English>USB drive</English>
+            <French>Clé USB</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BA0ADC5959">
+            <Original>Fixer la graine rend le sujet identique d'une session à l'autre — utile pour un scénario rejoué ou une séance de formation. 0 laisse dériver de l'identifiant réseau.</Original>
+            <English>Fixer la graine rend le sujet identique d'une session à l'autre — utile pour un scénario rejoué ou une séance de formation. 0 laisse dériver de l'identifiant réseau.</English>
+            <French>Fixer la graine rend le sujet identique d'une session à l'autre — utile pour un scénario rejoué ou une séance de formation. 0 laisse dériver de l'identifiant réseau.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BA4FEC0445">
+            <Original>Ordinateur sur cette personne</Original>
+            <English>Ordinateur sur cette personne</English>
+            <French>Ordinateur sur cette personne</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BA85DC89ED">
+            <Original>Sirène, Zeus prévenu, position du pirate révélée aux ennemis proches.</Original>
+            <English>Sirène, Zeus prévenu, position du pirate révélée aux ennemis proches.</English>
+            <French>Sirène, Zeus prévenu, position du pirate révélée aux ennemis proches.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BA9C7D1B15">
+            <Original>Les personnes et objets dans ce rayon forment le réseau.</Original>
+            <English>People and objects within this radius form the network.</English>
+            <French>Les personnes et objets dans ce rayon forment le réseau.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BAA823183D">
+            <Original>Générer automatiquement</Original>
+            <English>Générer automatiquement</English>
+            <French>Générer automatiquement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BAC6C711FD">
+            <Original>Identifiant du dataset (falcon recommandé).</Original>
+            <English>Identifiant du dataset (falcon recommandé).</English>
+            <French>Identifiant du dataset (falcon recommandé).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BAE804BBA0">
+            <Original>Campagne SSE (charger ou créer)</Original>
+            <English>Campagne SSE (charger ou créer)</English>
+            <French>Campagne SSE (charger ou créer)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BAFBFBA73A">
+            <Original>Fréquence</Original>
+            <English>Frequency</English>
+            <French>Fréquence</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BBF1B1F6C6">
+            <Original>Notes Zeus</Original>
+            <English>Notes Zeus</English>
+            <French>Notes Zeus</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BBF98C00EA">
+            <Original>Téléphone mobile collecté.</Original>
+            <English>Téléphone mobile collecté.</English>
+            <French>Téléphone mobile collecté.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BC5DE8C5EA">
+            <Original>Objets exploitables (max)</Original>
+            <English>Exploitable objects (max)</English>
+            <French>Objets exploitables (max)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BDDC7ADB12">
+            <Original>Nature</Original>
+            <English>Nature</English>
+            <French>Nature</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BDE87EFDEA">
+            <Original>Courrier — extrait</Original>
+            <English>Courrier — extrait</English>
+            <French>Courrier — extrait</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BE09B59B17">
+            <Original>Intelligence numérique (DOMEX)</Original>
+            <English>Digital intelligence (DOMEX)</English>
+            <French>Intelligence numérique (DOMEX)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BE68E61364">
+            <Original>Laisser vide pour laisser le terminal proposer un nom cohérent avec le sujet.</Original>
+            <English>Laisser vide pour laisser le terminal proposer un nom cohérent avec le sujet.</English>
+            <French>Laisser vide pour laisser le terminal proposer un nom cohérent avec le sujet.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BEAF7B27AC">
+            <Original>Identifiant d'une autre campagne : ses personnages et organisations, sans rien de découvert. Pour un drill réaliste sur le réseau de la vraie campagne.</Original>
+            <English>Identifiant d'une autre campagne : ses personnages et organisations, sans rien de découvert. Pour un drill réaliste sur le réseau de la vraie campagne.</English>
+            <French>Identifiant d'une autre campagne : ses personnages et organisations, sans rien de découvert. Pour un drill réaliste sur le réseau de la vraie campagne.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BEDC037381">
+            <Original>Au palier « accès établi »</Original>
+            <English>Au palier « accès établi »</English>
+            <French>Au palier « accès établi »</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BFA1E8BF60">
+            <Original>Ex. builtin_chef_hvt, builtin_cellule_insurgee_irak. Vide en Zeus = choisir dans la liste.</Original>
+            <English>Ex. builtin_chef_hvt, builtin_cellule_insurgee_irak. Vide en Zeus = choisir dans la liste.</English>
+            <French>Ex. builtin_chef_hvt, builtin_cellule_insurgee_irak. Vide en Zeus = choisir dans la liste.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BFFAB189C7">
+            <Original>Numérique</Original>
+            <English>Digital</English>
+            <French>Numérique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_BFFE9D485C">
+            <Original>Complément d’identité (usage avancé)</Original>
+            <English>Complément d’identité (usage avancé)</English>
+            <French>Complément d’identité (usage avancé)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C1AD41F8F0">
+            <Original>Le nom déclaré (panneau Identité ou SSE) n'est pas le vrai : seule une correspondance biométrique le révèle.</Original>
+            <English>Le nom déclaré (panneau Identité ou SSE) n'est pas le vrai : seule une correspondance biométrique le révèle.</English>
+            <French>Le nom déclaré (panneau Identité ou SSE) n'est pas le vrai : seule une correspondance biométrique le révèle.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C1C0201437">
+            <Original>Indice</Original>
+            <English>Hint</English>
+            <French>Indice</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C211FD39A4">
+            <Original>Radio / liaisons</Original>
+            <English>Radio / communications</English>
+            <French>Radio / liaisons</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C23ACC81C0">
+            <Original>Notes libres visibles uniquement côté préparation / Zeus.</Original>
+            <English>Notes libres visibles uniquement côté préparation / Zeus.</English>
+            <French>Notes libres visibles uniquement côté préparation / Zeus.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C2C5747AD0">
+            <Original>Générique</Original>
+            <English>Generic</English>
+            <French>Générique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C3162D0B05">
+            <Original>Présentation des documents SSE</Original>
+            <English>SSE document presentation</English>
+            <French>Présentation des documents SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C34AAD85BE">
+            <Original>Accès en cours</Original>
+            <English>Access in progress</English>
+            <French>Accès en cours</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C358CEA867">
+            <Original>Format : Expéditeur : texte du message</Original>
+            <English>Format : Expéditeur : texte du message</English>
+            <French>Format : Expéditeur : texte du message</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C36411F152">
+            <Original>Pièce 1 — contenu</Original>
+            <English>Pièce 1 — contenu</English>
+            <French>Pièce 1 — contenu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C4BA3E1DB8">
+            <Original>Ex. Relevé de comptes, ordre de mission, carte d’identité.</Original>
+            <English>Ex. Relevé de comptes, ordre de mission, carte d’identité.</English>
+            <French>Ex. Relevé de comptes, ordre de mission, carte d’identité.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C54AECDE5A">
+            <Original>Durée du transfert (s)</Original>
+            <English>Transfer duration (s)</English>
+            <French>Durée du transfert (s)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C5E048FE44">
+            <Original>Sachet stérile pour collecte et mise sous scellé d'éléments de preuve.</Original>
+            <English>Sachet stérile pour collecte et mise sous scellé d'éléments de preuve.</English>
+            <French>Sachet stérile pour collecte et mise sous scellé d'éléments de preuve.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C682317A51">
+            <Original>Personnes et objets dans ce rayon.</Original>
+            <English>People and objects within this radius.</English>
+            <French>Personnes et objets dans ce rayon.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C77C2BCB7D">
+            <Original>Tout ce qui se trouve dans ce rayon est intégré au site.</Original>
+            <English>Tout ce qui se trouve dans ce rayon est intégré au site.</English>
+            <French>Tout ce qui se trouve dans ce rayon est intégré au site.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C7EB9F3AAD">
+            <Original>Nature de l'objet</Original>
+            <English>Object type</English>
+            <French>Nature de l'objet</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C850F67D9F">
+            <Original>Téléphone satellite saisi</Original>
+            <English>Téléphone satellite saisi</English>
+            <French>Téléphone satellite saisi</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C8549ECACC">
+            <Original>Lier les cibles entre elles</Original>
+            <English>Link targets together</English>
+            <French>Lier les cibles entre elles</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C881C96E3C">
+            <Original>Fixer la graine rend le sujet identique d'une session à l'autre — utile pour un scénario rejoué. 0 laisse dériver de l'identifiant réseau.</Original>
+            <English>Fixer la graine rend le sujet identique d'une session à l'autre — utile pour un scénario rejoué. 0 laisse dériver de l'identifiant réseau.</English>
+            <French>Fixer la graine rend le sujet identique d'une session à l'autre — utile pour un scénario rejoué. 0 laisse dériver de l'identifiant réseau.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C89290ABA5">
+            <Original>Sur un objet : noms de variable des unités dont les empreintes s'y trouvent, séparés par des virgules (arme, téléphone, pièce d'IED…).</Original>
+            <English>Sur un objet : noms de variable des unités dont les empreintes s'y trouvent, séparés par des virgules (arme, téléphone, pièce d'IED…).</English>
+            <French>Sur un objet : noms de variable des unités dont les empreintes s'y trouvent, séparés par des virgules (arme, téléphone, pièce d'IED…).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C90174A4E0">
+            <Original>Identifiant biométrique (campagne)</Original>
+            <English>Biometric ID (campaign)</English>
+            <French>Identifiant biométrique (campagne)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_C9D8D09F08">
+            <Original>Prénom Nom réels, portés par son dossier biométrique. Vide avec « Faux papiers : oui » = nom généré.</Original>
+            <English>Prénom Nom réels, portés par son dossier biométrique. Vide avec « Faux papiers : oui » = nom généré.</English>
+            <French>Prénom Nom réels, portés par son dossier biométrique. Vide avec « Faux papiers : oui » = nom généré.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_CA5701EE37">
+            <Original>Courrier — objet</Original>
+            <English>Courrier — objet</English>
+            <French>Courrier — objet</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_CB16B6648F">
+            <Original>Pièce 1 — intitulé</Original>
+            <English>Pièce 1 — intitulé</English>
+            <French>Pièce 1 — intitulé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_CBAB5F515D">
+            <Original>Ordinateur</Original>
+            <English>Computer</English>
+            <French>Ordinateur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_CC0099938C">
+            <Original>Messages (un par ligne)</Original>
+            <English>Messages (un par ligne)</English>
+            <French>Messages (un par ligne)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_CC587FED60">
+            <Original>Motif de signalement</Original>
+            <English>Reason for flagging</English>
+            <French>Motif de signalement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_CC99BC0C14">
+            <Original>Disque dur saisi</Original>
+            <English>Disque dur saisi</English>
+            <French>Disque dur saisi</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_CD47276DEC">
+            <Original>Athena — Intelligence numérique</Original>
+            <English>Athena — Intelligence numérique</English>
+            <French>Athena — Intelligence numérique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_CD49F91D7E">
+            <Original>Doigts manquants</Original>
+            <English>Doigts manquants</English>
+            <French>Doigts manquants</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_CE784579DC">
+            <Original>Ce que le bureau verra. Vide en Zeus = formulaire.</Original>
+            <English>Ce que le bureau verra. Vide en Zeus = formulaire.</English>
+            <French>Ce que le bureau verra. Vide en Zeus = formulaire.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_CED1C585A6">
+            <Original>Trop d'essais</Original>
+            <English>Too many attempts</English>
+            <French>Trop d'essais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D0836A23B9">
+            <Original>Surnom sous lequel le sujet est connu. C’est souvent le seul élément dont dispose le terrain.</Original>
+            <English>Surnom sous lequel le sujet est connu. C’est souvent le seul élément dont dispose le terrain.</English>
+            <French>Surnom sous lequel le sujet est connu. C’est souvent le seul élément dont dispose le terrain.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D08DE436A5">
+            <Original>Capture la cible (générée au besoin) et l'enregistre comme modèle réutilisable (mission + profil local du Zeus).</Original>
+            <English>Capture la cible (générée au besoin) et l'enregistre comme modèle réutilisable (mission + profil local du Zeus).</English>
+            <French>Capture la cible (générée au besoin) et l'enregistre comme modèle réutilisable (mission + profil local du Zeus).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D2616FDA97">
+            <Original>Génération automatique : verdict stable dérivé de la graine du sujet. Les trois autres imposent le résultat de la requête d’identité du terminal SEEK.</Original>
+            <English>Génération automatique : verdict stable dérivé de la graine du sujet. Les trois autres imposent le résultat de la requête d’identité du terminal SEEK.</English>
+            <French>Génération automatique : verdict stable dérivé de la graine du sujet. Les trois autres imposent le résultat de la requête d’identité du terminal SEEK.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D2964B732C">
+            <Original>Nom de l'organisation. Vide : nom de code généré.</Original>
+            <English>Nom de l'organisation. Vide : nom de code généré.</English>
+            <French>Nom de l'organisation. Vide : nom de code généré.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D2BF4CB656">
+            <Original>Nom de guerre</Original>
+            <English>Nom de guerre</English>
+            <French>Nom de guerre</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D34119DF2D">
+            <Original>Mise en place dans Eden</Original>
+            <English>Mise en place dans Eden</English>
+            <French>Mise en place dans Eden</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D34AD31703">
+            <Original>Génère un site SSE d'entraînement (pack aléatoire ou choisi) autour du module.</Original>
+            <English>Génère un site SSE d'entraînement (pack aléatoire ou choisi) autour du module.</English>
+            <French>Génère un site SSE d'entraînement (pack aléatoire ou choisi) autour du module.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D390F918C5">
+            <Original>Visible aussi à distance (plus pauvre)</Original>
+            <English>Visible aussi à distance (plus pauvre)</English>
+            <French>Visible aussi à distance (plus pauvre)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D3ABEFFAC9">
+            <Original>Profil narratif utilisé pour la génération.</Original>
+            <English>Profil narratif utilisé pour la génération.</English>
+            <French>Profil narratif utilisé pour la génération.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D3B023EABC">
+            <Original>Téléphone</Original>
+            <English>Phone</English>
+            <French>Téléphone</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D3B4386273">
+            <Original>Smartphone collecté pour extraction numérique.</Original>
+            <English>Smartphone collecté pour extraction numérique.</English>
+            <French>Smartphone collecté pour extraction numérique.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D488CDA57E">
+            <Original>Zone analysée autour du module.</Original>
+            <English>Area analyzed around the module.</English>
+            <French>Zone analysée autour du module.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D51F236499">
+            <Original>Poser un objet de renseignement</Original>
+            <English>Place an intelligence object</English>
+            <French>Poser un objet de renseignement</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D599F5BE5C">
+            <Original>Après le délai d’exploitation</Original>
+            <English>Après le délai d’exploitation</English>
+            <French>Après le délai d’exploitation</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D5AA87A3D9">
+            <Original>Laisser « Selon le modèle » pour garder l’aspect du modèle choisi.</Original>
+            <English>Laisser « Selon le modèle » pour garder l’aspect du modèle choisi.</English>
+            <French>Laisser « Selon le modèle » pour garder l’aspect du modèle choisi.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D5DD1C5D78">
+            <Original>Exporte le graphe de renseignement de la mission.</Original>
+            <English>Exporte le graphe de renseignement de la mission.</English>
+            <French>Exporte le graphe de renseignement de la mission.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D646A459AE">
+            <Original>Lésion œil gauche</Original>
+            <English>Left eye injury</English>
+            <French>Lésion œil gauche</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D64D8E38B3">
+            <Original>Bandeau (optionnel)</Original>
+            <English>Bandeau (optionnel)</English>
+            <French>Bandeau (optionnel)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D6542AB806">
+            <Original>Pièce 1 — mot de code</Original>
+            <English>Pièce 1 — mot de code</English>
+            <French>Pièce 1 — mot de code</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D664532674">
+            <Original>Paquet — entités</Original>
+            <English>Packet - entities</English>
+            <French>Paquet — entités</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D70012B745">
+            <Original>Générer depuis un brief / scénario</Original>
+            <English>Générer depuis un brief / scénario</English>
+            <French>Générer depuis un brief / scénario</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D73F31553D">
+            <Original>Inconnu des bases</Original>
+            <English>Unknown to databases</English>
+            <French>Inconnu des bases</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D7546487E0">
+            <Original>Affiché par le SEEK en cas de correspondance. Vide = motif généré selon le tier.</Original>
+            <English>Affiché par le SEEK en cas de correspondance. Vide = motif généré selon le tier.</English>
+            <French>Affiché par le SEEK en cas de correspondance. Vide = motif généré selon le tier.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D8FBCFE837">
+            <Original>Paquet 2 — texte</Original>
+            <English>Paquet 2 — texte</English>
+            <French>Paquet 2 — texte</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D910355068">
+            <Original>Automatique : cataracte possible après 50 ans, prothèse rarissime.</Original>
+            <English>Automatique : cataracte possible après 50 ans, prothèse rarissime.</English>
+            <French>Automatique : cataracte possible après 50 ans, prothèse rarissime.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_D9169F85EF">
+            <Original>Watchlist tier 4 · pour info</Original>
+            <English>Watchlist tier 4 · pour info</English>
+            <French>Watchlist tier 4 · pour info</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DA1DD9E7AC">
+            <Original>Empreintes, iris et ADN consultables avec le terminal SEEK.</Original>
+            <English>Empreintes, iris et ADN consultables avec le terminal SEEK.</English>
+            <French>Empreintes, iris et ADN consultables avec le terminal SEEK.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DA8AB2FFDC">
+            <Original>Rôle dans le dataset</Original>
+            <English>Rôle dans le dataset</English>
+            <French>Rôle dans le dataset</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DAC5C299CF">
+            <Original>Mot de passe, mot de code ou indice laissé sur la machine.</Original>
+            <English>Mot de passe, mot de code ou indice laissé sur la machine.</English>
+            <French>Mot de passe, mot de code ou indice laissé sur la machine.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DAF2ABC7B8">
+            <Original>Supports numériques</Original>
+            <English>Digital media</English>
+            <French>Supports numériques</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DB05277DFF">
+            <Original>Copier la structure de</Original>
+            <English>Copy structure of</English>
+            <French>Copier la structure de</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DB0ADDB39F">
+            <Original>Horaire</Original>
+            <English>Schedule</English>
+            <French>Horaire</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DB6388D385">
+            <Original>Organisations et tableau des liens</Original>
+            <English>Organisations et tableau des liens</English>
+            <French>Organisations et tableau des liens</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DE6493C844">
+            <Original>Frère / sœur</Original>
+            <English>Brother / sister</English>
+            <French>Frère / sœur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DEABE47183">
+            <Original>Libellé bouton transmettre (optionnel)</Original>
+            <English>Libellé bouton transmettre (optionnel)</English>
+            <French>Libellé bouton transmettre (optionnel)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_DEE8290EC3">
+            <Original>Rayon de dotation (m)</Original>
+            <English>Rayon de dotation (m)</English>
+            <French>Rayon de dotation (m)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E0024277D7">
+            <Original>Nom de l'organisation mère (une cellule sous son réseau). Vide : aucune.</Original>
+            <English>Nom de l'organisation mère (une cellule sous son réseau). Vide : aucune.</English>
+            <French>Nom de l'organisation mère (une cellule sous son réseau). Vide : aucune.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E1C548AE79">
+            <Original>Terminal SEEK II</Original>
+            <English>Terminal SEEK II</English>
+            <French>Terminal SEEK II</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E214B8A299">
+            <Original>Document</Original>
+            <English>Document</English>
+            <French>Document</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E22995322F">
+            <Original>Génération automatique : le sujet reçoit un verdict stable dérivé de sa graine. Les trois autres imposent le résultat de la requête d'identité.</Original>
+            <English>Génération automatique : le sujet reçoit un verdict stable dérivé de sa graine. Les trois autres imposent le résultat de la requête d'identité.</English>
+            <French>Génération automatique : le sujet reçoit un verdict stable dérivé de sa graine. Les trois autres imposent le résultat de la requête d'identité.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E25C26010F">
+            <Original>Quantité d'éléments exploitables générés.</Original>
+            <English>Amount of exploitable items generated.</English>
+            <French>Quantité d'éléments exploitables générés.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E3357CD7D5">
+            <Original>Région / théâtre</Original>
+            <English>Région / théâtre</English>
+            <French>Région / théâtre</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E39BBE2519">
+            <Original>Menace</Original>
+            <English>Threat</English>
+            <French>Menace</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E3E778434F">
+            <Original>Appliquer : pose le dataset. Niveau seul : ne change que le niveau. Lister : affiche les datasets.</Original>
+            <English>Appliquer : pose le dataset. Niveau seul : ne change que le niveau. Lister : affiche les datasets.</English>
+            <French>Appliquer : pose le dataset. Niveau seul : ne change que le niveau. Lister : affiche les datasets.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E3E921B379">
+            <Original>Nationalité déclarée</Original>
+            <English>Stated nationality</English>
+            <French>Nationalité déclarée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E40C27961A">
+            <Original>Rôles des personnes synchronisées</Original>
+            <English>Rôles des personnes synchronisées</English>
+            <French>Rôles des personnes synchronisées</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E4387ADE0F">
+            <Original>Prénom</Original>
+            <English>First name</English>
+            <French>Prénom</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E4737DAB40">
+            <Original>Place le terminal biométrique SEEK dans l'équipement des joueurs désignés (sac, gilet puis uniforme). Sans terminal, aucune fiche n'est ouvrable.</Original>
+            <English>Place le terminal biométrique SEEK dans l'équipement des joueurs désignés (sac, gilet puis uniforme). Sans terminal, aucune fiche n'est ouvrable.</English>
+            <French>Place le terminal biométrique SEEK dans l'équipement des joueurs désignés (sac, gilet puis uniforme). Sans terminal, aucune fiche n'est ouvrable.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E488F0F130">
+            <Original>Surnom sous lequel le sujet est connu</Original>
+            <English>Surnom sous lequel le sujet est connu</English>
+            <French>Surnom sous lequel le sujet est connu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E4E69F4E5C">
+            <Original>Signalé — correspondance partielle</Original>
+            <English>Flagged — partial match</English>
+            <French>Signalé — correspondance partielle</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E55A6761A0">
+            <Original>Paquet 1 — qualité</Original>
+            <English>Paquet 1 — qualité</English>
+            <French>Paquet 1 — qualité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E697BC97A6">
+            <Original>Affiche UID, profil et état de l'entité survolée en Zeus, avec ses liens en 3D. Reposer le module pour le désactiver.</Original>
+            <English>Affiche UID, profil et état de l'entité survolée en Zeus, avec ses liens en 3D. Reposer le module pour le désactiver.</English>
+            <French>Affiche UID, profil et état de l'entité survolée en Zeus, avec ses liens en 3D. Reposer le module pour le désactiver.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E74A5AAC3E">
+            <Original>Oriente les contenus proposés.</Original>
+            <English>Guides the proposed content.</English>
+            <French>Oriente les contenus proposés.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E763C43C79">
+            <Original>Personnaliser les pièces ci-dessous</Original>
+            <English>Personnaliser les pièces ci-dessous</English>
+            <French>Personnaliser les pièces ci-dessous</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E7B1CF1A3D">
+            <Original>Terrain — feuille tachée</Original>
+            <English>Field - stained sheet</English>
+            <French>Terrain — feuille tachée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_E99CF9A2DE">
+            <Original>Photographie</Original>
+            <English>Photograph</English>
+            <French>Photographie</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_EA0F6EC944">
+            <Original>Référence de dossier SSE</Original>
+            <English>SSE case reference</English>
+            <French>Référence de dossier SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_EAA02F3F33">
+            <Original>Oui</Original>
+            <English>Oui</English>
+            <French>Oui</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_EABBD83E6E">
+            <Original>Repère de carte mentionné sur la pièce, s’il y en a un.</Original>
+            <English>Repère de carte mentionné sur la pièce, s’il y en a un.</English>
+            <French>Repère de carte mentionné sur la pièce, s’il y en a un.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_EB355E382D">
+            <Original>Aléatoire : cellule, planque, atelier IED, dépôt ou nœud financier.</Original>
+            <English>Aléatoire : cellule, planque, atelier IED, dépôt ou nœud financier.</English>
+            <French>Aléatoire : cellule, planque, atelier IED, dépôt ou nœud financier.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_EB90E9A8BB">
+            <Original>Oriente le réseau, les thèmes et les documents.</Original>
+            <English>Guides the network, themes and documents.</English>
+            <French>Oriente le réseau, les thèmes et les documents.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_EBF0353DB8">
+            <Original>Archives — papier jauni</Original>
+            <English>Archives - yellowed paper</English>
+            <French>Archives — papier jauni</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_EC5E30D840">
+            <Original>Panneau Zeus SSE</Original>
+            <English>Panneau Zeus SSE</English>
+            <French>Panneau Zeus SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_ED79F964B5">
+            <Original>Décoché : pas d'empreintes / iris / ADN pour SEEK.</Original>
+            <English>Unchecked: no fingerprints / iris / DNA for SEEK.</English>
+            <French>Décoché : pas d'empreintes / iris / ADN pour SEEK.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_ED7E3F8C39">
+            <Original>Paquet 2 — canal</Original>
+            <English>Paquet 2 — canal</English>
+            <French>Paquet 2 — canal</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_EF33304D4F">
+            <Original>Moyenne</Original>
+            <English>Medium</English>
+            <French>Moyenne</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_EF527E85F0">
+            <Original>Campagnes</Original>
+            <English>Campaigns</English>
+            <French>Campagnes</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_EF61D20F94">
+            <Original>Bureau — papier impeccable</Original>
+            <English>Office - pristine paper</English>
+            <French>Bureau — papier impeccable</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F0124FF16F">
+            <Original>Paquet 2 — révélation</Original>
+            <English>Paquet 2 — révélation</English>
+            <French>Paquet 2 — révélation</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F09016E234">
+            <Original>Organisation affichée</Original>
+            <English>Displayed organization</English>
+            <French>Organisation affichée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F0B768C43B">
+            <Original>Connu des joueurs / vérité</Original>
+            <English>Connu des joueurs / vérité</English>
+            <French>Connu des joueurs / vérité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F0BB7B9475">
+            <Original>Appareil photo pour documentation photographique de site.</Original>
+            <English>Appareil photo pour documentation photographique de site.</English>
+            <French>Appareil photo pour documentation photographique de site.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F153B82AB4">
+            <Original>Données SSE : ce que le générateur SSE a mis dans l'appareil (fichiers, courriels, messages, identifiants, lieux). Fichiers saisis : seulement le champ ci-dessous. Les deux : l'ensemble.</Original>
+            <English>Données SSE : ce que le générateur SSE a mis dans l'appareil (fichiers, courriels, messages, identifiants, lieux). Fichiers saisis : seulement le champ ci-dessous. Les deux : l'ensemble.</English>
+            <French>Données SSE : ce que le générateur SSE a mis dans l'appareil (fichiers, courriels, messages, identifiants, lieux). Fichiers saisis : seulement le champ ci-dessous. Les deux : l'ensemble.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F16B0327CA">
+            <Original>Ce que la personne déclare, pas ce qui est établi. Vide = génération automatique.</Original>
+            <English>Ce que la personne déclare, pas ce qui est établi. Vide = génération automatique.</English>
+            <French>Ce que la personne déclare, pas ce qui est établi. Vide = génération automatique.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F17D6914A9">
+            <Original>Décoché : le terminal invente un nom SSE au lieu de reprendre l'identité de l'unité.</Original>
+            <English>Unchecked: the terminal invents an SSE name instead of using the unit's identity.</English>
+            <French>Décoché : le terminal invente un nom SSE au lieu de reprendre l'identité de l'unité.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F1B11E4B26">
+            <Original>Matériel SSE COMSPEC</Original>
+            <English>Matériel SSE COMSPEC</English>
+            <French>Matériel SSE COMSPEC</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F203020200">
+            <Original>Rattachée à</Original>
+            <English>Attached to</English>
+            <French>Rattachée à</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F2D33E352D">
+            <Original>Affiché dans l'app Extraction. Vide = nom de l'objet ou de l'appareil SSE.</Original>
+            <English>Affiché dans l'app Extraction. Vide = nom de l'objet ou de l'appareil SSE.</English>
+            <French>Affiché dans l'app Extraction. Vide = nom de l'objet ou de l'appareil SSE.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F364E0157C">
+            <Original>Vraie identité (si faux papiers)</Original>
+            <English>True identity (if false papers)</English>
+            <French>Vraie identité (si faux papiers)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F3CB82AF6C">
+            <Original>Contenu</Original>
+            <English>Content</English>
+            <French>Contenu</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F3D9E18AC0">
+            <Original>Accès distant scénarisé</Original>
+            <English>Scripted remote access</English>
+            <French>Accès distant scénarisé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F3FEFB2906">
+            <Original>Essais permis (0 = illimité)</Original>
+            <English>Attempts allowed (0 = unlimited)</English>
+            <French>Essais permis (0 = illimité)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F42128454E">
+            <Original>&lt;t color='#7fd08a'&gt;1. Campagne&lt;/t&gt; Module « Campagne SSE » (Mission) : identifiant, type, sauvegarde automatique.&lt;br/&gt;&lt;t color='#7fd08a'&gt;2. Personnes&lt;/t&gt; Attributs d'une unité : catégories COMSPEC SSE (identité, biométrie, identifiant fixé pour un personnage récurrent) et Organisation (organisation, cellule, rôle, nom de guerre, ce que les joueurs savent).&lt;br/&gt;&lt;t color='#7fd08a'&gt;3. Organisations&lt;/t&gt; Module « Organisation » (Personnes) : synchronisez des personnes ou le chef d'un groupe ; rôles saisis ou générés en cellules ; synchronisez aussi les objets qui lui appartiennent.&lt;br/&gt;&lt;t color='#7fd08a'&gt;4. Objets&lt;/t&gt; Tout objet peut être SSE : attributs COMSPEC SSE (nature imposée, richesse), « Rattaché à l'organisation », Extraction DL-7.&lt;br/&gt;&lt;t color='#7fd08a'&gt;5. Sites&lt;/t&gt; Modules Sites et objets pour générer un site complet.&lt;br/&gt;&lt;t color='#7fd08a'&gt;6. Fin&lt;/t&gt; Module « Campagne SSE : sauvegarder » synchronisé à un déclencheur.</Original>
+            <English>&lt;t color='#7fd08a'&gt;1. Campagne&lt;/t&gt; Module « Campagne SSE » (Mission) : identifiant, type, sauvegarde automatique.&lt;br/&gt;&lt;t color='#7fd08a'&gt;2. Personnes&lt;/t&gt; Attributs d'une unité : catégories COMSPEC SSE (identité, biométrie, identifiant fixé pour un personnage récurrent) et Organisation (organisation, cellule, rôle, nom de guerre, ce que les joueurs savent).&lt;br/&gt;&lt;t color='#7fd08a'&gt;3. Organisations&lt;/t&gt; Module « Organisation » (Personnes) : synchronisez des personnes ou le chef d'un groupe ; rôles saisis ou générés en cellules ; synchronisez aussi les objets qui lui appartiennent.&lt;br/&gt;&lt;t color='#7fd08a'&gt;4. Objets&lt;/t&gt; Tout objet peut être SSE : attributs COMSPEC SSE (nature imposée, richesse), « Rattaché à l'organisation », Extraction DL-7.&lt;br/&gt;&lt;t color='#7fd08a'&gt;5. Sites&lt;/t&gt; Modules Sites et objets pour générer un site complet.&lt;br/&gt;&lt;t color='#7fd08a'&gt;6. Fin&lt;/t&gt; Module « Campagne SSE : sauvegarder » synchronisé à un déclencheur.</English>
+            <French>&lt;t color='#7fd08a'&gt;1. Campagne&lt;/t&gt; Module « Campagne SSE » (Mission) : identifiant, type, sauvegarde automatique.&lt;br/&gt;&lt;t color='#7fd08a'&gt;2. Personnes&lt;/t&gt; Attributs d'une unité : catégories COMSPEC SSE (identité, biométrie, identifiant fixé pour un personnage récurrent) et Organisation (organisation, cellule, rôle, nom de guerre, ce que les joueurs savent).&lt;br/&gt;&lt;t color='#7fd08a'&gt;3. Organisations&lt;/t&gt; Module « Organisation » (Personnes) : synchronisez des personnes ou le chef d'un groupe ; rôles saisis ou générés en cellules ; synchronisez aussi les objets qui lui appartiennent.&lt;br/&gt;&lt;t color='#7fd08a'&gt;4. Objets&lt;/t&gt; Tout objet peut être SSE : attributs COMSPEC SSE (nature imposée, richesse), « Rattaché à l'organisation », Extraction DL-7.&lt;br/&gt;&lt;t color='#7fd08a'&gt;5. Sites&lt;/t&gt; Modules Sites et objets pour générer un site complet.&lt;br/&gt;&lt;t color='#7fd08a'&gt;6. Fin&lt;/t&gt; Module « Campagne SSE : sauvegarder » synchronisé à un déclencheur.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F4D438D348">
+            <Original>Graine mission (affichage)</Original>
+            <English>Graine mission (affichage)</English>
+            <French>Graine mission (affichage)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F4F05DEBDE">
+            <Original>Scellés</Original>
+            <English>Scellés</English>
+            <French>Scellés</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F503CC4364">
+            <Original>Capture et sac de tête</Original>
+            <English>Capture et sac de tête</English>
+            <French>Capture et sac de tête</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F5485BBAE8">
+            <Original>Libellé</Original>
+            <English>Label</English>
+            <French>Libellé</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F5745B35D6">
+            <Original>Portée autour du module quand aucune unité n'est synchronisée</Original>
+            <English>Portée autour du module quand aucune unité n'est synchronisée</English>
+            <French>Portée autour du module quand aucune unité n'est synchronisée</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F5D5D6B3DF">
+            <Original>Relie au même réseau les personnes, véhicules et objets du rayon (téléphones, documents, liens). Placez d'abord le décor, puis le module au centre. Eden : la zone du module peut remplacer le rayon.</Original>
+            <English>Relie au même réseau les personnes, véhicules et objets du rayon (téléphones, documents, liens). Placez d'abord le décor, puis le module au centre. Eden : la zone du module peut remplacer le rayon.</English>
+            <French>Relie au même réseau les personnes, véhicules et objets du rayon (téléphones, documents, liens). Placez d'abord le décor, puis le module au centre. Eden : la zone du module peut remplacer le rayon.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F5DBCF8E17">
+            <Original>Groupe ou structure fictive à laquelle le support semble appartenir.</Original>
+            <English>Groupe ou structure fictive à laquelle le support semble appartenir.</English>
+            <French>Groupe ou structure fictive à laquelle le support semble appartenir.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F657DAC55C">
+            <Original>Ex. téléphone basique, smartphone usagé.</Original>
+            <English>Ex. téléphone basique, smartphone usagé.</English>
+            <French>Ex. téléphone basique, smartphone usagé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F734A5538E">
+            <Original>Niveau de révélation</Original>
+            <English>Revelation level</English>
+            <French>Niveau de révélation</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F8A3C37BEB">
+            <Original>Automatique</Original>
+            <English>Automatic</English>
+            <French>Automatique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F92DB9F07D">
+            <Original>Fichiers saisis</Original>
+            <English>Seized files</English>
+            <French>Fichiers saisis</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_F950DFB835">
+            <Original>Objet du courrier le plus récent trouvé sur l'ordinateur.</Original>
+            <English>Objet du courrier le plus récent trouvé sur l'ordinateur.</English>
+            <French>Objet du courrier le plus récent trouvé sur l'ordinateur.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_FA27128D8A">
+            <Original>Automatique : SEEK reprend le nom du panneau Identité Eden (ou Nom/Prénom COMSPEC s’ils sont remplis). Inventer : ignore l’identité Eden. Forcer : même effet que automatique, nom Eden imposé.</Original>
+            <English>Automatique : SEEK reprend le nom du panneau Identité Eden (ou Nom/Prénom COMSPEC s’ils sont remplis). Inventer : ignore l’identité Eden. Forcer : même effet que automatique, nom Eden imposé.</English>
+            <French>Automatique : SEEK reprend le nom du panneau Identité Eden (ou Nom/Prénom COMSPEC s’ils sont remplis). Inventer : ignore l’identité Eden. Forcer : même effet que automatique, nom Eden imposé.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_FAE0B0104A">
+            <Original>Compte rendu SSE (AAR) + graphe</Original>
+            <English>Compte rendu SSE (AAR) + graphe</English>
+            <French>Compte rendu SSE (AAR) + graphe</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_FAFD121A5A">
+            <Original>Format : Nom | type (lieu, personne, organisation…).</Original>
+            <English>Format: Name | type (place, person, organization...).</English>
+            <French>Format : Nom | type (lieu, personne, organisation…).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_FAFF6B76A4">
+            <Original>Lien de parenté</Original>
+            <English>Kinship</English>
+            <French>Lien de parenté</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_FCA5FECEA4">
+            <Original>Réservé à un besoin ponctuel. Préférez les catégories Documents, Téléphone et Ordinateur pour le contenu saisi.</Original>
+            <English>Réservé à un besoin ponctuel. Préférez les catégories Documents, Téléphone et Ordinateur pour le contenu saisi.</English>
+            <French>Réservé à un besoin ponctuel. Préférez les catégories Documents, Téléphone et Ordinateur pour le contenu saisi.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_FCED55D4BB">
+            <Original>Paquet — qualité</Original>
+            <English>Packet - quality</English>
+            <French>Paquet — qualité</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_FCEFB1E024">
+            <Original>Pochette documents SSE</Original>
+            <English>Pochette documents SSE</English>
+            <French>Pochette documents SSE</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_FD57B2EF48">
+            <Original>Laisser vide pour génération automatique.</Original>
+            <English>Laisser vide pour génération automatique.</English>
+            <French>Laisser vide pour génération automatique.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_FD8A2A97D1">
+            <Original>COMSPEC SSE — Ordinateur</Original>
+            <English>COMSPEC SSE — Ordinateur</English>
+            <French>COMSPEC SSE — Ordinateur</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_FE035157CD">
+            <Original>Port</Original>
+            <English>Port</English>
+            <French>Port</French>
+        </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_FFD602F24B">
+            <Original>Nom du compte utilisateur affiché à l'ouverture de session.</Original>
+            <English>Nom du compte utilisateur affiché à l'ouverture de session.</English>
+            <French>Nom du compte utilisateur affiché à l'ouverture de session.</French>
+        </Key>
+    </Package>
+</Project>

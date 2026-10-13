@@ -69,7 +69,7 @@ class CfgVehicles {
         scope = 2;
         scopeCurator = 0;
         category = "COMSPEC_SSE_Mission";
-        displayName = "Campagne SSE (charger ou créer)";
+        displayName = "$STR_COMSPEC_SSE_CFG_BAE804BBA0";
         function = "comspec_sse_fnc_moduleCampaign";
         functionPriority = 1;
         isGlobal = 0;
@@ -82,21 +82,21 @@ class CfgVehicles {
         class Attributes: AttributesBase {
             class Id: Edit {
                 property = "COMSPEC_SSE_Campaign_Id";
-                displayName = "Identifiant";
-                tooltip = "Même identifiant dans chaque mission de la campagne, par exemple OP-SABLE (vraie carte) ou BOOTCAMP (drills). Créée au premier lancement.";
+                displayName = "$STR_COMSPEC_SSE_CFG_68E546FCE7";
+                tooltip = "$STR_COMSPEC_SSE_CFG_59AC04E471";
                 typeName = "STRING";
                 defaultValue = "''";
             };
             class Name: Edit {
                 property = "COMSPEC_SSE_Campaign_Name";
-                displayName = "Nom";
+                displayName = "$STR_COMSPEC_SSE_CFG_7FF20370C8";
                 typeName = "STRING";
                 defaultValue = "''";
             };
             class Type: Combo {
                 property = "COMSPEC_SSE_Campaign_Type";
-                displayName = "Type";
-                tooltip = "Permanente : tout est gardé. Récurrente : mêmes personnages et organisations à chaque drill, rien de connu au départ. Temporaire : drill SOT jetable, rien n'est gardé.";
+                displayName = "$STR_COMSPEC_SSE_CFG_3DEB745651";
+                tooltip = "$STR_COMSPEC_SSE_CFG_00DFF861D0";
                 typeName = "STRING";
                 defaultValue = "'permanente'";
                 class Values {
@@ -107,29 +107,29 @@ class CfgVehicles {
             };
             class CopyFrom: Edit {
                 property = "COMSPEC_SSE_Campaign_CopyFrom";
-                displayName = "Copier la structure de";
-                tooltip = "Identifiant d'une autre campagne : ses personnages et organisations, sans rien de découvert. Pour un drill réaliste sur le réseau de la vraie campagne.";
+                displayName = "$STR_COMSPEC_SSE_CFG_DB05277DFF";
+                tooltip = "$STR_COMSPEC_SSE_CFG_BEAF7B27AC";
                 typeName = "STRING";
                 defaultValue = "''";
             };
             class Autosave: Edit {
                 property = "COMSPEC_SSE_Campaign_Autosave";
-                displayName = "Sauvegarde automatique (minutes)";
-                tooltip = "0 = jamais. Sans effet sur un drill temporaire.";
+                displayName = "$STR_COMSPEC_SSE_CFG_46F719D58D";
+                tooltip = "$STR_COMSPEC_SSE_CFG_02E1A2A4CC";
                 typeName = "NUMBER";
                 defaultValue = "15";
             };
             class SaveAtEnd: CheckboxNumber {
                 property = "COMSPEC_SSE_Campaign_SaveAtEnd";
-                displayName = "Sauvegarder à la fin de la mission";
-                tooltip = "Temporaire : le bac à sable est vidé à la place.";
+                displayName = "$STR_COMSPEC_SSE_CFG_91B1EF61F7";
+                tooltip = "$STR_COMSPEC_SSE_CFG_771988E23B";
                 typeName = "NUMBER";
                 defaultValue = "1";
             };
             class ModuleDescription: ModuleDescription {};
         };
         class ModuleDescription: ModuleDescription {
-            description = "Charge la campagne au lancement (sur le serveur). Une campagne garde sa graine biométrique (les mêmes personnages ont les mêmes empreintes), ses personnages récurrents (identifiant biométrique fixé), ses organisations, ce que les joueurs savent et le registre des scellés. Un seul module par mission.";
+            description = "$STR_COMSPEC_SSE_CFG_0323FC1D81";
         };
     };
 
@@ -138,7 +138,7 @@ class CfgVehicles {
         scope = 2;
         scopeCurator = 0;
         category = "COMSPEC_SSE_Mission";
-        displayName = "Campagne SSE : sauvegarder (déclencheur)";
+        displayName = "$STR_COMSPEC_SSE_CFG_0D432BE534";
         function = "comspec_sse_fnc_moduleCampaignSave";
         functionPriority = 5;
         isGlobal = 0;
@@ -151,7 +151,7 @@ class CfgVehicles {
         class Attributes: AttributesBase {
             class Action: Combo {
                 property = "COMSPEC_SSE_CampaignSave_Action";
-                displayName = "Action";
+                displayName = "$STR_COMSPEC_SSE_CFG_97C89A4D66";
                 typeName = "STRING";
                 defaultValue = "'save'";
                 class Values {
@@ -161,14 +161,14 @@ class CfgVehicles {
             };
             class Reason: Edit {
                 property = "COMSPEC_SSE_CampaignSave_Reason";
-                displayName = "Motif (journal de campagne)";
+                displayName = "$STR_COMSPEC_SSE_CFG_3CBCBC1C17";
                 typeName = "STRING";
                 defaultValue = "'objectif atteint'";
             };
             class ModuleDescription: ModuleDescription {};
         };
         class ModuleDescription: ModuleDescription {
-            description = "Synchronisez un déclencheur : à son activation, la campagne est sauvegardée (ou le drill temporaire vidé).";
+            description = "$STR_COMSPEC_SSE_CFG_A7112BB3C2";
         };
     };
 };
