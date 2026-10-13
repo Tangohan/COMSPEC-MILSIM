@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Menu Échap et Dépannage liaison refondus (ATAK natif 1.75.0)
+## Menu Échap et Dépannage liaison refondus (ATAK natif 1.76.0)
 
 ### Résumé joueur
 Type : nouveauté
@@ -60,6 +60,25 @@ Non testé en jeu. Demande de TTRD : boutons du menu Échap en haut à droite, s
 - « Copier le rapport » met le diagnostic et les versions dans le presse-papiers ; « Signaler un problème » ouvre le signalement existant.
 - Pas à pas (recherche de ce qui arrête le jeu) : au choix rapide (20 s par fonction) ou complet (55 s), lancé depuis la fenêtre. Nouveau bandeau compact en haut au centre avec barre de progression, temps restant et état de la liaison. L'étape mémorisée est effacée quand le pas à pas se termine ou est arrêté : elle ne reste affichée comme suspecte qu'après un vrai arrêt du jeu.
 - Textes traduits en anglais (dictionnaire i18n/en.txt).
+## Ligne de vue : de ma position vers le point (ATAK natif 1.75.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Ligne de vue : de ta position vers un point dont tu entres les coordonnées
+- Dans l'app Relief, onglet LIGNE DE VUE, tu entres les coordonnées du point (carroyage de 4 à 10 chiffres) puis TRACER : la ligne part de ta position.
+- Le bouton SOUS MON REGARD disparaît ; SUR LA CARTE reste pour toucher le point.
+- L'en-tête rappelle ta position, et un carroyage court vise le centre de sa case.
+EN : Line of sight: from your position to a point whose coordinates you enter
+- In the Relief app, LINE OF SIGHT tab, enter the point's coordinates (4 to 10-digit grid) then DRAW: the line starts from your position.
+- The UNDER MY GAZE button is gone; ON THE MAP still lets you tap the point.
+- The header shows your position, and a short grid aims at the centre of its square.
+
+### Détail technique
+
+Non testé en jeu. Demande de TTRD : remplacer « SOUS MON REGARD » par « de ma position vers le point », en entrant les coordonnées.
+- App Relief, onglet LIGNE DE VUE : le bouton SOUS MON REGARD est retiré. L'en-tête devient « DE MA POSITION VERS LE POINT : » et rappelle ma position (carroyage 8 chiffres). On entre les coordonnées du point (carroyage de 4, 6, 8 ou 10 chiffres, espaces acceptés) puis TRACER, ou on touche le point avec SUR LA CARTE.
+- Un carroyage court vise le centre de sa case (avant : le coin sud-ouest). La ligne part toujours de mes yeux, point à 1,7 m du sol. Tracé, profil, VOIR SUR LA CARTE et EFFACER inchangés.
+
 ## Langue du mod en tête des options CBA (ATAK natif 1.74.0)
 
 Non testé en jeu. Demande de TTRD : la sélection de langue dans Options des addons > COMSPEC.
