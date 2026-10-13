@@ -37,7 +37,7 @@ switch (_tab) do {
             (_nodes select _i) params ["_o", "_p", "_name", "_kind"];
             private _h = _hops select _i;
             private _deg = { (_x select 0) isEqualTo _i || {(_x select 1) isEqualTo _i} } count _links;
-            private _txt = format ["<t color='%1'>●</t> <t font='RobotoCondensedBold'>%2</t>%3<br/><t size='0.8' color='#8a9a93'>%4 · %5 voisin(s) · %6</t>",
+            private _txt = format ["<t color='%1'>●</t> <t font='COMSPEC_BarlowBold'>%2</t>%3<br/><t size='0.8' color='#8a9a93'>%4 · %5 voisin(s) · %6</t>",
                 [["#e5483a", "#5cc76b"] select (_h >= 0), "#7fb6e6"] select (_kind isEqualTo "gw"), [_name] call _esc,
                 ["", " <t size='0.8' color='#7fb6e6'>(moi)</t>"] select (_kind isEqualTo "me"),
                 switch (true) do { case (_kind isEqualTo "gw" || {_i isEqualTo _gw}): { "passerelle" }; case (_h < 0): { "<t color='#e5483a'>isolé</t>" }; default { format ["%1 saut(s)", _h] }; },
@@ -90,7 +90,7 @@ switch (_tab) do {
             if (_sl > 0) then { _det pushBack format ["%1/%2 places", _u, _sl]; };
             if (_bt >= 0) then { _det pushBack format ["batterie %1 %%", round _bt]; };
             if (_kind isEqualTo "relay" && {!_root}) then { _det pushBack "répéteur"; };
-            _rows pushBack ["text", format ["<t color='%1'>●</t> <t font='RobotoCondensedBold'>%2</t>  <t size='0.8' color='#8a9a93'>%3</t><br/><t size='0.8' color='#8a9a93'>%4 · %5 · %6 %7 · %8</t>",
+            _rows pushBack ["text", format ["<t color='%1'>●</t> <t font='COMSPEC_BarlowBold'>%2</t>  <t size='0.8' color='#8a9a93'>%3</t><br/><t size='0.8' color='#8a9a93'>%4 · %5 · %6 %7 · %8</t>",
                 ["#777777", "#7fb6e6"] select _ok, [_name] call _esc, createHashMapFromArray [["relay", "relais"], ["gw", "passerelle véhicule"], ["cp", "PC mobile"]] getOrDefault [_kind, _kind],
                 [format ["<t color='#e5483a'>%1</t>", _st], "en service"] select _ok, _det joinString " · ", [player distance2D _ap] call _dist, [player getDir _ap] call _card,
                 [format ["<t color='#e5483a'>hors de portée</t>"], format ["<t color='#5cc76b'>reçu %1 Mbit/s</t>", (_l select 1) toFixed 1]] select ((_l select 1) > 0 && {_ok})]];
@@ -115,7 +115,7 @@ switch (_tab) do {
                 private _name = getText (configFile >> "CfgWeapons" >> _base >> "displayName");
                 if (_name isEqualTo "") then { _name = _base; };
                 private _ch = [_id] call acre_api_fnc_getRadioChannel;
-                _rows pushBack ["person", "\z\comspec_atak_native\addons\main\data\app_waverelay.paa", format ["<t font='RobotoCondensedBold'>%1</t>%2<br/><t size='0.85' color='#8a9a93'>Canal %3</t>",
+                _rows pushBack ["person", "\z\comspec_atak_native\addons\main\data\app_waverelay.paa", format ["<t font='COMSPEC_BarlowBold'>%1</t>%2<br/><t size='0.85' color='#8a9a93'>Canal %3</t>",
                     [_name] call _esc, ["", "  <t size='0.8' color='#5cc76b'>active</t>"] select (_id isEqualTo _cur), _ch],
                     [
                         ["-", compile format ["['channel', '%1', %2] call comspec_atak_native_fnc_waveRelayAction;", _id, _ch - 1], false, _ch > 1],
@@ -133,7 +133,7 @@ switch (_tab) do {
                 _x params ["_k", "_label"];
                 private _cnt = { (_x getVariable ["COMSPEC_ATAK_Talkgroup", ""]) isEqualTo _k } count _peers;
                 private _on = _k isEqualTo _mine;
-                _rows pushBack ["person", "\z\comspec_atak_native\addons\main\data\app_waverelay.paa", format ["<t font='RobotoCondensedBold' color='%1'>%2</t>  <t size='0.8' color='#8a9a93'>%3</t><br/><t size='0.85' color='#8a9a93'>%4 membre(s)</t>",
+                _rows pushBack ["person", "\z\comspec_atak_native\addons\main\data\app_waverelay.paa", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t size='0.8' color='#8a9a93'>%3</t><br/><t size='0.85' color='#8a9a93'>%4 membre(s)</t>",
                     ["#e6ece8", "#5cc76b"] select _on, _k, _label, _cnt],
                     [[["REJOINDRE", "QUITTER"] select _on, compile format ["['talkgroup', '%1'] call comspec_atak_native_fnc_waveRelayAction;", ["" , _k] select !_on], !_on]], [[0.6, 0.65, 0.62, 1], [0.36, 0.78, 0.42, 1]] select _on];
             } forEach _tgs;
@@ -143,7 +143,7 @@ switch (_tab) do {
     default {
         private _q = [] call comspec_atak_native_fnc_linkQuality;
         private _kbps = _q getOrDefault ["kbps", 0];
-        _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_waverelay.paa", format ["<t size='1.3' font='RobotoCondensedBold'>%1</t><br/><t color='%2'>%3</t> · %4<br/><t size='0.85' color='#8a9a93'>Latence %5 ms · perte %6 %%</t>",
+        _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_waverelay.paa", format ["<t size='1.3' font='COMSPEC_BarlowBold'>%1</t><br/><t color='%2'>%3</t> · %4<br/><t size='0.85' color='#8a9a93'>Latence %5 ms · perte %6 %%</t>",
             [(_nodes select 0) select 2] call _esc,
             [["#e5483a", "#5cc76b"] select (_myHops >= 0), "#7fb6e6"] select (_gw isEqualTo 0),
             switch (true) do { case (_gw isEqualTo 0): { "Je suis la passerelle" }; case (_myHops < 0): { "Coupé de la passerelle" }; default { format ["%1 saut(s) jusqu'à la passerelle", _myHops] }; },
@@ -173,7 +173,7 @@ switch (_tab) do {
             _x params ["_lq", "_i"];
             (_nodes select _i) params ["_o", "_p", "_name", "_kind"];
             private _h = _hops select _i;
-            _rows pushBack ["text", format ["<t color='%1'>●</t> <t font='RobotoCondensedBold'>%2</t>  <t color='%1'>%3 %%</t><br/><t size='0.8' color='#8a9a93'>%4 %5 (%6°) · %7</t>",
+            _rows pushBack ["text", format ["<t color='%1'>●</t> <t font='COMSPEC_BarlowBold'>%2</t>  <t color='%1'>%3 %%</t><br/><t size='0.8' color='#8a9a93'>%4 %5 (%6°) · %7</t>",
                 [_lq] call _qCol, [_name] call _esc, _lq, [player distance2D _p] call _dist, [player getDir _p] call _card, round (player getDir _p),
                 switch (true) do { case (_kind isEqualTo "gw" || {_i isEqualTo _gw}): { "passerelle" }; case (_h < 0): { "isolé" }; default { format ["%1 saut(s) de la passerelle", _h] }; }]];
         } forEach _nb;

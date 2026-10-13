@@ -1001,7 +1001,7 @@ switch (_act) do {
         private _bg = ["COMSPEC_RscMapPanel", [_x0, _y0, _w, _h]] call _mk;
         _bg ctrlSetBackgroundColor [0.025, 0.030, 0.027, 0.92];
         private _st = ["COMSPEC_RscStructuredText", [_x0 + _pad / 2, _y0 + _pad / 4, _w - _pad, _rh * 1.1]] call _mk;
-        _st ctrlSetStructuredText parseText ((format ["<t size='0.85'><t font='RobotoCondensedBold' color='#5cc76b'>DRONE</t>  %1 · %2 · H %3 m%4</t>",
+        _st ctrlSetStructuredText parseText ((format ["<t size='0.85'><t font='COMSPEC_BarlowBold' color='#5cc76b'>DRONE</t>  %1 · %2 · H %3 m%4</t>",
             [_d getVariable ["COMSPEC_DroneMode", "HOVER"]] call _modeName,
             ["<t color='#e5483a'>hors liaison</t>", format ["liaison %1/4", _ln select 0]] select (_ln select 2),
             round ((getPosATL _d) select 2), ["", " · CQB"] select (_d getVariable ["COMSPEC_DroneCqb", false])]) call comspec_atak_native_fnc_tr);

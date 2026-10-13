@@ -57,7 +57,7 @@ if (_inter && {(_ui get "view") isEqualTo "LIB"}) exitWith {
     ];
     {
         _x params ["_n", "_w", "_its", ["_when", ""]];
-        _rows pushBack ["text", format ["<t font='RobotoCondensedBold'>%1</t> <t size='0.8' color='#8a9a93'>%2 · %3 élément(s) · %4</t>", [_n] call _esc, _w, count _its, _when]];
+        _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t> <t size='0.8' color='#8a9a93'>%2 · %3 élément(s) · %4</t>", [_n] call _esc, _w, count _its, _when]];
         private _i = _forEachIndex;
         _rows pushBack ["buttons", [
             ["APERÇU", compile format ["['preview', %1] call comspec_atak_native_fnc_planAction;", _i]],

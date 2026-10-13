@@ -248,13 +248,13 @@ switch (toUpper _mode) do {
         private _z = _st getOrDefault ["zoom", 1];
         private _fl = _st getOrDefault ["flash", "AUTO"];
         private _zs = { params ["_v"]; [_v toFixed 1, str _v] select ((_v mod 1) isEqualTo 0) };
-        (_cam displayCtrl 5) ctrlSetStructuredText parseText ((format ["<t align='center' font='RobotoCondensedBold'><t color='#f2d36b'>%1</t>   <t color='#6d7a74'>|</t>   ZOOM <t color='#5cc76b'>x%2</t>   <t color='#6d7a74'>|</t>   FLASH <t color='%3'>%4</t></t>",
+        (_cam displayCtrl 5) ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold'><t color='#f2d36b'>%1</t>   <t color='#6d7a74'>|</t>   ZOOM <t color='#5cc76b'>x%2</t>   <t color='#6d7a74'>|</t>   FLASH <t color='%3'>%4</t></t>",
             ["OBJECTIF ARRIÈRE", "SELFIE"] select _selfie, [_z] call _zs, ["#e8eadf", "#f2ab33"] select (_fl isEqualTo "ON"),
             createHashMapFromArray [["AUTO", "AUTO"], ["ON", "FORCÉ"], ["OFF", "COUPÉ"]] get _fl]) call comspec_atak_native_fnc_tr);
         // Échelle de zoom à droite : palier en cours en vert.
         (_cam displayCtrl 6) ctrlSetStructuredText parseText ((((_zoomSteps apply {
             private _on = abs (_x - _z) < 0.01;
-            format ["<t align='right' size='%1' color='%2' font='%3'>x%4</t>", [0.82, 1.12] select _on, ["#8a9a93", "#5cc76b"] select _on, ["RobotoCondensed", "RobotoCondensedBold"] select _on, [_x] call _zs]
+            format ["<t align='right' size='%1' color='%2' font='%3'>x%4</t>", [0.82, 1.12] select _on, ["#8a9a93", "#5cc76b"] select _on, [(COMSPEC_ATAK_FontSet select 0), (COMSPEC_ATAK_FontSet select 1)] select _on, [_x] call _zs]
         }) joinString "<br/>")) call comspec_atak_native_fnc_tr);
         // Exposition affichée : ISO et vitesse suivent la lumière au joueur (lampes et flash compris), ouverture f/1.7
         // du capteur du S7. ISO 1600 et plus en orange : photo bruitée.
@@ -263,7 +263,7 @@ switch (toUpper _mode) do {
         // Palier d'exposition : 0 (plein jour) à 6 (nuit noire, aucun seuil atteint).
         private _ei = (([150, 60, 25, 10, 4, 1.5] findIf { _lum >= _x }) + 7) mod 7;
         private _iso = [100, 200, 400, 800, 1600, 3200, 6400] select _ei;
-        (_cam displayCtrl 12) ctrlSetStructuredText parseText ((format ["<t align='right' font='RobotoCondensedBold' size='1.1'><t color='#8a9a93' size='0.8'>ISO </t><t color='%1'>%2</t></t><br/><t align='right' color='#a9b8b0' size='0.85'>f/1.7   1/%3 s</t>",
+        (_cam displayCtrl 12) ctrlSetStructuredText parseText ((format ["<t align='right' font='COMSPEC_BarlowBold' size='1.1'><t color='#8a9a93' size='0.8'>ISO </t><t color='%1'>%2</t></t><br/><t align='right' color='#a9b8b0' size='0.85'>f/1.7   1/%3 s</t>",
             ["#eef3ef", "#f2ab33"] select (_iso >= 1600), _iso, [250, 200, 125, 60, 30, 15, 8] select _ei]) call comspec_atak_native_fnc_tr);
         // Barre des raccourcis : touches en pastilles claires, action à côté, groupes séparés d'un filet.
         // Action principale (photo) en vert, touches de sortie plus discrètes. Repliée : photo, aide et quitter seuls.

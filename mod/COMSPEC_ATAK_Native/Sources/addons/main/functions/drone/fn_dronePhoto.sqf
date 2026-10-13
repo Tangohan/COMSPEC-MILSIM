@@ -317,7 +317,7 @@ switch (_act) do {
         // En-tête : titre de la fenêtre et prise de vue (date, heure, drone, grille, hauteur, cap).
         private _hd = ["COMSPEC_RscStructuredText", [_pad, _y, _w, _fs * 2.4]] call _mk;
         _hd ctrlEnable false;
-        _hd ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' size='1.1' color='%1'>TRANSMETTRE LE CLICHÉ</t><br/><t size='0.8' color='#8a9a93'>%2 %3 · %4 · %5 · %6 m sol · cap %7°</t>",
+        _hd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.1' color='%1'>TRANSMETTRE LE CLICHÉ</t><br/><t size='0.8' color='#8a9a93'>%2 %3 · %4 · %5 · %6 m sol · cap %7°</t>",
             _accHex, _date, _clock, _drone, _grid, _alt, _hdg]) call comspec_atak_native_fnc_tr);
         private _hh = (ctrlTextHeight _hd) max (_fs * 1.2);
         _hd ctrlSetPosition [_pad, _y, _w, _hh];

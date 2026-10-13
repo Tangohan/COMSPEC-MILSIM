@@ -109,7 +109,7 @@ private _lbl = {
     private _c = if (isNull _grp) then { [_cls, _rect, _t] call _mk } else { [_grp, _cls, _rect, _t] call _gmk };
     _c ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin);
     _c ctrlSetTextColor _col;
-    if (_bold) then { _c ctrlSetFont "RobotoCondensedBold"; };
+    if (_bold) then { _c ctrlSetFont (COMSPEC_ATAK_FontSet select 1); };
     _c
 };
 private _hit = {
@@ -432,7 +432,7 @@ private _drawConv = {
     };
     private _tt = ["COMSPEC_RscStructuredText", [_hx, _hh * 0.12, (_bx - _hx) max (_cw * 0.2), _hh * 0.85]] call _mk;
     _tt ctrlSetFontHeight _font;
-    _tt ctrlSetStructuredText parseText (((format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.72' color='#8a9a93'>%2</t>", [(_title) call comspec_atak_native_fnc_tr] call _esc, [(_sub) call comspec_atak_native_fnc_tr] call _esc])) call comspec_atak_native_fnc_tr);
+    _tt ctrlSetStructuredText parseText (((format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.72' color='#8a9a93'>%2</t>", [(_title) call comspec_atak_native_fnc_tr] call _esc, [(_sub) call comspec_atak_native_fnc_tr] call _esc])) call comspec_atak_native_fnc_tr);
     private _topY = _hh;
     // Suppression armée : bandeau de confirmation.
     if (_manage && {(_s getOrDefault ["chatDelArm", ""]) isEqualTo _curKey} && {_isChannel}) then {
@@ -459,7 +459,7 @@ private _drawConv = {
         {
             private _mine = _x get "mine";
             private _urgent = ((_x get "tags") findIf { _x in ["URGENT", "FLASH", "PRIORITAIRE", "IMMEDIATE"] }) >= 0;
-            private _tags = ((_x get "tags") apply { format ["<t font='RobotoCondensedBold' color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select (_x in ["URGENT", "FLASH", "PRIORITAIRE", "IMMEDIATE"]), [_x] call _esc] }) joinString " ";
+            private _tags = ((_x get "tags") apply { format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select (_x in ["URGENT", "FLASH", "PRIORITAIRE", "IMMEDIATE"]), [_x] call _esc] }) joinString " ";
             private _status = switch (_x get "status") do { case "FAILED": { "<t color='#e5483a'>Non transmis</t>" }; case "SENT": { "<t color='#8a9a93'>Envoi…</t>" }; case "PENDING": { "<t color='#f2ab33'>En attente de réseau</t>" }; default { "" }; };
             private _stamp = _x getOrDefault ["stamp", ""];
             private _date = [_today, (_stamp splitString " ") select 0] select ((_stamp find "-") > 0);
@@ -474,7 +474,7 @@ private _drawConv = {
                 private _out = (_x getOrDefault ["dir", ""]) isEqualTo "out";
                 ([_x getOrDefault ["body", ""], ""] call comspec_atak_native_fnc_chatParse) params ["", "_ptags", "_ptext"];
                 private _hot = ["URGENT", "FLASH", "IMPORTANT", "CONTACT", "TIC", "MEDEVAC"];
-                private _chips = (_ptags apply { format ["<t font='RobotoCondensedBold' color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select (_x in _hot), [_x] call _esc] }) joinString " ";
+                private _chips = (_ptags apply { format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select (_x in _hot), [_x] call _esc] }) joinString " ";
                 // État d'un SMS envoyé : en attente de réseau, envoi, distribué, lu, non transmis (60 s sans accusé).
                 private _st = _x getOrDefault ["status", ""];
                 if (_st isEqualTo "SENDING" && {time - (_x getOrDefault ["sentAt", time]) > 60}) then { _st = "FAILED"; _x set ["status", "FAILED"]; };
@@ -527,7 +527,7 @@ private _drawConv = {
     if (_wiki) then {
         // Mini wiki du tchat
         private _t = [_thread, "COMSPEC_RscStructuredText", [_pad, _y, _tw, _threadH]] call _gmk;
-        private _h = { params ["_x"]; format ["<t color='%2' font='RobotoCondensedBold'>%1</t>", _x, _accHex] };
+        private _h = { params ["_x"]; format ["<t color='%2' font='COMSPEC_BarlowBold'>%1</t>", _x, _accHex] };
         private _c = { params ["_k", "_v"]; format ["<t font='EtelkaMonospacePro' color='#f2ab33'>%1</t>  %2", _k, _v] };
         _t ctrlSetStructuredText parseText ((([
             ["AIDE DU TCHAT"] call _h,
@@ -607,7 +607,7 @@ private _drawConv = {
             [[_pad, _y + _fs * 0.6, _tw, pixelH], [_acc select 0, _acc select 1, _acc select 2, 0.5], _thread] call _box;
             private _nl = [_thread, "COMSPEC_RscTextCenter", [0, _y, _tw, _fs * 1.2], "NON LUS"] call _gmk;
             _nl ctrlSetFontHeight ((_fs * 0.75) max COMSPEC_ATAK_FontMin);
-            _nl ctrlSetFont "RobotoCondensedBold";
+            _nl ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
             _nl ctrlSetTextColor _acc;
             private _nw = (ctrlTextWidth _nl) + _pad;
             _nl ctrlSetPosition [_pad + (_tw - _nw) / 2, _y, _nw, _fs * 1.2];
@@ -648,7 +648,7 @@ private _drawConv = {
         _b ctrlSetBackgroundColor _bg;
         _b ctrlSetFontHeight ((_bodyFh) max COMSPEC_ATAK_FontMin);
         private _top = if (_showAv && {_first}) then {
-            format ["<t size='0.82' font='RobotoCondensedBold' color='%1'>%2</t>%3<br/>", [_aCol] call _hex, [_author] call _esc, ["", " " + _chips] select (_chips isNotEqualTo "")]
+            format ["<t size='0.82' font='COMSPEC_BarlowBold' color='%1'>%2</t>%3<br/>", [_aCol] call _hex, [_author] call _esc, ["", " " + _chips] select (_chips isNotEqualTo "")]
         } else { ["", _chips + "<br/>"] select (_chips isNotEqualTo "") };
         private _foot = format ["<t align='right' size='0.72' color='%3'>%1%2</t>", _time, ["", "  " + _status] select (_status isNotEqualTo ""), ["#8a9a93", "#d6e4ef"] select (_sms && _mine)];
         _b ctrlSetStructuredText parseText ((format ["%1%2<br/>%3", _top, _body, _foot]) call comspec_atak_native_fnc_tr);
@@ -704,7 +704,7 @@ private _drawConv = {
             _p ctrlSetStructuredText parseText ((format ["<t size='0.8' color='#8a9a93'>Commandes : </t><t size='0.8' font='EtelkaMonospacePro' color='#f2ab33'>%1</t>", (_m apply { "/" + _x }) joinString "  "]) call comspec_atak_native_fnc_tr);
         };
         ([_txt] call comspec_atak_native_fnc_chatCommand) params ["", "", "_text", "_unknown", "_tags"];
-        private _chips = (_tags apply { format ["<t font='RobotoCondensedBold' color='%1'>[%2]</t>", ["#f2ab33", "#e5483a"] select (_x in ["URGENT", "CONTACT", "TIC", "MEDEVAC"]), _x] }) joinString " ";
+        private _chips = (_tags apply { format ["<t font='COMSPEC_BarlowBold' color='%1'>[%2]</t>", ["#f2ab33", "#e5483a"] select (_x in ["URGENT", "CONTACT", "TIC", "MEDEVAC"]), _x] }) joinString " ";
         private _bad = ["", format ["  <t color='#e5483a'>inconnu : %1</t>", _unknown joinString " "]] select ((count _unknown) > 0);
         private _safe = [[_text, "<", "&lt;"] call CBA_fnc_replace, ">", "&gt;"] call CBA_fnc_replace;
         _p ctrlSetStructuredText parseText ((format ["<t size='0.8' color='#8a9a93'>Aperçu : </t><t size='0.8'>%1 %2</t>%3", _chips, _safe, _bad]) call comspec_atak_native_fnc_tr);

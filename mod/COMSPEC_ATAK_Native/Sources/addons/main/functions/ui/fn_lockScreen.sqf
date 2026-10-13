@@ -130,7 +130,7 @@ switch (_act) do {
         private _clock = ["COMSPEC_RscTextCenter", [0, _y, _dw, _clockH], [dayTime, "HH:MM"] call BIS_fnc_timeToString] call _mk;
         // Style de l'heure (Réglages > Personnalisation, COMSPEC_ATAK_LockClockStyle) : fine, grasse, militaire (accent).
         private _cs = profileNamespace getVariable ["COMSPEC_ATAK_LockClockStyle", "light"];
-        _clock ctrlSetFont (createHashMapFromArray [["bold", "RobotoCondensedBold"], ["mil", "EtelkaMonospaceProBold"]] getOrDefault [_cs, "RobotoCondensedLight"]);
+        _clock ctrlSetFont (createHashMapFromArray [["bold", (COMSPEC_ATAK_FontSet select 1)], ["mil", "EtelkaMonospaceProBold"]] getOrDefault [_cs, (COMSPEC_ATAK_FontSet select 2)]);
         _clock ctrlSetFontHeight ((_font * ([3.5, 2.9] select (_cs isEqualTo "mil"))) max COMSPEC_ATAK_FontMin);
         _clock ctrlSetTextColor ([[0.97, 0.99, 0.97, 1], _acc] select (_cs isEqualTo "mil"));
         _y = _y + _clockH;
@@ -144,7 +144,7 @@ switch (_act) do {
             ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"] select _wd, _dd,
             ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"] select (_mo - 1)];
         private _date = ["COMSPEC_RscTextCenter", [0, _y, _dw, _font * 1.2], _dateTxt] call _mk;
-        _date ctrlSetFont "RobotoCondensedBold";
+        _date ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
         _date ctrlSetFontHeight (_fs * 0.95);
         _date ctrlSetTextColor _acc;
         _y = _y + _font * 1.2 + _pad * 0.6;
@@ -192,7 +192,7 @@ switch (_act) do {
         private _ch = _font * 2.5;
         private _hintY = _dh - _font * 2.4;
         private _lbl = ["COMSPEC_RscText", [_cx, _y, _cw, _font], ["AUCUNE NOTIFICATION", format ["NOTIFICATIONS · %1", count _hist]] select ((count _hist) > 0)] call _mk;
-        _lbl ctrlSetFont "RobotoCondensedBold";
+        _lbl ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
         _lbl ctrlSetFontHeight ((_fs * 0.75) max COMSPEC_ATAK_FontMin);
         _lbl ctrlSetTextColor [0.62, 0.69, 0.65, 1];
         _y = _y + _font * 1.05;
@@ -221,7 +221,7 @@ switch (_act) do {
             _pic ctrlSetTextColor [0.95, 0.98, 0.96, 1];
             private _tx = _ix + _iw + _pad;
             private _body = ["COMSPEC_RscStructuredText", [_tx, _y + _ch * 0.1, _cx + _cw - _tx - _pad, _ch * 0.85]] call _mk;
-            _body ctrlSetStructuredText parseText ((format ["<t size='0.8' font='RobotoCondensedBold' color='#eef3ef'>%1</t><t size='0.72' align='right' color='#8a9a93'>%2</t><br/><t size='0.8' color='#c4cfc9'>%3</t>",
+            _body ctrlSetStructuredText parseText ((format ["<t size='0.8' font='COMSPEC_BarlowBold' color='#eef3ef'>%1</t><t size='0.72' align='right' color='#8a9a93'>%2</t><br/><t size='0.8' color='#c4cfc9'>%3</t>",
                 [_title] call _e, _x getOrDefault ["time", ""], [_plain] call _e]) call comspec_atak_native_fnc_tr);
             _y = _y + _ch + _pad * 0.5;
             _shown = _shown + 1;

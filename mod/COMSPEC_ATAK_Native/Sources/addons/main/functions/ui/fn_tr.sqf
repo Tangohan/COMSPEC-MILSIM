@@ -9,6 +9,10 @@
 */
 private _v = _this;
 if (_v isEqualType []) exitWith { _v apply { _x call comspec_atak_native_fnc_tr } };
+// Police autre que Barlow Condensed choisie (Réglages > Police) : le texte structuré passe dans cette police (fn_fontText).
+if ((missionNamespace getVariable ["COMSPEC_ATAK_FontAlt", false]) && {_v isEqualType ""} && {((_v find "<t") >= 0) || {(_v find "<br") >= 0}}) then {
+    _v = _v call comspec_atak_native_fnc_fontText;
+};
 if (!(_v isEqualType "") || {_v isEqualTo ""} || {(missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]) isEqualTo "fr"}) exitWith { _v };
 private _cache = missionNamespace getVariable ["COMSPEC_ATAK_I18nCache", createHashMap];
 private _hit = _cache getOrDefault [_v, nil];

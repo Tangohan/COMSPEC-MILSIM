@@ -41,7 +41,7 @@ private _lbl = {
     private _c = [_cls, _rect, _t] call _mk;
     _c ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin);
     _c ctrlSetTextColor _col;
-    if (_bold) then { _c ctrlSetFont "RobotoCondensedBold"; };
+    if (_bold) then { _c ctrlSetFont (COMSPEC_ATAK_FontSet select 1); };
     _c
 };
 private _hit = {
@@ -132,7 +132,7 @@ private _yCol = [_y0, _y0];
     private _fx = _bx + _letW + _gap;
     private _fw = _bww - _letW - _gap;
     private _lt = ["COMSPEC_RscStructuredText", [_fx, _by, _fw, _labH]] call _mk;
-    _lt ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold'>%1</t>  <t size='0.8' color='#6f7a74'>%2</t>", toUpper _name, _ex]) call comspec_atak_native_fnc_tr);
+    _lt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='#6f7a74'>%2</t>", toUpper _name, _ex]) call comspec_atak_native_fnc_tr);
     _lt ctrlSetFontHeight (_fs * 0.9);
     // Boutons rapides de L et T, à droite du champ.
     private _quick = switch (_k) do {
@@ -222,7 +222,7 @@ for "_i" from ((count _log) - 1) to (((count _log) - 8) max 0) step -1 do {
     _ci ctrlSetTextColor _cBlue;
     private _cx = _pad * 2.2 + _ch * 0.56 / _ratio;
     private _c = ["COMSPEC_RscStructuredText", [_cx, _y + _ch * 0.08, _w - (_cx - _pad) - _pad, _ch * 0.9]] call _mk;
-    _c ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='#4d9ffa'>%1</t>  <t font='EtelkaMonospacePro' size='0.8' color='#8a9a93'>%2 · %3</t><br/><t size='0.85'>%4</t>",
+    _c ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#4d9ffa'>%1</t>  <t font='EtelkaMonospacePro' size='0.8' color='#8a9a93'>%2 · %3</t><br/><t size='0.85'>%4</t>",
         [_who] call _esc, _hour, [_lg] call _esc, [[_text, "—"] select (_text isEqualTo "")] call _esc]) call comspec_atak_native_fnc_tr);
     _c ctrlSetFontHeight _fs;
     _y = _y + _ch + _pad * 0.4;

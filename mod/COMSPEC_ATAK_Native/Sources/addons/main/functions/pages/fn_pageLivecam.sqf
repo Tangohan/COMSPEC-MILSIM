@@ -90,7 +90,7 @@ if ((_camSt select 0) isNotEqualTo "OK") exitWith {
         default { "Aucun ATAK du camp à portée de la caméra : rapprochez-vous ou laissez un équipier près d'elle." };
     };
     private _t = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh * 0.35, _vw, _rowH * 3]] call comspec_atak_native_fnc_pageCtrl;
-    _t ctrlSetStructuredText parseText ((format ["<t align='center' font='RobotoCondensedBold' color='#e0a33a'>%1 · %2</t><br/><t align='center' size='0.85' color='#8a9a93'>%3</t>",
+    _t ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' color='#e0a33a'>%1 · %2</t><br/><t align='center' size='0.85' color='#8a9a93'>%3</t>",
         _unit getVariable ["COMSPEC_ATAK_CamName", "CAM"], toUpper (_camSt select 1), _why]) call comspec_atak_native_fnc_tr);
     true
 };
@@ -98,7 +98,7 @@ if ((_camSt select 0) isNotEqualTo "OK") exitWith {
 private _link = ["eval", _unit] call comspec_atak_native_fnc_feedLink;
 if ((_link get "res") isEqualTo 0) exitWith {
     private _t = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh * 0.35, _vw, _rowH * 3]] call comspec_atak_native_fnc_pageCtrl;
-    _t ctrlSetStructuredText parseText ((format ["<t align='center' font='RobotoCondensedBold' color='#e0a33a'>FLUX COUPÉ</t><br/><t align='center' size='0.85' color='#8a9a93'>%1</t>",
+    _t ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' color='#e0a33a'>FLUX COUPÉ</t><br/><t align='center' size='0.85' color='#8a9a93'>%1</t>",
         _link get "why"]) call comspec_atak_native_fnc_tr);
     // On guette le retour de la liaison.
     missionNamespace setVariable ["COMSPEC_ATAK_FeedPfh", [{
@@ -118,7 +118,7 @@ private _pic = ["COMSPEC_RscPhone", [_vx, _vy, _vw, _vh], format ["#(argb,%1,%1,
 // Décrochage : voile noir « image perdue » posé par moments, d'autant plus souvent que la liaison est mauvaise.
 private _drop = ["COMSPEC_RscStructuredText", [_vx, _vy, _vw, _vh]] call comspec_atak_native_fnc_pageCtrl;
 _drop ctrlSetBackgroundColor [0, 0, 0, 0.92];
-_drop ctrlSetStructuredText parseText ((format ["<br/><br/><t align='center' font='RobotoCondensedBold' color='#e0a33a'>SIGNAL INSTABLE</t><br/><t align='center' size='0.8' color='#8a9a93'>mise en mémoire tampon · %1 kbit/s</t>", _link get "kbps"]) call comspec_atak_native_fnc_tr);
+_drop ctrlSetStructuredText parseText ((format ["<br/><br/><t align='center' font='COMSPEC_BarlowBold' color='#e0a33a'>SIGNAL INSTABLE</t><br/><t align='center' size='0.8' color='#8a9a93'>mise en mémoire tampon · %1 kbit/s</t>", _link get "kbps"]) call comspec_atak_native_fnc_tr);
 _drop ctrlShow false;
 uiNamespace setVariable ["COMSPEC_ATAK_FeedDrop", _drop];
 // Bandeau de liaison : palier, débit, pertes, relais de la source et du téléphone.
@@ -128,7 +128,7 @@ private _path = (([_upRelay, _downRelay] select { _x isNotEqualTo "" }) arrayInt
 private _tierCol = createHashMapFromArray [["HD", "#5bc76b"], ["SD", "#c9d4cf"], ["BAS", "#f2ab33"], ["MINIMAL", "#e5483a"]];
 private _netBar = ["COMSPEC_RscStructuredText", [_vx + _pad / 2, _vy + _vh - _rowH * 1.1, _vw - _pad, _rowH]] call comspec_atak_native_fnc_pageCtrl;
 _netBar ctrlSetFontHeight (_fs * 0.85);
-_netBar ctrlSetStructuredText parseText ((format ["<t align='right'><t font='RobotoCondensedBold' color='%1'>%2</t> <t color='#c9d4cf'>· %3 · perte %4 %%%5</t></t>",
+_netBar ctrlSetStructuredText parseText ((format ["<t align='right'><t font='COMSPEC_BarlowBold' color='%1'>%2</t> <t color='#c9d4cf'>· %3 · perte %4 %%%5</t></t>",
     _tierCol getOrDefault [_link get "tier", "#c9d4cf"], _link get "tier",
     [format ["%1 kbit/s", _link get "kbps"], format ["%1 Mbit/s", ((_link get "kbps") / 1000) toFixed 1]] select ((_link get "kbps") >= 1000),
     _link get "loss", ["", format [" · via %1", _path]] select (_path isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
@@ -153,10 +153,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_FeedPfh", [{
 }, 0.5, [_link get "drop", _link get "tier", diag_tickTime + 3]] call CBA_fnc_addPerFrameHandler];
 private _osd = ["COMSPEC_RscStructuredText", [_vx + _pad / 2, _vy + _pad / 2, _vw - _pad, _rowH * 2.3]] call comspec_atak_native_fnc_pageCtrl;
 if (!_fixed) then {
-    _osd ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='#e5483a'>● LIVE</t>  <t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m · cap %4°</t>",
+    _osd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m · cap %4°</t>",
         [_unit, true] call comspec_atak_native_fnc_unitCallsign, [getPosASL _unit, 8] call comspec_atak_native_fnc_gridRef, round (player distance _unit), round getDir _unit]) call comspec_atak_native_fnc_tr);
 } else {
-    _osd ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='#e5483a'>● LIVE</t>  <t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m</t>",
+    _osd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m</t>",
         _unit getVariable ["COMSPEC_ATAK_CamName", "CAM"], [getPosASL _unit, 8] call comspec_atak_native_fnc_gridRef, round (player distance _unit)]) call comspec_atak_native_fnc_tr);
     // Panoramique local (la caméra posée ne bouge pas) et renommage.
     private _bs = _btnH * 1.2;

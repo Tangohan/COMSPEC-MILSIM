@@ -30,9 +30,9 @@ switch (_phase) do {
         private _bar = format ["<t color='#5cc76b'>%1</t><t color='#4a5a53'>%2</t>", _on, _off];
         _rows append [
             ["title", "Liaison en cours"],
-            ["person", _icon, format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · gardez le contact (2 m)</t>", [name _target] call _esc,
+            ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · gardez le contact (2 m)</t>", [name _target] call _esc,
                 ["Lien NFC : posez votre téléphone contre le sien", "Câble USB-C branché : lecture directe de la mémoire"] select ((_st getOrDefault ["mode", "NFC"]) isNotEqualTo "NFC")], [], [0.36, 0.78, 0.42, 1]],
-            ["text", format ["<t size='1.2'>%1</t>  <t font='RobotoCondensedBold'>%2 %%</t>", _bar, round (_p * 100)]],
+            ["text", format ["<t size='1.2'>%1</t>  <t font='COMSPEC_BarlowBold'>%2 %%</t>", _bar, round (_p * 100)]],
             ["buttons", [["ANNULER", { ["unlink"] call comspec_atak_native_fnc_linkAllyAction; }]]]
         ];
     };
@@ -45,11 +45,11 @@ switch (_phase) do {
         // État masqué (Réglages > Réalisme, fn_medShow) : seul le décès reste visible.
         private _showState = ["state", "nfc"] call comspec_atak_native_fnc_medShow;
         private _stateTxt = switch (true) do {
-            case (_dead): { "<t color='#e5483a' font='RobotoCondensedBold'>KIA</t>" };
+            case (_dead): { "<t color='#e5483a' font='COMSPEC_BarlowBold'>KIA</t>" };
             case (!_showState): { "" };
-            case (_uncon): { "<t color='#f2ab33' font='RobotoCondensedBold'>INCONSCIENT</t>" };
-            case ((_target getVariable ["ace_medical_woundBleeding", 0]) > 0 || {(damage _target) > 0.1}): { "<t color='#e8b84a' font='RobotoCondensedBold'>BLESSÉ</t>" };
-            default { "<t color='#5cc76b' font='RobotoCondensedBold'>VALIDE</t>" };
+            case (_uncon): { "<t color='#f2ab33' font='COMSPEC_BarlowBold'>INCONSCIENT</t>" };
+            case ((_target getVariable ["ace_medical_woundBleeding", 0]) > 0 || {(damage _target) > 0.1}): { "<t color='#e8b84a' font='COMSPEC_BarlowBold'>BLESSÉ</t>" };
+            default { "<t color='#5cc76b' font='COMSPEC_BarlowBold'>VALIDE</t>" };
         };
         (_target getVariable ["COMSPEC_ATAK_Pub", []]) params [["_bat", -1], ["", 0], ["_dev", ""]];
         private _devTxt = createHashMapFromArray [["OK", "intact"], ["CRACKED", "écran fêlé"], ["OFF", "éteint"], ["BROKEN", "détruit"]] getOrDefault [_dev, "état inconnu"];
@@ -61,7 +61,7 @@ switch (_phase) do {
         if (_cs isEqualTo "") then { _cs = [_target, true] call comspec_atak_native_fnc_unitCallsign; };
         // En-tête : l'équipier, son état, son téléphone et le type de lien.
         _rows append [
-            ["person", _icon, format ["<t size='1.15' font='RobotoCondensedBold'>%1</t>  %2<br/><t size='0.8' color='#8a9a93'>%3 · téléphone %4 · lien %5 depuis %6</t>",
+            ["person", _icon, format ["<t size='1.15' font='COMSPEC_BarlowBold'>%1</t>  %2<br/><t size='0.8' color='#8a9a93'>%3 · téléphone %4 · lien %5 depuis %6</t>",
                 [_name] call _esc, _stateTxt, [[_cs] call _esc, "sans indicatif"] select (_cs isEqualTo ""), _devTxt, _st getOrDefault ["mode", "NFC"], _st getOrDefault ["linkedAt", ""]], [],
                 [[0.36, 0.78, 0.42, 1], [0.9, 0.28, 0.23, 1]] select _dead]
         ];
@@ -153,11 +153,11 @@ switch (_phase) do {
         _near = [_near, [], { player distance _x }, "ASCEND"] call BIS_fnc_sortBy;
         private _ready = count _c;
         _rows append [
-            ["hero", _icon, format ["<t size='1.15' font='RobotoCondensedBold'>Liaison ATAK</t><br/>%1", [
+            ["hero", _icon, format ["<t size='1.15' font='COMSPEC_BarlowBold'>Liaison ATAK</t><br/>%1", [
                 format ["<t color='#5cc76b'>%1 appareil(s) à portée de lien</t>", _ready],
                 ["<t color='#8a9a93'>Aucun équipier à moins de 2 m</t>", format ["<t color='#f2ab33'>%1 équipier(s) à moins de 50 m : approchez-vous</t>", count _near]] select ((count _near) > 0)
             ] select (_ready isEqualTo 0)]],
-            ["text", "<t size='0.85' color='#c9d4cf'><t color='#5cc76b' font='RobotoCondensedBold'>1</t>  Approchez-vous à 2 m du blessé, du corps ou de son téléphone tombé<br/><t color='#5cc76b' font='RobotoCondensedBold'>2</t>  RELIER, puis gardez le contact pendant la liaison<br/><t color='#5cc76b' font='RobotoCondensedBold'>3</t>  Lisez son identité, envoyez son rapport, renvoyez ses données</t>"]
+            ["text", "<t size='0.85' color='#c9d4cf'><t color='#5cc76b' font='COMSPEC_BarlowBold'>1</t>  Approchez-vous à 2 m du blessé, du corps ou de son téléphone tombé<br/><t color='#5cc76b' font='COMSPEC_BarlowBold'>2</t>  RELIER, puis gardez le contact pendant la liaison<br/><t color='#5cc76b' font='COMSPEC_BarlowBold'>3</t>  Lisez son identité, envoyez son rapport, renvoyez ses données</t>"]
         ];
         if (_ready > 0) then { _rows pushBack ["section", "À portée de lien", "Moins de 2 m"]; };
         {
@@ -169,7 +169,7 @@ switch (_phase) do {
                 default { "<t color='#5cc76b'>valide</t>" };
             };
             (_owner getVariable ["COMSPEC_ATAK_Pub", []]) params [["", -1], ["", 0], ["_dev", ""]];
-            _rows pushBack ["person", _icon, format ["<t font='RobotoCondensedBold'>%1</t>  %2<br/><t size='0.8' color='#8a9a93'>%3 · %4 m · téléphone %5</t>",
+            _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t>  %2<br/><t size='0.8' color='#8a9a93'>%3 · %4 m · téléphone %5</t>",
                 [name _owner] call _esc, _st2, _what, _dist toFixed 1, createHashMapFromArray [["OK", "intact"], ["CRACKED", "fêlé"], ["OFF", "éteint"], ["BROKEN", "détruit"]] getOrDefault [_dev, "?"]],
                 [["RELIER", compile format ["['link', objectFromNetId '%1'] call comspec_atak_native_fnc_linkAllyAction;", netId _obj], true]]];
         } forEach _c;
@@ -177,7 +177,7 @@ switch (_phase) do {
             _rows pushBack ["section", "À proximité", "Équipiers avec un téléphone, à moins de 50 m"];
             {
                 private _down = !alive _x || {lifeState _x isEqualTo "INCAPACITATED"} || {_x getVariable ["ACE_isUnconscious", false]};
-                _rows pushBack ["person", _icon, format ["<t font='RobotoCondensedBold'>%1</t>  %2<br/><t size='0.8' color='#8a9a93'>%3 m · approchez-vous à 2 m</t>",
+                _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t>  %2<br/><t size='0.8' color='#8a9a93'>%3 m · approchez-vous à 2 m</t>",
                     [name _x] call _esc, ["", "<t color='#f2ab33'>à terre</t>"] select (_down && {["state", "nfc"] call comspec_atak_native_fnc_medShow}), round (player distance _x)],
                     [["TROP LOIN", {}, false, false]], [0.55, 0.6, 0.58, 1]];
             } forEach (_near select [0, 6]);

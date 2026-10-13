@@ -269,7 +269,7 @@ switch (_act) do {
             } forEach [[_a, _b, _d2], [_b, _a, _c2], [_c2, _d2, _b], [_d2, _c2, _a]];
             private _ct = (_c select [0, 3]) apply { (_x + 0.25) min 1 };
             _ct pushBack 1;
-            drawIcon3D ["#(argb,8,8,3)color(0,0,0,0)", _ct, _a, 1, 1, 0, _txt, 2, 0.034, "RobotoCondensedBold", "left", false, 0, -0.012];
+            drawIcon3D ["#(argb,8,8,3)color(0,0,0,0)", _ct, _a, 1, 1, 0, _txt, 2, 0.034, (COMSPEC_ATAK_FontSet select 1), "left", false, 0, -0.012];
         };
         {
             private _o = _y get "obj";

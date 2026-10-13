@@ -119,7 +119,7 @@ private _white = [1, 1, 1, 0.9 * _alpha];
                     if (_style isEqualTo "CHECK") then {
                         _map drawIcon ["\z\comspec_atak_native\addons\main\data\ui_check.paa", _c, _p, _isz * 0.8, _isz * 0.8, 0, "", 0];
                     } else {
-                        _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)", _c, _p, 0, 0, 0, "!", 0, _tsz * 1.05, "RobotoCondensedBold", "center"];
+                        _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)", _c, _p, 0, 0, 0, "!", 0, _tsz * 1.05, (COMSPEC_ATAK_FontSet select 1), "center"];
                     };
                     ["label", _map, [_p, toUpper _lbl, _c, _tsz * 0.9, _mpx, [_isz * 0.7 + (count _lbl) * 0.26 * (_tsz * 0.9 / pixelH), _isz * 0.9]]] call _gfx;
                 };

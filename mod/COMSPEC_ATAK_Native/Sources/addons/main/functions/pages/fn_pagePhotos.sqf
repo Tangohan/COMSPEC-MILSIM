@@ -60,7 +60,7 @@ _bg ctrlSetBackgroundColor [0, 0, 0, 1];
 private _tex = ["bind", _vw / (_vh * _ratio)] call comspec_atak_native_fnc_photoCam;
 if (_tex isEqualTo "") then {
     private _t = ["COMSPEC_RscStructuredText", [_vx + _pad, _vy + _vh * 0.4, _vw - _pad * 2, _font * 3]] call _mk;
-    _t ctrlSetStructuredText parseText (("<t align='center' font='RobotoCondensedBold' color='#f2ab33'>VISEUR INDISPONIBLE</t><br/><t align='center' size='0.8' color='#a9b8b1'>Activez « Image dans l'image » (PiP) dans Options > Vidéo d'Arma, ou passez en PLEIN ÉCRAN.</t>") call comspec_atak_native_fnc_tr);
+    _t ctrlSetStructuredText parseText (("<t align='center' font='COMSPEC_BarlowBold' color='#f2ab33'>VISEUR INDISPONIBLE</t><br/><t align='center' size='0.8' color='#a9b8b1'>Activez « Image dans l'image » (PiP) dans Options > Vidéo d'Arma, ou passez en PLEIN ÉCRAN.</t>") call comspec_atak_native_fnc_tr);
 } else {
     private _vf = ["COMSPEC_RscPhone", [_vx, _vy, _vw, _vh], _tex] call _mk;
     // Journal RPT de l'ouverture du viseur (fn_pipCheck, une fois par caméra) et texture rebranchée après son premier rendu.
@@ -147,13 +147,13 @@ private _zx = _vx + _vw / 2;
 private _zl = ["COMSPEC_RscStructuredText", [_zx - _zw * 1.05, _zy, _zw * 2.1, _chipH]] call _mk;
 _zl ctrlSetBackgroundColor [0, 0, 0, 0.55];
 _zl ctrlEnable false;
-_zl ctrlSetStructuredText parseText ((format ["<t align='center' font='RobotoCondensedBold' color='#5cc76b'>x%1</t>", [_zoom toFixed 1, str _zoom] select ((_zoom mod 1) isEqualTo 0)]) call comspec_atak_native_fnc_tr);
+_zl ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' color='#5cc76b'>x%1</t>", [_zoom toFixed 1, str _zoom] select ((_zoom mod 1) isEqualTo 0)]) call comspec_atak_native_fnc_tr);
 ["+", [_zx + _zw * 1.1, _zy, _zw, _chipH], compile format ["%1 ['zoom', 1] call comspec_atak_native_fnc_photoCam;", _keep], "Zoomer (numérique, jusqu'à x8)"] call _chip;
 if (!_canShoot) then {
     private _w = ["COMSPEC_RscStructuredText", [_vx + _pad, _vy + _vh * 0.58, _vw - _pad * 2, _font * 1.6]] call _mk;
     _w ctrlSetBackgroundColor [0, 0, 0, 0.55];
     _w ctrlEnable false;
-    _w ctrlSetStructuredText parseText (("<t align='center' size='0.9' font='RobotoCondensedBold' color='#f2ab33'>CONNECTEZ-VOUS À ATHENA POUR PHOTOGRAPHIER</t>") call comspec_atak_native_fnc_tr);
+    _w ctrlSetStructuredText parseText (("<t align='center' size='0.9' font='COMSPEC_BarlowBold' color='#f2ab33'>CONNECTEZ-VOUS À ATHENA POUR PHOTOGRAPHIER</t>") call comspec_atak_native_fnc_tr);
 };
 
 // Commandes : galerie, déclencheur, selfie.

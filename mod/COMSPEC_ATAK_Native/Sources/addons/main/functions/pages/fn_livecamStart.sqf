@@ -50,7 +50,7 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
         if (!isNull _osd) then {
             (["adapt", ["LIVECAM", _v]] call comspec_atak_native_fnc_videoLink) params ["_vt", "_vtxt"];
             if (_vtxt isNotEqualTo "") then { ["INFO", _vtxt, 3, 30] call comspec_atak_native_fnc_notify; };
-            _osd ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='#e5483a'>● LIVE</t>  <t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m · cap %4° · %5%6</t>",
+            _osd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m · cap %4° · %5%6</t>",
                 [_u, true] call comspec_atak_native_fnc_unitCallsign, [getPosASL _u, 8] call comspec_atak_native_fnc_gridRef, round (player distance _u), round getDir _u, [daytime, "HH:MM:SS"] call BIS_fnc_timeToString,
                 ["", "<br/>" + (["osd", [_v, _vt]] call comspec_atak_native_fnc_videoLink)] select (_v getOrDefault ["active", false])]) call comspec_atak_native_fnc_tr);
         };

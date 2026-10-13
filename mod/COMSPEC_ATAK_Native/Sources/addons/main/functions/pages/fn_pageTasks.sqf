@@ -51,7 +51,7 @@ _rows append [["section", "Ordres du TOC", [format ["%1 ordre(s), %2 à traiter"
     private _prio = toUpper (_y getOrDefault ["priority", "NORMAL"]);
     private _payload = _y getOrDefault ["payload", ""];
     if !(_payload isEqualType "") then { _payload = str _payload; };
-    _rows pushBack ["person", _icon, format ["<t font='RobotoCondensedBold'>%1</t>  <t color='%2' size='0.85'>%3</t>%4<br/><t size='0.8' color='#8a9a93'>De %5 · cible %6</t>%7",
+    _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='%2' size='0.85'>%3</t>%4<br/><t size='0.8' color='#8a9a93'>De %5 · cible %6</t>%7",
         [_label] call _esc, _hex, _labels getOrDefault [_st, _st], ["", "  <t color='#e04038' size='0.85'>PRIORITAIRE</t>"] select (_prio in ["HIGH", "URGENT", "FLASH", "PRIORITY"]),
         [_y getOrDefault ["issuer", "TOC"]] call _esc, [_y getOrDefault ["target", "-"]] call _esc,
         ["", format ["<br/><t size='0.85'>%1</t>", [_payload select [0, 220]] call _esc]] select (_payload isNotEqualTo "")], [], _rgb];
@@ -90,7 +90,7 @@ _rows append [["section", "Ordres du TOC", [format ["%1 ordre(s), %2 à traiter"
             private _pic = "";
             if (!isNull _u) then { _pic = [_u] call comspec_atak_native_fnc_avatarPath; if (_pic isEqualTo "") then { _pic = [_u, "texture"] call BIS_fnc_rankParams; }; };
             if (_pic isEqualTo "") then { _pic = "\a3\ui_f\data\map\vehicleicons\iconman_ca.paa"; };
-            _rows pushBack ["person", _pic, format ["<t font='RobotoCondensedBold'>%1</t>  <t color='%2' size='0.85'>%3</t><br/><t size='0.8' color='#8a9a93'>%4%5%6</t>",
+            _rows pushBack ["person", _pic, format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='%2' size='0.85'>%3</t><br/><t size='0.8' color='#8a9a93'>%4%5%6</t>",
                 [_nm] call _esc, _hex2, _stTxt, [_gn] call _esc, ["", format [" · %1", _a param [2, ""]]] select ((_a param [2, ""]) isNotEqualTo ""),
                 ["", format [" · par le chef %1", [_a param [3, ""]] call _esc]] select ((_a param [3, ""]) isNotEqualTo "")], [], [1, 1, 1, 1]];
         } forEach _list;
@@ -115,7 +115,7 @@ _rows pushBack ["section", "Tâches de la mission", [format ["%1 tâche(s)", cou
     private _btns = [];
     if (_has) then { _btns pushBack ["CARTE", compile format ["private _p = taskDestination ((simpleTasks player) select %1); ['MAP'] call comspec_atak_native_fnc_navigate; [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, [_p select 0, _p select 1]] call CBA_fnc_execNextFrame;", _idx]]; };
     _btns pushBack [["SUIVRE", "SUIVIE"] select _isCur, compile format ["player setCurrentTask ((simpleTasks player) select %1); ['TASK'] call comspec_atak_native_fnc_pageRender;", _idx], !_isCur, !_isCur];
-    _rows pushBack ["person", _icon, format ["<t font='RobotoCondensedBold' %1>%2</t>  <t color='%3' size='0.85'>%4</t><br/><t size='0.8' color='#8a9a93'>Tâche de mission%5</t>%6",
+    _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold' %1>%2</t>  <t color='%3' size='0.85'>%4</t><br/><t size='0.8' color='#8a9a93'>Tâche de mission%5</t>%6",
         ["", format ["color='%1'", _accHex]] select _isCur, [_desc select 1] call _esc, _hex, _labels getOrDefault [_st, _st], _dist,
         ["", format ["<br/><t size='0.8'>%1</t>", [_body select [0, 200]] call _esc]] select (_body isNotEqualTo "")], _btns, _rgb];
 } forEach _tasks;

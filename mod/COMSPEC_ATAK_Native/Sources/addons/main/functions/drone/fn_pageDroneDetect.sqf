@@ -74,9 +74,9 @@ private _summary = {
     private _s = round ((diag_tickTime - _at) max 0);
     private _d3 = str ((round _hd) mod 360);
     while { (count _d3) < 3 } do { _d3 = "0" + _d3; };
-    format ["<t size='0.75' color='#8a9a93'>CAP</t><br/><t size='1.6' font='RobotoCondensedBold'>%1°</t> <t color='#8a9a93'>%2</t><br/>%3<br/><t size='0.8' color='#8a9a93'>%4<br/>%5</t>",
+    format ["<t size='0.75' color='#8a9a93'>CAP</t><br/><t size='1.6' font='COMSPEC_BarlowBold'>%1°</t> <t color='#8a9a93'>%2</t><br/>%3<br/><t size='0.8' color='#8a9a93'>%4<br/>%5</t>",
         _d3, ["N", "NE", "E", "SE", "S", "SO", "O", "NO"] select ((round (_hd / 45)) mod 8),
-        [format ["<t color='#e5483a' font='RobotoCondensedBold'>%1 DRONE(S) INCONNU(S)</t>", _unk], "<t color='#5cc76b'>Aucun drone inconnu</t>"] select (_unk isEqualTo 0),
+        [format ["<t color='#e5483a' font='COMSPEC_BarlowBold'>%1 DRONE(S) INCONNU(S)</t>", _unk], "<t color='#5cc76b'>Aucun drone inconnu</t>"] select (_unk isEqualTo 0),
         ["Balayage manuel", "<t color='#5cc76b'>● Balayage automatique</t>"] select (profileNamespace getVariable ["COMSPEC_ATAK_DroneAuto", false]),
         ["Pas encore balayé", format ["Dernier balayage il y a %1", [format ["%1 s", _s], format ["%1 min %2 s", floor (_s / 60), _s mod 60]] select (_s >= 60)]] select (_at >= 0)]
 };
@@ -97,7 +97,7 @@ private _rows = [
     private _clock = (round (_rel / 30)) mod 12;
     if (_clock isEqualTo 0) then { _clock = 12; };
     private _barTxt = format ["<t color='%1'>%2</t><t color='#3a4440'>%3</t>", ["#5cc76b", "#8a9a93"] select _lost, ["", "●", "●●", "●●●", "●●●●"] select _bars, ["", "●", "●●", "●●●", "●●●●"] select (4 - _bars)];
-    _rows pushBack ["text", format ["<t font='RobotoCondensedBold' color='%1'>%2</t>  <t size='1.15' font='RobotoCondensedBold'>%3° %4</t>  <t color='#8a9a93'>±%5°</t>  <t size='0.9'>à %6 h</t><br/><t size='0.9'>%7  %8 dBm · %9</t><br/><t size='0.8' color='#8a9a93'>%10 · entendu depuis %11 · %12</t>",
+    _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2</t>  <t size='1.15' font='COMSPEC_BarlowBold'>%3° %4</t>  <t color='#8a9a93'>±%5°</t>  <t size='0.9'>à %6 h</t><br/><t size='0.9'>%7  %8 dBm · %9</t><br/><t size='0.8' color='#8a9a93'>%10 · entendu depuis %11 · %12</t>",
         ["#e5483a", "#4d9aff"] select _friend, ["INCONNU", "AMI"] select _friend, [_brg] call _deg3, [_brg] call _card, round _err, _clock,
         _barTxt, _dbm, _band,
         [format ["distance estimée %1", _rb], "distance inconnue (signal trop faible)"] select (_rb isEqualTo ""),

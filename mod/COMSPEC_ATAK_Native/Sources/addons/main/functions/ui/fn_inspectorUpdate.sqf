@@ -22,7 +22,7 @@ if ((count _e) isEqualTo 0) then {
     private _w = wind;
     private _from = (((_w select 0) atan2 (_w select 1)) + 180) mod 360;
     private _kv = { params ["_k", "_v"]; format ["<t align='left' color='#8a9a93'>%1</t><t align='right'>%2</t>", _k, _v] };
-    private _tile = { params ["_n", "_lab", "_col"]; format ["<t size='1.6' font='RobotoCondensedBold' color='%3'>%1</t><t size='0.8' color='#8a9a93'> %2</t>", _n, _lab, _col] };
+    private _tile = { params ["_n", "_lab", "_col"]; format ["<t size='1.6' font='COMSPEC_BarlowBold' color='%3'>%1</t><t size='0.8' color='#8a9a93'> %2</t>", _n, _lab, _col] };
     _text = format ["<t size='0.85'>%1   %2<br/><br/>%3<br/>%4<br/>%5<br/>%6<br/>%7<br/>%8</t><br/><br/><t size='0.75' color='#8a9a93'>Cliquez sur une unité pour sa fiche.</t>",
         [_fr, "alliés", "#47b3ff"] call _tile, [_ho, "contacts", ["#8a9a93", "#e5483a"] select (_ho > 0)] call _tile,
         ["Réseau", _netTxt] call _kv,
@@ -37,7 +37,7 @@ if ((count _e) isEqualTo 0) then {
     private _aff = _e getOrDefault ["affiliation", "unknown"];
     private _affTxt = createHashMapFromArray [["friend", "<t color='#47b3ff'>ami</t>"], ["hostile", "<t color='#e5483a'>ennemi</t>"], ["neutral", "<t color='#5cc76b'>neutre</t>"]] getOrDefault [_aff, "inconnu"];
     private _fresh = createHashMapFromArray [["LIVE", "<t color='#5cc76b'>en direct</t>"], ["STALE", "<t color='#f2ab33'>retardée</t>"], ["LOST", "<t color='#e5483a'>perdue</t>"], ["OFFLINE", "<t color='#8a9a93'>hors ligne</t>"]] getOrDefault [_e getOrDefault ["freshness", "LIVE"], "?"];
-    private _lines = [format ["<t size='1.15' font='RobotoCondensedBold' color='#5cc76b'>%1</t>  %2", _e getOrDefault ["callsign", "CONTACT"], _affTxt]];
+    private _lines = [format ["<t size='1.15' font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  %2", _e getOrDefault ["callsign", "CONTACT"], _affTxt]];
     if (!isNull _o) then {
         if (isPlayer _o && {_aff isEqualTo "friend"}) then { _lines pushBack format ["%1 %2", "Nom :" call _dim, name _o]; };
         private _role = roleDescription _o;

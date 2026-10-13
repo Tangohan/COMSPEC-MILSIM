@@ -36,7 +36,7 @@ private _code = _bt get "code";
 private _codeOn = _code isNotEqualTo "" && {_now < (_bt get "codeUntil")};
 _rows pushBack ["section", "Appairer un appareil", format ["Les deux téléphones à moins de %1 m", round _range]];
 if (_codeOn) then {
-    _rows pushBack ["text", format ["<t align='center' size='2' font='RobotoCondensedBold' color='%1'>%2 %3</t><br/><t align='center' size='0.8' color='#8a9a93'>Code d'appairage · valable encore %4 s · à saisir sur l'autre téléphone</t>",
+    _rows pushBack ["text", format ["<t align='center' size='2' font='COMSPEC_BarlowBold' color='%1'>%2 %3</t><br/><t align='center' size='0.8' color='#8a9a93'>Code d'appairage · valable encore %4 s · à saisir sur l'autre téléphone</t>",
         _accHex, _code select [0, 3], _code select [3, 3], round ((_bt get "codeUntil") - _now)]];
     _rows pushBack ["buttons", [["CACHER LE CODE", ["hideCode"] call _act]]];
 } else {
@@ -53,7 +53,7 @@ if ((count _pend) > 0) then {
     _rows pushBack ["section", "Demandes reçues", "Le son sortira du haut-parleur : les joueurs proches l'entendront"];
     {
         _x params ["_id", "", "_name", "_kind", "", "_title", "_at"];
-        _rows pushBack ["person", _icon, format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · %3 · expire dans %4 s</t>",
+        _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2 · %3 · expire dans %4 s</t>",
             [_title] call _esc, [_name] call _esc, ["son", "musique"] select (_kind isEqualTo "mus"), round (60 - (_now - _at))],
             [["ACCEPTER", ["accept", _id] call _act, true], ["REFUSER", ["refuse", _id] call _act]], _acc];
     } forEach _pend;
@@ -77,7 +77,7 @@ if ((count _paired) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a
         case ((_u distance player) > _range): { format ["<t color='#f2ab33'>hors de portée · %1 m</t>", round (_u distance player)] };
         default { format ["<t color='%1'>connecté · %2 m</t>", _accHex, round (_u distance player)] };
     };
-    _rows pushBack ["person", _icon, format ["<t font='RobotoCondensedBold'>ATAK de %1</t><br/><t size='0.8'>%2</t>", [_name] call _esc, _st],
+    _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>ATAK de %1</t><br/><t size='0.8'>%2</t>", [_name] call _esc, _st],
         [[["SONS", "FERMER"] select (_target isEqualTo _uid), ["target", _uid] call _act, _target isNotEqualTo _uid], ["OUBLIER", ["unpair", _uid] call _act]],
         [[0.55, 0.6, 0.58, 1], _acc] select (_target isEqualTo _uid)];
 } forEach _paired;

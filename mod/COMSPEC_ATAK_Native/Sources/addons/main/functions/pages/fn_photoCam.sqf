@@ -239,7 +239,7 @@ switch (_act) do {
         if (isNull _osd) exitWith { false };
         private _selfie = _st getOrDefault ["camSelfie", false];
         (call _pose) params ["", "_dir"];
-        _osd ctrlSetStructuredText parseText ((format ["<t size='0.8' font='EtelkaMonospacePro' color='#e8eee9' shadow='2'>%1</t><t size='0.8' align='right' font='EtelkaMonospacePro' color='#e8eee9' shadow='2'>%2°  %3</t><br/><t size='0.8' font='RobotoCondensedBold' color='%5' shadow='2'>%4</t><t size='0.8' align='right' font='RobotoCondensedBold' color='#5cc76b' shadow='2'>x%6</t>",
+        _osd ctrlSetStructuredText parseText ((format ["<t size='0.8' font='EtelkaMonospacePro' color='#e8eee9' shadow='2'>%1</t><t size='0.8' align='right' font='EtelkaMonospacePro' color='#e8eee9' shadow='2'>%2°  %3</t><br/><t size='0.8' font='COMSPEC_BarlowBold' color='%5' shadow='2'>%4</t><t size='0.8' align='right' font='COMSPEC_BarlowBold' color='#5cc76b' shadow='2'>x%6</t>",
             [getPosASL player, 8] call comspec_atak_native_fnc_gridRef, round ((((_dir select 0) atan2 (_dir select 1)) + 360) mod 360), [dayTime, "HH:MM"] call BIS_fnc_timeToString,
             (["OBJECTIF ARRIÈRE", "SELFIE"] select _selfie) + (["", "  · BASSE LUMIÈRE", "  · MODE NUIT"] select ((missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamLvl", 0]) max 0 min 2)), ["#c9d4cf", "#f2d36b"] select _selfie, [_st getOrDefault ["camZoom", 1]] call _zs]) call comspec_atak_native_fnc_tr);
         true

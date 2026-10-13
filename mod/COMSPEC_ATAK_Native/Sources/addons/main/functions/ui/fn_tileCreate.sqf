@@ -10,6 +10,7 @@ private _made = [];
 private _mk = {
     params ["_class", "_p"];
     private _c = if (isNull _group) then { _display ctrlCreate [_class, -1] } else { _display ctrlCreate [_class, -1, _group] };
+    [_c, _class] call comspec_atak_native_fnc_fontApply;
     _c ctrlSetPosition _p;
     _c ctrlCommit 0;
     _made pushBack _c;
@@ -27,6 +28,7 @@ private _two = false;
 if (_label isNotEqualTo "") then {
     // Mesure sur un contrôle temporaire (même police que le libellé), supprimé aussitôt.
     private _m = if (isNull _group) then { _display ctrlCreate ["COMSPEC_RscTextCenter", -1] } else { _display ctrlCreate ["COMSPEC_RscTextCenter", -1, _group] };
+    [_m, "COMSPEC_RscTextCenter"] call comspec_atak_native_fnc_fontApply;
     _m ctrlSetPosition [_x0, _y0, _w * 4, _font * 1.35];
     _m ctrlCommit 0;
     _m ctrlSetText _labelTxt; // i18n:brut (déjà traduit)

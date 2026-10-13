@@ -38,6 +38,31 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Nouvelle police du téléphone, au choix (ATAK natif 1.83.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Nouvelle police du téléphone, au choix
+- Le téléphone passe en Barlow Condensed, une police condensée plus nette sur le petit écran.
+- Réglages > Police permet d'en choisir une autre : B612, Rajdhani, Share Tech, ou celles du jeu (Roboto, Purista).
+- Le même choix est dans Options des addons > COMSPEC > Police du téléphone.
+EN : New phone font, your choice
+- The phone now uses Barlow Condensed, a condensed font that stays sharp on the small screen.
+- Settings > Font lets you pick another one: B612, Rajdhani, Share Tech, or the game's own (Roboto, Purista).
+- The same choice is in Addon Options > COMSPEC > Phone font.
+
+### Détail technique
+
+Non testé en jeu. Demandes de TTRD : « T'as pas du tout changé les font », « Va pour Barlow Condensed, et mets un paramètre dans les settings pour le font et permet de choisir les autres ».
+- Polices OFL converties au format Arma par `tools/gen_fonts.py` (sans FontToTga) : `.fxy` = « BIFo » + 01 01 00 00 puis 7 entiers 16 bits par caractère (code, page, x, y, largeur, hauteur, avance), format relevé sur les polices d'ACE3 ; planche `-01.paa` (DXT5, comme ACE3). 12 tailles (8 à 46) pour Barlow Condensed Medium/Bold/Regular, B612 Regular/Bold, Rajdhani Medium/Bold, Share Tech : 5,4 Mo. Familles `COMSPEC_Barlow`, `COMSPEC_BarlowBold`, `COMSPEC_BarlowLight`, `COMSPEC_B612(Bold)`, `COMSPEC_Rajdhani(Bold)`, `COMSPEC_ShareTech` dans `ui/fonts.hpp`, chaque taille appariée à Roboto Condensed du jeu pour les caractères absents (symboles). Licences dans `fonts/*/OFL.txt`, crédits dans CREDITS.md.
+- Classes `COMSPEC_Rsc…` et balises `<t font=…>` des apps en `COMSPEC_Barlow…` ; police par défaut des balises `<t>` posée dans `COMSPEC_RscStructuredText >> Attributes`.
+- Réglage CBA client `comspec_atak_native_font` (en tête de la liste COMSPEC, dans la police du jeu), repris dans Réglages > Affichage > Police : `fn_fontSet` pose `COMSPEC_ATAK_FontSet` [courant, gras, léger] ; `fn_fontApply` l'applique aux contrôles créés par `fn_pageCtrl`, `fn_formRender`, `fn_tileCreate` et aux textes fixes du display (`fn_layoutApply`) ; `fn_fontText` (appelée par `fn_tr`) remplace les familles dans le texte structuré et l'enveloppe dans la police choisie ; les `ctrlSetFont` et `drawIcon` des apps et de la carte lisent `COMSPEC_ATAK_FontSet`. Les rares contrôles créés par `ctrlCreate` hors de ces fonctions restent en Barlow.
+- Règle pour les prochaines PR du téléphone : écrire `COMSPEC_Barlow`/`COMSPEC_BarlowBold` dans les balises `<t font=…>` et `(COMSPEC_ATAK_FontSet select 0|1|2)` pour `ctrlSetFont` et `drawIcon`, jamais `RobotoCondensed…`.
+
+À tester en jeu
+- Premier point : le texte du téléphone s'affiche bien en Barlow Condensed (format de police généré sans l'outil de Bohemia). Si le texte est illisible ou absent : Échap > Options > Options des addons > COMSPEC > Police du téléphone > Roboto Condensed remet la police du jeu.
+- Les 6 polices, en mode mini (portrait, paysage) et plein écran ; aucun libellé qui déborde (BFT, Alertes, Réglages, Drone, CFF, tuiles du lanceur) ; textes de la carte.
+
 ## Gouttes de pluie sur l'écran désactivées (ATAK natif 1.82.0)
 
 ### Résumé joueur

@@ -1,14 +1,15 @@
 #include "colors.hpp"
-// Polices du téléphone (polices du jeu, rien d'embarqué) : une famille Android condensée pour tout le texte,
-// une monospace pour les valeurs alignées (grilles, heures, fréquences, compteurs).
+// Polices du téléphone : Barlow Condensed embarquée (ui/fonts.hpp, tools/gen_fonts.py) pour tout le texte, une monospace
+// du jeu pour les valeurs alignées (grilles, heures, fréquences, compteurs). Réglages > Police en choisit une autre :
+// fn_fontSet remplace ces familles à l'affichage (contrôles créés par fn_fontApply, balises <t font=…> par fn_tr).
 // Tailles : échelle de fn_layoutGet (font, fontSmall, fontCaption, fontTitle, fontDisplay) avec plancher en pixels.
-#define ATAK_FONT "RobotoCondensed"
-#define ATAK_FONT_BOLD "RobotoCondensedBold"
-#define ATAK_FONT_LIGHT "RobotoCondensedLight"
+#define ATAK_FONT "COMSPEC_Barlow"
+#define ATAK_FONT_BOLD "COMSPEC_BarlowBold"
+#define ATAK_FONT_LIGHT "COMSPEC_BarlowLight"
 #define ATAK_FONT_MONO "EtelkaMonospacePro"
 #define ATAK_FONT_MONO_BOLD "EtelkaMonospaceProBold"
 class RscText;
-class RscStructuredText;
+class RscStructuredText { class Attributes; };
 class RscButton;
 class RscEdit;
 class RscCombo;
@@ -29,7 +30,10 @@ class COMSPEC_RscTextRight: COMSPEC_RscText { style=1; };
 class COMSPEC_RscTextCenter: COMSPEC_RscText { style=2; };
 // Texte centré sur plusieurs lignes (libellé long d'une tuile du lanceur).
 class COMSPEC_RscTextCenterMulti: COMSPEC_RscText { style=18; lineSpacing=1; };
-class COMSPEC_RscStructuredText: RscStructuredText { colorText[]=ATAK_TEXT; colorBackground[]={0,0,0,0}; size="0.024 * safeZoneH"; };
+class COMSPEC_RscStructuredText: RscStructuredText { colorText[]=ATAK_TEXT; colorBackground[]={0,0,0,0}; size="0.024 * safeZoneH";
+    // Police des balises <t> sans font=… (Roboto Condensed dans la classe du jeu).
+    class Attributes: Attributes { font=ATAK_FONT; };
+};
 class COMSPEC_RscButton: RscButton {
     // Désactivé (ctrlEnable false) : texte nettement atténué et fond quasi transparent, bien distinct d'un bouton
     // disponible non choisi (fond BG2, texte clair).

@@ -35,7 +35,7 @@ if ((count _shown) isEqualTo 0) then {
     private _hex = (createHashMapFromArray [["TRACK", "#e5483a"], ["LOST", "#8a9a93"], ["DOWN", "#5cc76b"]]) getOrDefault [_st, "#c9d4cf"];
     private _ago = round (time - (_e get "seen"));
     private _p = _e get "pos";
-    _rows pushBack ["text", format ["<t font='RobotoCondensedBold'>LOCK %1 · %2</t>  <t size='0.8' color='%3'>%4</t><br/><t size='0.8' color='#8a9a93'>%5 · %6 m · %7 · marqué à %8 (%9)</t>",
+    _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>LOCK %1 · %2</t>  <t size='0.8' color='%3'>%4</t><br/><t size='0.8' color='#8a9a93'>%5 · %6 m · %7 · marqué à %8 (%9)</t>",
         [_e get "num", 3] call CBA_fnc_formatNumber, [_e get "name"] call _esc, _hex,
         (createHashMapFromArray [["TRACK", "ACCROCHÉE"], ["LOST", "PERDUE"], ["DOWN", "NEUTRALISÉE"]]) getOrDefault [_st, _st],
         [_p, 8] call comspec_atak_native_fnc_gridRef, round (player distance2D _p), [format ["vue il y a %1 s", _ago], "en vue"] select (_ago < 2),
@@ -58,7 +58,7 @@ _rows pushBack ["section", format ["Zones interdites au drone : %1", count _zone
 if ((count _zones) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucune zone interdite.</t>"]; };
 {
     _x params ["_id", "_c", "_r", "_who"];
-    _rows pushBack ["text", format ["<t font='RobotoCondensedBold'>%1</t>  <t size='0.8' color='#8a9a93'>rayon %2 m · à %3 m · posée par %4</t>",
+    _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='#8a9a93'>rayon %2 m · à %3 m · posée par %4</t>",
         [_c, 8] call comspec_atak_native_fnc_gridRef, _r, round (player distance2D _c), [_who] call _esc]];
     _rows pushBack ["buttons", [
         ["CARTE", compile format ["['MAP'] call comspec_atak_native_fnc_navigate; [[%1, %2, 0], 0.05] call comspec_atak_native_fnc_mapCenter;", _c select 0, _c select 1], false, true],

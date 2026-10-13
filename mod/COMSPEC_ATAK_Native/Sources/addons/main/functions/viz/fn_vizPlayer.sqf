@@ -191,22 +191,22 @@ private _upd = {
         _bits pushBack format ["Piste %1 / %2", (_m get "qi") + 1, count (_m get "queue")];
         _bits = _bits select { _x isNotEqualTo "" };
         private _tag = switch (true) do {
-            case (_m get "paused"): { "<t color='#f2ab33' font='RobotoCondensedBold'>EN PAUSE</t>" };
-            case (_state isEqualTo "loading"): { "<t color='#8a9a93' font='RobotoCondensedBold'>CHARGEMENT…</t>" };
-            case (_state isEqualTo "error"): { format ["<t color='#e5483a' font='RobotoCondensedBold'>ERREUR · %1</t>", [_st param [4, ""]] call _esc] };
+            case (_m get "paused"): { "<t color='#f2ab33' font='COMSPEC_BarlowBold'>EN PAUSE</t>" };
+            case (_state isEqualTo "loading"): { "<t color='#8a9a93' font='COMSPEC_BarlowBold'>CHARGEMENT…</t>" };
+            case (_state isEqualTo "error"): { format ["<t color='#e5483a' font='COMSPEC_BarlowBold'>ERREUR · %1</t>", [_st param [4, ""]] call _esc] };
             default { "" };
         };
-        if (_m get "speaker") then { _tag = _tag + (["", "   "] select (_tag isNotEqualTo "")) + "<t color='#5ccb6b' font='RobotoCondensedBold'>HAUT-PARLEUR</t>"; };
-        (_e get "title") ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' size='1.3'>%1</t>", [_t] call _esc]) call comspec_atak_native_fnc_tr);
+        if (_m get "speaker") then { _tag = _tag + (["", "   "] select (_tag isNotEqualTo "")) + "<t color='#5ccb6b' font='COMSPEC_BarlowBold'>HAUT-PARLEUR</t>"; };
+        (_e get "title") ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.3'>%1</t>", [_t] call _esc]) call comspec_atak_native_fnc_tr);
         (_e get "sub") ctrlSetStructuredText parseText ((format ["<t size='0.8' color='#8a9a93'>%1</t>%2", _bits joinString "  ·  ", ["", "     <t size='0.75'>" + _tag + "</t>"] select (_tag isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
         (_e get "tL") ctrlSetStructuredText parseText ((format ["<t size='0.75' color='#dfe8e3'>%1</t>", [_pos] call _fmt]) call comspec_atak_native_fnc_tr);
         (_e get "tR") ctrlSetStructuredText parseText ((format ["<t size='0.75' color='#8a9a93' align='right'>%1</t>", ["DIRECT", [_len] call _fmt] select (_len > 0)]) call comspec_atak_native_fnc_tr);
     } else {
         if ((count _heard) > 1) then {
-            (_e get "title") ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' size='1.3'>%1</t>", [_heard select 1] call _esc]) call comspec_atak_native_fnc_tr);
+            (_e get "title") ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.3'>%1</t>", [_heard select 1] call _esc]) call comspec_atak_native_fnc_tr);
             (_e get "sub") ctrlSetStructuredText parseText ((format ["<t size='0.8' color='#8a9a93'>Haut-parleur de %1</t>", [_heard select 0] call _esc]) call comspec_atak_native_fnc_tr);
         } else {
-            (_e get "title") ctrlSetStructuredText parseText (("<t font='RobotoCondensedBold' size='1.3'>Rien en lecture</t>") call comspec_atak_native_fnc_tr);
+            (_e get "title") ctrlSetStructuredText parseText (("<t font='COMSPEC_BarlowBold' size='1.3'>Rien en lecture</t>") call comspec_atak_native_fnc_tr);
             (_e get "sub") ctrlSetStructuredText parseText (("<t size='0.8' color='#8a9a93'>Choisissez un morceau dans ATHENA, FICHIERS, SERVEUR ou LIEN</t>") call comspec_atak_native_fnc_tr);
         };
         (_e get "tL") ctrlSetStructuredText parseText (("") call comspec_atak_native_fnc_tr);

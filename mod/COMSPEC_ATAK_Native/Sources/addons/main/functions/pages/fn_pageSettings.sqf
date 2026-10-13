@@ -101,7 +101,7 @@ private _perso = [
     ["COMSPEC_ATAK_Patch", "none", "", [["INSIGNE DE L'UNIFORME", "uniform"]], "Patch velcro visible avec « Voir l'arrière » ; BD = basse visibilité. Nominatif : votre nom, ou le texte ci-dessous. Insignes des mods et de la mission (RHS, 3CB, unités…) : « Choisir un insigne » ci-dessous"] call _profSegment,
     // Tous les patchs (nos patchs, insignes CfgUnitInsignia des mods et de la mission) : page PATCHES dédiée avec
     // recherche, sources et vignettes (fn_pagePatches), retour aux Réglages par la touche retour.
-    ["person", ([player] call comspec_atak_native_fnc_patchTexture) select 0, format ["<t font='RobotoCondensedBold'>Patch porté : %1</t><br/><t size='0.8' color='#8a9a93'>Recherche, nos patchs, insignes des mods et de la mission</t>",
+    ["person", ([player] call comspec_atak_native_fnc_patchTexture) select 0, format ["<t font='COMSPEC_BarlowBold'>Patch porté : %1</t><br/><t size='0.8' color='#8a9a93'>Recherche, nos patchs, insignes des mods et de la mission</t>",
         (["name", profileNamespace getVariable ["COMSPEC_ATAK_Patch", "none"]] call comspec_atak_native_fnc_patchCatalog) regexReplace ["[<>&]", ""]], [], [1, 1, 1, 1]],
     ["buttons", [[format ["CHOISIR UN INSIGNE (%1 disponibles)", count (["list"] call comspec_atak_native_fnc_patchCatalog)], { [{ ["PATCHES"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }, true]]],
     ["COMSPEC_ATAK_VestMount", "off", "Téléphone sur le gilet", [["NON", "off"], ["GAUCHE", "left"], ["CENTRE", "center"], ["DROITE", "right"]], "Le téléphone (notre modèle 3D) est accroché au torse et visible par les autres joueurs, sur tous les gilets"] call _profSegment,
@@ -148,6 +148,11 @@ private _perso = [
         ["ATHENA", { { profileNamespace setVariable _x; } forEach [["COMSPEC_ATAK_Accent", "GREEN"], ["COMSPEC_ATAK_Wallpaper", "athena"], ["COMSPEC_ATAK_WallBlur", false], ["COMSPEC_ATAK_LockClockStyle", "light"]]; saveProfileNamespace; [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]
     ]],
     ["COMSPEC_ATAK_TextScale", 1, "Taille du texte", [["PETIT", 0.9], ["NORMAL", 1], ["GRAND", 1.15], ["TRÈS GRAND", 1.3]]] call _profSegment,
+    // Police : réglage CBA comspec_atak_native_font (aussi dans Options des addons > COMSPEC).
+    ["segment", "Police", [["BARLOW", "barlow"], ["B612", "b612"], ["RAJDHANI", "rajdhani"], ["SHARE TECH", "sharetech"], ["ROBOTO", "roboto"], ["PURISTA", "purista"]] apply {
+        _x params ["_t", "_v"];
+        [_t, compile format ["['comspec_atak_native_font', '%1', false, 'client'] call CBA_settings_fnc_set;", _v], _v isEqualTo (missionNamespace getVariable ["comspec_atak_native_font", "barlow"])]
+    }, "Police de tout le téléphone. Barlow Condensed par défaut ; Roboto et Purista sont celles du jeu."],
     ["COMSPEC_ATAK_IconDensity", 0, "Icônes du lanceur", [["GRANDES", -1], ["NORMALES", 0], ["SERRÉES", 1]], "Moins ou plus d'icônes par ligne"] call _profSegment,
     ["section", "Animations et sons", "Un téléphone qui réagit : mouvement, clic et vibration légère, écran de verrouillage"],
     ["COMSPEC_ATAK_Animations", true, "", "Animations", "App qui s'ouvre en zoomant, page qui glisse au retour, onde sous le doigt, volet rapide animé"] call _profSwitch,
@@ -362,10 +367,10 @@ private _cat = _s getOrDefault ["setCat", ""];
 private _sel = (_cats select { (_x select 0) isEqualTo _cat }) param [0, []];
 private _rows = [];
 if ((count _sel) isEqualTo 0) then {
-    _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_settings.paa", format ["<t size='1.3' font='RobotoCondensedBold'>Réglages</t><br/><t color='#8a9a93'>COMSPEC ATAK %1%2</t>", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""], ["", format [" · %1 réglage(s) imposé(s) par %2", _lockedCount, ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")]] select (_lockedCount > 0)]];
+    _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_settings.paa", format ["<t size='1.3' font='COMSPEC_BarlowBold'>Réglages</t><br/><t color='#8a9a93'>COMSPEC ATAK %1%2</t>", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""], ["", format [" · %1 réglage(s) imposé(s) par %2", _lockedCount, ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")]] select (_lockedCount > 0)]];
     {
         _x params ["_k", "_t", "_sub", "_icon", "_r"];
-        _rows pushBack ["person", format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon], format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2</t>", _t, _sub],
+        _rows pushBack ["person", format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon], format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2</t>", _t, _sub],
             [["OUVRIR", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['setCat', '%1']; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], true]], ([] call comspec_atak_native_fnc_accent) select 0];
     } forEach _cats;
 } else {

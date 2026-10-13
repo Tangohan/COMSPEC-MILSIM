@@ -58,7 +58,7 @@ if (_vt < 0) then { _vt = _vp getOrDefault ["target", 4]; };
 private _stateHex = switch (true) do { case (_m in ["STRIKE", "RTH"]): { "#e5483a" }; case (_m isEqualTo "STANDBY"): { "#8fb3c9" }; default { "#5cc76b" }; };
 private _name = [_d, _l, "NAME"] call comspec_atak_native_fnc_droneOsd;
 if (_kind isEqualTo "HEAD") exitWith {
-    format ["<img image='%14' size='1.05' color='#5cc76b'/> <t font='RobotoCondensedBold'>%1</t>  <t color='%2'>%3</t>%4%5<br/><t size='0.82' color='#c9d4cf'>H %6 m · %7 km/h · <t color='%8'>Batterie %9 %%</t> · à %10 m · %11 · Grille %12%13</t>",
+    format ["<img image='%14' size='1.05' color='#5cc76b'/> <t font='COMSPEC_BarlowBold'>%1</t>  <t color='%2'>%3</t>%4%5<br/><t size='0.82' color='#c9d4cf'>H %6 m · %7 km/h · <t color='%8'>Batterie %9 %%</t> · à %10 m · %11 · Grille %12%13</t>",
         _name, _stateHex, _state, ["", " <t color='#f2ab33'>· CQB</t>"] select _cqb, _who,
         _h, round speed _d, _batHex, _bat, _l select 1, _link + (["", format [" · <t color='%1'>Flux %2</t>%3", _vHex, _vLb,
             ["", format [" via %1", _vp getOrDefault ["via", ""]]] select ((_vp getOrDefault ["hops", 0]) > 0)]] select _vOn), [getPosASL _d, 8] call comspec_atak_native_fnc_gridRef,
@@ -88,7 +88,7 @@ if (_kind isEqualTo "FEEDMINI") exitWith {
     format ["<t size='0.8' %1><t color='#e5483a'>●</t> REC %2:%3<br/>%4</t>", _sh, [floor (_rec / 60), 2] call CBA_fnc_formatNumber, [_rec mod 60, 2] call CBA_fnc_formatNumber, _name],
     format ["<t size='0.8' align='center' %1>CAP %2° · <t color='%3'>%4</t>%5 · x%6%7%8</t>", _sh, [round (getDirVisual _d) mod 360, 3] call CBA_fnc_formatNumber, _stateHex, _state, ["", " · CQB"] select _cqb, _zoom, _vis,
         ["", "<br/>" + (["osd", [_vp, _vt]] call comspec_atak_native_fnc_videoLink)] select (_vOn && {_l select 2})],
-    format ["<t size='0.8' align='right' %1>%2<br/><t color='%3'>BAT %4 %%</t>%5</t>", _sh, _link, _batHex, _bat, ["", "<br/><t color='#e5483a' font='RobotoCondensedBold'>ARMÉ</t>"] select _armed],
+    format ["<t size='0.8' align='right' %1>%2<br/><t color='%3'>BAT %4 %%</t>%5</t>", _sh, _link, _batHex, _bat, ["", "<br/><t color='#e5483a' font='COMSPEC_BarlowBold'>ARMÉ</t>"] select _armed],
     format ["<t size='0.8' %1>H %2 m · D %3 m · %4 km/h</t>", _sh, _h, _l select 1, round speed _d],
     format ["<t size='0.8' align='right' %1>%2</t>", _sh, _under]
 ]

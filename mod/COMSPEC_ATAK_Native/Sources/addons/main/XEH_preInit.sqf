@@ -4,6 +4,8 @@ uiNamespace setVariable ["COMSPEC_ATAK_PerfPreInitAt", diag_tickTime];
 COMSPEC_ATAK_UI_GENERATION = "native-rsc-v1";
 // Plancher des petites tailles de texte, recalculé par fn_layoutGet (0 tant qu'aucun écran n'est dessiné).
 COMSPEC_ATAK_FontMin = 0;
+// Police du téléphone (Réglages > Police) : familles courante, grasse et légère, avant tout dessin.
+[] call comspec_atak_native_fnc_fontSet;
 // Constantes posées par chaque machine (preInit tourne partout) : rien à diffuser. En public, chaque arrivée
 // renvoyait les deux valeurs à tous les joueurs et à la file JIP.
 missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION];
@@ -24,6 +26,20 @@ diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
     ["COMSPEC", ""], [["auto", "fr", "en"], ["Auto (langue du jeu / game language)", "Français", "English"], 0], 0,
     { [true] call comspec_atak_native_fnc_langApply; }] call CBA_fnc_addSetting;
 [] call comspec_atak_native_fnc_langApply;
+// Police du téléphone (par joueur), aussi dans le téléphone (Réglages > Affichage > Police). Réglage CBA, lisible dans
+// la police du jeu : si une police embarquée s'affichait mal, Roboto Condensed se remet d'ici.
+["comspec_atak_native_font", "LIST",
+    ["Police du téléphone / Phone font", "Police de tout le téléphone ATAK. Barlow Condensed par défaut ; Roboto Condensed et Purista sont les polices du jeu. / Font for the whole ATAK phone."],
+    ["COMSPEC", ""], [["barlow", "b612", "rajdhani", "sharetech", "roboto", "purista"], ["Barlow Condensed", "B612", "Rajdhani", "Share Tech", "Roboto Condensed (jeu / game)", "Purista (jeu / game)"], 0], 0,
+    {
+        params ["_v"];
+        [_v] call comspec_atak_native_fnc_fontSet;
+        // Téléphone ouvert : redessiné dans la nouvelle police.
+        [{
+            private _p = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["pageDrawn", ""];
+            if (_p isNotEqualTo "" && {!isNull ([] call comspec_atak_native_fnc_display)}) then { [] call comspec_atak_native_fnc_layoutApply; [_p] call comspec_atak_native_fnc_pageRender; };
+        }] call CBA_fnc_execNextFrame;
+    }] call CBA_fnc_addSetting;
 // Langue dans laquelle les menus CBA COMSPEC sont déclarés (fn_addSetting, fn_trMenu) : fn_menuRelang ne retraduit
 // que si elle change.
 missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]];

@@ -218,7 +218,7 @@ switch (_mode) do {
             private _ic = ["COMSPEC_RscIcon", [_x0 + pixelW * 8 + _iw * 0.225, _ry + (_rowH - _ih) / 2, _iw, _ih], _icon] call _mk;
             _ic ctrlSetTextColor _col;
             private _t = ["COMSPEC_RscStructuredText", [_x0 + pixelW * 16 + _iw * 1.45, _ry + (_rowH - _font * 0.95) / 2, _w - _iw * 1.45 - pixelW * 24, _rowH]] call _mk;
-            _t ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' size='0.95' color='%1'>%2</t><t size='0.75' color='#7d8c85' align='right'>%3</t>",
+            _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='0.95' color='%1'>%2</t><t size='0.75' color='#7d8c85' align='right'>%3</t>",
                 ["#e6efe9", "#f2685c"] select (_key in ["DELETE", "VIEWDEL", "LOSDEL", "NOFLYALL"]), _label, (_sub regexReplace ["[<>&]", ""]) select [0, 22]]) call comspec_atak_native_fnc_tr);
             _t ctrlSetFontHeight _font;
             private _b = ["COMSPEC_RscButtonOverlay", [_x0, _ry, _w, _rowH]] call _mk;

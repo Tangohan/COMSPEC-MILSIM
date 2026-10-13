@@ -35,7 +35,7 @@ if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
     private _img = _imgs getOrDefault [_open, ""];
     _rows append [
         ["title", "AVIS DE RECHERCHE"],
-        ["text", format ["<t size='1.3' font='RobotoCondensedBold'>%1</t>%2<br/><t color='%3' font='RobotoCondensedBold'>%4</t>  <t color='#8a9a93' size='0.85'>%5</t>",
+        ["text", format ["<t size='1.3' font='COMSPEC_BarlowBold'>%1</t>%2<br/><t color='%3' font='COMSPEC_BarlowBold'>%4</t>  <t color='#8a9a93' size='0.85'>%5</t>",
             [_name] call _esc, ["", format ["<br/><t color='#c9d4cf'>dit « %1 »</t>", [_alias] call _esc]] select (_alias isNotEqualTo ""),
             _kindColor getOrDefault [_kind, "#c9d4cf"], toUpper _level, _ref]]
     ];
@@ -67,7 +67,7 @@ if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
         private _key = format ["%1:%2", _kind, _id];
         private _img = _imgs getOrDefault [_key, ""];
         _rows pushBack ["person", [_dir + (_kindIcon getOrDefault [_kind, "app_intel.paa"]), _img] select (_img isNotEqualTo ""),
-            format ["<t font='RobotoCondensedBold'>%1</t>%2<br/><t size='0.8' color='%3'>%4</t>  <t size='0.75' color='#8a9a93'>%5</t>",
+            format ["<t font='COMSPEC_BarlowBold'>%1</t>%2<br/><t size='0.8' color='%3'>%4</t>  <t size='0.75' color='#8a9a93'>%5</t>",
                 [_name] call _esc, ["", format ["  <t color='#c9d4cf' size='0.85'>« %1 »</t>", [_alias] call _esc]] select (_alias isNotEqualTo ""), _kindColor getOrDefault [_kind, "#c9d4cf"], _level, _ref],
             [["FICHE", compile format ["['open', %1] call comspec_atak_native_fnc_wantedAction;", str _key], true]],
             [[0.9, 0.9, 0.9, 1], [1, 1, 1, 1]] select (_img isNotEqualTo "")];

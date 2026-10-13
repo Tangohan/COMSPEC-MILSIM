@@ -48,6 +48,8 @@ private _ww = _iw * 3.6;
 [88527, [_dx + _dw - _pad - _iw, _iy, _iw, _ih]] call _set;
 [88526, [_dx + _dw - _pad * 2 - _iw - _ih / _ratio, _iy, _ih / _ratio, _ih]] call _set;
 { (_d displayCtrl _x) ctrlSetFontHeight _fontS; } forEach [88513, 88524];
+// Police choisie (Réglages > Police) sur les textes fixes : batterie, météo, heure, titre de l'app, aide HUD.
+{ _x params ["_idc", "_cls"]; [_d displayCtrl _idc, _cls, true] call comspec_atak_native_fnc_fontApply; } forEach [[88513, "COMSPEC_RscLabel"], [88524, "COMSPEC_RscText"], [88525, "COMSPEC_RscText"], [88518, "COMSPEC_RscLabel"], [88528, "COMSPEC_RscLabel"]];
 // Mémoire vive (« RAM nn % », mise à jour par fn_statusUpdate) : entre le logo de liaison et le GPS, si la place suffit.
 private _ram = uiNamespace getVariable ["COMSPEC_ATAK_RamCtrl", controlNull];
 if (isNull _ram || {(ctrlParent _ram) isNotEqualTo _d}) then {
@@ -89,7 +91,7 @@ if (isNull _hBg || {(ctrlParent _hBg) isNotEqualTo _d}) then {
     _hIc ctrlSetText (("\z\comspec_atak_native\addons\main\data\ui_hand.paa") call comspec_atak_native_fnc_tr);
     _hIc ctrlSetTextColor [0.88, 0.93, 0.9, 0.95];
     _hKey = _d ctrlCreate ["COMSPEC_RscTextCenter", -1];
-    _hKey ctrlSetFont "RobotoCondensedBold";
+    _hKey ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
     _hKey ctrlSetText (("Ctrl+Maj+U") call comspec_atak_native_fnc_tr);
     _hKey ctrlSetBackgroundColor [1, 1, 1, 0.13];
     _hKey ctrlSetTextColor [0.92, 0.96, 0.93, 1];

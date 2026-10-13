@@ -32,7 +32,7 @@ private _ago = {
 private _units = count (_data getOrDefault ["units", createHashMap]);
 private _orders = count ([] call comspec_atak_native_fnc_tasksAll);
 private _rows = [
-    ["hero", "\z\comspec_atak_native\addons\main\data\app_status.paa", format ["<t size='1.35' font='RobotoCondensedBold'>STATUT</t>  <t color='%1' font='RobotoCondensedBold'>● %2</t><br/><t color='#8a9a93' size='0.85'>%3</t>", _pillHex, _pill, _pillTxt]],
+    ["hero", "\z\comspec_atak_native\addons\main\data\app_status.paa", format ["<t size='1.35' font='COMSPEC_BarlowBold'>STATUT</t>  <t color='%1' font='COMSPEC_BarlowBold'>● %2</t><br/><t color='#8a9a93' size='0.85'>%3</t>", _pillHex, _pill, _pillTxt]],
     ["section", "Liaison", ["Session propre au terminal", "Session Athena de COMSPEC Link"] select _bridge],
     ["info", "Athena", format ["<t color='%1'>%2</t>", _pillHex, toLower _pill]],
     ["info", "Canal poste", ["<t color='#e5483a'>fermé</t>", "<t color='#5cc76b'>ouvert</t>"] select _ready],

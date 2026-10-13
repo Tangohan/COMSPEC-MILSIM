@@ -32,12 +32,12 @@ private _doorState = {
 // --- En-tête : bâtiment et étage, ou état vide ---
 private _contactKey = "";
 if ((count _near) isEqualTo 0) then {
-    _rows pushBack ["hero", _icon, format ["<t size='1.3' font='RobotoCondensedBold'>BREACHER</t><br/><t size='0.9'>Aucun bâtiment au contact</t><br/><t size='0.8' color='%1'>Approchez-vous d'une entrée (moins de 8 m) : le Breacher ne voit que ce que vous avez devant vous.</t>", _grey]];
+    _rows pushBack ["hero", _icon, format ["<t size='1.3' font='COMSPEC_BarlowBold'>BREACHER</t><br/><t size='0.9'>Aucun bâtiment au contact</t><br/><t size='0.8' color='%1'>Approchez-vous d'une entrée (moins de 8 m) : le Breacher ne voit que ce que vous avez devant vous.</t>", _grey]];
 } else {
     _near params ["_b", "_doors", "_floors", "_myFloor"];
     private _name = getText (configOf _b >> "displayName");
     if (_name isEqualTo "") then { _name = "Bâtiment"; };
-    _rows pushBack ["hero", _icon, format ["<t size='1.2' font='RobotoCondensedBold'>%1</t><br/><t size='0.9'>Vous : <t font='RobotoCondensedBold'>%2</t> · ≈ %3 niveau(x)</t><br/><t size='0.8' color='%4'>%5 entrée(s) à moins de 8 m · %6</t>",
+    _rows pushBack ["hero", _icon, format ["<t size='1.2' font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.9'>Vous : <t font='COMSPEC_BarlowBold'>%2</t> · ≈ %3 niveau(x)</t><br/><t size='0.8' color='%4'>%5 entrée(s) à moins de 8 m · %6</t>",
         toUpper _name, [_myFloor] call _floorTxt, _floors, _grey, count _doors, [getPosASL _b, 8] call comspec_atak_native_fnc_gridRef]];
     if ((count _contact) > 0) then { _contactKey = ([_contact select 0, _contact select 1] call _doorState) select 2; };
 };
@@ -75,7 +75,7 @@ if ((count _near) > 0) then {
         private _btns = [];
         if (_isContact && {!_open}) then { _btns pushBack ["POIGNÉE", { ['handle'] call comspec_atak_native_fnc_breachAction; }, _lock isEqualTo ""]; };
         _btns pushBack [["CIBLER", "● CIBLE"] select _isTarget, compile format ["['target', %1] call comspec_atak_native_fnc_breachAction;", str _k], _isTarget];
-        _rows pushBack ["person", _icon, format ["<t font='RobotoCondensedBold'>Porte %1</t>  <t size='0.85' color='%2'>%3 · %4 m %5%6</t><br/><t size='0.85'>%7</t>",
+        _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>Porte %1</t>  <t size='0.85' color='%2'>%3 · %4 m %5%6</t><br/><t size='0.85'>%7</t>",
             _i, _grey, [_f] call _floorTxt, _d toFixed 1, [player getDir (ASLToAGL _p)] call _card, ["", "  <t color='#5cc76b'>· au contact</t>"] select _isContact, _st], _btns, _col];
     } forEach (_doors select [0, 8]);
 };
@@ -103,8 +103,8 @@ _rows pushBack ["section", "Charge", format ["%1 · estimation d'entraînement, 
 _rows pushBack ["segment", "Matériau de la porte", [["BOIS", "WOOD"], ["RENFORCÉ", "WOODR"], ["MÉTAL", "METAL"], ["BLINDÉE", "ARMOR"]] apply { [_x select 0, compile format ["['mat', '%1'] call comspec_atak_native_fnc_breachAction;", _x select 1], (_x select 1) isEqualTo _mat] }];
 _rows pushBack ["segment", "Méthode", ["LOCK", "STRIP", "FRAME", "WATER"] apply { [[_methNames get _x, (_methNames get _x) + " ★"] select (_x isEqualTo _recMeth), compile format ["['meth', '%1'] call comspec_atak_native_fnc_breachAction;", _x], _x isEqualTo _meth] }, "★ recommandée"];
 switch (true) do {
-    case (_tState select 1): { _rows pushBack ["text", "<t color='#5cc76b' font='RobotoCondensedBold'>Porte ouverte : pas de charge nécessaire.</t>"]; };
-    case ((_tState select 0) isEqualTo "free"): { _rows pushBack ["text", "<t color='#e8b84a' font='RobotoCondensedBold'>Porte non verrouillée : entrée manuelle possible, pas de charge.</t>"]; };
+    case (_tState select 1): { _rows pushBack ["text", "<t color='#5cc76b' font='COMSPEC_BarlowBold'>Porte ouverte : pas de charge nécessaire.</t>"]; };
+    case ((_tState select 0) isEqualTo "free"): { _rows pushBack ["text", "<t color='#e8b84a' font='COMSPEC_BarlowBold'>Porte non verrouillée : entrée manuelle possible, pas de charge.</t>"]; };
     default {};
 };
 if (_g <= 0) then {
@@ -114,7 +114,7 @@ if (_g <= 0) then {
     private _cube = (_g / 1000) ^ (1 / 3);
     private _cover = (9 * _cube) max 3;
     private _openAir = (14 * _cube) max 5;
-    _rows pushBack ["text", format ["<t size='1.6' font='RobotoCondensedBold' color='#f2ab33'>%1 g</t><t color='%2'> TNT · %3</t><br/><t size='1.15' font='RobotoCondensedBold'>%4 m</t><t color='%2'> derrière un mur   </t><t size='1.15' font='RobotoCondensedBold'>%5 m</t><t color='%2'> à découvert</t>",
+    _rows pushBack ["text", format ["<t size='1.6' font='COMSPEC_BarlowBold' color='#f2ab33'>%1 g</t><t color='%2'> TNT · %3</t><br/><t size='1.15' font='COMSPEC_BarlowBold'>%4 m</t><t color='%2'> derrière un mur   </t><t size='1.15' font='COMSPEC_BarlowBold'>%5 m</t><t color='%2'> à découvert</t>",
         _g, _grey, _methNames get _meth, ceil _cover, ceil _openAir]];
     _rows pushBack ["text", format ["<t size='0.8' color='%1'>Colonne du côté des gonds, hors de l'axe de la porte. Protection auditive et lunettes. Vérifier la cible derrière la porte.</t>", _grey]];
 };
@@ -128,7 +128,7 @@ _rows pushBack ["section", "Colonne", format ["%1 opérateur(s) à moins de 15 m
 if ((count _team) <= 1) then {
     _rows pushBack ["text", format ["<t color='%1'>Seul : rapprochez la colonne avant le top.</t>", _grey]];
 } else {
-    _rows pushBack ["text", ((_team select [0, 10]) apply { format ["<t font='RobotoCondensedBold'>%1</t> <t size='0.8' color='%2'>%3</t>", name _x, _grey, ["", format ["%1 m", round (player distance _x)]] select (_x isNotEqualTo player)] }) joinString "   "];
+    _rows pushBack ["text", ((_team select [0, 10]) apply { format ["<t font='COMSPEC_BarlowBold'>%1</t> <t size='0.8' color='%2'>%3</t>", name _x, _grey, ["", format ["%1 m", round (player distance _x)]] select (_x isNotEqualTo player)] }) joinString "   "];
 };
 
 // --- Top synchronisé : action principale ---

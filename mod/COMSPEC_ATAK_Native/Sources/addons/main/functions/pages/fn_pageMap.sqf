@@ -136,7 +136,7 @@ if (_interactive) then {
     private _tic = ["COMSPEC_RscIcon", [_bx + _pad, _tby, _tw, _th], _dir + "map_tools.paa"] call _mk;
     _tic ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _toolsOpen);
     private _tlb = ["COMSPEC_RscText", [_bx + _pad + _tw, _tby, _tbw - _tw, _th], "OUTILS"] call _mk;
-    _tlb ctrlSetFont "RobotoCondensedBold";
+    _tlb ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
     _tlb ctrlSetFontHeight _fs;
     _tlb ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _toolsOpen);
     private _tb = ["COMSPEC_RscButtonOverlay", [_bx + _pad, _tby, _tbw, _th]] call _mk;
@@ -156,7 +156,7 @@ if (_interactive) then {
     private _sic = ["COMSPEC_RscIcon", [_sx0, _tby, _tw, _th], _dir + "app_osint.paa"] call _mk;
     _sic ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _searchOpen);
     private _slb = ["COMSPEC_RscText", [_sx0 + _tw, _tby, _sbw - _tw, _th], "RECHERCHER"] call _mk;
-    _slb ctrlSetFont "RobotoCondensedBold";
+    _slb ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
     _slb ctrlSetFontHeight _fs;
     _slb ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _searchOpen);
     private _sbt = ["COMSPEC_RscButtonOverlay", [_sx0, _tby, _sbw, _th]] call _mk;
@@ -273,7 +273,7 @@ if (_interactive) then {
         _sic ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.36, 0.78, 0.42, 1]] select _open);
         if (_open) then {
             private _slb = ["COMSPEC_RscStructuredText", [_sx + _si, _sy + _sh * 0.2, _sw - _si, _sh * 0.8]] call _mk;
-            _slb ctrlSetStructuredText parseText (("<t font='RobotoCondensedBold' size='0.85' color='#5cc76b'>SITUATION</t><t size='0.85' color='#8a9a93' align='right'>REPLIER</t>") call comspec_atak_native_fnc_tr);
+            _slb ctrlSetStructuredText parseText (("<t font='COMSPEC_BarlowBold' size='0.85' color='#5cc76b'>SITUATION</t><t size='0.85' color='#8a9a93' align='right'>REPLIER</t>") call comspec_atak_native_fnc_tr);
         };
         private _sb = ["COMSPEC_RscButtonOverlay", [_sx, _sy, _sw, _sh]] call _mk;
         _sb ctrlSetTooltip (((["Afficher le panneau SITUATION (unités, contacts, sélection)", "Replier le panneau SITUATION"] select _open)) call comspec_atak_native_fnc_tr);
@@ -354,7 +354,7 @@ if (_interactive) then {
             private _fy = _ly0 - _lh - _gap * 2;
             private _hy = _fy - _fs * 1.35;
             private _lt = ["COMSPEC_RscStructuredText", [_sx, _hy, _sw, _fs * 1.25]] call _mk;
-            _lt ctrlSetStructuredText parseText (("<t font='RobotoCondensedBold' size='0.85' color='#5cc76b'>CALQUES</t>") call comspec_atak_native_fnc_tr);
+            _lt ctrlSetStructuredText parseText (("<t font='COMSPEC_BarlowBold' size='0.85' color='#5cc76b'>CALQUES</t>") call comspec_atak_native_fnc_tr);
             uiNamespace setVariable ["COMSPEC_ATAK_InspTextBottom", _hy - _fs * 0.2];
             private _sep = ["COMSPEC_RscText", [_sx, _hy - _fs * 0.1, _sw, pixelH]] call _mk;
             _sep ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.35];
@@ -476,7 +476,7 @@ if (_interactive && {_sel isNotEqualTo ""} && {(markerShape _sel) isNotEqualTo "
     private _ph = _fs * 4.6;
     private _py = _by + _mh - _ph - _pad;
     private _info = ["COMSPEC_RscMapPanel", [_px, _py, _pw, _ph]] call _mk;
-    _info ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='#5cc76b'>%1</t>  <t color='#8a9a93' size='0.85'>%2</t><br/><t size='0.85'>%3</t>",
+    _info ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  <t color='#8a9a93' size='0.85'>%2</t><br/><t size='0.85'>%3</t>",
         [markerText _sel, "(sans titre)"] select ((markerText _sel) isEqualTo ""), [getMarkerPos _sel] call comspec_atak_native_fnc_gridRef,
         [_note select 0, "Double clic : modifier · Suppr : effacer"] select ((_note select 0) isEqualTo "")]) call comspec_atak_native_fnc_tr);
     private _own = (_sel find "_USER_DEFINED") isEqualTo 0;
@@ -660,7 +660,7 @@ if (_camId isNotEqualTo "") then {
     // Incrustation (indicatif, grille, distance, cap) : tenue à jour chaque seconde par la boucle du Live cam.
     private _cosd = ["COMSPEC_RscStructuredText", [_cx2 + pixelW * 4, _cy2 + pixelH * 3, _cw2 - pixelW * 8, _fs * 3.2]] call _mk;
     _cosd ctrlSetFontHeight ((_fs * ([0.85, 0.7] select _mini)) max COMSPEC_ATAK_FontMin);
-    _cosd ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='#e5483a'>● LIVE</t>  <t font='RobotoCondensedBold'>%1</t>",
+    _cosd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t>",
         [_cu, true] call comspec_atak_native_fnc_unitCallsign]) call comspec_atak_native_fnc_tr);
     uiNamespace setVariable ["COMSPEC_ATAK_LivecamOsd", _cosd];
     if (_interactive) then {

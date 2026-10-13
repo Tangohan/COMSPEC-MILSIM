@@ -101,7 +101,7 @@ private _pfh = [{
         _x ctrlCommit 0.2;
     } forEach _bars;
     _e set [5, _smooth];
-    _alarm ctrlSetStructuredText parseText (((["", "<t size='0.8' color='#e5483a' align='right' font='RobotoCondensedBold'>BROUILLAGE DÉTECTÉ</t>"] select _jam)) call comspec_atak_native_fnc_tr);
+    _alarm ctrlSetStructuredText parseText (((["", "<t size='0.8' color='#e5483a' align='right' font='COMSPEC_BarlowBold'>BROUILLAGE DÉTECTÉ</t>"] select _jam)) call comspec_atak_native_fnc_tr);
     // Dernier relèvement
     private _b = (missionNamespace getVariable ["COMSPEC_ATAK_EwBearings", []]) param [((count (missionNamespace getVariable ["COMSPEC_ATAK_EwBearings", []])) - 1) max 0, []];
     if ((count _b) >= 5) then {
@@ -111,7 +111,7 @@ private _pfh = [{
         private _mhz = 30 + 2370 * ((round (_deg * 7.3)) mod 100) / 100;
         private _d3 = str ((round _deg) mod 360);
         while { (count _d3) < 3 } do { _d3 = "0" + _d3; };
-        _brgC ctrlSetStructuredText parseText ((format ["<t align='center' size='2' font='RobotoCondensedBold' color='#e5483a'>%1°</t><br/><t align='center' size='0.75' color='#c9d4cf'>%2 · %3</t>",
+        _brgC ctrlSetStructuredText parseText ((format ["<t align='center' size='2' font='COMSPEC_BarlowBold' color='#e5483a'>%1°</t><br/><t align='center' size='0.75' color='#c9d4cf'>%2 · %3</t>",
             _d3, ["Émetteur hostile", "Brouilleur"] select (_kind isEqualTo "BROUILLEUR"),
             [format ["%1 MHz", round _mhz], format ["%1 GHz", (_mhz / 1000) toFixed 2]] select (_mhz >= 1000)]) call comspec_atak_native_fnc_tr);
     } else {

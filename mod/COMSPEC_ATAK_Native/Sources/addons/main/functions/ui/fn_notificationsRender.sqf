@@ -87,7 +87,7 @@ private _bar = ["COMSPEC_RscText", [_x0, _y, _pad * 0.6, _h]] call _mk;
 _bar ctrlSetBackgroundColor _color;
 private _tx = _x0 + _pad * 1.4;
 private _lb = ["COMSPEC_RscText", [_tx, _y, _w * 0.3, _h], _label] call _mk;
-_lb ctrlSetFont "RobotoCondensedBold";
+_lb ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
 _lb ctrlSetFontHeight _fs;
 _lb ctrlSetTextColor _color;
 private _lw = (ctrlTextWidth _lb) + _pad * 0.6;

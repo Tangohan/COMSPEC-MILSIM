@@ -112,7 +112,7 @@ private _droneRow = {
     private _st = _dSt getOrDefault [_state, [_state, "#8a9a93"]];
     private _open = ["LIB", ["DRONE", toLower _file]] call _go;
     ["person", "\z\comspec_atak_native\addons\main\data\drone_quad.paa",
-        format ["<t font='RobotoCondensedBold'>%1</t>%2<br/><t size='0.75'><t color='%4'>● %3</t>   <t color='#8a9a93'>%5 %6   %7</t></t>",
+        format ["<t font='COMSPEC_BarlowBold'>%1</t>%2<br/><t size='0.75'><t color='%4'>● %3</t>   <t color='#8a9a93'>%5 %6   %7</t></t>",
             [[_title] call _esc, "Cliché drone sans titre"] select (_title isEqualTo ""), [_sse, _cf, _case] call _tags, _st select 0, _st select 1, _date, _clock, _grid],
         [["DÉTAILS", _open, false, true, "Fiche du cliché : position du drone, titre, description, SSE, confidentiel ; envoyer ou supprimer"],
          if (_state isEqualTo "DRAFT") then {
@@ -130,7 +130,7 @@ private _phoneRow = {
     _e params ["_path", "_name"];
     private _st = [_path, _name] call _phoneSt;
     ["person", "\z\comspec_atak_native\addons\main\data\ui_gallery.paa",
-        format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.75' color='%3'>● %2</t>", [_name] call _esc, _st select 0, _st select 1],
+        format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.75' color='%3'>● %2</t>", [_name] call _esc, _st select 0, _st select 1],
         [["DÉTAILS", ["LIB", ["PHONE", toLower _name]] call _go, false, true, "Fiche de la photo : emplacement, état d'envoi ; envoyer ou supprimer"],
          [["ENVOYER", "RENVOYER"] select ((_st select 2) || {(_st select 0) isEqualTo "ENVOI REFUSÉ"}), compile format ["['send', %1] call comspec_atak_native_fnc_photoLibrary;", _j], !(_st select 2), true, "Envoyer cette photo vers Athena (ATAK web)"],
          [["SUPPRIMER", "CONFIRMER"] select ([str _j] call _isArmed), compile format ["['delete', %1] call comspec_atak_native_fnc_photoLibrary;", _j], ["", "red"] select ([str _j] call _isArmed), true, "Effacer le fichier du téléphone (second appui pour confirmer). Une photo déjà reçue reste sur Athena."]],
@@ -247,7 +247,7 @@ if (_tab isEqualTo "SENT") exitWith {
     reverse _lines;
     private _watch = _droneList select { ((_x select 1) param [8, ""]) in ["SENDING", "FAILED"] };
     private _rows = _head + [
-        ["text", format ["<t size='1.3' font='RobotoCondensedBold' color='#e8b84a'>%1</t> <t size='0.8' color='#8a9a93'>en cours</t>      <t size='1.3' font='RobotoCondensedBold' color='#5cc76b'>%2</t> <t size='0.8' color='#8a9a93'>reçues</t>      <t size='1.3' font='RobotoCondensedBold' color='#e5483a'>%3</t> <t size='0.8' color='#8a9a93'>refusées</t>",
+        ["text", format ["<t size='1.3' font='COMSPEC_BarlowBold' color='#e8b84a'>%1</t> <t size='0.8' color='#8a9a93'>en cours</t>      <t size='1.3' font='COMSPEC_BarlowBold' color='#5cc76b'>%2</t> <t size='0.8' color='#8a9a93'>reçues</t>      <t size='1.3' font='COMSPEC_BarlowBold' color='#e5483a'>%3</t> <t size='0.8' color='#8a9a93'>refusées</t>",
             _pending, count (missionNamespace getVariable ["COMSPEC_Athena_PhotoUploaded", []]), count (missionNamespace getVariable ["COMSPEC_Athena_PhotoFailed", []])]],
         _lastRow,
         ["bar", [["", [_shootBtn, _sendBtn]]]]
