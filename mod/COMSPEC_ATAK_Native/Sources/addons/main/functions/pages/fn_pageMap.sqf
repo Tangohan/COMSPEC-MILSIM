@@ -597,22 +597,45 @@ if (_dv isNotEqualTo "OFF") then {
                 ["PETITE FENÊTRE", ["view", "INSET"] call _act, "", "Réduit la vue du drone dans un coin de la carte", 1.2],
                 ["RETOUR À LA CARTE", ["view", "OFF"] call _act, "", "Ferme la vue du drone et revient à la carte", 1.4]
             ];
+            // Largeur de chaque bouton d'après son texte affiché (traduit) : chaque libellé tient en entier. Si la
+            // rangée déborde, la police baisse pour tous ; s'il reste de la place, elle est partagée entre les boutons.
             private _gap = _pad * 0.8;
-            private _wsum = 0;
-            { if ((count _x) > 1) then { _wsum = _wsum + (_x select 4); }; } forEach _btns;
-            private _unit = (_mw - _pad * 2 - _gap * ({ (count _x) isEqualTo 1 } count _btns)) / _wsum;
-            private _byb = _by + _mh - _bh2 - _pad / 2;
-            private _xb = _bx + _pad;
+            private _fh0 = (_fs * 0.7) max COMSPEC_ATAK_FontMin;
+            private _padX = _fs * 0.9 / _ratio;
+            private _made = [];
             {
-                if ((count _x) isEqualTo 1) then { _xb = _xb + _gap; continue; };
-                _x params ["_lbl", "_code", "_state", "_tip", "_wk"];
-                private _b = ["COMSPEC_RscButton", [_xb, _byb, _unit * _wk - _pad / 3, _bh2], _lbl] call _mk;
-                _b ctrlSetFontHeight ((_fs * 0.7) max COMSPEC_ATAK_FontMin);
+                if ((count _x) isEqualTo 1) then { continue; };
+                _x params ["_lbl", "_code", "_state", "_tip"];
+                private _b = ["COMSPEC_RscButton", [_bx, _by + _mh - _bh2 - _pad / 2, _mw, _bh2], _lbl] call _mk;
+                _b ctrlSetFontHeight _fh0;
                 _b ctrlSetBackgroundColor (switch (_state) do { case "on": { [0.36, 0.78, 0.42, 0.9] }; case "red": { [0.75, 0.18, 0.15, 0.95] }; default { [0.08, 0.1, 0.09, 0.9] }; });
                 _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
                 _b ctrlAddEventHandler ["ButtonClick", _code];
-                _xb = _xb + _unit * _wk;
+                _made pushBack [_b, ctrlTextWidth _b, _forEachIndex];
             } forEach _btns;
+            private _avail = _mw - _pad * 2 - _gap * ({ (count _x) isEqualTo 1 } count _btns) - (_pad / 3) * (count _made);
+            private _tsum = 0;
+            { _tsum = _tsum + (_x select 1); } forEach _made;
+            private _k = ((_avail - _padX * (count _made)) / (_tsum max 0.001)) min 1;
+            private _fh = (_fh0 * _k) max COMSPEC_ATAK_FontMin;
+            private _extra = ((_avail - (_tsum * _k + _padX * (count _made))) max 0) / ((count _made) max 1);
+            private _byb = _by + _mh - _bh2 - _pad / 2;
+            private _xb = _bx + _pad;
+            private _last = -1;
+            {
+                _x params ["_b", "_tw", "_i"];
+                // Séparateur « | » entre ce bouton et le précédent : un écart.
+                if (_last >= 0 && {(_btns select [_last + 1, _i - _last - 1]) findIf { (count _x) isEqualTo 1 } >= 0}) then { _xb = _xb + _gap; };
+                private _w = _tw * _k + _padX + _extra;
+                _b ctrlSetFontHeight _fh;
+                _b ctrlSetPosition [_xb, _byb, _w, _bh2];
+                _b ctrlCommit 0;
+                // Police plancher atteinte : dernier recours, on réduit encore ce seul bouton.
+                private _f = _fh;
+                while { (ctrlTextWidth _b) > _w * 0.96 && {_f > _fh * 0.6} } do { _f = _f * 0.92; _b ctrlSetFontHeight _f; };
+                _xb = _xb + _w + _pad / 3;
+                _last = _i;
+            } forEach _made;
         };
     } else {
         // Incrustée : coin haut droit (à gauche de la barre d'outils en main), plus large en miniature.
@@ -627,7 +650,9 @@ if (_dv isNotEqualTo "OFF") then {
             {
                 _x params ["_lbl", "_code", "_col", "_tip"];
                 private _b = ["COMSPEC_RscButton", [_ix + _forEachIndex * _b3w, _iy + _ih2, _b3w - pixelW * 2, _bh3], _lbl] call _mk;
-                _b ctrlSetFontHeight ((_fs * 0.66) max COMSPEC_ATAK_FontMin);
+                private _f = (_fs * 0.66) max COMSPEC_ATAK_FontMin;
+                _b ctrlSetFontHeight _f;
+                while { (ctrlTextWidth _b) > (_b3w - pixelW * 2) * 0.92 && {_f > _fs * 0.4} } do { _f = _f * 0.92; _b ctrlSetFontHeight _f; };
                 _b ctrlSetBackgroundColor _col;
                 _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
                 _b ctrlAddEventHandler ["ButtonClick", _code];
