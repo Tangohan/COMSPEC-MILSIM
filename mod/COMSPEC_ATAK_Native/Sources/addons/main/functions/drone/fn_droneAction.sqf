@@ -266,13 +266,13 @@ private _camOpen = {
         private _page = _st getOrDefault ["activePage", ""];
         private _show = !isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])
             && {_page isEqualTo "DRONE" || {_page isEqualTo "MAP" && {(_st getOrDefault ["droneView", "OFF"]) isNotEqualTo "OFF"}}};
-        // Rendu coupé seulement après 3 s hors de la page (un aller-retour rapide garde la même cible de rendu),
-        // caméra libérée après 60 s (camPark, rouverte par la page au retour).
+        // Rendu coupé après 1,5 s hors de la page (un aller-retour rapide garde la même cible de rendu), caméra libérée
+        // après 20 s (camPark, rouverte par la page au retour). Avant : 3 s et 60 s (retour de TTRD : le jeu rame).
         if (_show) then { _cam setVariable ["hiddenSince", -1]; } else {
             private _h0 = _cam getVariable ["hiddenSince", -1];
             if (_h0 < 0) then { _cam setVariable ["hiddenSince", diag_tickTime]; _h0 = diag_tickTime; };
-            if (diag_tickTime - _h0 > 60) exitWith { ["camPark"] call comspec_atak_native_fnc_droneAction; };
-            if (diag_tickTime - _h0 < 3) then { _show = true; };
+            if (diag_tickTime - _h0 > 20) exitWith { ["camPark"] call comspec_atak_native_fnc_droneAction; };
+            if (diag_tickTime - _h0 < 1.5) then { _show = true; };
         };
         if (isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull])) exitWith {};
         if (!_show) exitWith {
@@ -1381,6 +1381,18 @@ switch (_act) do {
             { _x ctrlSetStructuredText parseText (((_t select _forEachIndex)) call comspec_atak_native_fnc_tr); } forEach _feed;
         };
         ["gimbalHud"] call comspec_atak_native_fnc_droneAction;
+        // Journal de performance (retour de TTRD : le jeu rame avec le drone ou les photos) : toutes les 30 s, les caméras
+        // qui rendent dans une texture (chacune redessine la scène à chaque image) et les images par seconde.
+        if (diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_PerfLogAt", 0])) then {
+            missionNamespace setVariable ["COMSPEC_ATAK_PerfLogAt", diag_tickTime + 30];
+            private _on = { params ["_k"]; private _c = missionNamespace getVariable [_k, objNull]; [0, 1] select (!isNull _c && {_c getVariable ["rendering", true]}) };
+            private _dc = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
+            ["INFO", "PERF", format ["%1 img/s ; caméras de rendu : drone %2 (qualité %3), aperçu cliché %4, viseur photo %5, live cam %6, carte JPC %7 ; flotte %8 ; page %9 ; téléphone %10",
+                round diag_fps, ["COMSPEC_ATAK_DroneCam"] call _on, (profileNamespace getVariable ["COMSPEC_ATAK_DroneQuality", 1]),
+                ["COMSPEC_ATAK_DronePrevCam"] call _on, ["COMSPEC_ATAK_PhotoCam"] call _on, ["COMSPEC_ATAK_LivecamCam"] call _on, ["COMSPEC_ATAK_JpcMapCam"] call _on,
+                count (missionNamespace getVariable ["COMSPEC_ATAK_DroneFleet", []]), _s getOrDefault ["activePage", ""],
+                ["fermé", "ouvert"] select (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull]))]] call comspec_atak_native_fnc_log;
+        };
         // Suivi des cibles marquées dans l'ordre choisi : cible suivante, position de l'orbite tenue à jour.
         ["tick"] call comspec_atak_native_fnc_droneSeq;
         // Onglet TÂCHES, drone non armé : redessiné quand le pilote passe à moins de 5 m du drone (étape 1 de l'armement).
