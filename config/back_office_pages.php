@@ -137,6 +137,11 @@ return [
         ['path' => 'back-office/organisation/catalogue/modele', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Modèle d’organisation', 'css' => ['back-office-catalog.css']],
         ['path' => 'back-office/organisation/catalogue/apercu', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Aperçu du modèle', 'css' => ['back-office-catalog.css']],
         ['path' => 'back-office/organisation/structure', 'group' => 'Personnel', 'kicker' => 'PERSONNEL', 'title' => 'Organigramme', 'subtitle' => 'Unités, sections et postes de votre communauté. Glissez un poste pour le déplacer.'],
+        ['path' => 'back-office/organisation/qualite-donnees', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · STRUCTURE', 'title' => 'Qualité des données', 'subtitle' => 'Postes vacants, titulaires en trop, qualifications manquantes : ce qui ne colle pas dans votre organigramme, et l’historique pour le corriger.', 'css' => ['back-office-data-quality.css'], 'quick' => [
+            ['label' => 'ORBAT', 'href' => 'orbat'],
+            ['label' => 'Organigramme', 'href' => 'back-office/organisation/structure'],
+            ['label' => 'Effectifs', 'href' => 'back-office/ressources/effectifs'],
+        ]],
         ['path' => 'back-office/organisation/anciennete', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · EFFECTIFS', 'title' => 'Ancienneté', 'subtitle' => 'Comment l’ancienneté est calculée et affichée sur les fiches des membres.', 'css' => ['back-office-seniority.css']],
         ['path' => 'back-office/organisation/progression', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · CARRIÈRE', 'title' => 'Progression & carrière', 'subtitle' => 'Comment un membre progresse : étapes, validations et qualifications requises.'],
         ['path' => 'back-office/organisation/passes', 'group' => 'Personnel', 'kicker' => 'PERSONNEL · PASS', 'title' => 'PASS RH', 'subtitle' => 'Des lots de conditions réutilisables pour ouvrir un poste, accorder une promotion ou noter un membre.', 'quick' => [
