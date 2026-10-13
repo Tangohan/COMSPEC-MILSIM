@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## App Réseau : stabilité calculée, passerelles lisibles (ATAK natif 1.78.0)
+## App Réseau : stabilité calculée, passerelles lisibles (ATAK natif 1.79.0)
 
 ### Résumé joueur
 Type : correctif
@@ -59,6 +59,24 @@ Non testé en jeu. Capture de TTRD : tuile Stabilité « any % » et section Pas
 - Passerelles et relais : l'état vide tient sur une ligne, sans répéter le maillage collé à la ligne « Maillage Wave Relay » ; celle-ci est espacée et indique « aucune passerelle » quand il n'y en a pas.
 - Zone radio : « Simulation de liaison dégradée » affiche « désactivée » ou « active : pertes et délais simulés » ; le type de zone n'est plus remplacé par « ? » quand il est inconnu.
 - Paquets envoyés affichés en entier (plus de notation 1e+06). Textes traduits en anglais.
+
+## Module Zeus et Eden « Relever routes et villes » (ATAK natif 1.78.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Nouveau module Zeus et Eden pour envoyer routes et villes à Athena
+- Le module « Relever routes et villes » (COMSPEC Outils) envoie à Athena les routes, pistes, villes et villages de la carte, sans attendre le relevé complet des bâtiments et du relief.
+- Posé dans l'éditeur, il part tout seul au début de la mission dès qu'Athena est liée ; dans Zeus, il part immédiatement.
+EN : New Zeus and Eden module to send roads and towns to Athena
+- The "Survey roads and towns" module (COMSPEC Tools) sends the map's roads, tracks, towns and villages to Athena, without waiting for the full survey of buildings and terrain.
+- Placed in the editor, it runs on its own at mission start once Athena is linked; in Zeus, it runs right away.
+
+### Détail technique
+Non testé en jeu. Demande de TTRD : un module Zeus et Eden dédié aux routes et villes. Le relevé existait déjà (`fn_sampleGeoNetwork`, Geo.Ingest) mais seulement au bout du relevé complet du théâtre ou par le menu ACE.
+- Eden : `COMSPEC_Module_GeoNetwork` (catégorie COMSPEC Outils), options « Au début de la mission » (défaut : oui) et « Renvoyer ». Exécuté par le Zeus ou le chef de mission (admin connecté, ou solo), qui attend la liaison Athena jusqu'à 3 minutes.
+- Zeus : module « Relever routes et villes » par Zeus Enhanced et ACE Zeus, envoi immédiat même si la carte a déjà été transmise.
+- Les réglages de communauté « Lieux » et « Routes » (modules du mod) restent respectés.
+
 
 ## Menu Échap et Dépannage liaison refondus (ATAK natif 1.77.0)
 
