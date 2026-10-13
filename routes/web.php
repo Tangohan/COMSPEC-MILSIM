@@ -974,6 +974,12 @@ return function (Router $router) {
     $router->get('/admin/system/avis-plateforme', [\App\Controllers\Admin\System\SystemPlatformReviewController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/avis-plateforme/traductions/{id}/reprendre', [\App\Controllers\Admin\System\SystemPlatformReviewController::class, 'acceptTranslation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/avis-plateforme/traductions/{id}/ecarter', [\App\Controllers\Admin\System\SystemPlatformReviewController::class, 'declineTranslation'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/noms-inappropries', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/noms-inappropries/mots', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'addWord'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/noms-inappropries/mots/defaut', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'restoreDefaults'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/noms-inappropries/mots/{id}/supprimer', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'deleteWord'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/noms-inappropries/analyser', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'scan'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/noms-inappropries/alertes/{id}/traiter', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'resolveAlert'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cron/install-vps', [SystemCronController::class, 'installVps'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cron/uninstall-vps', [SystemCronController::class, 'uninstallVps'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/recruitment-portal-tools', [SystemRecruitmentPortalToolsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

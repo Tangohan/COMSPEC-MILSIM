@@ -960,6 +960,7 @@ class UnitRepository
             $this->update($id, $tenantId, $extraPublic);
         }
         $this->syncDerivedJobRole($tenantId, $id, (string) ($data['name'] ?? ''));
+        \App\Services\Moderation\NameModerationService::afterSave('unit', $id, $tenantId, (string) ($data['name'] ?? ''), true);
         $row = $this->findById($id, $tenantId);
         return $row ?? [];
     }
@@ -1123,6 +1124,7 @@ class UnitRepository
         $ok = $stmt->rowCount() > 0;
         if (array_key_exists('name', $data)) {
             $this->syncDerivedJobRole($tenantId, $id, (string) $data['name']);
+            \App\Services\Moderation\NameModerationService::afterSave('unit', $id, $tenantId, (string) $data['name']);
         }
 
         return $ok;

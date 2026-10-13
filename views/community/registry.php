@@ -203,7 +203,7 @@ if ($registryCount === 0) {
         <?php foreach ($registryTenants as $i => $t): ?>
           <?php
           $slug = (string) ($t['slug'] ?? '');
-          $name = (string) ($t['name'] ?? $slug);
+          $name = name_mask_text((string) ($t['name'] ?? $slug));
           $code = trim((string) ($t['community_code'] ?? ''));
           $logoUrl = trim((string) ($t['logo_url'] ?? ''));
           $locked = !empty($t['registry_locked']);
@@ -272,7 +272,7 @@ if ($registryCount === 0) {
 
             <div class="cr-card__foot">
               <div class="min-w-0">
-                <h3 class="cr-card__name"><?= htmlspecialchars($name) ?></h3>
+                <h3 class="cr-card__name"><?= name_blur_html($name) ?></h3>
                 <?php if ($gameLabel !== ''): ?>
                 <p class="cr-card__game"><?= htmlspecialchars($gameLabel) ?></p>
                 <?php endif; ?>

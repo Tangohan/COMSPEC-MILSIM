@@ -219,7 +219,7 @@ $showChildren = $children !== [];
         <span class="cl-nav__mark" aria-hidden="true"><?= htmlspecialchars($nameInitials, ENT_QUOTES, 'UTF-8') ?></span>
         <?php endif; ?>
         <div class="cl-nav__titles">
-          <div class="cl-nav__name"><?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?></div>
+          <div class="cl-nav__name"><?= name_blur_html($tenantName) ?></div>
           <div class="cl-nav__sub"><?= htmlspecialchars(mb_strtoupper($typeLine), ENT_QUOTES, 'UTF-8') ?></div>
         </div>
       </div>
@@ -247,9 +247,9 @@ $showChildren = $children !== [];
     <div class="cl-hero__inner">
       <div class="cl-hero__copy">
         <div class="cl-pill cl-pill--muted"><?= htmlspecialchars(mb_strtoupper($typeLine), ENT_QUOTES, 'UTF-8') ?></div>
-        <h1 id="cl-unit-hero-title" class="cl-hero__title"><?= htmlspecialchars($unitName, ENT_QUOTES, 'UTF-8') ?></h1>
+        <h1 id="cl-unit-hero-title" class="cl-hero__title"><?= name_blur_html($unitName) ?></h1>
         <p class="cl-hero__lead">
-          Unité de <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?>
+          Unité de <?= name_blur_html($tenantName) ?>
           <?php if ($commanderName !== ''): ?>
           · Chef d’unité : <?= htmlspecialchars($commanderName, ENT_QUOTES, 'UTF-8') ?>
           <?php endif; ?>
@@ -279,11 +279,11 @@ $showChildren = $children !== [];
     <?php if ($showAbout): ?>
     <section id="presentation" class="cl-rise cl-unit-fiche__section" aria-labelledby="cl-unit-about-title">
       <p class="cl-kicker">Présentation</p>
-      <h2 id="cl-unit-about-title" class="cl-h2">À propos de <?= htmlspecialchars($unitName, ENT_QUOTES, 'UTF-8') ?></h2>
+      <h2 id="cl-unit-about-title" class="cl-h2">À propos de <?= name_blur_html($unitName) ?></h2>
       <?php if ($blurb !== ''): ?>
       <p class="cl-prose"><?= nl2br(htmlspecialchars($blurb, ENT_QUOTES, 'UTF-8')) ?></p>
       <?php else: ?>
-      <p class="cl-prose">Cette unité fait partie de <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?>.</p>
+      <p class="cl-prose">Cette unité fait partie de <?= name_blur_html($tenantName) ?>.</p>
       <?php endif; ?>
 
       <?php if ($tags !== []): ?>
@@ -305,9 +305,9 @@ $showChildren = $children !== [];
           <p class="cl-unit-fiche__lead-sub">
             Rattachée à
             <?php if ($parentHref !== null): ?>
-            <a href="<?= htmlspecialchars($parentHref, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($parentName, ENT_QUOTES, 'UTF-8') ?></a>
+            <a href="<?= htmlspecialchars($parentHref, ENT_QUOTES, 'UTF-8') ?>"><?= name_blur_html($parentName) ?></a>
             <?php else: ?>
-            <?= htmlspecialchars($parentName, ENT_QUOTES, 'UTF-8') ?>
+            <?= name_blur_html($parentName) ?>
             <?php endif; ?>
           </p>
           <?php endif; ?>
@@ -371,7 +371,7 @@ $showChildren = $children !== [];
           ?>
         <article class="cl-unit" style="--cl-unit-tone:<?= htmlspecialchars($csTone, ENT_QUOTES, 'UTF-8') ?>">
           <div class="cl-unit__code"><?= htmlspecialchars(mb_strtoupper($csCode !== '' ? $csCode : $csType), ENT_QUOTES, 'UTF-8') ?></div>
-          <h3 class="cl-unit__name"><?= htmlspecialchars((string) ($child['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></h3>
+          <h3 class="cl-unit__name"><?= name_blur_html((string) ($child['name'] ?? '')) ?></h3>
           <div class="cl-unit__meta">
             <span>Effectif</span>
             <span class="cl-mono"><?= $csCount ?> membre<?= $csCount > 1 ? 's' : '' ?></span>
@@ -421,7 +421,7 @@ $showChildren = $children !== [];
       <div class="cl-cta__copy">
         <p class="cl-kicker cl-kicker--on-dark">Rejoindre</p>
         <h2 id="cl-unit-cta-title" class="cl-h2 cl-h2--on-dark">Intéressé par cette unité ?</h2>
-        <p class="cl-cta__lead">Le contact et la candidature passent par <?= htmlspecialchars($tenantName, ENT_QUOTES, 'UTF-8') ?>, qui orientera votre demande vers <?= htmlspecialchars($unitName, ENT_QUOTES, 'UTF-8') ?>.</p>
+        <p class="cl-cta__lead">Le contact et la candidature passent par <?= name_blur_html($tenantName) ?>, qui orientera votre demande vers <?= name_blur_html($unitName) ?>.</p>
       </div>
       <div class="cl-cta__actions">
         <a href="<?= htmlspecialchars($contactHref, ENT_QUOTES, 'UTF-8') ?>" class="cl-btn cl-btn--accent">Contacter la communauté</a>

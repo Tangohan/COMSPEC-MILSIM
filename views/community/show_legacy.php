@@ -59,7 +59,7 @@ $userId = (int) (\App\Core\Session::get('user_id') ?? 0);
         <?php endforeach; ?>
     </div>
 
-    <h1 class="text-3xl font-black uppercase tracking-tight text-slate-900 mb-2"><?= htmlspecialchars($name) ?></h1>
+    <h1 class="text-3xl font-black uppercase tracking-tight text-slate-900 mb-2"><?= name_blur_html($name) ?></h1>
     <p class="text-sm text-slate-500 mb-6"><?= $publicAudience === 'platform' ? 'Portail public — fiche de présentation' : 'Page publique — fiche de présentation de la communauté' ?></p>
 
     <?php if ($gameLabel !== '' || $mainMods !== '' || $modpackSize !== null): ?>

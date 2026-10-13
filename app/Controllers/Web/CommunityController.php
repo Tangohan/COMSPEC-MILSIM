@@ -67,7 +67,7 @@ class CommunityController
     /** Registre des unités / communautés (hors tenant placeholder). */
     public function registry(Request $request, array $params = []): Response
     {
-        $tenants = $this->tenantRepository->listForRegistry();
+        $tenants = array_map(fn (array $t): array => $this->maskPublicNames($t), $this->tenantRepository->listForRegistry());
 
         $registryDesc = 'Annuaire public des communautés et unités MILSIM sur Athena. Parcourez les fiches, filtrez par jeu ou langue, et rejoignez une organisation.';
         $registryUrl = rtrim((string) url('communities'), '/');
@@ -125,6 +125,7 @@ class CommunityController
         if (!$tenant) {
             return Response::view('errors.404', ['title' => 'Communauté introuvable'])->setStatusCode(404);
         }
+        $tenant = $this->maskPublicNames($tenant);
         $settings = [];
         $rawSettings = $tenant['settings'] ?? null;
         if (is_string($rawSettings) && trim($rawSettings) !== '') {
@@ -163,7 +164,7 @@ class CommunityController
 
         if ($publicLayout === 'showcase') {
             $effectif = $this->userRepository->countActiveMembers($tid);
-            $publicUnits = $this->unitRepository->listPublicForTenant($tid);
+            $publicUnits = array_map(fn (array $u): array => $this->maskPublicNames($u), $this->unitRepository->listPublicForTenant($tid));
             $unitsPublic = count($publicUnits);
             $activityPct = $this->userRepository->activityRateLast30DaysPercent($tid);
             $rosterCount = $this->userRepository->countPublicRosterOptIn($tid);
@@ -344,11 +345,13 @@ class CommunityController
         if (!$tenant) {
             return Response::view('errors.404', ['title' => 'Communauté introuvable'])->setStatusCode(404);
         }
+        $tenant = $this->maskPublicNames($tenant);
         $tid = (int) ($tenant['id'] ?? 0);
         $unit = $this->unitRepository->findBySlugForTenant($tid, $unitSlug);
         if (!$unit) {
             return Response::view('errors.404', ['title' => 'Unité introuvable'])->setStatusCode(404);
         }
+        $unit = $this->maskPublicNames($unit);
 
         $isStaffViewer = $this->authService->check()
             && (int) Session::get('tenant_id') === $tid
@@ -370,7 +373,7 @@ class CommunityController
             $commanderName = $cu ? (trim((string) ($cu['display_name'] ?? $cu['callsign'] ?? '')) ?: null) : null;
         }
 
-        $children = $this->unitRepository->childrenForTenant($tid, $uid);
+        $children = array_map(fn (array $c): array => $this->maskPublicNames($c), $this->unitRepository->childrenForTenant($tid, $uid));
         $childrenCounts = [];
         foreach ($children as $c) {
             $cid = (int) ($c['id'] ?? 0);
@@ -381,6 +384,7 @@ class CommunityController
         $parentId = (int) ($unit['parent_id'] ?? 0);
         if ($parentId > 0) {
             $parentUnit = $this->unitRepository->findById($parentId, $tid);
+            $parentUnit = $parentUnit ? $this->maskPublicNames($parentUnit) : null;
         }
 
         $brandingRow = $this->tenantBrandingRepository->findByTenantId($tid);
@@ -476,6 +480,7 @@ class CommunityController
         if (!$tenant) {
             return Response::view('errors.404', ['title' => 'Communauté introuvable'])->setStatusCode(404);
         }
+        $tenant = $this->maskPublicNames($tenant);
         $tid = (int) ($tenant['id'] ?? 0);
         $viewerUserId = $this->authService->check() && Session::get('user_id')
             ? (int) Session::get('user_id')
@@ -556,6 +561,7 @@ class CommunityController
         if (!$tenant) {
             return Response::view('errors.404', ['title' => 'Communauté introuvable'])->setStatusCode(404);
         }
+        $tenant = $this->maskPublicNames($tenant);
         $tid = (int) ($tenant['id'] ?? 0);
         $viewerUserId = $this->authService->check() && Session::get('user_id')
             ? (int) Session::get('user_id')
@@ -728,6 +734,7 @@ class CommunityController
         if (!$tenant || $avis === '' || !$this->recruitmentOpeningRepository->tablesExist()) {
             return Response::view('errors.404', ['title' => 'Avis introuvable'])->setStatusCode(404);
         }
+        $tenant = $this->maskPublicNames($tenant);
         $tid = (int) ($tenant['id'] ?? 0);
         $opening = $this->recruitmentOpeningRepository->findPublishedByPublicSlug($tid, $avis);
         if (!$opening) {
@@ -2201,5 +2208,21 @@ class CommunityController
         }
 
         return $graphs;
+    }
+
+    /**
+     * Pages publiques : les mots inappropriés d’un nom (communauté, unité) sont remplacés par « • »
+     * partout (titre de page, méta, textes) ; les vues floutent ensuite ces « • ».
+     *
+     * @param array<string, mixed> $row
+     * @return array<string, mixed>
+     */
+    private function maskPublicNames(array $row): array
+    {
+        if (isset($row['name']) && is_string($row['name'])) {
+            $row['name'] = name_mask_text($row['name']);
+        }
+
+        return $row;
     }
 }
