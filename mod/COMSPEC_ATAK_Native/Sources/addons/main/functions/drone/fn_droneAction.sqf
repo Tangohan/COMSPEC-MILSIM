@@ -995,7 +995,7 @@ switch (_act) do {
             {
                 _x params ["_lbl", "_a", "_on", ["_tip", ""]];
                 private _b = ["COMSPEC_RscButton", [_x0 + _pad / 2 + _forEachIndex * _bw, _y, _bw - _pad / 4, _rh], _lbl] call _mk;
-                _b ctrlSetFontHeight (_fs * 0.74);
+                _b ctrlSetFontHeight ((_fs * 0.74) max COMSPEC_ATAK_FontMin);
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 if (_on) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
                 _b ctrlAddEventHandler ["ButtonClick", compile format ["%1 call comspec_atak_native_fnc_droneAction;", str _a]];

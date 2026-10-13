@@ -63,7 +63,7 @@ private _box = { params ["_rect", "_rgba"]; private _c = ["COMSPEC_RscText", _re
 private _lbl = {
     params ["_cls", "_rect", "_t", ["_fh", _fs], ["_col", _cText], ["_bold", false]];
     private _c = [_cls, _rect, _t] call _mk;
-    _c ctrlSetFontHeight _fh;
+    _c ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin);
     _c ctrlSetTextColor _col;
     if (_bold) then { _c ctrlSetFont "RobotoCondensedBold"; };
     _c
@@ -137,7 +137,7 @@ private _th = ((_tw * _ratio * 0.8) max (_font * 2.6)) min (_font * 3.8);
     _ic ctrlSetTextColor ([[0.70, 0.76, 0.73, 1], _rgba] select _on);
     private _c = ["COMSPEC_RscTextCenter", [_tx, _ty + _th * 0.60, _tw, _th * 0.3], _t, _fs * 0.8, [_cDim, _cText] select _on, _on] call _lbl;
     private _fh = _fs * 0.8;
-    while { (ctrlTextWidth _c) > _tw * 0.94 && {_fh > _fs * 0.55} } do { _fh = _fh * 0.92; _c ctrlSetFontHeight _fh; };
+    while { (ctrlTextWidth _c) > _tw * 0.94 && {_fh > _fs * 0.55} } do { _fh = _fh * 0.92; _c ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin); };
     [[_tx, _ty, _tw, _th], compile format [_redo, format ["(uiNamespace getVariable ['COMSPEC_ATAK_RecoDraft', createHashMap]) set ['tag', '%1'];", _k]], _t] call _hit;
 } forEach _types;
 _y = _y + 2 * (_th + _gap) + _pad * 0.4;
@@ -192,7 +192,7 @@ private _qb = (_wR - _gap) / 2;
     _ic ctrlSetTextColor _cAmber;
     private _c = ["COMSPEC_RscText", [_bx + _pad + _ih / _ratio, _y, _qb - _pad * 1.5 - _ih / _ratio, _rowH], _t, _fs * 0.85, _cText, true] call _lbl;
     private _fh = _fs * 0.85;
-    while { (ctrlTextWidth _c) > (_qb - _pad * 1.5 - _ih / _ratio) && {_fh > _fs * 0.6} } do { _fh = _fh * 0.92; _c ctrlSetFontHeight _fh; };
+    while { (ctrlTextWidth _c) > (_qb - _pad * 1.5 - _ih / _ratio) && {_fh > _fs * 0.6} } do { _fh = _fh * 0.92; _c ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin); };
     [[_bx, _y, _qb, _rowH], compile format [_redo, _set], _tip] call _hit;
 } forEach [
     ["MA POSITION", "ui_gps", "(uiNamespace getVariable ['COMSPEC_ATAK_RecoDraft', createHashMap]) set ['grid', [getPosASL player, 8] call comspec_atak_native_fnc_gridRef];", "Ma position"],

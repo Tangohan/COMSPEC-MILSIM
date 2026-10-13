@@ -106,7 +106,7 @@ private _box = { params ["_rect", "_rgba", ["_grp", controlNull]]; private _c = 
 private _lbl = {
     params ["_cls", "_rect", "_t", ["_fh", _fs], ["_col", _cText], ["_bold", false], ["_grp", controlNull]];
     private _c = if (isNull _grp) then { [_cls, _rect, _t] call _mk } else { [_grp, _cls, _rect, _t] call _gmk };
-    _c ctrlSetFontHeight _fh;
+    _c ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin);
     _c ctrlSetTextColor _col;
     if (_bold) then { _c ctrlSetFont "RobotoCondensedBold"; };
     _c
@@ -533,7 +533,7 @@ private _drawConv = {
     private _bodyFh = _font * 0.88;
     private _meas = [_thread, "COMSPEC_RscText", [0, 0, _tw, _bodyFh]] call _gmk;
     _meas ctrlSetTextColor [0, 0, 0, 0];
-    _meas ctrlSetFontHeight _bodyFh;
+    _meas ctrlSetFontHeight ((_bodyFh) max COMSPEC_ATAK_FontMin);
     private _dayLabel = {
         params ["_dt"];
         if (_dt isEqualTo _today) exitWith { "Aujourd'hui" };
@@ -552,7 +552,7 @@ private _drawConv = {
             _lastAuthor = "";
             _y = _y + _font * 0.2;
             private _sep = [_thread, "COMSPEC_RscTextCenter", [0, _y, _tw, _fs * 1.25], ([_date] call _dayLabel)] call _gmk;
-            _sep ctrlSetFontHeight (_fs * 0.82);
+            _sep ctrlSetFontHeight ((_fs * 0.82) max COMSPEC_ATAK_FontMin);
             _sep ctrlSetTextColor [0.70, 0.76, 0.73, 1];
             private _sw = ((ctrlTextWidth _sep) + _pad * 1.4) min _tw;
             _sep ctrlSetPosition [_pad + (_tw - _sw) / 2, _y, _sw, _fs * 1.25];
@@ -565,7 +565,7 @@ private _drawConv = {
             _unreadShown = true;
             [[_pad, _y + _fs * 0.6, _tw, pixelH], [_acc select 0, _acc select 1, _acc select 2, 0.5], _thread] call _box;
             private _nl = [_thread, "COMSPEC_RscTextCenter", [0, _y, _tw, _fs * 1.2], "NON LUS"] call _gmk;
-            _nl ctrlSetFontHeight (_fs * 0.75);
+            _nl ctrlSetFontHeight ((_fs * 0.75) max COMSPEC_ATAK_FontMin);
             _nl ctrlSetFont "RobotoCondensedBold";
             _nl ctrlSetTextColor _acc;
             private _nw = (ctrlTextWidth _nl) + _pad;
@@ -605,7 +605,7 @@ private _drawConv = {
         };
         private _b = [_thread, "COMSPEC_RscStructuredText", [_bx, _y, _bubbleW, _font]] call _gmk;
         _b ctrlSetBackgroundColor _bg;
-        _b ctrlSetFontHeight _bodyFh;
+        _b ctrlSetFontHeight ((_bodyFh) max COMSPEC_ATAK_FontMin);
         private _top = if (_showAv && {_first}) then {
             format ["<t size='0.82' font='RobotoCondensedBold' color='%1'>%2</t>%3<br/>", [_aCol] call _hex, [_author] call _esc, ["", " " + _chips] select (_chips isNotEqualTo "")]
         } else { ["", _chips + "<br/>"] select (_chips isNotEqualTo "") };

@@ -93,7 +93,7 @@ switch (_act) do {
             _x params ["_k", "_t"];
             private _n = if (_k isEqualTo "all") then { count _match } else { { (_x select 3) isEqualTo _k } count _match };
             private _b = ["COMSPEC_RscButton", [_x0 + _forEachIndex * _sw, _y0, _sw - _pad / 4, _rowH], format ["%1 (%2)", _t, _n]] call _mk;
-            _b ctrlSetFontHeight (_fs * 0.85);
+            _b ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
             if (_k isEqualTo _src) then { _b ctrlSetBackgroundColor _acc; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; } else { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor [0.92, 0.96, 0.93, 1]; };
             _b ctrlAddEventHandler ["ButtonClick", compile format ["['src', '%1'] call comspec_atak_native_fnc_pagePatches;", _k]];
         } forEach _srcs;
@@ -137,7 +137,7 @@ switch (_act) do {
                 _p ctrlSetTextColor [1, 1, 1, 1];
             } else {
                 private _e = ["COMSPEC_RscTextCenter", [_tx, _ty + _pad / 4, _tw, _ph], ["AUCUN", "SANS INSIGNE"] select (_v isEqualTo "uniform")] call _mk;
-                _e ctrlSetFontHeight (_fs * 0.8);
+                _e ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin);
                 _e ctrlSetTextColor [0.55, 0.6, 0.58, 1];
             };
             private _lb = ["COMSPEC_RscStructuredText", [_tx, _ty + _th - _lblH - _pad / 3, _tw, _lblH]] call _mk;
@@ -205,7 +205,7 @@ switch (_act) do {
         _e ctrlAddEventHandler ["KillFocus", { uiNamespace setVariable ["COMSPEC_ATAK_PatchFocus", false]; }];
         uiNamespace setVariable ["COMSPEC_ATAK_PatchEdit", _e];
         private _clr = ["COMSPEC_RscButton", [_pad + _w * 0.8, _y, _w * 0.2, _rowH], "EFFACER"] call comspec_atak_native_fnc_pageCtrl;
-        _clr ctrlSetFontHeight (_fs * 0.85);
+        _clr ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
         _clr ctrlAddEventHandler ["ButtonClick", {
             private _e = uiNamespace getVariable ["COMSPEC_ATAK_PatchEdit", controlNull];
             if (!isNull _e) then { _e ctrlSetText (("") call comspec_atak_native_fnc_tr); ctrlSetFocus _e; };

@@ -461,7 +461,7 @@ if (_view isNotEqualTo "") then {
                 _x params ["_lbl", "_code", ["_state", ""], ["_tip", ""], ["_en", true]];
                 private _bwid = _unit * ([_lbl] call _weight);
                 private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_state isEqualTo "main"), [_bx, _y + ([_lh, 0] select _big), _bwid - _pad / 3, [_btnH, _btnH * 1.45] select _big], _lbl] call comspec_atak_native_fnc_pageCtrl;
-                _b ctrlSetFontHeight (_bfs * ([1, 1.25] select _big));
+                _b ctrlSetFontHeight ((_bfs * ([1, 1.25] select _big)) max COMSPEC_ATAK_FontMin);
                 switch (_state) do {
                     case "on": { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
                     case "red": { _b ctrlSetBackgroundColor [0.78, 0.2, 0.16, 0.95]; _b ctrlSetTextColor [1, 1, 1, 1]; };

@@ -26,7 +26,7 @@ private _act = { params ["_a", ["_v", ""]]; compile format ["[%1, %2] call comsp
 private _btn = {
     params ["_rect", "_label", "_code", ["_on", false], ["_tip", ""]];
     private _b = ["COMSPEC_RscButton", _rect, _label] call comspec_atak_native_fnc_pageCtrl;
-    _b ctrlSetFontHeight (_fs * 0.86);
+    _b ctrlSetFontHeight ((_fs * 0.86) max COMSPEC_ATAK_FontMin);
     if (_on) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
     if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
     _b ctrlAddEventHandler ["ButtonClick", _code];

@@ -34,7 +34,7 @@ for "_i" from 0 to 23 do {
     _c ctrlSetBackgroundColor [0.95, 0.67, 0.2, 0.9];
 };
 private _thl = ["COMSPEC_RscText", [_x0 + _sw - _pad - _fs * 3 / _ratio * 0.5, _thY - _fs * 1.1, _fs * 3 / _ratio * 0.5, _fs]] call _mk;
-_thl ctrlSetText (("SEUIL") call comspec_atak_native_fnc_tr); _thl ctrlSetFontHeight (_fs * 0.75); _thl ctrlSetTextColor [0.95, 0.67, 0.2, 1];
+_thl ctrlSetText (("SEUIL") call comspec_atak_native_fnc_tr); _thl ctrlSetFontHeight ((_fs * 0.75) max COMSPEC_ATAK_FontMin); _thl ctrlSetTextColor [0.95, 0.67, 0.2, 1];
 // Boussole du relèvement
 private _cx = _x0 + _sw + (_w - _sw) / 2;
 private _ch = (_h * 0.58) min ((_w - _sw) * 0.8 * _ratio);
