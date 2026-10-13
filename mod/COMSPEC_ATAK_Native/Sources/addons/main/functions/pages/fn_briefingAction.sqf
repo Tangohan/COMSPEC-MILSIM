@@ -3,7 +3,8 @@
     ["tab", "SLIDES"|"MISSION"]  change d'onglet
     ["step", delta]              diapositive précédente / suivante
     ["goto", index]              saute à une diapositive
-    ["refresh"]                  relit les diapositives publiées sur Athena
+    ["refresh"]                  relit les diapositives publiées sur Athena (ou recharge le lien Google enregistré,
+                                 source « Google Slides » de l'engrenage, voir fn_briefingCfg)
     ["present"]                  présente les diapositives Athena à son camp, ou arrête
     ["follow"]                   suit le présentateur ou navigue librement
     ["questions", id]            relit les questions de la diapositive id (-1 : celle en cours)
@@ -24,7 +25,13 @@ switch (_action) do {
         switch (_src) do {
             // Google : chargement asynchrone par la DLL, la page se redessine quand l'image arrive.
             case "GOOGLE": {
-                [_target - _idx] call comspec_overwatch_connect_fnc_googleBriefingStep;
+                // Présentation chargée depuis l'engrenage pour ce téléphone seul : navigation non diffusée.
+                private _local = uiNamespace getVariable ["COMSPEC_ATAK_BriefLocalDeck", ""];
+                if (_local isNotEqualTo "" && {_local isEqualTo (missionNamespace getVariable ["COMSPEC_GoogleBriefingUrl", ""])}) then {
+                    ["step", _target] call comspec_atak_native_fnc_briefingCfg;
+                } else {
+                    [_target - _idx] call comspec_overwatch_connect_fnc_googleBriefingStep;
+                };
                 ["INFO", format ["Diapositive %1 / %2 en chargement…", _target + 1, _total], 2, 20] call comspec_atak_native_fnc_notify;
             };
             case "ATHENA": {
@@ -93,6 +100,11 @@ switch (_action) do {
     case "refresh": {
         if !([] call comspec_atak_native_fnc_bridge) exitWith {
             ["WARNING", "Diapositives Athena : COMSPEC Link requis", 4, 30] call comspec_atak_native_fnc_notify;
+        };
+        private _gUrl = profileNamespace getVariable ["COMSPEC_ATAK_BriefGoogleUrl", ""];
+        if ((profileNamespace getVariable ["COMSPEC_ATAK_BriefSource", "AUTO"]) isEqualTo "GOOGLE" && {_gUrl isNotEqualTo ""}) exitWith {
+            ["load", [_gUrl, false]] call comspec_atak_native_fnc_briefingCfg;
+            ["INFO", "Chargement de la présentation Google…", 3, 20] call comspec_atak_native_fnc_notify;
         };
         uiNamespace setVariable ["COMSPEC_ATAK_SlideCache", createHashMap];
         // Relecture hors de l'image en cours (l'appel à Athena peut prendre plusieurs secondes).

@@ -4,7 +4,8 @@
     sur la plateforme) ou "LOCAL" (DLL native seule). Sert à la page Briefing et à son rafraîchissement.
 */
 if ([] call comspec_atak_native_fnc_bridge) exitWith {
-    if (missionNamespace getVariable ["COMSPEC_GoogleBriefingActive", false]) exitWith {
+    // Source « Athena » choisie dans l'engrenage (fn_briefingSettings) : le deck Google partagé est ignoré.
+    if ((missionNamespace getVariable ["COMSPEC_GoogleBriefingActive", false]) && {(profileNamespace getVariable ["COMSPEC_ATAK_BriefSource", "AUTO"]) isNotEqualTo "ATHENA"}) exitWith {
         private _total = missionNamespace getVariable ["COMSPEC_GoogleBriefingTotal", 0];
         private _titles = [];
         for "_i" from 1 to _total do { _titles pushBack format ["Diapositive %1", _i]; };
