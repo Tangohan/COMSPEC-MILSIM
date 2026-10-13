@@ -61,6 +61,7 @@ Non testé en jeu. Demande de TTRD : les gouttes de pluie faisaient des bulles i
 - Léger : au plus 18 gouttes, deux contrôles chacune, créés une fois puis déplacés, 25 images par seconde seulement quand une goutte glisse, 2 sinon ; rien quand le téléphone est rangé ou sec. Suit la taille du téléphone en plein écran.
 - Nouveau réglage CBA par joueur, ATAK · Affichage > « Gouttes de pluie sur l'écran » : Complet, Réduit (9 gouttes, 12 images par seconde) ou Désactivé. Le réglage Réalisme « Saleté et sang sur l'écran » les coupe aussi.
 - À vérifier en jeu : sous une forte pluie, dehors, téléphone en main (plein écran et petit) puis porté ; passer sous un toit ; nettoyer l'écran ; changer d'app pendant que des gouttes glissent ; FPS avec et sans l'effet ; les trois valeurs du réglage.
+
 ## Module Zeus et Eden « Relever routes et villes » (ATAK natif 1.78.0)
 
 ### Résumé joueur
