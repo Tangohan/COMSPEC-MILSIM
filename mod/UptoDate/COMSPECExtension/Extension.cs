@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.80";
+    private const string ExtensionVersion = "2.0.81";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -7812,8 +7812,14 @@ public static partial class Extension
                     if (quals.Count >= 12) break;
                 }
             }
+            // 10e colonne « S: » : pourquoi il n'y a pas de portrait (avatar_status du site : no_portrait,
+            // source_missing, unsupported_format, write_failed), affichée et journalisée par le téléphone.
+            var avatarStatus = root.TryGetProperty("avatar_status", out var ast) && ast.ValueKind == JsonValueKind.String
+                ? (ast.GetString() ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "/")
+                : "";
             return displayName + "\t" + callsign + "\t" + avatarUrl + "\t" + unitName + "\t" + atakId
-                + "\t" + playtimeHours + "\t" + lastSeenAt + "\t" + militaryId + "\tQ:" + string.Join(";", quals);
+                + "\t" + playtimeHours + "\t" + lastSeenAt + "\t" + militaryId + "\tQ:" + string.Join(";", quals)
+                + "\tS:" + avatarStatus;
         }
         catch { return ""; }
     }

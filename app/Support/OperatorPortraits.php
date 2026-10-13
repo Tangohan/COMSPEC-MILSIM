@@ -62,28 +62,86 @@ final class OperatorPortraits
      */
     public static function gameThumbnailUrl(int $tenantId, int $userId): ?string
     {
+        return self::gameThumbnail($tenantId, $userId)['url'];
+    }
+
+    /**
+     * Comme gameThumbnailUrl, avec la raison quand il n'y a pas d'image (renvoyée au jeu, qui l'affiche) :
+     *   ok                  vignette (ou portrait JPEG d'origine) servie
+     *   no_portrait         aucun portrait opérateur sur la fiche
+     *   source_missing      portrait enregistré mais fichier absent du serveur (public/ et storage/uploads)
+     *   unsupported_format  PNG / WebP sans conversion possible (GD absent ou image illisible)
+     *   write_failed        conversion faite mais vignette impossible à écrire (droits du dossier)
+     *
+     * Le portrait est cherché dans public/uploads puis storage/uploads (même repli que public/index.php) ;
+     * la vignette est écrite dans public/uploads/portraits/atak, sinon storage/uploads/portraits/atak,
+     * servie à la même adresse /uploads/portraits/atak/… par le repli de public/index.php.
+     *
+     * @return array{url: ?string, status: string}
+     */
+    public static function gameThumbnail(int $tenantId, int $userId): array
+    {
         $url = self::forUser($tenantId, $userId);
         if ($url === null) {
-            return null;
+            return ['url' => null, 'status' => 'no_portrait'];
         }
         $path = (string) parse_url($url, PHP_URL_PATH);
         $pos = strpos($path, '/uploads/portraits/');
-        $public = function_exists('base_path') ? base_path('public') : '';
-        if ($pos === false || $public === '') {
-            return self::isJpeg($url) ? $url : null;
+        $root = function_exists('base_path') ? base_path() : '';
+        if ($pos === false || $root === '') {
+            return self::isJpeg($url) ? ['url' => $url, 'status' => 'ok'] : ['url' => null, 'status' => 'unsupported_format'];
         }
         $rel = substr($path, $pos + 1);
-        $src = $public . '/' . $rel;
-        if (str_contains($rel, '..') || !is_file($src)) {
-            return self::isJpeg($url) ? $url : null;
+        if (str_contains($rel, '..')) {
+            return ['url' => null, 'status' => 'source_missing'];
+        }
+        $bases = [$root . '/public', $root . '/storage'];
+        $src = null;
+        foreach ($bases as $base) {
+            if (is_file($base . '/' . $rel)) {
+                $src = $base . '/' . $rel;
+                break;
+            }
+        }
+        if ($src === null) {
+            return ['url' => null, 'status' => 'source_missing'];
         }
         $thumbRel = 'uploads/portraits/atak/' . pathinfo($rel, PATHINFO_FILENAME) . '.jpg';
-        $thumb = $public . '/' . $thumbRel;
-        if (!is_file($thumb) && !self::writeSquareJpeg($src, $thumb, 256)) {
-            return self::isJpeg($url) ? $url : null;
+        $thumbUrl = substr($url, 0, (int) strpos($url, $path) + $pos + 1) . $thumbRel;
+        foreach ($bases as $base) {
+            // Une vignette vide (écriture interrompue) est refaite.
+            if (is_file($base . '/' . $thumbRel) && (int) @filesize($base . '/' . $thumbRel) > 0) {
+                return ['url' => $thumbUrl, 'status' => 'ok'];
+            }
         }
+        $im = self::decode($src);
+        if ($im === null) {
+            return self::isJpeg($url) ? ['url' => $url, 'status' => 'ok'] : ['url' => null, 'status' => 'unsupported_format'];
+        }
+        foreach ($bases as $base) {
+            if (self::writeSquareJpeg($im, $base . '/' . $thumbRel, 256)) {
+                imagedestroy($im);
 
-        return substr($url, 0, (int) strpos($url, $path) + $pos + 1) . $thumbRel;
+                return ['url' => $thumbUrl, 'status' => 'ok'];
+            }
+        }
+        imagedestroy($im);
+
+        return self::isJpeg($url) ? ['url' => $url, 'status' => 'ok'] : ['url' => null, 'status' => 'write_failed'];
+    }
+
+    /**
+     * @return \GdImage|null
+     */
+    private static function decode(string $src): mixed
+    {
+        if (!function_exists('imagecreatefromstring')) {
+            return null;
+        }
+        $bin = @file_get_contents($src);
+        $im = $bin !== false ? @imagecreatefromstring($bin) : false;
+
+        return $im === false ? null : $im;
     }
 
     private static function isJpeg(string $url): bool
@@ -91,16 +149,8 @@ final class OperatorPortraits
         return (bool) preg_match('/\.jpe?g$/i', (string) parse_url($url, PHP_URL_PATH));
     }
 
-    private static function writeSquareJpeg(string $src, string $dest, int $size): bool
+    private static function writeSquareJpeg(mixed $im, string $dest, int $size): bool
     {
-        if (!function_exists('imagecreatefromstring')) {
-            return false;
-        }
-        $bin = @file_get_contents($src);
-        $im = $bin !== false ? @imagecreatefromstring($bin) : false;
-        if ($im === false) {
-            return false;
-        }
         $w = imagesx($im);
         $h = imagesy($im);
         $side = min($w, $h);
@@ -114,9 +164,8 @@ final class OperatorPortraits
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }
-        $ok = @imagejpeg($out, $dest, 88);
+        $ok = is_dir($dir) && is_writable($dir) && @imagejpeg($out, $dest, 88);
         imagedestroy($out);
-        imagedestroy($im);
 
         return $ok;
     }

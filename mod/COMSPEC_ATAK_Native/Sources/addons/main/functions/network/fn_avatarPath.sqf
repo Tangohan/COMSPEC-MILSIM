@@ -2,6 +2,8 @@
     Photo de profil Athena d'un joueur, téléchargée par la DLL d'Overwatch (profil site → image locale).
     Renvoie le chemin local si déjà en cache, sinon "" et lance le téléchargement en arrière-plan
     (nouvel essai au plus toutes les 2 min). Sans Overwatch : toujours "".
+    Un échec n'est plus muet : raison en français dans le journal (RPT, app Debug) et, pour son propre portrait,
+    une notification (une par raison et par partie, tant que la raison ne change pas).
     Params : [unité]
 */
 params [["_unit", player]];
@@ -21,36 +23,103 @@ _cache set [_uid, ["", diag_tickTime]];
 uiNamespace setVariable ["COMSPEC_ATAK_Avatars", _cache];
 [_uid] spawn {
     params ["_uid"];
+    // Échec : raison en français dans le journal (RPT + app Debug) et, pour son propre portrait, une notification
+    // par raison et par partie. Nouvel essai après _retry secondes (2 min par défaut).
+    private _fail = {
+        params ["_why", ["_retry", 120], ["_type", "WARNING"]];
+        private _cache = uiNamespace getVariable ["COMSPEC_ATAK_Avatars", createHashMap];
+        _cache set [_uid, ["", diag_tickTime + _retry - 120]];
+        uiNamespace setVariable ["COMSPEC_ATAK_Avatars", _cache];
+        // Journal seulement quand la raison change (la page de groupe redemande chaque joueur toutes les 2 min).
+        private _whyMap = uiNamespace getVariable ["COMSPEC_ATAK_AvatarWhy", createHashMap];
+        uiNamespace setVariable ["COMSPEC_ATAK_AvatarWhy", _whyMap];
+        if ((_whyMap getOrDefault [_uid, ""]) isEqualTo _why) exitWith {};
+        _whyMap set [_uid, _why];
+        private _self = _uid isEqualTo (getPlayerUID player);
+        ["WARNING", "PORTRAIT", format ["Portrait opérateur non affiché (%1) : %2", [_uid, "joueur local"] select _self, _why]] call comspec_atak_native_fnc_log;
+        if (_self) then { [_type, format ["Portrait opérateur non affiché : %1", _why], 6, 15] call comspec_atak_native_fnc_notify; };
+    };
     call {
         private _res = { params ["_r"]; if (_r isEqualType []) then { _r param [0, ""] } else { _r } };
         private _tenant = missionNamespace getVariable ["comspec_overwatch_tenant_id", ""];
-        private _info = ([(["COMSPECExtension", "GetPlayerAvatarInfo", [_uid, _tenant]] call comspec_atak_native_fnc_extAwait)] call _res) splitString "|";
-        if ((_info param [0, ""]) isNotEqualTo "OK") exitWith {};
-        private _cols = (_info param [1, ""]) splitString (toString [9]);
+        private _raw = [(["COMSPECExtension", "GetPlayerAvatarInfo", [_uid, _tenant]] call comspec_atak_native_fnc_extAwait)] call _res;
+        if !(_raw isEqualType "") then { _raw = str _raw; };
+        private _info = _raw splitString "|";
+        if ((_info param [0, ""]) isNotEqualTo "OK") exitWith {
+            private _err = _info param [1, "réponse vide de la DLL"];
+            [switch (true) do {
+                case (_err isEqualTo "not_found"): { "aucun compte Athena lié à ce SteamID" };
+                case (_err isEqualTo "unauthorized"): { "accès refusé par Athena" };
+                case (_err isEqualTo "no_tenant"): { "communauté non identifiée, reliez le compte Athena en jeu" };
+                case (_err isEqualTo "timeout"): { "Athena ne répond pas" };
+                case (_err isEqualTo "invalid_response"): { "réponse d'Athena illisible" };
+                case ((_err select [0, 5]) isEqualTo "http_"): { format ["erreur du serveur Athena (%1)", _err select [5]] };
+                default { format ["échec de la demande du profil (%1)", _err] };
+            }] call _fail;
+        };
+        // Découpe aux tabulations en gardant les colonnes vides (splitString les fusionne et décalait l'adresse
+        // de l'image vers une autre colonne quand le nom ou l'indicatif étaient vides).
+        private _payload = _raw select [3];
+        private _tab = toString [9];
+        private _cols = [];
+        private _i = _payload find _tab;
+        while {_i >= 0} do {
+            _cols pushBack (_payload select [0, _i]);
+            _payload = _payload select [_i + 1];
+            _i = _payload find _tab;
+        };
+        _cols pushBack _payload;
         // Qualifications (colonne « Q: », DLL récente) : [[nom, niveau, état, expiration], ...] ; absente = DLL ancienne.
         private _q = _cols findIf { (_x select [0, 2]) isEqualTo "Q:" };
         private _quals = uiNamespace getVariable ["COMSPEC_ATAK_Quals", createHashMap];
         _quals set [_uid, if (_q < 0) then { "olddll" } else { (((_cols select _q) select [2]) splitString ";") apply { private _f = _x splitString "~"; [_f param [0, ""], _f param [1, ""], _f param [2, ""], _f param [3, ""]] } }];
         uiNamespace setVariable ["COMSPEC_ATAK_Quals", _quals];
+        // Raison donnée par le site quand il n'envoie pas d'image (colonne « S: », COMSPEC Link 2.0.81+).
+        private _st = _cols findIf { (_x select [0, 2]) isEqualTo "S:" };
+        private _status = if (_st < 0) then { "" } else { (_cols select _st) select [2] };
         private _url = _cols param [2, ""];
-        if (_url isEqualTo "" || {(_url select [0, 2]) isEqualTo "Q:"}) exitWith {
-            // Pas de photo sur le profil : nouvel essai dans 10 min seulement (toutes les 2 min sinon, toute la partie).
-            private _cache = uiNamespace getVariable ["COMSPEC_ATAK_Avatars", createHashMap];
-            _cache set [_uid, ["", diag_tickTime + 480]];
+        if ((_url select [0, 2]) in ["Q:", "S:"] || {(_url find "/") < 0}) then { _url = ""; };
+        if (_url isEqualTo "") exitWith {
+            [switch (_status) do {
+                case "no_portrait": { "aucun portrait opérateur sur votre fiche Athena (Mon compte > Portrait)" };
+                case "source_missing": { "le fichier du portrait manque sur le serveur Athena, renvoyez-le depuis Mon compte" };
+                case "unsupported_format": { "le serveur Athena ne peut pas convertir ce portrait en JPEG (envoyez un JPG)" };
+                case "write_failed": { "le serveur Athena ne peut pas écrire la vignette JPEG (droits du dossier uploads/portraits/atak)" };
+                case "": { "Athena n'a renvoyé aucune image, sans raison (site ou COMSPEC Link pas à jour)" };
+                default { format ["Athena n'a renvoyé aucune image (%1)", _status] };
+            }, [120, 600] select (_status isEqualTo "no_portrait"), ["WARNING", "INFO"] select (_status isEqualTo "no_portrait")] call _fail;
             private _page = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""];
             if (_page isEqualTo "PROFILE") then { [{ ["PROFILE"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
         };
-        private _dl = ([(["COMSPECExtension", "DownloadBriefingSlideImage", [_url, "avatar_" + _uid]] call comspec_atak_native_fnc_extAwait)] call _res) splitString "|";
-        if ((_dl param [0, ""]) isNotEqualTo "OK" || {(_dl param [1, ""]) isEqualTo ""}) exitWith {};
+        private _dlRaw = [(["COMSPECExtension", "DownloadBriefingSlideImage", [_url, "avatar_" + _uid]] call comspec_atak_native_fnc_extAwait)] call _res;
+        if !(_dlRaw isEqualType "") then { _dlRaw = str _dlRaw; };
+        private _dl = _dlRaw splitString "|";
+        if ((_dl param [0, ""]) isNotEqualTo "OK" || {(_dl param [1, ""]) isEqualTo ""}) exitWith {
+            private _err = _dl param [1, "réponse vide de la DLL"];
+            [switch (true) do {
+                case (_err isEqualTo "not_found"): { format ["image introuvable sur le serveur (404) : %1", _url] };
+                case (_err isEqualTo "unauthorized"): { "téléchargement de l'image refusé par le serveur" };
+                case (_err isEqualTo "invalid_image"): { "le serveur n'a pas renvoyé une image JPEG ou PNG" };
+                case (_err isEqualTo "empty_image"): { "image vide reçue du serveur" };
+                case (_err isEqualTo "no_writable_cache_dir"): { "aucun dossier local inscriptible pour ranger l'image (dossier du mod ou TEMP)" };
+                case ((_err select [0, 13]) isEqualTo "write_failed_"): { format ["écriture de l'image en local impossible (%1)", _err select [13]] };
+                case (_err in ["timeout", "network", "unavailable"]): { format ["téléchargement de l'image impossible (%1)", _err] };
+                default { format ["téléchargement de l'image impossible (%1)", _err] };
+            }] call _fail;
+        };
         // Chemin local normalisé (\ → /) comme pour les diapositives ; Arma n'affiche que .jpg / .paa :
         // sinon on garde le logo (une photo PNG laissait un cadre vide).
         private _p = ((_dl select 1) splitString (toString [92])) joinString "/";
         private _lp = toLower _p;
-        if !((_lp select [(count _lp) - 4]) in [".jpg", "jpeg", ".paa"]) exitWith {};
+        if !((_lp select [(count _lp) - 4]) in [".jpg", "jpeg", ".paa"]) exitWith {
+            [format ["image reçue au format %1, illisible par Arma (JPEG attendu, site pas à jour ?)", _lp select [(count _lp) - 4]]] call _fail;
+        };
         private _cache = uiNamespace getVariable ["COMSPEC_ATAK_Avatars", createHashMap];
         _cache set [_uid, [_p, diag_tickTime]];
         uiNamespace setVariable ["COMSPEC_ATAK_Avatars", _cache];
-        // Redessiner la page qui attend l'image.
+        (uiNamespace getVariable ["COMSPEC_ATAK_AvatarWhy", createHashMap]) deleteAt _uid;
+        ["INFO", "PORTRAIT", format ["Portrait opérateur reçu (%1) : %2", _uid, _p]] call comspec_atak_native_fnc_log;
+        // Redessiner la page qui attend l'image (et le volet rapide s'il est ouvert : sa signature inclut le portrait).
         private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         private _page = _s getOrDefault ["activePage", ""];
         if (_page in ["ATHENA", "GROUP", "PROFILE", "CHAT", "DATING"]) then { [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call CBA_fnc_execNextFrame; };

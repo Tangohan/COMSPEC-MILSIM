@@ -11,6 +11,15 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Portrait opérateur dans le téléphone : causes corrigées, échec expliqué (ATAK natif 1.73.0, COMSPEC Link 2.0.81)
+
+Non testé en jeu. Signalé par TTRD : le volet rapide n'affichait que les initiales au lieu du portrait opérateur. DLL à recompiler (build_mod.bat), site à déployer sur le VPS, pas de migration.
+- Site : la vignette JPEG du portrait (uploads/portraits/atak) est faite aussi quand le portrait n'existe que dans storage/uploads (repli déjà servi par le site), et écrite dans storage/uploads si public/uploads n'est pas inscriptible. Un portrait JPEG reste envoyé tel quel si la conversion échoue.
+- Site : /api/atak/player-profile renvoie `avatar_status` (no_portrait, source_missing, unsupported_format, write_failed) et l'écrit dans le journal PHP (`[atak/player-profile]`) quand une image existe mais ne peut pas partir.
+- COMSPEC Link 2.0.81 : GetPlayerAvatarInfo transmet cette raison (colonne « S: »).
+- Téléphone : la réponse est découpée sans fusionner les colonnes vides (un nom ou un indicatif vide décalait l'adresse de l'image). Chaque échec (profil, téléchargement, format) est écrit en français dans le journal (RPT et app Debug, module PORTRAIT) avec sa raison, et le joueur reçoit une notification pour son propre portrait, une fois par raison.
+- Traduction : un chemin d'image téléchargée (C:/…/x.jpg) n'est plus passé au dictionnaire anglais.
+
 ## Adresse du portail Athena fixe (ATAK natif 1.72.0)
 
 Non testé en jeu. Demande de TTRD : personne n'héberge son propre Athena, l'adresse du portail ne doit plus être modifiable. Pas de DLL à recompiler, pas de migration.
