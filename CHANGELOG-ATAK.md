@@ -99,6 +99,7 @@ Non testé en jeu. Il faut recompiler la DLL (build_mod.bat) et déployer le sit
 - Site : `POST /api/atak/startup-check` (public, 20 requêtes / 10 min par adresse, rien en base) poste un embed par joueur et par session dans le webhook `DISCORD_DEBUG_WEBHOOK` : ✅/⚠️/❌ par étape, libellés FR / EN, joueur, versions, carte, date. Anti-spam : un message par session, 6 par joueur et par heure, 20 par minute au total. Textes du jeu nettoyés avant Discord (liens retirés, adresses IP tronquées, dossier utilisateur Windows masqué, mentions neutralisées). Aucun lien dans le message.
 
 #### Photos sur Discord : détails de la prise de vue (#744)
+## Photos sur Discord : détails de la prise de vue (ATAK natif 1.80.0, COMSPEC Link 2.0.81)
 
 Non testé en jeu. Demande de TTRD : l'embed Discord des photos manquait de données.
 - L'embed Quick Picture et Cliché drone affiche maintenant le grade de l'auteur, la mission et le serveur, l'altitude (mer et sol), la visée (site, point visé avec sa distance et sa grille, éloignement de l'opérateur pour le drone), la prise de vue (objectif arrière ou selfie, zoom, flash ; vision jour, nocturne ou thermique du drone), la météo (couverture, pluie, brouillard, vent), le terminal (modèle, versions ATAK et Link) et un lien vers la photo sur Athena.
@@ -329,6 +330,7 @@ Non testé en jeu. Demande de TTRD : la sélection de langue dans Options des ad
 - Défaut : Auto (suit la langue du jeu : français si Arma est en français, anglais sinon). Un joueur qui avait déjà choisi Français ou English garde son choix.
 - Un seul réglage pour tout le mod : téléphone, menus CBA COMSPEC (ATAK natif, Overwatch, SSE) et écrans du SSE. Le choix dans le téléphone (Réglages > Langue / Language) est le même réglage.
 - Changer de langue en cours de partie : le téléphone se redessine et les menus CBA COMSPEC sont retraduits à leur prochaine ouverture, sans relancer la mission (avant, il fallait relancer la mission).
+
 ## Texte du bouton PANIQUE (ATAK natif 1.73.0)
 
 ### Résumé joueur
