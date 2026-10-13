@@ -137,6 +137,9 @@ final class EmailEvents
     /** Signalement joueur envoyé depuis le mod (Échap > Signaler un problème) — alerte à l'exploitation. */
     public const ATAK_MOD_PLAYER_REPORT = 'ATAK_MOD_PLAYER_REPORT';
 
+    /** Réponse de l'exploitation au joueur qui a signalé un problème du mod (page /admin/atak-mod-reports). */
+    public const ATAK_MOD_REPORT_REPLY = 'ATAK_MOD_REPORT_REPLY';
+
     /** Nouvelle communauté créée — alerte à la boîte technique des incidents. */
     public const PLATFORM_NEW_COMMUNITY = 'PLATFORM_NEW_COMMUNITY';
 

@@ -68,6 +68,21 @@ function run_atak_mod_reports_migration(PDO $pdo): void
                  ADD KEY idx_amr_workflow (workflow_status, last_seen_at)"
             );
         }
+        // Réponse au joueur et suivi du traitement (page /admin/atak-mod-reports) — idempotent.
+        // last_seen_at = last_seen_at : la colonne a ON UPDATE CURRENT_TIMESTAMP, un ALTER ne la touche pas
+        // mais chaque UPDATE du suivi doit la conserver (sinon le rapport remonte comme « vu à l'instant »).
+        $replyColumns = [
+            'status_changed_at' => 'DATETIME NULL DEFAULT NULL',
+            'reply_text' => 'TEXT NULL',
+            'replied_at' => 'DATETIME NULL DEFAULT NULL',
+            'replied_by' => 'VARCHAR(128) NULL DEFAULT NULL',
+            'reply_channels' => 'VARCHAR(64) NULL DEFAULT NULL',
+        ];
+        foreach ($replyColumns as $column => $definition) {
+            if ($hasTable('atak_mod_reports') && !$hasCol('atak_mod_reports', $column)) {
+                $pdo->exec('ALTER TABLE atak_mod_reports ADD COLUMN ' . $column . ' ' . $definition);
+            }
+        }
     } catch (Throwable) {
         // Idempotent best-effort ; ne pas faire échouer le bootstrap API.
     }

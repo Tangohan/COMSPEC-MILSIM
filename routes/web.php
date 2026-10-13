@@ -1857,6 +1857,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/admin/atak-mod-reports', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/atak-mod-reports/status', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'updateStatus'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/atak-mod-reports/delete', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/atak-mod-reports/bulk', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'bulk'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/atak-mod-reports/reply', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'reply'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $lmsAdminMw = [AuthMiddleware::class, NonDefaultTenantMiddleware::class];
     $router->get('/admin/training', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, ''), $lmsAdminMw);
     $router->get('/admin/training/courses', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'courses'), $lmsAdminMw);

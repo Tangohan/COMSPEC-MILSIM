@@ -15,13 +15,18 @@ final class AtakModReportRepository
     public const STATUS_NEW = 'new';
     public const STATUS_IN_PROGRESS = 'in_progress';
     public const STATUS_FIXED = 'fixed';
+    public const STATUS_DISMISSED = 'dismissed';
 
     /** @var array<string, string> */
     public const STATUS_LABELS = [
         self::STATUS_NEW => 'Nouveau',
         self::STATUS_IN_PROGRESS => 'En cours',
         self::STATUS_FIXED => 'Corrigé',
+        self::STATUS_DISMISSED => 'Sans suite',
     ];
+
+    /** Nombre maximal de rapports touchés par une action groupée (« tout traiter », « tout supprimer »). */
+    public const BULK_LIMIT = 5000;
 
     private PDO $pdo;
 
@@ -176,24 +181,11 @@ final class AtakModReportRepository
     }
 
     /** @return list<array<string, mixed>> */
-    public function listRecent(int $limit = 100, ?string $severity = null, ?string $workflowStatus = null): array
+    public function listRecent(int $limit = 100, ?string $severity = null, ?string $workflowStatus = null, ?string $search = null): array
     {
         $limit = max(1, min(500, $limit));
-        $where = [];
-        $params = [];
-        if ($severity !== null && $severity !== '') {
-            $where[] = 'severity = ?';
-            $params[] = $this->normalizeSeverity($severity);
-        }
-        if ($workflowStatus !== null && $workflowStatus !== '') {
-            $where[] = 'workflow_status = ?';
-            $params[] = $this->normalizeWorkflowStatus($workflowStatus);
-        }
-        $sql = 'SELECT * FROM atak_mod_reports';
-        if ($where !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $where);
-        }
-        $sql .= ' ORDER BY last_seen_at DESC, id DESC LIMIT ' . $limit;
+        [$whereSql, $params] = $this->filterSql($severity, $workflowStatus, $search);
+        $sql = 'SELECT * FROM atak_mod_reports' . $whereSql . ' ORDER BY last_seen_at DESC, id DESC LIMIT ' . $limit;
         $st = $this->pdo->prepare($sql);
         $st->execute($params);
         $rows = $st->fetchAll(PDO::FETCH_ASSOC);
@@ -201,50 +193,218 @@ final class AtakModReportRepository
         return is_array($rows) ? $rows : [];
     }
 
-    public function countAll(?string $severity = null, ?string $workflowStatus = null): int
+    public function countAll(?string $severity = null, ?string $workflowStatus = null, ?string $search = null): int
     {
-        $where = [];
-        $params = [];
-        if ($severity !== null && $severity !== '') {
-            $where[] = 'severity = ?';
-            $params[] = $this->normalizeSeverity($severity);
-        }
-        if ($workflowStatus !== null && $workflowStatus !== '') {
-            $where[] = 'workflow_status = ?';
-            $params[] = $this->normalizeWorkflowStatus($workflowStatus);
-        }
-        $sql = 'SELECT COUNT(*) FROM atak_mod_reports';
-        if ($where !== []) {
-            $sql .= ' WHERE ' . implode(' AND ', $where);
-        }
-        $st = $this->pdo->prepare($sql);
+        [$whereSql, $params] = $this->filterSql($severity, $workflowStatus, $search);
+        $st = $this->pdo->prepare('SELECT COUNT(*) FROM atak_mod_reports' . $whereSql);
         $st->execute($params);
 
         return (int) $st->fetchColumn();
     }
 
+    /**
+     * Nombre de rapports par statut de suivi (tous types confondus).
+     *
+     * @return array<string, int>
+     */
+    public function countByStatus(): array
+    {
+        $out = array_fill_keys(array_keys(self::STATUS_LABELS), 0);
+        $rows = $this->pdo->query('SELECT workflow_status, COUNT(*) AS n FROM atak_mod_reports GROUP BY workflow_status');
+        foreach ($rows ? $rows->fetchAll(PDO::FETCH_ASSOC) : [] as $row) {
+            $key = $this->normalizeWorkflowStatus((string) ($row['workflow_status'] ?? ''));
+            $out[$key] += (int) ($row['n'] ?? 0);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Identifiants des rapports correspondant à un filtre (actions « tout traiter » sur la vue filtrée).
+     *
+     * @return list<int>
+     */
+    public function idsMatching(?string $severity = null, ?string $workflowStatus = null, ?string $search = null): array
+    {
+        [$whereSql, $params] = $this->filterSql($severity, $workflowStatus, $search);
+        $st = $this->pdo->prepare('SELECT id FROM atak_mod_reports' . $whereSql . ' ORDER BY id DESC LIMIT ' . self::BULK_LIMIT);
+        $st->execute($params);
+
+        return array_map('intval', $st->fetchAll(PDO::FETCH_COLUMN) ?: []);
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findById(int $id): ?array
+    {
+        if ($id < 1) {
+            return null;
+        }
+        $st = $this->pdo->prepare('SELECT * FROM atak_mod_reports WHERE id = ? LIMIT 1');
+        $st->execute([$id]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /**
+     * @param list<int> $ids
+     * @return list<array<string, mixed>>
+     */
+    public function findByIds(array $ids): array
+    {
+        $ids = self::cleanIds($ids);
+        if ($ids === []) {
+            return [];
+        }
+        $st = $this->pdo->prepare('SELECT * FROM atak_mod_reports WHERE id IN (' . self::placeholders($ids) . ')');
+        $st->execute($ids);
+
+        return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function updateWorkflowStatus(int $id, string $status): bool
+    {
+        return $id > 0 && $this->updateWorkflowStatusMany([$id], $status) > 0;
+    }
+
+    /**
+     * @param list<int> $ids
+     * @return int rapports dont le statut a changé
+     */
+    public function updateWorkflowStatusMany(array $ids, string $status): int
+    {
+        $ids = self::cleanIds($ids);
+        if ($ids === []) {
+            return 0;
+        }
+        // last_seen_at = last_seen_at : la colonne a ON UPDATE CURRENT_TIMESTAMP ; changer le suivi
+        // ne doit pas faire passer le rapport pour « vu à l'instant ».
+        $st = $this->pdo->prepare(
+            'UPDATE atak_mod_reports
+                SET workflow_status = ?, status_changed_at = CURRENT_TIMESTAMP, last_seen_at = last_seen_at
+              WHERE workflow_status <> ? AND id IN (' . self::placeholders($ids) . ')'
+        );
+        $norm = $this->normalizeWorkflowStatus($status);
+        $st->execute(array_merge([$norm, $norm], $ids));
+
+        return $st->rowCount();
+    }
+
+    /**
+     * Garde la réponse envoyée au joueur sur le rapport (visible sur la page même sans compte lié).
+     *
+     * @param list<string> $channels canaux réellement utilisés : site, email
+     */
+    public function saveReply(int $id, string $text, string $by, array $channels): bool
     {
         if ($id < 1) {
             return false;
         }
         $st = $this->pdo->prepare(
-            'UPDATE atak_mod_reports SET workflow_status = ? WHERE id = ?'
+            'UPDATE atak_mod_reports
+                SET reply_text = ?, replied_at = CURRENT_TIMESTAMP, replied_by = ?, reply_channels = ?,
+                    last_seen_at = last_seen_at
+              WHERE id = ?'
         );
-        $st->execute([$this->normalizeWorkflowStatus($status), $id]);
+        $st->execute([
+            $this->nullableText($text, 4000),
+            $this->nullableClip($by, 128),
+            $channels !== [] ? implode(',', array_values(array_unique($channels))) : null,
+            $id,
+        ]);
 
         return $st->rowCount() > 0;
     }
 
+    /**
+     * Compte Athena lié au Steam de chaque joueur (pour le prévenir sur le site ou par e-mail).
+     * Comptes membres (users.steam_id) d'abord, puis comptes Athena globaux (athena_accounts.steam_id).
+     *
+     * @param list<string> $steamUids
+     * @return array<string, array{user_id:int, tenant_id:int, email:string, name:string}>
+     */
+    public function linkedAccountsBySteam(array $steamUids): array
+    {
+        $steamUids = array_values(array_unique(array_filter(
+            array_map(static fn ($s): string => trim((string) $s), $steamUids),
+            static fn (string $s): bool => $s !== ''
+        )));
+        if ($steamUids === []) {
+            return [];
+        }
+        $out = [];
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT id, tenant_id, email, display_name, callsign, steam_id FROM users
+                  WHERE steam_id IN (' . self::placeholders($steamUids) . ')
+                  ORDER BY id DESC'
+            );
+            $st->execute($steamUids);
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $u) {
+                $steam = trim((string) ($u['steam_id'] ?? ''));
+                if ($steam === '' || isset($out[$steam])) {
+                    continue;
+                }
+                $out[$steam] = [
+                    'user_id' => (int) ($u['id'] ?? 0),
+                    'tenant_id' => (int) ($u['tenant_id'] ?? 0),
+                    'email' => self::validEmail($u['email'] ?? null),
+                    'name' => trim((string) ($u['callsign'] ?? '')) ?: trim((string) ($u['display_name'] ?? '')),
+                ];
+            }
+        } catch (\Throwable) {
+            // Table users absente (environnement de test) : pas de compte lié.
+        }
+
+        $missing = array_values(array_filter($steamUids, static fn (string $s): bool => !isset($out[$s])));
+        if ($missing !== []) {
+            try {
+                $st = $this->pdo->prepare(
+                    "SELECT a.steam_id, a.email, m.user_id, m.tenant_id
+                       FROM athena_accounts a
+                       LEFT JOIN account_tenant_memberships m ON m.account_id = a.id AND m.status = 'active'
+                      WHERE a.steam_id IN (" . self::placeholders($missing) . ')
+                      ORDER BY m.user_id DESC'
+                );
+                $st->execute($missing);
+                foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $a) {
+                    $steam = trim((string) ($a['steam_id'] ?? ''));
+                    if ($steam === '' || isset($out[$steam])) {
+                        continue;
+                    }
+                    $out[$steam] = [
+                        'user_id' => (int) ($a['user_id'] ?? 0),
+                        'tenant_id' => (int) ($a['tenant_id'] ?? 0),
+                        'email' => self::validEmail($a['email'] ?? null),
+                        'name' => '',
+                    ];
+                }
+            } catch (\Throwable) {
+                // Comptes Athena globaux absents : on garde les comptes membres trouvés.
+            }
+        }
+
+        return $out;
+    }
+
     public function deleteById(int $id): bool
     {
-        if ($id < 1) {
-            return false;
-        }
-        $st = $this->pdo->prepare('DELETE FROM atak_mod_reports WHERE id = ?');
-        $st->execute([$id]);
+        return $id > 0 && $this->deleteMany([$id]) > 0;
+    }
 
-        return $st->rowCount() > 0;
+    /**
+     * @param list<int> $ids
+     */
+    public function deleteMany(array $ids): int
+    {
+        $ids = self::cleanIds($ids);
+        if ($ids === []) {
+            return 0;
+        }
+        $st = $this->pdo->prepare('DELETE FROM atak_mod_reports WHERE id IN (' . self::placeholders($ids) . ')');
+        $st->execute($ids);
+
+        return $st->rowCount();
     }
 
     public function normalizeWorkflowStatus(string $raw): string
@@ -255,6 +415,7 @@ final class AtakModReportRepository
             'new', 'nouveau', 'open' => self::STATUS_NEW,
             'in_progress', 'en_cours', 'progress', 'triaged', 'wip' => self::STATUS_IN_PROGRESS,
             'fixed', 'corrige', 'corrigé', 'done', 'closed', 'resolved' => self::STATUS_FIXED,
+            'dismissed', 'sans_suite', 'ignored', 'wontfix', 'duplicate' => self::STATUS_DISMISSED,
             default => self::STATUS_NEW,
         };
     }
@@ -264,6 +425,55 @@ final class AtakModReportRepository
         $key = strtolower(trim($status));
 
         return self::STATUS_LABELS[$key] ?? self::STATUS_LABELS[self::STATUS_NEW];
+    }
+
+    /**
+     * @return array{0:string, 1:list<string>} clause WHERE (avec espace initial) et paramètres
+     */
+    private function filterSql(?string $severity, ?string $workflowStatus, ?string $search): array
+    {
+        $where = [];
+        $params = [];
+        if ($severity !== null && $severity !== '') {
+            $where[] = 'severity = ?';
+            $params[] = $this->normalizeSeverity($severity);
+        }
+        if ($workflowStatus !== null && $workflowStatus !== '') {
+            $where[] = 'workflow_status = ?';
+            $params[] = $this->normalizeWorkflowStatus($workflowStatus);
+        }
+        $search = trim((string) $search);
+        if ($search !== '') {
+            $like = '%' . addcslashes(mb_substr($search, 0, 80), '%_\\') . '%';
+            $where[] = '(message LIKE ? OR player_name LIKE ? OR callsign LIKE ? OR steam_uid LIKE ? OR channel LIKE ?)';
+            array_push($params, $like, $like, $like, $like, $like);
+        }
+
+        return [$where !== [] ? ' WHERE ' . implode(' AND ', $where) : '', $params];
+    }
+
+    /**
+     * @param array<mixed> $ids
+     * @return list<int>
+     */
+    private static function cleanIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+
+        return array_slice($ids, 0, self::BULK_LIMIT);
+    }
+
+    /** @param list<mixed> $values */
+    private static function placeholders(array $values): string
+    {
+        return implode(',', array_fill(0, count($values), '?'));
+    }
+
+    private static function validEmail(mixed $raw): string
+    {
+        $email = trim((string) $raw);
+
+        return $email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : '';
     }
 
     private function normalizeSeverity(string $raw): string
