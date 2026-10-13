@@ -661,7 +661,7 @@ if (_camId isNotEqualTo "") then {
     _cbg ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.9];
     private _cblack = ["COMSPEC_RscText", [_cx2, _cy2, _cw2, _ch2]] call _mk;
     _cblack ctrlSetBackgroundColor [0, 0, 0, 1];
-    ["COMSPEC_RscPhone", [_cx2, _cy2, _cw2, _ch2], "#(argb,1024,512,1)r2t(comspec_livecam,1.7778)"] call _mk;
+    ["COMSPEC_RscPhone", [_cx2, _cy2, _cw2, _ch2], "#(argb,1024,1024,1)r2t(comspec_livecam,1.7778)"] call _mk;
     // Incrustation (indicatif, grille, distance, cap) : tenue à jour chaque seconde par la boucle du Live cam.
     private _cosd = ["COMSPEC_RscStructuredText", [_cx2 + pixelW * 4, _cy2 + pixelH * 3, _cw2 - pixelW * 8, _fs * 3.2]] call _mk;
     _cosd ctrlSetFontHeight ((_fs * ([0.85, 0.7] select _mini)) max COMSPEC_ATAK_FontMin);
