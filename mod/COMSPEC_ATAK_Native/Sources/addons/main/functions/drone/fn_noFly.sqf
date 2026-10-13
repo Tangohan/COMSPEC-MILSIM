@@ -5,6 +5,7 @@
       ["list"]               → zones du camp du joueur : [[id, [x, y], rayon, auteur]...] ;
       ["add", [pos, rayon]]  pose une zone (rayon 50 à 2000 m) ;
       ["remove", id]         la retire pour tout le camp ;
+      ["clear"]              retire toutes les zones du camp du joueur ;
       ["inside", pos]        → zone du camp qui contient la position ([] sinon) ;
       ["exit", pos]          → point hors de toutes les zones, au plus près, en sortant par le bord le plus proche ;
       ["draw", carte]        dessin des zones (fn_mapOnDraw).
@@ -28,6 +29,13 @@ switch (_act) do {
     case "remove": {
         missionNamespace setVariable ["COMSPEC_ATAK_NoFly", _all select { (_x select 0) isNotEqualTo _arg }, true];
         ["INFO", "Zone interdite retirée", 3, 20] call comspec_atak_native_fnc_notify;
+        true
+    };
+    case "clear": {
+        private _n = count _mine;
+        if (_n isEqualTo 0) exitWith { false };
+        missionNamespace setVariable ["COMSPEC_ATAK_NoFly", _all select { (_x param [4, sideUnknown]) isNotEqualTo (side group player) }, true];
+        ["INFO", format ["%1 zones interdites retirées", _n], 3, 20] call comspec_atak_native_fnc_notify;
         true
     };
     case "inside": {

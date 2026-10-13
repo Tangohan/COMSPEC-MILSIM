@@ -1,7 +1,8 @@
 /*
     Menu contextuel de la carte (clic droit sans glisser) : VOIR LA CAMÉRA (équipier pointé), PING, MARQUEUR, Y ALLER,
-    CENTRER ICI, COPIER LA GRILLE, CHAMP DE VISION ICI (fn_reliefAction depuis le point), ZONE INTERDITE AU DRONE
-    (poser ou retirer, fn_noFly), SUPPRIMER (marqueur joueur pointé). Équipier pointé : aussi CHAMP DE VISION de l'équipier
+    CENTRER ICI, COPIER LA GRILLE, CHAMP DE VISION ICI (fn_reliefAction depuis le point), EFFACER LE CHAMP DE VISION
+    et EFFACER LA LIGNE DE VUE (quand il y en a un sur la carte), ZONE INTERDITE AU DRONE (poser, ou retirer celle
+    sous le clic), RETIRER TOUTES LES ZONES (camp), SUPPRIMER (marqueur joueur pointé). Équipier pointé : aussi CHAMP DE VISION de l'équipier
     et LOCALISER PAR RELAIS (triangulation, fn_relayNet).
     ["open", [contrôle carte, position écran]]  ouvre le menu au curseur (en-tête : grille, altitude, distance et azimut)
     ["close"]                                    ferme (clic ailleurs, Échap, choix d'une ligne)
@@ -83,6 +84,15 @@ switch (_mode) do {
                 private _z = ["inside", _pos] call comspec_atak_native_fnc_noFly;
                 if ((count _z) > 0) then { ["remove", _z select 0] call comspec_atak_native_fnc_noFly; };
             };
+            case "NOFLYALL": { ["clear"] call comspec_atak_native_fnc_noFly; };
+            case "VIEWDEL": {
+                ["clear"] call comspec_atak_native_fnc_reliefAction;
+                ["INFO", "Champ de vision effacé", 2, 20] call comspec_atak_native_fnc_notify;
+            };
+            case "LOSDEL": {
+                ["losClear"] call comspec_atak_native_fnc_reliefAction;
+                ["INFO", "Ligne de vue effacée", 2, 20] call comspec_atak_native_fnc_notify;
+            };
             case "VIEW": { ["compute", [_pos select 0, _pos select 1]] call comspec_atak_native_fnc_reliefAction; };
             case "VIEWU": { ["compute", _c getOrDefault ["unit", ""]] call comspec_atak_native_fnc_reliefAction; };
             case "LOCATE": {
@@ -134,10 +144,23 @@ switch (_mode) do {
                 ["LOCATE", "Localiser par relais", "triangulation", _dir + "app_waverelay.paa", [1, 0.65, 0.2, 1]]
             ]];
         };
-        if ((count (["inside", _pos] call comspec_atak_native_fnc_noFly)) > 0) then {
+        // Champ de vision et ligne de vue sur la carte (un seul de chaque, propre au joueur) : les effacer d'ici.
+        private _vs = missionNamespace getVariable ["COMSPEC_ATAK_Viewshed", []];
+        if ((count _vs) > 0) then {
+            _rows pushBack ["VIEWDEL", "Effacer le champ de vision", _vs param [13, ""], _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
+        };
+        if ((count (missionNamespace getVariable ["COMSPEC_ATAK_ReliefLos", []])) > 0) then {
+            _rows pushBack ["LOSDEL", "Effacer la ligne de vue", "", _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
+        };
+        private _nf = count (["list"] call comspec_atak_native_fnc_noFly);
+        private _inNf = (count (["inside", _pos] call comspec_atak_native_fnc_noFly)) > 0;
+        if (_inNf) then {
             _rows pushBack ["NOFLYDEL", "Retirer la zone interdite", "drone, tout le camp", _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
         } else {
             _rows pushBack ["NOFLY", "Zone interdite au drone", "rayon 200 m", _dir + "app_drone.paa", [0.95, 0.30, 0.25, 1]];
+        };
+        if (_nf > 1 || {_nf > 0 && {!_inNf}}) then {
+            _rows pushBack ["NOFLYALL", "Retirer toutes les zones", format ["%1 zones, tout le camp", _nf], _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
         };
         if (_m isNotEqualTo "") then { _rows pushBack ["DELETE", "Supprimer le marqueur", [markerText _m, ""] select ((markerText _m) isEqualTo ""), _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]]; };
         private _rowH = _font * 1.55;
@@ -196,7 +219,7 @@ switch (_mode) do {
             _ic ctrlSetTextColor _col;
             private _t = ["COMSPEC_RscStructuredText", [_x0 + pixelW * 16 + _iw * 1.45, _ry + (_rowH - _font * 0.95) / 2, _w - _iw * 1.45 - pixelW * 24, _rowH]] call _mk;
             _t ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' size='0.95' color='%1'>%2</t><t size='0.75' color='#7d8c85' align='right'>%3</t>",
-                ["#e6efe9", "#f2685c"] select (_key isEqualTo "DELETE"), _label, (_sub regexReplace ["[<>&]", ""]) select [0, 22]]) call comspec_atak_native_fnc_tr);
+                ["#e6efe9", "#f2685c"] select (_key in ["DELETE", "VIEWDEL", "LOSDEL", "NOFLYALL"]), _label, (_sub regexReplace ["[<>&]", ""]) select [0, 22]]) call comspec_atak_native_fnc_tr);
             _t ctrlSetFontHeight _font;
             private _b = ["COMSPEC_RscButtonOverlay", [_x0, _ry, _w, _rowH]] call _mk;
             _b ctrlAddEventHandler ["ButtonClick", compile format ["['act', '%1'] call comspec_atak_native_fnc_mapCtxMenu;", _key]];

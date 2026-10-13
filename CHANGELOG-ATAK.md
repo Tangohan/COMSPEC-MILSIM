@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Performance : arrivée en mission, arsenal et DLL (ATAK natif 1.68.0, COMSPEC Link 2.0.78)
+## Performance : arrivée en mission, arsenal et DLL (ATAK natif 1.69.0, COMSPEC Link 2.0.78)
 
 Non testé en jeu. Demande de TTRD : gros lag en rejoignant un serveur et en ouvrant l'arsenal. Il faut recompiler les DLL (build_mod.bat) ; pas de migration.
 - Arsenal : la fiche opérateur n'est plus reconstruite et envoyée à Athena à chaque clic. Rien tant que l'arsenal (ACE ou BIS) est ouvert ; un seul envoi à la fermeture, et au plus un toutes les 3 s hors arsenal. L'envoi part dans un spawn (requête HTTP hors du thread du jeu) au lieu de figer l'image jusqu'à 8 s.
@@ -23,6 +23,12 @@ Non testé en jeu. Demande de TTRD : gros lag en rejoignant un serveur et en ouv
 - Menus ACE d'Overwatch et du SSE : les gardes « déjà installé » sont par mission (elles restaient dans uiNamespace : à la mission suivante sans relancer Arma, les menus manquaient).
 - COMSPEC Link 2.0.78 : le minuteur de vidage n'est plus relancé à chaque mise en file (il pouvait ne jamais partir), un seul vidage à la fois, file sur disque écrite au plus toutes les 3 s, journaux d'appareil renvoyés avec une pause croissante hors ligne, version lue une fois, et préchauffage au chargement (file sur disque relue et connexion TLS vers Athena ouverte en tâche de fond).
 - Journal : lignes `[PERF]` (durées du preInit, du postInit client et serveur, arrivée en jeu, parcours de config, dictionnaire, fiche opérateur, reprise de session) et `Image figée : N ms` pour toute image de plus de 400 ms, avec arsenal, téléphone et carte ouverts ou non.
+## Carte : effacer le champ de vision et les zones interdites au drone (ATAK natif 1.68.0)
+
+Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : un champ de vision posé depuis la carte ne pouvait plus être retiré.
+- Menu de la carte (appui long / clic droit) : « Effacer le champ de vision » apparaît dès qu'un champ de vision est affiché (le bouton EFFACER n'existait que dans l'app Relief). Même chose pour la ligne de vue : « Effacer la ligne de vue ».
+- Zones interdites au drone : « Retirer la zone interdite » (clic dans la zone) existait déjà ; ajout de « Retirer toutes les zones » dans le menu de la carte et de RETIRER TOUTES LES ZONES dans l'app Marquer Tracking (toutes les zones du camp).
+- Un seul champ de vision existe à la fois par joueur : en poser un nouveau remplace le précédent.
 ## Intro au démarrage désactivée (ATAK natif 1.67.0)
 
 Non testé en jeu. TTRD : l'intro du mod est buggée. Pas de DLL à recompiler, pas de migration.
