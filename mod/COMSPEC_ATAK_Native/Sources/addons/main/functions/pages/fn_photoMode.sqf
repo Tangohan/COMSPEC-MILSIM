@@ -208,6 +208,9 @@ switch (toUpper _mode) do {
             true
         };
         // Cadrage du selfie : le bras tourne autour de la tête, dans la limite de ce qu'un bras atteint.
+        // Axes inversables séparément (réglages CBA personnels « Selfie : inverser… »).
+        if (missionNamespace getVariable ["comspec_atak_native_selfie_invert_x", false]) then { _dx = -_dx; };
+        if (missionNamespace getVariable ["comspec_atak_native_selfie_invert_y", false]) then { _dy = -_dy; };
         _st set ["yaw", (((_st getOrDefault ["yaw", 0]) - _dx * 2.5) max -75) min 75];
         _st set ["pitch", (((_st getOrDefault ["pitch", 10]) - _dy * 2.5) max -20) min 45];
         true

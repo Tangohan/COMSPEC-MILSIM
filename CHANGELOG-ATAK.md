@@ -38,6 +38,22 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Selfie : axes de la souris inversables (ATAK natif 1.91.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le selfie peut inverser les axes de la souris
+- Deux nouveaux réglages dans Options > Réglages des addons > COMSPEC > ATAK · Photo : « Selfie : inverser gauche / droite » et « Selfie : inverser haut / bas ».
+- Cochés, la souris cadre le selfie dans l'autre sens, comme devant un miroir. Ils sont désactivés par défaut et chaque joueur choisit pour lui.
+EN : Selfie mode can invert the mouse axes
+- Two new settings in Options > Addon Options > COMSPEC > ATAK · Photo: "Selfie: invert left / right" and "Selfie: invert up / down".
+- When ticked, the mouse frames the selfie the other way round, like in a mirror. They are off by default and each player picks for themselves.
+
+### Détail technique
+- Demande de TTRD (13/10) : inverser gauche / droite à la souris en mode selfie.
+- Réglages CBA client (non forcés par le serveur) comspec_atak_native_selfie_invert_x / _y, lus dans fn_photoMode "MOUSE" (branche selfie uniquement ; le zoom de l'objectif arrière et le glisser de l'app Photo ne changent pas). Traductions ajoutées à en.txt.
+- Non testé en jeu.
+
 ## Drone : bouton TEST VIDÉO pour l'image noire du téléphone (ATAK natif 1.90.0)
 
 ### Résumé joueur
