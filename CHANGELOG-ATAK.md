@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Barlow Condensed revient en test dans Réglages > Police (ATAK natif 1.85.0)
+
+### Résumé joueur
+Type : patch
+FR : Barlow Condensed à l'essai
+- Réglages > Police propose « Barlow (test) », une version corrigée de la police de la 1.83.0. Roboto reste la police par défaut.
+- Si le texte s'affiche mal avec Barlow, il suffit de repasser sur Roboto.
+EN : Barlow Condensed on trial
+- Settings > Font offers "Barlow (test)", a fixed version of the 1.83.0 font. Roboto stays the default.
+- If text looks wrong with Barlow, just switch back to Roboto.
+
+### Détail technique
+- Cause probable des lettres décalées de la 1.83.0 (« RÉGLAGES » lu « 2ÉGLAGES ») : la table `.fxy` générée avait des trous (code 0 puis 32…, puis des codes isolés). Les `.fxy` d'ACE3 n'en ont aucun dans un bloc de 32 codes alignés (0-351, 992-1087, 8176-8191). `tools/gen_fonts.py` écrit maintenant des blocs complets de 32, les codes absents en entrée vide. Polices régénérées.
+- Familles embarquées renommées `COMSPEC_BarlowC`, `COMSPEC_BarlowCBold`, `COMSPEC_BarlowCLight` ; `COMSPEC_Barlow*` (classes et balises) restent sur Roboto Condensed du jeu, écrites par le script. Valeur de réglage `barlow2` : un ancien choix `barlow` ne réactive pas la police.
+- `fn_fontText` remplace les noms suivis de leur guillemet (sinon `COMSPEC_Barlow` remplacé dans `COMSPEC_BarlowCBold`).
+- Non vérifiable hors du jeu : la troncature en hauteur vue en 1.83.0 peut venir d'une autre cause (hauteur de ligne). Si Barlow (test) est encore cassée, il faudra passer par FontToTGA (Arma 3 Tools) sur un PC Windows.
+- À tester en jeu : Réglages > Police > BARLOW (TEST) ; accueil, notifications, Réglages, petits textes sous les valeurs ; retour ROBOTO.
+
 ## Retour à la police du jeu sur le téléphone (ATAK natif 1.84.0)
 
 ### Résumé joueur
