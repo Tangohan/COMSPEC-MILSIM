@@ -6,8 +6,8 @@ private _isZeus = !isNull (getAssignedCuratorLogic player)
     || {!isMultiplayer};
 
 if (!_isZeus) exitWith {
-    (_disp displayCtrl 93510) ctrlSetStructuredText parseText "<t color='#f88'>Accès réservé au Zeus.</t>";
-    (_disp displayCtrl 93511) ctrlSetStructuredText parseText "";
+    (_disp displayCtrl 93510) ctrlSetStructuredText parseText (("<t color='#f88'>Accès réservé au Zeus.</t>") call comspec_sse_fnc_tr);
+    (_disp displayCtrl 93511) ctrlSetStructuredText parseText (("") call comspec_sse_fnc_tr);
     lbClear (_disp displayCtrl 93512);
     false
 };
@@ -77,10 +77,10 @@ private _site = if (!isNil "comspec_sse_fnc_listSiteEntities") then {
     ];
 } forEach _site;
 
-(_disp displayCtrl 93510) ctrlSetStructuredText parseText _knownTxt;
-(_disp displayCtrl 93511) ctrlSetStructuredText parseText _truthTxt;
+(_disp displayCtrl 93510) ctrlSetStructuredText parseText ((_knownTxt) call comspec_sse_fnc_tr);
+(_disp displayCtrl 93511) ctrlSetStructuredText parseText ((_truthTxt) call comspec_sse_fnc_tr);
 private _lb = _disp displayCtrl 93512;
 lbClear _lb;
-{ _lb lbAdd _x; } forEach _rows;
-if (_rows isEqualTo []) then { _lb lbAdd "(aucune entité SSE proche)"; };
+{ _lb lbAdd ((_x) call comspec_sse_fnc_tr); } forEach _rows;
+if (_rows isEqualTo []) then { _lb lbAdd (("(aucune entité SSE proche)") call comspec_sse_fnc_tr); };
 true

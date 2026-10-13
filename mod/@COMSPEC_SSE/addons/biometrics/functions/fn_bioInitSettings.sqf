@@ -11,7 +11,7 @@ private _catPop = ["COMSPEC SSE", "Biométrie — population"];
 
 private _add = {
     params ["_var", "_type", "_label", "_cat", "_value"];
-    [_var, _type, _label, _cat, _value, 1, {}, false] call CBA_fnc_addSetting;
+    [_var, _type, _label, _cat, _value, 1, {}, false] call comspec_sse_fnc_addSetting;
 };
 
 ["comspec_sse_bio_enabled", "CHECKBOX", ["Moteur biométrique", "Identités biologiques générées, base de données, qualité de capture selon le terrain et vraie recherche 1:N. Désactivé : ancien comportement (verdict tiré de la graine)."], _cat, true] call _add;

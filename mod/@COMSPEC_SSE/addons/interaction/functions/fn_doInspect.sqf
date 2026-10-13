@@ -28,7 +28,7 @@ private _time = missionNamespace getVariable ["comspec_sse_timeInspect", 5];
 
         private _lines = _fog getOrDefault ["lines", []];
         private _msg = (_fog getOrDefault ["title", "SSE"]) + endl + (_lines joinString endl);
-        hint _msg;
+        hint ((_msg) call comspec_sse_fnc_tr);
 
         [
             _fog getOrDefault ["uid", "?"],

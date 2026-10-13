@@ -14,7 +14,7 @@ private _labels = ["Surface", "Tactique", "Terrain", "Vérité complète"];
 private _label = _labels select _level;
 
 if (_announce && {hasInterface}) then {
-    hint format ["Scenario Director\nNiveau %1 — %2", _level, _label];
+    hint ((format ["Scenario Director\nNiveau %1 — %2", _level, _label]) call comspec_sse_fnc_tr);
 };
 
 [format ["setScenarioLevel %1 (%2)", _level, _label], "WARN"] call comspec_sse_fnc_log;

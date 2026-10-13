@@ -10,7 +10,7 @@ params [
 
 if (isNull _entity) exitWith {
     ["TX abandon — aucune cible", "WARN"] call comspec_sse_fnc_log;
-    if (_announce) then { hint "Aucun sujet à transmettre."; };
+    if (_announce) then { hint (("Aucun sujet à transmettre.") call comspec_sse_fnc_tr); };
     false
 };
 
@@ -43,9 +43,9 @@ if (_includeDigital && {!isNil "comspec_sse_fnc_submitDigitalAcquisition"}) then
 
 if (_announce) then {
     if (_okP) then {
-        hint "Fiche d’identité envoyée au registre.";
+        hint (("Fiche d’identité envoyée au registre.") call comspec_sse_fnc_tr);
     } else {
-        hint "La fiche n’est pas encore arrivée au registre. Elle est mise en attente — le détail est dans le journal COMSPEC.";
+        hint (("La fiche n’est pas encore arrivée au registre. Elle est mise en attente — le détail est dans le journal COMSPEC.") call comspec_sse_fnc_tr);
     };
 };
 

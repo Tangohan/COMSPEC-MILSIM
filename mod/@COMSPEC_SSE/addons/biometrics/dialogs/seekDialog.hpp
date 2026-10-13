@@ -4,7 +4,7 @@ class COMSPEC_SSE_SeekDialog {
     idd = 93100;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "[] call comspec_sse_fnc_seekOnLoad";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; [] call comspec_sse_fnc_seekOnLoad";
 
     class controlsBackground {
         class BG: RscText {

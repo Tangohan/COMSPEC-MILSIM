@@ -62,4 +62,4 @@ private _html = format [
     _sum getOrDefault ["status", "READY"]
 ];
 
-(_display displayCtrl 93110) ctrlSetStructuredText parseText _html;
+(_display displayCtrl 93110) ctrlSetStructuredText parseText ((_html) call comspec_sse_fnc_tr);

@@ -1,0 +1,7 @@
+/*
+    zen_context_menu_fnc_createAction avec le nom affiché dans la langue du téléphone (comspec_sse_fnc_tr).
+    Mêmes paramètres ; posé par mod/COMSPEC_ATAK_Native/tools/i18n.py --sse wrap.
+*/
+private _a = +_this;
+_a set [1, (_a select 1) call comspec_sse_fnc_tr];
+_a call zen_context_menu_fnc_createAction

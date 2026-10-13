@@ -30,7 +30,7 @@ if (isNil "ace_common_fnc_progressBar") exitWith {
     },
     {
         if (!isNil "comspec_sse_fnc_bioAnimate") then { [player, objNull, "", "stop"] call comspec_sse_fnc_bioAnimate; };
-        hint "Action SSE interrompue.";
+        hint (("Action SSE interrompue.") call comspec_sse_fnc_tr);
     },
     _label
 ] call ace_common_fnc_progressBar;

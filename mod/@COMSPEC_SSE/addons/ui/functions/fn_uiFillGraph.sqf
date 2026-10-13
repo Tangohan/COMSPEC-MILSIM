@@ -82,9 +82,9 @@ private _logical = if (!isNil "comspec_sse_fnc_listLogicalEntities") then { [] c
 
 private _lb = _disp displayCtrl _idcList;
 lbClear _lb;
-{ _lb lbAdd _x; } forEach _nodes;
-if (_nodes isEqualTo []) then { _lb lbAdd "(graphe vide — lier un record)"; };
+{ _lb lbAdd ((_x) call comspec_sse_fnc_tr); } forEach _nodes;
+if (_nodes isEqualTo []) then { _lb lbAdd (("(graphe vide — lier un record)") call comspec_sse_fnc_tr); };
 
 if (!isNil "comspec_sse_fnc_chartOpen") then { _edges pushBack "<br/><t color='#9aa'>Vue complète : ACE, COMSPEC SSE, Tableau des liens.</t>"; };
-(_disp displayCtrl _idcEdges) ctrlSetStructuredText parseText (_edges joinString "<br/>");
+(_disp displayCtrl _idcEdges) ctrlSetStructuredText parseText (((_edges joinString "<br/>")) call comspec_sse_fnc_tr);
 true

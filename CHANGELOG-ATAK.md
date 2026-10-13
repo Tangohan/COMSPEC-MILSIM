@@ -11,6 +11,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Traduction 2026-10-13 — Mod SSE et menus CBA d'Overwatch connect en anglais (ATAK natif 1.55.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : tout traduire.
+- Mod SSE : textes affichés, textes fixes des écrans (terminal, résultats, graphe, SEEK…), actions ACE, menu ZEN et modules Zeus ZEN dans la langue du téléphone de l'ATAK natif (environ 1 650 nouvelles traductions). Sans l'ATAK natif, le SSE reste en français.
+- Menus CBA d'Overwatch connect et du SSE : dans la langue du réglage « Langue du téléphone » (ou, avant son chargement, celle enregistrée dans le profil, sinon la langue du jeu). Nouveau `fn_trMenu` dans l'ATAK natif.
+- `tools/i18n.py --sse wrap|extract` pour le SSE ; PBO du SSE et de connect repaquetés (`tools/pack_pbo.py`).
+- Reste en français : noms d'objets et modules Eden du SSE (config), journaux techniques.
+
 ## Traduction 2026-10-13 — Fenêtres Overwatch connect et actions ACE/ZEN en anglais (ATAK natif 1.54.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : continuer de traduire le mod.

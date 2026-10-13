@@ -11,7 +11,7 @@ private _device = if ([_player, "seek"] call comspec_sse_fnc_hasEquipment) then 
 private _cap = [_target, _player, _modality, _device] call comspec_sse_fnc_bioCapture;
 private _label = switch (_modality) do { case "iris": { "Iris" }; case "visage": { "Photo faciale" }; case "adn": { "ADN" }; default { "Empreintes" }; };
 if !(_cap getOrDefault ["ok", false]) exitWith {
-    hint format ["%1 : relevé impossible.\n%2", _label, _cap getOrDefault ["blocked", ""]];
+    hint ((format ["%1 : relevé impossible.\n%2", _label, _cap getOrDefault ["blocked", ""]]) call comspec_sse_fnc_tr);
     false
 };
 
@@ -49,5 +49,5 @@ if (_modality isEqualTo "iris") then {
     _lines pushBack format ["OD %1 · OG %2", (_cap get "eyes") select 0, (_cap get "eyes") select 1];
 };
 { _lines pushBack ("· " + _x); } forEach (_cap getOrDefault ["factors", []]);
-hint (_lines joinString endl);
+hint (((_lines joinString endl)) call comspec_sse_fnc_tr);
 true

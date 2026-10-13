@@ -28,7 +28,7 @@ private _fill = {
     ([_kind] call comspec_sse_fnc_zeusChoices) params ["_vals", "_labs"];
     private _sel = 0;
     {
-        private _i = _ctrl lbAdd (_labs select _forEachIndex);
+        private _i = _ctrl lbAdd (((_labs select _forEachIndex)) call comspec_sse_fnc_tr);
         _ctrl lbSetData [_i, _x];
         if (_x isEqualTo (toUpper _current)) then { _sel = _i; };
     } forEach _vals;
@@ -41,7 +41,7 @@ private _names = (_targets select [0, 3]) apply {
     if (_x isKindOf "CAManBase") then { name _x } else { getText (configOf _x >> "displayName") }
 };
 private _more = if (count _targets > 3) then { format [" (+%1)", (count _targets) - 3] } else { "" };
-(_display displayCtrl 93018) ctrlSetText format ["%1 cible(s) : %2%3", count _targets, _names joinString ", ", _more];
+(_display displayCtrl 93018) ctrlSetText ((format ["%1 cible(s) : %2%3", count _targets, _names joinString ", ", _more]) call comspec_sse_fnc_tr);
 
 { (_display displayCtrl _x) cbSetChecked true; } forEach [93012, 93013, 93014, 93015];
 (_display displayCtrl 93016) cbSetChecked (count _targets > 1);
@@ -50,6 +50,6 @@ private _slider = _display displayCtrl 93017;
 _slider sliderSetRange [0, 100];
 _slider sliderSetSpeed [5, 10];
 _slider sliderSetPosition (_noisePct max 0 min 100);
-(_display displayCtrl 93019) ctrlSetText format ["%1 %2", round (_noisePct max 0 min 100), "%"];
+(_display displayCtrl 93019) ctrlSetText ((format ["%1 %2", round (_noisePct max 0 min 100), "%"]) call comspec_sse_fnc_tr);
 
 true

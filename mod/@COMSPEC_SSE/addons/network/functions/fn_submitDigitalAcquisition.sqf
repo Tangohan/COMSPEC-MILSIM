@@ -37,13 +37,13 @@ if ([] call comspec_sse_fnc_isOnline) then {
 };
 
 if (_ok) then {
-    if (_announce) then { hint "Acquisition numérique envoyée au registre."; };
+    if (_announce) then { hint (("Acquisition numérique envoyée au registre.") call comspec_sse_fnc_tr); };
     private _src = _payload getOrDefault ["source_type", "device"];
     private _q = _payload getOrDefault ["quality", 0];
     [_uid, "digital", _src, "Athena digital", _q, "TRANSMITTED"] call comspec_sse_fnc_addJournalEntry;
 } else {
     [_envelope] call comspec_sse_fnc_queueOffline;
-    if (_announce) then { hint "Acquisition numérique mise en attente."; };
+    if (_announce) then { hint (("Acquisition numérique mise en attente.") call comspec_sse_fnc_tr); };
     private _src = _payload getOrDefault ["source_type", "device"];
     private _q = _payload getOrDefault ["quality", 0];
     [_uid, "digital", _src, "QUEUED", _q, "QUEUED"] call comspec_sse_fnc_addJournalEntry;

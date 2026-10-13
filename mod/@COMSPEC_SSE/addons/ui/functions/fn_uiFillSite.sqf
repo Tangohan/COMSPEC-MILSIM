@@ -13,25 +13,25 @@ private _now = { (_x getOrDefault ["triage", ""]) == "EXPLOIT_NOW" } count _tri;
 private _low = { (_x getOrDefault ["triage", ""]) == "LOW_VALUE" } count _tri;
 private _untouched = { (_x getOrDefault ["level", "NONE"]) == "NONE" } count _list;
 
-(_disp displayCtrl _idcSum) ctrlSetStructuredText parseText format [
+(_disp displayCtrl _idcSum) ctrlSetStructuredText parseText ((format [
     "<t color='#8f8'>SITE EXPLOITATION</t><br/>Complétude: <t color='#ff8'>%1%%</t><br/>Éléments: %2<br/>À exploiter maintenant: %3<br/>Faible valeur: %4<br/>Non traités: %5<br/>Risque: %6",
     _pct, count _list, _now, _low, _untouched,
     if (_now > 2) then {"ÉLEVÉ — prioriser COMMS/HVT"} else {"MODÉRÉ"}
-];
+]) call comspec_sse_fnc_tr);
 
 private _lb = _disp displayCtrl _idcList;
 lbClear _lb;
 missionNamespace setVariable ["comspec_sse_uiSiteList", _tri];
 {
-    _lb lbAdd format [
+    _lb lbAdd ((format [
         "[%1] %2 · %3 · V%4",
         _x getOrDefault ["triage", "?"],
         _x getOrDefault ["type", "?"],
         _x getOrDefault ["level", "?"],
         _x getOrDefault ["INTEL_VALUE", 0]
-    ];
+    ]) call comspec_sse_fnc_tr);
 } forEach _tri;
-if (_tri isEqualTo []) then { _lb lbAdd "(aucun élément SSE dans le rayon)"; };
+if (_tri isEqualTo []) then { _lb lbAdd (("(aucun élément SSE dans le rayon)") call comspec_sse_fnc_tr); };
 
-(_disp displayCtrl _idcDetail) ctrlSetStructuredText parseText "<t color='#8f8'>DÉTAIL</t><br/>Sélectionnez un élément à gauche.<br/>Priorités = triage automatique après fouille.";
+(_disp displayCtrl _idcDetail) ctrlSetStructuredText parseText (("<t color='#8f8'>DÉTAIL</t><br/>Sélectionnez un élément à gauche.<br/>Priorités = triage automatique après fouille.") call comspec_sse_fnc_tr);
 true

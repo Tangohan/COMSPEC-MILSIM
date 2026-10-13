@@ -63,5 +63,5 @@ for "_i" from 0 to (_n - 1) do {
     ["members", count _jobs]
 ]] call comspec_sse_fnc_addLogicalEntity;
 
-hint format ["Réseau en file depuis brief\n%1\n%2 entité(s)", _brief, count _jobs];
+hint ((format ["Réseau en file depuis brief\n%1\n%2 entité(s)", _brief, count _jobs]) call comspec_sse_fnc_tr);
 _jobs apply { _x select 0 }

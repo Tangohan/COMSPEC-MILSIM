@@ -28,11 +28,11 @@ _safe = _safe regexReplace ["<", "&lt;"];
 _safe = _safe regexReplace [">", "&gt;"];
 _safe = _safe regexReplace ["\r\n|\n|\\n", "<br/>"];
 
-hintSilent parseText format [
+hintSilent ((parseText format [
     "<t font='PuristaMedium' size='1.15' color='%1'>COMSPEC SSE</t><br/><t size='0.95' align='left'>%2</t>",
     _color,
     _safe
-];
+]) call comspec_sse_fnc_tr);
 
 ["[ZEUS] " + _message, if (_kind isEqualTo "info") then { "INFO" } else { "WARNING" }] call comspec_sse_fnc_log;
 true

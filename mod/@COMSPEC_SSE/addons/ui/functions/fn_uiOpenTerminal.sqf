@@ -24,7 +24,7 @@ if (!isNil "comspec_overwatch_connect_fnc_sseOpenTerminal") exitWith {
 };
 
 if !(createDialog "COMSPEC_SSE_TerminalDialog") exitWith {
-    hint "Impossible d'ouvrir le terminal SSE.";
+    hint (("Impossible d'ouvrir le terminal SSE.") call comspec_sse_fnc_tr);
     false
 };
 true

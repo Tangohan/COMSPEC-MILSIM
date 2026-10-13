@@ -42,7 +42,7 @@ private _items = [
 ];
 private _bioChildren = _items apply {
     _x params ["_id", "_label", "_code"];
-    [_id, _label, _icon, _code, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call ace_interact_menu_fnc_createAction
+    [_id, _label, _icon, _code, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call comspec_sse_fnc_aceAction
 };
 
 private _insertBio = {
@@ -54,7 +54,7 @@ private _insertBio = {
 
 private _bioRoot = [
     "COMSPEC_SSE_Bio", "Biométrie", _icon, {}, _cond, _insertBio, [], {[0,0,0]}, 4, _aceParams, {}
-] call ace_interact_menu_fnc_createAction;
+] call comspec_sse_fnc_aceAction;
 if (!isNil "comspec_sse_fnc_acePadAction") then {
     _bioRoot = [_bioRoot] call comspec_sse_fnc_acePadAction;
 };
@@ -68,7 +68,7 @@ _cache set ["bioObjectChildren", [
     ["COMSPEC_SSE_Latent", "Relever des empreintes latentes", "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa",
         { [_this select 0, _this select 1] call comspec_sse_fnc_bioCaptureLatentAction },
         { (missionNamespace getVariable ["comspec_sse_bio_latents", true]) && {[_this select 0] call comspec_sse_fnc_canInspect} },
-        _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction
+        _noChildren, [], {[0,0,0]}, 3, _aceParams] call comspec_sse_fnc_aceAction
 ]];
 missionNamespace setVariable ["comspec_sse_aceMenuCache", _cache];
 
@@ -79,7 +79,7 @@ if (!isNil "ace_interact_menu_fnc_addActionToClass") then {
         { [_this select 0, _this select 1] call comspec_sse_fnc_bioCaptureLatentAction },
         { (missionNamespace getVariable ["comspec_sse_bio_latents", true]) && {(missionNamespace getVariable ["comspec_sse_bio_enabled", true])} },
         _noChildren, [], {[0,0,0]}, 3, _aceParams
-    ] call ace_interact_menu_fnc_createAction;
+    ] call comspec_sse_fnc_aceAction;
     {
         [_x, 0, [], _latentHolder, true] call ace_interact_menu_fnc_addActionToClass;
     } forEach ["WeaponHolderSimulated", "GroundWeaponHolder"];
@@ -97,7 +97,7 @@ if (!isNil "ace_interact_menu_fnc_addActionToClass") then {
         },
         { ["canOn", _this select 0, _this select 1] call comspec_sse_fnc_headBag },
         _noChildren, [], {[0,0,0]}, 2.5, _aceParams
-    ] call ace_interact_menu_fnc_createAction;
+    ] call comspec_sse_fnc_aceAction;
     private _bagOff = [
         "COMSPEC_SSE_HeadBagOff", "Retirer le sac de tête", "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa",
         {
@@ -108,7 +108,7 @@ if (!isNil "ace_interact_menu_fnc_addActionToClass") then {
         },
         { ["canOff", _this select 0, _this select 1] call comspec_sse_fnc_headBag },
         _noChildren, [], {[0,0,0]}, 2.5, _aceParams
-    ] call ace_interact_menu_fnc_createAction;
+    ] call comspec_sse_fnc_aceAction;
     {
         ["CAManBase", 0, ["ACE_MainActions"], _x, true] call ace_interact_menu_fnc_addActionToClass;
     } forEach [_bagOn, _bagOff];

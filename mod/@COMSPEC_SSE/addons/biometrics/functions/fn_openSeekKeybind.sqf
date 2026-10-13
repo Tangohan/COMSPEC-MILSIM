@@ -12,7 +12,7 @@ private _announce = {
     if (!isNil "comspec_overwatch_connect_fnc_announce") then {
         [_txt, "tactical", "warn"] call comspec_overwatch_connect_fnc_announce;
     } else {
-        hint _txt;
+        hint ((_txt) call comspec_sse_fnc_tr);
     };
 };
 
