@@ -65,6 +65,9 @@ if ((count _zones) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a9
         ["RETIRER", compile format ["['remove', %1] call comspec_atak_native_fnc_noFly; %2", str _id, _re], false, true, "Retire la zone pour tout le camp"]
     ]];
 } forEach _zones;
+if ((count _zones) > 1) then {
+    _rows pushBack ["buttons", [["RETIRER TOUTES LES ZONES", compile format ["['clear'] call comspec_atak_native_fnc_noFly; %1", _re], false, true, "Retire toutes les zones interdites du camp"]]];
+};
 
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 true
