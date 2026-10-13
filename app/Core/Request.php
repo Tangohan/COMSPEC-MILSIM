@@ -143,6 +143,29 @@ class Request
         return $this->server['HTTP_USER_AGENT'] ?? '';
     }
 
+    /** En-tête HTTP de la requête (« Sec-Fetch-Dest », « Accept »…), null s'il est absent. */
+    public function header(string $name): ?string
+    {
+        $key = 'HTTP_' . strtoupper(str_replace('-', '_', $name));
+        $v = $this->server[$key] ?? null;
+
+        return is_string($v) ? $v : null;
+    }
+
+    /**
+     * Ouverture d'une page par le navigateur (barre d'adresse, lien), par opposition à une image, un fetch ou un client
+     * API : Sec-Fetch-Dest « document », ou à défaut un Accept qui commence par text/html.
+     */
+    public function isBrowserNavigation(): bool
+    {
+        $dest = $this->header('Sec-Fetch-Dest');
+        if ($dest !== null && $dest !== '') {
+            return in_array(strtolower($dest), ['document', 'iframe'], true);
+        }
+
+        return str_starts_with(strtolower(trim((string) $this->header('Accept'))), 'text/html');
+    }
+
     /** @param mixed $value */
     public function setAttribute(string $key, mixed $value): void
     {

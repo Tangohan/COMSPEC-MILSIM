@@ -11,6 +11,8 @@ return [
         '/api/atak/whoami',
         // Dernières versions publiées (contrôle de mise à jour du mod au démarrage, avant toute liaison).
         '/api/atak/version',
+        // Check de démarrage du mod (salon Discord de debug) : avant toute liaison, rate-limité.
+        '/api/atak/startup-check',
         // Relais same-origin des tuiles Atlas / Arma3Map (Leaflet img + crossOrigin=anonymous
         // n’envoie ni cookie de session ni clé). Les hôtes sont déjà allowlistés dans
         // AtakRemoteTileGuard — voir AtakMapDataController::proxy.

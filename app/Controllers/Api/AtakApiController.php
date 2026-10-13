@@ -583,12 +583,19 @@ class AtakApiController
             }
         }
 
+        // Portrait opérateur seulement (règle du site), en vignette JPEG carrée lisible par Arma.
+        // Sans image, la raison part au jeu (avatar_status) et dans le journal du serveur.
+        $portrait = OperatorPortraits::gameThumbnail($tenantId, $userId);
+        if (!in_array($portrait['status'], ['ok', 'no_portrait'], true)) {
+            error_log(sprintf('[atak/player-profile] portrait opérateur indisponible pour le jeu (user=%d, tenant=%d) : %s', $userId, $tenantId, $portrait['status']));
+        }
+
         return Response::json([
             'ok' => true,
             'display_name' => (string) ($user['display_name'] ?? ''),
             'callsign' => $callsign,
-            // Portrait opérateur seulement (règle du site), en vignette JPEG carrée lisible par Arma.
-            'avatar_url' => (string) (OperatorPortraits::gameThumbnailUrl($tenantId, $userId) ?? ''),
+            'avatar_url' => (string) ($portrait['url'] ?? ''),
+            'avatar_status' => $portrait['status'],
             'unit_name' => $unitName,
             'unit_short' => $unitName !== '' ? \App\Support\UnitAbbreviation::standalone($unitName, $tenantId) : '',
             'atak_id' => $atakId,
@@ -1295,6 +1302,29 @@ class AtakApiController
         return $mapId < 1 ? self::DEFAULT_MAP_ID : $mapId;
     }
 
+    /**
+     * Répare un corps JSON produit par le SQF : caractères de contrôle bruts → espace,
+     * nombres non finis (nan, inf, 1.#INF, -nan(ind)) → 0, puis virgule décimale → point si encore illisible.
+     */
+    public static function sanitizeArmaJson(string $raw): string
+    {
+        $out = preg_replace('/[\x00-\x1F]/', ' ', $raw);
+        $out = is_string($out) ? $out : $raw;
+        $fixed = preg_replace(
+            '/([:\[,]\s*)-?(?:1\.#(?:INF|IND|QNAN)\d*|nan(?:\(ind\))?|inf(?:inity)?)(?=\s*[,}\]])/i',
+            '${1}0',
+            $out
+        );
+        $out = is_string($fixed) ? $fixed : $out;
+        if (json_decode($out, true) !== null) {
+            return $out;
+        }
+        // Virgule décimale seulement en dernier recours : elle fusionnerait [1,2] en [1.2].
+        $fixed = preg_replace('/(?<=[:\[\s])(-?\d+),(\d{1,6})(?=[,}\]\s])/', '$1.$2', $out);
+
+        return is_string($fixed) ? $fixed : $out;
+    }
+
     private function jsonBody(Request $request): array
     {
         if ($this->jsonBodyCache !== null) {
@@ -1321,6 +1351,13 @@ class AtakApiController
             $commaFixed = preg_replace('/(?<=[:\[\s])(-?\d+),(\d{1,6})(?=[,}\]\s])/', '$1.$2', $raw);
             if (is_string($commaFixed) && $commaFixed !== $raw) {
                 $decoded = json_decode($commaFixed, true);
+            }
+        }
+        if (!is_array($decoded)) {
+            // Saut de ligne brut dans un nom, « nan » / « 1.#INF » d'un nombre SQF : JSON illisible.
+            $cleaned = self::sanitizeArmaJson($raw);
+            if ($cleaned !== $raw) {
+                $decoded = json_decode($cleaned, true);
             }
         }
         unset($raw);
@@ -11722,24 +11759,35 @@ class AtakApiController
             } else {
                 $rows = $this->applyPlayNightFilter($rows, 'all', ['captured_at', 'created_at']);
             }
-            foreach ($rows as &$row) {
-                $row['url'] = \App\Support\ReconImageStorage::urlForRow($row);
-                $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
-                $row['captured_at'] = ReconCapturedAt::displayFromRow($row);
-                $row['author'] = (string) ($row['author_callsign'] ?? $row['author'] ?? '');
-                // Âge calculé ici : les dates SQL n'ont pas de fuseau, le navigateur peut être décalé.
-                $stamp = strtotime((string) $row['captured_at']);
-                $row['age_sec'] = $stamp !== false ? max(0, time() - $stamp) : null;
-            }
-            unset($row);
-            $rows = $this->presentReconPhotoMeta($tenantId, $rows);
-
-            return Response::json($rows);
+            return Response::json($this->presentReconRows($tenantId, $rows));
         } catch (\Throwable $e) {
             error_log('[atak/recon-images] index ' . $e->getMessage());
 
             return Response::json([]);
         }
+    }
+
+    /**
+     * Lignes recon_images telles que les lit le poste : URL d'affichage, libellé d'appareil, heure, auteur, âge,
+     * puis fiche du cliché et masquage des confidentiels (presentReconPhotoMeta).
+     *
+     * @param list<array<string, mixed>> $rows
+     * @return list<array<string, mixed>>
+     */
+    private function presentReconRows(int $tenantId, array $rows): array
+    {
+        foreach ($rows as &$row) {
+            $row['url'] = \App\Support\ReconImageStorage::urlForRow($row);
+            $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
+            $row['captured_at'] = ReconCapturedAt::displayFromRow($row);
+            $row['author'] = (string) ($row['author_callsign'] ?? $row['author'] ?? '');
+            // Âge calculé ici : les dates SQL n'ont pas de fuseau, le navigateur peut être décalé.
+            $stamp = strtotime((string) $row['captured_at']);
+            $row['age_sec'] = $stamp !== false ? max(0, time() - $stamp) : null;
+        }
+        unset($row);
+
+        return $this->presentReconPhotoMeta($tenantId, $rows);
     }
 
     /**
@@ -11875,11 +11923,17 @@ class AtakApiController
             ->header('Content-Type', 'text/plain; charset=utf-8')
             ->header('Cache-Control', 'no-store, private, max-age=0')
             ->setBody('Not found');
+        $id = (int) ($params['id'] ?? 0);
+        $download = $request->query('download') !== null;
+        // Lien ouvert dans le navigateur : le lecteur. ?raw=1 (ou ?download=1) garde le fichier nu.
+        if ($id > 0 && !$download && $request->query('raw') === null && $request->isBrowserNavigation()) {
+            return $this->reconViewerRedirect($id);
+        }
         $r = $this->requireTenant($request);
         if ($r instanceof Response) {
-            return $notFound();
+            // Maintenance (503) : dit tel quel, le lecteur l'affiche ; le reste reste un 404 muet.
+            return $r->statusCode() === 503 ? $r->header('Cache-Control', 'no-store') : $notFound();
         }
-        $id = (int) ($params['id'] ?? 0);
         $row = $id > 0 ? $this->reconImages()->get($r, $id) : null;
         if ($row === null || !empty($row['deleted_at'])) {
             return $notFound();
@@ -11896,7 +11950,8 @@ class AtakApiController
         $response = new Response();
         $response->header('Content-Type', \App\Support\ReconImageStorage::mimeType($abs));
         $response->header('Content-Length', (string) filesize($abs));
-        $response->header('Content-Disposition', 'inline');
+        $ext = strtolower(pathinfo($abs, PATHINFO_EXTENSION)) ?: 'jpg';
+        $response->header('Content-Disposition', ($download ? 'attachment' : 'inline') . '; filename="recon-' . $id . '.' . preg_replace('/[^a-z0-9]/', '', $ext) . '"');
         $response->header('Cache-Control', 'no-store, private, max-age=0');
         $response->header('Pragma', 'no-cache');
         $response->header('X-Content-Type-Options', 'nosniff');
@@ -12139,6 +12194,10 @@ class AtakApiController
 
     public function reconImagesShow(Request $request, array $params = []): Response
     {
+        // Lien ouvert dans le navigateur : le lecteur. Les clients API (fetch, jeu) gardent le JSON ; ?format=json le force.
+        if ($request->query('format') !== 'json' && $request->isBrowserNavigation() && (int) ($params['id'] ?? 0) > 0) {
+            return $this->reconViewerRedirect((int) $params['id']);
+        }
         $r = $this->requireTenant($request);
         if ($r instanceof Response) {
             return $r;
@@ -12153,6 +12212,124 @@ class AtakApiController
         $row = $this->presentReconPhotoMeta($tenantId, [$row])[0] ?? $row;
 
         return Response::json($row);
+    }
+
+    private function reconViewerRedirect(int $id): Response
+    {
+        return Response::redirect(url('recon/images/' . $id))
+            ->header('Cache-Control', 'no-store, private, max-age=0')
+            ->header('Referrer-Policy', 'no-referrer');
+    }
+
+    /**
+     * GET /recon/images/{id} : lecteur d'un cliché (zoom, rotation, plein écran, fiche, mini-carte, album de la même
+     * mission). Mêmes droits que GET /api/recon/images : communauté de la session, clichés confidentiels réservés à
+     * l'habilitation « confidentiel » (fiche visible, image masquée). Le fichier reste servi par …/file.
+     */
+    public function reconImagesViewer(Request $request, array $params = []): Response
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $data = [
+            'photoId' => $id,
+            'items' => [],
+            'index' => 0,
+            'error' => null,
+            'errorMessage' => '',
+            'mapConfig' => null,
+            'mapUrl' => url('atak'),
+        ];
+        $status = 200;
+        try {
+            if ($this->resolveTenantId($request) === null) {
+                $data['error'] = 'tenant';
+                $status = 403;
+            } else {
+                $r = $this->requireTenant($request);
+                if ($r instanceof Response) {
+                    $data['error'] = $r->statusCode() === 503 ? 'maintenance' : 'tenant';
+                    $payload = json_decode($r->body(), true);
+                    $data['errorMessage'] = is_array($payload) ? (string) ($payload['message'] ?? '') : '';
+                    $status = $r->statusCode();
+                } else {
+                    $tenantId = $r;
+                    $row = $id > 0 ? $this->reconImages()->get($tenantId, $id) : null;
+                    if ($row === null || !empty($row['deleted_at'])) {
+                        $data['error'] = 'not_found';
+                        $status = 404;
+                    } else {
+                        $unit = strtolower((string) ($row['unit_name'] ?? ''));
+                        $isFeed = (bool) preg_match('/^(chest|helmet|drone):/', $unit);
+                        $mission = trim((string) ($row['mission_id'] ?? ''));
+                        $album = $this->reconImages()->list($tenantId, $mission !== '' ? $mission : null, null, null, null, 200, $isFeed ? 'only' : 'exclude');
+                        $found = false;
+                        foreach ($album as $a) {
+                            if ((int) ($a['id'] ?? 0) === $id) {
+                                $found = true;
+                                break;
+                            }
+                        }
+                        if (!$found) {
+                            $album = [$row];
+                        }
+                        $album = $this->presentReconRows($tenantId, $album);
+                        foreach ($album as $i => &$a) {
+                            $a['_recon'] = true;
+                            if ((int) ($a['id'] ?? 0) === $id) {
+                                $data['index'] = $i;
+                            }
+                        }
+                        unset($a);
+                        $data['items'] = $album;
+                        $data['mapConfig'] = $this->reconViewerMapConfig($tenantId);
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('[atak/recon-images] viewer ' . $id . ' ' . $e->getMessage());
+            $data['error'] = 'server';
+            $status = 500;
+        }
+
+        return Response::view('recon-viewer', $data)
+            ->setStatusCode($status)
+            ->header('Cache-Control', 'no-store, private, max-age=0')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->header('X-Frame-Options', 'SAMEORIGIN')
+            ->header('Referrer-Policy', 'no-referrer');
+    }
+
+    /** Fond de carte de la communauté (comme /atak) pour la mini-carte du lecteur ; null si indisponible. */
+    private function reconViewerMapConfig(int $tenantId): ?array
+    {
+        try {
+            $repo = new \App\Repositories\AtakMapRepository();
+            $map = $repo->getDefaultForTenant($tenantId) ?: $repo->getBySlug('altis');
+            if (!is_array($map) || !function_exists('atak_resolve_tile_pattern')) {
+                return null;
+            }
+            $c = is_array($map['config'] ?? null) ? $map['config'] : [];
+            $slug = (string) ($map['slug'] ?? 'altis');
+            $pattern = atak_resolve_tile_pattern((string) ($map['tile_pattern'] ?? ''), $slug);
+            if ($pattern === '') {
+                return null;
+            }
+
+            return [
+                'title' => (string) ($map['label'] ?? $slug),
+                'tilePattern' => $pattern,
+                'minZoom' => (int) ($c['minZoom'] ?? 0),
+                'maxZoom' => (int) ($c['maxZoom'] ?? 6),
+                'tileSize' => (int) ($c['tileSize'] ?? 212),
+                'worldSize' => (int) ($c['worldSize'] ?? 30720),
+                'crs' => $c['crs'] ?? ['factorx' => 0.006839, 'factory' => 0.006836, 'tileWidth' => 212],
+                'offsetX' => isset($c['offset_x']) ? (float) $c['offset_x'] : 0.0,
+                'offsetY' => isset($c['offset_y']) ? (float) $c['offset_y'] : 0.0,
+            ];
+        } catch (\Throwable $e) {
+            error_log('[atak/recon-images] viewer map ' . $e->getMessage());
+
+            return null;
+        }
     }
 
     /**
@@ -13844,8 +14021,25 @@ class AtakApiController
             'context_id' => $mapId,
         ]);
         // Corps vide ou JSON illisible, ou véhicule sans indicatif : refus clair plutôt qu'une erreur 500.
+        // Le motif part dans la réponse (journal du jeu, COMSPEC Link 2.0.82) et dans error_log.
         if (\App\Repositories\AtakVehicleTrackingRepository::resolveCallsign($data) === '') {
-            return Response::json(['error' => 'vehicle_callsign requis'], 400);
+            if ($body === []) {
+                $raw = \App\Support\HttpJsonBody::rawJson();
+                $reason = $raw === '' ? 'corps vide' : 'JSON illisible (' . json_last_error_msg() . ')';
+                error_log('[atak/vehicles] 400 ' . $reason . ' : ' . mb_substr(preg_replace('/\s+/', ' ', $raw) ?? '', 0, 300));
+
+                return Response::json([
+                    'error' => 'invalid_json',
+                    'message' => 'Véhicule refusé : ' . $reason . '.',
+                ], 400);
+            }
+            $keys = implode(',', array_slice(array_map('strval', array_keys($body)), 0, 30));
+            error_log('[atak/vehicles] 400 indicatif absent, clés reçues : ' . $keys);
+
+            return Response::json([
+                'error' => 'vehicle_callsign requis',
+                'message' => 'Véhicule refusé : aucun indicatif (vehicle_callsign, callsign, vehicle_name, vehicle_id). Clés reçues : ' . $keys,
+            ], 400);
         }
 
         $vehicleId = $repo->upsert($data);

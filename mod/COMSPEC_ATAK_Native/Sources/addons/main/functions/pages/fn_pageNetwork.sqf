@@ -96,7 +96,7 @@ private _buttons = {
     {
         _x params ["_label", "_code", ["_primary", false]];
         private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + _forEachIndex * (_w1 + _pad * 0.5), _y, _w1, _fs * 1.7], _label] call _mk;
-        _b ctrlSetFontHeight (_fs * 0.85);
+        _b ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
         _b ctrlAddEventHandler ["ButtonClick", _code];
     } forEach _btns;
     _y = _y + _fs * 1.7 + _pad * 0.5;
@@ -335,7 +335,7 @@ private _rowH = _fs * 2.5;
         _bd ctrlSetBackgroundColor _acc;
         _bd ctrlSetTextColor [0.02, 0.03, 0.02, 1];
         _bd ctrlSetFont "RobotoCondensedBold";
-        _bd ctrlSetFontHeight (_fs * 0.75);
+        _bd ctrlSetFontHeight ((_fs * 0.75) max COMSPEC_ATAK_FontMin);
     } else {
         ctrlDelete _bd;
         [[_x0 + _w0 - _badgeW - _pad * 0.4, _y + _rowH * 0.12, _badgeW, _rowH * 0.8], format ["<t align='right' size='%1' color='%2'>%3</t>", _k * 0.66, _hex get _st, _why]] call _txt;

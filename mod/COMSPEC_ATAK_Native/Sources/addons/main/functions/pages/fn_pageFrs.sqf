@@ -57,14 +57,14 @@ private _hdrH = _fs * 2.9;
 private _hdr = ["COMSPEC_RscText", [0, 0, _bw, _hdrH]] call _mk;
 _hdr ctrlSetBackgroundColor [0.07, 0.07, 0.07, 1];
 private _dateC = ["COMSPEC_RscText", [_pad, 0, _bw * 0.45, _fs * 1.3], (_draft get "date") splitString " " param [0, ""]] call _mk;
-_dateC ctrlSetFontHeight (_fs * 0.85); _dateC ctrlSetTextColor [0.6, 0.6, 0.6, 1];
+_dateC ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin); _dateC ctrlSetTextColor [0.6, 0.6, 0.6, 1];
 private _placeC = ["COMSPEC_RscTextRight", [_bw * 0.45, 0, _bw * 0.55 - _pad, _fs * 1.3], [_draft getOrDefault ["place", ""], [_draft get "grid"] call _esc] select ((_draft getOrDefault ["place", ""]) isEqualTo "")] call _mk;
-_placeC ctrlSetFontHeight (_fs * 0.85); _placeC ctrlSetTextColor [0.6, 0.6, 0.6, 1];
+_placeC ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin); _placeC ctrlSetTextColor [0.6, 0.6, 0.6, 1];
 private _chipX = _pad;
 private _chip = {
     params ["_text", "_rgb"];
     private _c = ["COMSPEC_RscTextCenter", [_chipX, _fs * 1.35, 0.1, _fs * 1.25], _text] call _mk;
-    _c ctrlSetFontHeight (_fs * 0.8);
+    _c ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin);
     private _w = (ctrlTextWidth _c) + _pad;
     _c ctrlSetPosition [_chipX, _fs * 1.35, _w, _fs * 1.25]; _c ctrlCommit 0;
     _c ctrlSetBackgroundColor _rgb; _c ctrlSetTextColor [1, 1, 1, 1];
@@ -81,7 +81,7 @@ private _urg = _draft getOrDefault ["urgency", "routine"];
 if (_urg isNotEqualTo "routine") then { [toUpper ((((_cat get "urgencies") select { (_x select 0) isEqualTo _urg }) param [0, [_urg, _urg]]) select 1), [0.85, 0.45, 0.1, 1]] call _chip; };
 if ((count _themes) isEqualTo 0) then {
     private _c = ["COMSPEC_RscText", [_chipX, _fs * 1.35, _bw * 0.5, _fs * 1.25], "Aucun thème : ouvrez l'Entête"] call _mk;
-    _c ctrlSetFontHeight (_fs * 0.75); _c ctrlSetTextColor [0.55, 0.55, 0.55, 1];
+    _c ctrlSetFontHeight ((_fs * 0.75) max COMSPEC_ATAK_FontMin); _c ctrlSetTextColor [0.55, 0.55, 0.55, 1];
 };
 
 // Barre du bas (bandeau violet à creux) : dimensions communes.
@@ -106,7 +106,7 @@ _edit ctrlSetBackgroundColor [0, 0, 0, 0];
 _edit ctrlSetFontHeight _font;
 (uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap]) set ["body", _edit];
 private _cnt = ["COMSPEC_RscTextCenter", [_tx + _tw - _fs * 4.2 * _ratio, _ty + _th, _fs * 4.2 * _ratio, _cntH]] call _mk;
-_cnt ctrlSetFontHeight (_fs * 0.85);
+_cnt ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
 _cnt ctrlSetTextColor [1, 1, 1, 1];
 uiNamespace setVariable ["COMSPEC_ATAK_FrsCount", [_cnt, _ph, _max]];
 private _upd = {
@@ -204,7 +204,7 @@ if (_pjOn && {_view isEqualTo ""}) then {
     _tt ctrlSetFont "RobotoCondensedBold"; _tt ctrlSetFontHeight (_fs * 0.95); _tt ctrlSetTextColor [0.9, 0.9, 0.9, 1];
     private _cw = _fs * 2.6 / _ratio;
     private _cc = ["COMSPEC_RscTextCenter", [_gx + _gw - _cw, _pad / 2 + _titleH * 0.12, _cw, _titleH * 0.76], format ["%1/4", _np]] call _mk;
-    _cc ctrlSetFontHeight (_fs * 0.8); _cc ctrlSetTextColor [1, 1, 1, 1];
+    _cc ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin); _cc ctrlSetTextColor [1, 1, 1, 1];
     _cc ctrlSetBackgroundColor ([[0.27, 0.22, 0.62, 1], [0.85, 0.45, 0.1, 1]] select (_np >= 4));
     private _closeH = _fs * 1.5;
     private _helpH = _fs * 1.2;
@@ -246,7 +246,7 @@ if (_pjOn && {_view isEqualTo ""}) then {
                 _ic ctrlSetTextColor [0.62, 0.62, 0.66, 1];
             };
             private _lab = ["COMSPEC_RscText", [_cx, _cy + _tileH - _labH, _tw, _labH], format ["%1 %2", ["Photo ·", "Capture ·"] select (_kind isEqualTo "capture"), _name]] call _mk;
-            _lab ctrlSetFontHeight (_fs * 0.72); _lab ctrlSetTextColor [0.92, 0.92, 0.92, 1];
+            _lab ctrlSetFontHeight ((_fs * 0.72) max COMSPEC_ATAK_FontMin); _lab ctrlSetTextColor [0.92, 0.92, 0.92, 1];
             _lab ctrlSetBackgroundColor [0, 0, 0, 0.65];
             _lab ctrlSetTooltip ((format ["%1%2", _name, ["", format [" · %1", _grid]] select (_grid isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
             // Croix de retrait (coin haut droit).
@@ -262,7 +262,7 @@ if (_pjOn && {_view isEqualTo ""}) then {
             [_cx, _cy, _tw, _tileH] call _dash;
             private _plusH = _tileH * 0.42;
             private _pl = ["COMSPEC_RscTextCenter", [_cx, _cy + _tileH * 0.04, _tw, _plusH], "+"] call _mk;
-            _pl ctrlSetFontHeight (_plusH * 0.85); _pl ctrlSetTextColor [0.5, 0.5, 0.56, 1];
+            _pl ctrlSetFontHeight ((_plusH * 0.85) max COMSPEC_ATAK_FontMin); _pl ctrlSetTextColor [0.5, 0.5, 0.56, 1];
             // Trois sources compactes (mêmes actions que le bouton rond).
             private _srcs = [
                 ["ui_photocam.paa", "Caméra", { ["camera"] call comspec_atak_native_fnc_frsAction; }, "Caméra : capture de la vue jointe à la fiche"],
@@ -283,7 +283,7 @@ if (_pjOn && {_view isEqualTo ""}) then {
                 (["COMSPEC_RscPicture", [_sx + (_sw - _ih / _ratio) / 2, _iy, _ih / _ratio, _ih], _dir + _file] call _mk) ctrlSetTextColor [1, 1, 1, 1];
                 if (_labels) then {
                     private _t = ["COMSPEC_RscTextCenter", [_sx, _iy + _ih, _sw, _sh - _ih - _sh * 0.12], _name] call _mk;
-                    _t ctrlSetFontHeight ((_fs * 0.62) min ((_sh - _ih) * 0.7)); _t ctrlSetTextColor [0.85, 0.85, 0.9, 1];
+                    _t ctrlSetFontHeight (((_fs * 0.62) min ((_sh - _ih) * 0.7)) max COMSPEC_ATAK_FontMin); _t ctrlSetTextColor [0.85, 0.85, 0.9, 1];
                 };
                 [[_sx, _sy, _sw, _sh], _code, _tip] call _btn;
             } forEach _srcs;
@@ -295,11 +295,11 @@ if (_pjOn && {_view isEqualTo ""}) then {
         "4 pièces au plus, envoyées avec la fiche. La croix en retire une.",
         "Maximum atteint : retirez une pièce (croix) pour en joindre une autre."
     ] select (_np >= 4)] call _mk;
-    _help ctrlSetFontHeight (_fs * 0.7); _help ctrlSetTextColor [0.6, 0.6, 0.64, 1];
+    _help ctrlSetFontHeight ((_fs * 0.7) max COMSPEC_ATAK_FontMin); _help ctrlSetTextColor [0.6, 0.6, 0.64, 1];
     _help ctrlSetTooltip (("Caméra : capture de la vue · Galerie : photothèque du poste · Athena : fiches envoyées et leurs photos") call comspec_atak_native_fnc_tr);
     private _fw0 = (_gw * 0.5) max ((_fs * 6 / _ratio) min _gw);
     private _close = ["COMSPEC_RscButtonPrimary", [_x0 + (_pw - _fw0) / 2, _barTop - _closeH - _pad, _fw0, _closeH], "FERMER"] call _mk;
-    _close ctrlSetFontHeight (_fs * 0.85);
+    _close ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
     _close ctrlAddEventHandler ["ButtonClick", { ["pj"] call comspec_atak_native_fnc_frsAction; }];
 };
 if (_pjOn && {_view isNotEqualTo ""}) then {

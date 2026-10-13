@@ -150,13 +150,14 @@ _y = _y + _font * 1.4 + _pad / 2;
 private _detailH = [_bh * 0.36, 0] select _land;
 private _listW = [_bw, _bw * 0.58] select _land;
 private _listH = _bh - _y - _detailH - _pad / 2;
-private _cols = ["COMSPEC_RscLabel", [_pad, _y, _listW - _pad, _fs * 1.2], ""] call comspec_atak_native_fnc_pageCtrl;
+private _cols = ["COMSPEC_RscMono", [_pad, _y, _listW - _pad, _fs * 1.2], ""] call comspec_atak_native_fnc_pageCtrl;
 _cols ctrlSetText (((switch (true) do {
     case _filtersOpen: { "  FILTRES DU BFT (aussi appliqués à la carte)" };
     case (_view isEqualTo "ORBAT"): { "  FORMATION › GROUPE › ÉQUIPE › MEMBRE        DISTANCE · GISEMENT · TRAJET · ÂGE" };
     default { "  INDICATIF                 DISTANCE · GISEMENT · TRAJET · ÂGE" };
 })) call comspec_atak_native_fnc_tr);
-_cols ctrlSetFontHeight (_fs * 0.8);
+_cols ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin);
+_cols ctrlSetTextColor [0.55, 0.61, 0.58, 1];
 _y = _y + _fs * 1.2;
 _listH = _listH - _fs * 1.2;
 private _ids = [];

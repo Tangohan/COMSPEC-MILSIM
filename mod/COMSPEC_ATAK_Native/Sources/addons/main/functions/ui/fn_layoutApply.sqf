@@ -96,7 +96,7 @@ if (isNull _hBg || {(ctrlParent _hBg) isNotEqualTo _d}) then {
     uiNamespace setVariable ["COMSPEC_ATAK_HandHintCtrls", [_hBg, _hIc, _hKey]];
 };
 private _hShow = !_interactive && {profileNamespace getVariable ["COMSPEC_ATAK_HandHint", true]};
-_hKey ctrlSetFontHeight (_fontS * 0.8);
+_hKey ctrlSetFontHeight ((_fontS * 0.8) max COMSPEC_ATAK_FontMin);
 private _hh = _ah * 0.58;
 private _hIcH = _hh * 0.78;
 private _hKw = (ctrlTextWidth _hKey) + _pad * 2;

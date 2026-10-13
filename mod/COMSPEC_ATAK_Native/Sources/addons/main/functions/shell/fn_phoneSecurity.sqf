@@ -29,7 +29,7 @@ switch (_act) do {
         { _data set [_x, []]; } forEach ["messages", "inbox", "outbox", "p2p", "photos"];
         { _data set [_x, createHashMap]; } forEach ["markers", "remoteMarkers", "intel", "tasks"];
         { missionNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_Reports", "COMSPEC_ATAK_GeoTracks", "COMSPEC_ATAK_MarkerNotes", "COMSPEC_ATAK_DataLib", "COMSPEC_ATAK_Route"];
-        { uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_PhotoLib", "COMSPEC_ATAK_ChatDraft", "COMSPEC_ATAK_Mesh"];
+        { uiNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_PhotoLib", "COMSPEC_ATAK_ChatDraft", "COMSPEC_ATAK_ChatDrafts", "COMSPEC_ATAK_ChatDraftPeer", "COMSPEC_ATAK_Mesh"];
         { profileNamespace setVariable [_x, nil]; } forEach ["COMSPEC_ATAK_FrsDraft", "COMSPEC_ATAK_RecoDraft"];
         saveProfileNamespace;
         missionNamespace setVariable ["COMSPEC_ATAK_Wiped", true];

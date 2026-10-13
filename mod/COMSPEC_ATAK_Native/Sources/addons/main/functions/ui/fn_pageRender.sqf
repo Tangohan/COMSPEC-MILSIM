@@ -1,4 +1,5 @@
 params [["_page", "LAUNCHER"]];
+private _perfT = diag_tickTime;
 disableSerialization;
 private _d = ([] call comspec_atak_native_fnc_display);
 if (isNull _d) exitWith { false };
@@ -18,9 +19,15 @@ private _scrollMem = _st getOrDefault ["scrollMem", createHashMap];
 private _drawn = _st getOrDefault ["pageDrawn", ""];
 if (_drawn isNotEqualTo "") then { _scrollMem set [_drawn, ctrlScrollValues (_d displayCtrl 88531)]; };
 _st set ["scrollMem", _scrollMem];
+// Groupes défilants internes d'une page (liste et fil de la messagerie) : position relevée par nom avant l'effacement.
+private _grpMem = _st getOrDefault ["scrollGroups", createHashMap];
+{ _x params ["_n", "_c"]; if (!isNull _c) then { _grpMem set [_n, ctrlScrollValues _c]; }; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_ScrollGroups", []]);
+uiNamespace setVariable ["COMSPEC_ATAK_ScrollGroups", []];
+_st set ["scrollGroups", _grpMem];
 private _restore = (_drawn isEqualTo _page || {_st getOrDefault ["scrollRestore", false]}) && {!(_page in ["MAP", "CHAT"])};
 _st set ["scrollRestore", false];
 _st set ["pageDrawn", _page];
+_st set ["pagePrev", _drawn]; // page dessinée juste avant (centre de notifications : « nouveau » à l'entrée seulement)
 [] call comspec_atak_native_fnc_frsDraftSave;
 [] call comspec_atak_native_fnc_recoDraftSave;
 [] call comspec_atak_native_fnc_firesSave;
@@ -120,4 +127,5 @@ if (_restore && {_sv isEqualType []} && {(count _sv) isEqualTo 2} && {(_sv selec
 [] call comspec_atak_native_fnc_notificationsRender;
 // Écran de verrouillage, volet rapide et toast Android remis devant la page redessinée (fn_fx).
 ["raise"] call comspec_atak_native_fnc_fx;
+[format ["page %1 (dessin)", _page], _perfT] call comspec_atak_native_fnc_perfAcc;
 true

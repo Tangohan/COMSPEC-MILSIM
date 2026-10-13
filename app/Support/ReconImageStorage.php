@@ -78,6 +78,15 @@ final class ReconImageStorage
         return self::publicUrl(basename(str_replace('\\', '/', $path)));
     }
 
+    /**
+     * Lecteur d’images du site pour un cliché (zoom, plein écran, fiche, album) : lien « Ouvrir la photo
+     * sur Athena » des embeds Discord. Chaîne vide sans identifiant.
+     */
+    public static function viewerUrl(int $id): string
+    {
+        return $id > 0 ? url('recon/images/' . $id) : '';
+    }
+
     public static function publicUrl(string $filename): string
     {
         $filename = basename(str_replace('\\', '/', $filename));

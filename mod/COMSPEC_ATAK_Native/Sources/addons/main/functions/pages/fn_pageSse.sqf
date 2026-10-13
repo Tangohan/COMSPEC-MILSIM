@@ -80,7 +80,7 @@ private _hOf = { (ctrlPosition _this) select 3 };
 private _btn = {
     params ["_pos", "_label", "_code", ["_style", ""], ["_en", true], ["_tip", ""]];
     private _b = ["COMSPEC_RscButton", _pos, _label] call _mk;
-    _b ctrlSetFontHeight (_fs * 0.82);
+    _b ctrlSetFontHeight ((_fs * 0.82) max COMSPEC_ATAK_FontMin);
     switch (true) do {
         case (!_en): { _b ctrlSetBackgroundColor [0.06, 0.075, 0.095, 1]; _b ctrlSetTextColor [0.36, 0.42, 0.48, 1]; };
         case (_style isEqualTo "main"): { _b ctrlSetBackgroundColor [0.16, 0.42, 0.78, 1]; _b ctrlSetTextColor [1, 1, 1, 1]; };

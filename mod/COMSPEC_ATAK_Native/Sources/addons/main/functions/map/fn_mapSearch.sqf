@@ -543,7 +543,7 @@ switch (_act) do {
         {
             _x params ["_lbl", "_code", "_main"];
             private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _main, [_px + _pad / 2 + _forEachIndex * (_bw + _pad / 4), _py + _ph - _bh - _pad / 3, _bw, _bh], _lbl, false] call comspec_atak_native_fnc_pageCtrl;
-            _b ctrlSetFontHeight (_fs * 0.85);
+            _b ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
             _b ctrlAddEventHandler ["ButtonClick", _code];
         } forEach _btns;
     };

@@ -16,7 +16,8 @@
       ["toSse", clé]                fiche SSE d'observation (FRO) préremplie avec la cible, ouverte dans l'app FRS ;
       ["droneCam", clé]             caméra du drone appairé pointée et gardée sur la cible, vue drone incrustée sur la carte.
     Entrée (hashmap) : obj, num, src, marker, seen (time), pos (ASL), state ("TRACK" | "LOST" | "DOWN"),
-    lostAt, clock, name, tag, ghost (cadre gardé à la dernière position).
+    lostAt, clock, name, tag, ghost (cadre gardé à la dernière position), sentAt (dernière position envoyée aux autres
+    joueurs), toastAt / toasted (dernier bandeau « perdu », 30 s au plus souvent par cible ; « raccroché » seulement après lui).
     État : missionNamespace COMSPEC_ATAK_Locks (clé → entrée), COMSPEC_ATAK_LockN (dernier numéro).
 */
 params [["_act", "tick"], ["_arg", ""], ["_obj", objNull], ["_ray", []]];
@@ -83,6 +84,14 @@ private _aimed = {
     private _bestScore = 1;
     {
         private _o = _x;
+        // Tri grossier d'abord (position de l'objet, sans visée ni boîte englobante) : caméra zoomée, la recherche couvre
+        // plus d'un kilomètre et la plupart des unités trouvées sont loin du rayon. Marge large (12 m plus deux fois la
+        // tolérance) : un véhicule ou un homme frôlé par le rayon passe toujours au calcul fin ci-dessous.
+        private _v0 = (getPosASL _o) vectorDiff _eye;
+        private _al0 = _v0 vectorDotProduct _dir;
+        if (_al0 < -15 || {_al0 > _range + 15}) then { continue };
+        if ((vectorMagnitude (_v0 vectorDiff (_dir vectorMultiply _al0))) > (12 + 2 * _al0 * _tan)) then { continue };
+        if !([_o] call _ok) then { continue };
         private _cs = [aimPos _o, _o modelToWorldVisualWorld [0, 0, 0]];
         private _size = [((boundingBoxReal _o) select 2) * 0.45 max 1, 0.6] select (_o isKindOf "CAManBase");
         {
@@ -94,19 +103,25 @@ private _aimed = {
                 if (_score < _bestScore && {([_self, "VIEW", _o] checkVisibility [_eye, _x]) > 0.2}) then { _best = _o; _bestScore = _score; };
             };
         } forEach _cs;
-    } forEach ((_mid nearEntities [["CAManBase", "LandVehicle", "Air", "Ship", "StaticWeapon"], _range / 2 + 5]) select { [_x] call _ok });
+    } forEach (_mid nearEntities [["CAManBase", "LandVehicle", "Air", "Ship", "StaticWeapon"], _range / 2 + 5]);
     _best
 };
 
+// Source vue par le suivi : comme _source, mais [] pour un drone hors liaison (rien n'est vu sans retour vidéo).
+private _seeSrc = {
+    params ["_src"];
+    if (_src isEqualTo "DRONE" && {!((["link"] call comspec_atak_native_fnc_droneAction) select 2)}) exitWith { [] };
+    [_src] call _source
+};
 // La source voit-elle encore la cible ? Portée, vue directe et, caméra ouverte, dans son cadre.
+// Source déjà calculée (["tick"] : une fois par source et par passage, pas une fois par cible) ou recalculée ici.
 private _seesIt = {
-    params ["_e"];
+    params ["_e", ["_sv", 0]];
     private _o = _e get "obj";
     if (isNull _o || {!alive _o}) exitWith { false };
-    private _sv = [_e get "src"] call _source;
+    if (_sv isEqualType 0) then { _sv = [_e get "src"] call _seeSrc; };
     if (_sv isEqualTo []) exitWith { false };
     _sv params ["_eye", "_dir", "_fov", "_range", "_self", "_framed"];
-    if ((_e get "src") isEqualTo "DRONE" && {!((["link"] call comspec_atak_native_fnc_droneAction) select 2)}) exitWith { false };
     private _v = (aimPos _o) vectorDiff _eye;
     if ((vectorMagnitude _v) > _range * 1.15) exitWith { false };
     // Dans le cadre : caméra ouverte (16/9) ; sinon le regard (≈ 70°) ou la nacelle libre du drone.
@@ -174,7 +189,7 @@ private _release = {
 };
 
 switch (_act) do {
-    case "aimed": { [_arg] call _aimed };
+    case "aimed": { private _t = diag_tickTime; private _r = [_arg] call _aimed; ["marquage visée", _t] call comspec_atak_native_fnc_perfAcc; _r };
     case "list": {
         private _l = (keys _locks) apply { [-((_locks get _x) get "num"), _x] };
         _l sort true;
@@ -239,11 +254,22 @@ switch (_act) do {
             private _b = ASLToAGL ((_ctr vectorAdd _hw) vectorAdd _hh);
             private _c2 = ASLToAGL ((_ctr vectorAdd _hw) vectorDiff _hh);
             private _d2 = ASLToAGL ((_ctr vectorDiff _hw) vectorDiff _hh);
-            drawLine3D [_a, _b, _c];
-            drawLine3D [_b, _c2, _c];
-            drawLine3D [_c2, _d2, _c];
-            drawLine3D [_d2, _a, _c];
-            drawIcon3D ["#(argb,8,8,3)color(0,0,0,0)", _c, _a, 1, 1, 0, _txt, 2, 0.03, "EtelkaMonospacePro", "left"];
+            // Cadre fin et pâle, coins épais (lisibles sur ciel clair comme sur fond sombre), étiquette en clair
+            // au-dessus du coin haut gauche.
+            private _cf = +_c;
+            _cf set [3, (_c select 3) * 0.35];
+            drawLine3D [_a, _b, _cf];
+            drawLine3D [_b, _c2, _cf];
+            drawLine3D [_c2, _d2, _cf];
+            drawLine3D [_d2, _a, _cf];
+            {
+                _x params ["_p0", "_p1", "_p2"];
+                drawLine3D [_p0, _p0 vectorAdd ((_p1 vectorDiff _p0) vectorMultiply 0.22), _c, 4];
+                drawLine3D [_p0, _p0 vectorAdd ((_p2 vectorDiff _p0) vectorMultiply 0.22), _c, 4];
+            } forEach [[_a, _b, _d2], [_b, _a, _c2], [_c2, _d2, _b], [_d2, _c2, _a]];
+            private _ct = (_c select [0, 3]) apply { (_x + 0.25) min 1 };
+            _ct pushBack 1;
+            drawIcon3D ["#(argb,8,8,3)color(0,0,0,0)", _ct, _a, 1, 1, 0, _txt, 2, 0.034, "RobotoCondensedBold", "left", false, 0, -0.012];
         };
         {
             private _o = _y get "obj";
@@ -256,7 +282,9 @@ switch (_act) do {
         } forEach _locks;
         if (diag_tickTime >= (_st getOrDefault ["lockNext", 0])) then {
             _st set ["lockNext", diag_tickTime + 0.25];
+            private _t = diag_tickTime;
             _st set ["lockAimed", ["PHONE"] call _aimed];
+            ["marquage visée", _t] call comspec_atak_native_fnc_perfAcc;
         };
         private _a = _st getOrDefault ["lockAimed", objNull];
         if (!isNull _a && {alive _a} && {!((hashValue _a) in _locks)}) then {
@@ -322,6 +350,10 @@ switch (_act) do {
         private _reacq = missionNamespace getVariable ["comspec_atak_native_lock_reacquire", true];
         // Libérations faites après le parcours (on ne retire pas d'entrée d'une table en la parcourant).
         private _drop = [];
+        // Source (œil, direction, liaison) calculée une fois par passage pour toutes les cibles, pas une fois par cible.
+        private _svC = createHashMap;
+        // Cibles perdues pendant ce passage : un seul bandeau pour toutes (caméra tournée ailleurs, tout décroche d'un coup).
+        private _lostNow = [];
         {
             private _key = _x;
             private _e = _y;
@@ -348,7 +380,9 @@ switch (_act) do {
                 if (!_reacq || {diag_tickTime < (_e getOrDefault ["nextTry", 0])}) then { continue; };
                 _e set ["nextTry", diag_tickTime + 2];
             };
-            private _sees = [_e] call _seesIt;
+            private _src = _e get "src";
+            if !(_src in _svC) then { _svC set [_src, [_src] call _seeSrc]; };
+            private _sees = [_e, _svC get _src] call _seesIt;
             if (_sees) then {
                 private _p = getPosASL _o;
                 _e set ["seen", time];
@@ -358,21 +392,32 @@ switch (_act) do {
                     _e set ["ghost", false];
                     if (_m isEqualTo "" || {(markerShape _m) isEqualTo ""}) then { _e set ["pos", _p]; _m = [_e] call _dropMarker; _e set ["marker", _m]; };
                     if (_m isNotEqualTo "") then { _m setMarkerAlphaLocal 1; _m setMarkerText format ["LOCK %1 · %2 (%3)", _num, _e get "name", ["téléphone", "drone"] select ((_e get "src") isEqualTo "DRONE")]; };
-                    ["INFO", format ["LOCK %1 raccroché", _num]] call _say;
+                    // Bandeau « raccroché » seulement si la perte avait été annoncée (sinon le journal suffit).
+                    if (_e getOrDefault ["toasted", false]) then { ["INFO", format ["LOCK %1 raccroché", _num]] call _say; };
+                    _e set ["toasted", false];
                     ["log", format ["LOCK %1 : cible revue, suivi repris", _num], "#f2ab33"] call comspec_atak_native_fnc_droneAction;
                 };
-                // Suivi en direct : le marqueur suit la cible (au plus une fois par seconde, au-delà de 5 m).
+                // Suivi en direct : le marqueur suit la cible (au plus une fois par seconde, au-delà de 5 m). Déplacé chez soi
+                // à chaque fois, envoyé aux autres joueurs toutes les 3 s au plus : setMarkerPos repart sur le réseau (et dans
+                // la file des joueurs qui rejoignent) à chaque appel, une fois par seconde et par cible suivie auparavant.
                 if (_live && {(_p distance2D (_e get "pos")) > 5} && {(time - (_e get "movedAt")) >= 1}) then {
                     _e set ["pos", _p];
                     _e set ["movedAt", time];
-                    if (_m isNotEqualTo "" && {(markerShape _m) isNotEqualTo ""}) then { _m setMarkerPos _p; };
+                    if (_m isNotEqualTo "" && {(markerShape _m) isNotEqualTo ""}) then {
+                        if ((time - (_e getOrDefault ["sentAt", -1e9])) >= 3) then { _e set ["sentAt", time]; _m setMarkerPos _p; } else { _m setMarkerPosLocal _p; };
+                    };
                 };
                 continue;
             };
             if ((_e get "state") isEqualTo "TRACK" && {(time - (_e get "seen")) > _grace}) then {
                 _e set ["state", "LOST"];
                 _e set ["lostAt", time];
-                ["WARNING", format ["LOCK %1 perdu : %2 hors du champ", _num, _e get "name"]] call _say;
+                // Bandeau au plus une fois toutes les 30 s par cible (cible qui entre et sort du cadre : le journal note tout).
+                if ((time - (_e getOrDefault ["toastAt", -1e9])) >= 30) then {
+                    _e set ["toastAt", time];
+                    _e set ["toasted", true];
+                    _lostNow pushBack [_num, _e get "name"];
+                };
                 ["log", format ["LOCK %1 : cible perdue (%2)", _num, ["hors du champ de la caméra", "hors de vue"] select ((_e get "src") isEqualTo "PHONE")], "#f2ab33"] call comspec_atak_native_fnc_droneAction;
                 // 0 calque retiré, marqueur gardé · 1 calque retiré, marqueur effacé après délai · 2 tout effacé · 3 tout gardé (cadre fantôme).
                 if (_mode isEqualTo 2) then { _drop pushBack [_key, ""]; continue; };
@@ -385,6 +430,8 @@ switch (_act) do {
             if ((_e get "state") isEqualTo "LOST" && {_mode isEqualTo 1} && {(time - (_e get "lostAt")) > _keep}) then { _drop pushBack [_key, "marqueur effacé (perdue depuis trop longtemps)"]; };
         } forEach _locks;
         { _x call _release; } forEach _drop;
+        if ((count _lostNow) isEqualTo 1) then { ["WARNING", format ["LOCK %1 perdu : %2 hors du champ", (_lostNow select 0) select 0, (_lostNow select 0) select 1]] call _say; };
+        if ((count _lostNow) > 1) then { ["WARNING", format ["%1 cibles perdues : LOCK %2", count _lostNow, (_lostNow apply { _x select 0 }) joinString ", "]] call _say; };
         // Au plus 24 cibles suivies : au-delà, les plus anciennes perdues ou neutralisées sont libérées.
         if ((count _locks) > 24) then {
             private _old = ((keys _locks) apply { [_x, _locks get _x] }) select { ((_x select 1) get "state") isNotEqualTo "TRACK" };

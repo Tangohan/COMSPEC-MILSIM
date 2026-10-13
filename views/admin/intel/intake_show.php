@@ -157,7 +157,7 @@ $isOpen = in_array($it['state'], IntelIntakeService::OPEN_STATES, true);
                                     <?php foreach ($it['attachments'] as $a): ?>
                                         <li class="rmt__att<?= $a['blurred'] ? ' is-blurred' : '' ?>">
                                             <?php if ($a['is_image'] && $a['url']): ?>
-                                                <a href="<?= $h($a['url']) ?>" target="_blank" rel="noopener" class="rmt__att-img"><img src="<?= $h($a['url']) ?>" alt="<?= $h($a['caption'] !== '' ? $a['caption'] : 'Pièce jointe') ?>" loading="lazy"></a>
+                                                <a href="<?= $h($a['url']) ?>" target="_blank" rel="noopener" class="rmt__att-img" data-recon-viewer="rmt-att" data-title="<?= $h($a['caption'] !== '' ? $a['caption'] : ($a['original_name'] !== '' ? $a['original_name'] : 'Pièce jointe')) ?>" data-source="<?= $h($a['kind_label']) ?>" data-blurred="<?= $a['blurred'] ? '1' : '0' ?>"><img src="<?= $h($a['url']) ?>" alt="<?= $h($a['caption'] !== '' ? $a['caption'] : 'Pièce jointe') ?>" loading="lazy"></a>
                                             <?php elseif ($a['url']): ?>
                                                 <a href="<?= $h($a['url']) ?>" target="_blank" rel="noopener" class="rmt__att-file"><?= $h($a['original_name'] !== '' ? $a['original_name'] : 'Document') ?></a>
                                             <?php endif; ?>
@@ -370,3 +370,4 @@ $isOpen = in_array($it['state'], IntelIntakeService::OPEN_STATES, true);
         </div>
     </div>
 </div>
+<script src="<?= $h(asset_url('assets/js/recon-viewer.js')) ?>" defer></script>

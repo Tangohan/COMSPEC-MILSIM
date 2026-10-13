@@ -96,7 +96,7 @@ private _panel = {
     private _edge = ["COMSPEC_RscText", [_px0, _py0, _panW, pixelH * 2]] call _mk;
     _edge ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.55];
     private _t = ["COMSPEC_RscStructuredText", [_px0 + _panIn / _ratio * 0.6, _py0 + _panIn, _panW - _panIn / _ratio * 1.2, _h - _panIn * 1.5]] call _mk;
-    _t ctrlSetFontHeight _panFs;
+    _t ctrlSetFontHeight ((_panFs) max COMSPEC_ATAK_FontMin);
     [_t, _h]
 };
 // En main, la barre d'outils occupe le bord droit : la carte « moi » se cale à sa gauche (elle passait dessous).
@@ -361,7 +361,7 @@ if (_interactive) then {
             private _style = [] call comspec_atak_native_fnc_mapStyle;
             private _flw = _sw * 0.2;
             private _fl = ["COMSPEC_RscText", [_sx, _fy, _flw, _lh], "Fond"] call _mk;
-            _fl ctrlSetFontHeight _lfs;
+            _fl ctrlSetFontHeight ((_lfs) max COMSPEC_ATAK_FontMin);
             _fl ctrlSetTextColor [0.80, 0.86, 0.82, 1];
             private _styles = [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"]];
             private _cw = (_sw - _flw - _gap * ((count _styles) - 1)) / (count _styles);
@@ -369,7 +369,7 @@ if (_interactive) then {
                 _x params ["_t", "_k"];
                 private _on = _k isEqualTo _style;
                 private _b = ["COMSPEC_RscButton", [_sx + _flw + _forEachIndex * (_cw + _gap), _fy, _cw, _lh], _t] call _mk;
-                _b ctrlSetFontHeight (_lfs * 0.92);
+                _b ctrlSetFontHeight ((_lfs * 0.92) max COMSPEC_ATAK_FontMin);
                 _b ctrlSetBackgroundColor ([[0.11, 0.135, 0.12, 1], [0.36, 0.78, 0.42, 1]] select _on);
                 _b ctrlSetTextColor ([[0.92, 0.96, 0.93, 1], [0.03, 0.05, 0.04, 1]] select _on);
                 _b ctrlSetTooltip (("Fond de carte (aussi dans Réglages > Carte)") call comspec_atak_native_fnc_tr);
@@ -397,7 +397,7 @@ if (_interactive) then {
                 _inner ctrlSetBackgroundColor ([[0.04, 0.05, 0.045, 1], [0.36, 0.78, 0.42, 1]] select _on);
                 private _tx0 = _cx + _boxW * 1.45;
                 private _t = ["COMSPEC_RscText", [_tx0, _by0, _bx0 + _lwR - _tx0, _lh], _lbl + (["", " · imposé"] select _locked)] call _mk;
-                _t ctrlSetFontHeight _lfs;
+                _t ctrlSetFontHeight ((_lfs) max COMSPEC_ATAK_FontMin);
                 _t ctrlSetTextColor ([[[0.86, 0.91, 0.88, 1], [1, 1, 1, 1]] select _on, [0.50, 0.54, 0.52, 0.85]] select _locked);
                 if (_locked) then {
                     _row ctrlSetBackgroundColor [0.035, 0.04, 0.037, 0.8];
@@ -481,7 +481,7 @@ if (_interactive && {_sel isNotEqualTo ""} && {(markerShape _sel) isNotEqualTo "
         [_note select 0, "Double clic : modifier · Suppr : effacer"] select ((_note select 0) isEqualTo "")]) call comspec_atak_native_fnc_tr);
     private _own = (_sel find "_USER_DEFINED") isEqualTo 0;
     private _go = ["COMSPEC_RscButtonPrimary", [_px + _pw - _pad - _fs * 5 / _ratio * 0.6, _py + _pad / 2, _fs * 5 / _ratio * 0.6, _fs * 1.4], "Y ALLER"] call _mk;
-    _go ctrlSetFontHeight (_fs * 0.85);
+    _go ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
     _go ctrlAddEventHandler ["ButtonClick", { private _m = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]; private _p = getMarkerPos _m; [[_p select 0, _p select 1, 0], [markerText _m, "Marqueur"] select ((markerText _m) isEqualTo "")] spawn comspec_atak_native_fnc_routeCompute; }];
     if (_own) then {
         private _bw2 = (_pw - _pad * 3) / 2;
@@ -538,7 +538,7 @@ if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap]))
     if (_interactive) then {
         private _sw = _fs * 5.5 / _ratio * 0.6;
         _stop = ["COMSPEC_RscButton", [_gx + _gw - _sw - _pad / 2, _gy + _gh * 0.62 + _gh * 0.04, _sw, _gh * 0.3], "ARRÊTER"] call _mk;
-        _stop ctrlSetFontHeight ((_fs * 0.8) min (_gh * 0.26));
+        _stop ctrlSetFontHeight (((_fs * 0.8) min (_gh * 0.26)) max COMSPEC_ATAK_FontMin);
         _stop ctrlSetBackgroundColor [0.75, 0.18, 0.15, 1];
         _stop ctrlAddEventHandler ["ButtonClick", { missionNamespace setVariable ["COMSPEC_ATAK_Route", createHashMap]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
     };
@@ -602,7 +602,7 @@ if (_dv isNotEqualTo "OFF") then {
                 if ((count _x) isEqualTo 1) then { _xb = _xb + _gap; continue; };
                 _x params ["_lbl", "_code", "_state", "_tip", "_wk"];
                 private _b = ["COMSPEC_RscButton", [_xb, _byb, _unit * _wk - _pad / 3, _bh2], _lbl] call _mk;
-                _b ctrlSetFontHeight (_fs * 0.7);
+                _b ctrlSetFontHeight ((_fs * 0.7) max COMSPEC_ATAK_FontMin);
                 _b ctrlSetBackgroundColor (switch (_state) do { case "on": { [0.36, 0.78, 0.42, 0.9] }; case "red": { [0.75, 0.18, 0.15, 0.95] }; default { [0.08, 0.1, 0.09, 0.9] }; });
                 _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
                 _b ctrlAddEventHandler ["ButtonClick", _code];
@@ -622,7 +622,7 @@ if (_dv isNotEqualTo "OFF") then {
             {
                 _x params ["_lbl", "_code", "_col", "_tip"];
                 private _b = ["COMSPEC_RscButton", [_ix + _forEachIndex * _b3w, _iy + _ih2, _b3w - pixelW * 2, _bh3], _lbl] call _mk;
-                _b ctrlSetFontHeight (_fs * 0.66);
+                _b ctrlSetFontHeight ((_fs * 0.66) max COMSPEC_ATAK_FontMin);
                 _b ctrlSetBackgroundColor _col;
                 _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
                 _b ctrlAddEventHandler ["ButtonClick", _code];
@@ -658,8 +658,8 @@ if (_camId isNotEqualTo "") then {
     _cblack ctrlSetBackgroundColor [0, 0, 0, 1];
     ["COMSPEC_RscPhone", [_cx2, _cy2, _cw2, _ch2], "#(argb,1024,512,1)r2t(comspec_livecam,1.7778)"] call _mk;
     // Incrustation (indicatif, grille, distance, cap) : tenue à jour chaque seconde par la boucle du Live cam.
-    private _cosd = ["COMSPEC_RscStructuredText", [_cx2 + pixelW * 4, _cy2 + pixelH * 3, _cw2 - pixelW * 8, _fs * 2.4]] call _mk;
-    _cosd ctrlSetFontHeight (_fs * ([0.85, 0.7] select _mini));
+    private _cosd = ["COMSPEC_RscStructuredText", [_cx2 + pixelW * 4, _cy2 + pixelH * 3, _cw2 - pixelW * 8, _fs * 3.2]] call _mk;
+    _cosd ctrlSetFontHeight ((_fs * ([0.85, 0.7] select _mini)) max COMSPEC_ATAK_FontMin);
     _cosd ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='#e5483a'>● LIVE</t>  <t font='RobotoCondensedBold'>%1</t>",
         [_cu, true] call comspec_atak_native_fnc_unitCallsign]) call comspec_atak_native_fnc_tr);
     uiNamespace setVariable ["COMSPEC_ATAK_LivecamOsd", _cosd];
@@ -669,7 +669,7 @@ if (_camId isNotEqualTo "") then {
         {
             _x params ["_lbl", "_code", "_tip"];
             private _b = ["COMSPEC_RscButton", [_cx2 + _forEachIndex * _b4w, _cy2 + _ch2 + pixelH * 2, _b4w - pixelW * 2, _bh4], _lbl] call _mk;
-            _b ctrlSetFontHeight (_fs * 0.66);
+            _b ctrlSetFontHeight ((_fs * 0.66) max COMSPEC_ATAK_FontMin);
             _b ctrlSetBackgroundColor [0.08, 0.1, 0.09, 0.92];
             _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
             _b ctrlAddEventHandler ["ButtonClick", _code];

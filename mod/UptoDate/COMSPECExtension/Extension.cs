@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.81";
+    private const string ExtensionVersion = "2.0.82";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -321,7 +321,7 @@ public static partial class Extension
     private static long _screenshotWatchersStartedTicks;
     private static bool _screenshotQuotaEnsured;
 
-    private static void NotePostError(int code, string url)
+    private static void NotePostError(int code, string url, HttpResponseMessage? response = null, string? sentBody = null)
     {
         _lastPostErrorCode = code;
         string path;
@@ -341,7 +341,62 @@ public static partial class Extension
         var prev = System.Threading.Interlocked.Read(ref _lastPostErrorCbTicks);
         if (now - prev < TimeSpan.FromSeconds(3).Ticks) return;
         if (System.Threading.Interlocked.CompareExchange(ref _lastPostErrorCbTicks, now, prev) != prev) return;
-        InvokeCallback("PostError", $"{code}|{_lastPostErrorPath}|0");
+        var detail = PostErrorDetail(code, response, sentBody);
+        InvokeCallback("PostError", detail.Length == 0
+            ? $"{code}|{_lastPostErrorPath}|0"
+            : $"{code}|{_lastPostErrorPath}|0|{detail}");
+    }
+
+    /// <summary>
+    /// Refus de validation (400 / 404 / 409 / 422…) : motif renvoyé par Athena, plus le début du corps envoyé
+    /// pour un 400 / 422, gardés dans le journal du jeu (sinon seul le code restait, 2.0.82).
+    /// </summary>
+    private static string PostErrorDetail(int code, HttpResponseMessage? response, string? sentBody)
+    {
+        if (code < 400 || code > 499 || code is 401 or 403 or 429) return "";
+        var parts = new List<string>(2);
+        try
+        {
+            var body = response?.Content.ReadAsStringAsync().GetAwaiter().GetResult() ?? "";
+            var reason = "";
+            if (body.Length > 0)
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(body);
+                    if (doc.RootElement.ValueKind == JsonValueKind.Object)
+                    {
+                        foreach (var k in new[] { "message", "error", "detail" })
+                        {
+                            if (doc.RootElement.TryGetProperty(k, out var p) && p.ValueKind == JsonValueKind.String)
+                            {
+                                var v = (p.GetString() ?? "").Trim();
+                                if (v.Length > 0 && !reason.Contains(v, StringComparison.Ordinal))
+                                    reason = reason.Length == 0 ? v : reason + " — " + v;
+                            }
+                        }
+                    }
+                }
+                catch { /* pas du JSON : texte brut */ }
+                if (reason.Length == 0) reason = body;
+            }
+            if (reason.Length > 0) parts.Add("réponse : " + OneLineExcerpt(reason, 200));
+        }
+        catch { /* corps illisible */ }
+        if ((code == 400 || code == 422) && !string.IsNullOrEmpty(sentBody))
+            parts.Add("envoyé : " + OneLineExcerpt(sentBody, 240));
+        return string.Join(" · ", parts);
+    }
+
+    private static string OneLineExcerpt(string text, int max)
+    {
+        var sb = new StringBuilder(Math.Min(text.Length, max + 1));
+        foreach (var ch in text)
+        {
+            if (sb.Length >= max) { sb.Append('…'); break; }
+            sb.Append(ch == '|' ? '/' : char.IsControl(ch) ? ' ' : ch);
+        }
+        return sb.ToString().Trim();
     }
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -410,6 +465,55 @@ public static partial class Extension
             string Field(string name) =>
                 doc.RootElement.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "").Replace("|", "") : "";
             return "OK|" + Field("atak_native") + "|" + Field("link");
+        }
+        catch (Exception ex)
+        {
+            return FormatCaughtError(ex);
+        }
+    }
+
+    /// <summary>Champs « clé=valeur » du SQF en JSON (chaînes échappées ici : le JSON écrit en SQF cassait les envois).</summary>
+    private static string StartupCheck(string?[] args)
+    {
+        var baseUrl = NormalizeBaseUrl(args.Length > 0 && !string.IsNullOrWhiteSpace(args[0]) ? args[0] : _baseUrl);
+        if (!TryBuildRequestUri(baseUrl, "/api/atak/startup-check", out var uri, out var err) || uri is null)
+            return "ERR|" + err;
+        var json = new StringBuilder("{\"extension_version\":\"").Append(EscapeJson(CurrentExtensionVersion())).Append('"');
+        var fields = 0;
+        for (var i = 1; i < args.Length && fields < 48; i++)
+        {
+            var pair = args[i] ?? "";
+            var eq = pair.IndexOf('=');
+            if (eq <= 0 || eq > 40) continue;
+            var key = pair[..eq];
+            var keyOk = key != "extension_version";
+            foreach (var c in key)
+                if (!(c is >= 'a' and <= 'z' or >= '0' and <= '9' or '_')) keyOk = false;
+            if (!keyOk) continue;
+            var value = pair[(eq + 1)..];
+            if (value.Length > 600) value = value[..600];
+            json.Append(",\"").Append(key).Append("\":\"").Append(EscapeJson(value)).Append('"');
+            fields++;
+        }
+        json.Append('}');
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+            using var req = new HttpRequestMessage(HttpMethod.Post, uri) { Content = JsonContent(json.ToString()) };
+            using var response = SendTimed(req, cts.Token);
+            if ((int)response.StatusCode == 429) return "ERR|rate_limited";
+            var body = ReadContentUtf8(response, cts.Token);
+            string status = "";
+            try
+            {
+                using var doc = JsonDocument.Parse(body);
+                if (doc.RootElement.TryGetProperty("status", out var s) && s.ValueKind == JsonValueKind.String)
+                    status = (s.GetString() ?? "").Replace("|", "");
+            }
+            catch (JsonException) { }
+            if (!response.IsSuccessStatusCode)
+                return "ERR|" + (status.Length > 0 ? status : "http_" + (int)response.StatusCode);
+            return "OK|" + (status.Length > 0 ? status : "sent");
         }
         catch (Exception ex)
         {
@@ -1376,7 +1480,7 @@ public static partial class Extension
             NoteTransientPostFailure(code, url, jsonBody, response);
             return;
         }
-        NotePostError(code, url);
+        NotePostError(code, url, response, jsonBody);
         // 401 : clé / session temporairement incohérente — retenter client-init
         // (position, marqueur, recon… ; le chat synchrone peut encore passer).
         if (code == 401)
@@ -1461,7 +1565,7 @@ public static partial class Extension
                 if (!response.IsSuccessStatusCode)
                 {
                     var code = (int)response.StatusCode;
-                    NotePostError(code, item.Url);
+                    NotePostError(code, item.Url, response, item.Body);
                     if (TryNoteEndpointServerError(item.Url, response))
                     {
                         // Cette adresse attend ; le vidage continue avec les autres envois.
@@ -2581,6 +2685,37 @@ public static partial class Extension
             }
         }
 
+        // Caractères de contrôle bruts (saut de ligne dans un nom) et nombres non finis (« nan », « 1.#INF »)
+        // venus du SQF : JSON illisible, Athena répondait 400 sans indicatif lisible (2.0.82).
+        var cleaned = System.Text.RegularExpressions.Regex.Replace(s, @"[\x00-\x1F]", " ");
+        cleaned = System.Text.RegularExpressions.Regex.Replace(
+            cleaned,
+            @"(?<=[:\[,]\s*)-?(?:1\.#(?:INF|IND|QNAN)\d*|nan(?:\(ind\))?|inf(?:inity)?)(?=\s*[,\}\]])",
+            "0",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (cleaned != s)
+        {
+            foreach (var candidate in new[]
+            {
+                cleaned,
+                System.Text.RegularExpressions.Regex.Replace(
+                    cleaned,
+                    @"(?<=[:\[\s])(-?\d+),(\d{1,6})(?=[,\}\]\s])",
+                    "$1.$2"),
+            })
+            {
+                try
+                {
+                    using var _ = JsonDocument.Parse(candidate);
+                    return candidate;
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+        }
+
         // Cas fréquent : {""mapId"":1,""callsign"":""N-10""}
         if (s.Contains("\"\"", StringComparison.Ordinal))
         {
@@ -2864,6 +2999,12 @@ public static partial class Extension
         {
             return LatestVersions(args.Length > 0 ? args[0] : null);
         }
+        // Check de démarrage du mod (fn_startupCheck) : POST /api/atak/startup-check, public, sans session ni clé.
+        // ["StartupCheck", [adresse du portail, "clé=valeur", ...]] -> « OK|posted », « OK|duplicate », « OK|no_channel »… ou « ERR|… ».
+        if (function == "StartupCheck")
+        {
+            return StartupCheck(args);
+        }
 
         // Appel non bloquant : ["Async", [ticket, commande, args...]] répond tout de suite « QUEUED|ticket »,
         // exécute la commande sur un thread à part et renvoie son résultat par le rappel ("comspec", "async:<ticket>", résultat).
@@ -3030,7 +3171,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck";
         }
 
         if (function == "GetCapabilities")
@@ -5340,6 +5481,26 @@ public static partial class Extension
                 var safeKey = new string(cacheKeyRaw.Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '-').ToArray());
                 if (safeKey.Length == 0) safeKey = "slide";
                 var ext = imageUrl.ToLowerInvariant().Contains(".png") ? ".png" : ".jpg";
+
+                // Portraits (clé avatar_<uid>_<empreinte de l'adresse>) : le fichier déjà téléchargé pour cette
+                // adresse est rendu sans requête ; il n'est retéléchargé que s'il manque (adresse changée = autre clé).
+                if (safeKey.StartsWith("avatar_", StringComparison.Ordinal) && safeKey.Count(c => c == '_') >= 2)
+                {
+                    var dir = GetWritableCacheDir();
+                    if (dir != null)
+                    {
+                        foreach (var cachedExt in new[] { ".jpg", ".png" })
+                        {
+                            var cached = Path.Combine(dir, "briefing_" + safeKey + cachedExt);
+                            try
+                            {
+                                if (File.Exists(cached) && new FileInfo(cached).Length > 0)
+                                    return "OK|" + cached.Replace('\\', '/');
+                            }
+                            catch { /* téléchargement normal */ }
+                        }
+                    }
+                }
 
                 // URL relatives : conserver le préfixe /public de _baseUrl (ne pas utiliser Uri(base, /abs)).
                 if (!Uri.TryCreate(imageUrl, UriKind.Absolute, out _)
@@ -7812,8 +7973,14 @@ public static partial class Extension
                     if (quals.Count >= 12) break;
                 }
             }
+            // 10e colonne « S: » : pourquoi il n'y a pas de portrait (avatar_status du site : no_portrait,
+            // source_missing, unsupported_format, write_failed), affichée et journalisée par le téléphone.
+            var avatarStatus = root.TryGetProperty("avatar_status", out var ast) && ast.ValueKind == JsonValueKind.String
+                ? (ast.GetString() ?? "").Replace("\t", " ").Replace("\n", " ").Replace("\r", "").Replace("|", "/")
+                : "";
             return displayName + "\t" + callsign + "\t" + avatarUrl + "\t" + unitName + "\t" + atakId
-                + "\t" + playtimeHours + "\t" + lastSeenAt + "\t" + militaryId + "\tQ:" + string.Join(";", quals);
+                + "\t" + playtimeHours + "\t" + lastSeenAt + "\t" + militaryId + "\tQ:" + string.Join(";", quals)
+                + "\tS:" + avatarStatus;
         }
         catch { return ""; }
     }
