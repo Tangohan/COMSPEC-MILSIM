@@ -31,6 +31,58 @@ final class AdminGameServersController
         $servers = $tenantId > 0 ? $this->servers->listForTenant($tenantId) : [];
         $presence = $tenantId > 0 ? $this->servers->recentPresence($tenantId, 72, 150) : [];
 
+        // Adresses manquantes retrouvées par le nom du serveur (liste Steam, BattleMetrics ; gardées 24 h en cache).
+        $lookup = $this->servers->addressLookup();
+        $found = [];
+        $byName = function (string $name) use ($lookup, &$found): ?array {
+            $key = CommunityServerMatcher::normalizeName($name);
+            if ($key === '') {
+                return null;
+            }
+            if (!array_key_exists($key, $found)) {
+                $found[$key] = count($found) < 3 ? $lookup->lookupByName($name) : null;
+            }
+
+            return $found[$key];
+        };
+        foreach ($servers as $i => $srv) {
+            if (trim((string) ($srv['ip_address'] ?? '')) !== '' || trim((string) ($srv['server_name'] ?? '')) === '') {
+                continue;
+            }
+            $hit = $byName((string) $srv['server_name']);
+            if ($hit !== null) {
+                $this->servers->fillAddress($tenantId, (int) $srv['id'], $hit['ip'], $hit['port']);
+                $servers[$i]['ip_address'] = $hit['ip'];
+                $servers[$i]['port'] = ($srv['port'] ?? null) ?: $hit['port'];
+            }
+        }
+
+        // Joueurs rapprochés des serveurs déclarés tels qu'ils sont maintenant (serveur ajouté après leur passage).
+        $active = array_values(array_filter($servers, static fn (array $x): bool => (int) ($x['is_active'] ?? 0) === 1));
+        $labels = array_column($servers, 'label', 'id');
+        $matcher = new CommunityServerMatcher();
+        foreach ($presence as $i => $p) {
+            $ip = trim((string) ($p['server_ip'] ?? ''));
+            $port = !empty($p['server_port']) ? (int) $p['server_port'] : null;
+            $fill = null;
+            if ($ip === '' && trim((string) ($p['server_name'] ?? '')) !== '') {
+                $fill = $byName((string) $p['server_name']);
+                if ($fill !== null) {
+                    $ip = $fill['ip'];
+                    $port ??= $fill['port'];
+                }
+            }
+            $m = $active === [] ? null : $matcher->match($active, $ip, (string) ($p['server_name'] ?? ''), $port);
+            $mid = $m !== null ? (int) $m['id'] : null;
+            if ($fill !== null || $mid !== (empty($p['matched_server_id']) ? null : (int) $p['matched_server_id'])) {
+                $this->servers->updatePresenceServer((int) $p['id'], $fill !== null ? $ip : null, $fill !== null ? $port : null, $mid);
+            }
+            $presence[$i]['server_ip'] = $ip;
+            $presence[$i]['server_port'] = $port;
+            $presence[$i]['matched_server_id'] = $mid;
+            $presence[$i]['matched_label'] = $mid !== null ? ($labels[$mid] ?? null) : null;
+        }
+
         // Serveurs non déclarés où des joueurs ont été vus : proposés à l'enregistrement en un clic.
         $unknown = [];
         foreach ($presence as $p) {
@@ -42,9 +94,15 @@ final class AdminGameServersController
             if ($ip === '' && $name === '') {
                 continue;
             }
-            $key = $ip !== '' ? 'ip:' . $ip : 'name:' . CommunityServerMatcher::normalizeName($name);
+            $key = $ip !== '' ? 'ip:' . $ip . ':' . ($p['server_port'] ?? '') : 'name:' . CommunityServerMatcher::normalizeName($name);
             if (!isset($unknown[$key])) {
-                $unknown[$key] = ['server_ip' => $ip, 'server_name' => $name, 'players' => 0, 'last_seen' => (string) ($p['seen_at'] ?? '')];
+                $unknown[$key] = [
+                    'server_ip' => $ip,
+                    'server_port' => $p['server_port'] ?? null,
+                    'server_name' => $name,
+                    'players' => 0,
+                    'last_seen' => (string) ($p['seen_at'] ?? ''),
+                ];
             }
             $unknown[$key]['players']++;
         }
@@ -80,11 +138,8 @@ final class AdminGameServersController
 
         $ip = '';
         if ($rawIp !== '') {
-            if (preg_match('/^(.+):(\d{2,5})$/', $rawIp, $m) && substr_count($rawIp, ':') === 1) {
-                $rawIp = $m[1];
-                $port ??= (int) $m[2];
-            }
-            $ip = CommunityServerMatcher::normalizeHost($rawIp);
+            [$ip, $rawPort] = CommunityServerMatcher::splitAddress($rawIp);
+            $port ??= $rawPort;
             if ($ip === '') {
                 return $this->back('error', 'Adresse invalide : saisissez une adresse IP (ex. 203.0.113.10) ou un nom d’hôte (ex. arma.macommu.fr).');
             }
@@ -98,6 +153,15 @@ final class AdminGameServersController
         if ($label === '') {
             $label = $name !== '' ? mb_substr($name, 0, 120, 'UTF-8') : $ip;
         }
+        $foundNote = '';
+        if ($ip === '' && $name !== '') {
+            $hit = $this->servers->addressLookup()->lookupByName($name);
+            if ($hit !== null) {
+                $ip = $hit['ip'];
+                $port ??= $hit['port'];
+                $foundNote = ' Adresse retrouvée dans la liste des serveurs : ' . $ip . ($port !== null ? ':' . $port : '') . '.';
+            }
+        }
 
         try {
             if ($id > 0) {
@@ -106,7 +170,7 @@ final class AdminGameServersController
                 }
                 $this->servers->update($tenantId, $id, $label, $ip ?: null, $name ?: null, $port);
 
-                return $this->back('success', 'Serveur « ' . $label . ' » mis à jour.');
+                return $this->back('success', 'Serveur « ' . $label . ' » mis à jour.' . $foundNote);
             }
             $actor = $this->authService->user();
             $this->servers->create($tenantId, $label, $ip ?: null, $name ?: null, $port, $actor ? (int) $actor['id'] : null);
@@ -114,7 +178,7 @@ final class AdminGameServersController
             return $this->back('error', 'Enregistrement impossible. Lancez run-migrations.php si la table des serveurs n’existe pas encore.');
         }
 
-        return $this->back('success', 'Serveur « ' . $label . ' » enregistré. Les joueurs reliés à Athena seront prévenus s’ils jouent ailleurs.');
+        return $this->back('success', 'Serveur « ' . $label . ' » enregistré. Les joueurs reliés à Athena seront prévenus s’ils jouent ailleurs.' . $foundNote);
     }
 
     public function toggle(Request $request, array $params = []): Response

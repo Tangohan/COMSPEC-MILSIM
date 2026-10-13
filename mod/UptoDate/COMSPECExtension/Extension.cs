@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.77";
+    private const string ExtensionVersion = "2.0.78";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2851,7 +2851,7 @@ public static partial class Extension
 
         // Adresse publique de cette machine vue par Athena (serveur dédié : son IP, diffusée aux joueurs pour
         // reconnaître le serveur de la communauté). Sans liaison, l'adresse d'Athena passée en argument sert de base.
-        // args: [baseUrl?] → OK|ip
+        // args: [baseUrl?] → OK|ip:port (port de jeu lu sur la ligne de commande du serveur, 2302 par défaut)
         if (function == "Server.PublicIp")
         {
             var baseUrl = NormalizeBaseUrl(_baseUrl ?? "");
@@ -2866,7 +2866,8 @@ public static partial class Extension
                 if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
                 using var doc = JsonDocument.Parse(ReadContentUtf8(resp, ipCts.Token));
                 var ip = doc.RootElement.TryGetProperty("ip", out var p) ? (p.GetString() ?? "") : "";
-                return ip.Length > 0 && ip != "—" ? "OK|" + ip : "ERR|no_ip";
+                if (ip.Length == 0 || ip == "—") return "ERR|no_ip";
+                return "OK|" + (ip.Contains(':') ? "[" + ip + "]" : ip) + ":" + ReadLaunchServerPort().ToString(CultureInfo.InvariantCulture);
             }
             catch (Exception ex) { return FormatCaughtError(ex); }
         }
@@ -2884,7 +2885,7 @@ public static partial class Extension
             try
             {
                 using var spCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
-                var resp = SendJsonPost(spUri.AbsoluteUri, EnrichAtakPayload(NormalizeArmaJson(args[0])), spCts.Token);
+                var resp = SendJsonPost(spUri.AbsoluteUri, EnrichAtakPayload(AddLaunchConnectAddress(NormalizeArmaJson(args[0]))), spCts.Token);
                 var body = ReadContentUtf8(resp, spCts.Token);
                 if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
                 using var doc = JsonDocument.Parse(body);
@@ -10587,6 +10588,92 @@ public static partial class Extension
                 }
                 catch { /* profil verrouillé par Arma */ }
             }
+        }
+    }
+
+    // Valeur d'un paramètre de lancement Arma : « -nom=valeur » ou « -nom valeur ».
+    private static string ReadLaunchArg(string name)
+    {
+        try
+        {
+            var cmd = Environment.GetCommandLineArgs();
+            for (var i = 0; i < cmd.Length; i++)
+            {
+                var a = cmd[i] ?? "";
+                if (a.StartsWith("-" + name + "=", StringComparison.OrdinalIgnoreCase))
+                    return a[(name.Length + 2)..].Trim().Trim('"');
+                if (a.Equals("-" + name, StringComparison.OrdinalIgnoreCase) && i + 1 < cmd.Length)
+                    return (cmd[i + 1] ?? "").Trim().Trim('"');
+            }
+        }
+        catch { }
+        return "";
+    }
+
+    // Port de jeu du serveur dédié (-port=, 2302 par défaut).
+    private static int ReadLaunchServerPort()
+    {
+        return int.TryParse(ReadLaunchArg("port"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var p) && p > 0 && p < 65536 ? p : 2302;
+    }
+
+    // Client : serveur rejoint depuis le lanceur Arma ou Steam (-connect=ip -port=n, ou +connect ip:port).
+    private static (string Host, int Port) ReadLaunchConnect()
+    {
+        var host = ReadLaunchArg("connect");
+        if (host.Length == 0)
+        {
+            try
+            {
+                var cmd = Environment.GetCommandLineArgs();
+                for (var i = 0; i + 1 < cmd.Length; i++)
+                    if ((cmd[i] ?? "").Equals("+connect", StringComparison.OrdinalIgnoreCase)) { host = (cmd[i + 1] ?? "").Trim().Trim('"'); break; }
+            }
+            catch { }
+        }
+        if (host.Length == 0) return ("", 0);
+        var port = 0;
+        var colon = host.LastIndexOf(':');
+        if (colon > 0 && host.IndexOf(':') == colon && int.TryParse(host[(colon + 1)..], NumberStyles.Integer, CultureInfo.InvariantCulture, out var hp))
+        {
+            port = hp;
+            host = host[..colon];
+        }
+        if (int.TryParse(ReadLaunchArg("port"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var ap) && ap > 0 && ap < 65536) port = ap;
+        return (host, port);
+    }
+
+    // Server.Presence : sans adresse diffusée par le serveur, ajoute celle du lancement (-connect) si le joueur en a une.
+    private static string AddLaunchConnectAddress(string json)
+    {
+        try
+        {
+            var trimmed = (json ?? "").Trim();
+            if (!trimmed.StartsWith('{')) return json ?? "";
+            using var doc = JsonDocument.Parse(trimmed);
+            var root = doc.RootElement;
+            var current = root.TryGetProperty("server_ip", out var cur) && cur.ValueKind == JsonValueKind.String ? (cur.GetString() ?? "") : "";
+            if (current.Trim().Length > 0) return json ?? "";
+            var (host, port) = ReadLaunchConnect();
+            if (host.Length == 0) return json ?? "";
+            using var stream = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(stream))
+            {
+                writer.WriteStartObject();
+                foreach (var prop in root.EnumerateObject())
+                {
+                    if (prop.NameEquals("server_ip") || prop.NameEquals("server_port")) continue;
+                    prop.WriteTo(writer);
+                }
+                writer.WriteString("server_ip", host);
+                if (port > 0) writer.WriteNumber("server_port", port);
+                writer.WriteString("server_ip_source", "launch");
+                writer.WriteEndObject();
+            }
+            return Encoding.UTF8.GetString(stream.ToArray());
+        }
+        catch
+        {
+            return json ?? "";
         }
     }
 
