@@ -254,6 +254,12 @@ final class ReconImageStorage
     /** Type MIME d’un fichier image servi par la route authentifiée. */
     public static function mimeType(string $abs): string
     {
+        // Ancien « .png » allégé en JPEG par StoredPhotoCompressor : le contenu fait foi.
+        $info = @getimagesize($abs);
+        if (is_array($info) && is_string($info['mime'] ?? null) && str_starts_with($info['mime'], 'image/')) {
+            return $info['mime'];
+        }
+
         return match (strtolower(pathinfo($abs, PATHINFO_EXTENSION))) {
             'png' => 'image/png',
             'webp' => 'image/webp',

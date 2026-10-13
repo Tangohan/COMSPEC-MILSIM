@@ -39,6 +39,8 @@ final class CronSchedule
         'member_integration_daily' => 1440,
         'personnel_auto_advancement' => 1440,
         'advancement_seniority' => 1440,
+        // Passage borné à 90 s : le stock de photos se résorbe d'heure en heure.
+        'photo_compress' => 60,
     ];
 
     public static function intervalMinutes(string $jobKey): int

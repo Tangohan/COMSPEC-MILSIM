@@ -12117,6 +12117,10 @@ class AtakApiController
 
             $ext = pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION) ?: 'jpg';
             $ext = preg_replace('/[^a-zA-Z0-9]/', '', $ext) ?: 'jpg';
+            // Capture 4K en PNG (~10 Mo) : 1920 px, JPEG 80 avant rangement.
+            if (\App\Support\StoredPhotoCompressor::compressUploadToJpeg((string) $file['tmp_name'])) {
+                $ext = 'jpg';
+            }
             $photoMeta = self::reconPhotoMetaFromPost($_POST);
             $storeConfidential = !empty($photoMeta['is_confidential']);
             // Confidentiel : hors racine web, nom aléatoire (32 hex), servi par reconImagesFile seulement.

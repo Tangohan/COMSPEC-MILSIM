@@ -528,6 +528,11 @@ final class SseApiController
             ], 400);
         }
 
+        // Capture 4K en PNG (~10 Mo) : 1920 px, JPEG 80 avant rangement.
+        if (\App\Support\StoredPhotoCompressor::compressUploadToJpeg($tmp)) {
+            $ext = 'jpg';
+        }
+
         $dir = base_path('public/uploads/sse');
         if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
             error_log('[sse/photos] mkdir failed: ' . $dir);
