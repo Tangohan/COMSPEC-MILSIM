@@ -222,6 +222,136 @@ final class MusicAdminController
         return $back;
     }
 
+    public function platformUpload(Request $request, array $params = []): Response
+    {
+        return $this->upload($request, true);
+    }
+
+    public function tenantUpload(Request $request, array $params = []): Response
+    {
+        return $this->upload($request, false);
+    }
+
+    /**
+     * Envoi d'un ou plusieurs fichiers (champ audio[]). La page envoie les fichiers un par un en arrière-plan
+     * (réponse JSON) pour rester sous les limites du serveur ; sans JavaScript, le formulaire envoie tout d'un coup.
+     * Le quota par membre ne s'applique pas à l'administrateur de la plateforme.
+     */
+    private function upload(Request $request, bool $platform): Response
+    {
+        $json = str_contains((string) ($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json');
+        $finish = function (int $done, array $errors, string $summary) use ($json, $platform): Response {
+            if ($json) {
+                return Response::json(['ok' => $errors === [], 'done' => $done, 'errors' => $errors], $done > 0 || $errors === [] ? 200 : 422);
+            }
+            if ($done > 0) {
+                Session::flash('success', $summary);
+            }
+            if ($errors !== []) {
+                Session::flash('error', implode(' ', array_slice($errors, 0, 8)) . (count($errors) > 8 ? ' (+' . (count($errors) - 8) . ')' : ''));
+            }
+
+            return Response::redirect(url(self::base($platform)));
+        };
+        $ctx = $this->ctx();
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $userId] = $ctx;
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return $finish(0, ['Session expirée. Rechargez la page.'], '');
+        }
+        if ($platform && !Gate::getInstance()->allows('admin.system')) {
+            return $finish(0, ['Accès refusé.'], '');
+        }
+        $files = self::uploadedFiles($_FILES['audio'] ?? null);
+        if ($files === []) {
+            return $finish(0, ['Aucun fichier reçu.'], '');
+        }
+        $toGlobal = $platform && (string) $request->input('global', '') === '1';
+        $scope = $toGlobal ? 'community' : ((string) $request->input('scope', 'org') === 'community' ? 'community' : 'org');
+        $playlist = null;
+        $plId = (int) $request->input('playlist_id', 0);
+        if ($plId > 0) {
+            $pl = $this->music->findPlaylist($plId);
+            if ($pl !== null && ($pl['visibility'] ?? '') !== 'global' && ($platform || (int) ($pl['tenant_id'] ?? 0) === $tenantId)) {
+                $playlist = $pl;
+            }
+        }
+        $global = $toGlobal ? $this->music->globalPlaylist() : null;
+        $durations = array_map('floatval', explode(',', (string) $request->input('durations', '')));
+        $titleIn = trim((string) $request->input('title', ''));
+        $done = 0;
+        $errors = [];
+        foreach ($files as $i => $file) {
+            $label = trim((string) ($file['name'] ?? 'fichier')) . ' : ';
+            if (!$platform && $this->music->userUsageBytes($userId) >= MusicTrackStorage::USER_QUOTA_BYTES) {
+                $errors[] = $label . 'quota atteint (300 Mo).';
+                continue;
+            }
+            $stored = MusicTrackStorage::storeFromUpload($tenantId, $userId, $file);
+            if ($stored['error'] !== null) {
+                $errors[] = $label . $stored['error'];
+                continue;
+            }
+            if ($this->music->findDuplicate($userId, (string) $stored['sha1']) !== null) {
+                MusicTrackStorage::delete((string) $stored['path']);
+                $errors[] = $label . 'déjà en ligne.';
+                continue;
+            }
+            $title = count($files) === 1 && $titleIn !== '' ? $titleIn
+                : trim((string) preg_replace('/[_]+/', ' ', pathinfo((string) $stored['original_name'], PATHINFO_FILENAME)));
+            $id = $this->music->createTrack([
+                'tenant_id' => $tenantId,
+                'uploader_user_id' => $userId,
+                'scope' => $scope,
+                'title' => $title !== '' ? $title : 'Morceau sans titre',
+                'artist' => $request->input('artist', ''),
+                'genre' => $request->input('genre', ''),
+                'duration_seconds' => (int) round($durations[$i] ?? 0),
+                'file_path' => $stored['path'],
+                'file_ext' => $stored['ext'],
+                'mime' => $stored['mime'],
+                'size_bytes' => $stored['size'],
+                'sha1' => $stored['sha1'],
+            ]);
+            if ($global !== null) {
+                $this->music->addToPlaylist((int) $global['id'], $id, $userId);
+            }
+            if ($playlist !== null) {
+                $this->music->addToPlaylist((int) $playlist['id'], $id, $userId);
+            }
+            $done++;
+        }
+        $where = $toGlobal ? ' dans la playlist globale' : ($scope === 'community' ? ' dans la bibliothèque communautaire' : ' dans la bibliothèque de l\'organisation');
+
+        return $finish($done, $errors, $done . ' morceau(x) en ligne' . $where . ($playlist !== null ? ' et dans « ' . $playlist['name'] . ' »' : '') . '.');
+    }
+
+    /**
+     * $_FILES['audio'] en liste de fichiers, qu'il soit simple (audio) ou multiple (audio[]).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public static function uploadedFiles(mixed $f): array
+    {
+        if (!is_array($f) || !isset($f['name'])) {
+            return [];
+        }
+        if (!is_array($f['name'])) {
+            return ($f['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE ? [] : [$f];
+        }
+        $out = [];
+        foreach (array_keys($f['name']) as $k) {
+            if ((int) ($f['error'][$k] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+                continue;
+            }
+            $out[] = ['name' => $f['name'][$k], 'type' => $f['type'][$k] ?? '', 'tmp_name' => $f['tmp_name'][$k] ?? '', 'error' => $f['error'][$k], 'size' => $f['size'][$k] ?? 0];
+        }
+
+        return array_slice($out, 0, 50);
+    }
+
     public function platformPlaylistDelete(Request $request, array $params = []): Response
     {
         return $this->playlistDelete($request, $params, true);

@@ -11,6 +11,12 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Musique : les morceaux mis en ligne sur le site apparaissent sans redémarrer (ATAK natif 1.59.0)
+
+Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : un morceau envoyé sur le site doit être visible et lisible en jeu sans redémarrer.
+- App Musique, onglet ATHENA : chaque vue (playlist globale, communauté, organisation, mes envois, playlists) se recharge en arrière-plan quand on l'affiche et qu'elle date de plus de 60 s. Avant, une vue chargée restait figée jusqu'au bouton Actualiser ou au redémarrage du jeu.
+- Site : envoi d'un ou plusieurs fichiers depuis `/admin/musique` (avec ajout direct à la playlist globale) et `/back-office/ressources/musique`.
+
 ## Traduction 2026-10-13 — Noms d'objets et modules Eden/Zeus du SSE en anglais (ATAK natif 1.58.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : tout traduire sauf les journaux.

@@ -252,7 +252,7 @@ switch (_act) do {
     };
     case "ath": {
         _ui set ["ath", _arg];
-        if !(_arg in (uiNamespace getVariable ["COMSPEC_ATAK_MusicAth", createHashMap])) then { ["load", _arg] call comspec_atak_native_fnc_musicAthena; };
+        ["ensure", _arg] call comspec_atak_native_fnc_musicAthena;
         call _rerender;
     };
     case "athOpen": {

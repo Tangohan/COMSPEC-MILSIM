@@ -4,19 +4,24 @@
                       toute la plateforme), "org" (bibliothèque de mon organisation), "mine" (mes envois),
                       "playlists" (playlists publiques, de mon organisation et les miennes), "pl:<id>" (pistes d'une playlist).
       La recherche (uiNamespace COMSPEC_ATAK_MusicUi "athQ") s'applique aux vues de pistes.
-    État : uiNamespace COMSPEC_ATAK_MusicAth = HashMap vue → [éléments, heure de synchro, erreur, chargement]
+    État : uiNamespace COMSPEC_ATAK_MusicAth = HashMap vue → [éléments, heure de synchro, erreur, chargement, diag_tickTime de la synchro]
            piste    = ["lib", URL signée, titre, durée s, artiste, id, envoyé par]
            playlist = [id, nom, propriétaire, nombre de pistes, type global|public|org|private, description]
+      ["ensure", vue] : recharge la vue si elle n'a jamais été chargée ou date de plus de 60 s, pour que les morceaux
+                        mis en ligne sur le site apparaissent en jeu sans redémarrer (ouverture de l'onglet, changement de vue).
     L'app Musique est redessinée à la fin.
 */
 params [["_act", "load"], ["_view", "global"]];
 private _ath = uiNamespace getVariable ["COMSPEC_ATAK_MusicAth", createHashMap];
 uiNamespace setVariable ["COMSPEC_ATAK_MusicAth", _ath];
 private _render = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MUSIC") then { ["MUSIC"] call comspec_atak_native_fnc_pageRender; }; }] call CBA_fnc_execNextFrame; };
+private _prev = _ath getOrDefault [_view, [[], "", "", false, -1e9]];
+if (_act isEqualTo "ensure") then {
+    if (diag_tickTime - (_prev param [4, -1e9]) >= 60) then { _act = "load"; };
+};
 if (_act isNotEqualTo "load") exitWith {};
-private _prev = _ath getOrDefault [_view, [[], "", "", false]];
 if (_prev select 3) exitWith {};
-_ath set [_view, [_prev select 0, _prev select 1, "", true]];
+_ath set [_view, [_prev select 0, _prev select 1, "", true, _prev param [4, -1e9]]];
 call _render;
 [_view, _ath, _render] spawn {
     params ["_view", "_ath", "_render"];
@@ -35,7 +40,7 @@ call _render;
             case ((_raw find "not_found") >= 0): { "Playlist introuvable ou privée." };
             default { format ["Athena ne répond pas (%1).", _raw select [0, 60]] };
         };
-        _ath set [_view, [(_ath getOrDefault [_view, [[]]]) select 0, _now, _err, false]];
+        _ath set [_view, [(_ath getOrDefault [_view, [[]]]) select 0, _now, _err, false, diag_tickTime]];
         call _render;
     };
     private _items = [];
@@ -48,7 +53,7 @@ call _render;
             case "P": { if ((count _c) >= 6) then { _items pushBack [_c select 1, _c select 2, _c select 3, parseNumber (_c select 4), _c select 5, _c param [6, ""]]; }; };
         };
     } forEach ((_raw select [3]) splitString toString [10]);
-    _ath set [_view, [_items, _now, "", false]];
+    _ath set [_view, [_items, _now, "", false, diag_tickTime]];
     call _render;
 };
 true

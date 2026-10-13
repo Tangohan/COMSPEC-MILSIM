@@ -52,6 +52,8 @@ switch (_tab) do {
     case "ATH": {
         private _ath = uiNamespace getVariable ["COMSPEC_ATAK_MusicAth", createHashMap];
         private _view = _ui getOrDefault ["ath", "global"];
+        // Recharge en arrière-plan si la vue date de plus de 60 s : un morceau mis en ligne sur le site apparaît sans redémarrer.
+        ["ensure", _view] call comspec_atak_native_fnc_musicAthena;
         private _isPl = (_view select [0, 3]) isEqualTo "pl:";
         private _vBtn = { params ["_t", "_v", ["_tip", ""]]; [_t, ["ath", _v] call _act, _view isEqualTo _v || {_v isEqualTo "playlists" && {_isPl}}, _tip] };
         _rows pushBack ["segment", "Bibliothèque du site Athena", [
