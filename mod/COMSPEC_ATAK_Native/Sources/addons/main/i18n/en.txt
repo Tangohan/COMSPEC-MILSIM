@@ -10399,6 +10399,8 @@
 ["L'IP est de nouveau proposé à 5 NM de la cible, côté appareil", "The IP is proposed again 5 NM from the target, on the aircraft side"],
 ["Pour compléter la fiche, il faut une cible : VERROUILLER dans SITU en la visant ou en la désignant au laser (prise toute seule si votre laser est allumé), ou POSER LA CIBLE sur la carte ci-dessous. Tout le reste se remplit ensuite.", "To fill in the card you need a target: LOCK it in SIT by aiming at it or lasing it (taken automatically when your laser is on), or SET TARGET on the map below. Everything else then fills in."],
 ["Rien à compléter sans cible", "Nothing to fill in without a target"],
+["Lignes 2, 3, 4, 6, 7, 8 calculées · le reste à saisir", "Lines 2, 3, 4, 6, 7, 8 computed · enter the rest"],
+["Il faut d'abord une cible : VERROUILLER dans SITU en la visant ou en la désignant au laser, ou POSER LA CIBLE sur la carte ci-dessous. Les lignes 2, 3, 4, 6, 7 et 8 se calculent ensuite ; IP, lignes 5 et 9 et remarques sont à saisir.", "First you need a target: LOCK it in SIT by aiming at it or lasing it, or SET TARGET on the map below. Lines 2, 3, 4, 6, 7 and 8 are then computed; IP, lines 5 and 9 and remarks are yours to enter."],
 ["NORD", "NORTH"],
 ["NORD-EST", "NORTHEAST"],
 ["SUD-EST", "SOUTHEAST"],

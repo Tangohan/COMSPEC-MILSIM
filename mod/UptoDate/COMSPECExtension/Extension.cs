@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.82";
+    private const string ExtensionVersion = "2.0.83";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -6554,7 +6554,7 @@ public static partial class Extension
                 "playtime", "athena_feed",
                 "rp_enabled", "rp_network_failures", "rp_sensor_failures", "rp_visual_effects",
                 "rp_link_degrade", "rp_data_bar", "native_map_labels", "native_marker_tags",
-                "native_compass", "native_vibrate"
+                "native_compass", "native_vibrate", "native_jtac_autofill"
             })
             {
                 if (doc.RootElement.TryGetProperty(key, out var el) && el.ValueKind == JsonValueKind.String)
