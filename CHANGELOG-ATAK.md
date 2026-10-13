@@ -38,6 +38,14 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Langue du mod en tête des options CBA (ATAK natif 1.74.0)
+
+Non testé en jeu. Demande de TTRD : la sélection de langue dans Options des addons > COMSPEC.
+- Le réglage **Langue / Language** (Auto, Français, English) est maintenant tout en haut de la liste COMSPEC, onglet Client, au-dessus des sections « ATAK · … ». Il était rangé dans la section « ATAK · Langue / Language », au milieu de la liste, où on ne le trouvait pas.
+- Défaut : Auto (suit la langue du jeu : français si Arma est en français, anglais sinon). Un joueur qui avait déjà choisi Français ou English garde son choix.
+- Un seul réglage pour tout le mod : téléphone, menus CBA COMSPEC (ATAK natif, Overwatch, SSE) et écrans du SSE. Le choix dans le téléphone (Réglages > Langue / Language) est le même réglage.
+- Changer de langue en cours de partie : le téléphone se redessine et les menus CBA COMSPEC sont retraduits à leur prochaine ouverture, sans relancer la mission (avant, il fallait relancer la mission).
+
 ## Texte du bouton PANIQUE (ATAK natif 1.73.0)
 
 ### Résumé joueur
