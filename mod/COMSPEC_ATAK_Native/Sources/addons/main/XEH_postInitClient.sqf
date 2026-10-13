@@ -380,8 +380,14 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 // Briefing : la page suit la diapositive en cours (deck Google du présentateur, image chargée, liste Athena).
 [{
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
-    if ((_s getOrDefault ["activePage", ""]) isNotEqualTo "BRIEFING" || {(_s getOrDefault ["briefTab", "SLIDES"]) isEqualTo "MISSION"}) exitWith {};
+    // Onglet PARAMÈTRES (engrenage) : pas de rendu automatique, il effacerait le lien en cours de saisie.
+    if ((_s getOrDefault ["activePage", ""]) isNotEqualTo "BRIEFING" || {(_s getOrDefault ["briefTab", "SLIDES"]) in ["MISSION", "SETTINGS"]}) exitWith {};
     if (isNull ([] call comspec_atak_native_fnc_display)) exitWith {};
+    // Actualisation automatique (engrenage) : diapositives Athena relues toutes les 60 s, sans revenir à la première.
+    if ((profileNamespace getVariable ["COMSPEC_ATAK_BriefAuto", false]) && {[] call comspec_atak_native_fnc_bridge} && {diag_tickTime > (uiNamespace getVariable ["COMSPEC_ATAK_BriefAutoAt", 0])}) then {
+        uiNamespace setVariable ["COMSPEC_ATAK_BriefAutoAt", diag_tickTime + 60];
+        if ((([] call comspec_atak_native_fnc_briefingSignature) select 0) isEqualTo "ATHENA") then { [] spawn { [] call comspec_overwatch_connect_fnc_getBriefingSlides; }; };
+    };
     private _sig = (([] call comspec_atak_native_fnc_briefingSignature) select [0, 4]) + [["get"] call comspec_atak_native_fnc_briefingLive, count (["attendees"] call comspec_atak_native_fnc_briefingLive)];
     if (_sig isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_BriefSig", []])) exitWith {};
     uiNamespace setVariable ["COMSPEC_ATAK_BriefSig", _sig];

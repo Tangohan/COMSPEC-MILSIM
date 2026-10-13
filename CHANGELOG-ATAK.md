@@ -38,6 +38,31 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Briefing : engrenage pour le lien des présentations (ATAK natif 1.75.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : App Briefing : un engrenage pour régler le lien de la présentation
+- Un engrenage à droite des onglets ouvre les paramètres du briefing : collez le lien de votre présentation Google Slides, testez-le, enregistrez-le.
+- Le lien est nettoyé tout seul (espaces, caractères invisibles, https manquant, paramètres en trop) et chaque erreur est expliquée : présentation non publique, lien Drive ou Docs, lien raccourci, identifiant manquant.
+- Vous choisissez la source des diapositives : automatique, toujours Athena, ou toujours votre présentation Google Slides. Une actualisation automatique des diapositives Athena (toutes les minutes) est disponible.
+- TESTER charge la présentation sur votre téléphone seulement ; DIFFUSER À TOUS l'affiche pour tous les joueurs, comme le tableau de briefing.
+EN : Briefing app: a gear to set the presentation link
+- A gear to the right of the tabs opens the briefing settings: paste your Google Slides presentation link, test it, save it.
+- The link is cleaned up automatically (spaces, invisible characters, missing https, extra parameters) and every error is explained: presentation not public, Drive or Docs link, shortened link, missing ID.
+- You choose the slide source: automatic, always Athena, or always your Google Slides presentation. Automatic refresh of the Athena slides (every minute) is available.
+- TEST LINK loads the presentation on your phone only; SHOW TO EVERYONE displays it for all players, like the briefing board.
+
+### Détail technique
+
+Non testé en jeu. Demande de TTRD : « un engrenage paramétrage pour pouvoir modifier les URL d'accès ». L'adresse du portail Athena reste fixe (1.72.0) : seuls les liens de présentation se règlent.
+- Nouveau : `fn_briefingSettings` (panneau, onglet interne `SETTINGS`), `fn_briefingCfg` (actions), `fn_briefingUrl` (nettoyage et diagnostic du lien, sans réseau), icône `ui_gear.paa` (gen_assets.py).
+- Réglages dans le profil du joueur : `COMSPEC_ATAK_BriefSource` (AUTO / ATHENA / GOOGLE), `COMSPEC_ATAK_BriefGoogleUrl`, `COMSPEC_ATAK_BriefAuto`.
+- Chargement Google par COMSPEC Link (`LoadGoogleDeck` / `LoadGoogleSlide`) sans passer par `fn_loadGoogleBriefing` d'Overwatch, qui ouvrait l'ancien tableau par-dessus le téléphone. Un chargement local ne diffuse pas sa navigation ; DIFFUSER réutilise `broadcastGoogleBriefingState`.
+- `fn_extensionCallback` garde le code de `google_deck_error` d'un chargement lancé par l'engrenage et referme le tableau 9970 ouvert par Overwatch sur `google_deck_ready` quand le téléphone est ouvert. Overwatch traite toujours les rappels ensuite.
+- Source « Athena » : le deck Google partagé est ignoré par `fn_briefingSignature`. Source « Google Slides » : le lien enregistré est chargé à l'ouverture de l'app et par ACTUALISER.
+- Pas de DLL à recompiler, pas de migration.
+
 ## Langue du mod en tête des options CBA (ATAK natif 1.74.0)
 
 Non testé en jeu. Demande de TTRD : la sélection de langue dans Options des addons > COMSPEC.
