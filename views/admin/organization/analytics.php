@@ -21,7 +21,7 @@ use App\Services\Analytics\TenantAnalyticsLabels;
  * @var array{public_views: int, public_duration_avg: ?float, enlistment_opens: int, enlistment_submits: int, cta_clicks: int} $publicEngagement
  * @var list<array{category: string, events: int}> $tenantCategoryBreakdown
  * @var list<array{actor_label: string, events: int}> $tenantTopActors
- * @var array{total_events: int, distinct_actors: int, events_with_duration: int, avg_duration_seconds: ?float} $tenantUsageSummary
+ * @var array{total_events: int, distinct_actors: int, external_actors?: int, events_with_duration: int, avg_duration_seconds: ?float} $tenantUsageSummary
  * @var list<array{day: string, events: int}> $tenantDailyEvents
  * @var list<array{name: string, events: int}> $tenantTopEventNames
  * @var int $trainingCatalogViews
@@ -53,6 +53,7 @@ $tenantUsageSummary = is_array($tenantUsageSummary ?? null) ? $tenantUsageSummar
 $tenantUsageSummary += [
     'total_events' => 0,
     'distinct_actors' => 0,
+    'external_actors' => 0,
     'events_with_duration' => 0,
     'avg_duration_seconds' => null,
 ];
@@ -444,7 +445,11 @@ if ($analyticsFocus === 'conversion') {
                 <span class="bo-an-section__icon"><?= $icon('users') ?></span>
                 <div>
                     <h2 class="bo-an-section__title" id="an-usage-t">Qui utilise le portail</h2>
-                    <p class="bo-an-section__lead"><?= $h($int($tenantUsageSummary['total_events'])) ?> événements enregistrés, par <?= $h($int($tenantUsageSummary['distinct_actors'])) ?> personnes distinctes.</p>
+                    <?php if ((int) $tenantUsageSummary['external_actors'] > 0): ?>
+                    <p class="bo-an-section__lead"><?= $h($int($tenantUsageSummary['total_events'])) ?> événements enregistrés, par <?= $h($int($tenantUsageSummary['distinct_actors'])) ?> membres de la communauté et <?= $h($int($tenantUsageSummary['external_actors'])) ?> visiteurs d’autres communautés, non nommés.</p>
+                    <?php else: ?>
+                    <p class="bo-an-section__lead"><?= $h($int($tenantUsageSummary['total_events'])) ?> événements enregistrés, par <?= $h($int($tenantUsageSummary['distinct_actors'])) ?> membres de la communauté.</p>
+                    <?php endif; ?>
                 </div>
                 <?= $source(true) ?>
             </header>
