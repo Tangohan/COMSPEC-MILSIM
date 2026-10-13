@@ -40,6 +40,19 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ## Gouttes de pluie qui glissent sur l'écran (ATAK natif 1.76.0)
 
+### Résumé joueur
+Type : nouveauté
+FR : Les gouttes de pluie glissent sur l'écran du téléphone
+- Sous la pluie, téléphone sorti, les gouttes se posent sur l'écran, grossissent puis glissent vers le bas en laissant une traînée mouillée.
+- Quand la pluie s'arrête ou que tu te mets à l'abri, elles sèchent peu à peu ; nettoyer l'écran les enlève tout de suite.
+- Nouveau réglage dans les options d'addon, ATAK · Affichage > Gouttes de pluie sur l'écran : Complet, Réduit ou Désactivé.
+EN : Raindrops now slide down the phone screen
+- In the rain with the phone out, drops land on the screen, grow, then slide down leaving a wet trail.
+- When the rain stops or you take cover, they slowly dry; cleaning the screen removes them at once.
+- New setting in the addon options, ATAK · Display > Raindrops on the screen: Full, Reduced or Disabled.
+
+### Détail technique
+
 Non testé en jeu. Demande de TTRD : les gouttes de pluie faisaient des bulles immobiles sur l'écran du téléphone. Pas de DLL à recompiler, pas de migration.
 - Sous la pluie, téléphone sorti et à découvert : les gouttes se posent au hasard sur le verre, au rythme de la pluie, ou font grossir une goutte déjà posée.
 - Les petites restent posées (tension de surface). Assez grosses, elles tiennent un instant puis glissent vers le bas en accélérant, avec une trajectoire un peu irrégulière et des à-coups, perdent de l'eau dans une traînée mouillée qui sèche en quelques secondes, absorbent les gouttes qu'elles croisent et sortent par le bas.
@@ -48,6 +61,7 @@ Non testé en jeu. Demande de TTRD : les gouttes de pluie faisaient des bulles i
 - Léger : au plus 18 gouttes, deux contrôles chacune, créés une fois puis déplacés, 25 images par seconde seulement quand une goutte glisse, 2 sinon ; rien quand le téléphone est rangé ou sec. Suit la taille du téléphone en plein écran.
 - Nouveau réglage CBA par joueur, ATAK · Affichage > « Gouttes de pluie sur l'écran » : Complet, Réduit (9 gouttes, 12 images par seconde) ou Désactivé. Le réglage Réalisme « Saleté et sang sur l'écran » les coupe aussi.
 - À vérifier en jeu : sous une forte pluie, dehors, téléphone en main (plein écran et petit) puis porté ; passer sous un toit ; nettoyer l'écran ; changer d'app pendant que des gouttes glissent ; FPS avec et sans l'effet ; les trois valeurs du réglage.
+
 ## Ligne de vue : de ma position vers le point (ATAK natif 1.75.0)
 
 ### Résumé joueur
