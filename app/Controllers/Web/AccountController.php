@@ -463,6 +463,8 @@ class AccountController
                     'timezone' => trim((string) $request->input('timezone')),
                     'language' => $language,
                 ]);
+                // La langue du profil devient aussi celle du site (pages et e-mails suivent le même choix).
+                (new \App\Services\I18n\LocaleService())->setUserLocale($language, false);
                 try {
                     $this->personnelProfileRepository->ensureRecord($uid);
                     $primaryCs = trim((string) $request->input('callsign'));

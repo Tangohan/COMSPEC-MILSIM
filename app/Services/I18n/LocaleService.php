@@ -121,6 +121,31 @@ final class LocaleService
         }
     }
 
+    /**
+     * À la connexion : un choix de langue fait avant (bandeau cookies, sélecteur) remplit le profil s'il est vide ;
+     * sinon la langue du profil devient celle du site. Les e-mails suivent la langue du profil.
+     */
+    public function syncAfterLogin(int $userId): void
+    {
+        if ($userId < 1) {
+            return;
+        }
+        $chosen = $this->readCookie();
+        $profile = $this->profileLanguage($userId);
+        try {
+            if ($chosen !== null && $profile === null) {
+                $repo = $this->profiles ?? new UserProfileRepository();
+                $repo->ensureRow($userId);
+                $repo->upsert($userId, ['language' => $chosen]);
+            } elseif ($chosen === null && $profile !== null) {
+                $this->apply($profile);
+                $this->writeCookie($profile);
+            }
+        } catch (\Throwable) {
+            // Ne bloque jamais une connexion.
+        }
+    }
+
     public function boot(): void
     {
         $this->apply($this->resolve());

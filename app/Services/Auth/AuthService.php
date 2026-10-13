@@ -45,6 +45,7 @@ class AuthService
         Session::set('role_id', $user['role_id'] ? (int) $user['role_id'] : null);
         $this->userRepository->setCurrentTenant((int) $user['id'], (int) $user['tenant_id']);
         $this->userRepository->updateLastLogin((int) $user['id']);
+        (new \App\Services\I18n\LocaleService())->syncAfterLogin((int) $user['id']);
         try {
             $this->seniorityEnrollmentBootstrapService->syncTenureCommunityFromEnrollment(
                 (int) ($user['tenant_id'] ?? 0),

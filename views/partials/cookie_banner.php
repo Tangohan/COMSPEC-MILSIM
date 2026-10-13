@@ -19,6 +19,17 @@ $b = url('');
                     <span class="text-slate-300 select-none" aria-hidden="true">·</span>
                     <a href="<?= htmlspecialchars(url('legal/site'), ENT_QUOTES, 'UTF-8') ?>#cgu" class="font-semibold text-emerald-700 hover:underline"><?= htmlspecialchars(__('legal.cgu'), ENT_QUOTES, 'UTF-8') ?></a>
                 </nav>
+                <?php $curLocale = function_exists('locale') ? locale() : 'fr'; ?>
+                <div class="flex flex-wrap items-center gap-2 pt-1" role="group" aria-labelledby="cookie-banner-language">
+                    <span id="cookie-banner-language" class="text-[11px] font-bold text-slate-800"><?= htmlspecialchars(__('cookies.language_title'), ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php foreach (['fr' => 'Français', 'en' => 'English'] as $code => $name): ?>
+                        <?php $on = $curLocale === $code; ?>
+                        <a href="<?= htmlspecialchars(locale_switch_url($code), ENT_QUOTES, 'UTF-8') ?>" hreflang="<?= $code ?>" lang="<?= $code ?>" translate="no"
+                           class="px-2.5 py-1 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-colors <?= $on ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 text-slate-700 hover:bg-slate-100' ?>"
+                           <?= $on ? 'aria-current="true"' : '' ?>><?= $name ?></a>
+                    <?php endforeach; ?>
+                </div>
+                <p class="text-[11px] text-slate-500"><?= htmlspecialchars(__('cookies.language_desc'), ENT_QUOTES, 'UTF-8') ?></p>
             </div>
             <div class="flex flex-col gap-2.5 w-full shrink-0 md:w-80 lg:w-96" role="group" aria-label="<?= htmlspecialchars(__('cookies.choices_aria'), ENT_QUOTES, 'UTF-8') ?>">
                 <div class="flex flex-wrap gap-x-4 gap-y-1 justify-center md:justify-end">

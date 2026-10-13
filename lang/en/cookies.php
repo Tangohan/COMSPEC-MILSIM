@@ -25,4 +25,6 @@ return [
     'ttl_hint' => 'For privacy, a new consent may be requested after 180 days or after a major policy change.',
     'reset' => 'Reset',
     'save' => 'Save my choices',
+    'language_title' => 'Communication language',
+    'language_desc' => 'Site pages and emails. Saved to your profile when you are signed in.',
 ];
