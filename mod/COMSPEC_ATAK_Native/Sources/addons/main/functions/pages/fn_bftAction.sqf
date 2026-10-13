@@ -31,6 +31,7 @@ switch (_act) do {
     case "sms": {
         if (isNull _obj) exitWith {};
         _s set ["chatPeer", name _obj];
+        _s set ["chatView", "CONV"];
         ["CHAT"] call comspec_atak_native_fnc_navigate;
     };
     default {

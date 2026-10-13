@@ -11,6 +11,18 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Messagerie refaite (ATAK natif 1.52.0)
+
+Non testé en jeu. Demande de TTRD : « améliorer l'UI de la messagerie ». Pas de DLL à recompiler, pas de migration.
+- **Liste des conversations** : canaux Athena puis messages directs, avec icône, initiales ou photo de l'opérateur, dernier message, heure et pastille de non-lus ; + CANAL dans le bandeau d'état (Athena connecté, hors réseau…).
+- **Conversation** : en-tête (retour, nom, sous-titre) et boutons icônes aide, tri, vider, corbeille (confirmation en rouge).
+- **Bulles** ajustées au texte, regroupées par auteur, liseré de couleur par auteur, rouge pour l'urgent, séparateurs de jour en pastille, repère NON LUS.
+- **Saisie** : champ souligné à la couleur d'accent, bouton d'envoi, aperçu des commandes au-dessus.
+- **Paysage en main** : liste et conversation côte à côte. Téléphone porté : la conversation seule.
+- Inchangé : canaux, commandes `/`, raccourcis `@grille`, SMS et accusés, vider, tri, création et suppression de canal.
+
+---
+
 ## Correctif 2026-10-13 — Liaison : une adresse en erreur ne bloque plus tout (COMSPEC Link 2.0.76)
 
 ### Corrigé
