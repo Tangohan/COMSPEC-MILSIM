@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Véhicules : la molette et le menu d'actions ne sont plus bloqués par le téléphone (ATAK natif 1.93.0)
+
+### Résumé joueur
+Type : correctif
+FR : Dans un véhicule, le téléphone ne bloque plus la molette
+- Conducteur, passager ou tireur : la molette et le menu d'actions marchent de nouveau quand le téléphone est affiché en miniature. Tu peux démarrer le moteur, changer de place ou descendre.
+- Téléphone en main, la molette reste au téléphone comme avant.
+- Nouveau réglage « Menu d'actions libre en véhicule » (COMSPEC, ATAK · Interface), activé par défaut.
+EN : In a vehicle, the phone no longer blocks the scroll wheel
+- Driver, passenger or gunner: the scroll wheel and action menu work again while the phone is shown as a miniature. You can start the engine, switch seats or get out.
+- With the phone in hand, the wheel stays with the phone as before.
+- New setting "Free action menu in vehicles" (COMSPEC, ATAK · Interface), on by default.
+
+### Détail technique
+- Cause : le réglage « Masquer le menu d'actions » vaut « En main et porté » par défaut. En véhicule l'écran JPC n'est pas utilisable (fn_jpcScreen exige d'être à pied), le téléphone porté passe en miniature (cutRsc, texture = false) et COMSPEC_ATAK_ActionBlock bloquait PrevAction / NextAction : plus de menu d'actions, donc plus de « Démarrer le moteur ».
+- Correctif : dans COMSPEC_ATAK_ActionBlock, joueur dans un véhicule (objectParent player non nul) et réglage CBA client `comspec_atak_native_action_menu_vehicle` coché (défaut) → seul le téléphone en main garde la molette, comme le mode « En main seulement ».
+- À tester en jeu : miniature affichée, monter conducteur / passager / tireur, molette → menu d'actions et démarrage moteur ; téléphone en main en véhicule → la molette ne fait pas défiler le menu ; décocher le réglage → ancien comportement.
+
 ## Drone : bouton TEST VIDÉO pour l'image noire du téléphone (ATAK natif 1.90.0)
 
 ### Résumé joueur
