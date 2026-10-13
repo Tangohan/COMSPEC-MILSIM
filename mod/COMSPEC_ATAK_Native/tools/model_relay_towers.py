@@ -8,7 +8,7 @@ Pylônes relais du réseau ATAK (relais posés dans Eden / Zeus, fn_relayTower) 
                   faisceau hertzien, feu de balisage rouge
 
 Chaque modèle : massifs en béton, armoire technique au pied, LOD visuelles 1 / 4 / 12 / 30 (détail décroissant),
-ombre (volumes fermés), géométrie (boîtes convexes, masse, autocenter=0, map=transmitter) et géométrie de tir.
+ombres 0 et 10 (volumes fermés), géométrie (boîtes convexes, masse, autocenter=0, map=transmitter) et géométrie de tir.
 Ruine (relay_tower_XX_ruin.p3d) : même pylône plié au-dessus d'un tronçon resté debout, couché sur le sol, équipements
 arrachés et éparpillés (DestructBuilding, config.cpp).
 
@@ -38,12 +38,12 @@ SAMPLES = int(os.environ.get("RENDER_SAMPLES", "64"))
 
 # Matières : texture, rvmat, échelle de projection (m par tuile), réglages Cycles de l'aperçu (rugosité, métal).
 MATS = {
-    "galva": ("tower_galva", "tower_metal", 1.0, 0.38, 0.85),
-    "dark": ("tower_dark", "tower_metal", 1.0, 0.55, 0.35),
-    "radome": ("tower_radome", "tower_matte", 1.5, 0.5, 0.0),
-    "box": ("tower_box", "tower_metal", 1.0, 0.45, 0.25),
-    "concrete": ("tower_concrete", "tower_matte", 2.0, 0.9, 0.0),
-    "grating": ("tower_grating", "tower_metal", 1.0, 0.45, 0.7),
+    "galva": ("tower_galva", "tower_galva", 1.0, 0.38, 0.85),
+    "dark": ("tower_dark", "tower_dark", 1.0, 0.55, 0.35),
+    "radome": ("tower_radome", "tower_radome", 1.5, 0.5, 0.0),
+    "box": ("tower_box", "tower_box", 1.0, 0.45, 0.25),
+    "concrete": ("tower_concrete", "tower_concrete", 2.0, 0.9, 0.0),
+    "grating": ("tower_grating", "tower_grating", 1.0, 0.45, 0.7),
     "cable": ("tower_cable", "tower_matte", 1.0, 0.6, 0.0),
     "light": ("tower_light", "tower_glow", 1.0, 0.3, 0.0),
 }
@@ -855,12 +855,13 @@ def export_model(name, fn, height, ruin, mats):
             src = None
         ob = make_mesh(f"{name}_lod{res}", parts, mats)
         objs.append(set_lod(ob, 0, res))
-    # Ombre : silhouette fermée (détail 3).
-    parts, lat = build_parts(fn, 3, 6.0 if ruin else 0.0)
-    if ruin:
-        parts = collapse_parts(parts, Collapse(lat, height, seed), seed)
-    shadow = mesh_from_parts(name + "_shadow", parts)
-    set_lod(shadow, 4, 0)
+    # Ombres : volumes fermés, treillis presque complet de près (détail 2), silhouette de loin (détail 3).
+    for res, detail in ((0, 2), (10, 3)):
+        parts, lat = build_parts(fn, detail, (4.0, 6.0)[detail - 2] if ruin else 0.0)
+        if ruin:
+            parts = collapse_parts(parts, Collapse(lat, height, seed), seed)
+        shadow = mesh_from_parts(f"{name}_shadow{res}", parts)
+        set_lod(shadow, 4, res)
     # Géométrie et tir : boîtes convexes (pliées avec la ruine).
     gparts = box_lod(name, geo_boxes(lat, height, CAB_GEO[name], ruin))
     if ruin:
@@ -902,6 +903,27 @@ def preview_materials():
             img = n.new("ShaderNodeTexImage")
             img.image = bpy.data.images.load(path)
             nt.links.new(img.outputs["Color"], b.inputs["Base Color"])
+        # Relief et reflets : mêmes cartes _nohq / _smdi que le shader Super du jeu.
+        nq = os.path.join(RENDER, tex + "_nohq.png")
+        if os.path.exists(nq):
+            ni = n.new("ShaderNodeTexImage")
+            ni.image = bpy.data.images.load(nq)
+            ni.image.colorspace_settings.name = "Non-Color"
+            nm = n.new("ShaderNodeNormalMap")
+            nt.links.new(ni.outputs["Color"], nm.inputs["Color"])
+            nt.links.new(nm.outputs["Normal"], b.inputs["Normal"])
+        sm = os.path.join(RENDER, tex + "_smdi.png")
+        if os.path.exists(sm):
+            si = n.new("ShaderNodeTexImage")
+            si.image = bpy.data.images.load(sm)
+            si.image.colorspace_settings.name = "Non-Color"
+            sep = n.new("ShaderNodeSeparateColor")
+            nt.links.new(si.outputs["Color"], sep.inputs["Color"])
+            inv = n.new("ShaderNodeMath")
+            inv.operation = "SUBTRACT"
+            inv.inputs[0].default_value = 1.0
+            nt.links.new(sep.outputs["Blue"], inv.inputs[1])
+            nt.links.new(inv.outputs[0], b.inputs["Roughness"])
         if k == "light":
             b.inputs["Base Color"].default_value = (1.0, 0.05, 0.02, 1)
             b.inputs["Emission Color"].default_value = (1.0, 0.05, 0.02, 1)

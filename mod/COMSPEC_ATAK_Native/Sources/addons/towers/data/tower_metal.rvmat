@@ -1,9 +1,0 @@
-// Pylônes relais (tools/model_relay_towers.py) : acier galvanisé ou peint, reflets métalliques modérés.
-ambient[]={1,1,1,1};
-diffuse[]={1,1,1,1};
-forcedDiffuse[]={0,0,0,0};
-emmisive[]={0,0,0,1};
-specular[]={0.35,0.35,0.35,1};
-specularPower=40;
-PixelShaderID="Normal";
-VertexShaderID="Basic";

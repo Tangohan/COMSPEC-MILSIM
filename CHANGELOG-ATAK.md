@@ -15,6 +15,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : de vrais pylônes radio en 3D, hauts, variés et destructibles.
 - Trois modèles dans Eden et Zeus (Structures > Relais ATAK) : pylône treillis 30 m anthracite à panneaux et RRU, tour triangulaire galvanisée 40 m à tête à bras, faisceaux hertziens et fouets, pylône élancé 50 m à paliers, échelle et feu de balisage rouge. Massifs béton, armoire technique et passerelle de câbles au pied. LOD visuelles 1 / 4 / 12 / 30, ombre, géométrie et géométrie de tir.
+- Rendu Arma complet : shader Super avec relief (_nohq) et reflets (_smdi) pour l'acier galvanisé ou peint, les radômes, les coffrets, le béton et le caillebotis ; deux LOD d'ombre (treillis presque complet de près, silhouette de loin).
 - Chaque pylône posé est un relais du réseau ATAK (tour : 6, 9 ou 12 km, antennes à 28, 38 ou 48 m, sur secteur). Attributs Eden : nom, camp, raccordé ou répéteur, allumé, indestructible. Un module « ATAK · Relais » synchronisé passe avant.
 - Destructible : abattu (charges, obus, véhicules), le pylône est remplacé par sa ruine (plié au-dessus d'un tronçon debout, couché au sol, panneaux et paraboles arrachés). Le relais passe « détruit » et les téléphones qui l'utilisaient reçoivent « Relais perdu ».
 - Module « ATAK · Relais », type Tour fixe sans objet synchronisé : crée la tour 3D de 40 m (hauteur d'antenne réelle du pylône si la hauteur est laissée au type).
