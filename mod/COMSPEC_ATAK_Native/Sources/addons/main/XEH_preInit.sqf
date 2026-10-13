@@ -81,6 +81,12 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
 ["comspec_atak_native_selfie_anim", "EDITBOX",
     ["Animation du selfie", "Jouée en mode selfie. Par défaut comspec_atak_native_fnc_gestureSelfie : bras droit tendu devant le visage, téléphone tourné vers soi. Même format : action ou geste, animation CfgMoves, ou fonction appelée avec [joueur, ""selfie""] (puis [joueur, ""exit""] à la fermeture). Vide : on garde l'animation de l'appareil photo."],
     ["COMSPEC", "ATAK · Photo"], "comspec_atak_native_fnc_gestureSelfie", 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_selfie_invert_x", "CHECKBOX",
+    ["Selfie : inverser gauche / droite", "Désactivé par défaut. Coché : en mode selfie, la souris vers la droite cadre vers la gauche (et inversement). Réglage personnel."],
+    ["COMSPEC", "ATAK · Photo"], false, 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_selfie_invert_y", "CHECKBOX",
+    ["Selfie : inverser haut / bas", "Désactivé par défaut. Coché : en mode selfie, la souris vers le haut cadre vers le bas (et inversement). Réglage personnel."],
+    ["COMSPEC", "ATAK · Photo"], false, 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_gesture_finger", "CHECKBOX",
     ["Gestes doigt d'honneur", "Désactivé par défaut. Coché : les touches CBA « Doigt d'honneur » et « Doigt d'honneur libre (maintenir) » jouent le geste (à attribuer dans les touches COMSPEC ATAK)."],
     ["COMSPEC", "ATAK · Gestes"], false, 1] call comspec_atak_native_fnc_addSetting;
