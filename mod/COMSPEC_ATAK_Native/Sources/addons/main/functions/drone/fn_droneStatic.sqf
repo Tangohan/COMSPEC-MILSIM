@@ -42,7 +42,9 @@ switch (_act) do {
             uiNamespace setVariable ["COMSPEC_ATAK_DroneStaticGrain", [0, 0.1, 0.16] select ((3 - _t) max 0 min 2)];
             if (_txt isNotEqualTo "") then { ["log", _txt, ["#5cc76b", "#f2ab33"] select (_t < 3)] call comspec_atak_native_fnc_droneAction; };
         };
-        if !(isPiPEnabled) exitWith { "IMAGE DANS L'IMAGE (PIP) COUPÉE : OPTIONS > VIDÉO" };
+        // PiP coupée dans les options vidéo : raison claire au lieu d'une image noire (fn_pipCheck : journal et notification).
+        private _pip = ["check", "DRONE"] call comspec_atak_native_fnc_pipCheck;
+        if (_pip isNotEqualTo "") exitWith { _pip };
         if (_src isEqualTo "HELMET") exitWith {
             private _u = missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedUnit", objNull];
             if (!alive _u) exitWith { "CAMÉRA CASQUE HORS LIGNE" };

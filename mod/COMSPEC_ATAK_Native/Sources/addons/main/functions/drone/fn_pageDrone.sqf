@@ -147,6 +147,8 @@ if (_view isNotEqualTo "") then {
     private _bQ = [format ["NETTETÉ : %1", ["BASSE", "MOY.", "HAUTE"] select _q], ["quality", (_q + 1) mod 3] call _act, "", "Qualité de l'image : basse (plus fluide) → moyenne → haute (plus nette, plus lourde)"];
     private _bMenus = [["MENUS DU DRONE", "AGRANDIR L'IMAGE"] select _split, { private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _st set ["droneCamSplit", !(_st getOrDefault ["droneCamSplit", false])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, "", ["Réduit l'image et affiche dessous les onglets du drone (vol, tâches, cibles, photos, journal)", "Image à la taille de l'écran, onglets masqués"] select _split];
     private _bTotal = [["PLEIN ÉCRAN", "QUITTER LE PLEIN ÉCRAN"] select (_view isEqualTo "TOTAL"), { profileNamespace setVariable ["COMSPEC_ATAK_DroneMiniFull", !(profileNamespace getVariable ["COMSPEC_ATAK_DroneMiniFull", true])]; ["DRONE"] call comspec_atak_native_fnc_pageRender; }, "", "Téléphone en petit format : l'image du drone occupe tout l'écran"];
+    // Secours si l'image reste noire (PiP qui ne rend rien) : la vue du jeu passe sur la caméra du drone (fn_droneAction "direct").
+    private _bDirect = ["VUE DIRECTE", ["direct"] call _act, "", "Plein écran sur la caméra du drone, sans passer par l'image du téléphone (utile si elle reste noire). Échap pour revenir au téléphone"];
     private _bClose = ["FERMER", ["cam"] call _act, "", "Coupe l'image du drone (le drone continue ce qu'il fait)"];
     // Viseur photo.
     private _toolCode = { params ["_k"]; compile format ["['tool', %1] call comspec_atak_native_fnc_dronePhoto;", str _k] };
@@ -165,9 +167,9 @@ if (_view isNotEqualTo "") then {
     private _groups = switch (true) do {
         case (_view isEqualTo "SHOT"): { [["CADRAGE", [_bZoomOut, _bZoomIn, _bCenter, _bVis]], ["CIBLE", [_bMark]], ["SURLIGNER", [_bBox, _bCircle, _bErase]], ["PHOTO", [_bCancel, _bTake]]] };
         case (_view isEqualTo "TOTAL"): { [["", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bTotal]]] select [0, [0, 1] select _inter] };
-        case (_mini): { [["", [_bShot, _bMark, _bZoomOut, _bZoomIn]], ["", [_bVis, _bTotal, _bMenus, _bClose]]] };
-        case (_view isEqualTo "SPLIT"): { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bVis]], ["", [_bUp, _bDn, _bHover, _bMenus, _bMore]]] + _moreRow };
-        default { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bVis]], ["", [_bUp, _bDn, _bHover, _bTargets, _bMenus, _bMore]]] + _moreRow };
+        case (_mini): { [["", [_bShot, _bMark, _bZoomOut, _bZoomIn]], ["", [_bVis, _bTotal, _bDirect, _bMenus, _bClose]]] };
+        case (_view isEqualTo "SPLIT"): { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bVis]], ["", [_bUp, _bDn, _bHover, _bDirect, _bMenus, _bMore]]] + _moreRow };
+        default { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bVis]], ["", [_bUp, _bDn, _bHover, _bTargets, _bDirect, _bMenus, _bMore]]] + _moreRow };
     };
     // Rangées : largeur de chaque bouton selon la longueur de son libellé ; un groupe passe à la rangée suivante quand
     // la rangée serait trop chargée pour rester lisible.
@@ -219,7 +221,11 @@ if (_view isNotEqualTo "") then {
     private _bg = ["COMSPEC_RscText", [0, _top, _bw, _areaH + _barH]] call comspec_atak_native_fnc_pageCtrl;
     _bg ctrlSetBackgroundColor [0, 0, 0, 1];
     // Texture de la caméra : rendu lancé (caméra recréée au besoin) avant que l'image soit posée.
-    private _pic = ["RscPicture", [_ix, _iy, _iw, _ih], ["camBind"] call comspec_atak_native_fnc_droneAction] call comspec_atak_native_fnc_pageCtrl;
+    private _tex = ["camBind"] call comspec_atak_native_fnc_droneAction;
+    private _pic = ["RscPicture", [_ix, _iy, _iw, _ih], _tex] call comspec_atak_native_fnc_pageCtrl;
+    // Journal RPT de l'ouverture du flux (fn_pipCheck : pourquoi la vue resterait noire) et texture rebranchée sur
+    // l'image après le premier rendu de la caméra.
+    ["feedWatch", [_pic, _tex]] call comspec_atak_native_fnc_droneAction;
     // Pas de flux : neige « NO DATA » ; liaison faible : défauts TNT (fn_droneStatic, image rebranchée au besoin).
     ["build", [_ix, _iy, _iw, _ih, _pic]] call comspec_atak_native_fnc_droneStatic;
     // Réticule fin au centre.

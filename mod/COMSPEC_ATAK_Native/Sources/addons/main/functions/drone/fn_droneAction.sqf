@@ -241,14 +241,15 @@ private _expose = {
     };
     _lvl
 };
-// Objet caméra sur une cible de rendu neuve (anneau de 8 noms comspec_dronecam0..7 : mémoire vidéo bornée).
+// Objet caméra sur une cible de rendu neuve (anneau de 8 noms par qualité, comspec_dronecam<qualité>_0..7 : mémoire
+// vidéo bornée ; un même nom n'est jamais repris avec une autre taille de texture).
 // Image noire au retour sur la page : l'ancienne caméra était coupée (Terminate) puis relancée sur la même cible,
 // et l'image de la page était créée avant que la caméra rende de nouveau. Désormais la page appelle camBind, qui
 // recrée la caméra et lance son rendu avant de poser l'image.
 private _camMake = {
     private _n = ((missionNamespace getVariable ["COMSPEC_ATAK_DroneR2TN", 0]) + 1) mod 8;
     missionNamespace setVariable ["COMSPEC_ATAK_DroneR2TN", _n];
-    private _name = format ["comspec_dronecam%1", _n];
+    private _name = format ["comspec_dronecam%1_%2", call _camQ, _n];
     private _bc = (missionNamespace getVariable ["COMSPEC_ATAK_DroneCamBox", [[0, 0, 0], [0.3, 0.3, 0.15]]]) select 0;
     private _cam = "camera" camCreate (_d modelToWorld _bc);
     _cam cameraEffect ["Internal", "Back", _name];
@@ -272,7 +273,8 @@ private _camOpen = {
     private _over = (missionNamespace getVariable ["COMSPEC_ATAK_DroneCamOffsets", createHashMap]) getOrDefault [typeOf _d, []];
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamOver", [[], _over] select (_over isEqualType [] && {(count _over) isEqualTo 3})];
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCamBox", call _camBox];
-    if !(isPiPEnabled) then { ["WARNING", "Caméra du drone : activez « Image dans l'image » (PiP) dans Options > Vidéo d'Arma", 6, 40] call comspec_atak_native_fnc_notify; };
+    // PiP coupée (Options > Vidéo > Qualité PiP) : journal et notification ; distance de vue PiP trop courte relevée.
+    ["check", "DRONE"] call comspec_atak_native_fnc_pipCheck;
     // Caméra libérée puis rouverte (camPark) : on garde la vision choisie.
     if !(missionNamespace getVariable ["COMSPEC_ATAK_DroneCamParked", false]) then {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneVision", [0, 1] select (sunOrMoon < 0.3)];
@@ -288,8 +290,10 @@ private _camOpen = {
         // Page Drone à l'écran, ou vue drone sur la carte (à la place de la carte ou incrustée, aussi en miniature).
         private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
         private _page = _st getOrDefault ["activePage", ""];
-        private _show = !isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])
-            && {_page isEqualTo "DRONE" || {_page isEqualTo "MAP" && {(_st getOrDefault ["droneView", "OFF"]) isNotEqualTo "OFF"}}};
+        private _show = (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])
+            && {_page isEqualTo "DRONE" || {_page isEqualTo "MAP" && {(_st getOrDefault ["droneView", "OFF"]) isNotEqualTo "OFF"}}})
+            // Vue directe (téléphone rangé) : la nacelle continue de tourner, la caméra plein écran prend sa pose.
+            || {!isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneDirectCam", objNull])};
         // Rendu coupé après 1,5 s hors de la page (un aller-retour rapide garde la même cible de rendu), caméra libérée
         // après 20 s (camPark, rouverte par la page au retour). Avant : 3 s et 60 s (retour de TTRD : le jeu rame).
         if (_show) then { _cam setVariable ["hiddenSince", -1]; } else {
@@ -1032,6 +1036,88 @@ switch (_act) do {
     case "camEnsure": { if (!isNull _d) then { call _camBind; }; };
     // Caméra restée hors écran (fn_droneAction, boucle de la nacelle) : libérée, rouverte au retour sur la page Drone.
     case "camPark": { call _camClose; missionNamespace setVariable ["COMSPEC_ATAK_DroneCamParked", true]; };
+    // Image du flux posée par la page (fn_pageDrone) : journal RPT de l'ouverture une fois par cible de rendu
+    // (fn_pipCheck, étapes 1 à 5 et relevé à 2 s), sinon simple rebranchement de la texture à l'image suivante.
+    case "feedWatch": {
+        _arg params [["_pic", controlNull], ["_tex", ""]];
+        private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
+        if (_tex isEqualTo "" || {isNull _cam}) exitWith {};
+        private _name = _cam getVariable ["r2t", ""];
+        if (_name isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_DroneWatched", ""])) exitWith {
+            [{ ["rebind", _this] call comspec_atak_native_fnc_pipCheck; }, [_pic, _tex]] call CBA_fnc_execNextFrame;
+        };
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneWatched", _name];
+        ["watch", ["DRONE", _cam, _name, _tex, _pic]] call comspec_atak_native_fnc_pipCheck;
+    };
+    // VUE DIRECTE : secours quand l'image du téléphone reste noire (retour de TTRD, 13/10). La vue du jeu passe sur la
+    // caméra du drone, sans texture de rendu (comme le terminal UAV) : elle s'affiche même si la PiP ne rend rien.
+    // Téléphone rangé ; la nacelle garde sa visée (boucle de la caméra, pose recopiée chaque image). Échap revient à
+    // l'app Drone ; ouvrir le téléphone, perdre la liaison ou le drone, ou mourir, coupe aussi la vue directe.
+    case "direct": {
+        if (!isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneDirectCam", objNull])) exitWith { ["directEnd", true] call comspec_atak_native_fnc_droneAction; };
+        if (isNull _d || {!alive _d}) exitWith { ["WARNING", "Aucun drone appairé"] call _say; };
+        if !((["link"] call comspec_atak_native_fnc_droneAction) select 2) exitWith { ["WARNING", "Drone hors liaison : pas d'image"] call _say; };
+        if (missionNamespace getVariable ["COMSPEC_ATAK_DroneShotBusy", false]) exitWith { ["INFO", "Cliché en cours"] call _say; };
+        call _camBind;
+        private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
+        if (isNull _cam) exitWith { ["WARNING", "Caméra du drone indisponible"] call _say; };
+        private _v = "camera" camCreate (getPosATL _cam);
+        _v attachTo [_d, _cam getVariable ["off", [0, 0.3, -0.3]]];
+        _v setVectorDirAndUp [_d vectorWorldToModelVisual (vectorDirVisual _cam), _d vectorWorldToModelVisual (vectorUpVisual _cam)];
+        _v cameraEffect ["Internal", "Back"];
+        _v camSetFov (0.7 / ((missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1]) max 1));
+        _v camCommit 0;
+        private _vision = missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0];
+        if (_vision isEqualTo 1) then { camUseNVG true; };
+        if (_vision isEqualTo 2) then { true setCamUseTI 0; };
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectCam", _v];
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneShotCam", _v];
+        [] call comspec_atak_native_fnc_close;
+        ("COMSPEC_ATAK_DroneDirect" call BIS_fnc_rscLayer) cutText [format ["<t size='1.1' shadow='2'>VUE DIRECTE · %1</t><br/><t size='0.85' shadow='2' color='#c9d4cf'>Échap : retour au téléphone</t>",
+            [_d, ["link"] call comspec_atak_native_fnc_droneAction, "NAME"] call comspec_atak_native_fnc_droneOsd] call comspec_atak_native_fnc_tr, "PLAIN DOWN", 0.5, true, true];
+        private _eh = (findDisplay 46) displayAddEventHandler ["KeyDown", {
+            if ((_this select 1) isNotEqualTo 0x01) exitWith { false };
+            [{ ["directEnd", true] call comspec_atak_native_fnc_droneAction; }] call CBA_fnc_execNextFrame;
+            true
+        }];
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectEh", _eh];
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectPfh", [{
+            private _d = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
+            private _why = switch (true) do {
+                case (!alive player): { "joueur mort" };
+                case (isNull _d || {!alive _d}): { "drone perdu" };
+                case (!((["link"] call comspec_atak_native_fnc_droneAction) select 2)): { "liaison perdue" };
+                case (isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull])): { "caméra du drone fermée" };
+                case (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])): { "téléphone ouvert" };
+                default { "" };
+            };
+            if (_why isNotEqualTo "") then {
+                ["INFO", "CAMERA", format ["DRONE : vue directe fermée (%1)", _why]] call comspec_atak_native_fnc_log;
+                ["directEnd", false] call comspec_atak_native_fnc_droneAction;
+            };
+        }, 0.25] call CBA_fnc_addPerFrameHandler];
+        ["INFO", "CAMERA", format ["DRONE : vue directe ouverte (caméra plein écran sans texture de rendu, PiP active : %1)", isPiPEnabled]] call comspec_atak_native_fnc_log;
+    };
+    // Fin de la vue directe ; avec true, le téléphone rouvre en main sur l'app Drone.
+    case "directEnd": {
+        private _v = missionNamespace getVariable ["COMSPEC_ATAK_DroneDirectCam", objNull];
+        [missionNamespace getVariable ["COMSPEC_ATAK_DroneDirectPfh", -1]] call CBA_fnc_removePerFrameHandler;
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectPfh", -1];
+        (findDisplay 46) displayRemoveEventHandler ["KeyDown", missionNamespace getVariable ["COMSPEC_ATAK_DroneDirectEh", -1]];
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectEh", -1];
+        ("COMSPEC_ATAK_DroneDirect" call BIS_fnc_rscLayer) cutText ["", "PLAIN"];
+        if (isNull _v) exitWith {};
+        camUseNVG false;
+        false setCamUseTI 0;
+        _v cameraEffect ["Terminate", "Back"];
+        camDestroy _v;
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneDirectCam", objNull];
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneShotCam", objNull];
+        if (_arg isEqualTo true && {alive player} && {isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])}) then {
+            [true] call comspec_atak_native_fnc_open;
+            [{ ["DRONE"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+        };
+    };
     // Marquage au viseur de la caméra du drone (appui sur MARQUER ou touche « Marquer la cible »).
     case "lock": {
         if (isNull _d) exitWith {};

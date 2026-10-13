@@ -1,6 +1,8 @@
 /* Démarre (ou retarget) la caméra poitrine du Live cam. Params : [porteur, mode 0 jour / 1 NV / 2 thermique] */
 params ["_unit", ["_mode", 0]];
 if (isNull _unit) exitWith { false };
+// PiP coupée (Options > Vidéo) : le direct serait noir ; journal RPT et notification claire (fn_pipCheck).
+["check", "LIVE CAM"] call comspec_atak_native_fnc_pipCheck;
 private _cam = missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull];
 if (isNull _cam) then {
     _cam = "camera" camCreate (getPosATL _unit);
