@@ -38,12 +38,12 @@ private _linkOf = {
     params ["_x"];
     if (isNull _x || {!alive _x}) exitWith { [0, 0, false] };
     if (_x isEqualTo _active) exitWith { (["link"] call comspec_atak_native_fnc_droneAction) select [0, 3] };
-    private _range = missionNamespace getVariable ["comspec_atak_native_drone_range", 2500];
+    private _range = call comspec_atak_native_fnc_droneRange;
     if (terrainIntersectASL [eyePos player, getPosASL _x]) then { _range = _range * 0.3; };
     if !([player] call comspec_atak_native_fnc_hasDevice) then { _range = 0; };
     if ((missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) <= 0) then { _range = 0; };
     private _dist = player distance _x;
-    private _q = ((1 - _dist / (_range max 1)) max 0) min 1;
+    private _q = ((1 - (_dist / (_range max 1)) ^ 2) max 0) min 1;
     [[0, ceil (4 * _q) max 1] select (_dist < _range), round _dist, _dist < _range]
 };
 // Ordre de vol brut à un drone : le drone piloté passe par fn_droneAction (journal, surveillance, zones interdites).

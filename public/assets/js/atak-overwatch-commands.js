@@ -30,7 +30,7 @@
     hover: 'Stationnaire', home: 'Retour pilote', rth: 'Retour décollage', land: 'Atterrir', takeoff: 'Décoller',
     standby: 'Veille', resume: 'Reprendre', force: 'Forcer l’exécution', follow_me: 'Suivre le pilote',
     follow_unit: 'Suivre une unité', goto: 'Aller à', loiter: 'Orbite', observe: 'Observer', hunt: 'Recherche',
-    alt: 'Altitude', speed: 'Vitesse', photo: 'Photo'
+    alt: 'Altitude', speed: 'Vitesse', photo: 'Photo', role: 'Rôle (flotte)', swarm: 'Essaim'
   };
   var EXPLO_LABELS = { arm: 'Raccorder à ATAK', disarm: 'Rendre au déclencheur', fire: 'Mise à feu', sequence: 'Séquence' };
   var STATUS_LABELS = {
@@ -226,6 +226,12 @@
 
   function renderUav() {
     var out = '<div class="owc-scroll">';
+    // Télécommande sur le vrai téléphone : QR code de la page /telecommande-drone (mêmes ordres, rôles et essaim).
+    var remote = String(window.ATAK_API_BASE || '').replace(/\/$/, '') + '/telecommande-drone';
+    out += '<details class="owc-prefs"><summary>Télécommande sur mon téléphone</summary>' +
+      '<p class="owc-hint">Scannez le QR code avec votre téléphone (connecté à Athena) : boutons du drone, rôles et essaim, sans ouvrir la carte.</p>' +
+      '<p><img src="' + esc(remote) + '/qr.png" alt="QR code de la télécommande drone" width="180" height="180" loading="lazy" style="background:#fff;border-radius:8px"></p>' +
+      '<p><a href="' + esc(remote) + '" target="_blank" rel="noopener">' + esc(remote) + '</a></p></details>';
     if (!uavRows.length) {
       out += '<p class="owc-hint">Aucun drone appairé en vol sur cette carte. Un drone apparaît ici quand un pilote l’appaire à son téléphone COMSPEC ATAK.</p>';
     } else {

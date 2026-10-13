@@ -21,15 +21,37 @@ class AtakVehicleTrackingRepository
     }
 
     /**
+     * Indicatif du véhicule (clé de l'upsert) : vehicle_callsign, sinon callsign ou vehicle_name ; '' si absent.
+     */
+    public static function resolveCallsign(array $data): string
+    {
+        foreach (['vehicle_callsign', 'callsign', 'vehicle_name'] as $key) {
+            $value = $data[$key] ?? null;
+            if (is_scalar($value) && trim((string) $value) !== '') {
+                return mb_substr(trim((string) $value), 0, 100);
+            }
+        }
+        return '';
+    }
+
+    /**
      * Crée ou met à jour un véhicule (upsert)
+     *
+     * @throws \InvalidArgumentException si aucun indicatif n'est fourni
      */
     public function upsert(array $data): int
     {
+        $callsign = self::resolveCallsign($data);
+        if ($callsign === '') {
+            throw new \InvalidArgumentException('vehicle_callsign requis');
+        }
+        $data['vehicle_callsign'] = $callsign;
+
         // Vérifier si le véhicule existe déjà
         $existing = $this->findByCallsign(
-            (int) $data['tenant_id'],
-            (int) $data['context_id'],
-            (string) $data['vehicle_callsign']
+            (int) ($data['tenant_id'] ?? 0),
+            (int) ($data['context_id'] ?? 0),
+            $callsign
         );
 
         if ($existing) {

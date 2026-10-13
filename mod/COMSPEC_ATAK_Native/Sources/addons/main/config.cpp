@@ -44,11 +44,11 @@ class CfgFunctions {
             class exploList {}; class exploAction {}; class pageExplo {};
         };
         class tactical { file="z\comspec_atak_native\addons\main\functions\tactical";
-            class sniperBallistics {}; class pageSniper {}; class sniperAction {}; class jtacTarget {}; class pageJtac {}; class jtacAction {};
+            class sniperBallistics {}; class pageSniper {}; class sniperAction {}; class jtacTarget {}; class pageJtac {}; class jtacAction {}; class jtacAir {}; class jtacLines {}; class jtacGeometry {};
             class breachBuilding {}; class pageBreach {}; class breachAction {}; class breachTop {};
         };
         class drone { file="z\comspec_atak_native\addons\main\functions\drone";
-            class droneCmd {}; class droneAction {}; class droneOsd {}; class droneDraw {}; class pageDrone {}; class droneDetectScan {}; class pageDroneDetect {}; class droneDetectDraw {}; class lockAction {}; class droneFlir {}; class droneSeq {}; class dronePhoto {}; class droneStatic {}; class noFly {}; class droneFleet {};
+            class droneCmd {}; class droneAction {}; class droneOsd {}; class droneDraw {}; class pageDrone {}; class droneDetectScan {}; class pageDroneDetect {}; class droneDetectDraw {}; class lockAction {}; class droneFlir {}; class droneSeq {}; class dronePhoto {}; class droneStatic {}; class noFly {}; class droneFleet {}; class droneRange {};
         };
         class bluetooth { file="z\comspec_atak_native\addons\main\functions\bluetooth";
             class airplaneMode {}; class btAction {}; class btSounds {}; class pageBluetooth {}; class btInit { postInit=1; };

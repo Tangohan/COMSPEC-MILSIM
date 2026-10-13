@@ -149,6 +149,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 ["comspec_atak_native_medevacStatus", { ["statusRecv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
 // Ordres : réponses des joueurs du camp (app Tâches, qui a vu / reçu / exécute).
 ["comspec_atak_native_orderAck", { ["recv", _this] call comspec_atak_native_fnc_orderAck; }] call CBA_fnc_addEventHandler;
+// App JTAC : brief, appels du JTAC et réponses de l'équipage (CAS), envoyés aux seuls intéressés.
+["comspec_atak_native_cas", { ["recv", _this] call comspec_atak_native_fnc_jtacAction; }] call CBA_fnc_addEventHandler;
+// App JTAC ouverte en contrôle (ou vue équipage) : position et géométrie de l'appareil rafraîchies.
+[{ ["tick"] call comspec_atak_native_fnc_jtacAction; }, 3] call CBA_fnc_addPerFrameHandler;
 private _eh = addMissionEventHandler ["ExtensionCallback", { _this call comspec_atak_native_fnc_extensionCallback }];
 missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 // Service Athéna changé (Oui / Non) : apps Athena affichées ou masquées tout de suite.
@@ -326,7 +330,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     private _k = [player] call comspec_atak_native_fnc_vehicleTerminal;
     if (_k isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_TermKind", ""])) exitWith {};
     uiNamespace setVariable ["COMSPEC_ATAK_TermKind", _k];
-    if (_k in ["vehicle", "cp"]) then { ["INFO", ["Tablette du véhicule disponible (ATAK)", "Terminal du poste de commandement disponible"] select (_k isEqualTo "cp"), 4, 20] call comspec_atak_native_fnc_notify; };
+    if (_k in ["vehicle", "cp"] && {!([player, true] call comspec_atak_native_fnc_hasDevice)}) then { ["INFO", ["Tablette du véhicule disponible (ATAK)", "Terminal du poste de commandement disponible"] select (_k isEqualTo "cp"), 4, 20] call comspec_atak_native_fnc_notify; };
     if (!isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; };
 }, 2] call CBA_fnc_addPerFrameHandler;
 // Lueur des écrans la nuit (la sienne publiée, celle des joueurs proches dessinée) et filtre JVN (fn_screenGlow).
