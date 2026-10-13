@@ -18,7 +18,8 @@
       ["line", numéro, libellé, valeur, genre, clé, aide]   ligne de formulaire type 9-LINE, hauteur fixe :
           numéro en pastille, libellé à gauche, valeur à droite. genre "auto" (valeur calculée, en couleur d'accent ;
           vide ou "-" : l'aide en gris), "warn" (valeur en rouge), "edit" (champ de saisie clé dans la colonne valeur,
-          l'aide en infobulle et en gris sous le libellé)
+          l'aide en infobulle et en gris sous le libellé), "autoedit" (même champ, prérempli d'une proposition
+          automatique affichée en couleur d'accent)
       ["bar", [[titre de groupe, [[libellé, code, état, aide, actif]...]]...]]
           barre de boutons par groupes titrés (façon app Drone) ; état "" | "on" (vert, actif) | "red" (confirmation)
           | "main" (bouton principal) ; les groupes passent à la ligne quand les boutons deviendraient trop étroits.
@@ -98,17 +99,27 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _y = _y + _h + ([_pad / 2, pixelH * 2] select _card);
         };
         case "strip": {
-            // Bandeau de terminal : fond sombre pleine largeur, texte à gauche et à droite.
+            // Bandeau de terminal : fond sombre pleine largeur, texte à gauche et à droite, chacun dans sa colonne
+            // (un texte long passe à la ligne et le bandeau grandit, au lieu de chevaucher l'autre côté).
             _row params ["", "_left", ["_right", ""], ["_sbg", [0.02, 0.028, 0.024, 1]]];
             private _sh = _fs * 1.45;
+            private _hasR = _right isNotEqualTo "";
+            private _lw = [_w - _pad * 0.8, _w * 0.52 - _pad * 0.4] select _hasR;
             private _sb = ["COMSPEC_RscText", [_pad, _y, _w, _sh]] call _mk;
             _sb ctrlSetBackgroundColor _sbg;
-            private _lt = ["COMSPEC_RscStructuredText", [_pad * 1.4, _y, _w * 0.62, _sh]] call _mk;
+            private _lt = ["COMSPEC_RscStructuredText", [_pad * 1.4, _y, _lw, _sh]] call _mk;
             _lt ctrlSetStructuredText parseText ((_left) call comspec_atak_native_fnc_tr);
-            private _rt = ["COMSPEC_RscStructuredText", [_pad + _w * 0.3, _y, _w * 0.7 - _pad * 0.4, _sh]] call _mk;
-            _rt ctrlSetStructuredText parseText ((format ["<t align='right'>%1</t>", _right]) call comspec_atak_native_fnc_tr);
-            { private _th = (ctrlTextHeight _x) min _sh; _x ctrlSetPositionY (_y + (_sh - _th) / 2); _x ctrlSetPositionH _th; _x ctrlCommit 0; } forEach [_lt, _rt];
-            _y = _y + _sh + pixelH * 2;
+            private _parts = [_lt];
+            if (_hasR) then {
+                private _rt = ["COMSPEC_RscStructuredText", [_pad + _w * 0.52, _y, _w * 0.48 - _pad * 0.4, _sh]] call _mk;
+                _rt ctrlSetStructuredText parseText ((format ["<t align='right'>%1</t>", _right]) call comspec_atak_native_fnc_tr);
+                _parts pushBack _rt;
+            };
+            private _hh = _sh;
+            { _hh = _hh max ((ctrlTextHeight _x) + pixelH * 4); } forEach _parts;
+            { private _th = (ctrlTextHeight _x) min _hh; _x ctrlSetPositionY (_y + (_hh - _th) / 2); _x ctrlSetPositionH _th; _x ctrlCommit 0; } forEach _parts;
+            _sb ctrlSetPositionH _hh; _sb ctrlCommit 0;
+            _y = _y + _hh + pixelH * 2;
         };
         case "steps": {
             // Frise de la mission en cases accolées (deux rangées si les cases deviennent trop étroites).
@@ -359,7 +370,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             private _lw = (_w * 0.46) - _nw - _pad;
             private _vx = _pad + _w * 0.46;
             private _vw = _w * 0.54 - _pad;
-            private _isEdit = _kind isEqualTo "edit";
+            private _isEdit = _kind in ["edit", "autoedit"];
             // Libellé (et, pour un champ, l'aide en dessous) centré verticalement.
             private _lt = ["COMSPEC_RscStructuredText", [_lx, _y, _lw, _h]] call _mk;
             _lt ctrlSetStructuredText parseText ((format ["<t color='%3' size='%4'>%1</t>%2", [_label, toUpper _label] select _mono,
@@ -371,6 +382,8 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 private _e = ["COMSPEC_RscEdit", [_vx, _y + _h * 0.12, _vw, _h * 0.76], _value] call _mk;
                 _e ctrlSetFontHeight _font;
                 if (_mono) then { _e ctrlSetFont "EtelkaMonospacePro"; _e ctrlSetFontHeight (_font * 0.85); };
+                // Proposition automatique (modifiable) : en couleur d'accent, comme une valeur calculée.
+                if (_kind isEqualTo "autoedit") then { _e ctrlSetTextColor _acc; };
                 if (_help isNotEqualTo "") then { _e ctrlSetTooltip ((_help) call comspec_atak_native_fnc_tr); };
                 _fields set [_key, _e];
             } else {

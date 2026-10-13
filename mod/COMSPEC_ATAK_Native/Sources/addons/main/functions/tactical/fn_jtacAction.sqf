@@ -18,6 +18,7 @@
       "radio", code                   appel du pilote reçu à la radio (READBACK, CONTACT, TALLY, SPOT, VISUAL, NOJOY, IN, AWAY, OFF, UNABLE)
       "bda", résultat                 bilan transmis, mission terminée      "new" : nouvelle mission
       "pilot", code                   (équipage) appel envoyé au JTAC       "map" / "pmap" : carte centrée sur la cible
+      "ipAuto"                        l'IP redevient proposé automatiquement (fn_jtacLines)
       "pickIn", "tgt" | "ip"          onglet CARTE, prochain appui sur la carte tactique = cible ou IP
       "mapPick", "tgt" | "ip"         (onglet CARTE) arme ou désarme la pose ; "mapSet", [genre, position] : position posée
       "center", "tgt" | "ip" | "me" | "air"   carte tactique centrée sur la cible, l'IP, le JTAC ou l'appareil
@@ -96,7 +97,12 @@ private _save = {
     private _form = uiNamespace getVariable ["COMSPEC_ATAK_Form", createHashMap];
     {
         private _c = _form getOrDefault [_x, controlNull];
-        if (!isNull _c) then { _s set [_x, [_x] call comspec_atak_native_fnc_formValue]; };
+        // Proposition automatique laissée telle quelle : pas une saisie (elle suit la cible si celle-ci change).
+        if (!isNull _c) then {
+            private _v = [_x] call comspec_atak_native_fnc_formValue;
+            if ((trim _v) isEqualTo (_s getOrDefault ["auto_" + _x, ""])) then { _v = ""; };
+            _s set [_x, _v];
+        };
     } forEach ["jIp", "j5", "j9", "jFah", "jThreat", "jDc", "jBda"];
 };
 // Rafraîchissement (XEH_postInitClient, 3 s) : seulement les vues sans saisie, mission en cours.
@@ -123,6 +129,7 @@ switch (_act) do {
         call _render;
     };
     case "unlock": { _s set ["target", []]; call _render; };
+    case "ipAuto": { _s set ["ipAuto", true]; _s set ["jIp", ""]; call _render; };
     case "pickIn": {
         _s set ["mapPick", _arg];
         _s set ["pickBack", _s getOrDefault ["tab", "SIT"]];
@@ -142,6 +149,7 @@ switch (_act) do {
             _s set ["source", format ["carte · %1", [dayTime, "HH:MM"] call BIS_fnc_timeToString]];
         } else {
             _s set ["ip", _asl];
+            _s set ["ipAuto", false];
             if ((_s getOrDefault ["jIp", ""]) isEqualTo "") then { _s set ["jIp", format ["IP %1", [_asl, 6] call comspec_atak_native_fnc_gridRef]]; };
         };
         _s set ["mapPick", ""];
@@ -179,6 +187,7 @@ switch (_act) do {
             _s set ["source", format ["carte · %1", [dayTime, "HH:MM"] call BIS_fnc_timeToString]];
         } else {
             _s set ["ip", _asl];
+            _s set ["ipAuto", false];
             if ((_s getOrDefault ["jIp", ""]) isEqualTo "") then { _s set ["jIp", format ["IP %1", [_asl, 6] call comspec_atak_native_fnc_gridRef]]; };
             _s set ["tab", "BRIEF"];
         };
@@ -187,6 +196,7 @@ switch (_act) do {
     case "air": {
         private _a = _arg call BIS_fnc_objectFromNetId;
         _s set ["air", _a];
+        _s set ["airAuto", false];
         _s set ["ord", ""];
         // Nouvel appareil : la mission en cours (autre appareil) est close.
         private _m = _s getOrDefault ["msn", createHashMap];
@@ -283,7 +293,8 @@ switch (_act) do {
     };
     case "new": {
         _s set ["msn", createHashMap];
-        { _s deleteAt _x; } forEach ["j5", "j9", "jFah", "jThreat", "jDc", "jBda", "ord"];
+        { _s deleteAt _x; } forEach ["j5", "j9", "jFah", "jThreat", "jDc", "jBda", "ord", "jIp", "ip"];
+        _s set ["ipAuto", true];
         _s set ["clearing", true];
         _s set ["tab", "SIT"];
         call _render;
