@@ -1098,9 +1098,11 @@ return function (Router $router) {
     // Administration de la musique : plateforme (toutes organisations) et gestionnaires (leur organisation).
     $router->get('/admin/musique', [MusicAdminController::class, 'platform'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/musique/actions', [MusicAdminController::class, 'platformBulk'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/musique/envoyer', [MusicAdminController::class, 'platformUpload'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/musique/playlists/{id}/supprimer', [MusicAdminController::class, 'platformPlaylistDelete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/back-office/ressources/musique', [MusicAdminController::class, 'tenant'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/musique/actions', [MusicAdminController::class, 'tenantBulk'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/musique/envoyer', [MusicAdminController::class, 'tenantUpload'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/musique/playlists/{id}/supprimer', [MusicAdminController::class, 'tenantPlaylistDelete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/playlists/{id}/ajouter', [MusicLibraryController::class, 'playlistAdd'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/playlists/{id}/retirer', [MusicLibraryController::class, 'playlistRemove'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

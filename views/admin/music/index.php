@@ -80,6 +80,105 @@ $tabs = [
   </nav>
 
   <?php if ($tab === 'morceaux') : ?>
+    <details class="msc-upload ath-form msc-card"<?= (int) ($stats['tracks'] ?? 0) === 0 ? ' open' : '' ?>>
+      <summary class="msc-upload__summary">
+        <span class="msc-upload__plus" aria-hidden="true">+</span>
+        <span><strong>Mettre des morceaux en ligne</strong> <span class="msc-muted">Un ou plusieurs fichiers MP3, M4A, AAC ou WAV, 25 Mo maximum chacun<?= $platform ? ', sans limite de quota pour vous' : '' ?>. Écoutables sur le site et en jeu.</span></span>
+      </summary>
+      <form method="post" action="<?= $h($base . '/envoyer') ?>" enctype="multipart/form-data" class="msc-upload__form" data-msca-upload>
+        <?= $csrf ?>
+        <input type="hidden" name="durations" value="" data-msca-durations>
+        <label class="msc-drop" data-msca-drop>
+          <input type="file" name="audio[]" accept="audio/mpeg,audio/mp4,audio/aac,audio/wav,audio/x-wav,.mp3,.m4a,.aac,.wav" multiple required data-msca-file>
+          <span class="msc-drop__text" data-msca-drop-text>Déposez des fichiers audio ici ou cliquez pour choisir (plusieurs à la fois possible)</span>
+        </label>
+        <div class="ath-form__grid">
+          <label class="ath-field"><span class="ath-field__label">Titre</span><input class="ath-field__input" name="title" maxlength="160" placeholder="Nom du fichier si vide ou si plusieurs fichiers"></label>
+          <label class="ath-field"><span class="ath-field__label">Artiste</span><input class="ath-field__input" name="artist" maxlength="120" placeholder="Pour tous les fichiers envoyés"></label>
+          <label class="ath-field"><span class="ath-field__label">Genre</span><input class="ath-field__input" name="genre" maxlength="60" placeholder="Rock, ambiance, radio…"></label>
+          <label class="ath-field"><span class="ath-field__label">Bibliothèque</span>
+            <select class="ath-field__select" name="scope" data-msca-scope>
+              <option value="community"<?= $platform ? ' selected' : '' ?>>Communauté (toute la plateforme)</option>
+              <option value="org"<?= $platform ? '' : ' selected' ?>>Organisation seulement</option>
+            </select>
+          </label>
+          <?php $plChoices = array_values(array_filter($playlists, static fn (array $p): bool => ($p['visibility'] ?? '') !== 'global')); ?>
+          <?php if ($plChoices !== []) : ?>
+            <label class="ath-field"><span class="ath-field__label">Ajouter aussi à</span>
+              <select class="ath-field__select" name="playlist_id">
+                <option value="0">Aucune playlist</option>
+                <?php foreach ($plChoices as $p) : ?><option value="<?= (int) $p['id'] ?>"><?= $h($p['name']) ?><?= $platform && ($p['tenant_name'] ?? '') !== '' ? ' (' . $h($p['tenant_name']) . ')' : '' ?></option><?php endforeach; ?>
+              </select>
+            </label>
+          <?php endif; ?>
+        </div>
+        <?php if ($platform) : ?>
+          <label class="msca-check"><input type="checkbox" name="global" value="1" data-msca-global> Ajouter directement à la <strong>playlist globale</strong> (le morceau passe en bibliothèque communautaire)</label>
+        <?php endif; ?>
+        <p class="ath-field__help">Ne mettez en ligne que des morceaux que vous avez le droit de partager.</p>
+        <div class="msca-progress" data-msca-progress hidden></div>
+        <div class="ath-form__actions"><button type="submit" class="ath-btn ath-btn--solid" data-msca-submit>Mettre en ligne</button></div>
+      </form>
+    </details>
+    <script>
+    (function () {
+      var form = document.querySelector('[data-msca-upload]');
+      if (!form || !window.fetch || !window.FormData) return;
+      var input = form.querySelector('[data-msca-file]');
+      var text = form.querySelector('[data-msca-drop-text]');
+      var drop = form.querySelector('[data-msca-drop]');
+      var progress = form.querySelector('[data-msca-progress]');
+      var submit = form.querySelector('[data-msca-submit]');
+      var global = form.querySelector('[data-msca-global]');
+      var scope = form.querySelector('[data-msca-scope]');
+      var durations = [];
+      if (global && scope) global.addEventListener('change', function () { if (global.checked) scope.value = 'community'; scope.disabled = global.checked; });
+      ['dragenter', 'dragover'].forEach(function (e) { drop.addEventListener(e, function () { drop.classList.add('is-over'); }); });
+      ['dragleave', 'drop'].forEach(function (e) { drop.addEventListener(e, function () { drop.classList.remove('is-over'); }); });
+      function probe(file) {
+        return new Promise(function (resolve) {
+          var a = document.createElement('audio'); var u = URL.createObjectURL(file);
+          var done = function (d) { URL.revokeObjectURL(u); resolve(isFinite(d) ? Math.round(d) : 0); };
+          a.preload = 'metadata'; a.onloadedmetadata = function () { done(a.duration); }; a.onerror = function () { done(0); }; a.src = u;
+          setTimeout(function () { done(0); }, 8000);
+        });
+      }
+      input.addEventListener('change', function () {
+        var files = Array.prototype.slice.call(input.files || []);
+        text.textContent = files.length === 0 ? 'Déposez des fichiers audio ici ou cliquez pour choisir'
+          : files.length === 1 ? files[0].name : files.length + ' fichiers choisis';
+        durations = files.map(function () { return 0; });
+        files.forEach(function (f, i) { probe(f).then(function (d) { durations[i] = d; }); });
+      });
+      form.addEventListener('submit', function (ev) {
+        var files = Array.prototype.slice.call(input.files || []);
+        if (files.length === 0) return;
+        ev.preventDefault();
+        if (scope) scope.disabled = false;
+        submit.disabled = true; progress.hidden = false;
+        var ok = 0, errors = [], i = 0;
+        var next = function () {
+          if (i >= files.length) {
+            progress.textContent = ok + ' morceau(x) en ligne' + (errors.length ? ', ' + errors.length + ' refusé(s) : ' + errors.join(' ') : '.');
+            if (errors.length === 0) { window.location.reload(); } else { submit.disabled = false; setTimeout(function () { if (ok > 0) window.location.reload(); }, 6000); }
+            return;
+          }
+          var f = files[i];
+          progress.textContent = 'Envoi ' + (i + 1) + ' / ' + files.length + ' : ' + f.name + '…';
+          var fd = new FormData(form);
+          fd.delete('audio[]'); fd.append('audio[]', f, f.name);
+          fd.set('durations', String(durations[i] || 0));
+          if (files.length > 1) fd.set('title', '');
+          fetch(form.action, { method: 'POST', body: fd, credentials: 'same-origin', headers: { Accept: 'application/json' } })
+            .then(function (r) { return r.json().catch(function () { return { done: 0, errors: [f.name + ' : réponse inattendue du serveur (' + r.status + ').'] }; }); })
+            .then(function (j) { ok += j.done || 0; errors = errors.concat(j.errors || []); })
+            .catch(function () { errors.push(f.name + ' : envoi interrompu.'); })
+            .then(function () { i++; next(); });
+        };
+        next();
+      });
+    })();
+    </script>
     <section class="msc-card">
       <form method="get" action="<?= $h($base) ?>" class="msca-filters">
         <label class="ath-field"><span class="ath-field__label">Recherche</span><input class="ath-field__input" type="search" name="q" value="<?= $h($filters['q'] ?? '') ?>" placeholder="Titre, artiste, genre, indicatif"></label>

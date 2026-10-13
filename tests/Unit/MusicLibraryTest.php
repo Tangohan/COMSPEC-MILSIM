@@ -74,14 +74,33 @@ final class MusicLibraryTest extends TestCase
     {
         $root = dirname(__DIR__, 2);
         $routes = (string) file_get_contents($root . '/routes/web.php');
-        foreach (['/admin/musique', '/admin/musique/actions', '/admin/musique/playlists/{id}/supprimer'] as $path) {
+        foreach (['/admin/musique', '/admin/musique/actions', '/admin/musique/envoyer', '/admin/musique/playlists/{id}/supprimer'] as $path) {
             self::assertMatchesRegularExpression("#router->(get|post)\\('" . preg_quote($path, '#') . "', \\[MusicAdminController::class, '[a-zA-Z]+'\\], \\[AuthMiddleware::class, SystemAdminMiddleware::class\\]#", $routes, $path);
         }
-        foreach (['/back-office/ressources/musique', '/back-office/ressources/musique/actions', '/back-office/ressources/musique/playlists/{id}/supprimer'] as $path) {
+        foreach (['/back-office/ressources/musique', '/back-office/ressources/musique/actions', '/back-office/ressources/musique/envoyer', '/back-office/ressources/musique/playlists/{id}/supprimer'] as $path) {
             self::assertMatchesRegularExpression("#router->(get|post)\\('" . preg_quote($path, '#') . "', \\[MusicAdminController::class, '[a-zA-Z]+'\\], \\[AuthMiddleware::class, TenantResourceAdminMiddleware::class\\]#", $routes, $path);
         }
         self::assertStringContainsString("'admin/musique'", (string) file_get_contents($root . '/views/partials/platform_admin_sidebar.php'));
         self::assertStringContainsString("url('back-office/ressources/musique')", (string) file_get_contents($root . '/views/partials/ath_sidebar_nav.php'));
         self::assertFileExists($root . '/views/admin/music/index.php');
+    }
+
+    public function testUploadedFilesNormalisesSingleAndMultipleFields(): void
+    {
+        self::assertSame([], \App\Controllers\Admin\MusicAdminController::uploadedFiles(null));
+        self::assertSame([], \App\Controllers\Admin\MusicAdminController::uploadedFiles(['name' => '', 'tmp_name' => '', 'error' => UPLOAD_ERR_NO_FILE, 'size' => 0]));
+        $one = ['name' => 'a.mp3', 'type' => 'audio/mpeg', 'tmp_name' => '/tmp/a', 'error' => UPLOAD_ERR_OK, 'size' => 9];
+        self::assertSame([$one], \App\Controllers\Admin\MusicAdminController::uploadedFiles($one));
+        $multi = \App\Controllers\Admin\MusicAdminController::uploadedFiles([
+            'name' => ['a.mp3', '', 'b.wav'], 'type' => ['audio/mpeg', '', 'audio/wav'], 'tmp_name' => ['/tmp/a', '', '/tmp/b'],
+            'error' => [UPLOAD_ERR_OK, UPLOAD_ERR_NO_FILE, UPLOAD_ERR_OK], 'size' => [9, 0, 7],
+        ]);
+        self::assertSame(['a.mp3', 'b.wav'], array_column($multi, 'name'));
+    }
+
+    public function testAtakRefreshesAthenaViewsWithoutRestart(): void
+    {
+        $sqf = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/music/fn_pageMusic.sqf');
+        self::assertStringContainsString('["ensure", _view] call comspec_atak_native_fnc_musicAthena', $sqf);
     }
 }

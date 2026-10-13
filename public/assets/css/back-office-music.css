@@ -342,3 +342,6 @@
 .msca-pager { display: flex; gap: 0.6rem; align-items: center; justify-content: center; margin: 0.8rem 0; }
 .msca-meter { display: inline-block; width: 4rem; height: 0.4rem; border-radius: 2px; background: var(--msc-subtle); border: 1px solid var(--msc-line); vertical-align: middle; overflow: hidden; }
 .msca-meter span { display: block; height: 100%; background: var(--msc-acc); }
+.msca .msc-upload.msc-card { padding: 0; }
+.msca-check { display: flex; gap: 0.5rem; align-items: center; font-size: 0.88rem; }
+.msca-progress { padding: 0.5rem 0.7rem; border-radius: 4px; background: var(--msc-subtle); font-size: 0.86rem; }
