@@ -149,6 +149,32 @@ final class AtakModReportRepository
         return ['id' => (int) $this->pdo->lastInsertId(), 'created' => true, 'hit_count' => 1];
     }
 
+    /**
+     * Signalements joueur (source « player… ») créés depuis N minutes par le même joueur
+     * (Steam, sinon adresse IP). Sert de limite pour l'e-mail envoyé à l'exploitation.
+     */
+    public function countRecentPlayerReports(?string $steamUid, ?string $clientIp, int $minutes = 60): int
+    {
+        $minutes = max(1, min(1440, $minutes));
+        if ($steamUid !== null && $steamUid !== '') {
+            $st = $this->pdo->prepare(
+                "SELECT COUNT(*) FROM atak_mod_reports WHERE source LIKE 'player%' AND steam_uid = ?
+                   AND created_at >= (NOW() - INTERVAL {$minutes} MINUTE)"
+            );
+            $st->execute([$steamUid]);
+        } elseif ($clientIp !== null && $clientIp !== '') {
+            $st = $this->pdo->prepare(
+                "SELECT COUNT(*) FROM atak_mod_reports WHERE source LIKE 'player%' AND steam_uid IS NULL AND client_ip = ?
+                   AND created_at >= (NOW() - INTERVAL {$minutes} MINUTE)"
+            );
+            $st->execute([$clientIp]);
+        } else {
+            return 0;
+        }
+
+        return (int) $st->fetchColumn();
+    }
+
     /** @return list<array<string, mixed>> */
     public function listRecent(int $limit = 100, ?string $severity = null, ?string $workflowStatus = null): array
     {
