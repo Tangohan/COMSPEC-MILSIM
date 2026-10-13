@@ -219,9 +219,16 @@ switch (_tab) do {
         // Champs à saisie : la proposition automatique (fn_jtacLines) en vert tant que le joueur ne l'a pas changée.
         private _au = _b getOrDefault ["auto", createHashMap];
         private _fld = { params ["_k"]; private _v = _s getOrDefault [_k, ""]; [[_v, "edit"], [_au getOrDefault [_k, ""], "autoedit"]] select ((trim _v) isEqualTo "" && {(_au getOrDefault [_k, ""]) isNotEqualTo ""}) };
-        _rows pushBack ["strip", ["CAS BRIEF · 9-LINE", "", 0.9, true] call _mono, [["En vert : complété automatiquement, modifiable", "Rien à compléter sans cible"] select (!_hasT), _grey, 0.72] call _mono];
+        // Complétion automatique : réglage admin Athena (native_jtac_autofill), coupée par défaut (réalisme).
+        private _autoOn = _b getOrDefault ["autoOn", false];
+        private _hint = switch (true) do {
+            case (!_autoOn): { "Lignes 2, 3, 4, 6, 7, 8 calculées · le reste à saisir" };
+            case (!_hasT): { "Rien à compléter sans cible" };
+            default { "En vert : complété automatiquement, modifiable" };
+        };
+        _rows pushBack ["strip", ["CAS BRIEF · 9-LINE", "", 0.9, true] call _mono, [_hint, _grey, 0.72] call _mono];
         if (!_hasT) then {
-            _rows pushBack ["text", format ["<t color='%1' size='0.9'>Pour compléter la fiche, il faut une cible : VERROUILLER dans SITU en la visant ou en la désignant au laser (prise toute seule si votre laser est allumé), ou POSER LA CIBLE sur la carte ci-dessous. Tout le reste se remplit ensuite.</t>", _amber], [0.2, 0.14, 0.03, 1]];
+            _rows pushBack ["text", format ["<t color='%1' size='0.9'>%2</t>", _amber, ["Il faut d'abord une cible : VERROUILLER dans SITU en la visant ou en la désignant au laser, ou POSER LA CIBLE sur la carte ci-dessous. Les lignes 2, 3, 4, 6, 7 et 8 se calculent ensuite ; IP, lignes 5 et 9 et remarques sont à saisir.", "Pour compléter la fiche, il faut une cible : VERROUILLER dans SITU en la visant ou en la désignant au laser (prise toute seule si votre laser est allumé), ou POSER LA CIBLE sur la carte ci-dessous. Tout le reste se remplit ensuite."] select _autoOn], [0.2, 0.14, 0.03, 1]];
         };
         (["jIp"] call _fld) params ["_v1", "_k1"];
         _rows pushBack ["line", "1", "IP / BP", _v1, _k1, "jIp", "nom du point initial", "mono"];
@@ -235,7 +242,11 @@ switch (_tab) do {
         _rows pushBack ["line", "8", "Amis", _ln select 7, ["auto", "warn"] select _dcOn, "", "verrouillez la cible", "mono"];
         (["j9"] call _fld) params ["_v9", "_k9"];
         _rows pushBack ["line", "9", "Dégagement", _v9, _k9, "j9", "direction, altitude, point de retour", "mono"];
-        _rows pushBack ["buttons", [["POSER L'IP SUR LA CARTE", ["pickIn", "ip"] call _act], ["IP AUTO", ["ipAuto"] call _act, false, !(_s getOrDefault ["ipAuto", true]), "L'IP est de nouveau proposé à 5 NM de la cible, côté appareil"], ["POSER LA CIBLE", ["pickIn", "tgt"] call _act]]];
+        if (_autoOn) then {
+            _rows pushBack ["buttons", [["POSER L'IP SUR LA CARTE", ["pickIn", "ip"] call _act], ["IP AUTO", ["ipAuto"] call _act, false, !(_s getOrDefault ["ipAuto", true]), "L'IP est de nouveau proposé à 5 NM de la cible, côté appareil"], ["POSER LA CIBLE", ["pickIn", "tgt"] call _act]]];
+        } else {
+            _rows pushBack ["buttons", [["POSER L'IP SUR LA CARTE", ["pickIn", "ip"] call _act], ["POSER LA CIBLE", ["pickIn", "tgt"] call _act]]];
+        };
         // Remarques et restrictions.
         _rows pushBack ["strip", ["REMARQUES / RESTRICTIONS", "", 0.9, true] call _mono, ""];
         (["jFah"] call _fld) params ["_vF", "_kF"];

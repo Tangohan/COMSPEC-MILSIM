@@ -227,6 +227,19 @@ final class AtakExperienceService
                 'choices' => $tri('Toujours activer', 'Toujours désactiver'),
             ],
             [
+                'id' => 'native_jtac_autofill',
+                'label' => 'JTAC : complétion automatique du 9-LINE',
+                'description' => 'Par défaut, le JTAC saisit lui-même l’IP, les lignes 5 et 9 et les remarques (réalisme). Activé, le téléphone propose l’appareil, la cible laser, l’IP, la description, les menaces, le FAH et le dégagement.',
+                'type' => 'list',
+                'default' => 'off',
+                'group' => 'realisme',
+                'surface' => 'control',
+                'choices' => [
+                    ['value' => 'off', 'label' => 'Saisie manuelle (réalisme)'],
+                    ['value' => 'on', 'label' => 'Complétion automatique'],
+                ],
+            ],
+            [
                 'id' => 'radio_proximity',
                 'label' => 'Écoute radio à proximité',
                 'description' => 'Le poste entend les échanges radio autour des opérateurs.',
