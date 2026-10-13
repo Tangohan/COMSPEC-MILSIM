@@ -131,7 +131,7 @@ switch (_act) do {
         // Style de l'heure (Réglages > Personnalisation, COMSPEC_ATAK_LockClockStyle) : fine, grasse, militaire (accent).
         private _cs = profileNamespace getVariable ["COMSPEC_ATAK_LockClockStyle", "light"];
         _clock ctrlSetFont (createHashMapFromArray [["bold", "RobotoCondensedBold"], ["mil", "EtelkaMonospaceProBold"]] getOrDefault [_cs, "RobotoCondensedLight"]);
-        _clock ctrlSetFontHeight (_font * ([3.5, 2.9] select (_cs isEqualTo "mil")));
+        _clock ctrlSetFontHeight ((_font * ([3.5, 2.9] select (_cs isEqualTo "mil"))) max COMSPEC_ATAK_FontMin);
         _clock ctrlSetTextColor ([[0.97, 0.99, 0.97, 1], _acc] select (_cs isEqualTo "mil"));
         _y = _y + _clockH;
         date params ["_yy", "_mo", "_dd"];
@@ -164,7 +164,7 @@ switch (_act) do {
         {
             _x params ["_txt", "_col", "_sample"];
             private _c = ["COMSPEC_RscTextCenter", [0, _y, _dw * 0.3, _chipH], _sample] call _mk;
-            _c ctrlSetFontHeight (_fs * 0.85);
+            _c ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
             private _w = (ctrlTextWidth _c) + _pad * 2.4;
             _c ctrlSetText ((_txt) call comspec_atak_native_fnc_tr);
             _c ctrlSetTextColor _col;
@@ -193,7 +193,7 @@ switch (_act) do {
         private _hintY = _dh - _font * 2.4;
         private _lbl = ["COMSPEC_RscText", [_cx, _y, _cw, _font], ["AUCUNE NOTIFICATION", format ["NOTIFICATIONS · %1", count _hist]] select ((count _hist) > 0)] call _mk;
         _lbl ctrlSetFont "RobotoCondensedBold";
-        _lbl ctrlSetFontHeight (_fs * 0.75);
+        _lbl ctrlSetFontHeight ((_fs * 0.75) max COMSPEC_ATAK_FontMin);
         _lbl ctrlSetTextColor [0.62, 0.69, 0.65, 1];
         _y = _y + _font * 1.05;
         // Icône et titre d'une notification : « Source : texte » donne le titre, sinon le type.
@@ -240,14 +240,14 @@ switch (_act) do {
         private _more = (count _hist) - _shown;
         if (_shown > 0 && {_more > 0} && {_y + _font < _hintY - _font * 0.5}) then {
             private _m = ["COMSPEC_RscTextCenter", [_cx, _y, _cw, _font], format ["+ %1 autre(s) dans le centre de notifications", _more]] call _mk;
-            _m ctrlSetFontHeight (_fs * 0.75);
+            _m ctrlSetFontHeight ((_fs * 0.75) max COMSPEC_ATAK_FontMin);
             _m ctrlSetTextColor [0.55, 0.62, 0.58, 1];
         };
         // Invite en bas : poignée et texte qui « respirent » (fondu alterné par « tick »).
         private _bar = ["COMSPEC_RscText", [_dw * 0.44, _hintY - _font * 0.45, _dw * 0.12, pixelH * 4]] call _mk;
         _bar ctrlSetBackgroundColor [0.9, 0.94, 0.91, 0.75];
         private _hint = ["COMSPEC_RscTextCenter", [0, _hintY, _dw, _font * 1.2], "Touchez ou glissez vers le haut pour déverrouiller"] call _mk;
-        _hint ctrlSetFontHeight (_fs * 0.85);
+        _hint ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
         _hint ctrlSetTextColor [0.8, 0.86, 0.82, 1];
         uiNamespace setVariable ["COMSPEC_ATAK_LockClock", [_clock, (_chips select 1) select 0, (_chips select 2) select 0, _hint, _bar]];
         // Tout l'écran déverrouille (clic, ou glissé : le relâchement sur le bouton compte comme un clic).

@@ -145,7 +145,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _card ctrlCommit 0;
             private _ph = _fs * 1.35;
             private _pill = ["COMSPEC_RscTextCenter", [_pad + _w - _pillW - _pad / 2, _y + (_h - _ph) / 2, _pillW, _ph], [["NON", "OUI"] select _on, format ["IMPOSÉ · %1", ["NON", "OUI"] select _on]] select _locked] call _mk;
-            _pill ctrlSetFontHeight (_fs * 0.85);
+            _pill ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
             _pill ctrlSetBackgroundColor ([[[0.30, 0.34, 0.32, 1], _acc] select _on, [0.55, 0.38, 0.08, 1]] select _locked);
             _pill ctrlSetTextColor ([[0.90, 0.94, 0.91, 1], [0.03, 0.05, 0.04, 1]] select (_on && {!_locked}));
             if !(_locked) then {
@@ -263,7 +263,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 if !(_primary isEqualType true) then { _primary = false; };
                 private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + _w - (_nb - _forEachIndex) * (_bwid + _pad / 3), _y + _pad / 4 + _ih * 0.15, _bwid, _ih * 0.7], _label] call _mk;
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
-                _b ctrlSetFontHeight (_fs * 0.85);
+                _b ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
                 // Bouton secondaire au même gris-vert que les barres et onglets (le bleu par défaut détonnait).
                 if !(_primary) then { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor ([[0.45, 0.5, 0.47, 1], [0.92, 0.96, 0.93, 1]] select _enabled); };
                 if (_red) then { _b ctrlSetBackgroundColor [0.78, 0.2, 0.16, 0.95]; _b ctrlSetTextColor [1, 1, 1, 1]; };
@@ -386,7 +386,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                     {
                         _x params ["_lbl", "_code", ["_state", ""], ["_tip", ""], ["_en", true]];
                         private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select (_state isEqualTo "main"), [_x0 + _forEachIndex * _bwid, _y + ([0, _lh] select _titled), _bwid - _pad / 3, _bh], _lbl] call _mk;
-                        _b ctrlSetFontHeight (_fs * 0.8);
+                        _b ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin);
                         switch (_state) do {
                             case "on": { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
                             case "red": { _b ctrlSetBackgroundColor [0.78, 0.2, 0.16, 0.95]; _b ctrlSetTextColor [1, 1, 1, 1]; };

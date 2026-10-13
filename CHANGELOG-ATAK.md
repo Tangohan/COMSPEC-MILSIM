@@ -38,6 +38,31 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Textes du téléphone plus lisibles (ATAK natif 1.75.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Des textes plus lisibles sur le téléphone
+- Les petits textes (en-têtes de section, aides, légendes, libellés des tuiles) ne descendent plus en dessous d'une taille lisible, en mode mini comme en plein écran.
+- Le texte courant des apps est un peu plus grand.
+- Réglages > Taille du texte propose maintenant « Très grand ».
+- Les libellés au-dessus des champs passent dans la même police que le reste du téléphone ; les valeurs alignées (colonnes du BFT, solution de tir) restent en police à chasse fixe.
+EN : Easier-to-read text on the phone
+- Small text (section headers, help lines, captions, tile labels) no longer drops below a readable size, in mini mode as in full screen.
+- Regular app text is slightly larger.
+- Settings > Text size now offers "Very large".
+- Labels above input fields now use the same font as the rest of the phone; aligned values (BFT columns, firing solution) keep a fixed-width font.
+
+### Détail technique
+
+Non testé en jeu. Demande de TTRD : « Améliore le font de notre application ».
+- Échelle typographique unique dans `fn_layoutGet` : `font` (corps), `fontSmall` (0,78 → 0,82 × corps), nouvelles clés `fontCaption` (0,68 × corps), `fontTitle` (1,2 ×), `fontDisplay` (1,9 ×). Planchers en pixels réels (corps 16 px, courant 15 px, légende 13 px), hors écran-texture de la tablette JPC.
+- `COMSPEC_ATAK_FontMin` (plancher des légendes, posé par `fn_layoutGet`, 0 au preInit) : les 83 `ctrlSetFontHeight` calculés sous ce seuil (`_fs * 0.66` à `_fs * 0.85`, tailles passées aux helpers, boucles d'ajustement des tuiles) sont bornés par `max COMSPEC_ATAK_FontMin`. Avant : jusqu'à ~10 px de haut sur un écran 1080p en mode mini.
+- Réglages > Taille du texte : option TRÈS GRAND (1,3), borne haute 1,25 → 1,35.
+- `ui/controls.hpp` : macros `ATAK_FONT`, `ATAK_FONT_BOLD`, `ATAK_FONT_LIGHT`, `ATAK_FONT_MONO`, `ATAK_FONT_MONO_BOLD` ; `COMSPEC_RscLabel` passe de EtelkaMonospacePro à RobotoCondensedBold ; nouvelles classes `COMSPEC_RscMono` / `COMSPEC_RscMonoRight` (en-tête de colonnes du BFT, valeurs de la solution CFF). Établi (accessoires) : PuristaBold → RobotoCondensedBold.
+- Polices du jeu uniquement (rien d'embarqué, pas de question de licence).
+- À tester en jeu : mode mini portrait et paysage en 1080p, plein écran à 60 % (#709), Réglages > Taille du texte sur les 4 valeurs ; vérifier qu'aucun libellé ne déborde (BFT, Alertes, Réglages, Drone, CFF, tuiles du lanceur).
+
 ## Langue du mod en tête des options CBA (ATAK natif 1.74.0)
 
 Non testé en jeu. Demande de TTRD : la sélection de langue dans Options des addons > COMSPEC.

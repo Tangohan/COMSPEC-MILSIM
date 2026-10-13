@@ -220,7 +220,7 @@ switch (_act) do {
         _dt ctrlSetTextColor _dimTxt;
         private _st = ["COMSPEC_RscTextRight", [_w * 0.5, _py + _font * 2.25, _w * 0.5 - _pad, _font * 1.1], ["●  ATHENA HORS LIGNE", "●  ATHENA EN LIGNE"] select _online] call _mk;
         _st ctrlSetFont "RobotoCondensedBold";
-        _st ctrlSetFontHeight (_fs * 0.82);
+        _st ctrlSetFontHeight ((_fs * 0.82) max COMSPEC_ATAK_FontMin);
         _st ctrlSetTextColor ([_dimTxt, _acc] select _online);
         private _y = _py + _cardH + _pad * 0.75;
         private _div = ["COMSPEC_RscText", [_pad, _y, _w - _pad * 2, pixelH]] call _mk;
@@ -280,12 +280,12 @@ switch (_act) do {
             _lb ctrlSetFontHeight _fs;
             _lb ctrlSetTextColor ([[0.84, 0.88, 0.86, 1], [1, 1, 1, 1]] select _on);
             private _fh = _fs;
-            while { (ctrlTextWidth _lb) > _tw * 0.94 && {_fh > _fs * 0.7} } do { _fh = _fh * 0.92; _lb ctrlSetFontHeight _fh; };
+            while { (ctrlTextWidth _lb) > _tw * 0.94 && {_fh > _fs * 0.7} } do { _fh = _fh * 0.92; _lb ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin); };
             private _stt = ["COMSPEC_RscTextCenter", [_x0, _y0 + _th * 0.71, _tw, _th * 0.2], _state] call _mk;
-            _stt ctrlSetFontHeight (_fs * 0.78);
+            _stt ctrlSetFontHeight ((_fs * 0.78) max COMSPEC_ATAK_FontMin);
             _stt ctrlSetTextColor ([_dimTxt, _accHi] select _on);
             _fh = _fs * 0.78;
-            while { (ctrlTextWidth _stt) > _tw * 0.94 && {_fh > _fs * 0.55} } do { _fh = _fh * 0.92; _stt ctrlSetFontHeight _fh; };
+            while { (ctrlTextWidth _stt) > _tw * 0.94 && {_fh > _fs * 0.55} } do { _fh = _fh * 0.92; _stt ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin); };
             private _b = ["COMSPEC_RscButtonOverlay", [_x0, _y0, _tw, _th]] call _mk;
             _b setVariable ["key", _key];
             _b ctrlSetTooltip ((format ["%1 : %2", _label, _state]) call comspec_atak_native_fnc_tr);

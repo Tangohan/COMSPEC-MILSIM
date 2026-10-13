@@ -56,7 +56,7 @@ private _mk = {
     if (_txt isNotEqualTo "") then { _c ctrlSetText ([(_txt) call comspec_atak_native_fnc_tr, _txt] select ((_cls find "Edit") >= 0)); }; // i18n:brut
     if (_bgc isNotEqualTo []) then { _c ctrlSetBackgroundColor _bgc; };
     if (_fg isNotEqualTo []) then { _c ctrlSetTextColor _fg; };
-    _c ctrlSetFontHeight ([_fh, _fs] select (_fh < 0));
+    _c ctrlSetFontHeight (([_fh, _fs] select (_fh < 0)) max COMSPEC_ATAK_FontMin);
     _c ctrlCommit 0;
     _c
 };
@@ -224,7 +224,7 @@ private _drawSolution = {
     {
         _x params ["_t", "_val"];
         ["COMSPEC_RscText", [_px + _pad + _forEachIndex * _cw, _py + _pad * 0.6, _cw, _fs], _t, [], _cDim, _fs * 0.72] call _mk;
-        private _vc = ["COMSPEC_RscLabel", [_px + _pad + _forEachIndex * _cw, _py + _pad * 0.6 + _fs, _cw, _rowH], "", [], _cValue, _font * 1.05] call _mk;
+        private _vc = ["COMSPEC_RscMono", [_px + _pad + _forEachIndex * _cw, _py + _pad * 0.6 + _fs, _cw, _rowH], "", [], _cValue, _font * 1.05] call _mk;
         _vc ctrlSetText ((_val) call comspec_atak_native_fnc_tr);
     } forEach _cells;
     // Note : intervalle vertical, dérive du vent, portée.
@@ -267,7 +267,7 @@ private _drawLog = {
         private _idx = (count _msn) - 1 - _i;
         (_msn select _idx) params ["_t", "_g", "_a", "_r", "_st"];
         private _b = [[_px + _pad, _cy + _i * _rowH * 0.95, _pw - 2 * _pad, _rowH * 0.85], format ["%1  %2  %3 x%4  %5", _t, _g, _a, _r, _st], compile format ["['recall', %1] call comspec_atak_native_fnc_firesAction;", _idx], "off"] call _btn;
-        _b ctrlSetFontHeight (_fs * 0.85);
+        _b ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
         _b ctrlSetTooltip (("Rappeler cette mission (cible, munition, coups)") call comspec_atak_native_fnc_tr);
     };
     _py + _h + _pad

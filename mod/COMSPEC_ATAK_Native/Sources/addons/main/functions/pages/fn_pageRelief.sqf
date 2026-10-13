@@ -42,7 +42,7 @@ private _box = { params ["_rect", "_rgba"]; private _c = ["COMSPEC_RscText", _re
 private _lbl = {
     params ["_cls", "_rect", "_t", ["_fh", _fs], ["_col", _cText], ["_bold", false]];
     private _c = [_cls, _rect, _t] call _mk;
-    _c ctrlSetFontHeight _fh;
+    _c ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin);
     _c ctrlSetTextColor _col;
     if (_bold) then { _c ctrlSetFont "RobotoCondensedBold"; };
     _c
@@ -65,7 +65,7 @@ private _sec = {
 private _fit = {
     params ["_c", "_w", "_fh", ["_min", 0.6]];
     private _f = _fh;
-    while { (ctrlTextWidth _c) > _w && {_f > _fh * _min} } do { _f = _f * 0.92; _c ctrlSetFontHeight _f; };
+    while { (ctrlTextWidth _c) > _w && {_f > _fh * _min} } do { _f = _f * 0.92; _c ctrlSetFontHeight ((_f) max COMSPEC_ATAK_FontMin); };
 };
 // Bouton plein : [rect, texte, code, accent ?, aide].
 private _btn = {

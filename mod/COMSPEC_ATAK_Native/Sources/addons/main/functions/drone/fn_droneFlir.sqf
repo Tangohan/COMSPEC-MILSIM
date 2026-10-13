@@ -121,7 +121,7 @@ switch (_act) do {
                 private _t = ["COMSPEC_RscStructuredText", [_tx, _ty, _tw, _th]] call _mk;
                 _t ctrlSetBackgroundColor [0, 0, 0, 0];
                 _t setVariable ["al", ["left", "right", "center"] select _al];
-                _t ctrlSetFontHeight _ts;
+                _t ctrlSetFontHeight ((_ts) max COMSPEC_ATAK_FontMin);
                 _t
             };
             if (_style isEqualTo "INSET") then { { _x ctrlShow (_forEachIndex in [0, 5]); } forEach _texts; };
@@ -137,7 +137,7 @@ switch (_act) do {
             private _edges = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]] apply { private _b = [_x, [0.95, 0.25, 0.2, 0.95]] call _bar; _b ctrlShow false; _b };
             private _lbl = ["COMSPEC_RscText", [0, 0, _w * 0.3, _fs * 0.9]] call _mk;
             _lbl ctrlSetFont "EtelkaMonospacePro";
-            _lbl ctrlSetFontHeight (_fs * ([0.7, 0.55] select (_mini || {_style isEqualTo "INSET"})));
+            _lbl ctrlSetFontHeight ((_fs * ([0.7, 0.55] select (_mini || {_style isEqualTo "INSET"}))) max COMSPEC_ATAK_FontMin);
             _lbl ctrlSetTextColor [0.95, 0.25, 0.2, 1];
             _lbl ctrlShow false;
             _boxes pushBack [_edges, _lbl];

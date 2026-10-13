@@ -2,6 +2,8 @@
 private _perfT0 = diag_tickTime;
 uiNamespace setVariable ["COMSPEC_ATAK_PerfPreInitAt", diag_tickTime];
 COMSPEC_ATAK_UI_GENERATION = "native-rsc-v1";
+// Plancher des petites tailles de texte, recalculé par fn_layoutGet (0 tant qu'aucun écran n'est dessiné).
+COMSPEC_ATAK_FontMin = 0;
 // Constantes posées par chaque machine (preInit tourne partout) : rien à diffuser. En public, chaque arrivée
 // renvoyait les deux valeurs à tous les joueurs et à la file JIP.
 missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION];

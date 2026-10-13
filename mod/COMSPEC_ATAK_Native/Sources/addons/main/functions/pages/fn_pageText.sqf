@@ -70,7 +70,7 @@ if (_n > 0) then {
     {
         _x params ["_label", "_code"];
         private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * (_bw2 + _pad), _bh - _rowH - _pad, _bw2, _rowH], _label] call comspec_atak_native_fnc_pageCtrl;
-        _b ctrlSetFontHeight (_l get "fontSmall");
+        _b ctrlSetFontHeight ((_l get "fontSmall") max COMSPEC_ATAK_FontMin);
         _b ctrlAddEventHandler ["ButtonClick", _code];
     } forEach _buttons;
 };
