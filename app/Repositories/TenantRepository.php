@@ -216,6 +216,7 @@ class TenantRepository
     {
         $stmt = $this->pdo()->prepare('UPDATE tenants SET name = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$name, $tenantId]);
+        \App\Services\Moderation\NameModerationService::afterSave('tenant', $tenantId, $tenantId, $name);
     }
 
     public function getTenantType(int $tenantId): string
@@ -281,7 +282,10 @@ class TenantRepository
             $stmt->execute([$name, $slug, $planSlug]);
         }
 
-        return (int) $this->pdo()->lastInsertId();
+        $tenantId = (int) $this->pdo()->lastInsertId();
+        \App\Services\Moderation\NameModerationService::afterSave('tenant', $tenantId, $tenantId, $name, true);
+
+        return $tenantId;
     }
 
     public function setOwner(int $tenantId, int $ownerUserId): void

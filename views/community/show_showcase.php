@@ -570,7 +570,7 @@ if ($showcaseBackUrl === '') {
         <span class="cl-nav__mark" aria-hidden="true"><?= htmlspecialchars($nameInitials) ?></span>
         <?php endif; ?>
         <div class="cl-nav__titles">
-          <div class="cl-nav__name"><?= htmlspecialchars($name) ?></div>
+          <div class="cl-nav__name"><?= name_blur_html($name) ?></div>
           <div class="cl-nav__sub"><?= htmlspecialchars(mb_strtoupper($navSub)) ?></div>
         </div>
       </div>
@@ -631,7 +631,7 @@ if ($showcaseBackUrl === '') {
         <div class="cl-pill cl-pill--live"><span class="cl-pulse" aria-hidden="true"></span><span><?= htmlspecialchars(mb_strtoupper($accessLabel)) ?></span></div>
         <?php endif; ?>
 
-        <h1 id="cl-hero-title" class="cl-hero__title"><?= nl2br(htmlspecialchars($heroHeadline)) ?></h1>
+        <h1 id="cl-hero-title" class="cl-hero__title"><?= nl2br(name_blur_html($heroHeadline)) ?></h1>
         <?php if ($heroLead !== '' && $heroLead !== $heroHeadline): ?>
         <p class="cl-hero__lead"><?= nl2br(htmlspecialchars($heroLead)) ?></p>
         <?php endif; ?>
@@ -791,7 +791,7 @@ if ($showcaseBackUrl === '') {
     <section id="presentation" class="cl-about cl-rise" aria-labelledby="cl-about-title">
       <div class="cl-about__text">
         <p class="cl-kicker">Qui nous sommes</p>
-        <h2 id="cl-about-title" class="cl-h2"><?= htmlspecialchars($aboutTitle) ?></h2>
+        <h2 id="cl-about-title" class="cl-h2"><?= name_blur_html($aboutTitle) ?></h2>
         <?php if ($aboutBody !== ''): ?>
         <p class="cl-prose"><?= nl2br(htmlspecialchars($aboutBody)) ?></p>
         <?php endif; ?>
@@ -1048,7 +1048,7 @@ if ($showcaseBackUrl === '') {
           <?php else: ?>
           <div class="cl-unit__code"><?= htmlspecialchars(mb_strtoupper((string) ($unit['type'] ?? 'Unité'))) ?></div>
           <?php endif; ?>
-          <h3 class="cl-unit__name"><?= htmlspecialchars((string) ($unit['name'] ?? '')) ?></h3>
+          <h3 class="cl-unit__name"><?= name_blur_html((string) ($unit['name'] ?? '')) ?></h3>
           <?php if ($blurb !== ''): ?>
           <p class="cl-unit__desc"><?= nl2br(htmlspecialchars($blurb)) ?></p>
           <?php elseif ($cmdName !== ''): ?>
@@ -1520,7 +1520,7 @@ if ($showcaseBackUrl === '') {
           <?php elseif ($primaryCta === 'contacter'): ?>
             Une question ? Contactez-nous
           <?php else: ?>
-            <?= htmlspecialchars($name) ?>
+            <?= name_blur_html($name) ?>
           <?php endif; ?>
         </h2>
         <p class="cl-cta__lead">
@@ -1576,7 +1576,7 @@ if ($showcaseBackUrl === '') {
 
   <footer class="cl-footer">
     <div class="cl-footer__inner">
-      <div class="cl-footer__brand"><?= htmlspecialchars(mb_strtoupper($name)) ?> · Propulsé par Athena</div>
+      <div class="cl-footer__brand"><?= name_blur_html(mb_strtoupper($name)) ?> · Propulsé par Athena</div>
       <div class="cl-footer__links">
         <a href="<?= htmlspecialchars(url('communities')) ?>">Registre</a>
         <a href="<?= htmlspecialchars(url('mentions-legales')) ?>">Mentions légales</a>
@@ -1591,7 +1591,7 @@ if ($showcaseBackUrl === '') {
   <div class="cl-sticky-cta" data-cl-sticky-cta hidden>
     <div class="cl-sticky-cta__inner">
       <div class="cl-sticky-cta__copy">
-        <p class="cl-sticky-cta__kicker"><?= htmlspecialchars(mb_strtoupper($name)) ?></p>
+        <p class="cl-sticky-cta__kicker"><?= name_blur_html(mb_strtoupper($name)) ?></p>
         <p class="cl-sticky-cta__title"><?= htmlspecialchars((string) ($ctaPrimaryLabel ?? 'Rejoindre')) ?></p>
       </div>
       <a href="<?= htmlspecialchars((string) $ctaPrimaryHref) ?>" class="cl-btn cl-btn--accent comspec-analytics-cta" data-comspec-zone="vitrine_sticky" data-comspec-cta="<?= htmlspecialchars((string) $primaryCta) ?>"><?= htmlspecialchars(mb_strtoupper((string) ($ctaPrimaryLabel ?? 'Rejoindre'))) ?></a>

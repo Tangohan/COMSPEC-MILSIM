@@ -92,6 +92,7 @@ $platformNav = [
     ['key' => 'moderation', 'label' => 'Modération & sécurité', 'items' => [
         ['path' => 'admin/system/blocklist', 'label' => 'Liste de restriction', 'icon' => 'ban', 'access' => 'system', 'desc' => 'E-mails et réseaux bloqués sur tout le site'],
         ['path' => 'admin/system/member-sanctions', 'label' => 'Sanctions du site', 'icon' => 'gavel', 'access' => 'system', 'desc' => 'Restrictions de compte, forum, messagerie'],
+        ['path' => 'admin/system/noms-inappropries', 'label' => 'Noms inappropriés', 'icon' => 'flag', 'access' => 'system', 'desc' => 'Mots floutés dans les noms d’unités, alertes à traiter'],
     ]],
     ['key' => 'communication', 'label' => 'Communication', 'items' => [
         ['path' => 'admin/system/alerts', 'label' => 'Alertes plateforme', 'icon' => 'megaphone', 'access' => 'hub', 'desc' => 'Bandeaux et annonces sur le portail'],

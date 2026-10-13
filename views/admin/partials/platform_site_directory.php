@@ -55,6 +55,7 @@ $item = static function (string $href, string $title, string $desc) use ($h): vo
                 $item(url('admin/site-roles'), 'Affectations rôles site', 'Qui tient un rôle plateforme');
                 $item(url('admin/system/blocklist'), 'Liste de restriction', 'Blocages sur tout le site');
                 $item(url('admin/system/member-sanctions'), 'Sanctions du site', 'Mesures, toutes communautés');
+                $item(url('admin/system/noms-inappropries'), 'Noms inappropriés', 'Mots floutés, alertes de noms');
                 $item(url('admin/system/advanced-fiche-edit'), 'Édition avancée de fiche', 'Modification exceptionnelle');
                 ?>
             </ul>

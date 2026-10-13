@@ -2444,6 +2444,15 @@ class Container
                 self::get(\App\Repositories\TenantRepository::class),
             ),
             \App\Repositories\PlatformReviewRepository::class => new \App\Repositories\PlatformReviewRepository(),
+            \App\Repositories\NameFilterRepository::class => new \App\Repositories\NameFilterRepository(),
+            \App\Services\Moderation\NameModerationService::class => new \App\Services\Moderation\NameModerationService(
+                self::get(\App\Repositories\NameFilterRepository::class),
+            ),
+            \App\Controllers\Admin\System\SystemNameFilterController::class => new \App\Controllers\Admin\System\SystemNameFilterController(
+                self::get(\App\Repositories\NameFilterRepository::class),
+                self::get(\App\Services\Moderation\NameModerationService::class),
+                self::get(\App\Services\Audit\AuditService::class),
+            ),
             \App\Controllers\Api\PlatformReviewApiController::class => new \App\Controllers\Api\PlatformReviewApiController(
                 self::get(AuthService::class),
                 self::get(\App\Repositories\PlatformReviewRepository::class),

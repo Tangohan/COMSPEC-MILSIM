@@ -1316,6 +1316,9 @@ if (!function_exists('back_office_nav_permission_rules')) {
             'admin/system/avis-plateforme' => [
                 'any_permissions' => ['admin.system'],
             ],
+            'admin/system/noms-inappropries' => [
+                'any_permissions' => ['admin.system'],
+            ],
             'back-office/organisation/catalogue' => [
                 'any_permissions' => [
                     'organization.catalog.manage', 'organization.orbat.manage',
@@ -2115,7 +2118,23 @@ if (!function_exists('community_display_name')) {
             return 'Pas d\'organisation';
         }
 
-        return (string) ($tenantOrMembershipRow['name'] ?? '');
+        return name_mask_text((string) ($tenantOrMembershipRow['name'] ?? ''));
+    }
+}
+
+if (!function_exists('name_mask_text')) {
+    /** Nom de communauté ou d’unité avec les mots inappropriés remplacés par « • » (texte brut). */
+    function name_mask_text(string $name): string
+    {
+        return \App\Services\Moderation\NameModerationService::maskText($name);
+    }
+}
+
+if (!function_exists('name_blur_html')) {
+    /** HTML échappé d’un nom de communauté ou d’unité, mots inappropriés floutés. */
+    function name_blur_html(string $name): string
+    {
+        return \App\Services\Moderation\NameModerationService::blurHtml($name);
     }
 }
 

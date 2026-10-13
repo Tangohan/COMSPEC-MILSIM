@@ -132,4 +132,6 @@ final class AuditAction
 
     public const PLATFORM_TRANSLATION_ACCEPTED = 'platform.translation_accepted';
     public const PLATFORM_TRANSLATION_DECLINED = 'platform.translation_declined';
+    public const PLATFORM_NAME_FILTER_UPDATED = 'platform.name_filter_updated';
+    public const PLATFORM_NAME_ALERT_RESOLVED = 'platform.name_alert_resolved';
 }

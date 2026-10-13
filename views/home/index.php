@@ -403,7 +403,7 @@ $kpisShown = array_values(array_filter($kpis, static fn (array $k): bool => $k['
                                 <span class="hi-unit__initials who-item__initials" aria-hidden="true"><?= $e($initials) ?></span>
                                 <?php endif; ?>
                                 <span class="min-w-0">
-                                    <span class="hi-unit__name"><?= $e($unitName) ?></span>
+                                    <span class="hi-unit__name"><?= name_blur_html($unitName) ?></span>
                                     <span class="hi-unit__meta"><?= $e(__('home.public_sheet')) ?></span>
                                 </span>
                             </a>
