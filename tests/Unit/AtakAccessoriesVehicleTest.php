@@ -7,7 +7,7 @@ namespace Tests\Unit;
 use PHPUnit\Framework\TestCase;
 
 /**
- * ATAK natif : accessoires (batterie externe, balise IR, filtre d'écran JVN), sécurité en cas de capture
+ * ATAK natif : accessoires (batterie externe, filtre d'écran JVN ; plus de balise IR), sécurité en cas de capture
  * (effacement d'urgence, téléphone extractible), modèles de téléphone, tablette des véhicules et passerelles.
  */
 final class AtakAccessoriesVehicleTest extends TestCase
@@ -22,7 +22,7 @@ final class AtakAccessoriesVehicleTest extends TestCase
     public function testFunctionsAndItemsAreRegistered(): void
     {
         $cfg = $this->read(self::MAIN . '/config.cpp');
-        foreach (['powerBank', 'irBeacon', 'screenGlow', 'phoneSecurity'] as $fn) {
+        foreach (['powerBank', 'screenGlow', 'phoneSecurity'] as $fn) {
             self::assertStringContainsString('class ' . $fn . ' {};', $cfg, $fn);
             self::assertFileExists(dirname(__DIR__, 2) . '/' . self::MAIN . '/functions/shell/fn_' . $fn . '.sqf');
         }
@@ -39,20 +39,20 @@ final class AtakAccessoriesVehicleTest extends TestCase
             self::assertFileExists($data . $pic . '.paa');
         }
         self::assertFileExists($data . 'back_powerbank.paa');
+        // Balise IR intégrée à la coque retirée (irréaliste) : ni fonction, ni objet.
+        self::assertStringNotContainsString('irBeacon', $cfg);
+        self::assertFileDoesNotExist(dirname(__DIR__, 2) . '/' . self::MAIN . '/functions/shell/fn_irBeacon.sqf');
     }
 
-    public function testPowerBankAndIrBeaconUseThePhoneBattery(): void
+    public function testPowerBankUsesThePhoneBattery(): void
     {
         $bat = $this->read(self::MAIN . '/functions/core/fn_battery.sqf');
         self::assertStringContainsString('["rate", [_dt, _level]] call comspec_atak_native_fnc_powerBank', $bat);
-        self::assertStringContainsString('_f pushBack ["Balise IR", 0.08]', $bat);
+        self::assertStringNotContainsString('Balise IR', $bat);
         $pb = $this->read(self::MAIN . '/functions/shell/fn_powerBank.sqf');
         self::assertStringContainsString('player removeItem _item;', $pb);
-        $ir = $this->read(self::MAIN . '/functions/shell/fn_irBeacon.sqf');
-        self::assertStringContainsString('"ACE_IR_Strobe_Effect"', $ir);
-        self::assertStringContainsString('"B_IRStrobe"', $ir);
         $client = $this->read(self::MAIN . '/XEH_postInitClient.sqf');
-        self::assertStringContainsString('["tick"] call comspec_atak_native_fnc_irBeacon;', $client);
+        self::assertStringNotContainsString('comspec_atak_native_fnc_irBeacon', $client);
         self::assertStringContainsString('["tick"] call comspec_atak_native_fnc_screenGlow;', $client);
         self::assertStringContainsString('["tick"] call comspec_atak_native_fnc_phoneSecurity;', $client);
     }

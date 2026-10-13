@@ -5,7 +5,7 @@
     quand le signal est faible, brouilleur actif. Réglages serveur : autonomie écran en main comspec_atak_native_battery_hours
     (3 h par défaut, tous les usages suivent la même proportion), charge de départ comspec_atak_native_battery_start,
     recharge en véhicule comspec_atak_native_battery_vehicle.
-    Recharge à bord d'un véhicule moteur allumé ou par la batterie externe (fn_powerBank) ; balise IR alimentée par le téléphone. Alertes à 20 % et 5 % ; à 0 % le téléphone s'éteint (animation fn_powerFx)
+    Recharge à bord d'un véhicule moteur allumé ou par la batterie externe (fn_powerBank) . Alertes à 20 % et 5 % ; à 0 % le téléphone s'éteint (animation fn_powerFx)
     et reste inutilisable jusqu'à la recharge ou au changement de batterie (fn_batterySwap).
     Appelée chaque seconde écran ouvert (barre d'état) et toutes les 10 s sinon. Retourne le niveau 0–100.
     Détail de la dernière mesure : missionNamespace COMSPEC_ATAK_BatteryInfo = [% consommé par minute (négatif = recharge), [[facteur, % / min]...]].
@@ -45,8 +45,6 @@ if ((_lq getOrDefault ["sim", true]) && {(_lq getOrDefault ["bars", 4]) <= 1}) t
 if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap])) > 0) then { _f pushBack ["Guidage GPS", 0.25]; };
 private _uid = getPlayerUID player;
 private _t = [time, serverTime] select isMultiplayer;
-// Balise IR de la coque (fn_irBeacon) : alimentée par le téléphone.
-if (missionNamespace getVariable ["COMSPEC_ATAK_IrOn", false]) then { _f pushBack ["Balise IR", 0.08]; };
 if (((missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) findIf { _x isEqualType [] && {(_x param [2, ""]) isEqualTo _uid} && {(_x param [4, 1e9]) > _t} }) >= 0) then { _f pushBack ["Brouilleur", 0.8]; };
 private _rate = 0;
 { _rate = _rate + (_x select 1); } forEach _f;

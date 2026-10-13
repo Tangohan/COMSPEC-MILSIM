@@ -1,9 +1,9 @@
 /*
     App Accessoires : un établi, pas une liste. Le téléphone vu de dos (même rendu que « Voir l'arrière », fn_backView :
-    phone_back*.paa selon le modèle et la coque, batterie externe et antenne en calque) au centre, entouré de six
-    emplacements reliés à leur point de fixation par un trait fin : antenne (port SMA), balise IR, batterie de rechange,
+    phone_back*.paa selon le modèle et la coque, batterie externe et antenne en calque) au centre, entouré de cinq
+    emplacements reliés à leur point de fixation par un trait fin : antenne (port SMA), batterie de rechange,
     module DL-7, filtre d'écran JVN, batterie externe (plaque). Toucher un emplacement ouvre un tiroir : objets compatibles
-    de l'inventaire (FIXER), RETIRER si monté, actions propres (allumer la balise, changer la batterie…).
+    de l'inventaire (FIXER), RETIRER si monté, actions propres (changer la batterie, ouvrir Extraction…).
     Données et actions : fn_accessoriesAction. Params (fn_pageRender, module) : [page, [x, y, largeur, hauteur]]
 */
 params [["_page", "ACCESSORIES"], ["_rect", []]];
@@ -57,7 +57,7 @@ private _headH = _fs * 1.9;
 private _hintH = _fs * 1.5;
 [[_pad, _bh - _hintH, _bw - 2 * _pad, _hintH], format ["<t align='center' size='%1' color='#6d7a74'>Touchez un emplacement pour fixer ou retirer un accessoire</t>", _k * 0.75]] call _txt;
 
-// Disposition : portrait = 3 emplacements au-dessus et 3 au-dessous ; paysage = 3 à gauche et 3 à droite.
+// Disposition : portrait = 3 emplacements au-dessus et 2 au-dessous ; paysage = 3 à gauche et 2 à droite.
 private _portrait = _bh > _bw * 1.1;
 private _top = _pad * 0.5 + _headH + _pad * 0.5;
 private _bottom = _bh - _hintH - _pad * 0.5;
@@ -67,17 +67,18 @@ private _attach = [];  // point de départ du trait sur l'emplacement
 private _order = [];
 private _ix = 0; private _iy = 0; private _iw = 0; private _ih = 0;
 if (_portrait) then {
-    _order = ["spare", "ir", "antenna", "dl7", "filter", "powerbank"];
+    _order = ["spare", "antenna", "dl7", "filter", "powerbank"];
     private _sw = (_bw - 4 * _pad) / 3;
     private _sh = _fs * 5.4;
     private _yTop = _top;
     private _yBot = _bottom - _sh;
-    for "_i" from 0 to 5 do {
-        private _c = _i mod 3;
-        private _bx = _pad + _c * (_sw + _pad);
-        private _by = [_yTop, _yBot] select (_i > 2);
+    for "_i" from 0 to 4 do {
+        private _low = _i > 2;
+        // Rangée du bas : deux emplacements centrés.
+        private _bx = if (_low) then { (_bw - 2 * _sw - _pad) / 2 + (_i - 3) * (_sw + _pad) } else { _pad + _i * (_sw + _pad) };
+        private _by = [_yTop, _yBot] select _low;
         _boxes pushBack [_bx, _by, _sw, _sh];
-        _attach pushBack [_bx + _sw / 2, [_by + _sh, _by] select (_i > 2)];
+        _attach pushBack [_bx + _sw / 2, [_by + _sh, _by] select _low];
     };
     // Coque : texture carrée, la coque n'en occupe que la bande du milieu (environ 640-1410 px de haut).
     private _zone = (_yBot - _pad) - (_yTop + _sh + _pad);
@@ -87,16 +88,16 @@ if (_portrait) then {
     _ix = (_bw - _iw) / 2;
     _iy = (_yTop + _sh + _yBot) / 2 - _ih * 1024 / 2048;
 } else {
-    _order = ["spare", "dl7", "filter", "antenna", "ir", "powerbank"];
+    _order = ["spare", "dl7", "filter", "antenna", "powerbank"];
     private _sw = _bw * 0.27;
     private _sh = ((_bottom - _top - 2 * _pad) / 3) min (_fs * 5.4);
     private _span = 3 * _sh + 2 * _pad;
     private _y0 = _top + ((_bottom - _top) - _span) / 2;
-    for "_i" from 0 to 5 do {
-        private _r = _i mod 3;
+    for "_i" from 0 to 4 do {
         private _right = _i > 2;
+        // Colonne de droite : deux emplacements centrés en hauteur.
+        private _by = if (_right) then { _y0 + (_sh + _pad) / 2 + (_i - 3) * (_sh + _pad) } else { _y0 + _i * (_sh + _pad) };
         private _bx = [_pad, _bw - _pad - _sw] select _right;
-        private _by = _y0 + _r * (_sh + _pad);
         _boxes pushBack [_bx, _by, _sw, _sh];
         _attach pushBack [[_bx + _sw, _bx] select _right, _by + _sh / 2];
     };

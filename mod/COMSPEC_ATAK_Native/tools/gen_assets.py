@@ -181,7 +181,6 @@ ICONS = {
     "qs_airplane": '<path d="M12 2.5c.9 0 1.5.8 1.5 1.8V9l7.5 4.5v2L13.5 13v4.6l2.5 1.9V21L12 20l-4 1v-1.5l2.5-1.9V13L3 15.5v-2L10.5 9V4.3c0-1 .6-1.8 1.5-1.8z"/>',
     "qs_silent": '<path d="M6 16.5V11a6 6 0 0 1 9.8-4.6M18 10.5v6l1.5 2H8"/><path d="M10 20.5a2 2 0 0 0 4 0"/><path d="M3.5 3.5l17 17"/>',
     "qs_bt": '<path d="M7 7.5l10 9-5 4.5V3l5 4.5-10 9"/>',
-    "qs_ir": '<path d="M9 21h6M10 21V11h4v10"/><rect x="9" y="7" width="6" height="4" rx="1"/><path d="M12 2v2.5M5.5 4.5l1.8 1.8M18.5 4.5l-1.8 1.8M3.5 10h2M18.5 10h2"/>',
     "qs_battery": '<rect x="7" y="4.5" width="10" height="17" rx="1.6"/><path d="M10 2.5h4"/><path d="M9.5 15h5M9.5 18h5" stroke-width="2.2"/>',
     "qs_sun": '<circle cx="12" cy="12" r="4.2"/><path d="M12 1.8v2.6M12 19.6v2.6M1.8 12h2.6M19.6 12h2.6M4.8 4.8l1.8 1.8M17.4 17.4l1.8 1.8M4.8 19.2l1.8-1.8M17.4 6.6l1.8-1.8"/>',
     "qs_sun_low": '<circle cx="12" cy="12" r="3.6"/><path d="M12 5.5v1.2M12 17.3v1.2M5.5 12h1.2M17.3 12h1.2M7.4 7.4l.9.9M15.7 15.7l.9.9M7.4 16.6l.9-.9M15.7 8.3l.9-.9"/>',
@@ -1215,12 +1214,6 @@ def phone_back(src):
     panel = os.path.join(RENDER_DIR, "back_panel.png")
     if os.path.exists(panel):
         front.alpha_composite(Image.open(panel).convert("RGBA"))
-        # Balise IR vissée entre la plaque et les nervures (render_3d.render_irbeacon, rendu au double).
-        ir = os.path.join(RENDER_DIR, "irbeacon.png")
-        if os.path.exists(ir):
-            b = Image.open(ir).convert("RGBA")
-            b = b.resize((b.width // 2, b.height // 2), Image.LANCZOS)
-            front.alpha_composite(_soft_edges(b), (IR_POS[0] - b.width // 2, IR_POS[1] - b.height // 2))
         return front
     p = []
     p.append('<defs>'
@@ -1285,8 +1278,7 @@ def back_variants(tmp):
     vest_phone_atlas(back, tmp)
 
 
-# --- Accessoires vus de dos : batterie externe sur la plaque (calque), balise IR (dans la texture du dos) ---
-IR_POS = (1327, 776)
+# --- Accessoires vus de dos : batterie externe sur la plaque (calque) ---
 PLATE_C = (1025, 1020)
 
 
