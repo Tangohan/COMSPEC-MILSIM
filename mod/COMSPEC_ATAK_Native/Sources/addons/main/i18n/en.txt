@@ -3045,6 +3045,7 @@
 ["Deux %1 de COMSPEC ATAK sont chargés (%2 copies). Supprimez l'ancien (ex. Addons\comspec_atak_native_%1 ou un dossier @ en double) et relancez Arma.", "Two COMSPEC ATAK %1 files are loaded (%2 copies). Delete the old one (e.g. Addons\comspec_atak_native_%1 or a duplicate @ folder) and restart Arma."],
 ["Deux appuis : alerte de détresse à tout le camp", "Two presses: distress alert to the whole side"],
 ["deux appuis pour éviter les fausses alertes", "two presses to avoid false alarms"],
+["Alerte l'ensemble des opérateurs de votre détresse. Il est nécessaire d'appuyer deux fois d'affilée pour valider l'envoi.", "Alerts all operators of your distress. You must press twice in a row to confirm sending."],
 ["Deux appuis pour éviter les fausses alertes. Raccourci à choisir dans les touches CBA, catégorie COMSPEC ATAK.", "Two presses to avoid false alerts. Pick a shortcut in the CBA keybinds, category COMSPEC ATAK."],
 ["Deux caisses supplémentaires ce soir.", "Two additional crates tonight."],
 ["Devices liés: %1", "Linked devices: %1"],
