@@ -1,7 +1,8 @@
 /*
     Calque Wave Relay sur la carte (appelé depuis mapOnDraw), réglage profil COMSPEC_ATAK_MeshOnMap :
     - couverture réseau calculée (fn_relayNet "coverage") : vert débit fort, jaune, orange, rouge faible, gris zone blanche ;
-    - relais (antenne, nom, portée) et passerelles de véhicule ou PC mobiles, relais détruits barrés en gris ;
+    - relais (antenne, nom, portée, débit, saturation, batterie) et passerelles de véhicule ou PC mobiles ; relais hors
+      service en gris avec la raison (détruit barré) ; répéteurs reliés en pointillé au relais qui les raccorde ;
     - liens du maillage entre téléphones, vert au-dessus de 60 %, orange au-dessus de 30 %, rouge en dessous.
     Toujours affichées (même calque masqué) : les triangulations récentes (fn_relayNet "locate"), cercles de distance
     estimée depuis chaque source et zone d'incertitude autour de la position trouvée, pâlissant sur 10 min.
@@ -38,23 +39,40 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false]) then {
             _map drawRectangle [_p, _a, _a, 0, _col, _fill];
         } forEach _cells;
     };
-    // Relais et passerelles, même hors du maillage (aucun téléphone à portée) : icône, nom, portée.
+    // Relais et passerelles, même hors du maillage (aucun téléphone à portée) : icône, nom, portée, état.
+    // Hors service (détruit, éteint, batterie vide, brouillé, sans liaison) : gris, raison en clair, détruit barré.
+    // Répéteur : trait pointillé vers le relais qui le raccorde au réseau.
+    private _rl = ["list"] call comspec_atak_native_fnc_relayNet;
     {
-        _x params ["_o", "_ap", "_name", "_kind", "_rng", "_mb", "_ok"];
+        _x params ["_o", "_ap", "_name", "_kind", "_rng", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "", "_up"];
         private _p = getPosASLVisual _o;
         if (!_ok) then {
-            _map drawIcon ["\A3\ui_f\data\map\mapcontrol\transmitter_CA.paa", [0.5, 0.5, 0.5, 0.9], _p, 20, 20, 0, format ["%1 (détruit)", _name], 1, 0.026 * _ts, "RobotoCondensed", "right"];
-            _map drawLine [_p getPos [_r * 1.5, 45], _p getPos [_r * 1.5, 225], [0.9, 0.25, 0.2, 0.9]];
+            _map drawIcon ["\A3\ui_f\data\map\mapcontrol\transmitter_CA.paa", [0.5, 0.5, 0.5, 0.9], _p, 20, 20, 0, format ["%1 (%2)", _name, _st], 1, 0.026 * _ts, "RobotoCondensed", "right"];
+            if (_st isEqualTo "détruit") then { _map drawLine [_p getPos [_r * 1.5, 45], _p getPos [_r * 1.5, 225], [0.9, 0.25, 0.2, 0.9]]; };
+            if (_st in ["éteint", "batterie vide", "brouillé", "sans liaison"]) then { _map drawEllipse [_p, _rng, _rng, 0, [0.5, 0.5, 0.5, 0.35], ""]; };
             continue;
         };
+        if (!isNull _up) then {
+            private _q = getPosASLVisual _up;
+            private _len = _p distance2D _q;
+            private _dir = _p getDir _q;
+            for "_k" from 0 to (floor (_len / (_r * 3))) step 2 do {
+                _map drawLine [_p getPos [_k * _r * 3, _dir], _p getPos [((_k + 1) * _r * 3) min _len, _dir], [0.28, 0.70, 1, 0.8]];
+            };
+        };
+        private _sat = _sl > 0 && {_u > _sl};
+        private _col = [[0.28, 0.70, 1, 1], [1, 0.65, 0.2, 1]] select (_sat || {_bt >= 0 && {_bt < 20}});
         _map drawEllipse [_p, _rng, _rng, 0, [0.28, 0.70, 1, 0.45], ""];
         private _icon = switch (_kind) do {
             case "cp": { "\A3\ui_f\data\map\markers\nato\b_hq.paa" };
             case "gw": { "\A3\ui_f\data\map\markers\nato\b_motor_inf.paa" };
             default { "\A3\ui_f\data\map\mapcontrol\transmitter_CA.paa" };
         };
-        _map drawIcon [_icon, [0.28, 0.70, 1, 1], _p, 22, 22, 0, format ["%1 · %2 km · %3 Mbit/s", _name, (_rng / 1000) toFixed 1, round _mb], 1, 0.026 * _ts, "RobotoCondensedBold", "right"];
-    } forEach (["list"] call comspec_atak_native_fnc_relayNet);
+        private _extra = "";
+        if (_sat) then { _extra = _extra + format [" · saturé %1/%2", _u, _sl]; };
+        if (_bt >= 0) then { _extra = _extra + format [" · batt. %1 %%", round _bt]; };
+        _map drawIcon [_icon, _col, _p, 22, 22, 0, format ["%1 · %2 km · %3 Mbit/s%4", _name, (_rng / 1000) toFixed 1, _mb toFixed 1, _extra], 1, 0.026 * _ts, "RobotoCondensedBold", "right"];
+    } forEach _rl;
     // Le calcul (lignes de vue entre antennes) est mis en cache 3 s par l'action « scan ».
     private _mesh = ["scan"] call comspec_atak_native_fnc_waveRelayAction;
     private _nodes = _mesh getOrDefault ["nodes", []];

@@ -2,8 +2,8 @@
     App Réseau : chemin de la liaison (téléphone → porteur → COMSPEC Link → Athena) en schéma, indicateurs en tuiles,
     passerelles, relais et postes de commandement proches (celle utilisée marquée CONNECTÉ, la raison pour les autres),
     puis zone radio, débit simulé (fn_linkQuality) et état du téléphone (fn_deviceHealth, fn_deviceReport).
-    Données : fn_linkQuality, fn_vehicleGateway, fn_vehicleTerminal, fn_waveRelayAction (maillage), relais Overwatch
-    (COMSPEC_AtakRelays, comspec_overwatch_connect_fnc_getNearestAtakRelay), fn_antenna, état du câble DL-7 et de la
+    Données : fn_linkQuality, fn_relayNet (relais de mission, passerelles de véhicule, état, places, batterie),
+    fn_vehicleTerminal, fn_waveRelayAction (maillage), fn_antenna, état du câble DL-7 et de la
     Liaison allié. Rafraîchie toutes les 5 s tant qu'elle est affichée.
 */
 disableSerialization;
@@ -124,32 +124,28 @@ private _phoneSt = switch (true) do {
 private _nodes = [];
 _nodes pushBack ["Téléphone", _lq get "label", _phoneSub joinString " · ", _phoneSt, _lq get "bars", "\z\comspec_atak_native\addons\main\data\item_phone.paa"];
 // 2. Porteur : passerelle de véhicule / PC mobile, relais Overwatch, maillage via équipiers, ou direct.
-private _gw = ["nearest"] call comspec_atak_native_fnc_vehicleGateway;
-private _relay = if (_bridge && {!isNil "comspec_overwatch_connect_fnc_getNearestAtakRelay"}) then { [] call comspec_overwatch_connect_fnc_getNearestAtakRelay } else { createHashMap };
-if !(_relay isEqualType createHashMap) then { _relay = createHashMap; };
-private _relayOk = (count _relay) > 0 && {_relay getOrDefault ["in_range", false]} && {_relay getOrDefault ["alive", true]};
+private _best = ["best"] call comspec_atak_native_fnc_relayNet;
+private _req = (missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]) || {missionNamespace getVariable ["COMSPEC_ATAK_RelaysRequired", false]};
 private _mesh = ["scan"] call comspec_atak_native_fnc_waveRelayAction;
 private _hops = (_mesh getOrDefault ["hops", [-1]]) param [_mesh getOrDefault ["me", 0], -1];
 private _term = [player] call comspec_atak_native_fnc_vehicleTerminal;
-private _activeObj = objNull;
+private _activeObj = _best param [0, objNull];
 private _bearer = switch (true) do {
-    case (_gw isNotEqualTo [] && {!_relayOk || {(_gw select 3) >= (_relay getOrDefault ["throughput_mbps", 0])}}): {
-        _gw params ["_o", "_d", "_r", "_mb", "_m", "_n"];
-        _activeObj = _o;
-        [["Passerelle véhicule", "Poste de commandement"] select (_m isEqualTo "cp"), [_n] call _esc, format ["%1 / %2 · %3 Mbit/s", [_d] call _dist, [_r] call _dist, _mb], "ok", [1 - (_d / (_r max 1)) ^ 2] call _qBars, ["\z\comspec_atak_native\addons\main\data\app_network.paa", "\z\comspec_atak_native\addons\main\data\app_c2.paa"] select (_m isEqualTo "cp")]
-    };
-    case (_relayOk): {
-        _activeObj = _relay getOrDefault ["obj", objNull];
-        private _d = _relay getOrDefault ["dist", 0];
-        private _r = _relay getOrDefault ["range", 1];
-        ["Relais radio", [_relay getOrDefault ["name", "Relais"]] call _esc, format ["%1 / %2 · %3 Mbit/s · fiabilité %4 %%", [_d] call _dist, [_r] call _dist, (_relay getOrDefault ["throughput_mbps", 0]) toFixed 1, round (_relay getOrDefault ["reliability_pct", 0])],
-            ["ok", "warn"] select ((_relay getOrDefault ["reliability_pct", 100]) < 50), [1 - (_d / (_r max 1)) ^ 2] call _qBars, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"]
+    case (_best isNotEqualTo []): {
+        _best params ["_o", "_n", "_d", "_mb", "_ls", "_k", "_eff", "_u", "_sl", "_bt"];
+        private _extra = [];
+        if (_sl > 0) then { _extra pushBack format ["%1/%2 places", _u, _sl]; };
+        if (_bt >= 0) then { _extra pushBack format ["batterie %1 %%", round _bt]; };
+        [createHashMapFromArray [["relay", "Relais radio"], ["gw", "Passerelle véhicule"], ["cp", "Poste de commandement"]] getOrDefault [_k, "Relais radio"], [_n] call _esc,
+            format ["%1 / %2 · %3 Mbit/s%4", [_d] call _dist, [_eff] call _dist, _mb toFixed 1, ["", " · " + (_extra joinString " · ")] select (_extra isNotEqualTo [])],
+            ["ok", "warn"] select (_sl > 0 && {_u > _sl} || {_bt >= 0 && {_bt < 20}}), [1 - (_d / (_eff max 1)) ^ 2] call _qBars,
+            ["\z\comspec_atak_native\addons\main\data\app_waverelay.paa", "\z\comspec_atak_native\addons\main\data\app_c2.paa"] select (_k isEqualTo "cp")]
     };
     case (_hops > 1): {
         ["Maillage Wave Relay", format ["%1 sauts via équipiers", _hops - 1], format ["jusqu'à %1", [_mesh getOrDefault ["gwLabel", ""]] call _esc], "warn", 2, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"]
     };
-    case (_bridge && {missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]}): {
-        ["Aucun porteur", "Mode réaliste : relais obligatoire", "aucun relais, passerelle ou équipier à portée", "bad", 0, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"]
+    case (_req): {
+        ["Aucun porteur", "Relais obligatoires", "aucun relais, passerelle ou équipier à portée", "bad", 0, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"]
     };
     default {
         ["Réseau direct", "Liaison radio-data du téléphone", ["sans relais (mode arcade)", "terminal de bord du véhicule"] select (_term isNotEqualTo ""), "ok", _lq get "bars", "\z\comspec_atak_native\addons\main\data\app_network.paa"]
@@ -275,45 +271,26 @@ private _tiles = [
 _y = _y + (ceil ((count _tiles) / _cols)) * (_th + _pad * 0.5);
 
 // --- Passerelles, relais et postes de commandement proches ---
-private _sub = format ["Mode %1", [["arcade : le téléphone passe sans relais", "réaliste : relais obligatoire"] select (missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]), "local"] select (!_bridge)];
+private _sub = format ["Mode %1", ["arcade : le téléphone passe sans relais", "réaliste : relais obligatoire"] select _req];
 ["Passerelles et relais", _sub] call _section;
 private _items = [];
-private _gwLast = uiNamespace getVariable ["COMSPEC_ATAK_GwLast", objNull];
 {
-    _x params ["_o", "_m", "_r", "_mb", "_n"];
-    private _d = player distance _o;
-    private _masked = terrainIntersectASL [eyePos player, (getPosASL _o) vectorAdd [0, 0, [3, 9] select (_m isEqualTo "cp")]];
-    private _eff = [_r, _r * 0.35] select _masked;
-    if (_o isEqualTo _gwLast) then { _eff = _eff * 1.2; };
+    _x params ["_o", "_ant", "_n", "_k", "_r", "_mb", "_ok", "_st", "_u", "_sl", "_bt"];
+    private _d = player distance _ant;
+    private _masked = terrainIntersectASL [eyePos player, _ant];
+    private _eff = [[_r, _r * 0.35] select _masked, 0] select !_ok;
     private _why = switch (true) do {
         case (_o isEqualTo _activeObj): { "" };
+        case (!_ok): { _st };
         case (_d >= _eff): { format ["hors portée%1", ["", " (relief masquant)"] select _masked] };
         default { "à portée, moins bon débit" };
     };
-    _items pushBack [_d, ["Passerelle véhicule", "Poste de commandement"] select (_m isEqualTo "cp"), _n, _r, _eff, format ["%1 Mbit/s", _mb], _o isEqualTo _activeObj, _why,
-        ["\z\comspec_atak_native\addons\main\data\app_network.paa", "\z\comspec_atak_native\addons\main\data\app_c2.paa"] select (_m isEqualTo "cp")];
-} forEach (["list"] call comspec_atak_native_fnc_vehicleGateway);
-if (_bridge) then {
-    private _defR = 2000;
-    if (!isNil "ATHENA_fnc_getRealismParam") then { _defR = ["radio_relays", "relay_range_m", 2000] call ATHENA_fnc_getRealismParam; };
-    {
-        if (isNull _x || {!(_x getVariable ["COMSPEC_AtakRelay", false])}) then { continue };
-        private _d = player distance2D _x;
-        private _r = _x getVariable ["COMSPEC_AtakRelayRange", _defR];
-        if !(_r isEqualType 0) then { _r = _defR; };
-        private _alive = alive _x && {damage _x < 0.95};
-        private _n = _x getVariable ["COMSPEC_AtakRelayName", "Relais ATAK"];
-        if (!(_n isEqualType "") || {_n isEqualTo ""}) then { _n = "Relais ATAK"; };
-        private _why = switch (true) do {
-            case (_x isEqualTo _activeObj): { "" };
-            case (!_alive): { "détruit" };
-            case (_d > _r): { "hors portée" };
-            default { "à portée, moins bon débit" };
-        };
-        private _thr = _x getVariable ["COMSPEC_AtakRelayThroughput", 12];
-        _items pushBack [_d, "Relais radio", _n, _r, [_r, 0] select !_alive, format ["%1 Mbit/s", [_thr, 12] select !(_thr isEqualType 0)], _x isEqualTo _activeObj, _why, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"];
-    } forEach ((missionNamespace getVariable ["COMSPEC_AtakRelays", []]) select { _x isEqualType objNull });
-};
+    private _rate = format ["%1 Mbit/s", _mb toFixed 1];
+    if (_sl > 0) then { _rate = _rate + format [" · %1/%2", _u, _sl]; };
+    if (_bt >= 0) then { _rate = _rate + format [" · %1 %%", round _bt]; };
+    _items pushBack [_d, createHashMapFromArray [["relay", "Relais radio"], ["gw", "Passerelle véhicule"], ["cp", "Poste de commandement"]] getOrDefault [_k, "Relais radio"], _n, _r, _eff, _rate, _o isEqualTo _activeObj, _why,
+        ["\z\comspec_atak_native\addons\main\data\app_waverelay.paa", "\z\comspec_atak_native\addons\main\data\app_c2.paa"] select (_k isEqualTo "cp")];
+} forEach (["list"] call comspec_atak_native_fnc_relayNet);
 _items sort true;
 if ((count _items) isEqualTo 0) then {
     [format ["<t color='#8a9a93'>Aucune passerelle de véhicule, aucun poste de commandement ni relais déclaré pour votre camp.%1</t>",
@@ -323,7 +300,7 @@ private _rowH = _fs * 2.5;
 {
     _x params ["_d", "_type", "_name", "_r", "_eff", "_rate", "_on", "_why", "_icon"];
     private _q = [0, 1 - (_d / (_eff max 1)) ^ 2] select (_d < _eff);
-    private _st = switch (true) do { case (_on): { "ok" }; case (_why isEqualTo "détruit"): { "bad" }; case (_q > 0): { "warn" }; default { "off" }; };
+    private _st = switch (true) do { case (_on): { "ok" }; case (_why in ["détruit", "éteint", "batterie vide", "brouillé", "sans liaison"]): { "bad" }; case (_q > 0): { "warn" }; default { "off" }; };
     private _x0 = _pad;
     private _w0 = _cw - 2 * _pad;
     [[_x0, _y, _w0, _rowH], [[0.06, 0.072, 0.066, 0.96], [0.09, 0.12, 0.10, 0.98]] select _on] call _rect;
@@ -364,8 +341,8 @@ if (_bridge) then {
     if (!isNil "comspec_overwatch_connect_fnc_isLinkDegradeSimActive") then {
         ["Simulation de liaison dégradée", ["inactive", "<t color='#f2ab33'>active</t>"] select ([] call comspec_overwatch_connect_fnc_isLinkDegradeSimActive)] call _info;
     };
-    if ((count _relay) > 0) then {
-        ["Relais le plus proche", format ["%1 · %2 · %3 Mbit/s", [_relay getOrDefault ["name", "Relais"]] call _esc, [_relay getOrDefault ["dist", 0]] call _dist, (_relay getOrDefault ["throughput_mbps", 0]) toFixed 1]] call _info;
+    if (_best isNotEqualTo []) then {
+        ["Relais utilisé", format ["%1 · %2 · %3 Mbit/s", [_best select 1] call _esc, [_best select 2] call _dist, (_best select 3) toFixed 1]] call _info;
     };
     _y = _y + _pad * 0.3;
     [[

@@ -29,7 +29,7 @@ class CfgFunctions {
         class network { file="z\comspec_atak_native\addons\main\functions\network";
             class extensionCall {}; class extAwait {}; class extensionCallback {}; class serverPresence {}; class remoteSync {}; class importLegacyData {};
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
-            class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class relayNet {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {};
+            class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class relayNet {}; class moduleRelay {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {};
         };
         class viz { file="z\comspec_atak_native\addons\main\functions\viz";
             class vizEcg {}; class vizSpectrum {}; class vizPlayer {};
@@ -433,6 +433,22 @@ class CfgFactionClasses {
     class NO_CATEGORY;
     class COMSPEC_ATAK_Data: NO_CATEGORY { displayName="$STR_COMSPEC_ATAK_CFG_BC3E09CB53"; priority=2; side=7; };
     class COMSPEC_ATAK_Civil: NO_CATEGORY { displayName="$STR_COMSPEC_ATAK_CFG_1B554EECB0"; priority=2; side=7; };
+    class COMSPEC_ATAK_Network: NO_CATEGORY { displayName="$STR_COMSPEC_ATAK_CFG_0913AEF2ED"; priority=2; side=7; };
+};
+
+// Manuel de terrain (Eden et jeu, Aide > Manuel de terrain) : tutoriel des relais ATAK.
+// %1 ligne vide, %2 puce, %3 et %4 surlignage (codes réservés de CfgHints).
+class CfgHints {
+    class COMSPEC_ATAK {
+        displayName = "$STR_COMSPEC_ATAK_CFG_CF5C7F39D0";
+        class Relays {
+            displayName = "$STR_COMSPEC_ATAK_CFG_2C44314089";
+            displayNameShort = "$STR_COMSPEC_ATAK_CFG_E4E74278CD";
+            description = "$STR_COMSPEC_ATAK_CFG_BF0FFB1714";
+            image = "\z\comspec_atak_native\addons\main\data\app_waverelay.paa";
+            arguments[] = {};
+        };
+    };
 };
 
 class Extended_PreInit_EventHandlers { class comspec_atak_native_main { init="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_preInit.sqf'"; }; };
