@@ -156,6 +156,9 @@ if (!_okMod) exitWith {
 private _hist = (group player) getVariable ["COMSPEC_SeekQueryHistory", []];
 if (!(_hist isEqualType []) || {(count _hist) isEqualTo 0}) then { _hist = missionNamespace getVariable ["COMSPEC_SeekQueryHistory", []]; };
 if (!(_hist isEqualType [])) then { _hist = []; };
+// Une ligne par sujet (fn_seekHistoryPush regroupe) : le nombre d'interrogations est en [10].
+private _nQueries = 0;
+{ _nQueries = _nQueries + ((_x param [10, 1]) max 1); } forEach _hist;
 private _rank = createHashMapFromArray [["confirmed", 2], ["possible", 1]];
 private _resHex = { switch (_this) do { case "confirmed": { _hRed }; case "possible": { _hAmber }; default { _hDim }; } };
 private _resCol = { switch (_this) do { case "confirmed": { _cRed }; case "possible": { _cAmber }; default { _cMute }; } };
@@ -166,7 +169,7 @@ private _order = [];
     _x params [["_tick", 0], ["_clock", ""], ["_who", "?"], ["_alias", ""], ["_status", ""], ["_conf", 0], ["_ref", ""], ["_grid", ""], ["_res", "none"]];
     if !(_who in _ents) then { _ents set [_who, [0, "none", _status, _conf, _clock, _alias]]; _order pushBack _who; };
     private _e = _ents get _who;
-    _e set [0, (_e select 0) + 1];
+    _e set [0, (_e select 0) + ((_x param [10, 1]) max 1)];
     if ((_rank getOrDefault [_res, 0]) > (_rank getOrDefault [_e select 1, 0])) then { _e set [1, _res]; _e set [2, _status]; _e set [3, _conf]; };
 } forEach _hist;
 private _nConf = { (_x param [8, "none"]) isEqualTo "confirmed" } count _hist;
@@ -181,7 +184,7 @@ private _faceOk = !isNull _t && {_dist <= 4} && {!isNil "comspec_overwatch_conne
 
 // ─── Indicateurs ───────────────────────────────────────────────────────────────────────────────────────
 private _kpis = [
-    [count _hist, "INTERROGATIONS", "#e8edf2", _cBlue],
+    [_nQueries, "INTERROGATIONS", "#e8edf2", _cBlue],
     [_nConf, "CONFIRMÉES", [_hMute, _hRed] select (_nConf > 0), [_cMute, _cRed] select (_nConf > 0)],
     [_nPoss, "POSSIBLES", [_hMute, _hAmber] select (_nPoss > 0), [_cMute, _cAmber] select (_nPoss > 0)],
     [count _order, "ENTITÉS", "#e8edf2", _cMute]
@@ -365,10 +368,10 @@ private _pTimeline = {
     private _yy = _oy;
     private _lastMid = _oy;
     {
-        _x params [["_tick", 0], ["_clock", ""], ["_who", "?"], ["_alias", ""], ["_status", ""], ["_conf", 0], ["_ref", ""], ["_grid", ""], ["_res", "none"]];
-        private _c = [[_ex, _yy, _ox + _ow - _ex, _fs], format ["<t size='0.82' font='COMSPEC_BarlowBold'>%1</t>%2  <t size='0.78' color='%3'>%4%5</t><br/><t font='%6' size='0.55' color='%7'>GR %8%9</t>",
+        _x params [["_tick", 0], ["_clock", ""], ["_who", "?"], ["_alias", ""], ["_status", ""], ["_conf", 0], ["_ref", ""], ["_grid", ""], ["_res", "none"], ["_key", ""], ["_n", 1]];
+        private _c = [[_ex, _yy, _ox + _ow - _ex, _fs], format ["<t size='0.82' font='COMSPEC_BarlowBold'>%1</t>%2  <t size='0.78' color='%3'>%4%5</t><br/><t font='%6' size='0.55' color='%7'>GR %8%9%10</t>",
             _who, ["", format [" <t color='%1'>« %2 »</t>", _hDim, _alias]] select (_alias isNotEqualTo ""), _res call _resHex, _status, ["", format [" %1 %2", _conf, "%"]] select (_res isNotEqualTo "none"),
-            _mono, _hMute, [_grid, "—"] select (_grid isEqualTo ""), ["", format [" · %1", _ref]] select (_ref isNotEqualTo "")], true, _fs * 1.6] call _st;
+            _mono, _hMute, [_grid, "—"] select (_grid isEqualTo ""), ["", format [" · %1", _ref]] select (_ref isNotEqualTo ""), ["", format [" · ×%1", _n]] select (_n > 1)], true, _fs * 1.6] call _st;
         [[_ox, _yy + _fs * 0.1, _tcw - _pad * 0.3, _fs], format ["<t font='%1' size='0.6' color='%2'>%3</t>", _mono, _hDim, _clock], false] call _st;
         private _sq = _fs * 0.45;
         _lastMid = _yy + _fs * 0.5;
@@ -386,7 +389,7 @@ private _panels = [
     ["Dossier de l'opération", ["non classé", "actif"] select (_case isNotEqualTo ""), [_cMute, _cGreen] select (_case isNotEqualTo ""), _pCase, 1],
     ["Production · fiches rapides", "FRS", _cMute, _pFrs, 1],
     ["Terminal SEEK", ["hors dotation", "prêt"] select _item, [_cAmber, _cGreen] select _item, _pSeek, 1],
-    ["Chronologie · interrogations", format ["%1 dans le groupe", count _hist], _cMute, _pTimeline, [0, 1] select _wide]
+    ["Chronologie · interrogations", format ["%1 dans le groupe", _nQueries], _cMute, _pTimeline, [0, 1] select _wide]
 ];
 private _cols = if (_wide) then {
     private _cw = (_bw - 2 * _pad - _gap) / 2;
