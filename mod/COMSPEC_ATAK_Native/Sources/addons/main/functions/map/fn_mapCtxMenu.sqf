@@ -1,6 +1,8 @@
 /*
     Menu contextuel de la carte (clic droit sans glisser) : VOIR LA CAMÉRA (équipier pointé), PING, MARQUEUR, Y ALLER,
-    CENTRER ICI, COPIER LA GRILLE, ZONE INTERDITE AU DRONE (poser ou retirer, fn_noFly), SUPPRIMER (marqueur joueur pointé).
+    CENTRER ICI, COPIER LA GRILLE, CHAMP DE VISION ICI (fn_reliefAction depuis le point), ZONE INTERDITE AU DRONE
+    (poser ou retirer, fn_noFly), SUPPRIMER (marqueur joueur pointé). Équipier pointé : aussi CHAMP DE VISION de l'équipier
+    et LOCALISER PAR RELAIS (triangulation, fn_relayNet).
     ["open", [contrôle carte, position écran]]  ouvre le menu au curseur (en-tête : grille, altitude, distance et azimut)
     ["close"]                                    ferme (clic ailleurs, Échap, choix d'une ligne)
     ["act", clé]                                 exécute une ligne
@@ -81,6 +83,12 @@ switch (_mode) do {
                 private _z = ["inside", _pos] call comspec_atak_native_fnc_noFly;
                 if ((count _z) > 0) then { ["remove", _z select 0] call comspec_atak_native_fnc_noFly; };
             };
+            case "VIEW": { ["compute", [_pos select 0, _pos select 1]] call comspec_atak_native_fnc_reliefAction; };
+            case "VIEWU": { ["compute", _c getOrDefault ["unit", ""]] call comspec_atak_native_fnc_reliefAction; };
+            case "LOCATE": {
+                profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", true];
+                ["locate", _c getOrDefault ["unit", ""]] call comspec_atak_native_fnc_relayNet;
+            };
             case "CAM": {
                 private _u = objectFromNetId (_c getOrDefault ["unit", ""]);
                 if (isNull _u || {!alive _u}) exitWith {};
@@ -114,10 +122,18 @@ switch (_mode) do {
             ["MARKER", "Mettre un marqueur", "éditeur complet", _dir + "map_marker.paa", _acc],
             ["ROUTE", "Y aller", "itinéraire GPS", _dir + "map_route.paa", [0.40, 0.65, 1, 1]],
             ["CENTER", "Centrer ici", "", _dir + "map_center.paa", [0.86, 0.91, 0.88, 1]],
-            ["COPY", "Copier la grille", "10 chiffres", _dir + "map_grid.paa", [0.86, 0.91, 0.88, 1]]
+            ["COPY", "Copier la grille", "10 chiffres", _dir + "map_grid.paa", [0.86, 0.91, 0.88, 1]],
+            ["VIEW", "Champ de vision ici", format ["rayon %1 m", _s getOrDefault ["rlRadius", 1000]], _dir + "app_relief.paa", [0.36, 0.78, 0.42, 1]]
         ];
         private _cu = objectFromNetId (_c getOrDefault ["unit", ""]);
-        if (!isNull _cu && {alive _cu}) then { _rows insert [0, [["CAM", "Voir la caméra", [_cu, true] call comspec_atak_native_fnc_unitCallsign, _dir + "app_photos.paa", [0.36, 0.78, 0.42, 1]]]]; };
+        if (!isNull _cu && {alive _cu}) then {
+            private _cs = [_cu, true] call comspec_atak_native_fnc_unitCallsign;
+            _rows insert [0, [
+                ["CAM", "Voir la caméra", _cs, _dir + "app_photos.paa", [0.36, 0.78, 0.42, 1]],
+                ["VIEWU", "Son champ de vision", _cs, _dir + "app_relief.paa", [0.36, 0.78, 0.42, 1]],
+                ["LOCATE", "Localiser par relais", "triangulation", _dir + "app_waverelay.paa", [1, 0.65, 0.2, 1]]
+            ]];
+        };
         if ((count (["inside", _pos] call comspec_atak_native_fnc_noFly)) > 0) then {
             _rows pushBack ["NOFLYDEL", "Retirer la zone interdite", "drone, tout le camp", _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
         } else {

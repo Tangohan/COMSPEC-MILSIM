@@ -186,17 +186,27 @@ switch (_tool) do {
         _y = [_pad, _y, _w, "Réglages", format ["grille de 41 x 41, case de %1 m, cible à 1,7 m du sol", round ((2 * _radius) / 40)]] call _sec;
         _y = [_pad, _y, _w, "Rayon", "rlRadius", [["500 m", 500], ["1 km", 1000], ["2 km", 2000]], _radius] call _seg;
         _y = [_pad, _y, _w, "Obstacles", "rlObst", [["RELIEF SEUL", "TER"], ["+ BÂTIMENTS ET ARBRES", "OBJ"]], _s getOrDefault ["rlObst", "TER"]] call _seg;
+        // Observateur surélevé (toit, mât, drone) et secteur dans la direction du regard ; depuis un point ou un équipier : clic droit sur la carte.
+        _y = [_pad, _y, _w, "Hauteur d'œil", "rlHeight", [["AUCUNE", 0], ["10 m", 10], ["50 m", 50], ["150 m", 150]], _s getOrDefault ["rlHeight", 0]] call _seg;
+        _y = [_pad, _y, _w, "Secteur", "rlSector", [["360°", 360], ["120°", 120], ["60°", 60]], _s getOrDefault ["rlSector", 360]] call _seg;
         if (_busy) then {
             _y = [_pad, _y, _w, "Calcul en cours", missionNamespace getVariable ["COMSPEC_ATAK_ViewshedProgress", 0]] call _progress;
         } else {
             [[_pad, _y, _half, _bh2], "CALCULER", { ["compute"] call comspec_atak_native_fnc_reliefAction; }, true, "Quelques secondes selon le rayon (plus long avec les bâtiments)"] call _btn;
             [[_pad + _half + _gap, _y, _half, _bh2], "EFFACER", { ["clear"] call comspec_atak_native_fnc_reliefAction; }] call _btn;
             _y = _y + _bh2 + _pad;
+            private _drone = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
+            if (!isNull _drone && {alive _drone}) then {
+                [[_pad, _y, _w, _bh2], "DEPUIS LE DRONE", compile format ["['compute', '%1'] call comspec_atak_native_fnc_reliefAction;", netId _drone], false, "Champ de vision depuis la caméra du drone appairé"] call _btn;
+                _y = _y + _bh2 + _pad;
+            };
         };
         if ((count _vs) > 8) then {
             _vs params ["_center", "_cell", "_cells", "_r", "_minH", "_maxH", "_pctVis", "_best", "_when"];
             private _obst = _vs param [9, false];
-            _y = [_pad, _y, _w, "Résultat", format ["%1 · %2 · %3", [_when, "HH:MM"] call BIS_fnc_timeToString, [_r] call _dist, ["relief seul", "relief, bâtiments et arbres"] select _obst]] call _sec;
+            private _who = _vs param [13, "Moi"];
+            private _sector = _vs param [12, []];
+            _y = [_pad, _y, _w, "Résultat", format ["%4 · %1 · %2 · %3%5", [_when, "HH:MM"] call BIS_fnc_timeToString, [_r] call _dist, ["relief seul", "relief, bâtiments et arbres"] select _obst, _who, ["", format [" · secteur %1°", _sector param [1, 360]]] select (_sector isNotEqualTo [])]] call _sec;
             _y = [_pad, _y, _w, [
                 ["terrain vu", format ["%1 %%", _pctVis], [_pctVis] call _pctCol],
                 ["terrain caché", format ["%1 %%", 100 - _pctVis]],
@@ -229,7 +239,7 @@ switch (_tool) do {
             } forEach ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
             _y = _y + 4 * (_rowH + pixelH * 3) + _pad * 0.6;
             private _moved = player distance2D _center;
-            if (_moved > _cell * 2) then {
+            if (_who isEqualTo "Moi" && {_moved > _cell * 2}) then {
                 ["COMSPEC_RscText", [_pad, _y, _w, _fs * 1.3], format ["Vous avez bougé de %1 depuis le calcul : relancez-le pour une vue à jour.", [_moved] call _dist], _fs * 0.8, _cAmber] call _lbl;
                 _y = _y + _fs * 1.3 + _pad * 0.4;
             };

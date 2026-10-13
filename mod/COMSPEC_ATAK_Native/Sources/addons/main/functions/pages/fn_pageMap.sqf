@@ -289,6 +289,44 @@ if (_interactive) then {
                 // Les filtres d'unités (alliés, ennemis) sont appliqués à la collecte : on la relance.
                 if (_var in ["COMSPEC_ATAK_LayerFriends", "COMSPEC_ATAK_ShowHostile"]) then { [] call comspec_atak_native_fnc_localDataRefresh; };
                 if (_var isEqualTo "COMSPEC_ATAK_SigintLayer") then { [] spawn comspec_atak_native_fnc_sigintPoll; };
+                // Calque allumé : on dit ce qu'il montre, ou pourquoi il n'y a rien à voir (sans donnée, le calque semblait en panne).
+                private _on = _n getVariable [_var, _def];
+                if (_on) then {
+                    private _msg = switch (_var) do {
+                        case "COMSPEC_ATAK_LayerFriends": { format ["Alliés : %1 unité(s) amie(s) sur la carte", { (_x getOrDefault ["affiliation", ""]) isEqualTo "friend" } count values ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["units", createHashMap])] };
+                        case "COMSPEC_ATAK_ZonesLayer": {
+                            private _z = (count (missionNamespace getVariable ["COMSPEC_DangerZones", []])) + (count (missionNamespace getVariable ["COMSPEC_RoleplayZones", []])) + (count ((uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap]) getOrDefault ["zones", []]));
+                            ["Zones Athena : aucune zone reçue pour cette carte", format ["Zones Athena : %1 zone(s)", _z]] select (_z > 0)
+                        };
+                        case "COMSPEC_ATAK_SigintLayer": {
+                            private _e = count (uiNamespace getVariable ["COMSPEC_ATAK_Sigint", []]);
+                            [["SIGINT : Athena non joignable, aucun émetteur estimé", "SIGINT : aucun émetteur estimé pour l'instant (relèvements des relais sur Athena)"] select ([] call comspec_atak_native_fnc_bridge), format ["SIGINT : %1 émetteur(s) estimé(s)", _e]] select (_e > 0)
+                        };
+                        case "COMSPEC_ATAK_LayerEw": {
+                            private _e = (count (missionNamespace getVariable ["COMSPEC_ATAK_EwBearings", []])) + (count (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []])) + (count (missionNamespace getVariable ["COMSPEC_ATAK_GeoTracks", []]));
+                            ["Guerre élec. : aucun relèvement, brouilleur ni géolocalisation (app EW)", format ["Guerre élec. : %1 élément(s)", _e]] select (_e > 0)
+                        };
+                        case "COMSPEC_ATAK_LayerLogi": {
+                            private _e = { (_x getOrDefault ["status", ""]) in ["DEMANDEE", "VALIDEE", "EN_ROUTE"] } count values (missionNamespace getVariable ["COMSPEC_ATAK_LogiReqs", createHashMap]);
+                            ["Logistique : aucune demande ouverte (app Logistique)", format ["Logistique : %1 demande(s) ouverte(s)", _e]] select (_e > 0)
+                        };
+                        case "COMSPEC_ATAK_ViewshedShow": {
+                            // Rien de calculé : on lance le champ de vision depuis moi plutôt que d'afficher un calque vide.
+                            if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Viewshed", []])) < 9) then {
+                                ["compute"] call comspec_atak_native_fnc_reliefAction;
+                                "Relief : calcul du champ de vision depuis votre position (clic droit sur la carte : depuis un point)"
+                            } else { "Relief : champ de vision affiché" };
+                        };
+                        case "COMSPEC_ATAK_MeshOnMap": {
+                            private _rl = ["list"] call comspec_atak_native_fnc_relayNet;
+                            private _ok = { _x select 6 } count _rl;
+                            if (_ok > 0 && {(count (missionNamespace getVariable ["COMSPEC_ATAK_Coverage", []])) < 8}) then { ["coverage"] call comspec_atak_native_fnc_relayNet; };
+                            [format ["Wave Relay : %1 relais / passerelle(s), calcul de la couverture", _ok], "Wave Relay : aucun relais ni passerelle de véhicule dans votre camp, seuls les liens entre téléphones s'affichent"] select (_ok isEqualTo 0)
+                        };
+                        default { "" };
+                    };
+                    if (_msg isNotEqualTo "") then { ["INFO", _msg, 4, 20] call comspec_atak_native_fnc_notify; };
+                };
                 [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
             }];
             // [libellé, espace (P profil, M mission), variable, défaut, clé communauté (verrou Athena) ou ""]

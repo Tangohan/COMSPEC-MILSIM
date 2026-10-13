@@ -11,6 +11,15 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Relais : couverture réseau, triangulation, champs de vision ; calques de la carte qui disent ce qu'ils montrent (ATAK natif 1.53.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : triangulation par les relais, portée et couverture des relais, perte de réseau et débit, aperçu des champs de vision, et les relais invisibles sur la carte.
+- **Relais sur la carte** (calque Wave Relay) : tous les relais Overwatch de la mission (plus seulement le plus proche) avec leur nom, leur portée en cercle et leur débit, les relais détruits barrés en gris, les passerelles de véhicule et PC mobiles. Le maillage se raccroche à n'importe quel relais (un équipier près d'un autre relais n'est plus « isolé »).
+- **Couverture réseau** (Wave Relay, nouvel onglet COUVERTURE) : carte du débit reçu à hauteur d'homme sur 2, 5 ou 10 km autour de soi, relief et brouilleurs compris : vert 4 Mbit/s et plus, jaune, orange, rouge faible, gris zone blanche. Part du terrain couvert, débit moyen, débit à ma position, liste des relais avec ce qu'on en reçoit. Au survol de la carte, la barre du curseur donne le débit et la perte au point pointé.
+- **Triangulation par les relais** : LOCALISER sur un équipier (onglet RÉSEAU ou clic droit sur lui dans la carte, « Localiser par relais »). Chaque relais ou téléphone du camp qui entend son appareil donne une distance estimée (plus le lien est faible, plus l'erreur est grande) ; la carte trace ces cercles et la zone trouvée « ± N m » pendant 10 min. Une seule source : un cercle ; deux : position ambiguë ; trois et plus : un point.
+- **Champs de vision** : clic droit sur la carte, « Champ de vision ici » (observateur posé au point), ou sur un équipier, « Son champ de vision » (depuis ses yeux, dans la direction où il regarde). App Relief : hauteur d'œil ajoutée (toit 10 m, mât 50 m, drone 150 m), secteur 360°, 120° ou 60°, DEPUIS LE DRONE ; avec l'option « + bâtiments et arbres », les cases cachées par un mur, une maison ou des arbres sont en orange (rouge : par le relief) quand un drone est appairé. L'observateur et son secteur sont tracés sur la carte.
+- **Calques de la carte** : allumer un calque dit ce qu'il montre ou pourquoi il est vide (aucune zone reçue d'Athena, aucun relevé EW, aucune demande logistique, Athena injoignable pour SIGINT...). Relief sans calcul lance le champ de vision depuis soi ; Wave Relay lance la couverture s'il y a des relais.
+- À vérifier en jeu : relais et portées visibles sur la carte, couverture sur une mission avec relais (et brouilleur), LOCALISER un équipier balise coupée, champ de vision depuis un point, un équipier et le drone, chaque calque allumé puis éteint.
 ## Messagerie refaite (ATAK natif 1.52.0)
 
 Non testé en jeu. Demande de TTRD : « améliorer l'UI de la messagerie ». Pas de DLL à recompiler, pas de migration.

@@ -1,8 +1,12 @@
 /*
     Actions de l'app Relief : champ de vision, heatmap d'altitude, ligne de vue, bâtiments visibles.
-      "set"       : [clé d'état, valeur] (rlTool, rlRadius, rlObst, rlHeat, rlBldRadius) puis redessine la page.
-      "compute"   : grille 41 x 41 autour du joueur, en tâche de fond : case visible si rien ne coupe la ligne
+      "set"       : [clé d'état, valeur] (rlTool, rlRadius, rlObst, rlHeat, rlBldRadius, rlHeight, rlSector) puis redessine la page.
+      "compute"   : [origine] grille 41 x 41 autour de l'observateur, en tâche de fond : case visible si rien ne coupe la ligne
                     œil → sol de la case + 1,7 m (terrain seul, ou terrain + objets si rlObst = "OBJ").
+                    Origine : rien = moi ; [x, y] = point de la carte (observateur posé au sol) ; netId d'une unité ou
+                    d'un drone = depuis ses yeux / sa caméra. Hauteur ajoutée à l'œil : rlHeight (0, 10, 50 ou 150 m :
+                    toit, mât, drone). Secteur : rlSector (360, 120 ou 60°) dans la direction où regarde l'observateur
+                    (360° pour un point de la carte ou un drone), les cases hors secteur ne sont pas calculées.
                     Sert au champ de vision (vert / rouge) et à la heatmap (altitude absolue ou par rapport à moi).
       "clear"     : efface la grille.
       "show"      : affiche / masque les calques Relief sur la carte.
@@ -15,9 +19,9 @@
       "bldClear"  : efface les bâtiments.
       "focus"     : [position] centre la carte sur ce point.
     Résultats (missionNamespace) :
-      COMSPEC_ATAK_Viewshed = [centre, taille de case, [[pos, visible, altitude, couleur absolue, couleur relative]...],
+      COMSPEC_ATAK_Viewshed = [centre, taille de case, [[pos, visible, altitude, couleur absolue, couleur relative, masqué par un objet]...],
                                rayon, altitude mini, altitude maxi, % visible, index du point le plus haut, heure,
-                               obstacles, mon altitude] ;
+                               obstacles, altitude de l'observateur, œil ASL, [direction, ouverture] ou [] (360°), nom de l'observateur] ;
       COMSPEC_ATAK_ReliefLos = [œil ASL, cible ASL, point d'arrêt ASL ou [], nature de l'obstacle, [[distance, sol, visée]...], heure] ;
       COMSPEC_ATAK_ReliefBld = [centre, rayon, [[bâtiment, vu, distance, azimut]...], heure].
 */
@@ -45,18 +49,45 @@ switch (_act) do {
         if (missionNamespace getVariable ["COMSPEC_ATAK_ViewshedBusy", false]) exitWith { ["INFO", "Calcul du relief déjà en cours", 3, 20] call comspec_atak_native_fnc_notify; };
         private _radius = _s getOrDefault ["rlRadius", 1000];
         private _obst = (_s getOrDefault ["rlObst", "TER"]) isEqualTo "OBJ";
+        private _hAdd = _s getOrDefault ["rlHeight", 0];
+        private _fov = _s getOrDefault ["rlSector", 360];
+        private _eye = (eyePos player) vectorAdd [0, 0, _hAdd];
+        private _dir = getDirVisual player;
+        private _who = "Moi";
+        private _ign = vehicle player;
+        switch (true) do {
+            case (_k isEqualType [] && {(count _k) >= 2}): {
+                _eye = [_k select 0, _k select 1, ((getTerrainHeightASL _k) max 0) + 1.7 + _hAdd];
+                _dir = 0; _fov = 360; _ign = objNull;
+                _who = format ["Point %1", [_k] call comspec_atak_native_fnc_gridRef];
+            };
+            case (_k isEqualType "" && {_k isNotEqualTo ""}): {
+                private _o = objectFromNetId _k;
+                if (isNull _o) exitWith {};
+                _ign = vehicle _o;
+                if (_o isKindOf "CAManBase") then {
+                    _eye = (eyePos _o) vectorAdd [0, 0, _hAdd];
+                    private _ed = eyeDirection _o;
+                    _dir = (_ed select 0) atan2 (_ed select 1);
+                    _who = [_o, true] call comspec_atak_native_fnc_unitCallsign;
+                } else {
+                    // Drone ou véhicule : depuis l'objet, sans hauteur ajoutée ; un drone voit tout autour (tourelle).
+                    _eye = (getPosASL _o) vectorAdd [0, 0, -0.5];
+                    _dir = getDir _o; _fov = 360;
+                    _who = getText (configOf _o >> "displayName");
+                };
+            };
+        };
         missionNamespace setVariable ["COMSPEC_ATAK_ViewshedBusy", true];
         missionNamespace setVariable ["COMSPEC_ATAK_ViewshedProgress", 0];
         missionNamespace setVariable ["COMSPEC_ATAK_ViewshedShow", true];
         call _render;
-        [_radius, _render, _obst] spawn {
-            params ["_radius", "_render", "_obst"];
+        [_radius, _render, _obst, _eye, [[_dir, _fov], []] select (_fov >= 360), _who, _ign] spawn {
+            params ["_radius", "_render", "_obst", "_eye", "_sector", "_who", "_ign"];
             private _n = 41;
             private _half = floor (_n / 2);
             private _cell = (2 * _radius) / (_n - 1);
-            private _eye = eyePos player;
-            private _c = getPosASL player;
-            private _center = [_c select 0, _c select 1];
+            private _center = [_eye select 0, _eye select 1];
             private _myH = getTerrainHeightASL _center;
             private _cells = [];
             private _minH = 1e9;
@@ -70,6 +101,10 @@ switch (_act) do {
                     private _dy = (_j - _half) * _cell;
                     // Cercle plutôt que carré : on ignore les coins hors du rayon.
                     if (sqrt (_dx * _dx + _dy * _dy) > _radius + _cell / 2) then { continue };
+                    if (_sector isNotEqualTo [] && {_i isNotEqualTo _half || {_j isNotEqualTo _half}}) then {
+                        private _off = abs ((((_dx atan2 _dy) - (_sector select 0)) + 540) mod 360 - 180);
+                        if (_off > (_sector select 1) / 2) then { continue };
+                    };
                     private _p = [(_center select 0) + _dx, (_center select 1) + _dy];
                     private _h = getTerrainHeightASL _p;
                     // Mer : on prend la surface de l'eau comme sol.
@@ -77,14 +112,17 @@ switch (_act) do {
                     private _to = [_p select 0, _p select 1, _ground + 1.7];
                     private _seen = (_i isEqualTo _half && {_j isEqualTo _half}) || {!(terrainIntersectASL [_eye, _to])};
                     // Bâtiments, arbres et véhicules : seulement si demandé (plus lent).
+                    // Masqué par un objet seulement (le relief laisse voir) : case orange sur la carte.
+                    private _byObj = false;
                     if (_seen && _obst && {!(_i isEqualTo _half && {_j isEqualTo _half})}) then {
-                        _seen = (count (lineIntersectsSurfaces [_eye, _to, player, vehicle player, true, 1, "VIEW", "FIRE"])) isEqualTo 0;
+                        _seen = (count (lineIntersectsSurfaces [_eye, _to, _ign, objNull, true, 1, "VIEW", "FIRE"])) isEqualTo 0;
+                        _byObj = !_seen;
                     };
                     if (_seen) then { _vis = _vis + 1; };
                     _total = _total + 1;
                     if (_h < _minH) then { _minH = _h; };
                     if (_h > _maxH) then { _maxH = _h; _best = count _cells; };
-                    _cells pushBack [[_p select 0, _p select 1, _h], _seen, _h, [], []];
+                    _cells pushBack [[_p select 0, _p select 1, _h], _seen, _h, [], [], _byObj];
                 };
                 missionNamespace setVariable ["COMSPEC_ATAK_ViewshedProgress", (_i + 1) / _n];
             };
@@ -105,9 +143,9 @@ switch (_act) do {
                 _x set [4, if (_d < -0.05) then { [0.15, 0.35 + 0.2 * (1 + _d), 0.95, 0.15 + 0.35 * (abs _d)] } else {
                     if (_d < 0.05) then { [0.7, 0.75, 0.72, 0.15] } else { [0.95, 0.65 - 0.45 * _d, 0.15, 0.2 + 0.4 * _d] } }];
             } forEach _cells;
-            missionNamespace setVariable ["COMSPEC_ATAK_Viewshed", [_center, _cell, _cells, _radius, _minH, _maxH, round (100 * _vis / (_total max 1)), _best, dayTime, _obst, _myH]];
+            missionNamespace setVariable ["COMSPEC_ATAK_Viewshed", [_center, _cell, _cells, _radius, _minH, _maxH, round (100 * _vis / (_total max 1)), _best, dayTime, _obst, _myH, _eye, _sector, _who]];
             missionNamespace setVariable ["COMSPEC_ATAK_ViewshedBusy", false];
-            ["SUCCESS", format ["Relief calculé : %1 %% visible sur %2 m", round (100 * _vis / (_total max 1)), _radius], 4, 30] call comspec_atak_native_fnc_notify;
+            ["SUCCESS", format ["Champ de vision (%3) : %1 %% visible sur %2 m", round (100 * _vis / (_total max 1)), _radius, _who], 4, 30] call comspec_atak_native_fnc_notify;
             call _render;
         };
     };
