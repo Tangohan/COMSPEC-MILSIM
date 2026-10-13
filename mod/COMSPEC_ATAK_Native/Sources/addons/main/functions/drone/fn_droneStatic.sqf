@@ -15,6 +15,11 @@
     fréquents en dessous) : par salves de 0,15 à 0,8 s, image figée (COMSPEC_ATAK_DroneFeedFreeze, la caméra cesse de
     bouger), macroblocs gris, blocs « étalés » (morceau d'image agrandi), bandes horizontales décalées (déchirure),
     blocs de couleur brefs ; liaison presque perdue : éclairs de neige. Puis NO DATA quand la liaison tombe.
+    Relais dans la mission (fn_videoLink, sinon rien ne change) : le flux suit le chemin radio. Son palier adaptatif
+    (1080p, 720p, 480p, image par image) règle les images par seconde (480p : 6 i/s, image par image : 1,5 i/s, la
+    caméra se fige entre deux images) et un grain de compression (480p et moins) ; la qualité du chemin règle les
+    défauts TNT ; chaque changement de palier est noté au journal du drone avec sa raison. Caméra casque d'un équipier :
+    même calcul depuis sa position (lien direct de téléphone à téléphone, 3 km, ou relais).
     État : uiNamespace COMSPEC_ATAK_DroneStatic ([HashMap par image...]), COMSPEC_ATAK_DroneStaticWhy / Q (relus deux fois
     par seconde), COMSPEC_ATAK_DroneGlitch ([fin de salve, gravité]) ; missionNamespace COMSPEC_ATAK_DroneStaticPfh.
 */
@@ -26,19 +31,39 @@ switch (_act) do {
         // Source choisie seulement sur la carte : l'app Drone montre toujours le drone.
         private _src = ["DRONE", missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedSrc", "DRONE"]] select (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP");
         uiNamespace setVariable ["COMSPEC_ATAK_DroneStaticQ", 1];
+        uiNamespace setVariable ["COMSPEC_ATAK_DroneStaticFps", 0];
+        uiNamespace setVariable ["COMSPEC_ATAK_DroneStaticGrain", 0];
+        // Palier adaptatif du flux (relais) : images par seconde et grain, changement noté au journal du drone.
+        private _adapt = {
+            params ["_key", "_v"];
+            (["adapt", [_key, _v]] call comspec_atak_native_fnc_videoLink) params ["_t", "_txt"];
+            if !(_v getOrDefault ["active", false]) exitWith {};
+            uiNamespace setVariable ["COMSPEC_ATAK_DroneStaticFps", [0, (["tier", _t] call comspec_atak_native_fnc_videoLink) select 1] select (_t < 3)];
+            uiNamespace setVariable ["COMSPEC_ATAK_DroneStaticGrain", [0, 0.1, 0.16] select ((3 - _t) max 0 min 2)];
+            if (_txt isNotEqualTo "") then { ["log", _txt, ["#5cc76b", "#f2ab33"] select (_t < 3)] call comspec_atak_native_fnc_droneAction; };
+        };
         if !(isPiPEnabled) exitWith { "IMAGE DANS L'IMAGE (PIP) COUPÉE : OPTIONS > VIDÉO" };
         if (_src isEqualTo "HELMET") exitWith {
             private _u = missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedUnit", objNull];
             if (!alive _u) exitWith { "CAMÉRA CASQUE HORS LIGNE" };
             private _dist = _u distance player;
-            uiNamespace setVariable ["COMSPEC_ATAK_DroneStaticQ", (1 - _dist / 3000) max 0];
-            ["", "PORTEUR TROP LOIN"] select (_dist > 3000)
+            private _qh = (1 - _dist / 3000) max 0;
+            if (_u isEqualTo player) exitWith { "" };
+            private _v = ["path", ["HELMET", eyePos _u, _qh, 8]] call comspec_atak_native_fnc_videoLink;
+            if !(_v getOrDefault ["active", false]) exitWith {
+                uiNamespace setVariable ["COMSPEC_ATAK_DroneStaticQ", _qh];
+                ["", "PORTEUR TROP LOIN"] select (_dist > 3000)
+            };
+            ["HELMET", _v] call _adapt;
+            uiNamespace setVariable ["COMSPEC_ATAK_DroneStaticQ", _v get "q"];
+            ["", "PORTEUR HORS DU RÉSEAU DES RELAIS"] select !(_v get "ok")
         };
         if (_src isEqualTo "PHONE") exitWith { "" };
         if (isNull _d || {!alive _d}) exitWith { "DRONE PERDU" };
         if ((_d getVariable ["COMSPEC_DroneMode", ""]) isEqualTo "STANDBY") exitWith { "DRONE EN VEILLE : CAMÉRA COUPÉE" };
-        (["link"] call comspec_atak_native_fnc_droneAction) params ["", "_dist", "_ok", ["_q", 1]];
-        if (!_ok) exitWith { format ["LIAISON PERDUE À %1 M", _dist] };
+        (["link"] call comspec_atak_native_fnc_droneAction) params ["", "_dist", "_ok", ["_q", 1], ["_v", createHashMap]];
+        ["DRONE", _v] call _adapt;
+        if (!_ok) exitWith { [format ["LIAISON PERDUE À %1 M", _dist], "LIAISON PERDUE : AUCUN CHEMIN PAR LES RELAIS"] select (_v getOrDefault ["active", false]) };
         uiNamespace setVariable ["COMSPEC_ATAK_DroneStaticQ", _q];
         ""
     };
@@ -131,8 +156,17 @@ switch (_act) do {
             _gSev = _sev;
             uiNamespace setVariable ["COMSPEC_ATAK_DroneGlitch", [_gEnd, _gSev]];
             // Image figée : la caméra ne bouge plus le temps de la salve (et un peu plus quand c'est grave).
-            if ((random 1) < (0.2 + 0.5 * _sev)) then { missionNamespace setVariable ["COMSPEC_ATAK_DroneFeedFreeze", _gEnd + random (1.2 * _sev)]; };
+            if ((random 1) < (0.2 + 0.5 * _sev)) then { uiNamespace setVariable ["COMSPEC_ATAK_DroneGlitchHold", _gEnd + random (1.2 * _sev)]; };
         };
+        // Images par seconde du palier (relais) : la caméra bouge le temps d'un passage, puis se fige jusqu'à l'image suivante.
+        private _fps = uiNamespace getVariable ["COMSPEC_ATAK_DroneStaticFps", 0];
+        private _cad = 0;
+        if (_fps > 0 && {!_on} && {!_busy}) then {
+            private _nf = uiNamespace getVariable ["COMSPEC_ATAK_DroneStaticNextImg", 0];
+            if (_now >= _nf) then { uiNamespace setVariable ["COMSPEC_ATAK_DroneStaticNextImg", _now + 1 / _fps]; } else { _cad = _nf; };
+        };
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneFeedFreeze", (uiNamespace getVariable ["COMSPEC_ATAK_DroneGlitchHold", 0]) max _cad];
+        private _grain = [0, uiNamespace getVariable ["COMSPEC_ATAK_DroneStaticGrain", 0]] select (!_on && {!_busy});
         private _glitch = !_on && {!_busy} && {_now < _gEnd};
         // Éclair de neige (liaison presque perdue) : une ou deux images.
         private _flash = _glitch && {_gSev > 0.75} && {(random 1) < 0.18};
@@ -157,6 +191,17 @@ switch (_act) do {
                         _x ctrlSetTextColor [1, 1, 1, 0.75 + random 0.25];
                     };
                 } forEach _layers;
+            } else {
+                // Grain de compression d'un flux bas débit (480p et moins) : une couche de neige presque transparente.
+                if (_grain > 0) then {
+                    _e set ["grain", true];
+                    {
+                        _x ctrlShow (_forEachIndex isEqualTo _pick);
+                        if (_forEachIndex isEqualTo _pick) then { _x ctrlSetTextColor [1, 1, 1, _grain * (0.8 + random 0.4)]; };
+                    } forEach _layers;
+                } else {
+                    if (_e getOrDefault ["grain", false]) then { _e set ["grain", false]; { _x ctrlShow false; } forEach _layers; };
+                };
             };
             // Étiquette : NO DATA, puis la raison (taille de police calée sur celle du téléphone, hauteur mesurée).
             if (_on && {(_e get "last") isNotEqualTo _why}) then {

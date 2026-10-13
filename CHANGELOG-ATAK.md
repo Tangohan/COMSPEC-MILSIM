@@ -77,6 +77,31 @@ Non testé en jeu. Demande de TTRD : un module Zeus et Eden dédié aux routes e
 - Zeus : module « Relever routes et villes » par Zeus Enhanced et ACE Zeus, envoi immédiat même si la carte a déjà été transmise.
 - Les réglages de communauté « Lieux » et « Routes » (modules du mod) restent respectés.
 
+## Flux vidéo selon les relais (ATAK natif 1.78.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Les flux vidéo suivent maintenant les relais de la mission
+- Quand la mission pose des relais, l'image du drone, de la caméra casque, du Live cam et des caméras fixes passe par eux : plus tu es loin d'un relais ou plus il y a de bonds, plus l'image baisse (1080p, 720p, 480p, puis image par image) avec saccades, grain et défauts.
+- La qualité s'adapte toute seule : elle baisse vite quand la liaison faiblit et remonte quand elle revient. Le changement et sa raison sont notés dans le journal du drone.
+- L'image affiche la qualité courante, le débit, le relais utilisé et le délai. Un relais détruit ou coupé fait basculer sur un autre chemin, ou coupe l'image.
+- Avec des relais, le drone peut voler plus loin que sa portée directe tant qu'un relais le reçoit. Sans relais dans la mission, rien ne change.
+EN : Video feeds now follow the mission's relays
+- When the mission places relays, the drone, helmet camera, Live cam and fixed camera images go through them: the farther from a relay or the more hops, the lower the image (1080p, 720p, 480p, then frame by frame) with stutter, grain and defects.
+- Quality adapts by itself: it drops fast when the link weakens and comes back when it recovers. The change and its reason are written in the drone log.
+- The image shows the current quality, the bitrate, the relay in use and the delay. A destroyed or switched-off relay moves the feed to another path, or cuts the image.
+- With relays, the drone can fly beyond its direct range as long as a relay receives it. Without relays in the mission, nothing changes.
+
+### Détail technique
+
+Non testé en jeu. Demande de TTRD : « Améliore la gestion des flux vidéo suivant les relais ».
+- Nouveau `fn_videoLink` (functions/network) : chemin radio du flux, meilleur débit entre direct, un relais (source → relais → téléphone) et réseau (relais A → cœur de réseau → relais B, -20 %, +60 ms). Chaque bond suit la règle de `fn_relayNet "link"` (1 - (d/portée)², relief à 35 %), les répéteurs, brouilleurs, batteries et saturation déjà comptés par `fn_relayNet "list"`, la réception du téléphone bornée par `fn_linkQuality`. Paliers : 1080p dès 7 Mbit/s, 720p dès 3,5, 480p dès 1,2, image par image dès 0,15. Cache 1 s par flux.
+- Débit adaptatif (`"adapt"`) : baisse après 2 s, remontée après 6 s, perte immédiate ; raison en français au journal du drone (Live cam et caméras fixes : notification).
+- Drone : `["link"]` de `fn_droneAction` prend le meilleur chemin (direct ou relais) et renvoie le flux en 5e élément ; le retour automatique ne part que si aucun chemin ne passe. Drones Mavic : signal direct du mod Mavic inchangé, relais en plus.
+- `fn_droneStatic` : 480p à 6 i/s et image par image à 1,5 i/s (la caméra se fige entre deux images, même mécanisme que le gel TNT), grain de compression en 480p et moins, qualité du chemin pour les défauts TNT. Caméra casque d'un équipier : même calcul (maillage 3 km ou relais). Rendu de base (r2t, camBind) non touché.
+- Incrustations : palier, débit, relais et latence (vue caméra du drone, Live cam, caméra fixe, petite fenêtre de la carte), « Flux 720p via … » dans l'en-tête de l'app Drone.
+- Caméras fixes : « Hors réseau des relais » quand aucun chemin ; Live cam : flux coupé quand le porteur sort du réseau.
+- Réglage CBA serveur « Flux vidéo selon les relais » (coché par défaut). Aucun relais du camp dans la mission : mode arcade, comportement d'avant. Coût : quelques `terrainIntersectASL` par seconde, rien par image.
 
 ## Menu Échap et Dépannage liaison refondus (ATAK natif 1.77.0)
 

@@ -39,9 +39,14 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
         private _osd = uiNamespace getVariable ["COMSPEC_ATAK_LivecamOsd", controlNull];
         if (!isNull _osd) then {
             private _d = vectorDir _cam;
-            _osd ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='#e5483a'>● LIVE</t>  <t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m · cap %4° · %5</t>",
+            // Flux par les relais (fn_videoLink) : palier adaptatif, débit, relais et latence en troisième ligne.
+            private _v = ["video", _o] call comspec_atak_native_fnc_camAction;
+            (["adapt", ["LIVECAM", _v]] call comspec_atak_native_fnc_videoLink) params ["_vt", "_vtxt"];
+            if (_vtxt isNotEqualTo "") then { ["INFO", _vtxt, 3, 30] call comspec_atak_native_fnc_notify; };
+            _osd ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='#e5483a'>● LIVE</t>  <t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m · cap %4° · %5%6</t>",
                 _o getVariable ["COMSPEC_ATAK_CamName", "Caméra"], [getPosASL _o, 8] call comspec_atak_native_fnc_gridRef, round (player distance _o),
-                round (((_d select 0) atan2 (_d select 1)) + 360) mod 360, [dayTime, "HH:MM:SS"] call BIS_fnc_timeToString]) call comspec_atak_native_fnc_tr);
+                round (((_d select 0) atan2 (_d select 1)) + 360) mod 360, [dayTime, "HH:MM:SS"] call BIS_fnc_timeToString,
+                ["", "<br/>" + (["osd", [_v, _vt]] call comspec_atak_native_fnc_videoLink)] select (_v getOrDefault ["active", false])]) call comspec_atak_native_fnc_tr);
         };
     }, 1] call CBA_fnc_addPerFrameHandler];
 };
