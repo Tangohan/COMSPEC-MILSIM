@@ -78,6 +78,8 @@ Une seule version pour 8 PR regroupées (#782, #783, #785, #786, #787, #788, #78
 - Site : table `atak_briefing_plans` (une ligne par carte et par camp, créée aussi à la première écriture), GET `/api/atak/briefing-plan` (plans des 12 dernières heures), calque Leaflet `atak-briefing-plan.js` (zones remplies, lignes de phase étiquetées, flèches, points), préférence `showBriefingPlan`.
 - Calque Plan de la carte du téléphone : nouvelle préférence `COMSPEC_ATAK_PlanOnMap2`, active par défaut, avec le brouillon local plus pâle.
 - Brouillons et plans enregistrés restent personnels : ils arrivent sur le site une fois publiés dans le plan partagé. Exception : serveur sans le mod natif (`COMSPEC_ATAK_PlanSrvOn` absent), chaque joueur envoie son brouillon (`owner` = UID, une ligne par joueur).
+- Détection du serveur avec le mod : drapeau `COMSPEC_ATAK_PlanSrvOn` posé dès le preInit serveur ; côté client, `isServer` ou plan déjà écrit suffisent ; sans drapeau, le serveur est quand même essayé (5 s) avant le brouillon, puis `COMSPEC_ATAK_PlanNoSrv` évite d'attendre aux ajouts suivants. Le message « Serveur sans le mod ATAK natif » n'apparaît plus à tort en solo ou en partie hébergée.
+- TOUT EFF. ne vidait que la couche visée (souvent le partagé, vide quand les éléments étaient partis au brouillon) : il vide maintenant tracé, brouillon et partagé autorisé, avec un bouton CONFIRMER ? visible.
 - Clic droit de la carte du Plan : le relâchement n'arrivait pas toujours à la carte ; il est aussi détecté par `inputMouse 1` (premier des deux, traité une fois, événement `rclick`).
 
 ---

@@ -212,7 +212,7 @@ private _acts = [
     ["undo", "DÉFAIRE", { ["undo"] call comspec_atak_native_fnc_planAction; }, "Dernier point du tracé, sinon dernier élément (partagé : le dernier posé par vous)"],
     ["toggle", "NET. ⇄", { ["toggleClear"] call comspec_atak_native_fnc_planAction; }, "Bâtiment sélectionné : CLEARED <-> UNCLEARED (même numéro)"],
     ["del", "SUPPR.", { ["delete"] call comspec_atak_native_fnc_planAction; }, "Efface l'élément sélectionné"],
-    ["clear", "TOUT EFF.", { ["clearTarget"] call comspec_atak_native_fnc_planAction; }, "Vide la couche visée (deux appuis)"]
+    ["clear", ["TOUT EFF.", "CONFIRMER ?"] select ((diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PlanClearArm", -10])) <= 4), { ["clearTarget"] call comspec_atak_native_fnc_planAction; }, "Efface le brouillon et, si vous avez le droit, le plan partagé (deux appuis)"]
 ];
 private _aw = (_bw - _pad * 2 - _ew - _gap * (count _acts)) / (count _acts);
 {
