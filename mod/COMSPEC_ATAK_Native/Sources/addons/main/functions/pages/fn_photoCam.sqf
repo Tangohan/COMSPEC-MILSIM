@@ -111,7 +111,7 @@ private _redraw = { [{ if (((uiNamespace getVariable ["COMSPEC_ATAK_State", crea
 switch (_act) do {
     case "bind": {
         private _aspect = [_arg, 1] select (!(_arg isEqualType 0) || {_arg <= 0});
-        if !(isPiPEnabled) exitWith { "" };
+        if ((["check", "PHOTO"] call comspec_atak_native_fnc_pipCheck) isNotEqualTo "") exitWith { "" };
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_PhotoCam", objNull];
         if (isNull _cam) then {
             private _n = ((missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamN", 0]) + 1) mod 4;

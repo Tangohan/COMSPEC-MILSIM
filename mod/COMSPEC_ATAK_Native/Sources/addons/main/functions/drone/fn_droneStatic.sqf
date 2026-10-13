@@ -26,7 +26,9 @@ switch (_act) do {
         // Source choisie seulement sur la carte : l'app Drone montre toujours le drone.
         private _src = ["DRONE", missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedSrc", "DRONE"]] select (((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP");
         uiNamespace setVariable ["COMSPEC_ATAK_DroneStaticQ", 1];
-        if !(isPiPEnabled) exitWith { "IMAGE DANS L'IMAGE (PIP) COUPÉE : OPTIONS > VIDÉO" };
+        // PiP coupée dans les options vidéo : raison claire au lieu d'une image noire (fn_pipCheck : journal et notification).
+        private _pip = ["check", "DRONE"] call comspec_atak_native_fnc_pipCheck;
+        if (_pip isNotEqualTo "") exitWith { _pip };
         if (_src isEqualTo "HELMET") exitWith {
             private _u = missionNamespace getVariable ["COMSPEC_ATAK_DroneFeedUnit", objNull];
             if (!alive _u) exitWith { "CAMÉRA CASQUE HORS LIGNE" };

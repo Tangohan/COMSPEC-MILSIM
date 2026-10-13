@@ -79,7 +79,7 @@ class CfgFunctions {
             class dockServer {}; class dockVisual {}; class dockClient {}; class dockMenu {};
         };
         class camera { file="z\comspec_atak_native\addons\main\functions\camera";
-            class camAction {}; class camView {};
+            class camAction {}; class camView {}; class pipCheck {};
         };
         class pages { file="z\comspec_atak_native\addons\main\functions\pages";
             class chatSend {}; class taskAction {}; class briefingStep {}; class settingsSave {};

@@ -38,6 +38,25 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Vue caméra noire : explication claire et vue directe du drone (ATAK natif 1.74.0)
+
+### Résumé joueur
+Type : correctif
+FR : Caméra du drone et viseur photo noirs : on sait pourquoi, et le drone a une vue de secours
+- Si l'image dans l'image est désactivée dans les options vidéo d'Arma, l'app Drone et l'app Photo le disent clairement au lieu d'afficher une image noire.
+- Nouveau bouton VUE DIRECTE dans la caméra du drone : l'écran passe en plein écran sur la caméra du drone, même quand l'image du téléphone reste noire. Échap ramène au téléphone.
+- Le téléphone note dans le journal du jeu chaque étape de l'ouverture de la caméra, pour trouver la cause si l'image reste noire.
+EN : Black drone camera and photo viewfinder: a clear reason, and a backup drone view
+- If picture-in-picture is turned off in Arma's video options, the Drone and Photo apps now say so clearly instead of showing a black picture.
+- New DIRECT VIEW button in the drone camera: the screen switches to full screen on the drone camera, even when the phone picture stays black. Esc takes you back to the phone.
+- The phone writes every step of opening the camera to the game log, to find the cause if the picture stays black.
+
+### Détail technique
+- Retour de TTRD (13/10, 12:35 en jeu) : vue caméra de l'app Drone noire, puis viseur de l'app Photo noir aussi, en plein jour, PiP déclarée active (aucun NO DATA ni VISEUR INDISPONIBLE). Cause commune aux deux rendus r2t, non confirmée : rien n'est testé en jeu.
+- Nouveau `fn_pipCheck` (dossier camera) : `check` (PiP coupée → raison affichée sous NO DATA + notification + RPT ; distance de vue PiP < 300 m remontée), `watch` (RPT `[CAMERA]` étapes 1 à 5 : PiP, caméra et hauteur au-dessus du terrain, cible de rendu, texture, image ; `getVideoOptions` ; relevé à 2 s) et `rebind` (texture reposée sur l'image une image, deux images et 0,6 s après la création de la caméra).
+- Drone : noms de cible de rendu par qualité (`comspec_dronecam<q>_<n>`), plus jamais un même nom avec une autre taille de texture ; `feedWatch` appelé par la page ; `direct` / `directEnd` : caméra plein écran sans r2t attachée au drone, pose recopiée par la boucle de la nacelle (`COMSPEC_ATAK_DroneShotCam`), téléphone rangé, Échap (KeyDown du display 46) rouvre l'app Drone ; coupée si joueur mort, drone perdu, liaison perdue ou téléphone ouvert.
+- Photo : même contrôle et même journal à l'ouverture du viseur.
+
 ## Texte du bouton PANIQUE (ATAK natif 1.73.0)
 
 ### Résumé joueur
