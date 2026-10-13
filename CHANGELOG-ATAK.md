@@ -38,6 +38,21 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Gouttes de pluie sur l'écran désactivées (ATAK natif 1.82.0)
+
+### Résumé joueur
+Type : patch
+FR : Plus de gouttes de pluie sur l'écran du téléphone pour le moment
+- Sous la pluie, l'écran du téléphone ne se couvre plus de petites bulles.
+- L'effet revient plus tard, refait avec des gouttes qui glissent.
+EN : No more raindrops on the phone screen for now
+- In the rain, the phone screen no longer gets covered in small bubbles.
+- The effect will come back later, redone with sliding drops.
+
+### Détail technique
+- Demande de TTRD : effet de pluie mis de côté (W.I.P). fn_screenSurface ne dessine plus aucune goutte ; la saleté, le sang, les traces de doigts et le nettoyage sont inchangés. La refonte animée reste en brouillon (PR #728).
+- À vérifier en jeu : sous la pluie, téléphone sorti, plus aucune goutte ; poussière et traces toujours visibles.
+
 ## Grande mise à jour regroupée : téléphone, vidéo par relais, Athena (ATAK natif 1.81.0, COMSPEC Link 2.0.82, site)
 
 ### Résumé joueur
