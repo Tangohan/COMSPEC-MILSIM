@@ -12,12 +12,74 @@
                                 texture posée avant le premier rendu de la caméra peut rester noire) et l'état est
                                 relevé à 2 s (caméra, image, texture) ;
       ["rebind", [image, texture]]   pose de nouveau la texture sur l'image (si elle est toujours là).
+      ["test"]                TEST VIDÉO (app Drone, RÉGLAGES) : une caméra devant le joueur et la même image affichée
+                                à 4 endroits, numérotés, pendant 20 s : 1 dans la page du téléphone, 2 sur le téléphone hors
+                                de la page, 3 dans une fenêtre vide ouverte par-dessus, 4 dans un calque d'écran (comme
+                                l'incrustation). Retour de TTRD (13/10) : la PiP s'affiche partout ailleurs dans le jeu, sauf
+                                dans le téléphone ; le numéro qui montre une image dit où le téléphone bloque.
     source : "DRONE" ou "PHOTO" (préfixe des lignes du journal).
 */
 params [["_act", "check"], ["_arg", ""]];
 disableSerialization;
 private _say = { params ["_lvl", "_msg"]; [_lvl, "CAMERA", _msg] call comspec_atak_native_fnc_log; };
 switch (_act) do {
+    case "test": {
+        private _old = missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []];
+        if ((count _old) > 0) exitWith { ["testEnd"] call comspec_atak_native_fnc_pipCheck; };
+        private _phone = [] call comspec_atak_native_fnc_display;
+        if (isNull _phone) exitWith {};
+        // Caméra à hauteur des yeux, 2 m devant, tournée comme le joueur : texture carrée 512, nom simple, comme le terminal UAV.
+        private _dir = getCameraViewDirection player;
+        private _cam = "camera" camCreate [0, 0, 0];
+        _cam setPosASL ((eyePos player) vectorAdd (_dir vectorMultiply 0.5));
+        _cam setVectorDirAndUp [_dir, [0, 0, 1]];
+        _cam cameraEffect ["Internal", "Back", "comspecpiptest"];
+        _cam camSetFov 0.75;
+        _cam camCommit 0;
+        "comspecpiptest" setPiPEffect [0];
+        private _tex = "#(argb,512,512,1)r2t(comspecpiptest,1.0)";
+        private _ctrls = [];
+        private _mk = {
+            params ["_disp", "_parent", "_pos", "_n"];
+            private _p = if (isNull _parent) then { _disp ctrlCreate ["RscPicture", -1] } else { _disp ctrlCreate ["RscPicture", -1, _parent] };
+            _p ctrlSetPosition _pos;
+            _p ctrlSetText _tex; // i18n:brut
+            _p ctrlCommit 0;
+            private _l = if (isNull _parent) then { _disp ctrlCreate ["RscStructuredText", -1] } else { _disp ctrlCreate ["RscStructuredText", -1, _parent] };
+            _l ctrlSetPosition [_pos select 0, _pos select 1, _pos select 2, 0.06];
+            _l ctrlSetBackgroundColor [0, 0, 0, 0.7];
+            _l ctrlSetStructuredText parseText format ["<t size='1.6' color='#ffd400' font='PuristaBold'>%1</t>", _n];
+            _l ctrlCommit 0;
+            _ctrls append [_p, _l];
+        };
+        private _sz = 0.22 * safeZoneH;
+        private _w = _sz * 3 / 4;
+        // 1 : dans la page (groupe de contenu, comme l'image du drone).
+        [_phone, _phone displayCtrl 88531, [0, 0, _w, _sz], "1"] call _mk;
+        // 2 : sur le téléphone, hors du groupe de contenu.
+        [_phone, controlNull, [safeZoneX + 0.02, safeZoneY + 0.1, _w, _sz], "2"] call _mk;
+        // 3 : fenêtre vide ouverte par-dessus le téléphone.
+        private _top = _phone createDisplay "RscDisplayEmpty";
+        if (!isNull _top) then { [_top, controlNull, [safeZoneX + 0.04 + _w, safeZoneY + 0.1, _w, _sz], "3"] call _mk; };
+        // 4 : calque d'écran (cutRsc), comme l'incrustation du téléphone.
+        ("COMSPEC_ATAK_PipTest" call BIS_fnc_rscLayer) cutRsc ["RscTitleDisplayEmpty", "PLAIN", 0, false];
+        private _hud = uiNamespace getVariable ["RscTitleDisplayEmpty", displayNull];
+        if (!isNull _hud) then { [_hud, controlNull, [safeZoneX + 0.06 + 2 * _w, safeZoneY + 0.1, _w, _sz], "4"] call _mk; };
+        missionNamespace setVariable ["COMSPEC_ATAK_PipTest", [_cam, _ctrls, _top]];
+        ["INFO", format ["TEST VIDÉO : PiP active %1, distance de vue PiP %2 m, options %3 ; 4 images ouvertes (1 page, 2 téléphone, 3 fenêtre %4, 4 calque %5)", isPiPEnabled, round getPiPViewDistance, getVideoOptions, ["absente", "ouverte"] select (!isNull _top), ["absent", "ouvert"] select (!isNull _hud)]] call _say;
+        ["INFO", "TEST VIDÉO : notez les numéros qui montrent une image (fermeture dans 20 s, Échap ferme la fenêtre 3)", 20, 40] call comspec_atak_native_fnc_notify;
+        [{ ["testEnd"] call comspec_atak_native_fnc_pipCheck; }, [], 20] call CBA_fnc_waitAndExecute;
+        true
+    };
+    case "testEnd": {
+        (missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []]) params [["_cam", objNull], ["_ctrls", []], ["_top", displayNull]];
+        missionNamespace setVariable ["COMSPEC_ATAK_PipTest", []];
+        { ctrlDelete _x; } forEach _ctrls;
+        if (!isNull _top) then { _top closeDisplay 2; };
+        ("COMSPEC_ATAK_PipTest" call BIS_fnc_rscLayer) cutText ["", "PLAIN"];
+        if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", "comspecpiptest"]; camDestroy _cam; };
+        true
+    };
     case "check": {
         private _src = [_arg, "?"] select (_arg isEqualTo "");
         if !(isPiPEnabled) exitWith {
