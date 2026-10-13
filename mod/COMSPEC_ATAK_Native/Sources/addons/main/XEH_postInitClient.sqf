@@ -509,7 +509,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_HitPush", {
 if (isClass (configFile >> "CfgPatches" >> "ace_medical_engine")) then {
     // ACE : [unité, [[dégâts après gilet, partie, dégâts sans gilet]...], tireur, munition] (munition « falling », « vehiclecrash »… pour les chocs).
     ["ace_medical_woundReceived", {
-        params ["_unit", ["_damages", []], ["", objNull], ["_ammo", ""]];
+        params ["_unit", ["_damages", []], "", ["_ammo", ""]];
         if (_unit isNotEqualTo player) exitWith {};
         if !(_ammo isEqualType "") then { _ammo = ""; };
         {
