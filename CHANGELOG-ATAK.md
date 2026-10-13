@@ -5,6 +5,33 @@ Toutes les modifications notables des features ATAK sont documentées ici.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Règle : chaque version a un « Résumé joueur » (annonce Discord)
+
+À chaque fusion sur main, l'action « Discord changelog » poste dans le salon releases une carte écrite pour les **joueurs**. Elle ne publie **que** le bloc « Résumé joueur » de l'entrée dont le titre contient la version du titre de la PR (sinon une section « Résumé joueur » dans la description de la PR). Le détail technique n'est jamais posté. **Sans résumé, rien n'est annoncé.**
+
+Toute PR qui livre une version (mod ATAK natif, COMSPEC Link, ou nouveauté visible du site) ajoute ce bloc juste sous le titre de son entrée :
+
+```
+### Résumé joueur
+Type : correctif
+FR : L'adresse du portail Athena ne se règle plus
+- Le téléphone se connecte toujours au portail officiel : il n'y a plus d'adresse à saisir.
+- Si tu avais enregistré une autre adresse, elle est effacée automatiquement.
+EN : The Athena portal address is no longer a setting
+- The phone always connects to the official portal: there is no address to type any more.
+- If you had saved another address, it is cleared automatically.
+
+### Détail technique
+- (le détail pour les développeurs, comme avant)
+```
+
+- **Type** : `nouveauté`, `correctif`, `performance` ou `patch` (choisit l'emoji de la carte).
+- **FR / EN** : un titre court en clair, puis 2 à 4 puces. Mêmes informations dans les deux langues.
+- Écrire pour un joueur : des phrases complètes qui disent ce qui change pour lui, avec le nom des apps et des menus tels qu'il les voit. Jamais de nom de fonction, de variable, de fichier, de clé d'API ou de secret, pas de numéro de PR, pas de lien, pas de « recompiler la DLL ».
+- Le titre de l'entrée garde la version (« (ATAK natif 1.72.0) », « (COMSPEC Link 2.0.80) », « site ») : la carte en tire le champ Version.
+- Aperçu avant de fusionner : `python3 .github/scripts/discord_changelog.py --preview 1.72.0` (les termes techniques repérés sont signalés).
+- Pour ne rien annoncer : label `discord:skip` ou `[skip discord]` dans le titre de la PR.
+
 Journal développeur (style Bohemia) : [SPOTREP #00003](docs/dev/SPOTREP-00003.md) · [TECHREP #00003](docs/dev/TECHREP-00003.md).
 
 Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-2026-09-22-overwatch-1.6.12.md) · [Overwatch 1.6.9](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.9.md) · [Overwatch 1.6.8](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.8.md) · [Overwatch 1.6.7](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.7.md) · [Overwatch 1.6.3](docs/dev/STEAM-CHANGELOG-2026-09-20-overwatch-1.6.3.md) · [Overwatch 1.5.78](docs/dev/STEAM-CHANGELOG-2026-09-15-overwatch-1.5.78.md) · [Overwatch 1.5.77](docs/dev/STEAM-CHANGELOG-2026-09-14-overwatch-1.5.77.md) · [Overwatch 1.5.76](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.76.md) · [Overwatch 1.5.75](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.75.md) · [Overwatch 1.5.74](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.74.md) · [Overwatch 1.5.73](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.73.md) · [Overwatch 1.5.72](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.72.md) · [Overwatch 1.5.71](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.71.md) · [Overwatch 1.5.70](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.70.md) · [Overwatch 1.5.69](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.69.md) · [Overwatch 1.5.68](docs/dev/STEAM-CHANGELOG-2026-09-13-overwatch-1.5.68.md) · [Overwatch 1.5.36](docs/dev/STEAM-CHANGELOG-2026-09-11-overwatch-1.5.36.md).
@@ -13,10 +40,32 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ## Texte du bouton PANIQUE (ATAK natif 1.73.0)
 
+### Résumé joueur
+Type : nouveauté
+FR : Bouton PANIQUE : une consigne plus claire
+- Sous le bouton PANIQUE, le téléphone explique qu'il alerte tous les opérateurs et qu'il faut appuyer deux fois d'affilée pour envoyer l'alerte.
+EN : PANIC button: clearer instructions
+- Under the PANIC button, the phone explains that it alerts all operators and that you must press twice in a row to send the alert.
+
+### Détail technique
+
 Non testé en jeu. Demande de TTRD : nouveau texte sous PANIQUE, écran Détresse et contact.
 - Le bloc PANIQUE affiche « Alerte l'ensemble des opérateurs de votre détresse. Il est nécessaire d'appuyer deux fois d'affilée pour valider l'envoi. » (anglais : « Alerts all operators of your distress. You must press twice in a row to confirm sending. »).
 
 ## Adresse du portail Athena fixe (ATAK natif 1.72.0)
+
+### Résumé joueur
+Type : correctif
+FR : L'adresse du portail Athena ne se règle plus
+- Le téléphone et Overwatch se connectent toujours au portail officiel d'Athena : il n'y a plus d'adresse à saisir ni à vérifier.
+- Si tu avais enregistré une autre adresse, elle est ignorée et effacée automatiquement.
+- L'erreur « adresse invalide » à la liaison du compte ne peut plus se produire.
+EN : The Athena portal address is no longer a setting
+- The phone and Overwatch always connect to the official Athena portal: there is no address to type or check any more.
+- If you had saved another address, it is ignored and cleared automatically.
+- The "invalid address" error when linking your account can no longer happen.
+
+### Détail technique
 
 Non testé en jeu. Demande de TTRD : personne n'héberge son propre Athena, l'adresse du portail ne doit plus être modifiable. Pas de DLL à recompiler, pas de migration.
 - Le téléphone et Overwatch connect utilisent toujours https://athena.ttrd.fr/public : plus de réglage CBA « Adresse du portail », plus de champ d'adresse dans la fenêtre Connexion Athena.
@@ -26,6 +75,21 @@ Non testé en jeu. Demande de TTRD : personne n'héberge son propre Athena, l'ad
 - À vérifier en jeu : onglet COMPTE du téléphone (code et Steam), fenêtre Connexion Athena d'Overwatch (code, Steam), et que la liaison reste active après un redémarrage d'Arma.
 
 ## Performance : arrivée en mission, arsenal et DLL (ATAK natif 1.71.0, COMSPEC Link 2.0.80)
+
+### Résumé joueur
+Type : performance
+FR : Moins de lag en rejoignant un serveur et dans l'arsenal
+- L'arsenal ne fige plus le jeu : ta fiche opérateur n'est envoyée à Athena qu'à la fermeture de l'arsenal.
+- Rejoindre une mission est plus rapide : le mod prépare ses listes une seule fois, au lancement d'Arma.
+- La connexion à Athena se fait en arrière-plan, sans bloquer l'image.
+- Les menus ACE d'Overwatch et du SSE ne disparaissent plus quand on enchaîne deux missions.
+EN : Less lag when joining a server and in the arsenal
+- The arsenal no longer freezes the game: your operator sheet is only sent to Athena when you close the arsenal.
+- Joining a mission is faster: the mod prepares its lists once, when Arma starts.
+- Connecting to Athena happens in the background without freezing the screen.
+- Overwatch and SSE ACE menus no longer go missing when you play two missions in a row.
+
+### Détail technique
 
 Non testé en jeu. Demande de TTRD : gros lag en rejoignant un serveur et en ouvrant l'arsenal. Il faut recompiler les DLL (build_mod.bat) ; pas de migration.
 - Arsenal : la fiche opérateur n'est plus reconstruite et envoyée à Athena à chaque clic. Rien tant que l'arsenal (ACE ou BIS) est ouvert ; un seul envoi à la fermeture, et au plus un toutes les 3 s hors arsenal. L'envoi part dans un spawn (requête HTTP hors du thread du jeu) au lieu de figer l'image jusqu'à 8 s.
@@ -39,10 +103,34 @@ Non testé en jeu. Demande de TTRD : gros lag en rejoignant un serveur et en ouv
 - Journal : lignes `[PERF]` (durées du preInit, du postInit client et serveur, arrivée en jeu, parcours de config, dictionnaire, fiche opérateur, reprise de session) et `Image figée : N ms` pour toute image de plus de 400 ms, avec arsenal, téléphone et carte ouverts ou non.
 ## Correctif « Include file ...\ui\controls.hpp not found » au lancement (ATAK natif 1.70.0)
 
+### Résumé joueur
+Type : correctif
+FR : Erreur au lancement d'Arma corrigée
+- Le message d'erreur affiché au démarrage d'Arma, qui empêchait le mod de se charger, a disparu.
+- Le téléphone ne signale plus à tort que COMSPEC Link n'est pas à jour.
+EN : Arma startup error fixed
+- The error message shown when Arma starts, which stopped the mod from loading, is gone.
+- The phone no longer wrongly reports that COMSPEC Link is out of date.
+
+### Détail technique
+
 - `config.cpp` incluait `ui/controls.hpp` et `ui/displays.hpp` avec une barre oblique. HEMTT (main.pbo du dépôt) l'accepte, mais `build_mod.bat` empaquette avec Addon Builder en `-packonly` : la config reste en texte et c'est Arma qui la lit au démarrage, sans trouver le fichier. Les deux includes utilisent maintenant une barre oblique inverse (`ui\controls.hpp`), lue par les deux chaînes de build.
 - `LINK_VERSION_STR` passe à 2.0.79 pour suivre la DLL de #710 (sinon le téléphone signalait la DLL comme périmée).
 
 ## Serveurs de jeu : l'adresse du serveur est retrouvée (COMSPEC Link 2.0.79, site)
+
+### Résumé joueur
+Type : nouveauté
+FR : Serveurs de jeu : l'adresse de chaque serveur est retrouvée
+- La page Serveurs de jeu d'Athena affiche l'adresse et le port d'un serveur même quand il ne les annonce pas lui-même.
+- Les joueurs passés sur un serveur ajouté plus tard sont bien rattachés à ce serveur, et plus à « Ailleurs ».
+- Deux serveurs hébergés sur la même machine ne sont plus confondus.
+EN : Game servers: each server's address is found
+- Athena's Game servers page shows a server's address and port even when the server does not announce them itself.
+- Players who joined a server that was added later are now linked to that server instead of "Elsewhere".
+- Two servers hosted on the same machine are no longer mixed up.
+
+### Détail technique
 
 Non testé en jeu. DLL COMSPEC Link à recompiler (build_mod.bat) ; pas de main.pbo à refaire. Côté site, la colonne `server_port` et la table `game_server_address_lookup` se créent toutes seules (ou `run-migrations.php`).
 - L'adresse d'un serveur ne venait que du serveur lui-même (COMSPEC Link chargé sur le serveur dédié). Un serveur sans la DLL restait « inconnue » sur la page Serveurs de jeu.
@@ -51,6 +139,21 @@ Non testé en jeu. DLL COMSPEC Link à recompiler (build_mod.bat) ; pas de main.
 - COMSPEC Link 2.0.79 : le serveur dédié donne aussi son port de jeu (`-port`, 2302 par défaut) ; le client ajoute l'adresse de lancement (`-connect`/`-port` du lanceur Arma ou `+connect` de Steam) quand le serveur n'en diffuse pas.
 
 ## Mod ou DLL périmés signalés dans le téléphone, dernière version publiée sur Athena (ATAK natif 1.69.0, COMSPEC Link 2.0.78)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le téléphone te prévient quand ton mod n'est pas à jour
+- Au lancement, le téléphone vérifie ton installation et te prévient si un fichier du mod ou COMSPEC Link est ancien ou en double.
+- Une notification « Mise à jour disponible » apparaît quand une nouvelle version sort.
+- La version du mod affichée dans les Réglages et les Crédits est enfin la bonne.
+- La page ATAK natif du site affiche la dernière version.
+EN : The phone warns you when your mod is out of date
+- At startup, the phone checks your install and warns you if a mod file or COMSPEC Link is old or duplicated.
+- An "Update available" notification appears when a new version is out.
+- The mod version shown in Settings and Credits is finally correct.
+- The site's native ATAK page shows the latest version.
+
+### Détail technique
 
 Non testé en jeu. Il faut recompiler la DLL (build_mod.bat) ; pas de migration. Cause d'origine : un ancien `Addons\comspec_atak_native_main.pbo` était chargé à la place du main.pbo à jour, sans aucun message (plus de journal ni de connexion).
 - Au démarrage, le téléphone contrôle l'installation et prévient dans ses notifications (et dans le chat pour les erreurs), une fois par lancement : deux PBO du même addon chargés, code et config du main.pbo de versions différentes, DLL COMSPEC Link absente ou d'une autre version que celle attendue par le main.pbo.
@@ -63,11 +166,37 @@ Non testé en jeu. Il faut recompiler la DLL (build_mod.bat) ; pas de migration.
 
 ## Carte : effacer le champ de vision et les zones interdites au drone (ATAK natif 1.68.0)
 
+### Résumé joueur
+Type : nouveauté
+FR : Effacer le champ de vision et les zones interdites au drone depuis la carte
+- Un appui long sur la carte propose « Effacer le champ de vision » et « Effacer la ligne de vue » dès qu'ils sont affichés.
+- « Retirer toutes les zones » enlève d'un coup toutes les zones interdites au drone de ton camp.
+- Poser un nouveau champ de vision remplace le précédent.
+EN : Clear the viewshed and no-drone zones from the map
+- A long press on the map offers "Clear viewshed" and "Clear line of sight" as soon as they are shown.
+- "Remove all zones" clears every no-drone zone of your side in one go.
+- Placing a new viewshed replaces the previous one.
+
+### Détail technique
+
 Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : un champ de vision posé depuis la carte ne pouvait plus être retiré.
 - Menu de la carte (appui long / clic droit) : « Effacer le champ de vision » apparaît dès qu'un champ de vision est affiché (le bouton EFFACER n'existait que dans l'app Relief). Même chose pour la ligne de vue : « Effacer la ligne de vue ».
 - Zones interdites au drone : « Retirer la zone interdite » (clic dans la zone) existait déjà ; ajout de « Retirer toutes les zones » dans le menu de la carte et de RETIRER TOUTES LES ZONES dans l'app Marquer Tracking (toutes les zones du camp).
 - Un seul champ de vision existe à la fois par joueur : en poser un nouveau remplace le précédent.
 ## Intro au démarrage désactivée (ATAK natif 1.67.0)
+
+### Résumé joueur
+Type : correctif
+FR : L'intro au démarrage d'Arma est désactivée
+- L'animation et le son COMSPEC ne se lancent plus au démarrage d'Arma, car ils causaient des bugs.
+- Tu peux la réactiver dans les réglages d'addons (COMSPEC > ATAK · Intro).
+- L'écran de chargement des missions ne change pas.
+EN : The Arma startup intro is turned off
+- The COMSPEC animation and sound no longer play when Arma starts, because they caused bugs.
+- You can turn it back on in the addon options (COMSPEC > ATAK · Intro).
+- The mission loading screen does not change.
+
+### Détail technique
 
 Non testé en jeu. TTRD : l'intro du mod est buggée. Pas de DLL à recompiler, pas de migration.
 - L'intro sur l'écran de démarrage d'Arma (marque COMSPEC, trait vert, carillon) ne se lance plus : ni affichage ni son.
@@ -77,6 +206,19 @@ Non testé en jeu. TTRD : l'intro du mod est buggée. Pas de DLL à recompiler, 
 
 ## Taille du téléphone en plein écran réglable (ATAK natif 1.66.0)
 
+### Résumé joueur
+Type : nouveauté
+FR : Choisis la taille du téléphone en plein écran
+- Nouveau réglage de 60 à 100 %, dans l'app Réglages du téléphone ou dans les réglages d'addons.
+- Le téléphone reste centré et tout s'adapte : écran, boutons et carte.
+- La taille par défaut ne change pas.
+EN : Choose the size of the full-screen phone
+- New setting from 60 to 100%, in the phone's Settings app or in the addon options.
+- The phone stays centred and everything scales with it: screen, buttons and map.
+- The default size does not change.
+
+### Détail technique
+
 Non testé en jeu. Demande de TTRD : le téléphone ouvert en plein écran est trop gros pour certains.
 - Nouveau réglage par joueur « Taille du téléphone en plein écran », de 60 à 100 % (100 % par défaut = taille actuelle), dans le menu CBA (COMSPEC > ATAK · Affichage) et dans l'app Réglages > Emplacement (60, 70, 80, 90, 100 %). Les deux sont le même réglage.
 - Le téléphone reste centré ; l'écran, le texte, les boutons, les touches de la coque et la carte sont recalculés depuis cette taille. Le mode mini et sa taille ne changent pas.
@@ -84,6 +226,19 @@ Non testé en jeu. Demande de TTRD : le téléphone ouvert en plein écran est t
 ---
 
 ## Pylônes relais 3D destructibles (ATAK natif 1.65.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Des pylônes relais en 3D, destructibles
+- Trois vrais pylônes radio de 30, 40 et 50 m à poser dans Eden et Zeus, rubrique Relais ATAK.
+- Chaque pylône sert de relais au réseau des téléphones ATAK.
+- Détruit à l'explosif ou au véhicule, il s'effondre et les téléphones qui l'utilisaient perdent le réseau.
+EN : Destructible 3D relay towers
+- Three real radio towers (30, 40 and 50 m) to place in Eden and Zeus, under ATAK relays.
+- Each tower acts as a relay for the ATAK phone network.
+- Destroyed by explosives or vehicles, it collapses and the phones using it lose the network.
+
+### Détail technique
 
 Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : de vrais pylônes radio en 3D, hauts, variés et destructibles.
 - Trois modèles dans Eden et Zeus (Structures > Relais ATAK) : pylône treillis 30 m anthracite à panneaux et RRU, tour triangulaire galvanisée 40 m à tête à bras, faisceaux hertziens et fouets, pylône élancé 50 m à paliers, échelle et feu de balisage rouge. Massifs béton, armoire technique et passerelle de câbles au pied. LOD visuelles 1 / 4 / 12 / 30, ombre, géométrie et géométrie de tir.
@@ -96,6 +251,19 @@ Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : de vrais pylônes
 
 ## Connexion Athena : « invalid_url » mieux géré (ATAK natif 1.64.0, COMSPEC Link 2.0.77)
 
+### Résumé joueur
+Type : correctif
+FR : Liaison du compte Athena plus fiable
+- Si l'adresse du portail est vide ou mal écrite, le téléphone utilise automatiquement le portail officiel.
+- En cas d'échec, le téléphone réessaie tout seul sur le portail officiel.
+- Si le problème revient, le journal COMSPEC indique la cause exacte à transmettre au staff.
+EN : More reliable Athena account linking
+- If the portal address is empty or mistyped, the phone automatically uses the official portal.
+- If linking fails, the phone retries on the official portal by itself.
+- If the problem comes back, the COMSPEC log shows the exact cause to send to the staff.
+
+### Détail technique
+
 Non testé en jeu. Capture de TTRD : l'onglet COMPTE affichait « Athena n'a pas donné de code (invalid_url) ». Il faut recompiler la DLL (build_mod.bat) ; pas de migration.
 - L'adresse du portail est nettoyée avant la demande de code ; si elle est vide ou sans http, le portail par défaut (athena.ttrd.fr/public) est utilisé.
 - Si la DLL refuse quand même l'adresse, le jeu refait un essai sur le portail par défaut.
@@ -103,6 +271,21 @@ Non testé en jeu. Capture de TTRD : l'onglet COMPTE affichait « Athena n'a pas
 - À vérifier en jeu : onglet COMPTE, un code s'affiche. Sinon, envoyer la ligne « PairStart ... » du journal COMSPEC.
 
 ## App JTAC : formulaire 9-LINE lisible (ATAK natif 1.63.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : App JTAC : un 9-LINE enfin lisible
+- Les neuf lignes s'affichent en rangées claires : numéro, intitulé, valeur.
+- Une valeur manquante te dit quoi faire, par exemple « pointez l'IP » ou « verrouillez la cible ».
+- Les champs à remplir sont à côté de chaque ligne, avec une aide en gris.
+- L'équipage reçoit le 9-LINE avec la même présentation.
+EN : JTAC app: a readable 9-LINE at last
+- The nine lines are shown as clear rows: number, label, value.
+- A missing value tells you what to do, for example "mark the IP" or "lock the target".
+- Fields to fill in sit next to each line, with a grey hint.
+- The aircrew receives the 9-LINE with the same layout.
+
+### Détail technique
 
 Non testé en jeu. Demande de TTRD : « Ça faut améliorer le JTAC » (capture du 9-LINE). Pas de DLL à recompiler, pas de migration.
 - Les neuf lignes et les remarques sont des rangées de même hauteur : numéro en pastille, libellé lisible à gauche, valeur à droite. Les valeurs calculées sont en couleur d'accent, une valeur manquante dit quoi faire (« pointez l'IP », « verrouillez la cible »), les amis passent en rouge en DANGER CLOSE.
@@ -112,12 +295,38 @@ Non testé en jeu. Demande de TTRD : « Ça faut améliorer le JTAC » (capture 
 
 ## Intro au démarrage : plus de conflit avec le menu, nouveau son (ATAK natif 1.62.0)
 
+### Résumé joueur
+Type : correctif
+FR : Intro au démarrage : plus de conflit avec le menu, nouveau son
+- L'intro ne cache plus l'écran de démarrage ni le menu principal d'Arma.
+- La marque COMSPEC s'affiche discrètement en bas à droite.
+- Nouveau son, court et plus doux, coupé par une touche ou un clic et désactivable dans les réglages d'addons.
+EN : Startup intro: no more clash with the menu, new sound
+- The intro no longer hides Arma's startup screen or main menu.
+- The COMSPEC brand shows discreetly in the bottom right corner.
+- New sound, short and softer, skipped with any key or click and can be turned off in the addon options.
+
+### Détail technique
+
 - L'intro ne pose plus de fond noir plein écran : l'écran de démarrage d'Arma ou d'un pack d'unité reste visible. La marque COMSPEC apparaît en bas à droite avec un trait de balayage, en animations moteur (plus rien ne reste figé à l'écran pendant le chargement).
 - Le menu principal n'est plus jamais recouvert (l'ancienne version y rejouait l'intro sur fond noir, par-dessus le menu et la fenêtre « service Athéna »).
 - Nouveau son : carillon synthétique court (1,6 s), volume bas, coupé par une touche ou un clic. Réglage CBA **COMSPEC > ATAK · Intro > Son d'intro au démarrage** pour le désactiver (pris en compte au lancement suivant).
 - Marque des écrans de chargement : textes affichés même quand les fonctions ne sont pas encore compilées.
 
 ## Musique : l'onglet ATHENA ne reste plus bloqué sur « Chargement » (ATAK natif 1.61.0)
+
+### Résumé joueur
+Type : correctif
+FR : Musique : l'onglet ATHENA ne reste plus bloqué sur « Chargement »
+- Après une fin de mission, l'onglet ATHENA de l'app Musique ne reste plus bloqué sur « Chargement depuis Athena… ».
+- Si Athena ne répond pas, un message le dit et le bouton ACTUALISER redevient actif.
+- La liste déjà reçue reste affichée pendant un nouveau chargement.
+EN : Music: the ATHENA tab no longer gets stuck on "Loading"
+- After a mission ends, the ATHENA tab of the Music app no longer stays stuck on "Loading from Athena…".
+- If Athena does not answer, a message says so and the REFRESH button works again.
+- The list you already have stays on screen while it reloads.
+
+### Détail technique
 
 Non testé en jeu. Pas de DLL à recompiler. Signalé par TTRD : onglet ATHENA, playlist globale, « Chargement depuis Athena… » sans fin et boutons grisés.
 - Cause : l'état « chargement en cours » est gardé dans uiNamespace, qui survit à la fin de mission, alors que le script qui attendait la réponse d'Athena est arrêté. Revenu en jeu, l'onglet attendait une réponse qui ne viendrait jamais.
@@ -127,6 +336,17 @@ Non testé en jeu. Pas de DLL à recompiler. Signalé par TTRD : onglet ATHENA, 
 ---
 
 ## Gestes : doigt d'honneur corrigé, désactivé par défaut (ATAK natif 1.60.0)
+
+### Résumé joueur
+Type : correctif
+FR : Gestes : doigt d'honneur corrigé et désactivé par défaut
+- La main du doigt d'honneur et du selfie est enfin dans le bon sens.
+- Les gestes doigt d'honneur sont désactivés par défaut : à activer dans les réglages d'addons (COMSPEC · ATAK · Gestes).
+- Les actions ACE « Doigt d'honneur » sont retirées.
+EN : Gestures: middle finger fixed and off by default
+- The hand for the middle finger and the selfie now faces the right way.
+- Middle finger gestures are off by default: turn them on in the addon options (COMSPEC · ATAK · Gestures).
+- The "Middle finger" ACE actions are removed.
 
 ### Modifié
 - **Main du doigt d'honneur** : l'orientation de la paume était inversée (les doigts se repliaient vers le dos de la main). Toutes les poses du doigt d'honneur, du doigt d'honneur libre et du selfie sont régénérées par `tools/gen_gestures.py`, et la position du téléphone dans la main au selfie est recalculée.
@@ -138,6 +358,17 @@ Non testé en jeu. Pas de DLL à recompiler. Signalé par TTRD : onglet ATHENA, 
 ---
 
 ## Musique : les morceaux mis en ligne sur le site apparaissent sans redémarrer (ATAK natif 1.59.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Musique : les morceaux envoyés sur le site arrivent en jeu sans redémarrer
+- Dans l'app Musique, l'onglet ATHENA se met à jour tout seul : un morceau ajouté sur le site apparaît en moins d'une minute.
+- Sur le site, on peut envoyer plusieurs morceaux d'un coup.
+EN : Music: tracks uploaded on the site show up in game without a restart
+- In the Music app, the ATHENA tab refreshes by itself: a track added on the site shows up within a minute.
+- On the site, you can upload several tracks at once.
+
+### Détail technique
 
 Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : un morceau envoyé sur le site doit être visible et lisible en jeu sans redémarrer.
 - App Musique, onglet ATHENA : chaque vue (playlist globale, communauté, organisation, mes envois, playlists) se recharge en arrière-plan quand on l'affiche et qu'elle date de plus de 60 s. Avant, une vue chargée restait figée jusqu'au bouton Actualiser ou au redémarrage du jeu.
