@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.76";
+    private const string ExtensionVersion = "2.0.77";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -2980,7 +2980,17 @@ public static partial class Extension
                 // 6e champ (2.0.72+) : adresse avec le code déjà rempli, ouverte par OpenAthenaLink.
                 return "OK|" + SanitizeIdentityField(userCode) + "|" + Math.Clamp(ttl, 30, 900) + "|" + SanitizeIdentityField(verify) + "|" + _pendingPairPollSeconds + "|" + SanitizeIdentityField(verifyFull);
             }
-            catch (Exception ex) { return FormatCaughtError(ex); }
+            catch (Exception ex)
+            {
+                var failure = FormatCaughtError(ex);
+                // invalid_url : joindre la cause réelle (2.0.77) pour le journal, le jeu n'affiche que le code.
+                if (failure == "ERR|invalid_url")
+                {
+                    var detail = SanitizeIdentityField(ex.GetType().Name + ": " + ex.Message);
+                    failure += "|" + (detail.Length > 160 ? detail[..160] : detail);
+                }
+                return failure;
+            }
         }
 
         // Communauté de la session ouverte (compte Athena) : le mod n'a plus besoin qu'on la saisisse.
