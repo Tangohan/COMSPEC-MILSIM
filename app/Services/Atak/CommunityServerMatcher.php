@@ -44,6 +44,23 @@ final class CommunityServerMatcher
         return preg_match('/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/', $h) ? $h : '';
     }
 
+    /**
+     * « 1.2.3.4:2302 », « [::1]:2302 » ou « 1.2.3.4 » en [adresse, port ou null].
+     *
+     * @return array{0: string, 1: int|null}
+     */
+    public static function splitAddress(string $raw): array
+    {
+        $raw = trim($raw);
+        $port = null;
+        if (preg_match('/^\[[0-9a-f:.]+\]:(\d{1,5})$/i', $raw, $m) || (substr_count($raw, ':') === 1 && preg_match('/:(\d{1,5})$/', $raw, $m))) {
+            $p = (int) $m[1];
+            $port = $p > 0 && $p < 65536 ? $p : null;
+        }
+
+        return [self::normalizeHost($raw), $port];
+    }
+
     public static function normalizeName(string $raw): string
     {
         $n = mb_strtolower(trim($raw), 'UTF-8');
@@ -55,14 +72,20 @@ final class CommunityServerMatcher
      * @param list<array<string, mixed>> $servers lignes tenant_game_servers actives
      * @return array<string, mixed>|null le serveur reconnu
      */
-    public function match(array $servers, string $serverIp, string $serverName): ?array
+    public function match(array $servers, string $serverIp, string $serverName, ?int $serverPort = null): ?array
     {
-        $ip = self::normalizeHost($serverIp);
+        [$ip, $ipPort] = self::splitAddress($serverIp);
+        $serverPort ??= $ipPort;
         $name = self::normalizeName($serverName);
         if ($ip !== '') {
             foreach ($servers as $s) {
                 $host = self::normalizeHost((string) ($s['ip_address'] ?? ''));
                 if ($host === '') {
+                    continue;
+                }
+                // Plusieurs serveurs sur la même machine : le port les départage quand les deux sont connus.
+                $declaredPort = (int) ($s['port'] ?? 0);
+                if ($serverPort !== null && $declaredPort > 0 && $declaredPort !== $serverPort) {
                     continue;
                 }
                 if ($host === $ip) {

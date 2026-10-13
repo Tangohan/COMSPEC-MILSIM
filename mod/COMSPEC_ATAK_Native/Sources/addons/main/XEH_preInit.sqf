@@ -1,10 +1,14 @@
+#include "script_component.hpp"
 private _perfT0 = diag_tickTime;
 uiNamespace setVariable ["COMSPEC_ATAK_PerfPreInitAt", diag_tickTime];
 COMSPEC_ATAK_UI_GENERATION = "native-rsc-v1";
 // Constantes posées par chaque machine (preInit tourne partout) : rien à diffuser. En public, chaque arrivée
 // renvoyait les deux valeurs à tous les joueurs et à la file JIP.
 missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION];
-missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", "1.11.0"];
+missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", VERSION_STR];
+// Versions compilées dans ce code : fn_integrityCheck les compare à la config chargée, à la DLL et au site.
+missionNamespace setVariable ["COMSPEC_ATAK_CodeVersion", VERSION_STR];
+missionNamespace setVariable ["COMSPEC_ATAK_LinkExpected", LINK_VERSION_STR];
 diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;

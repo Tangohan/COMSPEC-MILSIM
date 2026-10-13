@@ -103,6 +103,16 @@ switch (_tab) do {
             "<t color='#5cc76b'>La DLL est à jour pour cette version de COMSPEC ATAK.</t>",
             "<t color='#f2ab33'>Recompilez la DLL COMSPECExtension (version 2.0.58 ou plus) et relancez Arma : les écrans concernés affichent sinon « mettez la DLL à jour ».</t>"
         ] select ((count _missing) > 0)];
+        // Contrôle de l'installation (fn_integrityCheck) : PBO en double, versions incohérentes, mises à jour.
+        private _issues = missionNamespace getVariable ["COMSPEC_ATAK_Integrity", []];
+        (missionNamespace getVariable ["COMSPEC_ATAK_LatestRemote", ["", "", -1]]) params ["_lAtak", "_lLink", "_lAt"];
+        private _integrity = [
+            ["section", "Installation", format ["%1 anomalie(s)", count _issues]],
+            ["info", "DLL attendue par ce main.pbo", [missionNamespace getVariable ["COMSPEC_ATAK_LinkExpected", "—"]] call _esc],
+            ["info", "Dernières versions sur Athena", [format ["ATAK %1 · COMSPEC Link %2", _lAtak, _lLink], "pas encore vérifié"] select (_lAt < 0)]
+        ];
+        { _integrity pushBack ["text", format ["<t color='%1'>%2</t>", ["#f2ab33", "#e5483a"] select ((_x select 1) isEqualTo "ERROR"), [_x select 2] call _esc]]; } forEach _issues;
+        _rows append _integrity;
         _rows pushBack ["buttons", [["RELANCER LE TEST", { [{ ['DEBUG'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }, true]]];
     };
     case "TOOLS": {

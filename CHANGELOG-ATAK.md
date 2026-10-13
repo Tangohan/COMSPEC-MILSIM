@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Performance : arrivée en mission, arsenal et DLL (ATAK natif 1.69.0, COMSPEC Link 2.0.78)
+## Performance : arrivée en mission, arsenal et DLL (ATAK natif 1.71.0, COMSPEC Link 2.0.80)
 
 Non testé en jeu. Demande de TTRD : gros lag en rejoignant un serveur et en ouvrant l'arsenal. Il faut recompiler les DLL (build_mod.bat) ; pas de migration.
 - Arsenal : la fiche opérateur n'est plus reconstruite et envoyée à Athena à chaque clic. Rien tant que l'arsenal (ACE ou BIS) est ouvert ; un seul envoi à la fermeture, et au plus un toutes les 3 s hors arsenal. L'envoi part dans un spawn (requête HTTP hors du thread du jeu) au lieu de figer l'image jusqu'à 8 s.
@@ -21,8 +21,27 @@ Non testé en jeu. Demande de TTRD : gros lag en rejoignant un serveur et en ouv
 - Connexion Athena (COMSPEC Link et DLL native) : Init, reprise de session, Connect, IP et inscription bêta passent par extAwait, sans figer le jeu pendant les requêtes.
 - Aéronefs occupés : un seul client remonte chaque aéronef (le joueur relié à bord, sinon le joueur relié de plus petit UID) au lieu de tous les clients.
 - Menus ACE d'Overwatch et du SSE : les gardes « déjà installé » sont par mission (elles restaient dans uiNamespace : à la mission suivante sans relancer Arma, les menus manquaient).
-- COMSPEC Link 2.0.78 : le minuteur de vidage n'est plus relancé à chaque mise en file (il pouvait ne jamais partir), un seul vidage à la fois, file sur disque écrite au plus toutes les 3 s, journaux d'appareil renvoyés avec une pause croissante hors ligne, version lue une fois, et préchauffage au chargement (file sur disque relue et connexion TLS vers Athena ouverte en tâche de fond).
+- COMSPEC Link 2.0.80 : le minuteur de vidage n'est plus relancé à chaque mise en file (il pouvait ne jamais partir), un seul vidage à la fois, file sur disque écrite au plus toutes les 3 s, journaux d'appareil renvoyés avec une pause croissante hors ligne, version lue une fois, et préchauffage au chargement (file sur disque relue et connexion TLS vers Athena ouverte en tâche de fond).
 - Journal : lignes `[PERF]` (durées du preInit, du postInit client et serveur, arrivée en jeu, parcours de config, dictionnaire, fiche opérateur, reprise de session) et `Image figée : N ms` pour toute image de plus de 400 ms, avec arsenal, téléphone et carte ouverts ou non.
+## Serveurs de jeu : l'adresse du serveur est retrouvée (COMSPEC Link 2.0.79, site)
+
+Non testé en jeu. DLL COMSPEC Link à recompiler (build_mod.bat) ; pas de main.pbo à refaire. Côté site, la colonne `server_port` et la table `game_server_address_lookup` se créent toutes seules (ou `run-migrations.php`).
+- L'adresse d'un serveur ne venait que du serveur lui-même (COMSPEC Link chargé sur le serveur dédié). Un serveur sans la DLL restait « inconnue » sur la page Serveurs de jeu.
+- Site : quand l'adresse manque, Athena la retrouve par le nom exact du serveur dans la liste publique Steam (clé `STEAM_WEB_API_KEY`), sinon sur BattleMetrics, avec le port de jeu. Résultat gardé 24 h. Les serveurs déjà déclarés sans adresse sont complétés à l'ouverture de la page, et « C'est notre serveur » enregistre l'adresse et le port.
+- Site : les joueurs déjà vus sont rapprochés des serveurs tels qu'ils sont déclarés maintenant (un serveur ajouté après leur passage ne les laisse plus en « Ailleurs »). Le port départage deux serveurs sur la même machine.
+- COMSPEC Link 2.0.79 : le serveur dédié donne aussi son port de jeu (`-port`, 2302 par défaut) ; le client ajoute l'adresse de lancement (`-connect`/`-port` du lanceur Arma ou `+connect` de Steam) quand le serveur n'en diffuse pas.
+
+## Mod ou DLL périmés signalés dans le téléphone, dernière version publiée sur Athena (ATAK natif 1.69.0, COMSPEC Link 2.0.78)
+
+Non testé en jeu. Il faut recompiler la DLL (build_mod.bat) ; pas de migration. Cause d'origine : un ancien `Addons\comspec_atak_native_main.pbo` était chargé à la place du main.pbo à jour, sans aucun message (plus de journal ni de connexion).
+- Au démarrage, le téléphone contrôle l'installation et prévient dans ses notifications (et dans le chat pour les erreurs), une fois par lancement : deux PBO du même addon chargés, code et config du main.pbo de versions différentes, DLL COMSPEC Link absente ou d'une autre version que celle attendue par le main.pbo.
+- Athena expose les dernières versions (`GET /api/atak/version`, public, lues directement dans `script_component.hpp` et `COMSPECExtension.csproj`). Le mod les compare aux siennes au démarrage puis toutes les 2 h (service Athéna activé) et notifie « Mise à jour disponible ». La page /atak-natif affiche la dernière version.
+- App Debug, onglet DLL : section « Installation » avec la DLL attendue, les versions du site et les anomalies.
+- La version affichée du mod (Réglages, Crédits, Debug) vient maintenant du main.pbo (elle restait figée à 1.11.0).
+- COMSPEC Link 2.0.78 : commande `LatestVersions`. La DLL annonçait encore 2.0.76 (csproj non monté en 1.64.0) ; csproj, constante et main.pbo sont alignés, un test PHP le vérifie.
+- `build_mod.bat` supprime une sortie HEMTT `comspec_atak_native_main.pbo` / `_towers.pbo` copiée par erreur à côté de main.pbo.
+
+
 ## Carte : effacer le champ de vision et les zones interdites au drone (ATAK natif 1.68.0)
 
 Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : un champ de vision posé depuis la carte ne pouvait plus être retiré.
