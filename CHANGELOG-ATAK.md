@@ -40,6 +40,15 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ## Texte du bouton PANIQUE (ATAK natif 1.73.0)
 
+### Résumé joueur
+Type : nouveauté
+FR : Bouton PANIQUE : une consigne plus claire
+- Sous le bouton PANIQUE, le téléphone explique qu'il alerte tous les opérateurs et qu'il faut appuyer deux fois d'affilée pour envoyer l'alerte.
+EN : PANIC button: clearer instructions
+- Under the PANIC button, the phone explains that it alerts all operators and that you must press twice in a row to send the alert.
+
+### Détail technique
+
 Non testé en jeu. Demande de TTRD : nouveau texte sous PANIQUE, écran Détresse et contact.
 - Le bloc PANIQUE affiche « Alerte l'ensemble des opérateurs de votre détresse. Il est nécessaire d'appuyer deux fois d'affilée pour valider l'envoi. » (anglais : « Alerts all operators of your distress. You must press twice in a row to confirm sending. »).
 
