@@ -557,6 +557,8 @@ player addEventHandler ["Respawn", { missionNamespace setVariable ["COMSPEC_ATAK
 
 // Saleté de l'écran (fn_screenDirt, rendu fn_screenSurface) : poussière, pluie, traces de doigts, sang après un soin.
 [{ ["tick"] call comspec_atak_native_fnc_screenDirt; }, 5] call CBA_fnc_addPerFrameHandler;
+// Gouttes de pluie qui glissent sur l'écran (fn_screenRain) : sort tout de suite si le téléphone est rangé ou sec.
+[{ ["tick"] call comspec_atak_native_fnc_screenRain; }, 0.04] call CBA_fnc_addPerFrameHandler;
 ["ace_treatmentSucceded", {
     params [["_medic", objNull], ["_patient", objNull]];
     if (_medic isEqualTo player && {_patient isNotEqualTo player || {(player getVariable ["ace_medical_woundBleeding", 0]) > 0}}) then { ["treat", _patient] call comspec_atak_native_fnc_screenDirt; };

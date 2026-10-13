@@ -43,6 +43,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["COMSPEC", "ATAK · Affichage"], [0.6, 1, 1, 0, true], 0,
     { if !(isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; }; }] call comspec_atak_native_fnc_addSetting;
 
+// Gouttes de pluie animées sur l'écran (fn_screenRain), par joueur : effet complet, réduit (moins de gouttes et
+// d'images par seconde) ou coupé.
+["comspec_atak_native_rain_fx", "LIST",
+    ["Gouttes de pluie sur l'écran", "Sous la pluie, téléphone sorti : des gouttes se posent sur le verre, grossissent puis glissent en laissant une traînée. Réduit : moitié moins de gouttes et d'images par seconde. Désactivé : aucune goutte."],
+    ["COMSPEC", "ATAK · Affichage"], [[2, 1, 0], ["Complet", "Réduit", "Désactivé"], 0], 0,
+    { ["clear"] call comspec_atak_native_fnc_screenRain; }] call comspec_atak_native_fnc_addSetting;
+
 // Réglages serveur (forçables par l'admin dans les réglages CBA du serveur / de la mission).
 // Tous les mods COMSPEC partagent une seule catégorie CBA « COMSPEC » ; sous-catégories « ATAK · … », « Overwatch · … », « SSE ».
 private _cat = ["COMSPEC", "ATAK · Accès au téléphone"];

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Textures de saleté de l'écran du téléphone (poussière, traces de doigts, sang, gouttes d'eau).
+"""Textures de saleté de l'écran du téléphone (poussière, traces de doigts, sang).
+Les gouttes de pluie sont dans gen_rain.py.
 
 Usage : python3 gen_dirt.py <hemtt>
 Sortie : Sources/addons/main/data/dirt_*.paa (blanches sur fond transparent, teintées en jeu par ctrlSetTextColor).
@@ -135,16 +136,6 @@ def splat(seed):
     return white(a.filter(ImageFilter.GaussianBlur(1.0)))
 
 
-def drop():
-    s = 64
-    a = Image.new("L", (s, s), 0)
-    d = ImageDraw.Draw(a)
-    d.ellipse([6, 6, s - 6, s - 6], fill=60)
-    d.ellipse([6, 6, s - 6, s - 6], outline=210, width=3)
-    d.ellipse([18, 14, 30, 24], fill=255)
-    return white(a.filter(ImageFilter.GaussianBlur(1.2)))
-
-
 def case_dust(src, seed):
     """Saleté de la coque d'un modèle (même cadre que sa texture) : poussière plus dense vers les bords et les
     creux, éclaboussures de boue ; masquée par la silhouette de la coque (l'ouverture de l'écran reste propre)."""
@@ -225,7 +216,6 @@ def main():
         for i in range(3):
             convert(smear(31 + i), f"dirt_smear_{i}", tmp)
         convert(splat(41), "dirt_splat", tmp)
-        convert(drop(), "dirt_drop", tmp)
         case_assets(tmp)
 
 

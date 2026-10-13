@@ -10196,5 +10196,8 @@
 ["❌ Échec de resynchronisation de %1", "❌ Failed to resync %1"],
 ["📍 TÉLÉPORTER", "📍 TELEPORT"],
 ["📡 Tableau de bord relais ATAK", "📡 ATAK relay dashboard"],
-["🔄 RESYNC TOUS", "🔄 RESYNC ALL"]
+["🔄 RESYNC TOUS", "🔄 RESYNC ALL"],
+["Gouttes de pluie sur l'écran", "Raindrops on the screen"],
+["Sous la pluie, téléphone sorti : des gouttes se posent sur le verre, grossissent puis glissent en laissant une traînée. Réduit : moitié moins de gouttes et d'images par seconde. Désactivé : aucune goutte.", "In the rain with the phone out: drops land on the glass, grow, then slide down leaving a wet trail. Reduced: half as many drops and frames per second. Disabled: no drops."],
+["Réduit", "Reduced"]
 ]
