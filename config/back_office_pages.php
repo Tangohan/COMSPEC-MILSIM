@@ -70,7 +70,7 @@ return [
             ['label' => 'Nouvel article', 'href' => 'back-office/articles/create'],
             ['label' => 'Voir côté membres', 'href' => 'articles'],
         ]],
-        ['path' => 'back-office/configuration', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Paramètres avancés', 'subtitle' => 'Réglages techniques de la plateforme. Modifiez-les seulement si vous savez ce qu’ils font.'],
+        ['path' => 'back-office/configuration', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Configuration', 'subtitle' => 'Tous les réglages de votre communauté au même endroit : identité, structure, accès, recrutement, contenu et modération.', 'css' => ['back-office-configuration.css']],
         ['path' => 'back-office/integrations', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégrations externes', 'subtitle' => 'Reliez Discord et les autres services : choix des salons, envoi des photos et des transmissions, clés d’accès.'],
         ['path' => 'back-office/dashboard-pins', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Raccourcis du portail', 'subtitle' => 'Les liens épinglés sur le tableau de bord des membres.'],
         ['path' => 'back-office/dashboard-tenues/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · TABLEAU DE BORD', 'title' => 'Mettre une tenue en avant', 'css' => ['dashboard-impact.css'], 'quick' => [
