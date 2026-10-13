@@ -21,11 +21,11 @@ class AtakVehicleTrackingRepository
     }
 
     /**
-     * Indicatif du véhicule (clé de l'upsert) : vehicle_callsign, sinon callsign ou vehicle_name ; '' si absent.
+     * Indicatif du véhicule (clé de l'upsert) : vehicle_callsign, sinon callsign, vehicle_name, vehicle_id ou vehicle_type ; '' si absent.
      */
     public static function resolveCallsign(array $data): string
     {
-        foreach (['vehicle_callsign', 'callsign', 'vehicle_name'] as $key) {
+        foreach (['vehicle_callsign', 'callsign', 'vehicle_name', 'vehicle_id', 'vehicle_type'] as $key) {
             $value = $data[$key] ?? null;
             if (is_scalar($value) && trim((string) $value) !== '') {
                 return mb_substr(trim((string) $value), 0, 100);

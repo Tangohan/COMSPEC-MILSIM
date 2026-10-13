@@ -1274,6 +1274,29 @@ class AtakApiController
         return $mapId < 1 ? self::DEFAULT_MAP_ID : $mapId;
     }
 
+    /**
+     * Répare un corps JSON produit par le SQF : caractères de contrôle bruts → espace,
+     * nombres non finis (nan, inf, 1.#INF, -nan(ind)) → 0, puis virgule décimale → point si encore illisible.
+     */
+    public static function sanitizeArmaJson(string $raw): string
+    {
+        $out = preg_replace('/[\x00-\x1F]/', ' ', $raw);
+        $out = is_string($out) ? $out : $raw;
+        $fixed = preg_replace(
+            '/([:\[,]\s*)-?(?:1\.#(?:INF|IND|QNAN)\d*|nan(?:\(ind\))?|inf(?:inity)?)(?=\s*[,}\]])/i',
+            '${1}0',
+            $out
+        );
+        $out = is_string($fixed) ? $fixed : $out;
+        if (json_decode($out, true) !== null) {
+            return $out;
+        }
+        // Virgule décimale seulement en dernier recours : elle fusionnerait [1,2] en [1.2].
+        $fixed = preg_replace('/(?<=[:\[\s])(-?\d+),(\d{1,6})(?=[,}\]\s])/', '$1.$2', $out);
+
+        return is_string($fixed) ? $fixed : $out;
+    }
+
     private function jsonBody(Request $request): array
     {
         if ($this->jsonBodyCache !== null) {
@@ -1300,6 +1323,13 @@ class AtakApiController
             $commaFixed = preg_replace('/(?<=[:\[\s])(-?\d+),(\d{1,6})(?=[,}\]\s])/', '$1.$2', $raw);
             if (is_string($commaFixed) && $commaFixed !== $raw) {
                 $decoded = json_decode($commaFixed, true);
+            }
+        }
+        if (!is_array($decoded)) {
+            // Saut de ligne brut dans un nom, « nan » / « 1.#INF » d'un nombre SQF : JSON illisible.
+            $cleaned = self::sanitizeArmaJson($raw);
+            if ($cleaned !== $raw) {
+                $decoded = json_decode($cleaned, true);
             }
         }
         unset($raw);
@@ -13947,8 +13977,25 @@ class AtakApiController
             'context_id' => $mapId,
         ]);
         // Corps vide ou JSON illisible, ou véhicule sans indicatif : refus clair plutôt qu'une erreur 500.
+        // Le motif part dans la réponse (journal du jeu, COMSPEC Link 2.0.81) et dans error_log.
         if (\App\Repositories\AtakVehicleTrackingRepository::resolveCallsign($data) === '') {
-            return Response::json(['error' => 'vehicle_callsign requis'], 400);
+            if ($body === []) {
+                $raw = \App\Support\HttpJsonBody::rawJson();
+                $reason = $raw === '' ? 'corps vide' : 'JSON illisible (' . json_last_error_msg() . ')';
+                error_log('[atak/vehicles] 400 ' . $reason . ' : ' . mb_substr(preg_replace('/\s+/', ' ', $raw) ?? '', 0, 300));
+
+                return Response::json([
+                    'error' => 'invalid_json',
+                    'message' => 'Véhicule refusé : ' . $reason . '.',
+                ], 400);
+            }
+            $keys = implode(',', array_slice(array_map('strval', array_keys($body)), 0, 30));
+            error_log('[atak/vehicles] 400 indicatif absent, clés reçues : ' . $keys);
+
+            return Response::json([
+                'error' => 'vehicle_callsign requis',
+                'message' => 'Véhicule refusé : aucun indicatif (vehicle_callsign, callsign, vehicle_name, vehicle_id). Clés reçues : ' . $keys,
+            ], 400);
         }
 
         $vehicleId = $repo->upsert($data);

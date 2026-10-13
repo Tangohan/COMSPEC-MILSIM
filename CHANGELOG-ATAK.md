@@ -125,6 +125,26 @@ Non testé en jeu. Demande de TTRD : « JTAC l'app a une UI pas encore assez ré
 - fn_formRender : nouvelles lignes `strip`, `steps`, `banner`, `big`, fond facultatif pour `text`, style « mono » pour `line` ; les autres apps ne changent pas.
 - i18n : textes ajoutés à en.txt.
 - À tester en jeu : onglets JTAC en portrait et paysage (mini et plein écran, échelle réglable), pose cible/IP sur la carte, cône FAH et cercle RED, vue équipage avec brief reçu, rafraîchissement CTRL toutes les 3 s (la carte garde sa vue), langue anglaise.
+## Véhicules refusés par Athena (HTTP 400) : JSON réparé, motif gardé dans le journal (ATAK natif 1.76.0, COMSPEC Link 2.0.81)
+
+### Résumé joueur
+Type : correctif
+FR : Les véhicules et drones remontent de nouveau sur la carte Athena
+- Certains véhicules ou drones étaient refusés par Athena juste après la connexion et n'apparaissaient pas sur la carte web.
+- Les informations envoyées sont maintenant toujours lisibles par Athena, même avec un nom de véhicule inhabituel.
+- Si un envoi est encore refusé, le journal du jeu indique désormais pourquoi, ce qui aide l'équipe à corriger.
+EN : Vehicles and drones show up on the Athena map again
+- Some vehicles or drones were rejected by Athena right after connecting and did not appear on the web map.
+- The data sent is now always readable by Athena, even with an unusual vehicle name.
+- If a send is still rejected, the game log now says why, which helps the team fix it.
+
+### Détail technique
+Non testé en jeu. Signalé par TTRD : `HTTP POST code 400 /public/api/atak/vehicles` en boucle juste après la connexion, alors que fiche opérateur, position et chat passaient. Il faut recompiler la DLL (build_mod.bat) ; pas de migration. La partie site n'est active qu'après déploiement sur le VPS.
+- Cause : Athena répond 400 quand le corps du véhicule est illisible ou sans indicatif. Le sérialiseur JSON d'Overwatch connect laissait passer des sauts de ligne bruts, des nombres non finis (« nan », « 1.#INF ») et un guillemet seul pour un tableau imbriqué : tout le corps devenait illisible, donc sans indicatif. Le motif exact n'était pas journalisé, la cause précise de ces trois 400 reste déduite.
+- Overwatch connect : chaînes échappées (sauts de ligne, tabulations, autres caractères de contrôle), nombres non finis envoyés à 0, tableaux imbriqués et camps/objets/groupes sérialisés proprement.
+- COMSPEC Link 2.0.81 : un corps encore illisible est réparé avant l'envoi (caractères de contrôle, nan/inf, virgule décimale). Pour un refus 4xx (hors 401/403/429), le journal du jeu garde désormais le motif renvoyé par Athena, et pour un 400/422 le début du corps envoyé : `ÉCHEC · HTTP POST — code 400 · /public/api/atak/vehicles (il y a 0 s) — réponse : … · envoyé : {…}`.
+- Site : même réparation du JSON côté Athena, indicatif repris aussi de `vehicle_id` ou `vehicle_type`, et le 400 dit pourquoi (JSON illisible ou clés reçues), avec une ligne `[atak/vehicles]` dans error_log.
+- À vérifier en jeu : après connexion, plus de 400 sur /api/atak/vehicles en montant dans un véhicule ou en pilotant un drone ; si un 400 revient, copier la ligne ÉCHEC complète du RPT (elle contient maintenant le motif).
 
 ## Ligne de vue : de ma position vers le point (ATAK natif 1.75.0)
 

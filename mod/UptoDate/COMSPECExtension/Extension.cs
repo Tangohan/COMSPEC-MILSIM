@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.80";
+    private const string ExtensionVersion = "2.0.81";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -321,7 +321,7 @@ public static partial class Extension
     private static long _screenshotWatchersStartedTicks;
     private static bool _screenshotQuotaEnsured;
 
-    private static void NotePostError(int code, string url)
+    private static void NotePostError(int code, string url, HttpResponseMessage? response = null, string? sentBody = null)
     {
         _lastPostErrorCode = code;
         string path;
@@ -341,7 +341,62 @@ public static partial class Extension
         var prev = System.Threading.Interlocked.Read(ref _lastPostErrorCbTicks);
         if (now - prev < TimeSpan.FromSeconds(3).Ticks) return;
         if (System.Threading.Interlocked.CompareExchange(ref _lastPostErrorCbTicks, now, prev) != prev) return;
-        InvokeCallback("PostError", $"{code}|{_lastPostErrorPath}|0");
+        var detail = PostErrorDetail(code, response, sentBody);
+        InvokeCallback("PostError", detail.Length == 0
+            ? $"{code}|{_lastPostErrorPath}|0"
+            : $"{code}|{_lastPostErrorPath}|0|{detail}");
+    }
+
+    /// <summary>
+    /// Refus de validation (400 / 404 / 409 / 422…) : motif renvoyé par Athena, plus le début du corps envoyé
+    /// pour un 400 / 422, gardés dans le journal du jeu (sinon seul le code restait, 2.0.81).
+    /// </summary>
+    private static string PostErrorDetail(int code, HttpResponseMessage? response, string? sentBody)
+    {
+        if (code < 400 || code > 499 || code is 401 or 403 or 429) return "";
+        var parts = new List<string>(2);
+        try
+        {
+            var body = response?.Content.ReadAsStringAsync().GetAwaiter().GetResult() ?? "";
+            var reason = "";
+            if (body.Length > 0)
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(body);
+                    if (doc.RootElement.ValueKind == JsonValueKind.Object)
+                    {
+                        foreach (var k in new[] { "message", "error", "detail" })
+                        {
+                            if (doc.RootElement.TryGetProperty(k, out var p) && p.ValueKind == JsonValueKind.String)
+                            {
+                                var v = (p.GetString() ?? "").Trim();
+                                if (v.Length > 0 && !reason.Contains(v, StringComparison.Ordinal))
+                                    reason = reason.Length == 0 ? v : reason + " — " + v;
+                            }
+                        }
+                    }
+                }
+                catch { /* pas du JSON : texte brut */ }
+                if (reason.Length == 0) reason = body;
+            }
+            if (reason.Length > 0) parts.Add("réponse : " + OneLineExcerpt(reason, 200));
+        }
+        catch { /* corps illisible */ }
+        if ((code == 400 || code == 422) && !string.IsNullOrEmpty(sentBody))
+            parts.Add("envoyé : " + OneLineExcerpt(sentBody, 240));
+        return string.Join(" · ", parts);
+    }
+
+    private static string OneLineExcerpt(string text, int max)
+    {
+        var sb = new StringBuilder(Math.Min(text.Length, max + 1));
+        foreach (var ch in text)
+        {
+            if (sb.Length >= max) { sb.Append('…'); break; }
+            sb.Append(ch == '|' ? '/' : char.IsControl(ch) ? ' ' : ch);
+        }
+        return sb.ToString().Trim();
     }
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
@@ -1376,7 +1431,7 @@ public static partial class Extension
             NoteTransientPostFailure(code, url, jsonBody, response);
             return;
         }
-        NotePostError(code, url);
+        NotePostError(code, url, response, jsonBody);
         // 401 : clé / session temporairement incohérente — retenter client-init
         // (position, marqueur, recon… ; le chat synchrone peut encore passer).
         if (code == 401)
@@ -1461,7 +1516,7 @@ public static partial class Extension
                 if (!response.IsSuccessStatusCode)
                 {
                     var code = (int)response.StatusCode;
-                    NotePostError(code, item.Url);
+                    NotePostError(code, item.Url, response, item.Body);
                     if (TryNoteEndpointServerError(item.Url, response))
                     {
                         // Cette adresse attend ; le vidage continue avec les autres envois.
@@ -2578,6 +2633,37 @@ public static partial class Extension
             catch
             {
                 // ignore
+            }
+        }
+
+        // Caractères de contrôle bruts (saut de ligne dans un nom) et nombres non finis (« nan », « 1.#INF »)
+        // venus du SQF : JSON illisible, Athena répondait 400 sans indicatif lisible (2.0.81).
+        var cleaned = System.Text.RegularExpressions.Regex.Replace(s, @"[\x00-\x1F]", " ");
+        cleaned = System.Text.RegularExpressions.Regex.Replace(
+            cleaned,
+            @"(?<=[:\[,]\s*)-?(?:1\.#(?:INF|IND|QNAN)\d*|nan(?:\(ind\))?|inf(?:inity)?)(?=\s*[,\}\]])",
+            "0",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (cleaned != s)
+        {
+            foreach (var candidate in new[]
+            {
+                cleaned,
+                System.Text.RegularExpressions.Regex.Replace(
+                    cleaned,
+                    @"(?<=[:\[\s])(-?\d+),(\d{1,6})(?=[,\}\]\s])",
+                    "$1.$2"),
+            })
+            {
+                try
+                {
+                    using var _ = JsonDocument.Parse(candidate);
+                    return candidate;
+                }
+                catch
+                {
+                    // ignore
+                }
             }
         }
 
