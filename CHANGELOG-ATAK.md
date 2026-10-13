@@ -11,6 +11,13 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Musique : l'onglet ATHENA ne reste plus bloqué sur « Chargement » (ATAK natif 1.60.0)
+
+Non testé en jeu. Pas de DLL à recompiler. Signalé par TTRD : onglet ATHENA, playlist globale, « Chargement depuis Athena… » sans fin et boutons grisés.
+- Cause : l'état « chargement en cours » est gardé dans uiNamespace, qui survit à la fin de mission, alors que le script qui attendait la réponse d'Athena est arrêté. Revenu en jeu, l'onglet attendait une réponse qui ne viendrait jamais.
+- Un chargement de plus de 35 s est maintenant considéré comme perdu : un garde-fou affiche « Athena n'a pas répondu à temps », ACTUALISER redevient actif et la vue se recharge seule 20 s après une erreur. La liste déjà reçue reste affichée pendant un nouveau chargement ; une réponse arrivée trop tard est ignorée.
+- Messages plus justes : une erreur 503 d'Athena (surcharge, maintenance) n'est plus présentée comme « migrations à lancer ».
+
 ## Musique : les morceaux mis en ligne sur le site apparaissent sans redémarrer (ATAK natif 1.59.0)
 
 Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : un morceau envoyé sur le site doit être visible et lisible en jeu sans redémarrer.
