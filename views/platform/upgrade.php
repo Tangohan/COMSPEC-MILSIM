@@ -29,7 +29,8 @@ if ($tenantId > 0) {
     $t = \App\Core\Container::get(\App\Repositories\TenantRepository::class)->findById($tenantId);
     if ($t) {
         $st = (string) ($t['subscription_status'] ?? 'none');
-        $hasPaidSubscription = in_array($st, ['active', 'trialing'], true);
+        $hasPaidSubscription = in_array($st, ['active', 'trialing'], true)
+            || \App\Support\PlanGift::activeFromSettings($t['settings'] ?? null) !== null;
         $raw = $t['settings'] ?? null;
         if (is_string($raw) && trim($raw) !== '') {
             $d = json_decode($raw, true);
