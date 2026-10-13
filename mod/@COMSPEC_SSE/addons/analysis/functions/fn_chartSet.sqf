@@ -13,11 +13,11 @@ switch (_key) do {
     case "fit": { [true] call comspec_sse_fnc_chartRefresh; };
     case "reveal": {
         private _id = _st getOrDefault ["sel", ""];
-        if (_id isEqualTo "") exitWith { hint "Choisissez d'abord une personne ou une organisation."; };
+        if (_id isEqualTo "") exitWith { hint (("Choisissez d'abord une personne ou une organisation.") call comspec_sse_fnc_tr); };
         switch (_id select [0, 2]) do {
             case "P:": { ["reveal", [_id select [2], 2, "renseignement transmis par le PC"]] call comspec_sse_fnc_orgOp; };
             case "O:": { ["revealOrg", [_id select [2], 2, "renseignement transmis par le PC"]] call comspec_sse_fnc_orgOp; };
-            default { hint "Seules les personnes et organisations se révèlent."; };
+            default { hint (("Seules les personnes et organisations se révèlent.") call comspec_sse_fnc_tr); };
         };
         // Le serveur répond par la diffusion de l'état : rafraîchissement automatique.
     };

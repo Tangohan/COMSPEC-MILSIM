@@ -12,7 +12,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
     0,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "COMSPEC_DEBUG_ENABLE_SSE_ACE",
@@ -25,7 +25,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
         missionNamespace setVariable ["COMSPEC_DEBUG_DISABLE_INTERACTION", !_this];
     },
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "COMSPEC_DEBUG_ENABLE_SSE_DIGITAL",
@@ -38,7 +38,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
         missionNamespace setVariable ["COMSPEC_DEBUG_DISABLE_DIGITAL", !_this];
     },
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "COMSPEC_DEBUG_ENABLE_BIOMETRICS",
@@ -51,7 +51,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
         missionNamespace setVariable ["COMSPEC_DEBUG_DISABLE_BIOMETRICS", !_this];
     },
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "COMSPEC_DEBUG_ENABLE_SSE_ZEUS",
@@ -62,7 +62,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
     0,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "COMSPEC_DEBUG_ENABLE_MARKERS",
@@ -73,7 +73,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
     0,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "COMSPEC_DEBUG_ENABLE_ATAK",
@@ -84,7 +84,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
     0,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "COMSPEC_DEBUG_ENABLE_COMPAT_ACE",
@@ -97,7 +97,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
         missionNamespace setVariable ["COMSPEC_DEBUG_DISABLE_COMPAT_ACE", !_this];
     },
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "COMSPEC_DEBUG_ENABLE_COMPAT_BII",
@@ -110,7 +110,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
         missionNamespace setVariable ["COMSPEC_DEBUG_DISABLE_COMPAT_BII", !_this];
     },
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "COMSPEC_DEBUG_ENABLE_OVERWATCH_SSE_ACE",
@@ -123,7 +123,7 @@ private _cat = ["COMSPEC Debug", "Isolation"];
         missionNamespace setVariable ["COMSPEC_DEBUG_DISABLE_OVERWATCH_SSE_ACE", !_this];
     },
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 private _cat2 = ["COMSPEC Debug", "Diagnostics"];
 
@@ -136,7 +136,7 @@ private _cat2 = ["COMSPEC Debug", "Diagnostics"];
     0,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "COMSPEC_DEBUG_BLOCK_DANGEROUS_ACE",
@@ -147,7 +147,7 @@ private _cat2 = ["COMSPEC Debug", "Diagnostics"];
     0,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "COMSPEC_DEBUG_THROW_ON_RECURSION",
@@ -158,7 +158,7 @@ private _cat2 = ["COMSPEC Debug", "Diagnostics"];
     0,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "COMSPEC_DEBUG_FORCE_RPT",
@@ -169,7 +169,7 @@ private _cat2 = ["COMSPEC Debug", "Diagnostics"];
     0,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "COMSPEC_SAFE_MODE",
@@ -182,6 +182,6 @@ private _cat2 = ["COMSPEC Debug", "Diagnostics"];
         missionNamespace setVariable ["COMSPEC_SAFE_MODE", _this];
     },
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 true

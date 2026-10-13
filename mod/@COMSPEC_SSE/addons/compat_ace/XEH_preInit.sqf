@@ -13,4 +13,4 @@ comspec_sse_aceDogtagBridgeReady = false;
     1,
     {},
     false
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;

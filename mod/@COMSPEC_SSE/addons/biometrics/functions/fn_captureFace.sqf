@@ -4,7 +4,7 @@ params [
 ];
 
 if !([_player, "face"] call comspec_sse_fnc_hasEquipment) exitWith {
-    hint "Appareil photo, SEEK II ou tablette / caméra compatible requis.";
+    hint (("Appareil photo, SEEK II ou tablette / caméra compatible requis.") call comspec_sse_fnc_tr);
     false
 };
 
@@ -33,7 +33,7 @@ if !([_player, "face"] call comspec_sse_fnc_hasEquipment) exitWith {
         if (!isNil "comspec_overwatch_connect_fnc_sseCaptureFacePhoto") then {
             [_target] call comspec_overwatch_connect_fnc_sseCaptureFacePhoto;
         } else {
-            hint "Photo faciale enregistrée.";
+            hint (("Photo faciale enregistrée.") call comspec_sse_fnc_tr);
         };
     },
     [_target]

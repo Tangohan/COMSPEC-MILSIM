@@ -10,7 +10,7 @@ if (!hasInterface) exitWith {};
 [{ !isNil "ace_interact_menu_fnc_createAction" && {!isNull player} }, {
     private _mk = {
         ["COMSPEC_SSE_Guide", "Guide SSE (manuel)", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa",
-            { ["COMSPEC_SSE", "Start"] call BIS_fnc_openFieldManual }, { true }, { [] }, [], {[0, 0, 0]}, 1, [false, false, false, false, true]] call ace_interact_menu_fnc_createAction
+            { ["COMSPEC_SSE", "Start"] call BIS_fnc_openFieldManual }, { true }, { [] }, [], {[0, 0, 0]}, 1, [false, false, false, false, true]] call comspec_sse_fnc_aceAction
     };
     [player, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], call _mk] call ace_interact_menu_fnc_addActionToObject;
     missionNamespace setVariable ["comspec_sse_guideActionMk", _mk];
@@ -21,9 +21,9 @@ if (!hasInterface) exitWith {};
 }, [], 60] call CBA_fnc_waitUntilAndExecute;
 
 [{ !isNil "zen_custom_modules_fnc_register" }, {
-    ["COMSPEC SSE · Outils", "Tutoriel : manuel du Zeus", { ["COMSPEC_SSE", "Zeus"] call BIS_fnc_openFieldManual }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa"] call zen_custom_modules_fnc_register;
+    ["COMSPEC SSE · Outils", "Tutoriel : manuel du Zeus", { ["COMSPEC_SSE", "Zeus"] call BIS_fnc_openFieldManual }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa"] call comspec_sse_fnc_zenModule;
     ["COMSPEC SSE · Outils", "Tutoriel : poser un exercice ici", {
         params ["_pos"];
         [ASLToAGL _pos, player] call comspec_sse_fnc_guideExercise;
-    }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa"] call zen_custom_modules_fnc_register;
+    }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa"] call comspec_sse_fnc_zenModule;
 }, [], 45] call CBA_fnc_waitUntilAndExecute;

@@ -3,7 +3,7 @@ params [
 ];
 
 if !([player, "seek"] call comspec_sse_fnc_hasEquipment) exitWith {
-    hint "Terminal SEEK II (ou tablette cTab / Android ATAK compatible) requis.";
+    hint (("Terminal SEEK II (ou tablette cTab / Android ATAK compatible) requis.") call comspec_sse_fnc_tr);
     false
 };
 
@@ -19,7 +19,7 @@ if (!isNil "comspec_overwatch_connect_fnc_sseOpenTerminal") exitWith {
 
 if !(createDialog "COMSPEC_SSE_SeekDialog") exitWith {
     private _sum = [_target] call comspec_sse_fnc_getBiometricSummary;
-    hint format ["SEEK II (fallback)\nStatus: %1", _sum getOrDefault ["status", "?"]];
+    hint ((format ["SEEK II (fallback)\nStatus: %1", _sum getOrDefault ["status", "?"]]) call comspec_sse_fnc_tr);
     false
 };
 

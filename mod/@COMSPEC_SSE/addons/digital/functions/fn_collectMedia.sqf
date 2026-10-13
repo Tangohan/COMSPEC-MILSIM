@@ -8,7 +8,7 @@ params [
 ];
 
 if !([_player, "evidence_bag"] call comspec_sse_fnc_hasEquipment) exitWith {
-    hint "Sachet de preuve SSE (ou kit médical ACE compatible) requis pour collecter un support.";
+    hint (("Sachet de preuve SSE (ou kit médical ACE compatible) requis pour collecter un support.") call comspec_sse_fnc_tr);
     false
 };
 
@@ -60,7 +60,7 @@ if !([_player, "evidence_bag"] call comspec_sse_fnc_hasEquipment) exitWith {
         ];
         ["collect", _target, [70, _coc]] call comspec_sse_fnc_requestServerOp;
 
-        hint format ["Support %1 collecté\n%2\nFichiers : %3", _kind, _media get "uid", count (_media getOrDefault ["files", []])];
+        hint ((format ["Support %1 collecté\n%2\nFichiers : %3", _kind, _media get "uid", count (_media getOrDefault ["files", []])]) call comspec_sse_fnc_tr);
         [_media get "uid", "collect_media", _kind, _media getOrDefault ["summary", ""], 70, "QUEUED"] call comspec_sse_fnc_addJournalEntry;
     },
     [_target, _player]

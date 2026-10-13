@@ -48,7 +48,7 @@ if ((count _lines) > 0 && {!(missionNamespace getVariable ["comspec_sse_milsimQu
     private _extra = _lines select {(_x find "Identité") >= 0 || {(_x find "Nationalité") >= 0} || {(_x find "Groupe") >= 0}};
     if ((count _extra) == 0) then { _extra = _lines select [0, (count _lines) min 2]; };
     if ((count _extra) > 0) then {
-        hintSilent format ["SSE — plaque :\n%1", _extra joinString "\n"];
+        hintSilent ((format ["SSE — plaque :\n%1", _extra joinString "\n"]) call comspec_sse_fnc_tr);
     };
 };
 

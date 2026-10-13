@@ -66,4 +66,10 @@ final class HtmlTranslatorTest extends TestCase
         $html = '<p>Texte inconnu</p><!-- Membres -->';
         self::assertSame($html, HtmlTranslator::translate($html));
     }
+
+    public function testTranslatesPlainTextLineByLine(): void
+    {
+        $text = "Bienvenue, Jean !\n\n  Statut : Actif\nLigne inconnue\n";
+        self::assertSame("Welcome, Jean!\n\n  Status: Active\nLigne inconnue\n", HtmlTranslator::translateText($text));
+    }
 }

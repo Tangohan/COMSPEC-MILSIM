@@ -25,5 +25,5 @@ if (_logical isEqualType []) then {
 private _disc = _g getOrDefault ["discovery", createHashMap];
 if (_disc isEqualType createHashMap) then { comspec_sse_discoveryStates = _disc; };
 
-hint format ["Graphe SSE importé — %1 entité(s) logiques.", count (keys (missionNamespace getVariable ["comspec_sse_logicalEntities", createHashMap]))];
+hint ((format ["Graphe SSE importé — %1 entité(s) logiques.", count (keys (missionNamespace getVariable ["comspec_sse_logicalEntities", createHashMap]))]) call comspec_sse_fnc_tr);
 true

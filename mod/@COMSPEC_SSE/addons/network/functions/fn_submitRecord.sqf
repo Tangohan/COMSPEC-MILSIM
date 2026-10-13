@@ -33,16 +33,16 @@ private _envelope = createHashMapFromArray [
 if ([] call comspec_sse_fnc_isOnline) then {
     private _ok = [_envelope] call comspec_sse_fnc_sendViaOverwatch;
     if (_ok) then {
-        hint format ["SSE transmis — %1", _recordId];
+        hint ((format ["SSE transmis — %1", _recordId]) call comspec_sse_fnc_tr);
         [_recordId, "transmit", _sourceType, "Transmis Athena", _quality, "TRANSMITTED"] call comspec_sse_fnc_addJournalEntry;
     } else {
         [_envelope] call comspec_sse_fnc_queueOffline;
-        hint format ["SSE en file (échec envoi) — %1", _recordId];
+        hint ((format ["SSE en file (échec envoi) — %1", _recordId]) call comspec_sse_fnc_tr);
         [_recordId, "transmit", _sourceType, "QUEUED (échec)", _quality, "QUEUED"] call comspec_sse_fnc_addJournalEntry;
     };
 } else {
     [_envelope] call comspec_sse_fnc_queueOffline;
-    hint format ["Mode hors-ligne — %1 mis en file QUEUED", _recordId];
+    hint ((format ["Mode hors-ligne — %1 mis en file QUEUED", _recordId]) call comspec_sse_fnc_tr);
     [_recordId, "transmit", _sourceType, "QUEUED offline", _quality, "QUEUED"] call comspec_sse_fnc_addJournalEntry;
 };
 

@@ -10,6 +10,9 @@ dictionnaire lang/en/site_auto.php : ['texte français' => 'English text', ...].
   python3 tools/i18n/site_i18n.py extract [dossier de views ...]   textes sans traduction -> tools/i18n/site_missing.tsv
   python3 tools/i18n/site_i18n.py merge fichier.tsv                ajoute les lignes « français<TAB>anglais »
   python3 tools/i18n/site_i18n.py stats
+
+Les e-mails (views/emails) sont aussi rendus avec des valeurs repères (render_emails.php) : chaque texte devient un
+modèle %1, %2… ; EmailService les traduit pour un destinataire dont le profil est en anglais.
 """
 import html
 import os
@@ -96,6 +99,43 @@ def extract_view(src):
     return out
 
 
+MARK = re.compile(r"88000\d\d")
+
+
+def email_segments():
+    """Textes des e-mails rendus (HTML et texte brut), valeurs des variables -> %1, %2… par texte."""
+    import json
+    import subprocess
+    try:
+        raw = subprocess.run(["php", os.path.join(ROOT, "tools", "i18n", "render_emails.php")], capture_output=True,
+                             text=True, timeout=120).stdout
+        data = json.loads(raw or "{}")
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        return {}
+    out = {}
+
+    def add(chunk, name):
+        n = [0]
+
+        def rep(_m):
+            n[0] += 1
+            return f"%{n[0]}"
+        for seg in segments_from_text(MARK.sub(rep, chunk)):
+            if n[0] <= 9:
+                out.setdefault(seg, "emails/" + name)
+    for key, parts in data.items():
+        name = key.split("#")[0]
+        h = SKIP_BLOCK.sub("\x00", parts.get("html", ""))
+        for am in ATTR.finditer(h):
+            add(am.group(2), name)
+        for p in re.split(r"<[^<>]*>", h):
+            for chunk in p.split("\x00"):
+                add(chunk, name)
+        for line in parts.get("text", "").split("\n"):
+            add(line, name)
+    return out
+
+
 def view_files(dirs):
     roots = [os.path.join(VIEWS, d) for d in dirs] if dirs else [VIEWS]
     for r in roots:
@@ -143,6 +183,9 @@ def main():
             rel = os.path.relpath(path, VIEWS)
             for s in extract_view(open(path, encoding="utf-8", errors="replace").read()):
                 found.setdefault(s, rel)
+        if not sys.argv[2:]:
+            for s, r in email_segments().items():
+                found.setdefault(s, r)
         missing = sorted(((s, r) for s, r in found.items() if s not in have), key=lambda p: (p[1], p[0]))
         with open(MISSING, "w", encoding="utf-8") as f:
             for s, r in missing:

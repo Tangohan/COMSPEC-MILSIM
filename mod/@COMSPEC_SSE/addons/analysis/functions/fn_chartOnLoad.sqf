@@ -19,16 +19,16 @@ _map ctrlAddEventHandler ["MouseButtonDblClick", {
 
 (_disp displayCtrl 93528) ctrlShow _zeus;
 if (_zeus) then {
-    (_disp displayCtrl 93501) ctrlSetText "TABLEAU DES LIENS — VUE ZEUS";
+    (_disp displayCtrl 93501) ctrlSetText (("TABLEAU DES LIENS — VUE ZEUS") call comspec_sse_fnc_tr);
     (_disp displayCtrl 93501) ctrlSetBackgroundColor [0.2, 0.12, 0.04, 1];
 };
-(_disp displayCtrl 93531) ctrlSetStructuredText parseText ([
+(_disp displayCtrl 93531) ctrlSetStructuredText parseText ((([
     "<t color='#8f8'>LÉGENDE</t>",
     "<img image='\A3\ui_f\data\map\markers\nato\o_hq.paa'/> organisation (couleur = menace)",
     "<img image='\A3\ui_f\data\map\vehicleicons\iconMan_ca.paa'/> personne",
     "<img image='\A3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa'/> document  <img image='\A3\ui_f\data\igui\cfg\simpleTasks\types\radio_ca.paa'/> appareil",
     "<t color='#ffffff'>plein</t> confirmé · <t color='#f0c060'>?</t> soupçonné" + (["", " · <t color='#777777'>gris</t> inconnu des joueurs"] select _zeus),
     "<t color='#9aa' size='0.85'>Clic : détail. Double-clic : zoom. Molette : échelle.</t>"
-] joinString "<br/>");
+] joinString "<br/>")) call comspec_sse_fnc_tr);
 
 [true] call comspec_sse_fnc_chartRefresh;

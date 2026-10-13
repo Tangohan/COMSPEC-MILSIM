@@ -7,7 +7,7 @@
     0,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_log_to_file",
@@ -18,7 +18,7 @@
     0,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_requireEquipment",
@@ -29,7 +29,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_allowModItemSubstitutes",
@@ -40,7 +40,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_extraEquipmentAliases",
@@ -51,7 +51,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_timeInspect",
@@ -62,7 +62,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_timeSearchQuick",
@@ -73,7 +73,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_timeSearchFull",
@@ -84,7 +84,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_timePhoto",
@@ -95,7 +95,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_timeFingerprint",
@@ -106,7 +106,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_timePhoneMin",
@@ -117,7 +117,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_timePhoneMax",
@@ -128,7 +128,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_timeComputerMin",
@@ -139,7 +139,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_timeComputerMax",
@@ -150,7 +150,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_noiseProbability",
@@ -161,7 +161,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_falseLeadProbability",
@@ -172,7 +172,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_missionId",
@@ -183,6 +183,6 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 true

@@ -16,7 +16,7 @@ params [
         private _quality = [65, true, 1, 1] call comspec_sse_fnc_calcQuality;
         private _docs = [_target, "documents"] call comspec_sse_fnc_getSection;
         if (isNil "_docs" || {!(_docs isEqualType [])} || {count _docs == 0}) exitWith {
-            hint "Aucun document exploitable.";
+            hint (("Aucun document exploitable.") call comspec_sse_fnc_tr);
         };
 
         // Lignes compactes (journal / fallback) — la visionneuse utilise surtout `docs`.
@@ -54,7 +54,7 @@ params [
         if (!isNil "comspec_sse_fnc_showResult") then {
             [_fog] call comspec_sse_fnc_showResult;
         } else {
-            hint (_lines joinString endl);
+            hint (((_lines joinString endl)) call comspec_sse_fnc_tr);
         };
     },
     [_target, _player]

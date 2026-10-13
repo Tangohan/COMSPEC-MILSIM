@@ -70,13 +70,13 @@ if (_ok) then {
         };
     };
     if (_announce) then {
-        hint "Fiche d’identité envoyée au registre.";
+        hint (("Fiche d’identité envoyée au registre.") call comspec_sse_fnc_tr);
     };
     [_uid, "person", "athena", "Fiche personne", 80, "TRANSMITTED"] call comspec_sse_fnc_addJournalEntry;
 } else {
     [_envelope] call comspec_sse_fnc_queueOffline;
     if (_announce) then {
-        hint "La fiche n’est pas encore arrivée au registre. Elle est mise en attente.";
+        hint (("La fiche n’est pas encore arrivée au registre. Elle est mise en attente.") call comspec_sse_fnc_tr);
     };
     [_uid, "person", "athena", "QUEUED", 80, "QUEUED"] call comspec_sse_fnc_addJournalEntry;
 };

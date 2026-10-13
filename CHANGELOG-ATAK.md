@@ -11,13 +11,21 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Réalisme 2026-10-13 — Balise IR clipsable à part (ATAK natif 1.55.0)
+## Réalisme 2026-10-13 — Balise IR clipsable à part (ATAK natif 1.56.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : la balise IR du téléphone n'était pas réaliste.
 - La balise IR n'est plus intégrée à la coque : c'est un objet d'inventaire, « Balise IR clipsable (pile CR123) » (`COMSPEC_ATAK_IrMarker`, type MS-2000 / Manta). La balise IR d'ACE (`ACE_IR_Strobe_Item`) convient aussi.
 - Clipsée sur la plaque MOLLE du téléphone porté sur le gilet, sinon sur l'épaule gauche. Allumée à la main : menu ACE « Téléphone ATAK » > Accessoires, ou établi (app Accessoires).
 - Pile propre : environ 8 h de clignotement, jetée vide. Elle ne consomme plus la batterie du téléphone et marche téléphone éteint, rangé ou absent.
 - Tuile « Balise IR » retirée du volet rapide (un téléphone ne pilote pas un marqueur IR).
+
+## Traduction 2026-10-13 — Mod SSE et menus CBA d'Overwatch connect en anglais (ATAK natif 1.55.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : tout traduire.
+- Mod SSE : textes affichés, textes fixes des écrans (terminal, résultats, graphe, SEEK…), actions ACE, menu ZEN et modules Zeus ZEN dans la langue du téléphone de l'ATAK natif (environ 1 650 nouvelles traductions). Sans l'ATAK natif, le SSE reste en français.
+- Menus CBA d'Overwatch connect et du SSE : dans la langue du réglage « Langue du téléphone » (ou, avant son chargement, celle enregistrée dans le profil, sinon la langue du jeu). Nouveau `fn_trMenu` dans l'ATAK natif.
+- `tools/i18n.py --sse wrap|extract` pour le SSE ; PBO du SSE et de connect repaquetés (`tools/pack_pbo.py`).
+- Reste en français : noms d'objets et modules Eden du SSE (config), journaux techniques.
 
 ## Traduction 2026-10-13 — Fenêtres Overwatch connect et actions ACE/ZEN en anglais (ATAK natif 1.54.0)
 
