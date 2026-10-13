@@ -149,8 +149,21 @@ final class OperatorPortraits
         return (bool) preg_match('/\.jpe?g$/i', (string) parse_url($url, PHP_URL_PATH));
     }
 
+    /**
+     * @param \GdImage|string $im image déjà décodée, ou chemin du fichier source
+     */
     private static function writeSquareJpeg(mixed $im, string $dest, int $size): bool
     {
+        if (is_string($im)) {
+            $decoded = self::decode($im);
+            if ($decoded === null) {
+                return false;
+            }
+            $ok = self::writeSquareJpeg($decoded, $dest, $size);
+            imagedestroy($decoded);
+
+            return $ok;
+        }
         $w = imagesx($im);
         $h = imagesy($im);
         $side = min($w, $h);
