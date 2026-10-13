@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.78";
+    private const string ExtensionVersion = "2.0.79";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -393,6 +393,28 @@ public static partial class Extension
     {
         if (_modVersion.Length == 0) return "";
         return $",\"mod_version\":\"{EscapeJson(_modVersion)}\"";
+    }
+
+    private static string LatestVersions(string? portal)
+    {
+        var baseUrl = NormalizeBaseUrl(string.IsNullOrWhiteSpace(portal) ? _baseUrl : portal);
+        if (!TryBuildRequestUri(baseUrl, "/api/atak/version", out var uri, out var err) || uri is null)
+            return "ERR|" + err;
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+            using var response = SendGet(uri, cts.Token);
+            if (!response.IsSuccessStatusCode)
+                return "ERR|http_" + (int)response.StatusCode;
+            using var doc = JsonDocument.Parse(ReadContentUtf8(response, cts.Token));
+            string Field(string name) =>
+                doc.RootElement.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "").Replace("|", "") : "";
+            return "OK|" + Field("atak_native") + "|" + Field("link");
+        }
+        catch (Exception ex)
+        {
+            return FormatCaughtError(ex);
+        }
     }
 
     private static string CurrentExtensionVersion()
@@ -2771,6 +2793,12 @@ public static partial class Extension
         {
             return "OK|" + ExtensionProductName + " " + CurrentExtensionVersion();
         }
+        // Dernières versions publiées sur Athena (GET /api/atak/version, public, sans session) : ATAK natif et COMSPEC Link.
+        // ["LatestVersions", [adresse du portail]] -> « OK|1.66.0|2.0.78 ». Appelé par Async (fn_integrityCheck).
+        if (function == "LatestVersions")
+        {
+            return LatestVersions(args.Length > 0 ? args[0] : null);
+        }
 
         // Appel non bloquant : ["Async", [ticket, commande, args...]] répond tout de suite « QUEUED|ticket »,
         // exécute la commande sur un thread à part et renvoie son résultat par le rappel ("comspec", "async:<ticket>", résultat).
@@ -2937,7 +2965,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions";
         }
 
         if (function == "GetCapabilities")

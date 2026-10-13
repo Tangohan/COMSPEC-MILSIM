@@ -11,13 +11,57 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Serveurs de jeu : l'adresse du serveur est retrouvée (COMSPEC Link 2.0.78, site)
+## Serveurs de jeu : l'adresse du serveur est retrouvée (COMSPEC Link 2.0.79, site)
 
 Non testé en jeu. DLL COMSPEC Link à recompiler (build_mod.bat) ; pas de main.pbo à refaire. Côté site, la colonne `server_port` et la table `game_server_address_lookup` se créent toutes seules (ou `run-migrations.php`).
 - L'adresse d'un serveur ne venait que du serveur lui-même (COMSPEC Link chargé sur le serveur dédié). Un serveur sans la DLL restait « inconnue » sur la page Serveurs de jeu.
 - Site : quand l'adresse manque, Athena la retrouve par le nom exact du serveur dans la liste publique Steam (clé `STEAM_WEB_API_KEY`), sinon sur BattleMetrics, avec le port de jeu. Résultat gardé 24 h. Les serveurs déjà déclarés sans adresse sont complétés à l'ouverture de la page, et « C'est notre serveur » enregistre l'adresse et le port.
 - Site : les joueurs déjà vus sont rapprochés des serveurs tels qu'ils sont déclarés maintenant (un serveur ajouté après leur passage ne les laisse plus en « Ailleurs »). Le port départage deux serveurs sur la même machine.
-- COMSPEC Link 2.0.78 : le serveur dédié donne aussi son port de jeu (`-port`, 2302 par défaut) ; le client ajoute l'adresse de lancement (`-connect`/`-port` du lanceur Arma ou `+connect` de Steam) quand le serveur n'en diffuse pas.
+- COMSPEC Link 2.0.79 : le serveur dédié donne aussi son port de jeu (`-port`, 2302 par défaut) ; le client ajoute l'adresse de lancement (`-connect`/`-port` du lanceur Arma ou `+connect` de Steam) quand le serveur n'en diffuse pas.
+
+## Mod ou DLL périmés signalés dans le téléphone, dernière version publiée sur Athena (ATAK natif 1.69.0, COMSPEC Link 2.0.78)
+
+Non testé en jeu. Il faut recompiler la DLL (build_mod.bat) ; pas de migration. Cause d'origine : un ancien `Addons\comspec_atak_native_main.pbo` était chargé à la place du main.pbo à jour, sans aucun message (plus de journal ni de connexion).
+- Au démarrage, le téléphone contrôle l'installation et prévient dans ses notifications (et dans le chat pour les erreurs), une fois par lancement : deux PBO du même addon chargés, code et config du main.pbo de versions différentes, DLL COMSPEC Link absente ou d'une autre version que celle attendue par le main.pbo.
+- Athena expose les dernières versions (`GET /api/atak/version`, public, lues directement dans `script_component.hpp` et `COMSPECExtension.csproj`). Le mod les compare aux siennes au démarrage puis toutes les 2 h (service Athéna activé) et notifie « Mise à jour disponible ». La page /atak-natif affiche la dernière version.
+- App Debug, onglet DLL : section « Installation » avec la DLL attendue, les versions du site et les anomalies.
+- La version affichée du mod (Réglages, Crédits, Debug) vient maintenant du main.pbo (elle restait figée à 1.11.0).
+- COMSPEC Link 2.0.78 : commande `LatestVersions`. La DLL annonçait encore 2.0.76 (csproj non monté en 1.64.0) ; csproj, constante et main.pbo sont alignés, un test PHP le vérifie.
+- `build_mod.bat` supprime une sortie HEMTT `comspec_atak_native_main.pbo` / `_towers.pbo` copiée par erreur à côté de main.pbo.
+
+
+## Carte : effacer le champ de vision et les zones interdites au drone (ATAK natif 1.68.0)
+
+Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : un champ de vision posé depuis la carte ne pouvait plus être retiré.
+- Menu de la carte (appui long / clic droit) : « Effacer le champ de vision » apparaît dès qu'un champ de vision est affiché (le bouton EFFACER n'existait que dans l'app Relief). Même chose pour la ligne de vue : « Effacer la ligne de vue ».
+- Zones interdites au drone : « Retirer la zone interdite » (clic dans la zone) existait déjà ; ajout de « Retirer toutes les zones » dans le menu de la carte et de RETIRER TOUTES LES ZONES dans l'app Marquer Tracking (toutes les zones du camp).
+- Un seul champ de vision existe à la fois par joueur : en poser un nouveau remplace le précédent.
+## Intro au démarrage désactivée (ATAK natif 1.67.0)
+
+Non testé en jeu. TTRD : l'intro du mod est buggée. Pas de DLL à recompiler, pas de migration.
+- L'intro sur l'écran de démarrage d'Arma (marque COMSPEC, trait vert, carillon) ne se lance plus : ni affichage ni son.
+- Le code est gardé. Nouveau réglage CBA « COMSPEC > ATAK · Intro > Intro au démarrage », décoché par défaut, pour la réactiver (pris en compte au lancement suivant).
+- La marque COMSPEC sur les écrans de chargement de mission reste inchangée.
+- À vérifier en jeu : lancer Arma, rien de COMSPEC sur l'écran de démarrage, menu principal normal.
+
+## Taille du téléphone en plein écran réglable (ATAK natif 1.66.0)
+
+Non testé en jeu. Demande de TTRD : le téléphone ouvert en plein écran est trop gros pour certains.
+- Nouveau réglage par joueur « Taille du téléphone en plein écran », de 60 à 100 % (100 % par défaut = taille actuelle), dans le menu CBA (COMSPEC > ATAK · Affichage) et dans l'app Réglages > Emplacement (60, 70, 80, 90, 100 %). Les deux sont le même réglage.
+- Le téléphone reste centré ; l'écran, le texte, les boutons, les touches de la coque et la carte sont recalculés depuis cette taille. Le mode mini et sa taille ne changent pas.
+- À vérifier en jeu : prendre le téléphone en main, passer en plein écran, essayer 60 % et 80 %, cliquer sur les apps, le dock, la carte et les touches de la coque ; changer la valeur téléphone ouvert (elle s'applique tout de suite).
+---
+
+## Pylônes relais 3D destructibles (ATAK natif 1.65.0)
+
+Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : de vrais pylônes radio en 3D, hauts, variés et destructibles.
+- Trois modèles dans Eden et Zeus (Structures > Relais ATAK) : pylône treillis 30 m anthracite à panneaux et RRU, tour triangulaire galvanisée 40 m à tête à bras, faisceaux hertziens et fouets, pylône élancé 50 m à paliers, échelle et feu de balisage rouge. Massifs béton, armoire technique et passerelle de câbles au pied. LOD visuelles 1 / 4 / 12 / 30, ombre, géométrie et géométrie de tir.
+- Rendu Arma complet : shader Super avec relief (_nohq) et reflets (_smdi) pour l'acier galvanisé ou peint, les radômes, les coffrets, le béton et le caillebotis ; deux LOD d'ombre (treillis presque complet de près, silhouette de loin).
+- Chaque pylône posé est un relais du réseau ATAK (tour : 6, 9 ou 12 km, antennes à 28, 38 ou 48 m, sur secteur). Attributs Eden : nom, camp, raccordé ou répéteur, allumé, indestructible. Un module « ATAK · Relais » synchronisé passe avant.
+- Destructible : abattu (charges, obus, véhicules), le pylône est remplacé par sa ruine (plié au-dessus d'un tronçon debout, couché au sol, panneaux et paraboles arrachés). Le relais passe « détruit » et les téléphones qui l'utilisaient reçoivent « Relais perdu ».
+- Module « ATAK · Relais », type Tour fixe sans objet synchronisé : crée la tour 3D de 40 m (hauteur d'antenne réelle du pylône si la hauteur est laissée au type).
+- Nouveau PBO `@COMSPEC_ATAK_Native/addons/towers.pbo` (modèles MLOD trop lourds pour main.pbo) : le copier avec main.pbo. `build_mod.bat` le construit.
+- Outils : `tools/gen_tower_textures.py` (textures raccordables) et `tools/model_relay_towers.py` (modèles, ruines, aperçus).
 
 ## Connexion Athena : « invalid_url » mieux géré (ATAK natif 1.64.0, COMSPEC Link 2.0.77)
 

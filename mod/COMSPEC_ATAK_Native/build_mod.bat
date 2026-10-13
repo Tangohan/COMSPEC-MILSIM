@@ -7,6 +7,9 @@ set "BUILDER=%ARMA3TOOLS%\AddonBuilder\AddonBuilder.exe"
 if not exist "%BUILDER%" set "BUILDER=C:\Program Files (x86)\Steam\steamapps\common\Arma 3 Tools\AddonBuilder\AddonBuilder.exe"
 if not exist "%BUILDER%" (echo [ERROR] AddonBuilder introuvable & exit /b 1)
 if not exist "%OUT%\addons" mkdir "%OUT%\addons"
+:: Sortie HEMTT copiee sans la renommer : deux PBO du meme addon, Arma lit souvent l'ancien (plus de journal ni de connexion).
+if exist "%OUT%\addons\comspec_atak_native_main.pbo" del /q "%OUT%\addons\comspec_atak_native_main.pbo"
+if exist "%OUT%\addons\comspec_atak_native_towers.pbo" del /q "%OUT%\addons\comspec_atak_native_towers.pbo"
 dotnet publish "%ROOT%COMSPECATAKNativeExtension\COMSPECATAKNativeExtension.csproj" -c Release -r win-x64 --self-contained true
 if errorlevel 1 exit /b 1
 copy /Y "%ROOT%COMSPECATAKNativeExtension\bin\publish\COMSPECATAKNativeExtension_x64.dll" "%OUT%\COMSPECATAKNativeExtension_x64.dll" >nul
