@@ -2170,7 +2170,7 @@
 ["Ce que le joueur lira. Les entités liées se saisissent ci-dessous, une par ligne.", "What the player will read. Linked entities are entered below, one per line."],
 ["Ce que le sujet déclare, pas ce qui est établi.", "What the subject states, not what is established."],
 ["Ce que le support laisse croire, pas forcément la vérité.", "What the medium suggests, not necessarily the truth."],
-["Ce que les autres voient (votre visage en direct)", "What others see (your face, live)"],
+["Ce que les autres voient (portrait opérateur Athena, puis votre visage en direct)", "What others see (your Athena operator portrait, then your face, live)"],
 ["Ce que les joueurs liront une fois l'organisation repérée.", "What players will read once the organization is spotted."],
 ["Ce que rapportent les habitants des localités à moins de 5 km : chiffres approximatifs, mis à jour toutes les 5 min, sans camp ni position exacte.", "What residents of towns within 5 km report: approximate figures, updated every 5 min, no side or exact position."],
 ["Ce que savent les joueurs", "What players know"],
