@@ -11,7 +11,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Pylônes relais 3D destructibles (ATAK natif 1.63.0)
+## Pylônes relais 3D destructibles (ATAK natif 1.64.0)
 
 Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : de vrais pylônes radio en 3D, hauts, variés et destructibles.
 - Trois modèles dans Eden et Zeus (Structures > Relais ATAK) : pylône treillis 30 m anthracite à panneaux et RRU, tour triangulaire galvanisée 40 m à tête à bras, faisceaux hertziens et fouets, pylône élancé 50 m à paliers, échelle et feu de balisage rouge. Massifs béton, armoire technique et passerelle de câbles au pied. LOD visuelles 1 / 4 / 12 / 30, ombre, géométrie et géométrie de tir.
@@ -20,6 +20,14 @@ Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : de vrais pylônes
 - Module « ATAK · Relais », type Tour fixe sans objet synchronisé : crée la tour 3D de 40 m (hauteur d'antenne réelle du pylône si la hauteur est laissée au type).
 - Nouveau PBO `@COMSPEC_ATAK_Native/addons/towers.pbo` (modèles MLOD trop lourds pour main.pbo) : le copier avec main.pbo. `build_mod.bat` le construit.
 - Outils : `tools/gen_tower_textures.py` (textures raccordables) et `tools/model_relay_towers.py` (modèles, ruines, aperçus).
+
+## App JTAC : formulaire 9-LINE lisible (ATAK natif 1.63.0)
+
+Non testé en jeu. Demande de TTRD : « Ça faut améliorer le JTAC » (capture du 9-LINE). Pas de DLL à recompiler, pas de migration.
+- Les neuf lignes et les remarques sont des rangées de même hauteur : numéro en pastille, libellé lisible à gauche, valeur à droite. Les valeurs calculées sont en couleur d'accent, une valeur manquante dit quoi faire (« pointez l'IP », « verrouillez la cible »), les amis passent en rouge en DANGER CLOSE.
+- Les champs à saisir (IP, description, dégagement, axe final, menaces, initiales) sont dans la colonne valeur, avec l'aide en gris sous le libellé, au lieu des grandes cases vides sous des légendes en petite police.
+- « IP → cible » s'affichait barré (la police du jeu n'a pas la flèche) : « IP vers cible ». Le 9-LINE reçu côté équipage a la même mise en page.
+- À vérifier en jeu : onglet BRIEF en portrait et en paysage, saisie dans les champs (texte gardé après un redessin), lisibilité de nuit, vue ÉQUIPAGE.
 
 ## Intro au démarrage : plus de conflit avec le menu, nouveau son (ATAK natif 1.62.0)
 
