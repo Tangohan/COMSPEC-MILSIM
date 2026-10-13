@@ -102,9 +102,12 @@ html[data-bo-theme="dark"] .pf-deadline,
 html[data-bo-theme="dark"] .pf-btn,
 html[data-bo-theme="dark"] .dm-btn:not(.dm-btn--primary),
 html[data-bo-theme="dark"] .personnel-file-hub-tabs,
+html[data-bo-theme="dark"] .personnel-file-lead .adv-panel--fiche,
 html[data-bo-theme="dark"] .personnel-file-hub-actions a {
   background: #141a18;
 }
+html[data-bo-theme="dark"] [data-personnel-visibility-admin] { border-color: #26302c; }
+html[data-bo-theme="dark"] [data-personnel-visibility-admin] button[type="submit"] { background: #12d18e; color: #06120d; }
 html[data-bo-theme="dark"] .pf-parcours { background: radial-gradient(90% 120% at 100% 0%, rgba(18, 209, 142, 0.1) 0%, rgba(18, 209, 142, 0) 60%), #141a18; }
 html[data-bo-theme="dark"] .pf-ring__track { stroke: #1d2a25; }
 html[data-bo-theme="dark"] .pf-timeline__dot,
