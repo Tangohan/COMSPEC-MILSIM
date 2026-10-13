@@ -1,8 +1,8 @@
 private _rec = [] call comspec_sse_fnc_uiGetRecord;
-if (isNull _rec) exitWith { hint "Sélectionnez un record (curseur / terminal)."; false };
+if (isNull _rec) exitWith { hint (("Sélectionnez un record (curseur / terminal).") call comspec_sse_fnc_tr); false };
 if (!isNil "comspec_sse_fnc_pivotSearch") then {
     private _m = [_rec] call comspec_sse_fnc_pivotSearch;
-    hint format ["Liens pivot créés/affichés: %1", count _m];
+    hint ((format ["Liens pivot créés/affichés: %1", count _m]) call comspec_sse_fnc_tr);
 };
 ["zeus"] call comspec_sse_fnc_uiRefresh;
 true

@@ -18,5 +18,5 @@ if (!hasInterface) exitWith {};
             [_sel] call comspec_sse_fnc_dl7ZeusForm;
         },
         "\A3\ui_f\data\igui\cfg\simpletasks\types\download_ca.paa"
-    ] call zen_custom_modules_fnc_register;
+    ] call comspec_sse_fnc_zenModule;
 }, [], 45] call CBA_fnc_waitUntilAndExecute;

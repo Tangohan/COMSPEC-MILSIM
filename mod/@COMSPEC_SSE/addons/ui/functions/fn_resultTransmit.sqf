@@ -1,5 +1,5 @@
 private _fog = missionNamespace getVariable ["comspec_sse_lastResult", createHashMap];
-if (count _fog == 0) exitWith { hint "Aucun résultat à transmettre."; false };
+if (count _fog == 0) exitWith { hint (("Aucun résultat à transmettre.") call comspec_sse_fnc_tr); false };
 
 private _ent = missionNamespace getVariable ["comspec_sse_lastResultEntity", objNull];
 if (isNull _ent && {!isNil "comspec_sse_fnc_uiGetRecord"}) then {
@@ -33,7 +33,7 @@ if (!isNil "comspec_sse_fnc_submitDigitalAcquisition") then {
             _fog
         ] call comspec_sse_fnc_submitRecord;
     } else {
-        hint "Liaison indisponible — résultat conservé sur place.";
+        hint (("Liaison indisponible — résultat conservé sur place.") call comspec_sse_fnc_tr);
     };
 };
 true

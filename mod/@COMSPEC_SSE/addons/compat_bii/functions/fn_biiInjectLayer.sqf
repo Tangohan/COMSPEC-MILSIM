@@ -27,7 +27,7 @@ private _mkBtn = {
     params ["_idc", "_x", "_text", "_code"];
     private _btn = _disp ctrlCreate ["RscButtonMenu", _idc];
     _btn ctrlSetPosition [_x, _y, _bw, _barH * 0.92];
-    _btn ctrlSetText _text;
+    _btn ctrlSetText ((_text) call comspec_sse_fnc_tr);
     _btn ctrlSetFontHeight (_barH * 0.38);
     _btn ctrlSetBackgroundColor [0.05, 0.22, 0.28, 0.92];
     _btn ctrlAddEventHandler ["ButtonClick", _code];

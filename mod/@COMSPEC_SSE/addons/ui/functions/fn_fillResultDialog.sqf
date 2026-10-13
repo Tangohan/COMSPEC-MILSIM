@@ -53,9 +53,9 @@ private _titleText = if (_isDocs) then {
         toUpper _title
     };
 };
-(_display displayCtrl 93011) ctrlSetText _titleText;
+(_display displayCtrl 93011) ctrlSetText ((_titleText) call comspec_sse_fnc_tr);
 
-(_display displayCtrl 93017) ctrlSetText (if (_mode == "feuille") then {
+(_display displayCtrl 93017) ctrlSetText (((if (_mode == "feuille") then {
     _chrome getOrDefault ["subtitle_feuille", "Feuille de consultation — lecture détaillée"]
 } else {
     if (_isDocs) then {
@@ -63,12 +63,12 @@ private _titleText = if (_isDocs) then {
     } else {
         _chrome getOrDefault ["subtitle_dossier", "Compte rendu d’exploitation"]
     }
-});
-(_display displayCtrl 93016) ctrlSetText (_chrome getOrDefault ["banner", "DIFFUSION RESTREINTE — EXPLOITATION TERRAIN"]);
+})) call comspec_sse_fnc_tr);
+(_display displayCtrl 93016) ctrlSetText (((_chrome getOrDefault ["banner", "DIFFUSION RESTREINTE — EXPLOITATION TERRAIN"])) call comspec_sse_fnc_tr);
 
-(_display displayCtrl 93013) ctrlSetText (_chrome getOrDefault ["btn_consult", "FEUILLE"]);
-(_display displayCtrl 93014) ctrlSetText (_chrome getOrDefault ["btn_transmit", "TRANSMETTRE"]);
-(_display displayCtrl 93015) ctrlSetText (_chrome getOrDefault ["btn_close", "FERMER"]);
+(_display displayCtrl 93013) ctrlSetText (((_chrome getOrDefault ["btn_consult", "FEUILLE"])) call comspec_sse_fnc_tr);
+(_display displayCtrl 93014) ctrlSetText (((_chrome getOrDefault ["btn_transmit", "TRANSMETTRE"])) call comspec_sse_fnc_tr);
+(_display displayCtrl 93015) ctrlSetText (((_chrome getOrDefault ["btn_close", "FERMER"])) call comspec_sse_fnc_tr);
 
 private _ink = "#1f1a14";
 private _muted = "#5a4e3c";
@@ -139,17 +139,17 @@ if (_isDocs && {(count _docs) > 0}) then {
     };
 };
 
-(_display displayCtrl 93012) ctrlSetStructuredText parseText _html;
+(_display displayCtrl 93012) ctrlSetStructuredText parseText ((_html) call comspec_sse_fnc_tr);
 
 private _qLabel = if (_ql != "") then { _ql } else {
     if (_q >= 80) then {"Bonne"} else { if (_q >= 55) then {"Correcte"} else {"Partielle"} };
 };
 private _qPrefix = _chrome getOrDefault ["quality_prefix", "Qualité d’exploitation"];
 private _footer = _chrome getOrDefault ["footer", "Ne constitue pas une preuve judiciaire — usage RP / renseignement uniquement."];
-(_display displayCtrl 93018) ctrlSetStructuredText parseText format [
+(_display displayCtrl 93018) ctrlSetStructuredText parseText ((format [
     "<t color='%1' size='0.72' align='left'>%2 : %3 %% — %4</t><br/>" +
     "<t color='%1' size='0.68' align='left'>%5</t>",
     _muted, _qPrefix, _q, _qLabel, _footer
-];
+]) call comspec_sse_fnc_tr);
 
 true

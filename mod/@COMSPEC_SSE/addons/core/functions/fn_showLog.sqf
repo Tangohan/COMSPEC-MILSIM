@@ -3,7 +3,7 @@
 */
 private _buf = [] call comspec_sse_fnc_getLog;
 if (count _buf == 0) exitWith {
-    hint "Journal SSE vide.\nActivez le debug CBA ou reproduisez une action pour journaliser.";
+    hint (("Journal SSE vide.\nActivez le debug CBA ou reproduisez une action pour journaliser.") call comspec_sse_fnc_tr);
 };
 
 private _lines = ["=== JOURNAL TECHNIQUE SSE ==="];
@@ -17,6 +17,6 @@ private _slice = _buf select [((count _buf) - 20) max 0, 20];
     ];
 } forEach _slice;
 
-hint (_lines joinString endl);
+hint (((_lines joinString endl)) call comspec_sse_fnc_tr);
 ["showLog: journal affiché"] call comspec_sse_fnc_log;
 true

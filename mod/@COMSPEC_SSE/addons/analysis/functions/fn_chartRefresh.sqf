@@ -67,8 +67,8 @@ if (_fit) then {
 
 private _np = { (_x get "kind") isEqualTo "person" } count (values _nodes);
 private _no = { (_x get "kind") isEqualTo "org" } count (values _nodes);
-(_disp displayCtrl 93503) ctrlSetText format ["  %1 organisation(s) · %2 personne(s) · %3 autre(s) · %4 lien(s)%5",
+(_disp displayCtrl 93503) ctrlSetText ((format ["  %1 organisation(s) · %2 personne(s) · %3 autre(s) · %4 lien(s)%5",
     _no, _np, (count _nodes) - _np - _no, count _edges,
-    ["", "   — rien de connu pour l'instant : contrôlez, identifiez, exploitez"] select ((count _nodes) isEqualTo 0)];
+    ["", "   — rien de connu pour l'instant : contrôlez, identifiez, exploitez"] select ((count _nodes) isEqualTo 0)]) call comspec_sse_fnc_tr);
 [_st getOrDefault ["sel", ""]] call comspec_sse_fnc_chartDetail;
 true

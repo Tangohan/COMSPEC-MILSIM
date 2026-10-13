@@ -65,14 +65,14 @@ if (!isNil "comspec_sse_fnc_addLogicalEntity") then {
 };
 
 private _lvlMeta = (_ds getOrDefault ["levels", createHashMap]) getOrDefault [str _level, createHashMap];
-hint format [
+hint ((format [
     "%1\nGraine : %2\nNiveau : %3 — %4\n%5 rôle(s)",
     _ds getOrDefault ["name", "Dataset"],
     _ds getOrDefault ["seed", ""],
     _level,
     _lvlMeta getOrDefault ["label", ""],
     count _created
-];
+]) call comspec_sse_fnc_tr);
 
 [format ["applyDataset %1 level=%2 n=%3", _ds getOrDefault ["id", "?"], _level, count _created], "WARN"] call comspec_sse_fnc_log;
 _created

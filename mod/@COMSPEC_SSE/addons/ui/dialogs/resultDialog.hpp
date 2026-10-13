@@ -10,7 +10,7 @@ class COMSPEC_SSE_ResultDialog {
     idd = 93010;
     movingEnable = 1;
     enableSimulation = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_SSE_ResultDisplay', _this select 0];";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_SSE_ResultDisplay', _this select 0];";
     onUnload = "uiNamespace setVariable ['COMSPEC_SSE_ResultDisplay', displayNull];";
 
     class controlsBackground {

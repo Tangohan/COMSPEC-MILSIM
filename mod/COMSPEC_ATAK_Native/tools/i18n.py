@@ -10,7 +10,7 @@ Sources/addons/main/i18n/en.txt : un tableau [["français", "anglais"], ...] lu 
   python3 tools/i18n.py extract   écrit tools/i18n/missing.tsv : textes du code sans traduction
   python3 tools/i18n.py merge F   ajoute au dictionnaire les lignes « français<TAB>anglais » du fichier F
   python3 tools/i18n.py stats     couverture du dictionnaire
-  python3 tools/i18n.py --connect wrap|extract|stats   même chose pour l'addon Overwatch connect embarqué
+  python3 tools/i18n.py --connect|--sse wrap|extract|stats   même chose pour l'addon Overwatch connect embarqué / le mod SSE
                                      (UptoDate/.../connect ; même dictionnaire, via comspec_overwatch_connect_fnc_tr)
   python3 tools/i18n.py stringtable  noms d'objets et modules Eden/Zeus (config.cpp, modules.hpp) -> stringtable.xml
                                      ($STR_..., langue du jeu ; anglais pris dans en.txt)
@@ -34,23 +34,41 @@ SINKS_UNARY = {"hint", "hintsilent", "systemchat", "hintc"}
 # Fichiers à ne pas toucher : la traduction elle-même.
 SKIP_FILES = {"fn_tr.sqf", "fn_langApply.sqf", "fn_aceAction.sqf", "fn_zenAction.sqf", "fn_zenModule.sqf"}
 IDENT = re.compile(r"[A-Za-z0-9_]")
-# Addon Overwatch connect embarqué dans @COMSPEC_ATAK_Native : mêmes règles, même dictionnaire. Son fn_tr passe la main
-# à celui de l'ATAK natif quand il est chargé ; ses écrans traduisent leurs textes fixes au chargement (fn_trDisplay).
+# Addon Overwatch connect embarqué dans @COMSPEC_ATAK_Native (--connect) et mod SSE (--sse) : mêmes règles, même
+# dictionnaire. Leur fn_tr passe la main à celui de l'ATAK natif quand il est chargé ; leurs écrans traduisent leurs
+# textes fixes au chargement (fn_trDisplay).
 CONNECT = "--connect" in sys.argv
+SSE = "--sse" in sys.argv
+EXTRA = CONNECT or SSE
 if CONNECT:
     sys.argv.remove("--connect")
     ADDON = os.path.join(os.path.dirname(ROOT), "UptoDate", "Sources", "comspec-overwatch-addons", "connect")
     MISSING = os.path.join(ROOT, "tools", "i18n", "missing_connect.tsv")
     TR = "comspec_overwatch_connect_fnc_tr"
-    SKIP_FILES = {"fn_tr.sqf", "fn_trDisplay.sqf", "fn_aceAction.sqf", "fn_zenAction.sqf", "fn_zenModule.sqf"}
-ONLOAD = re.compile(r'^(    onLoad\s*=\s*")(?!\(_this select 0\) call comspec_overwatch_connect_fnc_trDisplay)', re.M)
+elif SSE:
+    sys.argv.remove("--sse")
+    ADDON = os.path.join(os.path.dirname(ROOT), "@COMSPEC_SSE", "addons")
+    MISSING = os.path.join(ROOT, "tools", "i18n", "missing_sse.tsv")
+    TR = "comspec_sse_fnc_tr"
+if EXTRA:
+    SKIP_FILES = {"fn_tr.sqf", "fn_trDisplay.sqf", "fn_aceAction.sqf", "fn_zenAction.sqf", "fn_zenModule.sqf", "fn_addSetting.sqf"}
+TRDISPLAY = "(_this select 0) call " + TR + "Display; "
+ONLOAD = re.compile(r'^(    onLoad\s*=\s*")(?!' + re.escape(TRDISPLAY.strip()) + ')', re.M)
 HELPERS = [("ace_interact_menu_fnc_createAction", "aceAction"), ("zen_context_menu_fnc_createAction", "zenAction"),
            ("zen_custom_modules_fnc_register", "zenModule")]
+# connect, SSE : réglages CBA dans la langue du joueur (fn_addSetting -> comspec_atak_native_fnc_trMenu).
+if EXTRA:
+    HELPERS.append(("CBA_fnc_addSetting", "addSetting"))
 LOGLINE = re.compile(r"diag_log|fnc_(log\w*|appendLinkLog|appendModuleLog|callExtLogged)\b")
-TRDISPLAY = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; "
 
 
 def display_files():
+    if SSE:
+        out = []
+        for base, _, files in os.walk(ADDON):
+            if os.path.basename(base) == "dialogs":
+                out += [os.path.join(base, f) for f in sorted(files) if f.endswith(".hpp")]
+        return sorted(out)
     return [os.path.join(ADDON, f) for f in sorted(os.listdir(ADDON)) if f.startswith("display") and f.endswith(".hpp")]
 
 
@@ -246,9 +264,9 @@ def collect():
         with open(path, encoding="utf-8", errors="replace") as f:
             src = f.read()
         rel = os.path.relpath(path, ADDON)
-        if CONNECT:
-            # connect : beaucoup de journaux techniques, jamais affichés au joueur ; réglages CBA non traduits.
-            if rel == "XEH_preInit.sqf":
+        if EXTRA:
+            # connect, SSE : beaucoup de journaux techniques, jamais affichés au joueur ; addon debug ignoré.
+            if rel.startswith("debug" + os.sep):
                 continue
             src = "\n".join(l for l in src.split("\n") if not LOGLINE.search(l))
         for lit in strings(src):
@@ -256,7 +274,7 @@ def collect():
                 found.setdefault(seg, rel)
     # Textes fixes des écrans (ui/*.hpp ; display*.hpp pour connect) : traduits au chargement de l'écran
     # (fn_displayLoad ; fn_trDisplay pour connect).
-    if CONNECT:
+    if EXTRA:
         hpps = display_files()
     else:
         ui = os.path.join(ADDON, "ui")
@@ -337,7 +355,7 @@ def main():
                 with open(path, "w", encoding="utf-8", newline="") as f:
                     f.write(new)
                 total += n
-        if CONNECT:
+        if EXTRA:
             for path in display_files():
                 with open(path, encoding="utf-8", newline="") as f:
                     src = f.read()

@@ -35,6 +35,7 @@ class CfgFunctions {
             class aceAction {};
             class zenAction {};
             class zenModule {};
+            class addSetting {};
             class waitAthenaReady {};
             class setPlainText {};
             class startSyncLoops {};

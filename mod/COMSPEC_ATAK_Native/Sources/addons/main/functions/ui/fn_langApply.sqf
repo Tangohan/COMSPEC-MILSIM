@@ -2,10 +2,12 @@
     Langue du téléphone (réglage CBA « Langue du téléphone / Phone language » : Auto, Français, English).
     Auto suit la langue du jeu (français si Arma est en français, anglais sinon). En anglais, charge une fois le
     dictionnaire i18n/en.txt (tableau [["français", "anglais"], ...], tenu par tools/i18n.py) et prépare les modèles
-    à %1, %2… pour fn_tr. Params : [redessiner la page ouverte (changement en cours de partie)].
+    à %1, %2… pour fn_tr. Params : [redessiner la page ouverte (changement en cours de partie), langue imposée].
 */
-params [["_redraw", false]];
+params [["_redraw", false], ["_force", ""]];
 private _set = missionNamespace getVariable ["comspec_atak_native_language", "fr"];
+// _force : langue imposée (fn_trMenu charge le dictionnaire pour les menus CBA des autres addons).
+if (_force isNotEqualTo "") then { _set = _force; };
 private _lang = switch (_set) do {
     case "en": { "en" };
     case "auto": { ["en", "fr"] select (language isEqualTo "French") };

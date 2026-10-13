@@ -11,7 +11,7 @@ class COMSPEC_SSE_ChartDialog {
     idd = 93500;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "_this call comspec_sse_fnc_chartOnLoad";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; _this call comspec_sse_fnc_chartOnLoad";
     onUnload = "uiNamespace setVariable ['comspec_sse_chartDisplay', displayNull]";
 
     class controlsBackground {

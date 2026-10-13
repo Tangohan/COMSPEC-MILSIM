@@ -13,5 +13,5 @@ if (!isNil "comspec_sse_fnc_showResult") exitWith {
     [_fog] call comspec_sse_fnc_showResult;
 };
 
-hint ((_fog getOrDefault ["title", "DIGITAL"]) + endl + ((_fog getOrDefault ["lines", []]) joinString endl));
+hint ((((_fog getOrDefault ["title", "DIGITAL"]) + endl + ((_fog getOrDefault ["lines", []]) joinString endl))) call comspec_sse_fnc_tr);
 true

@@ -3,7 +3,7 @@
 */
 private _journal = [] call comspec_sse_fnc_getJournal;
 if (count _journal == 0) exitWith {
-    hint "Journal SSE vide.";
+    hint (("Journal SSE vide.") call comspec_sse_fnc_tr);
 };
 
 private _lines = ["=== JOURNAL SSE ==="];
@@ -23,5 +23,5 @@ private _slice = _journal select [((count _journal) - 12) max 0, 12];
     };
 } forEach _slice;
 
-hint (_lines joinString endl);
+hint (((_lines joinString endl)) call comspec_sse_fnc_tr);
 ["Journal SSE ouvert"] call comspec_sse_fnc_log;

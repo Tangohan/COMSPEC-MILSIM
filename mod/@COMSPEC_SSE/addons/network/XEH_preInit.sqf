@@ -12,7 +12,7 @@
         [_value] call comspec_sse_fnc_setCaseReference;
     },
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_mapId",
@@ -23,7 +23,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_preferExtension",
@@ -34,7 +34,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 if (isNil "comspec_sse_txQueue") then { comspec_sse_txQueue = []; };
 if (isNil "comspec_sse_caseRef") then { comspec_sse_caseRef = ""; };

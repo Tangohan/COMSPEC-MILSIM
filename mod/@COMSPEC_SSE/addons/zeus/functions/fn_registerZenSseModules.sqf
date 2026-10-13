@@ -33,7 +33,7 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
         ] call zen_dialog_fnc_create;
     },
     _icon
-] call zen_custom_modules_fnc_register;
+] call comspec_sse_fnc_zenModule;
 
 // --- Profil d'identité ---------------------------------------------------
 [
@@ -87,7 +87,7 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
         ] call zen_dialog_fnc_create;
     },
     _icon
-] call zen_custom_modules_fnc_register;
+] call comspec_sse_fnc_zenModule;
 
 // --- Biométrie du sujet (moteur du pack SSE) ------------------------------
 [
@@ -144,7 +144,7 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
         ] call zen_dialog_fnc_create;
     },
     "\A3\ui_f\data\igui\cfg\simpletasks\types\search_ca.paa"
-] call zen_custom_modules_fnc_register;
+] call comspec_sse_fnc_zenModule;
 
 // --- Doter en terminal SEEK ----------------------------------------------
 [
@@ -182,7 +182,7 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
         ] call zen_dialog_fnc_create;
     },
     "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa"
-] call zen_custom_modules_fnc_register;
+] call comspec_sse_fnc_zenModule;
 
 // --- Présentation des documents / fiches --------------------------------
 [
@@ -259,7 +259,7 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
         ] call zen_dialog_fnc_create;
     },
     "\A3\ui_f\data\igui\cfg\simpletasks\types\documents_ca.paa"
-] call zen_custom_modules_fnc_register;
+] call comspec_sse_fnc_zenModule;
 
 missionNamespace setVariable ["COMSPEC_ZenSseModulesRegistered", true];
 ["Modules SSE enregistrés dans Zeus Enhanced", "INFO"] call comspec_sse_fnc_log;

@@ -51,7 +51,7 @@ private _time = if (_full) then {
             };
         };
 
-        hint ((_fog getOrDefault ["title", "SSE"]) + endl + (_lines joinString endl));
+        hint ((((_fog getOrDefault ["title", "SSE"]) + endl + (_lines joinString endl))) call comspec_sse_fnc_tr);
 
         [
             _fog getOrDefault ["uid", "?"],

@@ -15,7 +15,7 @@ if (!isNil "cba_fnc_addKeybind") then {
             if (!isNil "comspec_sse_fnc_openSeekKeybind") then {
                 [] call comspec_sse_fnc_openSeekKeybind;
             } else {
-                hint "Terminal SSE indisponible - le mod COMSPEC SSE n'a pas charge le raccourci.";
+                hint (("Terminal SSE indisponible - le mod COMSPEC SSE n'a pas charge le raccourci.") call comspec_sse_fnc_tr);
             };
             true
         },

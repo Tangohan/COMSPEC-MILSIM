@@ -13,7 +13,7 @@ if (isNull _rec && {_isSeek}) then {
 };
 private _nav = "<t size='0.85' color='#8f8'>TERMINAL</t>  ·  Digital · SEEK · Site · Graph · Preuves · Mission";
 if (!_isSeek) then {
-    (_disp displayCtrl 93210) ctrlSetStructuredText parseText _nav;
+    (_disp displayCtrl 93210) ctrlSetStructuredText parseText ((_nav) call comspec_sse_fnc_tr);
 };
 
 private _sum = "";
@@ -83,16 +83,16 @@ if (isNull _rec) then {
     };
 };
 
-(_disp displayCtrl _idcSum) ctrlSetStructuredText parseText _sum;
+(_disp displayCtrl _idcSum) ctrlSetStructuredText parseText ((_sum) call comspec_sse_fnc_tr);
 if (!_isSeek) then {
-    (_disp displayCtrl _idcDetail) ctrlSetStructuredText parseText _detail;
+    (_disp displayCtrl _idcDetail) ctrlSetStructuredText parseText ((_detail) call comspec_sse_fnc_tr);
 } else {
-    (_disp displayCtrl _idcSum) ctrlSetStructuredText parseText (_sum + "<br/>" + _detail);
+    (_disp displayCtrl _idcSum) ctrlSetStructuredText parseText (((_sum + "<br/>" + _detail)) call comspec_sse_fnc_tr);
 };
 private _lb = _disp displayCtrl _idcList;
 lbClear _lb;
-{ _lb lbAdd _x; } forEach _entries;
+{ _lb lbAdd ((_x) call comspec_sse_fnc_tr); } forEach _entries;
 if (_entries isEqualTo []) then {
-    _lb lbAdd (["(aucun élément listé)", "Rien à afficher pour l'instant."] select _isSeek);
+    _lb lbAdd (((["(aucun élément listé)", "Rien à afficher pour l'instant."] select _isSeek)) call comspec_sse_fnc_tr);
 };
 true

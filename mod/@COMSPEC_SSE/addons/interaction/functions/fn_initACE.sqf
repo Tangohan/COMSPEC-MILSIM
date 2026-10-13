@@ -76,21 +76,21 @@ private _insertObject = {
 
 private _rootPerson = [
     "COMSPEC_SSE", "SSE", _icon, {}, _cond, _insertPerson, [], {[0,0,0]}, 4, _aceParams, {}
-] call ace_interact_menu_fnc_createAction;
+] call comspec_sse_fnc_aceAction;
 _rootPerson = [_rootPerson] call comspec_sse_fnc_acePadAction;
 
 private _rootObj = [
     "COMSPEC_SSE_OBJ", "SSE", _icon, {}, _cond, _insertObject, [], {[0,0,0]}, 3, _aceParams, {}
-] call ace_interact_menu_fnc_createAction;
+] call comspec_sse_fnc_aceAction;
 _rootObj = [_rootObj] call comspec_sse_fnc_acePadAction;
 
 private _personChildren = [
-    (["COMSPEC_SSE_Inspect", "Inspecter", _icon, { [_this select 0, _this select 1] call comspec_sse_fnc_doInspect }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call ace_interact_menu_fnc_createAction),
-    (["COMSPEC_SSE_Photo", "Photographier", "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doPhotograph }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call ace_interact_menu_fnc_createAction),
-    (["COMSPEC_SSE_Search", "Fouiller", "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa", { [_this select 0, _this select 1, false] call comspec_sse_fnc_doSearch }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call ace_interact_menu_fnc_createAction),
-    (["COMSPEC_SSE_Mark", "Marquer comme exploité", "\a3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doMarkExploited }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call ace_interact_menu_fnc_createAction),
-    (["COMSPEC_SSE_DocsP", "Lire documents", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doReadDocuments }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call ace_interact_menu_fnc_createAction),
-    (["COMSPEC_SSE_TerminalTarget", "Ouvrir le terminal SEEK", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [_this select 0] call comspec_sse_fnc_uiOpenTerminal }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call ace_interact_menu_fnc_createAction)
+    (["COMSPEC_SSE_Inspect", "Inspecter", _icon, { [_this select 0, _this select 1] call comspec_sse_fnc_doInspect }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call comspec_sse_fnc_aceAction),
+    (["COMSPEC_SSE_Photo", "Photographier", "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doPhotograph }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call comspec_sse_fnc_aceAction),
+    (["COMSPEC_SSE_Search", "Fouiller", "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa", { [_this select 0, _this select 1, false] call comspec_sse_fnc_doSearch }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call comspec_sse_fnc_aceAction),
+    (["COMSPEC_SSE_Mark", "Marquer comme exploité", "\a3\ui_f\data\igui\cfg\simpleTasks\types\use_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doMarkExploited }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call comspec_sse_fnc_aceAction),
+    (["COMSPEC_SSE_DocsP", "Lire documents", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doReadDocuments }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call comspec_sse_fnc_aceAction),
+    (["COMSPEC_SSE_TerminalTarget", "Ouvrir le terminal SEEK", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [_this select 0] call comspec_sse_fnc_uiOpenTerminal }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call comspec_sse_fnc_aceAction)
 ];
 
 if (!isNil "comspec_sse_fnc_aceDogtagIsPresent" && {[] call comspec_sse_fnc_aceDogtagIsPresent}) then {
@@ -103,26 +103,26 @@ if (!isNil "comspec_sse_fnc_aceDogtagIsPresent" && {[] call comspec_sse_fnc_aceD
             if (!isNil "comspec_sse_fnc_aceDogtagOnCheck") then { [_player, _target] call comspec_sse_fnc_aceDogtagOnCheck; };
         },
         _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams
-    ] call ace_interact_menu_fnc_createAction);
+    ] call comspec_sse_fnc_aceAction);
 };
 
 if (!isNil "comspec_sse_fnc_advanceExploitation") then {
-    _personChildren pushBack (["COMSPEC_SSE_Advance", "Approfondir l'exploitation", "\a3\ui_f\data\igui\cfg\simpleTasks\types\intel_ca.paa", { private _r = [_this select 0, _this select 1] call comspec_sse_fnc_advanceExploitation; hint format ["Niveau %1\n%2", _r getOrDefault ["level", "?"], (_r getOrDefault ["lines", []]) joinString endl]; }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call ace_interact_menu_fnc_createAction);
-    _personChildren pushBack (["COMSPEC_SSE_Timeline", "Chronologie SSE", "\a3\ui_f\data\igui\cfg\simpleTasks\types\wait_ca.paa", { private _ev = [_this select 0] call comspec_sse_fnc_buildTimeline; private _lines = _ev apply { format ["%1 — %2", _x getOrDefault ["when", "?"], _x getOrDefault ["text", ""]] }; hint (("Chronologie" + endl) + (_lines select [0, (count _lines) min 8] joinString endl)); }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call ace_interact_menu_fnc_createAction);
+    _personChildren pushBack (["COMSPEC_SSE_Advance", "Approfondir l'exploitation", "\a3\ui_f\data\igui\cfg\simpleTasks\types\intel_ca.paa", { private _r = [_this select 0, _this select 1] call comspec_sse_fnc_advanceExploitation; hint ((format ["Niveau %1\n%2", _r getOrDefault ["level", "?"], (_r getOrDefault ["lines", []]) joinString endl]) call comspec_sse_fnc_tr); }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call comspec_sse_fnc_aceAction);
+    _personChildren pushBack (["COMSPEC_SSE_Timeline", "Chronologie SSE", "\a3\ui_f\data\igui\cfg\simpleTasks\types\wait_ca.paa", { private _ev = [_this select 0] call comspec_sse_fnc_buildTimeline; private _lines = _ev apply { format ["%1 — %2", _x getOrDefault ["when", "?"], _x getOrDefault ["text", ""]] }; hint (((("Chronologie" + endl) + (_lines select [0, (count _lines) min 8] joinString endl))) call comspec_sse_fnc_tr); }, _cond, _noChildren, [], {[0,0,0]}, 4, _aceParams] call comspec_sse_fnc_aceAction);
 };
 
 private _objectChildren = [
-    (["COMSPEC_SSE_Examine", "Examiner", _icon, { [_this select 0, _this select 1] call comspec_sse_fnc_doInspect }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction),
-    (["COMSPEC_SSE_SearchObj", "Fouiller", "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa", { [_this select 0, _this select 1, true] call comspec_sse_fnc_doSearch }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction),
-    (["COMSPEC_SSE_Collect", "Collecter", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doCollect }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction),
-    (["COMSPEC_SSE_Docs", "Lire documents", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doReadDocuments }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction),
-    (["COMSPEC_SSE_Radio", "Exploiter radio", "\a3\ui_f\data\igui\cfg\simpleTasks\types\radio_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doExploitRadio }, { private _t = _this select 0; ([_t] call comspec_sse_fnc_canInspect) && { private _type = if (isNil {[_t] call comspec_sse_fnc_getData}) then { [_t] call comspec_sse_fnc_resolveEntityType } else { [[_t] call comspec_sse_fnc_getData, "type", ""] call BIS_fnc_getFromPairs }; _type == "RADIO" } }, _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction),
-    (["COMSPEC_SSE_TerminalTarget", "Ouvrir le terminal SEEK", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [_this select 0] call comspec_sse_fnc_uiOpenTerminal }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction)
+    (["COMSPEC_SSE_Examine", "Examiner", _icon, { [_this select 0, _this select 1] call comspec_sse_fnc_doInspect }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call comspec_sse_fnc_aceAction),
+    (["COMSPEC_SSE_SearchObj", "Fouiller", "\a3\ui_f\data\igui\cfg\simpleTasks\types\search_ca.paa", { [_this select 0, _this select 1, true] call comspec_sse_fnc_doSearch }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call comspec_sse_fnc_aceAction),
+    (["COMSPEC_SSE_Collect", "Collecter", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doCollect }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call comspec_sse_fnc_aceAction),
+    (["COMSPEC_SSE_Docs", "Lire documents", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doReadDocuments }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call comspec_sse_fnc_aceAction),
+    (["COMSPEC_SSE_Radio", "Exploiter radio", "\a3\ui_f\data\igui\cfg\simpleTasks\types\radio_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_doExploitRadio }, { private _t = _this select 0; ([_t] call comspec_sse_fnc_canInspect) && { private _type = if (isNil {[_t] call comspec_sse_fnc_getData}) then { [_t] call comspec_sse_fnc_resolveEntityType } else { [[_t] call comspec_sse_fnc_getData, "type", ""] call BIS_fnc_getFromPairs }; _type == "RADIO" } }, _noChildren, [], {[0,0,0]}, 3, _aceParams] call comspec_sse_fnc_aceAction),
+    (["COMSPEC_SSE_TerminalTarget", "Ouvrir le terminal SEEK", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [_this select 0] call comspec_sse_fnc_uiOpenTerminal }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call comspec_sse_fnc_aceAction)
 ];
 
 if (!isNil "comspec_sse_fnc_advanceExploitation") then {
-    _objectChildren pushBack (["COMSPEC_SSE_Advance", "Approfondir l'exploitation", "\a3\ui_f\data\igui\cfg\simpleTasks\types\intel_ca.paa", { private _r = [_this select 0, _this select 1] call comspec_sse_fnc_advanceExploitation; hint format ["Niveau %1\n%2", _r getOrDefault ["level", "?"], (_r getOrDefault ["lines", []]) joinString endl]; }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction);
-    _objectChildren pushBack (["COMSPEC_SSE_Bag", "Mettre sous scellé", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_bagEvidence }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction);
+    _objectChildren pushBack (["COMSPEC_SSE_Advance", "Approfondir l'exploitation", "\a3\ui_f\data\igui\cfg\simpleTasks\types\intel_ca.paa", { private _r = [_this select 0, _this select 1] call comspec_sse_fnc_advanceExploitation; hint ((format ["Niveau %1\n%2", _r getOrDefault ["level", "?"], (_r getOrDefault ["lines", []]) joinString endl]) call comspec_sse_fnc_tr); }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call comspec_sse_fnc_aceAction);
+    _objectChildren pushBack (["COMSPEC_SSE_Bag", "Mettre sous scellé", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [_this select 0, _this select 1] call comspec_sse_fnc_bagEvidence }, _cond, _noChildren, [], {[0,0,0]}, 3, _aceParams] call comspec_sse_fnc_aceAction);
 };
 
 private _cache = missionNamespace getVariable ["comspec_sse_aceMenuCache", createHashMap];
@@ -151,7 +151,7 @@ if (["CAManBase", 0, ["ACE_MainActions"], _rootPerson] call _addClass) then {
 };
 
 // Self interaction (joueur uniquement)
-private _selfRoot = ["COMSPEC_SSE_SELF", "COMSPEC SSE", _icon, {}, { !([] call comspec_sse_fnc_playerInHatchetVehicle) }, _noChildren, [], {[0,0,0]}, 1, _aceParams, {}] call ace_interact_menu_fnc_createAction;
+private _selfRoot = ["COMSPEC_SSE_SELF", "COMSPEC SSE", _icon, {}, { !([] call comspec_sse_fnc_playerInHatchetVehicle) }, _noChildren, [], {[0,0,0]}, 1, _aceParams, {}] call comspec_sse_fnc_aceAction;
 _selfRoot = [_selfRoot] call comspec_sse_fnc_acePadAction;
 if !(player getVariable ["comspec_sse_aceSelfInstalled", false]) then {
     player setVariable ["comspec_sse_aceSelfInstalled", true];
@@ -162,10 +162,10 @@ if !(player getVariable ["comspec_sse_aceSelfInstalled", false]) then {
             [player, 1, ["ACE_SelfActions", "COMSPEC_SSE_SELF"], _sa] call ace_interact_menu_fnc_addActionToObject;
         };
     } forEach [
-        (["COMSPEC_SSE_Journal", "Journal SSE", _icon, { [] call comspec_sse_fnc_openJournal }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction),
-        (["COMSPEC_SSE_TechLog", "Journal technique (erreurs)", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa", { [] call comspec_sse_fnc_showLog }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction),
-        (["COMSPEC_SSE_TerminalSelf", "Ouvrir le terminal SEEK", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [objNull] call comspec_sse_fnc_uiOpenTerminal }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction),
-        (["COMSPEC_SSE_EquipKit", "Équiper le kit SSE", "\a3\ui_f\data\igui\cfg\simpleTasks\types\box_ca.paa", { [] call comspec_sse_fnc_equipSseKit }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call ace_interact_menu_fnc_createAction)
+        (["COMSPEC_SSE_Journal", "Journal SSE", _icon, { [] call comspec_sse_fnc_openJournal }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call comspec_sse_fnc_aceAction),
+        (["COMSPEC_SSE_TechLog", "Journal technique (erreurs)", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa", { [] call comspec_sse_fnc_showLog }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call comspec_sse_fnc_aceAction),
+        (["COMSPEC_SSE_TerminalSelf", "Ouvrir le terminal SEEK", "\a3\ui_f\data\igui\cfg\simpleTasks\types\download_ca.paa", { [objNull] call comspec_sse_fnc_uiOpenTerminal }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call comspec_sse_fnc_aceAction),
+        (["COMSPEC_SSE_EquipKit", "Équiper le kit SSE", "\a3\ui_f\data\igui\cfg\simpleTasks\types\box_ca.paa", { [] call comspec_sse_fnc_equipSseKit }, { true }, _noChildren, [], {[0,0,0]}, 1, _aceParams] call comspec_sse_fnc_aceAction)
     ];
 };
 

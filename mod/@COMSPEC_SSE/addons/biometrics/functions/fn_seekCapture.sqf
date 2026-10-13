@@ -7,7 +7,7 @@ params [
 ];
 
 private _target = missionNamespace getVariable ["comspec_sse_seekTarget", objNull];
-if (isNull _target) exitWith { hint "Aucune cible SEEK."; false };
+if (isNull _target) exitWith { hint (("Aucune cible SEEK.") call comspec_sse_fnc_tr); false };
 
 switch (toLower _kind) do {
     case "fingerprint": { [_target, player] call comspec_sse_fnc_captureFingerprint; };

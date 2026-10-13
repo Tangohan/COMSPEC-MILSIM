@@ -7,7 +7,7 @@ params [
 ];
 
 if !([_player, "evidence_bag"] call comspec_sse_fnc_hasEquipment) exitWith {
-    hint "Sachet de preuve SSE (ou kit médical ACE compatible) requis.";
+    hint (("Sachet de preuve SSE (ou kit médical ACE compatible) requis.") call comspec_sse_fnc_tr);
 };
 
 [
@@ -41,14 +41,14 @@ if !([_player, "evidence_bag"] call comspec_sse_fnc_hasEquipment) exitWith {
         ["collect", _target, [_quality, _entry]] call comspec_sse_fnc_requestServerOp;
         if (!isNil "comspec_sse_fnc_custody") then { ["open", [_target, _player, format ["collecte, qualité %1 %%", _quality]]] call comspec_sse_fnc_custody; };
 
-        hint format [
+        hint ((format [
             "Preuve collectée\n%1\nPar : %2\nHeure : %3\nGrid : %4\nQualité : %5%%",
             _uid,
             name _player,
             _entry get "missionTime",
             _entry get "grid",
             _quality
-        ];
+        ]) call comspec_sse_fnc_tr);
 
         [
             _uid,

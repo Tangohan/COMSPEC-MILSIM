@@ -80,7 +80,7 @@ switch (_mode) do {
     };
     case "athenaPull": { ["list", []] call comspec_sse_fnc_campaignAthena; };
     default {
-        hint parseText ([] call comspec_sse_fnc_campaignInfo);
+        hint ((parseText ([] call comspec_sse_fnc_campaignInfo)) call comspec_sse_fnc_tr);
     };
 };
 true

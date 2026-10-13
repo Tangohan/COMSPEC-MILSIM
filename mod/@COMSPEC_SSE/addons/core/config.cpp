@@ -19,6 +19,12 @@ class CfgFunctions {
         class core {
             file = "z\comspec_sse\addons\core\functions";
             class log {};
+            class tr {};
+            class trDisplay {};
+            class aceAction {};
+            class zenAction {};
+            class zenModule {};
+            class addSetting {};
             class getLog {};
             class showLog {};
             class hash {};
