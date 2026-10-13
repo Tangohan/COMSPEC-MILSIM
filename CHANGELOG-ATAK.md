@@ -11,6 +11,10 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Correctif « Include file ...\ui\controls.hpp not found » au lancement (ATAK natif 1.68.0)
+
+- `config.cpp` incluait `ui/controls.hpp` et `ui/displays.hpp` avec une barre oblique. HEMTT (main.pbo du dépôt) l'accepte, mais `build_mod.bat` empaquette avec Addon Builder en `-packonly` : la config reste en texte et c'est Arma qui la lit au démarrage, sans trouver le fichier. Les deux includes utilisent maintenant une barre oblique inverse (`ui\controls.hpp`), lue par les deux chaînes de build.
+
 ## Intro au démarrage désactivée (ATAK natif 1.67.0)
 
 Non testé en jeu. TTRD : l'intro du mod est buggée. Pas de DLL à recompiler, pas de migration.
