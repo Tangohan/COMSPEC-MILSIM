@@ -63,7 +63,10 @@ _ram ctrlSetPosition [_rx0, _sy, (_rx1 - _rx0) max 0, _sh];
 _ram ctrlSetFontHeight (_fontS * 0.9);
 _ram ctrlCommit 0;
 if ((ctrlText _ram) isEqualTo "") then { _ram ctrlSetText (("RAM 00%") call comspec_atak_native_fnc_tr); };
-_ram ctrlShow ((ctrlTextWidth _ram) <= (_rx1 - _rx0));
+// Mode PETIT : barre d'état allégée (batterie, heure, notifications, réseau) ; météo et mémoire vive masquées.
+private _slimBar = (_l get "mini") && {!(_l get "texture")};
+{ (_d displayCtrl _x) ctrlShow !_slimBar; } forEach [88514, 88523, 88524];
+_ram ctrlShow (!_slimBar && {(ctrlTextWidth _ram) <= (_rx1 - _rx0)});
 (_d displayCtrl 88525) ctrlSetFontHeight _font;
 
 // Barre d'app : retour | titre ........ rotation | mini/plein | apps

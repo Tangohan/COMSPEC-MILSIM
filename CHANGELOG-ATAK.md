@@ -38,6 +38,87 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Regroupement : images dans le téléphone, ordres au drone, plan de briefing, app Groupe, mode PETIT (ATAK natif 1.91.0, COMSPEC Link 2.0.84)
+
+### Résumé joueur
+Type : nouveauté
+FR : Images du drone enfin visibles, ordres au drone sur la carte, plan de briefing partagé
+- La caméra du drone, le viseur de l'app Photo et les diapositives du Briefing s'affichent dans le téléphone au lieu de rester noirs. Sur la carte, un clic droit donne des ordres au drone : aller, rechercher, stationnaire, atterrir.
+- Le plan de briefing de l'app Plan apparaît sur la carte du site Athena et, par défaut, sur la carte du téléphone.
+- En véhicule, la molette et le menu d'actions marchent de nouveau avec le téléphone en miniature. Le HUD des autres mods (boussole, heure…) ne passe plus par-dessus le téléphone.
+- Nouvelle interface de l'app Groupe, et mode PETIT plus lisible : carte sur toute la largeur, plus d'apps sur l'accueil, messagerie en une vue, barre du haut allégée, fini le bandeau « indicatif · grille » en boucle. Le selfie peut aussi inverser les axes de la souris.
+EN : Drone pictures finally visible, drone orders from the map, shared briefing plan
+- The drone camera, the Photo app viewfinder and Briefing slides show in the phone instead of staying black. On the map, a right-click gives orders to the drone: go to, search, hover, land.
+- The briefing plan from the Plan app shows on the Athena website map and, by default, on the phone map.
+- In a vehicle, the scroll wheel and action menu work again with the phone as a miniature. Other mods' HUD (compass, time…) no longer draws over the phone.
+- A new Group app interface, and a clearer SMALL mode: full-width map, more apps on the home screen, messages in one view, lighter top bar, no more repeating "callsign · grid" banner. The selfie can also invert the mouse axes.
+
+### Détail technique
+
+Une seule version pour 8 PR regroupées (#782, #783, #785, #786, #787, #788, #789, #791) : ATAK natif 1.91.0, COMSPEC Link 2.0.84 (la DLL change avec l'app Plan #787 : recompiler avec build_mod.bat ; migration du plan de briefing à lancer côté site). main.pbo reconstruit avec HEMTT ; i18n/en.txt fusionné à trois voies et localisation/template/xx.txt régénéré (tools/i18n.py community) ; dictionnaire JS du site régénéré. Non testé en jeu.
+
+#### Drone, Photo et Briefing : les images s'affichent enfin dans le téléphone (#783)
+
+- Résultat du TEST VIDÉO (TTRD, 21:20 en jeu, nuit) : les 4 cadres, dont les 2 dans le téléphone, montrent une image nette, alors que la vue drone (même en THERMIQUE) et le viseur Photo restent noirs. Différences supprimées : textures r2t désormais carrées (512/1024/2048, le 16/9 vient du rapport r2t), noms de cibles sans tiret bas ni chiffre (comspecdronecam<a-c>n<a-h>, comspecphotocam<a-d>), plus de correction de couleurs setPiPEffect type 3 (« BASSE LUMIÈRE » / « MODE NUIT » retirés de l'incrustation) ; incrustation Live cam de la carte et cliché drone en texture carrée.
+- fn_pageDrone : bouton « X » rouge en haut à droite de l'image (droneAction "cam") ; VUE DIRECTE renommée CAMÉRA PLEIN ÉCRAN et placée dans la rangée principale.
+- Briefing : Arma n'affiche pas les PNG (même cause que les portraits opérateur, #724) et la plupart des diapositives envoyées sur Athena sont des PNG. /api/atak/briefing-slides sert désormais une copie JPEG 2048 x 1024 (App\Support\BriefingSlideGameImage, image entière centrée sur fond noir), écrite une fois dans uploads/briefing-slides/<tenant>/atak/. Côté serveur seulement : le site doit être mis à jour sur le VPS. Les présentations Google Slides chargées par l'engrenage restent en PNG (DLL) : non corrigé ici.
+- Textes coupés (captures TTRD) : fn_pageMap, rangée de la grande vue drone, largeur de chaque bouton mesurée sur son texte traduit (ctrlTextWidth), police réduite pour toute la rangée si elle déborde ; boutons de la petite fenêtre et barre de l'app Drone (fn_pageDrone) : police réduite tant que le libellé dépasse.
+- Suite de la PR #780 (fusionnée avec seulement le TEST VIDÉO). Non testé en jeu.
+
+#### Carte : ordres au drone depuis le clic droit (#785)
+
+- fn_mapCtxMenu : ligne DRONE (drone `COMSPEC_ATAK_Drone` en vie) qui ouvre un sous-menu (clé `sub` de l'état mapCtx, redessiné à l'image suivante) : DGOTO, DHUNT, DHOVER, DLAND, RETOUR.
+- fn_droneAction `["mapOrder", [genre, position]]` : liaison exigée, `goto` / `hunt [rayon choisi, pilote, centre]` (recherche en bandes de #777) / `goto [p, "HOVER"]` + nacelle à -90° / `goto [p, "LAND"]` ; journal et notification. `_send` renvoie maintenant `true` (false si zone interdite).
+- fn_droneCmd `goto` : 2e argument facultatif `HOVER` | `LAND` : arrivée à 6 m (au lieu de 20 m), ou IA arrêtée à moins de 25 m ; `LAND` se pose au lieu du stationnaire (aussi en CQB).
+- Non testé en jeu : vérifier le sous-menu, la précision du stationnaire et de l'atterrissage sur le point, et la recherche centrée sur le clic.
+
+#### App Plan : le plan de briefing visible sur le site et sur la carte du téléphone (#787)
+
+- Le serveur note dans `COMSPEC_ATAK_Plan_<camp>` l'UID de l'auteur de chaque modification (4e champ). `fn_planWeb` (toutes les 5 s) : l'auteur envoie tout le plan à Athena par COMSPEC Link `BriefingPlan.Push` (POST `/api/atak/briefing-plan`) ; sans confirmation après 30 à 60 s, un autre téléphone du camp relié l'envoie. Révision confirmée partagée (`COMSPEC_ATAK_PlanWeb_<camp>`) : un seul envoi par révision. Tracés à main levée allégés à 6000 sommets pour tout le plan.
+- Site : table `atak_briefing_plans` (une ligne par carte et par camp, créée aussi à la première écriture), GET `/api/atak/briefing-plan` (plans des 12 dernières heures), calque Leaflet `atak-briefing-plan.js` (zones remplies, lignes de phase étiquetées, flèches, points), préférence `showBriefingPlan`.
+- Calque Plan de la carte du téléphone : nouvelle préférence `COMSPEC_ATAK_PlanOnMap2`, active par défaut, avec le brouillon local plus pâle.
+- Brouillons et plans enregistrés restent personnels : ils arrivent sur le site une fois publiés dans le plan partagé. Exception : serveur sans le mod natif (`COMSPEC_ATAK_PlanSrvOn` absent), chaque joueur envoie son brouillon (`owner` = UID, une ligne par joueur).
+- Détection du serveur avec le mod : drapeau `COMSPEC_ATAK_PlanSrvOn` posé dès le preInit serveur ; côté client, `isServer` ou plan déjà écrit suffisent ; sans drapeau, le serveur est quand même essayé (5 s) avant le brouillon, puis `COMSPEC_ATAK_PlanNoSrv` évite d'attendre aux ajouts suivants. Le message « Serveur sans le mod ATAK natif » n'apparaît plus à tort en solo ou en partie hébergée.
+- TOUT EFF. ne vidait que la couche visée (souvent le partagé, vide quand les éléments étaient partis au brouillon) : il vide maintenant tracé, brouillon et partagé autorisé, avec un bouton CONFIRMER ? visible.
+- Clic droit de la carte du Plan : le relâchement n'arrivait pas toujours à la carte ; il est aussi détecté par `inputMouse 1` (premier des deux, traité une fois, événement `rclick`).
+
+---
+
+#### Véhicules : la molette et le menu d'actions ne sont plus bloqués par le téléphone (#789)
+
+- Cause : le réglage « Masquer le menu d'actions » vaut « En main et porté » par défaut. En véhicule l'écran JPC n'est pas utilisable (fn_jpcScreen exige d'être à pied), le téléphone porté passe en miniature (cutRsc, texture = false) et COMSPEC_ATAK_ActionBlock bloquait PrevAction / NextAction : plus de menu d'actions, donc plus de « Démarrer le moteur ».
+- Correctif : dans COMSPEC_ATAK_ActionBlock, joueur dans un véhicule (objectParent player non nul) et réglage CBA client `comspec_atak_native_action_menu_vehicle` coché (défaut) → seul le téléphone en main garde la molette, comme le mode « En main seulement ».
+- À tester en jeu : miniature affichée, monter conducteur / passager / tireur, molette → menu d'actions et démarrage moteur ; téléphone en main en véhicule → la molette ne fait pas défiler le menu ; décocher le réglage → ancien comportement.
+
+#### Téléphone : le HUD des autres mods ne passe plus par-dessus (#788)
+
+- Arma dessine les calques cutRsc (RscTitles) de tous les mods au-dessus des fenêtres createDisplay : le téléphone en main passait sous le HUD F-PANO ECOTI (Workshop), et le téléphone porté sous les calques créés après le sien.
+- Nouveau `fn_foreignHud` : tant que le téléphone est affiché, un per-frame CBA scanne chaque seconde les displays rangés dans `uiNamespace` et absents de `allDisplays` (les calques), hors téléphone (`COMSPEC_ATAK_*`) et HUD du jeu (`IGUI_displays`), et masque (`ctrlShow false`) leurs contrôles de premier niveau qui chevauchent la coque (`layoutGet` « visible »). Remasqués à chaque image si le mod les réaffiche, réaffichés à la fermeture ou quand ils ne chevauchent plus la coque. Aucun mod tiers modifié.
+- Réglage CBA client `comspec_atak_native_hide_foreign_hud` (ATAK · Affichage, activé par défaut). Écran 3D du JPC non concerné.
+- Limite : un texte posé par `cutText` / `titleText` ou dessiné par `drawIcon3D` n'a pas de display accessible et ne peut pas être masqué.
+
+#### App Groupe : nouvelle interface (#791)
+
+- fn_pageGroup réécrit : hero (symbole OTAN, nom, type, effectif, équipes, chef, accès), strip de bilan (respecte medShow allies), membres triés chef > moi > distance, fold « perso » (clés COMSPEC_ATAK_State grpFold_<clé>, fn_groupAction "fold"), QUITTER désactivé si seul, onglet GROUPES avec état vide.
+- fn_ftRows : strip « VOUS », folds « role » et « place », grille de rôles 4 par rangée en mini portrait et 6 sinon (infobulle = libellé complet), boutons d'édition d'équipe sur deux rangées, APPLIQUER MON RÔLE remplacé par le bouton PRENDRE de la liste complète.
+- fn_formRender : nouvelle ligne `field` (champ + bouton sur la même ligne) et 6e paramètre facultatif de `combo` ([libellé, code] : bouton intégré, code appelé avec la donnée choisie). Pas d'application au simple choix : la molette sur une liste fermée en change la ligne.
+- 46 textes ajoutés à i18n/en.txt. Aucune nouvelle fonction de jeu. Non testé en jeu.
+
+#### Mode PETIT : carte, accueil et messagerie plus lisibles, fin de la notification en boucle (#786)
+
+- Retour de TTRD (13/10) : « INFO · TA1 · 1519 1729 » en boucle en mode PETIT. fn_inspectorUpdate envoyait la notification à chaque rendu en mode mini avec une unité sélectionnée ; fn_statusUpdate le rappelle chaque seconde et la grille change quand l'unité bouge, donc l'anti-doublon de fn_notify ne jouait pas. La notification part désormais de fn_mapSelect, une fois par clic.
+- fn_layoutGet : page MAP en mini (hors texture JPC) sans dock ni rail ; fn_dockRender ne dessine rien quand les deux sont nuls. Paysage mini : 5 colonnes au lanceur (au lieu de 4).
+- fn_launcherRender : pas de recherche en mini, tuiles à 0,8 de hauteur relative (0,92 en plein écran).
+- fn_pageChat : vue partagée liste + conversation réservée au plein écran paysage.
+- fn_layoutApply : en mini, météo (88514, 88523, 88524) et RAM masquées.
+- Calculs de place (1080p, paysage mini) : écran 502 × 286 px, barre d'état + barre d'app 58 px, rail 49 px. Non testé en jeu.
+
+#### Selfie : axes de la souris inversables (#782)
+
+- Demande de TTRD (13/10) : inverser gauche / droite à la souris en mode selfie.
+- Réglages CBA client (non forcés par le serveur) comspec_atak_native_selfie_invert_x / _y, lus dans fn_photoMode "MOUSE" (branche selfie uniquement ; le zoom de l'objectif arrière et le glisser de l'app Photo ne changent pas). Traductions ajoutées à en.txt.
+- Non testé en jeu.
+
 ## Drone : bouton TEST VIDÉO pour l'image noire du téléphone (ATAK natif 1.90.0)
 
 ### Résumé joueur
@@ -53,6 +134,7 @@ EN : A test to fix the black drone picture in the phone
 - Retour de TTRD (13/10) : la PiP s'affiche partout ailleurs dans le jeu, sauf dans le téléphone. fn_pipCheck "test" / "testEnd" : caméra devant le joueur, texture carrée `#(argb,512,512,1)r2t(comspecpiptest,1.0)` à 4 endroits (1 groupe de contenu, 2 display du téléphone, 3 RscDisplayEmpty par-dessus, 4 calque cutRsc RscTitleDisplayEmpty), journal [CAMERA] ; bouton dans la rangée RÉGLAGES de la vue caméra.
 - fn_tr : les textures commençant par « #( » ne sont jamais traduites.
 - Seul commit de la PR #771 resté hors du regroupement #777. Non testé en jeu.
+
 ## Langues ajoutées par la communauté (ATAK natif 1.89.0)
 
 ### Résumé joueur
@@ -195,6 +277,7 @@ Non testé en jeu. Retour de TTRD : défilement pénible en bas de l'onglet LECT
 - fn_pageMusic : sections en accordéon (clé « fold » de l'état d'interface, « Son » ouverte par défaut), action « fold » dans fn_musicAction.
 - Icônes ui_chevron_down / ui_chevron_up (gen_assets.py) ; icônes du lecteur gardées chargées (fn_textureKeep).
 - À vérifier en jeu : onglet LECTURE en plein écran paysage (pochette carrée à gauche), ouverture / fermeture des 4 sections, curseurs de volume dans « Son », portrait mini.
+
 ## Barlow Condensed revient en test dans Réglages > Police (ATAK natif 1.86.0)
 
 ### Résumé joueur

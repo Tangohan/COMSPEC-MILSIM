@@ -48,6 +48,7 @@ if (_inter && {(_ui get "view") isEqualTo "LIB"}) exitWith {
     private _mode = ["tout le monde", "chefs de groupe, Zeus et admins", "Zeus et admins"] select ((missionNamespace getVariable ["comspec_atak_native_plan_edit", 1]) max 0 min 2);
     private _rows = [
         ["section", "Plan partagé du camp", format ["%1 élément(s)%2 · modifiable par : %3%4", count _sh, ["", format [" · « %1 »", [_sharedName] call _esc]] select (_sharedName isNotEqualTo ""), _mode, ["", " (vous : lecture seule)"] select !_can]],
+        ["text", format ["<t size='0.85' color='#8a9a93'>%1</t>", ["state"] call comspec_atak_native_fnc_planWeb]],
         ["buttons", [["EXPORTER", ["export", "S"] call _act], ["ENREGISTRER", { ["save", "S"] call comspec_atak_native_fnc_planAction; }]]],
         ["section", "Brouillon local", format ["%1 élément(s), gardé dans votre profil : préparez le plan à l'avance, puis ajoutez-le quand le groupe se réunit", count _dr]],
         ["buttons", [["AJOUTER AU PARTAGÉ", { ["publish", ["D", false]] call comspec_atak_native_fnc_planAction; }, true, _can], ["REMPLACER LE PARTAGÉ", { ["publish", ["D", true]] call comspec_atak_native_fnc_planAction; }, false, _can]]],
@@ -76,7 +77,7 @@ if (_inter && {(_ui get "view") isEqualTo "LIB"}) exitWith {
     if (_exp isNotEqualTo "") then { _rows pushBack ["memo", "planExport", "Dernier export (aussi copié dans le presse-papiers)", _exp select [0, 4000], 3]; };
     _rows append [
         ["section", "Affichage", ""],
-        ["switch", "Plan partagé sur la carte principale", profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap", false], { ["layer"] call comspec_atak_native_fnc_planAction; }, "Calque du plan sur l'app Carte, sous les unités"],
+        ["switch", "Plan sur la carte principale", profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true], { ["layer"] call comspec_atak_native_fnc_planAction; }, "Plan partagé et brouillon sur l'app Carte, sous les unités"],
         ["switch", "Fond assombri (façon image ISR)", profileNamespace getVariable ["COMSPEC_ATAK_PlanDim", true], {
             profileNamespace setVariable ["COMSPEC_ATAK_PlanDim", !(profileNamespace getVariable ["COMSPEC_ATAK_PlanDim", true])]; saveProfileNamespace; ["rerender"] call comspec_atak_native_fnc_planAction;
         }, "Les couleurs du plan ressortent mieux"]
@@ -211,7 +212,7 @@ private _acts = [
     ["undo", "DÉFAIRE", { ["undo"] call comspec_atak_native_fnc_planAction; }, "Dernier point du tracé, sinon dernier élément (partagé : le dernier posé par vous)"],
     ["toggle", "NET. ⇄", { ["toggleClear"] call comspec_atak_native_fnc_planAction; }, "Bâtiment sélectionné : CLEARED <-> UNCLEARED (même numéro)"],
     ["del", "SUPPR.", { ["delete"] call comspec_atak_native_fnc_planAction; }, "Efface l'élément sélectionné"],
-    ["clear", "TOUT EFF.", { ["clearTarget"] call comspec_atak_native_fnc_planAction; }, "Vide la couche visée (deux appuis)"]
+    ["clear", ["TOUT EFF.", "CONFIRMER ?"] select ((diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PlanClearArm", -10])) <= 4), { ["clearTarget"] call comspec_atak_native_fnc_planAction; }, "Efface le brouillon et, si vous avez le droit, le plan partagé (deux appuis)"]
 ];
 private _aw = (_bw - _pad * 2 - _ew - _gap * (count _acts)) / (count _acts);
 {

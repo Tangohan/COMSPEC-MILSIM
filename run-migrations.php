@@ -3877,6 +3877,12 @@ $migrationRunner->step('atak_role_time_moves', static function () use ($pdo): vo
     $pdo->exec(\App\Repositories\AtakRoleTimeCorrectionRepository::createTableSql());
 });
 
+// Plan de briefing de l'app Plan (ATAK natif) affiché sur la carte du site (COMSPEC Link 2.0.84).
+$migrationRunner->step('atak_briefing_plans', static function () use ($pdo): void {
+    echo "Migration atak_briefing_plans (plan de briefing des téléphones sur la carte du site)...\n";
+    $pdo->exec(\App\Repositories\AtakBriefingPlanRepository::createTableSql());
+});
+
 // Rôles d'équipe de feu partagés avec le jeu : rôles créés en jeu et rôle mémorisé par joueur (AtakRoleService).
 $atakRolesMigrate = require $root . '/bootstrap/atak_roles_migration.php';
 $migrationRunner->step('atak_roles', static function () use ($atakRolesMigrate, $pdo): void {

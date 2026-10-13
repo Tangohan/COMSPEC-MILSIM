@@ -105,7 +105,7 @@ private _prevTex = {
     _pc camSetFov _fov;
     _pc camCommit 0;
     _name setPiPEffect [_vis];
-    private _tex = format ["#(argb,1024,512,1)r2t(%1,1.7778)", _name];
+    private _tex = format ["#(argb,1024,1024,1)r2t(%1,1.7778)", _name];
     _pc setVariable ["key", _key];
     _pc setVariable ["r2t", _name];
     _pc setVariable ["tex", _tex];

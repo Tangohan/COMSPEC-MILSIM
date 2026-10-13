@@ -5,6 +5,7 @@
       "draw" [carte]                              fond, plan partagé, brouillon, aperçu, tracé en cours
       "down" / "up" [carte, bouton, x, y]         clic gauche : outil actif (ou sélection) ; clic droit sans glisser : terminer / quitter l'outil
       "move" [carte, x, y]                        curseur et crayon
+      "rclick" [carte, [x, y]]                    clic droit simple : terminer le tracé, quitter l'outil ou désélectionner
       "dbl"  [carte, bouton, x, y]                double clic : termine un trait ou une zone
       "hit"  [carte, [x, y]]                      -> [id, couche] de l'élément sous le point ("" sinon)
 */
@@ -55,7 +56,14 @@ switch (_ev) do {
     };
     case "down": {
         _a params ["_map", "_btn", "_mx", "_my"];
-        if (_btn isEqualTo 1) exitWith { _ui set ["rc", [_mx, _my, diag_tickTime]]; };
+        if (_btn isEqualTo 1) exitWith {
+            _ui set ["rc", [_mx, _my, diag_tickTime]];
+            // Le relâchement du clic droit n'arrive pas toujours à la carte (Arma le garde pour le glisser) :
+            // le bouton est aussi surveillé, et le premier des deux (« up » ou cette veille) traite le clic.
+            [{ (inputMouse 1) isEqualTo 0 }, {
+                ["rclick", [_this, getMousePosition]] call comspec_atak_native_fnc_planMap;
+            }, _map, 1.5] call CBA_fnc_waitUntilAndExecute;
+        };
         if (_btn isNotEqualTo 0) exitWith {};
         private _w = _map ctrlMapScreenToWorld [_mx, _my];
         private _p = [_w select 0, _w select 1, 0];
@@ -82,19 +90,28 @@ switch (_ev) do {
             private _d = [] call comspec_atak_native_fnc_display;
             if (!isNull _d && {(focusedCtrl _d) isEqualTo ((uiNamespace getVariable ["COMSPEC_ATAK_PlanCtrls", createHashMap]) getOrDefault ["map", controlNull])}) then { ctrlSetFocus (_d displayCtrl 88543); };
         }] call CBA_fnc_execNextFrame;
-        if (_btn isEqualTo 1) exitWith {
-            private _rc = _ui getOrDefault ["rc", []];
-            _ui set ["rc", []];
-            // Glisser droit = déplacer la carte ; clic droit simple = terminer le tracé, sinon quitter l'outil.
-            if ((count _rc) isEqualTo 3 && {(abs (_mx - (_rc select 0))) < pixelW * 6} && {(abs (_my - (_rc select 1))) < pixelH * 6} && {(diag_tickTime - (_rc select 2)) < 0.8}) then {
-                if ((count (_ui get "draft")) > 1 && {_geom in ["LINE", "AREA"]}) then { ["finish"] call comspec_atak_native_fnc_planAction; } else { ["cancel"] call comspec_atak_native_fnc_planAction; };
-            };
-        };
+        if (_btn isEqualTo 1) exitWith { ["rclick", [_map, [_mx, _my]]] call comspec_atak_native_fnc_planMap; };
         if (_btn isEqualTo 0 && {_ui getOrDefault ["drawing", false]}) then {
             _ui set ["drawing", false];
             private _mpx = ["mpx", _map] call comspec_atak_native_fnc_planGfx;
             private _pts = [_ui get "draft", _mpx * 2, true, false, 120] call comspec_atak_native_fnc_strokeSimplify;
             if ((count _pts) >= 2) then { ["commit", _pts] call comspec_atak_native_fnc_planAction; } else { _ui set ["draft", []]; };
+        };
+    };
+    // Clic droit sans glisser (le glisser droit déplace la carte), traité une seule fois :
+    // trait ou zone en cours -> terminé ; outil actif -> quitté ; sinon sélection retirée.
+    case "rclick": {
+        _a params ["_map", "_sp"];
+        private _rc = _ui getOrDefault ["rc", []];
+        if ((count _rc) < 3) exitWith {};
+        _ui set ["rc", []];
+        _sp params ["_mx", "_my"];
+        if ((abs (_mx - (_rc select 0))) >= pixelW * 6 || {(abs (_my - (_rc select 1))) >= pixelH * 6} || {(diag_tickTime - (_rc select 2)) >= 0.8}) exitWith {};
+        private _n = count (_ui get "draft");
+        switch (true) do {
+            case (_n > 1 && {_geom in ["LINE", "AREA"]}): { ["finish"] call comspec_atak_native_fnc_planAction; };
+            case (_n > 0 || {(_ui get "tool") isNotEqualTo ""}): { ["cancel"] call comspec_atak_native_fnc_planAction; };
+            case ((_ui get "sel") isNotEqualTo ""): { ["select", ["", ""]] call comspec_atak_native_fnc_planAction; };
         };
     };
     case "dbl": {

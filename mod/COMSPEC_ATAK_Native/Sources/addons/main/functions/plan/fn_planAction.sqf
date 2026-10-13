@@ -10,7 +10,7 @@
       "finish" / "cancel"         termine / abandonne le tracé en cours (clic droit, double clic, boutons)
       "undo"                      défait le dernier élément (brouillon : le dernier ; partagé : le dernier posé par moi)
       "select" [id, couche]       sélection (couche "S" partagé, "D" brouillon) ; "delete" ; "toggleClear" (CLEARED <-> UNCLEARED)
-      "clearTarget"               vide la couche visée (deux appuis)
+      "clearTarget"               efface tout : tracé en cours, brouillon et plan partagé si autorisé (deux appuis)
       "save" source               enregistre le partagé ("S") ou le brouillon ("D") sous le nom saisi (profil)
       "load" i | "preview" i | "previewOff" | "previewAdd" | "libDel" i     plans enregistrés
       "publish" [source, remplacer]   brouillon ("D"), aperçu ("P") ou plan enregistré (index) vers le plan partagé
@@ -64,8 +64,12 @@ private _addItems = {
     params ["_list", ["_toShared", true], ["_replace", false], ["_name", ""]];
     if ((count _list) isEqualTo 0) exitWith {};
     // Serveur sans le mod natif (mod chargé seulement chez les joueurs) : personne n'écrit le plan partagé.
-    private _srvOn = missionNamespace getVariable ["COMSPEC_ATAK_PlanSrvOn", false];
-    if (_toShared && {_srvOn} && {call _can}) then {
+    // Le drapeau du serveur peut manquer (solo, partie hébergée, drapeau pas encore reçu) : on essaie quand même
+    // le serveur, et seulement sans réponse sous 5 s les éléments vont au brouillon.
+    private _srvOn = isServer || {missionNamespace getVariable ["COMSPEC_ATAK_PlanSrvOn", false]} || {!isNil { missionNamespace getVariable _sharedVar }};
+    // Serveur déjà resté muet sans drapeau dans cette mission : directement au brouillon.
+    private _noSrv = !_srvOn && {missionNamespace getVariable ["COMSPEC_ATAK_PlanNoSrv", false]};
+    if (_toShared && {!_noSrv} && {call _can}) then {
         private _rev = (missionNamespace getVariable [_sharedVar, [0, [], ""]]) param [0, 0];
         [["merge", "replace"] select _replace, [_list, _name]] call _srv;
         // Affichés en attente jusqu'à la réponse du serveur ; sans réponse (refus, serveur muet), gardés dans le brouillon.
@@ -74,15 +78,16 @@ private _addItems = {
         uiNamespace setVariable ["COMSPEC_ATAK_PlanPending", _pend];
         [{ ((missionNamespace getVariable [_this select 0, [0]]) param [0, 0]) isNotEqualTo (_this select 1) }, {
             uiNamespace setVariable ["COMSPEC_ATAK_PlanPending", []];
-        }, [_sharedVar, _rev, _list], 5, {
+        }, [_sharedVar, _rev, _list, _srvOn], 5, {
             uiNamespace setVariable ["COMSPEC_ATAK_PlanPending", []];
             ["WARN", "PLAN", format ["Plan partagé : pas de réponse du serveur (%1 éléments gardés dans le brouillon)", count (_this select 2)]] call comspec_atak_native_fnc_log;
-            ["Plan partagé : pas de réponse du serveur, gardé dans votre brouillon", 4] call comspec_atak_native_fnc_toast;
+            [["Serveur sans le mod ATAK natif : plan partagé indisponible, éléments placés dans votre brouillon", "Plan partagé : pas de réponse du serveur, gardé dans votre brouillon"] select (_this select 3), 5] call comspec_atak_native_fnc_toast;
+            if !(_this select 3) then { missionNamespace setVariable ["COMSPEC_ATAK_PlanNoSrv", true]; };
             ["toDraft", _this select 2] call comspec_atak_native_fnc_planAction;
         }] call CBA_fnc_waitUntilAndExecute;
     } else {
         if (_toShared) then {
-            [["Édition du plan partagé réservée : éléments placés dans votre brouillon", "Serveur sans le mod ATAK natif : plan partagé indisponible, éléments placés dans votre brouillon"] select !_srvOn, 5] call comspec_atak_native_fnc_toast;
+            [["Édition du plan partagé réservée : éléments placés dans votre brouillon", "Serveur sans le mod ATAK natif : plan partagé indisponible, éléments placés dans votre brouillon"] select _noSrv, 5] call comspec_atak_native_fnc_toast;
         };
         private _d = [[], +(call _draftGet)] select !_replace;
         { private _c = +_x; _c set [0, call _newId]; if ((_c select 9) isEqualTo "") then { _c set [9, name player]; }; _d pushBack _c; } forEach _list;
@@ -159,7 +164,7 @@ switch (_act) do {
     case "target": { _ui set ["target", ["S", "D"] select ((_ui get "target") isEqualTo "S")]; call _rerender; };
     case "view": { _ui set ["view", _arg]; call _rerender; };
     case "layer": {
-        profileNamespace setVariable ["COMSPEC_ATAK_PlanOnMap", !(profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap", false])];
+        profileNamespace setVariable ["COMSPEC_ATAK_PlanOnMap2", !(profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true])];
         saveProfileNamespace;
         call _rerender;
     };
@@ -234,13 +239,26 @@ switch (_act) do {
         ["refresh"] call comspec_atak_native_fnc_planAction;
     };
     case "clearTarget": {
-        // Deux appuis en moins de 4 s : rien ne s'efface par erreur.
+        // Deux appuis en moins de 4 s (le bouton passe à « CONFIRMER ? ») : rien ne s'efface par erreur.
         if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PlanClearArm", -10]) > 4) exitWith {
             uiNamespace setVariable ["COMSPEC_ATAK_PlanClearArm", diag_tickTime];
-            ["Appuyez encore pour tout effacer", 3] call comspec_atak_native_fnc_toast;
+            ["Appuyez encore sur TOUT EFF. pour tout effacer", 3] call comspec_atak_native_fnc_toast;
+            call _rerender;
+            [{ if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PlanClearArm", -10]) > 4) then { ["rerender"] call comspec_atak_native_fnc_planAction; }; }, [], 4.2] call CBA_fnc_waitAndExecute;
         };
         uiNamespace setVariable ["COMSPEC_ATAK_PlanClearArm", -10];
-        if ((_ui get "target") isEqualTo "S") then { if (call _can) then { ["clear"] call _srv; } else { ["Édition du plan partagé réservée", 3] call comspec_atak_native_fnc_toast; }; } else { [[]] call _draftSet; };
+        // Tracé en cours, brouillon (toujours le mien) et plan partagé (si j'ai le droit et qu'il y a quelque chose).
+        _ui set ["draft", []];
+        private _nd = count (call _draftGet);
+        if (_nd > 0) then { [[]] call _draftSet; };
+        private _ns = count (call _shared);
+        private _msg = "";
+        if (_ns > 0) then {
+            if (call _can) then { ["clear"] call _srv; _msg = format ["Plan effacé (%1 élément(s) du partagé, %2 du brouillon)", _ns, _nd]; } else {
+                _msg = format ["Brouillon effacé (%1 élément(s)) ; plan partagé : édition réservée", _nd];
+            };
+        } else { _msg = ["Plan déjà vide", format ["Brouillon effacé (%1 élément(s))", _nd]] select (_nd > 0); };
+        [_msg, 4] call comspec_atak_native_fnc_toast;
         _ui set ["sel", ""];
         call _rerender;
     };
@@ -341,13 +359,13 @@ switch (_act) do {
         private _def = (_cat get "kinds") getOrDefault [_kind, []];
         private _n = count (_ui get "draft");
         private _t = if ((count _def) isEqualTo 0) then {
-            ["Clic : sélectionner · glisser droit : déplacer la carte", "Élément sélectionné : SUPPR pour l'effacer"] select ((_ui get "sel") isNotEqualTo "")
+            ["Clic : sélectionner · glisser droit : déplacer la carte", "Élément sélectionné : SUPPR pour l'effacer · clic droit : désélectionner"] select ((_ui get "sel") isNotEqualTo "")
         } else {
             switch (_def select 3) do {
-                case "POINT": { "Clic : poser" };
-                case "DIR": { ["Clic : position", "Clic : direction de tir"] select (_n > 0) };
+                case "POINT": { "Clic : poser · clic droit : quitter l'outil" };
+                case "DIR": { ["Clic : position · clic droit : quitter l'outil", "Clic : direction de tir · clic droit : annuler"] select (_n > 0) };
                 case "AREA": { format ["Clic : sommets (%1) · clic sur le 1er ou clic droit : fermer · 2 points = rectangle", _n] };
-                default { if (_ui get "pen") then { "Maintenir le clic gauche et dessiner" } else { format ["Clic : points (%1) · double clic ou clic droit : terminer", _n] } };
+                default { if (_ui get "pen") then { "Maintenir le clic gauche et dessiner · clic droit : quitter l'outil" } else { format ["Clic : points (%1) · double clic ou clic droit : terminer", _n] } };
             }
         };
         format ["<t size='0.8' color='#8a9a93'>%1</t>", _t]

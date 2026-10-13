@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.83";
+    private const string ExtensionVersion = "2.0.84";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -3080,6 +3080,19 @@ public static partial class Extension
             if (json.Length > 60000) return "ERR|payload_too_large";
             var path = function == "Squad.Sync" ? "/api/atak/squads/sync" : "/api/atak/screen-time";
             EnqueueOrSend(_baseUrl + path, EnrichAtakPayload(json));
+            return "OK|queued";
+        }
+
+        // Plan de briefing partagé d'un camp (app Plan de l'ATAK natif) vers la carte du site, en entier à chaque envoi.
+        // args: [json {mission_key, world, side, rev, name, reported_by, items[]}] → OK|queued
+        if (function == "BriefingPlan.Push")
+        {
+            if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0])) return "ERR|payload_empty";
+            if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+            if (!HasPortalAuth()) return "ERR|unauthorized";
+            var json = NormalizeArmaJson(args[0]);
+            if (json.Length > 200000) return "ERR|payload_too_large";
+            EnqueueOrSend(_baseUrl + "/api/atak/briefing-plan", EnrichAtakPayload(json));
             return "OK|queued";
         }
 

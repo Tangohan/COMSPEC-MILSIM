@@ -12,7 +12,8 @@
     Sans serveur (appel local, toute machine) :
       "clean"   élément              -> élément vérifié et borné, ou [] s'il est invalide (aussi pour l'import)
       "can"     []                   -> l'unité peut-elle modifier le plan partagé ?
-    Écrit missionNamespace COMSPEC_ATAK_Plan_<camp> = [révision, éléments, nom] (public, retrouvé par les JIP).
+    Écrit missionNamespace COMSPEC_ATAK_Plan_<camp> = [révision, éléments, nom, UID de l'auteur de la modification]
+    (public, retrouvé par les JIP ; envoyé au site par fn_planWeb).
 */
 params [["_by", objNull], ["_op", ""], ["_args", []]];
 private _cat = [] call comspec_atak_native_fnc_planCatalog;
@@ -120,5 +121,6 @@ switch (_op) do {
     default { _changed = false; };
 };
 if (!_changed) exitWith { false };
-missionNamespace setVariable [_var, [_rev + 1, _items, _name], true];
+// 4e champ : UID de l'auteur de la modification, qui l'envoie au site (fn_planWeb).
+missionNamespace setVariable [_var, [_rev + 1, _items, _name, getPlayerUID _by], true];
 true

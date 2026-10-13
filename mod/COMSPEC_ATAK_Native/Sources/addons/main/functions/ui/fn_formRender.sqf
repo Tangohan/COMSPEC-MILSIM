@@ -4,7 +4,9 @@
     Lignes :
       ["title", texte]                       ["text", texte structuré]
       ["edit", clé, libellé, valeur]          ["memo", clé, libellé, valeur, nb lignes]
-      ["combo", clé, libellé, [[texte, donnée, image, couleur]...], donnée choisie]
+      ["combo", clé, libellé, [[texte, donnée, image, couleur]...], donnée choisie, [libellé du bouton, code]]
+          bouton (facultatif) à droite de la liste, sur la même ligne : code appelé avec [donnée choisie]
+      ["field", clé, libellé, valeur, libellé du bouton, code, principal]   champ de saisie avec son bouton à droite
       ["toggle", libellé, actif, code]        ["buttons", [[libellé, code, principal, actif, aide]...]]
       ["password", clé, libellé]              ["hero", image, texte structuré]
       ["gap"]
@@ -201,12 +203,30 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _fields set [_key, _e];
             _y = _y + _h + _pad / 2;
         };
-        case "combo": {
-            _row params ["", "_key", "_label", "_items", ["_selData", ""]];
+        case "field": {
+            // Champ et bouton sur la même ligne (renommer) : libellé au-dessus, bouton à droite à hauteur du champ.
+            _row params ["", "_key", "_label", ["_value", ""], ["_btnLabel", "OK"], ["_code", {}], ["_primary", true]];
             private _lb = ["COMSPEC_RscLabel", [_pad, _y, _w, _fs * 1.2], _label] call _mk;
             _lb ctrlSetFontHeight (_fs * 0.9);
             _y = _y + _fs * 1.2;
-            private _c = ["COMSPEC_RscCombo", [_pad, _y, _w, _rowH]] call _mk;
+            private _bwF = _w * 0.32;
+            private _e = ["COMSPEC_RscEdit", [_pad, _y, _w - _bwF - _pad / 2, _rowH], _value] call _mk;
+            _e ctrlSetFontHeight _font;
+            _fields set [_key, _e];
+            private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + _w - _bwF, _y, _bwF, _rowH], _btnLabel] call _mk;
+            _b ctrlSetFontHeight ((_fs * 0.9) max COMSPEC_ATAK_FontMin);
+            if !(_primary) then { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor [0.92, 0.96, 0.93, 1]; };
+            [_b, _code] call _click;
+            _y = _y + _rowH + _pad / 2;
+        };
+        case "combo": {
+            _row params ["", "_key", "_label", "_items", ["_selData", ""], ["_btn", []]];
+            private _lb = ["COMSPEC_RscLabel", [_pad, _y, _w, _fs * 1.2], _label] call _mk;
+            _lb ctrlSetFontHeight (_fs * 0.9);
+            _y = _y + _fs * 1.2;
+            // Bouton intégré (pas d'application au choix : la molette sur une liste fermée en change la ligne).
+            private _bwC = [0, _w * 0.32] select ((count _btn) isEqualTo 2);
+            private _c = ["COMSPEC_RscCombo", [_pad, _y, _w - ([0, _bwC + _pad / 2] select (_bwC > 0)), _rowH]] call _mk;
             _c ctrlSetFontHeight _font;
             private _sel = 0;
             {
@@ -218,6 +238,13 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 if (_data isEqualTo _selData) then { _sel = _i; };
             } forEach _items;
             _c lbSetCurSel _sel;
+            if (_bwC > 0) then {
+                _btn params ["_bl", "_bc"];
+                private _b = ["COMSPEC_RscButtonPrimary", [_pad + _w - _bwC, _y, _bwC, _rowH], _bl] call _mk;
+                _b ctrlSetFontHeight ((_fs * 0.9) max COMSPEC_ATAK_FontMin);
+                _b setVariable ["comspec_combo", [_c, _bc]];
+                [_b, { params ["_b"]; (_b getVariable ["comspec_combo", [controlNull, {}]]) params ["_c", "_bc"]; if (!isNull _c) then { [_c lbData (lbCurSel _c)] call _bc; }; }] call _click;
+            };
             _fields set [_key, _c];
             _y = _y + _rowH + _pad / 2;
         };

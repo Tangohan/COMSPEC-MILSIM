@@ -3,12 +3,20 @@
       "rename" : nom lu dans le formulaire (chef ou seul dans le groupe)  "type" : clé de fn_groupTypes
       "lock"   : groupe fermé / ouvert aux arrivées                        "leave" : quitter (nouveau groupe à mon nom)
       "join"   : rejoindre le groupe (netId)                              "lead"  : passer le commandement (netId de l'unité)
+      "fold"   : [clé, ouverte par défaut] ouvre ou replie une section de l'app (onglets MON GROUPE et ÉQUIPES)
 */
 params [["_act", ""], ["_arg", ""]];
 private _grp = group player;
 private _isLead = (leader _grp) isEqualTo player || {(count units _grp) isEqualTo 1};
 private _rerender = { [{ ["GROUP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; };
 switch (_act) do {
+    case "fold": {
+        _arg params [["_k", ""], ["_def", false]];
+        private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        private _key = format ["grpFold_%1", _k];
+        _s set [_key, !(_s getOrDefault [_key, _def])];
+        call _rerender;
+    };
     case "rename": {
         if !(_isLead) exitWith { ["WARNING", "Seul le chef de groupe peut le renommer", 3, 20] call comspec_atak_native_fnc_notify; };
         private _name = trim (["grpName"] call comspec_atak_native_fnc_formValue);

@@ -86,7 +86,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
 }];
 // Menu d'actions d'Arma masqué pendant que le téléphone est affiché (réglage « Masquer le menu d'actions ») :
 // molette (PrevAction / NextAction) bloquée ; validation (Action) bloquée seulement téléphone en main.
-// Téléphone rangé : le gestionnaire renvoie false, le jeu (et ACE) se comporte normalement. Réinstallé à chaque ouverture (fn_open).
+// Téléphone rangé, ou porté en véhicule : le gestionnaire renvoie false, le jeu (et ACE) se comporte normalement. Réinstallé à chaque ouverture (fn_open).
 missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
     params [["_activate", false]];
     private _mode = missionNamespace getVariable ["comspec_atak_native_action_menu", 2];
@@ -94,6 +94,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
     private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     private _inHand = _st getOrDefault ["interactive", false];
     if (_activate) exitWith { _inHand };
+    // En véhicule (conducteur, passager, tireur) : le menu d'actions reste libre (démarrer le moteur, monter, descendre…)
+    // sauf téléphone en main (réglage « Menu d'actions libre en véhicule », activé par défaut).
+    if (!isNull objectParent player && {missionNamespace getVariable ["comspec_atak_native_action_menu_vehicle", true]}) exitWith { _inHand };
     // Écran sur le JPC : le joueur garde son arme et son menu d'actions.
     _inHand || {_mode isEqualTo 2 && {!(_st getOrDefault ["texture", false])}}
 }];
@@ -653,6 +656,8 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 }] call CBA_fnc_addEventHandler;
 // Escouades et équipes de feu vers Athena (rapporteur du groupe seulement, si quelque chose a changé).
 [{ [] call comspec_atak_native_fnc_squadSync; }, 30] call CBA_fnc_addPerFrameHandler;
+// Plan de briefing partagé vers la carte du site (auteur de la modification, sinon un autre téléphone relié).
+[{ ["tick"] call comspec_atak_native_fnc_planWeb; }, 5] call CBA_fnc_addPerFrameHandler;
 // Temps d'écran et temps par rôle (envoi à Athena toutes les 5 min et en fin de mission).
 [{ ["tick"] call comspec_atak_native_fnc_screenTime; }, 5] call CBA_fnc_addPerFrameHandler;
 addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; }];

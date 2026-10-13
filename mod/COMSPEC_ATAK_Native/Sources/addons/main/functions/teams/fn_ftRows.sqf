@@ -1,6 +1,7 @@
 /*
     Lignes de l'onglet ÉQUIPES de l'app Groupe (fn_pageGroup) : équipes de feu du groupe, fiche de création
     et de modification (nom, couleur, icône, description), mon rôle, placement des membres par les chefs.
+    Mon rôle et Placer un membre sont des sections repliables (fn_groupAction "fold", clés grpFold_role / grpFold_place).
     Renvoie les lignes de fn_formRender.
 */
 private _cat = [] call comspec_atak_native_fnc_ftCatalog;
@@ -19,11 +20,15 @@ private _colorItems = (_cat get "colors") apply { [_x select 1, _x select 0, _sw
 private _iconItems = (_cat get "icons") apply { [_x select 1, _x select 0, _x select 2, [0.9, 0.94, 0.91, 1]] };
 private _roleShort = { params ["_u"]; private _r = _u getVariable ["COMSPEC_FTRole", ""]; (((_cat get "roles") select { (_x select 0) isEqualTo _r }) param [0, ["", "", ""]]) select 2 };
 private _rows = [];
+private _fold = { params ["_k", "_t", "_sub", ["_def", false]]; ["fold", _t, _sub, _s getOrDefault [format ["grpFold_%1", _k], _def], compile format ["['fold', ['%1', %2]] call comspec_atak_native_fnc_groupAction;", _k, _def]] };
+private _lay = [] call comspec_atak_native_fnc_layoutGet;
+private _narrow = (_lay get "mini") && {!(_lay get "landscape")};
 
-// Moi
-private _mine = if ((_me get "id") isEqualTo "") then { "<t color='#8a9a93'>sans équipe</t>" } else { format ["<t color='%1' font='COMSPEC_BarlowBold'>● %2</t>", _me get "hex", [_me get "name"] call _esc] };
-_rows pushBack ["text", format ["<t size='0.9'>Vous : %1 · %2</t>", _mine, ["<t color='#8a9a93'>aucun rôle</t>", _me get "roleLabel"] select ((_me get "role") isNotEqualTo "")]];
-_rows pushBack ["section", format ["Équipes de feu (%1)", count _teams], "Couleur, icône et rôles visibles par tout le camp : Groupe, BFT, carte et Inter-team"];
+// Moi, en un bandeau : mon équipe et mon rôle à gauche, le décompte à droite.
+private _mine = if ((_me get "id") isEqualTo "") then { "<t size='0.85' color='#8a9a93'>sans équipe</t>" } else { format ["<t size='0.85' color='%1' font='COMSPEC_BarlowBold'>● %2</t>", _me get "hex", [_me get "name"] call _esc] };
+_rows pushBack ["strip", format ["<t size='0.85' color='#8a9a93'>VOUS  </t>%1<t size='0.85' color='#8a9a93'>  ·  </t><t size='0.85'>%2</t>", _mine, ["<t color='#8a9a93'>aucun rôle</t>", [_me get "roleLabel"] call _esc] select ((_me get "role") isNotEqualTo "")],
+    format ["<t size='0.85' color='#8a9a93'>%1 sans équipe</t>", count _free]];
+_rows pushBack ["section", format ["Équipes de feu (%1)", count _teams], "Visibles par tout le camp : Groupe, BFT, carte et Inter-team"];
 
 {
     _x params ["_t", "_m"];
@@ -51,16 +56,20 @@ _rows pushBack ["section", format ["Équipes de feu (%1)", count _teams], "Coule
             ["combo", "ftEColor", "Couleur", _colorItems, _t get "color"],
             ["combo", "ftEIcon", "Icône", _iconItems, _t get "iconKey"],
             ["memo", "ftEDesc", "Description (mission, secteur, consignes)", _t get "desc", 2],
+            // Deux rangées de deux : libellés jamais coupés, même en mini portrait.
             ["buttons", [
                 ["ENREGISTRER", compile format ["['edit', '%1'] call comspec_atak_native_fnc_ftAction;", _tid], true],
-                [["FERMER", "OUVRIR"] select (_t get "locked"), compile format ["['lock', '%1'] call comspec_atak_native_fnc_ftAction;", _tid]],
-                ["DISSOUDRE", compile format ["['delete', '%1'] call comspec_atak_native_fnc_ftAction;", _tid]],
                 ["ANNULER", { ["editClose"] call comspec_atak_native_fnc_ftAction; }]
-            ]]
+            ]],
+            ["buttons", [
+                [["FERMER L'ÉQUIPE", "OUVRIR L'ÉQUIPE"] select (_t get "locked"), compile format ["['lock', '%1'] call comspec_atak_native_fnc_ftAction;", _tid], false, true, ["Plus personne ne peut la rejoindre seul", "Tout le monde peut la rejoindre"] select (_t get "locked")],
+                ["DISSOUDRE", compile format ["['delete', '%1'] call comspec_atak_native_fnc_ftAction;", _tid], false, true, "Supprime l'équipe : ses membres passent sans équipe"]
+            ]],
+            ["gap"]
         ];
     };
 } forEach _teams;
-if ((count _teams) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucune équipe de feu dans ce groupe. Créez la première : Alpha, Bravo…</t>"]; };
+if ((count _teams) isEqualTo 0) then { _rows pushBack ["empty", "\z\comspec_atak_native\addons\main\data\app_interteam.paa", "Aucune équipe de feu", "Créez la première : Alpha, Bravo…"]; };
 if ((count _free) > 0) then {
     _rows pushBack ["person", "\A3\ui_f\data\map\vehicleicons\iconMan_ca.paa", format ["<t font='COMSPEC_BarlowBold'>Sans équipe</t>  <t size='0.8' color='#8a9a93'>%1</t><br/><t size='0.8'>%2</t>",
         count _free, (_free apply { [name _x] call _esc }) joinString " · "], [], [0.55, 0.6, 0.58, 1]];
@@ -83,7 +92,7 @@ if (_s getOrDefault ["ftCreate", false]) then {
     _rows pushBack ["buttons", [["CRÉER UNE ÉQUIPE", { ["createOpen"] call comspec_atak_native_fnc_ftAction; }, true, (count _teams) < 8]]];
 };
 
-// Mon rôle (rôles du mod, fonctions d'Athena, rôles créés en jeu)
+// Mon rôle (rôles du mod, fonctions d'Athena, rôles créés en jeu) : section repliable, résumé = rôle actuel.
 private _roleItems = (_cat get "roles") apply {
     private _o = _x param [4, ""];
     [format ["%1%2", _x select 1, ["", "  · Athena", "  · créé en jeu"] select (((["", "ATHENA", "CUSTOM"] find _o)) max 0)], _x select 0, _x select 3, [0.9, 0.94, 0.91, 1]]
@@ -91,39 +100,42 @@ private _roleItems = (_cat get "roles") apply {
 private _pref = player getVariable ["COMSPEC_FTRolePref", ""];
 private _prefLabel = (((_cat get "roles") select { (_x select 0) isEqualTo _pref }) param [0, ["", ""]]) select 1;
 (missionNamespace getVariable ["COMSPEC_ATAK_RoleAthena", ["", "", "", "", 0]]) params [["_athSt", ""], "", "", ["_athJob", ""], ["_athN", 0]];
-_rows append [
-    ["section", "Mon rôle", "Compté dans les temps par rôle (app Temps d'écran et Athena). Mémorisé : réappliqué à chaque arrivée et réapparition"],
-    ["combo", "ftMyRole", "Rôle", [["Aucun rôle", "", "", []]] + _roleItems, _me get "role"],
-    ["text", "<t size='0.8' color='#8a9a93'>Ou touchez directement un rôle :</t>"],
-    ["text", format ["<t size='0.8' color='#8a9a93'>Rôle mémorisé : %1%2 · Athena : %3</t>",
-        [[_prefLabel] call _esc, "aucun"] select (_prefLabel isEqualTo ""),
-        ["", format [" · fonction %1", [_athJob] call _esc]] select (_athJob isNotEqualTo ""),
-        [[_athSt, "en attente"] select (_athSt isEqualTo ""), format ["%1 rôle(s) reçu(s)", _athN]] select (_athSt isEqualTo "OK")]],
-    ["buttons", [
-        ["APPLIQUER MON RÔLE", { ["myRole"] call comspec_atak_native_fnc_ftAction; }, true],
-        ["NOUVEAU RÔLE", { ["roleNewOpen"] call comspec_atak_native_fnc_ftAction; }],
-        ["RECHARGER", { ["roleReload"] call comspec_atak_native_fnc_ftAction; }]
-    ]]
-];
-// Grille de rôles : un appui applique le rôle (la liste déroulante coupait les dernières lignes, JTAC et télépilote compris).
-private _roleKeys = [["", "AUCUN"]] + ((_cat get "roles") apply { [_x select 0, _x select 2] });
-private _rowsGrid = [];
-{
-    _x params ["_rk", "_rab"];
-    if (_rk isEqualTo "" || {_rk regexMatch "^[A-Za-z0-9_]{1,16}$"}) then {
-        _rowsGrid pushBack [toUpper _rab, compile format ["['myRoleKey', '%1'] call comspec_atak_native_fnc_ftAction;", _rk], (_me get "role") isEqualTo _rk];
+private _rf = ["role", "Mon rôle", [[_me get "roleLabel"] call _esc, "aucun rôle"] select ((_me get "role") isEqualTo "")] call _fold;
+_rows pushBack _rf;
+if (_rf select 3) then {
+    _rows pushBack ["text", "<t size='0.8' color='#a9b8b1'>Touchez un rôle pour le prendre. Compté dans les temps par rôle (Temps d'écran, Athena) et réappliqué à chaque arrivée.</t>"];
+    // Grille de rôles : un appui applique le rôle (la liste déroulante coupait les dernières lignes, JTAC et télépilote compris).
+    private _roleKeys = [["", "AUCUN", "Aucun rôle"]] + ((_cat get "roles") apply { [_x select 0, _x select 2, _x select 1] });
+    private _rowsGrid = [];
+    {
+        _x params ["_rk", "_rab", "_rlabel"];
+        if (_rk isEqualTo "" || {_rk regexMatch "^[A-Za-z0-9_]{1,16}$"}) then {
+            _rowsGrid pushBack [toUpper _rab, compile format ["['myRoleKey', '%1'] call comspec_atak_native_fnc_ftAction;", _rk], (_me get "role") isEqualTo _rk, _rlabel];
+        };
+    } forEach _roleKeys;
+    private _per = [6, 4] select _narrow;
+    for "_i" from 0 to ((count _rowsGrid) - 1) step _per do {
+        _rows pushBack ["segment", "", _rowsGrid select [_i, _per]];
     };
-} forEach _roleKeys;
-for "_i" from 0 to ((count _rowsGrid) - 1) step 4 do {
-    _rows pushBack ["segment", "", _rowsGrid select [_i, 4]];
-};
-if (_s getOrDefault ["ftRoleNew", false]) then {
     _rows append [
-        ["section", "Nouveau rôle", "Retenu sur Athena pour toute la communauté et proposé à chaque mission"],
-        ["edit", "ftRName", "Nom du rôle", ""],
-        ["combo", "ftRIcon", "Icône", (_cat get "roleIcons") apply { [_x select 1, _x select 0, _x select 2, [0.9, 0.94, 0.91, 1]] }, "FUS"],
-        ["buttons", [["CRÉER ET PRENDRE CE RÔLE", { ["roleNew"] call comspec_atak_native_fnc_ftAction; }, true], ["ANNULER", { ["roleNewClose"] call comspec_atak_native_fnc_ftAction; }]]]
+        ["combo", "ftMyRole", "Liste complète (rôles d'Athena et créés en jeu compris)", [["Aucun rôle", "", "", []]] + _roleItems, _me get "role", ["PRENDRE", { params ["_k"]; ["myRoleKey", _k] call comspec_atak_native_fnc_ftAction; }]],
+        ["text", format ["<t size='0.8' color='#8a9a93'>Rôle mémorisé : </t><t size='0.8'>%1</t><t size='0.8' color='#8a9a93'>%2 · Athena : %3</t>",
+            [[_prefLabel] call _esc, "aucun"] select (_prefLabel isEqualTo ""),
+            ["", format [" · fonction %1", [_athJob] call _esc]] select (_athJob isNotEqualTo ""),
+            [[_athSt, "en attente"] select (_athSt isEqualTo ""), format ["%1 rôle(s) reçu(s)", _athN]] select (_athSt isEqualTo "OK")]],
+        ["buttons", [
+            ["NOUVEAU RÔLE", { ["roleNewOpen"] call comspec_atak_native_fnc_ftAction; }, false, true, "Créer un rôle retenu sur Athena pour toute la communauté"],
+            ["RECHARGER", { ["roleReload"] call comspec_atak_native_fnc_ftAction; }, false, true, "Relire les rôles d'Athena"]
+        ]]
     ];
+    if (_s getOrDefault ["ftRoleNew", false]) then {
+        _rows append [
+            ["section", "Nouveau rôle", "Retenu sur Athena pour toute la communauté et proposé à chaque mission"],
+            ["edit", "ftRName", "Nom du rôle", ""],
+            ["combo", "ftRIcon", "Icône", (_cat get "roleIcons") apply { [_x select 1, _x select 0, _x select 2, [0.9, 0.94, 0.91, 1]] }, "FUS"],
+            ["buttons", [["CRÉER ET PRENDRE", { ["roleNew"] call comspec_atak_native_fnc_ftAction; }, true, true, "Crée le rôle et vous l'attribue"], ["ANNULER", { ["roleNewClose"] call comspec_atak_native_fnc_ftAction; }]]]
+        ];
+    };
 };
 
 // Placement des membres (chef de groupe, chefs d'équipe)
@@ -136,12 +148,16 @@ if (_isGL || {_isTL}) then {
     if (_sel isEqualTo "" || {(_memberItems findIf { (_x select 1) isEqualTo _sel }) < 0}) then { _sel = (_memberItems param [0, ["", ""]]) select 1; };
     private _targets = [["Équipe inchangée", "-", "", []], ["Sans équipe", "", "", []]] + (_teams apply { private _t = _x select 0; [_t get "name", _t get "id", _swatch, _t get "rgba"] });
     if (!_isGL) then { _targets = _targets select { (_x select 1) in ["-", "", _me get "id"] }; };
-    _rows append [
-        ["section", "Placer un membre", ["Chef d'équipe : vous placez dans votre équipe et nommez les rôles", "Chef de groupe : toutes les équipes et tous les rôles"] select _isGL],
-        ["combo", "ftMember", "Membre", _memberItems, _sel],
-        ["combo", "ftTarget", "Équipe", _targets, "-"],
-        ["combo", "ftRole", "Rôle", [["Rôle inchangé", "-", "", []], ["Aucun rôle", "", "", []]] + _roleItems, "-"],
-        ["buttons", [["APPLIQUER", { ["manage"] call comspec_atak_native_fnc_ftAction; }, true]]]
-    ];
+    private _pf = ["place", "Placer un membre", ["chef d'équipe", "chef de groupe"] select _isGL] call _fold;
+    _rows pushBack _pf;
+    if (_pf select 3) then {
+        _rows append [
+            ["text", format ["<t size='0.8' color='#a9b8b1'>%1</t>", ["Vous placez dans votre équipe et nommez les rôles.", "Toutes les équipes et tous les rôles."] select _isGL]],
+            ["combo", "ftMember", "Membre", _memberItems, _sel],
+            ["combo", "ftTarget", "Équipe", _targets, "-"],
+            ["combo", "ftRole", "Rôle", [["Rôle inchangé", "-", "", []], ["Aucun rôle", "", "", []]] + _roleItems, "-"],
+            ["buttons", [["APPLIQUER", { ["manage"] call comspec_atak_native_fnc_ftAction; }, true]]]
+        ];
+    };
 };
 _rows

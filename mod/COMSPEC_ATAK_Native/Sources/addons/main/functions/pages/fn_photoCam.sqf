@@ -98,11 +98,9 @@ private _expose = {
     if (_lvl isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamLvl", -1]) || {_name isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamLvlFor", ""])}) then {
         missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamLvl", _lvl];
         missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamLvlFor", _name];
-        _name setPiPEffect ([
-            [0],
-            [3, 1, 1.6, 1.05, 0.01, [0, 0, 0, 0], [1, 1, 1, 0.9], [0.299, 0.587, 0.114, 0]],
-            [3, 1, 3.2, 1.1, 0.03, [0, 0, 0, 0], [1, 1, 1, 0.55], [0.299, 0.587, 0.114, 0]]
-        ] select _lvl);
+        // Rendu normal à tous les niveaux : la correction de couleurs (type 3) rendait le viseur noir (TEST VIDÉO de
+        // TTRD, 13/10 à 21:20 : la même caméra sans effet, texture carrée, s'affiche nette de nuit).
+        _name setPiPEffect [0];
     };
     _lvl
 };
@@ -116,7 +114,7 @@ switch (_act) do {
         if (isNull _cam) then {
             private _n = ((missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamN", 0]) + 1) mod 4;
             missionNamespace setVariable ["COMSPEC_ATAK_PhotoCamN", _n];
-            private _name = format ["comspec_photocam%1", _n];
+            private _name = format ["comspecphotocam%1", ["a", "b", "c", "d"] select _n];
             _cam = "camera" camCreate (ASLToAGL (eyePos player));
             [_cam] call _place;
             _cam cameraEffect ["Internal", "Back", _name];
@@ -156,7 +154,8 @@ switch (_act) do {
             }, 0] call CBA_fnc_addPerFrameHandler];
         };
         // Largeur et hauteur en puissances de 2, dans le sens du viseur.
-        format ["#(argb,%3,%4,1)r2t(%1,%2)", _cam getVariable ["r2t", "comspec_photocam0"], _aspect, [512, 1024] select (_aspect >= 1), [1024, 512] select (_aspect >= 1)]
+        // Texture carrée (comme le TEST VIDÉO qui s'affiche) ; le rapport passé à r2t donne le cadrage.
+        format ["#(argb,1024,1024,1)r2t(%1,%2)", _cam getVariable ["r2t", "comspecphotocama"], _aspect]
     };
     case "stop": { call _stop; true };
     case "expose": {
@@ -241,7 +240,7 @@ switch (_act) do {
         (call _pose) params ["", "_dir"];
         _osd ctrlSetStructuredText parseText ((format ["<t size='0.8' font='EtelkaMonospacePro' color='#e8eee9' shadow='2'>%1</t><t size='0.8' align='right' font='EtelkaMonospacePro' color='#e8eee9' shadow='2'>%2°  %3</t><br/><t size='0.8' font='COMSPEC_BarlowBold' color='%5' shadow='2'>%4</t><t size='0.8' align='right' font='COMSPEC_BarlowBold' color='#5cc76b' shadow='2'>x%6</t>",
             [getPosASL player, 8] call comspec_atak_native_fnc_gridRef, round ((((_dir select 0) atan2 (_dir select 1)) + 360) mod 360), [dayTime, "HH:MM"] call BIS_fnc_timeToString,
-            (["OBJECTIF ARRIÈRE", "SELFIE"] select _selfie) + (["", "  · BASSE LUMIÈRE", "  · MODE NUIT"] select ((missionNamespace getVariable ["COMSPEC_ATAK_PhotoCamLvl", 0]) max 0 min 2)), ["#c9d4cf", "#f2d36b"] select _selfie, [_st getOrDefault ["camZoom", 1]] call _zs]) call comspec_atak_native_fnc_tr);
+            (["OBJECTIF ARRIÈRE", "SELFIE"] select _selfie), ["#c9d4cf", "#f2d36b"] select _selfie, [_st getOrDefault ["camZoom", 1]] call _zs]) call comspec_atak_native_fnc_tr);
         true
     };
     case "shoot": {
