@@ -96,6 +96,26 @@ EN : The phone gets its usual font back
 - `ui/fonts.hpp` : `COMSPEC_Barlow`, `COMSPEC_BarlowBold` et `COMSPEC_BarlowLight` pointent sur les fichiers Roboto Condensed du jeu (mêmes chemins que BCE), donc toutes les classes et balises `<t font=…>` du téléphone sont de nouveau en Roboto. Les familles B612, Rajdhani et Share Tech restent dans le pbo mais ne sont plus proposées.
 - Réglage `comspec_atak_native_font` réduit à `roboto` (défaut) et `purista` ; une ancienne valeur `barlow` retombe sur Roboto.
 - À vérifier en jeu : textes du téléphone nets et entiers (écran d'accueil, notifications, tuiles), choix Purista dans Réglages > Police.
+## Messages : molette, bouton Nouveau SMS, chargement plus léger (ATAK natif 1.84.0)
+
+### Résumé joueur
+Type : correctif
+FR : L'app Messages défile à la molette et a un bouton Nouveau SMS
+- La molette de la souris fait défiler la liste des canaux et contacts ainsi que le fil de la conversation.
+- Un bouton « Nouveau SMS » en bas de la liste affiche les joueurs de ton camp en ligne : un clic ouvre la conversation.
+- L'app ne relit plus tous les canaux à chaque rafraîchissement : elle reste fluide même avec beaucoup de canaux, et affiche « Chargement… » tant que les messages arrivent.
+EN : The Messages app scrolls with the mouse wheel and has a New SMS button
+- The mouse wheel scrolls the channel and contact list and the conversation thread.
+- A "New SMS" button at the bottom of the list shows the players on your side who are online: one click opens the conversation.
+- The app no longer re-reads every channel on each refresh: it stays smooth even with many channels, and shows "Loading…" while messages arrive.
+
+### Détail technique
+Non testé en jeu. Retours de TTRD en jeu sur 1.83.0 : molette sans effet, bouton SMS manquant en bas de page, chargement lourd de tous les canaux.
+- Molette : les groupes défilants imbriqués dans le contenu de la page ne recevaient pas la molette. `fn_pageChat` enregistre [groupe, hauteur du contenu] (`COMSPEC_ATAK_WheelGroups`) et pose une fois un `MouseZChanged` sur l'écran du téléphone qui fait défiler le groupe sous la souris.
+- Bouton « + NOUVEAU SMS » en pied de liste (en main) : état `chatPick`, liste réduite aux contacts en ligne, ANNULER pour revenir.
+- `fn_messagesAll` garde son résultat par canal tant que ses sources n'ont pas changé (au plus 5 s) : la liste, les pastilles (`fn_chatUnread`) et la barre d'état ne relisent plus chaque canal plusieurs fois par seconde.
+- « Chargement… » tant que COMSPEC Link n'a pas fait son premier relevé (`COMSPEC_ChatPollBootstrapped`).
+- Textes anglais des ajouts de 1.78.0 et 1.84.0 dans i18n/en.txt.
 
 ## Nouvelle police du téléphone, au choix (ATAK natif 1.83.0)
 
