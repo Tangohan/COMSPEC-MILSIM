@@ -757,6 +757,51 @@
             <English>Screen color</English>
             <French>Couleur de l'écran</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_M12_NAME">
+            <Original>Mât relais monopole 12 m</Original>
+            <English>Relay monopole 12 m</English>
+            <French>Mât relais monopole 12 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_M20_NAME">
+            <Original>Pylône relais monopole 20 m</Original>
+            <English>Relay monopole 20 m</English>
+            <French>Pylône relais monopole 20 m</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_M12_RUIN">
+            <Original>Mât relais monopole 12 m (ruine)</Original>
+            <English>Relay monopole 12 m (ruin)</English>
+            <French>Mât relais monopole 12 m (ruine)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_M20_RUIN">
+            <Original>Pylône relais monopole 20 m (ruine)</Original>
+            <English>Relay monopole 20 m (ruin)</English>
+            <French>Pylône relais monopole 20 m (ruine)</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_FREQ_NAME">
+            <Original>Bande de fréquence</Original>
+            <English>Frequency band</English>
+            <French>Bande de fréquence</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_FREQ_TIP">
+            <Original>Bande radio du relais, retenue pour les fréquences à venir (brouillage, compatibilité). Automatique : aucune bande imposée.</Original>
+            <English>Relay radio band, stored for upcoming frequency features (jamming, compatibility). Automatic: no band set.</English>
+            <French>Bande radio du relais, retenue pour les fréquences à venir (brouillage, compatibilité). Automatique : aucune bande imposée.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_FREQ_AUTO">
+            <Original>Automatique</Original>
+            <English>Automatic</English>
+            <French>Automatique</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TBR_MENU">
+            <Original>TBR · Tableau des relais</Original>
+            <English>TBR · Relay table</English>
+            <French>TBR · Tableau des relais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_TBR_HELP">
+            <Original>Aide : poser un relais</Original>
+            <English>Help: placing a relay</English>
+            <French>Aide : poser un relais</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_E4E74278CD">
             <Original>Relais ATAK</Original>
             <English>ATAK relays</English>

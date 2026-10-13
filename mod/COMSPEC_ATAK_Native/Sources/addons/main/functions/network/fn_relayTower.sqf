@@ -2,9 +2,9 @@
     Pylône relais 3D (COMSPEC_ATAK_RelayTower_30 / _40 / _50, tools/model_relay_towers.py) : relais du réseau ATAK dès
     sa pose (Eden, Zeus, script). Serveur seulement.
     Valeurs de la classe (comspec_atak_relayRange, Height, Throughput, Slots) ; attributs Eden (nom, camp, liaison,
-    allumé, indestructible) posés sur l'objet sous COMSPEC_TowerName, Side, Uplink, On, Indestructible.
+    bande de fréquence, allumé, indestructible) posés sur l'objet sous COMSPEC_TowerName, Side, Uplink, Freq, On, Indestructible.
     Un module « ATAK · Relais » synchronisé passe avant (il remplace ces valeurs).
-    Détruit (ruine) : fn_relayNet le voit « détruit », les téléphones qui l'utilisaient reçoivent « Relais perdu ».
+    Détruit (ruine, fn_relayTowerRuin) : fn_relayNet le voit « détruit », les téléphones qui l'utilisaient reçoivent « Relais perdu ».
       [objet] call comspec_atak_native_fnc_relayTower      enregistrement (image suivante, après les attributs Eden)
       ["sweep"] call ...                                   pylônes de la mission pas encore enregistrés (fin d'init serveur)
 */
@@ -14,6 +14,12 @@ if (_o isEqualType "") exitWith {
     { [_x] call comspec_atak_native_fnc_relayTower; } forEach (allMissionObjects "COMSPEC_ATAK_RelayTower_Base");
 };
 if (isNull _o) exitWith {};
+// Destruction : la ruine (pylône plié, équipements arrachés) reste au sol (fn_relayTowerRuin), aussi pour les tours
+// créées par le module « ATAK · Relais » (déjà enregistrées comme relais par lui).
+if !(_o getVariable ["COMSPEC_TowerKilledEh", false]) then {
+    _o setVariable ["COMSPEC_TowerKilledEh", true];
+    _o addEventHandler ["Killed", { [_this select 0] call comspec_atak_native_fnc_relayTowerRuin; }];
+};
 [{
     params ["_o"];
     if (isNull _o || {_o getVariable ["COMSPEC_AtakRelay", false]}) exitWith {};
@@ -33,6 +39,7 @@ if (isNull _o) exitWith {};
     _o setVariable ["COMSPEC_AtakRelaySide", _o getVariable ["COMSPEC_TowerSide", ""], true];
     _o setVariable ["COMSPEC_AtakRelayRoot", (_o getVariable ["COMSPEC_TowerUplink", "root"]) isNotEqualTo "repeater", true];
     _o setVariable ["COMSPEC_AtakRelayOn", _o getVariable ["COMSPEC_TowerOn", true], true];
+    _o setVariable ["COMSPEC_AtakRelayFreq", _o getVariable ["COMSPEC_TowerFreq", 0], true];
     // Pylône réel : sur le secteur, pas de batterie.
     _o setVariable ["COMSPEC_AtakRelayAutonomy", 0, true];
     _o setVariable ["COMSPEC_AtakRelayBatt", -1, true];
