@@ -545,7 +545,7 @@ switch (_function) do {
     };
     case "PostError": {
         // DLL → échec HTTP fire-and-forget (position, marqueurs, chat async…)
-        // data = "code|path|ageSec[|détail]" — détail (COMSPEC Link 2.0.81) : motif du refus renvoyé par Athena
+        // data = "code|path|ageSec[|détail]" — détail (COMSPEC Link 2.0.82) : motif du refus renvoyé par Athena
         // et début du corps envoyé pour un 400 / 422.
         private _parts = _data splitString "|";
         private _code = if ((count _parts) > 0) then { _parts select 0 } else { "?" };

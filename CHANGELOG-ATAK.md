@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Grande mise à jour regroupée : téléphone, vidéo par relais, Athena (ATAK natif 1.80.0, COMSPEC Link 2.0.81, site)
+## Grande mise à jour regroupée : téléphone, vidéo par relais, Athena (ATAK natif 1.81.0, COMSPEC Link 2.0.82, site)
 
 ### Résumé joueur
 Type : nouveauté
@@ -46,16 +46,16 @@ FR : Grosse mise à jour : messagerie réparée, vidéo par relais, applis refai
 - Applis du téléphone refaites : Musique (grande pochette, barre de progression), centre de notifications (cartes par urgence, filtres), appareil photo plein écran (raccourcis lisibles, ISO et vitesse qui suivent la lumière) et Briefing (un engrenage pour coller le lien Google Slides). Les textes sont plus lisibles, avec une taille « Très grand ».
 - Messages fonctionne à nouveau (canaux, défilement, non-lus) et les SMS sont plus fiables. Ton portrait opérateur Athena s'affiche dans le téléphone et dans Tinder.
 - Le drone, la caméra casque, le Live cam et les caméras fixes passent par les relais de la mission : la qualité de l'image suit la liaison. Une caméra noire est expliquée, le drone a un bouton VUE DIRECTE, et le drone comme le marquage de cibles font moins ramer le jeu.
-- Côté Athena : véhicules et drones de nouveau sur la carte web, photos Discord avec les détails de la prise de vue, check de démarrage posté dans le Discord (désactivable), et sur le site une page Configuration refaite et un lecteur d'images de reconnaissance avec zoom et plein écran.
+- Côté Athena : véhicules et drones de nouveau sur la carte web, check de démarrage posté dans le Discord (désactivable), et sur le site une page Configuration refaite et un lecteur d'images de reconnaissance avec zoom et plein écran.
 EN : Big update: messaging fixed, video through relays, apps redone
 - Phone apps redone: Music (big cover, progress bar), notification centre (cards by urgency, filters), full-screen camera (readable shortcuts, ISO and shutter speed that follow the light) and Briefing (a gear to paste the Google Slides link). Text is easier to read, with a "Very large" size.
 - Messages works again (channels, scrolling, unread counts) and SMS are more reliable. Your Athena operator portrait shows on the phone and in Tinder.
 - The drone, helmet camera, Live cam and fixed cameras go through the mission's relays: image quality follows the link. A black camera is explained, the drone has a DIRECT VIEW button, and both the drone and target marking slow the game down less.
-- On Athena: vehicles and drones are back on the web map, Discord photos show the shot details, the startup check is posted to the Discord (can be turned off), and on the site a redone Configuration page and a recon image viewer with zoom and full screen.
+- On Athena: vehicles and drones are back on the web map, the startup check is posted to the Discord (can be turned off), and on the site a redone Configuration page and a recon image viewer with zoom and full screen.
 
 ### Détail technique
 
-Une seule version pour 18 PR regroupées (#720, #721, #724, #727, #731 à #736, #738 à #745) : ATAK natif 1.80.0, COMSPEC Link 2.0.81. main.pbo reconstruit avec HEMTT, comspec_overwatch_connect.pbo repatché (fn_captureReconImage, fn_extensionCallback, fn_hashMapToJson). Gouttes de pluie (#728) non incluse : rendu en attente de validation. Non testé en jeu.
+Une seule version pour 17 PR regroupées (#720, #721, #724, #727, #731 à #736, #738 à #743, #745) : ATAK natif 1.81.0, COMSPEC Link 2.0.82 (la DLL change : cache des portraits, JSON des véhicules, check de démarrage). main.pbo reconstruit avec HEMTT, comspec_overwatch_connect.pbo repatché (fn_extensionCallback, fn_hashMapToJson). Les photos Discord (#744) sont arrivées sur main avant, en 1.80.0. Gouttes de pluie (#728) non incluse : rendu en attente de validation. Non testé en jeu.
 - Conflits résolus : liste des fonctions de config.cpp (union), nacelle « link » de fn_droneAction (cache 0,2 s de #732 + chemin par relais de #734), fn_droneStatic (palier adaptatif de #734 + diagnostic PiP de #736), incrustation Live cam de la carte (hauteur #734 + police mini #740).
 - Live cam : #734 (fn_videoLink, utilisé par le drone, la caméra casque et les caméras fixes) et #743 (fn_feedLink, définition et décrochages de la page Live cam) coexistent ; le changement de palier n'est plus notifié qu'une fois (boucle fn_livecamStart). À unifier plus tard.
 
@@ -97,16 +97,6 @@ Non testé en jeu. Il faut recompiler la DLL (build_mod.bat) et déployer le sit
 - Données envoyées : pseudo, indicatif, versions (mod, config, DLL, Arma), carte et nom de mission, étapes. L'UID Steam n'est envoyé que haché (`hashValue`, pour le dédoublonnage), aucune adresse IP ni jeton.
 - COMSPEC Link 2.0.81 : commande `StartupCheck` (champs `clé=valeur` mis en JSON par la DLL), `POST /api/atak/startup-check` sans clé API.
 - Site : `POST /api/atak/startup-check` (public, 20 requêtes / 10 min par adresse, rien en base) poste un embed par joueur et par session dans le webhook `DISCORD_DEBUG_WEBHOOK` : ✅/⚠️/❌ par étape, libellés FR / EN, joueur, versions, carte, date. Anti-spam : un message par session, 6 par joueur et par heure, 20 par minute au total. Textes du jeu nettoyés avant Discord (liens retirés, adresses IP tronquées, dossier utilisateur Windows masqué, mentions neutralisées). Aucun lien dans le message.
-
-#### Photos sur Discord : détails de la prise de vue (#744)
-## Photos sur Discord : détails de la prise de vue (ATAK natif 1.80.0, COMSPEC Link 2.0.81)
-
-Non testé en jeu. Demande de TTRD : l'embed Discord des photos manquait de données.
-- L'embed Quick Picture et Cliché drone affiche maintenant le grade de l'auteur, la mission et le serveur, l'altitude (mer et sol), la visée (site, point visé avec sa distance et sa grille, éloignement de l'opérateur pour le drone), la prise de vue (objectif arrière ou selfie, zoom, flash ; vision jour, nocturne ou thermique du drone), la météo (couverture, pluie, brouillard, vent), le terminal (modèle, versions ATAK et Link) et un lien vers la photo sur Athena.
-- Le cap et la position d'une photo du téléphone sont ceux de l'objectif (viseur), plus ceux du joueur.
-- Unité, grade et téléphone de l'auteur retrouvés aussi par le Steam de la session de jeu (avant : seulement avec une clé API).
-- Cliché confidentiel : ni visée ni lien public.
-- COMSPEC Link envoie ces détails à Athena (champ photo_extra) avec sa version. connect.pbo et main.pbo reconditionnés.
 
 #### Version de la DLL affichée dans « À propos » (#720)
 

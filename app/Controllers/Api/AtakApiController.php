@@ -14021,7 +14021,7 @@ class AtakApiController
             'context_id' => $mapId,
         ]);
         // Corps vide ou JSON illisible, ou véhicule sans indicatif : refus clair plutôt qu'une erreur 500.
-        // Le motif part dans la réponse (journal du jeu, COMSPEC Link 2.0.81) et dans error_log.
+        // Le motif part dans la réponse (journal du jeu, COMSPEC Link 2.0.82) et dans error_log.
         if (\App\Repositories\AtakVehicleTrackingRepository::resolveCallsign($data) === '') {
             if ($body === []) {
                 $raw = \App\Support\HttpJsonBody::rawJson();

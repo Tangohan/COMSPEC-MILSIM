@@ -3,7 +3,7 @@
     envoyé à Athena qui le poste dans le salon Discord de debug. Les joueurs voient ainsi qui a un mod ou une DLL cassés.
       [] call comspec_atak_native_fnc_startupCheck       depuis XEH_postInitClient, une fois par mission
     Part après le contrôle de l'installation (fn_integrityCheck), seulement avec le service Athéna sur « Oui » et le
-    réglage CBA « Envoyer le check de démarrage » coché. Commande DLL StartupCheck (COMSPEC Link 2.0.81+),
+    réglage CBA « Envoyer le check de démarrage » coché. Commande DLL StartupCheck (COMSPEC Link 2.0.82+),
     POST /api/atak/startup-check : pseudo, indicatif, versions, carte et résultat des étapes. Pas d'UID Steam (empreinte
     seulement), pas d'adresse IP, pas de jeton.
     Résultat : missionNamespace « COMSPEC_ATAK_StartupCheck » = [[étape, statut, détail], ...] (statut ok, warn, fail, off),

@@ -112,7 +112,7 @@ _cache set [_uid, [_path, diag_tickTime]];
         private _quals = uiNamespace getVariable ["COMSPEC_ATAK_Quals", createHashMap];
         _quals set [_uid, if (_q < 0) then { "olddll" } else { (((_cols select _q) select [2]) splitString ";") apply { private _f = _x splitString "~"; [_f param [0, ""], _f param [1, ""], _f param [2, ""], _f param [3, ""]] } }];
         uiNamespace setVariable ["COMSPEC_ATAK_Quals", _quals];
-        // Raison donnée par le site quand il n'envoie pas d'image (colonne « S: », COMSPEC Link 2.0.81+).
+        // Raison donnée par le site quand il n'envoie pas d'image (colonne « S: », COMSPEC Link 2.0.82+).
         private _st = _cols findIf { (_x select [0, 2]) isEqualTo "S:" };
         private _status = if (_st < 0) then { "" } else { (_cols select _st) select [2] };
         private _url = _cols param [2, ""];
@@ -129,7 +129,7 @@ _cache set [_uid, [_path, diag_tickTime]];
                 default { format ["Athena n'a renvoyé aucune image (%1)", _status] };
             }, [120, 600] select (_status isEqualTo "no_portrait"), ["WARNING", "INFO"] select (_status isEqualTo "no_portrait")] call _fail;
         };
-        // Clé de cache = joueur + empreinte de l'adresse : la DLL (2.0.81+) rend tout de suite le fichier déjà
+        // Clé de cache = joueur + empreinte de l'adresse : la DLL (2.0.82+) rend tout de suite le fichier déjà
         // téléchargé pour cette adresse, et ne retélécharge que si l'adresse a changé ou si le fichier manque.
         private _dlRaw = [(["COMSPECExtension", "DownloadBriefingSlideImage", [_url, format ["avatar_%1_%2", _uid, hashValue _url]]] call comspec_atak_native_fnc_extAwait)] call _res;
         if !(_dlRaw isEqualType "") then { _dlRaw = str _dlRaw; };

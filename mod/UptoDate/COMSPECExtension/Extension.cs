@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.81";
+    private const string ExtensionVersion = "2.0.82";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -349,7 +349,7 @@ public static partial class Extension
 
     /// <summary>
     /// Refus de validation (400 / 404 / 409 / 422…) : motif renvoyé par Athena, plus le début du corps envoyé
-    /// pour un 400 / 422, gardés dans le journal du jeu (sinon seul le code restait, 2.0.81).
+    /// pour un 400 / 422, gardés dans le journal du jeu (sinon seul le code restait, 2.0.82).
     /// </summary>
     private static string PostErrorDetail(int code, HttpResponseMessage? response, string? sentBody)
     {
@@ -2686,7 +2686,7 @@ public static partial class Extension
         }
 
         // Caractères de contrôle bruts (saut de ligne dans un nom) et nombres non finis (« nan », « 1.#INF »)
-        // venus du SQF : JSON illisible, Athena répondait 400 sans indicatif lisible (2.0.81).
+        // venus du SQF : JSON illisible, Athena répondait 400 sans indicatif lisible (2.0.82).
         var cleaned = System.Text.RegularExpressions.Regex.Replace(s, @"[\x00-\x1F]", " ");
         cleaned = System.Text.RegularExpressions.Regex.Replace(
             cleaned,
