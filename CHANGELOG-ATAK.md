@@ -40,6 +40,20 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ## Centre de notifications refondu (ATAK natif 1.74.0)
 
+### Résumé joueur
+Type : nouveauté
+FR : Le centre de notifications du téléphone fait peau neuve
+- Chaque notification devient une carte avec l'icône de l'app, une couleur selon l'urgence et l'heure (« il y a 4 min ») ; les non lues ont une pastille verte.
+- Un message répété ne s'empile plus : il remonte en tête avec un compteur. Une croix efface une notification, et un appui ouvre l'app concernée.
+- Des filtres Toutes, Alertes, Infos et Messages, et une barre de réglages rapides (mode avion, Bluetooth, silencieux).
+- Si ton installation du mod a un souci ou qu'une mise à jour est disponible, c'est affiché en haut, en rouge ou orange.
+EN : The phone's notification centre gets a makeover
+- Each notification is now a card with the app icon, a colour for its urgency and the time ("4 min ago"); unread ones show a green dot.
+- A repeated message no longer piles up: it moves back to the top with a counter. A cross clears a notification, and a tap opens the related app.
+- Filters for All, Alerts, Info and Messages, plus a quick-settings bar (airplane mode, Bluetooth, silent).
+- If your mod install has a problem or an update is available, it shows at the top in red or orange.
+
+### Détail technique
 Non testé en jeu. Demande de TTRD : améliorer l'UI des notifications. Pas de DLL à recompiler, pas de migration.
 - Une carte par notification : liseré et pastille d'icône à la couleur de gravité (info, message, attention, erreur), source en titre (« Drone », « Synchronisation »…), texte dessous, heure relative (« à l'instant », « il y a 4 min ») et pastille verte sur les non lues.
 - Un texte répété ne s'empile plus : il remonte en tête avec un compteur « ×3 ».
