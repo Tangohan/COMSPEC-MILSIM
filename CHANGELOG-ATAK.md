@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## App Réseau : stabilité calculée, passerelles lisibles (ATAK natif 1.77.0)
+## App Réseau : stabilité calculée, passerelles lisibles (ATAK natif 1.78.0)
 
 ### Résumé joueur
 Type : correctif
@@ -59,6 +59,29 @@ Non testé en jeu. Capture de TTRD : tuile Stabilité « any % » et section Pas
 - Passerelles et relais : l'état vide tient sur une ligne, sans répéter le maillage collé à la ligne « Maillage Wave Relay » ; celle-ci est espacée et indique « aucune passerelle » quand il n'y en a pas.
 - Zone radio : « Simulation de liaison dégradée » affiche « désactivée » ou « active : pertes et délais simulés » ; le type de zone n'est plus remplacé par « ? » quand il est inconnu.
 - Paquets envoyés affichés en entier (plus de notation 1e+06). Textes traduits en anglais.
+
+## Menu Échap et Dépannage liaison refondus (ATAK natif 1.77.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Menu Échap et dépannage de la liaison refaits
+- Les boutons COMSPEC du menu Échap sont maintenant en haut à droite, avec l'état de ta liaison, et ne cachent plus le titre du menu.
+- « Dépannage liaison » vérifie tout de suite ta liaison Athena, ton compte, ton téléphone et la version du mod, explique ce qui ne va pas et propose la bonne correction en un clic.
+- « Copier le rapport » copie le diagnostic pour le coller sur Discord ou dans un signalement.
+- Le test pas à pas (pour trouver ce qui fait planter le jeu) se lance au choix en rapide ou en complet, avec une barre de progression.
+EN : Escape menu and link troubleshooting redesigned
+- The COMSPEC buttons in the Escape menu are now at the top right, with your link status, and no longer hide the menu title.
+- "Link troubleshooting" instantly checks your Athena link, account, phone and mod version, explains what is wrong and offers the right fix in one click.
+- "Copy report" copies the diagnosis so you can paste it on Discord or in a bug report.
+- The step-by-step test (to find what makes the game crash) can run quick or full, with a progress bar.
+
+### Détail technique
+Non testé en jeu. Demande de TTRD : boutons du menu Échap en haut à droite, service de dépannage amélioré et UI refaite. Changements dans l'addon Overwatch connect embarqué (`comspec_overwatch_connect.pbo` repaqueté) ; pas de changement de DLL.
+- Menu Échap : les deux boutons quittent le haut gauche (ils couvraient le titre du menu) pour une barre COMSPEC en haut à droite, aux couleurs du téléphone : état de la liaison (Liaison OK, Hors ligne, ATAK local, Overwatch coupé…), « Dépannage liaison » et « Service Athéna : oui / non ». Pendant un pas à pas, le bouton devient « Arrêter le pas à pas ».
+- Dépannage liaison : le bouton ne coupe plus Overwatch pour 22 minutes d'office. Il ouvre une fenêtre de diagnostic immédiat : DLL COMSPEC Link, installation du mod (contrôles de #714 : PBO en double, versions mélangées, DLL périmée, mise à jour publiée), service Athéna, Overwatch, adresse Athena, liaison, compte et session, terminal ATAK porté, pertes, dernier pas à pas interrompu. Chaque problème donne sa cause probable et l'action à faire ; la correction proposée passe en vert (Reconnecter Athena, Lier mon compte, Rallumer Overwatch, Service Athéna).
+- « Copier le rapport » met le diagnostic et les versions dans le presse-papiers ; « Signaler un problème » ouvre le signalement existant.
+- Pas à pas (recherche de ce qui arrête le jeu) : au choix rapide (20 s par fonction) ou complet (55 s), lancé depuis la fenêtre. Nouveau bandeau compact en haut au centre avec barre de progression, temps restant et état de la liaison. L'étape mémorisée est effacée quand le pas à pas se termine ou est arrêté : elle ne reste affichée comme suspecte qu'après un vrai arrêt du jeu.
+- Textes traduits en anglais (dictionnaire i18n/en.txt).
 
 ## App JTAC plus réaliste : terminal, fiche 9-LINE et carte tactique (ATAK natif 1.76.0)
 
