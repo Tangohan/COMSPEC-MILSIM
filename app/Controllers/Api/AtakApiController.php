@@ -13949,17 +13949,33 @@ class AtakApiController
         }
         $body = $this->jsonBody($request);
         $clip = static fn (mixed $v, int $n): string => mb_substr(trim(is_scalar($v) ? (string) $v : ''), 0, $n, 'UTF-8');
-        $serverIp = $clip($body['server_ip'] ?? '', 64);
+        [$serverIp, $serverPort] = \App\Services\Atak\CommunityServerMatcher::splitAddress($clip($body['server_ip'] ?? '', 80));
+        $bodyPort = (int) ($body['server_port'] ?? 0);
+        if ($bodyPort > 0 && $bodyPort < 65536) {
+            $serverPort = $bodyPort;
+        }
         $serverName = $clip($body['server_name'] ?? '', 190);
+        $repo = \App\Core\Container::get(\App\Repositories\TenantGameServerRepository::class);
+        // Serveur sans COMSPEC Link et joueur entré sans -connect : adresse retrouvée par le nom (liste Steam, BattleMetrics).
+        if ($serverIp === '' && $serverName !== '') {
+            $found = $repo->addressLookup()->lookupByName($serverName);
+            if ($found !== null) {
+                $serverIp = $found['ip'];
+                $serverPort ??= $found['port'];
+            }
+        }
         $community = '';
         try {
             $community = (string) ($this->tenantRepository->findById($tenantId)['name'] ?? '');
         } catch (\Throwable) {
         }
 
-        $repo = \App\Core\Container::get(\App\Repositories\TenantGameServerRepository::class);
         $servers = $repo->listForTenant($tenantId, true);
-        $match = $servers === [] ? null : (new \App\Services\Atak\CommunityServerMatcher())->match($servers, $serverIp, $serverName);
+        $match = $servers === [] ? null : (new \App\Services\Atak\CommunityServerMatcher())->match($servers, $serverIp, $serverName, $serverPort);
+        // Serveur déclaré par son seul nom : l'adresse vue par le joueur complète la fiche.
+        if ($match !== null && $serverIp !== '' && trim((string) ($match['ip_address'] ?? '')) === '') {
+            $repo->fillAddress($tenantId, (int) $match['id'], $serverIp, $serverPort);
+        }
         $steam = is_array($actor) ? (string) ($actor['steam_uid'] ?? '') : '';
         if ($steam === '') {
             $steam = \App\Support\SteamId::normalize($clip($body['steam_uid'] ?? '', 32)) ?? '';
@@ -13973,7 +13989,8 @@ class AtakApiController
                 $serverName !== '' ? $serverName : null,
                 $clip($body['mission'] ?? '', 190) ?: null,
                 $clip($body['world'] ?? '', 64) ?: null,
-                $match !== null ? (int) $match['id'] : null
+                $match !== null ? (int) $match['id'] : null,
+                $serverPort
             );
         }
 

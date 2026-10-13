@@ -14,6 +14,15 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 ## Correctif « Include file ...\ui\controls.hpp not found » au lancement (ATAK natif 1.70.0)
 
 - `config.cpp` incluait `ui/controls.hpp` et `ui/displays.hpp` avec une barre oblique. HEMTT (main.pbo du dépôt) l'accepte, mais `build_mod.bat` empaquette avec Addon Builder en `-packonly` : la config reste en texte et c'est Arma qui la lit au démarrage, sans trouver le fichier. Les deux includes utilisent maintenant une barre oblique inverse (`ui\controls.hpp`), lue par les deux chaînes de build.
+- `LINK_VERSION_STR` passe à 2.0.79 pour suivre la DLL de #710 (sinon le téléphone signalait la DLL comme périmée).
+
+## Serveurs de jeu : l'adresse du serveur est retrouvée (COMSPEC Link 2.0.79, site)
+
+Non testé en jeu. DLL COMSPEC Link à recompiler (build_mod.bat) ; pas de main.pbo à refaire. Côté site, la colonne `server_port` et la table `game_server_address_lookup` se créent toutes seules (ou `run-migrations.php`).
+- L'adresse d'un serveur ne venait que du serveur lui-même (COMSPEC Link chargé sur le serveur dédié). Un serveur sans la DLL restait « inconnue » sur la page Serveurs de jeu.
+- Site : quand l'adresse manque, Athena la retrouve par le nom exact du serveur dans la liste publique Steam (clé `STEAM_WEB_API_KEY`), sinon sur BattleMetrics, avec le port de jeu. Résultat gardé 24 h. Les serveurs déjà déclarés sans adresse sont complétés à l'ouverture de la page, et « C'est notre serveur » enregistre l'adresse et le port.
+- Site : les joueurs déjà vus sont rapprochés des serveurs tels qu'ils sont déclarés maintenant (un serveur ajouté après leur passage ne les laisse plus en « Ailleurs »). Le port départage deux serveurs sur la même machine.
+- COMSPEC Link 2.0.79 : le serveur dédié donne aussi son port de jeu (`-port`, 2302 par défaut) ; le client ajoute l'adresse de lancement (`-connect`/`-port` du lanceur Arma ou `+connect` de Steam) quand le serveur n'en diffuse pas.
 
 ## Mod ou DLL périmés signalés dans le téléphone, dernière version publiée sur Athena (ATAK natif 1.69.0, COMSPEC Link 2.0.78)
 
