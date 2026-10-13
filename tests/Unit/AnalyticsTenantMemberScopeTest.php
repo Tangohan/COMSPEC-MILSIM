@@ -62,4 +62,19 @@ final class AnalyticsTenantMemberScopeTest extends TestCase
         self::assertStringNotContainsString('personnes distinctes', $view);
         self::assertStringContainsString("external_actors", $view);
     }
+
+    /**
+     * Même famille sur /back-office/tableau-operationnel : un identifiant d’utilisateur saisi à la main
+     * (chef, adjoint, remplaçant, personnel) affichait le nom d’un compte d’une autre communauté.
+     */
+    public function testOperationalBoardOnlyAcceptsMembersAsPeople(): void
+    {
+        $src = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Web/OperationalBoardController.php');
+        self::assertStringNotContainsString("\$this->nullableInt(\$request->input('chief_user_id'", $src);
+        self::assertStringNotContainsString("\$this->nullableInt(\$request->input('deputy_user_id'", $src);
+        self::assertStringNotContainsString("\$this->nullableInt(\$request->input('replacement_user_id'", $src);
+        self::assertSame(6, substr_count($src, "\$this->memberUserIdOrNull(\$request->input("));
+        self::assertStringContainsString('$this->users->isMemberOfTenant($id, $tenantId)', $src);
+        self::assertStringContainsString('!$this->users->isMemberOfTenant($uid, $tenantId)', $src);
+    }
 }
