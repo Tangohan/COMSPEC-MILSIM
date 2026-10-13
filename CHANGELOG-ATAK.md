@@ -11,6 +11,16 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## App Musique : lecteur refait (ATAK natif 1.73.0)
+
+Non testé en jeu. Demande de TTRD : améliorer l'UI de l'onglet LECTURE. Pas de DLL à recompiler, pas de migration ; la lecture elle-même (fichiers, liens, serveur, Athena, haut-parleur de proximité) ne change pas.
+- Lecteur : grande pochette avec l'égaliseur animé dedans, titre plus gros, ligne « artiste · source · Piste 1 / 4 » avec les états EN PAUSE, CHARGEMENT, ERREUR et HAUT-PARLEUR. Les pistes Athena affichaient « · piste 1/4 » sans source : corrigé (source « Athena », artiste quand il n'est pas déjà dans le titre).
+- Barre de progression plus épaisse, avec un curseur rond et les temps aux deux bouts ; un clic sur la barre va à ce passage de la piste (haut-parleur : les joueurs proches suivent).
+- Commandes en icônes centrées : aléatoire, précédent, lecture / pause (grosse pastille), suivant, répéter (non, la file, le morceau, au clic). Sauts -30 / -10 / +10 / +30 s et STOP en petits boutons dessous.
+- Volumes : curseurs 0-100 au cran de 1 au lieu de - / valeur / +, son appliqué pendant le glissé ; l'icône (casque, haut-parleur) coupe et rétablit. Le volume en service (écouteurs ou haut-parleur) est surligné.
+- Les lignes « Répéter » et « Lecture aléatoire » sont remplacées par les icônes du lecteur ; file d'attente, favoris et haut-parleurs proches restent dessous.
+- À vérifier en jeu : téléphone en main plein écran (et taille réduite), portrait mini, clic sur la barre (fichier local, lien, piste serveur), glissé des deux curseurs avec et sans haut-parleur, icônes aléatoire / répéter, traduction anglaise.
+
 ## Adresse du portail Athena fixe (ATAK natif 1.72.0)
 
 Non testé en jeu. Demande de TTRD : personne n'héberge son propre Athena, l'adresse du portail ne doit plus être modifiable. Pas de DLL à recompiler, pas de migration.
