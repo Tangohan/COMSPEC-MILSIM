@@ -88,6 +88,28 @@ Non testé en jeu. Retour de TTRD : défilement pénible en bas de l'onglet LECT
 - fn_pageMusic : sections en accordéon (clé « fold » de l'état d'interface, « Son » ouverte par défaut), action « fold » dans fn_musicAction.
 - Icônes ui_chevron_down / ui_chevron_up (gen_assets.py) ; icônes du lecteur gardées chargées (fn_textureKeep).
 - À vérifier en jeu : onglet LECTURE en plein écran paysage (pochette carrée à gauche), ouverture / fermeture des 4 sections, curseurs de volume dans « Son », portrait mini.
+## Drone : charge qui explose, grenades acceptées, recherche en balayage (ATAK natif 1.88.0)
+
+### Résumé joueur
+Type : correctif
+FR : Drone armé plus fiable et recherche plus rapide
+- Toutes les grenades de votre inventaire (M67, M84, fumigènes, 40 mm…), roquettes, missiles et charges explosives peuvent maintenant être fixées sous le drone, quel que soit le mod.
+- En frappe, la charge explose au contact ou au passage au ras de la cible : le drone ne se contente plus de la toucher avec ses hélices. S'il est abattu ou percute un obstacle en piqué, la charge part aussi.
+- En recherche, le drone part tout de suite en avançant et en montant, puis balaie la zone en bandes parallèles, puis croisées, au lieu de grimper à la verticale avant de tourner en rond.
+- Une erreur de script qui pouvait s'afficher quand vous étiez blessé avec ACE est corrigée.
+EN : More reliable armed drone and faster search
+- Every grenade in your inventory (M67, M84, smoke, 40 mm…), rocket, missile and explosive charge can now be attached under the drone, from any mod.
+- In a strike, the charge explodes on contact or when passing right next to the target: the drone no longer just hits it with its propellers. If it is shot down or hits an obstacle during the dive, the charge goes off too.
+- In search mode, the drone sets off straight away, climbing while it moves, then sweeps the area in parallel lanes, then crossed lanes, instead of climbing vertically before circling.
+- A script error that could appear when you were wounded with ACE is fixed.
+
+### Détail technique
+- fn_droneAction : charges reconnues par la simulation de la munition (shotGrenade, shotSmoke(X), shotIlluminating, shotRocket, shotMissile, shotMine, shotDirectionalBomb, shotShell à un coup…), variante `_Scripted` prise si elle existe ; liste de l'onglet TÂCHES par lignes de deux.
+- fn_droneCmd « strike » : piqué final dans un CBA PFH (chaque image) au lieu d'une boucle planifiée à 0,05 s ; fusée de proximité 3,5 m, point le plus proche dépassé, cible tuée à moins de 25 m ; gestionnaires Killed et Dammaged qui déclenchent la charge en mode STRIKE ; charge retirée avant setDamage (pas de double explosion).
+- fn_droneCmd « hunt » : vol piloté par notre boucle (IA MOVE coupée), montée 6 m/s en avançant, 50 km/h au moins, hauteur tenue sur le relief 60 m devant, montée devant un obstacle ; balayage en bandes (écart selon la hauteur), puis bandes croisées ; détection deux fois par seconde.
+- XEH_postInitClient (ace_medical_woundReceived), fn_pageLinkAlly, fn_pageNetwork : `params` avec `["", défaut]` remplacé par `""` (erreur « Variable locale dans espace global »).
+- Caméra du drone noire : pas de changement, cause toujours non confirmée.
+
 ## Barlow Condensed revient en test dans Réglages > Police (ATAK natif 1.86.0)
 
 ### Résumé joueur

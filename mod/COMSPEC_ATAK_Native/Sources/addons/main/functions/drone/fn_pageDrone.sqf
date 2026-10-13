@@ -596,12 +596,15 @@ switch (_tab) do {
                     [_no, _ok] select _near, ["#f2ab33", "#5cc76b"] select _near, _dist, ["", " : posez-le au sol près de vous (ATTERRIR, ou RETOUR puis ATTERRIR)"] select (!_near)]];
                 _rows pushBack ["text", format ["%1 <t font='COMSPEC_BarlowBold'>2. Choisissez la charge</t>", [_no, _ok] select ((count _pl) > 0)]];
                 if ((count _pl) isEqualTo 0) then {
-                    _rows pushBack ["text", "<t size='0.85' color='#f2ab33'>Aucune charge compatible dans votre inventaire.</t><br/><t size='0.8' color='#8a9a93'>Acceptées : roquette RPG-7 ou RPG-42, charge de démolition, grenade RGO ou RGN.</t>"];
+                    _rows pushBack ["text", "<t size='0.85' color='#f2ab33'>Aucune charge compatible dans votre inventaire.</t><br/><t size='0.8' color='#8a9a93'>Acceptées : toute grenade (à main, fumigène, assourdissante, 40 mm), roquette, missile ou charge explosive, quel que soit le mod.</t>"];
                 } else {
-                    _rows pushBack ["segment", "", _pl apply {
-                        _x params ["_mag", "_lbl", "_n"];
-                        [format ["%1 x%2", toUpper _lbl, _n], compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['droneArmMag', %1]; ['tab', 'TASK'] call comspec_atak_native_fnc_droneAction;", str _mag], _mag isEqualTo _pick]
-                    }, "La charge choisie est retirée de votre inventaire et fixée sous le drone"];
+                    // Deux charges par ligne : avec les grenades de tous les mods, la liste peut être longue.
+                    for "_c" from 0 to ((count _pl) - 1) step 2 do {
+                        _rows pushBack ["segment", ["", "La charge choisie est retirée de votre inventaire et fixée sous le drone"] select (_c isEqualTo 0), (_pl select [_c, 2]) apply {
+                            _x params ["_mag", "_lbl", "_n"];
+                            [format ["%1 x%2", toUpper _lbl, _n], compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['droneArmMag', %1]; ['tab', 'TASK'] call comspec_atak_native_fnc_droneAction;", str _mag], _mag isEqualTo _pick, _lbl]
+                        }];
+                    };
                 };
                 private _can = _near && {_pick isNotEqualTo ""};
                 _rows pushBack ["text", format ["%1 <t font='COMSPEC_BarlowBold'>3. Armez</t>%2", [_no, _ok] select _can,
@@ -622,8 +625,8 @@ switch (_tab) do {
         };
         _rows append [
             ["section", ["Recherche", "Recherche et frappe"] select (_strikeOk && {_armed}), [
-                "Le drone tourne autour de sa position dans le rayon choisi, signale le premier ennemi vu, puis l'observe.",
-                "Le drone tourne autour de sa position dans le rayon choisi et pique sur le premier ennemi vu (drone perdu)."
+                "Le drone balaie le rayon choisi autour de lui en bandes parallèles, puis croisées, signale le premier ennemi vu, puis l'observe.",
+                "Le drone balaie le rayon choisi autour de lui en bandes parallèles, puis croisées, et pique sur le premier ennemi vu (drone perdu)."
             ] select (_strikeOk && {_armed})],
             ["text", format ["<t size='0.85' color='%1'>%2</t>", ["#8a9a93", "#e5483a"] select (_strikeOk && {_armed}),
                 [["Mode signalement : armez le drone (ci-dessus) pour qu'il frappe.", "Drone non armé : signalement seulement."] select (!_strikeOk), format ["Drone armé (%1) : la recherche frappera.", _d getVariable ["COMSPEC_DroneArmedLabel", "charge"]]] select (_strikeOk && {_armed})]],
