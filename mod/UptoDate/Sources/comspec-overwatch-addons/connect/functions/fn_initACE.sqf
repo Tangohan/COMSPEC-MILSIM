@@ -19,7 +19,7 @@ if (isNull player) exitWith {
 // Version de structure : forcer le rebuild si l’arbre change (évite l’ancien menu plat).
 // v5 : un seul bouton Cartographie (fenêtre de relevé) à la place des trois envois séparés.
 private _menuVer = 9;
-if ((uiNamespace getVariable ["COMSPEC_ACEClassTreeVer", 0]) isEqualTo _menuVer) exitWith {
+if ((missionNamespace getVariable ["COMSPEC_ACEClassTreeVer", 0]) isEqualTo _menuVer) exitWith {
     missionNamespace setVariable ["COMSPEC_ACEMenuReady", true, false];
     missionNamespace setVariable ["COMSPEC_ACEMenuStructureVer", _menuVer, false];
     missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];
@@ -496,7 +496,7 @@ if (
 [] call comspec_overwatch_connect_fnc_initChargeAceActions;
 
 missionNamespace setVariable ["COMSPEC_ACEMenuUnit", player, false];
-uiNamespace setVariable ["COMSPEC_ACEClassTreeVer", _menuVer];
+missionNamespace setVariable ["COMSPEC_ACEClassTreeVer", _menuVer, false]; // par mission : ACE vide ses actions de classe à chaque mission
 
 if (!isNil "comspec_overwatch_connect_fnc_getBloodType") then {
     private _bt = [] call comspec_overwatch_connect_fnc_getBloodType;

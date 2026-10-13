@@ -9,6 +9,8 @@ return [
     'atak_exempt_paths' => [
         '/api/atak/ping',
         '/api/atak/whoami',
+        // Dernières versions publiées (contrôle de mise à jour du mod au démarrage, avant toute liaison).
+        '/api/atak/version',
         // Relais same-origin des tuiles Atlas / Arma3Map (Leaflet img + crossOrigin=anonymous
         // n’envoie ni cookie de session ni clé). Les hôtes sont déjà allowlistés dans
         // AtakRemoteTileGuard — voir AtakMapDataController::proxy.

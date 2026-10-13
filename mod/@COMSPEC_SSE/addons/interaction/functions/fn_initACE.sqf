@@ -19,10 +19,10 @@ if !(["COMSPEC_SSE_INIT_ACE_DONE", "initACE"] call comspec_debug_fnc_guardOnce) 
     ["comspec_sse_fnc_initACE"] call comspec_debug_fnc_exit;
 };
 
-if (uiNamespace getVariable ["comspec_sse_aceReady", false]) exitWith {
+if (missionNamespace getVariable ["comspec_sse_aceReady", false]) exitWith {
     ["comspec_sse_fnc_initACE"] call comspec_debug_fnc_exit;
 };
-uiNamespace setVariable ["comspec_sse_aceReady", true];
+missionNamespace setVariable ["comspec_sse_aceReady", true]; // par mission : ACE vide ses actions de classe à chaque mission
 
 if (!isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) exitWith {
     ["comspec_sse_fnc_initACE"] call comspec_debug_fnc_exit;

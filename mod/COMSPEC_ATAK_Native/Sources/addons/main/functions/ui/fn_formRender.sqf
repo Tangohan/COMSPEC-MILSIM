@@ -12,6 +12,10 @@
           principal = true, false ou "red" pour un bouton de confirmation)
       ["section", titre, sous-titre]        ["switch", libellé, actif, code, aide, imposé]
       ["segment", libellé, [[texte, code, actif, aide]...], aide]   ["info", libellé, valeur]   ["image", chemin]
+      ["line", numéro, libellé, valeur, genre, clé, aide]   ligne de formulaire type 9-LINE, hauteur fixe :
+          numéro en pastille, libellé à gauche, valeur à droite. genre "auto" (valeur calculée, en couleur d'accent ;
+          vide ou "-" : l'aide en gris), "warn" (valeur en rouge), "edit" (champ de saisie clé dans la colonne valeur,
+          l'aide en infobulle et en gris sous le libellé)
       ["bar", [[titre de groupe, [[libellé, code, état, aide, actif]...]]...]]
           barre de boutons par groupes titrés (façon app Drone) ; état "" | "on" (vert, actif) | "red" (confirmation)
           | "main" (bouton principal) ; les groupes passent à la ligne quand les boutons deviendraient trop étroits.
@@ -54,6 +58,7 @@ private _mk = {
     _c ctrlCommit 0;
     _c
 };
+private _lineIdx = 0; // lignes "line" : fond alterné
 {
     private _row = _x;
     switch (_row select 0) do {
@@ -186,6 +191,48 @@ private _mk = {
                 _b ctrlSetPosition [_pad + _w * 0.4, _y, _w * 0.6, _ih2]; _b ctrlCommit 0;
             };
             _y = _y + _ih2;
+        };
+        case "line": {
+            _row params ["", "_num", "_label", ["_value", ""], ["_kind", "auto"], ["_key", ""], ["_help", ""]];
+            private _h = _rowH * 1.25;
+            private _odd = (_lineIdx mod 2) isEqualTo 1;
+            _lineIdx = _lineIdx + 1;
+            private _bgL = ["COMSPEC_RscText", [_pad, _y, _w, _h - pixelH * 2]] call _mk;
+            _bgL ctrlSetBackgroundColor ([[0.055, 0.07, 0.064, 1], [0.07, 0.088, 0.08, 1]] select _odd);
+            // Pastille du numéro, carrée à l'écran.
+            private _nw = (_h * 0.7) * (uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW]);
+            private _nb = ["COMSPEC_RscText", [_pad * 1.5, _y + _h * 0.15, _nw, _h * 0.7 - pixelH * 2]] call _mk;
+            _nb ctrlSetBackgroundColor [_acc select 0, _acc select 1, _acc select 2, [0.9, 0.25] select (_num isEqualTo "")];
+            private _nt = ["COMSPEC_RscStructuredText", [_pad * 1.5, _y + (_h - _fs * 1.25) / 2, _nw, _fs * 1.25]] call _mk;
+            _nt ctrlSetStructuredText parseText format ["<t align='center' font='RobotoCondensedBold' color='#08100c'>%1</t>", _num];
+            private _lx = _pad * 2.5 + _nw;
+            private _lw = (_w * 0.46) - _nw - _pad;
+            private _vx = _pad + _w * 0.46;
+            private _vw = _w * 0.54 - _pad;
+            private _isEdit = _kind isEqualTo "edit";
+            // Libellé (et, pour un champ, l'aide en dessous) centré verticalement.
+            private _lt = ["COMSPEC_RscStructuredText", [_lx, _y, _lw, _h]] call _mk;
+            _lt ctrlSetStructuredText parseText ((format ["<t color='#e3ebe7'>%1</t>%2", _label,
+                ["", format ["<br/><t size='0.72' color='#93a39c'>%1</t>", _help]] select (_isEdit && {_help isNotEqualTo ""})]) call comspec_atak_native_fnc_tr);
+            private _th = (ctrlTextHeight _lt) min _h;
+            _lt ctrlSetPosition [_lx, _y + (_h - _th) / 2, _lw, _th];
+            _lt ctrlCommit 0;
+            if (_isEdit) then {
+                private _e = ["COMSPEC_RscEdit", [_vx, _y + _h * 0.14, _vw, _h * 0.72], _value] call _mk;
+                _e ctrlSetFontHeight _font;
+                if (_help isNotEqualTo "") then { _e ctrlSetTooltip ((_help) call comspec_atak_native_fnc_tr); };
+                _fields set [_key, _e];
+            } else {
+                private _empty = _value in ["", "-"];
+                private _col = switch (true) do { case _empty: { "#93a39c" }; case (_kind isEqualTo "warn"): { "#ff6a5c" }; default { _accHex } };
+                private _vt = ["COMSPEC_RscStructuredText", [_vx, _y, _vw, _h]] call _mk;
+                _vt ctrlSetStructuredText parseText ((format ["<t align='right' color='%1' font='%2'>%3</t>", _col, ["RobotoCondensedBold", "RobotoCondensed"] select _empty,
+                    [_value, _help] select _empty]) call comspec_atak_native_fnc_tr);
+                private _vh = (ctrlTextHeight _vt) min _h;
+                _vt ctrlSetPosition [_vx, _y + (_h - _vh) / 2, _vw, _vh];
+                _vt ctrlCommit 0;
+            };
+            _y = _y + _h;
         };
         case "gap": { _y = _y + _pad; };
         case "person": {

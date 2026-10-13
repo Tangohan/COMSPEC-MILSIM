@@ -51,4 +51,23 @@ final class CommunityServerMatcherTest extends TestCase
         self::assertSame('', CommunityServerMatcher::normalizeHost('pas une adresse'));
         self::assertSame('arma.example.org', CommunityServerMatcher::normalizeHost('Arma.Example.org'));
     }
+
+    public function testPortSeparatesServersOnSameMachine(): void
+    {
+        $servers = [
+            ['id' => 1, 'label' => 'Ops', 'ip_address' => '203.0.113.10', 'port' => 2302, 'server_name' => null],
+            ['id' => 2, 'label' => 'Training', 'ip_address' => '203.0.113.10', 'port' => 2402, 'server_name' => null],
+        ];
+        self::assertSame(2, $this->matcher()->match($servers, '203.0.113.10:2402', '')['id'] ?? null);
+        self::assertSame(1, $this->matcher()->match($servers, '203.0.113.10', '', 2302)['id'] ?? null);
+        self::assertSame(1, $this->matcher()->match($servers, '203.0.113.10', '')['id'] ?? null);
+    }
+
+    public function testSplitAddress(): void
+    {
+        self::assertSame(['203.0.113.10', 2302], CommunityServerMatcher::splitAddress('203.0.113.10:2302'));
+        self::assertSame(['2001:db8::1', 2302], CommunityServerMatcher::splitAddress('[2001:db8::1]:2302'));
+        self::assertSame(['203.0.113.10', null], CommunityServerMatcher::splitAddress('203.0.113.10'));
+        self::assertSame(['', null], CommunityServerMatcher::splitAddress(''));
+    }
 }

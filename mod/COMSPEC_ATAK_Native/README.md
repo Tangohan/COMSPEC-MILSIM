@@ -68,11 +68,13 @@ Identités livrées :
 - Windows avec Arma 3 Tools et le SDK .NET 8 : `build_mod.bat` (DLL + PBO).
 - Sans Arma 3 Tools (Linux ou Windows) : `hemtt build` depuis `Sources/`, puis copier
   `Sources/.hemttout/build/addons/comspec_atak_native_main.pbo` vers `@COMSPEC_ATAK_Native/addons/main.pbo`.
+  Les pylônes relais 3D sont dans un PBO à part : `comspec_atak_native_towers.pbo` vers `@COMSPEC_ATAK_Native/addons/towers.pbo`
+  (modèles et textures : `tools/gen_tower_textures.py`, `tools/model_relay_towers.py`).
   `hemtt check` vérifie la config et le SQF.
 
 ## Langue (français / anglais)
 
-- Réglage CBA **COMSPEC > ATAK · Langue / Language** (par joueur) : Français (défaut), English, ou Auto (langue du jeu). Changer en cours de partie redessine la page ouverte.
+- Réglage CBA **COMSPEC > Langue / Language**, tout en haut de la liste COMSPEC (onglet Client, par joueur) : Auto (défaut, langue du jeu), Français ou English. Aussi dans le téléphone (Réglages > Langue / Language). Il vaut pour tout le mod : téléphone, menus CBA COMSPEC (ATAK, Overwatch, SSE) et écrans du SSE. Changer en cours de partie redessine la page ouverte et retraduit les menus CBA dès leur prochaine ouverture, sans relancer la mission.
 - Le code reste écrit en français. Les textes affichés (`ctrlSetText`, `ctrlSetStructuredText`, `ctrlSetTooltip`, `lbAdd`, `hint`…) passent par `comspec_atak_native_fnc_tr`, qui les traduit avec le dictionnaire `Sources/addons/main/i18n/en.txt` (`[["français", "anglais"], ...]`). Les modèles à `%1`, `%2` traduisent aussi les textes formatés. Texte inconnu : reste en français. Les champs de saisie ne sont jamais traduits (`// i18n:brut`).
 - Après un ajout de texte ou un rebase : `python3 tools/i18n.py wrap` (fait passer les nouveaux affichages par `fnc_tr`, sans effet sur ce qui l'est déjà), puis `python3 tools/i18n.py extract` liste dans `tools/i18n/missing.tsv` les textes sans traduction ; une fois traduits (`français<TAB>anglais`), `python3 tools/i18n.py merge fichier.tsv`.
 - Menu CBA traduit au chargement (`fn_addSetting`). Noms d'objets et modules Eden/Zeus : `stringtable.xml` (langue du jeu), régénéré par `python3 tools/i18n.py stringtable` après un ajout dans `config.cpp` ou `modules.hpp` (écrire le texte en français, l'outil le remplace par une clé `$STR_`).

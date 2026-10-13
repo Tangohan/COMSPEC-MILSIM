@@ -3842,6 +3842,24 @@ html[data-bo-theme="dark"] .bo-mportal__btn--ghost {
   background: #111513;
 }
 
+/* ——— back-office-music.css ——— */
+html[data-bo-theme="dark"] .msc {
+  --msc-line: var(--ath-line, #2b3530);
+  --msc-surface: var(--ath-surface, #111513);
+  --msc-bg: var(--ath-bg, #151917);
+  --msc-muted: var(--ath-muted, #b9c5bf);
+  --msc-ink: var(--ath-ink, #e0e6e3);
+}
+html[data-bo-theme="dark"] .msc-hiddenflag {
+  color: var(--ath-danger, #e07b7b);
+}
+html[data-bo-theme="dark"] .msc-danger, html[data-bo-theme="dark"] .msc .ath-btn.msc-danger {
+  color: var(--ath-danger, #e07b7b);
+}
+html[data-bo-theme="dark"] .msca-flash--err {
+  background: var(--ath-danger-bg, #2c1919);
+}
+
 /* ——— back-office-onboarding-recovery.css ——— */
 html[data-bo-theme="dark"] .bo-recovery {
   --bo-ink: #dae1de;
@@ -9315,6 +9333,26 @@ html[data-bo-theme="dark"] .personnel-sheets__section {
 }
 html[data-bo-theme="dark"] .personnel-sheets__meta {
   color: #9da8b8;
+}
+
+/* ——— views/partials/plan_gift_notice_modal.php (<style> de la vue) ——— */
+html[data-bo-theme="dark"] .plan-gift-card {
+  background:#111513;
+  color:#dae1de;
+}
+html[data-bo-theme="dark"] .plan-gift-kicker {
+  color:#57f9cb;
+}
+html[data-bo-theme="dark"] .plan-gift-label {
+  color:#9da8b8;
+}
+html[data-bo-theme="dark"] .plan-gift-message {
+  background:#161b18;
+}
+html[data-bo-theme="dark"] .plan-gift-btn {
+  border:1px solid #303a35;
+  background:#111513;
+  color:#dae1de;
 }
 
 /* ——— views/personnel/deployment.php (<style> de la vue) ——— */

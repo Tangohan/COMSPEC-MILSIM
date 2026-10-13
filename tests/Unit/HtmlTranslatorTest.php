@@ -22,6 +22,15 @@ final class HtmlTranslatorTest extends TestCase
             'Fermer' => 'Close',
             'il y a %1 min' => '%1 min ago',
             'Membres' => 'Members',
+            'le %1' => 'on %1',
+            '%1 le %2' => '%1 on %2',
+            'Équipe %1-%2-%3' => 'Team %1-%2-%3',
+            '%1 personne%2' => '%1 person%2',
+            'Présence' => 'Attendance',
+            '%1 sur la carte' => '%1 on the map',
+            'Ouvrir %1' => 'Open %1',
+            '%1 personne%2 listée%3' => '%1 person%2 listed%3',
+            'Vous postulez pour : %1' => 'You are applying for: %1',
         ]);
     }
 
@@ -82,5 +91,50 @@ final class HtmlTranslatorTest extends TestCase
         );
         self::assertSame('{"message":"Texte inconnu"}', HtmlTranslator::translateJson('{"message":"Texte inconnu"}'));
         self::assertSame('pas du json', HtmlTranslator::translateJson('pas du json'));
+    }
+
+    public function testWeakTemplatesOnlyWrapShortValues(): void
+    {
+        self::assertSame('<p>on 12 mars 2026</p>', HtmlTranslator::translate('<p>le 12 mars 2026</p>'));
+        $sentence = '<p>Organisation fictive pour presenter le portail en conditions réalistes.</p>';
+        self::assertSame($sentence, HtmlTranslator::translate($sentence));
+    }
+
+    public function testTemplateWhoseMiddlePartWouldStartPastTheEndDoesNotThrow(): void
+    {
+        // Ancienne erreur : strpos() avec un décalage hors de la chaîne levait une ValueError et toute la page
+        // restait en français.
+        self::assertSame('<p>Équipe A-</p>', HtmlTranslator::translate('<p>Équipe A-</p>'));
+        self::assertSame('<p>Team A-B-C</p>', HtmlTranslator::translate('<p>Équipe A-B-C</p>'));
+    }
+
+    public function testPluralSuffixTemplatesDoNotCutWords(): void
+    {
+        self::assertSame('<p>3 persons</p>', HtmlTranslator::translate('<p>3 personnes</p>'));
+        $sentence = '<p>compte personnel, espaces de communauté</p>';
+        self::assertSame($sentence, HtmlTranslator::translate($sentence));
+    }
+
+    public function testDecoratedAndUppercaseTexts(): void
+    {
+        self::assertSame('<b>ATTENDANCE</b><i>🇫🇷 Members</i>', HtmlTranslator::translate('<b>PRÉSENCE</b><i>🇫🇷 Membres</i>'));
+    }
+
+    public function testTemplatesDoNotCutFrenchSentences(): void
+    {
+        $long = 'Refermer le tiroir ne laisse plus un panneau sombre affiché sur la carte';
+        self::assertSame('<p>' . $long . '</p>', HtmlTranslator::translate('<p>' . $long . '</p>'));
+        self::assertSame('<p>Ouvrir le dossier</p>', HtmlTranslator::translate('<p>Ouvrir le dossier</p>'));
+        self::assertSame('<p>Open Bravo-2</p>', HtmlTranslator::translate('<p>Ouvrir Bravo-2</p>'));
+        self::assertSame('<p>Présence : voir et annuler une demande</p>', HtmlTranslator::translate('<p>Présence : voir et annuler une demande</p>'));
+        self::assertSame('<p>Attendance: Bravo-2</p>', HtmlTranslator::translate('<p>Présence : Bravo-2</p>'));
+        self::assertSame('<p>Alpha on the map</p>', HtmlTranslator::translate('<p>Alpha sur la carte</p>'));
+    }
+
+    public function testValuesAfterTheTemplateTextAndParticipleAgreement(): void
+    {
+        self::assertSame('<p>You are applying for: [Démo] Cadre de section</p>', HtmlTranslator::translate('<p>Vous postulez pour : [Démo] Cadre de section</p>'));
+        self::assertSame('<p>1 person listed</p>', HtmlTranslator::translate('<p>1 personne listée</p>'));
+        self::assertSame('<p>3 persons listed</p>', HtmlTranslator::translate('<p>3 personnes listées</p>'));
     }
 }

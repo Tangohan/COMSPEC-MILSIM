@@ -50,11 +50,12 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
     ["COMSPEC", "Overwatch"], true
 ] call comspec_overwatch_connect_fnc_addSetting;
 
-[
-    "comspec_overwatch_api_url", "EDITBOX",
-    ["Adresse du portail", "Adresse Athena (ex. https://athena.ttrd.fr/public) — sans slash final, avec /public si le site l’utilise. Aussi réglable dans Paramètres ATAK."],
-    ["COMSPEC", "Overwatch"], "https://athena.ttrd.fr/public"
-] call comspec_overwatch_connect_fnc_addSetting;
+// Adresse du portail : plus de réglage, toujours https://athena.ttrd.fr/public (fn_portalUrl).
+// Une ancienne adresse enregistrée dans le profil est effacée.
+missionNamespace setVariable ["comspec_overwatch_api_url", "https://athena.ttrd.fr/public"];
+if (hasInterface && {!isNil {profileNamespace getVariable "comspec_overwatch_saved_api_url"}}) then {
+    profileNamespace setVariable ["comspec_overwatch_saved_api_url", nil];
+};
 
 // Clé et communauté : plus rien à saisir pour un joueur, la connexion au compte Athena (code ou Steam)
 // donne la communauté. Gardées en option côté serveur (valeur imposée à tous par le serveur ou la mission).

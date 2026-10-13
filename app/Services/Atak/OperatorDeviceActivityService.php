@@ -26,6 +26,59 @@ final class OperatorDeviceActivityService
     }
 
     /**
+     * Tout ce qu'affiche la fiche « Mes appareils » d'un opérateur : téléphone en jeu, journal par terminal,
+     * apps qui transmettent sous son indicatif et, sur demande, l'historique de liaison.
+     * Partagé par le back-office membre et la page compte Appareils ATAK.
+     *
+     * @param list<array<string, mixed>> $devices terminaux de listPhysicalTerminalsForUser()
+     * @return array{gamePhone: ?array<string, mixed>, deviceLogDigests: array<string, array<string, mixed>>, appActivity: list<array<string, mixed>>, linkEvents: ?array<string, list<array<string, mixed>>>}
+     */
+    public function overviewForUser(int $tenantId, int $userId, array $devices, string $fallbackCallsign = '', bool $withLinkEvents = false): array
+    {
+        $gamePhone = self::gamePhoneFor($tenantId, $userId);
+        $digests = [];
+        $linkEvents = $withLinkEvents ? [] : null;
+        $callsign = trim((string) ($gamePhone['callsign'] ?? '')) ?: trim($fallbackCallsign);
+        foreach ($devices as $device) {
+            if (!is_array($device)) {
+                continue;
+            }
+            $uid = trim((string) ($device['terminal_uid'] ?? ''));
+            if ($uid !== '') {
+                $logs = $this->recentLogs($tenantId, $uid);
+                $digests[$uid] = self::digestLogs($logs);
+                if ($linkEvents !== null && strtolower((string) ($device['status'] ?? '')) !== 'revoked') {
+                    $linkEvents[$uid] = AtakDevicePresenter::linkEvents($logs);
+                }
+            }
+            if ($callsign === '') {
+                $callsign = trim((string) ($device['operator_callsign'] ?? ''));
+            }
+        }
+
+        return [
+            'gamePhone' => $gamePhone,
+            'deviceLogDigests' => $digests,
+            'appActivity' => $this->appActivity($tenantId, $callsign),
+            'linkEvents' => $linkEvents,
+        ];
+    }
+
+    /**
+     * Téléphone en jeu de l'opérateur (numéro, IMEI, MAC, batterie, état) s'il s'est déjà connecté depuis le jeu.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function gamePhoneFor(int $tenantId, int $userId): ?array
+    {
+        try {
+            return (new \App\Repositories\GamePhoneIdentityRepository())->findRow($tenantId, $userId);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
      * Applications du téléphone avec les données transmises par cet opérateur (toutes cartes confondues).
      *
      * @return list<array{app: string, module: string, data: string, today: int, day: int, age_sec: ?int, status: string}>

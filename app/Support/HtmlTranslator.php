@@ -131,6 +131,29 @@ final class HtmlTranslator
         return implode("\n", $lines);
     }
 
+    /**
+     * Page complète : ajoute avant </head> le traducteur des textes posés par le JavaScript (assets/js/i18n_dom.js)
+     * et son dictionnaire (assets/js/i18n_en_dict.js, généré par site_i18n.py js-bundle).
+     */
+    public static function withDomScripts(string $html): string
+    {
+        $at = stripos($html, '</head>');
+        if ($at === false || str_contains($html, 'i18n_dom.js')) {
+            return $html;
+        }
+        $tags = '';
+        foreach (['i18n_en_dict.js', 'i18n_dom.js'] as $file) {
+            $path = base_path('public/assets/js/' . $file);
+            if (!is_file($path)) {
+                return $html;
+            }
+            $src = (function_exists('url') ? url('assets/js/' . $file) : '/assets/js/' . $file) . '?v=' . (int) filemtime($path);
+            $tags .= '<script src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" defer></script>';
+        }
+
+        return substr($html, 0, $at) . $tags . substr($html, $at);
+    }
+
     /** Champs d'une réponse JSON montrés tels quels par les pages (erreurs, confirmations, libellés). */
     private const JSON_KEYS = ['error', 'message', 'msg', 'warning', 'notice', 'hint', 'label', 'title', 'detail', 'reason', 'status_label'];
 
@@ -219,7 +242,12 @@ final class HtmlTranslator
         $core = substr($chunk, $lead, strlen($chunk) - $lead - $trail);
         $plain = html_entity_decode($core, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $key = (string) preg_replace('/\s+/u', ' ', $plain);
-        $en = self::lookup($key, 0);
+        try {
+            $en = self::lookup($key, 0);
+        } catch (\Throwable) {
+            // Un texte qui fait échouer la recherche reste en français, sans faire perdre la traduction de la page.
+            $en = null;
+        }
         if ($en === null) {
             return $chunk;
         }
@@ -244,7 +272,11 @@ final class HtmlTranslator
             $label = $exact[substr($s, 0, $k)] ?? null;
             if ($label !== null) {
                 $rest = substr($s, $k + 3);
-                $r = $label . ': ' . (self::lookup($rest, $depth + 1) ?? $rest);
+                $tr = self::lookup($rest, $depth + 1);
+                // « Libellé : phrase française » : pas de libellé anglais devant une phrase restée en français.
+                if ($tr !== null || (!self::looksLikeSentence($rest) && substr_count($rest, ' ') < 3)) {
+                    $r = $label . ': ' . ($tr ?? $rest);
+                }
             }
         }
         if ($r === null) {
@@ -262,6 +294,18 @@ final class HtmlTranslator
             }
             $r = $changed ? implode(' · ', $parts) : null;
         }
+        // Préfixe décoratif (drapeau, puce, icône) : le texte qui suit est cherché seul.
+        if ($r === null && $depth === 0 && preg_match('/^([^\p{L}\p{N}«"“(\[]+)(\p{L}.*)$/us', $s, $pm) === 1) {
+            $inner = self::lookup($pm[2], 1);
+            $r = $inner === null ? null : $pm[1] . $inner;
+        }
+        // Texte en capitales (« PRÉSENCE ») : cherché sous sa forme ordinaire, rendu en capitales.
+        if ($r === null && $depth <= 1 && mb_strtoupper($s, 'UTF-8') === $s && preg_match('/\p{Lu}{3}/u', $s) === 1) {
+            $lower = mb_strtolower($s, 'UTF-8');
+            $inner = self::lookup(mb_strtoupper(mb_substr($lower, 0, 1, 'UTF-8'), 'UTF-8') . mb_substr($lower, 1, null, 'UTF-8'), 2)
+                ?? self::lookup($lower, 2);
+            $r = $inner === null ? null : mb_strtoupper($inner, 'UTF-8');
+        }
         if ($depth === 0) {
             if (count(self::$memo) > 20000) {
                 self::$memo = [];
@@ -272,11 +316,28 @@ final class HtmlTranslator
         return $r;
     }
 
+    /**
+     * Valeur non traduite qui ressemble à un bout de phrase (long, ou commençant par un article ou une
+     * préposition) : le modèle qui l'a capturée coupe une phrase et donnerait un texte mi-français mi-anglais.
+     * $frenchWords : un mot français suffit (valeur en tête de texte, suivie d'une fin de phrase du modèle).
+     */
+    private static function looksLikeSentence(string $cap, bool $frenchWords = true): bool
+    {
+        // Mot français (accent, article, préposition) dans une valeur sans chiffre (les dates gardent leur mois).
+        if ($frenchWords && preg_match('/\d/', $cap) !== 1
+            && preg_match('/[àâçéèêëîïôûùœ]|\b(?:le|la|les|des|du|de|et|aux|au|pour|une|un|sur|avec|dans|par)\b/iu', $cap) === 1) {
+            return true;
+        }
+
+        return substr_count($cap, ' ') >= 7
+            || preg_match("/^(?:le|la|les|l’|l'|de|du|des|d’|d'|à|au|aux|un|une|en|et|pour|par|sur|avec)(?:\\s|(?<=[’'])\\p{L})/iu", $cap) === 1;
+    }
+
     private static function template(string $s, int $depth): ?string
     {
         $n = strlen($s);
         $candidates = array_merge(self::$templates[substr($s, 0, 3)] ?? [], self::$templates[''] ?? []);
-        foreach ($candidates as [$parts, $ids, $en]) {
+        foreach ($candidates as [$parts, $ids, $en, $weak, $glued]) {
             $p0 = $parts[0];
             if ($p0 !== '' && !str_starts_with($s, $p0)) {
                 continue;
@@ -289,12 +350,13 @@ final class HtmlTranslator
                 $pi = $parts[$i];
                 if ($i === $last) {
                     $at = $n - strlen($pi);
-                    if ($at <= $pos || ($pi !== '' && substr($s, $at) !== $pi)) {
+                    if ($at < $pos || ($at === $pos && !($glued[$i - 1] ?? false)) || ($pi !== '' && substr($s, $at) !== $pi)) {
                         $ok = false;
                         break;
                     }
                 } else {
-                    $f = strpos($s, $pi, $pos + 1);
+                    $from = ($glued[$i - 1] ?? false) ? $pos : $pos + 1;
+                    $f = $from < $n ? strpos($s, $pi, $from) : false;
                     if ($f === false) {
                         $ok = false;
                         break;
@@ -307,10 +369,34 @@ final class HtmlTranslator
             if (!$ok) {
                 continue;
             }
+            foreach ($caps as $k => $cap) {
+                if (($glued[$k] ?? false) && preg_match('/^\p{L}{0,3}$/u', $cap) !== 1) {
+                    continue 2;
+                }
+            }
+            if ($weak) {
+                foreach ($caps as $cap) {
+                    if (substr_count(trim($cap), ' ') >= 3) {
+                        continue 2;
+                    }
+                }
+            }
             $repl = [];
             foreach ($ids as $k => $id) {
                 $cap = $caps[$k];
-                $repl['%' . $id] = self::lookup(trim($cap), $depth + 1) ?? $cap;
+                $tr = self::lookup(trim($cap), $depth + 1);
+                // Dans une valeur déjà capturée, un modèle ne laisse pas de mots français autour de sa traduction.
+                if ($tr === null && (self::looksLikeSentence(trim($cap), $k === 0 && $parts[0] === '') || (($depth > 0 || $weak) && preg_match('/\p{L}{2}/u', $cap) === 1 && preg_match('/\d/', $cap) !== 1))) {
+                    // Morceau de phrase française, pas une valeur : mieux vaut tout laisser en français.
+                    continue 2;
+                }
+                $repl['%' . $id] = $tr ?? $cap;
+            }
+            // Accord français (« affiché%2 ») : un participe anglais ne prend pas de « s ».
+            foreach ($ids as $k => $id) {
+                if ($glued[$k] ?? false) {
+                    $en = preg_replace('/(?<=[a-z]ed|[a-z]wn)%' . $id . '(?!\d)/', '', $en) ?? $en;
+                }
             }
             // Remplacement simultané (%1 ne doit pas toucher %10).
             krsort($repl, SORT_NATURAL);
@@ -366,7 +452,15 @@ final class HtmlTranslator
                 continue;
             }
             $bucket = strlen($texts[0]) >= 3 ? substr($texts[0], 0, 3) : '';
-            self::$templates[$bucket][] = [$texts, $ids, $en];
+            // Modèle « faible » (« le %1 », « %1 sur %2 ») : presque aucun texte fixe, il ne doit s'appliquer qu'à
+            // des valeurs courtes (date, nom, nombre), jamais au milieu d'une phrase.
+            $weak = (int) preg_match_all('/\p{L}/u', implode('', $texts)) < 5;
+            // Valeur collée à un mot (« %1 membre%2 » : marque du pluriel) : elle ne capture que quelques lettres.
+            $glued = [];
+            foreach ($ids as $k => $_id) {
+                $glued[$k] = preg_match('/\p{L}$/u', $texts[$k]) === 1 || preg_match('/^\p{L}/u', $texts[$k + 1]) === 1;
+            }
+            self::$templates[$bucket][] = [$texts, $ids, $en, $weak, $glued];
         }
         foreach (self::$templates as &$list) {
             usort($list, static fn (array $a, array $b): int => strlen(implode('', $b[0])) <=> strlen(implode('', $a[0])));

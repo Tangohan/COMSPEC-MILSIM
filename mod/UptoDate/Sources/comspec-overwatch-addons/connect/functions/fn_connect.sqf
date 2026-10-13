@@ -19,25 +19,9 @@ private _cleanSecret = {
     _s
 };
 
-// Restaure une liaison precedente si les reglages CBA sont encore vides
-private _url = [missionNamespace getVariable ["comspec_overwatch_api_url", ""]] call _cleanSecret;
-// CBA corrompu (bool / valeur tronquée type « h ») → ignorer et retomber sur le profil.
-private _urlLooksValid = {
-    params ["_u"];
-    if (!(_u isEqualType "")) exitWith { false };
-    private _l = toLower _u;
-    ((count _u) >= 12) && {((_l find "https://") == 0) || {(_l find "http://") == 0}}
-};
-if (!([_url] call _urlLooksValid)) then {
-    if (!(_url isEqualTo "")) then {
-        [format ["[Athena] URL mémoire ignorée (%1) — repli profil / défaut.", _url]] call comspec_overwatch_connect_fnc_appendLinkLog;
-    };
-    _url = [profileNamespace getVariable ["comspec_overwatch_saved_api_url", ""]] call _cleanSecret;
-    if (!([_url] call _urlLooksValid)) then {
-        _url = "https://athena.ttrd.fr/public";
-    };
-    missionNamespace setVariable ["comspec_overwatch_api_url", _url];
-};
+// Portail Athena fixe (plus de réglage d’adresse) : toute valeur mémorisée est ignorée.
+private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
+missionNamespace setVariable ["comspec_overwatch_api_url", _url];
 private _keyLooksValid = {
     params ["_k"];
     if (!(_k isEqualType "")) exitWith { false };
@@ -68,21 +52,6 @@ if (_tenant isEqualTo "") then {
 };
 if (_tenant isNotEqualTo "") then {
     missionNamespace setVariable ["comspec_overwatch_tenant_id", _tenant];
-};
-
-_url = [_url] call _cleanSecret;
-if (_url isEqualTo "") exitWith {
-    missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
-    missionNamespace setVariable ["COMSPEC_LinkDetail", "Adresse Athena non renseignée", false];
-    ["[Athena] Pas d'adresse portail — utilisez Compte Athena (code) ou les reglages CBA."] call comspec_overwatch_connect_fnc_appendLinkLog;
-    [] call comspec_overwatch_connect_fnc_updateStatusBadges;
-};
-
-if (!([_url] call _urlLooksValid)) exitWith {
-    missionNamespace setVariable ["COMSPEC_LinkState", "offline", false];
-    missionNamespace setVariable ["COMSPEC_LinkDetail", "Adresse Athena invalide", false];
-    [format ["[Athena] Adresse invalide (%1). Exemple : https://athena.ttrd.fr/public", _url]] call comspec_overwatch_connect_fnc_appendLinkLog;
-    [] call comspec_overwatch_connect_fnc_updateStatusBadges;
 };
 
 missionNamespace setVariable ["COMSPEC_LinkState", "connecting", false];
@@ -135,14 +104,14 @@ _mapId = round _mapId;
 if (_mapId < 1) then { _mapId = 1; };
 missionNamespace setVariable ["comspec_overwatch_map_id", _mapId];
 missionNamespace setVariable ["COMSPEC_MapId", _mapId];
-private _result = ["COMSPECExtension" callExtension ["Connect", [_url, _key, _tenant, _steamForConnect, _modVersion, _bloodType, str _mapId]]] call comspec_overwatch_connect_fnc_extResult;
+private _result = [["COMSPECExtension", "Connect", [_url, _key, _tenant, _steamForConnect, _modVersion, _bloodType, str _mapId], 40] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
 private _parts = _result splitString "|";
 private _prefix = if (count _parts >= 1) then { _parts select 0 } else { "" };
 private _payload = if (count _parts >= 2) then { _parts select 1 } else { _result };
 
 if (_prefix == "OK") then {
     // whoami = IP publique uniquement ; le vrai succes auth est deja dans Connect (si cle presente).
-    private _ipResult = ["COMSPECExtension" callExtension ["GetClientIp", []]] call comspec_overwatch_connect_fnc_extResult;
+    private _ipResult = [["COMSPECExtension", "GetClientIp", []] call comspec_overwatch_connect_fnc_extAwait] call comspec_overwatch_connect_fnc_extResult;
     private _ipParts = _ipResult splitString "|";
     private _ipPrefix = if (count _ipParts >= 1) then { _ipParts select 0 } else { "" };
     private _userIp = if (count _ipParts >= 2) then { _ipParts select 1 } else { "—" };

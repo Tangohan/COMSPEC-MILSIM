@@ -5,15 +5,7 @@
 if (!hasInterface) exitWith { false };
 if (([] call comspec_overwatch_connect_fnc_athenaMode) isNotEqualTo "on") exitWith { false };
 
-private _url = missionNamespace getVariable ["comspec_overwatch_api_url", ""];
-if (!(_url isEqualType "")) then { _url = ""; };
-_url = trim _url;
-if (_url isEqualTo "") then {
-    _url = trim (profileNamespace getVariable ["comspec_overwatch_saved_api_url", ""]);
-};
-if (_url isEqualTo "") then {
-    _url = "https://athena.ttrd.fr/public";
-};
+private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
 
 private _steamUid = "";
 if (!isNull player) then {
@@ -56,10 +48,7 @@ if ((count _extParts) >= 2 && {(_extParts select 0) isEqualTo "OK"}) then {
 };
 
 private _raw = [
-    "COMSPECExtension" callExtension [
-        "RegisterBeta",
-        [_url, _steamUid, _playerUid, _playerName, _modVersion, _armaBuild, _armaBranch, _extVersion, "1"]
-    ]
+    ["COMSPECExtension", "RegisterBeta", [_url, _steamUid, _playerUid, _playerName, _modVersion, _armaBuild, _armaBranch, _extVersion, "1"]] call comspec_overwatch_connect_fnc_extAwait
 ] call comspec_overwatch_connect_fnc_extResult;
 
 private _parts = _raw splitString "|";

@@ -271,13 +271,7 @@ switch (true) do {
         private _url = if ((count _parts) >= 1) then { trim (_parts select 0) } else { "" };
         private _code = if ((count _parts) >= 2) then { toUpper (trim (_parts select 1)) } else { "" };
         private _steam = if ((count _parts) >= 3) then { trim (_parts select 2) } else { "" };
-        if (_url isEqualTo "") then {
-            _url = trim (missionNamespace getVariable ["comspec_overwatch_api_url", ""]);
-            if (_url isEqualTo "") then {
-                _url = trim (profileNamespace getVariable ["comspec_overwatch_saved_api_url", "https://athena.ttrd.fr/public"]);
-            };
-            if (_url isEqualTo "") then { _url = "https://athena.ttrd.fr/public"; };
-        };
+        _url = [] call comspec_overwatch_connect_fnc_portalUrl;
         [_url, _code, _steam] spawn comspec_overwatch_connect_fnc_accountLinkSubmit;
     };
     case ((_cmd select [0, 9]) isEqualTo "cas:send|"): {

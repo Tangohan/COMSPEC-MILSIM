@@ -1,5 +1,5 @@
 #include "script_component.hpp"
-#include "\z\comspec_sse\addons\ui\ui_macros.hpp"
+#include "ui_macros.hpp"
 
 /*
     COMSPEC SSE — modules Zeus / Eden (V0.8).

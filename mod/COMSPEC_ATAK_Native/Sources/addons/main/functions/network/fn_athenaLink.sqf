@@ -64,7 +64,8 @@ switch (_action) do {
                 if (_r isEqualType "") then { _r } else { str _r }
             };
             private _mine = { (uiNamespace getVariable ["COMSPEC_ATAK_AthenaLinkToken", -1]) isEqualTo _token };
-            private _url = if (_bridge) then { [] call comspec_overwatch_connect_fnc_portalUrl } else { profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"] };
+            // Portail Athena fixe : plus d’adresse réglable ni mémorisée.
+            private _url = "https://athena.ttrd.fr/public";
             private _pack = if (_bridge) then { [] call comspec_overwatch_connect_fnc_packVersion } else { "native" };
             private _steam = getPlayerUID player;
             if ((count _steam) >= 8) then { ["SetSteamId", [_steam]] call _ext; };
@@ -73,6 +74,7 @@ switch (_action) do {
             if !(call _mine) exitWith {};
             if ((_cells param [0, ""]) isNotEqualTo "OK") exitWith {
                 private _why = _cells param [1, "sans réponse"];
+                if ((count _cells) > 2) then { ["WARN", "ATHENA", format ["PairStart %1 sur %2 : %3", _why, _url, ((_cells select [2]) joinString "|")]] call comspec_atak_native_fnc_log; };
                 uiNamespace setVariable ["COMSPEC_ATAK_AthenaLink", ["error", "", 0, "", "", _why]];
                 ["WARN", "ATHENA", format ["Code de connexion impossible : %1", _why]] call comspec_atak_native_fnc_log;
                 call _redraw;

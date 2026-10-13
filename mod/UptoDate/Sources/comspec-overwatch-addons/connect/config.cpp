@@ -180,6 +180,7 @@ class CfgFunctions {
             class noteUplinkReturn {};
             class noteLinkTraffic {};
             class uplinkQuiet {};
+            class arsenalOpen {};
             class startLogSession {};
             class logTransmission {};
             class logFnError {};

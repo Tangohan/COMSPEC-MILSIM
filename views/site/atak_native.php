@@ -4,6 +4,8 @@ $t = static fn (string $key): string => htmlspecialchars(__('site.atakn_' . $key
 $asset = static fn (string $file): string => htmlspecialchars(asset_url('assets/atak-native/' . $file), ENT_QUOTES, 'UTF-8');
 $downloadHref = htmlspecialchars(url('atak/mod'), ENT_QUOTES, 'UTF-8');
 $supportHref = htmlspecialchars(url('soutenir-atak'), ENT_QUOTES, 'UTF-8');
+// Dernières versions publiées : mêmes valeurs que GET /api/atak/version, comparées par le mod à la sienne.
+$release = \App\Support\AtakReleaseInfo::latest();
 
 // Icônes reprises de mod/COMSPEC_ATAK_Native/tools/gen_assets.py (mêmes dessins que dans le téléphone).
 $apps = [
@@ -29,6 +31,9 @@ $shots = ['launch', 'map', 'gps', 'marker', 'tools', 'settings'];
             <a href="<?= $downloadHref ?>" class="hi-cta hi-cta-solid"><?= $t('cta_download') ?></a>
             <a href="#clip" class="hi-cta hi-cta-ghost"><?= $t('cta_clip') ?></a>
         </div>
+        <?php if ($release['atak_native'] !== null): ?>
+        <p class="atakn-note atakn-version"><?= htmlspecialchars(sprintf(__('site.atakn_latest_version'), $release['atak_native'], $release['link'] ?? '?'), ENT_QUOTES, 'UTF-8') ?></p>
+        <?php endif; ?>
         <dl class="atakn-stats">
             <div><dt>31</dt><dd><?= $t('stat_apps') ?></dd></div>
             <div><dt>3</dt><dd><?= $t('stat_modes') ?></dd></div>

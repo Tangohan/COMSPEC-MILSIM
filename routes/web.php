@@ -61,6 +61,7 @@ use App\Controllers\Web\AthenaDataInspectorController;
 use App\Controllers\Api\SseApiController;
 use App\Controllers\Api\MusicLibraryApiController;
 use App\Controllers\Web\MusicLibraryController;
+use App\Controllers\Admin\MusicAdminController;
 use App\Controllers\Api\SseFieldNoteApiController;
 use App\Controllers\Api\SseIntelApiController;
 use App\Controllers\Api\FireSupportController;
@@ -530,6 +531,7 @@ return function (Router $router) {
     $router->get('/formations/creer', [TrainingWizardController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account', [AccountController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account/acces', [AccountController::class, 'access'], [AuthMiddleware::class]);
+    $router->post('/compte/formule-offerte/{id}/vu', [\App\Controllers\Web\PlanGiftNoticeController::class, 'dismiss'], [AuthMiddleware::class]);
     $router->post('/account/quitter-communaute', [AccountController::class, 'leaveCommunity'], [AuthMiddleware::class]);
     $router->post('/account/sessions/fermer-les-autres', [AccountController::class, 'revokeOtherSessions'], [AuthMiddleware::class]);
     $router->get('/account/donnees', [AccountPrivacyController::class, 'index'], [AuthMiddleware::class]);
@@ -1040,6 +1042,9 @@ return function (Router $router) {
     $router->post('/admin/tenants/{id}/identity', [SystemTenantsController::class, 'updateIdentity'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/profil', [SystemTenantsController::class, 'updateType'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/tenants/{id}/plan', [SystemTenantsController::class, 'updatePlan'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/formules-offertes', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/formules-offertes', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'store'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/formules-offertes/{id}/retirer', [\App\Controllers\Admin\System\SystemPlanGiftsController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/tenant-recovery', [SystemTenantRecoveryController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/tenant-recovery/parse-dump', [SystemTenantRecoveryController::class, 'parseDump'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/tenant-recovery/restore', [SystemTenantRecoveryController::class, 'restore'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1094,6 +1099,15 @@ return function (Router $router) {
     $router->post('/back-office/ma-situation/musique/playlists/creer', [MusicLibraryController::class, 'playlistCreate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/playlists/{id}/modifier', [MusicLibraryController::class, 'playlistUpdate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/playlists/{id}/supprimer', [MusicLibraryController::class, 'playlistDelete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    // Administration de la musique : plateforme (toutes organisations) et gestionnaires (leur organisation).
+    $router->get('/admin/musique', [MusicAdminController::class, 'platform'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/musique/actions', [MusicAdminController::class, 'platformBulk'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/musique/envoyer', [MusicAdminController::class, 'platformUpload'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/musique/playlists/{id}/supprimer', [MusicAdminController::class, 'platformPlaylistDelete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/back-office/ressources/musique', [MusicAdminController::class, 'tenant'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/musique/actions', [MusicAdminController::class, 'tenantBulk'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/musique/envoyer', [MusicAdminController::class, 'tenantUpload'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/musique/playlists/{id}/supprimer', [MusicAdminController::class, 'tenantPlaylistDelete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/playlists/{id}/ajouter', [MusicLibraryController::class, 'playlistAdd'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/playlists/{id}/retirer', [MusicLibraryController::class, 'playlistRemove'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/playlists/{id}/deplacer', [MusicLibraryController::class, 'playlistMove'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2210,6 +2224,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
 
     // API ATAK Full PHP (parité Node — polling, pas de Socket.IO)
     $router->get('/api/atak/ping', [AtakPingController::class, 'ping']);
+    // Dernières versions de l'ATAK natif et de COMSPEC Link (contrôle de mise à jour du mod, public).
+    $router->get('/api/atak/version', [\App\Controllers\Api\AtakVersionController::class, 'latest']);
     $router->get('/map-data/{world}/{z}/{x}/{file}', [\App\Controllers\Api\AtakMapDataController::class, 'tile']);
     $router->get('/api/atak/tiles', [\App\Controllers\Api\AtakMapDataController::class, 'proxy']);
     $tacticalApi = \App\Controllers\Api\AthenaTacticalApiController::class;

@@ -269,6 +269,11 @@
 
 .atk-dev__sheets { display: grid; gap: 1rem; align-content: start; }
 
+/* Page compte « Appareils ATAK » : colonne plus étroite, le téléphone passe au-dessus des fiches. */
+.account-atak-devices .atk-dev__body { grid-template-columns: 1fr; }
+/* Onglet Liaison des fiches : contrôles puis historique, l'un sous l'autre. */
+.atk-tabs__panel .atk-link__grid { grid-template-columns: 1fr; }
+
 .atk-dev__foot {
   display: flex;
   flex-wrap: wrap;
@@ -627,7 +632,8 @@
 .atk-tabs > input:nth-of-type(1):checked ~ .atk-tabs__panel:nth-of-type(1),
 .atk-tabs > input:nth-of-type(2):checked ~ .atk-tabs__panel:nth-of-type(2),
 .atk-tabs > input:nth-of-type(3):checked ~ .atk-tabs__panel:nth-of-type(3),
-.atk-tabs > input:nth-of-type(4):checked ~ .atk-tabs__panel:nth-of-type(4) { display: block; }
+.atk-tabs > input:nth-of-type(4):checked ~ .atk-tabs__panel:nth-of-type(4),
+.atk-tabs > input:nth-of-type(5):checked ~ .atk-tabs__panel:nth-of-type(5) { display: block; }
 
 .atk-dir { white-space: nowrap; font-size: .78rem; color: var(--atk-muted); }
 .atk-chip--muted { background: var(--atk-panel-2); color: var(--atk-muted); }

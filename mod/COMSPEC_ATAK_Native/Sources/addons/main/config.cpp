@@ -9,13 +9,13 @@ class CfgPatches {
 class CfgFunctions {
     class comspec_atak_native { tag="comspec_atak_native";
         class core { file="z\comspec_atak_native\addons\main\functions\core";
-            class log {}; class battery {}; class weather {}; class stateInit {}; class storeSet {}; class schedulerStart {}; class schedulerStop {}; class schedulerTick {}; class debugDump {}; class deviceCatalog {}; class hasDevice {}; class deviceDenied {}; class tenantRule {}; class pref {}; class tenantApply {}; class canUse {}; class batterySwap {}; class linkQuality {}; class deviceHealth {}; class deviceDamage {}; class deviceRepair {}; class phoneIdent {}; class ramUsage {}; class athenaPulse {}; class batteryItem {}; class aircrewTerminal {}; class repairStart {}; class deviceImpact {}; class deviceReport {}; class screenDirt {}; class screenClean {}; class medShow {};
+            class log {}; class battery {}; class weather {}; class stateInit {}; class storeSet {}; class schedulerStart {}; class schedulerStop {}; class schedulerTick {}; class debugDump {}; class deviceCatalog {}; class deviceScan {}; class hasDevice {}; class deviceDenied {}; class tenantRule {}; class pref {}; class tenantApply {}; class canUse {}; class batterySwap {}; class linkQuality {}; class deviceHealth {}; class deviceDamage {}; class deviceRepair {}; class phoneIdent {}; class ramUsage {}; class athenaPulse {}; class batteryItem {}; class aircrewTerminal {}; class repairStart {}; class deviceImpact {}; class deviceReport {}; class screenDirt {}; class screenClean {}; class medShow {}; class integrityCheck {};
         };
         class ui { file="z\comspec_atak_native\addons\main\functions\ui";
             class display {}; class open {}; class close {}; class hudToggle {}; class interactToggle {}; class orientationToggle {}; class phoneDrag {}; class formRender {}; class formValue {}; class keyBlock {}; class fullAlert {}; class vibrate {}; class dataBarEnabled {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class navigate {}; class back {}; class modeToggle {};
             class pageRender {}; class pageClear {}; class pageCtrl {}; class tileCreate {}; class appList {}; class appBadge {}; class dockRender {}; class launcherRender {}; class deviceOverlay {}; class appVisible {}; class accent {};
             class statusUpdate {}; class inspectorUpdate {}; class abbrev {}; class notify {}; class notificationsRender {}; class notifCenter {}; class powerFx {}; class overlayFront {}; class screenSurface {};
-            class fx {}; class toast {}; class quickSettings {}; class lockScreen {}; class tr {}; class langApply {}; class addSetting {}; class aceAction {}; class zenAction {}; class zenModule {}; class trMenu {};
+            class fx {}; class toast {}; class quickSettings {}; class lockScreen {}; class tr {}; class langApply {}; class addSetting {}; class aceAction {}; class zenAction {}; class zenModule {}; class trMenu {}; class menuRelang {};
         };
         class map { file="z\comspec_atak_native\addons\main\functions\map";
             class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class natoSymbol {}; class mapLabels {}; class mapCtxMenu {}; class mapPing {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class unitGroup {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerWeb {}; class markerWebSweep {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {}; class mapUnfocus {}; class inspToggle {}; class markerPalette {}; class markerPaletteData {}; class markerLabels {}; class sigintPoll {}; class reliefDraw {}; class meshDraw {}; class logisticsDraw {}; class ewDraw {}; class mapSearch {}; class mapStyle {}; class textureKeep {}; class strokeSimplify {}; class strokeDraw {}; class strokeBar {};
@@ -27,7 +27,7 @@ class CfgFunctions {
             class planCatalog {}; class planGfx {}; class planDraw {}; class planServer {}; class planAction {}; class planMap {}; class pagePlan {};
         };
         class network { file="z\comspec_atak_native\addons\main\functions\network";
-            class extensionCall {}; class extAwait {}; class extensionCallback {}; class serverPresence {}; class remoteSync {}; class importLegacyData {};
+            class extensionCall {}; class relayTower {}; class extAwait {}; class extensionCallback {}; class serverPresence {}; class remoteSync {}; class importLegacyData {};
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
             class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class relayNet {}; class videoLink {}; class moduleRelay {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {};
         };
@@ -451,17 +451,16 @@ class CfgHints {
     };
 };
 
+class Extended_PreStart_EventHandlers { class comspec_atak_native_main { init="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_preStart.sqf'"; }; };
 class Extended_PreInit_EventHandlers { class comspec_atak_native_main { init="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_preInit.sqf'"; }; };
-// Intro du mod sur l'écran de démarrage d'Arma (une fois par lancement du jeu).
-// Repli sur le premier menu principal si l'écran de démarrage est passé avant le chargement des addons.
+// Intro du mod sur l'écran de démarrage d'Arma (une fois par lancement du jeu), jamais sur le menu principal.
 // Marque COMSPEC (emblème, « OVERWATCH · ATAK NATIF », version) sur les chargements de mission.
 class Extended_DisplayLoad_EventHandlers {
     class RscDisplayStart { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_introSplash.sqf'"; };
-    class RscDisplayMain { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_introSplash.sqf'"; };
     class RscDisplayLoadMission { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf'"; };
     class RscDisplayLoading { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf'"; };
 };
 class Extended_PostInit_EventHandlers { class comspec_atak_native_main { clientInit="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_postInitClient.sqf'"; serverInit="call compile preprocessFileLineNumbers 'z\comspec_atak_native\addons\main\XEH_postInitServer.sqf'"; }; };
 #include "gestures.hpp"
-#include "ui/controls.hpp"
-#include "ui/displays.hpp"
+#include "ui\controls.hpp"
+#include "ui\displays.hpp"

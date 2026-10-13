@@ -1,19 +1,47 @@
+#include "script_component.hpp"
+private _perfT0 = diag_tickTime;
+uiNamespace setVariable ["COMSPEC_ATAK_PerfPreInitAt", diag_tickTime];
 COMSPEC_ATAK_UI_GENERATION = "native-rsc-v1";
 // Constantes posées par chaque machine (preInit tourne partout) : rien à diffuser. En public, chaque arrivée
 // renvoyait les deux valeurs à tous les joueurs et à la file JIP.
 missionNamespace setVariable ["COMSPEC_ATAK_UI_GENERATION", COMSPEC_ATAK_UI_GENERATION];
-missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", "1.11.0"];
+missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", VERSION_STR];
+// Versions compilées dans ce code : fn_integrityCheck les compare à la config chargée, à la DLL et au site.
+missionNamespace setVariable ["COMSPEC_ATAK_CodeVersion", VERSION_STR];
+missionNamespace setVariable ["COMSPEC_ATAK_LinkExpected", LINK_VERSION_STR];
 diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
 
-// Langue du téléphone (par joueur). Titre bilingue : ce menu CBA n'est pas traduit. Le code reste en français,
-// fn_tr traduit à l'affichage (dictionnaire i18n/en.txt).
+// Langue du mod (par joueur) : téléphone, menus CBA COMSPEC (ATAK, Overwatch, SSE) et SSE. Sans sous-catégorie : CBA
+// range ces réglages en tête de la liste COMSPEC, au-dessus des sections « ATAK · … ». Titre bilingue, jamais traduit.
+// Le code reste en français, fn_tr traduit à l'affichage (dictionnaire i18n/en.txt) ; changer la langue redessine le
+// téléphone et retraduit les menus CBA COMSPEC (fn_menuRelang), sans relancer la mission.
 ["comspec_atak_native_language", "LIST",
-    ["Langue du téléphone / Phone language", "Français, English, ou Auto : langue du jeu (français si Arma est en français, anglais sinon). / Auto follows the game language."],
-    ["COMSPEC", "ATAK · Langue / Language"], [["fr", "en", "auto"], ["Français", "English", "Auto (langue du jeu / game language)"], 0], 0,
+    ["Langue / Language", "Langue du mod COMSPEC : téléphone ATAK, menus CBA COMSPEC et SSE. Auto suit la langue du jeu (français si Arma est en français, anglais sinon). / COMSPEC mod language: ATAK phone, COMSPEC CBA menus and SSE. Auto follows the game language."],
+    ["COMSPEC", ""], [["auto", "fr", "en"], ["Auto (langue du jeu / game language)", "Français", "English"], 0], 0,
     { [true] call comspec_atak_native_fnc_langApply; }] call CBA_fnc_addSetting;
 [] call comspec_atak_native_fnc_langApply;
+// Langue dans laquelle les menus CBA COMSPEC sont déclarés (fn_addSetting, fn_trMenu) : fn_menuRelang ne retraduit
+// que si elle change.
+missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVariable ["COMSPEC_ATAK_Lang", "fr"]];
+
+// Intro au démarrage du jeu (fn_introSplash), désactivée par défaut (TTRD, 1.67.0 : buggée). Les deux réglages sont
+// recopiés dans le profil : l'intro joue avant que CBA lise ses réglages.
+["comspec_atak_native_intro_enabled", "CHECKBOX",
+    ["Intro au démarrage", "Désactivée par défaut. Cochée : la marque COMSPEC et un trait vert s'affichent sur l'écran de démarrage d'Arma. Pris en compte au prochain lancement du jeu."],
+    ["COMSPEC", "ATAK · Intro"], false, 0,
+    { profileNamespace setVariable ["COMSPEC_ATAK_IntroEnabled", _this]; saveProfileNamespace; }] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_intro_sound", "CHECKBOX",
+    ["Son d'intro au démarrage", "Carillon court joué avec la marque COMSPEC sur l'écran de démarrage d'Arma. Pris en compte au prochain lancement du jeu."],
+    ["COMSPEC", "ATAK · Intro"], true, 0,
+    { profileNamespace setVariable ["COMSPEC_ATAK_IntroSound", _this]; saveProfileNamespace; }] call comspec_atak_native_fnc_addSetting;
+
+// Taille du téléphone en plein écran (par joueur) : 60 à 100 %, centré. Aussi dans Réglages > Emplacement du téléphone.
+["comspec_atak_native_full_scale", "SLIDER",
+    ["Taille du téléphone en plein écran", "Réduit le téléphone ouvert en plein écran (en main), qui reste centré : 100 % = taille d'origine. Le texte et les boutons suivent."],
+    ["COMSPEC", "ATAK · Affichage"], [0.6, 1, 1, 0, true], 0,
+    { if !(isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_layoutApply; }; }] call comspec_atak_native_fnc_addSetting;
 
 // Réglages serveur (forçables par l'admin dans les réglages CBA du serveur / de la mission).
 // Tous les mods COMSPEC partagent une seule catégorie CBA « COMSPEC » ; sous-catégories « ATAK · … », « Overwatch · … », « SSE ».
@@ -28,6 +56,9 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
 ["comspec_atak_native_selfie_anim", "EDITBOX",
     ["Animation du selfie", "Jouée en mode selfie. Par défaut comspec_atak_native_fnc_gestureSelfie : bras droit tendu devant le visage, téléphone tourné vers soi. Même format : action ou geste, animation CfgMoves, ou fonction appelée avec [joueur, ""selfie""] (puis [joueur, ""exit""] à la fermeture). Vide : on garde l'animation de l'appareil photo."],
     ["COMSPEC", "ATAK · Photo"], "comspec_atak_native_fnc_gestureSelfie", 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_gesture_finger", "CHECKBOX",
+    ["Gestes doigt d'honneur", "Désactivé par défaut. Coché : les touches CBA « Doigt d'honneur » et « Doigt d'honneur libre (maintenir) » jouent le geste (à attribuer dans les touches COMSPEC ATAK)."],
+    ["COMSPEC", "ATAK · Gestes"], false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_battery_items", "EDITBOX",
     ["Batteries de rechange", "Objets (classes exactes, séparées par des virgules) qui rechargent le téléphone à 100 % quand on change la batterie. L'objet est consommé. La « Batterie ATAK » (COMSPEC_ATAK_Battery) est toujours acceptée."],
     _cat, "COMSPEC_ATAK_Battery,ACE_UAVBattery", 1] call comspec_atak_native_fnc_addSetting;
@@ -255,3 +286,4 @@ if (isServer) then { ["comspec_atak_native_planSrv", { _this call comspec_atak_n
     ["WARNING", format ["Drone : %1 %2 en %3", ["ennemi repéré,", "frappe sur"] select (_kind isEqualTo "ENGAGE"), _what, [_pos, 8] call comspec_atak_native_fnc_gridRef], 6, 60] call comspec_atak_native_fnc_notify;
     [] call comspec_atak_native_fnc_vibrate;
 }] call CBA_fnc_addEventHandler;
+diag_log format ["[COMSPEC ATAK NATIVE][PERF] %1 : %2 ms", "preInit", round ((diag_tickTime - _perfT0) * 1000)];

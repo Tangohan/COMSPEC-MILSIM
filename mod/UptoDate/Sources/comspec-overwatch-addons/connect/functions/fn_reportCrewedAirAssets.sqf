@@ -14,6 +14,15 @@ private _now = diag_tickTime;
 private _sent = 0;
 private _sendBack = missionNamespace getVariable ["COMSPEC_SendBackoffSec", 0];
 if (!(_sendBack isEqualType 0)) then { _sendBack = 0; };
+// Un seul client remonte chaque aéronef (avant : tous les clients envoyaient tous les aéronefs occupés).
+// Candidats : joueurs reliés à Athena (COMSPEC_LinkState public, moi compris). Joueur relié à bord : lui (plus
+// petit UID de l'équipage) ; sinon (IA seules, équipage non relié) : le joueur relié de plus petit UID.
+private _myUid = getPlayerUID player;
+private _linked = (allPlayers select {
+    alive _x && {!(_x isKindOf "HeadlessClient_F")} && {_x isEqualTo player || {(_x getVariable ["COMSPEC_LinkState", "offline"]) isNotEqualTo "offline"}}
+}) apply { getPlayerUID _x };
+_linked sort true;
+private _globalReporter = _linked param [0, _myUid];
 
 {
     if (_sent >= 12) then { break };
@@ -29,6 +38,9 @@ if (!(_sendBack isEqualType 0)) then { _sendBack = 0; };
 
     private _crew = (crew _x) select { alive _x && {_x isKindOf "CAManBase"} };
     if (_crew isEqualTo []) then { continue };
+    private _crewLinked = (_crew apply { getPlayerUID _x }) select { _x in _linked };
+    _crewLinked sort true;
+    if ((_crewLinked param [0, _globalReporter]) isNotEqualTo _myUid) then { continue };
     if (
         !isNil "comspec_overwatch_connect_fnc_shouldSkipEnemyAiTransmit"
         && { [_x] call comspec_overwatch_connect_fnc_shouldSkipEnemyAiTransmit }

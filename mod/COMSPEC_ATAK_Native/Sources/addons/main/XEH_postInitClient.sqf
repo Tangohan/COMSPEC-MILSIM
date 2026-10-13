@@ -1,8 +1,16 @@
 if (!hasInterface) exitWith {};
+private _perfT0 = diag_tickTime;
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] Client PostInit complete";
+// PBO ou DLL périmés, versions plus récentes sur Athena : signalés dans les notifications du téléphone.
+["start"] call comspec_atak_native_fnc_integrityCheck;
 // Arsenal ACE : bouton COMSPEC (colonne de droite) qui regroupe les objets de nos mods (ATAK, Overwatch, SSE).
 if (!isNil "ace_arsenal_fnc_addRightPanelButton") then {
-    private _items = ("getNumber (_x >> 'scope') >= 2 && {((toLower configName _x) find 'comspec_') isEqualTo 0}" configClasses (configFile >> "CfgWeapons")) apply { configName _x };
+    // Liste faite au lancement du jeu (XEH_preStart) : plus de parcours de tout CfgWeapons à l'arrivée.
+    private _items = uiNamespace getVariable "COMSPEC_ATAK_ArsenalItems";
+    if (isNil "_items") then {
+        _items = ("getNumber (_x >> 'scope') >= 2 && {((toLower configName _x) find 'comspec_') isEqualTo 0}" configClasses (configFile >> "CfgWeapons")) apply { configName _x };
+        uiNamespace setVariable ["COMSPEC_ATAK_ArsenalItems", _items];
+    };
     if (_items isNotEqualTo []) then {
         [_items, "COMSPEC", "\z\comspec_atak_native\addons\main\data\arsenal_comspec.paa", "COMSPEC_Arsenal"] call ace_arsenal_fnc_addRightPanelButton;
     };
@@ -13,13 +21,18 @@ if ([] call comspec_atak_native_fnc_bridge) then {
     diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPEC Link présent : session Athena partagée, DLL native non initialisée";
 } else {
     // Sans COMSPEC Link : la DLL native ne contacte Athena qu'une fois « Oui » choisi au service Athéna (Réglages > Service Athéna).
+    // Dans un spawn, par extAwait : la reprise de session (jusqu'à trois requêtes HTTP) figeait l'arrivée en jeu.
     [{ ([] call comspec_atak_native_fnc_athenaMode) isEqualTo "on" }, {
-        private _athenaUrl = profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"];
-        private _extInit = "COMSPECATAKNativeExtension" callExtension ["Init", [_athenaUrl]];
-        missionNamespace setVariable ["COMSPEC_ATAK_NativeExtensionInit", _extInit, false];
-        private _restore = "COMSPECATAKNativeExtension" callExtension ["RestoreSession", [_athenaUrl, "1.0.0-native"]];
-        missionNamespace setVariable ["COMSPEC_ATAK_NativeAuthRestore", _restore, false];
-        diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPECATAKNativeExtension initialization requested";
+        [] spawn {
+            private _t0 = diag_tickTime;
+            private _athenaUrl = "https://athena.ttrd.fr/public";
+            private _extInit = ["COMSPECATAKNativeExtension", "Init", [_athenaUrl]] call comspec_atak_native_fnc_extAwait;
+            missionNamespace setVariable ["COMSPEC_ATAK_NativeExtensionInit", _extInit, false];
+            private _restore = ["COMSPECATAKNativeExtension", "RestoreSession", [_athenaUrl, "1.0.0-native"]] call comspec_atak_native_fnc_extAwait;
+            missionNamespace setVariable ["COMSPEC_ATAK_NativeAuthRestore", _restore, false];
+            diag_log "[COMSPEC ATAK NATIVE][INFO][EXT] COMSPECATAKNativeExtension initialization requested";
+            diag_log format ["[COMSPEC ATAK NATIVE][PERF] Init + reprise de session DLL native : %1 ms", round ((diag_tickTime - _t0) * 1000)];
+        };
     }] call CBA_fnc_waitUntilAndExecute;
 };
 // Porté : le téléphone reste affiché dans le coin et l'on continue à jouer. En main : souris et clavier.
@@ -83,7 +96,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
     _inHand || {_mode isEqualTo 2 && {!(_st getOrDefault ["texture", false])}}
 }];
 ["COMSPEC ATAK", "PhonePanic", "Bouton PANIQUE (deux appuis)", { if !([player] call comspec_atak_native_fnc_hasDevice) exitWith { false }; ["panic"] call comspec_atak_native_fnc_alertsAction; if (diag_tickTime < ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["panicArmedUntil", -1])) then { ["WARNING", "PANIQUE : appuyez encore pour envoyer", 5, 60] call comspec_atak_native_fnc_notify; }; true }, "", [0, [false,false,false]]] call CBA_fnc_addKeybind;
-["COMSPEC ATAK", "GestureFinger", ["Doigt d'honneur", "Geste du bras gauche (marche aussi fusil en main). Aussi dans les actions ACE perso."], { [player] call comspec_atak_native_fnc_gestureFinger }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
+["COMSPEC ATAK", "GestureFinger", ["Doigt d'honneur", "Geste du bras gauche (marche aussi fusil en main). Il faut cocher le réglage d'addon « Gestes doigt d'honneur »."], { [player] call comspec_atak_native_fnc_gestureFinger }, "", [0, [false, false, false]]] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "GestureFingerAim", ["Doigt d'honneur libre (maintenir)", "Tant que la touche est maintenue : bras gauche tendu, majeur levé, qui suit le joueur visé ou le plus proche du centre de l'écran, sinon le curseur."], { ["start"] call comspec_atak_native_fnc_gestureFingerAim; true }, { ["stop"] call comspec_atak_native_fnc_gestureFingerAim; true }, [0, [false, false, false]], false] call CBA_fnc_addKeybind;
 ["COMSPEC ATAK", "PhoneNight", "Mode nuit du téléphone (normal / rouge / sombre)", {
     private _m = profileNamespace getVariable ["COMSPEC_ATAK_NightMode", "OFF"];
@@ -335,15 +348,6 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 }, 2] call CBA_fnc_addPerFrameHandler;
 // Lueur des écrans la nuit (la sienne publiée, celle des joueurs proches dessinée) et filtre JVN (fn_screenGlow).
 [{ ["tick"] call comspec_atak_native_fnc_screenGlow; }, 1] call CBA_fnc_addPerFrameHandler;
-// Action ACE perso : doigt d'honneur, rangé dans le menu Gestes d'ACE quand celui-ci est affiché.
-if (!isNil "ace_interact_menu_fnc_createAction") then {
-    private _act = ["COMSPEC_GestureFinger", "Doigt d'honneur", "", { [player] call comspec_atak_native_fnc_gestureFinger; }, { alive player && {vehicle player isEqualTo player} }] call comspec_atak_native_fnc_aceAction;
-    private _path = ["ACE_SelfActions"];
-    if (isClass (configFile >> "CfgPatches" >> "ace_gestures") && {(missionNamespace getVariable ["ace_gestures_showOnInteractionMenu", 2]) isEqualTo 2}) then { _path pushBack "ace_gestures"; };
-    ["CAManBase", 1, _path, _act, true] call ace_interact_menu_fnc_addActionToClass;
-    private _act2 = ["COMSPEC_GestureFingerAim", "Doigt d'honneur libre (6 s)", "", { ["timed", 6] call comspec_atak_native_fnc_gestureFingerAim; }, { alive player && {vehicle player isEqualTo player} }] call comspec_atak_native_fnc_aceAction;
-    ["CAManBase", 1, _path, _act2, true] call ace_interact_menu_fnc_addActionToClass;
-};
 // Action ACE : changer la batterie du téléphone (si une batterie de rechange est portée).
 if (!isNil "ace_interact_menu_fnc_createAction") then {
     private _act = ["COMSPEC_ATAK_BatterySwap", "Changer la batterie", "\z\comspec_atak_native\addons\main\data\item_battery.paa", {
@@ -746,3 +750,17 @@ if (isNil "comspec_overwatch_atak_athena_fnc_athena_onNotify") then {
 [] call comspec_atak_native_fnc_dataInit;
 // Icônes PAA gardées en mémoire (sinon elles disparaissent un instant à chaque rafraîchissement de page).
 [{ !isNull (findDisplay 46) }, { [] call comspec_atak_native_fnc_textureKeep; }] call CBA_fnc_waitUntilAndExecute;
+// Mesures pour le journal ([PERF]) : durée de l'arrivée (preInit -> première image de jeu) et images figées
+// (plus de 400 ms) avec ce qui était ouvert, pour retrouver ce qui fait ramer en jeu.
+[{ time > 0 && {!isNull (findDisplay 46)} }, {
+    diag_log format ["[COMSPEC ATAK NATIVE][PERF] Arrivée en jeu : %1 ms depuis le preInit", round ((diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PerfPreInitAt", diag_tickTime])) * 1000)];
+    [{
+        private _dt = diag_deltaTime;
+        if (_dt < 0.4) exitWith {};
+        private _arsenal = !isNull (uiNamespace getVariable ["ace_arsenal_display", displayNull]) || {!isNull (uiNamespace getVariable ["BIS_fnc_arsenal_display", displayNull])};
+        diag_log format ["[COMSPEC ATAK NATIVE][PERF] Image figée : %1 ms (arsenal %2, téléphone %3, carte %4)", round (_dt * 1000), ["non", "ouvert"] select _arsenal, ["rangé", "affiché"] select !isNull ([] call comspec_atak_native_fnc_display), ["non", "ouverte"] select visibleMap];
+    }, 0] call CBA_fnc_addPerFrameHandler;
+}] call CBA_fnc_waitUntilAndExecute;
+// Arsenal ACE ouvert : repère dans le journal (l'ouverture elle-même apparaît en « Image figée … arsenal ouvert »).
+["ace_arsenal_displayOpened", { diag_log format ["[COMSPEC ATAK NATIVE][PERF] Arsenal ACE ouvert (%1 FPS)", round diag_fps]; }] call CBA_fnc_addEventHandler;
+diag_log format ["[COMSPEC ATAK NATIVE][PERF] %1 : %2 ms", "postInit client", round ((diag_tickTime - _perfT0) * 1000)];

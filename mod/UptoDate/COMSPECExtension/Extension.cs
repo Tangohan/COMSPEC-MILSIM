@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.76";
+    private const string ExtensionVersion = "2.0.80";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -395,7 +395,34 @@ public static partial class Extension
         return $",\"mod_version\":\"{EscapeJson(_modVersion)}\"";
     }
 
-    private static string CurrentExtensionVersion()
+    private static string LatestVersions(string? portal)
+    {
+        var baseUrl = NormalizeBaseUrl(string.IsNullOrWhiteSpace(portal) ? _baseUrl : portal);
+        if (!TryBuildRequestUri(baseUrl, "/api/atak/version", out var uri, out var err) || uri is null)
+            return "ERR|" + err;
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
+            using var response = SendGet(uri, cts.Token);
+            if (!response.IsSuccessStatusCode)
+                return "ERR|http_" + (int)response.StatusCode;
+            using var doc = JsonDocument.Parse(ReadContentUtf8(response, cts.Token));
+            string Field(string name) =>
+                doc.RootElement.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "").Replace("|", "") : "";
+            return "OK|" + Field("atak_native") + "|" + Field("link");
+        }
+        catch (Exception ex)
+        {
+            return FormatCaughtError(ex);
+        }
+    }
+
+    private static string? _currentExtensionVersion;
+
+    /// <summary>Version de la DLL, lue une fois (réflexion appelée à chaque requête HTTP auparavant).</summary>
+    private static string CurrentExtensionVersion() => _currentExtensionVersion ??= ReadExtensionVersion();
+
+    private static string ReadExtensionVersion()
     {
         try
         {
@@ -727,12 +754,23 @@ public static partial class Extension
         }
     }
 
-    private static void EnsureDrainTimer()
+    private static int _drainTimerBaseMs;
+
+    /// <summary>
+    /// Arme le minuteur de vidage. Appelé à chaque mise en file (positions, télémétrie) : relancer le minuteur
+    /// à chaque appel repoussait sans cesse son échéance (le vidage pouvait ne jamais partir) et coûtait un verrou
+    /// sur le thread du jeu. La période n'est changée que si le profil réseau l'a modifiée, ou sur demande (re-jitter).
+    /// </summary>
+    private static void EnsureDrainTimer(bool rejitter = false)
     {
         LoadQueueFromDisk();
-        var period = JitteredDrainPeriodMs();
         lock (DrainTimerLock)
         {
+            var baseMs = _drainPeriodMs;
+            if (_drainTimer != null && !rejitter && baseMs == _drainTimerBaseMs)
+                return;
+            _drainTimerBaseMs = baseMs;
+            var period = JitteredDrainPeriodMs();
             if (_drainTimer == null)
                 _drainTimer = new System.Threading.Timer(_ => DrainQueue(), null, period, period);
             else
@@ -1478,14 +1516,17 @@ public static partial class Extension
         JournalMaybeReport();
         if (string.IsNullOrEmpty(_baseUrl)) return;
         if (IsRateLimitedNow() || IsNetworkBackoffNow()) return;
-        lock (QueueDrainLock)
+        // Passage précédent encore en cours (Athena lente) : on le laisse finir au lieu d'empiler des threads
+        // sur le verrou (les minuteurs se chevauchent et affamaient les appels Async, sondages et journaux).
+        if (!System.Threading.Monitor.TryEnter(QueueDrainLock)) return;
+        try
         {
             // Phase A : lot priorisé d’abord (compte dans le budget HTTP du tick).
             if (TryDrainTelemetryBatch())
             {
                 PersistQueueToDisk();
                 // Re-jitter périodique pour désynchroniser les clients.
-                try { EnsureDrainTimer(); } catch { /* ignore */ }
+                try { EnsureDrainTimer(rejitter: true); } catch { /* ignore */ }
                 return;
             }
 
@@ -1570,6 +1611,10 @@ public static partial class Extension
             }
             PersistQueueToDisk();
         }
+        finally
+        {
+            System.Threading.Monitor.Exit(QueueDrainLock);
+        }
     }
 
     private static int _diskQueueLoaded;
@@ -1605,9 +1650,21 @@ public static partial class Extension
     }
 
     private static long _lastPersistSig;
+    private static long _lastPersistTick;
 
+    /// <summary>
+    /// Sauvegarde de la file sur disque. Pendant une coupure, la file change à chaque passage : elle était
+    /// réécrite entière (jusqu'à 500 lignes) chaque seconde. Au plus une écriture toutes les 3 s ; entre deux,
+    /// la file est marquée à sauvegarder et le passage suivant du minuteur s'en charge.
+    /// </summary>
     private static void PersistQueueToDisk()
     {
+        var nowTick = Environment.TickCount64;
+        if (nowTick - System.Threading.Interlocked.Read(ref _lastPersistTick) < 3000)
+        {
+            System.Threading.Interlocked.Exchange(ref _queueDirty, 1);
+            return;
+        }
         try
         {
             var dir = SyncStoreDir();
@@ -1623,6 +1680,7 @@ public static partial class Extension
                         PendingPosts.TryPeek(out var head) ? head.Body : null);
                 if (sig == _lastPersistSig && _lastPersistSig != 0) return;
                 _lastPersistSig = sig;
+                System.Threading.Interlocked.Exchange(ref _lastPersistTick, nowTick);
                 var fifo = Path.Combine(dir, "queue.jsonl");
                 var pos = Path.Combine(dir, "position.json");
                 var lines = new List<string>();
@@ -2384,8 +2442,35 @@ public static partial class Extension
     public static void RvExtension(nint output, int outputSize, nint function)
     {
         var functionString = Marshal.PtrToStringUTF8(function);
+        if (functionString == "Warmup")
+            KickBackgroundWarmup();
         RvExtensionArgsImpl(functionString, []);
         Output(output, outputSize, "");
+    }
+
+    private static int _warmupStarted;
+
+    /// <summary>
+    /// Premier « Warmup » (chargement du mod) : hors du thread du jeu, relit la file d'envoi sur disque et ouvre
+    /// une connexion TLS vers Athena (DNS + TCP + TLS, souvent plusieurs centaines de ms). Les premiers appels
+    /// synchrones de l'arrivée (Init, RestoreSession, Connect) réutilisent cette connexion au lieu de la payer.
+    /// </summary>
+    private static void KickBackgroundWarmup()
+    {
+        if (Interlocked.Exchange(ref _warmupStarted, 1) != 0) return;
+        _ = Task.Run(static async () =>
+        {
+            try { LoadQueueFromDisk(); } catch { /* best effort */ }
+            try
+            {
+                var baseUrl = string.IsNullOrEmpty(_baseUrl) ? "https://athena.ttrd.fr" : _baseUrl;
+                if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var u)) return;
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(6));
+                using var req = new HttpRequestMessage(HttpMethod.Head, new Uri(u.GetLeftPart(UriPartial.Authority) + "/"));
+                using var resp = await HttpClient.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cts.Token).ConfigureAwait(false);
+            }
+            catch { /* hors ligne : rien à préparer */ }
+        });
     }
 
     private const int MaxOutputBytes = 8000;
@@ -2769,7 +2854,15 @@ public static partial class Extension
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
+            if (function == "Warmup")
+                KickBackgroundWarmup();
             return "OK|" + ExtensionProductName + " " + CurrentExtensionVersion();
+        }
+        // Dernières versions publiées sur Athena (GET /api/atak/version, public, sans session) : ATAK natif et COMSPEC Link.
+        // ["LatestVersions", [adresse du portail]] -> « OK|1.66.0|2.0.78 ». Appelé par Async (fn_integrityCheck).
+        if (function == "LatestVersions")
+        {
+            return LatestVersions(args.Length > 0 ? args[0] : null);
         }
 
         // Appel non bloquant : ["Async", [ticket, commande, args...]] répond tout de suite « QUEUED|ticket »,
@@ -2851,7 +2944,7 @@ public static partial class Extension
 
         // Adresse publique de cette machine vue par Athena (serveur dédié : son IP, diffusée aux joueurs pour
         // reconnaître le serveur de la communauté). Sans liaison, l'adresse d'Athena passée en argument sert de base.
-        // args: [baseUrl?] → OK|ip
+        // args: [baseUrl?] → OK|ip:port (port de jeu lu sur la ligne de commande du serveur, 2302 par défaut)
         if (function == "Server.PublicIp")
         {
             var baseUrl = NormalizeBaseUrl(_baseUrl ?? "");
@@ -2866,7 +2959,8 @@ public static partial class Extension
                 if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
                 using var doc = JsonDocument.Parse(ReadContentUtf8(resp, ipCts.Token));
                 var ip = doc.RootElement.TryGetProperty("ip", out var p) ? (p.GetString() ?? "") : "";
-                return ip.Length > 0 && ip != "—" ? "OK|" + ip : "ERR|no_ip";
+                if (ip.Length == 0 || ip == "—") return "ERR|no_ip";
+                return "OK|" + (ip.Contains(':') ? "[" + ip + "]" : ip) + ":" + ReadLaunchServerPort().ToString(CultureInfo.InvariantCulture);
             }
             catch (Exception ex) { return FormatCaughtError(ex); }
         }
@@ -2884,7 +2978,7 @@ public static partial class Extension
             try
             {
                 using var spCts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
-                var resp = SendJsonPost(spUri.AbsoluteUri, EnrichAtakPayload(NormalizeArmaJson(args[0])), spCts.Token);
+                var resp = SendJsonPost(spUri.AbsoluteUri, EnrichAtakPayload(AddLaunchConnectAddress(NormalizeArmaJson(args[0]))), spCts.Token);
                 var body = ReadContentUtf8(resp, spCts.Token);
                 if (!resp.IsSuccessStatusCode) return "ERR|http_" + (int)resp.StatusCode;
                 using var doc = JsonDocument.Parse(body);
@@ -2936,7 +3030,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions";
         }
 
         if (function == "GetCapabilities")
@@ -2980,7 +3074,17 @@ public static partial class Extension
                 // 6e champ (2.0.72+) : adresse avec le code déjà rempli, ouverte par OpenAthenaLink.
                 return "OK|" + SanitizeIdentityField(userCode) + "|" + Math.Clamp(ttl, 30, 900) + "|" + SanitizeIdentityField(verify) + "|" + _pendingPairPollSeconds + "|" + SanitizeIdentityField(verifyFull);
             }
-            catch (Exception ex) { return FormatCaughtError(ex); }
+            catch (Exception ex)
+            {
+                var failure = FormatCaughtError(ex);
+                // invalid_url : joindre la cause réelle (2.0.77) pour le journal, le jeu n'affiche que le code.
+                if (failure == "ERR|invalid_url")
+                {
+                    var detail = SanitizeIdentityField(ex.GetType().Name + ": " + ex.Message);
+                    failure += "|" + (detail.Length > 160 ? detail[..160] : detail);
+                }
+                return failure;
+            }
         }
 
         // Communauté de la session ouverte (compte Athena) : le mod n'a plus besoin qu'on la saisisse.
@@ -5840,11 +5944,22 @@ public static partial class Extension
             ThreadPool.QueueUserWorkItem(static _ => DrainDeviceLogs());
     }
 
+    private static int _deviceLogFailStreak;
+
     private static void DrainDeviceLogs()
     {
+        var ok = true;
         try
         {
-            FlushDeviceLogsBatch(40);
+            // Hors ligne ou freiné par Athena : on n'insiste pas (la boucle renvoyait le lot aussitôt, sans pause).
+            if (IsNetworkBackoffNow() || IsRateLimitedNow())
+                ok = false;
+            else
+                ok = FlushDeviceLogsBatch(40);
+        }
+        catch
+        {
+            ok = false;
         }
         finally
         {
@@ -5852,7 +5967,18 @@ public static partial class Extension
             if (!PendingDeviceLogs.IsEmpty
                 && Interlocked.CompareExchange(ref _deviceLogDrainScheduled, 1, 0) == 0)
             {
-                ThreadPool.QueueUserWorkItem(static _ => DrainDeviceLogs());
+                if (ok)
+                {
+                    Interlocked.Exchange(ref _deviceLogFailStreak, 0);
+                    ThreadPool.QueueUserWorkItem(static _ => DrainDeviceLogs());
+                }
+                else
+                {
+                    // Échec : nouvel essai après 5 s, 10 s, 20 s… (60 s au plus).
+                    var n = Math.Min(Interlocked.Increment(ref _deviceLogFailStreak), 4);
+                    var delay = Math.Min(5000 * (1 << (n - 1)), 60000);
+                    _ = Task.Delay(delay).ContinueWith(static _ => DrainDeviceLogs(), TaskScheduler.Default);
+                }
             }
         }
     }
@@ -5869,17 +5995,18 @@ public static partial class Extension
         }
     }
 
-    private static void FlushDeviceLogsBatch(int maxLines)
+    /// <summary>Envoie un lot de journaux ; false si le lot a été remis en file (échec réseau ou HTTP).</summary>
+    private static bool FlushDeviceLogsBatch(int maxLines)
     {
         if (string.IsNullOrEmpty(_baseUrl) || _apiKey.Length == 0 || _terminalUid.Length == 0)
-            return;
+            return false;
         if (!TryBuildRequestUri(_baseUrl, "/api/atak/device-logs", out var uri, out _) || uri is null)
-            return;
+            return false;
         var batch = new List<DeviceLogItem>(Math.Min(maxLines, 80));
         while (batch.Count < maxLines && PendingDeviceLogs.TryDequeue(out var item))
             batch.Add(item);
         if (batch.Count == 0)
-            return;
+            return true;
         var sb = new StringBuilder(256 + batch.Count * 160);
         sb.Append("{\"terminal_uid\":\"").Append(EscapeJson(_terminalUid)).Append('"');
         if (_callSign.Length > 0)
@@ -5902,17 +6029,20 @@ public static partial class Extension
         try
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(SyncTimeoutSeconds));
-            var resp = SendJsonPost(uri.AbsoluteUri, sb.ToString(), cts.Token);
+            using var resp = SendJsonPost(uri.AbsoluteUri, sb.ToString(), cts.Token);
             if (!resp.IsSuccessStatusCode)
             {
                 foreach (var it in batch)
                     PendingDeviceLogs.Enqueue(it);
+                return false;
             }
+            return true;
         }
         catch
         {
             foreach (var it in batch)
                 PendingDeviceLogs.Enqueue(it);
+            return false;
         }
     }
 
@@ -10577,6 +10707,92 @@ public static partial class Extension
                 }
                 catch { /* profil verrouillé par Arma */ }
             }
+        }
+    }
+
+    // Valeur d'un paramètre de lancement Arma : « -nom=valeur » ou « -nom valeur ».
+    private static string ReadLaunchArg(string name)
+    {
+        try
+        {
+            var cmd = Environment.GetCommandLineArgs();
+            for (var i = 0; i < cmd.Length; i++)
+            {
+                var a = cmd[i] ?? "";
+                if (a.StartsWith("-" + name + "=", StringComparison.OrdinalIgnoreCase))
+                    return a[(name.Length + 2)..].Trim().Trim('"');
+                if (a.Equals("-" + name, StringComparison.OrdinalIgnoreCase) && i + 1 < cmd.Length)
+                    return (cmd[i + 1] ?? "").Trim().Trim('"');
+            }
+        }
+        catch { }
+        return "";
+    }
+
+    // Port de jeu du serveur dédié (-port=, 2302 par défaut).
+    private static int ReadLaunchServerPort()
+    {
+        return int.TryParse(ReadLaunchArg("port"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var p) && p > 0 && p < 65536 ? p : 2302;
+    }
+
+    // Client : serveur rejoint depuis le lanceur Arma ou Steam (-connect=ip -port=n, ou +connect ip:port).
+    private static (string Host, int Port) ReadLaunchConnect()
+    {
+        var host = ReadLaunchArg("connect");
+        if (host.Length == 0)
+        {
+            try
+            {
+                var cmd = Environment.GetCommandLineArgs();
+                for (var i = 0; i + 1 < cmd.Length; i++)
+                    if ((cmd[i] ?? "").Equals("+connect", StringComparison.OrdinalIgnoreCase)) { host = (cmd[i + 1] ?? "").Trim().Trim('"'); break; }
+            }
+            catch { }
+        }
+        if (host.Length == 0) return ("", 0);
+        var port = 0;
+        var colon = host.LastIndexOf(':');
+        if (colon > 0 && host.IndexOf(':') == colon && int.TryParse(host[(colon + 1)..], NumberStyles.Integer, CultureInfo.InvariantCulture, out var hp))
+        {
+            port = hp;
+            host = host[..colon];
+        }
+        if (int.TryParse(ReadLaunchArg("port"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var ap) && ap > 0 && ap < 65536) port = ap;
+        return (host, port);
+    }
+
+    // Server.Presence : sans adresse diffusée par le serveur, ajoute celle du lancement (-connect) si le joueur en a une.
+    private static string AddLaunchConnectAddress(string json)
+    {
+        try
+        {
+            var trimmed = (json ?? "").Trim();
+            if (!trimmed.StartsWith('{')) return json ?? "";
+            using var doc = JsonDocument.Parse(trimmed);
+            var root = doc.RootElement;
+            var current = root.TryGetProperty("server_ip", out var cur) && cur.ValueKind == JsonValueKind.String ? (cur.GetString() ?? "") : "";
+            if (current.Trim().Length > 0) return json ?? "";
+            var (host, port) = ReadLaunchConnect();
+            if (host.Length == 0) return json ?? "";
+            using var stream = new MemoryStream();
+            using (var writer = new Utf8JsonWriter(stream))
+            {
+                writer.WriteStartObject();
+                foreach (var prop in root.EnumerateObject())
+                {
+                    if (prop.NameEquals("server_ip") || prop.NameEquals("server_port")) continue;
+                    prop.WriteTo(writer);
+                }
+                writer.WriteString("server_ip", host);
+                if (port > 0) writer.WriteNumber("server_port", port);
+                writer.WriteString("server_ip_source", "launch");
+                writer.WriteEndObject();
+            }
+            return Encoding.UTF8.GetString(stream.ToArray());
+        }
+        catch
+        {
+            return json ?? "";
         }
     }
 

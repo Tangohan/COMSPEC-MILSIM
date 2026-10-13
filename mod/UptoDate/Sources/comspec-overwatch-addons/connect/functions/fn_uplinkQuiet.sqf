@@ -3,7 +3,7 @@
     arsenal ouvert, ou téléphone tout juste pris.
 */
 if (!hasInterface) exitWith { true };
-if (!isNull (uiNamespace getVariable ["ace_arsenal_display", displayNull])) exitWith { true };
+if ([] call comspec_overwatch_connect_fnc_arsenalOpen) exitWith { true };
 if (!isNull (findDisplay 31)) exitWith { true };
 if (!isNull (findDisplay 112)) exitWith { true };
 private _acq = missionNamespace getVariable ["COMSPEC_TerminalAcquiredAt", -1];

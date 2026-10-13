@@ -2,9 +2,8 @@
 """
 Intro au démarrage du jeu (fn_introSplash) : textures et son.
   intro_logo_ca.paa   emblème COMSPEC ATAK + « COMSPEC » en blanc sur fond transparent (1024x512), teinté en jeu
-                      (copies rouge / cyan décalées pour l'aberration chromatique) ;
-  intro_scan_ca.paa   lignes de balayage (64x1024, une ligne sombre sur deux) étirées sur l'écran ;
-  intro_glitch.ogg    son : grésillements numériques, montée, impact grave (façon intro de jeu de guerre), ~5 s.
+                      (marque des écrans de chargement, fn_loadingBadge) ;
+  intro_chime.ogg     son : carillon de démarrage synthétique, court et discret (~1,6 s).
 Dessin et son originaux, générés ici.
 
 Usage : python3 gen_intro.py <hemtt>     (Pillow, numpy, ffmpeg avec libvorbis)
@@ -67,60 +66,39 @@ def logo(w=1024, h=512):
     return img.resize((w, h), Image.LANCZOS)
 
 
-def scanlines(w=64, h=1024):
-    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    for y in range(0, h, 2):
-        d.line([(0, y), (w, y)], fill=(0, 0, 0, 110))
-    return img
-
-
 def sound(path):
-    """Grésillements (bruit haché), balayage montant, puis impact grave avec queue de réverbération."""
-    rnd = np.random.default_rng(7)
-    n = int(SR * 5.2)
+    """Carillon de démarrage synthétique, sobre : deux notes douces (la5 puis mi6, quinte montante) en sinus avec
+    quelques partiels de cloche, une nappe grave très légère et une petite réverbération. ~1,6 s, crête à -6 dBFS
+    (le jeu le joue en plus à volume 0,35)."""
+    n = int(SR * 1.6)
     t = np.arange(n) / SR
     out = np.zeros(n)
 
-    def burst(t0, dur, amp, hz):
-        i0, i1 = int(t0 * SR), int((t0 + dur) * SR)
-        seg = rnd.uniform(-1, 1, i1 - i0)
-        # Bruit échantillonné-bloqué : son « numérique » cassé.
-        hold = max(1, int(SR / hz))
-        seg = np.repeat(seg[::hold], hold)[: i1 - i0]
-        env = np.ones(i1 - i0)
-        env[: 80] = np.linspace(0, 1, 80)
-        env[-200:] = np.linspace(1, 0, 200)
-        out[i0:i1] += seg * env * amp
+    def note(t0, hz, amp, decay):
+        i = t >= t0
+        tt = t[i] - t0
+        env = np.minimum(tt / 0.008, 1) * np.exp(-tt * decay)
+        tone = (np.sin(2 * math.pi * hz * tt) + 0.22 * np.sin(2 * math.pi * hz * 2.0 * tt) * np.exp(-tt * 3)
+                + 0.06 * np.sin(2 * math.pi * hz * 3.01 * tt) * np.exp(-tt * 6))
+        out[i] += tone * env * amp
 
-    for t0, dur, amp, hz in ((0.05, 0.07, 0.35, 3000), (0.22, 0.05, 0.3, 6000), (0.31, 0.12, 0.4, 1800),
-                             (0.62, 0.04, 0.25, 9000), (0.7, 0.09, 0.35, 2500), (1.05, 0.05, 0.3, 4000),
-                             (3.9, 0.08, 0.35, 2200), (4.05, 0.05, 0.3, 7000), (4.2, 0.12, 0.4, 1500)):
-        burst(t0, dur, amp, hz)
-    # Montée : balayage 60 -> 900 Hz sous du bruit filtré, de 0,8 à 1,9 s.
-    m = (t >= 0.8) & (t < 1.9)
-    tm = t[m] - 0.8
-    f = 60 + (900 - 60) * (tm / 1.1) ** 2
-    ph = 2 * math.pi * np.cumsum(f) / SR
-    out[m] += np.sin(ph) * 0.18 * (tm / 1.1) ** 1.5
-    # Impact à 1,9 s : grave 42 Hz qui descend, sous-harmonique, claquement de bruit, longue queue.
-    i = t >= 1.9
-    ti = t[i] - 1.9
-    f = 42 * np.exp(-ti * 0.25) + 18
-    ph = 2 * math.pi * np.cumsum(f) / SR
-    boom = np.sin(ph) * np.exp(-ti * 1.1) * 0.95 + np.sin(ph * 0.5) * np.exp(-ti * 0.8) * 0.4
-    click = rnd.uniform(-1, 1, i.sum()) * np.exp(-ti * 28) * 0.6
-    # Nappe métallique (accord dissonant) qui s'éteint.
-    pad = sum(np.sin(2 * math.pi * hz * ti) for hz in (110, 116.5, 164.8)) * 0.05 * np.exp(-ti * 0.9)
-    out[i] += boom + click + pad
+    note(0.0, 880.0, 0.55, 3.2)
+    note(0.13, 1318.5, 0.5, 2.6)
+    # Nappe grave (la3 + mi4) qui gonfle puis s'éteint sous les deux notes.
+    pad = (np.sin(2 * math.pi * 220 * t) + 0.6 * np.sin(2 * math.pi * 329.6 * t)) * 0.08
+    pad *= np.minimum(t / 0.15, 1) * np.exp(-t * 2.2)
+    out += pad
     # Réverbération sommaire : échos décroissants.
     rev = out.copy()
-    for k, g in ((0.031, 0.35), (0.047, 0.28), (0.071, 0.2), (0.113, 0.14), (0.167, 0.09)):
+    for k, g in ((0.029, 0.3), (0.043, 0.24), (0.067, 0.17), (0.101, 0.11), (0.149, 0.07)):
         dly = int(k * SR)
         rev[dly:] += out[:-dly] * g
-    rev /= np.max(np.abs(rev)) * 1.05
+    fade = np.ones(n)
+    fade[-int(SR * 0.25):] = np.linspace(1, 0, int(SR * 0.25))
+    rev *= fade
+    rev *= 0.5 / np.max(np.abs(rev))
     pcm = (rev * 32767).astype(np.int16)
-    stereo = np.stack([pcm, np.roll(pcm, 9)], axis=1)
+    stereo = np.stack([pcm, np.roll(pcm, 14)], axis=1)
     wav = path[:-4] + ".wav"
     with wave.open(wav, "wb") as w:
         w.setnchannels(2)
@@ -134,9 +112,8 @@ def sound(path):
 def main():
     with tempfile.TemporaryDirectory() as tmp:
         paa(logo(), "intro_logo_ca", tmp)
-        paa(scanlines(), "intro_scan_ca", tmp)
         logo().save(os.path.join(HERE, "render", "intro_logo.png"))
-    sound(os.path.join(OUT, "intro_glitch.ogg"))
+    sound(os.path.join(OUT, "intro_chime.ogg"))
 
 
 if __name__ == "__main__":

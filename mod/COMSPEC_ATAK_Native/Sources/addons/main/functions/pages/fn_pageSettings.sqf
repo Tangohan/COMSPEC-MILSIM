@@ -169,8 +169,20 @@ _perso pushBack ["buttons", [["TOUT RÉINITIALISER (APPARENCE)", {
     saveProfileNamespace;
     [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }]]];
+// Taille du plein écran : réglage CBA par joueur (comspec_atak_native_full_scale), le même que dans le menu CBA.
+uiNamespace setVariable ["COMSPEC_ATAK_SetFullScale", {
+    params ["_v"];
+    ["comspec_atak_native_full_scale", _v, false, "client"] call CBA_settings_fnc_set;
+    [{ [] call comspec_atak_native_fnc_layoutApply; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+}];
+private _fullNow = missionNamespace getVariable ["comspec_atak_native_full_scale", 1];
+if !(_fullNow isEqualType 0) then { _fullNow = 1; };
 private _place = [
     ["COMSPEC_ATAK_MiniScale", 1, "Taille du mini", [["PETIT", 0.8], ["NORMAL", 1], ["GRAND", 1.2]]] call _profSegment,
+    ["segment", "Taille en plein écran", [["60 %", 0.6], ["70 %", 0.7], ["80 %", 0.8], ["90 %", 0.9], ["100 %", 1]] apply {
+        _x params ["_t", "_v"];
+        [_t, compile format ["[%1] call (uiNamespace getVariable 'COMSPEC_ATAK_SetFullScale');", _v], (abs (_fullNow - _v)) < 0.05]
+    }, "Téléphone en main, ouvert en plein écran : reste centré, 100 % = taille d'origine (aussi dans le menu CBA, ATAK · Affichage)"],
     ["COMSPEC_ATAK_Orientation", "PORTRAIT", "Sens du mini", [["VERTICAL", "PORTRAIT"], ["HORIZONTAL", "LANDSCAPE"]]] call _profSegment,
     ["segment", "Coin de l'écran", [[["HAUT G", "TL"], ["MILIEU G", "ML"], ["BAS G", "BL"]]] call _anchorSeg],
     ["segment", "", [[["HAUT D", "TR"], ["MILIEU D", "MR"], ["BAS D", "BR"]]] call _anchorSeg],
@@ -321,15 +333,15 @@ private _athena = [
     ["text", "<t size='0.8' color='#8a9a93'>Aussi dans le menu Échap, bouton Service Athéna.</t>"]
 ];
 
-// Langue du téléphone : même réglage que CBA (COMSPEC > ATAK · Langue / Language), libellés bilingues ; le changer redessine la page (fn_langApply).
-private _langSet = missionNamespace getVariable ["comspec_atak_native_language", "fr"];
+// Langue du mod : même réglage que CBA (COMSPEC > Langue / Language, en tête), libellés bilingues ; le changer redessine la page et les menus CBA (fn_langApply).
+private _langSet = missionNamespace getVariable ["comspec_atak_native_language", "auto"];
 private _lang = [
     ["section", "Langue / Language", "Langue du téléphone / Phone language"],
     ["segment", "Langue / Language", [
         ["FRANÇAIS", { ["comspec_atak_native_language", "fr", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "fr"],
         ["ENGLISH", { ["comspec_atak_native_language", "en", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "en"],
         ["AUTO", { ["comspec_atak_native_language", "auto", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "auto"]
-    ], "Auto : langue du jeu / game language. Aussi dans Échap > Options > Options des addons > COMSPEC > ATAK · Langue / Language."]
+    ], "Auto : langue du jeu / game language. Aussi dans Échap > Options > Options des addons > COMSPEC, en tête de la liste / also at the top of the COMSPEC addon options."]
 ];
 
 // Catégories, façon Android : liste d'accueil, puis une page par catégorie.

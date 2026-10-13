@@ -57,6 +57,7 @@ $icons = [
     'audit' => 'M9 3h6M4 6h16v15H4zM8 11h8M8 15h5',
     'file-check' => 'M6 3h9l4 4v14H6zM9 14l2 2 4-4',
     'home' => 'M4 11l8-7 8 7v9H4zM10 20v-6h4v6',
+    'music' => 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0M20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
 ];
 $icon = static fn (string $key): string => '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' . ($icons[$key] ?? $icons['gear']) . '"></path></svg>';
 $under = static fn (string $path): bool => $p === $path || str_starts_with($p, $path . '/');
@@ -77,6 +78,7 @@ $platformNav = [
         ['path' => 'admin/tenants', 'label' => 'Annuaire des communautés', 'icon' => 'globe', 'access' => 'system', 'also' => ['admin/system/tenants'], 'desc' => 'Fiches, formules, interventions'],
         ['path' => 'admin/system/tenant-recovery', 'label' => 'Récupération communauté', 'icon' => 'lifebuoy', 'access' => 'system', 'desc' => 'Rendre la main à une communauté bloquée'],
         ['path' => 'admin/system/subscription-plans', 'label' => 'Formules d’accès', 'icon' => 'layers', 'access' => 'system', 'desc' => 'Paliers, modules et plafonds'],
+        ['path' => 'admin/formules-offertes', 'label' => 'Formules offertes', 'icon' => 'star', 'access' => 'system', 'desc' => 'Offrir une formule à une communauté, e-mail et fenêtre aux gestionnaires'],
         ['path' => 'admin/system/demo-nda', 'label' => 'Accès démo du site', 'icon' => 'key', 'access' => 'system', 'desc' => 'Codes et engagements de confidentialité'],
     ]],
     ['key' => 'securite', 'label' => 'Comptes & accès', 'items' => [
@@ -97,6 +99,7 @@ $platformNav = [
         ['path' => 'admin/system/brief', 'label' => 'Brief membres', 'icon' => 'book', 'access' => 'system', 'desc' => 'Message de bienvenue des membres'],
         ['path' => 'admin/system/cooperation/catalog', 'label' => 'Types de coopération', 'icon' => 'coop', 'access' => 'system', 'desc' => 'Catalogue des coopérations entre unités'],
         ['path' => 'admin/system/cooperation/announcements', 'label' => 'Annonces de coopération', 'icon' => 'megaphone', 'access' => 'system', 'desc' => 'Messages diffusés aux communautés'],
+        ['path' => 'admin/musique', 'label' => 'Musique', 'icon' => 'music', 'access' => 'system', 'desc' => 'Bibliothèque du site et de l’app Musique de l’ATAK, playlist globale'],
     ]],
     ['key' => 'configuration', 'label' => 'Configuration', 'items' => [
         ['path' => 'admin/settings', 'label' => 'Paramètres système', 'icon' => 'gear', 'access' => 'system', 'desc' => 'Configuration effective, en lecture seule'],

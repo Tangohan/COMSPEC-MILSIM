@@ -1,15 +1,32 @@
 #!/usr/bin/env python3
 """
-Poste sur Discord un résumé de chaque mise à jour livrée (PR fusionnée sur main
-ou release publiée), sans aucun lien GitHub.
+Poste sur Discord une carte lisible par les joueurs pour chaque version livrée
+(PR fusionnée sur main ou release publiée), sans aucun lien GitHub.
 
-Lit l'événement GitHub (GITHUB_EVENT_NAME / GITHUB_EVENT_PATH) et poste sur le
-webhook DISCORD_RELEASES_WEBHOOK (secret du dépôt). Sans webhook, n'envoie rien.
+La carte ne reprend JAMAIS le détail technique de la PR : elle publie seulement
+le bloc « Résumé joueur » (français puis anglais) écrit pour cette version.
+Ordre de recherche du bloc :
+  1. l'entrée de CHANGELOG-ATAK.md dont le titre contient la version du titre de la PR ;
+  2. une section « Résumé joueur » dans la description de la PR (ou de la release).
+Sans bloc « Résumé joueur », rien n'est posté (avertissement dans le journal de l'action).
 
+Format du bloc (voir l'en-tête de CHANGELOG-ATAK.md) :
+
+    ### Résumé joueur
+    Type : correctif            (nouveauté, correctif, performance ou patch)
+    FR : L'adresse du portail ne se règle plus
+    - Phrase complète qui dit ce qui change pour le joueur.
+    EN : The portal address is no longer a setting
+    - Same sentence in English.
+
+Webhook : secret DISCORD_RELEASES_WEBHOOK. Sans webhook, n'envoie rien.
 Une PR est ignorée si elle porte le label « discord:skip » ou si son titre
 contient « [skip discord] ».
 
-Test local : python3 discord_changelog.py --dry-run --event pull_request --payload event.json
+Aperçu local d'une carte :
+  python3 .github/scripts/discord_changelog.py --preview 1.72.0
+Test d'un événement :
+  python3 .github/scripts/discord_changelog.py --dry-run --event pull_request --payload event.json
 """
 
 from __future__ import annotations
@@ -25,25 +42,36 @@ import urllib.request
 
 SKIP_LABEL = "discord:skip"
 SKIP_MARKER = "[skip discord]"
-MAX_DESC = 3500
-COLORS = {"fix": 0xE74C3C, "patch": 0xE67E22, "update": 0x6B7F3A}
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+CHANGELOG = os.path.join(ROOT, "CHANGELOG-ATAK.md")
+MAX_BULLETS = 4
+
+# Type de carte : emoji, libellé FR · EN, couleur
 KINDS = {
-    "fix": "🐛 Correctif",
-    "patch": "🩹 Patch",
-    "update": "🚀 Mise à jour",
+    "new": ("🚀", "Nouveauté · New", 0x6B7F3A),
+    "fix": ("🐛", "Correctif · Fix", 0xE74C3C),
+    "perf": ("⚡", "Performance", 0x3498DB),
+    "patch": ("🩹", "Patch", 0xE67E22),
 }
+KIND_WORDS = {
+    "new": r"nouveaut[ée]|new|feature|ajout|mise à jour|update",
+    "fix": r"correctif|fix|bug",
+    "perf": r"perf|performance",
+    "patch": r"patch|hotfix",
+}
+# Noms de produits lisibles, repérés dans le titre de l'entrée
 PRODUCTS = [
-    ("ATAK", r"\batak\b|t[ée]l[ée]phone|drone"),
-    ("Athena", r"\bathena\b|back-office|\bsite\b|portail|admin"),
-    ("Overwatch", r"\boverwatch\b"),
-    ("Link", r"\blink\b|\bdll\b"),
-    ("SSE", r"\bsse\b|\bseek\b|biom[ée]tri"),
-    ("Modules", r"\bmodules?\b"),
+    (r"ATAK natif\s+(\d+\.\d+\.\d+)", "Mod ATAK {}"),
+    (r"COMSPEC Link\s+(\d+\.\d+\.\d+)", "COMSPEC Link {}"),
 ]
+
+VERSION_RE = re.compile(r"\b\d+\.\d+\.\d+\b")
+SUMMARY_HEAD_RE = re.compile(r"^\s*(?:#{2,5}\s*|\*\*)\s*(?:r[ée]sum[ée] joueur|player summary)\b", re.I)
+STOP_RE = re.compile(r"^\s*(#{1,5}\s+\S|---\s*$)")
 
 
 # --------------------------------------------------------------------------
-# Nettoyage du texte : aucun lien, aucun détail technique
+# Texte : aucun lien, aucune mise en forme technique
 # --------------------------------------------------------------------------
 URL_RE = re.compile(r"https?://\S+|www\.\S+", re.I)
 MD_LINK_RE = re.compile(r"!?\[([^\]]*)\]\([^)]*\)")
@@ -51,82 +79,162 @@ GITHUB_REF_RE = re.compile(r"(?<![\w/])(?:[\w.-]+/[\w.-]+)?#\d+\b")
 
 
 def clean(text: str) -> str:
-    text = re.sub(r"<!--.*?-->", "", text, flags=re.S)
     text = MD_LINK_RE.sub(lambda m: m.group(1), text)
     text = URL_RE.sub("", text)
     text = GITHUB_REF_RE.sub("", text)
+    text = text.replace("`", "")
     text = re.sub(r"\(\s*[,;]?\s*\)", "", text)
-    out = []
-    for line in text.splitlines():
-        indent = re.match(r"^\s*", line).group(0)
-        rest = re.sub(r"[ \t]{2,}", " ", line[len(indent):]).rstrip()
-        rest = re.sub(r"\s+([.,;:!?])", r"\1", rest)
-        rest = re.sub(r"(?:\s+(?:and|et|or|ou|see|voir|in|dans))+\s*[.:]?$", "", rest, flags=re.I)
-        rest = re.sub(r"^(?:see|voir)\s*[.:]?$", "", rest, flags=re.I)
-        rest = re.sub(r"[.,;:]*\s*(?:see|voir)\s*[.:]?$", ".", rest, flags=re.I) if rest.lower().endswith(("see", "voir")) else rest
-        if re.fullmatch(r"[-*]\s*", rest):
-            continue
-        out.append(indent + rest)
-    return "\n".join(out).strip()
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    return re.sub(r"[ \t]+([.,])(?=\s|$)", r"\1", text).strip()
 
 
-def section(body: str, *names: str) -> str | None:
-    """Renvoie le contenu d'une section « After: » / « ## Après » etc."""
-    lines = body.splitlines()
-    heads = [n.lower() for n in names]
-    start = None
+def jargon(text: str) -> list[str]:
+    """Repère ce qui n'a rien à faire dans une annonce joueur."""
+    hits = []
+    if "`" in text:
+        hits.append("code entre accents graves")
+    if URL_RE.search(text):
+        hits.append("adresse web")
+    for word in (w.strip(".") for w in re.findall(r"[\w.]+", text)):
+        if "_" in word.strip("_"):
+            hits.append(word)
+        elif re.search(r"[a-z][A-Z]", word):
+            hits.append(word)
+        elif re.search(r"\.(?:pbo|php|cpp|hpp|sqf|bat|dll|cs|csproj|py|json)$", word, re.I):
+            hits.append(word)
+    return hits
+
+
+# --------------------------------------------------------------------------
+# Lecture du bloc « Résumé joueur »
+# --------------------------------------------------------------------------
+def summary_block(text: str) -> list[str] | None:
+    lines = (text or "").replace("\r\n", "\n").splitlines()
     for i, line in enumerate(lines):
-        bare = line.strip().lstrip("#").strip().strip("*").rstrip(":").strip().lower()
-        if start is None and bare in heads:
-            start = i + 1
-            continue
-        if start is not None and re.match(r"^\s*(#{1,6}\s+\S|\*\*[^*]+\*\*\s*:?\s*$|[A-Z][\w ]{1,30}:\s*$)", line):
-            if not line.lstrip().startswith(("-", "*")):
-                return "\n".join(lines[start:i]).strip()
-    if start is not None:
-        return "\n".join(lines[start:]).strip()
+        if SUMMARY_HEAD_RE.match(line):
+            out = []
+            for nxt in lines[i + 1:]:
+                if STOP_RE.match(nxt):
+                    break
+                out.append(nxt.lstrip("> ").rstrip() if nxt.lstrip().startswith(">") else nxt.rstrip())
+            return out
     return None
 
 
-def summarize(body: str) -> str:
-    body = body or ""
-    picked = section(body, "after", "après", "apres", "changements", "changes", "what's new", "nouveautés")
-    if not picked:
-        # Premier paragraphe utile
-        paras = [p for p in re.split(r"\n\s*\n", clean(body)) if p.strip()]
-        paras = [p for p in paras if not re.match(r"^_?requested by|^🤖|^before\s*:", p.strip(), re.I)]
-        picked = paras[0] if paras else ""
-    text = clean(picked)
-    text = "\n".join(l for l in text.splitlines()
-                     if not re.match(r"^\s*(🤖|_?requested by|generated with)", l, re.I))
-    if len(text) > MAX_DESC:
-        cut = text[:MAX_DESC].rsplit("\n", 1)[0]
-        text = cut + "\n…"
-    return text.strip()
+def parse_summary(lines: list[str]) -> dict | None:
+    data = {"kind": None, "product": None, "fr": None, "en": None}
+    lang = None
+    for raw in lines:
+        line = raw.strip()
+        if not line:
+            continue
+        m = re.match(r"^(type|produit|product|fr|en)\s*:\s*(.*)$", line, re.I)
+        if m:
+            key, val = m.group(1).lower(), clean(m.group(2))
+            if key == "type":
+                data["kind"] = val.lower()
+            elif key in ("produit", "product"):
+                data["product"] = val
+            else:
+                lang = key
+                data[lang] = {"title": val, "bullets": []}
+            continue
+        b = re.match(r"^[-*•]\s+(.*)$", line)
+        if b and lang:
+            data[lang]["bullets"].append(clean(b.group(1)))
+    if not data["fr"] or not data["fr"]["title"]:
+        return None
+    return data
 
 
-def kind_of(title: str, labels: list[str]) -> str:
-    t = f"{title} {' '.join(labels)}".lower()
-    if re.search(r"hotfix|\bpatch\b|correctif urgent", t):
-        return "patch"
-    if re.search(r"\bfix|\bbug|correct|r[ée]pare|debug|crash", t):
-        return "fix"
-    return "update"
+def changelog_entry(versions: list[str], path: str = CHANGELOG) -> tuple[str, str] | None:
+    """Renvoie (titre, corps) de la première entrée dont le titre contient une des versions."""
+    if not versions or not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+    parts = re.split(r"^## (?!#)", text, flags=re.M)
+    for part in parts[1:]:
+        head, _, body = part.partition("\n")
+        if any(re.search(rf"(?<![\d.]){re.escape(v)}(?![\d.])", head) for v in versions):
+            return head.strip(), body
+    return None
 
 
-def products_of(text: str) -> list[str]:
-    t = text.lower()
-    return [name for name, pat in PRODUCTS if re.search(pat, t)]
+def products_of(heading: str) -> str | None:
+    found = []
+    for pat, label in PRODUCTS:
+        for m in re.finditer(pat, heading, re.I):
+            found.append(label.format(m.group(1)))
+    if re.search(r"\bsite\b", heading, re.I):
+        found.append("Site Athena")
+    return "\n".join(found) or None
 
 
-def version_of(title: str) -> str | None:
-    m = re.search(r"\b\d+\.\d+\.\d+\b", title)
-    return m.group(0) if m else None
+def kind_of(declared: str | None, title: str) -> str:
+    for source in (declared or "", title):
+        for kind in ("patch", "perf", "fix", "new"):
+            if re.search(rf"\b(?:{KIND_WORDS[kind]})", source, re.I):
+                return kind
+    return "new"
 
 
 # --------------------------------------------------------------------------
-# Construction du message
+# Construction de la carte
 # --------------------------------------------------------------------------
+def card(summary: dict, heading: str, when: str | None) -> dict:
+    kind = kind_of(summary["kind"], heading)
+    emoji, label, color = KINDS[kind]
+
+    def bullets(lang: str) -> str:
+        items = summary[lang]["bullets"][:MAX_BULLETS] if summary[lang] else []
+        return "\n".join(f"• {b}" for b in items)
+
+    desc = bullets("fr")
+    if summary["en"]:
+        desc += f"\n\n**🇬🇧 {summary['en']['title']}**\n" + bullets("en")
+    desc = desc.strip()
+
+    fields = [{"name": "Type", "value": label, "inline": True}]
+    product = summary["product"] or products_of(heading)
+    if product:
+        fields.append({"name": "Version", "value": product, "inline": True})
+
+    embed = {
+        "title": f"{emoji} {summary['fr']['title']}"[:256],
+        "description": desc[:4000] or "Mise à jour déployée. · Update deployed.",
+        "color": color,
+        "fields": fields,
+        "footer": {"text": "COMSPEC · journal des mises à jour"},
+        "timestamp": when or datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    }
+    return {"username": "COMSPEC Releases", "embeds": [embed], "allowed_mentions": {"parse": []}}
+
+
+def find_summary(title: str, body: str) -> tuple[dict, str] | None:
+    entry = changelog_entry(VERSION_RE.findall(title))
+    if entry:
+        block = summary_block(entry[1])
+        parsed = parse_summary(block) if block else None
+        if parsed:
+            return parsed, entry[0]
+    block = summary_block(body)
+    parsed = parse_summary(block) if block else None
+    if parsed:
+        return parsed, title
+    return None
+
+
+def warn_jargon(summary: dict) -> None:
+    for lang in ("fr", "en"):
+        if not summary[lang]:
+            continue
+        text = " ".join([summary[lang]["title"]] + summary[lang]["bullets"])
+        hits = jargon(text)
+        if hits:
+            print(f"::warning::Résumé joueur ({lang}) : termes techniques à reformuler : {', '.join(sorted(set(hits)))}")
+
+
 def build(event_name: str, payload: dict) -> dict | None:
     if event_name == "pull_request":
         pr = payload.get("pull_request") or {}
@@ -142,43 +250,25 @@ def build(event_name: str, payload: dict) -> dict | None:
         rel = payload.get("release") or {}
         if rel.get("draft") or rel.get("prerelease"):
             return None
-        labels = []
         title = (rel.get("name") or rel.get("tag_name") or "").strip()
         body = rel.get("body") or ""
         when = rel.get("published_at")
     else:
         return None
 
-    title = clean(title) or "Mise à jour"
-    kind = "update" if event_name == "release" else kind_of(title, labels)
-    desc = summarize(body)
-    fields = []
-    prods = products_of(f"{title}\n{desc}")
-    if prods:
-        fields.append({"name": "Produits", "value": " · ".join(prods), "inline": True})
-    ver = version_of(title)
-    if ver:
-        fields.append({"name": "Version", "value": ver, "inline": True})
-
-    embed = {
-        "title": f"{KINDS[kind]} · {title}"[:256],
-        "description": desc or "Mise à jour déployée.",
-        "color": COLORS[kind],
-        "footer": {"text": "COMSPEC · journal des mises à jour"},
-    }
-    if fields:
-        embed["fields"] = fields
-    if when:
-        embed["timestamp"] = when
-    else:
-        embed["timestamp"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
-    return {"username": "COMSPEC Releases", "embeds": [embed], "allowed_mentions": {"parse": []}}
+    found = find_summary(title, body)
+    if not found:
+        print("::notice::Pas de « Résumé joueur » pour cette version (CHANGELOG-ATAK.md ou description) : rien n'est posté sur Discord.")
+        return None
+    summary, heading = found
+    warn_jargon(summary)
+    return card(summary, heading, when)
 
 
 def post(webhook: str, message: dict) -> None:
     req = urllib.request.Request(
         webhook, data=json.dumps(message).encode("utf-8"),
-        headers={"Content-Type": "application/json", "User-Agent": "COMSPEC-changelog/1.0"},
+        headers={"Content-Type": "application/json", "User-Agent": "COMSPEC-changelog/2.0"},
         method="POST",
     )
     try:
@@ -193,9 +283,19 @@ def post(webhook: str, message: dict) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true", help="affiche le message sans l'envoyer")
+    ap.add_argument("--preview", metavar="VERSION", help="affiche la carte de cette version de CHANGELOG-ATAK.md")
     ap.add_argument("--event", default=os.environ.get("GITHUB_EVENT_NAME", ""))
     ap.add_argument("--payload", default=os.environ.get("GITHUB_EVENT_PATH", ""))
     args = ap.parse_args()
+
+    if args.preview:
+        found = find_summary(args.preview, "")
+        if not found:
+            print(f"Aucun « Résumé joueur » pour {args.preview} dans CHANGELOG-ATAK.md.")
+            return 1
+        warn_jargon(found[0])
+        print(json.dumps(card(found[0], found[1], None), ensure_ascii=False, indent=2))
+        return 0
 
     if not args.payload or not os.path.exists(args.payload):
         print("Aucun événement GitHub à lire.")
@@ -210,7 +310,8 @@ def main() -> int:
     if args.dry_run:
         print(json.dumps(message, ensure_ascii=False, indent=2))
         return 0
-    webhook = os.environ.get("DISCORD_RELEASES_WEBHOOK", "").strip()
+    # Un copier-coller laisse parfois un BOM ou un caractère invisible devant « https » : on les retire.
+    webhook = os.environ.get("DISCORD_RELEASES_WEBHOOK", "").strip().strip("﻿​‌‍⁠‎‏").strip()
     if not webhook:
         print("Secret DISCORD_RELEASES_WEBHOOK absent : aucun message envoyé.")
         return 0
