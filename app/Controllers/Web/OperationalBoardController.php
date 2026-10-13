@@ -13,6 +13,7 @@ use App\Repositories\CommunityEventRepository;
 use App\Repositories\InterteamMissionRepository;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\PlanningEntryRepository;
+use App\Repositories\TacticalBriefingSlideRepository;
 use App\Repositories\TenantAlertRepository;
 use App\Repositories\TenantMiniArticleRepository;
 use App\Repositories\TrainingCourseRepository;
@@ -1399,6 +1400,23 @@ final class OperationalBoardController
             }
         }
 
+        /* Diapositives de briefing : mêmes droits que la page /back-office/atak/briefing-slides. */
+        $slidesTotal = 0;
+        $slidesActive = 0;
+        if ($canOrg) {
+            try {
+                foreach ((new TacticalBriefingSlideRepository())->allForTenant($tenantId) as $slide) {
+                    $slidesTotal++;
+                    if (!empty($slide['is_active'])) {
+                        $slidesActive++;
+                    }
+                }
+            } catch (\Throwable) {
+                $slidesTotal = 0;
+                $slidesActive = 0;
+            }
+        }
+
         $missions = [];
         if ($canOrg) {
             try {
@@ -1416,6 +1434,9 @@ final class OperationalBoardController
             'can_missions' => $canOrg,
             'can_alerts' => $canOrg,
             'can_ops_center' => $canOrg,
+            'can_slides' => $canOrg,
+            'slides_total' => $slidesTotal,
+            'slides_active' => $slidesActive,
             'events' => $events,
             'articles' => $articles,
             'articles_ready' => $articlesReady,

@@ -16,6 +16,9 @@ $canEffectifs = !empty($cockpit['can_effectifs']);
 $canMissions = !empty($cockpit['can_missions']);
 $canAlerts = !empty($cockpit['can_alerts']);
 $canOpsCenter = !empty($cockpit['can_ops_center']);
+$canSlides = !empty($cockpit['can_slides']);
+$slidesTotal = (int) ($cockpit['slides_total'] ?? 0);
+$slidesActive = (int) ($cockpit['slides_active'] ?? 0);
 $events = is_array($cockpit['events'] ?? null) ? $cockpit['events'] : [];
 $articles = is_array($cockpit['articles'] ?? null) ? $cockpit['articles'] : [];
 $missions = is_array($cockpit['missions'] ?? null) ? $cockpit['missions'] : [];
@@ -31,7 +34,7 @@ $formatWhen = static function (mixed $raw): string {
     return $ts ? date('d/m/Y H:i', $ts) : $s;
 };
 
-$showCockpit = $canEvents || $canArticles || $canAtak || $canEffectifs || $canMissions || $canAlerts || $canOpsCenter;
+$showCockpit = $canEvents || $canArticles || $canAtak || $canSlides || $canEffectifs || $canMissions || $canAlerts || $canOpsCenter;
 ?>
 <?php if ($showCockpit): ?>
 <section id="ops-zone-pilotage" class="bo-tbo-section bo-tbo-tools" aria-labelledby="ops-zone-pilotage-title">
@@ -108,6 +111,27 @@ $showCockpit = $canEvents || $canArticles || $canAtak || $canEffectifs || $canMi
             <footer>
                 <a href="<?= $h(url('back-office/articles')) ?>" class="bo-tbo-btn bo-tbo-btn--sm">Ouvrir les articles</a>
                 <a href="<?= $h(url('back-office/articles/create')) ?>" class="bo-tbo-btn bo-tbo-btn--ghost bo-tbo-btn--sm">Nouvel article</a>
+            </footer>
+        </article>
+        <?php endif; ?>
+
+        <?php if ($canSlides): ?>
+        <article class="bo-tbo-panel bo-tbo-tool" id="tbo-diapos">
+            <header>
+                <h3>Diapositives de briefing</h3>
+                <span class="bo-tbo-group__count">En jeu : <?= $slidesActive ?></span>
+            </header>
+            <p class="bo-tbo-muted">Les images montrées pendant le briefing. Celles mises en jeu s’affichent dans Arma et sur les téléphones ATAK.</p>
+            <?php if ($slidesTotal === 0): ?>
+                <p class="bo-tbo-tool__empty">Aucune diapositive pour l’instant. Ajoutez vos images ou un lien Google Slides.</p>
+            <?php else: ?>
+                <ul class="bo-tbo-tool__list">
+                    <li><span class="bo-tbo-tool__item"><strong>Diapositives préparées</strong><em><?= $slidesTotal ?></em></span></li>
+                    <li><span class="bo-tbo-tool__item"><strong>Visibles en jeu</strong><em><?= $slidesActive ?></em></span></li>
+                </ul>
+            <?php endif; ?>
+            <footer>
+                <a href="<?= $h(url('back-office/atak/briefing-slides')) ?>" class="bo-tbo-btn bo-tbo-btn--sm">Ouvrir les diapositives</a>
             </footer>
         </article>
         <?php endif; ?>

@@ -25,6 +25,7 @@ return [
             ['label' => 'Événements', 'href' => 'back-office/events'],
             ['label' => 'Articles', 'href' => 'back-office/articles'],
             ['label' => 'Poste ATAK', 'href' => 'back-office/atak'],
+            ['label' => 'Diapos de briefing', 'href' => 'back-office/atak/briefing-slides'],
             ['label' => 'Vue membres', 'href' => 'tableau-operationnel'],
         ]],
         ['path' => 'back-office/analytics/conversion', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Conversion des communautés', 'subtitle' => 'Combien de visiteurs deviennent candidats, puis membres.', 'css' => ['back-office-analytics.css']],
