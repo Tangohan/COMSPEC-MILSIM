@@ -8,6 +8,7 @@ use App\Core\Csrf;
 use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
+use App\Support\Seo;
 use App\Repositories\PersonnelJobRoleRepository;
 use App\Repositories\RecruitmentOpeningRepository;
 use App\Repositories\CommunityEventRepository;
@@ -319,6 +320,8 @@ class CommunityController
             'mediaViewerCanLike' => $mediaViewerUserId !== null && $mediaViewerUserId > 0,
             'tenantBranding' => $tenantBranding,
             'meta_description' => $seoDesc,
+            'seo_canonical' => $pageUrl,
+            'seo_robots' => Seo::communityIndexable($communityConfig) ? null : 'noindex,follow',
             'og_image' => $ogImage,
             'og_image_alt' => $tenantName . ' — Athena',
             'seo_json_ld' => $seoJsonLd,
@@ -427,6 +430,9 @@ class CommunityController
             'unitIsPreview' => empty($unit['show_on_public_page']) && $isStaffViewer,
             'communityShowcasePage' => true,
             'meta_description' => $unitDesc,
+            'seo_canonical' => $unitUrl,
+            // Seules les unités publiées d'une communauté visible dans l'annuaire sont indexées (aperçu staff : jamais).
+            'seo_robots' => (!empty($unit['show_on_public_page']) && $this->tenantIndexable($tenant)) ? null : 'noindex,follow',
             'og_image' => $ogImage,
             'og_image_alt' => $unitName . ' — ' . $tenantName,
             'seo_json_ld' => [
@@ -512,6 +518,8 @@ class CommunityController
             /* Charge community-landing.css + masque la nav bas (même shell que la vitrine). */
             'communityShowcasePage' => true,
             'meta_description' => $mediaDesc,
+            'seo_canonical' => $mediaUrl,
+            'seo_robots' => ($items !== [] && $this->tenantIndexable($tenant)) ? null : 'noindex,follow',
             'og_image' => $ogImage,
             'og_image_alt' => 'Médias — ' . $tenantName,
             'seo_json_ld' => [
@@ -591,6 +599,9 @@ class CommunityController
             'communityReelsPage' => true,
             'showPortalFooter' => false,
             'meta_description' => $reelsDesc,
+            'seo_canonical' => $reelsUrl,
+            // Mêmes médias que la galerie, en plein écran : non indexé pour ne pas doublonner /medias.
+            'seo_robots' => 'noindex,follow',
             'og_image' => $ogImage,
             'og_image_alt' => 'Fil média — ' . $tenantName,
             'seo_json_ld' => [
@@ -783,21 +794,32 @@ class CommunityController
             'communityLocked' => $communityLocked,
             'meta_description' => $openingSummary,
             'og_image_alt' => $openingTitle . ' — ' . $tenantName,
+            'seo_canonical' => $openingUrl,
+            'seo_robots' => (!$print && Seo::communityIndexable($communityConfig)) ? null : 'noindex,follow',
+            // Pas de JobPosting : Google le réserve aux vrais emplois (date, lieu, salaire) et signalerait des erreurs.
             'seo_json_ld' => [
                 [
-                    '@type' => 'JobPosting',
-                    'title' => $openingTitle,
+                    '@type' => 'WebPage',
+                    'name' => $openingTitle . ' — ' . $tenantName,
                     'description' => $openingSummary,
                     'url' => $openingUrl,
-                    'hiringOrganization' => [
+                    'isPartOf' => [
+                        '@type' => 'WebPage',
+                        'name' => $tenantName,
+                        'url' => $communityUrl,
+                    ],
+                    'about' => [
                         '@type' => 'Organization',
                         'name' => $tenantName,
                         'url' => $communityUrl,
                     ],
-                    'identifier' => [
-                        '@type' => 'PropertyValue',
-                        'name' => $tenantName,
-                        'value' => $avisSlug,
+                    'breadcrumb' => [
+                        '@type' => 'BreadcrumbList',
+                        'itemListElement' => [
+                            ['@type' => 'ListItem', 'position' => 1, 'name' => 'Communautés', 'item' => url('communities')],
+                            ['@type' => 'ListItem', 'position' => 2, 'name' => $tenantName, 'item' => $communityUrl],
+                            ['@type' => 'ListItem', 'position' => 3, 'name' => $openingTitle, 'item' => $openingUrl],
+                        ],
                     ],
                 ],
             ],
@@ -2079,6 +2101,16 @@ class CommunityController
      * @param array<string, mixed>|null $communityProfile
      * @return list<array<string, mixed>>
      */
+    /** Communauté visible dans l'annuaire public (sinon ses pages ne sont pas indexées). */
+    private function tenantIndexable(array $tenant): bool
+    {
+        $raw = $tenant['settings'] ?? null;
+        $decoded = is_string($raw) && trim($raw) !== '' ? json_decode($raw, true) : null;
+        $community = is_array($decoded) && is_array($decoded['community'] ?? null) ? $decoded['community'] : [];
+
+        return Seo::communityIndexable($community);
+    }
+
     private function buildCommunityPublicJsonLd(
         string $tenantName,
         string $seoDesc,

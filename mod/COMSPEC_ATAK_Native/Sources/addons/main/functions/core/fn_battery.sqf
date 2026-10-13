@@ -71,7 +71,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_Battery", _level];
     };
 } forEach [20, 5];
 if (_old > 0 && {_level <= 0}) then {
-    ["WARNING", "Batterie vide : le téléphone s'éteint", 6, 70] call comspec_atak_native_fnc_notify;
+    ["WARNING", ["Batterie vide : le téléphone s'éteint", "Batterie vide : le téléphone s'éteint. Mode secours SIM : les relais peuvent encore le localiser par son numéro ou son IMEI"] select (missionNamespace getVariable ["comspec_atak_native_sim_sos", true]), 6, 70] call comspec_atak_native_fnc_notify;
+    ["publish"] call comspec_atak_native_fnc_simSos;
     // Écran qui baisse, icône « batterie vide », puis noir et téléphone rangé (fn_powerFx).
     ["empty"] call comspec_atak_native_fnc_powerFx;
 };

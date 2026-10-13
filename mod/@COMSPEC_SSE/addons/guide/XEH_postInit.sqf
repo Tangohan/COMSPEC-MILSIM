@@ -21,9 +21,11 @@ if (!hasInterface) exitWith {};
 }, [], 60] call CBA_fnc_waitUntilAndExecute;
 
 [{ !isNil "zen_custom_modules_fnc_register" }, {
-    ["COMSPEC SSE · Outils", "Tutoriel : manuel du Zeus", { ["COMSPEC_SSE", "Zeus"] call BIS_fnc_openFieldManual }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa"] call comspec_sse_fnc_zenModule;
+    ["COMSPEC SSE · Outils", "Tutoriel : manuel du Zeus", { ["Zeus"] call comspec_sse_fnc_openGuide }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa"] call comspec_sse_fnc_zenModule;
     ["COMSPEC SSE · Outils", "Tutoriel : poser un exercice ici", {
         params ["_pos"];
         [ASLToAGL _pos, player] call comspec_sse_fnc_guideExercise;
+        // Retour immédiat dans Zeus ; la consigne complète arrive quand le serveur a posé la cellule.
+        if (!isNil "zen_common_fnc_showMessage") then { [("Exercice en cours de pose : 5 civils, téléphone, documents et caisse.") call comspec_sse_fnc_tr] call zen_common_fnc_showMessage; };
     }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\meet_ca.paa"] call comspec_sse_fnc_zenModule;
 }, [], 45] call CBA_fnc_waitUntilAndExecute;

@@ -60,6 +60,10 @@ class CfgFunctions {
             class sseOpenFromKeybind {};
             class sseHasTerminalItem {};
             class sseIdentityQuery {};
+            class sseLinkState {};
+            class sseKeyBlock {};
+            class sseTerminalGuard {};
+            class sseUploadFacePhoto {};
             class sseUnitSeed {};
             class sseTerminalPage {};
             class sseActiveCase {};
@@ -133,6 +137,7 @@ class CfgFunctions {
             class moduleTheaterSurvey {};
             class registerZenTheaterSurvey {};
             class moduleGeoNetwork {};
+            class zeusFeedback {};
             class forceSyncData {};
             class arsenalLocalLoadouts {};
             class arsenalNormalizeLoadout {};

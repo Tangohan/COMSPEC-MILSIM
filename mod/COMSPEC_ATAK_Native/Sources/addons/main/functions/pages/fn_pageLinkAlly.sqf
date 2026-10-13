@@ -51,7 +51,7 @@ switch (_phase) do {
             case ((_target getVariable ["ace_medical_woundBleeding", 0]) > 0 || {(damage _target) > 0.1}): { "<t color='#e8b84a' font='COMSPEC_BarlowBold'>BLESSÉ</t>" };
             default { "<t color='#5cc76b' font='COMSPEC_BarlowBold'>VALIDE</t>" };
         };
-        (_target getVariable ["COMSPEC_ATAK_Pub", []]) params [["_bat", -1], ["", 0], ["_dev", ""]];
+        (_target getVariable ["COMSPEC_ATAK_Pub", []]) params [["_bat", -1], "", ["_dev", ""]];
         private _devTxt = createHashMapFromArray [["OK", "intact"], ["CRACKED", "écran fêlé"], ["OFF", "éteint"], ["BROKEN", "détruit"]] getOrDefault [_dev, "état inconnu"];
         if ((_data getOrDefault ["battery", _bat]) isEqualType 0 && {(_data getOrDefault ["battery", _bat]) >= 0}) then { _devTxt = format ["%1 · batterie %2 %%", _devTxt, _data getOrDefault ["battery", _bat]]; };
         private _name = _data getOrDefault ["name", ""];
@@ -121,8 +121,8 @@ switch (_phase) do {
         private _queue = _data getOrDefault ["queue", []];
         private _failed = _data getOrDefault ["photosFailed", []];
         private _pending = _data getOrDefault ["photosPending", 0];
-        (_data getOrDefault ["frs", []]) params [["_fk", ""], ["", ""], ["", ""], ["_fb", ""]];
-        (_data getOrDefault ["reco", []]) params [["_rt", ""], ["", ""], ["_rx", ""]];
+        (_data getOrDefault ["frs", []]) params [["_fk", ""], "", "", ["_fb", ""]];
+        (_data getOrDefault ["reco", []]) params [["_rt", ""], "", ["_rx", ""]];
         private _items = [];
         { _items pushBack format ["%1 <t size='0.8' color='#8a9a93'>· %2 Ko · en file sans réseau</t>", [_x select 0] call _esc, _x param [1, 1]]; } forEach _queue;
         { _items pushBack format ["Photo %1 <t size='0.8' color='#8a9a93'>· refusée par Athena</t>", [_x] call _esc]; } forEach _failed;
@@ -168,7 +168,7 @@ switch (_phase) do {
                 case (lifeState _owner isEqualTo "INCAPACITATED" || {_owner getVariable ["ACE_isUnconscious", false]}): { "<t color='#f2ab33'>inconscient</t>" };
                 default { "<t color='#5cc76b'>valide</t>" };
             };
-            (_owner getVariable ["COMSPEC_ATAK_Pub", []]) params [["", -1], ["", 0], ["_dev", ""]];
+            (_owner getVariable ["COMSPEC_ATAK_Pub", []]) params ["", "", ["_dev", ""]];
             _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t>  %2<br/><t size='0.8' color='#8a9a93'>%3 · %4 m · téléphone %5</t>",
                 [name _owner] call _esc, _st2, _what, _dist toFixed 1, createHashMapFromArray [["OK", "intact"], ["CRACKED", "fêlé"], ["OFF", "éteint"], ["BROKEN", "détruit"]] getOrDefault [_dev, "?"]],
                 [["RELIER", compile format ["['link', objectFromNetId '%1'] call comspec_atak_native_fnc_linkAllyAction;", netId _obj], true]]];

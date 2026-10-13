@@ -246,6 +246,47 @@ final class SseCaseRepository
         );
     }
 
+    /**
+     * Dossier désigné par sa référence ; créé s'il n'existe pas encore.
+     * Le terrain peut ainsi ouvrir un dossier en tapant simplement son code.
+     *
+     * @return array{case: array<string, mixed>, created: bool}|null
+     */
+    public function findOrCreateByReference(
+        int $tenantId,
+        int $contextId,
+        string $reference,
+        string $title,
+        ?string $summary = null
+    ): ?array {
+        $reference = strtoupper(trim($reference));
+        if ($tenantId < 1 || $reference === '') {
+            return null;
+        }
+        $existing = $this->findByReferenceCode($tenantId, $reference);
+        if ($existing !== null) {
+            return ['case' => $existing, 'created' => false];
+        }
+        try {
+            $id = $this->create([
+                'tenant_id' => $tenantId,
+                'context_id' => $contextId,
+                'reference_code' => $reference,
+                'title' => $title,
+                'summary' => $summary,
+                'status' => 'ouvert',
+            ]);
+        } catch (\Throwable) {
+            // Course entre deux terminaux : l'autre vient de le créer.
+            $existing = $this->findByReferenceCode($tenantId, $reference);
+
+            return $existing !== null ? ['case' => $existing, 'created' => false] : null;
+        }
+        $case = $id > 0 ? $this->findByReferenceCode($tenantId, $reference) : null;
+
+        return $case !== null ? ['case' => $case, 'created' => true] : null;
+    }
+
     public function nextReference(int $tenantId): string
     {
         $year = date('Y');

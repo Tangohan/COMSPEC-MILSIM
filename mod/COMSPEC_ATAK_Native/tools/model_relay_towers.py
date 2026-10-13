@@ -6,9 +6,15 @@ Pylônes relais du réseau ATAK (relais posés dans Eden / Zeus, fn_relayTower) 
                   fouets omnidirectionnels, échelle et chemin de câbles
   relay_tower_50  pylône élancé carré 50 m galvanisé, trois paliers à caillebotis et garde-corps, échelle, panneaux,
                   faisceau hertzien, feu de balisage rouge
+  relay_tower_m20 monopole 20 m galvanisé en tronçons emboîtés, trois secteurs serrés en tête, parabole, armoires dans
+                  un enclos grillagé
+  relay_tower_m12 mât monopole léger 12 m, une couronne de trois panneaux, petite armoire
 
 Chaque modèle : massifs en béton, armoire technique au pied, LOD visuelles 1 / 4 / 12 / 30 (détail décroissant),
-ombres 0 et 10 (volumes fermés), géométrie (boîtes convexes, masse, autocenter=0, map=transmitter) et géométrie de tir.
+ombres 0 et 10 (une enveloppe convexe fermée par pièce, rentrée de 6 mm : pas de bandes ni d'ombre propre), géométrie
+(enveloppe de chaque pièce du pylône simplifié, masse, autocenter=0, map=transmitter), géométrie de tir (treillis presque
+complet), géométrie de vue (le plein seulement) et chemin praticable (massifs, dalles, paliers). Boîtes et cornières à
+facettes, tubes lissés.
 Ruine (relay_tower_XX_ruin.p3d) : même pylône plié au-dessus d'un tronçon resté debout, couché sur le sol, équipements
 arrachés et éparpillés (DestructBuilding, config.cpp).
 
@@ -54,16 +60,19 @@ MATS = {
 # ("struct" : se plie avec le pylône dans la ruine ; "equip" : pièce rigide arrachée ; "ground" : reste en place).
 # --------------------------------------------------------------------------------------------------------------------
 class Part:
-    __slots__ = ("verts", "faces", "mat", "kind", "gid", "box")
+    # smooth : nombre de faces lissées en tête de liste (flancs des tubes et des révolutions), le reste à arêtes vives.
+    __slots__ = ("verts", "faces", "mat", "kind", "gid", "box", "smooth")
 
-    def __init__(self, verts, faces, mat, kind, gid, box=False):
+    def __init__(self, verts, faces, mat, kind, gid, box=False, smooth=0):
         self.verts, self.faces, self.mat, self.kind, self.gid, self.box = verts, faces, mat, kind, gid, box
+        self.smooth = smooth
 
 
 class Builder:
-    def __init__(self, detail, split=0.0):
+    def __init__(self, detail, split=0.0, pieces=False):
         self.detail = detail      # 0 = complet ... 3 = silhouette
         self.split = split        # longueur max d'un tronçon (ruine), 0 = pièces d'un seul tenant
+        self.pieces = pieces      # ruine (ombres, géométries) : chaque tronçon est une pièce fermée à part
         self.parts = []
         self.gid = 0
         self.kind = "struct"
@@ -75,11 +84,11 @@ class Builder:
         self.kind = kind
         return self.gid
 
-    def add(self, verts, faces, mat=None, box=False):
-        self.parts.append(Part(verts, faces, mat or self.mat, self.kind, self.gid if self.kind != "struct" else 0, box))
+    def add(self, verts, faces, mat=None, box=False, smooth=0):
+        self.parts.append(Part(verts, faces, mat or self.mat, self.kind, self.gid if self.kind != "struct" else 0, box, smooth))
 
     # --- Primitives ---
-    def prism(self, p0, p1, prof, a, b=None, mat=None, caps=True, box=False):
+    def prism(self, p0, p1, prof, a, b=None, mat=None, caps=True, box=False, smooth=False):
         """Extrusion d'un contour 2D (x selon a, y selon b) de p0 à p1."""
         p0, p1 = Vector(p0), Vector(p1)
         d = p1 - p0
@@ -102,6 +111,10 @@ class Builder:
         n = len(prof)
         # Ruine : longues pièces recoupées tous les self.split m pour qu'elles se plient avec le pylône.
         segs = max(1, math.ceil((p1 - p0).length / self.split)) if self.split else 1
+        if self.pieces and segs > 1:
+            for k in range(segs):
+                self.prism(p0.lerp(p1, k / segs), p0.lerp(p1, (k + 1) / segs), prof, a, b, mat, True, box, smooth)
+            return
         verts, faces = [], []
         for k in range(segs + 1):
             c = p0.lerp(p1, k / segs)
@@ -109,10 +122,11 @@ class Builder:
         for k in range(segs):
             o = k * n
             faces += [(o + i, o + (i + 1) % n, o + n + (i + 1) % n, o + n + i) for i in range(n)]
+        sides = len(faces) if smooth else 0
         if caps:
             faces.append(tuple(reversed(range(n))))
             faces.append(tuple(range(segs * n, (segs + 1) * n)))
-        self.add(verts, faces, mat, box)
+        self.add(verts, faces, mat, box, sides)
 
     def beam(self, p0, p1, w, h, a=(0, 0, 1), mat=None):
         self.prism(p0, p1, [(-w / 2, -h / 2), (w / 2, -h / 2), (w / 2, h / 2), (-w / 2, h / 2)], a, None, mat, box=True)
@@ -123,7 +137,7 @@ class Builder:
         prof = [(r * math.cos(2 * math.pi * i / n), r * math.sin(2 * math.pi * i / n)) for i in range(n)]
         if Vector(a).cross(Vector(p1) - Vector(p0)).length < 1e-6:
             a = (1, 0, 0)
-        self.prism(p0, p1, prof, a, None, mat)
+        self.prism(p0, p1, prof, a, None, mat, smooth=n >= 6)
 
     def angle(self, p0, p1, s, t, a, b, mat=None):
         """Cornière à ailes égales s, épaisseur t, coin sur la ligne p0-p1, ailes selon +a et +b."""
@@ -160,12 +174,13 @@ class Builder:
             j = (i + 1) % n
             for k in range(m - 1):
                 faces.append((i * m + k, j * m + k, j * m + k + 1, i * m + k + 1))
+        sides = len(faces)
         # Fermeture des extrémités de rayon non nul.
         if prof[0][0] > 1e-4:
             faces.append(tuple(i * m for i in range(n)))
         if prof[-1][0] > 1e-4:
             faces.append(tuple(i * m + m - 1 for i in reversed(range(n))))
-        self.add(verts, faces, mat)
+        self.add(verts, faces, mat, smooth=sides)
 
 
 def rot_z(deg):
@@ -566,10 +581,126 @@ def tower_50(B):
     return lat
 
 
+class Mono:
+    """Monopole : fût conique en tronçons emboîtés (pas de treillis). Même interface que Lattice pour les équipements
+    (radius, n) et la ruine (Collapse)."""
+
+    def __init__(self, height, r0, r1):
+        self.n = 4
+        self.height, self.r0, self.r1 = height, r0, r1
+        self.panels = [0.0, height]
+        self.widths = [(0.0, r0 * 2), (height, r1 * 2)]
+
+    def radius(self, z):
+        t = max(0.0, min(1.0, z / self.height))
+        return self.r0 + (self.r1 - self.r0) * t
+
+    def corner(self, i, z):
+        r = self.radius(z)
+        p = math.radians(45 + i * 90)
+        return Vector((r * math.cos(p), r * math.sin(p), z))
+
+    def build(self, B, sections, fence=None):
+        """Fût en sections emboîtées (collerette au recouvrement), platine sur massif, tiges d'ancrage."""
+        B.kind, B.mat = "struct", "galva"
+        h = self.height
+        n = 16 if B.detail <= 1 else (10 if B.detail == 2 else 8)
+        zs = [h * k / sections for k in range(sections + 1)]
+        for z0, z1 in zip(zs, zs[1:]):
+            # Tronçon légèrement conique : deux anneaux de rayon différent (prisme tronc de cône).
+            # Ruine : anneaux tous les B.split m pour que le fût se plie (pièces séparées pour ombres et géométries).
+            k = max(1, math.ceil((z1 - z0) / B.split)) if B.split else 1
+            cuts = [z0 + (z1 - z0) * j / k for j in range(k + 1)]
+            if B.pieces:
+                for a, b in zip(cuts, cuts[1:]):
+                    B.lathe((0, 0, a), (0, 0, 1), [(self.radius(a), 0.0), (self.radius(b), b - a)], n, "galva")
+            else:
+                B.lathe((0, 0, z0), (0, 0, 1), [(self.radius(z), z - z0) for z in cuts], n, "galva")
+            if z0 > 0 and B.detail <= 2:
+                # Recouvrement du tronçon inférieur (manchon).
+                B.lathe((0, 0, z0 - 0.35), (0, 0, 1), [(self.radius(z0) * 1.06, 0.0), (self.radius(z0) * 1.06, 0.45)], n, "galva")
+        # Pied : platine, goussets, massif.
+        B.kind = "ground"
+        r = self.r0
+        B.cuboid((0, 0, -0.35), (r * 2 + 1.4, r * 2 + 1.4, 1.1), None, "concrete")
+        B.lathe((0, 0, 0.2), (0, 0, 1), [(r + 0.25, 0.0), (r + 0.25, 0.05)], n, "galva")
+        if B.detail <= 1:
+            for k in range(8):
+                a = 2 * math.pi * k / 8
+                c = Vector((math.cos(a), math.sin(a), 0)) * (r + 0.17)
+                B.tube((c.x, c.y, 0.2), (c.x, c.y, 0.36), 0.022, 6, "galva")
+                if B.detail == 0:
+                    g = Vector((math.cos(a + math.pi / 8), math.sin(a + math.pi / 8), 0))
+                    B.prism(Vector((0, 0, 0.25)) + g * r, Vector((0, 0, 0.25)) + g * (r + 0.2), [(0, 0), (0.012, 0), (0.012, 0.35), (0, 0.06)], (0, 0, 1), g.cross(Vector((0, 0, 1))), "galva")
+        B.kind = "struct"
+
+
+def fence(B, c, sx, sy, h=2.0, gate=True):
+    """Enclos grillagé (poteaux, lisse haute, grillage) autour des armoires d'un monopole."""
+    B.kind = "ground"
+    c = Vector(c)
+    pts = [c + Vector(p) for p in ((-sx / 2, -sy / 2, 0), (sx / 2, -sy / 2, 0), (sx / 2, sy / 2, 0), (-sx / 2, sy / 2, 0))]
+    for i in range(4):
+        p, q = pts[i], pts[(i + 1) % 4]
+        L = (q - p).length
+        d = (q - p).normalized()
+        k = max(1, round(L / 2.5))
+        for j in range(k + 1):
+            t = p + d * (L * j / k)
+            B.tube(t, t + Vector((0, 0, h)), 0.03, 8, "galva")
+        B.tube(p + Vector((0, 0, h)), q + Vector((0, 0, h)), 0.022, 6, "galva", (0, 0, 1))
+        if gate and i == 0:
+            # Portail : le grillage s'arrête sur 1,2 m au milieu du côté.
+            m = (p + q) / 2
+            for a, b in ((p, m - d * 0.6), (m + d * 0.6, q)):
+                B.cuboid((a + b) / 2 + Vector((0, 0, h / 2)), ((b - a).length, 0.01, h - 0.1), rot_z(math.degrees(math.atan2(d.y, d.x))), "grating")
+        else:
+            B.cuboid((p + q) / 2 + Vector((0, 0, h / 2)), (L, 0.01, h - 0.1), rot_z(math.degrees(math.atan2(d.y, d.x))), "grating")
+    B.kind = "struct"
+
+
+def tower_m20(B):
+    """Monopole 20 m (photo de référence 4) : fût galvanisé en quatre tronçons, trois secteurs de panneaux serrés en
+    tête, RRU, petite parabole, paratonnerre ; armoires dans un enclos grillagé au pied."""
+    lat = Mono(20.0, 0.42, 0.22)
+    lat.build(B, 4)
+    B.mat = "galva"
+    # Tête : collier et bras courts, panneaux contre le fût (comme sur la photo).
+    sector_ring(B, lat, 18.0, 0.28, (20, 140, 260), 1, 1.5, 0.28, 2.0, True)
+    sector_ring(B, lat, 16.2, 0.22, (80, 200, 320), 1, 1.0, 0.24, 3.0, False)
+    B.mat = "galva"
+    fwd = rot_z(-30) @ Vector((1, 0, 0))
+    pos = Vector((0, 0, 19.3)) + fwd * (lat.radius(19.3) + 0.45)
+    anchor = dish(B, pos, -30.0, 0.30, 0.22)
+    B.tube(anchor, Vector((0, 0, 19.3)) + fwd * lat.radius(19.3) * 0.8, 0.035, 8, "galva", (0, 0, 1))
+    top_pole(B, 20.0, 1.2, 0.05, True, False)
+    whip(B, (0.18, 0.0, 20.3), 1.2, 0.016)
+    cabinet(B, (3.2, 0.6, 0.0), 0.0, (0.75, 1.2, 1.6))
+    cabinet(B, (3.2, -0.9, 0.0), 0.0, (0.6, 0.8, 1.4))
+    cable_bridge(B, (2.75, 0.0, 0.0), (0.55, 0.0, 0.0), 2.2, 4)
+    fence(B, (3.1, -0.15, 0.0), 2.6, 4.0, 2.0)
+    return lat
+
+
+def tower_m12(B):
+    """Mât monopole léger 12 m : fût en trois tronçons, une couronne de trois panneaux, petite armoire."""
+    lat = Mono(12.0, 0.30, 0.17)
+    lat.build(B, 3)
+    B.mat = "galva"
+    sector_ring(B, lat, 10.6, 0.22, (0, 120, 240), 1, 1.0, 0.24, 2.0, True)
+    top_pole(B, 12.0, 1.0, 0.045, True, False)
+    whip(B, (0.15, 0.0, 12.2), 1.0, 0.015)
+    cabinet(B, (1.9, 0.0, 0.0), 0.0, (0.6, 0.9, 1.4))
+    cable_bridge(B, (1.55, 0.0, 0.0), (0.4, 0.0, 0.0), 2.0, 3)
+    return lat
+
+
 TOWERS = {
     "relay_tower_30": (tower_30, 30.0, 6000.0),
     "relay_tower_40": (tower_40, 40.0, 9000.0),
     "relay_tower_50": (tower_50, 50.0, 12000.0),
+    "relay_tower_m12": (tower_m12, 12.0, 3000.0),
+    "relay_tower_m20": (tower_m20, 20.0, 4500.0),
 }
 
 
@@ -642,7 +773,7 @@ def collapse_parts(parts, col, seed):
     out = []
     for p in parts:
         if p.kind == "struct":
-            out.append(Part([col.f(v) for v in p.verts], p.faces, p.mat, p.kind, p.gid, p.box))
+            out.append(Part([col.f(v) for v in p.verts], p.faces, p.mat, p.kind, p.gid, p.box, p.smooth))
         elif p.kind == "ground":
             out.append(p)
     # Équipements : chaque groupe suit la chute puis tombe au sol (couché, retourné), parfois projeté plus loin.
@@ -658,7 +789,7 @@ def collapse_parts(parts, col, seed):
         zmin = min(v.z for vs in moved for v in vs)
         lift = Vector((0, 0, 0.02 - zmin))
         for p, vs in zip(ps, moved):
-            out.append(Part([v + lift for v in vs], p.faces, p.mat, "equip", gid, p.box))
+            out.append(Part([v + lift for v in vs], p.faces, p.mat, "equip", gid, p.box, p.smooth))
     # Débris : cornières tordues éparpillées autour du pied.
     B = Builder(1)
     B.mat = parts[0].mat if parts else "galva"
@@ -706,17 +837,23 @@ def make_mesh(name, parts, mats, uv_from=None, with_uv=True):
     for pi, p in enumerate(parts):
         bv = [bm.verts.new(v) for v in p.verts]
         src = uv_from[pi].verts if uv_from is not None else p.verts
-        for f in p.faces:
+        for fi, f in enumerate(p.faces):
             try:
                 face = bm.faces.new([bv[i] for i in f])
             except ValueError:
                 continue
             face.material_index = keys.index(p.mat)
+            # Flancs des tubes lissés ; boîtes, cornières et bouchons à facettes (sinon le jeu moyenne les normales
+            # des coins : faces éclairées à contre-jour, reflets en bandes sur les massifs).
+            face.smooth = fi < p.smooth
             if uvl is not None:
                 uvs = project_uv([src[i] for i in f], MATS[p.mat][2])
                 for loop, uv in zip(face.loops, uvs):
                     loop[uvl].uv = uv
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    # Arête vive dès qu'une face voisine est à facettes (export A3OB : #SharpEdges#).
+    for e in bm.edges:
+        e.smooth = all(f.smooth for f in e.link_faces)
     bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 4], ngon_method="EAR_CLIP")
     bm.to_mesh(me)
     bm.free()
@@ -764,43 +901,6 @@ def tri(ob):
     bm.free()
 
 
-def box_lod(name, boxes, mass=0.0):
-    """LOD de géométrie : boîtes convexes séparées (une composante chacune), masse répartie sur les sommets."""
-    B = Builder(3)
-    for kind, args in boxes:
-        B.kind = "ground" if kind == "gbox" else "struct"
-        if kind == "seg":
-            p0, p1, w = args
-            B.beam(p0, p1, w, w, (0, 0, 1))
-        else:
-            c, size, rot = args
-            B.cuboid(c, size, rot)
-    return B.parts
-
-
-def geo_boxes(lat, height, extra, ruin=False):
-    """Jambes (un tronçon par cassure ; ruine : boîtes de 4 m qui suivent le pliage), tête d'équipements, massifs, armoire."""
-    boxes = []
-    top = lat.panels[-1]
-    zs = [0.0] + [z for z, _ in lat.widths if 0 < z < top] + [top]
-    if ruin:
-        zs = panel_levels(0.0, top, 4.0)
-    for i in range(lat.n):
-        for z0, z1 in zip(zs, zs[1:]):
-            boxes.append(("seg", (lat.corner(i, z0) * 0.97, lat.corner(i, z1) * 0.97, 0.22)))
-    for z in (2.0, 2.0 + (top - 2.0) * 0.5):
-        r = lat.radius(z)
-        for i in range(lat.n):
-            boxes.append(("seg", (lat.corner(i, z) * 0.9, lat.corner(i + 1, z) * 0.9, 0.1)))
-    w = lat.radius(top) * 2 + 1.6
-    boxes.append(("box", (Vector((0, 0, top - 2.0)), (w, w, 4.0), Matrix.Identity(3))))
-    for i in range(lat.n):
-        c = lat.corner(i, 0)
-        boxes.append(("gbox", (Vector((c.x, c.y, 0.06)), (1.1, 1.1, 0.12), rot_z(math.degrees(lat.phi[i])))))
-    boxes += extra
-    return boxes
-
-
 def mesh_from_parts(name, parts):
     me = bpy.data.meshes.new(name)
     bm = bmesh.new()
@@ -834,52 +934,115 @@ def clear_scene():
         bpy.data.meshes.remove(me)
 
 
-CAB_GEO = {
-    "relay_tower_30": [("gbox", (Vector((2.6, 0, 0.85)), (0.75, 1.2, 1.7), Matrix.Identity(3)))],
-    "relay_tower_40": [("gbox", (Vector((0, -3.4, 0.9)), (1.4, 0.8, 1.8), Matrix.Identity(3)))],
-    "relay_tower_50": [("gbox", (Vector((3.8, 0, 0.95)), (0.8, 1.4, 1.9), Matrix.Identity(3)))],
-}
+def hull(p, inset=0.0):
+    """Enveloppe convexe fermée d'une pièce (sommets, triangles), rentrée de inset m le long des normales :
+    une composante par pièce, sans arête ouverte (ombres et géométries du jeu)."""
+    bm = bmesh.new()
+    for v in p.verts:
+        bm.verts.new(v)
+    bmesh.ops.convex_hull(bm, input=bm.verts[:], use_existing_faces=False)
+    for v in [v for v in bm.verts if not v.link_faces]:
+        bm.verts.remove(v)
+    if len(bm.faces) < 4:
+        bm.free()
+        return None
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    if inset > 0:
+        lo = Vector([min(v.co[i] for v in bm.verts) for i in range(3)])
+        hi = Vector([max(v.co[i] for v in bm.verts) for i in range(3)])
+        d = min(inset, 0.2 * min(hi - lo))
+        moves = [v.normal.copy() * -d for v in bm.verts]
+        for v, m in zip(bm.verts, moves):
+            v.co += m
+    bmesh.ops.triangulate(bm, faces=bm.faces)
+    verts = [v.co.copy() for v in bm.verts]
+    idx = {v: i for i, v in enumerate(bm.verts)}
+    faces = [tuple(idx[v] for v in f.verts) for f in bm.faces]
+    bm.free()
+    return Part(verts, faces, p.mat, p.kind, p.gid, True)
+
+
+def extent(p):
+    lo = Vector([min(v[i] for v in p.verts) for i in range(3)])
+    hi = Vector([max(v[i] for v in p.verts) for i in range(3)])
+    return sorted(hi - lo)
+
+
+def hulls(parts, inset=0.0, min_len=0.0, min_thick=0.0):
+    """Une enveloppe par pièce assez grande (plus grande dimension >= min_len, plus petite >= min_thick)."""
+    out = []
+    for p in parts:
+        e = extent(p)
+        if e[2] < min_len or e[0] < min_thick:
+            continue
+        h = hull(p, inset)
+        if h is not None:
+            out.append(h)
+    return out
+
+
+def roadway_parts(parts):
+    """Surfaces praticables : dessus des massifs, de la dalle de l'armoire et des paliers (normale vers le haut)."""
+    out = []
+    for p in parts:
+        if p.mat not in ("concrete", "grating"):
+            continue
+        for f in p.faces:
+            vs = [p.verts[i] for i in f]
+            if len(vs) < 3:
+                continue
+            n = (vs[1] - vs[0]).cross(vs[2] - vs[0])
+            if n.length > 1e-9 and n.normalized().z > 0.9:
+                out.append(Part(vs, [tuple(range(len(vs)))], p.mat, p.kind, p.gid, True))
+    return out
+
+
+def lod_parts(fn, detail, ruin, height, seed, split):
+    """Pièces d'une LOD ; ruine : tronçons fermés séparés (pieces) pliés avec le pylône."""
+    B = Builder(detail, split if ruin else 0.0, pieces=ruin)
+    lat = fn(B)
+    parts = B.parts
+    if ruin:
+        parts = collapse_parts(parts, Collapse(lat, height, seed), seed)
+    return parts, lat
 
 
 def export_model(name, fn, height, ruin, mats):
     clear_scene()
     seed = sum(map(ord, name))
     objs = []
-    lat = None
     for res, detail in ((1, 0), (4, 1), (12, 2), (30, 3)):
         parts, lat = build_parts(fn, detail, (2.0, 3.0, 4.0, 6.0)[detail] if ruin else 0.0)
-        src = parts
-        if ruin:
-            col = Collapse(lat, height, seed)
-            parts = collapse_parts(parts, col, seed)
-            src = None
-        ob = make_mesh(f"{name}_lod{res}", parts, mats)
-        objs.append(set_lod(ob, 0, res))
-    # Ombres : volumes fermés, treillis presque complet de près (détail 2), silhouette de loin (détail 3).
-    for res, detail in ((0, 2), (10, 3)):
-        parts, lat = build_parts(fn, detail, (4.0, 6.0)[detail - 2] if ruin else 0.0)
         if ruin:
             parts = collapse_parts(parts, Collapse(lat, height, seed), seed)
-        shadow = mesh_from_parts(f"{name}_shadow{res}", parts)
+        ob = make_mesh(f"{name}_lod{res}", parts, mats)
+        objs.append(set_lod(ob, 0, res))
+    # Ombres : une enveloppe convexe fermée par pièce, rentrée de 6 mm sous la surface visible. Volumes ouverts
+    # (paraboles, révolutions à pointe) et volumes collés aux faces visibles donnaient des bandes claires et
+    # sombres sur les massifs et le pied du pylône.
+    # Ruine (au sol, vue de près) : le pylône simplifié suffit, le fichier reste léger.
+    for res, detail in ((0, 3 if ruin else 2), (10, 3)):
+        parts, _lat = lod_parts(fn, detail, ruin, height, seed, (4.0, 6.0)[detail - 2])
+        shadow = mesh_from_parts(f"{name}_shadow{res}", hulls(parts, 0.006, 0.08))
         set_lod(shadow, 4, res)
-    # Géométrie et tir : boîtes convexes (pliées avec la ruine).
-    gparts = box_lod(name, geo_boxes(lat, height, CAB_GEO[name], ruin))
-    if ruin:
-        col = Collapse(lat, height, seed)
-        bent = []
-        for p in gparts:
-            c = sum(p.verts, Vector()) / len(p.verts)
-            if p.kind == "ground":
-                bent.append(p)
-            else:
-                bent.append(Part([col.f(v) for v in p.verts], p.faces, p.mat, p.kind, p.gid, p.box))
-        gparts = bent
+    # Géométrie (collisions, sélection Eden) : chaque pièce du pylône simplifié, jambes, croisillons, antennes, massifs
+    # et armoire à leur vraie taille (plus de grande boîte invisible en tête, plus de croisillons traversables).
+    gp, _lat = lod_parts(fn, 3, ruin, height, seed, 4.0)
     props = [("autocenter", "0"), ("map", "transmitter")] if not ruin else [("autocenter", "0")]
-    geo = mesh_from_parts(name + "_geo", gparts)
+    geo = mesh_from_parts(name + "_geo", hulls(gp, 0.0, 0.12))
     add_mass(geo, 12000.0 if not ruin else 9000.0)
     set_lod(geo, 6, 0, props)
-    fire = mesh_from_parts(name + "_fire", gparts)
+    # Tir : tout le treillis presque complet (les balles touchent les cornières, passent entre elles).
+    fp = gp if ruin else lod_parts(fn, 2, ruin, height, seed, 4.0)[0]
+    fire = mesh_from_parts(name + "_fire", hulls(fp, 0.0, 0.05))
     set_lod(fire, 15, 0)
+    # Vue (IA) : seulement le plein (massifs, armoire, panneaux, paraboles) ; le treillis ne cache rien.
+    view = mesh_from_parts(name + "_view", hulls(gp, 0.0, 0.2, 0.12))
+    set_lod(view, 14, 0)
+    # Chemin praticable : dessus des massifs, dalle de l'armoire, paliers.
+    if not ruin:
+        rw = mesh_from_parts(name + "_roadway", roadway_parts(build_parts(fn, 3)[0]))
+        set_lod(rw, 11, 0)
     out = os.path.join(DATA, name + ("_ruin" if ruin else "") + ".p3d")
     bpy.context.view_layer.objects.active = objs[0]
     res = bpy.ops.a3ob.export_p3d(filepath=out, generate_components=True)
@@ -1021,7 +1184,8 @@ def previews():
     sc = scene_setup()
     pm = preview_materials()
     ground()
-    place = {"relay_tower_30": (-22, 0), "relay_tower_40": (0, 6), "relay_tower_50": (24, 0)}
+    place = {"relay_tower_30": (-22, 0), "relay_tower_40": (0, 6), "relay_tower_50": (24, 0),
+             "relay_tower_m12": (-40, 4), "relay_tower_m20": (44, 4)}
     objs = {}
     for name, (fn, h, _r) in TOWERS.items():
         if os.environ.get("RUINS_ONLY") == "1":
@@ -1041,7 +1205,9 @@ def intact_previews(sc, objs, place):
     render(sc, os.path.join(RENDER, "tower_family.png"))
     for name, cam, tgt, lens in (("relay_tower_30", (-14, -9, 16), (-22, 0, 27), 45),
                                  ("relay_tower_40", (8, -6, 25), (0, 6, 37), 40),
-                                 ("relay_tower_50", (34, -12, 34), (24, 0, 46), 42)):
+                                 ("relay_tower_50", (34, -12, 34), (24, 0, 46), 42),
+                                 ("relay_tower_m12", (-34, -6, 8), (-40, 4, 10), 40),
+                                 ("relay_tower_m20", (50, -8, 13), (44, 4, 18), 40)):
         sc.camera = None
         camera(sc, cam, tgt, lens, (1200, 1200))
         render(sc, os.path.join(RENDER, f"tower_{name[-2:]}_top.png"))

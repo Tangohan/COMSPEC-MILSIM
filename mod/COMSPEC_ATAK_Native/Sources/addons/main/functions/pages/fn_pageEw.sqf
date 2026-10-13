@@ -49,7 +49,7 @@ switch (_tab) do {
         (["geoAllowed"] call comspec_atak_native_fnc_ewAction) params ["_ok", "_why"];
         if !(_ok) exitWith { _rows pushBack ["text", format ["<t color='#f2ab33'>%1</t>", _why]]; };
         _rows append [
-            ["text", "<t size='0.8' color='#8a9a93'>Requête à l'opérateur : position par triangulation des antennes, avec une marge d'erreur. Un téléphone éteint, sans réseau ou changé ne répond plus.</t>"],
+            ["text", "<t size='0.8' color='#8a9a93'>Requête à l'opérateur : position par triangulation des antennes, avec une marge d'erreur. Un téléphone éteint, sans réseau ou changé ne répond plus. Batterie vide : sa carte SIM passe en mode secours et reste localisable par les relais, même pour un allié.</t>"],
             ["edit", "geoq", "Numéro (06 12 34 56 78), IMEI (35-…) ou MAC (A4:5E:…)", _f getOrDefault ["geoq", ""]],
             ["buttons", [["LOCALISER", { ['geoLocate'] call comspec_atak_native_fnc_ewAction; }, true]]]
         ];
@@ -63,6 +63,8 @@ switch (_tab) do {
             private _stTxt = switch (_st) do {
                 case "OK": { "<t color='#5cc76b'>en ligne</t>" };
                 case "OFF": { "<t color='#f2ab33'>éteint ou hors réseau</t>" };
+                case "SOS": { format ["<t color='#f2ab33'>batterie vide · secours SIM (%1)</t>", [format ["%1 relais", _e getOrDefault ["relays", 0]], "antennes"] select ((_e getOrDefault ["relays", 0]) isEqualTo 0)] };
+                case "SOSNOREL": { "<t color='#f2ab33'>batterie vide · aucun relais ne l'entend</t>" };
                 default { "<t color='#e5483a'>abonné introuvable</t>" };
             };
             private _where = if ((count _p) < 2) then { "<t color='#8a9a93'>aucune position</t>" } else {

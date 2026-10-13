@@ -404,7 +404,7 @@ if ((_sqRaw select [0, 3]) isEqualTo "OK|") then {
     };
     ["File d'envoi Athena", format ["Latence moyenne %1 ms · p95 %2 ms · 5 dernières min : %3 surcharge(s), %4 erreur(s) serveur, %5 délai(s)", _avg, _p95, _n429, _n5xx, _nto]] call _section;
     ["État d'Athena", format ["<t color='%1'>%2</t>", _hex get (_ovTxt select 0), _ovTxt select 1]] call _info;
-    (missionNamespace getVariable ["COMSPEC_ATAK_ServerPresence", []]) params [["_svSt", ""], ["_svLbl", ""], ["_svCom", ""], ["", ""], ["_svAt", ""]];
+    (missionNamespace getVariable ["COMSPEC_ATAK_ServerPresence", []]) params [["_svSt", ""], ["_svLbl", ""], ["_svCom", ""], "", ["_svAt", ""]];
     if (_svSt in ["ok", "away"]) then {
         ["Serveur de jeu", [format ["<t color='%1'>%2</t> · vérifié à %3", _hex get "ok", [_svLbl] call _esc, _svAt],
             format ["<t color='%1'>hors des serveurs de %2</t> · vérifié à %3", _hex get "warn", [["votre communauté", _svCom] select (_svCom isNotEqualTo "")] call _esc, _svAt]] select (_svSt isEqualTo "away")] call _info;

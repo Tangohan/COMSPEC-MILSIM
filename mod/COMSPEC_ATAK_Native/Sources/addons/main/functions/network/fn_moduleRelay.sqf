@@ -21,6 +21,8 @@ private _kinds = [["Radio relais portable", "portable"], ["Mât tactique", "mat"
 private _sides = [["Tous les camps", ""], ["BLUFOR", "WEST"], ["OPFOR", "EAST"], ["Indépendants", "GUER"], ["Civils", "CIV"]];
 private _auts = [["Secteur / groupe électrogène", 0], ["Batterie 1 h", 60], ["Batterie 2 h", 120], ["Batterie 4 h", 240], ["Batterie 8 h", 480], ["Batterie 12 h", 720], ["Batterie 24 h", 1440]];
 private _ups = [["Raccordé (satellite ou fibre)", "root"], ["Répéteur (passe par un relais raccordé)", "repeater"]];
+// Bande de fréquence : retenue sur le relais (COMSPEC_AtakRelayFreq, MHz, 0 = automatique) pour les fréquences à venir.
+private _freqs = [["Automatique", 0], ["UHF 400 MHz", 400], ["L 1,4 GHz", 1400], ["S 2,4 GHz", 2400], ["C 4,9 GHz", 4900]];
 // Portée Eden : le cercle du module (le plus grand des deux axes).
 private _area = _logic getVariable ["objectArea", []];
 private _eden = if ((count _area) >= 2) then { (_area select 0) max (_area select 1) } else { 0 };
@@ -30,13 +32,14 @@ private _cur = [
     [_logic getVariable ["Range", 0], _eden] select (_eden > 0),
     _logic getVariable ["Throughput", 0], _logic getVariable ["Height", 0], _logic getVariable ["Slots", 0],
     _logic getVariable ["Autonomy", 0], _logic getVariable ["Uplink", "root"],
-    _logic getVariable ["StartOn", true], _logic getVariable ["Indestructible", false], _logic getVariable ["Required", false]
+    _logic getVariable ["StartOn", true], _logic getVariable ["Indestructible", false], _logic getVariable ["Required", false],
+    _logic getVariable ["Freq", 0]
 ];
 
 private _apply = {
     params ["_vals", "_args"];
     _args params ["_ctx", "_logicPos", "_logicDir"];
-    _vals params ["_name", "_kind", "_side", "_range", "_mb", "_h", "_slots", "_aut", "_up", "_on", "_indes", "_req"];
+    _vals params ["_name", "_kind", "_side", "_range", "_mb", "_h", "_slots", "_aut", "_up", "_on", "_indes", "_req", ["_freq", 0]];
     private _preset = createHashMapFromArray [
         ["portable", [1500, 4, 2.5, 8, 0, ["Land_PortableLongRangeRadio_F", "Land_SurvivalRadio_F"]]],
         ["mat", [3000, 8, 10, 24, 0, ["Land_Antenna_01_F", "Land_TTowerSmall_1_F"]]],
@@ -84,6 +87,7 @@ private _apply = {
         _x setVariable ["COMSPEC_AtakRelaySide", _side, true];
         _x setVariable ["COMSPEC_AtakRelayRoot", _up isNotEqualTo "repeater", true];
         _x setVariable ["COMSPEC_AtakRelayOn", _on, true];
+        _x setVariable ["COMSPEC_AtakRelayFreq", _freq, true];
         _x setVariable ["COMSPEC_AtakRelayAutonomy", _aut, true];
         _x setVariable ["COMSPEC_AtakRelayBatt", [-1, 100] select (_aut > 0), true];
         _x setVariable ["COMSPEC_AtakRelayIp", format ["10.%1.%2.1", ((round abs (_p select 0)) mod 220) + 10, ((round abs (_p select 1)) mod 220) + 10], true];
@@ -114,7 +118,8 @@ if (_ctx get "zeus") then {
             ["COMBO", "Liaison", _ups, _cur select 8],
             ["CHECK", "Allumé", _cur select 9],
             ["CHECK", "Indestructible", _cur select 10],
-            ["CHECK", "Relais obligatoires", _cur select 11]
+            ["CHECK", "Relais obligatoires", _cur select 11],
+            ["COMBO", "Bande de fréquence", _freqs, _cur select 12]
         ],
         _apply, _args,
         "Lâchez le module sur un objet ou un véhicule pour l'équiper, sinon l'objet du type est créé. Répéteur : doit voir un relais raccordé. Relais obligatoires : sans relais, presque plus de réseau."
