@@ -15,7 +15,7 @@ diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
     { [true] call comspec_atak_native_fnc_langApply; }] call CBA_fnc_addSetting;
 [] call comspec_atak_native_fnc_langApply;
 
-// Intro au démarrage du jeu (fn_introSplash), désactivée par défaut (TTRD, 1.65.0 : buggée). Les deux réglages sont
+// Intro au démarrage du jeu (fn_introSplash), désactivée par défaut (TTRD, 1.66.0 : buggée). Les deux réglages sont
 // recopiés dans le profil : l'intro joue avant que CBA lise ses réglages.
 ["comspec_atak_native_intro_enabled", "CHECKBOX",
     ["Intro au démarrage", "Désactivée par défaut. Cochée : la marque COMSPEC et un trait vert s'affichent sur l'écran de démarrage d'Arma. Pris en compte au prochain lancement du jeu."],
