@@ -64,23 +64,13 @@ switch (_action) do {
                 if (_r isEqualType "") then { _r } else { str _r }
             };
             private _mine = { (uiNamespace getVariable ["COMSPEC_ATAK_AthenaLinkToken", -1]) isEqualTo _token };
-            private _url = if (_bridge) then { [] call comspec_overwatch_connect_fnc_portalUrl } else { profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"] };
+            // Portail Athena fixe : plus d’adresse réglable ni mémorisée.
+            private _url = "https://athena.ttrd.fr/public";
             private _pack = if (_bridge) then { [] call comspec_overwatch_connect_fnc_packVersion } else { "native" };
-            // Adresse illisible (réglage vide, sans http) : le portail par défaut, plutôt qu'« invalid_url ».
-            private _default = "https://athena.ttrd.fr/public";
-            _url = trim _url;
-            if (((toLower _url) find "http") isNotEqualTo 0) then { _url = _default; };
             private _steam = getPlayerUID player;
             if ((count _steam) >= 8) then { ["SetSteamId", [_steam]] call _ext; };
             // OK|code|durée s|adresse|intervalle s|adresse avec le code (6e champ : COMSPEC Link 2.0.72+)
             private _cells = (["PairStart", [_url, _steam, _pack]] call _ext) splitString "|";
-            if !(call _mine) exitWith {};
-            // Adresse refusée par la DLL : un second essai sur le portail par défaut avant d'abandonner.
-            if ((_cells param [1, ""]) isEqualTo "invalid_url" && {_url isNotEqualTo _default}) then {
-                ["WARN", "ATHENA", format ["PairStart : adresse refusée (%1), nouvel essai sur %2", _url, _default]] call comspec_atak_native_fnc_log;
-                _url = _default;
-                _cells = (["PairStart", [_url, _steam, _pack]] call _ext) splitString "|";
-            };
             if !(call _mine) exitWith {};
             if ((_cells param [0, ""]) isNotEqualTo "OK") exitWith {
                 private _why = _cells param [1, "sans réponse"];

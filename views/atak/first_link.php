@@ -187,19 +187,6 @@ $steps = [
                     </li>
                 </ul>
 
-                <?php if ($portalUrl !== ''): ?>
-                <p class="at-first-link__copy" style="margin-top:0.85rem;margin-bottom:0;">
-                    Adresse du portail (réglage avancé, rarement nécessaire si Appairer a réussi) :
-                </p>
-                <div class="at-first-link__copy-row">
-                    <pre id="fl-portal-url"><?= htmlspecialchars($portalUrl, ENT_QUOTES, 'UTF-8') ?></pre>
-                    <button type="button" class="at-first-link__btn at-first-link__btn--ghost" data-fl-copy="fl-portal-url">Copier</button>
-                </div>
-                <p class="at-first-link__copy" style="margin-top:0.4rem;font-size:0.92em;opacity:0.9;">
-                    Si besoin : téléphone → <strong>Paramètres</strong> → rubrique <strong>Liaison au poste</strong> → coller l’adresse, puis Enregistrer la liaison.
-                </p>
-                <?php endif; ?>
-
                 <?php if (!$hasAccessKey): ?>
                 <p class="at-first-link__callout at-first-link__callout--warn">
                     Votre communauté n’a pas encore de clé d’accès. Un administrateur doit en générer une dans

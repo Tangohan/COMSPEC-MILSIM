@@ -120,8 +120,7 @@ switch (toLower _mode) do {
     case "remote": {
         if (!canSuspend) exitWith { ["remote"] spawn comspec_atak_native_fnc_integrityCheck; };
         private _bridge = [] call comspec_atak_native_fnc_bridge;
-        private _url = if (_bridge && {!isNil "comspec_overwatch_connect_fnc_portalUrl"}) then { [] call comspec_overwatch_connect_fnc_portalUrl } else { profileNamespace getVariable ["COMSPEC_ATAK_Native_AthenaUrl", "https://athena.ttrd.fr/public"] };
-        if (!(_url isEqualType "") || {((toLower trim _url) find "http") isNotEqualTo 0}) then { _url = "https://athena.ttrd.fr/public"; };
+        private _url = "https://athena.ttrd.fr/public";
         private _ext = ["COMSPECATAKNativeExtension", "COMSPECExtension"] select _bridge;
         private _r = ([_ext, "LatestVersions", [trim _url]] call comspec_atak_native_fnc_extAwait) param [0, ""];
         if !(_r isEqualType "") then { _r = str _r; };
