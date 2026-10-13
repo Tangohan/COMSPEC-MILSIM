@@ -7,6 +7,7 @@
                   + rallumer, réparer l'écran, diagnostic d'Overwatch (repris ici et retirés de « Équipement »)
       Accessoires ▸ batterie externe, filtre d'écran JVN
       Passerelle du véhicule ▸ relais, poste de commandement, couper (équipage) ; aussi sur les véhicules (dehors)
+      Relais ATAK (sur l'objet relais) ▸ état, couper, allumer, changer la batterie
       Effacement d'urgence
       Débrancher le câble DL-7 (pendant une extraction)
     Appelé une fois depuis XEH_postInitClient, avant les actions d'entretien.
@@ -187,6 +188,27 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
     }] call comspec_atak_native_fnc_aceAction;
     [_x, 0, ["ACE_MainActions"], _k, true] call ace_interact_menu_fnc_addActionToClass;
 } forEach ["LandVehicle", "Ship", "Helicopter"];
+
+// Relais du réseau ATAK (module « ATAK · Relais » ou Overwatch), sur l'objet relais : état, couper, allumer, batterie.
+// Tout le monde peut couper un relais trouvé sur le terrain, ami comme ennemi.
+{
+    private _cls = _x;
+    private _r = ["COMSPEC_ATAK_Relay", "Relais ATAK", "\A3\ui_f\data\map\mapcontrol\transmitter_CA.paa", {},
+        { _target getVariable ["COMSPEC_AtakRelay", false] && {alive _target} }] call comspec_atak_native_fnc_aceAction;
+    [_cls, 0, ["ACE_MainActions"], _r, true] call ace_interact_menu_fnc_addActionToClass;
+    private _path = ["ACE_MainActions", "COMSPEC_ATAK_Relay"];
+    {
+        _x params ["_id", "_name", "_code", "_cond"];
+        [_cls, 0, _path, [_id, _name, "", _code, _cond] call comspec_atak_native_fnc_aceAction, true] call ace_interact_menu_fnc_addActionToClass;
+    } forEach [
+        ["COMSPEC_ATAK_RelayInfo", "État du relais", { ["info", _target] call comspec_atak_native_fnc_relayNet; }, { true }],
+        ["COMSPEC_ATAK_RelayOff", "Couper le relais", { ["power", [_target, "off"]] call comspec_atak_native_fnc_relayNet; }, { _target getVariable ["COMSPEC_AtakRelayOn", true] }],
+        ["COMSPEC_ATAK_RelayOn", "Allumer le relais", { ["power", [_target, "on"]] call comspec_atak_native_fnc_relayNet; }, { !(_target getVariable ["COMSPEC_AtakRelayOn", true]) }],
+        ["COMSPEC_ATAK_RelayBatt", "Changer la batterie", {
+            [10, _target, { ["power", [_this select 0, "battery"]] call comspec_atak_native_fnc_relayNet; }, {}, "Changement de la batterie du relais…"] call ace_common_fnc_progressBar;
+        }, { private _b = _target getVariable ["COMSPEC_AtakRelayBatt", -1]; _b isEqualType 0 && {_b >= 0} && {_b < 95} }]
+    ];
+} forEach ["Static", "Thing", "LandVehicle", "Ship", "Air"];
 
 [_root, "COMSPEC_ATAK_Wipe", "<t color='#e5483a'>Effacement d'urgence</t>", "", { ["wipe"] call comspec_atak_native_fnc_phoneSecurity; },
     { !(["wiped"] call comspec_atak_native_fnc_phoneSecurity) }] call _add;

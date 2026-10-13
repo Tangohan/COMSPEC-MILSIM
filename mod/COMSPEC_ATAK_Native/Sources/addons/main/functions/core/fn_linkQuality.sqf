@@ -1,7 +1,7 @@
 /*
     Qualité de la liaison radio-data du téléphone (simulation de débit), recalculée au plus toutes les 2 s.
     Renvoie un HashMap : bars (0-4), kbps, latency (ms), loss (%), label, factors [[nom, effet]...].
-    Facteurs : liaison Athena / relais Overwatch, passerelle de véhicule ou poste de commandement mobile, bâtiment au-dessus de la tête, masque du relief,
+    Facteurs : liaison Athena, meilleur relais reçu (fn_relayNet "best" : relais de mission, passerelle de véhicule, PC mobile), bâtiment au-dessus de la tête, masque du relief,
     véhicule, pluie et brouillard, zone radio, brouilleurs de mission (COMSPEC_ATAK_Jammers = [[pos, rayon]...]),
     état du téléphone. Réglage serveur comspec_atak_native_net_sim : coupé, débit plein et sans délai.
 */
@@ -22,8 +22,11 @@ private _mul = 1;
 private _lat = 60;
 private _loss = 0;
 private _kbps = 4000;
-// Passerelle de véhicule de son camp à portée (fn_vehicleGateway) : relais monté sur véhicule ou PC mobile.
-private _gwv = ["nearest"] call comspec_atak_native_fnc_vehicleGateway;
+// Meilleur relais reçu (fn_relayNet "best") : relais de la mission (module « ATAK · Relais » ou Overwatch), passerelle
+// de véhicule ou PC mobile ; relief, batterie, brouillage, chaîne des répéteurs et saturation déjà comptés.
+private _best = ["best"] call comspec_atak_native_fnc_relayNet;
+// Relais obligatoires : mode réaliste d'Athena, ou case « Relais obligatoires » d'un module « ATAK · Relais » de la mission.
+private _req = (missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]) || {missionNamespace getVariable ["COMSPEC_ATAK_RelaysRequired", false]};
 private _bridge = [] call comspec_atak_native_fnc_bridge;
 if (_bridge) then {
     private _link = toLower (missionNamespace getVariable ["COMSPEC_LinkState", "offline"]);
@@ -35,17 +38,6 @@ if (_bridge) then {
     };
     private _ms = missionNamespace getVariable ["COMSPEC_LastLatencyMs", -1];
     if (_ms isEqualType 0 && {_ms > 0}) then { _lat = _ms; };
-    if (!isNil "comspec_overwatch_connect_fnc_getNearestAtakRelay") then {
-        private _r = [] call comspec_overwatch_connect_fnc_getNearestAtakRelay;
-        if (_r isEqualType createHashMap && {(count _r) > 0}) then {
-            if ((_r getOrDefault ["in_range", false]) && {_r getOrDefault ["alive", true]}) then {
-                _kbps = ((_r getOrDefault ["throughput_mbps", 4]) * 1000) max 200;
-                _f pushBack [format ["Relais %1 à %2 m", _r getOrDefault ["name", ""], round (_r getOrDefault ["dist", 0])], format ["%1 Mbit/s", _r getOrDefault ["throughput_mbps", 4]]];
-            } else {
-                if ((missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]) && {_gwv isEqualTo []}) then { _mul = _mul * 0.1; _f pushBack ["Aucun relais à portée", "-90 %"]; };
-            };
-        };
-    };
     private _zone = missionNamespace getVariable ["COMSPEC_ZoneEffects", createHashMap];
     if (_zone isEqualType createHashMap && {(count _zone) > 0}) then {
         _loss = _loss max (_zone getOrDefault ["packet_loss_floor", 0]);
@@ -54,10 +46,13 @@ if (_bridge) then {
         _f pushBack [format ["Zone %1", _zone getOrDefault ["name", "radio"]], format ["perte %1 %%", _loss]];
     };
 };
-if (_gwv isNotEqualTo []) then {
-    _gwv params ["", "_gd", "_gr", "_gmb", "_gm", "_gn"];
-    _kbps = _kbps max round (_gmb * 1000 * (1 - 0.6 * (_gd / _gr) ^ 2));
-    _f pushBack [format ["%1 %2 à %3 m", ["Passerelle", "Poste de commandement"] select (_gm isEqualTo "cp"), _gn, round _gd], format ["%1 Mbit/s", _gmb]];
+if (_req && {_best isEqualTo []}) then { _mul = _mul * 0.1; _f pushBack ["Aucun relais à portée", "-90 %"]; };
+if (_best isNotEqualTo []) then {
+    _best params ["", "_gn", "_gd", "_gmb", "_gl", "_gk", "", "_gu", "_gs"];
+    // Relais obligatoires : on a le débit du relais ; sinon il ne fait qu'améliorer le direct.
+    if (_req) then { _kbps = (round (_gmb * 1000)) max 200; _loss = _loss max _gl; } else { _kbps = _kbps max round (_gmb * 1000); };
+    _f pushBack [format ["%1 %2 à %3 m", createHashMapFromArray [["relay", "Relais"], ["gw", "Passerelle"], ["cp", "Poste de commandement"]] getOrDefault [_gk, "Relais"], _gn, round _gd], format ["%1 Mbit/s", _gmb toFixed 1]];
+    if (_gs > 0 && {_gu > _gs}) then { _f pushBack [format ["Relais saturé (%1 téléphones pour %2 places)", _gu, _gs], format ["-%1 %%", round (100 * (1 - _gs / _gu))]]; };
 };
 private _unit = vehicle player;
 private _eye = eyePos player;

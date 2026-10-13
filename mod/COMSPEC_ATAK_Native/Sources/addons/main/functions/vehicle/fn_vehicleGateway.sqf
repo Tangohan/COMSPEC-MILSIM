@@ -8,6 +8,9 @@
     maillage Wave Relay s'y raccroche (fn_waveRelayAction, calque carte).
     État public du véhicule : COMSPEC_ATAK_Gateway = [mode, camp (str side), nom]. Liste publique tenue par le
     serveur : COMSPEC_ATAK_Gateways. Portées réglables par mission : COMSPEC_ATAK_GwRange = [relay, cp] en mètres.
+    Réglage serveur comspec_atak_native_vehicle_gateways (désactivé par défaut) : coupé, aucune passerelle ni action ACE,
+    celles déjà ouvertes sont refermées au balayage suivant. Un véhicule relais voulu par la mission se pose avec le
+    module « ATAK · Relais » synchronisé au véhicule (fn_moduleRelay).
     Params : [action, véhicule]
       "can" v        : le joueur peut-il commander la passerelle (équipage à bord, ou à moins de 6 m dehors) ?
       "state" v      : "" | "relay" | "cp"
@@ -19,11 +22,12 @@
 params [["_act", "list"], ["_v", objNull]];
 private _ranges = missionNamespace getVariable ["COMSPEC_ATAK_GwRange", [4000, 10000]];
 private _spec = { params ["_mode"]; [[_ranges select 0, 6], [_ranges select 1, 20]] select (_mode isEqualTo "cp") };
+private _on = missionNamespace getVariable ["comspec_atak_native_vehicle_gateways", false];
 private _ok = { params ["_o"]; !isNull _o && {alive _o} && {!(_o isKindOf "StaticWeapon")} && {_o isKindOf "LandVehicle" || {_o isKindOf "Ship"} || {_o isKindOf "Helicopter"}} };
 switch (_act) do {
     case "state": { (_v getVariable ["COMSPEC_ATAK_Gateway", []]) param [0, ""] };
     case "can": {
-        if !([_v] call _ok) exitWith { false };
+        if (!_on || {!([_v] call _ok)}) exitWith { false };
         private _in = objectParent player isEqualTo _v;
         (_in && {driver _v isEqualTo player || {commander _v isEqualTo player} || {gunner _v isEqualTo player} || {effectiveCommander _v isEqualTo player}})
             || {!_in && {isNull objectParent player} && {(player distance _v) < 6}}
@@ -32,6 +36,9 @@ switch (_act) do {
     case "cp";
     case "off": {
         if !([_v] call _ok) exitWith { false };
+        if (!_on && {_act isNotEqualTo "off"}) exitWith {
+            ["WARNING", "Passerelles de véhicule désactivées sur ce serveur", 4, 30] call comspec_atak_native_fnc_notify; false
+        };
         if (_act isEqualTo "cp" && {(speed _v) > 1 || {!isTouchingGround _v && {!(_v isKindOf "Ship")}}}) exitWith {
             ["WARNING", "Arrêtez le véhicule pour déployer le poste de commandement", 4, 30] call comspec_atak_native_fnc_notify; false
         };
@@ -45,6 +52,7 @@ switch (_act) do {
         true
     };
     case "list": {
+        if (!_on) exitWith { [] };
         private _side = str side group player;
         ((missionNamespace getVariable ["COMSPEC_ATAK_Gateways", []]) select { [_x] call _ok && {((_x getVariable ["COMSPEC_ATAK_Gateway", []]) param [1, ""]) isEqualTo _side} }) apply {
             (_x getVariable ["COMSPEC_ATAK_Gateway", []]) params [["_m", "relay"], "", ["_n", ""]];
@@ -77,6 +85,7 @@ switch (_act) do {
         if (!isServer) exitWith {};
         _v params [["_mode", "off"], ["_veh", objNull], ["_side", ""]];
         if (isNull _veh) exitWith {};
+        if (!_on) then { _mode = "off"; };
         private _mast = _veh getVariable ["COMSPEC_ATAK_GwMast", objNull];
         if (!isNull _mast && {_mode isNotEqualTo "cp"}) then { deleteVehicle _mast; _veh setVariable ["COMSPEC_ATAK_GwMast", objNull]; };
         private _list = (missionNamespace getVariable ["COMSPEC_ATAK_Gateways", []]) select { !isNull _x && {_x isNotEqualTo _veh} };
@@ -116,6 +125,8 @@ switch (_act) do {
             if (!alive _x) then { if (!isNull _mast) then { deleteVehicle _mast; }; _x setVariable ["COMSPEC_ATAK_Gateway", nil, true]; continue };
             private _st = _x getVariable ["COMSPEC_ATAK_Gateway", []];
             if (_st isEqualTo []) then { continue };
+            // Réglage coupé en cours de partie : passerelle refermée, mât retiré.
+            if (!_on) then { if (!isNull _mast) then { deleteVehicle _mast; _x setVariable ["COMSPEC_ATAK_GwMast", objNull]; }; _x setVariable ["COMSPEC_ATAK_Gateway", nil, true]; continue };
             // Poste de commandement qui repart : mât replié, passerelle en relais.
             if ((_st select 0) isEqualTo "cp" && {(speed _x) > 3}) then {
                 if (!isNull _mast) then { deleteVehicle _mast; _x setVariable ["COMSPEC_ATAK_GwMast", objNull]; };

@@ -82,14 +82,18 @@ switch (_tab) do {
         };
         _rows pushBack ["text", "<t size='0.8'><t color='#33d94d'>●</t> 4 Mbit/s et plus  <t color='#bfd933'>●</t> 1,5  <t color='#ff9926'>●</t> 0,5  <t color='#e5332a'>●</t> faible  <t color='#777777'>●</t> zone blanche</t>"];
         _rows pushBack ["switch", "Relais et couverture sur la carte", profileNamespace getVariable ["COMSPEC_ATAK_MeshOnMap", false], { ["mapLinks"] call comspec_atak_native_fnc_waveRelayAction; }, "Calque Wave Relay : relais, portées, couverture, liens"];
-        _rows pushBack ["section", format ["Relais et passerelles (%1)", count _relays], "Portée, débit nominal, distance"];
+        _rows pushBack ["section", format ["Relais et passerelles (%1)", count _relays], "État, portée, débit, places, distance"];
         {
-            _x params ["_o", "_ap", "_name", "_kind", "_rng", "_mb", "_ok"];
+            _x params ["_o", "_ap", "_name", "_kind", "_rng", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "_root"];
             private _l = ["link", [_ap, _rng, _mb, eyePos player]] call comspec_atak_native_fnc_relayNet;
-            _rows pushBack ["text", format ["<t color='%1'>●</t> <t font='RobotoCondensedBold'>%2</t>  <t size='0.8' color='#8a9a93'>%3</t><br/><t size='0.8' color='#8a9a93'>%4 · portée %5 · %6 Mbit/s · %7 %8 · %9</t>",
+            private _det = [format ["portée %1", [_rng] call _dist], format ["%1 Mbit/s", _mb toFixed 1]];
+            if (_sl > 0) then { _det pushBack format ["%1/%2 places", _u, _sl]; };
+            if (_bt >= 0) then { _det pushBack format ["batterie %1 %%", round _bt]; };
+            if (_kind isEqualTo "relay" && {!_root}) then { _det pushBack "répéteur"; };
+            _rows pushBack ["text", format ["<t color='%1'>●</t> <t font='RobotoCondensedBold'>%2</t>  <t size='0.8' color='#8a9a93'>%3</t><br/><t size='0.8' color='#8a9a93'>%4 · %5 · %6 %7 · %8</t>",
                 ["#777777", "#7fb6e6"] select _ok, [_name] call _esc, createHashMapFromArray [["relay", "relais"], ["gw", "passerelle véhicule"], ["cp", "PC mobile"]] getOrDefault [_kind, _kind],
-                ["détruit", "intact"] select _ok, [_rng] call _dist, round _mb, [player distance2D _ap] call _dist, [player getDir _ap] call _card,
-                [format ["<t color='#e5483a'>hors de portée</t>"], format ["<t color='#5cc76b'>reçu %1 Mbit/s</t>", (_l select 1) toFixed 1]] select ((_l select 1) > 0)]];
+                [format ["<t color='#e5483a'>%1</t>", _st], "en service"] select _ok, _det joinString " · ", [player distance2D _ap] call _dist, [player getDir _ap] call _card,
+                [format ["<t color='#e5483a'>hors de portée</t>"], format ["<t color='#5cc76b'>reçu %1 Mbit/s</t>", (_l select 1) toFixed 1]] select ((_l select 1) > 0 && {_ok})]];
         } forEach _relays;
         if (_relays isEqualTo []) then { _rows pushBack ["text", "<t color='#8a9a93'>Aucun relais dans cette mission ni passerelle de véhicule active dans votre camp.</t>"]; };
         private _tri = missionNamespace getVariable ["COMSPEC_ATAK_Trilat", []];
