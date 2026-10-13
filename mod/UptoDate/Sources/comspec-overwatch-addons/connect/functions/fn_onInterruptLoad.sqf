@@ -36,7 +36,7 @@ private _mode = [] call comspec_overwatch_connect_fnc_athenaMode;
 private _link = missionNamespace getVariable ["COMSPEC_LinkState", "offline"];
 private _iso = missionNamespace getVariable ["COMSPEC_DiagIsolateActive", false];
 private _state = switch (true) do {
-    case (_iso): { [[0.95, 0.67, 0.20, 1], "Pas à pas en cours"] };
+    case (_iso): { [[0.95, 0.67, 0.20, 1], "Pas à pas"] };
     case (_mode isEqualTo "off"): { [[0.35, 0.58, 0.72, 1], "ATAK local"] };
     case (!_enabled): { [[0.58, 0.64, 0.60, 1], "Overwatch coupé"] };
     case (_link isEqualTo "linked"): { [[0.36, 0.78, 0.42, 1], "Liaison OK"] };

@@ -11,6 +11,15 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Menu Échap et Dépannage liaison refondus (ATAK natif 1.74.0)
+
+Non testé en jeu. Demande de TTRD : boutons du menu Échap en haut à droite, service de dépannage amélioré et UI refaite. Changements dans l'addon Overwatch connect embarqué (`comspec_overwatch_connect.pbo` repaqueté) ; pas de changement de DLL.
+- Menu Échap : les deux boutons quittent le haut gauche (ils couvraient le titre du menu) pour une barre COMSPEC en haut à droite, aux couleurs du téléphone : état de la liaison (Liaison OK, Hors ligne, ATAK local, Overwatch coupé…), « Dépannage liaison » et « Service Athéna : oui / non ». Pendant un pas à pas, le bouton devient « Arrêter le pas à pas ».
+- Dépannage liaison : le bouton ne coupe plus Overwatch pour 22 minutes d'office. Il ouvre une fenêtre de diagnostic immédiat : DLL COMSPEC Link, installation du mod (contrôles de #714 : PBO en double, versions mélangées, DLL périmée, mise à jour publiée), service Athéna, Overwatch, adresse Athena, liaison, compte et session, terminal ATAK porté, pertes, dernier pas à pas interrompu. Chaque problème donne sa cause probable et l'action à faire ; la correction proposée passe en vert (Reconnecter Athena, Lier mon compte, Rallumer Overwatch, Service Athéna).
+- « Copier le rapport » met le diagnostic et les versions dans le presse-papiers ; « Signaler un problème » ouvre le signalement existant.
+- Pas à pas (recherche de ce qui arrête le jeu) : au choix rapide (20 s par fonction) ou complet (55 s), lancé depuis la fenêtre. Nouveau bandeau compact en haut au centre avec barre de progression, temps restant et état de la liaison. L'étape mémorisée est effacée quand le pas à pas se termine ou est arrêté : elle ne reste affichée comme suspecte qu'après un vrai arrêt du jeu.
+- Textes traduits en anglais (dictionnaire i18n/en.txt).
+
 ## Texte du bouton PANIQUE (ATAK natif 1.73.0)
 
 Non testé en jeu. Demande de TTRD : nouveau texte sous PANIQUE, écran Détresse et contact.

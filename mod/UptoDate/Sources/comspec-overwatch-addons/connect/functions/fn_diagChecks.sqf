@@ -185,8 +185,8 @@ private _ko = _rows select { (_x select 0) isEqualTo "ko" };
 private _warn = _rows select { (_x select 0) isEqualTo "warn" };
 private _verdict = switch (true) do {
     case (_iso): { ["warn", "Pas à pas en cours" call _T] };
-    case ((count _ko) > 0): { ["ko", (format ["%1 problème(s)", count _ko]) call _T] };
-    case ((count _warn) > 0): { ["warn", "À surveiller" call _T] };
+    case (_ko isNotEqualTo []): { ["ko", (format ["%1 problème(s)", count _ko]) call _T] };
+    case (_warn isNotEqualTo []): { ["warn", "À surveiller" call _T] };
     case (_mode isEqualTo "off"): { ["info", "ATAK local" call _T] };
     default { ["ok", "Liaison OK" call _T] };
 };

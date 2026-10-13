@@ -35,11 +35,21 @@ _verdict params ["_vLvl", "_vTxt"];
 (_display displayCtrl 32) ctrlSetBackgroundColor (_rgba get _vLvl);
 
 // Contrôles : problèmes d'abord, puis avertissements, puis le reste.
-private _order = createHashMapFromArray [["ko", 0], ["warn", 1], ["info", 2], ["ok", 3]];
-private _sorted = [_rows, [], { _order getOrDefault [_x select 0, 9] }, "ASCEND"] call BIS_fnc_sortBy;
+private _sorted = [];
+{
+    private _lvl = _x;
+    _sorted append (_rows select { (_x select 0) isEqualTo _lvl });
+} forEach ["ko", "warn", "info", "ok"];
+// Textes venus de la DLL ou du site : & < > échappés pour parseText.
+private _esc = {
+    if ((_this find "&") < 0 && {(_this find "<") < 0} && {(_this find ">") < 0}) exitWith { _this };
+    ((toArray _this) apply { switch (_x) do { case 38: { "&amp;" }; case 60: { "&lt;" }; case 62: { "&gt;" }; default { toString [_x] }; } }) joinString ""
+};
 private _html = "";
 {
     _x params ["_lvl", "_title", "_value", "_hint"];
+    _value = _value call _esc;
+    _hint = _hint call _esc;
     if (_html isNotEqualTo "") then { _html = _html + "<br/>"; };
     _html = _html + format [
         "<t font='PuristaSemibold' size='0.78' color='%1'>%2</t>  <t font='PuristaSemibold' size='0.92' color='#E6F0E8'>%3</t>  <t font='PuristaMedium' size='0.88' color='#94A399'>%4</t>",
