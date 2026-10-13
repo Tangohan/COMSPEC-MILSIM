@@ -3892,6 +3892,13 @@ $migrationRunner->step('music_library', static function () use ($musicLibraryMig
     $musicLibraryMigrate($pdo);
 });
 
+// Formules offertes à une communauté par l'administration de la plateforme (e-mail + fenêtre aux gestionnaires).
+$planGiftMigrate = require $root . '/bootstrap/plan_gift_migration.php';
+$migrationRunner->step('plan_gifts', static function () use ($planGiftMigrate, $pdo): void {
+    echo "Migration plan_gifts / plan_gift_notices (formules offertes)...\n";
+    $planGiftMigrate($pdo);
+});
+
 $atakSendQueueMigrate = require $root . '/bootstrap/atak_send_queue_migration.php';
 $migrationRunner->step('atak_send_queue', static function () use ($atakSendQueueMigrate, $pdo): void {
     echo "Migration atak_send_queue_snapshots / atak_send_queue_history (files d'envoi vers Athena)...\n";

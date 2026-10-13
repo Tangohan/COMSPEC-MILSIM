@@ -13,6 +13,8 @@ final class EmailEvents
     public const PLATFORM_ACCOUNT_EMAIL_VERIFIED = 'PLATFORM_ACCOUNT_EMAIL_VERIFIED';
     public const REGISTER_SECURITY_COMPANION = 'REGISTER_SECURITY_COMPANION';
     public const COMMUNITY_CREATION_CHECKLIST = 'COMMUNITY_CREATION_CHECKLIST';
+    /** Formule offerte à la communauté par l'administration de la plateforme — e-mail aux gestionnaires. */
+    public const PLAN_GIFT_GRANTED = 'PLAN_GIFT_GRANTED';
     public const NEW_COMMUNITY_MEMBER = 'NEW_COMMUNITY_MEMBER';
     /** Membre a quitté la communauté — notification aux responsables. */
     public const MEMBER_LEFT_COMMUNITY_STAFF = 'MEMBER_LEFT_COMMUNITY_STAFF';

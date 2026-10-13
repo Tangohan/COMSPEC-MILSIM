@@ -95,6 +95,8 @@ final class AuditActionLabel
         'platform.tenant_plan_assigned' => 'Formule d’accès affectée à une communauté',
         'platform.tenant_identity_updated' => 'Identité d’une communauté mise à jour',
         'platform.tenant_type_assigned' => 'Profil d’outils d’une communauté modifié',
+        'platform.tenant_plan_gifted' => 'Formule offerte à une communauté',
+        'platform.tenant_plan_gift_revoked' => 'Formule offerte retirée',
         'audit.rollback' => 'Restauration d’état depuis le journal',
         'audit.rollback_alert' => 'Alerte envoyée depuis le journal',
     ];

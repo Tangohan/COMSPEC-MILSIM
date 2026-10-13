@@ -78,6 +78,7 @@ $platformNav = [
         ['path' => 'admin/tenants', 'label' => 'Annuaire des communautés', 'icon' => 'globe', 'access' => 'system', 'also' => ['admin/system/tenants'], 'desc' => 'Fiches, formules, interventions'],
         ['path' => 'admin/system/tenant-recovery', 'label' => 'Récupération communauté', 'icon' => 'lifebuoy', 'access' => 'system', 'desc' => 'Rendre la main à une communauté bloquée'],
         ['path' => 'admin/system/subscription-plans', 'label' => 'Formules d’accès', 'icon' => 'layers', 'access' => 'system', 'desc' => 'Paliers, modules et plafonds'],
+        ['path' => 'admin/formules-offertes', 'label' => 'Formules offertes', 'icon' => 'star', 'access' => 'system', 'desc' => 'Offrir une formule à une communauté, e-mail et fenêtre aux gestionnaires'],
         ['path' => 'admin/system/demo-nda', 'label' => 'Accès démo du site', 'icon' => 'key', 'access' => 'system', 'desc' => 'Codes et engagements de confidentialité'],
     ]],
     ['key' => 'securite', 'label' => 'Comptes & accès', 'items' => [

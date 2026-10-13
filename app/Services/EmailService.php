@@ -163,7 +163,7 @@ final class EmailService
      * Langue d'un destinataire : celle de son profil Athena (choisie dans le sélecteur du site), sinon celle de la
      * page qui déclenche l'envoi (connexion, inscription…), sinon le français.
      */
-    private function recipientLocale(string $to): string
+    public function recipientLocale(string $to): string
     {
         try {
             $user = \App\Core\Container::get(\App\Repositories\UserRepository::class)->findFirstByEmailGlobal($to);
@@ -342,6 +342,43 @@ final class EmailService
             $tenantId,
             null,
             ['purpose' => 'register_security_companion']
+        );
+    }
+
+    /**
+     * Formule offerte à une communauté : e-mail à un gestionnaire, rédigé dans sa langue ($lang fr|en).
+     */
+    public function sendPlanGiftGranted(
+        string $to,
+        string $lang,
+        string $displayName,
+        string $tenantName,
+        string $planName,
+        ?string $endsAt,
+        string $adminMessage,
+        string $manageUrl,
+        int $tenantId,
+        int $giftId
+    ): bool {
+        $copy = \App\Support\PlanGift::copy($lang, $tenantName, $planName, $endsAt);
+
+        return $this->sendTemplated(
+            EmailEvents::PLAN_GIFT_GRANTED,
+            'plan_gift_granted',
+            $to,
+            $copy['subject'],
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'planName' => $planName,
+                'endsAt' => $endsAt,
+                'adminMessage' => $adminMessage,
+                'manageUrl' => $manageUrl,
+                'lang' => $lang,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'plan_gift_granted', 'gift_id' => $giftId]
         );
     }
 
