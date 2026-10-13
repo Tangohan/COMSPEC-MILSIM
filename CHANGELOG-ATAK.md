@@ -38,22 +38,30 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Regroupement : Messages, Musique, Signaler un problème (ATAK natif 1.87.0)
+## Regroupement : JTAC, Messages, Musique, Signaler un problème (ATAK natif 1.87.0, COMSPEC Link 2.0.83)
 
 ### Résumé joueur
-Type : correctif
-FR : Messages, Musique et Signaler un problème plus pratiques
+Type : nouveauté
+FR : JTAC plus réaliste, Messages, Musique et Signaler un problème plus pratiques
+- JTAC : par défaut, c'est toi qui remplis le 9-LINE (IP, description de la cible, dégagement, remarques) et qui choisis ton appareil et ta cible ; les lignes calculées le restent. L'administrateur de ta communauté peut réactiver la complétion automatique dans Contrôle de mission.
 - Messages : la molette fait défiler la liste et la conversation, un bouton « Nouveau SMS » montre les joueurs de ton camp en ligne, et l'app reste fluide avec beaucoup de canaux.
 - Musique : en paysage, la pochette est à gauche et les commandes à droite ; Son, File d'attente, Favoris et Haut-parleurs s'ouvrent d'un clic, un seul à la fois, avec l'essentiel visible même fermés.
 - Signaler un problème : nouvelle fenêtre avec six types de problème, une case pour joindre ton journal (clés et mots de passe retirés), et un message clair « transmis » ou la raison du refus. L'envoi ne fige plus le jeu.
-EN : Messages, Music and Report a problem are easier to use
+EN : More realistic JTAC, easier Messages, Music and Report a problem
+- JTAC: by default you fill in the 9-LINE yourself (IP, target description, egress, remarks) and pick your aircraft and target; computed lines stay computed. Your community administrator can turn automatic completion back on in Mission control.
 - Messages: the mouse wheel scrolls the list and the conversation, a "New SMS" button shows the players on your side who are online, and the app stays smooth with many channels.
 - Music: in landscape, the cover sits on the left and the controls on the right; Sound, Queue, Favourites and Speakers open with a click, one at a time, with the key information visible even when closed.
 - Report a problem: a new window with six kinds of problem, a box to attach your log (keys and passwords removed), and a clear "sent" message or the reason it was refused. Sending no longer freezes the game.
 
 ### Détail technique
 
-Une seule version pour 3 PR regroupées (#760, #761, #766) : ATAK natif 1.87.0. COMSPEC Link reste en 2.0.82 (aucune DLL modifiée). main.pbo reconstruit avec HEMTT, comspec_overwatch_connect.pbo repatché (fenêtre Signaler un problème). i18n/en.txt fusionné à trois voies. Non testé en jeu.
+Une seule version pour 4 PR regroupées (#760, #761, #766, #768) : ATAK natif 1.87.0, COMSPEC Link 2.0.83 (la DLL change : nouveau réglage JTAC autorisé, recompiler avec build_mod.bat). main.pbo reconstruit avec HEMTT, comspec_overwatch_connect.pbo repatché (fenêtre Signaler un problème). i18n/en.txt fusionné à trois voies. Non testé en jeu.
+
+#### JTAC : saisie manuelle par défaut, complétion automatique en réglage admin (#768)
+
+- Nouveau réglage communauté `native_jtac_autofill` (catalogue AtakExperienceService, groupe réalisme, surface Contrôle de mission), défaut `off`. Ajouté à la liste blanche de COMSPEC Link (2.0.83) ; sans DLL à jour, la clé n'arrive pas et le mod reste en saisie manuelle.
+- fn_jtacLines : toute la complétion de 1.85.0 (appareil le plus proche, cible laser, IP à 5 NM, ligne 5, menaces, FAH, dégagement, armement) n'agit que si la règle vaut `on`. Un IP proposé avant la coupure est effacé. Expose `autoOn`.
+- fn_pageJtac : bouton IP AUTO masqué et textes d'aide adaptés quand la complétion est coupée.
 
 #### Fenêtre « Signaler un problème » refaite, envoi et journal fiables (#766)
 
@@ -80,24 +88,6 @@ Non testé en jeu. Retour de TTRD : défilement pénible en bas de l'onglet LECT
 - fn_pageMusic : sections en accordéon (clé « fold » de l'état d'interface, « Son » ouverte par défaut), action « fold » dans fn_musicAction.
 - Icônes ui_chevron_down / ui_chevron_up (gen_assets.py) ; icônes du lecteur gardées chargées (fn_textureKeep).
 - À vérifier en jeu : onglet LECTURE en plein écran paysage (pochette carrée à gauche), ouverture / fermeture des 4 sections, curseurs de volume dans « Son », portrait mini.
-## JTAC : saisie manuelle par défaut, complétion automatique en réglage admin (ATAK natif 1.87.0, COMSPEC Link 2.0.83)
-
-### Résumé joueur
-Type : nouveauté
-FR : JTAC : le 9-LINE se remplit à la main, comme en vrai
-- Par défaut, c'est toi qui saisis l'IP, la description de la cible, le dégagement et les remarques. Les lignes calculées (cap, distance, altitudes, position, amis) restent calculées.
-- L'appareil et la cible ne sont plus choisis à ta place : choisis ton appareil et verrouille ou pose ta cible.
-- L'administrateur de ta communauté peut réactiver la complétion automatique dans Contrôle de mission, section Réalisme du téléphone.
-EN : JTAC: the 9-LINE is filled in by hand, like the real thing
-- By default you enter the IP, the target description, the egress and the remarks yourself. Computed lines (heading, distance, elevation, position, friendlies) are still computed.
-- The aircraft and the target are no longer picked for you: choose your aircraft and lock or set your target.
-- Your community administrator can turn automatic completion back on in Mission control, Phone realism section.
-
-### Détail technique
-- Nouveau réglage communauté `native_jtac_autofill` (catalogue AtakExperienceService, groupe réalisme, surface Contrôle de mission), défaut `off`. Ajouté à la liste blanche de COMSPEC Link (2.0.83) ; sans DLL à jour, la clé n'arrive pas et le mod reste en saisie manuelle.
-- fn_jtacLines : toute la complétion de 1.85.0 (appareil le plus proche, cible laser, IP à 5 NM, ligne 5, menaces, FAH, dégagement, armement) n'agit que si la règle vaut `on`. Un IP proposé avant la coupure est effacé. Expose `autoOn`.
-- fn_pageJtac : bouton IP AUTO masqué et textes d'aide adaptés quand la complétion est coupée.
-
 ## Barlow Condensed revient en test dans Réglages > Police (ATAK natif 1.86.0)
 
 ### Résumé joueur
