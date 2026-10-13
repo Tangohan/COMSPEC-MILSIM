@@ -43,7 +43,7 @@ final class PlatformSiteAdminAssetTest extends TestCase
         self::assertStringContainsString('Récupération communauté', $sidebar);
         self::assertStringContainsString('Communautés de test', $sidebar);
         self::assertStringContainsString('Administration complète du site', $directory);
-        self::assertStringContainsString('Quatre postes, tout le site', $directory);
+        self::assertStringContainsString('Tous les outils du site', $directory);
         self::assertStringContainsString('admin/system/demo-nda', $quick);
         self::assertStringContainsString('admin/system/updates', $quick);
         self::assertStringContainsString('admin/system/advanced-fiche-edit', $quick);
