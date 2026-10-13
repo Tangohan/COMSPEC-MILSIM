@@ -2,7 +2,7 @@
     Remonte une erreur / un bug vers Athena (POST /api/atak/mod-report).
     Params: [_level, _channel, _message, _detail, _source]
       _level  — ERROR|WARN|INFO|BUG
-      _source — auto|player|boot
+      _source — auto|player|player-nolog|boot (player-nolog : la DLL ne joint pas le journal)
 */
 params [
     ["_level", "ERROR", [""]],
@@ -38,10 +38,12 @@ if (!(_map isEqualType createHashMap)) then { _map = createHashMap; };
 // Table bornée (fuite mémoire sur une longue session sinon).
 if (count _map > 200) then { _map = createHashMap; };
 private _last = _map getOrDefault [_fp, -99999];
-if (_source isNotEqualTo "player" && {(diag_tickTime - _last) < 300}) exitWith { false };
+// Signalement joueur (« player », ou « player-nolog » quand le journal n'est pas joint) : jamais limité ici.
+private _isPlayer = (_source select [0, 6]) isEqualTo "player";
+if (!_isPlayer && {(diag_tickTime - _last) < 300}) exitWith { false };
 // Garde globale : au plus un signalement auto / 60 s, toutes empreintes confondues.
-if (_source isNotEqualTo "player" && {(diag_tickTime - (missionNamespace getVariable ["COMSPEC_DiagReportLastAuto", -99999])) < 60}) exitWith { false };
-if (_source isNotEqualTo "player") then { missionNamespace setVariable ["COMSPEC_DiagReportLastAuto", diag_tickTime, false]; };
+if (!_isPlayer && {(diag_tickTime - (missionNamespace getVariable ["COMSPEC_DiagReportLastAuto", -99999])) < 60}) exitWith { false };
+if (!_isPlayer) then { missionNamespace setVariable ["COMSPEC_DiagReportLastAuto", diag_tickTime, false]; };
 _map set [_fp, diag_tickTime];
 missionNamespace setVariable ["COMSPEC_DiagReportThrottle", _map, false];
 
@@ -94,7 +96,7 @@ if (count _detailApi > 1800) then {
 };
 
 private _fpServer = "";
-if (_source isEqualTo "player") then {
+if (_isPlayer) then {
     _fpServer = format ["player_%1", round diag_tickTime];
 } else {
     {

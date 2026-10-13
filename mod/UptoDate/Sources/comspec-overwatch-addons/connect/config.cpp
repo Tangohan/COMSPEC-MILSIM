@@ -99,6 +99,7 @@ class CfgFunctions {
             class reportDiag {};
             class bugReportShow {};
             class bugReportSubmit {};
+            class bugReportPick {};
             class diagIsolateAllows {};
             class diagIsolateCatalog {};
             class diagIsolateProbe {};

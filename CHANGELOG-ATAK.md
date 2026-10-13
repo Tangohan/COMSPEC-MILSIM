@@ -79,6 +79,27 @@ Non testé en jeu. Demande de TTRD : « On peut pas tout compléter ? » (captur
 - fn_pageJtac : champs proposés en vert (nouveau genre de ligne autoedit dans fn_formRender), consigne explicite sans cible, « Il manque : … » détaillé, bouton IP AUTO.
 - fn_formRender : le bandeau strip ne fait plus chevaucher ses deux textes (colonnes, passage à la ligne).
 - À tester en jeu : fiche avec cible verrouillée, laser allumé sans verrouiller, IP posé à la main puis IP AUTO, description et menaces avec ennemis connus ou non, saisie d'une valeur puis changement de cible (la saisie reste, les propositions suivent).
+## Fenêtre « Signaler un problème » refaite, envoi et journal fiables (ATAK natif 1.85.0)
+
+### Résumé joueur
+Type : correctif
+FR : Signaler un problème : nouvelle fenêtre, l'envoi fonctionne et le journal est joint
+- La fenêtre est refaite : six boutons pour choisir le type de problème, un grand champ pour raconter ce qui s'est passé.
+- Une case « Joindre mon journal de session » dit clairement ce qui part ; clés et mots de passe sont retirés avant l'envoi.
+- Après l'envoi, la fenêtre affiche « Signalement transmis » ou la raison du refus, et votre texte est gardé pour réessayer.
+- L'envoi ne fige plus le jeu.
+EN : Report a problem: new window, sending works and the log is attached
+- The window is redesigned: six buttons to pick the kind of problem, a large field to tell what happened.
+- An "Attach my session log" box says clearly what is sent; keys and passwords are removed before sending.
+- After sending, the window shows "Report sent" or why it was refused, and your text is kept to retry.
+- Sending no longer freezes the game.
+
+### Détail technique
+- `display_bug_report.hpp` (idd 9992) refait aux couleurs de l'ATAK natif : catégories en 6 boutons (`fn_bugReportPick`, code envoyé dans `channel`), champ multi-lignes 1500 caractères, `RscCheckBox` 9805 (cochée par défaut) avec explication, statut 9820, boutons « Envoyer le signalement » (primaire) / « Annuler ».
+- `fn_bugReportSubmit` : lancé en `spawn` (extAwait asynchrone, plus de gel), message ≥ 10 caractères, résultat dans la fenêtre (succès : bouton « Fermer » ; échec : raison selon `rate_limited`, `invalid_url`, `http_503`, `timeout`, `invalid`, extension absente, bouton « Réessayer »).
+- Journal : avant, le détail était coupé aux 1800 premiers caractères (les lignes les plus anciennes) et, au-dessus de 800, la DLL n'ajoutait pas la fin du journal. Désormais instantané court (< 800 : liaison, mode Athena, DLL, verdict du dépannage, fin du tampon session) + source `player` : la DLL joint les 3500 derniers caractères du journal fichier, lignes de secrets retirées. Case décochée : source `player-nolog`, rien de joint.
+- `fn_reportDiag` : toute source commençant par `player` échappe à l'anti-spam automatique.
+- Site : rien à changer, `/admin/atak-mod-reports` affiche déjà le détail (journal compris).
 
 ## Retour à la police du jeu sur le téléphone (ATAK natif 1.84.0)
 
