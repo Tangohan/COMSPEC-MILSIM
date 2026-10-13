@@ -234,6 +234,14 @@ EN : PANIC button: clearer instructions
 
 Non testé en jeu. Demande de TTRD : nouveau texte sous PANIQUE, écran Détresse et contact.
 - Le bloc PANIQUE affiche « Alerte l'ensemble des opérateurs de votre détresse. Il est nécessaire d'appuyer deux fois d'affilée pour valider l'envoi. » (anglais : « Alerts all operators of your distress. You must press twice in a row to confirm sending. »).
+## Version de la DLL affichée dans « À propos » (ATAK natif 1.73.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Capture de TTRD : « Extension (DLL) : inconnue », « COMSPEC Link 1.6.16 », « COMSPEC ATAK 1.11.0 ».
+- « Extension (DLL) » restait « inconnue » : la valeur lue n'était jamais remplie. La version est maintenant demandée à la DLL chargée (GetExtensionVersion, nouvelle fonction fn_extVersion) ; DLL muette : « absente ou trop ancienne : relancez build_mod.bat » ; autre version que celle attendue : affichée en orange avec la version attendue.
+- La ligne « COMSPEC Link 1.6.16 » montrait la version de l'addon Overwatch connect, pas celle de la DLL : renommée « Addon Overwatch connect ».
+- « COMSPEC ATAK » passe en rouge si le code et la config du main.pbo n'ont pas la même version (deux main.pbo chargés).
+- Le contrôle d'installation et le journal Debug lisent la même version de DLL.
+- À vérifier en jeu : « 1.11.0 » sur la capture veut dire que le main.pbo chargé date d'avant la 1.69.0 (vieux main.pbo encore chargé, ou mod pas mis à jour).
 
 ## Adresse du portail Athena fixe (ATAK natif 1.72.0)
 
