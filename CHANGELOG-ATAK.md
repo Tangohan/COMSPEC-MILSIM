@@ -94,6 +94,20 @@ EN : Give orders to your drone with a right-click on the map
 - fn_droneAction `["mapOrder", [genre, position]]` : liaison exigée, `goto` / `hunt [rayon choisi, pilote, centre]` (recherche en bandes de #777) / `goto [p, "HOVER"]` + nacelle à -90° / `goto [p, "LAND"]` ; journal et notification. `_send` renvoie maintenant `true` (false si zone interdite).
 - fn_droneCmd `goto` : 2e argument facultatif `HOVER` | `LAND` : arrivée à 6 m (au lieu de 20 m), ou IA arrêtée à moins de 25 m ; `LAND` se pose au lieu du stationnaire (aussi en CQB).
 - Non testé en jeu : vérifier le sous-menu, la précision du stationnaire et de l'atterrissage sur le point, et la recherche centrée sur le clic.
+## Carte : la notification « indicatif · grille » ne tourne plus en boucle (ATAK natif 1.92.0)
+
+### Résumé joueur
+Type : correctif
+FR : Fini le bandeau INFO qui revenait sans arrêt sur la carte
+- Sur la carte en écran réduit, cliquer une unité affiche son indicatif et sa grille une seule fois.
+- Le bandeau ne revient plus toutes les secondes tant que l'unité reste sélectionnée.
+EN : No more INFO banner repeating on the map
+- On the map in the small screen, clicking a unit shows its callsign and grid once.
+- The banner no longer comes back every second while the unit stays selected.
+
+### Détail technique
+- Retour de TTRD (13/10) : « INFO · TA1 · 1519 1729 » en boucle. fn_inspectorUpdate envoyait la notification à chaque rendu en mode mini avec une unité sélectionnée ; fn_statusUpdate le rappelle chaque seconde (panneau SITUATION ouvert) et la grille change quand l'unité bouge, donc l'anti-doublon de fn_notify ne jouait pas.
+- La notification part désormais de fn_mapSelect, une fois par clic. Non testé en jeu.
 
 ## Drone : bouton TEST VIDÉO pour l'image noire du téléphone (ATAK natif 1.90.0)
 

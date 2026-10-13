@@ -87,6 +87,5 @@ private _avail = (ctrlPosition _ctl) select 3;
     _ctl ctrlSetStructuredText parseText ((format ["<t size='%1'><t size='1.1'> </t><br/><br/>%2</t>", _x, _text]) call comspec_atak_native_fnc_tr);
     if ((ctrlTextHeight _ctl) <= _avail) exitWith {};
 } forEach [1, 0.92, 0.84, 0.76, 0.68];
-if ((count _e) > 0 && {([] call comspec_atak_native_fnc_layoutGet) get "mini"}) then {
-    ["INFO", format ["%1 · %2", _e getOrDefault ["callsign", "CONTACT"], [_e getOrDefault ["position", [0, 0, 0]], 8] call comspec_atak_native_fnc_gridRef], 4, 20] call comspec_atak_native_fnc_notify;
-};
+// Pas de notification ici : ce panneau est redessiné chaque seconde (fn_statusUpdate). Le bandeau « indicatif · grille »
+// de l'écran réduit part une seule fois, au clic sur l'unité (fn_mapSelect).
