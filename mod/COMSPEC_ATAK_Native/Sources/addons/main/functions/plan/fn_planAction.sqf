@@ -10,7 +10,7 @@
       "finish" / "cancel"         termine / abandonne le tracé en cours (clic droit, double clic, boutons)
       "undo"                      défait le dernier élément (brouillon : le dernier ; partagé : le dernier posé par moi)
       "select" [id, couche]       sélection (couche "S" partagé, "D" brouillon) ; "delete" ; "toggleClear" (CLEARED <-> UNCLEARED)
-      "clearTarget"               vide la couche visée (deux appuis)
+      "clearTarget"               efface tout : tracé en cours, brouillon et plan partagé si autorisé (deux appuis)
       "save" source               enregistre le partagé ("S") ou le brouillon ("D") sous le nom saisi (profil)
       "load" i | "preview" i | "previewOff" | "previewAdd" | "libDel" i     plans enregistrés
       "publish" [source, remplacer]   brouillon ("D"), aperçu ("P") ou plan enregistré (index) vers le plan partagé
@@ -239,13 +239,26 @@ switch (_act) do {
         ["refresh"] call comspec_atak_native_fnc_planAction;
     };
     case "clearTarget": {
-        // Deux appuis en moins de 4 s : rien ne s'efface par erreur.
+        // Deux appuis en moins de 4 s (le bouton passe à « CONFIRMER ? ») : rien ne s'efface par erreur.
         if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PlanClearArm", -10]) > 4) exitWith {
             uiNamespace setVariable ["COMSPEC_ATAK_PlanClearArm", diag_tickTime];
-            ["Appuyez encore pour tout effacer", 3] call comspec_atak_native_fnc_toast;
+            ["Appuyez encore sur TOUT EFF. pour tout effacer", 3] call comspec_atak_native_fnc_toast;
+            call _rerender;
+            [{ if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_PlanClearArm", -10]) > 4) then { ["rerender"] call comspec_atak_native_fnc_planAction; }; }, [], 4.2] call CBA_fnc_waitAndExecute;
         };
         uiNamespace setVariable ["COMSPEC_ATAK_PlanClearArm", -10];
-        if ((_ui get "target") isEqualTo "S") then { if (call _can) then { ["clear"] call _srv; } else { ["Édition du plan partagé réservée", 3] call comspec_atak_native_fnc_toast; }; } else { [[]] call _draftSet; };
+        // Tracé en cours, brouillon (toujours le mien) et plan partagé (si j'ai le droit et qu'il y a quelque chose).
+        _ui set ["draft", []];
+        private _nd = count (call _draftGet);
+        if (_nd > 0) then { [[]] call _draftSet; };
+        private _ns = count (call _shared);
+        private _msg = "";
+        if (_ns > 0) then {
+            if (call _can) then { ["clear"] call _srv; _msg = format ["Plan effacé (%1 élément(s) du partagé, %2 du brouillon)", _ns, _nd]; } else {
+                _msg = format ["Brouillon effacé (%1 élément(s)) ; plan partagé : édition réservée", _nd];
+            };
+        } else { _msg = ["Plan déjà vide", format ["Brouillon effacé (%1 élément(s))", _nd]] select (_nd > 0); };
+        [_msg, 4] call comspec_atak_native_fnc_toast;
         _ui set ["sel", ""];
         call _rerender;
     };
