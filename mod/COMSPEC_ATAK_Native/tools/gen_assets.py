@@ -205,6 +205,19 @@ ICONS = {
     "relief_heat": '<path d="M2 20l6-10 4 6 3-4 7 8z"/><path d="M5 20h14" stroke-dasharray="2 1.5"/><circle cx="18" cy="5" r="2.5"/>',
     "reco_eye": '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
     # Main ouverte : « prendre en main » (pastille Ctrl+Maj+U du téléphone porté).
+    # App Musique (lecteur) : précédent / suivant pleins, gros bouton lecture / pause en pastille (glyphe noir : la teinte
+    # de l'accent colore le disque, le glyphe reste sombre).
+    "ui_prev": '<path d="M18.5 5.5v13L9 12z" fill="#fff"/><path d="M6 5.5v13" stroke-width="2.6"/>',
+    "ui_next": '<path d="M5.5 5.5v13L15 12z" fill="#fff"/><path d="M18 5.5v13" stroke-width="2.6"/>',
+    "ui_play_circle": '<circle cx="12" cy="12" r="11.6" fill="#fff" stroke="none"/><path d="M9.5 7.2v9.6l7.6-4.8z" fill="#000" stroke="none"/>',
+    "ui_pause_circle": '<circle cx="12" cy="12" r="11.6" fill="#fff" stroke="none"/><rect x="8.2" y="7.3" width="2.8" height="9.4" rx=".7" fill="#000" stroke="none"/><rect x="13" y="7.3" width="2.8" height="9.4" rx=".7" fill="#000" stroke="none"/>',
+    "ui_shuffle": '<path d="M3 7h3.2c4.3 0 6.3 10 10.6 10H21M3 17h3.2c1.5 0 2.7-1.3 3.7-3M13.9 10c1-1.7 2-3 3.2-3H21M18.4 4.4L21 7l-2.6 2.6M18.4 14.4L21 17l-2.6 2.6"/>',
+    "ui_repeat": '<path d="M4 12.5v-3A2.5 2.5 0 0 1 6.5 7H19.5M17 4.5L19.5 7 17 9.5M20 11.5v3a2.5 2.5 0 0 1-2.5 2.5H4.5M7 19.5L4.5 17 7 14.5"/>',
+    "ui_repeat_one": '<path d="M4 12.5v-3A2.5 2.5 0 0 1 6.5 7H19.5M17 4.5L19.5 7 17 9.5M20 11.5v3a2.5 2.5 0 0 1-2.5 2.5H4.5M7 19.5L4.5 17 7 14.5"/><path d="M11 10.9l1.4-.9v4.4" stroke-width="1.5"/>',
+    "ui_headphones": '<path d="M4.5 15.5V12a7.5 7.5 0 0 1 15 0v3.5"/><rect x="3" y="14" width="4.6" height="6.8" rx="1.6" fill="#fff"/><rect x="16.4" y="14" width="4.6" height="6.8" rx="1.6" fill="#fff"/>',
+    "ui_speaker": '<path d="M3.5 9.3h3.6L11.8 5v14l-4.7-4.3H3.5z" fill="#fff"/><path d="M15.2 9a4.2 4.2 0 0 1 0 6M17.9 6.3a8 8 0 0 1 0 11.4"/>',
+    "ui_mute": '<path d="M3.5 9.3h3.6L11.8 5v14l-4.7-4.3H3.5z" fill="#fff"/><path d="M15.5 9.5l5 5M20.5 9.5l-5 5"/>',
+    "ui_dot": '<circle cx="12" cy="12" r="10" fill="#fff" stroke="none"/>',
     "ui_hand": '<path d="M9.1 12V5.6a1.3 1.3 0 0 1 2.6 0V11M11.7 11V4.3a1.3 1.3 0 0 1 2.6 0V11M14.3 11V5.6a1.3 1.3 0 0 1 2.6 0V11M16.9 11.2V8.3a1.3 1.3 0 0 1 2.6 0v5.4c0 4.1-2.8 7.3-6.6 7.3-2.7 0-4.3-1.3-5.8-3.5l-2.6-4a1.4 1.4 0 0 1 2.2-1.7l2.4 2.8V8.2"/>',
 }
 

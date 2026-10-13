@@ -166,6 +166,27 @@ Non testé en jeu. Signalé par TTRD : `HTTP POST code 400 /public/api/atak/vehi
 - COMSPEC Link 2.0.81 : un corps encore illisible est réparé avant l'envoi (caractères de contrôle, nan/inf, virgule décimale). Pour un refus 4xx (hors 401/403/429), le journal du jeu garde désormais le motif renvoyé par Athena, et pour un 400/422 le début du corps envoyé : `ÉCHEC · HTTP POST — code 400 · /public/api/atak/vehicles (il y a 0 s) — réponse : … · envoyé : {…}`.
 - Site : même réparation du JSON côté Athena, indicatif repris aussi de `vehicle_id` ou `vehicle_type`, et le 400 dit pourquoi (JSON illisible ou clés reçues), avec une ligne `[atak/vehicles]` dans error_log.
 - À vérifier en jeu : après connexion, plus de 400 sur /api/atak/vehicles en montant dans un véhicule ou en pilotant un drone ; si un 400 revient, copier la ligne ÉCHEC complète du RPT (elle contient maintenant le motif).
+## App Musique : lecteur refait (ATAK natif 1.76.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le lecteur de l'app Musique fait peau neuve
+- Grande pochette, titre lisible avec l'artiste et la source, et une barre de progression : touche-la pour aller directement à un passage du morceau.
+- Lecture, pause, précédent et suivant sont de grosses icônes au centre, avec la lecture aléatoire et la répétition à côté.
+- Les volumes des écouteurs et du haut-parleur se règlent avec un curseur ; l'icône coupe ou rétablit le son.
+EN : The Music app player gets a makeover
+- Big cover, readable title with the artist and source, and a progress bar: tap it to jump straight to a part of the track.
+- Play, pause, previous and next are big icons in the middle, with shuffle and repeat next to them.
+- Earphone and speaker volumes are set with a slider; the icon mutes or unmutes the sound.
+
+### Détail technique
+Non testé en jeu. Demande de TTRD : améliorer l'UI de l'onglet LECTURE. Pas de DLL à recompiler, pas de migration ; la lecture elle-même (fichiers, liens, serveur, Athena, haut-parleur de proximité) ne change pas.
+- Lecteur : grande pochette avec l'égaliseur animé dedans, titre plus gros, ligne « artiste · source · Piste 1 / 4 » avec les états EN PAUSE, CHARGEMENT, ERREUR et HAUT-PARLEUR. Les pistes Athena affichaient « · piste 1/4 » sans source : corrigé (source « Athena », artiste quand il n'est pas déjà dans le titre).
+- Barre de progression plus épaisse, avec un curseur rond et les temps aux deux bouts ; un clic sur la barre va à ce passage de la piste (haut-parleur : les joueurs proches suivent).
+- Commandes en icônes centrées : aléatoire, précédent, lecture / pause (grosse pastille), suivant, répéter (non, la file, le morceau, au clic). Sauts -30 / -10 / +10 / +30 s et STOP en petits boutons dessous.
+- Volumes : curseurs 0-100 au cran de 1 au lieu de - / valeur / +, son appliqué pendant le glissé ; l'icône (casque, haut-parleur) coupe et rétablit. Le volume en service (écouteurs ou haut-parleur) est surligné.
+- Les lignes « Répéter » et « Lecture aléatoire » sont remplacées par les icônes du lecteur ; file d'attente, favoris et haut-parleurs proches restent dessous.
+- À vérifier en jeu : téléphone en main plein écran (et taille réduite), portrait mini, clic sur la barre (fichier local, lien, piste serveur), glissé des deux curseurs avec et sans haut-parleur, icônes aléatoire / répéter, traduction anglaise.
 
 ## Ligne de vue : de ma position vers le point (ATAK natif 1.75.0)
 

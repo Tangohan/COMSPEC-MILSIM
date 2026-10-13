@@ -11,6 +11,9 @@
       ["person", image, texte structuré, [[libellé, code, principal, actif, aide]...], couleur image]  (ligne compacte : vignette, texte, boutons à droite ;
           principal = true, false ou "red" pour un bouton de confirmation)
       ["section", titre, sous-titre]        ["switch", libellé, actif, code, aide, imposé]
+      ["slider", libellé, valeur 0-100, code, aide, actif, icône, code de l'icône, aide de l'icône]
+          curseur 0-100 au cran de 1 : code appelé avec [valeur] pendant le glissé (sans redessiner la page) ; icône
+          (data\nom) cliquable à gauche, valeur à droite (0 = MUET) ; actif = liseré et icône en couleur d'accent
       ["segment", libellé, [[texte, code, actif, aide]...], aide]   ["info", libellé, valeur]   ["image", chemin]
       ["line", numéro, libellé, valeur, genre, clé, aide]   ligne de formulaire type 9-LINE, hauteur fixe :
           numéro en pastille, libellé à gauche, valeur à droite. genre "auto" (valeur calculée, en couleur d'accent ;
@@ -250,6 +253,55 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             } else {
                 _card ctrlSetTooltip (("Réglé par votre communauté sur Athena (Contrôle serveur)") call comspec_atak_native_fnc_tr);
             };
+            _y = _y + _h + _pad / 3;
+        };
+        case "slider": {
+            _row params ["", "_label", "_val", "_code", ["_help", ""], ["_active", false], ["_icon", ""], ["_iconCode", {}], ["_iconTip", ""]];
+            private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+            private _h = _rowH * 1.3;
+            private _card = ["COMSPEC_RscText", [_pad, _y, _w, _h]] call _mk;
+            _card ctrlSetBackgroundColor [0.085, 0.105, 0.095, 1];
+            if (_active) then {
+                private _rim = ["COMSPEC_RscText", [_pad, _y, pixelW * 3, _h]] call _mk;
+                _rim ctrlSetBackgroundColor _acc;
+            };
+            private _ix = _pad * 1.6;
+            if (_icon isNotEqualTo "") then {
+                private _is = _rowH * 0.7;
+                private _ic = ["COMSPEC_RscPicture", [_ix, _y + (_h - _is) / 2, _is * _ratio, _is], format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon]] call _mk;
+                _ic ctrlSetTextColor ([[0.62, 0.68, 0.65, 1], _acc] select _active);
+                private _ib = ["COMSPEC_RscButtonOverlay", [_ix, _y + (_h - _is) / 2, _is * _ratio, _is]] call _mk;
+                if (_iconTip isNotEqualTo "") then { _ib ctrlSetTooltip ((_iconTip) call comspec_atak_native_fnc_tr); };
+                [_ib, _iconCode] call _click;
+                _ix = _ix + _is * _ratio + _pad;
+            };
+            private _lw = _w * 0.34;
+            private _t = ["COMSPEC_RscStructuredText", [_ix, _y, _lw, _h]] call _mk;
+            _t ctrlSetStructuredText parseText ((format ["<t size='0.95' color='#eef4f0'>%1</t>%2", _label, ["", format ["<br/><t size='0.72' color='#a9b8b1'>%1</t>", _help]] select (_help isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+            private _th = ctrlTextHeight _t;
+            _t ctrlSetPosition [_ix, _y + (((_h - _th) / 2) max 0), _lw, _th min _h];
+            _t ctrlCommit 0;
+            private _vw = _font * 2.8 * _ratio;
+            private _sx = _ix + _lw + _pad / 2;
+            private _sw = (_pad + _w - _pad / 2 - _vw) - _sx - _pad / 2;
+            private _vt = ["COMSPEC_RscTextRight", [_pad + _w - _pad / 2 - _vw, _y, _vw, _h], [(str (round _val)) + " %", "MUET"] select ((round _val) <= 0)] call _mk;
+            _vt ctrlSetFont "RobotoCondensedBold";
+            _vt ctrlSetFontHeight _fs;
+            _vt ctrlSetTextColor ([[0.86, 0.91, 0.88, 1], _acc] select _active);
+            private _sl = ["COMSPEC_RscSlider", [_sx, _y + _h * 0.3, _sw, _h * 0.4]] call _mk;
+            _sl sliderSetRange [0, 100];
+            _sl sliderSetSpeed [1, 10];
+            _sl sliderSetPosition (_val max 0 min 100);
+            _sl setVariable ["comspec_slide", [_code, _vt, round _val]];
+            _sl ctrlAddEventHandler ["SliderPosChanged", {
+                params ["_c", "_v"];
+                (_c getVariable ["comspec_slide", [{}, controlNull, -1]]) params ["_code", "_vt", "_last"];
+                _v = round _v;
+                if (_v isEqualTo _last) exitWith {};
+                _c setVariable ["comspec_slide", [_code, _vt, _v]];
+                if (!isNull _vt) then { _vt ctrlSetText (([(str _v) + " %", "MUET"] select (_v <= 0)) call comspec_atak_native_fnc_tr); };
+                [_v] call _code;
+            }];
             _y = _y + _h + _pad / 3;
         };
         case "segment": {
