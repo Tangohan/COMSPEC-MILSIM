@@ -48,7 +48,7 @@ private _medIdent = {
         if (_v isEqualType 0 && {_v > 0}) then { _w = format ["%1 kg", round _v]; };
     };
     private _nr = "<t color='#8a9a93'>non renseigné</t>";
-    [[format ["<t font='RobotoCondensedBold' color='#e5483a'>%1</t>", _bt], _nr] select (_bt isEqualTo ""), [format ["<t font='RobotoCondensedBold'>%1</t>", _w], _nr] select (_w isEqualTo "")]
+    [[format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>%1</t>", _bt], _nr] select (_bt isEqualTo ""), [format ["<t font='COMSPEC_BarlowBold'>%1</t>", _w], _nr] select (_w isEqualTo "")]
 };
 // Ligne d'identité médicale réduite aux données affichées : [libellé, valeur] ("" si rien).
 private _identRow = {
@@ -145,7 +145,7 @@ _rows pushBack ["section", "Suivi des MEDEVAC", ["Aucune demande en cours", form
     private _mine = (_r get "uid") isEqualTo getPlayerUID player;
     private _dots = (_steps apply { ["○", "●"] select ((_steps find _x) <= _st) }) joinString " ";
     private _stTxt = if (_r getOrDefault ["cancelled", false]) then { "<t color='#8a9a93'>ANNULÉE</t>" } else { format ["<t color='%1'>%2</t>", ["#f2ab33", "#5cc76b"] select (_st >= 4), _steps select _st] };
-    _rows pushBack ["text", format ["<t font='RobotoCondensedBold'>%1 · %2</t>  <t size='0.8' color='#8a9a93'>%3 · LZ %4</t><br/><t size='0.8'>T1 %5 · T2 %6 · T3 %7 · brancards %8 · %9 · %10</t><br/>%11  %12%13",
+    _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1 · %2</t>  <t size='0.8' color='#8a9a93'>%3 · LZ %4</t><br/><t size='0.8'>T1 %5 · T2 %6 · T3 %7 · brancards %8 · %9 · %10</t><br/>%11  %12%13",
         _r get "prio", _r get "from", _r get "time", _r get "grid", _r get "t1", _r get "t2", _r get "t3", _r get "litter", _r get "sec", _r get "mark",
         _dots, _stTxt, ["", format ["  <t size='0.75' color='#8a9a93'>par %1</t>", _r get "by"]] select ((_r get "by") isNotEqualTo "")]];
     private _b = [["LZ", compile format ["['locateReq', '%1'] call comspec_atak_native_fnc_medicalAction;", _r get "id"]]];
@@ -192,7 +192,7 @@ _rows pushBack ["info", format ["Patient : %1", [_mon, true] call comspec_atak_n
     if (_vis get "blood") then { _vit pushBack format ["sang %1 %%", _blood]; };
     if (_vis get "hr") then { _vit pushBack format ["pouls %1", _hr]; };
     _vit append [format ["%1 m", round (player distance _u)], [getPosASL _u, 6] call comspec_atak_native_fnc_gridRef];
-    _rows pushBack ["text", format ["<t color='%1' font='RobotoCondensedBold'>%2</t>  %3  <t size='0.8' color='#8a9a93'>%4</t>",
+    _rows pushBack ["text", format ["<t color='%1' font='COMSPEC_BarlowBold'>%2</t>  %3  <t size='0.8' color='#8a9a93'>%4</t>",
         _lab select 1, _lab select 0, [_u, true] call comspec_atak_native_fnc_unitCallsign, _vit joinString " · "]];
     _rows pushBack ["buttons", [[["MONITEUR", "● SUIVI"] select (_u isEqualTo _mon), compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['medMon', %1]; [{ ['MEDICAL'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", str netId _u], _u isEqualTo _mon]]];
 } forEach _list;

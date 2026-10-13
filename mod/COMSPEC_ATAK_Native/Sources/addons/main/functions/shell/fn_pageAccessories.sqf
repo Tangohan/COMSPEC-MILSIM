@@ -50,7 +50,7 @@ private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"
 private _s7 = !(_model in ["rugged", "iphone"]);
 private _nMounted = { _x get "mounted" } count _slots;
 private _headH = _fs * 1.9;
-[[_pad, _pad * 0.5, _bw - 2 * _pad, _headH], format ["<t size='%1' font='RobotoCondensedBold' color='#e8eadf'>ÉTABLI</t><t size='%2' color='#8a9a93'>  ·  %3</t><t align='right' size='%2' color='%4'>%5 / %6 fixés</t>",
+[[_pad, _pad * 0.5, _bw - 2 * _pad, _headH], format ["<t size='%1' font='COMSPEC_BarlowBold' color='#e8eadf'>ÉTABLI</t><t size='%2' color='#8a9a93'>  ·  %3</t><t align='right' size='%2' color='%4'>%5 / %6 fixés</t>",
     _k * 1.15, _k * 0.85,
     [createHashMapFromArray [["rugged", "Tactique EUD"], ["iphone", "Premium"]] getOrDefault [_model, ""], "Coque " + (createHashMapFromArray [["coyote", "coyote"], ["od", "vert OD"], ["black", "noire"]] getOrDefault [_tint, "coyote"])] select _s7,
     _accHex, _nMounted, count _slots]] call _txt;
@@ -178,7 +178,7 @@ if (_s7 && {_ant isNotEqualTo []}) then {
     [[_bx + _pad * 0.6, _by + _pad * 0.25, _bw2 - _pad, _fs * 1.1], format ["<t size='%1' font='EtelkaMonospaceProBold' color='%2'>%3</t><t size='%4' color='#6d7a74'>  %5</t>",
         _k * 0.62, ["#8a9a93", _accHex] select _on, toUpper (_s get "title"), _k * 0.6, _s get "sub"]] call _txt;
     private _tx = _bx + _pad * 1.2 + _icW;
-    [[_tx, _by + _pad * 0.4 + _fs * 1.05, (_bx + _bw2) - _tx - _pad * 0.3, _bh2 - _fs * 1.2], format ["<t size='%1' font='RobotoCondensedBold' color='%2'>%3</t><br/><t size='%4' color='%5'>%6</t>",
+    [[_tx, _by + _pad * 0.4 + _fs * 1.05, (_bx + _bw2) - _tx - _pad * 0.3, _bh2 - _fs * 1.2], format ["<t size='%1' font='COMSPEC_BarlowBold' color='%2'>%3</t><br/><t size='%4' color='%5'>%6</t>",
         _k * 0.82, ["#6d7a74", "#e8eadf"] select _on, [(_s get "name")] call _esc, _k * 0.7, _s get "stateHex", [(_s get "state")] call _esc]] call _txt;
     // Pastille : nombre d'objets compatibles en poche.
     private _nc = count (_s get "cand");
@@ -216,7 +216,7 @@ if (count _s > 0) then {
     _shBg ctrlSetBackgroundColor [0.055, 0.067, 0.061, 0.99];
     [0, _sy, _bw, _sy, _acc] call _line;
     private _y = _sy + _pad * 0.5;
-    [[_pad, _y, _bw - 2 * _pad, _fs * 1.6], format ["<t size='%1' font='RobotoCondensedBold' color='#e8eadf'>%2</t><t size='%3' color='#8a9a93'>  ·  %4</t>",
+    [[_pad, _y, _bw - 2 * _pad, _fs * 1.6], format ["<t size='%1' font='COMSPEC_BarlowBold' color='#e8eadf'>%2</t><t size='%3' color='#8a9a93'>  ·  %4</t>",
         _k, toUpper (_s get "title"), _k * 0.75, _s get "sub"]] call _txt;
     private _x2 = ["COMSPEC_RscButton", [_bw - _pad - _fs * 4.2, _y, _fs * 4.2, _fs * 1.4], "FERMER"] call _mk;
     _x2 ctrlSetFontHeight ((_fs * 0.75) max COMSPEC_ATAK_FontMin);
@@ -229,7 +229,7 @@ if (count _s > 0) then {
         private _ic = ["COMSPEC_RscPicture", [_pad, _y + _rowH * 0.1, _icH / _ratio, _icH], _icon] call _mk;
         _ic ctrlSetTextColor [1, 1, 1, _alpha];
         _ic ctrlEnable false;
-        [[_pad * 1.5 + _icH / _ratio, _y + _rowH * 0.05, _bw - _btnW * 2 - _pad * 3 - _icH / _ratio, _rowH], format ["<t size='%1' font='RobotoCondensedBold'>%2</t><br/><t size='%3' color='#8a9a93'>%4</t>",
+        [[_pad * 1.5 + _icH / _ratio, _y + _rowH * 0.05, _bw - _btnW * 2 - _pad * 3 - _icH / _ratio, _rowH], format ["<t size='%1' font='COMSPEC_BarlowBold'>%2</t><br/><t size='%3' color='#8a9a93'>%4</t>",
             _k * 0.85, [_title] call _esc, _k * 0.7, [_sub] call _esc]] call _txt;
     };
     // Monté actuellement.

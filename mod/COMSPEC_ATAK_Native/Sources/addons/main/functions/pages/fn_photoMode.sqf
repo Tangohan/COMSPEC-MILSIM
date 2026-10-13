@@ -229,7 +229,7 @@ switch (toUpper _mode) do {
         private _z = _st getOrDefault ["zoom", 1];
         private _fl = _st getOrDefault ["flash", "AUTO"];
         private _zs = { params ["_v"]; [_v toFixed 1, str _v] select ((_v mod 1) isEqualTo 0) };
-        (_cam displayCtrl 5) ctrlSetStructuredText parseText ((format ["<t align='center' font='RobotoCondensedBold'><t color='#f2d36b'>%1</t>   <t color='#6d7a74'>|</t>   ZOOM <t color='#5cc76b'>x%2</t>   <t color='#6d7a74'>|</t>   FLASH <t color='%3'>%4</t></t>",
+        (_cam displayCtrl 5) ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold'><t color='#f2d36b'>%1</t>   <t color='#6d7a74'>|</t>   ZOOM <t color='#5cc76b'>x%2</t>   <t color='#6d7a74'>|</t>   FLASH <t color='%3'>%4</t></t>",
             ["OBJECTIF ARRIÈRE", "SELFIE"] select _selfie, [_z] call _zs, ["#e8eadf", "#f2ab33"] select (_fl isEqualTo "ON"),
             createHashMapFromArray [["AUTO", "AUTO"], ["ON", "FORCÉ"], ["OFF", "COUPÉ"]] get _fl]) call comspec_atak_native_fnc_tr);
         // Échelle de zoom à droite : palier en cours en vert.
@@ -242,7 +242,7 @@ switch (toUpper _mode) do {
             [["CLIC", "photo"], ["T", "marquer"], ["MOLETTE", "zoom"], ["SOURIS", "viser"], ["F", "flash"], ["R", "selfie"], ["ESPACE", "quitter"]],
             [["CLIC", "photo"], ["SOURIS", "cadrer"], ["MOLETTE", "zoom"], ["F", "flash"], ["R", "objectif arrière"], ["ESPACE", "quitter"]]
         ] select _selfie;
-        (_cam displayCtrl 3) ctrlSetStructuredText parseText ((format ["<t align='center' size='0.9'>%1</t>", (_keys apply { format ["<t font='RobotoCondensedBold' color='#eef3ef'>%1</t> <t color='#a9b8b0'>%2</t>", _x select 0, _x select 1] }) joinString "     "]) call comspec_atak_native_fnc_tr);
+        (_cam displayCtrl 3) ctrlSetStructuredText parseText ((format ["<t align='center' size='0.9'>%1</t>", (_keys apply { format ["<t font='COMSPEC_BarlowBold' color='#eef3ef'>%1</t> <t color='#a9b8b0'>%2</t>", _x select 0, _x select 1] }) joinString "     "]) call comspec_atak_native_fnc_tr);
         // Où part la photo : Athena (réseau présent) ou poste seul, et légende choisie dans l'app.
         private _net = (([] call comspec_atak_native_fnc_linkQuality) getOrDefault ["bars", 0]) > 0;
         private _cap = (uiNamespace getVariable ["COMSPEC_ATAK_PhotoCtx", []]) param [3, ""];

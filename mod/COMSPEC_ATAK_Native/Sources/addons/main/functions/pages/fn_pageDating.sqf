@@ -119,7 +119,7 @@ private _card = {
         default { "" };
     };
     _t ctrlSetStructuredText parseText ((format [
-        "<t size='1.45' font='RobotoCondensedBold' color='#ffffff' shadow='2'>%1</t><t size='1.25' color='#ffffff' shadow='2'>  %2</t>%3<br/><t size='0.8' color='#e8eee9' shadow='2'>%4%5</t>",
+        "<t size='1.45' font='COMSPEC_BarlowBold' color='#ffffff' shadow='2'>%1</t><t size='1.25' color='#ffffff' shadow='2'>  %2</t>%3<br/><t size='0.8' color='#e8eee9' shadow='2'>%4%5</t>",
         [_p get "name"] call _esc, _p get "age", _badge, _p get "dist", ["", " · " + (_p get "sub")] select ((_p get "sub") isNotEqualTo "")
     ]) call comspec_atak_native_fnc_tr);
 };
@@ -129,7 +129,7 @@ private _details = {
     _rect params ["_cx0", "_cy0", "_w", "_h"];
     private _t = ["COMSPEC_RscStructuredText", [_cx0, _cy0, _w, _h]] call _mk;
     _t ctrlSetStructuredText parseText ((format [
-        "<t color='#e8eee9'>« %1 »</t><br/><t size='0.85' color='#8a9a93'>Aime : </t><t size='0.85' color='%5'>%2 · %3 · %4</t><br/><t size='0.85' color='#8a9a93'>Compatibilité </t><t size='0.85' font='RobotoCondensedBold' color='%5'>%6 %%</t>",
+        "<t color='#e8eee9'>« %1 »</t><br/><t size='0.85' color='#8a9a93'>Aime : </t><t size='0.85' color='%5'>%2 · %3 · %4</t><br/><t size='0.85' color='#8a9a93'>Compatibilité </t><t size='0.85' font='COMSPEC_BarlowBold' color='%5'>%6 %%</t>",
         [_p get "bio"] call _esc, (_p get "tags") select 0, (_p get "tags") select 1, (_p get "tags") select 2, _pink, _p get "compat"
     ]) call comspec_atak_native_fnc_tr);
 };
@@ -151,7 +151,7 @@ switch (_tab) do {
             ["stop"] call comspec_atak_native_fnc_datingCam;
             private _rows = [];
             if !(_visible) then { _rows pushBack ["text", "<t color='#f2ab33'>Votre profil est caché : les autres ne vous voient pas (onglet MON PROFIL).</t>"]; };
-            _rows pushBack ["hero", _icon, "<t size='1.2' font='RobotoCondensedBold'>Plus personne autour de vous</t><br/><t color='#8a9a93'>Revenez plus tard : de nouveaux profils arrivent avec les joueurs, et parfois d'ailleurs.</t>"];
+            _rows pushBack ["hero", _icon, "<t size='1.2' font='COMSPEC_BarlowBold'>Plus personne autour de vous</t><br/><t color='#8a9a93'>Revenez plus tard : de nouveaux profils arrivent avec les joueurs, et parfois d'ailleurs.</t>"];
             if ((count _passed) > 0) then { _rows pushBack ["buttons", [["REVOIR LES PROFILS PASSÉS", { ["reset"] call comspec_atak_native_fnc_datingAction; }]]]; };
             [_rows, [0, _cy, _bw, _ch]] call comspec_atak_native_fnc_formRender;
         };
@@ -171,7 +171,7 @@ switch (_tab) do {
         {
             _x params ["_txt", "_act", "_col", "_txtCol", "_tip"];
             private _b = ["COMSPEC_RscButton", [_rx + _forEachIndex * (_bw3 + _pad / 2), _btnY, _bw3, _btnH], _txt] call _mk;
-            _b ctrlSetFont "RobotoCondensedBold";
+            _b ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
             _b ctrlSetBackgroundColor _col;
             _b ctrlSetTextColor _txtCol;
             _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
@@ -228,18 +228,18 @@ switch (_tab) do {
             private _rows = [];
             {
                 private _avatar = [_x] call comspec_atak_native_fnc_avatarPath;
-                _rows pushBack ["person", [_avatar, _icon] select (_avatar isEqualTo ""), format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='%2'>Match · %3</t>", [name _x] call _esc, _pink, [groupId group _x] call _esc],
+                _rows pushBack ["person", [_avatar, _icon] select (_avatar isEqualTo ""), format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='%2'>Match · %3</t>", [name _x] call _esc, _pink, [groupId group _x] call _esc],
                     [["SMS", compile format ["['sms', %1] call comspec_atak_native_fnc_datingAction;", str name _x], true]]];
             } forEach _matches;
             {
                 private _u = ["unit", _x] call comspec_atak_native_fnc_datingSpecials;
                 private _p = ["profile", _u] call comspec_atak_native_fnc_datingSpecials;
                 private _n = count ((missionNamespace getVariable ["COMSPEC_ATAK_RencardAiChat", createHashMap]) getOrDefault [_x, []]);
-                _rows pushBack ["person", _icon, format ["<t font='RobotoCondensedBold'>%1, %2</t><br/><t size='0.8' color='%3'>Match · %4 message(s)%5</t>",
+                _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1, %2</t><br/><t size='0.8' color='%3'>Match · %4 message(s)%5</t>",
                     [_p get "name"] call _esc, _p get "age", _pink, _n, ["", " · <t color='#e5483a'>profil supprimé</t>"] select (!alive _u)],
                     [["MESSAGES", compile format ["['open', %1] call comspec_atak_native_fnc_datingAction;", str _x], true]]];
             } forEach _aiMatches;
-            if (_rows isEqualTo []) then { _rows pushBack ["hero", _icon, "<t font='RobotoCondensedBold'>Pas encore de match</t><br/><t color='#8a9a93'>Likez, et attendez qu'on vous like en retour.</t>"]; };
+            if (_rows isEqualTo []) then { _rows pushBack ["hero", _icon, "<t font='COMSPEC_BarlowBold'>Pas encore de match</t><br/><t color='#8a9a93'>Likez, et attendez qu'on vous like en retour.</t>"]; };
             [_rows, [0, _cy, _bw, _ch]] call comspec_atak_native_fnc_formRender;
         };
     };

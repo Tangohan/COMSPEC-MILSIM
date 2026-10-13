@@ -166,7 +166,7 @@ if ((count _route) > 0) then {
             [_a, _b, _mpu, [0.26, 0.52, 0.96, 1]] call _seg;
         };
     };
-    _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [0.92, 0.26, 0.21, 1], _route get "dest", 26 * _k * _is, 26 * _k * _is, 0, _route getOrDefault ["label", ""], 2, 0.028 * _ts, "RobotoCondensedBold", "right"];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [0.92, 0.26, 0.21, 1], _route get "dest", 26 * _k * _is, 26 * _k * _is, 0, _route getOrDefault ["label", ""], 2, 0.028 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
 };
 
 // Calques Relief (champ de vision / altitudes) et Wave Relay (liens du maillage).
@@ -193,7 +193,7 @@ if ((count _wpts) > 0) then {
     for "_i" from 0 to ((count _wpts) - 2) do { [(_wpts select _i) select 0, (_wpts select (_i + 1)) select 0, [0.95, 0.75, 0.18, 0.9]] call _dash; };
     if (_wp getOrDefault ["nav", false]) then { _map drawArrow [getPosATL vehicle player, (_wpts select _wi) select 0, [0.36, 0.78, 0.42, 0.9]]; };
     {
-        _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [[0.95, 0.75, 0.18, 1], [0.36, 0.85, 0.42, 1]] select (_forEachIndex isEqualTo _wi), _x select 0, 22 * _k * _is, 22 * _k * _is, 0, _x select 1, 2, 0.026 * _ts, "RobotoCondensedBold", "right"];
+        _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [[0.95, 0.75, 0.18, 1], [0.36, 0.85, 0.42, 1]] select (_forEachIndex isEqualTo _wi), _x select 0, 22 * _k * _is, 22 * _k * _is, 0, _x select 1, 2, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
     } forEach _wpts;
 };
 
@@ -231,7 +231,7 @@ private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO
     _map drawIcon [_icon,_color,_pos,_size,_size,_dir,"",0];
     if (_lblOn && {!_boxOn} && {_scale < 0.25}) then {
         private _cs = _entity getOrDefault ["callsign",""];
-        if (_cs isNotEqualTo "") then { _map drawIcon [_clear,[1,1,1,(_color select 3) max 0.6],_pos,_size,_size,0,_cs,2,0.027 * _kt * _ts,"RobotoCondensedBold","right"]; };
+        if (_cs isNotEqualTo "") then { _map drawIcon [_clear,[1,1,1,(_color select 3) max 0.6],_pos,_size,_size,0,_cs,2,0.027 * _kt * _ts,(COMSPEC_ATAK_FontSet select 1),"right"]; };
     };
     if (_ech isNotEqualTo "") then { _map drawIcon [_ech, _color, _pos, _size, _size, 0, "", 0]; };
     // Candidat au cartouche : pas moi (carte « moi »), et pour les autres groupes seulement le chef (un cartouche par
@@ -292,7 +292,7 @@ private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO
             // Contact ENI : son cartouche rouge (fn_mapLabels) remplace le texte.
             if (_boxOn && {_mt isNotEqualTo ""} && {((toLower _type) select [0, 2]) isEqualTo "o_" || {(toUpper (_mt select [0, 4])) isEqualTo "ENI "}}) then { _mt = ""; };
             _map drawIcon [_icon,_rgba,_pos,16 * _k * _is,16 * _k * _is,_marker getOrDefault ["dir",0],"",0];
-            if (_mt isNotEqualTo "") then { _map drawIcon [_clear,[1,1,1,(_rgba select 3) max 0.6],_pos,16 * _k * _is,16 * _k * _is,0,_mt,2,0.025 * _kt * _ts,"RobotoCondensedBold","right"]; };
+            if (_mt isNotEqualTo "") then { _map drawIcon [_clear,[1,1,1,(_rgba select 3) max 0.6],_pos,16 * _k * _is,16 * _k * _is,0,_mt,2,0.025 * _kt * _ts,(COMSPEC_ATAK_FontSet select 1),"right"]; };
         };
     };
 } forEach (_data getOrDefault ["markers",createHashMap]);
@@ -338,12 +338,12 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
             private _p = [_geo select 0,_geo select 1,0];
             _map drawEllipse [_p,_r max 20,_r max 20,0,_c,""];
             _map drawEllipse [_p,_r max 20,_r max 20,0,[_c select 0,_c select 1,_c select 2,0.12],"#(rgb,8,8,3)color(1,1,1,1)"];
-            _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)",_c,_p,0,0,0,_label,2,0.028 * _ts,"RobotoCondensedBold","center"];
+            _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)",_c,_p,0,0,0,_label,2,0.028 * _ts,(COMSPEC_ATAK_FontSet select 1),"center"];
         } else {
             if ((count _geo) >= 2 && {(_geo select 0) isEqualType []}) then {
                 private _pts = _geo apply { [_x select 0,_x select 1,0] };
                 if ((toUpper _geom) isEqualTo "POLYGON" && {(count _pts) >= 3}) then { _map drawPolygon [_pts,_c]; } else { for "_i" from 0 to ((count _pts) - 2) do { _map drawLine [_pts select _i,_pts select (_i + 1),_c]; }; };
-                _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)",_c,_pts select 0,0,0,0,_label,2,0.028 * _ts,"RobotoCondensedBold","right"];
+                _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)",_c,_pts select 0,0,0,0,_label,2,0.028 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
             };
         };
     } forEach (missionNamespace getVariable ["COMSPEC_DangerZones",[]]);
@@ -354,7 +354,7 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
                 private _r = _x getOrDefault ["radius",200];
                 private _c = switch (_x getOrDefault ["type",""]) do { case "jammer": {[0.85,0.25,0.95,1]}; case "no_coverage": {[0.6,0.6,0.6,1]}; default {[0.95,0.5,0.15,1]}; };
                 _map drawEllipse [[_p select 0,_p select 1,0],_r,_r,0,_c,""];
-                _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)",_c,[_p select 0,_p select 1,0],0,0,0,format ["%1 · %2 %%",_x getOrDefault ["name","Zone"],_x getOrDefault ["intensity",0]],2,0.026 * _ts,"RobotoCondensed","center"];
+                _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)",_c,[_p select 0,_p select 1,0],0,0,0,format ["%1 · %2 %%",_x getOrDefault ["name","Zone"],_x getOrDefault ["intensity",0]],2,0.026 * _ts,(COMSPEC_ATAK_FontSet select 0),"center"];
             };
         };
     } forEach (missionNamespace getVariable ["COMSPEC_RoleplayZones",[]]);
@@ -369,7 +369,7 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_ZonesLayer", true]) then {
     private _key = _x get "key";
     private _q = ((uiNamespace getVariable ["COMSPEC_ATAK_Explo", createHashMap]) getOrDefault ["queue", []]) select { ((_x select 1) get "key") isEqualTo _key };
     if ((count _q) > 0) then { _txt = format ["%1 · T-%2", _txt, ((((_q select 0) select 0) - diag_tickTime) max 0) toFixed 1]; _c = [0.90,0.28,0.23,1]; };
-    _map drawIcon ["\z\comspec_atak_native\addons\main\data\app_explo.paa", _c, getPosASL _e, 18 * _k * _is, 18 * _k * _is, 0, _txt, 2, 0.03 * _kt * _ts, "RobotoCondensedBold", "right"];
+    _map drawIcon ["\z\comspec_atak_native\addons\main\data\app_explo.paa", _c, getPosASL _e, 18 * _k * _is, 18 * _k * _is, 0, _txt, 2, 0.03 * _kt * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
 } forEach ([] call comspec_atak_native_fnc_exploList);
 
 // Goniométrie : émetteurs estimés (cercle d'incertitude) et relèvements seuls (azimut tracé sur 3 km).
@@ -381,10 +381,10 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_SigintLayer", true]) then {
         if (_kind isEqualTo "azimuth") then {
             private _end = _pp vectorAdd [3000 * sin _brg,3000 * cos _brg,0];
             [_pp,_end,_sc] call _dashed;
-            _map drawIcon [_dot,_sc,_pp,8,8,0,format ["%1 · %2°",_cs,round _brg],2,0.026 * _ts,"RobotoCondensed","right"];
+            _map drawIcon [_dot,_sc,_pp,8,8,0,format ["%1 · %2°",_cs,round _brg],2,0.026 * _ts,(COMSPEC_ATAK_FontSet select 0),"right"];
         } else {
             _map drawEllipse [_pp,_r,_r,0,_sc,""];
-            _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa",_sc,_pp,18,18,0,format ["Émetteur probable %1 · ±%2 m · %3 relevés",_cs,round _r,_n],2,0.026 * _ts,"RobotoCondensedBold","right"];
+            _map drawIcon ["\A3\ui_f\data\map\markers\military\unknown_CA.paa",_sc,_pp,18,18,0,format ["Émetteur probable %1 · ±%2 m · %3 relevés",_cs,round _r,_n],2,0.026 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
         };
     } forEach (uiNamespace getVariable ["COMSPEC_ATAK_Sigint",[]]);
 };
@@ -394,7 +394,7 @@ if ((_state getOrDefault ["interactive",false]) && {_state getOrDefault ["mapDis
     private _me = getPosASL player;
     private _c = [_cursor select 0,_cursor select 1,0];
     [[_me select 0,_me select 1,0],_c,_yellow] call _dashed;
-    _map drawIcon [_dot,_yellow,_c,10,10,0,format ["%1 m  %2°",round (player distance2D _c),round (player getDir _c)],2,0.03 * _ts,"RobotoCondensedBold","right"];
+    _map drawIcon [_dot,_yellow,_c,10,10,0,format ["%1 m  %2°",round (player distance2D _c),round (player getDir _c)],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
 };
 
 // Mesure A -> B (ou A -> curseur tant que B n'est pas posé)
@@ -403,8 +403,8 @@ if ((count _measure) isEqualTo 1 && {(count _cursor) >= 2}) then { _measure push
 if ((count _measure) >= 2) then {
     _measure params ["_a","_b"];
     _map drawLine [_a,_b,_amber];
-    _map drawIcon [_dot,_amber,_a,14,14,0,"A",2,0.03 * _ts,"RobotoCondensedBold","right"];
-    _map drawIcon [_dot,_amber,_b,14,14,0,format ["%1 m  %2°",round (_a distance2D _b),round (_a getDir _b)],2,0.03 * _ts,"RobotoCondensedBold","right"];
+    _map drawIcon [_dot,_amber,_a,14,14,0,"A",2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
+    _map drawIcon [_dot,_amber,_b,14,14,0,format ["%1 m  %2°",round (_a distance2D _b),round (_a getDir _b)],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
 };
 
 // Bâtiments numérotés
@@ -413,19 +413,19 @@ if ((count _measure) >= 2) then {
     if (isNull _b) then { continue };
     (boundingBoxReal _b) params ["_p1","_p2"];
     _map drawRectangle [getPosASL _b,((_p2 select 0) - (_p1 select 0)) / 2,((_p2 select 1) - (_p1 select 1)) / 2,getDir _b,[0.95,0.67,0.20,0.9],""];
-    _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)",[1,1,1,1],getPosASL _b,0,0,0,_label,2,0.032 * _ts,"RobotoCondensedBold","center"];
+    _map drawIcon ["#(argb,8,8,3)color(0,0,0,0)",[1,1,1,1],getPosASL _b,0,0,0,_label,2,0.032 * _ts,(COMSPEC_ATAK_FontSet select 1),"center"];
 } forEach (_state getOrDefault ["mapHouses",[]]);
 
 // Hauteurs relevées
 {
     _x params ["_p","_alt","_delta"];
-    _map drawIcon ["\A3\ui_f\data\map\markers\military\triangle_CA.paa",[0.85,0.85,0.85,1],_p,14,14,0,format ["%1 m (%2%3)",round _alt,["","+"] select (_delta >= 0),round _delta],2,0.03 * _ts,"RobotoCondensedBold","right"];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\triangle_CA.paa",[0.85,0.85,0.85,1],_p,14,14,0,format ["%1 m (%2%3)",round _alt,["","+"] select (_delta >= 0),round _delta],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
 } forEach (_state getOrDefault ["mapHeights",[]]);
 
 // Zones plates
 {
     _map drawEllipse [_x,12,12,0,[0.36,0.78,0.42,0.9],""];
-    _map drawIcon [_dot,[0.36,0.78,0.42,1],_x,10,10,0,format ["LZ %1",_forEachIndex + 1],2,0.03 * _ts,"RobotoCondensedBold","right"];
+    _map drawIcon [_dot,[0.36,0.78,0.42,1],_x,10,10,0,format ["LZ %1",_forEachIndex + 1],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
 } forEach (_state getOrDefault ["mapFlat",[]]);
 
 // Ligne de vue
@@ -435,10 +435,10 @@ if ((count _los) >= 3) then {
     if ((count _block) > 0) then {
         _map drawLine [_from,ASLToAGL _block,[0.36,0.78,0.42,1]];
         _map drawLine [ASLToAGL _block,_to,[0.90,0.25,0.22,1]];
-        _map drawIcon [_dot,[0.90,0.25,0.22,1],ASLToAGL _block,12,12,0,"BLOQUÉ",2,0.03 * _ts,"RobotoCondensedBold","right"];
+        _map drawIcon [_dot,[0.90,0.25,0.22,1],ASLToAGL _block,12,12,0,"BLOQUÉ",2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
     } else {
         _map drawLine [_from,_to,[0.36,0.78,0.42,1]];
-        _map drawIcon [_dot,[0.36,0.78,0.42,1],_to,12,12,0,"VUE OK",2,0.03 * _ts,"RobotoCondensedBold","right"];
+        _map drawIcon [_dot,[0.36,0.78,0.42,1],_to,12,12,0,"VUE OK",2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
     };
 };
 
@@ -459,12 +459,12 @@ if ((count _ft) >= 2) then {
     private _red = [0.90, 0.25, 0.22, 1];
     private _rr = (_scale * 700) max 10;
     _map drawEllipse [_ft, _rr, _rr, 0, _red, ""];
-    _map drawIcon ["\A3\ui_f\data\map\markers\military\destroy_CA.paa", _red, _ft, 22, 22, 0, "TGT", 2, 0.032 * _ts, "RobotoCondensedBold", "right"];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\destroy_CA.paa", _red, _ft, 22, 22, 0, "TGT", 2, 0.032 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
     private _gid = _fires getOrDefault ["gun", "MAN"];
     private _g = if (_gid isEqualTo "MAN") then { objNull } else { objectFromNetId _gid };
     if (!isNull _g) then {
         _map drawLine [getPosATL _g, _ft, [0.90, 0.25, 0.22, 0.7]];
-        _map drawIcon ["\A3\ui_f\data\map\markers\nato\b_mortar.paa", [0.30, 0.70, 1, 1], getPosATL _g, 22, 22, 0, "GUN", 2, 0.03 * _ts, "RobotoCondensedBold", "right"];
+        _map drawIcon ["\A3\ui_f\data\map\markers\nato\b_mortar.paa", [0.30, 0.70, 1, 1], getPosATL _g, 22, 22, 0, "GUN", 2, 0.03 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
     };
 };
 
@@ -515,7 +515,7 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
         if ((_c getVariable ["comspec_sig", []]) isNotEqualTo _sig) then {
             _c setVariable ["comspec_sig", _sig];
             _c ctrlSetBackgroundColor [0.02, 0.02, 0.02, 0.86];
-            _c ctrlSetStructuredText parseText ((format ["<t size='%4' font='RobotoCondensedBold' color='#ffffff'>%1<br/>%2E<br/>%3N</t>", toUpper ([_title, "<", "&lt;"] call CBA_fnc_replace), _e, _n, 1]) call comspec_atak_native_fnc_tr);
+            _c ctrlSetStructuredText parseText ((format ["<t size='%4' font='COMSPEC_BarlowBold' color='#ffffff'>%1<br/>%2E<br/>%3N</t>", toUpper ([_title, "<", "&lt;"] call CBA_fnc_replace), _e, _n, 1]) call comspec_atak_native_fnc_tr);
             _c ctrlSetFontHeight _fs;
         };
         private _w = (_fs * 0.42 * (((count _title) max 9) + 1)) max (_fs * 4);
@@ -583,7 +583,7 @@ if (_spanX > 1 && {_spanY > 1}) then {
     private _x0 = _offX + (ceil (((_gTl select 0) - _offX) / _step)) * _step;
     for "_gx" from _x0 to (_gBr select 0) step _step do {
         private _g = mapGridPosition [_gx + 1, _midY];
-        if ((count _g) >= 6) then { _map drawIcon [_none, _gc, [_gx, _yTop, 0], 0, 0, 0, _g select [0, 3], [0, 2] select _light, _gs, "RobotoCondensedBold", "right"]; };
+        if ((count _g) >= 6) then { _map drawIcon [_none, _gc, [_gx, _yTop, 0], 0, 0, 0, _g select [0, 3], [0, 2] select _light, _gs, (COMSPEC_ATAK_FontSet select 1), "right"]; };
     };
     // Bord gauche : texte juste au-dessus de la ligne.
     private _y0 = _offY + (ceil (((_gBr select 1) - _offY) / _step)) * _step;
@@ -591,7 +591,7 @@ if (_spanX > 1 && {_spanY > 1}) then {
         private _g = mapGridPosition [_midX, _gy + ([-1, 1] select _northUp)];
         private _sy = ((_map ctrlMapWorldToScreen [_midX, _gy]) select 1) - _gs * 0.6;
         if ((count _g) >= 6 && {_sy > (_my + _gs * 1.4)}) then {
-            _map drawIcon [_none, _gc, _map ctrlMapScreenToWorld [_mx + pixelW * 2, _sy], 0, 0, 0, _g select [3, 3], [0, 2] select _light, _gs, "RobotoCondensedBold", "right"];
+            _map drawIcon [_none, _gc, _map ctrlMapScreenToWorld [_mx + pixelW * 2, _sy], 0, 0, 0, _g select [3, 3], [0, 2] select _light, _gs, (COMSPEC_ATAK_FontSet select 1), "right"];
         };
     };
 };

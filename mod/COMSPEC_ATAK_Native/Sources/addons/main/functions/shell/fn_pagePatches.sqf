@@ -192,7 +192,7 @@ switch (_act) do {
             if ((count _h) > 1 && {(_h select ((count _h) - 2)) isEqualTo "SETTINGS"}) then { [] call comspec_atak_native_fnc_back; } else { ["SETTINGS"] call comspec_atak_native_fnc_navigate; };
         }] call CBA_fnc_execNextFrame; }];
         private _hd = ["COMSPEC_RscStructuredText", [_pad + _w * 0.32, _y + (_rowH - _fs * 1.4) / 2, _w * 0.68, _fs * 1.4]] call comspec_atak_native_fnc_pageCtrl;
-        _hd ctrlSetStructuredText parseText ((format ["<t align='right' font='RobotoCondensedBold'>Patch au dos</t><t align='right' size='0.8' color='#8a9a93'>  %1 insignes d'unité</t>", ["count"] call comspec_atak_native_fnc_patchCatalog]) call comspec_atak_native_fnc_tr);
+        _hd ctrlSetStructuredText parseText ((format ["<t align='right' font='COMSPEC_BarlowBold'>Patch au dos</t><t align='right' size='0.8' color='#8a9a93'>  %1 insignes d'unité</t>", ["count"] call comspec_atak_native_fnc_patchCatalog]) call comspec_atak_native_fnc_tr);
         _y = _y + _rowH + _pad / 2;
         private _lb = ["COMSPEC_RscLabel", [_pad, _y, _w, _fs * 1.2], "RECHERCHER (NOM OU CLASSE)"] call comspec_atak_native_fnc_pageCtrl;
         _lb ctrlSetFontHeight (_fs * 0.9);

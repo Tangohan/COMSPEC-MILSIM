@@ -10207,5 +10207,7 @@
 ["❌ Échec de resynchronisation de %1", "❌ Failed to resync %1"],
 ["📍 TÉLÉPORTER", "📍 TELEPORT"],
 ["📡 Tableau de bord relais ATAK", "📡 ATAK relay dashboard"],
-["🔄 RESYNC TOUS", "🔄 RESYNC ALL"]
+["🔄 RESYNC TOUS", "🔄 RESYNC ALL"],
+["Police", "Font"],
+["Police de tout le téléphone. Barlow Condensed par défaut ; Roboto et Purista sont celles du jeu.", "Font for the whole phone. Barlow Condensed by default; Roboto and Purista are the game's own."]
 ]

@@ -99,7 +99,7 @@ private _tbg = ["COMSPEC_RscText", [_tx, _ty, _tw, _th]] call _mk;
 _tbg ctrlSetBackgroundColor [0.235, 0.235, 0.235, 1];
 private _body = _draft getOrDefault ["body", ""];
 private _ph = ["COMSPEC_RscStructuredText", [_tx + _pad / 2, _ty + _pad / 3, _tw - _pad, _fs * 2.6]] call _mk;
-_ph ctrlSetStructuredText parseText (("<t size='0.8' color='#8c8c8c' font='RobotoCondensedLight'>Veuillez inscrire vos informations dans ce cadre. N'hésitez pas à modifier la date, les thèmes ou le lieu (Entête) en fonction de l'événement.</t>") call comspec_atak_native_fnc_tr);
+_ph ctrlSetStructuredText parseText (("<t size='0.8' color='#8c8c8c' font='COMSPEC_BarlowLight'>Veuillez inscrire vos informations dans ce cadre. N'hésitez pas à modifier la date, les thèmes ou le lieu (Entête) en fonction de l'événement.</t>") call comspec_atak_native_fnc_tr);
 _ph ctrlShow (_body isEqualTo "");
 private _edit = ["COMSPEC_RscEditMulti", [_tx, _ty, _tw, _th], _body] call _mk;
 _edit ctrlSetBackgroundColor [0, 0, 0, 0];
@@ -201,7 +201,7 @@ if (_pjOn && {_view isEqualTo ""}) then {
     private _gw = _pw - 2 * _pad;
     private _titleH = _fs * 1.6;
     private _tt = ["COMSPEC_RscText", [_gx, _pad / 2, _gw, _titleH], "PIÈCES JOINTES"] call _mk;
-    _tt ctrlSetFont "RobotoCondensedBold"; _tt ctrlSetFontHeight (_fs * 0.95); _tt ctrlSetTextColor [0.9, 0.9, 0.9, 1];
+    _tt ctrlSetFont (COMSPEC_ATAK_FontSet select 1); _tt ctrlSetFontHeight (_fs * 0.95); _tt ctrlSetTextColor [0.9, 0.9, 0.9, 1];
     private _cw = _fs * 2.6 / _ratio;
     private _cc = ["COMSPEC_RscTextCenter", [_gx + _gw - _cw, _pad / 2 + _titleH * 0.12, _cw, _titleH * 0.76], format ["%1/4", _np]] call _mk;
     _cc ctrlSetFontHeight ((_fs * 0.8) max COMSPEC_ATAK_FontMin); _cc ctrlSetTextColor [1, 1, 1, 1];
@@ -332,7 +332,7 @@ if (_pjOn && {_view isNotEqualTo ""}) then {
                 if ((count _sent) isEqualTo 0) then { _rows pushBack ["text", "<t color='#9a9a9a'>Aucune fiche envoyée pendant cette session.</t>"]; };
                 {
                     _x params ["_time", "_kind", "_ref", "_status", "_excerpt", ["_np", 0]];
-                    _rows pushBack ["text", format ["<t color='#7d6ff0' font='RobotoCondensedBold'>%1</t>  %2  <t color='#9a9a9a'>%3 · %4%5</t><br/><t size='0.85'>%6</t>", _kind, _ref, _time, _status, ["", format [" · %1 pièce(s)", _np]] select (_np > 0), [_excerpt] call _esc]];
+                    _rows pushBack ["text", format ["<t color='#7d6ff0' font='COMSPEC_BarlowBold'>%1</t>  %2  <t color='#9a9a9a'>%3 · %4%5</t><br/><t size='0.85'>%6</t>", _kind, _ref, _time, _status, ["", format [" · %1 pièce(s)", _np]] select (_np > 0), [_excerpt] call _esc]];
                 } forEach (+_sent call { reverse _this; _this });
             } else {
                 if !(_scope in _lib) then { [{ ["load", _this] call comspec_atak_native_fnc_frsLibrary; }, _scope] call CBA_fnc_execNextFrame; };
@@ -344,7 +344,7 @@ if (_pjOn && {_view isNotEqualTo ""}) then {
                     _note params ["_id", "_ref", "_kind", "_title", "_grid", "_urg", "_status", "_when", "_author", "_body", "_urls"];
                     _rows append [
                         ["title", format ["%1 · %2", _kind, _ref]],
-                        ["text", format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#9a9a9a'>%2 · %3 · %4%5%6</t>", [_title] call _esc, _when, _urg, _status, ["", format [" · %1", _grid]] select (_grid isNotEqualTo ""), ["", format [" · %1", [_author] call _esc]] select (_author isNotEqualTo "")]],
+                        ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#9a9a9a'>%2 · %3 · %4%5%6</t>", [_title] call _esc, _when, _urg, _status, ["", format [" · %1", _grid]] select (_grid isNotEqualTo ""), ["", format [" · %1", [_author] call _esc]] select (_author isNotEqualTo "")]],
                         ["text", format ["<t size='0.9'>%1</t>", [([_body] call _esc), " ¶ ", "<br/>"] call CBA_fnc_replace]]
                     ];
                     if ((count _urls) > 0) then {
@@ -365,7 +365,7 @@ if (_pjOn && {_view isNotEqualTo ""}) then {
                     {
                         _x params ["_id", "_ref", "_kind", "_title", "_grid", "_urg", "_status", "_when", "_author", "_body", "_urls"];
                         _rows pushBack ["person", _dir + (["ui_folder.paa", "ui_gallery.paa"] select ((count _urls) > 0)),
-                            format ["<t color='#7d6ff0' font='RobotoCondensedBold'>%1</t>  %2<br/><t size='0.85'>%3</t><br/><t size='0.75' color='#9a9a9a'>%4 · %5%6</t>", _kind, _ref, [_title] call _esc, _when, _status, ["", format [" · %1 photo(s)", count _urls]] select ((count _urls) > 0)],
+                            format ["<t color='#7d6ff0' font='COMSPEC_BarlowBold'>%1</t>  %2<br/><t size='0.85'>%3</t><br/><t size='0.75' color='#9a9a9a'>%4 · %5%6</t>", _kind, _ref, [_title] call _esc, _when, _status, ["", format [" · %1 photo(s)", count _urls]] select ((count _urls) > 0)],
                             [["OUVRIR", compile format ["['libOpen', %1] call comspec_atak_native_fnc_frsAction;", str _id], true, true]], [0.8, 0.8, 0.8, 1]];
                     } forEach _notes;
                     _rows pushBack ["buttons", [[format ["ACTUALISER%1", ["", format [" (%1)", _at]] select (_at isNotEqualTo "")], compile format ["['load', %1] call comspec_atak_native_fnc_frsLibrary;", str _scope]]]];

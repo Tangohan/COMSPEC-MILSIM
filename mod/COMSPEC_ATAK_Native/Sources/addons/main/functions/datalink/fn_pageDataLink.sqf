@@ -36,10 +36,10 @@ if (_phase isNotEqualTo "") exitWith {
     (switch (_theme) do {
         case "linux": { [[0.01, 0.02, 0.012, 0.97], "#33ff66", "EtelkaMonospacePro", "tty1 · GNU/Linux"] };
         case "militaire": { [[0.07, 0.085, 0.05, 0.97], "#c8b560", "PuristaMedium", "SYSTÈME TACTIQUE · ACCÈS RESTREINT"] };
-        case "scada": { [[0.11, 0.12, 0.13, 0.97], "#ff9a1f", "RobotoCondensed", "Supervision industrielle"] };
-        case "telephone": { [[0.02, 0.02, 0.04, 0.97], "#e8ecff", "RobotoCondensedLight", "Écran verrouillé"] };
+        case "scada": { [[0.11, 0.12, 0.13, 0.97], "#ff9a1f", (COMSPEC_ATAK_FontSet select 0), "Supervision industrielle"] };
+        case "telephone": { [[0.02, 0.02, 0.04, 0.97], "#e8ecff", (COMSPEC_ATAK_FontSet select 2), "Écran verrouillé"] };
         case "coffre": { [[0.09, 0.015, 0.015, 0.97], "#ff4a3a", "EtelkaMonospacePro", "COFFRE CHIFFRÉ · AES-256"] };
-        default { [[0.015, 0.13, 0.30, 0.97], "#4cc2ff", "RobotoCondensed", "Session Windows"] };
+        default { [[0.015, 0.13, 0.30, 0.97], "#4cc2ff", (COMSPEC_ATAK_FontSet select 0), "Session Windows"] };
     }) params ["_bg", "_acc", "_font", "_os"];
     private _custom = _cfg getOrDefault ["accent", ""];
     if (_custom isEqualType "" && {(count _custom) isEqualTo 7} && {(_custom select [0, 1]) isEqualTo "#"}) then { _acc = _custom; };
@@ -205,7 +205,7 @@ if (_nodes isEqualTo []) then { _rows pushBack ["text", format ["<t color='%1'>A
         default { "<t color='#5cc76b'>libre</t>" };
     };
     _rows pushBack ["person", "\z\comspec_atak_native\addons\main\data\app_datalink.paa",
-        format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.85' color='%2'>%3 m · %4</t> %5", [_cfg getOrDefault ["name", "Support"]] call _esc, _grey, round _d, _cfg getOrDefault ["kind", ""], _state],
+        format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.85' color='%2'>%3 m · %4</t> %5", [_cfg getOrDefault ["name", "Support"]] call _esc, _grey, round _d, _cfg getOrDefault ["kind", ""], _state],
         [["BRANCHER", compile format ["['connect', '%1' call BIS_fnc_objectFromNetId] call comspec_atak_native_fnc_dataAction;", _o call BIS_fnc_netId], true, _d <= _len + 0.5]]];
 } forEach (_nodes select [0, 8]);
 
@@ -214,7 +214,7 @@ if (_lib isEqualTo []) then { _rows pushBack ["text", format ["<t color='%1'>Rie
 {
     _x params ["_src", "_fn", "_ft", "", "_fs", ["_clock", ""], "", ["_from", ""]];
     _rows pushBack ["person", "\z\comspec_atak_native\addons\main\data\app_datalink.paa",
-        format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.85' color='%2'>%3 · %4 · %5 %6</t>", [_fn] call _esc, _grey, _typeLabel getOrDefault [_ft, _ft], [_fs] call _kb, [_src] call _esc, _clock],
+        format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.85' color='%2'>%3 · %4 · %5 %6</t>", [_fn] call _esc, _grey, _typeLabel getOrDefault [_ft, _ft], [_fs] call _kb, [_src] call _esc, _clock],
         [["OUVRIR", compile format ["['view', %1] call comspec_atak_native_fnc_dataAction;", _forEachIndex], true]]];
 } forEach _lib;
 if (_lib isNotEqualTo []) then {

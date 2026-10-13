@@ -37,7 +37,7 @@ if ((count _list) isEqualTo 0) then { _rows pushBack ["text", "<t color='#8a9a93
     if ((_r getOrDefault ["ekia", ""]) isNotEqualTo "") then { _bits pushBack format ["EKIA %1", _r get "ekia"]; };
     if ((_r getOrDefault ["equip", ""]) isNotEqualTo "") then { _bits pushBack (_r get "equip"); };
     if ((_r getOrDefault ["ammo", ""]) isNotEqualTo "") then { _bits pushBack (_r get "ammo"); };
-    _rows pushBack ["text", format ["<t font='RobotoCondensedBold' color='%1'>%2 %3</t>  <t color='#8a9a93'>%4 · %5 · %6</t><br/><t size='0.9'>%7%8</t>%9",
+    _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold' color='%1'>%2 %3</t>  <t color='#8a9a93'>%4 · %5 · %6</t><br/><t size='0.9'>%7%8</t>%9",
         ["#5cc76b", "#e5483a"] select ((_r getOrDefault ["reatk", "NO"]) isEqualTo "YES"), _tgt, _res, _r getOrDefault ["by", "?"], _r getOrDefault ["time", ""], _r getOrDefault ["grid", ""],
         _bits joinString " · ", format ["%1%2", ["", " · "] select ((count _bits) > 0), _reatk],
         ["", format ["<br/><t size='0.85' color='#c9d4cf'>%1</t>", _r get "rem"]] select ((_r getOrDefault ["rem", ""]) isNotEqualTo "")]];

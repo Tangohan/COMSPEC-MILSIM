@@ -28,9 +28,9 @@ if (_p getOrDefault ["trails", true]) then {
 {
     _x params ["_x0", "_y0", "_dir", "_name", "_grp", "_me", "_veh"];
     private _icon = ["\A3\ui_f\data\map\vehicleicons\iconMan_ca.paa", "\A3\ui_f\data\map\vehicleicons\iconCar_ca.paa"] select _veh;
-    _map drawIcon [_icon, [_ally, _self] select _me, [_x0, _y0], [20, 26] select _me, [20, 26] select _me, _dir, ["", format ["%1 (%2)", _name, _grp]] select (_labels || _me), 1, 0.03, "RobotoCondensed", "right"];
+    _map drawIcon [_icon, [_ally, _self] select _me, [_x0, _y0], [20, 26] select _me, [20, 26] select _me, _dir, ["", format ["%1 (%2)", _name, _grp]] select (_labels || _me), 1, 0.03, (COMSPEC_ATAK_FontSet select 0), "right"];
 } forEach _units;
 {
     _x params ["_et", "_ex", "_ey", "_en"];
-    if (_et <= _t) then { _map drawIcon ["\A3\ui_f\data\map\markers\military\destroy_CA.paa", [0.9, 0.2, 0.2, 0.9], [_ex, _ey], 18, 18, 0, ["", _en] select _labels, 1, 0.028, "RobotoCondensed", "right"]; };
+    if (_et <= _t) then { _map drawIcon ["\A3\ui_f\data\map\markers\military\destroy_CA.paa", [0.9, 0.2, 0.2, 0.9], [_ex, _ey], 18, 18, 0, ["", _en] select _labels, 1, 0.028, (COMSPEC_ATAK_FontSet select 0), "right"]; };
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_AarEvents", []]);

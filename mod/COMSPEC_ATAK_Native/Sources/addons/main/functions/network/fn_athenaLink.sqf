@@ -96,7 +96,7 @@ switch (_action) do {
             if (uiNamespace getVariable ["COMSPEC_ATAK_AthenaLinkNotify", false]) then {
                 uiNamespace setVariable ["COMSPEC_ATAK_AthenaLinkNotify", false];
                 ["INFO", format ["Connexion Athena : sur %1, saisissez le code %2", _short, _code], 12, 40] call comspec_atak_native_fnc_notify;
-                hintSilent parseText ((format ["<t size='1.1' font='RobotoCondensedBold'>Connexion Athena</t><br/>Sur <t color='#5cc76b'>%1</t>, connecté à votre compte, saisissez le code :<br/><t size='1.8' font='RobotoCondensedBold' color='#5cc76b'>%2</t><br/><t size='0.85' color='#8a9a93'>Aussi dans l'app Athena du téléphone, qui accepte aussi e-mail et mot de passe.</t>", _short, _code]) call comspec_atak_native_fnc_tr);
+                hintSilent parseText ((format ["<t size='1.1' font='COMSPEC_BarlowBold'>Connexion Athena</t><br/>Sur <t color='#5cc76b'>%1</t>, connecté à votre compte, saisissez le code :<br/><t size='1.8' font='COMSPEC_BarlowBold' color='#5cc76b'>%2</t><br/><t size='0.85' color='#8a9a93'>Aussi dans l'app Athena du téléphone, qui accepte aussi e-mail et mot de passe.</t>", _short, _code]) call comspec_atak_native_fnc_tr);
             };
             if (uiNamespace getVariable ["COMSPEC_ATAK_AthenaLinkOpen", false]) then {
                 uiNamespace setVariable ["COMSPEC_ATAK_AthenaLinkOpen", false];

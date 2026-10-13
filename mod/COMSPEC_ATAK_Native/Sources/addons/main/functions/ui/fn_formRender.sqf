@@ -60,6 +60,7 @@ private _click = {
 private _mk = {
     params ["_class", "_pos", ["_text", ""]];
     private _c = _d ctrlCreate [_class, -1, _grp];
+    [_c, _class] call comspec_atak_native_fnc_fontApply;
     _c ctrlSetPosition _pos;
     if (_text isNotEqualTo "") then { _c ctrlSetText ((_text) call comspec_atak_native_fnc_tr); };
     _c ctrlCommit 0;
@@ -215,7 +216,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             private _bar = ["COMSPEC_RscText", [_pad, _y + _fs * 0.15, _pad * 0.35, _fs * 1.1]] call _mk;
             _bar ctrlSetBackgroundColor _acc;
             private _t = ["COMSPEC_RscStructuredText", [_pad * 1.6, _y, _w - _pad, _rowH]] call _mk;
-            _t ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='%3'>%1</t>%2", toUpper _title, ["", format ["<br/><t size='0.8' color='#8a9a93'>%1</t>", _sub]] select (_sub isNotEqualTo ""), _accHex]) call comspec_atak_native_fnc_tr);
+            _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='%3'>%1</t>%2", toUpper _title, ["", format ["<br/><t size='0.8' color='#8a9a93'>%1</t>", _sub]] select (_sub isNotEqualTo ""), _accHex]) call comspec_atak_native_fnc_tr);
             private _h = (ctrlTextHeight _t) max (_fs * 1.3);
             _t ctrlSetPosition [_pad * 1.6, _y, _w - _pad, _h];
             _t ctrlCommit 0;
@@ -297,7 +298,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             private _nb = ["COMSPEC_RscText", [_pad * 1.5, _y + _h * 0.15, _nw, _h * 0.7 - pixelH * 2]] call _mk;
             _nb ctrlSetBackgroundColor [_acc select 0, _acc select 1, _acc select 2, [0.9, 0.25] select (_num isEqualTo "")];
             private _nt = ["COMSPEC_RscStructuredText", [_pad * 1.5, _y + (_h - _fs * 1.25) / 2, _nw, _fs * 1.25]] call _mk;
-            _nt ctrlSetStructuredText parseText ((format ["<t align='center' font='%2' color='#08100c'>%1</t>", _num, ["RobotoCondensedBold", "EtelkaMonospaceProBold"] select _mono]) call comspec_atak_native_fnc_tr);
+            _nt ctrlSetStructuredText parseText ((format ["<t align='center' font='%2' color='#08100c'>%1</t>", _num, [(COMSPEC_ATAK_FontSet select 1), "EtelkaMonospaceProBold"] select _mono]) call comspec_atak_native_fnc_tr);
             private _lx = _pad * 2.5 + _nw;
             private _lw = (_w * 0.46) - _nw - _pad;
             private _vx = _pad + _w * 0.46;
@@ -321,7 +322,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 private _col = switch (true) do { case _empty: { "#93a39c" }; case (_kind isEqualTo "warn"): { "#ff6a5c" }; default { _accHex } };
                 private _vt = ["COMSPEC_RscStructuredText", [_vx, _y, _vw, _h]] call _mk;
                 _vt ctrlSetStructuredText parseText ((format ["<t align='right' color='%1' font='%2' size='%4'>%3</t>", _col,
-                    [["RobotoCondensedBold", "RobotoCondensed"] select _empty, ["EtelkaMonospaceProBold", "RobotoCondensed"] select _empty] select _mono,
+                    [[(COMSPEC_ATAK_FontSet select 1), (COMSPEC_ATAK_FontSet select 0)] select _empty, ["EtelkaMonospaceProBold", (COMSPEC_ATAK_FontSet select 0)] select _empty] select _mono,
                     [_value, _help] select _empty, [1, 0.9] select _mono]) call comspec_atak_native_fnc_tr);
                 private _vh = (ctrlTextHeight _vt) min _h;
                 _vt ctrlSetPosition [_vx, _y + (_h - _vh) / 2, _vw, _vh];
@@ -473,7 +474,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                     private _span = _bwid * (count _btns);
                     if (_titled && {_glabel isNotEqualTo ""}) then {
                         private _t = ["COMSPEC_RscStructuredText", [_x0, _y, _span, _lh]] call _mk;
-                        _t ctrlSetStructuredText parseText ((format ["<t size='0.72' font='RobotoCondensedBold' color='#8a9a93'>%1</t>", toUpper _glabel]) call comspec_atak_native_fnc_tr);
+                        _t ctrlSetStructuredText parseText ((format ["<t size='0.72' font='COMSPEC_BarlowBold' color='#8a9a93'>%1</t>", toUpper _glabel]) call comspec_atak_native_fnc_tr);
                         _t ctrlEnable false;
                         private _ln = ["COMSPEC_RscText", [_x0, _y + _lh - pixelH * 3, _span - _pad / 3, pixelH * 2]] call _mk;
                         _ln ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.45];

@@ -14,12 +14,12 @@ if ((count _r) > 0) then {
     private _g = [] call comspec_atak_native_fnc_routeGuide;
     if ((count _g) > 0) then {
         _g params ["_txt", "_dn", "_icon", "_left", "_eta", "_label"];
-        _rows pushBack ["hero", format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon], format ["<t size='1.4' font='RobotoCondensedBold'>%1</t>  <t size='1.05'>%2</t><br/><t color='#5cc76b'>%3 min</t> · %4 · arrivée %5<br/><t size='0.85' color='#8a9a93'>vers %6</t>",
+        _rows pushBack ["hero", format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon], format ["<t size='1.4' font='COMSPEC_BarlowBold'>%1</t>  <t size='1.05'>%2</t><br/><t color='#5cc76b'>%3 min</t> · %4 · arrivée %5<br/><t size='0.85' color='#8a9a93'>vers %6</t>",
             [_dn] call _fmt, _txt, ceil (_eta / 60), [_left] call _fmt, [(dayTime + _eta / 3600) mod 24, "HH:MM"] call BIS_fnc_timeToString, _label]];
         _rows pushBack ["buttons", [["VOIR SUR LA CARTE", { ['map'] call comspec_atak_native_fnc_gpsAction; }, true], ["ARRÊTER", { ['stop'] call comspec_atak_native_fnc_gpsAction; }]]];
     };
 } else {
-    _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_gps.paa", "<t size='1.2' font='RobotoCondensedBold'>Aucun guidage</t><br/><t color='#8a9a93'>Choisissez une destination : grille, carte, étape ou marqueur. L'itinéraire suit les routes et pistes.</t>"];
+    _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_gps.paa", "<t size='1.2' font='COMSPEC_BarlowBold'>Aucun guidage</t><br/><t color='#8a9a93'>Choisissez une destination : grille, carte, étape ou marqueur. L'itinéraire suit les routes et pistes.</t>"];
 };
 if (missionNamespace getVariable ["COMSPEC_ATAK_RouteBusy", false]) then { _rows pushBack ["text", "<t color='#f2ab33'>Calcul de l'itinéraire…</t>"]; };
 

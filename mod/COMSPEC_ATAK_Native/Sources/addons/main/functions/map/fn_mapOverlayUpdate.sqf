@@ -81,7 +81,7 @@ if (!isNull _wa) then {
         private _b = player getDir _p;
         _wa ctrlSetAngle [_b - _h, 0.5, 0.5];
         private _d = player distance2D _p;
-        (_ov getOrDefault ["wpText", controlNull]) ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' size='1.1'>%1</t> <t size='0.8' color='#8a9a93'>%2/%3</t><br/><t size='0.95'>%4</t> <t size='0.8' color='#8a9a93'>%5°</t>",
+        (_ov getOrDefault ["wpText", controlNull]) ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.1'>%1</t> <t size='0.8' color='#8a9a93'>%2/%3</t><br/><t size='0.95'>%4</t> <t size='0.8' color='#8a9a93'>%5°</t>",
             _n, (_w getOrDefault ["idx", 0]) + 1, count _pts, [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 1]] select (_d >= 1000), round _b]) call comspec_atak_native_fnc_tr);
     };
 };
@@ -97,10 +97,10 @@ if (!isNull _tape) then {
         params ["_a"];
         _a = (round _a) mod 360;
         switch (_a) do {
-            case 0: { "<t color='#e5483a' font='RobotoCondensedBold'>N</t>" };
-            case 90: { "<t font='RobotoCondensedBold'>E</t>" };
-            case 180: { "<t font='RobotoCondensedBold'>S</t>" };
-            case 270: { format ["<t font='RobotoCondensedBold'>%1</t>", _west] };
+            case 0: { "<t color='#e5483a' font='COMSPEC_BarlowBold'>N</t>" };
+            case 90: { "<t font='COMSPEC_BarlowBold'>E</t>" };
+            case 180: { "<t font='COMSPEC_BarlowBold'>S</t>" };
+            case 270: { format ["<t font='COMSPEC_BarlowBold'>%1</t>", _west] };
             default { format ["<t color='#c5ccc8'>%1</t>", _a] };
         };
     };
@@ -119,9 +119,9 @@ private _me = _ov getOrDefault ["me", controlNull];
 if (!isNull _me) then {
     // Mini : indicatif et cap seulement ; plein écran : avec la grille.
     _me ctrlSetStructuredText parseText (((if (([] call comspec_atak_native_fnc_layoutGet) get "mini") then {
-        format ["<t align='right'><t font='RobotoCondensedBold' color='#5cc76b'>%1</t><br/>%2 %3°</t>", [player] call comspec_atak_native_fnc_unitCallsign, [_h] call _cardinal, round _h]
+        format ["<t align='right'><t font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t><br/>%2 %3°</t>", [player] call comspec_atak_native_fnc_unitCallsign, [_h] call _cardinal, round _h]
     } else {
-        format ["<t align='right'><t font='RobotoCondensedBold' color='#5cc76b'>%1</t><br/>%2 %3°<br/>%4</t>",
+        format ["<t align='right'><t font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t><br/>%2 %3°<br/>%4</t>",
             [player] call comspec_atak_native_fnc_unitCallsign, [_h] call _cardinal, round _h, [player] call comspec_atak_native_fnc_gridRef]
     })) call comspec_atak_native_fnc_tr);
 };

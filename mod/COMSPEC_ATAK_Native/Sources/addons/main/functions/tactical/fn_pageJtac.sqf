@@ -73,7 +73,7 @@ private _logRows = {
         private _mine = _who isEqualTo _me;
         _r pushBack ["text", format ["%1  %2  <t size='0.88' color='%4'%5>%3</t>",
             [_t, _grey, 0.8] call _mono, [_who, [_green, "#7fd3e0"] select _mine, 0.8, true] call _mono, _txt,
-            ["#e6ece9", _red] select _crit, ["", " font='RobotoCondensedBold'"] select _crit], [[0.04, 0.05, 0.046, 1], [0.035, 0.044, 0.04, 1]] select ((_forEachIndex mod 2) isEqualTo 1)];
+            ["#e6ece9", _red] select _crit, ["", " font='COMSPEC_BarlowBold'"] select _crit], [[0.04, 0.05, 0.046, 1], [0.035, 0.044, 0.04, 1]] select ((_forEachIndex mod 2) isEqualTo 1)];
     } forEach ((_m getOrDefault ["log", []]) select [0, _n]);
     if ((count _r) isEqualTo 0) then { _r pushBack ["text", format ["<t color='%1'>Aucun appel pour l'instant.</t>", _grey]]; };
     _r
@@ -232,7 +232,7 @@ switch (_tab) do {
         if ((_b get "ltl") isNotEqualTo "") then { _rows pushBack ["line", "", "Ligne laser-cible", _b get "ltl", "auto", "", "", "mono"]; };
         _rows pushBack ["line", "", "Menaces", _s getOrDefault ["jThreat", ""], "edit", "jThreat", "sol-air, armes légères", "mono"];
         if (_dcOn) then {
-            _rows pushBack ["text", format ["<t color='%1' font='RobotoCondensedBold'>DANGER CLOSE</t><t size='0.85'> : amis à %2 m de la cible, sous la distance de risque de l'armement (%3 m, indicatif). Le chef au sol accepte le risque et donne ses initiales.</t>", _red, (_b get "friend") select 0, _b get "risk"], [0.2, 0.06, 0.05, 1]];
+            _rows pushBack ["text", format ["<t color='%1' font='COMSPEC_BarlowBold'>DANGER CLOSE</t><t size='0.85'> : amis à %2 m de la cible, sous la distance de risque de l'armement (%3 m, indicatif). Le chef au sol accepte le risque et donne ses initiales.</t>", _red, (_b get "friend") select 0, _b get "risk"], [0.2, 0.06, 0.05, 1]];
             _rows pushBack ["line", "", "Initiales du chef", _s getOrDefault ["jDc", ""], "edit", "jDc", "accepte le risque", "mono"];
         };
         _rows pushBack ["text", format ["<t size='0.72' color='%1'>TRANSMIS EN REMARQUES</t><br/>%2", _grey, [_b get "remarks", "", 0.82] call _mono], _cardBg];

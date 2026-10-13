@@ -41,7 +41,7 @@ private _rows = [];
 if (_logged) then {
     // Fiche : photo (ou logo), indicatif, nom, état de la liaison
     private _cs = ["comspec_profile_callsign", [player, true] call comspec_atak_native_fnc_unitCallsign] call _v;
-    _rows pushBack ["hero", _logo, format ["<t size='1.4' color='#5cc76b' font='RobotoCondensedBold'>%1</t>  <t size='1.1'>%2</t><br/><t color='%3' font='RobotoCondensedBold'>● %4</t>  <t color='#8a9a93' size='0.85'>%5</t>",
+    _rows pushBack ["hero", _logo, format ["<t size='1.4' color='#5cc76b' font='COMSPEC_BarlowBold'>%1</t>  <t size='1.1'>%2</t><br/><t color='%3' font='COMSPEC_BarlowBold'>● %4</t>  <t color='#8a9a93' size='0.85'>%5</t>",
         _cs, ["comspec_profile_name", name player] call _v, _pill select 1, _pill select 0, ["comspec_tenant_name", "Athena"] call _v]];
     if (_hText isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#7aa89a", "#e8b84a"] select _hWarn, _hText]]; };
     _rows append [
@@ -66,7 +66,7 @@ if (_logged) then {
         ];
     };
 } else {
-    _rows pushBack ["hero", _logo, format ["<t size='1.35' font='RobotoCondensedBold'>ATHENA</t>  <t color='%1' font='RobotoCondensedBold'>● %2</t><br/><t color='#8a9a93' size='0.85'>%3</t>",
+    _rows pushBack ["hero", _logo, format ["<t size='1.35' font='COMSPEC_BarlowBold'>ATHENA</t>  <t color='%1' font='COMSPEC_BarlowBold'>● %2</t><br/><t color='#8a9a93' size='0.85'>%3</t>",
         _pill select 1, _pill select 0, ["Liaison avec le portail et le poste de commandement", ["COMSPEC_LinkDetail"] call _v] select ((["COMSPEC_LinkDetail"] call _v) isNotEqualTo "")]];
     if (_err isNotEqualTo "" && {_err isNotEqualTo "-"}) then { _rows pushBack ["text", format ["<t color='#e5483a'>%1</t>", _err]]; };
     if (_hText isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#7aa89a", "#e8b84a"] select _hWarn, _hText]]; };
@@ -95,7 +95,7 @@ if (_logged) then {
         };
         case "pair": {
             _rows append [
-                ["text", "<t color='#c9d4cf'>Sur le portail Athena, page <t font='RobotoCondensedBold'>Appairer</t>, générez un code (valable 30 min) et saisissez-le ici.</t>"],
+                ["text", "<t color='#c9d4cf'>Sur le portail Athena, page <t font='COMSPEC_BarlowBold'>Appairer</t>, générez un code (valable 30 min) et saisissez-le ici.</t>"],
                 ["edit", "pair", "Code d'appairage", _draft getOrDefault ["pair", ""]],
                 ["buttons", [["LIER CE JEU À MON COMPTE", { ["pair"] call comspec_atak_native_fnc_athenaAction; }, true]]]
             ];
@@ -116,9 +116,9 @@ if (_logged) then {
                 case "pending": {
                     _rows append [
                         ["text", "<t color='#c9d4cf'>Sur votre ordinateur ou votre téléphone, connecté à votre compte Athena, ouvrez :</t>"],
-                        ["text", format ["<t size='1.25' font='RobotoCondensedBold' color='#5cc76b'>%1</t>", _short]],
+                        ["text", format ["<t size='1.25' font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>", _short]],
                         ["text", "<t color='#c9d4cf'>puis saisissez ce code :</t>"],
-                        ["text", format ["<t size='2.4' font='RobotoCondensedBold' align='center'>%1</t>", _lc]],
+                        ["text", format ["<t size='2.4' font='COMSPEC_BarlowBold' align='center'>%1</t>", _lc]],
                         ["text", format ["<t color='#8a9a93'>En attente de votre accord. Code valable encore %1 min.</t>", ceil ((_lu - diag_tickTime) / 60)]],
                         ["buttons", [
                             ["OUVRIR LA PAGE", { ["open"] call comspec_atak_native_fnc_athenaLink; }, true],

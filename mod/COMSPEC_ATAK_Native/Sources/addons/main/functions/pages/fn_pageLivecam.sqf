@@ -87,7 +87,7 @@ if ((_camSt select 0) isNotEqualTo "OK") exitWith {
         default { "Aucun ATAK du camp à portée de la caméra : rapprochez-vous ou laissez un équipier près d'elle." };
     };
     private _t = ["COMSPEC_RscStructuredText", [_vx, _vy + _vh * 0.35, _vw, _rowH * 3]] call comspec_atak_native_fnc_pageCtrl;
-    _t ctrlSetStructuredText parseText ((format ["<t align='center' font='RobotoCondensedBold' color='#e0a33a'>%1 · %2</t><br/><t align='center' size='0.85' color='#8a9a93'>%3</t>",
+    _t ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' color='#e0a33a'>%1 · %2</t><br/><t align='center' size='0.85' color='#8a9a93'>%3</t>",
         _unit getVariable ["COMSPEC_ATAK_CamName", "CAM"], toUpper (_camSt select 1), _why]) call comspec_atak_native_fnc_tr);
     true
 };
@@ -97,10 +97,10 @@ if (_fixed) then { [_unit, _mode, _pan] call comspec_atak_native_fnc_camView; } 
 private _pic = ["COMSPEC_RscPhone", [_vx, _vy, _vw, _vh], "#(argb,512,512,1)r2t(comspec_livecam,1.0)"] call comspec_atak_native_fnc_pageCtrl;
 private _osd = ["COMSPEC_RscStructuredText", [_vx + _pad / 2, _vy + _pad / 2, _vw - _pad, _rowH * 1.6]] call comspec_atak_native_fnc_pageCtrl;
 if (!_fixed) then {
-    _osd ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='#e5483a'>● LIVE</t>  <t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m · cap %4°</t>",
+    _osd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m · cap %4°</t>",
         [_unit, true] call comspec_atak_native_fnc_unitCallsign, [getPosASL _unit, 8] call comspec_atak_native_fnc_gridRef, round (player distance _unit), round getDir _unit]) call comspec_atak_native_fnc_tr);
 } else {
-    _osd ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='#e5483a'>● LIVE</t>  <t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m</t>",
+    _osd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#e5483a'>● LIVE</t>  <t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m</t>",
         _unit getVariable ["COMSPEC_ATAK_CamName", "CAM"], [getPosASL _unit, 8] call comspec_atak_native_fnc_gridRef, round (player distance _unit)]) call comspec_atak_native_fnc_tr);
     // Panoramique local (la caméra posée ne bouge pas) et renommage.
     private _bs = _btnH * 1.2;

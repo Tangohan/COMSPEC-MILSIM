@@ -99,6 +99,9 @@ private _sh = _dh * ((_scr select 3) - (_scr select 1));
 // Réglages > Taille du texte, avec un plancher en pixels réels : sur un écran 1080p en mode mini, les libellés
 // descendaient à 10 px de haut (« _fs * 0.7 »), illisibles. COMSPEC_ATAK_FontMin (plancher des légendes) sert aux
 // pages qui calculent leurs tailles à la main : (_fs * 0.7) max COMSPEC_ATAK_FontMin.
+// Police choisie dans Réglages > Police : familles remises à jour dès que le réglage change.
+private _fontFam = missionNamespace getVariable ["comspec_atak_native_font", "barlow"];
+if (_fontFam isNotEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_FontFam", ""])) then { [_fontFam] call comspec_atak_native_fnc_fontSet; };
 private _textScale = (profileNamespace getVariable ["COMSPEC_ATAK_TextScale", 1]) max 0.8 min 1.35;
 private _px = [pixelH, 0] select _texture; // texture UI (JPC) : coordonnées de texture, pas de plancher en pixels
 private _font = (((_sh * ([[[0.040, 0.060] select _land, 0.036] select !_mini, 0.052] select _texture)) max ([safeZoneH * 0.015, 0.03] select _texture)) * _textScale) max (_px * 16);

@@ -32,7 +32,7 @@ if (_tab isEqualTo "FT") then { _rows append ([] call comspec_atak_native_fnc_ft
 if (_tab isEqualTo "MINE") then {
     ([_grp] call _typeOf) params ["_tk", "_tname", "_ticon"];
     private _locked = _grp getVariable ["COMSPEC_GroupLocked", false];
-    _rows pushBack ["hero", _ticon, format ["<t size='1.3' font='RobotoCondensedBold'>%1</t><br/><t color='#7fb6e6'>%2</t> · %3 membre(s)<br/><t size='0.85' color='#8a9a93'>Chef : %4 · %5</t>",
+    _rows pushBack ["hero", _ticon, format ["<t size='1.3' font='COMSPEC_BarlowBold'>%1</t><br/><t color='#7fb6e6'>%2</t> · %3 membre(s)<br/><t size='0.85' color='#8a9a93'>Chef : %4 · %5</t>",
         [groupId _grp] call _esc, _tname, count units _grp, [name leader _grp] call _esc, ["groupe ouvert", "<t color='#f2ab33'>groupe fermé</t>"] select _locked]];
     if (_isLead) then {
         _rows append [
@@ -54,7 +54,7 @@ if (_tab isEqualTo "MINE") then {
         if (_isLead && {_u isNotEqualTo player} && {isPlayer _u}) then { _btns pushBack ["CHEF", compile format ["['lead', '%1'] call comspec_atak_native_fnc_groupAction;", netId _u]]; };
         private _ft = [_u] call comspec_atak_native_fnc_ftInfo;
         if ((_ft get "roleLabel") isNotEqualTo "") then { _role = _ft get "roleLabel"; };
-        _rows pushBack ["person", _pic, format ["<t font='RobotoCondensedBold'>%1</t>%2%6<br/><t size='0.8' color='#8a9a93'>%3 · %4 · %5</t>",
+        _rows pushBack ["person", _pic, format ["<t font='COMSPEC_BarlowBold'>%1</t>%2%6<br/><t size='0.8' color='#8a9a93'>%3 · %4 · %5</t>",
             [name _u] call _esc, ["", " <t color='#e8b84a'>● chef</t>"] select (_u isEqualTo leader _grp), [_role] call _esc, [_u] call _state,
             ["moi", format ["%1 m", round (_u distance2D player)]] select (_u isNotEqualTo player),
             ["", format ["  <t size='0.8' color='%1'>● %2</t>", _ft get "hex", [_ft get "name"] call _esc]] select ((_ft get "id") isNotEqualTo "")], _btns];
@@ -70,7 +70,7 @@ if (_tab isEqualTo "ALL") then {
         _x params ["_d", "_g"];
         ([_g] call _typeOf) params ["", "_tname", "_ticon"];
         private _locked = _g getVariable ["COMSPEC_GroupLocked", false];
-        _rows pushBack ["person", _ticon, format ["<t font='RobotoCondensedBold'>%1</t>  <t size='0.8' color='#7fb6e6'>%2</t><br/><t size='0.8' color='#8a9a93'>%3 membre(s) · chef %4 · %5</t>",
+        _rows pushBack ["person", _ticon, format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='#7fb6e6'>%2</t><br/><t size='0.8' color='#8a9a93'>%3 membre(s) · chef %4 · %5</t>",
             [groupId _g] call _esc, _tname, count units _g, [name leader _g] call _esc, [format ["%1 m", round _d], format ["%1 km", (_d / 1000) toFixed 1]] select (_d >= 1000)],
             [[["REJOINDRE", "FERMÉ"] select _locked, compile format ["['join', '%1'] call comspec_atak_native_fnc_groupAction;", netId _g], !_locked, !_locked]], [0.28, 0.70, 1, 1]];
     } forEach _sorted;

@@ -38,30 +38,40 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Textes du téléphone plus lisibles (ATAK natif 1.80.0)
+## Nouvelle police du téléphone et textes plus lisibles (ATAK natif 1.80.0)
 
 ### Résumé joueur
 Type : nouveauté
-FR : Des textes plus lisibles sur le téléphone
-- Les petits textes (en-têtes de section, aides, légendes, libellés des tuiles) ne descendent plus en dessous d'une taille lisible, en mode mini comme en plein écran.
-- Le texte courant des apps est un peu plus grand.
+FR : Nouvelle police du téléphone, au choix
+- Le téléphone passe en Barlow Condensed, une police condensée plus nette sur le petit écran.
+- Réglages > Police (et Options des addons > COMSPEC > Police du téléphone) permet d'en choisir une autre : B612, Rajdhani, Share Tech, ou celles du jeu (Roboto, Purista).
+- Les petits textes (en-têtes, aides, légendes, noms des apps) ne descendent plus sous une taille lisible, et les noms d'apps longs passent sur deux lignes.
 - Réglages > Taille du texte propose maintenant « Très grand ».
-- Les libellés au-dessus des champs passent dans la même police que le reste du téléphone ; les valeurs alignées (colonnes du BFT, solution de tir) restent en police à chasse fixe.
-EN : Easier-to-read text on the phone
-- Small text (section headers, help lines, captions, tile labels) no longer drops below a readable size, in mini mode as in full screen.
-- Regular app text is slightly larger.
+EN : New phone font, your choice
+- The phone now uses Barlow Condensed, a condensed font that stays sharp on the small screen.
+- Settings > Font (and Addon Options > COMSPEC > Phone font) lets you pick another one: B612, Rajdhani, Share Tech, or the game's own (Roboto, Purista).
+- Small text (headers, help lines, captions, app names) no longer drops below a readable size, and long app names wrap onto two lines.
 - Settings > Text size now offers "Very large".
-- Labels above input fields now use the same font as the rest of the phone; aligned values (BFT columns, firing solution) keep a fixed-width font.
 
 ### Détail technique
 
-Non testé en jeu. Demande de TTRD : « Améliore le font de notre application ».
-- Échelle typographique unique dans `fn_layoutGet` : `font` (corps), `fontSmall` (0,78 → 0,82 × corps), nouvelles clés `fontCaption` (0,68 × corps), `fontTitle` (1,2 ×), `fontDisplay` (1,9 ×). Planchers en pixels réels (corps 16 px, courant 15 px, légende 13 px), hors écran-texture de la tablette JPC.
-- `COMSPEC_ATAK_FontMin` (plancher des légendes, posé par `fn_layoutGet`, 0 au preInit) : les 83 `ctrlSetFontHeight` calculés sous ce seuil (`_fs * 0.66` à `_fs * 0.85`, tailles passées aux helpers, boucles d'ajustement des tuiles) sont bornés par `max COMSPEC_ATAK_FontMin`. Avant : jusqu'à ~10 px de haut sur un écran 1080p en mode mini.
-- Réglages > Taille du texte : option TRÈS GRAND (1,3), borne haute 1,25 → 1,35.
-- `ui/controls.hpp` : macros `ATAK_FONT`, `ATAK_FONT_BOLD`, `ATAK_FONT_LIGHT`, `ATAK_FONT_MONO`, `ATAK_FONT_MONO_BOLD` ; `COMSPEC_RscLabel` passe de EtelkaMonospacePro à RobotoCondensedBold ; nouvelles classes `COMSPEC_RscMono` / `COMSPEC_RscMonoRight` (en-tête de colonnes du BFT, valeurs de la solution CFF). Établi (accessoires) : PuristaBold → RobotoCondensedBold.
-- Polices du jeu uniquement (rien d'embarqué, pas de question de licence).
-- À tester en jeu : mode mini portrait et paysage en 1080p, plein écran à 60 % (#709), Réglages > Taille du texte sur les 4 valeurs ; vérifier qu'aucun libellé ne déborde (BFT, Alertes, Réglages, Drone, CFF, tuiles du lanceur).
+Non testé en jeu. Demandes de TTRD : « Améliore le font de notre application », « T'as pas du tout changé les font », « Va pour Barlow Condensed, et mets un paramètre dans les settings pour le font ».
+
+Police
+- Polices OFL converties au format Arma par `tools/gen_fonts.py` (sans FontToTga) : `.fxy` = « BIFo » + 01 01 00 00 puis 7 entiers 16 bits par caractère (code, page, x, y, largeur, hauteur, avance), format relevé sur les polices d'ACE3 ; planche `-01.paa` (DXT5, comme ACE3). 12 tailles (8 à 46) pour Barlow Condensed Medium/Bold/Regular, B612 Regular/Bold, Rajdhani Medium/Bold, Share Tech : 5,4 Mo. Familles `COMSPEC_Barlow`, `COMSPEC_BarlowBold`, `COMSPEC_BarlowLight`, `COMSPEC_B612(Bold)`, `COMSPEC_Rajdhani(Bold)`, `COMSPEC_ShareTech` dans `ui/fonts.hpp`, chaque taille appariée à Roboto Condensed du jeu pour les caractères absents (symboles).
+- Classes `COMSPEC_Rsc…` et balises `<t font=…>` des apps en `COMSPEC_Barlow…` ; police par défaut des balises `<t>` posée dans `COMSPEC_RscStructuredText >> Attributes`.
+- Réglage CBA client `comspec_atak_native_font` (en tête de la liste COMSPEC, lisible dans la police du jeu), repris dans Réglages > Affichage > Police : `fn_fontSet` pose `COMSPEC_ATAK_FontSet` [courant, gras, léger] ; `fn_fontApply` l'applique aux contrôles créés par `fn_pageCtrl`, `fn_formRender`, `fn_tileCreate` et aux textes fixes du display (`fn_layoutApply`) ; `fn_fontText` (appelée par `fn_tr`) remplace les familles dans le texte structuré et l'enveloppe dans la police choisie ; les `ctrlSetFont` et `drawIcon` des apps et de la carte lisent `COMSPEC_ATAK_FontSet`. Les rares contrôles créés directement par `ctrlCreate` hors de ces fonctions restent en Barlow.
+
+Lisibilité
+- Échelle typographique unique dans `fn_layoutGet` : `font` (corps), `fontSmall` (0,78 → 0,82 × corps), `fontCaption` (0,68 ×), `fontTitle` (1,2 ×), `fontDisplay` (1,9 ×). Planchers en pixels réels (corps 16 px, courant 15 px, légende 13 px), hors écran-texture de la tablette JPC.
+- `COMSPEC_ATAK_FontMin` borne les 83 `ctrlSetFontHeight` calculés sous le seuil des légendes. Avant : jusqu'à ~10 px de haut sur un écran 1080p en mode mini.
+- Tuiles du lanceur : nom long sur deux lignes (`COMSPEC_RscTextCenterMulti`) au lieu de descendre à 9 px.
+- Réglages > Taille du texte : TRÈS GRAND (1,3), borne haute 1,25 → 1,35.
+- `COMSPEC_RscLabel` passe de EtelkaMonospacePro à la police grasse du téléphone ; `COMSPEC_RscMono` / `COMSPEC_RscMonoRight` pour les valeurs alignées (en-tête de colonnes du BFT, solution CFF).
+
+À tester en jeu
+- Premier point : le texte du téléphone s'affiche bien en Barlow Condensed (format de police généré sans l'outil de Bohemia). Si le texte est illisible ou absent : Échap > Options > Options des addons > COMSPEC > Police du téléphone > Roboto Condensed remet la police du jeu.
+- Les 6 polices du réglage, en mode mini (portrait, paysage) et plein écran à 60 % ; Taille du texte sur les 4 valeurs ; aucun libellé qui déborde (BFT, Alertes, Réglages, Drone, CFF, tuiles du lanceur) ; textes de la carte.
 ## App Réseau : stabilité calculée, passerelles lisibles (ATAK natif 1.79.0)
 
 ### Résumé joueur

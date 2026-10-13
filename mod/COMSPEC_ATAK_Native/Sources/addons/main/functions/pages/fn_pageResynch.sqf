@@ -16,7 +16,7 @@ private _at = missionNamespace getVariable ["COMSPEC_ATAK_ResynchAt", ""];
 private _lines = missionNamespace getVariable ["COMSPEC_LastResynchSummary", []];
 if !(_lines isEqualType []) then { _lines = []; };
 private _rows = [
-    ["hero", "\z\comspec_atak_native\addons\main\data\app_resynch.paa", format ["<t size='1.35' font='RobotoCondensedBold'>RESYNCH</t><br/><t color='%1'>%2</t>",
+    ["hero", "\z\comspec_atak_native\addons\main\data\app_resynch.paa", format ["<t size='1.35' font='COMSPEC_BarlowBold'>RESYNCH</t><br/><t color='%1'>%2</t>",
         ["#8a9a93", "#f2ab33"] select _busy,
         switch (true) do {
             case _busy: { "Renvoi en cours…" };

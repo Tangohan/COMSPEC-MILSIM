@@ -33,7 +33,7 @@ class COMSPEC_RscDisplayATAK {
         class LinkLogo: COMSPEC_RscIcon { idc=COMSPEC_ATAK_IDC_LINKLOGO; ATAK_POS; colorText[]={0.36,0.78,0.42,1}; text="\z\comspec_atak_native\addons\main\data\ui_comspec_link.paa"; tooltip="COMSPEC Link connecté"; };
         class Signal: COMSPEC_RscIcon { idc=COMSPEC_ATAK_IDC_SIGNAL; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\sig_0.paa"; };
         class Back: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_BACK; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_back.paa"; action="[] call comspec_atak_native_fnc_back"; tooltip="Retour"; };
-        class Title: COMSPEC_RscText { idc=COMSPEC_ATAK_IDC_TITLE; font="RobotoCondensedBold"; text="APPLICATIONS"; ATAK_POS; };
+        class Title: COMSPEC_RscText { idc=COMSPEC_ATAK_IDC_TITLE; font="COMSPEC_BarlowBold"; text="APPLICATIONS"; ATAK_POS; };
         class Rotate: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_ROTATE; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_rotate.paa"; action="[] call comspec_atak_native_fnc_orientationToggle"; tooltip="Téléphone vertical / horizontal"; };
         class Mode: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_MODE; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_expand.paa"; action="[] call comspec_atak_native_fnc_modeToggle"; tooltip="Mini / plein écran"; };
         class Home: COMSPEC_RscIconButton { idc=COMSPEC_ATAK_IDC_HOME; ATAK_POS; text="\z\comspec_atak_native\addons\main\data\ui_apps.paa"; action="['LAUNCHER'] call comspec_atak_native_fnc_navigate"; tooltip="Applications"; };

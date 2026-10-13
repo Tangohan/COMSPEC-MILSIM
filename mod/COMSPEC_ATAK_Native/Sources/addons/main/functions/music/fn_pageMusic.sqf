@@ -40,7 +40,7 @@ private _trackRow = {
     private _items = _lists getOrDefault [_key, []];
     (_items select _i) params ["_k", "_r", "_t", ["_len", 0], ["_artist", ""], ["_id", ""]];
     private _isCur = (_m get "kind") isEqualTo _k && {(_m get "ref") isEqualTo _r || {_id isNotEqualTo "" && {((_m get "queue") param [_m get "qi", []]) param [5, ""] isEqualTo _id}}};
-    ["person", _icon, format ["<t %1>%2</t><br/><t size='0.75' color='#8a9a93'>%3%4</t>", ["", format ["color='%1' font='RobotoCondensedBold'", _accHex]] select _isCur,
+    ["person", _icon, format ["<t %1>%2</t><br/><t size='0.75' color='#8a9a93'>%3%4</t>", ["", format ["color='%1' font='COMSPEC_BarlowBold'", _accHex]] select _isCur,
         [_t] call _esc, [_sub] call _esc, ["", format [" · %1", [_len] call _fmt]] select (_len > 0)],
         [["LIRE", compile format ["['playList', [%1, %2]] call comspec_atak_native_fnc_musicAction;", [_key] call _listRef, _i], true],
          ["+ FILE", compile format ["['enqueue', +(%1 select %2)] call comspec_atak_native_fnc_musicAction;", [_key] call _listRef, _i]],
@@ -78,7 +78,7 @@ switch (_tab) do {
             private _kinds = createHashMapFromArray [["global", "Globale"], ["public", "Publique"], ["org", "Organisation"], ["private", "Privée"]];
             {
                 _x params ["_id", "_name", "_owner", "_n", "_kind", ["_desc", ""]];
-                _rows pushBack ["person", _icon, format ["<t font='RobotoCondensedBold'>%1</t><br/><t size='0.75' color='#8a9a93'>%2 · %3 · %4 morceau(x)</t>", [_name] call _esc,
+                _rows pushBack ["person", _icon, format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.75' color='#8a9a93'>%2 · %3 · %4 morceau(x)</t>", [_name] call _esc,
                     _kinds getOrDefault [_kind, _kind], [_owner] call _esc, _n],
                     [["OUVRIR", compile format ["['athOpen', [%1, %2]] call comspec_atak_native_fnc_musicAction;", str _id, str _name], true]], [[0.55, 0.6, 0.58, 1], _acc] select (_kind isEqualTo "global")];
             } forEach _items;
@@ -226,7 +226,7 @@ switch (_tab) do {
         for "_i" from 0 to (((count _q) min 40) - 1) do {
             (_q select _i) params ["_k", "_r", "_t", ["_len", 0]];
             private _isCur = _i isEqualTo (_m get "qi") && {_mine};
-            _rows pushBack ["person", _icon, format ["<t %1>%2. %3</t><br/><t size='0.75' color='#8a9a93'>%4%5</t>", ["", format ["color='%1' font='RobotoCondensedBold'", _accHex]] select _isCur, _i + 1, [_t] call _esc,
+            _rows pushBack ["person", _icon, format ["<t %1>%2. %3</t><br/><t size='0.75' color='#8a9a93'>%4%5</t>", ["", format ["color='%1' font='COMSPEC_BarlowBold'", _accHex]] select _isCur, _i + 1, [_t] call _esc,
                 _src getOrDefault [_k, ""], ["", format [" · %1", [_len] call _fmt]] select (_len > 0)],
                 [[["JOUER", "EN COURS"] select _isCur, ["jump", _i] call _act, !_isCur, !_isCur], ["MONTER", ["qUp", _i] call _act, false, _i > 0], ["RETIRER", ["qDel", _i] call _act]], [[0.55, 0.6, 0.58, 1], _acc] select _isCur];
         };
@@ -252,7 +252,7 @@ switch (_tab) do {
         {
             _x params ["_d", "_u", "_s"];
             private _in = _d < _range;
-            _rows pushBack ["text", format ["<t font='RobotoCondensedBold'>%1</t>  <t color='#8a9a93'>%2 m</t>  <t color='%3'>%4</t><br/><t size='0.8'>%5</t>",
+            _rows pushBack ["text", format ["<t font='COMSPEC_BarlowBold'>%1</t>  <t color='#8a9a93'>%2 m</t>  <t color='%3'>%4</t><br/><t size='0.8'>%5</t>",
                 [name _u] call _esc, round _d, ["#8a9a93", _accHex] select _in, ["hors de portée", "audible"] select _in, [_s select 2] call _esc]];
         } forEach (_near select [0, 8]);
         [_rows, [0, _vizH, _bw, _bh - _vizH]] call comspec_atak_native_fnc_formRender;

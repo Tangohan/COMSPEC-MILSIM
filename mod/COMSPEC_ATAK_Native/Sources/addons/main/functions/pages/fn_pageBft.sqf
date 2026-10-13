@@ -464,13 +464,13 @@ if ((count _sel) isEqualTo 0) then {
     private _grp = if (isNull _obj) then { "Athena" } else { groupId group _obj };
     private _ftI = if (isNull _obj) then { createHashMap } else { [_obj] call comspec_atak_native_fnc_ftInfo };
     private _ftTxt = switch (true) do {
-        case ((_ftI getOrDefault ["name", ""]) isNotEqualTo ""): { format ["<br/><t color='#8a9a93'>Équipe</t> <t color='%1' font='RobotoCondensedBold'>● %2</t>%3", _ftI get "hex", [_ftI get "name"] call _esc, ["", format [" · %1", _ftI get "roleLabel"]] select ((_ftI get "roleLabel") isNotEqualTo "")] };
+        case ((_ftI getOrDefault ["name", ""]) isNotEqualTo ""): { format ["<br/><t color='#8a9a93'>Équipe</t> <t color='%1' font='COMSPEC_BarlowBold'>● %2</t>%3", _ftI get "hex", [_ftI get "name"] call _esc, ["", format [" · %1", _ftI get "roleLabel"]] select ((_ftI get "roleLabel") isNotEqualTo "")] };
         case ((_ftI getOrDefault ["roleLabel", ""]) isNotEqualTo ""): { format ["<br/><t color='#8a9a93'>Rôle</t> %1", _ftI get "roleLabel"] };
         default { "" };
     };
     private _crew = if (!isNull _obj && {vehicle _obj isNotEqualTo _obj}) then { format ["<br/><t color='#8a9a93'>Dans</t> %1", getText (configOf vehicle _obj >> "displayName")] } else { "" };
     _det ctrlSetStructuredText parseText ((format [
-        "<t size='1.15' font='RobotoCondensedBold'>%1</t>  <t size='0.8' color='%2'>● %3</t><br/><t color='#8a9a93'>%4 · %5</t>%6%18<br/><t font='EtelkaMonospacePro'>%7</t><br/>%8 · %9° %10<br/>%15%16<br/><t color='#8a9a93'>Vitesse</t> %11  <t color='#8a9a93'>Cap</t> %12°  <t color='#8a9a93'>Alt</t> %13 m<br/><t color='#8a9a93'>État</t> %14%17",
+        "<t size='1.15' font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='%2'>● %3</t><br/><t color='#8a9a93'>%4 · %5</t>%6%18<br/><t font='EtelkaMonospacePro'>%7</t><br/>%8 · %9° %10<br/>%15%16<br/><t color='#8a9a93'>Vitesse</t> %11  <t color='#8a9a93'>Cap</t> %12°  <t color='#8a9a93'>Alt</t> %13 m<br/><t color='#8a9a93'>État</t> %14%17",
         [[_id, _e] call _labelOf] call _esc, _fc, _ft, _type, [_grp] call _esc, _crew,
         [_pos, 8] call comspec_atak_native_fnc_gridRef,
         [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 2]] select (_dist >= 1000), round (player getDir _pos), [player getDir _pos] call _card,

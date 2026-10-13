@@ -63,7 +63,7 @@ private _pfh = [{
         _e set [9, [_vHr, _vState]];
         private _lab = createHashMapFromArray [["cardiac_arrest", ["ARRÊT CARDIAQUE", "#e5483a"]], ["unconscious", ["INCONSCIENT", "#e5483a"]], ["critical", ["CRITIQUE", "#f2ab33"]], ["wounded", ["BLESSÉ", "#e8b84a"]], ["kia", ["KIA", "#8a9a93"]], ["none", ["AUCUN BLESSÉ", "#8a9a93"]]] getOrDefault [_state, ["STABLE", "#5cc76b"]];
         if (!_vState && {!(_state in ["kia", "none"])}) then { _lab = ["SUIVI", "#8a9a93"]; };
-        _head ctrlSetStructuredText parseText ((format ["<t size='0.75' color='#8a9a93'>BLESSÉ SUIVI</t>  <t size='0.75' color='%3'>● %2</t><br/><t size='1.25' font='RobotoCondensedBold'>%1</t>",
+        _head ctrlSetStructuredText parseText ((format ["<t size='0.75' color='#8a9a93'>BLESSÉ SUIVI</t>  <t size='0.75' color='%3'>● %2</t><br/><t size='1.25' font='COMSPEC_BarlowBold'>%1</t>",
             [[_u, true] call comspec_atak_native_fnc_unitCallsign, "—"] select (isNull _u), _lab select 0, _lab select 1]) call comspec_atak_native_fnc_tr);
         private _sys = round (70 + 50 * (_blood / 100)); private _dia = round (40 + 30 * (_blood / 100));
         private _spo = [round ((80 + 18 * (_blood / 100)) min 99), 0] select (_hr isEqualTo 0);

@@ -67,16 +67,16 @@ private _upd = {
             case (_state isEqualTo "error"): { format ["<t color='#e5483a'>ERREUR · %1</t>", _st param [4, ""]] };
             default { "" };
         };
-        _title ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' size='1.15'>%1</t><br/><t size='0.75' color='#8a9a93'>%2%3 · piste %4/%5</t>%6",
+        _title ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.15'>%1</t><br/><t size='0.75' color='#8a9a93'>%2%3 · piste %4/%5</t>%6",
             _m get "title", _src getOrDefault [_m get "kind", ""], ["", " · HAUT-PARLEUR"] select (_m get "speaker"), (_m get "qi") + 1, count (_m get "queue"), ["", "<br/><t size='0.75'>" + _tag + "</t>"] select (_tag isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
         _bar0 params ["_bx", "_by", "_bw"];
         _bar ctrlSetPosition [_bx, _by, [0, _bw * ((_pos / _len) min 1)] select (_len > 0), pixelH * 4]; _bar ctrlCommit 0;
         _times ctrlSetStructuredText parseText ((format ["<t size='0.75' color='#8a9a93'>%1 / %2</t>", [_pos] call _fmt, ["direct", [_len] call _fmt] select (_len > 0)]) call comspec_atak_native_fnc_tr);
     } else {
         if ((count _heard) > 1) then {
-            _title ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' size='1.15'>%1</t><br/><t size='0.75' color='#8a9a93'>Haut-parleur de %2</t>", _heard select 1, _heard select 0]) call comspec_atak_native_fnc_tr);
+            _title ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.15'>%1</t><br/><t size='0.75' color='#8a9a93'>Haut-parleur de %2</t>", _heard select 1, _heard select 0]) call comspec_atak_native_fnc_tr);
         } else {
-            _title ctrlSetStructuredText parseText (("<t font='RobotoCondensedBold' size='1.15'>Rien en lecture</t><br/><t size='0.75' color='#8a9a93'>Choisissez un fichier, une piste du serveur ou un lien</t>") call comspec_atak_native_fnc_tr);
+            _title ctrlSetStructuredText parseText (("<t font='COMSPEC_BarlowBold' size='1.15'>Rien en lecture</t><br/><t size='0.75' color='#8a9a93'>Choisissez un fichier, une piste du serveur ou un lien</t>") call comspec_atak_native_fnc_tr);
         };
         _bar ctrlSetPosition [_bar0 select 0, _bar0 select 1, 0, pixelH * 4]; _bar ctrlCommit 0;
         _times ctrlSetStructuredText parseText (("") call comspec_atak_native_fnc_tr);

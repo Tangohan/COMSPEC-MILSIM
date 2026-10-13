@@ -468,7 +468,7 @@ switch (_act) do {
             format ["%1 (il y a %2)", _hit get "hour", [format ["%1 s", _a], format ["%1 min", floor (_a / 60)]] select (_a >= 120)]
         };
         private _p = _hit getOrDefault ["pos", []];
-        _ret = format ["<t font='RobotoCondensedBold' color='#e9a53a'>%1</t> <t font='EtelkaMonospacePro' size='0.9'>%2</t>  <t size='0.85' color='%3'>%4</t><br/><t size='0.85'>Propriétaire : %5</t><br/><t size='0.85' color='#cfd8d3'>Vu à %6 · ± %7 m%8</t>",
+        _ret = format ["<t font='COMSPEC_BarlowBold' color='#e9a53a'>%1</t> <t font='EtelkaMonospacePro' size='0.9'>%2</t>  <t size='0.85' color='%3'>%4</t><br/><t size='0.85'>Propriétaire : %5</t><br/><t size='0.85' color='#cfd8d3'>Vu à %6 · ± %7 m%8</t>",
             _hit getOrDefault ["sub", ""], _hit getOrDefault ["q", ""], _col,
             [_hit getOrDefault ["why", ""], ["Suivi actif", "Localisé"] select !(_hit getOrDefault ["follow", false])] select _ok,
             [_hit get "owner", "Inconnu"] select ((_hit getOrDefault ["owner", ""]) isEqualTo ""),
@@ -564,7 +564,7 @@ switch (_act) do {
         _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", _rgb + [(1 - _ph) * ([0.5, 0.95] select _ok)], _p, 18 + 46 * _ph, 18 + 46 * _ph, 0, "", 0];
         _map drawIcon ["\A3\ui_f\data\map\markers\military\dot_CA.paa", _rgb + [1], _p, 16, 16, 0,
             format ["%1%2", [_hit get "owner", _hit get "q"] select ((_hit getOrDefault ["owner", ""]) isEqualTo ""), ["", format [" · %1", _hit get "hour"]] select ((_hit getOrDefault ["hour", ""]) isNotEqualTo "")],
-            1, 0.028 * _ts, "RobotoCondensedBold", "right"];
+            1, 0.028 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
     };
 };
 _ret

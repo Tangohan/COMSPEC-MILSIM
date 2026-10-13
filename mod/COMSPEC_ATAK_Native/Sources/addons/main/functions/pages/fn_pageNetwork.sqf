@@ -198,7 +198,7 @@ private _card = {
     _ic ctrlEnable false;
     private _tx = _x0 + _pad * 1.1 + _icH / _ratio;
     private _barW = _fs * 0.9 / _ratio * 0.22 * 1.45 * 4;
-    [[_tx, _y0 + _pad * 0.15, _x0 + _w0 - _tx - _barW - _pad * 0.6, _h0 - _pad * 0.2], format ["<t size='%1' font='EtelkaMonospaceProBold' color='%2'>%3</t>%7<br/><t size='%4' font='RobotoCondensedBold' color='%5'>%6</t><br/><t size='%8' color='#8a9a93'>%9</t>",
+    [[_tx, _y0 + _pad * 0.15, _x0 + _w0 - _tx - _barW - _pad * 0.6, _h0 - _pad * 0.2], format ["<t size='%1' font='EtelkaMonospaceProBold' color='%2'>%3</t>%7<br/><t size='%4' font='COMSPEC_BarlowBold' color='%5'>%6</t><br/><t size='%8' color='#8a9a93'>%9</t>",
         _k * 0.6, _hex get _st, toUpper _title, _k * 0.85, ["#e8eadf", "#6d7a74"] select (_st isEqualTo "off"), _main,
         ["", format ["<t size='%1' color='%2'>  ● ACTIF</t>", _k * 0.6, _accHex]] select _active, _k * 0.68, _sub]] call _txt;
     [_x0 + _w0 - _barW - _pad * 0.5, _y0 + _pad * 0.4, _fs * 0.9, [_nb, 0] select (_st isEqualTo "off"), [_st, "ok"] select (_st isEqualTo "off")] call _bars;
@@ -276,7 +276,7 @@ private _tiles = [
     private _tx = _pad + (_forEachIndex mod _cols) * (_tw + _pad * 0.5);
     private _ty = _y + (floor (_forEachIndex / _cols)) * (_th + _pad * 0.5);
     [[_tx, _ty, _tw, _th], [0.07, 0.085, 0.078, 0.96]] call _rect;
-    [[_tx + _pad * 0.5, _ty + _pad * 0.2, _tw - _pad, _th], format ["<t size='%1' color='#8a9a93'>%2</t><br/><t size='%3' font='RobotoCondensedBold' color='%4'>%5</t> <t size='%6' color='#8a9a93'>%7</t>",
+    [[_tx + _pad * 0.5, _ty + _pad * 0.2, _tw - _pad, _th], format ["<t size='%1' color='#8a9a93'>%2</t><br/><t size='%3' font='COMSPEC_BarlowBold' color='%4'>%5</t> <t size='%6' color='#8a9a93'>%7</t>",
         _k * 0.62, toUpper _lbl, _k * 1.15, [_hex get _st, "#e8eadf"] select (_st isEqualTo "off"), _val, _k * 0.65, _sub]] call _txt;
     if (_gauge >= 0) then {
         private _gw2 = _tw - _pad;
@@ -327,14 +327,14 @@ private _rowH = _fs * 2.5;
     private _badgeW = _fs * 5.4;
     private _tx = _x0 + _pad * 1.2 + _icH / _ratio;
     private _bwBars = [_x0 + _w0 - _badgeW - _pad * 0.6 - _fs * 1.6, _y + _rowH * 0.25, _rowH * 0.5, [_q] call _qBars, [_st, "ok"] select (_st isEqualTo "off")] call _bars;
-    [[_tx, _y + _pad * 0.1, (_x0 + _w0 - _badgeW - _pad * 0.8 - _fs * 1.8) - _tx, _rowH], format ["<t size='%1' font='RobotoCondensedBold'>%2</t> <t size='%3' color='#8a9a93'>%4</t><br/><t size='%3' color='#8a9a93'>%5 · portée %6 · %7</t>",
+    [[_tx, _y + _pad * 0.1, (_x0 + _w0 - _badgeW - _pad * 0.8 - _fs * 1.8) - _tx, _rowH], format ["<t size='%1' font='COMSPEC_BarlowBold'>%2</t> <t size='%3' color='#8a9a93'>%4</t><br/><t size='%3' color='#8a9a93'>%5 · portée %6 · %7</t>",
         _k * 0.85, [_name] call _esc, _k * 0.68, _type, [_d] call _dist, [_eff] call _dist, _rate]] call _txt;
     private _bd = ["COMSPEC_RscTextCenter", [_x0 + _w0 - _badgeW - _pad * 0.4, _y + _rowH * 0.25, _badgeW, _rowH * 0.5], ["", "CONNECTÉ"] select _on] call _mk;
     _bd ctrlEnable false;
     if (_on) then {
         _bd ctrlSetBackgroundColor _acc;
         _bd ctrlSetTextColor [0.02, 0.03, 0.02, 1];
-        _bd ctrlSetFont "RobotoCondensedBold";
+        _bd ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
         _bd ctrlSetFontHeight ((_fs * 0.75) max COMSPEC_ATAK_FontMin);
     } else {
         ctrlDelete _bd;
@@ -380,7 +380,7 @@ if !(_sim) then {
     private _bx = _pad;
     [_bx, _y + _fs * 0.1, _fs * 1.1, _lq get "bars", ["bad", "bad", "warn", "ok", "ok"] select (_lq get "bars")] call _bars;
     private _queue = count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]);
-    private _c = [[_bx + _fs * 2.2, _y, _cw - _fs * 2.2 - 2 * _pad, _fs * 1.3], format ["<t size='%1' font='RobotoCondensedBold'>%2</t><br/><t size='%3'>Débit <t color='#c9d4cf'>%4</t> · latence %5 ms · perte %6 %%<br/>Photo (600 Ko) : environ %7 s · message : %8 s%9</t>",
+    private _c = [[_bx + _fs * 2.2, _y, _cw - _fs * 2.2 - 2 * _pad, _fs * 1.3], format ["<t size='%1' font='COMSPEC_BarlowBold'>%2</t><br/><t size='%3'>Débit <t color='#c9d4cf'>%4</t> · latence %5 ms · perte %6 %%<br/>Photo (600 Ko) : environ %7 s · message : %8 s%9</t>",
         _k, _lq get "label", _k * 0.8, [_lq get "kbps"] call _rate, _lq get "latency", _lq get "loss",
         [round (((_lq get "latency") / 1000) + 4800 / ((_lq get "kbps") max 1)), "∞"] select ((_lq get "kbps") <= 0),
         [((((_lq get "latency") / 1000) + 8 / ((_lq get "kbps") max 1)) toFixed 1), "∞"] select ((_lq get "kbps") <= 0),

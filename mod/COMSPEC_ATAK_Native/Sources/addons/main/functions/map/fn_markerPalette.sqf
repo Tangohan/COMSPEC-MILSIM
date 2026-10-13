@@ -59,7 +59,7 @@ _pic ctrlSetTextColor _iconRgba;
 private _affName = (_affs select ((_affs findIf { (_x select 0) isEqualTo _aff }) max 0)) select 1;
 private _colName = (_swatches select ((_swatches findIf { (_x select 1) isEqualTo _colorKey }) max 0)) select 0;
 private _sum = ["COMSPEC_RscStructuredText", [_x0 + _pw + _pad, _y, _w * 0.62 - _pw - _pad, _ph],
-    format ["<t size='1.05' font='RobotoCondensedBold'>%1</t><br/><t color='#8a9a93' size='0.85'>%2 · %3 · taille %4 · clic sur la carte pour poser</t>",
+    format ["<t size='1.05' font='COMSPEC_BarlowBold'>%1</t><br/><t color='#8a9a93' size='0.85'>%2 · %3 · taille %4 · clic sur la carte pour poser</t>",
         _typeLabel, ([toLower _affName, "repère"] select (_aff in ["mil", "lib"])), toLower _colName, (_sizes select ((_sizes findIf { (_x select 1) isEqualTo _size }) max 0)) select 0]] call _mk;
 _sum ctrlSetFontHeight (_fs * 0.95);
 private _edit = _s getOrDefault ["markerEditAfter", false];
