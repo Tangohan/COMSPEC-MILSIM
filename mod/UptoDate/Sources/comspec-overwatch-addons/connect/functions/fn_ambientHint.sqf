@@ -23,4 +23,4 @@ private _title = _titles getOrDefault [toLower _type, "Overwatch"];
 [_type, _title, _message, _priority] call comspec_overwatch_connect_fnc_pushHtmlAlert;
 
 if !([] call comspec_overwatch_connect_fnc_shouldShowScreenNotification) exitWith {};
-hintSilent _message;
+hintSilent ((_message) call comspec_overwatch_connect_fnc_tr);

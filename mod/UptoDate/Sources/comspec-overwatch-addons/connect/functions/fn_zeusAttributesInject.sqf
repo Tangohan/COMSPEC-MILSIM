@@ -119,8 +119,8 @@ private _specs = [
     _x params ["_idc", "_label", "_tip", "_idx", "_kind"];
     private _btn = _display ctrlCreate ["RscButtonMenu", _idc];
     _btn ctrlSetPosition [_x0 + _idx * (_w + _gap), _y0, _w, _h];
-    _btn ctrlSetText _label;
-    _btn ctrlSetTooltip _tip;
+    _btn ctrlSetText ((_label) call comspec_overwatch_connect_fnc_tr);
+    _btn ctrlSetTooltip ((_tip) call comspec_overwatch_connect_fnc_tr);
     _btn ctrlSetFont "PuristaMedium";
     _btn ctrlSetBackgroundColor [0.02, 0.16, 0.14, 0.95];
     _btn ctrlSetTextColor [0.85, 0.95, 0.9, 1];

@@ -43,7 +43,7 @@ _created pushBack _bg;
     private _idc = 9441 + _forEachIndex;
     private _btn = _disp ctrlCreate ["RscButton", _idc];
     _btn ctrlSetPosition [_posX, _posY + (_forEachIndex * _itemH), _menuW, _itemH];
-    _btn ctrlSetText _label;
+    _btn ctrlSetText ((_label) call comspec_overwatch_connect_fnc_tr);
     _btn ctrlSetBackgroundColor [0.06, 0.14, 0.18, 0.95];
     _btn ctrlSetActiveColor [1, 1, 1, 1];
     private _action = if (_type isEqualTo "") then {

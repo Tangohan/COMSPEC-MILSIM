@@ -38,7 +38,7 @@ private _body = if (_note isEqualTo "") then {
 ["CAS", _targetName, _body, "URGENT", "", _targetType] call comspec_overwatch_connect_fnc_issueOrder;
 ["Demande d'appui aérien transmise.", "order", "info"] call comspec_overwatch_connect_fnc_announce;
 
-if (!isNull _noteCtrl) then { _noteCtrl ctrlSetText ""; };
+if (!isNull _noteCtrl) then { _noteCtrl ctrlSetText (("") call comspec_overwatch_connect_fnc_tr); };
 
 private _disp = uiNamespace getVariable ["COMSPEC_CasRequest_Display", displayNull];
 if (!isNull _disp) then {

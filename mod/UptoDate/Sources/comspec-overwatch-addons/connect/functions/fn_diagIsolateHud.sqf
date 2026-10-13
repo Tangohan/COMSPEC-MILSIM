@@ -40,5 +40,5 @@ if (!isNil "comspec_overwatch_connect_fnc_diagStatusSnapshot") then {
         _bodyTxt = _bodyTxt + "<br/>" + (_snap get "hudHtml");
     };
 };
-if (!isNull _title) then { _title ctrlSetStructuredText parseText _titleTxt; };
-if (!isNull _body) then { _body ctrlSetStructuredText parseText _bodyTxt; };
+if (!isNull _title) then { _title ctrlSetStructuredText parseText ((_titleTxt) call comspec_overwatch_connect_fnc_tr); };
+if (!isNull _body) then { _body ctrlSetStructuredText parseText ((_bodyTxt) call comspec_overwatch_connect_fnc_tr); };

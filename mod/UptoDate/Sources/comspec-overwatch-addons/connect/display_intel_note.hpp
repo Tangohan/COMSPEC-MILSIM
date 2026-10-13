@@ -81,7 +81,7 @@
 class COMSPEC_IntelNote_Dialog {
     idd = 9982;
     movingEnable = 0;
-    onLoad = "uiNamespace setVariable ['COMSPEC_IntelNote_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_intelNoteOnLoad;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_IntelNote_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_intelNoteOnLoad;";
     onUnload = "[] call comspec_overwatch_connect_fnc_intelNoteOnUnload;";
 
     class Controls {

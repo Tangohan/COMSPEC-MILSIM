@@ -30,7 +30,7 @@ private _console = _display displayCtrl 1401;
 private _consoleText = ctrlText _console;
 private _nl = toString [10];
 _consoleText = _consoleText + _formatted + _nl;
-_console ctrlSetText _consoleText;
+_console ctrlSetText ((_consoleText) call comspec_overwatch_connect_fnc_tr);
 
 private _radioLog = missionNamespace getVariable ["COMSPEC_RadioReplay", []];
 _radioLog pushBack [serverTime, name player, _channel, _priority, _kind, _msg];

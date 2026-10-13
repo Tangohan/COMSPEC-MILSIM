@@ -15,13 +15,13 @@ private _mode = [] call comspec_overwatch_connect_fnc_athenaMode;
 
 {
     _x params ["_idc", "_txt"];
-    (_display displayCtrl _idc) ctrlSetStructuredText parseText _txt;
+    (_display displayCtrl _idc) ctrlSetStructuredText parseText ((_txt) call comspec_overwatch_connect_fnc_tr);
 } forEach [[9462, _title], [9475, _subtitle], [9465, _question], [9473, _yesTitle], [9466, _yes], [9474, _noTitle], [9468, _no], [9470, _footer], [9471, _current]];
-(_display displayCtrl 9467) ctrlSetText _yesBtn;
-(_display displayCtrl 9469) ctrlSetText _noBtn;
+(_display displayCtrl 9467) ctrlSetText ((_yesBtn) call comspec_overwatch_connect_fnc_tr);
+(_display displayCtrl 9469) ctrlSetText ((_noBtn) call comspec_overwatch_connect_fnc_tr);
 
 private _close = _display displayCtrl 9472;
-_close ctrlSetText _closeTxt;
+_close ctrlSetText ((_closeTxt) call comspec_overwatch_connect_fnc_tr);
 _close ctrlShow (_mode isNotEqualTo "");
 
 private _btnFr = _display displayCtrl 9463;

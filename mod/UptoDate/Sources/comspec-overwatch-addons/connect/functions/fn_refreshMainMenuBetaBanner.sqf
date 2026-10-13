@@ -47,12 +47,12 @@ private _html = if (_fr) then {
     }
 };
 
-_text ctrlSetStructuredText parseText _html;
+_text ctrlSetStructuredText parseText ((_html) call comspec_overwatch_connect_fnc_tr);
 private _hit = _display displayCtrl 9614;
 if (!isNull _hit) then {
-    _hit ctrlSetTooltip (if (_fr) then {
+    _hit ctrlSetTooltip (((if (_fr) then {
         "Note de bêta publique COMSPEC Overwatch"
     } else {
         "COMSPEC Overwatch public beta notice"
-    });
+    })) call comspec_overwatch_connect_fnc_tr);
 };

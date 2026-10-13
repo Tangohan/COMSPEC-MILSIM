@@ -2,7 +2,7 @@
 class COMSPEC_OrderCompose_Dialog {
     idd = 9989;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_OrderCompose_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_orderComposeOnLoad;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_OrderCompose_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_orderComposeOnLoad;";
     onUnload = "uiNamespace setVariable ['COMSPEC_OrderCompose_Display', displayNull]; uiNamespace setVariable ['COMSPEC_OrderCompose_StatusToken', -1];";
 
     class Controls {

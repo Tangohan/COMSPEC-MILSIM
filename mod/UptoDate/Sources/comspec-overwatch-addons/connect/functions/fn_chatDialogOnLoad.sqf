@@ -10,11 +10,11 @@ private _url = missionNamespace getVariable ["comspec_overwatch_api_url", ""];
 private _host = [_url] call comspec_overwatch_connect_fnc_portalLabel;
 
 private _urlCtrl = _display displayCtrl 1399;
-if (!isNull _urlCtrl) then { _urlCtrl ctrlSetText ("Portail : " + _host); };
+if (!isNull _urlCtrl) then { _urlCtrl ctrlSetText ((("Portail : " + _host)) call comspec_overwatch_connect_fnc_tr); };
 
 private _ip = missionNamespace getVariable ["COMSPEC_userIp", "—"];
 private _ipCtrl = _display displayCtrl 1398;
-if (!isNull _ipCtrl) then { _ipCtrl ctrlSetText ("Votre adresse : " + _ip); };
+if (!isNull _ipCtrl) then { _ipCtrl ctrlSetText ((("Votre adresse : " + _ip)) call comspec_overwatch_connect_fnc_tr); };
 
 private _log = missionNamespace getVariable ["COMSPEC_Log", ""];
 private _logCtrl = _display displayCtrl 1402;
@@ -29,15 +29,15 @@ if (!isNull _logCtrl) then {
                 "[Athena] Aucun événement. Ouvrez le téléphone ATAK → Compte Athena (saisir un code), ou vérifiez l’URL https://athena.ttrd.fr/public dans CBA."
             };
         };
-        _logCtrl ctrlSetText (_hint + (toString [10]));
+        _logCtrl ctrlSetText (((_hint + (toString [10]))) call comspec_overwatch_connect_fnc_tr);
     } else {
-        _logCtrl ctrlSetText _log;
+        _logCtrl ctrlSetText ((_log) call comspec_overwatch_connect_fnc_tr);
     };
 };
 
 private _console = _display displayCtrl 1401;
 if (!isNull _console && {ctrlText _console isEqualTo ""}) then {
-    _console ctrlSetText ("Sent messages appear here." + (toString [10]));
+    _console ctrlSetText ((("Sent messages appear here." + (toString [10]))) call comspec_overwatch_connect_fnc_tr);
 };
 
 // Reflète l'état hidden/shown sauvegardé (profileNamespace) sur les boutons de filtre,
@@ -47,7 +47,7 @@ if (!isNull _console && {ctrlText _console isEqualTo ""}) then {
     private _ctrl = _display displayCtrl _idc;
     if (!isNull _ctrl) then {
         private _muted = profileNamespace getVariable [format ["comspec_overwatch_mute_%1", _category], false];
-        _ctrl ctrlSetText format ["%1 : %2", _label, if (_muted) then { "hidden" } else { "shown" }];
+        _ctrl ctrlSetText ((format ["%1 : %2", _label, if (_muted) then { "hidden" } else { "shown" }]) call comspec_overwatch_connect_fnc_tr);
     };
 } forEach [
     ["liaison", 1411, "Liaison"],

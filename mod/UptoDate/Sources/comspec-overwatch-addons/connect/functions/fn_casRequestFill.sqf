@@ -12,17 +12,17 @@ if (!(_world isEqualType []) || {(count _world) < 2}) then { _world = getPos pla
 
 private _grid = [9702] call comspec_overwatch_connect_fnc_casRequestCtrl;
 if (!isNull _grid) then {
-    _grid ctrlSetText format ["Grille %1", mapGridPosition _world];
+    _grid ctrlSetText ((format ["Grille %1", mapGridPosition _world]) call comspec_overwatch_connect_fnc_tr);
 };
 private _notes = [9703] call comspec_overwatch_connect_fnc_casRequestCtrl;
-if (!isNull _notes) then { _notes ctrlSetText ""; };
+if (!isNull _notes) then { _notes ctrlSetText (("") call comspec_overwatch_connect_fnc_tr); };
 
 private _combo = [9701] call comspec_overwatch_connect_fnc_casRequestCtrl;
 if (!isNull _combo) then {
     lbClear _combo;
     {
         _x params ["_label", "_code"];
-        private _i = _combo lbAdd _label;
+        private _i = _combo lbAdd ((_label) call comspec_overwatch_connect_fnc_tr);
         _combo lbSetData [_i, _code];
     } forEach [
         ["Appui immédiat (danger proche)", "CAS"],

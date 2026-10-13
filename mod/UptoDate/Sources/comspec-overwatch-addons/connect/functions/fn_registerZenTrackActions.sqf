@@ -128,7 +128,7 @@ if (
             [_obj] call (missionNamespace getVariable ["COMSPEC_ZeusToggleGpsBeacon", {}]);
         },
         _iconGps
-    ] call zen_custom_modules_fnc_register;
+    ] call comspec_overwatch_connect_fnc_zenModule;
 
     [
         "COMSPEC Roleplay",
@@ -141,7 +141,7 @@ if (
             [_obj, 0] call (missionNamespace getVariable ["COMSPEC_ZeusConfigurePhoneTrack", {}]);
         },
         _iconPhone
-    ] call zen_custom_modules_fnc_register;
+    ] call comspec_overwatch_connect_fnc_zenModule;
 
     [
         "COMSPEC Roleplay",
@@ -155,7 +155,7 @@ if (
             [_obj, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusToggleAllyTrack", {}]);
         },
         _iconAlly
-    ] call zen_custom_modules_fnc_register;
+    ] call comspec_overwatch_connect_fnc_zenModule;
 
     [
         "COMSPEC Roleplay",
@@ -164,7 +164,7 @@ if (
             [] call (missionNamespace getVariable ["COMSPEC_ZeusToggleEnemyAi", {}]);
         },
         _iconEnemy
-    ] call zen_custom_modules_fnc_register;
+    ] call comspec_overwatch_connect_fnc_zenModule;
 };
 
 if (
@@ -186,7 +186,7 @@ if (
             private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
             ({ !(_x isKindOf "CAManBase") && {_x isKindOf "AllVehicles"} } count _pool) > 0
         }
-    ] call zen_context_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_zenAction;
     [_gpsAction, [], 7] call zen_context_menu_fnc_addAction;
 
     private _phoneAction = [
@@ -203,7 +203,7 @@ if (
             private _pool = [] call comspec_overwatch_connect_fnc_curatorSelectedObjects;
             ({ _x isKindOf "CAManBase" } count _pool) > 0
         }
-    ] call zen_context_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_zenAction;
     [_phoneAction, [], 7] call zen_context_menu_fnc_addAction;
 
     private _allyAction = [
@@ -224,7 +224,7 @@ if (
             private _units = [objNull, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusCollectAllyAi", { [] }]);
             ({ !([_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag) } count _units) > 0
         }
-    ] call zen_context_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_zenAction;
     [_allyAction, [], 7] call zen_context_menu_fnc_addAction;
 
     private _allyOffAction = [
@@ -245,7 +245,7 @@ if (
             private _units = [objNull, _pool] call (missionNamespace getVariable ["COMSPEC_ZeusCollectAllyAi", { [] }]);
             ({ [_x, "COMSPEC_AllyTrack"] call comspec_overwatch_connect_fnc_isObjectFlag } count _units) > 0
         }
-    ] call zen_context_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_zenAction;
     [_allyOffAction, [], 7] call zen_context_menu_fnc_addAction;
 
     private _enemyOnAction = [
@@ -258,7 +258,7 @@ if (
         {
             !(missionNamespace getVariable ["COMSPEC_AtakShowEnemyAi", false])
         }
-    ] call zen_context_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_zenAction;
     [_enemyOnAction, [], 7] call zen_context_menu_fnc_addAction;
 
     private _enemyOffAction = [
@@ -271,7 +271,7 @@ if (
         {
             missionNamespace getVariable ["COMSPEC_AtakShowEnemyAi", false]
         }
-    ] call zen_context_menu_fnc_createAction;
+    ] call comspec_overwatch_connect_fnc_zenAction;
     [_enemyOffAction, [], 7] call zen_context_menu_fnc_addAction;
     missionNamespace setVariable ["COMSPEC_ZenTrackContextRegistered", true];
 };

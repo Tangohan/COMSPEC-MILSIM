@@ -49,7 +49,7 @@ missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
         [_pos, _obj, "no_coverage", 200, 100] call (missionNamespace getVariable "COMSPEC_ZenPlaceRoleplayZone");
     },
     _icon
-] call zen_custom_modules_fnc_register;
+] call comspec_overwatch_connect_fnc_zenModule;
 
 [
     "COMSPEC Roleplay",
@@ -59,7 +59,7 @@ missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
         [_pos, _obj, "interference", 300, 50] call (missionNamespace getVariable "COMSPEC_ZenPlaceRoleplayZone");
     },
     _icon
-] call zen_custom_modules_fnc_register;
+] call comspec_overwatch_connect_fnc_zenModule;
 
 [
     "COMSPEC Roleplay",
@@ -69,7 +69,7 @@ missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
         [_pos, _obj, "degraded", 500, 30] call (missionNamespace getVariable "COMSPEC_ZenPlaceRoleplayZone");
     },
     _icon
-] call zen_custom_modules_fnc_register;
+] call comspec_overwatch_connect_fnc_zenModule;
 
 [
     "COMSPEC Roleplay",
@@ -79,7 +79,7 @@ missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
         [_pos, _obj, "jammer", 400, 80] call (missionNamespace getVariable "COMSPEC_ZenPlaceRoleplayZone");
     },
     _icon
-] call zen_custom_modules_fnc_register;
+] call comspec_overwatch_connect_fnc_zenModule;
 
 [
     "COMSPEC Roleplay",
@@ -123,7 +123,7 @@ missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
         ] call zen_dialog_fnc_create;
     },
     "\A3\ui_f\data\map\markers\military\flag_CA.paa"
-] call zen_custom_modules_fnc_register;
+] call comspec_overwatch_connect_fnc_zenModule;
 
 [
     "COMSPEC Roleplay",
@@ -164,6 +164,6 @@ missionNamespace setVariable ["COMSPEC_ZenPlaceRoleplayZone", _place];
         ] call zen_dialog_fnc_create;
     },
     "\A3\ui_f\data\IGUI\Cfg\simpleTasks\types\listen_ca.paa"
-] call zen_custom_modules_fnc_register;
+] call comspec_overwatch_connect_fnc_zenModule;
 
 missionNamespace setVariable ["COMSPEC_ZenRoleplayModulesRegistered", true];

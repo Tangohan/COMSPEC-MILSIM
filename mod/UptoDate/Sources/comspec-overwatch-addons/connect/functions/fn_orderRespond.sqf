@@ -122,5 +122,5 @@ if (_status isEqualTo "ACK") then {
     };
 };
 
-if (!isNull _noteCtrl) then { _noteCtrl ctrlSetText ""; };
+if (!isNull _noteCtrl) then { _noteCtrl ctrlSetText (("") call comspec_overwatch_connect_fnc_tr); };
 [] call comspec_overwatch_connect_fnc_orderInboxOnLoad;

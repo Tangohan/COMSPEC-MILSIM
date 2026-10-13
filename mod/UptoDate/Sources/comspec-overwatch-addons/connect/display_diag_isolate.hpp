@@ -2,7 +2,7 @@
 class COMSPEC_DiagIsolate_Dialog {
     idd = 9995;
     movingEnable = 1;
-    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_diagIsolateOnLoad;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; (_this select 0) call comspec_overwatch_connect_fnc_diagIsolateOnLoad;";
     onUnload = "uiNamespace setVariable ['COMSPEC_DiagIsolate_Display', displayNull];";
 
     class Controls {

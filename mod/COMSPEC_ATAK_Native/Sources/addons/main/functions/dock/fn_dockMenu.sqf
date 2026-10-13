@@ -18,7 +18,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         private _free = _slots findIf { (count _x) == 0 };
         if (_free >= 0 && {(["phone"] call comspec_atak_native_fnc_dockClient) isNotEqualTo ""}) then {
             _out pushBack [["COMSPEC_ATAK_DockPut", format ["Poser mon téléphone (emplacement %1)", _free + 1], "\z\comspec_atak_native\addons\main\data\item_dock.paa",
-                { ["put", [_target, -1]] call comspec_atak_native_fnc_dockClient; }, { true }] call ace_interact_menu_fnc_createAction, [], _target];
+                { ["put", [_target, -1]] call comspec_atak_native_fnc_dockClient; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
         };
         private _all = call (missionNamespace getVariable "COMSPEC_ATAK_DockStaff");
         {
@@ -26,18 +26,18 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
                 _x params ["_owner", "_name", "_lv"];
                 private _txt = if (_owner isEqualTo _uid) then { format ["Reprendre mon téléphone · %1 · %2 %%", _forEachIndex + 1, _lv] } else { format ["Reprendre · %1 · %2 · %3 %%", _forEachIndex + 1, _name, _lv] };
                 _out pushBack [[format ["COMSPEC_ATAK_DockTake%1", _forEachIndex], _txt, "\z\comspec_atak_native\addons\main\data\item_phone.paa",
-                    { ["take", [_target, _this select 2]] call comspec_atak_native_fnc_dockClient; }, { true }, {}, _forEachIndex] call ace_interact_menu_fnc_createAction, [], _target];
+                    { ["take", [_target, _this select 2]] call comspec_atak_native_fnc_dockClient; }, { true }, {}, _forEachIndex] call comspec_atak_native_fnc_aceAction, [], _target];
             };
         } forEach _slots;
-        _out pushBack [["COMSPEC_ATAK_DockStatus", "État du socle", "", { ["status", [_target]] call comspec_atak_native_fnc_dockClient; }, { true }] call ace_interact_menu_fnc_createAction, [], _target];
+        _out pushBack [["COMSPEC_ATAK_DockStatus", "État du socle", "", { ["status", [_target]] call comspec_atak_native_fnc_dockClient; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
         if ((_target getVariable ["COMSPEC_ATAK_DockKit", false]) && {(_slots findIf { (count _x) > 0 }) < 0}) then {
-            _out pushBack [["COMSPEC_ATAK_DockPack", "Replier le socle", "", { ["pack", [_target]] call comspec_atak_native_fnc_dockClient; }, { true }] call ace_interact_menu_fnc_createAction, [], _target];
+            _out pushBack [["COMSPEC_ATAK_DockPack", "Replier le socle", "", { ["pack", [_target]] call comspec_atak_native_fnc_dockClient; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
         };
         _out
-    }, [], [0, 0, 0.12], 3] call ace_interact_menu_fnc_createAction;
+    }, [], [0, 0, 0.12], 3] call comspec_atak_native_fnc_aceAction;
     ["COMSPEC_ATAK_ChargingDock", 0, ["ACE_MainActions"], _root, true] call ace_interact_menu_fnc_addActionToClass;
     private _deploy = ["COMSPEC_ATAK_DockDeploy", "Poser le socle de recharge", _icon, { ["deploy"] call comspec_atak_native_fnc_dockClient; },
-        { "COMSPEC_ATAK_DockKit" in (items _player) && {isNull objectParent _player} }] call ace_interact_menu_fnc_createAction;
+        { "COMSPEC_ATAK_DockKit" in (items _player) && {isNull objectParent _player} }] call comspec_atak_native_fnc_aceAction;
     ["CAManBase", 1, ["ACE_SelfActions", "ACE_Equipment"], _deploy, true] call ace_interact_menu_fnc_addActionToClass;
 } else {
     private _add = {

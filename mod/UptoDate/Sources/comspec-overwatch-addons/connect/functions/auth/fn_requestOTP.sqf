@@ -11,7 +11,7 @@ if (_otpMode) exitWith {
     (_d displayCtrl 9420) ctrlShow true;
     (_d displayCtrl 9403) ctrlShow false;
     (_d displayCtrl 9424) ctrlShow false;
-    (_d displayCtrl 9421) ctrlSetText "Code temporaire par e-mail";
+    (_d displayCtrl 9421) ctrlSetText (("Code temporaire par e-mail") call comspec_overwatch_connect_fnc_tr);
     [(_d displayCtrl 9410), "<t align='center' size='0.55' color='#7aa89a'>Saisissez votre mot de passe, ou demandez un nouveau code.</t>"] call comspec_overwatch_connect_fnc_setPlainText;
 };
 private _url = [] call comspec_overwatch_connect_fnc_portalUrl;
@@ -26,6 +26,6 @@ missionNamespace setVariable ["comspec_overwatch_auth_otp_mode", true, false];
 (_d displayCtrl 9420) ctrlShow false;
 (_d displayCtrl 9403) ctrlShow true;
 (_d displayCtrl 9424) ctrlShow true;
-(_d displayCtrl 9421) ctrlSetText "Revenir au mot de passe";
+(_d displayCtrl 9421) ctrlSetText (("Revenir au mot de passe") call comspec_overwatch_connect_fnc_tr);
 [(_d displayCtrl 9410), "<t align='center' size='0.55' color='#7aa89a'>Un code vient d’être envoyé. Saisissez-le ci-dessous, puis validez.</t>"] call comspec_overwatch_connect_fnc_setPlainText;
 [] call comspec_overwatch_connect_fnc_pollAuth;

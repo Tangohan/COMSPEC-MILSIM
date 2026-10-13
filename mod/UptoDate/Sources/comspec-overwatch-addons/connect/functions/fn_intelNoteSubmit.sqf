@@ -19,7 +19,7 @@ private _fnc_say = {
     private _d = uiNamespace getVariable ["COMSPEC_IntelNote_Display", displayNull];
     if (isNull _d) exitWith {};
     private _c = _d displayCtrl 9618;
-    if (!isNull _c) then { _c ctrlSetStructuredText parseText _html; };
+    if (!isNull _c) then { _c ctrlSetStructuredText parseText ((_html) call comspec_overwatch_connect_fnc_tr); };
 };
 
 // --- Contrôles de saisie ---

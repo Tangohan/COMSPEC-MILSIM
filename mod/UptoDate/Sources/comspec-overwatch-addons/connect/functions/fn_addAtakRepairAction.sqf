@@ -33,7 +33,7 @@ private _actionPower = [
         !(_status get "powered_on") && {!(_status get "device_destroyed")}
     },
     _noChildren
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 
 // Action pour réparer l'écran
 private _actionScreen = [
@@ -48,7 +48,7 @@ private _actionScreen = [
         !(_status get "screen_ok") && {!(_status get "device_destroyed")} && {"ToolKit" in (items player)}
     },
     _noChildren
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 
 // Action pour diagnostic
 private _actionDiag = [
@@ -74,11 +74,11 @@ private _actionDiag = [
             _msg = _msg + "\nATAK irréparable, remplacement nécessaire";
         };
 
-        hint _msg;
+        hint ((_msg) call comspec_overwatch_connect_fnc_tr);
     },
     { true },
     _noChildren
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 
 // Ajouter au self-interact (copie isolée + gardes)
 [_actionPower, ["ACE_SelfActions", "ACE_Equipment"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;

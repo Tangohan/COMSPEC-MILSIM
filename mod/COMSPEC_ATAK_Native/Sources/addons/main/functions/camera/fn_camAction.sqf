@@ -182,19 +182,19 @@ switch (_mode) do {
         if (!hasInterface || {isNil "ace_interact_menu_fnc_createAction"}) exitWith { false };
         private _icon = "\z\comspec_atak_native\addons\main\data\item_camera.paa";
         private _root = ["ACE_SelfActions", "COMSPEC_ATAK_Phone"];
-        private _self = ["COMSPEC_ATAK_Cams", "Caméras", _icon, {}, { CAM_ITEM in (items _player) && {isNull objectParent _player} }] call ace_interact_menu_fnc_createAction;
+        private _self = ["COMSPEC_ATAK_Cams", "Caméras", _icon, {}, { CAM_ITEM in (items _player) && {isNull objectParent _player} }] call comspec_atak_native_fnc_aceAction;
         ["CAManBase", 1, _root, _self, true] call ace_interact_menu_fnc_addActionToClass;
-        private _put = ["COMSPEC_ATAK_CamPlace", "Poser une caméra", _icon, { ["place"] call comspec_atak_native_fnc_camAction; }, { true }] call ace_interact_menu_fnc_createAction;
+        private _put = ["COMSPEC_ATAK_CamPlace", "Poser une caméra", _icon, { ["place"] call comspec_atak_native_fnc_camAction; }, { true }] call comspec_atak_native_fnc_aceAction;
         ["CAManBase", 1, _root + ["COMSPEC_ATAK_Cams"], _put, true] call ace_interact_menu_fnc_addActionToClass;
 
         // Sur la caméra posée.
         private _mine = { (_target getVariable ["COMSPEC_ATAK_CamSide", ""]) isEqualTo str side group _player && {!(["dead", _target] call comspec_atak_native_fnc_camAction)} };
         missionNamespace setVariable ["COMSPEC_ATAK_CamMine", _mine];
-        private _main = ["COMSPEC_ATAK_CamMain", "Caméra IP", _icon, {}, { true }, {}, [], [0, 0, 0], 2.5] call ace_interact_menu_fnc_createAction;
+        private _main = ["COMSPEC_ATAK_CamMain", "Caméra IP", _icon, {}, { true }, {}, [], [0, 0, 0], 2.5] call comspec_atak_native_fnc_aceAction;
         [CAM_CLASS, 0, [], _main] call ace_interact_menu_fnc_addActionToClass;
         {
             _x params ["_id", "_txt", "_code", "_cond"];
-            [CAM_CLASS, 0, ["COMSPEC_ATAK_CamMain"], [_id, _txt, "", _code, _cond] call ace_interact_menu_fnc_createAction] call ace_interact_menu_fnc_addActionToClass;
+            [CAM_CLASS, 0, ["COMSPEC_ATAK_CamMain"], [_id, _txt, "", _code, _cond] call comspec_atak_native_fnc_aceAction] call ace_interact_menu_fnc_addActionToClass;
         } forEach [
             ["COMSPEC_ATAK_CamTake", "Récupérer la caméra", { ["pickup", _target] call comspec_atak_native_fnc_camAction; }, { !(["dead", _target] call comspec_atak_native_fnc_camAction) }],
             ["COMSPEC_ATAK_CamWreck", "Retirer la caméra détruite", { ["pickupNow", _target] call comspec_atak_native_fnc_camAction; }, { ["dead", _target] call comspec_atak_native_fnc_camAction }],

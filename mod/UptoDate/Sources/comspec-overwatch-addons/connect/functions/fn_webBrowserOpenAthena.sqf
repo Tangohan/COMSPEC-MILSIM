@@ -43,7 +43,7 @@ if ((count _atakUrl) < 16) exitWith {
     if (!isNull _displayErr) then {
         private _hintErr = _displayErr displayCtrl 9403;
         if (!isNull _hintErr) then {
-            _hintErr ctrlSetStructuredText parseText "<t align='right' size='0.5' color='#ff8a7a'>Adresse portail invalide</t>";
+            _hintErr ctrlSetStructuredText parseText (("<t align='right' size='0.5' color='#ff8a7a'>Adresse portail invalide</t>") call comspec_overwatch_connect_fnc_tr);
         };
     };
     private _lastErr = missionNamespace getVariable ["COMSPEC_WebBrowser_AthenaNotifyAt", -1e9];
@@ -80,7 +80,7 @@ if (!isNull _display) then {
         } else {
             "<t align='right' size='0.5' color='#7dffb3'>Carte ouverte dans le navigateur PC</t>"
         };
-        _hint ctrlSetStructuredText parseText _hintTxt;
+        _hint ctrlSetStructuredText parseText ((_hintTxt) call comspec_overwatch_connect_fnc_tr);
     };
 };
 

@@ -58,9 +58,9 @@ private _hint = _display displayCtrl 9403;
 if (!isNull _hint) then {
     private _color = if (isNull _browser) then {"#ff8a7a"} else {"#7dffb3"};
     private _msg = if (isNull _browser) then {"Écran intégré indisponible"} else {"Écran tactique"};
-    _hint ctrlSetStructuredText parseText format [
+    _hint ctrlSetStructuredText parseText ((format [
         "<t align='right' size='0.5' color='%1'>%2</t>",
         _color,
         _msg
-    ];
+    ]) call comspec_overwatch_connect_fnc_tr);
 };

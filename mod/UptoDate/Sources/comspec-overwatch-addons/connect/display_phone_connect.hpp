@@ -12,7 +12,7 @@ class COMSPEC_PhoneConnect_Dialog {
 
     movingEnable = 1;
 
-    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_phoneConnectDialogOnLoad;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; (_this select 0) call comspec_overwatch_connect_fnc_phoneConnectDialogOnLoad;";
 
     onUnload = "uiNamespace setVariable ['COMSPEC_PhoneConnect_Display', displayNull];";
 

@@ -92,7 +92,7 @@ if (_target isEqualTo 1) then {
             _x params ["_idc", "_idx"];
             private _ctrl = _disp displayCtrl _idc;
             if (!isNull _ctrl && { (trim (ctrlText _ctrl)) isEqualTo "" }) then {
-                _ctrl ctrlSetText (_cache select _idx);
+                _ctrl ctrlSetText (((_cache select _idx)) call comspec_overwatch_connect_fnc_tr);
             };
         } forEach [[9501, 0], [9502, 1], [9503, 2], [9504, 3], [9507, 4], [9508, 5]];
     };
@@ -125,10 +125,10 @@ if (!isNull _strip) then { _strip ctrlShow (_target isNotEqualTo 0); };
 (_pages select _target) params ["_label", ""];
 private _title = _disp displayCtrl 9540;
 if (!isNull _title) then {
-    _title ctrlSetStructuredText parseText format [
+    _title ctrlSetStructuredText parseText ((format [
         "<t size='0.64' align='center' color='#f2fff8'>%1</t>",
         if (_target isEqualTo 0) then { "SEEK II · ENROLL" } else { format ["SEEK II · %1", _label] }
-    ];
+    ]) call comspec_overwatch_connect_fnc_tr);
 };
 
 private _prev = _disp displayCtrl 9541;

@@ -30,7 +30,7 @@ switch (_act) do {
         _d setVariable ["COMSPEC_ArsenalOverlayOpen", _open];
         _g ctrlShow _open;
         private _t = _d getVariable ["COMSPEC_ArsenalToggle", controlNull];
-        if (!isNull _t) then { _t ctrlSetText (["ATHENA · TENUES", "FERMER LES TENUES"] select _open); };
+        if (!isNull _t) then { _t ctrlSetText (((["ATHENA · TENUES", "FERMER LES TENUES"] select _open)) call comspec_overwatch_connect_fnc_tr); };
         if (_open) then { [_d] call comspec_overwatch_connect_fnc_arsenalOverlayBeginLoad; };
         // Les cadres de l'arsenal ACE placés sous le panneau (statistiques, infos) se dessinaient par-dessus :
         // masqués tant que le panneau est ouvert (ACE les réaffiche, donc on repasse toutes les 0,25 s).

@@ -61,7 +61,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
                     { params ["_target"]; ["connect", _target] call comspec_atak_native_fnc_dataAction; },
                     { params ["_target"]; ["can", _target] call comspec_atak_native_fnc_dataAction },
                     {}, [], [0, 0, 0], 3
-                ] call ace_interact_menu_fnc_createAction;
+                ] call comspec_atak_native_fnc_aceAction;
                 // Corps / joueur capturé : sous « Interactions » (point au torse) ; à la racine, le point tombait aux pieds
                 // de l'unité, hors de portée (2 m de la tête). Objets : racine, portée du câble.
                 [_x, 0, [[], ["ACE_MainActions"]] select (_x isKindOf "CAManBase"), _act] call ace_interact_menu_fnc_addActionToObject;

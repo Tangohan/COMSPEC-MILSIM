@@ -3,7 +3,7 @@
 class COMSPEC_ReconNote_Dialog {
     idd = 9966;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_ReconNote_Display', _this select 0];";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_ReconNote_Display', _this select 0];";
     onUnload = "uiNamespace setVariable ['COMSPEC_ReconNote_Display', displayNull];";
 
     class Controls {

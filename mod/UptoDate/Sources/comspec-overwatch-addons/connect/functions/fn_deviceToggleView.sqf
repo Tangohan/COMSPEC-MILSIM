@@ -28,7 +28,7 @@ private _showRoster = if (_mode == "roster") then {
 
 { if (!isNull _x) then { _x ctrlShow _showRoster; }; } forEach [_rosterList, _rosterTitle];
 { if (!isNull _x) then { _x ctrlShow !_showRoster; }; } forEach [_profileAvatar, _profileName];
-if (!isNull _btnRoster) then { _btnRoster ctrlSetText (if (_showRoster) then { "Profil" } else { "Effectifs" }); };
+if (!isNull _btnRoster) then { _btnRoster ctrlSetText (((if (_showRoster) then { "Profil" } else { "Effectifs" })) call comspec_overwatch_connect_fnc_tr); };
 
 if (_showRoster) then {
     [_display] spawn comspec_overwatch_connect_fnc_showDeviceRoster;

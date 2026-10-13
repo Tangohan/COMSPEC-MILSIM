@@ -241,7 +241,7 @@ if (_crashed) then {
 
 if (!isNull _fx) then {
     if (_tex isNotEqualTo "") then {
-        _fx ctrlSetText _tex;
+        _fx ctrlSetText ((_tex) call comspec_overwatch_connect_fnc_tr);
         _fx ctrlSetPosition _pos;
         _fx ctrlSetFade 0;
         _fx ctrlEnable false;

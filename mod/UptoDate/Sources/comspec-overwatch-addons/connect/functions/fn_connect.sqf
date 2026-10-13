@@ -280,9 +280,9 @@ private _display = uiNamespace getVariable ["COMSPEC_Chat_Display", displayNull]
 if (!isNull _display) then {
     private _ipCtrl = _display displayCtrl 1398;
     private _ip = missionNamespace getVariable ["COMSPEC_userIp", "—"];
-    if (!isNull _ipCtrl) then { _ipCtrl ctrlSetText ("Votre adresse : " + _ip); };
+    if (!isNull _ipCtrl) then { _ipCtrl ctrlSetText ((("Votre adresse : " + _ip)) call comspec_overwatch_connect_fnc_tr); };
     private _urlCtrl = _display displayCtrl 1399;
     if (!isNull _urlCtrl) then {
-        _urlCtrl ctrlSetText ("Portail : " + ([_url] call comspec_overwatch_connect_fnc_portalLabel));
+        _urlCtrl ctrlSetText ((("Portail : " + ([_url] call comspec_overwatch_connect_fnc_portalLabel))) call comspec_overwatch_connect_fnc_tr);
     };
 };

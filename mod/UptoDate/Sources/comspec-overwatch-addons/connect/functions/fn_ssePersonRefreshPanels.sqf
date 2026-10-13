@@ -106,28 +106,28 @@ private _fpDone = (count _nfiqs) isEqualTo 10;
     if (!isNull _ctrl) then {
         if (_fpDone && {(_nfiqs select _forEachIndex) < 1}) then {
             private _n = _nfiqs select _forEachIndex;
-            _ctrl ctrlSetText (switch (_n) do { case -1: { "X" }; case -2: { "B" }; default { "-" }; });
+            _ctrl ctrlSetText (((switch (_n) do { case -1: { "X" }; case -2: { "B" }; default { "-" }; })) call comspec_overwatch_connect_fnc_tr);
             _ctrl ctrlSetTextColor [1, 1, 1, 1];
             _ctrl ctrlSetBackgroundColor (switch (_n) do { case -1: { [0.25, 0.26, 0.28, 0.95] }; case -2: { [0.55, 0.10, 0.10, 0.95] }; default { [0.70, 0.71, 0.72, 0.85] }; });
-            _ctrl ctrlSetTooltip format ["%1 · %2", _fingerNames select _forEachIndex, switch (_n) do { case -1: { "amputé" }; case -2: { "main trop blessée : non relevable" }; default { "non relevé" }; }];
+            _ctrl ctrlSetTooltip ((format ["%1 · %2", _fingerNames select _forEachIndex, switch (_n) do { case -1: { "amputé" }; case -2: { "main trop blessée : non relevable" }; default { "non relevé" }; }]) call comspec_overwatch_connect_fnc_tr);
         } else {
         if (_fpDone) then {
             private _n = _nfiqs select _forEachIndex;
-            _ctrl ctrlSetText str _n;
+            _ctrl ctrlSetText ((str _n) call comspec_overwatch_connect_fnc_tr);
             _ctrl ctrlSetTextColor ([[0.05, 0.05, 0.05, 1], [1, 1, 1, 1]] select (_n >= 4));
             _ctrl ctrlSetBackgroundColor (switch (true) do {
                 case (_n <= 2): { [0.16, 0.66, 0.27, 0.92] };
                 case (_n == 3): { [0.95, 0.72, 0.10, 0.92] };
                 default { [0.80, 0.16, 0.12, 0.92] };
             });
-            _ctrl ctrlSetTooltip format ["%1 · NFIQ %2", _fingerNames select _forEachIndex, _n];
+            _ctrl ctrlSetTooltip ((format ["%1 · NFIQ %2", _fingerNames select _forEachIndex, _n]) call comspec_overwatch_connect_fnc_tr);
         } else {
             // Doigt attendu : index droit (début de la séquence slap 4-4-2).
             private _next = _forEachIndex isEqualTo 1;
-            _ctrl ctrlSetText (["-", ">"] select _next);
+            _ctrl ctrlSetText (((["-", ">"] select _next)) call comspec_overwatch_connect_fnc_tr);
             _ctrl ctrlSetTextColor ([[0.25, 0.26, 0.28, 1], [1, 1, 1, 1]] select _next);
             _ctrl ctrlSetBackgroundColor ([[0.70, 0.71, 0.72, 0.85], [0.08, 0.30, 0.78, 0.95]] select _next);
-            _ctrl ctrlSetTooltip format ["%1 · non capturé", _fingerNames select _forEachIndex];
+            _ctrl ctrlSetTooltip ((format ["%1 · non capturé", _fingerNames select _forEachIndex]) call comspec_overwatch_connect_fnc_tr);
         };
         };
     };
@@ -158,7 +158,7 @@ private _fpPrompt = if (_fpDone) then {
 };
 if (_bioMsg isNotEqualTo "") then { _fpPrompt = _bioMsg; };
 private _fpPromptCtrl = _disp displayCtrl 9621;
-if (!isNull _fpPromptCtrl) then { _fpPromptCtrl ctrlSetStructuredText parseText _fpPrompt; };
+if (!isNull _fpPromptCtrl) then { _fpPromptCtrl ctrlSetStructuredText parseText ((_fpPrompt) call comspec_overwatch_connect_fnc_tr); };
 
 private _fnc_step = {
     params ["_label", "_done"];
@@ -184,7 +184,7 @@ if (_fpDone) then {
     { _fpRows pushBack format ["<t size='0.38' color='%1'>· %2</t>", _cWarn, _x]; } forEach (_fpFactors select [0, 4]);
 };
 private _fpPanel = _disp displayCtrl 9622;
-if (!isNull _fpPanel) then { _fpPanel ctrlSetStructuredText parseText (_fpRows joinString "<br/>"); };
+if (!isNull _fpPanel) then { _fpPanel ctrlSetStructuredText parseText (((_fpRows joinString "<br/>")) call comspec_overwatch_connect_fnc_tr); };
 
 // =====================================================================
 // IRIS — œil droit (OD) et œil gauche (OG)
@@ -211,14 +211,14 @@ if (_irDone) then {
     if (!isNull _picCtrl) then { _picCtrl ctrlSetTextColor [1, 1, 1, [0.30, 1] select (_q >= 0)]; };
     private _txtCtrl = _disp displayCtrl _txt;
     if (!isNull _txtCtrl) then {
-        _txtCtrl ctrlSetStructuredText parseText (if (_q < 0) then {
+        _txtCtrl ctrlSetStructuredText parseText (((if (_q < 0) then {
             format ["<t size='0.42' color='%1' align='center'>%2</t>", _cMute, ["Non capturé", "Pas d'iris (prothèse)"] select (_irDone && {_q == -1})]
         } else {
             format [
                 "<t size='0.42' color='%1' align='center'>Qualité </t><t size='0.44' font='TahomaB' color='%2' align='center'>%3</t><t size='0.42' color='%2' align='center'>  ·  %4</t>",
                 _cSub, [_q] call _fnc_qCol, _q, ["FAIBLE, RECAPTURER", "UTILISABLE"] select (_q >= 70)
             ]
-        });
+        })) call comspec_overwatch_connect_fnc_tr);
     };
     private _bgCtrl = _disp displayCtrl _bg;
     private _barCtrl = _disp displayCtrl _bar;
@@ -248,15 +248,15 @@ private _irPrompt = if (_irDone) then {
 };
 if (_bioMsg isNotEqualTo "") then { _irPrompt = _bioMsg; };
 private _irPromptCtrl = _disp displayCtrl 9629;
-if (!isNull _irPromptCtrl) then { _irPromptCtrl ctrlSetStructuredText parseText _irPrompt; };
+if (!isNull _irPromptCtrl) then { _irPromptCtrl ctrlSetStructuredText parseText ((_irPrompt) call comspec_overwatch_connect_fnc_tr); };
 private _irNote = _disp displayCtrl 9626;
 if (!isNull _irNote) then {
-    _irNote ctrlSetStructuredText parseText (if (_irDone) then {
+    _irNote ctrlSetStructuredText parseText (((if (_irDone) then {
         format ["<t size='0.42' color='%1'>Capture double · qualité %2%3 · réf. %4%5</t>", _cMute, _ir select 1, "%", _ir select 2,
             [format ["<br/><t color='%1'>%2</t>", _cWarn, ((_ir param [4, []]) select [0, 3]) joinString " · "], ""] select (((_ir param [4, []]) isEqualTo []))]
     } else {
         format ["<t size='0.42' color='%1'>Capture double (les deux yeux). Ôtez lunettes et couvre-chef.</t>", _cMute]
-    });
+    })) call comspec_overwatch_connect_fnc_tr);
 };
 
 // =====================================================================
@@ -325,9 +325,9 @@ if (_queryPending) then {
 private _ban = _disp displayCtrl 9640;
 if (!isNull _ban) then { _ban ctrlSetBackgroundColor _banColor; };
 private _banText = _disp displayCtrl 9641;
-if (!isNull _banText) then { _banText ctrlSetStructuredText parseText _banTxt; };
+if (!isNull _banText) then { _banText ctrlSetStructuredText parseText ((_banTxt) call comspec_overwatch_connect_fnc_tr); };
 private _det = _disp displayCtrl 9642;
-if (!isNull _det) then { _det ctrlSetStructuredText parseText _detail; };
+if (!isNull _det) then { _det ctrlSetStructuredText parseText ((_detail) call comspec_overwatch_connect_fnc_tr); };
 
 // Synthèse des modalités (9522) : une ligne par modalité, sujet en tête.
 private _subj = if (isNull _bt) then {
@@ -407,7 +407,7 @@ if ((count _query) >= 3 && {_qd isEqualType createHashMap} && {(count _qd) > 0})
 };
 if (_bioMsg isNotEqualTo "") then { _rows pushBack _bioMsg; };
 private _bioCtrl = _disp displayCtrl 9522;
-if (!isNull _bioCtrl) then { _bioCtrl ctrlSetStructuredText parseText (_rows joinString "<br/>"); };
+if (!isNull _bioCtrl) then { _bioCtrl ctrlSetStructuredText parseText (((_rows joinString "<br/>")) call comspec_overwatch_connect_fnc_tr); };
 
 // Jauge de complétude (9566) : empreintes, iris, visage, ADN.
 private _platen = _disp displayCtrl 9566;
@@ -436,7 +436,7 @@ private _sigTxt = if (_signed) then {
 } else {
     format ["<t size='0.56' font='TahomaB' color='%1'>Non signé</t><br/><t size='0.48' color='%2'>La fiche partira sans procès-verbal (touche SIGN).</t>", _cWarn, _cSub]
 };
-(_disp displayCtrl 9520) ctrlSetStructuredText parseText _sigTxt;
+(_disp displayCtrl 9520) ctrlSetStructuredText parseText ((_sigTxt) call comspec_overwatch_connect_fnc_tr);
 
 // --- Viseur du visage (9577) : sujet, cadrage, qualité estimée, dernier cliché ---
 private _ft = _face getOrDefault ["target", objNull];
@@ -485,7 +485,7 @@ if (isNull _ft) then {
     };
 };
 private _faceCtrl = _disp displayCtrl 9577;
-if (!isNull _faceCtrl) then { _faceCtrl ctrlSetStructuredText parseText (_faceLines joinString "<br/>"); };
+if (!isNull _faceCtrl) then { _faceCtrl ctrlSetStructuredText parseText (((_faceLines joinString "<br/>")) call comspec_overwatch_connect_fnc_tr); };
 
 // --- Lecture du viseur (9525) : état de la capture et qualité ---
 private _photo = uiNamespace getVariable ["COMSPEC_SsePerson_PhotoPending", false];
@@ -497,18 +497,18 @@ private _mode = switch (true) do {
 private _qTxt = if (_faceQ >= 0) then {
     format ["<t color='%1'>Q %2</t>", ["#ff8a7a", "#ffd166", "#7dff9a"] select ((parseNumber (_faceQ >= 55)) + (parseNumber (_faceQ >= 80))), _faceQ]
 } else { "<t color='#b0b4b8'>Q --</t>" };
-(_disp displayCtrl 9525) ctrlSetStructuredText parseText format [
+(_disp displayCtrl 9525) ctrlSetStructuredText parseText ((format [
     "<t size='0.46' font='TahomaB' align='center' color='#ffffff'>%1   %2%3</t>",
     _mode, _qTxt, ["", "   <t color='#ffd166'>ARMÉ</t>"] select _photo
-];
+]) call comspec_overwatch_connect_fnc_tr);
 
 // --- Barre de titre (9526) : batterie, heure ---
 // Batterie simulée : décroît avec la durée de mission, jamais sous 12 %.
 private _bat = (97 - floor (time / 420)) max 12;
-(_disp displayCtrl 9526) ctrlSetStructuredText parseText format [
+(_disp displayCtrl 9526) ctrlSetStructuredText parseText ((format [
     "<t size='0.48' align='right' color='%1'>BAT %2%3</t><t size='0.48' align='right' color='#ffffff'>   %4</t>",
     ["#ffd166", "#ffffff"] select (_bat > 25), _bat, "%", _clock
-];
+]) call comspec_overwatch_connect_fnc_tr);
 
 // --- Barre d'état (9600) : liaison, synchro, dossier, compteur, file d'attente ---
 if (_online) then { missionNamespace setVariable ["COMSPEC_SseLastSync", _clock]; };
@@ -535,8 +535,8 @@ private _bits = [_linkTxt, _caseTxt, format ["<t color='%1'>REC %2</t>", _cSub, 
 if (_queryPending) then { _bits pushBack format ["<t font='TahomaB' color='%1'>QUERY…</t>", _cBlue]; };
 if (_pending > 0) then { _bits pushBack format ["<t font='TahomaB' color='%1'>%2 en att.</t>", _cWarn, _pending]; };
 _bits pushBack (["<t color='#5a6670'>Non signé</t>", format ["<t color='%1'>Signé</t>", _cOk]] select _signed);
-(_disp displayCtrl 9600) ctrlSetStructuredText parseText format [
+(_disp displayCtrl 9600) ctrlSetStructuredText parseText ((format [
     "<t size='0.4' color='%1'>%2</t>",
     _cSub,
     _bits joinString "<t color='#8a9096'>  |  </t>"
-];
+]) call comspec_overwatch_connect_fnc_tr);

@@ -52,12 +52,12 @@ private _paint = {
     private _live = !isNull (_st getOrDefault ["cam", objNull]);
     (_disp displayCtrl 9575) ctrlShow ((_live || _frozen) && {(uiNamespace getVariable ["COMSPEC_SsePerson_Page", 0]) isEqualTo 5});
     (_disp displayCtrl 9574) ctrlShow (!(_live || _frozen) && {(uiNamespace getVariable ["COMSPEC_SsePerson_Page", 0]) isEqualTo 5});
-    (_disp displayCtrl 9578) ctrlSetText (switch (_st getOrDefault ["angle", "face"]) do {
+    (_disp displayCtrl 9578) ctrlSetText (((switch (_st getOrDefault ["angle", "face"]) do {
         case "trois_quarts": { "3/4" };
         case "profil": { "PROFIL" };
         default { "FACE" };
-    });
-    (_disp displayCtrl 9515) ctrlSetText (["PRENDRE LE CLICHÉ", "REPRENDRE"] select _frozen);
+    })) call comspec_overwatch_connect_fnc_tr);
+    (_disp displayCtrl 9515) ctrlSetText (((["PRENDRE LE CLICHÉ", "REPRENDRE"] select _frozen)) call comspec_overwatch_connect_fnc_tr);
 };
 
 switch (_act) do {

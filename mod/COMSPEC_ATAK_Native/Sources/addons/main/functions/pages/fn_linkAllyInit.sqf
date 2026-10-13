@@ -67,7 +67,7 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         params ["_target"];
         _target isNotEqualTo player && {(player distance _target) < 2.2} && {[player] call comspec_atak_native_fnc_hasDevice} && {[_target] call comspec_atak_native_fnc_hasDevice}
         && {((uiNamespace getVariable ["COMSPEC_ATAK_LinkAlly", createHashMap]) getOrDefault ["phase", ""]) isEqualTo ""}
-    }] call ace_interact_menu_fnc_createAction;
+    }] call comspec_atak_native_fnc_aceAction;
     ["CAManBase", 0, ["ACE_MainActions"], _act, true] call ace_interact_menu_fnc_addActionToClass;
 };
 true

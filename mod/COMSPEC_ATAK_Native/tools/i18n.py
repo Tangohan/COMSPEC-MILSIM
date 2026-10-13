@@ -10,6 +10,8 @@ Sources/addons/main/i18n/en.txt : un tableau [["français", "anglais"], ...] lu 
   python3 tools/i18n.py extract   écrit tools/i18n/missing.tsv : textes du code sans traduction
   python3 tools/i18n.py merge F   ajoute au dictionnaire les lignes « français<TAB>anglais » du fichier F
   python3 tools/i18n.py stats     couverture du dictionnaire
+  python3 tools/i18n.py --connect wrap|extract|stats   même chose pour l'addon Overwatch connect embarqué
+                                     (UptoDate/.../connect ; même dictionnaire, via comspec_overwatch_connect_fnc_tr)
   python3 tools/i18n.py stringtable  noms d'objets et modules Eden/Zeus (config.cpp, modules.hpp) -> stringtable.xml
                                      ($STR_..., langue du jeu ; anglais pris dans en.txt)
 
@@ -30,8 +32,26 @@ TR = "comspec_atak_native_fnc_tr"
 SINKS_BINARY = {"ctrlsettext", "ctrlsetstructuredtext", "ctrlsettooltip", "lbadd", "lbsettext", "lnbaddrow", "lnbsettext", "lbsettooltip", "ctrlsetstructuredtext"}
 SINKS_UNARY = {"hint", "hintsilent", "systemchat", "hintc"}
 # Fichiers à ne pas toucher : la traduction elle-même.
-SKIP_FILES = {"fn_tr.sqf", "fn_langApply.sqf"}
+SKIP_FILES = {"fn_tr.sqf", "fn_langApply.sqf", "fn_aceAction.sqf", "fn_zenAction.sqf", "fn_zenModule.sqf"}
 IDENT = re.compile(r"[A-Za-z0-9_]")
+# Addon Overwatch connect embarqué dans @COMSPEC_ATAK_Native : mêmes règles, même dictionnaire. Son fn_tr passe la main
+# à celui de l'ATAK natif quand il est chargé ; ses écrans traduisent leurs textes fixes au chargement (fn_trDisplay).
+CONNECT = "--connect" in sys.argv
+if CONNECT:
+    sys.argv.remove("--connect")
+    ADDON = os.path.join(os.path.dirname(ROOT), "UptoDate", "Sources", "comspec-overwatch-addons", "connect")
+    MISSING = os.path.join(ROOT, "tools", "i18n", "missing_connect.tsv")
+    TR = "comspec_overwatch_connect_fnc_tr"
+    SKIP_FILES = {"fn_tr.sqf", "fn_trDisplay.sqf", "fn_aceAction.sqf", "fn_zenAction.sqf", "fn_zenModule.sqf"}
+ONLOAD = re.compile(r'^(    onLoad\s*=\s*")(?!\(_this select 0\) call comspec_overwatch_connect_fnc_trDisplay)', re.M)
+HELPERS = [("ace_interact_menu_fnc_createAction", "aceAction"), ("zen_context_menu_fnc_createAction", "zenAction"),
+           ("zen_custom_modules_fnc_register", "zenModule")]
+LOGLINE = re.compile(r"diag_log|fnc_(log\w*|appendLinkLog|appendModuleLog|callExtLogged)\b")
+TRDISPLAY = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; "
+
+
+def display_files():
+    return [os.path.join(ADDON, f) for f in sorted(os.listdir(ADDON)) if f.startswith("display") and f.endswith(".hpp")]
 
 
 def sqf_files():
@@ -226,16 +246,26 @@ def collect():
         with open(path, encoding="utf-8", errors="replace") as f:
             src = f.read()
         rel = os.path.relpath(path, ADDON)
+        if CONNECT:
+            # connect : beaucoup de journaux techniques, jamais affichés au joueur ; réglages CBA non traduits.
+            if rel == "XEH_preInit.sqf":
+                continue
+            src = "\n".join(l for l in src.split("\n") if not LOGLINE.search(l))
         for lit in strings(src):
             for seg in segments(lit):
                 found.setdefault(seg, rel)
-    # Textes fixes des écrans (ui/*.hpp) : traduits au chargement de l'écran (fn_displayLoad).
-    ui = os.path.join(ADDON, "ui")
-    for f in sorted(os.listdir(ui)):
-        with open(os.path.join(ui, f), encoding="utf-8", errors="replace") as fh:
+    # Textes fixes des écrans (ui/*.hpp ; display*.hpp pour connect) : traduits au chargement de l'écran
+    # (fn_displayLoad ; fn_trDisplay pour connect).
+    if CONNECT:
+        hpps = display_files()
+    else:
+        ui = os.path.join(ADDON, "ui")
+        hpps = [os.path.join(ui, f) for f in sorted(os.listdir(ui))]
+    for path in hpps:
+        with open(path, encoding="utf-8", errors="replace") as fh:
             for m in re.finditer(r'\b(?:text|tooltip)\s*=\s*"((?:[^"]|"")*)"', fh.read()):
                 for seg in segments(m.group(1).replace('""', '"')):
-                    found.setdefault(seg, "ui/" + f)
+                    found.setdefault(seg, os.path.relpath(path, ADDON))
     return found
 
 
@@ -299,10 +329,22 @@ def main():
             with open(path, encoding="utf-8", errors="replace", newline="") as f:
                 src = f.read()
             new, n = wrap_source(src)
+            # Noms d'actions ACE / ZEN et modules Zeus ZEN : passés par les variantes qui traduisent (fn_aceAction…).
+            pre = TR[:-len("_fnc_tr")]
+            for fn, helper in HELPERS:
+                new = re.sub(r"\bcall(\s+)" + fn + r"\b", lambda m: "call" + m.group(1) + pre + "_fnc_" + helper, new)
             if new != src:
                 with open(path, "w", encoding="utf-8", newline="") as f:
                     f.write(new)
                 total += n
+        if CONNECT:
+            for path in display_files():
+                with open(path, encoding="utf-8", newline="") as f:
+                    src = f.read()
+                new = ONLOAD.sub(lambda m: m.group(1) + TRDISPLAY, src)
+                if new != src:
+                    with open(path, "w", encoding="utf-8", newline="") as f:
+                        f.write(new)
         print(f"{total} affichages passés par {TR}")
     elif cmd == "stringtable":
         stringtable()

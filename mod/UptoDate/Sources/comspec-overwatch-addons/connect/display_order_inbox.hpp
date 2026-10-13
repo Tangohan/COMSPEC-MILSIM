@@ -2,7 +2,7 @@
 class COMSPEC_OrderInbox_Dialog {
     idd = 9975;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_OrderInbox_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_orderInboxOnLoad;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_OrderInbox_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_orderInboxOnLoad;";
     onUnload = "uiNamespace setVariable ['COMSPEC_OrderInbox_Display', displayNull];";
 
     class Controls {

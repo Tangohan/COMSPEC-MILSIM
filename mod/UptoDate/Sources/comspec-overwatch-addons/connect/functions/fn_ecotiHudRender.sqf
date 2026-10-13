@@ -158,7 +158,7 @@ private _fnc_getCtrls = {
         _sh ctrlShow false;
         _txt ctrlShow false;
         _pic ctrlShow true;
-        _pic ctrlSetText _ic;
+        _pic ctrlSetText ((_ic) call comspec_overwatch_connect_fnc_tr);
         _pic ctrlSetTextColor _iconCol;
         _pic ctrlSetPosition [_px, _py, _iconW, _bhDot];
         _pic ctrlCommit 0;
@@ -173,7 +173,7 @@ private _fnc_getCtrls = {
         };
 
         _pic ctrlShow true;
-        _pic ctrlSetText _ic;
+        _pic ctrlSetText ((_ic) call comspec_overwatch_connect_fnc_tr);
         _pic ctrlSetTextColor _iconCol;
         _pic ctrlSetPosition [_px, _py + 0.002 * safeZoneH, _iconW, _iconW];
         _pic ctrlCommit 0;
@@ -184,13 +184,13 @@ private _fnc_getCtrls = {
         private _th = _bh;
 
         _sh ctrlShow true;
-        _sh ctrlSetText _line;
+        _sh ctrlSetText ((_line) call comspec_overwatch_connect_fnc_tr);
         _sh ctrlSetTextColor [0, 0, 0, 0.55 * _alpha];
         _sh ctrlSetPosition [_tx + 0.0012 * safeZoneW, _ty + 0.0012 * safeZoneH, _tw, _th];
         _sh ctrlCommit 0;
 
         _txt ctrlShow true;
-        _txt ctrlSetText _line;
+        _txt ctrlSetText ((_line) call comspec_overwatch_connect_fnc_tr);
         _txt ctrlSetTextColor _txtCol;
         _txt ctrlSetPosition [_tx, _ty, _tw, _th];
         _txt ctrlCommit 0;

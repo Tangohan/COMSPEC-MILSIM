@@ -281,7 +281,7 @@ class COMSPEC_SeekEdit: RscEdit {
 class COMSPEC_SsePerson_Dialog {
     idd = 9991;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_SsePerson_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_ssePersonDialogOnLoad;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_SsePerson_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_ssePersonDialogOnLoad;";
     onUnload = "uiNamespace setVariable ['COMSPEC_SsePerson_Display', displayNull]; ['stop'] call comspec_overwatch_connect_fnc_sseFaceViewfinder; if (uiNamespace getVariable ['COMSPEC_SsePerson_SuspendUnload', false]) then { uiNamespace setVariable ['COMSPEC_SsePerson_SuspendUnload', false]; } else { uiNamespace setVariable ['COMSPEC_SsePerson_Target', objNull]; uiNamespace setVariable ['COMSPEC_SsePerson_Samples', []]; uiNamespace setVariable ['COMSPEC_SsePerson_Signature', []]; uiNamespace setVariable ['COMSPEC_SsePerson_Query', []]; uiNamespace setVariable ['COMSPEC_SsePerson_IdentityCache', []]; ['reset'] call comspec_overwatch_connect_fnc_sseFaceViewfinder; };";
 
     class Controls {

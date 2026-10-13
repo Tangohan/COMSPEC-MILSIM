@@ -2,7 +2,7 @@
 class COMSPEC_Callsign_Dialog {
     idd = 9977;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_Callsign_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_callsignDialogOnLoad;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_Callsign_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_callsignDialogOnLoad;";
     onUnload = "uiNamespace setVariable ['COMSPEC_Callsign_Display', displayNull];";
 
     class Controls {

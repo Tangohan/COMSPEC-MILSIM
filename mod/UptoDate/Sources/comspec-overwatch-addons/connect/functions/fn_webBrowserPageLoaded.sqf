@@ -36,7 +36,7 @@ if (!isNull _display) then {
 
         };
 
-        _hint ctrlSetStructuredText parseText _label;
+        _hint ctrlSetStructuredText parseText ((_label) call comspec_overwatch_connect_fnc_tr);
 
     };
 

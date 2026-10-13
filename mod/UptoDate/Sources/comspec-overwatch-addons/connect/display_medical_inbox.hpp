@@ -2,7 +2,7 @@
 class COMSPEC_MedicalInbox_Dialog {
     idd = 9976;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_MedicalInbox_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_medicalInboxOnLoad;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_MedicalInbox_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_medicalInboxOnLoad;";
     onUnload = "uiNamespace setVariable ['COMSPEC_MedicalInbox_Display', displayNull];";
 
     class Controls {

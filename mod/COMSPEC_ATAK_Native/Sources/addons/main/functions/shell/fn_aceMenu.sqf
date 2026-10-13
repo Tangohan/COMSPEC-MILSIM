@@ -16,9 +16,9 @@ private _root = ["ACE_SelfActions", "COMSPEC_ATAK_Phone"];
 private _add = {
     params ["_path", "_id", "_name", ["_icon", ""], ["_code", {}], ["_cond", { true }], ["_children", nil]];
     private _a = if (isNil "_children") then {
-        [_id, _name, _icon, _code, _cond] call ace_interact_menu_fnc_createAction
+        [_id, _name, _icon, _code, _cond] call comspec_atak_native_fnc_aceAction
     } else {
-        [_id, _name, _icon, _code, _cond, _children] call ace_interact_menu_fnc_createAction
+        [_id, _name, _icon, _code, _cond, _children] call comspec_atak_native_fnc_aceAction
     };
     ["CAManBase", 1, _path, _a, true] call ace_interact_menu_fnc_addActionToClass;
 };
@@ -35,10 +35,10 @@ private _add = {
         private _out = (["owned"] call comspec_atak_native_fnc_antenna) select { (_x select 0) isNotEqualTo _cur } apply {
             _x params ["_id", "", "_name"];
             [[format ["COMSPEC_ATAK_Ant_%1", _id], format ["Visser : %1", _name], format ["\z\comspec_atak_native\addons\main\data\item_antenna_%1.paa", _id],
-                { ["mount", _this select 2] call comspec_atak_native_fnc_antenna; }, { true }, {}, _id] call ace_interact_menu_fnc_createAction, [], _target]
+                { ["mount", _this select 2] call comspec_atak_native_fnc_antenna; }, { true }, {}, _id] call comspec_atak_native_fnc_aceAction, [], _target]
         };
         if (_cur isNotEqualTo "") then {
-            _out pushBack [["COMSPEC_ATAK_AntOff", "Retirer l'antenne", "", { ["unmount"] call comspec_atak_native_fnc_antenna; }, { true }] call ace_interact_menu_fnc_createAction, [], _target];
+            _out pushBack [["COMSPEC_ATAK_AntOff", "Retirer l'antenne", "", { ["unmount"] call comspec_atak_native_fnc_antenna; }, { true }] call comspec_atak_native_fnc_aceAction, [], _target];
         };
         _out
     }] call _add;
@@ -159,7 +159,7 @@ private _gwKids = {
     {
         _x params ["_mode", "_txt"];
         if (_mode isNotEqualTo _st && {_mode isNotEqualTo "off" || {_st isNotEqualTo ""}}) then {
-            _out pushBack [[format ["COMSPEC_ATAK_Gw_%1", _mode], _txt, "", { (_this select 2) params ["_m", "_veh"]; [_m, _veh] call comspec_atak_native_fnc_vehicleGateway; }, { true }, {}, [_mode, _v]] call ace_interact_menu_fnc_createAction, [], _v];
+            _out pushBack [[format ["COMSPEC_ATAK_Gw_%1", _mode], _txt, "", { (_this select 2) params ["_m", "_veh"]; [_m, _veh] call comspec_atak_native_fnc_vehicleGateway; }, { true }, {}, [_mode, _v]] call comspec_atak_native_fnc_aceAction, [], _v];
         };
     } forEach [["relay", "Activer la passerelle (relais)"], ["cp", "Déployer le poste de commandement"], ["off", "Couper la passerelle"]];
     _out
@@ -171,7 +171,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
 {
     private _a = ["COMSPEC_ATAK_GwExt", "Passerelle ATAK", "\A3\ui_f\data\map\markers\nato\b_hq.paa", {},
         { ["can", _target] call comspec_atak_native_fnc_vehicleGateway },
-        { [_target] call (missionNamespace getVariable "COMSPEC_ATAK_GwKids") }] call ace_interact_menu_fnc_createAction;
+        { [_target] call (missionNamespace getVariable "COMSPEC_ATAK_GwKids") }] call comspec_atak_native_fnc_aceAction;
     [_x, 0, ["ACE_MainActions"], _a, true] call ace_interact_menu_fnc_addActionToClass;
     // Kit terminal (réglage serveur « avec le kit installé ») : tablette durcie posée dans le véhicule.
     private _k = ["COMSPEC_ATAK_VehKit", "Installer le terminal ATAK", "\z\comspec_atak_native\addons\main\data\item_vehiclekit.paa", {
@@ -186,7 +186,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_GwKids", _gwKids];
     }, {
         (missionNamespace getVariable ["comspec_atak_native_vehicle_terminal", "all"]) isEqualTo "kit" && {alive _target}
             && {!(_target getVariable ["COMSPEC_ATAK_VehTerm", false])} && {"COMSPEC_ATAK_VehicleKit" in (items _player)}
-    }] call ace_interact_menu_fnc_createAction;
+    }] call comspec_atak_native_fnc_aceAction;
     [_x, 0, ["ACE_MainActions"], _k, true] call ace_interact_menu_fnc_addActionToClass;
 } forEach ["LandVehicle", "Ship", "Helicopter"];
 

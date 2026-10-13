@@ -1,7 +1,7 @@
 class COMSPEC_Chat_Dialog {
     idd = 9999;
     movingEnable = 1;
-    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_chatDialogOnLoad;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; (_this select 0) call comspec_overwatch_connect_fnc_chatDialogOnLoad;";
     onUnload = "uiNamespace setVariable ['COMSPEC_Chat_Display', displayNull];";
 
     class Controls {

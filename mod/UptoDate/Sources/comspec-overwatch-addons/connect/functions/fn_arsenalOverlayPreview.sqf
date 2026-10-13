@@ -12,11 +12,11 @@ private _has = _caption isNotEqualTo "";
 
 private _head = _grp getVariable ["COMSPEC_ArsenalDetailHead", controlNull];
 if (!isNull _head) then {
-    _head ctrlSetStructuredText parseText (if (_has) then {
+    _head ctrlSetStructuredText parseText (((if (_has) then {
         format ["<t size='1.05' font='PuristaSemibold' color='#e2f7ef'>%1</t><br/><t size='0.78' color='#7f9c94'>%2</t>", _caption, _meta]
     } else {
         "<t size='0.95' color='#9bb0aa'>Choisissez une tenue dans la liste</t><br/><t size='0.78' color='#7f9c94'>Son équipement s'affiche ici.</t>"
-    });
+    })) call comspec_overwatch_connect_fnc_tr);
 };
 private _icons = [_loadout] call comspec_overwatch_connect_fnc_arsenalLoadoutIcons;
 private _withPic = _icons select { (_x select 2) isNotEqualTo "" };
@@ -27,8 +27,8 @@ private _withPic = _icons select { (_x select 2) isNotEqualTo "" };
     _p ctrlShow _on;
     if (_on) then {
         (_withPic select _forEachIndex) params ["_kind", "", "_pic", "_dn"];
-        _p ctrlSetText _pic;
-        _p ctrlSetTooltip format ["%1 : %2", _kind, _dn];
+        _p ctrlSetText ((_pic) call comspec_overwatch_connect_fnc_tr);
+        _p ctrlSetTooltip ((format ["%1 : %2", _kind, _dn]) call comspec_overwatch_connect_fnc_tr);
     };
 } forEach (_grp getVariable ["COMSPEC_ArsenalPreviewPics", []]);
 
@@ -43,9 +43,9 @@ if (!isNull _names) then {
         case (_err isEqualTo "too_large"): { "<t color='#ffb080'>Tenue trop lourde pour l'aperçu en jeu : ouvrez-la sur le poste Athena.</t>" };
         default { "<t color='#7f9c94'>Équipement non disponible pour cette tenue.</t>" };
     };
-    _names ctrlSetStructuredText parseText format ["<t size='0.82' color='#d0dcd8'>%1</t>", _txt];
+    _names ctrlSetStructuredText parseText ((format ["<t size='0.82' color='#d0dcd8'>%1</t>", _txt]) call comspec_overwatch_connect_fnc_tr);
 };
 (_grp getVariable ["COMSPEC_ArsenalDetailBtns", []]) params [["_bApply", controlNull], ["_bKeep", controlNull], ["_bDel", controlNull]];
-if (!isNull _bKeep) then { _bKeep ctrlSetText (["PARTAGER À L'ORGANISATION", "IMPORTER DANS MON ARSENAL"] select _isCloud); };
-if (!isNull _bDel) then { _bDel ctrlSetText (["SUPPRIMER DE MON ARSENAL", "RETIRER DE LA COMMUNAUTÉ"] select _isCloud); };
+if (!isNull _bKeep) then { _bKeep ctrlSetText (((["PARTAGER À L'ORGANISATION", "IMPORTER DANS MON ARSENAL"] select _isCloud)) call comspec_overwatch_connect_fnc_tr); };
+if (!isNull _bDel) then { _bDel ctrlSetText (((["SUPPRIMER DE MON ARSENAL", "RETIRER DE LA COMMUNAUTÉ"] select _isCloud)) call comspec_overwatch_connect_fnc_tr); };
 { if (!isNull _x) then { _x ctrlEnable _has; }; } forEach [_bApply, _bKeep, _bDel];

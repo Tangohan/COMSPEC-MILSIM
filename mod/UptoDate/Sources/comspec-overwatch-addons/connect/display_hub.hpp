@@ -2,7 +2,7 @@
 class COMSPEC_Hub_Dialog {
     idd = 9969;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_Hub_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_updateStatusBadges; [] spawn comspec_overwatch_connect_fnc_showPlayerProfile;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_Hub_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_updateStatusBadges; [] spawn comspec_overwatch_connect_fnc_showPlayerProfile;";
     onUnload = "uiNamespace setVariable ['COMSPEC_Hub_Display', displayNull];";
 
     class Controls {

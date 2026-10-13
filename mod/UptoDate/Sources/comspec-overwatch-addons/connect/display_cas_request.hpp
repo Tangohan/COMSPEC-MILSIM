@@ -2,7 +2,7 @@
 class COMSPEC_CasRequest_Dialog {
     idd = 9988;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_CasRequest_Display', _this select 0];";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_CasRequest_Display', _this select 0];";
     onUnload = "uiNamespace setVariable ['COMSPEC_CasRequest_Display', displayNull];";
 
     class Controls {

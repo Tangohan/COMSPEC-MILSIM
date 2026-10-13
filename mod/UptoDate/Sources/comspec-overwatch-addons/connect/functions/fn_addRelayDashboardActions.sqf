@@ -12,7 +12,7 @@ if (!hasInterface) exitWith {};
     "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa",
     {call comspec_overwatch_connect_fnc_openRelayDashboard},
     {true}
-] call ace_interact_menu_fnc_createAction, [], [0, 0, 0], 100] call ace_interact_menu_fnc_addActionToClass;
+] call comspec_overwatch_connect_fnc_aceAction, [], [0, 0, 0], 100] call ace_interact_menu_fnc_addActionToClass;
 
 ["Land_Tablet_02_F", 0, ["ACE_MainActions"], [
     "COMSPEC_OpenRelayDashboard",
@@ -20,7 +20,7 @@ if (!hasInterface) exitWith {};
     "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa",
     {call comspec_overwatch_connect_fnc_openRelayDashboard},
     {true}
-] call ace_interact_menu_fnc_createAction, [], [0, 0, 0], 100] call ace_interact_menu_fnc_addActionToClass;
+] call comspec_overwatch_connect_fnc_aceAction, [], [0, 0, 0], 100] call ace_interact_menu_fnc_addActionToClass;
 
 // Ajouter aux objets marqués spécifiquement
 ["All", 0, ["ACE_MainActions"], [
@@ -29,7 +29,7 @@ if (!hasInterface) exitWith {};
     "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa",
     {call comspec_overwatch_connect_fnc_openRelayDashboard},
     {_target getVariable ["COMSPEC_HasRelayDashboard", false]}
-] call ace_interact_menu_fnc_createAction, [], [0, 0, 0], 100] call ace_interact_menu_fnc_addActionToClass;
+] call comspec_overwatch_connect_fnc_aceAction, [], [0, 0, 0], 100] call ace_interact_menu_fnc_addActionToClass;
 
 // Action scroll menu fallback (si pas ACE)
 if (!isClass (configFile >> "CfgPatches" >> "ace_interact_menu")) then {

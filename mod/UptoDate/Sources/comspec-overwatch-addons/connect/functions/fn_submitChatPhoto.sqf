@@ -22,10 +22,10 @@ if (!isNull _display) then {
     if (!isNull _console) then {
         private _nl = toString [10];
         private _line = format ["[Photo] Envoyée — %1", _caption];
-        _console ctrlSetText ((ctrlText _console) + _line + _nl);
+        _console ctrlSetText ((((ctrlText _console) + _line + _nl)) call comspec_overwatch_connect_fnc_tr);
     };
     private _ctrl = _display displayCtrl 1400;
-    if (!isNull _ctrl) then { _ctrl ctrlSetText ""; };
+    if (!isNull _ctrl) then { _ctrl ctrlSetText ""; }; // i18n:brut
 };
 
 ["_PHOTO", createHashMapFromArray [

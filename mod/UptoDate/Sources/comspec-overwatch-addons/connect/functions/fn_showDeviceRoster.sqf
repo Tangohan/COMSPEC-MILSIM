@@ -31,7 +31,7 @@ missionNamespace setVariable ["COMSPEC_DeviceRosterRows", _recent, false];
 if (ctrlType _listCtrl == 5) then {
     lbClear _listCtrl;
     if (count _recent == 0) exitWith {
-        _listCtrl lbAdd "Aucun contact récent";
+        _listCtrl lbAdd (("Aucun contact récent") call comspec_overwatch_connect_fnc_tr);
     };
     {
         if (_forEachIndex >= 12) exitWith {};
@@ -40,12 +40,12 @@ if (ctrlType _listCtrl == 5) then {
         private _st = toLower _status;
         private _link = if (_st isEqualTo "offline") then { "hors liaison" } else { "en liaison" };
         private _you = if (_isSelf) then { " (vous)" } else { "" };
-        private _idx = _listCtrl lbAdd format ["%1%2  %3", _callsign, _you, _link];
-        _listCtrl lbSetTooltip [_idx, format ["%1 · %2 %3", _roleTxt, round _gx, round _gy]];
+        private _idx = _listCtrl lbAdd ((format ["%1%2  %3", _callsign, _you, _link]) call comspec_overwatch_connect_fnc_tr);
+        _listCtrl lbSetTooltip (([_idx, format ["%1 · %2 %3", _roleTxt, round _gx, round _gy]]) call comspec_overwatch_connect_fnc_tr);
     } forEach _recent;
 } else {
     if (count _recent == 0) exitWith {
-        _listCtrl ctrlSetStructuredText parseText "<t size='0.5' color='#5a6c7e'>Aucun contact vu dans les quinze dernières minutes.</t>";
+        _listCtrl ctrlSetStructuredText parseText (("<t size='0.5' color='#5a6c7e'>Aucun contact vu dans les quinze dernières minutes.</t>") call comspec_overwatch_connect_fnc_tr);
     };
     private _maxRows = 8;
     private _lines = [];
@@ -64,5 +64,5 @@ if (ctrlType _listCtrl == 5) then {
     if (count _recent > _maxRows) then {
         _lines pushBack format ["<t size='0.42' color='#5a6c7e'>+%1 autre(s)</t>", (count _recent) - _maxRows];
     };
-    _listCtrl ctrlSetStructuredText parseText (_lines joinString "<br/>");
+    _listCtrl ctrlSetStructuredText parseText (((_lines joinString "<br/>")) call comspec_overwatch_connect_fnc_tr);
 };

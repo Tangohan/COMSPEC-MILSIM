@@ -31,7 +31,7 @@ if (!_hasMarkup && {_s isNotEqualTo ""}) then {
 };
 
 isNil {
-    _c ctrlSetStructuredText parseText _s;
+    _c ctrlSetStructuredText parseText ((_s) call comspec_overwatch_connect_fnc_tr);
 };
 if ((_color isEqualType []) && {(count _color) >= 3} && {!_hasMarkup}) then {
     private _a = if ((count _color) > 3) then { _color select 3 } else { 1 };

@@ -14,7 +14,7 @@ private _hint = _display displayCtrl 9502;
 
 if !([] call comspec_overwatch_connect_fnc_canTriageMedical) exitWith {
     if (!isNull _hint) then {
-        _hint ctrlSetStructuredText parseText "<t align='center' size='0.55' color='#fca5a5'>Accès réservé aux médecins et chefs d’équipe.</t>";
+        _hint ctrlSetStructuredText parseText (("<t align='center' size='0.55' color='#fca5a5'>Accès réservé aux médecins et chefs d’équipe.</t>") call comspec_overwatch_connect_fnc_tr);
     };
 };
 
@@ -48,7 +48,7 @@ private _shown = [];
     if (_grid != "") then { _line = _line + format [" · Grille %1", _grid]; };
     if (_created != "") then { _line = _line + format [" · %1", _created]; };
 
-    private _idx = _list lbAdd _line;
+    private _idx = _list lbAdd ((_line) call comspec_overwatch_connect_fnc_tr);
     _list lbSetData [_idx, _id];
     _shown pushBack _id;
 } forEach _alerts;
@@ -61,5 +61,5 @@ if (!isNull _hint) then {
     } else {
         format ["%1 alerte(s) — sélectionnez puis mettez à jour le statut.", count _shown]
     };
-    _hint ctrlSetStructuredText parseText format ["<t align='center' size='0.55' color='#8aa0b4'>%1</t>", _txt];
+    _hint ctrlSetStructuredText parseText ((format ["<t align='center' size='0.55' color='#8aa0b4'>%1</t>", _txt]) call comspec_overwatch_connect_fnc_tr);
 };

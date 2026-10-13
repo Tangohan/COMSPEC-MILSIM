@@ -2,7 +2,7 @@
 class COMSPEC_FlightManifest_Dialog {
     idd = 9998;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_FlightManifest_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_fillFlightManifest;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_FlightManifest_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_fillFlightManifest;";
     onUnload = "uiNamespace setVariable ['COMSPEC_FlightManifest_Display', displayNull];";
 
     class Controls {

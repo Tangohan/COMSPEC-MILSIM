@@ -15,7 +15,7 @@ private _fontH = (((((safezoneW / safezoneH) min 1.2) / 1.2) / 25) * 0.85);
 
 if (isNull (_display displayCtrl 9606)) then {
     private _iso = _display ctrlCreate ["RscButton", 9606];
-    _iso ctrlSetText "Dépannage liaison";
+    _iso ctrlSetText (("Dépannage liaison") call comspec_overwatch_connect_fnc_tr);
     _iso ctrlSetFont "PuristaMedium";
     _iso ctrlSetFontHeight _fontH;
     _iso ctrlSetTextColor [1, 0.9, 0.65, 1];
@@ -38,7 +38,7 @@ if (isNull (_display displayCtrl 9607)) then {
     private _fr = (toLower language) isEqualTo "french";
     private _mode = [] call comspec_overwatch_connect_fnc_athenaMode;
     private _btn = _display ctrlCreate ["RscButton", 9607];
-    _btn ctrlSetText format ["%1 : %2", ["Athena service", "Service Athéna"] select _fr, [["no", "yes"], ["non", "oui"]] select _fr select (_mode isEqualTo "on")];
+    _btn ctrlSetText ((format ["%1 : %2", ["Athena service", "Service Athéna"] select _fr, [["no", "yes"], ["non", "oui"]] select _fr select (_mode isEqualTo "on")]) call comspec_overwatch_connect_fnc_tr);
     _btn ctrlSetFont "PuristaMedium";
     _btn ctrlSetFontHeight _fontH;
     _btn ctrlSetTextColor [0.85, 0.95, 0.92, 1];

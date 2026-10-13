@@ -2,7 +2,7 @@
 class COMSPEC_AccountLink_Dialog {
     idd = 9972;
     movingEnable = 1;
-    onLoad = "uiNamespace setVariable ['COMSPEC_AccountLink_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_accountLinkOnLoad;";
+    onLoad = "(_this select 0) call comspec_overwatch_connect_fnc_trDisplay; uiNamespace setVariable ['COMSPEC_AccountLink_Display', _this select 0]; [] call comspec_overwatch_connect_fnc_accountLinkOnLoad;";
     onUnload = "uiNamespace setVariable ['COMSPEC_AccountLink_Display', displayNull]; missionNamespace setVariable ['COMSPEC_AccountLink_StatusToken', -1, false];";
 
     class Controls {

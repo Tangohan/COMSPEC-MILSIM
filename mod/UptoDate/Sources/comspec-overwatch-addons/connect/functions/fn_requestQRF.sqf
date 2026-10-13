@@ -352,7 +352,7 @@ private _applyLocalQrfFeedback = {
 
         private _urgencyColor = if (_priorityNorm isEqualTo "FLASH") then { "#ff0000" } else { "#ff9900" };
 
-        hint parseText format [
+        hint ((parseText format [
 
             "<t color='%1' size='1.5' align='center'>RENFORT DEMANDÉ</t><br/>" +
 
@@ -372,7 +372,7 @@ private _applyLocalQrfFeedback = {
 
             _statusLabel
 
-        ];
+        ]) call comspec_overwatch_connect_fnc_tr);
 
     };
 

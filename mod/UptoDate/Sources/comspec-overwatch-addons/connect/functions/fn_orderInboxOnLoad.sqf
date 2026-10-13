@@ -55,7 +55,7 @@ private _shown = [];
         default { "En attente de réponse" };
     };
 
-    private _idx = _list lbAdd format ["[%1] %2 — %3 (%4)", _statusLabel, _typeLabel, _issuer, _prio];
+    private _idx = _list lbAdd ((format ["[%1] %2 — %3 (%4)", _statusLabel, _typeLabel, _issuer, _prio]) call comspec_overwatch_connect_fnc_tr);
     _list lbSetData [_idx, _id];
     _shown pushBack _id;
 } forEach _orders;
@@ -69,5 +69,5 @@ if (!isNull _hint) then {
     } else {
         format ["%1 ordre(s) — sélectionnez puis choisissez une réponse.", count _shown]
     };
-    _hint ctrlSetStructuredText parseText format ["<t align='center' size='0.55' color='#8aa0b4'>%1</t>", _txt];
+    _hint ctrlSetStructuredText parseText ((format ["<t align='center' size='0.55' color='#8aa0b4'>%1</t>", _txt]) call comspec_overwatch_connect_fnc_tr);
 };

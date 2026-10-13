@@ -32,7 +32,7 @@ private _atakAction = [
     {},
     _condAtak,
     _noChildren
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 
 [_atakAction, ["ACE_SelfActions", "COMSPEC_Main"]] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
@@ -56,7 +56,7 @@ private _reportAction = [
             },
             { true },
             _noChildren
-        ] call ace_interact_menu_fnc_createAction;
+        ] call comspec_overwatch_connect_fnc_aceAction;
         _actions pushBack [_spotrepAction, [], player];
 
         private _contactAction = [
@@ -68,7 +68,7 @@ private _reportAction = [
             },
             { true },
             _noChildren
-        ] call ace_interact_menu_fnc_createAction;
+        ] call comspec_overwatch_connect_fnc_aceAction;
         _actions pushBack [_contactAction, [], player];
 
         private _sitrepAction = [
@@ -80,7 +80,7 @@ private _reportAction = [
             },
             { true },
             _noChildren
-        ] call ace_interact_menu_fnc_createAction;
+        ] call comspec_overwatch_connect_fnc_aceAction;
         _actions pushBack [_sitrepAction, [], player];
 
         _actions apply {
@@ -88,7 +88,7 @@ private _reportAction = [
             [[_act] call comspec_overwatch_connect_fnc_acePadAction, _kids, _obj]
         }
     }
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 
 [_reportAction, _atakPath] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
@@ -112,7 +112,7 @@ private _poiAction = [
             },
             { true },
             _noChildren
-        ] call ace_interact_menu_fnc_createAction;
+        ] call comspec_overwatch_connect_fnc_aceAction;
         _actions pushBack [_cacheAction, [], player];
 
         private _enemyAction = [
@@ -124,7 +124,7 @@ private _poiAction = [
             },
             { true },
             _noChildren
-        ] call ace_interact_menu_fnc_createAction;
+        ] call comspec_overwatch_connect_fnc_aceAction;
         _actions pushBack [_enemyAction, [], player];
 
         private _objectiveAction = [
@@ -136,7 +136,7 @@ private _poiAction = [
             },
             { true },
             _noChildren
-        ] call ace_interact_menu_fnc_createAction;
+        ] call comspec_overwatch_connect_fnc_aceAction;
         _actions pushBack [_objectiveAction, [], player];
 
         _actions apply {
@@ -144,7 +144,7 @@ private _poiAction = [
             [[_act] call comspec_overwatch_connect_fnc_acePadAction, _kids, _obj]
         }
     }
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 
 [_poiAction, _atakPath] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
@@ -168,7 +168,7 @@ private _sseAction = [
     },
     _condSse,
     _noChildren
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 
 [_sseAction, _atakPath] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
@@ -184,7 +184,7 @@ private _sseCaseAction = [
     },
     _condSse,
     _noChildren
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 
 [_sseCaseAction, _atakPath] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
@@ -208,7 +208,7 @@ private _supportAction = [
             },
             { true },
             _noChildren
-        ] call ace_interact_menu_fnc_createAction;
+        ] call comspec_overwatch_connect_fnc_aceAction;
         _actions pushBack [_medevacAction, [], player];
 
         private _qrfAction = [
@@ -220,7 +220,7 @@ private _supportAction = [
             },
             { true },
             _noChildren
-        ] call ace_interact_menu_fnc_createAction;
+        ] call comspec_overwatch_connect_fnc_aceAction;
         _actions pushBack [_qrfAction, [], player];
 
         _actions apply {
@@ -228,7 +228,7 @@ private _supportAction = [
             [[_act] call comspec_overwatch_connect_fnc_acePadAction, _kids, _obj]
         }
     }
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 
 [_supportAction, _atakPath] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 
@@ -256,7 +256,7 @@ private _vehicleServiceAction = [
             },
             { fuel (vehicle player) < 0.3 },
             _noChildren
-        ] call ace_interact_menu_fnc_createAction;
+        ] call comspec_overwatch_connect_fnc_aceAction;
         _actions pushBack [_refuelAction, [], player];
 
         private _rearmAction = [
@@ -268,7 +268,7 @@ private _vehicleServiceAction = [
             },
             { true },
             _noChildren
-        ] call ace_interact_menu_fnc_createAction;
+        ] call comspec_overwatch_connect_fnc_aceAction;
         _actions pushBack [_rearmAction, [], player];
 
         private _repairAction = [
@@ -280,7 +280,7 @@ private _vehicleServiceAction = [
             },
             { damage (vehicle player) > 0.2 },
             _noChildren
-        ] call ace_interact_menu_fnc_createAction;
+        ] call comspec_overwatch_connect_fnc_aceAction;
         _actions pushBack [_repairAction, [], player];
 
         _actions apply {
@@ -288,7 +288,7 @@ private _vehicleServiceAction = [
             [[_act] call comspec_overwatch_connect_fnc_acePadAction, _kids, _obj]
         }
     }
-] call ace_interact_menu_fnc_createAction;
+] call comspec_overwatch_connect_fnc_aceAction;
 
 [_vehicleServiceAction, _atakPath] call comspec_overwatch_connect_fnc_aceAddSelfAction;
 

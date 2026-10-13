@@ -126,7 +126,7 @@ if (isNull (_display displayCtrl 86210)) then {
         private _i = _forEachIndex;
         private _lbl = _display ctrlCreate ["RscText", _idc];
         _lbl ctrlSetPosition [_ex, _y0 + _i * (_lineH + _gap), _ew, _lineH];
-        _lbl ctrlSetText _txt;
+        _lbl ctrlSetText ((_txt) call comspec_overwatch_connect_fnc_tr);
         _lbl ctrlSetFont "EtelkaMonospacePro";
         _lbl ctrlSetTextColor [0.85, 0.95, 0.9, 1];
         _lbl ctrlSetBackgroundColor [0.02, 0.08, 0.07, 0.88];
@@ -176,7 +176,7 @@ if ([_cs] call comspec_overwatch_connect_fnc_isUsableCallsign) then {
     private _cur = trim (ctrlText _target);
     if ((toLower _cur) isNotEqualTo (toLower _cs)) then {
         if ([_cur, _obj] call _fncDefault || {_cur isEqualTo _gid && {[_gid, _obj] call _fncDefault}}) then {
-            _target ctrlSetText _cs;
+            _target ctrlSetText ((_cs) call comspec_overwatch_connect_fnc_tr);
             [_cs, _obj] call comspec_overwatch_connect_fnc_applyGroupIdFromCallsign;
         };
     };
