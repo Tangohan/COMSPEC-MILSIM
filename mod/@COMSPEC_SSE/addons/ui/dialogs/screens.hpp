@@ -34,7 +34,7 @@ class COMSPEC_SSE_TerminalDialog {
     idd = 93200;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "['terminal'] call comspec_sse_fnc_uiOnLoad";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; ['terminal'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
         SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93201,"TERMINAL SSE — TERRAIN",93202,"  Record lié · collecte · transmission");
@@ -134,7 +134,7 @@ class COMSPEC_SSE_DigitalDialog {
     idd = 93250;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "['digital'] call comspec_sse_fnc_uiOnLoad";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; ['digital'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
         SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93251,"EXPLOITATION NUMÉRIQUE",-1,"  Support numérique lié au record");
@@ -178,7 +178,7 @@ class COMSPEC_SSE_SiteDialog {
     idd = 93300;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "['site'] call comspec_sse_fnc_uiOnLoad";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; ['site'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
         SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93301,"EXPLOITATION DE SITE",-1,"  Complétude · priorités · éléments non traités");
@@ -204,7 +204,7 @@ class COMSPEC_SSE_GraphDialog {
     idd = 93350;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "['graph'] call comspec_sse_fnc_uiOnLoad";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; ['graph'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
         SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93351,"GRAPHE DE RENSEIGNEMENT",-1,"  Nœuds et relations établies sur le terrain");
@@ -227,7 +227,7 @@ class COMSPEC_SSE_EvidenceDialog {
     idd = 93400;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "['evidence'] call comspec_sse_fnc_uiOnLoad";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; ['evidence'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
         SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93401,"PREUVES — CHAÎNE DE CONSERVATION",-1,"  Pièces saisies · scellés · traçabilité");
@@ -250,7 +250,7 @@ class COMSPEC_SSE_MissionIntelDialog {
     idd = 93450;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "['mission'] call comspec_sse_fnc_uiOnLoad";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; ['mission'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
         SSE_FRAME(COMSPEC_SSE_RscHeader,COMSPEC_SSE_RscAccentLine,93451,"RENSEIGNEMENT MISSION — FUSION",-1,"  Ensemble des renseignements recueillis · filtre par fiabilité");
@@ -276,7 +276,7 @@ class COMSPEC_SSE_ZeusControlDialog {
     idd = 93500;
     movingEnable = 0;
     enableSimulation = 1;
-    onLoad = "['zeus'] call comspec_sse_fnc_uiOnLoad";
+    onLoad = "(_this select 0) call comspec_sse_fnc_trDisplay; ['zeus'] call comspec_sse_fnc_uiOnLoad";
 
     class controlsBackground {
         SSE_FRAME(COMSPEC_SSE_RscHeaderZeus,COMSPEC_SSE_RscAccentLineZeus,93501,"CONTRÔLE ZEUS SSE — VÉRITÉ / CONNU JOUEURS",-1,"  Réservé au chef de mission · ne pas afficher aux joueurs");

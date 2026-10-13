@@ -65,7 +65,7 @@ private _actions = [
 
 private _digChildren = _actions apply {
     _x params ["_aid", "_label", "_code"];
-    [_aid, _label, _icon, _code, _condDigital, _noChildren, [], {[0,0,0]}, 3, _aceParams] call ace_interact_menu_fnc_createAction
+    [_aid, _label, _icon, _code, _condDigital, _noChildren, [], {[0,0,0]}, 3, _aceParams] call comspec_sse_fnc_aceAction
 };
 
 private _insertDig = {
@@ -77,7 +77,7 @@ private _insertDig = {
 
 private _digRoot = [
     "COMSPEC_SSE_DIGITAL", "Exploitation numérique", _icon, {}, _condDigital, _insertDig, [], {[0,0,0]}, 3, _aceParams, {}
-] call ace_interact_menu_fnc_createAction;
+] call comspec_sse_fnc_aceAction;
 if (!isNil "comspec_sse_fnc_acePadAction") then {
     _digRoot = [_digRoot] call comspec_sse_fnc_acePadAction;
 };

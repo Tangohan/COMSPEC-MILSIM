@@ -3,10 +3,10 @@ _ctx params ["_disp", "_idcFilter", "_idcList"];
 if (isNull _disp) exitWith { false };
 
 private _filter = missionNamespace getVariable ["comspec_sse_uiMissionFilter", "ALL"];
-(_disp displayCtrl _idcFilter) ctrlSetStructuredText parseText format [
+(_disp displayCtrl _idcFilter) ctrlSetStructuredText parseText ((format [
     "<t size='0.85'>Filtre fusion: <t color='#8f8'>%1</t> · OBSERVED / REPORTED / ASSESSED / CONFIRMED</t>",
     _filter
-];
+]) call comspec_sse_fnc_tr);
 
 private _rows = [];
 
@@ -58,6 +58,6 @@ if (!isNil "comspec_sse_fnc_deduplicateIntel") then {
 
 private _lb = _disp displayCtrl _idcList;
 lbClear _lb;
-{ _lb lbAdd _x; } forEach (_rows select [0, 80]);
-if (_rows isEqualTo []) then { _lb lbAdd "(aucune donnée fusionnée)"; };
+{ _lb lbAdd ((_x) call comspec_sse_fnc_tr); } forEach (_rows select [0, 80]);
+if (_rows isEqualTo []) then { _lb lbAdd (("(aucune donnée fusionnée)") call comspec_sse_fnc_tr); };
 true

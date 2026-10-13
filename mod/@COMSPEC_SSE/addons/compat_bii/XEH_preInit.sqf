@@ -13,7 +13,7 @@ comspec_sse_biiBridgeReady = false;
     1,
     {},
     false
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_biiExportToBii",
@@ -24,4 +24,4 @@ comspec_sse_biiBridgeReady = false;
     1,
     {},
     false
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;

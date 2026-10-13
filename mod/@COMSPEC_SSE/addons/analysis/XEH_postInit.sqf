@@ -18,7 +18,7 @@ if (!hasInterface) exitWith {};
 ["comspec_sse_anaNote", {
     params [["_msg", "", [""]]];
     if (_msg isEqualTo "") exitWith {};
-    hint parseText format ["<t color='#7fd08a' size='1.1'>SSE · Analyse</t><br/><br/>%1", _msg];
+    hint ((parseText format ["<t color='#7fd08a' size='1.1'>SSE · Analyse</t><br/><br/>%1", _msg]) call comspec_sse_fnc_tr);
 }] call CBA_fnc_addEventHandler;
 
 // Tableau des liens et registre ouverts : suivent l'état diffusé par le serveur
@@ -39,14 +39,14 @@ if (!hasInterface) exitWith {};
     private _p = [false, false, false, false, true];
     private _none = { [] };
     private _self = [
-        (["COMSPEC_SSE_Chart", "Tableau des liens", "\A3\ui_f\data\map\markers\nato\o_hq.paa", { [false] call comspec_sse_fnc_chartOpen }, { true }, _none, [], {[0, 0, 0]}, 1, _p] call ace_interact_menu_fnc_createAction),
-        (["COMSPEC_SSE_Register", "Registre des scellés", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa", { ["evidence"] call comspec_sse_fnc_uiOpenScreen }, { true }, _none, [], {[0, 0, 0]}, 1, _p] call ace_interact_menu_fnc_createAction),
+        (["COMSPEC_SSE_Chart", "Tableau des liens", "\A3\ui_f\data\map\markers\nato\o_hq.paa", { [false] call comspec_sse_fnc_chartOpen }, { true }, _none, [], {[0, 0, 0]}, 1, _p] call comspec_sse_fnc_aceAction),
+        (["COMSPEC_SSE_Register", "Registre des scellés", "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa", { ["evidence"] call comspec_sse_fnc_uiOpenScreen }, { true }, _none, [], {[0, 0, 0]}, 1, _p] call comspec_sse_fnc_aceAction),
         (["COMSPEC_SSE_MySeals", "Pièces que je détiens", "\a3\ui_f\data\igui\cfg\simpleTasks\types\box_ca.paa", {
             private _ids = ["held", [player]] call comspec_sse_fnc_custody;
             private _all = missionNamespace getVariable ["comspec_sse_custody", createHashMap];
-            hint parseText format ["<t color='#7fd08a'>Pièces détenues : %1</t><br/>%2", count _ids,
-                (_ids apply { private _p = _all get _x; format ["%1 · %2 · %3", _x, _p getOrDefault ["state", "?"], _p getOrDefault ["desc", ""]] }) joinString "<br/>"];
-        }, { true }, _none, [], {[0, 0, 0]}, 1, _p] call ace_interact_menu_fnc_createAction)
+            hint ((parseText format ["<t color='#7fd08a'>Pièces détenues : %1</t><br/>%2", count _ids,
+                (_ids apply { private _p = _all get _x; format ["%1 · %2 · %3", _x, _p getOrDefault ["state", "?"], _p getOrDefault ["desc", ""]] }) joinString "<br/>"]) call comspec_sse_fnc_tr);
+        }, { true }, _none, [], {[0, 0, 0]}, 1, _p] call comspec_sse_fnc_aceAction)
     ];
     missionNamespace setVariable ["comspec_sse_anaSelfActions", _self];
     private _install = {
@@ -74,7 +74,7 @@ if (!hasInterface) exitWith {};
             isPlayer _target && {alive _target} && {_target != _player} && {(["held", [_player]] call comspec_sse_fnc_custody) isNotEqualTo []}
         },
         _none, [], {[0, 0, 0]}, 3, _p
-    ] call ace_interact_menu_fnc_createAction;
+    ] call comspec_sse_fnc_aceAction;
     ["CAManBase", 0, ["ACE_MainActions"], _give, true] call ace_interact_menu_fnc_addActionToClass;
 }, [], 60] call CBA_fnc_waitUntilAndExecute;
 
@@ -89,7 +89,7 @@ if (!hasInterface) exitWith {};
     missionNamespace setVariable ["comspec_sse_anaZenSel", _sel];
     {
         _x params ["_cat", "_name", "_code", "_icon"];
-        [_cat, _name, _code, _icon] call zen_custom_modules_fnc_register;
+        [_cat, _name, _code, _icon] call comspec_sse_fnc_zenModule;
     } forEach [
         ["COMSPEC SSE · Personnes", "Organisation : affecter", { params ["_pos", "_obj"]; ["assign", [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel")] call comspec_sse_fnc_orgZeusForm; }, "\A3\ui_f\data\map\markers\nato\o_hq.paa"],
         ["COMSPEC SSE · Personnes", "Organisation : générer un réseau", { params ["_pos", "_obj"]; private _s = [_obj] call (missionNamespace getVariable "comspec_sse_anaZenSel"); if (count _s == 1 && {(_s select 0) isKindOf "CAManBase"}) then { _s = units group (_s select 0); }; ["generate", _s] call comspec_sse_fnc_orgZeusForm; }, "\A3\ui_f\data\map\markers\nato\o_hq.paa"],

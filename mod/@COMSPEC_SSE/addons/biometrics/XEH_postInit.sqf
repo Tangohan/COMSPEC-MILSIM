@@ -41,7 +41,7 @@ if (hasInterface) then {
     ["comspec_sse_bioZeusNote", {
         params [["_msg", ""]];
         if (isNull (getAssignedCuratorLogic player)) exitWith {};
-        hint parseText format ["<t color='#7fd08a'>SSE · Biométrie (Zeus)</t><br/>%1", _msg];
+        hint ((parseText format ["<t color='#7fd08a'>SSE · Biométrie (Zeus)</t><br/>%1", _msg]) call comspec_sse_fnc_tr);
         if (!isNull (findDisplay 312)) then { [_msg] call BIS_fnc_showCuratorFeedbackMessage; };
     }] call CBA_fnc_addEventHandler;
 };

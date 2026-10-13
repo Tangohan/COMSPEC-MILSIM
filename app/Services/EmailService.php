@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Repositories\EmailDeliveryRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\Integrations\DiscordEventRelayService;
+use App\Support\HtmlTranslator;
 
 final class EmailService
 {
@@ -133,6 +134,17 @@ final class EmailService
             return false;
         }
 
+        // Destinataire dont le profil est en anglais : modèle (écrit en français) traduit comme une page du site.
+        if ($this->recipientLocale($to) === 'en') {
+            try {
+                $subject = HtmlTranslator::translateText($subject);
+                $parts['html'] = HtmlTranslator::translate($parts['html']);
+                $parts['text'] = HtmlTranslator::translateText($parts['text']);
+            } catch (\Throwable) {
+                // E-mail laissé en français plutôt que pas d'e-mail.
+            }
+        }
+
         return $this->send(
             $eventCode,
             $to,
@@ -145,6 +157,28 @@ final class EmailService
             null,
             $forceImmediate
         );
+    }
+
+    /**
+     * Langue d'un destinataire : celle de son profil Athena (choisie dans le sélecteur du site), sinon celle de la
+     * page qui déclenche l'envoi (connexion, inscription…), sinon le français.
+     */
+    private function recipientLocale(string $to): string
+    {
+        try {
+            $user = \App\Core\Container::get(\App\Repositories\UserRepository::class)->findFirstByEmailGlobal($to);
+            if ($user !== null) {
+                $row = (new \App\Repositories\UserProfileRepository())->getByUserId((int) $user['id']);
+                $lang = trim((string) ($row['language'] ?? ''));
+                if ($lang !== '') {
+                    return \App\Services\I18n\LocaleService::normalize($lang);
+                }
+            }
+        } catch (\Throwable) {
+            // Pas de base ou pas de profil : langue de la page en cours.
+        }
+
+        return function_exists('locale') ? (string) locale() : 'fr';
     }
 
     /**

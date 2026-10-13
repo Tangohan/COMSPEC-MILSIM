@@ -9,7 +9,7 @@ params [
 
 if (isNull _entity) exitWith { false };
 if !([_player, "evidence_bag"] call comspec_sse_fnc_hasEquipment) exitWith {
-    hint "Sachet de preuve requis.";
+    hint (("Sachet de preuve requis.") call comspec_sse_fnc_tr);
     false
 };
 
@@ -31,5 +31,5 @@ if (_player canAdd "COMSPEC_SSE_EvidenceBag") then {
 ["SSE_RecordCollected", [_entity, _label]] call comspec_sse_fnc_emitEvent;
 // Registre des scellés : numéro de scellé et ligne au journal de la pièce (le serveur répond).
 if (!isNil "comspec_sse_fnc_custody") exitWith { ["seal", [_entity, _player, ""]] call comspec_sse_fnc_custody; true };
-hint format ["Preuve mise sous scellé\n%1", _label];
+hint ((format ["Preuve mise sous scellé\n%1", _label]) call comspec_sse_fnc_tr);
 true

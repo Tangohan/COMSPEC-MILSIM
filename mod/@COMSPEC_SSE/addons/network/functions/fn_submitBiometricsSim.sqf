@@ -32,11 +32,11 @@ if ([] call comspec_sse_fnc_isOnline) then {
 };
 
 if (_ok) then {
-    if (_announce) then { hint "Biométrie envoyée au registre."; };
+    if (_announce) then { hint (("Biométrie envoyée au registre.") call comspec_sse_fnc_tr); };
     [_uid, "biometrics", "seek_ii", "Bio sim", 80, "TRANSMITTED"] call comspec_sse_fnc_addJournalEntry;
 } else {
     [_envelope] call comspec_sse_fnc_queueOffline;
-    if (_announce) then { hint "Biométrie mise en attente."; };
+    if (_announce) then { hint (("Biométrie mise en attente.") call comspec_sse_fnc_tr); };
     [_uid, "biometrics", "seek_ii", "QUEUED", 80, "QUEUED"] call comspec_sse_fnc_addJournalEntry;
 };
 

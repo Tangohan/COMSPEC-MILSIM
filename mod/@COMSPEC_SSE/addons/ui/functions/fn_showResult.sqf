@@ -17,7 +17,7 @@ if (!isNull _ent) then {
 
 if !(createDialog "COMSPEC_SSE_ResultDialog") exitWith {
     private _lines = _fog getOrDefault ["lines", []];
-    hint ((_fog getOrDefault ["title", "SSE"]) + endl + (_lines joinString endl));
+    hint ((((_fog getOrDefault ["title", "SSE"]) + endl + (_lines joinString endl))) call comspec_sse_fnc_tr);
     true
 };
 

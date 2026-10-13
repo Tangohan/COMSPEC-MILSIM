@@ -9,14 +9,14 @@ private _tabLine = format [
     toUpper _tab
 ];
 if (_idcTabs isEqualTo 93252) then {
-    (_disp displayCtrl _idcTabs) ctrlSetStructuredText parseText format [
+    (_disp displayCtrl _idcTabs) ctrlSetStructuredText parseText ((format [
         "<t size='0.85'>Onglet: <t color='#8f8'>%1</t> · Overview / Contacts / Messages / Calls / Files / Photos / Locs / Deleted / Network</t>",
         toUpper _tab
-    ];
+    ]) call comspec_sse_fnc_tr);
 };
 
 if (isNull _rec) exitWith {
-    (_disp displayCtrl _idcBody) ctrlSetStructuredText parseText "<t color='#f88'>Aucun record SSE lié.</t>";
+    (_disp displayCtrl _idcBody) ctrlSetStructuredText parseText (("<t color='#f88'>Aucun record SSE lié.</t>") call comspec_sse_fnc_tr);
     false
 };
 
@@ -136,9 +136,9 @@ switch (_tab) do {
 if (_idcTabs isEqualTo 9582) then {
     _body = _tabLine + "<br/>" + _body;
 };
-(_disp displayCtrl _idcBody) ctrlSetStructuredText parseText _body;
+(_disp displayCtrl _idcBody) ctrlSetStructuredText parseText ((_body) call comspec_sse_fnc_tr);
 private _lb = _disp displayCtrl _idcList;
 lbClear _lb;
-{ _lb lbAdd _x; } forEach _list;
-if (_list isEqualTo []) then { _lb lbAdd "(vide)"; };
+{ _lb lbAdd ((_x) call comspec_sse_fnc_tr); } forEach _list;
+if (_list isEqualTo []) then { _lb lbAdd (("(vide)") call comspec_sse_fnc_tr); };
 true

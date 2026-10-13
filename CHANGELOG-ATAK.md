@@ -11,6 +11,30 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Relais du réseau ATAK : module Eden/Zeus, tutoriel, passerelles de véhicule coupées (ATAK natif 1.56.0)
+
+Non testé en jeu. Pas de DLL à recompiler. Demande de TTRD : améliorer les relais, un tuto dans Eden, couper par défaut les relais véhicule / mât de commandement.
+- Passerelles de véhicule et PC mobile à mât : nouveau réglage serveur « Passerelles de véhicule et PC mobile », **désactivé par défaut** (plus d'action ACE, celles ouvertes se referment). Un véhicule relais voulu par la mission se fait avec le module synchronisé au véhicule.
+- Nouveau module Eden et Zeus **ATAK · Relais** (catégorie COMSPEC — ATAK · Réseau) : le cercle du module dans Eden est la portée ; types radio portable, mât tactique, tour fixe, terminal satellite ; camp, débit, hauteur d'antenne, places, alimentation (secteur ou batterie), liaison raccordée ou répéteur, allumé, indestructible, relais obligatoires. Objet synchronisé ou lâché dessus en Zeus = équipé, sinon l'objet du type est créé.
+- Tutoriel : description du module dans Eden, infobulles des attributs et page « Relais du réseau ATAK » du manuel de terrain (Aide > Manuel de terrain).
+- Relais plus réalistes : hauteur d'antenne pour le relief, répéteurs qui doivent voir un relais raccordé (sinon « sans liaison »), débit partagé au-delà des places, batterie qui se vide, brouilleurs, relais réservés à un camp. Le téléphone prend le meilleur relais reçu (plus le seul plus proche).
+- ACE sur le relais : état, couper, allumer, changer la batterie. Carte et app Wave Relay : état de chaque relais (éteint, batterie vide, brouillé, sans liaison, saturé), répéteurs reliés en pointillé à leur relais.
+
+À vérifier en jeu :
+- Eden : module ATAK · Relais visible, cercle étirable, description et infobulles lisibles ; manuel de terrain.
+- Mission sans module : ACE « Passerelle ATAK » absent sur les véhicules ; avec le réglage coché, il revient.
+- Un raccordé et deux répéteurs en chaîne : le dernier s'éteint quand on coupe celui du milieu (ACE), la carte le dit.
+- Batterie 1 h : la charge baisse, à vide le relais tombe ; « Changer la batterie » le relance.
+- Plus de joueurs que de places : débit partagé dans l'app Réseau et l'app Wave Relay.
+
+## Traduction 2026-10-13 — Mod SSE et menus CBA d'Overwatch connect en anglais (ATAK natif 1.55.0)
+
+Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : tout traduire.
+- Mod SSE : textes affichés, textes fixes des écrans (terminal, résultats, graphe, SEEK…), actions ACE, menu ZEN et modules Zeus ZEN dans la langue du téléphone de l'ATAK natif (environ 1 650 nouvelles traductions). Sans l'ATAK natif, le SSE reste en français.
+- Menus CBA d'Overwatch connect et du SSE : dans la langue du réglage « Langue du téléphone » (ou, avant son chargement, celle enregistrée dans le profil, sinon la langue du jeu). Nouveau `fn_trMenu` dans l'ATAK natif.
+- `tools/i18n.py --sse wrap|extract` pour le SSE ; PBO du SSE et de connect repaquetés (`tools/pack_pbo.py`).
+- Reste en français : noms d'objets et modules Eden du SSE (config), journaux techniques.
+
 ## Traduction 2026-10-13 — Fenêtres Overwatch connect et actions ACE/ZEN en anglais (ATAK natif 1.54.0)
 
 Non testé en jeu. Pas de DLL à recompiler, pas de migration. Demande de TTRD : continuer de traduire le mod.

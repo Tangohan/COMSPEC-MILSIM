@@ -10,7 +10,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_operatorSkill",
@@ -21,7 +21,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_autoTriage",
@@ -32,7 +32,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_autoPivot",
@@ -43,7 +43,7 @@
     1,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_autoMarkers",
@@ -54,7 +54,7 @@
     1,
     { [] call comspec_sse_fnc_createMapMarkers },
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 [
     "comspec_sse_crossMissionPersist",
@@ -65,6 +65,6 @@
     0,
     {},
     true
-] call CBA_fnc_addSetting;
+] call comspec_sse_fnc_addSetting;
 
 true

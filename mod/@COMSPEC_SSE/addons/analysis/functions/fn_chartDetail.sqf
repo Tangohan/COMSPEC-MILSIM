@@ -11,7 +11,7 @@ private _nodes = _st getOrDefault ["nodes", createHashMap];
 private _ctrl = _disp displayCtrl 93530;
 private _n = _nodes getOrDefault [_id, createHashMap];
 if (count _n == 0) exitWith {
-    _ctrl ctrlSetStructuredText parseText "<t color='#9aa'>Choisissez un nœud sur le tableau.</t><br/><br/><t color='#9aa' size='0.9'>Le tableau se remplit au fil de la mission : personnes contrôlées et identifiées, pièces saisies, appareils et documents exploités. Une appartenance d'abord soupçonnée devient confirmée par une identification biométrique.</t>";
+    _ctrl ctrlSetStructuredText parseText (("<t color='#9aa'>Choisissez un nœud sur le tableau.</t><br/><br/><t color='#9aa' size='0.9'>Le tableau se remplit au fil de la mission : personnes contrôlées et identifiées, pièces saisies, appareils et documents exploités. Une appartenance d'abord soupçonnée devient confirmée par une identification biométrique.</t>") call comspec_sse_fnc_tr);
 };
 
 private _orgs = missionNamespace getVariable ["comspec_sse_orgs", createHashMap];
@@ -81,6 +81,6 @@ if (_links isNotEqualTo []) then {
     _lines pushBack "<t color='#8f8'>LIENS</t>";
     _lines append (_links select [0, 14]);
 };
-_ctrl ctrlSetStructuredText parseText (_lines joinString "<br/>");
+_ctrl ctrlSetStructuredText parseText (((_lines joinString "<br/>")) call comspec_sse_fnc_tr);
 _ctrl ctrlSetPositionH ((ctrlTextHeight _ctrl) max ((ctrlPosition (ctrlParentControlsGroup _ctrl)) select 3));
 _ctrl ctrlCommit 0;
