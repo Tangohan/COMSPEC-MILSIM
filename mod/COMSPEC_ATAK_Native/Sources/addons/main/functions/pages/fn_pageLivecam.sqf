@@ -95,7 +95,7 @@ private _mode = _s getOrDefault ["livecamMode", 0];
 private _pan = _s getOrDefault ["livecamPan", 0];
 if (_fixed) then { [_unit, _mode, _pan] call comspec_atak_native_fnc_camView; } else { [_unit, _mode] call comspec_atak_native_fnc_livecamStart; };
 private _pic = ["COMSPEC_RscPhone", [_vx, _vy, _vw, _vh], "#(argb,512,512,1)r2t(comspec_livecam,1.0)"] call comspec_atak_native_fnc_pageCtrl;
-private _osd = ["COMSPEC_RscStructuredText", [_vx + _pad / 2, _vy + _pad / 2, _vw - _pad, _rowH * 1.6]] call comspec_atak_native_fnc_pageCtrl;
+private _osd = ["COMSPEC_RscStructuredText", [_vx + _pad / 2, _vy + _pad / 2, _vw - _pad, _rowH * 2.3]] call comspec_atak_native_fnc_pageCtrl;
 if (!_fixed) then {
     _osd ctrlSetStructuredText parseText ((format ["<t font='RobotoCondensedBold' color='#e5483a'>● LIVE</t>  <t font='RobotoCondensedBold'>%1</t><br/><t size='0.8' color='#c9d4cf'>%2 · %3 m · cap %4°</t>",
         [_unit, true] call comspec_atak_native_fnc_unitCallsign, [getPosASL _unit, 8] call comspec_atak_native_fnc_gridRef, round (player distance _unit), round getDir _unit]) call comspec_atak_native_fnc_tr);

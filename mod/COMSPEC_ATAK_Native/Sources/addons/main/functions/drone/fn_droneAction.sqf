@@ -36,7 +36,7 @@
       "" = le téléphone pilote, personne ne peut se connecter au drone avec un terminal UAV ;
       uid = seul ce joueur peut s'y connecter (pilotage manuel) ; absent = drone libre.
       ["tick"]                    surveillance (toutes les secondes tant qu'un drone est appairé) ;
-      ["link"]                    renvoie [barres 0-4, distance, en liaison, qualité 0-1].
+      ["link"]                    renvoie [barres 0-4, distance, en liaison, qualité 0-1, flux vidéo (fn_videoLink "path")].
     Tâches sur point (onglet TÂCHES) :
       ["tab", "PILOT" | "TASK" | "TARGETS" | "PHOTO" | "LOG"]   onglet de la page ;
       ["task", "GOTO" | "LOITER" | "OBSERVE" | "ESCORT"] / ["taskRad", m]   tâche et rayon choisis ;
@@ -133,8 +133,8 @@ private _payloads = [
     ["DemoCharge_Remote_Mag", "DemoCharge_Remote_Ammo_Scripted", "charge de démolition"],
     ["HandGrenade", "GrenadeHand", "grenade RGO"], ["MiniGrenade", "mini_Grenade", "grenade RGN"]
 ];
-// Liaison : [barres 0-4, distance, en liaison, qualité 0-1] (la qualité règle les défauts TNT de l'image, fn_droneStatic).
-private _link = {
+// Liaison directe pilote-drone : [barres 0-4, distance, en liaison, qualité 0-1].
+private _linkDirect = {
     if (isNull _d || {!alive _d}) exitWith { [0, 0, false, 0] };
     private _range = call comspec_atak_native_fnc_droneRange;
     if (terrainIntersectASL [eyePos player, getPosASL _d]) then { _range = _range * 0.3; };
@@ -154,6 +154,21 @@ private _link = {
     private _ok = _dist < _range;
     private _q = [0, ((1 - (_dist / (_range max 1)) ^ 2) max 0) min 1] select _ok;
     [[0, ceil (4 * _q) max 1] select _ok, round _dist, _ok, _q]
+};
+// Liaison : [barres 0-4, distance, en liaison, qualité 0-1, flux vidéo] (la qualité règle les défauts TNT de l'image,
+// fn_droneStatic). Relais dans la mission (fn_videoLink) : le drone passe aussi par eux (relais à portée du drone, puis
+// réseau jusqu'au relais du téléphone), le meilleur chemin l'emporte et donne la qualité du flux ; sans relais, liaison
+// directe seule, comme avant. Flux vidéo : HashMap de fn_videoLink "path" (clé "active" fausse en mode arcade).
+private _link = {
+    private _l = call _linkDirect;
+    if (isNull _d || {!alive _d}) exitWith { _l + [createHashMap] };
+    // Téléphone absent ou batterie vide : ni direct ni relais.
+    if (!([player] call comspec_atak_native_fnc_hasDevice) || {(missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100]) <= 0}) exitWith { _l + [createHashMap] };
+    private _v = ["path", ["DRONE", getPosASL _d, _l select 3, 20]] call comspec_atak_native_fnc_videoLink;
+    if !(_v getOrDefault ["active", false]) exitWith { _l + [_v] };
+    private _ok = _v get "ok";
+    private _q = _v get "q";
+    [[0, ceil (4 * _q) max 1 min 4] select _ok, _l select 1, _ok, _q, _v]
 };
 private _needLink = {
     if ((call _link) select 2) exitWith { true };
