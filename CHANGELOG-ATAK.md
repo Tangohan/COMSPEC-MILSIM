@@ -38,6 +38,25 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Carte : ordres au drone depuis le clic droit (ATAK natif 1.91.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Donne des ordres à ton drone d'un clic droit sur la carte
+- Sur la carte du téléphone, le clic droit propose « Ordre au drone » quand tu as un drone appairé.
+- Quatre ordres au point cliqué : Aller, Rechercher (balayage en bandes autour du point), Stationnaire (le drone se cale au-dessus, caméra à la verticale) et Atterrir (il se pose sur le point).
+- Chaque ordre est noté dans le journal du drone. Un point dans une zone interdite au drone est refusé, comme avant.
+EN : Give orders to your drone with a right-click on the map
+- On the phone map, right-click now offers "Drone order" when you have a paired drone.
+- Four orders at the clicked spot: Go to, Search (lane sweep around the spot), Hover (the drone settles above it, camera straight down) and Land (it lands on the spot).
+- Each order is written in the drone log. A spot inside a drone no-fly zone is refused, as before.
+
+### Détail technique
+- fn_mapCtxMenu : ligne DRONE (drone `COMSPEC_ATAK_Drone` en vie) qui ouvre un sous-menu (clé `sub` de l'état mapCtx, redessiné à l'image suivante) : DGOTO, DHUNT, DHOVER, DLAND, RETOUR.
+- fn_droneAction `["mapOrder", [genre, position]]` : liaison exigée, `goto` / `hunt [rayon choisi, pilote, centre]` (recherche en bandes de #777) / `goto [p, "HOVER"]` + nacelle à -90° / `goto [p, "LAND"]` ; journal et notification. `_send` renvoie maintenant `true` (false si zone interdite).
+- fn_droneCmd `goto` : 2e argument facultatif `HOVER` | `LAND` : arrivée à 6 m (au lieu de 20 m), ou IA arrêtée à moins de 25 m ; `LAND` se pose au lieu du stationnaire (aussi en CQB).
+- Non testé en jeu : vérifier le sous-menu, la précision du stationnaire et de l'atterrissage sur le point, et la recherche centrée sur le clic.
+
 ## Drone : bouton TEST VIDÉO pour l'image noire du téléphone (ATAK natif 1.90.0)
 
 ### Résumé joueur
