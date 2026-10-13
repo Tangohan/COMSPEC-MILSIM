@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Text;
 
+namespace COMSPECExtension;
+
 /// <summary>
 /// Journal des envois vers Athena : chaque envoi suivi (rapports, 9-line, SSE, logistique, Discord...) avec ses étapes
 /// (en file, envoi, nouvel essai, envoyé, échec), plus un signal de charge d'Athena (latence, 429, 5xx, délais dépassés).
