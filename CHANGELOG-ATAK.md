@@ -38,93 +38,42 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Selfie : axes de la souris inversables (ATAK natif 1.91.0)
+## Regroupement : images dans le téléphone, ordres au drone, plan de briefing, véhicules (ATAK natif 1.91.0, COMSPEC Link 2.0.84)
 
 ### Résumé joueur
 Type : nouveauté
-FR : Le selfie peut inverser les axes de la souris
-- Deux nouveaux réglages dans Options > Réglages des addons > COMSPEC > ATAK · Photo : « Selfie : inverser gauche / droite » et « Selfie : inverser haut / bas ».
-- Cochés, la souris cadre le selfie dans l'autre sens, comme devant un miroir. Ils sont désactivés par défaut et chaque joueur choisit pour lui.
-EN : Selfie mode can invert the mouse axes
-- Two new settings in Options > Addon Options > COMSPEC > ATAK · Photo: "Selfie: invert left / right" and "Selfie: invert up / down".
-- When ticked, the mouse frames the selfie the other way round, like in a mirror. They are off by default and each player picks for themselves.
+FR : Images du drone enfin visibles, ordres au drone sur la carte, plan de briefing partagé
+- La caméra du drone, le viseur de l'app Photo et les diapositives du Briefing s'affichent dans le téléphone au lieu de rester noirs. Sur la carte, un clic droit donne des ordres au drone : aller, rechercher, stationnaire, atterrir.
+- Le plan de briefing de l'app Plan apparaît sur la carte du site Athena et, par défaut, sur la carte du téléphone.
+- En véhicule, la molette et le menu d'actions marchent de nouveau avec le téléphone en miniature. Le HUD des autres mods (boussole, heure…) ne passe plus par-dessus le téléphone.
+- Sur la carte, le bandeau « indicatif · grille » ne revient plus en boucle, et le selfie peut inverser les axes de la souris (réglages ATAK · Photo).
+EN : Drone pictures finally visible, drone orders from the map, shared briefing plan
+- The drone camera, the Photo app viewfinder and Briefing slides show in the phone instead of staying black. On the map, a right-click gives orders to the drone: go to, search, hover, land.
+- The briefing plan from the Plan app shows on the Athena website map and, by default, on the phone map.
+- In a vehicle, the scroll wheel and action menu work again with the phone as a miniature. Other mods' HUD (compass, time…) no longer draws over the phone.
+- On the map, the "callsign · grid" banner no longer repeats, and the selfie can invert the mouse axes (ATAK · Photo settings).
 
 ### Détail technique
-- Demande de TTRD (13/10) : inverser gauche / droite à la souris en mode selfie.
-- Réglages CBA client (non forcés par le serveur) comspec_atak_native_selfie_invert_x / _y, lus dans fn_photoMode "MOUSE" (branche selfie uniquement ; le zoom de l'objectif arrière et le glisser de l'app Photo ne changent pas). Traductions ajoutées à en.txt.
-- Non testé en jeu.
-## Drone, Photo et Briefing : les images s'affichent enfin dans le téléphone (ATAK natif 1.91.0)
 
-### Résumé joueur
-Type : correctif
-FR : Les images du drone, de l'app Photo et du Briefing s'affichent dans le téléphone
-- La vue caméra du drone et le viseur de l'app Photo ne restent plus noirs dans le téléphone, de jour comme de nuit : il n'est plus nécessaire de passer en plein écran.
-- Une croix rouge en haut à droite de l'image du drone ferme la caméra d'un clic.
-- Le bouton CAMÉRA PLEIN ÉCRAN passe dans la rangée principale de la vue drone (Échap pour revenir au téléphone).
-- Briefing > Diapositives : les diapositives publiées sur Athena s'affichent au lieu d'une zone noire.
-- Les boutons de la vue drone sur la carte (MARQUER LA CIBLE, OUBLIER LES CIBLES, RETOUR À LA CARTE…) et de l'app Drone ne coupent plus leur texte.
-EN : Drone, Photo app and Briefing pictures show in the phone
-- The drone camera view and the Photo app viewfinder no longer stay black in the phone, by day or night: you no longer need to switch to full screen.
-- A red cross at the top right of the drone picture closes the camera in one click.
-- The FULL-SCREEN CAMERA button moves to the main row of the drone view (Esc to go back to the phone).
-- Briefing > Slides: slides published on Athena show instead of a black area.
-- The drone view buttons on the map (MARK TARGET, FORGET TARGETS, BACK TO MAP…) and in the Drone app no longer cut their text.
+Une seule version pour 7 PR regroupées (#782, #783, #785, #786, #787, #788, #789) : ATAK natif 1.91.0, COMSPEC Link 2.0.84 (la DLL change avec l'app Plan #787 : recompiler avec build_mod.bat ; migration du plan de briefing à lancer côté site). main.pbo reconstruit avec HEMTT ; i18n/en.txt fusionné à trois voies et localisation/template/xx.txt régénéré (tools/i18n.py community) ; dictionnaire JS du site régénéré. Non testé en jeu.
 
-### Détail technique
+#### Drone, Photo et Briefing : les images s'affichent enfin dans le téléphone (#783)
+
 - Résultat du TEST VIDÉO (TTRD, 21:20 en jeu, nuit) : les 4 cadres, dont les 2 dans le téléphone, montrent une image nette, alors que la vue drone (même en THERMIQUE) et le viseur Photo restent noirs. Différences supprimées : textures r2t désormais carrées (512/1024/2048, le 16/9 vient du rapport r2t), noms de cibles sans tiret bas ni chiffre (comspecdronecam<a-c>n<a-h>, comspecphotocam<a-d>), plus de correction de couleurs setPiPEffect type 3 (« BASSE LUMIÈRE » / « MODE NUIT » retirés de l'incrustation) ; incrustation Live cam de la carte et cliché drone en texture carrée.
 - fn_pageDrone : bouton « X » rouge en haut à droite de l'image (droneAction "cam") ; VUE DIRECTE renommée CAMÉRA PLEIN ÉCRAN et placée dans la rangée principale.
 - Briefing : Arma n'affiche pas les PNG (même cause que les portraits opérateur, #724) et la plupart des diapositives envoyées sur Athena sont des PNG. /api/atak/briefing-slides sert désormais une copie JPEG 2048 x 1024 (App\Support\BriefingSlideGameImage, image entière centrée sur fond noir), écrite une fois dans uploads/briefing-slides/<tenant>/atak/. Côté serveur seulement : le site doit être mis à jour sur le VPS. Les présentations Google Slides chargées par l'engrenage restent en PNG (DLL) : non corrigé ici.
 - Textes coupés (captures TTRD) : fn_pageMap, rangée de la grande vue drone, largeur de chaque bouton mesurée sur son texte traduit (ctrlTextWidth), police réduite pour toute la rangée si elle déborde ; boutons de la petite fenêtre et barre de l'app Drone (fn_pageDrone) : police réduite tant que le libellé dépasse.
 - Suite de la PR #780 (fusionnée avec seulement le TEST VIDÉO). Non testé en jeu.
-## Carte : ordres au drone depuis le clic droit (ATAK natif 1.91.0)
 
-### Résumé joueur
-Type : nouveauté
-FR : Donne des ordres à ton drone d'un clic droit sur la carte
-- Sur la carte du téléphone, le clic droit propose « Ordre au drone » quand tu as un drone appairé.
-- Quatre ordres au point cliqué : Aller, Rechercher (balayage en bandes autour du point), Stationnaire (le drone se cale au-dessus, caméra à la verticale) et Atterrir (il se pose sur le point).
-- Chaque ordre est noté dans le journal du drone. Un point dans une zone interdite au drone est refusé, comme avant.
-EN : Give orders to your drone with a right-click on the map
-- On the phone map, right-click now offers "Drone order" when you have a paired drone.
-- Four orders at the clicked spot: Go to, Search (lane sweep around the spot), Hover (the drone settles above it, camera straight down) and Land (it lands on the spot).
-- Each order is written in the drone log. A spot inside a drone no-fly zone is refused, as before.
+#### Carte : ordres au drone depuis le clic droit (#785)
 
-### Détail technique
 - fn_mapCtxMenu : ligne DRONE (drone `COMSPEC_ATAK_Drone` en vie) qui ouvre un sous-menu (clé `sub` de l'état mapCtx, redessiné à l'image suivante) : DGOTO, DHUNT, DHOVER, DLAND, RETOUR.
 - fn_droneAction `["mapOrder", [genre, position]]` : liaison exigée, `goto` / `hunt [rayon choisi, pilote, centre]` (recherche en bandes de #777) / `goto [p, "HOVER"]` + nacelle à -90° / `goto [p, "LAND"]` ; journal et notification. `_send` renvoie maintenant `true` (false si zone interdite).
 - fn_droneCmd `goto` : 2e argument facultatif `HOVER` | `LAND` : arrivée à 6 m (au lieu de 20 m), ou IA arrêtée à moins de 25 m ; `LAND` se pose au lieu du stationnaire (aussi en CQB).
 - Non testé en jeu : vérifier le sous-menu, la précision du stationnaire et de l'atterrissage sur le point, et la recherche centrée sur le clic.
-## Carte : la notification « indicatif · grille » ne tourne plus en boucle (ATAK natif 1.92.0)
 
-### Résumé joueur
-Type : correctif
-FR : Fini le bandeau INFO qui revenait sans arrêt sur la carte
-- Sur la carte en écran réduit, cliquer une unité affiche son indicatif et sa grille une seule fois.
-- Le bandeau ne revient plus toutes les secondes tant que l'unité reste sélectionnée.
-EN : No more INFO banner repeating on the map
-- On the map in the small screen, clicking a unit shows its callsign and grid once.
-- The banner no longer comes back every second while the unit stays selected.
+#### App Plan : le plan de briefing visible sur le site et sur la carte du téléphone (#787)
 
-### Détail technique
-- Retour de TTRD (13/10) : « INFO · TA1 · 1519 1729 » en boucle. fn_inspectorUpdate envoyait la notification à chaque rendu en mode mini avec une unité sélectionnée ; fn_statusUpdate le rappelle chaque seconde (panneau SITUATION ouvert) et la grille change quand l'unité bouge, donc l'anti-doublon de fn_notify ne jouait pas.
-- La notification part désormais de fn_mapSelect, une fois par clic. Non testé en jeu.
-## App Plan : le plan de briefing visible sur le site et sur la carte du téléphone (ATAK natif 1.92.0, COMSPEC Link 2.0.84)
-
-### Résumé joueur
-Type : nouveauté
-FR : Le plan de briefing s'affiche sur le site et sur la carte du téléphone
-- Les zones, lignes et points du plan partagé de l'app Plan apparaissent sur la carte Athena du site, dans un nouveau calque « Plan de briefing » (lecture seule, réglable dans les préférences de la carte).
-- Sur le téléphone, le plan partagé et votre brouillon sont maintenant affichés par défaut sur l'app Carte, sous les unités (réglage dans Plan, vue PLANS).
-- Sur un serveur sans le mod ATAK natif (pas de plan partagé), votre brouillon apparaît sur le site comme plan personnel.
-- Clic droit dans la carte du Plan : termine le trait ou la zone en cours, quitte l'outil, ou retire la sélection.
-EN : The briefing plan now shows on the website and on the phone's map
-- Areas, lines and points of the shared plan from the Plan app appear on the Athena website map, in a new "Briefing plan" layer (read only, can be turned off in the map preferences).
-- On the phone, the shared plan and your draft now show by default on the Map app, under the units (setting in Plan, PLANS view).
-- The PLANS view tells you whether the plan reached the website.
-- On a server without the native ATAK mod (no shared plan), your draft shows on the website as a personal plan.
-- Right click on the Plan map: finishes the line or area being drawn, leaves the tool, or clears the selection.
-
-### Détail technique
 - Le serveur note dans `COMSPEC_ATAK_Plan_<camp>` l'UID de l'auteur de chaque modification (4e champ). `fn_planWeb` (toutes les 5 s) : l'auteur envoie tout le plan à Athena par COMSPEC Link `BriefingPlan.Push` (POST `/api/atak/briefing-plan`) ; sans confirmation après 30 à 60 s, un autre téléphone du camp relié l'envoie. Révision confirmée partagée (`COMSPEC_ATAK_PlanWeb_<camp>`) : un seul envoi par révision. Tracés à main levée allégés à 6000 sommets pour tout le plan.
 - Site : table `atak_briefing_plans` (une ligne par carte et par camp, créée aussi à la première écriture), GET `/api/atak/briefing-plan` (plans des 12 dernières heures), calque Leaflet `atak-briefing-plan.js` (zones remplies, lignes de phase étiquetées, flèches, points), préférence `showBriefingPlan`.
 - Calque Plan de la carte du téléphone : nouvelle préférence `COMSPEC_ATAK_PlanOnMap2`, active par défaut, avec le brouillon local plus pâle.
@@ -132,41 +81,30 @@ EN : The briefing plan now shows on the website and on the phone's map
 - Clic droit de la carte du Plan : le relâchement n'arrivait pas toujours à la carte ; il est aussi détecté par `inputMouse 1` (premier des deux, traité une fois, événement `rclick`).
 
 ---
-## Téléphone : le HUD des autres mods ne passe plus par-dessus (ATAK natif 1.93.0)
 
-### Résumé joueur
-Type : correctif
-FR : Le HUD des autres mods ne recouvre plus le téléphone
-- Les textes que d'autres mods dessinent à l'écran (boussole F-PANO / ECOTI, température, heure, distance...) sont cachés à l'endroit du téléphone tant qu'il est affiché, en mini comme en plein écran.
-- Ils reviennent dès que le téléphone est rangé, et seulement là où ils gênaient.
-- Pour les garder visibles : Options > Options des addons > COMSPEC > ATAK · Affichage, décocher « Masquer le HUD des autres mods sous le téléphone ».
-EN : Other mods' HUD no longer covers the phone
-- Texts that other mods draw on screen (F-PANO / ECOTI compass, temperature, time, distance...) are hidden where the phone is while it is shown, in mini and full screen.
-- They come back as soon as the phone is put away, and only where they were in the way.
-- To keep them visible: Options > Addon Options > COMSPEC > ATAK · Display, untick "Hide other mods' HUD under the phone".
+#### Véhicules : la molette et le menu d'actions ne sont plus bloqués par le téléphone (#789)
 
-### Détail technique
+- Cause : le réglage « Masquer le menu d'actions » vaut « En main et porté » par défaut. En véhicule l'écran JPC n'est pas utilisable (fn_jpcScreen exige d'être à pied), le téléphone porté passe en miniature (cutRsc, texture = false) et COMSPEC_ATAK_ActionBlock bloquait PrevAction / NextAction : plus de menu d'actions, donc plus de « Démarrer le moteur ».
+- Correctif : dans COMSPEC_ATAK_ActionBlock, joueur dans un véhicule (objectParent player non nul) et réglage CBA client `comspec_atak_native_action_menu_vehicle` coché (défaut) → seul le téléphone en main garde la molette, comme le mode « En main seulement ».
+- À tester en jeu : miniature affichée, monter conducteur / passager / tireur, molette → menu d'actions et démarrage moteur ; téléphone en main en véhicule → la molette ne fait pas défiler le menu ; décocher le réglage → ancien comportement.
+
+#### Téléphone : le HUD des autres mods ne passe plus par-dessus (#788)
+
 - Arma dessine les calques cutRsc (RscTitles) de tous les mods au-dessus des fenêtres createDisplay : le téléphone en main passait sous le HUD F-PANO ECOTI (Workshop), et le téléphone porté sous les calques créés après le sien.
 - Nouveau `fn_foreignHud` : tant que le téléphone est affiché, un per-frame CBA scanne chaque seconde les displays rangés dans `uiNamespace` et absents de `allDisplays` (les calques), hors téléphone (`COMSPEC_ATAK_*`) et HUD du jeu (`IGUI_displays`), et masque (`ctrlShow false`) leurs contrôles de premier niveau qui chevauchent la coque (`layoutGet` « visible »). Remasqués à chaque image si le mod les réaffiche, réaffichés à la fermeture ou quand ils ne chevauchent plus la coque. Aucun mod tiers modifié.
 - Réglage CBA client `comspec_atak_native_hide_foreign_hud` (ATAK · Affichage, activé par défaut). Écran 3D du JPC non concerné.
 - Limite : un texte posé par `cutText` / `titleText` ou dessiné par `drawIcon3D` n'a pas de display accessible et ne peut pas être masqué.
-## Véhicules : la molette et le menu d'actions ne sont plus bloqués par le téléphone (ATAK natif 1.93.0)
 
-### Résumé joueur
-Type : correctif
-FR : Dans un véhicule, le téléphone ne bloque plus la molette
-- Conducteur, passager ou tireur : la molette et le menu d'actions marchent de nouveau quand le téléphone est affiché en miniature. Tu peux démarrer le moteur, changer de place ou descendre.
-- Téléphone en main, la molette reste au téléphone comme avant.
-- Nouveau réglage « Menu d'actions libre en véhicule » (COMSPEC, ATAK · Interface), activé par défaut.
-EN : In a vehicle, the phone no longer blocks the scroll wheel
-- Driver, passenger or gunner: the scroll wheel and action menu work again while the phone is shown as a miniature. You can start the engine, switch seats or get out.
-- With the phone in hand, the wheel stays with the phone as before.
-- New setting "Free action menu in vehicles" (COMSPEC, ATAK · Interface), on by default.
+#### Carte : la notification « indicatif · grille » ne tourne plus en boucle (#786)
 
-### Détail technique
-- Cause : le réglage « Masquer le menu d'actions » vaut « En main et porté » par défaut. En véhicule l'écran JPC n'est pas utilisable (fn_jpcScreen exige d'être à pied), le téléphone porté passe en miniature (cutRsc, texture = false) et COMSPEC_ATAK_ActionBlock bloquait PrevAction / NextAction : plus de menu d'actions, donc plus de « Démarrer le moteur ».
-- Correctif : dans COMSPEC_ATAK_ActionBlock, joueur dans un véhicule (objectParent player non nul) et réglage CBA client `comspec_atak_native_action_menu_vehicle` coché (défaut) → seul le téléphone en main garde la molette, comme le mode « En main seulement ».
-- À tester en jeu : miniature affichée, monter conducteur / passager / tireur, molette → menu d'actions et démarrage moteur ; téléphone en main en véhicule → la molette ne fait pas défiler le menu ; décocher le réglage → ancien comportement.
+- Retour de TTRD (13/10) : « INFO · TA1 · 1519 1729 » en boucle. fn_inspectorUpdate envoyait la notification à chaque rendu en mode mini avec une unité sélectionnée ; fn_statusUpdate le rappelle chaque seconde (panneau SITUATION ouvert) et la grille change quand l'unité bouge, donc l'anti-doublon de fn_notify ne jouait pas.
+- La notification part désormais de fn_mapSelect, une fois par clic. Non testé en jeu.
+
+#### Selfie : axes de la souris inversables (#782)
+
+- Demande de TTRD (13/10) : inverser gauche / droite à la souris en mode selfie.
+- Réglages CBA client (non forcés par le serveur) comspec_atak_native_selfie_invert_x / _y, lus dans fn_photoMode "MOUSE" (branche selfie uniquement ; le zoom de l'objectif arrière et le glisser de l'app Photo ne changent pas). Traductions ajoutées à en.txt.
+- Non testé en jeu.
 
 ## Drone : bouton TEST VIDÉO pour l'image noire du téléphone (ATAK natif 1.90.0)
 
@@ -183,6 +121,7 @@ EN : A test to fix the black drone picture in the phone
 - Retour de TTRD (13/10) : la PiP s'affiche partout ailleurs dans le jeu, sauf dans le téléphone. fn_pipCheck "test" / "testEnd" : caméra devant le joueur, texture carrée `#(argb,512,512,1)r2t(comspecpiptest,1.0)` à 4 endroits (1 groupe de contenu, 2 display du téléphone, 3 RscDisplayEmpty par-dessus, 4 calque cutRsc RscTitleDisplayEmpty), journal [CAMERA] ; bouton dans la rangée RÉGLAGES de la vue caméra.
 - fn_tr : les textures commençant par « #( » ne sont jamais traduites.
 - Seul commit de la PR #771 resté hors du regroupement #777. Non testé en jeu.
+
 ## Langues ajoutées par la communauté (ATAK natif 1.89.0)
 
 ### Résumé joueur
@@ -325,6 +264,7 @@ Non testé en jeu. Retour de TTRD : défilement pénible en bas de l'onglet LECT
 - fn_pageMusic : sections en accordéon (clé « fold » de l'état d'interface, « Son » ouverte par défaut), action « fold » dans fn_musicAction.
 - Icônes ui_chevron_down / ui_chevron_up (gen_assets.py) ; icônes du lecteur gardées chargées (fn_textureKeep).
 - À vérifier en jeu : onglet LECTURE en plein écran paysage (pochette carrée à gauche), ouverture / fermeture des 4 sections, curseurs de volume dans « Son », portrait mini.
+
 ## Barlow Condensed revient en test dans Réglages > Police (ATAK natif 1.86.0)
 
 ### Résumé joueur
