@@ -131,6 +131,29 @@ final class HtmlTranslator
         return implode("\n", $lines);
     }
 
+    /**
+     * Page complète : ajoute avant </head> le traducteur des textes posés par le JavaScript (assets/js/i18n_dom.js)
+     * et son dictionnaire (assets/js/i18n_en_dict.js, généré par site_i18n.py js-bundle).
+     */
+    public static function withDomScripts(string $html): string
+    {
+        $at = stripos($html, '</head>');
+        if ($at === false || str_contains($html, 'i18n_dom.js')) {
+            return $html;
+        }
+        $tags = '';
+        foreach (['i18n_en_dict.js', 'i18n_dom.js'] as $file) {
+            $path = base_path('public/assets/js/' . $file);
+            if (!is_file($path)) {
+                return $html;
+            }
+            $src = (function_exists('url') ? url('assets/js/' . $file) : '/assets/js/' . $file) . '?v=' . (int) filemtime($path);
+            $tags .= '<script src="' . htmlspecialchars($src, ENT_QUOTES, 'UTF-8') . '" defer></script>';
+        }
+
+        return substr($html, 0, $at) . $tags . substr($html, $at);
+    }
+
     /** Champs d'une réponse JSON montrés tels quels par les pages (erreurs, confirmations, libellés). */
     private const JSON_KEYS = ['error', 'message', 'msg', 'warning', 'notice', 'hint', 'label', 'title', 'detail', 'reason', 'status_label'];
 
@@ -219,7 +242,12 @@ final class HtmlTranslator
         $core = substr($chunk, $lead, strlen($chunk) - $lead - $trail);
         $plain = html_entity_decode($core, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $key = (string) preg_replace('/\s+/u', ' ', $plain);
-        $en = self::lookup($key, 0);
+        try {
+            $en = self::lookup($key, 0);
+        } catch (\Throwable) {
+            // Un texte qui fait échouer la recherche reste en français, sans faire perdre la traduction de la page.
+            $en = null;
+        }
         if ($en === null) {
             return $chunk;
         }
@@ -276,7 +304,7 @@ final class HtmlTranslator
     {
         $n = strlen($s);
         $candidates = array_merge(self::$templates[substr($s, 0, 3)] ?? [], self::$templates[''] ?? []);
-        foreach ($candidates as [$parts, $ids, $en]) {
+        foreach ($candidates as [$parts, $ids, $en, $weak]) {
             $p0 = $parts[0];
             if ($p0 !== '' && !str_starts_with($s, $p0)) {
                 continue;
@@ -294,7 +322,7 @@ final class HtmlTranslator
                         break;
                     }
                 } else {
-                    $f = strpos($s, $pi, $pos + 1);
+                    $f = $pos + 1 < $n ? strpos($s, $pi, $pos + 1) : false;
                     if ($f === false) {
                         $ok = false;
                         break;
@@ -306,6 +334,13 @@ final class HtmlTranslator
             }
             if (!$ok) {
                 continue;
+            }
+            if ($weak) {
+                foreach ($caps as $cap) {
+                    if (substr_count(trim($cap), ' ') >= 3) {
+                        continue 2;
+                    }
+                }
             }
             $repl = [];
             foreach ($ids as $k => $id) {
@@ -366,7 +401,10 @@ final class HtmlTranslator
                 continue;
             }
             $bucket = strlen($texts[0]) >= 3 ? substr($texts[0], 0, 3) : '';
-            self::$templates[$bucket][] = [$texts, $ids, $en];
+            // Modèle « faible » (« le %1 », « %1 sur %2 ») : presque aucun texte fixe, il ne doit s'appliquer qu'à
+            // des valeurs courtes (date, nom, nombre), jamais au milieu d'une phrase.
+            $weak = (int) preg_match_all('/\p{L}/u', implode('', $texts)) < 5;
+            self::$templates[$bucket][] = [$texts, $ids, $en, $weak];
         }
         foreach (self::$templates as &$list) {
             usort($list, static fn (array $a, array $b): int => strlen(implode('', $b[0])) <=> strlen(implode('', $a[0])));

@@ -102,5 +102,10 @@ final class MusicLibraryTest extends TestCase
     {
         $sqf = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/music/fn_pageMusic.sqf');
         self::assertStringContainsString('["ensure", _view] call comspec_atak_native_fnc_musicAthena', $sqf);
+        // Un chargement perdu (fin de mission) ne doit pas bloquer l'onglet : état « busy » borné et garde-fou.
+        self::assertStringContainsString('["busy", _view] call comspec_atak_native_fnc_musicAthena', $sqf);
+        $athena = (string) file_get_contents(dirname(__DIR__, 2) . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/music/fn_musicAthena.sqf');
+        self::assertStringContainsString('CBA_fnc_waitAndExecute', $athena);
+        self::assertStringContainsString('#define BUSY_MAX', $athena);
     }
 }

@@ -11,12 +11,21 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Intro au démarrage : plus de conflit avec le menu, nouveau son (ATAK natif 1.61.0)
+## Intro au démarrage : plus de conflit avec le menu, nouveau son (ATAK natif 1.62.0)
 
 - L'intro ne pose plus de fond noir plein écran : l'écran de démarrage d'Arma ou d'un pack d'unité reste visible. La marque COMSPEC apparaît en bas à droite avec un trait de balayage, en animations moteur (plus rien ne reste figé à l'écran pendant le chargement).
 - Le menu principal n'est plus jamais recouvert (l'ancienne version y rejouait l'intro sur fond noir, par-dessus le menu et la fenêtre « service Athéna »).
 - Nouveau son : carillon synthétique court (1,6 s), volume bas, coupé par une touche ou un clic. Réglage CBA **COMSPEC > ATAK · Intro > Son d'intro au démarrage** pour le désactiver (pris en compte au lancement suivant).
 - Marque des écrans de chargement : textes affichés même quand les fonctions ne sont pas encore compilées.
+
+## Musique : l'onglet ATHENA ne reste plus bloqué sur « Chargement » (ATAK natif 1.61.0)
+
+Non testé en jeu. Pas de DLL à recompiler. Signalé par TTRD : onglet ATHENA, playlist globale, « Chargement depuis Athena… » sans fin et boutons grisés.
+- Cause : l'état « chargement en cours » est gardé dans uiNamespace, qui survit à la fin de mission, alors que le script qui attendait la réponse d'Athena est arrêté. Revenu en jeu, l'onglet attendait une réponse qui ne viendrait jamais.
+- Un chargement de plus de 35 s est maintenant considéré comme perdu : un garde-fou affiche « Athena n'a pas répondu à temps », ACTUALISER redevient actif et la vue se recharge seule 20 s après une erreur. La liste déjà reçue reste affichée pendant un nouveau chargement ; une réponse arrivée trop tard est ignorée.
+- Messages plus justes : une erreur 503 d'Athena (surcharge, maintenance) n'est plus présentée comme « migrations à lancer ».
+
+---
 
 ## Gestes : doigt d'honneur corrigé, désactivé par défaut (ATAK natif 1.60.0)
 
