@@ -254,11 +254,22 @@ switch (_act) do {
             private _b = ASLToAGL ((_ctr vectorAdd _hw) vectorAdd _hh);
             private _c2 = ASLToAGL ((_ctr vectorAdd _hw) vectorDiff _hh);
             private _d2 = ASLToAGL ((_ctr vectorDiff _hw) vectorDiff _hh);
-            drawLine3D [_a, _b, _c];
-            drawLine3D [_b, _c2, _c];
-            drawLine3D [_c2, _d2, _c];
-            drawLine3D [_d2, _a, _c];
-            drawIcon3D ["#(argb,8,8,3)color(0,0,0,0)", _c, _a, 1, 1, 0, _txt, 2, 0.03, "EtelkaMonospacePro", "left"];
+            // Cadre fin et pâle, coins épais (lisibles sur ciel clair comme sur fond sombre), étiquette en clair
+            // au-dessus du coin haut gauche.
+            private _cf = +_c;
+            _cf set [3, (_c select 3) * 0.35];
+            drawLine3D [_a, _b, _cf];
+            drawLine3D [_b, _c2, _cf];
+            drawLine3D [_c2, _d2, _cf];
+            drawLine3D [_d2, _a, _cf];
+            {
+                _x params ["_p0", "_p1", "_p2"];
+                drawLine3D [_p0, _p0 vectorAdd ((_p1 vectorDiff _p0) vectorMultiply 0.22), _c, 4];
+                drawLine3D [_p0, _p0 vectorAdd ((_p2 vectorDiff _p0) vectorMultiply 0.22), _c, 4];
+            } forEach [[_a, _b, _d2], [_b, _a, _c2], [_c2, _d2, _b], [_d2, _c2, _a]];
+            private _ct = (_c select [0, 3]) apply { (_x + 0.25) min 1 };
+            _ct pushBack 1;
+            drawIcon3D ["#(argb,8,8,3)color(0,0,0,0)", _ct, _a, 1, 1, 0, _txt, 2, 0.034, "RobotoCondensedBold", "left", false, 0, -0.012];
         };
         {
             private _o = _y get "obj";
