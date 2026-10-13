@@ -5,6 +5,15 @@ Toutes les modifications notables des features ATAK sont documentées ici.
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Véhicules refusés par Athena (HTTP 400) : JSON réparé, motif gardé dans le journal (ATAK natif 1.75.0, COMSPEC Link 2.0.81)
+
+Non testé en jeu. Signalé par TTRD : `HTTP POST code 400 /public/api/atak/vehicles` en boucle juste après la connexion, alors que fiche opérateur, position et chat passaient. Il faut recompiler la DLL (build_mod.bat) ; pas de migration. La partie site n'est active qu'après déploiement sur le VPS.
+- Cause : Athena répond 400 quand le corps du véhicule est illisible ou sans indicatif. Le sérialiseur JSON d'Overwatch connect laissait passer des sauts de ligne bruts, des nombres non finis (« nan », « 1.#INF ») et un guillemet seul pour un tableau imbriqué : tout le corps devenait illisible, donc sans indicatif. Le motif exact n'était pas journalisé, la cause précise de ces trois 400 reste déduite.
+- Overwatch connect : chaînes échappées (sauts de ligne, tabulations, autres caractères de contrôle), nombres non finis envoyés à 0, tableaux imbriqués et camps/objets/groupes sérialisés proprement.
+- COMSPEC Link 2.0.81 : un corps encore illisible est réparé avant l'envoi (caractères de contrôle, nan/inf, virgule décimale). Pour un refus 4xx (hors 401/403/429), le journal du jeu garde désormais le motif renvoyé par Athena, et pour un 400/422 le début du corps envoyé : `ÉCHEC · HTTP POST — code 400 · /public/api/atak/vehicles (il y a 0 s) — réponse : … · envoyé : {…}`.
+- Site : même réparation du JSON côté Athena, indicatif repris aussi de `vehicle_id` ou `vehicle_type`, et le 400 dit pourquoi (JSON illisible ou clés reçues), avec une ligne `[atak/vehicles]` dans error_log.
+- À vérifier en jeu : après connexion, plus de 400 sur /api/atak/vehicles en montant dans un véhicule ou en pilotant un drone ; si un 400 revient, copier la ligne ÉCHEC complète du RPT (elle contient maintenant le motif).
+
 ## Règle : chaque version a un « Résumé joueur » (annonce Discord)
 
 À chaque fusion sur main, l'action « Discord changelog » poste dans le salon releases une carte écrite pour les **joueurs**. Elle ne publie **que** le bloc « Résumé joueur » de l'entrée dont le titre contient la version du titre de la PR (sinon une section « Résumé joueur » dans la description de la PR). Le détail technique n'est jamais posté. **Sans résumé, rien n'est annoncé.**
