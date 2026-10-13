@@ -203,7 +203,7 @@ $renderCard = static function (array $entry) use ($boardToday, $entryTypeLabels,
 
 $boardCockpit = is_array($boardCockpit ?? null) ? $boardCockpit : [];
 $hasTools = false;
-foreach (['can_events', 'can_articles', 'can_atak', 'can_effectifs', 'can_missions', 'can_alerts', 'can_ops_center'] as $toolKey) {
+foreach (['can_events', 'can_articles', 'can_atak', 'can_slides', 'can_effectifs', 'can_missions', 'can_alerts', 'can_ops_center'] as $toolKey) {
     $hasTools = $hasTools || !empty($boardCockpit[$toolKey]);
 }
 
@@ -233,6 +233,9 @@ $alertsToFix = count($boardQualificationAlerts) + count($boardFireConflicts);
         <div class="bo-tbo-intro__actions">
             <a href="#tbo-nouvelle" class="bo-tbo-btn bo-tbo-btn--primary">Ajouter une fiche</a>
             <a href="<?= $h(url('tableau-operationnel')) ?>" class="bo-tbo-btn bo-tbo-btn--outline">Voir le mur comme un membre</a>
+            <?php if (!empty($boardCockpit['can_slides'])): ?>
+                <a href="<?= $h(url('back-office/atak/briefing-slides')) ?>" class="bo-tbo-btn bo-tbo-btn--outline">Diapositives de briefing</a>
+            <?php endif; ?>
             <a href="<?= $h(url('documentation') . '#mur-operationnel') ?>" class="bo-tbo-intro__doc">Guide complet du mur</a>
         </div>
     </section>

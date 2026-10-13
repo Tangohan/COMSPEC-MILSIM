@@ -39,6 +39,8 @@ final class OperationalBoardPilotageAssetTest extends TestCase
         self::assertStringContainsString('Ouvrir le poste ATAK', $partial);
         self::assertStringContainsString('Portail missions', $partial);
         self::assertStringContainsString('Effectifs', $partial);
+        self::assertStringContainsString('back-office/atak/briefing-slides', $partial);
+        self::assertStringContainsString("'can_slides'", $controller);
         self::assertStringNotContainsString('endpoint', strtolower($partial));
         self::assertStringNotContainsString('JSON', $partial);
         self::assertStringNotContainsString('slug', strtolower($partial));

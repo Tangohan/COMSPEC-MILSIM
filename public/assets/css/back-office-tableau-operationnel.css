@@ -577,6 +577,8 @@
 
 .bo-tbo-group__count {
   display: inline-flex;
+  flex: none;
+  white-space: nowrap;
   align-items: center;
   padding: 1px 8px;
   border-radius: 999px;
@@ -1032,7 +1034,7 @@
 
 .bo-tbo-tools__grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 12px;
 }
 
@@ -1068,7 +1070,7 @@
   text-decoration: none;
 }
 
-.bo-tbo .bo-tbo-tool__item:hover strong {
+.bo-tbo a.bo-tbo-tool__item:hover strong {
   color: var(--tbo-accent);
 }
 
@@ -1135,9 +1137,6 @@
   }
   .bo-tbo-types {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .bo-tbo-tools__grid {
-    grid-template-columns: 1fr;
   }
 }
 
