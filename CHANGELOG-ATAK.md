@@ -11,6 +11,15 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## App Réseau : stabilité calculée, passerelles lisibles (ATAK natif 1.74.0)
+
+Non testé en jeu. Capture de TTRD : tuile Stabilité « any % » et section Passerelles et relais confuse.
+- Stabilité : la valeur n'était jamais calculée (affichage « any % »). Elle vient maintenant de la perte de paquets (mesurée par COMSPEC Link et simulée par le téléphone), de la latence, de l'état de COMSPEC Link et des réponses d'Athena : stable, correcte, instable, très instable, ou « liaison coupée ». Sans aucune mesure, la tuile affiche « — » et « pas encore de mesure ».
+- Chemin de la liaison : la carte COMSPEC Link affiche Connecté, Dégradé, Connexion… ou Hors ligne au lieu de LINKED.
+- Passerelles et relais : l'état vide tient sur une ligne, sans répéter le maillage collé à la ligne « Maillage Wave Relay » ; celle-ci est espacée et indique « aucune passerelle » quand il n'y en a pas.
+- Zone radio : « Simulation de liaison dégradée » affiche « désactivée » ou « active : pertes et délais simulés » ; le type de zone n'est plus remplacé par « ? » quand il est inconnu.
+- Paquets envoyés affichés en entier (plus de notation 1e+06). Textes traduits en anglais.
+
 ## Texte du bouton PANIQUE (ATAK natif 1.73.0)
 
 Non testé en jeu. Demande de TTRD : nouveau texte sous PANIQUE, écran Détresse et contact.
