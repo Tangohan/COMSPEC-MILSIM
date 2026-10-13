@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Messagerie réparée, SMS plus fiables, Live cam selon les relais (ATAK natif 1.78.0)
+
+### Résumé joueur
+Type : correctif
+FR : L'app Messages fonctionne à nouveau, et les SMS et le Live cam suivent le réseau
+- Cliquer sur un canal ou un contact ouvre bien la conversation, les listes et le fil défilent et restent où tu les as laissés, et des pastilles comptent les messages non lus par canal, par contact et sur l'icône de l'app.
+- SMS : contacts récents en tête avec leur numéro, brouillon gardé par conversation, compteur de caractères, rappel quand tu n'as pas de réseau, « destinataire hors réseau » au lieu de « non transmis », et un clic sur un SMS non transmis le renvoie.
+- Live cam : l'image suit la liaison à travers les relais (HD, SD, basse, minimale), décroche quand le signal est instable et indique pourquoi le flux est coupé.
+EN : The Messages app works again, and SMS and Live cam follow the network
+- Clicking a channel or a contact opens the conversation, lists and the thread scroll and stay where you left them, and badges count unread messages per channel, per contact and on the app icon.
+- SMS: recent contacts first with their number, a draft kept per conversation, a character counter, a reminder when you have no signal, "recipient out of network" instead of "not sent", and clicking an unsent SMS sends it again.
+- Live cam: the picture follows the link through the relays (HD, SD, low, minimal), drops out when the signal is unstable and tells you why the feed is cut.
+
+### Détail technique
+Non testé en jeu. Demandes de TTRD : clics sur les canaux sans effet, pas de défilement, pas de pastilles de non-lus ; améliorer les SMS ; améliorer les flux vidéo suivant les relais.
+- Cause probable du volet de conversation vide : les initiales d'un nom d'un seul mot (« CH:general ») lisaient un deuxième mot absent, ce qui interrompait le dessin de l'en-tête et de toute la conversation. Corrigé.
+- Non-lus : nouvelle fonction `fn_chatUnread` (canaux, comptes par conversation, « lu ») partagée par la liste et l'icône d'app (`fn_appBadge`). Un message est mémorisé par identifiant ou auteur|heure|texte ; l'historique présent dans les 90 premières secondes compte comme lu.
+- Défilement : `fn_pageRender` relève la position des groupes défilants nommés (`COMSPEC_ATAK_ScrollGroups`) avant d'effacer la page ; la liste et le fil la retrouvent (le fil reste en bas sauf si on était remonté).
+- SMS : brouillon par conversation, compteur 400 caractères, bandeau « pas de réseau », relais affiché, contacts triés par dernier SMS, accusé « HELD » quand le destinataire est hors réseau (`fn_p2pReceive`, `fn_p2pAck`), « non transmis » enregistré après 60 s et renvoi au clic.
+- Live cam : nouvelle fonction `fn_feedLink` (liaison montante publiée toutes les 10 s par chaque client, liaison descendante du téléphone, caméra fixe via l'ATAK le plus proche) ; texture 512/256/128/64 px selon le débit, voile « signal instable » selon les pertes, palier réévalué toutes les 3 s, flux coupé avec sa raison.
+
 ## Menu Échap et Dépannage liaison refondus (ATAK natif 1.77.0)
 
 ### Résumé joueur
