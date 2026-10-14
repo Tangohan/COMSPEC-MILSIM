@@ -5,11 +5,15 @@
 /** @var string $severityFilter */
 /** @var string $statusFilter */
 /** @var string $searchFilter */
+/** @var string $gravityFilter */
+/** @var string $sort */
 /** @var array<string, int> $statusCounts */
-/** @var array<string, array{user_id:int, tenant_id:int, email:string, name:string}> $linkedAccounts */
-/** @var string $defaultFixedMessage */
+/** @var array<string, int> $gravityCounts rapports à traiter (nouveaux ou en cours) par gravité */
+/** @var array<string, array{user_id:int, tenant_id:int, email:string, name:string, lang?:string}> $linkedAccounts */
 
 use App\Repositories\AtakModReportRepository as Reports;
+use App\Services\Monitoring\AtakModReportGravity as Gravity;
+use App\Services\Monitoring\AtakModReportReplyService as Replies;
 
 $rows = is_array($rows ?? null) ? $rows : [];
 $total = (int) ($total ?? count($rows));
@@ -17,9 +21,11 @@ $totalAll = (int) ($totalAll ?? $total);
 $severityFilter = trim((string) ($severityFilter ?? ''));
 $statusFilter = trim((string) ($statusFilter ?? ''));
 $searchFilter = trim((string) ($searchFilter ?? ''));
+$gravityFilter = trim((string) ($gravityFilter ?? ''));
+$sort = ($sort ?? '') === Reports::SORT_RECENT ? Reports::SORT_RECENT : Reports::SORT_GRAVITY;
 $statusCounts = is_array($statusCounts ?? null) ? $statusCounts : [];
+$gravityCounts = is_array($gravityCounts ?? null) ? $gravityCounts : [];
 $linkedAccounts = is_array($linkedAccounts ?? null) ? $linkedAccounts : [];
-$defaultFixedMessage = (string) ($defaultFixedMessage ?? '');
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
@@ -77,8 +83,14 @@ $csrfToken = \App\Core\Csrf::token();
 $base = url('admin/atak-mod-reports');
 $statusChoices = Reports::STATUS_LABELS;
 
-$listUrl = static function (array $overrides = []) use ($base, $severityFilter, $statusFilter, $searchFilter): string {
-    $params = array_merge(['severity' => $severityFilter, 'status' => $statusFilter, 'q' => $searchFilter], $overrides);
+$listUrl = static function (array $overrides = []) use ($base, $severityFilter, $statusFilter, $searchFilter, $gravityFilter, $sort): string {
+    $params = array_merge([
+        'severity' => $severityFilter,
+        'status' => $statusFilter,
+        'q' => $searchFilter,
+        'gravity' => $gravityFilter,
+        'sort' => $sort === Reports::SORT_RECENT ? Reports::SORT_RECENT : '',
+    ], $overrides);
     $params = array_filter($params, static fn ($v): bool => trim((string) $v) !== '');
 
     return $params === [] ? $base : $base . '?' . http_build_query($params);
@@ -87,14 +99,17 @@ $listUrl = static function (array $overrides = []) use ($base, $severityFilter, 
 $returnFields = '<input type="hidden" name="_csrf" value="' . $h($csrfToken) . '">'
     . '<input type="hidden" name="return_severity" value="' . $h($severityFilter) . '">'
     . '<input type="hidden" name="return_status" value="' . $h($statusFilter) . '">'
-    . '<input type="hidden" name="return_q" value="' . $h($searchFilter) . '">';
+    . '<input type="hidden" name="return_q" value="' . $h($searchFilter) . '">'
+    . '<input type="hidden" name="return_gravity" value="' . $h($gravityFilter) . '">'
+    . '<input type="hidden" name="return_sort" value="' . $h($sort === Reports::SORT_RECENT ? Reports::SORT_RECENT : '') . '">';
 
-$hasFilters = $severityFilter !== '' || $statusFilter !== '' || $searchFilter !== '';
-$replyTemplates = [
-    'Corrigé' => $defaultFixedMessage,
-    'En cours' => 'Merci pour votre signalement. Nous avons reproduit le problème et travaillons sur une correction.',
-    'Besoin d’infos' => 'Merci pour votre signalement. Pouvez-vous nous en dire plus (ce que vous faisiez, sur quel serveur) ? Répondez sur le Discord COMSPEC, salon support.',
-    'Pas un bug' => 'Merci pour votre signalement. Après vérification, ce comportement est normal dans le mod : rien à corriger de notre côté.',
+$hasFilters = $severityFilter !== '' || $statusFilter !== '' || $searchFilter !== '' || $gravityFilter !== '';
+/** Gravité → ton de pastille */
+$gravityTone = [
+    Gravity::CRITICAL => 'rose',
+    Gravity::HIGH => 'amber',
+    Gravity::NORMAL => 'blue',
+    Gravity::LOW => 'slate',
 ];
 ?>
 <div class="pa amr">
@@ -133,6 +148,26 @@ $replyTemplates = [
                         </div>
                     </dl>
                 </aside>
+            </div>
+            <div class="amr-gravity" aria-label="Rapports à traiter par gravité">
+                <p class="amr-gravity__label">À traiter par gravité</p>
+                <ul class="amr-gravity__list">
+                    <?php foreach (Gravity::LEVELS as $level): ?>
+                    <li>
+                        <a class="amr-grav-chip amr-grav-chip--<?= $h($level) ?><?= $gravityFilter === $level ? ' is-active' : '' ?>"
+                           href="<?= $h($listUrl(['gravity' => $gravityFilter === $level ? '' : $level])) ?>"
+                           title="<?= $h(Gravity::HINTS[$level]) ?>">
+                            <span class="amr-grav-chip__dot" aria-hidden="true"></span>
+                            <?= $h(Gravity::LABELS[$level]) ?>
+                            <strong><?= (int) ($gravityCounts[$level] ?? 0) ?></strong>
+                        </a>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <p class="amr-gravity__hint">
+                    Calculée à la réception d’après le message. Critique et signalements joueurs : e-mail à l’exploitation.
+                    Faible : jamais d’e-mail au joueur. Corrigez-la sur chaque rapport si besoin.
+                </p>
             </div>
         </header>
 
@@ -173,6 +208,22 @@ $replyTemplates = [
                         <option value="info" <?= $severityFilter === 'info' ? 'selected' : '' ?>>Infos</option>
                     </select>
                 </label>
+                <label class="amr-search__field amr-search__field--type">
+                    <span class="amr-label">Gravité</span>
+                    <select name="gravity">
+                        <option value="" <?= $gravityFilter === '' ? 'selected' : '' ?>>Toutes</option>
+                        <?php foreach (Gravity::LABELS as $value => $label): ?>
+                        <option value="<?= $h($value) ?>" <?= $gravityFilter === $value ? 'selected' : '' ?>><?= $h($label) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label class="amr-search__field amr-search__field--type">
+                    <span class="amr-label">Trier</span>
+                    <select name="sort">
+                        <option value="" <?= $sort === Reports::SORT_GRAVITY ? 'selected' : '' ?>>Plus graves d’abord</option>
+                        <option value="<?= $h(Reports::SORT_RECENT) ?>" <?= $sort === Reports::SORT_RECENT ? 'selected' : '' ?>>Plus récents d’abord</option>
+                    </select>
+                </label>
                 <div class="amr-search__actions">
                     <button type="submit" class="pa-btn pa-btn--ink">Filtrer</button>
                     <?php if ($hasFilters): ?>
@@ -197,18 +248,25 @@ $replyTemplates = [
                         <button type="submit" name="bulk_action" value="dismissed" class="pa-btn pa-btn--sm pa-btn--line" data-amr-needs-selection>Sans suite</button>
                         <button type="submit" name="bulk_action" value="delete" class="pa-btn pa-btn--sm amr-btn--danger" data-amr-needs-selection
                                 onclick="return confirm('Supprimer définitivement les rapports cochés ?');">Supprimer</button>
+                        <span class="amr-bulk__gravity">
+                            <label class="amr-sr" for="amr-gravity-to">Nouvelle gravité</label>
+                            <select id="amr-gravity-to" name="gravity_to">
+                                <?php foreach (Gravity::LABELS as $value => $label): ?>
+                                <option value="<?= $h($value) ?>"><?= $h($label) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <button type="submit" name="bulk_action" value="gravity" class="pa-btn pa-btn--sm pa-btn--line" data-amr-needs-selection>Changer la gravité</button>
+                        </span>
                     </div>
                     <label class="amr-check amr-bulk__notify">
                         <input type="checkbox" name="notify" value="1" checked>
-                        <span>Prévenir les joueurs quand je marque corrigé</span>
+                        <span>Prévenir les joueurs quand je marque corrigé (message type dans leur langue, sans e-mail si la gravité est faible)</span>
                     </label>
-                    <input type="hidden" name="notify_message" value="<?= $h($defaultFixedMessage) ?>">
                 </form>
 
                 <form method="post" action="<?= $h(url('admin/atak-mod-reports/bulk')) ?>" class="amr-bulk__row amr-bulk__row--all">
                     <?= $returnFields ?>
                     <input type="hidden" name="scope" value="filter">
-                    <input type="hidden" name="notify_message" value="<?= $h($defaultFixedMessage) ?>">
                     <p class="amr-bulk__label">
                         Tout d’un coup, sur les <strong><?= (int) $total ?></strong> rapport(s)
                         <?= $hasFilters ? 'de ce filtre' : 'du journal' ?> :
@@ -273,6 +331,10 @@ $replyTemplates = [
                     $canSite = $account !== null && $account['user_id'] > 0 && $account['tenant_id'] > 0;
                     $canEmail = $account !== null && $account['email'] !== '';
                     $hits = (int) ($row['hit_count'] ?? 1);
+                    $grav = Gravity::normalize((string) ($row['gravity'] ?? '')) ?? Gravity::NORMAL;
+                    $isAuto = Replies::isAuto($row);
+                    $playerLang = Replies::lang($account);
+                    $mailDefault = $canEmail && Gravity::mailsPlayer($grav);
                     $replyText = trim((string) ($row['reply_text'] ?? ''));
                     $replyChannels = array_filter(explode(',', (string) ($row['reply_channels'] ?? '')));
                     ?>
@@ -282,8 +344,14 @@ $replyTemplates = [
                                 <input type="checkbox" name="ids[]" value="<?= $id ?>" form="amr-bulk" data-amr-item aria-label="Cocher ce rapport">
                             </label>
                             <div class="amr-card__tags">
+                                <span class="amr-grav-chip amr-grav-chip--<?= $h($grav) ?> amr-grav-chip--static" title="<?= $h(Gravity::HINTS[$grav]) ?>">
+                                    <span class="amr-grav-chip__dot" aria-hidden="true"></span><?= $h(Gravity::LABELS[$grav]) ?>
+                                </span>
                                 <span class="pa-pill pa-pill--<?= $h($statusTone[$wf]) ?>"><?= $h($statusChoices[$wf]) ?></span>
                                 <span class="pa-pill pa-pill--<?= $h($sevTone) ?>"><?= $h($sevLabel) ?></span>
+                                <?php if ($isAuto): ?>
+                                <span class="amr-card__channel" title="Envoyé tout seul par le mod, le joueur n’a rien signalé">Détection auto</span>
+                                <?php endif; ?>
                                 <span class="amr-card__channel"><?= $h((string) ($row['channel'] ?? '') ?: '—') ?></span>
                                 <?php if ($hits > 1): ?>
                                 <span class="amr-card__hits" title="Envois regroupés (même problème, même joueur, moins de 30 min d’écart)">× <?= $hits ?></span>
@@ -309,6 +377,7 @@ $replyTemplates = [
                                 <dd>
                                     <?php if ($account !== null): ?>
                                         <span class="amr-dot amr-dot--ok" aria-hidden="true"></span>Lié<?= $canEmail ? ' · ' . $h($maskEmail($account['email'])) : ' · sans e-mail' ?>
+                                        · <?= $playerLang === 'en' ? 'anglais' : 'français' ?>
                                     <?php else: ?>
                                         <span class="amr-dot" aria-hidden="true"></span>Aucun compte lié
                                     <?php endif; ?>
@@ -350,6 +419,19 @@ $replyTemplates = [
                                             class="pa-btn pa-btn--sm <?= $value === Reports::STATUS_FIXED ? 'pa-btn--mint' : 'pa-btn--line' ?>"><?= $h($label) ?></button>
                                 <?php endforeach; ?>
                             </form>
+                            <form method="post" action="<?= $h(url('admin/atak-mod-reports/gravity')) ?>" class="amr-card__gravity">
+                                <?= $returnFields ?>
+                                <input type="hidden" name="report_id" value="<?= $id ?>">
+                                <label>
+                                    <span class="amr-label">Gravité</span>
+                                    <select name="gravity" data-amr-autosubmit>
+                                        <?php foreach (Gravity::LABELS as $value => $label): ?>
+                                        <option value="<?= $h($value) ?>" <?= $grav === $value ? 'selected' : '' ?>><?= $h($label) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </label>
+                                <noscript><button type="submit" class="pa-btn pa-btn--sm pa-btn--line">OK</button></noscript>
+                            </form>
                             <form method="post" action="<?= $h(url('admin/atak-mod-reports/delete')) ?>"
                                   onsubmit="return confirm('Supprimer définitivement ce rapport ?');">
                                 <?= $returnFields ?>
@@ -364,9 +446,18 @@ $replyTemplates = [
                                 <form method="post" action="<?= $h(url('admin/atak-mod-reports/reply')) ?>" class="amr-reply">
                                     <?= $returnFields ?>
                                     <input type="hidden" name="report_id" value="<?= $id ?>">
+                                    <p class="amr-note">
+                                        <?= $isAuto
+                                            ? 'Erreur détectée automatiquement par le mod : le joueur n’a rien signalé, les messages types et l’e-mail le disent.'
+                                            : 'Signalement écrit par le joueur depuis le jeu.' ?>
+                                        <?php if ($account !== null): ?>
+                                        Langue du joueur : <strong><?= $playerLang === 'en' ? 'anglais' : 'français' ?></strong>
+                                        (profil Athena)<?= $playerLang === 'en' ? ', écrivez votre réponse en anglais' : '' ?>.
+                                        <?php endif; ?>
+                                    </p>
                                     <div class="amr-reply__templates" role="group" aria-label="Messages types">
-                                        <?php foreach ($replyTemplates as $tplLabel => $tplText): ?>
-                                        <button type="button" class="amr-chip" data-amr-template="<?= $h($tplText) ?>"><?= $h($tplLabel) ?></button>
+                                        <?php foreach (Replies::templates($isAuto, $playerLang) as $tplKey => $tplText): ?>
+                                        <button type="button" class="amr-chip" data-amr-template="<?= $h($tplText) ?>"><?= $h(Replies::TEMPLATE_LABELS[$tplKey] ?? $tplKey) ?></button>
                                         <?php endforeach; ?>
                                     </div>
                                     <label class="amr-reply__field">
@@ -385,8 +476,8 @@ $replyTemplates = [
                                             <span>Notification sur Athena</span>
                                         </label>
                                         <label class="amr-check<?= $canEmail ? '' : ' is-off' ?>">
-                                            <input type="checkbox" name="via_email" value="1" <?= $canEmail ? 'checked' : 'disabled' ?>>
-                                            <span>E-mail<?= $canEmail ? ' à ' . $h($maskEmail($account['email'])) : ' (adresse inconnue)' ?></span>
+                                            <input type="checkbox" name="via_email" value="1" <?= $canEmail ? ($mailDefault ? 'checked' : '') : 'disabled' ?>>
+                                            <span>E-mail<?= $canEmail ? ' à ' . $h($maskEmail($account['email'])) : ' (adresse inconnue)' ?><?= $canEmail && !$mailDefault ? ' (décoché : gravité faible)' : '' ?></span>
                                         </label>
                                         <label class="amr-reply__then">
                                             <span class="amr-label">Puis</span>
@@ -465,6 +556,7 @@ $replyTemplates = [
     }
     root.addEventListener('change', function (e) {
         if (e.target && e.target.hasAttribute('data-amr-item')) { refresh(); }
+        if (e.target && e.target.hasAttribute('data-amr-autosubmit') && e.target.form) { e.target.form.submit(); }
     });
     root.addEventListener('click', function (e) {
         var btn = e.target && e.target.closest ? e.target.closest('[data-amr-template]') : null;
