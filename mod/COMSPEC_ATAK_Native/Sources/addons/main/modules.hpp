@@ -449,3 +449,22 @@ class COMSPEC_ATAK_Module_Relay: COMSPEC_ATAK_Module_DataBase {
         description = "$STR_COMSPEC_ATAK_CFG_22558DD904";
     };
 };
+// Contrôle Zeus des ATAK (fn_moduleZeusControl, fn_moduleZeusJammer) : Zeus seulement, formulaire à la pose.
+class COMSPEC_ATAK_Module_ZeusControl: COMSPEC_ATAK_Module_DataBase {
+    scope = 1;
+    scopeCurator = 2;
+    category = "COMSPEC_ATAK_Zeus";
+    displayName = "$STR_COMSPEC_ATAK_CFG_511DBA2C67";
+    icon = "\z\comspec_atak_native\addons\main\data\app_ew.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\app_ew.paa";
+    function = "comspec_atak_native_fnc_moduleZeusControl";
+};
+class COMSPEC_ATAK_Module_ZeusJammer: COMSPEC_ATAK_Module_DataBase {
+    scope = 1;
+    scopeCurator = 2;
+    category = "COMSPEC_ATAK_Zeus";
+    displayName = "$STR_COMSPEC_ATAK_CFG_EC6B15B9EF";
+    icon = "\z\comspec_atak_native\addons\main\data\app_ew.paa";
+    portrait = "\z\comspec_atak_native\addons\main\data\app_ew.paa";
+    function = "comspec_atak_native_fnc_moduleZeusJammer";
+};

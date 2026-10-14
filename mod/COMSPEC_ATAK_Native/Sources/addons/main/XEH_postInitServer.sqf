@@ -12,6 +12,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_PlanSrvOn", true, true];
 ["init"] call comspec_atak_native_fnc_captureServer;
 // Socles de recharge CS-10 : mémoire, recharge et emplacements (fn_dockServer).
 ["init"] call comspec_atak_native_fnc_dockServer;
+// Contrôle Zeus des ATAK : effets par joueur, brouilleurs de zone, report à la réapparition (fn_zeusServer).
+["init"] call comspec_atak_native_fnc_zeusServer;
 // Adresse publique du serveur, pour reconnaître le serveur de la communauté (fn_serverPresence).
 ["serverInit"] call comspec_atak_native_fnc_serverPresence;
 // Téléphones accrochés aux gilets (fn_vestMount) restés seuls après une déconnexion.

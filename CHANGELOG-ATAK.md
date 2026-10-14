@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Contrôle Zeus des ATAK : désactiver, couper le son, punir, brouiller, dégâts (ATAK natif 1.93.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le Zeus peut maintenant agir sur ton ATAK
+- Il peut désactiver ou verrouiller ton téléphone avec un message, et couper ses haut-parleurs (musique, sons, vibrations).
+- Il peut te punir par le téléphone : avertissement ou message en plein écran, écran qui bugue, alarme stridente que les joueurs autour entendent.
+- Il peut brouiller ton téléphone seul ou toute une zone, et les brouilleurs du mod Crows Electronic Warfare brouillent aussi l'ATAK.
+- Il peut aussi fêler l'écran, déclencher une impulsion électromagnétique, faire surchauffer le téléphone, vider la batterie, le détruire ou le réparer.
+EN : Zeus can now act on your ATAK
+- They can disable or lock your phone with a message, and mute its speakers (music, sounds, vibrations).
+- They can punish you through the phone: full-screen warning or message, glitching screen, shrill alarm that nearby players hear.
+- They can jam your phone alone or a whole area, and Crows Electronic Warfare jammers now jam the ATAK too.
+- They can also crack the screen, trigger an electromagnetic pulse, overheat the phone, empty the battery, destroy it or repair it.
+
+### Détail technique
+
+- Nouveau dossier `functions/zeus`. Le serveur seul écrit l'état (`fn_zeusServer`, événement CBA `comspec_atak_native_zeus`, accepté d'un curateur assigné, de l'hôte ou d'un admin connecté) : variable d'unité publique `COMSPEC_ATAK_ZeusFx` = `[[clé, valeur, fin]...]` (clés `off`, `lock`, `mute`, `jam`, `heat`, `drain`), lue par `fn_zeusFx`. Effets durables jusqu'à l'action inverse ou « Tout rétablir » (ou une durée), reportés à la réapparition (`EntityRespawned`) et vus par les arrivants (variable publique). Effets ponctuels relayés au joueur (`comspec_atak_native_zeusFx` → `fn_zeusClient`).
+- Côté joueur : `fn_canUse` renvoie `zeus` (désactivé) ou `heat` (surchauffe 3) et le téléphone se range ; `fn_deviceOverlay` masque l'app et appelle `fn_zeusOverlay` (écran rouge verrouillé, bandes de parasites, voile de surchauffe) ; muet : `fn_vibrate`, `fn_fx`, `fn_musicTick`/`fn_musicAction` (musique et haut-parleur coupés), `fn_btInit` (sons Bluetooth) ; `fn_battery` compte surchauffe et décharge ; dégâts par `fn_deviceDamage` / `fn_deviceRepair` (réglage serveur « Dégâts du téléphone » requis).
+- Brouillage : 7e élément « force » dans `COMSPEC_ATAK_Jammers` (`fn_linkQuality`, `fn_ewEffects`), brouilleurs de zone Zeus remis par le serveur toutes les 5 s si une écriture d'un client les efface. `fn_zeusJam` : brouillage ciblé + brouilleurs Crows EW lus dans `crowsEW_jamming_jamMap` (format déduit du mod, non vérifié en jeu), réglage serveur « Brouilleurs Crows Electronic Warfare ».
+- Zeus : menu clic droit ZEN « ATAK · Contrôle Zeus » (Accès, Son, Punir, Brouiller, Dégâts et effets, Tout rétablir) sur la sélection ou l'unité survolée (`fn_zeusMenu`) ; il remplace le menu ZEN / ACE Zeus d'Overwatch « ATAK — Infos / dégâts / brouillage », qui agissait sur l'état du téléphone d'Overwatch. Modules Zeus sans ZEN : « ATAK · Contrôle Zeus » (joueur sous le module, rayon, tous, camp ; intensité, durée, message) et « ATAK · Brouilleur de zone ». Aide : Manuel de terrain > COMSPEC — ATAK > Contrôle Zeus des ATAK (FR/EN).
+- À tester en jeu (Zeus + un joueur) : chaque entrée du menu clic droit et les deux modules ; verrou (écran rouge, clics bloqués, message), désactivation (téléphone rangé, message), muet (musique coupée, plus de vibration sonore), alarme entendue par un joueur proche, brouillage ciblé et de zone (barres de signal, app Réseau), surchauffe 1-2-3, IEM, destruction puis réparation ; persistance après réapparition et pour un joueur qui rejoint ; un brouilleur Crows EW posé près d'un joueur.
+
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
 
 ### Résumé joueur

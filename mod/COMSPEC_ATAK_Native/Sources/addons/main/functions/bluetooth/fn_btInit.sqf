@@ -20,6 +20,8 @@ if (!hasInterface) exitWith {};
     { if (_y isEqualType objNull && {isNull _y}) then { _h deleteAt _x; }; } forEach +_h;
     _a params [["_src", objNull], ["_kind", ""], ["_ref", ""], ["_range", 20], ["_id", ""]];
     if (isNull _src || {_ref isEqualTo ""}) exitWith {};
+    // Haut-parleurs du téléphone qui joue coupés par le Zeus (fn_zeusFx "mute") : aucun son.
+    if (["mute", false, _src] call comspec_atak_native_fnc_zeusFx) exitWith {};
     if (_kind isEqualTo "snd") exitWith {
         private _o = _src say3D [_ref, _range];
         _h set [_id, _o];
