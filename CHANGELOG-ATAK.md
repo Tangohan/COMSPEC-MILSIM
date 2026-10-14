@@ -38,72 +38,43 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Numéro de build complet dans le téléphone (ATAK natif 1.96.0)
+## Regroupement : numéro de build, photo refusée expliquée, antenne, carte plus lisible, boutons verts (ATAK natif 1.95.0)
 
 ### Résumé joueur
-Type : patch
-FR : Le téléphone affiche son numéro de build complet
-- Réglages, Crédits et Statut montrent maintenant la version suivie de la date du build et d'un code court, par exemple 1.96.0 - 2026.10.14 a1b2c3d.
-- Ce numéro est aussi écrit en tête du journal que tu envoies au support : on sait tout de suite quel build tu utilises.
-- La notification « mise à jour disponible » fonctionne comme avant.
-EN : The phone shows its full build number
-- Settings, Credits and Status now show the version followed by the build date and a short code, for example 1.96.0 - 2026.10.14 a1b2c3d.
-- This number is also written at the top of the log you send to support, so we know right away which build you run.
-- The "update available" notice works as before.
+Type : correctif
+FR : Carte plus lisible, antenne vissée sur la coque, numéro de build complet
+- Sur la petite carte du téléphone, les noms des repères sont plus grands et les symboles de la mission sont à l'échelle de l'écran ; le calque « Cartouches » s'appelle maintenant « Coordonnées repères ».
+- L'antenne d'extension part du port de la coque au lieu de flotter au-dessus, sur tous les modèles, et le texte des boutons verts n'a plus de contour noir.
+- Si la formule de ta communauté n'inclut pas la carte Athena, une fenêtre explique une fois pourquoi ta photo n'est pas partie.
+- Réglages, Crédits et Statut affichent la version avec la date du build et un code court, aussi écrits en tête du journal envoyé au support.
+EN : Clearer map, antenna screwed onto the case, full build number
+- On the phone's small map, marker names are larger and mission symbols scale with the screen; the "Labels" layer is now called "Marker coords".
+- The extension antenna starts from the case port instead of floating above it, on every model, and green button labels no longer have a black outline.
+- If your community's plan does not include the Athena map, a window explains once why your photo was not sent.
+- Settings, Credits and Status show the version with the build date and a short code, also written at the top of the log sent to support.
 
 ### Détail technique
+Regroupe #820, #822, #825, #826, #827 et #829 (une seule version : ATAK natif 1.95.0, COMSPEC Link inchangé 2.0.85 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.14 7ba409e » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin, que HEMTT ne produit pas et dont l’ancienne copie ne décrit plus les textures d’antenne régénérées).
+
+#### Numéro de build complet dans le téléphone (#822)
+
 - Règle de numérotation commune : `docs/VERSIONING.md` (MAJEUR.MINEUR.CORRECTIF, MINEUR +1 par sortie ou regroupement, CORRECTIF +1 pour un correctif seul d'une version déjà sortie, empreinte de build jamais comparée).
 - `build_info.hpp` (`BUILD_STAMP`, vide dans le dépôt) inclus par `script_component.hpp` ; posé par `build_mod.bat` (git + PowerShell) ou `tools/stamp_build.py`, puis remis à vide.
 - `COMSPEC_ATAK_NativeBuild` = « VERSION_STR - empreinte » (« - dev » sans empreinte) : Réglages, Crédits, Statut, app Debug (Vue d'ensemble, DLL), page texte STATUT, dump debug, check de démarrage Discord, RPT (BOOT) et journal de session COMSPEC (module VERSION, au postInit client).
 - `COMSPEC_ATAK_NativeVersion` et `mod_version` envoyés au site restent `MAJEUR.MINEUR.CORRECTIF` ; `fn_integrityCheck` ignore tout ce qui suit un espace dans les versions comparées.
 - Test : `AtakReleaseInfoTest::testBuildStampIsNeverCommitted`.
 
-
-## Photo refusée faute de carte Athena : une fenêtre claire au joueur (ATAK natif 1.95.0)
-
-### Résumé joueur
-Type : correctif
-FR : Une fenêtre explique pourquoi ta photo n'est pas partie
-- Si la formule de ta communauté n'inclut pas la carte et les liaisons Athena, une fenêtre s'ouvre à la première photo refusée : ce qui s'est passé, pourquoi, et quoi faire (prévenir l'administrateur de ta communauté).
-- Elle ne s'affiche qu'une fois par partie, avec un bouton OK.
-EN : A window explains why your photo was not sent
-- If your community's plan does not include the Athena map and links, a window opens on the first refused photo: what happened, why, and what to do (tell your community's administrator).
-- It only shows once per session, with an OK button.
-
-### Détail technique
+#### Photo refusée faute de carte Athena : une fenêtre claire au joueur (#820)
 
 - XEH_postInitClient (retour des photos) : quand le dernier refus porte `feature_unavailable` (connect, 1.93.0), `BIS_fnc_guiMessage` sur l'écran de jeu (attend la fermeture du menu Échap), une fois par session (`COMSPEC_ATAK_PlanModalShown`), à la place de la notification « Photo refusée par Athena ». Textes FR, traduits dans i18n/en.txt.
-- main.pbo reconstruit avec HEMTT 1.17.2 (texHeaders.bin repris de 1.93.0).
 - À tester en jeu : communauté sans la carte, prendre deux photos. La fenêtre s'ouvre une seule fois, lisible en FR et en EN (Réglages > Langue), OK la ferme. Communauté avec la carte : aucune fenêtre, envoi normal.
 
-## Texte des boutons verts moins gras (ATAK natif, numéro attribué au regroupement)
+#### Texte des boutons verts moins gras (#825)
 
-### Résumé joueur
-Type : correctif
-FR : Le texte des boutons verts est plus fin et plus lisible
-- Les boutons verts du téléphone (RÉDIGER, REPRENDRE, ACCUSER RÉCEPTION, l'option choisie dans les Réglages comme COQUE NERVURÉE) n'ont plus de contour noir autour des lettres.
-- Les autres boutons gardent leur aspect, avec un texte un peu plus net.
-EN : Green button labels are thinner and easier to read
-- The phone's green buttons (WRITE, RESUME, ACKNOWLEDGE, the selected option in Settings such as RIBBED CASE) no longer have a black outline around the letters.
-- Other buttons keep their look, with slightly crisper text.
-
-### Détail technique
 - `COMSPEC_RscButton` (ui/controls.hpp) : `shadow=0`. La classe héritait du `shadow=2` du RscButton du jeu (contour noir du texte), qui doublait l'épaisseur du texte noir sur fond vert. Touche tous les boutons du téléphone (classes dérivées comprises) ; police inchangée (Roboto Condensed Bold, ou la police choisie dans Réglages > Police).
 
-## Antenne d'extension fixée sur la coque (ATAK natif, version attribuée au regroupement)
+#### Antenne d'extension fixée sur la coque (#826)
 
-### Résumé joueur
-Type : correctif
-FR : L'antenne d'extension est vissée sur la coque
-- L'antenne ne flotte plus au-dessus du téléphone : elle part du port de la coque, en haut à gauche.
-- Un petit bossage noir avec son écrou montre où elle est vissée, de face comme de dos.
-- Elle suit aussi le bord de la coque sur les autres modèles de téléphone et sur la tablette.
-EN : The extension antenna is screwed onto the case
-- The antenna no longer floats above the phone: it now starts from the case port, top left.
-- A small black boss with its nut shows where it is screwed in, from the front and from the back.
-- It also follows the edge of the case on the other phone models and on the tablet.
-
-### Détail technique
 - Cause : l'antenne était dessinée avec « garder les proportions » (style 2096) dans un cadre 384 x 1536 qui dépasse
   de la coque. Au moindre écart entre le rapport de pixels calculé et l'écran, Arma recentrait l'image dans ce cadre
   très haut et elle remontait d'environ 50 px de texture, alors que la coque (style 48) est étirée sur le sien.
@@ -114,25 +85,17 @@ EN : The extension antenna is screwed onto the case
 - gen_assets.py : bossage moulé et écrou six pans sous l'embase (`_boss_svg`), absent de l'icône d'inventaire.
   antenna_*_land/port/back.paa régénérés.
 
-## Carte du téléphone : noms des repères plus lisibles, symboles de la mission à l'échelle de l'écran (ATAK natif, numéro au regroupement)
+#### Carte du téléphone : noms des repères plus lisibles, symboles de la mission à l'échelle de l'écran (#827)
 
-### Résumé joueur
-Type : correctif
-FR : Sur la petite carte du téléphone, les noms se lisent et les symboles ne prennent plus toute la place
-- Les noms des repères sont plus grands, en blanc pur sur une plaque plus sombre.
-- Les symboles posés par la mission (symboles OTAN bleus, repères, zones, traits) sont à l'échelle de l'écran du téléphone, comme les unités : plus petits quand le téléphone est porté, normaux en plein écran.
-- Le réglage Réglages > Carte « taille des symboles » s'applique aussi à ces symboles.
-EN : On the phone's small map, names are readable and symbols no longer take over
-- Marker names are larger, in pure white on a darker plate.
-- Symbols placed by the mission (blue NATO symbols, markers, areas, lines) now scale with the phone screen, like units: smaller when the phone is worn, normal in full screen.
-- The Settings > Map "symbol size" option now applies to these symbols too.
-
-### Détail technique
 - `COMSPEC_RscMapAtak` : `showMarkers=0` (la carte Arma dessinait les marqueurs à taille fixe en pixels, 32 px pour l'OTAN) ; `COMSPEC_RscMapJtac` garde `showMarkers=1`.
 - Nouveau `fn_mapGameMarkers` : redessine allMapMarkers (ICON à `taille CfgMarkers x markerSize x 0,62 x écran (0,45..1,2) x réglage symboles`, RECTANGLE / ELLIPSE à la brosse CfgMarkerBrushes avec bordure, POLYLINE en trait fin). Propriétés relues toutes les secondes ou dès que le nombre de marqueurs change, position lue à chaque image.
 - `fn_mapMarkerText` : texte 0,021 -> 0,024, ligne 2 0,86 -> 0,9, plaque 0,84 -> 0,93 d'opacité, texte blanc pur ; décalage du nom calculé sur la taille réellement dessinée (`COMSPEC_ATAK_MkScale`).
 - `fn_mapOnDraw` : plancher du facteur texte écran 0,8 -> 0,95 (noms de lieux, indicatifs, repères).
 - Non testé en jeu. À vérifier : téléphone porté et plein écran (S7 et un autre terminal), zoom loin / moyen / près ; symboles OTAN plus petits et une seule fois (si un grand symbole Arma reste dessiné sous le petit, `showMarkers` n'est pas pris en compte par le jeu) ; zones pleines, bordées et hachurées ; traits tracés à la main ; carte JTAC inchangée.
+
+#### Calque « Cartouches » renommé « Coordonnées repères » (#829)
+
+- Le libellé faisait penser à des munitions. Même réglage (`COMSPEC_ATAK_MarkerTags` / `native_marker_tags`) : nom et coordonnées E / N sous les repères, en zoom rapproché. CALQUES de la carte : « Coordonnées repères » ; Réglages > Carte et page Expérience ATAK du site : « Coordonnées des repères ». en.txt et modèle communautaire mis à jour.
 
 ---
 
