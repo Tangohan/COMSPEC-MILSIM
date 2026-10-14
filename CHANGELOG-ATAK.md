@@ -54,7 +54,7 @@ EN : The Plan app is redesigned and you share your cameras by NFC, Bluetooth or 
 - Share by NFC (phones back to back, even with no network at all), by Bluetooth (short range, no network) or through relays (no distance limit).
 
 ### Détail technique
-Regroupe #833 et #834 (une seule version : ATAK natif 1.96.0, COMSPEC Link inchangé 2.0.85 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « STAMP » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin).
+Regroupe #833 et #834 (une seule version : ATAK natif 1.96.0, COMSPEC Link inchangé 2.0.85 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.14 e9bdc48 » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin).
 
 #### App Plan refaite : palette d'outils, menus, annuler / rétablir, salles collaboratives, aide et tutoriel (#833)
 
