@@ -148,6 +148,26 @@ EN : The phone really tells you when an update is out
 - COMSPEC Link 2.0.85 : `LatestVersions` renvoie `OK|atak|link|résumé FR|résumé EN` (anciens main.pbo : champs en plus ignorés). Le résumé suit la langue du téléphone.
 - Test en jeu sans changer de main.pbo : console de debug, `["remote", "1.0.0"] spawn comspec_atak_native_fnc_integrityCheck` (simule un ATAK 1.0.0, profil non modifié).
 - À tester en jeu (DLL rebuild via build_mod.bat pour le résumé) : service Athéna sur « Oui », la commande ci-dessus → bandeau orange « Mise à jour ATAK disponible : version 1.94.0 (vous avez la 1.0.0). … », carte épinglée en tête des Notifications, lignes `[UPDATE]` dans l'app Debug ; en anglais, texte entièrement en anglais ; avec le main.pbo à jour, journal « ATAK 1.94.0 à jour » et aucune carte.
+## Liaison : 502/504 en alerte sans rapport auto, ligne ZEN une fois, dump boot plus clair (connect.pbo)
+
+### Résumé joueur
+Type : correctif
+FR : Moins de fausses erreurs dans le journal de ton téléphone
+- Une erreur 502 ou 504 passagère s'affiche en alerte et n'envoie plus de rapport d'erreur automatique.
+- L'alerte de compatibilité ZEN n'apparaît plus à chaque mission.
+- Le diagnostic de démarrage affiche la version de l'ATAK natif et précise que la session Athena n'est pas encore ouverte à ce moment-là.
+EN : Fewer false errors in your phone's log
+- A passing 502 or 504 error shows as a warning and no longer sends an automatic error report.
+- The ZEN compatibility warning no longer shows up at every mission.
+- The startup diagnostic shows the native ATAK version and says the Athena session is not open yet at that point.
+
+### Détail technique
+
+- Connect `fn_extensionCallback` (PostError) : 502 et 504 rejoignent 0/-1/401/403/429/503 en WARN, donc plus de `reportDiag` automatique (502 vu le 2026-10-14 à 10:50:24 UTC sur `POST /api/atak/explosive-timers`, pendant le reload PHP-FPM du déploiement de #802).
+- Connect `XEH_preInit` : « Stub zen_attributes_fnc_addAttribute installé » passe en INFO, une fois par lancement d'Arma (`uiNamespace`).
+- Connect `fn_diagStatusSnapshot` : « Version des mods » affiche « ATAK natif x.y.z » quand l'ancienne surcouche Athena n'est pas chargée (avant : « Athena — »).
+- Connect `fn_logDump` : `athenaReady=false` du dump « boot » est suivi de « (avant le handshake : normal au démarrage) » ; ce dump part à CBA_settingsInitialized, avant le handshake.
+- comspec_overwatch_connect.pbo repatché (tools/pbo_patch.py, 4 fichiers). main.pbo inchangé.
 
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
 
