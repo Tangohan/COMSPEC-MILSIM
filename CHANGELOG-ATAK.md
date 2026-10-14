@@ -38,23 +38,23 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Regroupement : Zeus sur les ATAK, nouveaux terminaux, carte, drone, mise à jour (ATAK natif 1.93.0, COMSPEC Link 2.0.85)
+## Regroupement : Zeus sur les ATAK, Comptes rendus, nouveaux terminaux, carte, drone, mise à jour (ATAK natif 1.93.0, COMSPEC Link 2.0.85)
 
 ### Résumé joueur
 Type : nouveauté
-FR : Le Zeus prend la main sur les ATAK, nouveaux terminaux et carte plus lisible
+FR : Le Zeus prend la main sur les ATAK, Comptes rendus refaits, nouveaux terminaux
 - Le Zeus peut désactiver, verrouiller, rendre muet, brouiller ou abîmer ton téléphone, et les brouilleurs du mod Crows Electronic Warfare brouillent aussi l'ATAK.
-- Nouveaux terminaux V2 ENHANCED, XIAOMI X3D et SONIM XP8, nouvelle tablette ; la carte a des noms de repères et de lieux plus lisibles, et chaque type de lieu se masque dans CALQUES.
-- Drone : bouton PLEIN ÉCRAN, image plus légère pour le jeu, et les ordres du clic droit de la carte disent s'ils sont reçus ou pourquoi ils sont refusés.
-- Le téléphone te prévient vraiment quand une mise à jour sort, avec ce qui change ; l'ancienne fenêtre « Lier le jeu à Athena » est remplacée par l'app Athena du téléphone.
-EN : Zeus takes control of the ATAKs, new terminals and a clearer map
+- L'app Comptes rendus est refaite : une fiche par type (SALUTE, UXO, blessé, LOGREP…), des valeurs proposées par le jeu, des brouillons et des accusés de réception.
+- Nouveaux terminaux V2 ENHANCED, XIAOMI X3D et SONIM XP8, nouvelle tablette ; la carte a des noms de repères et de lieux plus lisibles, masquables dans CALQUES.
+- Drone : bouton PLEIN ÉCRAN, image plus légère, ordres de la carte qui disent s'ils sont reçus. Le téléphone te prévient enfin des mises à jour, et l'app Athena remplace l'ancienne fenêtre « Lier le jeu à Athena ».
+EN : Zeus takes control of the ATAKs, Reports redone, new terminals
 - Zeus can disable, lock, mute, jam or damage your phone, and Crows Electronic Warfare jammers now jam the ATAK too.
-- New terminals V2 ENHANCED, XIAOMI X3D and SONIM XP8, new tablet; the map has clearer marker and place names, and each kind of place can be hidden in LAYERS.
-- Drone: FULL SCREEN button, lighter picture for the game, and map right-click orders tell you whether they were received or why they were refused.
-- The phone really tells you when an update is out, with what changes; the old "Link the game to Athena" window is replaced by the phone's Athena app.
+- The Reports app is redone: one sheet per report type (SALUTE, UXO, casualty, LOGREP…), values suggested by the game, drafts and read receipts.
+- New terminals V2 ENHANCED, XIAOMI X3D and SONIM XP8, new tablet; the map has clearer marker and place names, which can be hidden in LAYERS.
+- Drone: FULL SCREEN button, lighter picture, map orders that tell you whether they were received. The phone now tells you about updates, and the Athena app replaces the old "Link the game to Athena" window.
 
 ### Détail technique
-Regroupe #805, #806, #807, #808, #810, #811, #812 et #813 (une seule version : ATAK natif 1.93.0, COMSPEC Link 2.0.85 ; main.pbo et comspec_overwatch_connect.pbo reconstruits depuis les sources).
+Regroupe #805, #806, #807, #808, #810, #811, #812, #813 et #814 (une seule version : ATAK natif 1.93.0, COMSPEC Link 2.0.85 ; main.pbo et comspec_overwatch_connect.pbo reconstruits depuis les sources).
 
 #### Nouveaux terminaux : V2 Enhanced, XIAOMI X3D, SONIM XP8 et nouvelle tablette (#805)
 
@@ -118,6 +118,14 @@ Regroupe #805, #806, #807, #808, #810, #811, #812 et #813 (une seule version : A
 #### Liaison Athena : l'ancienne fenêtre « Lier le jeu à Athena » ne s'ouvre plus avec l'ATAK natif (#810)
 - Connect `fn_accountLinkShow` et `auth/fn_openLogin` passent la main à l'action `["show", user]` de `comspec_atak_native_fnc_athenaLink` quand l'ATAK natif est chargé : ACE « Connexion Athena », hub « Compte », Dépannage liaison « Lier », tablette web, Réglages > Lier mon compte et bouton de l'écran d'authentification ouvrent le téléphone sur l'app Athena, onglet COMPTE (code à valider sur athena.ttrd.fr/lier, ou e-mail + mot de passe). Un appel automatique dans les 90 premières secondes de mission n'ouvre rien : il demande le code et affiche la notification. Sans l'ATAK natif, l'ancien comportement reste. La surcouche Iceman (atak_athena) n'est pas modifiée.
 - À tester en jeu : mission sans session Athena, aucune ancienne fenêtre ; ACE > COMSPEC Athena > Connexion Athena ouvre le téléphone sur l'app Athena avec un code ; le valider sur athena.ttrd.fr/lier connecte.
+
+#### App Comptes rendus refaite : une fiche par type de compte rendu (#814)
+- `fn_reportTypes` : catalogue étendu (repère de ligne, requis, proposition, présentation par type : code, couleur, bandeau, outils, JNET, photo).
+- `fn_reportForm` (nouveau) : fiche propre à chaque type ; `fn_reportAuto` (nouveau) : propositions tirées du jeu (knowsAbout du groupe, position estimée par targetKnowledge, effectifs, chargeurs, carburant, laser).
+- `fn_formRender` : lignes `lineseg` et `linecombo`, libellé rouge et pastille élargie pour `line`.
+- `fn_reportAction` : brouillons (`COMSPEC_ATAK_RepDrafts`), contrôle avant envoi, accusés `comspec_atak_native_reportRcpt` (relayés au camp, rejoués aux arrivants), photo via `captureReconImage`, `jnet_escalate` dans structured_data, accusé d'ordre via `fn_taskAction`.
+- Site : `JnetFieldReportBridge` remonte de 1, 2 échelons ou jusqu'au sommet selon `jnet_escalate` ; libellés des nouveaux champs dans `AtakIcemanReportCatalog`.
+- Non testé en jeu.
 
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
 

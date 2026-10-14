@@ -168,6 +168,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 ["comspec_atak_native_bda", { ["recv", _this] call comspec_atak_native_fnc_bdaAction; }] call CBA_fnc_addEventHandler;
 // Comptes rendus du camp (app Comptes rendus) : tous les types, rejoués par la synchro serveur.
 ["comspec_atak_native_report", { ["recv", _this] call comspec_atak_native_fnc_reportAction; }] call CBA_fnc_addEventHandler;
+// Accusés de lecture et de réception des comptes rendus (l'auteur les garde).
+["comspec_atak_native_reportRcpt", { ["rcpt", _this] call comspec_atak_native_fnc_reportAction; }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_medevacStatus", { ["statusRecv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
 // Ordres : réponses des joueurs du camp (app Tâches, qui a vu / reçu / exécute).
 ["comspec_atak_native_orderAck", { ["recv", _this] call comspec_atak_native_fnc_orderAck; }] call CBA_fnc_addEventHandler;
