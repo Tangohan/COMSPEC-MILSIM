@@ -38,6 +38,26 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Numéro de build complet dans le téléphone (ATAK natif 1.96.0)
+
+### Résumé joueur
+Type : patch
+FR : Le téléphone affiche son numéro de build complet
+- Réglages, Crédits et Statut montrent maintenant la version suivie de la date du build et d'un code court, par exemple 1.96.0 - 2026.10.14 a1b2c3d.
+- Ce numéro est aussi écrit en tête du journal que tu envoies au support : on sait tout de suite quel build tu utilises.
+- La notification « mise à jour disponible » fonctionne comme avant.
+EN : The phone shows its full build number
+- Settings, Credits and Status now show the version followed by the build date and a short code, for example 1.96.0 - 2026.10.14 a1b2c3d.
+- This number is also written at the top of the log you send to support, so we know right away which build you run.
+- The "update available" notice works as before.
+
+### Détail technique
+- Règle de numérotation commune : `docs/VERSIONING.md` (MAJEUR.MINEUR.CORRECTIF, MINEUR +1 par sortie ou regroupement, CORRECTIF +1 pour un correctif seul d'une version déjà sortie, empreinte de build jamais comparée).
+- `build_info.hpp` (`BUILD_STAMP`, vide dans le dépôt) inclus par `script_component.hpp` ; posé par `build_mod.bat` (git + PowerShell) ou `tools/stamp_build.py`, puis remis à vide.
+- `COMSPEC_ATAK_NativeBuild` = « VERSION_STR - empreinte » (« - dev » sans empreinte) : Réglages, Crédits, Statut, app Debug (Vue d'ensemble, DLL), page texte STATUT, dump debug, check de démarrage Discord, RPT (BOOT) et journal de session COMSPEC (module VERSION, au postInit client).
+- `COMSPEC_ATAK_NativeVersion` et `mod_version` envoyés au site restent `MAJEUR.MINEUR.CORRECTIF` ; `fn_integrityCheck` ignore tout ce qui suit un espace dans les versions comparées.
+- Test : `AtakReleaseInfoTest::testBuildStampIsNeverCommitted`.
+
 ## Regroupement : Zeus sur les ATAK, Comptes rendus, nouveaux terminaux, carte, drone, mise à jour (ATAK natif 1.93.0, COMSPEC Link 2.0.85)
 
 ### Résumé joueur

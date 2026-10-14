@@ -39,6 +39,17 @@ final class AtakReleaseInfoTest extends TestCase
         self::assertSame(AtakReleaseInfo::latest($root)['link'], $m[1]);
     }
 
+    public function testBuildStampIsNeverCommitted(): void
+    {
+        $root = dirname(__DIR__, 2) . '/mod/COMSPEC_ATAK_Native/Sources/addons/main';
+        $hpp = (string) file_get_contents($root . '/build_info.hpp');
+
+        // L'empreinte (date, commit) est posée au build puis retirée (docs/VERSIONING.md) : committée, elle ferait
+        // entrer en conflit chaque PR native et afficherait une date fausse dans les builds suivants.
+        self::assertSame(1, preg_match('/^#define BUILD_STAMP ""$/m', $hpp));
+        self::assertStringContainsString('#include "build_info.hpp"', (string) file_get_contents($root . '/script_component.hpp'));
+    }
+
     public function testMissingFilesGiveNullsInsteadOfErrors(): void
     {
         $info = AtakReleaseInfo::latest(sys_get_temp_dir() . '/atak-release-info-missing');

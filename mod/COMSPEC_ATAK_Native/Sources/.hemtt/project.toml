@@ -1,5 +1,6 @@
 # Build Linux/Windows sans Arma 3 Tools : `hemtt build` depuis mod/COMSPEC_ATAK_Native/Sources,
 # puis copier .hemttout/build/addons/comspec_atak_native_main.pbo vers ../@COMSPEC_ATAK_Native/addons/main.pbo.
+# Empreinte du build (date, commit) : python3 ../tools/stamp_build.py avant, --reset après (docs/VERSIONING.md).
 # Même chose pour comspec_atak_native_towers.pbo (pylônes relais 3D) -> ../@COMSPEC_ATAK_Native/addons/towers.pbo.
 name = "COMSPEC ATAK Native"
 prefix = "comspec_atak_native"

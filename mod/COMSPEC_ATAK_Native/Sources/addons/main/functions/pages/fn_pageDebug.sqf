@@ -58,7 +58,7 @@ switch (_tab) do {
             ["info", "Init DLL native", [["COMSPEC_ATAK_NativeExtensionInit"] call _q] call _esc],
             ["info", "Session restaurée", [["COMSPEC_ATAK_NativeAuthRestore"] call _q] call _esc],
             ["section", "Versions et simulations", ""],
-            ["info", "COMSPEC ATAK", ["COMSPEC_ATAK_NativeVersion"] call _q],
+            ["info", "COMSPEC ATAK", ["COMSPEC_ATAK_NativeBuild"] call _q],
             ["info", "Communauté", ["comspec_tenant_name", "—"] call _q],
             ["info", "Dégâts / débit / apps civiles", format ["%1 / %2 / %3", ["comspec_atak_native_damage_sim", true] call _q, ["comspec_atak_native_net_sim", true] call _q, ["comspec_atak_native_civil_apps", true] call _q]],
             ["info", "Téléphone", (([] call comspec_atak_native_fnc_deviceHealth) get "state") + format [" · batterie %1 %%", round (missionNamespace getVariable ["COMSPEC_ATAK_Battery", 100])]],
@@ -89,7 +89,7 @@ switch (_tab) do {
         _rows append [
             ["section", "Extension", ""],
             ["info", "DLL chargée", ["<t color='#e5483a'>non (aucune réponse)</t>", [(_ver splitString "|") param [1, _ver]] call _esc] select (_ver isNotEqualTo "")],
-            ["info", "COMSPEC ATAK", [missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "—"]] call _esc],
+            ["info", "COMSPEC ATAK", [missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"]]] call _esc],
             ["info", "COMSPEC Link", [[] call comspec_atak_native_fnc_bridge] call _ok],
             ["info", "Fonctions Overwatch récentes", [!isNil "comspec_overwatch_connect_fnc_splitKeepEmpty"] call _ok],
             ["info", "Identité téléphone reçue", [(count (missionNamespace getVariable ["comspec_profile_phone", []])) > 0] call _ok],

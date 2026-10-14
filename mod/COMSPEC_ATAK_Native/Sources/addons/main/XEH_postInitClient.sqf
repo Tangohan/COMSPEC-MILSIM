@@ -1,6 +1,10 @@
 if (!hasInterface) exitWith {};
 private _perfT0 = diag_tickTime;
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] Client PostInit complete";
+// Version complète en tête du journal de session COMSPEC (le .log que les joueurs envoient au support).
+if (!isNil "comspec_overwatch_connect_fnc_log") then {
+    ["INFO", "VERSION", format ["COMSPEC ATAK %1 · COMSPEC Link attendu %2 · mission %3", missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", "?"], missionNamespace getVariable ["COMSPEC_ATAK_LinkExpected", "?"], missionName]] call comspec_overwatch_connect_fnc_log;
+};
 // PBO ou DLL périmés, versions plus récentes sur Athena : signalés dans les notifications du téléphone.
 ["start"] call comspec_atak_native_fnc_integrityCheck;
 // Check de démarrage posté dans le salon Discord de debug d'Athena (une fois par mission, réglage CBA pour refuser).

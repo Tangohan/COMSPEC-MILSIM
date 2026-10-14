@@ -42,7 +42,7 @@ private _steps = [];
 private _code = missionNamespace getVariable ["COMSPEC_ATAK_CodeVersion", ""];
 private _cfg = ["comspec_atak_native_main"] call _patch;
 private _bad = _issues select { (_x select 0) isEqualTo "code" || {((_x select 0) find "dup_") isEqualTo 0} };
-_steps pushBack ["mod", ["ok", "fail"] select (_bad isNotEqualTo []), [format ["version %1", _code], [_bad] call _issueText] select (_bad isNotEqualTo [])];
+_steps pushBack ["mod", ["ok", "fail"] select (_bad isNotEqualTo []), [format ["version %1", missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", _code]], [_bad] call _issueText] select (_bad isNotEqualTo [])];
 
 // 2. Téléphone : état initialisé, téléphone porté ou non (simple information).
 private _stateOk = !isNil { uiNamespace getVariable "COMSPEC_ATAK_State" };
