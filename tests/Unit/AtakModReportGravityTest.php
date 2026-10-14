@@ -25,6 +25,9 @@ final class AtakModReportGravityTest extends TestCase
         self::assertSame(Gravity::LOW, Gravity::classify('auto', 'info', 'Démarrage'));
         // Un mot « passager » dans le seul journal ne rend pas l'erreur faible.
         self::assertSame(Gravity::NORMAL, Gravity::classify('auto', 'error', 'ÉCHEC · fiche — invalid', "--- journal ---\ntimeout il y a 2 h"));
+        // Refus « formule sans la carte » : attendu, faible (pas de ticket ni d'e-mail).
+        self::assertSame(Gravity::LOW, Gravity::classify('auto', 'error', 'ÉCHEC · PhotoUpload — http_403 · COMSPEC_859_60136.png', 'ERR|http_403|COMSPEC_859_60136.png|feature_unavailable'));
+        self::assertSame(Gravity::HIGH, Gravity::classify('player', 'bug', 'Photo refusée', 'feature_unavailable'));
         // Gravité proposée par le mod : prioritaire si elle est valable.
         self::assertSame(Gravity::LOW, Gravity::classify('auto', 'error', 'Plantage', '', 'low'));
         self::assertSame(Gravity::CRITICAL, Gravity::classify('auto', 'error', 'Plantage', '', 'nimporte'));
