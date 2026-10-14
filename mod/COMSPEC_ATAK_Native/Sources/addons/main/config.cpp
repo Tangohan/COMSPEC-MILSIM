@@ -157,6 +157,7 @@ class COMSPEC_ATAK_Apps {
     class Dating      { name="Tinder"; page="DATING"; section="Civil"; order=410; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_dating.paa"; };
 };
 
+// Objets d'inventaire : vrais modèles 3D au sol et dans l'éditeur (tools/model_items.py), dans le PBO items (addons/items/data).
 // Batterie de rechange du téléphone (action ACE « Changer la batterie ATAK », consommée au changement).
 class CfgWeapons {
     class ItemCore;
@@ -166,7 +167,7 @@ class CfgWeapons {
         displayName="$STR_COMSPEC_ATAK_CFG_9E4D5298F6";
         descriptionShort="$STR_COMSPEC_ATAK_CFG_96B5F49A5D";
         picture="\z\comspec_atak_native\addons\main\data\item_battery.paa";
-        model="\A3\Weapons_F\Ammo\mag_univ.p3d";
+        model="\z\comspec_atak_native\addons\items\data\item3d_battery.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=2; };
     };
@@ -176,7 +177,7 @@ class CfgWeapons {
         displayName="$STR_COMSPEC_ATAK_CFG_814EE34AA5";
         descriptionShort="$STR_COMSPEC_ATAK_CFG_DC496FDDDD";
         picture="\z\comspec_atak_native\addons\main\data\item_repairkit.paa";
-        model="\A3\Weapons_F\Items\Toolkit";
+        model="\z\comspec_atak_native\addons\items\data\item3d_repairkit.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=10; };
     };
@@ -186,7 +187,7 @@ class CfgWeapons {
         displayName="$STR_COMSPEC_ATAK_CFG_5BC13315C6";
         descriptionShort="$STR_COMSPEC_ATAK_CFG_1707ED67D7";
         picture="\z\comspec_atak_native\addons\main\data\item_datacable.paa";
-        model="\A3\Weapons_F\Ammo\mag_univ.p3d";
+        model="\z\comspec_atak_native\addons\items\data\item3d_datacable.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=4; };
     };
@@ -196,7 +197,7 @@ class CfgWeapons {
         displayName="$STR_COMSPEC_ATAK_CFG_A200DC2D3C";
         descriptionShort="$STR_COMSPEC_ATAK_CFG_B2101F06B2";
         picture="\z\comspec_atak_native\addons\main\data\item_antenna_stub.paa";
-        model="\A3\Weapons_F\Ammo\mag_univ.p3d";
+        model="\z\comspec_atak_native\addons\items\data\item3d_stub.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=1; };
     };
@@ -206,7 +207,7 @@ class CfgWeapons {
         displayName="$STR_COMSPEC_ATAK_CFG_9EFEB0E683";
         descriptionShort="$STR_COMSPEC_ATAK_CFG_02FF4B66E0";
         picture="\z\comspec_atak_native\addons\main\data\item_antenna_whip.paa";
-        model="\A3\Weapons_F\Ammo\mag_univ.p3d";
+        model="\z\comspec_atak_native\addons\items\data\item3d_whip.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=3; };
     };
@@ -216,7 +217,7 @@ class CfgWeapons {
         displayName="$STR_COMSPEC_ATAK_CFG_0D7BE9D700";
         descriptionShort="$STR_COMSPEC_ATAK_CFG_FBA3573C81";
         picture="\z\comspec_atak_native\addons\main\data\item_antenna_patch.paa";
-        model="\A3\Weapons_F\Ammo\mag_univ.p3d";
+        model="\z\comspec_atak_native\addons\items\data\item3d_patch.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=4; };
     };
@@ -225,7 +226,7 @@ class CfgWeapons {
         displayName="$STR_COMSPEC_ATAK_CFG_EF53A02082";
         descriptionShort="$STR_COMSPEC_ATAK_CFG_0F70B04FFA";
         picture="\z\comspec_atak_native\addons\main\data\item_powerbank.paa";
-        model="\A3\Weapons_F\Ammo\mag_univ.p3d";
+        model="\z\comspec_atak_native\addons\items\data\item3d_powerbank.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=10; };
     };
@@ -234,7 +235,7 @@ class CfgWeapons {
         displayName="$STR_COMSPEC_ATAK_CFG_9BEF18E007";
         descriptionShort="$STR_COMSPEC_ATAK_CFG_F12FD15D32";
         picture="\z\comspec_atak_native\addons\main\data\item_nvgfilter.paa";
-        model="\A3\Weapons_F\Ammo\mag_univ.p3d";
+        model="\z\comspec_atak_native\addons\items\data\item3d_nvgfilter.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=1; };
     };
@@ -243,7 +244,7 @@ class CfgWeapons {
         displayName="$STR_COMSPEC_ATAK_CFG_32C19DF5F3";
         descriptionShort="$STR_COMSPEC_ATAK_CFG_DBD1600D8A";
         picture="\z\comspec_atak_native\addons\main\data\item_vehiclekit.paa";
-        model="\A3\Weapons_F\Ammo\mag_univ.p3d";
+        model="\z\comspec_atak_native\addons\items\data\item3d_vehiclekit.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=30; };
     };
@@ -254,7 +255,7 @@ class CfgWeapons {
         displayName="$STR_COMSPEC_ATAK_CFG_857C44D0D3";
         descriptionShort="$STR_COMSPEC_ATAK_CFG_C98EF6B77B";
         picture="\z\comspec_atak_native\addons\main\data\item_camera.paa";
-        model="\A3\Weapons_F\Ammo\mag_univ.p3d";
+        model="\z\comspec_atak_native\addons\items\data\item3d_camera.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=4; };
     };
@@ -264,7 +265,7 @@ class CfgWeapons {
         displayName="$STR_COMSPEC_ATAK_CFG_5DA6A7ED86";
         descriptionShort="$STR_COMSPEC_ATAK_CFG_C5AF6AC183";
         picture="\z\comspec_atak_native\addons\main\data\item_dock.paa";
-        model="\A3\Weapons_F\Ammo\mag_univ.p3d";
+        model="\z\comspec_atak_native\addons\items\data\item3d_dock.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=80; };
     };
@@ -327,72 +328,84 @@ class CfgVehicles {
     class Item_COMSPEC_ATAK_Battery: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_9E4D5298F6";
+        model="\z\comspec_atak_native\addons\items\data\item3d_battery.p3d"; editorPreview="\z\comspec_atak_native\addons\items\data\item3d_battery_preview.jpg";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_Battery { name="COMSPEC_ATAK_Battery"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_RepairKit: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_814EE34AA5";
+        model="\z\comspec_atak_native\addons\items\data\item3d_repairkit.p3d"; editorPreview="\z\comspec_atak_native\addons\items\data\item3d_repairkit_preview.jpg";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_RepairKit { name="COMSPEC_ATAK_RepairKit"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_DataCable: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_5BC13315C6";
+        model="\z\comspec_atak_native\addons\items\data\item3d_datacable.p3d"; editorPreview="\z\comspec_atak_native\addons\items\data\item3d_datacable_preview.jpg";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_DataCable { name="COMSPEC_ATAK_DataCable"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_Antenna_Stub: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_A200DC2D3C";
+        model="\z\comspec_atak_native\addons\items\data\item3d_stub.p3d"; editorPreview="\z\comspec_atak_native\addons\items\data\item3d_stub_preview.jpg";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_Antenna_Stub { name="COMSPEC_ATAK_Antenna_Stub"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_Antenna_Whip: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_9EFEB0E683";
+        model="\z\comspec_atak_native\addons\items\data\item3d_whip.p3d"; editorPreview="\z\comspec_atak_native\addons\items\data\item3d_whip_preview.jpg";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_Antenna_Whip { name="COMSPEC_ATAK_Antenna_Whip"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_Antenna_Patch: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_0D7BE9D700";
+        model="\z\comspec_atak_native\addons\items\data\item3d_patch.p3d"; editorPreview="\z\comspec_atak_native\addons\items\data\item3d_patch_preview.jpg";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_Antenna_Patch { name="COMSPEC_ATAK_Antenna_Patch"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_PowerBank: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_EF53A02082";
+        model="\z\comspec_atak_native\addons\items\data\item3d_powerbank.p3d"; editorPreview="\z\comspec_atak_native\addons\items\data\item3d_powerbank_preview.jpg";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_PowerBank { name="COMSPEC_ATAK_PowerBank"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_NvgFilter: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_9BEF18E007";
+        model="\z\comspec_atak_native\addons\items\data\item3d_nvgfilter.p3d"; editorPreview="\z\comspec_atak_native\addons\items\data\item3d_nvgfilter_preview.jpg";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_NvgFilter { name="COMSPEC_ATAK_NvgFilter"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_VehicleKit: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_32C19DF5F3";
+        model="\z\comspec_atak_native\addons\items\data\item3d_vehiclekit.p3d"; editorPreview="\z\comspec_atak_native\addons\items\data\item3d_vehiclekit_preview.jpg";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_VehicleKit { name="COMSPEC_ATAK_VehicleKit"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_Camera: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_857C44D0D3";
+        model="\z\comspec_atak_native\addons\items\data\item3d_camera.p3d"; editorPreview="\z\comspec_atak_native\addons\items\data\item3d_camera_preview.jpg";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_Camera { name="COMSPEC_ATAK_Camera"; count=1; }; };
     };
     // Caméra IP posée (fn_camAction) : petit objet global, destructible (tirs, explosions), non listé dans l'éditeur.
+    // Modèle tools/model_items.py (camera_ip) : origine au centre du boîtier, base magnétique 9,2 cm dessous.
     class COMSPEC_ATAK_CameraObj: Static {
         scope=1; scopeCurator=0; author="COMSPEC"; displayName="$STR_COMSPEC_ATAK_CFG_A37BF51B41";
-        model="\A3\Structures_F\Items\Electronics\HandyCam_F.p3d";
+        model="\z\comspec_atak_native\addons\items\data\camera_ip.p3d";
         armor=3;
     };
     class Item_COMSPEC_ATAK_DockKit: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";
         displayName="$STR_COMSPEC_ATAK_CFG_EB509FDE34";
+        model="\z\comspec_atak_native\addons\items\data\item3d_dock.p3d"; editorPreview="\z\comspec_atak_native\addons\items\data\item3d_dock_preview.jpg";
         vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
         class TransportItems { class _xx_COMSPEC_ATAK_DockKit { name="COMSPEC_ATAK_DockKit"; count=1; }; };
     };

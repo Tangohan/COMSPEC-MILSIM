@@ -10,6 +10,10 @@ sauf indication), tirés d'un bruit périodique (FFT) pour qu'aucune couture ne 
   tower_grating caillebotis galvanisé (maille 33 mm : 1 m = 30 mailles)
   tower_cable   gaine de câble noire
   tower_light   feu de balisage rouge
+  tower_olive   acier peint vert olive militaire (armoires, pylône de 30 m) : farinage, coulures, éclats, rouille
+  tower_sign    panneaux (512 x 256, UV propres) : danger électrique / RF, identifiant du site, consignes
+  tower_fence   grillage simple torsion de l'enclos (_ca, transparence)
+  tower_net     filet de camouflage (_ca, transparence) : lanières vert / brun / sable sur maille
 Pour chacun (sauf câble et feu) : _nohq (normales) et _smdi (reflets) du shader Super (rvmat tower_<nom>.rvmat).
 
     python3 gen_tower_textures.py      # écrit render/tower_*_co.png
@@ -198,6 +202,83 @@ def cable():
     save("tower_cable", tint(g, (1.0, 1.0, 1.0)))
 
 
+def olive():
+    mott = noise(2.0)
+    fine = noise(0.7)
+    g = 0.5 + 0.06 * (mott - 0.5) + 0.03 * (fine - 0.5)
+    rgb = tint(g, (0.62, 0.66, 0.44))
+    chalk = np.clip((noise(1.8) - 0.5) * 1.5, 0, 1)
+    rgb += (0.05 * chalk)[..., None] * np.array([0.9, 0.9, 0.8])
+    rgb -= 0.06 * streaks()[..., None]
+    # Éclats de peinture (apprêt gris) et rouille aux défauts.
+    chip = np.clip((noise(0.9) - 0.84) * 8, 0, 1)
+    rgb = rgb * (1 - 0.5 * chip[..., None]) + 0.5 * chip[..., None] * np.array([0.42, 0.42, 0.40])
+    rust = np.clip((noise(1.1) - 0.8) * 5, 0, 1) * np.clip((fine - 0.5) * 4, 0, 1)
+    rgb = rgb * (1 - 0.6 * rust[..., None]) + 0.6 * rust[..., None] * np.array([0.32, 0.18, 0.09])
+    save("tower_olive", rgb)
+    maps("tower_olive", noise(0.9) + 1.5 * chip + 2.0 * rust, 5.0, 0.30 - 0.15 * chalk - 0.25 * rust, 0.38 - 0.12 * chalk)
+
+
+def sign():
+    """Panneaux : moitié gauche danger (triangle jaune, éclair, ondes RF), moitié droite plaque d'identification."""
+    from PIL import ImageDraw, ImageFont
+
+    def font(sz):
+        for f in ("/usr/share/fonts/truetype/dejavu/DejaVuSansCondensed-Bold.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"):
+            if os.path.exists(f):
+                return ImageFont.truetype(f, sz)
+        return ImageFont.load_default()
+
+    im = Image.new("RGB", (512, 256), (232, 232, 226))
+    d = ImageDraw.Draw(im)
+    d.rectangle((0, 0, 255, 255), fill=(236, 196, 30))
+    d.rectangle((6, 6, 249, 249), outline=(20, 20, 18), width=6)
+    d.polygon([(128, 22), (230, 196), (26, 196)], outline=(20, 20, 18), width=12)
+    d.polygon([(136, 70), (106, 132), (130, 132), (114, 180), (156, 112), (132, 112), (150, 70)], fill=(20, 20, 18))
+    d.text((40, 206), "DANGER RF", font=font(28), fill=(20, 20, 18))
+    d.rectangle((262, 6, 505, 249), outline=(30, 34, 30), width=6)
+    d.rectangle((262, 6, 505, 66), fill=(46, 58, 40))
+    d.text((276, 18), "COMSPEC RELAIS", font=font(21), fill=(235, 235, 225))
+    d.text((276, 80), "SITE ATAK-07", font=font(27), fill=(28, 30, 28))
+    d.text((276, 124), "ACCÈS RÉGLEMENTÉ", font=font(18), fill=(28, 30, 28))
+    d.text((276, 152), "Champ RF : ne pas", font=font(18), fill=(70, 70, 66))
+    d.text((276, 174), "stationner devant", font=font(18), fill=(70, 70, 66))
+    d.text((276, 196), "les antennes.", font=font(18), fill=(70, 70, 66))
+    d.text((276, 222), "Urgence : 112", font=font(18), fill=(150, 30, 26))
+    a = np.asarray(im).astype(float) / 255
+    a = a * (1 - 0.12 * np.clip(noise(2.2, 256)[:, :256].repeat(2, 1)[:, :512] - 0.4, 0, 1)[..., None])
+    Image.fromarray((np.clip(a, 0, 1) * 255).astype(np.uint8)).save(os.path.join(RENDER, "tower_sign_co.png"))
+    print("texture tower_sign")
+
+
+def net():
+    """Filet de camouflage (transparence) : lanières découpées aux trois teintes sur une maille sombre, trous."""
+    n1, n2, n3 = noise(1.4), noise(2.4), noise(0.5)
+    col = np.where((n1 > 0.55)[..., None], np.array([0.17, 0.20, 0.11]), np.array([0.27, 0.25, 0.15]))
+    col = np.where((n2 > 0.62)[..., None], np.array([0.46, 0.41, 0.30]), col)
+    col = col * (0.85 + 0.3 * n3)[..., None]
+    ys, xs = np.mgrid[0:N, 0:N]
+    mesh = ((xs % 32) < 3) | ((ys % 32) < 3)
+    garnish = (noise(0.8) + 0.3 * n1) > 0.5
+    alpha = np.where(garnish, 1.0, np.where(mesh, 1.0, 0.0))
+    col = np.where((~garnish & mesh)[..., None], np.array([0.12, 0.12, 0.10]), col)
+    rgba = np.concatenate([np.clip(col, 0, 1), alpha[..., None]], -1)
+    Image.fromarray((rgba * 255).astype(np.uint8), "RGBA").resize((512, 512), Image.LANCZOS).save(os.path.join(RENDER, "tower_net_ca.png"))
+    print("texture tower_net")
+
+
+def fence_mesh():
+    """Grillage simple torsion (transparence) : 16 mailles losanges de 6 cm par mètre, fil galvanisé."""
+    M = 512
+    ys, xs = np.mgrid[0:M, 0:M] / M * 16
+    u, v = (xs + ys) % 1.0, (xs - ys) % 1.0
+    wire = (np.minimum(u, 1 - u) < 0.055) | (np.minimum(v, 1 - v) < 0.055)
+    g = 0.55 + 0.1 * (noise(1.5)[:M, :M] - 0.5)
+    rgba = np.stack([g * 0.98, g, g * 1.03, wire.astype(float)], -1)
+    Image.fromarray((np.clip(rgba, 0, 1) * 255).astype(np.uint8), "RGBA").save(os.path.join(RENDER, "tower_fence_ca.png"))
+    print("texture tower_fence")
+
+
 if __name__ == "__main__":
     galva()
     dark()
@@ -207,3 +288,7 @@ if __name__ == "__main__":
     grating()
     cable()
     light()
+    olive()
+    sign()
+    net()
+    fence_mesh()

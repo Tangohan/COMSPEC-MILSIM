@@ -2,7 +2,7 @@
     Caméras IP fixes (item COMSPEC_ATAK_Camera) : posées au mur, au sol, sur un objet ou un véhicule,
     regardées depuis l'app Vidéo live du téléphone (section « Caméras fixes », fn_camView).
 
-    L'objet posé (COMSPEC_ATAK_CameraObj, modèle de petite caméra d'A3) est global et porte, en variables publiques :
+    L'objet posé (COMSPEC_ATAK_CameraObj, caméra durcie IPC-2 sur rotule magnétique, tools/model_items.py) est global et porte, en variables publiques :
       COMSPEC_ATAK_CamSide  camp du poseur (str side), seul ce camp la voit dans le téléphone
       COMSPEC_ATAK_CamName  nom (CAM-1, CAM-2... ou renommée)
       COMSPEC_ATAK_CamOwner nom du poseur ; COMSPEC_ATAK_CamGroup indicatif de son groupe
@@ -105,7 +105,8 @@ switch (_mode) do {
             default { vectorNormalized [_n select 0, _n select 1, 0] };
         };
         private _u = [_d] call _upOf;
-        private _p = _pos vectorAdd (_n vectorMultiply 0.07);
+        // Modèle camera_ip : base magnétique 9,2 cm sous le centre du boîtier (posée au sol), dos à 3,5 cm (mur, plafond).
+        private _p = _pos vectorAdd (_n vectorMultiply ([0.045, 0.092] select ((_n select 2) > 0.7)));
         private _cam = createVehicle [CAM_CLASS, ASLToATL _p, [], 0, "CAN_COLLIDE"];
         if (isNull _cam) exitWith { false };
         _cam setPosASL _p;

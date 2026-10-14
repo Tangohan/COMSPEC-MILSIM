@@ -20,6 +20,15 @@ class CfgVehicles {
         destrType="DestructBuilding"; armor=700;
         comspec_atak_relayRange=6000; comspec_atak_relayHeight=28; comspec_atak_relayThroughput=20; comspec_atak_relaySlots=64;
         class DestructionEffects: DestructionEffects {};
+        // Feux d'obstacle rouges (globes émissifs du modèle + lumière du jeu la nuit), points mémoire light_*.
+        class MarkerLights {
+            class Top {
+                name="light_top"; color[]={1,0.08,0.03}; ambient[]={0.1,0.008,0.003};
+                brightness=0.01; intensity=80; drawLight=1; drawLightSize=0.35; drawLightCenterSize=0.08;
+                activeLight=1; blinking=1; blinkingPattern[]={0.6,1.4}; blinkingPatternGuarantee=0; dayLight=0; useFlare=1;
+                class Attenuation { start=0; constant=0; linear=0; quadratic=1; hardLimitStart=40; hardLimitEnd=60; };
+            };
+        };
         class Attributes {
             class COMSPEC_TowerName {
                 displayName="$STR_COMSPEC_ATAK_CFG_ACB975B116"; tooltip="$STR_COMSPEC_ATAK_CFG_2669F78090";
@@ -109,6 +118,10 @@ class CfgVehicles {
     };
     class COMSPEC_ATAK_RelayTower_40: COMSPEC_ATAK_RelayTower_Base {
         scope=2; scopeCurator=2;
+        class MarkerLights: MarkerLights {
+            class Mid1: Top { name="light_mid1"; blinking=0; intensity=40; drawLightSize=0.25; };
+            class Mid2: Mid1 { name="light_mid2"; };
+        };
         displayName="$STR_COMSPEC_ATAK_CFG_7FACF53561";
         model="\z\comspec_atak_native\addons\towers\data\relay_tower_40.p3d";
         editorPreview="\z\comspec_atak_native\addons\towers\data\relay_tower_40_preview.jpg";
@@ -120,6 +133,10 @@ class CfgVehicles {
     };
     class COMSPEC_ATAK_RelayTower_50: COMSPEC_ATAK_RelayTower_Base {
         scope=2; scopeCurator=2;
+        class MarkerLights: MarkerLights {
+            class Mid1: Top { name="light_mid1"; blinking=0; intensity=40; drawLightSize=0.25; };
+            class Mid2: Mid1 { name="light_mid2"; };
+        };
         displayName="$STR_COMSPEC_ATAK_CFG_83983FCE7E";
         model="\z\comspec_atak_native\addons\towers\data\relay_tower_50.p3d";
         editorPreview="\z\comspec_atak_native\addons\towers\data\relay_tower_50_preview.jpg";
