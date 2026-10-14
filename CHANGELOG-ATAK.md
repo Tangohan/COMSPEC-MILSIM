@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Erreur 502 au déploiement, journal de l'appareil à la bonne heure (site)
+
+### Résumé joueur
+Type : correctif
+FR : Athena ne coupe plus tes envois pendant une mise à jour
+- Une mise à jour d'Athena laisse finir les envois en cours : fini l'erreur 502 isolée pendant un déploiement.
+- Le journal de l'appareil sur Athena affiche l'heure de ton PC, au lieu d'avoir deux heures d'avance.
+EN : Athena no longer cuts your sends during an update
+- An Athena update lets sends in progress finish: no more lone 502 error during a deployment.
+- The device log on Athena shows your PC's time, instead of running two hours ahead.
+
+### Détail technique
+
+- Cause du 502 sur `POST /api/atak/explosive-timers` (2026-10-14 12:50:24 heure du joueur = 10:50:24 UTC) : le déploiement de #802 (étape « Pull on VPS » 10:50:19 → 10:50:24) finit par `systemctl reload php8.4-fpm`. Avec `process_control_timeout = 0` (défaut), le reload tue les workers occupés et nginx renvoie 502. Le code de l'endpoint n'est pas en cause.
+- `deploy-vps.yml` : règle une fois `process_control_timeout = 10s` dans `/etc/php/8.4/fpm/php-fpm.conf` (sauvegarde `.bak-deploy`, `php-fpm -t` avant, restauration si refusé) puis reload.
+- `AtakDeviceLogRepository` : COMSPEC Link envoie `logged_at` en heure locale sans fuseau ; l'écart entre la ligne la plus récente du lot et l'heure serveur, arrondi au quart d'heure (15 min à 14 h), est retiré des heures sans fuseau.
+- Le volet mod (502/504 en alerte, ligne ZEN, dump) est dans une PR à part, livrée avec le regroupement ATAK.
+
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
 
 ### Résumé joueur
