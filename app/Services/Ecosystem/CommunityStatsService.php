@@ -235,6 +235,7 @@ final class CommunityStatsService
         $coops = $this->cooperationCounts();
         $recos = $this->ecosystem->recommendationCounts();
         $reviews = $this->ecosystem->reviewSummaries();
+        $twins = $this->ecosystem->twinCounts();
 
         $rows = [];
         foreach ($registry as $t) {
@@ -271,6 +272,7 @@ final class CommunityStatsService
                 'recommendations' => $recos[$id] ?? 0,
                 'rating' => $reviews[$id]['avg'] ?? null,
                 'rating_count' => $reviews[$id]['count'] ?? 0,
+                'twins' => $twins[$id] ?? 0,
                 'created_at' => $created !== null ? date('Y-m-d', $created) : null,
                 'age_days' => $created !== null ? max(0, (int) floor((time() - $created) / 86400)) : null,
             ];

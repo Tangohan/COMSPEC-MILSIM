@@ -38,7 +38,12 @@ final class CommunityEcosystemTest extends TestCase
             self::assertStringContainsString($route, $routes);
         }
         self::assertStringContainsString('run_community_ecosystem_migration', $migrations);
-        foreach (['tenant_recommendations', 'cooperation_reviews', 'cooperation_board_posts', 'cooperation_board_responses'] as $table) {
+        self::assertStringContainsString("'/hub/c/{slug}/jumeler'", $routes);
+        self::assertStringContainsString("'/hub/jumelages/{id}'", $routes);
+        // Jumelage : seule la communauté invitée accepte ; on ne se jumelle pas avec soi-même.
+        self::assertStringContainsString("\$decision === 'accept' && \$isPartner && \$status === 'pending'", $ctrl);
+        self::assertStringContainsString('ne peut pas se jumeler avec elle-même', $ctrl);
+        foreach (['tenant_recommendations', 'cooperation_reviews', 'cooperation_board_posts', 'cooperation_board_responses', 'tenant_twinnings'] as $table) {
             self::assertStringContainsString($table, $migration);
         }
         // Pas d’auto-recommandation, avis réservé aux partenaires d’une coopération clôturée, CSRF partout.

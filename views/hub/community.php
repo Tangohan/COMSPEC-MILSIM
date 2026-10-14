@@ -11,6 +11,9 @@ $hubStructure = is_array($hubStructure ?? null) ? $hubStructure : ['levels' => [
 $hubReviews = is_array($hubReviews ?? null) ? $hubReviews : [];
 $hubRecommended = !empty($hubRecommended);
 $hubCanCooperate = !empty($hubCanCooperate);
+$hubRowTwins = is_array($hubRowTwins ?? null) ? $hubRowTwins : [];
+$hubTwinWithMe = is_array($hubTwinWithMe ?? null) ? $hubTwinWithMe : null;
+$hubCanTwin = !empty($hubCanTwin);
 $csrf = (string) ($csrfToken ?? \App\Core\Csrf::token());
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 $num = static fn ($v, int $dec = 0): string => $v === null ? '—' : number_format((float) $v, $dec, ',', "\u{202F}");
@@ -81,6 +84,52 @@ $maxLevel = max([1, ...array_map('intval', $hubStructure['levels'])]);
         </div>
         <?php endforeach; ?>
       </div>
+    </section>
+
+
+    <section class="hx-section hx-card" id="jumelage" aria-labelledby="hx-twin">
+      <p class="hx-kicker">Jumelages et parrainages</p>
+      <h2 id="hx-twin" class="hx-title">Unités sœurs</h2>
+      <?php if ($hubRowTwins === []): ?>
+      <p class="hx-sub">Pas encore de jumelage ni de parrainage.</p>
+      <?php else: ?>
+      <ul class="hx-twin-chips">
+        <?php foreach ($hubRowTwins as $tw): ?>
+        <li><a href="<?= $h(url('hub/c/' . $tw['other_slug'])) ?>"><span aria-hidden="true"><?= $tw['kind'] === 'parrainage' ? '🛡' : '🤝' ?></span> <?= $h((string) $tw['other_name']) ?></a> <small><?= $tw['role'] === 'jumelle' ? 'jumelée' : ($tw['role'] === 'marraine' ? 'filleule de ' . $h((string) $hubRow['name']) : 'marraine de ' . $h((string) $hubRow['name'])) ?> · depuis <?= $h(date('m/Y', strtotime((string) $tw['accepted_at']))) ?></small></li>
+        <?php endforeach; ?>
+      </ul>
+      <?php endif; ?>
+
+      <?php if ($hubTwinWithMe !== null): ?>
+      <p class="hx-twin-state">
+        <?php if ($hubTwinWithMe['status'] === 'active'): ?>
+        <?= $hubTwinWithMe['kind'] === 'parrainage' ? '🛡 Un parrainage vous lie à cette communauté.' : '🤝 Vous êtes jumelés avec cette communauté.' ?>
+        <?php elseif ($hubMine !== null && (int) $hubTwinWithMe['requester_tenant_id'] === (int) $hubMine['id']): ?>
+        Votre demande est envoyée : elle attend la réponse de <?= $h((string) $hubRow['name']) ?>.
+        <?php else: ?>
+        <?= $h((string) $hubRow['name']) ?> vous propose un <?= $hubTwinWithMe['kind'] === 'parrainage' ? 'parrainage' : 'jumelage' ?>. <a href="<?= $h(url('hub')) ?>#jumelages">Répondre</a>
+        <?php endif; ?>
+      </p>
+      <?php elseif ($hubCanTwin && $hubMine !== null): ?>
+      <details class="hx-twin-form">
+        <summary class="hx-btn hx-btn--accent">Proposer un jumelage ou un parrainage</summary>
+        <form method="post" action="<?= $h(url('hub/c/' . $hubRow['slug'] . '/jumeler')) ?>" class="mt-4 grid gap-3">
+          <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+          <fieldset class="hx-twin-kinds">
+            <legend class="sr-only">Formule</legend>
+            <label><input type="radio" name="kind" value="jumelage" checked> <span><strong>🤝 Jumelage</strong><small>D’égal à égal : opérations communes, échanges de joueurs, soutien mutuel.</small></span></label>
+            <label><input type="radio" name="kind" value="parrainage"> <span><strong>🛡 Parrainage</strong><small>Une unité expérimentée accompagne une jeune unité : formation, conseils, premières opérations.</small></span></label>
+          </fieldset>
+          <fieldset class="hx-twin-role" data-twin-role>
+            <legend class="text-xs font-bold">Dans ce parrainage…</legend>
+            <label><input type="radio" name="role" value="marraine" checked> <?= $h((string) $hubMine['name']) ?> parraine <?= $h((string) $hubRow['name']) ?></label>
+            <label><input type="radio" name="role" value="filleule"> <?= $h((string) $hubMine['name']) ?> souhaite être parrainée par <?= $h((string) $hubRow['name']) ?></label>
+          </fieldset>
+          <textarea class="hx-area" name="message" maxlength="2000" placeholder="Pourquoi ce lien ? Une opération vécue ensemble, un projet commun…"></textarea>
+          <button type="submit" class="hx-btn hx-btn--accent justify-self-start">Envoyer la proposition</button>
+        </form>
+      </details>
+      <?php endif; ?>
     </section>
 
     <section class="hx-section hx-compare" aria-label="Structure et avis">

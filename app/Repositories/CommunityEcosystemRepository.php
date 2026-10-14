@@ -366,6 +366,126 @@ class CommunityEcosystemRepository
         $st->execute([$status, $postId]);
     }
 
+    // ——— Jumelages et parrainages ———
+
+    public const TWIN_KINDS = [
+        'jumelage' => 'Jumelage',
+        'parrainage' => 'Parrainage',
+    ];
+
+    /**
+     * Relation en cours ou en attente entre deux communautés (dans un sens ou dans l’autre).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function twinBetween(int $a, int $b): ?array
+    {
+        if (!$this->tableExists('tenant_twinnings')) {
+            return null;
+        }
+        $st = $this->pdo->prepare(
+            "SELECT * FROM tenant_twinnings
+             WHERE status IN ('pending', 'active')
+               AND ((requester_tenant_id = ? AND partner_tenant_id = ?) OR (requester_tenant_id = ? AND partner_tenant_id = ?))
+             ORDER BY id DESC LIMIT 1"
+        );
+        $st->execute([$a, $b, $b, $a]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /** @param 'jumelage'|'parrainage' $kind */
+    public function requestTwin(int $requester, int $partner, string $kind, ?int $sponsor, int $userId, string $message): int
+    {
+        $st = $this->pdo->prepare(
+            'INSERT INTO tenant_twinnings (requester_tenant_id, partner_tenant_id, kind, sponsor_tenant_id, message, requested_by_user_id)
+             VALUES (?, ?, ?, ?, ?, ?)'
+        );
+        $st->execute([$requester, $partner, $kind, $kind === 'parrainage' ? $sponsor : null, $message !== '' ? $message : null, $userId]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findTwin(int $id): ?array
+    {
+        if (!$this->tableExists('tenant_twinnings')) {
+            return null;
+        }
+        $st = $this->pdo->prepare('SELECT * FROM tenant_twinnings WHERE id = ? LIMIT 1');
+        $st->execute([$id]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    /** @param 'active'|'declined'|'cancelled'|'ended' $status */
+    public function setTwinStatus(int $id, string $status, int $userId): void
+    {
+        $extra = match ($status) {
+            'active' => ', accepted_at = NOW()',
+            'ended' => ', ended_at = NOW()',
+            default => '',
+        };
+        $st = $this->pdo->prepare("UPDATE tenant_twinnings SET status = ?, responded_by_user_id = ?{$extra} WHERE id = ?");
+        $st->execute([$status, $userId, $id]);
+    }
+
+    /**
+     * Relations d’une communauté vues de son côté : partenaire, formule et rôle (marraine, filleule, jumelle).
+     *
+     * @param list<string> $statuses
+     * @return list<array<string, mixed>>
+     */
+    public function twinsOf(int $tenantId, array $statuses = ['active']): array
+    {
+        if ($tenantId < 1 || !$this->tableExists('tenant_twinnings') || $statuses === []) {
+            return [];
+        }
+        $in = implode(',', array_fill(0, count($statuses), '?'));
+        $logo = $this->columnExists('tenants', 'logo_url') ? 't.logo_url' : 'NULL';
+        $st = $this->pdo->prepare(
+            "SELECT w.*, t.id AS other_id, t.name AS other_name, t.slug AS other_slug, {$logo} AS other_logo,
+                    (w.requester_tenant_id = ?) AS outgoing
+             FROM tenant_twinnings w
+             JOIN tenants t ON t.id = IF(w.requester_tenant_id = ?, w.partner_tenant_id, w.requester_tenant_id)
+             WHERE (w.requester_tenant_id = ? OR w.partner_tenant_id = ?) AND w.status IN ({$in})
+             ORDER BY COALESCE(w.accepted_at, w.created_at) DESC"
+        );
+        $st->execute([$tenantId, $tenantId, $tenantId, $tenantId, ...$statuses]);
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $row['outgoing'] = (bool) $row['outgoing'];
+            $row['role'] = $row['kind'] !== 'parrainage'
+                ? 'jumelle'
+                : ((int) ($row['sponsor_tenant_id'] ?? 0) === $tenantId ? 'marraine' : 'filleule');
+            $out[] = $row;
+        }
+
+        return $out;
+    }
+
+    /** @return array<int, int> tenant_id => nombre de relations actives */
+    public function twinCounts(): array
+    {
+        if (!$this->tableExists('tenant_twinnings')) {
+            return [];
+        }
+        $out = [];
+        $rows = $this->pdo->query(
+            "SELECT tid, COUNT(*) n FROM (
+                SELECT requester_tenant_id AS tid FROM tenant_twinnings WHERE status = 'active'
+                UNION ALL SELECT partner_tenant_id FROM tenant_twinnings WHERE status = 'active'
+             ) x GROUP BY tid"
+        )->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        foreach ($rows as $r) {
+            $out[(int) $r['tid']] = (int) $r['n'];
+        }
+
+        return $out;
+    }
+
     private function columnExists(string $table, string $column): bool
     {
         $st = $this->pdo->prepare(

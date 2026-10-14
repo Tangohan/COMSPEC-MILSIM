@@ -72,6 +72,8 @@ class HubController
             'hubBoardPosts' => array_slice($openPosts, 0, 6),
             'hubBoardOpenCount' => count($openPosts),
             'hubCanCooperate' => $tenantId > 0 && CooperationAccess::canCreate(),
+            'hubTwins' => $tenantId > 0 ? $repo->twinsOf($tenantId, ['active', 'pending']) : [],
+            'hubCanTwin' => $tenantId > 0 && CooperationAccess::canManage(),
             'hubQuickLinks' => $this->quickLinks(),
             'hub_announce_items' => $this->announceItems(),
             'hub_announce_manage_url' => DashboardPinsAccess::canManage(Gate::getInstance()) ? url('back-office/alerts') : null,
@@ -106,8 +108,91 @@ class HubController
             'hubReviews' => $this->ecosystem()->reviewsFor((int) $row['id']),
             'hubRecommended' => in_array((int) $row['id'], $this->ecosystem()->recommendedByUser($userId), true),
             'hubCanCooperate' => $tenantId > 0 && CooperationAccess::canCreate() && ($mine === null || $mine['id'] !== $row['id']),
+            'hubRowTwins' => $this->ecosystem()->twinsOf((int) $row['id']),
+            'hubTwinWithMe' => $mine !== null && $mine['id'] !== $row['id'] ? $this->ecosystem()->twinBetween($mine['id'], (int) $row['id']) : null,
+            'hubCanTwin' => $tenantId > 0 && CooperationAccess::canManage() && ($mine === null || $mine['id'] !== $row['id']),
+            'hubTwinKinds' => CommunityEcosystemRepository::TWIN_KINDS,
             'csrfToken' => Csrf::token(),
         ]);
+    }
+
+    /** Proposer un jumelage ou un parrainage à une autre communauté. */
+    public function twinRequest(Request $request, array $params = []): Response
+    {
+        $slug = (string) ($params['slug'] ?? '');
+        $back = url('hub/c/' . $slug) . '#jumelage';
+        $tenantId = $this->currentTenantId();
+        $target = $this->stats()->forSlug($slug);
+        if (!Csrf::validate($request->input('_csrf_token')) || $tenantId < 1 || $target === null || !CooperationAccess::canManage()) {
+            Session::flash('error', 'Demande refusée : il faut un rôle autorisé à piloter les coopérations.');
+
+            return Response::redirect($back);
+        }
+        $targetId = (int) $target['id'];
+        if ($targetId === $tenantId) {
+            Session::flash('error', 'Une communauté ne peut pas se jumeler avec elle-même.');
+
+            return Response::redirect($back);
+        }
+        $repo = $this->ecosystem();
+        if (!$repo->tableExists('tenant_twinnings')) {
+            Session::flash('error', 'Les jumelages seront disponibles après la prochaine mise à jour de la base de données.');
+
+            return Response::redirect($back);
+        }
+        if ($repo->twinBetween($tenantId, $targetId) !== null) {
+            Session::flash('error', 'Une demande ou une relation existe déjà avec cette communauté.');
+
+            return Response::redirect($back);
+        }
+        $kind = (string) $request->input('kind', 'jumelage') === 'parrainage' ? 'parrainage' : 'jumelage';
+        // Parrainage : « nous parrainons » (marraine = nous) ou « nous souhaitons être parrainés » (marraine = eux).
+        $sponsor = $kind === 'parrainage' ? ((string) $request->input('role', 'marraine') === 'filleule' ? $targetId : $tenantId) : null;
+        $repo->requestTwin($tenantId, $targetId, $kind, $sponsor, (int) Session::get('user_id'), mb_substr(trim((string) $request->input('message', '')), 0, 2000));
+        Session::flash('success', ($kind === 'parrainage' ? 'Proposition de parrainage' : 'Proposition de jumelage') . ' envoyée à ' . $target['name'] . '.');
+
+        return Response::redirect($back);
+    }
+
+    /** Accepter, décliner, annuler une demande, ou mettre fin à un jumelage. */
+    public function twinDecide(Request $request, array $params = []): Response
+    {
+        $back = url('hub') . '#jumelages';
+        $tenantId = $this->currentTenantId();
+        $repo = $this->ecosystem();
+        $twin = $repo->findTwin((int) ($params['id'] ?? 0));
+        if (!Csrf::validate($request->input('_csrf_token')) || $twin === null || $tenantId < 1 || !CooperationAccess::canManage()) {
+            Session::flash('error', 'Action refusée.');
+
+            return Response::redirect($back);
+        }
+        $isRequester = (int) $twin['requester_tenant_id'] === $tenantId;
+        $isPartner = (int) $twin['partner_tenant_id'] === $tenantId;
+        $decision = (string) $request->input('decision', '');
+        $status = (string) $twin['status'];
+        $userId = (int) Session::get('user_id');
+        $next = match (true) {
+            $decision === 'accept' && $isPartner && $status === 'pending' => 'active',
+            $decision === 'decline' && $isPartner && $status === 'pending' => 'declined',
+            $decision === 'cancel' && $isRequester && $status === 'pending' => 'cancelled',
+            $decision === 'end' && ($isRequester || $isPartner) && $status === 'active' => 'ended',
+            default => null,
+        };
+        if ($next === null) {
+            Session::flash('error', 'Cette action n’est pas possible sur cette relation.');
+
+            return Response::redirect($back);
+        }
+        $repo->setTwinStatus((int) $twin['id'], $next, $userId);
+        $this->stats()->forgetCache();
+        Session::flash('success', match ($next) {
+            'active' => (string) $twin['kind'] === 'parrainage' ? 'Parrainage scellé : il apparaît sur les fiches des deux communautés.' : 'Jumelage scellé : il apparaît sur les fiches des deux communautés.',
+            'declined' => 'Demande déclinée.',
+            'cancelled' => 'Demande retirée.',
+            default => 'Relation terminée.',
+        });
+
+        return Response::redirect($back);
     }
 
     /** Comparaison côte à côte de deux communautés (par défaut : la vôtre à gauche). */

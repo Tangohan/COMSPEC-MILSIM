@@ -488,6 +488,8 @@ return function (Router $router) {
     $router->get('/hub/c/{slug}', [HubController::class, 'community'], [AuthMiddleware::class]);
     $router->post('/hub/c/{slug}/recommander', [HubController::class, 'recommend'], [AuthMiddleware::class]);
     $router->post('/hub/avis', [HubController::class, 'review'], [AuthMiddleware::class]);
+    $router->post('/hub/c/{slug}/jumeler', [HubController::class, 'twinRequest'], [AuthMiddleware::class]);
+    $router->post('/hub/jumelages/{id}', [HubController::class, 'twinDecide'], [AuthMiddleware::class]);
     $router->get('/hub/bourse', [HubController::class, 'board'], [AuthMiddleware::class]);
     $router->post('/hub/bourse', [HubController::class, 'boardStore'], [AuthMiddleware::class]);
     $router->post('/hub/bourse/{id}/repondre', [HubController::class, 'boardRespond'], [AuthMiddleware::class]);

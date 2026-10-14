@@ -13,6 +13,15 @@ $hubPendingReviews = is_array($hubPendingReviews ?? null) ? $hubPendingReviews :
 $hubBoardPosts = is_array($hubBoardPosts ?? null) ? $hubBoardPosts : [];
 $hubCanCooperate = !empty($hubCanCooperate);
 $hubQuickLinks = is_array($hubQuickLinks ?? null) ? $hubQuickLinks : [];
+$hubTwins = is_array($hubTwins ?? null) ? $hubTwins : [];
+$hubCanTwin = !empty($hubCanTwin);
+$twinIds = [];
+foreach ($hubTwins as $tw) {
+    if ($tw['status'] === 'active') {
+        $twinIds[(int) $tw['other_id']] = (string) $tw['role'];
+    }
+}
+$roleLabels = ['jumelle' => 'Unité jumelle', 'marraine' => 'Vous la parrainez', 'filleule' => 'Votre marraine'];
 $hubAnnounceItems = is_array($hub_announce_items ?? null) ? $hub_announce_items : [];
 $hubAnnounceManageUrl = isset($hub_announce_manage_url) && is_string($hub_announce_manage_url) && $hub_announce_manage_url !== '' ? $hub_announce_manage_url : null;
 $csrf = (string) ($csrfToken ?? \App\Core\Csrf::token());
@@ -176,6 +185,53 @@ $sortLink = static fn (string $key): string => url('hub') . '?tri=' . rawurlenco
     </section>
     <?php endif; ?>
 
+
+    <?php if ($hubMine !== null): ?>
+    <section class="hx-section" id="jumelages" aria-labelledby="hx-twin-title">
+      <div class="hx-section__head">
+        <div>
+          <p class="hx-kicker">Jumelages et parrainages</p>
+          <h2 id="hx-twin-title" class="hx-title">Vos unités sœurs</h2>
+          <p class="hx-sub">Comme deux villes jumelées : un <strong>jumelage</strong> lie deux unités d’égal à égal, un <strong>parrainage</strong> unit une unité aguerrie à une jeune unité qu’elle accompagne. Le lien s’affiche sur les deux fiches et dans l’annuaire. Proposez-le depuis la fiche d’une communauté.</p>
+        </div>
+      </div>
+      <?php if ($hubTwins === []): ?>
+      <p class="hx-empty">Aucun jumelage pour l’instant. Ouvrez la fiche d’une communauté amie et proposez-lui de sceller le lien.</p>
+      <?php else: ?>
+      <div class="hx-twins">
+        <?php foreach ($hubTwins as $tw):
+          $pending = $tw['status'] === 'pending';
+          $incoming = $pending && !$tw['outgoing'];
+          $kindLabel = $tw['kind'] === 'parrainage' ? 'Parrainage' : 'Jumelage';
+        ?>
+        <article class="hx-twin<?= $pending ? ' is-pending' : '' ?><?= $incoming ? ' is-incoming' : '' ?>">
+          <span class="hx-twin__seal" aria-hidden="true"><?= $tw['kind'] === 'parrainage' ? '🛡' : '🤝' ?></span>
+          <div class="hx-twin__body">
+            <p class="hx-kicker"><?= $h($kindLabel) ?><?= $pending ? ($incoming ? ' · demande reçue' : ' · demande envoyée') : ' · depuis le ' . $h(date('d/m/Y', strtotime((string) $tw['accepted_at']))) ?></p>
+            <h3><a href="<?= $h(url('hub/c/' . $tw['other_slug'])) ?>"><?= $h((string) $tw['other_name']) ?></a></h3>
+            <p class="hx-sub"><?= $h($roleLabels[(string) $tw['role']] ?? '') ?><?php if ($tw['role'] === 'marraine' && $pending): ?> (vous seriez la marraine)<?php endif; ?></p>
+            <?php if (!empty($tw['message'])): ?><p class="hx-twin__msg">« <?= $h((string) $tw['message']) ?> »</p><?php endif; ?>
+          </div>
+          <?php if ($hubCanTwin): ?>
+          <form method="post" action="<?= $h(url('hub/jumelages/' . (int) $tw['id'])) ?>" class="hx-twin__actions">
+            <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+            <?php if ($incoming): ?>
+            <button type="submit" name="decision" value="accept" class="hx-btn hx-btn--accent hx-btn--small">Sceller le <?= $h(mb_strtolower($kindLabel)) ?></button>
+            <button type="submit" name="decision" value="decline" class="hx-btn hx-btn--line hx-btn--small">Décliner</button>
+            <?php elseif ($pending): ?>
+            <button type="submit" name="decision" value="cancel" class="hx-btn hx-btn--line hx-btn--small">Retirer la demande</button>
+            <?php else: ?>
+            <button type="submit" name="decision" value="end" class="hx-btn hx-btn--line hx-btn--small" onclick="return confirm('Mettre fin à ce <?= $h(mb_strtolower($kindLabel)) ?> ? Il disparaîtra des deux fiches.');">Mettre fin</button>
+            <?php endif; ?>
+          </form>
+          <?php endif; ?>
+        </article>
+        <?php endforeach; ?>
+      </div>
+      <?php endif; ?>
+    </section>
+    <?php endif; ?>
+
     <section class="hx-section" aria-labelledby="hx-board-title">
       <div class="hx-section__head">
         <div>
@@ -273,6 +329,8 @@ $sortLink = static fn (string $key): string => url('hub') . '?tri=' . rawurlenco
                       <?= $h($r['game'] !== '' ? (string) $r['game'] : 'Jeu non précisé') ?>
                       <?php if ($r['recruitment_open']): ?> · <span class="hx-pill">Recrute</span><?php endif; ?>
                       <?php if ($isMine): ?> · <span class="hx-pill hx-pill--muted">Vous</span><?php endif; ?>
+                      <?php if (isset($twinIds[(int) $r['id']])): ?> · <span class="hx-pill hx-pill--twin"><?= $twinIds[(int) $r['id']] === 'jumelle' ? 'Jumelée' : ($twinIds[(int) $r['id']] === 'marraine' ? 'Filleule' : 'Marraine') ?></span><?php endif; ?>
+                      <?php if ((int) ($r['twins'] ?? 0) > 0): ?> · <span title="<?= (int) $r['twins'] ?> jumelage(s) ou parrainage(s)">🤝 <?= (int) $r['twins'] ?></span><?php endif; ?>
                     </small>
                   </div>
                 </div>

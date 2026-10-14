@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Hub inter-communautés : recommandations, avis après coopération, bourse aux coopérations.
+ * Hub inter-communautés : recommandations, avis après coopération, bourse aux coopérations, jumelages.
  * Idempotent : chaque table n’est créée que si elle manque.
  */
 function run_community_ecosystem_migration(PDO $pdo): void
@@ -87,6 +87,28 @@ function run_community_ecosystem_migration(PDO $pdo): void
             KEY idx_cbr_tenant (tenant_id),
             CONSTRAINT fk_cbr_post FOREIGN KEY (post_id) REFERENCES cooperation_board_posts (id) ON DELETE CASCADE,
             CONSTRAINT fk_cbr_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+        // Jumelage (d’égal à égal) ou parrainage (une unité accompagne une plus jeune) entre deux communautés.
+        // sponsor_tenant_id : la marraine pour un parrainage, NULL pour un jumelage.
+        'tenant_twinnings' => "CREATE TABLE tenant_twinnings (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            requester_tenant_id INT UNSIGNED NOT NULL,
+            partner_tenant_id INT UNSIGNED NOT NULL,
+            kind VARCHAR(16) NOT NULL DEFAULT 'jumelage',
+            sponsor_tenant_id INT UNSIGNED NULL,
+            status VARCHAR(16) NOT NULL DEFAULT 'pending',
+            message TEXT NULL,
+            requested_by_user_id INT UNSIGNED NOT NULL,
+            responded_by_user_id INT UNSIGNED NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            accepted_at DATETIME NULL,
+            ended_at DATETIME NULL,
+            PRIMARY KEY (id),
+            KEY idx_twin_requester (requester_tenant_id, status),
+            KEY idx_twin_partner (partner_tenant_id, status),
+            CONSTRAINT fk_twin_requester FOREIGN KEY (requester_tenant_id) REFERENCES tenants (id) ON DELETE CASCADE,
+            CONSTRAINT fk_twin_partner FOREIGN KEY (partner_tenant_id) REFERENCES tenants (id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     ];
 

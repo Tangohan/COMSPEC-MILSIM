@@ -150,3 +150,34 @@ html[data-bo-theme="dark"] .hubx .hx-rate label:has(input:checked) { background:
 .hubx .hx-tree small { color: var(--hx-muted); }
 .hubx .hx-post__by { font-size: .76rem; color: var(--hx-muted); }
 .hubx .hx-post__by a { font-weight: 700; color: var(--hx-ink); }
+
+/* Jumelages et parrainages */
+.hubx .hx-pill--twin { background: #fef3c7; color: #92400e; }
+html[data-bo-theme="dark"] .hubx .hx-pill--twin { background: #2e2310; color: #fcd34d; }
+.hubx .hx-twins { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); }
+.hubx .hx-twin { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .35rem .9rem; border: 1px solid var(--hx-line); border-radius: 1rem; background: var(--hx-surface); padding: 1rem 1.1rem; }
+.hubx .hx-twin.is-pending { border-style: dashed; }
+.hubx .hx-twin.is-incoming { border: 1px solid #f59e0b; box-shadow: 0 0 0 3px rgba(245, 158, 11, .12); }
+.hubx .hx-twin__seal { display: inline-flex; align-items: center; justify-content: center; width: 2.6rem; height: 2.6rem; border-radius: 50%; background: var(--hx-accent-soft); font-size: 1.3rem; }
+.hubx .hx-twin h3 { font-size: 1.02rem; font-weight: 900; }
+.hubx .hx-twin h3 a { color: var(--hx-ink); text-decoration: none; }
+.hubx .hx-twin h3 a:hover { color: var(--hx-accent); }
+.hubx .hx-twin__msg { margin-top: .3rem; font-size: .82rem; font-style: italic; color: var(--hx-muted); }
+.hubx .hx-twin__actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .4rem; }
+.hubx .hx-twin-chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+.hubx .hx-twin-chips li { border: 1px solid var(--hx-line); border-radius: .8rem; padding: .45rem .75rem; font-size: .84rem; }
+.hubx .hx-twin-chips a { font-weight: 800; color: var(--hx-ink); text-decoration: none; }
+.hubx .hx-twin-chips small { display: block; font-size: .72rem; color: var(--hx-muted); }
+.hubx .hx-twin-state { margin-top: .9rem; border-radius: .8rem; background: var(--hx-accent-soft); padding: .65rem .85rem; font-size: .86rem; font-weight: 600; color: var(--hx-accent); }
+.hubx .hx-twin-form { margin-top: 1rem; }
+.hubx .hx-twin-form > summary { list-style: none; width: fit-content; }
+.hubx .hx-twin-form > summary::-webkit-details-marker { display: none; }
+.hubx .hx-twin-form[open] > summary { display: none; }
+.hubx .hx-twin-kinds { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); border: 0; padding: 0; }
+.hubx .hx-twin-kinds label { display: flex; gap: .6rem; align-items: flex-start; border: 1px solid var(--hx-line); border-radius: .9rem; padding: .75rem .85rem; cursor: pointer; }
+.hubx .hx-twin-kinds label:has(input:checked) { border-color: var(--hx-accent); background: var(--hx-accent-soft); }
+.hubx .hx-twin-kinds strong { display: block; font-size: .9rem; }
+.hubx .hx-twin-kinds small { display: block; margin-top: .15rem; font-size: .76rem; color: var(--hx-muted); }
+.hubx .hx-twin-role { display: grid; gap: .35rem; border: 0; padding: 0; font-size: .84rem; }
+.hubx .hx-twin-form form:not(:has(input[name="kind"][value="parrainage"]:checked)) .hx-twin-role { display: none; }
+.hubx .hx-twin-form button[type="submit"] { justify-self: start; }
