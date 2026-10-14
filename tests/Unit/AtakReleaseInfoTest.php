@@ -47,6 +47,36 @@ final class AtakReleaseInfoTest extends TestCase
         self::assertNull($info['link']);
     }
 
+    public function testPlayerSummaryOfTheLatestVersionIsInBothLanguages(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $summary = AtakReleaseInfo::playerSummary((string) AtakReleaseInfo::latest($root)['atak_native'], $root);
+
+        // Chaque version a son « Résumé joueur » : la notification « mise à jour disponible » le montre au joueur.
+        self::assertNotSame('', $summary['fr']);
+        self::assertNotSame('', $summary['en']);
+        self::assertStringNotContainsString('|', $summary['fr'] . $summary['en']);
+        self::assertLessThanOrEqual(300, mb_strlen($summary['fr']));
+    }
+
+    public function testPlayerSummaryReadsTitleAndBulletsOfTheRightEntry(): void
+    {
+        $dir = sys_get_temp_dir() . '/atak-release-info-' . bin2hex(random_bytes(4));
+        mkdir($dir);
+        file_put_contents($dir . '/CHANGELOG-ATAK.md', "# CHANGELOG\n\n## Autre (ATAK natif 1.10.0)\n\n### Résumé joueur\nType : correctif\n"
+            . "FR : Mauvaise entrée\n- Non\nEN : Wrong entry\n- No\n\n## Carte (ATAK natif 1.1.0)\n\n### Résumé joueur\nType : nouveauté\n"
+            . "FR : La carte | change\n- Un point.\n- Deux points.\nEN : The map changes\n- One dot.\n\n### Détail technique\n- `fn_x` interne\n");
+        try {
+            $summary = AtakReleaseInfo::playerSummary('1.1.0', $dir);
+            self::assertSame('La carte  change. Un point. Deux points.', $summary['fr']);
+            self::assertSame('The map changes. One dot.', $summary['en']);
+            self::assertSame(['fr' => '', 'en' => ''], AtakReleaseInfo::playerSummary('1.2.0', $dir));
+        } finally {
+            @unlink($dir . '/CHANGELOG-ATAK.md');
+            @rmdir($dir);
+        }
+    }
+
     public function testVersionEndpointNeedsNoApiKey(): void
     {
         self::assertFalse(ComspecApiKeyAuth::pathRequiresProtection('/api/atak/version'));
