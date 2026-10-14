@@ -8,9 +8,44 @@
       ["table"] call ...   TBR, tableau des relais (menu COMSPEC ATAK d'Eden) : pylônes et modules relais de la mission,
                            nom, type, camp, portée, bande, liaison, état, position ; répéteurs sans relais raccordé à portée
                            signalés ; Aller (caméra), Sélectionner, double clic = les deux.
+      ["help"] call ...    Aide relais (même menu) : texte du manuel de terrain dans une fenêtre de l'éditeur.
 */
 params [["_mode", "watch"]];
 if (!is3DEN) exitWith {};
+disableSerialization;
+// Menus d'Eden (TBR, aide) : l'action d'un menu s'exécute pendant que la liste déroulante du menu est encore ouverte.
+// Une fenêtre créée à ce moment restait invisible et gardait la souris (menu bloqué) ; on la crée donc juste après,
+// dans un script à part, une fois le menu refermé.
+if (_mode in ["table", "help"] && {!canSuspend}) exitWith { [_mode] spawn { uiSleep 0.05; _this call comspec_atak_native_fnc_relayEden; }; };
+// Fenêtre de l'éditeur : fond assombri, panneau centré, titre. Renvoie [display, x, y, l, h, unité] ou [].
+// Positions en safeZone (comme le formulaire Zeus) ; Échap ferme (RscDisplayEmpty).
+private _window = {
+    params ["_titleTxt", ["_wr", 0.62], ["_hr", 0.62]];
+    private _parent = findDisplay 313;
+    if (isNull _parent) exitWith { [] };
+    private _d = _parent createDisplay "RscDisplayEmpty";
+    if (isNull _d) exitWith { [] };
+    private _w = safeZoneW * _wr * 0.75;
+    private _h = safeZoneH * _hr;
+    private _x0 = safeZoneX + (safeZoneW - _w) / 2;
+    private _y0 = safeZoneY + (safeZoneH - _h) / 2 + safeZoneH * 0.015;
+    private _u = safeZoneH * 0.006;
+    private _dim = _d ctrlCreate ["ctrlStatic", -1];
+    _dim ctrlSetPosition [safeZoneX, safeZoneY, safeZoneW, safeZoneH];
+    _dim ctrlSetBackgroundColor [0, 0, 0, 0.45];
+    _dim ctrlCommit 0;
+    private _bg = _d ctrlCreate ["ctrlStatic", -1];
+    _bg ctrlSetPosition [_x0, _y0, _w, _h];
+    _bg ctrlSetBackgroundColor [0.13, 0.14, 0.13, 0.97];
+    _bg ctrlCommit 0;
+    private _title = _d ctrlCreate ["ctrlStatic", -1];
+    _title ctrlSetPosition [_x0, _y0 - 5 * _u, _w, 5 * _u];
+    _title ctrlSetBackgroundColor [0.10, 0.30, 0.16, 1];
+    _title ctrlSetTextColor [1, 1, 1, 1];
+    _title ctrlSetText ("  " + _titleTxt);
+    _title ctrlCommit 0;
+    [_d, _x0, _y0, _w, _h, _u]
+};
 private _towerCls = "COMSPEC_ATAK_RelayTower_Base";
 private _modCls = "COMSPEC_ATAK_Module_Relay";
 switch (_mode) do {
@@ -48,6 +83,32 @@ switch (_mode) do {
             };
             { deleteVehicle _y; } forEach _previews;
         }];
+    };
+    case "help": {
+        // Aide relais (menu COMSPEC ATAK > Aide : poser un relais). Même texte que la page du manuel de terrain (CfgHints),
+        // affiché dans une fenêtre à nous : BIS_fnc_openFieldManual lancé depuis ce menu cherchait un écran parent et
+        // tombait sur un booléen (erreur createDisplay dans fn_openFieldManual.sqf, ligne 40).
+        private _win = [localize "STR_COMSPEC_ATAK_CFG_2C44314089", 0.62, 0.66] call _window;
+        if (_win isEqualTo []) exitWith {};
+        _win params ["_d", "_x0", "_y0", "_w", "_h", "_u"];
+        private _grp = _d ctrlCreate ["ctrlControlsGroup", -1];
+        _grp ctrlSetPosition [_x0 + 2 * _u, _y0 + 2 * _u, _w - 4 * _u, _h - 11 * _u];
+        _grp ctrlCommit 0;
+        private _txt = _d ctrlCreate ["ctrlStructuredText", -1, _grp];
+        private _tw = _w - 7 * _u;
+        _txt ctrlSetPosition [0, 0, _tw, _h];
+        _txt ctrlSetStructuredText parseText format [localize "STR_COMSPEC_ATAK_CFG_BF0FFB1714",
+            "<br/><br/>", "<br/>• ", "<t color='#7ED38A' font='RobotoCondensedBold' size='1.1'>", "</t>"];
+        _txt ctrlCommit 0;
+        _txt ctrlSetPosition [0, 0, _tw, (ctrlTextHeight _txt) + 2 * _u];
+        _txt ctrlCommit 0;
+        private _bw = _w * 0.2;
+        private _b = _d ctrlCreate ["ctrlButton", -1];
+        _b ctrlSetPosition [_x0 + _w - _bw - _u, _y0 + _h - 6 * _u, _bw, 5 * _u];
+        _b ctrlSetText ("Fermer" call comspec_atak_native_fnc_tr);
+        _b ctrlAddEventHandler ["ButtonClick", { (ctrlParent (_this select 0)) closeDisplay 2; }];
+        _b ctrlCommit 0;
+        ctrlSetFocus _b;
     };
     case "table": {
         private _num = { params ["_v", "_d"]; [_d, _v] select (_v isEqualType 0) };
@@ -100,21 +161,9 @@ switch (_mode) do {
             } forEach _rows;
         };
 
-        private _parent = findDisplay 313;
-        if (isNull _parent) exitWith {};
-        private _d = _parent createDisplay "RscDisplayEmpty";
-        private _w = 150 * pixelGridNoUIScale * pixelW;
-        private _h = 90 * pixelGridNoUIScale * pixelH;
-        private _x0 = 0.5 - _w / 2;
-        private _y0 = 0.5 - _h / 2;
-        private _u = pixelGridNoUIScale * pixelH;
-        private _bg = _d ctrlCreate ["ctrlStaticBackground", -1];
-        _bg ctrlSetPosition [_x0, _y0, _w, _h];
-        _bg ctrlCommit 0;
-        private _title = _d ctrlCreate ["ctrlStaticTitle", -1];
-        _title ctrlSetPosition [_x0, _y0 - 5 * _u, _w, 5 * _u];
-        _title ctrlSetText (format ["TBR · Tableau des relais (%1)", count _rows] call comspec_atak_native_fnc_tr);
-        _title ctrlCommit 0;
+        private _win = [format ["TBR · Tableau des relais (%1)", count _rows] call comspec_atak_native_fnc_tr, 0.9, 0.62] call _window;
+        if (_win isEqualTo []) exitWith {};
+        _win params ["_d", "_x0", "_y0", "_w", "_h", "_u"];
         private _list = _d ctrlCreate ["ctrlListNBox", 100];
         _list ctrlSetPosition [_x0 + _u, _y0 + _u, _w - 2 * _u, _h - 14 * _u];
         _list lnbSetColumnsPos [0, 0.22, 0.40, 0.49, 0.57, 0.66, 0.78, 0.89];
@@ -157,7 +206,7 @@ switch (_mode) do {
             if (_what in ["sel", "both"] && {!isNull _e}) then { set3DENSelected [_e]; };
         };
         uiNamespace setVariable ["COMSPEC_ATAK_TbrAct", _act];
-        private _bw = 28 * pixelGridNoUIScale * pixelW;
+        private _bw = _w * 0.18;
         private _by = _y0 + _h - 6 * _u;
         {
             _x params ["_lbl", "_code", "_k"];
