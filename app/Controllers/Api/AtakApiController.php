@@ -2595,6 +2595,12 @@ class AtakApiController
             ], 503);
         }
 
+        // Ticket Discord (ouverture, compteur ×N), après la réponse au jeu ; jamais bloquant.
+        $reportId = (int) $result['id'];
+        \App\Services\Monitoring\AtakModReportDiscordTicketService::defer(
+            static fn (\App\Services\Monitoring\AtakModReportDiscordTicketService $t) => $t->onReport($reportId)
+        );
+
         // Signalement joueur (Échap > Signaler un problème) : e-mail à l'exploitation, jamais bloquant.
         if ($result['created'] && str_starts_with(strtolower($source), 'player')) {
             try {
