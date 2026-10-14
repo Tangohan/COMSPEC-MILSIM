@@ -111,18 +111,19 @@ class CfgVehicles {
             class Kind: Combo {
                 property = "COMSPEC_SSE_OrgModule_Kind";
                 displayName = "$STR_COMSPEC_SSE_CFG_BDDC7ADB12";
+                tooltip = "$STR_COMSPEC_SSE_CFG_DB6463085C";
                 typeName = "STRING";
                 defaultValue = "'reseau'";
                 class Values {
-                    class Reseau { name = "Réseau"; value = "reseau"; };
-                    class Cellule { name = "Cellule"; value = "cellule"; };
-                    class Groupe { name = "Groupe armé"; value = "groupe"; };
-                    class Milice { name = "Milice"; value = "milice"; };
-                    class Criminel { name = "Réseau criminel"; value = "criminel"; };
-                    class Clan { name = "Clan, famille"; value = "clan"; };
-                    class Entreprise { name = "Entreprise écran"; value = "entreprise"; };
-                    class Service { name = "Service de renseignement"; value = "service"; };
-                    class Soutien { name = "Réseau de soutien"; value = "soutien"; };
+                    class Reseau { name = "$STR_COMSPEC_SSE_CFG_5CBDDF1BDA"; value = "reseau"; };
+                    class Cellule { name = "$STR_COMSPEC_SSE_CFG_B8C77BEB16"; value = "cellule"; };
+                    class Groupe { name = "$STR_COMSPEC_SSE_CFG_D0C2714243"; value = "groupe"; };
+                    class Milice { name = "$STR_COMSPEC_SSE_CFG_EB08DFF156"; value = "milice"; };
+                    class Criminel { name = "$STR_COMSPEC_SSE_CFG_757A01995B"; value = "criminel"; };
+                    class Clan { name = "$STR_COMSPEC_SSE_CFG_81BB813464"; value = "clan"; };
+                    class Entreprise { name = "$STR_COMSPEC_SSE_CFG_898AB8D570"; value = "entreprise"; };
+                    class Service { name = "$STR_COMSPEC_SSE_CFG_4BFB2603C5"; value = "service"; };
+                    class Soutien { name = "$STR_COMSPEC_SSE_CFG_C713B7703C"; value = "soutien"; };
                 };
             };
             class Parent: Edit {
@@ -135,13 +136,14 @@ class CfgVehicles {
             class Threat: Combo {
                 property = "COMSPEC_SSE_OrgModule_Threat";
                 displayName = "$STR_COMSPEC_SSE_CFG_E39BBE2519";
+                tooltip = "$STR_COMSPEC_SSE_CFG_A0343D674B";
                 typeName = "STRING";
                 defaultValue = "'moyenne'";
                 class Values {
-                    class Faible { name = "Faible"; value = "faible"; };
-                    class Moyenne { name = "Moyenne"; value = "moyenne"; };
-                    class Elevee { name = "Élevée"; value = "elevee"; };
-                    class Critique { name = "Critique"; value = "critique"; };
+                    class Faible { name = "$STR_COMSPEC_SSE_CFG_3DF7A6B1E1"; value = "faible"; };
+                    class Moyenne { name = "$STR_COMSPEC_SSE_CFG_EF33304D4F"; value = "moyenne"; };
+                    class Elevee { name = "$STR_COMSPEC_SSE_CFG_4C4DE74821"; value = "elevee"; };
+                    class Critique { name = "$STR_COMSPEC_SSE_CFG_6256DE98F1"; value = "critique"; };
                 };
             };
             class Description: Edit {
@@ -159,8 +161,8 @@ class CfgVehicles {
                 typeName = "STRING";
                 defaultValue = "'manual'";
                 class Values {
-                    class Manual { name = "Saisis sur chaque personne"; value = "manual"; };
-                    class Auto { name = "Générés (cellules et rôles)"; value = "auto"; };
+                    class Manual { name = "$STR_COMSPEC_SSE_CFG_3D4AD104BA"; value = "manual"; };
+                    class Auto { name = "$STR_COMSPEC_SSE_CFG_1A5FE6557C"; value = "auto"; };
                 };
             };
             class Seed: Edit {
@@ -173,12 +175,13 @@ class CfgVehicles {
             class Known: Combo {
                 property = "COMSPEC_SSE_OrgModule_Known";
                 displayName = "$STR_COMSPEC_SSE_CFG_01CE550E6F";
+                tooltip = "$STR_COMSPEC_SSE_CFG_698FD3A976";
                 typeName = "NUMBER";
                 defaultValue = "0";
                 class Values {
-                    class Rien { name = "Rien"; value = 0; };
-                    class Chef { name = "Le chef ou les membres sont soupçonnés"; value = 1; };
-                    class Org { name = "L'organisation est connue des services"; value = 2; };
+                    class Rien { name = "$STR_COMSPEC_SSE_CFG_107309E51C"; value = 0; };
+                    class Chef { name = "$STR_COMSPEC_SSE_CFG_338A300200"; value = 1; };
+                    class Org { name = "$STR_COMSPEC_SSE_CFG_2E8D40A6EE"; value = 2; };
                 };
             };
             class ModuleDescription: ModuleDescription {};
@@ -221,6 +224,7 @@ class Cfg3DEN {
                     };
                     class COMSPEC_SSE_Org_Role {
                         displayName = "$STR_COMSPEC_SSE_CFG_8B82479022";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_E7EC1A8FA0";
                         property = "COMSPEC_SSE_Org_Role";
                         control = "Combo";
                         expression = "_this setVariable ['COMSPEC_SSE_Org_Role', _value, true];";
@@ -228,21 +232,21 @@ class Cfg3DEN {
                         typeName = "STRING";
                         condition = "objectBrain";
                         class Values {
-                            class Chef { name = "Chef"; value = "chef"; };
-                            class Adjoint { name = "Adjoint"; value = "adjoint"; };
-                            class ChefCellule { name = "Chef de cellule"; value = "chefcellule"; };
-                            class Financier { name = "Financier"; value = "financier"; };
-                            class Logisticien { name = "Logisticien"; value = "logisticien"; };
-                            class Artificier { name = "Artificier"; value = "artificier"; };
-                            class Recruteur { name = "Recruteur"; value = "recruteur"; };
-                            class Propagande { name = "Propagandiste"; value = "propagande"; };
-                            class Transmissions { name = "Transmissions"; value = "transmissions"; };
-                            class Courrier { name = "Courrier"; value = "courrier"; };
-                            class Guetteur { name = "Guetteur"; value = "guetteur"; };
-                            class Combattant { name = "Combattant"; value = "combattant"; };
-                            class Membre { name = "Membre"; value = "membre"; };
-                            class Facilitateur { name = "Facilitateur"; value = "facilitateur"; };
-                            class Sympathisant { name = "Sympathisant"; value = "sympathisant"; };
+                            class Chef { name = "$STR_COMSPEC_SSE_CFG_46DE8428AC"; value = "chef"; };
+                            class Adjoint { name = "$STR_COMSPEC_SSE_CFG_F5DF03113D"; value = "adjoint"; };
+                            class ChefCellule { name = "$STR_COMSPEC_SSE_CFG_D4601A84BA"; value = "chefcellule"; };
+                            class Financier { name = "$STR_COMSPEC_SSE_CFG_8FAF1224A7"; value = "financier"; };
+                            class Logisticien { name = "$STR_COMSPEC_SSE_CFG_12B553B4AB"; value = "logisticien"; };
+                            class Artificier { name = "$STR_COMSPEC_SSE_CFG_3D067E1103"; value = "artificier"; };
+                            class Recruteur { name = "$STR_COMSPEC_SSE_CFG_B732FA329A"; value = "recruteur"; };
+                            class Propagande { name = "$STR_COMSPEC_SSE_CFG_14DBC51120"; value = "propagande"; };
+                            class Transmissions { name = "$STR_COMSPEC_SSE_CFG_1BC4C81762"; value = "transmissions"; };
+                            class Courrier { name = "$STR_COMSPEC_SSE_CFG_6347EE1AA8"; value = "courrier"; };
+                            class Guetteur { name = "$STR_COMSPEC_SSE_CFG_B000B0D387"; value = "guetteur"; };
+                            class Combattant { name = "$STR_COMSPEC_SSE_CFG_6B7D371AD3"; value = "combattant"; };
+                            class Membre { name = "$STR_COMSPEC_SSE_CFG_BBC7E79964"; value = "membre"; };
+                            class Facilitateur { name = "$STR_COMSPEC_SSE_CFG_78A1D8F3DF"; value = "facilitateur"; };
+                            class Sympathisant { name = "$STR_COMSPEC_SSE_CFG_A29B47B929"; value = "sympathisant"; };
                         };
                     };
                     class COMSPEC_SSE_Org_Alias {
@@ -257,6 +261,7 @@ class Cfg3DEN {
                     };
                     class COMSPEC_SSE_Org_Known {
                         displayName = "$STR_COMSPEC_SSE_CFG_01CE550E6F";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_2820E4C1AC";
                         property = "COMSPEC_SSE_Org_Known";
                         control = "Combo";
                         expression = "_this setVariable ['COMSPEC_SSE_Org_Known', _value, true];";
@@ -264,9 +269,9 @@ class Cfg3DEN {
                         typeName = "NUMBER";
                         condition = "objectBrain";
                         class Values {
-                            class Rien { name = "Rien (à découvrir)"; value = 0; };
-                            class Soupcon { name = "Appartenance soupçonnée"; value = 1; };
-                            class Confirme { name = "Appartenance confirmée"; value = 2; };
+                            class Rien { name = "$STR_COMSPEC_SSE_CFG_E11BD7E4AB"; value = 0; };
+                            class Soupcon { name = "$STR_COMSPEC_SSE_CFG_B5F75A0B25"; value = 1; };
+                            class Confirme { name = "$STR_COMSPEC_SSE_CFG_3D1993661F"; value = 2; };
                         };
                     };
                     class COMSPEC_SSE_OrgLinked {

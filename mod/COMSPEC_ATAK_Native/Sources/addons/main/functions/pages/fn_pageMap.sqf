@@ -283,6 +283,11 @@ if (_interactive) then {
         if (_open) then {
             uiNamespace setVariable ["COMSPEC_ATAK_LayerToggle", {
                 params ["_ns", "_var", "_def"];
+                // Réglage CBA côté joueur (noms sur la carte) : enregistré par CBA, le même que dans le menu CBA.
+                if (_ns isEqualTo "C") exitWith {
+                    [_var, !(missionNamespace getVariable [_var, _def]), false, "client"] call CBA_settings_fnc_set;
+                    [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+                };
                 private _n = [profileNamespace, missionNamespace] select (_ns isEqualTo "M");
                 _n setVariable [_var, !(_n getVariable [_var, _def])];
                 if (_ns isEqualTo "P") then { saveProfileNamespace; };
@@ -333,10 +338,15 @@ if (_interactive) then {
                 };
                 [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
             }];
-            // [libellé, espace (P profil, M mission), variable, défaut, clé communauté (verrou Athena) ou ""]
+            // [libellé, espace (P profil, M mission, C réglage CBA du joueur), variable, défaut, clé communauté (verrou Athena) ou ""]
             private _layers = [
                 ["Alliés", "P", "COMSPEC_ATAK_LayerFriends", true, ""],
                 ["Cartouches", "P", "COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"],
+                ["Noms des repères", "C", "comspec_atak_native_map_show_marker_text", true, ""],
+                ["Villes", "C", "comspec_atak_native_map_show_cities", true, ""],
+                ["Villages", "C", "comspec_atak_native_map_show_villages", true, ""],
+                ["Lieux-dits", "C", "comspec_atak_native_map_show_locals", true, ""],
+                ["Sites", "C", "comspec_atak_native_map_show_sites", true, ""],
                 ["Zones Athena", "P", "COMSPEC_ATAK_ZonesLayer", true, ""],
                 ["SIGINT", "P", "COMSPEC_ATAK_SigintLayer", true, ""],
                 ["Guerre élec.", "P", "COMSPEC_ATAK_LayerEw", true, ""],
@@ -384,7 +394,7 @@ if (_interactive) then {
             private _boxW = _boxH / _ratio;
             {
                 _x params ["_lbl", "_ns", "_var", "_def", "_tenant"];
-                private _on = ([profileNamespace, missionNamespace] select (_ns isEqualTo "M")) getVariable [_var, _def];
+                private _on = ([profileNamespace, missionNamespace] select (_ns in ["M", "C"])) getVariable [_var, _def];
                 private _locked = false;
                 if (_tenant isNotEqualTo "") then { ([_var, _def, _tenant] call comspec_atak_native_fnc_pref) params ["_v", "_lk"]; _on = _v; _locked = _lk; };
                 private _bx0 = _sx + (_forEachIndex mod 2) * (_lw + _pad / 2);

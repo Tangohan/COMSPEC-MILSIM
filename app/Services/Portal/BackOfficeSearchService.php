@@ -14,6 +14,9 @@ use App\Support\EffectifsLmsAccess;
 /**
  * Recherche du back-office : pages d’administration + contenu de la communauté.
  *
+ * Les pages et les guides sont classés par pertinence : titre avant sous-titre avant mots-clés,
+ * avec synonymes métier (orbat ↔ organigramme, droits ↔ accès…) et tolérance d’une faute de frappe.
+ *
  * @phpstan-type SearchHit array{title: string, subtitle?: string, excerpt?: string, href: string}
  */
 final class BackOfficeSearchService
@@ -23,6 +26,58 @@ final class BackOfficeSearchService
     public const MAX_QUERY_LEN = 200;
 
     private const PER_SCOPE = 10;
+
+    private const GUIDES_LIMIT = 6;
+
+    /**
+     * Synonymes métier : un mot tapé trouve aussi les pages qui emploient l’autre terme.
+     *
+     * @var array<string, list<string>>
+     */
+    private const SYNONYMS = [
+        'orbat' => ['organigramme', 'structure', 'unite'],
+        'organigramme' => ['orbat', 'structure'],
+        'unite' => ['structure', 'orbat', 'affectation'],
+        'droit' => ['acces', 'permission', 'role'],
+        'permission' => ['droit', 'acces', 'role'],
+        'acces' => ['droit', 'permission', 'role'],
+        'role' => ['acces', 'droit'],
+        'recrutement' => ['candidature', 'inscription', 'enrolement'],
+        'candidature' => ['recrutement', 'dossier'],
+        'candidat' => ['recrutement', 'candidature'],
+        'inscription' => ['recrutement', 'candidature'],
+        'membre' => ['effectifs', 'personnel', 'utilisateur', 'compte'],
+        'joueur' => ['membre', 'effectifs', 'personnel'],
+        'personnel' => ['effectifs', 'membre'],
+        'utilisateur' => ['membre', 'compte'],
+        'grade' => ['avancement', 'referentiel'],
+        'promotion' => ['avancement', 'grade'],
+        'mission' => ['operation', 'evenement'],
+        'operation' => ['mission', 'evenement'],
+        'evenement' => ['operation', 'calendrier'],
+        'session' => ['evenement', 'operation', 'pointage'],
+        'aide' => ['guide', 'documentation'],
+        'tuto' => ['guide', 'tutoriel'],
+        'tutoriel' => ['guide'],
+        'doc' => ['documentation', 'guide', 'document'],
+        'mail' => ['e-mail', 'communications'],
+        'email' => ['e-mail', 'communications'],
+        'serveur' => ['serveurs', 'jeu'],
+        'mod' => ['modpack'],
+        'mods' => ['modpack'],
+        'callsign' => ['indicatif'],
+        'indicatif' => ['callsign'],
+        'formation' => ['training', 'lms', 'cours'],
+        'cours' => ['formation'],
+        'fonction' => ['emploi', 'metier'],
+        'emploi' => ['fonction', 'metier'],
+        'metier' => ['fonction', 'emploi'],
+        'modele' => ['catalogue', 'kit'],
+        'kit' => ['catalogue', 'modele'],
+        'parametre' => ['reglage', 'configuration'],
+        'reglage' => ['parametre', 'configuration'],
+        'vitrine' => ['page publique', 'presentation'],
+    ];
 
     public function __construct(
         private UserRepository $userRepository,
@@ -37,7 +92,8 @@ final class BackOfficeSearchService
      *   pages: list<SearchHit>,
      *   personnel: list<SearchHit>,
      *   documents: list<SearchHit>,
-     *   events: list<SearchHit>
+     *   events: list<SearchHit>,
+     *   guides: list<SearchHit>
      * }
      */
     public function search(int $tenantId, string $raw, Gate $gate): array
@@ -46,6 +102,7 @@ final class BackOfficeSearchService
             $raw = mb_substr($raw, 0, self::MAX_QUERY_LEN);
         }
         $pages = $this->filterPages($raw, $gate);
+        $guides = $this->filterGuides($raw);
         if (mb_strlen(trim($raw)) < self::MIN_QUERY_LEN) {
             return [
                 'query' => $raw,
@@ -54,6 +111,7 @@ final class BackOfficeSearchService
                 'personnel' => [],
                 'documents' => [],
                 'events' => [],
+                'guides' => $guides,
             ];
         }
 
@@ -64,6 +122,7 @@ final class BackOfficeSearchService
             'personnel' => $this->searchPersonnel($tenantId, $raw, $gate),
             'documents' => $this->searchDocuments($tenantId, $raw, $gate),
             'events' => $this->searchEvents($tenantId, $raw),
+            'guides' => $guides,
         ];
     }
 
@@ -72,23 +131,143 @@ final class BackOfficeSearchService
      */
     private function filterPages(string $raw, Gate $gate): array
     {
-        $needle = $this->normalize($raw);
-        $out = [];
-        foreach ($this->pageCatalog($gate) as $page) {
-            $hay = $this->normalize($page['title'] . ' ' . ($page['subtitle'] ?? '') . ' ' . ($page['keywords'] ?? ''));
-            if ($needle === '' || $this->hayContains($hay, $needle)) {
-                $out[] = [
-                    'title' => $page['title'],
-                    'subtitle' => $page['subtitle'],
-                    'href' => $page['href'],
-                ];
+        return $this->rank($this->pageCatalog($gate), $raw, 8, 40);
+    }
+
+    /**
+     * Guides d’aide : quelques entrées d’accueil sans saisie, puis les plus pertinents.
+     *
+     * @return list<SearchHit>
+     */
+    private function filterGuides(string $raw): array
+    {
+        return $this->rank(BackOfficeHelpCatalog::entries(), $raw, 3, self::GUIDES_LIMIT);
+    }
+
+    /**
+     * @param list<array{title: string, subtitle: string, href: string, keywords?: string}> $items
+     * @return list<SearchHit>
+     */
+    private function rank(array $items, string $raw, int $emptyLimit, int $limit): array
+    {
+        $tokens = $this->tokens($this->normalize($raw));
+        $scored = [];
+        foreach ($items as $i => $item) {
+            $score = $tokens === [] ? 1.0 : $this->score($item, $tokens);
+            if ($score <= 0.0) {
+                continue;
             }
-            if (count($out) >= ($needle === '' ? 8 : 40)) {
+            $scored[] = ['score' => $score, 'i' => $i, 'item' => $item];
+            if ($tokens === [] && count($scored) >= $emptyLimit) {
                 break;
             }
         }
+        usort($scored, static fn (array $a, array $b): int => [$b['score'], $a['i']] <=> [$a['score'], $b['i']]);
+        $out = [];
+        foreach (array_slice($scored, 0, $tokens === [] ? $emptyLimit : $limit) as $row) {
+            $out[] = [
+                'title' => $row['item']['title'],
+                'subtitle' => $row['item']['subtitle'],
+                'href' => $row['item']['href'],
+            ];
+        }
 
         return $out;
+    }
+
+    /**
+     * Chaque mot tapé doit se retrouver quelque part ; le titre pèse plus que le sous-titre, lui-même plus que les mots-clés.
+     *
+     * @param array{title: string, subtitle: string, keywords?: string} $item
+     * @param list<string> $tokens
+     */
+    private function score(array $item, array $tokens): float
+    {
+        $fields = [
+            [$this->normalize($item['title']), 3.0],
+            [$this->normalize($item['subtitle']), 1.5],
+            [$this->normalize($item['keywords'] ?? ''), 1.0],
+        ];
+        $total = 0.0;
+        foreach ($tokens as $token) {
+            $best = 0.0;
+            foreach ($fields as [$hay, $weight]) {
+                $best = max($best, $this->tokenMatch($hay, $token) * $weight);
+            }
+            if ($best <= 0.0) {
+                return 0.0;
+            }
+            $total += $best;
+        }
+        $title = $fields[0][0];
+        $phrase = implode(' ', $tokens);
+        if (str_starts_with($title, $phrase)) {
+            $total += 2.0;
+        } elseif (str_contains($title, $phrase)) {
+            $total += 1.0;
+        }
+
+        return $total;
+    }
+
+    /**
+     * 1 = présent, 0,8 = synonyme, 0,6 = une faute de frappe (mots de 5 lettres et plus), 0 = absent.
+     */
+    private function tokenMatch(string $hay, string $token): float
+    {
+        if ($hay === '') {
+            return 0.0;
+        }
+        if (str_contains($hay, $token)) {
+            return 1.0;
+        }
+        $stem = $this->stem($token);
+        if ($stem !== $token && str_contains($hay, $stem)) {
+            return 0.95;
+        }
+        foreach (self::SYNONYMS[$stem] ?? self::SYNONYMS[$token] ?? [] as $syn) {
+            if (str_contains($hay, $syn)) {
+                return 0.8;
+            }
+        }
+        $len = strlen($token);
+        if ($len < 5) {
+            return 0.0;
+        }
+        $maxDistance = $len >= 9 ? 2 : 1;
+        foreach (preg_split('/[^a-z0-9]+/', $hay, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $word) {
+            if (abs(strlen($word) - $len) > $maxDistance) {
+                continue;
+            }
+            if (levenshtein($word, $token) <= $maxDistance) {
+                return 0.6;
+            }
+        }
+
+        return 0.0;
+    }
+
+    /**
+     * Pluriel simple du français et de l’anglais : « grades » → « grade », « unités » → « unite ».
+     */
+    private function stem(string $token): string
+    {
+        if (strlen($token) > 3 && (str_ends_with($token, 's') || str_ends_with($token, 'x'))) {
+            return substr($token, 0, -1);
+        }
+
+        return $token;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function tokens(string $needle): array
+    {
+        $parts = preg_split('/[^a-z0-9]+/', $needle, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $stop = ['de', 'du', 'des', 'la', 'le', 'les', 'un', 'une', 'et', 'a', 'l', 'd', 'en', 'pour', 'ou'];
+
+        return array_values(array_filter($parts, static fn (string $t): bool => !in_array($t, $stop, true)));
     }
 
     /**
@@ -168,6 +347,35 @@ final class BackOfficeSearchService
             ['title' => 'E-mails aux membres', 'subtitle' => 'Écrire à tout ou partie de la communauté', 'href' => url('back-office/communications'), 'keywords' => 'e-mail communications envoi message', 'ok' => $org],
             ['title' => 'Doctrine et SOP', 'subtitle' => 'Procédures de l’unité', 'href' => url('back-office/doctrine'), 'keywords' => 'doctrine sop procédures', 'ok' => $org],
             ['title' => 'Traçabilité du courrier', 'subtitle' => 'Qui a lu quoi', 'href' => url('back-office/courrier/traceabilite'), 'keywords' => 'courrier traçabilité lecture', 'ok' => $org],
+            ['title' => 'Référentiel des grades', 'subtitle' => 'Grades disponibles et libellés', 'href' => url('back-office/referentiels/grades'), 'keywords' => 'grades référentiel français américain insignes rang', 'ok' => $org],
+            ['title' => 'Avancement et grades', 'subtitle' => 'Règles de promotion', 'href' => url('back-office/organisation/grades'), 'keywords' => 'avancement promotion grades ancienneté règles', 'ok' => $org],
+            ['title' => 'Campagnes d’avancement', 'subtitle' => 'Promotions à valider', 'href' => url('back-office/rh/avancement'), 'keywords' => 'avancement campagne promotion tableau', 'ok' => $org],
+            ['title' => 'Progression et carrière', 'subtitle' => 'Parcours, grades et qualifications', 'href' => url('back-office/organisation/progression'), 'keywords' => 'progression carrière parcours grades qualifications', 'ok' => $org],
+            ['title' => 'Référentiel des qualifications', 'subtitle' => 'Brevets, certifications et habilitations', 'href' => url('back-office/referentiels/qualifications'), 'keywords' => 'qualifications brevets certifications habilitations compétences', 'ok' => $org],
+            ['title' => 'Matrice de compétences', 'subtitle' => 'Compétences attendues par grade', 'href' => url('back-office/referentiels/competences'), 'keywords' => 'compétences matrice grades attendus', 'ok' => $org],
+            ['title' => 'Décorations', 'subtitle' => 'Médailles et distinctions', 'href' => url('back-office/referentiels/decorations'), 'keywords' => 'décorations médailles distinctions récompenses', 'ok' => $org],
+            ['title' => 'Dotation', 'subtitle' => 'Équipement attribué aux membres', 'href' => url('back-office/referentiels/dotation'), 'keywords' => 'dotation équipement matériel paquetage', 'ok' => $org],
+            ['title' => 'Disponibilité des unités', 'subtitle' => 'Postes tenus et vacants', 'href' => url('back-office/organisation/disponibilite'), 'keywords' => 'disponibilité unités postes vacants effectif', 'ok' => $org],
+            ['title' => 'Structure et recrutement', 'subtitle' => 'Organigramme et postes ouverts', 'href' => url('back-office/organisation/structure'), 'keywords' => 'structure orbat recrutement postes unités', 'ok' => $org],
+            ['title' => 'Rôles et fonctions', 'subtitle' => 'Emplois du dossier et niveaux d’accès', 'href' => url('back-office/roles-functions'), 'keywords' => 'rôles fonctions emplois métiers accès', 'ok' => $org],
+            ['title' => 'Codes d’invitation', 'subtitle' => 'Codes de recrutement prioritaires', 'href' => url('back-office/recruitments/codes-invitation'), 'keywords' => 'codes invitation recrutement prioritaire parrainage', 'ok' => $org || $gate->allows('organization.recruitment.manage')],
+            ['title' => 'Questions du formulaire Discord', 'subtitle' => 'Recrutement via Discord', 'href' => url('back-office/recruitments/discord-questions'), 'keywords' => 'discord questions formulaire recrutement', 'ok' => $org || $gate->allows('organization.recruitment.manage')],
+            ['title' => 'Messages préfaits du recrutement', 'subtitle' => 'Réponses types aux candidats', 'href' => url('back-office/recruitments/messages-prefaits'), 'keywords' => 'messages préfaits réponses types candidats recrutement', 'ok' => $org || $gate->allows('organization.recruitment.manage')],
+            ['title' => 'Délais d’alerte du recrutement', 'subtitle' => 'Relances des dossiers en attente', 'href' => url('back-office/recruitments/settings'), 'keywords' => 'délais alerte relance recrutement réglages', 'ok' => $org || $gate->allows('organization.recruitment.manage')],
+            ['title' => 'Analyses des candidatures', 'subtitle' => 'Volumes, délais et conversion', 'href' => url('back-office/ressources/recrutement/analyses'), 'keywords' => 'analyses statistiques candidatures recrutement conversion', 'ok' => $org || $gate->allows('organization.recruitment.manage')],
+            ['title' => 'Aide après inscription', 'subtitle' => 'Reprendre la configuration d’une communauté', 'href' => url('back-office/onboarding-recovery'), 'keywords' => 'rattrapage onboarding assistant reprise configuration création', 'ok' => $org],
+            ['title' => 'Nouveautés de votre organisation', 'subtitle' => 'Fonctions récentes à découvrir', 'href' => url('back-office/nouveautes-organisation'), 'keywords' => 'nouveautés fonctionnalités récentes mises à jour', 'ok' => $org],
+            ['title' => 'Réglages effectifs', 'subtitle' => 'Options du bureau des effectifs', 'href' => url('back-office/ressources/effectifs/reglages'), 'keywords' => 'réglages effectifs options dossier rh', 'ok' => $org],
+            ['title' => 'Fiches jumelles', 'subtitle' => 'Doublons de dossiers', 'href' => url('back-office/ressources/effectifs/doublons'), 'keywords' => 'doublons fiches jumelles fusion', 'ok' => $org],
+            ['title' => 'Mini-articles', 'subtitle' => 'Actualités courtes de la communauté', 'href' => url('back-office/articles'), 'keywords' => 'articles actualités news publication', 'ok' => $org],
+            ['title' => 'Modèles d’e-mail', 'subtitle' => 'Messages réutilisables', 'href' => url('back-office/communications/templates'), 'keywords' => 'modèles e-mail templates communications', 'ok' => $org],
+            ['title' => 'Types de documents', 'subtitle' => 'Classement de la bibliothèque', 'href' => url('back-office/documents/types'), 'keywords' => 'types documents classement catégories', 'ok' => $org],
+            ['title' => 'Modpacks', 'subtitle' => 'Listes de mods de la communauté', 'href' => url('back-office/ressources/modpacks'), 'keywords' => 'modpacks mods workshop arma', 'ok' => $org],
+            ['title' => 'Serveurs de jeu', 'subtitle' => 'Adresses et accès des serveurs', 'href' => url('back-office/ressources/serveurs-de-jeu'), 'keywords' => 'serveurs jeu arma adresse ip connexion', 'ok' => $org],
+            ['title' => 'Configuration du forum', 'subtitle' => 'Catégories et réglages du forum', 'href' => url('back-office/ressources/forum-config'), 'keywords' => 'forum configuration catégories sections', 'ok' => $org],
+            ['title' => 'Configuration ATAK', 'subtitle' => 'Réglages de la carte tactique', 'href' => url('back-office/ressources/atak-config'), 'keywords' => 'atak tacmap configuration carte', 'ok' => $org],
+            ['title' => 'Escouades en jeu', 'subtitle' => 'Groupes affichés dans ATAK', 'href' => url('back-office/atak/escouades'), 'keywords' => 'escouades atak jeu groupes', 'ok' => $org],
+            ['title' => 'Diapositives de briefing', 'subtitle' => 'Présentations tactiques', 'href' => url('back-office/atak/briefing-slides'), 'keywords' => 'diapositives briefing présentation eden', 'ok' => $org],
         ];
         $out = [];
         foreach ($all as $row) {

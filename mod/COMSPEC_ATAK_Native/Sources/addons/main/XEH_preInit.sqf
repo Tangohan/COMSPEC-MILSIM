@@ -74,6 +74,25 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
     ["COMSPEC", "ATAK · Affichage"], true, 0,
     { missionNamespace setVariable ["COMSPEC_ATAK_ForeignNext", 0]; }] call comspec_atak_native_fnc_addSetting;
 
+// Étiquettes de la carte du téléphone (par joueur, enregistrées dans le profil par CBA), aussi dans Réglages > Carte
+// et CALQUES : style des noms de repères (fn_mapMarkerText) et des lieux (fn_mapPlaceText), catégories masquables.
+["comspec_atak_native_map_marker_style", "LIST",
+    ["Style des noms de repères", "Comment le téléphone écrit le nom des repères et des cibles accrochées (LOCK) sur sa carte. Plaque : plaque sombre au liseré de la couleur du repère (par défaut). Pilule : pilule sombre arrondie. Cartouche : boîte décalée reliée au repère, avec distance et azimut. Contour : texte blanc détouré. Classique : texte Arma d'avant."],
+    ["COMSPEC", "ATAK · Carte"], [["plate", "pill", "card", "outline", "classic"], ["Plaque", "Pilule", "Cartouche + trait", "Contour", "Classique (avant)"], 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_map_place_style", "LIST",
+    ["Style des noms de lieux", "Comment le téléphone écrit les villes, villages et lieux-dits sur sa carte. Tactique : capitales grasses détourées (par défaut). Étiquette : plaque sombre et losange de couleur. Discret : petit texte clair. Classique : couleurs de la carte Arma."],
+    ["COMSPEC", "ATAK · Carte"], [["tactical", "tag", "quiet", "classic"], ["Tactique", "Étiquette", "Discret", "Classique (avant)"], 0], 0] call comspec_atak_native_fnc_addSetting;
+{
+    _x params ["_k", "_t", "_h"];
+    [_k, "CHECKBOX", [_t, _h], ["COMSPEC", "ATAK · Carte"], true, 0] call comspec_atak_native_fnc_addSetting;
+} forEach [
+    ["comspec_atak_native_map_show_marker_text", "Noms des repères", "Texte des repères et des cibles accrochées sur la carte du téléphone (les symboles restent). Aussi dans CALQUES."],
+    ["comspec_atak_native_map_show_cities", "Noms des villes", "Villes et capitales sur la carte du téléphone. Aussi dans CALQUES."],
+    ["comspec_atak_native_map_show_villages", "Noms des villages", "Villages sur la carte du téléphone, à partir d'un zoom moyen. Aussi dans CALQUES."],
+    ["comspec_atak_native_map_show_locals", "Noms des lieux-dits", "Lieux-dits et noms marins sur la carte du téléphone, en zoom rapproché. Aussi dans CALQUES."],
+    ["comspec_atak_native_map_show_sites", "Noms des sites", "Aéroports et sites militaires (base, camp, caserne...) sur la carte du téléphone, en zoom rapproché. Aussi dans CALQUES."]
+];
+
 // Réglages serveur (forçables par l'admin dans les réglages CBA du serveur / de la mission).
 // Tous les mods COMSPEC partagent une seule catégorie CBA « COMSPEC » ; sous-catégories « ATAK · … », « Overwatch · … », « SSE ».
 private _cat = ["COMSPEC", "ATAK · Accès au téléphone"];
@@ -151,6 +170,13 @@ private _sim = ["COMSPEC", "ATAK · Simulation"];
 ["comspec_atak_native_ew_open", "CHECKBOX",
     ["Guerre électronique ouverte à tous", "Coché : tout porteur de téléphone peut brouiller et goniométrer. Décoché : réservé aux unités COMSPEC_ATAK_EwOperator ou au rôle « guerre électronique / brouilleur / SIGINT »."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_zeus_crows", "CHECKBOX",
+    ["Brouilleurs Crows Electronic Warfare", "Avec le mod Crows Electronic Warfare chargé, ses brouilleurs (modules Zeus du mod) brouillent aussi le téléphone ATAK : débit, GPS et BFT, plein effet dans leur rayon efficace."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+// Contrôle Zeus des ATAK : le menu clic droit ZEN d'Overwatch (« ATAK — Infos / dégâts / brouillage », état du téléphone
+// d'Overwatch) est remplacé par « ATAK · Contrôle Zeus » (fn_zeusMenu), qui agit sur l'ATAK natif.
+missionNamespace setVariable ["COMSPEC_ZenAtakPlayerContextRegistered", true];
+missionNamespace setVariable ["COMSPEC_AceAtakZeusInteractRegistered", true];
 private _geo = ["COMSPEC", "ATAK · Géolocalisation (GEOLOC)"];
 ["comspec_atak_native_geoloc_enabled", "CHECKBOX",
     ["Traçage des téléphones", "App GE (guerre électronique), onglet GÉOLOC : localiser un téléphone à partir de son numéro, de son IMEI ou de son adresse MAC (roleplay)."],

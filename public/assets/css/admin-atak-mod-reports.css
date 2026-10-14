@@ -74,7 +74,7 @@ html[data-bo-theme="dark"] .amr {
 }
 
 @media (min-width: 760px) {
-  .amr-search { grid-template-columns: minmax(0, 1fr) 13rem auto; }
+  .amr-search { grid-template-columns: minmax(0, 1fr) repeat(3, 11rem) auto; }
 }
 
 .amr-search__field { display: block; margin: 0; }
@@ -428,3 +428,85 @@ html[data-bo-theme="dark"] .amr .amr-btn--danger { color: #1a0b0e; }
   .amr-card__facts { grid-template-columns: 1fr; }
 }
 html[data-bo-theme="dark"] .amr .pa-btn--mint { color: #04140d; }
+
+/* ── Gravité ── */
+
+.amr-gravity {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.amr-gravity__label {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.amr-gravity__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.amr-gravity__hint { margin: 10px 0 0; color: rgba(255, 255, 255, 0.62); font-size: 12.5px; line-height: 1.5; }
+
+.amr-grav-chip {
+  --amr-grav-dot: var(--pa-tone-slate-fg);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--pa-tone-slate-bg);
+  color: var(--pa-tone-slate-fg);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.5;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.amr-grav-chip__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amr-grav-dot);
+}
+
+.amr-grav-chip strong { font-variant-numeric: tabular-nums; }
+
+.amr-grav-chip--critical { --amr-grav-dot: var(--pa-tone-rose-fg); background: var(--pa-tone-rose-bg); color: var(--pa-tone-rose-fg); }
+.amr-grav-chip--high { --amr-grav-dot: var(--pa-tone-amber-fg); background: var(--pa-tone-amber-bg); color: var(--pa-tone-amber-fg); }
+.amr-grav-chip--normal { --amr-grav-dot: var(--pa-tone-blue-fg); background: var(--pa-tone-blue-bg); color: var(--pa-tone-blue-fg); }
+.amr-grav-chip--low { --amr-grav-dot: var(--pa-tone-slate-fg); background: var(--pa-tone-slate-bg); color: var(--pa-tone-slate-fg); }
+
+/* Rapport critique : la pastille se voit aussi en marge de la carte. */
+.amr-grav-chip--critical.amr-grav-chip--static { box-shadow: 0 0 0 1px var(--pa-tone-rose-fg) inset; }
+
+a.amr-grav-chip:hover { border-color: currentColor; }
+a.amr-grav-chip.is-active { border-color: currentColor; box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35); }
+
+.amr-card__gravity { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.amr-card__gravity label { display: flex; align-items: center; gap: 8px; }
+.amr-card__gravity .amr-label { margin: 0; }
+.amr-card__gravity select,
+.amr-bulk__gravity select {
+  min-height: 30px;
+  padding: 4px 8px;
+  border: 1px solid var(--pa-line);
+  border-radius: 8px;
+  background: var(--pa-surface);
+  color: var(--pa-ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.amr-bulk__gravity { display: inline-flex; align-items: center; gap: 6px; }

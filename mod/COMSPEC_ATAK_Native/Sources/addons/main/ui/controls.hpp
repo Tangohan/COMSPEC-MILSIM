@@ -61,9 +61,12 @@ class COMSPEC_RscPicture: RscPicture { colorText[]=ATAK_GREEN; colorBackground[]
 class COMSPEC_RscMap: RscMapControl { colorBackground[]={0.045,0.055,0.048,1}; colorOutside[]={0.025,0.030,0.027,1}; showCountourInterval=1;
     // Textes de la carte Arma plus discrets (marqueurs, lieux, grille) : lisibles aussi sur le petit écran.
     sizeExLabel="0.018 * safeZoneH"; sizeExGrid="0.016 * safeZoneH"; sizeExUnits="0.024 * safeZoneH"; sizeExNames="0.026 * safeZoneH"; sizeExInfo="0.018 * safeZoneH"; sizeExLevel="0.016 * safeZoneH"; sizeEx="0.018 * safeZoneH"; };
-// Carte du téléphone : libellés Arma (repères de mission, lieux) un peu plus grands ; numéros de grille Arma masqués
-// (taille minuscule) car redessinés par fn_mapOnDraw à la taille choisie dans Réglages > Carte.
-class COMSPEC_RscMapAtak: COMSPEC_RscMap { sizeExLabel="0.022 * safeZoneH"; sizeExGrid="0.0005"; sizeExNames="0.030 * safeZoneH"; sizeExInfo="0.021 * safeZoneH"; sizeEx="0.021 * safeZoneH"; };
+// Carte du téléphone : textes Arma des repères (sizeExLabel), noms de lieux (sizeExNames) et numéros de grille masqués
+// (taille minuscule) car redessinés par l'ATAK : fn_mapMarkerText et fn_mapPlaceText (style et calques au choix),
+// fn_mapOnDraw pour la grille.
+class COMSPEC_RscMapAtak: COMSPEC_RscMap { sizeExLabel="0.0005"; sizeExGrid="0.0005"; sizeExNames="0.0005"; sizeExInfo="0.021 * safeZoneH"; sizeEx="0.021 * safeZoneH"; };
+// Carte de l'app JTAC (dessin à part, fn_jtacDraw) : textes Arma des repères et des lieux gardés.
+class COMSPEC_RscMapJtac: COMSPEC_RscMapAtak { sizeExLabel="0.022 * safeZoneH"; sizeExNames="0.030 * safeZoneH"; };
 class COMSPEC_RscPanel: COMSPEC_RscText { colorBackground[]=ATAK_BG1; };
 class COMSPEC_RscTile: COMSPEC_RscText { colorBackground[]=ATAK_BG2; };
 class COMSPEC_RscBadge: COMSPEC_RscTextCenter { font=ATAK_FONT_BOLD; colorBackground[]=ATAK_DANGER; colorText[]={1,1,1,1}; sizeEx="0.018 * safeZoneH"; };

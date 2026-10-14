@@ -897,5 +897,35 @@
             <English>Text</English>
             <French>Texte</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_C3B58F43CF">
+            <Original>COMSPEC — ATAK · Contrôle Zeus</Original>
+            <English>COMSPEC — ATAK · Zeus control</English>
+            <French>COMSPEC — ATAK · Contrôle Zeus</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_E5E2FEEE38">
+            <Original>Contrôle Zeus des ATAK</Original>
+            <English>Zeus control of ATAKs</English>
+            <French>Contrôle Zeus des ATAK</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_46B8C2431E">
+            <Original>Contrôle Zeus</Original>
+            <English>Zeus control</English>
+            <French>Contrôle Zeus</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_67446103B5">
+            <Original>Le Zeus agit à distance sur le téléphone ATAK des joueurs.%1%3Clic droit (ZEN)%4%2Sélectionnez un ou plusieurs joueurs (ou un véhicule et son équipage), clic droit &gt; ATAK · Contrôle Zeus.%2Accès : désactiver / réactiver, verrouiller avec un message, déverrouiller.%2Son : couper / rétablir les haut-parleurs (musique, haut-parleur, Bluetooth, vibrations, clics).%2Punir : avertissement, message du commandement, écran qui bugue, alarme stridente entendue à 60 m, vibrations.%2Brouiller : 30 %, 70 %, 100 % ou arrêter, sur ce joueur seulement.%2Dégâts et effets : fêlures, impulsion électromagnétique, surchauffe (chaud, brûlant, arrêt de sécurité), décharge de batterie, batterie vide ou pleine, redémarrage, destruction, réparation.%2Tout rétablir : retire tous les effets et répare.%1%3Modules Zeus (sans ZEN)%4%2COMSPEC — ATAK · Contrôle Zeus &gt; ATAK · Contrôle Zeus : même liste, sur le joueur sous le module, les joueurs d'un rayon, tous les joueurs ou un camp ; intensité, durée et message.%2ATAK · Brouilleur de zone : brouilleur invisible (rayon, force, durée, camp épargné), ou retrait des brouilleurs Zeus.%1%3Bon à savoir%4%2Les effets durables tiennent jusqu'à l'action inverse ou « Tout rétablir », réapparition et arrivée en cours de partie comprises ; une durée les arrête seuls.%2Les dégâts suivent le réglage serveur des dégâts du téléphone.%2Les brouilleurs du mod Crows Electronic Warfare brouillent aussi l'ATAK (réglage serveur Brouilleurs Crows Electronic Warfare).</Original>
+            <English>Zeus acts remotely on the players' ATAK phones.%1%3Right click (ZEN)%4%2Select one or more players (or a vehicle and its crew), right click &gt; ATAK · Zeus control.%2Access: disable / re-enable, lock with a message, unlock.%2Sound: mute / restore the speakers (music, speaker, Bluetooth, vibrations, clicks).%2Punish: warning, message from command, glitching screen, shrill alarm heard at 60 m, vibrations.%2Jam: 30 %, 70 %, 100 % or stop, on this player only.%2Damage and effects: cracks, electromagnetic pulse, overheating (hot, burning hot, safety shutdown), battery drain, empty or full battery, reboot, destruction, repair.%2Restore everything: removes all effects and repairs.%1%3Zeus modules (without ZEN)%4%2COMSPEC — ATAK · Zeus control &gt; ATAK · Zeus control: same list, on the player under the module, players in a radius, all players or a side; intensity, duration and message.%2ATAK · Area jammer: invisible jammer (radius, strength, duration, spared side), or removal of Zeus jammers.%1%3Good to know%4%2Lasting effects hold until the opposite action or "Restore everything", respawn and join in progress included; a duration ends them on their own.%2Damage follows the server's phone damage setting.%2Jammers from the Crows Electronic Warfare mod also jam the ATAK (server setting Crows Electronic Warfare jammers).</English>
+            <French>Le Zeus agit à distance sur le téléphone ATAK des joueurs.%1%3Clic droit (ZEN)%4%2Sélectionnez un ou plusieurs joueurs (ou un véhicule et son équipage), clic droit &gt; ATAK · Contrôle Zeus.%2Accès : désactiver / réactiver, verrouiller avec un message, déverrouiller.%2Son : couper / rétablir les haut-parleurs (musique, haut-parleur, Bluetooth, vibrations, clics).%2Punir : avertissement, message du commandement, écran qui bugue, alarme stridente entendue à 60 m, vibrations.%2Brouiller : 30 %, 70 %, 100 % ou arrêter, sur ce joueur seulement.%2Dégâts et effets : fêlures, impulsion électromagnétique, surchauffe (chaud, brûlant, arrêt de sécurité), décharge de batterie, batterie vide ou pleine, redémarrage, destruction, réparation.%2Tout rétablir : retire tous les effets et répare.%1%3Modules Zeus (sans ZEN)%4%2COMSPEC — ATAK · Contrôle Zeus &gt; ATAK · Contrôle Zeus : même liste, sur le joueur sous le module, les joueurs d'un rayon, tous les joueurs ou un camp ; intensité, durée et message.%2ATAK · Brouilleur de zone : brouilleur invisible (rayon, force, durée, camp épargné), ou retrait des brouilleurs Zeus.%1%3Bon à savoir%4%2Les effets durables tiennent jusqu'à l'action inverse ou « Tout rétablir », réapparition et arrivée en cours de partie comprises ; une durée les arrête seuls.%2Les dégâts suivent le réglage serveur des dégâts du téléphone.%2Les brouilleurs du mod Crows Electronic Warfare brouillent aussi l'ATAK (réglage serveur Brouilleurs Crows Electronic Warfare).</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_511DBA2C67">
+            <Original>ATAK · Contrôle Zeus</Original>
+            <English>ATAK · Zeus control</English>
+            <French>ATAK · Contrôle Zeus</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_EC6B15B9EF">
+            <Original>ATAK · Brouilleur de zone</Original>
+            <English>ATAK · Area jammer</English>
+            <French>ATAK · Brouilleur de zone</French>
+        </Key>
     </Package>
 </Project>

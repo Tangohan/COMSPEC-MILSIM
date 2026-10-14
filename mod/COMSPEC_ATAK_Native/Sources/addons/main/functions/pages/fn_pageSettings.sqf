@@ -52,6 +52,20 @@ private _cbaSwitch = {
     if (_locked) then { _v = _rule isEqualTo "on"; };
     ["switch", _label, _v, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_CbaToggle');", _k], _help, _locked]
 };
+// Choix exclusif enregistré en réglage CBA côté joueur (étiquettes de la carte) : le même que dans le menu CBA.
+uiNamespace setVariable ["COMSPEC_ATAK_CbaSet", {
+    params ["_k", "_v"];
+    [_k, _v, false, "client"] call CBA_settings_fnc_set;
+    [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+}];
+private _cbaSegment = {
+    params ["_k", "_def", "_label", "_opts", ["_help", ""]];
+    private _cur = missionNamespace getVariable [_k, _def];
+    ["segment", _label, _opts apply {
+        _x params ["_t", "_v"];
+        [_t, compile format ["['%1', %2] call (uiNamespace getVariable 'COMSPEC_ATAK_CbaSet');", _k, str _v], _v isEqualTo _cur]
+    }, _help]
+};
 
 // Emplacement du mini : remet à zéro le décalage glissé pour partir du nouveau coin.
 uiNamespace setVariable ["COMSPEC_ATAK_SetAnchor", {
@@ -86,8 +100,8 @@ private _perso = [
     ["COMSPEC_ATAK_Accent", "GREEN", "Couleur d'accent", [["VERT", "GREEN"], ["BLEU", "BLUE"], ["ORANGE", "ORANGE"], ["ROUGE", "RED"], ["VIOLET", "PURPLE"], ["SABLE", "SAND"]]] call _profSegment,
     ["COMSPEC_ATAK_Shell", "auto", "Coque", [["AUTO", "auto"], ["JOUR", "day"], ["NUIT", "night"]], "auto : nuit après le coucher du soleil"] call _profSegment,
     ["COMSPEC_ATAK_ShellTint", "coyote", "Couleur de la coque", [["COYOTE", "coyote"], ["VERT OD", "od"], ["NOIR", "black"]]] call _profSegment,
-    ["COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone", [["DURCI S7", "s7"], ["TACTIQUE", "rugged"], ["PREMIUM", "iphone"], ["TABLETTE A/B", "keys"]]] call _profSegment,
-    ["COMSPEC_ATAK_PhoneModel", "s7", "", [["SUPPORT JPC", "plate"], ["ÉTUI MULTICAM", "flip"], ["COQUE NERVURÉE", "ribbed"]], "Coque affichée autour de l'écran ; la couleur de coque ne change que le S7. TABLETTE A/B : tablette durcie à touches, celle du JPC. SUPPORT JPC : coque tan à fixation porte-plaques ; ÉTUI MULTICAM : étui à rabat et velcro"] call _profSegment,
+    ["COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone", [["DURCI S7", "s7"], ["V2 ENHANCED", "iphone"], ["XIAOMI X3D", "rugged"], ["TABLETTE", "keys"]]] call _profSegment,
+    ["COMSPEC_ATAK_PhoneModel", "s7", "", [["SONIM XP8", "sonim"], ["SUPPORT JPC", "plate"], ["ÉTUI MULTICAM", "flip"], ["COQUE NERVURÉE", "ribbed"]], "Coque affichée autour de l'écran ; la couleur de coque ne change que le S7. V2 ENHANCED : S7 en coque durcie OPENA ; XIAOMI X3D : cadre tactique allongé ; SONIM XP8 : téléphone durci avec radio maillée goTenna Pro clipsée ; TABLETTE : tablette durcie (sur le JPC : la tablette à touches). SUPPORT JPC : coque tan à fixation porte-plaques ; ÉTUI MULTICAM : étui à rabat et velcro"] call _profSegment,
     ["COMSPEC_ATAK_CarryStyle", "hud", "Terminal porté", [["MINIATURE", "hud"], ["SUR LE JPC", "jpc"]], "SUR LE JPC : la tablette durcie relevée sur le porte-plaques affiche l'ATAK en 3D, on baisse les yeux pour lire (vue libre, arme). Sans gilet ou en véhicule : miniature"] call _profSegment,
     ["COMSPEC_ATAK_VehTablet", true, "", "Tablette dans les véhicules", "Tablette durcie de bord affichée à la place du téléphone dans un véhicule équipé ou au poste de commandement"] call _profSwitch,
     ["COMSPEC_ATAK_ModuleTint", "olive", "Module DL-7", [["OLIVE", "olive"], ["NOIR", "black"], ["TAN", "tan"]], "Couleur du module de l'app Extraction"] call _profSegment,
@@ -201,6 +215,13 @@ private _map = [
     ["COMSPEC_ATAK_Labels", true, "native_map_labels", "Indicatifs des unités", "Nom à côté de chaque symbole ami"] call _profSwitch,
     ["COMSPEC_ATAK_LabelStyle", "FULL", "Cartouches des unités", [["COMPLET", "FULL"], ["INDICATIF SEUL", "CALLSIGN"], ["AUCUN", "NONE"]], "Boîte sombre près du symbole : indicatif, puis distance et azimut depuis moi en zoom rapproché ; contacts ENI bordés de rouge avec heure et auteur"] call _profSegment,
     ["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags", "Cartouches des repères", "Nom et coordonnées E / N sous le repère"] call _profSwitch,
+    ["comspec_atak_native_map_marker_style", "plate", "Noms des repères", [["PLAQUE", "plate"], ["PILULE", "pill"], ["CARTOUCHE", "card"], ["CONTOUR", "outline"], ["CLASSIQUE", "classic"]], "Repères et cibles accrochées (LOCK) : plaque sombre au liseré de couleur, pilule, cartouche relié avec distance et azimut, texte détouré ou texte Arma d'avant"] call _cbaSegment,
+    ["comspec_atak_native_map_place_style", "tactical", "Noms des lieux", [["TACTIQUE", "tactical"], ["ÉTIQUETTE", "tag"], ["DISCRET", "quiet"], ["CLASSIQUE", "classic"]], "Villes, villages, lieux-dits et sites : capitales détourées, plaque sombre, petit texte clair ou couleurs Arma d'avant"] call _cbaSegment,
+    ["comspec_atak_native_map_show_marker_text", "", "Afficher les noms des repères", "Les symboles restent, seul le texte disparaît (aussi dans CALQUES)", true] call _cbaSwitch,
+    ["comspec_atak_native_map_show_cities", "", "Afficher les villes", "", true] call _cbaSwitch,
+    ["comspec_atak_native_map_show_villages", "", "Afficher les villages", "", true] call _cbaSwitch,
+    ["comspec_atak_native_map_show_locals", "", "Afficher les lieux-dits", "", true] call _cbaSwitch,
+    ["comspec_atak_native_map_show_sites", "", "Afficher les sites", "Aéroports, bases et camps militaires", true] call _cbaSwitch,
     ["COMSPEC_ATAK_Compass", true, "native_compass", "Boussole", "Rose des vents et cap en haut à gauche"] call _profSwitch,
     ["COMSPEC_ATAK_CompassStyle", "CLASSIC", "Style de la boussole", [["CLASSIQUE", "CLASSIC"], ["CADRAN", "CARD"], ["FLÈCHE", "ARROW"], ["BANDEAU", "TAPE"]], "CLASSIQUE : rose fixe, aiguille au cap. CADRAN : le cadran tourne, le haut reste l'avant. FLÈCHE : aiguille seule. BANDEAU : cap gradué en haut à gauche"] call _profSegment,
     ["COMSPEC_ATAK_AllyFilter", "ALL", "Alliés affichés", [["TOUS", "ALL"], ["MON GROUPE", "GROUP"], ["MON ORBAT", "ORBAT"]], ["", format ["ORBAT : %1", missionNamespace getVariable ["comspec_profile_unit", ""]]] select ((missionNamespace getVariable ["comspec_profile_unit", ""]) isNotEqualTo "")] call _profSegment,

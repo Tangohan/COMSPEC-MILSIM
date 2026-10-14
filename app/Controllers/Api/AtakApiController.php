@@ -2513,6 +2513,7 @@ class AtakApiController
         $extVersion = trim((string) ($body['extension_version'] ?? ''));
         $armaBuild = trim((string) ($body['arma_build'] ?? ''));
         $contextRaw = $body['context'] ?? $body['context_json'] ?? null;
+        $gravity = trim((string) ($body['gravity'] ?? ''));
 
         if ($message === '') {
             return Response::json([
@@ -2564,9 +2565,22 @@ class AtakApiController
             }
         }
 
+        // Refus « formule sans la carte » : on dit quelle communauté et quelle formule, pour la débloquer.
+        if ($steam !== null && AtakPlanAccess::isDenialReport($message, $detail)) {
+            try {
+                $accounts = $this->modReports()->linkedAccountsBySteam([$steam]);
+                $planDiag = AtakPlanAccess::diagnosis((int) ($accounts[$steam]['tenant_id'] ?? 0));
+                if ($planDiag !== '') {
+                    $detail = trim($detail . "\nDiagnostic Athena : " . $planDiag);
+                }
+            } catch (\Throwable) {
+            }
+        }
+
         try {
             $result = $this->modReports()->upsert([
                 'severity' => $severity,
+                'gravity' => $gravity !== '' ? $gravity : null,
                 'channel' => $channel,
                 'message' => $message,
                 'detail_text' => $detail !== '' ? $detail : null,
@@ -2595,11 +2609,19 @@ class AtakApiController
             ], 503);
         }
 
-        // Signalement joueur (Échap > Signaler un problème) : e-mail à l'exploitation, jamais bloquant.
-        if ($result['created'] && str_starts_with(strtolower($source), 'player')) {
+        // Ticket Discord (ouverture, compteur ×N), après la réponse au jeu ; jamais bloquant.
+        $reportId = (int) $result['id'];
+        \App\Services\Monitoring\AtakModReportDiscordTicketService::defer(
+            static fn (\App\Services\Monitoring\AtakModReportDiscordTicketService $t) => $t->onReport($reportId)
+        );
+
+        // Signalement joueur (Échap > Signaler un problème) ou erreur automatique critique : e-mail à
+        // l'exploitation, jamais bloquant. Les autres détections automatiques restent sur la page.
+        if ($result['created']) {
             try {
                 (new \App\Services\Monitoring\AtakModReportMailer($this->modReports()))->notify([
                     'id' => $result['id'],
+                    'gravity' => $result['gravity'],
                     'channel' => $channel,
                     'message' => $message,
                     'detail' => $detail,
@@ -2616,8 +2638,9 @@ class AtakApiController
             }
         }
 
-        // Prévenir le joueur par e-mail (Steam lié, au plus une fois par jour), jamais bloquant.
-        if ($authNotifier !== null) {
+        // Prévenir le joueur par e-mail (Steam lié, au plus une fois par jour, jamais pour une gravité faible),
+        // jamais bloquant.
+        if ($authNotifier !== null && \App\Services\Monitoring\AtakModReportGravity::mailsPlayer($result['gravity'])) {
             try {
                 $authNotifier->handle([
                     'id' => $result['id'],
@@ -2637,6 +2660,7 @@ class AtakApiController
             'created' => $result['created'],
             'id' => $result['id'],
             'hit_count' => $result['hit_count'],
+            'gravity' => $result['gravity'],
         ]);
     }
 

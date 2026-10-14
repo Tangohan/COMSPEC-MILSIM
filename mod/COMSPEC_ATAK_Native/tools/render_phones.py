@@ -4,6 +4,9 @@ Rendus 3D (Blender / Cycles) des trois cadres alternatifs du terminal ATAK : sma
 Appareils génériques : aucune marque ni logo réel.
 Chaque appareil donne une face (paysage, trou d'écran transparent où le jeu incruste l'interface) et un dos (miroir
 horizontal de la face : la silhouette se superpose une fois retournée). Toiles 2048 x 2048 RGBA.
+Depuis ATAK natif 1.93.0, les faces et dos iphone, rugged, keys et tablet viennent des photos de frame_photos.py :
+ne pas relancer ces quatre-là (leurs anciens rendus sont remplacés ; celui de keys reste pour le JPC sous
+render/phone_keys_jpc_*.png).
 Prérequis : pip install bpy (Blender comme module Python, 5.x) ; réutilise les aides de render_3d.py.
 
     python3 render_phones.py [sortie]      # par défaut tools/render/

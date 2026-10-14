@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Objets d'inventaire en vraie 3D, pylônes relais retravaillés jour et nuit (ATAK natif 1.92.0)
+## Objets d'inventaire en vraie 3D, pylônes relais retravaillés jour et nuit (ATAK natif 1.94.0)
 
 ### Résumé joueur
 Type : nouveauté
@@ -69,6 +69,143 @@ EN : ATAK items finally have real 3D models, and the relay towers look far more 
 - Ruines : haubans rompus (ancrages restants), feux éteints.
 - Aperçus : `tools/render/tower_family_night.png` (vue de nuit), aperçus Eden refaits.
 - Nouveau PBO `items.pbo` (addons/items : modèles, atlas, rvmat ; 8 Mo) pour garder main.pbo sous la limite de 100 Mo de GitHub ; build_mod.bat, README et project.toml à jour. PBO main, towers et items reconstruits avec HEMTT. Non testé en jeu : vérifier les feux MarkerLights sur un bâtiment, l'orientation des objets dans les porte-armes au sol, et la pose de la caméra au mur.
+
+---
+
+## Regroupement : Zeus sur les ATAK, Comptes rendus, nouveaux terminaux, carte, drone, mise à jour (ATAK natif 1.93.0, COMSPEC Link 2.0.85)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le Zeus prend la main sur les ATAK, Comptes rendus refaits, nouveaux terminaux
+- Le Zeus peut désactiver, verrouiller, rendre muet, brouiller ou abîmer ton téléphone, et les brouilleurs du mod Crows Electronic Warfare brouillent aussi l'ATAK.
+- L'app Comptes rendus est refaite : une fiche par type (SALUTE, UXO, blessé, LOGREP…), des valeurs proposées par le jeu, des brouillons et des accusés de réception.
+- Nouveaux terminaux V2 ENHANCED, XIAOMI X3D et SONIM XP8, nouvelle tablette ; la carte a des noms de repères et de lieux plus lisibles, masquables dans CALQUES.
+- Drone : bouton PLEIN ÉCRAN, image plus légère, ordres de la carte qui disent s'ils sont reçus. Le téléphone te prévient enfin des mises à jour, l'app Athena remplace l'ancienne fenêtre « Lier le jeu à Athena », et une photo refusée par la formule de ta communauté est expliquée.
+EN : Zeus takes control of the ATAKs, Reports redone, new terminals
+- Zeus can disable, lock, mute, jam or damage your phone, and Crows Electronic Warfare jammers now jam the ATAK too.
+- The Reports app is redone: one sheet per report type (SALUTE, UXO, casualty, LOGREP…), values suggested by the game, drafts and read receipts.
+- New terminals V2 ENHANCED, XIAOMI X3D and SONIM XP8, new tablet; the map has clearer marker and place names, which can be hidden in LAYERS.
+- Drone: FULL SCREEN button, lighter picture, map orders that tell you whether they were received. The phone now tells you about updates, the Athena app replaces the old "Link the game to Athena" window, and a photo refused by your community's plan is explained.
+
+### Détail technique
+Regroupe #805, #806, #807, #808, #810, #811, #812, #813, #814 et #818 (une seule version : ATAK natif 1.93.0, COMSPEC Link 2.0.85 ; main.pbo et comspec_overwatch_connect.pbo reconstruits depuis les sources).
+
+#### Nouveaux terminaux : V2 Enhanced, XIAOMI X3D, SONIM XP8 et nouvelle tablette (#805)
+
+- Coques photo fournies par TTRD (tools/src/frame_*.png) posées par `tools/frame_photos.py` dans la toile 2048 px : proportions gardées, ouverture de l'écran mise à 1092 px de large et centrée comme celle du S7. Franges presque transparentes du détourage (alpha < 12) supprimées. Dos : miroir de la face, intérieur remplacé par un panneau polymère avec module photo, marquages remis à l'endroit.
+- Identifiants inchangés (`iphone` = V2 ENHANCED, `rugged` = XIAOMI X3D, `keys` et `tablet` = tablette) : aucun profil à migrer. Nouveau modèle `sonim` (SONIM XP8) : photo assemblée par frame_photos.py (téléphone, goTenna Pro posé derrière et dépassant en haut ; au dos, son côté clip).
+- `fn_layoutGet` : écran propre à chaque modèle (`_scrLand`, paysage ; portrait = quart de tour), boîtes visibles remesurées. Le S7 et les coques plate / flip / ribbed gardent l'ouverture commune.
+- PAA régénérés : `phone_{landscape,portrait}_{iphone,rugged,keys,tablet}[_night]`, `phone_back_{iphone,rugged,keys}`, `dirt_case_*` de ces modèles, `item_vehiclekit` (`gen_assets.py <hemtt> frames`, `gen_dirt.py <hemtt> case …`).
+- JPC : `jpc_iphone` / `jpc_rugged` (p3d et atlas) reconstruits, `jpc_sonim` ajouté (classe COMSPEC_ATAK_JpcPhone_sonim, selfie compris) avec l'ouverture de chaque photo ; texture de l'écran 3D aux proportions du modèle (1024 x 496 V2 Enhanced, 1024 x 384 X3D, 1024 x 584 Sonim, `COMSPEC_ATAK_JpcTexH`). La tablette sur le JPC reste le modèle 3D à touches (rendu gardé sous `render/phone_keys_jpc_*`).
+- Noms : Réglages > Modèle du téléphone, vue de dos et Accessoires, carte Discord des photos ; anglais dans i18n/en.txt.
+- À tester en jeu : Réglages > Modèle du téléphone, choisir V2 ENHANCED, XIAOMI X3D, SONIM XP8 puis TABLETTE ; pour chacun, mini et plein écran, portrait et paysage, jour et nuit : l'interface remplit exactement l'ouverture (pas de bande noire, rien de coupé), la poussière de coque suit le cadre ; Voir l'arrière ; tablette de véhicule ; porté sur le JPC avec V2 ENHANCED, X3D et SONIM (écran 3D cadré, pas déformé). Un profil qui avait Premium ou Tactique doit ouvrir directement le nouveau modèle.
+#### Ordres au drone depuis la carte : chaque ordre dit s'il part ou pourquoi il est refusé (#806)
+
+- Retour de TTRD (14/10, capture : sous-menu affiché sur un DJI Mavic 3E, « les ordres fonctionnent pas ? »). Chemin relu de bout en bout : clés DGOTO/DHUNT/DHOVER/DLAND bien traitées après le regroupement 1.91.0, `mapOrder` → `_send` → événement visé `comspec_atak_native_droneCmd` → `goto`/`hunt` côté machine du drone. Pas de clé perdue. Le refus le plus probable est la liaison (`_needLink`), qui ne disait que « hors liaison » sans raison ni journal ; « perdu 12:58 » sur la capture est un marqueur LOCK (cible marquée perdue de vue), pas l'état de la liaison.
+- `fn_mapCtxMenu` : les quatre ordres partent à l'image suivante (`CBA_fnc_execNextFrame`), hors du clic d'un bouton que `close` vient d'effacer.
+- `fn_droneAction "mapOrder"` : journal à chaque étape (demande, liaison bonne et barres, veille, drone posé, terminal UAV repris, envoi, attente d'accusé) ; refus expliqués par bandeau (app DRONE au clic) + ligne rouge : point illisible, pas de drone, détruit, batterie (`fuel`) vide, frappe en cours, liaison perdue (pas de téléphone, batterie du téléphone, signal Mavic, relief avec portée ×0,3, distance/portée), zone interdite.
+- `_watchMap` (chaque seconde, liaison ou non) : `COMSPEC_ATAK_DroneMapOrder` [ordre, grille, time, étape, COMSPEC_DroneAckN à l'envoi] → « ordre reçu » (bandeau SUCCESS) dès que le compteur bouge, ligne à 5 s sans accusé, bandeau ERROR à 30 s (FORCER L'EXÉCUTION ou réappairer).
+- en.txt : 31 traductions.
+#### Caméra noire : bouton PLEIN ÉCRAN du drone, TEST VIDÉO détaillé, drone plus léger (#807)
+
+- Retour de TTRD (14/10, après 1.91.0) : viseur Photo et image du drone toujours noirs dans le téléphone ; bris d'écran validé. Le premier TEST VIDÉO (13/10 21:20) s'affichait aux 4 endroits, mais montrait le joueur de dos, c'est-à-dire pas depuis la position posée par le script : la caméra n'est pas là où le code la place. Cause des vues noires toujours non confirmée.
+- `fn_pipCheck` "test" : grille de 9 images dans une fenêtre par-dessus le téléphone, 30 s : A référence (premier test), B texture 1024, C rapport 16/9, D caméra déplacée à chaque image comme l'app Photo (camSetPos + camCommit + setPosASL), E déplacée par setPosASL seul, F accrochée au joueur et orientée chaque image comme le drone, G posée 30 m au-dessus et tournée vers le sol, H thermique, I flux réel du drone (camBind). Relevé à 2 s : position réelle de chaque caméra (distance au joueur, hauteur, écart à la position posée). Bouton aussi dans l'app Photo.
+- App Drone : bouton PLEIN ÉCRAN sur l'image (bord droit, mi-hauteur) → `fn_droneAction` "direct". Pendant la vue directe, le rendu dans la texture est coupé (la scène n'est plus dessinée deux fois).
+- Performance (retour de TTRD : « le drone fait très vite une surcharge ») : netteté par défaut BASSE (texture 512 au lieu de 1024), caméra et boucle de la nacelle libérées 5 s après avoir quitté l'app Drone (20 s avant) ; viseur Photo en texture 512.
+- Journal : lignes « Flux caméra ouvert / suspendu / arrêté » du drone ; les lignes CAMERA, PHOTO, DRONE et PERF du journal natif sont recopiées dans le journal de session COMSPEC (.log d'Overwatch), qui ne les contenait pas.
+- Non testé en jeu.
+#### Contrôle Zeus des ATAK : désactiver, couper le son, punir, brouiller, dégâts (#808)
+
+
+- Nouveau dossier `functions/zeus`. Le serveur seul écrit l'état (`fn_zeusServer`, événement CBA `comspec_atak_native_zeus`, accepté d'un curateur assigné, de l'hôte ou d'un admin connecté) : variable d'unité publique `COMSPEC_ATAK_ZeusFx` = `[[clé, valeur, fin]...]` (clés `off`, `lock`, `mute`, `jam`, `heat`, `drain`), lue par `fn_zeusFx`. Effets durables jusqu'à l'action inverse ou « Tout rétablir » (ou une durée), reportés à la réapparition (`EntityRespawned`) et vus par les arrivants (variable publique). Effets ponctuels relayés au joueur (`comspec_atak_native_zeusFx` → `fn_zeusClient`).
+- Côté joueur : `fn_canUse` renvoie `zeus` (désactivé) ou `heat` (surchauffe 3) et le téléphone se range ; `fn_deviceOverlay` masque l'app et appelle `fn_zeusOverlay` (écran rouge verrouillé, bandes de parasites, voile de surchauffe) ; muet : `fn_vibrate`, `fn_fx`, `fn_musicTick`/`fn_musicAction` (musique et haut-parleur coupés), `fn_btInit` (sons Bluetooth) ; `fn_battery` compte surchauffe et décharge ; dégâts par `fn_deviceDamage` / `fn_deviceRepair` (réglage serveur « Dégâts du téléphone » requis).
+- Brouillage : 7e élément « force » dans `COMSPEC_ATAK_Jammers` (`fn_linkQuality`, `fn_ewEffects`), brouilleurs de zone Zeus remis par le serveur toutes les 5 s si une écriture d'un client les efface. `fn_zeusJam` : brouillage ciblé + brouilleurs Crows EW lus dans `crowsEW_jamming_jamMap` (format déduit du mod, non vérifié en jeu), réglage serveur « Brouilleurs Crows Electronic Warfare ».
+- Zeus : menu clic droit ZEN « ATAK · Contrôle Zeus » (Accès, Son, Punir, Brouiller, Dégâts et effets, Tout rétablir) sur la sélection ou l'unité survolée (`fn_zeusMenu`) ; il remplace le menu ZEN / ACE Zeus d'Overwatch « ATAK — Infos / dégâts / brouillage », qui agissait sur l'état du téléphone d'Overwatch. Modules Zeus sans ZEN : « ATAK · Contrôle Zeus » (joueur sous le module, rayon, tous, camp ; intensité, durée, message) et « ATAK · Brouilleur de zone ». Aide : Manuel de terrain > COMSPEC — ATAK > Contrôle Zeus des ATAK (FR/EN).
+- À tester en jeu (Zeus + un joueur) : chaque entrée du menu clic droit et les deux modules ; verrou (écran rouge, clics bloqués, message), désactivation (téléphone rangé, message), muet (musique coupée, plus de vibration sonore), alarme entendue par un joueur proche, brouillage ciblé et de zone (barres de signal, app Réseau), surchauffe 1-2-3, IEM, destruction puis réparation ; persistance après réapparition et pour un joueur qui rejoint ; un brouilleur Crows EW posé près d'un joueur.
+#### Notification « mise à jour disponible » réparée et plus claire (#811)
+
+- Cause : `fn_integrityCheck` « start » attendait le choix du service Athéna puis bouclait `while { mode == "on" }` toutes les 2 h ; un « Non » ou un choix fait après les 30 premières secondes coupait la vérification pour toute la mission, et rien n'était noté au journal dans ce cas. La notification passait par `_raise` (bandeau une fois par lancement du jeu, texte « Mettez le mod à jour sur Steam ou reconstruisez le main.pbo », journalisée en ERROR) ; en anglais, le libellé « Mise à jour disponible » étant traduit seul, le reste du texte restait en français.
+- Boucle qui suit le réglage toute la partie : contrôle dès le passage sur « Oui », puis toutes les 30 min.
+- Journal module `UPDATE` (français) : chaque décision (attente du choix, service sur « Non », demande envoyée, erreur de la DLL ou d'Athena, à jour, version de développement plus récente, mise à jour disponible avec ou sans résumé, bandeau déjà montré pour cette version, notifications coupées).
+- Bandeau + entrée des Notifications une fois par version (profil `COMSPEC_ATAK_UpdateNotified`, 20 dernières) ; carte épinglée (`COMSPEC_ATAK_Integrity`, clés `update_atak` / `update_link`) retirée dès que la version est à jour. Une DLL Link en retard alors que l'ATAK l'est aussi ne donne qu'une notification.
+- Site : `GET /api/atak/version` renvoie `summary_fr` / `summary_en`, le « Résumé joueur » (titre + puces, 300 caractères max) de l'entrée « ATAK natif <version> » de ce fichier (`AtakReleaseInfo::playerSummary`).
+- COMSPEC Link 2.0.85 : `LatestVersions` renvoie `OK|atak|link|résumé FR|résumé EN` (anciens main.pbo : champs en plus ignorés). Le résumé suit la langue du téléphone.
+- Test en jeu sans changer de main.pbo : console de debug, `["remote", "1.0.0"] spawn comspec_atak_native_fnc_integrityCheck` (simule un ATAK 1.0.0, profil non modifié).
+- À tester en jeu (DLL rebuild via build_mod.bat pour le résumé) : service Athéna sur « Oui », la commande ci-dessus → bandeau orange « Mise à jour ATAK disponible : version 1.93.0 (vous avez la 1.0.0). … », carte épinglée en tête des Notifications, lignes `[UPDATE]` dans l'app Debug ; en anglais, texte entièrement en anglais ; avec le main.pbo à jour, journal « ATAK 1.93.0 à jour » et aucune carte.
+#### Liaison : 502/504 en alerte sans rapport auto, ligne ZEN une fois, dump boot plus clair (#812)
+
+
+- Connect `fn_extensionCallback` (PostError) : 502 et 504 rejoignent 0/-1/401/403/429/503 en WARN, donc plus de `reportDiag` automatique (502 vu le 2026-10-14 à 10:50:24 UTC sur `POST /api/atak/explosive-timers`, pendant le reload PHP-FPM du déploiement de #802).
+- Connect `XEH_preInit` : « Stub zen_attributes_fnc_addAttribute installé » passe en INFO, une fois par lancement d'Arma (`uiNamespace`).
+- Connect `fn_diagStatusSnapshot` : « Version des mods » affiche « ATAK natif x.y.z » quand l'ancienne surcouche Athena n'est pas chargée (avant : « Athena — »).
+- Connect `fn_logDump` : `athenaReady=false` du dump « boot » est suivi de « (avant le handshake : normal au démarrage) » ; ce dump part à CBA_settingsInitialized, avant le handshake.
+- comspec_overwatch_connect.pbo repatché (tools/pbo_patch.py, 4 fichiers). main.pbo inchangé.
+#### Carte du téléphone : nouveaux noms de repères, de cibles et de lieux, lieux masquables (#813)
+
+- La carte du téléphone (`COMSPEC_RscMapAtak`) n'écrit plus le texte des marqueurs ni les noms de lieux (`sizeExLabel` et `sizeExNames` minuscules, comme la grille) ; l'ATAK les dessine : `fn_mapMarkerText` (repères Arma et Athena, LOCK) et `fn_mapPlaceText` (lieux de `nearestLocations`, liste faite une fois par carte).
+- Styles : réglages CBA client `comspec_atak_native_map_marker_style` (plate, pill, card, outline, classic) et `comspec_atak_native_map_place_style` (tactical, tag, quiet, classic). Catégories : `comspec_atak_native_map_show_marker_text`, `_cities`, `_villages`, `_locals`, `_sites` (aussi dans CALQUES, espace « C », et Réglages > Carte).
+- Désencombrement : étiquette à droite du symbole, sinon à gauche, sinon rien ; en zoom très éloigné seuls les LOCK et le repère sélectionné gardent leur nom ; villages sous l'échelle 0,25, lieux-dits et sites sous 0,08 ; un lieu qui chevauche une étiquette de repère n'est pas écrit.
+- Largeur des textes mesurée une fois (`fn_mapTextW`, `ctrlTextWidth` sur un texte caché, cache).
+- La carte de l'app JTAC passe sur `COMSPEC_RscMapJtac` et garde les textes Arma.
+- Aperçus : /mnt/project-files/atak/etiquettes-carte/.
+
+#### Liaison Athena : l'ancienne fenêtre « Lier le jeu à Athena » ne s'ouvre plus avec l'ATAK natif (#810)
+- Connect `fn_accountLinkShow` et `auth/fn_openLogin` passent la main à l'action `["show", user]` de `comspec_atak_native_fnc_athenaLink` quand l'ATAK natif est chargé : ACE « Connexion Athena », hub « Compte », Dépannage liaison « Lier », tablette web, Réglages > Lier mon compte et bouton de l'écran d'authentification ouvrent le téléphone sur l'app Athena, onglet COMPTE (code à valider sur athena.ttrd.fr/lier, ou e-mail + mot de passe). Un appel automatique dans les 90 premières secondes de mission n'ouvre rien : il demande le code et affiche la notification. Sans l'ATAK natif, l'ancien comportement reste. La surcouche Iceman (atak_athena) n'est pas modifiée.
+- À tester en jeu : mission sans session Athena, aucune ancienne fenêtre ; ACE > COMSPEC Athena > Connexion Athena ouvre le téléphone sur l'app Athena avec un code ; le valider sur athena.ttrd.fr/lier connecte.
+
+#### App Comptes rendus refaite : une fiche par type de compte rendu (#814)
+- `fn_reportTypes` : catalogue étendu (repère de ligne, requis, proposition, présentation par type : code, couleur, bandeau, outils, JNET, photo).
+- `fn_reportForm` (nouveau) : fiche propre à chaque type ; `fn_reportAuto` (nouveau) : propositions tirées du jeu (knowsAbout du groupe, position estimée par targetKnowledge, effectifs, chargeurs, carburant, laser).
+- `fn_formRender` : lignes `lineseg` et `linecombo`, libellé rouge et pastille élargie pour `line`.
+- `fn_reportAction` : brouillons (`COMSPEC_ATAK_RepDrafts`), contrôle avant envoi, accusés `comspec_atak_native_reportRcpt` (relayés au camp, rejoués aux arrivants), photo via `captureReconImage`, `jnet_escalate` dans structured_data, accusé d'ordre via `fn_taskAction`.
+- Site : `JnetFieldReportBridge` remonte de 1, 2 échelons ou jusqu'au sommet selon `jnet_escalate` ; libellés des nouveaux champs dans `AtakIcemanReportCatalog`.
+- Non testé en jeu.
+
+#### Photos : refus de la formule expliqué au joueur, sans rapport automatique (#818)
+- Cause du rapport #661 (ÉCHEC · PhotoUpload — http_403 · feature_unavailable) : `AtakPlanAccess` (garde de formule depuis le 13/09) refuse toute l'API tactique quand la formule appliquée de la communauté n'a pas `atak` (essai fondateur de 30 jours terminé, formule `free`). Ce n'est pas une régression de #793/#794.
+- Connect (`fn_extensionCallback`, PhotoUpload) : `ERR|http_403|fichier|feature_unavailable` → journalisé en WARN (pas de rapport auto), message clair FR (traduit EN dans i18n/en.txt), retour Galerie en alerte. comspec_overwatch_connect.pbo et main.pbo repatchés (tools/pbo_patch.py).
+- Site (#817) : un tel rapport reçu des anciens mods est classé Faible (ni ticket ni e-mail) et son détail nomme la communauté et sa formule.
+- À tester en jeu : avec une communauté sans la carte, prendre une photo ; Galerie > dernière photo refusée affiche le nouveau message (FR et EN), aucun rapport auto dans /admin/atak-mod-reports. Avec une communauté qui a la carte, l'envoi marche toujours.
+
+## Erreur 502 au déploiement, journal de l'appareil à la bonne heure (site)
+
+### Résumé joueur
+Type : correctif
+FR : Athena ne coupe plus tes envois pendant une mise à jour
+- Une mise à jour d'Athena laisse finir les envois en cours : fini l'erreur 502 isolée pendant un déploiement.
+- Le journal de l'appareil sur Athena affiche l'heure de ton PC, au lieu d'avoir deux heures d'avance.
+EN : Athena no longer cuts your sends during an update
+- An Athena update lets sends in progress finish: no more lone 502 error during a deployment.
+- The device log on Athena shows your PC's time, instead of running two hours ahead.
+
+### Détail technique
+
+- Cause du 502 sur `POST /api/atak/explosive-timers` (2026-10-14 12:50:24 heure du joueur = 10:50:24 UTC) : le déploiement de #802 (étape « Pull on VPS » 10:50:19 → 10:50:24) finit par `systemctl reload php8.4-fpm`. Avec `process_control_timeout = 0` (défaut), le reload tue les workers occupés et nginx renvoie 502. Le code de l'endpoint n'est pas en cause.
+- `deploy-vps.yml` : règle une fois `process_control_timeout = 10s` dans `/etc/php/8.4/fpm/php-fpm.conf` (sauvegarde `.bak-deploy`, `php-fpm -t` avant, restauration si refusé) puis reload.
+- `AtakDeviceLogRepository` : COMSPEC Link envoie `logged_at` en heure locale sans fuseau ; l'écart entre la ligne la plus récente du lot et l'heure serveur, arrondi au quart d'heure (15 min à 14 h), est retiré des heures sans fuseau.
+- Le volet mod (502/504 en alerte, ligne ZEN, dump) est dans une PR à part, livrée avec le regroupement ATAK.
+## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
+
+### Résumé joueur
+Type : correctif
+FR : Le menu COMSPEC ATAK de l'éditeur Eden refonctionne
+- « Aide : poser un relais » ouvre l'aide des relais au lieu d'afficher une erreur de script.
+- « TBR · Tableau des relais » s'affiche de nouveau, au lieu de bloquer la souris derrière une fenêtre invisible.
+- Les deux fenêtres se ferment avec le bouton Fermer ou la touche Échap.
+- Poser un relais sans liaison Athena n'envoie plus de rapport d'erreur automatique « Relais ATAK ».
+EN : The COMSPEC ATAK menu in the Eden editor works again
+- "Help: placing a relay" opens the relay help instead of showing a script error.
+- "TBR · Relay table" shows again, instead of locking the mouse behind an invisible window.
+- Both windows close with the Close button or the Escape key.
+- Placing a relay without an Athena connection no longer sends an automatic "Relais ATAK" error report.
+
+### Détail technique
+
+- Cause : les deux entrées du menu Eden s'exécutaient pendant que la liste déroulante du menu était encore ouverte. `BIS_fnc_openFieldManual` n'y trouvait pas d'écran parent (booléen passé à `createDisplay`, fn_openFieldManual.sqf ligne 40) ; la fenêtre TBR était créée mais restait invisible et gardait la souris.
+- `fn_relayEden` : les modes `table` et `help` relancent leur travail dans un script à part (`spawn` + `uiSleep 0.05`), une fois le menu refermé ; fenêtre commune `_window` (fond assombri, panneau et titre en safeZone, couleurs explicites, Échap ferme).
+- Nouveau mode `help` : le texte du manuel de terrain (`STR_COMSPEC_ATAK_CFG_BF0FFB1714`, CfgHints) dans une fenêtre défilante de l'éditeur ; le menu n'appelle plus `BIS_fnc_openFieldManual`. La page reste dans Aide > Manuel de terrain.
+- Connect (`fn_syncAtakRelay`) : sans session Athena (`COMSPEC_AthenaReady` faux), la fiche du relais n'est plus envoyée ; la boucle serveur des relais (12 s) la remonte dès que la liaison est prête. `UpdateRelay` n'est plus appelé par `callExtLogged` : la DLL l'envoie en tâche de fond et rend un résultat vide, compté à tort comme « ÉCHEC · Relais ATAK | ["",0,0] » toutes les 12 s (journal de TTRD du 14/10). Seul un refus ERR|… est journalisé, en WARN (pas de rapport auto), suivi d'une pause d'une minute. Évite les rapports auto « ÉCHEC · Relais ATAK » (rapport #659). comspec_overwatch_connect.pbo repatché (tools/pbo_patch.py).
+- À tester en jeu (Eden) : menu COMSPEC ATAK > Aide : poser un relais (fenêtre lisible, défilement, Fermer, Échap) ; TBR avec et sans relais posés (liste, Aller, Sélectionner, double clic, Fermer, Échap) ; la souris et la caméra d'Eden répondent après fermeture.
 
 ## Regroupement : images dans le téléphone, ordres au drone, plan de briefing, app Groupe, mode PETIT (ATAK natif 1.91.0, COMSPEC Link 2.0.84)
 

@@ -155,6 +155,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 ];
 // Suivi des cibles marquées : en vue, perdues, neutralisées (deux fois par seconde).
 [{ private _t = diag_tickTime; ["tick"] call comspec_atak_native_fnc_lockAction; ["marquage suivi", _t] call comspec_atak_native_fnc_perfAcc; }, 0.5] call CBA_fnc_addPerFrameHandler;
+// Contrôle Zeus des ATAK : effets reçus du serveur (fn_zeusClient), boucle d'une seconde, menu clic droit ZEN du Zeus.
+["comspec_atak_native_zeusFx", { _this call comspec_atak_native_fnc_zeusClient; }] call CBA_fnc_addEventHandler;
+[{ ["tick"] call comspec_atak_native_fnc_zeusClient; }, 1] call CBA_fnc_addPerFrameHandler;
+["register"] call comspec_atak_native_fnc_zeusMenu;
 // Batterie : consommation aussi téléphone rangé (la barre d'état la met à jour chaque seconde quand il est ouvert).
 [{ if (isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_battery; }; }, 10] call CBA_fnc_addPerFrameHandler;
 ["comspec_atak_native_p2p", { _this call comspec_atak_native_fnc_p2pReceive }] call CBA_fnc_addEventHandler;
@@ -164,6 +168,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 ["comspec_atak_native_bda", { ["recv", _this] call comspec_atak_native_fnc_bdaAction; }] call CBA_fnc_addEventHandler;
 // Comptes rendus du camp (app Comptes rendus) : tous les types, rejoués par la synchro serveur.
 ["comspec_atak_native_report", { ["recv", _this] call comspec_atak_native_fnc_reportAction; }] call CBA_fnc_addEventHandler;
+// Accusés de lecture et de réception des comptes rendus (l'auteur les garde).
+["comspec_atak_native_reportRcpt", { ["rcpt", _this] call comspec_atak_native_fnc_reportAction; }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_medevacStatus", { ["statusRecv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
 // Ordres : réponses des joueurs du camp (app Tâches, qui a vu / reçu / exécute).
 ["comspec_atak_native_orderAck", { ["recv", _this] call comspec_atak_native_fnc_orderAck; }] call CBA_fnc_addEventHandler;

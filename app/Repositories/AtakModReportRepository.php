@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Core\Database;
+use App\Services\Monitoring\AtakModReportGravity as Gravity;
 use PDO;
 
 /**
@@ -49,6 +50,7 @@ final class AtakModReportRepository
     /**
      * @param array{
      *   severity?:string,
+     *   gravity?:?string,
      *   channel?:string,
      *   message:string,
      *   detail_text?:?string,
@@ -64,7 +66,7 @@ final class AtakModReportRepository
      *   extension_version?:?string,
      *   arma_build?:?string
      * } $data
-     * @return array{id:int, created:bool, hit_count:int}
+     * @return array{id:int, created:bool, hit_count:int, gravity:string}
      */
     public function upsert(array $data): array
     {
@@ -82,6 +84,14 @@ final class AtakModReportRepository
 
         $steam = $this->clip((string) ($data['steam_uid'] ?? ''), 32);
         $steam = $steam !== '' ? $steam : null;
+        $source = $this->clip((string) ($data['source'] ?? 'auto'), 32) ?: 'auto';
+        $gravity = Gravity::classify(
+            $source,
+            $severity,
+            $message,
+            (string) ($data['detail_text'] ?? ''),
+            isset($data['gravity']) ? (string) $data['gravity'] : null
+        );
 
         // Dédup : même empreinte + même Steam dans les 30 dernières minutes → incrément
         $st = $this->pdo->prepare(
@@ -123,24 +133,25 @@ final class AtakModReportRepository
             ]);
             $hits = (int) $existing['hit_count'] + 1;
 
-            return ['id' => $id, 'created' => false, 'hit_count' => $hits];
+            return ['id' => $id, 'created' => false, 'hit_count' => $hits, 'gravity' => $this->gravityOf($id, $gravity)];
         }
 
         $ins = $this->pdo->prepare(
             'INSERT INTO atak_mod_reports (
-                severity, channel, message, detail_text, context_json, fingerprint, source,
+                severity, gravity, channel, message, detail_text, context_json, fingerprint, source,
                 steam_uid, player_uid, player_name, callsign, client_ip,
                 mod_version, extension_version, arma_build
-             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
         );
         $ins->execute([
             $severity,
+            $gravity,
             $channel,
             $message,
             $this->nullableText($data['detail_text'] ?? null, 8000),
             $this->nullableText($data['context_json'] ?? null, 16000),
             $fingerprint,
-            $this->clip((string) ($data['source'] ?? 'auto'), 32) ?: 'auto',
+            $source,
             $steam,
             $this->nullableClip($data['player_uid'] ?? null, 64),
             $this->nullableClip($data['player_name'] ?? null, 128),
@@ -151,7 +162,45 @@ final class AtakModReportRepository
             $this->nullableClip($data['arma_build'] ?? null, 64),
         ]);
 
-        return ['id' => (int) $this->pdo->lastInsertId(), 'created' => true, 'hit_count' => 1];
+        return ['id' => (int) $this->pdo->lastInsertId(), 'created' => true, 'hit_count' => 1, 'gravity' => $gravity];
+    }
+
+    /** Gravité gardée sur un rapport regroupé (elle a pu être corrigée à la main depuis). */
+    private function gravityOf(int $id, string $fallback): string
+    {
+        try {
+            $st = $this->pdo->prepare('SELECT gravity FROM atak_mod_reports WHERE id = ? LIMIT 1');
+            $st->execute([$id]);
+
+            return Gravity::normalize((string) $st->fetchColumn()) ?? $fallback;
+        } catch (\Throwable) {
+            return $fallback;
+        }
+    }
+
+    /**
+     * Rapports automatiques critiques créés depuis N minutes pour le même joueur (Steam, sinon IP).
+     * Sert de limite pour l'e-mail envoyé à l'exploitation.
+     */
+    public function countRecentCriticalAutoReports(?string $steamUid, ?string $clientIp, int $minutes = 60): int
+    {
+        $minutes = max(1, min(1440, $minutes));
+        if ($steamUid !== null && $steamUid !== '') {
+            $where = 'steam_uid = ?';
+            $param = $steamUid;
+        } elseif ($clientIp !== null && $clientIp !== '') {
+            $where = 'steam_uid IS NULL AND client_ip = ?';
+            $param = $clientIp;
+        } else {
+            return 0;
+        }
+        $st = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM atak_mod_reports WHERE source NOT LIKE 'player%' AND gravity = 'critical' AND {$where}
+               AND created_at >= (NOW() - INTERVAL {$minutes} MINUTE)"
+        );
+        $st->execute([$param]);
+
+        return (int) $st->fetchColumn();
     }
 
     /**
@@ -180,12 +229,24 @@ final class AtakModReportRepository
         return (int) $st->fetchColumn();
     }
 
+    public const SORT_RECENT = 'recent';
+    public const SORT_GRAVITY = 'gravity';
+
     /** @return list<array<string, mixed>> */
-    public function listRecent(int $limit = 100, ?string $severity = null, ?string $workflowStatus = null, ?string $search = null): array
-    {
+    public function listRecent(
+        int $limit = 100,
+        ?string $severity = null,
+        ?string $workflowStatus = null,
+        ?string $search = null,
+        ?string $gravity = null,
+        string $sort = self::SORT_RECENT
+    ): array {
         $limit = max(1, min(500, $limit));
-        [$whereSql, $params] = $this->filterSql($severity, $workflowStatus, $search);
-        $sql = 'SELECT * FROM atak_mod_reports' . $whereSql . ' ORDER BY last_seen_at DESC, id DESC LIMIT ' . $limit;
+        [$whereSql, $params] = $this->filterSql($severity, $workflowStatus, $search, $gravity);
+        $order = $sort === self::SORT_GRAVITY
+            ? "CASE gravity WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END, last_seen_at DESC, id DESC"
+            : 'last_seen_at DESC, id DESC';
+        $sql = 'SELECT * FROM atak_mod_reports' . $whereSql . ' ORDER BY ' . $order . ' LIMIT ' . $limit;
         $st = $this->pdo->prepare($sql);
         $st->execute($params);
         $rows = $st->fetchAll(PDO::FETCH_ASSOC);
@@ -193,9 +254,9 @@ final class AtakModReportRepository
         return is_array($rows) ? $rows : [];
     }
 
-    public function countAll(?string $severity = null, ?string $workflowStatus = null, ?string $search = null): int
+    public function countAll(?string $severity = null, ?string $workflowStatus = null, ?string $search = null, ?string $gravity = null): int
     {
-        [$whereSql, $params] = $this->filterSql($severity, $workflowStatus, $search);
+        [$whereSql, $params] = $this->filterSql($severity, $workflowStatus, $search, $gravity);
         $st = $this->pdo->prepare('SELECT COUNT(*) FROM atak_mod_reports' . $whereSql);
         $st->execute($params);
 
@@ -220,13 +281,55 @@ final class AtakModReportRepository
     }
 
     /**
+     * Rapports à traiter (nouveaux ou en cours) par gravité.
+     *
+     * @return array<string, int>
+     */
+    public function countOpenByGravity(): array
+    {
+        $out = array_fill_keys(Gravity::LEVELS, 0);
+        $rows = $this->pdo->query(
+            "SELECT gravity, COUNT(*) AS n FROM atak_mod_reports
+              WHERE workflow_status IN ('new', 'in_progress') GROUP BY gravity"
+        );
+        foreach ($rows ? $rows->fetchAll(PDO::FETCH_ASSOC) : [] as $row) {
+            $key = Gravity::normalize((string) ($row['gravity'] ?? '')) ?? Gravity::NORMAL;
+            $out[$key] += (int) ($row['n'] ?? 0);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Corrige la gravité à la main.
+     *
+     * @param list<int> $ids
+     * @return int rapports changés
+     */
+    public function updateGravityMany(array $ids, string $gravity): int
+    {
+        $ids = self::cleanIds($ids);
+        $norm = Gravity::normalize($gravity);
+        if ($ids === [] || $norm === null) {
+            return 0;
+        }
+        $st = $this->pdo->prepare(
+            'UPDATE atak_mod_reports SET gravity = ?, last_seen_at = last_seen_at
+              WHERE gravity <> ? AND id IN (' . self::placeholders($ids) . ')'
+        );
+        $st->execute(array_merge([$norm, $norm], $ids));
+
+        return $st->rowCount();
+    }
+
+    /**
      * Identifiants des rapports correspondant à un filtre (actions « tout traiter » sur la vue filtrée).
      *
      * @return list<int>
      */
-    public function idsMatching(?string $severity = null, ?string $workflowStatus = null, ?string $search = null): array
+    public function idsMatching(?string $severity = null, ?string $workflowStatus = null, ?string $search = null, ?string $gravity = null): array
     {
-        [$whereSql, $params] = $this->filterSql($severity, $workflowStatus, $search);
+        [$whereSql, $params] = $this->filterSql($severity, $workflowStatus, $search, $gravity);
         $st = $this->pdo->prepare('SELECT id FROM atak_mod_reports' . $whereSql . ' ORDER BY id DESC LIMIT ' . self::BULK_LIMIT);
         $st->execute($params);
 
@@ -319,9 +422,10 @@ final class AtakModReportRepository
     /**
      * Compte Athena lié au Steam de chaque joueur (pour le prévenir sur le site ou par e-mail).
      * Comptes membres (users.steam_id) d'abord, puis comptes Athena globaux (athena_accounts.steam_id).
+     * « lang » : langue du profil Athena du joueur (fr par défaut, en si son profil est en anglais).
      *
      * @param list<string> $steamUids
-     * @return array<string, array{user_id:int, tenant_id:int, email:string, name:string}>
+     * @return array<string, array{user_id:int, tenant_id:int, email:string, name:string, lang:string}>
      */
     public function linkedAccountsBySteam(array $steamUids): array
     {
@@ -384,6 +488,42 @@ final class AtakModReportRepository
             }
         }
 
+        $langs = $this->profileLanguages(array_map(static fn (array $a): int => $a['user_id'], array_values($out)));
+        foreach ($out as $steam => $account) {
+            $out[$steam]['lang'] = $langs[$account['user_id']] ?? 'fr';
+        }
+
+        return $out;
+    }
+
+    /**
+     * Langue choisie par chaque membre sur Athena (user_profiles.language) ; absente = français.
+     *
+     * @param list<int> $userIds
+     * @return array<int, string> fr ou en
+     */
+    public function profileLanguages(array $userIds): array
+    {
+        $userIds = self::cleanIds($userIds);
+        if ($userIds === []) {
+            return [];
+        }
+        $out = [];
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT user_id, language FROM user_profiles WHERE user_id IN (' . self::placeholders($userIds) . ')'
+            );
+            $st->execute($userIds);
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+                $lang = strtolower(trim((string) ($row['language'] ?? '')));
+                if ($lang !== '') {
+                    $out[(int) $row['user_id']] = str_starts_with($lang, 'en') ? 'en' : 'fr';
+                }
+            }
+        } catch (\Throwable) {
+            // Pas de table des profils : français.
+        }
+
         return $out;
     }
 
@@ -430,10 +570,15 @@ final class AtakModReportRepository
     /**
      * @return array{0:string, 1:list<string>} clause WHERE (avec espace initial) et paramètres
      */
-    private function filterSql(?string $severity, ?string $workflowStatus, ?string $search): array
+    private function filterSql(?string $severity, ?string $workflowStatus, ?string $search, ?string $gravity = null): array
     {
         $where = [];
         $params = [];
+        $gravity = Gravity::normalize($gravity);
+        if ($gravity !== null) {
+            $where[] = 'gravity = ?';
+            $params[] = $gravity;
+        }
         if ($severity !== null && $severity !== '') {
             $where[] = 'severity = ?';
             $params[] = $this->normalizeSeverity($severity);

@@ -14,6 +14,9 @@ if !(_ctx get "run") exitWith { true };
 
 private _targets = _ctx get "targets";
 private _modelId = trim (_logic getVariable ["ModelId", ""]);
+// Eden : « Autre modèle » (identifiant saisi) passe avant la liste des modèles intégrés.
+private _custom = trim (_logic getVariable ["ModelIdCustom", ""]);
+if (_custom isNotEqualTo "") then { _modelId = _custom; };
 
 if (_targets isEqualTo []) exitWith {
     ["Appliquer un modèle : aucune cible.\nPosez le module sur une personne ou un objet.", "error"] call comspec_sse_fnc_zeusNotify;

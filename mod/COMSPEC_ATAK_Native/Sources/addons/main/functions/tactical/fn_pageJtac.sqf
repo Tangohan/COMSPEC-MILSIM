@@ -84,7 +84,7 @@ private _mapAt = {
     _rect params ["_mx", "_my", "_mw", "_mh"];
     private _bgm = ["COMSPEC_RscText", [_mx, _my, _mw, _mh]] call comspec_atak_native_fnc_pageCtrl;
     _bgm ctrlSetBackgroundColor [0.02, 0.028, 0.024, 1];
-    private _map = ["COMSPEC_RscMapAtak", [_bx + _mx, _by + _my, _mw, _mh], "", false] call comspec_atak_native_fnc_pageCtrl;
+    private _map = ["COMSPEC_RscMapJtac", [_bx + _mx, _by + _my, _mw, _mh], "", false] call comspec_atak_native_fnc_pageCtrl;
     _map setVariable ["mode", _mode];
     _map ctrlAddEventHandler ["Draw", { params ["_c"]; [_c, _c getVariable ["mode", "JTAC"]] call comspec_atak_native_fnc_jtacDraw; }];
     _map ctrlAddEventHandler ["MouseButtonClick", {

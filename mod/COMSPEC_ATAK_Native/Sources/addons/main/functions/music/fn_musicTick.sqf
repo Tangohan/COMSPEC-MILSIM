@@ -22,7 +22,8 @@ private _ownKey = {
 };
 
 // 1. Ma piste
-if ((_m get "kind") isNotEqualTo "" && {!_enabled || {!alive player} || {([] call comspec_atak_native_fnc_canUse) isNotEqualTo ""}}) then {
+// Haut-parleurs coupés par le Zeus (fn_zeusFx "mute") : la musique s'arrête et ne repart pas.
+if ((_m get "kind") isNotEqualTo "" && {!_enabled || {!alive player} || {([] call comspec_atak_native_fnc_canUse) isNotEqualTo ""} || {["mute", false] call comspec_atak_native_fnc_zeusFx}}) then {
     _m set ["kind", ""]; _m set ["status", ["idle", 0, 0, "", ""]];
 };
 private _key = call _ownKey;

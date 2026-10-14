@@ -22,6 +22,21 @@ final class JnetFieldReportBridgeTest extends TestCase
         self::assertSame([5], Bridge::targetsFor('down', 5, 3, []));
     }
 
+    public function testOperatorCanEscalateHigherFromTheGame(): void
+    {
+        self::assertSame(1, Bridge::escalationLevels([]));
+        self::assertSame(1, Bridge::escalationLevels(['jnet_escalate' => '1']));
+        self::assertSame(2, Bridge::escalationLevels(['jnet_escalate' => '2']));
+        self::assertSame(20, Bridge::escalationLevels(['jnet_escalate' => 'TOP']));
+        self::assertSame(1, Bridge::escalationLevels(['jnet_escalate' => 'n/a']));
+        $sitrep = Bridge::buildReport(['report_type' => 'SITREP', 'structured_data' => ['jnet_escalate' => '2', 'kind' => 'sitrep', 'next' => 'Tenir le carrefour']]);
+        self::assertSame(2, $sitrep['escalate']);
+        // Le choix d'échelon et les clés techniques ne s'affichent pas dans l'échange.
+        self::assertStringNotContainsString('jnet_escalate', $sitrep['body']);
+        self::assertStringNotContainsString('sitrep', $sitrep['body']);
+        self::assertStringContainsString('Intentions : Tenir le carrefour', $sitrep['body']);
+    }
+
     public function testReconNoteBecomesIntel(): void
     {
         $b = Bridge::buildReconNote(['tag' => 'vehicle', 'text' => "  technical\n au carrefour ", 'confidence' => 'seen', 'mission_id' => 'OP-41']);

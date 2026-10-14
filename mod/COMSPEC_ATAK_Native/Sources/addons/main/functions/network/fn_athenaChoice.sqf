@@ -8,7 +8,7 @@ switch (_what) do {
         if (!isNil "comspec_overwatch_connect_fnc_athenaChoiceShow") then { [true] call comspec_overwatch_connect_fnc_athenaChoiceShow; };
     };
     case "link": {
-        if (!isNil "comspec_overwatch_connect_fnc_accountLinkShow") then { [] call comspec_overwatch_connect_fnc_accountLinkShow; };
+        ["show", true] call comspec_atak_native_fnc_athenaLink;
     };
     default {
         if (!isNil "comspec_overwatch_connect_fnc_athenaApply") then {

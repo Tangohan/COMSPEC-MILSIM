@@ -330,6 +330,7 @@ return function (Router $router) {
     $router->get('/c/{slug}/enlistment/enter', [CommunityController::class, 'enterEnlistment'], [AuthMiddleware::class, EnlistmentModuleSanctionMiddleware::class]);
     $router->get('/c/{slug}/setup', [CommunityController::class, 'setupForm'], [AuthMiddleware::class]);
     $router->post('/c/{slug}/setup', [CommunityController::class, 'setupStore'], [AuthMiddleware::class]);
+    $router->get('/communities/create/guide', [CommunityController::class, 'createGuide']);
     $router->get('/communities/create', [CommunityController::class, 'createForm'], [AuthMiddleware::class]);
     $router->post('/communities/create', [CommunityController::class, 'create'], [AuthMiddleware::class]);
     $router->get('/communities/create/preview', [CommunityController::class, 'createPreview'], [AuthMiddleware::class]);
@@ -1859,6 +1860,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/admin/atak-mod-reports/delete', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'delete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/atak-mod-reports/bulk', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'bulk'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/atak-mod-reports/reply', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'reply'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/atak-mod-reports/gravity', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'updateGravity'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $lmsAdminMw = [AuthMiddleware::class, NonDefaultTenantMiddleware::class];
     $router->get('/admin/training', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, ''), $lmsAdminMw);
     $router->get('/admin/training/courses', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'courses'), $lmsAdminMw);

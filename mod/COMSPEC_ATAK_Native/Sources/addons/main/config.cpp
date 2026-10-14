@@ -3,7 +3,7 @@ class CfgPatches {
     class comspec_atak_native_main {
         name="COMSPEC ATAK Native Standalone"; author="COMSPEC"; requiredVersion=2.14;
         requiredAddons[]={"A3_UI_F","A3_Weapons_F","A3_Modules_F","A3_Anims_F_Config_Sdr","cba_main","cba_xeh","3DEN"};
-        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset","COMSPEC_ATAK_Module_DatingProfile"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
+        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset","COMSPEC_ATAK_Module_DatingProfile","COMSPEC_ATAK_Module_ZeusControl","COMSPEC_ATAK_Module_ZeusJammer"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
     };
 };
 // Langues du mod en plus du français (fn_langList). Un mod de traduction communautaire ajoute sa propre classe
@@ -23,7 +23,7 @@ class CfgFunctions {
             class fx {}; class toast {}; class quickSettings {}; class lockScreen {}; class tr {}; class langApply {}; class langList {}; class langResolve {}; class addSetting {}; class aceAction {}; class zenAction {}; class zenModule {}; class trMenu {}; class menuRelang {};
         };
         class map { file="z\comspec_atak_native\addons\main\functions\map";
-            class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class natoSymbol {}; class mapLabels {}; class mapCtxMenu {}; class mapPing {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class unitGroup {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerWeb {}; class markerWebSweep {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {}; class mapUnfocus {}; class inspToggle {}; class markerPalette {}; class markerPaletteData {}; class markerLabels {}; class sigintPoll {}; class reliefDraw {}; class meshDraw {}; class logisticsDraw {}; class ewDraw {}; class mapSearch {}; class mapStyle {}; class textureKeep {}; class strokeSimplify {}; class strokeDraw {}; class strokeBar {};
+            class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class natoSymbol {}; class mapLabels {}; class mapMarkerText {}; class mapPlaceText {}; class mapTextW {}; class mapCtxMenu {}; class mapPing {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class unitGroup {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerWeb {}; class markerWebSweep {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {}; class mapUnfocus {}; class inspToggle {}; class markerPalette {}; class markerPaletteData {}; class markerLabels {}; class sigintPoll {}; class reliefDraw {}; class meshDraw {}; class logisticsDraw {}; class ewDraw {}; class mapSearch {}; class mapStyle {}; class textureKeep {}; class strokeSimplify {}; class strokeDraw {}; class strokeBar {};
         };
         class gestures { file="z\comspec_atak_native\addons\main\functions\gestures";
             class gestureFinger {}; class gestureFingerAim {}; class gestureSelfie {};
@@ -68,7 +68,7 @@ class CfgFunctions {
             class dataSetup {}; class dataParseFiles {}; class dataServer {}; class dataAction {}; class dataInit {}; class dataOverlay {}; class pageDataLink {}; class zeusForm {}; class moduleContext {}; class moduleDataNode {}; class moduleDataFile {}; class moduleDataReset {}; class moduleDating {};
         };
         class reports { file="z\comspec_atak_native\addons\main\functions\reports";
-            class reportTypes {}; class reportAction {}; class pageReports {};
+            class reportTypes {}; class reportAction {}; class pageReports {}; class reportForm {}; class reportAuto {};
         };
         class teams { file="z\comspec_atak_native\addons\main\functions\teams";
             class ftCatalog {}; class ftInfo {}; class ftTeams {}; class ftServer {}; class ftAction {}; class ftRows {}; class ftCenter {};
@@ -79,6 +79,9 @@ class CfgFunctions {
         };
         class aar { file="z\comspec_atak_native\addons\main\functions\aar";
             class aarRecord {}; class aarAction {}; class aarDraw {}; class pageAar {};
+        };
+        class zeus { file="z\comspec_atak_native\addons\main\functions\zeus";
+            class zeusFx {}; class zeusJam {}; class zeusServer {}; class zeusClient {}; class zeusOverlay {}; class zeusMenu {}; class moduleZeusControl {}; class moduleZeusJammer {};
         };
         class dock { file="z\comspec_atak_native\addons\main\functions\dock";
             class dockServer {}; class dockVisual {}; class dockClient {}; class dockMenu {};
@@ -313,6 +316,10 @@ class CfgVehicles {
         model="\z\comspec_atak_native\addons\main\data\jpc_iphone.p3d";
         hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_iphone_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
     };
+    class COMSPEC_ATAK_JpcPhone_sonim: COMSPEC_ATAK_JpcPhone_s7 {
+        model="\z\comspec_atak_native\addons\main\data\jpc_sonim.p3d";
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_sonim_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
+    };
     class COMSPEC_ATAK_JpcPhone_plate: COMSPEC_ATAK_JpcPhone_s7 {
         model="\z\comspec_atak_native\addons\main\data\jpc_plate.p3d";
         hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_plate_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
@@ -451,6 +458,7 @@ class CfgFactionClasses {
     class NO_CATEGORY;
     class COMSPEC_ATAK_Data: NO_CATEGORY { displayName="$STR_COMSPEC_ATAK_CFG_BC3E09CB53"; priority=2; side=7; };
     class COMSPEC_ATAK_Civil: NO_CATEGORY { displayName="$STR_COMSPEC_ATAK_CFG_1B554EECB0"; priority=2; side=7; };
+    class COMSPEC_ATAK_Zeus: NO_CATEGORY { displayName="$STR_COMSPEC_ATAK_CFG_C3B58F43CF"; priority=2; side=7; };
     class COMSPEC_ATAK_Network: NO_CATEGORY { displayName="$STR_COMSPEC_ATAK_CFG_0913AEF2ED"; priority=2; side=7; };
 };
 
@@ -466,6 +474,13 @@ class CfgHints {
             image = "\z\comspec_atak_native\addons\main\data\app_waverelay.paa";
             arguments[] = {};
         };
+        class ZeusControl {
+            displayName = "$STR_COMSPEC_ATAK_CFG_E5E2FEEE38";
+            displayNameShort = "$STR_COMSPEC_ATAK_CFG_46B8C2431E";
+            description = "$STR_COMSPEC_ATAK_CFG_67446103B5";
+            image = "\z\comspec_atak_native\addons\main\data\app_ew.paa";
+            arguments[] = {};
+        };
     };
 };
 
@@ -478,7 +493,7 @@ class Display3DEN {
                 items[] += {"COMSPEC_ATAK_Menu"};
                 class COMSPEC_ATAK_Menu { text = "COMSPEC ATAK"; items[] = {"COMSPEC_ATAK_MenuRelays", "COMSPEC_ATAK_MenuRelayHelp"}; };
                 class COMSPEC_ATAK_MenuRelays { text = "$STR_COMSPEC_ATAK_CFG_TBR_MENU"; action = "['table'] call comspec_atak_native_fnc_relayEden"; };
-                class COMSPEC_ATAK_MenuRelayHelp { text = "$STR_COMSPEC_ATAK_CFG_TBR_HELP"; action = "['COMSPEC_ATAK', 'Relays'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_ATAK_MenuRelayHelp { text = "$STR_COMSPEC_ATAK_CFG_TBR_HELP"; action = "['help'] call comspec_atak_native_fnc_relayEden"; };
             };
         };
     };

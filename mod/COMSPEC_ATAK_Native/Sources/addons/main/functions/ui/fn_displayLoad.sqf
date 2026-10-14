@@ -14,7 +14,7 @@ _state set ["drag", []];
 _state set ["pageDrawn", ""];
 uiNamespace setVariable ["COMSPEC_ATAK_Display", _display];
 // Proportions d'un carré (hauteur / largeur en unités d'interface) : écran du joueur, ou texture 1024 x 576 du JPC.
-uiNamespace setVariable ["COMSPEC_ATAK_Ratio", [pixelH / pixelW, 1024 / 576] select _texture];
+uiNamespace setVariable ["COMSPEC_ATAK_Ratio", [pixelH / pixelW, 1024 / (missionNamespace getVariable ["COMSPEC_ATAK_JpcTexH", 576])] select _texture];
 uiNamespace setVariable ["COMSPEC_ATAK_PageControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_ToastControls", []];

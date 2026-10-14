@@ -31,6 +31,7 @@ use App\Services\Community\CommunityOnboardingValidationService;
 use App\Services\Community\CommunityWizardUploadService;
 use App\Services\Community\TenantBootstrapService;
 use App\Services\Community\TenantCommunityProfileService;
+use App\Services\Community\WizardOrbatPresets;
 use App\Services\EmailService;
 use App\Services\Rbac\RbacService;
 use App\Services\Recruitment\TenantRecruitmentSettings;
@@ -933,6 +934,21 @@ class CommunityController
         return Response::redirect(url('c/' . $slug . '/enlistment'));
     }
 
+    /**
+     * Guide public de l’assistant de création : étapes, champs et modèles, sans compte requis.
+     */
+    public function createGuide(Request $request, array $params = []): Response
+    {
+        return Response::view('layout.main', [
+            'title' => 'Guide de création d’une communauté',
+            'content' => 'community.create_guide',
+            'orbatPresets' => WizardOrbatPresets::forWizard(),
+            'officialKits' => \App\Services\OrganizationCatalog\OrganizationKitDefinitions::officialKits(),
+            'tenantTypes' => \App\Services\Community\TenantTypeConfig::availableTypes(),
+            'isLoggedIn' => $this->authService->check(),
+        ]);
+    }
+
     public function createForm(Request $request, array $params = []): Response
     {
         if (!$this->authService->check()) {
@@ -962,6 +978,7 @@ class CommunityController
             'gradesUsGrouped' => $this->groupGradesByCategory($gradesUs),
             'badgeLabels' => TenantCommunityProfileService::badgeLabels(),
             'defaultWizardUnitsJson' => json_encode($this->defaultQuickWizardUnits(), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
+            'orbatPresets' => WizardOrbatPresets::forWizard(),
             'wizardPermissionGroups' => CommunityOnboardingValidationService::wizardPermissionFieldGroups(),
             'subscriptionOfferCards' => $this->subscriptionOfferCards($billingConfigured),
             'communityCreateDraft' => Session::get('community_create_draft') ?? [],
@@ -1930,19 +1947,19 @@ class CommunityController
      */
     private function buildWizardFromRequest(Request $request): array
     {
-        $quick = $request->input('wizard_quick_fill') ? true : false;
+        // Le constructeur ORBAT synchronise toujours wizard_units_json : la structure de départ
+        // ne sert que si le navigateur n’a rien envoyé (JavaScript désactivé).
         $units = [];
-        if ($quick) {
-            $units = $this->defaultQuickWizardUnits();
-        } else {
-            $raw = trim((string) $request->input('wizard_units_json', ''));
-            if ($raw !== '') {
-                $decoded = json_decode($raw, true);
-                if (!is_array($decoded)) {
-                    throw new \InvalidArgumentException('La structure des unités n’est pas valide. Vérifiez l’organigramme à l’étape Organisation.');
-                }
-                $units = $decoded;
+        $raw = trim((string) $request->input('wizard_units_json', ''));
+        if ($raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (!is_array($decoded)) {
+                throw new \InvalidArgumentException('La structure des unités n’est pas valide. Vérifiez l’organigramme à l’étape Organisation.');
             }
+            $units = $decoded;
+        }
+        if ($units === [] && $request->input('wizard_quick_fill')) {
+            $units = $this->defaultQuickWizardUnits();
         }
 
         $gs = strtoupper(trim((string) $request->input('wizard_grade_system_code', 'FR_CLASSIC')));
@@ -2042,32 +2059,7 @@ class CommunityController
      */
     private function defaultQuickWizardUnits(): array
     {
-        return [
-            [
-                'key' => 'g1',
-                'parent_key' => '',
-                'name' => 'État-major',
-                'slug' => 'etat-major',
-                'type' => 'group',
-                'display_order' => 0,
-            ],
-            [
-                'key' => 's1',
-                'parent_key' => 'g1',
-                'name' => '1re section',
-                'slug' => '1re-section',
-                'type' => 'section',
-                'display_order' => 0,
-            ],
-            [
-                'key' => 't1',
-                'parent_key' => 's1',
-                'name' => '1re équipe',
-                'slug' => '1re-equipe',
-                'type' => 'team',
-                'display_order' => 0,
-            ],
-        ];
+        return WizardOrbatPresets::unitsFor(WizardOrbatPresets::DEFAULT_ID);
     }
 
     /**

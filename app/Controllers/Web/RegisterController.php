@@ -57,6 +57,7 @@ final class RegisterController
         }
 
         $registerOld = Session::getFlash('register_old');
+        $errorField = Session::getFlash('register_error_field');
         // Discard legacy multi-step flash if still present from an older build.
         Session::getFlash('register_step');
         $queryCode = trim((string) $request->query('community_code'));
@@ -68,6 +69,7 @@ final class RegisterController
                 : (is_array($registerOld) ? trim((string) ($registerOld['community_code'] ?? '')) : ''),
             'prefill_tenant_slug' => trim((string) $request->query('tenant_slug')),
             'register_old' => is_array($registerOld) ? $registerOld : [],
+            'register_error_field' => is_string($errorField) ? $errorField : '',
         ]);
     }
 
@@ -113,9 +115,13 @@ final class RegisterController
             'community_code' => $communityCodeInput,
             'accept_terms' => $acceptTerms ? '1' : '',
         ];
-        $flashBack = static function (string $message) use ($oldPayload): void {
+        // $field : champ concerné, pour afficher l’erreur sous ce champ (vide = erreur générale en haut).
+        $flashBack = static function (string $message, string $field = '') use ($oldPayload): void {
             Session::flash('error', $message);
             Session::flash('register_old', $oldPayload);
+            if ($field !== '') {
+                Session::flash('register_error_field', $field);
+            }
         };
 
         $v = new Validator(
@@ -144,12 +150,12 @@ final class RegisterController
             return Response::redirect(url('register'));
         }
         if ($password !== $confirm) {
-            $flashBack('Les deux mots de passe ne sont pas identiques.');
+            $flashBack('Les deux mots de passe ne sont pas identiques.', 'password_confirmation');
 
             return Response::redirect(url('register'));
         }
         if (!$acceptTerms) {
-            $flashBack('Merci d’accepter les conditions pour terminer l’inscription.');
+            $flashBack('Merci d’accepter les conditions pour terminer l’inscription.', 'accept_terms');
 
             return Response::redirect(url('register'));
         }
@@ -158,7 +164,8 @@ final class RegisterController
             $resolvedSteamId = $this->steamWebApiService->resolveSteamIdFromUserInput($steamProfile);
             if ($resolvedSteamId === null) {
                 $flashBack(
-                    'Profil Steam non reconnu. Indiquez le lien de votre profil, votre numéro Steam, un identifiant classique (STEAM_0:…), ou laissez le champ vide.'
+                    'Profil Steam non reconnu. Indiquez le lien de votre profil, votre numéro Steam, un identifiant classique (STEAM_0:…), ou laissez le champ vide.',
+                    'steam_profile'
                 );
 
                 return Response::redirect(url('register'));
@@ -169,7 +176,7 @@ final class RegisterController
         if ($communityCodeInput !== '') {
             $resolved = $this->tenantRepository->findByCommunityCode($communityCodeInput);
             if (!$resolved) {
-                $flashBack('Ce code d’invitation n’est pas reconnu. Vérifiez-le ou laissez le champ vide.');
+                $flashBack('Ce code d’invitation n’est pas reconnu. Vérifiez-le ou laissez le champ vide.', 'community_code');
 
                 return Response::redirect(url('register'));
             }
@@ -182,7 +189,7 @@ final class RegisterController
         }
         $tenantId = (int) $tenant['id'];
         if (strcasecmp($email, UserRepository::SYSTEM_MODERATOR_EMAIL) === 0) {
-            $flashBack('Cette adresse e-mail ne peut pas être utilisée.');
+            $flashBack('Cette adresse e-mail ne peut pas être utilisée.', 'email');
 
             return Response::redirect(url('register'));
         }
@@ -219,12 +226,12 @@ final class RegisterController
             return Response::redirect(url('login'));
         }
         if ($this->userRepository->emailExistsInTenant($tenantId, $email)) {
-            $flashBack('Cette adresse e-mail est déjà utilisée. Connectez-vous ou choisissez une autre adresse.');
+            $flashBack('Cette adresse e-mail est déjà utilisée. Connectez-vous ou choisissez une autre adresse.', 'email');
 
             return Response::redirect(url('register'));
         }
         if ($this->indicatorBlocklist->isEmailBlockedForTenant($tenantId, $email)) {
-            $flashBack('Cette adresse ne peut pas être utilisée pour rejoindre cette communauté pour le moment.');
+            $flashBack('Cette adresse ne peut pas être utilisée pour rejoindre cette communauté pour le moment.', 'email');
 
             return Response::redirect(url('register'));
         }

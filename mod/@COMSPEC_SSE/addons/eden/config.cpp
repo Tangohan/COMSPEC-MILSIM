@@ -71,39 +71,39 @@ class Cfg3DEN {
                         typeName = "STRING";
                         condition = "objectSimulated - objectBrain";
                         class values {
-                            class Auto { name = "Automatique"; value = ""; default = 1; };
-                            class Phone { name = "Téléphone"; value = "PHONE"; };
-                            class Computer { name = "Ordinateur"; value = "COMPUTER"; };
-                            class Radio { name = "Radio"; value = "RADIO"; };
-                            class Document { name = "Document / papiers"; value = "DOCUMENT"; };
-                            class Media { name = "Support (clé USB, carte, disque)"; value = "MEDIA"; };
-                            class Weapon { name = "Arme"; value = "WEAPON"; };
-                            class Container { name = "Caisse / sac / contenant"; value = "CONTAINER"; };
-                            class Vehicle { name = "Véhicule"; value = "VEHICLE"; };
-                            class Building { name = "Bâtiment / pièce"; value = "BUILDING"; };
-                            class Object { name = "Objet divers"; value = "OBJECT"; };
+                            class Auto { name = "$STR_COMSPEC_SSE_CFG_F8A3C37BEB"; value = ""; default = 1; };
+                            class Phone { name = "$STR_COMSPEC_SSE_CFG_D3B023EABC"; value = "PHONE"; };
+                            class Computer { name = "$STR_COMSPEC_SSE_CFG_CBAB5F515D"; value = "COMPUTER"; };
+                            class Radio { name = "$STR_COMSPEC_SSE_CFG_B11BF19E3F"; value = "RADIO"; };
+                            class Document { name = "$STR_COMSPEC_SSE_CFG_F7D3B1FB6B"; value = "DOCUMENT"; };
+                            class Media { name = "$STR_COMSPEC_SSE_CFG_4DB44A646B"; value = "MEDIA"; };
+                            class Weapon { name = "$STR_COMSPEC_SSE_CFG_D7DB063433"; value = "WEAPON"; };
+                            class Container { name = "$STR_COMSPEC_SSE_CFG_49719A1839"; value = "CONTAINER"; };
+                            class Vehicle { name = "$STR_COMSPEC_SSE_CFG_87C24BCDC7"; value = "VEHICLE"; };
+                            class Building { name = "$STR_COMSPEC_SSE_CFG_B228C08B27"; value = "BUILDING"; };
+                            class Object { name = "$STR_COMSPEC_SSE_CFG_ADEDF35BDA"; value = "OBJECT"; };
                         };
                     };
                     class comspec_sse_profile {
                         displayName = "$STR_COMSPEC_SSE_CFG_669FE25A32";
-                        tooltip = "$STR_COMSPEC_SSE_CFG_D3ABEFFAC9";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_7565793116";
                         property = "comspec_sse_profile";
                         control = "Combo";
                         expression = "_this setVariable ['comspec_sse_profile', _value, isServer];";
                         defaultValue = "'RANDOM'";
                         typeName = "STRING";
                         class values {
-                            class RANDOM { name = "Aléatoire"; value = "RANDOM"; default = 1; };
-                            class CIVILIAN { name = "Civil"; value = "CIVILIAN"; };
-                            class INSURGENT { name = "Insurgé"; value = "INSURGENT"; };
-                            class MILITARY { name = "Militaire"; value = "MILITARY"; };
-                            class HVT { name = "Chef / HVT"; value = "HVT"; };
-                            class COURIER { name = "Courrier"; value = "COURIER"; };
-                            class FINANCIER { name = "Financier"; value = "FINANCIER"; };
-                            class TECHNICIAN { name = "Technicien / artificier"; value = "TECHNICIAN"; };
-                            class INTELLIGENCE { name = "Renseignement"; value = "INTELLIGENCE"; };
-                            class LOGISTICS { name = "Logistique"; value = "LOGISTICS"; };
-                            class CUSTOM { name = "Personnalisé (contenu saisi)"; value = "CUSTOM"; };
+                            class RANDOM { name = "$STR_COMSPEC_SSE_CFG_6DBD11FF8A"; value = "RANDOM"; default = 1; };
+                            class CIVILIAN { name = "$STR_COMSPEC_SSE_CFG_496B2073F0"; value = "CIVILIAN"; };
+                            class INSURGENT { name = "$STR_COMSPEC_SSE_CFG_DA14187553"; value = "INSURGENT"; };
+                            class MILITARY { name = "$STR_COMSPEC_SSE_CFG_1E0730DF18"; value = "MILITARY"; };
+                            class HVT { name = "$STR_COMSPEC_SSE_CFG_21C1444A64"; value = "HVT"; };
+                            class COURIER { name = "$STR_COMSPEC_SSE_CFG_6347EE1AA8"; value = "COURIER"; };
+                            class FINANCIER { name = "$STR_COMSPEC_SSE_CFG_8FAF1224A7"; value = "FINANCIER"; };
+                            class TECHNICIAN { name = "$STR_COMSPEC_SSE_CFG_E3CCC90C1A"; value = "TECHNICIAN"; };
+                            class INTELLIGENCE { name = "$STR_COMSPEC_SSE_CFG_672B3D9978"; value = "INTELLIGENCE"; };
+                            class LOGISTICS { name = "$STR_COMSPEC_SSE_CFG_8C266B946B"; value = "LOGISTICS"; };
+                            class CUSTOM { name = "$STR_COMSPEC_SSE_CFG_C99D5F121A"; value = "CUSTOM"; };
                         };
                     };
                     class comspec_sse_generation {
@@ -115,8 +115,8 @@ class Cfg3DEN {
                         defaultValue = "'AUTO'";
                         typeName = "STRING";
                         class values {
-                            class AUTO { name = "Automatique (au premier examen)"; value = "AUTO"; default = 1; };
-                            class MANUAL { name = "Manuelle (module / script)"; value = "MANUAL"; };
+                            class AUTO { name = "$STR_COMSPEC_SSE_CFG_D74578875D"; value = "AUTO"; default = 1; };
+                            class MANUAL { name = "$STR_COMSPEC_SSE_CFG_E6A412CFEE"; value = "MANUAL"; };
                         };
                     };
                     class comspec_sse_complexity {
@@ -128,10 +128,10 @@ class Cfg3DEN {
                         defaultValue = "'STANDARD'";
                         typeName = "STRING";
                         class values {
-                            class LIGHT { name = "Légère — quelques indices"; value = "LIGHT"; };
-                            class STANDARD { name = "Standard"; value = "STANDARD"; default = 1; };
-                            class DETAILED { name = "Détaillée"; value = "DETAILED"; };
-                            class HIGH_VALUE { name = "Haute valeur — dossier riche"; value = "HIGH_VALUE"; };
+                            class LIGHT { name = "$STR_COMSPEC_SSE_CFG_142CF342A2"; value = "LIGHT"; };
+                            class STANDARD { name = "$STR_COMSPEC_SSE_CFG_2DFA66079D"; value = "STANDARD"; default = 1; };
+                            class DETAILED { name = "$STR_COMSPEC_SSE_CFG_094D4A1824"; value = "DETAILED"; };
+                            class HIGH_VALUE { name = "$STR_COMSPEC_SSE_CFG_78AEB2046E"; value = "HIGH_VALUE"; };
                         };
                     };
                     class comspec_sse_identityMode {
@@ -143,9 +143,9 @@ class Cfg3DEN {
                         defaultValue = "'AUTO'";
                         typeName = "STRING";
                         class values {
-                            class AUTO { name = "Automatique (identité Eden)"; value = "AUTO"; default = 1; };
-                            class NONE { name = "Inventer un nom SSE"; value = "NONE"; };
-                            class CUSTOM { name = "Forcer le nom Eden"; value = "CUSTOM"; };
+                            class AUTO { name = "$STR_COMSPEC_SSE_CFG_C3841EB9B7"; value = "AUTO"; default = 1; };
+                            class NONE { name = "$STR_COMSPEC_SSE_CFG_3B12544651"; value = "NONE"; };
+                            class CUSTOM { name = "$STR_COMSPEC_SSE_CFG_544D0C17A7"; value = "CUSTOM"; };
                         };
                     };
                     class COMSPEC_SSE_Profile_Preset {
@@ -157,10 +157,10 @@ class Cfg3DEN {
                         defaultValue = "'auto'";
                         typeName = "STRING";
                         class values {
-                            class Auto { name = "Génération automatique (défaut)"; value = "auto"; default = 1; };
-                            class Inconnu { name = "Inconnu des bases"; value = "inconnu"; };
-                            class Signale { name = "Signalé — correspondance partielle"; value = "signale"; };
-                            class Recherche { name = "Recherché — correspondance confirmée"; value = "recherche"; };
+                            class Auto { name = "$STR_COMSPEC_SSE_CFG_A3D3991651"; value = "auto"; default = 1; };
+                            class Inconnu { name = "$STR_COMSPEC_SSE_CFG_D73F31553D"; value = "inconnu"; };
+                            class Signale { name = "$STR_COMSPEC_SSE_CFG_E4E69F4E5C"; value = "signale"; };
+                            class Recherche { name = "$STR_COMSPEC_SSE_CFG_43C9CA349C"; value = "recherche"; };
                         };
                     };
                     class COMSPEC_SSE_LastName {
@@ -260,15 +260,15 @@ class Cfg3DEN {
                     };
                     class comspec_sse_bioMode {
                         displayName = "$STR_COMSPEC_SSE_CFG_5427FD158C";
-                        tooltip = "$STR_COMSPEC_SSE_CFG_DA1DD9E7AC";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_7B69F2D6FE";
                         property = "comspec_sse_bioMode";
                         control = "Combo";
                         expression = "_this setVariable ['comspec_sse_bioMode', _value, isServer];";
                         defaultValue = "'AUTO'";
                         typeName = "STRING";
                         class values {
-                            class AUTO { name = "Générer automatiquement"; value = "AUTO"; default = 1; };
-                            class NONE { name = "Ne pas inclure de biométrie"; value = "NONE"; };
+                            class AUTO { name = "$STR_COMSPEC_SSE_CFG_BAA823183D"; value = "AUTO"; default = 1; };
+                            class NONE { name = "$STR_COMSPEC_SSE_CFG_9FA9D5AB01"; value = "NONE"; };
                         };
                     };
                     class comspec_sse_zeusNotes {
@@ -282,7 +282,7 @@ class Cfg3DEN {
                     };
                     class comspec_sse_networkId {
                         displayName = "$STR_COMSPEC_SSE_CFG_847E74EACA";
-                        tooltip = "$STR_COMSPEC_SSE_CFG_279BBE8E2C";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_C0F632D7E1";
                         property = "comspec_sse_networkId";
                         control = "Edit";
                         expression = "_this setVariable ['comspec_sse_networkId', _value, isServer];";
@@ -291,7 +291,7 @@ class Cfg3DEN {
                     };
                     class comspec_sse_modelId {
                         displayName = "$STR_COMSPEC_SSE_CFG_4508276612";
-                        tooltip = "$STR_COMSPEC_SSE_CFG_8FB8E11D7C";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_001AD3CCE1";
                         property = "comspec_sse_modelId";
                         control = "Edit";
                         expression = "_this setVariable ['comspec_sse_modelId', _value, isServer];";
@@ -300,21 +300,34 @@ class Cfg3DEN {
                     };
                     class comspec_sse_datasetId {
                         displayName = "$STR_COMSPEC_SSE_CFG_71849A3505";
-                        tooltip = "$STR_COMSPEC_SSE_CFG_4743916477";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_092AEF7733";
                         property = "comspec_sse_datasetId";
-                        control = "Edit";
+                        control = "Combo";
                         expression = "_this setVariable ['comspec_sse_datasetId', _value, isServer];";
                         defaultValue = "''";
                         typeName = "STRING";
+                        class values {
+                            class None { name = "$STR_COMSPEC_SSE_CFG_B2ED82F1BF"; value = ""; default = 1; };
+                            class Falcon { name = "$STR_COMSPEC_SSE_CFG_97D25CCAC9"; value = "falcon"; };
+                        };
                     };
                     class comspec_sse_datasetRole {
                         displayName = "$STR_COMSPEC_SSE_CFG_DA8AB2FFDC";
-                        tooltip = "$STR_COMSPEC_SSE_CFG_244DC42347";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_C6F8BEB399";
                         property = "comspec_sse_datasetRole";
-                        control = "Edit";
+                        control = "Combo";
                         expression = "_this setVariable ['comspec_sse_datasetRole', _value, isServer];";
                         defaultValue = "''";
                         typeName = "STRING";
+                        class values {
+                            class None { name = "$STR_COMSPEC_SSE_CFG_B2ED82F1BF"; value = ""; default = 1; };
+                            class R1 { name = "$STR_COMSPEC_SSE_CFG_F28E227441"; value = "falcon_hvt"; };
+                            class R2 { name = "$STR_COMSPEC_SSE_CFG_BBA6DAA8E0"; value = "falcon_ied"; };
+                            class R3 { name = "$STR_COMSPEC_SSE_CFG_1E0AE6D7F7"; value = "falcon_courier"; };
+                            class R4 { name = "$STR_COMSPEC_SSE_CFG_5FE5851955"; value = "falcon_finance"; };
+                            class R5 { name = "$STR_COMSPEC_SSE_CFG_8126E6E984"; value = "falcon_safehouse"; };
+                            class R6 { name = "$STR_COMSPEC_SSE_CFG_1A7E2B7F81"; value = "falcon_noise"; };
+                        };
                     };
                     class comspec_sse_missionSeed {
                         displayName = "$STR_COMSPEC_SSE_CFG_F4D438D348";
@@ -334,18 +347,18 @@ class Cfg3DEN {
                         defaultValue = "'IRAQ'";
                         typeName = "STRING";
                         class values {
-                            class IRAQ { name = "Irak"; value = "IRAQ"; default = 1; };
-                            class SYRIA { name = "Syrie"; value = "SYRIA"; };
-                            class LEVANT { name = "Levant"; value = "LEVANT"; };
-                            class AFRICA_SAHEL { name = "Sahel"; value = "AFRICA_SAHEL"; };
-                            class RUSSIA { name = "Russie / théâtre Est"; value = "RUSSIA"; };
-                            class GENERIC { name = "Générique"; value = "GENERIC"; };
-                            class RANDOM { name = "Aléatoire"; value = "RANDOM"; };
+                            class IRAQ { name = "$STR_COMSPEC_SSE_CFG_01AA4D2337"; value = "IRAQ"; default = 1; };
+                            class SYRIA { name = "$STR_COMSPEC_SSE_CFG_6211A1E3C7"; value = "SYRIA"; };
+                            class LEVANT { name = "$STR_COMSPEC_SSE_CFG_A8FA522986"; value = "LEVANT"; };
+                            class AFRICA_SAHEL { name = "$STR_COMSPEC_SSE_CFG_30B56C8107"; value = "AFRICA_SAHEL"; };
+                            class RUSSIA { name = "$STR_COMSPEC_SSE_CFG_D031524C84"; value = "RUSSIA"; };
+                            class GENERIC { name = "$STR_COMSPEC_SSE_CFG_C2C5747AD0"; value = "GENERIC"; };
+                            class RANDOM { name = "$STR_COMSPEC_SSE_CFG_6DBD11FF8A"; value = "RANDOM"; };
                         };
                     };
                     class comspec_sse_advancedData {
                         displayName = "$STR_COMSPEC_SSE_CFG_BFFE9D485C";
-                        tooltip = "$STR_COMSPEC_SSE_CFG_FCA5FECEA4";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_DBEE120484";
                         property = "comspec_sse_advancedData";
                         control = "Edit";
                         expression = "_this setVariable ['comspec_sse_advancedData', _value, isServer];";

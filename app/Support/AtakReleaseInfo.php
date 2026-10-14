@@ -17,6 +17,8 @@ final class AtakReleaseInfo
 {
     public const SCRIPT_COMPONENT = 'mod/COMSPEC_ATAK_Native/Sources/addons/main/script_component.hpp';
     public const LINK_CSPROJ = 'mod/UptoDate/COMSPECExtension/COMSPECExtension.csproj';
+    public const CHANGELOG = 'CHANGELOG-ATAK.md';
+    private const SUMMARY_MAX = 300;
 
     /** @var array{atak_native: ?string, link: ?string, link_expected: ?string}|null */
     private static ?array $cache = null;
@@ -46,12 +48,60 @@ final class AtakReleaseInfo
         return $info;
     }
 
-    private static function read(string $path): string
+    /**
+     * « Résumé joueur » de l'entrée du changelog dont le titre porte « ATAK natif <version> » : titre puis puces,
+     * en une ligne par langue (notification « mise à jour disponible » du téléphone). Vide si l'entrée n'en a pas.
+     *
+     * @return array{fr: string, en: string}
+     */
+    public static function playerSummary(string $version, ?string $root = null): array
+    {
+        $out = ['fr' => '', 'en' => ''];
+        if (preg_match('/^[0-9]+(?:\.[0-9]+){1,3}$/', $version) !== 1) {
+            return $out;
+        }
+        $md = str_replace("\r\n", "\n", self::read(rtrim($root ?? base_path(), '/') . '/' . self::CHANGELOG, 1048576));
+        if ($md === '') {
+            return $out;
+        }
+        $heading = '/^## [^\n]*ATAK natif ' . preg_quote($version, '/') . '(?![0-9.])[^\n]*$/m';
+        if (preg_match($heading, $md, $m, PREG_OFFSET_CAPTURE) !== 1) {
+            return $out;
+        }
+        $start = $m[0][1] + strlen($m[0][0]);
+        $next = strpos($md, "\n## ", $start);
+        $entry = substr($md, $start, $next === false ? null : $next - $start);
+        if (preg_match('/^### Résumé joueur[ \t]*\n(.*?)(?=^### |\z)/ms', $entry, $b) !== 1) {
+            return $out;
+        }
+        $lang = '';
+        $parts = ['fr' => [], 'en' => []];
+        foreach (explode("\n", $b[1]) as $line) {
+            $line = trim($line);
+            if (preg_match('/^(FR|EN)\s*:\s*(.+)$/u', $line, $l) === 1) {
+                $lang = $l[1] === 'FR' ? 'fr' : 'en';
+                $parts[$lang][] = rtrim($l[2], ' .') . '.';
+            } elseif ($lang !== '' && str_starts_with($line, '- ')) {
+                $parts[$lang][] = trim(substr($line, 2));
+            }
+        }
+        foreach ($parts as $k => $lines) {
+            $text = trim(str_replace(['|', '`', '**'], ['', '', ''], implode(' ', $lines)));
+            if (mb_strlen($text) > self::SUMMARY_MAX) {
+                $text = rtrim(mb_substr($text, 0, self::SUMMARY_MAX - 1)) . '…';
+            }
+            $out[$k] = $text;
+        }
+
+        return $out;
+    }
+
+    private static function read(string $path, int $max = 65536): string
     {
         if (!is_file($path) || !is_readable($path)) {
             return '';
         }
-        $raw = @file_get_contents($path, false, null, 0, 65536);
+        $raw = @file_get_contents($path, false, null, 0, $max);
 
         return is_string($raw) ? $raw : '';
     }

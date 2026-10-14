@@ -108,10 +108,14 @@ switch (_mode) do {
                 profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", true];
                 ["locate", _c getOrDefault ["unit", ""]] call comspec_atak_native_fnc_relayNet;
             };
-            case "DGOTO": { ["mapOrder", ["GOTO", _pos]] call comspec_atak_native_fnc_droneAction; };
-            case "DHUNT": { ["mapOrder", ["HUNT", _pos]] call comspec_atak_native_fnc_droneAction; };
-            case "DHOVER": { ["mapOrder", ["HOVER", _pos]] call comspec_atak_native_fnc_droneAction; };
-            case "DLAND": { ["mapOrder", ["LAND", _pos]] call comspec_atak_native_fnc_droneAction; };
+            // Ordres au drone : envoyés à l'image suivante, hors du clic d'un bouton que "close" vient d'effacer ; le
+            // journal du drone note chaque étape et un bandeau dit pourquoi un ordre est refusé (fn_droneAction "mapOrder").
+            case "DGOTO";
+            case "DHUNT";
+            case "DHOVER";
+            case "DLAND": {
+                [{ ["mapOrder", _this] call comspec_atak_native_fnc_droneAction; }, [_arg select [1], +_pos]] call CBA_fnc_execNextFrame;
+            };
             case "CAM": {
                 private _u = objectFromNetId (_c getOrDefault ["unit", ""]);
                 if (isNull _u || {!alive _u}) exitWith {};

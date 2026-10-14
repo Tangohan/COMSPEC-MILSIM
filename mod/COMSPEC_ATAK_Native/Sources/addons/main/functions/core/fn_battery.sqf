@@ -46,6 +46,11 @@ if ((count (missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap]))
 private _uid = getPlayerUID player;
 private _t = [time, serverTime] select isMultiplayer;
 if (((missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) findIf { _x isEqualType [] && {(_x param [2, ""]) isEqualTo _uid} && {(_x param [4, 1e9]) > _t} }) >= 0) then { _f pushBack ["Brouilleur", 0.8]; };
+// Contrôle Zeus (fn_zeusFx) : surchauffe (1 chaud, 2 brûlant) et décharge forcée (% / min).
+private _heat = ["heat", 0] call comspec_atak_native_fnc_zeusFx;
+if (_heat isEqualType 0 && {_heat > 0}) then { _f pushBack [["Appareil chaud", "Surchauffe", "Surchauffe critique"] select ((_heat min 3) - 1), [0.3, 0.9, 0.3] select ((_heat min 3) - 1)]; };
+private _drain = ["drain", 0] call comspec_atak_native_fnc_zeusFx;
+if (_drain isEqualType 0 && {_drain > 0}) then { _f pushBack ["Décharge anormale", _drain]; };
 private _rate = 0;
 { _rate = _rate + (_x select 1); } forEach _f;
 // Les taux ci-dessus donnent environ 3 h écran en main (0,55 % / min) ; l'admin règle cette autonomie.
