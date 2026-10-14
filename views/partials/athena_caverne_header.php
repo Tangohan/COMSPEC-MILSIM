@@ -65,6 +65,8 @@ if ($currentKey === '') {
         $currentKey = 'admin';
     } elseif (str_starts_with($currentPath, 'evenements')) {
         $currentKey = 'events';
+    } elseif ($currentPath === 'communities' || (str_starts_with($currentPath, 'communities/') && !str_starts_with($currentPath, 'communities/create'))) {
+        $currentKey = 'registre';
     }
 }
 $sectionLabelByKey = [
@@ -76,6 +78,7 @@ $sectionLabelByKey = [
     'recrutement' => 'Recrutement',
     'admin' => 'Gestion',
     'events' => 'Manœuvres',
+    'registre' => 'Registre des unités',
 ];
 $sectionLabel = (string) ($athena_header_section ?? ($sectionLabelByKey[$currentKey] ?? 'Espace membre'));
 if (function_exists('i18n_phrase')) {
@@ -97,7 +100,14 @@ $headerTenantType = function_exists('navigation_current_tenant_type')
     ? navigation_current_tenant_type()
     : \App\Services\Community\TenantTypeConfig::TYPE_FULL;
 $headerTypeLabel = \App\Services\Community\TenantTypeConfig::label($headerTenantType);
-$headerAllowsPath = static function (string $path) use ($headerTenantType): bool {
+// Compte sans organisation : seules les pages utiles restent (tableau de bord, forum, registre,
+// création de communauté, compte). Suit l’appartenance à chaque requête.
+$headerNoOrg = class_exists(\App\Support\PortalAccessChoice::class)
+    && \App\Support\PortalAccessChoice::restrictsNavigationToNoOrganization();
+$headerAllowsPath = static function (string $path) use ($headerTenantType, $headerNoOrg): bool {
+    if ($headerNoOrg && !\App\Support\PortalAccessChoice::noOrganizationAllowsPath($path)) {
+        return false;
+    }
     if (
         ($path === 'jnet' || str_starts_with($path, 'jnet/'))
         && class_exists(\App\Support\PortalAccessChoice::class)
@@ -125,6 +135,9 @@ if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()) 
 }
 $navItems[] = ['key' => 'formations', 'label' => 'Formations', 'href' => url('formations'), 'path' => 'formations'];
 $navItems[] = ['key' => 'effectifs', 'label' => 'Effectifs', 'href' => url('personnel'), 'path' => 'personnel'];
+if ($headerNoOrg) {
+    $navItems[] = ['key' => 'registre', 'label' => 'Registre des unités', 'href' => url('communities'), 'path' => 'communities'];
+}
 if ($canRecruit) {
     $navItems[] = [
         'key' => 'recrutement',
@@ -160,6 +173,11 @@ if (!$headerAllowsPath('evenements') && !$headerAllowsPath('atak')) {
     $ctaHref = url('dashboard');
     $ctaLabel = 'Tableau de bord';
     $ctaActive = $currentKey === 'dashboard';
+}
+if ($headerNoOrg) {
+    $ctaHref = url('communities/create');
+    $ctaLabel = 'Créer ma communauté';
+    $ctaActive = str_starts_with($currentPath, 'communities/create');
 }
 if (function_exists('i18n_phrase')) {
     $ctaLabel = i18n_phrase('nav', (string) $ctaLabel);
@@ -501,6 +519,7 @@ if (function_exists('i18n_phrase')) {
                 <?php $localeSwitcherVariant = 'dark'; require base_path('views/partials/language_switcher.php'); ?>
             </div>
 
+            <?php if ($espaceLinks !== []): ?>
             <div class="athena-header__menu relative hidden md:block">
                 <button
                     type="button"
@@ -533,6 +552,7 @@ if (function_exists('i18n_phrase')) {
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
 
             <div class="relative">
                 <button

@@ -147,22 +147,21 @@ require base_path('views/partials/alert_banners.php');
                 <div class="max-w-3xl">
                     <p class="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#34d399]"><?= $n('Sans organisation rattachée') ?></p>
                     <h2 class="mb-4 text-3xl font-black tracking-tight leading-[1.08] text-white md:text-5xl">
-                        <?= $n('Rejoignez une unité ou une communauté') ?><span class="text-[#34d399]">.</span>
+                        <?= $n('Rejoignez une unité ou créez votre communauté') ?><span class="text-[#34d399]">.</span>
                     </h2>
                     <div class="mb-6 h-[3px] w-12 bg-[#047857]" aria-hidden="true"></div>
                     <p class="mb-8 max-w-2xl text-sm leading-relaxed text-white/75 md:text-base">
-                        <?= $n('Vous n’êtes rattaché à aucune organisation pour l’instant. Parcourez le registre des communautés, ou utilisez un code d’invitation pour rejoindre votre unité.') ?>
+                        <?= $n('Vous n’êtes rattaché à aucune organisation pour l’instant. Rejoignez votre unité avec son code communauté, postulez depuis le registre, ou créez l’espace de votre propre groupe.') ?>
                     </p>
-                    <div class="flex flex-col flex-wrap gap-3 sm:flex-row">
-                        <?php if (!function_exists('forum_public_nav_visible') || forum_public_nav_visible()): ?>
-                        <a href="<?= url('forum') ?>" class="inline-flex items-center justify-center border border-transparent bg-[#047857] px-7 py-3.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white transition-colors hover:bg-[#065f46]">
-                            <?= $n('Forum') ?>
+                    <div class="dash-start-hero-actions">
+                        <a href="<?= htmlspecialchars(url('communities/create'), ENT_QUOTES, 'UTF-8') ?>" class="dash-start-btn dash-start-btn--primary" data-dash-start="create">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                            <?= $n('Créer ma communauté') ?>
                         </a>
-                        <?php endif; ?>
-                        <a href="<?= url('join') ?>" class="inline-flex items-center justify-center border border-white/30 px-7 py-3.5 text-[11px] font-bold uppercase tracking-[0.16em] text-white transition-colors hover:bg-white/10">
+                        <a href="<?= htmlspecialchars(url('join'), ENT_QUOTES, 'UTF-8') ?>" class="dash-start-btn dash-start-btn--ghost" data-dash-start="join">
                             <?= $n('Rejoindre une communauté') ?>
                         </a>
-                        <a href="<?= url('communities') ?>" class="inline-flex items-center justify-center px-4 py-3.5 text-[11px] font-bold uppercase tracking-wider text-white/70 underline decoration-[#047857] underline-offset-4 hover:text-white">
+                        <a href="<?= htmlspecialchars(url('communities'), ENT_QUOTES, 'UTF-8') ?>" class="dash-start-link">
                             <?= $n('Parcourir le registre des unités') ?>
                         </a>
                     </div>
@@ -237,20 +236,51 @@ require base_path('views/partials/alert_banners.php');
         </section>
         <?php endif; ?>
 
-        <?php if ($candidate_enlistment_tracking === [] && $myApplicationsAllRoot === []): ?>
-        <section class="dash-zone dash-guest-zone dash-reveal bg-white" data-dash-reveal>
-            <div class="mx-auto max-w-2xl px-6 py-16 text-center md:py-20">
-                <svg class="mx-auto h-20 w-20 text-[#929292]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M3 21h18" />
-                    <path d="M5 21V7l7-4 7 4v14" />
-                    <path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01" />
-                    <path d="M10 21v-5a2 2 0 0 1 2-2 2 2 0 0 1 2 2v5" />
-                </svg>
-                <h3 class="mt-6 text-lg font-bold tracking-tight text-[#161616]"><?= $n('Rien à afficher ici pour l’instant') ?></h3>
-                <p class="mt-2 text-sm leading-relaxed text-[#666]"><?= $n('Vous n’êtes rattaché à aucune organisation et n’avez encore déposé aucune candidature. Une fois une candidature envoyée ou une communauté rejointe, son suivi apparaîtra ici.') ?></p>
+        <section class="dash-zone dash-guest-zone dash-start dash-reveal" id="dash-start" data-dash-reveal aria-labelledby="dash-start-title">
+            <div class="dash-guest-zone__inner">
+                <header class="dash-zone__head">
+                    <p class="dash-zone__kicker"><?= $n('Pour commencer') ?></p>
+                    <h3 id="dash-start-title" class="dash-zone__title"><?= $n('Deux façons d’entrer sur Athena') ?></h3>
+                    <p class="dash-zone__lead"><?= $n('Tout Athena se vit au sein d’une communauté. Rejoignez celle de votre unité, ou créez la vôtre si vous dirigez un groupe.') ?></p>
+                </header>
+                <div class="dash-start-grid">
+                    <article class="dash-start-card">
+                        <span class="dash-start-card__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/></svg>
+                        </span>
+                        <p class="dash-start-card__kicker"><?= $n('Votre unité est déjà sur Athena') ?></p>
+                        <h4 class="dash-start-card__title"><?= $n('Rejoindre une communauté') ?></h4>
+                        <p class="dash-start-card__text"><?= $n('Entrez le code communauté fourni par votre unité, ou trouvez-la dans le registre, puis envoyez votre candidature.') ?></p>
+                        <ul class="dash-start-card__list">
+                            <li><?= $n('Le code ouvre directement la page de votre unité') ?></li>
+                            <li><?= $n('Votre candidature est étudiée par son staff') ?></li>
+                            <li><?= $n('Le suivi de vos dossiers apparaît sur ce tableau de bord') ?></li>
+                        </ul>
+                        <div class="dash-start-card__actions">
+                            <a href="<?= htmlspecialchars(url('join'), ENT_QUOTES, 'UTF-8') ?>" class="dash-start-btn dash-start-btn--dark"><?= $n('Entrer un code') ?></a>
+                            <a href="<?= htmlspecialchars(url('communities'), ENT_QUOTES, 'UTF-8') ?>" class="dash-start-btn dash-start-btn--outline"><?= $n('Voir le registre') ?></a>
+                        </div>
+                    </article>
+                    <article class="dash-start-card dash-start-card--create">
+                        <span class="dash-start-card__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M12 9v6M9 12h6"/></svg>
+                        </span>
+                        <p class="dash-start-card__kicker"><?= $n('Vous dirigez un groupe') ?></p>
+                        <h4 class="dash-start-card__title"><?= $n('Créer ma communauté') ?></h4>
+                        <p class="dash-start-card__text"><?= $n('Une communauté est l’espace de votre unité sur Athena : effectifs et ORBAT, formations, manœuvres, recrutement et carte ATAK partagés par tous vos membres.') ?></p>
+                        <ul class="dash-start-card__list">
+                            <li><?= $n('Gratuit pour démarrer') ?></li>
+                            <li><?= $n('Formule Pro offerte 30 jours au fondateur') ?></li>
+                            <li><?= $n('Assistant de création pas à pas, tout reste modifiable ensuite') ?></li>
+                        </ul>
+                        <div class="dash-start-card__actions">
+                            <a href="<?= htmlspecialchars(url('communities/create'), ENT_QUOTES, 'UTF-8') ?>" class="dash-start-btn dash-start-btn--primary"><?= $n('Créer ma communauté') ?></a>
+                            <a href="<?= htmlspecialchars(url('communities/create/guide'), ENT_QUOTES, 'UTF-8') ?>" class="dash-start-btn dash-start-btn--outline"><?= $n('Lire le guide de création') ?></a>
+                        </div>
+                    </article>
+                </div>
             </div>
         </section>
-        <?php endif; ?>
         <?php endif; ?>
 
         <?php if (!$dashboard_is_default_tenant): ?>
