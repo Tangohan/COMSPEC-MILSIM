@@ -9,6 +9,9 @@
                          et la page ouverte dans le navigateur si « ouvrir » (juste après « Oui » au service Athéna)
       ["open"]           ouvre la page /lier avec le code déjà rempli (COMSPEC Link 2.0.72+)
       ["cancel"]         abandonne le code en cours
+      ["show"]           téléphone en main sur l'app Athena, onglet COMPTE (remplace les anciennes fenêtres
+                         « Lier le jeu à Athena » et « Connexion Athena » de COMSPEC Overwatch). Dans les
+                         90 premières secondes de la mission, rien ne s'ouvre : juste le code et la notification.
     État : uiNamespace « COMSPEC_ATAK_AthenaLink » = [état, code, échéance diag_tickTime, adresse, adresse complète, détail]
       état : "" (aucun), "asking", "pending", "approved", "expired", "error".
 */
@@ -25,6 +28,18 @@ private _redraw = {
 };
 
 switch (_action) do {
+    case "show": {
+        if (!hasInterface || {isNull findDisplay 46}) exitWith {};
+        // Appel automatique au lancement (ancien code d'Overwatch) : ne pas mettre le téléphone en main.
+        if (time < 90 && {!_open}) exitWith {
+            if (!_bridge || {!([] call comspec_overwatch_connect_fnc_isReady)}) then { ["offer", false] call comspec_atak_native_fnc_athenaLink; };
+        };
+        uiNamespace setVariable ["COMSPEC_ATAK_AthenaTab", "account"];
+        if (isNull ([] call comspec_atak_native_fnc_display) || {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false])}) then {
+            [true] call comspec_atak_native_fnc_open;
+        };
+        [{ ["ATHENA"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+    };
     case "cancel": {
         uiNamespace setVariable ["COMSPEC_ATAK_AthenaLink", ["", "", 0, "", "", ""]];
         uiNamespace setVariable ["COMSPEC_ATAK_AthenaLinkToken", diag_tickTime];

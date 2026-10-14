@@ -52,7 +52,7 @@ switch (_what) do {
     };
     case "link": {
         closeDialog 0;
-        [] spawn { uiSleep 0.2; [] call comspec_overwatch_connect_fnc_accountLinkShow; };
+        [] spawn { uiSleep 0.2; [true] call comspec_overwatch_connect_fnc_accountLinkShow; };
     };
     case "enable": {
         missionNamespace setVariable ["comspec_overwatch_enabled", true, false];
