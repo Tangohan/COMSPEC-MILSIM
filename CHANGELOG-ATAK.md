@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Nouvelle app Distances : pas, kilomètres et heures de pilote, sur le téléphone et la fiche du site (ATAK natif, numéro au regroupement, COMSPEC Link 2.0.86)
+
+### Résumé joueur
+Type : nouveauté
+FR : Nouvelle app Distances : tes pas, tes kilomètres et tes heures de pilote
+- L'app Distances du téléphone montre ce que tu as parcouru pendant la mission : pas, kilomètres à pied, en véhicule, en bateau, en vol et en saut HALO, temps de marche et allure moyenne.
+- Les heures de pilote sont comptées par appareil (Chinook, Black Hawk, Apache…) quand tu es aux commandes, moteur allumé.
+- Tout est compté par le serveur, même si ton téléphone est vide ou cassé, et arrive sur ta fiche du site toutes les 10 minutes avec le cumul de toutes tes missions et ton temps moyen à pied par mission.
+EN : New Distances app: your steps, kilometres and pilot hours
+- The phone's Distances app shows what you covered this mission: steps, kilometres on foot, by land vehicle, by boat, in flight and in HALO jumps, time on the move and average pace.
+- Pilot hours are counted per aircraft (Chinook, Black Hawk, Apache…) while you are at the controls with the engine running.
+- Everything is counted by the server, even if your phone is flat or broken, and reaches your member file on the site every 10 minutes with your all-missions totals and your average time on foot per mission.
+
+### Détail technique
+- Serveur (`fn_distanceServer`, PFH 3 s dans `XEH_postInitServer`) : écart de position de chaque joueur rangé à pied / terrestre / bateau / vol / saut (ParachuteBase, ou chute libre : pas au sol, > 15 m ATL, vz < -8 m/s ou anim halofreefall ; distance 3D en saut, 2D sinon). Téléport ignoré au-delà d'une vitesse plausible par mode. Pas = distance / longueur de pas (0,7 à 1,6 m selon l'allure), rien à la nage ni à plat ventre. Temps à pied = temps en mouvement. Saut compté au départ d'au moins 150 m ou sous voile. Pilote = `currentPilot` d'un `Air` moteur allumé, par `typeOf`.
+- Envoi `Distance.Batch` (nouvelle commande COMSPEC Link 2.0.86, file d'attente comme `ScreenTime.Batch`) toutes les 10 min, au départ d'un joueur et à `MPEnded`, par lots de 25 ; ce qui échoue reste en mémoire serveur. Compteurs de la mission poussés au joueur toutes les 15 s (`COMSPEC_ATAK_DistMe`, ciblé sur son client) pour l'app `fn_pageDistance` (lanceur Navigation, icône `app_distance`).
+- Réglage CBA serveur « Distances parcourues » (`comspec_atak_native_distance`, actif par défaut).
+- Site : `POST /api/atak/distance/batch` → `atak_distance_stats` (une ligne par membre et session `mission_key`) et `atak_pilot_time` (par classe d'appareil), migration `bootstrap/atak_distance_migration.php`. Fiche du membre : carte « Distances parcourues en jeu » (cumuls, sessions, temps à pied total et moyen par session) et « Heures de pilote par appareil », classes regroupées par type (`AtakDistanceRepository::aircraftFamily` : Chinook avec Huron, Black Hawk avec Ghost Hawk, Little Bird avec Hummingbird…).
+- DLL à reconstruire (build_mod.bat) : sans COMSPEC Link 2.0.86 le serveur compte quand même mais n'envoie rien (journal WARN DISTANCE).
+- Non testé en jeu. À vérifier : marche, course, sprint, rampé, nage (pas et km) ; véhicule terrestre, bateau ; hélicoptère et avion en pilote et en passager ; saut HALO depuis un avion et ouverture de voile ; respawn et téléport Zeus non comptés ; app Distances mise à jour toutes les 15 s ; fiche du site après 10 min ou à la fin de mission.
+
+---
+
 ## Objets d'inventaire en vraie 3D, pylônes relais retravaillés jour et nuit (ATAK natif 1.94.0)
 
 ### Résumé joueur

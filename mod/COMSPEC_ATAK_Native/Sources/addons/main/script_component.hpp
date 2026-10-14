@@ -5,5 +5,5 @@
 #define VERSION_STR "1.94.0"
 // Version de la DLL COMSPEC Link (mod/UptoDate/COMSPECExtension/COMSPECExtension.csproj) livrée avec ce main.pbo.
 // fn_integrityCheck la compare à la DLL chargée ; un test PHP vérifie que les deux restent alignées.
-#define LINK_VERSION_STR "2.0.85"
+#define LINK_VERSION_STR "2.0.86"
 #define UI_GENERATION "native-rsc-v1"

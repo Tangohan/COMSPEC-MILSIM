@@ -75,7 +75,7 @@ class CfgFunctions {
             class json {}; class squadSnapshot {}; class squadSync {}; class pageInterTeam {}; class interTeamAction {}; class ftRoleSync {};
         };
         class screen { file="z\comspec_atak_native\addons\main\functions\screen";
-            class roleKey {}; class screenTime {}; class pageScreenTime {}; class playTimeServer {};
+            class roleKey {}; class screenTime {}; class pageScreenTime {}; class playTimeServer {}; class distanceServer {}; class pageDistance {};
         };
         class aar { file="z\comspec_atak_native\addons\main\functions\aar";
             class aarRecord {}; class aarAction {}; class aarDraw {}; class pageAar {};
@@ -109,6 +109,7 @@ class COMSPEC_ATAK_Apps {
     class Waypoints   { name="Itinéraire"; page="WAYPOINTS"; section="Navigation"; order=14; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_waypoints.paa"; };
     class Relief      { name="Relief"; page="RELIEF"; section="Navigation"; order=16; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_relief.paa"; };
     class Weather     { name="Météo"; page="WEATHER"; section="Navigation"; order=18; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_weather.paa"; };
+    class Distance    { name="Distances"; page="DISTANCE"; function="comspec_atak_native_fnc_pageDistance"; section="Navigation"; order=19; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_distance.paa"; };
     class Chat        { name="Messages"; page="CHAT"; section="Communication"; order=30; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_chat.paa"; };
     class Group       { name="Groupe"; page="GROUP"; section="Communication"; order=32; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_group.paa"; };
     class Alerts      { name="Alertes"; page="ALERTS"; section="Communication"; order=34; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_alerts.paa"; };

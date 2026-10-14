@@ -876,6 +876,14 @@ class PersonnelController
             $atakRoleTimes = [];
         }
 
+        // Distances parcourues en jeu et heures de pilote par type d'appareil (app Distances de l'ATAK natif).
+        $atakDistance = null;
+        try {
+            $atakDistance = (new \App\Repositories\AtakDistanceRepository())->summaryForUser((int) $tenantId, $uid);
+        } catch (\Throwable) {
+            $atakDistance = null;
+        }
+
         // Encadrement : corriger le temps par rôle (déplacer vers le bon rôle) et voir le journal des corrections.
         $canCorrectRoleTime = $previewAs === null && $this->canCorrectRoleTime();
         $roleTimeMoves = [];
@@ -1087,6 +1095,7 @@ class PersonnelController
             'seniorityDetailLines' => $seniorityDetailLines,
             'armaPlaytime' => $armaPlaytime,
             'atakRoleTimes' => $atakRoleTimes,
+            'atakDistance' => $atakDistance,
             'canCorrectRoleTime' => $canCorrectRoleTime,
             'roleTimeMoves' => $roleTimeMoves,
             'roleTimePathSegment' => $this->personPathSegment($target),
