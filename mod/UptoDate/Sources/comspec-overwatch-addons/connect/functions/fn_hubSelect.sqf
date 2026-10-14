@@ -34,7 +34,7 @@ if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWit
             [] call comspec_overwatch_connect_fnc_phoneConnectShow;
         };
         case "account": {
-            [] call comspec_overwatch_connect_fnc_accountLinkShow;
+            [true] call comspec_overwatch_connect_fnc_accountLinkShow;
         };
         case "callsign": {
             ["callsign"] call comspec_overwatch_connect_fnc_openTabletView;

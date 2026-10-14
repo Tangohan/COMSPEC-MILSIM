@@ -267,8 +267,10 @@ if (_lsig isNotEqualTo _lineSig) then {
 { _x ctrlShow (!_off && !_fxOn); } forEach _lines;
 // Écran éteint ou animation d'alimentation : les fenêtres d'app ne passent plus devant l'écran noir ou de démarrage.
 private _content = _d displayCtrl 88531;
+// Verrou à distance du Zeus (fn_zeusFx "lock") : l'app est masquée sous l'écran rouge (fn_zeusOverlay).
+private _zLock = (["lock", ""] call comspec_atak_native_fnc_zeusFx) isNotEqualTo "";
 private _isMap = ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "MAP";
-if (_off || _fxOn) then {
+if (_off || _fxOn || _zLock) then {
     _content ctrlShow false;
     (_d displayCtrl 88530) ctrlShow false;
     uiNamespace setVariable ["COMSPEC_ATAK_DevCovered", true];
@@ -286,6 +288,8 @@ if (_front) then { [] call comspec_atak_native_fnc_overlayFront; };
 uiNamespace setVariable ["COMSPEC_ATAK_DevOverlay", [_crack, _black, _txt, _block, _tint, _glitch, _shatter, _boot, _barBg, _bar, _bootTxt, _dead, _deadSig, _lines, _lineSig]];
 // Rayures, pixels morts, poussière, traces de doigts, sang et gouttes, par-dessus le reste (fn_screenSurface).
 [_hp] call comspec_atak_native_fnc_screenSurface;
+// Effets du Zeus (verrou, écran qui bugue, surchauffe) par-dessus tout ; écran éteint : rien à montrer.
+if (([] call comspec_atak_native_fnc_zeusOverlay) && {!_off}) then { [] call comspec_atak_native_fnc_overlayFront; };
 // Redémarrage terminé : on redessine la page.
 private _wasOff = uiNamespace getVariable ["COMSPEC_ATAK_DevWasOff", false];
 uiNamespace setVariable ["COMSPEC_ATAK_DevWasOff", _off];

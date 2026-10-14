@@ -39,8 +39,11 @@ if (isNil "zen_attributes_fnc_addAttribute") then {
         // no-op compat — ZEN partiel / mauvais ordre de chargement
         false
     };
-    if (!isNil "comspec_overwatch_connect_fnc_log") then {
-        ["WARN", "Compat", "Stub zen_attributes_fnc_addAttribute installé (ZEN incomplet ou absent)"] call comspec_overwatch_connect_fnc_log;
+    // Simple information (rien à corriger pour le joueur) : INFO et une seule fois par lancement d'Arma,
+    // sinon chaque mission ajoutait une « Alerte · Compatibilité » au journal de l'appareil sur Athena.
+    if (!isNil "comspec_overwatch_connect_fnc_log" && {!(uiNamespace getVariable ["COMSPEC_ZenStubLogged", false])}) then {
+        uiNamespace setVariable ["COMSPEC_ZenStubLogged", true];
+        ["INFO", "Compat", "Stub zen_attributes_fnc_addAttribute installé (ZEN incomplet ou absent)"] call comspec_overwatch_connect_fnc_log;
     };
 };
 

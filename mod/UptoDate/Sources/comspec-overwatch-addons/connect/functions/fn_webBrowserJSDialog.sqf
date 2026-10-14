@@ -263,7 +263,7 @@ switch (true) do {
             if (!isNull (findDisplay 9974)) then { closeDialog 0; };
             0 spawn {
                 uiSleep 0.08;
-                [] call comspec_overwatch_connect_fnc_accountLinkShow;
+                [true] call comspec_overwatch_connect_fnc_accountLinkShow;
             };
         };
         private _rest = _cmd select [13, (count _cmd) - 13];

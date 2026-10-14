@@ -2,7 +2,8 @@
     Qualité de la liaison radio-data du téléphone (simulation de débit), recalculée au plus toutes les 2 s.
     Renvoie un HashMap : bars (0-4), kbps, latency (ms), loss (%), label, factors [[nom, effet]...].
     Facteurs : liaison Athena, meilleur relais reçu (fn_relayNet "best" : relais de mission, passerelle de véhicule, PC mobile), bâtiment au-dessus de la tête, masque du relief,
-    véhicule, pluie et brouillard, zone radio, brouilleurs de mission (COMSPEC_ATAK_Jammers = [[pos, rayon]...]),
+    véhicule, pluie et brouillard, zone radio, brouilleurs de mission (COMSPEC_ATAK_Jammers = [[pos, rayon]...], force en 7e élément),
+    brouillage Zeus ciblé et brouilleurs Crows Electronic Warfare (fn_zeusJam),
     état du téléphone. Réglage serveur comspec_atak_native_net_sim : coupé, débit plein et sans délai.
 */
 // Mode avion (fn_airplaneMode) : aucun réseau, même simulation coupée ; les envois partent en file comme sans signal.
@@ -92,16 +93,23 @@ if (_masked >= 3) then {
 if (rain > 0.3) then { _mul = _mul * (1 - rain * 0.3); _f pushBack ["Pluie", format ["-%1 %%", round (rain * 30)]]; };
 if (fog > 0.5) then { _mul = _mul * 0.9; _f pushBack ["Brouillard dense", "-10 %"]; };
 {
-    _x params [["_pos", [0, 0, 0]], ["_rad", 500], ["_uid", ""], ["_side", ""], ["_until", 1e9], ["_exempt", false]];
+    _x params [["_pos", [0, 0, 0]], ["_rad", 500], ["_uid", ""], ["_side", ""], ["_until", 1e9], ["_exempt", false], ["_str", 1]];
     if (_until < ([time, serverTime] select isMultiplayer)) then { continue; };
     if (_exempt && {_side isEqualTo str side group player}) then { continue; };
     if (_pos isEqualType objNull) then { _pos = getPosATL _pos; };
     private _d = player distance2D _pos;
     if (_d < _rad) exitWith {
-        private _m = (_d / _rad) ^ 2;
+        // Force du brouilleur (7e élément, brouilleurs de zone Zeus) : 1 par défaut.
+        private _m = 1 - ((_str max 0) min 1) * (1 - (_d / _rad) ^ 2);
         _mul = _mul * _m; _loss = _loss max (round ((1 - _m) * 80)); _f pushBack ["Brouillage", format ["-%1 %%", round ((1 - _m) * 100)]];
     };
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
+// Brouillage Zeus ciblé sur ce joueur et brouilleurs du mod Crows Electronic Warfare (fn_zeusJam).
+private _zj = [] call comspec_atak_native_fnc_zeusJam;
+if (_zj > 0) then {
+    private _m = 1 - _zj;
+    _mul = _mul * _m; _loss = _loss max (round (_zj * 80)); _f pushBack ["Brouillage", format ["-%1 %%", round (_zj * 100)]];
+};
 private _hp = [] call comspec_atak_native_fnc_deviceHealth;
 private _dmg = _hp getOrDefault ["damage", 0];
 if (_dmg > 0.3) then { _mul = _mul * (1.15 - _dmg); _f pushBack ["Boîtier du téléphone abîmé", format ["-%1 %%", round ((_dmg - 0.15) * 100)]]; };

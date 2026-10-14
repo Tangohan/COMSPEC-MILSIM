@@ -18,7 +18,8 @@ use App\Support\ReconNoteCatalog;
  *
  * - L'opérateur est retrouvé par son compte (clé API du jeu ou Steam vérifié de la session), puis son unité
  *   par ses affectations. Sans compte ou sans unité, rien n'est relayé (aucune diffusion à l'aveugle).
- * - Un FRAGO descend vers les sous-unités ; tout le reste remonte vers l'échelon supérieur.
+ * - Un FRAGO descend vers les sous-unités ; tout le reste remonte vers l'échelon supérieur, ou plus haut quand
+ *   l'opérateur l'a choisi dans l'app Comptes rendus (structured_data.jnet_escalate : 1, 2 ou « top »).
  * - Une photo confidentielle ou liée au bureau SSE n'est jamais montrée en vignette : seul le lien vers le
  *   lecteur du site (qui contrôle les droits) est publié, comme pour Discord.
  * - Un rapport à diffusion restreinte (visibility ≠ ALL) n'est pas relayé.
@@ -89,7 +90,7 @@ final class JnetFieldReportBridge
     }
 
     /**
-     * @param array{kind:string,title:string,body:string,link_url:?string,image_url:?string,direction:string} $built
+     * @param array{kind:string,title:string,body:string,link_url:?string,image_url:?string,direction:string,escalate?:int} $built
      */
     private function relay(int $tenantId, ?int $userId, string $sourceKind, string $sourceRef, array $built): int
     {
@@ -103,6 +104,9 @@ final class JnetFieldReportBridge
             }
             $unitId = (int) $unit['id'];
             $parentId = (int) ($unit['parent_id'] ?? 0);
+            if ($built['direction'] === 'up') {
+                $parentId = $this->ancestor($tenantId, $unitId, $parentId, (int) ($built['escalate'] ?? 1));
+            }
             $childIds = [];
             if ($built['direction'] === 'down') {
                 foreach ($this->units->childrenForTenant($tenantId, $unitId) as $child) {
@@ -126,6 +130,42 @@ final class JnetFieldReportBridge
 
             return 0;
         }
+    }
+
+    /**
+     * Échelon visé en remontant de $levels crans depuis l'unité (1 = son parent). S'arrête au sommet de l'arbre ;
+     * une boucle dans l'arbre des unités ne fait jamais tourner sans fin.
+     */
+    private function ancestor(int $tenantId, int $unitId, int $parentId, int $levels): int
+    {
+        $seen = [$unitId => true];
+        for ($i = 1; $i < $levels && $parentId > 0 && !isset($seen[$parentId]); $i++) {
+            $seen[$parentId] = true;
+            $parent = $this->units->findById($parentId, $tenantId);
+            $next = is_array($parent) ? (int) ($parent['parent_id'] ?? 0) : 0;
+            if ($next <= 0 || isset($seen[$next])) {
+                break;
+            }
+            $parentId = $next;
+        }
+
+        return $parentId;
+    }
+
+    /**
+     * Nombre d'échelons à remonter demandé par le jeu : 1 par défaut, 2, ou « top » (sommet, 20 crans au plus).
+     *
+     * @param array<string, mixed> $fields
+     */
+    public static function escalationLevels(array $fields): int
+    {
+        $raw = strtolower(trim((string) ($fields['jnet_escalate'] ?? '')));
+        if ($raw === 'top') {
+            return 20;
+        }
+        $n = (int) $raw;
+
+        return $n >= 1 ? min($n, 20) : 1;
     }
 
     private function enabled(int $tenantId): bool
@@ -257,7 +297,7 @@ final class JnetFieldReportBridge
 
     /**
      * @param array<string, mixed> $report
-     * @return array{kind:string,title:string,body:string,link_url:?string,image_url:?string,direction:string}
+     * @return array{kind:string,title:string,body:string,link_url:?string,image_url:?string,direction:string,escalate:int}
      */
     public static function buildReport(array $report): array
     {
@@ -276,7 +316,7 @@ final class JnetFieldReportBridge
         $lines = [];
         $fields = is_array($report['structured_data'] ?? null) ? $report['structured_data'] : [];
         foreach ($fields as $key => $value) {
-            if (!is_scalar($value) || trim((string) $value) === '' || in_array((string) $key, ['send_to'], true)) {
+            if (!is_scalar($value) || trim((string) $value) === '' || in_array((string) $key, ['send_to', 'jnet_escalate', 'kind', 'source'], true)) {
                 continue;
             }
             $lines[] = AtakIcemanReportCatalog::fieldLabelFr($type, (string) $key) . ' : ' . self::oneLine((string) $value);
@@ -303,6 +343,7 @@ final class JnetFieldReportBridge
             'link_url' => 'atak',
             'image_url' => null,
             'direction' => $type === 'FRAGO' ? 'down' : 'up',
+            'escalate' => self::escalationLevels($fields),
         ];
     }
 

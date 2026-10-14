@@ -10,13 +10,15 @@ private _now = [time, serverTime] select isMultiplayer;
 private _mySide = str side group player;
 private _k = 0;
 {
-    _x params [["_pos", [0, 0, 0]], ["_rad", 500], ["_uid", ""], ["_side", ""], ["_until", 1e9], ["_exempt", false]];
+    _x params [["_pos", [0, 0, 0]], ["_rad", 500], ["_uid", ""], ["_side", ""], ["_until", 1e9], ["_exempt", false], ["_str", 1]];
     if (_until < _now) then { continue; };
     if (_exempt && {_side isEqualTo _mySide}) then { continue; };
     if (_pos isEqualType objNull) then { if (isNull _pos) then { continue; }; _pos = getPosATL _pos; };
     private _d = player distance2D _pos;
-    if (_d < _rad) then { _k = _k max (1 - _d / (_rad max 1)); };
+    if (_d < _rad) then { _k = _k max ((1 - _d / (_rad max 1)) * ((_str max 0) min 1)); };
 } forEach (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]);
+// Brouillage Zeus ciblé et brouilleurs Crows Electronic Warfare (fn_zeusJam).
+_k = _k max ([] call comspec_atak_native_fnc_zeusJam);
 private _err = [0, round (25 + 175 * _k)] select (_k > 0);
 // Puce GPS du téléphone abîmée (fn_deviceDamage) : erreur de 15 à 100 m, 400 m si elle est hors service.
 private _gpsHw = ((missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap]) getOrDefault ["gps", 0]) * ([0, 1] select (missionNamespace getVariable ["comspec_atak_native_damage_sim", true]));

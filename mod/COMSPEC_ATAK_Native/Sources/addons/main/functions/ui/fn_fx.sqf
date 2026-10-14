@@ -52,7 +52,7 @@ switch (_act) do {
             [{ ctrlDelete _this; }, _c, 0.4] call CBA_fnc_waitAndExecute;
         };
         if (["tapFx"] call comspec_atak_native_fnc_fx) then {
-            if !(profileNamespace getVariable ["COMSPEC_ATAK_Silent", false]) then { playSound "ClickSoft"; };
+            if !((profileNamespace getVariable ["COMSPEC_ATAK_Silent", false]) || {["mute", false] call comspec_atak_native_fnc_zeusFx}) then { playSound "ClickSoft"; };
             // Vibration légère : la coque descend d'un pixel et revient (pas pendant la vibration d'un message).
             if ((uiNamespace getVariable ["COMSPEC_ATAK_Vibrating", -1]) < 0) then {
                 private _ph = _d displayCtrl 88509;
