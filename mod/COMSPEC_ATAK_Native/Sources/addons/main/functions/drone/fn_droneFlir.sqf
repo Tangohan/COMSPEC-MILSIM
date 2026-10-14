@@ -8,13 +8,13 @@
       ["project", posASL]     → [u, v] dans l'image (0..1), [] derrière la caméra ;
       ["click", [x, y]]       clic sur l'image (coordonnées écran) : la nacelle vise ce point ; le rayon du clic est gardé
                               (uiNamespace COMSPEC_ATAK_DroneClickRay = [œil ASL, direction]) pour le marquage au clic.
-    Projection : caméra de rendu en 16/9 (r2t aspect 1.7778), tangente du demi-angle vertical = champ de la caméra
-    (camSetFov), horizontal = champ × 16/9.
+    Projection : caméra de rendu au rapport COMSPEC_ATAK_DroneCamAspect (r2t, 1 comme l'app Vidéo Live), tangente du
+    demi-angle vertical = champ de la caméra (camSetFov), horizontal = champ × rapport.
 */
 params [["_act", "frame"], ["_arg", []], ["_style", "FULL"], ["_inGroup", false]];
 disableSerialization;
 private _f = uiNamespace getVariable ["COMSPEC_ATAK_Flir", createHashMap];
-private _aspect = 1.7778;
+private _aspect = missionNamespace getVariable ["COMSPEC_ATAK_DroneCamAspect", 1];
 
 // Repère de la caméra : position, direction, droite, haut, tangente verticale.
 private _basis = {
@@ -80,7 +80,7 @@ switch (_act) do {
             private _bg = ["COMSPEC_RscText", [_rx, _ry, _w, _h]] call _mk;
             _bg ctrlSetBackgroundColor [0, 0, 0, 1];
             // Caméra relancée (ou recréée) avant que l'image soit posée : sinon image noire au retour sur la vue.
-            private _pic = ["RscPicture", [_rx, _ry, _w, _h], ["camBind"] call comspec_atak_native_fnc_droneAction] call _mk;
+            private _pic = ["COMSPEC_RscPhone", [_rx, _ry, _w, _h], ["camBind"] call comspec_atak_native_fnc_droneAction] call _mk;
             _pic ctrlSetTextColor [1, 1, 1, 1];
             // Pas de flux (liaison perdue, drone perdu ou en veille, PiP coupée) : neige « NO DATA » et sa raison par-dessus
             // l'image ; liaison faible : défauts TNT ; image rebranchée si la caméra a été recréée (fn_droneStatic).

@@ -31,7 +31,8 @@ private _lblOn = _labels && {_lblStyle isNotEqualTo "NONE"};
 // textes proportionnels aussi mais jamais sous une taille lisible.
 private _kRaw = ((ctrlPosition _map) select 3) / (safeZoneH * 0.7);
 private _k = (_kRaw max 0.35) min 1.35;
-private _kt = (_kRaw max 0.8) min 1.25;
+// Textes : plancher relevé de 0,8 à 0,95 (petite carte du téléphone porté : étiquettes illisibles sinon).
+private _kt = (_kRaw max 0.95) min 1.25;
 // Étiquettes : blanc cerné de noir (ombre 2), lisible sur tous les fonds de carte.
 private _clear = "#(argb,8,8,3)color(0,0,0,0)";
 // Réglages > Carte : taille des textes (indicatifs, grilles, libellés) et des symboles. Défaut 1.25 (plus grand qu'avant).
@@ -39,6 +40,10 @@ private _ts = ((profileNamespace getVariable ["COMSPEC_ATAK_MapTextScale", 1.25]
 private _is = ((profileNamespace getVariable ["COMSPEC_ATAK_MapIconScale", 1.25]) max 0.8) min 2.2;
 uiNamespace setVariable ["COMSPEC_ATAK_MapTs", _ts];
 uiNamespace setVariable ["COMSPEC_ATAK_MapIs", _is];
+// Marqueurs de la mission (fn_mapGameMarkers) : symbole Arma (32 px pour l'OTAN) ramené à l'échelle de l'écran de l'ATAK,
+// comme les unités ; gardé pour fn_mapMarkerText, qui décolle les noms du symbole.
+private _mk = 0.62 * ((_kRaw max 0.45) min 1.2) * _is;
+uiNamespace setVariable ["COMSPEC_ATAK_MkScale", _mk];
 private _bgStyle = [] call comspec_atak_native_fnc_mapStyle;
 // Cartouches façon ATAK (fn_mapLabels) en carte plein écran ; la petite carte (téléphone en HUD) garde l'indicatif simple.
 private _boxOn = _lblOn && {_kRaw > 0.75} && {_scale < 0.25};
@@ -143,6 +148,9 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_LayerHeat", false]) then {
 // Noms des villes, villages, lieux-dits et sites (fn_mapPlaceText) : sous tous les symboles. La carte Arma ne les
 // écrit plus (COMSPEC_RscMapAtak) ; chaque catégorie se masque dans CALQUES.
 [_map, _ts, _kt, _scale] call comspec_atak_native_fnc_mapPlaceText;
+
+// Marqueurs de la mission (symboles, zones, traits) : la carte Arma ne les dessine plus (showMarkers = 0).
+[_map, _mk] call comspec_atak_native_fnc_mapGameMarkers;
 
 // GPS : itinéraire en trait épais (bordure sombre, bleu à parcourir, gris déjà parcouru), arrivée en drapeau.
 private _route = missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap];

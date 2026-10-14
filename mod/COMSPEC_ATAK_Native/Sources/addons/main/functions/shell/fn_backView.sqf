@@ -21,7 +21,9 @@ private _h = _w * pixelH / pixelW;
 if (_h > safeZoneH * 1.5) then { _h = safeZoneH * 1.5; _w = _h * pixelW / pixelH; };
 private _x = safeZoneX + (safeZoneW - _w) / 2;
 private _y = safeZoneY + safeZoneH / 2 - _h * 0.57;
-private _img = _d ctrlCreate ["COMSPEC_RscPicture", -1];
+// Dos, batterie et antenne étirés sur leur cadre (COMSPEC_RscPhone, style 48) : avec « garder les proportions », l'antenne,
+// dans un cadre bien plus haut que large, était recentrée autrement que le dos et flottait au-dessus de la coque.
+private _img = _d ctrlCreate ["COMSPEC_RscPhone", -1];
 private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
 private _s7 = !(_model in ["rugged", "iphone", "sonim", "keys", "plate", "flip", "ribbed"]);
 _img ctrlSetText (((["\z\comspec_atak_native\addons\main\data\phone_back_" + _model + ".paa", format ["\z\comspec_atak_native\addons\main\data\phone_back%1.paa", _suffix]] select _s7)) call comspec_atak_native_fnc_tr);
@@ -31,14 +33,14 @@ _img ctrlCommit 0;
 private _ant = ["get"] call comspec_atak_native_fnc_antenna;
 // Batterie externe sur la plaque (fn_powerBank) : calque carré de la texture.
 if (_s7 && {missionNamespace getVariable ["COMSPEC_ATAK_PowerBankOn", false]}) then {
-    private _pb = _d ctrlCreate ["COMSPEC_RscPicture", -1];
+    private _pb = _d ctrlCreate ["COMSPEC_RscPhone", -1];
     _pb ctrlSetText (("\z\comspec_atak_native\addons\main\data\back_powerbank.paa") call comspec_atak_native_fnc_tr);
     _pb ctrlSetTextColor [1, 1, 1, 1];
     _pb ctrlSetPosition [_x, _y, _w, _h];
     _pb ctrlCommit 0;
 };
 if (_s7 && {_ant isNotEqualTo []}) then {
-    private _a = _d ctrlCreate ["COMSPEC_RscPicture", -1];
+    private _a = _d ctrlCreate ["COMSPEC_RscPhone", -1];
     _a ctrlSetText ((format ["\z\comspec_atak_native\addons\main\data\antenna_%1_back.paa", _ant select 0]) call comspec_atak_native_fnc_tr);
     _a ctrlSetTextColor [1, 1, 1, 1];
     _a ctrlSetPosition [_x + _w * 1426 / 2048, _y + _h * -832 / 2048, _w * 384 / 2048, _h * 1536 / 2048];
