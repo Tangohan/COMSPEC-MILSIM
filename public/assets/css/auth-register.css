@@ -1,0 +1,542 @@
+/**
+ * Page d’inscription (views/auth/register.php).
+ * Champs alignés (libellé, champ, aide dessous), sections numérotées, partie facultative repliable,
+ * force du mot de passe, erreurs sous les champs, mode nuit (html[data-bo-theme="dark"]).
+ */
+
+.ds-page--register {
+  --rg-field-bg: #eeeeee;
+  --rg-field-bg-hover: #e5e5e5;
+  --rg-field-bg-focus: #ffffff;
+  --rg-line: var(--ds-text);
+  --rg-surface: #ffffff;
+  --rg-surface-border: #e2e2e2;
+  --rg-num-bg: var(--ds-primary);
+  --rg-num-text: #ffffff;
+  --rg-ok: #18753c;
+  --rg-warn: #b34000;
+  --rg-meter-off: #d9d9d9;
+  --rg-preview-bg: #fbf6e3;
+  --rg-preview-border: #e6d38f;
+  --rg-link: var(--ds-primary);
+}
+
+html[data-bo-theme="dark"] .ds-page--register {
+  --ds-text: #ececea;
+  --ds-text-alt: #c9cbc8;
+  --ds-text-mention: #9ea3a0;
+  --ds-bg: #111816;
+  --ds-bg-alt: #18211f;
+  --ds-border: #2c3835;
+  --ds-primary: #1d6f64;
+  --ds-primary-hover: #238275;
+  --ds-focus: #4fb3e0;
+  --ds-error: #ff8a80;
+  --ds-error-bg: #3a1716;
+  --ds-success: #6fd394;
+  --ds-success-bg: #16301f;
+  --ds-warning: #f2c66d;
+  --ds-warning-bg: #33290f;
+  --ds-info: #8ab4ff;
+  --ds-info-bg: #18233a;
+  --rg-field-bg: #1f2a28;
+  --rg-field-bg-hover: #253230;
+  --rg-field-bg-focus: #263432;
+  --rg-line: #8c9693;
+  --rg-surface: #18211f;
+  --rg-surface-border: #2c3835;
+  --rg-num-bg: #2a8c7e;
+  --rg-ok: #6fd394;
+  --rg-warn: #f5a35c;
+  --rg-meter-off: #33403d;
+  --rg-preview-bg: #241f10;
+  --rg-preview-border: #57491d;
+  --rg-link: #7fd3c6;
+  color-scheme: dark;
+}
+html[data-bo-theme="dark"] .ds-page--register .ds-main a,
+html[data-bo-theme="dark"] .ds-page--register .ds-check a,
+html[data-bo-theme="dark"] .ds-page--register .ds-kicker {
+  color: var(--rg-link);
+}
+html[data-bo-theme="dark"] .ds-page--register .ds-footer__links a {
+  color: var(--ds-text-alt);
+}
+html[data-bo-theme="dark"] .ds-page--register .ds-alert {
+  background: var(--ds-bg-alt);
+  color: var(--ds-text);
+}
+html[data-bo-theme="dark"] .ds-page--register .ds-alert--error { background: var(--ds-error-bg); }
+html[data-bo-theme="dark"] .ds-page--register .ds-alert--success { background: var(--ds-success-bg); }
+html[data-bo-theme="dark"] .ds-page--register .ds-alert--warning { background: var(--ds-warning-bg); }
+html[data-bo-theme="dark"] .ds-page--register .ds-alert p,
+html[data-bo-theme="dark"] .ds-page--register .ds-alert__title {
+  color: var(--ds-text);
+}
+html[data-bo-theme="dark"] .ds-page--register .ds-preview-modal {
+  background: var(--ds-bg-alt);
+  color: var(--ds-text);
+}
+html[data-bo-theme="dark"] .ds-page--register .ds-preview-modal__body a {
+  color: var(--rg-link);
+}
+
+/* --- En-tête ----------------------------------------------------------- */
+.ds-page--register .ds-main__inner--register {
+  max-width: 38rem;
+}
+.rg-lead {
+  margin-top: 0.6rem;
+  font-size: 1.0625rem;
+}
+
+/* Bandeau preview : une ligne discrète, la fenêtre détaillée s’ouvre au besoin. */
+.rg-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.65rem;
+  margin: 1.1rem 0 0;
+  padding: 0.55rem 0.8rem;
+  background: var(--rg-preview-bg);
+  border: 1px solid var(--rg-preview-border);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--ds-text-alt);
+}
+.rg-preview .ds-preview-notice__badge {
+  font-size: 0.6875rem;
+  padding: 0.15rem 0.5rem;
+}
+.rg-preview__text {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+.rg-preview__more {
+  border: 0;
+  background: none;
+  padding: 0.15rem 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--rg-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+/* --- Formulaire -------------------------------------------------------- */
+.rg-form {
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+.rg-summary {
+  margin: 0;
+  padding: 0.65rem 0.9rem;
+  border-left: 4px solid var(--ds-error);
+  background: var(--ds-error-bg);
+  color: var(--ds-text);
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+.rg-summary:focus {
+  outline: none;
+}
+
+.rg-section {
+  margin: 0;
+  padding: 1.1rem 1.1rem 1.2rem;
+  min-width: 0;
+  border: 1px solid var(--rg-surface-border);
+  border-radius: 0.5rem;
+  background: var(--rg-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.rg-section__title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  float: left; /* place la légende dans la boîte (pas sur la bordure) */
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--ds-text);
+}
+.rg-section__title + * {
+  clear: both;
+}
+.rg-section__num {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: var(--rg-num-bg);
+  color: var(--rg-num-text);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.rg-section__hint {
+  margin: -0.65rem 0 0;
+  font-size: 0.875rem;
+  color: var(--ds-text-mention);
+}
+
+.rg-grid {
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 640px) {
+  .rg-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+/* Chaque champ : libellé, champ, aide, erreur — toujours dans cet ordre, donc les champs s’alignent. */
+.rg-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.rg-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ds-text);
+}
+.rg-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  height: 2.75rem;
+  padding: 0 0.9rem;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--ds-text);
+  background: var(--rg-field-bg);
+  border: 0;
+  border-bottom: 2px solid var(--rg-line);
+  border-radius: 0.3rem 0.3rem 0 0;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.rg-input::placeholder {
+  color: var(--ds-text-mention);
+  opacity: 1;
+}
+.rg-input:hover {
+  background: var(--rg-field-bg-hover);
+}
+.rg-input:focus,
+.rg-input:focus-visible {
+  outline: 2px solid var(--ds-focus);
+  outline-offset: 2px;
+  background: var(--rg-field-bg-focus);
+}
+.rg-input[aria-invalid="true"] {
+  border-bottom-color: var(--ds-error);
+  box-shadow: inset 0 -1px 0 var(--ds-error);
+}
+.rg-input--code {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.rg-input--code::placeholder {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.rg-hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--ds-text-mention);
+}
+.rg-error {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--ds-error);
+}
+.rg-error::before {
+  content: "!";
+  display: inline-grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.35rem;
+  border-radius: 999px;
+  background: var(--ds-error);
+  color: var(--ds-bg);
+  font-size: 0.6875rem;
+  vertical-align: 0.05em;
+}
+.rg-error:empty {
+  display: none;
+}
+
+/* Mot de passe : bouton œil à droite, hors de la zone de saisie. */
+.rg-password {
+  position: relative;
+}
+.rg-input--password {
+  padding-right: 3rem;
+}
+.rg-eye {
+  position: absolute;
+  top: 0.125rem;
+  right: 0.125rem;
+  width: 2.5rem;
+  height: 2.375rem;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--ds-text-alt);
+  cursor: pointer;
+}
+.rg-eye:hover {
+  color: var(--ds-text);
+  background: rgba(127, 127, 127, 0.14);
+}
+.rg-eye:focus-visible {
+  outline: 2px solid var(--ds-focus);
+  outline-offset: 0;
+}
+.rg-eye .rg-eye__hide,
+.rg-eye[aria-pressed="true"] .rg-eye__show {
+  display: none;
+}
+.rg-eye[aria-pressed="true"] .rg-eye__hide {
+  display: block;
+}
+
+/* Jauge de force (et espace équivalent sous la confirmation pour garder l’alignement). */
+.rg-meter {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.25rem;
+  height: 0.3rem;
+  margin-top: 0.45rem;
+}
+.rg-meter span {
+  border-radius: 999px;
+  background: var(--rg-meter-off);
+  transition: background-color 0.2s ease;
+}
+.rg-meter[data-level="1"] span:nth-child(-n+1) { background: var(--ds-error); }
+.rg-meter[data-level="2"] span:nth-child(-n+2) { background: var(--rg-warn); }
+.rg-meter[data-level="3"] span:nth-child(-n+3) { background: var(--rg-ok); }
+.rg-meter[data-level="4"] span { background: var(--rg-ok); }
+.rg-meter--spacer {
+  visibility: hidden;
+}
+@media (max-width: 639px) {
+  .rg-meter--spacer { display: none; }
+}
+.rg-hint[data-level="1"] { color: var(--ds-error); }
+.rg-hint[data-level="2"] { color: var(--rg-warn); }
+.rg-hint[data-level="3"],
+.rg-hint[data-level="4"],
+.rg-hint[data-state="ok"] { color: var(--rg-ok); }
+.rg-hint[data-state="ko"] { color: var(--ds-error); }
+.rg-hint[data-state="ok"]::before { content: "✓ "; font-weight: 700; }
+
+/* --- Partie facultative ------------------------------------------------ */
+.rg-optional {
+  border: 1px dashed var(--rg-surface-border);
+  border-radius: 0.5rem;
+  background: transparent;
+}
+.rg-optional[open] {
+  border-style: solid;
+  background: var(--rg-surface);
+}
+.rg-optional__summary {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1.1rem;
+  cursor: pointer;
+  list-style: none;
+  border-radius: 0.5rem;
+  color: var(--ds-text-alt);
+}
+.rg-optional__summary::-webkit-details-marker {
+  display: none;
+}
+.rg-optional__summary:focus-visible {
+  outline: 2px solid var(--ds-focus);
+  outline-offset: 2px;
+}
+.rg-optional__summary:hover .rg-optional__label {
+  color: var(--ds-text);
+}
+.rg-optional__badge {
+  flex-shrink: 0;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--rg-surface-border);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--ds-text-mention);
+}
+.rg-optional__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+.rg-optional__chevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+.rg-optional[open] .rg-optional__chevron {
+  transform: rotate(180deg);
+}
+.rg-optional__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0 1.1rem 1.2rem;
+}
+.rg-optional__body > .rg-section__hint {
+  margin-top: -0.35rem;
+}
+
+.rg-help {
+  font-size: 0.875rem;
+  color: var(--ds-text-alt);
+}
+.rg-help summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--rg-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.rg-help summary::before {
+  content: "?";
+  display: inline-grid;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+  font-size: 0.6875rem;
+  text-decoration: none;
+}
+.rg-help summary::-webkit-details-marker {
+  display: none;
+}
+.rg-help ol {
+  margin: 0.5rem 0 0;
+  padding: 0.65rem 0.9rem 0.65rem 2rem;
+  background: var(--rg-field-bg);
+  border-radius: 0.375rem;
+  list-style: decimal;
+}
+.rg-help li + li {
+  margin-top: 0.3rem;
+}
+
+/* --- Conditions et envoi ---------------------------------------------- */
+.rg-submit {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.rg-check {
+  align-items: center;
+  background: var(--rg-surface);
+  border: 1px solid var(--rg-surface-border);
+  border-radius: 0.5rem;
+  box-shadow: inset 4px 0 0 0 var(--ds-primary);
+}
+html[data-bo-theme="dark"] .rg-check {
+  box-shadow: inset 4px 0 0 0 var(--rg-num-bg);
+}
+.rg-check input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+}
+.rg-check label {
+  color: var(--ds-text-alt);
+}
+.rg-check.is-invalid {
+  border-color: var(--ds-error);
+  box-shadow: inset 4px 0 0 0 var(--ds-error);
+}
+.rg-error--check {
+  margin-top: -0.4rem;
+}
+.rg-submit__btn {
+  min-height: 3rem;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  border-radius: 0.375rem;
+}
+html[data-bo-theme="dark"] .rg-submit__btn {
+  background: var(--ds-primary);
+  color: #fff;
+}
+html[data-bo-theme="dark"] .rg-submit__btn:hover {
+  background: var(--ds-primary-hover);
+}
+.rg-submit__hint {
+  margin: -0.25rem 0 0;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: var(--ds-text-mention);
+}
+
+/* Téléphone : bouton d’envoi toujours visible en bas de l’écran. */
+@media (max-width: 639px) {
+  .rg-section {
+    padding: 1rem 0.9rem 1.1rem;
+  }
+  .rg-optional__summary {
+    padding: 0.85rem 0.9rem;
+  }
+  .rg-optional__body {
+    padding: 0 0.9rem 1.1rem;
+  }
+  .rg-submit {
+    display: contents; /* le bouton devient enfant direct du formulaire : il reste collé en bas tant que le formulaire est à l’écran */
+  }
+  .rg-submit__btn {
+    position: sticky;
+    bottom: 0.75rem;
+    z-index: 5;
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rg-input,
+  .rg-meter span,
+  .rg-optional__chevron {
+    transition: none;
+  }
+}
+
+/* Une erreur affichée remplace le retour en direct du même sens (pas de message en double). */
+.rg-field:has(> .rg-error:not(:empty)) > .rg-hint[data-state="ko"],
+.rg-field:has(> .rg-error:not(:empty)) > .rg-hint[data-level="1"] {
+  display: none;
+}
+/* Pile d’alertes vide : pas d’espace réservé entre le bandeau et le formulaire. */
+.ds-page--register .ds-alert-stack:not(:has(*)) {
+  display: none;
+}
