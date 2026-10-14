@@ -38,23 +38,23 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Regroupement : drone comme Vidéo Live, carte plus lisible, antenne, numéro de build, photo refusée expliquée (ATAK natif 1.95.0)
+## Regroupement : drone comme Vidéo Live, téléphone en main pour les photos, carte plus lisible, antenne, numéro de build (ATAK natif 1.95.0)
 
 ### Résumé joueur
 Type : nouveauté
-FR : App Drone refaite, carte plus lisible, antenne vissée sur la coque
+FR : App Drone refaite, téléphone en main pour les photos, carte plus lisible
 - L'image du drone s'affiche comme celle des caméras fixes de Vidéo Live ; l'app Drone montre la liste des drones à gauche (choisir pour piloter, ou appairer un drone tout proche), l'image et les commandes à droite, avec la rangée JOUR / VISION NOCTURNE / THERMIQUE.
+- En mode photo, ton personnage tient son téléphone devant lui et la photo part de l'objectif au dos ; en selfie, l'objectif se place face à ton visage même tête baissée. Si la formule de ta communauté n'inclut pas la carte Athena, une fenêtre explique une fois pourquoi ta photo n'est pas partie.
 - Sur la petite carte du téléphone, les noms des repères sont plus grands et les symboles de la mission sont à l'échelle de l'écran ; le calque « Cartouches » s'appelle maintenant « Coordonnées repères ».
-- L'antenne d'extension part du port de la coque au lieu de flotter au-dessus, sur tous les modèles, et le texte des boutons verts n'a plus de contour noir.
-- Réglages, Crédits et Statut affichent la version avec la date du build ; si la formule de ta communauté n'inclut pas la carte Athena, une fenêtre explique une fois pourquoi ta photo n'est pas partie.
-EN : Drone app redone, clearer map, antenna screwed onto the case
+- L'antenne d'extension part du port de la coque au lieu de flotter au-dessus, le texte des boutons verts n'a plus de contour noir, et Réglages, Crédits et Statut affichent la version avec la date du build.
+EN : Drone app redone, phone in hand for photos, clearer map
 - The drone picture is shown like the fixed cameras in Live Video; the Drone app lists drones on the left (pick one to fly it, or pair a drone close by), with the picture and controls on the right and the DAY / NIGHT VISION / THERMAL row.
+- In photo mode, your character holds the phone in front of them and the photo is taken from the rear lens; in selfie mode, the lens moves in front of your face even with your head down. If your community's plan does not include the Athena map, a window explains once why your photo was not sent.
 - On the phone's small map, marker names are larger and mission symbols scale with the screen; the "Labels" layer is now called "Marker coords".
-- The extension antenna starts from the case port instead of floating above it, on every model, and green button labels no longer have a black outline.
-- Settings, Credits and Status show the version with the build date; if your community's plan does not include the Athena map, a window explains once why your photo was not sent.
+- The extension antenna starts from the case port instead of floating above it, green button labels no longer have a black outline, and Settings, Credits and Status show the version with the build date.
 
 ### Détail technique
-Regroupe #820, #822, #825, #826, #827, #829 et #830 (une seule version : ATAK natif 1.95.0, COMSPEC Link inchangé 2.0.85 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.14 1c505a2 » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin, que HEMTT ne produit pas et dont l’ancienne copie ne décrit plus les textures d’antenne régénérées).
+Regroupe #820, #822, #825, #826, #827, #829, #830 et #831 (une seule version : ATAK natif 1.95.0, COMSPEC Link inchangé 2.0.85 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.14 1c505a2 » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin, que HEMTT ne produit pas et dont l’ancienne copie ne décrit plus les textures d’antenne régénérées).
 
 #### Numéro de build complet dans le téléphone (#822)
 
@@ -98,6 +98,18 @@ Regroupe #820, #822, #825, #826, #827, #829 et #830 (une seule version : ATAK na
 - Caméra du flux créée comme celle de `fn_camView` (cible au nom fixe, texture carrée rapport 1, contrôle COMSPEC_RscPhone, pas de camCommit à la création) et raccrochée au drone à chaque image ; zoom par camSetPos + camCommit puis raccrochage.
 - App Drone en grand format couché : liste à gauche (flotte : choisir = piloter ; drones à moins de 15 m : choisir = appairer), image et commandes à droite, rangée JOUR / VISION NOCTURNE / THERMIQUE comme Vidéo Live.
 - À tester en jeu : image du drone (plus d'écran noir), zoom, JOUR / NV / THERMIQUE, piloter un drone de la flotte, appairer un drone posé à moins de 15 m.
+
+#### Appareil photo : le téléphone dans la main, selfie face au visage (#831)
+
+- `fn_gestureSelfie` : mode `photo` = même pose que le selfie (bras tendu, téléphone du profil accroché à la main droite) ; mode `rear` = position de l'objectif arrière (dos du téléphone).
+- `fn_photoMode` : objectif arrière placé sur le téléphone tenu en main (caméra scriptée même sans zoom, visée à la souris comme au zoom). Réglage CBA « Animation de l'appareil photo » : défaut `comspec_atak_native_fnc_gestureSelfie` ; l'ancienne valeur `gesturePoint` est reprise comme le nouveau défaut.
+- Selfie (`lens`) : on ne peut pas tourner la tête d'un joueur par script, donc l'objectif suit la tête. Orientation lue sur l'os `head` (`selectionVectorDirAndUp`, repli `eyeDirection`), site borné à -35°/+50°. Tête à moins de 12° du téléphone : objectif sur le téléphone ; au-delà, glisse vers l'axe du visage (complet à 30°). Journal `[PHOTO] Selfie : visage à X° du téléphone…` toutes les 3 s.
+
+À vérifier en jeu :
+- Mode photo (objectif arrière) : le S7 est dans la main droite, bien orienté (écran vers soi), et l'image n'est pas masquée par la main ou le téléphone ; visée et zoom à la souris.
+- Autre joueur : voit le téléphone dans la main pendant la photo, puis le téléphone disparaît à la sortie.
+- Selfie en entrant tête baissée ou tournée : le visage est cadré de face. Relever la ligne `Selfie : visage à …` du journal si ce n'est pas le cas (elle dit si l'orientation vient de l'os de la tête ou du regard).
+- Passage photo ↔ selfie (R) sans que le bras retombe ; sortie (Espace) : bras baissé, arme reprise.
 
 #### Calque « Cartouches » renommé « Coordonnées repères » (#829)
 
