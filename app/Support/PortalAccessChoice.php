@@ -115,6 +115,49 @@ final class PortalAccessChoice
         return self::isPlaceholderTenant(is_array($tenant) ? $tenant : null);
     }
 
+    /**
+     * Pages qui servent à un compte sans organisation : tableau de bord, forum public, registre et
+     * création de communauté, rejoindre avec un code, sa propre fiche et son compte. Tout le reste
+     * (Hub, Formations, Effectifs, back-office, manœuvres, ATAK…) ne mène qu’à des pages vides du sas.
+     */
+    public const NO_ORGANIZATION_PATHS = [
+        'dashboard',
+        'forum',
+        'communities',
+        'join',
+        'personnel/me',
+        'account',
+    ];
+
+    public static function noOrganizationAllowsPath(string $path): bool
+    {
+        $path = trim($path, '/');
+        foreach (self::NO_ORGANIZATION_PATHS as $allowed) {
+            if ($path === $allowed || str_starts_with($path, $allowed . '/')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Le menu se réduit aux pages utiles tant que le compte n’a pas d’organisation réelle
+     * (l’administrateur de la plateforme garde tout). Recalculé à chaque requête : dès que
+     * le compte rejoint ou crée une communauté, la barre complète revient.
+     */
+    public static function restrictsNavigationToNoOrganization(): bool
+    {
+        if ((int) Session::get('user_id', 0) <= 0) {
+            return false;
+        }
+        if (Gate::getInstance()->isPlatformAdmin()) {
+            return false;
+        }
+
+        return self::isNoOrganizationContext();
+    }
+
     public static function remember(string $portal, bool $persist): void
     {
         $portal = self::normalize($portal);

@@ -3724,6 +3724,217 @@ a.dash-action-tile {
   }
 }
 
+/* Compte sans organisation : rejoindre ou créer une communauté */
+.dash-start-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.dash-start-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.85rem 1.35rem;
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.dash-start-btn svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.dash-start-btn--primary {
+  background: #047857;
+  color: #ffffff;
+}
+
+.dash-start-btn--primary:hover {
+  background: #065f46;
+}
+
+.dash-start-btn--ghost {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+.dash-start-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dash-start-btn--dark {
+  background: #161616;
+  color: #ffffff;
+}
+
+.dash-start-btn--dark:hover {
+  background: #2b2b2b;
+}
+
+.dash-start-btn--outline {
+  border-color: #d4d4d4;
+  color: #161616;
+}
+
+.dash-start-btn--outline:hover {
+  background: #f6f6f6;
+}
+
+.dash-start-link {
+  padding: 0.85rem 0.25rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: underline;
+  text-decoration-color: #047857;
+  text-underline-offset: 4px;
+}
+
+.dash-start-link:hover {
+  color: #ffffff;
+}
+
+.dash-start {
+  background: #ffffff;
+}
+
+.dash-start-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .dash-start-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+.dash-start-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  border: 1px solid #e5e5e5;
+  border-top: 3px solid #161616;
+  background: #fafafa;
+}
+
+.dash-start-card--create {
+  border-top-color: #047857;
+  background: #f3faf7;
+}
+
+@media (min-width: 768px) {
+  .dash-start-card {
+    padding: 2rem;
+  }
+}
+
+.dash-start-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid #e5e5e5;
+  background: #ffffff;
+  color: #161616;
+}
+
+.dash-start-card--create .dash-start-card__icon {
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+.dash-start-card__icon svg {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+.dash-start-card__kicker {
+  margin: 0 0 0.4rem;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #666666;
+}
+
+.dash-start-card--create .dash-start-card__kicker {
+  color: #047857;
+}
+
+.dash-start-card__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  color: #161616;
+}
+
+.dash-start-card__text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #4a4a4a;
+}
+
+.dash-start-card__list {
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.dash-start-card__list li {
+  position: relative;
+  padding-left: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #161616;
+}
+
+.dash-start-card__list li::before {
+  content: "";
+  position: absolute;
+  left: 0.15rem;
+  top: 0.3rem;
+  width: 0.7rem;
+  height: 0.4rem;
+  border-left: 2px solid #047857;
+  border-bottom: 2px solid #047857;
+  transform: rotate(-45deg);
+}
+
+.dash-start-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: auto;
+  padding-top: 1.5rem;
+}
+
+@media (max-width: 479px) {
+  .dash-start-hero-actions .dash-start-btn,
+  .dash-start-card__actions .dash-start-btn {
+    width: 100%;
+  }
+}
+
 /* Action tiles : conserver le pattern mobile (formulaire) / desktop (rail) */
 .dash-action-tile-shell .dash-org-anomaly-tile__open.dash-action-tile {
   display: none;
