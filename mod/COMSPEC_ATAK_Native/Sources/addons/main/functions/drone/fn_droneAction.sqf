@@ -272,23 +272,23 @@ private _expose = {
     };
     _lvl
 };
-// Objet caméra sur une cible de rendu neuve (anneau de 8 noms par qualité, comspec_dronecam<qualité>_0..7 : mémoire
-// vidéo bornée ; un même nom n'est jamais repris avec une autre taille de texture).
-// Image noire au retour sur la page : l'ancienne caméra était coupée (Terminate) puis relancée sur la même cible,
-// et l'image de la page était créée avant que la caméra rende de nouveau. Désormais la page appelle camBind, qui
-// recrée la caméra et lance son rendu avant de poser l'image.
+// Objet caméra du flux, fait comme celui de l'app Vidéo Live (fn_camView, caméras fixes : l'image s'affiche dans le
+// téléphone, retour de TTRD, 14/10) : une cible de rendu au nom fixe par qualité, caméra créée, rendu lancé, puis
+// accrochée au drone, sans camCommit. Avant, un camCommit juste après la création ramenait la caméra à sa position
+// camSetPos (jamais réglée) au lieu de la laisser accrochée au drone : image noire. La boucle de la nacelle la
+// raccroche maintenant à chaque image, comme la caméra plein écran (qui, elle, s'affichait).
 private _camMake = {
-    private _n = ((missionNamespace getVariable ["COMSPEC_ATAK_DroneR2TN", 0]) + 1) mod 8;
-    missionNamespace setVariable ["COMSPEC_ATAK_DroneR2TN", _n];
-    // Nom sans tiret bas ni chiffre collé, comme celui du TEST VIDÉO qui s'affiche (comspecpiptest).
-    private _name = format ["comspecdronecam%1n%2", ["a", "b", "c"] select (call _camQ), ["a", "b", "c", "d", "e", "f", "g", "h"] select _n];
+    private _name = ["comspec_dronelive", "comspec_dronelivem", "comspec_droneliveh"] select (call _camQ);
     private _bc = (missionNamespace getVariable ["COMSPEC_ATAK_DroneCamBox", [[0, 0, 0], [0.3, 0.3, 0.15]]]) select 0;
     private _cam = "camera" camCreate (_d modelToWorld _bc);
     _cam cameraEffect ["Internal", "Back", _name];
-    _cam camSetFov (0.7 / (missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1]));
-    _cam camCommit 0;
+    _cam camSetFov 0.7;
     _cam attachTo [_d, _bc];
     _cam setVectorDirAndUp [[0, 0.8, -0.6], [0, 0.6, 0.8]];
+    // Zoom gardé : appliqué l'image suivante (camCommit, puis caméra raccrochée par la boucle de la nacelle).
+    if ((missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1]) isNotEqualTo 1) then {
+        [{ [missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull], missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1]] call (missionNamespace getVariable ["COMSPEC_ATAK_DroneFovFn", {}]); }] call CBA_fnc_execNextFrame;
+    };
     _cam setVariable ["rendering", true];
     _cam setVariable ["r2t", _name];
     _cam setVariable ["q", call _camQ];
@@ -300,6 +300,17 @@ private _camMake = {
         round (((getPosASL _d) select 2) - getTerrainHeightASL (getPosASL _d))]] call comspec_atak_native_fnc_log;
     _cam
 };
+// Champ (zoom) de la caméra du flux : camSetFov ne prend effet qu'avec camCommit, qui ramène aussi la caméra à sa
+// position camSetPos : on lui donne sa position du moment, et la boucle de la nacelle la raccroche au drone l'image suivante.
+private _camFov = {
+    params ["_cam", "_z"];
+    if (isNull _cam) exitWith {};
+    _cam camSetFov (0.7 / (_z max 1));
+    _cam camSetPos (ASLToAGL (getPosASLVisual _cam));
+    _cam camCommit 0;
+    _cam setVariable ["off", nil];
+};
+missionNamespace setVariable ["COMSPEC_ATAK_DroneFovFn", _camFov];
 private _camOpen = {
     if (!isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull]) || {isNull _d}) exitWith {};
     // Nacelle posée hors du modèle, du côté où elle regarde (voir la boucle ci-dessous) : sur un Mavic, la caméra
@@ -464,12 +475,11 @@ private _camOpen = {
             private _md = vectorNormalized _mDir;
             _bc vectorAdd (_md vectorMultiply (((_bh select 0) * abs (_md select 0)) + ((_bh select 1) * abs (_md select 1)) + ((_bh select 2) * abs (_md select 2)) + 0.25))
         };
-        // Caméra attachée : position et orientation dans le repère du drone (rattachée seulement si le point bouge).
-        if ((_off distance (_cam getVariable ["off", [1e6, 0, 0]])) > 0.01) then {
-            _cam attachTo [_d, _off];
-            _cam setVariable ["off", _off];
-            missionNamespace setVariable ["COMSPEC_ATAK_DroneCamOff", _off];
-        };
+        // Caméra raccrochée à chaque image (comme la caméra plein écran, qui s'affiche) : un camCommit (zoom) ne peut
+        // plus la laisser à l'écart du drone.
+        _cam attachTo [_d, _off];
+        _cam setVariable ["off", _off];
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneCamOff", _off];
         _cam setVectorDirAndUp [_mDir, _mUp];
         // Cliché en cours (fn_dronePhoto) : la caméra plein écran prend la même pose.
         private _shot = missionNamespace getVariable ["COMSPEC_ATAK_DroneShotCam", objNull];
@@ -498,9 +508,10 @@ private _camBind = {
         _cam = call _camMake;
     };
     _cam setVariable ["hiddenSince", -1];
-    // Texture carrée (comme le TEST VIDÉO qui s'affiche) ; le 16/9 vient du rapport passé à r2t.
-    ([[512, 512], [1024, 1024], [2048, 2048]] select (call _camQ)) params ["_tw", "_th"];
-    format ["#(argb,%1,%2,1)r2t(%3,1.7778)", _tw, _th, _cam getVariable ["r2t", "comspec_dronecam"]]
+    // Même texture que l'app Vidéo Live (caméras fixes) : carrée, rapport 1 (COMSPEC_ATAK_DroneCamAspect pour les
+    // cadres LOCK, le clic et le glisser sur l'image).
+    missionNamespace setVariable ["COMSPEC_ATAK_DroneCamAspect", 1];
+    format ["#(argb,%1,%1,1)r2t(%2,1.0)", [512, 1024, 2048] select (call _camQ), _cam getVariable ["r2t", "comspec_dronelive"]]
 };
 // Capteur : ce que la caméra voit (vue directe, portée réduite par le brouillard), en 360° ou dans le champ de la nacelle pointée.
 private _scan = {
@@ -877,7 +888,7 @@ switch (_act) do {
     case "zoom": {
         missionNamespace setVariable ["COMSPEC_ATAK_DroneZoom", _arg];
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
-        if (!isNull _cam) then { _cam camSetFov (0.7 / _arg); _cam camCommit 0; };
+        [_cam, _arg] call _camFov;
         call _render;
     };
     case "gimbalGet": {
@@ -919,7 +930,7 @@ switch (_act) do {
         private _z = (round (10 * (((missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1]) * _arg) max 1 min 8))) / 10;
         missionNamespace setVariable ["COMSPEC_ATAK_DroneZoom", _z];
         private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
-        if (!isNull _cam) then { _cam camSetFov (0.7 / _z); _cam camCommit 0.15; };
+        [_cam, _z] call _camFov;
         _z
     };
     // Ligne de la vue caméra : angles de la nacelle, zoom, mode marquage.
@@ -951,6 +962,12 @@ switch (_act) do {
         // Jour → nuit (intensification) → thermique → jour.
         private _v = ((missionNamespace getVariable ["COMSPEC_ATAK_DroneVision", 0]) + 1) mod 3;
         missionNamespace setVariable ["COMSPEC_ATAK_DroneVision", _v];
+        call _expose;
+        call _render;
+    };
+    // Mode de vision choisi directement (rangée JOUR / VISION NOCTURNE / THERMIQUE, comme l'app Vidéo Live).
+    case "visionSet": {
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneVision", ((_arg max 0) min 2)];
         call _expose;
         call _render;
     };

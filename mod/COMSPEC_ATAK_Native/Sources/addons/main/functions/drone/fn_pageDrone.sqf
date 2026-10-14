@@ -42,6 +42,60 @@ uiNamespace setVariable ["COMSPEC_ATAK_DroneMenusShown", false];
 private _phEd = _s getOrDefault ["dronePhEdit", -1];
 if (_phEd >= 0 && {_phEd < count (["list"] call comspec_atak_native_fnc_dronePhoto)}) exitWith { ["modal", [_bw, _bh]] call comspec_atak_native_fnc_dronePhoto; true };
 
+// Liste des drones à gauche, comme l'app Vidéo Live (retour de TTRD, 14/10 : « refais le menu drone comme l'app Live
+// avec un select à gauche ») : drones de la flotte (choisir = le piloter), puis drones posés à moins de 15 m (choisir =
+// l'appairer). Téléphone couché en grand format seulement ; le reste de la page (image, commandes, onglets) occupe la
+// colonne de droite, à partir de _ox.
+private _ox = 0;
+if ((_l get "landscape") && {!_mini}) then {
+    private _lw = (_bw - 0.012) * 0.3;
+    private _list = ["COMSPEC_RscListBox", [_pad, _pad, _lw, _bh - 2 * _pad]] call comspec_atak_native_fnc_pageCtrl;
+    _list ctrlSetFontHeight _fs;
+    private _fleet = ["list"] call comspec_atak_native_fnc_droneFleet;
+    private _hdr = _list lbAdd (("DRONES APPAIRÉS") call comspec_atak_native_fnc_tr);
+    _list lbSetColor [_hdr, [0.36, 0.78, 0.42, 1]];
+    {
+        (["link", _x] call comspec_atak_native_fnc_droneFleet) params ["_bars", "_dist", "_ok"];
+        // Nom, distance, batterie, puis l'état (traduit seul : le nom du drone reste tel quel).
+        private _i = _list lbAdd ((format ["%1 · %2 m · %3 %%", [_x, [], "NAME"] call comspec_atak_native_fnc_droneOsd, round (player distance _x), round (100 * fuel _x)])
+            + ((["", "Piloté", "Hors liaison"] select ([[2, 0] select _ok, 1] select (_x isEqualTo _d))) call { [" · " + (_this call comspec_atak_native_fnc_tr), ""] select (_this isEqualTo "") }));
+        _list lbSetData [_i, "FLY:" + netId _x];
+        _list lbSetPicture [_i, "\z\comspec_atak_native\addons\main\data\app_drone.paa"];
+        _list lbSetColor [_i, [[0.9, 0.28, 0.23, 1], [0.92, 0.96, 0.93, 1]] select _ok];
+        _list lbSetTooltip (([_i, (format ["%1 · liaison %2/4 · %3 m du sol", toLower (_x getVariable ["COMSPEC_DroneMode", "HOVER"]), _bars, round ((getPosATL _x) select 2)]) call comspec_atak_native_fnc_tr]) call comspec_atak_native_fnc_tr);
+        if (_x isEqualTo _d) then { _list lbSetCurSel _i; };
+    } forEach _fleet;
+    if ((count _fleet) isEqualTo 0) then { private _i = _list lbAdd (("Aucun drone appairé") call comspec_atak_native_fnc_tr); _list lbSetColor [_i, [0.54, 0.6, 0.58, 1]]; };
+    private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {!(_x in _fleet)} && {(_x getVariable ["COMSPEC_DroneOwner", ""]) in ["", getPlayerUID player]} };
+    private _hdr2 = _list lbAdd (("À PORTÉE (MOINS DE 15 M)") call comspec_atak_native_fnc_tr);
+    _list lbSetColor [_hdr2, [0.36, 0.78, 0.42, 1]];
+    {
+        private _i = _list lbAdd ((format ["%1 · %2 m · ", [_x, [], "NAME"] call comspec_atak_native_fnc_droneOsd, round (player distance _x)]) + ("Appairer" call comspec_atak_native_fnc_tr));
+        if ((count _fleet) < 4) then { _list lbSetData [_i, "PAIR:" + netId _x]; };
+        _list lbSetPicture [_i, "\z\comspec_atak_native\addons\main\data\app_drone.paa"];
+        _list lbSetColor [_i, [0.95, 0.67, 0.2, 1]];
+        _list lbSetTooltip (([_i, (["Choisir pour appairer ce drone au téléphone (il devient le drone piloté)", "Flotte complète (4 drones) : libérez-en un d'abord"] select ((count _fleet) >= 4)) call comspec_atak_native_fnc_tr]) call comspec_atak_native_fnc_tr);
+    } forEach _near;
+    if ((count _near) isEqualTo 0) then { private _i = _list lbAdd (("Aucun drone libre posé près de vous") call comspec_atak_native_fnc_tr); _list lbSetColor [_i, [0.54, 0.6, 0.58, 1]]; };
+    _list ctrlAddEventHandler ["LBSelChanged", {
+        params ["_c", "_i"];
+        // Données : "FLY:<netId>" (drone de la flotte), "PAIR:<netId>" (drone à appairer), "" (titre, ligne vide).
+        private _id = _c lbData _i;
+        private _p = _id find ":";
+        if (_p < 0) exitWith {};
+        private _k = _id select [0, _p];
+        private _o = objectFromNetId (_id select [_p + 1]);
+        if (isNull _o) exitWith {};
+        if (_k isEqualTo "FLY") exitWith {
+            if (_o isEqualTo (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])) exitWith {};
+            [{ ["switch", _this] call comspec_atak_native_fnc_droneFleet; }, _o] call CBA_fnc_execNextFrame;
+        };
+        if (_k isEqualTo "PAIR") then { [{ ["pair", _this] call comspec_atak_native_fnc_droneAction; }, _o] call CBA_fnc_execNextFrame; };
+    }];
+    _ox = _pad * 2 + _lw;
+    _bw = _bw - _ox;
+};
+
 if (isNull _d) exitWith {
     // Drones à portée de main : posés au sol à moins de 15 m, sans pilote humain.
     private _near = (player nearEntities [["Air", "Mavic_drone_base_F"], 15]) select { alive _x && {unitIsUAV _x} && {(_x getVariable ["COMSPEC_DroneOwner", ""]) in ["", getPlayerUID player]} };
@@ -61,7 +115,7 @@ if (isNull _d) exitWith {
         _rows pushBack ["section", "Journal du dernier vol", format ["%1 événements", count _lg]];
         _rows pushBack ["text", ((_lg select [((count _lg) - 8) max 0]) apply { format ["<t size='0.8'><t color='#8a9a93'>%1</t>  <t color='%3'>%2</t></t>", _x select 0, _x select 1, ["#c9d4cf", _x select 2] select ((_x select 2) isNotEqualTo "")] }) joinString "<br/>"];
     };
-    [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
+    [_rows, [_ox, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
     true
 };
 
@@ -104,10 +158,10 @@ private _view = switch (true) do {
 // Télémétrie en haut (deux lignes), rafraîchie chaque seconde. Petit format avec l'image : les incrustations la portent.
 private _top = 0;
 if (_view isEqualTo "" || {!_mini && {!(_view in ["TOTAL", "SHOT"])}}) then {
-    private _osd = ["COMSPEC_RscMapPanel", [0, 0, _bw, _fs * 2.6]] call comspec_atak_native_fnc_pageCtrl;
+    private _osd = ["COMSPEC_RscMapPanel", [_ox, 0, _bw, _fs * 2.6]] call comspec_atak_native_fnc_pageCtrl;
     _osd ctrlSetStructuredText parseText ((([_d, _link] call comspec_atak_native_fnc_droneOsd)) call comspec_atak_native_fnc_tr);
     private _osdH = ((ctrlTextHeight _osd) + _fs * 0.5) max (_fs * 2.6);
-    _osd ctrlSetPosition [0, 0, _bw, _osdH];
+    _osd ctrlSetPosition [_ox, 0, _bw, _osdH];
     _osd ctrlCommit 0;
     uiNamespace setVariable ["COMSPEC_ATAK_DroneOsd", _osd];
     _top = _osdH;
@@ -137,6 +191,8 @@ if (_view isNotEqualTo "") then {
     private _bZoomOut = ["ZOOM -", [1 / 1.5] call _zoomBy, "", "Dézoomer (molette vers vous, touche -) ; zoom actuel affiché sur l'image", _zoom > 1];
     private _bZoomIn = ["ZOOM +", [1.5] call _zoomBy, "", "Zoomer jusqu'à x8 (molette vers l'avant, touche +)", _zoom < 8];
     private _bVis = [["VISION JOUR", "VISION NUIT", "THERMIQUE"] select _vis, ["vision"] call _act, ["", "on"] select (_vis > 0), "Change le mode de la caméra : jour → nuit (intensification de lumière) → thermique"];
+    // Rangée des modes de vision, comme l'app Vidéo Live : JOUR, VISION NOCTURNE, THERMIQUE (le mode actif en vert).
+    private _visRow = [["JOUR", 0], ["VISION NOCTURNE", 1], ["THERMIQUE", 2]] apply { [_x select 0, ["visionSet", _x select 1] call _act, ["", "on"] select (_vis isEqualTo (_x select 1)), "Mode de la caméra du drone"] };
     private _bNadir = [["CAMÉRA VERS LE SOL", "CAMÉRA DEVANT"] select (_aim isEqualTo "NADIR"), ["camAim", ["NADIR", ""] select (_aim isEqualTo "NADIR")] call _act, "", ["Tourne la caméra à la verticale, vers le sol sous le drone", "Remet la caméra devant le drone"] select (_aim isEqualTo "NADIR"), _src isEqualTo "DRONE"];
     private _bCenter = ["RECENTRER", { ["recenter"] call comspec_atak_native_fnc_droneAction; ["gimbalHud"] call comspec_atak_native_fnc_droneAction; }, "", "Remet la caméra droit devant le drone, 37° vers le bas", _src isEqualTo "DRONE"];
     private _bMark = [["MARQUER", "CLIQUEZ LA CIBLE"] select _markMode, ["markMode"] call _act, ["", "red"] select _markMode, "Appuyez, puis cliquez sur une personne ou un véhicule dans l'image : il est marqué (LOCK) et suivi sur la carte. Rappuyez pour arrêter de marquer"];
@@ -171,8 +227,8 @@ if (_view isNotEqualTo "") then {
         case (_view isEqualTo "SHOT"): { [["CADRAGE", [_bZoomOut, _bZoomIn, _bCenter, _bVis]], ["CIBLE", [_bMark]], ["SURLIGNER", [_bBox, _bCircle, _bErase]], ["PHOTO", [_bCancel, _bTake]]] };
         case (_view isEqualTo "TOTAL"): { [["", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bTotal]]] select [0, [0, 1] select _inter] };
         case (_mini): { [["", [_bShot, _bMark, _bDirect, _bZoomOut, _bZoomIn]], ["", [_bVis, _bTotal, _bMenus, _bClose]]] };
-        case (_view isEqualTo "SPLIT"): { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bVis, _bDirect]], ["", [_bUp, _bDn, _bHover, _bMenus, _bMore]]] + _moreRow };
-        default { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bVis, _bDirect]], ["", [_bUp, _bDn, _bHover, _bTargets, _bMenus, _bMore]]] + _moreRow };
+        case (_view isEqualTo "SPLIT"): { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bDirect]], ["", _visRow], ["", [_bUp, _bDn, _bHover, _bMenus, _bMore]]] + _moreRow };
+        default { [["*", [_bShot, _bMark, _bZoomOut, _bZoomIn, _bDirect]], ["", _visRow], ["", [_bUp, _bDn, _bHover, _bTargets, _bMenus, _bMore]]] + _moreRow };
     };
     // Rangées : largeur de chaque bouton selon la longueur de son libellé ; un groupe passe à la rangée suivante quand
     // la rangée serait trop chargée pour rester lisible.
@@ -219,13 +275,13 @@ if (_view isNotEqualTo "") then {
     // Image 16/9 ajustée à la place disponible (bandes noires sur les côtés ou dessus / dessous).
     private _iw = _bw min (_areaH / _k169);
     private _ih = _iw * _k169;
-    private _ix = (_bw - _iw) / 2;
+    private _ix = _ox + (_bw - _iw) / 2;
     private _iy = _top + (_areaH - _ih) / 2;
-    private _bg = ["COMSPEC_RscText", [0, _top, _bw, _areaH + _barH]] call comspec_atak_native_fnc_pageCtrl;
+    private _bg = ["COMSPEC_RscText", [_ox, _top, _bw, _areaH + _barH]] call comspec_atak_native_fnc_pageCtrl;
     _bg ctrlSetBackgroundColor [0, 0, 0, 1];
     // Texture de la caméra : rendu lancé (caméra recréée au besoin) avant que l'image soit posée.
     private _tex = ["camBind"] call comspec_atak_native_fnc_droneAction;
-    private _pic = ["RscPicture", [_ix, _iy, _iw, _ih], _tex] call comspec_atak_native_fnc_pageCtrl;
+    private _pic = ["COMSPEC_RscPhone", [_ix, _iy, _iw, _ih], _tex] call comspec_atak_native_fnc_pageCtrl;
     // Journal RPT de l'ouverture du flux (fn_pipCheck : pourquoi la vue resterait noire) et texture rebranchée sur
     // l'image après le premier rendu de la caméra.
     ["feedWatch", [_pic, _tex]] call comspec_atak_native_fnc_droneAction;
@@ -410,7 +466,7 @@ if (_view isNotEqualTo "") then {
         private _sg = [1, -1] select ((profileNamespace getVariable ["COMSPEC_ATAK_DroneDragMode", 0]) isEqualTo 1);
         private _tv = 0.7 / (missionNamespace getVariable ["COMSPEC_ATAK_DroneZoom", 1]);
         private _fovV = 2 * atan _tv;
-        private _fovH = 2 * atan (_tv * 1.7778);
+        private _fovH = 2 * atan (_tv * (missionNamespace getVariable ["COMSPEC_ATAK_DroneCamAspect", 1]));
         ["gimbal", [(_g0 select 0) - _sg * _dx / _w * _fovH, (_g0 select 1) + _sg * _dy / _h * _fovV]] call comspec_atak_native_fnc_droneAction;
         ["gimbalHud"] call comspec_atak_native_fnc_droneAction;
     }];
@@ -476,7 +532,7 @@ if (_view isNotEqualTo "") then {
         { { _wsum = _wsum + ([_x select 0] call _weight); } forEach (_x select 1); } forEach _row;
         private _gw = _pad * 0.8;
         private _unit = (_bw - _pad - ((count _row) - 1) * _gw) / (_wsum max 1);
-        private _x0 = _pad / 2;
+        private _x0 = _ox + _pad / 2;
         {
             _x params ["_glabel", "_btns"];
             private _span = 0;
@@ -968,5 +1024,5 @@ switch (_tab) do {
         _rows pushBack ["buttons", [["DÉSAPPAIRER", ["unpair"] call _act]]];
     };
 };
-[_rows, [0, _top, _bw, (_bh - _top) max (_fs * 4)]] call comspec_atak_native_fnc_formRender;
+[_rows, [_ox, _top, _bw, (_bh - _top) max (_fs * 4)]] call comspec_atak_native_fnc_formRender;
 true
