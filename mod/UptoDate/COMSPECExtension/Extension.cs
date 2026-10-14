@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.85";
+    private const string ExtensionVersion = "2.0.86";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -3071,6 +3071,20 @@ public static partial class Extension
             var batch = NormalizeArmaJson(args[0]);
             if (batch.Length > 60000) return "ERR|payload_too_large";
             EnqueueOrSend(_baseUrl + "/api/atak/screen-time/batch", EnrichAtakPayload(batch));
+            return "OK|queued";
+        }
+
+        // Serveur Arma : distances parcourues (pas, à pied, véhicule, vol, saut) et heures de pilote par appareil
+        // de tous les joueurs (app Distances de l'ATAK natif), toutes les 10 min. « probe » : la DLL sait-elle envoyer ?
+        if (function == "Distance.Batch")
+        {
+            if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0])) return "ERR|payload_empty";
+            if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
+            if (!HasPortalAuth()) return "ERR|unauthorized";
+            if (args[0] == "probe") return "OK|ready";
+            var batch = NormalizeArmaJson(args[0]);
+            if (batch.Length > 60000) return "ERR|payload_too_large";
+            EnqueueOrSend(_baseUrl + "/api/atak/distance/batch", EnrichAtakPayload(batch));
             return "OK|queued";
         }
 

@@ -16,9 +16,11 @@
       ["rotate", obj, degrés]     tourne la caméra sur son axe vertical (+ à droite)
       ["rename", obj]             ouvre le téléphone sur la caméra, champ de nom affiché
       ["setName", obj, nom]       renomme (16 caractères au plus)
-      ["list"]                    caméras du camp du joueur
+      ["list"]                    caméras du camp que je peux voir (posées par moi ou partagées avec moi, fn_camShare)
+      ["listAll"]                 toutes les caméras du camp du joueur
       ["dead", obj]               bool : détruite
-      ["status", obj]             [code, libellé, couleur RGBA] ; code OK, DEAD, JAM, NONET, LINK
+      ["status", obj]             [code, libellé, couleur RGBA] ; code OK, DEAD, NOACCESS, JAM, NONET, LINK
+                                  À portée de son Wi-Fi, la caméra se regarde en direct, sans réseau.
                                   Relais dans la mission (fn_videoLink) : la caméra doit aussi joindre le téléphone, en
                                   direct (Wi-Fi, comspec_atak_native_camera_range) ou par les relais, sinon LINK.
       ["video", obj]              chemin du flux (HashMap de fn_videoLink "path", clé "CAM:<hashValue>")
@@ -36,10 +38,11 @@ private _upOf = {
 };
 
 switch (_mode) do {
-    case "list": {
+    case "listAll": {
         private _side = str side group player;
         (missionNamespace getVariable ["COMSPEC_ATAK_Cams", []]) select { !isNull _x && {(_x getVariable ["COMSPEC_ATAK_CamSide", ""]) isEqualTo _side} }
     };
+    case "list": { (["listAll"] call _fn) select { ["can", _x] call comspec_atak_native_fnc_camShare } };
     case "dead": {
         if (isNull _a) exitWith { true };
         private _host = attachedTo _a;
@@ -48,6 +51,8 @@ switch (_mode) do {
     case "status": {
         if (isNull _a) exitWith { ["GONE", "Retirée", [0.54, 0.6, 0.58, 1]] };
         if (["dead", _a] call _fn) exitWith { ["DEAD", "Détruite", [0.9, 0.28, 0.23, 1]] };
+        // Accès retiré par le poseur (fn_camShare "revoke").
+        if !(["can", _a] call comspec_atak_native_fnc_camShare) exitWith { ["NOACCESS", "Accès retiré", [0.54, 0.6, 0.58, 1]] };
         private _now = [time, serverTime] select isMultiplayer;
         // Brouilleurs de mission (mêmes entrées que fn_linkQuality) : au cœur de la zone, plus d'image.
         private _jam = (missionNamespace getVariable ["COMSPEC_ATAK_Jammers", []]) findIf {
@@ -58,11 +63,13 @@ switch (_mode) do {
             }
         };
         if (_jam >= 0) exitWith { ["JAM", "Brouillée", [0.88, 0.64, 0.23, 1]] };
-        // Même règle que le reste du téléphone : sans réseau, pas de flux.
-        if ((([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0) exitWith { ["NONET", "Pas de réseau", [0.88, 0.64, 0.23, 1]] };
-        // Liaison Wi-Fi de la caméra : un ATAK du camp (le sien compris) à portée.
         private _range = missionNamespace getVariable ["comspec_atak_native_camera_range", 600];
         if !(_range isEqualType 0) then { _range = 600; };
+        // À portée de son Wi-Fi, la caméra se regarde en direct, sans réseau (accès reçu par NFC en coupure, par exemple).
+        if ((player distance _a) < _range && {([] call comspec_atak_native_fnc_canUse) isEqualTo ""}) exitWith { ["OK", "En ligne (Wi-Fi direct)", [0.36, 0.78, 0.42, 1]] };
+        // Même règle que le reste du téléphone : sans réseau, pas de flux.
+        if ((([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0) exitWith { ["NONET", "Pas de réseau", [0.88, 0.64, 0.23, 1]] };
+        // Liaison de la caméra au réseau : un ATAK du camp (le sien compris) à portée de son Wi-Fi.
         private _side = _a getVariable ["COMSPEC_ATAK_CamSide", ""];
         private _near = (allPlayers findIf { alive _x && {(_x distance _a) < _range} && {str side group _x isEqualTo _side} && {[_x] call comspec_atak_native_fnc_hasDevice} }) >= 0;
         if (!_near) exitWith { ["LINK", "Hors liaison", [0.88, 0.64, 0.23, 1]] };
@@ -118,13 +125,14 @@ switch (_mode) do {
             _cam setVectorDirAndUp [_d, _u];
         };
         player removeItem CAM_ITEM;
-        private _names = (["list"] call _fn) apply { _x getVariable ["COMSPEC_ATAK_CamName", ""] };
+        private _names = (["listAll"] call _fn) apply { _x getVariable ["COMSPEC_ATAK_CamName", ""] };
         private _i = 1;
         while { (format ["CAM-%1", _i]) in _names } do { _i = _i + 1; };
         private _name = format ["CAM-%1", _i];
         _cam setVariable ["COMSPEC_ATAK_CamSide", str side group player, true];
         _cam setVariable ["COMSPEC_ATAK_CamName", _name, true];
         _cam setVariable ["COMSPEC_ATAK_CamOwner", name player, true];
+        _cam setVariable ["COMSPEC_ATAK_CamOwnerUid", [getPlayerUID player, netId player] select (getPlayerUID player isEqualTo ""), true];
         _cam setVariable ["COMSPEC_ATAK_CamGroup", groupId group player, true];
         // Explosion proche : hors service, même si l'objet tient encore debout.
         _cam addEventHandler ["Explosion", { params ["_c", "_dmg"]; if (_dmg > 0.05) then { _c setVariable ["COMSPEC_ATAK_CamDead", true, true]; }; }];

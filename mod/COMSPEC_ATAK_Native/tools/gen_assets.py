@@ -96,6 +96,8 @@ ICONS = {
     "app_interteam": '<circle cx="5.5" cy="6" r="2.5"/><circle cx="18.5" cy="6" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8 6h8M7 8.2l3.6 7.6M17 8.2l-3.6 7.6"/><path d="M10 11.5h4" stroke-dasharray="1.5 1.5"/>',
     # Accessoires : téléphone vu de dos, antenne vissée en haut, plaque au centre, fixations latérales.
     "app_accessories": '<rect x="7" y="6" width="10" height="16" rx="2"/><path d="M14.5 6V2"/><circle cx="14.5" cy="2" r="0.6" fill="#fff"/><rect x="9.5" y="11" width="5" height="6" rx="1"/><path d="M3 10h4M3 14h4M17 10h4M17 18h4"/>',
+    # Distances : trajet en pointillés d'un point de départ à un fanion d'arrivée.
+    "app_distance": '<circle cx="5" cy="19" r="2"/><path d="M7 18.5c3-1 3-5 6-5.5s4-3 4-6" stroke-dasharray="2 2"/><path d="M17 3v6M17 3.2h4.5l-1.3 1.7 1.3 1.7H17"/>',
     "app_screentime": '<rect x="6" y="2.5" width="12" height="19" rx="2"/><circle cx="12" cy="12" r="3.8"/><path d="M12 9.8V12l1.6 1.2M10.5 19h3"/>',
     "app_bft": '<circle cx="12" cy="12" r="8"/><path d="M12 6l3.5 9L12 13l-3.5 2z"/>',
     "app_intel": '<path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
