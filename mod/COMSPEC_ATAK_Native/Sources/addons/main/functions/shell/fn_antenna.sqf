@@ -1,5 +1,5 @@
 /*
-    Antennes d'extension de débit, vissées sur le port SMA de la coque (en haut à gauche).
+    Antennes d'extension de débit, vissées sur le port SMA de la coque (bord haut, à gauche ; bossage dessiné avec l'antenne).
     L'antenne doit être dans l'inventaire ; l'antenne montée est gardée sur le joueur (COMSPEC_ATAK_Antenna).
     Effet (fn_linkQuality) : débit de base multiplié et pertes du terrain, des bâtiments et du brouillage atténuées
     (facteur de liaison m devient m ^ exposant). Contourne l'antenne interne endommagée. Aucun effet sans signal du tout.
@@ -62,14 +62,23 @@ switch (_act) do {
         if (isNull _d || {_cur isEqualTo []}) exitWith { ctrlDelete _c; uiNamespace setVariable ["COMSPEC_ATAK_AntOverlay", []]; false };
         if (isNull _c || {(ctrlParent _c) isNotEqualTo _d}) then {
             ctrlDelete _c;
-            _c = _d ctrlCreate ["COMSPEC_RscPicture", -1];
+            // Image étirée sur son cadre, comme la coque (COMSPEC_RscPhone, style 48) : avec « garder les proportions »
+            // (COMSPEC_RscPicture), le moindre écart de rapport de pixels recentrait l'antenne dans son cadre très haut
+            // et elle flottait au-dessus de la coque, décalée du port.
+            _c = _d ctrlCreate ["COMSPEC_RscPhone", -1];
             _c ctrlEnable false;
             _c ctrlSetTextColor [1, 1, 1, 1];
         };
         private _l = [] call comspec_atak_native_fnc_layoutGet;
         private _land = _l get "landscape";
-        // Zone dessinée (gen_assets.py ANT_FRAME) en fractions du carré de la coque ; portrait = paysage tourné d'un quart.
-        (if (_land) then { [238, -832, 384, 1536] } else { [1344, 238, 1536, 384] }) params ["_fx", "_fy", "_fw", "_fh"];
+        // Zone dessinée (gen_assets.py ANT_FRAME) en pixels du carré de la coque ; portrait = paysage tourné d'un quart.
+        // Le port SMA est dessiné pour le S7 (x 430, y 632 en paysage) : décalage vers le bord haut de la coque de chaque
+        // autre modèle (mesuré sur tools/render/phone_<modèle>_front.png), pour que l'antenne parte du boîtier.
+        ((createHashMapFromArray [
+            ["rugged", [50, 124]], ["iphone", [20, 35]], ["sonim", [-50, -18]], ["tablet", [20, 33]], ["keys", [20, 33]],
+            ["plate", [0, -21]], ["flip", [-30, -71]], ["ribbed", [0, -21]]
+        ]) getOrDefault [_l getOrDefault ["model", "s7"], [0, 0]]) params ["_ox", "_oy"];
+        (if (_land) then { [238 + _ox, -832 + _oy, 384, 1536] } else { [1344 - _oy, 238 + _ox, 1536, 384] }) params ["_fx", "_fy", "_fw", "_fh"];
         (_l get "phone") params ["_px", "_py", "_pw", "_ph"];
         _c ctrlSetText ((format ["\z\comspec_atak_native\addons\main\data\antenna_%1_%2.paa", _cur select 0, ["port", "land"] select _land]) call comspec_atak_native_fnc_tr);
         _c ctrlSetPosition [_px + _pw * _fx / 2048, _py + _ph * _fy / 2048, _pw * _fw / 2048, _ph * _fh / 2048];
