@@ -87,7 +87,7 @@ class CfgFunctions {
             class dockServer {}; class dockVisual {}; class dockClient {}; class dockMenu {};
         };
         class camera { file="z\comspec_atak_native\addons\main\functions\camera";
-            class camAction {}; class camView {}; class pipCheck {};
+            class camAction {}; class camView {}; class pipCheck {}; class camShare {};
         };
         class pages { file="z\comspec_atak_native\addons\main\functions\pages";
             class chatSend {}; class taskAction {}; class briefingStep {}; class settingsSave {};
@@ -472,6 +472,13 @@ class CfgHints {
             displayNameShort = "$STR_COMSPEC_ATAK_CFG_E4E74278CD";
             description = "$STR_COMSPEC_ATAK_CFG_BF0FFB1714";
             image = "\z\comspec_atak_native\addons\main\data\app_waverelay.paa";
+            arguments[] = {};
+        };
+        class CameraShare {
+            displayName = "$STR_COMSPEC_ATAK_CFG_BF7BE30836";
+            displayNameShort = "$STR_COMSPEC_ATAK_CFG_146C6595D4";
+            description = "$STR_COMSPEC_ATAK_CFG_C9AF05C42B";
+            image = "\z\comspec_atak_native\addons\main\data\app_livecam.paa";
             arguments[] = {};
         };
         class ZeusControl {

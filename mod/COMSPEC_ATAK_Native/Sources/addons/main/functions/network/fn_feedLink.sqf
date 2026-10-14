@@ -9,7 +9,8 @@
                           texture en px, 0 si coupé), drop (part du temps où l'image décroche, 0-0.8),
                           up [kbit/s, perte, relais] de la source, down [kbit/s, perte, relais] du téléphone, why.
     Caméra fixe : elle passe en Wi-Fi par l'ATAK du camp le plus proche (portée comspec_atak_native_camera_range) ;
-    sa liaison montante est celle de ce téléphone.
+    sa liaison montante est celle de ce téléphone. Mon téléphone à portée de son Wi-Fi : liaison directe, sans réseau
+    (débit selon la distance), pour regarder une caméra partagée par NFC ou Bluetooth en coupure réseau.
 */
 params [["_mode", "eval"], ["_src", objNull]];
 private _mine = {
@@ -29,6 +30,23 @@ switch (_mode) do {
         true
     };
     default {
+        private _cr = missionNamespace getVariable ["comspec_atak_native_camera_range", 600];
+        if !(_cr isEqualType 0) then { _cr = 600; };
+        private _dd = if (_src isKindOf "COMSPEC_ATAK_CameraObj") then { player distance _src } else { 1e9 };
+        if (_dd < _cr) exitWith {
+            private _f = (_dd / _cr) ^ 2;
+            private _kbps = round (6000 * (1 - _f) max 300);
+            private _loss = round (25 * _f);
+            private _tier = switch (true) do {
+                case (_kbps >= 1800 && {_loss < 15}): { ["HD", 512, 0] };
+                case (_kbps >= 700): { ["SD", 256, 0.05] };
+                default { ["BAS", 128, 0.2] };
+            };
+            createHashMapFromArray [
+                ["kbps", _kbps], ["loss", _loss], ["tier", _tier select 0], ["res", _tier select 1],
+                ["drop", ((_tier select 2) + _loss / 150) min 0.8], ["up", [_kbps, _loss, "Wi-Fi"]], ["down", [_kbps, _loss, "Wi-Fi"]], ["why", ""]
+            ]
+        };
         private _down = call _mine;
         private _host = _src;
         if (_src isKindOf "COMSPEC_ATAK_CameraObj") then {
