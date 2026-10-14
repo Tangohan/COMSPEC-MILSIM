@@ -5,6 +5,11 @@
 */
 if (!hasInterface) exitWith {};
 
+// ATAK natif : connexion dans l’app Athena du téléphone, pas l’ancien écran Connexion Athena.
+if (!isNil "comspec_atak_native_fnc_athenaLink") exitWith {
+    ["show", true] call comspec_atak_native_fnc_athenaLink;
+};
+
 if (!isNil "comspec_overwatch_atak_athena_fnc_athena_authFocus"
     && {missionNamespace getVariable ["comspec_overwatch_atak_ui_only", true]}
 ) exitWith {
