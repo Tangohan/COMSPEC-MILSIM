@@ -369,6 +369,11 @@ private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 ["comspec_atak_native_plan_edit", "LIST",
     ["Plan de briefing : édition", "Qui peut dessiner sur le plan partagé du camp (app Plan). Les autres le voient et préparent leur brouillon, ajouté ensuite par un chef."],
     _team, [[0, 1, 2], ["Tout le monde", "Chefs de groupe, Zeus et admins", "Zeus et admins seulement"], 1], 1] call comspec_atak_native_fnc_addSetting;
+// App Plan : historique ANNULER / RÉTABLIR (ce que le serveur a changé pour moi) et salle collaborative créée.
+if (hasInterface) then {
+    ["comspec_atak_native_planDiff", { ["histPush", _this] call comspec_atak_native_fnc_planAction; }] call CBA_fnc_addEventHandler;
+    ["comspec_atak_native_planRoom", { ["roomJoin", _this param [0, ""]] call comspec_atak_native_fnc_planAction; }] call CBA_fnc_addEventHandler;
+};
 if (isServer) then {
     ["comspec_atak_native_planSrv", { _this call comspec_atak_native_fnc_planServer; }] call CBA_fnc_addEventHandler;
     // Le serveur a le mod : posé dès le preInit (aussi en solo et en partie hébergée), sans attendre XEH_postInitServer.
