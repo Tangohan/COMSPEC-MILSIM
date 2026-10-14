@@ -387,6 +387,45 @@ final class EmailService
         );
     }
 
+    public function sendPlanEndWarning(
+        string $to,
+        string $lang,
+        string $displayName,
+        string $tenantName,
+        string $planName,
+        string $kind,
+        string $endsAt,
+        bool $atakLost,
+        int $graceDays,
+        string $plansUrl,
+        int $tenantId
+    ): bool {
+        $copy = \App\Support\PlanAccessWindow::copy($lang, $tenantName, $planName, $kind, $endsAt, $atakLost, $graceDays);
+
+        return $this->sendTemplated(
+            EmailEvents::PLAN_END_WARNING,
+            'plan_end_warning',
+            $to,
+            $copy['subject'],
+            [
+                'displayName' => $displayName,
+                'tenantName' => $tenantName,
+                'planName' => $planName,
+                'kind' => $kind,
+                'endsAt' => $endsAt,
+                'atakLost' => $atakLost,
+                'graceDays' => $graceDays,
+                'plansUrl' => $plansUrl,
+                'lang' => $lang,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'plan_end_warning', 'kind' => $kind, 'ends_at' => $endsAt],
+            false,
+            $lang
+        );
+    }
+
     public function sendCommunityCreationChecklist(
         string $to,
         string $displayName,

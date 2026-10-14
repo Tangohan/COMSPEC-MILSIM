@@ -12,6 +12,7 @@ use App\Core\Session;
 use App\Repositories\PlanGiftRepository;
 use App\Repositories\SubscriptionPlanRepository;
 use App\Repositories\TenantRepository;
+use App\Services\Platform\PlanEndWarningService;
 use App\Services\Platform\PlanGiftService;
 use App\Support\PlanGift;
 
@@ -53,6 +54,16 @@ final class SystemPlanGiftsController
             $error ??= 'Les formules d’accès ne sont pas disponibles sur cette base.';
         }
 
+        $endWatch = ['ending' => [], 'grace' => [], 'gated' => []];
+        $endConfig = null;
+        try {
+            $endService = new PlanEndWarningService(null, $this->tenants, $this->plans);
+            $endConfig = $endService->config();
+            $endWatch = $endService->watchList();
+        } catch (\Throwable) {
+            $error ??= 'Le suivi des fins de formule n’est pas disponible sur cette base.';
+        }
+
         return Response::view('layout.main', [
             'title' => 'Formules offertes',
             'content' => 'admin.system.plan_gifts',
@@ -65,6 +76,9 @@ final class SystemPlanGiftsController
             'planGiftError' => $error,
             'planGiftDurations' => PlanGift::DURATIONS,
             'planGiftFormAction' => url('admin/formules-offertes'),
+            'planEndWatch' => $endWatch,
+            'planEndConfig' => $endConfig,
+            'planEndSettingsAction' => url('admin/formules-offertes/reglages'),
         ]);
     }
 
@@ -116,6 +130,30 @@ final class SystemPlanGiftsController
                 . ' gestionnaire(s) ; la fenêtre s’affichera à leur prochaine connexion.';
         }
         Session::flash('success', $msg);
+
+        return Response::redirect($back);
+    }
+
+    /** Réglages des fins de formule : avertissement (bandeau, e-mail) et période de grâce. */
+    public function saveSettings(Request $request, array $params = []): Response
+    {
+        $back = url('admin/formules-offertes') . '#fins-de-formule';
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($back);
+        }
+        try {
+            (new PlanEndWarningService())->saveConfig([
+                'grace_enabled' => $request->input('grace_enabled', ''),
+                'grace_days' => $request->input('grace_days', ''),
+                'warning_days' => $request->input('warning_days', ''),
+                'warning_email' => $request->input('warning_email', ''),
+            ]);
+            Session::flash('success', 'Réglages des fins de formule enregistrés.');
+        } catch (\Throwable) {
+            Session::flash('error', 'Les réglages n’ont pas pu être enregistrés (table platform_settings absente ?).');
+        }
 
         return Response::redirect($back);
     }

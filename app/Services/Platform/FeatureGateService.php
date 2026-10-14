@@ -12,6 +12,7 @@ use App\Repositories\TenantRepository;
 use App\Repositories\TenantUsageCounterRepository;
 use App\Repositories\TrainingCourseRepository;
 use App\Repositories\UserRepository;
+use App\Support\PlanAccessWindow;
 use App\Support\PlanGift;
 
 /**
@@ -28,6 +29,8 @@ final class FeatureGateService
         private CommunityEventRepository $communityEventRepository,
         private TrainingCourseRepository $trainingCourseRepository,
         private ?PlatformFeatureDeploymentEvaluator $deploymentEvaluator = null,
+        /** Jours de grâce imposés (tests) ; null = réglage plateforme. */
+        private ?int $graceDays = null,
     ) {}
 
     /**
@@ -52,7 +55,7 @@ final class FeatureGateService
             $features = [];
         }
         $base = !empty($features[$feature]) || $this->quotaConfigForFeature($plan, $feature) !== null;
-        if (!$base) {
+        if (!$base && !$this->graceAllows($tenant, $feature)) {
             return false;
         }
 
@@ -82,7 +85,7 @@ final class FeatureGateService
         }
 
         $allowed = !empty($features[$feature]) || $this->hasRemainingQuota($tenantId, $plan, $feature);
-        if (!$allowed) {
+        if (!$allowed && !$this->graceAllows($tenant, $feature)) {
             return false;
         }
 
@@ -228,6 +231,28 @@ final class FeatureGateService
     {
         // Formule offerte en cours > abonnement actif > essai fondateur Pro > formule de base (voir PlanGift).
         return PlanGift::effectivePlanSlug($tenant);
+    }
+
+    /**
+     * Période de grâce (réglage plateforme, désactivée par défaut) : pendant N jours après la fin d'un essai
+     * fondateur ou d'une formule offerte, les modules de la formule terminée restent ouverts.
+     *
+     * @param array<string, mixed> $tenant
+     */
+    private function graceAllows(array $tenant, string $feature): bool
+    {
+        $days = $this->graceDays ?? PlanEndWarningService::cachedGraceDays();
+        $grace = PlanAccessWindow::grace($tenant, $days);
+        if ($grace === null) {
+            return false;
+        }
+        $plan = $this->planRepository->findBySlug($grace['plan_slug']);
+        if (!$plan) {
+            return false;
+        }
+        $features = json_decode((string) ($plan['features_json'] ?? '{}'), true);
+
+        return is_array($features) && !empty($features[$feature]);
     }
 
     /** Paiement en retard : accès réduit, sauf si une formule offerte court. */

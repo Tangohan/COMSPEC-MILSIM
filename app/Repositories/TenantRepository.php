@@ -587,10 +587,32 @@ SQL;
                 // Formule réellement appliquée (formule offerte, essai fondateur) : c'est elle que l'annuaire affiche.
                 'effective_plan_slug' => \App\Support\PlanGift::effectivePlanSlug($row),
                 'plan_gift' => \App\Support\PlanGift::activeFromSettings($row['settings'] ?? null),
+                // Seules les clés utiles aux fins de formule (essai fondateur, formule offerte même terminée).
+                'plan_window' => self::planWindowSettings($row['settings'] ?? null),
             ];
         }
 
         return $out;
+    }
+
+    /**
+     * @return array{founder_trial_ends_at: ?string, plan_gift: ?array<string, mixed>, plan_end_warning_sent: ?string}
+     */
+    private static function planWindowSettings(mixed $raw): array
+    {
+        $s = is_string($raw) && trim($raw) !== '' ? json_decode($raw, true) : (is_array($raw) ? $raw : []);
+        if (!is_array($s)) {
+            $s = [];
+        }
+        $trial = $s['founder_trial_ends_at'] ?? null;
+        $gift = $s[\App\Support\PlanGift::SETTINGS_KEY] ?? null;
+        $warned = $s[\App\Support\PlanAccessWindow::WARNED_KEY] ?? null;
+
+        return [
+            'founder_trial_ends_at' => is_string($trial) && $trial !== '' ? $trial : null,
+            'plan_gift' => is_array($gift) ? $gift : null,
+            'plan_end_warning_sent' => is_string($warned) ? $warned : null,
+        ];
     }
 
     /**
