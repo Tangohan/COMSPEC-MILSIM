@@ -38,6 +38,31 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Appareil photo : le téléphone dans la main, selfie face au visage (ATAK natif 1.97.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le téléphone est enfin dans ta main quand tu prends une photo
+- En mode photo, ton personnage tient son téléphone (le S7 par défaut, ou le modèle choisi) devant lui au lieu d'une main vide qui pointe.
+- La photo part de l'objectif au dos du téléphone : ni la main ni le téléphone ne cachent l'image.
+- En selfie, l'objectif se place face à ton visage, même si ta tête regardait ailleurs en entrant : plus de selfie de l'arrière du casque.
+EN : Your phone is finally in your hand when you take a photo
+- In photo mode, your character holds the phone (the S7 by default, or the model you picked) in front of them instead of an empty pointing hand.
+- The photo is taken from the lens on the back of the phone: neither the hand nor the phone hides the picture.
+- In selfie mode, the lens moves in front of your face even if your head was looking elsewhere: no more selfies of the back of your helmet.
+
+### Détail technique
+Non testé en jeu. Pas de DLL à recompiler. Version provisoire : le regroupement la renumérote.
+- `fn_gestureSelfie` : mode `photo` = même pose que le selfie (bras tendu, téléphone du profil accroché à la main droite) ; mode `rear` = position de l'objectif arrière (dos du téléphone).
+- `fn_photoMode` : objectif arrière placé sur le téléphone tenu en main (caméra scriptée même sans zoom, visée à la souris comme au zoom). Réglage CBA « Animation de l'appareil photo » : défaut `comspec_atak_native_fnc_gestureSelfie` ; l'ancienne valeur `gesturePoint` est reprise comme le nouveau défaut.
+- Selfie (`lens`) : on ne peut pas tourner la tête d'un joueur par script, donc l'objectif suit la tête. Orientation lue sur l'os `head` (`selectionVectorDirAndUp`, repli `eyeDirection`), site borné à -35°/+50°. Tête à moins de 12° du téléphone : objectif sur le téléphone ; au-delà, glisse vers l'axe du visage (complet à 30°). Journal `[PHOTO] Selfie : visage à X° du téléphone…` toutes les 3 s.
+
+À vérifier en jeu :
+- Mode photo (objectif arrière) : le S7 est dans la main droite, bien orienté (écran vers soi), et l'image n'est pas masquée par la main ou le téléphone ; visée et zoom à la souris.
+- Autre joueur : voit le téléphone dans la main pendant la photo, puis le téléphone disparaît à la sortie.
+- Selfie en entrant tête baissée ou tournée : le visage est cadré de face. Relever la ligne `Selfie : visage à …` du journal si ce n'est pas le cas (elle dit si l'orientation vient de l'os de la tête ou du regard).
+- Passage photo ↔ selfie (R) sans que le bras retombe ; sortie (Espace) : bras baissé, arme reprise.
+
 ## Objets d'inventaire en vraie 3D, pylônes relais retravaillés jour et nuit (ATAK natif 1.94.0)
 
 ### Résumé joueur
