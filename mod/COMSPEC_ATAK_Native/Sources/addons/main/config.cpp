@@ -312,6 +312,10 @@ class CfgVehicles {
         model="\z\comspec_atak_native\addons\main\data\jpc_iphone.p3d";
         hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_iphone_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
     };
+    class COMSPEC_ATAK_JpcPhone_sonim: COMSPEC_ATAK_JpcPhone_s7 {
+        model="\z\comspec_atak_native\addons\main\data\jpc_sonim.p3d";
+        hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_sonim_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};
+    };
     class COMSPEC_ATAK_JpcPhone_plate: COMSPEC_ATAK_JpcPhone_s7 {
         model="\z\comspec_atak_native\addons\main\data\jpc_plate.p3d";
         hiddenSelectionsTextures[]={"\z\comspec_atak_native\addons\main\data\jpc_plate_ca.paa","#(argb,8,8,3)color(0,0,0,1)"};

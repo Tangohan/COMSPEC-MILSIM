@@ -4,6 +4,8 @@ Coques photo du terminal ATAK (images fournies par TTRD, 2026-10-14) à la place
   iphone        V2 ENHANCED   Samsung S7 en coque durcie OPENA, fixation et câble (src/frame_v2_enhanced.png)
   rugged        XIAOMI X3D    cadre tactique Bunker Supply, très allongé (src/frame_xiaomi_x3d.png)
   keys, tablet  TABLETTE      tablette durcie, la sélectionnable et celle des véhicules (src/frame_tablette.png)
+  sonim         SONIM XP8     Sonim durci et radio maillée goTenna Pro clipsée au dos, qui dépasse en haut
+                              (src/frame_sonim.png : téléphone à gauche, goTenna de face puis côté clip à droite)
 Les identifiants restent ceux des anciens modèles : un profil qui a gardé « iphone » ou « rugged » ne casse pas.
 
 Chaque photo garde ses proportions : l'ouverture de l'écran n'est donc plus la même pour tous les modèles. La photo
@@ -13,7 +15,7 @@ fn_layoutGet (SCREEN, écran paysage par modèle) et les écrit dans render/fram
 
     python3 frame_photos.py            # écrit render/phone_<modèle>_front.png et _back.png
     python3 gen_assets.py <hemtt> models    # puis les PAA (paysage, portrait, nuit, dos)
-    python3 gen_dirt.py <hemtt> case iphone rugged keys tablet
+    python3 gen_dirt.py <hemtt> case iphone rugged sonim keys tablet
 
 Dos : miroir de la face (même silhouette une fois retournée), l'intérieur de la coque remplacé par un panneau en
 polymère sombre avec le module photo ; les marquages de la coque (OPENA, BUNKER SUPPLY) sont remis à l'endroit.
@@ -36,7 +38,30 @@ FRAMES = {
     "rugged": ("frame_xiaomi_x3d.png", (186, 106, 1460, 593, 34), [(92, 150, 160, 550)]),
     "keys": ("frame_tablette.png", (160, 104, 1523, 794, 30), []),
     "tablet": ("frame_tablette.png", (160, 104, 1523, 794, 30), []),
+    "sonim": ("frame_sonim.png", (58, 117, 1130, 696, 40), []),  # panneau en px de la photo assemblée
 }
+# Photos à assembler : (boîte du téléphone, [(boîte de l'accessoire vu de face, vu de dos, position dans la boîte du
+# téléphone)]) ; l'accessoire passe derrière le téléphone (clipsé au dos), le dos montre son côté clip.
+COMPOSE = {
+    "sonim": ((34, 37, 1198, 667), [((1254, 213, 2137, 323), (1254, 392, 2137, 503), (240, -78))]),
+}
+
+
+def compose(photo, model):
+    """Téléphone recadré, accessoires posés derrière ; renvoie la face et la base du dos (accessoire côté clip)."""
+    if model not in COMPOSE:
+        return photo, photo
+    box, extras = COMPOSE[model]
+    phone = photo.crop(box)
+    top = max([0] + [-pos[1] for _, _, pos in extras])
+    out = []
+    for side in (0, 1):
+        img = Image.new("RGBA", (phone.width, phone.height + top), (0, 0, 0, 0))
+        for front, back, (x, y) in extras:
+            img.alpha_composite(photo.crop((front, back)[side]), (x, y + top))
+        img.alpha_composite(phone, (0, top))
+        out.append(img)
+    return out[0], out[1]
 
 
 def clean(img):
@@ -93,7 +118,7 @@ def back_panel(w, h, r):
 
 def build(model):
     name, panel, labels = FRAMES[model]
-    photo = clean(Image.open(os.path.join(SRC, name)).convert("RGBA"))
+    photo, back_base = compose(clean(Image.open(os.path.join(SRC, name)).convert("RGBA")), model)
     hx0, hy0, hx1, hy1 = hole_bbox(photo)
     s = HOLE_W / (hx1 - hx0)
     w, h = round(photo.width * s), round(photo.height * s)
@@ -109,7 +134,7 @@ def build(model):
     vis = [vis[0] / SIZE, vis[1] / SIZE, vis[2] / SIZE, vis[3] / SIZE]
 
     # Dos : face retournée, intérieur remplacé par le panneau, marquages remis à l'endroit.
-    back_src = photo.copy()
+    back_src = back_base.copy()
     px0, py0, px1, py1, pr = panel
     pnl = back_panel(px1 - px0, py1 - py0, pr)
     back_src.alpha_composite(pnl, (px0, py0))

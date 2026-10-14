@@ -359,7 +359,7 @@ final class QuickPictureDiscordEmbed
     ];
 
     /** Modèles de téléphone de l'ATAK natif (profil COMSPEC_ATAK_PhoneModel). */
-    private const PHONE_MODELS = ['s7' => 'Samsung Galaxy S7', 'rugged' => 'Xiaomi X3D', 'iphone' => 'Samsung S7 V2 Enhanced', 'keys' => 'Tablette durcie'];
+    private const PHONE_MODELS = ['s7' => 'Samsung Galaxy S7', 'rugged' => 'Xiaomi X3D', 'iphone' => 'Samsung S7 V2 Enhanced', 'sonim' => 'Sonim XP8 + goTenna Pro', 'keys' => 'Tablette durcie'];
 
     /**
      * « clé=valeur|clé=valeur » envoyé par le jeu → tableau des clés connues (valeurs nettoyées, 120 caractères).

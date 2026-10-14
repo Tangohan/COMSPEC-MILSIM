@@ -24,13 +24,14 @@ DATA = os.path.join(HERE, "..", "Sources", "addons", "main", "data")
 TEX_PREFIX = "z\\comspec_atak_native\\addons\\main\\data\\"
 HOLE = (455, 716, 1547, 1334)  # écran commun (bords extérieurs du trou des coques)
 # Photos de frame_photos.py (render/frame_screens.json) : ouverture propre, même largeur que l'écran commun.
-HOLES = {"iphone": (455, 760, 1547, 1290), "rugged": (454, 820, 1546, 1229)}
+HOLES = {"iphone": (455, 760, 1547, 1290), "rugged": (454, 820, 1546, 1229), "sonim": (455, 712, 1547, 1337)}
 # modèle : (rectangle du corps, rectangle recadré dans l'atlas, rayon des coins en pixels) — mêmes valeurs que
 # gen_assets.JPC_PHONES (corps mesuré sur l'alpha des rendus, recadrage = boîte englobante avec fixations).
 PHONES = {
     "s7": ((270, 630, 1720, 1425), (206, 569, 1901, 1752), 90),
     "rugged": ((372, 751, 1638, 1301), (369, 721, 1641, 1501), 40),
     "iphone": ((248, 667, 1738, 1385), (212, 629, 1962, 1647), 70),
+    "sonim": ((236, 617, 1760, 1433), (223, 503, 1764, 1440), 50),
     "plate": ((150, 610, 1897, 1429), (145, 605, 1903, 1645), 40),
     "flip": ((200, 550, 1847, 1453), (195, 543, 1853, 1459), 50),
     "ribbed": ((245, 610, 1802, 1429), (240, 605, 1808, 1435), 70),

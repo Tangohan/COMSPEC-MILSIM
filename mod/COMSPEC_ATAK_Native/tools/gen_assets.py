@@ -1349,7 +1349,7 @@ def nvgfilter_item(size=256):
 
 
 # --- Autres modèles (render_phones.py) : même ouverture d'écran que le S7 (x 455..1546, y 716..1333) ---
-PHONE_MODELS = ["rugged", "iphone", "tablet", "keys", "plate", "flip", "ribbed"]
+PHONE_MODELS = ["rugged", "iphone", "sonim", "tablet", "keys", "plate", "flip", "ribbed"]
 
 
 def _hole(model):
@@ -1703,6 +1703,7 @@ JPC_PHONES = {
     "s7": (206, 569, 1901, 1752),
     "rugged": (369, 721, 1641, 1501),
     "iphone": (212, 629, 1962, 1647),
+    "sonim": (223, 503, 1764, 1440),
     "plate": (145, 605, 1903, 1645),
     "flip": (195, 543, 1853, 1459),
     "ribbed": (240, 605, 1808, 1435),
@@ -1900,9 +1901,9 @@ def main():
             jpc_rvmats()
             return
         # « cases » : coques de référence (support JPC, étui multicam, coque nervurée).
-        # « frames » : coques photo de frame_photos.py (V2 Enhanced, Xiaomi X3D, tablettes) et icône du kit véhicule.
+        # « frames » : coques photo de frame_photos.py (V2 Enhanced, Xiaomi X3D, Sonim, tablettes) et icône du kit véhicule.
         if len(sys.argv) > 2 and sys.argv[2] == "frames":
-            model_assets(tmp, only=["iphone", "rugged", "keys", "tablet"])
+            model_assets(tmp, only=["iphone", "rugged", "sonim", "keys", "tablet"])
             vehiclekit_item(tmp)
             return
         if len(sys.argv) > 2 and sys.argv[2] == "cases":
