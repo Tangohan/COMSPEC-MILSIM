@@ -10,6 +10,12 @@ use PDO;
 
 class TenantMessageRepository
 {
+    /**
+     * Fil non lu pour le membre « tu » : un message d’une autre personne posté après sa dernière lecture.
+     * Règle unique pour les badges, la messagerie, la boîte de réception et JNET.
+     */
+    private const UNREAD_PREDICATE = "EXISTS (SELECT 1 FROM tenant_messages um WHERE um.thread_id = t.id AND um.sender_user_id <> tu.user_id AND um.created_at > COALESCE(tu.last_read_at, '1970-01-01'))";
+
     private PDO $pdo;
 
     public function __construct()
@@ -190,7 +196,11 @@ class TenantMessageRepository
                 (SELECT body FROM tenant_messages WHERE thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_preview,
                 (SELECT sender_user_id FROM tenant_messages WHERE thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_sender_id,
                 tu.last_read_at,
-                (t.updated_at > COALESCE(tu.last_read_at, '1970-01-01')) AS thread_unread
+                EXISTS (
+                    SELECT 1 FROM tenant_messages um
+                    WHERE um.thread_id = t.id AND um.sender_user_id <> tu.user_id
+                      AND um.created_at > COALESCE(tu.last_read_at, '1970-01-01')
+                ) AS thread_unread
                 FROM tenant_message_threads t
                 INNER JOIN tenant_message_thread_users tu ON tu.thread_id = t.id AND tu.user_id = ?
                 WHERE t.tenant_id = ?
@@ -215,7 +225,7 @@ class TenantMessageRepository
             $stmt = $this->pdo->prepare(
                 'SELECT t.id, t.subject, t.created_at, t.updated_at,
                 (SELECT body FROM tenant_messages WHERE thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_preview,
-                (t.updated_at > COALESCE(tu.last_read_at, \'1970-01-01\')) AS has_unread
+                ' . self::UNREAD_PREDICATE . ' AS has_unread
                 FROM tenant_message_threads t
                 INNER JOIN tenant_message_thread_users tu ON tu.thread_id = t.id AND tu.user_id = ?
                 WHERE t.tenant_id = ?
@@ -388,6 +398,10 @@ class TenantMessageRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * Fils non lus : au moins un message d’une autre personne posté après la dernière lecture.
+     * Même règle que listInboxThreadsForUser() (page Messagerie) et que la boîte de réception.
+     */
     public function unreadCountForUser(int $tenantId, int $userId): int
     {
         try {
@@ -395,7 +409,11 @@ class TenantMessageRepository
                 'SELECT COUNT(*) FROM tenant_message_threads t
                 INNER JOIN tenant_message_thread_users tu ON tu.thread_id = t.id AND tu.user_id = ?
                 WHERE t.tenant_id = ?
-                AND t.updated_at > COALESCE(tu.last_read_at, \'1970-01-01\')'
+                AND EXISTS (
+                    SELECT 1 FROM tenant_messages um
+                    WHERE um.thread_id = t.id AND um.sender_user_id <> tu.user_id
+                      AND um.created_at > COALESCE(tu.last_read_at, \'1970-01-01\')
+                )'
             );
             $stmt->execute([$userId, $tenantId]);
 
@@ -451,7 +469,7 @@ class TenantMessageRepository
         $metaSelect = $meta ? 't.precedence, t.recipients_summary, t.origin,' : '';
         $where = '';
         if ($box === 'unread') {
-            $where = " AND t.updated_at > COALESCE(tu.last_read_at, '1970-01-01')";
+            $where = ' AND ' . self::UNREAD_PREDICATE;
         } elseif ($box === 'sent') {
             $where = ' AND EXISTS (SELECT 1 FROM tenant_messages ms WHERE ms.thread_id = t.id AND ms.sender_user_id = tu.user_id)';
         }
@@ -463,7 +481,7 @@ class TenantMessageRepository
                 (SELECT sender_user_id FROM tenant_messages WHERE thread_id = t.id ORDER BY id DESC LIMIT 1) AS last_sender_id,
                 (SELECT COUNT(*) FROM tenant_messages WHERE thread_id = t.id) AS message_count,
                 (SELECT COUNT(*) FROM tenant_message_thread_users WHERE thread_id = t.id) AS participant_count,
-                (t.updated_at > COALESCE(tu.last_read_at, '1970-01-01')) AS has_unread
+                " . self::UNREAD_PREDICATE . " AS has_unread
                 FROM tenant_message_threads t
                 INNER JOIN tenant_message_thread_users tu ON tu.thread_id = t.id AND tu.user_id = ?
                 WHERE t.tenant_id = ?{$where}

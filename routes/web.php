@@ -484,6 +484,15 @@ return function (Router $router) {
     $router->get('/api/portal/search', [PortalSearchController::class, 'apiSearch'], [AuthMiddleware::class]);
     $router->get('/api/back-office/search', [\App\Controllers\Admin\Organization\BackOfficeSearchController::class, 'api'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/hub', [HubController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/hub/comparer', [HubController::class, 'compare'], [AuthMiddleware::class]);
+    $router->get('/hub/c/{slug}', [HubController::class, 'community'], [AuthMiddleware::class]);
+    $router->post('/hub/c/{slug}/recommander', [HubController::class, 'recommend'], [AuthMiddleware::class]);
+    $router->post('/hub/avis', [HubController::class, 'review'], [AuthMiddleware::class]);
+    $router->get('/hub/bourse', [HubController::class, 'board'], [AuthMiddleware::class]);
+    $router->post('/hub/bourse', [HubController::class, 'boardStore'], [AuthMiddleware::class]);
+    $router->post('/hub/bourse/{id}/repondre', [HubController::class, 'boardRespond'], [AuthMiddleware::class]);
+    $router->post('/hub/bourse/{id}/cloturer', [HubController::class, 'boardClose'], [AuthMiddleware::class]);
+    $router->post('/hub/bourse/reponses/{id}', [HubController::class, 'boardDecide'], [AuthMiddleware::class]);
     $router->get('/operations', [OperationWorkspaceController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/operations', [OperationWorkspaceController::class, 'store'], [AuthMiddleware::class]);
     $router->get('/operations/{uuid}', [OperationWorkspaceController::class, 'show'], [AuthMiddleware::class]);
@@ -512,6 +521,7 @@ return function (Router $router) {
     $router->post('/pointage/check-in', [PointageController::class, 'checkIn'], [AuthMiddleware::class]);
     $router->get('/manoeuvres', [PointageController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/boite-reception', [InboxController::class, 'index'], [AuthMiddleware::class]);
+    $router->post('/boite-reception/lu', [InboxController::class, 'markRead'], [AuthMiddleware::class]);
     $router->get('/onboarding', [OnboardingController::class, 'index'], [AuthMiddleware::class]);
     $router->post('/onboarding/persona', [OnboardingController::class, 'choosePersona'], [AuthMiddleware::class]);
     $router->post('/onboarding/step', [OnboardingController::class, 'toggleStep'], [AuthMiddleware::class]);
@@ -1112,10 +1122,12 @@ return function (Router $router) {
     $router->get('/admin/musique', [MusicAdminController::class, 'platform'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/musique/actions', [MusicAdminController::class, 'platformBulk'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/musique/envoyer', [MusicAdminController::class, 'platformUpload'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/musique/doublons', [MusicAdminController::class, 'platformDuplicates'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/musique/playlists/{id}/supprimer', [MusicAdminController::class, 'platformPlaylistDelete'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/back-office/ressources/musique', [MusicAdminController::class, 'tenant'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/musique/actions', [MusicAdminController::class, 'tenantBulk'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/musique/envoyer', [MusicAdminController::class, 'tenantUpload'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/ressources/musique/doublons', [MusicAdminController::class, 'tenantDuplicates'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ressources/musique/playlists/{id}/supprimer', [MusicAdminController::class, 'tenantPlaylistDelete'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/playlists/{id}/ajouter', [MusicLibraryController::class, 'playlistAdd'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ma-situation/musique/playlists/{id}/retirer', [MusicLibraryController::class, 'playlistRemove'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
