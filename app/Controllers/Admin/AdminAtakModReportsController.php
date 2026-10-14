@@ -10,6 +10,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\AtakModReportRepository;
 use App\Services\Auth\AuthService;
+use App\Services\Monitoring\AtakModReportDiscordTicketService;
 use App\Services\Monitoring\AtakModReportGravity as Gravity;
 use App\Services\Monitoring\AtakModReportReplyService;
 
@@ -80,6 +81,7 @@ final class AdminAtakModReportsController
         $id = (int) $request->input('report_id');
         $status = (string) $request->input('workflow_status');
         if ($this->modReportRepository->updateWorkflowStatus($id, $status)) {
+            $this->discordStatus([$id], $status);
             $label = AtakModReportRepository::statusLabel(
                 $this->modReportRepository->normalizeWorkflowStatus($status)
             );
@@ -99,6 +101,7 @@ final class AdminAtakModReportsController
 
         $id = (int) $request->input('report_id');
         if ($this->modReportRepository->deleteById($id)) {
+            $this->discordDeleted([$id]);
             Session::flash('success', 'Rapport supprimé.');
         } else {
             Session::flash('error', 'Rapport introuvable.');
@@ -172,6 +175,7 @@ final class AdminAtakModReportsController
         $status = self::BULK_ACTIONS[$action];
         if ($status === null) {
             $n = $this->modReportRepository->deleteMany($ids);
+            $this->discordDeleted($ids);
             Session::flash('success', $n . ' rapport(s) supprimé(s).');
 
             return $this->back($request);
@@ -180,6 +184,7 @@ final class AdminAtakModReportsController
         $notify = $status === AtakModReportRepository::STATUS_FIXED && (string) $request->input('notify', '') === '1';
         $reports = $notify ? $this->modReportRepository->findByIds($ids) : [];
         $n = $this->modReportRepository->updateWorkflowStatusMany($ids, $status);
+        $this->discordStatus($ids, $status);
         $msg = $n . ' rapport(s) passé(s) en « ' . AtakModReportRepository::statusLabel($status) . ' ».';
         if ($n < count($ids)) {
             $msg .= ' ' . (count($ids) - $n) . ' l’étaient déjà.';
@@ -228,9 +233,10 @@ final class AdminAtakModReportsController
             $this->adminName()
         );
 
+        $this->discordReply($id, $message, $result);
         $after = (string) $request->input('then_status', '');
-        if ($after !== '') {
-            $this->modReportRepository->updateWorkflowStatus($id, $after);
+        if ($after !== '' && $this->modReportRepository->updateWorkflowStatus($id, $after)) {
+            $this->discordStatus([$id], $after);
         }
 
         $sent = [];
@@ -249,6 +255,29 @@ final class AdminAtakModReportsController
         }
 
         return $this->back($request, $id);
+    }
+
+    /** @param list<int> $ids */
+    private function discordStatus(array $ids, string $status): void
+    {
+        $status = $this->modReportRepository->normalizeWorkflowStatus($status);
+        $by = $this->adminName();
+        AtakModReportDiscordTicketService::defer(static fn (AtakModReportDiscordTicketService $t) => $t->onStatusChanged($ids, $status, $by));
+    }
+
+    /** @param list<int> $ids */
+    private function discordDeleted(array $ids): void
+    {
+        $by = $this->adminName();
+        AtakModReportDiscordTicketService::defer(static fn (AtakModReportDiscordTicketService $t) => $t->onDeleted($ids, $by));
+    }
+
+    /** @param array<string, mixed> $result */
+    private function discordReply(int $id, string $message, array $result): void
+    {
+        $by = $this->adminName();
+        $channels = array_keys(array_filter(['site' => !empty($result['site']), 'email' => !empty($result['email'])]));
+        AtakModReportDiscordTicketService::defer(static fn (AtakModReportDiscordTicketService $t) => $t->onReply($id, $message, $by, $channels));
     }
 
     private function replies(): AtakModReportReplyService
