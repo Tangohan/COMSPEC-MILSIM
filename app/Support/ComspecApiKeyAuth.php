@@ -369,7 +369,7 @@ final class ComspecApiKeyAuth
         if ($row === null) {
             return false;
         }
-        if (strtotime((string) ($row['expires_at'] ?? '')) < time()) {
+        if (UtcDateTime::isPast($row['expires_at'] ?? null)) {
             return false;
         }
         $tid = (int) ($row['tenant_id'] ?? 0);
