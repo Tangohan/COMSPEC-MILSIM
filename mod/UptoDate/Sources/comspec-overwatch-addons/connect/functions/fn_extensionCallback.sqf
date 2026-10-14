@@ -556,10 +556,9 @@ switch (_function) do {
         if ((_path find "terrain") >= 0) then {
             missionNamespace setVariable ["COMSPEC_TerrainAbort", true, false];
         };
-        // 401 / 403 / 429 / 502 / 503 / 504 / coupure : WARN, pas ERROR spam ni rapport automatique.
-        // 502 / 504 = passerelle nginx (PHP-FPM rechargé au déploiement, délai) : la DLL réessaie seule.
+        // 401 / 403 / 429 / 503 / coupure : WARN, pas ERROR spam.
         private _phase = if (
-            (_code in ["0", "-1", "401", "403", "429", "502", "503", "504"])
+            (_code in ["0", "-1", "401", "403", "429", "503"])
         ) then { "warn" } else { "fail" };
         private _summary = format ["code %1 · %2 (il y a %3 s)", _code, _label, _age];
         if (_detail isNotEqualTo "") then { _summary = format ["%1 — %2", _summary, _detail]; };

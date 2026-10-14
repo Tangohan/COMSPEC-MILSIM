@@ -33,8 +33,7 @@ private _snapshot = [
     format ["ace_menus=%1", missionNamespace getVariable ["comspec_overwatch_ace_menus", false]],
     format ["log_level=%1", missionNamespace getVariable ["comspec_overwatch_log_level", 3]],
     format ["linkState=%1", missionNamespace getVariable ["COMSPEC_LinkState", "?"]],
-    // Le dump « boot » part à CBA_settingsInitialized, avant le handshake Athena : false y est normal.
-    format ["athenaReady=%1%2", missionNamespace getVariable ["COMSPEC_AthenaReady", false], ["", " (avant le handshake : normal au démarrage)"] select (_reason isEqualTo "boot" && {!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])})],
+    format ["athenaReady=%1", missionNamespace getVariable ["COMSPEC_AthenaReady", false]],
     format ["extOk=%1 code=%2 ping=%3", _extOk, _extCode, _ping],
     format ["mavic_setting_enableConnectionDistance isNil=%1 val=%2", isNil "mavic_setting_enableConnectionDistance", missionNamespace getVariable ["mavic_setting_enableConnectionDistance", "NIL"]],
     format ["mavic_setting_maxConnectionDistance isNil=%1 val=%2", isNil "mavic_setting_maxConnectionDistance", missionNamespace getVariable ["mavic_setting_maxConnectionDistance", "NIL"]],

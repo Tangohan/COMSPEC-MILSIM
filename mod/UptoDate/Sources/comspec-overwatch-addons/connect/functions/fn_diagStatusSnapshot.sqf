@@ -59,13 +59,7 @@ if (_host isEqualTo "") then { _host = "inconnue"; };
 
 private _ow = getText (configFile >> "CfgPatches" >> "comspec_overwatch_connect" >> "versionStr");
 if (_ow isEqualTo "") then { _ow = "—"; };
-// Ancienne surcouche ATAK Athena (gelée) : souvent absente. On affiche alors l'ATAK natif chargé à la place.
 private _ath = getText (configFile >> "CfgPatches" >> "comspec_overwatch_atak_athena" >> "versionStr");
-private _athLabel = "Athena";
-if (_ath isEqualTo "") then {
-    _ath = getText (configFile >> "CfgPatches" >> "comspec_atak_native_main" >> "versionStr");
-    if (_ath isNotEqualTo "") then { _athLabel = "ATAK natif"; };
-};
 if (_ath isEqualTo "") then { _ath = "—"; };
 private _extVer = missionNamespace getVariable ["COMSPEC_ExtVersionCached", ""];
 if (_extVer isEqualTo "") then {
@@ -111,7 +105,7 @@ if (_linked) then {
 
 private _debit = format ["%1 ko/s", _rateKo];
 private _total = format ["%1 envois · %2 ko reçus", round _sent, _totalInKo];
-private _mods = format ["Overwatch %1 · %2 %3 · liaison %4", _ow, _athLabel, _ath, _extVer];
+private _mods = format ["Overwatch %1 · Athena %2 · liaison %3", _ow, _ath, _extVer];
 private _returns = format [
     "messages %1 · marqueurs %2 · ordres %3 · formes %4",
     ["messages"] call _fnCount,
