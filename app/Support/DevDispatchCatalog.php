@@ -293,6 +293,17 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(757, '2026-10-14', 'JNET : les reco du jeu remontent dans l’espace de l’unité', 'Les notes de reco, photos et rapports envoyés depuis l’ATAK en jeu arrivent désormais dans JNET. Chacun devient un échange de l’unité de l’opérateur, remonté vers son échelon supérieur : la chaîne de commandement le voit dans « Remonté » et dans le flux commun. Une reco modifiée en jeu met à jour son échange. Les photos confidentielles ou liées au bureau SSE ne montrent jamais l’image, seulement un lien d’ouverture sur Athena. Rechargez le portail (Ctrl+F5).', [
+                'Reco, photos et rapports ATAK (Contact, SALUTE, BDA, FRAGO…) relayés dans l’espace JNET de l’unité',
+                'Badge d’origine « Reco terrain », « Photo terrain » ou « Rapport ATAK », vignette de la photo et lien vers la carte',
+                'Un FRAGO envoyé du jeu descend vers les sous-unités, avec accusé de lecture',
+                'Réglage « Reco terrain → JNET » dans les modules ATAK pour couper le relais',
+            ], [
+                'Membres d’une unité en liste compacte (photo, grade, fonction)',
+                'En-tête des échanges sur deux lignes, plus lisible dans les colonnes étroites',
+            ], [], ['atak', 'command'], [
+                'Envoyez une note de reco ou une photo depuis l’ATAK en jeu, puis ouvrez JNET → l’espace de votre unité : elle apparaît dans « Remonté ». Votre échelon supérieur la voit aussi. Un joueur sans compte Athena lié ou sans unité n’est pas relayé.',
+            ], 'Portail Athena'),
             $pr(756, '2026-10-02', 'Compétences : les organisations créent leurs modules et valident leurs membres', 'Le parcours compétences ALPHA → DELTA n’était alimenté par aucun écran : aucune organisation ne pouvait créer de module ni enregistrer une validation. Le pilotage des formations gagne une rubrique Compétences : créer et modifier les modules par phase, fixer les prérequis et le renouvellement, puis valider les membres module par module. La page « Mon parcours compétences » est refaite : progression globale, frise des phases, modules avec statut, prérequis et échéances. Rechargez le portail (Ctrl+F5).', [
                 'Pilotage des formations → Compétences : modules ALPHA, BRAVO, CHARLIE, DELTA',
                 'Prérequis entre modules (boucles refusées) et renouvellement en jours',

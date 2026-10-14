@@ -398,6 +398,11 @@ final class JnetSpaceService
                 'authorInitials' => (string) ($byUserId[(int) $r['author_user_id']]['initials'] ?? mb_strtoupper(mb_substr($author !== '' ? $author : 'M', 0, 2))),
                 'authorHref' => isset($byUserId[(int) $r['author_user_id']]) ? url('jnet/personnel/' . (int) $r['author_user_id']) : '',
                 'requiresAck' => (bool) $r['requires_ack'],
+                'source' => (string) ($r['source_kind'] ?? ''),
+                'sourceLabel' => JnetFieldReportBridge::SOURCE_LABELS[(string) ($r['source_kind'] ?? '')] ?? '',
+                'image' => trim((string) ($r['image_url'] ?? '')),
+                'protectedImage' => ($r['source_kind'] ?? '') === JnetFieldReportBridge::SOURCE_IMAGE
+                    && trim((string) ($r['image_url'] ?? '')) === '',
                 'audience' => count($audience),
                 'readCount' => $readCount,
                 'readByMe' => isset($readSet[$viewerUserId]),

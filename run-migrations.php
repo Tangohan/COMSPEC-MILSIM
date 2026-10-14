@@ -2398,6 +2398,14 @@ try {
     $migrationRunner->warn('units_public_dates', $e);
 }
 
+$jnetExchangesSourceMigrate = require $root . '/bootstrap/jnet_exchanges_source_migration.php';
+try {
+    echo "Migration JNET (origine des échanges : reco, photos et rapports du jeu)...\n";
+    $jnetExchangesSourceMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] jnet_exchanges_source : ' . $e->getMessage() . "\n";
+}
+
 $militaryReferentialMigrate = require $root . '/bootstrap/military_referential_migration.php';
 try {
     echo "Migration référentiel militaire SOF (countries / military_units / affiliations)...\n";

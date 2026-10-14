@@ -148,6 +148,43 @@ class AtakApiController
 
     private ?ReconNoteRepository $reconNoteRepo = null;
 
+    private ?\App\Services\Jnet\JnetFieldReportBridge $jnetBridgeService = null;
+
+    private function jnetBridge(): \App\Services\Jnet\JnetFieldReportBridge
+    {
+        return $this->jnetBridgeService ??= new \App\Services\Jnet\JnetFieldReportBridge();
+    }
+
+    /**
+     * Compte Athena de l'opérateur pour le relais JNET : clé API personnelle du joueur, sinon Steam d'une
+     * session de jeu vérifiée. Un Steam seulement déclaré dans le message (clé API commune, session absente
+     * ou expirée) n'est jamais accepté : il permettrait de publier dans JNET au nom d'un autre joueur.
+     */
+    private function jnetGameUserId(int $tenantId, mixed $actor, string $declaredSteam = ''): ?int
+    {
+        try {
+            if (\App\Support\ComspecApiKeyAuth::matchedTenantId() === $tenantId) {
+                $uid = \App\Support\ComspecApiKeyAuth::matchedUserId();
+                if ($uid !== null && $uid > 0) {
+                    return $uid;
+                }
+            }
+            if (!is_array($actor) || empty($actor['session_ok'])) {
+                return null;
+            }
+            $steam = is_string($actor['steam_uid'] ?? null) ? trim($actor['steam_uid']) : '';
+            if ($steam === '' || ($declaredSteam !== '' && $declaredSteam !== $steam)) {
+                return null;
+            }
+            $user = $this->userRepository->findBySteamIdForTenant($tenantId, $steam);
+            $uid = $user ? (int) ($user['id'] ?? 0) : 0;
+
+            return $uid > 0 ? $uid : null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     private function ingestTrafficRepo(): AtakIngestTrafficRepository
     {
         return $this->ingestTrafficRepo ??= new AtakIngestTrafficRepository();
@@ -11806,6 +11843,10 @@ class AtakApiController
             'pos_z' => $z,
         ]);
         $this->recordGameIngest($tenantId, max(1, $mapId), false);
+        if ($row !== []) {
+            // Relais JNET : la reco remonte de l'unité de l'opérateur vers son échelon supérieur.
+            $this->jnetBridge()->relayReconNote($tenantId, $this->jnetGameUserId($tenantId, $actor, $authorUid), $row);
+        }
 
         return Response::json(['ok' => true, 'note' => $row]);
     }
@@ -12220,6 +12261,12 @@ class AtakApiController
             }
             $row['url'] = \App\Support\ReconImageStorage::urlForRow($row);
             $row['device_label'] = $this->reconDeviceLabel((string) ($row['device_type'] ?? 'CTAB'));
+            // Relais JNET : photo prise par le joueur lui-même (compte retrouvé). Vignette seulement pour un
+            // cliché ni confidentiel ni SSE ; sinon lien vers le lecteur du site, qui contrôle l'accès.
+            $jnetUserId = $this->jnetGameUserId($tenantId, $actor);
+            if ($jnetUserId !== null) {
+                $this->jnetBridge()->relayReconImage($tenantId, $jnetUserId, $row + $data);
+            }
             $isConfidential = !empty($data['is_confidential']);
             $mapId = (int) ($_POST['mapId'] ?? $_POST['map_id'] ?? self::DEFAULT_MAP_ID);
             try {
@@ -13008,6 +13055,14 @@ class AtakApiController
         }
 
         $reportId = $repo->create($data);
+        if ($reportId > 0) {
+            $this->jnetBridge()->relayTacticalReport(
+                $tenantId,
+                $this->jnetGameUserId($tenantId, $actor, (string) ($data['submitter_steam_id'] ?? '')),
+                $reportId,
+                $data
+            );
+        }
         $reportMissionKey = \App\Support\AtakMissionKey::normalize($body['mission_key'] ?? null);
         if ($reportMissionKey !== '' && $reportId > 0) {
             $repo->setMissionKey($reportId, $reportMissionKey);
