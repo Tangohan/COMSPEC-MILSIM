@@ -147,9 +147,8 @@
 ["%1 m (sol %2 m)", "%1 m (ground %2 m)"],
 ["%1 m / portée %2 m %3", "%1 m / range %2 m %3"],
 ["%1 m : %2 m (%3 mrad)", "%1 m: %2 m (%3 mrad)"],
-["%1 m du sol", "%1 m above ground"],
-
 ["%1 m d'altitude", "%1 m elevation"],
+["%1 m du sol", "%1 m above ground"],
 ["%1 m/s du %2", "%1 m/s from %2"],
 ["%1 m/s du %2 (%3°), rafales %4 m/s", "%1 m/s from %2 (%3°), gusts %4 m/s"],
 ["%1 marqueur(s) renvoyé(s) vers Athena.", "%1 marker(s) resent to Athena."],
@@ -3167,8 +3166,6 @@
 ["Coordonnées du point : carroyage de 4, 6, 8 ou 10 chiffres, ex. 1518 1730", "Point coordinates: 4, 6, 8 or 10-digit grid, e.g. 1518 1730"],
 ["Coordonnées illisibles", "Unreadable coordinates"],
 ["Coordonnées repères", "Marker coords"],
-["Copier la grille", "Copy grid"],
-
 ["copie", "copy"],
 ["Copie décalée (Ctrl+D)", "Offset copy (Ctrl+D)"],
 ["Copier dans la salle", "Copy to the room"],
