@@ -7,6 +7,10 @@ params [
     ["_aliveHint", true, [true]]
 ];
 if (isNull _obj) exitWith { false };
+// Pas encore de session Athena (mission lancée hors ligne, test Eden, liaison pas encore ouverte) : rien à envoyer.
+// La boucle serveur des relais (12 s) les remontera dès que la liaison sera prête ; sans ce garde-fou, chaque pose
+// de relais produisait un rapport automatique « ÉCHEC · Relais ATAK — not_connected ».
+if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
 
 // Récupérer valeurs par défaut depuis config centralisée
 private _defaultRange = 2000;
