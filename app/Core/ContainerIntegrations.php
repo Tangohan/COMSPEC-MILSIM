@@ -44,6 +44,12 @@ final class ContainerIntegrations
                 Gate::getInstance(),
             ),
             \App\Services\Notifications\ActivityHubPresentationService::class => new \App\Services\Notifications\ActivityHubPresentationService(),
+            \App\Repositories\CommunityEcosystemRepository::class => new \App\Repositories\CommunityEcosystemRepository(),
+            \App\Services\Ecosystem\CommunityStatsService::class => new \App\Services\Ecosystem\CommunityStatsService(
+                Container::get(\App\Repositories\TenantRepository::class),
+                Container::get(\App\Repositories\UserRepository::class),
+                Container::get(\App\Repositories\CommunityEcosystemRepository::class),
+            ),
             \App\Repositories\AsyncJobRepository::class => new \App\Repositories\AsyncJobRepository(),
             \App\Repositories\TenantApiKeyRepository::class => new \App\Repositories\TenantApiKeyRepository(),
             \App\Controllers\Web\ActivityHubController::class => new \App\Controllers\Web\ActivityHubController(
