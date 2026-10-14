@@ -38,23 +38,23 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Regroupement : numéro de build, photo refusée expliquée, antenne, carte plus lisible, boutons verts (ATAK natif 1.95.0)
+## Regroupement : drone comme Vidéo Live, carte plus lisible, antenne, numéro de build, photo refusée expliquée (ATAK natif 1.95.0)
 
 ### Résumé joueur
-Type : correctif
-FR : Carte plus lisible, antenne vissée sur la coque, numéro de build complet
+Type : nouveauté
+FR : App Drone refaite, carte plus lisible, antenne vissée sur la coque
+- L'image du drone s'affiche comme celle des caméras fixes de Vidéo Live ; l'app Drone montre la liste des drones à gauche (choisir pour piloter, ou appairer un drone tout proche), l'image et les commandes à droite, avec la rangée JOUR / VISION NOCTURNE / THERMIQUE.
 - Sur la petite carte du téléphone, les noms des repères sont plus grands et les symboles de la mission sont à l'échelle de l'écran ; le calque « Cartouches » s'appelle maintenant « Coordonnées repères ».
 - L'antenne d'extension part du port de la coque au lieu de flotter au-dessus, sur tous les modèles, et le texte des boutons verts n'a plus de contour noir.
-- Si la formule de ta communauté n'inclut pas la carte Athena, une fenêtre explique une fois pourquoi ta photo n'est pas partie.
-- Réglages, Crédits et Statut affichent la version avec la date du build et un code court, aussi écrits en tête du journal envoyé au support.
-EN : Clearer map, antenna screwed onto the case, full build number
+- Réglages, Crédits et Statut affichent la version avec la date du build ; si la formule de ta communauté n'inclut pas la carte Athena, une fenêtre explique une fois pourquoi ta photo n'est pas partie.
+EN : Drone app redone, clearer map, antenna screwed onto the case
+- The drone picture is shown like the fixed cameras in Live Video; the Drone app lists drones on the left (pick one to fly it, or pair a drone close by), with the picture and controls on the right and the DAY / NIGHT VISION / THERMAL row.
 - On the phone's small map, marker names are larger and mission symbols scale with the screen; the "Labels" layer is now called "Marker coords".
 - The extension antenna starts from the case port instead of floating above it, on every model, and green button labels no longer have a black outline.
-- If your community's plan does not include the Athena map, a window explains once why your photo was not sent.
-- Settings, Credits and Status show the version with the build date and a short code, also written at the top of the log sent to support.
+- Settings, Credits and Status show the version with the build date; if your community's plan does not include the Athena map, a window explains once why your photo was not sent.
 
 ### Détail technique
-Regroupe #820, #822, #825, #826, #827 et #829 (une seule version : ATAK natif 1.95.0, COMSPEC Link inchangé 2.0.85 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.14 7ba409e » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin, que HEMTT ne produit pas et dont l’ancienne copie ne décrit plus les textures d’antenne régénérées).
+Regroupe #820, #822, #825, #826, #827, #829 et #830 (une seule version : ATAK natif 1.95.0, COMSPEC Link inchangé 2.0.85 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.14 7ba409e » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin, que HEMTT ne produit pas et dont l’ancienne copie ne décrit plus les textures d’antenne régénérées).
 
 #### Numéro de build complet dans le téléphone (#822)
 
@@ -92,6 +92,12 @@ Regroupe #820, #822, #825, #826, #827 et #829 (une seule version : ATAK natif 1.
 - `fn_mapMarkerText` : texte 0,021 -> 0,024, ligne 2 0,86 -> 0,9, plaque 0,84 -> 0,93 d'opacité, texte blanc pur ; décalage du nom calculé sur la taille réellement dessinée (`COMSPEC_ATAK_MkScale`).
 - `fn_mapOnDraw` : plancher du facteur texte écran 0,8 -> 0,95 (noms de lieux, indicatifs, repères).
 - Non testé en jeu. À vérifier : téléphone porté et plein écran (S7 et un autre terminal), zoom loin / moyen / près ; symboles OTAN plus petits et une seule fois (si un grand symbole Arma reste dessiné sous le petit, `showMarkers` n'est pas pris en compte par le jeu) ; zones pleines, bordées et hachurées ; traits tracés à la main ; carte JTAC inchangée.
+
+#### Drone : image rendue comme les caméras fixes de Vidéo Live, liste des drones à gauche (#830)
+
+- Caméra du flux créée comme celle de `fn_camView` (cible au nom fixe, texture carrée rapport 1, contrôle COMSPEC_RscPhone, pas de camCommit à la création) et raccrochée au drone à chaque image ; zoom par camSetPos + camCommit puis raccrochage.
+- App Drone en grand format couché : liste à gauche (flotte : choisir = piloter ; drones à moins de 15 m : choisir = appairer), image et commandes à droite, rangée JOUR / VISION NOCTURNE / THERMIQUE comme Vidéo Live.
+- À tester en jeu : image du drone (plus d'écran noir), zoom, JOUR / NV / THERMIQUE, piloter un drone de la flotte, appairer un drone posé à moins de 15 m.
 
 #### Calque « Cartouches » renommé « Coordonnées repères » (#829)
 
