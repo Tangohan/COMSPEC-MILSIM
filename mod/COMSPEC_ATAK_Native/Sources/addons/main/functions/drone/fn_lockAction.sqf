@@ -131,7 +131,7 @@ private _seesIt = {
         private _right = vectorNormalized (_dir vectorCrossProduct [0, 0, 1]);
         if ((vectorMagnitude _right) < 0.01) then { _right = [1, 0, 0]; };
         private _up = _right vectorCrossProduct _dir;
-        private _aspect = [1.7778, getResolution select 4] select ((_e get "src") isEqualTo "PHONE");
+        private _aspect = [missionNamespace getVariable ["COMSPEC_ATAK_DroneCamAspect", 1], getResolution select 4] select ((_e get "src") isEqualTo "PHONE");
         (abs ((_v vectorDotProduct _right) / _z)) < (_fov * _aspect * 1.02) && {(abs ((_v vectorDotProduct _up) / _z)) < (_fov * 1.02)}
     } else { ((_e get "src") isEqualTo "DRONE") || {(_dir vectorCos _v) > 0.8} };
     _in && {([_self, "VIEW", _o] checkVisibility [_eye, aimPos _o]) > 0.2}
