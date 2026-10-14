@@ -121,7 +121,9 @@ final class ActivityHubPresentationService
                 'at' => $at,
             ],
             'atak_mod_report_reply' => [
-                'title' => 'Réponse à votre signalement du mod',
+                'title' => !empty($payload['auto'])
+                    ? 'Réponse sur une erreur détectée par votre mod'
+                    : 'Réponse à votre signalement du mod',
                 'detail' => trim((string) ($payload['summary'] ?? '')) !== ''
                     ? trim((string) $payload['summary'])
                     : trim((string) ($payload['report'] ?? 'L’équipe COMSPEC a traité votre signalement.')),

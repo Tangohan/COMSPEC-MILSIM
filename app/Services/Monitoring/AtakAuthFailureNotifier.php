@@ -58,11 +58,15 @@ final class AtakAuthFailureNotifier
                 EmailEvents::ATAK_PLAYER_ACCESS_REFUSED,
                 'atak_player_access_refused',
                 $to,
-                'COMSPEC ATAK : Athena a refusé la connexion de votre jeu',
+                ($vars['lang'] ?? 'fr') === 'en'
+                    ? 'COMSPEC ATAK: Athena refused your game connection'
+                    : 'COMSPEC ATAK : Athena a refusé la connexion de votre jeu',
                 $vars,
                 $tenantId,
                 null,
-                $summary
+                $summary,
+                false,
+                (string) ($vars['lang'] ?? 'fr')
             );
         };
     }
@@ -143,9 +147,10 @@ final class AtakAuthFailureNotifier
         if (!$this->claimDailySlot($steam, (int) ($report['id'] ?? 0), $diagnosis['code'])) {
             return ['diagnosis' => $diagnosis, 'mailed' => false];
         }
-        $advice = self::adviceFor($diagnosis);
+        $lang = ($account['lang'] ?? 'fr') === 'en' ? 'en' : 'fr';
+        $advice = self::adviceFor($diagnosis, $lang);
         $name = $account['name'] !== '' ? $account['name']
-            : (trim((string) ($report['callsign'] ?? '')) ?: (trim((string) ($report['player_name'] ?? '')) ?: 'opérateur'));
+            : (trim((string) ($report['callsign'] ?? '')) ?: (trim((string) ($report['player_name'] ?? '')) ?: ($lang === 'en' ? 'operator' : 'opérateur')));
         try {
             $mailed = ($this->sendMail)(
                 $account['email'],
@@ -157,9 +162,10 @@ final class AtakAuthFailureNotifier
                     'versions' => trim('Mod ' . trim((string) ($report['mod_version'] ?? '?'))
                         . ' · Link ' . trim((string) ($report['extension_version'] ?? '?'))),
                     'helpUrl' => url('atak/premiere-liaison'),
+                    'lang' => $lang,
                 ],
                 $account['tenant_id'] > 0 ? $account['tenant_id'] : null,
-                ['purpose' => 'atak_player_access_refused', 'report_id' => (int) ($report['id'] ?? 0), 'diagnosis' => $diagnosis['code']]
+                ['purpose' => 'atak_player_access_refused', 'report_id' => (int) ($report['id'] ?? 0), 'diagnosis' => $diagnosis['code'], 'lang' => $lang]
             );
         } catch (\Throwable) {
             $mailed = false;
@@ -179,33 +185,52 @@ final class AtakAuthFailureNotifier
     }
 
     /**
-     * Ce qu'on dit au joueur, selon le diagnostic.
+     * Ce qu'on dit au joueur, selon le diagnostic, dans la langue de son profil Athena.
      *
      * @param array{code:string, text:string, no_access_key:bool} $diagnosis
      * @return array{reason:string, steps:list<string>}
      */
-    public static function adviceFor(array $diagnosis): array
+    public static function adviceFor(array $diagnosis, string $lang = 'fr'): array
     {
+        $en = $lang === 'en';
         if ($diagnosis['code'] === self::DIAG_ACCOUNT_DISABLED) {
             return [
-                'reason' => 'Votre compte est désactivé sur Athena, le jeu ne peut donc plus s’y connecter.',
+                'reason' => $en
+                    ? 'Your Athena account is disabled, so the game can no longer connect to it.'
+                    : 'Votre compte est désactivé sur Athena, le jeu ne peut donc plus s’y connecter.',
                 'steps' => [
-                    'Contactez le gestionnaire de votre communauté pour réactiver votre compte.',
+                    $en
+                        ? 'Ask your community manager to re-enable your account.'
+                        : 'Contactez le gestionnaire de votre communauté pour réactiver votre compte.',
                 ],
             ];
         }
-        $reason = match ($diagnosis['code']) {
-            self::DIAG_NO_SESSION => 'Votre jeu n’a pas de session Athena ouverte : il n’envoyait que la clé de votre communauté, et Athena l’a refusée.',
-            self::DIAG_REVOKED, self::DIAG_REFRESH_EXPIRED => 'Votre session Athena en jeu est terminée : il faut vous reconnecter.',
-            default => 'Votre jeu a gardé un ancien jeton de connexion, qu’Athena a refusé.',
-        };
-        $steps = [
-            'Mettez à jour le mod COMSPEC depuis le Steam Workshop (Arma 3 Launcher, onglet Mods).',
-            'Quittez complètement Arma 3, relancez-le, puis reconnectez-vous depuis le jeu : Échap > Connexion Athena.',
-            'Si le refus revient, ouvrez Échap > Dépannage liaison et suivez la correction proposée.',
-        ];
+        $reason = $en
+            ? match ($diagnosis['code']) {
+                self::DIAG_NO_SESSION => 'Your game has no open Athena session: it only sent your community key, and Athena refused it.',
+                self::DIAG_REVOKED, self::DIAG_REFRESH_EXPIRED => 'Your in-game Athena session has ended: you need to sign in again.',
+                default => 'Your game kept an old sign-in token, which Athena refused.',
+            }
+            : match ($diagnosis['code']) {
+                self::DIAG_NO_SESSION => 'Votre jeu n’a pas de session Athena ouverte : il n’envoyait que la clé de votre communauté, et Athena l’a refusée.',
+                self::DIAG_REVOKED, self::DIAG_REFRESH_EXPIRED => 'Votre session Athena en jeu est terminée : il faut vous reconnecter.',
+                default => 'Votre jeu a gardé un ancien jeton de connexion, qu’Athena a refusé.',
+            };
+        $steps = $en
+            ? [
+                'Update the COMSPEC mod from the Steam Workshop (Arma 3 Launcher, Mods tab).',
+                'Quit Arma 3 completely, start it again, then sign in again from the game: Esc > Athena sign-in.',
+                'If Athena still refuses, open Esc > Link troubleshooting and follow the suggested fix.',
+            ]
+            : [
+                'Mettez à jour le mod COMSPEC depuis le Steam Workshop (Arma 3 Launcher, onglet Mods).',
+                'Quittez complètement Arma 3, relancez-le, puis reconnectez-vous depuis le jeu : Échap > Connexion Athena.',
+                'Si le refus revient, ouvrez Échap > Dépannage liaison et suivez la correction proposée.',
+            ];
         if ($diagnosis['no_access_key'] || $diagnosis['code'] === self::DIAG_NO_SESSION) {
-            $steps[] = 'Si cela ne suffit pas, demandez au gestionnaire de votre communauté la clé d’accès ATAK (Configuration ATAK sur Athena).';
+            $steps[] = $en
+                ? 'If that is not enough, ask your community manager for the ATAK access key (ATAK settings on Athena).'
+                : 'Si cela ne suffit pas, demandez au gestionnaire de votre communauté la clé d’accès ATAK (Configuration ATAK sur Athena).';
         }
 
         return ['reason' => $reason, 'steps' => $steps];

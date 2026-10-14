@@ -256,16 +256,16 @@ final class AtakModReportDiscordTicketService
     }
 
     /**
-     * Gravité : seuls les rapports qui comptent ouvrent un ticket. Colonne `gravity` (faible, moyenne, haute,
-     * critique) quand elle existe ; sinon la sévérité du mod (info = faible).
+     * Gravité (AtakModReportGravity) : les rapports « Faible » n'ouvrent pas de ticket. Sans gravité connue,
+     * la sévérité du mod décide (info = faible).
      *
      * @param array<string, mixed> $report
      */
     public static function opensTicket(array $report): bool
     {
-        $gravity = strtolower(trim((string) ($report['gravity'] ?? '')));
-        if ($gravity !== '') {
-            return !in_array($gravity, ['low', 'faible', 'minor', 'info'], true);
+        $gravity = AtakModReportGravity::normalize(isset($report['gravity']) ? (string) $report['gravity'] : null);
+        if ($gravity !== null) {
+            return $gravity !== AtakModReportGravity::LOW;
         }
 
         return strtolower(trim((string) ($report['severity'] ?? 'error'))) !== 'info';
@@ -288,7 +288,7 @@ final class AtakModReportDiscordTicketService
         $versions = 'Mod ' . (trim((string) ($report['mod_version'] ?? '')) ?: '—')
             . ' · Link ' . (trim((string) ($report['extension_version'] ?? '')) ?: '—');
         $kind = str_starts_with(strtolower((string) ($report['source'] ?? '')), 'player') ? 'Signalement joueur' : 'Détection automatique';
-        $gravity = trim((string) ($report['gravity'] ?? ''));
+        $gravity = AtakModReportGravity::normalize(isset($report['gravity']) ? (string) $report['gravity'] : null);
         $detail = AtakStartupCheckService::clean((string) ($report['detail_text'] ?? ''), 900);
 
         $description = '## ' . self::STATUS_ICONS[$status] . ' ' . AtakModReportRepository::statusLabel($status) . ' · ' . self::STATUS_EN[$status]
@@ -297,7 +297,7 @@ final class AtakModReportDiscordTicketService
         $fields = [
             ['name' => 'Joueur / Player', 'value' => $who, 'inline' => true],
             ['name' => 'Type', 'value' => $kind . ' · ' . AtakStartupCheckService::clean((string) ($report['channel'] ?? 'Core'), 40)
-                . ($gravity !== '' ? ' · gravité ' . AtakStartupCheckService::clean($gravity, 20) : ''), 'inline' => true],
+                . ($gravity !== null ? ' · gravité ' . AtakModReportGravity::label($gravity) : ''), 'inline' => true],
             ['name' => 'Versions', 'value' => $versions, 'inline' => true],
             ['name' => 'Occurrences', 'value' => '×' . max(1, $stats['hits'])
                 . ($stats['reports'] > 1 ? ' · ' . $stats['reports'] . ' rapports' : ''), 'inline' => true],
