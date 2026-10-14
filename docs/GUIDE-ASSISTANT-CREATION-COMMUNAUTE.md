@@ -68,7 +68,7 @@ Le filtre « Filtrer les modèles » cherche dans le titre, le résumé et les n
 
 ## Étape 1 — unités réelles
 
-Le sélecteur s’appuie sur le référentiel `military_units` (seed `bootstrap/military_referential_seed.php`). La recherche ignore désormais accents, apostrophes et ordre des mots, et inclut les alias (sigles, surnoms, anciens noms).
+Le sélecteur s’appuie sur le référentiel `military_units` (seed `bootstrap/military_referential_seed.php`, 12 pays, sources et corrections dans [REFERENTIEL-UNITES-REELLES-SOURCES.md](REFERENTIEL-UNITES-REELLES-SOURCES.md)). La recherche ignore désormais accents, apostrophes et ordre des mots, et inclut les alias (sigles, surnoms, anciens noms).
 
 ## Après la création
 
