@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.84";
+    private const string ExtensionVersion = "2.0.85";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -463,8 +463,11 @@ public static partial class Extension
                 return "ERR|http_" + (int)response.StatusCode;
             using var doc = JsonDocument.Parse(ReadContentUtf8(response, cts.Token));
             string Field(string name) =>
-                doc.RootElement.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? (v.GetString() ?? "").Replace("|", "") : "";
-            return "OK|" + Field("atak_native") + "|" + Field("link");
+                doc.RootElement.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String
+                    ? (v.GetString() ?? "").Replace("|", "").Replace("\r", " ").Replace("\n", " ")
+                    : "";
+            // 2.0.85 : résumé joueur de la dernière version (FR, EN), montré dans la notification « mise à jour disponible ».
+            return "OK|" + Field("atak_native") + "|" + Field("link") + "|" + Field("summary_fr") + "|" + Field("summary_en");
         }
         catch (Exception ex)
         {
@@ -2994,7 +2997,7 @@ public static partial class Extension
             return "OK|" + ExtensionProductName + " " + CurrentExtensionVersion();
         }
         // Dernières versions publiées sur Athena (GET /api/atak/version, public, sans session) : ATAK natif et COMSPEC Link.
-        // ["LatestVersions", [adresse du portail]] -> « OK|1.66.0|2.0.78 ». Appelé par Async (fn_integrityCheck).
+        // ["LatestVersions", [adresse du portail]] -> « OK|1.66.0|2.0.78|résumé FR|résumé EN ». Appelé par Async (fn_integrityCheck).
         if (function == "LatestVersions")
         {
             return LatestVersions(args.Length > 0 ? args[0] : null);

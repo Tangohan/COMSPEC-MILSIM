@@ -17,11 +17,15 @@ final class AtakVersionController
     public function latest(Request $request, array $params = []): Response
     {
         $info = AtakReleaseInfo::latest();
+        // Ce qui change pour le joueur, montré dans la notification « mise à jour disponible » (COMSPEC Link 2.0.85+).
+        $summary = AtakReleaseInfo::playerSummary((string) ($info['atak_native'] ?? ''));
 
         return Response::json([
             'ok' => $info['atak_native'] !== null,
             'atak_native' => $info['atak_native'] ?? '',
             'link' => $info['link'] ?? '',
+            'summary_fr' => $summary['fr'],
+            'summary_en' => $summary['en'],
             'download' => rtrim(url(''), '/') . '/atak/mod',
         ])->header('Cache-Control', 'public, max-age=300');
     }

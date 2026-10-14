@@ -124,6 +124,30 @@ EN : Zeus can now act on your ATAK
 - Brouillage : 7e élément « force » dans `COMSPEC_ATAK_Jammers` (`fn_linkQuality`, `fn_ewEffects`), brouilleurs de zone Zeus remis par le serveur toutes les 5 s si une écriture d'un client les efface. `fn_zeusJam` : brouillage ciblé + brouilleurs Crows EW lus dans `crowsEW_jamming_jamMap` (format déduit du mod, non vérifié en jeu), réglage serveur « Brouilleurs Crows Electronic Warfare ».
 - Zeus : menu clic droit ZEN « ATAK · Contrôle Zeus » (Accès, Son, Punir, Brouiller, Dégâts et effets, Tout rétablir) sur la sélection ou l'unité survolée (`fn_zeusMenu`) ; il remplace le menu ZEN / ACE Zeus d'Overwatch « ATAK — Infos / dégâts / brouillage », qui agissait sur l'état du téléphone d'Overwatch. Modules Zeus sans ZEN : « ATAK · Contrôle Zeus » (joueur sous le module, rayon, tous, camp ; intensité, durée, message) et « ATAK · Brouilleur de zone ». Aide : Manuel de terrain > COMSPEC — ATAK > Contrôle Zeus des ATAK (FR/EN).
 - À tester en jeu (Zeus + un joueur) : chaque entrée du menu clic droit et les deux modules ; verrou (écran rouge, clics bloqués, message), désactivation (téléphone rangé, message), muet (musique coupée, plus de vibration sonore), alarme entendue par un joueur proche, brouillage ciblé et de zone (barres de signal, app Réseau), surchauffe 1-2-3, IEM, destruction puis réparation ; persistance après réapparition et pour un joueur qui rejoint ; un brouilleur Crows EW posé près d'un joueur.
+## Notification « mise à jour disponible » réparée et plus claire (ATAK natif 1.94.0, COMSPEC Link 2.0.85)
+
+### Résumé joueur
+Type : correctif
+FR : Le téléphone te prévient vraiment quand une mise à jour sort
+- Une notification « Mise à jour ATAK disponible » donne la nouvelle version, la tienne, et ce qui change pour toi.
+- Elle explique comment l'installer : quitter Arma, laisser Steam mettre à jour le mod, relancer.
+- Elle reste épinglée en haut des Notifications tant que tu n'as pas mis à jour, et le bandeau ne revient pas à chaque partie.
+- Si tu actives le service Athéna en cours de partie, la vérification se fait tout de suite au lieu d'attendre la mission suivante.
+EN : The phone really tells you when an update is out
+- An "ATAK update available" notification shows the new version, yours, and what changes for you.
+- It explains how to install it: quit Arma, let Steam update the mod, restart.
+- It stays pinned at the top of Notifications until you update, and the banner does not come back every game.
+- If you turn the Athena service on during a game, the check runs straight away instead of waiting for the next mission.
+
+### Détail technique
+- Cause : `fn_integrityCheck` « start » attendait le choix du service Athéna puis bouclait `while { mode == "on" }` toutes les 2 h ; un « Non » ou un choix fait après les 30 premières secondes coupait la vérification pour toute la mission, et rien n'était noté au journal dans ce cas. La notification passait par `_raise` (bandeau une fois par lancement du jeu, texte « Mettez le mod à jour sur Steam ou reconstruisez le main.pbo », journalisée en ERROR) ; en anglais, le libellé « Mise à jour disponible » étant traduit seul, le reste du texte restait en français.
+- Boucle qui suit le réglage toute la partie : contrôle dès le passage sur « Oui », puis toutes les 30 min.
+- Journal module `UPDATE` (français) : chaque décision (attente du choix, service sur « Non », demande envoyée, erreur de la DLL ou d'Athena, à jour, version de développement plus récente, mise à jour disponible avec ou sans résumé, bandeau déjà montré pour cette version, notifications coupées).
+- Bandeau + entrée des Notifications une fois par version (profil `COMSPEC_ATAK_UpdateNotified`, 20 dernières) ; carte épinglée (`COMSPEC_ATAK_Integrity`, clés `update_atak` / `update_link`) retirée dès que la version est à jour. Une DLL Link en retard alors que l'ATAK l'est aussi ne donne qu'une notification.
+- Site : `GET /api/atak/version` renvoie `summary_fr` / `summary_en`, le « Résumé joueur » (titre + puces, 300 caractères max) de l'entrée « ATAK natif <version> » de ce fichier (`AtakReleaseInfo::playerSummary`).
+- COMSPEC Link 2.0.85 : `LatestVersions` renvoie `OK|atak|link|résumé FR|résumé EN` (anciens main.pbo : champs en plus ignorés). Le résumé suit la langue du téléphone.
+- Test en jeu sans changer de main.pbo : console de debug, `["remote", "1.0.0"] spawn comspec_atak_native_fnc_integrityCheck` (simule un ATAK 1.0.0, profil non modifié).
+- À tester en jeu (DLL rebuild via build_mod.bat pour le résumé) : service Athéna sur « Oui », la commande ci-dessus → bandeau orange « Mise à jour ATAK disponible : version 1.94.0 (vous avez la 1.0.0). … », carte épinglée en tête des Notifications, lignes `[UPDATE]` dans l'app Debug ; en anglais, texte entièrement en anglais ; avec le main.pbo à jour, journal « ATAK 1.94.0 à jour » et aucune carte.
 
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
 
