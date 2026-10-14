@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Photos : refus de la formule expliqué au joueur, sans rapport automatique (ATAK natif 1.95.0)
+
+### Résumé joueur
+Type : correctif
+FR : Une photo refusée parce que ta communauté n'a pas la carte Athena est enfin expliquée
+- Si la formule de ta communauté n'inclut pas la carte et les liaisons Athena, l'app Galerie et la notification le disent clairement, au lieu d'un simple « refusée ».
+- Ce refus n'envoie plus de rapport d'erreur automatique : ce n'est pas un bug, il suffit que l'administrateur de ta communauté change ou reçoive une formule.
+EN : A photo refused because your community has no Athena map is now explained
+- If your community's plan does not include the Athena map and links, the Gallery app and the notification say so clearly, instead of a plain "rejected".
+- This refusal no longer sends an automatic error report: it is not a bug, your community's administrator just needs another plan.
+
+### Détail technique
+
+- Cause du rapport #661 (ÉCHEC · PhotoUpload — http_403 · feature_unavailable) : `AtakPlanAccess` (garde de formule depuis le 13/09) refuse toute l'API tactique quand la formule appliquée de la communauté n'a pas `atak` (essai fondateur de 30 jours terminé, formule `free`). Ce n'est pas une régression de #793/#794.
+- Connect (`fn_extensionCallback`, PhotoUpload) : `ERR|http_403|fichier|feature_unavailable` → journalisé en WARN (pas de rapport auto), message clair FR (traduit EN dans i18n/en.txt), retour Galerie en alerte. comspec_overwatch_connect.pbo et main.pbo repatchés (tools/pbo_patch.py).
+- Site (#817) : un tel rapport reçu des anciens mods est classé Faible (ni ticket ni e-mail) et son détail nomme la communauté et sa formule.
+- À tester en jeu : avec une communauté sans la carte, prendre une photo ; Galerie > dernière photo refusée affiche le nouveau message (FR et EN), aucun rapport auto dans /admin/atak-mod-reports. Avec une communauté qui a la carte, l'envoi marche toujours.
+
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
 
 ### Résumé joueur

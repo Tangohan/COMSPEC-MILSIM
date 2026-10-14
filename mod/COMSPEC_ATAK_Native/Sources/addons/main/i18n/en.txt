@@ -7336,6 +7336,7 @@
 ["Photo prise — qualité %1%% (%2)", "Photo taken — quality %1%% (%2)"],
 ["Photo précédente", "Previous photo"],
 ["PHOTO RAPIDE", "QUICK PHOTO"],
+["Photo non envoyée. La formule de votre communauté n’inclut pas la carte et les liaisons Athena, prévenez son administrateur.", "Photo not sent. Your community's plan does not include the Athena map and links, let its administrator know."],
 ["Photo refusée par Athena : %1", "Photo rejected by Athena: %1"],
 ["Photo remontée", "Photo reported"],
 ["Photo reçue sur ATAK web", "Photo received on ATAK web"],
