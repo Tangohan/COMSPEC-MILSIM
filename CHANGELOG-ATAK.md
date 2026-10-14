@@ -58,6 +58,23 @@ EN : The phone shows its full build number
 - `COMSPEC_ATAK_NativeVersion` et `mod_version` envoyés au site restent `MAJEUR.MINEUR.CORRECTIF` ; `fn_integrityCheck` ignore tout ce qui suit un espace dans les versions comparées.
 - Test : `AtakReleaseInfoTest::testBuildStampIsNeverCommitted`.
 
+
+## Photo refusée faute de carte Athena : une fenêtre claire au joueur (ATAK natif 1.95.0)
+
+### Résumé joueur
+Type : correctif
+FR : Une fenêtre explique pourquoi ta photo n'est pas partie
+- Si la formule de ta communauté n'inclut pas la carte et les liaisons Athena, une fenêtre s'ouvre à la première photo refusée : ce qui s'est passé, pourquoi, et quoi faire (prévenir l'administrateur de ta communauté).
+- Elle ne s'affiche qu'une fois par partie, avec un bouton OK.
+EN : A window explains why your photo was not sent
+- If your community's plan does not include the Athena map and links, a window opens on the first refused photo: what happened, why, and what to do (tell your community's administrator).
+- It only shows once per session, with an OK button.
+
+### Détail technique
+
+- XEH_postInitClient (retour des photos) : quand le dernier refus porte `feature_unavailable` (connect, 1.93.0), `BIS_fnc_guiMessage` sur l'écran de jeu (attend la fermeture du menu Échap), une fois par session (`COMSPEC_ATAK_PlanModalShown`), à la place de la notification « Photo refusée par Athena ». Textes FR, traduits dans i18n/en.txt.
+- main.pbo reconstruit avec HEMTT 1.17.2 (texHeaders.bin repris de 1.93.0).
+- À tester en jeu : communauté sans la carte, prendre deux photos. La fenêtre s'ouvre une seule fois, lisible en FR et en EN (Réglages > Langue), OK la ferme. Communauté avec la carte : aucune fenêtre, envoi normal.
 ## Objets d'inventaire en vraie 3D, pylônes relais retravaillés jour et nuit (ATAK natif 1.94.0)
 
 ### Résumé joueur
