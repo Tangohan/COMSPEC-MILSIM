@@ -192,6 +192,9 @@ private _perfT = diag_tickTime;
 // Plan de briefing (app Plan) sous les unités : plan partagé du camp et mon brouillon (plus pâle). Affiché par défaut.
 if (profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true]) then {
     [_map, (missionNamespace getVariable [format ["COMSPEC_ATAK_Plan_%1", side group player], [0, [], ""]]) param [1, []], 0.85] call comspec_atak_native_fnc_planDraw;
+    // Salle collaborative rejointe (code) : dessinée comme le plan du camp.
+    private _planRoom = uiNamespace getVariable ["COMSPEC_ATAK_PlanRoomId", ""];
+    if (_planRoom isNotEqualTo "") then { [_map, (missionNamespace getVariable ["COMSPEC_ATAK_PlanRoom_" + _planRoom, [0, [], ""]]) param [1, []], 0.85] call comspec_atak_native_fnc_planDraw; };
     private _planDraft = missionNamespace getVariable ["COMSPEC_ATAK_PlanDraft", []];
     if ((count _planDraft) > 0) then { [_map, _planDraft, 0.55] call comspec_atak_native_fnc_planDraw; };
 };

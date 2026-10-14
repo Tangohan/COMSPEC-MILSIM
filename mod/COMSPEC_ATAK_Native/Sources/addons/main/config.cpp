@@ -29,7 +29,7 @@ class CfgFunctions {
             class gestureFinger {}; class gestureFingerAim {}; class gestureSelfie {};
         };
         class plan { file="z\comspec_atak_native\addons\main\functions\plan";
-            class planCatalog {}; class planGfx {}; class planDraw {}; class planServer {}; class planAction {}; class planMap {}; class planWeb {}; class pagePlan {};
+            class planCatalog {}; class planGfx {}; class planDraw {}; class planServer {}; class planAction {}; class planMap {}; class planWeb {}; class pagePlan {}; class planUi {}; class planHelp {};
         };
         class network { file="z\comspec_atak_native\addons\main\functions\network";
             class extensionCall {}; class relayTower {}; class relayTowerRuin {}; class relayEden {}; class extAwait {}; class extensionCallback {}; class serverPresence {}; class remoteSync {}; class importLegacyData {};
