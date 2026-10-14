@@ -66,6 +66,16 @@ class ForumNotificationRepository
         return $rows;
     }
 
+    public function markRead(int $tenantId, int $userId, int $notificationId): void
+    {
+        if (!$this->tableExists()) {
+            return;
+        }
+        $this->pdo->prepare(
+            'UPDATE forum_notifications SET read_at = NOW() WHERE id = ? AND tenant_id = ? AND user_id = ? AND read_at IS NULL'
+        )->execute([$notificationId, $tenantId, $userId]);
+    }
+
     public function markAllRead(int $tenantId, int $userId): void
     {
         if (!$this->tableExists()) {
