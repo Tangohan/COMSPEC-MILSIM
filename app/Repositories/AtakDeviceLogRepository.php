@@ -83,6 +83,7 @@ final class AtakDeviceLogRepository
             (tenant_id, terminal_uid, callsign, steam_uid, player_name, level, channel, message, detail_text, raw_line, source, fingerprint, logged_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
         $st = $this->pdo->prepare($sql);
+        $skew = $this->clientClockSkew($lines);
 
         foreach (array_slice($lines, 0, self::MAX_BATCH) as $raw) {
             if (!is_array($raw)) {
@@ -94,7 +95,7 @@ final class AtakDeviceLogRepository
                 $skipped++;
                 continue;
             }
-            $loggedAt = $this->normalizeDateTime($line['logged_at']);
+            $loggedAt = $this->normalizeDateTime($line['logged_at'], $skew);
             $fp = substr(hash('sha256', strtolower($uid . '|' . $line['level'] . '|' . $line['channel'] . '|' . $line['message'])), 0, 40);
             if ($this->isDuplicate($tenantId, $fp, $loggedAt)) {
                 $skipped++;
@@ -267,13 +268,57 @@ final class AtakDeviceLogRepository
         }
     }
 
-    private function normalizeDateTime(?string $raw): string
+    /**
+     * COMSPEC Link envoie l'heure locale du PC du joueur sans fuseau (« 2026-10-14T12:50:24.602 »),
+     * alors que la colonne est lue comme UTC : le journal s'affichait décalé (+2 h en été en France).
+     * Le lot part juste après les lignes : l'écart entre sa ligne la plus récente et l'heure du serveur,
+     * arrondi au quart d'heure, est le fuseau du joueur. Seules les heures sans fuseau explicite sont corrigées.
+     *
+     * @param list<mixed> $lines
+     */
+    private function clientClockSkew(array $lines): int
+    {
+        $latest = null;
+        foreach (array_slice($lines, 0, self::MAX_BATCH) as $raw) {
+            if (!is_array($raw)) {
+                continue;
+            }
+            $at = trim((string) ($raw['logged_at'] ?? $raw['ts'] ?? $raw['at'] ?? ''));
+            if ($at === '' || self::hasExplicitZone($at)) {
+                continue;
+            }
+            $ts = strtotime($at);
+            if ($ts !== false && ($latest === null || $ts > $latest)) {
+                $latest = $ts;
+            }
+        }
+        if ($latest === null) {
+            return 0;
+        }
+        $skew = (int) (round(($latest - time()) / 900) * 900);
+        // Moins de 15 min : horloge juste (ou lot un peu ancien). Plus de 14 h : pas un fuseau, on ne touche à rien.
+        if (abs($skew) < 900 || abs($skew) > 14 * 3600) {
+            return 0;
+        }
+
+        return $skew;
+    }
+
+    private static function hasExplicitZone(string $raw): bool
+    {
+        return preg_match('/(Z|[+-]\d{2}:?\d{2}|\bUTC|\bGMT)$/i', trim($raw)) === 1;
+    }
+
+    private function normalizeDateTime(?string $raw, int $skew = 0): string
     {
         $raw = trim((string) $raw);
         if ($raw === '') {
             return date('Y-m-d H:i:s');
         }
         $ts = strtotime($raw);
+        if ($ts !== false && $skew !== 0 && !self::hasExplicitZone($raw)) {
+            $ts -= $skew;
+        }
 
         return $ts !== false ? date('Y-m-d H:i:s', $ts) : date('Y-m-d H:i:s');
     }

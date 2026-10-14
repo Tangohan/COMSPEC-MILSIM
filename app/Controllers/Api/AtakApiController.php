@@ -2565,6 +2565,18 @@ class AtakApiController
             }
         }
 
+        // Refus « formule sans la carte » : on dit quelle communauté et quelle formule, pour la débloquer.
+        if ($steam !== null && AtakPlanAccess::isDenialReport($message, $detail)) {
+            try {
+                $accounts = $this->modReports()->linkedAccountsBySteam([$steam]);
+                $planDiag = AtakPlanAccess::diagnosis((int) ($accounts[$steam]['tenant_id'] ?? 0));
+                if ($planDiag !== '') {
+                    $detail = trim($detail . "\nDiagnostic Athena : " . $planDiag);
+                }
+            } catch (\Throwable) {
+            }
+        }
+
         try {
             $result = $this->modReports()->upsert([
                 'severity' => $severity,
