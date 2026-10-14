@@ -1,8 +1,8 @@
 #define COMPONENT atak_native
 #define COMPONENT_BEAUTIFIED ATAK Native
 #define PREFIX comspec_atak_native
-#define VERSION 1.96.0
-#define VERSION_STR "1.96.0"
+#define VERSION 1.95.0
+#define VERSION_STR "1.95.0"
 // Empreinte du build (date, commit), jamais comparée : voir docs/VERSIONING.md.
 #include "build_info.hpp"
 // Version de la DLL COMSPEC Link (mod/UptoDate/COMSPECExtension/COMSPECExtension.csproj) livrée avec ce main.pbo.
