@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Liaison : 502/504 en alerte sans rapport auto, ligne ZEN une fois, dump boot plus clair (connect.pbo)
+
+### Résumé joueur
+Type : correctif
+FR : Moins de fausses erreurs dans le journal de ton téléphone
+- Une erreur 502 ou 504 passagère s'affiche en alerte et n'envoie plus de rapport d'erreur automatique.
+- L'alerte de compatibilité ZEN n'apparaît plus à chaque mission.
+- Le diagnostic de démarrage affiche la version de l'ATAK natif et précise que la session Athena n'est pas encore ouverte à ce moment-là.
+EN : Fewer false errors in your phone's log
+- A passing 502 or 504 error shows as a warning and no longer sends an automatic error report.
+- The ZEN compatibility warning no longer shows up at every mission.
+- The startup diagnostic shows the native ATAK version and says the Athena session is not open yet at that point.
+
+### Détail technique
+
+- Connect `fn_extensionCallback` (PostError) : 502 et 504 rejoignent 0/-1/401/403/429/503 en WARN, donc plus de `reportDiag` automatique (502 vu le 2026-10-14 à 10:50:24 UTC sur `POST /api/atak/explosive-timers`, pendant le reload PHP-FPM du déploiement de #802).
+- Connect `XEH_preInit` : « Stub zen_attributes_fnc_addAttribute installé » passe en INFO, une fois par lancement d'Arma (`uiNamespace`).
+- Connect `fn_diagStatusSnapshot` : « Version des mods » affiche « ATAK natif x.y.z » quand l'ancienne surcouche Athena n'est pas chargée (avant : « Athena — »).
+- Connect `fn_logDump` : `athenaReady=false` du dump « boot » est suivi de « (avant le handshake : normal au démarrage) » ; ce dump part à CBA_settingsInitialized, avant le handshake.
+- comspec_overwatch_connect.pbo repatché (tools/pbo_patch.py, 4 fichiers). main.pbo inchangé.
+
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
 
 ### Résumé joueur
