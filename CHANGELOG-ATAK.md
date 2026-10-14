@@ -38,6 +38,26 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Ordres au drone depuis la carte : chaque ordre dit s'il part ou pourquoi il est refusé (ATAK natif 1.93.0)
+
+### Résumé joueur
+Type : correctif
+FR : Les ordres au drone du clic droit sur la carte disent ce qui se passe
+- Aller, Rechercher, Stationnaire et Atterrir affichent maintenant « ordre reçu » quand le drone l'a pris, ou la raison d'un refus : liaison perdue (distance, relief, signal DJI), zone interdite, batterie vide, frappe en cours.
+- Liaison perdue : le message dit à quelle distance est le drone et quoi faire (se rapprocher, attendre « liaison rétablie », puis redonner l'ordre). Un appui sur le message ouvre l'app Drone.
+- Chaque étape est notée dans le journal de l'app Drone, et si le drone ne répond jamais, le téléphone le dit au bout de 30 s.
+EN : Drone orders from the map right-click now tell you what happens
+- Go, Search, Hover and Land now show "order received" once the drone took it, or why it was refused: link lost (distance, terrain, DJI signal), no-fly zone, empty battery, strike under way.
+- Link lost: the message gives the drone's distance and what to do (move closer, wait for "link restored", then give the order again). Tapping the message opens the Drone app.
+- Every step is written to the Drone app log, and if the drone never answers, the phone says so after 30 s.
+
+### Détail technique
+- Retour de TTRD (14/10, capture : sous-menu affiché sur un DJI Mavic 3E, « les ordres fonctionnent pas ? »). Chemin relu de bout en bout : clés DGOTO/DHUNT/DHOVER/DLAND bien traitées après le regroupement 1.91.0, `mapOrder` → `_send` → événement visé `comspec_atak_native_droneCmd` → `goto`/`hunt` côté machine du drone. Pas de clé perdue. Le refus le plus probable est la liaison (`_needLink`), qui ne disait que « hors liaison » sans raison ni journal ; « perdu 12:58 » sur la capture est un marqueur LOCK (cible marquée perdue de vue), pas l'état de la liaison.
+- `fn_mapCtxMenu` : les quatre ordres partent à l'image suivante (`CBA_fnc_execNextFrame`), hors du clic d'un bouton que `close` vient d'effacer.
+- `fn_droneAction "mapOrder"` : journal à chaque étape (demande, liaison bonne et barres, veille, drone posé, terminal UAV repris, envoi, attente d'accusé) ; refus expliqués par bandeau (app DRONE au clic) + ligne rouge : point illisible, pas de drone, détruit, batterie (`fuel`) vide, frappe en cours, liaison perdue (pas de téléphone, batterie du téléphone, signal Mavic, relief avec portée ×0,3, distance/portée), zone interdite.
+- `_watchMap` (chaque seconde, liaison ou non) : `COMSPEC_ATAK_DroneMapOrder` [ordre, grille, time, étape, COMSPEC_DroneAckN à l'envoi] → « ordre reçu » (bandeau SUCCESS) dès que le compteur bouge, ligne à 5 s sans accusé, bandeau ERROR à 30 s (FORCER L'EXÉCUTION ou réappairer).
+- en.txt : 31 traductions.
+
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
 
 ### Résumé joueur
