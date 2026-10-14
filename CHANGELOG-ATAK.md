@@ -54,7 +54,7 @@ EN : Drone app redone, phone in hand for photos, clearer map
 - The extension antenna starts from the case port instead of floating above it, green button labels no longer have a black outline, and Settings, Credits and Status show the version with the build date.
 
 ### Détail technique
-Regroupe #820, #822, #825, #826, #827, #829, #830 et #831 (une seule version : ATAK natif 1.95.0, COMSPEC Link inchangé 2.0.85 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.14 1c505a2 » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin, que HEMTT ne produit pas et dont l’ancienne copie ne décrit plus les textures d’antenne régénérées).
+Regroupe #820, #822, #825, #826, #827, #829, #830 et #831 (une seule version : ATAK natif 1.95.0, COMSPEC Link inchangé 2.0.85 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.14 2544731 » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin, que HEMTT ne produit pas et dont l’ancienne copie ne décrit plus les textures d’antenne régénérées).
 
 #### Numéro de build complet dans le téléphone (#822)
 
