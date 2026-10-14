@@ -7031,6 +7031,49 @@ class AtakApiController
     }
 
     /**
+     * Serveur Arma (COMSPEC Link « Distance.Batch », app Distances de l'ATAK natif) : distances parcourues et heures de
+     * pilote de tous les joueurs, comptées par le serveur et envoyées toutes les 10 min.
+     * Corps : {mission_key, players: [{player_uid, call_sign, steps, foot_m, foot_s, land_m, land_s, sea_m, sea_s, air_m,
+     * air_s, halo_m, halo_s, halo_jumps, pilot: [{class, label, kind: heli|plane, seconds, meters}]}]}.
+     */
+    public function distanceBatch(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $actor = $this->guardArmaWrite($request, $tenantId, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $repo = new \App\Repositories\AtakDistanceRepository();
+        if (!$repo->schemaReady()) {
+            return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+        }
+        $body = $this->jsonBody($request);
+        $missionKey = \App\Support\AtakMissionKey::normalize($body['mission_key'] ?? null);
+        $matched = 0;
+        $unmatched = 0;
+        foreach (\App\Repositories\AtakDistanceRepository::normalizeBatch($body['players'] ?? []) as $p) {
+            $uid = SteamId::normalize($p['player_uid']);
+            $user = $uid !== null ? $this->userRepository->findBySteamIdForTenant($tenantId, $uid) : null;
+            if ($user === null) {
+                $unmatched++;
+                continue;
+            }
+            if ($repo->addSession($tenantId, (int) $user['id'], $missionKey, $p['stats'], $p['pilot'])) {
+                $matched++;
+            }
+        }
+
+        return Response::json(['ok' => true, 'matched' => $matched, 'unmatched' => $unmatched]);
+    }
+
+    /**
      * File d'envoi de COMSPEC Link (« SendQueue.Report ») : bilan de la file d'un joueur ou d'un serveur Arma,
      * envoyé toutes les ~30 s quand quelque chose a changé. Corps : steam_uid, call_sign, client_kind (client|server),
      * extension_version, mod_version, summary {queued, sending, retry, failed, done, overload…}, items (100 au plus).

@@ -38,23 +38,23 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Regroupement : app Plan refaite, partage des caméras par NFC, Bluetooth ou relais (ATAK natif 1.96.0)
+## Regroupement : app Plan refaite, partage des caméras, nouvelle app Distances (ATAK natif 1.96.0, COMSPEC Link 2.0.86)
 
 ### Résumé joueur
 Type : nouveauté
-FR : L'app Plan est refaite et tu partages tes caméras par NFC, Bluetooth ou relais
-- App Plan : outils rangés dans une palette, menu au clic droit, ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), une description par élément, et un menu EXPORTER pour copier le plan ou un texte de briefing avec les grilles.
-- Une salle de plan se crée en un clic : donne son code, tous ceux qui le tapent dessinent sur le même plan. Un tutoriel s'ouvre au premier lancement et la touche H affiche l'aide de l'outil en cours.
-- App Vidéo live : bouton PARTAGER, vers un ATAK ou vers TOUS. Une caméra n'est plus visible par tout le camp sans partage.
-- Partage par NFC (téléphones dos à dos, même sans aucun réseau), par Bluetooth (courte portée, sans réseau) ou par les relais (sans limite de distance).
-EN : The Plan app is redesigned and you share your cameras by NFC, Bluetooth or relay
-- Plan app: tools in a palette, right-click menu, UNDO / REDO (Ctrl+Z / Ctrl+Y), a description per item, and an EXPORT menu to copy the plan or a briefing text with grids.
-- Create a plan room in one click: share its code and everyone who types it draws on the same plan. A tutorial opens the first time and the H key shows help for the current tool.
-- Live video app: SHARE button, to one ATAK or to ALL. A camera is no longer visible to the whole side without sharing.
-- Share by NFC (phones back to back, even with no network at all), by Bluetooth (short range, no network) or through relays (no distance limit).
+FR : App Plan refaite, caméras partagées par NFC, Bluetooth ou relais, nouvelle app Distances
+- App Plan : outils rangés dans une palette, menu au clic droit, ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), une description par élément, un menu EXPORTER, des salles où tous ceux qui ont le code dessinent sur le même plan, un tutoriel et l'aide sur la touche H.
+- App Vidéo live : bouton PARTAGER vers un ATAK ou vers TOUS, par NFC (téléphones dos à dos, même sans réseau), par Bluetooth (courte portée, sans réseau) ou par les relais (sans limite de distance). Une caméra n'est plus visible par tout le camp sans partage.
+- Nouvelle app Distances : tes pas, tes kilomètres à pied, en véhicule, en bateau, en vol et en saut HALO, et tes heures de pilote par appareil, comptés par le serveur même si ton téléphone est vide ou cassé.
+- Ces distances arrivent sur ta fiche du site toutes les 10 minutes, avec le cumul de toutes tes missions.
+EN : Plan app redone, cameras shared by NFC, Bluetooth or relay, new Distances app
+- Plan app: tools in a palette, right-click menu, UNDO / REDO (Ctrl+Z / Ctrl+Y), a description per item, an EXPORT menu, rooms where everyone with the code draws on the same plan, a tutorial and help on the H key.
+- Live video app: SHARE button to one ATAK or to ALL, by NFC (phones back to back, even with no network), by Bluetooth (short range, no network) or through relays (no distance limit). A camera is no longer visible to the whole side without sharing.
+- New Distances app: your steps, kilometres on foot, by vehicle, by boat, in flight and in HALO jumps, and your pilot hours per aircraft, counted by the server even if your phone is flat or broken.
+- These distances reach your member file on the site every 10 minutes, with your all-missions totals.
 
 ### Détail technique
-Regroupe #833 et #834 (une seule version : ATAK natif 1.96.0, COMSPEC Link inchangé 2.0.85 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.14 e9bdc48 » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin).
+Regroupe #833, #834 et #836 (une seule version : ATAK natif 1.96.0, COMSPEC Link 2.0.86 pour la nouvelle commande `Distance.Batch` de #836 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.14 e9bdc48 » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin).
 
 #### App Plan refaite : palette d'outils, menus, annuler / rétablir, salles collaboratives, aide et tutoriel (#833)
 
@@ -73,6 +73,15 @@ Regroupe #833 et #834 (une seule version : ATAK natif 1.96.0, COMSPEC Link incha
 - `fn_camAction` : `list` filtrée par accès (`listAll` garde tout le camp pour les noms), statut `NOACCESS`, UID du poseur enregistré à la pose. `fn_feedLink` : liaison Wi-Fi directe à une caméra fixe à portée (`comspec_atak_native_camera_range`, 600 m), même sans réseau.
 - `fn_pageLivecam` : bouton PARTAGER et panneau (méthode avec ses conditions, puis destinataire) ; `fn_livecamStart` et la mini-caméra de la carte s'arrêtent sans accès. Réglage CBA `comspec_atak_native_camera_share` : « Partage obligatoire » (défaut) ou « Tout le camp voit tout » (comportement d'avant, PARTAGER masqué). Page « Partage des caméras » du Manuel de terrain (FR/EN). Test `AtakCameraShareTest`.
 - À tester en jeu : caméra posée visible du seul poseur ; PARTAGER par NFC à 1 m en mode avion, l'équipier la regarde à moins de 600 m ; Bluetooth refusé hors portée ou éteint (raison affichée), TOUS à portée ; relais TOUS, un arrivant la voit ; RETIRER LES ACCÈS ; Ma caméra partagée visible dans VOIR CAMÉRA (carte / BFT) ; réglage « Tout le camp voit tout ».
+
+#### Nouvelle app Distances : pas, kilomètres, heures de pilote par appareil, sur le téléphone et la fiche du site (#836)
+
+- Serveur (`fn_distanceServer`, PFH 3 s dans `XEH_postInitServer`) : écart de position de chaque joueur rangé à pied / terrestre / bateau / vol / saut (ParachuteBase, ou chute libre : pas au sol, > 15 m ATL, vz < -8 m/s ou anim halofreefall ; distance 3D en saut, 2D sinon). Téléport ignoré au-delà d'une vitesse plausible par mode. Pas = distance / longueur de pas (0,7 à 1,6 m selon l'allure), rien à la nage ni à plat ventre. Temps à pied = temps en mouvement. Saut compté au départ d'au moins 150 m ou sous voile. Pilote = `currentPilot` d'un `Air` moteur allumé, par `typeOf`.
+- Envoi `Distance.Batch` (nouvelle commande COMSPEC Link 2.0.86, file d'attente comme `ScreenTime.Batch`) toutes les 10 min, au départ d'un joueur et à `MPEnded`, par lots de 25 ; ce qui échoue reste en mémoire serveur. Compteurs de la mission poussés au joueur toutes les 15 s (`COMSPEC_ATAK_DistMe`, ciblé sur son client) pour l'app `fn_pageDistance` (lanceur Navigation, icône `app_distance`).
+- Réglage CBA serveur « Distances parcourues » (`comspec_atak_native_distance`, actif par défaut).
+- Site : `POST /api/atak/distance/batch` → `atak_distance_stats` (une ligne par membre et session `mission_key`) et `atak_pilot_time` (par classe d'appareil), migration `bootstrap/atak_distance_migration.php`. Fiche du membre : carte « Distances parcourues en jeu » (cumuls, sessions, temps à pied total et moyen par session) et « Heures de pilote par appareil », classes regroupées par type (`AtakDistanceRepository::aircraftFamily` : Chinook avec Huron, Black Hawk avec Ghost Hawk, Little Bird avec Hummingbird…).
+- DLL à reconstruire (build_mod.bat) : sans COMSPEC Link 2.0.86 le serveur compte quand même mais n'envoie rien (journal WARN DISTANCE).
+- Non testé en jeu. À vérifier : marche, course, sprint, rampé, nage (pas et km) ; véhicule terrestre, bateau ; hélicoptère et avion en pilote et en passager ; saut HALO depuis un avion et ouverture de voile ; respawn et téléport Zeus non comptés ; app Distances mise à jour toutes les 15 s ; fiche du site après 10 min ou à la fin de mission.
 
 ---
 

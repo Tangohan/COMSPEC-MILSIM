@@ -375,6 +375,9 @@ private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 ["comspec_atak_native_screen_time", "CHECKBOX",
     ["Temps d'écran et temps par rôle", "Compte le temps du téléphone allumé (en main, porté, par app) et le temps de jeu par rôle (pilote, chef d'équipe…). Visible dans l'app Temps d'écran et envoyé à Athena (fiche du membre, back-office)."],
     _team, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_distance", "CHECKBOX",
+    ["Distances parcourues", "Le serveur compte pour chaque joueur les pas, les kilomètres à pied, en véhicule, en vol et en saut, et les heures de pilote par appareil. Visible dans l'app Distances et envoyé à Athena (fiche du membre)."],
+    _team, true, 1] call comspec_atak_native_fnc_addSetting;
 // App Plan (carte de briefing) : qui modifie le plan partagé du camp ; le serveur seul l'écrit (fn_planServer).
 ["comspec_atak_native_plan_edit", "LIST",
     ["Plan de briefing : édition", "Qui peut dessiner sur le plan partagé du camp (app Plan). Les autres le voient et préparent leur brouillon, ajouté ensuite par un chef."],
