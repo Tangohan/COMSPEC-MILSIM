@@ -684,7 +684,7 @@ final class JnetPortalController
             'jnetNodeId' => $nodeId,
             'jnetCanTba' => PortalAccessChoice::canAccessTba(),
             'jnetUnreadMail' => $unread,
-            'jnetDtg' => strtoupper(gmdate('dHi') . 'Z' . gmdate('M y')),
+            'jnetDtg' => strtoupper(gmdate('dHi') . 'Z ' . gmdate('M y')),
         ], $extra);
 
         return Response::view('layout.main', $payload);

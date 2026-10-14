@@ -122,9 +122,17 @@ final class JnetPortalRealDataAssetTest extends TestCase
         $js = (string) file_get_contents($root . '/public/assets/js/jnet_spaces.js');
         $dashboard = (string) file_get_contents($root . '/app/Services/Jnet/JnetDashboardService.php');
 
-        // Hiérarchie : arbre des unités, plus de grille plate.
-        self::assertStringContainsString('_unit_tree.php', $home);
-        self::assertStringContainsString('_unit_tree.php', $space);
+        // Hiérarchie : cartes par commandement et organigramme (arbre), au choix.
+        $views = (string) file_get_contents($root . '/views/jnet/_unit_views.php');
+        self::assertStringContainsString('_unit_views.php', $home);
+        self::assertStringContainsString('_unit_views.php', $space);
+        self::assertStringContainsString('_unit_tree.php', $views);
+        self::assertStringContainsString('_unit_card.php', $views);
+        self::assertStringContainsString('jnet.view.', $js);
+
+        // Bandeau de diffusion sur les deux écrans.
+        self::assertStringContainsString('_diffusion.php', $home);
+        self::assertStringContainsString('_diffusion.php', $space);
         self::assertStringNotContainsString("\$commands", $home);
 
         // Guide sur les deux écrans.

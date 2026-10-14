@@ -24,25 +24,39 @@ $prioKey = static fn (array $t): string => preg_replace('/[^a-z]/', '', strtolow
 $exBack = url('jnet');
 $label = (string) ($space['label'] ?? 'Organisation');
 $guideContext = 'org';
+$orgBadge = is_string($space['badge'] ?? null) ? (string) $space['badge'] : '';
+$topCount = count($unitTree);
 ?>
 <div class="jn-layout">
     <?php require base_path('views/jnet/_spaces_rail.php'); ?>
 
     <div class="jn-main">
+        <?php $diffusionText = 'Échelon organisation — diffusion : tous les membres'; require base_path('views/jnet/_diffusion.php'); ?>
+
         <section class="jn-head jn-head--org" aria-labelledby="jn-space-title">
             <div class="jn-head__id">
-                <div>
-                    <p class="jn-kicker">Espace commun · toute l’organisation</p>
+                <?php if ($orgBadge !== ''): ?>
+                    <img class="jn-emblem jn-emblem--img jn-emblem--round" src="<?= $h($orgBadge) ?>" alt="Insigne de <?= $h($label) ?>">
+                <?php else: ?>
+                    <span class="jn-emblem jn-emblem--round" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="30" height="30"><path fill="currentColor" d="M12 2.5l2.8 6.1 6.7.7-5 4.5 1.4 6.6L12 17l-5.9 3.4 1.4-6.6-5-4.5 6.7-.7z"/></svg>
+                    </span>
+                <?php endif; ?>
+                <div class="jn-head__text">
+                    <p class="jn-chip">Échelon organisation</p>
                     <h1 id="jn-space-title" class="jn-head__name"><?= $h($label) ?></h1>
+                    <p class="jn-head__lead">
+                        <?= $topCount ?> commandement<?= $topCount > 1 ? 's' : '' ?> · <?= (int) $orgStats['units'] ?> unité<?= (int) $orgStats['units'] > 1 ? 's' : '' ?>
+                        · <span class="jn-posture jn-posture--<?= $postureClass ?>"><?= $h((string) ($posture['label'] ?? '')) ?></span>
+                    </p>
                     <?php if ($motto !== ''): ?><p class="jn-head__motto"><?= $h($motto) ?></p><?php endif; ?>
                 </div>
             </div>
-            <dl class="jn-figures">
-                <div><dt>Posture</dt><dd class="jn-posture jn-posture--<?= $postureClass ?>"><?= $h((string) ($posture['label'] ?? '')) ?></dd></div>
-                <div><dt>Unités</dt><dd><?= (int) $orgStats['units'] ?></dd></div>
-                <div><dt>Disponibles</dt><dd><?= (int) $orgStats['available'] ?><small> / <?= (int) $orgStats['members'] ?></small></dd></div>
-                <div><dt>Opérations</dt><dd><?= (int) $orgStats['ops'] ?></dd></div>
-                <div><dt>Échanges 24 h</dt><dd><?= (int) $orgStats['exchanges24h'] ?></dd></div>
+            <dl class="jn-figures jn-figures--big">
+                <div><dt>membres</dt><dd><?= (int) $orgStats['members'] ?></dd></div>
+                <div class="is-ok"><dt>disponibles</dt><dd><?= (int) $orgStats['available'] ?></dd></div>
+                <div class="is-accent"><dt>opérations</dt><dd><?= (int) $orgStats['ops'] ?></dd></div>
+                <div><dt>échanges 24 h</dt><dd><?= (int) $orgStats['exchanges24h'] ?></dd></div>
             </dl>
         </section>
 
@@ -52,9 +66,9 @@ $guideContext = 'org';
             <div class="jn-section__head">
                 <div>
                     <h2 id="jn-units-title">Situation des unités</h2>
-                    <p class="jn-section__lead">Cliquez sur une unité pour ouvrir son espace. Les flèches déplient les sous-unités.</p>
+                    <p class="jn-section__lead">Cliquez sur une unité pour ouvrir son espace. L’organigramme montre toute la chaîne de commandement.</p>
                 </div>
-                <a class="jn-link" href="<?= $h(url('jnet/unite')) ?>">Organigramme complet →</a>
+                <a class="jn-link" href="<?= $h(url('jnet/unite')) ?>">Fiche d’unité complète →</a>
             </div>
             <?php if ($unitTree === []): ?>
                 <div class="jn-empty">
@@ -63,7 +77,7 @@ $guideContext = 'org';
                     <p><a class="jn-btn" href="<?= $h(effectifs_workspace_url('chaine')) ?>">Ouvrir la chaîne de commandement</a></p>
                 </div>
             <?php else: ?>
-                <?php $treeNodes = $unitTree; require base_path('views/jnet/_unit_tree.php'); ?>
+                <?php $viewNodes = $unitTree; $viewId = 'jn-org-units'; $viewGrouped = true; require base_path('views/jnet/_unit_views.php'); ?>
             <?php endif; ?>
         </section>
 
@@ -95,7 +109,8 @@ $guideContext = 'org';
                         <p>Ouvrez l’espace de votre unité dans l’arbre ci-dessus et publiez le premier : il apparaîtra ici pour l’encadrement concerné.</p>
                     </div>
                 <?php else: ?>
-                    <div class="jn-stack">
+                    <div class="jn-stack jn-stack--rows">
+                        <?php $exVariant = 'row'; $exPerspective = ''; ?>
                         <?php foreach ($flow as $ex): ?>
                             <?php require base_path('views/jnet/_exchange.php'); ?>
                         <?php endforeach; ?>

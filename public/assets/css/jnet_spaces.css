@@ -1548,3 +1548,417 @@ textarea.jn-input { resize: vertical; }
 .jnet-embed.jnet-embed .jn-avatar img {
   display: block;
 }
+
+/* ═══════════ Refonte d'après la maquette « JNET — Tableau d'unité » (2026-10) ═══════════
+ * Bandeau de diffusion, en-têtes à gros chiffres, unités en cartes ou en organigramme,
+ * flux commun en lignes, fil interne en messagerie, cartes « équipe » avec visages.
+ * Toujours les jetons --ath-* : clair et nuit sans règle dédiée.
+ */
+
+/* ——— Bandeau de diffusion ——— */
+
+.jnet-embed.jnet-embed .jn-diffusion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  margin: 0;
+  padding: 0.5rem 0.9rem;
+  border-left: 4px solid var(--jn-unit);
+  background: color-mix(in srgb, var(--jn-unit) 16%, var(--jn-surface));
+  font: 700 0.72rem/1.3 var(--jn-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--jn-ink);
+}
+
+.jnet-embed.jnet-embed .jn-diffusion__dtg {
+  font-weight: 600;
+  color: var(--jn-ink-2);
+  white-space: nowrap;
+}
+
+/* ——— En-têtes ——— */
+
+.jnet-embed.jnet-embed .jn-chip {
+  display: inline-block;
+  margin: 0 0 0.45rem;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--jn-unit);
+  font: 700 0.68rem/1.2 var(--jn-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--jn-unit);
+}
+
+.jnet-embed.jnet-embed .jn-head--org {
+  border: 0;
+  background: none;
+  padding: 0.25rem 0 1.25rem;
+  border-bottom: 1px solid var(--jn-line);
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.jnet-embed.jnet-embed .jn-head--org .jn-head__name {
+  font-size: clamp(1.7rem, 3.2vw, 2.6rem);
+}
+
+.jnet-embed.jnet-embed .jn-emblem--round {
+  border-radius: 50%;
+  border-width: 3px;
+}
+
+.jnet-embed.jnet-embed .jn-head__lead .jn-posture {
+  font-size: 0.8rem !important;
+  font-weight: 800;
+  vertical-align: baseline;
+}
+
+.jnet-embed.jnet-embed span.jn-posture--green { color: var(--jn-ok); }
+.jnet-embed.jnet-embed span.jn-posture--amber { color: var(--jn-warn); }
+.jnet-embed.jnet-embed span.jn-posture--red { color: var(--jn-danger); }
+
+.jnet-embed.jnet-embed .jn-figures--big {
+  gap: 1.25rem 2.75rem;
+}
+
+.jnet-embed.jnet-embed .jn-figures--big dt {
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.jnet-embed.jnet-embed .jn-figures--big dd {
+  font-size: clamp(1.7rem, 2.6vw, 2.25rem);
+  font-weight: 900;
+}
+
+.jnet-embed.jnet-embed .jn-figures--big .is-ok dd { color: var(--jn-ok); }
+.jnet-embed.jnet-embed .jn-figures--big .is-accent dd,
+.jnet-embed.jnet-embed .jn-figures--big .is-accent dd a { color: var(--jn-unit); }
+
+.jnet-embed.jnet-embed .jn-figures__op dd {
+  font-size: clamp(1.15rem, 1.8vw, 1.55rem);
+  text-transform: uppercase;
+}
+
+.jnet-embed.jnet-embed .jn-figures__op dd a {
+  text-decoration: none;
+}
+
+.jnet-embed.jnet-embed .jn-head--unit {
+  --jn-shield-fill: color-mix(in srgb, var(--jn-unit) 12%, var(--jn-surface));
+  align-items: center;
+  padding: 1.4rem 1.6rem;
+  border-top-width: 1px;
+  border-left: 4px solid var(--jn-unit);
+}
+
+.jnet-embed.jnet-embed .jn-head--unit .jn-head__name {
+  font-size: clamp(1.7rem, 3.2vw, 2.6rem);
+}
+
+.jnet-embed.jnet-embed .jn-shield {
+  position: relative;
+  flex: 0 0 72px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.jnet-embed.jnet-embed .jn-shield svg {
+  display: block;
+}
+
+.jnet-embed.jnet-embed .jn-shield__mark {
+  position: absolute;
+  inset: 0 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 900 1.5rem/1 var(--jn-font);
+  color: var(--jn-unit);
+}
+
+/* ——— Cartes / Organigramme ——— */
+
+.jnet-embed.jnet-embed .jn-views {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.jnet-embed.jnet-embed .jn-views__radio {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.jnet-embed.jnet-embed .jn-views__switch {
+  display: inline-flex;
+  align-self: flex-end;
+  border: 1px solid var(--jn-line);
+  background: var(--jn-surface);
+}
+
+.jnet-embed.jnet-embed .jn-views__switch label {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--jn-muted);
+  cursor: pointer;
+}
+
+.jnet-embed.jnet-embed .jn-views__switch label + label {
+  border-left: 1px solid var(--jn-line);
+}
+
+.jnet-embed.jnet-embed .jn-views__radio:nth-of-type(1):checked ~ .jn-views__switch label:nth-child(1),
+.jnet-embed.jnet-embed .jn-views__radio:nth-of-type(2):checked ~ .jn-views__switch label:nth-child(2) {
+  background: var(--jn-ink);
+  color: var(--jn-surface);
+}
+
+.jnet-embed.jnet-embed .jn-views__radio:focus-visible ~ .jn-views__switch {
+  outline: 2px solid var(--jn-unit);
+  outline-offset: 2px;
+}
+
+.jnet-embed.jnet-embed .jn-views__radio:nth-of-type(1):checked ~ .jn-views__pane--tree,
+.jnet-embed.jnet-embed .jn-views__radio:nth-of-type(2):checked ~ .jn-views__pane--cards {
+  display: none;
+}
+
+.jnet-embed.jnet-embed .jn-views__more {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--jn-muted);
+}
+
+.jnet-embed.jnet-embed .jn-views__more label {
+  margin-left: 0.5rem;
+  color: var(--jn-unit);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.jnet-embed.jnet-embed .jn-views__pane--cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.jnet-embed.jnet-embed .jn-group__head a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.jnet-embed.jnet-embed .jn-group__head a:hover strong {
+  color: var(--jn-unit);
+}
+
+.jnet-embed.jnet-embed .jn-cards {
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+}
+
+.jnet-embed.jnet-embed .jn-unit__activity.is-idle {
+  color: var(--jn-muted);
+}
+
+.jnet-embed.jnet-embed .jn-unit__faces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.jnet-embed.jnet-embed .jn-ex__meta .jn-ex__time {
+  white-space: nowrap;
+}
+
+.jnet-embed.jnet-embed .jn-face {
+  position: relative;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--jn-unit) 14%, var(--jn-surface));
+  font: 800 0.7rem/1 var(--jn-font);
+  color: var(--jn-ink);
+}
+
+.jnet-embed.jnet-embed .jn-face img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.jnet-embed.jnet-embed .jn-face:not(.jn-face--more)::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--jn-surface);
+  background: var(--jn-ok);
+}
+
+.jnet-embed.jnet-embed .jn-face.is-off::after {
+  background: var(--jn-muted);
+}
+
+.jnet-embed.jnet-embed .jn-face--more {
+  background: var(--jn-line-soft);
+  color: var(--jn-muted);
+}
+
+/* ——— Flux commun en lignes ——— */
+
+.jnet-embed.jnet-embed .jn-stack--rows {
+  gap: 0;
+  border: 1px solid var(--jn-line);
+  background: var(--jn-surface);
+}
+
+.jnet-embed.jnet-embed .jn-stack--rows > .jn-ex {
+  border: 0;
+  border-top: 1px solid var(--jn-line-soft);
+}
+
+.jnet-embed.jnet-embed .jn-stack--rows > .jn-ex:first-child {
+  border-top: 0;
+}
+
+.jnet-embed.jnet-embed .jn-ex--row,
+.jnet-embed.jnet-embed .jn-ex--chat {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.25rem 1rem;
+  align-items: start;
+}
+
+.jnet-embed.jnet-embed .jn-ex__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.jnet-embed.jnet-embed .jn-ex--card .jn-ex__main,
+.jnet-embed.jnet-embed .jn-ex--row .jn-ex__main,
+.jnet-embed.jnet-embed .jn-ex--chat .jn-ex__main {
+  gap: 0.35rem;
+}
+
+.jnet-embed.jnet-embed .jn-ex__clock {
+  padding-top: 0.15rem;
+  min-width: 3.4rem;
+  font: 600 0.8rem/1.3 var(--jn-mono);
+  color: var(--jn-muted);
+}
+
+.jnet-embed.jnet-embed .jn-ex--row .jn-ex__title {
+  font-size: 0.95rem;
+}
+
+.jnet-embed.jnet-embed .jn-ex__origin {
+  font-size: 0.8rem;
+  color: var(--jn-muted);
+}
+
+.jnet-embed.jnet-embed .jn-ex__origin a,
+.jnet-embed.jnet-embed .jn-ex__origin b {
+  font-weight: 700;
+  color: var(--jn-ink);
+  text-decoration: none;
+}
+
+.jnet-embed.jnet-embed .jn-ex__dest {
+  font-size: 0.78rem;
+  color: var(--jn-muted);
+}
+
+/* ——— Fil interne en messagerie ——— */
+
+.jnet-embed.jnet-embed .jn-ex--chat .jn-ex__avatar {
+  text-decoration: none;
+}
+
+.jnet-embed.jnet-embed .jn-ex--chat .jn-ex__face {
+  width: 36px;
+  height: 36px;
+  font-size: 0.72rem;
+}
+
+.jnet-embed.jnet-embed .jn-ex--chat .jn-ex__meta {
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--jn-muted);
+}
+
+.jnet-embed.jnet-embed .jn-ex--chat .jn-ex__who {
+  color: var(--jn-ink);
+  text-decoration: none;
+}
+
+.jnet-embed.jnet-embed .jn-ex--chat .jn-ex__from {
+  color: var(--jn-muted);
+  text-decoration: none;
+}
+
+.jnet-embed.jnet-embed .jn-ex--chat .jn-ex__from:hover {
+  color: var(--jn-unit);
+}
+
+.jnet-embed.jnet-embed .jn-ex--chat .jn-ex__stamp {
+  font-family: var(--jn-mono);
+  font-size: 0.75rem;
+}
+
+.jnet-embed.jnet-embed .jn-ex--chat .jn-ex__title {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.jnet-embed.jnet-embed .jn-ex--chat .jn-ex__title .jn-tag {
+  margin-right: 0.4rem;
+  vertical-align: 0.1em;
+}
+
+/* ——— Accusés de lecture ——— */
+
+.jnet-embed.jnet-embed .jn-ex__ack {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--jn-warn);
+}
+
+.jnet-embed.jnet-embed .jn-ex__ack.is-complete {
+  color: var(--jn-ok);
+}
+
+/* ——— Colonnes d'un espace d'unité ——— */
+
+.jnet-embed.jnet-embed .jn-flow--internal .jn-compose {
+  margin-bottom: 0.25rem;
+}
+
+@media (max-width: 720px) {
+  .jnet-embed.jnet-embed .jn-views__switch {
+    align-self: flex-start;
+  }
+
+  .jnet-embed.jnet-embed .jn-head--unit {
+    padding: 1rem;
+  }
+}
