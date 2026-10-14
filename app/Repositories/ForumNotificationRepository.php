@@ -11,9 +11,9 @@ class ForumNotificationRepository
 {
     private PDO $pdo;
 
-    public function __construct()
+    public function __construct(?PDO $pdo = null)
     {
-        $this->pdo = Database::getPdo();
+        $this->pdo = $pdo ?? Database::getPdo();
     }
 
     public function tableExists(): bool
@@ -93,5 +93,48 @@ class ForumNotificationRepository
         $stmt->execute([$tenantId, $userId]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Notifications non lues d'un type pour un compte, toutes communautés (le compte est unique).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listUnreadOfTypeForUser(int $userId, string $type, int $maxAgeDays = 30, int $limit = 20): array
+    {
+        if ($userId < 1 || !$this->tableExists()) {
+            return [];
+        }
+        $lim = max(1, min(50, $limit));
+        $days = max(1, min(365, $maxAgeDays));
+        $stmt = $this->pdo->prepare(
+            "SELECT id, type, payload_json, created_at FROM forum_notifications
+             WHERE user_id = ? AND type = ? AND read_at IS NULL AND created_at >= ?
+             ORDER BY created_at DESC, id DESC LIMIT {$lim}"
+        );
+        $stmt->execute([$userId, $type, date('Y-m-d H:i:s', time() - $days * 86400)]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    /**
+     * Marque lues des notifications d'un type, seulement si elles appartiennent à ce compte.
+     *
+     * @param list<int> $ids
+     */
+    public function markReadForUser(array $ids, int $userId, string $type): int
+    {
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids), static fn (int $id): bool => $id > 0)));
+        if ($ids === [] || $userId < 1 || !$this->tableExists()) {
+            return 0;
+        }
+        $ids = array_slice($ids, 0, 50);
+        $in = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->pdo->prepare(
+            "UPDATE forum_notifications SET read_at = NOW() WHERE user_id = ? AND type = ? AND read_at IS NULL AND id IN ({$in})"
+        );
+        $stmt->execute(array_merge([$userId, $type], $ids));
+
+        return $stmt->rowCount();
     }
 }

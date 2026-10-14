@@ -365,6 +365,28 @@ final class AtakModReportRepository
         return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+    /**
+     * Statut actuel de quelques rapports (fenêtre « réponse à votre signalement » du joueur).
+     *
+     * @param list<int> $ids
+     * @return array<int, string> id → statut normalisé
+     */
+    public function workflowStatusesByIds(array $ids): array
+    {
+        $ids = self::cleanIds($ids);
+        if ($ids === []) {
+            return [];
+        }
+        $st = $this->pdo->prepare('SELECT id, workflow_status FROM atak_mod_reports WHERE id IN (' . self::placeholders($ids) . ')');
+        $st->execute($ids);
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $row) {
+            $out[(int) $row['id']] = $this->normalizeWorkflowStatus((string) ($row['workflow_status'] ?? ''));
+        }
+
+        return $out;
+    }
+
     public function updateWorkflowStatus(int $id, string $status): bool
     {
         return $id > 0 && $this->updateWorkflowStatusMany([$id], $status) > 0;

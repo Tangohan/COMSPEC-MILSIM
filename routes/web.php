@@ -533,6 +533,7 @@ return function (Router $router) {
     $router->get('/account', [AccountController::class, 'index'], [AuthMiddleware::class]);
     $router->get('/account/acces', [AccountController::class, 'access'], [AuthMiddleware::class]);
     $router->post('/compte/formule-offerte/{id}/vu', [\App\Controllers\Web\PlanGiftNoticeController::class, 'dismiss'], [AuthMiddleware::class]);
+    $router->post('/compte/retours-signalement/vu', [\App\Controllers\Web\ModReportReplyNoticeController::class, 'dismiss'], [AuthMiddleware::class]);
     $router->post('/account/quitter-communaute', [AccountController::class, 'leaveCommunity'], [AuthMiddleware::class]);
     $router->post('/account/sessions/fermer-les-autres', [AccountController::class, 'revokeOtherSessions'], [AuthMiddleware::class]);
     $router->get('/account/donnees', [AccountPrivacyController::class, 'index'], [AuthMiddleware::class]);
