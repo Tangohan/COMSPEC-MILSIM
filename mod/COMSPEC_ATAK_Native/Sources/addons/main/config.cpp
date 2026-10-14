@@ -465,7 +465,7 @@ class Display3DEN {
                 items[] += {"COMSPEC_ATAK_Menu"};
                 class COMSPEC_ATAK_Menu { text = "COMSPEC ATAK"; items[] = {"COMSPEC_ATAK_MenuRelays", "COMSPEC_ATAK_MenuRelayHelp"}; };
                 class COMSPEC_ATAK_MenuRelays { text = "$STR_COMSPEC_ATAK_CFG_TBR_MENU"; action = "['table'] call comspec_atak_native_fnc_relayEden"; };
-                class COMSPEC_ATAK_MenuRelayHelp { text = "$STR_COMSPEC_ATAK_CFG_TBR_HELP"; action = "['COMSPEC_ATAK', 'Relays'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_ATAK_MenuRelayHelp { text = "$STR_COMSPEC_ATAK_CFG_TBR_HELP"; action = "['help'] call comspec_atak_native_fnc_relayEden"; };
             };
         };
     };

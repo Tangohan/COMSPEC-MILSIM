@@ -38,6 +38,26 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
+
+### Résumé joueur
+Type : correctif
+FR : Le menu COMSPEC ATAK de l'éditeur Eden refonctionne
+- « Aide : poser un relais » ouvre l'aide des relais au lieu d'afficher une erreur de script.
+- « TBR · Tableau des relais » s'affiche de nouveau, au lieu de bloquer la souris derrière une fenêtre invisible.
+- Les deux fenêtres se ferment avec le bouton Fermer ou la touche Échap.
+EN : The COMSPEC ATAK menu in the Eden editor works again
+- "Help: placing a relay" opens the relay help instead of showing a script error.
+- "TBR · Relay table" shows again, instead of locking the mouse behind an invisible window.
+- Both windows close with the Close button or the Escape key.
+
+### Détail technique
+
+- Cause : les deux entrées du menu Eden s'exécutaient pendant que la liste déroulante du menu était encore ouverte. `BIS_fnc_openFieldManual` n'y trouvait pas d'écran parent (booléen passé à `createDisplay`, fn_openFieldManual.sqf ligne 40) ; la fenêtre TBR était créée mais restait invisible et gardait la souris.
+- `fn_relayEden` : les modes `table` et `help` relancent leur travail dans un script à part (`spawn` + `uiSleep 0.05`), une fois le menu refermé ; fenêtre commune `_window` (fond assombri, panneau et titre en safeZone, couleurs explicites, Échap ferme).
+- Nouveau mode `help` : le texte du manuel de terrain (`STR_COMSPEC_ATAK_CFG_BF0FFB1714`, CfgHints) dans une fenêtre défilante de l'éditeur ; le menu n'appelle plus `BIS_fnc_openFieldManual`. La page reste dans Aide > Manuel de terrain.
+- À tester en jeu (Eden) : menu COMSPEC ATAK > Aide : poser un relais (fenêtre lisible, défilement, Fermer, Échap) ; TBR avec et sans relais posés (liste, Aller, Sélectionner, double clic, Fermer, Échap) ; la souris et la caméra d'Eden répondent après fermeture.
+
 ## Regroupement : images dans le téléphone, ordres au drone, plan de briefing, app Groupe, mode PETIT (ATAK natif 1.91.0, COMSPEC Link 2.0.84)
 
 ### Résumé joueur
