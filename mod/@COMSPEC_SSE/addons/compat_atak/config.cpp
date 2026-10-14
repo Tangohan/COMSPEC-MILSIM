@@ -102,9 +102,9 @@ class Cfg3DEN {
                         typeName = "STRING";
                         DL7_COND;
                         class values {
-                            class Sse { name = "Données SSE générées"; value = "sse"; default = 1; };
-                            class Manual { name = "Fichiers saisis ci-dessous"; value = "manual"; };
-                            class Both { name = "Les deux"; value = "both"; };
+                            class Sse { name = "$STR_COMSPEC_SSE_CFG_2B49D01A7A"; value = "sse"; default = 1; };
+                            class Manual { name = "$STR_COMSPEC_SSE_CFG_A95FCA2FCE"; value = "manual"; };
+                            class Both { name = "$STR_COMSPEC_SSE_CFG_90DB01B4A5"; value = "both"; };
                         };
                     };
                     class COMSPEC_SSE_Dl7_Files {
@@ -129,6 +129,7 @@ class Cfg3DEN {
                     };
                     class COMSPEC_SSE_Dl7_Theme {
                         displayName = "$STR_COMSPEC_SSE_CFG_2547BF4CA0";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_5BD884C543";
                         property = "COMSPEC_SSE_Dl7_Theme";
                         control = "Combo";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Theme', _value];";
@@ -136,17 +137,18 @@ class Cfg3DEN {
                         typeName = "STRING";
                         DL7_COND;
                         class values {
-                            class Auto { name = "Selon l'appareil"; value = "auto"; default = 1; };
-                            class Windows { name = "Windows (bureau bleu)"; value = "windows"; };
-                            class Linux { name = "Linux (terminal vert)"; value = "linux"; };
-                            class Militaire { name = "Militaire"; value = "militaire"; };
-                            class Scada { name = "Industriel (SCADA)"; value = "scada"; };
-                            class Telephone { name = "Téléphone verrouillé"; value = "telephone"; };
-                            class Coffre { name = "Coffre chiffré"; value = "coffre"; };
+                            class Auto { name = "$STR_COMSPEC_SSE_CFG_F2F36B7F9C"; value = "auto"; default = 1; };
+                            class Windows { name = "$STR_COMSPEC_SSE_CFG_6CDE1BE9BE"; value = "windows"; };
+                            class Linux { name = "$STR_COMSPEC_SSE_CFG_0BF36E37B6"; value = "linux"; };
+                            class Militaire { name = "$STR_COMSPEC_SSE_CFG_1E0730DF18"; value = "militaire"; };
+                            class Scada { name = "$STR_COMSPEC_SSE_CFG_0FAE4CBFA9"; value = "scada"; };
+                            class Telephone { name = "$STR_COMSPEC_SSE_CFG_A92E2B0C4B"; value = "telephone"; };
+                            class Coffre { name = "$STR_COMSPEC_SSE_CFG_2D9AD0EB1E"; value = "coffre"; };
                         };
                     };
                     class COMSPEC_SSE_Dl7_Banner {
                         displayName = "$STR_COMSPEC_SSE_CFG_F09016E234";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_0C8B638B56";
                         property = "COMSPEC_SSE_Dl7_Banner";
                         control = "Edit";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Banner', _value];";
@@ -166,6 +168,7 @@ class Cfg3DEN {
                     };
                     class COMSPEC_SSE_Dl7_Hint {
                         displayName = "$STR_COMSPEC_SSE_CFG_C1C0201437";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_98E82155A6";
                         property = "COMSPEC_SSE_Dl7_Hint";
                         control = "Edit";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Hint', _value];";
@@ -175,6 +178,7 @@ class Cfg3DEN {
                     };
                     class COMSPEC_SSE_Dl7_Attempts {
                         displayName = "$STR_COMSPEC_SSE_CFG_F3FEFB2906";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_00C08F59B3";
                         property = "COMSPEC_SSE_Dl7_Attempts";
                         control = "Edit";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Attempts', _value];";
@@ -185,6 +189,7 @@ class Cfg3DEN {
                     };
                     class COMSPEC_SSE_Dl7_OnFail {
                         displayName = "$STR_COMSPEC_SSE_CFG_CED1C585A6";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_600E25C8D2";
                         property = "COMSPEC_SSE_Dl7_OnFail";
                         control = "Combo";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_OnFail', _value];";
@@ -192,14 +197,15 @@ class Cfg3DEN {
                         typeName = "STRING";
                         DL7_COND;
                         class values {
-                            class Lock { name = "Verrouiller (forçage seul)"; value = "lock"; default = 1; };
-                            class Wipe { name = "Effacer les données"; value = "wipe"; };
-                            class Alarm { name = "Déclencher l'alarme"; value = "alarm"; };
-                            class None { name = "Rien"; value = "none"; };
+                            class Lock { name = "$STR_COMSPEC_SSE_CFG_7EC29D9943"; value = "lock"; default = 1; };
+                            class Wipe { name = "$STR_COMSPEC_SSE_CFG_0384948B18"; value = "wipe"; };
+                            class Alarm { name = "$STR_COMSPEC_SSE_CFG_2FA41491DA"; value = "alarm"; };
+                            class None { name = "$STR_COMSPEC_SSE_CFG_107309E51C"; value = "none"; };
                         };
                     };
                     class COMSPEC_SSE_Dl7_Crack {
                         displayName = "$STR_COMSPEC_SSE_CFG_13E08E6708";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_03CAF58EAF";
                         property = "COMSPEC_SSE_Dl7_Crack";
                         control = "Checkbox";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Crack', _value];";
@@ -209,6 +215,7 @@ class Cfg3DEN {
                     };
                     class COMSPEC_SSE_Dl7_CrackTime {
                         displayName = "$STR_COMSPEC_SSE_CFG_AF7756A553";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_18D06EB587";
                         property = "COMSPEC_SSE_Dl7_CrackTime";
                         control = "Edit";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_CrackTime', _value];";
@@ -219,6 +226,7 @@ class Cfg3DEN {
                     };
                     class COMSPEC_SSE_Dl7_Duration {
                         displayName = "$STR_COMSPEC_SSE_CFG_C54AECDE5A";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_7F7B72796A";
                         property = "COMSPEC_SSE_Dl7_Duration";
                         control = "Edit";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Duration', _value];";
@@ -229,6 +237,7 @@ class Cfg3DEN {
                     };
                     class COMSPEC_SSE_Dl7_Port {
                         displayName = "$STR_COMSPEC_SSE_CFG_FE035157CD";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_4F40071791";
                         property = "COMSPEC_SSE_Dl7_Port";
                         control = "Combo";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_Port', _value];";
@@ -236,9 +245,9 @@ class Cfg3DEN {
                         typeName = "STRING";
                         DL7_COND;
                         class values {
-                            class Usb { name = "USB-C"; value = "usb"; default = 1; };
-                            class Rj45 { name = "Ethernet RJ45"; value = "rj45"; };
-                            class Serie { name = "Série RS-232 (lent)"; value = "serie"; };
+                            class Usb { name = "$STR_COMSPEC_SSE_CFG_DBB1867285"; value = "usb"; default = 1; };
+                            class Rj45 { name = "$STR_COMSPEC_SSE_CFG_8161F144F1"; value = "rj45"; };
+                            class Serie { name = "$STR_COMSPEC_SSE_CFG_2B264D3E23"; value = "serie"; };
                         };
                     };
                     class COMSPEC_SSE_Dl7_Alarm {
@@ -251,14 +260,15 @@ class Cfg3DEN {
                         typeName = "STRING";
                         DL7_COND;
                         class values {
-                            class None { name = "Aucune"; value = "none"; default = 1; };
-                            class Connect { name = "Au branchement"; value = "connect"; };
-                            class Fail { name = "Mauvais mot de passe"; value = "fail"; };
-                            class Download { name = "En fin de téléchargement"; value = "download"; };
+                            class None { name = "$STR_COMSPEC_SSE_CFG_E8F8827310"; value = "none"; default = 1; };
+                            class Connect { name = "$STR_COMSPEC_SSE_CFG_B80BA8ECDA"; value = "connect"; };
+                            class Fail { name = "$STR_COMSPEC_SSE_CFG_58F66D2E68"; value = "fail"; };
+                            class Download { name = "$STR_COMSPEC_SSE_CFG_7DB7C44D86"; value = "download"; };
                         };
                     };
                     class COMSPEC_SSE_Dl7_OneShot {
                         displayName = "$STR_COMSPEC_SSE_CFG_4275ED3369";
+                        tooltip = "$STR_COMSPEC_SSE_CFG_6DE71EE356";
                         property = "COMSPEC_SSE_Dl7_OneShot";
                         control = "Checkbox";
                         expression = "_this setVariable ['COMSPEC_SSE_Dl7_OneShot', _value];";
