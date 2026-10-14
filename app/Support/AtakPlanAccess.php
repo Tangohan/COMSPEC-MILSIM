@@ -17,6 +17,30 @@ final class AtakPlanAccess
 {
     public const FEATURE = 'atak';
 
+    /** Liaison de base (décision TTRD 2026-10-14, variante B) : positions, comptes rendus et briefing. */
+    public const FEATURE_BASIC = 'atak_link_basic';
+
+    /**
+     * Appels du jeu ouverts avec la liaison de base. Tout le reste (photos, vidéo, drone, commandes web, IFF,
+     * marqueurs, CAS, logistique…) reste réservé aux formules qui ont la carte complète (Standard et plus).
+     * Préfixes de chemin après /api/.
+     */
+    public const BASIC_PATHS = [
+        // Connexion et fonctionnement du lien (sans eux, rien ne passe).
+        'atak/whoami', 'atak/client-init', 'atak/me-link-status', 'atak/disconnect',
+        'atak/game-session/', 'atak/game-link/', 'atak/operator/', 'atak/presence', 'atak/server-presence',
+        'atak/session-restore', 'atak/mod-modules', 'atak/mod-report', 'atak/device-logs', 'atak/device-alerts',
+        'atak/web-log', 'atak/send-queue/report', 'atak/telemetry/', 'atak/notifications', 'atak/stream',
+        'atak/playtime', 'atak/screen-time', 'atak/experience', 'atak/beta-register', 'atak/player-profile',
+        'atak/phone-pairing', 'atak/mission-settings', 'atak/roleplay-stats',
+        // Positions.
+        'atak/position', 'atak/units', 'atak/squads/sync', 'units',
+        // Comptes rendus.
+        'atak/reports', 'atak/salute',
+        // Briefing.
+        'atak/briefing-plan', 'atak/briefing-presence', 'atak/briefing-slides',
+    ];
+
     public static function allows(int $tenantId): bool
     {
         if ($tenantId < 1) {
@@ -33,6 +57,51 @@ final class AtakPlanAccess
         } catch (\Throwable) {
             return false;
         }
+    }
+
+    /** Liaison de base : la formule l'inclut (clé absente = valeur par défaut du catalogue, vraie partout). */
+    public static function allowsBasic(int $tenantId): bool
+    {
+        if ($tenantId < 1) {
+            return false;
+        }
+
+        try {
+            $gate = Container::get(FeatureGateService::class);
+
+            return $gate instanceof FeatureGateService && $gate->allowsWithCatalogDefault($tenantId, self::FEATURE_BASIC);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /** Chemin d'API ouvert avec la liaison de base (ex. « /api/atak/position », sous-dossier éventuel compris). */
+    public static function isBasicPath(string $path): bool
+    {
+        $path = strtolower((string) parse_url($path, PHP_URL_PATH));
+        $at = strpos($path, '/api/');
+        if ($at === false) {
+            return false;
+        }
+        $rel = substr($path, $at + 5);
+        foreach (self::BASIC_PATHS as $prefix) {
+            $prefix = rtrim($prefix, '/');
+            if ($rel === $prefix || str_starts_with($rel, $prefix . '/')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Appel de l'API tactique : carte complète, ou liaison de base pour les chemins de base. */
+    public static function allowsRequest(int $tenantId, string $path): bool
+    {
+        if (self::allows($tenantId)) {
+            return true;
+        }
+
+        return self::isBasicPath($path) && self::allowsBasic($tenantId);
     }
 
     /** Rapport du mod qui porte ce refus (ex. « ERR|http_403|photo.png|feature_unavailable »). */
@@ -65,19 +134,24 @@ final class AtakPlanAccess
         }
 
         return sprintf(
-            'la communauté « %s » est en formule « %s », sans la carte et les liaisons (essai fondateur terminé ou formule de base) : '
-            . 'toutes les remontées du jeu (photos, positions, comptes rendus) sont refusées. Pour la débloquer : offrir une formule '
-            . '(Administration > Formules offertes) ou changer sa formule.',
+            'la communauté « %s » est en formule « %s », sans la carte complète (essai fondateur terminé ou formule de base) : '
+            . '%s Pour la débloquer : offrir une formule (Administration > Formules offertes) ou changer sa formule.',
             $name,
-            $plan
+            $plan,
+            self::allowsBasic($tenantId)
+                ? 'la liaison de base (positions, comptes rendus, briefing) passe, le reste (photos, vidéo, drone…) est refusé.'
+                : 'toutes les remontées du jeu (photos, positions, comptes rendus) sont refusées.'
         );
     }
 
-    public static function deniedJson(): Response
+    /** $basic : la communauté a la liaison de base, seule cette fonction est réservée aux formules supérieures. */
+    public static function deniedJson(bool $basic = false): Response
     {
         return Response::json([
             'error' => 'feature_unavailable',
-            'message' => 'La carte et les liaisons ne sont pas disponibles pour cette communauté. Contactez votre administrateur.',
+            'message' => $basic
+                ? 'Fonction réservée aux formules Standard et plus. La liaison de base (positions, comptes rendus, briefing) reste active.'
+                : 'La carte et les liaisons ne sont pas disponibles pour cette communauté. Contactez votre administrateur.',
         ], 403);
     }
 }

@@ -1187,7 +1187,11 @@ class AtakApiController
         }
 
         if (!AtakPlanAccess::allows($id)) {
-            return AtakPlanAccess::deniedJson();
+            // Liaison de base (formule Gratuit) : positions, comptes rendus et briefing passent quand même.
+            $basic = AtakPlanAccess::allowsBasic($id);
+            if (!$basic || !AtakPlanAccess::isBasicPath($request->path())) {
+                return AtakPlanAccess::deniedJson($basic);
+            }
         }
 
         return $id;

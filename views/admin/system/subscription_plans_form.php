@@ -87,7 +87,8 @@ $limitsVal = $prettyJson(is_string($lj) ? $lj : null);
                     <?php foreach (SubscriptionPlanFeaturesCatalog::BOOL_FEATURES as $key): ?>
                         <?php
                         $def = $defs[$key] ?? ['label' => $key, 'help' => ''];
-                        $checked = !empty($features[$key]);
+                        // Clé absente de la formule (ajoutée depuis) : la valeur par défaut du catalogue s'applique déjà.
+                        $checked = array_key_exists($key, $features) ? !empty($features[$key]) : !empty(SubscriptionPlanFeaturesCatalog::defaultsForSlug((string) ($row['slug'] ?? 'free'))[$key] ?? false);
                         ?>
                         <label class="flex gap-3 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm hover:border-emerald-300">
                             <input type="checkbox" name="feature_<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8') ?>" value="1" class="mt-1 rounded border-slate-300 text-emerald-700 focus:ring-emerald-500" <?= $checked ? 'checked' : '' ?> />
