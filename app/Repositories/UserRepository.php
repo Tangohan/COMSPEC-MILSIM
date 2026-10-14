@@ -1859,8 +1859,13 @@ class UserRepository
         $idParts = [];
         $extraJoins = '';
         if ($hasPa) {
-            $extraJoins .= 'LEFT JOIN personnel_assignments pa ON pa.user_id = u.id AND pa.is_primary = 1
-                    AND pa.status = \'active\' AND (pa.ended_at IS NULL OR pa.ended_at > CURDATE())
+            // Une seule affectation par membre : sinon chaque ligne d'historique multiplie le résultat (500 /jnet, mémoire épuisée).
+            $extraJoins .= 'LEFT JOIN personnel_assignments pa ON pa.id = (
+                    SELECT pa2.id FROM personnel_assignments pa2
+                    WHERE pa2.user_id = u.id AND pa2.is_primary = 1
+                    AND pa2.status = \'active\' AND (pa2.ended_at IS NULL OR pa2.ended_at > CURDATE())
+                    ORDER BY pa2.id DESC LIMIT 1
+                )
                 LEFT JOIN units un_pa ON un_pa.id = pa.unit_id AND un_pa.tenant_id = u.tenant_id ';
             $unitParts[] = 'un_pa.name';
             $codeParts[] = 'un_pa.code';
@@ -1870,8 +1875,12 @@ class UserRepository
         $codeParts[] = 'un_pp.code';
         $idParts[] = 'un_pp.id';
         if ($hasUu) {
-            $extraJoins .= 'LEFT JOIN user_units uu ON uu.user_id = u.id AND uu.is_primary = 1
-                    AND (uu.ended_at IS NULL OR uu.ended_at > NOW())
+            $extraJoins .= 'LEFT JOIN user_units uu ON uu.id = (
+                    SELECT uu2.id FROM user_units uu2
+                    WHERE uu2.user_id = u.id AND uu2.is_primary = 1
+                    AND (uu2.ended_at IS NULL OR uu2.ended_at > NOW())
+                    ORDER BY uu2.id DESC LIMIT 1
+                )
                 LEFT JOIN units un_uu ON un_uu.id = uu.unit_id AND un_uu.tenant_id = u.tenant_id ';
             $unitParts[] = 'un_uu.name';
             $codeParts[] = 'un_uu.code';
@@ -1910,7 +1919,7 @@ class UserRepository
                        ' . $jobRoleSelect . $extrasSelect . '
                 FROM users u
                 LEFT JOIN tenants t ON t.id = u.tenant_id
-                LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+                ' . $this->personnelProfilesJoinSql($tenantId) . '
                 ' . $extrasJoin . '
                 ' . $jobRoleJoin . '
                 ' . $gc['join'] . '
@@ -1919,7 +1928,7 @@ class UserRepository
                 WHERE ' . $this->sqlMemberOfTenantPredicate('u', $tenantId) . ' AND u.id IN (' . $ph . ')';
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($userIds);
-        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $rows = $this->dedupeRowsByUserId($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []);
         foreach ($rows as &$row) {
             $tenantLabel = trim((string) ($row['tenant_name'] ?? ''));
             if (function_exists('community_display_name')) {
