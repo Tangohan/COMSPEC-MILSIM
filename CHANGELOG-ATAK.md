@@ -75,6 +75,21 @@ EN : A window explains why your photo was not sent
 - XEH_postInitClient (retour des photos) : quand le dernier refus porte `feature_unavailable` (connect, 1.93.0), `BIS_fnc_guiMessage` sur l'écran de jeu (attend la fermeture du menu Échap), une fois par session (`COMSPEC_ATAK_PlanModalShown`), à la place de la notification « Photo refusée par Athena ». Textes FR, traduits dans i18n/en.txt.
 - main.pbo reconstruit avec HEMTT 1.17.2 (texHeaders.bin repris de 1.93.0).
 - À tester en jeu : communauté sans la carte, prendre deux photos. La fenêtre s'ouvre une seule fois, lisible en FR et en EN (Réglages > Langue), OK la ferme. Communauté avec la carte : aucune fenêtre, envoi normal.
+
+## Texte des boutons verts moins gras (ATAK natif, numéro attribué au regroupement)
+
+### Résumé joueur
+Type : correctif
+FR : Le texte des boutons verts est plus fin et plus lisible
+- Les boutons verts du téléphone (RÉDIGER, REPRENDRE, ACCUSER RÉCEPTION, l'option choisie dans les Réglages comme COQUE NERVURÉE) n'ont plus de contour noir autour des lettres.
+- Les autres boutons gardent leur aspect, avec un texte un peu plus net.
+EN : Green button labels are thinner and easier to read
+- The phone's green buttons (WRITE, RESUME, ACKNOWLEDGE, the selected option in Settings such as RIBBED CASE) no longer have a black outline around the letters.
+- Other buttons keep their look, with slightly crisper text.
+
+### Détail technique
+- `COMSPEC_RscButton` (ui/controls.hpp) : `shadow=0`. La classe héritait du `shadow=2` du RscButton du jeu (contour noir du texte), qui doublait l'épaisseur du texte noir sur fond vert. Touche tous les boutons du téléphone (classes dérivées comprises) ; police inchangée (Roboto Condensed Bold, ou la police choisie dans Réglages > Police).
+
 ## Objets d'inventaire en vraie 3D, pylônes relais retravaillés jour et nuit (ATAK natif 1.94.0)
 
 ### Résumé joueur
