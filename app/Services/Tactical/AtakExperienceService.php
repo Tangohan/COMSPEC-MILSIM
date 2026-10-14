@@ -198,7 +198,7 @@ final class AtakExperienceService
             ],
             [
                 'id' => 'native_marker_tags',
-                'label' => 'Cartouches des repères',
+                'label' => 'Coordonnées des repères',
                 'description' => 'Encadré nom et coordonnées E / N sous les repères de la carte du téléphone.',
                 'type' => 'tri',
                 'default' => 'player',
