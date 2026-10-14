@@ -15,6 +15,7 @@ class JnetExchangeRepository
 {
     private ?PDO $pdo = null;
     private ?bool $ready = null;
+    private ?bool $sourceReady = null;
 
     public function __construct(?PDO $pdo = null)
     {
@@ -41,6 +42,72 @@ class JnetExchangeRepository
         }
 
         return $this->ready;
+    }
+
+    /** Colonnes d'origine (reco, photos, rapports du jeu) présentes ? */
+    public function sourceColumnsReady(): bool
+    {
+        if ($this->sourceReady !== null) {
+            return $this->sourceReady;
+        }
+        if (!$this->schemaReady()) {
+            return $this->sourceReady = false;
+        }
+        try {
+            $this->pdo()->query('SELECT source_kind, source_ref, image_url FROM jnet_exchanges LIMIT 1');
+            $this->sourceReady = true;
+        } catch (\Throwable) {
+            $this->sourceReady = false;
+        }
+
+        return $this->sourceReady;
+    }
+
+    /**
+     * Crée ou met à jour l'échange lié à une donnée de terrain (une reco modifiée en jeu garde le même échange).
+     * Retourne l'identifiant de l'échange, ou 0 si les colonnes d'origine ne sont pas encore en place.
+     *
+     * @param array{from_unit_id:int, author_user_id:int, kind:string, title:string, body:string,
+     *              link_url:?string, image_url:?string, requires_ack:bool, targets:list<int>} $data
+     */
+    public function upsertFromSource(int $tenantId, string $sourceKind, string $sourceRef, array $data): int
+    {
+        if (!$this->sourceColumnsReady() || $sourceKind === '' || $sourceRef === '') {
+            return 0;
+        }
+        $pdo = $this->pdo();
+        $st = $pdo->prepare('SELECT id FROM jnet_exchanges WHERE tenant_id = ? AND source_kind = ? AND source_ref = ? LIMIT 1');
+        $st->execute([$tenantId, $sourceKind, $sourceRef]);
+        $existing = (int) ($st->fetchColumn() ?: 0);
+        if ($existing === 0) {
+            $id = $this->create(
+                $tenantId,
+                $data['from_unit_id'],
+                $data['author_user_id'],
+                $data['kind'],
+                $data['title'],
+                $data['body'],
+                $data['link_url'],
+                $data['requires_ack'],
+                $data['targets']
+            );
+            $pdo->prepare('UPDATE jnet_exchanges SET source_kind = ?, source_ref = ?, image_url = ? WHERE id = ?')
+                ->execute([$sourceKind, $sourceRef, $data['image_url'], $id]);
+
+            return $id;
+        }
+        // Mise à jour du contenu seulement : destinataires et accusés de lecture restent ceux du premier envoi.
+        $pdo->prepare('UPDATE jnet_exchanges SET kind = ?, title = ?, body = ?, link_url = ?, image_url = ? WHERE id = ?')
+            ->execute([
+                $data['kind'],
+                $data['title'],
+                $data['body'] !== '' ? $data['body'] : null,
+                $data['link_url'],
+                $data['image_url'],
+                $existing,
+            ]);
+
+        return $existing;
     }
 
     /**
@@ -106,8 +173,7 @@ class JnetExchangeRepository
         }
         $limit = max(1, min(500, $limit));
         $st = $this->pdo()->prepare(
-            'SELECT e.id, e.from_unit_id, e.author_user_id, e.kind, e.title, e.body, e.link_url, e.requires_ack, e.created_at,
-                    u.display_name AS author_display_name, u.callsign AS author_callsign
+            'SELECT e.*, u.display_name AS author_display_name, u.callsign AS author_callsign
              FROM jnet_exchanges e
              LEFT JOIN users u ON u.id = e.author_user_id
              WHERE e.tenant_id = ? AND e.deleted_at IS NULL

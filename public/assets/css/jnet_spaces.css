@@ -1962,3 +1962,171 @@ textarea.jn-input { resize: vertical; }
     padding: 1rem;
   }
 }
+
+
+/* ——— Échanges venus du jeu (reco, photos, rapports ATAK) ——— */
+
+/* Vert olive « terrain » : distinct de l'ambre du type Renseignement et de l'accent d'unité. */
+.jnet-embed { --jn-field: #5f7a1f; }
+html[data-bo-theme="dark"] .jnet-embed { --jn-field: #a3c45a; }
+
+.jnet-embed.jnet-embed .jn-ex__meta {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.3rem;
+}
+
+.jnet-embed.jnet-embed .jn-ex__line,
+.jnet-embed.jnet-embed .jn-ex__route {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.45rem;
+  min-width: 0;
+}
+
+.jnet-embed.jnet-embed .jn-ex__route {
+  font-size: 0.75rem;
+  color: var(--jn-muted);
+}
+
+.jnet-embed.jnet-embed .jn-ex__route .jn-unitchip {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jnet-embed.jnet-embed .jn-ex--field {
+  border-left: 3px solid var(--jn-field);
+}
+
+.jnet-embed.jnet-embed .jn-stack > .jn-ex--field {
+  border-left: 3px solid var(--jn-field);
+}
+
+.jnet-embed.jnet-embed .jn-ex__source {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.12rem 0.45rem 0.12rem 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--jn-field);
+  background: color-mix(in srgb, var(--jn-field) 12%, transparent);
+  white-space: nowrap;
+}
+
+.jnet-embed.jnet-embed .jn-ex__media {
+  display: block;
+  margin: 0.15rem 0 0.1rem;
+  aspect-ratio: 16 / 9;
+  max-height: 240px;
+  overflow: hidden;
+  background: var(--jn-line-soft);
+  border: 1px solid var(--jn-line);
+}
+
+.jnet-embed.jnet-embed .jn-ex__media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 220ms ease;
+}
+
+.jnet-embed.jnet-embed .jn-ex__media:hover img { transform: scale(1.02); }
+
+.jnet-embed.jnet-embed .jn-ex__media:focus-visible {
+  outline: 2px solid var(--jn-field);
+  outline-offset: 2px;
+}
+
+.jnet-embed.jnet-embed .jn-ex__media--protected {
+  aspect-ratio: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  border-style: dashed;
+  background:
+    repeating-linear-gradient(135deg, transparent 0 8px, color-mix(in srgb, var(--jn-muted) 8%, transparent) 8px 16px),
+    var(--jn-surface);
+  color: var(--jn-ink-2);
+  font-size: 0.82rem;
+  text-decoration: none;
+}
+
+.jnet-embed.jnet-embed .jn-ex__media--protected:hover { color: var(--jn-ink); }
+
+/* ——— Membres : liste compacte ——— */
+
+.jnet-embed.jnet-embed .jn-people {
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 0;
+  border: 1px solid var(--jn-line);
+  background: var(--jn-surface);
+}
+
+.jnet-embed.jnet-embed .jn-person {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 0.7rem;
+  align-items: center;
+  padding: 0.6rem 0.8rem;
+  border: 0;
+  border-bottom: 1px solid var(--jn-line-soft);
+  text-align: left;
+}
+
+.jnet-embed.jnet-embed .jn-person .jn-avatar {
+  grid-row: 1 / span 2;
+  width: 40px;
+  height: 40px;
+  font-size: 0.78rem;
+}
+
+.jnet-embed.jnet-embed .jn-person .jn-avatar::after {
+  width: 10px;
+  height: 10px;
+}
+
+.jnet-embed.jnet-embed .jn-person strong {
+  align-self: end;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jnet-embed.jnet-embed .jn-person > span:last-child {
+  align-self: start;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jnet-embed.jnet-embed .jn-ex__media img { transition: none; }
+}
+
+/* Flux commun (colonne large) : la photo reste une vignette, le texte garde la lecture. */
+.jnet-embed.jnet-embed .jn-stack .jn-ex__media {
+  max-width: 420px;
+}
+
+/* Petit écran : seuls l'échelon supérieur et l'unité courante restent lisibles dans le fil. */
+@media (max-width: 640px) {
+  .jnet-embed.jnet-embed .jn-crumbs li:not(:nth-last-child(-n+2)) { display: none; }
+  .jnet-embed.jnet-embed .jn-crumbs li:nth-last-child(2):not(:first-child)::before { content: '… ›'; }
+  .jnet-embed.jnet-embed .jn-crumbs a,
+  .jnet-embed.jnet-embed .jn-crumbs__here { max-width: 60vw; }
+}
+
+/* Fil interne (messagerie) : l'en-tête reste sur une ligne, malgré l'en-tête en colonnes des autres cartes. */
+.jnet-embed.jnet-embed .jn-ex--chat .jn-ex__meta {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+}

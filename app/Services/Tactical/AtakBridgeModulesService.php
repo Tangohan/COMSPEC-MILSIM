@@ -113,6 +113,11 @@ final class AtakBridgeModulesService
                 'label' => 'Routage des rapports tactiques',
                 'description' => 'Applique les règles de distribution aux rapports, sans masquer les données existantes.',
             ],
+            [
+                'id' => 'jnet_bridge',
+                'label' => 'Reco terrain → JNET',
+                'description' => 'Publie dans l’espace JNET de l’unité de l’opérateur ses notes de reco, photos et rapports envoyés depuis le jeu, remontés vers l’échelon supérieur. Photos confidentielles : lien seulement, jamais l’image.',
+            ],
         ];
     }
 

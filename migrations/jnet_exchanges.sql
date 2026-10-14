@@ -12,12 +12,16 @@ CREATE TABLE IF NOT EXISTS `jnet_exchanges` (
   `title` varchar(160) NOT NULL,
   `body` text NULL,
   `link_url` varchar(500) NULL COMMENT 'Lien interne optionnel (document, fiche, position)',
+  `image_url` varchar(500) NULL COMMENT 'Vignette d’une photo de reco (jamais pour un cliché confidentiel)',
   `requires_ack` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = accusé de lecture demandé',
+  `source_kind` varchar(24) NULL COMMENT 'Origine automatique : recon_note|recon_image|atak_report (NULL = publié à la main)',
+  `source_ref` varchar(64) NULL COMMENT 'Identifiant de la donnée de terrain',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `deleted_at` datetime NULL,
   PRIMARY KEY (`id`),
   KEY `jnet_exchanges_tenant_created` (`tenant_id`, `created_at`),
-  KEY `jnet_exchanges_from` (`tenant_id`, `from_unit_id`)
+  KEY `jnet_exchanges_from` (`tenant_id`, `from_unit_id`),
+  UNIQUE KEY `jnet_exchanges_source` (`tenant_id`, `source_kind`, `source_ref`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `jnet_exchange_targets` (
