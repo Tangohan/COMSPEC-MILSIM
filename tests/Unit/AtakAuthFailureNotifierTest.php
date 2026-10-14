@@ -26,7 +26,7 @@ final class AtakAuthFailureNotifierTest extends TestCase
         $this->pdo = new PDO('sqlite::memory:');
         $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $this->pdo->exec("CREATE TABLE atak_mod_reports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, severity TEXT DEFAULT 'error', workflow_status TEXT DEFAULT 'new',
+            id INTEGER PRIMARY KEY AUTOINCREMENT, severity TEXT DEFAULT 'error', gravity TEXT DEFAULT 'normal', workflow_status TEXT DEFAULT 'new',
             channel TEXT DEFAULT 'Core', message TEXT, detail_text TEXT, context_json TEXT, fingerprint TEXT,
             source TEXT DEFAULT 'auto', steam_uid TEXT, player_uid TEXT, player_name TEXT, callsign TEXT, client_ip TEXT,
             mod_version TEXT, extension_version TEXT, arma_build TEXT, hit_count INTEGER DEFAULT 1,
@@ -181,5 +181,26 @@ final class AtakAuthFailureNotifierTest extends TestCase
         self::assertFalse($result['mailed']);
         self::assertNotNull($result['diagnosis']);
         self::assertSame([], $mails);
+    }
+
+    public function testEnglishProfileGetsEnglishAdviceAndTemplate(): void
+    {
+        $this->pdo->exec('CREATE TABLE user_profiles (user_id INTEGER PRIMARY KEY, language TEXT)');
+        $this->pdo->exec('INSERT INTO user_profiles (user_id, language) SELECT id, \'en\' FROM users');
+        $mails = [];
+        self::assertTrue($this->notifier($mails)->handle($this->report())['mailed']);
+        $vars = $mails[0][1];
+        self::assertSame('en', $vars['lang']);
+        self::assertStringStartsWith('Your ', $vars['reasonText']);
+        self::assertStringContainsString('Esc > Athena sign-in', implode(' ', $vars['steps']));
+
+        $rendered = (static function (array $__vars): array {
+            extract($__vars);
+
+            return require dirname(__DIR__, 2) . '/views/emails/atak_player_access_refused.php';
+        })($vars);
+        self::assertStringContainsString('your COMSPEC ATAK mod detected that Athena refused', $rendered['text']);
+        self::assertStringContainsString('To fix it:', $rendered['text']);
+        self::assertStringNotContainsString('Bonjour', $rendered['html']);
     }
 }
