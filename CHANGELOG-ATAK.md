@@ -38,6 +38,20 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Texte des boutons verts moins gras (ATAK natif, numéro attribué au regroupement)
+
+### Résumé joueur
+Type : correctif
+FR : Le texte des boutons verts est plus fin et plus lisible
+- Les boutons verts du téléphone (RÉDIGER, REPRENDRE, ACCUSER RÉCEPTION, l'option choisie dans les Réglages comme COQUE NERVURÉE) n'ont plus de contour noir autour des lettres.
+- Les autres boutons gardent leur aspect, avec un texte un peu plus net.
+EN : Green button labels are thinner and easier to read
+- The phone's green buttons (WRITE, RESUME, ACKNOWLEDGE, the selected option in Settings such as RIBBED CASE) no longer have a black outline around the letters.
+- Other buttons keep their look, with slightly crisper text.
+
+### Détail technique
+- `COMSPEC_RscButton` (ui/controls.hpp) : `shadow=0`. La classe héritait du `shadow=2` du RscButton du jeu (contour noir du texte), qui doublait l'épaisseur du texte noir sur fond vert. Touche tous les boutons du téléphone (classes dérivées comprises) ; police inchangée (Roboto Condensed Bold, ou la police choisie dans Réglages > Police).
+
 ## Objets d'inventaire en vraie 3D, pylônes relais retravaillés jour et nuit (ATAK natif 1.94.0)
 
 ### Résumé joueur

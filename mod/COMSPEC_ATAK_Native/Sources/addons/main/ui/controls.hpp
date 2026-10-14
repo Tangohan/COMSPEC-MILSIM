@@ -37,7 +37,9 @@ class COMSPEC_RscStructuredText: RscStructuredText { colorText[]=ATAK_TEXT; colo
 class COMSPEC_RscButton: RscButton {
     // Désactivé (ctrlEnable false) : texte nettement atténué et fond quasi transparent, bien distinct d'un bouton
     // disponible non choisi (fond BG2, texte clair).
-    font=ATAK_FONT_BOLD; colorText[]=ATAK_TEXT; colorDisabled[]={0.42,0.46,0.44,0.7};
+    // shadow=0 : le RscButton du jeu trace un contour noir autour du texte (shadow=2), qui empâtait le texte foncé
+    // des boutons verts (RÉDIGER, option choisie d'un sélecteur) jusqu'à le rendre illisible.
+    shadow=0; font=ATAK_FONT_BOLD; colorText[]=ATAK_TEXT; colorDisabled[]={0.42,0.46,0.44,0.7};
     colorBackground[]=ATAK_BG2; colorBackgroundActive[]=ATAK_GREEN_DIM; colorBackgroundDisabled[]={0.04,0.045,0.042,0.55};
     colorFocused[]=ATAK_BG2; colorBorder[]=ATAK_BORDER; colorShadow[]={0,0,0,0}; offsetPressedX=0; offsetPressedY=0;
     sizeEx="0.024 * safeZoneH";
