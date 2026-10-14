@@ -68,7 +68,7 @@ class CfgFunctions {
             class dataSetup {}; class dataParseFiles {}; class dataServer {}; class dataAction {}; class dataInit {}; class dataOverlay {}; class pageDataLink {}; class zeusForm {}; class moduleContext {}; class moduleDataNode {}; class moduleDataFile {}; class moduleDataReset {}; class moduleDating {};
         };
         class reports { file="z\comspec_atak_native\addons\main\functions\reports";
-            class reportTypes {}; class reportAction {}; class pageReports {};
+            class reportTypes {}; class reportAction {}; class pageReports {}; class reportForm {}; class reportAuto {};
         };
         class teams { file="z\comspec_atak_native\addons\main\functions\teams";
             class ftCatalog {}; class ftInfo {}; class ftTeams {}; class ftServer {}; class ftAction {}; class ftRows {}; class ftCenter {};

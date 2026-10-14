@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## App Comptes rendus refaite : une fiche par type de compte rendu (ATAK natif 1.93.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : L'app Comptes rendus est entièrement refaite
+- Chaque compte rendu a sa propre fiche : SALUTE lettre par lettre, UXO en 9 lignes, NBC-1 aux lignes OTAN, blessé au format MIST, SITREP et ordre de conduite en paragraphes, LOGREP par classe avec niveaux en couleur, contact en gros boutons.
+- Le téléphone propose les valeurs du jeu : l'ennemi que vous visez ou le plus proche connu, l'état de votre groupe, la cible de votre désignateur, votre position et l'heure. Une ligne obligatoire oubliée s'affiche en rouge.
+- Les fiches entamées restent en brouillon. Dans Envoyés, vous voyez qui a lu et accusé réception de vos comptes rendus ; dans Reçus, un bouton Accuser réception prévient l'auteur.
+- Les ordres du commandement s'accusent depuis l'app. Vous pouvez joindre une photo et choisir jusqu'où le compte rendu remonte sur Athena.
+EN : The Reports app has been completely redone
+- Every report has its own sheet: SALUTE letter by letter, UXO as a 9-line, NBC-1 with NATO lines, casualty in MIST format, SITREP and FRAGO in paragraphs, LOGREP by class with coloured levels, contact with big buttons.
+- The phone suggests values from the game: the enemy you aim at or the nearest known one, your group's state, your designator's target, your position and the time. A forgotten required line turns red.
+- Sheets you start stay as drafts. In Sent you see who read and acknowledged your reports; in Received, an Acknowledge button tells the author.
+- Orders from command can be acknowledged from the app. You can attach a photo and choose how far up the report goes on Athena.
+
+### Détail technique
+- `fn_reportTypes` : catalogue étendu (repère de ligne, requis, proposition, présentation par type : code, couleur, bandeau, outils, JNET, photo).
+- `fn_reportForm` (nouveau) : fiche propre à chaque type ; `fn_reportAuto` (nouveau) : propositions tirées du jeu (knowsAbout du groupe, position estimée par targetKnowledge, effectifs, chargeurs, carburant, laser).
+- `fn_formRender` : lignes `lineseg` et `linecombo`, libellé rouge et pastille élargie pour `line`.
+- `fn_reportAction` : brouillons (`COMSPEC_ATAK_RepDrafts`), contrôle avant envoi, accusés `comspec_atak_native_reportRcpt` (relayés au camp, rejoués aux arrivants), photo via `captureReconImage`, `jnet_escalate` dans structured_data, accusé d'ordre via `fn_taskAction`.
+- Site : `JnetFieldReportBridge` remonte de 1, 2 échelons ou jusqu'au sommet selon `jnet_escalate` ; libellés des nouveaux champs dans `AtakIcemanReportCatalog`.
+- Non testé en jeu.
+
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
 
 ### Résumé joueur
