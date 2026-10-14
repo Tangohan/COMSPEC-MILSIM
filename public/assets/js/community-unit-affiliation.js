@@ -78,6 +78,15 @@
         return map[tier] || '';
     }
 
+    /** Minuscules, sans accents ni apostrophes typographiques : « Trépel » = « trepel », « 1er RPIMa » = « 1rpima ». */
+    function foldText(v) {
+        var t = String(v || '').toLowerCase();
+        if (t.normalize) {
+            t = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+        return t.replace(/[’'`´]/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim();
+    }
+
     function renderUnitList(query) {
         var list = $('wizard-real-unit-list');
         if (!list) return;
@@ -86,21 +95,23 @@
             return;
         }
         var units = catalog.units[currentCountry];
-        var q = (query || '').toLowerCase().trim();
+        var q = foldText(query);
+        var qTokens = q ? q.split(' ') : [];
+        var qCompact = q.replace(/\s+/g, '');
         var visible = 0;
         var lastTier = '';
 
         units.forEach(function (u) {
             var name = String(u.name || '');
-            var hay = name.toLowerCase();
-            if (u.short_name) hay += ' ' + String(u.short_name).toLowerCase();
-            if (u.id) hay += ' ' + String(u.id).toLowerCase();
+            var hay = name;
+            if (u.short_name) hay += ' ' + String(u.short_name);
+            if (u.id) hay += ' ' + String(u.id);
             if (Array.isArray(u.aliases)) {
-                u.aliases.forEach(function (a) { hay += ' ' + String(a).toLowerCase(); });
+                u.aliases.forEach(function (a) { hay += ' ' + String(a); });
             }
+            hay = foldText(hay);
             var compact = hay.replace(/\s+/g, '');
-            var qCompact = q.replace(/\s+/g, '');
-            if (q && hay.indexOf(q) === -1 && compact.indexOf(qCompact) === -1) {
+            if (q && compact.indexOf(qCompact) === -1 && !qTokens.every(function (tok) { return hay.indexOf(tok) !== -1; })) {
                 return;
             }
             visible += 1;

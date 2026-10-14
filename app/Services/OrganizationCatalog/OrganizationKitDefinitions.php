@@ -13,6 +13,11 @@ final class OrganizationKitDefinitions
     public const GAMING_COMMUNITY = 'official.gaming_community';
     public const FRENCH_ARMY = 'official.french_army';
     public const US_SOF = 'official.us_sof';
+    public const US_ARMY_INFANTRY = 'official.us_army_infantry';
+    public const SOF_TASK_FORCE = 'official.sof_task_force';
+    public const FRENCH_ARMOR = 'official.french_armor';
+    public const AIRMOBILE = 'official.airmobile';
+    public const PRIVATE_MILITARY = 'official.private_military';
 
     /**
      * @return list<array<string, mixed>>
@@ -23,6 +28,11 @@ final class OrganizationKitDefinitions
             self::frenchArmy(),
             self::usSof(),
             self::infantryLight(),
+            self::usArmyInfantry(),
+            self::sofTaskForce(),
+            self::frenchArmor(),
+            self::airmobile(),
+            self::privateMilitary(),
             self::gamingCommunity(),
         ];
     }
@@ -36,6 +46,11 @@ final class OrganizationKitDefinitions
             self::FRENCH_ARMY,
             self::US_SOF,
             self::INFANTRY_LIGHT,
+            self::US_ARMY_INFANTRY,
+            self::SOF_TASK_FORCE,
+            self::FRENCH_ARMOR,
+            self::AIRMOBILE,
+            self::PRIVATE_MILITARY,
             self::GAMING_COMMUNITY,
         ];
     }
@@ -81,8 +96,8 @@ final class OrganizationKitDefinitions
         return [
             'code' => self::INFANTRY_LIGHT,
             'title' => 'Compagnie d’infanterie légère',
-            'summary' => 'Une compagnie, trois pelotons et des groupes, avec les fonctions d’encadrement et de combat usuelles, et un système de grades français.',
-            'version' => 1,
+            'summary' => 'Une compagnie, trois pelotons de deux groupes, une section d’appui et une cellule soutien, avec les fonctions d’encadrement, de combat et de soutien usuelles, et un système de grades français.',
+            'version' => 2,
             'grade_system_code' => 'FR_CLASSIC',
             'units' => [
                 ['key' => 'cie', 'parent_key' => null, 'name' => 'Compagnie', 'slug' => 'compagnie', 'type' => 'group', 'code' => 'CIE', 'display_order' => 10],
@@ -96,24 +111,37 @@ final class OrganizationKitDefinitions
                 ['key' => 'plt3', 'parent_key' => 'cie', 'name' => '3e peloton', 'slug' => '3e-peloton', 'type' => 'group', 'code' => '3PLT', 'display_order' => 50],
                 ['key' => 'plt3g1', 'parent_key' => 'plt3', 'name' => 'Groupe Echo', 'slug' => 'groupe-echo', 'type' => 'group', 'code' => '3A', 'display_order' => 51],
                 ['key' => 'plt3g2', 'parent_key' => 'plt3', 'name' => 'Groupe Foxtrot', 'slug' => 'groupe-foxtrot', 'type' => 'group', 'code' => '3B', 'display_order' => 52],
+                ['key' => 'appui', 'parent_key' => 'cie', 'name' => 'Section d’appui', 'slug' => 'section-appui', 'type' => 'group', 'code' => 'SAP', 'display_order' => 60],
+                ['key' => 'soutien', 'parent_key' => 'cie', 'name' => 'Cellule soutien', 'slug' => 'cellule-soutien', 'type' => 'group', 'code' => 'SOU', 'display_order' => 70],
             ],
             'job_role_categories' => [
                 ['key' => 'cmd', 'parent_key' => null, 'name' => 'Commandement', 'slug' => 'commandement-infanterie', 'sort_order' => 10],
                 ['key' => 'combat', 'parent_key' => null, 'name' => 'Combat', 'slug' => 'combat-infanterie', 'sort_order' => 20],
+                ['key' => 'appui', 'parent_key' => null, 'name' => 'Appui', 'slug' => 'appui-infanterie', 'sort_order' => 25],
                 ['key' => 'soutien', 'parent_key' => null, 'name' => 'Soutien', 'slug' => 'soutien-infanterie', 'sort_order' => 30],
             ],
             'job_roles' => [
                 ['category_key' => 'cmd', 'name' => 'Chef de compagnie', 'slug' => 'chef-de-compagnie', 'description' => 'Conduit la compagnie et arbitre les priorités.', 'sort_order' => 10],
+                ['category_key' => 'cmd', 'name' => 'Adjoint de compagnie', 'slug' => 'adjoint-de-compagnie', 'description' => 'Seconde le chef de compagnie et tient l’état-major.', 'sort_order' => 15],
                 ['category_key' => 'cmd', 'name' => 'Chef de peloton', 'slug' => 'chef-de-peloton', 'description' => 'Conduit un peloton et relaye les ordres.', 'sort_order' => 20],
                 ['category_key' => 'cmd', 'name' => 'Chef de groupe', 'slug' => 'chef-de-groupe', 'description' => 'Conduit un groupe au plus près du terrain.', 'sort_order' => 30],
+                ['category_key' => 'cmd', 'name' => 'Chef d’équipe', 'slug' => 'chef-equipe-infanterie', 'description' => 'Conduit une équipe de trois ou quatre combattants.', 'sort_order' => 40],
                 ['category_key' => 'combat', 'name' => 'Équipier', 'slug' => 'equipier-infanterie', 'description' => 'Combattant de base du groupe.', 'sort_order' => 10],
                 ['category_key' => 'combat', 'name' => 'Radio', 'slug' => 'radio-infanterie', 'description' => 'Relais des transmissions du groupe ou du peloton.', 'sort_order' => 20],
                 ['category_key' => 'combat', 'name' => 'Tireur de précision', 'slug' => 'tireur-precision', 'description' => 'Appui observation et tir précis.', 'sort_order' => 30],
+                ['category_key' => 'combat', 'name' => 'Grenadier', 'slug' => 'grenadier-infanterie', 'description' => 'Met en œuvre le lance-grenades du groupe.', 'sort_order' => 40],
+                ['category_key' => 'combat', 'name' => 'Mitrailleur', 'slug' => 'mitrailleur-infanterie', 'description' => 'Assure l’appui feu soutenu du groupe.', 'sort_order' => 50],
+                ['category_key' => 'appui', 'name' => 'Tireur anti-char', 'slug' => 'tireur-antichar-infanterie', 'description' => 'Engage les véhicules et les positions renforcées.', 'sort_order' => 10],
+                ['category_key' => 'appui', 'name' => 'Servant mortier', 'slug' => 'servant-mortier-infanterie', 'description' => 'Met en œuvre le mortier léger de la compagnie.', 'sort_order' => 20],
+                ['category_key' => 'appui', 'name' => 'Observateur', 'slug' => 'observateur-infanterie', 'description' => 'Demande et ajuste les tirs d’appui.', 'sort_order' => 30],
                 ['category_key' => 'soutien', 'name' => 'Logisticien', 'slug' => 'logisticien-compagnie', 'description' => 'Suit le matériel et les besoins de la compagnie.', 'sort_order' => 10],
+                ['category_key' => 'soutien', 'name' => 'Auxiliaire sanitaire', 'slug' => 'auxiliaire-sanitaire-infanterie', 'description' => 'Porte les premiers soins et prépare l’évacuation.', 'sort_order' => 20],
+                ['category_key' => 'soutien', 'name' => 'Conducteur', 'slug' => 'conducteur-infanterie', 'description' => 'Assure les déplacements et le ravitaillement.', 'sort_order' => 30],
             ],
             'roles' => [
                 ['name' => 'Commandement de compagnie', 'slug' => 'kit-cie-commandement', 'description' => 'Pilotage de la compagnie et de l’organigramme.', 'preset' => 'commandement_unite'],
                 ['name' => 'Encadrement de peloton', 'slug' => 'kit-peloton-encadrement', 'description' => 'Encadrement d’un peloton, sans administration complète.', 'preset' => 'commandement_unite'],
+                ['name' => 'Instruction', 'slug' => 'kit-cie-instruction', 'description' => 'Formations, évaluations et qualifications.', 'preset' => 'instructor'],
                 ['name' => 'Membre de section', 'slug' => 'kit-section-membre', 'description' => 'Profil de base pour un équipier.', 'preset' => 'member'],
             ],
         ];
@@ -127,8 +155,8 @@ final class OrganizationKitDefinitions
         return [
             'code' => self::GAMING_COMMUNITY,
             'title' => 'Communauté gaming',
-            'summary' => 'Une structure légère pour une communauté de joueurs : animation, accueil, technique et événements, avec un système de grades français.',
-            'version' => 1,
+            'summary' => 'Une structure légère pour une communauté de joueurs : animation, accueil, modération, technique, création de missions et événements, avec un système de grades français.',
+            'version' => 2,
             'grade_system_code' => 'FR_CLASSIC',
             'units' => [
                 ['key' => 'root', 'parent_key' => null, 'name' => 'Communauté', 'slug' => 'communaute', 'type' => 'group', 'code' => 'COM', 'display_order' => 10],
@@ -136,22 +164,33 @@ final class OrganizationKitDefinitions
                 ['key' => 'accueil', 'parent_key' => 'root', 'name' => 'Accueil', 'slug' => 'accueil', 'type' => 'group', 'code' => 'ACC', 'display_order' => 30],
                 ['key' => 'tech', 'parent_key' => 'root', 'name' => 'Technique', 'slug' => 'technique', 'type' => 'group', 'code' => 'TEC', 'display_order' => 40],
                 ['key' => 'events', 'parent_key' => 'root', 'name' => 'Événements', 'slug' => 'evenements', 'type' => 'group', 'code' => 'EVT', 'display_order' => 50],
+                ['key' => 'missions', 'parent_key' => 'root', 'name' => 'Création de missions', 'slug' => 'creation-missions', 'type' => 'group', 'code' => 'MIS', 'display_order' => 60],
+                ['key' => 'modo', 'parent_key' => 'root', 'name' => 'Modération', 'slug' => 'moderation', 'type' => 'group', 'code' => 'MOD', 'display_order' => 70],
             ],
             'job_role_categories' => [
                 ['key' => 'encad', 'parent_key' => null, 'name' => 'Encadrement', 'slug' => 'encadrement-communaute', 'sort_order' => 10],
                 ['key' => 'accueil', 'parent_key' => null, 'name' => 'Accueil', 'slug' => 'accueil-communaute', 'sort_order' => 20],
                 ['key' => 'tech', 'parent_key' => null, 'name' => 'Technique', 'slug' => 'technique-communaute', 'sort_order' => 30],
+                ['key' => 'jeu', 'parent_key' => null, 'name' => 'Jeu et missions', 'slug' => 'jeu-missions-communaute', 'sort_order' => 40],
             ],
             'job_roles' => [
                 ['category_key' => 'encad', 'name' => 'Administrateur', 'slug' => 'administrateur-communaute', 'description' => 'Pilote la communauté au quotidien.', 'sort_order' => 10],
                 ['category_key' => 'encad', 'name' => 'Animateur', 'slug' => 'animateur-communaute', 'description' => 'Propose et conduit les sessions.', 'sort_order' => 20],
+                ['category_key' => 'encad', 'name' => 'Modérateur', 'slug' => 'moderateur-communaute', 'description' => 'Veille au respect des règles sur le forum et le serveur vocal.', 'sort_order' => 30],
+                ['category_key' => 'encad', 'name' => 'Responsable communication', 'slug' => 'communication-communaute', 'description' => 'Publie les annonces, les médias et les comptes rendus.', 'sort_order' => 40],
                 ['category_key' => 'accueil', 'name' => 'Recruteur', 'slug' => 'recruteur-communaute', 'description' => 'Accueille les nouveaux et suit les candidatures.', 'sort_order' => 10],
                 ['category_key' => 'accueil', 'name' => 'Guide', 'slug' => 'guide-communaute', 'description' => 'Accompagne les arrivants dans les premiers pas.', 'sort_order' => 20],
+                ['category_key' => 'accueil', 'name' => 'Formateur', 'slug' => 'formateur-communaute', 'description' => 'Organise les entraînements et les formations de base.', 'sort_order' => 30],
                 ['category_key' => 'tech', 'name' => 'Référent technique', 'slug' => 'referent-technique', 'description' => 'Suit les outils, les mods et les accès.', 'sort_order' => 10],
+                ['category_key' => 'tech', 'name' => 'Administrateur serveur', 'slug' => 'admin-serveur-communaute', 'description' => 'Maintient le serveur de jeu, les mises à jour et les sauvegardes.', 'sort_order' => 20],
+                ['category_key' => 'tech', 'name' => 'Responsable modpack', 'slug' => 'modpack-communaute', 'description' => 'Compose et teste la liste de mods de la communauté.', 'sort_order' => 30],
+                ['category_key' => 'jeu', 'name' => 'Concepteur de missions', 'slug' => 'concepteur-missions', 'description' => 'Écrit, construit et teste les missions jouées en session.', 'sort_order' => 10],
+                ['category_key' => 'jeu', 'name' => 'Maître du jeu', 'slug' => 'maitre-du-jeu', 'description' => 'Pilote la session en direct (Zeus, game master) et fait vivre le scénario.', 'sort_order' => 20],
             ],
             'roles' => [
                 ['name' => 'Administration de communauté', 'slug' => 'kit-communaute-admin', 'description' => 'Pilotage de la communauté.', 'preset' => 'commandement_unite'],
                 ['name' => 'Cellule recrutement', 'slug' => 'kit-communaute-recrutement', 'description' => 'Accueil et dossiers d’arrivée.', 'preset' => 'cellule_recrutement'],
+                ['name' => 'Modération du forum', 'slug' => 'kit-communaute-moderation', 'description' => 'Modération des échanges de la communauté.', 'preset' => 'forum_moderator_org'],
                 ['name' => 'Membre', 'slug' => 'kit-communaute-membre', 'description' => 'Profil de base des joueurs.', 'preset' => 'member'],
             ],
         ];
@@ -300,6 +339,280 @@ final class OrganizationKitDefinitions
                 self::job('sout', 'Analyste renseignement', 'ussof-analyste-renseignement', 'Prépare le dossier de mission et suit la situation.', 20),
                 self::job('sout', 'Logisticien des opérations spéciales', 'ussof-logisticien-sof', 'Suit le matériel spécifique et les recomplètements du groupement.', 30),
                 self::job('sout', 'Opérateur de drone', 'ussof-operateur-drone', 'Met en œuvre un engin aérien pour observer ou appuyer.', 40),
+            ],
+            'roles' => [],
+        ];
+    }
+
+    /**
+     * Compagnie d’infanterie de l’US Army (brigade d’infanterie), grades américains.
+     *
+     * @return array<string, mixed>
+     */
+    public static function usArmyInfantry(): array
+    {
+        $units = [
+            self::unit(null, 'coy', 'Compagnie d’infanterie', 'usinf-compagnie', 'COY', 10),
+            self::unit('coy', 'hq', 'Section de commandement', 'usinf-commandement', 'HQ', 20),
+            self::unit('hq', 'fist', 'Équipe d’appui feu', 'usinf-equipe-appui-feu', 'FIST', 21),
+            self::unit('hq', 'mort', 'Section mortiers 60 mm', 'usinf-mortiers', 'MORT', 22),
+        ];
+        $order = 30;
+        foreach ([1 => '1er', 2 => '2e', 3 => '3e'] as $n => $label) {
+            $plt = 'plt' . $n;
+            $units[] = self::unit('coy', $plt, $label . ' peloton', 'usinf-' . $n . '-peloton', $n . 'PLT', $order);
+            $units[] = self::unit($plt, $plt . 'hq', 'Commandement du ' . $label . ' peloton', 'usinf-' . $n . '-peloton-cdt', $n . 'HQ', $order + 1);
+            foreach ([1 => '1er', 2 => '2e', 3 => '3e'] as $s => $sLabel) {
+                $sq = $plt . 'sq' . $s;
+                $units[] = self::unit($plt, $sq, $sLabel . ' groupe de combat', 'usinf-' . $n . '-groupe-' . $s, $n . '-' . $s, $order + 1 + $s);
+                $units[] = self::unit($sq, $sq . 'a', 'Équipe Alpha', 'usinf-' . $n . '-' . $s . '-alpha', $n . '-' . $s . 'A', 1);
+                $units[] = self::unit($sq, $sq . 'b', 'Équipe Bravo', 'usinf-' . $n . '-' . $s . '-bravo', $n . '-' . $s . 'B', 2);
+            }
+            $units[] = self::unit($plt, $plt . 'wpn', 'Groupe d’armes', 'usinf-' . $n . '-groupe-armes', $n . 'WPN', $order + 5);
+            $order += 10;
+        }
+
+        return [
+            'code' => self::US_ARMY_INFANTRY,
+            'title' => 'Compagnie d’infanterie US Army',
+            'summary' => 'Une compagnie de fusiliers type brigade d’infanterie américaine : trois pelotons de trois groupes à deux équipes Alpha et Bravo, un groupe d’armes par peloton, des mortiers et une équipe d’appui feu, avec les grades américains.',
+            'version' => 1,
+            'grade_system_code' => 'US_CLASSIC',
+            'units' => $units,
+            'job_role_categories' => [
+                self::cat('cmd', 'Commandement', 'usinf-commandement', 10),
+                self::cat('fus', 'Groupe de combat', 'usinf-groupe-combat', 20),
+                self::cat('armes', 'Armes collectives', 'usinf-armes-collectives', 30),
+                self::cat('appui', 'Appui feu', 'usinf-appui-feu', 40),
+                self::cat('sout', 'Soutien', 'usinf-soutien', 50),
+            ],
+            'job_roles' => [
+                self::job('cmd', 'Commandant de compagnie', 'usinf-commandant-compagnie', 'Company Commander : conduit la compagnie, en général capitaine.', 10),
+                self::job('cmd', 'Officier adjoint', 'usinf-officier-adjoint', 'Executive Officer : seconde le commandant et tient la logistique de la compagnie.', 20),
+                self::job('cmd', 'Premier sergent', 'usinf-premier-sergent', 'First Sergeant : sous-officier le plus ancien, discipline et soutien du personnel.', 30),
+                self::job('cmd', 'Chef de peloton', 'usinf-chef-peloton', 'Platoon Leader : lieutenant qui conduit le peloton.', 40),
+                self::job('cmd', 'Sergent de peloton', 'usinf-sergent-peloton', 'Platoon Sergeant : seconde le chef de peloton et tient le soutien.', 50),
+                self::job('cmd', 'Radio de compagnie', 'usinf-radio-compagnie', 'RTO : tient les liaisons du commandement de compagnie.', 60),
+                self::job('fus', 'Chef de groupe', 'usinf-chef-groupe', 'Squad Leader : conduit un groupe de neuf soldats.', 10),
+                self::job('fus', 'Chef d’équipe', 'usinf-chef-equipe', 'Team Leader : conduit une équipe de feu de quatre.', 20),
+                self::job('fus', 'Fusilier', 'usinf-fusilier', 'Rifleman : combattant de base de l’équipe.', 30),
+                self::job('fus', 'Fusilier automatique', 'usinf-fusilier-automatique', 'Automatic Rifleman : appui feu soutenu de l’équipe.', 40),
+                self::job('fus', 'Grenadier', 'usinf-grenadier', 'Grenadier : lance-grenades de l’équipe.', 50),
+                self::job('fus', 'Tireur désigné', 'usinf-tireur-designe', 'Designated Marksman : tir précis à moyenne portée.', 60),
+                self::job('armes', 'Chef du groupe d’armes', 'usinf-chef-groupe-armes', 'Weapons Squad Leader : place les mitrailleuses et les missiles du peloton.', 10),
+                self::job('armes', 'Mitrailleur', 'usinf-mitrailleur', 'Machine Gunner : sert la mitrailleuse moyenne.', 20),
+                self::job('armes', 'Pourvoyeur', 'usinf-pourvoyeur', 'Assistant Gunner : approvisionne et seconde le mitrailleur.', 30),
+                self::job('armes', 'Tireur missile anti-char', 'usinf-tireur-antichar', 'Javelin Gunner : engage les blindés et les positions.', 40),
+                self::job('appui', 'Chef de section mortiers', 'usinf-chef-mortiers', 'Section Sergeant : conduit les pièces de mortier.', 10),
+                self::job('appui', 'Servant mortier', 'usinf-servant-mortier', 'Mortarman : met en œuvre le mortier de 60 mm.', 20),
+                self::job('appui', 'Observateur avancé', 'usinf-observateur-avance', 'Forward Observer : demande et ajuste les feux indirects.', 30),
+                self::job('appui', 'Officier appui feu', 'usinf-officier-appui-feu', 'Fire Support Officer : coordonne les feux au profit de la compagnie.', 40),
+                self::job('sout', 'Infirmier de combat', 'usinf-infirmier-combat', 'Combat Medic : soins au plus près et évacuation.', 10),
+                self::job('sout', 'Sous-officier ravitaillement', 'usinf-ravitaillement', 'Supply Sergeant : matériel, munitions et vivres.', 20),
+            ],
+            'roles' => [],
+        ];
+    }
+
+    /**
+     * Task force d’opérations spéciales pensée pour le milsim (structure générique, non nominative).
+     *
+     * @return array<string, mixed>
+     */
+    public static function sofTaskForce(): array
+    {
+        return [
+            'code' => self::SOF_TASK_FORCE,
+            'title' => 'Task force d’opérations spéciales',
+            'summary' => 'Une task force générique pour le milsim : poste de commandement, deux éléments d’assaut, reconnaissance et tireurs d’élite, appui (guidage aérien, déminage, santé), aviation et cellule renseignement, avec les grades américains.',
+            'version' => 1,
+            'grade_system_code' => 'US_CLASSIC',
+            'units' => [
+                self::unit(null, 'tf', 'Task force', 'tfsof-task-force', 'TF', 10),
+                self::unit('tf', 'toc', 'Poste de commandement', 'tfsof-poste-commandement', 'TOC', 20),
+                self::unit('tf', 'as1', 'Élément d’assaut 1', 'tfsof-assaut-1', 'AS1', 30),
+                self::unit('as1', 'as1a', 'Équipe d’assaut 1A', 'tfsof-assaut-1a', 'AS1A', 31),
+                self::unit('as1', 'as1b', 'Équipe d’assaut 1B', 'tfsof-assaut-1b', 'AS1B', 32),
+                self::unit('tf', 'as2', 'Élément d’assaut 2', 'tfsof-assaut-2', 'AS2', 40),
+                self::unit('as2', 'as2a', 'Équipe d’assaut 2A', 'tfsof-assaut-2a', 'AS2A', 41),
+                self::unit('as2', 'as2b', 'Équipe d’assaut 2B', 'tfsof-assaut-2b', 'AS2B', 42),
+                self::unit('tf', 'recce', 'Reconnaissance et tireurs d’élite', 'tfsof-reconnaissance', 'RECCE', 50),
+                self::unit('tf', 'spt', 'Élément d’appui', 'tfsof-appui', 'SPT', 60),
+                self::unit('tf', 'avn', 'Élément aviation', 'tfsof-aviation', 'AVN', 70),
+                self::unit('tf', 'intel', 'Cellule renseignement', 'tfsof-renseignement', 'S2', 80),
+            ],
+            'job_role_categories' => [
+                self::cat('cmd', 'Commandement', 'tfsof-commandement', 10),
+                self::cat('assaut', 'Assaut', 'tfsof-assaut', 20),
+                self::cat('recce', 'Reconnaissance', 'tfsof-reconnaissance', 30),
+                self::cat('appui', 'Appui', 'tfsof-appui', 40),
+                self::cat('avn', 'Aviation', 'tfsof-aviation', 50),
+                self::cat('rens', 'Renseignement', 'tfsof-renseignement', 60),
+            ],
+            'job_roles' => [
+                self::job('cmd', 'Commandant de task force', 'tfsof-commandant', 'Fixe l’intention et conduit l’ensemble de la task force.', 10),
+                self::job('cmd', 'Officier opérations', 'tfsof-officier-operations', 'Prépare les ordres, tient le tempo et le suivi de situation.', 20),
+                self::job('cmd', 'Opérateur transmissions', 'tfsof-transmissions', 'Tient le réseau radio, les fréquences et les comptes rendus.', 30),
+                self::job('assaut', 'Chef d’élément d’assaut', 'tfsof-chef-element', 'Conduit un élément d’assaut de deux équipes.', 10),
+                self::job('assaut', 'Chef d’équipe d’assaut', 'tfsof-chef-equipe', 'Conduit une équipe au contact.', 20),
+                self::job('assaut', 'Opérateur d’assaut', 'tfsof-operateur-assaut', 'Combat rapproché, nettoyage et saisie d’objectifs.', 30),
+                self::job('assaut', 'Mitrailleur', 'tfsof-mitrailleur', 'Appui feu soutenu de l’équipe.', 40),
+                self::job('assaut', 'Opérateur effraction', 'tfsof-effraction', 'Ouvre les accès par moyens mécaniques, balistiques ou explosifs.', 50),
+                self::job('assaut', 'Maître-chien', 'tfsof-maitre-chien', 'Met en œuvre le chien d’assaut ou de recherche.', 60),
+                self::job('recce', 'Chef d’équipe reconnaissance', 'tfsof-chef-reconnaissance', 'Conduit l’observation avancée et rend compte.', 10),
+                self::job('recce', 'Tireur d’élite', 'tfsof-tireur-elite', 'Neutralise à longue portée et couvre les assauts.', 20),
+                self::job('recce', 'Observateur', 'tfsof-observateur', 'Seconde le tireur d’élite, mesure et renseigne.', 30),
+                self::job('appui', 'Contrôleur aérien avancé', 'tfsof-jtac', 'JTAC : guide l’appui aérien et les frappes.', 10),
+                self::job('appui', 'Démineur', 'tfsof-demineur', 'EOD : repère et neutralise les engins explosifs.', 20),
+                self::job('appui', 'Infirmier opérations spéciales', 'tfsof-infirmier', 'Soins avancés et préparation des évacuations.', 30),
+                self::job('appui', 'Opérateur de drone', 'tfsof-operateur-drone', 'Observe et appuie avec un drone tactique.', 40),
+                self::job('avn', 'Pilote d’hélicoptère', 'tfsof-pilote', 'Insère, extrait et appuie la force.', 10),
+                self::job('avn', 'Chef de bord', 'tfsof-chef-bord', 'Commande l’équipage et la soute.', 20),
+                self::job('avn', 'Tireur de sabord', 'tfsof-tireur-sabord', 'Protège l’appareil et appuie au poser.', 30),
+                self::job('rens', 'Analyste renseignement', 'tfsof-analyste', 'Prépare le dossier d’objectif et suit la menace.', 10),
+                self::job('rens', 'Opérateur exploitation', 'tfsof-exploitation', 'Exploite documents, matériels et personnes capturés.', 20),
+            ],
+            'roles' => [],
+        ];
+    }
+
+    /**
+     * Escadron blindé de l’Armée de terre (chars et reconnaissance), grades français.
+     *
+     * @return array<string, mixed>
+     */
+    public static function frenchArmor(): array
+    {
+        return [
+            'code' => self::FRENCH_ARMOR,
+            'title' => 'Escadron blindé',
+            'summary' => 'Un escadron de cavalerie blindée : peloton de commandement et de logistique, quatre pelotons de chars et un peloton de reconnaissance, avec les équipages et le soutien mécanique, et les grades français.',
+            'version' => 1,
+            'grade_system_code' => 'FR_CLASSIC',
+            'units' => [
+                self::unit(null, 'esc', 'Escadron blindé', 'blinde-escadron', 'ESC', 10),
+                self::unit('esc', 'pcl', 'Peloton de commandement et de logistique', 'blinde-commandement-logistique', 'PCL', 20),
+                self::unit('esc', 'p1', '1er peloton', 'blinde-1er-peloton', '1PEL', 30),
+                self::unit('esc', 'p2', '2e peloton', 'blinde-2e-peloton', '2PEL', 40),
+                self::unit('esc', 'p3', '3e peloton', 'blinde-3e-peloton', '3PEL', 50),
+                self::unit('esc', 'p4', '4e peloton', 'blinde-4e-peloton', '4PEL', 60),
+                self::unit('esc', 'recce', 'Peloton de reconnaissance', 'blinde-reconnaissance', 'PRI', 70),
+            ],
+            'job_role_categories' => [
+                self::cat('cmd', 'Commandement', 'blinde-commandement', 10),
+                self::cat('equipage', 'Équipages', 'blinde-equipages', 20),
+                self::cat('recce', 'Reconnaissance', 'blinde-reconnaissance', 30),
+                self::cat('sout', 'Soutien', 'blinde-soutien', 40),
+            ],
+            'job_roles' => [
+                self::job('cmd', 'Commandant d’escadron', 'blinde-commandant-escadron', 'Conduit l’escadron et coordonne la manœuvre des pelotons.', 10),
+                self::job('cmd', 'Officier adjoint', 'blinde-officier-adjoint', 'Seconde le commandant et tient le poste de commandement.', 20),
+                self::job('cmd', 'Chef de peloton', 'blinde-chef-peloton', 'Conduit un peloton de chars.', 30),
+                self::job('cmd', 'Sous-officier adjoint', 'blinde-sous-officier-adjoint', 'Seconde le chef de peloton et commande un char.', 40),
+                self::job('equipage', 'Chef de char', 'blinde-chef-char', 'Commande l’engin, choisit les objectifs et tient la liaison.', 10),
+                self::job('equipage', 'Tireur', 'blinde-tireur', 'Met en œuvre l’armement principal et les viseurs.', 20),
+                self::job('equipage', 'Pilote', 'blinde-pilote', 'Conduit l’engin et tient sa mobilité.', 30),
+                self::job('recce', 'Chef de patrouille', 'blinde-chef-patrouille', 'Conduit deux véhicules légers en reconnaissance.', 10),
+                self::job('recce', 'Chef d’engin léger', 'blinde-chef-engin-leger', 'Commande un véhicule de reconnaissance.', 20),
+                self::job('recce', 'Éclaireur', 'blinde-eclaireur', 'Débarque pour observer, renseigner et baliser.', 30),
+                self::job('sout', 'Mécanicien dépanneur', 'blinde-mecanicien', 'Répare et dépanne les engins sur le terrain.', 10),
+                self::job('sout', 'Ravitailleur', 'blinde-ravitailleur', 'Ravitaille en carburant et munitions.', 20),
+                self::job('sout', 'Auxiliaire sanitaire', 'blinde-auxiliaire-sanitaire', 'Porte les premiers soins aux équipages.', 30),
+            ],
+            'roles' => [],
+        ];
+    }
+
+    /**
+     * Groupement aéromobile (hélicoptères de l’ALAT), grades français.
+     *
+     * @return array<string, mixed>
+     */
+    public static function airmobile(): array
+    {
+        return [
+            'code' => self::AIRMOBILE,
+            'title' => 'Groupement aéromobile',
+            'summary' => 'Une unité d’hélicoptères : escadrilles de manœuvre, d’attaque et de reconnaissance, centre des opérations aériennes et maintenance, avec les équipages, les contrôleurs et les mécaniciens, et les grades français.',
+            'version' => 1,
+            'grade_system_code' => 'FR_CLASSIC',
+            'units' => [
+                self::unit(null, 'gam', 'Groupement aéromobile', 'aero-groupement', 'GAM', 10),
+                self::unit('gam', 'cops', 'Centre des opérations aériennes', 'aero-operations', 'COPS', 20),
+                self::unit('gam', 'ehm', 'Escadrille de manœuvre', 'aero-escadrille-manoeuvre', 'EHM', 30),
+                self::unit('gam', 'eha', 'Escadrille d’attaque', 'aero-escadrille-attaque', 'EHA', 40),
+                self::unit('gam', 'ehr', 'Escadrille de reconnaissance', 'aero-escadrille-reconnaissance', 'EHR', 50),
+                self::unit('gam', 'maint', 'Maintenance et soutien', 'aero-maintenance', 'MCO', 60),
+            ],
+            'job_role_categories' => [
+                self::cat('cmd', 'Commandement', 'aero-commandement', 10),
+                self::cat('equipage', 'Équipages', 'aero-equipages', 20),
+                self::cat('ops', 'Opérations aériennes', 'aero-operations-aeriennes', 30),
+                self::cat('sout', 'Soutien', 'aero-soutien', 40),
+            ],
+            'job_roles' => [
+                self::job('cmd', 'Commandant de groupement', 'aero-commandant', 'Conduit le groupement et répartit les missions.', 10),
+                self::job('cmd', 'Commandant d’escadrille', 'aero-commandant-escadrille', 'Conduit une escadrille et ses équipages.', 20),
+                self::job('cmd', 'Chef de patrouille', 'aero-chef-patrouille', 'Conduit une patrouille de deux appareils ou plus.', 30),
+                self::job('equipage', 'Chef de bord', 'aero-chef-bord', 'Commande l’appareil et la mission de l’équipage.', 10),
+                self::job('equipage', 'Pilote', 'aero-pilote', 'Pilote l’appareil.', 20),
+                self::job('equipage', 'Copilote', 'aero-copilote', 'Seconde le pilote, navigue et met en œuvre les systèmes.', 30),
+                self::job('equipage', 'Mécanicien navigant', 'aero-mecanicien-navigant', 'Suit l’appareil en vol et gère la soute et l’embarquement.', 40),
+                self::job('equipage', 'Tireur de sabord', 'aero-tireur-sabord', 'Protège l’appareil avec l’arme de sabord.', 50),
+                self::job('equipage', 'Tireur d’attaque', 'aero-tireur-attaque', 'Met en œuvre l’armement de l’hélicoptère d’attaque.', 60),
+                self::job('ops', 'Officier opérations aériennes', 'aero-officier-operations', 'Planifie les vols, les itinéraires et les créneaux.', 10),
+                self::job('ops', 'Contrôleur aérien', 'aero-controleur', 'Gère les mouvements autour des zones de poser.', 20),
+                self::job('ops', 'Guide de poser', 'aero-guide-poser', 'Balise et guide les appareils au sol.', 30),
+                self::job('sout', 'Mécanicien aéronautique', 'aero-mecanicien', 'Entretient et répare les appareils.', 10),
+                self::job('sout', 'Ravitailleur carburant', 'aero-ravitailleur', 'Ravitaille les appareils en carburant.', 20),
+                self::job('sout', 'Armurier', 'aero-armurier', 'Arme et désarme les appareils.', 30),
+            ],
+            'roles' => [],
+        ];
+    }
+
+    /**
+     * Société militaire privée (fiction milsim : contractors), grades français par défaut.
+     *
+     * @return array<string, mixed>
+     */
+    public static function privateMilitary(): array
+    {
+        return [
+            'code' => self::PRIVATE_MILITARY,
+            'title' => 'Société militaire privée',
+            'summary' => 'Un cadre « contractors » pour le milsim : direction, équipes de protection et d’intervention, renseignement, logistique et formation. Les grades restent modifiables ; les fonctions décrivent les métiers.',
+            'version' => 1,
+            'grade_system_code' => 'FR_CLASSIC',
+            'units' => [
+                self::unit(null, 'smp', 'Société', 'smp-societe', 'SMP', 10),
+                self::unit('smp', 'dir', 'Direction des opérations', 'smp-direction', 'DIR', 20),
+                self::unit('smp', 'ops', 'Équipes opérationnelles', 'smp-equipes', 'OPS', 30),
+                self::unit('ops', 'psd', 'Équipe protection rapprochée', 'smp-protection-rapprochee', 'PSD', 31),
+                self::unit('ops', 'qrf', 'Équipe d’intervention rapide', 'smp-intervention-rapide', 'QRF', 32),
+                self::unit('ops', 'convoi', 'Équipe escorte de convois', 'smp-escorte-convois', 'CVY', 33),
+                self::unit('smp', 'rens', 'Renseignement et analyse', 'smp-renseignement', 'INT', 40),
+                self::unit('smp', 'log', 'Logistique', 'smp-logistique', 'LOG', 50),
+                self::unit('smp', 'form', 'Formation', 'smp-formation', 'TRG', 60),
+            ],
+            'job_role_categories' => [
+                self::cat('dir', 'Direction', 'smp-direction', 10),
+                self::cat('ops', 'Opérations', 'smp-operations', 20),
+                self::cat('sout', 'Soutien', 'smp-soutien', 30),
+            ],
+            'job_roles' => [
+                self::job('dir', 'Directeur des opérations', 'smp-directeur-operations', 'Négocie les contrats, fixe les priorités et répond du résultat.', 10),
+                self::job('dir', 'Chef de projet', 'smp-chef-projet', 'Conduit un contrat sur le terrain et ses équipes.', 20),
+                self::job('ops', 'Chef d’équipe', 'smp-chef-equipe', 'Conduit une équipe de protection ou d’intervention.', 10),
+                self::job('ops', 'Opérateur de protection', 'smp-operateur-protection', 'Assure la sécurité d’une personne ou d’un site.', 20),
+                self::job('ops', 'Opérateur d’intervention', 'smp-operateur-intervention', 'Intervient en renfort ou en extraction.', 30),
+                self::job('ops', 'Chauffeur sécurité', 'smp-chauffeur', 'Conduit en convoi et maîtrise la conduite défensive.', 40),
+                self::job('ops', 'Tireur de précision', 'smp-tireur-precision', 'Couvre les mouvements et les sites sensibles.', 50),
+                self::job('ops', 'Infirmier tactique', 'smp-infirmier', 'Soins d’urgence et évacuation.', 60),
+                self::job('sout', 'Analyste', 'smp-analyste', 'Évalue la menace et prépare les itinéraires.', 10),
+                self::job('sout', 'Logisticien', 'smp-logisticien', 'Gère véhicules, équipements et approvisionnements.', 20),
+                self::job('sout', 'Instructeur', 'smp-instructeur', 'Forme et qualifie les nouveaux opérateurs.', 30),
+                self::job('sout', 'Opérateur transmissions', 'smp-transmissions', 'Tient les liaisons et le suivi des équipes.', 40),
             ],
             'roles' => [],
         ];

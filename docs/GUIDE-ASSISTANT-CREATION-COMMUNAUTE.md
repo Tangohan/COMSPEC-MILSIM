@@ -1,58 +1,80 @@
 # Guide — Assistant « Créer une communauté »
 
-Ce document décrit le parcours `/communities/create` : objectif de chaque étape, champs importants et personnalisation possible avant et après création.
+Ce document décrit le parcours `/communities/create` : objectif de chaque étape, champs importants, aides intégrées et personnalisation possible avant et après création.
+
+Version utilisateur (publique, sans compte) : **`/communities/create/guide`** — tableau « champ / à quoi il sert / conseil / où le modifier ensuite » pour chaque étape, structures types, modèles officiels et FAQ (`views/community/create_guide.php`).
 
 ## Accès
 
-- Utilisateur connecté uniquement.
-- Après création réussie, le fondateur dispose d’un compte dans la nouvelle communauté avec le rôle « Fondateur » (équivalent propriétaire communauté).
+- Assistant : utilisateur connecté uniquement.
+- Guide : public (lien « Guide complet des champs » dans l’en-tête de l’assistant et dans le tutoriel).
+- Après création réussie, le fondateur dispose d’un compte dans la nouvelle communauté avec le rôle « Fondateur ».
+
+## Aides intégrées à l’assistant
+
+| Aide | Où | Comportement |
+|------|----|--------------|
+| Tutoriel en 6 diapositives | Bouton « Tutoriel en 2 minutes » (en-tête) | Ouvert automatiquement à la première visite (mémorisé dans `localStorage`, clé `athena.ccTutorialSeen`), jamais si un brouillon est repris. Flèches ← → et Échap. |
+| Encart « À retenir » | Haut de chaque étape (`.cc-tip`) | Trois points clés de l’étape. |
+| Explications de champ | `<details class="cc-help">` sous les champs sensibles | Repliées par défaut, sans JavaScript. |
+| Validation | Étape 1 | « Suivant », les onglets et l’envoi exigent un nom ; adresse personnalisée vérifiée. |
+| Aperçu de l’adresse | Sous « Nom affiché » | Calcul en direct de `/c/…`, avertit si l’adresse est réservée (`TenantSlugService::RESERVED`). |
+| Progression | Bandeau d’étapes | Coche ✓ sur les étapes validées. |
 
 ## Vue d’ensemble des étapes
 
-1. **Identité et fuseau** — Nom public, option de segment d’URL (slug), langue, fuseau horaire, éléments de présentation (badges, textes, logo et bannière en URL).
-2. **Rôles et permissions** — Modèle **rapide** ou **standard**, matrice récapitulative, et éventuellement **rôles supplémentaires** (profils métier avec cases à cocher pour les autorisations).
-3. **Structure ORBAT** — Arborescence d’unités (groupe, section, équipe, escouade), démarrage rapide optionnel, édition JSON avancée pour les besoins pointus.
-4. **Référentiel de grades** — Modèle français ou américain, aperçus par catégorie, grade du fondateur.
-5. **Validation et accès** — Visibilité ORBAT, choix de formule (gratuite ou abonnement Stripe si configuré), mode d’inscription, message d’accueil, options de verrouillage, JSON optionnel du formulaire MilSim, aperçu dans un nouvel onglet, récapitulatif.
+1. **Identité** — nom, adresse web, langue, fuseau, unité représentée (réelle via le référentiel militaire, ou fictive), vitrine facultative.
+2. **Type** — Complet, Bureau des effectifs ou Carte ATAK (`TenantTypeConfig`), avec la conséquence de chaque choix affichée sur la carte.
+3. **Organisation** — modèle de rôles, rôles supplémentaires, modèle officiel du catalogue (filtrable), structure type et arborescence ORBAT.
+4. **Grades** — référentiel français ou américain, grade du fondateur.
+5. **Accès & offre** — mode d’inscription, accueil, verrouillage, formulaire MilSim, créneaux, visibilité ORBAT, formule, ancienneté, aperçu, récapitulatif.
 
-## Étape 1 — Identité et fuseau
+## Étape 3 — structures types (presets ORBAT)
 
-- **Nom affiché** : nom de la communauté tel qu’il apparaît sur le site.
-- **Slug URL personnalisé** : case à cocher « Définir un slug URL personnalisé ». Si elle est **décochée**, le segment d’adresse web est **dérivé automatiquement** du nom (minuscules, tirets). Si elle est **cochée**, le champ permet de forcer un segment précis (lettres minuscules, chiffres, tirets).
-- **Langue** et **fuseau horaire** : utilisés pour l’affichage et le comportement par défaut.
-- **Identité publique** (optionnel) : modèle de page, accroche, doctrine courte, badges, mode de présentation, textes, logo et bannière (URLs HTTPS). Affinage possible ensuite dans le back-office communauté.
+Source : `App\Services\Community\WizardOrbatPresets` (testée par `tests/Unit/WizardOrbatPresetsTest.php`).
 
-## Étape 2 — Rôles et permissions
+| Identifiant | Libellé | Unités |
+|-------------|---------|--------|
+| `minimal` | Structure minimale (valeur par défaut) | 3 |
+| `squad` | Escouade | 4 |
+| `section_fr` | Section d’infanterie (FR) | 11 |
+| `platoon_us` | Peloton US (platoon) | 12 |
+| `company_fr` | Compagnie (3 sections) | 15 |
+| `sof_detachment` | Détachement forces spéciales | 5 |
+| `combined_arms` | Groupement interarmes | 18 |
+| `gaming` | Communauté de joueurs | 6 |
 
-- **Modèle rapide** : jeux de rôles types (Fondateur, Commandement, RH, Instructeur, Membre, Invité, Modérateur forum) avec droits de base.
-- **Modèle standard** : comme le rapide, avec des droits de modération forum étendus pour le rôle modérateur (notamment la section organisation du forum).
-- **Rôles supplémentaires** : vous pouvez ajouter jusqu’à 15 profils nommés (nom affiché + identifiant technique unique). Pour chaque profil, cochez les autorisations parmi celles proposées (forum, documents, formations, administration légère). Ces rôles existent **uniquement dans votre communauté** ; l’attribution aux membres se fait dans le back-office (rôles).
+Un clic sur une carte remplace l’arborescence (confirmation si elle n’est pas vide). Contraintes respectées par chaque preset : une seule racine, types `group|section|squad|team`, adresses courtes uniques et conformes à `^[a-z0-9]([a-z0-9-]{0,48}[a-z0-9])?$`.
 
-Les identifiants techniques réservés ne peuvent pas être réutilisés (par ex. `member`, `tenant_admin`, etc.).
+Côté serveur, `wizard_units_json` fait foi ; la structure par défaut ne sert que si rien n’est envoyé (navigateur sans JavaScript).
 
-## Étape 3 — ORBAT
+## Étape 3 — modèles officiels du catalogue
 
-- **Démarrage rapide** : insère un petit organigramme type (état-major, section, équipe) modifiable.
-- **Arborescence** : chaque ligne peut être développée ou repliée ; vous pouvez ajouter une unité racine, des sous-unités, définir le type et l’ordre, changer le parent, supprimer une branche.
-- **Slugs d’unités** : si « Slugs d’unités personnalisés » est **décoché**, le segment d’URL de chaque unité est **calculé à partir du nom**. Sinon, un champ permet de le saisir.
-- **JSON avancé** : pour import ou retouches fines ; le contenu reste synchronisé avec le champ caché envoyé au serveur.
+Source : `App\Services\OrganizationCatalog\OrganizationKitDefinitions` (synchronisés en base par `OrganizationCatalogService::ensureOfficialSeeded()`).
 
-## Étape 4 — Grades
+| Code | Titre | Grades |
+|------|-------|--------|
+| `official.french_army` | Armée française (catalogue d’emplois) | FR |
+| `official.us_sof` | SOF américain (catalogue d’emplois) | US |
+| `official.infantry_light` | Compagnie d’infanterie légère (v2 : appui, soutien, rôle Instruction) | FR |
+| `official.us_army_infantry` | Compagnie d’infanterie US Army | US |
+| `official.sof_task_force` | Task force d’opérations spéciales | US |
+| `official.french_armor` | Escadron blindé | FR |
+| `official.airmobile` | Groupement aéromobile | FR |
+| `official.private_military` | Société militaire privée | FR |
+| `official.gaming_community` | Communauté gaming (v2 : modération, missions, serveurs) | FR |
 
-- Choix du **référentiel** (français ou américain) et **grade du fondateur** dans les listes groupées par catégorie.
+Le filtre « Filtrer les modèles » cherche dans le titre, le résumé et les noms de fonctions.
 
-## Étape 5 — Validation
+## Étape 1 — unités réelles
 
-- **Visibilité ORBAT** : public, membres uniquement, ou réservé au commandement (selon les règles produit).
-- **Formules** : « Quartier libre » (création immédiate) ou abonnements Pro / Pro+ si Stripe est configuré (création après paiement confirmé).
-- **Paramètres d’accès** : mode d’inscription, message d’accueil, verrouillage de communauté, confirmation « sans IA », personnalisation JSON du formulaire MilSim.
-- **Aperçu** : ouvre une page de simulation (brouillon en session) sans créer la communauté.
-- **Récapitulatif** : résumé dynamique des choix principaux.
+Le sélecteur s’appuie sur le référentiel `military_units` (seed `bootstrap/military_referential_seed.php`). La recherche ignore désormais accents, apostrophes et ordre des mots, et inclut les alias (sigles, surnoms, anciens noms).
 
 ## Après la création
 
-- Paramétrage fin : back-office organisation (présentation, rôles, utilisateurs, forum, etc.).
-- Communautés anciennes sans assistant complet : voir la page de **rattrapage onboarding** (back-office) et le document [QA_COMMUNITY_ONBOARDING.md](QA_COMMUNITY_ONBOARDING.md).
+- Paramétrage fin : back-office (présentation, rôles, utilisateurs, forum, etc.).
+- La recherche du back-office (Ctrl/⌘+K) renvoie aussi des **guides** (`App\Services\Portal\BackOfficeHelpCatalog`) : sections du guide du portail et du guide de création.
+- Communautés anciennes sans assistant complet : page **Aide après inscription** (`/back-office/onboarding-recovery`) et [QA_COMMUNITY_ONBOARDING.md](QA_COMMUNITY_ONBOARDING.md).
 
 ## Paiement Stripe
 

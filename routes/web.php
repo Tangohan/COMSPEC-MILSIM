@@ -330,6 +330,7 @@ return function (Router $router) {
     $router->get('/c/{slug}/enlistment/enter', [CommunityController::class, 'enterEnlistment'], [AuthMiddleware::class, EnlistmentModuleSanctionMiddleware::class]);
     $router->get('/c/{slug}/setup', [CommunityController::class, 'setupForm'], [AuthMiddleware::class]);
     $router->post('/c/{slug}/setup', [CommunityController::class, 'setupStore'], [AuthMiddleware::class]);
+    $router->get('/communities/create/guide', [CommunityController::class, 'createGuide']);
     $router->get('/communities/create', [CommunityController::class, 'createForm'], [AuthMiddleware::class]);
     $router->post('/communities/create', [CommunityController::class, 'create'], [AuthMiddleware::class]);
     $router->get('/communities/create/preview', [CommunityController::class, 'createPreview'], [AuthMiddleware::class]);
