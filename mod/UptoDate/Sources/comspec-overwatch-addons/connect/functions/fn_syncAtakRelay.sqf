@@ -11,6 +11,8 @@ if (isNull _obj) exitWith { false };
 // La boucle serveur des relais (12 s) les remontera dès que la liaison sera prête ; sans ce garde-fou, chaque pose
 // de relais produisait un rapport automatique « ÉCHEC · Relais ATAK — not_connected ».
 if (!(missionNamespace getVariable ["COMSPEC_AthenaReady", false])) exitWith { false };
+// Après un refus de l'extension, pause d'une minute avant de réessayer (pas un échec toutes les 12 s).
+if (diag_tickTime < (missionNamespace getVariable ["COMSPEC_RelaySyncHoldUntil", 0])) exitWith { false };
 
 // Récupérer valeurs par défaut depuis config centralisée
 private _defaultRange = 2000;
@@ -77,7 +79,10 @@ private _extra = format [
 ];
 
 private _fnc_num = { (_this select 0) toFixed (_this select 1) };
-["UpdateRelay", [
+// UpdateRelay est envoyé en tâche de fond par l'extension : un retour vide veut dire « accepté », pas un échec.
+// (callExtLogged le comptait comme ÉCHEC et chaque passage de la boucle produisait un rapport automatique.)
+// Seul un refus explicite (ERR|…) est journalisé, en avertissement, puis on attend une minute.
+private _raw = ["COMSPECExtension", "UpdateRelay", [
     _uid,
     [_pos select 0, 2] call _fnc_num,
     [_pos select 1, 2] call _fnc_num,
@@ -85,5 +90,10 @@ private _fnc_num = { (_this select 0) toFixed (_this select 1) };
     str (round _range),
     if (_alive) then {"1"} else {"0"},
     _extra
-], "Relais ATAK", false, false, "system", false] call comspec_overwatch_connect_fnc_callExtLogged;
+]] call comspec_overwatch_connect_fnc_extAwait;
+private _txt = [_raw] call comspec_overwatch_connect_fnc_extResult;
+if (_txt isEqualType "" && {(_txt find "ERR") >= 0 && {(_txt find "ERR") < 3}}) then {
+    missionNamespace setVariable ["COMSPEC_RelaySyncHoldUntil", diag_tickTime + 60];
+    ["Relais ATAK", "warn", _txt, nil, false, "system"] call comspec_overwatch_connect_fnc_logTransmission;
+};
 true
