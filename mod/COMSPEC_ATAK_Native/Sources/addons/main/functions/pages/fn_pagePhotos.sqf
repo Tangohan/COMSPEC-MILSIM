@@ -149,6 +149,9 @@ _zl ctrlSetBackgroundColor [0, 0, 0, 0.55];
 _zl ctrlEnable false;
 _zl ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold' color='#5cc76b'>x%1</t>", [_zoom toFixed 1, str _zoom] select ((_zoom mod 1) isEqualTo 0)]) call comspec_atak_native_fnc_tr);
 ["+", [_zx + _zw * 1.1, _zy, _zw, _chipH], compile format ["%1 ['zoom', 1] call comspec_atak_native_fnc_photoCam;", _keep], "Zoomer (numérique, jusqu'à x8)"] call _chip;
+// Image noire ? TEST VIDÉO (fn_pipCheck) : la vidéo du téléphone montrée de plusieurs façons, lettres à relever.
+["TEST VIDÉO", [_vx + _pad / 2, _zy, (_vw * 0.22) max (_font * 4), _chipH], { ["test"] call comspec_atak_native_fnc_pipCheck; },
+    "Viseur noir ? Montre 30 s la vidéo de plusieurs façons (lettres A à I) : dites-nous lesquelles restent noires"] call _chip;
 if (!_canShoot) then {
     private _w = ["COMSPEC_RscStructuredText", [_vx + _pad, _vy + _vh * 0.58, _vw - _pad * 2, _font * 1.6]] call _mk;
     _w ctrlSetBackgroundColor [0, 0, 0, 0.55];

@@ -12,11 +12,12 @@
                                 texture posée avant le premier rendu de la caméra peut rester noire) et l'état est
                                 relevé à 2 s (caméra, image, texture) ;
       ["rebind", [image, texture]]   pose de nouveau la texture sur l'image (si elle est toujours là).
-      ["test"]                TEST VIDÉO (app Drone, RÉGLAGES) : une caméra devant le joueur et la même image affichée
-                                à 4 endroits, numérotés, pendant 20 s : 1 dans la page du téléphone, 2 sur le téléphone hors
-                                de la page, 3 dans une fenêtre vide ouverte par-dessus, 4 dans un calque d'écran (comme
-                                l'incrustation). Retour de TTRD (13/10) : la PiP s'affiche partout ailleurs dans le jeu, sauf
-                                dans le téléphone ; le numéro qui montre une image dit où le téléphone bloque.
+      ["test"]                TEST VIDÉO (apps Drone et Photo) : une grille de 9 images, lettres A à I, pendant 30 s, dans une
+                                fenêtre ouverte par-dessus le téléphone. A reprend le premier test (qui s'affiche chez TTRD,
+                                13/10 21:20), chaque autre lettre ajoute une seule différence avec les vues Photo et Drone
+                                (noires) : texture 1024, image 16/9, caméra déplacée comme l'app Photo, déplacée par
+                                position seule, accrochée comme le drone, posée 30 m plus haut, thermique, flux réel du
+                                drone. Les lettres noires désignent la cause ; le journal note où chaque caméra se trouve.
     source : "DRONE" ou "PHOTO" (préfixe des lignes du journal).
 */
 params [["_act", "check"], ["_arg", ""]];
@@ -27,57 +28,156 @@ switch (_act) do {
         private _old = missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []];
         if ((count _old) > 0) exitWith { ["testEnd"] call comspec_atak_native_fnc_pipCheck; };
         private _phone = [] call comspec_atak_native_fnc_display;
-        if (isNull _phone) exitWith {};
-        // Caméra à hauteur des yeux, 2 m devant, tournée comme le joueur : texture carrée 512, nom simple, comme le terminal UAV.
+        private _parent = [findDisplay 46, _phone] select (!isNull _phone);
+        if (isNull _parent) exitWith {};
+        // Pose de départ : yeux du joueur, direction de sa vue.
+        private _eye = eyePos player;
         private _dir = getCameraViewDirection player;
-        private _cam = "camera" camCreate [0, 0, 0];
-        _cam setPosASL ((eyePos player) vectorAdd (_dir vectorMultiply 0.5));
-        _cam setVectorDirAndUp [_dir, [0, 0, 1]];
-        _cam cameraEffect ["Internal", "Back", "comspecpiptest"];
-        _cam camSetFov 0.75;
-        _cam camCommit 0;
-        "comspecpiptest" setPiPEffect [0];
-        private _tex = "#(argb,512,512,1)r2t(comspecpiptest,1.0)";
+        private _flat = vectorNormalized [_dir select 0, _dir select 1, 0];
+        if ((vectorMagnitude _flat) < 0.01) then { _flat = [0, 1, 0]; };
+        missionNamespace setVariable ["COMSPEC_ATAK_PipTestPose", [_eye, _flat]];
+        // Variantes : [lettre, ce qui change par rapport à A, texture, rapport, mode]. Chaque différence entre le premier
+        // TEST VIDÉO (qui s'affiche) et les vues de l'app Photo et de l'app Drone (noires) a sa lettre.
+        private _variants = [
+            ["A", "référence (premier test)", 512, 1, "static"],
+            ["B", "texture 1024", 1024, 1, "static"],
+            ["C", "image 16/9", 512, 1.7778, "static"],
+            ["D", "suit la vue comme l'app Photo", 512, 1, "photo"],
+            ["E", "suit la vue (position seule)", 512, 1, "pos"],
+            ["F", "accrochée comme le drone", 512, 1, "attach"],
+            ["G", "30 m au-dessus, vers le sol", 512, 1, "high"],
+            ["H", "thermique", 512, 1, "thermal"],
+            ["I", "flux réel du drone", 0, 1.7778, "drone"]
+        ];
+        private _top = _parent createDisplay "RscDisplayEmpty";
+        if (isNull _top) exitWith { ["WARNING", "TEST VIDÉO : fenêtre de test impossible à ouvrir"] call _say; };
+        private _cellW = 0.30 * safeZoneW;
+        private _cellH = 0.27 * safeZoneH;
+        private _cams = [];
         private _ctrls = [];
-        private _mk = {
-            params ["_disp", "_parent", "_pos", "_n"];
-            private _p = if (isNull _parent) then { _disp ctrlCreate ["RscPicture", -1] } else { _disp ctrlCreate ["RscPicture", -1, _parent] };
-            _p ctrlSetPosition _pos;
-            _p ctrlSetText _tex; // i18n:brut
-            _p ctrlCommit 0;
-            private _l = if (isNull _parent) then { _disp ctrlCreate ["RscStructuredText", -1] } else { _disp ctrlCreate ["RscStructuredText", -1, _parent] };
-            _l ctrlSetPosition [_pos select 0, _pos select 1, _pos select 2, 0.06];
-            _l ctrlSetBackgroundColor [0, 0, 0, 0.7];
-            _l ctrlSetStructuredText parseText format ["<t size='1.6' color='#ffd400' font='PuristaBold'>%1</t>", _n];
-            _l ctrlCommit 0;
-            _ctrls append [_p, _l];
-        };
-        private _sz = 0.22 * safeZoneH;
-        private _w = _sz * 3 / 4;
-        // 1 : dans la page (groupe de contenu, comme l'image du drone).
-        [_phone, _phone displayCtrl 88531, [0, 0, _w, _sz], "1"] call _mk;
-        // 2 : sur le téléphone, hors du groupe de contenu.
-        [_phone, controlNull, [safeZoneX + 0.02, safeZoneY + 0.1, _w, _sz], "2"] call _mk;
-        // 3 : fenêtre vide ouverte par-dessus le téléphone.
-        private _top = _phone createDisplay "RscDisplayEmpty";
-        if (!isNull _top) then { [_top, controlNull, [safeZoneX + 0.04 + _w, safeZoneY + 0.1, _w, _sz], "3"] call _mk; };
-        // 4 : calque d'écran (cutRsc), comme l'incrustation du téléphone.
-        ("COMSPEC_ATAK_PipTest" call BIS_fnc_rscLayer) cutRsc ["RscTitleDisplayEmpty", "PLAIN", 0, false];
-        private _hud = uiNamespace getVariable ["RscTitleDisplayEmpty", displayNull];
-        if (!isNull _hud) then { [_hud, controlNull, [safeZoneX + 0.06 + 2 * _w, safeZoneY + 0.1, _w, _sz], "4"] call _mk; };
-        missionNamespace setVariable ["COMSPEC_ATAK_PipTest", [_cam, _ctrls, _top]];
-        ["INFO", format ["TEST VIDÉO : PiP active %1, distance de vue PiP %2 m, options %3 ; 4 images ouvertes (1 page, 2 téléphone, 3 fenêtre %4, 4 calque %5)", isPiPEnabled, round getPiPViewDistance, getVideoOptions, ["absente", "ouverte"] select (!isNull _top), ["absent", "ouvert"] select (!isNull _hud)]] call _say;
-        ["INFO", "TEST VIDÉO : notez les numéros qui montrent une image (fermeture dans 20 s, Échap ferme la fenêtre 3)", 20, 40] call comspec_atak_native_fnc_notify;
-        [{ ["testEnd"] call comspec_atak_native_fnc_pipCheck; }, [], 20] call CBA_fnc_waitAndExecute;
+        {
+            _x params ["_k", "_what", "_size", "_aspect", "_mode"];
+            private _col = _forEachIndex mod 3;
+            private _row = floor (_forEachIndex / 3);
+            private _cx = safeZoneX + 0.04 * safeZoneW + _col * (_cellW + 0.01 * safeZoneW);
+            private _cy = safeZoneY + 0.08 * safeZoneH + _row * (_cellH + 0.02 * safeZoneH);
+            private _name = "comspecpiptest" + toLower _k;
+            private _tex = "";
+            private _cam = objNull;
+            private _note = "";
+            if (_mode isEqualTo "drone") then {
+                private _d = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
+                if (isNull _d || {!alive _d}) then { _note = "aucun drone appairé"; } else {
+                    _tex = ["camBind"] call comspec_atak_native_fnc_droneAction;
+                    _cam = missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull];
+                    if (_tex isEqualTo "") then { _note = "caméra du drone indisponible"; };
+                };
+            } else {
+                private _pos = _eye vectorAdd (_flat vectorMultiply 0.5);
+                private _cd = _flat;
+                private _cu = [0, 0, 1];
+                if (_mode isEqualTo "high") then { _pos = _eye vectorAdd [0, 0, 30]; _cd = [0, 0, -1]; _cu = _flat; };
+                _cam = "camera" camCreate [0, 0, 0];
+                // Comme le drone : rendu lancé d'abord, puis accrochée et orientée.
+                if (_mode isEqualTo "attach") then {
+                    _cam setPosASL _pos;
+                    _cam cameraEffect ["Internal", "Back", _name];
+                    _cam camSetFov 0.75;
+                    _cam camCommit 0;
+                    _cam attachTo [player, [0, 0.5, 1.7]];
+                    _cam setVectorDirAndUp [player vectorWorldToModelVisual _flat, [0, 0, 1]];
+                } else {
+                    _cam setPosASL _pos;
+                    _cam setVectorDirAndUp [_cd, _cu];
+                    _cam cameraEffect ["Internal", "Back", _name];
+                    _cam camSetFov 0.75;
+                    _cam camCommit 0;
+                };
+                _name setPiPEffect [[0, 2] select (_mode isEqualTo "thermal")];
+                _cam setVariable ["pipTest", [_k, _mode, _pos]];
+                _tex = format ["#(argb,%1,%1,1)r2t(%2,%3)", _size, _name, _aspect];
+            };
+            // Image aux proportions de la texture (pixels carrés), la plus grande qui tient dans la case.
+            private _ph = _cellH - 0.05 * safeZoneH;
+            private _pw = (_ph / pixelH) * _aspect * pixelW;
+            if (_pw > _cellW) then { _pw = _cellW; _ph = (_pw / pixelW) / _aspect * pixelH; };
+            private _bg = _top ctrlCreate ["RscText", -1];
+            _bg ctrlSetPosition [_cx, _cy, _cellW, _cellH];
+            _bg ctrlSetBackgroundColor [0.15, 0.02, 0.02, 1];
+            _bg ctrlCommit 0;
+            private _pic = _top ctrlCreate ["RscPicture", -1];
+            _pic ctrlSetPosition [_cx + (_cellW - _pw) / 2, _cy + 0.05 * safeZoneH, _pw, _ph];
+            if (_tex isNotEqualTo "") then { _pic ctrlSetText _tex; }; // i18n:brut
+            _pic ctrlCommit 0;
+            private _lb = _top ctrlCreate ["RscStructuredText", -1];
+            _lb ctrlSetPosition [_cx, _cy, _cellW, 0.05 * safeZoneH];
+            _lb ctrlSetBackgroundColor [0, 0, 0, 0.85];
+            _lb ctrlSetStructuredText parseText (((format ["<t size='1.3' color='#ffd400' font='PuristaBold'>%1</t> <t size='0.9' color='#ffffff'>%2%3</t>", _k, _what call comspec_atak_native_fnc_tr, ["", " : " + (_note call comspec_atak_native_fnc_tr)] select (_note isNotEqualTo "")])) call comspec_atak_native_fnc_tr);
+            _lb ctrlCommit 0;
+            _ctrls append [_bg, _pic, _lb];
+            if (!isNull _cam && {_mode isNotEqualTo "drone"}) then { _cams pushBack _cam; };
+            ["INFO", format ["TEST VIDÉO %1 (%2) : cible %3, texture %4, caméra %5", _k, _what, _name, [_tex, "-"] select (_tex isEqualTo ""), ["absente", "créée"] select (!isNull _cam)]] call _say;
+        } forEach _variants;
+        // Variantes D, E, F : déplacées à chaque image comme les vraies caméras (D : appel exact de l'app Photo).
+        private _pfh = [{
+            (missionNamespace getVariable ["COMSPEC_ATAK_PipTestPose", []]) params [["_eye0", []], ["_flat0", [0, 1, 0]]];
+            private _eye = eyePos player;
+            private _dir = getCameraViewDirection player;
+            {
+                (_x getVariable ["pipTest", ["", "", []]]) params ["", "_mode"];
+                switch (_mode) do {
+                    case "photo": {
+                        private _p = _eye vectorAdd (_dir vectorMultiply 0.3);
+                        private _r = _dir vectorCrossProduct [0, 0, 1];
+                        private _u = if ((vectorMagnitude _r) < 0.01) then { [0, 1, 0] } else { vectorNormalized (_r vectorCrossProduct _dir) };
+                        _x camSetPos (ASLToAGL _p);
+                        _x camSetFov 0.75;
+                        _x camCommit 0;
+                        _x setPosASL _p;
+                        _x setVectorDirAndUp [_dir, _u];
+                    };
+                    case "pos": {
+                        _x setPosASL (_eye vectorAdd (_dir vectorMultiply 0.5));
+                        _x setVectorDirAndUp [_dir, [0, 0, 1]];
+                    };
+                    case "attach": { _x setVectorDirAndUp [player vectorWorldToModelVisual _dir, [0, 0, 1]]; };
+                    default {};
+                };
+            } forEach ((missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []]) param [0, []]);
+        }, 0] call CBA_fnc_addPerFrameHandler;
+        missionNamespace setVariable ["COMSPEC_ATAK_PipTest", [_cams, _ctrls, _top, _pfh]];
+        ["INFO", format ["TEST VIDÉO : PiP %1, distance de vue PiP %2 m, options %3, %4 caméras ouvertes", ["DÉSACTIVÉE", "active"] select isPiPEnabled, round getPiPViewDistance, getVideoOptions, count _cams]] call _say;
+        // Relevé à 2 s : où chaque caméra se trouve vraiment (le premier test montrait le joueur de dos au lieu de la vue
+        // devant lui : la caméra n'était pas là où le script l'avait posée).
+        [{
+            {
+                (_x getVariable ["pipTest", ["", "", []]]) params ["_k", "_mode", "_want"];
+                private _at = getPosASL _x;
+                ["INFO", "CAMERA", format ["TEST VIDÉO %1 : caméra à %2 m du joueur, %3 m au-dessus du sol, à %4 m de la position posée au départ, regarde %5",
+                    _k, round ((_at distance (eyePos player)) * 10) / 10, round (((_at select 2) - getTerrainHeightASL _at) * 10) / 10,
+                    round ((_at distance _want) * 10) / 10, (vectorDir _x) apply { (round (_x * 100)) / 100 }]] call comspec_atak_native_fnc_log;
+            } forEach ((missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []]) param [0, []]);
+        }, [], 2] call CBA_fnc_waitAndExecute;
+        ["INFO", "TEST VIDÉO : notez les lettres qui restent noires (fermeture dans 30 s, Échap ferme plus tôt)", 30, 40] call comspec_atak_native_fnc_notify;
+        _top displayAddEventHandler ["Unload", { [{ if ((count (missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []])) > 0) then { ["testEnd"] call comspec_atak_native_fnc_pipCheck; }; }] call CBA_fnc_execNextFrame; }];
+        [{ ["testEnd"] call comspec_atak_native_fnc_pipCheck; }, [], 30] call CBA_fnc_waitAndExecute;
         true
     };
     case "testEnd": {
-        (missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []]) params [["_cam", objNull], ["_ctrls", []], ["_top", displayNull]];
+        (missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []]) params [["_cams", []], ["_ctrls", []], ["_top", displayNull], ["_pfh", -1]];
+        if ((count (missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []])) isEqualTo 0) exitWith { false };
         missionNamespace setVariable ["COMSPEC_ATAK_PipTest", []];
+        if (_pfh >= 0) then { [_pfh] call CBA_fnc_removePerFrameHandler; };
         { ctrlDelete _x; } forEach _ctrls;
         if (!isNull _top) then { _top closeDisplay 2; };
-        ("COMSPEC_ATAK_PipTest" call BIS_fnc_rscLayer) cutText ["", "PLAIN"];
-        if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", "comspecpiptest"]; camDestroy _cam; };
+        {
+            if (!isNull _x) then {
+                private _k = (_x getVariable ["pipTest", ["a"]]) select 0;
+                _x cameraEffect ["Terminate", "Back", "comspecpiptest" + toLower _k];
+                camDestroy _x;
+            };
+        } forEach _cams;
+        ["INFO", "CAMERA", "TEST VIDÉO terminé : caméras de test fermées"] call comspec_atak_native_fnc_log;
         true
     };
     case "check": {

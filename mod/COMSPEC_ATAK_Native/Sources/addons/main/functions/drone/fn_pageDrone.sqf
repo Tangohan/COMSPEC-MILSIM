@@ -151,8 +151,8 @@ if (_view isNotEqualTo "") then {
     // Mis dans la rangée principale (retour de TTRD, 13/10 : « permets le plein écran pour compenser le bug »).
     private _bDirect = ["CAMÉRA PLEIN ÉCRAN", ["direct"] call _act, "", "Plein écran sur la caméra du drone, sans passer par l'image du téléphone (utile si elle reste noire). Échap pour revenir au téléphone"];
     private _bClose = ["FERMER", ["cam"] call _act, "", "Coupe l'image du drone (le drone continue ce qu'il fait)"];
-    // Diagnostic de l'image noire : la même image vidéo montrée à 4 endroits (fn_pipCheck "test").
-    private _bPipTest = ["TEST VIDÉO", { ["test"] call comspec_atak_native_fnc_pipCheck; }, "", "Image noire ? Affiche 20 s la même vidéo à 4 endroits numérotés : dites-nous lesquels montrent une image"];
+    // Diagnostic de l'image noire : la vidéo montrée de 9 façons, lettres A à I (fn_pipCheck "test").
+    private _bPipTest = ["TEST VIDÉO", { ["test"] call comspec_atak_native_fnc_pipCheck; }, "", "Image noire ? Montre 30 s la vidéo de plusieurs façons (lettres A à I) : dites-nous lesquelles restent noires"];
     // Viseur photo.
     private _toolCode = { params ["_k"]; compile format ["['tool', %1] call comspec_atak_native_fnc_dronePhoto;", str _k] };
     private _bBox = [["CADRE", "CADRE : TRACEZ"] select (_tool isEqualTo "BOX"), ["BOX"] call _toolCode, ["", "on"] select (_tool isEqualTo "BOX"), "Surligner d'un cadre jaune : appuyez, puis glissez sur l'image (4 surlignages au plus). Rappuyez pour reprendre la main sur la caméra", (count _shapes) < 4 || {_tool isEqualTo "BOX"}];
@@ -260,6 +260,19 @@ if (_view isNotEqualTo "") then {
     _bx ctrlSetTextColor [1, 1, 1, 1];
     _bx ctrlSetTooltip ("Fermer la caméra (le drone continue ce qu'il fait)" call comspec_atak_native_fnc_tr);
     _bx ctrlAddEventHandler ["ButtonClick", ["cam"] call _act];
+    // PLEIN ÉCRAN sur l'image, comme dans l'app Photo (retour de TTRD, 14/10 : « la vue complète du drone via un bouton,
+    // comme pour l'appareil photo ») : bord droit, à mi-hauteur (les incrustations occupent les coins). La vue du jeu
+    // passe sur la caméra du drone (fn_droneAction "direct"), Échap revient au téléphone.
+    if (_view isNotEqualTo "SHOT") then {
+        private _fw = (_iw * 0.18) max (_fs * 5.5);
+        private _fb = ["COMSPEC_RscButton", [_ix + _iw - _fw - pixelW * 6, _iy + (_ih - _xh) / 2, _fw, _xh], "PLEIN ÉCRAN"] call comspec_atak_native_fnc_pageCtrl;
+        _fb ctrlSetFont "COMSPEC_BarlowBold";
+        _fb ctrlSetFontHeight ((_xh * 0.62) min (_fs * 0.95));
+        _fb ctrlSetBackgroundColor [0, 0, 0, 0.6];
+        _fb ctrlSetTextColor [1, 1, 1, 1];
+        _fb ctrlSetTooltip ("Vue complète de la caméra du drone en plein écran. Échap pour revenir au téléphone" call comspec_atak_native_fnc_tr);
+        _fb ctrlAddEventHandler ["ButtonClick", ["direct"] call _act];
+    };
     // Viseur photo : coins de cadrage blancs, tiers de l'image en pointillé léger, surlignages déjà tracés.
     // Surlignage : [genre "BOX" | "CIRCLE", u0, v0, u1, v1] en fractions de l'image ; contrôles : 4 bords et un anneau.
     private _place = {
