@@ -49,4 +49,19 @@ final class AtakModReportMailerTest extends TestCase
         self::assertStringNotContainsString('Détail technique', $text);
         self::assertStringContainsString('signalements cette heure', $html);
     }
+
+    public function testComposeAutoCriticalSaysTheModDetectedIt(): void
+    {
+        $r = $this->report();
+        $r['source'] = 'auto';
+        $r['gravity'] = 'critical';
+        $r['message'] = 'callExtension : extension introuvable';
+        [$subject, $html, $text] = AtakModReportMailer::compose($r, 'https://x');
+
+        self::assertStringStartsWith('Erreur critique détectée par le mod', $subject);
+        self::assertStringContainsString('le joueur n’a rien signalé', $text);
+        self::assertStringContainsString('Message du mod', $text);
+        self::assertStringContainsString('Gravité : Critique', $text);
+        self::assertStringNotContainsString('Signaler un problème', $html);
+    }
 }

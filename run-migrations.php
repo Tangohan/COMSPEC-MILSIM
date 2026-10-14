@@ -3685,6 +3685,15 @@ try {
     $migrationRunner->warn('atak_mod_reports', $e);
 }
 
+require_once $root . '/bootstrap/atak_mod_report_discord_migration.php';
+try {
+    echo "Migration atak_mod_report_discord (tickets Discord des signalements du mod)...\n";
+    run_atak_mod_report_discord_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_mod_report_discord : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_mod_report_discord', $e);
+}
+
 require_once $root . '/bootstrap/atak_device_logs_migration.php';
 try {
     echo "Migration atak_device_logs (journal des appareils ATAK)...\n";

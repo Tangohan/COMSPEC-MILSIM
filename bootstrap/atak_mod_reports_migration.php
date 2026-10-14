@@ -83,6 +83,30 @@ function run_atak_mod_reports_migration(PDO $pdo): void
                 $pdo->exec('ALTER TABLE atak_mod_reports ADD COLUMN ' . $column . ' ' . $definition);
             }
         }
+        // Gravité (critique, importante, moyenne, faible) : calculée à la réception, corrigeable sur la page.
+        // Les rapports déjà reçus sont classés une fois, à l'ajout de la colonne.
+        if ($hasTable('atak_mod_reports') && !$hasCol('atak_mod_reports', 'gravity')) {
+            $pdo->exec(
+                "ALTER TABLE atak_mod_reports
+                 ADD COLUMN gravity VARCHAR(16) NOT NULL DEFAULT 'normal' AFTER severity,
+                 ADD KEY idx_amr_gravity (gravity, last_seen_at)"
+            );
+            if (class_exists(\App\Services\Monitoring\AtakModReportGravity::class)) {
+                $rows = $pdo->query('SELECT id, source, severity, message, detail_text FROM atak_mod_reports');
+                $upd = $pdo->prepare('UPDATE atak_mod_reports SET gravity = ?, last_seen_at = last_seen_at WHERE id = ?');
+                foreach ($rows ? $rows->fetchAll(PDO::FETCH_ASSOC) : [] as $row) {
+                    $upd->execute([
+                        \App\Services\Monitoring\AtakModReportGravity::classify(
+                            (string) ($row['source'] ?? ''),
+                            (string) ($row['severity'] ?? ''),
+                            (string) ($row['message'] ?? ''),
+                            (string) ($row['detail_text'] ?? '')
+                        ),
+                        (int) $row['id'],
+                    ]);
+                }
+            }
+        }
         // E-mails automatiques au joueur (accès refusé par Athena…) : un seul par joueur, problème et jour.
         if (!$hasTable('atak_player_auto_notices')) {
             $pdo->exec(

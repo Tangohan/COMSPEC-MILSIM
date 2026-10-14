@@ -114,6 +114,8 @@ final class EmailService
      * @param array<string, mixed> $payloadSummary
      * @param bool $forceImmediate Messages attendus dans la minute (lien d'inscription, code de connexion,
      *                             mot de passe) : ne jamais dépendre du worker MAIL_QUEUE.
+     * @param string|null $locale langue dans laquelle le modèle est déjà écrit (fr|en) ; null = langue du profil
+     *                            du destinataire, modèle français traduit si besoin
      */
     public function sendTemplated(
         string $eventCode,
@@ -124,7 +126,8 @@ final class EmailService
         ?int $tenantId = null,
         ?string $replyTo = null,
         ?array $payloadSummary = null,
-        bool $forceImmediate = false
+        bool $forceImmediate = false,
+        ?string $locale = null
     ): bool {
         $this->lastSendError = null;
         $parts = $this->templateEngine->render($templateName, $templateVars);
@@ -135,7 +138,9 @@ final class EmailService
         }
 
         // Destinataire dont le profil est en anglais : modèle (écrit en français) traduit comme une page du site.
-        if ($this->recipientLocale($to) === 'en') {
+        // $locale donné : le modèle est déjà écrit dans cette langue ; en anglais, seul le gabarit commun
+        // (lien de secours, pied de page) reste à traduire.
+        if (($locale !== null ? \App\Services\I18n\LocaleService::normalize($locale) : $this->recipientLocale($to)) === 'en') {
             try {
                 $subject = HtmlTranslator::translateText($subject);
                 $parts['html'] = HtmlTranslator::translate($parts['html']);
