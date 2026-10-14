@@ -200,7 +200,7 @@
 
         class ModuleDescription
         {
-            description = "$STR_COMSPEC_SSE_CFG_17890A8F23";
+            description = "$STR_COMSPEC_SSE_CFG_1053444090";
             position = 0;
             direction = 0;
             optional = 1;
@@ -247,7 +247,7 @@
 
         class ModuleDescription
         {
-            description = "$STR_COMSPEC_SSE_CFG_E4737DAB40";
+            description = "$STR_COMSPEC_SSE_CFG_064A3DCAD7";
             position = 0;
             direction = 0;
             optional = 1;
@@ -271,7 +271,7 @@
             class Prefab
             {
                 displayName = "$STR_COMSPEC_SSE_CFG_A351AF061A";
-                tooltip = "$STR_COMSPEC_SSE_CFG_1941DB564B";
+                tooltip = "$STR_COMSPEC_SSE_CFG_8FDF653057";
                 property = "COMSPEC_SSE_DocChrome_Prefab";
                 control = "Combo";
                 expression = "_this setVariable ['Prefab',_value,true];";
@@ -288,8 +288,8 @@
             };
             class PaperStyle
             {
-                displayName = "$STR_COMSPEC_SSE_CFG_38EF9DD8EF";
-                tooltip = "$STR_COMSPEC_SSE_CFG_D5AA87A3D9";
+                displayName = "$STR_COMSPEC_SSE_CFG_08E9024C23";
+                tooltip = "$STR_COMSPEC_SSE_CFG_5DF2E5143B";
                 property = "COMSPEC_SSE_DocChrome_PaperStyle";
                 control = "Combo";
                 expression = "_this setVariable ['PaperStyle',_value,true];";
@@ -306,8 +306,8 @@
             };
             class Banner
             {
-                displayName = "$STR_COMSPEC_SSE_CFG_D64D8E38B3";
-                tooltip = "$STR_COMSPEC_SSE_CFG_B3D29703D1";
+                displayName = "$STR_COMSPEC_SSE_CFG_94BD8BF502";
+                tooltip = "$STR_COMSPEC_SSE_CFG_7C4F51B20E";
                 property = "COMSPEC_SSE_DocChrome_Banner";
                 control = "Edit";
                 expression = "_this setVariable ['Banner',_value,true];";
@@ -316,8 +316,8 @@
             };
             class TitlePerson
             {
-                displayName = "$STR_COMSPEC_SSE_CFG_50EB4CF8B0";
-                tooltip = "$STR_COMSPEC_SSE_CFG_04599608E2";
+                displayName = "$STR_COMSPEC_SSE_CFG_39D6FD18FC";
+                tooltip = "$STR_COMSPEC_SSE_CFG_2E7D217CD3";
                 property = "COMSPEC_SSE_DocChrome_TitlePerson";
                 control = "Edit";
                 expression = "_this setVariable ['TitlePerson',_value,true];";
@@ -326,8 +326,8 @@
             };
             class TitleDocs
             {
-                displayName = "$STR_COMSPEC_SSE_CFG_865E727F4F";
-                tooltip = "$STR_COMSPEC_SSE_CFG_510609F529";
+                displayName = "$STR_COMSPEC_SSE_CFG_4058BD6EBB";
+                tooltip = "$STR_COMSPEC_SSE_CFG_54EF63FC40";
                 property = "COMSPEC_SSE_DocChrome_TitleDocs";
                 control = "Edit";
                 expression = "_this setVariable ['TitleDocs',_value,true];";
@@ -336,8 +336,8 @@
             };
             class SubtitleDossier
             {
-                displayName = "$STR_COMSPEC_SSE_CFG_6ABCDD2502";
-                tooltip = "$STR_COMSPEC_SSE_CFG_4ECFD04A93";
+                displayName = "$STR_COMSPEC_SSE_CFG_41824AF0CC";
+                tooltip = "$STR_COMSPEC_SSE_CFG_E7B6313E3C";
                 property = "COMSPEC_SSE_DocChrome_SubtitleDossier";
                 control = "Edit";
                 expression = "_this setVariable ['SubtitleDossier',_value,true];";
@@ -346,8 +346,8 @@
             };
             class Footer
             {
-                displayName = "$STR_COMSPEC_SSE_CFG_09EAEE23DA";
-                tooltip = "$STR_COMSPEC_SSE_CFG_54676EF14E";
+                displayName = "$STR_COMSPEC_SSE_CFG_D249EAD79B";
+                tooltip = "$STR_COMSPEC_SSE_CFG_08AA395002";
                 property = "COMSPEC_SSE_DocChrome_Footer";
                 control = "Edit";
                 expression = "_this setVariable ['Footer',_value,true];";
@@ -356,8 +356,8 @@
             };
             class BtnConsult
             {
-                displayName = "$STR_COMSPEC_SSE_CFG_3484725616";
-                tooltip = "$STR_COMSPEC_SSE_CFG_45581DDE0C";
+                displayName = "$STR_COMSPEC_SSE_CFG_4A43DB3AB2";
+                tooltip = "$STR_COMSPEC_SSE_CFG_E2A2750648";
                 property = "COMSPEC_SSE_DocChrome_BtnConsult";
                 control = "Edit";
                 expression = "_this setVariable ['BtnConsult',_value,true];";
@@ -366,8 +366,8 @@
             };
             class BtnTransmit
             {
-                displayName = "$STR_COMSPEC_SSE_CFG_DEABE47183";
-                tooltip = "$STR_COMSPEC_SSE_CFG_05E0AFA220";
+                displayName = "$STR_COMSPEC_SSE_CFG_EC8564132E";
+                tooltip = "$STR_COMSPEC_SSE_CFG_C27426E011";
                 property = "COMSPEC_SSE_DocChrome_BtnTransmit";
                 control = "Edit";
                 expression = "_this setVariable ['BtnTransmit',_value,true];";
@@ -376,8 +376,8 @@
             };
             class BtnClose
             {
-                displayName = "$STR_COMSPEC_SSE_CFG_767FD5BDDA";
-                tooltip = "$STR_COMSPEC_SSE_CFG_6D51BE0AA5";
+                displayName = "$STR_COMSPEC_SSE_CFG_21A54E3104";
+                tooltip = "$STR_COMSPEC_SSE_CFG_9CC355D91B";
                 property = "COMSPEC_SSE_DocChrome_BtnClose";
                 control = "Edit";
                 expression = "_this setVariable ['BtnClose',_value,true];";
@@ -404,7 +404,7 @@
             };
             class Footer
             {
-                displayName = "$STR_COMSPEC_SSE_CFG_09EAEE23DA";
+                displayName = "$STR_COMSPEC_SSE_CFG_D249EAD79B";
                 description = "$STR_COMSPEC_SSE_CFG_1A05DB15DF";
                 typeName = "STRING";
                 defaultValue = "";
@@ -413,7 +413,7 @@
 
         class ModuleDescription
         {
-            description = "$STR_COMSPEC_SSE_CFG_7C7ECA35F0";
+            description = "$STR_COMSPEC_SSE_CFG_FE74F2DB26";
             position = 0;
             direction = 0;
             optional = 1;

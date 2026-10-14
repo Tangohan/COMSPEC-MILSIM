@@ -22,6 +22,16 @@ if (!hasInterface) exitWith {};
 
 [{ !isNil "zen_custom_modules_fnc_register" }, {
     ["COMSPEC SSE · Outils", "Tutoriel : manuel du Zeus", { ["Zeus"] call comspec_sse_fnc_openGuide }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa"] call comspec_sse_fnc_zenModule;
+    ["COMSPEC SSE · Outils", "Tutoriel : choisir un chapitre", {
+        if (isNil "zen_dialog_fnc_create") exitWith { ["Zeus"] call comspec_sse_fnc_openGuide; };
+        private _ids = ["Zeus", "ModTools", "ModMission", "ModPeople", "ModDigital", "Datasets", "CaseRef", "Campaigns", "Documents", "Items", "Models", "Eden"];
+        private _lbls = _ids apply { getText (configFile >> "CfgHints" >> "COMSPEC_SSE" >> _x >> "displayName") };
+        [
+            ("Manuel SSE") call comspec_sse_fnc_tr,
+            [["COMBO", ("Chapitre") call comspec_sse_fnc_tr, [_ids, _lbls, 0]]],
+            { params ["_v"]; [_v select 0] call comspec_sse_fnc_openGuide; }
+        ] call zen_dialog_fnc_create;
+    }, "\a3\ui_f\data\igui\cfg\simpleTasks\types\documents_ca.paa"] call comspec_sse_fnc_zenModule;
     ["COMSPEC SSE · Outils", "Tutoriel : poser un exercice ici", {
         params ["_pos"];
         [ASLToAGL _pos, player] call comspec_sse_fnc_guideExercise;

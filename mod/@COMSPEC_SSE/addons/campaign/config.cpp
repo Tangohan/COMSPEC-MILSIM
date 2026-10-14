@@ -83,13 +83,14 @@ class CfgVehicles {
             class Id: Edit {
                 property = "COMSPEC_SSE_Campaign_Id";
                 displayName = "$STR_COMSPEC_SSE_CFG_68E546FCE7";
-                tooltip = "$STR_COMSPEC_SSE_CFG_59AC04E471";
+                tooltip = "$STR_COMSPEC_SSE_CFG_3D733DBC98";
                 typeName = "STRING";
                 defaultValue = "''";
             };
             class Name: Edit {
                 property = "COMSPEC_SSE_Campaign_Name";
                 displayName = "$STR_COMSPEC_SSE_CFG_7FF20370C8";
+                tooltip = "$STR_COMSPEC_SSE_CFG_17208B92CD";
                 typeName = "STRING";
                 defaultValue = "''";
             };
@@ -100,36 +101,44 @@ class CfgVehicles {
                 typeName = "STRING";
                 defaultValue = "'permanente'";
                 class Values {
-                    class Permanente { name = "Permanente (vraie campagne)"; value = "permanente"; };
-                    class Recurrente { name = "Récurrente (bootcamp, drills)"; value = "recurrente"; };
-                    class Temporaire { name = "Temporaire (drill SOT jetable)"; value = "temporaire"; };
+                    class Permanente { name = "$STR_COMSPEC_SSE_CFG_39E7554B3B"; value = "permanente"; };
+                    class Recurrente { name = "$STR_COMSPEC_SSE_CFG_BC72CC8240"; value = "recurrente"; };
+                    class Temporaire { name = "$STR_COMSPEC_SSE_CFG_33814F2738"; value = "temporaire"; };
                 };
             };
             class CopyFrom: Edit {
                 property = "COMSPEC_SSE_Campaign_CopyFrom";
                 displayName = "$STR_COMSPEC_SSE_CFG_DB05277DFF";
-                tooltip = "$STR_COMSPEC_SSE_CFG_BEAF7B27AC";
+                tooltip = "$STR_COMSPEC_SSE_CFG_6BC5A2F521";
                 typeName = "STRING";
                 defaultValue = "''";
             };
-            class Autosave: Edit {
+            class Autosave: Combo {
                 property = "COMSPEC_SSE_Campaign_Autosave";
                 displayName = "$STR_COMSPEC_SSE_CFG_46F719D58D";
-                tooltip = "$STR_COMSPEC_SSE_CFG_02E1A2A4CC";
+                tooltip = "$STR_COMSPEC_SSE_CFG_431CAD1E47";
                 typeName = "NUMBER";
                 defaultValue = "15";
+                class Values {
+                    class M0 { name = "$STR_COMSPEC_SSE_CFG_F405E1BE2C"; value = 0; };
+                    class M5 { name = "$STR_COMSPEC_SSE_CFG_112F9360A3"; value = 5; };
+                    class M10 { name = "$STR_COMSPEC_SSE_CFG_F4731FA7D1"; value = 10; };
+                    class M15 { name = "$STR_COMSPEC_SSE_CFG_C83C4B7DD1"; value = 15; };
+                    class M30 { name = "$STR_COMSPEC_SSE_CFG_98F537212E"; value = 30; };
+                    class M60 { name = "$STR_COMSPEC_SSE_CFG_04AF531503"; value = 60; };
+                };
             };
             class SaveAtEnd: CheckboxNumber {
                 property = "COMSPEC_SSE_Campaign_SaveAtEnd";
                 displayName = "$STR_COMSPEC_SSE_CFG_91B1EF61F7";
-                tooltip = "$STR_COMSPEC_SSE_CFG_771988E23B";
+                tooltip = "$STR_COMSPEC_SSE_CFG_7749B9EDD8";
                 typeName = "NUMBER";
                 defaultValue = "1";
             };
             class ModuleDescription: ModuleDescription {};
         };
         class ModuleDescription: ModuleDescription {
-            description = "$STR_COMSPEC_SSE_CFG_0323FC1D81";
+            description = "$STR_COMSPEC_SSE_CFG_8F17D61D8E";
         };
     };
 
@@ -152,23 +161,25 @@ class CfgVehicles {
             class Action: Combo {
                 property = "COMSPEC_SSE_CampaignSave_Action";
                 displayName = "$STR_COMSPEC_SSE_CFG_97C89A4D66";
+                tooltip = "$STR_COMSPEC_SSE_CFG_325E6A9763";
                 typeName = "STRING";
                 defaultValue = "'save'";
                 class Values {
-                    class Save { name = "Sauvegarder"; value = "save"; };
-                    class End { name = "Fin de mission (sauver, ou vider un drill temporaire)"; value = "end"; };
+                    class Save { name = "$STR_COMSPEC_SSE_CFG_E24E94AD56"; value = "save"; };
+                    class End { name = "$STR_COMSPEC_SSE_CFG_BF2E09C2F4"; value = "end"; };
                 };
             };
             class Reason: Edit {
                 property = "COMSPEC_SSE_CampaignSave_Reason";
                 displayName = "$STR_COMSPEC_SSE_CFG_3CBCBC1C17";
+                tooltip = "$STR_COMSPEC_SSE_CFG_EEEF930C08";
                 typeName = "STRING";
                 defaultValue = "'objectif atteint'";
             };
             class ModuleDescription: ModuleDescription {};
         };
         class ModuleDescription: ModuleDescription {
-            description = "$STR_COMSPEC_SSE_CFG_A7112BB3C2";
+            description = "$STR_COMSPEC_SSE_CFG_53AA62AC95";
         };
     };
 };

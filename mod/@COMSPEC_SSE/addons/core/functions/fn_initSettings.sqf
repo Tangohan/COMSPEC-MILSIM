@@ -23,7 +23,7 @@
 [
     "comspec_sse_requireEquipment",
     "CHECKBOX",
-    ["Exiger le matériel SSE", "Si activé, photographie, empreintes, ADN et collecte nécessitent les items dédiés (ou un substitut compatible)."],
+    ["Exiger le matériel SSE", "Si activé, chaque geste demande son matériel (ou un substitut compatible) : appareil photo (photos), kit d'empreintes (empreintes, latentes), kit ADN, terminal SEEK II (SEEK, iris), sachet de preuve (collecte, scellé, support USB/SD)."],
     ["COMSPEC SSE", "Matériel"],
     true,
     1,
