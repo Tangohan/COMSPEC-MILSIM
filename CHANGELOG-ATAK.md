@@ -38,6 +38,27 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Caméra noire : bouton PLEIN ÉCRAN du drone, TEST VIDÉO détaillé, drone plus léger (ATAK natif 1.94.0)
+
+### Résumé joueur
+Type : correctif
+FR : Drone en plein écran d'un bouton, et un test pour la caméra noire
+- Un bouton PLEIN ÉCRAN sur l'image de l'app Drone montre toute la vue du drone, comme dans l'app Photo. Échap pour revenir au téléphone.
+- L'image du drone est moins lourde par défaut et s'arrête dès qu'on quitte l'app Drone : le jeu doit moins ramer.
+- Image encore noire dans le téléphone ? Le bouton TEST VIDÉO (app Photo, et RÉGLAGES de la caméra du drone) affiche la vidéo de 9 façons, lettres A à I : dites-nous lesquelles restent noires.
+EN : Drone full screen in one tap, and a test for the black camera
+- A FULL SCREEN button on the Drone app picture shows the drone's whole view, like the Photo app. Esc returns to the phone.
+- The drone picture is lighter by default and stops as soon as you leave the Drone app: the game should lag less.
+- Picture still black inside the phone? The VIDEO TEST button (Photo app, and the drone camera SETTINGS) shows the video 9 ways, letters A to I: tell us which stay black.
+
+### Détail technique
+- Retour de TTRD (14/10, après 1.91.0) : viseur Photo et image du drone toujours noirs dans le téléphone ; bris d'écran validé. Le premier TEST VIDÉO (13/10 21:20) s'affichait aux 4 endroits, mais montrait le joueur de dos, c'est-à-dire pas depuis la position posée par le script : la caméra n'est pas là où le code la place. Cause des vues noires toujours non confirmée.
+- `fn_pipCheck` "test" : grille de 9 images dans une fenêtre par-dessus le téléphone, 30 s : A référence (premier test), B texture 1024, C rapport 16/9, D caméra déplacée à chaque image comme l'app Photo (camSetPos + camCommit + setPosASL), E déplacée par setPosASL seul, F accrochée au joueur et orientée chaque image comme le drone, G posée 30 m au-dessus et tournée vers le sol, H thermique, I flux réel du drone (camBind). Relevé à 2 s : position réelle de chaque caméra (distance au joueur, hauteur, écart à la position posée). Bouton aussi dans l'app Photo.
+- App Drone : bouton PLEIN ÉCRAN sur l'image (bord droit, mi-hauteur) → `fn_droneAction` "direct". Pendant la vue directe, le rendu dans la texture est coupé (la scène n'est plus dessinée deux fois).
+- Performance (retour de TTRD : « le drone fait très vite une surcharge ») : netteté par défaut BASSE (texture 512 au lieu de 1024), caméra et boucle de la nacelle libérées 5 s après avoir quitté l'app Drone (20 s avant) ; viseur Photo en texture 512.
+- Journal : lignes « Flux caméra ouvert / suspendu / arrêté » du drone ; les lignes CAMERA, PHOTO, DRONE et PERF du journal natif sont recopiées dans le journal de session COMSPEC (.log d'Overwatch), qui ne les contenait pas.
+- Non testé en jeu.
+
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
 
 ### Résumé joueur

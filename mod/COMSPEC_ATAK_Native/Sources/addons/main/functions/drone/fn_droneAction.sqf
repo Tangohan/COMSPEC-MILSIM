@@ -238,7 +238,9 @@ private _gridPos = {
 private _saveGrid = { private _v = ["droneTaskGrid", "§"] call comspec_atak_native_fnc_formValue; if (_v isNotEqualTo "§") then { _s set ["droneTaskGridVal", _v]; }; };
 // Qualité du flux (profil COMSPEC_ATAK_DroneQuality : 0 basse, 1 moyenne, 2 haute) : taille de la texture de rendu.
 // Largeur et hauteur en puissances de 2 (576 ne l'est pas : texture jamais créée, image noire) ; le 16/9 vient de r2t.
-private _camQ = { ((profileNamespace getVariable ["COMSPEC_ATAK_DroneQuality", 1]) max 0) min 2 };
+// Netteté par défaut BASSE (texture 512, celle du TEST VIDÉO qui s'affiche) : la 1024 par défaut pesait sur le jeu
+// (retour de TTRD, 14/10 : « le drone fait très vite une surcharge »).
+private _camQ = { ((profileNamespace getVariable ["COMSPEC_ATAK_DroneQuality", 0]) max 0) min 2 };
 // Boîte englobante du drone dans le repère du modèle : [centre, demi-côtés].
 private _camBox = {
     (boundingBoxReal _d) params ["_b0", "_b1"];
@@ -293,6 +295,9 @@ private _camMake = {
     missionNamespace setVariable ["COMSPEC_ATAK_DroneCam", _cam];
     missionNamespace setVariable ["COMSPEC_ATAK_DroneR2T", _name];
     call _expose;
+    ["INFO", "DRONE", format ["Flux caméra ouvert : cible de rendu %1, texture %2 px, PiP %3, distance de vue PiP %4 m, drone %5 à %6 m du sol",
+        _name, [512, 1024, 2048] select (call _camQ), ["DÉSACTIVÉE", "active"] select isPiPEnabled, round getPiPViewDistance, typeOf _d,
+        round (((getPosASL _d) select 2) - getTerrainHeightASL (getPosASL _d))]] call comspec_atak_native_fnc_log;
     _cam
 };
 private _camOpen = {
@@ -323,13 +328,16 @@ private _camOpen = {
         private _show = (!isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])
             && {_page isEqualTo "DRONE" || {_page isEqualTo "MAP" && {(_st getOrDefault ["droneView", "OFF"]) isNotEqualTo "OFF"}}})
             // Vue directe (téléphone rangé) : la nacelle continue de tourner, la caméra plein écran prend sa pose.
-            || {!isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneDirectCam", objNull])};
-        // Rendu coupé après 1,5 s hors de la page (un aller-retour rapide garde la même cible de rendu), caméra libérée
-        // après 20 s (camPark, rouverte par la page au retour). Avant : 3 s et 60 s (retour de TTRD : le jeu rame).
+            || {!isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneDirectCam", objNull])}
+            // TEST VIDÉO en cours (fn_pipCheck, lettre I : flux réel du drone), même depuis l'app Photo.
+            || {(count (missionNamespace getVariable ["COMSPEC_ATAK_PipTest", []])) > 0};
+        // Rendu coupé après 1,5 s hors de la page (un aller-retour rapide garde la même cible de rendu), caméra et boucle
+        // libérées après 5 s (camPark, rouverte par la page au retour). Avant : 3 s et 60 s, puis 20 s (retour de TTRD :
+        // le jeu rame).
         if (_show) then { _cam setVariable ["hiddenSince", -1]; } else {
             private _h0 = _cam getVariable ["hiddenSince", -1];
             if (_h0 < 0) then { _cam setVariable ["hiddenSince", diag_tickTime]; _h0 = diag_tickTime; };
-            if (diag_tickTime - _h0 > 20) exitWith { ["camPark"] call comspec_atak_native_fnc_droneAction; };
+            if (diag_tickTime - _h0 > 5) exitWith { ["camPark"] call comspec_atak_native_fnc_droneAction; };
             if (diag_tickTime - _h0 < 1.5) then { _show = true; };
         };
         if (isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneCam", objNull])) exitWith {};
@@ -337,7 +345,15 @@ private _camOpen = {
             if (_cam getVariable ["rendering", true]) then {
                 _cam setVariable ["rendering", false];
                 _cam cameraEffect ["Terminate", "Back", _cam getVariable ["r2t", "comspec_dronecam"]];
+                ["INFO", "DRONE", format ["Flux caméra suspendu (app Drone quittée) : rendu %1 coupé", _cam getVariable ["r2t", ""]]] call comspec_atak_native_fnc_log;
             };
+        };
+        // Plein écran (vue directe) : la vue du jeu montre déjà le drone, le rendu dans la texture est coupé (deux rendus
+        // de la scène à chaque image sinon) ; la caméra reste pour porter la pose de la nacelle.
+        private _direct = !isNull (missionNamespace getVariable ["COMSPEC_ATAK_DroneDirectCam", objNull]);
+        if (_direct && {_cam getVariable ["rendering", true]}) then {
+            _cam setVariable ["rendering", false];
+            _cam cameraEffect ["Terminate", "Back", _cam getVariable ["r2t", "comspec_dronecam"]];
         };
         // Photo demandée par le poste web (Overwatch connect, fn_webCmdUavPhoto) : elle relance cette caméra sur l'ancienne
         // cible fixe comspec_dronecam ; à la fin du cliché, caméra et cible neuves.
@@ -346,7 +362,7 @@ private _camOpen = {
         _cam setVariable ["webBusy", _web];
         // De retour à l'écran : la page appelle camBind (caméra et cible neuves). Si elle a été dessinée avant que la
         // coupure soit vue, on recrée la caméra ici et on redessine la page (une fois : camBind remet rendering).
-        if !(_cam getVariable ["rendering", true]) exitWith {
+        if (!_direct && {!(_cam getVariable ["rendering", true])}) exitWith {
             ["camBind"] call comspec_atak_native_fnc_droneAction;
             [{ [_this] call comspec_atak_native_fnc_pageRender; }, _page] call CBA_fnc_execNextFrame;
         };
@@ -1105,7 +1121,11 @@ switch (_act) do {
     };
     case "camEnsure": { if (!isNull _d) then { call _camBind; }; };
     // Caméra restée hors écran (fn_droneAction, boucle de la nacelle) : libérée, rouverte au retour sur la page Drone.
-    case "camPark": { call _camClose; missionNamespace setVariable ["COMSPEC_ATAK_DroneCamParked", true]; };
+    case "camPark": {
+        call _camClose;
+        missionNamespace setVariable ["COMSPEC_ATAK_DroneCamParked", true];
+        ["INFO", "DRONE", "Flux caméra arrêté : caméra et boucle de la nacelle libérées (app Drone fermée depuis 5 s)"] call comspec_atak_native_fnc_log;
+    };
     // Image du flux posée par la page (fn_pageDrone) : journal RPT de l'ouverture une fois par cible de rendu
     // (fn_pipCheck, étapes 1 à 5 et relevé à 2 s), sinon simple rebranchement de la texture à l'image suivante.
     case "feedWatch": {

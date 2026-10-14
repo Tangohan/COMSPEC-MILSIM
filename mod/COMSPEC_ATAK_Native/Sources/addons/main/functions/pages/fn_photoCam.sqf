@@ -154,8 +154,8 @@ switch (_act) do {
             }, 0] call CBA_fnc_addPerFrameHandler];
         };
         // Largeur et hauteur en puissances de 2, dans le sens du viseur.
-        // Texture carrée (comme le TEST VIDÉO qui s'affiche) ; le rapport passé à r2t donne le cadrage.
-        format ["#(argb,1024,1024,1)r2t(%1,%2)", _cam getVariable ["r2t", "comspecphotocama"], _aspect]
+        // Texture carrée 512 (taille du TEST VIDÉO qui s'affiche, et moins lourde) ; le rapport passé à r2t donne le cadrage.
+        format ["#(argb,512,512,1)r2t(%1,%2)", _cam getVariable ["r2t", "comspecphotocama"], _aspect]
     };
     case "stop": { call _stop; true };
     case "expose": {
