@@ -76,12 +76,34 @@ final class CsrfPostMiddleware
             return $next($request);
         }
 
-        if (!Csrf::validate($request->input('_csrf_token'))) {
+        if (!self::hasValidToken($request)) {
             Session::flash('error', 'Session expirée. Merci de réessayer.');
 
             return Response::redirect(Session::get('user_id') ? url('dashboard') : url('login'));
         }
 
         return $next($request);
+    }
+
+    /**
+     * Le jeton est accepté sous les noms réellement émis par les pages : « _csrf_token »
+     * (Csrf::field), « _csrf » (signalements du mod, fiche unité…) et l'en-tête X-CSRF-Token
+     * des appels fetch en JSON. Ne lire que « _csrf_token » renvoyait « Session expirée »
+     * à un utilisateur connecté sur ces formulaires.
+     */
+    private static function hasValidToken(Request $request): bool
+    {
+        $candidates = [
+            $request->input('_csrf_token'),
+            $request->input('_csrf'),
+            $request->header('X-CSRF-Token'),
+        ];
+        foreach ($candidates as $token) {
+            if (is_string($token) && $token !== '' && Csrf::validate($token)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
