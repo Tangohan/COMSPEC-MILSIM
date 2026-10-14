@@ -233,6 +233,9 @@ final class AtakModReportReplyService
 
             return $repo->create($account['tenant_id'], $account['user_id'], self::NOTIFICATION_TYPE, [
                 'summary' => self::clip($message, 160),
+                // Texte complet et rapports cités : fenêtre « réponse à votre signalement » à la connexion.
+                'message' => mb_substr($message, 0, 2000),
+                'report_ids' => array_values(array_filter(array_map(static fn (array $r): int => (int) ($r['id'] ?? 0), $reports))),
                 'report' => self::clip(self::reportsLabel($reports, self::lang($account)), 120),
                 'auto' => self::allAuto($reports),
                 'href' => url('activite'),

@@ -70,6 +70,8 @@ Identités livrées :
   `Sources/.hemttout/build/addons/comspec_atak_native_main.pbo` vers `@COMSPEC_ATAK_Native/addons/main.pbo`.
   Les pylônes relais 3D sont dans un PBO à part : `comspec_atak_native_towers.pbo` vers `@COMSPEC_ATAK_Native/addons/towers.pbo`
   (modèles et textures : `tools/gen_tower_textures.py`, `tools/model_relay_towers.py`).
+  Les objets d'inventaire 3D aussi : `comspec_atak_native_items.pbo` vers `@COMSPEC_ATAK_Native/addons/items.pbo`
+  (`tools/gen_item_textures.py`, `tools/model_items.py`).
   `hemtt check` vérifie la config et le SQF.
 
 ## Langue (français / anglais)

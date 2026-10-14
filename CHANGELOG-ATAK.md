@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Photo refusée faute de carte Athena : une fenêtre claire au joueur (ATAK natif 1.94.0)
+## Photo refusée faute de carte Athena : une fenêtre claire au joueur (ATAK natif 1.95.0)
 
 ### Résumé joueur
 Type : correctif
@@ -54,6 +54,39 @@ EN : A window explains why your photo was not sent
 - XEH_postInitClient (retour des photos) : quand le dernier refus porte `feature_unavailable` (connect, 1.93.0), `BIS_fnc_guiMessage` sur l'écran de jeu (attend la fermeture du menu Échap), une fois par session (`COMSPEC_ATAK_PlanModalShown`), à la place de la notification « Photo refusée par Athena ». Textes FR, traduits dans i18n/en.txt.
 - main.pbo reconstruit avec HEMTT 1.17.2 (texHeaders.bin repris de 1.93.0).
 - À tester en jeu : communauté sans la carte, prendre deux photos. La fenêtre s'ouvre une seule fois, lisible en FR et en EN (Réglages > Langue), OK la ferme. Communauté avec la carte : aucune fenêtre, envoi normal.
+## Objets d'inventaire en vraie 3D, pylônes relais retravaillés jour et nuit (ATAK natif 1.94.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Les objets ATAK ont enfin leur vrai modèle 3D, et les pylônes relais sont bien plus réalistes
+- Batterie, batterie externe, caméra IP, filtre JVN, kit de réparation, kit véhicule, les trois antennes, câble DL-7 et valise du socle : posés au sol ou dans l'éditeur, ce sont maintenant de vrais objets détaillés, plus la sacoche générique. Leurs icônes d'inventaire sont refaites d'après ces modèles.
+- La caméra IP posée est une caméra durcie sur rotule et base magnétique, avec projecteurs infrarouges visibles la nuit.
+- Les pylônes relais gagnent des haubans, plates-formes, armoires vert olive avec climatisation, enclos grillagés, filet de camouflage, panneaux de danger et une dalle béton. Les ombres sont plus fidèles.
+- La nuit, les feux rouges d'obstacle clignotent au sommet (et à mi-hauteur sur les pylônes de 40 et 50 m).
+EN : ATAK items finally have real 3D models, and the relay towers look far more realistic
+- Battery, power bank, IP camera, NVG filter, repair kit, vehicle kit, the three antennas, DL-7 cable and dock case: on the ground or in the editor, they are now real detailed objects instead of the generic pouch. Their inventory icons are redone from these models.
+- The placed IP camera is a rugged camera on a ball mount and magnetic base, with infrared lamps visible at night.
+- Relay towers gain guy wires, platforms, olive cabinets with air conditioning, fenced compounds, camouflage netting, danger signs and a concrete pad. Shadows are more accurate.
+- At night, red obstruction lights blink at the top (and halfway up on the 40 and 50 m towers).
+
+### Détail technique
+
+#### Objets d'inventaire 3D (tools/model_items.py, tools/gen_item_textures.py)
+- 11 modèles MLOD `item3d_*.p3d` (battery, powerbank, camera, nvgfilter, repairkit, vehiclekit, stub, whip, patch, datacable, dock) + `camera_ip.p3d` : LOD 1, ombre 0 (enveloppe convexe par pièce, rentrée 0,4 mm), géométrie (masse, autocenter=0) et géométrie de tir. Dos au sol, avant vers +Y.
+- Une seule texture : atlas 1024 `items_co/_nohq/_smdi` (32 pastilles de matière + étiquettes et sérigraphies), `items.rvmat` (Super) et `items_glow.rvmat` (voyants et IR émissifs).
+- Références visuelles fournies par TTRD : caméra durcie khaki / noir sur rotule magnétique, pochette ranger green à écusson COMSPEC, berceau véhicule khaki avec boîtier d'antenne et fouet, patch khaki.
+- config.cpp : `model=` des 11 CfgWeapons et des `Item_COMSPEC_ATAK_*` (plus `editorPreview` rendus), `COMSPEC_ATAK_CameraObj` sur `camera_ip.p3d` (au lieu de HandyCam_F). fn_camAction : écart à la surface 9,2 cm au sol (base magnétique), 4,5 cm au mur et au plafond.
+- Icônes d'inventaire `item_*.paa` (sauf le téléphone) : rendus Cycles des modèles (fond transparent, ombre portée). gen_assets.py ne les écrase plus quand `render/icon_*.png` existe.
+
+#### Pylônes relais (tools/model_relay_towers.py, tools/gen_tower_textures.py)
+- Détail : dalle béton du site, goussets aux nœuds du treillis, échelons des monopoles, pare-glace des passerelles de câbles, armoires vert olive (`tower_olive`) avec panneau danger RF, voyant, plinthe et ouïes, groupes de climatisation, plaque d'identification du site (`tower_sign`), enclos en grillage transparent (`tower_fence_ca`, collision gardée, balles traversantes), filet de camouflage (`tower_net_ca`) sur le monopole 20 m, haubans + ancrages (30 m peint olive, 12 m), plate-forme de tête du 40 m, couronne et parabole supplémentaires (30 m, 50 m).
+- Nuit : feux d'obstacle (globe émissif) sur les cinq pylônes, mi-hauteur sur 40 / 50 m ; LOD mémoire `light_top`, `light_mid1`, `light_mid2` et `class MarkerLights` (rouge, clignotant, éteint le jour) dans towers/config.cpp.
+- Ombres : ombre proche tirée de la LOD 4 au lieu de la LOD 12 (échelle, chemins de câbles, garde-corps, haubans) ; panneaux, filet et grillage exclus des ombres et géométries.
+- Ruines : haubans rompus (ancrages restants), feux éteints.
+- Aperçus : `tools/render/tower_family_night.png` (vue de nuit), aperçus Eden refaits.
+- Nouveau PBO `items.pbo` (addons/items : modèles, atlas, rvmat ; 8 Mo) pour garder main.pbo sous la limite de 100 Mo de GitHub ; build_mod.bat, README et project.toml à jour. PBO main, towers et items reconstruits avec HEMTT. Non testé en jeu : vérifier les feux MarkerLights sur un bâtiment, l'orientation des objets dans les porte-armes au sol, et la pose de la caméra au mur.
+
+---
 
 ## Regroupement : Zeus sur les ATAK, Comptes rendus, nouveaux terminaux, carte, drone, mise à jour (ATAK natif 1.93.0, COMSPEC Link 2.0.85)
 

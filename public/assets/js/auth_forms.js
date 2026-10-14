@@ -31,12 +31,24 @@ document.addEventListener('click', (event) => {
   if (span) {
     span.textContent = label.trim() !== '' ? label : (hide ? 'Afficher le mot de passe' : 'Masquer le mot de passe');
   }
-  btn.setAttribute('aria-label', (span && span.textContent) ? span.textContent : (hide ? 'Afficher le mot de passe' : 'Masquer le mot de passe'));
+  const fallback = hide ? 'Afficher le mot de passe' : 'Masquer le mot de passe';
+  const finalLabel = (span && span.textContent) ? span.textContent : (label.trim() !== '' ? label.trim() : fallback);
+  btn.setAttribute('aria-label', finalLabel);
+  if (btn.hasAttribute('aria-pressed')) {
+    btn.setAttribute('aria-pressed', hide ? 'false' : 'true');
+  }
+  if (btn.hasAttribute('title')) {
+    btn.setAttribute('title', finalLabel);
+  }
 });
 
 document.addEventListener('submit', (event) => {
   const form = event.target;
   if (!(form instanceof HTMLFormElement) || !form.hasAttribute('data-register-form')) {
+    return;
+  }
+  // Formulaire avec erreurs affichées sous les champs : géré par auth_register.js.
+  if (form.hasAttribute('data-inline-validation')) {
     return;
   }
   const confirm = form.querySelector('[data-password-confirm-of]');
@@ -98,5 +110,14 @@ if (previewModal instanceof HTMLDialogElement) {
       previewModal.close();
     }
   });
-  openPreview();
+  // Ouverture automatique à la première visite seulement ; ensuite, le lien « En savoir plus » la rouvre.
+  const seenKey = 'athena.register.preview_seen';
+  previewModal.addEventListener('close', () => {
+    try { localStorage.setItem(seenKey, '1'); } catch (e) { /* stockage indisponible */ }
+  });
+  let seen = false;
+  try { seen = localStorage.getItem(seenKey) === '1'; } catch (e) { seen = false; }
+  if (!seen) {
+    openPreview();
+  }
 }
