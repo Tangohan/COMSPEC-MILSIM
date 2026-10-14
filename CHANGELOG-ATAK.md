@@ -38,6 +38,32 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Nouveaux terminaux : V2 Enhanced, XIAOMI X3D, SONIM XP8 et nouvelle tablette (ATAK natif 1.93.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Quatre nouveaux terminaux pour ton ATAK
+- PREMIUM devient V2 ENHANCED : le Samsung S7 dans une coque durcie sable, avec sa fixation et son câble.
+- TACTIQUE devient XIAOMI X3D : un téléphone allongé dans un cadre tactique noir et sable.
+- Nouveau : SONIM XP8, un téléphone durci noir avec sa radio maillée GOTENNA PRO clipsée au dos.
+- La tablette (au choix dans Réglages, et celle des véhicules) prend un nouveau cadre durci.
+- Ton choix est gardé : si tu avais pris Premium ou Tactique, tu as directement le nouveau modèle. Le Samsung S7 reste le terminal par défaut.
+EN : Four new terminals for your ATAK
+- PREMIUM becomes V2 ENHANCED: the Samsung S7 in a sand rugged case, with its mount and cable.
+- TACTICAL becomes XIAOMI X3D: an elongated phone in a black and sand tactical frame.
+- New: SONIM XP8, a black rugged phone with its GOTENNA PRO mesh radio clipped on the back.
+- The tablet (selectable in Settings, and the vehicle one) gets a new rugged frame.
+- Your choice is kept: if you had picked Premium or Tactical, you get the new model straight away. The Samsung S7 stays the default terminal.
+
+### Détail technique
+- Coques photo fournies par TTRD (tools/src/frame_*.png) posées par `tools/frame_photos.py` dans la toile 2048 px : proportions gardées, ouverture de l'écran mise à 1092 px de large et centrée comme celle du S7. Franges presque transparentes du détourage (alpha < 12) supprimées. Dos : miroir de la face, intérieur remplacé par un panneau polymère avec module photo, marquages remis à l'endroit.
+- Identifiants inchangés (`iphone` = V2 ENHANCED, `rugged` = XIAOMI X3D, `keys` et `tablet` = tablette) : aucun profil à migrer. Nouveau modèle `sonim` (SONIM XP8) : photo assemblée par frame_photos.py (téléphone, goTenna Pro posé derrière et dépassant en haut ; au dos, son côté clip).
+- `fn_layoutGet` : écran propre à chaque modèle (`_scrLand`, paysage ; portrait = quart de tour), boîtes visibles remesurées. Le S7 et les coques plate / flip / ribbed gardent l'ouverture commune.
+- PAA régénérés : `phone_{landscape,portrait}_{iphone,rugged,keys,tablet}[_night]`, `phone_back_{iphone,rugged,keys}`, `dirt_case_*` de ces modèles, `item_vehiclekit` (`gen_assets.py <hemtt> frames`, `gen_dirt.py <hemtt> case …`).
+- JPC : `jpc_iphone` / `jpc_rugged` (p3d et atlas) reconstruits, `jpc_sonim` ajouté (classe COMSPEC_ATAK_JpcPhone_sonim, selfie compris) avec l'ouverture de chaque photo ; texture de l'écran 3D aux proportions du modèle (1024 x 496 V2 Enhanced, 1024 x 384 X3D, 1024 x 584 Sonim, `COMSPEC_ATAK_JpcTexH`). La tablette sur le JPC reste le modèle 3D à touches (rendu gardé sous `render/phone_keys_jpc_*`).
+- Noms : Réglages > Modèle du téléphone, vue de dos et Accessoires, carte Discord des photos ; anglais dans i18n/en.txt.
+- À tester en jeu : Réglages > Modèle du téléphone, choisir V2 ENHANCED, XIAOMI X3D, SONIM XP8 puis TABLETTE ; pour chacun, mini et plein écran, portrait et paysage, jour et nuit : l'interface remplit exactement l'ouverture (pas de bande noire, rien de coupé), la poussière de coque suit le cadre ; Voir l'arrière ; tablette de véhicule ; porté sur le JPC avec V2 ENHANCED, X3D et SONIM (écran 3D cadré, pas déformé). Un profil qui avait Premium ou Tactique doit ouvrir directement le nouveau modèle.
+
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
 
 ### Résumé joueur
