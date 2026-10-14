@@ -140,6 +140,10 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_LayerHeat", false]) then {
     { _map drawRectangle [_x select 0, _x select 1, _x select 1, 0, _x select 2, _tex]; } forEach (_hDraw select 1);
 };
 
+// Noms des villes, villages, lieux-dits et sites (fn_mapPlaceText) : sous tous les symboles. La carte Arma ne les
+// écrit plus (COMSPEC_RscMapAtak) ; chaque catégorie se masque dans CALQUES.
+[_map, _ts, _kt, _scale] call comspec_atak_native_fnc_mapPlaceText;
+
 // GPS : itinéraire en trait épais (bordure sombre, bleu à parcourir, gris déjà parcouru), arrivée en drapeau.
 private _route = missionNamespace getVariable ["COMSPEC_ATAK_Route", createHashMap];
 if ((count _route) > 0) then {
@@ -292,11 +296,8 @@ private _nato = (profileNamespace getVariable ["COMSPEC_ATAK_UnitSymbols", "NATO
             };
             private _rgba = [_marker getOrDefault ["color","ColorGreen"], [0.36,0.78,0.42,1]] call _mkRgba;
             _rgba set [3,(_rgba select 3) * (_marker getOrDefault ["alpha",1])];
-            private _mt = if (_labels && {_scale < 0.3}) then {_marker getOrDefault ["text",""]} else {""};
-            // Contact ENI : son cartouche rouge (fn_mapLabels) remplace le texte.
-            if (_boxOn && {_mt isNotEqualTo ""} && {((toLower _type) select [0, 2]) isEqualTo "o_" || {(toUpper (_mt select [0, 4])) isEqualTo "ENI "}}) then { _mt = ""; };
+            // Nom du repère : écrit par fn_mapMarkerText, comme ceux des marqueurs du jeu.
             _map drawIcon [_icon,_rgba,_pos,16 * _k * _is,16 * _k * _is,_marker getOrDefault ["dir",0],"",0];
-            if (_mt isNotEqualTo "") then { _map drawIcon [_clear,[1,1,1,(_rgba select 3) max 0.6],_pos,16 * _k * _is,16 * _k * _is,0,_mt,2,0.025 * _kt * _ts,(COMSPEC_ATAK_FontSet select 1),"right"]; };
         };
     };
 } forEach (_data getOrDefault ["markers",createHashMap]);
@@ -476,6 +477,7 @@ if ((count _ft) >= 2) then {
 // Seuls les marqueurs posés par les joueurs ou Athena et ayant un titre ; réglage profil COMSPEC_ATAK_MarkerTags.
 private _pool = uiNamespace getVariable ["COMSPEC_ATAK_MarkerTagPool", []];
 private _used = 0;
+private _tagged = [];
 if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_native_fnc_pref) select 0) && {_k > 0.75} && {_scale < 0.12}) then {
     private _disp = ctrlParent _map;
     private _mp = ctrlPosition _map;
@@ -532,12 +534,17 @@ if (((["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"] call comspec_atak_
         };
         if !(ctrlShown _c) then { _c ctrlShow true; };
         _used = _used + 1;
+        _tagged pushBack _id;
     } forEach (_data getOrDefault ["markers", createHashMap]);
     if ((count _gridCache) > 400) then { _gridCache = createHashMap; };
     uiNamespace setVariable ["COMSPEC_ATAK_TagGridCache", _gridCache];
 };
 for "_i" from _used to ((count _pool) - 1) do { private _c = _pool select _i; if (ctrlShown _c) then { _c ctrlShow false; }; };
 uiNamespace setVariable ["COMSPEC_ATAK_MarkerTagPool", _pool select { !isNull _x }];
+
+// Noms des repères (fn_mapMarkerText, style au choix) : la carte Arma n'écrit plus le texte des marqueurs.
+// Ceux qui ont déjà leur cartouche E / N (ci-dessus) sont sautés ; masquables dans CALQUES (Noms des repères).
+[_map, _ts, _kt, _scale, _tagged, _boxOn] call comspec_atak_native_fnc_mapMarkerText;
 
 // Calques Logistique (points de largage) et guerre électronique (gonio, brouilleurs).
 if (profileNamespace getVariable ["COMSPEC_ATAK_LayerLogi", true]) then { [_map] call comspec_atak_native_fnc_logisticsDraw; };
