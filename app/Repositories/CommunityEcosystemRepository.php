@@ -241,11 +241,14 @@ class CommunityEcosystemRepository
             return [];
         }
         $where = $scope === 'all' ? '1 = 1' : "p.status = 'open' AND (p.starts_at IS NULL OR p.starts_at >= DATE_SUB(NOW(), INTERVAL 1 DAY))";
-        $responses = $this->tableExists('cooperation_board_responses')
-            ? '(SELECT COUNT(*) FROM cooperation_board_responses r WHERE r.post_id = p.id)'
-            : '0';
+        $hasResp = $this->tableExists('cooperation_board_responses');
+        $responses = $hasResp ? '(SELECT COUNT(*) FROM cooperation_board_responses r WHERE r.post_id = p.id)' : '0';
+        // Joueurs proposés (hors propositions déclinées) : alimente la jauge de renfort.
+        $offered = $hasResp ? "(SELECT COALESCE(SUM(r.slots), 0) FROM cooperation_board_responses r WHERE r.post_id = p.id AND r.status <> 'declined')" : '0';
+        $logo = $this->columnExists('tenants', 'logo_url') ? 't.logo_url' : 'NULL';
         $st = $this->pdo->query(
-            "SELECT p.*, t.name AS tenant_name, t.slug AS tenant_slug, {$responses} AS responses_count
+            "SELECT p.*, t.name AS tenant_name, t.slug AS tenant_slug, {$logo} AS tenant_logo,
+                {$responses} AS responses_count, {$offered} AS offered_slots
              FROM cooperation_board_posts p JOIN tenants t ON t.id = p.tenant_id
              WHERE {$where}
              ORDER BY (p.starts_at IS NULL), p.starts_at ASC, p.created_at DESC
