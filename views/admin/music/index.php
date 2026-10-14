@@ -98,6 +98,7 @@ $tabs = [
           <label class="ath-field"><span class="ath-field__label">Titre</span><input class="ath-field__input" name="title" maxlength="160" placeholder="Nom du fichier si vide ou si plusieurs fichiers"></label>
           <label class="ath-field"><span class="ath-field__label">Artiste</span><input class="ath-field__input" name="artist" maxlength="120" placeholder="Pour tous les fichiers envoyés"></label>
           <label class="ath-field"><span class="ath-field__label">Genre</span><input class="ath-field__input" name="genre" maxlength="60" placeholder="Rock, ambiance, radio…"></label>
+          <label class="ath-field"><span class="ath-field__label">Pseudo affiché</span><input class="ath-field__input" name="uploader_alias" maxlength="80" value="<?= $h((string) ($uploaderDefaultAlias ?? '')) ?>" placeholder="Votre indicatif par défaut"><span class="ath-field__help">Nom montré comme auteur de l’envoi sur le site et dans l’ATAK. Vide : votre indicatif.</span></label>
           <label class="ath-field"><span class="ath-field__label">Bibliothèque</span>
             <select class="ath-field__select" name="scope" data-msca-scope>
               <option value="community"<?= $platform ? ' selected' : '' ?>>Communauté (toute la plateforme)</option>
@@ -118,6 +119,17 @@ $tabs = [
           <label class="msca-check"><input type="checkbox" name="global" value="1" data-msca-global> Ajouter directement à la <strong>playlist globale</strong> (le morceau passe en bibliothèque communautaire)</label>
         <?php endif; ?>
         <p class="ath-field__help">Ne mettez en ligne que des morceaux que vous avez le droit de partager.</p>
+        <div class="msca-dup" data-msca-dup hidden role="alert">
+          <p class="msca-dup__title">Doublons probables</p>
+          <p class="msca-dup__text">Ces fichiers ressemblent à des morceaux déjà en ligne. Vérifiez avant d’envoyer : un doublon occupe du stockage et encombre les playlists.</p>
+          <ul class="msca-dup__list" data-msca-dup-list></ul>
+          <label class="msca-check"><input type="checkbox" data-msca-dup-ok> Je confirme qu’il ne s’agit pas de doublons (autre version, autre morceau du même nom…)</label>
+          <div class="ath-form__actions">
+            <button type="button" class="ath-btn" data-msca-dup-cancel>Annuler et revoir la sélection</button>
+            <button type="button" class="ath-btn ath-btn--solid" data-msca-dup-force disabled>Mettre en ligne quand même</button>
+          </div>
+        </div>
+        <input type="hidden" name="confirm_duplicates" value="" data-msca-dup-flag>
         <div class="msca-progress" data-msca-progress hidden></div>
         <div class="ath-form__actions"><button type="submit" class="ath-btn ath-btn--solid" data-msca-submit>Mettre en ligne</button></div>
       </form>
@@ -152,10 +164,61 @@ $tabs = [
         durations = files.map(function () { return 0; });
         files.forEach(function (f, i) { probe(f).then(function (d) { durations[i] = d; }); });
       });
+      var dupBox = form.querySelector('[data-msca-dup]');
+      var dupList = form.querySelector('[data-msca-dup-list]');
+      var dupOk = form.querySelector('[data-msca-dup-ok]');
+      var dupForce = form.querySelector('[data-msca-dup-force]');
+      var dupCancel = form.querySelector('[data-msca-dup-cancel]');
+      var dupFlag = form.querySelector('[data-msca-dup-flag]');
+      var titleInput = form.querySelector('input[name="title"]');
+      var esc = function (v) { var d = document.createElement('div'); d.textContent = v == null ? '' : String(v); return d.innerHTML; };
+      function titleFor(f, count) {
+        if (count === 1 && titleInput && titleInput.value.trim() !== '') return titleInput.value.trim();
+        return f.name.replace(/\.[^.]+$/, '').replace(/_+/g, ' ').trim();
+      }
+      if (dupOk) dupOk.addEventListener('change', function () { dupForce.disabled = !dupOk.checked; });
+      if (dupCancel) dupCancel.addEventListener('click', function () { dupBox.hidden = true; dupOk.checked = false; dupForce.disabled = true; submit.disabled = false; });
+      if (dupForce) dupForce.addEventListener('click', function () {
+        // Seconde confirmation explicite avant de forcer l'envoi.
+        if (!window.confirm('Mettre en ligne ces morceaux malgré les titres similaires déjà présents ?')) return;
+        dupFlag.value = '1';
+        dupBox.hidden = true;
+        form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', { cancelable: true }));
+      });
+      // Les titres changent : la confirmation précédente ne vaut plus.
+      input.addEventListener('change', function () { dupFlag.value = ''; });
+      if (titleInput) titleInput.addEventListener('input', function () { dupFlag.value = ''; });
+
       form.addEventListener('submit', function (ev) {
         var files = Array.prototype.slice.call(input.files || []);
         if (files.length === 0) return;
         ev.preventDefault();
+        if (dupFlag.value !== '1') {
+          submit.disabled = true;
+          var check = new FormData();
+          check.append('_csrf_token', (form.querySelector('input[name="_csrf_token"]') || {}).value || '');
+          files.forEach(function (f) { check.append('titles[]', titleFor(f, files.length)); });
+          fetch(form.action.replace(/\/envoyer$/, '/doublons'), { method: 'POST', body: check, credentials: 'same-origin', headers: { Accept: 'application/json' } })
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+              var matches = (j && j.matches) || {};
+              var keys = Object.keys(matches);
+              if (keys.length === 0) { dupFlag.value = 'checked'; startUpload(files); return; }
+              dupList.innerHTML = keys.map(function (k) {
+                return '<li><strong>' + esc(k) + '</strong> ressemble à ' + matches[k].map(function (m) {
+                  return '« ' + esc(m.title) + ' »' + (m.artist ? ' — ' + esc(m.artist) : '') + ' <span class="msc-muted">(envoyé par ' + esc(m.uploader_name) + (m.tenant_name ? ', ' + esc(m.tenant_name) : '') + ')</span>';
+                }).join(', ') + '</li>';
+              }).join('');
+              dupOk.checked = false; dupForce.disabled = true; dupBox.hidden = false;
+              dupBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            })
+            .catch(function () { dupFlag.value = 'checked'; startUpload(files); });
+          return;
+        }
+        startUpload(files);
+      });
+
+      function startUpload(files) {
         if (scope) scope.disabled = false;
         submit.disabled = true; progress.hidden = false;
         var ok = 0, errors = [], i = 0;
@@ -178,7 +241,7 @@ $tabs = [
             .then(function () { i++; next(); });
         };
         next();
-      });
+      }
     })();
     </script>
     <section class="msc-card">
