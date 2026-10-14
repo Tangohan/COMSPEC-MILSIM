@@ -168,6 +168,28 @@ EN : Fewer false errors in your phone's log
 - Connect `fn_diagStatusSnapshot` : « Version des mods » affiche « ATAK natif x.y.z » quand l'ancienne surcouche Athena n'est pas chargée (avant : « Athena — »).
 - Connect `fn_logDump` : `athenaReady=false` du dump « boot » est suivi de « (avant le handshake : normal au démarrage) » ; ce dump part à CBA_settingsInitialized, avant le handshake.
 - comspec_overwatch_connect.pbo repatché (tools/pbo_patch.py, 4 fichiers). main.pbo inchangé.
+## Carte du téléphone : nouveaux noms de repères, de cibles et de lieux, lieux masquables (ATAK natif 1.93.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Des noms plus lisibles sur la carte du téléphone
+- Les noms des repères s'affichent sur une plaque sombre au liseré de la couleur du repère, au lieu du texte bleu brut.
+- Une cible accrochée s'affiche en rouge : « LOCK 098 » puis le nom de la cible à côté.
+- Les villes, villages et lieux-dits ont un nouveau style, et chaque catégorie se masque dans CALQUES (Villes, Villages, Lieux-dits, Sites, Noms des repères).
+- Cinq styles de repères et quatre styles de lieux au choix dans Réglages > Carte ou dans le menu CBA, dont l'ancien affichage.
+EN : Clearer names on the phone map
+- Marker names show on a dark plate edged in the marker colour, instead of the plain blue text.
+- A locked target shows in red: "LOCK 098" followed by the target name.
+- Towns, villages and localities have a new style, and each category can be hidden in LAYERS (Towns, Villages, Localities, Sites, Marker names).
+- Five marker styles and four place styles to choose from in Settings > Map or in the CBA menu, including the old look.
+
+### Détail technique
+- La carte du téléphone (`COMSPEC_RscMapAtak`) n'écrit plus le texte des marqueurs ni les noms de lieux (`sizeExLabel` et `sizeExNames` minuscules, comme la grille) ; l'ATAK les dessine : `fn_mapMarkerText` (repères Arma et Athena, LOCK) et `fn_mapPlaceText` (lieux de `nearestLocations`, liste faite une fois par carte).
+- Styles : réglages CBA client `comspec_atak_native_map_marker_style` (plate, pill, card, outline, classic) et `comspec_atak_native_map_place_style` (tactical, tag, quiet, classic). Catégories : `comspec_atak_native_map_show_marker_text`, `_cities`, `_villages`, `_locals`, `_sites` (aussi dans CALQUES, espace « C », et Réglages > Carte).
+- Désencombrement : étiquette à droite du symbole, sinon à gauche, sinon rien ; en zoom très éloigné seuls les LOCK et le repère sélectionné gardent leur nom ; villages sous l'échelle 0,25, lieux-dits et sites sous 0,08 ; un lieu qui chevauche une étiquette de repère n'est pas écrit.
+- Largeur des textes mesurée une fois (`fn_mapTextW`, `ctrlTextWidth` sur un texte caché, cache).
+- La carte de l'app JTAC passe sur `COMSPEC_RscMapJtac` et garde les textes Arma.
+- Aperçus : /mnt/project-files/atak/etiquettes-carte/.
 
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
 

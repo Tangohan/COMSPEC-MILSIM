@@ -52,6 +52,20 @@ private _cbaSwitch = {
     if (_locked) then { _v = _rule isEqualTo "on"; };
     ["switch", _label, _v, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_CbaToggle');", _k], _help, _locked]
 };
+// Choix exclusif enregistré en réglage CBA côté joueur (étiquettes de la carte) : le même que dans le menu CBA.
+uiNamespace setVariable ["COMSPEC_ATAK_CbaSet", {
+    params ["_k", "_v"];
+    [_k, _v, false, "client"] call CBA_settings_fnc_set;
+    [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+}];
+private _cbaSegment = {
+    params ["_k", "_def", "_label", "_opts", ["_help", ""]];
+    private _cur = missionNamespace getVariable [_k, _def];
+    ["segment", _label, _opts apply {
+        _x params ["_t", "_v"];
+        [_t, compile format ["['%1', %2] call (uiNamespace getVariable 'COMSPEC_ATAK_CbaSet');", _k, str _v], _v isEqualTo _cur]
+    }, _help]
+};
 
 // Emplacement du mini : remet à zéro le décalage glissé pour partir du nouveau coin.
 uiNamespace setVariable ["COMSPEC_ATAK_SetAnchor", {
@@ -201,6 +215,13 @@ private _map = [
     ["COMSPEC_ATAK_Labels", true, "native_map_labels", "Indicatifs des unités", "Nom à côté de chaque symbole ami"] call _profSwitch,
     ["COMSPEC_ATAK_LabelStyle", "FULL", "Cartouches des unités", [["COMPLET", "FULL"], ["INDICATIF SEUL", "CALLSIGN"], ["AUCUN", "NONE"]], "Boîte sombre près du symbole : indicatif, puis distance et azimut depuis moi en zoom rapproché ; contacts ENI bordés de rouge avec heure et auteur"] call _profSegment,
     ["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags", "Cartouches des repères", "Nom et coordonnées E / N sous le repère"] call _profSwitch,
+    ["comspec_atak_native_map_marker_style", "plate", "Noms des repères", [["PLAQUE", "plate"], ["PILULE", "pill"], ["CARTOUCHE", "card"], ["CONTOUR", "outline"], ["CLASSIQUE", "classic"]], "Repères et cibles accrochées (LOCK) : plaque sombre au liseré de couleur, pilule, cartouche relié avec distance et azimut, texte détouré ou texte Arma d'avant"] call _cbaSegment,
+    ["comspec_atak_native_map_place_style", "tactical", "Noms des lieux", [["TACTIQUE", "tactical"], ["ÉTIQUETTE", "tag"], ["DISCRET", "quiet"], ["CLASSIQUE", "classic"]], "Villes, villages, lieux-dits et sites : capitales détourées, plaque sombre, petit texte clair ou couleurs Arma d'avant"] call _cbaSegment,
+    ["comspec_atak_native_map_show_marker_text", "", "Afficher les noms des repères", "Les symboles restent, seul le texte disparaît (aussi dans CALQUES)", true] call _cbaSwitch,
+    ["comspec_atak_native_map_show_cities", "", "Afficher les villes", "", true] call _cbaSwitch,
+    ["comspec_atak_native_map_show_villages", "", "Afficher les villages", "", true] call _cbaSwitch,
+    ["comspec_atak_native_map_show_locals", "", "Afficher les lieux-dits", "", true] call _cbaSwitch,
+    ["comspec_atak_native_map_show_sites", "", "Afficher les sites", "Aéroports, bases et camps militaires", true] call _cbaSwitch,
     ["COMSPEC_ATAK_Compass", true, "native_compass", "Boussole", "Rose des vents et cap en haut à gauche"] call _profSwitch,
     ["COMSPEC_ATAK_CompassStyle", "CLASSIC", "Style de la boussole", [["CLASSIQUE", "CLASSIC"], ["CADRAN", "CARD"], ["FLÈCHE", "ARROW"], ["BANDEAU", "TAPE"]], "CLASSIQUE : rose fixe, aiguille au cap. CADRAN : le cadran tourne, le haut reste l'avant. FLÈCHE : aiguille seule. BANDEAU : cap gradué en haut à gauche"] call _profSegment,
     ["COMSPEC_ATAK_AllyFilter", "ALL", "Alliés affichés", [["TOUS", "ALL"], ["MON GROUPE", "GROUP"], ["MON ORBAT", "ORBAT"]], ["", format ["ORBAT : %1", missionNamespace getVariable ["comspec_profile_unit", ""]]] select ((missionNamespace getVariable ["comspec_profile_unit", ""]) isNotEqualTo "")] call _profSegment,
