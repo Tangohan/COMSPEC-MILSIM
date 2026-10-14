@@ -107,6 +107,10 @@ final class AtakModReportGravity
         if ($critical) {
             return self::CRITICAL;
         }
+        // Refus attendu : la formule de la communauté n'inclut pas la carte (le joueur voit le message en jeu).
+        if (\App\Support\AtakPlanAccess::isDenialReport($message, $detail)) {
+            return self::LOW;
+        }
         $sev = strtolower(trim($severity));
         if (in_array($sev, ['warn', 'warning', 'info'], true)) {
             return self::LOW;

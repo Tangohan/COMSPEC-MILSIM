@@ -38,4 +38,11 @@ final class AtakPlanAccessAssetTest extends TestCase
         self::assertStringNotContainsString('FeatureGateService', $body);
         self::assertStringNotContainsString('allows', $body);
     }
+
+    public function testDenialReportIsRecognised(): void
+    {
+        self::assertTrue(AtakPlanAccess::isDenialReport('ÉCHEC · PhotoUpload — http_403', 'ERR|http_403|a.png|feature_unavailable'));
+        self::assertFalse(AtakPlanAccess::isDenialReport('ÉCHEC · PhotoUpload — http_403', 'ERR|http_403|a.png'));
+        self::assertSame('', AtakPlanAccess::diagnosis(0));
+    }
 }
