@@ -399,7 +399,7 @@ private _cat = _s getOrDefault ["setCat", ""];
 private _sel = (_cats select { (_x select 0) isEqualTo _cat }) param [0, []];
 private _rows = [];
 if ((count _sel) isEqualTo 0) then {
-    _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_settings.paa", format ["<t size='1.3' font='COMSPEC_BarlowBold'>Réglages</t><br/><t color='#8a9a93'>COMSPEC ATAK %1%2</t>", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""], ["", format [" · %1 réglage(s) imposé(s) par %2", _lockedCount, ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")]] select (_lockedCount > 0)]];
+    _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_settings.paa", format ["<t size='1.3' font='COMSPEC_BarlowBold'>Réglages</t><br/><t color='#8a9a93'>COMSPEC ATAK %1%2</t>", missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"]], ["", format [" · %1 réglage(s) imposé(s) par %2", _lockedCount, ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")]] select (_lockedCount > 0)]];
     {
         _x params ["_k", "_t", "_sub", "_icon", "_r"];
         _rows pushBack ["person", format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon], format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2</t>", _t, _sub],
