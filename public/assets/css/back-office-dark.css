@@ -227,3 +227,21 @@ html[data-bo-theme="dark"] .sqf__step { background: rgba(154, 166, 161, 0.12); }
 html[data-bo-theme="dark"] .sqf__error, html[data-bo-theme="dark"] .sqf__bad, html[data-bo-theme="dark"] .sqf__state--failed { color: #f87171; }
 html[data-bo-theme="dark"] .sqf__state--retry, html[data-bo-theme="dark"] .sqf__state--sending { color: #fbbf24; }
 html[data-bo-theme="dark"] .sqf__state--done { color: #34d399; }
+
+/* Recherche du back-office : résultat actif, surlignage, touches */
+html[data-bo-theme="dark"] .ath-bo-search__results a.is-active {
+  background: #192c23;
+  box-shadow: inset 3px 0 0 #12d18e;
+}
+html[data-bo-theme="dark"] .ath-bo-search__results mark {
+  background: #1f4a37;
+  color: inherit;
+}
+html[data-bo-theme="dark"] .ath-bo-search__hint kbd {
+  border-color: #2c3a33;
+  background: #141a17;
+  color: #dee4e1;
+}
+html[data-bo-theme="dark"] .ath-bo-search__empty a {
+  color: #34d399;
+}

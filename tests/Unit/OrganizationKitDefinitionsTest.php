@@ -12,12 +12,17 @@ final class OrganizationKitDefinitionsTest extends TestCase
     public function testOfficialKitsAreTenantAgnosticAndComplete(): void
     {
         $kits = OrganizationKitDefinitions::officialKits();
-        self::assertCount(4, $kits);
+        self::assertCount(9, $kits);
         self::assertSame(
             [
                 OrganizationKitDefinitions::FRENCH_ARMY,
                 OrganizationKitDefinitions::US_SOF,
                 OrganizationKitDefinitions::INFANTRY_LIGHT,
+                OrganizationKitDefinitions::US_ARMY_INFANTRY,
+                OrganizationKitDefinitions::SOF_TASK_FORCE,
+                OrganizationKitDefinitions::FRENCH_ARMOR,
+                OrganizationKitDefinitions::AIRMOBILE,
+                OrganizationKitDefinitions::PRIVATE_MILITARY,
                 OrganizationKitDefinitions::GAMING_COMMUNITY,
             ],
             OrganizationKitDefinitions::officialCodes()
@@ -84,6 +89,26 @@ final class OrganizationKitDefinitionsTest extends TestCase
         }
         $volume = OrganizationKitDefinitions::volumeLabel($kit);
         self::assertStringNotContainsString('rôle', $volume);
+    }
+
+    public function testKitUnitTreesAreConsistent(): void
+    {
+        foreach (OrganizationKitDefinitions::officialKits() as $kit) {
+            $keys = array_column($kit['units'], 'key');
+            self::assertSame(count($keys), count(array_unique($keys)), (string) $kit['code']);
+            $categories = array_column($kit['job_role_categories'], 'key');
+            foreach ($kit['units'] as $unit) {
+                $parent = $unit['parent_key'] ?? null;
+                if ($parent !== null) {
+                    self::assertContains($parent, $keys, (string) $kit['code'] . ':' . $unit['key']);
+                }
+                self::assertMatchesRegularExpression('/^[a-z0-9]([a-z0-9-]{0,48}[a-z0-9])?$/', (string) $unit['slug']);
+            }
+            foreach ($kit['job_roles'] as $job) {
+                self::assertContains($job['category_key'], $categories, (string) $job['slug']);
+            }
+            self::assertContains($kit['grade_system_code'], ['FR_CLASSIC', 'US_CLASSIC']);
+        }
     }
 
     public function testJobDoctrineCodesAndSlugsStayUnique(): void

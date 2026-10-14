@@ -3075,6 +3075,11 @@ body.eff-sheets--resizing iframe {
 .ath-bo-search__results strong { display: block; font-size: 13px; }
 .ath-bo-search__sub { display: block; margin-top: 0.1rem; font-size: 11px; color: #5c6b73; }
 .ath-bo-search__empty { margin: 0.5rem 0.25rem; font-size: 13px; color: #5c6b73; }
+.ath-bo-search__empty p + p { margin-top: 0.4rem; font-size: 12px; }
+.ath-bo-search__empty a { color: #0f7a55; font-weight: 700; text-decoration: underline; }
+.ath-bo-search__results a.is-active { background: #ecfdf5; box-shadow: inset 3px 0 0 #12d18e; }
+.ath-bo-search__results mark { background: #d1fae5; color: inherit; border-radius: 2px; }
+.ath-bo-search__hint kbd { display: inline-block; border: 1px solid #d7dee3; border-bottom-width: 2px; border-radius: 3px; background: #fff; padding: 0 0.25rem; font-size: 10px; font-family: inherit; color: #3c474c; }
 
 /* Fiche membre */
 .eff-fiche-hero {
