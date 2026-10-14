@@ -7,7 +7,7 @@ Usage : python3 gen_assets.py <hemtt>
 Sortie : Sources/addons/main/data/*.paa
 Dépendances : Pillow, CairoSVG, HEMTT (hemtt utils paa convert).
 """
-import io, os, subprocess, sys, tempfile
+import io, json, os, subprocess, sys, tempfile
 from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageOps
 import cairosvg
 
@@ -1352,6 +1352,17 @@ def nvgfilter_item(size=256):
 PHONE_MODELS = ["rugged", "iphone", "tablet", "keys", "plate", "flip", "ribbed"]
 
 
+def _hole(model):
+    """Ouverture de l'écran (px inclus) : propre à chaque photo de frame_photos.py, sinon celle commune des rendus."""
+    f = os.path.join(RENDER_DIR, "frame_screens.json")
+    if os.path.exists(f):
+        with open(f) as fh:
+            hole = json.load(fh).get(model, {}).get("hole_px")
+        if hole:
+            return tuple(hole)
+    return (455, 716, 1546, 1333)
+
+
 def _night(img):
     """Variante de nuit : coque très assombrie, alpha gardé (l'ouverture de l'écran reste transparente)."""
     from PIL import ImageEnhance
@@ -1383,11 +1394,17 @@ def accessory_assets(tmp):
     if os.path.exists(pb):
         convert(_icon_from(_soft_edges(Image.open(pb).convert("RGBA"))), "item_powerbank", tmp)
     convert(nvgfilter_item(), "item_nvgfilter", tmp)
+    vehiclekit_item(tmp)
+
+
+def vehiclekit_item(tmp):
+    """Icône du kit véhicule : la tablette des véhicules, écran éteint."""
     tab = os.path.join(RENDER_DIR, "phone_tablet_front.png")
     if os.path.exists(tab):
         t = Image.open(tab).convert("RGBA")
         glass = Image.new("RGBA", t.size, (0, 0, 0, 0))
-        glass.paste(_glass(1092, 618), (455, 716))
+        hx0, hy0, hx1, hy1 = _hole("tablet")
+        glass.paste(_glass(hx1 - hx0 + 1, hy1 - hy0 + 1), (hx0, hy0))
         glass.alpha_composite(t)
         convert(_icon_from(glass), "item_vehiclekit", tmp)
 
@@ -1656,8 +1673,10 @@ JPC_HOLE = (455, 716, 1547, 1334)
 
 
 def jpc_tablet_atlas(tmp):
-    f = os.path.join(RENDER_DIR, "phone_keys_front.png")
-    b = os.path.join(RENDER_DIR, "phone_keys_back.png")
+    # Rendu 3D de la tablette à touches (render_phones.py keys, gardé sous ce nom) : la coque 2D « keys » est
+    # désormais la photo de frame_photos.py, mais le modèle 3D du JPC reste la tablette A/B.
+    f = os.path.join(RENDER_DIR, "phone_keys_jpc_front.png")
+    b = os.path.join(RENDER_DIR, "phone_keys_jpc_back.png")
     if not (os.path.exists(f) and os.path.exists(b)):
         print("rendus keys absents : python3 render_phones.py (RENDER_ONLY=keys)")
         return
@@ -1682,8 +1701,8 @@ def jpc_tablet_atlas(tmp):
 # Téléphones portés ouverts sur le JPC (model_jpc_phones.PHONES : mêmes rectangles) : rectangle recadré.
 JPC_PHONES = {
     "s7": (206, 569, 1901, 1752),
-    "rugged": (305, 558, 1697, 1555),
-    "iphone": (388, 643, 1614, 1407),
+    "rugged": (369, 721, 1641, 1501),
+    "iphone": (212, 629, 1962, 1647),
     "plate": (145, 605, 1903, 1645),
     "flip": (195, 543, 1853, 1459),
     "ribbed": (240, 605, 1808, 1435),
@@ -1881,6 +1900,11 @@ def main():
             jpc_rvmats()
             return
         # « cases » : coques de référence (support JPC, étui multicam, coque nervurée).
+        # « frames » : coques photo de frame_photos.py (V2 Enhanced, Xiaomi X3D, tablettes) et icône du kit véhicule.
+        if len(sys.argv) > 2 and sys.argv[2] == "frames":
+            model_assets(tmp, only=["iphone", "rugged", "keys", "tablet"])
+            vehiclekit_item(tmp)
+            return
         if len(sys.argv) > 2 and sys.argv[2] == "cases":
             model_assets(tmp, only=["plate", "flip", "ribbed"])
             return

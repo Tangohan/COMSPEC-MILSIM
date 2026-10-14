@@ -108,7 +108,10 @@ switch (_act) do {
         private _mat = _d + (["jpc_screen_night.rvmat", "jpc_screen.rvmat"] select (sunOrMoon > 0.5));
         missionNamespace setVariable ["COMSPEC_ATAK_JpcMat", _mat];
         _obj setObjectMaterialGlobal [1, _mat];
-        _obj setObjectTexture [1, format ["#(rgb,1024,576,1)ui(""COMSPEC_RscATAKTexture"",""comspec_atak_jpc_%1"")", _n]];
+        // Texture aux proportions de l'écran du modèle (photos de frame_photos.py plus allongées que le 16:9).
+        private _texH = (createHashMapFromArray [["iphone", 496], ["rugged", 384]]) getOrDefault [_model, 576];
+        missionNamespace setVariable ["COMSPEC_ATAK_JpcTexH", _texH];
+        _obj setObjectTexture [1, format ["#(rgb,1024,%2,1)ui(""COMSPEC_RscATAKTexture"",""comspec_atak_jpc_%1"")", _n, _texH]];
         // Rafraîchissement de l'écran (displayUpdate) : seulement s'il peut être vu (à l'écran, pas trop loin).
         if ((missionNamespace getVariable ["COMSPEC_ATAK_JpcPfh", -1]) < 0) then {
             missionNamespace setVariable ["COMSPEC_ATAK_JpcPfh", [{

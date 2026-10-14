@@ -2,8 +2,8 @@
     Géométrie du terminal.
     - Porté (HUD) ou en main mini : téléphone vertical ou horizontal, dans le coin choisi (bas droit par défaut).
     - En main plein écran : téléphone horizontal agrandi au centre.
-    La coque est la texture carrée du S7 (tools/src) ou d'un autre modèle (tactique, premium, tablette de bord des
-    véhicules : tools/render_phones.py) ; l'écran occupe la même zone transparente sur toutes.
+    La coque est la texture carrée du S7 (tools/src) ou d'un autre modèle (coques des rendus tools/render_phones.py,
+    photos tools/frame_photos.py) ; l'écran occupe la zone transparente de chacune.
 */
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _interactive = _s getOrDefault ["interactive", false];
@@ -16,19 +16,21 @@ private _texture = _s getOrDefault ["texture", false];
 if (_texture) then { _orient = "LANDSCAPE"; };
 private _mini = _mode isEqualTo "MINI";
 private _land = _orient isEqualTo "LANDSCAPE";
-private _ratio = [pixelH / pixelW, 1024 / 576] select _texture; // hauteur (unités écran) d'un carré de largeur 1
+private _ratio = [pixelH / pixelW, 1024 / (missionNamespace getVariable ["COMSPEC_ATAK_JpcTexH", 576])] select _texture; // hauteur (unités écran) d'un carré de largeur 1
 
 // Coque S7 : texture carrée 2048 px. Fractions mesurées dans tools/src/android_s7_ca.png.
 // _vis = boîte visible de la coque (avec la fixation), _scr = écran transparent.
 // Modèle choisi (profil COMSPEC_ATAK_PhoneModel) ou tablette de bord (véhicule équipé, poste de commandement).
-// Toutes les coques gardent la même ouverture d'écran ; seule la boîte visible change (paysage, mesurée sur les rendus).
+// Boîte visible et écran mesurés en paysage ; le portrait en est le quart de tour horaire.
 private _term = [player] call comspec_atak_native_fnc_vehicleTerminal;
 private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
 // La tablette du véhicule est commune, pour qui n'a pas son ATAK : avec son téléphone, on garde son téléphone.
 if (_term in ["vehicle", "cp"] && {profileNamespace getVariable ["COMSPEC_ATAK_VehTablet", true]} && {!([player, true] call comspec_atak_native_fnc_hasDevice)}) then { _model = "tablet"; };
+// iphone (V2 ENHANCED), rugged (XIAOMI X3D), keys et tablet (tablette) : photos de TTRD (tools/frame_photos.py), qui
+// gardent leurs proportions ; leur écran (paysage) est donc propre à chacune, mesuré sur l'ouverture de la photo.
 private _visLand = (createHashMapFromArray [
-    ["s7", [0.1025, 0.2798, 0.9263, 0.8535]], ["rugged", [0.1509, 0.2744, 0.8267, 0.7573]], ["iphone", [0.1914, 0.3159, 0.7861, 0.6851]], ["tablet", [0.0850, 0.2510, 0.9258, 0.7549]],
-    ["keys", [0.0923, 0.2495, 0.9083, 0.7178]],
+    ["s7", [0.1025, 0.2798, 0.9263, 0.8535]], ["rugged", [0.1802, 0.3521, 0.8013, 0.7329]], ["iphone", [0.1035, 0.3071, 0.9580, 0.8042]], ["tablet", [0.1655, 0.3237, 0.8105, 0.6772]],
+    ["keys", [0.1655, 0.3237, 0.8105, 0.6772]],
     ["plate", [0.0728, 0.2974, 0.9272, 0.8013]],
     ["flip", [0.0972, 0.2671, 0.9028, 0.7104]],
     ["ribbed", [0.1191, 0.2974, 0.8809, 0.6987]]
@@ -37,7 +39,12 @@ if (_visLand isEqualTo []) then { _model = "s7"; _visLand = [0.1025, 0.2798, 0.9
 // Vertical : texture tournée d'un quart de tour horaire.
 _visLand params ["_lx0", "_ly0", "_lx1", "_ly1"];
 private _vis = [[1 - _ly1, _lx0, 1 - _ly0, _lx1], _visLand] select _land;
-private _scr = [[0.3491, 0.2222, 0.6504, 0.7549], [0.2222, 0.3496, 0.7549, 0.6509]] select _land;
+private _scrLand = (createHashMapFromArray [
+    ["rugged", [0.2218, 0.4003, 0.7550, 0.6002]], ["iphone", [0.2220, 0.3709, 0.7552, 0.6299]],
+    ["keys", [0.2217, 0.3666, 0.7549, 0.6336]], ["tablet", [0.2217, 0.3666, 0.7549, 0.6336]]
+]) getOrDefault [_model, [0.2222, 0.3496, 0.7549, 0.6509]];
+_scrLand params ["_sx0", "_sy0", "_sx1", "_sy1"];
+private _scr = [[1 - _sy1, _sx0, 1 - _sy0, _sx1], _scrLand] select _land;
 // L'écran déborde légèrement sous la coque : le bord flou de la texture (filtrage) laissait voir un liseré.
 private _bleed = 0.003;
 _scr = [(_scr select 0) - _bleed, (_scr select 1) - _bleed, (_scr select 2) + _bleed, (_scr select 3) + _bleed];
