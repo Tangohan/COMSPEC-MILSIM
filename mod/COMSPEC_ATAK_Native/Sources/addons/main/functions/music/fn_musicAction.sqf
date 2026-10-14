@@ -37,6 +37,7 @@ private _usable = {
     if !(missionNamespace getVariable ["comspec_atak_native_music_enabled", true]) exitWith { ["WARNING", "Musique désactivée sur ce serveur", 3, 30] call comspec_atak_native_fnc_notify; false };
     private _why = [] call comspec_atak_native_fnc_canUse;
     if (_why isNotEqualTo "") exitWith { ["WARNING", "Téléphone indisponible : pas de musique", 3, 30] call comspec_atak_native_fnc_notify; false };
+    if (["mute", false] call comspec_atak_native_fnc_zeusFx) exitWith { ["WARNING", "Haut-parleurs coupés à distance : pas de musique", 3, 30] call comspec_atak_native_fnc_notify; false };
     true
 };
 private _volTick = {

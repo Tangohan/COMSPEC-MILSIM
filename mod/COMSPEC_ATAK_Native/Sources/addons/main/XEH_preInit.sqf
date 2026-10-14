@@ -151,6 +151,13 @@ private _sim = ["COMSPEC", "ATAK · Simulation"];
 ["comspec_atak_native_ew_open", "CHECKBOX",
     ["Guerre électronique ouverte à tous", "Coché : tout porteur de téléphone peut brouiller et goniométrer. Décoché : réservé aux unités COMSPEC_ATAK_EwOperator ou au rôle « guerre électronique / brouilleur / SIGINT »."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_zeus_crows", "CHECKBOX",
+    ["Brouilleurs Crows Electronic Warfare", "Avec le mod Crows Electronic Warfare chargé, ses brouilleurs (modules Zeus du mod) brouillent aussi le téléphone ATAK : débit, GPS et BFT, plein effet dans leur rayon efficace."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+// Contrôle Zeus des ATAK : le menu clic droit ZEN d'Overwatch (« ATAK — Infos / dégâts / brouillage », état du téléphone
+// d'Overwatch) est remplacé par « ATAK · Contrôle Zeus » (fn_zeusMenu), qui agit sur l'ATAK natif.
+missionNamespace setVariable ["COMSPEC_ZenAtakPlayerContextRegistered", true];
+missionNamespace setVariable ["COMSPEC_AceAtakZeusInteractRegistered", true];
 private _geo = ["COMSPEC", "ATAK · Géolocalisation (GEOLOC)"];
 ["comspec_atak_native_geoloc_enabled", "CHECKBOX",
     ["Traçage des téléphones", "App GE (guerre électronique), onglet GÉOLOC : localiser un téléphone à partir de son numéro, de son IMEI ou de son adresse MAC (roleplay)."],
