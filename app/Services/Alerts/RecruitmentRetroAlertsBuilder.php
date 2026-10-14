@@ -44,7 +44,7 @@ final class RecruitmentRetroAlertsBuilder
                     'id' => -2100 - (int) $first['id'],
                     'kind' => $total >= 3 ? 'urgent' : 'rappel',
                     'title' => 'Bilan à renseigner',
-                    'body' => 'Le dossier de ' . $name . ' a plus de 30 jours' . $extra . '. Laissez une courte note pour améliorer le processus.',
+                    'body' => $name . ' a été accepté il y a plus de 30 jours' . $extra . '. Faites le bilan d’intégration : une note et quelques lignes suffisent.',
                     'cta_label' => $total === 1 ? 'Ouvrir le dossier' : 'Voir les dossiers',
                     'cta_url' => $total === 1
                         ? url('back-office/recruitments/' . (int) $first['id'] . '?dossier=1#bilan-recrutement')
@@ -73,7 +73,7 @@ final class RecruitmentRetroAlertsBuilder
                 'id' => -2200 - $eid,
                 'kind' => 'rappel',
                 'title' => 'Votre avis sur le recrutement',
-                'body' => 'Votre dossier a été reçu il y a ' . $age . ' jours. Un court retour aide l’équipe à améliorer l’accueil des candidats.',
+                'body' => 'Votre candidature a été acceptée il y a ' . $age . ' jours. Un court retour aide l’équipe à améliorer l’accueil des nouvelles recrues.',
                 'cta_label' => 'Laisser mon avis',
                 'cta_url' => url('enlistment/suivi/' . rawurlencode($token) . '#bilan-processus'),
                 'coupon_code' => null,

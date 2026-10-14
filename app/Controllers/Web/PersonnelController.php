@@ -838,6 +838,12 @@ class PersonnelController
                 'editor_label' => null,
                 'breakdown_label' => null,
                 'last_sync_label' => null,
+                // Secondes brutes pour la barre serveur / Zeus / éditeur / avant le détail de la synthèse.
+                'total_seconds' => 0,
+                'server_seconds' => 0,
+                'zeus_seconds' => 0,
+                'editor_seconds' => 0,
+                'unsplit_seconds' => 0,
             ];
             if ($steamIdResolved !== null && $ready) {
                 $ptRow = $this->armaPlaytimeRepository->getSummaryForUser((int) $tenantId, $uid);
@@ -855,6 +861,12 @@ class PersonnelController
                 if ($editorSecs > 0) {
                     $armaPlaytime['editor_label'] = $this->formatArmaPlaytimeFrench($editorSecs);
                 }
+                $armaPlaytime['total_seconds'] = $ptSecs;
+                $armaPlaytime['server_seconds'] = $serverSecs;
+                $armaPlaytime['zeus_seconds'] = $zeusSecs;
+                $armaPlaytime['editor_seconds'] = $editorSecs;
+                // Sessions remontées avant les colonnes serveur / Zeus / éditeur : comptées dans le cumul seulement.
+                $armaPlaytime['unsplit_seconds'] = max(0, $ptSecs - $serverSecs - $zeusSecs - $editorSecs);
                 if (function_exists('format_arma_playtime_breakdown_french') && is_array($ptRow)) {
                     $breakdown = format_arma_playtime_breakdown_french($ptRow);
                     $armaPlaytime['breakdown_label'] = $breakdown !== '' ? $breakdown : null;
@@ -868,12 +880,20 @@ class PersonnelController
             }
         }
 
-        // Temps passé dans chaque rôle en jeu (pilote, chef, médecin, rôle du slot…), relevé par l'ATAK natif.
+        // Temps passé dans chaque rôle en jeu (pilote, chef, médecin, rôle du slot…), compté par le serveur Arma
+        // (ou le téléphone ATAK), avec la façon dont le rôle a été détecté.
         $atakRoleTimes = [];
+        $atakPlayStats = null;
         try {
-            $atakRoleTimes = (new \App\Repositories\AtakScreenTimeRepository())->rolesForUser((int) $tenantId, $uid);
+            $screenTimeRepo = new \App\Repositories\AtakScreenTimeRepository();
+            $atakRoleTimes = $screenTimeRepo->rolesForUser((int) $tenantId, $uid);
+            // 7 / 30 jours, sessions, 8 semaines : même visibilité que le cumul (le membre lui-même ou l'encadrement).
+            if ($isSelf || $canStaffView) {
+                $atakPlayStats = $screenTimeRepo->playStatsForUser((int) $tenantId, $uid);
+            }
         } catch (\Throwable) {
             $atakRoleTimes = [];
+            $atakPlayStats = null;
         }
 
         // Encadrement : corriger le temps par rôle (déplacer vers le bon rôle) et voir le journal des corrections.
@@ -1087,6 +1107,7 @@ class PersonnelController
             'seniorityDetailLines' => $seniorityDetailLines,
             'armaPlaytime' => $armaPlaytime,
             'atakRoleTimes' => $atakRoleTimes,
+            'atakPlayStats' => $atakPlayStats,
             'canCorrectRoleTime' => $canCorrectRoleTime,
             'roleTimeMoves' => $roleTimeMoves,
             'roleTimePathSegment' => $this->personPathSegment($target),

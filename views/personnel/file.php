@@ -866,40 +866,6 @@ if ($personnelFileIsRhFull) {
                                 <?php endif; ?>
                             </div>
                             <?php endif; ?>
-                            <?php if (is_array($armaPlaytime ?? null)): ?>
-                            <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:col-span-2 xl:col-span-1">
-                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Temps de jeu en mission</p>
-                                <?php if (!empty($armaPlaytime['show_steam_hint_self'])): ?>
-                                    <p class="mt-2 text-sm text-slate-700">Indiquez dans les préférences du compte le même identifiant que dans le jeu pour que le cumul puisse être rattaché à votre dossier.</p>
-                                <?php elseif (!empty($armaPlaytime['no_steam_staff'])): ?>
-                                    <p class="mt-2 text-sm text-slate-600">Non renseigné sur ce dossier.</p>
-                                <?php elseif (!empty($armaPlaytime['schema_ready']) && $steamId !== null && ($armaPlaytime['hours_label'] ?? null) !== null): ?>
-                                    <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars((string) $armaPlaytime['hours_label'], ENT_QUOTES, 'UTF-8') ?></p>
-                                    <?php if (!empty($armaPlaytime['server_label']) || !empty($armaPlaytime['zeus_label']) || !empty($armaPlaytime['editor_label'])): ?>
-                                        <ul class="mt-2 space-y-0.5 text-xs text-slate-600">
-                                            <?php if (!empty($armaPlaytime['server_label'])): ?>
-                                                <li>En serveur : <?= htmlspecialchars((string) $armaPlaytime['server_label'], ENT_QUOTES, 'UTF-8') ?></li>
-                                            <?php endif; ?>
-                                            <?php if (!empty($armaPlaytime['zeus_label'])): ?>
-                                                <li>En Zeus : <?= htmlspecialchars((string) $armaPlaytime['zeus_label'], ENT_QUOTES, 'UTF-8') ?></li>
-                                            <?php endif; ?>
-                                            <?php if (!empty($armaPlaytime['editor_label'])): ?>
-                                                <li>Dans l’éditeur : <?= htmlspecialchars((string) $armaPlaytime['editor_label'], ENT_QUOTES, 'UTF-8') ?></li>
-                                            <?php endif; ?>
-                                        </ul>
-                                    <?php endif; ?>
-                                    <?php if (!empty($armaPlaytime['last_sync_label'])): ?>
-                                        <p class="mt-2 text-xs text-slate-500">Dernière remontée : <?= htmlspecialchars((string) $armaPlaytime['last_sync_label'], ENT_QUOTES, 'UTF-8') ?></p>
-                                    <?php endif; ?>
-                                    <p class="mt-2 text-[10px] text-slate-500">Cumul issu des sessions avec le mod connecté au portail. Le détail (serveur, Zeus, éditeur) se complète au fil des prochaines sessions.</p>
-                                    <?php if (!empty($viewerIsPersonnelSubject)): ?>
-                                        <p class="mt-3 rounded-lg border border-sky-200/80 bg-sky-50/90 px-3 py-2 text-[11px] leading-snug text-slate-700">Pour forcer une remontée depuis le jeu : téléphone Athena → <span class="font-semibold">Remonter le temps</span>, ou Resynch Athena. Rechargez ensuite cette page.</p>
-                                    <?php endif; ?>
-                                <?php elseif ($steamId !== null): ?>
-                                    <p class="mt-2 text-sm text-slate-600">Le cumul sera affiché après mise à jour du suivi côté portail.</p>
-                                <?php endif; ?>
-                            </div>
-                            <?php endif; ?>
                             <?php
                             $atakRoleTimes = is_array($atakRoleTimes ?? null) ? $atakRoleTimes : [];
                             $roleDur = static function (int $s): string {
@@ -907,93 +873,212 @@ if ($personnelFileIsRhFull) {
                                 $m = intdiv($s % 3600, 60);
                                 return $h > 0 ? $h . ' h ' . str_pad((string) $m, 2, '0', STR_PAD_LEFT) : max(1, $m) . ' min';
                             };
-                            ?>
-                            <?php
                             $canCorrectRoleTime = !empty($canCorrectRoleTime);
                             $roleTimeMoves = is_array($roleTimeMoves ?? null) ? $roleTimeMoves : [];
+                            $ptBlock = is_array($armaPlaytime ?? null) ? $armaPlaytime : null;
+                            $playStats = is_array($atakPlayStats ?? null) ? $atakPlayStats : null;
+                            $ptReady = $ptBlock !== null && !empty($ptBlock['schema_ready']) && $steamId !== null && ($ptBlock['hours_label'] ?? null) !== null;
+                            $showRoleColumn = $atakRoleTimes !== [] || ($canCorrectRoleTime && $roleTimeMoves !== []);
+                            // Temps par rôle : part de chaque rôle dans le total des rôles.
+                            $roleTotal = max(1, array_sum(array_map(static fn (array $r): int => (int) $r['seconds'], $atakRoleTimes)));
+                            $roleBadge = [
+                                'crew' => 'bg-amber-100 text-amber-800',
+                                'team' => 'bg-sky-100 text-sky-800',
+                                'specialty' => 'bg-violet-100 text-violet-800',
+                                'slot' => 'bg-slate-200/80 text-slate-700',
+                                'manual' => 'bg-rose-100 text-rose-700',
+                            ];
                             ?>
-                            <?php if ($atakRoleTimes !== [] || ($canCorrectRoleTime && $roleTimeMoves !== [])): ?>
-                            <div id="temps-par-role" class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:col-span-2 xl:col-span-1">
-                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Temps par rôle en jeu</p>
-                                <ul class="mt-2 space-y-1.5">
-                                    <?php $roleMax = max(1, (int) ($atakRoleTimes[0]['seconds'] ?? 1)); ?>
-                                    <?php foreach (array_slice($atakRoleTimes, 0, 8) as $rt): ?>
-                                    <li>
-                                        <div class="flex items-baseline justify-between gap-3 text-xs">
-                                            <span class="font-semibold text-slate-800"><?= htmlspecialchars((string) $rt['label'], ENT_QUOTES, 'UTF-8') ?></span>
-                                            <span class="tabular-nums font-bold text-slate-900"><?= htmlspecialchars($roleDur((int) $rt['seconds']), ENT_QUOTES, 'UTF-8') ?></span>
-                                        </div>
-                                        <div class="mt-1 h-1.5 rounded-full bg-slate-200/80" aria-hidden="true"><div class="h-1.5 rounded-full bg-emerald-500" style="width: <?= max(4, (int) round(100 * (int) $rt['seconds'] / $roleMax)) ?>%"></div></div>
-                                        <?php if (($rt['last_day'] ?? '') !== '' && ($ts = strtotime((string) $rt['last_day'])) !== false): ?>
-                                        <p class="mt-0.5 text-[10px] text-slate-500">Dernière fois le <?= date('d/m/Y', $ts) ?></p>
-                                        <?php endif; ?>
-                                    </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                                <p class="mt-2 text-[10px] text-slate-500">Relevé par le téléphone ATAK en partie (rôle tenu et slot joué).</p>
-                                <?php if ($canCorrectRoleTime): ?>
-                                <?php $personSeg = rawurlencode((string) ($roleTimePathSegment ?? '')); ?>
-                                <details class="mt-3 rounded-lg border border-slate-200 bg-white/70 px-3 py-2 text-xs text-slate-700">
-                                    <summary class="cursor-pointer font-semibold text-slate-800">Corriger le temps par rôle</summary>
-                                    <p class="mt-2 text-[11px] text-slate-500">Après une perte de synchro, déplacez le temps vers le bon rôle. Rien n’est perdu, chaque correction est journalisée et peut être annulée.</p>
-                                    <?php if ($atakRoleTimes !== []): ?>
-                                    <form method="post" action="<?= htmlspecialchars(url('personnel/' . $personSeg . '/temps-par-role/deplacer'), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 space-y-2">
-                                        <?= \App\Core\Csrf::field() ?>
-                                        <label class="block">
-                                            <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Déplacer le temps de</span>
-                                            <select name="from_key" required class="mt-0.5 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs">
-                                                <?php foreach ($atakRoleTimes as $rt): ?>
-                                                <option value="<?= htmlspecialchars((string) $rt['key'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $rt['label'] . ' (' . $roleDur((int) $rt['seconds']) . ')', ENT_QUOTES, 'UTF-8') ?></option>
-                                                <?php endforeach; ?>
-                                            </select>
-                                        </label>
-                                        <label class="block">
-                                            <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Vers le rôle</span>
-                                            <select name="to_key" required class="mt-0.5 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs">
-                                                <?php foreach ($atakRoleTimes as $rt): ?>
-                                                <option value="<?= htmlspecialchars((string) $rt['key'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $rt['label'], ENT_QUOTES, 'UTF-8') ?></option>
-                                                <?php endforeach; ?>
-                                                <option value="__new">Autre rôle (saisir ci-dessous)…</option>
-                                            </select>
-                                        </label>
-                                        <label class="block">
-                                            <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Nom du rôle, si autre</span>
-                                            <input type="text" name="to_label" maxlength="60" placeholder="ex. TACP" class="mt-0.5 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs">
-                                        </label>
-                                        <label class="block">
-                                            <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Minutes à déplacer</span>
-                                            <input type="number" name="minutes" min="1" step="1" placeholder="vide = tout" class="mt-0.5 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs">
-                                        </label>
-                                        <label class="block">
-                                            <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Motif</span>
-                                            <input type="text" name="reason" maxlength="255" placeholder="ex. perte de synchro, rôle tombé" class="mt-0.5 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs">
-                                        </label>
-                                        <button type="submit" class="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white">Déplacer le temps</button>
-                                    </form>
+                            <?php if ($ptBlock !== null || $showRoleColumn): ?>
+                            <div id="temps-par-role" class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:col-span-2 xl:col-span-3">
+                                <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                                    <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Temps de jeu</p>
+                                    <?php if ($ptReady && !empty($ptBlock['last_sync_label'])): ?>
+                                    <p class="text-[10px] text-slate-500">Dernière remontée : <?= htmlspecialchars((string) $ptBlock['last_sync_label'], ENT_QUOTES, 'UTF-8') ?></p>
                                     <?php endif; ?>
-                                    <?php if ($roleTimeMoves !== []): ?>
-                                    <p class="mt-3 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Journal des corrections</p>
-                                    <ul class="mt-1 space-y-1.5">
-                                        <?php foreach ($roleTimeMoves as $mv): ?>
-                                        <?php $mvTs = strtotime((string) ($mv['created_at'] ?? '')); ?>
-                                        <li class="rounded-md border border-slate-200 bg-white px-2 py-1.5 <?= $mv['reverted_at'] !== null ? 'opacity-60' : '' ?>">
-                                            <p><span class="font-semibold"><?= htmlspecialchars($roleDur((int) $mv['seconds']), ENT_QUOTES, 'UTF-8') ?></span> de <?= htmlspecialchars((string) $mv['from_label'], ENT_QUOTES, 'UTF-8') ?> vers <?= htmlspecialchars((string) $mv['to_label'], ENT_QUOTES, 'UTF-8') ?></p>
-                                            <p class="text-[10px] text-slate-500">Par <?= htmlspecialchars((string) ($mv['actor_name'] ?? '') !== '' ? (string) $mv['actor_name'] : 'inconnu', ENT_QUOTES, 'UTF-8') ?><?= $mvTs ? ' le ' . date('d/m/Y \à H:i', $mvTs) : '' ?><?php if (trim((string) ($mv['reason'] ?? '')) !== ''): ?> · <?= htmlspecialchars((string) $mv['reason'], ENT_QUOTES, 'UTF-8') ?><?php endif; ?></p>
-                                            <?php if ($mv['reverted_at'] !== null): ?>
-                                            <?php $rvTs = strtotime((string) $mv['reverted_at']); ?>
-                                            <p class="text-[10px] text-slate-500">Annulée<?= trim((string) ($mv['reverted_by_name'] ?? '')) !== '' ? ' par ' . htmlspecialchars((string) $mv['reverted_by_name'], ENT_QUOTES, 'UTF-8') : '' ?><?= $rvTs ? ' le ' . date('d/m/Y \à H:i', $rvTs) : '' ?></p>
-                                            <?php else: ?>
-                                            <form method="post" action="<?= htmlspecialchars(url('personnel/' . $personSeg . '/temps-par-role/' . (int) $mv['id'] . '/annuler'), ENT_QUOTES, 'UTF-8') ?>" class="mt-1">
+                                </div>
+                                <div class="mt-3 grid gap-5 <?= $ptBlock !== null && $showRoleColumn ? 'lg:grid-cols-5' : '' ?>">
+                                    <?php if ($ptBlock !== null): ?>
+                                    <div class="min-w-0 <?= $showRoleColumn ? 'lg:col-span-3' : '' ?>">
+                                        <?php if (!empty($ptBlock['show_steam_hint_self'])): ?>
+                                            <p class="text-sm text-slate-700">Indiquez dans les préférences du compte le même identifiant que dans le jeu pour que le cumul puisse être rattaché à votre dossier.</p>
+                                        <?php elseif (!empty($ptBlock['no_steam_staff'])): ?>
+                                            <p class="text-sm text-slate-600">Non renseigné sur ce dossier.</p>
+                                        <?php elseif ($ptReady): ?>
+                                            <?php
+                                            $ptTotal = (int) ($ptBlock['total_seconds'] ?? 0);
+                                            $ptParts = array_values(array_filter([
+                                                ['label' => 'En serveur', 'seconds' => (int) ($ptBlock['server_seconds'] ?? 0), 'dot' => 'bg-emerald-500'],
+                                                ['label' => 'En Zeus', 'seconds' => (int) ($ptBlock['zeus_seconds'] ?? 0), 'dot' => 'bg-sky-500'],
+                                                ['label' => 'Dans l’éditeur', 'seconds' => (int) ($ptBlock['editor_seconds'] ?? 0), 'dot' => 'bg-amber-400'],
+                                                ['label' => 'Avant le détail', 'seconds' => (int) ($ptBlock['unsplit_seconds'] ?? 0), 'dot' => 'bg-slate-400'],
+                                            ], static fn (array $p): bool => $p['seconds'] > 0));
+                                            $ptBase = max(1, $ptTotal, array_sum(array_column($ptParts, 'seconds')));
+                                            ?>
+                                            <div class="flex flex-wrap items-end gap-x-3 gap-y-1">
+                                                <p class="text-2xl font-black tabular-nums text-slate-900"><?= htmlspecialchars((string) $ptBlock['hours_label'], ENT_QUOTES, 'UTF-8') ?></p>
+                                                <p class="pb-1 text-[11px] text-slate-500">cumul en mission depuis le début du suivi</p>
+                                            </div>
+                                            <?php if ($playStats !== null): ?>
+                                            <?php
+                                            $lastPlayTs = ($playStats['last_day'] ?? '') !== '' ? strtotime((string) $playStats['last_day']) : false;
+                                            $kpis = [
+                                                ['7 derniers jours', (int) $playStats['play_7d'] > 0 ? $roleDur((int) $playStats['play_7d']) : '—'],
+                                                ['30 derniers jours', (int) $playStats['play_30d'] > 0 ? $roleDur((int) $playStats['play_30d']) : '—'],
+                                                ['Sessions (30 j)', (string) (int) $playStats['sessions_30d']],
+                                                ['Dernière partie', $lastPlayTs ? date('d/m/Y', $lastPlayTs) : '—'],
+                                            ];
+                                            ?>
+                                            <dl class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                                <?php foreach ($kpis as [$kLabel, $kValue]): ?>
+                                                <div class="rounded-xl border border-slate-200/80 bg-white px-3 py-2">
+                                                    <dt class="text-[9px] font-black uppercase tracking-wider text-slate-500"><?= htmlspecialchars($kLabel, ENT_QUOTES, 'UTF-8') ?></dt>
+                                                    <dd class="mt-0.5 text-sm font-bold tabular-nums text-slate-900"><?= htmlspecialchars($kValue, ENT_QUOTES, 'UTF-8') ?></dd>
+                                                </div>
+                                                <?php endforeach; ?>
+                                            </dl>
+                                            <?php endif; ?>
+                                            <?php if ($ptParts !== []): ?>
+                                            <div class="mt-4">
+                                                <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Où ce temps a été joué</p>
+                                                <div class="mt-1.5 flex h-2.5 w-full overflow-hidden rounded-full bg-slate-200/80" role="img" aria-label="<?= htmlspecialchars(implode(', ', array_map(static fn (array $p): string => $p['label'] . ' ' . $roleDur($p['seconds']), $ptParts)), ENT_QUOTES, 'UTF-8') ?>">
+                                                    <?php foreach ($ptParts as $part): ?>
+                                                    <div class="h-full <?= $part['dot'] ?>" style="width: <?= max(1, (int) round(100 * $part['seconds'] / $ptBase)) ?>%" title="<?= htmlspecialchars($part['label'] . ' : ' . $roleDur($part['seconds']), ENT_QUOTES, 'UTF-8') ?>"></div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                                <ul class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600">
+                                                    <?php foreach ($ptParts as $part): ?>
+                                                    <li class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full <?= $part['dot'] ?>" aria-hidden="true"></span><?= htmlspecialchars($part['label'], ENT_QUOTES, 'UTF-8') ?> : <span class="font-semibold tabular-nums text-slate-800"><?= htmlspecialchars($roleDur($part['seconds']), ENT_QUOTES, 'UTF-8') ?></span> <span class="tabular-nums text-slate-400"><?= (int) round(100 * $part['seconds'] / $ptBase) ?> %</span></li>
+                                                    <?php endforeach; ?>
+                                                </ul>
+                                                <?php if ((int) ($ptBlock['unsplit_seconds'] ?? 0) > 0): ?>
+                                                <p class="mt-1.5 text-[10px] leading-snug text-slate-500"><span class="font-semibold">Avant le détail</span> : temps remonté avant que le jeu distingue serveur, Zeus et éditeur. Il compte dans le cumul, sans contexte précis.</p>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php endif; ?>
+                                            <?php if ($playStats !== null && (int) $playStats['total_seconds'] > 0): ?>
+                                            <?php $weekMax = max(1, ...array_map(static fn (array $w): int => (int) $w['seconds'], $playStats['weeks'])); ?>
+                                            <div class="mt-4">
+                                                <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">8 dernières semaines</p>
+                                                <div class="mt-1.5 flex h-16 items-end gap-1" role="img" aria-label="Temps de jeu par semaine sur les 8 dernières semaines">
+                                                    <?php foreach ($playStats['weeks'] as $w): ?>
+                                                    <?php $wTs = strtotime((string) $w['start']); $wSec = (int) $w['seconds']; ?>
+                                                    <div class="flex h-full flex-1 items-end rounded-sm bg-slate-200/60" title="<?= htmlspecialchars('Semaine du ' . ($wTs ? date('d/m', $wTs) : '') . ' : ' . ($wSec > 0 ? $roleDur($wSec) : 'pas de partie'), ENT_QUOTES, 'UTF-8') ?>">
+                                                        <div class="w-full rounded-sm <?= $wSec > 0 ? 'bg-emerald-500' : '' ?>" style="height: <?= $wSec > 0 ? max(6, (int) round(100 * $wSec / $weekMax)) : 0 ?>%"></div>
+                                                    </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                                <?php $wFirst = strtotime((string) ($playStats['weeks'][0]['start'] ?? '')); ?>
+                                                <div class="mt-1 flex justify-between text-[10px] text-slate-400"><span><?= $wFirst ? 'Sem. du ' . date('d/m', $wFirst) : '' ?></span><span>Cette semaine</span></div>
+                                            </div>
+                                            <?php endif; ?>
+                                            <p class="mt-3 text-[10px] text-slate-500">Cumul issu des sessions avec le mod connecté au portail. Les 7 et 30 jours, les sessions et les semaines viennent du temps compté pendant les parties.</p>
+                                            <?php if (!empty($viewerIsPersonnelSubject)): ?>
+                                                <p class="mt-3 rounded-lg border border-sky-200/80 bg-sky-50/90 px-3 py-2 text-[11px] leading-snug text-slate-700">Pour forcer une remontée depuis le jeu : téléphone Athena → <span class="font-semibold">Remonter le temps</span>, ou Resynch Athena. Rechargez ensuite cette page.</p>
+                                            <?php endif; ?>
+                                        <?php elseif ($steamId !== null): ?>
+                                            <p class="text-sm text-slate-600">Le cumul sera affiché après mise à jour du suivi côté portail.</p>
+                                        <?php endif; ?>
+                                    </div>
+                                    <?php endif; ?>
+                                    <?php if ($showRoleColumn): ?>
+                                    <div class="min-w-0 <?= $ptBlock !== null ? 'lg:col-span-2 lg:border-l lg:border-slate-200/80 lg:pl-5' : '' ?>">
+                                        <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Par rôle tenu</p>
+                                        <?php if ($atakRoleTimes !== []): ?>
+                                        <ul class="mt-2 space-y-2">
+                                            <?php $roleMax = max(1, (int) ($atakRoleTimes[0]['seconds'] ?? 1)); ?>
+                                            <?php foreach (array_slice($atakRoleTimes, 0, 8) as $rt): ?>
+                                            <?php $det = (string) ($rt['detection'] ?? ''); ?>
+                                            <li>
+                                                <div class="flex items-baseline justify-between gap-3 text-xs">
+                                                    <span class="min-w-0">
+                                                        <span class="font-semibold text-slate-800"><?= htmlspecialchars((string) $rt['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                        <?php if ($det !== ''): ?>
+                                                        <span class="ml-1 inline-block rounded-full px-1.5 py-px text-[9px] font-bold <?= $roleBadge[$det] ?? $roleBadge['team'] ?>" title="<?= htmlspecialchars(\App\Support\AtakRoleDetection::hint($det), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) ($rt['detection_label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></span>
+                                                        <?php endif; ?>
+                                                    </span>
+                                                    <span class="shrink-0 tabular-nums"><span class="font-bold text-slate-900"><?= htmlspecialchars($roleDur((int) $rt['seconds']), ENT_QUOTES, 'UTF-8') ?></span> <span class="text-[10px] text-slate-400"><?= (int) round(100 * (int) $rt['seconds'] / $roleTotal) ?> %</span></span>
+                                                </div>
+                                                <div class="mt-1 h-1.5 rounded-full bg-slate-200/80" aria-hidden="true"><div class="h-1.5 rounded-full bg-emerald-500" style="width: <?= max(4, (int) round(100 * (int) $rt['seconds'] / $roleMax)) ?>%"></div></div>
+                                                <?php if (($rt['last_day'] ?? '') !== '' && ($ts = strtotime((string) $rt['last_day'])) !== false): ?>
+                                                <p class="mt-0.5 text-[10px] text-slate-500">Dernière fois le <?= date('d/m/Y', $ts) ?></p>
+                                                <?php endif; ?>
+                                            </li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                        <?php if (count($atakRoleTimes) > 8): ?>
+                                        <p class="mt-1 text-[10px] text-slate-500">+ <?= count($atakRoleTimes) - 8 ?> autre(s) rôle(s).</p>
+                                        <?php endif; ?>
+                                        <?php else: ?>
+                                        <p class="mt-2 text-xs text-slate-500">Aucun temps par rôle pour l’instant.</p>
+                                        <?php endif; ?>
+                                        <p class="mt-2 text-[10px] text-slate-500">Compté par le serveur Arma, ou par le téléphone ATAK quand le serveur ne remonte pas. Rôle reconnu dans cet ordre : poste d’équipage, rôle d’équipe choisi dans le téléphone, spécialité Arma, sinon nom du slot.</p>
+                                        <?php if ($canCorrectRoleTime): ?>
+                                        <?php $personSeg = rawurlencode((string) ($roleTimePathSegment ?? '')); ?>
+                                        <details class="mt-3 rounded-lg border border-slate-200 bg-white/70 px-3 py-2 text-xs text-slate-700">
+                                            <summary class="cursor-pointer font-semibold text-slate-800">Corriger le temps par rôle</summary>
+                                            <p class="mt-2 text-[11px] text-slate-500">Après une perte de synchro, déplacez le temps vers le bon rôle. Rien n’est perdu, chaque correction est journalisée et peut être annulée.</p>
+                                            <?php if ($atakRoleTimes !== []): ?>
+                                            <form method="post" action="<?= htmlspecialchars(url('personnel/' . $personSeg . '/temps-par-role/deplacer'), ENT_QUOTES, 'UTF-8') ?>" class="mt-2 space-y-2">
                                                 <?= \App\Core\Csrf::field() ?>
-                                                <button type="submit" class="text-[11px] font-semibold text-sky-700 underline">Annuler cette correction</button>
+                                                <label class="block">
+                                                    <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Déplacer le temps de</span>
+                                                    <select name="from_key" required class="mt-0.5 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs">
+                                                        <?php foreach ($atakRoleTimes as $rt): ?>
+                                                        <option value="<?= htmlspecialchars((string) $rt['key'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $rt['label'] . ' (' . $roleDur((int) $rt['seconds']) . ')', ENT_QUOTES, 'UTF-8') ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </label>
+                                                <label class="block">
+                                                    <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Vers le rôle</span>
+                                                    <select name="to_key" required class="mt-0.5 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs">
+                                                        <?php foreach ($atakRoleTimes as $rt): ?>
+                                                        <option value="<?= htmlspecialchars((string) $rt['key'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $rt['label'], ENT_QUOTES, 'UTF-8') ?></option>
+                                                        <?php endforeach; ?>
+                                                        <option value="__new">Autre rôle (saisir ci-dessous)…</option>
+                                                    </select>
+                                                </label>
+                                                <label class="block">
+                                                    <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Nom du rôle, si autre</span>
+                                                    <input type="text" name="to_label" maxlength="60" placeholder="ex. TACP" class="mt-0.5 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs">
+                                                </label>
+                                                <label class="block">
+                                                    <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Minutes à déplacer</span>
+                                                    <input type="number" name="minutes" min="1" step="1" placeholder="vide = tout" class="mt-0.5 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs">
+                                                </label>
+                                                <label class="block">
+                                                    <span class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Motif</span>
+                                                    <input type="text" name="reason" maxlength="255" placeholder="ex. perte de synchro, rôle tombé" class="mt-0.5 w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-xs">
+                                                </label>
+                                                <button type="submit" class="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white">Déplacer le temps</button>
                                             </form>
                                             <?php endif; ?>
-                                        </li>
-                                        <?php endforeach; ?>
-                                    </ul>
+                                            <?php if ($roleTimeMoves !== []): ?>
+                                            <p class="mt-3 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Journal des corrections</p>
+                                            <ul class="mt-1 space-y-1.5">
+                                                <?php foreach ($roleTimeMoves as $mv): ?>
+                                                <?php $mvTs = strtotime((string) ($mv['created_at'] ?? '')); ?>
+                                                <li class="rounded-md border border-slate-200 bg-white px-2 py-1.5 <?= $mv['reverted_at'] !== null ? 'opacity-60' : '' ?>">
+                                                    <p><span class="font-semibold"><?= htmlspecialchars($roleDur((int) $mv['seconds']), ENT_QUOTES, 'UTF-8') ?></span> de <?= htmlspecialchars((string) $mv['from_label'], ENT_QUOTES, 'UTF-8') ?> vers <?= htmlspecialchars((string) $mv['to_label'], ENT_QUOTES, 'UTF-8') ?></p>
+                                                    <p class="text-[10px] text-slate-500">Par <?= htmlspecialchars((string) ($mv['actor_name'] ?? '') !== '' ? (string) $mv['actor_name'] : 'inconnu', ENT_QUOTES, 'UTF-8') ?><?= $mvTs ? ' le ' . date('d/m/Y \à H:i', $mvTs) : '' ?><?php if (trim((string) ($mv['reason'] ?? '')) !== ''): ?> · <?= htmlspecialchars((string) $mv['reason'], ENT_QUOTES, 'UTF-8') ?><?php endif; ?></p>
+                                                    <?php if ($mv['reverted_at'] !== null): ?>
+                                                    <?php $rvTs = strtotime((string) $mv['reverted_at']); ?>
+                                                    <p class="text-[10px] text-slate-500">Annulée<?= trim((string) ($mv['reverted_by_name'] ?? '')) !== '' ? ' par ' . htmlspecialchars((string) $mv['reverted_by_name'], ENT_QUOTES, 'UTF-8') : '' ?><?= $rvTs ? ' le ' . date('d/m/Y \à H:i', $rvTs) : '' ?></p>
+                                                    <?php else: ?>
+                                                    <form method="post" action="<?= htmlspecialchars(url('personnel/' . $personSeg . '/temps-par-role/' . (int) $mv['id'] . '/annuler'), ENT_QUOTES, 'UTF-8') ?>" class="mt-1">
+                                                        <?= \App\Core\Csrf::field() ?>
+                                                        <button type="submit" class="text-[11px] font-semibold text-sky-700 underline">Annuler cette correction</button>
+                                                    </form>
+                                                    <?php endif; ?>
+                                                </li>
+                                                <?php endforeach; ?>
+                                            </ul>
+                                            <?php endif; ?>
+                                        </details>
+                                        <?php endif; ?>
+                                    </div>
                                     <?php endif; ?>
-                                </details>
-                                <?php endif; ?>
+                                </div>
                             </div>
                             <?php endif; ?>
                             <?php if ($accountCreatedDisplay !== null): ?>

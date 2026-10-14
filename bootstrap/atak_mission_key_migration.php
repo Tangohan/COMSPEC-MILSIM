@@ -7,6 +7,7 @@ declare(strict_types=1);
  *
  * - logs_positions.mission_key : relecture filtrée par session jouée (onglet Relecture de /atak) ;
  * - atak_screen_time.mission_key : temps d'écran et par rôle gardés par mission (clé unique élargie) ;
+ * - atak_screen_time.source_mask : qui a remonté la ligne (téléphone ATAK, serveur Arma), pour le tableur des heures ;
  * - atak_tactical_reports.mission_key : comptes rendus rattachés à la session ;
  * - atak_casualties : morts amis remontés par les téléphones (télémétrie « combat », kind kia),
  *   couche des pertes de la relecture. Un mort n'est gardé qu'une fois (dedupe_key).
@@ -42,6 +43,13 @@ return static function (PDO $pdo): void {
                 ADD UNIQUE KEY uniq_atak_screen_time_mission (tenant_id, user_id, day, mission_key, kind, item_key)"
         );
         echo "  [OK] atak_screen_time.mission_key\n";
+    }
+
+    // Qui a remonté la ligne (masque de bits, cumulé) : 1 = téléphone ATAK, 2 = serveur Arma ; 0 = avant ce suivi
+    // ou correction à la main. La clé unique ne change pas.
+    if ($tableExists('atak_screen_time') && !$columnExists('atak_screen_time', 'source_mask')) {
+        $pdo->exec('ALTER TABLE atak_screen_time ADD COLUMN source_mask TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER seconds');
+        echo "  [OK] atak_screen_time.source_mask\n";
     }
 
     if ($tableExists('atak_tactical_reports') && !$columnExists('atak_tactical_reports', 'mission_key')) {
