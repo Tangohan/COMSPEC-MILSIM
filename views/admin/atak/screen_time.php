@@ -46,6 +46,7 @@ $maxRole = $roles !== [] ? max(array_column($roles, 'seconds')) : 1;
                 <?php foreach ($periods as $n => $label): ?>
                     <a href="<?= $h(url('back-office/atak/temps-ecran?jours=' . $n)) ?>" class="aksq__period<?= (int) $n === $days ? ' is-active' : '' ?>"<?= (int) $n === $days ? ' aria-current="page"' : '' ?>><?= $h($label) ?></a>
                 <?php endforeach; ?>
+                <a href="<?= $h(url('back-office/atak/heures' . ($days !== 30 ? '?jours=' . $days : ''))) ?>" class="aksq__link">Heures de jeu (tableur)</a>
                 <a href="<?= $h(url('back-office/atak/escouades')) ?>" class="aksq__link">Escouades en jeu</a>
             </nav>
         </header>

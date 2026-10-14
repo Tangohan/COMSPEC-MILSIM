@@ -1810,6 +1810,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/back-office/atak/cycle-mission/{id}/cloturer', [AdminMissionCycleController::class, 'close'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/escouades', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/temps-ecran', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'screenTime'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/atak/heures', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'hours'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/files-envoi', [\App\Controllers\Admin\AdminAtakSendQueueController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     // Remontées : comptes rendus et fiches de renseignement suivis comme des pull requests (contrôle d'accès dans le contrôleur).
     $router->get('/back-office/remontees', [\App\Controllers\Admin\AdminIntelIntakeController::class, 'index'], [AuthMiddleware::class]);

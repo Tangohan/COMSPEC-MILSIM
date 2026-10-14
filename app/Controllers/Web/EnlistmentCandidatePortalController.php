@@ -300,10 +300,11 @@ final class EnlistmentCandidatePortalController
             && $submittedAgeHours !== null
             && $submittedAgeHours > $slaHours;
         $referentLabel = $this->portalReferentLabelForCandidate($row, $tenantId);
-        $ageDays = $this->enlistmentAgeDaysPortal($row);
-        $retroEligible = !EnlistmentRecruitmentEngagementRepository::isRetroExcludedStatus($statusRaw)
-            && $ageDays !== null
-            && $ageDays >= 30;
+        // Retour candidat : candidature acceptée, 30 jours après l’acceptation (même règle que le bilan équipe).
+        $daysSinceAcceptance = \App\Support\EnlistmentStatusCatalog::daysSince(\App\Support\EnlistmentStatusCatalog::retroAnchor($row));
+        $retroEligible = $statusRaw === 'reviewed'
+            && $daysSinceAcceptance !== null
+            && $daysSinceAcceptance >= \App\Support\EnlistmentStatusCatalog::RETRO_DELAY_DAYS;
         $retroTable = $this->recruitmentEngagementRepository->retroTableExists();
         $candidateRetroRow = $retroTable
             ? $this->recruitmentEngagementRepository->findRetro($tenantId, $enlistmentId, EnlistmentRecruitmentEngagementRepository::SCOPE_CANDIDATE_RETURN)
@@ -684,17 +685,14 @@ final class EnlistmentCandidatePortalController
 
             return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
         }
-        $ageDays = $this->enlistmentAgeDaysPortal($row);
-        if (EnlistmentRecruitmentEngagementRepository::isRetroExcludedStatus((string) ($row['status'] ?? ''))) {
-            $msg = ((string) ($row['status'] ?? '')) === 'blocked'
-                ? 'Pas de bilan pour une candidature non admise.'
-                : 'Pas de bilan pour une candidature refusée.';
-            Session::flash('error', $msg);
+        if ((string) ($row['status'] ?? '') !== 'reviewed') {
+            Session::flash('error', 'Ce bilan concerne uniquement les candidatures acceptées.');
 
             return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
         }
-        if ($ageDays === null || $ageDays < 30) {
-            Session::flash('error', 'Ce bilan n’est proposé qu’à partir de 30 jours après la réception de votre dossier.');
+        $daysSinceAcceptance = \App\Support\EnlistmentStatusCatalog::daysSince(\App\Support\EnlistmentStatusCatalog::retroAnchor($row));
+        if ($daysSinceAcceptance === null || $daysSinceAcceptance < \App\Support\EnlistmentStatusCatalog::RETRO_DELAY_DAYS) {
+            Session::flash('error', 'Ce bilan est proposé 30 jours après l’acceptation de votre candidature.');
 
             return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
         }
@@ -913,23 +911,6 @@ final class EnlistmentCandidatePortalController
         Session::flash('success', 'Votre signalement a bien été transmis. L’équipe recrutement en est informée.');
 
         return Response::redirect(url('enlistment/suivi/' . rawurlencode($token)));
-    }
-
-    /**
-     * @param array<string, mixed> $enlistmentRow
-     */
-    private function enlistmentAgeDaysPortal(array $enlistmentRow): ?int
-    {
-        $base = trim((string) ($enlistmentRow['created_at'] ?? ''));
-        if ($base === '') {
-            return null;
-        }
-        $ts = strtotime($base);
-        if ($ts === false || $ts <= 0) {
-            return null;
-        }
-
-        return max(0, (int) floor((time() - $ts) / 86400));
     }
 
     public function attachmentDownloadPreparation(Request $request, array $params = []): Response
