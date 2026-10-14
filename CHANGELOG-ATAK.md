@@ -46,15 +46,15 @@ FR : Le Zeus prend la main sur les ATAK, Comptes rendus refaits, nouveaux termin
 - Le Zeus peut désactiver, verrouiller, rendre muet, brouiller ou abîmer ton téléphone, et les brouilleurs du mod Crows Electronic Warfare brouillent aussi l'ATAK.
 - L'app Comptes rendus est refaite : une fiche par type (SALUTE, UXO, blessé, LOGREP…), des valeurs proposées par le jeu, des brouillons et des accusés de réception.
 - Nouveaux terminaux V2 ENHANCED, XIAOMI X3D et SONIM XP8, nouvelle tablette ; la carte a des noms de repères et de lieux plus lisibles, masquables dans CALQUES.
-- Drone : bouton PLEIN ÉCRAN, image plus légère, ordres de la carte qui disent s'ils sont reçus. Le téléphone te prévient enfin des mises à jour, et l'app Athena remplace l'ancienne fenêtre « Lier le jeu à Athena ».
+- Drone : bouton PLEIN ÉCRAN, image plus légère, ordres de la carte qui disent s'ils sont reçus. Le téléphone te prévient enfin des mises à jour, l'app Athena remplace l'ancienne fenêtre « Lier le jeu à Athena », et une photo refusée par la formule de ta communauté est expliquée.
 EN : Zeus takes control of the ATAKs, Reports redone, new terminals
 - Zeus can disable, lock, mute, jam or damage your phone, and Crows Electronic Warfare jammers now jam the ATAK too.
 - The Reports app is redone: one sheet per report type (SALUTE, UXO, casualty, LOGREP…), values suggested by the game, drafts and read receipts.
 - New terminals V2 ENHANCED, XIAOMI X3D and SONIM XP8, new tablet; the map has clearer marker and place names, which can be hidden in LAYERS.
-- Drone: FULL SCREEN button, lighter picture, map orders that tell you whether they were received. The phone now tells you about updates, and the Athena app replaces the old "Link the game to Athena" window.
+- Drone: FULL SCREEN button, lighter picture, map orders that tell you whether they were received. The phone now tells you about updates, the Athena app replaces the old "Link the game to Athena" window, and a photo refused by your community's plan is explained.
 
 ### Détail technique
-Regroupe #805, #806, #807, #808, #810, #811, #812, #813 et #814 (une seule version : ATAK natif 1.93.0, COMSPEC Link 2.0.85 ; main.pbo et comspec_overwatch_connect.pbo reconstruits depuis les sources).
+Regroupe #805, #806, #807, #808, #810, #811, #812, #813, #814 et #818 (une seule version : ATAK natif 1.93.0, COMSPEC Link 2.0.85 ; main.pbo et comspec_overwatch_connect.pbo reconstruits depuis les sources).
 
 #### Nouveaux terminaux : V2 Enhanced, XIAOMI X3D, SONIM XP8 et nouvelle tablette (#805)
 
@@ -126,6 +126,13 @@ Regroupe #805, #806, #807, #808, #810, #811, #812, #813 et #814 (une seule versi
 - `fn_reportAction` : brouillons (`COMSPEC_ATAK_RepDrafts`), contrôle avant envoi, accusés `comspec_atak_native_reportRcpt` (relayés au camp, rejoués aux arrivants), photo via `captureReconImage`, `jnet_escalate` dans structured_data, accusé d'ordre via `fn_taskAction`.
 - Site : `JnetFieldReportBridge` remonte de 1, 2 échelons ou jusqu'au sommet selon `jnet_escalate` ; libellés des nouveaux champs dans `AtakIcemanReportCatalog`.
 - Non testé en jeu.
+
+#### Photos : refus de la formule expliqué au joueur, sans rapport automatique (#818)
+- Cause du rapport #661 (ÉCHEC · PhotoUpload — http_403 · feature_unavailable) : `AtakPlanAccess` (garde de formule depuis le 13/09) refuse toute l'API tactique quand la formule appliquée de la communauté n'a pas `atak` (essai fondateur de 30 jours terminé, formule `free`). Ce n'est pas une régression de #793/#794.
+- Connect (`fn_extensionCallback`, PhotoUpload) : `ERR|http_403|fichier|feature_unavailable` → journalisé en WARN (pas de rapport auto), message clair FR (traduit EN dans i18n/en.txt), retour Galerie en alerte. comspec_overwatch_connect.pbo et main.pbo repatchés (tools/pbo_patch.py).
+- Site (#817) : un tel rapport reçu des anciens mods est classé Faible (ni ticket ni e-mail) et son détail nomme la communauté et sa formule.
+- À tester en jeu : avec une communauté sans la carte, prendre une photo ; Galerie > dernière photo refusée affiche le nouveau message (FR et EN), aucun rapport auto dans /admin/atak-mod-reports. Avec une communauté qui a la carte, l'envoi marche toujours.
+
 ## Erreur 502 au déploiement, journal de l'appareil à la bonne heure (site)
 
 ### Résumé joueur
@@ -143,7 +150,6 @@ EN : Athena no longer cuts your sends during an update
 - `deploy-vps.yml` : règle une fois `process_control_timeout = 10s` dans `/etc/php/8.4/fpm/php-fpm.conf` (sauvegarde `.bak-deploy`, `php-fpm -t` avant, restauration si refusé) puis reload.
 - `AtakDeviceLogRepository` : COMSPEC Link envoie `logged_at` en heure locale sans fuseau ; l'écart entre la ligne la plus récente du lot et l'heure serveur, arrondi au quart d'heure (15 min à 14 h), est retiré des heures sans fuseau.
 - Le volet mod (502/504 en alerte, ligne ZEN, dump) est dans une PR à part, livrée avec le regroupement ATAK.
-
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
 
 ### Résumé joueur

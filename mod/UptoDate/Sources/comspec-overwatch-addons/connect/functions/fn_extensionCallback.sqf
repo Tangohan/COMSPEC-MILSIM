@@ -390,6 +390,8 @@ switch (_function) do {
         private _fileHint = if ((count _parts) > 2) then { _parts select 2 } else { _detail };
         if (_fileHint isEqualTo "") then { _fileHint = _detail; };
         private _hintLow = toLower _fileHint;
+        // Refus de la formule (403 feature_unavailable) : attendu, la communauté n'a pas la carte et les liaisons.
+        private _planRefused = (_parts param [3, ""]) isEqualTo "feature_unavailable";
 
         private _fnc_matchKeys = {
             params ["_list", "_hint"];
@@ -481,13 +483,15 @@ switch (_function) do {
                     missionNamespace setVariable ["COMSPEC_FeedSnapFailUntil", diag_tickTime + 300, false];
                 };
                 private _txPhase = if (
-                    (_detail find "http_503") == 0
+                    _planRefused
+                    || {(_detail find "http_503") == 0}
                     || {(_detail find "network") == 0}
                     || {(_detail find "http_429") == 0}
                     || {(_detail find "file_empty") == 0}
                 ) then { "warn" } else { "fail" };
                 ["PhotoUpload", _txPhase, format ["%1 · %2", _detail, _fileHint], _data, true, "system"] call comspec_overwatch_connect_fnc_logTransmission;
                 private _msg = switch (true) do {
+                    case (_planRefused): { "Photo non envoyée. La formule de votre communauté n’inclut pas la carte et les liaisons Athena, prévenez son administrateur." };
                     case ((_detail find "file_not_found") == 0): { "Photo introuvable sur le disque — capturez à nouveau." };
                     case ((_detail find "file_empty") == 0): { "La capture n’était pas encore prête — reprenez la photo." };
                     case ((_detail find "not_connected") == 0): { "Pas de liaison Athena — reconnectez-vous puis renvoyez." };
@@ -499,7 +503,8 @@ switch (_function) do {
                 missionNamespace setVariable ["COMSPEC_LastReconUploadResult", ["ERR", _msg, format ["%1 · %2", _detail, _fileHint], [daytime, "HH:MM:SS"] call BIS_fnc_timeToString], false];
                 if (!isNil "comspec_overwatch_atak_athena_fnc_athena_setPanelFeedback") then {
                     private _fbKind = if (
-                        (_detail find "http_503") == 0
+                        _planRefused
+                        || {(_detail find "http_503") == 0}
                         || {(_detail find "http_429") == 0}
                         || {(_detail find "network") == 0}
                     ) then { "warn" } else { "error" };
