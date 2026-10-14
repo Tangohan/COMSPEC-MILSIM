@@ -90,6 +90,30 @@ EN : Green button labels are thinner and easier to read
 ### Détail technique
 - `COMSPEC_RscButton` (ui/controls.hpp) : `shadow=0`. La classe héritait du `shadow=2` du RscButton du jeu (contour noir du texte), qui doublait l'épaisseur du texte noir sur fond vert. Touche tous les boutons du téléphone (classes dérivées comprises) ; police inchangée (Roboto Condensed Bold, ou la police choisie dans Réglages > Police).
 
+## Antenne d'extension fixée sur la coque (ATAK natif, version attribuée au regroupement)
+
+### Résumé joueur
+Type : correctif
+FR : L'antenne d'extension est vissée sur la coque
+- L'antenne ne flotte plus au-dessus du téléphone : elle part du port de la coque, en haut à gauche.
+- Un petit bossage noir avec son écrou montre où elle est vissée, de face comme de dos.
+- Elle suit aussi le bord de la coque sur les autres modèles de téléphone et sur la tablette.
+EN : The extension antenna is screwed onto the case
+- The antenna no longer floats above the phone: it now starts from the case port, top left.
+- A small black boss with its nut shows where it is screwed in, from the front and from the back.
+- It also follows the edge of the case on the other phone models and on the tablet.
+
+### Détail technique
+- Cause : l'antenne était dessinée avec « garder les proportions » (style 2096) dans un cadre 384 x 1536 qui dépasse
+  de la coque. Au moindre écart entre le rapport de pixels calculé et l'écran, Arma recentrait l'image dans ce cadre
+  très haut et elle remontait d'environ 50 px de texture, alors que la coque (style 48) est étirée sur le sien.
+  L'antenne utilise maintenant COMSPEC_RscPhone (style 48), comme la coque et le câble DL-7 ; idem pour le dos,
+  la batterie externe et l'antenne de « Voir l'arrière ».
+- Le port SMA était placé pour le S7 seul : décalage par modèle (rugged, iphone, sonim, tablet, keys, plate, flip,
+  ribbed) vers le bord haut de chaque coque, mesuré sur les rendus.
+- gen_assets.py : bossage moulé et écrou six pans sous l'embase (`_boss_svg`), absent de l'icône d'inventaire.
+  antenna_*_land/port/back.paa régénérés.
+
 ## Objets d'inventaire en vraie 3D, pylônes relais retravaillés jour et nuit (ATAK natif 1.94.0)
 
 ### Résumé joueur

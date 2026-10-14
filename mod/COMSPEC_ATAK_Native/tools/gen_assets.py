@@ -1277,7 +1277,7 @@ def phone_back(src):
         bw = 2 + (i * 7) % 5
         p.append(f'<rect x="{578 + i * 5.2}" y="1188" width="{bw * 0.8}" height="52" fill="#111"/>')
     p.append('<text x="655" y="1266" text-anchor="middle" font-family="DejaVu Sans Mono" font-size="15" fill="#333">S/N CS-0417-ATK</text>')
-    # Bossage du port SMA (antenne) en haut à gauche vu de face : à droite vu de dos.
+    # Bossage du port SMA : dessiné avec l'antenne (antenna_img), seulement quand une antenne est vissée.
     svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048" width="2048" height="2048">{"".join(p)}</svg>'
     over = Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=2048, output_height=2048))).convert("RGBA")
     out = front.copy()
@@ -1446,6 +1446,7 @@ def vest_phone_atlas(back, tmp):
 # --- Antennes d'extension de débit (port SMA en haut à gauche de la coque, x 430, y 632 de la texture 2048) ---
 ANT_BASE = (430, 632)
 ANT_FRAME = (238, -832, 384, 1536)  # zone dessinée (x, y, l, h) en pixels de la texture du téléphone
+NUT_GRAD = '<linearGradient id="nut" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5c5f5c"/><stop offset="0.45" stop-color="#c9ccc6"/><stop offset="1" stop-color="#4a4c4a"/></linearGradient>'
 
 
 def _sma_svg(x, y):
@@ -1462,12 +1463,12 @@ def _collar_svg(x, y, w=60, h=54):
     return "".join(out)
 
 
-def antenna_svg(kind):
+def antenna_svg(kind, boss=True):
     x, y = ANT_BASE
     defs = ('<defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a6a1c"/><stop offset="0.45" stop-color="#f0d27a"/><stop offset="1" stop-color="#7a5c14"/></linearGradient>'
             '<linearGradient id="rub" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0c0d0c"/><stop offset="0.35" stop-color="#3a3c3a"/><stop offset="0.6" stop-color="#1c1d1c"/><stop offset="1" stop-color="#070707"/></linearGradient>'
             '<linearGradient id="pat" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a3c3a"/><stop offset="1" stop-color="#111211"/></linearGradient></defs>')
-    b = [defs, _sma_svg(x, y)]
+    b = [defs.replace("</defs>", NUT_GRAD + "</defs>"), _boss_svg(x, y) if boss else "", _sma_svg(x, y)]
     top = y - 46
     if kind == "stub":
         b.append(_collar_svg(x, top))
@@ -1502,10 +1503,10 @@ def antenna_svg(kind):
 ANT_PHOTO_H = {"stub": 450}  # hauteur visible au-dessus du port SMA, en pixels de la texture du téléphone
 
 
-def antenna_img(kind):
+def antenna_img(kind, boss=True):
     src = os.path.join(HERE, "src", f"antenna_{kind}_photo.png")
     if kind not in ANT_PHOTO_H or not os.path.exists(src):
-        return antenna_svg(kind)
+        return antenna_svg(kind, boss)
     photo = Image.open(src).convert("RGBA")
     photo = photo.crop(photo.split()[3].point(lambda v: 255 if v > 40 else 0).getbbox())
     fx, fy, fw, fh = ANT_FRAME
@@ -1515,13 +1516,29 @@ def antenna_img(kind):
     w = max(1, int(photo.width * h / photo.height))
     photo = photo.resize((w, h), Image.LANCZOS)
     x, y = ANT_BASE
-    out = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    out = _boss_img() if boss else Image.new("RGBA", (W, H), (0, 0, 0, 0))
     out.alpha_composite(photo, (int((x - fx) * k - w / 2), int((y - fy) * k - h)))
     return out
 
 
+def _boss_svg(x, y):
+    """Bossage du port SMA moulé dans la coque, à cheval sur son bord haut, et écrou six pans de l'embase :
+    l'antenne paraît vissée dans la coque au lieu de flotter au-dessus (seul le port est dessiné, la coque vient de la texture)."""
+    return (f'<rect x="{x - 46}" y="{y - 8}" width="92" height="34" rx="10" fill="#161716" stroke="#050505" stroke-width="3"/>'
+            f'<rect x="{x - 40}" y="{y - 5}" width="80" height="6" rx="3" fill="#ffffff" fill-opacity="0.10"/>'
+            f'<polygon points="{x - 30},{y + 2} {x - 24},{y - 12} {x + 24},{y - 12} {x + 30},{y + 2}" fill="url(#nut)" stroke="#2b2b2b" stroke-width="2"/>'
+            f'<rect x="{x - 2}" y="{y - 11}" width="4" height="12" fill="#000" fill-opacity="0.35"/>')
+
+
+def _boss_img():
+    x, y = ANT_BASE
+    fx, fy, fw, fh = ANT_FRAME
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{fx} {fy} {fw} {fh}" width="256" height="1024"><defs>{NUT_GRAD}</defs>{_boss_svg(x, y)}</svg>'
+    return Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=256, output_height=1024))).convert("RGBA")
+
+
 def antenna_item(kind, size=256):
-    img = antenna_img(kind)
+    img = antenna_img(kind, boss=False)  # objet d'inventaire : l'antenne seule, sans le bossage de la coque
     if kind == "whip":  # fouet couché en diagonale, sinon trop fin dans la case d'inventaire
         img = img.rotate(-38, expand=True, resample=Image.BICUBIC)
     box = img.getbbox()
