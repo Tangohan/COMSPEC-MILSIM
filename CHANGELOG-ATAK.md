@@ -38,6 +38,31 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## App Plan refaite : palette d'outils, menus, annuler / rétablir, salles collaboratives, aide et tutoriel (ATAK natif, numéro au regroupement)
+
+### Résumé joueur
+Type : nouveauté
+FR : L'app Plan est refaite, avec une aide, un tutoriel et le travail à plusieurs
+- Les outils sont rangés dans une palette avec leur nom complet, et le clic droit ouvre enfin un menu : modifier, dupliquer, copier, supprimer, poser une note.
+- ANNULER et RÉTABLIR (Ctrl+Z / Ctrl+Y) marchent aussi sur le plan partagé, et chaque élément peut recevoir une description pour le briefing.
+- Une salle se crée en un clic : donne son code, tous ceux qui le tapent dessinent sur le même plan. Le menu EXPORTER copie le plan ou un texte de briefing avec les grilles.
+- Un tutoriel s'ouvre au premier lancement, et la touche H affiche l'aide de l'outil en cours. La carte ne saute plus en haut à gauche après une suppression.
+EN : The Plan app is redesigned, with help, a tutorial and teamwork
+- Tools sit in a palette with their full name, and right click finally opens a menu: edit, duplicate, copy, delete, place a note.
+- UNDO and REDO (Ctrl+Z / Ctrl+Y) also work on the shared plan, and every item can get a description for the briefing.
+- Create a room in one click: share its code and everyone who types it draws on the same plan. The EXPORT menu copies the plan or a briefing text with grids.
+- A tutorial opens the first time, and the H key shows help for the current tool. The map no longer jumps to the top left after a deletion.
+
+### Détail technique
+- `fn_pagePlan` ne crée plus que la carte ; barres, palette, fiche de sélection et menus sont dans `fn_planUi` (« build »), refait seul à chaque clic : la carte n'est plus recréée par SUPPR. / CONFIRMER / choix d'un outil. Une carte neuve n'enregistre sa vue (`COMSPEC_ATAK_PlanView`) qu'une fois calée sur le but (`fn_planMap` « draw », 3 recalages au plus) : avant, son premier dessin (coin haut gauche du monde) écrasait la vue gardée.
+- Clic droit sans outil : menu (`ctxOpen` / `ctxAct`) sur l'élément pointé (modifier, dupliquer, copier vers brouillon / camp / salle, nettoyé ⇄, grille, centrer, supprimer) ou sur la carte vide (note, ennemi, CP, RP, grille, centrer, aide).
+- Historique : le serveur renvoie à l'auteur ce que chaque opération a changé (`comspec_atak_native_planDiff` [repère, salle, avant, après]) ; ANNULER / RÉTABLIR envoient l'opération `patch` (ids gardés). Brouillon : même diff calculé localement. 40 entrées.
+- Salles : `roomNew` (code de 5 caractères, `COMSPEC_ATAK_PlanRoom_<code>` publique), rejoindre par code, quitter ; droit d'édition = avoir le code. La salle est dessinée sur la carte principale et publiable sur le plan du camp.
+- Élément : 11e champ description (300 caractères), envoyée au site (`desc`) et affichée dans l'infobulle de la carte du briefing web.
+- EXPORTER : code COMSPECPLAN1 (inchangé), texte de briefing avec grilles, enregistrer, publier, importer ; source au choix (camp, brouillon, salle).
+- Aide (H, `fn_planHelp`) selon l'outil en cours et raccourcis (Entrée, Échap, Ctrl+Z/Y/D, Suppr) ; tutoriel en 10 étapes au premier lancement (profil `COMSPEC_ATAK_PlanTuto`), rejouable. Textes FR traduits en anglais (en.txt).
+- À tester en jeu : dessin des 3 géométries, clic droit (menu / fin de tracé), SUPPR. puis CONFIRMER sans saut de carte, Ctrl+Z / Ctrl+Y sur brouillon et camp, salle à 2 joueurs (création, code, dessin croisé, quitter), export texte collé dans Discord, tutoriel au premier lancement, touche H, langue anglaise.
+
 ## Objets d'inventaire en vraie 3D, pylônes relais retravaillés jour et nuit (ATAK natif 1.94.0)
 
 ### Résumé joueur

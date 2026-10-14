@@ -5,9 +5,12 @@
       "draw" [carte]                              fond, plan partagé, brouillon, aperçu, tracé en cours
       "down" / "up" [carte, bouton, x, y]         clic gauche : outil actif (ou sélection) ; clic droit sans glisser : terminer / quitter l'outil
       "move" [carte, x, y]                        curseur et crayon
-      "rclick" [carte, [x, y]]                    clic droit simple : terminer le tracé, quitter l'outil ou désélectionner
+      "rclick" [carte, [x, y]]                    clic droit simple : terminer le tracé, quitter l'outil, sinon menu (fn_planUi)
       "dbl"  [carte, bouton, x, y]                double clic : termine un trait ou une zone
       "hit"  [carte, [x, y]]                      -> [id, couche] de l'élément sous le point ("" sinon)
+    Vue : une carte toute neuve montre d'abord le coin haut gauche du monde, avant d'appliquer ctrlMapAnimAdd. La
+    vue (COMSPEC_ATAK_PlanView) n'est enregistrée qu'une fois la carte calée sur le but posé par fn_pagePlan ; sans
+    cela, un rendu juste après (SUPPR., CONFIRMER) repartait de ce coin.
 */
 params [["_ev", ""], ["_a", []]];
 private _ui = ["ui"] call comspec_atak_native_fnc_planAction;
@@ -18,7 +21,25 @@ switch (_ev) do {
     case "draw": {
         _a params ["_map"];
         private _cp = ctrlPosition _map;
-        uiNamespace setVariable ["COMSPEC_ATAK_PlanView", [ctrlMapScale _map, _map ctrlMapScreenToWorld [(_cp select 0) + (_cp select 2) / 2, (_cp select 1) + (_cp select 3) / 2]]];
+        private _mid = [(_cp select 0) + (_cp select 2) / 2, (_cp select 1) + (_cp select 3) / 2];
+        if (_map getVariable ["comspec_planReady", false]) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_PlanView", [ctrlMapScale _map, _map ctrlMapScreenToWorld _mid]];
+        } else {
+            // Calage : animation finie et quelques images passées, le but doit être au centre (recalé 3 fois au plus).
+            private _aim = _map getVariable ["comspec_planAim", []];
+            if ((count _aim) < 2) exitWith { _map setVariable ["comspec_planReady", true]; };
+            if ((diag_tickTime - (_map getVariable ["comspec_planBorn", 0])) < 0.15 || {!ctrlMapAnimDone _map}) exitWith {};
+            private _tries = _map getVariable ["comspec_planFix", 0];
+            private _sp = _map ctrlMapWorldToScreen [(_aim select 1) select 0, (_aim select 1) select 1];
+            if ((_sp distance2D _mid) < 0.004 || {_tries >= 3}) exitWith { _map setVariable ["comspec_planReady", true]; };
+            _map setVariable ["comspec_planFix", _tries + 1];
+            private _last = _map getVariable ["comspec_planLast", _aim select 1];
+            private _st = _map ctrlMapWorldToScreen [_last select 0, _last select 1];
+            private _fix = _map ctrlMapScreenToWorld [(_st select 0) + (_sp select 0) - (_mid select 0), (_st select 1) + (_sp select 1) - (_mid select 1)];
+            _map setVariable ["comspec_planLast", _fix];
+            _map ctrlMapAnimAdd [0, _aim select 0, [_fix select 0, _fix select 1, 0]];
+            ctrlMapAnimCommit _map;
+        };
         // Fond assombri (comme une image ISR) : les couleurs du plan ressortent.
         if (profileNamespace getVariable ["COMSPEC_ATAK_PlanDim", true]) then {
             _map drawRectangle [[worldSize / 2, worldSize / 2, 0], worldSize * 1.5, worldSize * 1.5, 0, [0.02, 0.025, 0.03, 0.42], "#(rgb,8,8,3)color(1,1,1,1)"];
@@ -26,6 +47,7 @@ switch (_ev) do {
         private _sel = _ui get "sel";
         private _selL = _ui get "selLayer";
         [_map, ["shared"] call comspec_atak_native_fnc_planAction, 1, [_sel, ""] select (_selL isNotEqualTo "S")] call comspec_atak_native_fnc_planDraw;
+        [_map, ["room"] call comspec_atak_native_fnc_planAction, 1, [_sel, ""] select (_selL isNotEqualTo "R")] call comspec_atak_native_fnc_planDraw;
         [_map, ["draft"] call comspec_atak_native_fnc_planAction, 0.8, [_sel, ""] select (_selL isNotEqualTo "D")] call comspec_atak_native_fnc_planDraw;
         // Envoyés au plan partagé, en attente de la réponse du serveur : ils restent visibles.
         [_map, ["pending"] call comspec_atak_native_fnc_planAction, 0.7] call comspec_atak_native_fnc_planDraw;
@@ -65,6 +87,16 @@ switch (_ev) do {
             }, _map, 1.5] call CBA_fnc_waitUntilAndExecute;
         };
         if (_btn isNotEqualTo 0) exitWith {};
+        // Clic sous la palette d'outils ou le panneau d'aide (fond sans bouton) : rien n'est posé sur la carte.
+        private _blocked = false;
+        {
+            if ((count _x) isEqualTo 4 && {_mx >= (_x select 0)} && {_mx <= (_x select 0) + (_x select 2)} && {_my >= (_x select 1)} && {_my <= (_x select 1) + (_x select 3)}) exitWith { _blocked = true; };
+        } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_PlanRects", createHashMap]) getOrDefault ["block", []]);
+        if (_blocked) exitWith {};
+        // Menu ouvert (clic droit, EXPORTER, SALLE) : ce clic le ferme seulement.
+        if ((_ui get "menu") isNotEqualTo "" || {(count (_ui get "ctx")) > 0}) exitWith {
+            _ui set ["menu", ""]; _ui set ["ctx", createHashMap]; ["chrome"] call comspec_atak_native_fnc_planAction;
+        };
         private _w = _map ctrlMapScreenToWorld [_mx, _my];
         private _p = [_w select 0, _w select 1, 0];
         private _d = _ui get "draft";
@@ -111,7 +143,12 @@ switch (_ev) do {
         switch (true) do {
             case (_n > 1 && {_geom in ["LINE", "AREA"]}): { ["finish"] call comspec_atak_native_fnc_planAction; };
             case (_n > 0 || {(_ui get "tool") isNotEqualTo ""}): { ["cancel"] call comspec_atak_native_fnc_planAction; };
-            case ((_ui get "sel") isNotEqualTo ""): { ["select", ["", ""]] call comspec_atak_native_fnc_planAction; };
+            // Sans outil : menu au point cliqué (élément pointé : ses actions ; carte vide : pose rapide, grille).
+            default {
+                private _hit = ["hit", [_map, [_mx, _my]]] call comspec_atak_native_fnc_planMap;
+                private _w = _map ctrlMapScreenToWorld [_mx, _my];
+                ["ctxOpen", [[_w select 0, _w select 1, 0], _hit select 0, _hit select 1]] call comspec_atak_native_fnc_planAction;
+            };
         };
     };
     case "dbl": {
@@ -160,7 +197,7 @@ switch (_ev) do {
                 };
                 if (_d < _bestD) then { _bestD = _d; _best = [_id, _layer]; };
             } forEach _items;
-        } forEach [["D", ["draft"] call comspec_atak_native_fnc_planAction], ["S", ["shared"] call comspec_atak_native_fnc_planAction]];
+        } forEach [["D", ["draft"] call comspec_atak_native_fnc_planAction], ["R", ["room"] call comspec_atak_native_fnc_planAction], ["S", ["shared"] call comspec_atak_native_fnc_planAction]];
         [_best, _inside] select ((_best select 0) isEqualTo "")
     };
 };

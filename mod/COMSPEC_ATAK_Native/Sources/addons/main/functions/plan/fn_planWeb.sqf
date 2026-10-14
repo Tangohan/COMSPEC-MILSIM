@@ -66,15 +66,15 @@ private _total = 0;
 private _step = ceil (_total / 6000) max 1;
 private _js = comspec_atak_native_fnc_json;
 private _parts = _items apply {
-    _x params [["_id", ""], ["_kind", ""], ["_pts", []], ["_text", ""], ["_ck", "WHITE"], ["_dashed", false], ["_arrow", false], ["_w", 2], ["_num", 0], ["_author", ""]];
+    _x params [["_id", ""], ["_kind", ""], ["_pts", []], ["_text", ""], ["_ck", "WHITE"], ["_dashed", false], ["_arrow", false], ["_w", 2], ["_num", 0], ["_author", ""], ["_desc", ""]];
     private _keep = _pts;
     if (_step > 1 && {(count _pts) > 8}) then {
         _keep = [];
         { if ((_forEachIndex mod _step) isEqualTo 0) then { _keep pushBack _x; }; } forEach _pts;
         if ((_keep select -1) isNotEqualTo (_pts select -1)) then { _keep pushBack (_pts select -1); };
     };
-    format ['{"id":%1,"kind":%2,"text":%3,"color":%4,"dashed":%5,"arrow":%6,"width":%7,"num":%8,"author":%9,"pts":',
-        [_id] call _js, [_kind] call _js, [_text] call _js, [_ck] call _js, [_dashed] call _js, [_arrow] call _js, [_w] call _js, [_num] call _js, [_author] call _js]
+    format ['{"id":%1,"kind":%2,"text":%3,"color":%4,"dashed":%5,"arrow":%6,"width":%7,"num":%8,"author":%9,"desc":%10,"pts":',
+        [_id] call _js, [_kind] call _js, [_text] call _js, [_ck] call _js, [_dashed] call _js, [_arrow] call _js, [_w] call _js, [_num] call _js, [_author] call _js, [_desc] call _js]
         + (str (_keep apply { [round (_x select 0), round (_x select 1)] })) + "}"
 };
 // Concaténation (et non format, borné à quelques milliers de caractères) : le plan peut peser plusieurs dizaines de Ko.

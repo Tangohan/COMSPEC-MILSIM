@@ -198,6 +198,10 @@ private _sourceName = {
 private _selFind = {
     private _id = _ui get "sel";
     if (_id isEqualTo "") exitWith { [] };
+    // Modification envoyée au serveur et pas encore revenue : la fiche part de cette version (sinon un texte
+    // tapé puis une couleur choisie aussitôt renvoyaient l'ancien texte avec la nouvelle couleur).
+    (uiNamespace getVariable ["COMSPEC_ATAK_PlanSelPend", []]) params [["_pId", ""], ["_pIt", []], ["_pAt", -1e9]];
+    if (_pId isEqualTo _id && {(diag_tickTime - _pAt) < 3}) exitWith { +_pIt };
     private _list = [_ui get "selLayer"] call _itemsOf;
     private _i = _list findIf { (_x select 0) isEqualTo _id };
     if (_i < 0) exitWith { [] };
@@ -344,6 +348,7 @@ switch (_act) do {
         if ((_it param [_i, ""]) isEqualTo _v) exitWith {};
         if ((count _it) < 11) then { _it resize 11; _it set [10, ""]; };
         _it set [_i, _v];
+        if ((_ui get "selLayer") isNotEqualTo "D") then { uiNamespace setVariable ["COMSPEC_ATAK_PlanSelPend", [_ui get "sel", +_it, diag_tickTime]]; };
         [_ui get "selLayer", _ui get "sel", _it] call _updItem;
         if (_field isEqualTo "color") then { call _chrome; };
     };
