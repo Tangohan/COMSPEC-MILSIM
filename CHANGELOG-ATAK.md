@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Carte du téléphone : noms des repères plus lisibles, symboles de la mission à l'échelle de l'écran (ATAK natif, numéro au regroupement)
+
+### Résumé joueur
+Type : correctif
+FR : Sur la petite carte du téléphone, les noms se lisent et les symboles ne prennent plus toute la place
+- Les noms des repères sont plus grands, en blanc pur sur une plaque plus sombre.
+- Les symboles posés par la mission (symboles OTAN bleus, repères, zones, traits) sont à l'échelle de l'écran du téléphone, comme les unités : plus petits quand le téléphone est porté, normaux en plein écran.
+- Le réglage Réglages > Carte « taille des symboles » s'applique aussi à ces symboles.
+EN : On the phone's small map, names are readable and symbols no longer take over
+- Marker names are larger, in pure white on a darker plate.
+- Symbols placed by the mission (blue NATO symbols, markers, areas, lines) now scale with the phone screen, like units: smaller when the phone is worn, normal in full screen.
+- The Settings > Map "symbol size" option now applies to these symbols too.
+
+### Détail technique
+- `COMSPEC_RscMapAtak` : `showMarkers=0` (la carte Arma dessinait les marqueurs à taille fixe en pixels, 32 px pour l'OTAN) ; `COMSPEC_RscMapJtac` garde `showMarkers=1`.
+- Nouveau `fn_mapGameMarkers` : redessine allMapMarkers (ICON à `taille CfgMarkers x markerSize x 0,62 x écran (0,45..1,2) x réglage symboles`, RECTANGLE / ELLIPSE à la brosse CfgMarkerBrushes avec bordure, POLYLINE en trait fin). Propriétés relues toutes les secondes ou dès que le nombre de marqueurs change, position lue à chaque image.
+- `fn_mapMarkerText` : texte 0,021 -> 0,024, ligne 2 0,86 -> 0,9, plaque 0,84 -> 0,93 d'opacité, texte blanc pur ; décalage du nom calculé sur la taille réellement dessinée (`COMSPEC_ATAK_MkScale`).
+- `fn_mapOnDraw` : plancher du facteur texte écran 0,8 -> 0,95 (noms de lieux, indicatifs, repères).
+- Non testé en jeu. À vérifier : téléphone porté et plein écran (S7 et un autre terminal), zoom loin / moyen / près ; symboles OTAN plus petits et une seule fois (si un grand symbole Arma reste dessiné sous le petit, `showMarkers` n'est pas pris en compte par le jeu) ; zones pleines, bordées et hachurées ; traits tracés à la main ; carte JTAC inchangée.
+
+---
+
 ## Objets d'inventaire en vraie 3D, pylônes relais retravaillés jour et nuit (ATAK natif 1.94.0)
 
 ### Résumé joueur
