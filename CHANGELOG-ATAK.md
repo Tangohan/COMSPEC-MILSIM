@@ -54,7 +54,7 @@ EN : Drone app redone, clearer map, antenna screwed onto the case
 - Settings, Credits and Status show the version with the build date; if your community's plan does not include the Athena map, a window explains once why your photo was not sent.
 
 ### Détail technique
-Regroupe #820, #822, #825, #826, #827, #829 et #830 (une seule version : ATAK natif 1.95.0, COMSPEC Link inchangé 2.0.85 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.14 7ba409e » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin, que HEMTT ne produit pas et dont l’ancienne copie ne décrit plus les textures d’antenne régénérées).
+Regroupe #820, #822, #825, #826, #827, #829 et #830 (une seule version : ATAK natif 1.95.0, COMSPEC Link inchangé 2.0.85 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.14 1c505a2 » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin, que HEMTT ne produit pas et dont l’ancienne copie ne décrit plus les textures d’antenne régénérées).
 
 #### Numéro de build complet dans le téléphone (#822)
 
