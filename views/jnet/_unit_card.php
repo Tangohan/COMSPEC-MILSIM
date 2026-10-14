@@ -2,6 +2,7 @@
 declare(strict_types=1);
 /**
  * Carte d’unité (lien vers son espace). Attend $u (JnetSpaceService::unitCard).
+ * Avec des visages ($u['faces']), la carte montre qui compose l’unité et qui est disponible.
  * @var array<string, mixed> $u
  */
 $h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
@@ -9,6 +10,8 @@ $accent = (string) ($u['accent'] ?? '');
 $st = (array) ($u['strength'] ?? []);
 $total = (int) ($st['total'] ?? 0);
 $fill = max(0, min(100, (int) ($u['fill'] ?? 0)));
+$faces = is_array($u['faces'] ?? null) ? $u['faces'] : [];
+$activity = (string) ($u['activity'] ?? '');
 ?>
 <a class="jn-unit" href="<?= $h((string) $u['href']) ?>"<?= $accent !== '' ? ' style="--jn-unit: ' . $h($accent) . '"' : '' ?>>
     <span class="jn-unit__top">
@@ -22,6 +25,22 @@ $fill = max(0, min(100, (int) ($u['fill'] ?? 0)));
             <span class="jn-unit__sub"><?= (int) $u['subCount'] ?> sous-unité<?= (int) $u['subCount'] > 1 ? 's' : '' ?></span>
         <?php endif; ?>
     </span>
+    <?php if ($faces !== []): ?>
+        <span class="jn-unit__faces">
+            <?php foreach ($faces as $f): ?>
+                <span class="jn-face<?= ($f['duty'] ?? '') === 'off' ? ' is-off' : '' ?>" title="<?= $h((string) ($f['name'] ?? '')) ?> · <?= ($f['duty'] ?? '') === 'off' ? 'indisponible' : 'disponible' ?>">
+                    <?php if (is_string($f['photo'] ?? null) && $f['photo'] !== ''): ?>
+                        <img src="<?= $h((string) $f['photo']) ?>" alt="">
+                    <?php else: ?>
+                        <?= $h((string) ($f['initials'] ?? '?')) ?>
+                    <?php endif; ?>
+                </span>
+            <?php endforeach; ?>
+            <?php if ($total > count($faces)): ?>
+                <span class="jn-face jn-face--more">+<?= $total - count($faces) ?></span>
+            <?php endif; ?>
+        </span>
+    <?php endif; ?>
     <span class="jn-meter" role="img" aria-label="<?= (int) ($st['available'] ?? 0) ?> disponibles sur <?= $total ?>">
         <span style="width: <?= $fill ?>%"></span>
     </span>
@@ -31,7 +50,7 @@ $fill = max(0, min(100, (int) ($u['fill'] ?? 0)));
             <span class="jn-unit__last"><?= $h((string) $u['lastActivity']) ?></span>
         <?php endif; ?>
     </span>
-    <span class="jn-unit__activity">
-        <?= (string) ($u['activity'] ?? '') !== '' ? $h((string) $u['activity']) : 'Aucune opération engagée' ?>
+    <span class="jn-unit__activity<?= $activity === '' ? ' is-idle' : '' ?>">
+        <?= $activity !== '' ? $h($activity) : 'Aucune opération engagée' ?>
     </span>
 </a>

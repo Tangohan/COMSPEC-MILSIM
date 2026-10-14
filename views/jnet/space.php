@@ -22,9 +22,9 @@ $exBack = (string) ($space['href'] ?? url('jnet'));
 $parentLabel = (string) ($parent['label'] ?? '');
 $parentHref = (string) ($parent['href'] ?? '');
 $hasParentUnit = (int) ($parent['id'] ?? -1) > 0;
-$noExchanges = $received === [] && $internal === [] && $sentUp === [];
 $guideContext = 'unit';
-$composeLabel = 'Publier un échange';
+$leadOp = $spaceOps[0] ?? null;
+$composeLabel = 'Partager avec ' . $label;
 $face = static function (array $p) use ($h): string {
     $photo = $p['photo'] ?? null;
     if (is_string($photo) && $photo !== '') {
@@ -38,6 +38,8 @@ $face = static function (array $p) use ($h): string {
     <?php require base_path('views/jnet/_spaces_rail.php'); ?>
 
     <div class="jn-main">
+        <?php $diffusionText = 'Espace ' . $label . ' — diffusion : membres de ' . $label . ' et chaîne de commandement'; require base_path('views/jnet/_diffusion.php'); ?>
+
         <nav class="jn-crumbs" aria-label="Échelons">
             <ol>
                 <?php foreach ($chain as $c): ?>
@@ -57,24 +59,28 @@ $face = static function (array $p) use ($h): string {
                 <?php if ($badge !== ''): ?>
                     <img class="jn-emblem jn-emblem--img" src="<?= $h($badge) ?>" alt="Insigne de <?= $h($label) ?>">
                 <?php else: ?>
-                    <span class="jn-emblem" aria-hidden="true"><?= $h($monogram) ?></span>
+                    <span class="jn-shield" aria-hidden="true">
+                        <svg viewBox="0 0 80 92" width="72" height="83"><path d="M40 3 76 15v27c0 22-15 38-36 47C19 80 4 64 4 42V15z" fill="var(--jn-shield-fill)" stroke="var(--jn-unit)" stroke-width="4" stroke-linejoin="round"/></svg>
+                        <span class="jn-shield__mark"><?= $h($monogram) ?></span>
+                    </span>
                 <?php endif; ?>
                 <div class="jn-head__text">
-                    <p class="jn-kicker">Espace d’unité</p>
+                    <p class="jn-chip"><?= $hasParentUnit ? 'Rattachée à ' . $h($parentLabel) : 'Espace d’unité' ?></p>
                     <h1 id="jn-space-title" class="jn-head__name"><?= $h($label) ?></h1>
                     <p class="jn-head__lead">
-                        <?php if ($hasParentUnit): ?>
-                            Sous <a href="<?= $h($parentHref) ?>"><?= $h($parentLabel) ?></a> ·
-                        <?php endif; ?>
-                        Chef <b><?= $h((string) ($space['leader'] ?? '') !== '' ? (string) $space['leader'] : 'non désigné') ?></b>
-                        · Adjoint <b><?= $h((string) ($space['deputy'] ?? '') !== '' ? (string) $space['deputy'] : 'non désigné') ?></b>
+                        Chef : <b><?= $h((string) ($space['leader'] ?? '') !== '' ? (string) $space['leader'] : 'non désigné') ?></b>
+                        · Adjoint : <b><?= $h((string) ($space['deputy'] ?? '') !== '' ? (string) $space['deputy'] : 'non désigné') ?></b>
                     </p>
                 </div>
             </div>
-            <dl class="jn-figures">
-                <div><dt>Disponibles</dt><dd><?= (int) $strength['available'] ?><small> / <?= (int) $strength['total'] ?></small></dd></div>
-                <div><dt>Opérations</dt><dd><?= (int) ($spaceOpsTotal ?? 0) ?></dd></div>
-                <div><dt>Sous-unités</dt><dd><?= count($subTree) ?></dd></div>
+            <dl class="jn-figures jn-figures--big">
+                <div class="is-ok"><dt>disponibles</dt><dd><?= (int) $strength['available'] ?><small>/<?= (int) $strength['total'] ?></small></dd></div>
+                <?php if ($leadOp !== null): ?>
+                    <div class="is-accent jn-figures__op"><dt><?= $h((string) ($leadOp['state'] ?? '')) ?><?= (int) ($spaceOpsTotal ?? 0) > 1 ? ' · ' . (int) $spaceOpsTotal . ' opérations' : '' ?></dt><dd><a href="<?= $h(url('jnet/operations/' . (int) ($leadOp['id'] ?? 0))) ?>"><?= $h((string) ($leadOp['title'] ?? '')) ?></a></dd></div>
+                <?php else: ?>
+                    <div><dt>opération</dt><dd>0</dd></div>
+                <?php endif; ?>
+                <div><dt>sous-unité<?= count($subTree) > 1 ? 's' : '' ?></dt><dd><?= count($subTree) ?></dd></div>
             </dl>
         </section>
 
@@ -87,56 +93,41 @@ $face = static function (array $p) use ($h): string {
             </div>
         <?php else: ?>
             <section class="jn-section" aria-labelledby="jn-ex-title">
-                <div class="jn-section__head">
-                    <div>
-                        <h2 id="jn-ex-title">Échanges</h2>
-                        <p class="jn-section__lead">Ce qui descend du commandement, ce qui circule dans l’unité, ce qui remonte.</p>
-                    </div>
-                </div>
-
-                <?php if (!empty($canPost)): ?>
-                    <?php require base_path('views/jnet/_exchange_composer.php'); ?>
-                <?php else: ?>
+                <h2 id="jn-ex-title" class="sr-only">Échanges</h2>
+                <?php if (empty($canPost)): ?>
                     <p class="jn-hint">Vous consultez cet espace sans en être membre : la publication est réservée à l’unité et à son encadrement.</p>
                 <?php endif; ?>
-
-                <?php if ($noExchanges): ?>
-                    <div class="jn-empty jn-empty--wide">
-                        <p><strong>Aucun échange pour l’instant dans cet espace.</strong></p>
-                        <p>
-                            <?= !empty($canPost)
-                                ? 'Cliquez sur « Publier un échange » : choisissez un type, un titre, puis à qui le diffuser.'
-                                : 'Les ordres, comptes rendus et renseignements de l’unité apparaîtront ici.' ?>
-                        </p>
-                    </div>
-                <?php else: ?>
-                    <div class="jn-flows">
-                        <?php
-                        $columns = [
-                            ['key' => 'down', 'icon' => '↓', 'title' => 'Reçu', 'lead' => 'Du commandement' . ($hasParentUnit ? ' (' . $parentLabel . ' et au-dessus)' : '') . ' et des unités partenaires.', 'items' => $received, 'empty' => 'Rien de reçu.'],
-                            ['key' => 'internal', 'icon' => '≡', 'title' => 'Dans l’unité', 'lead' => 'Le fil de l’unité et de ses sous-unités.', 'items' => $internal, 'empty' => 'Aucun échange interne.'],
-                            ['key' => 'up', 'icon' => '↑', 'title' => 'Remonté', 'lead' => $hasParentUnit ? 'Envoyé vers ' . $parentLabel . '.' : 'Envoyé vers l’échelon supérieur.', 'items' => $sentUp, 'empty' => 'Rien de remonté.'],
-                        ];
-                        ?>
-                        <?php foreach ($columns as $col): ?>
-                            <section class="jn-flow jn-flow--<?= $h($col['key']) ?>" aria-labelledby="jn-col-<?= $h($col['key']) ?>">
-                                <header class="jn-flow__head">
-                                    <span class="jn-flow__icon" aria-hidden="true"><?= $col['icon'] ?></span>
-                                    <div>
-                                        <h3 id="jn-col-<?= $h($col['key']) ?>"><?= $h($col['title']) ?> <span class="jn-flow__count"><?= count($col['items']) ?></span></h3>
-                                        <p><?= $h($col['lead']) ?></p>
-                                    </div>
-                                </header>
-                                <?php if ($col['items'] === []): ?>
-                                    <p class="jn-flow__empty"><?= $h($col['empty']) ?></p>
-                                <?php endif; ?>
-                                <?php foreach ($col['items'] as $ex): ?>
-                                    <?php require base_path('views/jnet/_exchange.php'); ?>
-                                <?php endforeach; ?>
-                            </section>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endif; ?>
+                <div class="jn-flows">
+                    <?php
+                    $upTarget = $hasParentUnit ? $parentLabel : 'l’échelon supérieur';
+                    $columns = [
+                        ['key' => 'down', 'icon' => '↓', 'title' => 'Reçu du commandement', 'lead' => 'Ordres et consignes descendus' . ($hasParentUnit ? ' de ' . $parentLabel . ' et au-dessus' : ' du commandement'), 'items' => $received, 'empty' => 'Rien de reçu pour l’instant.', 'variant' => 'card', 'perspective' => 'down'],
+                        ['key' => 'internal', 'icon' => '≡', 'title' => 'Dans l’unité', 'lead' => 'Le fil de ' . $label . ' et de ses sous-unités', 'items' => $internal, 'empty' => 'Aucun échange interne. Publiez le premier ci-dessus.', 'variant' => 'chat', 'perspective' => ''],
+                        ['key' => 'up', 'icon' => '↑', 'title' => 'Remonté vers ' . $upTarget, 'lead' => 'Comptes rendus et renseignement transmis', 'items' => $sentUp, 'empty' => 'Rien de remonté pour l’instant.', 'variant' => 'card', 'perspective' => 'up'],
+                    ];
+                    ?>
+                    <?php foreach ($columns as $col): ?>
+                        <section class="jn-flow jn-flow--<?= $h($col['key']) ?>" aria-labelledby="jn-col-<?= $h($col['key']) ?>">
+                            <header class="jn-flow__head">
+                                <span class="jn-flow__icon" aria-hidden="true"><?= $col['icon'] ?></span>
+                                <div>
+                                    <h3 id="jn-col-<?= $h($col['key']) ?>"><?= $h($col['title']) ?> <span class="jn-flow__count"><?= count($col['items']) ?></span></h3>
+                                    <p><?= $h($col['lead']) ?></p>
+                                </div>
+                            </header>
+                            <?php if ($col['key'] === 'internal' && !empty($canPost)): ?>
+                                <?php require base_path('views/jnet/_exchange_composer.php'); ?>
+                            <?php endif; ?>
+                            <?php if ($col['items'] === []): ?>
+                                <p class="jn-flow__empty"><?= $h($col['empty']) ?></p>
+                            <?php endif; ?>
+                            <?php $exVariant = $col['variant']; $exPerspective = $col['perspective']; ?>
+                            <?php foreach ($col['items'] as $ex): ?>
+                                <?php require base_path('views/jnet/_exchange.php'); ?>
+                            <?php endforeach; ?>
+                        </section>
+                    <?php endforeach; ?>
+                </div>
             </section>
         <?php endif; ?>
 
@@ -144,11 +135,11 @@ $face = static function (array $p) use ($h): string {
             <section class="jn-section" aria-labelledby="jn-sub-title">
                 <div class="jn-section__head">
                     <div>
-                        <h2 id="jn-sub-title">Sous-unités</h2>
-                        <p class="jn-section__lead">Chaque sous-unité a son espace. Ce qu’elle remonte apparaît ici dans « Dans l’unité ».</p>
+                        <h2 id="jn-sub-title">Sous-unités de <?= $h($label) ?></h2>
+                        <p class="jn-section__lead">Chaque sous-unité a son espace. Ce qu’elle publie pour <?= $h($label) ?> apparaît dans « Dans l’unité ».</p>
                     </div>
                 </div>
-                <?php $treeNodes = $subTree; require base_path('views/jnet/_unit_tree.php'); ?>
+                <?php $viewNodes = $subTree; $viewId = 'jn-sub-units'; $viewGrouped = false; require base_path('views/jnet/_unit_views.php'); ?>
             </section>
         <?php endif; ?>
 

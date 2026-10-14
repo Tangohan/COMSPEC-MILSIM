@@ -528,7 +528,8 @@ final class JnetSpaceService
     private function unitCard(JnetSpaceTree $tree, int $id, array $byUserId, array $ops, array $lastActivity): array
     {
         $n = (array) $tree->node($id);
-        $strength = $this->strengthOf($tree->memberIdsInSubtree($id), $byUserId);
+        $subtreeMembers = $tree->memberIdsInSubtree($id);
+        $strength = $this->strengthOf($subtreeMembers, $byUserId);
         $unitOps = $this->opsInSubtree($tree, $id, $ops);
         $op = $unitOps[0] ?? null;
         $parent = $tree->parentOf($id);
@@ -545,8 +546,33 @@ final class JnetSpaceService
             'activity' => $op !== null ? ((string) $op['title'] . ' — ' . (string) $op['state']) : '',
             'lastActivity' => $lastActivity[$id] ?? '',
             'subCount' => count($tree->childrenOf($id)),
+            'faces' => $this->facesOf($subtreeMembers, $byUserId),
             'href' => $this->spaceUrl($id),
         ];
+    }
+
+    /**
+     * Visages d'une unité pour les cartes « équipe » : disponibles d'abord, au plus $limit.
+     *
+     * @param list<int> $memberIds
+     * @param array<int, array<string, mixed>> $byUserId
+     * @return list<array{name:string, initials:string, photo:?string, duty:string, href:string}>
+     */
+    private function facesOf(array $memberIds, array $byUserId, int $limit = 5): array
+    {
+        $faces = [];
+        foreach ($this->membersOf($memberIds, $byUserId) as $p) {
+            $faces[] = [
+                'name' => (string) ($p['name'] ?? ''),
+                'initials' => (string) ($p['initials'] ?? '?'),
+                'photo' => is_string($p['photo'] ?? null) && $p['photo'] !== '' ? (string) $p['photo'] : null,
+                'duty' => (string) ($p['duty'] ?? ''),
+                'href' => (string) ($p['href'] ?? ''),
+            ];
+        }
+        usort($faces, static fn (array $a, array $b): int => ($a['duty'] === 'off') <=> ($b['duty'] === 'off'));
+
+        return array_slice($faces, 0, $limit);
     }
 
     /**
