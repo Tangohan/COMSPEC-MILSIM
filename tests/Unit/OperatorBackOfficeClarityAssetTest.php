@@ -68,7 +68,7 @@ final class OperatorBackOfficeClarityAssetTest extends TestCase
 
         $topbar = (string) file_get_contents($root . '/views/partials/back_office_topbar.php');
         self::assertStringContainsString('events_rsvp_pending', $topbar);
-        self::assertStringContainsString("'label' => 'MESSAGES'", $topbar);
+        self::assertStringContainsString("'label' => 'À LIRE'", $topbar);
 
         $shellCss = (string) file_get_contents($root . '/public/assets/css/back-office-shell.css');
         self::assertStringContainsString('.ath-sidebar__item-badge--notif', $shellCss);

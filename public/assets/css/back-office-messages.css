@@ -284,3 +284,6 @@ html[data-bo-theme="dark"] .msgx-avatar--staff { background: var(--mx-accent); c
 @media (prefers-reduced-motion: reduce) {
   .msgx * { animation: none !important; transition: none !important; }
 }
+
+/* Cible du défilement automatique : laisse la place à l'en-tête et au compositeur collants. */
+.msgx-stream > * { scroll-margin-top: 84px; scroll-margin-bottom: 96px; }

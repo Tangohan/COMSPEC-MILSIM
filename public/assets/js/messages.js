@@ -148,10 +148,17 @@
       stream.scrollTop = unread
         ? Math.max(0, unread.getBoundingClientRect().top - stream.getBoundingClientRect().top + stream.scrollTop - 24)
         : stream.scrollHeight;
-    } else if (unread) {
-      unread.scrollIntoView({ block: 'center' });
     } else {
-      window.scrollTo(0, document.documentElement.scrollHeight);
+      // Fil sans défilement interne (mobile, conversation courte) : on ne bouge la page que si
+      // la cible est hors de l'écran, jamais jusqu'au pied de page.
+      var target = unread || stream.lastElementChild;
+      if (target) {
+        var r = target.getBoundingClientRect();
+        var vh = window.innerHeight || document.documentElement.clientHeight;
+        if (r.top > vh * 0.8 || r.bottom < 0) {
+          target.scrollIntoView({ block: unread ? 'start' : 'end' });
+        }
+      }
     }
   }
 

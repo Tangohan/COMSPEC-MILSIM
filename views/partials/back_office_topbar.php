@@ -39,13 +39,14 @@ if (isset($boTopAlerts) && is_array($boTopAlerts)) {
     $boQualN = (int) ($boBadges['qualifications_expiring'] ?? 0);
     if ($boMsgN > 0) {
         $topAlerts[] = [
-            'label' => 'MESSAGES',
+            // Total de la boîte de réception : conversations, notifications du forum et courrier.
+            'label' => 'À LIRE',
             'n' => $boMsgN,
             'dot' => '#c72e2e',
             'fg' => '#a32222',
             'bg' => '#fdecec',
             'bd' => '#f6cccc',
-            'title' => $boMsgN . ' message' . ($boMsgN > 1 ? 's' : '') . ' à lire',
+            'title' => $boMsgN . ' élément' . ($boMsgN > 1 ? 's' : '') . ' non lu' . ($boMsgN > 1 ? 's' : '') . ' (messages, forum, courrier) — ouvrir la boîte de réception',
             'href' => url('boite-reception'),
         ];
     }

@@ -566,7 +566,10 @@ class TenantMessageRepository
             $ins = $this->pdo->prepare(
                 'INSERT INTO tenant_message_thread_users (thread_id, user_id, recipient_kind, via_label, last_read_at) VALUES (?, ?, ?, ?, ?)'
             );
-            $ins->execute([$threadId, $senderUserId, 'sender', null, date('Y-m-d H:i:s')]);
+            // Horloge de la base (comme created_at des messages) : évite tout décalage de fuseau PHP / MySQL.
+            $this->pdo->prepare(
+                'INSERT INTO tenant_message_thread_users (thread_id, user_id, recipient_kind, via_label, last_read_at) VALUES (?, ?, ?, NULL, NOW())'
+            )->execute([$threadId, $senderUserId, 'sender']);
             foreach ($recipients as $userId => $viaLabel) {
                 $userId = (int) $userId;
                 if ($userId < 1 || $userId === $senderUserId) {
