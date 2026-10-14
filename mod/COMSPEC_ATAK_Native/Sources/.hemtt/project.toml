@@ -2,6 +2,7 @@
 # puis copier .hemttout/build/addons/comspec_atak_native_main.pbo vers ../@COMSPEC_ATAK_Native/addons/main.pbo.
 # Empreinte du build (date, commit) : python3 ../tools/stamp_build.py avant, --reset après (docs/VERSIONING.md).
 # Même chose pour comspec_atak_native_towers.pbo (pylônes relais 3D) -> ../@COMSPEC_ATAK_Native/addons/towers.pbo.
+# Et comspec_atak_native_items.pbo (objets d'inventaire 3D) -> ../@COMSPEC_ATAK_Native/addons/items.pbo.
 name = "COMSPEC ATAK Native"
 prefix = "comspec_atak_native"
 mainprefix = "z"

@@ -10,6 +10,7 @@ if not exist "%OUT%\addons" mkdir "%OUT%\addons"
 :: Sortie HEMTT copiee sans la renommer : deux PBO du meme addon, Arma lit souvent l'ancien (plus de journal ni de connexion).
 if exist "%OUT%\addons\comspec_atak_native_main.pbo" del /q "%OUT%\addons\comspec_atak_native_main.pbo"
 if exist "%OUT%\addons\comspec_atak_native_towers.pbo" del /q "%OUT%\addons\comspec_atak_native_towers.pbo"
+if exist "%OUT%\addons\comspec_atak_native_items.pbo" del /q "%OUT%\addons\comspec_atak_native_items.pbo"
 dotnet publish "%ROOT%COMSPECATAKNativeExtension\COMSPECATAKNativeExtension.csproj" -c Release -r win-x64 --self-contained true
 if errorlevel 1 exit /b 1
 copy /Y "%ROOT%COMSPECATAKNativeExtension\bin\publish\COMSPECATAKNativeExtension_x64.dll" "%OUT%\COMSPECATAKNativeExtension_x64.dll" >nul
@@ -30,6 +31,9 @@ copy /Y "%TEMP%\comspec_build_info.hpp" "%STAMPFILE%" >nul
 if not "%BERR%"=="0" exit /b 1
 :: Pylones relais 3D (modeles MLOD volumineux) : PBO a part.
 "%BUILDER%" "%ROOT%Sources\addons\towers" "%OUT%\addons" -packonly -prefix=z\comspec_atak_native\addons\towers
+if errorlevel 1 exit /b 1
+:: Objets d'inventaire 3D (modeles MLOD, atlas) : PBO a part.
+"%BUILDER%" "%ROOT%Sources\addons\items" "%OUT%\addons" -packonly -prefix=z\comspec_atak_native\addons\items
 if errorlevel 1 exit /b 1
 :: Overwatch connect est embarque : connexion Athena, synchro, FRS, Reco... sans charger @COMSPECOverwatch.
 set "OW=%ROOT%..\UptoDate"

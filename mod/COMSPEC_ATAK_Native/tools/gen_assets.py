@@ -1783,6 +1783,9 @@ def patch_assets(tmp):
 
 
 def convert(img, name, tmp):
+    # Icônes d'objets rendues en 3D par model_items.py (render/icon_*.png) : ce sont elles qui comptent.
+    if name.startswith("item_") and os.path.exists(os.path.join(HERE, "render", "icon_" + name[5:] + ".png")):
+        return
     png = os.path.join(tmp, name + ".png")
     img.save(png)
     paa = os.path.join(OUT, name + ".paa")
