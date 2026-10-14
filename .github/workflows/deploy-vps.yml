@@ -100,6 +100,26 @@ jobs:
             if [ -d /var/www/athena.ttrd.fr.git-broke/public/assets/img/communities ]; then
               echo "NOTE: logos communauté encore sous athena.ttrd.fr.git-broke — voir docs/bugs/2026-10-01-community-logos-git-broke-orphelins.md"
             fi
+            # Reload PHP-FPM sans couper les requêtes en cours : avec process_control_timeout = 0 (défaut),
+            # le reload tue les workers occupés et nginx répond 502 au mod (ex. POST /api/atak/explosive-timers
+            # à 10:50:24 UTC le 2026-10-14, pile pendant le déploiement de #802). On laisse 10 s aux requêtes.
+            for FPM_CONF in /etc/php/8.4/fpm/php-fpm.conf /etc/php-fpm.conf; do
+              if [ -f "$FPM_CONF" ] && ! grep -qE '^\s*process_control_timeout\s*=' "$FPM_CONF"; then
+                cp "$FPM_CONF" "$FPM_CONF.bak-deploy"
+                if grep -qE '^\s*;\s*process_control_timeout\s*=' "$FPM_CONF"; then
+                  sed -i -E 's/^\s*;\s*process_control_timeout\s*=.*/process_control_timeout = 10s/' "$FPM_CONF"
+                else
+                  sed -i -E '0,/^\[global\]/s//[global]\nprocess_control_timeout = 10s/' "$FPM_CONF"
+                fi
+                FPM_TEST="$(command -v php-fpm8.4 || command -v php-fpm || true)"
+                if [ -n "$FPM_TEST" ] && ! "$FPM_TEST" -t -y "$FPM_CONF" >/dev/null 2>&1; then
+                  echo "WARN: process_control_timeout refusé par php-fpm -t, configuration restaurée"
+                  mv "$FPM_CONF.bak-deploy" "$FPM_CONF"
+                else
+                  echo "PHP-FPM : process_control_timeout = 10s (reload sans 502)"
+                fi
+              fi
+            done
             if command -v systemctl >/dev/null 2>&1; then
               systemctl reload php8.4-fpm 2>/dev/null || systemctl reload php-fpm 2>/dev/null || true
             fi

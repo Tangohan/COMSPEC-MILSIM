@@ -38,6 +38,32 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Erreur 502 au déploiement, journal de l'appareil à la bonne heure (site + connect.pbo, sans changement de version)
+
+### Résumé joueur
+Type : correctif
+FR : Moins de fausses erreurs dans le journal de ton téléphone
+- Une mise à jour d'Athena ne coupe plus les envois en cours : fini l'erreur 502 isolée pendant un déploiement.
+- Une erreur 502 ou 504 passagère s'affiche en alerte et n'envoie plus de rapport d'erreur automatique.
+- Le journal de l'appareil sur Athena affiche l'heure de ton PC, au lieu d'avoir deux heures d'avance.
+- L'alerte de compatibilité ZEN n'apparaît plus à chaque mission.
+EN : Fewer false errors in your phone's log
+- An Athena update no longer cuts sends in progress: no more lone 502 error during a deployment.
+- A passing 502 or 504 error shows as a warning and no longer sends an automatic error report.
+- The device log on Athena shows your PC's time, instead of running two hours ahead.
+- The ZEN compatibility warning no longer shows up at every mission.
+
+### Détail technique
+
+- Cause du 502 sur `POST /api/atak/explosive-timers` (2026-10-14 12:50:24 heure du joueur = 10:50:24 UTC) : le déploiement de #802 (étape « Pull on VPS » 10:50:19 → 10:50:24) finit par `systemctl reload php8.4-fpm`. Avec `process_control_timeout = 0` (défaut Debian), le reload tue les workers occupés et nginx renvoie 502. Le code de l'endpoint n'est pas en cause.
+- `deploy-vps.yml` : règle une fois `process_control_timeout = 10s` dans `/etc/php/8.4/fpm/php-fpm.conf` (sauvegarde `.bak-deploy`, `php-fpm -t` avant, restauration si refusé) puis reload.
+- Connect `fn_extensionCallback` (PostError) : 502 et 504 rejoignent 0/-1/401/403/429/503 en WARN, donc plus de `reportDiag` automatique.
+- Connect `XEH_preInit` : la ligne « Stub zen_attributes_fnc_addAttribute installé » passe en INFO, une fois par lancement d'Arma (`uiNamespace`).
+- Connect `fn_diagStatusSnapshot` : « Version des mods » affiche « ATAK natif x.y.z » quand l'ancienne surcouche Athena n'est pas chargée (avant : « Athena — »).
+- Connect `fn_logDump` : `athenaReady=false` du dump « boot » est suivi de « (avant le handshake : normal au démarrage) » ; ce dump part à CBA_settingsInitialized, avant le handshake.
+- `AtakDeviceLogRepository` : COMSPEC Link envoie `logged_at` en heure locale sans fuseau ; l'écart entre la ligne la plus récente du lot et l'heure serveur, arrondi au quart d'heure (15 min à 14 h), est retiré des heures sans fuseau.
+- comspec_overwatch_connect.pbo repatché (tools/pbo_patch.py, 4 fichiers). main.pbo inchangé.
+
 ## Eden : menu COMSPEC ATAK réparé, TBR et aide relais (ATAK natif 1.92.0)
 
 ### Résumé joueur
