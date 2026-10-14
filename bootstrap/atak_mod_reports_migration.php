@@ -83,6 +83,22 @@ function run_atak_mod_reports_migration(PDO $pdo): void
                 $pdo->exec('ALTER TABLE atak_mod_reports ADD COLUMN ' . $column . ' ' . $definition);
             }
         }
+        // E-mails automatiques au joueur (accès refusé par Athena…) : un seul par joueur, problème et jour.
+        if (!$hasTable('atak_player_auto_notices')) {
+            $pdo->exec(
+                "CREATE TABLE atak_player_auto_notices (
+                    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    steam_uid VARCHAR(32) NOT NULL,
+                    problem VARCHAR(48) NOT NULL,
+                    sent_on DATE NOT NULL,
+                    report_id BIGINT UNSIGNED DEFAULT NULL,
+                    diagnosis VARCHAR(48) DEFAULT NULL,
+                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    PRIMARY KEY (id),
+                    UNIQUE KEY uk_apan_player_day (steam_uid, problem, sent_on)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+            );
+        }
     } catch (Throwable) {
         // Idempotent best-effort ; ne pas faire échouer le bootstrap API.
     }

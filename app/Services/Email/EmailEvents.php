@@ -140,6 +140,9 @@ final class EmailEvents
     /** Réponse de l'exploitation au joueur qui a signalé un problème du mod (page /admin/atak-mod-reports). */
     public const ATAK_MOD_REPORT_REPLY = 'ATAK_MOD_REPORT_REPLY';
 
+    /** E-mail automatique au joueur dont le jeu se voit refuser l'accès par Athena (rapport auto « unauthorized »). */
+    public const ATAK_PLAYER_ACCESS_REFUSED = 'ATAK_PLAYER_ACCESS_REFUSED';
+
     /** Nouvelle communauté créée — alerte à la boîte technique des incidents. */
     public const PLATFORM_NEW_COMMUNITY = 'PLATFORM_NEW_COMMUNITY';
 

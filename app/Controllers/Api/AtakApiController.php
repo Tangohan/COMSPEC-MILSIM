@@ -2510,6 +2510,23 @@ class AtakApiController
             $ip = substr($ip, 0, 45);
         }
 
+        // Accès refusé par Athena (unauthorized, session refusée) : le mod ne voit qu'un 401/403,
+        // le diagnostic serveur (session jeu, compte, clé) est ajouté au détail du rapport.
+        $authNotifier = null;
+        $authDiagnosis = null;
+        if ($steam !== null && \App\Services\Monitoring\AtakAuthFailureNotifier::isAuthFailure($source, $message, $detail)) {
+            try {
+                $authNotifier = new \App\Services\Monitoring\AtakAuthFailureNotifier(\App\Core\Database::getPdo(), $this->modReports());
+                $accounts = $this->modReports()->linkedAccountsBySteam([$steam]);
+                $tenantForKey = isset($accounts[$steam]) && $accounts[$steam]['tenant_id'] > 0 ? $accounts[$steam]['tenant_id'] : null;
+                $authDiagnosis = $authNotifier->diagnose($steam, $tenantForKey);
+                $detail = trim($detail . "\nDiagnostic Athena : " . $authDiagnosis['text']
+                    . ($authDiagnosis['no_access_key'] ? ' Aucune clé d’accès ATAK configurée pour la communauté.' : ''));
+            } catch (\Throwable) {
+                $authNotifier = null;
+            }
+        }
+
         try {
             $result = $this->modReports()->upsert([
                 'severity' => $severity,
@@ -2558,6 +2575,22 @@ class AtakApiController
                     'extension_version' => $extVersion,
                     'arma_build' => $armaBuild,
                 ]);
+            } catch (\Throwable) {
+            }
+        }
+
+        // Prévenir le joueur par e-mail (Steam lié, au plus une fois par jour), jamais bloquant.
+        if ($authNotifier !== null) {
+            try {
+                $authNotifier->handle([
+                    'id' => $result['id'],
+                    'steam_uid' => $steam,
+                    'message' => $message,
+                    'player_name' => $playerName,
+                    'callsign' => $callsign,
+                    'mod_version' => $modVersion,
+                    'extension_version' => $extVersion,
+                ], $authDiagnosis);
             } catch (\Throwable) {
             }
         }

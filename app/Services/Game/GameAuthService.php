@@ -20,6 +20,7 @@ use App\Support\ComspecApiKeyAuth;
 use App\Support\OperatorTacticalIdentity;
 use App\Support\SilentSchemaMigration;
 use App\Support\SteamId;
+use App\Support\UtcDateTime;
 
 final class GameAuthService
 {
@@ -136,7 +137,7 @@ final class GameAuthService
         if ($row === null) {
             return $this->fail('OTP_EXPIRED', 401);
         }
-        if (strtotime((string) ($row['expires_at'] ?? '')) < time()) {
+        if (UtcDateTime::isPast($row['expires_at'] ?? null)) {
             return $this->fail('OTP_EXPIRED', 401);
         }
         if ((int) ($row['attempts'] ?? 0) >= 8) {
@@ -287,7 +288,7 @@ final class GameAuthService
         if ($session === null) {
             return $this->fail('SESSION_EXPIRED', 401);
         }
-        if (strtotime((string) ($session['refresh_expires_at'] ?? '')) < time()) {
+        if (UtcDateTime::isPast($session['refresh_expires_at'] ?? null)) {
             return $this->fail('SESSION_EXPIRED', 401);
         }
         $account = $this->accounts->findById((int) $session['account_id']);
@@ -372,7 +373,7 @@ final class GameAuthService
         if ($row === null) {
             return null;
         }
-        if (strtotime((string) ($row['expires_at'] ?? '')) < time()) {
+        if (UtcDateTime::isPast($row['expires_at'] ?? null)) {
             return null;
         }
 
@@ -620,7 +621,7 @@ final class GameAuthService
         );
         $logo = CommunityMediaDetails::publicUrl((string) ($exp['logo_path'] ?? ''))
             ?: (string) ($mergedBrand['logo_url'] ?? $tenant['logo_url'] ?? '');
-        $expiresIso = gmdate('c', strtotime((string) ($session['expires_at'] ?? 'now')) ?: time());
+        $expiresIso = gmdate('c', UtcDateTime::timestamp($session['expires_at'] ?? null) ?? time());
         $phone = ['number' => '', 'imei' => '', 'mac' => '', 'format' => ''];
         try {
             $phone = (new GamePhoneIdentityRepository())->forUser($tenantId, $userId);
