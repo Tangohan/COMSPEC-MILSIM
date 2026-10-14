@@ -15,6 +15,8 @@ final class EmailEvents
     public const COMMUNITY_CREATION_CHECKLIST = 'COMMUNITY_CREATION_CHECKLIST';
     /** Formule offerte à la communauté par l'administration de la plateforme — e-mail aux gestionnaires. */
     public const PLAN_GIFT_GRANTED = 'PLAN_GIFT_GRANTED';
+    /** Essai fondateur ou formule offerte qui se termine bientôt — e-mail aux gestionnaires. */
+    public const PLAN_END_WARNING = 'PLAN_END_WARNING';
     public const NEW_COMMUNITY_MEMBER = 'NEW_COMMUNITY_MEMBER';
     /** Membre a quitté la communauté — notification aux responsables. */
     public const MEMBER_LEFT_COMMUNITY_STAFF = 'MEMBER_LEFT_COMMUNITY_STAFF';

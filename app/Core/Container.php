@@ -584,6 +584,7 @@ class Container
                 \App\Core\Database::getPdo()
             ),
             \App\Services\Cron\Jobs\PhotoCompressCronJob::class => new \App\Services\Cron\Jobs\PhotoCompressCronJob(),
+            \App\Services\Cron\Jobs\PlanEndWarningCronJob::class => new \App\Services\Cron\Jobs\PlanEndWarningCronJob(),
             \App\Repositories\AtakReportRoutingRepository::class => new \App\Repositories\AtakReportRoutingRepository(),
             \App\Services\Tactical\AtakBridgeModulesService::class => new \App\Services\Tactical\AtakBridgeModulesService(),
             \App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob::class => new \App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob(
@@ -636,6 +637,7 @@ class Container
                     self::get(\App\Services\Cron\Jobs\PersonnelAutoAdvancementCronJob::class),
                     self::get(\App\Services\Cron\Jobs\AdvancementSeniorityCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PhotoCompressCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\PlanEndWarningCronJob::class),
                 ],
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),

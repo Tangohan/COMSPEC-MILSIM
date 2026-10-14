@@ -41,6 +41,8 @@ final class CronSchedule
         'advancement_seniority' => 1440,
         // Passage borné à 90 s : le stock de photos se résorbe d'heure en heure.
         'photo_compress' => 60,
+        // Fins d'essai fondateur et de formule offerte : e-mail une fois par fin.
+        'plan_end_warning' => 360,
     ];
 
     public static function intervalMinutes(string $jobKey): int
