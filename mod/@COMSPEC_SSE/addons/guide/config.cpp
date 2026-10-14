@@ -46,7 +46,7 @@ class CfgHints {
             displayName = "$STR_COMSPEC_SSE_CFG_7549FAA67C";
             displayNameShort = "$STR_COMSPEC_SSE_CFG_7549FAA67C";
             description = "$STR_COMSPEC_SSE_CFG_9A715CB0F1";
-            tip = "Chaque chapitre de ce manuel correspond à une étape réelle d'un SSE.";
+            tip = "$STR_COMSPEC_SSE_CFG_3646C2D826";
             arguments[] = {};
             image = HINT_IMG;
             noImage = 0;
@@ -55,7 +55,7 @@ class CfgHints {
             displayName = "$STR_COMSPEC_SSE_CFG_B2EF3D8634";
             displayNameShort = "$STR_COMSPEC_SSE_CFG_5427FD158C";
             description = "$STR_COMSPEC_SSE_CFG_ACDEF74322";
-            tip = "Une identification certaine confirme l'appartenance du sujet à son organisation.";
+            tip = "$STR_COMSPEC_SSE_CFG_61CCF4C126";
             arguments[] = {};
             image = HINT_IMG;
             noImage = 0;
@@ -64,7 +64,7 @@ class CfgHints {
             displayName = "$STR_COMSPEC_SSE_CFG_F503CC4364";
             displayNameShort = "$STR_COMSPEC_SSE_CFG_3D7AF5EC00";
             description = "$STR_COMSPEC_SSE_CFG_25C0AE9942";
-            tip = "Le modèle du sac se règle dans les réglages CBA (COMSPEC SSE, Biométrie).";
+            tip = "$STR_COMSPEC_SSE_CFG_ABAA25A627";
             arguments[] = {};
             image = HINT_IMG;
             noImage = 0;
@@ -73,7 +73,7 @@ class CfgHints {
             displayName = "$STR_COMSPEC_SSE_CFG_B80CA83E9F";
             displayNameShort = "$STR_COMSPEC_SSE_CFG_F4F05DEBDE";
             description = "$STR_COMSPEC_SSE_CFG_B59B00E2C9";
-            tip = "« Pièces que je détiens » liste ce que vous portez.";
+            tip = "$STR_COMSPEC_SSE_CFG_8D04FF3E4A";
             arguments[] = {};
             image = HINT_IMG;
             noImage = 0;
@@ -82,7 +82,7 @@ class CfgHints {
             displayName = "$STR_COMSPEC_SSE_CFG_DB6388D385";
             displayNameShort = "$STR_COMSPEC_SSE_CFG_3343043971";
             description = "$STR_COMSPEC_SSE_CFG_54F61CC779";
-            tip = "Le Zeus voit tout le réseau, ce que vous ignorez en gris.";
+            tip = "$STR_COMSPEC_SSE_CFG_9F02B44AA2";
             arguments[] = {};
             image = HINT_IMG;
             noImage = 0;
@@ -91,7 +91,7 @@ class CfgHints {
             displayName = "$STR_COMSPEC_SSE_CFG_9FA7DC4B0C";
             displayNameShort = "$STR_COMSPEC_SSE_CFG_BFFAB189C7";
             description = "$STR_COMSPEC_SSE_CFG_A873796D42";
-            tip = "Le contenu numérique du SSE devient extractible au DL-7 sans rien saisir.";
+            tip = "$STR_COMSPEC_SSE_CFG_A46EA4BB22";
             arguments[] = {};
             image = HINT_IMG;
             noImage = 0;
@@ -100,7 +100,7 @@ class CfgHints {
             displayName = "$STR_COMSPEC_SSE_CFG_EF527E85F0";
             displayNameShort = "$STR_COMSPEC_SSE_CFG_EF527E85F0";
             description = "$STR_COMSPEC_SSE_CFG_0DA4135C9F";
-            tip = "Menu personnel, Campagne en cours : type, mission n°, personnages récurrents, journal.";
+            tip = "$STR_COMSPEC_SSE_CFG_37316FE63F";
             arguments[] = {};
             image = HINT_IMG;
             noImage = 0;
@@ -109,7 +109,7 @@ class CfgHints {
             displayName = "$STR_COMSPEC_SSE_CFG_D34119DF2D";
             displayNameShort = "$STR_COMSPEC_SSE_CFG_770CB7BEB2";
             description = "$STR_COMSPEC_SSE_CFG_F42128454E";
-            tip = "Menu COMSPEC SSE de la barre d'Eden : ce manuel à tout moment.";
+            tip = "$STR_COMSPEC_SSE_CFG_E01A8ED6C5";
             arguments[] = {};
             image = HINT_IMG;
             noImage = 0;
@@ -118,7 +118,7 @@ class CfgHints {
             displayName = "$STR_COMSPEC_SSE_CFG_0F926D953A";
             displayNameShort = "$STR_COMSPEC_SSE_CFG_0093EDC3AB";
             description = "$STR_COMSPEC_SSE_CFG_6E79CF4CEF";
-            tip = "Pour un drill SOT : campagne temporaire, puis « poser un exercice ici ».";
+            tip = "$STR_COMSPEC_SSE_CFG_1F35AA56A1";
             arguments[] = {};
             image = HINT_IMG;
             noImage = 0;
@@ -127,7 +127,88 @@ class CfgHints {
             displayName = "$STR_COMSPEC_SSE_CFG_385FD78DF8";
             displayNameShort = "$STR_COMSPEC_SSE_CFG_385FD78DF8";
             description = "$STR_COMSPEC_SSE_CFG_763969454F";
-            tip = "Les rôles ajoutés apparaissent dans les formulaires Zeus.";
+            tip = "$STR_COMSPEC_SSE_CFG_32875EE6F1";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class Datasets {
+            displayName = "$STR_COMSPEC_SSE_CFG_A917899E61";
+            displayNameShort = "$STR_COMSPEC_SSE_CFG_93A7F22476";
+            description = "$STR_COMSPEC_SSE_CFG_099DA36626";
+            tip = "$STR_COMSPEC_SSE_CFG_56C051C840";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class CaseRef {
+            displayName = "$STR_COMSPEC_SSE_CFG_EA0F6EC944";
+            displayNameShort = "$STR_COMSPEC_SSE_CFG_834EA30E42";
+            description = "$STR_COMSPEC_SSE_CFG_85EE05467D";
+            tip = "$STR_COMSPEC_SSE_CFG_8F9638520A";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class ModMission {
+            displayName = "$STR_COMSPEC_SSE_CFG_D5FAA07334";
+            displayNameShort = "$STR_COMSPEC_SSE_CFG_C9084946F5";
+            description = "$STR_COMSPEC_SSE_CFG_8767304505";
+            tip = "$STR_COMSPEC_SSE_CFG_086D7D3EAA";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class ModPeople {
+            displayName = "$STR_COMSPEC_SSE_CFG_F6800D38C9";
+            displayNameShort = "$STR_COMSPEC_SSE_CFG_EB3DCC5483";
+            description = "$STR_COMSPEC_SSE_CFG_BB03B66639";
+            tip = "$STR_COMSPEC_SSE_CFG_437FA69F3E";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class ModDigital {
+            displayName = "$STR_COMSPEC_SSE_CFG_C3B4425DDB";
+            displayNameShort = "$STR_COMSPEC_SSE_CFG_0A7C3A5AB0";
+            description = "$STR_COMSPEC_SSE_CFG_E272B72F39";
+            tip = "$STR_COMSPEC_SSE_CFG_439C4B448B";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class ModTools {
+            displayName = "$STR_COMSPEC_SSE_CFG_F7CD61CB3B";
+            displayNameShort = "$STR_COMSPEC_SSE_CFG_8DF66CF5F5";
+            description = "$STR_COMSPEC_SSE_CFG_A5427D36D6";
+            tip = "$STR_COMSPEC_SSE_CFG_6B1C0F1BB5";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class Documents {
+            displayName = "$STR_COMSPEC_SSE_CFG_DF90578A65";
+            displayNameShort = "$STR_COMSPEC_SSE_CFG_C513967CEA";
+            description = "$STR_COMSPEC_SSE_CFG_EAFF9C49E6";
+            tip = "$STR_COMSPEC_SSE_CFG_1C1FD222F7";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class Items {
+            displayName = "$STR_COMSPEC_SSE_CFG_0266B57201";
+            displayNameShort = "$STR_COMSPEC_SSE_CFG_C39E887B1D";
+            description = "$STR_COMSPEC_SSE_CFG_DE3BF4BD58";
+            tip = "$STR_COMSPEC_SSE_CFG_FFF57E16D1";
+            arguments[] = {};
+            image = HINT_IMG;
+            noImage = 0;
+        };
+        class Models {
+            displayName = "$STR_COMSPEC_SSE_CFG_144B2D2353";
+            displayNameShort = "$STR_COMSPEC_SSE_CFG_0F7183BE84";
+            description = "$STR_COMSPEC_SSE_CFG_C527E20D98";
+            tip = "$STR_COMSPEC_SSE_CFG_EFFB33E883";
             arguments[] = {};
             image = HINT_IMG;
             noImage = 0;
@@ -144,14 +225,23 @@ class Display3DEN {
                 items[] += {"COMSPEC_SSE_Menu"};
                 class COMSPEC_SSE_Menu {
                     text = "COMSPEC SSE";
-                    items[] = {"COMSPEC_SSE_MenuEden", "COMSPEC_SSE_MenuStart", "COMSPEC_SSE_MenuLinks", "COMSPEC_SSE_MenuCampaigns", "COMSPEC_SSE_MenuZeus", "COMSPEC_SSE_MenuCustom"};
+                    items[] = {"COMSPEC_SSE_MenuEden", "COMSPEC_SSE_MenuStart", "COMSPEC_SSE_MenuLinks", "COMSPEC_SSE_MenuCampaigns", "COMSPEC_SSE_MenuZeus", "COMSPEC_SSE_MenuDatasets", "COMSPEC_SSE_MenuCaseRef", "COMSPEC_SSE_MenuModMission", "COMSPEC_SSE_MenuModPeople", "COMSPEC_SSE_MenuModDigital", "COMSPEC_SSE_MenuModTools", "COMSPEC_SSE_MenuDocuments", "COMSPEC_SSE_MenuItems", "COMSPEC_SSE_MenuModels", "COMSPEC_SSE_MenuCustom"};
                 };
-                class COMSPEC_SSE_MenuEden { text = "Mise en place d'une mission"; action = "['COMSPEC_SSE', 'Eden'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuStart { text = "Prise en main (joueurs)"; action = "['COMSPEC_SSE', 'Start'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuLinks { text = "Organisations et tableau des liens"; action = "['COMSPEC_SSE', 'Links'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuCampaigns { text = "Campagnes"; action = "['COMSPEC_SSE', 'Campaigns'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuZeus { text = "Conduite au Zeus"; action = "['COMSPEC_SSE', 'Zeus'] call BIS_fnc_openFieldManual"; };
-                class COMSPEC_SSE_MenuCustom { text = "Personnalisation"; action = "['COMSPEC_SSE', 'Custom'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_SSE_MenuEden { text = "$STR_COMSPEC_SSE_CFG_D2BC59B49C"; action = "['COMSPEC_SSE', 'Eden'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_SSE_MenuStart { text = "$STR_COMSPEC_SSE_CFG_20FDBBF21A"; action = "['COMSPEC_SSE', 'Start'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_SSE_MenuLinks { text = "$STR_COMSPEC_SSE_CFG_DB6388D385"; action = "['COMSPEC_SSE', 'Links'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_SSE_MenuCampaigns { text = "$STR_COMSPEC_SSE_CFG_EF527E85F0"; action = "['COMSPEC_SSE', 'Campaigns'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_SSE_MenuZeus { text = "$STR_COMSPEC_SSE_CFG_0F926D953A"; action = "['COMSPEC_SSE', 'Zeus'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_SSE_MenuDatasets { text = "$STR_COMSPEC_SSE_CFG_A917899E61"; action = "['COMSPEC_SSE', 'Datasets'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_SSE_MenuCaseRef { text = "$STR_COMSPEC_SSE_CFG_EA0F6EC944"; action = "['COMSPEC_SSE', 'CaseRef'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_SSE_MenuModMission { text = "$STR_COMSPEC_SSE_CFG_D5FAA07334"; action = "['COMSPEC_SSE', 'ModMission'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_SSE_MenuModPeople { text = "$STR_COMSPEC_SSE_CFG_F6800D38C9"; action = "['COMSPEC_SSE', 'ModPeople'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_SSE_MenuModDigital { text = "$STR_COMSPEC_SSE_CFG_C3B4425DDB"; action = "['COMSPEC_SSE', 'ModDigital'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_SSE_MenuModTools { text = "$STR_COMSPEC_SSE_CFG_F7CD61CB3B"; action = "['COMSPEC_SSE', 'ModTools'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_SSE_MenuDocuments { text = "$STR_COMSPEC_SSE_CFG_DF90578A65"; action = "['COMSPEC_SSE', 'Documents'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_SSE_MenuItems { text = "$STR_COMSPEC_SSE_CFG_0266B57201"; action = "['COMSPEC_SSE', 'Items'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_SSE_MenuModels { text = "$STR_COMSPEC_SSE_CFG_144B2D2353"; action = "['COMSPEC_SSE', 'Models'] call BIS_fnc_openFieldManual"; };
+                class COMSPEC_SSE_MenuCustom { text = "$STR_COMSPEC_SSE_CFG_385FD78DF8"; action = "['COMSPEC_SSE', 'Custom'] call BIS_fnc_openFieldManual"; };
             };
         };
     };

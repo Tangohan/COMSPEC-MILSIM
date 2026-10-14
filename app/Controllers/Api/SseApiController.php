@@ -1219,7 +1219,7 @@ final class SseApiController
             return $this->jsonBodyCache;
         }
         if (HttpJsonBody::isMultipart()) {
-            $this->jsonBodyCache = HttpJsonBody::postFields();
+            $this->jsonBodyCache = self::withCaseCode(HttpJsonBody::postFields());
 
             return $this->jsonBodyCache;
         }
@@ -1231,9 +1231,27 @@ final class SseApiController
         }
         $decoded = json_decode($raw, true);
         unset($raw);
-        $this->jsonBodyCache = is_array($decoded) ? $decoded : [];
+        $this->jsonBodyCache = self::withCaseCode(is_array($decoded) ? $decoded : []);
 
         return $this->jsonBodyCache;
+    }
+
+    /**
+     * Le pack @COMSPEC_SSE envoie la référence de dossier sous « case_reference » ;
+     * SEEK Overwatch et l'ATAK natif sous « case_code ». Les deux classent la fiche.
+     *
+     * @param array<string, mixed> $body
+     * @return array<string, mixed>
+     */
+    public static function withCaseCode(array $body): array
+    {
+        $code = trim((string) ($body['case_code'] ?? ''));
+        $ref = $body['case_reference'] ?? '';
+        if ($code === '' && is_string($ref) && trim($ref) !== '') {
+            $body['case_code'] = trim($ref);
+        }
+
+        return $body;
     }
 
     /**
