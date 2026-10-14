@@ -6069,7 +6069,7 @@ return [
     'Cartographie tactique et positions en temps réel' => 'Tactical mapping and real-time positions',
     'Cartographie, relief, occupation du sol, itinéraires.' => 'Mapping, relief, land cover, routes.',
     'Cartographier les fonctions réelles' => 'Map actual duties',
-    'Cartouches des repères' => 'Marker labels',
+    'Coordonnées des repères' => 'Marker coordinates',
     'Cas' => 'Case',
     'Cas fréquents' => 'Common cases',
     'Cas par cas' => 'Case by case',
