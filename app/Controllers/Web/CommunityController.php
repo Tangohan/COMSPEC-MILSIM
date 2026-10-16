@@ -1014,7 +1014,7 @@ class CommunityController
                 'eyebrow' => 'Sans engagement',
                 'description' => 'Forum, documents, messagerie, effectifs et formations de base pour démarrer sans frais.',
                 'meta' => 'Gratuit',
-                'limits' => ['10 places', '5 formations', '3 événements par mois', 'Courrier et ATAK non inclus'],
+                'limits' => ['10 places', '5 formations', '3 événements par mois', 'Liaison jeu de base (positions, comptes rendus, briefing)'],
                 'value' => 'free',
                 'paid' => false,
                 'available' => true,

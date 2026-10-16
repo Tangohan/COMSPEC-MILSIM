@@ -9417,6 +9417,7 @@ return [
     'Courrier archivé à retrouver.' => 'Archived mail to retrieve.',
     'Courrier entrant sans réponse attendue.' => 'Incoming mail with no reply expected.',
     'Courrier et ATAK non inclus' => 'Mail and ATAK not included',
+    'Liaison jeu de base (positions, comptes rendus, briefing)' => 'Basic game link (positions, reports, briefing)',
     'Courrier frontière' => 'Border courier',
     'Courrier interne et notifications écrites.' => 'Internal mail and written notifications.',
     'Courrier officiel' => 'Official mail',
