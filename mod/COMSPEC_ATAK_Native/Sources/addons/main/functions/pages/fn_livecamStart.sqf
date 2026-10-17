@@ -37,9 +37,11 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_LivecamPfh" }) then {
             _v = ["path", ["LIVECAM", eyePos _u, [0, 1 - (_dd / _mr) ^ 2] select (_dd < _mr), 8]] call comspec_atak_native_fnc_videoLink;
         };
         private _noPath = (_v getOrDefault ["active", false]) && {!(_v getOrDefault ["ok", true])};
-        if (!alive _u || {!([_u] call comspec_atak_native_fnc_hasDevice)} || _noPath) exitWith {
+        // Partage retiré par le porteur (fn_camShare "revoke").
+        private _noAcc = !(["can", _u] call comspec_atak_native_fnc_camShare);
+        if (!alive _u || {!([_u] call comspec_atak_native_fnc_hasDevice)} || _noPath || _noAcc) exitWith {
             [] call comspec_atak_native_fnc_livecamStop;
-            ["WARNING", ["Live cam : flux perdu", "Live cam : flux perdu, porteur hors du réseau des relais"] select _noPath, 3, 30] call comspec_atak_native_fnc_notify;
+            ["WARNING", (switch (true) do { case _noAcc: { "Live cam : le porteur a retiré le partage" }; case _noPath: { "Live cam : flux perdu, porteur hors du réseau des relais" }; default { "Live cam : flux perdu" }; }), 3, 30] call comspec_atak_native_fnc_notify;
             // Page Live cam, ou petite fenêtre de la carte (VOIR CAMÉRA) : seule la page à l'écran est redessinée.
             private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
             private _pg = _st getOrDefault ["activePage", ""];

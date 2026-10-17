@@ -274,6 +274,12 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_video_relays", "CHECKBOX",
     ["Flux vidéo selon les relais", "Quand la mission pose des relais ATAK, les flux vidéo (drone, caméra casque, Live cam, caméras fixes) passent par eux : débit, définition (1080p à image par image), images par seconde, latence et défauts d'image suivent la distance aux relais, le nombre de bonds et la perte d'un relais. Sans relais dans la mission, rien ne change. Décocher pour garder les flux comme avant."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_camera_share", "LIST",
+    ["Partage des caméras", "Partage obligatoire : une caméra fixe n'est visible que de son poseur, la caméra d'un téléphone que de son porteur, jusqu'à ce qu'ils la partagent (app Vidéo live > PARTAGER, par NFC, Bluetooth ou relais, à un ATAK ou à TOUS). Tout le camp : chaque ATAK voit toutes les caméras du camp sans partage (comme avant)."],
+    _sim, [[0, 1], ["Partage obligatoire", "Tout le camp voit tout"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_bt_range", "SLIDER",
+    ["Portée Bluetooth (m)", "Distance maximale entre deux téléphones pour l'appairage, l'envoi de sons et le partage de caméras par Bluetooth. Le NFC reste à 2 m (téléphones dos à dos)."],
+    _sim, [5, 100, 15, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_drone_strike", "CHECKBOX",
     ["Drones armés", "Permet de fixer une charge (roquette RPG, charge de démolition, grenade) sur un drone et de l'envoyer en tir et oublie ou en recherche et frappe."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;

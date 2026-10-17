@@ -8,6 +8,9 @@
     Le flux suit le réseau (fn_feedLink) : liaison montante de la source et descendante du téléphone, relais compris.
     HD, SD, BAS ou MINIMAL fixent la définition de l'image ; les pertes la font décrocher par moments ; sans liaison,
     pas d'image et la raison est affichée. Qualité réévaluée toutes les 3 s (page redessinée si le palier change).
+    Partage (fn_camShare) : par défaut, une caméra n'est listée que si elle est à moi ou partagée avec moi. Le bouton
+    PARTAGER sous la liste ouvre, à la place de l'image, le choix de la méthode (NFC, Bluetooth, relais, chacune avec
+    ses conditions) puis du destinataire (un ATAK ou TOUS). « Ma caméra » (mon téléphone) est en tête de liste.
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -20,14 +23,16 @@ private _gw = _bw - 0.012;
 private _rowH = _font * 1.5;
 private _land = _l get "landscape";
 
-// Porteurs d'ATAK du camp (sauf moi), vivants.
-private _feeds = allPlayers select { _x isNotEqualTo player && {alive _x} && {side group _x isEqualTo side group player} && {[_x] call comspec_atak_native_fnc_hasDevice} };
+// Porteurs d'ATAK du camp (sauf moi), vivants, dont la caméra m'est partagée ; ma propre caméra en tête, pour la partager.
+private _shareOn = ["required"] call comspec_atak_native_fnc_camShare;
+private _feeds = allPlayers select { _x isNotEqualTo player && {alive _x} && {side group _x isEqualTo side group player} && {[_x] call comspec_atak_native_fnc_hasDevice} && {["can", _x] call comspec_atak_native_fnc_camShare} };
+if (_shareOn && {[player] call comspec_atak_native_fnc_hasDevice}) then { _feeds = [player] + _feeds; };
 private _cams = ["list"] call comspec_atak_native_fnc_camAction;
 _cams = [_cams, [], { player distance _x }, "ASCEND"] call BIS_fnc_sortBy;
 private _target = _s getOrDefault ["livecamTarget", ""];
 private _unit = objectFromNetId _target;
 if (isNull _unit || {!(_unit in _feeds) && {!(_unit in _cams)}}) then {
-    _unit = _feeds param [0, _cams param [0, objNull]];
+    _unit = (_feeds - [player]) param [0, _cams param [0, _feeds param [0, objNull]]];
     _target = if (isNull _unit) then { "" } else { netId _unit };
     _s set ["livecamTarget", _target];
 };
@@ -35,15 +40,25 @@ private _fixed = _unit in _cams;
 
 // Liste (à gauche en horizontal, en haut en vertical) et image.
 private _listRect = if (_land) then { [_pad, _pad, _gw * 0.3, _bh - 2 * _pad] } else { [_pad, _pad, _gw - 2 * _pad, (_bh * 0.28) min (_rowH * 5)] };
+// Bouton PARTAGER sous la liste (partage obligatoire seulement).
+private _shareRect = [];
+if (_shareOn) then {
+    _shareRect = [_listRect select 0, (_listRect select 1) + (_listRect select 3) - _rowH, _listRect select 2, _rowH];
+    _listRect set [3, (_listRect select 3) - _rowH - _pad / 2];
+};
 private _list = ["COMSPEC_RscListBox", _listRect] call comspec_atak_native_fnc_pageCtrl;
 _list ctrlSetFontHeight _fs;
 {
-    private _i = _list lbAdd ((format ["%1 · %2 m", [_x, true] call comspec_atak_native_fnc_unitCallsign, round (player distance _x)]) call comspec_atak_native_fnc_tr);
+    private _i = _list lbAdd (if (_x isEqualTo player) then { ("Ma caméra (moi)") call comspec_atak_native_fnc_tr } else {
+        (format ["%1 · %2 m", [_x, true] call comspec_atak_native_fnc_unitCallsign, round (player distance _x)]) call comspec_atak_native_fnc_tr });
     _list lbSetData [_i, netId _x];
     _list lbSetPicture [_i, "\z\comspec_atak_native\addons\main\data\app_photos.paa"];
     if (_x isEqualTo _unit) then { _list lbSetCurSel _i; };
 } forEach _feeds;
-if ((count _feeds) isEqualTo 0) then { _list lbAdd (("Aucun autre ATAK en ligne") call comspec_atak_native_fnc_tr); };
+if (((count _feeds) - ([0, 1] select (player in _feeds))) isEqualTo 0) then {
+    private _i = _list lbAdd ((["Aucun autre ATAK en ligne", "Aucune caméra d'équipier partagée avec vous"] select _shareOn) call comspec_atak_native_fnc_tr);
+    _list lbSetColor [_i, [0.54, 0.6, 0.58, 1]];
+};
 // Caméras fixes du camp : nom, distance, état.
 private _hdr = _list lbAdd (("CAMÉRAS FIXES") call comspec_atak_native_fnc_tr);
 _list lbSetColor [_hdr, [0.36, 0.78, 0.42, 1]];
@@ -56,7 +71,7 @@ _list lbSetColor [_hdr, [0.36, 0.78, 0.42, 1]];
     _list lbSetTooltip (([_i, format ["Posée par %1 (%2)", _x getVariable ["COMSPEC_ATAK_CamOwner", "?"], _x getVariable ["COMSPEC_ATAK_CamGroup", "?"]]]) call comspec_atak_native_fnc_tr);
     if (_x isEqualTo _unit) then { _list lbSetCurSel _i; };
 } forEach _cams;
-if ((count _cams) isEqualTo 0) then { private _i = _list lbAdd (("Aucune caméra posée (ACE : Téléphone ATAK > Caméras)") call comspec_atak_native_fnc_tr); _list lbSetColor [_i, [0.54, 0.6, 0.58, 1]]; };
+if ((count _cams) isEqualTo 0) then { private _i = _list lbAdd ((["Aucune caméra posée (ACE : Téléphone ATAK > Caméras)", "Aucune caméra posée ou partagée avec vous (ACE : Téléphone ATAK > Caméras)"] select _shareOn) call comspec_atak_native_fnc_tr); _list lbSetColor [_i, [0.54, 0.6, 0.58, 1]]; };
 _list ctrlAddEventHandler ["LBSelChanged", {
     params ["_c", "_i"];
     private _id = _c lbData _i;
@@ -66,14 +81,124 @@ _list ctrlAddEventHandler ["LBSelChanged", {
     _st set ["livecamTarget", _id];
     _st set ["livecamPan", 0];
     _st set ["livecamRename", false];
+    _st set ["livecamShare", false];
     [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 }];
+private _canShare = ["canShare", _unit] call comspec_atak_native_fnc_camShare;
+private _sharing = _shareOn && {_canShare} && {_s getOrDefault ["livecamShare", false]};
+if (_shareOn) then {
+    private _sb = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _sharing, _shareRect, ["PARTAGER", "FERMER LE PARTAGE"] select _sharing] call comspec_atak_native_fnc_pageCtrl;
+    _sb ctrlSetFontHeight _fs;
+    _sb ctrlEnable _canShare;
+    _sb ctrlSetTooltip (([
+        "Seul le porteur d'un téléphone peut partager sa caméra ; une caméra fixe se partage par qui y a accès.",
+        "Partager cette caméra par NFC, Bluetooth ou relais, à un ATAK ou à TOUS"] select _canShare) call comspec_atak_native_fnc_tr);
+    _sb ctrlAddEventHandler ["ButtonClick", {
+        private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        _st set ["livecamShare", !(_st getOrDefault ["livecamShare", false])];
+        [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    }];
+};
 
 private _vx = if (_land) then { _pad * 2 + _gw * 0.3 } else { _pad };
 private _vy = if (_land) then { _pad } else { _pad * 2 + (_listRect select 3) };
 private _vw = _gw - _vx - _pad;
 private _btnH = _rowH;
 private _vh = _bh - _vy - _pad * 2 - _btnH;
+// Panneau de partage à la place de l'image : méthode (avec ses conditions), destinataire, envoi.
+if (_sharing) exitWith {
+    private _ph = _bh - _vy - _pad;
+    private _pbg = ["COMSPEC_RscPanel", [_vx, _vy, _vw, _ph]] call comspec_atak_native_fnc_pageCtrl;
+    _pbg ctrlSetBackgroundColor [0.05, 0.07, 0.06, 1];
+    private _m = _s getOrDefault ["shareMethod", "NFC"];
+    private _methods = ["methods"] call comspec_atak_native_fnc_camShare;
+    private _name = if (_unit isEqualTo player) then { "ma caméra" } else { _unit getVariable ["COMSPEC_ATAK_CamName", "CAM"] };
+    private _acc = ["access", _unit] call comspec_atak_native_fnc_camShare;
+    private _accTxt = if ((count _acc) isEqualTo 0) then { "aucun (vous seul)" } else {
+        (_acc apply {
+            _x params [["_id", ""], ["_how", ""]];
+            private _who = if (_id isEqualTo "ALL") then { "TOUS" } else {
+                private _i = allPlayers findIf { getPlayerUID _x isEqualTo _id || {netId _x isEqualTo _id} };
+                if (_i < 0) then { "hors ligne" } else { [allPlayers select _i, true] call comspec_atak_native_fnc_unitCallsign }
+            };
+            format ["%1 (%2)", _who, (((_methods select { (_x select 0) isEqualTo _how }) param [0, ["", _how]]) select 1)]
+        }) joinString ", "
+    };
+    private _y = _vy + _pad / 2;
+    private _hd = ["COMSPEC_RscStructuredText", [_vx + _pad / 2, _y, _vw - _pad, _rowH * 1.9]] call comspec_atak_native_fnc_pageCtrl;
+    _hd ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold'>PARTAGER %1</t><br/><t size='0.8' color='#8a9a93'>Accès : %2</t>", toUpper _name, _accTxt]) call comspec_atak_native_fnc_tr);
+    _y = _y + _rowH * 2;
+    // Méthodes : NFC, BLUETOOTH, RELAIS.
+    private _mw = (_vw - _pad * 2) / 3;
+    {
+        _x params ["_code", "_title"];
+        private _b = ["COMSPEC_RscButton", [_vx + _pad / 2 + _forEachIndex * (_mw + _pad / 2), _y, _mw, _btnH], _title] call comspec_atak_native_fnc_pageCtrl;
+        _b ctrlSetFontHeight _fs;
+        if (_code isEqualTo _m) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.9]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
+        _b ctrlAddEventHandler ["ButtonClick", compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['shareMethod', '%1'];
+            [{ ['LIVECAM'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _code]];
+    } forEach _methods;
+    _y = _y + _btnH + _pad / 2;
+    // Principe de la méthode, et ce qui manque à mon téléphone.
+    private _mine = ["mine", _m] call comspec_atak_native_fnc_camShare;
+    private _info = ["COMSPEC_RscStructuredText", [_vx + _pad / 2, _y, _vw - _pad, _rowH * 3.2]] call comspec_atak_native_fnc_pageCtrl;
+    _info ctrlSetFontHeight (_fs * 0.9);
+    _info ctrlSetStructuredText parseText ((format ["<t size='0.85' color='#c9d4cf'>%1</t>%2<br/><t size='0.75' color='#8a9a93'>Le partage donne l'accès. L'image suit la liaison de la caméra : une caméra fixe se regarde par son Wi-Fi à portée, même sans réseau ; sinon par le réseau et les relais.</t>",
+        ((_methods select { (_x select 0) isEqualTo _m }) param [0, ["", "", ""]]) select 2,
+        ["", format ["<br/><t size='0.85' color='#e0a33a'>%1</t>", _mine]] select (_mine isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+    _y = _y + _rowH * 3.3;
+    // Destinataires : TOUS, puis les ATAK du camp (joignables en premier, sinon la raison).
+    private _rows = ["candidates", [_unit, _m]] call comspec_atak_native_fnc_camShare;
+    _rows = (_rows select { _x select 2 }) + (_rows select { !(_x select 2) });
+    private _to = _s getOrDefault ["shareTo", "ALL"];
+    private _lh = ((_vy + _ph) - _y - _btnH - _pad) max (_rowH * 2);
+    private _rl = ["COMSPEC_RscListBox", [_vx + _pad / 2, _y, _vw - _pad, _lh]] call comspec_atak_native_fnc_pageCtrl;
+    _rl ctrlSetFontHeight _fs;
+    private _nOk = count (_rows select { _x select 2 });
+    private _iAll = _rl lbAdd ((if (_m isEqualTo "RELAY") then { "TOUS · tout le camp" } else { format ["TOUS · %1 ATAK à portée", _nOk] }) call comspec_atak_native_fnc_tr);
+    _rl lbSetData [_iAll, "ALL"];
+    _rl lbSetColor [_iAll, [0.36, 0.78, 0.42, 1]];
+    if (_to isEqualTo "ALL") then { _rl lbSetCurSel _iAll; };
+    {
+        _x params ["_u", "_d", "_ok", "_why"];
+        private _id = getPlayerUID _u;
+        if (_id isEqualTo "") then { _id = netId _u; };
+        private _i = _rl lbAdd ((format ["%1 · %2 m · %3", [_u, true] call comspec_atak_native_fnc_unitCallsign, round _d, ["joignable", _why] select !_ok]) call comspec_atak_native_fnc_tr);
+        _rl lbSetData [_i, _id];
+        if (!_ok) then { _rl lbSetColor [_i, [0.54, 0.6, 0.58, 1]]; };
+        if (_id isEqualTo _to) then { _rl lbSetCurSel _i; };
+    } forEach _rows;
+    if ((count _rows) isEqualTo 0) then {
+        private _i = _rl lbAdd (([format ["Aucun ATAK du camp à proximité pour %1", (((_methods select { (_x select 0) isEqualTo _m }) param [0, ["", _m]]) select 1)], "Aucun autre ATAK du camp"] select (_m isEqualTo "RELAY")) call comspec_atak_native_fnc_tr);
+        _rl lbSetColor [_i, [0.54, 0.6, 0.58, 1]];
+    };
+    _rl ctrlAddEventHandler ["LBSelChanged", {
+        params ["_c", "_i"];
+        private _id = _c lbData _i;
+        if (_id isNotEqualTo "") then { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["shareTo", _id]; };
+    }];
+    // Actions : ENVOYER, et RETIRER LES ACCÈS pour le poseur (ou le porteur du téléphone).
+    private _by = _vy + _ph - _btnH - _pad / 2;
+    private _owner = ["owner", _unit] call comspec_atak_native_fnc_camShare;
+    private _bw2 = (_vw - _pad * 1.5) / 2;
+    private _send = ["COMSPEC_RscButtonPrimary", [_vx + _pad / 2, _by, [_vw - _pad, _bw2] select (_owner && {(count _acc) > 0}), _btnH], "ENVOYER"] call comspec_atak_native_fnc_pageCtrl;
+    _send ctrlSetFontHeight _fs;
+    _send ctrlEnable (_mine isEqualTo "");
+    _send ctrlAddEventHandler ["ButtonClick", {
+        private _st = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+        ["send", [objectFromNetId (_st getOrDefault ["livecamTarget", ""]), _st getOrDefault ["shareMethod", "NFC"], _st getOrDefault ["shareTo", "ALL"]]] call comspec_atak_native_fnc_camShare;
+        [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    }];
+    if (_owner && {(count _acc) > 0}) then {
+        private _rv = ["COMSPEC_RscButton", [_vx + _pad + _bw2, _by, _bw2, _btnH], "RETIRER LES ACCÈS"] call comspec_atak_native_fnc_pageCtrl;
+        _rv ctrlSetFontHeight _fs;
+        _rv ctrlAddEventHandler ["ButtonClick", {
+            ["revoke", objectFromNetId ((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["livecamTarget", ""])] call comspec_atak_native_fnc_camShare;
+            [{ ["LIVECAM"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+        }];
+    };
+    true
+};
 private _bg = ["COMSPEC_RscPanel", [_vx, _vy, _vw, _vh]] call comspec_atak_native_fnc_pageCtrl;
 _bg ctrlSetBackgroundColor [0, 0, 0, 1];
 if (isNull _unit) exitWith {

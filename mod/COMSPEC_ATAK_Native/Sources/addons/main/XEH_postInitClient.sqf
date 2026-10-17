@@ -168,6 +168,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 ["comspec_atak_native_p2p", { _this call comspec_atak_native_fnc_p2pReceive }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_p2pAck", { _this call comspec_atak_native_fnc_p2pAck }] call CBA_fnc_addEventHandler;
 // MEDEVAC du camp : demandes et suivi (app Médical, onglet MEDEVAC).
+// Caméra partagée avec moi (fn_camShare : NFC, Bluetooth ou relais).
+["comspec_atak_native_camShare", { ["recv", _this] call comspec_atak_native_fnc_camShare; }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_medevac", { ["recv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_bda", { ["recv", _this] call comspec_atak_native_fnc_bdaAction; }] call CBA_fnc_addEventHandler;
 // Comptes rendus du camp (app Comptes rendus) : tous les types, rejoués par la synchro serveur.
