@@ -20,6 +20,24 @@ final class PhotoFaceBlurTest extends TestCase
     }
 
     /** Damier contrasté : un flou y change forcément les pixels. */
+    public function testGaussianBlurIsSmoothNotBlocky(): void
+    {
+        // Disque noir sur fond blanc : un agrandissement brut y laisse des marches nettes.
+        $im = imagecreatetruecolor(400, 200);
+        imagefilledrectangle($im, 0, 0, 399, 199, imagecolorallocate($im, 255, 255, 255));
+        imagefilledellipse($im, 140, 100, 60, 80, imagecolorallocate($im, 0, 0, 0));
+        PhotoFaceBlur::apply($im, ['type' => 'gauss', 'force' => 60, 'opacity' => 100, 'size' => 100, 'angle' => 0, 'faces' => [[0.2, 0.15, 0.3, 0.6]]]);
+        // Au centre du cadre, deux pixels voisins ne doivent jamais faire un saut net (marche d'escalier d'un agrandissement brut).
+        $jump = 0;
+        for ($y = 70; $y < 130; $y += 3) {
+            for ($x = 100; $x < 180; $x++) {
+                $jump = max($jump, abs((imagecolorat($im, $x, $y) & 255) - (imagecolorat($im, $x + 1, $y) & 255)));
+            }
+        }
+        imagedestroy($im);
+        self::assertLessThan(12, $jump);
+    }
+
     private function checker(): \GdImage
     {
         $im = imagecreatetruecolor(400, 200);

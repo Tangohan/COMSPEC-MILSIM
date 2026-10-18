@@ -145,12 +145,47 @@ final class PhotoFaceBlur
                 continue;
             }
             $zone = self::effect($im, $x0, $y0, $w, $h, $spec);
-            imagecopymerge($im, $zone, $x0, $y0, 0, 0, $w, $h, (int) ($spec['opacity'] ?? 100));
+            if (in_array($spec['type'] ?? 'gauss', ['gauss', 'motion'], true)) {
+                self::mergeFeathered($im, $zone, $x0, $y0, $w, $h, (int) ($spec['opacity'] ?? 100));
+            } else {
+                imagecopymerge($im, $zone, $x0, $y0, 0, 0, $w, $h, (int) ($spec['opacity'] ?? 100));
+            }
             imagedestroy($zone);
             $done++;
         }
 
         return $done;
+    }
+
+    /**
+     * Pose la zone floutée avec des bords fondus (15 % du petit côté), pour ne pas laisser un rectangle net autour du flou.
+     *
+     * @param \GdImage $im
+     * @param \GdImage $zone
+     */
+    private static function mergeFeathered($im, $zone, int $x0, int $y0, int $w, int $h, int $opacity): void
+    {
+        $edge = max(1.0, min($w, $h) * 0.15);
+        $op = max(0, min(100, $opacity)) / 100;
+        for ($y = 0; $y < $h; $y++) {
+            $dy = min($y + 1, $h - $y) / $edge;
+            for ($x = 0; $x < $w; $x++) {
+                $a = $op * min(1.0, $dy, min($x + 1, $w - $x) / $edge);
+                if ($a <= 0) {
+                    continue;
+                }
+                $z = imagecolorat($zone, $x, $y);
+                if ($a >= 1) {
+                    imagesetpixel($im, $x0 + $x, $y0 + $y, $z);
+                    continue;
+                }
+                $o = imagecolorat($im, $x0 + $x, $y0 + $y);
+                $r = (int) round((($z >> 16) & 255) * $a + (($o >> 16) & 255) * (1 - $a));
+                $g = (int) round((($z >> 8) & 255) * $a + (($o >> 8) & 255) * (1 - $a));
+                $b = (int) round(($z & 255) * $a + ($o & 255) * (1 - $a));
+                imagesetpixel($im, $x0 + $x, $y0 + $y, ($r << 16) | ($g << 8) | $b);
+            }
+        }
     }
 
     /**
@@ -197,18 +232,28 @@ final class PhotoFaceBlur
                 imagedestroy($src);
                 break;
             default:
-                // Flou gaussien : réduction puis agrandissement lissé, et filtre gaussien répété selon la force.
-                $f = max(2, (int) round(2 + $force * 0.14));
-                $sw = max(2, intdiv($w, $f));
-                $sh = max(2, intdiv($h, $f));
-                $small = imagecreatetruecolor($sw, $sh);
-                imagecopyresampled($small, $im, 0, 0, $x0, $y0, $sw, $sh, $w, $h);
-                for ($i = 0, $n = 1 + intdiv($force, 25); $i < $n; $i++) {
-                    imagefilter($small, IMG_FILTER_GAUSSIAN_BLUR);
+                // Flou gaussien : réduction, filtre gaussien répété selon la force, puis agrandissement par paliers
+                // (×2 à chaque fois, lissé à chaque palier). Un agrandissement direct de GD donnait des gros blocs.
+                $f = max(2.0, 2 + $force * 0.1);
+                $sw = max(4, (int) round($w / $f));
+                $sh = max(4, (int) round($h / $f));
+                $cur = imagecreatetruecolor($sw, $sh);
+                imagecopyresampled($cur, $im, 0, 0, $x0, $y0, $sw, $sh, $w, $h);
+                for ($i = 0, $n = 2 + intdiv($force, 15); $i < $n; $i++) {
+                    imagefilter($cur, IMG_FILTER_GAUSSIAN_BLUR);
                 }
-                imagecopyresampled($zone, $small, 0, 0, 0, 0, $w, $h, $sw, $sh);
-                imagefilter($zone, IMG_FILTER_GAUSSIAN_BLUR);
-                imagedestroy($small);
+                while ($sw < $w || $sh < $h) {
+                    $nw = min($w, $sw * 2);
+                    $nh = min($h, $sh * 2);
+                    $next = imagecreatetruecolor($nw, $nh);
+                    imagecopyresampled($next, $cur, 0, 0, 0, 0, $nw, $nh, $sw, $sh);
+                    imagedestroy($cur);
+                    imagefilter($next, IMG_FILTER_GAUSSIAN_BLUR);
+                    imagefilter($next, IMG_FILTER_GAUSSIAN_BLUR);
+                    [$cur, $sw, $sh] = [$next, $nw, $nh];
+                }
+                imagecopy($zone, $cur, 0, 0, 0, 0, $w, $h);
+                imagedestroy($cur);
                 break;
         }
 
