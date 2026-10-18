@@ -74,6 +74,11 @@ return function (PDO $pdo): void {
     if (is_callable($renSeed)) {
         $renSeed($pdo);
     }
+
+    $editionsSeed = require dirname(__DIR__) . '/bootstrap/doctrine_official_editions_seed.php';
+    if (is_callable($editionsSeed)) {
+        $editionsSeed($pdo);
+    }
 };
 
 function seedDefaultDoctrineCatalog(PDO $pdo): void
