@@ -227,17 +227,24 @@ final class OrganizationSettingsController
             return Response::redirect($redirectTo);
         }
 
+        $accessNote = '';
+        $grantedN = (int) ($result['access_granted'] ?? 0);
+        $revokedN = (int) ($result['access_revoked'] ?? 0);
+        if ($grantedN > 0 || $revokedN > 0) {
+            $accessNote = ' Niveaux d’accès : ' . $grantedN . ' droit(s) de base ajouté(s), '
+                . $revokedN . ' droit(s) d’administration retiré(s) aux niveaux Membre et RH.';
+        }
         if (!empty($result['changed'])) {
             Session::flash(
                 'success',
                 'Profil mis à jour : « ' . TenantTypeConfig::label($result['from']) . ' » → « '
-                . TenantTypeConfig::label($result['to']) . ' ». Les menus et accès ont été ajustés.'
+                . TenantTypeConfig::label($result['to']) . ' ». Les menus et accès ont été ajustés.' . $accessNote
             );
         } else {
             Session::flash(
                 'success',
                 'Profil « ' . TenantTypeConfig::label($newType)
-                . ' » réappliqué : menus et permissions ont été réalignés.'
+                . ' » réappliqué : menus et permissions ont été réalignés.' . $accessNote
             );
         }
 

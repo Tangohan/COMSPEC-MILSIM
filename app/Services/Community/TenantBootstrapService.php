@@ -198,6 +198,9 @@ final class TenantBootstrapService
             $communityCode = $this->generateUniqueCommunityCode($slug);
             $this->tenantRepository->updateCommunityCode($tenantId, $communityCode);
 
+            // Droits de chaque niveau d’accès alignés sur le profil choisi (Membre, RH, Gestionnaire).
+            TenantSeedHelper::alignAccessProfilesForType($pdo, $tenantId, $tenantType);
+
             try {
                 (new CommunityAccessCollapseService(
                     $pdo,

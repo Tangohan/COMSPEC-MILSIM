@@ -127,7 +127,7 @@ final class TenantPublicListingCollationTest extends TestCase
             'app/Repositories/TenantMessageRepository.php',
             'app/Repositories/InterteamMissionRepository.php',
             'app/Repositories/Courrier/DocumentTemplateRepository.php',
-            'app/Services/Community/TenantTypeSwitchService.php',
+            'app/Services/Community/TenantSeedHelper.php',
             'app/Services/Rbac/RoleDefinitionCatalog.php',
             'app/Services/Doctrine/DocumentAudienceResolver.php',
         ];

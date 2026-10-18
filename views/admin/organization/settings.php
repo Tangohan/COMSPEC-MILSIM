@@ -780,10 +780,19 @@ $hubSaveHint = $hubSaveHints[$hubTab] ?? $hubSaveHints['identite'];
         <p class="bo-setting-group__kicker">Profil</p>
         <h2 class="bo-setting-group__title">Type de communauté</h2>
         <p class="bo-setting-row__help" style="margin-top:8px;max-width:720px;">
-            Le profil détermine les outils visibles pour tous les membres. Profil actuel :
+            Le profil détermine les outils qui existent pour toute la communauté. Profil actuel :
             <strong><?= $h($currentTypeLabel) ?></strong>.
-            Changer ou réappliquer un profil ajuste les menus et permissions sans effacer les données.
+            <a href="<?= $h(url('documentation/profils')) ?>" style="font-weight:700;">Guide des profils et des accès</a>
         </p>
+        <div style="margin-top:13px;">
+            <?php $tpcCurrentType = $currentTenantType; require base_path('views/partials/tenant_profile_compare.php'); ?>
+        </div>
+        <ul class="bo-setting-row__help" style="margin:13px 0 0;padding-left:1.1rem;max-width:720px;display:grid;gap:4px;">
+            <li>Les menus, le tableau de bord et les adresses des modules hors profil sont masqués pour tous ; <strong>aucune donnée n’est supprimée</strong>.</li>
+            <li>Chaque niveau d’accès retrouve ses droits de base : Membre (usage courant), RH (fiches, invitations), Gestionnaire (tout).</li>
+            <li>L’administration, les invitations et la modération sont retirées du niveau Membre ; le niveau RH garde ses outils mais plus l’administration complète.</li>
+            <li>Réappliquer le profil actuel répare des droits incohérents sans rien changer d’autre.</li>
+        </ul>
         <fieldset class="bo-setting-group__rows" style="border:none;padding:0;margin-top:13px;">
             <legend class="sr-only">Profil de la communauté</legend>
             <?php foreach ($tenantTypeOptions as $typeKey => $typeMeta): ?>
@@ -796,6 +805,9 @@ $hubSaveHint = $hubSaveHints[$hubTab] ?? $hubSaveHints['identite'];
                     <span class="bo-setting-row__copy">
                         <span class="bo-setting-row__label"><?= $h((string) ($typeMeta['label'] ?? $typeKey)) ?><?= $isCurrent ? ' · profil actuel' : '' ?></span>
                         <span class="bo-setting-row__help"><?= $h((string) ($typeMeta['description'] ?? '')) ?></span>
+                        <?php if (!$isCurrent && !empty($typeMeta['consequences'])): ?>
+                            <span class="bo-setting-row__help" style="display:block;margin-top:4px;">Si vous choisissez ce profil : <?= $h((string) $typeMeta['consequences']) ?></span>
+                        <?php endif; ?>
                     </span>
                 </label>
             <?php endforeach; ?>
