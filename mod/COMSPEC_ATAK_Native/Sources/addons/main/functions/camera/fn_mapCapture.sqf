@@ -114,12 +114,14 @@ switch (_act) do {
             setTerrainGrid 3.125;
             // Ciel dégagé à midi (vue locale ; en solo ou dans l'éditeur l'heure est remise à la fin).
             private _weather = [date, overcast, fog, rain];
+            // _weather select 0 : la date [année, mois, jour, heure, minute] (passer _weather entier donnait un tableau
+            // là où setDate attend un nombre : « Type Tableau, Nombre attendu »).
             private _noon = {
-                private _d = +(_this select 0);
+                private _d = _this;
                 setDate [_d select 0, _d select 1, _d select 2, 12, 0];
                 0 setOvercast 0; 0 setRain 0; 0 setFog 0;
             };
-            if (_clear) then { [_weather] call _noon; forceWeatherChange; };
+            if (_clear) then { (_weather select 0) call _noon; forceWeatherChange; };
             // Unités, morts et véhicules cachés (localement), le joueur compris.
             private _hidden = [];
             if (_hide) then {
@@ -144,6 +146,12 @@ switch (_act) do {
                 _map ctrlSetPosition [safeZoneX, safeZoneY, safeZoneW, safeZoneH];
                 _map ctrlCommit 0;
                 _map ctrlMapSetPosition [];
+                // Échap ferme cet écran sans passer par l'écran de jeu : même arrêt propre ici.
+                _mapDisp displayAddEventHandler ["KeyDown", {
+                    params ["", "_key"];
+                    if (_key isEqualTo 1) exitWith { missionNamespace setVariable ["COMSPEC_ATAK_MapCapStop", true]; true };
+                    false
+                }];
             } else {
                 _cam = "camera" camCreate [worldSize / 2, worldSize / 2, 500];
                 _cam cameraEffect ["Internal", "Back"];
@@ -168,12 +176,13 @@ switch (_act) do {
                     _alt = (_h * (tan 20.05) / (tan 3.44)) min 9000;
                     _fov = 2 * (rad (atan ((tan 20.05) * _h / _alt)));
                 };
+                // Plan : échelle fixée une fois (_fw par défaut) ; l'emprise est ensuite mesurée à cette échelle. La recalculer
+                // avec l'emprise mesurée changeait le zoom des tuiles sans changer le pas (tuiles décalées).
+                private _planScale = (_fw / worldSize) * (safeZoneH / safeZoneW) * 1.4;
                 private _place = {
                     params ["_px", "_py"];
                     if (_mode isEqualTo "plan") then {
-                        // Échelle de la carte : _fw mètres sur la largeur de l'écran.
-                        private _scale = (_fw / worldSize) * (safeZoneH / safeZoneW) * 1.4;
-                        _map ctrlMapAnimAdd [0, _scale, [_px, _py, 0]];
+                        _map ctrlMapAnimAdd [0, _planScale, [_px, _py, 0]];
                         ctrlMapAnimCommit _map;
                     } else {
                         private _gz = getTerrainHeightASL [_px, _py];
@@ -223,7 +232,9 @@ switch (_act) do {
                         };
                     };
                 };
-                private _step = round ((_fw min _fh) * (1 - _overlap)) max 10;
+                // Pas arrondi à 5 m : deux captures d'une même hauteur (deux villes) gardent le même pas malgré le bruit de
+                // la mesure, map_stitch.py les réunit en une seule couche.
+                private _step = ((round ((_fw min _fh) * (1 - _overlap) / 5)) * 5) max 10;
                 ([_center, _radius, _step] call _grid) params ["_x0", "_y0", "_nx", "_ny"];
                 ["INFO", "MAPCAP", format ["%1 h%2 : %3 x %4 tuiles, pas %5 m, emprise %6 x %7 m, origine %8 %9, caméra %10 m fov %11", _mode, _h, _nx, _ny, _step, round _fw, round _fh, round _x0, round _y0, round _alt, _fov]] call comspec_atak_native_fnc_log;
                 if (_calib isNotEqualTo []) then {
@@ -260,7 +271,7 @@ switch (_act) do {
                         };
                         _shots = _shots + 1;
                         // Soleil tenu à midi (l'heure avance pendant une longue capture).
-                        if (_clear && {(_shots mod 40) isEqualTo 0}) then { [_weather] call _noon; };
+                        if (_clear && {(_shots mod 40) isEqualTo 0}) then { (_weather select 0) call _noon; };
                         uiSleep 0.35;
                     } forEach _cols;
                 };

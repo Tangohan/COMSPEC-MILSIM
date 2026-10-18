@@ -55,15 +55,35 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def layers(folder):
-    out = {}
-    for f in sorted(os.listdir(folder)):
+    """Une couche par (carte, rendu, hauteur). Plusieurs captures d'une même hauteur (deux villes, ou une zone
+    reprise) sont réunies : leur grille est calée sur des multiples du pas, les cases sont renumérotées depuis
+    l'origine la plus au sud-ouest ; une case prise deux fois garde l'image la plus récente."""
+    found = {}
+    for f in os.listdir(folder):
         m = NAME.match(f)
         if not m:
             continue
         g = m.groupdict()
+        p = os.path.join(folder, f)
         key = (g["world"], g["mode"].lower(), int(g["h"]))
-        lay = out.setdefault(key, {"step": int(g["step"]), "w": int(g["w"]), "ox": int(g["ox"]), "oy": int(g["oy"]), "tiles": {}})
-        lay["tiles"][(int(g["ix"]), int(g["iy"]))] = os.path.join(folder, f)
+        found.setdefault(key, []).append((os.path.getmtime(p), int(g["step"]), int(g["w"]), int(g["ox"]), int(g["oy"]),
+                                          int(g["ix"]), int(g["iy"]), p))
+    out = {}
+    for key, items in found.items():
+        steps = {}
+        for it in items:
+            steps[it[1]] = steps.get(it[1], 0) + 1
+        step = max(steps, key=lambda s: steps[s])
+        if len(steps) > 1:
+            print("%s_%s_h%d : pas différents %s, seul le pas %d m est gardé (refaire la capture des autres)"
+                  % (key[0], key[1], key[2], sorted(steps), step))
+        items = sorted((it for it in items if it[1] == step), key=lambda it: it[0])
+        ox = min(it[3] for it in items)
+        oy = min(it[4] for it in items)
+        tiles = {}
+        for _, _, _, iox, ioy, ix, iy, p in items:
+            tiles[(ix + int(round((iox - ox) / float(step))), iy + int(round((ioy - oy) / float(step))))] = p
+        out[key] = {"step": step, "w": max(it[2] for it in items), "ox": ox, "oy": oy, "tiles": tiles}
     return out
 
 
@@ -160,7 +180,8 @@ def read_manifest(paths):
                         world, mode, h = p[1], p[2].lower(), int(float(p[3]))
                         # v : taille carte, altitude, fov, ax, ay, u0, v0, pas, largeur, hauteur, x0, y0, nx, ny, grille, portée
                         v = [float(x) for x in p[4:20]]
-                        heads[(world.lower(), mode, h, int(round(v[7])), int(round(v[10])), int(round(v[11])))] = {
+                        # Même cadrage pour toutes les captures d'une hauteur : l'origine n'entre pas dans la clé.
+                        heads[(world.lower(), mode, h, int(round(v[7])))] = {
                             "world_size": v[0], "alt": v[1], "fov": v[2], "ax": v[3], "ay": v[4], "u0": v[5], "v0": v[6],
                             "step": v[7], "fw": v[8], "fh": v[9], "gn": int(v[14]), "span": v[15],
                         }
@@ -215,7 +236,7 @@ class Layer:
         first = next(iter(lay["tiles"].values()))
         with Image.open(first) as im:
             self.W, self.H = im.size
-        head = heads.get((self.world.lower(), self.mode, self.h, lay["step"], lay["ox"], lay["oy"]))
+        head = heads.get((self.world.lower(), self.mode, self.h, lay["step"]))
         self.world_size = head["world_size"] if head else None
         fw = head["fw"] if head else float(lay["w"])
         self.res = fw / float(self.W)  # mètres par pixel d'une capture
