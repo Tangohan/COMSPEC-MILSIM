@@ -135,6 +135,23 @@ class PersonnelProfileRepository
 
     public function ensureRecord(int $userId, ?int $tenantId = null): void
     {
+        if ($userId < 1) {
+            return;
+        }
+        if ($this->hasTenantIdColumn()) {
+            // La clé unique (user_id, tenant_id) ne bloque pas les doublons quand tenant_id est NULL :
+            // sans communauté, chaque appel créait une nouvelle ligne (fiches « dupliquées » dans À traiter).
+            if ($tenantId === null || $tenantId < 1) {
+                $tenantId = $this->preferredTenantId($userId) ?? 0;
+            }
+            if ($tenantId < 1) {
+                $exists = $this->pdo->prepare('SELECT 1 FROM personnel_profiles WHERE user_id = ? LIMIT 1');
+                $exists->execute([$userId]);
+                if ($exists->fetchColumn()) {
+                    return;
+                }
+            }
+        }
         if ($tenantId !== null && $tenantId > 0 && $this->hasTenantIdColumn()) {
             $stmt = $this->pdo->prepare(
                 'INSERT IGNORE INTO personnel_profiles (user_id, tenant_id, created_at, updated_at) VALUES (?, ?, NOW(), NOW())'

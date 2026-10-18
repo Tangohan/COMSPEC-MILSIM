@@ -96,10 +96,16 @@ final class PersonnelProfileGapScanService
 
         $classified = [];
         $counts = $emptyCounts;
+        $seen = [];
         foreach ($raw as $row) {
             if (!is_array($row)) {
                 continue;
             }
+            $rowId = (int) ($row['id'] ?? 0);
+            if ($rowId > 0 && isset($seen[$rowId])) {
+                continue;
+            }
+            $seen[$rowId] = true;
             $issues = self::classifyRow($row);
             if ($issues['issue_count'] < 1) {
                 continue;
@@ -336,6 +342,17 @@ final class PersonnelProfileGapScanService
                ) THEN 1 ELSE 0 END AS has_active_absence'
             : '0 AS has_active_absence';
 
+        // Un seul dossier par membre : les anciennes lignes sans communauté (tenant_id NULL)
+        // multipliaient chaque membre dans « À traiter » (400 lignes pour 4 membres).
+        $profileJoin = $this->columnExists('personnel_profiles', 'tenant_id')
+            ? 'LEFT JOIN personnel_profiles pp ON pp.id = (
+                    SELECT pp2.id FROM personnel_profiles pp2
+                    WHERE pp2.user_id = u.id AND (pp2.tenant_id = u.tenant_id OR pp2.tenant_id IS NULL)
+                    ORDER BY (pp2.tenant_id = u.tenant_id) DESC, pp2.id ASC
+                    LIMIT 1
+                )'
+            : 'LEFT JOIN personnel_profiles pp ON pp.user_id = u.id';
+
         $select = 'SELECT u.id, u.display_name, u.callsign, u.email, u.avatar_url,
                        ' . $gradeIdSelect . ',
                        ' . $roleIdSelect . ',
@@ -350,7 +367,7 @@ final class PersonnelProfileGapScanService
                        ' . $hasTenantRoleSelect . ',
                        ' . $absenceSelect . '
                 FROM users u
-                LEFT JOIN personnel_profiles pp ON pp.user_id = u.id
+                ' . $profileJoin . '
                 ' . $roleJoin . '
                 ' . $grade['join'] . '
                 ' . $job['join'];

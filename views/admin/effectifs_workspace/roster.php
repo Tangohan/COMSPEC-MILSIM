@@ -308,19 +308,17 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
         </form>
         <?php endif; ?>
         <div class="eff-sheets" role="region" aria-label="Tableur des effectifs" tabindex="0">
-            <table class="eff-sheets__table" id="eff-roster-table" data-cols-storage="eff-roster-col-widths-v1">
+            <table class="eff-sheets__table" id="eff-roster-table" data-cols-storage="eff-roster-col-widths-v2">
                 <colgroup>
                     <?php if ($canBulkAny): ?><col style="width:2rem"><?php endif; ?>
-                    <col data-col="identity" style="width:14rem">
+                    <col data-col="identity" style="width:12.5rem">
                     <col data-col="grade" style="width:6.5rem">
-                    <col data-col="fonction" style="width:9rem">
-                    <col data-col="qualifications" style="width:12rem">
-                    <col data-col="affectation" style="width:14rem">
-                    <col data-col="roles" style="width:12rem">
-                    <col data-col="reperes" style="width:14rem">
-                    <col data-col="indicateurs" style="width:11rem">
-                    <col data-col="statut" style="width:7.5rem">
-                    <col data-col="actions" style="width:13rem">
+                    <col data-col="fonction" style="width:8.5rem">
+                    <col data-col="qualifications" style="width:6.5rem">
+                    <col data-col="affectation" style="width:9.5rem">
+                    <col data-col="roles" style="width:8rem">
+                    <col data-col="suivi" style="width:8rem">
+                    <col data-col="actions" style="width:6.5rem">
                 </colgroup>
                 <thead>
                     <tr>
@@ -333,9 +331,7 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                         <th data-col="qualifications">Qualifications<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Qualifications" tabindex="0"></span></th>
                         <th data-col="affectation">Affectation<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Affectation" tabindex="0"></span></th>
                         <th data-col="roles">Rôles<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Rôles" tabindex="0"></span></th>
-                        <th data-col="reperes">Repères<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Repères" tabindex="0"></span></th>
-                        <th data-col="indicateurs">Indicateurs<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Indicateurs" tabindex="0"></span></th>
-                        <th data-col="statut">Statut<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Statut" tabindex="0"></span></th>
+                        <th data-col="suivi">Suivi<span class="eff-sheets__col-resizer" role="separator" aria-orientation="vertical" aria-label="Redimensionner la colonne Suivi" tabindex="0"></span></th>
                         <th data-col="actions">Actions</th>
                     </tr>
                 </thead>
@@ -451,6 +447,18 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                         <span class="eff-sheets__meta">Indicatif · <?= htmlspecialchars($callsign, ENT_QUOTES, 'UTF-8') ?></span>
                                     <?php endif; ?>
                                     <?php if ($character !== ''): ?><span class="eff-sheets__meta">Personnage · <?= htmlspecialchars($character, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                                    <?php
+                                    $idMeta = array_values(array_filter([
+                                        $matricule !== '' ? 'Mle ' . $matricule : '',
+                                        $orgNumber !== '' && strcasecmp($orgNumber, $matricule) !== 0 ? 'N° communauté ' . $orgNumber : '',
+                                        $radioAssigned !== '' ? 'Radio ' . $radioAssigned : '',
+                                        $memberBadges !== [] ? count($memberBadges) . ' distinction' . (count($memberBadges) > 1 ? 's' : '') : '',
+                                    ]));
+                                    ?>
+                                    <?php if ($idMeta !== []): ?><span class="eff-sheets__meta"><?= htmlspecialchars(implode(' · ', $idMeta), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                                    <?php if ($status !== 'active'): ?>
+                                        <span class="eff-sheets__badge <?= htmlspecialchars($statusClass($status), ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($statusLabel($status), ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </td>
@@ -557,70 +565,14 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             </div>
                         </td>
                         <td>
-                            <dl class="eff-sheets__reperes">
-                                <div>
-                                    <dt>Matricule</dt>
-                                    <dd><?= $matricule !== '' ? htmlspecialchars($matricule, ENT_QUOTES, 'UTF-8') : '—' ?></dd>
-                                </div>
-                                <?php if ($orgNumber !== '' && strcasecmp($orgNumber, $matricule) !== 0): ?>
-                                <div>
-                                    <dt>N° communauté</dt>
-                                    <dd><?= htmlspecialchars($orgNumber, ENT_QUOTES, 'UTF-8') ?></dd>
-                                </div>
-                                <?php endif; ?>
-                                <div>
-                                    <dt>Radio</dt>
-                                    <dd><?= $radioAssigned !== '' ? htmlspecialchars($radioAssigned, ENT_QUOTES, 'UTF-8') : '—' ?></dd>
-                                </div>
-                                <?php if ($extraCallsigns !== []): ?>
-                                <div>
-                                    <dt>Autres indicatifs</dt>
-                                    <dd><?= htmlspecialchars(implode(', ', array_slice($extraCallsigns, 0, 3)), ENT_QUOTES, 'UTF-8') ?><?= count($extraCallsigns) > 3 ? '…' : '' ?></dd>
-                                </div>
-                                <?php endif; ?>
-                                <div>
-                                    <dt>Distinctions</dt>
-                                    <dd>
-                                        <?php if ($memberBadges !== []): ?>
-                                            <?php $badgeNames = array_values(array_filter(array_map(static fn (array $badge): string => trim((string) ($badge['name'] ?? '')), $memberBadges))); ?>
-                                            <span class="eff-sheets__distinctions" title="<?= htmlspecialchars(implode(' · ', $badgeNames), ENT_QUOTES, 'UTF-8') ?>"><?= count($memberBadges) ?> · <?= htmlspecialchars(implode(', ', array_slice($badgeNames, 0, 2)), ENT_QUOTES, 'UTF-8') ?><?= count($badgeNames) > 2 ? '…' : '' ?></span>
-                                        <?php else: ?>
-                                            —
-                                        <?php endif; ?>
-                                    </dd>
-                                </div>
-                            </dl>
-                        </td>
-                        <td>
-                            <div class="eff-sheets__metrics eff-sheets__metrics--compact">
-                                <div class="eff-sheets__meter eff-sheets__meter--text" title="Ancienneté réelle<?= $prePlatformLabel !== '' ? ' · avant le site : ' . $prePlatformLabel : '' ?><?= $communitySeniorityLabel !== '' ? ' · communauté : ' . $communitySeniorityLabel : '' ?>">
-                                    <div class="eff-sheets__meter-head">
-                                        <span>Anc.</span>
-                                        <strong><?= htmlspecialchars($seniorityLabel, ENT_QUOTES, 'UTF-8') ?></strong>
-                                    </div>
-                                    <?php if ($prePlatformStart !== ''): ?>
-                                        <p class="eff-sheets__meter-note">Avant site<?= $prePlatformLabel !== '' ? ' · ' . htmlspecialchars($prePlatformLabel, ENT_QUOTES, 'UTF-8') : '' ?></p>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="eff-sheets__meter<?= $availabilityScore < 40 ? ' is-low' : '' ?>" title="Disponibilité <?= $availabilityScore ?> %">
-                                    <div class="eff-sheets__meter-head">
-                                        <span>Dispo</span>
-                                        <strong><?= $availabilityScore ?>%</strong>
-                                    </div>
-                                    <div class="eff-sheets__meter-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $availabilityScore ?>" aria-label="Disponibilité">
-                                        <span style="width:<?= max(0, min(100, $availabilityScore)) ?>%"></span>
-                                    </div>
-                                </div>
-                                <div class="eff-sheets__meter<?= $presenceScore < 40 ? ' is-low' : '' ?>" title="Présence <?= $presenceScore ?> %">
-                                    <div class="eff-sheets__meter-head">
-                                        <span>Prés.</span>
-                                        <strong><?= $presenceScore ?>%</strong>
-                                    </div>
-                                    <div class="eff-sheets__meter-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $presenceScore ?>" aria-label="Présence">
-                                        <span style="width:<?= max(0, min(100, $presenceScore)) ?>%"></span>
-                                    </div>
-                                </div>
-                                <div class="eff-sheets__meter<?= $completionScore < 40 ? ' is-low' : '' ?>" title="Complétion du dossier <?= $completionScore ?> %">
+                            <?php
+                            $suiviTitle = 'Ancienneté réelle : ' . $seniorityLabel
+                                . ($prePlatformLabel !== '' ? ' (avant le site : ' . $prePlatformLabel . ')' : '')
+                                . ' · Disponibilité ' . $availabilityScore . ' % · Présence ' . $presenceScore . ' % · Dossier ' . $completionScore . ' %';
+                            ?>
+                            <div class="eff-sheets__suivi" title="<?= htmlspecialchars($suiviTitle, ENT_QUOTES, 'UTF-8') ?>">
+                                <span class="eff-sheets__suivi-line"><span>Anc.</span> <strong><?= htmlspecialchars($seniorityLabel, ENT_QUOTES, 'UTF-8') ?></strong></span>
+                                <div class="eff-sheets__meter<?= $completionScore < 40 ? ' is-low' : '' ?>">
                                     <div class="eff-sheets__meter-head">
                                         <span>Dossier</span>
                                         <strong><?= $completionScore ?>%</strong>
@@ -629,9 +581,10 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                                         <span style="width:<?= max(0, min(100, $completionScore)) ?>%"></span>
                                     </div>
                                 </div>
+                                <span class="eff-sheets__suivi-line<?= min($availabilityScore, $presenceScore) < 40 ? ' is-low' : '' ?>"><span>Dispo</span> <?= $availabilityScore ?>% · <span>Prés.</span> <?= $presenceScore ?>%</span>
                                 <?php if ($canEditProfiles): ?>
                                     <details class="eff-sheets__pop">
-                                        <summary class="eff-sheets__chip">Corriger l’ancienneté</summary>
+                                        <summary class="eff-sheets__chip">Ancienneté</summary>
                                         <div class="eff-sheets__pop-panel">
                                             <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/anciennete'), ENT_QUOTES, 'UTF-8') ?>" class="eff-sheets__pop-form">
                                                 <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
@@ -649,20 +602,12 @@ $noRoleCount = (int) ($counts['no_role'] ?? 0);
                             </div>
                         </td>
                         <td>
-                            <span class="eff-sheets__badge <?= htmlspecialchars($statusClass($status), ENT_QUOTES, 'UTF-8') ?>">
-                                <?= htmlspecialchars($statusLabel($status), ENT_QUOTES, 'UTF-8') ?>
-                            </span>
-                        </td>
-                        <td>
                             <div class="eff-sheets__actions">
-                                <a class="is-primary" href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>">Fiche</a>
-                                <?php if ($canEditProfiles): ?>
-                                    <a href="<?= htmlspecialchars($personnelEditUrl, ENT_QUOTES, 'UTF-8') ?>">Modifier</a>
-                                <?php endif; ?>
+                                <a class="is-primary" href="<?= htmlspecialchars($ficheUrl, ENT_QUOTES, 'UTF-8') ?>">Ouvrir la fiche</a>
                                 <?php if ($canRequestElevation): ?>
                                     <?php $cooldownSec = (int) ($elevationCooldownByUserId[$id] ?? 0); ?>
                                     <?php if ($cooldownSec > 0): ?>
-                                        <span class="eff-sheets__chip" style="opacity:.55;cursor:default" title="Une demande a déjà été envoyée récemment pour ce membre — patientez avant d’en renvoyer une.">Élévation (patientez <?= htmlspecialchars($cooldownLabel($cooldownSec), ENT_QUOTES, 'UTF-8') ?>)</span>
+                                        <span class="eff-sheets__chip" style="opacity:.55;cursor:default" title="Une demande a déjà été envoyée récemment pour ce membre. Patientez <?= htmlspecialchars($cooldownLabel($cooldownSec), ENT_QUOTES, 'UTF-8') ?> avant d’en renvoyer une.">Élévation envoyée</span>
                                     <?php else: ?>
                                     <button type="button" class="eff-sheets__chip" data-eff-elev-open="<?= $id ?>">Élévation</button>
                                     <?php endif; ?>

@@ -1109,3 +1109,534 @@
 .bo-eff-workspace .eff-sheets__metrics--compact .eff-sheets__chip {
   font-size: 0.6875rem;
 }
+
+/* ——— Fiche membre : en-têtes de carte, état civil, fenêtres (dialog) ——— */
+.eff-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.bo-eff-content--member .eff-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.bo-eff-workspace .eff-btn--sm {
+  min-height: 1.85rem;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.72rem;
+}
+
+.bo-eff-content--member .eff-dl--compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
+  gap: 0 1rem;
+}
+
+.bo-eff-content--member .eff-dd--empty {
+  color: var(--ath-subtle, #8c979b) !important;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.bo-eff-content--member .eff-card__list--scroll {
+  max-height: 11rem;
+  overflow-y: auto;
+}
+
+.bo-eff-content--member .eff-fiche-hero__portrait {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.bo-eff-content--member .eff-fiche-hero__portrait-btn {
+  padding: 0.15rem 0.45rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #fff;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bo-eff-content--member .eff-fiche-hero__portrait-btn:hover {
+  border-color: var(--ath-ink, #0c1116);
+  color: var(--ath-ink, #0c1116);
+}
+
+.eff-dialog {
+  width: min(34rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 3rem);
+  padding: 0;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #fff;
+  color: var(--ath-ink, #0c1116);
+  box-shadow: 0 24px 60px rgba(12, 17, 22, 0.28);
+}
+
+.eff-dialog--wide {
+  width: min(52rem, calc(100vw - 2rem));
+}
+
+.eff-dialog::backdrop {
+  background: rgba(12, 17, 22, 0.55);
+}
+
+.eff-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: calc(100vh - 3rem);
+  padding: 1rem 1.15rem;
+  overflow-y: auto;
+}
+
+.eff-dialog__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: -1rem -1.15rem 0;
+  padding: 0.85rem 1.15rem;
+  border-bottom: 1px solid var(--ath-line, #e3e8ea);
+  position: sticky;
+  top: -1rem;
+  z-index: 1;
+  background: #fff;
+}
+
+.eff-dialog__head h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--ath-ink, #0c1116);
+}
+
+.eff-dialog__close {
+  border: 0;
+  background: transparent;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.eff-dialog__foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin: 0.25rem -1.15rem -1rem;
+  padding: 0.75rem 1.15rem;
+  border-top: 1px solid var(--ath-line, #e3e8ea);
+  position: sticky;
+  bottom: -1rem;
+  background: #fff;
+}
+
+.eff-dialog__spacer {
+  flex: 1 1 auto;
+}
+
+.eff-dialog label,
+.eff-dialog legend {
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.eff-dialog input[type="text"],
+.eff-dialog input[type="number"],
+.eff-dialog input[type="date"],
+.eff-dialog input[type="search"],
+.eff-dialog select,
+.eff-dialog textarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #fff;
+  color: var(--ath-ink, #0c1116);
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.eff-dialog__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 0.9rem;
+}
+
+.eff-dialog__wide {
+  grid-column: 1 / -1;
+}
+
+.eff-dialog__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.eff-dialog__portrait {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.eff-dialog__portrait .eff-fiche-hero__avatar {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 6rem;
+  height: 6rem;
+  overflow: hidden;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #f4f7f7;
+  font-weight: 800;
+}
+
+.eff-dialog__portrait .eff-fiche-hero__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.eff-dialog__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.eff-dialog__toolbar input[type="search"] {
+  margin-top: 0;
+}
+
+.eff-dialog__counter {
+  flex: 0 0 auto;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+/* Sélecteur de fonctions */
+.eff-job-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.eff-job-picker__group,
+.elevation-access-rights__module {
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #fff;
+}
+
+.eff-job-picker__group > summary,
+.elevation-access-rights__module > summary {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: var(--ath-ink, #0c1116);
+}
+
+.eff-job-picker__group > summary small,
+.elevation-access-rights__module > summary small {
+  margin-left: 0.35rem;
+  color: var(--ath-subtle, #8c979b);
+  font-weight: 600;
+}
+
+.eff-job-picker__group > .eff-card__hint {
+  margin: 0 0.75rem 0.4rem;
+  font-size: 0.75rem;
+}
+
+.eff-job-picker__items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.25rem 0.75rem;
+  padding: 0 0.75rem 0.65rem;
+}
+
+.eff-job-picker__item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.3rem 0.35rem;
+  border: 1px solid transparent;
+}
+
+.eff-job-picker__item:has(input[type="checkbox"]:checked) {
+  border-color: var(--ath-accent, #0b8a5c);
+  background: #f3fbf7;
+}
+
+.eff-job-picker__check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  color: var(--ath-ink, #0c1116) !important;
+  font-weight: 400 !important;
+  cursor: pointer;
+}
+
+.eff-job-picker__check strong {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 650;
+}
+
+.eff-job-picker__check small {
+  display: block;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.72rem;
+  font-weight: 400;
+}
+
+.eff-job-picker__primary {
+  flex: 0 0 auto;
+  position: relative;
+  cursor: pointer;
+}
+
+.eff-job-picker__primary input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.eff-job-picker__primary span[aria-hidden] {
+  color: #c9d1d3;
+  font-size: 1rem;
+}
+
+.eff-job-picker__primary input:checked + span[aria-hidden] {
+  color: #d4a017;
+}
+
+.eff-job-picker__primary input:disabled + span[aria-hidden] {
+  opacity: 0.35;
+}
+
+.eff-job-picker__primary input:focus-visible + span[aria-hidden] {
+  outline: 2px solid var(--ath-accent, #0b8a5c);
+}
+
+/* Formulaire d'élévation partagé : champs filtrés selon le type, droits groupés par module */
+.elev-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.elev-field[hidden] {
+  display: none !important;
+}
+
+.elevation-access-rights__search {
+  margin-bottom: 0.4rem;
+}
+
+.elevation-access-rights__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.elevation-access-rights__module .elevation-access-rights__grid {
+  padding: 0 0.75rem 0.6rem;
+}
+
+.elevation-access-rights__count {
+  margin: 0 0 0.35rem;
+  color: var(--ath-accent, #0b8a5c);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .eff-dialog__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .eff-dialog__portrait {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.eff-dialog [hidden],
+.elev-fields [hidden] {
+  display: none !important;
+}
+
+.bo-eff-content--member .eff-dl--compact div {
+  display: block;
+  padding: 0.4rem 0;
+}
+
+.bo-eff-content--member .eff-dl--compact dd {
+  margin: 0.1rem 0 0;
+}
+
+.elevation-access-rights__hint {
+  margin: 0.15rem 0 0.5rem;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.elevation-access-rights__groups .elevation-access-rights__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.2rem 0.75rem;
+}
+
+.elevation-access-rights__groups .elevation-access-rights__option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.2rem 0;
+  color: var(--ath-ink, #0c1116);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.elevation-access-rights__groups .elevation-access-rights__option strong {
+  display: block;
+  font-weight: 600;
+}
+
+.elevation-access-rights__groups .elevation-access-rights__option small {
+  display: block;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.72rem;
+}
+
+/* ——— Emplois : explications, recherche et liste rangée par catégorie ——— */
+.bo-eff-workspace .eff-jobs-explain {
+  max-width: 48rem;
+  margin: 0.6rem 0 0;
+  padding: 0 0 0 1.1rem;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  list-style: disc;
+}
+
+.bo-eff-workspace .eff-jobs-explain strong {
+  color: var(--ath-ink, #0c1116);
+}
+
+.bo-eff-workspace .eff-jobs-search {
+  display: block;
+  width: 100%;
+  margin: 0 0 0.6rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  background: #fff;
+  color: var(--ath-ink, #0c1116);
+  font-size: 0.8125rem;
+}
+
+.bo-eff-workspace .eff-jobs-group {
+  margin: 0 0 0.35rem;
+}
+
+.bo-eff-workspace .eff-jobs-group > summary {
+  padding: 0.35rem 0.15rem;
+  color: var(--ath-muted, #6d7a80);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.bo-eff-workspace .eff-jobs-group > summary small {
+  margin-left: 0.25rem;
+  color: var(--ath-subtle, #8c979b);
+  font-weight: 600;
+}
+
+.bo-eff-workspace [data-filter-scope] [hidden] {
+  display: none !important;
+}
+
+/* ——— Tableur : colonne « Suivi » compacte (ancienneté, dossier, dispo / présence) ——— */
+.bo-eff-workspace .eff-sheets__suivi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.bo-eff-workspace .eff-sheets__suivi-line {
+  color: var(--ath-ink, #0c1116);
+}
+
+.bo-eff-workspace .eff-sheets__suivi-line > span {
+  color: var(--ath-muted, #6d7a80);
+}
+
+.bo-eff-workspace .eff-sheets__suivi-line.is-low {
+  color: #a15c07;
+}
+
+.bo-eff-workspace .eff-sheets__table td {
+  vertical-align: top;
+}
+
+.bo-eff-workspace .eff-sheets__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
+
+/* Le tableur tient dans la largeur de la page : colonnes fixes, pas de « max-content ». */
+.bo-eff-workspace #eff-roster-table {
+  width: 100%;
+  min-width: 66rem;
+}
+
+.bo-eff-workspace #eff-roster-table td,
+.bo-eff-workspace #eff-roster-table .eff-sheets__cell-text,
+.bo-eff-workspace #eff-roster-table .eff-sheets__suivi-line {
+  overflow: hidden;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.bo-eff-workspace #eff-roster-table .eff-sheets__badge {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bo-eff-workspace #eff-roster-table .eff-sheets__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.bo-eff-workspace #eff-roster-table .eff-sheets__pop[open] {
+  overflow: visible;
+}
