@@ -238,6 +238,30 @@ switch (_act) do {
             private _f = [] call comspec_atak_native_fnc_firesState;
             { _f set [format ["n%1", _forEachIndex + 1], _x]; } forEach _lines;
             _f set ["nr", _b get "remarks"];
+            // Géométrie de la carte tactique (cible, IP et axe d'entrée, cône FAH, distance de risque, JTAC, ami le plus
+            // proche, appareil) : le poste Overwatch la redessine sur sa carte (objet JSON « geo » du 9-LINE).
+            private _xy = { params ["_p"]; if ((count _p) < 2) exitWith { "null" }; format ["[%1,%2]", round (_p select 0), round (_p select 1)] };
+            private _esc = { params ["_t"]; [[[_t, "\", "\\"] call CBA_fnc_replace, """", "\"""] call CBA_fnc_replace, toString [10], " "] call CBA_fnc_replace };
+            private _tg = _b getOrDefault ["target", []];
+            private _ip = _s getOrDefault ["ip", []];
+            private _ipName = _s getOrDefault ["jIp", ""];
+            if ((trim _ipName) isEqualTo "") then { _ipName = _s getOrDefault ["auto_jIp", ""]; };
+            private _win = [_b getOrDefault ["fah", ""]] call comspec_atak_native_fnc_jtacFah;
+            private _near = [];
+            if ((count _tg) >= 2) then {
+                private _side = side group player;
+                {
+                    if (alive _x && {side group _x isEqualTo _side} && {!((vehicle _x) isKindOf "Air")} && {_x isNotEqualTo player} && {(_x distance2D _tg) < 3000}) then {
+                        if ((count _near) isEqualTo 0 || {(_x distance2D _tg) < (_near distance2D _tg)}) then { _near = getPosASL _x; };
+                    };
+                } forEach allUnits;
+            };
+            _f set ["geo", format ['{"source":"jtac","target":%1,"ip":%2,"ipName":"%3","fah":"%4","fahWindow":%5,"risk":%6,"dangerClose":%7,"jtac":%8,"friendly":%9,"aircraft":"%10","aircraftPos":%11,"laser":%12,"laserCode":%13,"type":%14,"method":"%15","ordnance":"%16"}',
+                [_tg] call _xy, [_ip] call _xy, [_ipName] call _esc, [_b getOrDefault ["fah", ""]] call _esc,
+                ["null", format ["[%1,%2]", round (_win select 0), round (_win select 1)]] select ((count _win) isEqualTo 2),
+                round (_b getOrDefault ["risk", 0]), ["false", "true"] select (_b getOrDefault ["dc", false]),
+                [getPosASL player] call _xy, [_near] call _xy, [groupId group _air] call _esc, [getPosASL _air] call _xy,
+                ["false", "true"] select ((_s getOrDefault ["mark", "LASER"]) isEqualTo "LASER"), _b getOrDefault ["code", 1111], _b getOrDefault ["type", 2], [_b getOrDefault ["method", ""]] call _esc, [_b getOrDefault ["ord", ""]] call _esc]];
             ["send9"] spawn comspec_atak_native_fnc_firesAction; // attente de la DLL sans figer le jeu
         };
         [["INFO", "SUCCESS"] select _sent, [format ["9-LINE à %1 : équipage IA, transmettez-le à la radio", groupId group _air], format ["9-LINE transmis à %1, attente du readback", groupId group _air]] select _sent, 4, 40] call comspec_atak_native_fnc_notify;

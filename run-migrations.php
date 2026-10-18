@@ -3995,6 +3995,16 @@ try {
 }
 $migrationEnsurePdo();
 
+$atakNineLineGeoMigrate = require $root . '/bootstrap/atak_nine_line_geo_migration.php';
+try {
+    echo "Migration atak_nine_line.geo_json (géométrie de l'app JTAC)...\n";
+    $atakNineLineGeoMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] atak_nine_line_geo : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('atak_nine_line_geo', $e);
+}
+$migrationEnsurePdo();
+
 $atakOrderTemplatesMigrate = require $root . '/bootstrap/atak_order_templates_migration.php';
 try {
     echo "Migration atak_order_templates (modèles d’ordres personnalisés)...\n";
