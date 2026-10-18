@@ -490,6 +490,13 @@ try {
     echo '  [ATTENTION] training_course_lms_platform_version : ' . $e->getMessage() . "\n";
     $migrationRunner->warn('training_course_lms_platform_version', $e);
 }
+$trainingUrlDeliveryMigrate = require $root . '/bootstrap/training_url_delivery_migration.php';
+try {
+    $trainingUrlDeliveryMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_url_delivery : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_url_delivery', $e);
+}
 $trainingCoursesLmsScopeMigrate = require $root . '/bootstrap/training_courses_lms_scope_migration.php';
 try {
     $trainingCoursesLmsScopeMigrate($pdo);
@@ -2567,6 +2574,14 @@ try {
     $migrationRunner->warn('account_purge_requests', $e);
 }
 
+require_once $root . '/bootstrap/platform_account_bans_migration.php';
+try {
+    run_platform_account_bans_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] platform_account_bans : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('platform_account_bans', $e);
+}
+
 $personnelCorrectionRequestsMigrate = require $root . '/bootstrap/personnel_correction_requests_migration.php';
 try {
     echo "Migration personnel_correction_requests (corrections RH fiche opérateur)...\n";
@@ -3936,6 +3951,13 @@ $planGiftMigrate = require $root . '/bootstrap/plan_gift_migration.php';
 $migrationRunner->step('plan_gifts', static function () use ($planGiftMigrate, $pdo): void {
     echo "Migration plan_gifts / plan_gift_notices (formules offertes)...\n";
     $planGiftMigrate($pdo);
+});
+
+// Envois d'e-mails sous quota : récapitulatif des alertes d'exploitation, compteur du jour.
+$emailDigestMigrate = require $root . '/bootstrap/email_digest_migration.php';
+$migrationRunner->step('email_digest', static function () use ($emailDigestMigrate, $pdo): void {
+    echo "Migration email_digest_items (récapitulatif des alertes e-mail)...\n";
+    $emailDigestMigrate($pdo);
 });
 
 $atakSendQueueMigrate = require $root . '/bootstrap/atak_send_queue_migration.php';

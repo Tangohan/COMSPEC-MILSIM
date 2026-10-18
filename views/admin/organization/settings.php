@@ -115,29 +115,55 @@ $unitCatalogPayload = \App\Services\Community\RealUnitAffiliationCatalog::fronte
 
 $h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
 
+/**
+ * Interrupteur lisible : titre, aide et conséquence affichée selon l’état.
+ * Les noms de champs (valeur cachée 0 + case 1) sont inchangés.
+ */
 $renderToggle = static function (
     string $label,
     string $help,
     string $name,
     bool $checked,
-    string $valueOn = 'Actif',
-    string $valueOff = 'Inactif',
+    string $effectOn = '',
+    string $effectOff = '',
 ) use ($h): void {
     ?>
-    <div class="bo-setting-row">
-        <div class="bo-setting-row__copy">
-            <div class="bo-setting-row__label"><?= $h($label) ?></div>
-            <div class="bo-setting-row__help"><?= $h($help) ?></div>
-        </div>
-        <div class="bo-setting-row__control">
-            <span class="bo-setting-row__value" data-bo-toggle-value="<?= $h($name) ?>"><?= $h($checked ? $valueOn : $valueOff) ?></span>
-            <label class="ath-toggle <?= $checked ? 'is-on' : 'is-off' ?>">
-                <input type="hidden" name="<?= $h($name) ?>" value="0">
-                <input type="checkbox" class="ath-toggle__input" name="<?= $h($name) ?>" value="1" <?= $checked ? 'checked' : '' ?> data-bo-toggle="<?= $h($name) ?>" data-on="<?= $h($valueOn) ?>" data-off="<?= $h($valueOff) ?>">
-                <span class="ath-toggle__knob" aria-hidden="true"></span>
-            </label>
-        </div>
-    </div>
+    <label class="bcs-switch">
+        <input type="hidden" name="<?= $h($name) ?>" value="0">
+        <input type="checkbox" class="bcs-switch__input" name="<?= $h($name) ?>" value="1" <?= $checked ? 'checked' : '' ?>>
+        <span class="bcs-switch__track" aria-hidden="true"></span>
+        <span class="bcs-switch__copy">
+            <span class="bcs-switch__title"><?= $h($label) ?></span>
+            <?php if ($help !== ''): ?><span class="bcs-switch__help"><?= $h($help) ?></span><?php endif; ?>
+            <?php if ($effectOn !== ''): ?><span class="bcs-switch__effect bcs-switch__effect--on"><strong>Activé :</strong> <span><?= $h($effectOn) ?></span></span><?php endif; ?>
+            <?php if ($effectOff !== ''): ?><span class="bcs-switch__effect bcs-switch__effect--off"><strong>Désactivé :</strong> <span><?= $h($effectOff) ?></span></span><?php endif; ?>
+        </span>
+    </label>
+    <?php
+};
+
+/** Pastilles « Où ça apparaît ? » */
+$renderWhere = static function (array $places, string $extraClass = '') use ($h): void {
+    ?>
+    <p class="bcs-where<?= $extraClass !== '' ? ' ' . $h($extraClass) : '' ?>">
+        <span class="bcs-where__label">Où ça apparaît ?</span>
+        <?php foreach ($places as $place): ?>
+            <span class="bcs-chip"><?= $h((string) $place) ?></span>
+        <?php endforeach; ?>
+    </p>
+    <?php
+};
+
+/** Vignette d’image (ou état vide). */
+$renderThumb = static function (string $url, string $emptyLabel, bool $square = false) use ($h): void {
+    ?>
+    <span class="bcs-media__thumb<?= $square ? ' bcs-media__thumb--square' : '' ?>">
+        <?php if ($url !== ''): ?>
+            <img src="<?= $h($url) ?>" alt="">
+        <?php else: ?>
+            <?= $h($emptyLabel) ?>
+        <?php endif; ?>
+    </span>
     <?php
 };
 
@@ -151,68 +177,126 @@ $hubTab = (string) ($settingsHubTab ?? 'identite');
 if (!in_array($hubTab, ['identite', 'vitrine', 'inscription', 'accueil', 'portail', 'profil'], true)) {
     $hubTab = 'identite';
 }
-$hubTabs = [
-    'identite' => 'Identité',
-    'vitrine' => 'Vitrine',
-    'inscription' => 'Inscription',
-    'accueil' => 'Accueil',
-    'portail' => 'Portail',
-    'profil' => 'Profil',
-];
 $hubInscriptionUrl = $formAction . (str_contains($formAction, '?') ? '&' : '?') . 'onglet=inscription#coordonnees';
 $hubSubmitForm = $hubTab === 'inscription' ? 'bo-inscription-settings-form' : 'bo-community-settings-form';
 $hubSaveHints = [
-    'identite' => 'Nom, logo, représentation, vitrine, portail et cycle.',
-    'vitrine' => 'Nom, logo, représentation, vitrine, portail et cycle.',
-    'portail' => 'Nom, logo, représentation, vitrine, portail et cycle.',
-    'profil' => 'Cycle administratif. Le type de communauté s’applique avec le bouton du cadre ci-dessus.',
-    'inscription' => 'Parcours d’arrivée, contact des candidats et dossier.',
-    'accueil' => 'Photos et défilement : boutons de cette rubrique.',
+    'identite' => 'Enregistre en une fois les rubriques Identité, Vitrine, Portail et le cycle administratif.',
+    'vitrine' => 'Enregistre en une fois les rubriques Identité, Vitrine, Portail et le cycle administratif.',
+    'portail' => 'Enregistre en une fois les rubriques Identité, Vitrine, Portail et le cycle administratif.',
+    'profil' => 'Enregistre le cycle administratif. Le type de communauté s’applique avec son propre bouton « Appliquer le profil ».',
+    'inscription' => 'Enregistre le parcours d’arrivée, le contact des candidats et les questions du dossier.',
+    'accueil' => 'Chaque photo s’enregistre avec les boutons de la rubrique.',
 ];
 $hubSaveHint = $hubSaveHints[$hubTab] ?? $hubSaveHints['identite'];
+$hubNavSelected = static fn (string $key): string => $hubTab === $key
+    ? 'class="bcs-nav__item is-active" aria-selected="true" tabindex="0"'
+    : 'class="bcs-nav__item" aria-selected="false" tabindex="-1"';
+$publicPageBase = (string) url('c/');
+if (!preg_match('#^https?://#i', $publicPageBase)) {
+    $publicPageBase = trim((string) ($_SERVER['HTTP_HOST'] ?? '')) . '/' . ltrim($publicPageBase, '/');
+}
+$publicPageHost = preg_replace('#^https?://#i', '', $publicPageBase) ?? 'c/';
+$imagesNeedAddress = $slugHint === '';
 ?>
-<div class="bo-community-settings bo-settings-hub" data-settings-hub data-active-tab="<?= $h($hubTab) ?>">
+<div class="bcs bo-settings-hub" data-settings-hub data-active-tab="<?= $h($hubTab) ?>">
+<div class="bcs-layout">
 
-    <div class="bo-settings-hub-tabs" role="tablist" aria-label="Rubriques des paramètres">
-        <?php foreach ($hubTabs as $tabKey => $tabLabel): ?>
-            <button
-                type="button"
-                class="bo-settings-hub-tab<?= $hubTab === $tabKey ? ' is-active' : '' ?>"
-                role="tab"
-                id="bo-settings-tab-<?= $h($tabKey) ?>"
-                data-settings-tab="<?= $h($tabKey) ?>"
-                aria-selected="<?= $hubTab === $tabKey ? 'true' : 'false' ?>"
-                tabindex="<?= $hubTab === $tabKey ? '0' : '-1' ?>"
-            >
-                <?= $h((string) $tabLabel) ?>
-            </button>
-        <?php endforeach; ?>
-    </div>
+    <aside class="bcs-aside" aria-label="Rubriques des paramètres">
+        <nav class="bcs-box bcs-nav">
+            <p class="bcs-box__title">Rubriques</p>
+            <div class="bcs-nav__list" role="tablist" aria-orientation="vertical" aria-label="Rubriques des paramètres">
+                <button type="button" role="tab" id="bo-settings-tab-identite" data-settings-tab="identite" <?= $hubNavSelected('identite') ?>>
+                    <span class="bcs-nav__num" aria-hidden="true">1</span>
+                    <span class="bcs-nav__label">Identité</span>
+                    <span class="bcs-nav__desc">Nom, adresse, logo, unité représentée</span>
+                </button>
+                <button type="button" role="tab" id="bo-settings-tab-vitrine" data-settings-tab="vitrine" <?= $hubNavSelected('vitrine') ?>>
+                    <span class="bcs-nav__num" aria-hidden="true">2</span>
+                    <span class="bcs-nav__label">Vitrine</span>
+                    <span class="bcs-nav__desc">Textes publics, registre, modules visibles</span>
+                </button>
+                <button type="button" role="tab" id="bo-settings-tab-inscription" data-settings-tab="inscription" <?= $hubNavSelected('inscription') ?>>
+                    <span class="bcs-nav__num" aria-hidden="true">3</span>
+                    <span class="bcs-nav__label">Inscription</span>
+                    <span class="bcs-nav__desc">Candidatures, contact, questions</span>
+                </button>
+                <button type="button" role="tab" id="bo-settings-tab-accueil" data-settings-tab="accueil" <?= $hubNavSelected('accueil') ?>>
+                    <span class="bcs-nav__num" aria-hidden="true">4</span>
+                    <span class="bcs-nav__label">Écran d’accueil</span>
+                    <span class="bcs-nav__desc">Photos affichées après la connexion</span>
+                </button>
+                <button type="button" role="tab" id="bo-settings-tab-portail" data-settings-tab="portail" <?= $hubNavSelected('portail') ?>>
+                    <span class="bcs-nav__num" aria-hidden="true">5</span>
+                    <span class="bcs-nav__label">Portail</span>
+                    <span class="bcs-nav__desc">Menus, couleurs, images, relais Discord</span>
+                </button>
+                <button type="button" role="tab" id="bo-settings-tab-profil" data-settings-tab="profil" <?= $hubNavSelected('profil') ?>>
+                    <span class="bcs-nav__num" aria-hidden="true">6</span>
+                    <span class="bcs-nav__label">Profil</span>
+                    <span class="bcs-nav__desc">Type de communauté, cycle des recrues</span>
+                </button>
+            </div>
+        </nav>
+
+        <div class="bcs-box bcs-aside__extra">
+            <p class="bcs-box__title">En un coup d’œil</p>
+            <dl class="bcs-status">
+                <div class="bcs-status__row">
+                    <dt>Page publique</dt>
+                    <dd><span class="bcs-pill <?= $slugHint !== '' ? 'bcs-pill--ok' : 'bcs-pill--warn' ?>"><?= $slugHint !== '' ? 'En ligne' : 'Sans adresse' ?></span></dd>
+                </div>
+                <div class="bcs-status__row">
+                    <dt>Registre des unités</dt>
+                    <dd><span class="bcs-pill <?= $registryListed ? 'bcs-pill--ok' : '' ?>"><?= $registryListed ? 'Listée' : 'Masquée' ?></span></dd>
+                </div>
+                <div class="bcs-status__row">
+                    <dt>Recrutement</dt>
+                    <dd><span class="bcs-pill <?= $communityLocked ? 'bcs-pill--warn' : 'bcs-pill--ok' ?>"><?= $communityLocked ? 'Fermé' : 'Ouvert' ?></span></dd>
+                </div>
+                <div class="bcs-status__row">
+                    <dt>Candidature</dt>
+                    <dd><span class="bcs-pill"><?= $h($registrationLabel) ?></span></dd>
+                </div>
+            </dl>
+            <div class="bcs-box__actions">
+                <?php if ($publicPageUrl !== ''): ?>
+                    <a class="bcs-btn bcs-btn--block" href="<?= $h($publicPageUrl) ?>" target="_blank" rel="noopener">Voir la page publique ↗</a>
+                <?php endif; ?>
+                <a class="bcs-btn bcs-btn--block" href="<?= $h(url('back-office/community/presentation')) ?>">Mise en page de la vitrine</a>
+            </div>
+        </div>
+    </aside>
+
+    <div class="bcs-main">
 
     <?php if ($discordInviteMissing): ?>
-        <?php
-        $notice_tone = 'warning';
-        $notice_title = 'Lien Discord manquant';
-        $notice_body = 'Le recrutement via Discord est actif, mais aucun lien d\'invitation n\'est renseigné. '
-            . 'Les candidats ne pourront pas ouvrir votre serveur depuis le formulaire public. '
-            . '<a href="' . $h($hubInscriptionUrl) . '">Renseigner le lien Discord</a>';
-        include base_path('views/partials/bo_dsfr_notice.php');
-        ?>
+        <div class="bcs-notice" role="status">
+            <span aria-hidden="true">⚠</span>
+            <span><strong>Lien Discord manquant.</strong> Le recrutement se fait via Discord, mais aucun lien d’invitation n’est renseigné : les candidats ne pourront pas rejoindre votre serveur depuis le formulaire public. <a class="bcs-link" href="<?= $h($hubInscriptionUrl) ?>">Renseigner le lien Discord</a></span>
+        </div>
     <?php endif; ?>
 
     <div data-settings-panel="accueil"<?= $hubTab === 'accueil' ? '' : ' hidden' ?>>
-    <section class="ath-card ath-rise bo-setting-group" id="accueil-connexion">
-        <p class="bo-setting-group__kicker">Connexion</p>
-        <h2 class="bo-setting-group__title">Images d’accueil</h2>
-        <p class="bo-settings-note">
-            Ces photos s’affichent après connexion, sur l’écran de bienvenue. Sans image personnalisée, la photo de bienvenue du portail est utilisée.
-            Plusieurs images défilent à tour de rôle, dans l’ordre de la liste.
-        </p>
+    <header class="bcs-intro">
+        <p class="bcs-intro__kicker">Rubrique 4 · Écran d’accueil</p>
+        <h2 class="bcs-intro__title">Les photos que voient vos membres en se connectant</h2>
+        <p class="bcs-intro__text">Juste après la connexion, Athena affiche un écran de bienvenue en plein écran. Mettez-y des photos de vos opérations : c’est la première chose que voient vos membres. Ces photos ne sont <strong>pas</strong> visibles par les visiteurs.</p>
+        <div class="bcs-intro__foot">
+            <?php $renderWhere(['Écran de bienvenue après connexion']); ?>
+        </div>
+    </header>
+    <section class="bcs-card" id="accueil-connexion">
+        <div class="bcs-card__head">
+            <div class="bcs-card__heading">
+                <h3 class="bcs-card__title">Images d’accueil</h3>
+                <p class="bcs-card__desc">Sans image personnalisée, la photo par défaut du portail est utilisée. Avec plusieurs images, elles défilent dans l’ordre de la liste.</p>
+            </div>
+        </div>
 
         <?php if ($loginAccueilImages === []): ?>
         <div class="bo-accueil-preview">
             <img src="<?= $h($loginAccueilDefaultUrl) ?>" alt="" class="bo-accueil-preview__img">
-            <p class="bo-accueil-preview__caption">Photo actuelle : celle du portail (par défaut).</p>
+            <p class="bo-accueil-preview__caption">Aucune photo ajoutée : c’est l’image par défaut du portail qui s’affiche.</p>
         </div>
         <?php else: ?>
         <ol class="bo-accueil-gallery">
@@ -233,32 +317,32 @@ $hubSaveHint = $hubSaveHints[$hubTab] ?? $hubSaveHints['identite'];
                             <form method="post" action="<?= $h(url('back-office/organisation/parametres/accueil-connexion/' . $imgId . '/ordre')) ?>">
                                 <?= \App\Core\Csrf::field() ?>
                                 <input type="hidden" name="direction" value="up">
-                                <button type="submit" class="bo-accueil-btn">Monter</button>
+                                <button type="submit" class="bo-accueil-btn bcs-btn bcs-btn--small">Monter</button>
                             </form>
                             <?php endif; ?>
                             <?php if ($idx < count($loginAccueilImages) - 1): ?>
                             <form method="post" action="<?= $h(url('back-office/organisation/parametres/accueil-connexion/' . $imgId . '/ordre')) ?>">
                                 <?= \App\Core\Csrf::field() ?>
                                 <input type="hidden" name="direction" value="down">
-                                <button type="submit" class="bo-accueil-btn">Descendre</button>
+                                <button type="submit" class="bo-accueil-btn bcs-btn bcs-btn--small">Descendre</button>
                             </form>
                             <?php endif; ?>
                             <form method="post" action="<?= $h(url('back-office/organisation/parametres/accueil-connexion/' . $imgId . '/supprimer')) ?>" onsubmit="return confirm('Retirer cette image d’accueil ?');">
                                 <?= \App\Core\Csrf::field() ?>
-                                <button type="submit" class="bo-accueil-btn bo-accueil-btn--danger">Retirer</button>
+                                <button type="submit" class="bo-accueil-btn bo-accueil-btn--danger bcs-btn bcs-btn--small bcs-btn--danger">Retirer</button>
                             </form>
                         </div>
                         <form method="post" enctype="multipart/form-data" action="<?= $h(url('back-office/organisation/parametres/accueil-connexion/' . $imgId)) ?>" class="bo-accueil-gallery__edit">
                             <?= \App\Core\Csrf::field() ?>
                             <label class="bo-accueil-field">
-                                <span>Description courte (facultatif)</span>
+                                <span>Description courte <span class="bcs-opt">(facultatif, lue par les lecteurs d’écran)</span></span>
                                 <input type="text" name="login_accueil_alt" maxlength="200" value="<?= $h($imgAlt) ?>" placeholder="Paysage nocturne, opérateurs en forêt">
                             </label>
                             <label class="bo-accueil-field">
                                 <span>Remplacer l’image</span>
-                                <input type="file" name="login_accueil_replace" class="bo-setting-file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
+                                <input type="file" name="login_accueil_replace" class="bcs-file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
                             </label>
-                            <button type="submit" class="bo-accueil-btn bo-accueil-btn--primary">Enregistrer</button>
+                            <button type="submit" class="bo-accueil-btn bo-accueil-btn--primary bcs-btn bcs-btn--small">Enregistrer cette image</button>
                         </form>
                     </div>
                 </li>
@@ -267,593 +351,580 @@ $hubSaveHint = $hubSaveHints[$hubTab] ?? $hubSaveHints['identite'];
         <?php endif; ?>
 
         <?php if (count($loginAccueilImages) > 1): ?>
-        <form method="post" action="<?= $h(url('back-office/organisation/parametres/accueil-connexion/defilement')) ?>" class="bo-accueil-slideshow">
+        <form method="post" action="<?= $h(url('back-office/organisation/parametres/accueil-connexion/defilement')) ?>" class="bo-accueil-slideshow bcs-sub">
             <?= \App\Core\Csrf::field() ?>
-            <label class="bo-setting-remove">
+            <label class="bcs-check">
                 <input type="hidden" name="login_accueil_slideshow" value="0">
                 <input type="checkbox" name="login_accueil_slideshow" value="1" <?= $loginAccueilSlideshow ? 'checked' : '' ?>>
                 Défiler automatiquement les images
             </label>
-            <p class="bo-settings-note">Les photos changent toutes les dix secondes. Le défilement s’arrête si le visiteur a demandé moins d’animations.</p>
-            <button type="submit" class="bo-accueil-btn bo-accueil-btn--primary">Enregistrer le défilement</button>
+            <p class="bcs-help">Les photos changent toutes les dix secondes. Le défilement s’arrête si le visiteur a demandé moins d’animations dans son système.</p>
+            <div><button type="submit" class="bo-accueil-btn bo-accueil-btn--primary bcs-btn bcs-btn--small">Enregistrer le défilement</button></div>
         </form>
         <?php endif; ?>
 
         <?php if ($canAddLoginAccueil): ?>
-        <form method="post" enctype="multipart/form-data" action="<?= $h(url('back-office/organisation/parametres/accueil-connexion')) ?>" class="bo-accueil-add">
+        <form method="post" enctype="multipart/form-data" action="<?= $h(url('back-office/organisation/parametres/accueil-connexion')) ?>" class="bo-accueil-add bcs-sub">
             <?= \App\Core\Csrf::field() ?>
-            <div class="bo-setting-row bo-setting-row--stack">
-                <div class="bo-setting-row__copy">
-                    <div class="bo-setting-row__label">Ajouter une image</div>
-                    <div class="bo-setting-row__help"><?= $h($loginAccueilHint) ?> Jusqu’à <?= (int) $loginAccueilMaxImages ?> images.</div>
-                </div>
-                <div class="bo-setting-row__control">
-                    <input type="file" name="login_accueil_images[]" class="bo-setting-file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple>
-                </div>
-            </div>
+            <p class="bcs-sub__title">Ajouter une image</p>
+            <p class="bcs-sub__help"><?= $h($loginAccueilHint) ?> Jusqu’à <?= (int) $loginAccueilMaxImages ?> images. Conseil : photos paysage, sujet au centre (les bords peuvent être rognés sur mobile).</p>
+            <input type="file" name="login_accueil_images[]" class="bcs-file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple>
             <label class="bo-accueil-field">
-                <span>Description courte pour ces nouvelles images (facultatif)</span>
+                <span>Description courte pour ces nouvelles images <span class="bcs-opt">(facultatif)</span></span>
                 <input type="text" name="login_accueil_alt" maxlength="200" placeholder="Opérateurs en vision nocturne">
             </label>
-            <button type="submit" class="bo-accueil-btn bo-accueil-btn--primary">Ajouter</button>
+            <div><button type="submit" class="bo-accueil-btn bo-accueil-btn--primary bcs-btn bcs-btn--primary">Ajouter</button></div>
         </form>
         <?php else: ?>
-        <p class="bo-settings-note">Nombre maximum d’images atteint. Retirez-en une pour en ajouter une autre.</p>
+        <p class="bcs-empty">Nombre maximum d’images atteint. Retirez-en une pour en ajouter une autre.</p>
         <?php endif; ?>
     </section>
     </div>
 
-    <form method="post" enctype="multipart/form-data" action="<?= $h($formAction) ?>" id="bo-community-settings-form">
-        <?= \App\Core\Csrf::field() ?>
-        <input type="hidden" name="settings_tab" value="<?= $h($hubTab) ?>">
-
-        <div class="bo-settings-grid">
-
-            <div data-settings-panel="identite"<?= $hubTab === 'identite' ? '' : ' hidden' ?>>
-            <section class="ath-card ath-rise bo-setting-group" id="identite">
-                <p class="bo-setting-group__kicker">Identité</p>
-                <h2 class="bo-setting-group__title">Nom, logo et représentation</h2>
-                <div class="bo-setting-group__rows">
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Nom affiché</div>
-                            <div class="bo-setting-row__help">Titre visible sur la page publique et le registre.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <input type="text" id="tenant_name" name="tenant_name" class="bo-setting-row__field--wide" maxlength="255" value="<?= $h((string) ($tenant['name'] ?? '')) ?>" placeholder="Ex. 92e RI">
-                        </div>
-                    </div>
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Adresse courte de la page publique</div>
-                            <div class="bo-setting-row__help">Lettres minuscules, chiffres et tirets. Mettez à jour les liens déjà partagés si vous la changez.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <input type="text" id="tenant_slug" name="tenant_slug" class="bo-setting-row__field--wide" maxlength="50" pattern="[a-z0-9]([-a-z0-9]*[a-z0-9])?" value="<?= $h($slugHint) ?>" placeholder="mon-unite">
-                        </div>
-                    </div>
-                    <div class="bo-setting-row">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Logo</div>
-                            <div class="bo-setting-row__help">JPG, PNG ou WebP · 12 Mo maximum.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <?php if ($logoUrl !== ''): ?>
-                                <img src="<?= $h($logoUrl) ?>" alt="" class="bo-setting-thumb">
-                            <?php endif; ?>
-                            <span class="bo-setting-row__value"><?= $logoUrl !== '' ? 'Défini' : '—' ?></span>
-                            <input type="file" name="org_logo" class="bo-setting-file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" <?= $slugHint === '' ? 'disabled' : '' ?>>
-                        </div>
-                    </div>
-                    <?php if ($logoUrl !== ''): ?>
-                    <label class="bo-setting-remove">
-                        <input type="hidden" name="remove_org_logo" value="0">
-                        <input type="checkbox" name="remove_org_logo" value="1">
-                        Retirer le logo
-                    </label>
-                    <?php endif; ?>
-                    <div class="bo-setting-row">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Image d’en-tête du registre</div>
-                            <div class="bo-setting-row__help">Bandeau paysage sur la carte du registre des unités.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <?php if ($coverUrl !== ''): ?>
-                                <img src="<?= $h($coverUrl) ?>" alt="" class="bo-setting-thumb bo-setting-thumb--wide">
-                            <?php endif; ?>
-                            <span class="bo-setting-row__value"><?= $coverUrl !== '' ? 'Définie' : '—' ?></span>
-                            <input type="file" name="registry_cover" class="bo-setting-file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" <?= $slugHint === '' ? 'disabled' : '' ?>>
-                        </div>
-                    </div>
-                    <?php if ($coverUrl !== ''): ?>
-                    <label class="bo-setting-remove">
-                        <input type="hidden" name="remove_registry_cover" value="0">
-                        <input type="checkbox" name="remove_registry_cover" value="1">
-                        Retirer l’image du registre
-                    </label>
-                    <?php endif; ?>
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Message d’accueil <span style="font-weight:600;color:var(--ath-subtle)">(facultatif)</span></div>
-                            <div class="bo-setting-row__help">Texte court de bienvenue sur le portail. Distinct de la bio du bandeau, réglée dans la rubrique Vitrine.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <textarea id="welcome_text" name="welcome_text" rows="3" maxlength="500" class="bo-setting-row__field--wide" placeholder="Présentez votre unité en quelques phrases…"><?= $h((string) ($c['welcome_text'] ?? '')) ?></textarea>
-                        </div>
-                    </div>
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Code pour rejoindre <span style="font-weight:600;color:var(--ath-subtle)">(facultatif)</span></div>
-                            <div class="bo-setting-row__help">Affiché sur la page « Rejoindre » pour faciliter l’arrivée des membres.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <input type="text" id="community_code" name="community_code" class="bo-setting-row__field" maxlength="64" value="<?= $h((string) ($tenant['community_code'] ?? '')) ?>" placeholder="MON-UNIT">
-                        </div>
-                    </div>
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Jeu ou plateforme <span style="font-weight:600;color:var(--ath-subtle)">(facultatif)</span></div>
-                            <div class="bo-setting-row__help">Affiché sur la fiche publique et dans le registre.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <input type="text" id="game_label" name="game_label" class="bo-setting-row__field" maxlength="120" value="<?= $h((string) ($c['game_label'] ?? '')) ?>" placeholder="Ex. Arma 3">
-                        </div>
-                    </div>
-                    <div class="bo-setting-row bo-setting-row--stack" id="affiliation">
-                        <span id="representation-unite"></span>
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Représentation de la communauté</div>
-                            <div class="bo-setting-row__help">Choisissez une ou plusieurs entités du référentiel militaire (commandement, composante, régiment, commando…) ou indiquez un cadre fictif. La recherche fonctionne aussi sur les alias (ex. Hubert, 1RPIMA, USASOC).</div>
-                        </div>
-                        <div class="bo-setting-row__control" style="align-items:flex-start;max-width:100%;width:100%;">
-                            <div class="bo-unit-affiliation-panel" style="width:min(100%,760px);">
-                                <div class="bo-unit-affiliation-modes" role="radiogroup" aria-label="Type de représentation">
-                                    <label>
-                                        <input type="radio" name="unit_affiliation_mode" value="real" <?= $unitAffiliationMode === 'real' ? 'checked' : '' ?>>
-                                        <span>Unité réelle</span>
-                                    </label>
-                                    <label>
-                                        <input type="radio" name="unit_affiliation_mode" value="fictional" <?= $unitAffiliationMode === 'fictional' ? 'checked' : '' ?>>
-                                        <span>Unité fictive</span>
-                                    </label>
-                                </div>
-
-                                <div id="bo-unit-affiliation-fictional" class="bo-unit-affiliation-panel<?= $unitAffiliationMode === 'fictional' ? '' : ' is-hidden' ?>"<?= $unitAffiliationMode === 'fictional' ? '' : ' hidden' ?>>
-                                    <label class="bo-setting-row__label" for="unit_affiliation_fictional_label">Nom de l’unité fictive</label>
-                                    <input
-                                        type="text"
-                                        name="unit_affiliation_fictional_label"
-                                        id="unit_affiliation_fictional_label"
-                                        class="bo-setting-row__field--wide"
-                                        maxlength="200"
-                                        value="<?= $h($unitAffiliationFictionalLabel) ?>"
-                                        placeholder="Ex. Task Force Phoenix"
-                                        <?= $unitAffiliationMode === 'fictional' ? '' : 'disabled' ?>
-                                    >
-                                    <p class="bo-settings-note" style="margin-top:0;">Exemple&nbsp;: Task Force Phoenix, 1er régiment fictif…</p>
-                                </div>
-
-                                <div id="bo-unit-affiliation-real" class="bo-unit-affiliation-panel<?= $unitAffiliationMode === 'real' ? '' : ' is-hidden' ?>"<?= $unitAffiliationMode === 'real' ? '' : ' hidden' ?>>
-                                    <label class="bo-setting-row__label" for="unit_affiliation_country">Pays de rattachement</label>
-                                    <select name="unit_affiliation_country" id="unit_affiliation_country" class="bo-setting-row__field" <?= $unitAffiliationMode === 'real' ? '' : 'disabled' ?>>
-                                        <option value="">Choisir un pays</option>
-                                        <?php foreach ($unitCountryLabels as $countryCode => $countryLabel): ?>
-                                            <option value="<?= $h($countryCode) ?>" <?= $unitAffiliationCountry === $countryCode ? 'selected' : '' ?>><?= $h($countryLabel) ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <label class="bo-setting-row__label" for="unit_affiliation_search">Rechercher une unité</label>
-                                    <input type="search" id="unit_affiliation_search" class="bo-setting-row__field--wide" placeholder="Rechercher une unité, un régiment, un commando…" <?= $unitAffiliationMode === 'real' ? '' : 'disabled' ?>>
-                                    <div id="unit_affiliation_units" class="bo-unit-affiliation-units" role="group" aria-label="Unités disponibles"></div>
-                                    <p class="bo-settings-note" id="unit_affiliation_summary" style="margin-top:0;">Aucune unité sélectionnée.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <?php if ($publicPageUrl !== ''): ?>
-                    <p class="bo-settings-note"><a href="<?= $h($publicPageUrl) ?>" target="_blank" rel="noopener">Voir la page publique ↗</a></p>
-                <?php endif; ?>
-            </section>
-            </div>
-
-            <div data-settings-panel="vitrine"<?= $hubTab === 'vitrine' ? '' : ' hidden' ?>>
-            <section class="ath-card ath-rise bo-setting-group" id="textes-publics">
-                <p class="bo-setting-group__kicker">Vitrine</p>
-                <h2 class="bo-setting-group__title">Textes publics</h2>
-                <div class="bo-setting-group__rows">
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Bio courte du bandeau</div>
-                            <div class="bo-setting-row__help">Quelques lignes sous le titre, dans le bandeau d’accueil de la page publique. Ce n’est pas le texte « Qui sommes-nous ».</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <textarea id="public_hero_subtitle" name="public_hero_subtitle" rows="3" maxlength="600" class="bo-setting-row__field--wide" placeholder="Quelques lignes pour situer votre communauté dès l’arrivée sur la page."><?= $h($publicHeroSubtitle) ?></textarea>
-                        </div>
-                    </div>
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Titre « Qui sommes-nous »</div>
-                            <div class="bo-setting-row__help">Intitulé de la section de présentation longue sur la vitrine.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <input type="text" id="public_about_title" name="public_about_title" class="bo-setting-row__field--wide" maxlength="160" value="<?= $h($publicAboutTitle) ?>" placeholder="Qui sommes-nous ?">
-                        </div>
-                    </div>
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Texte « Qui sommes-nous »</div>
-                            <div class="bo-setting-row__help">Présentation détaillée (histoire, cadre de jeu, accueil). Distinct de la bio du bandeau.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <textarea id="public_about_body" name="public_about_body" rows="5" maxlength="8000" class="bo-setting-row__field--wide" placeholder="Présentez votre histoire, votre cadre de jeu, votre manière d’accueillir…"><?= $h($publicAboutBody) ?></textarea>
-                        </div>
-                    </div>
-                </div>
-                <p class="bo-settings-note">Mise en page avancée, modules et médias : <a href="<?= $h(url('back-office/community/presentation')) ?>">Page d’accueil publique</a></p>
-            </section>
-
-            <section class="ath-card ath-rise bo-setting-group" id="visibilite">
-                <p class="bo-setting-group__kicker">Visibilité</p>
-                <h2 class="bo-setting-group__title">Registre des unités</h2>
-                <div class="bo-setting-group__rows">
-                    <?php $renderToggle(
-                        'Apparaître dans le registre public',
-                        'Rend la communauté visible dans la liste des unités.',
-                        'registry_listed',
-                        $registryListed,
-                        'Public',
-                        'Masquée'
-                    ); ?>
-                    <?php $renderToggle(
-                        'Forum réservé aux membres',
-                        'Masque « Accéder au forum » aux visiteurs non connectés.',
-                        'forum_members_only',
-                        $forumMembersOnly,
-                        'Réservé',
-                        'Ouvert'
-                    ); ?>
-                    <div class="bo-setting-row">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Page d’accueil publique</div>
-                            <div class="bo-setting-row__help">Vitrine consultable sans connexion lorsque l’adresse courte est définie.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <span class="bo-setting-row__value"><?= $slugHint !== '' ? 'En ligne' : 'Indisponible' ?></span>
-                        </div>
-                    </div>
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Visibilité de l’organigramme</div>
-                            <div class="bo-setting-row__help">Qui peut consulter la structure de l’unité.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <select id="orbat_visibility" name="orbat_visibility" class="bo-setting-row__field--wide">
-                                <option value="public" <?= $orbatVis === 'public' ? 'selected' : '' ?>>Visible par tous les visiteurs</option>
-                                <option value="members" <?= $orbatVis === 'members' ? 'selected' : '' ?>>Réservée aux membres</option>
-                                <option value="command" <?= $orbatVis === 'command' ? 'selected' : '' ?>>Réservée au commandement</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="bo-setting-row bo-setting-row--stack" id="timezone">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Fuseau horaire</div>
-                            <div class="bo-setting-row__help">Base de tous les horodatages (événements, échéances, journaux).</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <select id="timezone_select" name="timezone" class="bo-setting-row__field--wide">
-                                <?php foreach ($zones as $z): ?>
-                                    <option value="<?= $h($z) ?>" <?= $z === $currentTz ? 'selected' : '' ?>><?= $h($z) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Langue de référence</div>
-                            <div class="bo-setting-row__help">Langue par défaut pour les textes du portail.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <select id="default_locale" name="default_locale" class="bo-setting-row__field">
-                                <option value="fr" <?= $locale === 'fr' ? 'selected' : '' ?>>Français</option>
-                                <option value="en" <?= $locale === 'en' ? 'selected' : '' ?>>English</option>
-                            </select>
-                        </div>
-                    </div>
-                    <?php foreach (['forum' => 'Forum', 'documents' => 'Documents', 'events' => 'Événements', 'roster' => 'Effectifs', 'training' => 'Formations', 'analytics' => 'Statistiques'] as $mk => $ml): ?>
-                        <?php $renderToggle(
-                            'Module « ' . $ml . ' » sur la vitrine',
-                            'Affiche ce module sur la page de présentation publique.',
-                            'public_mod_' . $mk,
-                            !empty($pm[$mk]),
-                            'Visible',
-                            'Masqué'
-                        ); ?>
-                    <?php endforeach; ?>
-                </div>
-            </section>
-            </div>
-
-            <div data-settings-panel="portail"<?= $hubTab === 'portail' ? '' : ' hidden' ?>>
-            <section class="ath-card ath-rise bo-setting-group" id="navigation">
-                <p class="bo-setting-group__kicker">Navigation</p>
-                <h2 class="bo-setting-group__title">Portail</h2>
-                <div class="bo-setting-group__rows">
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Sous-menu Opérations</div>
-                            <div class="bo-setting-row__help">Style d’affichage du sous-menu latéral.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <select name="nav_operations_submenu_style" class="bo-setting-row__field">
-                                <?php foreach ($navStyleLabels as $val => $lbl): ?>
-                                    <option value="<?= $h($val) ?>" <?= $navOpsStyle === $val ? 'selected' : '' ?>><?= $h($lbl) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Couleur d’accent Opérations</div>
-                            <div class="bo-setting-row__help">Teinte appliquée au panneau latéral Opérations.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <select name="nav_operations_accent" class="bo-setting-row__field">
-                                <?php foreach ($navAccentLabels as $val => $lbl): ?>
-                                    <option value="<?= $h($val) ?>" <?= $navOpsAccent === $val ? 'selected' : '' ?>><?= $h($lbl) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-                    <?php $renderToggle(
-                        'Image du panneau Opérations',
-                        'Illustration affichée dans le menu latéral Opérations.',
-                        'nav_operations_image_enabled',
-                        $navOpsImageEnabled,
-                        'Affichée',
-                        'Masquée'
-                    ); ?>
-                    <div class="bo-setting-row">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Visuel Opérations</div>
-                            <div class="bo-setting-row__help">Image de fond du menu Opérations.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <?php if ($navOpsUrl !== ''): ?>
-                                <img src="<?= $h($navOpsUrl) ?>" alt="" class="bo-setting-thumb bo-setting-thumb--wide">
-                            <?php endif; ?>
-                            <span class="bo-setting-row__value"><?= $navOpsUrl !== '' ? 'Définie' : '—' ?></span>
-                            <input type="file" name="nav_operations" class="bo-setting-file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" <?= $slugHint === '' ? 'disabled' : '' ?>>
-                        </div>
-                    </div>
-                    <?php if ($navOpsUrl !== ''): ?>
-                    <label class="bo-setting-remove">
-                        <input type="hidden" name="remove_nav_operations" value="0">
-                        <input type="checkbox" name="remove_nav_operations" value="1">
-                        Retirer le visuel Opérations
-                    </label>
-                    <?php endif; ?>
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Sous-menu Ressources</div>
-                            <div class="bo-setting-row__help">Style d’affichage du sous-menu Ressources.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <select name="nav_resources_submenu_style" class="bo-setting-row__field">
-                                <?php foreach ($navStyleLabels as $val => $lbl): ?>
-                                    <option value="<?= $h($val) ?>" <?= $navResStyle === $val ? 'selected' : '' ?>><?= $h($lbl) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="bo-setting-row bo-setting-row--stack">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Couleur d’accent Ressources</div>
-                            <div class="bo-setting-row__help">Teinte appliquée au panneau latéral Ressources.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <select name="nav_resources_accent" class="bo-setting-row__field">
-                                <?php foreach ($navAccentLabels as $val => $lbl): ?>
-                                    <option value="<?= $h($val) ?>" <?= $navResAccent === $val ? 'selected' : '' ?>><?= $h($lbl) ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    </div>
-                    <?php $renderToggle(
-                        'Image du panneau Ressources',
-                        'Illustration affichée dans le menu latéral Ressources.',
-                        'nav_resources_image_enabled',
-                        $navResImageEnabled,
-                        'Affichée',
-                        'Masquée'
-                    ); ?>
-                    <div class="bo-setting-row">
-                        <div class="bo-setting-row__copy">
-                            <div class="bo-setting-row__label">Visuel Ressources</div>
-                            <div class="bo-setting-row__help">Image de fond du menu Ressources.</div>
-                        </div>
-                        <div class="bo-setting-row__control">
-                            <?php if ($navResUrl !== ''): ?>
-                                <img src="<?= $h($navResUrl) ?>" alt="" class="bo-setting-thumb bo-setting-thumb--wide">
-                            <?php endif; ?>
-                            <span class="bo-setting-row__value"><?= $navResUrl !== '' ? 'Définie' : '—' ?></span>
-                            <input type="file" name="nav_resources" class="bo-setting-file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" <?= $slugHint === '' ? 'disabled' : '' ?>>
-                        </div>
-                    </div>
-                    <?php if ($navResUrl !== ''): ?>
-                    <label class="bo-setting-remove">
-                        <input type="hidden" name="remove_nav_resources" value="0">
-                        <input type="checkbox" name="remove_nav_resources" value="1">
-                        Retirer le visuel Ressources
-                    </label>
-                    <?php endif; ?>
-                </div>
-            </section>
-            </div>
-
-            <div data-settings-panel="profil"<?= $hubTab === 'profil' ? '' : ' hidden' ?>>
-            <section class="ath-card ath-rise bo-setting-group" id="cycle-effectif">
-                <p class="bo-setting-group__kicker">Effectif</p>
-                <h2 class="bo-setting-group__title">Cycle administratif</h2>
-                <p class="bo-settings-note">Ces positions indiquent où en est l’enrôlement. Elles ne remplacent ni le rôle obligatoire Opérateur, ni les fonctions attribuées au membre.</p>
-                <div class="bo-setting-group__rows">
-                    <label class="bo-setting-row">
-                        <span class="bo-setting-row__copy"><span class="bo-setting-row__label">Durée obligatoire « En formation »</span><span class="bo-setting-row__help">Nombre de jours minimum avant le passage en service actif.</span></span>
-                        <span class="bo-setting-row__control"><input type="number" name="personnel_training_days" min="0" max="3650" value="<?= (int) ($lifecycle['training_days'] ?? 14) ?>"> jours</span>
-                    </label>
-                    <label class="bo-setting-row">
-                        <span class="bo-setting-row__copy"><span class="bo-setting-row__label">Ancienneté de service requise</span><span class="bo-setting-row__help">Délai administratif complémentaire après la formation (0 pour aucun).</span></span>
-                        <span class="bo-setting-row__control"><input type="number" name="personnel_active_service_days" min="0" max="3650" value="<?= (int) ($lifecycle['active_service_days'] ?? 0) ?>"> jours</span>
-                    </label>
-                </div>
-            </section>
-            </div>
-
-        </div>
-
-            <div data-settings-panel="portail"<?= $hubTab === 'portail' ? '' : ' hidden' ?>>
-        <section class="ath-card ath-rise bo-setting-group" id="marque">
-            <p class="bo-setting-group__kicker">Marque</p>
-            <h2 class="bo-setting-group__title">Images complémentaires et relais</h2>
-            <div class="bo-setting-group__rows">
-                <div class="bo-setting-row">
-                    <div class="bo-setting-row__copy">
-                        <div class="bo-setting-row__label">Bannière</div>
-                        <div class="bo-setting-row__help">Bandeau large pour les mises en avant (12 Mo max.).</div>
-                    </div>
-                    <div class="bo-setting-row__control">
-                        <span class="bo-setting-row__value"><?= $bannerUrl !== '' ? 'Définie' : '—' ?></span>
-                        <input type="file" name="org_banner" class="bo-setting-file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" <?= $slugHint === '' ? 'disabled' : '' ?>>
-                    </div>
-                </div>
-                <?php if ($bannerUrl !== ''): ?>
-                <label class="bo-setting-remove"><input type="hidden" name="remove_org_banner" value="0"><input type="checkbox" name="remove_org_banner" value="1"> Retirer la bannière</label>
-                <?php endif; ?>
-                <div class="bo-setting-row">
-                    <div class="bo-setting-row__copy">
-                        <div class="bo-setting-row__label">Icône navigateur</div>
-                        <div class="bo-setting-row__help">Petite icône carrée dans l’onglet du navigateur.</div>
-                    </div>
-                    <div class="bo-setting-row__control">
-                        <span class="bo-setting-row__value"><?= $faviconUrl !== '' ? 'Définie' : '—' ?></span>
-                        <input type="file" name="org_favicon" class="bo-setting-file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" <?= $slugHint === '' ? 'disabled' : '' ?>>
-                    </div>
-                </div>
-                <?php if ($faviconUrl !== ''): ?>
-                <label class="bo-setting-remove"><input type="hidden" name="remove_org_favicon" value="0"><input type="checkbox" name="remove_org_favicon" value="1"> Retirer l’icône</label>
-                <?php endif; ?>
-                <div class="bo-setting-row bo-setting-row--stack">
-                    <div class="bo-setting-row__copy">
-                        <div class="bo-setting-row__label">Couleurs de marque</div>
-                        <div class="bo-setting-row__help">Couleur principale et couleur d’accent du portail.</div>
-                    </div>
-                    <div class="bo-setting-row__control" style="gap:12px;">
-                        <input type="color" name="primary_color" value="<?= $h($primaryColor) ?>" title="Couleur principale">
-                        <input type="color" name="accent_color" value="<?= $h($accentColor) ?>" title="Couleur d’accent">
-                    </div>
-                </div>
-                <div class="bo-setting-row bo-setting-row--stack">
-                    <div class="bo-setting-row__copy">
-                        <div class="bo-setting-row__label">Relais Discord (annonces)</div>
-                        <div class="bo-setting-row__help">Les annonces du portail et les mises à jour du pack peuvent partir vers un salon Discord. Le salon commun, les salons à part et les photos Quick Picture se règlent dans <a href="<?= $h(url('back-office/integrations')) ?>">Intégrations</a>.</div>
-                    </div>
-                    <div class="bo-setting-row__control">
-                        <input type="text" inputmode="url" autocomplete="off" spellcheck="false" id="discord_webhook_url" name="discord_webhook_url" class="bo-setting-row__field--wide" maxlength="500" value="<?= $h((string) ($i['discord_webhook_url'] ?? '')) ?>" placeholder="https://discord.com/api/webhooks/…">
-                    </div>
-                </div>
-            </div>
-        </section>
-            </div>
-    </form>
-
-    <div data-settings-panel="inscription"<?= $hubTab === 'inscription' ? '' : ' hidden' ?> id="inscription">
-        <?php
-        $settingsHubEmbedInscription = true;
-        include base_path('views/admin/organization/inscription_settings.php');
-        ?>
-    </div>
-
     <div data-settings-panel="profil"<?= $hubTab === 'profil' ? '' : ' hidden' ?>>
-    <form method="post" action="<?= $h($tenantTypeFormAction) ?>" class="ath-card ath-rise bo-setting-group" id="profil">
+    <header class="bcs-intro">
+        <p class="bcs-intro__kicker">Rubrique 6 · Profil</p>
+        <h2 class="bcs-intro__title">Le type de communauté et le cycle des recrues</h2>
+        <p class="bcs-intro__text">Le <strong>type de communauté</strong> choisit les outils proposés à tous vos membres (menus, modules, permissions). Le <strong>cycle administratif</strong> fixe combien de temps une recrue reste « En formation » avant de passer en service actif.</p>
+        <div class="bcs-intro__foot">
+            <?php $renderWhere(['Menus du portail', 'Fiches des membres']); ?>
+        </div>
+    </header>
+    <form method="post" action="<?= $h($tenantTypeFormAction) ?>" class="bcs-card" id="profil">
         <?= \App\Core\Csrf::field() ?>
         <input type="hidden" name="settings_tab" value="profil">
         <span id="org-profil"></span>
-        <p class="bo-setting-group__kicker">Profil</p>
-        <h2 class="bo-setting-group__title">Type de communauté</h2>
-        <p class="bo-setting-row__help" style="margin-top:8px;max-width:720px;">
-            Le profil détermine les outils visibles pour tous les membres. Profil actuel :
-            <strong><?= $h($currentTypeLabel) ?></strong>.
-            Changer ou réappliquer un profil ajuste les menus et permissions sans effacer les données.
-        </p>
-        <fieldset class="bo-setting-group__rows" style="border:none;padding:0;margin-top:13px;">
+        <div class="bcs-card__head">
+            <div class="bcs-card__heading">
+                <h3 class="bcs-card__title">Type de communauté</h3>
+                <p class="bcs-card__desc">Profil actuel : <strong><?= $h($currentTypeLabel) ?></strong>. Changer ou réappliquer un profil ajuste les menus et les permissions, <strong>sans effacer de données</strong>.</p>
+            </div>
+        </div>
+        <fieldset class="bcs-choices" style="border:none;padding:0;margin:14px 0 0;">
             <legend class="sr-only">Profil de la communauté</legend>
             <?php foreach ($tenantTypeOptions as $typeKey => $typeMeta): ?>
                 <?php
                 $isCurrent = $typeKey === $currentTenantType;
                 $inputId = 'tenant_type_' . preg_replace('/[^a-z0-9_-]/i', '', (string) $typeKey);
                 ?>
-                <label for="<?= $h($inputId) ?>" class="bo-setting-row" style="align-items:flex-start;cursor:pointer;<?= $isCurrent ? 'background:var(--ath-row-hover);margin:0 -8px;padding-left:8px;padding-right:8px;' : '' ?>">
-                    <input id="<?= $h($inputId) ?>" type="radio" name="tenant_type" value="<?= $h((string) $typeKey) ?>" style="margin-top:3px;min-height:auto;" <?= $isCurrent ? 'checked' : '' ?>>
-                    <span class="bo-setting-row__copy">
-                        <span class="bo-setting-row__label"><?= $h((string) ($typeMeta['label'] ?? $typeKey)) ?><?= $isCurrent ? ' · profil actuel' : '' ?></span>
-                        <span class="bo-setting-row__help"><?= $h((string) ($typeMeta['description'] ?? '')) ?></span>
+                <label for="<?= $h($inputId) ?>" class="bcs-choice">
+                    <input id="<?= $h($inputId) ?>" type="radio" name="tenant_type" value="<?= $h((string) $typeKey) ?>" <?= $isCurrent ? 'checked' : '' ?>>
+                    <span>
+                        <span class="bcs-choice__title"><?= $h((string) ($typeMeta['label'] ?? $typeKey)) ?><?= $isCurrent ? ' · actuel' : '' ?></span>
+                        <span class="bcs-choice__help"><?= $h((string) ($typeMeta['description'] ?? '')) ?></span>
                     </span>
                 </label>
             <?php endforeach; ?>
         </fieldset>
-        <label class="bo-setting-row" style="align-items:flex-start;cursor:pointer;margin-top:8px;">
-            <input type="checkbox" name="confirm_type_change" value="1" required style="margin-top:3px;min-height:auto;">
-            <span class="bo-setting-row__copy">
-                <span class="bo-setting-row__label">Confirmation</span>
-                <span class="bo-setting-row__help">Je confirme l’application (ou la réapplication) de ce profil pour toute la communauté.</span>
-            </span>
-        </label>
-        <div class="bo-settings-save">
-            <button type="submit" class="ath-btn">Appliquer le profil</button>
+        <div class="bcs-card__foot" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+            <label class="bcs-check">
+                <input type="checkbox" name="confirm_type_change" value="1" required>
+                <span>Je confirme l’application de ce profil pour toute la communauté.</span>
+            </label>
+            <button type="submit" class="bcs-btn">Appliquer le profil</button>
         </div>
     </form>
     </div>
 
-    <div class="bo-settings-hub-save" data-settings-save>
-        <p class="bo-settings-hub-save__hint" data-settings-save-hint><?= $h($hubSaveHint) ?></p>
-        <button type="button" class="ath-btn ath-btn--solid" data-settings-submit="<?= $h($hubSubmitForm) ?>"<?= $hubTab === 'accueil' ? ' hidden' : '' ?>>Enregistrer</button>
+    <form method="post" enctype="multipart/form-data" action="<?= $h($formAction) ?>" id="bo-community-settings-form" class="bcs-panel" data-bcs-track>
+        <?= \App\Core\Csrf::field() ?>
+        <input type="hidden" name="settings_tab" value="<?= $h($hubTab) ?>">
+
+            <div data-settings-panel="identite"<?= $hubTab === 'identite' ? '' : ' hidden' ?>>
+            <header class="bcs-intro" id="identite">
+                <p class="bcs-intro__kicker">Rubrique 1 · Identité</p>
+                <h2 class="bcs-intro__title">Qui vous êtes, en quelques champs</h2>
+                <p class="bcs-intro__text">Le nom, l’adresse et le logo de votre communauté. Ils sont repris partout : sur votre <strong>page publique</strong>, sur votre <strong>carte dans le registre des unités</strong> et en haut du <strong>portail de vos membres</strong>.</p>
+                <div class="bcs-intro__foot">
+                    <?php $renderWhere(['Page publique', 'Registre des unités', 'Portail membres']); ?>
+                    <?php if ($publicPageUrl !== ''): ?>
+                        <a class="bcs-link" href="<?= $h($publicPageUrl) ?>" target="_blank" rel="noopener">Voir le résultat ↗</a>
+                    <?php endif; ?>
+                </div>
+            </header>
+
+            <section class="bcs-card">
+                <div class="bcs-card__head">
+                    <div class="bcs-card__heading">
+                        <h3 class="bcs-card__title">Nom et adresse</h3>
+                        <p class="bcs-card__desc">Ce que les visiteurs lisent en premier et l’adresse à partager sur Discord ou les forums.</p>
+                    </div>
+                </div>
+                <div class="bcs-card__body">
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="tenant_name">Nom affiché</label>
+                        <p class="bcs-help">Le nom complet de votre communauté, tel que vous voulez qu’on le lise. Exemple : « 92e Régiment d’Infanterie » ou « Task Force Phoenix ».</p>
+                        <input type="text" id="tenant_name" name="tenant_name" maxlength="255" value="<?= $h((string) ($tenant['name'] ?? '')) ?>" placeholder="Ex. 92e RI">
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="tenant_slug">Adresse de la page publique</label>
+                        <p class="bcs-help">Lettres minuscules, chiffres et tirets uniquement. <em>Attention :</em> si vous la changez, les liens déjà partagés ne fonctionneront plus.</p>
+                        <div class="bcs-affix">
+                            <span class="bcs-affix__prefix"><?= $h($publicPageHost) ?></span>
+                            <input type="text" id="tenant_slug" name="tenant_slug" maxlength="50" pattern="[a-z0-9]([-a-z0-9]*[a-z0-9])?" value="<?= $h($slugHint) ?>" placeholder="mon-unite">
+                        </div>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="game_label">Jeu ou plateforme <span class="bcs-opt">(facultatif)</span></label>
+                        <p class="bcs-help">Affiché sur votre page publique et sur votre carte du registre : les joueurs filtrent souvent par jeu.</p>
+                        <input type="text" id="game_label" name="game_label" class="bcs-input--short" maxlength="120" value="<?= $h((string) ($c['game_label'] ?? '')) ?>" placeholder="Ex. Arma 3, Arma Reforger, Squad">
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card">
+                <div class="bcs-card__head">
+                    <div class="bcs-card__heading">
+                        <h3 class="bcs-card__title">Logo et image du registre</h3>
+                        <p class="bcs-card__desc">JPG, PNG ou WebP, 12 Mo maximum. Les images sont recadrées automatiquement.</p>
+                    </div>
+                </div>
+                <div class="bcs-card__body">
+                    <?php if ($imagesNeedAddress): ?>
+                        <p class="bcs-notice bcs-notice--info">Renseignez d’abord l’adresse de la page publique et enregistrez : l’envoi d’images sera alors disponible.</p>
+                    <?php endif; ?>
+                    <div class="bcs-media">
+                        <?php $renderThumb($logoUrl, 'Pas de logo', true); ?>
+                        <div class="bcs-media__copy">
+                            <span class="bcs-label">Logo</span>
+                            <p class="bcs-help">Carré, fond transparent de préférence. Affiché en haut du portail, sur la page publique et dans le registre.</p>
+                            <input type="file" name="org_logo" class="bcs-file" aria-label="Choisir un logo" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" <?= $imagesNeedAddress ? 'disabled' : '' ?>>
+                            <?php if ($logoUrl !== ''): ?>
+                            <label class="bcs-check">
+                                <input type="hidden" name="remove_org_logo" value="0">
+                                <input type="checkbox" name="remove_org_logo" value="1">
+                                Retirer le logo
+                            </label>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="bcs-media">
+                        <?php $renderThumb($coverUrl, 'Fond coloré automatique'); ?>
+                        <div class="bcs-media__copy">
+                            <span class="bcs-label">Image d’en-tête du registre</span>
+                            <p class="bcs-help">Photo paysage (environ 1600 × 600) en haut de votre carte dans le registre des unités. Sans image, un fond coloré est généré.</p>
+                            <input type="file" name="registry_cover" class="bcs-file" aria-label="Choisir une image d’en-tête du registre" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" <?= $imagesNeedAddress ? 'disabled' : '' ?>>
+                            <?php if ($coverUrl !== ''): ?>
+                            <label class="bcs-check">
+                                <input type="hidden" name="remove_registry_cover" value="0">
+                                <input type="checkbox" name="remove_registry_cover" value="1">
+                                Retirer l’image du registre
+                            </label>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card">
+                <div class="bcs-card__head">
+                    <div class="bcs-card__heading">
+                        <h3 class="bcs-card__title">Accueil des nouveaux membres</h3>
+                        <p class="bcs-card__desc">Deux aides pour que les nouveaux trouvent leurs repères.</p>
+                    </div>
+                </div>
+                <div class="bcs-card__body">
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="welcome_text">Message de bienvenue <span class="bcs-opt">(facultatif)</span></label>
+                        <p class="bcs-help">Quelques phrases affichées à vos membres sur le portail. À ne pas confondre avec la bio du bandeau public (rubrique Vitrine).</p>
+                        <textarea id="welcome_text" name="welcome_text" rows="3" maxlength="500" placeholder="Bienvenue à la Task Force ! Pensez à lire le règlement et à rejoindre le Discord avant votre première opération."><?= $h((string) ($c['welcome_text'] ?? '')) ?></textarea>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="community_code">Code pour rejoindre <span class="bcs-opt">(facultatif)</span></label>
+                        <p class="bcs-help">Un code court à donner aux nouveaux : ils le saisissent sur la page « Rejoindre » pour trouver directement votre communauté.</p>
+                        <input type="text" id="community_code" name="community_code" class="bcs-input--short bcs-mono" maxlength="64" value="<?= $h((string) ($tenant['community_code'] ?? '')) ?>" placeholder="Ex. TF-PHOENIX">
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="affiliation">
+                <span id="representation-unite"></span>
+                <div class="bcs-card__head">
+                    <div class="bcs-card__heading">
+                        <h3 class="bcs-card__title">Unité représentée</h3>
+                        <p class="bcs-card__desc">Votre communauté s’inspire-t-elle d’une unité réelle (régiment, commando, composante…) ou d’un cadre fictif ? Ce choix s’affiche sur votre page publique et aide les joueurs à vous trouver.</p>
+                    </div>
+                </div>
+                <div class="bcs-card__body">
+                    <div class="bcs-field">
+                        <div class="bo-unit-affiliation-panel">
+                            <div class="bo-unit-affiliation-modes" role="radiogroup" aria-label="Type de représentation">
+                                <label>
+                                    <input type="radio" name="unit_affiliation_mode" value="real" <?= $unitAffiliationMode === 'real' ? 'checked' : '' ?>>
+                                    <span>Unité réelle</span>
+                                </label>
+                                <label>
+                                    <input type="radio" name="unit_affiliation_mode" value="fictional" <?= $unitAffiliationMode === 'fictional' ? 'checked' : '' ?>>
+                                    <span>Unité fictive</span>
+                                </label>
+                            </div>
+                            <?php if ($unitAffiliationMode === ''): ?>
+                                <p class="bcs-help">Rien n’est choisi pour l’instant : aucune unité n’est mentionnée sur votre page publique.</p>
+                            <?php endif; ?>
+
+                            <div id="bo-unit-affiliation-fictional" class="bo-unit-affiliation-panel<?= $unitAffiliationMode === 'fictional' ? '' : ' is-hidden' ?>"<?= $unitAffiliationMode === 'fictional' ? '' : ' hidden' ?>>
+                                <label class="bcs-label" for="unit_affiliation_fictional_label">Nom de l’unité fictive</label>
+                                <input
+                                    type="text"
+                                    name="unit_affiliation_fictional_label"
+                                    id="unit_affiliation_fictional_label"
+                                    maxlength="200"
+                                    value="<?= $h($unitAffiliationFictionalLabel) ?>"
+                                    placeholder="Ex. Task Force Phoenix"
+                                    <?= $unitAffiliationMode === 'fictional' ? '' : 'disabled' ?>
+                                >
+                                <p class="bcs-example">Exemples : Task Force Phoenix, 1er régiment fictif, Groupement Alpha…</p>
+                            </div>
+
+                            <div id="bo-unit-affiliation-real" class="bo-unit-affiliation-panel<?= $unitAffiliationMode === 'real' ? '' : ' is-hidden' ?>"<?= $unitAffiliationMode === 'real' ? '' : ' hidden' ?>>
+                                <label class="bcs-label" for="unit_affiliation_country">Pays de rattachement</label>
+                                <select name="unit_affiliation_country" id="unit_affiliation_country" class="bcs-input--short" <?= $unitAffiliationMode === 'real' ? '' : 'disabled' ?>>
+                                    <option value="">Choisir un pays</option>
+                                    <?php foreach ($unitCountryLabels as $countryCode => $countryLabel): ?>
+                                        <option value="<?= $h($countryCode) ?>" <?= $unitAffiliationCountry === $countryCode ? 'selected' : '' ?>><?= $h($countryLabel) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <label class="bcs-label" for="unit_affiliation_search">Rechercher une unité</label>
+                                <p class="bcs-help">Cochez une ou plusieurs entités. La recherche comprend aussi les surnoms et sigles (ex. Hubert, 1RPIMA, USASOC).</p>
+                                <input type="search" id="unit_affiliation_search" placeholder="Rechercher une unité, un régiment, un commando…" <?= $unitAffiliationMode === 'real' ? '' : 'disabled' ?>>
+                                <div id="unit_affiliation_units" class="bo-unit-affiliation-units" role="group" aria-label="Unités disponibles"></div>
+                                <p class="bcs-help" id="unit_affiliation_summary">Aucune unité sélectionnée.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            </div>
+
+            <div data-settings-panel="vitrine"<?= $hubTab === 'vitrine' ? '' : ' hidden' ?>>
+            <header class="bcs-intro">
+                <p class="bcs-intro__kicker">Rubrique 2 · Vitrine</p>
+                <h2 class="bcs-intro__title">Ce que voient les visiteurs non connectés</h2>
+                <p class="bcs-intro__text">Les textes principaux de votre <strong>page publique</strong>, votre présence dans le <strong>registre des unités</strong> et les blocs affichés. Pour la mise en page complète (photos, étapes de recrutement, FAQ, témoignages…), ouvrez la <a class="bcs-link" href="<?= $h(url('back-office/community/presentation')) ?>">page d’accueil publique</a>.</p>
+                <div class="bcs-intro__foot">
+                    <?php $renderWhere(['Page publique', 'Registre des unités']); ?>
+                    <?php if ($publicPageUrl !== ''): ?>
+                        <a class="bcs-link" href="<?= $h($publicPageUrl) ?>" target="_blank" rel="noopener">Voir le résultat ↗</a>
+                    <?php endif; ?>
+                </div>
+            </header>
+
+            <section class="bcs-card" id="textes-publics">
+                <div class="bcs-card__head">
+                    <div class="bcs-card__heading">
+                        <h3 class="bcs-card__title">Textes de la page publique</h3>
+                        <p class="bcs-card__desc">Deux niveaux : une accroche courte en haut de page, puis une présentation détaillée plus bas.</p>
+                    </div>
+                </div>
+                <div class="bcs-card__body">
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="public_hero_subtitle">Bio courte du bandeau</label>
+                        <p class="bcs-help">2 ou 3 lignes sous votre nom, en haut de la page. C’est souvent la seule chose lue : dites qui vous êtes, à quoi vous jouez et quand.</p>
+                        <textarea id="public_hero_subtitle" name="public_hero_subtitle" rows="3" maxlength="600" placeholder="Ex. Unité MILSIM francophone sur Arma 3. Opérations coopératives le samedi soir, ambiance sérieuse mais détendue."><?= $h($publicHeroSubtitle) ?></textarea>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="public_about_title">Titre de la présentation</label>
+                        <p class="bcs-help">Le titre de la section « Qui sommes-nous » plus bas sur la page.</p>
+                        <input type="text" id="public_about_title" name="public_about_title" maxlength="160" value="<?= $h($publicAboutTitle) ?>" placeholder="Qui sommes-nous ?">
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="public_about_body">Texte de la présentation</label>
+                        <p class="bcs-help">Votre histoire, votre cadre de jeu, votre façon d’accueillir les nouveaux. Quelques paragraphes suffisent.</p>
+                        <textarea id="public_about_body" name="public_about_body" rows="6" maxlength="8000" placeholder="Fondée en 2021, notre unité…"><?= $h($publicAboutBody) ?></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="visibilite">
+                <div class="bcs-card__head">
+                    <div class="bcs-card__heading">
+                        <h3 class="bcs-card__title">Visibilité</h3>
+                        <p class="bcs-card__desc">Qui peut vous trouver et ce qu’un visiteur peut consulter sans être membre.</p>
+                    </div>
+                </div>
+                <div class="bcs-card__body">
+                    <?php $renderToggle(
+                        'Apparaître dans le registre des unités',
+                        'Le registre est l’annuaire public des communautés hébergées sur Athena.',
+                        'registry_listed',
+                        $registryListed,
+                        'votre carte est visible dans l’annuaire et mène à votre page publique.',
+                        'vous n’apparaissez pas dans l’annuaire. Votre page publique reste accessible à qui a le lien.'
+                    ); ?>
+                    <?php $renderToggle(
+                        'Forum réservé aux membres',
+                        'Concerne le bouton « Accéder au forum » de votre page publique.',
+                        'forum_members_only',
+                        $forumMembersOnly,
+                        'les visiteurs non connectés ne voient pas le bouton du forum.',
+                        'tout visiteur peut ouvrir et lire le forum depuis votre page publique.'
+                    ); ?>
+                    <div class="bcs-field">
+                        <span class="bcs-label">Page publique</span>
+                        <p class="bcs-help">
+                            <?php if ($slugHint !== ''): ?>
+                                <span class="bcs-pill bcs-pill--ok">En ligne</span>
+                                Consultable sans connexion<?php if ($publicPageUrl !== ''): ?> à l’adresse <a class="bcs-link" href="<?= $h($publicPageUrl) ?>" target="_blank" rel="noopener"><?= $h(preg_replace('#^https?://#i', '', $publicPageUrl) ?? $publicPageUrl) ?></a><?php endif; ?>.
+                            <?php else: ?>
+                                <span class="bcs-pill bcs-pill--warn">Indisponible</span>
+                                Renseignez l’adresse de la page publique dans la rubrique Identité pour la mettre en ligne.
+                            <?php endif; ?>
+                        </p>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="orbat_visibility">Qui peut voir l’organigramme ?</label>
+                        <p class="bcs-help">L’organigramme montre la structure de l’unité (sections, groupes, postes). Le rendre public rassure les candidats ; le réserver protège vos effectifs.</p>
+                        <select id="orbat_visibility" name="orbat_visibility" class="bcs-input--short">
+                            <option value="public" <?= $orbatVis === 'public' ? 'selected' : '' ?>>Tous les visiteurs</option>
+                            <option value="members" <?= $orbatVis === 'members' ? 'selected' : '' ?>>Les membres uniquement</option>
+                            <option value="command" <?= $orbatVis === 'command' ? 'selected' : '' ?>>Le commandement uniquement</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="modules-vitrine">
+                <div class="bcs-card__head">
+                    <div class="bcs-card__heading">
+                        <h3 class="bcs-card__title">Blocs affichés sur la page publique</h3>
+                        <p class="bcs-card__desc">Activez uniquement ce qui donne envie de vous rejoindre. Un bloc désactivé reste disponible pour vos membres dans le portail.</p>
+                    </div>
+                </div>
+                <div class="bcs-card__body">
+                    <?php
+                    $moduleHelp = [
+                        'forum' => ['Forum', 'Les derniers sujets publics du forum.'],
+                        'documents' => ['Documents', 'Les documents marqués comme publics (règlement, doctrine…).'],
+                        'events' => ['Événements', 'Vos prochaines opérations et entraînements ouverts.'],
+                        'roster' => ['Effectifs', 'Le nombre de membres et la composition de l’unité.'],
+                        'training' => ['Formations', 'Le catalogue des formations proposées.'],
+                        'analytics' => ['Statistiques', 'Quelques chiffres d’activité (opérations jouées, présence).'],
+                    ];
+                    foreach ($moduleHelp as $mk => [$ml, $mh]):
+                        $renderToggle(
+                            $ml,
+                            $mh,
+                            'public_mod_' . $mk,
+                            !empty($pm[$mk]),
+                            '',
+                            ''
+                        );
+                    endforeach;
+                    ?>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="timezone">
+                <div class="bcs-card__head">
+                    <div class="bcs-card__heading">
+                        <h3 class="bcs-card__title">Langue et fuseau horaire</h3>
+                        <p class="bcs-card__desc">Réglages de référence pour toute la communauté.</p>
+                    </div>
+                </div>
+                <div class="bcs-card__body">
+                    <div class="bcs-grid">
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="timezone_select">Fuseau horaire</label>
+                            <p class="bcs-help">Sert à afficher les heures des événements, échéances et journaux.</p>
+                            <select id="timezone_select" name="timezone">
+                                <?php foreach ($zones as $z): ?>
+                                    <option value="<?= $h($z) ?>" <?= $z === $currentTz ? 'selected' : '' ?>><?= $h($z) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="default_locale">Langue de référence</label>
+                            <p class="bcs-help">Langue par défaut des textes du portail pour vos membres.</p>
+                            <select id="default_locale" name="default_locale">
+                                <option value="fr" <?= $locale === 'fr' ? 'selected' : '' ?>>Français</option>
+                                <option value="en" <?= $locale === 'en' ? 'selected' : '' ?>>English</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            </div>
+
+            <div data-settings-panel="portail"<?= $hubTab === 'portail' ? '' : ' hidden' ?>>
+            <header class="bcs-intro">
+                <p class="bcs-intro__kicker">Rubrique 5 · Portail</p>
+                <h2 class="bcs-intro__title">L’apparence de l’espace membres</h2>
+                <p class="bcs-intro__text">Couleurs, images et menus que voient vos membres une fois connectés, ainsi que le relais des annonces vers Discord. Rien ici n’est visible des visiteurs.</p>
+                <div class="bcs-intro__foot">
+                    <?php $renderWhere(['Portail membres', 'Discord']); ?>
+                </div>
+            </header>
+
+            <section class="bcs-card" id="navigation">
+                <div class="bcs-card__head">
+                    <div class="bcs-card__heading">
+                        <h3 class="bcs-card__title">Menus Opérations et Ressources</h3>
+                        <p class="bcs-card__desc">Ces deux menus du portail s’ouvrent en panneau latéral. Choisissez leur présentation, leur couleur et leur image de fond.</p>
+                    </div>
+                </div>
+                <div class="bcs-card__body">
+                    <?php foreach ([
+                        'operations' => ['label' => 'Menu Opérations', 'style' => $navOpsStyle, 'accent' => $navOpsAccent, 'imageOn' => $navOpsImageEnabled, 'url' => $navOpsUrl, 'file' => 'nav_operations', 'remove' => 'remove_nav_operations'],
+                        'resources' => ['label' => 'Menu Ressources', 'style' => $navResStyle, 'accent' => $navResAccent, 'imageOn' => $navResImageEnabled, 'url' => $navResUrl, 'file' => 'nav_resources', 'remove' => 'remove_nav_resources'],
+                    ] as $slot => $cfg): ?>
+                    <div class="bcs-sub">
+                        <p class="bcs-sub__title"><?= $h($cfg['label']) ?></p>
+                        <div class="bcs-grid" style="border-top:0;">
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="nav_<?= $h($slot) ?>_submenu_style">Présentation des liens</label>
+                                <select id="nav_<?= $h($slot) ?>_submenu_style" name="nav_<?= $h($slot) ?>_submenu_style">
+                                    <?php foreach ($navStyleLabels as $val => $lbl): ?>
+                                        <option value="<?= $h($val) ?>" <?= $cfg['style'] === $val ? 'selected' : '' ?>><?= $h($lbl) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="nav_<?= $h($slot) ?>_accent">Couleur d’accent</label>
+                                <select id="nav_<?= $h($slot) ?>_accent" name="nav_<?= $h($slot) ?>_accent">
+                                    <?php foreach ($navAccentLabels as $val => $lbl): ?>
+                                        <option value="<?= $h($val) ?>" <?= $cfg['accent'] === $val ? 'selected' : '' ?>><?= $h($lbl) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        <?php $renderToggle(
+                            'Afficher une image dans le panneau',
+                            '',
+                            'nav_' . $slot . '_image_enabled',
+                            $cfg['imageOn'],
+                            'une illustration orne le haut du panneau.',
+                            'le panneau n’affiche que les liens.'
+                        ); ?>
+                        <div class="bcs-media">
+                            <?php $renderThumb($cfg['url'], 'Image par défaut'); ?>
+                            <div class="bcs-media__copy">
+                                <span class="bcs-label">Image personnalisée <span class="bcs-opt">(facultatif)</span></span>
+                                <input type="file" name="<?= $h($cfg['file']) ?>" class="bcs-file" aria-label="Image du <?= $h(mb_strtolower($cfg['label'])) ?>" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" <?= $imagesNeedAddress ? 'disabled' : '' ?>>
+                                <?php if ($cfg['url'] !== ''): ?>
+                                <label class="bcs-check">
+                                    <input type="hidden" name="<?= $h($cfg['remove']) ?>" value="0">
+                                    <input type="checkbox" name="<?= $h($cfg['remove']) ?>" value="1">
+                                    Revenir à l’image par défaut
+                                </label>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="marque">
+                <div class="bcs-card__head">
+                    <div class="bcs-card__heading">
+                        <h3 class="bcs-card__title">Marque et relais</h3>
+                        <p class="bcs-card__desc">Images complémentaires, couleurs du portail et envoi automatique des annonces vers Discord.</p>
+                    </div>
+                </div>
+                <div class="bcs-card__body">
+                    <div class="bcs-media">
+                        <?php $renderThumb($bannerUrl, 'Pas de bannière'); ?>
+                        <div class="bcs-media__copy">
+                            <span class="bcs-label">Bannière</span>
+                            <p class="bcs-help">Bandeau large utilisé pour les mises en avant. 12 Mo max.</p>
+                            <input type="file" name="org_banner" class="bcs-file" aria-label="Choisir une bannière" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" <?= $imagesNeedAddress ? 'disabled' : '' ?>>
+                            <?php if ($bannerUrl !== ''): ?>
+                            <label class="bcs-check"><input type="hidden" name="remove_org_banner" value="0"><input type="checkbox" name="remove_org_banner" value="1"> Retirer la bannière</label>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="bcs-media">
+                        <?php $renderThumb($faviconUrl, 'Icône Athena', true); ?>
+                        <div class="bcs-media__copy">
+                            <span class="bcs-label">Icône de l’onglet du navigateur</span>
+                            <p class="bcs-help">Petite image carrée affichée dans l’onglet et les favoris. Un logo simple rend mieux.</p>
+                            <input type="file" name="org_favicon" class="bcs-file" aria-label="Choisir une icône" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" <?= $imagesNeedAddress ? 'disabled' : '' ?>>
+                            <?php if ($faviconUrl !== ''): ?>
+                            <label class="bcs-check"><input type="hidden" name="remove_org_favicon" value="0"><input type="checkbox" name="remove_org_favicon" value="1"> Retirer l’icône</label>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="bcs-field">
+                        <span class="bcs-label">Couleurs de marque</span>
+                        <p class="bcs-help">Couleur principale (boutons, liens) et couleur d’accent du portail.</p>
+                        <div class="bcs-inline" style="gap:18px;flex-wrap:wrap;">
+                            <label class="bcs-inline"><input type="color" name="primary_color" value="<?= $h($primaryColor) ?>"> Principale</label>
+                            <label class="bcs-inline"><input type="color" name="accent_color" value="<?= $h($accentColor) ?>"> Accent</label>
+                        </div>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="discord_webhook_url">Relais Discord des annonces <span class="bcs-opt">(facultatif)</span></label>
+                        <p class="bcs-help">Collez l’adresse d’un webhook Discord : les annonces du portail et les mises à jour du pack y seront publiées automatiquement. Les salons séparés et les photos se règlent dans <a class="bcs-link" href="<?= $h(url('back-office/integrations')) ?>">Intégrations</a>.</p>
+                        <input type="text" inputmode="url" autocomplete="off" spellcheck="false" id="discord_webhook_url" name="discord_webhook_url" maxlength="500" value="<?= $h((string) ($i['discord_webhook_url'] ?? '')) ?>" placeholder="https://discord.com/api/webhooks/…">
+                    </div>
+                </div>
+            </section>
+            </div>
+
+            <div data-settings-panel="profil"<?= $hubTab === 'profil' ? '' : ' hidden' ?>>
+            <section class="bcs-card" id="cycle-effectif">
+                <div class="bcs-card__head">
+                    <div class="bcs-card__heading">
+                        <h3 class="bcs-card__title">Cycle administratif des recrues</h3>
+                        <p class="bcs-card__desc">Ces durées indiquent où en est l’enrôlement d’un membre. Elles ne remplacent ni le rôle obligatoire Opérateur, ni les fonctions attribuées.</p>
+                    </div>
+                </div>
+                <div class="bcs-card__body">
+                    <div class="bcs-grid">
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="personnel_training_days">Durée minimale « En formation »</label>
+                            <p class="bcs-help">Nombre de jours avant de pouvoir passer en service actif.</p>
+                            <span class="bcs-inline"><input type="number" id="personnel_training_days" name="personnel_training_days" min="0" max="3650" value="<?= (int) ($lifecycle['training_days'] ?? 14) ?>"> jours</span>
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="personnel_active_service_days">Ancienneté de service requise</label>
+                            <p class="bcs-help">Délai supplémentaire après la formation (0 = aucun).</p>
+                            <span class="bcs-inline"><input type="number" id="personnel_active_service_days" name="personnel_active_service_days" min="0" max="3650" value="<?= (int) ($lifecycle['active_service_days'] ?? 0) ?>"> jours</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            </div>
+    </form>
+
+    <div data-settings-panel="inscription"<?= $hubTab === 'inscription' ? '' : ' hidden' ?> id="inscription">
+        <header class="bcs-intro">
+            <p class="bcs-intro__kicker">Rubrique 3 · Inscription</p>
+            <h2 class="bcs-intro__title">Comment on vous rejoint</h2>
+            <p class="bcs-intro__text">Le parcours proposé aux candidats depuis votre page publique : type de formulaire, contact, et questions posées. Le bouton « Candidater » de la page publique mène à ce formulaire.</p>
+            <div class="bcs-intro__foot">
+                <?php $renderWhere(['Page publique', 'Formulaire de candidature']); ?>
+                <?php if ($publicPageUrl !== ''): ?>
+                    <a class="bcs-link" href="<?= $h($publicPageUrl) ?>" target="_blank" rel="noopener">Voir le résultat ↗</a>
+                <?php endif; ?>
+            </div>
+        </header>
+        <?php
+        $settingsHubEmbedInscription = true;
+        include base_path('views/admin/organization/inscription_settings.php');
+        ?>
     </div>
 
-    <p class="bo-settings-note">
-        Mise en page avancée de la vitrine :
-        <a href="<?= $h(url('back-office/community/presentation')) ?>">Page d’accueil publique</a>
-        · <a href="<?= $h(url('back-office/media')) ?>">Médias</a>
-        · <a href="<?= $h(url('back-office/integrations')) ?>">Intégrations</a>
-        · <a href="<?= $h(url('back-office/configuration-initiale')) ?>">Assistant de démarrage</a>
+    <div class="bo-settings-hub-save" data-settings-save>
+        <div class="bcs-savebar__copy">
+            <p class="bcs-savebar__title" data-bcs-save-title>Enregistrer les modifications</p>
+            <p class="bcs-savebar__hint" data-bcs-save-hint><?= $h($hubSaveHint) ?></p>
+        </div>
+        <button type="button" class="bcs-btn bcs-btn--primary" data-settings-submit="<?= $h($hubSubmitForm) ?>"<?= $hubTab === 'accueil' ? ' hidden' : '' ?>>Enregistrer</button>
+    </div>
+
+    <p class="bcs-footer-links">
+        Aller plus loin :
+        <a class="bcs-link" href="<?= $h(url('back-office/community/presentation')) ?>">Page d’accueil publique</a>
+        · <a class="bcs-link" href="<?= $h(url('back-office/media')) ?>">Médias</a>
+        · <a class="bcs-link" href="<?= $h(url('back-office/integrations')) ?>">Intégrations</a>
+        · <a class="bcs-link" href="<?= $h(url('back-office/configuration-initiale')) ?>">Assistant de démarrage</a>
     </p>
+    </div>
+</div>
 </div>
 <script>
 (function () {
-    document.querySelectorAll('.ath-toggle__input[data-bo-toggle]').forEach(function (input) {
-        var sync = function () {
-            var label = document.querySelector('[data-bo-toggle-value="' + input.getAttribute('data-bo-toggle') + '"]');
-            var wrap = input.closest('.ath-toggle');
-            if (wrap) {
-                wrap.classList.toggle('is-on', input.checked);
-                wrap.classList.toggle('is-off', !input.checked);
-            }
-            if (label) {
-                label.textContent = input.checked ? (input.getAttribute('data-on') || 'Actif') : (input.getAttribute('data-off') || 'Inactif');
-            }
-        };
-        input.addEventListener('change', sync);
-        sync();
-    });
-
-    var hash = (location.hash || '').replace(/^#/, '');
-    if (hash) {
-        var target = document.getElementById(hash);
-        if (target) {
-            requestAnimationFrame(function () {
-                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            });
-        }
-    }
-
     var unitCatalog = <?= json_encode($unitCatalogPayload, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
     var selectedIds = <?= json_encode($unitAffiliationUnitIds, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
     var countrySelect = document.getElementById('unit_affiliation_country');
@@ -992,6 +1063,35 @@ $hubSaveHint = $hubSaveHints[$hubTab] ?? $hubSaveHints['identite'];
         searchInput.addEventListener('input', renderUnitOptions);
     }
     syncAffiliationPanels();
+
+
+    /* Barre d’enregistrement : texte selon la rubrique + modifications en attente */
+    var hub = document.querySelector('[data-settings-hub]');
+    var saveHints = <?= json_encode($hubSaveHints, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+    var saveBar = hub ? hub.querySelector('[data-settings-save]') : null;
+    var saveHint = hub ? hub.querySelector('[data-bcs-save-hint]') : null;
+    var saveTitle = hub ? hub.querySelector('[data-bcs-save-title]') : null;
+    var dirtyForms = {};
+    function refreshSaveBar() {
+        if (!hub) return;
+        var tab = hub.getAttribute('data-active-tab') || 'identite';
+        if (saveHint) saveHint.textContent = saveHints[tab] || '';
+        var formId = tab === 'inscription' ? 'bo-inscription-settings-form' : 'bo-community-settings-form';
+        var dirty = !!dirtyForms[formId];
+        if (saveBar) saveBar.classList.toggle('is-dirty', dirty);
+        if (saveTitle) saveTitle.textContent = dirty ? 'Modifications non enregistrées' : 'Enregistrer les modifications';
+    }
+    ['bo-community-settings-form', 'bo-inscription-settings-form'].forEach(function (id) {
+        var f = document.getElementById(id);
+        if (!f) return;
+        var mark = function () { dirtyForms[id] = true; refreshSaveBar(); };
+        f.addEventListener('input', mark);
+        f.addEventListener('change', mark);
+    });
+    if (hub && typeof MutationObserver === 'function') {
+        new MutationObserver(refreshSaveBar).observe(hub, { attributes: true, attributeFilter: ['data-active-tab'] });
+    }
+    refreshSaveBar();
 
     if (window.location.hash === '#affiliation') {
         var affEl = document.getElementById('affiliation');

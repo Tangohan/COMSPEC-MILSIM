@@ -981,6 +981,9 @@ return function (Router $router) {
     $router->post('/admin/system/demo-nda/remove-bypass', [SystemDemoNdaController::class, 'removeBypassIp'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/demo-nda/add-my-ip', [SystemDemoNdaController::class, 'addMyIp'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/demo-nda/reset-visit', [SystemDemoNdaController::class, 'resetVisit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/e-mails', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/e-mails/reglages', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/e-mails/recapitulatif', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'sendDigestNow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cron', [SystemCronController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cron/run', [SystemCronController::class, 'runNow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/retours-interface', [SystemUxFeedbackController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -990,6 +993,8 @@ return function (Router $router) {
     $router->get('/admin/system/noms-inappropries', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/noms-inappropries/mots', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'addWord'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/noms-inappropries/mots/defaut', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'restoreDefaults'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/noms-inappropries/mots/{id}/modifier', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'updateWord'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/noms-inappropries/alertes/{id}/renommer', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'renameSubject'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/noms-inappropries/mots/{id}/supprimer', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'deleteWord'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/noms-inappropries/analyser', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'scan'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/noms-inappropries/alertes/{id}/traiter', [\App\Controllers\Admin\System\SystemNameFilterController::class, 'resolveAlert'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -1097,6 +1102,11 @@ return function (Router $router) {
     $router->post('/admin/users/purge-anonymises', [SystemUsersController::class, 'purgeAnonymized'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/purge-requests/approve', [SystemUsersController::class, 'approvePurgeRequest'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/users/purge-requests/reject', [SystemUsersController::class, 'rejectPurgeRequest'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/retirer-communaute', [SystemUsersController::class, 'removeMembership'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/reintegrer-communaute', [SystemUsersController::class, 'restoreMembership'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/bannir', [SystemUsersController::class, 'ban'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/lever-bannissement', [SystemUsersController::class, 'unban'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/users/bloquer-ip', [SystemUsersController::class, 'blockIp'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/site-roles', [SystemSiteRoleAssignmentController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/assign', [SystemSiteRoleAssignmentController::class, 'assign'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/site-roles/revoke', [SystemSiteRoleAssignmentController::class, 'revoke'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

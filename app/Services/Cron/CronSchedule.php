@@ -43,6 +43,10 @@ final class CronSchedule
         'photo_compress' => 60,
         // Fins d'essai fondateur et de formule offerte : e-mail une fois par fin.
         'plan_end_warning' => 360,
+        // E-mails reportés par le quota quotidien ou mis en file (MAIL_QUEUE).
+        'mail_queue' => 5,
+        // Le récapitulatif vérifie sa propre cadence (Administration > Envois d'e-mails).
+        'mail_ops_digest' => 5,
     ];
 
     public static function intervalMinutes(string $jobKey): int

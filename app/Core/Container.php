@@ -598,6 +598,22 @@ class Container
             ),
             \App\Services\Cron\Jobs\PhotoCompressCronJob::class => new \App\Services\Cron\Jobs\PhotoCompressCronJob(),
             \App\Services\Cron\Jobs\PlanEndWarningCronJob::class => new \App\Services\Cron\Jobs\PlanEndWarningCronJob(),
+            \App\Services\Email\MailBudgetGate::class => new \App\Services\Email\MailBudgetGate(
+                self::get(\App\Repositories\EmailDeliveryRepository::class)
+            ),
+            \App\Services\Cron\Jobs\MailQueueCronJob::class => new \App\Services\Cron\Jobs\MailQueueCronJob(
+                new \App\Services\Email\MailQueueProcessor(
+                    self::get(\App\Repositories\AsyncJobRepository::class),
+                    self::get(\App\Services\EmailService::class)
+                )
+            ),
+            \App\Services\Cron\Jobs\OpsMailDigestCronJob::class => new \App\Services\Cron\Jobs\OpsMailDigestCronJob(
+                new \App\Services\Email\OpsMailDigestService(
+                    new \App\Repositories\EmailDigestRepository(),
+                    self::get(\App\Services\EmailService::class),
+                    self::get(\App\Services\Email\MailBudgetGate::class)
+                )
+            ),
             \App\Repositories\AtakReportRoutingRepository::class => new \App\Repositories\AtakReportRoutingRepository(),
             \App\Services\Tactical\AtakBridgeModulesService::class => new \App\Services\Tactical\AtakBridgeModulesService(),
             \App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob::class => new \App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob(
@@ -651,6 +667,8 @@ class Container
                     self::get(\App\Services\Cron\Jobs\AdvancementSeniorityCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PhotoCompressCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PlanEndWarningCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\MailQueueCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\OpsMailDigestCronJob::class),
                 ],
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),
@@ -1978,6 +1996,13 @@ class Container
                 self::get(\App\Services\Training\TenantPedagogyChainGuard::class),
             ),
             \App\Services\Training\PedagogyPathwayService::class => new \App\Services\Training\PedagogyPathwayService(),
+            \App\Services\Training\TrainingPedagogyDesignationService::class => new \App\Services\Training\TrainingPedagogyDesignationService(
+                self::get(\App\Repositories\PedagogyRepository::class),
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+            ),
             \App\Services\Training\TenantPedagogyStructureService::class => new \App\Services\Training\TenantPedagogyStructureService(
                 self::get(\App\Repositories\UnitRepository::class),
             ),
@@ -1991,6 +2016,7 @@ class Container
                 self::get(\App\Services\Training\PedagogyPathwayService::class),
                 self::get(\App\Services\Training\TenantPedagogyStructureService::class),
                 self::get(\App\Repositories\TrainingCourseRepository::class),
+                self::get(\App\Services\Training\TrainingPedagogyDesignationService::class),
             ),
             \App\Controllers\Web\TrainingController::class => new \App\Controllers\Web\TrainingController(
                 self::get(\App\Repositories\TrainingRepository::class),

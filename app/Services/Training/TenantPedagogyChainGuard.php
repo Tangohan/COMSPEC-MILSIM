@@ -8,6 +8,7 @@ use App\Repositories\PedagogyRepository;
 
 /**
  * Garde-fous « chaîne pédagogique » au niveau tenant (présence de profils clés).
+ * Un membre nommé directement (training_pedagogy_designations) compte comme un rôle reconnu.
  */
 final class TenantPedagogyChainGuard
 {
@@ -21,7 +22,8 @@ final class TenantPedagogyChainGuard
 
     public function hasActiveDesignerCapacity(int $tenantId): bool
     {
-        if ($this->pedagogyRepository->countUsersWithDesignTrainerRoleSet($tenantId) > 0) {
+        if ($this->pedagogyRepository->countUsersWithDesignTrainerRoleSet($tenantId) > 0
+            || $this->pedagogyRepository->countDesignatedUsers($tenantId, 'design_trainer') > 0) {
             return true;
         }
 
@@ -30,7 +32,8 @@ final class TenantPedagogyChainGuard
 
     public function hasCertifiedOrRoleInstructor(int $tenantId): bool
     {
-        if ($this->pedagogyRepository->tenantHasAnyInstructorEligibility($tenantId)) {
+        if ($this->pedagogyRepository->tenantHasAnyInstructorEligibility($tenantId)
+            || $this->pedagogyRepository->countDesignatedUsers($tenantId, 'delivery_instructor') > 0) {
             return true;
         }
 
@@ -43,7 +46,8 @@ final class TenantPedagogyChainGuard
             return true;
         }
 
-        return $this->pedagogyRepository->countUsersWithPedagogyKindRoles($tenantId, 'instructor_certifier') > 0;
+        return $this->pedagogyRepository->countUsersWithPedagogyKindRoles($tenantId, 'instructor_certifier') > 0
+            || $this->pedagogyRepository->countDesignatedUsers($tenantId, 'instructor_certifier') > 0;
     }
 
     public function hasTrainerOfTrainers(int $tenantId): bool
@@ -52,7 +56,8 @@ final class TenantPedagogyChainGuard
             return true;
         }
 
-        return $this->pedagogyRepository->countUsersWithPedagogyKindRoles($tenantId, 'trainer_certifier') > 0;
+        return $this->pedagogyRepository->countUsersWithPedagogyKindRoles($tenantId, 'trainer_certifier') > 0
+            || $this->pedagogyRepository->countDesignatedUsers($tenantId, 'trainer_certifier') > 0;
     }
 
     /**

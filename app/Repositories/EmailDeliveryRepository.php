@@ -98,4 +98,65 @@ class EmailDeliveryRepository
 
         return (int) $stmt->fetchColumn();
     }
+
+    /** Envois réellement partis chez le fournisseur depuis $since (le mode fichier de développement ne compte pas). */
+    public function countSentSince(string $since): int
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT COUNT(*) FROM email_deliveries WHERE created_at >= ? AND status = 'sent' AND transport <> 'file'"
+        );
+        $stmt->execute([$since]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Volume par type et par issue (sent, failed, digest, deferred, muted) depuis $since.
+     *
+     * @return list<array{event_code:string, status:string, n:int}>
+     */
+    public function countByEventAndStatusSince(string $since): array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT event_code, status, COUNT(*) AS n FROM email_deliveries WHERE created_at >= ? GROUP BY event_code, status'
+        );
+        $stmt->execute([$since]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $out[] = ['event_code' => (string) $r['event_code'], 'status' => (string) $r['status'], 'n' => (int) $r['n']];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Envois par jour (envoyés réellement / tous) sur les $days derniers jours.
+     *
+     * @return array<string, array{sent:int, total:int}> clé Y-m-d
+     */
+    public function dailyCounts(int $days): array
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT DATE(created_at) AS d, SUM(status = 'sent' AND transport <> 'file') AS sent, COUNT(*) AS total
+             FROM email_deliveries WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY) GROUP BY DATE(created_at)"
+        );
+        $stmt->execute([max(1, $days) - 1]);
+        $out = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $out[(string) $r['d']] = ['sent' => (int) $r['sent'], 'total' => (int) $r['total']];
+        }
+
+        return $out;
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function recentFailures(int $limit = 15): array
+    {
+        $stmt = $this->pdo->query(
+            "SELECT event_code, recipient, subject, transport, error_message, created_at FROM email_deliveries
+             WHERE status = 'failed' ORDER BY id DESC LIMIT " . max(1, min(100, $limit))
+        );
+
+        return $stmt ? ($stmt->fetchAll(PDO::FETCH_ASSOC) ?: []) : [];
+    }
 }
