@@ -174,6 +174,9 @@ private _sim = ["COMSPEC", "ATAK · Simulation"];
 ["comspec_atak_native_blood_style", "LIST",
     ["Sang sur l'écran", "Discret : quelques taches pâles. Réaliste : éclaboussures, traces de doigts, coulures, paumes. Gore : taches plus grandes et plus nombreuses, nappes épaisses et mains entières."],
     _sim, [[0, 1, 2], ["Discret", "Réaliste", "Gore"], 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_clean_items", "EDITBOX",
+    ["Kits de nettoyage (en plus)", "Le nettoyage se fait toujours sans objet. Avec un de ces objets (classes exactes, séparées par des virgules), un coup de chiffon va deux fois plus vite et enlève tout, sang compris. L'objet n'est pas consommé. Vide : aucun kit."],
+    _sim, "ACE_fieldDressing,ACE_elasticBandage,ACE_packingBandage,ACE_quikclot", 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_ew_open", "CHECKBOX",
     ["Guerre électronique ouverte à tous", "Coché : tout porteur de téléphone peut brouiller et goniométrer. Décoché : réservé aux unités COMSPEC_ATAK_EwOperator ou au rôle « guerre électronique / brouilleur / SIGINT »."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;

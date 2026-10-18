@@ -626,6 +626,25 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         ["can"] call comspec_atak_native_fnc_screenClean
     }] call comspec_atak_native_fnc_aceAction;
     ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"], _deep, true] call ace_interact_menu_fnc_addActionToClass;
+    // Tension et SpO2 : brassard et oxymètre posés par un soignant (8 s) ; l'app Médical et la liaison NFC n'affichent
+    // ces valeurs qu'après cette mesure (fn_medVitals « measure »).
+    private _measure = {
+        params ["_target"];
+        private _go = { params ["_t"]; [_t, "measure"] call comspec_atak_native_fnc_medVitals;
+            ["SUCCESS", format ["Tension et SpO2 mesurées : %1", [_t, true] call comspec_atak_native_fnc_unitCallsign], 4, 30] call comspec_atak_native_fnc_notify; };
+        if (isNil "ace_common_fnc_progressBar") exitWith { [_target] call _go; };
+        [8, [_target, _go], { (_this select 0) params ["_t", "_go"]; [_t] call _go; }, {}, "Brassard et oxymètre…",
+            { (_this select 0) params ["_t"]; alive _t && {(player distance _t) < 3} }] call ace_common_fnc_progressBar;
+        player playActionNow "Medic";
+    };
+    private _bp = ["COMSPEC_ATAK_MeasureBp", "Mesurer tension et SpO2", "", { [_this select 0] call (_this select 2) }, {
+        alive (_this select 0) && {isNull objectParent (_this select 1)}
+    }, {}, _measure] call comspec_atak_native_fnc_aceAction;
+    ["CAManBase", 0, ["ACE_MainActions"], _bp, true] call ace_interact_menu_fnc_addActionToClass;
+    private _bpSelf = ["COMSPEC_ATAK_MeasureBpSelf", "Mesurer ma tension et SpO2", "", { [_this select 0] call (_this select 2) }, {
+        isNull objectParent (_this select 0)
+    }, {}, _measure] call comspec_atak_native_fnc_aceAction;
+    ["CAManBase", 1, ["ACE_SelfActions"], _bpSelf, true] call ace_interact_menu_fnc_addActionToClass;
 };
 // Sang projeté sur le téléphone sorti quand un homme est tué à moins de 3,5 m (fn_screenDirt « nearby »).
 addMissionEventHandler ["EntityKilled", {

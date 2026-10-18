@@ -5,6 +5,7 @@
                 étalent plus qu'elles n'essuient, fn_screenDirt "clean") ;
       "deep"  : nettoyage complet, 10 s : tout part d'un coup (poussière, traces, sang sur l'écran et la coque) ;
       "can"   : le nettoyage est-il possible maintenant (téléphone porté, pas déjà en train de nettoyer) ?
+    Kit en complément (réglage « Kits de nettoyage ») : deux fois plus vite, nettoyage complet.
     Barre de progression ACE si ACE est présent et le téléphone rangé.
 */
 params [["_mode", "start"]];
@@ -20,6 +21,9 @@ player setVariable ["COMSPEC_ATAK_Cleaning", true];
 private _deep = _mode isEqualTo "deep";
 private _blood = _stains > 0 || {((_n getOrDefault ["blood", 0]) max (_n getOrDefault ["frameBlood", 0])) > 0.1};
 private _time = [[3, 6] select _blood, 10] select _deep;
+// Kit de nettoyage en complément (réglage serveur, jamais obligatoire) : deux fois plus vite, et tout part d'un coup.
+private _kits = ((missionNamespace getVariable ["comspec_atak_native_clean_items", ""]) splitString ", ;") apply { toLower _x };
+if (_kits isNotEqualTo [] && {((items player) findIf { (toLower _x) in _kits }) >= 0}) then { _deep = true; _time = _time / 2; };
 missionNamespace setVariable ["COMSPEC_ATAK_CleanDeep", _deep];
 missionNamespace setVariable ["COMSPEC_ATAK_CleanDone", {
     player setVariable ["COMSPEC_ATAK_Cleaning", false];
