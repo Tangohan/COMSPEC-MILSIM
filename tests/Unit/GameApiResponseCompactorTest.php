@@ -23,6 +23,8 @@ final class GameApiResponseCompactorTest extends TestCase
 
     private function request(string $path, string $ua = 'COMSPECExtension/2.0.88', ?string $inm = null, ?string $enc = null, string $method = 'GET'): Request
     {
+        $_GET = [];
+        $_POST = [];
         $_SERVER['REQUEST_METHOD'] = $method;
         $_SERVER['REQUEST_URI'] = $path;
         $_SERVER['HTTP_USER_AGENT'] = $ua;

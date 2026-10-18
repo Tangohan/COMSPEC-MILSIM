@@ -15,7 +15,7 @@
 params [["_tab", "overview", [""]]];
 if (!hasInterface) exitWith {};
 disableSerialization;
-if (!is3DEN) exitWith { systemChat (("Tableau de bord SSE : disponible dans l'éditeur Eden (menu COMSPEC SSE).") call comspec_sse_fnc_tr); };
+if (!is3DEN) exitWith { hintSilent (("Tableau de bord SSE : disponible dans l'éditeur Eden (menu COMSPEC SSE).") call comspec_sse_fnc_tr); };
 // Action d'un menu d'Eden : la liste déroulante est encore ouverte, la fenêtre est créée juste après.
 if (!canSuspend) exitWith { [_tab] spawn { uiSleep 0.05; _this call comspec_sse_fnc_openDashboard; }; };
 private _parent = findDisplay 313;
