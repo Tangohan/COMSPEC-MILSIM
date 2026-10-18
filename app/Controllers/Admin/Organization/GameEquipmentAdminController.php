@@ -10,6 +10,7 @@ use App\Core\Request;
 use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\GameEquipmentRepository;
+use App\Repositories\GameItemIconRepository;
 use App\Repositories\GameRoleKitRepository;
 use App\Services\GameEquipment\GameItemKinds;
 use App\Services\GameEquipment\PlayerKitService;
@@ -104,6 +105,39 @@ final class GameEquipmentAdminController
     private function playerKits(): PlayerKitService
     {
         return \App\Core\Container::get(PlayerKitService::class);
+    }
+
+    /**
+     * Icône PNG d’un objet (convertie depuis le .paa envoyé par COMSPEC Link). Nom = empreinte SHA-256, servie
+     * seulement si elle appartient à la communauté ; contenu immuable, donc mis en cache longtemps.
+     */
+    public function icon(Request $request, array $params = []): Response
+    {
+        $deny = $this->denyUnlessManage();
+        if ($deny !== null) {
+            return $deny;
+        }
+        $file = (string) ($params['file'] ?? '');
+        $notFound = (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=UTF-8')->setBody('Not found');
+        if (preg_match('/^([a-f0-9]{64})\.png$/', $file, $m) !== 1) {
+            return $notFound;
+        }
+        $repo = new GameItemIconRepository();
+        if (!$repo->tenantHasHash((int) Session::get('tenant_id'), $m[1])) {
+            return $notFound;
+        }
+        $path = $repo->pathForHash($m[1]);
+        $body = is_file($path) ? @file_get_contents($path) : false;
+        if (!is_string($body) || $body === '') {
+            return $notFound;
+        }
+
+        return (new Response())
+            ->setStatusCode(200)
+            ->header('Content-Type', 'image/png')
+            ->header('Cache-Control', 'private, max-age=31536000, immutable')
+            ->header('X-Content-Type-Options', 'nosniff')
+            ->setBody($body);
     }
 
     public function kits(Request $request, array $params = []): Response
