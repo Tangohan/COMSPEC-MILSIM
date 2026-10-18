@@ -38,6 +38,32 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Fluidité : moins de calculs téléphone rangé, carte et menu des apps allégés, derniers textes traduits (ATAK natif 2.1.1)
+
+### Résumé joueur
+Type : amélioration
+FR : Le téléphone coûte moins d'images par seconde, surtout rangé
+- Téléphone rangé, la qualité du réseau et le meilleur relais sont recalculés moins souvent : beaucoup moins de calculs de relief et de bâtiments en fond, près des relais surtout.
+- La carte ne relit plus tous les marqueurs de la mission chaque seconde : seulement quand un marqueur est posé, modifié ou supprimé.
+- Le menu des apps se redessine plus vite (recherche, épinglage, pastilles), et la lueur d'écran et la musique ne travaillent plus pour rien quand elles ne servent pas.
+- Derniers textes encore en français en mode anglais traduits (débits du réseau, fiches SEEK et SSE en Bluetooth, trois infobulles de modules Eden).
+EN : The phone costs fewer frames per second, especially when stowed
+- With the phone stowed, network quality and the best relay are recomputed less often: far fewer terrain and building checks in the background, especially near relays.
+- The map no longer rereads every mission marker each second: only when a marker is placed, changed or deleted.
+- The apps menu redraws faster (search, pinning, badges), and screen glow and music no longer do work when they are not in use.
+- Last texts still in French in English mode are translated (network throughput, SEEK and SSE records over Bluetooth, three Eden module tooltips).
+
+### Détail technique
+- `fn_linkQuality` : cache 6 s téléphone fermé (2 s ouvert) ; un cache vidé exprès (antenne, dégâts, mode avion, brouillage, test de débit) vide aussi le meilleur relais.
+- `fn_relayNet "best"` : résultat gardé 1,5 s ouvert / 6 s fermé (`COMSPEC_ATAK_RelayBest`, vidé par `"pin"`) ; `"list"` ne compte plus les téléphones (hasDevice sur chaque joueur) quand aucun relais n'est en service.
+- Marqueurs : compteur `COMSPEC_ATAK_MkRev` (EH MarkerCreated / Deleted / Updated). `fn_mapGameMarkers` relit sur changement (sinon 5 s au lieu de 1 s), `fn_localDataRefresh` sur changement (2 s avec marqueurs Athena, sinon 10 s), `fn_markerWebSweep` (relais du camp, 15 s) ne sérialise plus rien sans changement.
+- `fn_localDataRefresh` : pistes Athena non parcourues quand l'indicatif a déjà trouvé la sienne. `fn_natoSymbol` : cache vidé d'un coup au-delà de 400 unités (plus de copie des clés à chaque image).
+- `fn_feedLink "publish"` : variation de palier diffusée seulement si elle tient deux tours (relais changé ou coupure : aussitôt).
+- `fn_screenGlow "tick"` : sortie immédiate réglage serveur coupé (défaut). `fn_musicTick` : `MusicStatus` (DLL, appel bloquant) au plus toutes les 1,5 s, position extrapolée entre deux. `fn_phoneSecurity` : catalogue cherché dans le HashMap. `fn_relayEden` : éditeur relu toutes les 1,5 s sans tour posée.
+- Lanceur : pastilles calculées une fois par app, mesure des libellés de tuile gardée (`COMSPEC_ATAK_TileFit`, plus de contrôle créé et supprimé par tuile à chaque redessin).
+- i18n : 14 entrées dans `en.txt` (+ modèle communautaire regénéré), 3 infobulles de `modules.hpp` en `$STR_COMSPEC_ATAK_CFG_*`. main.pbo à reconstruire au regroupement. COMSPEC Link inchangé.
+- À tester en jeu : barres de signal et bascule de relais téléphone ouvert et rangé (près d'un relais, en marchant), toast « relais perdu » ; poser, déplacer et supprimer un marqueur (carte du téléphone, et sur Athena pour le relais du camp) ; marqueurs Athena reçus ; recherche, épinglage et pastille Messages dans le menu des apps ; musique DLL (barre de lecture, fin de piste) ; aperçu de tour relais dans Eden ; mode anglais : page Réseau > débits, Bluetooth > fiches SEEK.
+
 ## Regroupement : réseau radio réaliste, apps refaites, synchro allégée, icônes des objets (ATAK natif 2.1.0.AB - Denver, COMSPEC Link 2.0.88)
 
 ### Résumé joueur

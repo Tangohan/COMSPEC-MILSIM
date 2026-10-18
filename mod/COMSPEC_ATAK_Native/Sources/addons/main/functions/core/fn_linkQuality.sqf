@@ -1,5 +1,5 @@
 /*
-    Qualité de la liaison radio-data du téléphone (simulation de débit), recalculée au plus toutes les 2 s.
+    Qualité de la liaison radio-data du téléphone (simulation de débit), recalculée au plus toutes les 2 s (6 s téléphone fermé).
     Renvoie un HashMap : bars (0-4), kbps, latency (ms), loss (%), label, factors [[nom, effet]...].
     Facteurs : liaison Athena, meilleur relais reçu (fn_relayNet "best" : relais de mission, passerelle de véhicule, PC mobile), bâtiment au-dessus de la tête, masque du relief,
     véhicule, pluie et brouillard, zone radio, brouilleurs de mission (COMSPEC_ATAK_Jammers = [[pos, rayon]...], force en 7e élément),
@@ -17,7 +17,11 @@ if (missionNamespace getVariable ["COMSPEC_ATAK_Airplane", false]) exitWith {
     createHashMapFromArray [["bars", 0], ["kbps", 0], ["latency", 0], ["loss", 100], ["label", "Mode avion"], ["factors", [["Mode avion", "aucun réseau"]]], ["sim", true], ["airplane", true]]
 };
 private _cache = uiNamespace getVariable ["COMSPEC_ATAK_LinkQ", []];
-if ((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < 2}) exitWith { _cache select 1 };
+// Téléphone fermé : recalcul toutes les 6 s au lieu de 2 (les boucles de fond, alertes BFT, file d'envoi, balise, le
+// demandent sans cesse et chaque calcul lance une vingtaine de rayons contre les bâtiments et le relief).
+if ((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < ([6, 2] select !isNull ([] call comspec_atak_native_fnc_display))}) exitWith { _cache select 1 };
+// Cache vidé exprès (antenne, dégâts, mode avion, brouillage, test de débit…) : le meilleur relais est recalculé aussi.
+if ((count _cache) isNotEqualTo 2) then { uiNamespace setVariable ["COMSPEC_ATAK_RelayBest", []]; };
 private _q = createHashMap;
 if !(missionNamespace getVariable ["comspec_atak_native_net_sim", true]) exitWith {
     // Réseau exclusivement par relais : même sans simulation de débit, aucun relais reçu = aucun réseau.
