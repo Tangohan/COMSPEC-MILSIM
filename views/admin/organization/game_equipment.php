@@ -115,6 +115,8 @@ $renderRank = static function (string $kind, array $rows, bool $big) use ($h, $i
         $mod = $modLabel((string) $r['mod']);
         echo '<li class="bo-ge-rank__row' . ($i >= 5 ? ' is-extra' : '') . '">'
             . '<span class="bo-ge-rank__pos">' . ($i + 1) . '</span>'
+            . (($ico = \App\Repositories\GameItemIconRepository::urlFor((string) $r['class'])) !== null
+                ? '<img class="bo-ge-itemico" src="' . $h($ico) . '" alt="" loading="lazy" decoding="async" width="48" height="48">' : '')
             . '<span class="bo-ge-rank__body">'
             . '<span class="bo-ge-rank__name" translate="no">' . $h($label($r)) . '</span>'
             . '<span class="bo-ge-rank__meta"><code class="bo-ge-mono" translate="no">' . $h((string) $r['class']) . '</code>'

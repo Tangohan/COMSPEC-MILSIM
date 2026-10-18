@@ -217,7 +217,7 @@ _perso pushBack (["dock", "Dock", format ["%1 app(s) en raccourci en bas de l'é
 if (["dock"] call _foldOpen) then {
     {
         _perso pushBack ["switch", _x get "name", (_x get "id") in _dockNow, compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_DockToggle');", _x get "id"]];
-    } forEach (([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible });
+    } forEach (([] call comspec_atak_native_fnc_appList) select { [_x] call comspec_atak_native_fnc_appVisible && {!(_x getOrDefault ["wip", false])} });
     _perso pushBack ["buttons", [["DOCK PAR DÉFAUT", { profileNamespace setVariable ["COMSPEC_ATAK_DockApps", []]; saveProfileNamespace; [{ [] call comspec_atak_native_fnc_dockRender; ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]]];
 };
 _perso pushBack ["buttons", [["TOUT RÉINITIALISER (APPARENCE)", {
@@ -385,7 +385,8 @@ _appsRows pushBack ["section", "Applications", format ["%1 app(s) cachée(s) du 
 {
     private _id = _x get "id";
     if (_id isNotEqualTo "Settings" && {!((_x get "section") isEqualTo "Civil" && {!(missionNamespace getVariable ["comspec_atak_native_civil_apps", true])})}) then {
-        _appsRows pushBack ["switch", format ["%1  <t size='0.8' color='#8a9a93'>%2</t>", _x get "name", _x get "section"], !(_id in _hidden), compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_AppHide');", _id]];
+        // App en chantier (wip=1) : signalée W.I.P dans la liste (elle reste grisée et fermée au lanceur).
+        _appsRows pushBack ["switch", format ["%1  <t size='0.8' color='#8a9a93'>%2</t>%3", _x get "name", _x get "section", ["", "  <t size='0.75' color='#d99a1f'>W.I.P</t>"] select (_x getOrDefault ["wip", false])], !(_id in _hidden), compile format ["['%1'] call (uiNamespace getVariable 'COMSPEC_ATAK_AppHide');", _id]];
     };
 } forEach ([] call comspec_atak_native_fnc_appList);
 

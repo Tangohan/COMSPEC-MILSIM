@@ -7,6 +7,8 @@
       immobile allongé ou assis au calme plus de 2 min).
     Gardé sur ce PC (profileNamespace COMSPEC_ATAK_Garmin), par jour réel : 14 jours et 40 activités ; envoyé au site à chaque
     écriture du profil (toutes les 5 min, Garmin.Report de COMSPEC Link 2.0.87 ; fiche du membre).
+    Montre Garmin (objet COMSPEC_ATAK_GarminWatch, emplacement montre) obligatoire si le réglage serveur
+    comspec_atak_native_garmin_watch est coché (par défaut) : sans elle, aucune mesure.
     Params : [mode : "tick" | "save" (fin de mission : activité en cours close et profil écrit)]
     Mémoire : missionNamespace COMSPEC_ATAK_Gm (HashMap) : bb, real (dernière seconde réelle vue), hr, stress, goal,
               days (jour -> HashMap), acts (liste), cur (activité en cours), last (position), rest (secondes de repos)
@@ -71,7 +73,7 @@ private _save = {
     { _days deleteAt _x; } forEach (_keys select [14]);
     _gm set ["real", [] call _real];
     private _out = [];
-    { if !(_x in ["days", "acts", "cur", "last", "tick", "saved", "min", "rest", "away", "web"]) then { _out pushBack [_x, _y]; }; } forEach _gm;
+    { if !(_x in ["days", "acts", "cur", "last", "tick", "saved", "min", "rest", "away", "web", "worn"]) then { _out pushBack [_x, _y]; }; } forEach _gm;
     // Courbes gardées pour aujourd'hui et hier seulement (le reste des jours : les totaux).
     { (_days get _x) deleteAt "series"; } forEach (_keys select [2, 12]);
     _out pushBack ["days", (keys _days) apply { private _d = _days get _x; [_x, (keys _d) apply { [_x, _d get _x] }] }];
@@ -101,6 +103,18 @@ private _save = {
 };
 
 if (_mode isEqualTo "save") exitWith { [] call _finish; [] call _save; true };
+
+// Montre Garmin obligatoire (réglage serveur « ATAK · Garmin ») : sans la « Montre Garmin » dans l'emplacement montre,
+// rien n'est mesuré ni envoyé au site. L'activité en cours est close et le dernier point oublié quand on l'enlève (pas de
+// saut de distance quand elle revient) ; l'app affiche « Aucune montre Garmin ».
+private _worn = !(missionNamespace getVariable ["comspec_atak_native_garmin_watch", true])
+    || {((assignedItems player) findIf { _x isKindOf ["COMSPEC_ATAK_GarminWatch", configFile >> "CfgWeapons"] }) >= 0};
+private _was = _gm getOrDefault ["worn", true];
+_gm set ["worn", _worn];
+if (!_worn) exitWith {
+    if (_was) then { [] call _finish; _gm set ["last", []]; };
+    false
+};
 
 private _now = diag_tickTime;
 private _dt = (_now - (_gm getOrDefault ["tick", _now])) min 10;

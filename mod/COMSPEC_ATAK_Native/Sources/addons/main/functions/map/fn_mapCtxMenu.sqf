@@ -34,19 +34,21 @@ private _unbindEsc = {
     if (_h >= 0 && {!isNull _d}) then { _d displayRemoveEventHandler ["KeyDown", _h]; };
     uiNamespace setVariable ["COMSPEC_ATAK_MapCtxKey", -1];
 };
+// Relais sous le curseur : traité avant le switch, la fonction renvoyant true pour tous les autres modes (un booléen
+// à la place de l'objet faisait échouer isNull, et avec lui le clic droit et le clic gauche sur la carte).
+if (_mode isEqualTo "relayAt") exitWith {
+    _arg params ["_map", "_screen"];
+    if (isNull _map || {!(profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true])}) exitWith { objNull };
+    private _near = 0.022 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]);
+    private _hit = objNull;
+    {
+        private _sp = _map ctrlMapWorldToScreen (getPosASLVisual (_x select 0));
+        private _dd = [(_sp select 0) - (_screen select 0), (_sp select 1) - (_screen select 1)] distance2D [0, 0];
+        if (_dd < _near) then { _near = _dd; _hit = _x select 0; };
+    } forEach (["list"] call comspec_atak_native_fnc_relayNet);
+    _hit
+};
 switch (_mode) do {
-    case "relayAt": {
-        _arg params ["_map", "_screen"];
-        if (isNull _map || {!(profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true])}) exitWith { objNull };
-        private _near = 0.022 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]);
-        private _hit = objNull;
-        {
-            private _sp = _map ctrlMapWorldToScreen (getPosASLVisual (_x select 0));
-            private _dd = [(_sp select 0) - (_screen select 0), (_sp select 1) - (_screen select 1)] distance2D [0, 0];
-            if (_dd < _near) then { _near = _dd; _hit = _x select 0; };
-        } forEach (["list"] call comspec_atak_native_fnc_relayNet);
-        _hit
-    };
     case "open": {
         _arg params ["_map", "_screen", ["_card", false]];
         if (isNull _map) exitWith {};

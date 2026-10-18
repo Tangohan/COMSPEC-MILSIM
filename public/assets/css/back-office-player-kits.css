@@ -160,3 +160,18 @@
     grid-row: 2;
   }
 }
+
+.bo-pk__objs li:has(> .bo-pk__ico) {
+  align-items: center;
+}
+
+.bo-pk__ico {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  padding: 2px;
+  border-radius: 5px;
+  background: #1d2125;
+  box-sizing: border-box;
+}

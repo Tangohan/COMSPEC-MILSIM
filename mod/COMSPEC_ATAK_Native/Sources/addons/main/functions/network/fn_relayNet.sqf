@@ -23,8 +23,10 @@
                    case « Réseau exclusivement par relais » d'un module « ATAK · Relais », ou mode réaliste d'Athena).
       "required" : vrai si les relais sont obligatoires (mode « only » ou case « Relais obligatoires »).
       "pin"      : [relais ou objNull] préfère ce relais (objNull : retour au choix automatique).
-      "link"     : [position antenne ASL, portée, Mbit/s, position ASL visée] -> [qualité 0-1, Mbit/s, perte %] ;
-                   portée réduite à 35 % quand le relief coupe la ligne (même règle que le maillage Wave Relay).
+      "link"     : [position antenne ASL, portée, Mbit/s, position ASL visée, mode, objets ignorés, gain dB]
+                   -> [qualité 0-1, Mbit/s, perte %, marge dB, [[cause, dB]...], MCS] : bilan radio de fn_radioLink
+                   (relief et zone de Fresnel, feuillage et bâtiments en mode "full"), débit par modulation adaptative.
+                   Réglage serveur comspec_atak_native_net_realism à 0 : ancien modèle (portée x 0,35 derrière le relief).
       "coverage" : calcule en tâche de fond une grille 41 x 41 autour du centre donné (ou de moi), rayon rcRadius
                    (2, 5 ou 10 km) : meilleur débit reçu à 1,7 m du sol, brouilleurs compris.
                    Résultat : missionNamespace COMSPEC_ATAK_Coverage = [centre, case, [[pos, Mbit/s, perte %, relais]...],
@@ -113,6 +115,7 @@ switch (_act) do {
         } forEach _out;
         // Répéteurs : sans liaison propre (satellite, fibre), un relais doit voir un relais raccordé, de proche en proche.
         // Débit du répéteur = le plus faible de la chaîne, réduit par la qualité de chaque bond.
+        private _real = missionNamespace getVariable ["comspec_atak_native_net_realism", 1];
         private _feed = _out apply { [-1, _x select 5] select ((_x select 6) && {_x select 11}) };
         private _hop = _feed apply { [-1, 0] select (_x >= 0) };
         private _queue = [];
@@ -124,10 +127,18 @@ switch (_act) do {
                 if ((_feed select _forEachIndex) >= 0 || {!(_x select 6)}) then { continue };
                 private _reach = (_a select 4) max (_x select 4);
                 private _d = (_a select 1) distance (_x select 1);
-                if (_d > _reach) then { continue };
-                if (terrainIntersectASL [_a select 1, _x select 1]) then { _reach = _reach * 0.35; };
-                if (_d > _reach) then { continue };
-                private _q = 1 - (_d / _reach) ^ 2;
+                if (_d > 2 * _reach) then { continue };
+                // Bond entre relais : bilan radio (relief, zone de Fresnel entre les deux antennes), qualité = marge / 20 dB.
+                // Mode simplifié : portée x 0,35 quand le relief coupe la ligne (ancien modèle).
+                private _q = -1;
+                if (_real isEqualTo 0) then {
+                    if (terrainIntersectASL [_a select 1, _x select 1]) then { _reach = _reach * 0.35; };
+                    if (_d <= _reach) then { _q = 1 - (_d / _reach) ^ 2; };
+                } else {
+                    private _mg = ([_a select 1, _x select 1, _reach] call comspec_atak_native_fnc_radioLink) select 0;
+                    if (_mg >= 0) then { _q = (_mg / 20) min 1; };
+                };
+                if (_q < 0) then { continue };
                 _feed set [_forEachIndex, (_x select 5) min ((_feed select _i) * (0.45 + 0.55 * _q))];
                 _hop set [_forEachIndex, (_hop select _i) + 1];
                 _x set [12, _a select 0];
@@ -180,28 +191,64 @@ switch (_act) do {
     case "best": {
         // Meilleur relais ou passerelle reçu par le téléphone : [objet, nom, distance, Mbit/s, perte % (lien radio et
         // relais), type, portée effective, téléphones à portée, places, batterie %, fréquence MHz, santé, latence ms du
-        // relais] ou []. Hystérésis : celui déjà accroché est gardé 20 % au-delà de sa portée. Relais préféré (fiche du
+        // relais, marge dB de la voie montante, émission possible, [[cause, dB]...], MCS] ou []. Hystérésis : celui déjà accroché est gardé 20 % au-delà de sa portée. Relais préféré (fiche du
         // relais sur la carte) : choisi tant qu'il est reçu.
         private _last = uiNamespace getVariable ["COMSPEC_ATAK_RelayLast", objNull];
         private _pin = uiNamespace getVariable ["COMSPEC_ATAK_RelayPin", objNull];
         private _eye = eyePos player;
         private _best = [];
         private _pinned = false;
+        private _real = missionNamespace getVariable ["comspec_atak_native_net_realism", 1];
+        // Bilan radio (fn_radioLink) : la portée du relais est celle de la voie montante (le téléphone émet bien moins
+        // fort que le relais) ; la voie descendante a 4 dB de plus, d'où une frange « réception seule » au-delà de la
+        // portée, où l'on reçoit encore sans pouvoir émettre. Terminal de bord ou passerelle (antenne de toit) : +3 dB.
+        // Évanouissements lents (multitrajets) de ±2 dB propres à chaque relais, plus profonds en mouvement rapide.
+        private _gain = [0, 3] select (([player] call comspec_atak_native_fnc_vehicleTerminal) isNotEqualTo "");
+        private _spd = (abs speed vehicle player) / 3.6;
+        private _dl = [4, 0] select (_real isEqualTo 0);
+        private _cands = [];
         {
-            _x params ["_o", "_ant", "_n", "_k", "_r", "_mb", "_ok", "", "_u", "_sl", "_bt", "", "", "_fq", "", "_rl", "", "_hl", "", "", "_lat"];
+            _x params ["_o", "_ant", "", "", "_r", "_mb", "_ok"];
             if (!_ok) then { continue };
             private _rr = [_r, _r * 1.2] select (_o isEqualTo _last);
-            private _l = ["link", [_ant, _rr, _mb, _eye]] call comspec_atak_native_fnc_relayNet;
-            if ((_l select 1) <= 0) then { continue };
+            if ((_ant distance _eye) > 2 * _rr) then { continue };
+            private _fade = 0;
+            if (_real > 0) then {
+                private _seed = ((_ant select 0) + (_ant select 1)) mod 360;
+                _fade = 2 * (sin (time * 21 + _seed)) * (cos (time * 7.3 + _seed * 3));
+                if (_spd > 8) then { _fade = _fade - random ((_spd / 10) min 3); };
+            };
+            private _l = ["link", [_ant, _rr, _mb, _eye, "fast", [], _gain + _fade + _dl]] call comspec_atak_native_fnc_relayNet;
+            if ((_l select 3) < 0) then { continue };
+            _cands pushBack [-(_l select 3), _forEachIndex, _x, _rr, _fade];
+        } forEach (["list"] call comspec_atak_native_fnc_relayNet);
+        // Les trois meilleurs au relief seul (et le relais préféré) sont recalculés avec feuillage et bâtiments.
+        _cands sort true;
+        private _top = [];
+        { if (_forEachIndex < 3 || {!isNull _pin && {((_x select 2) select 0) isEqualTo _pin}}) then { _top pushBack _x; }; } forEach _cands;
+        private _bestTx = false;
+        {
+            _x params ["", "", "_e", "_rr", "_fade"];
+            _e params ["_o", "_ant", "_n", "_k", "_r", "_mb", "_ok", "", "_u", "_sl", "_bt", "", "", "_fq", "", "_rl", "", "_hl", "", "", "_lat"];
+            private _l = ["link", [_ant, _rr, _mb, _eye, "full", [player, _o], _gain + _fade]] call comspec_atak_native_fnc_relayNet;
+            private _tx = (_l select 3) >= 0;
+            // Réception seule : débit de la voie descendante, aucune émission possible.
+            if (!_tx) then {
+                _l = ["link", [_ant, _rr, _mb, _eye, "full", [player, _o], _gain + _fade + _dl]] call comspec_atak_native_fnc_relayNet;
+                if ((_l select 3) < 0) then { continue };
+            };
             private _isPin = !isNull _pin && {_o isEqualTo _pin};
             if (_pinned && {!_isPin}) then { continue };
-            if (_isPin || {_best isEqualTo []} || {(_l select 1) > (_best select 3)}) then {
-                private _eff = [_rr, _rr * 0.35] select (terrainIntersectASL [_ant, _eye]);
+            if (_isPin || {_best isEqualTo []} || {_tx && {!_bestTx}} || {(_tx isEqualTo _bestTx) && {(_l select 1) > (_best select 3)}}) then {
+                private _dist = _ant distance _eye;
+                private _mg = [(_l select 3) - _dl, _l select 3] select _tx;
+                private _eff = if (_real isEqualTo 0) then { [_rr, _rr * 0.35] select (terrainIntersectASL [_ant, _eye]) } else { round (_dist * 10 ^ ((_mg max -20) / 20)) };
                 private _loss = round (100 - (100 - (_l select 2)) * (100 - _rl) / 100);
-                _best = [_o, _n, _ant distance _eye, _l select 1, _loss, _k, _eff, _u, _sl, _bt, _fq, _hl, _lat];
+                _best = [_o, _n, _dist, _l select 1, _loss, _k, _eff, _u, _sl, _bt, _fq, _hl, _lat, _mg, _tx, _l select 4, _l select 5];
                 _pinned = _isPin;
+                _bestTx = _tx;
             };
-        } forEach (["list"] call comspec_atak_native_fnc_relayNet);
+        } forEach _top;
         // Relais perdu (détruit, coupé, batterie vide, brouillé, sans liaison, ou hors de portée) : toast sur le téléphone,
         // ou notification s'il est fermé, avec le relais de repli s'il y en a un.
         private _now0 = _best param [0, objNull];
@@ -281,14 +328,25 @@ switch (_act) do {
         } forEach (missionNamespace getVariable ["COMSPEC_AtakRelays", []]);
     };
     case "link": {
-        _arg params ["_ant", "_range", "_mb", "_p"];
-        private _d = _ant distance _p;
-        if (_d > _range) exitWith { [0, 0, 100] };
-        private _eff = _range;
-        if (terrainIntersectASL [_ant, _p]) then { _eff = _eff * 0.35; };
-        if (_d > _eff) exitWith { [0, 0, 100] };
-        private _q = (1 - (_d / _eff) ^ 2) * (1 - 0.15 * rain);
-        [_q, _mb * (0.45 + 0.55 * _q), round ((1 - _q) * 35)]
+        // [antenne ASL, portée, Mbit/s, cible ASL, mode ("fast" relief seul | "full" + feuillage et bâtiments),
+        //  objets ignorés, gain dB en plus] -> [qualité 0-1, Mbit/s, perte %, marge dB, [[cause, dB]...], MCS 0-7 (-1 : aucun)].
+        _arg params ["_ant", "_range", "_mb", "_p", ["_mode", "fast"], ["_ign", []], ["_extra", 0]];
+        if ((missionNamespace getVariable ["comspec_atak_native_net_realism", 1]) isEqualTo 0) exitWith {
+            // Modèle simplifié (ancien) : portée x 0,35 derrière le relief, qualité 1 - (d / portée)².
+            private _d = _ant distance _p;
+            private _eff = _range;
+            if (_d <= _range && {terrainIntersectASL [_ant, _p]}) then { _eff = _eff * 0.35; };
+            if (_d > _eff) exitWith { [0, 0, 100, -1, [], -1] };
+            private _q = (1 - (_d / _eff) ^ 2) * (1 - 0.15 * rain);
+            [_q, _mb * (0.45 + 0.55 * _q), round ((1 - _q) * 35), 20 * log (_eff / (_d max 1)), [], -1]
+        };
+        ([_ant, _p, _range, _mode, _ign] call comspec_atak_native_fnc_radioLink) params ["_mg", "_ls"];
+        _mg = _mg + _extra;
+        if (_mg < 0) exitWith { [0, 0, 100, _mg, _ls, -1] };
+        // Modulation adaptative : comme une radio maillée réelle, 8 débits (MCS 0 à 7) selon la marge ; perte de paquets
+        // forte au seuil, négligeable au-delà de 15 dB.
+        private _mcs = ({ _mg >= _x } count [0, 2, 4, 6, 9, 12, 16, 20]) - 1;
+        [(_mg / 20) min 1, _mb * ([0.06, 0.12, 0.25, 0.4, 0.55, 0.7, 0.85, 1] select _mcs), round (40 * exp (-_mg / 5)), _mg, _ls, _mcs]
     };
     case "coverage": {
         if (missionNamespace getVariable ["COMSPEC_ATAK_CoverageBusy", false]) exitWith { ["INFO", "Calcul de couverture déjà en cours", 3, 20] call comspec_atak_native_fnc_notify; };

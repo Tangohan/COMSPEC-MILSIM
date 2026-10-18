@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.87";
+    private const string ExtensionVersion = "2.0.88";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -1549,6 +1549,7 @@ public static partial class Extension
             var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
             var sentCode = (int)response.StatusCode;
             JournalHttp(started, sentCode);
+            NoteTrafficUntracked(req, response);
             // Issue notée après la remise en file éventuelle (finally) pour distinguer nouvel essai et échec.
             try
             {
@@ -2279,15 +2280,20 @@ public static partial class Extension
     private static HttpResponseMessage SendTimed(HttpRequestMessage req, CancellationToken token)
     {
         var started = DateTime.UtcNow.Ticks;
+        // gzip + empreinte de la dernière réponse (304 = inchangée, copie gardée resservie) ; volume compté par canal.
+        PrepareTrackedRequest(req);
+        var outBytes = EstimateRequestBytes(req);
         try
         {
             var resp = HttpClient.SendAsync(req, token).GetAwaiter().GetResult();
             JournalHttp(started, (int)resp.StatusCode);
+            FinishTrackedResponse(req, resp, outBytes, token);
             return resp;
         }
         catch
         {
             JournalHttp(started, -1);
+            NoteTraffic(TrafficChannelKey(req.RequestUri), outBytes, 0, -1);
             throw;
         }
     }
@@ -2366,11 +2372,11 @@ public static partial class Extension
         return "OK|" + payload;
     }
 
-    private static HttpResponseMessage SendJsonPost(string url, string jsonBody, CancellationToken token)
+    private static HttpResponseMessage SendJsonPost(string url, string jsonBody, CancellationToken token, bool gzip = false)
     {
         using var req = new HttpRequestMessage(HttpMethod.Post, url)
         {
-            Content = JsonContent(jsonBody)
+            Content = gzip ? GzipJsonContent(jsonBody) : JsonContent(jsonBody)
         };
         AttachApiKeyHeader(req);
         var started = DateTime.UtcNow.Ticks;
@@ -2989,6 +2995,9 @@ public static partial class Extension
         // File d'envoi suivie (app Réseau du téléphone) : lue en mémoire, sans réseau.
         if (function == "SendQueue.Status")
             return JournalStatusForSqf();
+        // Volume échangé avec Athena par canal (app Réseau du téléphone, bandeau de dépannage) : en mémoire, sans réseau.
+        if (function == "SyncStats")
+            return SyncStatsForSqf();
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
@@ -3081,6 +3090,10 @@ public static partial class Extension
 
         // Serveur Arma : distances parcourues (pas, à pied, véhicule, vol, saut) et heures de pilote par appareil
         // de tous les joueurs (app Distances de l'ATAK natif), toutes les 10 min. « probe » : la DLL sait-elle envoyer ?
+        // Icônes des objets portés (Item.Icons, 2.0.88) : .paa lu dans le PBO puis envoyé une fois par classe.
+        // args: [json {items: [[classe, picture]…]}] ou ["status"] → OK|queued
+        if (function == "Item.Icons") return HandleItemIcons(args);
+
         if (function == "Distance.Batch")
         {
             if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0])) return "ERR|payload_empty";
@@ -3193,6 +3206,15 @@ public static partial class Extension
             return ApplyEmitTelemetry(args);
         }
 
+        // Empreinte d'une tenue ACE (panneau Tenues Athena) : sha256 du texte tel que SyncWardrobe l'envoie, comparé au
+        // payload_sha256 du site pour savoir quelles tenues locales n'y sont pas encore (sans rien renvoyer). 2.0.88.
+        // ["HashText", [texte]] -> « OK|<sha256 hex minuscule> ».
+        if (function == "HashText")
+        {
+            var text = args.Length > 0 ? (args[0] ?? "") : "";
+            return "OK|" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
+        }
+
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
@@ -3207,7 +3229,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck,HashText";
         }
 
         if (function == "GetCapabilities")
@@ -4345,7 +4367,7 @@ public static partial class Extension
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
             // ACE Arsenal wardrobes Athena — liste métadonnées (sans payload).
-            // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated\towner
+            // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated\towner\tmine\tsha256 (mine, sha256 : 2.0.88)
             // Args optionnels : [startLine] — page par lignes complètes (évite troncature).
             // Retour page : OK|NEXT\tnextLine\nlines…  ou  OK|END\nlines…
             if (function == "ListWardrobes")
@@ -6861,11 +6883,13 @@ public static partial class Extension
                 var bytes = el.TryGetProperty("payload_bytes", out var b) ? b.ToString() : "0";
                 var upd = el.TryGetProperty("updated_at", out var u) && u.ValueKind == JsonValueKind.String ? Clean(u.GetString() ?? "") : "";
                 var owner = el.TryGetProperty("owner_label", out var o) && o.ValueKind == JsonValueKind.String ? Clean(o.GetString() ?? "") : "";
+                var mine = el.TryGetProperty("mine", out var m) && (m.ValueKind == JsonValueKind.True || (m.ValueKind == JsonValueKind.Number && m.GetInt32() != 0)) ? "1" : "0";
+                var sha = el.TryGetProperty("payload_sha256", out var h) && h.ValueKind == JsonValueKind.String ? Clean(h.GetString() ?? "") : "";
                 if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(name)) continue;
                 if (sb.Length > 0) sb.Append('\n');
                 sb.Append(id).Append('\t').Append(name).Append('\t').Append(slug).Append('\t')
                     .Append(coll).Append('\t').Append(fav).Append('\t').Append(bytes).Append('\t').Append(upd)
-                    .Append('\t').Append(owner);
+                    .Append('\t').Append(owner).Append('\t').Append(mine).Append('\t').Append(sha);
             }
             return sb.ToString();
         }
@@ -11735,7 +11759,8 @@ public static partial class Extension
             if (!TryBuildRequestUri(_baseUrl, path, out var uri, out var err) || uri is null)
                 return FormatAtakExtArray("ERROR", err);
             var payload = EnrichOperatorProfilePayload(json);
-            var resp = SendJsonPost(uri.AbsoluteUri, payload, cts.Token);
+            // Fiche (équipement, catalogue, mods) : 10 à 25 Ko en clair, compressée en gzip (Athena la décompresse).
+            var resp = SendJsonPost(uri.AbsoluteUri, payload, cts.Token, gzip: true);
             var body = ReadContentUtf8(resp, cts.Token);
             if (resp.IsSuccessStatusCode)
                 return FormatOperatorProfileResponse(body);

@@ -339,6 +339,9 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_net_sim", "CHECKBOX",
     ["Débit réseau simulé", "Bâtiments, relief, véhicule, météo, brouilleurs, relais et dégâts réduisent le débit : messages et photos partent avec un délai, se perdent et repartent, ou attendent le retour du réseau."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_net_realism", "LIST",
+    ["Réalisme de la simulation radio", "Réaliste : bilan radio en dB (relief et zone de Fresnel, feuillage, bâtiments, évanouissements, frange de réception seule, brouillage selon la force du signal, envois l'un après l'autre). Exigeant : forêt et bâtiments comptés en entier. Simplifié : ancien modèle (portée x 0,35 derrière le relief)."],
+    _sim, [[1, 2, 0], ["Réaliste", "Exigeant", "Simplifié (ancien modèle)"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_offline_hold", "CHECKBOX",
     ["Fonctionnement hors connexion", "Sans signal, le téléphone garde ses dernières données (fil Athena, ordres, alertes, unités) et retient comptes rendus, MEDEVAC, alertes, appels JTAC et itinéraires reçus : tout arrive au retour du réseau, avec un bilan. Décoché : ils arrivent même sans signal."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
@@ -401,6 +404,11 @@ private _lock = ["COMSPEC", "ATAK · Marquage au viseur"];
 ["comspec_atak_native_lock_range", "SLIDER",
     ["Portée du marquage au téléphone", "Distance maximale en mètres pour marquer et suivre une cible à l'appareil photo du téléphone (la caméra du drone garde sa portée de capteur)."],
     _lock, [100, 2000, 800, 0], 1] call comspec_atak_native_fnc_addSetting;
+
+// App Garmin : la montre Garmin (objet COMSPEC_ATAK_GarminWatch) portée dans l'emplacement montre.
+["comspec_atak_native_garmin_watch", "CHECKBOX",
+    ["Montre Garmin obligatoire", "Activé par défaut : l'app Garmin ne mesure rien (pas, cardio, stress, sommeil, activités) et n'envoie rien au site tant que le joueur ne porte pas la « Montre Garmin » dans l'emplacement montre. Décocher pour que le téléphone mesure seul."],
+    ["COMSPEC", "ATAK · Garmin"], true, 1] call comspec_atak_native_fnc_addSetting;
 
 // Extraction de données au câble DL-7 (app Extraction, modules Zeus / Eden « ATAK · Données »).
 private _data = ["COMSPEC", "ATAK · Extraction de données"];

@@ -73,6 +73,8 @@ if (_lang isNotEqualTo "fr" && {_loaded isNotEqualTo _lang}) then {
                 };
             };
             _parts pushBack _buf;
+            // « % » sans numéro (« 40 % de pertes ») : texte fixe, cherché tel quel.
+            if (_ids isEqualTo []) then { _exact set [_fr, _en]; };
             // Deux valeurs collées (« %1%2 ») : impossible à séparer, modèle ignoré.
             private _ok = (count _ids) > 0 && {((_parts select [1, (count _parts) - 2]) findIf { _x isEqualTo "" }) < 0};
             if (_ok) then {

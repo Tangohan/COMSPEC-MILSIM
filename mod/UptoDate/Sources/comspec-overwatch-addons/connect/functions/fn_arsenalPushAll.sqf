@@ -62,6 +62,9 @@ private _fail = 0;
     _parsed params [["_success", false], ["_status", ""], ["_detail", ""]];
     if (_success || {_status isEqualTo "QUEUED"}) then {
         _ok = _ok + 1;
+        // Registre de synchro (panneau Tenues Athena) : ce texte est maintenant celui du site.
+        private _sha = [_payload] call comspec_overwatch_connect_fnc_arsenalHash;
+        ["set", _name, _sha, _sha] call comspec_overwatch_connect_fnc_arsenalLedger;
     } else {
         _fail = _fail + 1;
         ["DEBUG", "ARSENAL", format ["Sync fail %1 → %2 %3", _name, _status, _detail]] call comspec_overwatch_connect_fnc_log;
@@ -69,6 +72,7 @@ private _fail = 0;
 } forEach _entries;
 
 missionNamespace setVariable ["COMSPEC_ArsenalPushBusy", false, false];
+if (_ok > 0) then { saveProfileNamespace; };
 if (_sendingAll) then {
     missionNamespace setVariable ["COMSPEC_ArsenalLastPushAt", diag_tickTime, false];
 };

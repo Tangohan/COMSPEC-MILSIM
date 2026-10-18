@@ -1,11 +1,11 @@
 """
-Atlas des objets d'inventaire 3D (model_items.py) : une seule texture 1024 x 1024 pour les onze objets.
+Atlas des objets d'inventaire 3D (model_items.py) : une seule texture 1024 x 1024 pour les douze objets.
 
   moitié haute   32 pastilles de matière (128 px) : polymère olive / noir / tan, caoutchouc, cordura, laiton de SMA,
                  acier, alu anodisé, verre d'objectif, filtre vert, voyants, radôme, gaine, sangle...
                  Chaque face d'une matière unie prend ses UV dans sa pastille (grain, salissure, usure).
   moitié basse   étiquettes et sérigraphies (batterie, batterie externe, caméra, patch, DL-7, kit de réparation,
-                 kit véhicule, valise du socle, filtre JVN).
+                 kit véhicule, valise du socle, filtre JVN, cadran de la montre Garmin).
 
 Pour le shader Super (rvmat items.rvmat) : items_co (couleur), items_nohq (grain, trame du cordura, gaufrage du
 caoutchouc) et items_smdi (G = intensité, B = brillance des reflets : laiton et verre brillants, cordura mat).
@@ -13,6 +13,7 @@ caoutchouc) et items_smdi (G = intensité, B = brillance des reflets : laiton et
     python3 gen_item_textures.py      # écrit render/items_{co,nohq,smdi}.png
     puis  hemtt utils paa convert render/items_co.png ../Sources/addons/items/data/items_co.paa  (idem _nohq, _smdi)
 """
+import math
 import os
 
 import numpy as np
@@ -74,6 +75,7 @@ LABELS = {
     "dock_side": (944, 608, 1016, 808),
     "camera_back": (912, 820, 1016, 924),
     "eagle": (772, 392, 1012, 504),
+    "garmin": (600, 688, 720, 808),
 }
 
 rng = np.random.default_rng(424242)
@@ -260,6 +262,45 @@ def draw_labels(img):
     d.text((x0 + 39, y0 + 26), "!", font=font(30), fill=(25, 25, 22))
     d.text((x0 + 86, y0 + 12), "RF · 50 Ω", font=font(20), fill=(25, 25, 22))
     d.text((x0 + 86, y0 + 40), "SMA-M", font=font(20), fill=(25, 25, 22))
+    # Cadran de la montre Garmin (disque) : lunette noire graduée, écran MIP (heure, jauges Body Battery et cardio).
+    x0, y0, x1, y1 = LABELS["garmin"]
+    S = 4
+    sz = (x1 - x0) * S
+    g = Image.new("RGB", (sz, sz), (22, 23, 24))
+    gd = ImageDraw.Draw(g)
+    c, rb, rs = sz / 2, sz / 2, sz / 2 * 0.80
+    gd.ellipse((0, 0, sz - 1, sz - 1), fill=(34, 35, 37))
+    for k in range(60):
+        if k % 15 == 0:
+            continue
+        a = math.radians(k * 6 - 90)
+        r1 = rb * (0.86 if k % 5 else 0.83)
+        gd.line((c + r1 * math.cos(a), c + r1 * math.sin(a), c + rb * 0.95 * math.cos(a), c + rb * 0.95 * math.sin(a)),
+                fill=(200, 200, 196) if k % 5 == 0 else (120, 120, 118), width=S * (2 if k % 5 == 0 else 1))
+    for k, t in ((0, "60"), (15, "15"), (30, "30"), (45, "45")):
+        a = math.radians(k * 6 - 90)
+        tw = gd.textlength(t, font=font(9 * S))
+        gd.text((c + rb * 0.89 * math.cos(a) - tw / 2, c + rb * 0.89 * math.sin(a) - 5 * S), t, font=font(9 * S), fill=(225, 225, 220))
+    gd.ellipse((c - rs - 2 * S, c - rs - 2 * S, c + rs + 2 * S, c + rs + 2 * S), fill=(12, 12, 13))
+    gd.ellipse((c - rs, c - rs, c + rs, c + rs), fill=(6, 7, 8))
+    # Jauges en arc : Body Battery (bleu, gauche) et fréquence cardiaque (rouge, droite).
+    for (a0, a1, col, part) in ((120, 240, (78, 161, 243), 0.75), (-60, 60, (240, 86, 106), 0.45)):
+        box_ = (c - rs * 0.9, c - rs * 0.9, c + rs * 0.9, c + rs * 0.9)
+        gd.arc(box_, a0, a1, fill=(46, 48, 50), width=3 * S)
+        if a0 > 0:
+            gd.arc(box_, a1 - (a1 - a0) * part, a1, fill=col, width=3 * S)
+        else:
+            gd.arc(box_, a0, a0 + (a1 - a0) * part, fill=col, width=3 * S)
+    def ct(t, y, size, col):
+        tw = gd.textlength(t, font=font(size * S))
+        gd.text((c - tw / 2, y), t, font=font(size * S), fill=col)
+    ct("SAM 18", c - rs * 0.62, 8, (170, 172, 170))
+    ct("14:32", c - rs * 0.40, 22, (236, 238, 236))
+    ct("75  ♥ 76", c + rs * 0.20, 9, (200, 202, 200))
+    ct("8 412", c + rs * 0.45, 8, (150, 152, 150))
+    gd.ellipse((c - rs * 0.06, c - rs * 0.76, c + rs * 0.06, c - rs * 0.64), fill=(53, 181, 90))
+    g = g.resize((x1 - x0, y1 - y0), Image.LANCZOS)
+    img.paste(g, (x0, y0))
     # Plaque de numéro de série (code-barres).
     x0, y0, x1, y1 = box("serial", (210, 210, 202))
     d.text((x0 + 10, y0 + 6), "S/N 7741-0326-A", font=font(16), fill=(30, 30, 30))

@@ -1462,6 +1462,11 @@
             <English>Hard drive extracted for digital exploitation.</English>
             <French>Disque dur extrait pour exploitation numérique.</French>
         </Key>
+        <Key ID="STR_COMSPEC_SSE_CFG_519542D0B0">
+            <Original>Tableau de bord SSE</Original>
+            <English>SSE dashboard</English>
+            <French>Tableau de bord SSE</French>
+        </Key>
         <Key ID="STR_COMSPEC_SSE_CFG_51F4E8DCDB">
             <Original>Changer le niveau seulement</Original>
             <English>Change level only</English>

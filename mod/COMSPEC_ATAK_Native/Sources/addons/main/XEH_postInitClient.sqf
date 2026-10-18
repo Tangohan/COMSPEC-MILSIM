@@ -536,7 +536,9 @@ addMissionEventHandler ["EntityKilled", {
     };
     private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
     if ((count _queue) isEqualTo 0) exitWith {};
-    if ((([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0) exitWith {};
+    // Réception seule (hors de portée d'émission) : la file attend aussi.
+    private _lq = [] call comspec_atak_native_fnc_linkQuality;
+    if ((_lq get "bars") isEqualTo 0 || {!(_lq getOrDefault ["tx", true])}) exitWith {};
     // Au plus 5 envois toutes les 2 s : vider toute la file d'un coup figeait le jeu au retour du réseau.
     private _batch = _queue select [0, 5];
     missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue select [5]];
@@ -748,7 +750,9 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 [{ ["tick"] call comspec_atak_native_fnc_screenTime; }, 5] call CBA_fnc_addPerFrameHandler;
 // Montre Garmin : pas, fréquence cardiaque, stress, Body Battery, sommeil et activités, gardés dans le profil du joueur.
 [{ ["tick"] call comspec_atak_native_fnc_garminTick; }, 2] call CBA_fnc_addPerFrameHandler;
-addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; }];
+// App Distances : carnet des missions, carrière et records gardés sur ce PC (compteurs poussés par le serveur toutes les 15 s).
+[{ ["tick"] call comspec_atak_native_fnc_distanceLog; }, 15] call CBA_fnc_addPerFrameHandler;
+addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; ["save"] call comspec_atak_native_fnc_distanceLog; }];
 // Arrivée en cours de partie : mon équipe de feu d'un ancien groupe ne me suit pas.
 [{ ["comspec_atak_native_ftCheck", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
 // Rôles d'Athena et rôle mémorisé du joueur, réappliqué à l'arrivée et à la réapparition (fn_ftRoleSync).

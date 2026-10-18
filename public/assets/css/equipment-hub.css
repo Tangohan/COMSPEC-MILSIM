@@ -908,3 +908,16 @@ a.eq-rolekits__card:hover {
   color: var(--eq-muted, #6b7280);
   font-style: normal;
 }
+.eq-hub__item-group li:has(> .eq-hub__item-ico) {
+  align-items: center;
+}
+.eq-hub__item-group li > .eq-hub__item-ico {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  padding: 2px;
+  border-radius: 5px;
+  background: #1d2125;
+  box-sizing: border-box;
+}

@@ -24,6 +24,8 @@ COMSPEC_ArsenalOverlayEH = [
 
 ["ace_arsenal_displayClosed", {
     uiNamespace setVariable ["ace_arsenal_display", displayNull];
+    // Tenues Athena : celles vues pendant que le panneau était ouvert ne sont plus « nouvelles ».
+    [] call comspec_overwatch_connect_fnc_arsenalMarkSeen;
 }] call CBA_fnc_addEventHandler;
 
 ["INFO", "ARSENAL", "Panneau Athena ACE Arsenal enregistré"] call comspec_overwatch_connect_fnc_log;

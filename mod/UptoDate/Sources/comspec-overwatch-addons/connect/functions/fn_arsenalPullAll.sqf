@@ -44,7 +44,8 @@ private _meta = [];
     _meta pushBack [
         _parts select 0,
         _parts select 1,
-        if (count _parts > 3) then { _parts select 3 } else { "" }
+        if (count _parts > 3) then { _parts select 3 } else { "" },
+        _parts param [9, ""]
     ];
 } forEach _lines;
 
@@ -71,7 +72,7 @@ private _pulled = 0;
 private _skippedDense = 0;
 
 {
-    _x params ["_id", "_name"];
+    _x params ["_id", "_name", "", ["_siteSha", ""]];
     private _loadout = [_id] call comspec_overwatch_connect_fnc_arsenalCloudLoadout;
     if (_loadout isEqualTo []) then {
         if ((missionNamespace getVariable ["COMSPEC_ArsenalCloudLoadoutError", ""]) isEqualTo "too_large") then {
@@ -88,6 +89,8 @@ private _skippedDense = 0;
         _names pushBack toLower _name;
     };
     _pulled = _pulled + 1;
+    // Registre de synchro : la tenue importée est celle du site (sha du site) ; sha local tel qu'il sera relu.
+    ["set", _name, _siteSha, [str _loadout] call comspec_overwatch_connect_fnc_arsenalHash] call comspec_overwatch_connect_fnc_arsenalLedger;
 } forEach _meta;
 
 profileNamespace setVariable ["ace_arsenal_saved_loadouts", _merged];

@@ -56,7 +56,8 @@ final class ReconNoteDiscordServiceTest extends TestCase
         $catalog = (string) file_get_contents($root . '/app/Support/DiscordWebhookCatalog.php');
         $page = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/pages/fn_pageReco.sqf');
         $click = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/map/fn_mapMouseButtonDown.sqf');
-        $athena = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/pages/fn_pageAthena.sqf');
+        // L'avertissement BattlEye vit dans l'état de connexion de l'app Athena (fn_athenaStatus, 2.1.0).
+        $athena = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/network/fn_athenaStatus.sqf');
 
         self::assertStringContainsString('ReconNoteDiscordService::defer($tenantId, $row)', $api);
         self::assertStringContainsString("'kind' => 'recon_note'", $api);
@@ -66,6 +67,6 @@ final class ReconNoteDiscordServiceTest extends TestCase
         self::assertStringContainsString('POINTÉ CARTE', $page);
         self::assertStringNotContainsString('"SOUS MON REGARD"', $page);
         self::assertStringContainsString('recoPick', $click);
-        self::assertStringContainsString('BATTLEYE ACTIF', $athena);
+        self::assertStringContainsString('BattlEye actif', $athena);
     }
 }

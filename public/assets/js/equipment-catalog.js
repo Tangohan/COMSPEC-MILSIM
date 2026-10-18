@@ -470,6 +470,16 @@
       var ul = document.createElement('ul');
       items.forEach(function (it) {
         var li = document.createElement('li');
+        if (it.icon) {
+          var img = document.createElement('img');
+          img.className = 'eq-hub__item-ico';
+          img.src = it.icon;
+          img.alt = '';
+          img.loading = 'lazy';
+          img.width = 32;
+          img.height = 32;
+          li.appendChild(img);
+        }
         var span = document.createElement('span');
         span.textContent = it.name || '';
         span.setAttribute('translate', 'no');

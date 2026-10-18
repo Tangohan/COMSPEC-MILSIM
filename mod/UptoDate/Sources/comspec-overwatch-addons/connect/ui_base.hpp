@@ -8,6 +8,7 @@ class RscPicture;
 class RscPictureKeepAspect;
 class RscListBox;
 class RscCombo;
+class RscListNBox;
 class RscWebBrowser;
 class RscMapControl;
 class RscHTML;
@@ -88,4 +89,22 @@ class COMSPEC_RscButtonAtakDanger: COMSPEC_RscButtonAtak {
     colorBackground[] = {0.42, 0.11, 0.10, 0.96};
     colorBackgroundActive[] = {0.60, 0.17, 0.15, 1};
     colorFocused[] = {0.60, 0.17, 0.15, 1};
+};
+
+// Panneau Tenues Athena (ACE Arsenal) : liste à lignes hautes, sélection verte COMSPEC (#5cc76b).
+class COMSPEC_RscArsenalOutfitList: RscListNBox {
+    rowHeight = "(((((safezoneW / safezoneH) min 1.2) / 1.2) / 25) * 1.5)";
+    sizeEx = "(((((safezoneW / safezoneH) min 1.2) / 1.2) / 25) * 0.86)";
+    colorBackground[] = {0, 0, 0, 0};
+    colorText[] = {0.90, 0.94, 0.91, 1};
+    colorDisabled[] = {0.55, 0.60, 0.57, 1};
+    colorSelect[] = {1, 1, 1, 1};
+    colorSelect2[] = {1, 1, 1, 1};
+    colorSelectBackground[] = {0.36, 0.78, 0.42, 0.24};
+    colorSelectBackground2[] = {0.36, 0.78, 0.42, 0.24};
+    colorPictureSelected[] = {1, 1, 1, 1};
+    period = 0;
+    drawSideArrows = 0;
+    idcLeft = -1;
+    idcRight = -1;
 };
