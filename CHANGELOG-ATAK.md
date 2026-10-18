@@ -38,6 +38,24 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Drone : image de la caméra noire dans le téléphone (ATAK natif 2.1.1)
+
+### Résumé joueur
+Type : correctif
+FR : L'image du drone ne doit plus rester noire dans le téléphone
+- Après la caméra plein écran, après être sorti de l'app Drone ou après un zoom, l'image du drone repart sur un flux neuf au lieu de rester noire.
+- Si l'image reste noire malgré tout, le bouton TEST VIDÉO (Drone > RÉGLAGES) montre une nouvelle vue J : une caméra simple accrochée au drone. Dites-nous si J et I s'affichent.
+EN : The drone picture should no longer stay black in the phone
+- After the full-screen camera, after leaving the Drone app or after zooming, the drone picture restarts on a fresh feed instead of staying black.
+- If it still stays black, the VIDEO TEST button (Drone > SETTINGS) shows a new view J: a plain camera attached to the drone. Tell us whether J and I show a picture.
+
+### Détail technique
+- `fn_droneAction` : cible de rendu neuve à chaque création de la caméra du flux (anneau de 8 noms par qualité `comspecdronefeed<q><n>`) ; #830 était revenu à un nom fixe (`comspec_dronelive`) repris juste après un `Terminate` (retour de VUE DIRECTE, page quittée, caméra libérée à 5 s). Caméra créée comme la lettre F du TEST VIDÉO (posée, rendu lancé, `camCommit 0`, accrochée une fois) ; la boucle de la nacelle ne fait plus que l'orienter et ne la raccroche que si le point bouge. Zoom : caméra décrochée, `camCommit`, raccrochée dans la même image. Effet de vision reposé sur chaque cible neuve.
+- `fn_pipCheck` : plus de rebranchement de la texture après coup (Drone et Photo, les deux vues noires, étaient les seules à reposer la texture ; Vidéo Live et le TEST VIDÉO la posent une fois). Nouvelle ligne RPT `[CAMERA] DRONE état` toutes les 15 s tant que l'image est à l'écran (cible, âge, rendu, hauteur, distance au drone, accroche, champ, vision, PiP, i/s, PROBLÈME repéré). TEST VIDÉO : la lettre H (thermique, déjà vue bonne) devient J, caméra de script accrochée au drone.
+- Cause déduite du code (aucune reproduction en jeu possible ici) : à tester en jeu, vision nuit et jour, avant et après CAMÉRA PLEIN ÉCRAN, avant et après un zoom.
+
+---
+
 ## Regroupement : réseau radio réaliste, apps refaites, synchro allégée, icônes des objets (ATAK natif 2.1.0.AB - Denver, COMSPEC Link 2.0.88)
 
 ### Résumé joueur
