@@ -24,6 +24,15 @@ foreach ($words as $w) {
     $wordsByLang[$w['lang']] = ($wordsByLang[$w['lang']] ?? 0) + 1;
 }
 ?>
+<style>
+.pa .nf-rename, .pa .nf-edit { display: inline-block; vertical-align: top; }
+.pa .nf-rename > summary, .pa .nf-edit > summary { list-style: none; cursor: pointer; }
+.pa .nf-rename > summary::-webkit-details-marker, .pa .nf-edit > summary::-webkit-details-marker { display: none; }
+.pa .nf-rename[open], .pa .nf-edit[open] { display: block; margin: .5rem 0; }
+.pa .nf-rename form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: flex-end; margin-top: .5rem; }
+.pa .nf-rename label { display: flex; flex-direction: column; gap: .25rem; font-size: .8rem; }
+.pa .nf-edit form { margin-top: .5rem; }
+</style>
 <div class="pa">
     <div class="pa__frame">
         <header class="pa-hero">
@@ -120,6 +129,14 @@ foreach ($words as $w) {
                                 $call = trim((string) ($row['user_callsign'] ?? ''));
                                 $who = $who !== '' && $call !== '' ? $who . ' (' . $call . ')' : ($who !== '' ? $who : ($call !== '' ? $call : '—'));
                                 $ts = strtotime((string) ($row['created_at'] ?? ''));
+                                $authorEmail = trim((string) ($row['user_email'] ?? ''));
+                                $canBan = $authorEmail !== '' && !str_ends_with(strtolower($authorEmail), '@deleted.invalid');
+                                $currentName = $isTenant
+                                    ? trim((string) ($row['tenant_name'] ?? ''))
+                                    : trim((string) ($row['unit_current_name'] ?? ''));
+                                if ($currentName === '') {
+                                    $currentName = (string) ($row['name'] ?? '');
+                                }
                                 ?>
                                 <tr>
                                     <td translate="no"><strong><?= $h((string) ($row['name'] ?? '')) ?></strong></td>
@@ -135,7 +152,12 @@ foreach ($words as $w) {
                                         <?php endif; ?>
                                     </td>
                                     <td translate="no"><?= $h((string) ($row['matched_words'] ?? '')) ?></td>
-                                    <td translate="no"><?= $h($who) ?></td>
+                                    <td translate="no">
+                                        <?= $h($who) ?>
+                                        <?php if ($canBan): ?>
+                                            <br><a href="<?= $h(url('admin/users/person') . '?email=' . rawurlencode($authorEmail) . '#bannissement') ?>">Bannir l’auteur…</a>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?= $ts ? $h(date('d/m/Y H:i', $ts)) : '—' ?></td>
                                     <td><?= $h($statusLabels[$st] ?? $st) ?></td>
                                     <td>
@@ -150,6 +172,16 @@ foreach ($words as $w) {
                                                 <input type="hidden" name="decision" value="allow">
                                                 <button type="submit" class="pa-btn pa-btn--ghost" data-confirm="Retirer le floutage pour ce nom ?">Autoriser ce nom</button>
                                             </form>
+                                            <details class="nf-rename">
+                                                <summary class="pa-btn pa-btn--ghost">Renommer…</summary>
+                                                <form method="post" action="<?= $h($indexUrl . '/alertes/' . $id . '/renommer') ?>">
+                                                    <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+                                                    <label>Nouveau nom de <?= $isTenant ? 'la communauté' : 'l’unité' ?>
+                                                        <input type="text" name="name" required minlength="2" maxlength="120" value="<?= $h($currentName) ?>" autocomplete="off">
+                                                    </label>
+                                                    <button type="submit" class="pa-btn pa-btn--solid">Enregistrer le nom</button>
+                                                </form>
+                                            </details>
                                         <?php else: ?>
                                             —
                                         <?php endif; ?>
@@ -159,7 +191,8 @@ foreach ($words as $w) {
                             </tbody>
                         </table>
                     </div>
-                    <p>Pour renommer une communauté vous-même, ouvrez sa fiche puis la partie Identité (nom et adresse courte).</p>
+                    <p>« Renommer… » change le nom à la place de l’auteur et ferme l’alerte si le nouveau nom est propre.
+                        « Bannir l’auteur… » ouvre son dossier à la rubrique Bannissement (motif, Steam ID et adresses IP au choix).</p>
                 <?php endif; ?>
             </section>
         <?php else: ?>
@@ -217,9 +250,33 @@ foreach ($words as $w) {
                                     <td><?= $h($langLabels[$w['lang']] ?? $w['lang']) ?></td>
                                     <td><?= $h($modeLabels[$w['mode']] ?? $w['mode']) ?></td>
                                     <td>
+                                        <details class="nf-edit">
+                                            <summary class="pa-btn pa-btn--ghost">Modifier</summary>
+                                            <form class="pa-filters" method="post" action="<?= $h($indexUrl . '/mots/' . (int) $w['id'] . '/modifier') ?>">
+                                                <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
+                                                <label>Mot ou expression
+                                                    <input type="text" name="word" required minlength="2" maxlength="120" value="<?= $h($w['word']) ?>" autocomplete="off">
+                                                </label>
+                                                <label>Langue
+                                                    <select name="lang">
+                                                        <?php foreach ($langLabels as $lv => $ll): ?>
+                                                            <option value="<?= $h($lv) ?>"<?= $w['lang'] === $lv ? ' selected' : '' ?>><?= $h($ll) ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </label>
+                                                <label>Correspondance
+                                                    <select name="mode">
+                                                        <?php foreach ($modeLabels as $mv => $ml): ?>
+                                                            <option value="<?= $h($mv) ?>"<?= $w['mode'] === $mv ? ' selected' : '' ?>><?= $h($ml) ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </label>
+                                                <button type="submit" class="pa-btn pa-btn--solid">Enregistrer</button>
+                                            </form>
+                                        </details>
                                         <form method="post" action="<?= $h($indexUrl . '/mots/' . (int) $w['id'] . '/supprimer') ?>" style="display:inline">
                                             <input type="hidden" name="_csrf_token" value="<?= $h($csrf) ?>">
-                                            <button type="submit" class="pa-btn pa-btn--ghost">Retirer</button>
+                                            <button type="submit" class="pa-btn pa-btn--ghost" data-confirm="Retirer ce mot de la liste ?">Retirer</button>
                                         </form>
                                     </td>
                                 </tr>
@@ -232,3 +289,12 @@ foreach ($words as $w) {
         <?php endif; ?>
     </div>
 </div>
+<script>
+document.querySelectorAll('.pa button[data-confirm]').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+        if (!window.confirm(btn.getAttribute('data-confirm') || '')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>

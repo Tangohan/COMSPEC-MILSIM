@@ -45,7 +45,7 @@ final class NameFilterWiringAssetTest extends TestCase
                 self::assertStringContainsString('SystemAdminMiddleware::class', $line);
             }
         }
-        self::assertSame(6, $count);
+        self::assertSame(8, $count);
         self::assertStringContainsString("'admin/system/noms-inappropries'", $this->src('views/partials/platform_admin_sidebar.php'));
     }
 }

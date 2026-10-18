@@ -34,8 +34,8 @@ final class PlatformUsersMergeAssetTest extends TestCase
         self::assertStringContainsString('confirm_email', $view);
 
         $list = (string) file_get_contents(dirname(__DIR__, 2) . '/views/admin/system/users.php');
-        self::assertStringContainsString('Fusionner les comptes', $list);
-        self::assertStringContainsString('needsAccountMerge', $list);
+        self::assertStringContainsString('#fusion-comptes', $list);
+        self::assertStringContainsString('Réunir ses', $list);
     }
 
     public function testMergeServiceExposesAdminPreviewAndMerge(): void

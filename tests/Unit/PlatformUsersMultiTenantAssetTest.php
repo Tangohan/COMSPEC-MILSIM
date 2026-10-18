@@ -35,7 +35,8 @@ final class PlatformUsersMultiTenantAssetTest extends TestCase
         $view = (string) file_get_contents($root . '/views/admin/system/user_person.php');
         self::assertStringContainsString('Identifiant plateforme', $view);
         self::assertStringContainsString('Appartenance active', $view);
-        self::assertStringContainsString('Orphelin', $view);
+        self::assertStringContainsString('Sans communauté', $view);
+        self::assertStringNotContainsString('Orphelin', $view);
         self::assertStringContainsString('reste visible dans l’annuaire', $view);
         self::assertStringContainsString('le dossier métier reste propre à chacune', $view);
         self::assertStringNotContainsString('masquée de l’annuaire', $view);
@@ -44,7 +45,7 @@ final class PlatformUsersMultiTenantAssetTest extends TestCase
         $list = (string) file_get_contents($root . '/views/admin/system/users.php');
         self::assertStringContainsString('admin/users/person', $list);
         self::assertStringContainsString('Dossier complet', $list);
-        self::assertStringContainsString('restent visibles', $list);
+        self::assertStringContainsString('reste visible', $list);
         self::assertStringNotContainsString('sont masqués par défaut', $list);
 
         $orgShow = (string) file_get_contents($root . '/views/admin/organization/users/show.php');
