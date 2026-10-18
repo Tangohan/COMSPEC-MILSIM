@@ -7131,6 +7131,89 @@ class AtakApiController
     }
 
     /**
+     * COMSPEC Link (« Item.Icons », 2.0.88) : parmi les classes portées par le joueur, celles dont la communauté n'a
+     * pas encore l'icône. Corps : {classes: [classe…]} (200 au plus). Réponse : {ok, missing: [classe…]} (25 au plus).
+     */
+    public function itemIconsMissing(Request $request, array $params = []): Response
+    {
+        $ctx = $this->itemIconsContext($request, 64 * 1024);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $repo] = $ctx;
+        $classes = $this->jsonBody($request)['classes'] ?? [];
+
+        return Response::json(['ok' => true, 'missing' => $repo->missing($tenantId, is_array($classes) ? array_values($classes) : [])]);
+    }
+
+    /**
+     * COMSPEC Link (« Item.Icons ») : icône d'une classe, une seule fois. Corps : {class, picture, paa (base64 du .paa
+     * lu dans le PBO, réduit par la DLL au mipmap utile, 1 Mo au plus)} ou {class, picture, status: not_found} quand le fichier est introuvable chez le
+     * joueur. Le .paa est décodé ici (pas de fichier client stocké tel quel) puis rangé en PNG par empreinte.
+     */
+    public function itemIconUpload(Request $request, array $params = []): Response
+    {
+        $ctx = $this->itemIconsContext($request, HttpJsonBody::MAX_BYTES);
+        if ($ctx instanceof Response) {
+            return $ctx;
+        }
+        [$tenantId, $repo] = $ctx;
+        $body = $this->jsonBody($request);
+        $class = \App\Repositories\GameItemIconRepository::validClass($body['class'] ?? null);
+        if ($class === null) {
+            return Response::json(['ok' => false, 'error' => 'invalid_class'], 400);
+        }
+        $picture = is_string($body['picture'] ?? null) ? $body['picture'] : '';
+        $paaB64 = is_string($body['paa'] ?? null) ? $body['paa'] : '';
+        try {
+            if ($paaB64 === '') {
+                $status = ($body['status'] ?? '') === 'not_found' ? 'not_found' : 'invalid';
+                $repo->mark($tenantId, $class, $status, null, null, null, $picture);
+
+                return Response::json(['ok' => true, 'status' => $status]);
+            }
+            $paa = base64_decode($paaB64, true);
+            if ($paa === false || $paa === '') {
+                return Response::json(['ok' => false, 'error' => 'invalid_base64'], 400);
+            }
+            $res = $repo->storePaa($tenantId, $class, $paa, $picture);
+        } catch (\Throwable $e) {
+            error_log('[item-icons] ' . $class . ' ' . $e->getMessage());
+
+            return Response::json(['ok' => false, 'error' => 'store_failed'], 500);
+        }
+
+        return Response::json(['ok' => true] + $res);
+    }
+
+    /**
+     * @return array{0: int, 1: \App\Repositories\GameItemIconRepository}|Response
+     */
+    private function itemIconsContext(Request $request, int $maxBytes): array|Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        if ((int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > $maxBytes || strlen(HttpJsonBody::rawJson()) > $maxBytes) {
+            return Response::json(['ok' => false, 'error' => 'payload_too_large'], 413);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $actor = $this->guardArmaWrite($request, $r, false);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $repo = new \App\Repositories\GameItemIconRepository();
+        if (!$repo->schemaReady()) {
+            return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+        }
+
+        return [$r, $repo];
+    }
+
+    /**
      * File d'envoi de COMSPEC Link (« SendQueue.Report ») : bilan de la file d'un joueur ou d'un serveur Arma,
      * envoyé toutes les ~30 s quand quelque chose a changé. Corps : steam_uid, call_sign, client_kind (client|server),
      * extension_version, mod_version, summary {queued, sending, retry, failed, done, overload…}, items (100 au plus).

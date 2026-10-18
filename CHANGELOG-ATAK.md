@@ -58,6 +58,23 @@ EN : Plan app: readable tutorial and working rooms
 - Pas de régression commune des polices : fn_fontSet, fn_fontApply, fn_fontText et ui/fonts.hpp n'ont pas changé depuis 1.85.0. Les sous-libellés de la palette n'étaient pas coupés : la fiche du tutoriel les recouvrait.
 - À tester en jeu : tutoriel étapes 1 à 10 (en français, en anglais, en TRÈS GRAND) ; SALLE > Créer une salle (le code s'affiche, SALLE XXXXX · 1 en haut) ; taper un code puis REJOINDRE depuis un autre joueur ; lignes du menu EXPORTER et du clic droit ; un clic sur la carte hors menu le ferme toujours.
 
+## [Non publié] Icônes des objets sur Athena (COMSPEC Link 2.0.88, connect.pbo)
+
+### Résumé joueur
+Type : nouveauté
+FR : Les objets portés ont maintenant leur image sur Athena
+- Les pages Équipement des joueurs et Kits par rôle peuvent afficher l'icône de chaque arme, tenue, gilet ou sac, comme dans l'arsenal.
+- L'image est prise une seule fois dans les fichiers du mod sur ton PC, en arrière-plan, sans rien changer à ta partie.
+EN : Carried items now have their picture on Athena
+- The Player equipment and Role kits pages can show the icon of each weapon, uniform, vest or backpack, as in the arsenal.
+- The picture is read only once from the mod files on your PC, in the background, without affecting your game.
+
+### Détail technique
+- COMSPEC Link 2.0.88 : commande `Item.Icons` ([classe, picture]…). Fil d'arrière-plan unique : demande au site les classes sans icône (`POST /api/atak/item-icons/missing`), retrouve le `.paa` dans le PBO dont le préfixe correspond (Arma 3, DLC, @mods locaux, !Workshop, Workshop Steam, `-mod=`/`-serverMod=`, seul l'en-tête des PBO est lu), garde le premier mipmap ≤ 512 px et l'envoie (`POST /api/atak/item-icons`), ou `not_found`. Une fois par classe et par session, 300 au plus, rien en cas de 429 / réseau en repli. `Item.Icons` `["status"]` donne les compteurs.
+- connect.pbo : `fn_sendItemIcons` appelé après un envoi réussi de la fiche opérateur (register/sync) avec le catalogue des objets ; classes déjà proposées pendant la partie ignorées. Ancienne DLL : un INFO dans le journal, pas de nouvel essai.
+- Site (PR #883) : décodage PAA (DXT1/3/5 + LZO, ARGB + LZSS) en PNG ≤ 256 px rangé par SHA-256, table `game_item_icons`.
+- À tester en jeu : icônes d'un mod Workshop (ex. RHS/CUP) et d'Arma 3 de base visibles après une partie ; « Item.Icons » `status` dans la console de débogage.
+
 ## Regroupement : mode hors connexion, points de passage, fond photo de la carte (ATAK natif 2.0.1.AB - Denver, COMSPEC Link 2.0.87)
 
 ### Résumé joueur

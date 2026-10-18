@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.87";
+    private const string ExtensionVersion = "2.0.88";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -3081,6 +3081,10 @@ public static partial class Extension
 
         // Serveur Arma : distances parcourues (pas, à pied, véhicule, vol, saut) et heures de pilote par appareil
         // de tous les joueurs (app Distances de l'ATAK natif), toutes les 10 min. « probe » : la DLL sait-elle envoyer ?
+        // Icônes des objets portés (Item.Icons, 2.0.88) : .paa lu dans le PBO puis envoyé une fois par classe.
+        // args: [json {items: [[classe, picture]…]}] ou ["status"] → OK|queued
+        if (function == "Item.Icons") return HandleItemIcons(args);
+
         if (function == "Distance.Batch")
         {
             if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0])) return "ERR|payload_empty";

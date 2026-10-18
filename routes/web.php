@@ -1286,6 +1286,7 @@ return function (Router $router) {
     $router->post('/back-office/dashboard-tenues/{id}/move', [DashboardWardrobePinsAdminController::class, 'move'], [AuthMiddleware::class]);
     // Équipement remonté par le mod et kits par rôle (publiés comme tenues d’arsenal).
     $router->get('/back-office/equipement-joueurs', [GameEquipmentAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/equipement-joueurs/icones/{file}', [GameEquipmentAdminController::class, 'icon'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/kits-roles', [GameEquipmentAdminController::class, 'kits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/kits-roles/nouveau', [GameEquipmentAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/kits-roles', [GameEquipmentAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2419,6 +2420,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/screen-time', [AtakApiController::class, 'screenTime']);
     $router->post('/api/atak/screen-time/batch', [AtakApiController::class, 'screenTimeBatch']);
     $router->post('/api/atak/distance/batch', [AtakApiController::class, 'distanceBatch']);
+    $router->post('/api/atak/item-icons/missing', [AtakApiController::class, 'itemIconsMissing']);
+    $router->post('/api/atak/item-icons', [AtakApiController::class, 'itemIconUpload']);
     $router->post('/api/atak/garmin', [AtakApiController::class, 'garmin']);
     $router->post('/api/atak/send-queue/report', [AtakApiController::class, 'sendQueueReport']);
     $router->post('/api/atak/game-session/discover', [AtakApiController::class, 'gameSessionDiscover']);
