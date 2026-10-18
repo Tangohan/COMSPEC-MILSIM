@@ -118,6 +118,11 @@ class Application
             }
         } catch (\Throwable) {
         }
+        // Réponses au jeu (COMSPEC Link) : 304 si rien n'a changé depuis le dernier passage, sinon gzip.
+        try {
+            \App\Support\GameApiResponseCompactor::apply($this->request, $response);
+        } catch (\Throwable) {
+        }
         $response->send();
         try {
             \App\Services\Cron\CronWatchdog::maybeKick($this->request->path());

@@ -52,6 +52,11 @@ class Response
     {
         return $this->headers[$name] ?? null;
     }
+
+    public function hasBodyStream(): bool
+    {
+        return $this->bodyStream !== null;
+    }
     public function send(): void
     {
         http_response_code($this->statusCode);

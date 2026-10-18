@@ -530,6 +530,7 @@ public static partial class Extension
 
             var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
             var code = (int)response.StatusCode;
+            NoteTrafficUntracked(req, response);
             Interlocked.Exchange(ref _telemetryLastLatencyMs, Math.Max(0, Environment.TickCount64 - started));
             // Lot de positions / télémétrie compté avec les autres requêtes (app Réseau : réponses d'Athena).
             JournalHttp(DateTime.UtcNow.Ticks - Math.Max(0, Environment.TickCount64 - started) * TimeSpan.TicksPerMillisecond, code);
