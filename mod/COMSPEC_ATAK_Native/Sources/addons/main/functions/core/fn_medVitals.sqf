@@ -54,6 +54,8 @@ private _hr = [_u getVariable ["ace_medical_heartRate", -1], -1] call _num;
 if (!isNil "ace_medical_status_fnc_getHeartRate") then { _hr = [[_u] call ace_medical_status_fnc_getHeartRate, _hr] call _num; };
 if (_hr <= 0) then { _hr = [72, 92, 112, 130, 148] select _cls; };
 _hr = round ((_hr + ([2, 9] call _wob)) max 20 min 220);
+// Retour de jeu 2.1.0 : sans cette ligne, un blessé vivant affichait « 0 · pas de pouls » et un tracé plat.
+_out set ["hr", _hr];
 // Tension (brassard) et SpO2 (oxymètre) : seulement mesurées par un soignant, gardées sur l'unité (publique).
 private _now = [time, serverTime] select isMultiplayer;
 if (_mode isEqualTo "measure") then {
