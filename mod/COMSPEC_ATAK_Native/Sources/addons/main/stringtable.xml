@@ -807,6 +807,21 @@
             <English>TBR · Relay table</English>
             <French>TBR · Tableau des relais</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_NETGUIDE_BTN">
+            <Original>COMSPEC ATAK · Guide réseau</Original>
+            <English>COMSPEC ATAK · Network guide</English>
+            <French>COMSPEC ATAK · Guide réseau</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_NETGUIDE_MENU">
+            <Original>Guide : réseau et simulation</Original>
+            <English>Guide: network and simulation</English>
+            <French>Guide : réseau et simulation</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_NETGUIDE_TIP">
+            <Original>Comment fonctionne le réseau ATAK et ce que le mod simule : signal, relief, forêt, relais, brouillage, débit, file d'envoi, réglages de mission.</Original>
+            <English>How the ATAK network works and what the mod simulates: signal, terrain, forest, relays, jamming, throughput, send queue, mission settings.</English>
+            <French>Comment fonctionne le réseau ATAK et ce que le mod simule : signal, relief, forêt, relais, brouillage, débit, file d'envoi, réglages de mission.</French>
+        </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_TBR_HELP">
             <Original>Aide : poser un relais</Original>
             <English>Help: placing a relay</English>
