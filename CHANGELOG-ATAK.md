@@ -38,6 +38,30 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Points de passage refaits : pose au clic droit, noms, types, itinéraire partagé en direct (ATAK natif, numéro au regroupement)
+
+### Résumé joueur
+Type : nouveauté
+FR : Points de passage refaits, plus rapides et lisibles
+- Clic droit sur la carte puis « Point de passage » : une fiche s'ouvre pour donner un nom, choisir le type (étape, départ, point de contrôle, ralliement, objectif, LZ, arrivée) et le partage, puis VALIDER. Avec « À la suite », on enchaîne les étapes ; un clic gauche pose tout de suite.
+- L'itinéraire est partagé en direct avec ton groupe (ou ton camp, ou toi seul) : chaque étape posée, modifiée ou supprimée apparaît aussitôt chez les autres, sans couper leur navigation.
+- Sur la carte : traits épais à la couleur de chaque étape, flèche de sens, distance et azimut des tronçons, étapes numérotées et nommées. Clique une étape pour la renommer, changer son type, la déplacer, la remonter ou la supprimer.
+- L'app Itinéraire montre le type de chaque étape, permet d'inverser l'itinéraire et de « Faire naviguer le groupe ».
+EN : Waypoints redone, faster and easier to read
+- Right-click the map then "Waypoint": a card opens to give a name, pick the type (waypoint, start, checkpoint, rally point, objective, LZ, finish) and the sharing, then CONFIRM. With "In a row" you chain waypoints; a left-click places one right away.
+- The route is shared live with your group (or your side, or only you): every waypoint placed, edited or deleted shows up at once for the others, without stopping their navigation.
+- On the map: thick lines in each waypoint's colour, direction arrows, leg distance and bearing, numbered and named waypoints. Click a waypoint to rename it, change its type, move it, reorder it or delete it.
+- The Route app shows each waypoint's type, can reverse the route and "Send group on route".
+
+### Détail technique
+- `fn_wpAction` : étapes `[pos, nom, type]` (une étape `[pos, nom]` d'avant vaut le type WP), sept types (WP, SP, CP, RP, OBJ, LZ, FIN) avec couleur et symbole CfgMarkers, nom automatique par type (« CP 3 »), actions open / anchor / place / edit / new / rename / retype / move / up / down / reverse, partage profil `COMSPEC_ATAK_WpShare` (0 moi seul, 1 groupe par défaut, 2 camp) et pose à la suite `COMSPEC_ATAK_WpSeries` (oui par défaut). Chaque modification part en direct une seconde après la dernière (`sync`, événement `comspec_atak_native_waypoints` avec le drapeau « en direct » : pas de vibreur, navigation gardée) ; « Faire naviguer le groupe » (`push`) envoie et lance la navigation. 30 étapes au plus (20 avant).
+- `fn_wpCard` (nouveau) : fiche du mode POINTS DE PASSAGE sur la carte (nom, type, partage, à la suite, VALIDER ; pour une étape existante TERMINÉ, DÉPLACER ICI, AVANT / APRÈS, NAVIGUER, SUPPRIMER). `fn_wpDraw` (nouveau) : rendu de l'itinéraire sorti de `fn_mapOnDraw` (traits épais, chevrons, distances au zoom, tronçons passés estompés, point choisi et trait vers le curseur). `fn_wpAt` (nouveau) : étape sous le curseur.
+- Carte : clic droit en mode POINTS DE PASSAGE = point de pose (ne quitte plus l'outil), clic gauche sur une étape = sa fiche (aussi en sélection). Menu clic droit : POINT DE PASSAGE, et sur une étape MODIFIER L'ÉTAPE, NAVIGUER VERS L'ÉTAPE, SUPPRIMER L'ÉTAPE.
+- Serveur : un itinéraire effacé n'est plus rejoué aux arrivants.
+- Bâti sur le regroupement 1.97.0 (#853) pour reprendre son menu clic droit ; main.pbo non reconstruit (fait au regroupement).
+
+**À tester en jeu** : clic droit > Point de passage, nom saisi puis VALIDER, Entrée dans le champ nom, À la suite coché et décoché, clic gauche en mode étapes ; clic sur une étape (sélection et mode étapes), renommer, changer le type, DÉPLACER ICI après un clic droit, AVANT / APRÈS, SUPPRIMER ; à deux dans le même groupe, une étape posée ou supprimée apparaît chez l'autre sans couper sa navigation ; partage Camp avec un joueur d'un autre groupe ; Moi seul n'envoie rien ; « Faire naviguer le groupe » ; arrivée en cours de partie (itinéraire du groupe rejoué) ; lisibilité des traits et noms sur carte claire et sombre, en mini et en plein écran ; envoi d'un itinéraire en Bluetooth.
+
 ## Regroupement : marqueurs, relais, Bluetooth, app Garmin, sang et santé, téléphone, Reco, JTAC (ATAK natif 1.97.0, COMSPEC Link 2.0.87)
 
 ### Résumé joueur

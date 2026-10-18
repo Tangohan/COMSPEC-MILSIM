@@ -43,7 +43,7 @@ class CfgFunctions {
             class musicState {}; class musicAction {}; class musicTick {}; class musicServerList {}; class musicAthena {}; class pageMusic {};
         };
         class nav { file="z\comspec_atak_native\addons\main\functions\nav";
-            class routeCompute {}; class routeGuide {}; class routeBanner {}; class wpAction {}; class pageWaypoints {}; class pageGps {}; class gpsAction {};
+            class routeCompute {}; class routeGuide {}; class routeBanner {}; class wpAction {}; class wpAt {}; class wpCard {}; class wpDraw {}; class pageWaypoints {}; class pageGps {}; class gpsAction {};
         };
         class explo { file="z\comspec_atak_native\addons\main\functions\explo";
             class exploList {}; class exploAction {}; class pageExplo {};

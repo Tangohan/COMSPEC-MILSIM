@@ -53,7 +53,8 @@ missionNamespace setVariable ["COMSPEC_ATAK_SrvKeep", _keep];
 }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_wpStore", {
     params ["_grp", "_pts", "_who"];
-    COMSPEC_ATAK_SrvRoutes set [_grp, [_pts, _who]];
+    // Itinéraire effacé par le groupe : plus rien à rejouer aux arrivants.
+    if ((count _pts) isEqualTo 0) then { COMSPEC_ATAK_SrvRoutes deleteAt _grp; } else { COMSPEC_ATAK_SrvRoutes set [_grp, [_pts, _who]]; };
     // Groupes disparus retirés (une entrée par groupe ayant reçu un itinéraire, jamais supprimée sinon).
     { if (isNull (groupFromNetId _x)) then { COMSPEC_ATAK_SrvRoutes deleteAt _x; }; } forEach (keys COMSPEC_ATAK_SrvRoutes);
 }] call CBA_fnc_addEventHandler;
