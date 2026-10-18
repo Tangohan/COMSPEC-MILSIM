@@ -13,6 +13,13 @@ if (_button isEqualTo 0) exitWith {
     // App Feux : la cible est pointée sur la carte.
     private _mp = _s getOrDefault ["medevacPick", ""];
     if (_mp isNotEqualTo "") exitWith { _s set ["medevacPick", ""]; ["picked", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_medicalAction; true };
+    // App Reco : POINTÉ CARTE, le point touché devient le carroyage de la note.
+    if (_s getOrDefault ["recoPick", false]) exitWith {
+        _s set ["recoPick", false];
+        (uiNamespace getVariable ["COMSPEC_ATAK_RecoDraft", createHashMap]) set ["grid", [[_world select 0, _world select 1, 0], 8] call comspec_atak_native_fnc_gridRef];
+        ["RECO"] call comspec_atak_native_fnc_navigate;
+        true
+    };
     if ((_s getOrDefault ["reportPick", ""]) isNotEqualTo "") exitWith { _s set ["reportPick", ""]; ["picked", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_reportAction; true };
     if ((_s getOrDefault ["dronePick", ""]) isNotEqualTo "") exitWith { _s set ["dronePick", ""]; ["picked", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_droneAction; true };
     private _lp = _s getOrDefault ["logiPick", ""];

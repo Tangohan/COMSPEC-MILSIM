@@ -21,7 +21,17 @@ if !(_bridge) then {
     _link = ["offline", "linked"] select _ready;
 };
 private _logged = _state isEqualTo "READY";
+// Détecteur BattlEye : la DLL de liaison ne répond pas (BattlEye bloque les extensions non autorisées, c'est la cause
+// quasi constante) : la liaison ne pourra jamais se faire tant que le jeu tourne avec BattlEye. Relu toutes les 20 s.
+private _be = uiNamespace getVariable ["COMSPEC_ATAK_BattlEyeCheck", [-100, false]];
+if (diag_tickTime - (_be select 0) > 20) then {
+    _be = [diag_tickTime, ([true] call comspec_atak_native_fnc_extVersion) isEqualTo ""];
+    uiNamespace setVariable ["COMSPEC_ATAK_BattlEyeCheck", _be];
+};
+private _battlEye = (_be select 1) && {!_logged};
+private _beRow = ["text", "<t color='#e5483a' font='COMSPEC_BarlowBold'>BATTLEYE ACTIF : LIAISON IMPOSSIBLE</t><br/><t size='0.85'>Le module de liaison ne répond pas : votre jeu tourne avec BattlEye, qui le bloque. La liaison Athena ne pourra jamais se connecter ainsi.</t><br/><t size='0.85' color='#e8b84a'>Quittez Arma, décochez BattlEye dans le lanceur Arma 3, puis relancez le jeu.</t>"];
 private _pill = switch (true) do {
+    case (_battlEye): { ["BATTLEYE ACTIF", "#e5483a"] };
     case (_logged && {_link isEqualTo "linked"}): { ["CONNECTÉ", "#5cc76b"] };
     case (_link isEqualTo "degraded"): { ["DÉGRADÉ", "#f2ab33"] };
     case (_logged): { ["SESSION OUVERTE", "#f2ab33"] };
@@ -68,7 +78,8 @@ if (_logged) then {
 } else {
     _rows pushBack ["hero", _logo, format ["<t size='1.35' font='COMSPEC_BarlowBold'>ATHENA</t>  <t color='%1' font='COMSPEC_BarlowBold'>● %2</t><br/><t color='#8a9a93' size='0.85'>%3</t>",
         _pill select 1, _pill select 0, ["Liaison avec le portail et le poste de commandement", ["COMSPEC_LinkDetail"] call _v] select ((["COMSPEC_LinkDetail"] call _v) isNotEqualTo "")]];
-    if (_err isNotEqualTo "" && {_err isNotEqualTo "-"}) then { _rows pushBack ["text", format ["<t color='#e5483a'>%1</t>", _err]]; };
+    if (_battlEye) then { _rows pushBack _beRow; };
+    if (_err isNotEqualTo "" && {_err isNotEqualTo "-"} && {!_battlEye}) then { _rows pushBack ["text", format ["<t color='#e5483a'>%1</t>", _err]]; };
     if (_hText isNotEqualTo "") then { _rows pushBack ["text", format ["<t color='%1'>%2</t>", ["#7aa89a", "#e8b84a"] select _hWarn, _hText]]; };
     private _tab = uiNamespace getVariable ["COMSPEC_ATAK_AthenaTab", "account"];
     private _tabBtn = {

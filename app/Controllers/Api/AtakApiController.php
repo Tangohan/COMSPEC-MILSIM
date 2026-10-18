@@ -25,6 +25,7 @@ use App\Repositories\CasNineLineRepository;
 use App\Repositories\ReconImageRepository;
 use App\Repositories\ReconNoteRepository;
 use App\Support\ReconNoteCatalog;
+use App\Services\Monitoring\ReconNoteDiscordService;
 use App\Repositories\MapShapeRepository;
 use App\Repositories\LaserCodeRepository;
 use App\Repositories\TenantRepository;
@@ -11898,6 +11899,9 @@ class AtakApiController
         $text = trim((string) ($body['text'] ?? ''));
         $tag = ReconNoteCatalog::normalizeTag((string) ($body['tag'] ?? ''));
         if ($text === '' && $tag === '') {
+            // Corps illisible (guillemets doublés d'une ancienne DLL) ou note vide : tracé, sinon la reco disparaît sans bruit.
+            error_log('[atak/recon-notes] note refusée (vide ou illisible), tenant ' . $tenantId . ', ' . strlen(HttpJsonBody::rawJson()) . ' octets reçus');
+
             return Response::json([
                 'error' => 'empty',
                 'message' => 'Indiquez une observation ou un type.',
@@ -11946,6 +11950,25 @@ class AtakApiController
         if ($row !== []) {
             // Relais JNET : la reco remonte de l'unité de l'opérateur vers son échelon supérieur.
             $this->jnetBridge()->relayReconNote($tenantId, $this->jnetGameUserId($tenantId, $actor, $authorUid), $row);
+            if ($existing === null) {
+                // Journal Activité (admin) et salon Discord des recos, une fois par note (pas aux renvois).
+                $author = trim((string) ($row['author'] ?? ''));
+                $tagLabel = ReconNoteCatalog::tagLabel((string) ($row['tag'] ?? ''));
+                $this->activityLog->record(
+                    $tenantId,
+                    max(1, $mapId),
+                    AtakActivityLogService::TYPE_INTEL,
+                    'Reco ' . $tagLabel . ($text !== '' ? ' — ' . $text : '') . ' (' . ReconNoteDiscordService::grid($row) . ')',
+                    $author !== '' ? $author : null,
+                    $this->buildActivityMeta($tenantId, max(1, $mapId), $body, is_array($actor) ? $actor : null, null, [
+                        'kind' => 'recon_note',
+                        'tag' => (string) ($row['tag'] ?? ''),
+                        'confidence' => (string) ($row['confidence'] ?? ''),
+                        'source_id' => $sourceId,
+                    ])
+                );
+                ReconNoteDiscordService::defer($tenantId, $row);
+            }
         }
 
         return Response::json(['ok' => true, 'note' => $row]);
