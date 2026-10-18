@@ -6995,6 +6995,53 @@ class AtakApiController
     }
 
     /**
+     * Téléphone ATAK natif (COMSPEC Link « Garmin.Report », 2.0.87) : la montre de l'app Garmin du joueur, envoyée en
+     * entier toutes les 5 min. Corps : {player_uid, call_sign, status: {bb, hr, stress, rest_hr, goal},
+     * days: [{day, steps, foot_m, …}], acts: [{day, at, type, place, world, m, sec}]}.
+     */
+    public function garmin(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $requireSteam = ComspecApiKeyAuth::matchedUserId() === null;
+        $actor = $this->guardArmaWrite($request, $tenantId, $requireSteam);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $repo = new \App\Repositories\AtakGarminRepository();
+        if (!$repo->schemaReady()) {
+            return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+        }
+        $body = $this->jsonBody($request);
+        $user = null;
+        $sessionUserId = ComspecApiKeyAuth::matchedUserId();
+        if ($sessionUserId !== null) {
+            $user = $this->userRepository->findById($sessionUserId, $tenantId);
+        }
+        $uid = $actor['steam_uid'] ?? SteamId::normalize((string) ($body['player_uid'] ?? $body['steam_uid'] ?? ''));
+        if ($user === null && $uid !== null) {
+            $user = $this->userRepository->findBySteamIdForTenant($tenantId, $uid);
+        }
+        if ($user === null) {
+            return Response::json(['ok' => true, 'matched' => false]);
+        }
+        $report = \App\Repositories\AtakGarminRepository::normalizeReport($body);
+
+        return Response::json([
+            'ok' => $repo->saveReport($tenantId, (int) $user['id'], $report),
+            'matched' => true,
+            'days' => count($report['days']),
+            'activities' => count($report['activities']),
+        ]);
+    }
+
+    /**
      * Serveur Arma (COMSPEC Link « ScreenTime.Batch ») : temps de jeu et temps par rôle de tous les joueurs,
      * comptés par le serveur, donc même quand le téléphone d'un joueur n'a plus de batterie ni de réseau.
      * Corps : {mission_key, players: [{player_uid, call_sign, items: [{kind: play|role, key, label, seconds}]}]}.

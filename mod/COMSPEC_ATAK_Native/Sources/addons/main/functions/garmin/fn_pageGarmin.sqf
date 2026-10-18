@@ -348,6 +348,16 @@ switch (_tab) do {
         ]] call _list;
         [_x0, _y, _W, _f * 2.4, format ["<t size='0.8' color='%1'>Mesures de la montre portée en jeu, gardées sur ce PC (14 jours). Fréquence cardiaque d'ACE quand le mod est chargé, sinon estimée d'après l'effort, la fatigue et le stress.</t>", _hDim]] call _txt;
         _y = _y + _f * 2.6;
+        // Envoi au site (fiche du membre), toutes les 5 min.
+        (_gm getOrDefault ["web", [-1, ""]]) params ["_wt", "_ws"];
+        private _web = switch (true) do {
+            case (_wt < 0): { "Envoi au site : dans les 5 premières minutes de jeu" };
+            case (_ws isEqualTo "OK"): { format ["Envoyé au site il y a %1 min (fiche du membre)", floor ((diag_tickTime - _wt) / 60)] };
+            case (_ws isEqualTo "SANS LIAISON"): { "Pas envoyé au site : téléphone non relié à Athena" };
+            default { format ["Pas envoyé au site : %1", _ws] };
+        };
+        [_x0, _y, _W, _f * 1.3, format ["<t size='0.8' color='%1'>%2</t>", _hDim, _web]] call _txt;
+        _y = _y + _f * 1.5;
     };
 };
 

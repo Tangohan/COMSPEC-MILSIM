@@ -5,7 +5,8 @@
       la fatigue et le stress), stress (tirs proches, ennemi proche, blessures, combat), Body Battery (se vide avec
       l'effort et le stress, se recharge au repos, au sommeil et hors du jeu), sommeil / repos (inconscient, ou
       immobile allongé ou assis au calme plus de 2 min).
-    Gardé sur ce PC (profileNamespace COMSPEC_ATAK_Garmin), par jour réel : 14 jours et 40 activités.
+    Gardé sur ce PC (profileNamespace COMSPEC_ATAK_Garmin), par jour réel : 14 jours et 40 activités ; envoyé au site à chaque
+    écriture du profil (toutes les 5 min, Garmin.Report de COMSPEC Link 2.0.87 ; fiche du membre).
     Params : [mode : "tick" | "save" (fin de mission : activité en cours close et profil écrit)]
     Mémoire : missionNamespace COMSPEC_ATAK_Gm (HashMap) : bb, real (dernière seconde réelle vue), hr, stress, goal,
               days (jour -> HashMap), acts (liste), cur (activité en cours), last (position), rest (secondes de repos)
@@ -70,7 +71,7 @@ private _save = {
     { _days deleteAt _x; } forEach (_keys select [14]);
     _gm set ["real", [] call _real];
     private _out = [];
-    { if !(_x in ["days", "acts", "cur", "last", "tick", "saved", "min", "rest", "away"]) then { _out pushBack [_x, _y]; }; } forEach _gm;
+    { if !(_x in ["days", "acts", "cur", "last", "tick", "saved", "min", "rest", "away", "web"]) then { _out pushBack [_x, _y]; }; } forEach _gm;
     // Courbes gardées pour aujourd'hui et hier seulement (le reste des jours : les totaux).
     { (_days get _x) deleteAt "series"; } forEach (_keys select [2, 12]);
     _out pushBack ["days", (keys _days) apply { private _d = _days get _x; [_x, (keys _d) apply { [_x, _d get _x] }] }];
@@ -78,6 +79,25 @@ private _save = {
     profileNamespace setVariable ["COMSPEC_ATAK_Garmin", _out];
     saveProfileNamespace;
     _gm set ["saved", diag_tickTime];
+    // Envoi au site (fiche du membre) : la montre en entier, sans les courbes (Garmin.Report de COMSPEC Link 2.0.87).
+    if !([] call comspec_atak_native_fnc_bridge) exitWith { _gm set ["web", [diag_tickTime, "SANS LIAISON"]]; };
+    private _dayOut = (keys _days) apply {
+        private _d = _days get _x;
+        private _h = createHashMapFromArray [["day", _x], ["stress_avg", round ((_d getOrDefault ["stress_sum", 0]) / ((_d getOrDefault ["stress_t", 0]) max 1))]];
+        { _h set [_x, round (_d getOrDefault [_x, 0])]; } forEach ["steps", "foot_m", "foot_s", "hr_max", "bb_up", "bb_down", "sleep_s", "run_n", "run_m", "walk_n", "walk_m", "act_n"];
+        private _r = _d getOrDefault ["hr_rest", 999];
+        _h set ["hr_rest", [round _r, 0] select (_r > 300)];
+        _h
+    };
+    private _actOut = (_gm get "acts") apply { createHashMapFromArray [["day", _x get "day"], ["at", _x get "at"], ["type", _x get "type"], ["place", _x get "place"], ["world", _x get "world"], ["m", _x get "m"], ["sec", _x get "sec"]] };
+    private _payload = createHashMapFromArray [
+        ["player_uid", getPlayerUID player], ["call_sign", [player] call comspec_atak_native_fnc_unitCallsign],
+        ["status", createHashMapFromArray [["bb", round (_gm get "bb")], ["hr", round (_gm getOrDefault ["hr", 0])], ["stress", round (_gm getOrDefault ["stress", 0])], ["rest_hr", _gm getOrDefault ["rest_hr", 60]], ["goal", _gm getOrDefault ["goal", 10000]]]],
+        ["days", _dayOut], ["acts", _actOut]
+    ];
+    private _r = "COMSPECExtension" callExtension ["Garmin.Report", [[_payload] call comspec_atak_native_fnc_json]];
+    if (_r isEqualType []) then { _r = _r param [0, ""]; };
+    _gm set ["web", [diag_tickTime, [[format ["ERREUR %1", _r], "COMSPEC Link 2.0.87 requis"] select (_r isEqualTo ""), "OK"] select ((_r select [0, 3]) isEqualTo "OK|")]];
 };
 
 if (_mode isEqualTo "save") exitWith { [] call _finish; [] call _save; true };

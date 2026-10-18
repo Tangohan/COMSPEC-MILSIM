@@ -3093,14 +3093,15 @@ public static partial class Extension
             return "OK|queued";
         }
 
-        if (function is "Squad.Sync" or "ScreenTime.Report")
+        // Montre de l'app Garmin (Garmin.Report, 2.0.87) : état, 14 derniers jours et 40 dernières activités du joueur, toutes les 5 min.
+        if (function is "Squad.Sync" or "ScreenTime.Report" or "Garmin.Report")
         {
             if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0])) return "ERR|payload_empty";
             if (string.IsNullOrEmpty(_baseUrl)) return "ERR|not_connected";
             if (!HasPortalAuth()) return "ERR|unauthorized";
             var json = NormalizeArmaJson(args[0]);
             if (json.Length > 60000) return "ERR|payload_too_large";
-            var path = function == "Squad.Sync" ? "/api/atak/squads/sync" : "/api/atak/screen-time";
+            var path = function switch { "Squad.Sync" => "/api/atak/squads/sync", "Garmin.Report" => "/api/atak/garmin", _ => "/api/atak/screen-time" };
             EnqueueOrSend(_baseUrl + path, EnrichAtakPayload(json));
             return "OK|queued";
         }
