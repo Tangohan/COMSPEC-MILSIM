@@ -79,7 +79,7 @@ final class AtakShellPersonalisationTest extends TestCase
         $init = $this->read(self::MAIN . '/XEH_postInitClient.sqf');
         self::assertStringContainsString('[] call comspec_atak_native_fnc_aceMenu;', $init);
         self::assertStringNotContainsString('["ACE_SelfActions", "ACE_Equipment"]', $init);
-        self::assertSame(4, substr_count($init, '["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"]'));
+        self::assertSame(5, substr_count($init, '["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"]'));
         // Le menu doit exister avant que les actions d'entretien s'y accrochent.
         self::assertTrue(strpos($init, 'fnc_aceMenu') < strpos($init, 'COMSPEC_ATAK_BatterySwap'));
         $menu = $this->read(self::MAIN . '/functions/shell/fn_aceMenu.sqf');
