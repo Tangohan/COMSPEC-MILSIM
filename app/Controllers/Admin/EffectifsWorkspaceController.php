@@ -34,6 +34,7 @@ use App\Services\Effectifs\EffectifsStaffAlertService;
 use App\Services\Effectifs\ElevationApprovalService;
 use App\Services\Effectifs\MemberOffboardingService;
 use App\Services\Effectifs\PersonnelCommandChainService;
+use App\Services\Personnel\JobRolePickerService;
 use App\Services\Personnel\PersonnelDuplicateDetectionService;
 use App\Services\Personnel\PersonnelJobRoleAssignmentsSettings;
 use App\Services\Personnel\PersonnelStructureChangeNotificationService;
@@ -42,6 +43,7 @@ use App\Services\Admin\RolePermissionService;
 use App\Services\Rbac\CommunityAccessProfiles;
 use App\Repositories\TenantAdminSettingsRepository;
 use App\Support\EffectifsLmsAccess;
+use App\Support\GradeSelectOptions;
 use App\Support\OrganizationRoleLabels;
 use DateTimeImmutable;
 
@@ -580,12 +582,15 @@ class EffectifsWorkspaceController
         }
 
         $canEditProfiles = EffectifsLmsAccess::canEditProfiles($gate);
-        $memberEditorHtml = '';
-        if ($canEditProfiles) {
-            $editor = \App\Core\Container::get(\App\Controllers\Web\PersonnelController::class)
-                ->embeddedEditor($request, ['id' => $id]);
-            if ($editor->statusCode() === 200) {
-                $memberEditorHtml = $editor->body();
+        $jobRolePickerGroups = [];
+        if ($jobRolesAvailable) {
+            try {
+                $jobRolePickerGroups = (new JobRolePickerService($this->personnelJobRoleRepository))->groups(
+                    $tenantId,
+                    array_map(static fn (array $r): int => (int) ($r['personnel_job_role_id'] ?? 0), $jobRoles)
+                );
+            } catch (\Throwable $e) {
+                error_log('Effectifs member: job role picker failed: ' . $e->getMessage());
             }
         }
 
@@ -610,7 +615,8 @@ class EffectifsWorkspaceController
             'elevationHistory' => $elevationHistory,
             'latestDeparture' => $latestDeparture,
             'canEditProfiles' => $canEditProfiles,
-            'memberEditorHtml' => $memberEditorHtml,
+            'jobRolePickerGroups' => $jobRolePickerGroups,
+            'civilStatusOptions' => $this->civilStatusOptions(),
             'canManageStatus' => EffectifsLmsAccess::canManageStatus($gate),
             'canManageAssignments' => EffectifsLmsAccess::canManageAssignments($gate),
             'canManageRoles' => EffectifsLmsAccess::canManageRoles($gate),
@@ -968,13 +974,29 @@ class EffectifsWorkspaceController
             return Response::redirect($redirect);
         }
 
+        // Les valeurs « cat:slug » désignent une fonction du référentiel pas encore copiée dans la communauté :
+        // elle est créée à la volée dans son domaine.
+        $picker = new JobRolePickerService($this->personnelJobRoleRepository);
         $rawIds = $request->input('job_role_ids', []);
-        $ids = is_array($rawIds)
-            ? array_values(array_unique(array_filter(array_map('intval', $rawIds), static fn (int $roleId): bool => $roleId > 0)))
-            : [];
         $settings = PersonnelJobRoleAssignmentsSettings::resolve($this->tenantRepository->getSettings($tenantId));
-        $ids = array_slice($ids, 0, (int) $settings['max_roles_per_member']);
-        $primaryId = (int) $request->input('primary_job_role_id', 0);
+        $maxRoles = (int) $settings['max_roles_per_member'];
+        $rawIds = is_array($rawIds) ? array_slice(array_values($rawIds), 0, max(1, $maxRoles)) : [];
+        try {
+            $ids = $picker->resolveValues($tenantId, $rawIds);
+        } catch (\Throwable $e) {
+            error_log('Effectifs functions: catalog role materialization failed: ' . $e->getMessage());
+            Session::flash('error', 'Impossible d’ajouter une fonction du référentiel. Réessayez.');
+
+            return Response::redirect($redirect);
+        }
+        $ids = array_slice($ids, 0, $maxRoles);
+        $rawPrimary = trim((string) $request->input('primary_job_role_id', ''));
+        $primaryId = 0;
+        if ($rawPrimary !== '') {
+            $primaryId = str_starts_with($rawPrimary, JobRolePickerService::CATALOG_PREFIX)
+                ? $picker->materializeCatalogRole($tenantId, substr($rawPrimary, strlen(JobRolePickerService::CATALOG_PREFIX)))
+                : (int) $rawPrimary;
+        }
         if (!in_array($primaryId, $ids, true)) {
             $primaryId = $ids[0] ?? 0;
         }
@@ -1366,6 +1388,111 @@ class EffectifsWorkspaceController
         Session::flash('success', 'Grade mis à jour.');
 
         return Response::redirect($this->redirectAfterMemberAction($request, $id));
+    }
+
+    /**
+     * État civil du personnage (lieu de naissance, situation familiale…) saisi par un gérant ou les RH
+     * depuis la fiche membre. L'identité civile réelle reste dans « Mon compte ».
+     */
+    /**
+     * Choix proposés dans la fenêtre « État civil » de la fiche membre.
+     *
+     * @return array<string, array<string, string>>
+     */
+    private function civilStatusOptions(): array
+    {
+        $out = [];
+        foreach (\App\Services\Personnel\PersonnelCorrectionRequestService::choiceCatalog() as $key => $pairs) {
+            if (!in_array($key, ['family_situation', 'sex', 'blood_type'], true) || !is_array($pairs)) {
+                continue;
+            }
+            foreach ($pairs as $pair) {
+                $value = trim((string) ($pair['value'] ?? ''));
+                if ($value !== '') {
+                    $out[$key][$value] = (string) ($pair['label'] ?? $value);
+                }
+            }
+        }
+
+        return $out;
+    }
+
+    public function updateMemberCivilStatus(Request $request, array $params = []): Response
+    {
+        $denied = $this->denyUnlessAccess();
+        if ($denied !== null) {
+            return $denied;
+        }
+        $id = (int) ($params['id'] ?? 0);
+        $redirect = effectifs_workspace_url('membres/' . $id) . '#modifier-dossier';
+        if (!EffectifsLmsAccess::canEditProfiles(Gate::getInstance())) {
+            Session::flash('error', 'Vous n’êtes pas habilité à modifier les dossiers.');
+
+            return Response::redirect($redirect);
+        }
+        if (!Csrf::validate((string) $request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Réessayez.');
+
+            return Response::redirect($redirect);
+        }
+        $tenantId = (int) Session::get('tenant_id');
+        $user = $id > 0 ? $this->userRepository->findById($id, $tenantId) : null;
+        if ($user === null) {
+            Session::flash('error', 'Membre introuvable.');
+
+            return Response::redirect(effectifs_workspace_url());
+        }
+        $text = static function (mixed $raw, int $max): ?string {
+            $value = trim((string) $raw);
+            if ($value === '') {
+                return null;
+            }
+
+            return mb_substr($value, 0, $max, 'UTF-8');
+        };
+        $existing = $this->personnelProfileRepository->getByUserId($id, $tenantId) ?? [];
+        $choice = static function (string $key, mixed $raw, array $allowed) use ($existing): ?string {
+            $value = trim((string) $raw);
+            if ($value === '') {
+                return null;
+            }
+            // Une ancienne valeur hors liste reste telle quelle si on ne la change pas.
+            if (in_array($value, $allowed, true) || $value === trim((string) ($existing[$key] ?? ''))) {
+                return $value;
+            }
+
+            return null;
+        };
+        $catalog = \App\Services\Personnel\PersonnelCorrectionRequestService::choiceCatalog();
+        $values = static fn (string $key): array => array_values(array_filter(array_map(
+            static fn (array $pair): string => trim((string) ($pair['value'] ?? '')),
+            is_array($catalog[$key] ?? null) ? $catalog[$key] : []
+        )));
+        $weightRaw = trim((string) $request->input('weight_kg', ''));
+        $weight = $weightRaw !== '' && ctype_digit($weightRaw) ? max(20, min(300, (int) $weightRaw)) : null;
+        $data = [
+            'birth_place' => $text($request->input('birth_place'), 150),
+            'family_situation' => $choice('family_situation', $request->input('family_situation'), $values('family_situation')),
+            'sex' => $choice('sex', $request->input('sex'), $values('sex')),
+            'nationality' => $text($request->input('nationality'), 100),
+            'blood_type' => $choice('blood_type', $request->input('blood_type'), $values('blood_type')),
+            'languages' => $text($request->input('languages'), 255),
+            'weight_kg' => $weight,
+            'nickname_primary' => $text($request->input('nickname_primary'), 100),
+            'motto' => $text($request->input('motto'), 255),
+        ];
+        $this->personnelProfileRepository->ensureRecord($id, $tenantId);
+        $this->personnelProfileRepository->update($id, $data);
+        $this->adminAuditService->logUserUpdated(
+            $tenantId,
+            (int) Session::get('user_id'),
+            $id,
+            'etat_civil',
+            implode(', ', array_keys(array_filter($data, static fn ($v): bool => $v !== null)))
+        );
+        Session::flash('success', 'État civil mis à jour.');
+
+        return Response::redirect($redirect);
     }
 
     public function quickAssignment(Request $request, array $params = []): Response
@@ -2490,8 +2617,12 @@ class EffectifsWorkspaceController
             return strcasecmp((string) ($a['assignment_path'] ?? ''), (string) ($b['assignment_path'] ?? ''));
         });
 
+        $gradeSystem = strtoupper(trim((string) ($this->tenantRepository->getSettings($tenantId)['grade_system_code'] ?? '')));
+
         return [
             'grades' => $grades,
+            // Grades triés et regroupés (pays, catégorie, du plus élevé au plus bas) pour les listes déroulantes.
+            'grade_groups' => GradeSelectOptions::groups($grades, str_starts_with($gradeSystem, 'US') ? 'US' : 'FR'),
             'roles' => $roles,
             'job_roles' => $jobRoles,
             'units' => $units,

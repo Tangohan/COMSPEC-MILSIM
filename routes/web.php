@@ -1422,6 +1422,7 @@ return function (Router $router) {
     $router->get('/back-office/referentiels/grades/{id}/edit', [GradeReferentielController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/{id}/update', [GradeReferentielController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/{id}/deactivate', [GradeReferentielController::class, 'deactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/{id}/reactivate', [GradeReferentielController::class, 'reactivate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
 
     $router->get('/back-office/organisation/grades', [AdvancementAdminController::class, 'grades'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/organisation/grades/create', [AdvancementAdminController::class, 'gradeCreate'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1635,6 +1636,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/effectifs/membres/{id}/anciennete', [EffectifsWorkspaceController::class, 'updateMemberSeniority'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/roles', [EffectifsWorkspaceController::class, 'updateMemberRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/fonctions', [EffectifsWorkspaceController::class, 'updateMemberJobRoles'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/ressources/effectifs/membres/{id}/etat-civil', [EffectifsWorkspaceController::class, 'updateMemberCivilStatus'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/grade', [EffectifsWorkspaceController::class, 'updateMemberGrade'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/affectation', [EffectifsWorkspaceController::class, 'quickAssignment'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/ressources/effectifs/membres/{id}/elevation', [EffectifsWorkspaceController::class, 'requestElevation'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

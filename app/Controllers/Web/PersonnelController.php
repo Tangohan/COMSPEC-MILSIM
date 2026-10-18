@@ -1966,7 +1966,9 @@ class PersonnelController
             return $this->personnelMissingResponse(true);
         }
         $isSelf = (int) $currentUser['id'] === (int) $target['id'];
-        $canStaffEdit = $this->canStaffEditPersonnel();
+        // Gérants et RH changent l'image opérateur depuis la fiche Effectifs : même règle que l'édition des dossiers.
+        $canStaffEdit = $this->canStaffEditPersonnel()
+            || \App\Support\EffectifsLmsAccess::canEditProfiles(Gate::getInstance());
         if (!$isSelf && !$canStaffEdit) {
             return $this->personnelForbiddenResponse(true, url('personnel'));
         }

@@ -4615,6 +4615,13 @@ $migrationRunner->step('permissions.code', static function () use ($pdo): void {
 // FBAC must run last so no legacy seed can recreate a global or role-derived grant.
 $migrationRunner->step('function_based_access_v2', static fn () => run_function_based_access_v2_migration($pdo));
 
+// Fiches dossier en double (lignes sans communauté recréées à chaque ouverture de son propre dossier).
+$personnelDossierDedupe = require $root . '/bootstrap/personnel_dossier_dedupe_migration.php';
+$migrationRunner->step('personnel_dossier_dedupe', static function () use ($personnelDossierDedupe, $pdo): void {
+    echo "Nettoyage des fiches dossier en double (personnel_profiles, personnel_extras)...\n";
+    $personnelDossierDedupe($pdo);
+});
+
 require_once $root . '/bootstrap/migrations_full_post.php';
 comspec_print_post_migration_report($pdo, $root, $migrationFlush);
 $migrationsOk = $migrationRunner->printReport();
