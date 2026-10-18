@@ -19,7 +19,7 @@ final class ReconNoteDiscordServiceTest extends TestCase
             'author' => 'TA1 · James',
             'pos_x' => 15334.2,
             'pos_y' => 17228.9,
-        ], 'Bet Leader');
+        ]);
 
         self::assertSame('🔭 Reco · Véhicule', $embed['title']);
         self::assertStringContainsString('2 pick-up armés', $embed['description']);
@@ -29,7 +29,6 @@ final class ReconNoteDiscordServiceTest extends TestCase
         self::assertSame('1533 1722', $fields['Carroyage']);
         self::assertSame('Vu direct', $fields['Fiabilité']);
         self::assertSame('TA1 · James', $fields['Auteur']);
-        self::assertSame('Bet Leader', $fields['Communauté']);
     }
 
     public function testPostSendsOnceAndNothingWithoutWebhook(): void
@@ -54,7 +53,7 @@ final class ReconNoteDiscordServiceTest extends TestCase
         $root = dirname(__DIR__, 2);
         $api = (string) file_get_contents($root . '/app/Controllers/Api/AtakApiController.php');
         $ext = (string) file_get_contents($root . '/mod/UptoDate/COMSPECExtension/Extension.cs');
-        $env = (string) file_get_contents($root . '/.env.example');
+        $catalog = (string) file_get_contents($root . '/app/Support/DiscordWebhookCatalog.php');
         $page = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/pages/fn_pageReco.sqf');
         $click = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/map/fn_mapMouseButtonDown.sqf');
         $athena = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/functions/pages/fn_pageAthena.sqf');
@@ -63,7 +62,7 @@ final class ReconNoteDiscordServiceTest extends TestCase
         self::assertStringContainsString("'kind' => 'recon_note'", $api);
         self::assertStringContainsString('EnqueueOrSend(_baseUrl + "/api/recon/notes", EnrichAtakPayload(json))', $ext);
         self::assertStringContainsString('json = EnrichAtakPayload(json);', $ext);
-        self::assertStringContainsString('DISCORD_RECON_WEBHOOK=', $env);
+        self::assertStringContainsString('KEY_ATAK_RECON_NOTES', $catalog);
         self::assertStringContainsString('POINTÉ CARTE', $page);
         self::assertStringNotContainsString('"SOUS MON REGARD"', $page);
         self::assertStringContainsString('recoPick', $click);

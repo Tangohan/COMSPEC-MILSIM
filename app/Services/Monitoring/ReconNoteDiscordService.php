@@ -4,22 +4,23 @@ declare(strict_types=1);
 
 namespace App\Services\Monitoring;
 
-use App\Core\Database;
+use App\Services\Integrations\DiscordEventRelayService;
 use App\Services\Integrations\DiscordWebhookService;
+use App\Support\DiscordWebhookCatalog;
 use App\Services\Security\FileRateLimiter;
 use App\Support\ReconNoteCatalog;
 
 /**
  * Notes de reco des joueurs (app Reco du téléphone) postées dans un salon Discord, une carte par note :
- * type, observation, fiabilité, carroyage, auteur (indicatif et pseudo), communauté.
+ * type, observation, fiabilité, carroyage, auteur (indicatif et pseudo).
  *
- * Salon : webhook DISCORD_RECON_WEBHOOK dans le .env du VPS. Sans lui, rien n'est envoyé.
- * Envoi après la réponse HTTP (le jeu n'attend pas Discord) ; au plus 30 notes par minute en tout.
+ * Salon : choisi par chaque communauté dans Back-office > Intégrations > Relais Discord, « Notes de reco »
+ * (salon commun ou salon à part ; désactivé par défaut). Sans salon, rien n'est envoyé.
+ * Envoi après la réponse HTTP (le jeu n'attend pas Discord) ; au plus 30 notes par minute et par communauté.
  * Aucun Steam, e-mail ni adresse IP n'est posté ; mentions neutralisées.
  */
 final class ReconNoteDiscordService
 {
-    public const ENV_WEBHOOK = 'DISCORD_RECON_WEBHOOK';
     private const PER_MINUTE = 30;
 
     /** @var \Closure(string, array<string, mixed>): array{ok:bool} */
@@ -29,7 +30,7 @@ final class ReconNoteDiscordService
      * @param (\Closure(string, array<string, mixed>): array{ok:bool})|null $send envoi (URL, embed) ; tests
      */
     public function __construct(
-        private ?string $webhookUrl = null,
+        private string $webhookUrl,
         ?\Closure $send = null,
         private ?FileRateLimiter $limiter = null
     ) {
@@ -37,28 +38,22 @@ final class ReconNoteDiscordService
             => (new DiscordWebhookService())->sendRawEmbed($url, $embed, 'Athena · Reco');
     }
 
-    public static function configuredWebhook(): string
-    {
-        return trim((string) (($_ENV[self::ENV_WEBHOOK] ?? null) ?: (getenv(self::ENV_WEBHOOK) ?: '')));
-    }
-
     /**
-     * Poste la note après la réponse HTTP. Jamais bloquant, jamais d'exception.
+     * Poste la note dans le salon de la communauté, après la réponse HTTP. Jamais bloquant, jamais d'exception.
      *
      * @param array<string, mixed> $note ligne recon_notes
      */
     public static function defer(int $tenantId, array $note): void
     {
-        $url = self::configuredWebhook();
-        if (!(new DiscordWebhookService())->isValidWebhookUrl($url)) {
-            return;
-        }
         register_shutdown_function(static function () use ($tenantId, $note): void {
             try {
                 if (function_exists('fastcgi_finish_request')) {
                     @fastcgi_finish_request();
                 }
-                (new self())->post($note, self::tenantName($tenantId));
+                $url = (new DiscordEventRelayService())->resolveUrl($tenantId, DiscordWebhookCatalog::KEY_ATAK_RECON_NOTES);
+                if ($url !== null) {
+                    (new self($url))->post($note, $tenantId);
+                }
             } catch (\Throwable $e) {
                 error_log('[atak/recon-notes] discord ' . $e->getMessage());
             }
@@ -69,17 +64,16 @@ final class ReconNoteDiscordService
      * @param array<string, mixed> $note
      * @return string sent, throttled, disabled, failed
      */
-    public function post(array $note, string $community = ''): string
+    public function post(array $note, int $tenantId = 0): string
     {
-        $url = $this->webhookUrl ?? self::configuredWebhook();
-        if ($url === '') {
+        if ($this->webhookUrl === '') {
             return 'disabled';
         }
         $limiter = $this->limiter ?? new FileRateLimiter();
-        if ($limiter->hit('atak_recon_note_discord', 60) > self::PER_MINUTE) {
+        if ($limiter->hit('atak_recon_note_discord_' . $tenantId, 60) > self::PER_MINUTE) {
             return 'throttled';
         }
-        $res = ($this->send)($url, self::buildEmbed($note, $community));
+        $res = ($this->send)($this->webhookUrl, self::buildEmbed($note));
 
         return ($res['ok'] ?? false) ? 'sent' : 'failed';
     }
@@ -88,7 +82,7 @@ final class ReconNoteDiscordService
      * @param array<string, mixed> $note
      * @return array<string, mixed>
      */
-    public static function buildEmbed(array $note, string $community = ''): array
+    public static function buildEmbed(array $note): array
     {
         $tag = (string) ($note['tag'] ?? '');
         $label = ReconNoteCatalog::tagLabel($tag);
@@ -103,9 +97,6 @@ final class ReconNoteDiscordService
         $author = self::clean((string) ($note['author'] ?? ''));
         if ($author !== '') {
             $fields[] = ['name' => 'Auteur', 'value' => mb_substr($author, 0, 100), 'inline' => true];
-        }
-        if ($community !== '') {
-            $fields[] = ['name' => 'Communauté', 'value' => mb_substr(self::clean($community), 0, 100), 'inline' => true];
         }
 
         return [
@@ -140,17 +131,5 @@ final class ReconNoteDiscordService
         $s = str_replace(['@everyone', '@here'], ['@ everyone', '@ here'], $s);
 
         return preg_replace('~https?://\S+~i', '[lien]', $s) ?? $s;
-    }
-
-    private static function tenantName(int $tenantId): string
-    {
-        try {
-            $st = Database::getPdo()->prepare('SELECT name FROM tenants WHERE id = ? LIMIT 1');
-            $st->execute([$tenantId]);
-
-            return (string) ($st->fetchColumn() ?: '');
-        } catch (\Throwable) {
-            return '';
-        }
     }
 }
