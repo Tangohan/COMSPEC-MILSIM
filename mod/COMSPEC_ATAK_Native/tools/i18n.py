@@ -17,6 +17,9 @@ Sources/addons/main/i18n/en.txt : un tableau [["français", "anglais"], ...] lu 
                                      gardées, phrases nouvelles ajoutées vides, phrases disparues retirées ; écrit aussi
                                      localisation/template/xx.txt (et categories.json, tools/i18n_categories.py)
                                      quand F est omis
+  python3 tools/i18n.py fr           assemble i18n/fr.txt (réglage Français) : textes écrits en anglais dans le code
+                                     (tools/i18n_fr_source.tsv, anglais<TAB>français) + anglais -> français des stringtables
+                                     (ATAK natif, SSE, Overwatch connect : noms d'objets et textes lus par getText)
   python3 tools/i18n.py stringtable  noms d'objets et modules Eden/Zeus (config.cpp, modules.hpp) -> stringtable.xml
                                      (--sse : tout le SSE ; --connect : config.cpp et modules/ d'Overwatch connect)
                                      ($STR_..., langue du jeu ; anglais pris dans en.txt)
@@ -397,6 +400,36 @@ def stringtable():
         print("  " + fr)
 
 
+def build_fr():
+    """i18n/fr.txt : [["texte anglais", "français"], ...], chargé par fn_langApply quand la langue est le français."""
+    import html as _h
+    mod = os.path.dirname(ROOT)
+    pairs = {}
+    tables = [os.path.join(ROOT, "Sources", "addons", "main", "stringtable.xml"),
+              os.path.join(mod, "@COMSPEC_SSE", "addons", "main", "stringtable.xml"),
+              os.path.join(mod, "UptoDate", "Sources", "comspec-overwatch-addons", "connect", "stringtable.xml")]
+    for t in tables:
+        if not os.path.exists(t):
+            continue
+        for m in re.finditer(r"<English>(.*?)</English>\s*<French>(.*?)</French>", open(t, encoding="utf-8").read(), re.S):
+            en, fr = _h.unescape(m.group(1)), _h.unescape(m.group(2))
+            if en and fr and en != fr:
+                pairs.setdefault(en, fr)
+    src = os.path.join(ROOT, "tools", "i18n_fr_source.tsv")
+    for line in open(src, encoding="utf-8"):
+        line = line.rstrip("\n")
+        if line.startswith("#") or "\t" not in line:
+            continue
+        en, fr = line.split("\t", 1)
+        if en != fr:
+            pairs[en] = fr
+    out = os.path.join(ROOT, "Sources", "addons", "main", "i18n", "fr.txt")
+    esc = lambda t: t.replace('"', '""')
+    with open(out, "w", encoding="utf-8", newline="\n") as f:
+        f.write("[\n" + ",\n".join(f'["{esc(e)}", "{esc(r)}"]' for e, r in sorted(pairs.items())) + "\n]\n")
+    print(f"{len(pairs)} entrées dans {os.path.relpath(out, ROOT)}")
+
+
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "stats"
     if cmd == "wrap":
@@ -433,6 +466,8 @@ def main():
             for s, src in sorted(missing, key=lambda p: (p[1], p[0])):
                 f.write(f"{s}\t{src}\n")
         print(f"{len(found)} textes, {len(missing)} sans traduction -> {os.path.relpath(MISSING, ROOT)}")
+    elif cmd == "fr":
+        build_fr()
     elif cmd == "community":
         pairs = load_dict()
         path = sys.argv[2] if len(sys.argv) > 2 else os.path.join(ROOT, "localisation", "template", "xx.txt")

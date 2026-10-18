@@ -1401,7 +1401,7 @@ switch (_act) do {
         private _m = [_pos] call comspec_atak_native_fnc_markerDrop;
         { if ((_old select _forEachIndex) isEqualTo "§") then { _s deleteAt _x; } else { _s set [_x, _old select _forEachIndex]; }; } forEach _keys;
         if (_m isNotEqualTo "") then {
-            _m setMarkerText format ["%1 %2 (drone %3)", ["INC", "ENI", "AMI"] select (["INCONNU", "ENNEMI", "AMI"] find _tag), _name, _clock];
+            _m setMarkerText format ["%1 %2 (drone %3)", ([["UNK", "ENY", "FRD"], ["INC", "ENI", "AMI"]] select ((missionNamespace getVariable ["COMSPEC_ATAK_Lang", "en"]) isEqualTo "fr")) select (["INCONNU", "ENNEMI", "AMI"] find _tag), _name, _clock];
             [format ["Détection %1 posée sur la carte (%2)", [_num, 2] call CBA_fnc_formatNumber, [_pos, 8] call comspec_atak_native_fnc_gridRef]] call _log;
         };
     };

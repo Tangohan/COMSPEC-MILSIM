@@ -48,6 +48,7 @@ if ((count _pts) > 0) then {
     _rows pushBack ["section", "Étapes", "Toucher MODIFIER pour renommer, changer le type ou déplacer sur la carte"];
     {
         _x params ["_p", "_n"];
+        _n = [_n] call comspec_atak_native_fnc_markerAutoName; // FIN <-> END selon la langue
         private _tRow = ["type", _x param [2, "WP"]] call comspec_atak_native_fnc_wpAction;
         private _prevP = if (_forEachIndex isEqualTo 0) then { getPosATL player } else { (_pts select (_forEachIndex - 1)) select 0 };
         private _on = _forEachIndex isEqualTo _idx;
