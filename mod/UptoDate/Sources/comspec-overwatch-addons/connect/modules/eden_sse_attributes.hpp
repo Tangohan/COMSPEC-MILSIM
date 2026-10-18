@@ -28,7 +28,7 @@ class Cfg3DEN
         {
             class COMSPEC_Overwatch_PhoneTrack
             {
-                displayName = "COMSPEC — Suivi ATAK";
+                displayName = "$STR_COMSPEC_OW_CFG_C49FBE77F5";
                 collapsed = 1;
                 condition = "objectBrain";
 
@@ -36,8 +36,8 @@ class Cfg3DEN
                 {
                     class COMSPEC_PhoneTrack
                     {
-                        displayName = "Téléphone visible sur l’ATAK";
-                        tooltip = "La position de cette personne apparaît sur la carte de commandement, comme si elle portait un téléphone. Par défaut, aucun détail (nom, grille, cap…) n’est publié : le Zeus choisit ensuite ce qui apparaît, en jeu.";
+                        displayName = "$STR_COMSPEC_OW_CFG_CCCD375186";
+                        tooltip = "$STR_COMSPEC_OW_CFG_B84B3FD620";
                         property = "COMSPEC_PhoneTrack";
                         control = "Checkbox";
                         expression = "[_this, _value] call comspec_overwatch_connect_fnc_setPhoneTrack;";
@@ -47,8 +47,8 @@ class Cfg3DEN
 
                     class COMSPEC_PhoneCallsign
                     {
-                        displayName = "Nom affiché sur la carte";
-                        tooltip = "Laisser vide : le nom de la personne est utilisé. Renseignez un indicatif si plusieurs contacts ont le même nom.";
+                        displayName = "$STR_COMSPEC_OW_CFG_3EB5598FA5";
+                        tooltip = "$STR_COMSPEC_OW_CFG_C6E6AC49A8";
                         property = "COMSPEC_PhoneCallsign";
                         control = "Edit";
                         expression = "if (_value != '') then { _this setVariable ['COMSPEC_PhoneCallsign', _value, true]; };";
@@ -58,8 +58,8 @@ class Cfg3DEN
 
                     class COMSPEC_AllyTrack
                     {
-                        displayName = "IA alliée visible sur l’ATAK";
-                        tooltip = "Cette IA apparaît sur la carte de commandement comme une unité de terrain (pas comme un téléphone). Utile pour une section d’accompagnement, un QRF ou un élément ami. Sans effet sur un joueur : il est déjà suivi s’il a une tablette.";
+                        displayName = "$STR_COMSPEC_OW_CFG_05CF37BCCA";
+                        tooltip = "$STR_COMSPEC_OW_CFG_D87EDC6B9C";
                         property = "COMSPEC_AllyTrack";
                         control = "Checkbox";
                         expression = "[_this, _value] call comspec_overwatch_connect_fnc_setAllyTrack;";
@@ -69,8 +69,8 @@ class Cfg3DEN
 
                     class COMSPEC_AllyCallsign
                     {
-                        displayName = "Indicatif";
-                        tooltip = "Nom court affiché sur la carte et dans les effectifs (ex. RAVEN). Laisser vide : le nom du groupe, sinon le nom de l’IA.";
+                        displayName = "$STR_COMSPEC_OW_CFG_E1829FA177";
+                        tooltip = "$STR_COMSPEC_OW_CFG_73B225B539";
                         property = "COMSPEC_AllyCallsign";
                         control = "Edit";
                         expression = "if (_value != '') then { _this setVariable ['COMSPEC_AllyCallsign', _value, true]; };";
@@ -82,7 +82,7 @@ class Cfg3DEN
 
             class COMSPEC_Overwatch_GpsBeacon
             {
-                displayName = "COMSPEC — Balise GPS";
+                displayName = "$STR_COMSPEC_OW_CFG_C032C6FDD9";
                 collapsed = 1;
                 condition = "objectVehicle";
 
@@ -90,8 +90,8 @@ class Cfg3DEN
                 {
                     class COMSPEC_GpsBeacon
                     {
-                        displayName = "Balise GPS (suivi ATAK)";
-                        tooltip = "Le véhicule apparaît sur la carte de commandement même sans joueur à bord (convoi IA, véhicule volé, balise posée par le chef de mission).";
+                        displayName = "$STR_COMSPEC_OW_CFG_6525C816AC";
+                        tooltip = "$STR_COMSPEC_OW_CFG_91EE3FBA4C";
                         property = "COMSPEC_GpsBeacon";
                         control = "Checkbox";
                         expression = "[_this, _value] call comspec_overwatch_connect_fnc_setGpsBeacon;";
@@ -101,8 +101,8 @@ class Cfg3DEN
 
                     class COMSPEC_GpsCallsign
                     {
-                        displayName = "Nom affiché sur la carte";
-                        tooltip = "Laisser vide : le modèle du véhicule est utilisé. Utile pour distinguer deux véhicules du même type (ex. Convoi 1).";
+                        displayName = "$STR_COMSPEC_OW_CFG_3EB5598FA5";
+                        tooltip = "$STR_COMSPEC_OW_CFG_88F89B739E";
                         property = "COMSPEC_GpsCallsign";
                         control = "Edit";
                         expression = "if (_value != '') then { _this setVariable ['COMSPEC_GpsCallsign', _value, true]; };";

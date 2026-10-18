@@ -1,7 +1,7 @@
 /*
     Texte d'un menu CBA déclaré par un autre addon (Overwatch connect, SSE), dont l'initialisation peut passer avant
     celle de l'ATAK natif : langue du réglage « Langue / Language » s'il est déjà connu, sinon celle enregistrée dans
-    le profil (réglages CBA du joueur), sinon la langue du jeu (fn_langResolve). Chaque traduction garde son texte français
+    le profil (réglages CBA du joueur), sinon l'anglais (valeur par défaut du réglage). Chaque traduction garde son texte français
     (COMSPEC_ATAK_MenuFr) : fn_menuRelang retraduit ces menus si la langue change en cours de partie.
 */
 params [["_text", ""]];
@@ -19,7 +19,7 @@ if (_set isEqualTo "") then {
         };
     };
 };
-private _lang = [[_set, "auto"] select (_set isEqualTo "")] call comspec_atak_native_fnc_langResolve;
+private _lang = [[_set, "en"] select (_set isEqualTo "")] call comspec_atak_native_fnc_langResolve;
 if (_lang isEqualTo "fr") exitWith { _text };
 private _prev = missionNamespace getVariable ["COMSPEC_ATAK_Lang", ""];
 if ((missionNamespace getVariable ["COMSPEC_ATAK_I18nLoaded", ""]) isNotEqualTo _lang) then { [false, _lang] call comspec_atak_native_fnc_langApply; };

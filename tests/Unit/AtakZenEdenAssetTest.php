@@ -116,7 +116,8 @@ final class AtakZenEdenAssetTest extends TestCase
 
     public function testEdenObjectAttributesCoverGpsPhoneAndAlly(): void
     {
-        $eden = (string) file_get_contents($this->connectRoot() . '/modules/eden_sse_attributes.hpp');
+        $eden = (string) file_get_contents($this->connectRoot() . '/modules/eden_sse_attributes.hpp')
+            . (string) file_get_contents($this->connectRoot() . '/stringtable.xml');
         self::assertStringContainsString('Téléphone visible sur l’ATAK', $eden);
         self::assertStringContainsString('IA alliée visible sur l’ATAK', $eden);
         self::assertStringContainsString('Balise GPS (suivi ATAK)', $eden);

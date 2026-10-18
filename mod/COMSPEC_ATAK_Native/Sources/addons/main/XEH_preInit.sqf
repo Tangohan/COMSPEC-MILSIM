@@ -26,11 +26,12 @@ diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 // range ces réglages en tête de la liste COMSPEC, au-dessus des sections « ATAK · … ». Titre bilingue, jamais traduit.
 // Le code reste en français, fn_tr traduit à l'affichage (dictionnaire i18n/en.txt) ; changer la langue redessine le
 // téléphone et retraduit les menus CBA COMSPEC (fn_menuRelang), sans relancer la mission.
-// Langues : Auto, Français, puis l'anglais et celles des mods de traduction chargés (CfgComspecLanguages, fn_langList).
-private _langs = [] call comspec_atak_native_fnc_langList;
+// Langues : English (par défaut depuis 2.1.0, TTRD), Français, celles des mods de traduction chargés (CfgComspecLanguages,
+// fn_langList), puis Auto. Un joueur qui avait déjà choisi une langue la garde (valeur enregistrée par CBA).
+private _langs = ([] call comspec_atak_native_fnc_langList) select { (_x select 0) isNotEqualTo "en" };
 ["comspec_atak_native_language", "LIST",
-    ["Langue / Language", "Langue du mod COMSPEC : téléphone ATAK, menus CBA COMSPEC et SSE. Auto suit la langue du jeu (français si Arma est en français, anglais sinon). D'autres langues apparaissent ici quand un mod de traduction COMSPEC est chargé. / COMSPEC mod language: ATAK phone, COMSPEC CBA menus and SSE. Auto follows the game language. More languages appear here when a COMSPEC translation mod is loaded."],
-    ["COMSPEC", ""], [["auto", "fr"] + (_langs apply { _x select 0 }), ["Auto (langue du jeu / game language)", "Français"] + (_langs apply { _x select 1 }), 0], 0,
+    ["Langue / Language", "COMSPEC mod language: ATAK phone, COMSPEC CBA menus and SSE. English by default; Auto follows the game language. More languages appear here when a COMSPEC translation mod is loaded. / Langue du mod COMSPEC : téléphone ATAK, menus CBA COMSPEC et SSE. Anglais par défaut ; Auto suit la langue du jeu. D'autres langues apparaissent ici quand un mod de traduction COMSPEC est chargé."],
+    ["COMSPEC", ""], [["en", "fr"] + (_langs apply { _x select 0 }) + ["auto"], ["English", "Français"] + (_langs apply { _x select 1 }) + ["Auto (game language / langue du jeu)"], 0], 0,
     { [true] call comspec_atak_native_fnc_langApply; }] call CBA_fnc_addSetting;
 [] call comspec_atak_native_fnc_langApply;
 // Police du téléphone (par joueur), aussi dans le téléphone (Réglages > Affichage > Police). Réglage CBA, lisible dans

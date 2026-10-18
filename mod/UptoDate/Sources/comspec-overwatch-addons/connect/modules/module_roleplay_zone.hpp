@@ -38,8 +38,8 @@
         {
             class Intensity
             {
-                displayName = "Intensité (%)";
-                tooltip = "Force de l’effet réseau sur la liaison ATAK (0 à 100).";
+                displayName = "$STR_COMSPEC_OW_CFG_67AAB8C24E";
+                tooltip = "$STR_COMSPEC_OW_CFG_E55236682D";
                 property = "COMSPEC_RoleplayZone_Intensity";
                 control = "Edit";
                 expression = "_this setVariable ['Intensity',_value,true];";
@@ -53,8 +53,8 @@
         {
             class Intensity
             {
-                displayName = "Intensité (%)";
-                description = "Force de l’effet réseau (0-100)";
+                displayName = "$STR_COMSPEC_OW_CFG_67AAB8C24E";
+                description = "$STR_COMSPEC_OW_CFG_072BDDCC33";
                 typeName = "NUMBER";
                 defaultValue = "50";
             };
@@ -62,7 +62,7 @@
 
         class ModuleDescription
         {
-            description = "Zone roleplay ATAK";
+            description = "$STR_COMSPEC_OW_CFG_ADCE459A30";
             position = 1;
             direction = 0;
             optional = 1;
@@ -75,7 +75,7 @@
     {
         scope = 2;
         scopeCurator = 0;
-        displayName = "Zone sans couverture ATAK";
+        displayName = "$STR_COMSPEC_OW_CFG_8493539798";
         function = "comspec_overwatch_connect_fnc_moduleNoCoverage";
         icon = "\A3\ui_f\data\map\markers\military\objective_CA.paa";
         portrait = "\A3\ui_f\data\map\markers\military\objective_CA.paa";
@@ -90,8 +90,8 @@
         {
             class Intensity
             {
-                displayName = "Intensité (%)";
-                tooltip = "Coupure totale de liaison (recommandé 100).";
+                displayName = "$STR_COMSPEC_OW_CFG_67AAB8C24E";
+                tooltip = "$STR_COMSPEC_OW_CFG_E9A09FA5A3";
                 property = "COMSPEC_NoCoverage_Intensity";
                 control = "Edit";
                 expression = "_this setVariable ['Intensity',_value,true];";
@@ -105,8 +105,8 @@
         {
             class Intensity
             {
-                displayName = "Intensité (%)";
-                description = "Coupure de liaison (0-100)";
+                displayName = "$STR_COMSPEC_OW_CFG_67AAB8C24E";
+                description = "$STR_COMSPEC_OW_CFG_A308257713";
                 typeName = "NUMBER";
                 defaultValue = "100";
             };
@@ -114,7 +114,7 @@
 
         class ModuleDescription
         {
-            description = "Zone où la liaison ATAK est totalement coupée. Posez sur la carte, un objet ou un joueur.";
+            description = "$STR_COMSPEC_OW_CFG_44F2573C13";
             position = 1;
             direction = 0;
             optional = 1;
@@ -127,7 +127,7 @@
     {
         scope = 2;
         scopeCurator = 0;
-        displayName = "Zone d'interférence ATAK";
+        displayName = "$STR_COMSPEC_OW_CFG_EB163E4266";
         function = "comspec_overwatch_connect_fnc_moduleInterference";
 
         class AttributeValues
@@ -140,8 +140,8 @@
         {
             class Intensity
             {
-                displayName = "Intensité (%)";
-                tooltip = "Niveau d’interférence radio (pertes de paquets).";
+                displayName = "$STR_COMSPEC_OW_CFG_67AAB8C24E";
+                tooltip = "$STR_COMSPEC_OW_CFG_28412253F4";
                 property = "COMSPEC_Interference_Intensity";
                 control = "Edit";
                 expression = "_this setVariable ['Intensity',_value,true];";
@@ -155,8 +155,8 @@
         {
             class Intensity
             {
-                displayName = "Intensité (%)";
-                description = "Intensité de l'interférence (0-100)";
+                displayName = "$STR_COMSPEC_OW_CFG_67AAB8C24E";
+                description = "$STR_COMSPEC_OW_CFG_16E0AC21A7";
                 typeName = "NUMBER";
                 defaultValue = "50";
             };
@@ -164,7 +164,7 @@
 
         class ModuleDescription
         {
-            description = "Zone avec forte interférence radio. Posez sur la carte, un objet ou un joueur.";
+            description = "$STR_COMSPEC_OW_CFG_F342A5E02A";
             position = 1;
             direction = 0;
             optional = 1;
@@ -177,7 +177,7 @@
     {
         scope = 2;
         scopeCurator = 0;
-        displayName = "Zone de couverture dégradée";
+        displayName = "$STR_COMSPEC_OW_CFG_F0E580EDB4";
         function = "comspec_overwatch_connect_fnc_moduleDegraded";
 
         class AttributeValues
@@ -190,8 +190,8 @@
         {
             class Intensity
             {
-                displayName = "Intensité (%)";
-                tooltip = "Dégradation de la couverture (latence / pertes).";
+                displayName = "$STR_COMSPEC_OW_CFG_67AAB8C24E";
+                tooltip = "$STR_COMSPEC_OW_CFG_C5157629DF";
                 property = "COMSPEC_Degraded_Intensity";
                 control = "Edit";
                 expression = "_this setVariable ['Intensity',_value,true];";
@@ -205,8 +205,8 @@
         {
             class Intensity
             {
-                displayName = "Intensité (%)";
-                description = "Intensité de la dégradation (0-100)";
+                displayName = "$STR_COMSPEC_OW_CFG_67AAB8C24E";
+                description = "$STR_COMSPEC_OW_CFG_CBA64DC262";
                 typeName = "NUMBER";
                 defaultValue = "30";
             };
@@ -214,7 +214,7 @@
 
         class ModuleDescription
         {
-            description = "Zone de couverture dégradée. Posez sur la carte, un objet ou un joueur.";
+            description = "$STR_COMSPEC_OW_CFG_809A929057";
             position = 1;
             direction = 0;
             optional = 1;
@@ -227,7 +227,7 @@
     {
         scope = 2;
         scopeCurator = 0;
-        displayName = "Brouilleur ATAK actif";
+        displayName = "$STR_COMSPEC_OW_CFG_269ED66ECF";
         function = "comspec_overwatch_connect_fnc_moduleJammer";
         icon = "\A3\ui_f\data\map\markers\military\destroy_CA.paa";
         portrait = "\A3\ui_f\data\map\markers\military\destroy_CA.paa";
@@ -242,8 +242,8 @@
         {
             class Intensity
             {
-                displayName = "Puissance (%)";
-                tooltip = "Puissance du brouilleur (coupures intermittentes).";
+                displayName = "$STR_COMSPEC_OW_CFG_BDD02A65C7";
+                tooltip = "$STR_COMSPEC_OW_CFG_D416786C6F";
                 property = "COMSPEC_Jammer_Intensity";
                 control = "Edit";
                 expression = "_this setVariable ['Intensity',_value,true];";
@@ -257,8 +257,8 @@
         {
             class Intensity
             {
-                displayName = "Puissance (%)";
-                description = "Puissance du brouilleur (0-100)";
+                displayName = "$STR_COMSPEC_OW_CFG_BDD02A65C7";
+                description = "$STR_COMSPEC_OW_CFG_42AAE408F8";
                 typeName = "NUMBER";
                 defaultValue = "80";
             };
@@ -266,7 +266,7 @@
 
         class ModuleDescription
         {
-            description = "Brouilleur radio actif. Posez sur la carte, un véhicule, un objet ou un joueur.";
+            description = "$STR_COMSPEC_OW_CFG_A267933A82";
             position = 1;
             direction = 0;
             optional = 1;

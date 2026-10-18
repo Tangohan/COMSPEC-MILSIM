@@ -50,7 +50,7 @@ private _raise = {
     uiNamespace setVariable ["COMSPEC_ATAK_IntegritySeen", _seen];
     [_level, _text, 12, 60] call comspec_atak_native_fnc_notify;
     // Téléphone fermé ou cassé par le PBO périmé lui-même : la ligne reste visible dans le chat.
-    if (_level isEqualTo "ERROR") then { systemChat format ["[COMSPEC ATAK] %1", _text call comspec_atak_native_fnc_tr]; };
+    if (_level isEqualTo "ERROR") then { systemChat format ["[COMSPEC ATAK] %1", _text call comspec_atak_native_fnc_tr]; }; // i18n:brut (déjà traduit)
 };
 // Version de la DLL chargée, "" si elle ne répond pas. « OK|COMSPECExtension 2.0.78 ».
 // Version de la DLL chargée, "" si elle ne répond pas (fn_extVersion, relue à chaque contrôle).

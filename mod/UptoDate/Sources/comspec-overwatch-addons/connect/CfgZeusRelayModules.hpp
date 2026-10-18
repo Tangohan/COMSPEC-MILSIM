@@ -3,7 +3,7 @@
 
 class CfgFactionClasses {
     class COMSPEC_ATAK {
-        displayName = "COMSPEC ATAK";
+        displayName = "$STR_COMSPEC_OW_CFG_AE461ABCB5";
         priority = 2;
         side = 7; // Logic
         icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa";
@@ -15,7 +15,7 @@ class CfgVehicles {
     class Module_F;
     class COMSPEC_ModuleScanRelays: Module_F {
         scope = 2;
-        displayName = "Scanner réseau relais";
+        displayName = "$STR_COMSPEC_OW_CFG_D04248E677";
         icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa";
         category = "COMSPEC_ATAK";
         function = "ATHENA_fnc_zeusModuleScanRelays";
@@ -26,21 +26,21 @@ class CfgVehicles {
         
         class Arguments {
             class ScanRadius {
-                displayName = "Rayon de scan (m)";
-                description = "Distance maximum pour détecter les relais";
+                displayName = "$STR_COMSPEC_OW_CFG_64CDA735DA";
+                description = "$STR_COMSPEC_OW_CFG_F5B75017DE";
                 typeName = "NUMBER";
                 defaultValue = 5000;
             };
             class AutoUpload {
-                displayName = "Upload automatique";
-                description = "Remonter automatiquement les relais détectés";
+                displayName = "$STR_COMSPEC_OW_CFG_EA0A853A02";
+                description = "$STR_COMSPEC_OW_CFG_22E71CD3F3";
                 typeName = "BOOL";
                 defaultValue = 1;
             };
         };
         
         class ModuleDescription {
-            description = "Scanne tous les relais radio dans un rayon et les remonte vers le serveur ATHENA. Affiche un rapport style relevé terrain avec feedback visuel.";
+            description = "$STR_COMSPEC_OW_CFG_3EA68EFD33";
             sync[] = {};
         };
     };
@@ -48,7 +48,7 @@ class CfgVehicles {
     // Module Zeus : Tableau de bord des relais
     class COMSPEC_ModuleRelayDashboard: Module_F {
         scope = 2;
-        displayName = "Tableau de bord relais";
+        displayName = "$STR_COMSPEC_OW_CFG_5A2FEC5375";
         icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa";
         category = "COMSPEC_ATAK";
         function = "ATHENA_fnc_openRelayDashboard";
@@ -58,7 +58,7 @@ class CfgVehicles {
         isDisposable = 0;
         
         class ModuleDescription {
-            description = "Ouvre le tableau de bord des relais radio avec statut en temps réel, détection d'erreurs, et actions de gestion.";
+            description = "$STR_COMSPEC_OW_CFG_1B834F3DE2";
             sync[] = {};
         };
     };
@@ -66,7 +66,7 @@ class CfgVehicles {
     // Module Zeus : Resync d'un relais spécifique
     class COMSPEC_ModuleResyncRelay: Module_F {
         scope = 2;
-        displayName = "Resync relais";
+        displayName = "$STR_COMSPEC_OW_CFG_9BE0C2885D";
         icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\upload_ca.paa";
         category = "COMSPEC_ATAK";
         function = "ATHENA_fnc_zeusResyncRelay";
@@ -76,7 +76,7 @@ class CfgVehicles {
         isDisposable = 0;
         
         class ModuleDescription {
-            description = "Resynchronise immédiatement un relais spécifique vers le serveur ATHENA. Placez le module sur le relais.";
+            description = "$STR_COMSPEC_OW_CFG_3D21C9B243";
             sync[] = {};
         };
     };

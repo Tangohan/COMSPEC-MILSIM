@@ -50,7 +50,7 @@ private _list = ["COMSPEC_RscListBox", _listRect] call comspec_atak_native_fnc_p
 _list ctrlSetFontHeight _fs;
 {
     private _i = _list lbAdd (if (_x isEqualTo player) then { ("Ma caméra (moi)") call comspec_atak_native_fnc_tr } else {
-        (format ["%1 · %2 m", [_x, true] call comspec_atak_native_fnc_unitCallsign, round (player distance _x)]) call comspec_atak_native_fnc_tr });
+        (format ["%1 · %2 m", [_x, true] call comspec_atak_native_fnc_unitCallsign, round (player distance _x)]) call comspec_atak_native_fnc_tr }); // i18n:brut (déjà traduit)
     _list lbSetData [_i, netId _x];
     _list lbSetPicture [_i, "\z\comspec_atak_native\addons\main\data\app_photos.paa"];
     if (_x isEqualTo _unit) then { _list lbSetCurSel _i; };

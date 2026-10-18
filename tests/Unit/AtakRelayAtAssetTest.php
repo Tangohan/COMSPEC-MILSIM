@@ -16,7 +16,8 @@ final class AtakRelayAtAssetTest extends TestCase
         $page = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/ui/relay_page.hpp');
         $update = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/atak_athena/functions/fn_athena_updateRelay.sqf');
         $nearest = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/functions/fn_getNearestAtakRelay.sqf');
-        $eden = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/modules/module_atak_relay.hpp');
+        $eden = (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/modules/module_atak_relay.hpp')
+            . (string) file_get_contents($root . '/mod/UptoDate/Sources/comspec-overwatch-addons/connect/stringtable.xml');
         $js = (string) file_get_contents($root . '/public/assets/js/atak-overwatch-ops.js');
         $repo = (string) file_get_contents($root . '/app/Repositories/AtakRelayRepository.php');
         $view = (string) file_get_contents($root . '/views/admin/atak/server_control.php');

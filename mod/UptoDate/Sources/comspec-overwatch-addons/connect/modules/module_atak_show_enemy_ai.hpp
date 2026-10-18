@@ -11,7 +11,7 @@
         scope = 2;
         scopeCurator = 0;
         category = "COMSPEC_Outils";
-        displayName = "Contacts ennemis sur l’ATAK";
+        displayName = "$STR_COMSPEC_OW_CFG_C2A0D7DA8A";
         function = "comspec_overwatch_connect_fnc_moduleAtakShowEnemyAi";
         functionPriority = 1;
         isGlobal = 1;
@@ -29,8 +29,8 @@
         {
             class ShowAtStart
             {
-                displayName = "Afficher les IA ennemies sur la carte";
-                tooltip = "Par défaut, les contacts ennemis (losanges rouges) n’apparaissent pas sur le poste. Choisissez de les afficher dès le début, ou de les laisser masqués : Zeus pourra les afficher en cours de mission.";
+                displayName = "$STR_COMSPEC_OW_CFG_6FA6AB6924";
+                tooltip = "$STR_COMSPEC_OW_CFG_7857339678";
                 property = "COMSPEC_AtakShowEnemyAi_ShowAtStart";
                 control = "Combo";
                 expression = "_this setVariable ['ShowAtStart',_value,true];";
@@ -39,8 +39,8 @@
 
                 class Values
                 {
-                    class Hidden { name = "Masqués (défaut)"; value = "hidden"; default = 1; };
-                    class Show { name = "Afficher dès le début de mission"; value = "show"; };
+                    class Hidden { name = "$STR_COMSPEC_OW_CFG_C9D13447C8"; value = "hidden"; default = 1; };
+                    class Show { name = "$STR_COMSPEC_OW_CFG_8179936E65"; value = "show"; };
                 };
             };
         };
@@ -49,21 +49,21 @@
         {
             class ShowAtStart
             {
-                displayName = "Afficher les IA ennemies sur la carte";
-                description = "Masqués par défaut, ou visibles dès le début. Zeus peut changer ce choix en cours de mission.";
+                displayName = "$STR_COMSPEC_OW_CFG_6FA6AB6924";
+                description = "$STR_COMSPEC_OW_CFG_80F9B4B19B";
                 typeName = "STRING";
                 defaultValue = "hidden";
                 class values
                 {
-                    class Hidden { name = "Masqués (défaut)"; value = "hidden"; default = 1; };
-                    class Show { name = "Afficher dès le début de mission"; value = "show"; };
+                    class Hidden { name = "$STR_COMSPEC_OW_CFG_C9D13447C8"; value = "hidden"; default = 1; };
+                    class Show { name = "$STR_COMSPEC_OW_CFG_8179936E65"; value = "show"; };
                 };
             };
         };
 
         class ModuleDescription
         {
-            description = "Les contacts ennemis n’apparaissent pas sur le poste tant que ce n’est pas demandé. Posez ce module pour les afficher dès le début, ou laissez Zeus le faire en cours de mission.";
+            description = "$STR_COMSPEC_OW_CFG_B1E2532872";
             position = 0;
             direction = 0;
             optional = 1;

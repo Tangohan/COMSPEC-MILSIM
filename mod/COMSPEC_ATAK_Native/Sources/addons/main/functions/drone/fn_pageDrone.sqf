@@ -58,7 +58,7 @@ if ((_l get "landscape") && {!_mini}) then {
         (["link", _x] call comspec_atak_native_fnc_droneFleet) params ["_bars", "_dist", "_ok"];
         // Nom, distance, batterie, puis l'état (traduit seul : le nom du drone reste tel quel).
         private _i = _list lbAdd ((format ["%1 · %2 m · %3 %%", [_x, [], "NAME"] call comspec_atak_native_fnc_droneOsd, round (player distance _x), round (100 * fuel _x)])
-            + ((["", "Piloté", "Hors liaison"] select ([[2, 0] select _ok, 1] select (_x isEqualTo _d))) call { [" · " + (_this call comspec_atak_native_fnc_tr), ""] select (_this isEqualTo "") }));
+            + ((["", "Piloté", "Hors liaison"] select ([[2, 0] select _ok, 1] select (_x isEqualTo _d))) call { [" · " + (_this call comspec_atak_native_fnc_tr), ""] select (_this isEqualTo "") })); // i18n:brut (déjà traduit)
         _list lbSetData [_i, "FLY:" + netId _x];
         _list lbSetPicture [_i, "\z\comspec_atak_native\addons\main\data\app_drone.paa"];
         _list lbSetColor [_i, [[0.9, 0.28, 0.23, 1], [0.92, 0.96, 0.93, 1]] select _ok];
@@ -70,7 +70,7 @@ if ((_l get "landscape") && {!_mini}) then {
     private _hdr2 = _list lbAdd (("À PORTÉE (MOINS DE 15 M)") call comspec_atak_native_fnc_tr);
     _list lbSetColor [_hdr2, [0.36, 0.78, 0.42, 1]];
     {
-        private _i = _list lbAdd ((format ["%1 · %2 m · ", [_x, [], "NAME"] call comspec_atak_native_fnc_droneOsd, round (player distance _x)]) + ("Appairer" call comspec_atak_native_fnc_tr));
+        private _i = _list lbAdd ((format ["%1 · %2 m · ", [_x, [], "NAME"] call comspec_atak_native_fnc_droneOsd, round (player distance _x)]) + ("Appairer" call comspec_atak_native_fnc_tr)); // i18n:brut (déjà traduit)
         if ((count _fleet) < 4) then { _list lbSetData [_i, "PAIR:" + netId _x]; };
         _list lbSetPicture [_i, "\z\comspec_atak_native\addons\main\data\app_drone.paa"];
         _list lbSetColor [_i, [0.95, 0.67, 0.2, 1]];

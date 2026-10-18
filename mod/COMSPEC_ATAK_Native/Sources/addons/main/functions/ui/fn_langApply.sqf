@@ -1,12 +1,12 @@
 /*
-    Langue du mod (réglage CBA COMSPEC « Langue / Language », en tête de la liste : Auto, Français, English, puis les
-    langues des mods de traduction chargés, fn_langList). Hors français, charge une fois le dictionnaire de la langue
+    Langue du mod (réglage CBA COMSPEC « Langue / Language », en tête de la liste : English (par défaut), Français, les
+    langues des mods de traduction chargés (fn_langList), puis Auto). Hors français, charge une fois le dictionnaire de la langue
     (tableau [["français", "traduction"], ...] ; anglais : i18n/en.txt, tenu par tools/i18n.py) par-dessus l'anglais :
     une phrase que le mod de traduction n'a pas (encore) traduite s'affiche en anglais. Prépare aussi les modèles à
     %1, %2… pour fn_tr. Params : [redessiner la page ouverte (changement en cours de partie), langue imposée].
 */
 params [["_redraw", false], ["_force", ""]];
-private _set = missionNamespace getVariable ["comspec_atak_native_language", "auto"];
+private _set = missionNamespace getVariable ["comspec_atak_native_language", "en"];
 // _force : langue imposée (fn_trMenu charge le dictionnaire pour les menus CBA des autres addons).
 if (_force isNotEqualTo "") then { _set = _force; };
 private _lang = [_set] call comspec_atak_native_fnc_langResolve;

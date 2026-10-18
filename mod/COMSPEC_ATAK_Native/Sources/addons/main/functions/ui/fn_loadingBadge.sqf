@@ -18,7 +18,7 @@ private _lh = _lw * 0.5 * pixelH / pixelW;
 private _lx = safeZoneX + safeZoneW - _lw - 0.015 * safeZoneW;
 private _ly = safeZoneY + safeZoneH - _lh - 0.075 * safeZoneH;
 private _logo = _display ctrlCreate ["RscPicture", -1];
-_logo ctrlSetText (_data + "intro_logo_ca.paa");
+_logo ctrlSetText (_data + "intro_logo_ca.paa"); // i18n:brut (image, ou déjà traduit par _tr)
 _logo ctrlSetTextColor [0.93, 0.97, 0.95, 0.9];
 _logo ctrlSetPosition [_lx, _ly, _lw, _lh];
 _logo ctrlSetFade 1;
@@ -28,7 +28,7 @@ _txt ctrlSetPosition [_lx - _lw * 0.3, _ly + _lh * 0.92, _lw * 1.3, 0.05 * safeZ
 _txt ctrlSetStructuredText parseText ((format [
     "<t align='right' font='PuristaSemibold' size='0.9' color='#5cc76b'>OVERWATCH  ·  ATAK NATIF</t><t align='right' font='EtelkaMonospacePro' size='0.75' color='#8a9a92'>   %1</t>",
     ["", "v" + _ver] select (_ver isNotEqualTo "")
-]) call _tr);
+]) call _tr); // i18n:brut (image, ou déjà traduit par _tr)
 _txt ctrlSetFade 1;
 _txt ctrlCommit 0;
 { _x ctrlSetFade 0; _x ctrlCommit 0.6; } forEach [_logo, _txt];

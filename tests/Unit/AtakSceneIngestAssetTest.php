@@ -153,7 +153,8 @@ final class AtakSceneIngestAssetTest extends TestCase
         self::assertStringNotContainsString('json', strtolower($dlg));
         self::assertStringNotContainsString('endpoint', strtolower($dlg));
 
-        $mod = (string) file_get_contents($root . '/modules/module_theater_survey.hpp');
+        $mod = (string) file_get_contents($root . '/modules/module_theater_survey.hpp')
+            . (string) file_get_contents($root . '/stringtable.xml');
         self::assertStringContainsString('Relever la carte du théâtre', $mod);
         self::assertStringContainsString('COMSPEC_Outils', $mod);
 
