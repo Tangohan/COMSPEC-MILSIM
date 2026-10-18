@@ -90,6 +90,17 @@ switch (_act) do {
                 call _redraw;
             };
             case "reboot": { ["reboot"] call comspec_atak_native_fnc_deviceRepair; };
+            case "blood": { ["zeus", [_a param [0, 50]]] call comspec_atak_native_fnc_screenDirt; call _redraw; };
+            case "clean": {
+                // Nettoyage forcé, même si le joueur a coupé la saleté de son côté (fn_screenDirt ne l'aurait pas fait).
+                private _n = missionNamespace getVariable ["COMSPEC_ATAK_Device", createHashMap];
+                { _n set [_x, 0]; } forEach ["dust", "drops", "prints", "frameBlood", "blood"];
+                _n set ["stains", []];
+                missionNamespace setVariable ["COMSPEC_ATAK_Device", _n];
+                missionNamespace setVariable ["COMSPEC_ATAK_HandsBlood", 0];
+                ["SUCCESS", "Écran nettoyé par le commandement", 3, 30] call comspec_atak_native_fnc_notify;
+                call _redraw;
+            };
             case "battery": {
                 private _lv = (_a param [0, 100]) max 0 min 100;
                 missionNamespace setVariable ["COMSPEC_ATAK_Battery", _lv];

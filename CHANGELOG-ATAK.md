@@ -106,6 +106,35 @@ EN : New Garmin app, your smartwatch inside the ATAK
 - 18 icônes (app_garmin, g_*) dans tools/gen_assets.py ; textes anglais ajoutés à en.txt.
 - À tester en jeu : ouvrir l'app (Navigation > Garmin), courir 500 m puis s'arrêter 90 s (activité « Course à pied » dans Activités), monter en véhicule et rouler 1 km, s'allonger 2 min sans ennemi (Sommeil augmente, Body Battery remonte), se faire tirer dessus (Stress monte), changer l'objectif de pas dans Défis, quitter et revenir (Body Battery rechargée, message « rechargés pendant … hors du jeu »), passer le téléphone en anglais.
 
+## Sang réaliste et gore, nettoyage libre, constantes médicales réalistes, socle Zeus, ADN sur les taches de sang (ATAK natif 1.97.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Sang plus vrai sur le téléphone, nettoyage sans kit, moniteur médical réaliste et ADN sur les taches de sang
+- Le sang sur l'écran reste où il est tombé : éclaboussures, coulures, flaques, paumes, et tes doigts en sang laissent des traces là où tu touches. Réglage « Sang sur l'écran » : Discret, Réaliste ou Gore.
+- Nettoyer l'écran ne demande plus aucun kit, autant de fois que tu veux ; « Nettoyage complet » remet écran et coque à neuf. Zeus peut couvrir un écran de sang ou le nettoyer.
+- App Médical : fréquence cardiaque, tension au brassard (mesurée toutes les minutes), oxygène du sang et respiration cohérents ; plus de tension ni d'oxygène affichés sans pouls, et la perte de sang s'affiche en classe d'hémorragie. Les alertes santé n'apparaissent plus en plein écran, seulement sur le téléphone.
+- Au sol, une tache de sang se sert de l'action « Tache de sang » : l'examiner, relever les empreintes sanglantes ou prélever l'ADN pour le laboratoire. Le kit socle posé par Zeus devient directement le socle de recharge déplié.
+EN : More realistic blood on the phone, cleaning without a kit, realistic medical monitor and DNA from blood stains
+- Blood on the screen stays where it landed: spatter, drips, pools, palm prints, and your bloody fingers leave marks where you touch. "Blood on the screen" setting: Discreet, Realistic or Gore.
+- Cleaning the screen no longer needs any kit, as often as you like; "Full clean" restores the screen and case. Zeus can cover a screen in blood or clean it.
+- Medical app: heart rate, cuff blood pressure (measured every minute), blood oxygen and breathing that make sense; no blood pressure or oxygen shown without a pulse, and blood loss is shown as a hemorrhage class. Health alerts no longer appear full screen, only on the phone.
+- On the ground, use the "Blood stain" action on a blood stain: examine it, lift bloody prints or swab DNA for the lab. The dock kit placed by Zeus now becomes the unfolded charging dock straight away.
+
+### Détail technique
+Retours de jeu de TTRD du 2026-10-16 (19:00 à 20:51).
+
+- **Sang à l'écran** (`fn_screenDirt`, `fn_screenSurface`) : les taches sont une liste mémorisée `stains` ([type, variante, x, y, taille, angle, opacité], 40 au plus) au lieu d'un tirage pseudo-aléatoire partagé : ajouter une trace ne déplace plus les autres. Tirages séparés par catégorie (`_from`). Nouveaux modes : `tap` (empreinte de doigt sanglant au point touché, `fn_displayLoad`), `hit` (blessure du porteur : éclaboussures, coulures, flaque si l'écran est ouvert), `nearby` (homme tué à moins de 3,5 m, `EntityKilled`), `zeus`. Dix textures `blood_{splat,hand,drip,spatter,pool}_{0,1}.paa` générées par `tools/gen_dirt.py blood`. Réglage CBA `comspec_atak_native_blood_style` (Discret / Réaliste / Gore).
+- **« Depop au clic »** : le contrôle cliqué passait au premier plan ; le retour du focus au relâchement (déjà en place) suffit pour les pages, la carte peut encore masquer les taches pendant un glisser.
+- **Nettoyage** (`fn_screenClean`) : plus de condition d'objet ni de quantité ; mode `deep` (10 s, tout à zéro) : action ACE « Nettoyage complet (écran et coque) », boutons app Profil et Réglages. Zeus : « Couvrir l'écran de sang » et « Nettoyer l'écran » (`fn_zeusMenu`, `fn_zeusClient`), nettoyage forcé même si la saleté est coupée chez le joueur.
+- **Alerte santé** (`fn_athenaSignal`) : plus de `fullAlert` (bandeau rouge sur l'écran de jeu, visible sans téléphone) ; notification ATAK seulement, et seulement si le joueur a un téléphone.
+- **Constantes** : nouvelle `fn_medVitals` (ACE : pouls, tension, volume ; KAT : SpO2, respiration ; sinon classes ATLS I à IV). Arrêt / mort : FC 0, tension et SpO2 `---`. Systolique < 70 : SpO2 non mesurable. Tension au brassard (PNI) gardée 60 s. Utilisée par le moniteur (`fn_vizEcg`), le suivi des troupes (`fn_pageMedical`) et le bilan NFC (`fn_linkAllyAction`, lignes Tension et SpO2 ajoutées) ; « Volume sanguin » devient « Perte sanguine estimée ».
+- **Socle Zeus** (`fn_dockServer` `zeusKit`) : un `Item_COMSPEC_ATAK_DockKit` créé en cours de partie (time > 0 : Zeus, script) est remplacé côté serveur par `COMSPEC_ATAK_ChargingDock` à la même place, rangeable avec le kit, éditable par les Zeus, non recréé aux parties suivantes. Un kit placé dans l'éditeur reste une valise à ramasser.
+- **SSE** (`comspec_sse_fnc_bioBloodStain`, `comspec_sse_biometrics.pbo`) : le serveur relève les gouttes des blessés qui saignent (tous les 1,5 m) et la flaque d'un corps, avec la personne la plus proche (soignant) ; liste publique `COMSPEC_SSE_BloodTraces` (150 au plus). Action ACE personnelle « Tache de sang » à 2,5 m : Examiner, Relever les empreintes sanglantes (latente versée à la base, auteur = blessé ou soignant), Prélever l'ADN (sang du blessé, laboratoire, qualité selon l'âge et la pluie).
+- Traductions anglaises ajoutées (`i18n/en.txt`).
+
+---
+
 ## Regroupement : app Plan refaite, partage des caméras, nouvelle app Distances (ATAK natif 1.96.0, COMSPEC Link 2.0.86)
 
 ### Résumé joueur

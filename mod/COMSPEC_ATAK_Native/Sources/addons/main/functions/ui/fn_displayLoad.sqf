@@ -90,7 +90,11 @@ if (_interactive) then {
         if (_button isNotEqualTo 0) exitWith { false };
         (uiNamespace getVariable ["COMSPEC_ATAK_TapDown", [_mx, _my, -10]]) params ["_ix", "_iy", "_it"];
         private _moved = (diag_tickTime - _it) < 2 && {((abs (_mx - _ix)) / pixelW) + ((abs (_my - _iy)) / pixelH) > 12};
-        if (!_moved) then { ["tap", [_mx, _my]] call comspec_atak_native_fnc_fx; };
+        if (!_moved) then {
+            ["tap", [_mx, _my]] call comspec_atak_native_fnc_fx;
+            // Mains en sang : empreinte de doigt à l'endroit touché (fn_screenDirt « tap »).
+            if ((missionNamespace getVariable ["COMSPEC_ATAK_HandsBlood", 0]) > 0.08) then { ["tap", [_mx, _my]] call comspec_atak_native_fnc_screenDirt; };
+        };
         // Volet rapide ou écran de verrouillage affiché : ils repassent devant l'app cliquée.
         if ((uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]) || {uiNamespace getVariable ["COMSPEC_ATAK_ShadeOpen", false]}) then {
             [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame;

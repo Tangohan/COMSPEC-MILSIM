@@ -537,7 +537,11 @@ missionNamespace setVariable ["COMSPEC_ATAK_HitPush", {
         [{
             private _q = missionNamespace getVariable ["COMSPEC_ATAK_HitQueue", []];
             missionNamespace setVariable ["COMSPEC_ATAK_HitQueue", []];
-            if (alive player && {(count _q) > 0}) then { ["hits", _q] call comspec_atak_native_fnc_deviceImpact; };
+            if (alive player && {(count _q) > 0}) then {
+                ["hits", _q] call comspec_atak_native_fnc_deviceImpact;
+                // Sang sur l'écran et la coque (téléphone en main ou sur le gilet).
+                ["hit", _q] call comspec_atak_native_fnc_screenDirt;
+            };
         }] call CBA_fnc_execNextFrame;
     };
     _q pushBack [_part, _dmg, _raw, _ammo];
@@ -615,7 +619,21 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         ["can"] call comspec_atak_native_fnc_screenClean
     }] call comspec_atak_native_fnc_aceAction;
     ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"], _clean, true] call ace_interact_menu_fnc_addActionToClass;
+    // Nettoyage complet (10 s) : tout part d'un coup, sang compris, sans kit ni objet.
+    private _deep = ["COMSPEC_ATAK_CleanDeep", "Nettoyage complet (écran et coque)", "", {
+        [{ ["deep"] call comspec_atak_native_fnc_screenClean; }] call CBA_fnc_execNextFrame;
+    }, {
+        ["can"] call comspec_atak_native_fnc_screenClean
+    }] call comspec_atak_native_fnc_aceAction;
+    ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"], _deep, true] call ace_interact_menu_fnc_addActionToClass;
 };
+// Sang projeté sur le téléphone sorti quand un homme est tué à moins de 3,5 m (fn_screenDirt « nearby »).
+addMissionEventHandler ["EntityKilled", {
+    params ["_dead"];
+    if (!hasInterface || {!(_dead isKindOf "CAManBase")} || {_dead isEqualTo player} || {!alive player}) exitWith {};
+    private _d = player distance _dead;
+    if (_d < 3.5) then { ["nearby", [_d]] call comspec_atak_native_fnc_screenDirt; };
+}];
 
 // Actions ACE : réparer le téléphone (kit de réparation ATAK consommé, ou caisse à outils) ou passer sur un téléphone de rechange.
 // La réparation couvre aussi l'état du réalisme Overwatch (écran cassé, appareil détruit) : fn_repairStart, fn_deviceRepair.

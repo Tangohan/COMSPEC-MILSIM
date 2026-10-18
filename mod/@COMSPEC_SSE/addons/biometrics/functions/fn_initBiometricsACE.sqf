@@ -84,6 +84,8 @@ if (!isNil "ace_interact_menu_fnc_addActionToClass") then {
         [_x, 0, [], _latentHolder, true] call ace_interact_menu_fnc_addActionToClass;
     } forEach ["WeaponHolderSimulated", "GroundWeaponHolder"];
 };
+// Taches de sang au sol : examen, latentes sanglantes, ADN (action personnelle, fn_bioBloodStain).
+["client"] call comspec_sse_fnc_bioBloodStain;
 
 // Sac de tête : sur toute personne maîtrisée, indépendamment du menu SSE.
 if (!isNil "ace_interact_menu_fnc_addActionToClass") then {

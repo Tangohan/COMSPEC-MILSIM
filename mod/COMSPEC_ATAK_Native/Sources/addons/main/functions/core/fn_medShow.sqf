@@ -18,7 +18,7 @@ private _fields = [
     ["hr", "Pouls et tracé cardiaque"],
     ["bp", "Tension artérielle"],
     ["spo2", "Saturation (SpO2)"],
-    ["blood", "Volume sanguin"],
+    ["blood", "Perte sanguine estimée"],
     ["bleed", "Hémorragie"],
     ["pain", "Douleur"],
     ["wounds", "Blessures par partie du corps"],
