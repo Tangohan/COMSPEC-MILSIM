@@ -362,6 +362,7 @@ class CfgFunctions {
             class collectOperatorLoadout {};
             class collectItemCatalog {};
             class collectLoadedMods {};
+            class sendItemIcons {};
             class collectOperatorVersions {};
             class collectOperatorEnvironment {};
             class operatorProfileFingerprint {};

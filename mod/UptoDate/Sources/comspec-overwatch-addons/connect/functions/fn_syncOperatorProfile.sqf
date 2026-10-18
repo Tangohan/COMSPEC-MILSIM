@@ -102,6 +102,8 @@ private _parsed = [
 _parsed params ["_ok", "_status", "_detail"];
 
 private _result = [_ok, _status, _detail] call comspec_overwatch_connect_fnc_applyOperatorProfileResponse;
+// Icônes des objets portés (une fois par classe et par partie ; COMSPEC Link 2.0.88).
+if (_ok) then { [_payload getOrDefault ["item_catalog", []]] call comspec_overwatch_connect_fnc_sendItemIcons; };
 
 if (_ok && {!(_result getOrDefault ["pending", false])}) then {
     missionNamespace setVariable ["COMSPEC_OperatorFingerprint", _fp, false];
