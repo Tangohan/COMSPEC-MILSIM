@@ -63,9 +63,11 @@ MATS = {
     # Bagues de repérage des jarretières (texture procédurale du jeu, pas de fichier) : jaune et rouge.
     "tape_y": ("#(argb,8,8,3)color(0.85,0.62,0.05,1,CO)", "tower_matte", 1.0, 0.6, 0.0),
     "tape_r": ("#(argb,8,8,3)color(0.62,0.06,0.04,1,CO)", "tower_matte", 1.0, 0.6, 0.0),
+    # Tresse de terre vert-jaune.
+    "earth": ("#(argb,8,8,3)color(0.32,0.52,0.1,1,CO)", "tower_matte", 1.0, 0.6, 0.0),
 }
 # Couleur de l'aperçu Cycles des matières procédurales.
-PROC = {"tape_y": (0.85, 0.62, 0.05), "tape_r": (0.62, 0.06, 0.04)}
+PROC = {"tape_y": (0.85, 0.62, 0.05), "tape_r": (0.62, 0.06, 0.04), "earth": (0.32, 0.52, 0.1)}
 # Matières sans volume propre (panneaux collés, filet) : ni ombre, ni collision, ni tir.
 THIN = ("sign", "net", "fence")
 
@@ -264,8 +266,12 @@ def sweep(B, pts, r, n=5, mat="cable"):
 
 
 def jumper(B, pts, r=0.009, tapes=()):
-    """Jarretière noire (LOD 1 seulement) : courbe par les points, bagues de couleur près du premier point."""
-    if B.detail > 0:
+    """Jarretière noire : courbe par les points, bagues de couleur près du premier point. LOD 4 (pylône debout) :
+    même câble, plus épais et moins lissé, sinon les jarretières disparaissaient dès qu'on reculait en jeu."""
+    if B.detail > 1 or (B.detail == 1 and not B.intact):
+        return
+    if B.detail == 1:
+        sweep(B, spline(pts, 1), r * 1.7, 4, "cable")
         return
     sweep(B, spline(pts, 2), r, 4, "cable")
     p0, p1 = Vector(pts[0]), Vector(pts[1])
@@ -273,6 +279,37 @@ def jumper(B, pts, r=0.009, tapes=()):
     for k, m in enumerate(tapes):
         q = p0 + d * (0.05 + 0.035 * k)
         B.tube(q, q + d * 0.025, r * 1.35, 4, m)
+
+
+def bundle(B, pts, n, r=0.016, spread=0.04, far=False):
+    """Faisceau de n câbles noirs côte à côte le long de pts (chaînette entre les points), pylône debout seulement
+    (dans la ruine les câbles sont arrachés). LOD 4 : moitié moins de câbles, plus épais. far : un câble épais
+    subsiste en LOD 12 pour les grands faisceaux."""
+    if not B.intact or B.detail > (2 if far else 1):
+        return
+    pts = [Vector(p) for p in pts]
+    d = pts[-1] - pts[0]
+    side = d.cross(Vector((0, 0, 1)))
+    side = side.normalized() if side.length > 1e-4 else Vector((1, 0, 0))
+    if B.detail == 2:
+        sweep(B, spline(pts, 1), r * 3.0, 4, "cable")
+        return
+    if B.detail == 1:
+        n, r, spread = max(1, n // 2), r * 1.6, spread * 1.8
+    seg = 3 if B.detail == 0 else 1
+    for k in range(n):
+        o = side * (spread * (k - (n - 1) / 2))
+        # Les câbles d'un faisceau pendent un peu différemment (pas de nappe parfaitement rigide).
+        sag = Vector((0, 0, -0.02 * (k % 3)))
+        sweep(B, spline([pts[0] + o] + [p + o + sag for p in pts[1:-1]] + [pts[-1] + o * 0.5], seg), r, 5 if B.detail == 0 else 4, "cable")
+
+
+def earth_strap(B, a, b):
+    """Tresse de terre vert-jaune posée au sol entre deux points (armoire et pied du pylône)."""
+    if B.detail > 1 or not B.intact:
+        return
+    a, b = Vector(a), Vector(b)
+    B.beam(Vector((a.x, a.y, 0.012)), Vector((b.x, b.y, 0.012)), 0.035, 0.008, (0, 0, 1), "earth")
 
 
 def clamp(B, c, r, axis=(0, 0, 1), side=(1, 0, 0), w=0.06):
@@ -571,8 +608,9 @@ def cabinet(B, pos, az, size=(0.8, 1.3, 1.7)):
     B.kind = "struct"
 
 
-def cable_bridge(B, p0, p1, h=2.4, n_cables=4):
-    """Passerelle horizontale de câbles entre l'armoire et le pied du pylône, sur deux poteaux."""
+def cable_bridge(B, p0, p1, h=2.4, n_cables=4, to=None):
+    """Passerelle horizontale de câbles entre l'armoire et le pied du pylône, sur deux poteaux ; to : point où les
+    câbles rejoignent le chemin de câbles du pylône (ou l'entrée du fût), tresse de terre au sol."""
     B.kind = "ground"
     p0, p1 = Vector(p0), Vector(p1)
     a, b = p0 + Vector((0, 0, h)), p1 + Vector((0, 0, h))
@@ -595,7 +633,12 @@ def cable_bridge(B, p0, p1, h=2.4, n_cables=4):
     if B.detail <= 1:
         for k in range(n_cables):
             off = side * (-0.09 + 0.06 * k) + Vector((0, 0, 0.03))
-            B.tube(a + off, b + off, 0.011, 6, "cable")
+            B.tube(a + off, b + off, 0.016 if B.detail == 0 else 0.022, 6, "cable")
+    if to is not None:
+        # Les câbles quittent la passerelle, plongent en boucle et rejoignent le pylône.
+        to = Vector(to)
+        bundle(B, [b + Vector((0, 0, 0.03)), b + d * 0.25 - Vector((0, 0, 0.25)), (b + to) / 2 - Vector((0, 0, 0.35)), to], n_cables, 0.016, 0.05)
+        earth_strap(B, p0, Vector((to.x, to.y, 0)))
     B.kind = "struct"
 
 
@@ -628,11 +671,14 @@ def cable_run(B, x, y, z0, z1, n=6, along=(1, 0, 0)):
             z += 0.8 if B.detail == 0 else 1.6
     nrm = al.cross(Vector((0, 0, 1)))
     # Faisceau de feeders : deux nappes de câbles noirs (photos de référence), colliers de maintien tous les 1,2 m.
-    rows = ((0.03, n), (0.065, max(2, n - 2))) if B.detail == 0 else ((0.03, 2),)
+    # Rayons relevés (1,7 cm de près, 2,6 cm en LOD 4) et nappe pleine en LOD 12 : le faisceau restait invisible en jeu.
+    if B.detail >= 2:
+        B.beam(base + nrm * 0.045 + Vector((0, 0, z0)), base + nrm * 0.045 + Vector((0, 0, z1)), 0.26, 0.06, al, "cable")
+    rows = ((0.03, n), (0.065, max(2, n - 2))) if B.detail == 0 else ((0.035, 4),) if B.detail == 1 else ()
     for dn, cnt in rows:
         for k in range(cnt):
             off = al * (-0.12 + 0.24 * k / max(1, cnt - 1)) + nrm * dn
-            B.tube(base + off + Vector((0, 0, z0)), base + off + Vector((0, 0, z1)), 0.013 if B.detail == 0 else 0.03, 6, "cable")
+            B.tube(base + off + Vector((0, 0, z0)), base + off + Vector((0, 0, z1)), 0.017 if B.detail == 0 else 0.026, 6, "cable")
     if B.detail == 0:
         z = z0 + 0.6
         while z < z1:
@@ -792,8 +838,17 @@ def step_bolts(B, lat, z0, z1, az=200.0):
         k += 1
 
 
-def sector_ring(B, lat, z, arm, az_list, panels_per, h, w, tilt=3.0, rru_on=True, spread=0.5):
-    """Bras de secteurs : un bras horizontal (deux tubes) par azimut, tube de fixation et panneaux au bout."""
+def feed_point(lat, feed, z, d=None):
+    """Arrivée d'un faisceau à la cote z : chemin de câbles (x, y) du treillis, ou entrée dans le fût du monopole
+    (« pole » : juste sous la surface, côté d)."""
+    if feed == "pole":
+        return d * (lat.radius(z) * 0.8) + Vector((0, 0, z))
+    return Vector((feed[0], feed[1], z))
+
+
+def sector_ring(B, lat, z, arm, az_list, panels_per, h, w, tilt=3.0, rru_on=True, spread=0.5, feed=None):
+    """Bras de secteurs : un bras horizontal (deux tubes) par azimut, tube de fixation et panneaux au bout ; feed :
+    faisceau de chaque secteur vers le chemin de câbles (x, y) ou dans le fût (« pole »)."""
     for az in az_list:
         rz = rot_z(az)
         fwd = rz @ Vector((1, 0, 0))
@@ -809,14 +864,23 @@ def sector_ring(B, lat, z, arm, az_list, panels_per, h, w, tilt=3.0, rru_on=True
             panel_antenna(B, base, az, h, w, 0.12, tilt)
             if rru_on:
                 rru(B, base + Vector((0, 0, -0.55)) + side * 0.0, az)
+        if feed is not None:
+            # Sous les jarretières : le faisceau longe le bras en chaînette jusqu'au pylône puis descend.
+            # Départ là où finissent les jarretières des RRU (ou des panneaux sans RRU).
+            zs = z - (1.62 if rru_on else 0.9)
+            start = Vector((0, 0, zs)) + fwd * (r + arm + (0.06 if rru_on else 0.12))
+            # Toujours en descente (une chaînette qui remonte dessinait un « W » sur les monopoles).
+            core = Vector((0, 0, zs - 0.3)) + fwd * (lat.radius(zs) + 0.08)
+            end = feed_point(lat, feed, zs - (0.5 if feed == "pole" else 1.6), fwd)
+            bundle(B, [start, start.lerp(core, 0.5) - Vector((0, 0, 0.06)), core, end], max(2, 2 * panels_per), 0.016, 0.04, far=True)
 
 
 # --------------------------------------------------------------------------------------------------------------------
 # Les trois pylônes
 # --------------------------------------------------------------------------------------------------------------------
-def rru_rack(B, lat, z, face, n=3):
+def rru_rack(B, lat, z, face, n=3, feed=None):
     """Grappe de RRU à mi-hauteur (planche « Telecom Tower Components ») : deux traverses boulonnées sur une face du
-    pylône, tubes courts, RRU à ailettes côte à côte, jarretières vers le chemin de câbles."""
+    pylône, tubes courts, RRU à ailettes côte à côte, jarretières vers le chemin de câbles (feed : (x, y))."""
     nf = lat.face_normal(face)
     a, b = lat.corner(face, z), lat.corner(face + 1, z)
     a.z = b.z = z
@@ -834,6 +898,9 @@ def rru_rack(B, lat, z, face, n=3):
         B.tube(q + Vector((0, 0, -0.35)), q + Vector((0, 0, 0.9)), 0.03, 8, "galva")
         B.kind = "struct"
         rru(B, q + Vector((0, 0, 0.3)), az)
+        if feed is not None:
+            s = q + Vector((0, 0, 0.3 - 0.96))
+            bundle(B, [s, s - nf * 0.12 - Vector((0, 0, 0.25)), feed_point(lat, feed, z - 0.9)], 2, 0.014, 0.05)
 
 
 def panel_levels(z0, z1, step):
@@ -856,9 +923,9 @@ def tower_30(B):
     if B.detail <= 2:
         ladder(B, 0.0, -0.2, 0.3, 29.0)
     # Trois secteurs de deux panneaux hauts (2,6 m), RRU en dessous, montés au plus près du mât.
-    sector_ring(B, lat, 26.6, 0.35, (30, 150, 270), 1, 2.6, 0.34, 2.0, True)
+    sector_ring(B, lat, 26.6, 0.35, (30, 150, 270), 1, 2.6, 0.34, 2.0, True, feed=(0.0, -0.05))
     # Deuxième couronne plus basse (opérateur 2) : panneaux 1,6 m, parabole de faisceau hertzien.
-    sector_ring(B, lat, 22.4, 0.30, (90, 210, 330), 1, 1.6, 0.28, 4.0, True)
+    sector_ring(B, lat, 22.4, 0.30, (90, 210, 330), 1, 1.6, 0.28, 4.0, True, feed=(0.0, -0.05))
     B.mat = "olive"
     fwd = rot_z(-20) @ Vector((1, 0, 0))
     anchor = dish(B, Vector((0, 0, 19.0)) + fwd * (lat.radius(19.0) + 0.55), -20.0, 0.3, 0.2)
@@ -868,7 +935,7 @@ def tower_30(B):
     whip(B, (0.3, 0.3, 30.0), 0.8, 0.015)
     guys(B, lat, (14.0, 26.0), 12.0, 60.0)
     cabinet(B, (2.6, 0.0, 0.0), 0.0, (0.75, 1.2, 1.6))
-    cable_bridge(B, (2.2, 0.0, 0.0), (0.45, 0.0, 0.0), 2.2, 4)
+    cable_bridge(B, (2.2, 0.0, 0.0), (0.45, 0.0, 0.0), 2.2, 4, (0.1, -0.05, 1.7))
     site_sign(B, (3.6, -1.3, 0.1), 0.0)
     return lat
 
@@ -886,7 +953,7 @@ def tower_40(B):
     # Tête circulaire : trois secteurs de trois panneaux, RRU, AAU, fouets, GPS (planches de référence).
     head_ring(B, lat, 37.0, 39.2, 1.95, (90, 210, 330), (0.0, 0.33))
     B.mat = "galva"
-    rru_rack(B, lat, 32.4, 0, 3)
+    rru_rack(B, lat, 32.4, 0, 3, (0.0, 0.28))
     B.mat = "galva"
     # Faisceaux hertziens : grande parabole sur une face, petite plus bas.
     for z, az, r in ((31.0, 30.0, 0.45), (27.0, 150.0, 0.30)):
@@ -908,11 +975,11 @@ def tower_40(B):
     cabinet(B, (0.0, -3.4, 0.0), 90.0, (0.8, 1.4, 1.7))
     cabinet(B, (1.6, -3.4, 0.0), 90.0, (0.7, 1.0, 1.5))
     ac_unit(B, (-1.6, -3.5, 0.1), 90.0)
-    cable_bridge(B, (0.0, -2.9, 0.0), (0.0, -0.9, 0.0), 2.4, 5)
+    cable_bridge(B, (0.0, -2.9, 0.0), (0.0, -0.9, 0.0), 2.4, 5, (0.06, 0.28, 1.9))
     fence(B, (0.0, -4.0, 0.0), 5.4, 2.6, 2.0)
     # Local technique et groupe électrogène hors de l'enclos, chemin de câbles vers le pylône.
     shelter(B, (-5.0, -1.4, 0.0), 180.0, (2.2, 3.0, 2.5))
-    cable_bridge(B, (-3.6, -0.6, 0.0), (-1.2, -0.4, 0.0), 2.4, 5)
+    cable_bridge(B, (-3.6, -0.6, 0.0), (-1.2, -0.4, 0.0), 2.4, 5, (-0.08, 0.28, 1.9))
     generator(B, (-5.2, -4.4, 0.0), 0.0)
     site_sign(B, (-2.75, -5.4, 0.1), -90.0)
     return lat
@@ -931,9 +998,9 @@ def tower_50(B):
     B.mat = "galva"
     head_ring(B, lat, 46.4, 48.8, 2.1, (0, 120, 240), (0.0, 0.32), 2.5, 2.0, 0.34)
     B.mat = "galva"
-    sector_ring(B, lat, 41.0, 0.45, (60, 180, 300), 2, 1.4, 0.26, 4.0, True, 0.3)
+    sector_ring(B, lat, 41.0, 0.45, (60, 180, 300), 2, 1.4, 0.26, 4.0, True, 0.3, (0.0, 0.27))
     B.mat = "galva"
-    rru_rack(B, lat, 36.0, 1, 4)
+    rru_rack(B, lat, 36.0, 1, 4, (0.0, 0.27))
     B.mat = "galva"
     for z, az, r in ((38.5, 60.0, 0.32), (33.0, 200.0, 0.45)):
         fwd = rot_z(az) @ Vector((1, 0, 0))
@@ -950,10 +1017,10 @@ def tower_50(B):
     cabinet(B, (3.8, 0.0, 0.0), 0.0, (0.8, 1.4, 1.8))
     cabinet(B, (3.8, -1.8, 0.0), 0.0, (0.8, 1.2, 1.8))
     ac_unit(B, (3.8, 1.6, 0.1), 0.0)
-    cable_bridge(B, (3.35, 0.0, 0.0), (1.6, 0.0, 0.0), 2.6, 5)
+    cable_bridge(B, (3.35, 0.0, 0.0), (1.6, 0.0, 0.0), 2.6, 5, (0.08, 0.27, 2.1))
     fence(B, (4.6, -0.2, 0.0), 3.4, 5.6, 2.0)
     shelter(B, (0.0, -5.6, 0.0), -90.0, (2.2, 3.2, 2.5))
-    cable_bridge(B, (0.0, -4.4, 0.0), (0.0, -1.7, 0.0), 2.4, 6)
+    cable_bridge(B, (0.0, -4.4, 0.0), (0.0, -1.7, 0.0), 2.4, 6, (0.0, 0.27, 1.9))
     generator(B, (4.4, -5.4, 0.0), 90.0)
     site_sign(B, (6.4, -2.9, 0.1), 0.0)
     return lat
@@ -1150,16 +1217,19 @@ def head_ring(B, lat, z0, z1, R, sectors, feed, tall=2.4, short=1.9, w=0.32):
             if off != 0:
                 rru(B, pp + Vector((0, 0, z0 + 0.62)), az_s + off + 180.0)
         # Faisceau du secteur : des pieds de tubes vers le pylône puis le chemin de câbles.
-        if B.detail == 0:
+        # Six câbles par secteur de près, trois plus épais en LOD 4, un gros en LOD 12 (bundle) : visibles en jeu.
+        if B.detail <= 2 and B.intact:
             a = math.radians(az_s)
             d = Vector((math.cos(a), math.sin(a), 0))
             f = Vector((feed[0], feed[1], 0))
-            for j in range(3):
-                o = Vector((-d.y, d.x, 0)) * (0.035 * (j - 1))
-                # Câble qui pend entre le pied du tube et le pylône (chaînette), puis descend le long du pylône.
-                tip = d * (rin + 0.06) + o + Vector((0, 0, z0 - 0.45))
-                sweep(B, spline([d * (R + 0.09) + o + Vector((0, 0, z0 - 0.55)), d * ((R + rin) / 2) + o + Vector((0, 0, z0 - 0.85 - 0.05 * j)),
-                                 tip, tip * 0.5 + f * 0.5 + Vector((0, 0, z0 - 1.2)) * 0.5, f + o * 0.5 + Vector((0, 0, z0 - 2.2))], 4), 0.014, 5, "cable")
+            for off in (-24.0, 24.0):
+                a2 = math.radians(az_s + off)
+                d2 = Vector((math.cos(a2), math.sin(a2), 0))
+                # Câbles qui pendent entre le pied des tubes et le pylône (chaînette), puis descendent le long du pylône.
+                tip = d * (rin + 0.06) + Vector((0, 0, z0 - 0.45))
+                foot = d2 * (R + 0.09) + Vector((0, 0, z0 - 0.55))
+                bundle(B, [foot, (foot + tip) / 2 - Vector((0, 0, 0.3)), tip, tip * 0.5 + f * 0.5 + Vector((0, 0, z0 - 1.2)) * 0.5,
+                           f + Vector((0, 0, z0 - 2.2))], 3, 0.016, 0.035, far=True)
         # Entre deux secteurs : AAU sur son tube, fouet omnidirectionnel au-dessus.
         a = math.radians(az_s + 60.0)
         d = Vector((math.cos(a), math.sin(a), 0))
@@ -1184,7 +1254,7 @@ def tower_m20(B):
     step_bolts(B, lat, 2.6, 18.0)
     B.mat = "galva"
     head_ring(B, lat, 17.6, 19.3, 1.2, (20, 140, 260), (0.0, 0.0), 1.6, 1.3, 0.28)
-    sector_ring(B, lat, 15.4, 0.22, (80, 200, 320), 1, 1.0, 0.24, 3.0, False)
+    sector_ring(B, lat, 15.4, 0.22, (80, 200, 320), 1, 1.0, 0.24, 3.0, False, feed="pole")
     B.mat = "galva"
     fwd = rot_z(-30) @ Vector((1, 0, 0))
     pos = Vector((0, 0, 13.6)) + fwd * (lat.radius(13.6) + 0.45)
@@ -1195,7 +1265,9 @@ def tower_m20(B):
     cabinet(B, (3.2, 0.6, 0.0), 0.0, (0.75, 1.2, 1.6))
     cabinet(B, (3.2, -0.9, 0.0), 0.0, (0.6, 0.8, 1.4))
     ac_unit(B, (3.3, -1.9, 0.1), 0.0)
-    cable_bridge(B, (2.75, 0.0, 0.0), (0.55, 0.0, 0.0), 2.2, 4)
+    # Boîte d'entrée des câbles au pied du fût, côté armoires.
+    B.cuboid((lat.radius(1.5) + 0.03, 0.0, 1.5), (0.08, 0.22, 0.3), None, "galva")
+    cable_bridge(B, (2.75, 0.0, 0.0), (0.55, 0.0, 0.0), 2.2, 4, (lat.radius(1.5) * 0.8, 0.0, 1.5))
     fence(B, (3.1, -0.15, 0.0), 2.6, 4.0, 2.0)
     camo_net(B, 1.7, -2.4, 4.6, 2.1, 2.5)
     site_sign(B, (4.8, -2.4, 0.1), 0.0)
@@ -1210,12 +1282,13 @@ def tower_m12(B):
     lat.build(B, 3)
     step_bolts(B, lat, 2.4, 10.0)
     B.mat = "galva"
-    sector_ring(B, lat, 10.6, 0.22, (0, 120, 240), 1, 1.0, 0.24, 2.0, True)
+    sector_ring(B, lat, 10.6, 0.22, (0, 120, 240), 1, 1.0, 0.24, 2.0, True, feed="pole")
     top_pole(B, 12.0, 1.0, 0.045, True, True)
     whip(B, (0.15, 0.0, 12.2), 1.0, 0.015)
     guys(B, lat, (8.0,), 6.5, 60.0)
     cabinet(B, (1.9, 0.0, 0.0), 0.0, (0.6, 0.9, 1.4))
-    cable_bridge(B, (1.55, 0.0, 0.0), (0.4, 0.0, 0.0), 2.0, 3)
+    B.cuboid((lat.radius(1.4) + 0.03, 0.0, 1.4), (0.08, 0.2, 0.28), None, "galva")
+    cable_bridge(B, (1.55, 0.0, 0.0), (0.4, 0.0, 0.0), 2.0, 3, (lat.radius(1.4) * 0.8, 0.0, 1.4))
     return lat
 
 
