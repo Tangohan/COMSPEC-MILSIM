@@ -38,6 +38,23 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Guide réseau : toutes les rubriques s'ouvrent, guide seulement dans Eden (ATAK natif 2.1.1)
+
+### Résumé joueur
+Type : correctif
+FR : Le guide « Réseau et simulation » affiche enfin chaque rubrique
+- Cliquer sur une rubrique du guide (Relais, Brouillage, Envois, Le téléphone…) affiche bien son texte et son schéma ; avant, la fenêtre restait sur « Vue d'ensemble ».
+- Le bouton du guide disparaît du menu principal du jeu : le guide s'ouvre dans l'éditeur Eden, menu COMSPEC ATAK > Guide : réseau et simulation.
+EN : The "Network and simulation" guide now opens every section
+- Clicking a section of the guide (Relays, Jamming, Transmissions, The phone…) now shows its text and diagram; before, the window stayed on "Overview".
+- The guide button is gone from the game's main menu: the guide opens in the Eden editor, COMSPEC ATAK menu > Guide: network and simulation.
+
+### Détail technique
+- `fn_netGuide` : le gestionnaire LBSelChanged appelait `fn_tr` à chaque clic ; il s'exécute hors du script qui a créé la fenêtre (namespace de l'interface), où la fonction peut manquer : erreur, rien n'était mis à jour (l'affichage initial, fait dans le script, marchait). Textes et schémas de chaque rubrique sont maintenant traduits et mis en forme à l'ouverture ; le clic n'utilise plus que des commandes du moteur et `lbCurSel`. Cause déduite du code et de la capture, non reproduite en jeu.
+- Menu principal (TTRD) : `fn_mainMenuButton` et son Extended_DisplayLoad RscDisplayMain retirés, clés de stringtable du bouton supprimées ; seule entrée restante : Display3DEN > COMSPEC ATAK > Guide.
+
+---
+
 ## Regroupement : réseau radio réaliste, apps refaites, synchro allégée, icônes des objets (ATAK natif 2.1.0.AB - Denver, COMSPEC Link 2.0.88)
 
 ### Résumé joueur

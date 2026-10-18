@@ -544,8 +544,6 @@ class Extended_PreInit_EventHandlers { class comspec_atak_native_main { init="ca
 // Intro du mod sur l'écran de démarrage d'Arma (une fois par lancement du jeu), jamais sur le menu principal.
 // Marque COMSPEC (emblème, « OVERWATCH · ATAK NATIF », version) sur les chargements de mission.
 class Extended_DisplayLoad_EventHandlers {
-    // Menu principal (fn_mainMenuButton, exclu de tools/i18n.py wrap : fn_tr pas encore là) : bouton « COMSPEC ATAK · Guide réseau » (fn_mainMenuButton -> fn_netGuide), rien d'autre.
-    class RscDisplayMain { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_mainMenuButton.sqf'"; };
     class RscDisplayStart { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_introSplash.sqf'"; };
     class RscDisplayLoadMission { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf'"; };
     class RscDisplayLoading { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf'"; };
