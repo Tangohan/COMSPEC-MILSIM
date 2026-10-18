@@ -54,7 +54,7 @@ EN : COMSPEC ATAK 2.0.1 "Denver": offline mode, waypoints, photo basemap, and ev
 - Also in 1.97: new Garmin app, realistic blood and cleaning without a kit, measured blood pressure and oxygen, a lockable phone with a back key, your allies' faces blurred in your photos, your role's kits in the Athena wardrobes.
 
 ### Détail technique
-Regroupe #857, #858 et #859. Première version de MAJEUR 2 décidée par TTRD : `VERSION_STR` « 2.0.1 » (seul comparé) et nom affiché `VERSION_NAME` « 2.0.1.AB - Denver » (docs/VERSIONING.md). La 1.97.0 n'a pas été annoncée : ce Résumé joueur la couvre aussi. COMSPEC Link inchangée (2.0.87). main.pbo reconstruit avec HEMTT 1.17.2, empreinte « STAMP » posée par tools/stamp_build.py puis remise à vide.
+Regroupe #857, #858 et #859. Première version de MAJEUR 2 décidée par TTRD : `VERSION_STR` « 2.0.1 » (seul comparé) et nom affiché `VERSION_NAME` « 2.0.1.AB - Denver » (docs/VERSIONING.md). La 1.97.0 n'a pas été annoncée : ce Résumé joueur la couvre aussi. COMSPEC Link inchangée (2.0.87). main.pbo reconstruit avec HEMTT 1.17.2, empreinte « 2026.10.18 aa7ecf3 » posée par tools/stamp_build.py puis remise à vide.
 
 #### Points de passage refaits : pose au clic droit, noms, types, itinéraire partagé en direct (#857)
 ##### Résumé joueur de la PR
