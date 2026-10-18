@@ -18,6 +18,8 @@ final class AtakQuickLinkPageTest extends TestCase
 
         self::assertStringContainsString("->get('/lier', [\\App\\Controllers\\Web\\AtakQuickLinkController::class, 'show'])", $routes);
         self::assertStringContainsString("->post('/lier', [\\App\\Controllers\\Web\\AtakQuickLinkController::class, 'confirm'], [AuthMiddleware::class", $routes);
+        self::assertStringContainsString("->get('/lier/etat', [\\App\\Controllers\\Web\\AtakQuickLinkController::class, 'state'], [AuthMiddleware::class])", $routes);
+        self::assertStringContainsString('describePending', $ctrl);
         self::assertStringContainsString("'verification_uri' => url('lier')", $svc);
         self::assertStringContainsString("'verification_uri_complete'", $svc);
         self::assertStringContainsString('approveFromWeb', $ctrl);
