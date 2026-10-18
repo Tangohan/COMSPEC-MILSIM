@@ -34,7 +34,7 @@ private _flat = { params ["_h"]; (keys _h) select { !((_h get _x) isEqualType ob
 
 switch (toLower _act) do {
     case "online": {
-        if !(missionNamespace getVariable ["comspec_atak_native_offline_hold", true]) exitWith { true };
+        if !(["offlineHold"] call comspec_atak_native_fnc_netCond) exitWith { true };
         // Terminal de bord d'un véhicule (sans téléphone sur soi) : seul le signal compte.
         if (!([player] call comspec_atak_native_fnc_hasDevice) && {([player] call comspec_atak_native_fnc_vehicleTerminal) isNotEqualTo ""}) exitWith {
             private _q = [] call comspec_atak_native_fnc_linkQuality;

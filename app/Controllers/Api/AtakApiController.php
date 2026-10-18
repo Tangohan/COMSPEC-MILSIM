@@ -7816,6 +7816,37 @@ class AtakApiController
     }
 
     /**
+     * Conditions réseau appliquées en jeu depuis le menu Échap de l'ATAK natif (COMSPEC Link « NetConditions.Report »).
+     * Gardées pour la page Contrôle serveur (bloc « Appliquées en jeu ») ; les règles de la communauté ne changent pas.
+     * GET : dernières conditions reçues.
+     */
+    public function netConditions(Request $request, array $params = []): Response
+    {
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $svc = new \App\Services\Tactical\AtakExperienceService();
+        $method = strtoupper((string) ($request->method() ?? 'GET'));
+        if ($method === 'POST') {
+            if (!$this->authArma()) {
+                return Response::json(['error' => 'Unauthorized'], 401);
+            }
+            $actor = $this->guardArmaWrite($request, $tenantId, false);
+            if ($actor instanceof Response) {
+                return $actor;
+            }
+            $steam = is_array($actor) && is_string($actor['steam_uid'] ?? null) ? $actor['steam_uid'] : null;
+            $live = $svc->recordLiveNetwork($tenantId, $this->jsonBody($request), $steam);
+
+            return Response::json(['ok' => true, 'net_live' => $live]);
+        }
+
+        return Response::json(['net_live' => $svc->get($tenantId)['settings']['net_live'] ?? []]);
+    }
+
+    /**
      * Met à jour le triage d’une alerte médicale (message tchat).
      * Réservé aux profils médecin / RH (web) ou au flux jeu (clé API).
      */

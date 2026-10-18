@@ -50,7 +50,14 @@ private _sections = [
         "Là où le rayon passe à moins de 20 m du sol, le mod compte les arbres le long du trajet : la profondeur de feuillage traversée coûte de quelques dB à plus de 30 dB (modèle de Weissberger à 4,9 GHz). Le feuillage mouillé par la pluie atténue 20 % de plus.",
         "Chaque bâtiment traversé entre vous et le relais coûte environ 12 dB (deux murs).",
         "À l'intérieur : près d'une fenêtre le signal passe encore ; au fond du bâtiment il chute fortement ; en sous-sol, au cœur d'un grand bâtiment ou sous l'eau, il n'y a plus rien.",
-        "La pluie elle-même et le brouillard n'affaiblissent presque pas une onde à 4,9 GHz : seul le feuillage mouillé compte."
+        "La pluie, l'orage et le vent comptent aussi (rubrique suivante) ; le brouillard n'a aucun effet à 4,9 GHz."
+    ]],
+    ["Météo, surcharge et pertes de paquets", "", [
+        "Pluie : à 4,9 GHz elle affaiblit peu l'onde elle-même (environ 0,05 dB/km sous une averse, 0,5 dB/km sous un déluge, ITU-R P.838), mais elle mouille les antennes (0,5 à 2 dB) et le feuillage (+20 %).",
+        "Orage : les éclairs font monter le bruit radio jusqu'à 6 dB et les paquets se perdent par rafales. Vent fort (au-delà de 30 km/h) : mâts et arbres bougent, le signal fluctue de quelques dB.",
+        "Surcharge : les téléphones à portée d'un même relais se partagent son canal. Plus il est occupé (vos envois, ceux des autres, le trafic de fond fixé par le serveur), plus le débit baisse, la latence monte et des paquets se perdent par collisions. Au-delà de 100 %, la capacité se partage.",
+        "Pertes de paquets : elles arrivent par rafales, comme sur une vraie liaison radio : de mauvaises périodes où plusieurs envois de suite se perdent, puis le lien redevient bon. Les envois perdus repartent automatiquement.",
+        "Conditions réseau (menu Échap) : chacun y voit les conditions du moment ; un administrateur du serveur ou un Zeus les règle pour tous (météo, surcharge, pertes, latence, relais) et elles sont envoyées au site. Une règle de la communauté sur le site (Contrôle serveur > Réseau et simulation) s'impose au serveur."
     ]],
     ["Relais, répéteurs et maillage", "chain", [
         "Raccordé : le relais porte le réseau seul (satellite, fibre). Répéteur : il doit voir un relais raccordé, ou un répéteur qui l'est, de proche en proche. Chaque bond est un vrai lien radio et le débit d'un répéteur est le plus faible de la chaîne.",
@@ -82,7 +89,7 @@ private _sections = [
         "Module ATAK · Relais (Modules > COMSPEC — ATAK · Réseau) : type (radio portable 1,5 km, mât tactique 3 km, tour fixe 6 km, terminal satellite 1 km), portée (cercle du module), débit, hauteur d'antenne, places, camp, canal, raccordé ou répéteur, batterie et autonomie.",
         "Pylônes relais 3D (Objets > Structures > Relais ATAK) : relais prêts à poser. Menu COMSPEC ATAK > TBR : tableau de tous les relais de la mission, répéteurs isolés signalés.",
         "Conseils : placez les relais en hauteur et en vue directe des zones de jeu ; une tour sur une crête couvre plus qu'un mât dans un vallon ; une forêt dense se couvre par un relais haut au-dessus de la canopée, pas par un relais bas à l'orée.",
-        "Réglages serveur (CBA, COMSPEC) : Débit réseau simulé, Réalisme de la simulation radio (Réaliste, Exigeant, Simplifié), Réseau exclusivement par relais, Passerelles de véhicule et PC mobile, Fonctionnement hors connexion, Flux vidéo selon les relais. Case du module : Relais obligatoires.",
+        "Réglages serveur (CBA, COMSPEC) : Débit réseau simulé, Réalisme de la simulation radio (Réaliste, Exigeant, Simplifié), Météo sur le réseau et son intensité, Surcharge du réseau, Trafic de fond, Pertes de paquets, Perte minimale, Latence ajoutée, Réseau exclusivement par relais, Passerelles de véhicule et PC mobile, Fonctionnement hors connexion, Flux vidéo selon les relais. Case du module : Relais obligatoires. En partie, le menu Échap > Conditions réseau les change pour tout le serveur.",
         "Variables de mission : COMSPEC_ATAK_Jammers = [[position, rayon], ...] pose des brouilleurs ; COMSPEC_ATAK_MeshRange règle la portée du maillage entre téléphones (3 000 m)."
     ]],
     ["En jeu : voir le réseau", "", [

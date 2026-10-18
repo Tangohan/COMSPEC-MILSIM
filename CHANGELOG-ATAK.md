@@ -38,23 +38,23 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Regroupement : français complet, Resynch qui renvoie tout, correctifs photo, drone, médical et capture (ATAK natif 2.1.1.AB - Denver, COMSPEC Link 2.0.88)
+## Regroupement : réseau qui suit la météo et la charge, français complet, Resynch qui renvoie tout, Réglages, fluidité et correctifs (ATAK natif 2.1.1.AB - Denver, COMSPEC Link 2.0.89)
 
 ### Résumé joueur
-Type : correctif
-FR : COMSPEC ATAK 2.1.1 « Denver » : le français partout, un Resynch complet, un téléphone plus fluide et une série de correctifs
+Type : nouveauté
+FR : COMSPEC ATAK 2.1.1 « Denver » : un réseau qui suit la météo, le français partout, un Resynch complet et une série de correctifs
+- Pluie, orage, vent et surcharge des relais comptent maintenant sur le réseau, avec des pertes par rafales ; nouveau bouton Conditions réseau dans le menu Échap, réglable par l'admin ou le Zeus et imposable depuis le site.
 - Le réglage Français traduit enfin tout : écrans d'Overwatch, menus, actions ACE et noms automatiques des marqueurs suivent la langue du mod, sans relancer la mission.
-- L'app Synchro renvoie tout ce qui manque à Athena (carte du camp, plan de briefing, équipes, montre Garmin, tenues modifiées, objets) et montre l'état de chaque catégorie.
-- Téléphone plus fluide, surtout rangé ; photo plein écran sans main devant la vue, avec la touche B pour le flou ; l'image du drone ne reste plus noire ; le pouls et le nom du blessé reviennent dans l'app Médical.
-- L'app Réglages montre l'état de la liaison et cherche n'importe quel réglage ; le code de liaison Athena se renouvelle tout seul ; le guide réseau ouvre chaque rubrique et la capture de la carte par Zeus démarre de nouveau.
-EN : COMSPEC ATAK 2.1.1 "Denver": French everywhere, a complete Resynch, a smoother phone and a batch of fixes
+- L'app Synchro renvoie tout ce qui manque à Athena et montre l'état de chaque catégorie ; l'app Réglages montre l'état de la liaison et cherche n'importe quel réglage ; le code de liaison Athena se renouvelle tout seul.
+- Téléphone plus fluide, surtout rangé ; photo plein écran sans main devant la vue (touche B pour le flou) ; l'image du drone ne reste plus noire ; pouls et nom du blessé dans l'app Médical ; guide réseau et capture de carte Zeus réparés.
+EN : COMSPEC ATAK 2.1.1 "Denver": a network that follows the weather, French everywhere, a complete Resynch and a batch of fixes
+- Rain, storms, wind and relay congestion now count on the network, with losses in bursts; new Network conditions button in the Escape menu, set by the admin or Zeus and enforceable from the website.
 - The French setting now translates everything: Overwatch screens, menus, ACE actions and automatic marker names follow the mod language, without restarting the mission.
-- The Synchro app resends everything Athena is missing (side map, briefing plan, teams, Garmin watch, changed loadouts, items) and shows the state of each category.
-- A smoother phone, especially when stowed; fullscreen camera with no hand in front of the view, with the B key for blur; the drone picture no longer stays black; the casualty's pulse and name are back in the Medical app.
-- The Settings app shows your link status and searches any setting; the Athena link code renews itself; the network guide opens every section and the Zeus map capture starts again.
+- The Synchro app resends everything Athena is missing and shows the state of each category; the Settings app shows your link status and searches any setting; the Athena link code renews itself.
+- A smoother phone, especially when stowed; fullscreen camera with no hand in front of the view (B key for blur); the drone picture no longer stays black; pulse and casualty name in the Medical app; network guide and Zeus map capture fixed.
 
 ### Détail technique
-Regroupe #893, #894, #896, #897, #898, #899, #900, #905, #906 et #908. `VERSION_STR` « 2.1.1 » (seul comparé), nom affiché « 2.1.1.AB - Denver ». COMSPEC Link inchangé (2.0.88), pas de DLL à recompiler. main.pbo reconstruit avec HEMTT 1.22 (build « 2026.10.18 5d418bd », `i18n/fr.txt` inclus, 96,5 Mo, sous la limite GitHub de 100 Mo). `comspec_overwatch_connect.pbo` repris de #898 puis repatché avec `fn_forceSyncData.sqf` de #900 ; `comspec_sse_core.pbo` patché par #898. Rien à déployer côté site.
+Regroupe #893, #894, #896, #897, #898, #899, #900, #905, #906, #908 et #909. `VERSION_STR` « 2.1.1 » (seul comparé), nom affiché « 2.1.1.AB - Denver ». COMSPEC Link 2.0.89 (#909) : DLL à recompiler (build_mod.bat). Le bouton du menu principal de #909 est retiré (#893 garde le guide réseau dans Eden seulement) ; le bouton Conditions réseau du menu Échap reste. main.pbo reconstruit avec HEMTT 1.22 (build « 2026.10.18 5d418bd », `i18n/fr.txt` inclus, 96,5 Mo, sous la limite GitHub de 100 Mo). `comspec_overwatch_connect.pbo` repris de #898 puis repatché avec `fn_forceSyncData.sqf` de #900 ; `comspec_sse_core.pbo` patché par #898. Site à déployer (#909 : Contrôle serveur > Réseau et simulation, `POST /api/atak/net-conditions`, sans migration).
 
 #### Le réglage Français traduit tout, noms automatiques des marqueurs (#898)
 - `i18n/fr.txt` (anglais vers français) chargé en français, assemblé par `tools/i18n.py fr` depuis `tools/i18n_fr_source.tsv` et les stringtables ; `fn_tr` et les écrans (ATAK, connect, SSE) traduisent dès qu'un dictionnaire est chargé ; langue lue dans le profil CBA dès le preInit ; menus CBA vidés au changement de langue ; actions ACE retraduites à chaque affichage. Noms automatiques des marqueurs (palette, LOCK, détections drone, END/FIN) posés dans la langue du mod et relus par `fn_markerAutoName`.
@@ -186,6 +186,33 @@ EN : The phone costs fewer frames per second, especially when stowed
 - Lanceur : pastilles calculées une fois par app, mesure des libellés de tuile gardée (`COMSPEC_ATAK_TileFit`, plus de contrôle créé et supprimé par tuile à chaque redessin).
 - i18n : 14 entrées dans `en.txt` (+ modèle communautaire regénéré), 3 infobulles de `modules.hpp` en `$STR_COMSPEC_ATAK_CFG_*`. main.pbo à reconstruire au regroupement. COMSPEC Link inchangé.
 - À tester en jeu : barres de signal et bascule de relais téléphone ouvert et rangé (près d'un relais, en marchant), toast « relais perdu » ; poser, déplacer et supprimer un marqueur (carte du téléphone, et sur Athena pour le relais du camp) ; marqueurs Athena reçus ; recherche, épinglage et pastille Messages dans le menu des apps ; musique DLL (barre de lecture, fin de piste) ; aperçu de tour relais dans Eden ; mode anglais : page Réseau > débits, Bluetooth > fiches SEEK.
+
+
+#### Réseau : météo, surcharge, pertes en rafales et Conditions réseau du menu Échap (#909)
+
+##### Résumé joueur de la PR
+Type : nouveauté
+FR : Le réseau du téléphone suit la météo et la charge, et se règle depuis le menu Échap
+- Pluie, orage et vent fort comptent maintenant sur le réseau : antennes mouillées, bruit des éclairs, signal qui fluctue. Le brouillard, lui, ne change rien, comme en vrai.
+- Quand beaucoup de téléphones utilisent le même relais, le canal se remplit : le débit baisse, la latence monte et des paquets se perdent. Les pertes arrivent par rafales, comme sur une vraie radio.
+- Nouveau bouton Conditions réseau dans le menu Échap : chacun y voit ce qui coûte du signal en ce moment. Un administrateur du serveur ou un Zeus y règle la météo, la surcharge, les pertes et la latence pour tout le serveur, avec des modèles prêts à l'emploi.
+- Les administrateurs de la communauté peuvent imposer ces conditions depuis la page Contrôle serveur du site, qui affiche aussi celles appliquées en jeu.
+EN : The phone network follows weather and load, and is set from the Escape menu
+- Rain, storms and strong wind now count on the network: wet antennas, lightning noise, a fluctuating signal. Fog changes nothing, as in real life.
+- When many phones use the same relay, its channel fills up: throughput drops, latency rises and packets are lost. Losses come in bursts, as on a real radio.
+- New Network conditions button in the Escape menu: everyone sees what is costing signal right now. A server admin or a Zeus sets weather, congestion, losses and latency there for the whole server, with ready-made presets.
+- Community admins can enforce these conditions from the Server control page of the website, which also shows the ones applied in game.
+
+##### Détail technique
+- `fn_netCond` : conditions effectives, règle du site (`net_*` de `COMSPEC_TenantExperience`) > menu Échap (`COMSPEC_ATAK_NetCond`, diffusée, JIP) > CBA. Toutes les lectures de `net_sim`, `net_realism`, `relay_only`, `vehicle_gateways`, `offline_hold`, `video_relays` passent par lui. Nouveaux réglages CBA (tous actifs par défaut) : `net_weather`, `net_weather_k`, `net_congestion`, `net_bg_load`, `net_loss`, `net_loss_floor`, `net_latency_add`.
+- `fn_netWeather` : pluie ITU-R P.838 à 4,9 GHz sur le trajet, radômes mouillés, bruit d'orage (`lightnings`, ciel couvert), vent > 8 m/s ; ajoutés au bilan de `fn_radioLink` (le débit suit la MCS) ; sans relais, équivalent sur la liaison directe. Brouillard : aucun effet, affiché.
+- `fn_netLoad` : trafic émis publié par joueur (`COMSPEC_ATAK_NetLoad`, 10 s, seulement s'il change), charge du relais = trafic à portée + trafic de fond ; partage au-delà de 100 %, rendement CSMA, file M/M/1, collisions (`fn_linkQuality`).
+- `fn_netSend` : pertes Gilbert-Elliott (rafales d'environ 3 envois), aucune perte si la condition est coupée ; perte minimale et latence ajoutée dans `fn_linkQuality`.
+- `fn_netConfig` : bouton du menu Échap (`RscDisplayInterrupt`/`RscDisplayMPInterrupt`, sous la barre COMSPEC), fenêtre avec source de chaque condition, modèles, conditions du moment ; application contrôlée côté serveur (admin, hôte, Zeus), notification à tous, envoi au site `NetConditions.Report`.
+- COMSPEC Link 2.0.89 : `GetExperience` transmet toutes les clés `net_*` ; `NetConditions.Report` -> `POST /api/atak/net-conditions`. DLL à recompiler (build_mod.bat).
+- Site : groupe « Réseau et simulation radio » dans Contrôle serveur (13 règles, « Laisser au serveur » par défaut), bloc « Conditions appliquées en jeu » et bouton pour les garder comme règles (`/back-office/atak/controle-serveur/reseau-adopter`). Stockage dans `experience_config.net_live`, sans migration.
+- Guide réseau : rubrique « Météo, surcharge et pertes de paquets ».
+- À tester en jeu : bouton Conditions réseau en solo et en multijoueur (admin connecté, Zeus, simple joueur en lecture seule) ; appliquer un modèle et voir la notification chez tous ; arrivée d'un joueur après application (JIP) ; pluie forte et orage (Zeus météo) et lecture de la page Réseau ; plusieurs joueurs qui envoient des photos sur un même relais (surcharge) ; perte minimale 20 % (renvois, remise en file) ; règle imposée depuis le site (verrouillée dans la fenêtre) avec Link 2.0.89 ; bloc « Conditions appliquées en jeu » sur le site.
 
 ## Regroupement : réseau radio réaliste, apps refaites, synchro allégée, icônes des objets (ATAK natif 2.1.0.AB - Denver, COMSPEC Link 2.0.88)
 

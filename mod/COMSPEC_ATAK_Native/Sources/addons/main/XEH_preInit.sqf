@@ -345,6 +345,29 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_net_realism", "LIST",
     ["Réalisme de la simulation radio", "Réaliste : bilan radio en dB (relief et zone de Fresnel, feuillage, bâtiments, évanouissements, frange de réception seule, brouillage selon la force du signal, envois l'un après l'autre). Exigeant : forêt et bâtiments comptés en entier. Simplifié : ancien modèle (portée x 0,35 derrière le relief)."],
     _sim, [[1, 2, 0], ["Réaliste", "Exigeant", "Simplifié (ancien modèle)"], 0], 1] call comspec_atak_native_fnc_addSetting;
+// Conditions réseau (fn_netCond) : toutes les simulations actives par défaut. Le menu Échap (Conditions réseau) les
+// applique au serveur en cours de partie ; une règle de la communauté sur le site l'emporte sur les deux.
+["comspec_atak_native_net_weather", "CHECKBOX",
+    ["Météo sur le réseau", "Pluie sur le trajet, antennes mouillées, bruit des orages et vent fort réduisent la marge radio ; orage et vent font perdre des paquets par rafales. Le brouillard n'a aucun effet à 4,9 GHz."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_net_weather_k", "LIST",
+    ["Intensité de la météo sur le réseau", "100 % : valeurs réelles à 4,9 GHz. Au-dessus, la météo pèse davantage (scénario dégradé) ; 0 % : aucun effet."],
+    _sim, [[0, 50, 100, 150, 200], ["0 %", "50 %", "100 % (réel)", "150 %", "200 %"], 2], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_net_congestion", "CHECKBOX",
+    ["Surcharge du réseau", "Les téléphones à portée d'un même relais se partagent son canal : plus il est chargé, plus le débit baisse, la latence monte et des paquets se perdent par collisions."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_net_bg_load", "LIST",
+    ["Trafic de fond", "Part de la capacité de chaque relais déjà occupée par d'autres utilisateurs (flux vidéo, synchronisations, unités hors jeu)."],
+    _sim, [[0, 10, 25, 50, 75, 90], ["0 %", "10 %", "25 %", "50 %", "75 %", "90 %"], 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_net_loss", "CHECKBOX",
+    ["Pertes de paquets", "Des envois se perdent selon la qualité du lien, par rafales (mauvaises périodes), et repartent automatiquement. Décoché : rien ne se perd, seuls le débit et la latence comptent."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_net_loss_floor", "LIST",
+    ["Perte minimale", "Pertes de paquets imposées partout, même avec un excellent signal (zone dégradée, matériel usé)."],
+    _sim, [[0, 1, 3, 5, 10, 20], ["0 %", "1 %", "3 %", "5 %", "10 %", "20 %"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_net_latency_add", "LIST",
+    ["Latence ajoutée", "Délai ajouté à chaque envoi, par exemple pour une liaison satellite vers le poste (600 ms)."],
+    _sim, [[0, 50, 150, 300, 600, 1200], ["0 ms", "50 ms", "150 ms", "300 ms", "600 ms (satellite)", "1 200 ms"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_offline_hold", "CHECKBOX",
     ["Fonctionnement hors connexion", "Sans signal, le téléphone garde ses dernières données (fil Athena, ordres, alertes, unités) et retient comptes rendus, MEDEVAC, alertes, appels JTAC et itinéraires reçus : tout arrive au retour du réseau, avec un bilan. Décoché : ils arrivent même sans signal."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;

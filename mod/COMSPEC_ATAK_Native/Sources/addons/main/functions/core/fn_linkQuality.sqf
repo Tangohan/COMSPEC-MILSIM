@@ -11,6 +11,11 @@
     proche du relais résiste). Réglage serveur comspec_atak_native_net_realism : 0 simplifié (ancien modèle), 1 réaliste,
     2 exigeant. Clés en plus : tx (émission possible), margin (dB, -1 sans relais), jitter (ms).
     Réseau exclusivement par relais (fn_relayNet "only") : sans relais reçu, aucun réseau (même simulation coupée).
+    Conditions réseau (fn_netCond : site, menu Échap, réglages CBA ; toutes actives par défaut) :
+      - météo (fn_netWeather) : pluie, antennes mouillées, orage, vent ; dans le bilan radio avec un relais, en
+        équivalent de débit sans relais ; orage et vent ajoutent pertes en rafales et gigue ;
+      - surcharge (fn_netLoad) : trafic des téléphones à portée du même relais et trafic de fond du serveur ;
+      - pertes de paquets : perte minimale imposée, ou aucune perte si la condition est coupée ; latence ajoutée.
 */
 // Mode avion (fn_airplaneMode) : aucun réseau, même simulation coupée ; les envois partent en file comme sans signal.
 if (missionNamespace getVariable ["COMSPEC_ATAK_Airplane", false]) exitWith {
@@ -23,7 +28,7 @@ if ((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < ([6, 2] s
 // Cache vidé exprès (antenne, dégâts, mode avion, brouillage, test de débit…) : le meilleur relais est recalculé aussi.
 if ((count _cache) isNotEqualTo 2) then { uiNamespace setVariable ["COMSPEC_ATAK_RelayBest", []]; };
 private _q = createHashMap;
-if !(missionNamespace getVariable ["comspec_atak_native_net_sim", true]) exitWith {
+if !(["sim"] call comspec_atak_native_fnc_netCond) exitWith {
     // Réseau exclusivement par relais : même sans simulation de débit, aucun relais reçu = aucun réseau.
     _q = if ((["only"] call comspec_atak_native_fnc_relayNet) && {(["best"] call comspec_atak_native_fnc_relayNet) isEqualTo []}) then {
         createHashMapFromArray [["bars", 0], ["kbps", 0], ["latency", 0], ["loss", 100], ["label", "Aucun relais"], ["factors", [["Aucun relais reçu (réseau exclusivement par relais)", "aucun réseau"]]], ["sim", true]]
@@ -34,7 +39,7 @@ if !(missionNamespace getVariable ["comspec_atak_native_net_sim", true]) exitWit
     _q
 };
 private _f = [];
-private _real = missionNamespace getVariable ["comspec_atak_native_net_realism", 1];
+private _real = (["realism"] call comspec_atak_native_fnc_netCond);
 if (!(_real isEqualType 0)) then { _real = 1; };
 private _tx = true;
 private _margin = -1;
@@ -170,6 +175,43 @@ if (_real > 0 && {_spd > 15}) then {
     _jit = _jit + round ((_spd * 2) min 120);
     _f pushBack [format ["En mouvement rapide (%1 km/h)", round (_spd * 3.6)], format ["+%1 %% de pertes", round ((_spd / 6) min 12)]];
 };
+// Météo : avec un relais, ses dB sont déjà dans le bilan radio (fn_radioLink) ; sans relais, la liaison directe perd
+// l'équivalent (2 km de pluie compris). Orage et vent : pertes en rafales et gigue en plus dans tous les cas.
+(["global"] call comspec_atak_native_fnc_netWeather) params ["_wxL", "_wxPl", "_wxJit"];
+if (_real > 0) then {
+    if (_best isEqualTo []) then {
+        private _db = ["path", 2000] call comspec_atak_native_fnc_netWeather;
+        { _db = _db + (_x select 1); } forEach _wxL;
+        if (_db >= 0.5) then {
+            private _m = 10 ^ (-_db / 20);
+            _mul = _mul * _m;
+            _f pushBack ["Météo (pluie, orage, vent)", format ["-%1 dB", round _db]];
+        };
+    };
+    if (_wxPl > 0) then { _loss = _loss + _wxPl; _jit = _jit + _wxJit; _f pushBack ["Météo : pertes en rafales", format ["+%1 %% de pertes", _wxPl]]; };
+    if (fog > 0.5 && {["weather"] call comspec_atak_native_fnc_netCond}) then { _f pushBack ["Brouillard", "aucun effet à 4,9 GHz"]; };
+};
+// Surcharge : canal partagé par les téléphones à portée du relais utilisé (ou à 2 km sans relais), plus le trafic de fond.
+if (_real > 0 && {["congestion"] call comspec_atak_native_fnc_netCond}) then {
+    private _ant = getPosASL player;
+    private _rng = 2000;
+    private _cap = 4000;
+    if (_best isNotEqualTo []) then {
+        private _e = ["entry", _best select 0] call comspec_atak_native_fnc_relayNet;
+        if (_e isNotEqualTo []) then { _ant = _e select 1; _rng = _e select 4; _cap = ((_e select 5) * 1000) max 200; };
+    };
+    (["at", _ant, _rng, _cap] call comspec_atak_native_fnc_netLoad) params ["_u", "_np"];
+    if (_u > 0.3) then {
+        private _uq = _u min 0.95;
+        private _m = (1 / (_u max 1)) * (1 - 0.3 * ((_u min 1) ^ 2));
+        private _ql = round (20 * _uq / (1 - _uq) + 400 * ((_u - 1) max 0));
+        private _cl = round ((20 * _u ^ 2) min 25);
+        _mul = _mul * _m;
+        _lat = _lat + _ql;
+        _loss = _loss + _cl;
+        _f pushBack [format ["Surcharge du réseau (canal occupé à %1 %%, %2 téléphones)", round (_u * 100), _np], format ["-%1 %% · +%2 ms", round ((1 - _m) * 100), _ql]];
+    };
+};
 _mul = 0 max (_mul min 1);
 // Antenne d'extension de débit : pertes atténuées et débit de base relevé (rien à faire sans aucun signal).
 if (_ext isNotEqualTo [] && {_mul > 0}) then {
@@ -181,6 +223,12 @@ if (_ext isNotEqualTo [] && {_mul > 0}) then {
 _kbps = round (_kbps * _mul);
 _lat = round (_lat + (1 - _mul) * 600);
 _loss = round (_loss max ((1 - _mul) * 35));
+// Conditions du serveur : perte minimale et latence ajoutée (zone dégradée, liaison satellite) ; pertes coupées.
+private _lf = ["lossFloor"] call comspec_atak_native_fnc_netCond;
+if (_lf > 0 && {_loss < _lf}) then { _loss = _lf; _f pushBack ["Perte minimale imposée par le serveur", format ["%1 %%", _lf]]; };
+private _la = ["latencyAdd"] call comspec_atak_native_fnc_netCond;
+if (_la > 0) then { _lat = _lat + _la; _f pushBack ["Latence ajoutée par le serveur", format ["+%1 ms", _la]]; };
+if !(["loss"] call comspec_atak_native_fnc_netCond) then { _loss = 0; };
 private _bars = switch (true) do { case (_kbps <= 0): { 0 }; case (_kbps < 250): { 1 }; case (_kbps < 900): { 2 }; case (_kbps < 2200): { 3 }; default { 4 }; };
 // Gigue : la latence varie d'un paquet à l'autre, d'autant plus que la liaison est mauvaise.
 _jit = round (_jit + (1 - _mul) * 80);
