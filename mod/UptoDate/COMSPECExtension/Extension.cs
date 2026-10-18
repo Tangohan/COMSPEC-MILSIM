@@ -3197,6 +3197,15 @@ public static partial class Extension
             return ApplyEmitTelemetry(args);
         }
 
+        // Empreinte d'une tenue ACE (panneau Tenues Athena) : sha256 du texte tel que SyncWardrobe l'envoie, comparé au
+        // payload_sha256 du site pour savoir quelles tenues locales n'y sont pas encore (sans rien renvoyer). 2.0.88.
+        // ["HashText", [texte]] -> « OK|<sha256 hex minuscule> ».
+        if (function == "HashText")
+        {
+            var text = args.Length > 0 ? (args[0] ?? "") : "";
+            return "OK|" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
+        }
+
         // Phase 1-2 ATAK : initATAK.sqf attend un tableau ["version","label"].
         if (function == "GetVersion")
         {
@@ -3211,7 +3220,7 @@ public static partial class Extension
         // pour dire quelle fonction manque quand la DLL n'a pas été recompilée.
         if (function == "GetAtakFeatures")
         {
-            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck";
+            return "OK|" + ExtensionVersion + "|ListSseFieldNotes,GetWantedNotices,BriefingPresence,BriefingComments,BriefingSlidesNotes,BriefingSlidesOperation,PhoneIdentity,DownloadBriefingSlideImage,ReconImagesKnown,AthenaMusic,LatestVersions,StartupCheck,HashText";
         }
 
         if (function == "GetCapabilities")
@@ -4349,7 +4358,7 @@ public static partial class Extension
                 return "OK|" + (simplified.Length > MaxOutputBytes - 4 ? simplified.Substring(0, MaxOutputBytes - 4) : simplified);
             }
             // ACE Arsenal wardrobes Athena — liste métadonnées (sans payload).
-            // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated\towner
+            // Lignes : id\tname\tslug\tcollection\tfavorite\tbytes\tupdated\towner\tmine\tsha256 (mine, sha256 : 2.0.88)
             // Args optionnels : [startLine] — page par lignes complètes (évite troncature).
             // Retour page : OK|NEXT\tnextLine\nlines…  ou  OK|END\nlines…
             if (function == "ListWardrobes")
@@ -6865,11 +6874,13 @@ public static partial class Extension
                 var bytes = el.TryGetProperty("payload_bytes", out var b) ? b.ToString() : "0";
                 var upd = el.TryGetProperty("updated_at", out var u) && u.ValueKind == JsonValueKind.String ? Clean(u.GetString() ?? "") : "";
                 var owner = el.TryGetProperty("owner_label", out var o) && o.ValueKind == JsonValueKind.String ? Clean(o.GetString() ?? "") : "";
+                var mine = el.TryGetProperty("mine", out var m) && (m.ValueKind == JsonValueKind.True || (m.ValueKind == JsonValueKind.Number && m.GetInt32() != 0)) ? "1" : "0";
+                var sha = el.TryGetProperty("payload_sha256", out var h) && h.ValueKind == JsonValueKind.String ? Clean(h.GetString() ?? "") : "";
                 if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(name)) continue;
                 if (sb.Length > 0) sb.Append('\n');
                 sb.Append(id).Append('\t').Append(name).Append('\t').Append(slug).Append('\t')
                     .Append(coll).Append('\t').Append(fav).Append('\t').Append(bytes).Append('\t').Append(upd)
-                    .Append('\t').Append(owner);
+                    .Append('\t').Append(owner).Append('\t').Append(mine).Append('\t').Append(sha);
             }
             return sb.ToString();
         }

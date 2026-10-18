@@ -159,6 +159,10 @@ class CfgFunctions {
             class arsenalDeleteLocal {};
             class arsenalDeleteCloud {};
             class arsenalInitOverlay {};
+            class arsenalHash {};
+            class arsenalLedger {};
+            class arsenalStateInfo {};
+            class arsenalMarkSeen {};
             class sendIntel {};
             class initACE {};
             class initACEAthena {};
