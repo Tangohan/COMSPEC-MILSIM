@@ -61,37 +61,63 @@ class AdminRecruitmentsController
         if (!$tenantId) {
             return Response::redirect(url('login'));
         }
-        $statusFilter = $request->query('status');
+        $statusFilter = trim((string) $request->query('status', ''));
+        $statusFilter = in_array($statusFilter, ['submitted', 'reviewed', 'rejected', 'blocked', 'cancelled'], true) ? $statusFilter : null;
         $stageFilter = trim((string) $request->query('stage', ''));
         $stageFilterActive = in_array($stageFilter, ['interview_scheduled', 'on_hold'], true);
-        $enlistments = $stageFilterActive
-            ? $this->enlistmentRepository->allForTenant((int) $tenantId, 'submitted')
-            : $this->enlistmentRepository->allForTenant((int) $tenantId, $statusFilter ?: null);
         $enlistmentCounts = $this->enlistmentRepository->countsByStatusForTenant((int) $tenantId);
 
+        // Tous les dossiers sont chargés une fois : le tableau en colonnes et les filtres rapides
+        // portent sur l’ensemble, la vue liste applique ensuite le filtre de statut ou d’étape.
+        $allRows = $this->enlistmentRepository->allForTenant((int) $tenantId);
         $stageCounts = ['interview_scheduled' => 0, 'on_hold' => 0];
-        if (($enlistmentCounts['submitted'] ?? 0) > 0) {
-            $submittedRows = $stageFilterActive ? $enlistments : $this->enlistmentRepository->allForTenant((int) $tenantId, 'submitted');
-            foreach ($submittedRows as $sr) {
-                $stg = EnlistmentRepository::effectivePipelineStage($sr);
-                if (isset($stageCounts[$stg])) {
-                    $stageCounts[$stg]++;
-                }
+        foreach ($allRows as $sr) {
+            if ((string) ($sr['status'] ?? '') !== 'submitted') {
+                continue;
             }
-        }
-        if ($stageFilterActive) {
-            $enlistments = array_values(array_filter(
-                $enlistments,
-                static fn (array $row): bool => EnlistmentRepository::effectivePipelineStage($row) === $stageFilter
-            ));
+            $stg = EnlistmentRepository::effectivePipelineStage($sr);
+            if (isset($stageCounts[$stg])) {
+                $stageCounts[$stg]++;
+            }
         }
         $tenantSettings = $this->tenantRepository->getSettings((int) $tenantId);
         $slaHours = TenantRecruitmentSettings::enlistmentSlaHoursFromSettings($tenantSettings);
-        $enlistments = (new \App\Services\Recruitment\EnlistmentStaffRowEnricher())->enrich((int) $tenantId, $enlistments, $slaHours);
+        $allRows = (new \App\Services\Recruitment\EnlistmentStaffRowEnricher())->enrich((int) $tenantId, $allRows, $slaHours);
         $submittedOlderThanSla = count(array_filter(
-            $enlistments,
+            $allRows,
             static fn (array $row): bool => !empty($row['submitted_sla_breached'])
         ));
+
+        $query = [
+            'vue' => (string) $request->query('vue', ''),
+            'filtre' => (string) $request->query('filtre', ''),
+            'q' => (string) $request->query('q', ''),
+            'status' => (string) ($statusFilter ?? ''),
+            'stage' => $stageFilterActive ? $stageFilter : '',
+        ];
+        $pipelineView = \App\Support\EnlistmentPipelineBoard::view($query);
+        $rowsForView = $allRows;
+        if ($pipelineView === 'liste') {
+            if ($stageFilterActive) {
+                $rowsForView = array_values(array_filter(
+                    $allRows,
+                    static fn (array $row): bool => (string) ($row['status'] ?? '') === 'submitted'
+                        && EnlistmentRepository::effectivePipelineStage($row) === $stageFilter
+                ));
+            } elseif ($statusFilter !== null) {
+                $rowsForView = array_values(array_filter(
+                    $allRows,
+                    static fn (array $row): bool => (string) ($row['status'] ?? '') === $statusFilter
+                ));
+            }
+        }
+        $viewerUserId = (int) Session::get('user_id');
+        $pipelineVars = \App\Support\EnlistmentPipelineBoard::viewVars($rowsForView, $query, $viewerUserId, $slaHours);
+        // Compteurs des filtres rapides : toujours sur l’ensemble des dossiers, quelle que soit la vue.
+        $pipelineVars['pipelineCounts'] = \App\Support\EnlistmentPipelineBoard::counts(
+            \App\Support\EnlistmentNextAction::annotate($allRows, $slaHours, $viewerUserId),
+            $viewerUserId
+        );
         $retroTableReady = $this->recruitmentEngagementRepository->retroTableExists();
 
         $staffRetrosDueCount = 0;
@@ -113,7 +139,6 @@ class AdminRecruitmentsController
             'content' => 'admin.recruitments.index',
             'title' => 'Candidatures',
             'recruitmentLmsTitle' => 'File des candidatures',
-            'enlistments' => $enlistments,
             'statusFilter' => $statusFilter,
             'stageFilter' => $stageFilterActive ? $stageFilter : null,
             'stageCounts' => $stageCounts,
@@ -125,7 +150,7 @@ class AdminRecruitmentsController
             'staffRetrosDueFirstId' => $staffRetrosDueFirstId,
             'recruitmentAdminNav' => 'queue',
             'showPortalFooter' => false,
-        ]);
+        ] + $pipelineVars);
     }
 
     public function show(Request $request, array $params = []): Response
@@ -388,8 +413,12 @@ class AdminRecruitmentsController
         if ($returnTo === 'dossier') {
             return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
+        // Retour à la file dans la même vue (tableau / liste, filtre, recherche) : clés connues uniquement.
+        parse_str((string) $request->input('return_qs', ''), $returnQs);
+        $keep = array_intersect_key(is_array($returnQs) ? $returnQs : [], array_flip(['vue', 'filtre', 'q', 'status', 'stage']));
+        $keep = array_filter(array_map(static fn ($v): string => is_scalar($v) ? mb_substr((string) $v, 0, 80) : '', $keep), static fn (string $v): bool => $v !== '');
 
-        return Response::redirect(url('back-office/recruitments'));
+        return Response::redirect(url('back-office/recruitments') . ($keep !== [] ? '?' . http_build_query($keep) : ''));
     }
 
     public function recruiterPick(Request $request, array $params = []): Response

@@ -293,7 +293,22 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
-            $pr(758, '2026-10-18', 'Portail Athena 1.7.0 « Denver » : chaque version porte un nom de ville', 'Le portail passe en version 1.7.0 et s’appelle Denver. Désormais, chaque nouvelle version du site reçoit le nom d’une ville américaine, jamais réutilisé ; les correctifs gardent le nom de leur version. Toutes les versions jusqu’à 1.6 restent Phoenix, la prochaine sera Austin. La bannière « Production en ligne » affiche le nom de ville et les versions à jour de l’ATAK en jeu, de COMSPEC Link et d’Overwatch. Rechargez le portail (Ctrl+F5).', [
+            $pr(866, '2026-10-18', 'Bureau recrutement : la file se range par prochaine action', 'La file des candidatures devient un tableau en colonnes : À prendre, En instruction, Entretien, En attente, Intégration et Bilan 30 jours. Chaque carte dit ce qu’il faut faire, qui le porte et si c’est en retard, avec un bouton qui mène au bon endroit de la fiche. Des filtres rapides isolent vos dossiers, ceux sans recruteur et ceux en retard ; la liste complète reste disponible. La fiche candidat s’ouvre sur une barre de pilotage : frise des 4 étapes, prochaine action, référent et délai. Rechargez le portail (Ctrl+F5).', [
+                'Tableau en colonnes par prochaine action, trié du plus urgent au moins urgent',
+                'Filtres rapides « Mes dossiers », « Sans recruteur », « En retard » et recherche par nom, e-mail ou n° de dossier',
+                '« Me désigner » directement depuis une carte, sans quitter la file',
+                'Barre de pilotage en tête de la fiche candidat : étapes, prochaine action, référent, délai',
+            ], [
+                'Un entretien passé sans décision est signalé « Conclure l’entretien » au lieu de rester « dans les délais »',
+                'La liste complète gagne une colonne « Prochaine action »',
+                'Le délai d’alerte se règle depuis un menu compact en tête de file',
+            ], [
+                'Les candidatures acceptées en cours d’intégration s’affichaient « Statut à vérifier » dans la liste',
+                'Le récapitulatif de la fiche indiquait l’étape 2 sur 4 pour un dossier encore sans référent',
+            ], ['personnel'], [
+                'Ouvrez Bureau recrutement → File des dossiers : les dossiers sont rangés par colonne. Cliquez « Sans recruteur » puis « Me désigner » sur une carte : elle passe dans « En instruction » et dans « Mes dossiers ».',
+            ], 'Portail Athena'),
+            $pr(758,'2026-10-18', 'Portail Athena 1.7.0 « Denver » : chaque version porte un nom de ville', 'Le portail passe en version 1.7.0 et s’appelle Denver. Désormais, chaque nouvelle version du site reçoit le nom d’une ville américaine, jamais réutilisé ; les correctifs gardent le nom de leur version. Toutes les versions jusqu’à 1.6 restent Phoenix, la prochaine sera Austin. La bannière « Production en ligne » affiche le nom de ville et les versions à jour de l’ATAK en jeu, de COMSPEC Link et d’Overwatch. Rechargez le portail (Ctrl+F5).', [
                 'Nom de ville à côté du numéro de version du portail (Phoenix, Denver, puis Austin…)',
                 'Versions de COMSPEC ATAK et COMSPEC Link lues directement dans le mod, toujours à jour',
             ], [
