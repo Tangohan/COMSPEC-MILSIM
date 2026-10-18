@@ -725,3 +725,11 @@
   background: var(--doc-accent, #0f766e);
   cursor: pointer;
 }
+
+/* Lien affiché en visionneuse (Pages HTML « à partir d’un simple lien ») */
+.athena-embed { margin: 0 0 1.5rem; }
+.athena-embed__frame { position: relative; width: 100%; height: min(80vh, 820px); border: 1px solid rgba(148, 163, 184, .45); border-radius: 12px; overflow: hidden; background: #f1f5f9; }
+.athena-embed__frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.athena-embed__link { display: inline-block; margin-top: .6rem; font-weight: 700; }
+.athena-embed__link::after { content: " ↗"; }
+@media print { .athena-embed__frame { display: none; } }

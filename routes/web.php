@@ -980,6 +980,9 @@ return function (Router $router) {
     $router->post('/admin/system/demo-nda/remove-bypass', [SystemDemoNdaController::class, 'removeBypassIp'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/demo-nda/add-my-ip', [SystemDemoNdaController::class, 'addMyIp'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/demo-nda/reset-visit', [SystemDemoNdaController::class, 'resetVisit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/e-mails', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/e-mails/reglages', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/e-mails/recapitulatif', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'sendDigestNow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cron', [SystemCronController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cron/run', [SystemCronController::class, 'runNow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/retours-interface', [SystemUxFeedbackController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);

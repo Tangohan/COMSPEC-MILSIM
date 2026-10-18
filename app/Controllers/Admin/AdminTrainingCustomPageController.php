@@ -575,11 +575,18 @@ final class AdminTrainingCustomPageController
             return ['error' => $sectionsRes['error'], 'data' => []];
         }
         $body = HtmlContentSanitizer::sanitize((string) $request->input('html_body', ''));
+        $embedUrl = trim((string) $request->input('embed_url', ''));
+        if ($embedUrl !== '') {
+            if (!preg_match('#^https?://#i', $embedUrl) || filter_var($embedUrl, FILTER_VALIDATE_URL) === false) {
+                return ['error' => 'Le lien à afficher doit être une adresse web complète (https://…).', 'data' => []];
+            }
+            $body = TrainingFormationCustomPageRenderer::embedSnippet($embedUrl, (string) $request->input('embed_label', '')) . $body;
+        }
         if ($title === '' || $slug === '') {
             return ['error' => 'Titre et slug sont requis.', 'data' => []];
         }
         if ($structure === 'single' && trim($body) === '') {
-            return ['error' => 'Le corps HTML est requis en mode page unique.', 'data' => []];
+            return ['error' => 'Ajoutez un corps HTML ou un lien à afficher.', 'data' => []];
         }
 
         $readTime = $this->htmlPageService->estimateReadTimeMinutes($body, $sectionsRes['sections_json']);

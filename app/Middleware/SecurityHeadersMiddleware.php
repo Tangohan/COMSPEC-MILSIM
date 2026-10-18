@@ -15,6 +15,9 @@ use App\Core\Response;
  * la vue 3D reste un écran vide.
  *
  * deck.gl charge aussi des icônes SVG en data: via fetch() — connect-src doit autoriser data:.
+ *
+ * Les formations affichent des documents externes dans une visionneuse (Google Docs / Sheets / Slides,
+ * draw.io, YouTube, PDF…) : sans frame-src, le navigateur retombe sur default-src 'self' et le cadre reste vide.
  */
 final class SecurityHeadersMiddleware
 {
@@ -23,7 +26,7 @@ final class SecurityHeadersMiddleware
         . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
         . "img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; "
         . "connect-src 'self' data: https: wss:; media-src 'self' blob:; "
-        . "worker-src 'self' blob:";
+        . "worker-src 'self' blob:; frame-src 'self' https:";
 
     public function __invoke(Request $request, callable $next): Response
     {
@@ -38,6 +41,7 @@ final class SecurityHeadersMiddleware
         }
         $csp = self::ensureWorkerSrc($csp);
         $csp = self::ensureConnectSrcData($csp);
+        $csp = self::ensureFrameSrcHttps($csp);
         $response->header('Content-Security-Policy', $csp);
         $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || ((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
@@ -106,5 +110,35 @@ final class SecurityHeadersMiddleware
         }
 
         return rtrim($csp, '; ') . "; connect-src 'self' data: https: wss:";
+    }
+
+    /**
+     * Garantit https: dans frame-src (visionneuses de documents des formations).
+     * Si frame-src vaut déjà 'none', on ne touche pas.
+     */
+    public static function ensureFrameSrcHttps(string $csp): string
+    {
+        $csp = trim($csp);
+        if ($csp === '') {
+            return $csp;
+        }
+        if (preg_match('/(?:^|;)\s*frame-src\s+([^;]*)/i', $csp, $m) === 1) {
+            $value = trim((string) ($m[1] ?? ''));
+            if ($value === '' || preg_match("/^'none'$/i", $value) === 1 || preg_match('/(?:^|\s)https:(?:\s|$)/i', $value) === 1) {
+                return rtrim($csp, '; ');
+            }
+            $replaced = preg_replace_callback(
+                '/((?:^|;)\s*)frame-src\s+[^;]*/i',
+                static function (array $match) use ($value): string {
+                    return $match[1] . 'frame-src https: ' . $value;
+                },
+                $csp,
+                1
+            );
+
+            return rtrim((string) ($replaced ?? $csp), '; ');
+        }
+
+        return rtrim($csp, '; ') . "; frame-src 'self' https:";
     }
 }

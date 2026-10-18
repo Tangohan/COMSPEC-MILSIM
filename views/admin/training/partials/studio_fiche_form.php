@@ -67,6 +67,42 @@ $validityDaysField = $course['validity_days'] ?? null;
         </div>
     </section>
 
+    <?php
+    $curDeliveryMode = (string) ($course['delivery_mode'] ?? 'parcours');
+    if (!in_array($curDeliveryMode, ['parcours', 'url_redirect', 'url_viewer'], true)) {
+        $curDeliveryMode = 'parcours';
+    }
+    $deliveryChoices = [
+        'parcours' => ['Parcours', 'Modules, leçons et évaluations construits dans l’onglet Structure.'],
+        'url_redirect' => ['Lien direct', 'L’apprenant qui ouvre la formation est redirigé vers l’adresse indiquée (site, document, outil).'],
+        'url_viewer' => ['Visionneuse', 'L’adresse s’affiche dans Athena : Google Docs, Sheets, Slides, Drawings, draw.io, PDF, vidéo…'],
+    ];
+    ?>
+    <section id="studio-delivery" class="ts-fiche-block scroll-mt-28" data-studio-delivery>
+        <div class="ts-fiche-block__head">
+            <div>
+                <h2>Type de formation</h2>
+                <p>Un parcours complet, ou simplement un lien à ouvrir. Inscription, visibilité et suivi restent les mêmes.</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <?php foreach ($deliveryChoices as $dKey => [$dLabel, $dHint]): ?>
+            <label class="ts-delivery-card flex gap-3 items-start rounded-xl border border-slate-200 bg-white p-3 cursor-pointer has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/60">
+                <input type="radio" name="delivery_mode" value="<?= htmlspecialchars($dKey) ?>" class="mt-1" <?= $curDeliveryMode === $dKey ? 'checked' : '' ?>>
+                <span>
+                    <span class="block text-sm font-bold text-slate-900"><?= htmlspecialchars($dLabel) ?></span>
+                    <span class="block text-xs text-slate-600 mt-0.5"><?= htmlspecialchars($dHint) ?></span>
+                </span>
+            </label>
+            <?php endforeach; ?>
+        </div>
+        <div class="ts-field mt-4" data-studio-delivery-url>
+            <label for="fiche-delivery-url">Adresse à ouvrir</label>
+            <input id="fiche-delivery-url" type="text" name="delivery_url" inputmode="url" maxlength="1000" value="<?= htmlspecialchars((string) ($course['delivery_url'] ?? '')) ?>" placeholder="https://docs.google.com/…">
+            <p class="ts-field__hint">Obligatoire pour « Lien direct » et « Visionneuse ». Pour un document Google, partagez-le en lecture (« Tous les utilisateurs disposant du lien »). Ignorée pour un parcours.</p>
+        </div>
+    </section>
+
     <section class="ts-fiche-block">
         <div class="ts-fiche-block__head">
             <div>
