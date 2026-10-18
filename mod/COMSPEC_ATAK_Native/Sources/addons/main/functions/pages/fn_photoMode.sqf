@@ -1,8 +1,9 @@
 /*
     Mode photo : viseur plein écran, on se déplace comme à pied (arme rangée, téléphone tenu devant soi).
-    Marche (ZQSD / flèches, ou joueur encore en mouvement) : vue du joueur rendue au jeu, qui gère seul pas et
-    souris ; à l'arrêt, l'objectif du téléphone (dos du téléphone, zoom) reprend la main. Avec la caméra scriptée
-    active, le joueur restait planté (retour de TTRD, 18/10 : « on peut plus se déplacer »).
+    Sans zoom, vue du joueur gérée par le jeu (pas et souris) ; zoom (caméra scriptée) seulement à l'arrêt : se mettre
+    à marcher (ZQSD / flèches) le ramène à x1, sans retour automatique. Avec la caméra scriptée active même à x1, le
+    joueur restait planté (retour de TTRD, 18/10 : « on peut plus se déplacer »), et un zoom qui sautait à chaque
+    pas était pénible.
     Clic gauche : photo envoyée sur ATAK web (plusieurs possibles). R : selfie (téléphone à bout de bras, tourné vers soi,
     cadrage à la souris dans la limite du bras). Molette ou + / - : zoom numérique x1 à x8, visée à la souris pendant
     le zoom (caméra scriptée). F : flash AUTO / OUI / NON (AUTO : nuit ou intérieur très sombre).
@@ -132,13 +133,16 @@ switch (toUpper _mode) do {
         };
         private _selfie = _st getOrDefault ["selfie", false];
         private _zoom = _st getOrDefault ["zoom", 1];
-        // Marche (objectif arrière) : touche de déplacement tenue ou joueur pas encore arrêté. La vue revient au jeu
-        // (pas de caméra scriptée) le temps de marcher, le zoom reprend à l'arrêt ; un court délai évite le clignotement.
-        if (!_selfie && {
+        // Marche (objectif arrière) : une touche de déplacement ramène le zoom à x1 d'un coup (la vue revient au jeu,
+        // qui seul fait marcher le joueur) ; le zoom ne revient pas de lui-même à l'arrêt.
+        if (!_selfie && {_zoom > 1.01 || {abs ((_st getOrDefault ["fov", 0.75]) - 0.75) > 0.01}} && {
             ((["MoveForward", "MoveBack", "TurnLeft", "TurnRight", "MoveLeft", "MoveRight", "MoveFastForward", "MoveSlowForward", "EvasiveLeft", "EvasiveRight"] findIf { (inputAction _x) > 0 }) >= 0)
-            || {(vectorMagnitude (velocity player)) > 0.3}
-        }) then { _st set ["walkUntil", diag_tickTime + 0.35]; };
-        private _walk = !_selfie && {diag_tickTime < (_st getOrDefault ["walkUntil", 0])};
+        }) then {
+            _zoom = 1;
+            _st set ["zoom", 1];
+            _st set ["fov", 0.75];
+            ["HUD"] call comspec_atak_native_fnc_photoMode;
+        };
         private _eye = eyePos player;
         private _tPos = _eye;
         private _tDir = [0, 1, 0];
@@ -193,10 +197,9 @@ switch (toUpper _mode) do {
             if (_k >= 1) then { _st set ["tr0", -1]; };
         };
         private _cam = _st getOrDefault ["cam", objNull];
-        // Vue naturelle en marchant, ou sans zoom ni selfie : pas de caméra scriptée (à l'arrêt, sauf téléphone en
-        // main : il cacherait la vue).
-        private _natural = !_selfie && {_walk || {_rear isEqualTo [] && {_zoom < 1.01} && {_k >= 1} && {abs ((_st getOrDefault ["fov", 0.75]) - 0.75) < 0.01}}};
-        // Téléphone en main masqué pour soi seul en vue naturelle (les autres le voient toujours en main).
+        // Vue naturelle sans zoom ni selfie : pas de caméra scriptée, le joueur marche et tourne librement.
+        private _natural = !_selfie && {_zoom < 1.01} && {_k >= 1} && {abs ((_st getOrDefault ["fov", 0.75]) - 0.75) < 0.01};
+        // Téléphone en main masqué pour soi seul en vue naturelle (il cacherait la vue ; les autres le voient en main).
         private _ph = missionNamespace getVariable ["COMSPEC_ATAK_SelfiePhone", objNull];
         if (!isNull _ph && {(isObjectHidden _ph) isNotEqualTo _natural}) then { _ph hideObject _natural; };
         if (_natural) exitWith {
@@ -531,7 +534,6 @@ switch (toUpper _mode) do {
         [uiNamespace getVariable ["COMSPEC_ATAK_PhotoPFH", -1]] call CBA_fnc_removePerFrameHandler;
         private _ph = missionNamespace getVariable ["COMSPEC_ATAK_SelfiePhone", objNull];
         if (!isNull _ph) then { _ph hideObject false; };
-        _st set ["walkUntil", 0];
         // Bras baissé : le geste n'est plus relancé et se termine de lui-même ; une animation CfgMoves est rendue,
         // une fonction reçoit [joueur, "exit"] pour remettre sa pose à zéro.
         private _last = _st getOrDefault ["lastAnim", ""];
