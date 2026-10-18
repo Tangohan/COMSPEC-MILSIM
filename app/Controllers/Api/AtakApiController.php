@@ -66,6 +66,7 @@ use App\Repositories\AtakDeviceLogRepository;
 use App\Repositories\AtakRealismRepository;
 use App\Services\Tactical\MissionDisplaySettingsService;
 use App\Repositories\OperatorGameProfileRepository;
+use App\Services\GameEquipment\GameItemUsageRecorder;
 use App\Services\OperatorGame\OperatorGameObservationNormalizer;
 use App\Services\OperatorGame\OperatorGameReconciliationService;
 
@@ -223,6 +224,8 @@ class AtakApiController
     private ?AtakRealismRepository $realismRegistry = null;
     private ?OperatorGameProfileRepository $operatorGameProfiles = null;
 
+    private ?GameItemUsageRecorder $gameItemUsage = null;
+
     /** Register/sync is deliberately separate from the high-frequency position channel. */
     public function operatorRegister(Request $request, array $params = []): Response
     {
@@ -257,6 +260,8 @@ class AtakApiController
             $reference = [];
         }
         $profile = $repo->upsertProfile($tenantId, $reference, $steamId, $payload);
+        // Équipement porté et mods chargés (classements back-office, kits par rôle). Ne lève jamais.
+        ($this->gameItemUsage ??= new GameItemUsageRecorder())->record($tenantId, $steamId, $payload);
         if (!$linked) {
             if ($profile['first_seen']) {
                 $repo->event($tenantId, $profile['id'], $steamId, 'STEAM_ACCOUNT_NOT_FOUND', [

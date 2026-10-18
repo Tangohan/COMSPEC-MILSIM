@@ -5,6 +5,7 @@ $mineWardrobes = $mineWardrobes ?? [];
 $collections = $collections ?? [];
 $equipmentClasses = $equipmentClasses ?? [];
 $dotationItems = $dotationItems ?? [];
+$roleKits = is_array($roleKits ?? null) ? $roleKits : [];
 $canManageCatalog = !empty($canManageCatalog);
 $canManageDotation = !empty($canManageDotation);
 $equipmentKindLabels = is_array($equipmentKindLabels ?? null) ? $equipmentKindLabels : \App\Support\ArsenalLoadoutItems::kindLabels();
@@ -131,6 +132,29 @@ $mineCatalog = array_map(static function (array $w): array {
         <?php if ($migrationMissing): ?>
         <p class="eq-hub__empty">Cette page n’est pas encore prête sur cette instance. Demandez à l’administration d’appliquer la mise à jour, puis rechargez.</p>
         <?php else: ?>
+
+        <?php if ($roleKits !== []): ?>
+        <section class="eq-rolekits" aria-labelledby="eq-rolekits-heading">
+            <div class="eq-hub__section-head">
+                <h2 id="eq-rolekits-heading">Kits proposés pour mon rôle</h2>
+            </div>
+            <ul class="eq-rolekits__list">
+                <?php foreach ($roleKits as $rk): ?>
+                <?php $rkUrl = !empty($rk['wardrobe_id']) ? url('equipment/tenues/' . (int) $rk['wardrobe_id']) : ''; ?>
+                <li>
+                    <<?= $rkUrl !== '' ? 'a href="' . $h($rkUrl) . '"' : 'div' ?> class="eq-rolekits__card">
+                        <span class="eq-rolekits__role" translate="no"><?= $h((string) ($rk['role_name'] ?? '') !== '' ? (string) $rk['role_name'] : 'Tous les rôles') ?></span>
+                        <span class="eq-rolekits__name" translate="no"><?= $h((string) ($rk['name'] ?? '')) ?></span>
+                        <?php if (trim((string) ($rk['description'] ?? '')) !== ''): ?>
+                        <span class="eq-rolekits__mods"><?= $h(mb_strimwidth((string) $rk['description'], 0, 140, '…')) ?></span>
+                        <?php endif; ?>
+                        <span class="eq-rolekits__mods">Mods requis : <?= ($rk['required_mods'] ?? []) === [] ? 'aucun' : '<span translate="no">' . $h(implode(', ', (array) $rk['required_mods'])) . '</span>' ?></span>
+                    </<?= $rkUrl !== '' ? 'a' : 'div' ?>>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+        </section>
+        <?php endif; ?>
 
         <section class="eq-hub__collections" aria-labelledby="eq-collections-heading">
             <div class="eq-hub__section-head">
