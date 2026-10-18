@@ -23,6 +23,12 @@ Webhook : secret DISCORD_RELEASES_WEBHOOK. Sans webhook, n'envoie rien.
 Une PR est ignorée si elle porte le label « discord:skip » ou si son titre
 contient « [skip discord] ».
 
+Une seule annonce par version (voir already_announced) :
+  - une PR que GitHub marque « fusionnée » parce que ses commits sont arrivés
+    dans main par un regroupement n'annonce rien : le regroupement s'en charge ;
+  - une entrée de CHANGELOG-ATAK.md qui existait déjà avant la fusion n'est pas
+    reprise (une PR de suivi qui cite la même version ne la reposte pas).
+
 Aperçu local d'une carte :
   python3 .github/scripts/discord_changelog.py --preview 1.72.0
 Test d'un événement :
@@ -36,6 +42,7 @@ import datetime
 import json
 import os
 import re
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -211,17 +218,18 @@ def card(summary: dict, heading: str, when: str | None) -> dict:
     return {"username": "COMSPEC Releases", "embeds": [embed], "allowed_mentions": {"parse": []}}
 
 
-def find_summary(title: str, body: str) -> tuple[dict, str] | None:
+def find_summary(title: str, body: str) -> tuple[dict, str, bool] | None:
+    """(résumé, titre, vient du journal) ; le dernier est faux pour la description de la PR."""
     entry = changelog_entry(VERSION_RE.findall(title))
     if entry:
         block = summary_block(entry[1])
         parsed = parse_summary(block) if block else None
         if parsed:
-            return parsed, entry[0]
+            return parsed, entry[0], True
     block = summary_block(body)
     parsed = parse_summary(block) if block else None
     if parsed:
-        return parsed, title
+        return parsed, title, False
     return None
 
 
@@ -235,6 +243,46 @@ def warn_jargon(summary: dict) -> None:
             print(f"::warning::Résumé joueur ({lang}) : termes techniques à reformuler : {', '.join(sorted(set(hits)))}")
 
 
+# --------------------------------------------------------------------------
+# Une seule annonce par version
+# --------------------------------------------------------------------------
+def git(*args: str) -> str | None:
+    try:
+        out = subprocess.run(["git", "-C", ROOT, *args], capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return out.stdout if out.returncode == 0 else None
+
+
+def merged_into_main(sha: str, branch: str = "main") -> bool | None:
+    """Vrai si sha est un commit de main lui-même (fusion ou squash), faux s'il n'y est
+    arrivé qu'à l'intérieur d'un regroupement. None si l'historique est illisible."""
+    chain = git("rev-list", "--first-parent", "-n", "200", f"origin/{branch}") or git(
+        "rev-list", "--first-parent", "-n", "200", "HEAD")
+    if not chain:
+        return None
+    return sha in chain.split()
+
+
+def file_at(sha: str) -> str | None:
+    return git("show", f"{sha}:CHANGELOG-ATAK.md")
+
+
+def entry_heading_in(text: str | None, heading: str) -> bool:
+    return bool(text) and re.search(rf"^## {re.escape(heading)}\s*$", text, re.M) is not None
+
+
+def already_announced(pr: dict) -> str | None:
+    """Raison de ne pas annoncer cette PR, ou None."""
+    sha = pr.get("merge_commit_sha") or ""
+    if not sha:
+        return None
+    on_main = merged_into_main(sha, (pr.get("base") or {}).get("ref") or "main")
+    if on_main is False:
+        return "PR arrivée dans main par un regroupement : l'annonce part avec le regroupement."
+    return None
+
+
 def build(event_name: str, payload: dict) -> dict | None:
     if event_name == "pull_request":
         pr = payload.get("pull_request") or {}
@@ -246,6 +294,11 @@ def build(event_name: str, payload: dict) -> dict | None:
             return None
         body = pr.get("body") or ""
         when = pr.get("merged_at")
+        reason = already_announced(pr)
+        if reason:
+            print(f"::notice::{reason}")
+            return None
+        merge_sha = pr.get("merge_commit_sha") or ""
     elif event_name == "release":
         rel = payload.get("release") or {}
         if rel.get("draft") or rel.get("prerelease"):
@@ -253,6 +306,7 @@ def build(event_name: str, payload: dict) -> dict | None:
         title = (rel.get("name") or rel.get("tag_name") or "").strip()
         body = rel.get("body") or ""
         when = rel.get("published_at")
+        merge_sha = ""
     else:
         return None
 
@@ -260,7 +314,10 @@ def build(event_name: str, payload: dict) -> dict | None:
     if not found:
         print("::notice::Pas de « Résumé joueur » pour cette version (CHANGELOG-ATAK.md ou description) : rien n'est posté sur Discord.")
         return None
-    summary, heading = found
+    summary, heading, from_changelog = found
+    if merge_sha and from_changelog and entry_heading_in(file_at(f"{merge_sha}^1"), heading):
+        print(f"::notice::L'entrée « {heading} » existait déjà avant cette fusion : déjà annoncée, rien n'est reposté.")
+        return None
     warn_jargon(summary)
     return card(summary, heading, when)
 

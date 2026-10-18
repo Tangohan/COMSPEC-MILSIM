@@ -125,1181 +125,1398 @@ foreach ($military as $sec) {
         break;
     }
 }
-$profileChecklist = [
-    'Profil' => [
-        'Nom de communauté' => trim((string) ($tenant['name'] ?? '')) !== '',
-        'Bio courte du hero' => trim((string) ($c['public_hero_subtitle'] ?? '')) !== '' || trim((string) ($c['simple_body'] ?? '')) !== '',
-        'Présentation “Qui sommes-nous ?”' => trim((string) ($c['public_about_body'] ?? '')) !== '' || trim((string) ($c['simple_body'] ?? '')) !== '' || $hasMilitaryContent,
-        'Attentes recrutement' => trim((string) ($c['expectations'] ?? '')) !== '',
-        'Prérequis (page publique)' => $prereqRows !== [] && trim((string) ($prereqRows[0]['label'] ?? '')) !== '',
-        'Étapes de recrutement' => $stepRows !== [] && trim((string) ($stepRows[0]['title'] ?? '')) !== '',
-        'Code communauté' => trim((string) ($tenant['community_code'] ?? '')) !== '',
-        'Meta description SEO' => trim((string) ($c['public_meta_description'] ?? '')) !== '',
-        'Accroche registre' => trim((string) ($c['registry_tagline'] ?? '')) !== '' || trim((string) ($c['public_hero_subtitle'] ?? '')) !== '',
-    ],
-    'Visuel' => [
-        'Image registre' => $registryCoverUrl !== null && trim((string) $registryCoverUrl) !== '',
-        'Badges registre / style de jeu' => $selectedBadges !== [] || $selectedRegistryTags !== [],
-        'Doctrine / accès' => trim((string) ($c['public_doctrine'] ?? '')) !== '' || trim((string) ($c['public_access_label'] ?? '')) !== '',
-        'Alerte / créneaux vitrine' => trim((string) ($c['public_highlight_body'] ?? '')) !== '' || trim((string) ($c['public_schedule_body'] ?? '')) !== '',
-    ],
-    'Liens' => [
-        'Canal Discord' => trim((string) ($c['contact_discord_url'] ?? '')) !== '',
-        'E-mail de contact' => trim((string) ($c['contact_email'] ?? '')) !== '',
-        'Formulaire contact public' => !empty($c['contact_form_enabled']),
-        'Site / YouTube / TeamSpeak' => trim((string) ($c['public_social_website'] ?? '')) !== ''
-            || trim((string) ($c['public_social_youtube'] ?? '')) !== ''
-            || trim((string) ($c['public_social_teamspeak'] ?? '')) !== '',
-    ],
-    'Événements' => [
-        'Module événements activé (vitrine)' => !empty($pm['events']),
-        'Mission publique renseignée' => trim((string) ($c['public_mission'] ?? '')) !== '',
-    ],
+$h = static fn (string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+$cv = static fn (string $key): string => htmlspecialchars((string) ($c[$key] ?? ''), ENT_QUOTES, 'UTF-8');
+$slugHint = trim((string) ($tenant['slug'] ?? ''));
+$publicPageUrl = $slugHint !== '' ? url('c/' . rawurlencode($slugHint)) : '';
+$settingsUrl = url('back-office/community');
+
+/**
+ * Interrupteur lisible. $withHidden = false pour les cases qui n’envoyaient
+ * pas de valeur « 0 » (modules) : les données reçues restent identiques.
+ */
+$renderSwitch = static function (
+    string $name,
+    bool $checked,
+    string $title,
+    string $help,
+    string $effectOn = '',
+    string $effectOff = '',
+    bool $withHidden = true,
+    string $id = '',
+) use ($h): void {
+    ?>
+    <label class="bcs-switch"<?= $id !== '' ? ' id="' . $h($id) . '"' : '' ?>>
+        <?php if ($withHidden): ?><input type="hidden" name="<?= $h($name) ?>" value="0"><?php endif; ?>
+        <input type="checkbox" class="bcs-switch__input" name="<?= $h($name) ?>" value="1" <?= $checked ? 'checked' : '' ?>>
+        <span class="bcs-switch__track" aria-hidden="true"></span>
+        <span class="bcs-switch__copy">
+            <span class="bcs-switch__title"><?= $h($title) ?></span>
+            <?php if ($help !== ''): ?><span class="bcs-switch__help"><?= $h($help) ?></span><?php endif; ?>
+            <?php if ($effectOn !== ''): ?><span class="bcs-switch__effect bcs-switch__effect--on"><strong>Activé :</strong> <span><?= $h($effectOn) ?></span></span><?php endif; ?>
+            <?php if ($effectOff !== ''): ?><span class="bcs-switch__effect bcs-switch__effect--off"><strong>Désactivé :</strong> <span><?= $h($effectOff) ?></span></span><?php endif; ?>
+        </span>
+    </label>
+    <?php
+};
+
+$renderWhere = static function (array $places) use ($h): void {
+    ?>
+    <p class="bcs-where">
+        <span class="bcs-where__label">Où ça apparaît ?</span>
+        <?php foreach ($places as $place): ?><span class="bcs-chip"><?= $h((string) $place) ?></span><?php endforeach; ?>
+    </p>
+    <?php
+};
+
+/** En-tête de carte : titre, explication, emplacement. */
+$cardHead = static function (string $title, string $desc, array $where = []) use ($h, $renderWhere): void {
+    ?>
+    <div class="bcs-card__head">
+        <div class="bcs-card__heading">
+            <h3 class="bcs-card__title"><?= $h($title) ?></h3>
+            <?php if ($desc !== ''): ?><p class="bcs-card__desc"><?= $desc ?></p><?php endif; ?>
+            <?php if ($where !== []): ?><div class="bcs-card__where"><?php $renderWhere($where); ?></div><?php endif; ?>
+        </div>
+    </div>
+    <?php
+};
+
+/* ---------- Complétion du profil public : priorités et liens ---------- */
+$hasSocial = trim((string) ($c['public_social_website'] ?? '')) !== ''
+    || trim((string) ($c['public_social_youtube'] ?? '')) !== ''
+    || trim((string) ($c['public_social_teamspeak'] ?? '')) !== '';
+$profileItems = [
+    ['label' => 'Bio courte du bandeau', 'where' => 'Page publique', 'done' => trim((string) ($c['public_hero_subtitle'] ?? '')) !== '' || trim((string) ($c['simple_body'] ?? '')) !== '', 'href' => '#f-hero-subtitle'],
+    ['label' => 'Texte « Qui sommes-nous ? »', 'where' => 'Page publique', 'done' => trim((string) ($c['public_about_body'] ?? '')) !== '' || trim((string) ($c['simple_body'] ?? '')) !== '' || $hasMilitaryContent, 'href' => '#f-about-body'],
+    ['label' => 'Image d’en-tête du registre', 'where' => 'Registre des unités', 'done' => $registryCoverUrl !== null && trim((string) $registryCoverUrl) !== '', 'href' => '#f-registry-cover'],
+    ['label' => 'Lien Discord', 'where' => 'Contact', 'done' => trim((string) ($c['contact_discord_url'] ?? '')) !== '', 'href' => '#f-contact-discord'],
+    ['label' => 'Étapes de recrutement', 'where' => 'Page publique', 'done' => $stepRows !== [] && trim((string) ($stepRows[0]['title'] ?? '')) !== '', 'href' => '#cp-steps'],
+    ['label' => 'Prérequis pour candidater', 'where' => 'Page publique', 'done' => $prereqRows !== [] && trim((string) ($prereqRows[0]['label'] ?? '')) !== '', 'href' => '#cp-prereq'],
+    ['label' => 'Accroche du registre', 'where' => 'Registre des unités', 'done' => trim((string) ($c['registry_tagline'] ?? '')) !== '' || trim((string) ($c['public_hero_subtitle'] ?? '')) !== '', 'href' => '#f-registry-tagline'],
+    ['label' => 'E-mail de contact', 'where' => 'Contact', 'done' => trim((string) ($c['contact_email'] ?? '')) !== '', 'href' => '#f-contact-email'],
+    ['label' => 'Code pour rejoindre', 'where' => 'Paramètres · Identité', 'done' => trim((string) ($tenant['community_code'] ?? '')) !== '', 'href' => $settingsUrl . '?onglet=identite#community_code'],
+    ['label' => 'Description pour Google et les partages', 'where' => 'Référencement', 'done' => trim((string) ($c['public_meta_description'] ?? '')) !== '', 'href' => '#f-meta-description'],
+    ['label' => 'Style de jeu ou pastilles', 'where' => 'Registre des unités', 'done' => $selectedBadges !== [] || $selectedRegistryTags !== [], 'href' => '#f-registry-tags'],
+    ['label' => 'Mission publique', 'where' => 'Page publique', 'done' => trim((string) ($c['public_mission'] ?? '')) !== '', 'href' => '#f-mission'],
+    ['label' => 'Attentes envers les joueurs', 'where' => 'Page publique', 'done' => trim((string) ($c['expectations'] ?? '')) !== '', 'href' => '#f-expectations'],
+    ['label' => 'Doctrine ou type d’accès', 'where' => 'Page publique', 'done' => trim((string) ($c['public_doctrine'] ?? '')) !== '' || trim((string) ($c['public_access_label'] ?? '')) !== '', 'href' => '#f-doctrine'],
+    ['label' => 'Alerte ou créneaux de jeu', 'where' => 'Page publique', 'done' => trim((string) ($c['public_highlight_body'] ?? '')) !== '' || trim((string) ($c['public_schedule_body'] ?? '')) !== '', 'href' => '#cp-alert'],
+    ['label' => 'Site, YouTube ou TeamSpeak', 'where' => 'Page publique', 'done' => $hasSocial, 'href' => '#cp-social'],
+    ['label' => 'Formulaire « Nous écrire »', 'where' => 'Contact', 'done' => !empty($c['contact_form_enabled']), 'href' => '#f-contact-form'],
+    ['label' => 'Bloc Événements affiché', 'where' => 'Page publique', 'done' => !empty($pm['events']), 'href' => '#cp-modules'],
+    ['label' => 'Nom de la communauté', 'where' => 'Paramètres · Identité', 'done' => trim((string) ($tenant['name'] ?? '')) !== '', 'href' => $settingsUrl . '?onglet=identite#tenant_name'],
 ];
-$profileChecklistDone = 0;
-foreach ($profileChecklist as $groupItems) {
-    foreach ($groupItems as $isDone) {
-        if ($isDone) {
-            $profileChecklistDone++;
-        }
-    }
-}
-$profileChecklistTotal = 0;
-foreach ($profileChecklist as $groupItems) {
-    $profileChecklistTotal += count($groupItems);
-}
+$profileChecklistTotal = count($profileItems);
+$profileChecklistDone = count(array_filter($profileItems, static fn (array $it): bool => (bool) $it['done']));
 $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChecklistDone / $profileChecklistTotal) * 100) : 0;
+$profileMissing = array_values(array_filter($profileItems, static fn (array $it): bool => !$it['done']));
+$profileTop = array_slice($profileMissing, 0, 4);
+$profileRestMissing = array_slice($profileMissing, 4);
+$profileDoneItems = array_values(array_filter($profileItems, static fn (array $it): bool => (bool) $it['done']));
+
+$renderTodo = static function (array $it) use ($h): void {
+    $external = !str_starts_with((string) $it['href'], '#');
+    ?>
+    <li class="bcs-todo__item<?= $it['done'] ? ' is-done' : '' ?>">
+        <a class="bcs-todo__link" href="<?= $h((string) $it['href']) ?>"<?= $external ? '' : ' data-cp-goto' ?>>
+            <span><span class="bcs-todo__label"><?= $h((string) $it['label']) ?></span><span class="bcs-todo__where"><?= $h((string) $it['where']) ?></span></span>
+        </a>
+    </li>
+    <?php
+};
+
+$cpPanels = [
+    'visibilite' => ['Visibilité & registre', 'Annuaire, image, forum'],
+    'vitrine' => ['Page publique', 'Bandeau, sections, recrutement'],
+    'textes' => ['Présentation & contact', 'Texte libre, attentes, contact'],
+    'profil' => ['Jeu & inscription', 'Type de candidature, mods, style'],
+    'candidature' => ['Formulaire de candidature', 'Questions et textes du dossier'],
+    'portail' => ['Menus du portail', 'Opérations et Ressources'],
+];
+$cpNum = 0;
 ?>
-<div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 lg:py-12">
-    <header class="mb-6 lg:mb-8">
-        <h1 class="text-2xl lg:text-3xl font-black text-slate-900 mb-2">Fiche registre &amp; contact</h1>
-        <p class="text-slate-600 text-sm max-w-3xl">Ce que vous saisissez ici alimente la <strong class="font-semibold text-slate-800">page publique de votre communauté</strong> et, si vous le souhaitez, votre <a href="<?= htmlspecialchars(url('communities')) ?>" class="text-emerald-700 font-semibold underline decoration-emerald-200 hover:decoration-emerald-600">carte dans le registre des unités</a>.</p>
-        <p class="text-slate-500 text-xs mt-2"><a href="<?= htmlspecialchars(url('back-office/community')) ?>" class="underline hover:text-slate-800">← Identité &amp; code rejoindre</a></p>
-    </header>
+<div class="bcs cp-presentation" data-cp-root>
+<div class="bcs-layout">
 
-    <section class="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 shadow-sm">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-                <p class="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-700">Complétion profil public</p>
-                <h2 class="mt-1 text-lg font-black tracking-tight text-slate-900"><?= $profileChecklistDone ?>/<?= $profileChecklistTotal ?> éléments renseignés</h2>
-                <p class="mt-1 text-sm text-slate-600">Recommandations automatiques pour améliorer la conversion visiteur → candidat/membre.</p>
+    <aside class="bcs-aside" aria-label="Navigation de la page">
+        <section class="bcs-box bcs-progress" aria-labelledby="cp-progress-title">
+            <p class="bcs-box__title" id="cp-progress-title">Profil public complété</p>
+            <div class="bcs-progress__head">
+                <span class="bcs-progress__value"><?= $profileChecklistPercent ?>&nbsp;%</span>
+                <span class="bcs-progress__count"><?= $profileChecklistDone ?> sur <?= $profileChecklistTotal ?> éléments</span>
             </div>
-            <span class="inline-flex items-center rounded-full border border-emerald-300 bg-white px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-emerald-800"><?= $profileChecklistPercent ?>%</span>
-        </div>
-        <div class="mt-4 grid gap-3 lg:grid-cols-2">
-            <?php foreach ($profileChecklist as $groupLabel => $items): ?>
-                <?php
-                $groupDone = 0;
-                foreach ($items as $itemOk) {
-                    if ($itemOk) {
-                        $groupDone++;
-                    }
-                }
-                ?>
-                <div class="rounded-xl border border-emerald-100 bg-white p-3">
-                    <p class="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-800"><?= htmlspecialchars($groupLabel) ?> · <?= $groupDone ?>/<?= count($items) ?></p>
-                    <ul class="mt-2 space-y-1.5">
-                        <?php foreach ($items as $label => $isDone): ?>
-                            <li class="flex items-center gap-2 rounded-lg border <?= $isDone ? 'border-emerald-200 bg-emerald-50/50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-900' ?> px-2.5 py-1.5 text-xs">
-                                <span aria-hidden="true"><?= $isDone ? '✅' : '⚠️' ?></span>
-                                <span><?= htmlspecialchars($label) ?></span>
-                            </li>
-                        <?php endforeach; ?>
+            <div class="bcs-progress__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<?= $profileChecklistPercent ?>" aria-label="Complétion du profil public">
+                <div class="bcs-progress__fill" style="width: <?= max(2, $profileChecklistPercent) ?>%"></div>
+            </div>
+            <?php if ($profileTop !== []): ?>
+                <p class="bcs-progress__lead">À compléter en priorité</p>
+                <ul class="bcs-todo">
+                    <?php foreach ($profileTop as $it) { $renderTodo($it); } ?>
+                </ul>
+                <?php if ($profileRestMissing !== [] || $profileDoneItems !== []): ?>
+                <details class="bcs-more">
+                    <summary>Voir tout (<?= $profileChecklistTotal ?>)</summary>
+                    <ul class="bcs-todo">
+                        <?php foreach ($profileRestMissing as $it) { $renderTodo($it); } ?>
+                        <?php foreach ($profileDoneItems as $it) { $renderTodo($it); } ?>
                     </ul>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    </section>
-
-    <nav class="cp-presentation-tabs sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-8 border-y border-slate-200/90 bg-slate-50/95 backdrop-blur-md shadow-sm" aria-label="Parties de la fiche">
-        <p class="text-[0.65rem] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 lg:hidden">Navigation</p>
-        <div class="flex flex-wrap gap-2" role="tablist">
-            <button type="button" role="tab" data-cp-tab="visibilite" aria-selected="true" class="cp-tab-btn inline-flex items-center rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">Registre &amp; accès</button>
-            <button type="button" role="tab" data-cp-tab="vitrine" aria-selected="false" class="cp-tab-btn inline-flex items-center rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">Page publique</button>
-            <button type="button" role="tab" data-cp-tab="profil" aria-selected="false" class="cp-tab-btn inline-flex items-center rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">Inscription &amp; profil jeu</button>
-            <button type="button" role="tab" data-cp-tab="textes" aria-selected="false" class="cp-tab-btn inline-flex items-center rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">Textes &amp; contact</button>
-            <button type="button" role="tab" data-cp-tab="candidature" aria-selected="false" class="cp-tab-btn inline-flex items-center rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40">Formulaire candidature</button>
-        </div>
-    </nav>
-
-    <form id="community-presentation-form" method="post" enctype="multipart/form-data" action="<?= htmlspecialchars(url('back-office/community/presentation')) ?>" class="pb-28">
-        <?= \App\Core\Csrf::field() ?>
-
-        <div class="cp-panel space-y-8 lg:space-y-10" data-cp-panel="visibilite" id="cp-panel-visibilite">
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-            <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Visibilité</h2>
-            <label class="flex items-start gap-3 cursor-pointer">
-                <input type="hidden" name="registry_listed" value="0">
-                <input type="checkbox" name="registry_listed" value="1" class="mt-1" <?= (!array_key_exists('registry_listed', $c) || !empty($c['registry_listed'])) ? 'checked' : '' ?>>
-                <span class="text-sm text-slate-700">Faire apparaître notre communauté dans la liste publique du registre des unités</span>
-            </label>
-            <label class="flex items-start gap-3 cursor-pointer">
-                <input type="hidden" name="forum_members_only" value="0">
-                <input type="checkbox" name="forum_members_only" value="1" class="mt-1" <?= !empty($c['forum_members_only']) ? 'checked' : '' ?>>
-                <span class="text-sm text-slate-700">Forum réservé aux membres (masquer le bouton « Accéder au forum » pour les visiteurs non membres)</span>
-            </label>
-            <?php $slugHint = trim((string) ($tenant['slug'] ?? '')); ?>
-            <div class="rounded-xl border border-slate-200 bg-slate-50/90 px-4 py-4 text-sm text-slate-700 space-y-4">
-                <div>
-                    <p class="font-semibold text-slate-900">Image d’en-tête sur la carte du registre (facultatif)</p>
-                    <p class="mt-1 text-xs text-slate-600 leading-relaxed">
-                        Une photo <strong class="font-semibold text-slate-800">paysage</strong> (type bandeau) donne le meilleur rendu sur la carte du registre des unités.
-                        Formats acceptés : JPG, PNG ou WebP — jusqu’à 3&nbsp;Mo.
-                        <?php if ($slugHint === ''): ?>
-                        Définissez d’abord l’identifiant public de votre communauté dans
-                        <a class="font-semibold text-emerald-700 underline" href="<?= htmlspecialchars(url('back-office/community'), ENT_QUOTES, 'UTF-8') ?>">Identité &amp; code rejoindre</a>
-                        pour activer l’envoi.
-                        <?php endif; ?>
-                    </p>
-                </div>
-                <?php if ($registryCoverUrl): ?>
-                <div class="rounded-lg border border-slate-200 bg-white p-2 overflow-hidden">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Aperçu actuel</p>
-                    <img src="<?= htmlspecialchars($registryCoverUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" class="w-full max-h-40 object-cover rounded-md">
-                </div>
+                </details>
                 <?php endif; ?>
-                <div class="space-y-2">
-                    <label for="registry_cover" class="block text-xs font-bold text-slate-700">Choisir une image</label>
-                    <input type="file" name="registry_cover" id="registry_cover" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-                           class="block w-full max-w-md text-xs text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-700 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-emerald-800 disabled:opacity-50 disabled:pointer-events-none"
-                           <?= $slugHint === '' ? 'disabled aria-disabled="true" title="Identifiant public requis"' : '' ?>>
-                </div>
-                <?php if ($registryCoverUrl): ?>
-                <label class="flex items-start gap-3 cursor-pointer text-xs text-slate-700">
-                    <input type="hidden" name="remove_registry_cover" value="0">
-                    <input type="checkbox" name="remove_registry_cover" value="1" class="mt-0.5">
-                    <span>Retirer l’image et revenir au fond coloré automatique sur la carte du registre</span>
-                </label>
-                <?php endif; ?>
-            </div>
+            <?php else: ?>
+                <p class="bcs-progress__done">Tout est renseigné : votre page publique est complète.</p>
+            <?php endif; ?>
         </section>
 
-        <section class="rounded-2xl border border-sky-100 bg-sky-50/40 p-6 shadow-sm space-y-5">
-            <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Navigation portail — Opérations &amp; Ressources</h2>
-            <p class="text-xs text-slate-600">Personnalisez les sous-menus (style visuel), l’accent couleur et les images du panneau latéral pour rendre la navigation plus vivante.</p>
+        <nav class="bcs-box bcs-nav" aria-label="Parties de la fiche">
+            <p class="bcs-box__title">Parties de la page</p>
+            <div class="bcs-nav__list cp-presentation-tabs" role="tablist" aria-orientation="vertical">
+                <?php foreach ($cpPanels as $pKey => [$pLabel, $pDesc]): $cpNum++; ?>
+                <div class="bcs-nav__group">
+                    <button type="button" role="tab" class="bcs-nav__item<?= $pKey === 'visibilite' ? ' is-active' : '' ?>" data-cp-tab="<?= $h($pKey) ?>" aria-selected="<?= $pKey === 'visibilite' ? 'true' : 'false' ?>" aria-controls="cp-panel-<?= $h($pKey) ?>">
+                        <span class="bcs-nav__num" aria-hidden="true"><?= $cpNum ?></span>
+                        <span class="bcs-nav__label"><?= $h($pLabel) ?></span>
+                        <span class="bcs-nav__desc"><?= $h($pDesc) ?></span>
+                    </button>
+                    <ul class="bcs-nav__sub" data-cp-sub="<?= $h($pKey) ?>"<?= $pKey === 'visibilite' ? '' : ' hidden' ?>></ul>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </nav>
+
+        <div class="bcs-box bcs-aside__extra">
+            <div class="bcs-box__actions" style="margin-top:0;">
+                <?php if ($publicPageUrl !== ''): ?>
+                    <a class="bcs-btn bcs-btn--block" href="<?= $h($publicPageUrl) ?>" target="_blank" rel="noopener">Voir la page publique ↗</a>
+                <?php endif; ?>
+                <a class="bcs-btn bcs-btn--block" href="<?= $h(url('communities')) ?>" target="_blank" rel="noopener">Voir le registre des unités ↗</a>
+                <a class="bcs-btn bcs-btn--block" href="<?= $h($settingsUrl) ?>">Paramètres de la communauté</a>
+            </div>
+        </div>
+    </aside>
+
+    <div class="bcs-main">
+    <form id="community-presentation-form" method="post" enctype="multipart/form-data" action="<?= $h(url('back-office/community/presentation')) ?>" class="bcs-panel">
+        <?= \App\Core\Csrf::field() ?>
+
+        <!-- 1. Visibilité & registre -->
+        <div class="bcs-panel" data-cp-panel="visibilite" id="cp-panel-visibilite" role="tabpanel">
+            <header class="bcs-intro">
+                <p class="bcs-intro__kicker">Partie 1 · Visibilité &amp; registre</p>
+                <h2 class="bcs-intro__title">Qui peut vous trouver ?</h2>
+                <p class="bcs-intro__text">Le <strong>registre des unités</strong> est l’annuaire public d’Athena : chaque communauté listée y a une carte (image, accroche, pastilles) qui mène à sa <strong>page publique</strong>. Choisissez ici si vous y figurez et ce que voit un visiteur non connecté.</p>
+                <div class="bcs-intro__foot">
+                    <?php $renderWhere(['Registre des unités', 'Page publique']); ?>
+                    <a class="bcs-link" href="<?= $h(url('communities')) ?>" target="_blank" rel="noopener">Voir le registre ↗</a>
+                </div>
+            </header>
+
+            <section class="bcs-card" id="visibilite">
+                <?php $cardHead('Visibilité', 'Trois réglages, avec leur effet concret.', ['Registre des unités', 'Page publique']); ?>
+                <div class="bcs-card__body">
+                    <?php $renderSwitch(
+                        'registry_listed',
+                        !array_key_exists('registry_listed', $c) || !empty($c['registry_listed']),
+                        'Apparaître dans le registre public des unités',
+                        'Le meilleur moyen d’être découvert par des joueurs qui cherchent une unité.',
+                        'votre carte est visible dans l’annuaire et mène à votre page publique.',
+                        'vous n’êtes pas dans l’annuaire. Votre page publique reste accessible à qui possède le lien.'
+                    ); ?>
+                    <?php $renderSwitch(
+                        'registry_featured',
+                        !empty($c['registry_featured']),
+                        'Mettre en avant dans le registre',
+                        'Ajoute un badge sur votre carte et la place parmi les premières.',
+                        'votre carte porte un badge « mise en avant » et remonte dans la liste.',
+                        'votre carte est classée normalement.'
+                    ); ?>
+                    <?php $renderSwitch(
+                        'forum_members_only',
+                        !empty($c['forum_members_only']),
+                        'Réserver le forum aux membres',
+                        'Concerne le bouton « Accéder au forum » de votre page publique.',
+                        'les visiteurs non membres ne voient pas le bouton du forum.',
+                        'tout visiteur peut ouvrir et lire le forum depuis votre page publique.'
+                    ); ?>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="carte-registre">
+                <?php $cardHead('Votre carte dans le registre', 'Ce qu’un joueur voit en parcourant l’annuaire, avant même de cliquer.', ['Registre des unités']); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-media" id="f-registry-cover">
+                        <span class="bcs-media__thumb">
+                            <?php if ($registryCoverUrl): ?>
+                                <img src="<?= $h((string) $registryCoverUrl) ?>" alt="">
+                            <?php else: ?>
+                                Fond coloré automatique
+                            <?php endif; ?>
+                        </span>
+                        <div class="bcs-media__copy">
+                            <label class="bcs-label" for="registry_cover">Image d’en-tête <span class="bcs-opt">(facultatif)</span></label>
+                            <p class="bcs-help">Une photo <em>paysage</em> type bandeau (environ 1600 × 600) donne le meilleur rendu. JPG, PNG ou WebP, 3&nbsp;Mo maximum. Sans image, la carte affiche un fond coloré.</p>
+                            <?php if ($slugHint === ''): ?>
+                                <p class="bcs-notice bcs-notice--info">Définissez d’abord l’adresse publique de votre communauté dans <a class="bcs-link" href="<?= $h($settingsUrl . '?onglet=identite') ?>">Paramètres · Identité</a> pour activer l’envoi.</p>
+                            <?php endif; ?>
+                            <input type="file" name="registry_cover" id="registry_cover" class="bcs-file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"<?= $slugHint === '' ? ' disabled aria-disabled="true" title="Adresse publique requise"' : '' ?>>
+                            <?php if ($registryCoverUrl): ?>
+                            <label class="bcs-check">
+                                <input type="hidden" name="remove_registry_cover" value="0">
+                                <input type="checkbox" name="remove_registry_cover" value="1">
+                                <span>Retirer l’image et revenir au fond coloré automatique</span>
+                            </label>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-registry-tagline">Accroche de la carte</label>
+                        <p class="bcs-help">Une seule phrase sous votre nom dans l’annuaire. Si elle est vide, le début de la bio du bandeau est utilisé.</p>
+                        <input type="text" id="f-registry-tagline" name="registry_tagline" value="<?= $cv('registry_tagline') ?>" maxlength="220" placeholder="Ex. Unité MILSIM francophone, opérations coopératives le samedi soir">
+                    </div>
+                    <div class="bcs-field" id="f-registry-tags">
+                        <span class="bcs-label">Pastilles affichées sur la carte</span>
+                        <p class="bcs-help">Cochez ce qui décrit le mieux votre univers : les joueurs filtrent l’annuaire avec ces pastilles.</p>
+                        <div class="bcs-checks">
+                            <?php foreach ($registryTagLabels as $slug => $label): ?>
+                                <label class="bcs-check">
+                                    <input type="checkbox" name="registry_tags[]" value="<?= $h((string) $slug) ?>" <?= in_array($slug, $selectedRegistryTags, true) ? 'checked' : '' ?>>
+                                    <?= $h((string) $label) ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 2. Page publique -->
+        <div class="bcs-panel" data-cp-panel="vitrine" id="cp-panel-vitrine" role="tabpanel" hidden>
+            <header class="bcs-intro">
+                <p class="bcs-intro__kicker">Partie 2 · Page publique</p>
+                <h2 class="bcs-intro__title">Votre vitrine, de haut en bas</h2>
+                <p class="bcs-intro__text">Les blocs ci-dessous suivent l’ordre de la page publique : bandeau d’accueil, présentation, recrutement, puis bas de page. <strong>Un bloc laissé vide n’est simplement pas affiché</strong> : remplissez d’abord l’essentiel (bandeau, présentation, étapes).</p>
+                <div class="bcs-intro__foot">
+                    <?php $renderWhere(['Page publique']); ?>
+                    <?php if ($publicPageUrl !== ''): ?><a class="bcs-link" href="<?= $h($publicPageUrl) ?>" target="_blank" rel="noopener">Voir le résultat ↗</a><?php endif; ?>
+                </div>
+            </header>
+
+            <section class="bcs-card" id="cp-modele">
+                <?php $cardHead('Modèle de page', 'La mise en page générale et les éléments flottants.'); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-grid">
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-layout">Modèle</label>
+                            <p class="bcs-help"><em>Vitrine</em> : pleine page, grandes images, idéal pour recruter. <em>Classique</em> : carte compacte.</p>
+                            <select id="f-layout" name="public_page_layout">
+                                <option value="legacy" <?= $publicLayoutSel === 'legacy' ? 'selected' : '' ?>>Classique (carte compacte)</option>
+                                <option value="showcase" <?= $publicLayoutSel === 'showcase' ? 'selected' : '' ?>>Vitrine (pleine page)</option>
+                            </select>
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-audience">Type de fiche</label>
+                            <p class="bcs-help">Choisissez « Plateforme » uniquement pour un portail ou un outil : le recrutement y est moins mis en avant.</p>
+                            <select id="f-audience" name="public_audience">
+                                <option value="unit" <?= $publicAudienceSel === 'unit' ? 'selected' : '' ?>>Unité / communauté de jeu</option>
+                                <option value="platform" <?= $publicAudienceSel === 'platform' ? 'selected' : '' ?>>Plateforme / outil</option>
+                            </select>
+                        </div>
+                    </div>
+                    <?php $renderSwitch(
+                        'public_recruitment_badge_open',
+                        !empty($c['public_recruitment_badge_open']),
+                        'Badge « Recrutement ouvert »',
+                        'Un badge bien visible dans le bandeau d’accueil.',
+                        'le badge s’affiche en haut de la page.',
+                        'pas de badge.'
+                    ); ?>
+                    <?php $renderSwitch(
+                        'public_sticky_cta_enabled',
+                        !array_key_exists('public_sticky_cta_enabled', $c) || !empty($c['public_sticky_cta_enabled']),
+                        'Bouton « Candidater » toujours visible',
+                        'Une barre fixée en bas de l’écran pendant que le visiteur fait défiler la page.',
+                        'la barre suit le visiteur : le bouton Candidater est toujours à portée.',
+                        'le bouton n’apparaît qu’aux endroits prévus de la page.'
+                    ); ?>
+                    <?php $renderSwitch(
+                        'public_roster_enabled',
+                        !empty($c['public_roster_enabled']),
+                        'Afficher la liste publique des membres',
+                        'Seuls les membres ayant accepté d’y figurer apparaissent.',
+                        'un tableau des membres volontaires est affiché.',
+                        'aucune liste de membres sur la page publique.'
+                    ); ?>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-bandeau">
+                <?php $cardHead('Bandeau d’accueil', 'Le haut de page : c’est souvent la seule partie lue. Soyez court et concret.'); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-hero-headline">Titre d’accroche</label>
+                        <p class="bcs-help">Une phrase forte qui résume votre identité.</p>
+                        <textarea id="f-hero-headline" name="public_hero_headline" rows="2" maxlength="220" placeholder="Ex. Une unité qui joue sérieusement, sans se prendre au sérieux."><?= $cv('public_hero_headline') ?></textarea>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-hero-subtitle">Bio courte</label>
+                        <p class="bcs-help">2 ou 3 lignes sous le titre : qui vous êtes, à quoi vous jouez, quand. Vide, une bio existante peut être reprise automatiquement.</p>
+                        <textarea id="f-hero-subtitle" name="public_hero_subtitle" rows="3" maxlength="600" placeholder="Ex. Unité MILSIM francophone sur Arma 3. Opérations coopératives le samedi soir, ambiance sérieuse mais détendue."><?= $cv('public_hero_subtitle') ?></textarea>
+                    </div>
+                    <div class="bcs-grid">
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-session">Session de recrutement <span class="bcs-opt">(badge)</span></label>
+                            <input type="text" id="f-session" name="public_recruitment_session_label" value="<?= $cv('public_recruitment_session_label') ?>" maxlength="80" placeholder="Ex. Session septembre 2026">
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-founded">Année de fondation</label>
+                            <input type="text" id="f-founded" name="public_founded_year" value="<?= $cv('public_founded_year') ?>" maxlength="12" class="bcs-input--tiny" placeholder="2023">
+                        </div>
+                        <div class="bcs-field" id="f-doctrine-wrap">
+                            <label class="bcs-label" for="f-doctrine">Doctrine <span class="bcs-opt">(court)</span></label>
+                            <input type="text" id="f-doctrine" name="public_doctrine" value="<?= $cv('public_doctrine') ?>" maxlength="200" placeholder="Ex. Doctrine US Army, procédures OTAN">
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-access">Type d’accès</label>
+                            <input type="text" id="f-access" name="public_access_label" value="<?= $cv('public_access_label') ?>" maxlength="120" placeholder="Ex. Public + validation">
+                        </div>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-region-badges">Badges libres</label>
+                        <p class="bcs-help">Un badge par ligne, affichés sous le titre. Exemple : FR, OTAN, 18+.</p>
+                        <textarea id="f-region-badges" name="public_region_badges" rows="3" class="bcs-mono" placeholder="FR&#10;OTAN"><?= $h($regionBadgesLines) ?></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-alert">
+                <?php $cardHead('Alerte et créneaux de jeu', 'Un bandeau d’information sous le haut de page (session en cours, pause…) et une ligne rappelant vos horaires.'); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-grid">
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-hl-style">Ton de l’alerte</label>
+                            <?php
+                            // Même garde que TenantCommunityProfileService::publicShowcasePayload :
+                            // ne pas relire $c['public_highlight_style'] après ?? (clé absente → 500).
+                            $hlStyleSel = in_array(
+                                ($hlStyleRaw = strtolower(trim((string) ($c['public_highlight_style'] ?? 'info')))),
+                                ['info', 'warning', 'success'],
+                                true
+                            ) ? $hlStyleRaw : 'info';
+                            ?>
+                            <select id="f-hl-style" name="public_highlight_style">
+                                <option value="info" <?= $hlStyleSel === 'info' ? 'selected' : '' ?>>Information (bleu)</option>
+                                <option value="warning" <?= $hlStyleSel === 'warning' ? 'selected' : '' ?>>Attention (orange)</option>
+                                <option value="success" <?= $hlStyleSel === 'success' ? 'selected' : '' ?>>Ouverture / bonne nouvelle (vert)</option>
+                            </select>
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-hl-title">Titre de l’alerte</label>
+                            <input type="text" id="f-hl-title" name="public_highlight_title" value="<?= $cv('public_highlight_title') ?>" maxlength="120" placeholder="Ex. Session de recrutement en cours">
+                        </div>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-hl-body">Texte de l’alerte</label>
+                        <p class="bcs-help">Laissez vide pour ne pas afficher d’alerte.</p>
+                        <textarea id="f-hl-body" name="public_highlight_body" rows="2" maxlength="400" placeholder="Ex. Inscriptions ouvertes jusqu’au 30 septembre, places limitées."><?= $cv('public_highlight_body') ?></textarea>
+                    </div>
+                    <div class="bcs-grid">
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-sched-label">Libellé des créneaux</label>
+                            <input type="text" id="f-sched-label" name="public_schedule_label" value="<?= $cv('public_schedule_label') ?>" maxlength="80" placeholder="Créneaux hebdo">
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-sched-body">Horaires</label>
+                            <input type="text" id="f-sched-body" name="public_schedule_body" value="<?= $cv('public_schedule_body') ?>" maxlength="240" placeholder="Ven. 20h–23h · Dim. opérations">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-presentation">
+                <?php $cardHead('Présentation « Qui sommes-nous ? »', 'La section qui raconte votre histoire et votre façon de jouer.'); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-about-title">Titre de la section</label>
+                        <input type="text" id="f-about-title" name="public_about_title" value="<?= $cv('public_about_title') ?>" maxlength="160" placeholder="Ex. Du milsim structuré, pas militarisé">
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-about-body">Texte principal</label>
+                        <p class="bcs-help">Histoire, cadre de jeu, ambiance, accueil des nouveaux. Vide, la présentation existante (partie 3) est reprise.</p>
+                        <textarea id="f-about-body" name="public_about_body" rows="5" maxlength="8000" placeholder="Fondée en 2021, notre unité…"><?= $cv('public_about_body') ?></textarea>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-about-2">Second paragraphe <span class="bcs-opt">(facultatif)</span></label>
+                        <textarea id="f-about-2" name="public_about_body_secondary" rows="3" maxlength="4000"><?= $cv('public_about_body_secondary') ?></textarea>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-mission">Mission publique</label>
+                        <p class="bcs-help">Ce que vous cherchez à accomplir ensemble, en quelques lignes.</p>
+                        <textarea id="f-mission" name="public_mission" rows="3" maxlength="4000" placeholder="Ex. Offrir des opérations réalistes et bien préparées à des joueurs adultes et disponibles."><?= $cv('public_mission') ?></textarea>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-specialties">Spécialités</label>
+                        <p class="bcs-help">Une par ligne. Exemple : Infanterie légère, Reconnaissance, Appui aérien.</p>
+                        <textarea id="f-specialties" name="public_specialties" rows="3"><?= $h($specialtiesLines) ?></textarea>
+                    </div>
+                    <div class="bcs-grid">
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-sections-title">Titre du bloc « Sections »</label>
+                            <input type="text" id="f-sections-title" name="public_sections_title" value="<?= $cv('public_sections_title') ?>" maxlength="160" placeholder="Nos sections">
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-sections-lead">Sous-texte</label>
+                            <input type="text" id="f-sections-lead" name="public_sections_lead" value="<?= $cv('public_sections_lead') ?>" maxlength="240" placeholder="Les places ouvertes sont indiquées par section.">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-pitch">
+                <?php $cardHead('Points forts', 'Jusqu’à quatre arguments courts (titre + une phrase). Exemple : « Encadrement » — « Un instructeur suit chaque recrue pendant un mois ».'); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-pairs">
+                        <?php foreach ($pitchRows as $i => $pr): ?>
+                        <div class="bcs-pair">
+                            <input type="text" name="public_pitch_title[]" value="<?= $h((string) ($pr['title'] ?? '')) ?>" maxlength="120" placeholder="Titre" aria-label="Point fort <?= (int) $i + 1 ?> : titre">
+                            <input type="text" name="public_pitch_body[]" value="<?= $h((string) ($pr['body'] ?? '')) ?>" maxlength="400" placeholder="Description courte" aria-label="Point fort <?= (int) $i + 1 ?> : description">
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-prereq">
+                <div class="bcs-card__head">
+                    <div class="bcs-card__heading">
+                        <h3 class="bcs-card__title">Prérequis pour candidater</h3>
+                        <p class="bcs-card__desc">Ce qu’un candidat doit avoir avant de postuler (âge, micro, jeu…). Une liste claire évite les candidatures inadaptées.</p>
+                    </div>
+                    <button type="button" id="add-prereq-row" class="bcs-btn bcs-btn--small">+ Ajouter un prérequis</button>
+                </div>
+                <div id="prereq-rows" class="bcs-rows" data-prereq-max="16">
+                    <?php foreach ($prereqRows as $i => $prRow): ?>
+                        <?php
+                        $st = (string) ($prRow['status'] ?? 'required');
+                        $pkeySel = (string) ($prRow['key'] ?? '');
+                        ?>
+                    <div class="bcs-row cp-dyn-row" data-prereq-row>
+                        <div class="bcs-row__head">
+                            <span class="bcs-row__index">Prérequis <span data-row-index><?= (int) $i + 1 ?></span></span>
+                            <div class="bcs-row__tools">
+                                <button type="button" class="cp-move-up bcs-btn bcs-btn--small" title="Monter" aria-label="Monter">↑</button>
+                                <button type="button" class="cp-move-down bcs-btn bcs-btn--small" title="Descendre" aria-label="Descendre">↓</button>
+                                <button type="button" class="cp-remove-row bcs-btn bcs-btn--small bcs-btn--danger">Retirer</button>
+                            </div>
+                        </div>
+                        <div class="bcs-grid">
+                            <div class="bcs-field">
+                                <label class="bcs-mini-label">Libellé affiché</label>
+                                <input type="text" name="public_prereq_label[]" value="<?= $h((string) ($prRow['label'] ?? '')) ?>" maxlength="160" placeholder="Ex. Micro correct et Discord">
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-mini-label">Catégorie <span class="bcs-opt">(remplit le libellé)</span></label>
+                                <select name="public_prereq_key[]" class="cp-prereq-cat">
+                                    <option value="">Libre (texte seul)</option>
+                                    <?php foreach ($prereqCatalog as $ck => $cinfo): ?>
+                                    <option value="<?= $h((string) $ck) ?>" <?= $pkeySel === $ck ? 'selected' : '' ?> data-hint="<?= $h((string) $cinfo['hint']) ?>" data-label="<?= $h((string) $cinfo['label']) ?>"><?= $h((string) $cinfo['label']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-mini-label">Niveau d’exigence</label>
+                                <select name="public_prereq_status[]">
+                                    <option value="required" <?= $st === 'required' ? 'selected' : '' ?>>Exigé</option>
+                                    <option value="optional" <?= $st === 'optional' ? 'selected' : '' ?>>Souhaité</option>
+                                    <option value="not_required" <?= $st === 'not_required' ? 'selected' : '' ?>>Non exigé</option>
+                                </select>
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-mini-label">Précision <span class="bcs-opt">(facultatif)</span></label>
+                                <input type="text" name="public_prereq_detail[]" value="<?= $h((string) ($prRow['detail'] ?? '')) ?>" maxlength="240" placeholder="Court complément affiché sous le libellé">
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-steps">
+                <div class="bcs-card__head">
+                    <div class="bcs-card__heading">
+                        <h3 class="bcs-card__title">Étapes de recrutement</h3>
+                        <p class="bcs-card__desc">Le parcours d’un candidat, de la candidature au premier terrain. Exemple : Candidature → Entretien vocal → Formation initiale → Première opération.</p>
+                    </div>
+                    <button type="button" id="add-step-row" class="bcs-btn bcs-btn--small">+ Ajouter une étape</button>
+                </div>
+                <div id="step-rows" class="bcs-rows" data-step-max="12">
+                    <?php foreach ($stepRows as $i => $stRow): ?>
+                    <div class="bcs-row cp-dyn-row" data-step-row>
+                        <div class="bcs-row__head">
+                            <span class="bcs-row__index">Étape <span data-row-index><?= (int) $i + 1 ?></span></span>
+                            <div class="bcs-row__tools">
+                                <button type="button" class="cp-move-up bcs-btn bcs-btn--small" title="Monter" aria-label="Monter">↑</button>
+                                <button type="button" class="cp-move-down bcs-btn bcs-btn--small" title="Descendre" aria-label="Descendre">↓</button>
+                                <button type="button" class="cp-remove-row bcs-btn bcs-btn--small bcs-btn--danger">Retirer</button>
+                            </div>
+                        </div>
+                        <div class="bcs-grid bcs-grid--3">
+                            <div class="bcs-field">
+                                <label class="bcs-mini-label">Titre</label>
+                                <input type="text" name="public_step_title[]" value="<?= $h((string) ($stRow['title'] ?? '')) ?>" maxlength="120" placeholder="Ex. Candidature en ligne">
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-mini-label">Délai</label>
+                                <input type="text" name="public_step_delay[]" value="<?= $h((string) ($stRow['delay'] ?? '')) ?>" maxlength="40" placeholder="sous 5 jours">
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-mini-label">Affichage</label>
+                                <select name="public_step_highlight[]">
+                                    <option value="0" <?= empty($stRow['highlight']) ? 'selected' : '' ?>>Normal</option>
+                                    <option value="1" <?= !empty($stRow['highlight']) ? 'selected' : '' ?>>Mis en avant</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-mini-label">Description courte</label>
+                            <textarea name="public_step_body[]" rows="2" maxlength="500" placeholder="Ce que le candidat doit savoir à cette étape"><?= $h((string) ($stRow['body'] ?? '')) ?></textarea>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-modules">
+                <?php $cardHead('Blocs automatiques', 'Des blocs remplis automatiquement à partir du portail. Activez ceux qui donnent envie de vous rejoindre.'); ?>
+                <div class="bcs-card__body">
+                    <?php foreach ([
+                        'events' => ['Événements', 'Vos prochaines opérations et entraînements ouverts.'],
+                        'forum' => ['Forum', 'Les derniers sujets publics du forum.'],
+                        'documents' => ['Documents', 'Les documents marqués comme publics (règlement, doctrine…).'],
+                        'roster' => ['Effectifs', 'La composition de l’unité.'],
+                        'training' => ['Formations', 'Le catalogue des formations proposées.'],
+                        'analytics' => ['Statistiques', 'Quelques chiffres d’activité.'],
+                    ] as $mk => [$ml, $mh]): ?>
+                        <?php $renderSwitch('public_mod_' . $mk, !empty($pm[$mk]), $ml, $mh, '', '', false); ?>
+                    <?php endforeach; ?>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-stats">
+                <?php $cardHead('Chiffres clés', 'Quatre chiffres en vue d’ensemble. En mode automatique, effectif et nombre d’unités sont calculés pour vous.'); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-stats-mode">Mode de calcul</label>
+                        <select id="f-stats-mode" name="public_stats_mode" class="bcs-input--short">
+                            <option value="manual" <?= $statsModeSel === 'manual' ? 'selected' : '' ?>>Saisie manuelle</option>
+                            <option value="computed" <?= $statsModeSel === 'computed' ? 'selected' : '' ?>>Calcul automatique</option>
+                        </select>
+                    </div>
+                    <div class="bcs-grid">
+                        <div class="bcs-field"><label class="bcs-mini-label" for="f-st-eff">Effectif</label><input type="text" id="f-st-eff" name="public_stats_effectif" value="<?= $h((string) ($sm['effectif'] ?? '')) ?>" maxlength="12" placeholder="42"></div>
+                        <div class="bcs-field"><label class="bcs-mini-label" for="f-st-un">Unités</label><input type="text" id="f-st-un" name="public_stats_unites" value="<?= $h((string) ($sm['unites'] ?? '')) ?>" maxlength="12" placeholder="4"></div>
+                        <div class="bcs-field"><label class="bcs-mini-label" for="f-st-act">Activité en % <span class="bcs-opt">(manuel)</span></label><input type="text" id="f-st-act" name="public_stats_activite" value="<?= $h((string) ($sm['activite_percent'] ?? '')) ?>" maxlength="12" placeholder="92"></div>
+                        <div class="bcs-field"><label class="bcs-mini-label" for="f-st-th">Théâtre <span class="bcs-opt">(manuel)</span></label><input type="text" id="f-st-th" name="public_stats_theatre" value="<?= $h((string) ($sm['theatre'] ?? '')) ?>" maxlength="120" placeholder="Europe"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-encadrement">
+                <?php $cardHead('Encadrement affiché', 'Les responsables que vous souhaitez présenter (texte libre, sans lien avec les grades du portail).'); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-pairs">
+                        <?php foreach ($cmdChain as $ci => $crow): ?>
+                            <?php if (!is_array($crow)) { continue; } ?>
+                        <div class="bcs-pair bcs-pair--3">
+                            <input type="text" name="cmd_role_label[]" value="<?= $h((string) ($crow['role_label'] ?? '')) ?>" placeholder="Rôle (ex. Chef d’unité)" aria-label="Responsable <?= (int) $ci + 1 ?> : rôle">
+                            <input type="text" name="cmd_display_name[]" value="<?= $h((string) ($crow['display_name'] ?? '')) ?>" placeholder="Nom affiché" aria-label="Responsable <?= (int) $ci + 1 ?> : nom">
+                            <input type="text" name="cmd_hint[]" value="<?= $h((string) ($crow['hint'] ?? '')) ?>" placeholder="Sous-titre" aria-label="Responsable <?= (int) $ci + 1 ?> : sous-titre">
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-video">
+                <?php $cardHead('Vidéo de présentation', 'Une vidéo YouTube ou Vimeo intégrée à la page. Les chapitres permettent d’aller directement à un moment.'); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-video-url">Lien de la vidéo</label>
+                        <input type="url" id="f-video-url" name="public_video_url" value="<?= $cv('public_video_url') ?>" maxlength="1024" placeholder="https://www.youtube.com/watch?v=…">
+                    </div>
+                    <div class="bcs-grid">
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-video-title">Titre</label>
+                            <input type="text" id="f-video-title" name="public_video_title" value="<?= $cv('public_video_title') ?>" maxlength="160">
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-video-body">Texte d’accompagnement</label>
+                            <textarea id="f-video-body" name="public_video_body" rows="2" maxlength="800"><?= $cv('public_video_body') ?></textarea>
+                        </div>
+                    </div>
+                    <div class="bcs-field">
+                        <span class="bcs-label">Chapitres <span class="bcs-opt">(facultatif)</span></span>
+                        <div class="bcs-pairs">
+                            <?php foreach ($videoChapterRows as $i => $ch): ?>
+                            <div class="bcs-pair bcs-pair--time">
+                                <input type="text" name="public_video_chapter_time[]" value="<?= $h((string) ($ch['time'] ?? '')) ?>" maxlength="16" class="bcs-mono" placeholder="00:34" aria-label="Chapitre <?= (int) $i + 1 ?> : minutage">
+                                <input type="text" name="public_video_chapter_label[]" value="<?= $h((string) ($ch['label'] ?? '')) ?>" maxlength="120" placeholder="Briefing et distribution des ordres" aria-label="Chapitre <?= (int) $i + 1 ?> : titre">
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-faq">
+                <?php $cardHead('Questions fréquentes', 'Répondez d’avance aux questions des candidats (âge minimum, fréquence de jeu, matériel…). Les paires vides sont ignorées.'); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-pairs">
+                        <?php foreach ($faqRows as $i => $fq): ?>
+                        <div class="bcs-stack bcs-row">
+                            <input type="text" name="public_faq_q[]" value="<?= $h((string) ($fq['q'] ?? '')) ?>" maxlength="200" placeholder="Question (ex. Faut-il de l’expérience ?)" aria-label="Question <?= (int) $i + 1 ?>">
+                            <textarea name="public_faq_a[]" rows="2" maxlength="800" placeholder="Réponse" aria-label="Réponse <?= (int) $i + 1 ?>"><?= $h((string) ($fq['a'] ?? '')) ?></textarea>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-temoignages">
+                <?php $cardHead('Témoignages', 'Quelques mots de vos membres. Les initiales servent d’avatar.'); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-pairs">
+                        <?php foreach ($quoteRows as $i => $qr): ?>
+                        <div class="bcs-stack bcs-row">
+                            <textarea name="public_quote_text[]" rows="2" maxlength="600" placeholder="Citation" aria-label="Témoignage <?= (int) $i + 1 ?>"><?= $h((string) ($qr['text'] ?? '')) ?></textarea>
+                            <div class="bcs-pair bcs-pair--3">
+                                <input type="text" name="public_quote_name[]" value="<?= $h((string) ($qr['name'] ?? '')) ?>" maxlength="80" placeholder="Indicatif" aria-label="Témoignage <?= (int) $i + 1 ?> : indicatif">
+                                <input type="text" name="public_quote_meta[]" value="<?= $h((string) ($qr['meta'] ?? '')) ?>" maxlength="120" placeholder="Grade · section · ancienneté" aria-label="Témoignage <?= (int) $i + 1 ?> : détails">
+                                <input type="text" name="public_quote_initials[]" value="<?= $h((string) ($qr['initials'] ?? '')) ?>" maxlength="4" class="bcs-mono" placeholder="BA" aria-label="Témoignage <?= (int) $i + 1 ?> : initiales">
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-cta">
+                <?php $cardHead('Partenaires et appel final', 'Le bas de page : unités alliées, puis un dernier appel à candidater.'); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-partners">Unités alliées ou partenaires</label>
+                        <p class="bcs-help">Une par ligne.</p>
+                        <textarea id="f-partners" name="public_partners" rows="3"><?= $h($partnersLines) ?></textarea>
+                    </div>
+                    <div class="bcs-grid">
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-cta-kicker">Sur-titre</label>
+                            <input type="text" id="f-cta-kicker" name="public_cta_kicker" value="<?= $cv('public_cta_kicker') ?>" maxlength="80" placeholder="Prêt à nous rejoindre ?">
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-cta-title">Titre</label>
+                            <input type="text" id="f-cta-title" name="public_cta_title" value="<?= $cv('public_cta_title') ?>" maxlength="160" placeholder="Rejoignez la prochaine session">
+                        </div>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-cta-body">Texte</label>
+                        <textarea id="f-cta-body" name="public_cta_body" rows="2" maxlength="500"><?= $cv('public_cta_body') ?></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-social">
+                <?php $cardHead('Réseaux et présence en ligne', 'Liens affichés en bas de la page publique. Laissez vide ce que vous n’avez pas.'); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-grid">
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-web">Site web</label>
+                            <input type="url" id="f-web" name="public_social_website" value="<?= $cv('public_social_website') ?>" maxlength="500" placeholder="https://">
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-yt">Chaîne YouTube</label>
+                            <input type="url" id="f-yt" name="public_social_youtube" value="<?= $cv('public_social_youtube') ?>" maxlength="500" placeholder="https://youtube.com/@…">
+                        </div>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-ts">TeamSpeak ou adresse vocale</label>
+                        <input type="text" id="f-ts" name="public_social_teamspeak" value="<?= $cv('public_social_teamspeak') ?>" maxlength="160" placeholder="ts.exemple.net ou ts3server://…">
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-seo">
+                <?php $cardHead('Référencement et partage', 'Le titre et le résumé affichés par Google et lors d’un partage de lien (Discord, réseaux sociaux).', ['Google', 'Aperçus de liens']); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-meta-title">Titre <span class="bcs-opt">(facultatif)</span></label>
+                        <p class="bcs-help">Vide, le nom de la communauté est utilisé.</p>
+                        <input type="text" id="f-meta-title" name="public_meta_title" value="<?= $cv('public_meta_title') ?>" maxlength="120" placeholder="Ex. 1er RPIMa — Unité MILSIM Arma 3">
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-meta-description">Description</label>
+                        <p class="bcs-help">Entre 150 et 220 caractères : une phrase claire qui donne envie de cliquer.</p>
+                        <textarea id="f-meta-description" name="public_meta_description" rows="2" maxlength="320" placeholder="Unité MILSIM francophone sur Arma 3 : opérations coopératives chaque samedi, formation des recrues, ambiance sérieuse et conviviale."><?= $cv('public_meta_description') ?></textarea>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 3. Présentation & contact -->
+        <div class="bcs-panel" data-cp-panel="textes" id="cp-panel-textes" role="tabpanel" hidden>
+            <header class="bcs-intro">
+                <p class="bcs-intro__kicker">Partie 3 · Présentation &amp; contact</p>
+                <h2 class="bcs-intro__title">Votre texte de présentation et vos coordonnées</h2>
+                <p class="bcs-intro__text">Le texte de présentation de votre fiche (en texte libre ou en sections étiquetées façon ordre d’opération), ce que vous attendez des joueurs, et comment vous contacter.</p>
+                <div class="bcs-intro__foot">
+                    <?php $renderWhere(['Page publique', 'Formulaire de contact']); ?>
+                </div>
+            </header>
+
+            <section class="bcs-card" id="cp-texte">
+                <?php $cardHead('Présentation', 'Choisissez la forme qui vous ressemble. Seul le mode choisi est affiché.'); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-field">
+                        <div class="bcs-choices">
+                            <label class="bcs-choice">
+                                <input type="radio" name="presentation_mode" value="simple" <?= $presentationMode === 'simple' ? 'checked' : '' ?>>
+                                <span><span class="bcs-choice__title">Texte libre</span><span class="bcs-choice__help">Un seul bloc de texte, comme un article.</span></span>
+                            </label>
+                            <label class="bcs-choice">
+                                <input type="radio" name="presentation_mode" value="military" <?= $presentationMode === 'military' ? 'checked' : '' ?>>
+                                <span><span class="bcs-choice__title">Sections étiquetées</span><span class="bcs-choice__help">Plusieurs blocs titrés (PRIMO, SECUNDO…), style ordre militaire.</span></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-simple-body">Texte libre</label>
+                        <textarea id="f-simple-body" name="simple_body" rows="8"><?= $cv('simple_body') ?></textarea>
+                    </div>
+                    <div class="bcs-field" id="military-sections">
+                        <div class="bcs-row__head" style="margin:0;">
+                            <span class="bcs-label">Sections étiquetées</span>
+                            <button type="button" id="add-military-section" class="bcs-btn bcs-btn--small">+ Ajouter une section</button>
+                        </div>
+                        <?php foreach ($military as $i => $sec): ?>
+                            <?php if (!is_array($sec)) { continue; } ?>
+                            <div class="bcs-row bcs-stack military-section-row">
+                                <div class="bcs-pair">
+                                    <input type="text" name="military_label[]" value="<?= $h((string) ($sec['label'] ?? '')) ?>" maxlength="32" class="bcs-mono" placeholder="Étiquette (ex. PRIMO)" aria-label="Section <?= (int) $i + 1 ?> : étiquette">
+                                    <input type="text" name="military_title[]" value="<?= $h((string) ($sec['title'] ?? '')) ?>" maxlength="200" placeholder="Titre de section" aria-label="Section <?= (int) $i + 1 ?> : titre">
+                                </div>
+                                <textarea name="military_body[]" rows="4" placeholder="Contenu" aria-label="Section <?= (int) $i + 1 ?> : contenu"><?= $h((string) ($sec['body'] ?? '')) ?></textarea>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-expectations">Attentes envers les joueurs</label>
+                        <p class="bcs-help">Présence, comportement, matériel, âge… Être clair ici fait gagner du temps à tout le monde.</p>
+                        <textarea id="f-expectations" name="expectations" rows="4" placeholder="Ex. Présence à 2 opérations par mois, micro obligatoire, 18 ans minimum, respect de la chaîne de commandement en jeu."><?= $cv('expectations') ?></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-contact">
+                <?php $cardHead('Contact public', 'Comment un visiteur peut vous joindre avant de candidater.', ['Page publique']); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-contact-intro">Phrase d’introduction <span class="bcs-opt">(facultatif)</span></label>
+                        <input type="text" id="f-contact-intro" name="contact_intro" value="<?= $cv('contact_intro') ?>" maxlength="500" placeholder="Une question ? Écrivez-nous, on répond sous 48 h.">
+                    </div>
+                    <div class="bcs-grid">
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-contact-discord">Lien d’invitation Discord</label>
+                            <p class="bcs-help">Un lien qui n’expire pas.</p>
+                            <input type="url" id="f-contact-discord" name="contact_discord_url" value="<?= $cv('contact_discord_url') ?>" maxlength="500" placeholder="https://discord.gg/…">
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-contact-email">E-mail de contact</label>
+                            <p class="bcs-help">Affiché et destinataire du formulaire.</p>
+                            <input type="email" id="f-contact-email" name="contact_email" value="<?= $cv('contact_email') ?>" maxlength="255" placeholder="recrutement@mon-unite.fr">
+                        </div>
+                    </div>
+                    <?php $renderSwitch(
+                        'contact_form_enabled',
+                        !empty($c['contact_form_enabled']),
+                        'Formulaire « Nous écrire »',
+                        'Nécessite un e-mail de contact valide.',
+                        'les visiteurs peuvent vous envoyer un message depuis la page publique.',
+                        'seuls l’e-mail et le Discord sont affichés.',
+                        true,
+                        'f-contact-form'
+                    ); ?>
+                </div>
+            </section>
+        </div>
+
+        <!-- 4. Jeu & inscription -->
+        <div class="bcs-panel" data-cp-panel="profil" id="cp-panel-profil" role="tabpanel" hidden>
+            <header class="bcs-intro">
+                <p class="bcs-intro__kicker">Partie 4 · Jeu &amp; inscription</p>
+                <h2 class="bcs-intro__title">À quoi vous jouez et comment on candidate</h2>
+                <p class="bcs-intro__text">Ces informations aident un joueur à savoir en un coup d’œil si votre unité lui correspond (jeu, mods, style) et définissent le formulaire ouvert par le bouton « Candidater ».</p>
+                <div class="bcs-intro__foot">
+                    <?php $renderWhere(['Page publique', 'Registre des unités', 'Formulaire de candidature']); ?>
+                </div>
+            </header>
+
+            <section class="bcs-card" id="cp-inscription">
+                <?php $cardHead('Formulaire de candidature', 'Le parcours proposé aux visiteurs qui cliquent sur « Candidater ».'); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-registration-mode">Type de candidature</label>
+                        <p class="bcs-help"><em>MilSim complet</em> : dossier détaillé (expérience, disponibilités, motivation), réglable en partie 5. <em>Simple</em> : quelques champs. <em>Discord</em> : pseudo + vos questions, la suite se passe sur votre serveur.</p>
+                        <select id="f-registration-mode" name="registration_mode">
+                            <option value="milsim" <?= $registrationMode === 'milsim' ? 'selected' : '' ?>>MilSim complet (dossier détaillé)</option>
+                            <option value="simple" <?= $registrationMode === 'simple' ? 'selected' : '' ?>>Simple (champs réduits, arrivée rapide)</option>
+                            <option value="discord" <?= $registrationMode === 'discord' ? 'selected' : '' ?>>Via Discord (pseudo et questions personnalisées)</option>
+                        </select>
+                        <?php if ($registrationMode === 'discord'): ?>
+                        <p class="bcs-help">Composez les questions dans <a class="bcs-link" href="<?= $h(url('back-office/recruitments/discord-questions')) ?>">Questions Discord</a> et renseignez le lien d’invitation en partie 3.</p>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </section>
+
+            <section class="bcs-card" id="cp-jeu">
+                <?php $cardHead('Jeu et matériel', 'Ce qu’un candidat doit installer pour jouer avec vous.', ['Page publique', 'Registre des unités']); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-grid">
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-game">Jeu</label>
+                            <input type="text" id="f-game" name="game_label" value="<?= $cv('game_label') ?>" maxlength="120" placeholder="Arma 3, Arma Reforger, Squad…">
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-modpack">Taille du modpack <span class="bcs-opt">(Go, indicatif)</span></label>
+                            <input type="text" id="f-modpack" name="modpack_size_gb" value="<?= $cv('modpack_size_gb') ?>" maxlength="32" class="bcs-input--tiny" placeholder="45">
+                        </div>
+                    </div>
+                    <div class="bcs-field">
+                        <label class="bcs-label" for="f-mods">Mods principaux</label>
+                        <p class="bcs-help">Une liste courte ou une description (ex. ACE3, TFAR, RHS).</p>
+                        <textarea id="f-mods" name="main_mods" rows="4" class="bcs-mono" placeholder="ACE3&#10;TFAR&#10;RHS"><?= $cv('main_mods') ?></textarea>
+                    </div>
+                    <div class="bcs-field" id="f-style-badges">
+                        <span class="bcs-label">Style de jeu</span>
+                        <p class="bcs-help">Cochez ce qui vous correspond : affiché sur votre page publique.</p>
+                        <div class="bcs-checks">
+                            <?php foreach ($badgeLabels as $slug => $label): ?>
+                                <label class="bcs-check">
+                                    <input type="checkbox" name="style_badges[]" value="<?= $h((string) $slug) ?>" <?= in_array($slug, $selectedBadges, true) ? 'checked' : '' ?>>
+                                    <?= $h((string) $label) ?>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- 5. Formulaire de candidature -->
+        <div class="bcs-panel" data-cp-panel="candidature" id="cp-panel-candidature" role="tabpanel" hidden>
+            <header class="bcs-intro">
+                <p class="bcs-intro__kicker">Partie 5 · Formulaire de candidature</p>
+                <h2 class="bcs-intro__title">Le dossier que remplissent les candidats</h2>
+                <p class="bcs-intro__text">Utilisé quand le type de candidature est <strong>MilSim complet</strong> (partie 4). Les blocs les plus utiles sont ouverts ; les textes secondaires sont repliés. La marque affichée en haut du formulaire est fixée par la plateforme : <strong><?= $h(\App\Services\Community\EnlistmentMilsimPackService::PLATFORM_NAV_BRAND) ?></strong>.</p>
+                <div class="bcs-intro__foot">
+                    <?php $renderWhere(['Formulaire de candidature']); ?>
+                    <?php if ($registrationMode !== 'milsim'): ?><span class="bcs-pill bcs-pill--warn">Non utilisé actuellement (type : <?= $h(\App\Services\Community\TenantCommunityProfileService::registrationModeLabel($registrationMode)) ?>)</span><?php endif; ?>
+                </div>
+            </header>
+
+            <section id="pack-milsim-editor" class="bcs-card">
+                <?php $cardHead('Contenu du dossier', 'Ouvrez un bloc pour le modifier.'); ?>
+
+                <details open class="bcs-fold">
+                    <summary>Champs du dossier <span class="bcs-fold__hint">libellés, aides, type de réponse</span></summary>
+                    <div class="bcs-fold__body">
+                        <p class="bcs-help" style="margin:10px 0;">Pour chaque champ : libellé, aide et <em>type de réponse</em> (texte, zone, liste, oui/non). Pour les listes, une option par ligne.</p>
+                        <?php
+                        $fieldsData = is_array($em['fields'] ?? null) ? $em['fields'] : [];
+                        $inputPrefix = 'em_fld';
+                        include base_path('views/partials/milsim_pack_fields_editor.php');
+                        ?>
+                    </div>
+                </details>
+
+                <details open class="bcs-fold">
+                    <summary>Section Motivation <span class="bcs-fold__hint">pourquoi vous rejoindre</span></summary>
+                    <div class="bcs-fold__body">
+                        <p class="bcs-help" style="margin:10px 0;">Titre, introduction, questions affichées et caractère obligatoire.</p>
+                        <?php
+                        $motivationData = is_array($em['motivation'] ?? null) ? $em['motivation'] : [];
+                        $inputPrefix = 'em_motivation';
+                        include base_path('views/partials/motivation_section_editor.php');
+                        ?>
+                    </div>
+                </details>
+
+                <details open class="bcs-fold">
+                    <summary>Questions supplémentaires <span class="bcs-fold__hint">vos propres questions</span></summary>
+                    <div class="bcs-fold__body">
+                        <?php
+                        $customQuestions = \App\Services\Community\EnlistmentMilsimPackService::normalizeCustomQuestions($em['custom_questions'] ?? []);
+                        include base_path('views/partials/enlistment_custom_questions_editor.php');
+                        ?>
+                    </div>
+                </details>
+
+                <details class="bcs-fold">
+                    <summary>Disponibilités et engagement <span class="bcs-fold__hint">créneaux proposés</span></summary>
+                    <div class="bcs-fold__body">
+                        <div class="bcs-field" style="border-top:0;">
+                            <label class="bcs-label" for="f-em-q13">Question d’engagement</label>
+                            <input type="text" id="f-em-q13" name="em_commitment_q13" value="<?= $h((string) ($em['commitment_q13'] ?? '')) ?>" maxlength="400" placeholder="Question engagement">
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-em-q15">Question de confirmation des créneaux</label>
+                            <p class="bcs-help">Vide alors que des créneaux sont cochés : une formulation est proposée automatiquement.</p>
+                            <input type="text" id="f-em-q15" name="em_availability_q15" value="<?= $h((string) ($em['availability_q15'] ?? '')) ?>" maxlength="400" placeholder="Question de confirmation sur les créneaux">
+                        </div>
+                        <div class="bcs-field">
+                            <?php
+                            $selectedSlots = is_array($em['availability_slots'] ?? null) ? $em['availability_slots'] : [];
+                            $idsInputName = 'em_availability_slot_ids[]';
+                            $customInputName = 'em_availability_slot_custom[]';
+                            $configuredFlagName = '';
+                            $formId = '';
+                            include base_path('views/partials/availability_slots_editor.php');
+                            ?>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="bcs-fold">
+                    <summary>Refus automatique <span class="bcs-fold__hint">selon certaines réponses</span></summary>
+                    <div class="bcs-fold__body">
+                        <?php
+                        $autoRefuseRules = \App\Services\Community\EnlistmentMilsimPackService::normalizeAutoRefuseRules($em['auto_refuse_rules'] ?? []);
+                        $refuseFieldLabels = \App\Services\Community\EnlistmentMilsimPackService::refuseTargetFieldLabels($em);
+                        include base_path('views/partials/enlistment_auto_refuse_editor.php');
+                        ?>
+                    </div>
+                </details>
+
+                <details class="bcs-fold">
+                    <summary>Page d’entrée du formulaire <span class="bcs-fold__hint">préambule avant le dossier</span></summary>
+                    <div class="bcs-fold__body">
+                        <div class="bcs-grid">
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-letter">Lettre du logo</label>
+                                <input type="text" id="f-em-letter" name="em_logo_letter" value="<?= $h(mb_substr((string) ($em['logo_letter'] ?? 'F'), 0, 3)) ?>" maxlength="3" class="bcs-input--tiny bcs-mono">
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-watermark">Filigrane <span class="bcs-opt">(arrière-plan)</span></label>
+                                <input type="text" id="f-em-watermark" name="em_watermark" value="<?= $h((string) ($em['watermark'] ?? '')) ?>" maxlength="40">
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-ptitle">Titre du portail</label>
+                                <input type="text" id="f-em-ptitle" name="em_portal_title" value="<?= $h((string) ($em['portal_title'] ?? '')) ?>" maxlength="200">
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-psub">Sous-titre du portail</label>
+                                <input type="text" id="f-em-psub" name="em_portal_subtitle" value="<?= $h((string) ($em['portal_subtitle'] ?? '')) ?>" maxlength="400">
+                            </div>
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-em-pretitle">Grand titre</label>
+                            <input type="text" id="f-em-pretitle" name="em_preamble_title" value="<?= $h((string) ($em['preamble_title'] ?? '')) ?>" maxlength="200">
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-em-lead">Texte d’introduction</label>
+                            <textarea id="f-em-lead" name="em_preamble_lead" rows="3" maxlength="2000"><?= $h((string) ($em['preamble_lead'] ?? '')) ?></textarea>
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-em-status">Bloc statut</label>
+                            <p class="bcs-help">Une information par ligne.</p>
+                            <textarea id="f-em-status" name="em_preamble_status" rows="4" class="bcs-mono"><?= $h($emPreambleStatus) ?></textarea>
+                        </div>
+                        <div class="bcs-grid">
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-cta">Bouton d’entrée</label>
+                                <input type="text" id="f-em-cta" name="em_preamble_cta" value="<?= $h((string) ($em['preamble_cta'] ?? '')) ?>" maxlength="120">
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-foot">Pied de page</label>
+                                <input type="text" id="f-em-foot" name="em_preamble_footer" value="<?= $h((string) ($em['preamble_footer'] ?? '')) ?>" maxlength="600">
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-classified">Badge « classifié »</label>
+                                <input type="text" id="f-em-classified" name="em_classified_badge" value="<?= $h((string) ($em['classified_badge'] ?? '')) ?>" maxlength="40">
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="bcs-fold">
+                    <summary>Textes du dossier <span class="bcs-fold__hint">titres, règles, colonnes, bouton d’envoi</span></summary>
+                    <div class="bcs-fold__body">
+                        <div class="bcs-grid">
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-progress">Préfixe de progression</label>
+                                <input type="text" id="f-em-progress" name="em_progress_prefix" value="<?= $h((string) ($em['progress_prefix'] ?? '')) ?>" maxlength="80">
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-session">Titre du bloc session</label>
+                                <input type="text" id="f-em-session" name="em_session_block_title" value="<?= $h((string) ($em['session_block_title'] ?? '')) ?>" maxlength="120">
+                            </div>
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-em-roe-title">Règles d’engagement (ROE)</label>
+                            <p class="bcs-help">Un titre, puis une règle par ligne.</p>
+                            <input type="text" id="f-em-roe-title" name="em_roe_title" value="<?= $h((string) ($em['roe_title'] ?? '')) ?>" maxlength="160" placeholder="Titre">
+                            <textarea name="em_roe_lines" rows="5" aria-label="Règles, une par ligne"><?= $h($emRoeLines) ?></textarea>
+                        </div>
+                        <div class="bcs-grid">
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-doc">Référence du document</label>
+                                <input type="text" id="f-em-doc" name="em_doc_control" value="<?= $h((string) ($em['doc_control'] ?? '')) ?>" maxlength="120">
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-cand">Préfixe du titre de candidature</label>
+                                <input type="text" id="f-em-cand" name="em_candidate_prefix" value="<?= $h((string) ($em['candidate_prefix'] ?? '')) ?>" maxlength="80">
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-queue">Libellé de la file d’attente</label>
+                                <input type="text" id="f-em-queue" name="em_queue_label" value="<?= $h((string) ($em['queue_label'] ?? '')) ?>" maxlength="120">
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-ref">Libellé « Réf. »</label>
+                                <input type="text" id="f-em-ref" name="em_ref_label" value="<?= $h((string) ($em['ref_label'] ?? '')) ?>" maxlength="40">
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-sec">Mention de sécurité</label>
+                                <input type="text" id="f-em-sec" name="em_security_label" value="<?= $h((string) ($em['security_label'] ?? '')) ?>" maxlength="40">
+                            </div>
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-em-op-title">Note opérationnelle : titre</label>
+                            <input type="text" id="f-em-op-title" name="em_op_note_title" value="<?= $h((string) ($em['op_note_title'] ?? '')) ?>" maxlength="160">
+                        </div>
+                        <div class="bcs-grid">
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-col1">Colonne 1</label>
+                                <textarea id="f-em-col1" name="em_op_col1" rows="3"><?= $h((string) ($em['op_col1'] ?? '')) ?></textarea>
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-col2">Colonne 2</label>
+                                <textarea id="f-em-col2" name="em_op_col2" rows="3"><?= $h((string) ($em['op_col2'] ?? '')) ?></textarea>
+                            </div>
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-em-aiwarn">Avertissement IA <span class="bcs-opt">(affiché en rouge)</span></label>
+                            <input type="text" id="f-em-aiwarn" name="em_op_ai_warning" value="<?= $h((string) ($em['op_ai_warning'] ?? '')) ?>" maxlength="600">
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-em-archive">Note d’archive <span class="bcs-opt">(encadré gris)</span></label>
+                            <textarea id="f-em-archive" name="em_archive_note" rows="2" maxlength="1200"><?= $h((string) ($em['archive_note'] ?? '')) ?></textarea>
+                        </div>
+                        <div class="bcs-field">
+                            <span class="bcs-label">Titres des sections du formulaire</span>
+                            <div class="bcs-grid" style="border-top:0;">
+                                <div class="bcs-field"><label class="bcs-mini-label" for="f-em-s0">Section 0 (mode de candidature)</label><input type="text" id="f-em-s0" name="em_section_0" value="<?= $h((string) ($em['section_0'] ?? '')) ?>" maxlength="200"></div>
+                                <?php for ($si = 1; $si <= 4; $si++): ?>
+                                <div class="bcs-field"><label class="bcs-mini-label" for="f-em-s<?= $si ?>">Section <?= $si ?><?= $si === 3 ? ' (Motivation)' : '' ?></label><input type="text" id="f-em-s<?= $si ?>" name="em_section_<?= $si ?>" value="<?= $h((string) ($em['section_' . $si] ?? '')) ?>" maxlength="200"></div>
+                                <?php endfor; ?>
+                            </div>
+                        </div>
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-em-aicheck">Case d’attestation « sans IA »</label>
+                            <input type="text" id="f-em-aicheck" name="em_ai_checkbox" value="<?= $h((string) ($em['ai_checkbox'] ?? '')) ?>" maxlength="400">
+                        </div>
+                        <div class="bcs-grid">
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-submit">Bouton d’envoi</label>
+                                <input type="text" id="f-em-submit" name="em_submit_button" value="<?= $h((string) ($em['submit_button'] ?? '')) ?>" maxlength="120">
+                            </div>
+                            <div class="bcs-field">
+                                <label class="bcs-label" for="f-em-submit-foot">Texte sous le bouton</label>
+                                <input type="text" id="f-em-submit-foot" name="em_submit_footer" value="<?= $h((string) ($em['submit_footer'] ?? '')) ?>" maxlength="200">
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="bcs-fold">
+                    <summary>Avertissements affichés au candidat <span class="bcs-fold__hint">une idée par ligne</span></summary>
+                    <div class="bcs-fold__body">
+                        <p class="bcs-help" style="margin:10px 0;">Les mentions sur le rôle d’Athena et l’analyse automatique des réponses sont toujours ajoutées par la plateforme.</p>
+                        <textarea name="em_disclaimer_recruitment" rows="6" aria-label="Avertissements, un par ligne"><?= $h(implode("\n", is_array($em['disclaimer_recruitment_lines'] ?? null) ? $em['disclaimer_recruitment_lines'] : \App\Services\Community\EnlistmentMilsimPackService::defaultRecruitmentDisclaimerLines())) ?></textarea>
+                    </div>
+                </details>
+
+                <details class="bcs-fold">
+                    <summary>Import avancé <span class="bcs-fold__hint">pour l’équipe technique</span></summary>
+                    <div class="bcs-fold__body">
+                        <p class="bcs-help" style="margin:10px 0;">Facultatif. Reprend les réglages de l’éditeur des champs ci-dessus ; utile pour coller une configuration fournie par l’équipe technique. Ne modifiez pas sans savoir ce que vous faites.</p>
+                        <textarea name="em_fields_json" rows="10" class="bcs-mono" aria-label="Configuration avancée des champs"><?= $h($emFieldsJson) ?></textarea>
+                    </div>
+                </details>
+            </section>
+        </div>
+
+        <!-- 6. Menus du portail -->
+        <div class="bcs-panel" data-cp-panel="portail" id="cp-panel-portail" role="tabpanel" hidden>
+            <header class="bcs-intro">
+                <p class="bcs-intro__kicker">Partie 6 · Menus du portail</p>
+                <h2 class="bcs-intro__title">Les menus Opérations et Ressources</h2>
+                <p class="bcs-intro__text">Réservé à vos membres connectés : la présentation, la couleur et l’image des deux panneaux de navigation du portail. Ces réglages sont aussi disponibles dans <a class="bcs-link" href="<?= $h($settingsUrl . '?onglet=portail') ?>">Paramètres · Portail</a>.</p>
+                <div class="bcs-intro__foot">
+                    <?php $renderWhere(['Portail membres']); ?>
+                </div>
+            </header>
             <?php foreach ([
-                'operations' => ['label' => 'Opérations', 'accent' => $navOpsAccent, 'style' => $navOpsStyle, 'imageUrl' => $navOpsImageUrl, 'imageEnabled' => $navOpsImageEnabled],
-                'resources' => ['label' => 'Ressources', 'accent' => $navResAccent, 'style' => $navResStyle, 'imageUrl' => $navResImageUrl, 'imageEnabled' => $navResImageEnabled],
+                'operations' => ['label' => 'Menu Opérations', 'accent' => $navOpsAccent, 'style' => $navOpsStyle, 'imageUrl' => $navOpsImageUrl, 'imageEnabled' => $navOpsImageEnabled],
+                'resources' => ['label' => 'Menu Ressources', 'accent' => $navResAccent, 'style' => $navResStyle, 'imageUrl' => $navResImageUrl, 'imageEnabled' => $navResImageEnabled],
             ] as $slot => $cfg): ?>
-                <div class="rounded-xl border border-slate-200 bg-white p-4 space-y-4">
-                    <h3 class="text-xs font-black uppercase tracking-wider text-slate-800"><?= htmlspecialchars($cfg['label']) ?></h3>
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Couleur d’accent</label>
-                            <select name="nav_<?= htmlspecialchars($slot) ?>_accent" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
+            <section class="bcs-card" id="cp-nav-<?= $h($slot) ?>">
+                <?php $cardHead($cfg['label'], ''); ?>
+                <div class="bcs-card__body">
+                    <div class="bcs-grid">
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-nav-<?= $h($slot) ?>-accent">Couleur d’accent</label>
+                            <select id="f-nav-<?= $h($slot) ?>-accent" name="nav_<?= $h($slot) ?>_accent">
                                 <?php foreach ($navAccents as $accent): ?>
-                                    <option value="<?= htmlspecialchars($accent) ?>" <?= $cfg['accent'] === $accent ? 'selected' : '' ?>><?= htmlspecialchars(ucfirst($accent)) ?></option>
+                                    <option value="<?= $h((string) $accent) ?>" <?= $cfg['accent'] === $accent ? 'selected' : '' ?>><?= $h(ucfirst((string) $accent)) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 mb-1">Style sous-menu</label>
-                            <select name="nav_<?= htmlspecialchars($slot) ?>_submenu_style" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
+                        <div class="bcs-field">
+                            <label class="bcs-label" for="f-nav-<?= $h($slot) ?>-style">Présentation des liens</label>
+                            <select id="f-nav-<?= $h($slot) ?>-style" name="nav_<?= $h($slot) ?>_submenu_style">
                                 <option value="standard" <?= $cfg['style'] === 'standard' ? 'selected' : '' ?>>Standard</option>
                                 <option value="cards" <?= $cfg['style'] === 'cards' ? 'selected' : '' ?>>Cartes</option>
                                 <option value="minimal" <?= $cfg['style'] === 'minimal' ? 'selected' : '' ?>>Minimal</option>
                             </select>
                         </div>
                     </div>
-                    <label class="flex items-start gap-3 text-xs text-slate-700">
-                        <input type="hidden" name="nav_<?= htmlspecialchars($slot) ?>_image_enabled" value="0">
-                        <input type="checkbox" name="nav_<?= htmlspecialchars($slot) ?>_image_enabled" value="1" class="mt-0.5" <?= !empty($cfg['imageEnabled']) ? 'checked' : '' ?>>
-                        <span>Afficher l’image dans le panneau latéral du menu.</span>
-                    </label>
-                    <?php if (!empty($cfg['imageUrl'])): ?>
-                        <div class="rounded-lg border border-slate-200 bg-slate-50 p-2">
-                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">Aperçu image actuelle</p>
-                            <img src="<?= htmlspecialchars((string) $cfg['imageUrl']) ?>" alt="" class="w-full max-h-36 object-cover rounded-md">
+                    <?php $renderSwitch(
+                        'nav_' . $slot . '_image_enabled',
+                        !empty($cfg['imageEnabled']),
+                        'Afficher une image dans le panneau',
+                        '',
+                        'une illustration orne le haut du panneau.',
+                        'le panneau n’affiche que les liens.'
+                    ); ?>
+                    <div class="bcs-media">
+                        <span class="bcs-media__thumb">
+                            <?php if (!empty($cfg['imageUrl'])): ?><img src="<?= $h((string) $cfg['imageUrl']) ?>" alt=""><?php else: ?>Image par défaut<?php endif; ?>
+                        </span>
+                        <div class="bcs-media__copy">
+                            <label class="bcs-label" for="f-nav-<?= $h($slot) ?>-image">Image personnalisée <span class="bcs-opt">(facultatif)</span></label>
+                            <p class="bcs-help">JPG, PNG ou WebP, 3 Mo maximum.</p>
+                            <input type="file" id="f-nav-<?= $h($slot) ?>-image" name="nav_<?= $h($slot) ?>_image" class="bcs-file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp">
+                            <?php if (!empty($cfg['imageUrl'])): ?>
+                            <label class="bcs-check">
+                                <input type="hidden" name="remove_nav_<?= $h($slot) ?>_image" value="0">
+                                <input type="checkbox" name="remove_nav_<?= $h($slot) ?>_image" value="1">
+                                <span>Revenir à l’image par défaut</span>
+                            </label>
+                            <?php endif; ?>
                         </div>
-                    <?php endif; ?>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Image personnalisée (JPG, PNG, WebP — 3 Mo max)</label>
-                        <input type="file" name="nav_<?= htmlspecialchars($slot) ?>_image" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-                               class="block w-full max-w-md text-xs text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-sky-700 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-sky-800">
                     </div>
-                    <?php if (!empty($cfg['imageUrl'])): ?>
-                        <label class="flex items-start gap-3 text-xs text-slate-700">
-                            <input type="hidden" name="remove_nav_<?= htmlspecialchars($slot) ?>_image" value="0">
-                            <input type="checkbox" name="remove_nav_<?= htmlspecialchars($slot) ?>_image" value="1" class="mt-0.5">
-                            <span>Retirer l’image personnalisée de ce menu.</span>
-                        </label>
-                    <?php endif; ?>
                 </div>
+            </section>
             <?php endforeach; ?>
-        </section>
-        </div>
-
-        <div class="cp-panel hidden space-y-8 lg:space-y-10" data-cp-panel="vitrine" id="cp-panel-vitrine">
-        <section class="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-6 shadow-sm space-y-6">
-            <div class="border-b border-emerald-200/80 pb-4">
-                <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Fiche publique vitrine</h2>
-                <p class="text-xs text-slate-600 mt-1">Bandeau d’accueil, chiffres clés, encadrement affiché et liste des membres (si activée) sur votre page publique.</p>
-            </div>
-
-            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Modèle &amp; type de fiche</h3>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Modèle de page</label>
-                <select name="public_page_layout" class="w-full max-w-md rounded border border-slate-300 px-3 py-2 text-sm">
-                    <option value="legacy" <?= $publicLayoutSel === 'legacy' ? 'selected' : '' ?>>Classique (carte compacte)</option>
-                    <option value="showcase" <?= $publicLayoutSel === 'showcase' ? 'selected' : '' ?>>Vitrine (pleine page)</option>
-                </select>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Type de fiche</label>
-                <select name="public_audience" class="w-full max-w-md rounded border border-slate-300 px-3 py-2 text-sm">
-                    <option value="unit" <?= $publicAudienceSel === 'unit' ? 'selected' : '' ?>>Unité / communauté de jeu (recrutement, code, forum)</option>
-                    <option value="platform" <?= $publicAudienceSel === 'platform' ? 'selected' : '' ?>>Plateforme / outil (portail, emphase recrutement réduite)</option>
-                </select>
-                <p class="mt-1 text-[11px] text-slate-500">Pour les portails système, choisissez « Plateforme » et préférez le modèle <strong>Vitrine</strong> pour la bonne mise en page.</p>
-            </div>
-            <label class="flex items-start gap-3 cursor-pointer">
-                <input type="hidden" name="public_recruitment_badge_open" value="0">
-                <input type="checkbox" name="public_recruitment_badge_open" value="1" class="mt-1" <?= !empty($c['public_recruitment_badge_open']) ? 'checked' : '' ?>>
-                <span class="text-sm text-slate-700">Afficher le badge « Recrutement ouvert » (hero vitrine)</span>
-            </label>
-            <label class="flex items-start gap-3 cursor-pointer">
-                <input type="hidden" name="public_roster_enabled" value="0">
-                <input type="checkbox" name="public_roster_enabled" value="1" class="mt-1" <?= !empty($c['public_roster_enabled']) ? 'checked' : '' ?>>
-                <span class="text-sm text-slate-700">Activer le tableau roster public (membres avec opt-in)</span>
-            </label>
-            <label class="flex items-start gap-3 cursor-pointer">
-                <input type="hidden" name="public_sticky_cta_enabled" value="0">
-                <input type="checkbox" name="public_sticky_cta_enabled" value="1" class="mt-1" <?= !array_key_exists('public_sticky_cta_enabled', $c) || !empty($c['public_sticky_cta_enabled']) ? 'checked' : '' ?>>
-                <span class="text-sm text-slate-700">Barre d’action flottante en bas de la vitrine (CTA recrutement)</span>
-            </label>
-            <label class="flex items-start gap-3 cursor-pointer">
-                <input type="hidden" name="registry_featured" value="0">
-                <input type="checkbox" name="registry_featured" value="1" class="mt-1" <?= !empty($c['registry_featured']) ? 'checked' : '' ?>>
-                <span class="text-sm text-slate-700">Mettre en avant dans le registre public (badge + priorité d’affichage)</span>
-            </label>
-            </div>
-
-            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">SEO &amp; registre</h3>
-                <p class="text-[11px] text-slate-500">Titre et description utilisés pour le partage (réseaux, Google) et l’accroche de la carte registre.</p>
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre SEO (optionnel)</label>
-                        <input type="text" name="public_meta_title" value="<?= htmlspecialchars((string) ($c['public_meta_title'] ?? '')) ?>" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ex. 1er RPIMa — Unité MILSIM">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Accroche registre (court)</label>
-                        <input type="text" name="registry_tagline" value="<?= htmlspecialchars((string) ($c['registry_tagline'] ?? '')) ?>" maxlength="220" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Une phrase pour la carte annuaire">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Meta description SEO</label>
-                    <textarea name="public_meta_description" rows="2" maxlength="320" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="160–220 caractères recommandés pour le référencement et le partage."><?= htmlspecialchars((string) ($c['public_meta_description'] ?? '')) ?></textarea>
-                </div>
-            </div>
-
-            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Alerte &amp; créneaux (vitrine)</h3>
-                <p class="text-[11px] text-slate-500">Bandeau type alerte DSFR sous le hero, plus une ligne « créneaux » pour les sessions régulières.</p>
-                <div class="grid gap-4 sm:grid-cols-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Style d’alerte</label>
-                        <?php
-                        // Même garde que TenantCommunityProfileService::publicShowcasePayload :
-                        // ne pas relire $c['public_highlight_style'] après ?? (clé absente → 500).
-                        $hlStyleSel = in_array(
-                            ($hlStyleRaw = strtolower(trim((string) ($c['public_highlight_style'] ?? 'info')))),
-                            ['info', 'warning', 'success'],
-                            true
-                        ) ? $hlStyleRaw : 'info';
-                        ?>
-                        <select name="public_highlight_style" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                            <option value="info" <?= $hlStyleSel === 'info' ? 'selected' : '' ?>>Information</option>
-                            <option value="warning" <?= $hlStyleSel === 'warning' ? 'selected' : '' ?>>Attention</option>
-                            <option value="success" <?= $hlStyleSel === 'success' ? 'selected' : '' ?>>Ouverture / succès</option>
-                        </select>
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre de l’alerte</label>
-                        <input type="text" name="public_highlight_title" value="<?= htmlspecialchars((string) ($c['public_highlight_title'] ?? '')) ?>" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ex. Session de recrutement en cours">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Texte de l’alerte</label>
-                    <textarea name="public_highlight_body" rows="2" maxlength="400" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($c['public_highlight_body'] ?? '')) ?></textarea>
-                </div>
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Libellé créneaux</label>
-                        <input type="text" name="public_schedule_label" value="<?= htmlspecialchars((string) ($c['public_schedule_label'] ?? '')) ?>" maxlength="80" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Créneaux hebdo">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Détail des créneaux</label>
-                        <input type="text" name="public_schedule_body" value="<?= htmlspecialchars((string) ($c['public_schedule_body'] ?? '')) ?>" maxlength="240" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ven. 20h–23h · Dim. ops">
-                    </div>
-                </div>
-            </div>
-
-            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Réseaux &amp; présence</h3>
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Site web</label>
-                        <input type="url" name="public_social_website" value="<?= htmlspecialchars((string) ($c['public_social_website'] ?? '')) ?>" maxlength="500" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="https://">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Chaîne YouTube</label>
-                        <input type="url" name="public_social_youtube" value="<?= htmlspecialchars((string) ($c['public_social_youtube'] ?? '')) ?>" maxlength="500" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="https://youtube.com/…">
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-bold text-slate-700 mb-1">TeamSpeak / adresse vocale</label>
-                        <input type="text" name="public_social_teamspeak" value="<?= htmlspecialchars((string) ($c['public_social_teamspeak'] ?? '')) ?>" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="ts.exemple.net ou ts3server://…">
-                    </div>
-                </div>
-            </div>
-
-            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Bandeau &amp; repères visuels</h3>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Bio courte du hero</label>
-                <textarea name="public_hero_subtitle" rows="3" maxlength="600" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Quelques lignes pour situer votre communauté dès l’arrivée sur la page."><?= htmlspecialchars((string) ($c['public_hero_subtitle'] ?? '')) ?></textarea>
-                <p class="mt-1 text-[11px] text-slate-500">Visible dans le bandeau d’accueil. Si vous laissez ce champ vide, la bio courte existante pourra être reprise automatiquement.</p>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Badges libres (une ligne = un badge, ex. FR / OTAN)</label>
-                <textarea name="public_region_badges" rows="3" class="w-full rounded border border-slate-300 px-3 py-2 text-sm font-mono"><?= htmlspecialchars($regionBadgesLines) ?></textarea>
-            </div>
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Doctrine (court)</label>
-                    <input type="text" name="public_doctrine" value="<?= htmlspecialchars((string) ($c['public_doctrine'] ?? '')) ?>" maxlength="200" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Libellé accès</label>
-                    <input type="text" name="public_access_label" value="<?= htmlspecialchars((string) ($c['public_access_label'] ?? '')) ?>" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Public + validation">
-                </div>
-            </div>
-            </div>
-
-            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Blocs visibles &amp; textes du corps de page</h3>
-            <div>
-                <p class="text-xs font-bold text-slate-700 mb-2">Modules affichés (vitrine)</p>
-                <div class="flex flex-wrap gap-3">
-                    <?php foreach (['forum' => 'Forum', 'documents' => 'Documents', 'events' => 'Événements', 'roster' => 'Roster', 'training' => 'Formations', 'analytics' => 'Analytique'] as $mk => $ml): ?>
-                    <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-                        <input type="checkbox" name="public_mod_<?= htmlspecialchars($mk) ?>" value="1" <?= !empty($pm[$mk]) ? 'checked' : '' ?>>
-                        <?= htmlspecialchars($ml) ?>
-                    </label>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Mission publique</label>
-                <textarea name="public_mission" rows="4" maxlength="4000" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($c['public_mission'] ?? '')) ?></textarea>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Spécialités (une par ligne)</label>
-                <textarea name="public_specialties" rows="4" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars($specialtiesLines) ?></textarea>
-            </div>
-            </div>
-
-            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Accroche &amp; présentation (vitrine mockup)</h3>
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre d’accroche (hero)</label>
-                        <textarea name="public_hero_headline" rows="2" maxlength="220" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Une unité qui joue sérieusement…"><?= htmlspecialchars((string) ($c['public_hero_headline'] ?? '')) ?></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Session de recrutement (badge)</label>
-                        <input type="text" name="public_recruitment_session_label" value="<?= htmlspecialchars((string) ($c['public_recruitment_session_label'] ?? '')) ?>" maxlength="80" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Session août 2026">
-                        <label class="block text-xs font-bold text-slate-700 mb-1 mt-3">Année de fondation</label>
-                        <input type="text" name="public_founded_year" value="<?= htmlspecialchars((string) ($c['public_founded_year'] ?? '')) ?>" maxlength="12" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="2023">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Titre « Qui nous sommes »</label>
-                    <input type="text" name="public_about_title" value="<?= htmlspecialchars((string) ($c['public_about_title'] ?? '')) ?>" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Du milsim structuré, pas militarisé">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Texte “Qui sommes-nous ?”</label>
-                    <textarea name="public_about_body" rows="4" maxlength="8000" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($c['public_about_body'] ?? '')) ?></textarea>
-                    <p class="mt-1 text-[11px] text-slate-500">Bloc long affiché dans la section de présentation. Si vous le laissez vide, la présentation déjà en place pourra être reprise pour ne pas casser l’existant.</p>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Second paragraphe (optionnel)</label>
-                    <textarea name="public_about_body_secondary" rows="3" maxlength="4000" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($c['public_about_body_secondary'] ?? '')) ?></textarea>
-                </div>
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre du bloc sections / unités</label>
-                        <input type="text" name="public_sections_title" value="<?= htmlspecialchars((string) ($c['public_sections_title'] ?? '')) ?>" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Sous-texte sections</label>
-                        <input type="text" name="public_sections_lead" value="<?= htmlspecialchars((string) ($c['public_sections_lead'] ?? '')) ?>" maxlength="240" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Les places ouvertes sont indiquées par section.">
-                    </div>
-                </div>
-            </div>
-
-            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Vidéo de présentation</h3>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Lien de la vidéo (YouTube, Vimeo…)</label>
-                    <input type="url" name="public_video_url" value="<?= htmlspecialchars((string) ($c['public_video_url'] ?? '')) ?>" maxlength="1024" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="https://">
-                </div>
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre</label>
-                        <input type="text" name="public_video_title" value="<?= htmlspecialchars((string) ($c['public_video_title'] ?? '')) ?>" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Texte d’accompagnement</label>
-                        <textarea name="public_video_body" rows="2" maxlength="800" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($c['public_video_body'] ?? '')) ?></textarea>
-                    </div>
-                </div>
-                <p class="text-xs font-bold text-slate-700">Chapitres (optionnel)</p>
-                <?php foreach ($videoChapterRows as $i => $ch): ?>
-                <div class="grid gap-2 sm:grid-cols-[7rem_1fr]">
-                    <input type="text" name="public_video_chapter_time[]" value="<?= htmlspecialchars((string) ($ch['time'] ?? '')) ?>" maxlength="16" class="rounded border border-slate-300 px-3 py-2 text-sm font-mono" placeholder="00:34">
-                    <input type="text" name="public_video_chapter_label[]" value="<?= htmlspecialchars((string) ($ch['label'] ?? '')) ?>" maxlength="120" class="rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Briefing et distribution des ordres">
-                </div>
-                <?php endforeach; ?>
-            </div>
-
-            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Points forts (pitch)</h3>
-                <?php foreach ($pitchRows as $i => $pr): ?>
-                <div class="grid gap-2 sm:grid-cols-2">
-                    <input type="text" name="public_pitch_title[]" value="<?= htmlspecialchars((string) ($pr['title'] ?? '')) ?>" maxlength="120" class="rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Titre">
-                    <input type="text" name="public_pitch_body[]" value="<?= htmlspecialchars((string) ($pr['body'] ?? '')) ?>" maxlength="400" class="rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Description courte">
-                </div>
-                <?php endforeach; ?>
-            </div>
-
-            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                        <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Prérequis pour candidater</h3>
-                        <p class="text-xs text-slate-600 mt-1">Liste affichée dans la section « Prérequis » de la page publique. Ajoutez, réordonnez ou retirez des points.</p>
-                    </div>
-                    <button type="button" id="add-prereq-row" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow hover:bg-emerald-700">+ Prérequis</button>
-                </div>
-                <div id="prereq-rows" class="space-y-3" data-prereq-max="16">
-                    <?php foreach ($prereqRows as $i => $prRow): ?>
-                        <?php
-                        $st = (string) ($prRow['status'] ?? 'required');
-                        $pkeySel = (string) ($prRow['key'] ?? '');
-                        ?>
-                    <div class="cp-dyn-row rounded-lg border border-slate-200 bg-slate-50/80 p-3 space-y-2" data-prereq-row>
-                        <div class="flex flex-wrap items-center justify-between gap-2">
-                            <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Point <span data-row-index><?= (int) $i + 1 ?></span></span>
-                            <div class="flex flex-wrap gap-1">
-                                <button type="button" class="cp-move-up rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:border-emerald-300" title="Monter">↑</button>
-                                <button type="button" class="cp-move-down rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:border-emerald-300" title="Descendre">↓</button>
-                                <button type="button" class="cp-remove-row rounded border border-rose-200 bg-white px-2 py-1 text-[10px] font-bold text-rose-700 hover:bg-rose-50">Retirer</button>
-                            </div>
-                        </div>
-                        <div class="grid gap-2 sm:grid-cols-2">
-                            <div>
-                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Libellé affiché</label>
-                                <input type="text" name="public_prereq_label[]" value="<?= htmlspecialchars((string) ($prRow['label'] ?? '')) ?>" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ex. Micro correct et Discord">
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Catégorie (optionnel)</label>
-                                <select name="public_prereq_key[]" class="w-full rounded border border-slate-300 px-3 py-2 text-sm cp-prereq-cat">
-                                    <option value="">Libre (texte seul)</option>
-                                    <?php foreach ($prereqCatalog as $ck => $cinfo): ?>
-                                    <option value="<?= htmlspecialchars($ck) ?>" <?= $pkeySel === $ck ? 'selected' : '' ?> data-hint="<?= htmlspecialchars($cinfo['hint'], ENT_QUOTES, 'UTF-8') ?>" data-label="<?= htmlspecialchars($cinfo['label'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($cinfo['label']) ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="grid gap-2 sm:grid-cols-[12rem_1fr]">
-                            <div>
-                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Niveau d’exigence</label>
-                                <select name="public_prereq_status[]" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm">
-                                    <option value="required" <?= $st === 'required' ? 'selected' : '' ?>>Exigé</option>
-                                    <option value="optional" <?= $st === 'optional' ? 'selected' : '' ?>>Souhaité</option>
-                                    <option value="not_required" <?= $st === 'not_required' ? 'selected' : '' ?>>Non exigé</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Précision (optionnel)</label>
-                                <input type="text" name="public_prereq_detail[]" value="<?= htmlspecialchars((string) ($prRow['detail'] ?? '')) ?>" maxlength="240" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="Court complément affiché sous le libellé">
-                            </div>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                        <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Étapes de recrutement</h3>
-                        <p class="text-xs text-slate-600 mt-1">Parcours candidature → terrain sur la page publique. Titre + courte description ; délai et mise en avant optionnels.</p>
-                    </div>
-                    <button type="button" id="add-step-row" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow hover:bg-emerald-700">+ Étape</button>
-                </div>
-                <div id="step-rows" class="space-y-3" data-step-max="12">
-                    <?php foreach ($stepRows as $i => $stRow): ?>
-                    <div class="cp-dyn-row rounded-lg border border-slate-200 bg-slate-50/80 p-3 space-y-2" data-step-row>
-                        <div class="flex flex-wrap items-center justify-between gap-2">
-                            <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Étape <span data-row-index><?= (int) $i + 1 ?></span></span>
-                            <div class="flex flex-wrap gap-1">
-                                <button type="button" class="cp-move-up rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:border-emerald-300" title="Monter">↑</button>
-                                <button type="button" class="cp-move-down rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:border-emerald-300" title="Descendre">↓</button>
-                                <button type="button" class="cp-remove-row rounded border border-rose-200 bg-white px-2 py-1 text-[10px] font-bold text-rose-700 hover:bg-rose-50">Retirer</button>
-                            </div>
-                        </div>
-                        <div class="grid gap-2 sm:grid-cols-[1fr_8rem_10rem]">
-                            <div>
-                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Titre</label>
-                                <input type="text" name="public_step_title[]" value="<?= htmlspecialchars((string) ($stRow['title'] ?? '')) ?>" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ex. Candidature en ligne">
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Délai</label>
-                                <input type="text" name="public_step_delay[]" value="<?= htmlspecialchars((string) ($stRow['delay'] ?? '')) ?>" maxlength="40" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="sous 5 jours">
-                            </div>
-                            <div>
-                                <label class="block text-[11px] font-bold text-slate-600 mb-1">Affichage</label>
-                                <select name="public_step_highlight[]" class="w-full rounded border border-slate-300 px-2 py-2 text-sm">
-                                    <option value="0" <?= empty($stRow['highlight']) ? 'selected' : '' ?>>Normale</option>
-                                    <option value="1" <?= !empty($stRow['highlight']) ? 'selected' : '' ?>>Mise en avant</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-1">Description courte</label>
-                            <textarea name="public_step_body[]" rows="2" maxlength="500" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ce que le candidat doit savoir à cette étape"><?= htmlspecialchars((string) ($stRow['body'] ?? '')) ?></textarea>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Questions fréquentes</h3>
-                <?php foreach ($faqRows as $i => $fq): ?>
-                <div class="grid gap-2">
-                    <input type="text" name="public_faq_q[]" value="<?= htmlspecialchars((string) ($fq['q'] ?? '')) ?>" maxlength="200" class="rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Question">
-                    <textarea name="public_faq_a[]" rows="2" maxlength="800" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Réponse"><?= htmlspecialchars((string) ($fq['a'] ?? '')) ?></textarea>
-                </div>
-                <?php endforeach; ?>
-            </div>
-
-            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Témoignages</h3>
-                <?php foreach ($quoteRows as $i => $qr): ?>
-                <div class="rounded-lg border border-slate-200 p-3 space-y-2">
-                    <textarea name="public_quote_text[]" rows="2" maxlength="600" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Citation"><?= htmlspecialchars((string) ($qr['text'] ?? '')) ?></textarea>
-                    <div class="grid gap-2 sm:grid-cols-3">
-                        <input type="text" name="public_quote_name[]" value="<?= htmlspecialchars((string) ($qr['name'] ?? '')) ?>" maxlength="80" class="rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Indicatif">
-                        <input type="text" name="public_quote_meta[]" value="<?= htmlspecialchars((string) ($qr['meta'] ?? '')) ?>" maxlength="120" class="rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Grade · section · ancienneté">
-                        <input type="text" name="public_quote_initials[]" value="<?= htmlspecialchars((string) ($qr['initials'] ?? '')) ?>" maxlength="4" class="rounded border border-slate-300 px-3 py-2 text-sm font-mono" placeholder="BA">
-                    </div>
-                </div>
-                <?php endforeach; ?>
-            </div>
-
-            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Partenaires &amp; appel final</h3>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Unités alliées / partenaires (un par ligne)</label>
-                    <textarea name="public_partners" rows="3" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars($partnersLines) ?></textarea>
-                </div>
-                <div class="grid gap-3 sm:grid-cols-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Sur-titre CTA</label>
-                        <input type="text" name="public_cta_kicker" value="<?= htmlspecialchars((string) ($c['public_cta_kicker'] ?? '')) ?>" maxlength="80" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre CTA</label>
-                        <input type="text" name="public_cta_title" value="<?= htmlspecialchars((string) ($c['public_cta_title'] ?? '')) ?>" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Texte CTA</label>
-                    <textarea name="public_cta_body" rows="2" maxlength="500" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($c['public_cta_body'] ?? '')) ?></textarea>
-                </div>
-            </div>
-
-            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Vue d’ensemble chiffrée</h3>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Statistiques (vue d’ensemble)</label>
-                <select name="public_stats_mode" class="w-full max-w-md rounded border border-slate-300 px-3 py-2 text-sm mb-3">
-                    <option value="manual" <?= $statsModeSel === 'manual' ? 'selected' : '' ?>>Saisie manuelle</option>
-                    <option value="computed" <?= $statsModeSel === 'computed' ? 'selected' : '' ?>>Calcul automatique (effectifs / unités / activité)</option>
-                </select>
-                <div class="grid gap-3 sm:grid-cols-2">
-                    <div>
-                        <label class="text-[11px] text-slate-500">Effectif</label>
-                        <input type="text" name="public_stats_effectif" value="<?= htmlspecialchars((string) ($sm['effectif'] ?? '')) ?>" maxlength="12" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                    </div>
-                    <div>
-                        <label class="text-[11px] text-slate-500">Unités</label>
-                        <input type="text" name="public_stats_unites" value="<?= htmlspecialchars((string) ($sm['unites'] ?? '')) ?>" maxlength="12" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                    </div>
-                    <div>
-                        <label class="text-[11px] text-slate-500">Activité % (manuel)</label>
-                        <input type="text" name="public_stats_activite" value="<?= htmlspecialchars((string) ($sm['activite_percent'] ?? '')) ?>" maxlength="12" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="92">
-                    </div>
-                    <div>
-                        <label class="text-[11px] text-slate-500">Théâtre (manuel)</label>
-                        <input type="text" name="public_stats_theatre" value="<?= htmlspecialchars((string) ($sm['theatre'] ?? '')) ?>" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Europe">
-                    </div>
-                </div>
-            </div>
-            </div>
-
-            <div class="rounded-xl border border-emerald-100 bg-white p-5 shadow-sm space-y-4">
-                <h3 class="text-xs font-black uppercase tracking-wider text-emerald-900">Encadrement affiché sur la fiche</h3>
-            <div>
-                <p class="text-xs font-bold text-slate-700 mb-2">Chaîne de commandement (affichage libre)</p>
-                <?php foreach ($cmdChain as $ci => $crow): ?>
-                    <?php if (!is_array($crow)) { continue; } ?>
-                <div class="grid gap-2 sm:grid-cols-3 mb-3 rounded-lg border border-slate-200 bg-white p-3">
-                    <input type="text" name="cmd_role_label[]" value="<?= htmlspecialchars((string) ($crow['role_label'] ?? '')) ?>" placeholder="Rôle" class="rounded border border-slate-300 px-2 py-1 text-sm">
-                    <input type="text" name="cmd_display_name[]" value="<?= htmlspecialchars((string) ($crow['display_name'] ?? '')) ?>" placeholder="Nom affiché" class="rounded border border-slate-300 px-2 py-1 text-sm">
-                    <input type="text" name="cmd_hint[]" value="<?= htmlspecialchars((string) ($crow['hint'] ?? '')) ?>" placeholder="Sous-titre" class="rounded border border-slate-300 px-2 py-1 text-sm sm:col-span-1">
-                </div>
-                <?php endforeach; ?>
-            </div>
-            </div>
-        </section>
-        </div>
-
-        <div class="cp-panel hidden space-y-8 lg:space-y-10" data-cp-panel="profil" id="cp-panel-profil">
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-            <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Inscription publique</h2>
-            <p class="text-xs text-slate-500">Formulaire de candidature ouvert depuis votre page publique (section recrutement).</p>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Mode du formulaire de candidature</label>
-                <select name="registration_mode" class="w-full max-w-md rounded border border-slate-300 px-3 py-2 text-sm">
-                    <option value="milsim" <?= $registrationMode === 'milsim' ? 'selected' : '' ?>>MilSim complet (dossier détaillé, CV, disponibilités, etc.)</option>
-                    <option value="simple" <?= $registrationMode === 'simple' ? 'selected' : '' ?>>Mode simple (champs réduits, onboarding rapide)</option>
-                    <option value="discord" <?= $registrationMode === 'discord' ? 'selected' : '' ?>>Recrutement via Discord (pseudo et questions personnalisées)</option>
-                </select>
-                <?php if ($registrationMode === 'discord'): ?>
-                <p class="mt-1.5 text-xs text-slate-500 max-w-2xl">
-                    Les candidats déposent une fiche courte (pseudo Discord + vos questions). Composez les questions dans
-                    <a href="<?= htmlspecialchars(url('back-office/recruitments/discord-questions'), ENT_QUOTES, 'UTF-8') ?>" class="font-semibold text-indigo-700 underline">Questions Discord</a>
-                    et renseignez le lien d’invitation Discord dans la fiche contact.
-                </p>
-                <?php endif; ?>
-            </div>
-        </section>
-
-        <section class="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 shadow-sm space-y-4">
-            <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Jeu &amp; matériel</h2>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Jeu (titre court)</label>
-                <input type="text" name="game_label" value="<?= htmlspecialchars((string) ($c['game_label'] ?? '')) ?>" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Arma 3, Squad…">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Mods principaux</label>
-                <textarea name="main_mods" rows="4" class="w-full rounded border border-slate-300 px-3 py-2 text-sm font-mono" placeholder="Liste ou description"><?= htmlspecialchars((string) ($c['main_mods'] ?? '')) ?></textarea>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Taille modpack (Go, indicatif)</label>
-                <input type="text" name="modpack_size_gb" value="<?= htmlspecialchars((string) ($c['modpack_size_gb'] ?? '')) ?>" maxlength="32" class="w-full max-w-xs rounded border border-slate-300 px-3 py-2 text-sm" placeholder="ex. 45">
-            </div>
-            <div>
-                <p class="text-xs font-bold text-slate-700 mb-2">Style de jeu</p>
-                <div class="flex flex-wrap gap-3">
-                    <?php foreach ($badgeLabels as $slug => $label): ?>
-                        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-                            <input type="checkbox" name="style_badges[]" value="<?= htmlspecialchars($slug) ?>" <?= in_array($slug, $selectedBadges, true) ? 'checked' : '' ?>>
-                            <?= htmlspecialchars($label) ?>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-            <div>
-                <p class="text-xs font-bold text-slate-700 mb-2">Pastilles dans le registre des unités</p>
-                <p class="text-[11px] text-slate-500 mb-2">Visibles sur votre carte lorsque la communauté est affichée dans le registre. Cochez ce qui correspond le mieux à votre univers.</p>
-                <div class="flex flex-wrap gap-3">
-                    <?php foreach ($registryTagLabels as $slug => $label): ?>
-                        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
-                            <input type="checkbox" name="registry_tags[]" value="<?= htmlspecialchars($slug) ?>" <?= in_array($slug, $selectedRegistryTags, true) ? 'checked' : '' ?>>
-                            <?= htmlspecialchars($label) ?>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-        </section>
-        </div>
-
-        <div class="cp-panel hidden space-y-8 lg:space-y-10" data-cp-panel="textes" id="cp-panel-textes">
-        <section class="rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/30 to-white p-6 shadow-md space-y-6">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Présentation</h2>
-                    <p class="text-xs text-slate-500 mt-1 max-w-xl">Contenu affiché sur votre fiche publique : mode texte libre ou sections étiquetées (type PRIMO / SECUNDO).</p>
-                </div>
-                <div class="flex flex-wrap gap-3 text-sm">
-                    <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm cursor-pointer hover:border-indigo-300">
-                        <input type="radio" name="presentation_mode" value="simple" <?= $presentationMode === 'simple' ? 'checked' : '' ?>>
-                        Texte libre
-                    </label>
-                    <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm cursor-pointer hover:border-indigo-300">
-                        <input type="radio" name="presentation_mode" value="military" <?= $presentationMode === 'military' ? 'checked' : '' ?>>
-                        Sections étiquetées
-                    </label>
-                </div>
-            </div>
-            <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                <label class="block text-xs font-bold text-slate-700 mb-2">Texte simple (mode libre)</label>
-                <textarea name="simple_body" rows="8" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm leading-relaxed focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"><?= htmlspecialchars((string) ($c['simple_body'] ?? '')) ?></textarea>
-            </div>
-            <div class="space-y-4" id="military-sections">
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                    <p class="text-xs font-bold text-slate-800">Sections étiquetées (mode militaire)</p>
-                    <button type="button" id="add-military-section" class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow hover:bg-emerald-700">+ Section</button>
-                </div>
-                <?php foreach ($military as $i => $sec): ?>
-                    <?php if (!is_array($sec)) { continue; } ?>
-                    <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-4 space-y-3 shadow-sm">
-                        <div class="grid gap-2 sm:grid-cols-3">
-                            <input type="text" name="military_label[]" value="<?= htmlspecialchars((string) ($sec['label'] ?? '')) ?>" maxlength="32" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono" placeholder="Étiquette (ex. PRIMO)">
-                            <input type="text" name="military_title[]" value="<?= htmlspecialchars((string) ($sec['title'] ?? '')) ?>" maxlength="200" class="rounded-lg border border-slate-300 px-3 py-2 text-sm sm:col-span-2" placeholder="Titre de section">
-                        </div>
-                        <textarea name="military_body[]" rows="4" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" placeholder="Contenu"><?= htmlspecialchars((string) ($sec['body'] ?? '')) ?></textarea>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-            <div class="rounded-xl border border-slate-200 bg-white p-4">
-                <label class="block text-xs font-bold text-slate-700 mb-2">Attentes vis-à-vis des joueurs</label>
-                <textarea name="expectations" rows="4" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm"><?= htmlspecialchars((string) ($c['expectations'] ?? '')) ?></textarea>
-            </div>
-        </section>
-
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-            <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Contact public</h2>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Introduction (optionnel)</label>
-                <input type="text" name="contact_intro" value="<?= htmlspecialchars((string) ($c['contact_intro'] ?? '')) ?>" maxlength="500" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">URL Discord (https://…)</label>
-                <input type="url" name="contact_discord_url" value="<?= htmlspecialchars((string) ($c['contact_discord_url'] ?? '')) ?>" maxlength="500" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="https://discord.gg/…">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">E-mail affiché &amp; destinataire formulaire</label>
-                <input type="email" name="contact_email" value="<?= htmlspecialchars((string) ($c['contact_email'] ?? '')) ?>" maxlength="255" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-            </div>
-            <label class="flex items-start gap-3 cursor-pointer">
-                <input type="hidden" name="contact_form_enabled" value="0">
-                <input type="checkbox" name="contact_form_enabled" value="1" class="mt-1" <?= !empty($c['contact_form_enabled']) ? 'checked' : '' ?>>
-                <span class="text-sm text-slate-700">Activer le formulaire « nous écrire » sur la fiche publique (nécessite un e-mail valide ci-dessus)</span>
-            </label>
-        </section>
-        </div>
-
-        <div class="cp-panel hidden space-y-8 lg:space-y-10" data-cp-panel="candidature" id="cp-panel-candidature">
-        <section id="pack-milsim-editor" class="rounded-2xl border border-emerald-100 bg-gradient-to-b from-white to-emerald-50/20 p-6 shadow-md space-y-4 scroll-mt-24">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between border-b border-emerald-100 pb-4">
-                <div>
-                    <h2 class="text-sm font-black uppercase tracking-widest text-slate-900">Pack MilSim — formulaire /enlistment</h2>
-                    <p class="text-xs text-slate-500 mt-1 max-w-2xl">Affiché lorsque l’inscription est en <strong>MilSim complet</strong>. Ajustez le préambule, les champs (type de contrôle), les ROE et les textes latéraux.</p>
-                </div>
-                <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-700 max-w-xs shadow-sm">
-                    <p class="font-bold text-slate-900 mb-1">Barre de navigation</p>
-                    <p class="leading-relaxed">La marque affichée est fixée par la plateforme : <strong class="text-emerald-800"><?= htmlspecialchars(\App\Services\Community\EnlistmentMilsimPackService::PLATFORM_NAV_BRAND) ?></strong>. Elle n’est pas modifiable ici (cohérence Athena).</p>
-                </div>
-            </div>
-
-            <details open class="group rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <summary class="cursor-pointer list-none rounded-t-2xl px-4 py-3 text-sm font-bold text-slate-900 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
-                    <span class="inline-flex items-center gap-2"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-xs font-black text-white">1</span> Préambule &amp; portail</span>
-                </summary>
-                <div class="space-y-4 border-t border-slate-100 p-4">
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Lettre logo (préambule)</label>
-                    <input type="text" name="em_logo_letter" value="<?= htmlspecialchars(mb_substr((string) ($em['logo_letter'] ?? 'F'), 0, 3)) ?>" maxlength="3" class="w-full max-w-[6rem] rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Filigrane (arrière-plan)</label>
-                    <input type="text" name="em_watermark" value="<?= htmlspecialchars((string) ($em['watermark'] ?? '')) ?>" maxlength="40" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                </div>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Titre portail (préambule)</label>
-                <input type="text" name="em_portal_title" value="<?= htmlspecialchars((string) ($em['portal_title'] ?? '')) ?>" maxlength="200" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Sous-titre portail</label>
-                <input type="text" name="em_portal_subtitle" value="<?= htmlspecialchars((string) ($em['portal_subtitle'] ?? '')) ?>" maxlength="400" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Titre préambule (grand)</label>
-                <input type="text" name="em_preamble_title" value="<?= htmlspecialchars((string) ($em['preamble_title'] ?? '')) ?>" maxlength="200" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Texte d’introduction</label>
-                <textarea name="em_preamble_lead" rows="3" maxlength="2000" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($em['preamble_lead'] ?? '')) ?></textarea>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Bloc statut (une ligne par ligne)</label>
-                <textarea name="em_preamble_status" rows="4" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono"><?= htmlspecialchars($emPreambleStatus) ?></textarea>
-            </div>
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Bouton d’entrée</label>
-                    <input type="text" name="em_preamble_cta" value="<?= htmlspecialchars((string) ($em['preamble_cta'] ?? '')) ?>" maxlength="120" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Pied préambule</label>
-                    <input type="text" name="em_preamble_footer" value="<?= htmlspecialchars((string) ($em['preamble_footer'] ?? '')) ?>" maxlength="600" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                </div>
-            </div>
-                </div>
-            </details>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Badge « classifié »</label>
-                <input type="text" name="em_classified_badge" value="<?= htmlspecialchars((string) ($em['classified_badge'] ?? '')) ?>" maxlength="40" class="w-full max-w-md rounded-lg border border-slate-300 px-3 py-2 text-sm">
-            </div>
-
-            <details open class="rounded-2xl border border-emerald-200 bg-white shadow-sm">
-                <summary class="cursor-pointer list-none rounded-t-2xl px-4 py-3 text-sm font-bold text-slate-900 hover:bg-emerald-50/50 [&::-webkit-details-marker]:hidden">
-                    <span class="inline-flex items-center gap-2"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-xs font-black text-white">2</span> Champs du dossier candidat</span>
-                </summary>
-                <div class="border-t border-emerald-100 p-4 space-y-2">
-                    <p class="text-xs text-slate-600 mb-3">Pour chaque champ : libellé, aide, <strong>type de contrôle</strong> (texte, zone, liste, oui/non). Les options s’affichent une par ligne pour les listes.</p>
-                    <?php
-                    $fieldsData = is_array($em['fields'] ?? null) ? $em['fields'] : [];
-                    $inputPrefix = 'em_fld';
-                    include base_path('views/partials/milsim_pack_fields_editor.php');
-                    ?>
-                </div>
-            </details>
-
-            <details open class="rounded-2xl border border-amber-200 bg-white shadow-sm">
-                <summary class="cursor-pointer list-none rounded-t-2xl px-4 py-3 text-sm font-bold text-slate-900 hover:bg-amber-50/40 [&::-webkit-details-marker]:hidden">
-                    <span class="inline-flex items-center gap-2"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-600 text-xs font-black text-white">★</span> Section Motivation</span>
-                </summary>
-                <div class="border-t border-amber-100 p-4 space-y-2">
-                    <p class="text-xs text-slate-600 mb-3">Personnalisez le bloc Motivation du formulaire public : titre, introduction, questions affichées et caractère obligatoire.</p>
-                    <?php
-                    $motivationData = is_array($em['motivation'] ?? null) ? $em['motivation'] : [];
-                    $inputPrefix = 'em_motivation';
-                    include base_path('views/partials/motivation_section_editor.php');
-                    ?>
-                </div>
-            </details>
-
-            <details open class="rounded-2xl border border-indigo-200 bg-white shadow-sm">
-                <summary class="cursor-pointer list-none rounded-t-2xl px-4 py-3 text-sm font-bold text-slate-900 hover:bg-indigo-50/40 [&::-webkit-details-marker]:hidden">
-                    <span class="inline-flex items-center gap-2"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-700 text-xs font-black text-white">+</span> Questions supplémentaires</span>
-                </summary>
-                <div class="border-t border-indigo-100 p-4">
-                    <?php
-                    $customQuestions = \App\Services\Community\EnlistmentMilsimPackService::normalizeCustomQuestions($em['custom_questions'] ?? []);
-                    include base_path('views/partials/enlistment_custom_questions_editor.php');
-                    ?>
-                </div>
-            </details>
-
-            <details class="rounded-2xl border border-rose-200 bg-white shadow-sm">
-                <summary class="cursor-pointer list-none rounded-t-2xl px-4 py-3 text-sm font-bold text-slate-900 hover:bg-rose-50/40 [&::-webkit-details-marker]:hidden">
-                    <span class="inline-flex items-center gap-2"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-700 text-xs font-black text-white">!</span> Refus automatique selon les réponses</span>
-                </summary>
-                <div class="border-t border-rose-100 p-4">
-                    <?php
-                    $autoRefuseRules = \App\Services\Community\EnlistmentMilsimPackService::normalizeAutoRefuseRules($em['auto_refuse_rules'] ?? []);
-                    $refuseFieldLabels = \App\Services\Community\EnlistmentMilsimPackService::refuseTargetFieldLabels($em);
-                    include base_path('views/partials/enlistment_auto_refuse_editor.php');
-                    ?>
-                </div>
-            </details>
-
-            <details class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <summary class="cursor-pointer list-none rounded-t-2xl px-4 py-3 text-sm font-bold text-slate-900 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
-                    <span class="inline-flex items-center gap-2"><span class="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-800 text-xs font-black text-white">ℹ</span> Avertissements affichés au candidat</span>
-                </summary>
-                <div class="border-t border-slate-100 p-4 space-y-2">
-                    <p class="text-xs text-slate-600">Texte recrutement (une idée par ligne). Les mentions sur le rôle d’Athena et l’analyse automatique des formulations sont toujours affichées côté plateforme.</p>
-                    <textarea name="em_disclaimer_recruitment" rows="6" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars(implode("\n", is_array($em['disclaimer_recruitment_lines'] ?? null) ? $em['disclaimer_recruitment_lines'] : \App\Services\Community\EnlistmentMilsimPackService::defaultRecruitmentDisclaimerLines()), ENT_QUOTES, 'UTF-8') ?></textarea>
-                </div>
-            </details>
-
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Préfixe progression (sidebar)</label>
-                    <input type="text" name="em_progress_prefix" value="<?= htmlspecialchars((string) ($em['progress_prefix'] ?? '')) ?>" maxlength="80" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Titre bloc session</label>
-                    <input type="text" name="em_session_block_title" value="<?= htmlspecialchars((string) ($em['session_block_title'] ?? '')) ?>" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                </div>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Titre ROE + règles (une par ligne)</label>
-                <input type="text" name="em_roe_title" value="<?= htmlspecialchars((string) ($em['roe_title'] ?? '')) ?>" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm mb-2">
-                <textarea name="em_roe_lines" rows="5" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars($emRoeLines) ?></textarea>
-            </div>
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Document control</label>
-                    <input type="text" name="em_doc_control" value="<?= htmlspecialchars((string) ($em['doc_control'] ?? '')) ?>" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Préfixe titre candidature</label>
-                    <input type="text" name="em_candidate_prefix" value="<?= htmlspecialchars((string) ($em['candidate_prefix'] ?? '')) ?>" maxlength="80" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                </div>
-            </div>
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">File d’attente (libellé)</label>
-                    <input type="text" name="em_queue_label" value="<?= htmlspecialchars((string) ($em['queue_label'] ?? '')) ?>" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Libellé « Réf. »</label>
-                    <input type="text" name="em_ref_label" value="<?= htmlspecialchars((string) ($em['ref_label'] ?? '')) ?>" maxlength="40" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                </div>
-            </div>
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Sécurité (sidebar)</label>
-                    <input type="text" name="em_security_label" value="<?= htmlspecialchars((string) ($em['security_label'] ?? '')) ?>" maxlength="40" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                </div>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Note opérationnelle — titre</label>
-                <input type="text" name="em_op_note_title" value="<?= htmlspecialchars((string) ($em['op_note_title'] ?? '')) ?>" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-            </div>
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Colonne 1 (texte)</label>
-                    <textarea name="em_op_col1" rows="3" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($em['op_col1'] ?? '')) ?></textarea>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Avertissement IA (rouge)</label>
-                    <input type="text" name="em_op_ai_warning" value="<?= htmlspecialchars((string) ($em['op_ai_warning'] ?? '')) ?>" maxlength="600" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                </div>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Colonne 2</label>
-                <textarea name="em_op_col2" rows="2" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($em['op_col2'] ?? '')) ?></textarea>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Note d’archive (encadré gris)</label>
-                <textarea name="em_archive_note" rows="2" maxlength="1200" class="w-full rounded border border-slate-300 px-3 py-2 text-sm"><?= htmlspecialchars((string) ($em['archive_note'] ?? '')) ?></textarea>
-            </div>
-            <div class="space-y-3">
-                <p class="text-xs font-bold text-slate-800">Titres des blocs du formulaire (sections I à IV + entête)</p>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Titre section 0 (mode de candidature)</label>
-                    <input type="text" name="em_section_0" value="<?= htmlspecialchars((string) ($em['section_0'] ?? '')) ?>" maxlength="200" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                </div>
-                <div class="grid gap-2 sm:grid-cols-2">
-                    <?php for ($si = 1; $si <= 4; $si++): ?>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Titre section <?= $si ?><?= $si === 3 ? ' (Motivation — aussi éditable ci-dessus)' : '' ?></label>
-                        <input type="text" name="em_section_<?= $si ?>" value="<?= htmlspecialchars((string) ($em['section_' . $si] ?? '')) ?>" maxlength="200" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
-                    </div>
-                    <?php endfor; ?>
-                </div>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Questions engagement (lignes)</label>
-                <input type="text" name="em_commitment_q13" value="<?= htmlspecialchars((string) ($em['commitment_q13'] ?? '')) ?>" maxlength="400" class="w-full rounded border border-slate-300 px-3 py-2 text-sm mb-2" placeholder="Question engagement">
-                <input type="text" name="em_availability_q15" value="<?= htmlspecialchars((string) ($em['availability_q15'] ?? '')) ?>" maxlength="400" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Question de confirmation sur les créneaux">
-                <p class="mt-1 text-[11px] text-slate-500">Si vous laissez la confirmation vide alors que des créneaux sont cochés ci-dessous, un libellé sera proposé automatiquement.</p>
-            </div>
-            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <?php
-                $selectedSlots = is_array($em['availability_slots'] ?? null) ? $em['availability_slots'] : [];
-                $idsInputName = 'em_availability_slot_ids[]';
-                $customInputName = 'em_availability_slot_custom[]';
-                $configuredFlagName = '';
-                $formId = '';
-                include base_path('views/partials/availability_slots_editor.php');
-                ?>
-            </div>
-            <div>
-                <label class="block text-xs font-bold text-slate-700 mb-1">Case confirmation IA</label>
-                <input type="text" name="em_ai_checkbox" value="<?= htmlspecialchars((string) ($em['ai_checkbox'] ?? '')) ?>" maxlength="400" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-            </div>
-            <div class="grid gap-4 sm:grid-cols-2">
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Bouton envoi</label>
-                    <input type="text" name="em_submit_button" value="<?= htmlspecialchars((string) ($em['submit_button'] ?? '')) ?>" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Pied bouton</label>
-                    <input type="text" name="em_submit_footer" value="<?= htmlspecialchars((string) ($em['submit_footer'] ?? '')) ?>" maxlength="200" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
-                </div>
-            </div>
-            <details class="rounded-2xl border border-dashed border-slate-300 bg-slate-50/80">
-                <summary class="cursor-pointer px-4 py-3 text-xs font-bold text-slate-600 [&::-webkit-details-marker]:hidden">Import structuré (expert) — surcharge des champs</summary>
-                <div class="border-t border-slate-200 p-4">
-                    <p class="text-[11px] text-slate-500 mb-2">Optionnel. Reprend les mêmes réglages que l’éditeur visuel ; pratique pour coller une configuration fournie par l’équipe technique (widgets et options avancées).</p>
-                    <textarea name="em_fields_json" rows="10" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-mono"><?= htmlspecialchars($emFieldsJson) ?></textarea>
-                </div>
-            </details>
-        </section>
-        </div>
-
-        <div class="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-200">
-            <p class="text-xs text-slate-500 max-w-md">Les changements s’appliquent à toute la fiche. Utilisez le bouton fixe en bas à droite pour enregistrer avec le récapitulatif.</p>
-            <button type="submit" class="px-6 py-3 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-emerald-700 shadow-md">Enregistrer (direct)</button>
         </div>
     </form>
 
-    <div id="presentation-save-dock" class="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
-        <div class="mx-auto max-w-6xl px-4 pb-4 pt-2 flex justify-end pointer-events-auto">
-            <button type="button" id="presentation-open-recap" class="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3.5 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-slate-900/25 ring-1 ring-white/10 transition hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400">
-                <svg class="h-4 w-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                Enregistrer
-            </button>
+    <div class="bcs-savebar" id="presentation-save-dock">
+        <div class="bcs-savebar__copy">
+            <p class="bcs-savebar__title" id="presentation-save-title">Aucune modification en attente</p>
+            <p class="bcs-savebar__hint">Un seul bouton pour toute la page : un récapitulatif des changements s’affiche avant l’enregistrement.</p>
+        </div>
+        <button type="button" id="presentation-open-recap" class="bcs-btn bcs-btn--primary">Enregistrer</button>
+    </div>
+    </div>
+</div>
+
+    <div id="presentation-recap-modal" class="bcs-modal" role="dialog" aria-modal="true" aria-labelledby="presentation-recap-title" hidden>
+        <div class="bcs-modal__backdrop" data-recap-close="1" tabindex="-1"></div>
+        <div class="bcs-modal__dialog">
+            <div class="bcs-modal__head">
+                <h2 id="presentation-recap-title" class="bcs-modal__title">Vérifier avant d’enregistrer</h2>
+                <p class="bcs-help">Les changements faits depuis l’ouverture de la page.</p>
+            </div>
+            <div id="presentation-recap-body" class="bcs-modal__body"></div>
+            <p id="presentation-recap-empty" class="bcs-modal__body bcs-help" hidden>Aucune modification détectée depuis l’ouverture de la page. Vous pouvez tout de même enregistrer.</p>
+            <div class="bcs-modal__foot">
+                <button type="button" class="bcs-btn" data-recap-close="1">Continuer à modifier</button>
+                <button type="button" id="presentation-confirm-submit" class="bcs-btn bcs-btn--primary">Confirmer l’enregistrement</button>
+            </div>
         </div>
     </div>
-
-    <div id="presentation-recap-modal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="presentation-recap-title">
-        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" data-recap-close="1" tabindex="-1"></div>
-        <div class="absolute inset-x-4 top-[8vh] mx-auto max-h-[min(84vh,640px)] w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
-            <div class="border-b border-slate-100 px-5 py-4">
-                <h2 id="presentation-recap-title" class="text-lg font-black text-slate-900">Récapitulatif avant enregistrement</h2>
-                <p class="mt-1 text-xs text-slate-500">Vérifiez les changements détectés depuis l’ouverture de la page.</p>
-            </div>
-            <div id="presentation-recap-body" class="max-h-[min(50vh,320px)] overflow-y-auto px-5 py-4 text-sm text-slate-700"></div>
-            <p id="presentation-recap-empty" class="hidden px-5 text-sm text-slate-500">Aucune modification détectée par rapport au chargement de la page.</p>
-            <div class="flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4">
-                <button type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-700 hover:bg-slate-100" data-recap-close="1">Annuler</button>
-                <button type="button" id="presentation-confirm-submit" class="rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-sm hover:bg-emerald-700">Confirmer l’enregistrement</button>
-            </div>
-        </div>
-    </div>
-
-    <p class="mt-10"><a href="<?= htmlspecialchars(url('back-office')) ?>" class="text-sm text-slate-600 underline">Retour au back-office</a></p>
 </div>
 <script>
 (function () {
     var form = document.getElementById('community-presentation-form');
-    if (form) {
-        function cssEsc(s) {
-            if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(s);
-            return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-        }
-        function formToState(f) {
-            var fd = new FormData(f);
-            var o = {};
-            fd.forEach(function (v, k) {
-                if (o[k] === undefined) o[k] = [];
-                o[k].push(String(v));
-            });
-            Object.keys(o).forEach(function (k) { o[k].sort(); });
-            return o;
-        }
-        var initialState = formToState(form);
-        var recapBypass = false;
+    if (!form) return;
 
-        function truncate(s, n) {
-            s = String(s || '');
-            if (s.length <= n) return s;
-            return s.slice(0, n - 1) + '…';
-        }
-        function fieldLabel(el) {
-            if (!el || !el.name) return el && el.name ? el.name : '';
-            if (el.id) {
-                var lb = form.querySelector('label[for="' + cssEsc(el.id) + '"]');
-                if (lb) return truncate(lb.textContent.replace(/\s+/g, ' ').trim(), 100);
-            }
-            var p = el.closest('label');
-            if (p) return truncate(p.textContent.replace(/\s+/g, ' ').trim(), 100);
-            var sec = el.closest('section');
-            var h2 = sec ? sec.querySelector('h2') : null;
-            var secTitle = h2 ? h2.textContent.trim() : 'Formulaire';
-            return secTitle + ' — ' + el.name;
-        }
-        function getRepresentativeElement(name) {
-            var list = form.querySelectorAll('[name="' + cssEsc(name) + '"]');
-            return list.length ? list[0] : null;
-        }
-
-        var modal = document.getElementById('presentation-recap-modal');
-        var bodyEl = document.getElementById('presentation-recap-body');
-        var emptyEl = document.getElementById('presentation-recap-empty');
-        var btnOpen = document.getElementById('presentation-open-recap');
-        var btnConfirm = document.getElementById('presentation-confirm-submit');
-
-        function openModal() {
-            var cur = formToState(form);
-            var keys = Object.keys(initialState).concat(Object.keys(cur)).filter(function (v, i, a) { return a.indexOf(v) === i; });
-            var changes = [];
-            keys.forEach(function (k) {
-                var a = JSON.stringify(initialState[k] || []);
-                var b = JSON.stringify(cur[k] || []);
-                if (a !== b) changes.push(k);
-            });
-            bodyEl.innerHTML = '';
-            if (changes.length === 0) {
-                emptyEl.classList.remove('hidden');
-            } else {
-                emptyEl.classList.add('hidden');
-                var ul = document.createElement('ul');
-                ul.className = 'space-y-3';
-                changes.forEach(function (name) {
-                    var el = getRepresentativeElement(name);
-                    var lab = fieldLabel(el);
-                    var before = truncate((initialState[name] || []).join(', ') || '—', 120);
-                    var after = truncate((cur[name] || []).join(', ') || '—', 120);
-                    var li = document.createElement('li');
-                    li.className = 'rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2';
-                    var pTitle = document.createElement('p');
-                    pTitle.className = 'font-bold text-slate-900';
-                    pTitle.textContent = lab;
-                    var pBefore = document.createElement('p');
-                    pBefore.className = 'mt-1 text-xs text-slate-600';
-                    pBefore.appendChild(document.createTextNode('Avant : '));
-                    pBefore.appendChild(document.createTextNode(before));
-                    var pAfter = document.createElement('p');
-                    pAfter.className = 'mt-0.5 text-xs text-emerald-800';
-                    pAfter.appendChild(document.createTextNode('Après : '));
-                    pAfter.appendChild(document.createTextNode(after));
-                    li.appendChild(pTitle);
-                    li.appendChild(pBefore);
-                    li.appendChild(pAfter);
-                    ul.appendChild(li);
-                });
-                bodyEl.appendChild(ul);
-            }
-            modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            if (btnConfirm) btnConfirm.focus();
-        }
-        function closeModal() {
-            modal.classList.add('hidden');
-            document.body.style.overflow = '';
-        }
-        form.addEventListener('submit', function (e) {
-            if (recapBypass) {
-                recapBypass = false;
-                return;
-            }
-            e.preventDefault();
-            openModal();
-        });
-        if (btnOpen) btnOpen.addEventListener('click', function () { openModal(); });
-        modal.querySelectorAll('[data-recap-close]').forEach(function (el) {
-            el.addEventListener('click', closeModal);
-        });
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) closeModal();
-        });
-        if (btnConfirm) btnConfirm.addEventListener('click', function () {
-            if (typeof form.reportValidity === 'function' && !form.reportValidity()) return;
-            closeModal();
-            if (typeof form.requestSubmit === 'function') {
-                recapBypass = true;
-                form.requestSubmit();
-            } else {
-                form.submit();
-            }
-        });
+    function cssEsc(s) {
+        if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(s);
+        return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     }
+    function formToState(f) {
+        var fd = new FormData(f);
+        var o = {};
+        fd.forEach(function (v, k) {
+            if (v instanceof File) v = v.name || '';
+            if (o[k] === undefined) o[k] = [];
+            o[k].push(String(v));
+        });
+        Object.keys(o).forEach(function (k) { o[k].sort(); });
+        return o;
+    }
+    var initialState = formToState(form);
+    var recapBypass = false;
+
+    function truncate(s, n) {
+        s = String(s || '');
+        if (s.length <= n) return s;
+        return s.slice(0, n - 1) + '…';
+    }
+    function clean(t) {
+        return truncate(String(t || '').replace(/\s+/g, ' ').trim(), 100);
+    }
+    function fieldLabel(el) {
+        if (!el || !el.name) return el && el.name ? el.name : '';
+        if (el.id) {
+            var lb = form.querySelector('label[for="' + cssEsc(el.id) + '"]');
+            if (lb) return clean(lb.textContent);
+        }
+        var sw = el.closest('.bcs-switch');
+        if (sw) {
+            var st = sw.querySelector('.bcs-switch__title');
+            if (st) return clean(st.textContent);
+        }
+        if (el.getAttribute('aria-label')) return clean(el.getAttribute('aria-label'));
+        var field = el.closest('.bcs-field');
+        var fl = field ? field.querySelector('.bcs-label, .bcs-mini-label') : null;
+        var card = el.closest('.bcs-card, .bcs-fold');
+        var ct = card ? card.querySelector('.bcs-card__title, summary') : null;
+        var cardTitle = ct ? clean(ct.childNodes[0] ? ct.childNodes[0].textContent : ct.textContent) : 'Formulaire';
+        if (fl) return cardTitle + ' — ' + clean(fl.textContent);
+        var p = el.closest('label');
+        if (p) return clean(p.textContent);
+        return cardTitle;
+    }
+    function getRepresentativeElement(name) {
+        var list = form.querySelectorAll('[name="' + cssEsc(name) + '"]');
+        for (var i = 0; i < list.length; i++) {
+            if (list[i].type !== 'hidden') return list[i];
+        }
+        return list.length ? list[0] : null;
+    }
+    function changedNames() {
+        var cur = formToState(form);
+        var keys = Object.keys(initialState).concat(Object.keys(cur)).filter(function (v, i, a) { return a.indexOf(v) === i; });
+        var out = [];
+        keys.forEach(function (k) {
+            if (JSON.stringify(initialState[k] || []) !== JSON.stringify(cur[k] || [])) out.push(k);
+        });
+        return { names: out, cur: cur };
+    }
+
+    var modal = document.getElementById('presentation-recap-modal');
+    var bodyEl = document.getElementById('presentation-recap-body');
+    var emptyEl = document.getElementById('presentation-recap-empty');
+    var btnOpen = document.getElementById('presentation-open-recap');
+    var btnConfirm = document.getElementById('presentation-confirm-submit');
+    var dock = document.getElementById('presentation-save-dock');
+    var dockTitle = document.getElementById('presentation-save-title');
+
+    function refreshDock() {
+        var n = changedNames().names.length;
+        if (dock) dock.classList.toggle('is-dirty', n > 0);
+        if (dockTitle) {
+            dockTitle.textContent = n === 0
+                ? 'Aucune modification en attente'
+                : (n === 1 ? '1 champ modifié, non enregistré' : n + ' champs modifiés, non enregistrés');
+        }
+    }
+    var dockTimer = null;
+    function scheduleDock() {
+        if (dockTimer) clearTimeout(dockTimer);
+        dockTimer = setTimeout(refreshDock, 250);
+    }
+    form.addEventListener('input', scheduleDock);
+    form.addEventListener('change', scheduleDock);
+    form.addEventListener('click', function (e) {
+        if (e.target && e.target.closest && e.target.closest('button[type="button"]')) scheduleDock();
+    });
+
+    function openModal() {
+        var diff = changedNames();
+        var changes = diff.names;
+        var cur = diff.cur;
+        bodyEl.innerHTML = '';
+        if (changes.length === 0) {
+            emptyEl.hidden = false;
+            bodyEl.hidden = true;
+        } else {
+            emptyEl.hidden = true;
+            bodyEl.hidden = false;
+            var ul = document.createElement('ul');
+            ul.className = 'bcs-recap';
+            changes.forEach(function (name) {
+                var el = getRepresentativeElement(name);
+                var before = truncate((initialState[name] || []).filter(Boolean).join(', ') || '—', 120);
+                var after = truncate((cur[name] || []).filter(Boolean).join(', ') || '—', 120);
+                var li = document.createElement('li');
+                var pTitle = document.createElement('p');
+                pTitle.className = 'bcs-recap__name';
+                pTitle.textContent = fieldLabel(el);
+                var pBefore = document.createElement('p');
+                pBefore.className = 'bcs-recap__before';
+                pBefore.textContent = 'Avant : ' + before;
+                var pAfter = document.createElement('p');
+                pAfter.className = 'bcs-recap__after';
+                pAfter.textContent = 'Après : ' + after;
+                li.appendChild(pTitle);
+                li.appendChild(pBefore);
+                li.appendChild(pAfter);
+                ul.appendChild(li);
+            });
+            bodyEl.appendChild(ul);
+        }
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        if (btnConfirm) btnConfirm.focus();
+    }
+    function closeModal() {
+        modal.hidden = true;
+        document.body.style.overflow = '';
+        if (btnOpen) btnOpen.focus();
+    }
+    form.addEventListener('submit', function (e) {
+        if (recapBypass) {
+            recapBypass = false;
+            return;
+        }
+        e.preventDefault();
+        openModal();
+    });
+    if (btnOpen) btnOpen.addEventListener('click', openModal);
+    modal.querySelectorAll('[data-recap-close]').forEach(function (el) {
+        el.addEventListener('click', closeModal);
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal && !modal.hidden) closeModal();
+    });
+    if (btnConfirm) btnConfirm.addEventListener('click', function () {
+        if (typeof form.reportValidity === 'function' && !form.reportValidity()) {
+            closeModal();
+            return;
+        }
+        modal.hidden = true;
+        document.body.style.overflow = '';
+        if (typeof form.requestSubmit === 'function') {
+            recapBypass = true;
+            form.requestSubmit();
+        } else {
+            form.submit();
+        }
+    });
+    refreshDock();
 })();
 (function () {
     var container = document.getElementById('military-sections');
@@ -1308,13 +1525,13 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
     btn.addEventListener('click', function () {
         var n = container.querySelectorAll('textarea[name="military_body[]"]').length + 1;
         var wrap = document.createElement('div');
-        wrap.className = 'rounded-xl border border-slate-100 bg-slate-50 p-4 space-y-2 military-section-row';
+        wrap.className = 'bcs-row bcs-stack military-section-row';
         wrap.innerHTML =
-            '<div class="grid gap-2 sm:grid-cols-3">' +
-            '<input type="text" name="military_label[]" value="POINT ' + n + '" maxlength="32" class="rounded border border-slate-300 px-2 py-1 text-xs font-mono" placeholder="PRIMO">' +
-            '<input type="text" name="military_title[]" value="" maxlength="200" class="rounded border border-slate-300 px-2 py-1 text-sm sm:col-span-2" placeholder="Titre">' +
+            '<div class="bcs-pair">' +
+            '<input type="text" name="military_label[]" value="POINT ' + n + '" maxlength="32" class="bcs-mono" placeholder="Étiquette (ex. PRIMO)" aria-label="Section ' + n + ' : étiquette">' +
+            '<input type="text" name="military_title[]" value="" maxlength="200" placeholder="Titre de section" aria-label="Section ' + n + ' : titre">' +
             '</div>' +
-            '<textarea name="military_body[]" rows="4" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Contenu"></textarea>';
+            '<textarea name="military_body[]" rows="4" placeholder="Contenu" aria-label="Section ' + n + ' : contenu"></textarea>';
         container.appendChild(wrap);
     });
 })();
@@ -1326,10 +1543,15 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
             if (idx) idx.textContent = String(i + 1);
         });
     }
+    var rowTools = '<div class="bcs-row__tools">' +
+        '<button type="button" class="cp-move-up bcs-btn bcs-btn--small" title="Monter" aria-label="Monter">↑</button>' +
+        '<button type="button" class="cp-move-down bcs-btn bcs-btn--small" title="Descendre" aria-label="Descendre">↓</button>' +
+        '<button type="button" class="cp-remove-row bcs-btn bcs-btn--small bcs-btn--danger">Retirer</button>' +
+        '</div>';
     function bindList(containerId, addBtnId, rowAttr, maxAttr, buildHtml) {
         var container = document.getElementById(containerId);
         var addBtn = document.getElementById(addBtnId);
-        if (!container || !addBtn) return;
+        if (!container || !addBtn) return null;
         var max = parseInt(container.getAttribute(maxAttr) || '12', 10) || 12;
         function rows() {
             return container.querySelectorAll('[' + rowAttr + ']');
@@ -1337,11 +1559,13 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
         addBtn.addEventListener('click', function () {
             if (rows().length >= max) return;
             var wrap = document.createElement('div');
-            wrap.className = 'cp-dyn-row rounded-lg border border-slate-200 bg-slate-50/80 p-3 space-y-2';
+            wrap.className = 'bcs-row cp-dyn-row';
             wrap.setAttribute(rowAttr, '');
             wrap.innerHTML = buildHtml(rows().length + 1);
             container.appendChild(wrap);
             reindex(container);
+            var first = wrap.querySelector('input[type="text"]');
+            if (first) first.focus();
         });
         container.addEventListener('click', function (e) {
             var t = e.target;
@@ -1383,29 +1607,16 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
     <?php endforeach; ?>
     var prereqContainer = bindList('prereq-rows', 'add-prereq-row', 'data-prereq-row', 'data-prereq-max', function (n) {
         return '' +
-            '<div class="flex flex-wrap items-center justify-between gap-2">' +
-            '<span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Point <span data-row-index>' + n + '</span></span>' +
-            '<div class="flex flex-wrap gap-1">' +
-            '<button type="button" class="cp-move-up rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:border-emerald-300" title="Monter">↑</button>' +
-            '<button type="button" class="cp-move-down rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:border-emerald-300" title="Descendre">↓</button>' +
-            '<button type="button" class="cp-remove-row rounded border border-rose-200 bg-white px-2 py-1 text-[10px] font-bold text-rose-700 hover:bg-rose-50">Retirer</button>' +
-            '</div></div>' +
-            '<div class="grid gap-2 sm:grid-cols-2">' +
-            '<div><label class="block text-[11px] font-bold text-slate-600 mb-1">Libellé affiché</label>' +
-            '<input type="text" name="public_prereq_label[]" value="" maxlength="160" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ex. Micro correct et Discord"></div>' +
-            '<div><label class="block text-[11px] font-bold text-slate-600 mb-1">Catégorie (optionnel)</label>' +
-            '<select name="public_prereq_key[]" class="w-full rounded border border-slate-300 px-3 py-2 text-sm cp-prereq-cat">' +
-            '<option value="">Libre (texte seul)</option>' + prereqCatOptions +
-            '</select></div></div>' +
-            '<div class="grid gap-2 sm:grid-cols-[12rem_1fr]">' +
-            '<div><label class="block text-[11px] font-bold text-slate-600 mb-1">Niveau d’exigence</label>' +
-            '<select name="public_prereq_status[]" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm">' +
-            '<option value="required" selected>Exigé</option>' +
-            '<option value="optional">Souhaité</option>' +
-            '<option value="not_required">Non exigé</option>' +
-            '</select></div>' +
-            '<div><label class="block text-[11px] font-bold text-slate-600 mb-1">Précision (optionnel)</label>' +
-            '<input type="text" name="public_prereq_detail[]" value="" maxlength="240" class="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" placeholder="Court complément affiché sous le libellé"></div>' +
+            '<div class="bcs-row__head"><span class="bcs-row__index">Prérequis <span data-row-index>' + n + '</span></span>' + rowTools + '</div>' +
+            '<div class="bcs-grid">' +
+            '<div class="bcs-field"><label class="bcs-mini-label">Libellé affiché</label>' +
+            '<input type="text" name="public_prereq_label[]" value="" maxlength="160" placeholder="Ex. Micro correct et Discord"></div>' +
+            '<div class="bcs-field"><label class="bcs-mini-label">Catégorie <span class="bcs-opt">(remplit le libellé)</span></label>' +
+            '<select name="public_prereq_key[]" class="cp-prereq-cat"><option value="">Libre (texte seul)</option>' + prereqCatOptions + '</select></div>' +
+            '<div class="bcs-field"><label class="bcs-mini-label">Niveau d’exigence</label>' +
+            '<select name="public_prereq_status[]"><option value="required" selected>Exigé</option><option value="optional">Souhaité</option><option value="not_required">Non exigé</option></select></div>' +
+            '<div class="bcs-field"><label class="bcs-mini-label">Précision <span class="bcs-opt">(facultatif)</span></label>' +
+            '<input type="text" name="public_prereq_detail[]" value="" maxlength="240" placeholder="Court complément affiché sous le libellé"></div>' +
             '</div>';
     });
     if (prereqContainer) {
@@ -1430,71 +1641,107 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
     }
     bindList('step-rows', 'add-step-row', 'data-step-row', 'data-step-max', function (n) {
         return '' +
-            '<div class="flex flex-wrap items-center justify-between gap-2">' +
-            '<span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Étape <span data-row-index>' + n + '</span></span>' +
-            '<div class="flex flex-wrap gap-1">' +
-            '<button type="button" class="cp-move-up rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:border-emerald-300" title="Monter">↑</button>' +
-            '<button type="button" class="cp-move-down rounded border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold text-slate-600 hover:border-emerald-300" title="Descendre">↓</button>' +
-            '<button type="button" class="cp-remove-row rounded border border-rose-200 bg-white px-2 py-1 text-[10px] font-bold text-rose-700 hover:bg-rose-50">Retirer</button>' +
-            '</div></div>' +
-            '<div class="grid gap-2 sm:grid-cols-[1fr_8rem_10rem]">' +
-            '<div><label class="block text-[11px] font-bold text-slate-600 mb-1">Titre</label>' +
-            '<input type="text" name="public_step_title[]" value="" maxlength="120" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ex. Candidature en ligne"></div>' +
-            '<div><label class="block text-[11px] font-bold text-slate-600 mb-1">Délai</label>' +
-            '<input type="text" name="public_step_delay[]" value="" maxlength="40" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="sous 5 jours"></div>' +
-            '<div><label class="block text-[11px] font-bold text-slate-600 mb-1">Affichage</label>' +
-            '<select name="public_step_highlight[]" class="w-full rounded border border-slate-300 px-2 py-2 text-sm">' +
-            '<option value="0" selected>Normale</option><option value="1">Mise en avant</option></select></div>' +
+            '<div class="bcs-row__head"><span class="bcs-row__index">Étape <span data-row-index>' + n + '</span></span>' + rowTools + '</div>' +
+            '<div class="bcs-grid bcs-grid--3">' +
+            '<div class="bcs-field"><label class="bcs-mini-label">Titre</label>' +
+            '<input type="text" name="public_step_title[]" value="" maxlength="120" placeholder="Ex. Candidature en ligne"></div>' +
+            '<div class="bcs-field"><label class="bcs-mini-label">Délai</label>' +
+            '<input type="text" name="public_step_delay[]" value="" maxlength="40" placeholder="sous 5 jours"></div>' +
+            '<div class="bcs-field"><label class="bcs-mini-label">Affichage</label>' +
+            '<select name="public_step_highlight[]"><option value="0" selected>Normal</option><option value="1">Mis en avant</option></select></div>' +
             '</div>' +
-            '<div><label class="block text-[11px] font-bold text-slate-600 mb-1">Description courte</label>' +
-            '<textarea name="public_step_body[]" rows="2" maxlength="500" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" placeholder="Ce que le candidat doit savoir à cette étape"></textarea></div>';
+            '<div class="bcs-field"><label class="bcs-mini-label">Description courte</label>' +
+            '<textarea name="public_step_body[]" rows="2" maxlength="500" placeholder="Ce que le candidat doit savoir à cette étape"></textarea></div>';
     });
 })();
 (function () {
+    /* Navigation entre les parties + sommaire de la partie active */
     var tabs = document.querySelectorAll('[data-cp-tab]');
     var panels = document.querySelectorAll('[data-cp-panel]');
     if (!tabs.length || !panels.length) return;
-    var order = ['visibilite', 'vitrine', 'profil', 'textes', 'candidature'];
-    function show(id) {
-        if (order.indexOf(id) === -1) id = 'visibilite';
+    var order = [];
+    panels.forEach(function (p) { order.push(p.getAttribute('data-cp-panel')); });
+    var main = document.querySelector('.cp-presentation .bcs-main');
+
+    panels.forEach(function (p) {
+        var key = p.getAttribute('data-cp-panel');
+        var sub = document.querySelector('[data-cp-sub="' + key + '"]');
+        if (!sub) return;
+        p.querySelectorAll('.bcs-card[id]').forEach(function (card) {
+            var t = card.querySelector('.bcs-card__title');
+            if (!t) return;
+            var li = document.createElement('li');
+            var a = document.createElement('a');
+            a.className = 'bcs-nav__sublink';
+            a.href = '#' + card.id;
+            a.setAttribute('data-cp-goto', '');
+            a.textContent = t.textContent;
+            li.appendChild(a);
+            sub.appendChild(li);
+        });
+    });
+
+    function scrollToEl(el) {
+        if (!el) return;
+        window.requestAnimationFrame(function () {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    }
+    function show(id, opts) {
+        opts = opts || {};
+        if (order.indexOf(id) === -1) id = order[0];
         panels.forEach(function (p) {
-            var on = p.getAttribute('data-cp-panel') === id;
-            p.classList.toggle('hidden', !on);
+            p.hidden = p.getAttribute('data-cp-panel') !== id;
         });
         tabs.forEach(function (t) {
             var on = t.getAttribute('data-cp-tab') === id;
             t.setAttribute('aria-selected', on ? 'true' : 'false');
-            t.classList.toggle('bg-emerald-50', on);
-            t.classList.toggle('border-emerald-500', on);
-            t.classList.toggle('text-emerald-950', on);
-            t.classList.toggle('shadow', on);
-            t.classList.toggle('ring-1', on);
-            t.classList.toggle('ring-emerald-500/30', on);
+            t.classList.toggle('is-active', on);
         });
-        try {
-            if (history.replaceState) {
-                history.replaceState(null, '', '#' + id);
-            } else {
-                location.hash = id;
-            }
-        } catch (e) {}
-        var navEl = document.querySelector('.cp-presentation-tabs');
-        if (navEl && typeof navEl.scrollIntoView === 'function') {
-            navEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } else {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        document.querySelectorAll('[data-cp-sub]').forEach(function (s) {
+            s.hidden = s.getAttribute('data-cp-sub') !== id;
+        });
+        if (opts.updateHash) {
+            try { history.replaceState(null, '', '#' + id); } catch (e) {}
         }
+        if (opts.scrollTop && main) {
+            var top = main.getBoundingClientRect().top + window.pageYOffset - 80;
+            if (window.pageYOffset > top) window.scrollTo({ top: top, behavior: 'smooth' });
+        }
+    }
+    function goTo(hash, updateHash) {
+        var h = String(hash || '').replace(/^#/, '');
+        if (!h) return false;
+        if (order.indexOf(h) !== -1 && !document.getElementById(h)) {
+            show(h, { updateHash: updateHash, scrollTop: true });
+            return true;
+        }
+        var el = document.getElementById(h);
+        if (!el) return false;
+        var panel = el.closest('[data-cp-panel]');
+        if (!panel) return false;
+        show(panel.getAttribute('data-cp-panel'), {});
+        if (updateHash) {
+            try { history.replaceState(null, '', '#' + h); } catch (e) {}
+        }
+        scrollToEl(el);
+        var focusable = el.matches('input, select, textarea') ? el : null;
+        if (focusable) setTimeout(function () { focusable.focus({ preventScroll: true }); }, 350);
+        return true;
     }
     tabs.forEach(function (t) {
         t.addEventListener('click', function () {
-            show(String(t.getAttribute('data-cp-tab') || ''));
+            show(String(t.getAttribute('data-cp-tab') || ''), { updateHash: true, scrollTop: true });
         });
     });
-    window.addEventListener('hashchange', function () {
-        var h = (location.hash || '').replace(/^#/, '');
-        if (order.indexOf(h) !== -1) show(h);
+    document.addEventListener('click', function (e) {
+        var a = e.target && e.target.closest ? e.target.closest('a[data-cp-goto]') : null;
+        if (!a) return;
+        if (goTo(a.getAttribute('href'), true)) e.preventDefault();
     });
-    var initial = (location.hash || '').replace(/^#/, '');
-    show(order.indexOf(initial) !== -1 ? initial : 'visibilite');
+    window.addEventListener('hashchange', function () {
+        goTo(location.hash, false);
+    });
+    if (!goTo(location.hash, false)) show(order[0], {});
 })();
 </script>
