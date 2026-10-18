@@ -1,0 +1,157 @@
+/* Atelier de traduction de l'ATAK natif (/traduire-atak) — complète atak-native.css (mêmes couleurs que le téléphone). */
+.atakt { --atakt-err: #ff6b5e; --atakt-warn: var(--atakn-amber); --atakt-panel: rgba(255, 255, 255, 0.025); }
+.atakt-title { font-size: clamp(2.8rem, 9vw, 6.5rem); }
+
+.atakt-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+.atakt-flow span { margin-right: 0.5rem; color: var(--atakn-ui); font-variant-numeric: tabular-nums; }
+
+.atakt-panel {
+  margin-top: 2.5rem;
+  padding: 1.5rem 1.25rem;
+  border: 1px solid var(--atakn-line);
+  background: var(--atakt-panel);
+  scroll-margin-top: 5rem;
+}
+@media (min-width: 768px) { .atakt-panel { padding: 2rem 2rem 2.25rem; } }
+.atakt-h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+  font-size: 1.45rem;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: #fff;
+  scroll-margin-top: 5rem;
+}
+.atakt-h2 span { font-size: 0.85rem; color: var(--atakn-ui); font-variant-numeric: tabular-nums; }
+.atakt-help { margin: 0.5rem 0 0; max-width: 52rem; font-size: 0.92rem; line-height: 1.6; color: rgba(255, 255, 255, 0.62); }
+
+.atakt-grid { display: grid; gap: 1rem 1.5rem; }
+@media (min-width: 720px) { .atakt-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.atakt-field { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.atakt-field > span { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.55); }
+.atakt-field small { font-size: 0.8rem; line-height: 1.45; color: rgba(255, 255, 255, 0.45); }
+.atakt input[type="text"],
+.atakt input[type="search"],
+.atakt select,
+.atakt textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0;
+  background: #0b0e0c;
+  color: #fff;
+  font: inherit;
+  font-size: 0.95rem;
+}
+.atakt select { color-scheme: dark; }
+.atakt input:focus,
+.atakt select:focus,
+.atakt textarea:focus { outline: 2px solid var(--atakn-ui); outline-offset: 0; border-color: transparent; }
+.atakt input:invalid { border-color: var(--atakt-err); }
+
+.atakt-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.25rem; margin-top: 1.25rem; }
+.atakt-file { position: relative; cursor: pointer; }
+.atakt-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.atakt-file:focus-within { outline: 2px solid var(--atakn-ui); outline-offset: 2px; }
+.atakt-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--atakn-ui);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.atakt-link:hover { text-decoration: underline; }
+.atakt-link:disabled { color: rgba(255, 255, 255, 0.25); cursor: default; text-decoration: none; }
+.atakt-msg { margin: 0.75rem 0 0; font-size: 0.88rem; color: rgba(255, 255, 255, 0.6); }
+.atakt-actions .atakt-msg { margin: 0; }
+.atakt .is-bad { color: var(--atakt-err); }
+.atakt-msg.is-ok { color: var(--atakn-ui); }
+.atakt-msg.is-warn { color: var(--atakt-warn); }
+
+.atakt-progress { height: 6px; margin-top: 1.25rem; background: rgba(255, 255, 255, 0.08); }
+.atakt-progress i { display: block; height: 100%; width: 0; background: var(--atakn-ui); transition: width 0.3s ease; }
+.atakt-progress-label { margin: 0.5rem 0 0; font-size: 0.85rem; font-variant-numeric: tabular-nums; color: rgba(255, 255, 255, 0.7); }
+
+.atakt-toolbar { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; }
+.atakt-toolbar input { flex: 1 1 18rem; }
+.atakt-toolbar select { flex: 0 1 14rem; }
+
+.atakt-rules { margin-top: 1rem; font-size: 0.9rem; color: rgba(255, 255, 255, 0.65); }
+.atakt-rules summary { cursor: pointer; font-weight: 700; color: rgba(255, 255, 255, 0.85); }
+.atakt-rules ul { margin: 0.6rem 0 0; padding-left: 1.2rem; list-style: square; line-height: 1.6; }
+.atakt-rules p { margin: 0.6rem 0 0; max-width: 52rem; line-height: 1.6; }
+
+.atakt-list { margin: 1.25rem 0 0; padding: 0; list-style: none; }
+.atakt-row {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.atakt-row.is-done { box-shadow: inset 3px 0 0 var(--atakn-ui); padding-left: 0.9rem; }
+.atakt-src { display: grid; gap: 0.35rem; min-width: 0; }
+.atakt-src p { margin: 0; font-size: 0.92rem; line-height: 1.5; overflow-wrap: anywhere; white-space: pre-wrap; }
+.atakt-fr { color: #fff; }
+.atakt-en { color: rgba(255, 255, 255, 0.55); }
+.atakt-tag {
+  display: inline-block;
+  min-width: 6.5rem;
+  margin-right: 0.6rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--atakn-sand);
+  white-space: normal;
+}
+.atakt textarea { resize: vertical; line-height: 1.5; }
+.atakt-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.atakt-row-issues { margin: 0; padding: 0; list-style: none; font-size: 0.82rem; }
+.atakt-row-issues:empty { display: none; }
+.atakt .is-error { color: var(--atakt-err); }
+.atakt .is-warn { color: var(--atakt-warn); }
+.atakt-row-tools { display: flex; gap: 1.25rem; }
+.atakt-empty { padding: 1.5rem 0; color: rgba(255, 255, 255, 0.5); }
+.atakt-pager { display: flex; align-items: center; justify-content: center; gap: 1.5rem; margin-top: 1.25rem; }
+.atakt-page { font-size: 0.85rem; font-variant-numeric: tabular-nums; color: rgba(255, 255, 255, 0.6); }
+
+.atakt-stats { margin-top: 1.25rem; }
+.atakt-stats .is-error dt { color: var(--atakt-err); }
+.atakt-stats .is-warn dt { color: var(--atakt-warn); }
+.atakt-stats .is-muted dt { color: rgba(255, 255, 255, 0.75); }
+.atakt-issues { margin: 1.25rem 0 0; padding: 0; list-style: none; font-size: 0.86rem; line-height: 1.55; }
+.atakt-issues li { padding: 0.35rem 0; border-top: 1px solid rgba(255, 255, 255, 0.06); overflow-wrap: anywhere; }
+.atakt-issues .is-ok { color: var(--atakn-ui); }
+.atakt-issues .atakt-link { font-size: 0.86rem; color: #fff; }
+
+.atakt-tree {
+  margin: 1.25rem 0 0;
+  padding: 1rem;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #050605;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--atakn-sand);
+}
+.atakt-steps { margin-top: 1.5rem; }

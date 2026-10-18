@@ -2,6 +2,10 @@
 
 *Version française plus bas.*
 
+**Easiest way: [athena.ttrd.fr/traduire-atak](https://athena.ttrd.fr/traduire-atak).** Translate in your browser, with
+automatic checks, then download the finished mod (PBO, mod.cpp, Workshop preview and description) as a zip. No
+account, no tools, nothing sent to the server. The steps below are the manual way.
+
 COMSPEC ATAK Native ships in French and English. Any other language can be added by the community as a
 small separate mod, published on the Steam Workshop by its translators. The phone picks it up by itself:
 the new language appears in **Settings > Language** on the phone and in **Esc > Options > Addon Options >
@@ -75,6 +79,10 @@ Without Python: take the new `template/xx.txt` and copy your translations over, 
 ---
 
 # Traduire COMSPEC ATAK dans une autre langue
+
+**Le plus simple : [athena.ttrd.fr/traduire-atak](https://athena.ttrd.fr/traduire-atak).** Traduction dans le
+navigateur avec vérification automatique, puis mod complet (PBO, mod.cpp, aperçu et description Workshop) téléchargé
+en zip. Sans compte ni outils, rien n'est envoyé au serveur. Les étapes ci-dessous sont la méthode manuelle.
 
 Le mod est livré en français et en anglais. Toute autre langue s'ajoute par un petit mod séparé que ses
 traducteurs publient sur le Workshop. Le téléphone le détecte tout seul : la langue apparaît dans

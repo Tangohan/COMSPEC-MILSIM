@@ -310,6 +310,8 @@ return function (Router $router) {
     $router->get('/nouveautes/{kind}/{number}', [SitePagesController::class, 'dispatch']);
     $router->get('/sse', [SitePagesController::class, 'sse']);
     $router->get('/atak-natif', [SitePagesController::class, 'atakNative']);
+    $router->get('/traduire-atak', [SitePagesController::class, 'translateAtak']);
+    $router->get('/traduire-atak/modele.json', [SitePagesController::class, 'translateAtakTemplate']);
     $router->get('/renseignement-sse', fn () => \App\Core\Response::redirect(url('sse')));
 
     $router->get('/acces-demonstration', [DemoNdaController::class, 'show']);
