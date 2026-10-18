@@ -130,6 +130,26 @@ final class NameFilterRepository
         return $st->rowCount() > 0;
     }
 
+    /** @return 'ok'|'duplicate'|'missing' */
+    public function updateWord(int $id, string $word, string $lang, string $mode): string
+    {
+        $this->ensureSchema();
+        $st = $this->pdo()->prepare('SELECT id FROM name_filter_words WHERE id = ? LIMIT 1');
+        $st->execute([$id]);
+        if (!$st->fetchColumn()) {
+            return 'missing';
+        }
+        $st = $this->pdo()->prepare('SELECT id FROM name_filter_words WHERE word = ? AND id <> ? LIMIT 1');
+        $st->execute([$word, $id]);
+        if ($st->fetchColumn()) {
+            return 'duplicate';
+        }
+        $st = $this->pdo()->prepare('UPDATE name_filter_words SET word = ?, lang = ?, match_mode = ? WHERE id = ?');
+        $st->execute([$word, $lang, $mode, $id]);
+
+        return 'ok';
+    }
+
     public function deleteWord(int $id): bool
     {
         $this->ensureSchema();
@@ -221,10 +241,12 @@ final class NameFilterRepository
     {
         $this->ensureSchema();
         $limit = max(1, min(500, $limit));
-        $sql = 'SELECT a.*, t.name AS tenant_name, t.slug AS tenant_slug, u.display_name AS user_display_name, u.callsign AS user_callsign
+        $sql = 'SELECT a.*, t.name AS tenant_name, t.slug AS tenant_slug, u.display_name AS user_display_name, u.callsign AS user_callsign, u.email AS user_email,
+                       un.name AS unit_current_name
                 FROM name_filter_alerts a
                 LEFT JOIN tenants t ON t.id = a.tenant_id
-                LEFT JOIN users u ON u.id = a.user_id'
+                LEFT JOIN users u ON u.id = a.user_id
+                LEFT JOIN units un ON a.subject_type = \'unit\' AND un.id = a.subject_id'
             . ($openOnly ? ' WHERE a.status = \'open\'' : '')
             . ' ORDER BY a.created_at DESC, a.id DESC LIMIT ' . $limit;
 
