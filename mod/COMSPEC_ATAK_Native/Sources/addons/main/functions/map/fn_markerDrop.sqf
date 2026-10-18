@@ -1,6 +1,7 @@
 /*
-    Pose un marqueur joueur sur le canal courant, comme la carte Arma : il est partagé avec le canal
-    et COMSPEC Link l'envoie à Athena (EH MarkerCreated).
+    Pose un marqueur joueur, comme la carte Arma : il est partagé avec le canal choisi dans la palette (Général par
+    défaut, fn_markerPlace "channel") et COMSPEC Link l'envoie à Athena (EH MarkerCreated). Canal refusé par le
+    serveur (Général désactivé…) : posé sur le canal Camp, puis sur le canal courant.
 */
 params ["_pos", ["_kind", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -18,19 +19,27 @@ private _prefix = if (_aff in ["mil", "lib"]) then { toUpper _label } else { for
 private _size = _s getOrDefault ["markerSize", 1];
 private _index = (missionNamespace getVariable ["COMSPEC_ATAK_MarkerIndex", 0]) + 1;
 missionNamespace setVariable ["COMSPEC_ATAK_MarkerIndex", _index];
-private _channel = currentChannel;
-// Même schéma de nom que les marqueurs posés à la main : visible sur le canal, supprimable par le joueur.
-private _name = format ["_USER_DEFINED #%1/%2/%3", clientOwner, 9000 + _index, _channel];
-private _m = createMarker [_name, _pos, _channel, player];
+private _want = ["channel"] call comspec_atak_native_fnc_markerPlace;
+private _m = "";
+private _channel = _want;
+{
+    _channel = _x;
+    // Même schéma de nom que les marqueurs posés à la main : visible sur le canal, supprimable par le joueur.
+    _m = createMarker [format ["_USER_DEFINED #%1/%2/%3", clientOwner, 9000 + _index, _channel], _pos, _channel, player];
+    if (_m isNotEqualTo "") exitWith {};
+} forEach ([_want, 1, currentChannel] arrayIntersect [_want, 1, currentChannel]);
 if (_m isEqualTo "") exitWith {
     ["WARNING", "Marqueur refusé sur ce canal", 3, 20] call comspec_atak_native_fnc_notify;
     ""
+};
+if (_channel isNotEqualTo _want) then {
+    ["WARNING", format ["Canal %1 refusé par le serveur : marqueur posé sur le canal %2", ["channelName", _want] call comspec_atak_native_fnc_markerPlace, ["channelName", _channel] call comspec_atak_native_fnc_markerPlace], 5, 20] call comspec_atak_native_fnc_notify;
 };
 _m setMarkerTypeLocal _type;
 _m setMarkerColorLocal _color;
 _m setMarkerSizeLocal [_size, _size];
 _m setMarkerText format ["%1 %2", _prefix, _index];
 [_m] call comspec_atak_native_fnc_markerWeb;
-["SUCCESS", format ["%1 %2 · %3", _prefix, _index, mapGridPosition _pos], 3, 20] call comspec_atak_native_fnc_notify;
+["SUCCESS", format ["%1 %2 · %3 · canal %4", _prefix, _index, mapGridPosition _pos, ["channelName", _channel] call comspec_atak_native_fnc_markerPlace], 3, 20] call comspec_atak_native_fnc_notify;
 if (_s getOrDefault ["markerEditAfter", false]) then { [_m] call comspec_atak_native_fnc_markerEditOpen; };
 _m

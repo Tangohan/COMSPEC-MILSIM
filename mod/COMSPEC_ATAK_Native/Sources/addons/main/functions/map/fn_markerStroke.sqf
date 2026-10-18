@@ -18,11 +18,12 @@ private _commit = {
     private _flat = [];
     { _flat append [(_x select 0), (_x select 1)]; } forEach (_pts select [0, 200]);
     private _index = (missionNamespace getVariable ["COMSPEC_ATAK_MarkerIndex", 0]) + 1;
+    private _channel = ["channel"] call comspec_atak_native_fnc_markerPlace;
     missionNamespace setVariable ["COMSPEC_ATAK_MarkerIndex", _index];
     // Overwatch (EH MarkerCreated) enverrait sinon au web un point « mil_dot » avant que la polyligne existe :
     // ses EH sont muets le temps de poser le trait, fn_markerWeb l'envoie ensuite en entier.
     missionNamespace setVariable ["COMSPEC_MarkerEhMuted", (missionNamespace getVariable ["COMSPEC_MarkerEhMuted", 0]) + 1];
-    private _m = createMarker [format ["_USER_DEFINED #%1/%2/%3", clientOwner, 9000 + _index, currentChannel], _pts select 0, currentChannel, player];
+    private _m = createMarker [format ["_USER_DEFINED #%1/%2/%3", clientOwner, 9000 + _index, _channel], _pts select 0, _channel, player];
     if (_m isNotEqualTo "") then {
         _m setMarkerShapeLocal "POLYLINE";
         _m setMarkerPolylineLocal _flat;

@@ -2,7 +2,8 @@
     Menu contextuel de la carte (clic droit sans glisser) : VOIR LA CAMÉRA (équipier pointé), PING, MARQUEUR, Y ALLER,
     CENTRER ICI, COPIER LA GRILLE, CHAMP DE VISION ICI (fn_reliefAction depuis le point), EFFACER LE CHAMP DE VISION
     et EFFACER LA LIGNE DE VUE (quand il y en a un sur la carte), ZONE INTERDITE AU DRONE (poser, ou retirer celle
-    sous le clic), RETIRER TOUTES LES ZONES (camp), SUPPRIMER (marqueur joueur pointé). Drone appairé et en vie : ORDRE AU DRONE
+    sous le clic), RETIRER TOUTES LES ZONES (camp), SUPPRIMER (marqueur joueur ou alerte pointés), EFFACER LES ALERTES (repères
+    d'alerte reçus). MARQUEUR ouvre la palette au point (fn_markerPlace) ou l'éditeur complet (réglage d'addon). Drone appairé et en vie : ORDRE AU DRONE
     ouvre un sous-menu ALLER, RECHERCHER, STATIONNAIRE, ATTERRIR au point cliqué (fn_droneAction "mapOrder"), et RETOUR. Équipier pointé : aussi CHAMP DE VISION de l'équipier
     et LOCALISER PAR RELAIS (triangulation, fn_relayNet).
     ["open", [contrôle carte, position écran]]  ouvre le menu au curseur (en-tête : grille, altitude, distance et azimut)
@@ -33,8 +34,8 @@ switch (_mode) do {
         if (isNull _map) exitWith {};
         private _w = _map ctrlMapScreenToWorld _screen;
         private _m = [_map, _screen] call comspec_atak_native_fnc_markerAt;
-        // Mêmes règles que la suppression (fn_markerDelete) : seuls les marqueurs posés par les joueurs.
-        if ((_m find "_USER_DEFINED") isNotEqualTo 0) then { _m = ""; };
+        // Mêmes règles que la suppression (fn_markerDelete) : marqueurs posés par les joueurs et repères d'alerte reçus.
+        if (([_m] call comspec_atak_native_fnc_markerDeletable) isEqualTo 0) then { _m = ""; };
         // Équipier pointé (joueur du camp avec un téléphone, à moins d'environ un symbole du clic) : ligne VOIR CAMÉRA.
         private _near = 0.03;
         private _who = objNull;
@@ -79,7 +80,7 @@ switch (_mode) do {
         playSound "ClickSoft";
         switch (_arg) do {
             case "PING": { ["send", _pos] call comspec_atak_native_fnc_mapPing; };
-            case "MARKER": { ["", _pos] call comspec_atak_native_fnc_markerEditOpen; };
+            case "MARKER": { ["open", _pos] call comspec_atak_native_fnc_markerPlace; };
             case "ROUTE": { [_pos, "Point de la carte"] spawn comspec_atak_native_fnc_routeCompute; };
             case "CENTER": { _s set ["mapFollow", false]; [_pos] call comspec_atak_native_fnc_mapCenter; };
             case "COPY": {
@@ -88,6 +89,13 @@ switch (_mode) do {
                 [format ["Grille %1 copiée", _g], 2] call comspec_atak_native_fnc_toast;
             };
             case "DELETE": { if (_m isNotEqualTo "") then { [_m] call comspec_atak_native_fnc_markerDelete; }; };
+            case "ALERTSDEL": {
+                private _n = 0;
+                { if ((_x find "COMSPEC_ALERT_") isEqualTo 0 || {(_x find "COMSPEC_PANIC_") isEqualTo 0}) then { deleteMarkerLocal _x; _n = _n + 1; }; } forEach allMapMarkers;
+                _s set ["selectedMarker", ""];
+                ["INFO", format ["%1 alerte(s) effacée(s) de la carte", _n], 2, 20] call comspec_atak_native_fnc_notify;
+                [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+            };
             case "NOFLY": { ["add", [_pos, 200]] call comspec_atak_native_fnc_noFly; };
             case "NOFLYDEL": {
                 private _z = ["inside", _pos] call comspec_atak_native_fnc_noFly;
@@ -146,7 +154,7 @@ switch (_mode) do {
         private _dir = "\z\comspec_atak_native\addons\main\data\";
         private _rows = [
             ["PING", "Ping", "signal au groupe", "\A3\ui_f\data\map\markers\military\circle_CA.paa", [1, 0.85, 0.15, 1]],
-            ["MARKER", "Mettre un marqueur", "éditeur complet", _dir + "map_marker.paa", _acc],
+            ["MARKER", "Mettre un marqueur", ["palette, canal", "éditeur complet"] select ((missionNamespace getVariable ["comspec_atak_native_marker_menu", "palette"]) isEqualTo "editor"), _dir + "map_marker.paa", _acc],
             ["ROUTE", "Y aller", "itinéraire GPS", _dir + "map_route.paa", [0.40, 0.65, 1, 1]],
             ["CENTER", "Centrer ici", "", _dir + "map_center.paa", [0.86, 0.91, 0.88, 1]],
             ["COPY", "Copier la grille", "10 chiffres", _dir + "map_grid.paa", [0.86, 0.91, 0.88, 1]],
@@ -179,7 +187,12 @@ switch (_mode) do {
         if (_nf > 1 || {_nf > 0 && {!_inNf}}) then {
             _rows pushBack ["NOFLYALL", "Retirer toutes les zones", format ["%1 zones, tout le camp", _nf], _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
         };
-        if (_m isNotEqualTo "") then { _rows pushBack ["DELETE", "Supprimer le marqueur", [markerText _m, ""] select ((markerText _m) isEqualTo ""), _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]]; };
+        if (_m isNotEqualTo "") then {
+            _rows pushBack ["DELETE", ["Supprimer le marqueur", "Effacer cette alerte"] select (([_m] call comspec_atak_native_fnc_markerDeletable) isEqualTo 2), [markerText _m, ""] select ((markerText _m) isEqualTo ""), _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
+        };
+        // Repères d'alerte reçus (CONTACT, WIA, SALUTE, PANIQUE…, locaux à ce téléphone) : tous d'un coup.
+        private _na = { (_x find "COMSPEC_ALERT_") isEqualTo 0 || {(_x find "COMSPEC_PANIC_") isEqualTo 0} } count allMapMarkers;
+        if (_na > 0) then { _rows pushBack ["ALERTSDEL", "Effacer les alertes", format ["%1 sur la carte", _na], _dir + "ui_bell.paa", [0.95, 0.30, 0.25, 1]]; };
         // Drone appairé (fn_droneAction) : une ligne ouvre le sous-menu des ordres au point cliqué.
         private _dr = missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull];
         private _drOk = !isNull _dr && {alive _dr};
@@ -254,7 +267,7 @@ switch (_mode) do {
             _ic ctrlSetTextColor _col;
             private _t = ["COMSPEC_RscStructuredText", [_x0 + pixelW * 16 + _iw * 1.45, _ry + (_rowH - _font * 0.95) / 2, _w - _iw * 1.45 - pixelW * 24, _rowH]] call _mk;
             _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='0.95' color='%1'>%2</t><t size='0.75' color='#7d8c85' align='right'>%3</t>",
-                ["#e6efe9", "#f2685c"] select (_key in ["DELETE", "VIEWDEL", "LOSDEL", "NOFLYALL"]), _label, (_sub regexReplace ["[<>&]", ""]) select [0, 22]]) call comspec_atak_native_fnc_tr);
+                ["#e6efe9", "#f2685c"] select (_key in ["DELETE", "ALERTSDEL", "VIEWDEL", "LOSDEL", "NOFLYALL"]), _label, (_sub regexReplace ["[<>&]", ""]) select [0, 22]]) call comspec_atak_native_fnc_tr);
             _t ctrlSetFontHeight _font;
             private _b = ["COMSPEC_RscButtonOverlay", [_x0, _ry, _w, _rowH]] call _mk;
             _b ctrlAddEventHandler ["ButtonClick", compile format ["['act', '%1'] call comspec_atak_native_fnc_mapCtxMenu;", _key]];
