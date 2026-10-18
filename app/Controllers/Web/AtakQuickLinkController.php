@@ -20,6 +20,7 @@ use App\Support\LoginIntendedDestination;
 final class AtakQuickLinkController
 {
     private const PENDING_CODE_KEY = 'atak_quick_link_code';
+    private const WATCH_KEY = 'atak_quick_link_watch';
 
     public function __construct(private ?GameAtakPairingService $pairing = null)
     {
@@ -41,13 +42,22 @@ final class AtakQuickLinkController
             $code = self::cleanCode((string) Session::get(self::PENDING_CODE_KEY, ''));
         }
         Session::forget(self::PENDING_CODE_KEY);
+        $linked = (bool) Session::getFlash('atak_quick_link_done');
+        $gameRequest = null;
+        if (!$linked && $code !== '') {
+            $this->pairing ??= Container::get(GameAtakPairingService::class);
+            $gameRequest = $this->pairing->describePending($code, (int) Session::get('user_id'), (int) Session::get('tenant_id'));
+        }
 
         return Response::view('layout.main', [
             'title' => 'Lier le jeu',
             'content' => 'account.game_link',
             'accountHubPage' => true,
             'code' => $code,
-            'linked' => (bool) Session::getFlash('atak_quick_link_done'),
+            'gameRequest' => $gameRequest,
+            'watch' => $linked ? (int) Session::get(self::WATCH_KEY, 0) : 0,
+            'steamMoved' => $linked ? (int) Session::getFlash('atak_quick_link_moved') : 0,
+            'linked' => $linked,
             'success' => Session::getFlash('success'),
             'error' => Session::getFlash('error'),
         ]);
@@ -76,9 +86,31 @@ final class AtakQuickLinkController
             return Response::redirect($back);
         }
         Session::flash('atak_quick_link_done', '1');
+        Session::set(self::WATCH_KEY, (int) ($result['payload']['challenge_id'] ?? 0));
+        Session::flash('atak_quick_link_moved', (string) count((array) ($result['payload']['steam_moved_from'] ?? [])));
         Session::flash('success', 'C’est fait. Retournez dans Arma : votre téléphone se connecte et se synchronise tout seul.');
 
         return Response::redirect(url('lier'));
+    }
+
+    /**
+     * GET /lier/etat : la page attend que le jeu reprenne sa session après l'autorisation.
+     * Réponse : {"state": "approved" | "consumed" | "expired" | "unknown"}.
+     */
+    public function state(Request $request, array $params = []): Response
+    {
+        $userId = (int) Session::get('user_id');
+        $watch = (int) Session::get(self::WATCH_KEY, 0);
+        if ($userId < 1 || $watch < 1) {
+            return Response::json(['state' => 'unknown']);
+        }
+        $this->pairing ??= Container::get(GameAtakPairingService::class);
+        $state = $this->pairing->approvalProgress($watch, $userId);
+        if ($state !== 'approved') {
+            Session::forget(self::WATCH_KEY);
+        }
+
+        return Response::json(['state' => $state]);
     }
 
     /** Code affiché par le jeu (XXXX-XXXX) : lettres et chiffres seulement, 16 au plus. */
