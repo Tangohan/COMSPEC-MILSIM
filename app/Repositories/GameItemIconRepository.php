@@ -202,7 +202,7 @@ final class GameItemIconRepository
         $class = strtolower(trim($class));
         $tenantId = (int) Session::get('tenant_id');
         if ($class === '' || $tenantId < 1) {
-            return null;
+            return $class === '' ? null : self::bundledUrl($class);
         }
         if (self::$tenantHashesFor !== $tenantId) {
             self::$tenantHashesFor = $tenantId;
@@ -224,8 +224,29 @@ final class GameItemIconRepository
             }
         }
         $hash = self::$tenantHashes[$class] ?? null;
+        if ($hash !== null) {
+            return self::urlForHash($hash);
+        }
 
-        return $hash !== null ? self::urlForHash($hash) : null;
+        return self::bundledUrl($class);
+    }
+
+    /**
+     * Icônes livrées avec le site pour nos propres objets (ex. les 17 objets @COMSPEC_SSE, rendus 256 px) :
+     * public/assets/img/game-items/<classe en minuscules>.png, utilisées tant que le jeu n’a rien envoyé.
+     */
+    public static function bundledUrl(string $class): ?string
+    {
+        $class = strtolower(trim($class));
+        if (preg_match('/^[a-z0-9_][a-z0-9_.\-]{0,127}$/', $class) !== 1) {
+            return null;
+        }
+        $rel = 'assets/img/game-items/' . $class . '.png';
+        if (!is_file(dirname(__DIR__, 2) . '/public/' . $rel)) {
+            return null;
+        }
+
+        return function_exists('asset_url') ? asset_url($rel) : '/' . $rel;
     }
 
     public function tenantHasHash(int $tenantId, string $hash): bool
