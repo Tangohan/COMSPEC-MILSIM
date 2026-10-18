@@ -488,6 +488,19 @@ class Container
                 self::get(\App\Repositories\ArsenalWardrobeRepository::class),
                 self::get(\App\Services\Dashboard\DashboardWardrobeShowcaseService::class)
             ),
+            \App\Repositories\GameEquipmentRepository::class => new \App\Repositories\GameEquipmentRepository(),
+            \App\Repositories\GameRoleKitRepository::class => new \App\Repositories\GameRoleKitRepository(),
+            \App\Services\GameEquipment\RoleKitService::class => new \App\Services\GameEquipment\RoleKitService(
+                self::get(\App\Repositories\GameRoleKitRepository::class),
+                self::get(\App\Repositories\GameEquipmentRepository::class),
+                self::get(\App\Repositories\ArsenalWardrobeRepository::class),
+                self::get(\App\Repositories\PersonnelJobRoleRepository::class)
+            ),
+            \App\Controllers\Admin\Organization\GameEquipmentAdminController::class => new \App\Controllers\Admin\Organization\GameEquipmentAdminController(
+                self::get(\App\Repositories\GameEquipmentRepository::class),
+                self::get(\App\Repositories\GameRoleKitRepository::class),
+                self::get(\App\Services\GameEquipment\RoleKitService::class)
+            ),
             \App\Controllers\Admin\Organization\ModerationOrganizationController::class => new \App\Controllers\Admin\Organization\ModerationOrganizationController(
                 self::get(AuthService::class),
                 self::get(\App\Repositories\ModerationRepository::class),
