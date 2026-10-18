@@ -254,6 +254,7 @@ uiNamespace setVariable ["COMSPEC_SseSampleFinish", {
         _onTarget = _onTarget select { (_x isEqualType []) && {(count _x) >= 3} && {(_x select 0) isNotEqualTo _kind} };
         _onTarget pushBack [_kind, _quality, _labRef, _detail, _factors];
         _target setVariable ["comspec_sse_bioSamples", _onTarget, true];
+        [_target, _label, format ["qualité %1 · %2", _quality, _labRef]] call comspec_overwatch_connect_fnc_sseTeamLog;
     };
 
     [

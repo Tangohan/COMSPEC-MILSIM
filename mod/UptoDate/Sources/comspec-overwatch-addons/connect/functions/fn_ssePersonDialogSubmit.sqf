@@ -394,6 +394,40 @@ if (_eLast isEqualTo "" && {_eFirst isEqualTo ""} && {_eAlias isEqualTo ""}) exi
     [1] call comspec_overwatch_connect_fnc_sseTerminalPage;
 };
 
+// Fiche SSE gardée sur le poste (COMSPEC_SSE_Sheets, mission) : l'app Bluetooth du téléphone peut l'envoyer à un
+// équipier, même hors liaison. Une fiche par sujet : une retransmission remplace la précédente.
+private _who = trim format ["%1 %2", _first, _last];
+if (_who isEqualTo "") then { _who = [_alias, "Sujet inconnu"] select (_alias isEqualTo ""); };
+private _sheetLines = [];
+{
+    _x params ["_lab", "_val"];
+    if (_val isEqualType 0) then { _val = [str _val, ""] select (_val < 0); };
+    if (_val isNotEqualTo "") then { _sheetLines pushBack [_lab, _val]; };
+} forEach [
+    ["Nom", _last], ["Prénom", _first], ["Alias", _alias], ["Âge", _age], ["Nationalité", _nat], ["Langue", _lang],
+    ["Signes particuliers", _marks], ["Affiliation", _affil], ["Déclaration", _stmt], ["Circonstance", _circ],
+    ["Dossier", _caseCode], ["Grille", _grid]
+];
+{
+    if ((_x isEqualType []) && {(count _x) >= 3}) then { _sheetLines pushBack [toUpper (_x select 0), format ["qualité %1 · %2", _x select 1, _x select 2]]; };
+} forEach _samples;
+if (!isNull _target) then {
+    private _fm = _target getVariable ["comspec_sse_facePhotoMeta", []];
+    if ((_fm isEqualType []) && {(count _fm) >= 3}) then { _sheetLines pushBack ["Photo du visage", format ["%1 · qualité %2 · %3", _fm select 0, _fm select 1, _fm select 2]]; };
+    private _lq = (_target getVariable ["comspec_sse_seekLastQuery", []]) param [1, []];
+    if ((_lq isEqualType []) && {(count _lq) >= 3}) then { _sheetLines pushBack ["Interrogation SEEK", format ["%1 · score %2 · %3", _lq select 0, _lq select 1, _lq select 2]]; };
+};
+if ((count _sig) >= 4) then { _sheetLines pushBack ["Signé", format ["%1 · %2", _sig select 0, _sig select 3]]; };
+private _st = systemTime;
+private _sheetClock = format ["%1:%2", [str (_st select 3), "0" + str (_st select 3)] select ((_st select 3) < 10), [str (_st select 4), "0" + str (_st select 4)] select ((_st select 4) < 10)];
+private _sheets = missionNamespace getVariable ["COMSPEC_SSE_Sheets", []];
+if !(_sheets isEqualType []) then { _sheets = []; };
+_sheets = _sheets select { (_x isEqualType []) && {(_x param [0, ""]) isNotEqualTo _idKey} };
+_sheets pushBack [_idKey, _who, _sheetLines, _callsign, _sheetClock, _grid, ""];
+if ((count _sheets) > 40) then { _sheets deleteAt 0; };
+missionNamespace setVariable ["COMSPEC_SSE_Sheets", _sheets];
+[_target, "Fiche SSE transmise", [_caseCode, "sans dossier"] select (_caseCode isEqualTo "")] call comspec_overwatch_connect_fnc_sseTeamLog;
+
 ["ssePersonDialogSubmit", format ["TX identité L=%1 F=%2 A=%3 octets=%4", count _eLast, count _eFirst, count _eAlias, count _json], "", "Fn", "INFO"] call comspec_overwatch_connect_fnc_logFnError;
 
 private _parsed = [

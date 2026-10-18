@@ -319,16 +319,25 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     ["WARNING", "Activité réseau anormale sur votre téléphone", 5, 40] call comspec_atak_native_fnc_notify;
 }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_buzz", {
-    params ["_from", "_grid"];
+    params ["_from", "_grid", ["_txt", ""], ["_pos", []], ["_src", objNull]];
     if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
     if ((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"]) exitWith {};
-    ["WARNING", format ["VIBREUR · %1 vous appelle · %2", _from, _grid], 8, 70] call comspec_atak_native_fnc_notify;
+    if !(_txt isEqualType "") then { _txt = ""; };
+    ["WARNING", [format ["VIBREUR · %1 vous appelle · %2", _from, _grid], format ["VIBREUR · %1 : %2 · %3", _from, _txt, _grid]] select (_txt isNotEqualTo ""), 8, 70] call comspec_atak_native_fnc_notify;
+    // Alerte visuelle à l'écran du téléphone (VU / CARTE / FERMER), affichée aussi à la prochaine ouverture.
+    ["show", [_from, _grid, _txt, _pos, _src]] call comspec_atak_native_fnc_buzzAlert;
     private _buzz = {
         if (isNull ([] call comspec_atak_native_fnc_display) && {!(profileNamespace getVariable ["COMSPEC_ATAK_Silent", false])} && {!isNil "comspec_overwatch_connect_fnc_playAtakVibrate"}) then { [0.9] call comspec_overwatch_connect_fnc_playAtakVibrate; } else { [] call comspec_atak_native_fnc_vibrate; };
     };
     [] call _buzz;
     [_buzz, [], 0.9] call CBA_fnc_waitAndExecute;
     [_buzz, [], 1.8] call CBA_fnc_waitAndExecute;
+}] call CBA_fnc_addEventHandler;
+// Accusé du vibreur : le destinataire a appuyé sur VU.
+["comspec_atak_native_buzzAck", {
+    params [["_who", "?"]];
+    if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
+    ["INFO", format ["VIBREUR · %1 a vu votre message", _who], 5] call comspec_atak_native_fnc_notify;
 }] call CBA_fnc_addEventHandler;
 
 // PANIQUE d'un allié : alerte rouge, vibration, repère local sur la carte pendant 10 min.

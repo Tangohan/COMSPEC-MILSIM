@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.86";
+    private const string ExtensionVersion = "2.0.87";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -3051,6 +3051,11 @@ public static partial class Extension
         if (function != null && function.StartsWith("Clip", StringComparison.Ordinal))
         {
             return ClipCommand(function, args);
+        }
+        // Transfert de photos et de musiques entre téléphones par l'app Bluetooth (BtTransfer.cs).
+        if (function != null && function.StartsWith("Bt", StringComparison.Ordinal))
+        {
+            return BtCommand(function, args);
         }
 #endif
 

@@ -38,6 +38,39 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Bluetooth : photos, musiques, données et fiches ; SEEK en équipe ; vibreur BFT avec message (ATAK natif 1.97.0, COMSPEC Link 2.0.87)
+
+### Résumé joueur
+Type : nouveauté
+FR : Bluetooth qui envoie vraiment des fichiers, SEEK partagé entre joueurs, vibreur BFT avec message
+- App Bluetooth : en plus des sons, tu envoies à un téléphone appairé tes photos, tes musiques, ta position, ton itinéraire, un plan, une fiche SEEK ou une fiche SSE. Une barre montre l'avancement et tu peux annuler.
+- Ce que tu reçois arrive au bon endroit : photos dans ta Galerie, musiques dans le lecteur, itinéraire dans Points de passage, plan dans l'app Plan, fiches dans le terminal SEEK. Tout est aussi listé dans « Reçus par Bluetooth ».
+- SEEK et app SSE : une section « Équipe sur ce sujet » montre ce que nos autres joueurs ont déjà fait sur la même personne (empreintes, iris, ADN, photo, interrogation, fiche, signature).
+- BFT : VIBRER ouvre un message rapide (RALLIEMENT, CONTACT, STOP, BESOIN D'AIDE, APPELEZ-MOI, RAS) ou un texte libre. Le téléphone de ton équipier vibre et affiche une grande alerte avec ton message, ta grille et ta distance, avec VU (tu es prévenu qu'il l'a vue) et CARTE.
+EN : Bluetooth that really sends files, SEEK shared between players, BFT buzzer with a message
+- Bluetooth app: on top of sounds, you can send a paired phone your photos, your music, your position, your route, a plan, a SEEK sheet or an SSE sheet. A bar shows progress and you can cancel.
+- What you receive lands in the right place: photos in your Gallery, music in the player, route in Waypoints, plan in the Plan app, sheets in the SEEK terminal. Everything is also listed under "Received by Bluetooth".
+- SEEK and SSE app: a "Team on this subject" section shows what our other players already did on the same person (fingerprints, iris, DNA, photo, query, sheet, signature).
+- BFT: BUZZ opens a quick message (RALLY, CONTACT, STOP, NEED HELP, CALL ME, ALL CLEAR) or free text. Your teammate's phone vibrates and shows a large alert with your message, grid and distance, with SEEN (you are told they saw it) and MAP.
+
+### Détail technique
+Version provisoire : le fil de regroupement attribue le numéro du lot (docs/VERSIONING.md). main.pbo reconstruit avec HEMTT 1.17.2, empreinte posée par tools/stamp_build.py puis remise à vide ; comspec_overwatch_connect.pbo repaqueté (tools/pack_pbo.py). DLL modifiée : `build_mod.bat` obligatoire.
+
+#### Bluetooth : transfert de fichiers et de données
+- COMSPEC Link 2.0.87 (`BtTransfer.cs`, branché dans `Extension.cs` sous `COMSPEC_ATAK_NATIVE`) : `BtFileOpen` / `BtFileRead` / `BtFileClose` côté émetteur (photo limitée aux dossiers de captures et de screenshots, 8 Mo ; musique limitée au dossier COMSPEC_Music, 30 Mo ; morceaux de 3000 octets en base64), `BtRecvOpen` / `BtRecvWrite` / `BtRecvEnd` / `BtRecvAbort` côté récepteur (fichier temporaire dans `%TEMP%\COMSPEC_BT`, rangé à la fin dans le dossier Captures ou `COMSPEC_Music\Bluetooth`, nom unique).
+- `fn_btItems` (nouveau) : listes par onglet (photos, musiques, données, fiches), données envoyées et rangement à la réception (repère local 10 min, `wpAction receive`, bibliothèque Plan, journal SEEK marqué « reçu de », fiches SSE), boîte de réception `COMSPEC_ATAK_BtInbox` (30).
+- `fn_btAction` : nouvelles sortes `pho`, `mp3`, `pos`, `wp`, `plan`, `seek`, `sse` ; offre → acceptation → envoi (`data`, ou `fbeg` / `fchk` / `fend` pompé par un PFH à 4 morceaux par 0,25 s, portée vérifiée à chaque envoi), accusé `done`, `fabort` / `cancel`, réceptions bloquées plus de 30 s abandonnées, Bluetooth coupé = transferts arrêtés. DLL ancienne : message « reconstruire avec build_mod.bat ».
+- `fn_pageBluetooth` : section « Transferts en cours » (pourcentage, barre, ANNULER), envoi en deux rangées d'onglets (SONS / MUSIQUE / PHOTOS, DONNÉES / FICHES), « Reçus par Bluetooth » avec VOIR.
+
+#### SEEK : actions des autres joueurs sur le même individu
+- `fn_sseTeamLog` (connect, nouveau) : journal d'équipe public sur l'unité visée (`COMSPEC_SSE_TeamLog`, 20 lignes, même action du même joueur dans la minute remplacée).
+- Alimenté par `fn_sseBiometricSample`, `fn_sseCaptureFacePhoto` (métadonnées de la photo désormais publiques), `fn_seekHistoryPush`, `fn_sseSignAtak`, `fn_ssePersonDialogSubmit` (qui garde aussi la fiche SSE envoyée dans `COMSPEC_SSE_Sheets`, 40, pour le Bluetooth).
+- Affiché dans la synthèse du terminal SEEK (`fn_ssePersonRefreshPanels`) et dans le panneau sujet de l'app SSE (`fn_pageSse`).
+
+#### BFT : vibreur avec message et alerte à l'écran
+- `fn_pageBft` / `fn_bftAction` : VIBRER ouvre un composeur (6 messages prêts, texte libre de 80 caractères, `<>` retirés, 5 s entre deux envois vers la même personne) ; l'événement `comspec_atak_native_buzz` porte maintenant texte, position et émetteur (anciens appels compatibles).
+- `fn_buzzAlert` (nouveau) : alerte orange sur l'écran du téléphone, gardée 2 min (affichée à l'ouverture si le téléphone était rangé, redessinée après chaque page par `fn_fx raise`), boutons VU (`comspec_atak_native_buzzAck` → « X a vu votre message » chez l'émetteur), CARTE, FERMER.
+
 ## Regroupement : app Plan refaite, partage des caméras, nouvelle app Distances (ATAK natif 1.96.0, COMSPEC Link 2.0.86)
 
 ### Résumé joueur

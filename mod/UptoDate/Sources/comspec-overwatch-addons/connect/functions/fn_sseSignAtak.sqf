@@ -28,6 +28,7 @@ if (!(_stamp isEqualType "") || {_stamp isEqualTo ""}) then {
 };
 
 uiNamespace setVariable ["COMSPEC_SsePerson_Signature", [_callsign, _terminal, _atakId, _stamp]];
+[uiNamespace getVariable ["COMSPEC_SsePerson_Target", objNull], "Procès-verbal signé", _stamp] call comspec_overwatch_connect_fnc_sseTeamLog;
 
 if (!isNil "comspec_overwatch_connect_fnc_ssePersonRefreshPanels") then {
     [] call comspec_overwatch_connect_fnc_ssePersonRefreshPanels;

@@ -83,6 +83,10 @@ private _fnc_store = {
     _arr
 };
 
+if (!isNull _target) then {
+    [_target, "Interrogation SEEK", format ["%1%2", _status, ["", format [" · %1", _ref]] select (_ref isNotEqualTo "")]] call comspec_overwatch_connect_fnc_sseTeamLog;
+};
+
 private _local = missionNamespace getVariable ["COMSPEC_SeekQueryHistory", []];
 _local = [_local, _entry] call _fnc_store;
 missionNamespace setVariable ["COMSPEC_SeekQueryHistory", _local, false];
