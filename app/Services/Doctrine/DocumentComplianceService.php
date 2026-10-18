@@ -174,12 +174,32 @@ final class DocumentComplianceService
                 'title' => (string) ($row['title'] ?? ''),
                 'badge' => $badge,
                 'deadline_label' => $this->deadlineLabel($row['acknowledgment_deadline_at'] ?? null),
+                'deadline_at' => $row['acknowledgment_deadline_at'] ?? null,
+                'version_id' => $versionId,
+                'version_label' => $this->versionLabelForRow($row),
+                'mandatory' => (string) ($row['requirement_level'] ?? '') === 'mandatory',
+                'needs_signature' => !empty($row['acknowledgment_required']),
+                'summary' => trim((string) ($row['summary'] ?? '')),
                 'href' => \url('documents/doctrine/' . $documentId),
+                'ack_url' => \url('documents/doctrine/' . $documentId . '/acknowledge'),
                 'sort_priority' => (int) ($badge['sort_priority'] ?? 8),
             ];
         }
         usort($pending, static fn (array $a, array $b): int => ($a['sort_priority'] <=> $b['sort_priority']) ?: strcmp($a['reference'], $b['reference']));
 
         return array_slice($pending, 0, max(1, $limit));
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function versionLabelForRow(array $row): string
+    {
+        $label = trim((string) ($row['version_label'] ?? ''));
+        if ($label === '' && isset($row['version_major'], $row['version_minor'])) {
+            $label = 'v' . (int) $row['version_major'] . '.' . (int) $row['version_minor'];
+        }
+
+        return $label;
     }
 }
