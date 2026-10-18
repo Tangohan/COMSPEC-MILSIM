@@ -77,14 +77,15 @@ $stageMeta = static function (string $stage) use ($statusMeta): array {
             'bar' => 'bg-orange-500',
             'label' => 'Mise en attente',
         ],
-        'accepted' => $statusMeta('reviewed'),
+        // Accepté avec intégration à finaliser : c’est une candidature acceptée, pas un statut inconnu.
+        'accepted', 'acceptance_onboarding' => $statusMeta('reviewed'),
         default => $statusMeta($stage),
     };
 };
 
 $filterLink = static function (?string $key, ?string $current, string $label, int $count, string $baseUrl): string {
     $active = ($key === null && $current === null) || ($key !== null && $current === $key);
-    $href = $key === null ? $baseUrl : $baseUrl . '?status=' . rawurlencode($key);
+    $href = $key === null ? $baseUrl . '?vue=liste' : $baseUrl . '?status=' . rawurlencode($key);
     $cls = $active
         ? 'border-slate-900 bg-slate-900 text-white shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/50 focus-visible:ring-offset-2'
         : 'border-slate-300 bg-slate-100 text-slate-900 hover:border-slate-400 hover:bg-slate-200/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2';
@@ -145,6 +146,43 @@ $formatHoursShort = static function (?int $hours): string {
     return $rem > 0 ? $days . ' j ' . $rem . ' h' : $days . ' j';
 };
 
+$pipelineView = (string) ($pipelineView ?? 'liste');
+$pipelineFilter = (string) ($pipelineFilter ?? '');
+$pipelineSearch = (string) ($pipelineSearch ?? '');
+$pipelineCounts = is_array($pipelineCounts ?? null) ? $pipelineCounts : ['mine' => 0, 'libre' => 0, 'retard' => 0, 'active' => 0, 'interviews' => 0, 'retro' => 0];
+$pipelineColumns = is_array($pipelineColumns ?? null) ? $pipelineColumns : [];
+$pipelineOffBoard = (int) ($pipelineOffBoard ?? 0);
+$pipelineState = array_filter([
+    'vue' => $pipelineView,
+    'filtre' => $pipelineFilter,
+    'q' => $pipelineSearch,
+    'status' => $pipelineView === 'liste' ? (string) ($statusFilter ?? '') : '',
+    'stage' => $pipelineView === 'liste' ? (string) ($stageFilter ?? '') : '',
+], static fn (string $v): bool => $v !== '');
+$pipelineReturnQs = http_build_query($pipelineState);
+$qLink = static fn (array $override): string => \App\Support\EnlistmentPipelineBoard::link($baseList, $pipelineState, $override);
+$h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
+$rpInitials = $initials;
+$rpNow = (int) ($nowTs ?? time());
+$rpAgo = static function (string $sql) use ($rpNow): string {
+    $ts = $sql !== '' ? strtotime($sql) : false;
+    if ($ts === false) {
+        return '—';
+    }
+    $m = max(0, intdiv($rpNow - $ts, 60));
+    if ($m < 60) {
+        return $m < 2 ? 'à l’instant' : 'il y a ' . $m . ' min';
+    }
+    $hh = intdiv($m, 60);
+    if ($hh < 24) {
+        return 'il y a ' . $hh . ' h';
+    }
+    $d = intdiv($hh, 24);
+
+    return $d < 45 ? 'il y a ' . $d . ' j' : 'le ' . date('d/m/Y', $ts);
+};
+$listBase = static fn (array $o): string => $qLink(['vue' => 'liste'] + $o);
+$baseListForPills = $baseList;
 ?>
 <style>
     .recruitment-bureau .recruitment-sla-save {
@@ -305,118 +343,161 @@ $formatHoursShort = static function (?int $hours): string {
         line-height: 1.15;
     }
 </style>
-<div class="recruitment-bureau recruitment-bureau--queue space-y-5 w-full max-w-none">
-        <?php if ($staffRetrosDueCount > 0): ?>
-        <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5" role="status">
-            <p class="text-sm font-semibold text-amber-950">
-                <?= $staffRetrosDueCount === 1
-                    ? '1 recrue acceptée il y a plus de 30 jours attend son bilan d’intégration.'
-                    : $staffRetrosDueCount . ' recrues acceptées il y a plus de 30 jours attendent leur bilan d’intégration.' ?>
-                <span class="font-normal text-amber-900/80">La colonne Bilan les signale aussi ligne par ligne.</span>
-            </p>
-            <a href="<?= htmlspecialchars($staffRetrosDueFirstId > 0 ? url('back-office/recruitments/' . $staffRetrosDueFirstId . '?dossier=1#bilan-recrutement') : url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex min-h-[2.25rem] items-center rounded-lg bg-emerald-600 px-3 text-[11px] font-bold uppercase tracking-wide text-white transition hover:bg-emerald-500">Renseigner un bilan</a>
+<div class="recruitment-bureau recruitment-bureau--queue rp w-full max-w-none">
+    <header class="rp-head">
+        <div>
+            <p class="rp-head__eyebrow">Bureau recrutement</p>
+            <h1 class="rp-head__title">File des candidatures</h1>
+            <p class="rp-head__lead">Chaque dossier est rangé selon la prochaine action à mener. Prenez ce qui n’a pas de recruteur, traitez d’abord ce qui est en retard.</p>
         </div>
+        <nav class="rp-head__tools" aria-label="Outils du bureau">
+            <a class="rp-tool" href="<?= $h(url('enlistment')) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>Formulaire public</a>
+            <?php if (can('invitations.send') || can('admin.organization') || can('admin.access')): ?>
+                <a class="rp-tool" href="<?= $h(url('back-office/invitations')) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Invitations</a>
+            <?php endif; ?>
+            <a class="rp-tool" href="<?= $h(url('back-office/recruitments/messages-prefaits')) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg>Modèles de texte</a>
+            <a class="rp-tool" href="<?= $h(url('back-office/recruitments/equipe')) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5M16 5a3 3 0 0 1 0 6M21 19c0-2-1.5-3.6-3.5-4.4"/></svg>Fil recruteurs</a>
+            <details class="rp-sla">
+                <summary class="rp-tool"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>Alerte à <?= $enlistmentSlaHours ?> h</summary>
+                <form class="rp-sla__panel" method="post" action="<?= $h(url('back-office/recruitments/settings')) ?>">
+                    <?= \App\Core\Csrf::field() ?>
+                    <label for="enlistment-sla-hours">Délai d’alerte (heures)</label>
+                    <div class="rp-sla__row">
+                        <input type="number" id="enlistment-sla-hours" name="enlistment_sla_hours" min="1" max="720" value="<?= $enlistmentSlaHours ?>">
+                        <button type="submit" class="rp-btn recruitment-sla-save">Enregistrer</button>
+                    </div>
+                    <p class="rp-sla__hint">Un dossier sans action depuis plus longtemps passe « En retard ». <a href="<?= $h(url('back-office/recruitments/settings')) ?>">Tous les réglages →</a></p>
+                </form>
+            </details>
+        </nav>
+    </header>
+
+    <?php
+    $kpiFilter = static function (string $key) use ($pipelineFilter, $qLink): string {
+        return $qLink(['filtre' => $pipelineFilter === $key ? null : $key]);
+    };
+    ?>
+    <div class="rp-focus" role="group" aria-label="Ce qui demande votre attention">
+        <a class="rp-kpi rp-kpi--you<?= $pipelineFilter === 'mine' ? ' is-active' : '' ?>" href="<?= $h($kpiFilter('mine')) ?>">
+            <span class="rp-kpi__label">Mes dossiers</span>
+            <span class="rp-kpi__value"><?= (int) $pipelineCounts['mine'] ?></span>
+            <span class="rp-kpi__hint"><?= $pipelineFilter === 'mine' ? 'Filtre actif · retirer' : 'Dont je suis le référent' ?></span>
+        </a>
+        <a class="rp-kpi rp-kpi--take<?= (int) $pipelineCounts['libre'] > 0 ? ' is-hot' : '' ?><?= $pipelineFilter === 'libre' ? ' is-active' : '' ?>" href="<?= $h($kpiFilter('libre')) ?>">
+            <span class="rp-kpi__label">Sans recruteur</span>
+            <span class="rp-kpi__value"><?= (int) $pipelineCounts['libre'] ?></span>
+            <span class="rp-kpi__hint"><?= $pipelineFilter === 'libre' ? 'Filtre actif · retirer' : 'À prendre en charge' ?></span>
+        </a>
+        <a class="rp-kpi rp-kpi--late<?= (int) $pipelineCounts['retard'] > 0 ? ' is-hot' : '' ?><?= $pipelineFilter === 'retard' ? ' is-active' : '' ?>" href="<?= $h($kpiFilter('retard')) ?>">
+            <span class="rp-kpi__label">En retard</span>
+            <span class="rp-kpi__value"><?= (int) $pipelineCounts['retard'] ?></span>
+            <span class="rp-kpi__hint"><?= $pipelineFilter === 'retard' ? 'Filtre actif · retirer' : 'Seuil de ' . $enlistmentSlaHours . ' h dépassé' ?></span>
+        </a>
+        <a class="rp-kpi rp-kpi--soon" href="<?= $h($qLink(['vue' => 'tableau', 'status' => null, 'stage' => null]) . '#col-interview') ?>">
+            <span class="rp-kpi__label">Entretiens</span>
+            <span class="rp-kpi__value"><?= (int) $pipelineCounts['interviews'] ?></span>
+            <span class="rp-kpi__hint">À tenir ou à conclure</span>
+        </a>
+        <a class="rp-kpi rp-kpi--ok" href="<?= $h($staffRetrosDueFirstId > 0 ? url('back-office/recruitments/' . $staffRetrosDueFirstId . '?dossier=1#bilan-recrutement') : $qLink(['vue' => 'tableau', 'status' => null, 'stage' => null]) . '#col-retro') ?>">
+            <span class="rp-kpi__label">Bilans 30 j dus</span>
+            <span class="rp-kpi__value"><?= max((int) $pipelineCounts['retro'], $staffRetrosDueCount) ?></span>
+            <span class="rp-kpi__hint"><?= $staffRetrosDueFirstId > 0 ? 'Ouvrir le premier' : 'Aucun en attente' ?></span>
+        </a>
+        <div class="rp-kpi">
+            <span class="rp-kpi__label">En cours</span>
+            <span class="rp-kpi__value"><?= (int) $pipelineCounts['active'] ?></span>
+            <span class="rp-kpi__hint">Sur <?= $nTotal ?> dossiers reçus</span>
+        </div>
+    </div>
+
+    <div class="rp-bar">
+        <div class="rp-seg" role="tablist" aria-label="Affichage">
+            <a role="tab" aria-selected="<?= $pipelineView === 'tableau' ? 'true' : 'false' ?>" class="<?= $pipelineView === 'tableau' ? 'is-active' : '' ?>" href="<?= $h($qLink(['vue' => 'tableau', 'status' => null, 'stage' => null])) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="5" height="16" rx="1"/><rect x="10" y="4" width="5" height="11" rx="1"/><rect x="17" y="4" width="4" height="7" rx="1"/></svg>Tableau</a>
+            <a role="tab" aria-selected="<?= $pipelineView === 'liste' ? 'true' : 'false' ?>" class="<?= $pipelineView === 'liste' ? 'is-active' : '' ?>" href="<?= $h($qLink(['vue' => 'liste'])) ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Liste complète</a>
+        </div>
+        <form class="rp-search" method="get" action="<?= $h($baseList) ?>" role="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <?php foreach (['vue', 'filtre', 'status', 'stage'] as $keep): ?>
+                <?php if (isset($pipelineState[$keep])): ?><input type="hidden" name="<?= $keep ?>" value="<?= $h($pipelineState[$keep]) ?>"><?php endif; ?>
+            <?php endforeach; ?>
+            <input type="search" name="q" value="<?= $h($pipelineSearch) ?>" placeholder="Rechercher un nom, un e-mail, un n° de dossier…" aria-label="Rechercher un dossier">
+        </form>
+        <?php if ($pipelineFilter !== '' || $pipelineSearch !== ''): ?>
+            <div class="rp-chips">
+                <?php if ($pipelineFilter !== ''): ?>
+                    <a class="rp-chip is-active" href="<?= $h($qLink(['filtre' => null])) ?>"><?= $h(\App\Support\EnlistmentPipelineBoard::FILTERS[$pipelineFilter]) ?> <span aria-hidden="true">×</span></a>
+                <?php endif; ?>
+                <?php if ($pipelineSearch !== ''): ?>
+                    <a class="rp-chip is-active" href="<?= $h($qLink(['q' => null])) ?>">« <?= $h($pipelineSearch) ?> » <span aria-hidden="true">×</span></a>
+                <?php endif; ?>
+                <a class="rp-chip rp-chip--clear" href="<?= $h($qLink(['filtre' => null, 'q' => null])) ?>">Tout effacer</a>
+            </div>
         <?php endif; ?>
+    </div>
 
+    <?php if ($pipelineView === 'tableau'): ?>
+        <?php $boardTotal = array_sum(array_map(static fn (array $c): int => count($c['cards']), $pipelineColumns)); ?>
+        <?php if ($boardTotal === 0 && ($pipelineFilter !== '' || $pipelineSearch !== '')): ?>
+            <div class="rp-empty">
+                <strong>Aucun dossier ne correspond</strong>
+                <p>Le filtre ou la recherche ne laisse aucun dossier en cours. Les dossiers clos restent consultables dans la liste complète.</p>
+                <a class="rp-btn rp-btn--ghost" href="<?= $h($qLink(['filtre' => null, 'q' => null])) ?>">Effacer les filtres</a>
+            </div>
+        <?php elseif ($boardTotal === 0): ?>
+            <div class="rp-empty">
+                <strong>Rien à traiter</strong>
+                <p>Aucun dossier n’attend d’action. Les candidatures reçues depuis la page d’enrôlement apparaîtront ici, dans la colonne « À prendre ».</p>
+                <a class="rp-btn" href="<?= $h(url('enlistment')) ?>">Voir le formulaire public</a>
+            </div>
+        <?php else: ?>
+            <div class="rp-board" aria-label="Dossiers par prochaine action">
+                <?php foreach ($pipelineColumns as $col): ?>
+                    <section class="rp-col rp-col--<?= $h($col['key']) ?>" id="col-<?= $h($col['key']) ?>" aria-labelledby="col-<?= $h($col['key']) ?>-t">
+                        <header class="rp-col__head">
+                            <div>
+                                <h2 class="rp-col__title" id="col-<?= $h($col['key']) ?>-t"><?= $h($col['label']) ?></h2>
+                                <p class="rp-col__hint"><?= $h($col['hint']) ?></p>
+                                <?php if ((int) $col['late'] > 0): ?><span class="rp-col__late"><?= (int) $col['late'] ?> en retard</span><?php endif; ?>
+                            </div>
+                            <span class="rp-col__count"><?= count($col['cards']) ?></span>
+                        </header>
+                        <?php if ($col['cards'] === []): ?>
+                            <p class="rp-col__empty">Rien ici.</p>
+                        <?php endif; ?>
+                        <?php foreach ($col['cards'] as $card): ?>
+                            <?php require base_path('views/admin/recruitments/partials/pipeline_card.php'); ?>
+                        <?php endforeach; ?>
+                    </section>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+        <?php if ($pipelineOffBoard > 0): ?>
+            <p class="rp-offboard">
+                <span><?= $pipelineOffBoard ?> dossier<?= $pipelineOffBoard > 1 ? 's' : '' ?> sans action en attente (refusés, annulés, intégrés) ne figure<?= $pipelineOffBoard > 1 ? 'nt' : '' ?> pas sur le tableau.</span>
+                <a href="<?= $h($qLink(['vue' => 'liste'])) ?>">Liste complète →</a>
+            </p>
+        <?php endif; ?>
+    <?php else: ?>
         <div class="overflow-hidden rounded-xl border border-stone-300/80 bg-white shadow-sm">
-            <div class="border-b border-stone-200 bg-stone-50 px-4 py-4 sm:px-5 sm:py-5">
-                <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                    <div>
-                        <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Bureau recrutement</p>
-                        <h1 class="mt-0.5 text-xl font-black tracking-tight text-stone-900 sm:text-2xl">Dossiers de candidature</h1>
-                        <p class="mt-1.5 max-w-3xl text-sm leading-relaxed text-stone-600">
-                            Tableau de suivi : étape du parcours, délai sans action (dossiers à traiter), durée de traitement (dossiers tranchés) et bilan d’intégration 30 jours après l’acceptation.
-                        </p>
-                    </div>
-                    <div class="flex flex-wrap gap-1.5">
-                        <a href="<?= htmlspecialchars(url('enlistment')) ?>" class="inline-flex min-h-[2.25rem] items-center rounded-lg border border-stone-300 bg-white px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-stone-800 shadow-sm transition hover:border-emerald-400/60 hover:bg-emerald-50/50">
-                            Formulaire public
-                        </a>
-                        <?php if (can('invitations.send') || can('admin.organization') || can('admin.access')): ?>
-                        <a href="<?= htmlspecialchars(url('back-office/invitations')) ?>" class="inline-flex min-h-[2.25rem] items-center rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-950 shadow-sm transition hover:bg-amber-100">
-                            Invitations
-                        </a>
-                        <?php endif; ?>
-                        <a href="<?= htmlspecialchars(url('back-office/recruitments/messages-prefaits')) ?>" class="inline-flex min-h-[2.25rem] items-center rounded-lg border border-slate-300 bg-slate-100 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-900 shadow-sm transition hover:bg-slate-200">
-                            Modèles de texte
-                        </a>
-                        <a href="<?= htmlspecialchars(url('back-office/recruitments/equipe')) ?>" class="inline-flex min-h-[2.25rem] items-center rounded-lg border border-sky-300 bg-sky-50 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-950 shadow-sm transition hover:bg-sky-100">
-                            Fil recruteurs
-                        </a>
-                        <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="inline-flex min-h-[2.25rem] items-center rounded-lg border border-stone-900 bg-stone-900 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-white shadow-sm transition hover:bg-stone-800">
-                            Délais d’alerte
-                        </a>
-                    </div>
+            <div class="border-b border-stone-200 bg-white px-3 py-3 sm:px-5">
+                <?php $statusCurrentForPills = $stageFilter === null ? $statusFilter : '__stage_active__'; ?>
+                <div class="flex flex-wrap gap-2">
+                    <?= $filterLink(null, $statusCurrentForPills, 'Tous', $nTotal, $baseListForPills) ?>
+                    <?= $filterLink('submitted', $statusCurrentForPills, 'À traiter', $nSubmitted, $baseListForPills) ?>
+                    <?= $stageFilterLink('interview_scheduled', $stageFilter, 'Entretien', $nInterview, $baseListForPills) ?>
+                    <?= $stageFilterLink('on_hold', $stageFilter, 'En attente', $nOnHold, $baseListForPills) ?>
+                    <?= $filterLink('reviewed', $statusCurrentForPills, 'Acceptées', $nReviewed, $baseListForPills) ?>
+                    <?= $filterLink('rejected', $statusCurrentForPills, 'Refusées', $nRejected, $baseListForPills) ?>
+                    <?= $filterLink('blocked', $statusCurrentForPills, 'Non admis', $nBlocked, $baseListForPills) ?>
+                    <?php if ($nCancelled > 0): ?>
+                        <?= $filterLink('cancelled', $statusCurrentForPills, 'Annulées', $nCancelled, $baseListForPills) ?>
+                    <?php endif; ?>
                 </div>
             </div>
-
-            <div class="border-b border-stone-200 bg-white px-3 py-4 sm:px-5">
-                <div class="recruitment-queue-kpi" role="group" aria-label="Indicateurs de la file">
-                    <div class="recruitment-queue-kpi__card">
-                        <p class="recruitment-queue-kpi__label">Total</p>
-                        <p class="recruitment-queue-kpi__value"><?= $nTotal ?></p>
-                    </div>
-                    <div class="recruitment-queue-kpi__card" style="border-color:#fde68a;background:#fffbeb;">
-                        <p class="recruitment-queue-kpi__label" style="color:#92400e;">À traiter</p>
-                        <p class="recruitment-queue-kpi__value" style="color:#78350f;"><?= $nSubmitted ?></p>
-                    </div>
-                    <div class="recruitment-queue-kpi__card" style="<?= $submittedOlderThanSla > 0 ? 'border-color:#fecaca;background:#fff1f2;' : 'border-color:#bae6fd;background:#f0f9ff;' ?>">
-                        <p class="recruitment-queue-kpi__label" style="<?= $submittedOlderThanSla > 0 ? 'color:#9f1239;' : 'color:#075985;' ?>">Hors délai</p>
-                        <p class="recruitment-queue-kpi__value" style="<?= $submittedOlderThanSla > 0 ? 'color:#881337;' : 'color:#0c4a6e;' ?>"><?= $submittedOlderThanSla ?></p>
-                    </div>
-                    <div class="recruitment-queue-kpi__card" style="border-color:#a7f3d0;background:#ecfdf5;">
-                        <p class="recruitment-queue-kpi__label" style="color:#065f46;">Acceptées</p>
-                        <p class="recruitment-queue-kpi__value" style="color:#064e3b;"><?= $nReviewed ?></p>
-                    </div>
-                    <div class="recruitment-queue-kpi__card" style="border-color:#fecdd3;background:#fff1f2;">
-                        <p class="recruitment-queue-kpi__label" style="color:#9f1239;">Refusées</p>
-                        <p class="recruitment-queue-kpi__value" style="color:#881337;"><?= $nRejected ?></p>
-                    </div>
-                    <div class="recruitment-queue-kpi__card" style="border-color:#d6d3d1;background:#fafaf9;">
-                        <p class="recruitment-queue-kpi__label">Non admis</p>
-                        <p class="recruitment-queue-kpi__value"><?= $nBlocked ?></p>
-                    </div>
-                </div>
-
-                <div class="mt-4 flex flex-wrap items-end justify-between gap-3 border-t border-stone-200/80 pt-4">
-                    <?php $statusCurrentForPills = $stageFilter === null ? $statusFilter : '__stage_active__'; ?>
-                    <div class="flex flex-wrap gap-2">
-                        <?= $filterLink(null, $statusCurrentForPills, 'Tous', $nTotal, $baseList) ?>
-                        <?= $filterLink('submitted', $statusCurrentForPills, 'À traiter', $nSubmitted, $baseList) ?>
-                        <?= $stageFilterLink('interview_scheduled', $stageFilter, 'Entretien', $nInterview, $baseList) ?>
-                        <?= $stageFilterLink('on_hold', $stageFilter, 'En attente', $nOnHold, $baseList) ?>
-                        <?= $filterLink('reviewed', $statusCurrentForPills, 'Acceptées', $nReviewed, $baseList) ?>
-                        <?= $filterLink('rejected', $statusCurrentForPills, 'Refusées', $nRejected, $baseList) ?>
-                        <?= $filterLink('blocked', $statusCurrentForPills, 'Non admis', $nBlocked, $baseList) ?>
-                        <?php if ($nCancelled > 0): ?>
-                            <?= $filterLink('cancelled', $statusCurrentForPills, 'Annulées', $nCancelled, $baseList) ?>
-                        <?php endif; ?>
-                    </div>
-
-                    <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="flex flex-wrap items-end gap-2 rounded-lg border border-stone-200 bg-stone-50/90 px-3 py-2">
-                        <?= \App\Core\Csrf::field() ?>
-                        <div>
-                            <label for="enlistment-sla-hours" class="block text-[10px] font-bold uppercase tracking-wide text-stone-600">Délai d’alerte (heures)</label>
-                            <input
-                                type="number"
-                                id="enlistment-sla-hours"
-                                name="enlistment_sla_hours"
-                                min="1"
-                                max="720"
-                                value="<?= $enlistmentSlaHours ?>"
-                                class="mt-1 w-[5.5rem] rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm font-semibold text-stone-900 shadow-inner focus:border-[#1c4d6e] focus:outline-none focus:ring-2 focus:ring-[#1c4d6e]/20"
-                            >
-                        </div>
-                        <button type="submit" class="recruitment-sla-save inline-flex min-h-[2.25rem] items-center justify-center rounded-lg border border-slate-900 bg-slate-900 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-slate-800">Enregistrer</button>
-                        <a href="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="inline-flex min-h-[2.25rem] items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-900 transition hover:bg-slate-100">Détail</a>
-                    </form>
-                </div>
-            </div>
-
             <div class="px-0 py-0 sm:px-0">
                 <?php if (empty($enlistments)): ?>
                     <div class="m-4 rounded-xl border-2 border-dashed border-stone-300 bg-[#faf8f3] px-6 py-12 text-center sm:m-6">
-                        <p class="text-lg font-extrabold text-stone-900">Aucun dossier<?= $statusFilter ? ' pour ce filtre' : '' ?></p>
+                        <p class="text-lg font-extrabold text-stone-900">Aucun dossier<?= ($statusFilter || $pipelineFilter !== '' || $pipelineSearch !== '') ? ' pour ce filtre' : '' ?></p>
                         <p class="mt-2 mx-auto max-w-md text-sm text-stone-600">
                             Les candidatures reçues depuis la page d’enrôlement apparaîtront ici.
                         </p>
@@ -431,8 +512,8 @@ $formatHoursShort = static function (?int $hours): string {
                                 <tr>
                                     <th>Réception</th>
                                     <th>Candidat</th>
-                                    <th>Contact</th>
                                     <th>État</th>
+                                    <th>Prochaine action</th>
                                     <th>Instruit par</th>
                                     <th>Affectation</th>
                                     <th>Rôle</th>
@@ -491,14 +572,28 @@ $formatHoursShort = static function (?int $hours): string {
                                         <td>
                                             <div class="flex items-center gap-2 min-w-0">
                                                 <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-stone-200 bg-stone-100 text-[10px] font-black text-stone-800"><?= htmlspecialchars($initials($fn, $ln)) ?></span>
-                                                <span class="font-semibold text-stone-900 truncate" title="<?= htmlspecialchars($full) ?>"><?= htmlspecialchars($full) ?></span>
+                                                <span class="min-w-0">
+                                                    <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $fid . '?dossier=1'), ENT_QUOTES, 'UTF-8') ?>" class="block font-semibold text-stone-900 truncate hover:underline" title="<?= htmlspecialchars($full) ?>"><?= htmlspecialchars($full) ?></a>
+                                                    <span class="recruitment-sheets__meta truncate max-w-[14rem]" title="<?= htmlspecialchars((string) ($e['email'] ?? '')) ?>">#<?= $fid ?> · <?= htmlspecialchars((string) ($e['email'] ?? '—')) ?></span>
+                                                </span>
                                             </div>
                                         </td>
-                                        <td class="max-w-[12rem] truncate text-stone-700" title="<?= htmlspecialchars((string) ($e['email'] ?? '')) ?>"><?= htmlspecialchars((string) ($e['email'] ?? '—')) ?></td>
                                         <td>
                                             <span class="inline-flex items-center rounded border px-1.5 py-0.5 text-[11px] font-bold ring-1 <?= htmlspecialchars($meta['class']) ?>"><?= htmlspecialchars($meta['label']) ?></span>
                                             <?php if ($stageInfo !== null && (int) $stageInfo['index'] > 0): ?>
                                                 <span class="recruitment-sheets__meta">Étape <?= (int) $stageInfo['index'] ?>/<?= (int) $stageInfo['total'] ?> · <?= htmlspecialchars((string) $stageInfo['label']) ?></span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php $na = is_array($e['next_action'] ?? null) ? $e['next_action'] : null; ?>
+                                            <?php if ($na !== null && $na['column'] !== null): ?>
+                                                <span class="rp-next">
+                                                    <b><?= htmlspecialchars((string) $na['label']) ?></b>
+                                                    <?php if ((string) $na['urgencyLabel'] !== ''): ?><span class="rp-urg rp-urg--<?= htmlspecialchars((string) $na['urgency']) ?>"><?= htmlspecialchars((string) $na['urgencyLabel']) ?></span><?php endif; ?>
+                                                    <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $fid . '?dossier=1') . '#' . (string) $na['anchor'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars((string) $na['cta']) ?> →</a>
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="text-stone-400"><?= $na !== null ? htmlspecialchars((string) $na['label']) : 'Dossier clos' ?></span>
                                             <?php endif; ?>
                                         </td>
                                         <td>
@@ -508,6 +603,7 @@ $formatHoursShort = static function (?int $hours): string {
                                                 <span class="text-stone-400">—</span>
                                                 <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/' . $fid . '/referent'), ENT_QUOTES, 'UTF-8') ?>" class="mt-1">
                                                     <?= \App\Core\Csrf::field() ?>
+                                                    <input type="hidden" name="return_qs" value="<?= htmlspecialchars($pipelineReturnQs, ENT_QUOTES, 'UTF-8') ?>">
                                                     <button type="submit" class="text-[10px] font-bold uppercase tracking-wide text-[#059669] underline decoration-[#059669]/35 underline-offset-2 hover:decoration-[#059669]">Me désigner</button>
                                                 </form>
                                             <?php endif; ?>
@@ -628,6 +724,9 @@ $formatHoursShort = static function (?int $hours): string {
                                                 </span>
                                             <?php endif; ?>
                                         </div>
+                                        <?php if (is_array($e['next_action'] ?? null) && $e['next_action']['column'] !== null): ?>
+                                            <p class="mt-2 rp-next"><b><?= htmlspecialchars((string) $e['next_action']['label']) ?></b><?php if ((string) $e['next_action']['urgencyLabel'] !== ''): ?> <span class="rp-urg rp-urg--<?= htmlspecialchars((string) $e['next_action']['urgency']) ?>"><?= htmlspecialchars((string) $e['next_action']['urgencyLabel']) ?></span><?php endif; ?></p>
+                                        <?php endif; ?>
                                         <p class="mt-2 truncate text-sm text-stone-600"><?= htmlspecialchars((string) ($e['email'] ?? '—')) ?></p>
                                         <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $fid . '?dossier=1'), ENT_QUOTES, 'UTF-8') ?>" class="mt-3 inline-flex w-full items-center justify-center rounded-lg border border-stone-900 bg-stone-900 py-2 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-stone-800">Consulter le dossier</a>
                                     </div>
@@ -638,5 +737,5 @@ $formatHoursShort = static function (?int $hours): string {
                 <?php endif; ?>
             </div>
         </div>
-
+    <?php endif; ?>
 </div>
