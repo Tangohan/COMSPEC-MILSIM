@@ -980,6 +980,9 @@ return function (Router $router) {
     $router->post('/admin/system/demo-nda/remove-bypass', [SystemDemoNdaController::class, 'removeBypassIp'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/demo-nda/add-my-ip', [SystemDemoNdaController::class, 'addMyIp'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/demo-nda/reset-visit', [SystemDemoNdaController::class, 'resetVisit'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/system/e-mails', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/e-mails/reglages', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'saveSettings'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/system/e-mails/recapitulatif', [\App\Controllers\Admin\System\SystemMailTrafficController::class, 'sendDigestNow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/cron', [SystemCronController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/system/cron/run', [SystemCronController::class, 'runNow'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->get('/admin/system/retours-interface', [SystemUxFeedbackController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
@@ -2388,6 +2391,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/briefing-plan', [AtakApiController::class, 'briefingPlanStore']);
     $router->post('/api/atak/screen-time', [AtakApiController::class, 'screenTime']);
     $router->post('/api/atak/screen-time/batch', [AtakApiController::class, 'screenTimeBatch']);
+    $router->post('/api/atak/distance/batch', [AtakApiController::class, 'distanceBatch']);
     $router->post('/api/atak/send-queue/report', [AtakApiController::class, 'sendQueueReport']);
     $router->post('/api/atak/game-session/discover', [AtakApiController::class, 'gameSessionDiscover']);
     $router->post('/api/atak/game-session/join', [AtakApiController::class, 'gameSessionJoin']);

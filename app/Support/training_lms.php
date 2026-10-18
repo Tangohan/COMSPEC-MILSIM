@@ -83,7 +83,7 @@ function training_lesson_type_labels_fr(): array
         'audio' => 'Audio',
         'scorm_like' => 'Paquet SCORM',
         'checklist' => 'Liste de contrôle',
-        'external_link' => 'Lien externe',
+        'external_link' => 'Lien web (Docs, Sheets, Slides, draw.io…)',
         'canvas' => 'Parcours visuel (slides & modales)',
         'quiz' => 'Quiz',
         'modals' => 'Modales',
@@ -107,7 +107,7 @@ function training_lesson_type_labels_learner_fr(): array
         'audio' => 'Audio',
         'scorm_like' => 'Parcours guidé',
         'checklist' => 'Liste de contrôle',
-        'external_link' => 'Ressource externe',
+        'external_link' => 'Document en ligne',
         'canvas' => 'Parcours interactif',
         'quiz' => 'Évaluation',
         'modals' => 'Fiches à explorer',
@@ -1101,3 +1101,42 @@ function training_lms_sequence_step_done(array $step, array $completedLessonIds,
     return false;
 }
 
+
+/** Adresse acceptée pour une formation « lien » : http(s) absolue ou page du site (/…). */
+function training_course_delivery_url_is_valid(string $url): bool
+{
+    $url = trim($url);
+    if ($url === '' || mb_strlen($url) > 1000 || preg_match('/\s/u', $url)) {
+        return false;
+    }
+    if (str_starts_with($url, '/')) {
+        // « //hote » et « /\hote » sont lus comme une autre origine par les navigateurs.
+        return !str_starts_with($url, '//') && !str_starts_with($url, '/\\');
+    }
+    $parts = parse_url($url);
+
+    return $parts !== false
+        && !empty($parts['host'])
+        && in_array(strtolower((string) ($parts['scheme'] ?? '')), ['http', 'https'], true);
+}
+
+/**
+ * Formation « lien » : mode et adresse à ouvrir, ou null pour un parcours classique
+ * (ou si l’adresse enregistrée n’est pas utilisable).
+ *
+ * @param array<string, mixed> $course
+ * @return array{mode: 'url_redirect'|'url_viewer', url: string}|null
+ */
+function training_course_delivery(array $course): ?array
+{
+    $mode = (string) ($course['delivery_mode'] ?? 'parcours');
+    if ($mode !== 'url_redirect' && $mode !== 'url_viewer') {
+        return null;
+    }
+    $url = trim((string) ($course['delivery_url'] ?? ''));
+    if (!training_course_delivery_url_is_valid($url)) {
+        return null;
+    }
+
+    return ['mode' => $mode, 'url' => $url];
+}

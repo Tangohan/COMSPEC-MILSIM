@@ -29,7 +29,7 @@ class CfgFunctions {
             class gestureFinger {}; class gestureFingerAim {}; class gestureSelfie {};
         };
         class plan { file="z\comspec_atak_native\addons\main\functions\plan";
-            class planCatalog {}; class planGfx {}; class planDraw {}; class planServer {}; class planAction {}; class planMap {}; class planWeb {}; class pagePlan {};
+            class planCatalog {}; class planGfx {}; class planDraw {}; class planServer {}; class planAction {}; class planMap {}; class planWeb {}; class pagePlan {}; class planUi {}; class planHelp {};
         };
         class network { file="z\comspec_atak_native\addons\main\functions\network";
             class extensionCall {}; class relayTower {}; class relayTowerRuin {}; class relayEden {}; class relayZeus {}; class extAwait {}; class extensionCallback {}; class serverPresence {}; class remoteSync {}; class importLegacyData {};
@@ -75,7 +75,7 @@ class CfgFunctions {
             class json {}; class squadSnapshot {}; class squadSync {}; class pageInterTeam {}; class interTeamAction {}; class ftRoleSync {};
         };
         class screen { file="z\comspec_atak_native\addons\main\functions\screen";
-            class roleKey {}; class screenTime {}; class pageScreenTime {}; class playTimeServer {};
+            class roleKey {}; class screenTime {}; class pageScreenTime {}; class playTimeServer {}; class distanceServer {}; class pageDistance {};
         };
         class aar { file="z\comspec_atak_native\addons\main\functions\aar";
             class aarRecord {}; class aarAction {}; class aarDraw {}; class pageAar {};
@@ -87,7 +87,7 @@ class CfgFunctions {
             class dockServer {}; class dockVisual {}; class dockClient {}; class dockMenu {};
         };
         class camera { file="z\comspec_atak_native\addons\main\functions\camera";
-            class camAction {}; class camView {}; class pipCheck {};
+            class camAction {}; class camView {}; class pipCheck {}; class camShare {};
         };
         class pages { file="z\comspec_atak_native\addons\main\functions\pages";
             class chatSend {}; class taskAction {}; class briefingStep {}; class settingsSave {};
@@ -109,6 +109,7 @@ class COMSPEC_ATAK_Apps {
     class Waypoints   { name="Itinéraire"; page="WAYPOINTS"; section="Navigation"; order=14; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_waypoints.paa"; };
     class Relief      { name="Relief"; page="RELIEF"; section="Navigation"; order=16; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_relief.paa"; };
     class Weather     { name="Météo"; page="WEATHER"; section="Navigation"; order=18; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_weather.paa"; };
+    class Distance    { name="Distances"; page="DISTANCE"; function="comspec_atak_native_fnc_pageDistance"; section="Navigation"; order=19; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_distance.paa"; };
     class Chat        { name="Messages"; page="CHAT"; section="Communication"; order=30; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_chat.paa"; };
     class Group       { name="Groupe"; page="GROUP"; section="Communication"; order=32; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_group.paa"; };
     class Alerts      { name="Alertes"; page="ALERTS"; section="Communication"; order=34; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_alerts.paa"; };
@@ -472,6 +473,13 @@ class CfgHints {
             displayNameShort = "$STR_COMSPEC_ATAK_CFG_E4E74278CD";
             description = "$STR_COMSPEC_ATAK_CFG_BF0FFB1714";
             image = "\z\comspec_atak_native\addons\main\data\app_waverelay.paa";
+            arguments[] = {};
+        };
+        class CameraShare {
+            displayName = "$STR_COMSPEC_ATAK_CFG_BF7BE30836";
+            displayNameShort = "$STR_COMSPEC_ATAK_CFG_146C6595D4";
+            description = "$STR_COMSPEC_ATAK_CFG_C9AF05C42B";
+            image = "\z\comspec_atak_native\addons\main\data\app_livecam.paa";
             arguments[] = {};
         };
         class ZeusControl {

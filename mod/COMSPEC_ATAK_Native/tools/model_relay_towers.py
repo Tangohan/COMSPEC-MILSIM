@@ -1564,7 +1564,9 @@ def export_model(name, fn, height, ruin, mats):
     clear_scene()
     seed = sum(map(ord, name))
     objs = []
-    for res, detail in ((1, 0), (4, 1), (12, 2), (30, 3)):
+    # Ruine : commence au niveau 1 (sans jarretières, colliers ni connecteurs, arrachés à la chute) ; le niveau
+    # complet doublait le poids de towers.pbo, au-delà des 100 Mo qu'accepte GitHub.
+    for res, detail in (((1, 1), (4, 2), (12, 3)) if ruin else ((1, 0), (4, 1), (12, 2), (30, 3))):
         parts, lat = build_parts(fn, detail, (2.0, 3.0, 4.0, 6.0)[detail] if ruin else 0.0)
         if ruin:
             parts = collapse_parts(parts, Collapse(lat, height, seed), seed)
@@ -1581,14 +1583,16 @@ def export_model(name, fn, height, ruin, mats):
         set_lod(shadow, 4, res)
     # Géométrie (collisions, sélection Eden) : chaque pièce du pylône simplifié, jambes, croisillons, antennes, massifs
     # et armoire à leur vraie taille (plus de grande boîte invisible en tête, plus de croisillons traversables).
-    gp_all, _lat = lod_parts(fn, 3, ruin, height, seed, 4.0)
+    # Ruine : tronçons de 10 m (un composant par tronçon et par pièce, des tronçons de 4 m alourdissaient le fichier).
+    gp_all, _lat = lod_parts(fn, 3, ruin, height, seed, 10.0 if ruin else 4.0)
     gp = solid(gp_all)
     props = [("autocenter", "0"), ("map", "transmitter")] if not ruin else [("autocenter", "0")]
     geo = mesh_from_parts(name + "_geo", hulls(gp + fence_walls(gp_all), 0.0, 0.12))
     add_mass(geo, 12000.0 if not ruin else 9000.0)
     set_lod(geo, 6, 0, props)
-    # Tir : tout le treillis presque complet (les balles touchent les cornières, passent entre elles).
-    fp = gp if ruin else solid(lod_parts(fn, 2, ruin, height, seed, 4.0)[0])
+    # Tir : les mêmes pièces que la géométrie (jambes, croisillons, tête, armoires à leur vraie taille : les balles
+    # touchent les cornières et passent entre elles). Le treillis du niveau 2 doublait le poids du fichier.
+    fp = gp
     fire = mesh_from_parts(name + "_fire", hulls(fp, 0.0, 0.05))
     set_lod(fire, 15, 0)
     # Vue (IA) : seulement le plein (massifs, armoire, panneaux, paraboles) ; le treillis ne cache rien.

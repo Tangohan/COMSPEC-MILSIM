@@ -490,6 +490,13 @@ try {
     echo '  [ATTENTION] training_course_lms_platform_version : ' . $e->getMessage() . "\n";
     $migrationRunner->warn('training_course_lms_platform_version', $e);
 }
+$trainingUrlDeliveryMigrate = require $root . '/bootstrap/training_url_delivery_migration.php';
+try {
+    $trainingUrlDeliveryMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_url_delivery : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_url_delivery', $e);
+}
 $trainingCoursesLmsScopeMigrate = require $root . '/bootstrap/training_courses_lms_scope_migration.php';
 try {
     $trainingCoursesLmsScopeMigrate($pdo);
@@ -3897,6 +3904,13 @@ $migrationRunner->step('atak_squads_screen_time', static function () use ($atakS
     $atakSquadsMigrate($pdo);
 });
 
+// App Distances de l'ATAK natif : distances parcourues par session et heures de pilote par appareil (COMSPEC Link 2.0.86).
+$atakDistanceMigrate = require $root . '/bootstrap/atak_distance_migration.php';
+$migrationRunner->step('atak_distance', static function () use ($atakDistanceMigrate, $pdo): void {
+    echo "Migration atak_distance_stats / atak_pilot_time (distances parcourues, heures de pilote)...\n";
+    $atakDistanceMigrate($pdo);
+});
+
 // Corrections du temps par rôle par l'encadrement (déplacer vers le bon rôle, journal annulable).
 $migrationRunner->step('atak_role_time_moves', static function () use ($pdo): void {
     echo "Migration atak_role_time_moves (corrections du temps par rôle)...\n";
@@ -3929,6 +3943,13 @@ $planGiftMigrate = require $root . '/bootstrap/plan_gift_migration.php';
 $migrationRunner->step('plan_gifts', static function () use ($planGiftMigrate, $pdo): void {
     echo "Migration plan_gifts / plan_gift_notices (formules offertes)...\n";
     $planGiftMigrate($pdo);
+});
+
+// Envois d'e-mails sous quota : récapitulatif des alertes d'exploitation, compteur du jour.
+$emailDigestMigrate = require $root . '/bootstrap/email_digest_migration.php';
+$migrationRunner->step('email_digest', static function () use ($emailDigestMigrate, $pdo): void {
+    echo "Migration email_digest_items (récapitulatif des alertes e-mail)...\n";
+    $emailDigestMigrate($pdo);
 });
 
 $atakSendQueueMigrate = require $root . '/bootstrap/atak_send_queue_migration.php';

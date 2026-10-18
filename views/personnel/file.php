@@ -1081,6 +1081,49 @@ if ($personnelFileIsRhFull) {
                                 </div>
                             </div>
                             <?php endif; ?>
+                            <?php
+                            $atakDistance = is_array($atakDistance ?? null) ? $atakDistance : null;
+                            $distKm = static function (int $m): string {
+                                return $m < 1000 ? $m . ' m' : number_format($m / 1000, $m < 100000 ? 1 : 0, ',', ' ') . ' km';
+                            };
+                            ?>
+                            <?php if ($atakDistance !== null): ?>
+                            <?php $dt = $atakDistance['totals']; ?>
+                            <div id="distances" class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:col-span-2 xl:col-span-1">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Distances parcourues en jeu</p>
+                                <p class="mt-1 text-sm font-bold text-slate-900"><?= htmlspecialchars($distKm((int) $atakDistance['total_m']), ENT_QUOTES, 'UTF-8') ?> au total</p>
+                                <p class="text-[11px] text-slate-500"><?= (int) $atakDistance['sessions'] ?> session(s) de jeu</p>
+                                <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                                    <div><dt class="text-slate-500">Pas</dt><dd class="tabular-nums font-bold text-slate-900"><?= number_format((int) $dt['steps'], 0, ',', ' ') ?></dd></div>
+                                    <div><dt class="text-slate-500">À pied</dt><dd class="tabular-nums font-bold text-slate-900"><?= htmlspecialchars($distKm((int) $dt['foot_m']), ENT_QUOTES, 'UTF-8') ?></dd></div>
+                                    <div><dt class="text-slate-500">Temps à pied, total</dt><dd class="tabular-nums font-bold text-slate-900"><?= (int) $dt['foot_s'] > 0 ? htmlspecialchars($roleDur((int) $dt['foot_s']), ENT_QUOTES, 'UTF-8') : '—' ?></dd></div>
+                                    <div><dt class="text-slate-500">Temps à pied, moyenne par session</dt><dd class="tabular-nums font-bold text-slate-900"><?= (int) $atakDistance['avg_foot_s'] > 0 ? htmlspecialchars($roleDur((int) $atakDistance['avg_foot_s']), ENT_QUOTES, 'UTF-8') : '—' ?></dd></div>
+                                    <div><dt class="text-slate-500">Véhicule terrestre</dt><dd class="tabular-nums font-bold text-slate-900"><?= htmlspecialchars($distKm((int) $dt['land_m']), ENT_QUOTES, 'UTF-8') ?></dd></div>
+                                    <div><dt class="text-slate-500">Vol</dt><dd class="tabular-nums font-bold text-slate-900"><?= htmlspecialchars($distKm((int) $dt['air_m']), ENT_QUOTES, 'UTF-8') ?></dd></div>
+                                    <div><dt class="text-slate-500">Saut HALO et sous voile</dt><dd class="tabular-nums font-bold text-slate-900"><?= htmlspecialchars($distKm((int) $dt['halo_m']), ENT_QUOTES, 'UTF-8') ?><?php if ((int) $dt['halo_jumps'] > 0): ?> <span class="font-normal text-slate-500">· <?= (int) $dt['halo_jumps'] ?> saut(s)</span><?php endif; ?></dd></div>
+                                    <?php if ((int) $dt['sea_m'] > 0): ?>
+                                    <div><dt class="text-slate-500">Bateau</dt><dd class="tabular-nums font-bold text-slate-900"><?= htmlspecialchars($distKm((int) $dt['sea_m']), ENT_QUOTES, 'UTF-8') ?></dd></div>
+                                    <?php endif; ?>
+                                </dl>
+                                <?php if ($atakDistance['pilot'] !== []): ?>
+                                <p class="mt-4 text-[9px] font-black uppercase tracking-widest text-slate-500">Heures de pilote par appareil</p>
+                                <ul class="mt-2 space-y-1.5">
+                                    <?php $pilotMax = max(1, (int) ($atakDistance['pilot'][0]['seconds'] ?? 1)); ?>
+                                    <?php foreach (array_slice($atakDistance['pilot'], 0, 10) as $pt): ?>
+                                    <li>
+                                        <div class="flex items-baseline justify-between gap-3 text-xs">
+                                            <span class="font-semibold text-slate-800"><?= htmlspecialchars((string) $pt['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                                            <span class="tabular-nums font-bold text-slate-900"><?= htmlspecialchars($roleDur((int) $pt['seconds']), ENT_QUOTES, 'UTF-8') ?></span>
+                                        </div>
+                                        <div class="mt-1 h-1.5 rounded-full bg-slate-200/80" aria-hidden="true"><div class="h-1.5 rounded-full bg-sky-500" style="width: <?= max(4, (int) round(100 * (int) $pt['seconds'] / $pilotMax)) ?>%"></div></div>
+                                        <p class="mt-0.5 text-[10px] text-slate-500"><?= htmlspecialchars($distKm((int) $pt['meters']), ENT_QUOTES, 'UTF-8') ?> aux commandes<?php if (count($pt['variants']) > 1 || (($pt['variants'][0] ?? '') !== '' && ($pt['variants'][0] ?? '') !== $pt['label'])): ?> · <?= htmlspecialchars(implode(', ', array_slice($pt['variants'], 0, 4)), ENT_QUOTES, 'UTF-8') ?><?php endif; ?></p>
+                                    </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                                <?php endif; ?>
+                                <p class="mt-3 text-[10px] text-slate-500">Compté par le serveur de jeu (app Distances du téléphone ATAK) et remonté toutes les 10 minutes. Les pas sont estimés d’après l’allure ; les heures de pilote comptent le temps aux commandes, moteur allumé.</p>
+                            </div>
+                            <?php endif; ?>
                             <?php if ($accountCreatedDisplay !== null): ?>
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Membre depuis</p>

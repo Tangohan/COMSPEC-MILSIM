@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Repositories\EmailDeliveryRepository;
+use App\Repositories\EmailDigestRepository;
 use App\Services\Email\EmailEvents;
+use App\Services\Email\MailBudget;
+use App\Services\Email\MailBudgetGate;
 use App\Services\Integrations\DiscordEventRelayService;
 use App\Support\HtmlTranslator;
 
@@ -16,7 +19,9 @@ final class EmailService
     public function __construct(
         private EmailTransportResolver $transportResolver,
         private EmailTemplateEngine $templateEngine,
-        private EmailDeliveryRepository $deliveryRepository
+        private EmailDeliveryRepository $deliveryRepository,
+        private ?MailBudgetGate $budgetGate = null,
+        private ?EmailDigestRepository $digestRepository = null
     ) {}
 
     /** Dernier message d’erreur après un envoi échoué (même requête HTTP). */
@@ -28,6 +33,10 @@ final class EmailService
     /**
      * @param array<string, mixed> $payloadSummary
      * @param bool $forceImmediate Si true, ignore MAIL_QUEUE (alertes incident, etc.)
+     * @param bool $fromQueue Envoi tiré de la file async_jobs : ne pas la réalimenter via MAIL_QUEUE.
+     *
+     * Le quota quotidien (MailBudget) s'applique au moment de l'envoi : un e-mail regroupé dans le récapitulatif,
+     * reporté au lendemain ou coupé par l'administration renvoie true (rien n'est perdu côté appelant).
      */
     public function send(
         string $eventCode,
@@ -39,10 +48,11 @@ final class EmailService
         ?string $replyTo = null,
         ?array $payloadSummary = null,
         ?int $campaignId = null,
-        bool $forceImmediate = false
+        bool $forceImmediate = false,
+        bool $fromQueue = false
     ): bool {
         $this->lastSendError = null;
-        if (!$forceImmediate && filter_var((string) env('MAIL_QUEUE', ''), FILTER_VALIDATE_BOOLEAN)) {
+        if (!$fromQueue && !$forceImmediate && filter_var((string) env('MAIL_QUEUE', ''), FILTER_VALIDATE_BOOLEAN)) {
             try {
                 $repo = \App\Core\Container::get(\App\Repositories\AsyncJobRepository::class);
                 if ($repo->tableExists()) {
@@ -73,6 +83,11 @@ final class EmailService
         $cfg = \email_config();
         $mailerType = (string) ($cfg['default_mailer'] ?? 'file');
         $reply = $replyTo !== null && trim((string) $replyTo) !== '' ? trim((string) $replyTo) : null;
+
+        if ($mailerType !== 'file'
+            && $this->holdForBudget($eventCode, $to, $subject, $htmlBody, $textBody, $tenantId, $reply, $payloadSummary, $campaignId, $mailerType)) {
+            return true;
+        }
         $result = $this->transportResolver->sendMessage(
             $to,
             $subject,
@@ -107,6 +122,68 @@ final class EmailService
         }
 
         return $result['ok'];
+    }
+
+    /**
+     * Quota quotidien : regroupe, reporte ou coupe l'e-mail au lieu de l'envoyer. true = pris en charge (pas d'envoi maintenant).
+     *
+     * @param array<string, mixed>|null $payloadSummary
+     */
+    private function holdForBudget(
+        string $eventCode,
+        string $to,
+        string $subject,
+        string $htmlBody,
+        string $textBody,
+        ?int $tenantId,
+        ?string $replyTo,
+        ?array $payloadSummary,
+        ?int $campaignId,
+        string $mailerType
+    ): bool {
+        $gate = $this->budgetGate ??= new MailBudgetGate($this->deliveryRepository);
+        $check = $gate->check($eventCode, $to);
+        $decision = $check['decision'];
+        if ($decision === MailBudget::SEND) {
+            return false;
+        }
+        $summary = ($payloadSummary ?? []) + ['budget' => $decision, 'sent_today' => $check['sent_today']];
+
+        try {
+            if ($decision === MailBudget::GROUP) {
+                $text = $textBody !== '' ? $textBody : trim(html_entity_decode(strip_tags($htmlBody), ENT_QUOTES, 'UTF-8'));
+                ($this->digestRepository ??= new EmailDigestRepository())->add($to, $eventCode, $subject, $text, $tenantId);
+                $this->deliveryRepository->insert($tenantId, $eventCode, $to, $subject, $mailerType, 'digest', null, null, $summary, $campaignId);
+
+                return true;
+            }
+            if ($decision === MailBudget::MUTE) {
+                $this->deliveryRepository->insert($tenantId, $eventCode, $to, $subject, $mailerType, 'muted', null, null, $summary, $campaignId);
+
+                return true;
+            }
+            // DEFER : quota du jour atteint, l'e-mail repart demain depuis la file (tâche « mail_queue »).
+            $jobs = \App\Core\Container::get(\App\Repositories\AsyncJobRepository::class);
+            if (!$jobs->tableExists()) {
+                return false;
+            }
+            $jobs->enqueue('email_send', json_encode([
+                'eventCode' => $eventCode,
+                'to' => $to,
+                'subject' => $subject,
+                'htmlBody' => $htmlBody,
+                'textBody' => $textBody,
+                'tenantId' => $tenantId,
+                'replyTo' => $replyTo,
+                'payloadSummary' => $payloadSummary,
+                'campaignId' => $campaignId,
+            ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), $tenantId, MailBudget::nextWindow());
+            $this->deliveryRepository->insert($tenantId, $eventCode, $to, $subject, $mailerType, 'deferred', null, null, $summary, $campaignId);
+
+            return true;
+        } catch (\Throwable) {
+            return false;
+        }
     }
 
     /**
@@ -1391,6 +1468,37 @@ final class EmailService
             $tenantId,
             null,
             ['purpose' => 'training_publish_elevation', 'course_title' => $courseTitle]
+        );
+    }
+
+    public function sendTrainingPedagogyDesignation(
+        string $to,
+        string $displayName,
+        string $actorDisplayName,
+        string $tenantName,
+        string $stepTitle,
+        string $stepDetail,
+        string $actionUrl,
+        string $actionLabel,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::TRAINING_PEDAGOGY_DESIGNATION,
+            'training_pedagogy_designation',
+            $to,
+            'Vous êtes nommé — ' . $stepTitle,
+            [
+                'displayName' => $displayName,
+                'actorDisplayName' => $actorDisplayName,
+                'tenantName' => $tenantName,
+                'stepTitle' => $stepTitle,
+                'stepDetail' => $stepDetail,
+                'actionUrl' => $actionUrl,
+                'actionLabel' => $actionLabel,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'training_pedagogy_designation', 'step' => $stepTitle]
         );
     }
 

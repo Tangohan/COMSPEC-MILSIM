@@ -45,6 +45,15 @@ $action = $isEdit ? training_lms_admin_url('pages-html/'.(int)$customPage['id'])
       </div>
 
       <div class="cp-editor-workspace p-4">
+        <div class="cp-editor-card mb-4" id="cp-embed-card">
+          <div class="cp-editor-card__head"><p class="cp-editor-card__title">Page à partir d’un simple lien</p></div>
+          <p class="text-xs text-slate-600 mb-2">Collez l’adresse d’un Google Docs, Sheets, Slides, Drawings, d’un schéma draw.io, d’un Figma ou d’un PDF : la page l’affiche en visionneuse, avec un bouton pour l’ouvrir dans un nouvel onglet. Le corps HTML devient facultatif. Pensez à partager le document en lecture « à toute personne disposant du lien ».</p>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input type="url" name="embed_url" id="cp-embed-url" inputmode="url" autocomplete="off" placeholder="https://docs.google.com/…" class="flex-1 min-w-0 rounded-lg border border-slate-200 px-3 py-2 text-sm">
+            <input type="text" name="embed_label" id="cp-embed-label" maxlength="120" placeholder="Texte du bouton (facultatif)" class="sm:w-56 rounded-lg border border-slate-200 px-3 py-2 text-sm">
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1">Le lien est ajouté en tête du corps HTML à l’enregistrement. Pour le retirer, supprimez le bloc <code>athena-embed</code> du corps HTML.</p>
+        </div>
         <div class="cp-editor-card" data-cp-snippet-context="intro">
           <div class="cp-editor-card__head"><p class="cp-editor-card__title">Corps HTML</p></div>
           <div class="cp-snippet-bar"><button type="button" class="cp-snippet-btn" data-cp-snippet="encadre">Encadré</button><button type="button" class="cp-snippet-btn" data-cp-snippet="timeline">Timeline</button><button type="button" class="cp-snippet-btn" data-cp-snippet="tableau">Tableau</button></div>

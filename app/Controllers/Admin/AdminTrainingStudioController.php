@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controllers\Admin;
 
 use App\Core\Csrf;
+use App\Core\Database;
 use App\Core\Gate;
 use App\Core\Request;
 use App\Core\Response;
@@ -33,6 +34,7 @@ use App\Services\Training\TrainingService;
 use App\Services\Training\TrainingSessionInstructorGuard;
 use App\Services\Training\TrainingStaffAlertService;
 use App\Support\TrainingLmsStaffAccess;
+use App\Support\TrainingUrlDeliverySchema;
 
 class AdminTrainingStudioController
 {
@@ -382,6 +384,15 @@ class AdminTrainingStudioController
             'lms_scope' => $lmsScope,
         ];
         $newId = $this->courseRepository->create($tenantId, $createPayload);
+        $deliveryRes = $this->deliveryPatchFromRequest($request);
+        if ($deliveryRes['patch'] !== []) {
+            $this->courseRepository->update($newId, $deliveryRes['patch']);
+        }
+        if ($deliveryRes['error'] !== null) {
+            Session::flash('error', 'Formation créée en parcours classique. ' . $deliveryRes['error']);
+
+            return Response::redirect($this->studioEditUrl($newId, 'fiche') . '#studio-delivery');
+        }
         if ($this->pedagogyRepository->trainingCoursesHavePedagogyColumns()) {
             $oid = max(0, (int) $request->input('pedagogical_owner_user_id', 0));
             $fid = max(0, (int) $request->input('final_validator_user_id', 0));
@@ -805,6 +816,13 @@ class AdminTrainingStudioController
             $mode = (string) $request->input('lesson_player_mode', 'legacy');
             $patch['lesson_player_mode'] = in_array($mode, ['legacy', 'stage'], true) ? $mode : 'legacy';
         }
+        $deliveryRes = $this->deliveryPatchFromRequest($request);
+        if ($deliveryRes['error'] !== null) {
+            Session::flash('error', $deliveryRes['error']);
+
+            return Response::redirect($this->studioEditUrl($courseId, 'fiche') . '#studio-delivery');
+        }
+        $patch = array_merge($patch, $deliveryRes['patch']);
         if ($this->pedagogyRepository->trainingCoursesHavePedagogyColumns()) {
             $oid = max(0, (int) $request->input('pedagogical_owner_user_id', (int) ($course['pedagogical_owner_user_id'] ?? 0)));
             $fid = max(0, (int) $request->input('final_validator_user_id', (int) ($course['final_validator_user_id'] ?? 0)));
@@ -838,6 +856,46 @@ class AdminTrainingStudioController
         Session::flash('success', 'Données de la formation enregistrées.');
 
         return Response::redirect($this->studioEditUrl($courseId, 'fiche'));
+    }
+
+    /**
+     * Formation « lien » (redirection simple ou visionneuse). Rien à écrire si le formulaire
+     * n’envoie pas le choix : les autres enregistrements ne touchent pas ces colonnes.
+     *
+     * @return array{error: ?string, patch: array<string, mixed>}
+     */
+    private function deliveryPatchFromRequest(Request $request): array
+    {
+        if ($request->input('delivery_mode') === null) {
+            return ['error' => null, 'patch' => []];
+        }
+        $mode = (string) $request->input('delivery_mode', 'parcours');
+        if (!in_array($mode, ['parcours', 'url_redirect', 'url_viewer'], true)) {
+            $mode = 'parcours';
+        }
+        $url = trim((string) $request->input('delivery_url', ''));
+        if ($mode !== 'parcours' && !training_course_delivery_url_is_valid($url)) {
+            return [
+                'error' => $url === ''
+                    ? 'Indiquez l’adresse à ouvrir pour une formation « Lien direct » ou « Visionneuse ».'
+                    : 'L’adresse à ouvrir doit commencer par https:// (ou http://), ou par / pour une page du site.',
+                'patch' => [],
+            ];
+        }
+        TrainingUrlDeliverySchema::ensure(Database::getPdo());
+        if (!$this->courseRepository->hasDeliveryColumns()) {
+            return [
+                'error' => $mode === 'parcours'
+                    ? null
+                    : 'Les formations « lien » ne sont pas encore activées sur cette installation (mise à jour de la base à lancer).',
+                'patch' => [],
+            ];
+        }
+
+        return ['error' => null, 'patch' => [
+            'delivery_mode' => $mode,
+            'delivery_url' => $url !== '' ? mb_substr($url, 0, 1000) : null,
+        ]];
     }
 
     private function saveCoursePresentation(Request $request, array $course, int $tenantId, int $userId): Response
@@ -1690,17 +1748,18 @@ class AdminTrainingStudioController
         }
 
         $title = trim((string) $request->input('resource_title', ''));
-        if ($title === '') {
-            Session::flash('error', 'Indiquez un titre pour la ressource.');
-
-            return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
-        }
         $url = trim((string) $request->input('resource_external_url', ''));
         $extUrl = $url === '' ? null : substr($url, 0, 500);
         if ($extUrl === null) {
             Session::flash('error', 'Indiquez une adresse web (de préférence en https://).');
 
             return $this->studioRedirectAfter($request, $courseId, 'structure', $hash);
+        }
+        if ($title === '') {
+            // Titre par défaut : le service (« Google Sheets », « draw.io »…) plutôt qu’un refus.
+            $title = function_exists('training_url_viewer_provider_label')
+                ? training_url_viewer_provider_label($extUrl)
+                : 'Lien';
         }
         $this->resourceRepository->create($lessonId, [
             'resource_type' => 'link',

@@ -685,6 +685,11 @@ if (_camId isNotEqualTo "") then {
         _s set ["mapCam", ""];
         ["WARNING", "Caméra de l'équipier : flux perdu", 3, 30] call comspec_atak_native_fnc_notify;
     };
+    // Caméra de téléphone non partagée avec moi (fn_camShare) : pas de flux.
+    if !(["can", _cu] call comspec_atak_native_fnc_camShare) exitWith {
+        _s set ["mapCam", ""];
+        ["WARNING", "Caméra non partagée : demandez à l'équipier de vous la partager (app Vidéo live > PARTAGER)", 4, 30] call comspec_atak_native_fnc_notify;
+    };
     private _mini = _l get "mini";
     private _cmode = _s getOrDefault ["livecamMode", 0];
     [_cu, _cmode] call comspec_atak_native_fnc_livecamStart;

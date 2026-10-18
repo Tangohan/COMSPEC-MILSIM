@@ -60,7 +60,8 @@ EN : Relays are clearer and more realistic
 - `fn_moduleRelay` : posé en Zeus sur un relais existant, le formulaire reprend ses valeurs et modifie le relais (uid et batterie conservés).
 - Nouveau `fn_relayZeus` : attributs ZEN « Relais · … » (nom, en service, fréquence, portée, débit, hauteur, places, réseau du camp, liaison, alimentation, batterie) appliqués à tous les relais sélectionnés, menu contextuel ZEN « ATAK · Relais » (fiche, allumer, couper, batterie neuve, réparer, réseau exclusivement par relais).
 - Carte : `fn_mapCtxMenu` mode `relayAt` et fiche relais (mode carte au clic gauche en mode SÉLECTION, lignes ajoutées au clic droit) ; `fn_meshDraw` étiquette MHz/perte/canal partagé/santé, anneau du relais préféré ; `fn_pageNetwork` lignes de relais sur 3 lignes avec la santé.
-- `tools/model_relay_towers.py` : tête circulaire (double anneau, bras, caillebotis annulaire, 3 panneaux par secteur, RRU, AAU, GPS), jarretières avec bagues jaune/rouge, colliers, feeders en chaînette, échelle à câbles, local technique (porte, clim, entrée de câbles), groupe électrogène, clôture barbelée ; 30/40/50 m, m12, m20 et ruines réexportés (LOD1 30 m ≈ 19k, 40 m ≈ 29k, 50 m ≈ 38k triangles).
+- `tools/model_relay_towers.py` : tête circulaire (double anneau, bras, caillebotis annulaire, 3 panneaux par secteur, RRU, AAU, GPS), jarretières avec bagues jaune/rouge, colliers, feeders en chaînette, échelle à câbles, local technique (porte, clim, entrée de câbles), groupe électrogène, clôture barbelée ; 30/40/50 m, m12, m20 et ruines réexportés (LOD1 30 m ≈ 19k, 40 m ≈ 29k, 50 m ≈ 38k triangles). Pour garder towers.pbo sous les 100 Mo de GitHub (93,6 Mo) : ruines sans le niveau complet (jarretières et colliers arrachés), LOD de tir = pièces de la géométrie, géométrie des ruines en tronçons de 10 m.
+- main.pbo et towers.pbo reconstruits avec HEMTT 1.17.2 sur main à jour (ATAK natif 1.96.0), empreinte posée puis remise à vide ; la version sera fixée au regroupement.
 
 ### À tester en jeu
 - Carte du téléphone en mode SÉLECTION : clic gauche sur un relais → fiche ; clic droit → actions relais puis menu habituel ; « Relais préféré » puis « Choix automatique ».
@@ -69,6 +70,55 @@ EN : Relays are clearer and more realistic
 - Réglage CBA « Réseau exclusivement par relais » puis la case du module : sans relais, plus de réseau et messages en attente ; retour du réseau en s'approchant d'un relais.
 - Zeus : double clic sur un pylône (attributs « Relais · … »), menu clic droit « ATAK · Relais », module Relais posé sur un relais existant.
 - Nouveaux pylônes 30/40/50 m et mâts 12/20 m : tête, câbles, local, groupe, clôture ; fluidité à distance (LOD) et ruines après destruction.
+
+---
+
+## Regroupement : app Plan refaite, partage des caméras, nouvelle app Distances (ATAK natif 1.96.0, COMSPEC Link 2.0.86)
+
+### Résumé joueur
+Type : nouveauté
+FR : App Plan refaite, caméras partagées par NFC, Bluetooth ou relais, nouvelle app Distances
+- App Plan : outils rangés dans une palette, menu au clic droit, ANNULER / RÉTABLIR (Ctrl+Z / Ctrl+Y), une description par élément, un menu EXPORTER, des salles où tous ceux qui ont le code dessinent sur le même plan, un tutoriel et l'aide sur la touche H.
+- App Vidéo live : bouton PARTAGER vers un ATAK ou vers TOUS, par NFC (téléphones dos à dos, même sans réseau), par Bluetooth (courte portée, sans réseau) ou par les relais (sans limite de distance). Une caméra n'est plus visible par tout le camp sans partage.
+- Nouvelle app Distances : tes pas, tes kilomètres à pied, en véhicule, en bateau, en vol et en saut HALO, et tes heures de pilote par appareil, comptés par le serveur même si ton téléphone est vide ou cassé.
+- Ces distances arrivent sur ta fiche du site toutes les 10 minutes, avec le cumul de toutes tes missions.
+EN : Plan app redone, cameras shared by NFC, Bluetooth or relay, new Distances app
+- Plan app: tools in a palette, right-click menu, UNDO / REDO (Ctrl+Z / Ctrl+Y), a description per item, an EXPORT menu, rooms where everyone with the code draws on the same plan, a tutorial and help on the H key.
+- Live video app: SHARE button to one ATAK or to ALL, by NFC (phones back to back, even with no network), by Bluetooth (short range, no network) or through relays (no distance limit). A camera is no longer visible to the whole side without sharing.
+- New Distances app: your steps, kilometres on foot, by vehicle, by boat, in flight and in HALO jumps, and your pilot hours per aircraft, counted by the server even if your phone is flat or broken.
+- These distances reach your member file on the site every 10 minutes, with your all-missions totals.
+
+### Détail technique
+Regroupe #833, #834 et #836 (une seule version : ATAK natif 1.96.0, COMSPEC Link 2.0.86 pour la nouvelle commande `Distance.Batch` de #836 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.14 fc17ea7 » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin).
+
+#### App Plan refaite : palette d'outils, menus, annuler / rétablir, salles collaboratives, aide et tutoriel (#833)
+
+- `fn_pagePlan` ne crée plus que la carte ; barres, palette, fiche de sélection et menus sont dans `fn_planUi` (« build »), refait seul à chaque clic : la carte n'est plus recréée par SUPPR. / CONFIRMER / choix d'un outil. Une carte neuve n'enregistre sa vue (`COMSPEC_ATAK_PlanView`) qu'une fois calée sur le but (`fn_planMap` « draw », 3 recalages au plus) : avant, son premier dessin (coin haut gauche du monde) écrasait la vue gardée.
+- Clic droit sans outil : menu (`ctxOpen` / `ctxAct`) sur l'élément pointé (modifier, dupliquer, copier vers brouillon / camp / salle, nettoyé ⇄, grille, centrer, supprimer) ou sur la carte vide (note, ennemi, CP, RP, grille, centrer, aide).
+- Historique : le serveur renvoie à l'auteur ce que chaque opération a changé (`comspec_atak_native_planDiff` [repère, salle, avant, après]) ; ANNULER / RÉTABLIR envoient l'opération `patch` (ids gardés). Brouillon : même diff calculé localement. 40 entrées.
+- Salles : `roomNew` (code de 5 caractères, `COMSPEC_ATAK_PlanRoom_<code>` publique), rejoindre par code, quitter ; droit d'édition = avoir le code. La salle est dessinée sur la carte principale et publiable sur le plan du camp.
+- Élément : 11e champ description (300 caractères), envoyée au site (`desc`) et affichée dans l'infobulle de la carte du briefing web.
+- EXPORTER : code COMSPECPLAN1 (inchangé), texte de briefing avec grilles, enregistrer, publier, importer ; source au choix (camp, brouillon, salle).
+- Aide (H, `fn_planHelp`) selon l'outil en cours et raccourcis (Entrée, Échap, Ctrl+Z/Y/D, Suppr) ; tutoriel en 10 étapes au premier lancement (profil `COMSPEC_ATAK_PlanTuto`), rejouable. Textes FR traduits en anglais (en.txt).
+- À tester en jeu : dessin des 3 géométries, clic droit (menu / fin de tracé), SUPPR. puis CONFIRMER sans saut de carte, Ctrl+Z / Ctrl+Y sur brouillon et camp, salle à 2 joueurs (création, code, dessin croisé, quitter), export texte collé dans Discord, tutoriel au premier lancement, touche H, langue anglaise.
+
+#### Partage des caméras par NFC, Bluetooth ou relais, à un ATAK ou à TOUS (#834)
+
+- Nouveau `fn_camShare` : liste d'accès en variable publique `COMSPEC_ATAK_ShareAcc` sur la source (objet caméra, ou l'unité pour la caméra de son téléphone). NFC à 2 m sans réseau ; Bluetooth à portée `comspec_atak_native_bt_range` (nouveau curseur CBA, 5 à 100 m, 15 par défaut), Bluetooth allumé des deux côtés ; relais par le réseau (`linkQuality`), TOUS = tout le camp, arrivants compris. Événement CBA `comspec_atak_native_camShare` pour prévenir les destinataires ; RETIRER LES ACCÈS coupe le flux chez l'autre.
+- `fn_camAction` : `list` filtrée par accès (`listAll` garde tout le camp pour les noms), statut `NOACCESS`, UID du poseur enregistré à la pose. `fn_feedLink` : liaison Wi-Fi directe à une caméra fixe à portée (`comspec_atak_native_camera_range`, 600 m), même sans réseau.
+- `fn_pageLivecam` : bouton PARTAGER et panneau (méthode avec ses conditions, puis destinataire) ; `fn_livecamStart` et la mini-caméra de la carte s'arrêtent sans accès. Réglage CBA `comspec_atak_native_camera_share` : « Partage obligatoire » (défaut) ou « Tout le camp voit tout » (comportement d'avant, PARTAGER masqué). Page « Partage des caméras » du Manuel de terrain (FR/EN). Test `AtakCameraShareTest`.
+- À tester en jeu : caméra posée visible du seul poseur ; PARTAGER par NFC à 1 m en mode avion, l'équipier la regarde à moins de 600 m ; Bluetooth refusé hors portée ou éteint (raison affichée), TOUS à portée ; relais TOUS, un arrivant la voit ; RETIRER LES ACCÈS ; Ma caméra partagée visible dans VOIR CAMÉRA (carte / BFT) ; réglage « Tout le camp voit tout ».
+
+#### Nouvelle app Distances : pas, kilomètres, heures de pilote par appareil, sur le téléphone et la fiche du site (#836)
+
+- Serveur (`fn_distanceServer`, PFH 3 s dans `XEH_postInitServer`) : écart de position de chaque joueur rangé à pied / terrestre / bateau / vol / saut (ParachuteBase, ou chute libre : pas au sol, > 15 m ATL, vz < -8 m/s ou anim halofreefall ; distance 3D en saut, 2D sinon). Téléport ignoré au-delà d'une vitesse plausible par mode. Pas = distance / longueur de pas (0,7 à 1,6 m selon l'allure), rien à la nage ni à plat ventre. Temps à pied = temps en mouvement. Saut compté au départ d'au moins 150 m ou sous voile. Pilote = `currentPilot` d'un `Air` moteur allumé, par `typeOf`.
+- Envoi `Distance.Batch` (nouvelle commande COMSPEC Link 2.0.86, file d'attente comme `ScreenTime.Batch`) toutes les 10 min, au départ d'un joueur et à `MPEnded`, par lots de 25 ; ce qui échoue reste en mémoire serveur. Compteurs de la mission poussés au joueur toutes les 15 s (`COMSPEC_ATAK_DistMe`, ciblé sur son client) pour l'app `fn_pageDistance` (lanceur Navigation, icône `app_distance`).
+- Réglage CBA serveur « Distances parcourues » (`comspec_atak_native_distance`, actif par défaut).
+- Site : `POST /api/atak/distance/batch` → `atak_distance_stats` (une ligne par membre et session `mission_key`) et `atak_pilot_time` (par classe d'appareil), migration `bootstrap/atak_distance_migration.php`. Fiche du membre : carte « Distances parcourues en jeu » (cumuls, sessions, temps à pied total et moyen par session) et « Heures de pilote par appareil », classes regroupées par type (`AtakDistanceRepository::aircraftFamily` : Chinook avec Huron, Black Hawk avec Ghost Hawk, Little Bird avec Hummingbird…).
+- DLL à reconstruire (build_mod.bat) : sans COMSPEC Link 2.0.86 le serveur compte quand même mais n'envoie rien (journal WARN DISTANCE).
+- Non testé en jeu. À vérifier : marche, course, sprint, rampé, nage (pas et km) ; véhicule terrestre, bateau ; hélicoptère et avion en pilote et en passager ; saut HALO depuis un avion et ouverture de voile ; respawn et téléport Zeus non comptés ; app Distances mise à jour toutes les 15 s ; fiche du site après 10 min ou à la fin de mission.
+
+---
 
 ## Regroupement : drone comme Vidéo Live, téléphone en main pour les photos, carte plus lisible, antenne, numéro de build (ATAK natif 1.95.0)
 
@@ -86,7 +136,7 @@ EN : Drone app redone, phone in hand for photos, clearer map
 - The extension antenna starts from the case port instead of floating above it, green button labels no longer have a black outline, and Settings, Credits and Status show the version with the build date.
 
 ### Détail technique
-Regroupe #820, #822, #825, #826, #827, #829, #830 et #831 (une seule version : ATAK natif 1.95.0, COMSPEC Link inchangé 2.0.85 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.14 2544731 » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin, que HEMTT ne produit pas et dont l’ancienne copie ne décrit plus les textures d’antenne régénérées).
+Regroupe #820, #822, #825, #826, #827, #829, #830 et #831 (une seule version : ATAK natif 1.95.0, COMSPEC Link inchangé 2.0.85 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.14 fc17ea7 » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin, que HEMTT ne produit pas et dont l’ancienne copie ne décrit plus les textures d’antenne régénérées).
 
 #### Numéro de build complet dans le téléphone (#822)
 
