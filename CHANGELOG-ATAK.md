@@ -38,22 +38,33 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Reco transmise au poste, point pointé sur la carte, alerte BattlEye, points simples visibles (ATAK natif, numéro au regroupement, COMSPEC Link 2.0.87)
+## Regroupement : marqueurs, relais, Bluetooth, app Garmin, sang et santé, téléphone, Reco, JTAC (ATAK natif 1.97.0, COMSPEC Link 2.0.87)
 
 ### Résumé joueur
-Type : correctif
-FR : Les notes de reco arrivent enfin au poste
-- Les notes envoyées depuis l'app Reco apparaissent maintenant sur la carte du site, dans le fil de renseignement et dans le journal du poste.
-- Dans l'app Reco, « Sous mon regard » est remplacé par « Pointé carte » : touchez la carte du téléphone pour placer le point de la note.
-- L'app Athena prévient en rouge quand le jeu tourne avec BattlEye : la liaison ne peut pas se faire tant qu'il est actif.
-- Les points simples posés sur la carte sont bien visibles, en jeu comme sur le site.
-EN : Recon notes finally reach the command post
-- Notes sent from the Recon app now show on the site map, in the intelligence feed and in the command post log.
-- In the Recon app, "Under my gaze" is replaced by "Pick on map": tap the phone map to place the note's point.
-- The Athena app warns in red when the game runs with BattlEye: the link cannot connect while it is on.
-- Simple dots placed on the map are now clearly visible, in game and on the site.
+Type : nouveauté
+FR : Relais et Bluetooth refaits, app Garmin, sang et santé réalistes, marqueurs au clic droit
+- Carte : clic droit à l'endroit voulu puis VALIDER pour poser un marqueur (canal Général par défaut), alertes effaçables, fiche de chaque relais au clic (fréquence, perte, santé) ; pylônes 3D refaits et réseau par relais seulement si la mission l'impose. La carte JTAC ne saute plus et le 9-LINE s'affiche sur Overwatch.
+- Bluetooth : envoie photos, musiques, position, itinéraire, plan ou fiches SEEK à un téléphone appairé ; SEEK montre ce que l'équipe a déjà fait sur une personne ; le vibreur BFT transmet un message rapide. Les notes de l'app Reco arrivent enfin au poste, et l'app Athena prévient quand l'anti-triche du jeu bloque la liaison.
+- Nouvelle app Garmin (Body Battery, cœur, stress, sommeil, activités, défis) ; sang sur l'écran réaliste (Discret, Réaliste ou Gore), nettoyage sans kit, moniteur médical cohérent et ADN sur les taches de sang.
+- Téléphone plus propre : verrouillage, touche retour partout, mini déplaçable à la souris, alertes réglables, photo et selfie en mini ; MP3 refusés désormais lus et menu COMSPEC SSE d'Eden réparé.
+EN : Relays and Bluetooth redone, Garmin app, realistic blood and health, right-click markers
+- Map: right-click where you want, then CONFIRM to place a marker (Global channel by default), alerts can be cleared, click a relay to see its card (frequency, loss, health); 3D towers redone and relay-only networks when the mission requires it. The JTAC map no longer jumps and the 9-LINE shows on Overwatch.
+- Bluetooth: send photos, music, position, route, plan or SEEK files to a paired phone; SEEK shows what the team already did on a person; the BFT buzzer sends a quick message. Reco app notes finally reach the command post, and the Athena app warns when the game's anti-cheat blocks the link.
+- New Garmin app (Body Battery, heart rate, stress, sleep, activities, challenges); realistic blood on the screen (Subtle, Realistic or Gore), cleaning without a kit, a consistent medical monitor and DNA on blood stains.
+- Cleaner phone: lock screen, back key everywhere, mini screen movable with the mouse, adjustable alerts, photo and selfie in mini; refused MP3 files now play and the Eden COMSPEC SSE menu is fixed.
 
 ### Détail technique
+Regroupe #840, #841, #844, #845, #847, #848, #849, #850 et #851 (une seule version : ATAK natif 1.97.0, COMSPEC Link 2.0.87 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « STAMP » posée par tools/stamp_build.py puis remise à vide ; towers.pbo de #850 et comspec_overwatch_connect.pbo de #851 repris tels quels, seuls à changer ces sources).
+
+#### Marqueurs au clic droit (VALIDER, à la suite, canal Général), fiche d'étiquette, alertes effaçables (#840)
+
+- Nouvelles fonctions `fn_markerPlace` (ouverture, point de pose, VALIDER, canal, repli) et `fn_markerDeletable` (joueur / alerte locale / mission). `fn_mapMouseButtonDown/Up` arment le clic droit en mode MARQUEUR comme en sélection ; le double clic ouvre la palette au point.
+- Palette : point de pose au clic droit (anneau + aperçu), VALIDER, « À la suite », replier / déplier (profil), fermer, ligne CANAL (Général par défaut ; repli Camp puis canal courant si le serveur refuse, avec bandeau). Réglages d'addon ATAK · Carte : « Menu de pose des marqueurs » (palette / éditeur complet) et « Canal des marqueurs ».
+- Fiche d'étiquette refaite (liseré couleur, nature MISSION / JOUEUR / ALERTE, grille · distance · azimut, Y ALLER, CENTRER, MODIFIER, SUPPRIMER / EFFACER). Alertes effaçables localement : fiche, Suppr, clic droit, « Effacer les alertes (N) ».
+- À tester en jeu : clic droit > Mettre un marqueur puis VALIDER ; « À la suite » ; canal Général vu par un autre groupe ; réglage Éditeur complet ; EFFACER sur WIA / CONTACT ; fiche en mini sans recouvrir OUTILS ; anglais.
+
+#### Reco transmise au poste, point pointé sur la carte, alerte BattlEye, points simples visibles (#841)
+
 - Cause des recos perdues : la commande synchrone `RECON.Note` de COMSPEC Link postait le JSON tel que livré par `callExtension` (guillemets doublés). PHP lisait un corps vide et répondait 400 « Indiquez une observation » ; rien n'était enregistré (RECO 0 sur le site). 2.0.87 passe le corps par `EnrichAtakPayload` (normalisation + jeton de session, Steam, version), dans les chemins synchrone et asynchrone.
 - `POST /api/recon/notes` : une entrée « Renseignement » au journal Activité par nouvelle note (type, texte, carroyage, auteur), et un `error_log [atak/recon-notes]` quand une note est refusée vide ou illisible.
 - Webhook Discord `DISCORD_RECON_WEBHOOK` (nouveau, `.env` du VPS) : une carte par note (type, observation, fiabilité, carroyage, auteur, communauté), envoyée après la réponse, 30 par minute au plus, mentions et liens neutralisés. Vide : rien n'est posté. `ReconNoteDiscordService`.
@@ -62,66 +73,30 @@ EN : Recon notes finally reach the command post
 - Points simples (`mil_dot`, `hd_dot`) : le point ne remplit qu'un quart de son image et la couleur par défaut est noire. Téléphone (`fn_mapGameMarkers`) : symbole doublé, éclairci s'il est trop sombre. Site (`arma-map-markers.js`) : rond plein cerclé de blanc au lieu du PNG, et le libellé « Repère · indicatif » n'est plus masqué (seul « Repère » nu l'est).
 - Non testé en jeu. À tester : une reco envoyée apparaît sur le site (calque Notes reco, fil RECO), au journal Activité et dans Discord ; POINTÉ CARTE ; jeu lancé avec BattlEye puis sans ; point simple noir posé en jeu, visible au téléphone et sur le site. Il faut recompiler la DLL (build_mod.bat) et reconstruire main.pbo au regroupement.
 
-## Menu SSE d'Eden, MP3 refusés, check de liaison sur Discord (ATAK natif, numéro attribué au regroupement)
+#### Menu SSE d'Eden, MP3 refusés, check de liaison sur Discord (#844)
 
-### Résumé joueur
-Type : correctif
-FR : Le menu COMSPEC SSE d'Eden s'ouvre, les MP3 refusés se lisent, la liaison en jeu est confirmée sur Discord
-- Eden : chaque entrée du menu COMSPEC SSE ouvre le manuel dans une fenêtre de l'éditeur, avec la liste des chapitres à gauche (plus d'erreur de script).
-- App Musique : un MP3 qui affichait « format non lu » (souvent un MP3 tiré d'une vidéo, avec une grosse pochette) se lit maintenant. Un faux MP3 (M4A, WebM ou Opus renommé) le dit clairement.
-- Site : chaque morceau envoyé est testé pour le jeu ; le bouton « Tester la lecture en jeu » répare aussi les morceaux déjà en ligne.
-- Quand tu te lies à Athena en jeu, le salon de debug du Discord reçoit une confirmation : numéro et IMEI attribués, terminal porté, ou l'erreur de connexion.
-EN : The Eden COMSPEC SSE menu opens, rejected MP3s play, in-game linking is confirmed on Discord
-- Eden: every entry of the COMSPEC SSE menu opens the manual in an editor window, with the chapter list on the left (no more script error).
-- Music app: an MP3 that showed "format not read" (often an MP3 taken from a video, with a large cover picture) now plays. A fake MP3 (renamed M4A, WebM or Opus) says so clearly.
-- Site: every uploaded track is tested for the game; the "Test in-game playback" action also repairs tracks already online.
-- When you link to Athena in game, the Discord debug channel gets a confirmation: assigned number and IMEI, terminal carried, or the connection error.
-
-### Détail technique
 - @COMSPEC_SSE guide : les actions du menu d'Eden appelaient `BIS_fnc_openFieldManual`, qui y cherche un écran parent et tombe sur un booléen (erreur `createDisplay` ligne 40 de fn_openFieldManual.sqf). Elles passent par `comspec_sse_fnc_openGuide`, qui dans Eden attend la fermeture du menu (uiSleep 0.05) puis ouvre sa propre fenêtre sur l'écran 313 (liste des chapitres CfgHints + texte). comspec_sse_guide.pbo patché avec tools/pbo_patch.py.
 - DLL native (MusicPlayer.cs) : si MCI refuse d'ouvrir un fichier local (ERR277 = MCIERR_INTERNAL), copie dans le cache sans balise ID3v2 ni octets avant la première trame MPEG (deux trames valides de suite), second essai ; sinon le vrai format est reconnu (ftyp, WebM, OggS, fLaC, page web). À recompiler avec build_mod.bat.
 - Site : `App\Support\MusicGameCheck` (même recherche de trame), appelé par `MusicTrackStorage::storeFromUpload` (MP3 réparé sur place, faux MP3 refusé, note dans la réponse) et par la nouvelle action groupée `game_check` de /admin/musique et /back-office/ressources/musique (taille et sha1 mis à jour). Pas de migration.
 - fn_startupCheck : envoi à la liaison (`COMSPEC_AthenaReady` vrai, identité du téléphone reçue) ou, sans liaison 2 min après le contrôle d'installation, avec l'erreur (`comspec_overwatch_auth_error`, `COMSPEC_LinkDetail`) ; nouveau rapport à chaque nouvelle liaison dans la mission. Champ `trigger` (link, link_failed) ; étapes `link`, `phone` (numéro, IMEI, attribué par Athena ou provisoire), `terminal` (objet porté, modèle) ; l'étape `account` est remplacée par `link`. Aucune nouvelle commande DLL.
 - TEST VIDÉO : le flux réel du drone (I) est créé en premier.
 
-## Nouvelle app Garmin : montre connectée (ATAK natif, numéro au regroupement)
+#### App JTAC : carte et fiche stables, géométrie JTAC sur Overwatch, temps d'écran dépliable (#845)
 
-### Résumé joueur
-Type : nouveauté
-FR : Nouvelle app Garmin, ta montre connectée dans l'ATAK
-- Accueil façon Garmin Connect : Body Battery du jour et sa courbe, fréquence cardiaque, stress, sommeil et pas, puis le résumé d'hier et des 7 derniers jours.
-- Tes courses, marches, trajets, vols, sauts, sorties en bateau et nages s'enregistrent seuls, avec le lieu, la distance, le temps et l'allure ou la vitesse.
-- Onglet Défis : objectif de pas du jour (réglable de 6 000 à 15 000), 100 000 pas, marathon de la semaine, 5 km d'une traite, un saut, Body Battery à 80.
-- La Body Battery baisse avec l'effort et le stress au combat, remonte au repos, quand tu dors (ou es inconscient) et pendant que tu ne joues pas. La montre garde 14 jours sur ton PC.
-EN : New Garmin app, your smartwatch inside the ATAK
-- Garmin Connect style home: today's Body Battery and its chart, heart rate, stress, sleep and steps, then yesterday and the last 7 days.
-- Your runs, walks, rides, flights, jumps, boat trips and swims are recorded on their own, with the place, distance, time and pace or speed.
-- Challenges tab: daily step goal (adjustable from 6,000 to 15,000), 100,000 steps, weekly marathon, 5 km in one go, one jump, Body Battery at 80.
-- Body Battery drains with effort and combat stress, and recharges at rest, while you sleep (or are unconscious) and while you are not playing. The watch keeps 14 days on your PC.
+- `fn_jtacDraw` n'enregistre la vue qu'une fois la carte calée (3 recalages au plus, comme `fn_planMap`) ; la fiche `formRender` est inscrite dans `COMSPEC_ATAK_ScrollGroups`. `fn_jtacAction` « brief » pose l'objet `geo`, `fn_firesAction` « send9 » l'ajoute au JSON de `SubmitNineLine` (DLL inchangée).
+- Site : colonne `atak_nine_line.geo_json` (bootstrap idempotent, run-migrations.php, schema.sql), `CasNineLineRepository::sanitizeGeo`, `/api/cas` renvoie `geo`, calque « Appuis JTAC » dans Overwatch Beta. Back-office Temps d'écran : membres dépliables, filtres nom / rôle / app, durée des apps masquée par défaut. Test `JtacGeoOverwatchTest`.
+- À tester en jeu : onglet CTRL, carte et fiche immobiles après plusieurs actualisations ; 9-LINE transmis visible sur Overwatch Beta ; Temps d'écran dépliable et filtrable.
 
-### Détail technique
+#### Nouvelle app Garmin : montre connectée (#847)
+
 - Nouvelle app `Garmin` (section Navigation, ordre 20, icône app_garmin) : `fn_pageGarmin` dessine trois onglets (Accueil, Défis, Activités) sur fond sombre, barre d'onglets fixe en bas ; onglet gardé dans `COMSPEC_ATAK_State` (`gmTab`).
 - `fn_garminTick` (client, PFH 2 s dans XEH_postInitClient, sauvegarde aussi à `Ended`) : pas et distances avec les règles de `fn_distanceServer` (plus la nage), activités reconnues seules (close après 90 s d'arrêt ou au changement de genre, distance minimale par type, lieu par `nearestLocations`, 40 gardées), stress (suppression, ennemi < 300 m, blessures, COMBAT), fréquence cardiaque (`ace_medical_heartRate` sinon estimée), sommeil (inconscient ou immobile allongé / assis au calme > 2 min), Body Battery (+20/h sommeil, +8/h repos, -6 à -46/h effort et stress, +12/h hors du jeu au retour).
 - Données par jour réel du PC dans `profileNamespace COMSPEC_ATAK_Garmin` (paires, 14 jours, courbe à 5 min gardée pour aujourd'hui et hier), écrites toutes les 5 min. Rien n'est envoyé au site : pas de nouvelle commande COMSPEC Link.
 - 18 icônes (app_garmin, g_*) dans tools/gen_assets.py ; textes anglais ajoutés à en.txt.
 - À tester en jeu : ouvrir l'app (Navigation > Garmin), courir 500 m puis s'arrêter 90 s (activité « Course à pied » dans Activités), monter en véhicule et rouler 1 km, s'allonger 2 min sans ennemi (Sommeil augmente, Body Battery remonte), se faire tirer dessus (Stress monte), changer l'objectif de pas dans Défis, quitter et revenir (Body Battery rechargée, message « rechargés pendant … hors du jeu »), passer le téléphone en anglais.
 
-## Sang réaliste et gore, nettoyage libre, constantes médicales réalistes, socle Zeus, ADN sur les taches de sang (ATAK natif 1.97.0)
+#### Sang réaliste et gore, nettoyage libre, constantes médicales réalistes, socle Zeus, ADN sur les taches de sang (#848)
 
-### Résumé joueur
-Type : nouveauté
-FR : Sang plus vrai sur le téléphone, nettoyage sans kit, moniteur médical réaliste et ADN sur les taches de sang
-- Le sang sur l'écran reste où il est tombé : éclaboussures, coulures, flaques, paumes, et tes doigts en sang laissent des traces là où tu touches. Réglage « Sang sur l'écran » : Discret, Réaliste ou Gore.
-- Nettoyer l'écran ne demande plus aucun kit, autant de fois que tu veux ; « Nettoyage complet » remet écran et coque à neuf. Zeus peut couvrir un écran de sang ou le nettoyer.
-- App Médical : fréquence cardiaque, tension au brassard (mesurée toutes les minutes), oxygène du sang et respiration cohérents ; plus de tension ni d'oxygène affichés sans pouls, et la perte de sang s'affiche en classe d'hémorragie. Les alertes santé n'apparaissent plus en plein écran, seulement sur le téléphone.
-- Au sol, une tache de sang se sert de l'action « Tache de sang » : l'examiner, relever les empreintes sanglantes ou prélever l'ADN pour le laboratoire. Le kit socle posé par Zeus devient directement le socle de recharge déplié.
-EN : More realistic blood on the phone, cleaning without a kit, realistic medical monitor and DNA from blood stains
-- Blood on the screen stays where it landed: spatter, drips, pools, palm prints, and your bloody fingers leave marks where you touch. "Blood on the screen" setting: Discreet, Realistic or Gore.
-- Cleaning the screen no longer needs any kit, as often as you like; "Full clean" restores the screen and case. Zeus can cover a screen in blood or clean it.
-- Medical app: heart rate, cuff blood pressure (measured every minute), blood oxygen and breathing that make sense; no blood pressure or oxygen shown without a pulse, and blood loss is shown as a hemorrhage class. Health alerts no longer appear full screen, only on the phone.
-- On the ground, use the "Blood stain" action on a blood stain: examine it, lift bloody prints or swab DNA for the lab. The dock kit placed by Zeus now becomes the unfolded charging dock straight away.
-
-### Détail technique
 Retours de jeu de TTRD du 2026-10-16 (19:00 à 20:51).
 
 - **Sang à l'écran** (`fn_screenDirt`, `fn_screenSurface`) : les taches sont une liste mémorisée `stains` ([type, variante, x, y, taille, angle, opacité], 40 au plus) au lieu d'un tirage pseudo-aléatoire partagé : ajouter une trace ne déplace plus les autres. Tirages séparés par catégorie (`_from`). Nouveaux modes : `tap` (empreinte de doigt sanglant au point touché, `fn_displayLoad`), `hit` (blessure du porteur : éclaboussures, coulures, flaque si l'écran est ouvert), `nearby` (homme tué à moins de 3,5 m, `EntityKilled`), `zeus`. Dix textures `blood_{splat,hand,drip,spatter,pool}_{0,1}.paa` générées par `tools/gen_dirt.py blood`. Réglage CBA `comspec_atak_native_blood_style` (Discret / Réaliste / Gore).
@@ -133,24 +108,8 @@ Retours de jeu de TTRD du 2026-10-16 (19:00 à 20:51).
 - **SSE** (`comspec_sse_fnc_bioBloodStain`, `comspec_sse_biometrics.pbo`) : le serveur relève les gouttes des blessés qui saignent (tous les 1,5 m) et la flaque d'un corps, avec la personne la plus proche (soignant) ; liste publique `COMSPEC_SSE_BloodTraces` (150 au plus). Action ACE personnelle « Tache de sang » à 2,5 m : Examiner, Relever les empreintes sanglantes (latente versée à la base, auteur = blessé ou soignant), Prélever l'ADN (sang du blessé, laboratoire, qualité selon l'âge et la pluie).
 - Traductions anglaises ajoutées (`i18n/en.txt`).
 
----
+#### Retours de jeu : téléphone verrouillé, retour, disposition à la souris, réglages et photo (#849)
 
-## Retours de jeu : téléphone verrouillé, retour, disposition à la souris, réglages et photo (ATAK natif 1.97.0)
-
-### Résumé joueur
-Type : correctif
-FR : Téléphone plus propre : verrouillage, retour, disposition à la souris, notifications et Personnalisation
-- Téléphone verrouillé : plus aucune app ni rail par-dessus l'écran de verrouillage. La touche retour marche dans toutes les apps et sous-écrans. Le rapport SALUTE est enfin dans l'ordre S, A, L, U, T, E.
-- Réglages > Emplacement : nouvelles positions HAUT CENTRE et BAS CENTRE, et DÉPLACER À LA SOURIS pour glisser le mini où tu veux (clic droit pour finir). La boussole du mini tourne en continu.
-- Réglages > Alertes : coupe tous les bandeaux, les petits messages du bas, ou seulement certains types. Personnalisation est rangée par thème, sans les réglages en test ; le mode tablette sur le JPC est retiré pour l'instant.
-- Localisation par les relais : elle prend quelques secondes et s'efface au clic droit. Historique des alertes : CARTE centre bien le point. Photo en mini : PHOTO et SELFIE passent en plein écran, selfie recadré sur le visage. Aide à la connexion dans l'app Athena et bandeau si tu n'es pas connecté.
-EN : Cleaner phone: lock screen, back key, mouse layout, notifications and Personalisation
-- Locked phone: no app or side rail shows over the lock screen any more. The back key works in every app and sub-screen. The SALUTE report is finally in S, A, L, U, T, E order.
-- Settings > Position: new TOP CENTRE and BOTTOM CENTRE positions, and MOVE WITH THE MOUSE to drag the mini wherever you want (right-click to finish). The mini compass now turns smoothly.
-- Settings > Alerts: turn off all banners, the small messages at the bottom, or only some types. Personalisation is sorted by theme without test settings; the JPC tablet mode is removed for now.
-- Relay location: it takes a few seconds and can be cleared with a right-click. Alert history: MAP now centres the point. Photo in mini: PHOTO and SELFIE go full screen, selfie framed on the face. Sign-in help in the Athena app and a banner when you are not signed in.
-
-### Détail technique
 - Écran de verrouillage : `fn_dockRender` sort tant que `COMSPEC_ATAK_LockUp` (le rafraîchissement d'une seconde recréait le dock et le rail par-dessus) ; `fn_navigate` refuse l'ouverture d'une app verrouillé ; `fn_lockScreen` redessine le dock au déverrouillage.
 - Retour : `fn_back` gère un sous-écran déclaré par la page (`backSub` = [page, code], remis à zéro par `fn_pageRender`) avant l'historique ; déclaré par DataLink, Signalements, Wanted, Dating, Briefing, FRS, Galerie, drone de la carte. Bouton retour actif hors accueil.
 - Sous-menus (`fn_formRender`) : textes secondaires plus clairs, titres de section blancs, sections repliables plus contrastées.
@@ -165,23 +124,8 @@ EN : Cleaner phone: lock screen, back key, mouse layout, notifications and Perso
 - Athena : volet AIDE À LA CONNEXION dans l'app ; bandeau WARNING qui ouvre l'app Athena quand le service est choisi mais la session absente (25 s puis toutes les 10 min, `fn_statusUpdate`).
 - Dictionnaire anglais complété (`tools/i18n.py merge`).
 
+#### Relais : clic sur la carte, fréquence, perte et santé, édition Zeus, réseau exclusivement par relais, pylônes 3D refaits (#850)
 
-## Relais : clic sur la carte, fréquence, perte et santé, édition Zeus, réseau exclusivement par relais, pylônes 3D refaits (ATAK natif, numéro au regroupement)
-
-### Résumé joueur
-Type : nouveauté
-FR : Relais plus lisibles et plus réalistes
-- Sur la carte du téléphone, un clic gauche sur un relais ouvre sa fiche (état, fréquence, perte, latence, débit, portée, structure, alimentation) ; le clic droit ajoute les actions du relais au menu habituel : en faire ton relais préféré, voir sa couverture, s'y rendre.
-- L'app Réseau et la carte montrent pour chaque relais sa fréquence, son taux de perte et son état de santé ; deux relais proches réglés sur le même canal se gênent et perdent du débit.
-- Les missions peuvent imposer un réseau exclusivement par relais : sans relais à portée, plus aucun réseau, et les messages attendent le retour de la liaison. En Zeus, les attributs d'un relais se modifient directement (nom, fréquence, portée, débit, alimentation…) et un menu « ATAK · Relais » permet d'allumer, couper, réparer ou changer la batterie.
-- Les pylônes ont été refaits : tête circulaire avec passerelle, antennes de secteur, boîtiers radio, câbles à bagues jaunes et rouges, local technique, groupe électrogène et clôture barbelée.
-EN : Relays are clearer and more realistic
-- On the phone map, a left click on a relay opens its sheet (status, frequency, loss, latency, throughput, range, structure, power); a right click adds the relay actions to the usual menu: make it your preferred relay, show its coverage, go there.
-- The Network app and the map show each relay's frequency, loss rate and health; two nearby relays set to the same channel interfere and lose throughput.
-- Missions can require a relay-only network: with no relay in range there is no network at all, and messages wait until the link is back. In Zeus, relay attributes can be edited directly (name, frequency, range, throughput, power…) and an "ATAK · Relais" menu turns relays on or off, repairs them or swaps the battery.
-- The towers were rebuilt: circular head with walkway, sector antennas, radio units, cables with yellow and red bands, equipment shelter, generator and barbed-wire fence.
-
-### Détail technique
 - `fn_relayNet` : l'entrée « list » passe à 21 champs (fréquence MHz, canal auto, perte %, structure %, santé nominal/dégradé/critique/hors service, sauts, nombre de relais sur le même canal, latence ms). Plan de canaux auto 4940–4975 MHz (pas de 5 MHz, premier canal libre parmi les relais qui se recouvrent), passerelles en 4985. Interférence co-canal : débit / (1 + 0,35 n). Perte = produit des causes (dégâts, brouillage, co-canal, sauts, saturation). « best » rend fréquence, santé, latence et suit le relais épinglé (`uiNamespace COMSPEC_ATAK_RelayPin`). Nouvelles actions `entry`, `only`, `required`, `pin`.
 - `fn_linkQuality` : en mode exclusivement par relais et sans relais, multiplicateur 0 et facteur « Aucun relais reçu (réseau exclusivement par relais) », y compris si la simulation réseau est coupée ; latence du relais ajoutée, facteur si le relais est dégradé ou critique.
 - Réglage CBA serveur `comspec_atak_native_relay_only` (défaut non), case « Réseau exclusivement par relais » du module Relais (variable `COMSPEC_ATAK_RelayOnly`), variable de mission `COMSPEC_LinkViaRelays` toujours prise en compte. Combo Fréquence du module : canaux C1–C8.
@@ -199,40 +143,26 @@ EN : Relays are clearer and more realistic
 - Zeus : double clic sur un pylône (attributs « Relais · … »), menu clic droit « ATAK · Relais », module Relais posé sur un relais existant.
 - Nouveaux pylônes 30/40/50 m et mâts 12/20 m : tête, câbles, local, groupe, clôture ; fluidité à distance (LOD) et ruines après destruction.
 
----
+#### Bluetooth : photos, musiques, données et fiches ; SEEK en équipe ; vibreur BFT avec message (#851)
 
-## Bluetooth : photos, musiques, données et fiches ; SEEK en équipe ; vibreur BFT avec message (ATAK natif 1.97.0, COMSPEC Link 2.0.87)
-
-### Résumé joueur
-Type : nouveauté
-FR : Bluetooth qui envoie vraiment des fichiers, SEEK partagé entre joueurs, vibreur BFT avec message
-- App Bluetooth : en plus des sons, tu envoies à un téléphone appairé tes photos, tes musiques, ta position, ton itinéraire, un plan, une fiche SEEK ou une fiche SSE. Une barre montre l'avancement et tu peux annuler.
-- Ce que tu reçois arrive au bon endroit : photos dans ta Galerie, musiques dans le lecteur, itinéraire dans Points de passage, plan dans l'app Plan, fiches dans le terminal SEEK. Tout est aussi listé dans « Reçus par Bluetooth ».
-- SEEK et app SSE : une section « Équipe sur ce sujet » montre ce que nos autres joueurs ont déjà fait sur la même personne (empreintes, iris, ADN, photo, interrogation, fiche, signature).
-- BFT : VIBRER ouvre un message rapide (RALLIEMENT, CONTACT, STOP, BESOIN D'AIDE, APPELEZ-MOI, RAS) ou un texte libre. Le téléphone de ton équipier vibre et affiche une grande alerte avec ton message, ta grille et ta distance, avec VU (tu es prévenu qu'il l'a vue) et CARTE.
-EN : Bluetooth that really sends files, SEEK shared between players, BFT buzzer with a message
-- Bluetooth app: on top of sounds, you can send a paired phone your photos, your music, your position, your route, a plan, a SEEK sheet or an SSE sheet. A bar shows progress and you can cancel.
-- What you receive lands in the right place: photos in your Gallery, music in the player, route in Waypoints, plan in the Plan app, sheets in the SEEK terminal. Everything is also listed under "Received by Bluetooth".
-- SEEK and SSE app: a "Team on this subject" section shows what our other players already did on the same person (fingerprints, iris, DNA, photo, query, sheet, signature).
-- BFT: BUZZ opens a quick message (RALLY, CONTACT, STOP, NEED HELP, CALL ME, ALL CLEAR) or free text. Your teammate's phone vibrates and shows a large alert with your message, grid and distance, with SEEN (you are told they saw it) and MAP.
-
-### Détail technique
 Version provisoire : le fil de regroupement attribue le numéro du lot (docs/VERSIONING.md). main.pbo reconstruit avec HEMTT 1.17.2, empreinte posée par tools/stamp_build.py puis remise à vide ; comspec_overwatch_connect.pbo repaqueté (tools/pack_pbo.py). DLL modifiée : `build_mod.bat` obligatoire.
 
-#### Bluetooth : transfert de fichiers et de données
+##### Bluetooth : transfert de fichiers et de données
 - COMSPEC Link 2.0.87 (`BtTransfer.cs`, branché dans `Extension.cs` sous `COMSPEC_ATAK_NATIVE`) : `BtFileOpen` / `BtFileRead` / `BtFileClose` côté émetteur (photo limitée aux dossiers de captures et de screenshots, 8 Mo ; musique limitée au dossier COMSPEC_Music, 30 Mo ; morceaux de 3000 octets en base64), `BtRecvOpen` / `BtRecvWrite` / `BtRecvEnd` / `BtRecvAbort` côté récepteur (fichier temporaire dans `%TEMP%\COMSPEC_BT`, rangé à la fin dans le dossier Captures ou `COMSPEC_Music\Bluetooth`, nom unique).
 - `fn_btItems` (nouveau) : listes par onglet (photos, musiques, données, fiches), données envoyées et rangement à la réception (repère local 10 min, `wpAction receive`, bibliothèque Plan, journal SEEK marqué « reçu de », fiches SSE), boîte de réception `COMSPEC_ATAK_BtInbox` (30).
 - `fn_btAction` : nouvelles sortes `pho`, `mp3`, `pos`, `wp`, `plan`, `seek`, `sse` ; offre → acceptation → envoi (`data`, ou `fbeg` / `fchk` / `fend` pompé par un PFH à 4 morceaux par 0,25 s, portée vérifiée à chaque envoi), accusé `done`, `fabort` / `cancel`, réceptions bloquées plus de 30 s abandonnées, Bluetooth coupé = transferts arrêtés. DLL ancienne : message « reconstruire avec build_mod.bat ».
 - `fn_pageBluetooth` : section « Transferts en cours » (pourcentage, barre, ANNULER), envoi en deux rangées d'onglets (SONS / MUSIQUE / PHOTOS, DONNÉES / FICHES), « Reçus par Bluetooth » avec VOIR.
 
-#### SEEK : actions des autres joueurs sur le même individu
+##### SEEK : actions des autres joueurs sur le même individu
 - `fn_sseTeamLog` (connect, nouveau) : journal d'équipe public sur l'unité visée (`COMSPEC_SSE_TeamLog`, 20 lignes, même action du même joueur dans la minute remplacée).
 - Alimenté par `fn_sseBiometricSample`, `fn_sseCaptureFacePhoto` (métadonnées de la photo désormais publiques), `fn_seekHistoryPush`, `fn_sseSignAtak`, `fn_ssePersonDialogSubmit` (qui garde aussi la fiche SSE envoyée dans `COMSPEC_SSE_Sheets`, 40, pour le Bluetooth).
 - Affiché dans la synthèse du terminal SEEK (`fn_ssePersonRefreshPanels`) et dans le panneau sujet de l'app SSE (`fn_pageSse`).
 
-#### BFT : vibreur avec message et alerte à l'écran
+##### BFT : vibreur avec message et alerte à l'écran
 - `fn_pageBft` / `fn_bftAction` : VIBRER ouvre un composeur (6 messages prêts, texte libre de 80 caractères, `<>` retirés, 5 s entre deux envois vers la même personne) ; l'événement `comspec_atak_native_buzz` porte maintenant texte, position et émetteur (anciens appels compatibles).
 - `fn_buzzAlert` (nouveau) : alerte orange sur l'écran du téléphone, gardée 2 min (affichée à l'ouverture si le téléphone était rangé, redessinée après chaque page par `fn_fx raise`), boutons VU (`comspec_atak_native_buzzAck` → « X a vu votre message » chez l'émetteur), CARTE, FERMER.
+
+---
 
 ## Regroupement : app Plan refaite, partage des caméras, nouvelle app Distances (ATAK natif 1.96.0, COMSPEC Link 2.0.86)
 
