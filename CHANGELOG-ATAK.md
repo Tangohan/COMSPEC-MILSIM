@@ -54,7 +54,7 @@ EN : Relays and Bluetooth redone, Garmin app, realistic blood and health, right-
 - Cleaner phone: lock screen, back key everywhere, mini screen movable with the mouse, adjustable alerts, photo and selfie in mini; refused MP3 files now play and the Eden COMSPEC SSE menu is fixed.
 
 ### Détail technique
-Regroupe #840, #841, #844, #845, #847, #848, #849, #850 et #851 (une seule version : ATAK natif 1.97.0, COMSPEC Link 2.0.87 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « STAMP » posée par tools/stamp_build.py puis remise à vide ; towers.pbo de #850 et comspec_overwatch_connect.pbo de #851 repris tels quels, seuls à changer ces sources).
+Regroupe #840, #841, #844, #845, #847, #848, #849, #850 et #851 (une seule version : ATAK natif 1.97.0, COMSPEC Link 2.0.87 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.18 b191c86 » posée par tools/stamp_build.py puis remise à vide ; towers.pbo de #850 et comspec_overwatch_connect.pbo de #851 repris tels quels, seuls à changer ces sources).
 
 #### Marqueurs au clic droit (VALIDER, à la suite, canal Général), fiche d'étiquette, alertes effaçables (#840)
 
