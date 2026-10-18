@@ -22,7 +22,10 @@ final class PlatformProductionStatusTest extends TestCase
         self::assertArrayHasKey('pack_label', $snap);
         self::assertArrayHasKey('codename', $snap);
         self::assertArrayHasKey('codename_label', $snap);
-        self::assertSame('Phoenix', $snap['codename']);
-        self::assertSame('Opération Phoenix', $snap['codename_label']);
+        self::assertSame('1.7.0', $snap['platform_version']);
+        self::assertSame('Denver', $snap['codename']);
+        self::assertSame('Denver', $snap['codename_label']);
+        self::assertMatchesRegularExpression('/^\d+\.\d+\.\d+$/', $snap['atak_version']);
+        self::assertMatchesRegularExpression('/^2\.0\.\d+$/', $snap['link_version']);
     }
 }

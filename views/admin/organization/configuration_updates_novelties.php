@@ -15,13 +15,14 @@ $prod = is_array($productionStatus ?? null) ? $productionStatus : [];
 $prodVersion = htmlspecialchars((string) ($prod['platform_version'] ?? ''), ENT_QUOTES, 'UTF-8');
 $prodWhen = htmlspecialchars((string) ($prod['deployed_at_label'] ?? 'Non renseignée'), ENT_QUOTES, 'UTF-8');
 $prodOverwatch = htmlspecialchars((string) ($prod['overwatch_version'] ?? ''), ENT_QUOTES, 'UTF-8');
-$prodAthena = htmlspecialchars((string) ($prod['athena_version'] ?? ''), ENT_QUOTES, 'UTF-8');
-$prodExt = htmlspecialchars((string) ($prod['extension_version'] ?? ''), ENT_QUOTES, 'UTF-8');
+$prodAtak = htmlspecialchars((string) ($prod['atak_version'] ?? ''), ENT_QUOTES, 'UTF-8');
+$prodLink = htmlspecialchars((string) ($prod['link_version'] ?? ($prod['extension_version'] ?? '')), ENT_QUOTES, 'UTF-8');
 $prodSha = htmlspecialchars((string) ($prod['git_sha'] ?? ''), ENT_QUOTES, 'UTF-8');
 $prodBulletin = htmlspecialchars((string) ($prod['bulletin_title'] ?? ''), ENT_QUOTES, 'UTF-8');
 $prodBulletinUrl = htmlspecialchars((string) ($prod['bulletin_url'] ?? ''), ENT_QUOTES, 'UTF-8');
 $prodCodename = htmlspecialchars((string) ($prod['codename'] ?? ''), ENT_QUOTES, 'UTF-8');
 $prodCodenameLabel = htmlspecialchars((string) ($prod['codename_label'] ?? ''), ENT_QUOTES, 'UTF-8');
+$prodCodenameState = htmlspecialchars((string) ($prod['codename_state'] ?? ''), ENT_QUOTES, 'UTF-8');
 ?>
 <div class="mx-auto max-w-2xl px-4 py-10 sm:px-6">
     <?php if ($prod !== []): ?>
@@ -37,7 +38,10 @@ $prodCodenameLabel = htmlspecialchars((string) ($prod['codename_label'] ?? ''), 
                             <span class="ml-1.5 inline-flex items-center rounded-md bg-emerald-900 px-2 py-0.5 text-xs font-bold tabular-nums text-emerald-50">v<?= $prodVersion ?></span>
                         <?php endif; ?>
                         <?php if ($prodCodenameLabel !== ''): ?>
-                            <span class="ml-1.5 inline-flex items-center rounded-md border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-xs font-bold tracking-wide text-emerald-900"><?= $prodCodenameLabel ?></span>
+                            <span class="ml-1.5 inline-flex items-center gap-1 rounded-md border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-xs font-bold tracking-wide text-emerald-900" title="Nom de la version<?= $prodCodenameState !== '' ? ' · ' . $prodCodenameState : '' ?>">
+                                <svg class="h-3 w-3 shrink-0" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5c0 3.2 4.5 8.5 4.5 8.5s4.5-5.3 4.5-8.5A4.5 4.5 0 0 0 8 1.5Zm0 6.2a1.7 1.7 0 1 1 0-3.4 1.7 1.7 0 0 1 0 3.4Z"/></svg>
+                                <?= $prodCodenameLabel ?>
+                            </span>
                         <?php endif; ?>
                     </p>
                     <p class="mt-1 text-sm text-slate-600">
@@ -56,19 +60,19 @@ $prodCodenameLabel = htmlspecialchars((string) ($prod['codename_label'] ?? ''), 
 
             <dl class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div class="rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-3">
-                    <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Overwatch</dt>
-                    <dd class="mt-1 text-base font-semibold tabular-nums text-slate-900"><?= $prodOverwatch !== '' ? $prodOverwatch : '—' ?></dd>
-                    <dd class="mt-0.5 text-[11px] text-slate-500">Pack jeu</dd>
+                    <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500">COMSPEC ATAK</dt>
+                    <dd class="mt-1 text-base font-semibold tabular-nums text-slate-900"><?= $prodAtak !== '' ? $prodAtak : '—' ?></dd>
+                    <dd class="mt-0.5 text-[11px] text-slate-500">Téléphone en jeu</dd>
                 </div>
                 <div class="rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-3">
-                    <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Athena (téléphone)</dt>
-                    <dd class="mt-1 text-base font-semibold tabular-nums text-slate-900"><?= $prodAthena !== '' ? $prodAthena : '—' ?></dd>
-                    <dd class="mt-0.5 text-[11px] text-slate-500">Module ATAK</dd>
-                </div>
-                <div class="rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-3">
-                    <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Extension</dt>
-                    <dd class="mt-1 text-base font-semibold tabular-nums text-slate-900"><?= $prodExt !== '' ? $prodExt : '—' ?></dd>
+                    <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500">COMSPEC Link</dt>
+                    <dd class="mt-1 text-base font-semibold tabular-nums text-slate-900"><?= $prodLink !== '' ? $prodLink : '—' ?></dd>
                     <dd class="mt-0.5 text-[11px] text-slate-500">Liaison Arma</dd>
+                </div>
+                <div class="rounded-xl border border-slate-200/90 bg-white/90 px-3.5 py-3">
+                    <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500">COMSPEC Overwatch</dt>
+                    <dd class="mt-1 text-base font-semibold tabular-nums text-slate-900"><?= $prodOverwatch !== '' ? $prodOverwatch : '—' ?></dd>
+                    <dd class="mt-0.5 text-[11px] text-slate-500">Poste de commandement</dd>
                 </div>
             </dl>
 
