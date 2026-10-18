@@ -10910,9 +10910,8 @@
 ["Un relevé local est encore en cours. Réessayez dans un instant.", "A local survey is still in progress. Try again in a moment."],
 ["un saut en 7 jours", "one jump in 7 days"],
 ["Un seul module pour toute la mission. Sans module : modèle Standard.", "One module for the whole mission. Without a module: Standard template."],
-["Un type coupé reste visible dans le centre de notifications", "A muted type stays visible in the notification centre"],
-
 ["Un son sort du haut-parleur ; un fichier, une donnée ou une fiche est rangé sur le téléphone", "A sound plays from the speaker; a file, data or sheet is stored on the phone"],
+["Un type coupé reste visible dans le centre de notifications", "A muted type stays visible in the notification centre"],
 ["Un téléphone allumé de nuit éclaire son porteur et se voit de loin (encore plus aux JVN). Mode nuit, véhicule et filtre d'écran JVN la réduisent.", "A phone turned on at night lights up its carrier and is visible from afar (even more with NVGs). Night mode, vehicle and NVG screen filter reduce it."],
 ["Un téléphone laissé sur un socle se charge aussi pendant que le serveur est éteint (temps réel écoulé).", "A phone left on a dock also charges while the server is off (real time elapsed)."],
 ["Un téléphone qui réagit : mouvement, clic et vibration légère", "A phone that reacts: motion, click and light vibration"],
