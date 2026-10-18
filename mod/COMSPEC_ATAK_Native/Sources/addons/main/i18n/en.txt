@@ -1173,6 +1173,7 @@
 ["Appels : %1", "Calls: %1"],
 ["Appels du pilote (radio)", "Pilot calls (radio)"],
 ["Appels envoyés", "Calls sent"],
+["Application en chantier (W.I.P), bientôt disponible", "App under construction (W.I.P), coming soon"],
 ["Applications ATAK / Overwatch", "ATAK / Overwatch applications"],
 ["Applique le dataset FALCON autour de vous (ou un brief par défaut)", "Applies the FALCON dataset around you (or a default brief)"],
 ["Applique un dataset narratif (ex. FALCON) autour du module et règle le niveau de révélation : ce que les joueurs peuvent apprendre.", "Applies a narrative dataset (e.g. FALCON) around the module and sets the reveal level: what players can learn."],
