@@ -1,0 +1,19 @@
+/**
+ * Back-office — Métriques joueurs (préfixe pm-, sur la base aksq- des pages ATAK).
+ */
+.pm__grid { display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr)); }
+.pm__grid > * { min-width: 0; }
+.pm__note { margin: 0.2rem 0 0; }
+.pm__watch { margin-top: 0; }
+.pm__member { display: block; color: inherit; text-decoration: none; }
+.pm__member:hover strong, .pm__member:focus-visible strong { color: var(--aksq-accent); text-decoration: underline; }
+.pm__member:focus-visible { outline: 2px solid var(--aksq-accent); outline-offset: 2px; border-radius: 0.25rem; }
+.pm__member + .aksq__chip { margin-top: 0.3rem; }
+.pm__sub { display: block; font-size: 0.72rem; }
+.pm__table td { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pm__table tbody tr:hover { background: var(--aksq-accent-soft); }
+@media (max-width: 640px) {
+  .pm__table thead th:nth-child(3), .pm__table tbody tr > :nth-child(3),
+  .pm__table thead th:nth-child(5), .pm__table tbody tr > :nth-child(5),
+  .pm__table thead th:nth-child(8), .pm__table tbody tr > :nth-child(8) { display: none; }
+}

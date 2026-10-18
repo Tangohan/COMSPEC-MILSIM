@@ -242,6 +242,89 @@ class AtakDistanceRepository
     }
 
     /**
+     * Distances de chaque membre sur la période (page Métriques joueurs) : cumul des sessions jouées depuis $days jours
+     * (0 = depuis le début), indexé par membre.
+     *
+     * @return array<int, array{user_id: int, display_name: string, callsign: string, totals: array<string, int>, total_m: int, sessions: int, last_day: string}>
+     */
+    public function summaryByUser(int $tenantId, int $days): array
+    {
+        if ($tenantId < 1 || !$this->schemaReady()) {
+            return [];
+        }
+        $where = 'd.tenant_id = ?';
+        $args = [$tenantId];
+        if ($days > 0) {
+            $where .= ' AND d.day >= (CURRENT_DATE - INTERVAL ? DAY)';
+            $args[] = $days - 1;
+        }
+        $cols = array_keys(self::COUNTERS);
+        $st = $this->pdo()->prepare(
+            'SELECT d.user_id, MAX(u.display_name) AS display_name, MAX(u.callsign) AS callsign, COUNT(*) AS sessions, MAX(d.day) AS last_day, '
+            . implode(', ', array_map(static fn (string $k): string => "COALESCE(SUM(d.{$k}), 0) AS {$k}", $cols))
+            . " FROM atak_distance_stats d LEFT JOIN users u ON u.id = d.user_id WHERE {$where} GROUP BY d.user_id"
+        );
+        $st->execute($args);
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $uid = (int) $r['user_id'];
+            $sum = self::buildSummary($r, []);
+            $out[$uid] = [
+                'user_id' => $uid,
+                'display_name' => (string) ($r['display_name'] ?? ''),
+                'callsign' => (string) ($r['callsign'] ?? ''),
+                'totals' => $sum['totals'],
+                'total_m' => $sum['total_m'],
+                'sessions' => $sum['sessions'],
+                'last_day' => $sum['last_day'],
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * Heures de pilote de la communauté (cumul depuis le début : la table ne garde pas le jour du vol) : secondes par
+     * membre, et par type d'appareil avec le nombre de pilotes.
+     *
+     * @return array{by_user: array<int, int>, families: list<array{key: string, label: string, kind: string, seconds: int, meters: int, variants: list<string>, last_flown_at: string, pilots: int}>}
+     */
+    public function pilotTotals(int $tenantId): array
+    {
+        if ($tenantId < 1 || !$this->schemaReady()) {
+            return ['by_user' => [], 'families' => []];
+        }
+        $st = $this->pdo()->prepare(
+            'SELECT user_id, vehicle_class, vehicle_label, vehicle_kind, seconds, meters, last_flown_at FROM atak_pilot_time WHERE tenant_id = ?'
+        );
+        $st->execute([$tenantId]);
+
+        return self::pilotTotalsFromRows($st->fetchAll(PDO::FETCH_ASSOC) ?: []);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $rows lignes de atak_pilot_time (avec user_id)
+     * @return array{by_user: array<int, int>, families: list<array{key: string, label: string, kind: string, seconds: int, meters: int, variants: list<string>, last_flown_at: string, pilots: int}>}
+     */
+    public static function pilotTotalsFromRows(array $rows): array
+    {
+        $byUser = [];
+        $pilots = [];
+        foreach ($rows as $row) {
+            $uid = (int) ($row['user_id'] ?? 0);
+            $byUser[$uid] = ($byUser[$uid] ?? 0) + (int) ($row['seconds'] ?? 0);
+            $fam = self::aircraftFamily((string) ($row['vehicle_class'] ?? ''), (string) ($row['vehicle_label'] ?? ''));
+            $pilots[$fam['key']][$uid] = true;
+        }
+        $families = array_map(
+            static fn (array $g): array => $g + ['pilots' => count($pilots[$g['key']] ?? [])],
+            self::groupPilot($rows)
+        );
+
+        return ['by_user' => $byUser, 'families' => $families];
+    }
+
+    /**
      * @param array<string, mixed> $r ligne SUM(...) de atak_distance_stats
      * @param list<array{key: string, label: string, kind: string, seconds: int, meters: int, variants: list<string>, last_flown_at: string}> $pilot
      * @return array{totals: array<string, int>, total_m: int, sessions: int, foot_sessions: int, avg_foot_s: int, last_day: string, pilot: list<array{key: string, label: string, kind: string, seconds: int, meters: int, variants: list<string>, last_flown_at: string}>}

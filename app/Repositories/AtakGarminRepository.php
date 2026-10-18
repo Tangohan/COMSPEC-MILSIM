@@ -233,6 +233,58 @@ class AtakGarminRepository
     }
 
     /**
+     * Montres des membres sur la période (page Métriques joueurs) : jours reçus depuis $days jours (0 = tout), pas,
+     * distance à pied, courses, sommeil moyen, et le dernier état envoyé (Body Battery, synchro). Indexé par membre.
+     *
+     * @return array<int, array{user_id: int, display_name: string, callsign: string, days: int, steps: int, foot_m: int, run_n: int, run_m: int, avg_steps: int, avg_sleep_s: int, body_battery: int, synced_at: string}>
+     */
+    public function summaryByUser(int $tenantId, int $days): array
+    {
+        if ($tenantId < 1 || !$this->schemaReady()) {
+            return [];
+        }
+        $join = 'd.tenant_id = s.tenant_id AND d.user_id = s.user_id';
+        $args = [];
+        if ($days > 0) {
+            $join .= ' AND d.day >= (CURRENT_DATE - INTERVAL ? DAY)';
+            $args[] = $days - 1;
+        }
+        $args[] = $tenantId;
+        $st = $this->pdo()->prepare(
+            "SELECT s.user_id, MAX(u.display_name) AS display_name, MAX(u.callsign) AS callsign, MAX(s.body_battery) AS body_battery,
+                    MAX(s.synced_at) AS synced_at, COUNT(d.day) AS days, COALESCE(SUM(d.steps), 0) AS steps, COALESCE(SUM(d.foot_m), 0) AS foot_m,
+                    COALESCE(SUM(d.run_n), 0) AS run_n, COALESCE(SUM(d.run_m), 0) AS run_m, COALESCE(SUM(d.sleep_s), 0) AS sleep_s
+             FROM atak_garmin_status s
+             LEFT JOIN atak_garmin_days d ON {$join}
+             LEFT JOIN users u ON u.id = s.user_id
+             WHERE s.tenant_id = ?
+             GROUP BY s.user_id"
+        );
+        $st->execute($args);
+        $out = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) ?: [] as $r) {
+            $uid = (int) $r['user_id'];
+            $n = (int) $r['days'];
+            $out[$uid] = [
+                'user_id' => $uid,
+                'display_name' => (string) ($r['display_name'] ?? ''),
+                'callsign' => (string) ($r['callsign'] ?? ''),
+                'days' => $n,
+                'steps' => (int) $r['steps'],
+                'foot_m' => (int) $r['foot_m'],
+                'run_n' => (int) $r['run_n'],
+                'run_m' => (int) $r['run_m'],
+                'avg_steps' => $n > 0 ? (int) round((int) $r['steps'] / $n) : 0,
+                'avg_sleep_s' => $n > 0 ? (int) round((int) $r['sleep_s'] / $n) : 0,
+                'body_battery' => (int) ($r['body_battery'] ?? 0),
+                'synced_at' => (string) ($r['synced_at'] ?? ''),
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * @param array<string, mixed> $status
      * @param list<array<string, mixed>> $week jours du plus récent au plus ancien
      * @param array<string, mixed> $totals

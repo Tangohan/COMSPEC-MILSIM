@@ -32,6 +32,7 @@ $athIcoPaths = [
     'mail' => 'M3 6h18v12H3zM3 7l9 6 9-6',
     'roleplay' => 'M12 3c3 0 5 2 5 5 0 2-1 3.5-2.5 4.5L12 21l-2.5-8.5C8 11.5 7 10 7 8c0-3 2-5 5-5z',
     'coop' => 'M8 12h8M10 8l-4 4 4 4M14 8l4 4-4 4M5 5h14v14H5z',
+    'pulse' => 'M3 12h4l3-8 4 16 3-8h4',
 ];
 
 $athIco = static function (string $key) use ($athIcoPaths, $h): string {
@@ -131,6 +132,14 @@ $recruitChildren = [
     ['label' => 'Offres publiées', 'href' => url('back-office/recruitment/offers'), 'active' => $navAt('back-office/recruitment/offers')],
     ['label' => 'Invitations', 'href' => url('back-office/invitations'), 'active' => $navAt('back-office/invitations')],
     ['label' => 'Statistiques', 'href' => url('back-office/ressources/recrutement/analyses'), 'active' => $navAt('back-office/ressources/recrutement/analyses')],
+];
+
+// Métriques joueurs : ce que le jeu remonte (temps d'écran, distances, heures de vol, montre Garmin).
+$metricsChildren = [
+    ['label' => 'Vue d’ensemble', 'href' => url('back-office/metriques-joueurs'), 'active' => $navAt('back-office/metriques-joueurs')],
+    ['label' => 'Temps d’écran et rôles', 'href' => url('back-office/atak/temps-ecran'), 'active' => $navAt('back-office/atak/temps-ecran')],
+    ['label' => 'Heures de jeu (tableur)', 'href' => url('back-office/atak/heures'), 'active' => $navAt('back-office/atak/heures')],
+    ['label' => 'Escouades en jeu', 'href' => url('back-office/atak/escouades'), 'active' => $navAt('back-office/atak/escouades')],
 ];
 
 $rhChildren = [
@@ -428,6 +437,13 @@ if ($isOperatorBoNav) {
                     'icon' => 'users',
                     'active' => $anyActive($membersChildren),
                     'children' => $membersChildren,
+                ],
+                [
+                    'label' => 'Métriques joueurs',
+                    'href' => url('back-office/metriques-joueurs'),
+                    'icon' => 'pulse',
+                    'active' => $anyActive($metricsChildren),
+                    'children' => $metricsChildren,
                 ],
                 [
                     'label' => 'Recrutement',
