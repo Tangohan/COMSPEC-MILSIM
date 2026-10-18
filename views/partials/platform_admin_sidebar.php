@@ -96,6 +96,7 @@ $platformNav = [
     ]],
     ['key' => 'communication', 'label' => 'Communication', 'items' => [
         ['path' => 'admin/system/alerts', 'label' => 'Alertes plateforme', 'icon' => 'megaphone', 'access' => 'hub', 'desc' => 'Bandeaux et annonces sur le portail'],
+        ['path' => 'admin/system/e-mails', 'label' => 'Envois d’e-mails', 'icon' => 'mail', 'access' => 'system', 'desc' => 'Quota quotidien, alertes regroupées, volume par type'],
         ['path' => 'admin/newsletter', 'label' => 'Lettre d’information', 'icon' => 'mail', 'access' => 'system', 'desc' => 'Inscrits depuis la page d’accueil'],
         ['path' => 'admin/system/brief', 'label' => 'Brief membres', 'icon' => 'book', 'access' => 'system', 'desc' => 'Message de bienvenue des membres'],
         ['path' => 'admin/system/cooperation/catalog', 'label' => 'Types de coopération', 'icon' => 'coop', 'access' => 'system', 'desc' => 'Catalogue des coopérations entre unités'],

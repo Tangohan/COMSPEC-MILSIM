@@ -145,6 +145,9 @@ final class EmailEvents
     /** E-mail automatique au joueur dont le jeu se voit refuser l'accès par Athena (rapport auto « unauthorized »). */
     public const ATAK_PLAYER_ACCESS_REFUSED = 'ATAK_PLAYER_ACCESS_REFUSED';
 
+    /** Récapitulatif des alertes d'exploitation regroupées (incidents, nouveaux comptes, signalements…). */
+    public const OPS_DIGEST = 'OPS_DIGEST';
+
     /** Nouvelle communauté créée — alerte à la boîte technique des incidents. */
     public const PLATFORM_NEW_COMMUNITY = 'PLATFORM_NEW_COMMUNITY';
 
