@@ -24,7 +24,9 @@ final class AtakRelayModuleTest extends TestCase
         $pre = $this->read(self::MAIN . '/XEH_preInit.sqf');
         self::assertMatchesRegularExpression('/\["comspec_atak_native_vehicle_gateways", "CHECKBOX",.*?_sim, false, 1\]/s', $pre);
         $gw = $this->read(self::MAIN . '/functions/vehicle/fn_vehicleGateway.sqf');
-        self::assertStringContainsString('private _on = missionNamespace getVariable ["comspec_atak_native_vehicle_gateways", false];', $gw);
+        // Lu par fn_netCond (site, menu Échap Conditions réseau, puis réglage CBA ci-dessus, défaut false).
+        self::assertStringContainsString('private _on = (["gateways"] call comspec_atak_native_fnc_netCond);', $gw);
+        self::assertStringContainsString('["gateways", "comspec_atak_native_vehicle_gateways", "net_gateways", "bool", false,', $this->read(self::MAIN . '/functions/network/fn_netCond.sqf'));
         self::assertStringContainsString('if (!_on || {!([_v] call _ok)}) exitWith { false };', $gw);
         self::assertStringContainsString('if (!_on) exitWith { [] };', $gw);
     }
