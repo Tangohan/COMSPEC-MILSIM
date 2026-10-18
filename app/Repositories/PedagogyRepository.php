@@ -318,4 +318,107 @@ final class PedagogyRepository
 
         return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
+
+    /** Étapes de la chaîne pédagogique où une personne peut être nommée directement. */
+    public const DESIGNATION_KINDS = ['design_trainer', 'delivery_instructor', 'instructor_certifier', 'trainer_certifier'];
+
+    public function designationsAvailable(): bool
+    {
+        return $this->hasTable('training_pedagogy_designations');
+    }
+
+    /**
+     * Membres nommés (actifs ou non) à une étape, avec qui les a nommés.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listDesignations(int $tenantId, string $kind): array
+    {
+        if (!in_array($kind, self::DESIGNATION_KINDS, true) || !$this->designationsAvailable()) {
+            return [];
+        }
+        try {
+            $st = $this->pdo->prepare(
+                'SELECT tpd.id, tpd.user_id, tpd.pedagogy_kind, tpd.created_at, tpd.designated_by_user_id,
+                        u.display_name, u.callsign, u.email, u.status,
+                        b.display_name AS designated_by_name
+                 FROM training_pedagogy_designations tpd
+                 INNER JOIN users u ON u.id = tpd.user_id AND u.tenant_id = tpd.tenant_id
+                 LEFT JOIN users b ON b.id = tpd.designated_by_user_id
+                 WHERE tpd.tenant_id = ? AND tpd.pedagogy_kind = ?
+                 ORDER BY u.display_name ASC'
+            );
+            $st->execute([$tenantId, $kind]);
+
+            return $st->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (PDOException) {
+            return [];
+        }
+    }
+
+    /** Ajoute la nomination ; false si elle existait déjà. */
+    public function addDesignation(int $tenantId, int $userId, string $kind, ?int $actorUserId): bool
+    {
+        if (!in_array($kind, self::DESIGNATION_KINDS, true) || $tenantId < 1 || $userId < 1) {
+            return false;
+        }
+        $st = $this->pdo->prepare(
+            'INSERT IGNORE INTO training_pedagogy_designations (tenant_id, user_id, pedagogy_kind, designated_by_user_id, created_at)
+             VALUES (?, ?, ?, ?, NOW())'
+        );
+        $st->execute([$tenantId, $userId, $kind, $actorUserId !== null && $actorUserId > 0 ? $actorUserId : null]);
+
+        return $st->rowCount() > 0;
+    }
+
+    public function removeDesignation(int $tenantId, int $userId, string $kind): bool
+    {
+        if (!in_array($kind, self::DESIGNATION_KINDS, true) || !$this->designationsAvailable()) {
+            return false;
+        }
+        $st = $this->pdo->prepare('DELETE FROM training_pedagogy_designations WHERE tenant_id = ? AND user_id = ? AND pedagogy_kind = ?');
+        $st->execute([$tenantId, $userId, $kind]);
+
+        return $st->rowCount() > 0;
+    }
+
+    /** Membres actifs nommés à une étape. */
+    public function countDesignatedUsers(int $tenantId, string $kind): int
+    {
+        if (!in_array($kind, self::DESIGNATION_KINDS, true) || !$this->designationsAvailable()) {
+            return 0;
+        }
+        try {
+            $st = $this->pdo->prepare(
+                "SELECT COUNT(DISTINCT tpd.user_id) FROM training_pedagogy_designations tpd
+                 INNER JOIN users u ON u.id = tpd.user_id AND u.tenant_id = tpd.tenant_id AND u.status = 'active'
+                 WHERE tpd.tenant_id = ? AND tpd.pedagogy_kind = ?"
+            );
+            $st->execute([$tenantId, $kind]);
+
+            return (int) $st->fetchColumn();
+        } catch (PDOException) {
+            return 0;
+        }
+    }
+
+    /** @param list<string> $kinds */
+    public function userHasDesignation(int $tenantId, int $userId, array $kinds): bool
+    {
+        $kinds = array_values(array_intersect($kinds, self::DESIGNATION_KINDS));
+        if ($kinds === [] || $userId < 1 || !$this->designationsAvailable()) {
+            return false;
+        }
+        try {
+            $ph = implode(',', array_fill(0, count($kinds), '?'));
+            $st = $this->pdo->prepare(
+                "SELECT 1 FROM training_pedagogy_designations WHERE tenant_id = ? AND user_id = ? AND pedagogy_kind IN ($ph) LIMIT 1"
+            );
+            $st->execute(array_merge([$tenantId, $userId], $kinds));
+
+            return (bool) $st->fetchColumn();
+        } catch (PDOException) {
+            return false;
+        }
+    }
 }

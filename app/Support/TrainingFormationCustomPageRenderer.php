@@ -51,7 +51,10 @@ final class TrainingFormationCustomPageRenderer
         $titleEsc = htmlspecialchars($title, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $sections = self::decodeSections(isset($row['sections_json']) ? (string) $row['sections_json'] : null);
         $introHtml = (string) ($row['intro_html'] ?? '');
-        $intro = trim($introHtml !== '' ? $introHtml : (string) ($row['html_body'] ?? ''));
+        $intro = self::expandEmbeds(trim($introHtml !== '' ? $introHtml : (string) ($row['html_body'] ?? '')));
+        foreach ($sections as $si => $sec) {
+            $sections[$si]['html'] = self::expandEmbeds((string) $sec['html']);
+        }
         $cssHref = $base . '/assets/css/training_formation_doc.css';
         $catalogueUrl = $base . '/formations';
 
@@ -100,6 +103,52 @@ final class TrainingFormationCustomPageRenderer
         }
 
         return self::wrapShell($titleEsc, $cssHref, $body, $chrome, $showProgress);
+    }
+
+    /**
+     * Bloc « lien affiché en visionneuse » stocké dans le corps HTML : il ne contient qu’un lien,
+     * donc il passe HtmlContentSanitizer ; la visionneuse (iframe) est ajoutée au rendu par expandEmbeds().
+     */
+    public static function embedSnippet(string $url, string $label = ''): string
+    {
+        $label = trim($label);
+        if ($label === '') {
+            $label = 'Ouvrir le document';
+        }
+
+        return '<div class="athena-embed"><a class="athena-embed__link" href="'
+            . htmlspecialchars(trim($url), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '">'
+            . htmlspecialchars(mb_substr($label, 0, 120), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '</a></div>';
+    }
+
+    /** Ajoute la visionneuse devant chaque lien « athena-embed » (Google Docs / Sheets / Slides, draw.io, PDF…). */
+    public static function expandEmbeds(string $html): string
+    {
+        if (!str_contains($html, 'athena-embed__link')) {
+            return $html;
+        }
+        $out = preg_replace_callback(
+            '/<a\b[^>]*class="athena-embed__link"[^>]*>/i',
+            static function (array $m): string {
+                if (preg_match('/\bhref="([^"]*)"/i', $m[0], $h) !== 1) {
+                    return $m[0];
+                }
+                $url = html_entity_decode($h[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                if (!preg_match('#^https://#i', $url)) {
+                    return $m[0];
+                }
+                $src = function_exists('training_url_viewer_embed_src') ? training_url_viewer_embed_src($url) : null;
+                $src ??= $url;
+                $frame = '<div class="athena-embed__frame"><iframe src="' . htmlspecialchars($src, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                    . '" title="Document intégré" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
+                $tag = preg_replace('/>$/', ' target="_blank" rel="noopener noreferrer">', $m[0]) ?? $m[0];
+
+                return $frame . $tag;
+            },
+            $html
+        );
+
+        return $out ?? $html;
     }
 
     private static function renderSingleFragment(

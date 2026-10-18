@@ -586,6 +586,21 @@ class TrainingController
         $canAccessLearning = $userId && $enrollment
             ? $this->trainingService->canAccessCourse((int) $userId, $courseId, $tenantId)
             : false;
+        // Formation « lien » : un apprenant qui a accès (ou le staff) est envoyé directement vers l’adresse
+        // ou la visionneuse. ?fiche=1 garde la fiche (inscription, avis, attestation).
+        $courseDelivery = function_exists('training_course_delivery') ? training_course_delivery($course) : null;
+        if ($courseDelivery !== null && $userId && (string) $request->query('fiche', '') !== '1') {
+            $deliveryGate = Gate::getInstance();
+            $deliveryStaff = $deliveryGate->allows('training.manage')
+                || $deliveryGate->allows('training.update')
+                || $deliveryGate->allows('training.publish')
+                || $deliveryGate->allows('admin.organization')
+                || $deliveryGate->allows('admin.access')
+                || $deliveryGate->allows('admin.system');
+            if (($enrollment && $canAccessLearning) || $deliveryStaff) {
+                return $this->openCourseDelivery($course, $courseDelivery, $tenantId, (int) $userId);
+            }
+        }
         $canWithdrawEnrollment = false;
         if ($userId && $enrollment && training_enrollment_can_withdraw_by_member($enrollment)) {
             $canWithdrawEnrollment = $this->certificateService->getByEnrollment((int) $enrollment['id']) === null;
@@ -693,6 +708,7 @@ class TrainingController
                 || $gate->allows('admin.access')
                 || $gate->allows('admin.system'),
             'lmsPassedQuizIds' => $lmsPassedQuizIds,
+            'courseDelivery' => $courseDelivery,
             'analyticsBeacon' => [
                 'tenantId' => $tenantId,
                 'category' => AnalyticsEventCategory::TRAINING,
@@ -701,6 +717,47 @@ class TrainingController
                 'subjectId' => $courseId,
             ],
         ]);
+    }
+
+    /**
+     * Ouvre une formation « lien » : redirection (signée via /leave pour un site externe) ou visionneuse.
+     *
+     * @param array<string, mixed> $course
+     * @param array{mode: string, url: string} $delivery
+     */
+    private function openCourseDelivery(array $course, array $delivery, int $tenantId, int $userId): Response
+    {
+        $courseId = (int) ($course['id'] ?? 0);
+        $this->analyticsEventService->record(
+            $tenantId,
+            $userId,
+            AnalyticsEventCategory::TRAINING,
+            AnalyticsEventName::COURSE_VIEW,
+            AnalyticsSubjectType::TRAINING_COURSE,
+            $courseId,
+            null,
+            null
+        );
+        $url = $delivery['url'];
+        if ($delivery['mode'] === 'url_viewer') {
+            return Response::view('training.course_url_viewer', [
+                'title' => (string) ($course['title'] ?? 'Formation'),
+                'course' => $course,
+                'deliveryUrl' => $url,
+            ]);
+        }
+        if (str_starts_with($url, '/')) {
+            return Response::redirect($url);
+        }
+        $href = training_lms_resource_external_href($url);
+        if ($href === null) {
+            Session::flash('error', 'Le lien de cette formation n’est pas utilisable. Prévenez le formateur.');
+            $slug = trim((string) ($course['slug'] ?? ''));
+
+            return Response::redirect($slug !== '' ? url('formations/' . rawurlencode($slug)) . '?fiche=1' : url('formations'));
+        }
+
+        return Response::redirect($href);
     }
 
     public function postWithdrawEnrollment(Request $request, array $params = []): Response

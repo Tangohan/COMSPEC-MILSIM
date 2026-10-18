@@ -701,3 +701,24 @@
     transition: none;
   }
 }
+
+/* Visionneuse d’adresse web (Docs, Sheets, Slides, Drawings, draw.io, PDF…) — partials/url_viewer.php */
+.lms-url-viewer { border: 1px solid #e2e8f0; border-radius: 14px; background: #fff; overflow: hidden; }
+.lms-url-viewer + .lms-url-viewer { margin-top: 1rem; }
+.lms-url-viewer__bar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; padding: .65rem .9rem; border-bottom: 1px solid #e2e8f0; background: #f8fafc; }
+.lms-url-viewer__provider { font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #0f766e; }
+.lms-url-viewer__title { font-size: .875rem; font-weight: 600; color: #0f172a; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 12rem; }
+.lms-url-viewer__open { margin-left: auto; font-size: .8rem; font-weight: 700; color: #047857; text-decoration: none; white-space: nowrap; }
+.lms-url-viewer__open:hover { text-decoration: underline; }
+.lms-url-viewer__frame { position: relative; width: 100%; height: min(78vh, 760px); background: #f1f5f9; }
+.lms-url-viewer--compact .lms-url-viewer__frame { height: min(60vh, 520px); }
+.lms-url-viewer__frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.lms-url-viewer__hint { margin: 0; padding: .5rem .9rem .65rem; font-size: .75rem; color: #64748b; }
+.lms-lesson-annexes { margin-top: 1.25rem; border-top: 1px solid #e2e8f0; padding-top: 1rem; }
+.lms-lesson-annexes__head { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .6rem; }
+.lms-lesson-annexes__head h3 { margin: 0; font-size: .95rem; font-weight: 700; color: #0f172a; }
+.lms-lesson-annexes__head span { font-size: .75rem; color: #64748b; }
+.lms-lesson-annexes__file { display: flex; align-items: center; gap: .75rem; padding: .65rem .85rem; border: 1px solid #e2e8f0; border-radius: 12px; background: #f8fafc; text-decoration: none; color: #0f172a; }
+.lms-lesson-annexes__file:hover { border-color: #10b981; background: #ecfdf5; }
+.lms-lesson-annexes__kind { font-size: .65rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #047857; background: #d1fae5; border-radius: 6px; padding: .15rem .4rem; }
+.lms-lesson-annexes__name { font-weight: 600; font-size: .9rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
