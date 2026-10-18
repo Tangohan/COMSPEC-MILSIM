@@ -379,6 +379,7 @@ if (_interactive) then {
             _fl ctrlSetFontHeight ((_lfs) max COMSPEC_ATAK_FontMin);
             _fl ctrlSetTextColor [0.80, 0.86, 0.82, 1];
             private _styles = [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"]];
+            if ((["info"] call comspec_atak_native_fnc_photoMap) isNotEqualTo []) then { _styles pushBack ["PHOTO", "PHOTO"]; };
             private _cw = (_sw - _flw - _gap * ((count _styles) - 1)) / (count _styles);
             {
                 _x params ["_t", "_k"];

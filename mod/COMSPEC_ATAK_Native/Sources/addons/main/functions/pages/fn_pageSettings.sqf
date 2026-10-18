@@ -235,7 +235,7 @@ private _map = [
     ["section", "Lisibilité et fond", "Taille des textes et symboles de la carte, fond de carte"],
     ["COMSPEC_ATAK_MapTextScale", 1.25, "Textes de la carte", [["PETIT", 1], ["NORMAL", 1.25], ["GRAND", 1.5], ["TRÈS GRAND", 1.8]], "Indicatifs, numéros de grille, cartouches, panneaux d'info"] call _profSegment,
     ["COMSPEC_ATAK_MapIconScale", 1.25, "Symboles de la carte", [["PETIT", 1], ["NORMAL", 1.25], ["GRAND", 1.5], ["TRÈS GRAND", 1.8]], "Unités, repères, charges, points de passage"] call _profSegment,
-    ["COMSPEC_ATAK_MapStyle", [] call comspec_atak_native_fnc_mapStyle, "Fond de carte", [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"]], "Topographique Arma, éclairci, assombri ou bleu nuit (aussi dans CALQUES)"] call _profSegment
+    ["COMSPEC_ATAK_MapStyle", [] call comspec_atak_native_fnc_mapStyle, "Fond de carte", [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"]] + ([[], [["PHOTO", "PHOTO"]]] select ((["info"] call comspec_atak_native_fnc_photoMap) isNotEqualTo [])), "Topographique Arma, éclairci, assombri, bleu nuit ou photo capturée de la carte (mod COMSPEC ATAK Photo ; aussi dans CALQUES)"] call _profSegment
 ];
 private _alerts = [
     ["COMSPEC_ATAK_Notifications", true, "", "Bandeaux de notification", "Messages du poste, missions de tir, photos"] call _profSwitch,

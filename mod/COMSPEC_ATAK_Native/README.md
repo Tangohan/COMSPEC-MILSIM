@@ -58,6 +58,17 @@ Identités livrées :
 - Événement CBA global en fin de téléchargement : `comspec_atak_native_dataDownloaded` `[objet, joueur, noms des fichiers]`.
 - Réglages serveur **COMSPEC > ATAK · Extraction de données** : câble DL-7 obligatoire (objet « Câble de données DL-7 »), longueur du câble, vitesse des transferts.
 
+## Capture de la carte (fond photo à niveaux de détail)
+
+Comme Plans ou Google Maps : une vue satellite de toute la carte, bâtiments et arbres compris, de plus en plus fine quand on zoome.
+
+1. **En jeu** (solo ou éditeur, Zeus avec ZEN) : module **COMSPEC ATAK > Capture de la carte**, rendu « Satellite », plusieurs hauteurs (ex. `1200` pour toute la carte puis `400` autour d'une ville). Ou console : `["start", ["sat", [1200], [], 0]] call comspec_atak_native_fnc_mapCapture;` (carte entière) puis `["start", ["sat", [400], getPosATL player, 1500]] call comspec_atak_native_fnc_mapCapture;`. Ciel dégagé à midi et unités cachées par défaut, Échap arrête. Avant une grande carte, relever `maxScreenShotFolderSizeMB` dans `Documents\Arma 3\Arma3.cfg` (une image pèse 3 à 5 Mo ; Altis à 1200 m : environ 800 images, 3 Go).
+2. **Assemblage** (Python, `pip install pillow numpy`) : `python tools/map_stitch.py "%USERPROFILE%\Documents\Arma 3\Screenshots" sortie --pyramid --no-mosaic`. Le journal Arma (`%LOCALAPPDATA%\Arma 3\*.rpt`, lignes `CMAPL` / `CMAPS`) sert à redresser chaque image sur le relief ; garder le RPT de la capture. Sortie : `sortie/<carte>_sat/meta.json` et `z/x/y.webp`.
+3. **Site** : ajouter `--upload https://athena.ttrd.fr/public --key <X_COMSPEC_KEY du .env>` ; le calque **Photo COMSPEC** apparaît dans les fonds de la carte ATAK web (`storage/map-photo/<carte>/sat`). Une zone capturée moins finement est découpée dans le niveau au-dessus, le zoom reste photo partout.
+4. **Téléphone** : ajouter `--addon mods` (HEMTT 1.15 ou plus dans le PATH ou la variable `HEMTT` pour des PAA, sinon JPG) : `mods/@COMSPEC_ATAK_Photo/addons/comspec_atak_photo_<carte>.pbo`, mod optionnel à charger avec `@COMSPEC_ATAK_Native`. Le fond **PHOTO** apparaît alors dans Réglages > Carte et CALQUES (`fn_photoMap`). Taille limitée par `--addon-max-tiles` (12000 tuiles, environ 250 Mo). Si les tuiles se chevauchent ou laissent des joints : `profileNamespace setVariable ["COMSPEC_ATAK_PhotoPx", 1.0]` (facteur de taille) puis le signaler.
+
+Rendus « 3D oblique » et « Plan » : mosaïque par hauteur (sans `--no-mosaic`) ; le plan entre aussi dans la pyramide (`<carte>_plan`, calque **Plan COMSPEC** du site).
+
 ## Ressources graphiques
 
 `tools/gen_assets.py` convertit la coque fournie (`tools/src/android_s7_ca.png`, portrait obtenu par rotation) et dessine les icônes (SVG → PNG → PAA). Il demande Pillow, CairoSVG et HEMTT :

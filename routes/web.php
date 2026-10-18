@@ -2275,6 +2275,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/startup-check', [\App\Controllers\Api\AtakStartupCheckController::class, 'store']);
     $router->get('/map-data/{world}/{z}/{x}/{file}', [\App\Controllers\Api\AtakMapDataController::class, 'tile']);
     $router->get('/api/atak/tiles', [\App\Controllers\Api\AtakMapDataController::class, 'proxy']);
+    // Fond « Photo COMSPEC » : capture de la carte du mod (tools/map_stitch.py --pyramid --upload, clé plateforme).
+    $router->get('/map-photo/{world}/{mode}/{z}/{x}/{file}', [\App\Controllers\Api\AtakMapPhotoController::class, 'tile']);
+    $router->post('/api/atak/map-photo/upload', [\App\Controllers\Api\AtakMapPhotoController::class, 'upload']);
     $tacticalApi = \App\Controllers\Api\AthenaTacticalApiController::class;
     $router->get('/api/athena/tactical/markers', [$tacticalApi, 'index']);
     $router->post('/api/athena/tactical/markers', [$tacticalApi, 'store']);
