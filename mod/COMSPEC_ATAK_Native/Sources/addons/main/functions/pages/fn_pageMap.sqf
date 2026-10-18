@@ -429,7 +429,8 @@ if (_interactive) then {
     // Consigne de l'outil actif
     private _mode = _s getOrDefault ["mapMode", "SELECT"];
     private _hintText = switch (_mode) do {
-        case "MARKER": { "MARQUEUR : clic pour poser" };
+        // MARQUEUR : la palette dit elle-même comment poser (clic gauche, ou clic droit puis VALIDER) et se ferme par ✕.
+        case "MARKER": { "" };
         case "MEASURE": { "MESURE : clic A puis B" };
         case "HOUSES": { "BÂTIMENTS : clic pour numéroter autour" };
         case "HEIGHT": { "HAUTEUR : clic pour relever l'altitude" };
@@ -477,35 +478,89 @@ if (_searchOpen) then {
 if (_interactive && {(count (_search getOrDefault ["hit", createHashMap])) > 0} && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
     private _cw = ((_mw * 0.5) max (_font * 11 / _ratio)) min (_mw - 2 * _pad);
     private _chh = _fs * 4.9;
-    private _selUp = [0, _fs * 4.6 + _pad] select ((_s getOrDefault ["selectedMarker", ""]) isNotEqualTo "");
+    // Fiche du marqueur sélectionné (plus bas) : la fiche du résultat passe au-dessus.
+    private _selUp = [0, _fs * 6.2 + _pad * 4] select ((_s getOrDefault ["selectedMarker", ""]) isNotEqualTo "");
     ["card", [_bx + (_mw - _cw) / 2, _by + _mh - _panH - _pad * 2 - _fs * 2 - _chh - _selUp, _cw, _chh]] call comspec_atak_native_fnc_mapSearch;
 } else {
     uiNamespace setVariable ["COMSPEC_ATAK_MapSearchCard", controlNull];
 };
-// Marqueur sélectionné : titre, description et actions (en main).
+// Marqueur sélectionné (clic gauche sur une étiquette) : fiche au-dessus du panneau curseur. Liseré et pastille de la
+// couleur du marqueur, titre, nature (alerte, joueur, mission), grille · distance · azimut, note, puis une rangée
+// d'actions qui ne chevauche jamais le texte : Y ALLER, CENTRER, MODIFIER (marqueur de joueur), SUPPRIMER / EFFACER.
 private _sel = _s getOrDefault ["selectedMarker", ""];
 if (_interactive && {_sel isNotEqualTo ""} && {(markerShape _sel) isNotEqualTo ""} && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
-    private _note = (missionNamespace getVariable ["COMSPEC_ATAK_MarkerNotes", createHashMap]) getOrDefault [_sel, ["", ""]];
-    private _pw = (_mw * 0.5) max (_font * 10 / _ratio) min (_mw - 2 * _pad);
+    private _note = ((missionNamespace getVariable ["COMSPEC_ATAK_MarkerNotes", createHashMap]) getOrDefault [_sel, ["", ""]]) select 0;
+    private _kind = [_sel] call comspec_atak_native_fnc_markerDeletable;
+    private _pw = ((_mw * 0.46) max (_font * 12 / _ratio)) min (_mw - 2 * _pad);
     private _px = _bx + (_mw - _pw) / 2;
-    private _ph = _fs * 4.6;
-    private _py = _by + _mh - _ph - _pad;
-    private _info = ["COMSPEC_RscMapPanel", [_px, _py, _pw, _ph]] call _mk;
-    _info ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#5cc76b'>%1</t>  <t color='#8a9a93' size='0.85'>%2</t><br/><t size='0.85'>%3</t>",
-        [markerText _sel, "(sans titre)"] select ((markerText _sel) isEqualTo ""), [getMarkerPos _sel] call comspec_atak_native_fnc_gridRef,
-        [_note select 0, "Double clic : modifier · Suppr : effacer"] select ((_note select 0) isEqualTo "")]) call comspec_atak_native_fnc_tr);
-    private _own = (_sel find "_USER_DEFINED") isEqualTo 0;
-    private _go = ["COMSPEC_RscButtonPrimary", [_px + _pw - _pad - _fs * 5 / _ratio * 0.6, _py + _pad / 2, _fs * 5 / _ratio * 0.6, _fs * 1.4], "Y ALLER"] call _mk;
-    _go ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
-    _go ctrlAddEventHandler ["ButtonClick", { private _m = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]; private _p = getMarkerPos _m; [[_p select 0, _p select 1, 0], [markerText _m, "Marqueur"] select ((markerText _m) isEqualTo "")] spawn comspec_atak_native_fnc_routeCompute; }];
-    if (_own) then {
-        private _bw2 = (_pw - _pad * 3) / 2;
-        private _b1 = ["COMSPEC_RscButton", [_px + _pad, _py + _ph - _fs * 1.6 - _pad / 2, _bw2, _fs * 1.5], "MODIFIER"] call _mk;
-        _b1 ctrlSetFontHeight _fs;
-        _b1 ctrlAddEventHandler ["ButtonClick", { [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]] call comspec_atak_native_fnc_markerEditOpen; }];
-        private _b2 = ["COMSPEC_RscButton", [_px + _pad * 2 + _bw2, _py + _ph - _fs * 1.6 - _pad / 2, _bw2, _fs * 1.5], "SUPPRIMER"] call _mk;
-        _b2 ctrlSetFontHeight _fs;
-        _b2 ctrlAddEventHandler ["ButtonClick", { [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]] call comspec_atak_native_fnc_markerDelete; }];
+    private _lineH = _fs * 1.05;
+    private _btnH = _fs * 1.5;
+    private _in = _pad * 0.8;
+    private _ph = _in + _fs * 1.3 + _lineH + ([0, _lineH] select (_note isNotEqualTo "")) + _in * 0.6 + _btnH + _in;
+    private _py = _by + _mh - _panH - _pad * 2 - _ph;
+    // Couleur du marqueur (CfgMarkerColors), claire par défaut (marqueur sans couleur ou noir sur fond sombre).
+    private _rgba = (getArray (configFile >> "CfgMarkerColors" >> (markerColor _sel) >> "color")) apply { if (_x isEqualType "") then { call compile _x } else { _x } };
+    if ((count _rgba) isNotEqualTo 4 || {((_rgba select 0) + (_rgba select 1) + (_rgba select 2)) < 0.3}) then { _rgba = [0.86, 0.91, 0.88, 1]; };
+    _rgba = [_rgba select 0, _rgba select 1, _rgba select 2, 1];
+    { private _o = ["COMSPEC_RscText", [_px + pixelW * _x, _py + pixelH * _x, _pw, _ph]] call _mk; _o ctrlSetBackgroundColor [0, 0, 0, 0.22]; } forEach [2, 4];
+    private _brd = ["COMSPEC_RscText", [_px - pixelW, _py - pixelH, _pw + pixelW * 2, _ph + pixelH * 2]] call _mk;
+    _brd ctrlSetBackgroundColor [0.30, 0.36, 0.32, 0.9];
+    private _cbg = ["COMSPEC_RscText", [_px, _py, _pw, _ph]] call _mk;
+    _cbg ctrlSetBackgroundColor [0.035, 0.042, 0.038, 0.97];
+    private _edge = ["COMSPEC_RscText", [_px, _py, pixelW * 4, _ph]] call _mk;
+    _edge ctrlSetBackgroundColor _rgba;
+    // Pastille : l'icône du marqueur dans sa couleur.
+    private _tH = _fs * 1.3 + _lineH;
+    private _tW = _tH / _ratio;
+    private _tx0 = _px + pixelW * 4 + _in / _ratio * 0.6;
+    private _chip = ["COMSPEC_RscText", [_tx0, _py + _in, _tW, _tH]] call _mk;
+    _chip ctrlSetBackgroundColor [_rgba select 0, _rgba select 1, _rgba select 2, 0.16];
+    private _ic = ["COMSPEC_RscIcon", [_tx0 + _tW * 0.15, _py + _in + _tH * 0.15, _tW * 0.7, _tH * 0.7], getText (configFile >> "CfgMarkers" >> (markerType _sel) >> "icon")] call _mk;
+    _ic ctrlSetTextColor _rgba;
+    // Fermer (en haut à droite).
+    private _cw = _fs * 1.2;
+    private _cx = _px + _pw - _cw / _ratio - _in / _ratio * 0.6;
+    private _cl = ["COMSPEC_RscIcon", [_cx, _py + _in, _cw / _ratio, _cw], "\z\comspec_atak_native\addons\main\data\ui_close.paa"] call _mk;
+    _cl ctrlSetTextColor [0.55, 0.62, 0.58, 1];
+    private _clb = ["COMSPEC_RscButtonOverlay", [_cx, _py + _in, _cw / _ratio, _cw]] call _mk;
+    _clb ctrlSetTooltip (("Fermer la fiche") call comspec_atak_native_fnc_tr);
+    _clb ctrlAddEventHandler ["ButtonClick", { (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["selectedMarker", ""]; [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }];
+    // Titre, nature, position ; note s'il y en a une.
+    private _mp = getMarkerPos _sel;
+    private _dd = player distance2D _mp;
+    private _kindTxt = ["MISSION", "JOUEUR", "ALERTE"] select _kind;
+    private _kindCol = ["#8a9a93", "#5cc76b", "#f2a33a"] select _kind;
+    private _txX = _tx0 + _tW + _in / _ratio * 0.6;
+    private _txt = ["COMSPEC_RscStructuredText", [_txX, _py + _in - _fs * 0.1, _cx - _txX - _in / _ratio * 0.4, _tH + ([0, _lineH] select (_note isNotEqualTo "")) + _fs * 0.2]] call _mk;
+    _txt ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='1.15' color='#e6efe9'>%1</t>  <t size='0.72' color='%2'>%3</t><br/><t font='EtelkaMonospacePro' size='0.82' color='#8a9a93'>%4 · %5 · %6°</t>%7",
+        ([markerText _sel, "(sans titre)"] select ((markerText _sel) isEqualTo "")) regexReplace ["[<>&]", ""], _kindCol, _kindTxt,
+        [_mp, 8] call comspec_atak_native_fnc_gridRef, [format ["%1 m", round _dd], format ["%1 km", (_dd / 1000) toFixed 1]] select (_dd >= 1000), round (player getDir _mp),
+        ["", format ["<br/><t size='0.85' color='#c9d3cd'>%1</t>", (_note regexReplace ["[<>&]", ""]) select [0, 90]]] select (_note isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+    _txt ctrlSetFontHeight _fs;
+    // Actions : une rangée en bas de la fiche.
+    private _acts = [
+        ["Y ALLER", "COMSPEC_RscButtonPrimary", { private _m = (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]; private _p = getMarkerPos _m; [[_p select 0, _p select 1, 0], [markerText _m, "Marqueur"] select ((markerText _m) isEqualTo "")] spawn comspec_atak_native_fnc_routeCompute; }],
+        ["CENTRER", "COMSPEC_RscButton", { private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; _s set ["mapFollow", false]; [getMarkerPos (_s getOrDefault ["selectedMarker", ""])] call comspec_atak_native_fnc_mapCenter; }]
+    ];
+    if (_kind isEqualTo 1) then {
+        _acts pushBack ["MODIFIER", "COMSPEC_RscButton", { [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]] call comspec_atak_native_fnc_markerEditOpen; }];
+    };
+    if (_kind > 0) then {
+        _acts pushBack [["", "SUPPRIMER", "EFFACER"] select _kind, "COMSPEC_RscButton", { [(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["selectedMarker", ""]] call comspec_atak_native_fnc_markerDelete; }];
+    };
+    private _ay = _py + _ph - _in - _btnH;
+    private _ax0 = _px + pixelW * 4 + _in / _ratio * 0.6;
+    private _aw = ((_px + _pw - _in / _ratio * 0.6) - _ax0 - _pad * 0.5 * ((count _acts) - 1)) / (count _acts);
+    {
+        _x params ["_lbl", "_cls", "_code"];
+        private _b = [_cls, [_ax0 + _forEachIndex * (_aw + _pad * 0.5), _ay, _aw, _btnH], _lbl] call _mk;
+        _b ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
+        _b ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);
+        if (_lbl in ["SUPPRIMER", "EFFACER"]) then { _b ctrlSetTextColor [0.95, 0.42, 0.36, 1]; };
+        _b ctrlAddEventHandler ["ButtonClick", _code];
+    } forEach _acts;
+    if (_kind > 0) then {
+        _txt ctrlSetTooltip ((["", "Double clic : modifier · Suppr : effacer", "Suppr : effacer cette alerte de la carte"] select _kind) call comspec_atak_native_fnc_tr);
     };
 };
 

@@ -413,6 +413,18 @@ if ((_state getOrDefault ["interactive",false]) && {_state getOrDefault ["mapDis
     _map drawIcon [_dot,_yellow,_c,10,10,0,format ["%1 m  %2°",round (player distance2D _c),round (player getDir _c)],2,0.03 * _ts,(COMSPEC_ATAK_FontSet select 1),"right"];
 };
 
+// Point de pose choisi d'un clic droit en mode MARQUEUR (fn_markerPlace) : aperçu du type choisi dans un anneau qui pulse.
+private _anchor = _state getOrDefault ["markerAnchor", []];
+if ((count _anchor) >= 2 && {(_state getOrDefault ["mapMode","SELECT"]) isEqualTo "MARKER"}) then {
+    private _ap = [_anchor select 0, _anchor select 1, 0];
+    private _pulse = 0.55 + 0.45 * (abs sin (diag_tickTime * 180));
+    private _ring = [0.36, 0.78, 0.42, _pulse];
+    _map drawIcon ["\A3\ui_f\data\map\markers\military\circle_CA.paa", _ring, _ap, 34 * _is, 34 * _is, 0, "", 0];
+    private _ic = getText (configFile >> "CfgMarkers" >> (_state getOrDefault ["markerType", "mil_dot"]) >> "icon");
+    if (_ic isNotEqualTo "") then { _map drawIcon [_ic, [1, 1, 1, 0.75], _ap, 20 * _is, 20 * _is, 0, "", 0]; };
+    _map drawIcon [_dot, [0.36, 0.78, 0.42, 1], _ap, 6, 6, 0, "  " + (("POINT DE POSE · VALIDER") call comspec_atak_native_fnc_tr), 2, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
+};
+
 // Mesure A -> B (ou A -> curseur tant que B n'est pas posé)
 private _measure = +(_state getOrDefault ["mapMeasure",[]]);
 if ((count _measure) isEqualTo 1 && {(count _cursor) >= 2}) then { _measure pushBack [_cursor select 0,_cursor select 1,0]; };

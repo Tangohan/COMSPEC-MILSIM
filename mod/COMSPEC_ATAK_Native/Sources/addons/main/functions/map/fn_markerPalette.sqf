@@ -4,7 +4,8 @@
     - grille d'icônes du type (infanterie, blindé, artillerie, PC, médical…) ;
     - couleur (AUTO = couleur du camp) et taille ;
     - AUTRES : tous les marqueurs Arma et des mods, en liste ;
-    - « éditer après la pose » pour saisir titre et description tout de suite.
+    - canal (Général par défaut), « à la suite » (la palette reste après VALIDER), « titre et note » après la pose ;
+    - en-tête : VALIDER pose au point choisi d'un clic droit (fn_markerPlace), replier, fermer.
     Les icônes sont montrées sur des tuiles claires, dans la couleur qu'elles auront sur la carte.
     Params : [[x, y, w, h] zone disponible]
 */
@@ -44,9 +45,13 @@ private _iconRgba = if (_colorKey isEqualTo "AUTO") then { _affColor } else { pr
 private _tile = { params ["_c", ["_sel", false]]; if (((_c select 0) + (_c select 1) + (_c select 2)) > 2.4) then { [[0.10, 0.12, 0.11, 0.95], [0.16, 0.30, 0.19, 1]] select _sel } else { [[0.66, 0.69, 0.67, 0.95], [0.80, 0.90, 0.81, 1]] select _sel } };
 private _short = createHashMapFromArray [["Poste de commandement", "PC"], ["Reconnaissance", "Reco"], ["Anti-aérien", "Sol-air"], ["Hélicoptère", "Hélico"], ["Point de ralliement", "Ralliement"], ["Champ de mines", "Mines"], ["Triangle plat", "Triangle"]];
 
-// 1. Choix en cours : aperçu tel qu'il sera posé, résumé et option d'édition.
+// 1. En-tête : aperçu tel qu'il sera posé, résumé (texte structuré), VALIDER au point choisi, replier, fermer.
 private _size = _s getOrDefault ["markerSize", 1];
 private _sizes = [["S", 0.7], ["M", 1], ["L", 1.4], ["XL", 2]];
+private _fold = profileNamespace getVariable ["COMSPEC_ATAK_MarkerFold", false];
+private _anchor = _s getOrDefault ["markerAnchor", []];
+private _hasAnchor = (count _anchor) >= 2;
+private _chan = ["channel"] call comspec_atak_native_fnc_markerPlace;
 private _ph = _rh * 1.7;
 private _pw = _ph * _ratio;
 private _typeLabel = ((_types select ((_types findIf { (_x select 0) isEqualTo _type }) max 0)) param [1, getText (configFile >> "CfgMarkers" >> _type >> "name")]);
@@ -58,17 +63,55 @@ private _pic = ["COMSPEC_RscIcon", [_x0 + _pw * (1 - _pi) / 2, _y + _ph * (1 - _
 _pic ctrlSetTextColor _iconRgba;
 private _affName = (_affs select ((_affs findIf { (_x select 0) isEqualTo _aff }) max 0)) select 1;
 private _colName = (_swatches select ((_swatches findIf { (_x select 1) isEqualTo _colorKey }) max 0)) select 0;
-private _sum = ["COMSPEC_RscStructuredText", [_x0 + _pw + _pad, _y, _w * 0.62 - _pw - _pad, _ph],
-    format ["<t size='1.05' font='COMSPEC_BarlowBold'>%1</t><br/><t color='#8a9a93' size='0.85'>%2 · %3 · taille %4 · clic sur la carte pour poser</t>",
-        _typeLabel, ([toLower _affName, "repère"] select (_aff in ["mil", "lib"])), toLower _colName, (_sizes select ((_sizes findIf { (_x select 1) isEqualTo _size }) max 0)) select 0]] call _mk;
-_sum ctrlSetFontHeight (_fs * 0.95);
-private _edit = _s getOrDefault ["markerEditAfter", false];
-private _eb = ["COMSPEC_RscButton", [_x0 + _w * 0.62, _y + (_ph - _rh) / 2, _w * 0.38, _rh], ["☐  Titre et note après la pose", "☑  Titre et note après la pose"] select _edit] call _mk;
-_eb ctrlSetFontHeight ((_fs * 0.82) max COMSPEC_ATAK_FontMin);
-if (_edit) then { _eb ctrlSetTextColor _green; };
-_eb ctrlSetTooltip (("Ouvrir l'éditeur (titre, description) juste après la pose") call comspec_atak_native_fnc_tr);
-_eb ctrlAddEventHandler ["ButtonClick", { private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; ['markerEditAfter', !(_s getOrDefault ["markerEditAfter", false])] call (uiNamespace getVariable 'COMSPEC_ATAK_MarkerPick'); }];
+// Boutons carrés à droite (replier / fermer), VALIDER à leur gauche.
+private _ib = _rh;
+private _ibW = _ib / _ratio;
+private _iconBtn = {
+    params ["_xx", "_icon", "_tip", "_code", ["_col", [0.86, 0.91, 0.88, 1]]];
+    private _f = ["COMSPEC_RscText", [_xx, _y + (_ph - _ib) / 2, _ibW, _ib]] call _mk;
+    _f ctrlSetBackgroundColor [0.10, 0.12, 0.11, 0.95];
+    private _i = ["COMSPEC_RscIcon", [_xx + _ibW * 0.2, _y + (_ph - _ib) / 2 + _ib * 0.2, _ibW * 0.6, _ib * 0.6], "\z\comspec_atak_native\addons\main\data\" + _icon] call _mk;
+    _i ctrlSetTextColor _col;
+    private _b = ["COMSPEC_RscButtonOverlay", [_xx, _y + (_ph - _ib) / 2, _ibW, _ib]] call _mk;
+    _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr);
+    _b ctrlAddEventHandler ["ButtonClick", _code];
+};
+private _closeX = _x0 + _w - _ibW;
+private _foldX = _closeX - _ibW - _pad / 2;
+[_closeX, "ui_close.paa", "Fermer la palette (retour à la sélection)", { ["close"] call comspec_atak_native_fnc_markerPlace; }, [0.95, 0.45, 0.40, 1]] call _iconBtn;
+[_foldX, ["ui_chevron_up.paa", "ui_chevron_down.paa"] select _fold, ["Replier la palette", "Déplier la palette"] select _fold, { ["fold"] call comspec_atak_native_fnc_markerPlace; }] call _iconBtn;
+private _vw = (_w * 0.2) max (_fs * 6 / _ratio * 0.6);
+private _vx = _foldX - _pad / 2 - _vw;
+private _vb = ["COMSPEC_RscButtonPrimary", [_vx, _y + (_ph - _rh * 1.15) / 2, _vw, _rh * 1.15], "VALIDER"] call _mk;
+_vb ctrlSetFont (COMSPEC_ATAK_FontSet select 1);
+_vb ctrlSetFontHeight ((_fs * 0.95) max COMSPEC_ATAK_FontMin);
+_vb ctrlSetTooltip (([
+    "Clic droit sur la carte pour choisir le point, puis VALIDER",
+    "Poser le marqueur au point choisi (clic droit)"
+] select _hasAnchor) call comspec_atak_native_fnc_tr);
+if !(_hasAnchor) then { _vb ctrlSetBackgroundColor [0.16, 0.22, 0.18, 0.95]; _vb ctrlSetTextColor [0.55, 0.62, 0.58, 1]; };
+_vb ctrlAddEventHandler ["ButtonClick", { ["validate"] call comspec_atak_native_fnc_markerPlace; }];
+// Résumé : type, camp · couleur · taille · canal, puis le point choisi ou la consigne.
+private _where = if (_hasAnchor) then {
+    private _dd = player distance2D _anchor;
+    format ["<t color='#5cc76b'>POINT</t> <t font='EtelkaMonospacePro'>%1</t> · %2 · %3°", [_anchor, 8] call comspec_atak_native_fnc_gridRef,
+        [format ["%1 m", round _dd], format ["%1 km", (_dd / 1000) toFixed 1]] select (_dd >= 1000), round (player getDir _anchor)]
+} else {
+    format ["<t color='#d9a441'>%1</t>", ("Clic droit : choisir le point · clic gauche : poser tout de suite") call comspec_atak_native_fnc_tr]
+};
+private _sum = ["COMSPEC_RscStructuredText", [_x0 + _pw + _pad, _y, (_vx - _pad) - (_x0 + _pw + _pad), _ph]] call _mk;
+_sum ctrlSetStructuredText parseText ((format ["<t size='1.05' font='COMSPEC_BarlowBold'>%1</t><br/><t color='#8a9a93' size='0.85'>%2 · %3 · taille %4 · canal %5</t><br/><t size='0.8'>%6</t>",
+    _typeLabel, ([toLower _affName, "repère"] select (_aff in ["mil", "lib"])), toLower _colName,
+    (_sizes select ((_sizes findIf { (_x select 1) isEqualTo _size }) max 0)) select 0,
+    ["channelName", _chan] call comspec_atak_native_fnc_markerPlace, _where]) call comspec_atak_native_fnc_tr);
+_sum ctrlSetFontHeight (_fs * 0.9);
 _y = _y + _ph + _pad;
+// Repliée : l'en-tête seul (on pose toujours au clic, VALIDER reste là).
+if (_fold) exitWith {
+    _bg ctrlSetPosition [_x0 - _pad, _y0 - _pad, _w + 2 * _pad, (_y - _y0) + _pad];
+    _bg ctrlCommit 0;
+    _y
+};
 
 // 2. Camp : onglets soulignés de la couleur du camp.
 private _n = count _affs;
@@ -186,7 +229,38 @@ private _ow = ((_x0 + _w - _zx) / 4) min (_w * 0.07);
 } forEach _sizes;
 _y = _y + _rh + _pad / 2;
 
-// 5. Tous les marqueurs chargés (Arma et mods) en liste.
+// 5. Canal (Général par défaut : vu de tous) et options de pose : à la suite, titre et note après la pose.
+["CANAL", _x0, _w * 0.12] call _lab;
+private _chans = [0, 1, 2, 3, 4, 5];
+private _chW = (_w * 0.58) / (count _chans);
+{
+    private _on = _x isEqualTo _chan;
+    private _b = ["COMSPEC_RscButton", [_x0 + _w * 0.12 + _forEachIndex * _chW, _y, _chW - _pad / 3, _rh], ["channelName", _x] call comspec_atak_native_fnc_markerPlace] call _mk;
+    _b ctrlSetFontHeight ((_fs * 0.72) max COMSPEC_ATAK_FontMin);
+    if (_on) then { _b ctrlSetBackgroundColor _green; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
+    _b ctrlSetTooltip (([
+        "Général : tous les joueurs voient le marqueur", "Camp : tout mon camp", "Commandement : chefs de groupe",
+        "Groupe : mon groupe seulement", "Véhicule : l'équipage de mon véhicule", "Direct : les joueurs proches"
+    ] select _forEachIndex) call comspec_atak_native_fnc_tr);
+    _b ctrlAddEventHandler ["ButtonClick", compile format ["['setChannel', %1] call comspec_atak_native_fnc_markerPlace;", _x]];
+} forEach _chans;
+private _optX = _x0 + _w * 0.71;
+private _optW = (_x0 + _w - _optX - _pad / 2) / 2;
+private _series = profileNamespace getVariable ["COMSPEC_ATAK_MarkerSeries", false];
+private _sb = ["COMSPEC_RscButton", [_optX, _y, _optW, _rh], ["☐  À la suite", "☑  À la suite"] select _series] call _mk;
+_sb ctrlSetFontHeight ((_fs * 0.78) max COMSPEC_ATAK_FontMin);
+if (_series) then { _sb ctrlSetTextColor _green; };
+_sb ctrlSetTooltip (("Après VALIDER, la palette reste ouverte pour poser le marqueur suivant") call comspec_atak_native_fnc_tr);
+_sb ctrlAddEventHandler ["ButtonClick", { ["series"] call comspec_atak_native_fnc_markerPlace; }];
+private _edit = _s getOrDefault ["markerEditAfter", false];
+private _eb = ["COMSPEC_RscButton", [_optX + _optW + _pad / 2, _y, _optW, _rh], ["☐  Titre et note", "☑  Titre et note"] select _edit] call _mk;
+_eb ctrlSetFontHeight ((_fs * 0.78) max COMSPEC_ATAK_FontMin);
+if (_edit) then { _eb ctrlSetTextColor _green; };
+_eb ctrlSetTooltip (("Ouvrir l'éditeur (titre, description) juste après la pose") call comspec_atak_native_fnc_tr);
+_eb ctrlAddEventHandler ["ButtonClick", { private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]; ['markerEditAfter', !(_s getOrDefault ["markerEditAfter", false])] call (uiNamespace getVariable 'COMSPEC_ATAK_MarkerPick'); }];
+_y = _y + _rh + _pad / 2;
+
+// 6. Tous les marqueurs chargés (Arma et mods) en liste.
 ["AUTRES", _x0, _w * 0.12] call _lab;
 private _combo = ["COMSPEC_RscCombo", [_x0 + _w * 0.12, _y, _w * 0.88, _rh]] call _mk;
 _combo ctrlSetFontHeight ((_fs * 0.85) max COMSPEC_ATAK_FontMin);

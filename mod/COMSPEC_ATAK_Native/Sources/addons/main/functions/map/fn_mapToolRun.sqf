@@ -32,8 +32,9 @@ switch (_tool) do {
             private _lz = _cur deleteAt _hit;
             _s set ["mapFlat", _cur];
             private _index = (missionNamespace getVariable ["COMSPEC_ATAK_MarkerIndex", 0]) + 1;
+            private _channel = ["channel"] call comspec_atak_native_fnc_markerPlace;
             missionNamespace setVariable ["COMSPEC_ATAK_MarkerIndex", _index];
-            private _m = createMarker [format ["_USER_DEFINED #%1/%2/%3", clientOwner, 9000 + _index, currentChannel], _lz, currentChannel, player];
+            private _m = createMarker [format ["_USER_DEFINED #%1/%2/%3", clientOwner, 9000 + _index, _channel], _lz, _channel, player];
             if (_m isEqualTo "") exitWith { ["WARNING", "Marqueur refusé sur ce canal", 3, 20] call comspec_atak_native_fnc_notify; };
             _m setMarkerTypeLocal (["mil_pickup", "mil_flag"] select !(isClass (configFile >> "CfgMarkers" >> "mil_pickup")));
             _m setMarkerColorLocal "ColorGreen";

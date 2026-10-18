@@ -1,4 +1,7 @@
-/* Clic gauche : action de l'outil actif. Clic droit : quitte l'outil (retour à la sélection), sinon menu contextuel (au relâchement). */
+/*
+    Clic gauche : action de l'outil actif. Clic droit : quitte l'outil (retour à la sélection), sinon menu contextuel
+    (au relâchement) ; en mode MARQUEUR, choisit le point de pose de la palette.
+*/
 params ["_map","_button","_mx","_my",["_shift",false],["_ctrl",false],["_alt",false]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _world = _map ctrlMapScreenToWorld [_mx,_my];
@@ -44,7 +47,8 @@ if (_button isEqualTo 0) exitWith {
     true
 };
 if (_button isEqualTo 1) exitWith {
-    if ((_s getOrDefault ["mapMode","SELECT"]) isNotEqualTo "SELECT" || {(count (_s getOrDefault ["drawStroke",[]])) > 0}) then {
+    // Mode MARQUEUR : le clic droit choisit le point de pose (au relâchement, fn_markerPlace "anchor"), il ne quitte plus.
+    if (!((_s getOrDefault ["mapMode","SELECT"]) in ["SELECT","MARKER"]) || {(count (_s getOrDefault ["drawStroke",[]])) > 0}) then {
         _s set ["drawStroke",[]];
         ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
         [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;

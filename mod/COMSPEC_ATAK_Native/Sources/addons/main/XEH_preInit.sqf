@@ -86,6 +86,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 ["comspec_atak_native_map_place_style", "LIST",
     ["Style des noms de lieux", "Comment le téléphone écrit les villes, villages et lieux-dits sur sa carte. Tactique : capitales grasses détourées (par défaut). Étiquette : plaque sombre et losange de couleur. Discret : petit texte clair. Classique : couleurs de la carte Arma."],
     ["COMSPEC", "ATAK · Carte"], [["tactical", "tag", "quiet", "classic"], ["Tactique", "Étiquette", "Discret", "Classique (avant)"], 0], 0] call comspec_atak_native_fnc_addSetting;
+// Pose des marqueurs (fn_markerPlace) : menu ouvert par « Mettre un marqueur » (clic droit) et le double clic, canal.
+["comspec_atak_native_marker_menu", "LIST",
+    ["Menu de pose des marqueurs", "Ce qui s'ouvre avec « Mettre un marqueur » du clic droit et le double clic sur la carte. Palette : icônes par camp, couleur, taille et canal, puis VALIDER au point cliqué (par défaut). Éditeur complet : le formulaire titre, description, type, couleur, taille, orientation, opacité et canal."],
+    ["COMSPEC", "ATAK · Carte"], [["palette", "editor"], ["Palette d'icônes", "Éditeur complet"], 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_marker_channel", "LIST",
+    ["Canal des marqueurs", "Canal sur lequel le téléphone pose les marqueurs (palette, traits, LZ, éditeur). Général : vus de tous les joueurs (par défaut). Se change aussi à chaque pose, ligne CANAL de la palette."],
+    ["COMSPEC", "ATAK · Carte"], [[0, 1, 2, 3, 4, 5], ["Général", "Camp", "Commandement", "Groupe", "Véhicule", "Direct"], 0], 0] call comspec_atak_native_fnc_addSetting;
 {
     _x params ["_k", "_t", "_h"];
     [_k, "CHECKBOX", [_t, _h], ["COMSPEC", "ATAK · Carte"], true, 0] call comspec_atak_native_fnc_addSetting;

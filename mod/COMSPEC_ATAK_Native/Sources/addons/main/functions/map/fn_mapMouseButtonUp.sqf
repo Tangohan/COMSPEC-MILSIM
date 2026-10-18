@@ -1,11 +1,15 @@
 params ["_map","_button","_mx","_my"];
 [] call comspec_atak_native_fnc_mapUnfocus;
-// Clic droit sans glisser (le glisser droit déplace la carte) : menu contextuel PING / MARQUEUR / SUPPRIMER.
+// Clic droit sans glisser (le glisser droit déplace la carte) : menu contextuel PING / MARQUEUR / SUPPRIMER, ou en mode
+// MARQUEUR le point de pose de la palette (VALIDER).
 if (_button isEqualTo 1) exitWith {
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
     private _rc = _s getOrDefault ["mapRc", []];
     _s set ["mapRc", []];
     if ((count _rc) isEqualTo 3 && {(abs (_mx - (_rc select 0))) < pixelW * 6} && {(abs (_my - (_rc select 1))) < pixelH * 6} && {(diag_tickTime - (_rc select 2)) < 0.8}) then {
+        if ((_s getOrDefault ["mapMode", "SELECT"]) isEqualTo "MARKER") exitWith {
+            ["anchor", _map ctrlMapScreenToWorld [_mx, _my]] call comspec_atak_native_fnc_markerPlace;
+        };
         ["open", [_map, [_mx, _my]]] call comspec_atak_native_fnc_mapCtxMenu;
     };
     false
