@@ -2177,13 +2177,21 @@
       } else if (v === 'video' || v === 'video_integrated') {
         extHint.classList.remove('hidden');
         extHint.textContent = 'URL directe du fichier vidéo (MP4, WebM…).';
+      } else if (v === 'external_link') {
+        extHint.classList.remove('hidden');
+        extHint.textContent = 'Google Docs, Sheets, Slides, Drawings, draw.io, Figma, PDF… s’affichent dans la leçon (visionneuse) avec un bouton pour ouvrir dans un nouvel onglet. Partagez le document en lecture « à toute personne disposant du lien ».';
+      } else if (!isJson && !isCanvas) {
+        extHint.classList.remove('hidden');
+        extHint.textContent = 'Facultatif : un lien (Google Docs, Sheets, Slides, draw.io, PDF…) affiché sous le contenu, en visionneuse. Vous pouvez aussi coller le lien seul dans « Contenu ».';
       } else {
         extHint.classList.add('hidden');
         extHint.textContent = '';
       }
     }
     if (extLabel) {
-      extLabel.textContent = v === 'video_embed' ? 'URL de la vidéo (YouTube / Vimeo)' : 'URL externe (optionnel)';
+      extLabel.textContent = v === 'video_embed'
+        ? 'URL de la vidéo (YouTube / Vimeo)'
+        : (v === 'external_link' ? 'Adresse du document ou du site' : 'URL externe (optionnel)');
     }
     if (isCanvas) {
       if (!wrap || !canvasTa) return;

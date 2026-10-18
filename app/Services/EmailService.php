@@ -1394,6 +1394,37 @@ final class EmailService
         );
     }
 
+    public function sendTrainingPedagogyDesignation(
+        string $to,
+        string $displayName,
+        string $actorDisplayName,
+        string $tenantName,
+        string $stepTitle,
+        string $stepDetail,
+        string $actionUrl,
+        string $actionLabel,
+        int $tenantId
+    ): bool {
+        return $this->sendTemplated(
+            EmailEvents::TRAINING_PEDAGOGY_DESIGNATION,
+            'training_pedagogy_designation',
+            $to,
+            'Vous êtes nommé — ' . $stepTitle,
+            [
+                'displayName' => $displayName,
+                'actorDisplayName' => $actorDisplayName,
+                'tenantName' => $tenantName,
+                'stepTitle' => $stepTitle,
+                'stepDetail' => $stepDetail,
+                'actionUrl' => $actionUrl,
+                'actionLabel' => $actionLabel,
+            ],
+            $tenantId,
+            null,
+            ['purpose' => 'training_pedagogy_designation', 'step' => $stepTitle]
+        );
+    }
+
     public function sendEffectifsElevationRequest(
         string $to,
         string $staffDisplayName,

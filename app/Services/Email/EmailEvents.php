@@ -79,6 +79,8 @@ final class EmailEvents
     public const TRAINING_COURSE_SESSION_SCHEDULED_LEARNER = 'TRAINING_COURSE_SESSION_SCHEDULED_LEARNER';
     /** Demande d’élévation pour publier une fiche Studio — notification aux personnes habilitées. */
     public const TRAINING_PUBLISH_ELEVATION_REQUEST = 'TRAINING_PUBLISH_ELEVATION_REQUEST';
+    /** Membre nommé à une étape de la chaîne pédagogique (conception, animation, validation, gouvernance). */
+    public const TRAINING_PEDAGOGY_DESIGNATION = 'TRAINING_PEDAGOGY_DESIGNATION';
     /** Demande d’élévation RH (grade / rôle / droits) depuis le bureau effectifs. */
     public const EFFECTIFS_ELEVATION_REQUEST = 'EFFECTIFS_ELEVATION_REQUEST';
     /** Demande de correction RH fiche opérateur — notification organisateurs. */
@@ -222,6 +224,7 @@ final class EmailEvents
         self::TRAINING_MODULE_BLOCKED_STAFF,
         self::TRAINING_COURSE_SESSION_SCHEDULED_LEARNER,
         self::TRAINING_PUBLISH_ELEVATION_REQUEST,
+        self::TRAINING_PEDAGOGY_DESIGNATION,
         self::EFFECTIFS_ELEVATION_REQUEST,
         self::PERSONNEL_CORRECTION_REQUEST_STAFF,
         self::PERSONNEL_CORRECTION_REQUEST_MEMBER,

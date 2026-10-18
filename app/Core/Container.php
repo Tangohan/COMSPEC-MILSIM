@@ -1965,6 +1965,13 @@ class Container
                 self::get(\App\Services\Training\TenantPedagogyChainGuard::class),
             ),
             \App\Services\Training\PedagogyPathwayService::class => new \App\Services\Training\PedagogyPathwayService(),
+            \App\Services\Training\TrainingPedagogyDesignationService::class => new \App\Services\Training\TrainingPedagogyDesignationService(
+                self::get(\App\Repositories\PedagogyRepository::class),
+                self::get(UserRepository::class),
+                self::get(TenantRepository::class),
+                self::get(\App\Services\EmailService::class),
+                self::get(\App\Repositories\UserNotificationPreferencesRepository::class),
+            ),
             \App\Services\Training\TenantPedagogyStructureService::class => new \App\Services\Training\TenantPedagogyStructureService(
                 self::get(\App\Repositories\UnitRepository::class),
             ),
@@ -1978,6 +1985,7 @@ class Container
                 self::get(\App\Services\Training\PedagogyPathwayService::class),
                 self::get(\App\Services\Training\TenantPedagogyStructureService::class),
                 self::get(\App\Repositories\TrainingCourseRepository::class),
+                self::get(\App\Services\Training\TrainingPedagogyDesignationService::class),
             ),
             \App\Controllers\Web\TrainingController::class => new \App\Controllers\Web\TrainingController(
                 self::get(\App\Repositories\TrainingRepository::class),

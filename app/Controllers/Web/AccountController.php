@@ -747,6 +747,11 @@ class AccountController
                 'hint' => 'Lorsqu’un concepteur demande à pouvoir publier une fiche formation.',
             ],
             [
+                'key' => EmailEvents::TRAINING_PEDAGOGY_DESIGNATION,
+                'label' => 'Nomination dans la chaîne pédagogique',
+                'hint' => 'Lorsque vous êtes nommé concepteur, animateur, validateur d’encadrants ou référent de gouvernance.',
+            ],
+            [
                 'key' => EmailEvents::EFFECTIFS_ELEVATION_REQUEST,
                 'label' => 'Demande d’élévation RH (effectifs)',
                 'hint' => 'Lorsqu’un membre du bureau effectifs demande une évolution de grade, de rôle ou de droits pour un autre membre.',
