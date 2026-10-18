@@ -12,6 +12,8 @@ use App\Core\Session;
 use App\Repositories\TenantAnalyticsRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\EmailService;
+use App\Support\AtakReleaseInfo;
+use App\Support\AtakTranslationTemplate;
 use App\Support\ChangelogCatalog;
 use App\Support\DevDispatchCatalog;
 
@@ -258,5 +260,36 @@ final class SitePagesController
                 ],
             ],
         ]);
+    }
+
+    /**
+     * Atelier public de traduction de l'ATAK natif : tout se passe dans le navigateur (lecture du modèle, saisie,
+     * vérification, création de l'addon et du zip). Rien n'est envoyé au serveur, aucun compte n'est demandé.
+     */
+    public function translateAtak(Request $request, array $params = []): Response
+    {
+        return Response::view('layout.marketing', [
+            'content' => 'site.atak_translate',
+            'title' => __('site.atakt_meta_title'),
+            'meta_description' => __('site.atakt_meta_description'),
+            'marketingActive' => 'traduire-atak',
+            'marketingStyles' => [asset_url('assets/css/atak-native.css'), asset_url('assets/css/atak-translate.css') . '?v=1'],
+            'marketingScripts' => [asset_url('assets/js/atak-translate.js') . '?v=1'],
+        ]);
+    }
+
+    /** Modèle de traduction de la version publiée : [[français, anglais], ...] (voir AtakTranslationTemplate). */
+    public function translateAtakTemplate(Request $request, array $params = []): Response
+    {
+        $etag = '"' . AtakTranslationTemplate::fingerprint() . '"';
+        if (trim((string) $request->header('If-None-Match')) === $etag) {
+            return (new Response())->setStatusCode(304)->header('ETag', $etag)->header('Cache-Control', 'public, max-age=600');
+        }
+        $release = AtakReleaseInfo::latest();
+
+        return Response::json([
+            'version' => $release['atak_native'],
+            'entries' => AtakTranslationTemplate::entries(),
+        ])->header('ETag', $etag)->header('Cache-Control', 'public, max-age=600');
     }
 }
