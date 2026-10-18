@@ -21,6 +21,17 @@ final class AtakReleaseInfoTest extends TestCase
         self::assertMatchesRegularExpression('/^\d+\.\d+\.\d+$/', (string) $info['link']);
     }
 
+    public function testDisplayedNameStartsWithTheComparableVersion(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $hpp = (string) file_get_contents($root . '/mod/COMSPEC_ATAK_Native/Sources/addons/main/script_component.hpp');
+
+        // VERSION_NAME (« 2.0.1.AB - Denver ») n'est qu'affiché ; VERSION_STR reste MAJEUR.MINEUR.CORRECTIF pour
+        // les comparaisons (versionStr, contrôle d'intégrité, /api/atak/version).
+        self::assertSame(1, preg_match('/^#define VERSION_NAME "([^"]+)"$/m', $hpp, $m));
+        self::assertStringStartsWith(AtakReleaseInfo::latest($root)['atak_native'] . '.', $m[1]);
+    }
+
     public function testMainPboExpectsTheLinkDllOfTheSameCommit(): void
     {
         $info = AtakReleaseInfo::latest(dirname(__DIR__, 2));

@@ -13,9 +13,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", VERSION_STR];
 // Versions compilées dans ce code : fn_integrityCheck les compare à la config chargée, à la DLL et au site.
 missionNamespace setVariable ["COMSPEC_ATAK_CodeVersion", VERSION_STR];
 missionNamespace setVariable ["COMSPEC_ATAK_LinkExpected", LINK_VERSION_STR];
-// Version complète pour les humains (Réglages, Debug, journal, support) : « 1.94.0 - 2026.10.14 a1b2c3d ».
+// Version complète pour les humains (Réglages, Debug, journal, support) : « 2.0.1.AB - Denver · 2026.10.18 a1b2c3d ».
 // Les comparaisons de versions n'utilisent que COMSPEC_ATAK_NativeVersion (MAJEUR.MINEUR.CORRECTIF).
-missionNamespace setVariable ["COMSPEC_ATAK_NativeBuild", VERSION_STR + " - " + ([BUILD_STAMP, "dev"] select (BUILD_STAMP isEqualTo ""))];
+missionNamespace setVariable ["COMSPEC_ATAK_NativeName", VERSION_NAME];
+missionNamespace setVariable ["COMSPEC_ATAK_NativeBuild", VERSION_NAME + " · " + ([BUILD_STAMP, "dev"] select (BUILD_STAMP isEqualTo ""))];
 diag_log format ["[COMSPEC ATAK NATIVE][INFO][BOOT] COMSPEC ATAK %1 (COMSPEC Link attendu %2)", missionNamespace getVariable "COMSPEC_ATAK_NativeBuild", LINK_VERSION_STR];
 diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
