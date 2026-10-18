@@ -53,6 +53,26 @@ final class AtakStartupCheckService
         'link_failed' => ['Liaison impossible', 'Link failed'],
     ];
 
+    /**
+     * Liaison en jeu refusée : que faire, selon le code d'erreur vu par le mod. [FR, EN].
+     * Le profil Steam privé n'est jamais en cause : le jeu envoie le SteamID64 lui-même et Steam OpenID
+     * comme le code /lier fonctionnent quelle que soit la visibilité du profil.
+     */
+    public const LINK_FIXES = [
+        'STEAM_NOT_LINKED' => [
+            'Ce Steam n\'est relié à aucun compte Athena (un profil Steam privé n\'est pas en cause). Le joueur le relie une fois : téléphone > app Athena > OBTENIR MON CODE, puis il saisit le code sur athena.ttrd.fr/lier, connecté à son compte. Ou sur le site : Mon compte > Préférences > Se connecter avec Steam.',
+            'This Steam account is not linked to any Athena account (a private Steam profile is not the issue). The player links it once: phone > Athena app > GET MY CODE, then enters the code at athena.ttrd.fr/lier while signed in. Or on the site: My account > Preferences > Sign in with Steam.',
+        ],
+        'NO_TENANT' => [
+            'Le compte Athena n\'est membre d\'aucune communauté active : un responsable doit l\'accepter dans sa communauté.',
+            'The Athena account is not a member of any active community: a community manager must accept it.',
+        ],
+        'ACCOUNT_DISABLED' => [
+            'Le compte Athena est désactivé ou banni.',
+            'The Athena account is disabled or banned.',
+        ],
+    ];
+
     /** Même rapport (joueur + session) : un seul message. Au plus 6 par joueur et par heure, 20 par minute en tout. */
     private const DEDUPE_SECONDS = 6 * 3600;
     private const PLAYER_MAX_PER_HOUR = 6;
@@ -294,6 +314,11 @@ final class AtakStartupCheckService
             $fields[] = ['name' => 'Carte / Map', 'value' => $where . ($report['mp'] ? '' : ' (solo)'), 'inline' => true];
         }
 
+        $fix = self::linkFix($report['steps']);
+        if ($fix !== null) {
+            $fields[] = ['name' => 'Que faire / What to do', 'value' => $fix[0] . "\n\n" . $fix[1], 'inline' => false];
+        }
+
         [$titleFr, $titleEn] = self::TRIGGERS[$report['trigger'] ?? 'start'] ?? self::TRIGGERS['start'];
 
         return [
@@ -304,6 +329,30 @@ final class AtakStartupCheckService
             'footer' => ['text' => $titleFr . ' · ' . $titleEn],
             'timestamp' => gmdate('c'),
         ];
+    }
+
+    /**
+     * Conseil pour une liaison en jeu refusée (étape « link » en échec), d'après le code d'erreur du détail.
+     *
+     * @param list<array{id:string, status:string, detail:string}> $steps
+     * @return array{0:string, 1:string}|null
+     */
+    public static function linkFix(array $steps): ?array
+    {
+        foreach ($steps as $step) {
+            if ($step['id'] !== 'link' || $step['status'] !== 'fail') {
+                continue;
+            }
+            // Le détail est passé par clean() : « STEAM\_NOT\_LINKED ».
+            $detail = strtoupper(str_replace('\\', '', $step['detail']));
+            foreach (self::LINK_FIXES as $code => $fix) {
+                if (preg_match('/(?<![A-Z_])(?:C2_)?' . $code . '(?![A-Z_])/', $detail) === 1) {
+                    return $fix;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
