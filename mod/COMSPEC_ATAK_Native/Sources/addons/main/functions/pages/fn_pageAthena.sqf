@@ -163,6 +163,22 @@ if (_logged) then {
             _rows pushBack ["text", "<t color='#8a9a93' size='0.85'>Votre Steam est associé au compte à cette occasion : aux parties suivantes, la connexion se fait seule.</t>"];
         };
     };
+    // Aide à la connexion (retour de jeu) : les étapes et les blocages courants, repliable.
+    private _help = uiNamespace getVariable ["COMSPEC_ATAK_AthenaHelp", false];
+    _rows append [
+        ["gap"],
+        ["fold", "AIDE À LA CONNEXION", "Étapes et problèmes courants", _help, { uiNamespace setVariable ["COMSPEC_ATAK_AthenaHelp", !(uiNamespace getVariable ["COMSPEC_ATAK_AthenaHelp", false])]; [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame; }]
+    ];
+    if (_help) then {
+        _rows append [
+            ["text", "<t color='#f2f6f3' font='COMSPEC_BarlowBold'>1.</t> <t color='#c9d4cf'>Il faut un compte sur <t color='#5cc76b'>athena.ttrd.fr</t> (gratuit), membre de votre communauté.</t>"],
+            ["text", "<t color='#f2f6f3' font='COMSPEC_BarlowBold'>2.</t> <t color='#c9d4cf'>Onglet COMPTE : OBTENIR MON CODE. Sur votre PC ou votre téléphone, connecté au site, ouvrez <t color='#5cc76b'>athena.ttrd.fr/lier</t> et saisissez le code.</t>"],
+            ["text", "<t color='#f2f6f3' font='COMSPEC_BarlowBold'>3.</t> <t color='#c9d4cf'>Autorisez : le téléphone se connecte seul en quelques secondes, et les parties suivantes aussi (Steam associé).</t>"],
+            ["text", "<t color='#e8b84a'>Pas de code ?</t> <t color='#c9d4cf'>Vérifiez la connexion internet du jeu et que COMSPEC Link est autorisé (BattlEye, pare-feu). Puis RÉESSAYER.</t>"],
+            ["text", "<t color='#e8b84a'>Code expiré ?</t> <t color='#c9d4cf'>Il ne dure que quelques minutes : NOUVEAU CODE.</t>"],
+            ["text", "<t color='#e8b84a'>Toujours bloqué ?</t> <t color='#c9d4cf'>Onglet E-MAIL (mot de passe ou code reçu par e-mail), ou CODE PORTAIL (page Appairer du site). Sinon, prévenez votre staff.</t>"]
+        ];
+    };
 };
 [_rows, [0, 0, _bw, _bh]] call comspec_atak_native_fnc_formRender;
 uiNamespace setVariable ["COMSPEC_ATAK_AthenaSig", [_state, _link, _ready, _hText, _err]];

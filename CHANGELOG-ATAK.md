@@ -38,6 +38,36 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Retours de jeu : téléphone verrouillé, retour, disposition à la souris, réglages et photo (ATAK natif 1.97.0)
+
+### Résumé joueur
+Type : correctif
+FR : Téléphone plus propre : verrouillage, retour, disposition à la souris, notifications et Personnalisation
+- Téléphone verrouillé : plus aucune app ni rail par-dessus l'écran de verrouillage. La touche retour marche dans toutes les apps et sous-écrans. Le rapport SALUTE est enfin dans l'ordre S, A, L, U, T, E.
+- Réglages > Emplacement : nouvelles positions HAUT CENTRE et BAS CENTRE, et DÉPLACER À LA SOURIS pour glisser le mini où tu veux (clic droit pour finir). La boussole du mini tourne en continu.
+- Réglages > Alertes : coupe tous les bandeaux, les petits messages du bas, ou seulement certains types. Personnalisation est rangée par thème, sans les réglages en test ; le mode tablette sur le JPC est retiré pour l'instant.
+- Localisation par les relais : elle prend quelques secondes et s'efface au clic droit. Historique des alertes : CARTE centre bien le point. Photo en mini : PHOTO et SELFIE passent en plein écran, selfie recadré sur le visage. Aide à la connexion dans l'app Athena et bandeau si tu n'es pas connecté.
+EN : Cleaner phone: lock screen, back key, mouse layout, notifications and Personalisation
+- Locked phone: no app or side rail shows over the lock screen any more. The back key works in every app and sub-screen. The SALUTE report is finally in S, A, L, U, T, E order.
+- Settings > Position: new TOP CENTRE and BOTTOM CENTRE positions, and MOVE WITH THE MOUSE to drag the mini wherever you want (right-click to finish). The mini compass now turns smoothly.
+- Settings > Alerts: turn off all banners, the small messages at the bottom, or only some types. Personalisation is sorted by theme without test settings; the JPC tablet mode is removed for now.
+- Relay location: it takes a few seconds and can be cleared with a right-click. Alert history: MAP now centres the point. Photo in mini: PHOTO and SELFIE go full screen, selfie framed on the face. Sign-in help in the Athena app and a banner when you are not signed in.
+
+### Détail technique
+- Écran de verrouillage : `fn_dockRender` sort tant que `COMSPEC_ATAK_LockUp` (le rafraîchissement d'une seconde recréait le dock et le rail par-dessus) ; `fn_navigate` refuse l'ouverture d'une app verrouillé ; `fn_lockScreen` redessine le dock au déverrouillage.
+- Retour : `fn_back` gère un sous-écran déclaré par la page (`backSub` = [page, code], remis à zéro par `fn_pageRender`) avant l'historique ; déclaré par DataLink, Signalements, Wanted, Dating, Briefing, FRS, Galerie, drone de la carte. Bouton retour actif hors accueil.
+- Sous-menus (`fn_formRender`) : textes secondaires plus clairs, titres de section blancs, sections repliables plus contrastées.
+- Emplacement : ancres TC et BC (`fn_layoutGet`), mode disposition dans `fn_phoneDrag` (ARRANGE_ON/OFF/DRAW : voile, cadre, glisser partout, au moins un quart visible).
+- Boussole : aiguille et cadran mis à jour à chaque image (`fn_mapOnDraw` -> `fn_mapOverlayUpdate` [false, true], getDirVisual).
+- Localisation : `relayNet` « locateStart » (6 à 10 s, annulable), action « Effacer les localisations » du menu carte (trilatération, traces, recherche).
+- Alertes > Historique > CARTE : suivi coupé et visée périmée ignorée (`fn_mapCenter`), ping local sur le point.
+- Options des addons : `comspec_atak_native_phone_3d` (ATAK en 3D, défaut décoché : gilet et JPC), `comspec_atak_native_screen_glow` défaut décoché (aucune lumière vue par les autres), `comspec_atak_native_stowed_damage` (téléphone rangé destructible, défaut coché), catégorie « Objets par interface » (`comspec_atak_native_ui_items_<modèle>`, tablette : tablet,tablette,ctab) ; un modèle sans son objet retombe sur le S7.
+- Notifications : profil `COMSPEC_ATAK_Toasts` (fn_toast), types muets `COMSPEC_ATAK_NotifMuted` réglables dans Réglages > Alertes.
+- Personnaliser réécrit par sections (Téléphone, Thème et écran, Verrouillage et sécurité, Animations et sons, Accessoires) et volets repliables (Patch, Gilet si 3D, Dock) ; police Barlow (test) retirée ; style JPC bloqué (`fn_jpcScreen` _allowed = false, `fn_vestMount` ignore l'ancien choix).
+- Photo : en MINI, l'app Photo n'ouvre plus de viseur (boutons PHOTO / SELFIE vers `fn_photoMode`) ; selfie : objectif sur le téléphone visé sur le visage, position lissée, recadrage borné (`fn_gestureSelfie` « lens »).
+- Athena : volet AIDE À LA CONNEXION dans l'app ; bandeau WARNING qui ouvre l'app Athena quand le service est choisi mais la session absente (25 s puis toutes les 10 min, `fn_statusUpdate`).
+- Dictionnaire anglais complété (`tools/i18n.py merge`).
+
 ## Regroupement : app Plan refaite, partage des caméras, nouvelle app Distances (ATAK natif 1.96.0, COMSPEC Link 2.0.86)
 
 ### Résumé joueur
