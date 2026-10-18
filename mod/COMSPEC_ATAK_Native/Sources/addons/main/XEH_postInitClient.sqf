@@ -78,7 +78,7 @@ addMissionEventHandler ["MarkerCreated", {
 addMissionEventHandler ["MarkerDeleted", { params ["_m"]; (missionNamespace getVariable ["COMSPEC_ATAK_MarkerMeta", createHashMap]) deleteAt _m; }];
 // Position de la miniature : coin suivant (réglage profil COMSPEC_ATAK_MiniAnchor, aussi dans Réglages).
 missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
-    private _list = ["BR", "BL", "TL", "TR", "MR", "ML"];
+    private _list = ["BR", "BC", "BL", "TL", "TC", "TR", "MR", "ML"];
     private _cur = _list find toUpper (profileNamespace getVariable ["COMSPEC_ATAK_MiniAnchor", "BR"]);
     private _next = _list select ((_cur max 0) + 1) mod (count _list);
     profileNamespace setVariable ["COMSPEC_ATAK_MiniAnchor", _next];
@@ -163,6 +163,12 @@ missionNamespace setVariable ["COMSPEC_ATAK_ActionBlock", {
 ["comspec_atak_native_zeusFx", { _this call comspec_atak_native_fnc_zeusClient; }] call CBA_fnc_addEventHandler;
 [{ ["tick"] call comspec_atak_native_fnc_zeusClient; }, 1] call CBA_fnc_addPerFrameHandler;
 ["register"] call comspec_atak_native_fnc_zeusMenu;
+// Attributs ZEN des relais (fenêtre Éditer d'un pylône ou relais) et menu clic droit « ATAK · Relais ».
+["register"] call comspec_atak_native_fnc_relayZeus;
+// Module Zeus (ZEN) « Capture de la carte » : tuiles satellite, 3D ou plan de la carte (fn_mapCapture, tools/map_stitch.py).
+if (!isNil "zen_custom_modules_fnc_register") then {
+    ["COMSPEC ATAK", "Capture de la carte", { params ["_pos"]; ["zeus", _pos] call comspec_atak_native_fnc_mapCapture; }, "\a3\ui_f\data\igui\cfg\simpletasks\types\map_ca.paa"] call comspec_atak_native_fnc_zenModule;
+};
 // Batterie : consommation aussi téléphone rangé (la barre d'état la met à jour chaque seconde quand il est ouvert).
 [{ if (isNull ([] call comspec_atak_native_fnc_display)) then { [] call comspec_atak_native_fnc_battery; }; }, 10] call CBA_fnc_addPerFrameHandler;
 ["comspec_atak_native_p2p", { _this call comspec_atak_native_fnc_p2pReceive }] call CBA_fnc_addEventHandler;
@@ -319,16 +325,25 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     ["WARNING", "Activité réseau anormale sur votre téléphone", 5, 40] call comspec_atak_native_fnc_notify;
 }] call CBA_fnc_addEventHandler;
 ["comspec_atak_native_buzz", {
-    params ["_from", "_grid"];
+    params ["_from", "_grid", ["_txt", ""], ["_pos", []], ["_src", objNull]];
     if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
     if ((([] call comspec_atak_native_fnc_deviceHealth) get "state") in ["OFF", "BROKEN"]) exitWith {};
-    ["WARNING", format ["VIBREUR · %1 vous appelle · %2", _from, _grid], 8, 70] call comspec_atak_native_fnc_notify;
+    if !(_txt isEqualType "") then { _txt = ""; };
+    ["WARNING", [format ["VIBREUR · %1 vous appelle · %2", _from, _grid], format ["VIBREUR · %1 : %2 · %3", _from, _txt, _grid]] select (_txt isNotEqualTo ""), 8, 70] call comspec_atak_native_fnc_notify;
+    // Alerte visuelle à l'écran du téléphone (VU / CARTE / FERMER), affichée aussi à la prochaine ouverture.
+    ["show", [_from, _grid, _txt, _pos, _src]] call comspec_atak_native_fnc_buzzAlert;
     private _buzz = {
         if (isNull ([] call comspec_atak_native_fnc_display) && {!(profileNamespace getVariable ["COMSPEC_ATAK_Silent", false])} && {!isNil "comspec_overwatch_connect_fnc_playAtakVibrate"}) then { [0.9] call comspec_overwatch_connect_fnc_playAtakVibrate; } else { [] call comspec_atak_native_fnc_vibrate; };
     };
     [] call _buzz;
     [_buzz, [], 0.9] call CBA_fnc_waitAndExecute;
     [_buzz, [], 1.8] call CBA_fnc_waitAndExecute;
+}] call CBA_fnc_addEventHandler;
+// Accusé du vibreur : le destinataire a appuyé sur VU.
+["comspec_atak_native_buzzAck", {
+    params [["_who", "?"]];
+    if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
+    ["INFO", format ["VIBREUR · %1 a vu votre message", _who], 5] call comspec_atak_native_fnc_notify;
 }] call CBA_fnc_addEventHandler;
 
 // PANIQUE d'un allié : alerte rouge, vibration, repère local sur la carte pendant 10 min.
@@ -537,7 +552,11 @@ missionNamespace setVariable ["COMSPEC_ATAK_HitPush", {
         [{
             private _q = missionNamespace getVariable ["COMSPEC_ATAK_HitQueue", []];
             missionNamespace setVariable ["COMSPEC_ATAK_HitQueue", []];
-            if (alive player && {(count _q) > 0}) then { ["hits", _q] call comspec_atak_native_fnc_deviceImpact; };
+            if (alive player && {(count _q) > 0}) then {
+                ["hits", _q] call comspec_atak_native_fnc_deviceImpact;
+                // Sang sur l'écran et la coque (téléphone en main ou sur le gilet).
+                ["hit", _q] call comspec_atak_native_fnc_screenDirt;
+            };
         }] call CBA_fnc_execNextFrame;
     };
     _q pushBack [_part, _dmg, _raw, _ammo];
@@ -615,7 +634,40 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
         ["can"] call comspec_atak_native_fnc_screenClean
     }] call comspec_atak_native_fnc_aceAction;
     ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"], _clean, true] call ace_interact_menu_fnc_addActionToClass;
+    // Nettoyage complet (10 s) : tout part d'un coup, sang compris, sans kit ni objet.
+    private _deep = ["COMSPEC_ATAK_CleanDeep", "Nettoyage complet (écran et coque)", "", {
+        [{ ["deep"] call comspec_atak_native_fnc_screenClean; }] call CBA_fnc_execNextFrame;
+    }, {
+        ["can"] call comspec_atak_native_fnc_screenClean
+    }] call comspec_atak_native_fnc_aceAction;
+    ["CAManBase", 1, ["ACE_SelfActions", "COMSPEC_ATAK_Phone", "COMSPEC_ATAK_Care"], _deep, true] call ace_interact_menu_fnc_addActionToClass;
+    // Tension et SpO2 : brassard et oxymètre posés par un soignant (8 s) ; l'app Médical et la liaison NFC n'affichent
+    // ces valeurs qu'après cette mesure (fn_medVitals « measure »).
+    private _measure = {
+        params ["_target"];
+        private _go = { params ["_t"]; [_t, "measure"] call comspec_atak_native_fnc_medVitals;
+            ["SUCCESS", format ["Tension et SpO2 mesurées : %1", [_t, true] call comspec_atak_native_fnc_unitCallsign], 4, 30] call comspec_atak_native_fnc_notify; };
+        if (isNil "ace_common_fnc_progressBar") exitWith { [_target] call _go; };
+        [8, [_target, _go], { (_this select 0) params ["_t", "_go"]; [_t] call _go; }, {}, "Brassard et oxymètre…",
+            { (_this select 0) params ["_t"]; alive _t && {(player distance _t) < 3} }] call ace_common_fnc_progressBar;
+        player playActionNow "Medic";
+    };
+    private _bp = ["COMSPEC_ATAK_MeasureBp", "Mesurer tension et SpO2", "", { [_this select 0] call (_this select 2) }, {
+        alive (_this select 0) && {isNull objectParent (_this select 1)}
+    }, {}, _measure] call comspec_atak_native_fnc_aceAction;
+    ["CAManBase", 0, ["ACE_MainActions"], _bp, true] call ace_interact_menu_fnc_addActionToClass;
+    private _bpSelf = ["COMSPEC_ATAK_MeasureBpSelf", "Mesurer ma tension et SpO2", "", { [_this select 0] call (_this select 2) }, {
+        isNull objectParent (_this select 0)
+    }, {}, _measure] call comspec_atak_native_fnc_aceAction;
+    ["CAManBase", 1, ["ACE_SelfActions"], _bpSelf, true] call ace_interact_menu_fnc_addActionToClass;
 };
+// Sang projeté sur le téléphone sorti quand un homme est tué à moins de 3,5 m (fn_screenDirt « nearby »).
+addMissionEventHandler ["EntityKilled", {
+    params ["_dead"];
+    if (!hasInterface || {!(_dead isKindOf "CAManBase")} || {_dead isEqualTo player} || {!alive player}) exitWith {};
+    private _d = player distance _dead;
+    if (_d < 3.5) then { ["nearby", [_d]] call comspec_atak_native_fnc_screenDirt; };
+}];
 
 // Actions ACE : réparer le téléphone (kit de réparation ATAK consommé, ou caisse à outils) ou passer sur un téléphone de rechange.
 // La réparation couvre aussi l'état du réalisme Overwatch (écran cassé, appareil détruit) : fn_repairStart, fn_deviceRepair.
@@ -690,7 +742,9 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 [{ ["tick"] call comspec_atak_native_fnc_planWeb; }, 5] call CBA_fnc_addPerFrameHandler;
 // Temps d'écran et temps par rôle (envoi à Athena toutes les 5 min et en fin de mission).
 [{ ["tick"] call comspec_atak_native_fnc_screenTime; }, 5] call CBA_fnc_addPerFrameHandler;
-addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; }];
+// Montre Garmin : pas, fréquence cardiaque, stress, Body Battery, sommeil et activités, gardés dans le profil du joueur.
+[{ ["tick"] call comspec_atak_native_fnc_garminTick; }, 2] call CBA_fnc_addPerFrameHandler;
+addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; }];
 // Arrivée en cours de partie : mon équipe de feu d'un ancien groupe ne me suit pas.
 [{ ["comspec_atak_native_ftCheck", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
 // Rôles d'Athena et rôle mémorisé du joueur, réappliqué à l'arrivée et à la réapparition (fn_ftRoleSync).

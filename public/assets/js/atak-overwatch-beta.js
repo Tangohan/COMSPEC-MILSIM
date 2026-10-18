@@ -1950,6 +1950,110 @@
       }
     });
   }
+  // Géométrie des appuis JTAC (app JTAC du téléphone ATAK natif, objet « geo » du 9-LINE) : cible, IP et axe d'entrée,
+  // cône de l'axe final d'attaque (FAH), distance de risque, JTAC et ligne laser, ami le plus proche, appareil.
+  var jtacGeoLayer = null;
+  function jtacGeoPoint(p) {
+    if (!Array.isArray(p) || p.length < 2) return null;
+    var x = Number(p[0]);
+    var y = Number(p[1]);
+    if (!Number.isFinite(x) || !Number.isFinite(y) || (Math.abs(x) < 0.5 && Math.abs(y) < 0.5)) return null;
+    return { x: x, y: y };
+  }
+  function jtacGeoOffset(pt, dist, bearing) {
+    var r = bearing * Math.PI / 180;
+    return { x: pt.x + Math.sin(r) * dist, y: pt.y + Math.cos(r) * dist };
+  }
+  function jtacGeoLabel(pt, text, cls) {
+    return L.marker(worldToLatLng(pt.x, pt.y), {
+      interactive: false,
+      keyboard: false,
+      icon: L.divIcon({ className: 'ow-jtac-geo-label ' + (cls || ''), html: '<span>' + escapeHtml(text) + '</span>', iconSize: null })
+    });
+  }
+  function jtacGeoActive(row) {
+    var st = String(row.status || '').toUpperCase();
+    if (st === 'COMPLETE' || st === 'ABORTED' || st === 'CANCELLED') return false;
+    var t = Date.parse(String(row.updated_at || row.created_at || '').replace(' ', 'T'));
+    return !Number.isFinite(t) || (Date.now() - t) < 6 * 3600 * 1000;
+  }
+  function renderJtacGeoOnMap() {
+    if (jtacGeoLayer) { map.removeLayer(jtacGeoLayer); jtacGeoLayer = null; }
+    if (hiddenLayers.jtac) return;
+    var group = L.layerGroup();
+    var amber = '#f2ab33';
+    var red = '#e5483a';
+    var green = '#5cc76b';
+    var cyan = '#33e6f2';
+    var ll = function (pt) { return worldToLatLng(pt.x, pt.y); };
+    jtacRows().forEach(function (row) {
+      var g = row && row.geo;
+      if (!g || typeof g !== 'object' || !jtacGeoActive(row)) return;
+      var tgt = jtacGeoPoint(g.target);
+      if (!tgt) return;
+      var dc = !!g.dangerClose;
+      var ip = jtacGeoPoint(g.ip);
+      var who = String(row.author || row.jtac || 'JTAC');
+      // Cône FAH : l'appareil vole au cap FAH vers la cible, il arrive donc du côté opposé.
+      var win = Array.isArray(g.fahWindow) && g.fahWindow.length === 2 ? g.fahWindow.map(Number) : null;
+      if (win && Number.isFinite(win[0]) && Number.isFinite(win[1])) {
+        var span = Math.max(2, ((win[1] - win[0]) % 360 + 360) % 360);
+        var rad = ip ? Math.min(15000, Math.max(3000, Math.hypot(ip.x - tgt.x, ip.y - tgt.y) * 1.1)) : 6000;
+        var cone = [ll(tgt)];
+        for (var a = 0; a <= span; a += Math.max(1, span / 12)) cone.push(ll(jtacGeoOffset(tgt, rad, win[0] + a + 180)));
+        L.polygon(cone, { color: amber, weight: 1.5, fillColor: amber, fillOpacity: 0.12, interactive: false }).addTo(group);
+        jtacGeoLabel(jtacGeoOffset(tgt, rad * 0.7, win[0] + span / 2 + 180), 'FAH ' + (g.fah || ''), 'is-amber').addTo(group);
+      }
+      // Distance de risque de l'armement (rouge si DANGER CLOSE).
+      var risk = Number(g.risk || 0);
+      if (risk > 0) {
+        var ring = [];
+        for (var d = 0; d < 360; d += 10) ring.push(ll(jtacGeoOffset(tgt, risk, d)));
+        L.polygon(ring, { color: dc ? red : amber, weight: 1.5, dashArray: '6 4', fill: false, interactive: false }).addTo(group);
+        jtacGeoLabel(jtacGeoOffset(tgt, risk, 135), 'RED ' + Math.round(risk) + ' m', dc ? 'is-red' : 'is-amber').addTo(group);
+      }
+      // IP et axe d'entrée (cap et distance).
+      if (ip) {
+        L.polyline([ll(ip), ll(tgt)], { color: green, weight: 2, interactive: false }).addTo(group);
+        var hdg = Math.round((Math.atan2(tgt.x - ip.x, tgt.y - ip.y) * 180 / Math.PI + 360) % 360);
+        var nm = (Math.hypot(tgt.x - ip.x, tgt.y - ip.y) / 1852).toFixed(1);
+        jtacGeoLabel({ x: (ip.x + tgt.x) / 2, y: (ip.y + tgt.y) / 2 }, String(hdg).padStart(3, '0') + '° · ' + nm + ' NM', 'is-green').addTo(group);
+        L.circleMarker(ll(ip), { radius: 6, color: green, weight: 2, fillColor: green, fillOpacity: 0.35 })
+          .bindTooltip(g.ipName || 'IP', { permanent: true, direction: 'right', className: 'ow-jtac-geo-tip is-green' }).addTo(group);
+      }
+      // Ami le plus proche relié à la cible.
+      var fr = jtacGeoPoint(g.friendly);
+      if (fr) {
+        L.polyline([ll(tgt), ll(fr)], { color: dc ? red : green, weight: 1.5, dashArray: '3 4', interactive: false }).addTo(group);
+        jtacGeoLabel({ x: (fr.x + tgt.x) / 2, y: (fr.y + tgt.y) / 2 }, Math.round(Math.hypot(fr.x - tgt.x, fr.y - tgt.y)) + ' m', dc ? 'is-red' : 'is-green').addTo(group);
+      }
+      // JTAC et ligne laser-cible.
+      var jt = jtacGeoPoint(g.jtac);
+      if (jt) {
+        if (g.laser) L.polyline([ll(jt), ll(tgt)], { color: red, weight: 1.5, opacity: 0.75, interactive: false }).addTo(group);
+        L.circleMarker(ll(jt), { radius: 5, color: cyan, weight: 2, fillColor: cyan, fillOpacity: 0.5 })
+          .bindTooltip(who, { permanent: true, direction: 'right', className: 'ow-jtac-geo-tip is-cyan' }).addTo(group);
+      }
+      // Appareil au moment du 9-LINE.
+      var ac = jtacGeoPoint(g.aircraftPos);
+      if (ac) {
+        L.polyline([ll(ac), ll(tgt)], { color: green, weight: 1, dashArray: '2 6', opacity: 0.7, interactive: false }).addTo(group);
+        L.circleMarker(ll(ac), { radius: 5, color: green, weight: 2, fillColor: '#0b120e', fillOpacity: 0.8 })
+          .bindTooltip(g.aircraft || 'ACFT', { permanent: true, direction: 'top', className: 'ow-jtac-geo-tip is-green' }).addTo(group);
+      }
+      // Cible : losange, grille (ligne 6) et fiche du 9-LINE au clic.
+      var tip = 'TGT · ' + who + (row.line6 ? ' · ' + row.line6 : '') + (g.laser && g.laserCode ? ' · LSR ' + g.laserCode : '');
+      L.marker(ll(tgt), {
+        zIndexOffset: 600,
+        icon: L.divIcon({ className: 'ow-jtac-geo-target' + (dc ? ' is-dc' : ''), html: '<span></span>', iconSize: [18, 18], iconAnchor: [9, 9] })
+      }).bindTooltip(tip, { permanent: true, direction: 'right', offset: [10, 0], className: 'ow-jtac-geo-tip is-red' })
+        .bindPopup('<strong>9-LINE ' + escapeHtml(who) + '</strong><br>' + [1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (n) {
+          return n + '. ' + escapeHtml(row['line' + n] || '—');
+        }).join('<br>') + (dc ? '<br><strong>DANGER CLOSE</strong>' : ''))
+        .addTo(group);
+    });
+    jtacGeoLayer = group.addTo(map);
+  }
   function renderPresenceHeat() {
     if (presenceLayer) { map.removeLayer(presenceLayer); presenceLayer = null; }
     var box = document.getElementById('ow-presence-heat');
@@ -5701,6 +5805,7 @@
       if (input.dataset.owLayer === 'vehicles') renderGpsVehiclesOnMap(gpsVehicles);
       if (input.dataset.owLayer === 'air') renderAirAssetsOnMap(airAssets);
       if (input.dataset.owLayer === 'arma-markers') renderArmaMarkers();
+      if (input.dataset.owLayer === 'jtac') renderJtacGeoOnMap();
       renderMap();
     });
   });
@@ -5777,7 +5882,8 @@
     return api('/api/cas?mapId=' + encodeURIComponent(mapId)).then(function (payload) {
       casRows = asList(payload, 'items');
       paintAirLists();
-    }).catch(function () { casRows = []; });
+      renderJtacGeoOnMap();
+    }).catch(function () { casRows = []; renderJtacGeoOnMap(); });
   }
 
   function loadAirAssets() {

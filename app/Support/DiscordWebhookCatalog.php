@@ -22,6 +22,8 @@ final class DiscordWebhookCatalog
     public const KEY_ATAK_DISCORD_APP = 'atak_discord_app';
     /** Alertes terrain graves (opérateur à terre, panique) recopiées dans le salon. */
     public const KEY_ATAK_TACTICAL_ALERTS = 'atak_tactical_alerts';
+    /** Notes de l'app Reco du téléphone (type, observation, carroyage, auteur). */
+    public const KEY_ATAK_RECON_NOTES = 'atak_recon_notes';
 
     public const MODE_OFF = 'off';
     public const MODE_DEFAULT = 'default';
@@ -66,6 +68,13 @@ final class DiscordWebhookCatalog
                 'group' => 'Téléphone ATAK',
                 'label' => 'Alertes graves du terrain',
                 'hint' => 'Opérateur à terre, PANIQUE et rapports de décès remontés par les téléphones : recopiés dans le salon choisi.',
+                'default_mode' => self::MODE_OFF,
+            ],
+            [
+                'key' => self::KEY_ATAK_RECON_NOTES,
+                'group' => 'Téléphone ATAK',
+                'label' => 'Notes de reco',
+                'hint' => 'Chaque note envoyée depuis l’app Reco du téléphone : type (véhicule, groupe armé…), observation, fiabilité, carroyage et auteur. Mentions et liens retirés.',
                 'default_mode' => self::MODE_OFF,
             ],
             [

@@ -33,9 +33,14 @@ if (!hasInterface) exitWith { false };
 private _d = "\z\comspec_atak_native\addons\main\data\";
 private _off = "#(argb,8,8,3)color(0,0,0,1)";
 private _style = profileNamespace getVariable ["COMSPEC_ATAK_CarryStyle", "hud"];
+// ATAK sur le JPC en chantier (WIP) : bloqué pour tous pour le moment (demande TTRD), le terminal porté reste la
+// miniature. Pour le rouvrir plus tard : _allowed = réglage serveur « ATAK en 3D visible » (comspec_atak_native_phone_3d).
+private _allowed = false;
+if (!_allowed) then { _style = "hud"; };
 // Modèle du profil (la tablette de bord des véhicules n'est pas portable : S7) ; S7 : teinte de la coque.
 private _model = profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"];
 if !(_model in (_phones + ["keys"])) then { _model = "s7"; };
+if (_model isNotEqualTo "s7" && {!([_model, player] call (missionNamespace getVariable ["COMSPEC_ATAK_ModelOk", { true }]))}) then { _model = "s7"; };
 private _cls = ["COMSPEC_ATAK_JpcPhone_" + _model, "COMSPEC_ATAK_JpcTablet"] select (_model isEqualTo "keys");
 private _tint = profileNamespace getVariable ["COMSPEC_ATAK_ShellTint", "coyote"];
 private _skin = ["", format ["%1jpc_s7_%2_ca.paa", _d, _tint]] select (_model isEqualTo "s7" && {_tint in ["od", "black"]});
@@ -154,6 +159,10 @@ switch (_act) do {
         true
     };
     case "toggle": {
+        if (!_allowed && {!(call _isOpen)}) exitWith {
+            ["INFO", "ATAK sur le JPC : en chantier, pas encore disponible", 4, 20] call comspec_atak_native_fnc_notify;
+            false
+        };
         if (call _isOpen) exitWith {
             uiNamespace setVariable ["COMSPEC_ATAK_HudWanted", false];
             [] call comspec_atak_native_fnc_close;

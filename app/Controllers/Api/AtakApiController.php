@@ -25,6 +25,7 @@ use App\Repositories\CasNineLineRepository;
 use App\Repositories\ReconImageRepository;
 use App\Repositories\ReconNoteRepository;
 use App\Support\ReconNoteCatalog;
+use App\Services\Monitoring\ReconNoteDiscordService;
 use App\Repositories\MapShapeRepository;
 use App\Repositories\LaserCodeRepository;
 use App\Repositories\TenantRepository;
@@ -66,6 +67,7 @@ use App\Repositories\AtakDeviceLogRepository;
 use App\Repositories\AtakRealismRepository;
 use App\Services\Tactical\MissionDisplaySettingsService;
 use App\Repositories\OperatorGameProfileRepository;
+use App\Services\GameEquipment\GameItemUsageRecorder;
 use App\Services\OperatorGame\OperatorGameObservationNormalizer;
 use App\Services\OperatorGame\OperatorGameReconciliationService;
 
@@ -223,6 +225,8 @@ class AtakApiController
     private ?AtakRealismRepository $realismRegistry = null;
     private ?OperatorGameProfileRepository $operatorGameProfiles = null;
 
+    private ?GameItemUsageRecorder $gameItemUsage = null;
+
     /** Register/sync is deliberately separate from the high-frequency position channel. */
     public function operatorRegister(Request $request, array $params = []): Response
     {
@@ -257,6 +261,8 @@ class AtakApiController
             $reference = [];
         }
         $profile = $repo->upsertProfile($tenantId, $reference, $steamId, $payload);
+        // Équipement porté et mods chargés (classements back-office, kits par rôle). Ne lève jamais.
+        ($this->gameItemUsage ??= new GameItemUsageRecorder())->record($tenantId, $steamId, $payload);
         if (!$linked) {
             if ($profile['first_seen']) {
                 $repo->event($tenantId, $profile['id'], $steamId, 'STEAM_ACCOUNT_NOT_FOUND', [
@@ -6989,6 +6995,53 @@ class AtakApiController
     }
 
     /**
+     * Téléphone ATAK natif (COMSPEC Link « Garmin.Report », 2.0.87) : la montre de l'app Garmin du joueur, envoyée en
+     * entier toutes les 5 min. Corps : {player_uid, call_sign, status: {bb, hr, stress, rest_hr, goal},
+     * days: [{day, steps, foot_m, …}], acts: [{day, at, type, place, world, m, sec}]}.
+     */
+    public function garmin(Request $request, array $params = []): Response
+    {
+        if (!$this->authArma()) {
+            return Response::json(['error' => 'Unauthorized'], 401);
+        }
+        $r = $this->requireTenant($request);
+        if ($r instanceof Response) {
+            return $r;
+        }
+        $tenantId = $r;
+        $requireSteam = ComspecApiKeyAuth::matchedUserId() === null;
+        $actor = $this->guardArmaWrite($request, $tenantId, $requireSteam);
+        if ($actor instanceof Response) {
+            return $actor;
+        }
+        $repo = new \App\Repositories\AtakGarminRepository();
+        if (!$repo->schemaReady()) {
+            return Response::json(['ok' => false, 'error' => 'schema_not_ready'], 503);
+        }
+        $body = $this->jsonBody($request);
+        $user = null;
+        $sessionUserId = ComspecApiKeyAuth::matchedUserId();
+        if ($sessionUserId !== null) {
+            $user = $this->userRepository->findById($sessionUserId, $tenantId);
+        }
+        $uid = $actor['steam_uid'] ?? SteamId::normalize((string) ($body['player_uid'] ?? $body['steam_uid'] ?? ''));
+        if ($user === null && $uid !== null) {
+            $user = $this->userRepository->findBySteamIdForTenant($tenantId, $uid);
+        }
+        if ($user === null) {
+            return Response::json(['ok' => true, 'matched' => false]);
+        }
+        $report = \App\Repositories\AtakGarminRepository::normalizeReport($body);
+
+        return Response::json([
+            'ok' => $repo->saveReport($tenantId, (int) $user['id'], $report),
+            'matched' => true,
+            'days' => count($report['days']),
+            'activities' => count($report['activities']),
+        ]);
+    }
+
+    /**
      * Serveur Arma (COMSPEC Link « ScreenTime.Batch ») : temps de jeu et temps par rôle de tous les joueurs,
      * comptés par le serveur, donc même quand le téléphone d'un joueur n'a plus de batterie ni de réseau.
      * Corps : {mission_key, players: [{player_uid, call_sign, items: [{kind: play|role, key, label, seconds}]}]}.
@@ -11898,6 +11951,9 @@ class AtakApiController
         $text = trim((string) ($body['text'] ?? ''));
         $tag = ReconNoteCatalog::normalizeTag((string) ($body['tag'] ?? ''));
         if ($text === '' && $tag === '') {
+            // Corps illisible (guillemets doublés d'une ancienne DLL) ou note vide : tracé, sinon la reco disparaît sans bruit.
+            error_log('[atak/recon-notes] note refusée (vide ou illisible), tenant ' . $tenantId . ', ' . strlen(HttpJsonBody::rawJson()) . ' octets reçus');
+
             return Response::json([
                 'error' => 'empty',
                 'message' => 'Indiquez une observation ou un type.',
@@ -11946,6 +12002,25 @@ class AtakApiController
         if ($row !== []) {
             // Relais JNET : la reco remonte de l'unité de l'opérateur vers son échelon supérieur.
             $this->jnetBridge()->relayReconNote($tenantId, $this->jnetGameUserId($tenantId, $actor, $authorUid), $row);
+            if ($existing === null) {
+                // Journal Activité (admin) et salon Discord des recos, une fois par note (pas aux renvois).
+                $author = trim((string) ($row['author'] ?? ''));
+                $tagLabel = ReconNoteCatalog::tagLabel((string) ($row['tag'] ?? ''));
+                $this->activityLog->record(
+                    $tenantId,
+                    max(1, $mapId),
+                    AtakActivityLogService::TYPE_INTEL,
+                    'Reco ' . $tagLabel . ($text !== '' ? ' — ' . $text : '') . ' (' . ReconNoteDiscordService::grid($row) . ')',
+                    $author !== '' ? $author : null,
+                    $this->buildActivityMeta($tenantId, max(1, $mapId), $body, is_array($actor) ? $actor : null, null, [
+                        'kind' => 'recon_note',
+                        'tag' => (string) ($row['tag'] ?? ''),
+                        'confidence' => (string) ($row['confidence'] ?? ''),
+                        'source_id' => $sourceId,
+                    ])
+                );
+                ReconNoteDiscordService::defer($tenantId, $row);
+            }
         }
 
         return Response::json(['ok' => true, 'note' => $row]);
@@ -12332,6 +12407,16 @@ class AtakApiController
                 'device_type' => $deviceNorm !== '' ? $deviceNorm : 'CTAB',
                 'captured_at' => ReconCapturedAt::unixFromPosted($_POST['capturedAt'] ?? $_POST['captured_at'] ?? null),
             ] + $photoMeta;
+            // Visages floutés par le mode photo du téléphone (cadres envoyés par le jeu), avant tout le reste :
+            // l'original gardé par la correction de couleur ne doit pas montrer les visages.
+            $faceBlur = \App\Support\PhotoFaceBlur::fromExtra((string) ($_POST['photo_extra'] ?? ''));
+            if ($faceBlur !== null) {
+                try {
+                    \App\Support\PhotoFaceBlur::applyFile($path, $faceBlur);
+                } catch (\Throwable $blurErr) {
+                    error_log('[atak/recon-images] face blur ' . $blurErr->getMessage());
+                }
+            }
             // Captures d'Arma délavées : niveaux et tons moyens corrigés avant l'incrustation (original gardé à côté).
             if (!\App\Support\PhotoAutoLevel::skipsProfile($data['fx_profile'] ?? null, $deviceNorm)) {
                 try {

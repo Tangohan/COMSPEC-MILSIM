@@ -3,7 +3,7 @@
     Params : [[x, y, w, h] dans la zone de contenu, unité suivie]
     Le tracé est une suite de colonnes fines (une par échantillon) reliant chaque point au précédent ;
     une boucle de 40 ms le fait défiler et s'arrête seule quand la page change.
-    Constantes : état et pouls lus par COMSPEC Link (ACE), tension et SpO2 estimées d'après le sang.
+    Constantes : fn_medVitals (ACE/KAT ou classes d'hémorragie ATLS), tension au brassard (PNI) toutes les 60 s.
 */
 params ["_rect", ["_u", objNull]];
 disableSerialization;
@@ -46,16 +46,10 @@ private _pfh = [{
     // Constantes relues une fois par seconde.
     if (diag_tickTime > _next) then {
         _e set [6, diag_tickTime + 1];
-        private _st = if (isNull _u) then { ["none", 100, 0, 0] } else {
-            if (isNil "comspec_overwatch_connect_fnc_getMedicalState") then { [["stable", "kia"] select !alive _u, 100, 0, [80, 0] select !alive _u] } else { ([_u] call comspec_overwatch_connect_fnc_getMedicalState) splitString "|" }
-        };
-        private _state = _st param [0, "stable"];
-        if (!isNull _u && {!alive _u}) then { _state = "kia"; };
-        // Overwatch renvoie des textes ("76") : parseNumber str "76" donnait 0 (guillemets), d'où 0 bpm et ligne plate.
-        private _num = { params ["_v"]; if (_v isEqualType "") then { parseNumber _v } else { _v } };
-        private _blood = [_st param [1, 100]] call _num;
-        private _hr = [_st param [3, 80]] call _num;
-        if (_state in ["cardiac_arrest", "kia"]) then { _hr = 0; };
+        // Constantes cohérentes (fn_medVitals) : ACE/KAT, sinon classes d'hémorragie ATLS ; tension au brassard toutes les 60 s.
+        private _v = [_u] call comspec_atak_native_fnc_medVitals;
+        private _state = _v getOrDefault ["state", "none"];
+        private _hr = _v getOrDefault ["hr", 0];
         _e set [7, _hr];
         _e set [8, _state];
         // Données masquées (Réglages > Réalisme, fn_medShow) : ni valeur, ni tracé, ni couleur d'alerte.
@@ -65,14 +59,33 @@ private _pfh = [{
         if (!_vState && {!(_state in ["kia", "none"])}) then { _lab = ["SUIVI", "#8a9a93"]; };
         _head ctrlSetStructuredText parseText ((format ["<t size='0.75' color='#8a9a93'>BLESSÉ SUIVI</t>  <t size='0.75' color='%3'>● %2</t><br/><t size='1.25' font='COMSPEC_BarlowBold'>%1</t>",
             [[_u, true] call comspec_atak_native_fnc_unitCallsign, "—"] select (isNull _u), _lab select 0, _lab select 1]) call comspec_atak_native_fnc_tr);
-        private _sys = round (70 + 50 * (_blood / 100)); private _dia = round (40 + 30 * (_blood / 100));
-        private _spo = [round ((80 + 18 * (_blood / 100)) min 99), 0] select (_hr isEqualTo 0);
-        private _col = { params ["_v", "_ok"]; format ["<t color='%1'>%2</t>", ["#f2ab33", "#5cc76b"] select _ok, _v] };
+        private _col = { params ["_t", "_ok"]; format ["<t color='%1'>%2</t>", ["#f2ab33", "#5cc76b"] select _ok, _t] };
         private _lines = [];
-        if (_vHr) then { _lines pushBack format ["Fréquence cardiaque<t align='right'>%1 bpm</t>", [_hr, _hr >= 50 && {_hr <= 110}] call _col]; };
-        if (_vBp) then { _lines pushBack format ["Tension<t align='right'>%1 / %2</t>", _sys, _dia]; };
-        if (_vSpo) then { _lines pushBack format ["SpO2<t align='right'>%1 %%</t>", [_spo, _spo >= 94] call _col]; };
-        if (_vBlood) then { _lines pushBack format ["Sang<t align='right'>%1 %%</t>", [round _blood, _blood >= 80] call _col]; };
+        if (!isNull _u) then {
+            private _sys = _v getOrDefault ["sys", -1];
+            private _spo = _v getOrDefault ["spo2", -1];
+            private _rr = _v getOrDefault ["rr", 0];
+            private _cls = _v getOrDefault ["hemClass", 0];
+            // Pas de pouls : le moniteur n'a plus de signal, « --- » plutôt qu'un chiffre impossible.
+            if (_vHr) then { _lines pushBack format ["FC<t align='right'>%1</t>", [[format ["%1 bpm", _hr], _hr >= 50 && {_hr <= 110}] call _col, "<t color='#e5483a'>0 · pas de pouls</t>"] select (_hr <= 0)]; };
+            // Tension et SpO2 : seulement après une mesure au brassard et à l'oxymètre (action ACE), avec son âge.
+            private _age = _v getOrDefault ["nibpAge", -1];
+            private _when = ["", format [" <t size='0.75' color='#8a9a93'>il y a %1 min</t>", floor (_age / 60)]] select (_age >= 60);
+            private _none = "<t color='#8a9a93'>non mesurée</t>";
+            if (_vBp) then { _lines pushBack format ["Tension<t align='right'>%1</t>", switch (true) do {
+                case (_age < 0): { _none };
+                case (_sys < 0): { "--- <t size='0.75' color='#8a9a93'>imprenable</t>" };
+                default { format ["%1%2", [format ["%1/%2", _sys, _v getOrDefault ["dia", 0]], _sys >= 90] call _col, _when] };
+            }]; };
+            if (_vSpo) then { _lines pushBack format ["SpO2<t align='right'>%1</t>", switch (true) do {
+                case (_age < 0): { _none };
+                case (_spo < 0): { "--- <t size='0.75' color='#8a9a93'>pas de signal</t>" };
+                default { format ["%1%2", [format ["%1 %%", _spo], _spo >= 94] call _col, _when] };
+            }]; };
+            if (_vHr) then { _lines pushBack format ["F. resp.<t align='right'>%1</t>", [format ["%1 /min", _rr], _rr >= 10 && {_rr <= 24}] call _col]; };
+            // Volume de sang : aucun moniteur ne le mesure ; le soignant estime la perte (classe d'hémorragie).
+            if (_vBlood) then { _lines pushBack format ["Hémorragie<t align='right'>%1</t>", [["aucune", "classe I", "classe II", "classe III", "classe IV"] select _cls, _cls < 2] call _col]; };
+        };
         _lines pushBack format ["Distance<t align='right'>%1</t>", [format ["%1 m", round (player distance _u)], "—"] select (isNull _u)];
         _vit ctrlSetStructuredText parseText ((format ["<t size='0.8'>%1</t>", _lines joinString "<br/>"]) call comspec_atak_native_fnc_tr);
     };

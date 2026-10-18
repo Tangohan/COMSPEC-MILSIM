@@ -1033,6 +1033,7 @@ CREATE TABLE IF NOT EXISTS `atak_nine_line` (
   `line8` varchar(255) DEFAULT NULL,
   `line9` text DEFAULT NULL,
   `lines_checked` json DEFAULT NULL,
+  `geo_json` text DEFAULT NULL,
   `status` varchar(50) DEFAULT 'DRAFT',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,

@@ -343,6 +343,35 @@ final class ArsenalWardrobeRepository
         ];
     }
 
+    /**
+     * Collection gérée par la plateforme (sans propriétaire, visible de toute la communauté), créée au besoin.
+     * Utilisée pour les « Kits par rôle » publiés depuis le back-office.
+     *
+     * @param list<string> $tags
+     */
+    public function ensureTenantCollection(int $tenantId, string $slug, string $name, string $description, array $tags): int
+    {
+        $slug = self::slugify($slug);
+        $tagsJson = json_encode(array_values(array_map('strval', $tags)), JSON_UNESCAPED_UNICODE) ?: '[]';
+        $existing = $this->findCollectionBySlug($tenantId, $slug);
+        if ($existing !== null) {
+            $id = (int) ($existing['id'] ?? 0);
+            $this->pdo->prepare(
+                'UPDATE arsenal_equipment_collections SET tags_json = ?, visibility = \'tenant\', updated_at = NOW()
+                 WHERE id = ? AND tenant_id = ?'
+            )->execute([$tagsJson, $id, $tenantId]);
+
+            return $id;
+        }
+        $this->pdo->prepare(
+            'INSERT INTO arsenal_equipment_collections
+                (tenant_id, owner_user_id, name, slug, description, visibility, tags_json, sort_order, created_at, updated_at)
+             VALUES (?, NULL, ?, ?, ?, \'tenant\', ?, -10, NOW(), NOW())'
+        )->execute([$tenantId, mb_substr($name, 0, 120), $slug, mb_substr($description, 0, 500), $tagsJson]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
     public function deleteCollection(int $tenantId, int $userId, int $id): bool
     {
         $st = $this->pdo->prepare(

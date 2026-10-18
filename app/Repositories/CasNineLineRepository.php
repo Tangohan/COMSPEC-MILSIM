@@ -24,6 +24,8 @@ class CasNineLineRepository
 
     private ?bool $hasMissionKind = null;
 
+    private ?bool $hasGeo = null;
+
     public function __construct(?PDO $pdo = null)
     {
         $this->pdo = $pdo;
@@ -46,6 +48,85 @@ class CasNineLineRepository
         }
 
         return $this->hasMissionKind;
+    }
+
+    private function hasGeoColumn(): bool
+    {
+        if ($this->hasGeo !== null) {
+            return $this->hasGeo;
+        }
+        try {
+            $st = $this->pdo()->prepare(
+                'SELECT 1 FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1'
+            );
+            $st->execute(['atak_nine_line', 'geo_json']);
+            $this->hasGeo = (bool) $st->fetchColumn();
+        } catch (\Throwable) {
+            $this->hasGeo = false;
+        }
+
+        return $this->hasGeo;
+    }
+
+    /**
+     * Géométrie envoyée par l'app JTAC (objet « geo ») réduite aux champs connus : positions [x, y] en mètres du
+     * terrain, nombres bornés, textes courts. Null quand rien d'exploitable (pas de cible).
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function sanitizeGeo(mixed $geo): ?array
+    {
+        if (!is_array($geo)) {
+            return null;
+        }
+        $point = static function (mixed $p): ?array {
+            if (!is_array($p) || count($p) < 2) {
+                return null;
+            }
+            $x = $p[0] ?? null;
+            $y = $p[1] ?? null;
+            if (!is_numeric($x) || !is_numeric($y)) {
+                return null;
+            }
+            $x = (float) $x;
+            $y = (float) $y;
+            if ($x < -1000 || $y < -1000 || $x > 100000 || $y > 100000) {
+                return null;
+            }
+
+            return [round($x), round($y)];
+        };
+        $text = static fn (mixed $v, int $max = 64): string => mb_substr(trim(is_scalar($v) ? (string) $v : ''), 0, $max);
+        $target = $point($geo['target'] ?? null);
+        if ($target === null) {
+            return null;
+        }
+        $window = null;
+        if (is_array($geo['fahWindow'] ?? null) && count($geo['fahWindow']) === 2
+            && is_numeric($geo['fahWindow'][0] ?? null) && is_numeric($geo['fahWindow'][1] ?? null)) {
+            $window = [(int) round((float) $geo['fahWindow'][0]), (int) round((float) $geo['fahWindow'][1])];
+        }
+
+        return [
+            'source' => $text($geo['source'] ?? 'jtac', 16),
+            'target' => $target,
+            'ip' => $point($geo['ip'] ?? null),
+            'ipName' => $text($geo['ipName'] ?? ''),
+            'fah' => $text($geo['fah'] ?? ''),
+            'fahWindow' => $window,
+            'risk' => max(0, min(5000, (int) ($geo['risk'] ?? 0))),
+            'dangerClose' => !empty($geo['dangerClose']),
+            'jtac' => $point($geo['jtac'] ?? null),
+            'friendly' => $point($geo['friendly'] ?? null),
+            'aircraft' => $text($geo['aircraft'] ?? ''),
+            'aircraftPos' => $point($geo['aircraftPos'] ?? null),
+            'laser' => !empty($geo['laser']),
+            'laserCode' => max(0, min(9999, (int) ($geo['laserCode'] ?? 0))),
+            'type' => max(0, min(3, (int) ($geo['type'] ?? 0))),
+            'method' => $text($geo['method'] ?? '', 16),
+            'ordnance' => $text($geo['ordnance'] ?? ''),
+        ];
     }
 
     public function listCas(int $tenantId, int $mapId, ?string $assignedTo = null, ?string $status = null, string $kind = self::KIND_CAS): array
@@ -169,6 +250,11 @@ class CasNineLineRepository
             ]);
         }
         $id = (int) $this->pdo()->lastInsertId();
+        $geo = self::sanitizeGeo($payload['geo'] ?? null);
+        if ($geo !== null && $this->hasGeoColumn()) {
+            $this->pdo()->prepare('UPDATE atak_nine_line SET geo_json = ? WHERE tenant_id = ? AND id = ?')
+                ->execute([json_encode($geo, JSON_UNESCAPED_UNICODE), $tenantId, $id]);
+        }
         $row = $this->getCas($tenantId, $id);
         return $row ?? [];
     }
@@ -265,6 +351,9 @@ class CasNineLineRepository
             $decoded = json_decode($linesChecked, true);
             $row['lines_checked'] = is_array($decoded) ? $decoded : [];
         }
+        $geo = is_string($row['geo_json'] ?? null) ? json_decode($row['geo_json'], true) : null;
+        $row['geo'] = is_array($geo) ? $geo : null;
+        unset($row['geo_json']);
         $row['missionId'] = $row['mission_id'] ?? null;
         $row['assignedAircraft'] = $row['assigned_aircraft'] ?? null;
         $kind = strtolower(trim((string) ($row['mission_kind'] ?? self::KIND_CAS)));

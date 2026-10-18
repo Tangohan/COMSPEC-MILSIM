@@ -57,7 +57,24 @@ class ArsenalWardrobeController
             $dotation = [];
         }
 
-        return $this->hubView(false, $wardrobes, $collections, $classes, $dotation);
+        return $this->hubView(false, $wardrobes, $collections, $classes, $dotation, $this->roleKitsForMember($tenantId, $userId));
+    }
+
+    /**
+     * Kits proposés pour les fonctions du membre (back-office › Kits par rôle). Jamais bloquant.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function roleKitsForMember(int $tenantId, int $userId): array
+    {
+        try {
+            /** @var \App\Services\GameEquipment\RoleKitService $service */
+            $service = \App\Core\Container::get(\App\Services\GameEquipment\RoleKitService::class);
+
+            return $service->listForMember($tenantId, $userId);
+        } catch (\Throwable) {
+            return [];
+        }
     }
 
     public function redirectHub(Request $request, array $params = []): Response
@@ -687,6 +704,7 @@ class ArsenalWardrobeController
      * @param list<array<string, mixed>> $collections
      * @param list<array<string, mixed>> $classes
      * @param list<array<string, mixed>> $dotation
+     * @param list<array<string, mixed>> $roleKits
      */
     private function hubView(
         bool $migrationMissing,
@@ -694,6 +712,7 @@ class ArsenalWardrobeController
         array $collections,
         array $classes,
         array $dotation = [],
+        array $roleKits = [],
     ): Response {
         $mine = array_values(array_filter($wardrobes, static fn (array $w): bool => !empty($w['mine'])));
 
@@ -707,6 +726,7 @@ class ArsenalWardrobeController
             'collections' => $collections,
             'equipmentClasses' => $classes,
             'dotationItems' => $dotation,
+            'roleKits' => $roleKits,
             'canManageCatalog' => $this->canManageCatalog(),
             'canManageDotation' => $this->canManageDotation(),
             'equipmentKindLabels' => ArsenalLoadoutItems::kindLabels(),

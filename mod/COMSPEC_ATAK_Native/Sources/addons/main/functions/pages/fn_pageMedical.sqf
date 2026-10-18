@@ -170,10 +170,10 @@ _rows pushBack ["section", "Suivi des troupes", ["Camp allié", "Camp allié, le
 private _rank = createHashMapFromArray [["cardiac_arrest", 0], ["unconscious", 1], ["critical", 2], ["wounded", 3], ["stable", 4]];
 private _list = [];
 {
-    private _st = if (isNil "comspec_overwatch_connect_fnc_getMedicalState") then { ["stable", 100, 0, 80] } else { ([_x] call comspec_overwatch_connect_fnc_getMedicalState) splitString "|" };
-    private _h = _st param [0, "stable"];
-    if (!alive _x) then { _h = "kia"; };
-    _list pushBack [[[_x, true] call comspec_atak_native_fnc_unitCallsign, _rank getOrDefault [_h, 5]] select (_vis get "state"), _x, _h, _st param [1, "100"], _st param [3, "80"]];
+    // Constantes cohérentes (fn_medVitals) : classe d'hémorragie estimée plutôt qu'un « % de sang » qu'aucun soignant ne lit.
+    private _mv = [_x] call comspec_atak_native_fnc_medVitals;
+    private _h = _mv getOrDefault ["state", "stable"];
+    _list pushBack [[[_x, true] call comspec_atak_native_fnc_unitCallsign, _rank getOrDefault [_h, 5]] select (_vis get "state"), _x, _h, _mv getOrDefault ["hemClass", 0], _mv getOrDefault ["hr", 0]];
 } forEach (allPlayers select { side group _x isEqualTo side group player });
 _list sort true;
 // Blessé suivi au moniteur : choisi dans la liste, sinon le plus grave (moi s'il n'y a personne).
@@ -189,8 +189,8 @@ _rows pushBack ["info", format ["Patient : %1", [_mon, true] call comspec_atak_n
     private _lab = createHashMapFromArray [["cardiac_arrest", ["ARRÊT", "#e5483a"]], ["unconscious", ["INCONSCIENT", "#e5483a"]], ["critical", ["CRITIQUE", "#f2ab33"]], ["wounded", ["BLESSÉ", "#e8b84a"]], ["kia", ["KIA", "#8a9a93"]]] getOrDefault [_h, ["STABLE", "#5cc76b"]];
     if (!(_vis get "state") && {_h isNotEqualTo "kia"}) then { _lab = ["—", "#8a9a93"]; };
     private _vit = [];
-    if (_vis get "blood") then { _vit pushBack format ["sang %1 %%", _blood]; };
-    if (_vis get "hr") then { _vit pushBack format ["pouls %1", _hr]; };
+    if (_vis get "blood" && {_blood > 0}) then { _vit pushBack (["", "hémorragie I", "hémorragie II", "hémorragie III", "hémorragie IV"] select _blood); };
+    if (_vis get "hr") then { _vit pushBack ([format ["pouls %1", _hr], "pas de pouls"] select (_hr <= 0)); };
     _vit append [format ["%1 m", round (player distance _u)], [getPosASL _u, 6] call comspec_atak_native_fnc_gridRef];
     _rows pushBack ["text", format ["<t color='%1' font='COMSPEC_BarlowBold'>%2</t>  %3  <t size='0.8' color='#8a9a93'>%4</t>",
         _lab select 1, _lab select 0, [_u, true] call comspec_atak_native_fnc_unitCallsign, _vit joinString " · "]];

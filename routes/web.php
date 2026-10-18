@@ -197,6 +197,7 @@ use App\Controllers\Web\TenantMessagesController;
 use App\Controllers\Admin\Organization\InvitationAdminController;
 use App\Controllers\Admin\Organization\DashboardPinsAdminController;
 use App\Controllers\Admin\Organization\DashboardWardrobePinsAdminController;
+use App\Controllers\Admin\Organization\GameEquipmentAdminController;
 use App\Controllers\Admin\Organization\ModerationOrganizationController;
 use App\Controllers\Admin\Organization\OrganizationSecurityIndicatorsController;
 use App\Controllers\Admin\Organization\OrganizationAnalyticsController;
@@ -1281,6 +1282,15 @@ return function (Router $router) {
     $router->post('/back-office/dashboard-tenues/{id}/update', [DashboardWardrobePinsAdminController::class, 'update'], [AuthMiddleware::class]);
     $router->post('/back-office/dashboard-tenues/{id}/delete', [DashboardWardrobePinsAdminController::class, 'delete'], [AuthMiddleware::class]);
     $router->post('/back-office/dashboard-tenues/{id}/move', [DashboardWardrobePinsAdminController::class, 'move'], [AuthMiddleware::class]);
+    // Équipement remonté par le mod et kits par rôle (publiés comme tenues d’arsenal).
+    $router->get('/back-office/equipement-joueurs', [GameEquipmentAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/kits-roles', [GameEquipmentAdminController::class, 'kits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/kits-roles/nouveau', [GameEquipmentAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/kits-roles', [GameEquipmentAdminController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->get('/back-office/kits-roles/{id}', [GameEquipmentAdminController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/kits-roles/{id}', [GameEquipmentAdminController::class, 'update'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/kits-roles/{id}/supprimer', [GameEquipmentAdminController::class, 'delete'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/kits-roles/{id}/publier', [GameEquipmentAdminController::class, 'publish'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $mwTenantMemberModeration = [AuthMiddleware::class, OrganizationAdminMiddleware::class, TenantMemberModerationMiddleware::class];
     $router->get('/back-office/moderation', [ModerationOrganizationController::class, 'index'], $mwTenantMemberModeration);
     $router->get('/back-office/audit', [OrganizationAuditController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -2401,6 +2411,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/screen-time', [AtakApiController::class, 'screenTime']);
     $router->post('/api/atak/screen-time/batch', [AtakApiController::class, 'screenTimeBatch']);
     $router->post('/api/atak/distance/batch', [AtakApiController::class, 'distanceBatch']);
+    $router->post('/api/atak/garmin', [AtakApiController::class, 'garmin']);
     $router->post('/api/atak/send-queue/report', [AtakApiController::class, 'sendQueueReport']);
     $router->post('/api/atak/game-session/discover', [AtakApiController::class, 'gameSessionDiscover']);
     $router->post('/api/atak/game-session/join', [AtakApiController::class, 'gameSessionJoin']);

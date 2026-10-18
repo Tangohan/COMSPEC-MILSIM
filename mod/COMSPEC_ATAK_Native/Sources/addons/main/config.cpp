@@ -14,16 +14,16 @@ class CfgComspecLanguages {
 class CfgFunctions {
     class comspec_atak_native { tag="comspec_atak_native";
         class core { file="z\comspec_atak_native\addons\main\functions\core";
-            class log {}; class battery {}; class weather {}; class stateInit {}; class storeSet {}; class schedulerStart {}; class schedulerStop {}; class schedulerTick {}; class debugDump {}; class deviceCatalog {}; class deviceScan {}; class hasDevice {}; class deviceDenied {}; class tenantRule {}; class pref {}; class tenantApply {}; class canUse {}; class batterySwap {}; class linkQuality {}; class perfAcc {}; class deviceHealth {}; class deviceDamage {}; class deviceRepair {}; class phoneIdent {}; class ramUsage {}; class athenaPulse {}; class batteryItem {}; class aircrewTerminal {}; class repairStart {}; class deviceImpact {}; class deviceReport {}; class screenDirt {}; class screenClean {}; class medShow {}; class integrityCheck {}; class startupCheck {}; class simSos {};
+            class log {}; class battery {}; class weather {}; class stateInit {}; class storeSet {}; class schedulerStart {}; class schedulerStop {}; class schedulerTick {}; class debugDump {}; class deviceCatalog {}; class deviceScan {}; class hasDevice {}; class deviceDenied {}; class tenantRule {}; class pref {}; class tenantApply {}; class canUse {}; class batterySwap {}; class linkQuality {}; class perfAcc {}; class deviceHealth {}; class deviceDamage {}; class deviceRepair {}; class phoneIdent {}; class ramUsage {}; class athenaPulse {}; class batteryItem {}; class aircrewTerminal {}; class repairStart {}; class deviceImpact {}; class deviceReport {}; class screenDirt {}; class screenClean {}; class medShow {}; class medVitals {}; class integrityCheck {}; class startupCheck {}; class simSos {};
         };
         class ui { file="z\comspec_atak_native\addons\main\functions\ui";
             class display {}; class open {}; class close {}; class hudToggle {}; class interactToggle {}; class orientationToggle {}; class phoneDrag {}; class formRender {}; class formValue {}; class keyBlock {}; class fullAlert {}; class vibrate {}; class dataBarEnabled {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class fontSet {}; class fontApply {}; class fontText {}; class navigate {}; class back {}; class modeToggle {};
             class pageRender {}; class pageClear {}; class pageCtrl {}; class tileCreate {}; class appList {}; class appBadge {}; class chatUnread {}; class dockRender {}; class launcherRender {}; class deviceOverlay {}; class appVisible {}; class accent {};
             class statusUpdate {}; class inspectorUpdate {}; class abbrev {}; class notify {}; class notificationsRender {}; class notifCenter {}; class notifMeta {}; class powerFx {}; class overlayFront {}; class foreignHud {}; class screenSurface {};
-            class fx {}; class toast {}; class quickSettings {}; class lockScreen {}; class tr {}; class langApply {}; class langList {}; class langResolve {}; class addSetting {}; class aceAction {}; class zenAction {}; class zenModule {}; class trMenu {}; class menuRelang {};
+            class fx {}; class toast {}; class buzzAlert {}; class quickSettings {}; class lockScreen {}; class tr {}; class langApply {}; class langList {}; class langResolve {}; class addSetting {}; class aceAction {}; class zenAction {}; class zenModule {}; class trMenu {}; class menuRelang {};
         };
         class map { file="z\comspec_atak_native\addons\main\functions\map";
-            class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class natoSymbol {}; class mapLabels {}; class mapMarkerText {}; class mapPlaceText {}; class mapGameMarkers {}; class mapTextW {}; class mapCtxMenu {}; class mapPing {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class unitGroup {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerWeb {}; class markerWebSweep {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {}; class mapUnfocus {}; class inspToggle {}; class markerPalette {}; class markerPaletteData {}; class markerLabels {}; class sigintPoll {}; class reliefDraw {}; class meshDraw {}; class logisticsDraw {}; class ewDraw {}; class mapSearch {}; class mapStyle {}; class textureKeep {}; class strokeSimplify {}; class strokeDraw {}; class strokeBar {};
+            class mapOnDraw {}; class mapMouseButtonDown {}; class mapSelect {}; class mapToolSet {}; class symbology {}; class natoSymbol {}; class mapLabels {}; class mapMarkerText {}; class mapPlaceText {}; class mapGameMarkers {}; class mapTextW {}; class mapCtxMenu {}; class mapPing {}; class localDataRefresh {}; class mapCenter {}; class mapMouseMoving {}; class mapOverlayUpdate {}; class markerDrop {}; class unitCallsign {}; class unitGroup {}; class gridRef {}; class mapZoom {}; class mapToolMenu {}; class mapToolRun {}; class markerAt {}; class markerCatalog {}; class markerEditOpen {}; class markerEditor {}; class markerEditSave {}; class markerDelete {}; class markerWeb {}; class markerWebSweep {}; class markerStroke {}; class mapMouseButtonUp {}; class mapDblClick {}; class mapUnfocus {}; class inspToggle {}; class markerPalette {}; class markerPaletteData {}; class markerPlace {}; class markerDeletable {}; class markerLabels {}; class sigintPoll {}; class reliefDraw {}; class meshDraw {}; class logisticsDraw {}; class ewDraw {}; class mapSearch {}; class mapStyle {}; class textureKeep {}; class strokeSimplify {}; class strokeDraw {}; class strokeBar {};
         };
         class gestures { file="z\comspec_atak_native\addons\main\functions\gestures";
             class gestureFinger {}; class gestureFingerAim {}; class gestureSelfie {};
@@ -32,7 +32,7 @@ class CfgFunctions {
             class planCatalog {}; class planGfx {}; class planDraw {}; class planServer {}; class planAction {}; class planMap {}; class planWeb {}; class pagePlan {}; class planUi {}; class planHelp {};
         };
         class network { file="z\comspec_atak_native\addons\main\functions\network";
-            class extensionCall {}; class relayTower {}; class relayTowerRuin {}; class relayEden {}; class extAwait {}; class extensionCallback {}; class serverPresence {}; class remoteSync {}; class importLegacyData {};
+            class extensionCall {}; class relayTower {}; class relayTowerRuin {}; class relayEden {}; class relayZeus {}; class extAwait {}; class extensionCallback {}; class serverPresence {}; class remoteSync {}; class importLegacyData {};
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
             class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class relayNet {}; class videoLink {}; class moduleRelay {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {}; class feedLink {}; class extVersion {};
         };
@@ -56,7 +56,7 @@ class CfgFunctions {
             class droneCmd {}; class droneAction {}; class droneOsd {}; class droneDraw {}; class pageDrone {}; class droneDetectScan {}; class pageDroneDetect {}; class droneDetectDraw {}; class lockAction {}; class droneFlir {}; class droneSeq {}; class dronePhoto {}; class droneStatic {}; class noFly {}; class droneFleet {}; class droneRange {};
         };
         class bluetooth { file="z\comspec_atak_native\addons\main\functions\bluetooth";
-            class airplaneMode {}; class btAction {}; class btSounds {}; class pageBluetooth {}; class btInit { postInit=1; };
+            class airplaneMode {}; class btAction {}; class btSounds {}; class btItems {}; class pageBluetooth {}; class btInit { postInit=1; };
         };
         class shell { file="z\comspec_atak_native\addons\main\functions\shell";
             class antenna {}; class backView {}; class aceMenu {}; class vestMount {}; class powerBank {}; class screenGlow {}; class phoneSecurity {}; class droppedPhone {}; class patchTexture {}; class patchCatalog {}; class pagePatches {}; class pageAccessories {}; class accessoriesAction {}; class vestBuiltin {}; class jpcScreen {}; class jpcMap {}; class captureServer {}; class compromise {};
@@ -77,6 +77,9 @@ class CfgFunctions {
         class screen { file="z\comspec_atak_native\addons\main\functions\screen";
             class roleKey {}; class screenTime {}; class pageScreenTime {}; class playTimeServer {}; class distanceServer {}; class pageDistance {};
         };
+        class garmin { file="z\comspec_atak_native\addons\main\functions\garmin";
+            class garminTick {}; class pageGarmin {};
+        };
         class aar { file="z\comspec_atak_native\addons\main\functions\aar";
             class aarRecord {}; class aarAction {}; class aarDraw {}; class pageAar {};
         };
@@ -87,7 +90,7 @@ class CfgFunctions {
             class dockServer {}; class dockVisual {}; class dockClient {}; class dockMenu {};
         };
         class camera { file="z\comspec_atak_native\addons\main\functions\camera";
-            class camAction {}; class camView {}; class pipCheck {}; class camShare {};
+            class camAction {}; class camView {}; class pipCheck {}; class camShare {}; class photoFaces {}; class blackStage {}; class mapCapture {};
         };
         class pages { file="z\comspec_atak_native\addons\main\functions\pages";
             class chatSend {}; class taskAction {}; class briefingStep {}; class settingsSave {};
@@ -110,6 +113,7 @@ class COMSPEC_ATAK_Apps {
     class Relief      { name="Relief"; page="RELIEF"; section="Navigation"; order=16; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_relief.paa"; };
     class Weather     { name="Météo"; page="WEATHER"; section="Navigation"; order=18; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_weather.paa"; };
     class Distance    { name="Distances"; page="DISTANCE"; function="comspec_atak_native_fnc_pageDistance"; section="Navigation"; order=19; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_distance.paa"; };
+    class Garmin      { name="Garmin"; page="GARMIN"; function="comspec_atak_native_fnc_pageGarmin"; section="Navigation"; order=20; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_garmin.paa"; };
     class Chat        { name="Messages"; page="CHAT"; section="Communication"; order=30; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_chat.paa"; };
     class Group       { name="Groupe"; page="GROUP"; section="Communication"; order=32; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_group.paa"; };
     class Alerts      { name="Alertes"; page="ALERTS"; section="Communication"; order=34; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_alerts.paa"; };

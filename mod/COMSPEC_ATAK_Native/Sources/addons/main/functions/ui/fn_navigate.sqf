@@ -7,6 +7,12 @@ if !(_page in _allowed) then { _page = "LAUNCHER"; };
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 // Touche accueil (coque ou barre d'app) sur l'écran de verrouillage : déverrouille.
 if (_page isEqualTo "LAUNCHER" && {uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]}) then { ["unlock"] call comspec_atak_native_fnc_lockScreen; };
+// Téléphone verrouillé : aucune app ne s'ouvre par-dessus l'écran de verrouillage (dock, raccourci, notification).
+// Un redessin sans empilement (mode, orientation) passe : fn_pageRender remet l'écran de verrouillage devant.
+if (_push && {uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]}) exitWith {
+    ["Déverrouillez d'abord le téléphone", 2] call comspec_atak_native_fnc_toast;
+    false
+};
 private _prevPage = _s getOrDefault ["activePage", ""];
 private _history = _s getOrDefault ["history", []];
 private _last = if ((count _history) > 0) then { _history select ((count _history) - 1) } else { "" };

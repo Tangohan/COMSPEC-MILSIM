@@ -75,6 +75,8 @@ switch (_act) do {
         private _ctrls = uiNamespace getVariable ["COMSPEC_ATAK_LockCtrls", []];
         uiNamespace setVariable ["COMSPEC_ATAK_LockCtrls", []];
         uiNamespace setVariable ["COMSPEC_ATAK_LockClock", []];
+        // Dock (mini) ou rail des apps (plein écran) retirés pendant le verrouillage : remis.
+        [] call comspec_atak_native_fnc_dockRender;
         if (["anim"] call comspec_atak_native_fnc_fx) then {
             // L'écran de verrouillage remonte : le groupe rétrécit par le bas, son contenu glisse hors de vue.
             _ctrls params [["_grp", controlNull]];
@@ -94,6 +96,9 @@ switch (_act) do {
         if (isNull _d || {!_interactive}) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_LockUp", false]; call _kill; false };
         uiNamespace setVariable ["COMSPEC_ATAK_LockUp", true];
         call _kill;
+        // Dock et rail des apps retirés : rien de cliquable ne dépasse de l'écran de verrouillage.
+        { ctrlDelete _x; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_DockControls", []]);
+        uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []];
         private _l = [] call comspec_atak_native_fnc_layoutGet;
         (_l get "device") params ["_dx", "_dy", "_dw", "_dh"];
         private _font = _l get "font";

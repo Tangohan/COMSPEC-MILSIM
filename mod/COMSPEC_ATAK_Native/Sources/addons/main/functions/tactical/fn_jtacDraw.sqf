@@ -9,8 +9,30 @@
 */
 params ["_map", ["_mode", "JTAC"]];
 private _cp = ctrlPosition _map;
-// Vue gardée d'un rendu à l'autre (la page se redessine toutes les 3 s pendant le contrôle).
-uiNamespace setVariable [format ["COMSPEC_ATAK_JtacView_%1", _mode], [ctrlMapScale _map, _map ctrlMapScreenToWorld [(_cp select 0) + (_cp select 2) / 2, (_cp select 1) + (_cp select 3) / 2]]];
+private _cMid = [(_cp select 0) + (_cp select 2) / 2, (_cp select 1) + (_cp select 3) / 2];
+// Vue gardée d'un rendu à l'autre (la page se redessine toutes les 3 s pendant le contrôle). Une carte toute neuve
+// montre d'abord le coin haut gauche du monde : la vue n'est enregistrée qu'une fois la carte calée sur le but posé
+// par fn_pageJtac (comme fn_planMap), sinon le rendu suivant repartait de ce coin.
+if (_map getVariable ["comspec_jtacReady", false]) then {
+    uiNamespace setVariable [format ["COMSPEC_ATAK_JtacView_%1", _mode], [ctrlMapScale _map, _map ctrlMapScreenToWorld _cMid]];
+} else {
+    // Calage : animation finie et quelques images passées, le but doit être au centre (recalé 3 fois au plus).
+    call {
+        private _aim = _map getVariable ["comspec_jtacAim", []];
+        if ((count _aim) < 2) exitWith { _map setVariable ["comspec_jtacReady", true]; };
+        if ((diag_tickTime - (_map getVariable ["comspec_jtacBorn", 0])) < 0.15 || {!ctrlMapAnimDone _map}) exitWith {};
+        private _tries = _map getVariable ["comspec_jtacFix", 0];
+        private _sp = _map ctrlMapWorldToScreen [(_aim select 1) select 0, (_aim select 1) select 1];
+        if ((_sp distance2D _cMid) < 0.004 || {_tries >= 3}) exitWith { _map setVariable ["comspec_jtacReady", true]; };
+        _map setVariable ["comspec_jtacFix", _tries + 1];
+        private _last = _map getVariable ["comspec_jtacLast", _aim select 1];
+        private _st = _map ctrlMapWorldToScreen [_last select 0, _last select 1];
+        private _fix = _map ctrlMapScreenToWorld [(_st select 0) + (_sp select 0) - (_cMid select 0), (_st select 1) + (_sp select 1) - (_cMid select 1)];
+        _map setVariable ["comspec_jtacLast", _fix];
+        _map ctrlMapAnimAdd [0, _aim select 0, [_fix select 0, _fix select 1, 0]];
+        ctrlMapAnimCommit _map;
+    };
+};
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_Jtac", createHashMap];
 private _pilot = _mode isEqualTo "PILOT";
 private _amber = [0.95, 0.67, 0.2, 1];

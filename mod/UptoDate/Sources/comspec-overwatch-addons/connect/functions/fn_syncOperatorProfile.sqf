@@ -78,6 +78,16 @@ if ((count _json) > 28000) then {
     _payload = [_payload] call _fncOmitLoadout;
     _json = [_payload] call comspec_overwatch_connect_fnc_jsonValue;
 };
+// Encore trop lourd : la liste des mods, puis le catalogue des objets, repartent au prochain envoi.
+if ((count _json) > 28000) then {
+    _payload deleteAt "mods";
+    _payload deleteAt "mods_key";
+    _json = [_payload] call comspec_overwatch_connect_fnc_jsonValue;
+};
+if ((count _json) > 28000) then {
+    _payload deleteAt "item_catalog";
+    _json = [_payload] call comspec_overwatch_connect_fnc_jsonValue;
+};
 
 private _cmd = if ((toLower _event) isEqualTo "register") then { "OperatorRegister" } else { "OperatorSync" };
 private _parsed = [
@@ -97,6 +107,7 @@ if (_ok && {!(_result getOrDefault ["pending", false])}) then {
     missionNamespace setVariable ["COMSPEC_OperatorFingerprint", _fp, false];
     missionNamespace setVariable ["COMSPEC_OperatorRegistered", true, false];
     missionNamespace setVariable ["COMSPEC_OperatorProfileFailCount", 0, false];
+    if ("mods_key" in _payload) then { missionNamespace setVariable ["COMSPEC_OpModsSentKey", _payload get "mods_key", false]; };
 };
 if (_result getOrDefault ["pending", false]) then {
     missionNamespace setVariable ["COMSPEC_OperatorProfileBackoffUntil", diag_tickTime + 300, false];

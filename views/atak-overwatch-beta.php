@@ -312,6 +312,7 @@ $icon = static function (string $path): string {
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="shapes" checked> Tracés et zones</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="tracks"> Trajectoires</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="arma-markers" id="ow-arma-markers" checked> Marqueurs du théâtre</label>
+        <label class="ow-toggle"><input type="checkbox" data-ow-layer="jtac" checked> Appuis JTAC (cible, IP, FAH)</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="tactical-obs" checked> Observations terrain</label>
         <label class="ow-toggle"><input type="checkbox" data-ow-layer="tactical-assess" checked> Évaluations confirmées</label>
         <p class="ow-help" id="ow-tactical-tracks-help">Aucune piste d’observation pour le moment.</p>

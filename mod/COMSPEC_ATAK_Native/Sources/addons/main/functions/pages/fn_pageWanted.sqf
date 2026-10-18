@@ -43,6 +43,7 @@ if (_open isNotEqualTo "" && {(count _sel) > 0}) then {
         if (_url isNotEqualTo "") then { _rows pushBack ["text", "<t size='0.85' color='#8a9a93'>Photo en chargement, ou au format PNG (visible sur Athena seulement).</t>"]; } else { _rows pushBack ["text", "<t size='0.85' color='#8a9a93'>Aucune photo sur Athena.</t>"]; };
     };
     if (_details isNotEqualTo "") then { _rows append [["section", "Éléments connus", ""], ["text", [_details] call _esc]]; };
+    (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["WANTED", { ["open", ""] call comspec_atak_native_fnc_wantedAction; }]];
     _rows append [
         ["text", format ["<t size='0.8' color='#8a9a93'>Mis à jour le %1. En cas de contact : contrôle d'identité dans l'app SSE, puis FRS au bureau SSE.</t>", _upd]],
         ["buttons", [["RETOUR", { ["open", ""] call comspec_atak_native_fnc_wantedAction; }], ["CONTRÔLE SSE", { ["SSE"] call comspec_atak_native_fnc_navigate; }, true]]]

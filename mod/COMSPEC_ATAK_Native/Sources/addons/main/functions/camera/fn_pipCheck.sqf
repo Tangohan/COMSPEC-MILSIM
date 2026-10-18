@@ -38,7 +38,11 @@ switch (_act) do {
         missionNamespace setVariable ["COMSPEC_ATAK_PipTestPose", [_eye, _flat]];
         // Variantes : [lettre, ce qui change par rapport à A, texture, rapport, mode]. Chaque différence entre le premier
         // TEST VIDÉO (qui s'affiche) et les vues de l'app Photo et de l'app Drone (noires) a sa lettre.
+        // Le flux réel du drone (I) passe en premier : au test du 14/10, les huit caméras de script A à H s'affichaient
+        // toutes et seule I restait vide. Créée avant les autres, elle dit si c'est la caméra du drone elle-même ou le
+        // nombre de rendus simultanés (I était la 9e cible r2t ouverte).
         private _variants = [
+            ["I", "flux réel du drone", 0, 1.7778, "drone"],
             ["A", "référence (premier test)", 512, 1, "static"],
             ["B", "texture 1024", 1024, 1, "static"],
             ["C", "image 16/9", 512, 1.7778, "static"],
@@ -46,8 +50,7 @@ switch (_act) do {
             ["E", "suit la vue (position seule)", 512, 1, "pos"],
             ["F", "accrochée comme le drone", 512, 1, "attach"],
             ["G", "30 m au-dessus, vers le sol", 512, 1, "high"],
-            ["H", "thermique", 512, 1, "thermal"],
-            ["I", "flux réel du drone", 0, 1.7778, "drone"]
+            ["H", "thermique", 512, 1, "thermal"]
         ];
         private _top = _parent createDisplay "RscDisplayEmpty";
         if (isNull _top) exitWith { ["WARNING", "TEST VIDÉO : fenêtre de test impossible à ouvrir"] call _say; };

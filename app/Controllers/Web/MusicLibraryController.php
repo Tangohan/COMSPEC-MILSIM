@@ -255,7 +255,9 @@ final class MusicLibraryController
                 $this->music->addToPlaylist($plId, $id, $userId);
             }
         }
-        Session::flash('success', 'Morceau en ligne' . ($scope === 'community' ? ' dans la bibliothèque communautaire.' : ' dans la bibliothèque de votre organisation.'));
+        $game = $stored['game'] ?? null;
+        Session::flash('success', 'Morceau en ligne' . ($scope === 'community' ? ' dans la bibliothèque communautaire.' : ' dans la bibliothèque de votre organisation.')
+            . (is_array($game) && $game['status'] !== 'ok' ? ' Test de lecture en jeu : ' . $game['message'] : ''));
 
         return $this->back($request, '?vue=mine');
     }

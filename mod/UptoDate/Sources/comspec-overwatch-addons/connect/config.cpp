@@ -360,6 +360,8 @@ class CfgFunctions {
             class collectOperatorFace {};
             class collectOperatorMedical {};
             class collectOperatorLoadout {};
+            class collectItemCatalog {};
+            class collectLoadedMods {};
             class collectOperatorVersions {};
             class collectOperatorEnvironment {};
             class operatorProfileFingerprint {};
@@ -484,6 +486,7 @@ class CfgFunctions {
             class atakSignalState {};
             class pendingSyncCount {};
             class seekHistoryPush {};
+            class sseTeamLog {};
             class ecotiIlluminateZone {};
             class ecotiRouteEdit {};
             class ecotiApplyHudSetting {};

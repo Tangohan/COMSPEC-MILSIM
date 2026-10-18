@@ -66,6 +66,32 @@ final class AtakStartupCheckServiceTest extends TestCase
         self::assertSame('ATAK 1.75.0 · Link 2.0.81 · Arma 2.18', $embed['fields'][1]['value']);
     }
 
+    public function testLinkReportShowsAssignedPhoneAndTerminal(): void
+    {
+        $sent = [];
+        $body = $this->body('s' . bin2hex(random_bytes(6)));
+        $body['trigger'] = 'link';
+        $body['step_link'] = 'ok|lié · 1er RPIMa';
+        $body['step_phone'] = 'ok|n° 06 12 34 56 78 · IMEI 35-123456-123456-7 · attribué par Athena (FR)';
+        $body['step_terminal'] = 'ok|Samsung Galaxy S7 · modèle S7';
+        $this->service($sent)->handle($body);
+
+        $embed = $sent[0];
+        self::assertStringContainsString('Liaison en jeu · Tango (Alpha 1-1)', $embed['title']);
+        self::assertStringContainsString('✅ **Numéro et IMEI / Number and IMEI** · n° 06 12 34 56 78 · IMEI 35-123456-123456-7', $embed['description']);
+        self::assertStringContainsString('✅ **Terminal** · Samsung Galaxy S7', $embed['description']);
+        self::assertSame('Liaison en jeu · In-game link', $embed['footer']['text']);
+    }
+
+    public function testUnknownTriggerFallsBackToStartupCheck(): void
+    {
+        $body = $this->body('x');
+        $body['trigger'] = 'nope';
+        self::assertSame('start', AtakStartupCheckService::normalize($body)['trigger'] ?? null);
+        $body['trigger'] = 'link_failed';
+        self::assertSame('link_failed', AtakStartupCheckService::normalize($body)['trigger'] ?? null);
+    }
+
     public function testGameTextIsScrubbedForDiscord(): void
     {
         $sent = [];

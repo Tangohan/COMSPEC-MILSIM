@@ -125,21 +125,28 @@ private _nodes = [];
 _nodes pushBack ["Téléphone", _lq get "label", _phoneSub joinString " · ", _phoneSt, _lq get "bars", "\z\comspec_atak_native\addons\main\data\item_phone.paa"];
 // 2. Porteur : passerelle de véhicule / PC mobile, relais Overwatch, maillage via équipiers, ou direct.
 private _best = ["best"] call comspec_atak_native_fnc_relayNet;
-private _req = (missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]) || {missionNamespace getVariable ["COMSPEC_ATAK_RelaysRequired", false]};
+private _only = ["only"] call comspec_atak_native_fnc_relayNet;
+private _req = ["required"] call comspec_atak_native_fnc_relayNet;
 private _mesh = ["scan"] call comspec_atak_native_fnc_waveRelayAction;
 private _hops = (_mesh getOrDefault ["hops", [-1]]) param [_mesh getOrDefault ["me", 0], -1];
 private _term = [player] call comspec_atak_native_fnc_vehicleTerminal;
 private _activeObj = _best param [0, objNull];
 private _bearer = switch (true) do {
     case (_best isNotEqualTo []): {
-        _best params ["_o", "_n", "_d", "_mb", "_ls", "_k", "_eff", "_u", "_sl", "_bt"];
+        _best params ["_o", "_n", "_d", "_mb", "_ls", "_k", "_eff", "_u", "_sl", "_bt", ["_fq", 0], ["_hl", ""]];
         private _extra = [];
         if (_sl > 0) then { _extra pushBack format ["%1/%2 places", _u, _sl]; };
         if (_bt >= 0) then { _extra pushBack format ["batterie %1 %%", round _bt]; };
+        if (_fq > 0) then { _extra pushBack format ["%1 MHz", _fq]; };
+        _extra pushBack format ["perte %1 %%", _ls];
+        if (_hl in ["dégradé", "critique"]) then { _extra pushBack _hl; };
         [createHashMapFromArray [["relay", "Relais radio"], ["gw", "Passerelle véhicule"], ["cp", "Poste de commandement"]] getOrDefault [_k, "Relais radio"], [_n] call _esc,
             format ["%1 / %2 · %3 Mbit/s%4", [_d] call _dist, [_eff] call _dist, _mb toFixed 1, ["", " · " + (_extra joinString " · ")] select (_extra isNotEqualTo [])],
-            ["ok", "warn"] select (_sl > 0 && {_u > _sl} || {_bt >= 0 && {_bt < 20}}), [1 - (_d / (_eff max 1)) ^ 2] call _qBars,
+            ["ok", "warn"] select (_sl > 0 && {_u > _sl} || {_bt >= 0 && {_bt < 20}} || {_hl in ["dégradé", "critique"]}), [1 - (_d / (_eff max 1)) ^ 2] call _qBars,
             ["\z\comspec_atak_native\addons\main\data\app_waverelay.paa", "\z\comspec_atak_native\addons\main\data\app_c2.paa"] select (_k isEqualTo "cp")]
+    };
+    case (_only): {
+        ["Aucun relais", "Réseau exclusivement par relais", "aucun relais reçu : aucun réseau", "bad", 0, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"]
     };
     case (_hops > 1): {
         ["Maillage Wave Relay", format ["%1 sauts via équipiers", _hops - 1], format ["jusqu'à %1", [_mesh getOrDefault ["gwLabel", ""]] call _esc], "warn", 2, "\z\comspec_atak_native\addons\main\data\app_waverelay.paa"]
@@ -287,11 +294,15 @@ private _tiles = [
 _y = _y + (ceil ((count _tiles) / _cols)) * (_th + _pad * 0.5);
 
 // --- Passerelles, relais et postes de commandement proches ---
-private _sub = format ["Mode %1", ["arcade : le téléphone passe sans relais", "réaliste : relais obligatoire"] select _req];
+private _sub = format ["Mode %1", switch (true) do {
+    case (_only): { "réseau exclusivement par relais : sans relais, aucun réseau" };
+    case (_req): { "réaliste : relais obligatoire" };
+    default { "arcade : le téléphone passe sans relais" };
+}];
 ["Passerelles et relais", _sub] call _section;
 private _items = [];
 {
-    _x params ["_o", "_ant", "_n", "_k", "_r", "_mb", "_ok", "_st", "_u", "_sl", "_bt"];
+    _x params ["_o", "_ant", "_n", "_k", "_r", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "", "", "_fq", "_auto", "_loss", "_hp", "_hl", "_hops", "_co", "_lat"];
     private _d = player distance _ant;
     private _masked = terrainIntersectASL [eyePos player, _ant];
     private _eff = [[_r, _r * 0.35] select _masked, 0] select !_ok;
@@ -304,16 +315,20 @@ private _items = [];
     private _rate = format ["%1 Mbit/s", _mb toFixed 1];
     if (_sl > 0) then { _rate = _rate + format [" · %1/%2", _u, _sl]; };
     if (_bt >= 0) then { _rate = _rate + format [" · %1 %%", round _bt]; };
+    // Troisième ligne : fréquence, perte, latence, santé et structure du relais.
+    private _hc = createHashMapFromArray [["nominal", "#5cd96b"], ["dégradé", "#f2ab33"], ["critique", "#e5483a"], ["hors service", "#8a9a93"]];
+    private _health = format ["%1 MHz%2 · perte %3 %% · %4 ms · <t color='%5'>%6</t> · structure %7 %%%8", _fq, ["", " auto"] select _auto,
+        _loss, _lat, _hc getOrDefault [_hl, "#8a9a93"], _hl, _hp, ["", format [" · <t color='#f2ab33'>%1 sur le canal</t>", _co]] select (_co > 0)];
     _items pushBack [_d, createHashMapFromArray [["relay", "Relais radio"], ["gw", "Passerelle véhicule"], ["cp", "Poste de commandement"]] getOrDefault [_k, "Relais radio"], _n, _r, _eff, _rate, _o isEqualTo _activeObj, _why,
-        ["\z\comspec_atak_native\addons\main\data\app_waverelay.paa", "\z\comspec_atak_native\addons\main\data\app_c2.paa"] select (_k isEqualTo "cp")];
+        ["\z\comspec_atak_native\addons\main\data\app_waverelay.paa", "\z\comspec_atak_native\addons\main\data\app_c2.paa"] select (_k isEqualTo "cp"), _health];
 } forEach (["list"] call comspec_atak_native_fnc_relayNet);
 _items sort true;
 if ((count _items) isEqualTo 0) then {
     ["<t color='#8a9a93'>Aucune passerelle de véhicule, aucun poste de commandement ni relais déclaré pour votre camp.</t>"] call _para;
 };
-private _rowH = _fs * 2.5;
+private _rowH = _fs * 3.3;
 {
-    _x params ["_d", "_type", "_name", "_r", "_eff", "_rate", "_on", "_why", "_icon"];
+    _x params ["_d", "_type", "_name", "_r", "_eff", "_rate", "_on", "_why", "_icon", ["_health", ""]];
     private _q = [0, 1 - (_d / (_eff max 1)) ^ 2] select (_d < _eff);
     private _st = switch (true) do { case (_on): { "ok" }; case (_why in ["détruit", "éteint", "batterie vide", "brouillé", "sans liaison"]): { "bad" }; case (_q > 0): { "warn" }; default { "off" }; };
     private _x0 = _pad;
@@ -327,8 +342,8 @@ private _rowH = _fs * 2.5;
     private _badgeW = _fs * 5.4;
     private _tx = _x0 + _pad * 1.2 + _icH / _ratio;
     private _bwBars = [_x0 + _w0 - _badgeW - _pad * 0.6 - _fs * 1.6, _y + _rowH * 0.25, _rowH * 0.5, [_q] call _qBars, [_st, "ok"] select (_st isEqualTo "off")] call _bars;
-    [[_tx, _y + _pad * 0.1, (_x0 + _w0 - _badgeW - _pad * 0.8 - _fs * 1.8) - _tx, _rowH], format ["<t size='%1' font='COMSPEC_BarlowBold'>%2</t> <t size='%3' color='#8a9a93'>%4</t><br/><t size='%3' color='#8a9a93'>%5 · portée %6 · %7</t>",
-        _k * 0.85, [_name] call _esc, _k * 0.68, _type, [_d] call _dist, [_eff] call _dist, _rate]] call _txt;
+    [[_tx, _y + _pad * 0.1, (_x0 + _w0 - _badgeW - _pad * 0.8 - _fs * 1.8) - _tx, _rowH], format ["<t size='%1' font='COMSPEC_BarlowBold'>%2</t> <t size='%3' color='#8a9a93'>%4</t><br/><t size='%3' color='#8a9a93'>%5 · portée %6 · %7</t><br/><t size='%3' color='#8a9a93'>%8</t>",
+        _k * 0.85, [_name] call _esc, _k * 0.68, _type, [_d] call _dist, [_eff] call _dist, _rate, _health]] call _txt;
     private _bd = ["COMSPEC_RscTextCenter", [_x0 + _w0 - _badgeW - _pad * 0.4, _y + _rowH * 0.25, _badgeW, _rowH * 0.5], ["", "CONNECTÉ"] select _on] call _mk;
     _bd ctrlEnable false;
     if (_on) then {

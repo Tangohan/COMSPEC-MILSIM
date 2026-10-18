@@ -12,6 +12,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\MusicLibraryRepository;
 use App\Services\Auth\AuthService;
+use App\Support\MusicGameCheck;
 use App\Support\MusicTitleSimilarity;
 use App\Support\MusicTrackStorage;
 
@@ -174,6 +175,8 @@ final class MusicAdminController
         $global = $this->music->globalPlaylist();
         $done = 0;
         $skipped = 0;
+        /** @var array<string, list<string>> $game résultat de « Tester la lecture en jeu » par statut */
+        $game = [MusicGameCheck::OK => [], MusicGameCheck::FIXED => [], MusicGameCheck::WARN => [], MusicGameCheck::BAD => []];
         foreach (array_slice($ids, 0, 200) as $id) {
             $t = $this->music->findTrack($id);
             // Un gestionnaire n'agit que sur les morceaux de son organisation.
@@ -210,12 +213,37 @@ final class MusicAdminController
                     $this->music->deleteTrack($id);
                     MusicTrackStorage::delete((string) $t['file_path']);
                     break;
+                case 'game_check':
+                    // Même contrôle qu'à l'envoi : MP3 réparé sur place (balise retirée), faux MP3 et fichiers vides signalés.
+                    $abs = MusicTrackStorage::absolutePath((string) $t['file_path']);
+                    $r = $abs === null
+                        ? ['status' => MusicGameCheck::BAD, 'message' => 'fichier introuvable sur le serveur.']
+                        : MusicGameCheck::check($abs, (string) ($t['file_ext'] ?? 'mp3'));
+                    if ($r['status'] === MusicGameCheck::FIXED && $abs !== null) {
+                        clearstatcache(true, $abs);
+                        $this->music->updateTrackFile($id, (int) @filesize($abs), (string) sha1_file($abs));
+                    }
+                    $game[$r['status']][] = '« ' . (string) $t['title'] . ' » : ' . $r['message'];
+                    break;
                 default:
                     Session::flash('error', 'Action inconnue.');
 
                     return $back;
             }
             $done++;
+        }
+        if ($action === 'game_check') {
+            $msg = $done . ' morceau(x) testé(s) : ' . count($game[MusicGameCheck::OK]) . ' lisible(s) tel(s) quel(s), '
+                . count($game[MusicGameCheck::FIXED]) . ' réparé(s), ' . count($game[MusicGameCheck::WARN]) . ' à surveiller, '
+                . count($game[MusicGameCheck::BAD]) . ' illisible(s).';
+            $details = array_merge($game[MusicGameCheck::FIXED], $game[MusicGameCheck::WARN]);
+            Session::flash('success', $msg . ($details !== [] ? ' ' . implode(' ', array_slice($details, 0, 10)) : ''));
+            if ($game[MusicGameCheck::BAD] !== []) {
+                Session::flash('error', 'Illisibles en jeu, à remplacer par un vrai MP3 : ' . implode(' ', array_slice($game[MusicGameCheck::BAD], 0, 10))
+                    . (count($game[MusicGameCheck::BAD]) > 10 ? ' (+' . (count($game[MusicGameCheck::BAD]) - 10) . ')' : ''));
+            }
+
+            return $back;
         }
         $labels = [
             'hide' => 'masqué(s)', 'restore' => 'rétabli(s)', 'community' => 'passé(s) dans la bibliothèque communautaire',
@@ -246,12 +274,13 @@ final class MusicAdminController
     private function upload(Request $request, bool $platform): Response
     {
         $json = str_contains((string) ($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json');
-        $finish = function (int $done, array $errors, string $summary) use ($json, $platform): Response {
+        $notes = [];
+        $finish = function (int $done, array $errors, string $summary) use ($json, $platform, &$notes): Response {
             if ($json) {
-                return Response::json(['ok' => $errors === [], 'done' => $done, 'errors' => $errors], $done > 0 || $errors === [] ? 200 : 422);
+                return Response::json(['ok' => $errors === [], 'done' => $done, 'errors' => $errors, 'notes' => $notes], $done > 0 || $errors === [] ? 200 : 422);
             }
             if ($done > 0) {
-                Session::flash('success', $summary);
+                Session::flash('success', $summary . ($notes !== [] ? ' ' . implode(' ', array_slice($notes, 0, 8)) : ''));
             }
             if ($errors !== []) {
                 Session::flash('error', implode(' ', array_slice($errors, 0, 8)) . (count($errors) > 8 ? ' (+' . (count($errors) - 8) . ')' : ''));
@@ -314,6 +343,9 @@ final class MusicAdminController
                 MusicTrackStorage::delete((string) $stored['path']);
                 $errors[] = $label . 'déjà en ligne.';
                 continue;
+            }
+            if (in_array($stored['game']['status'] ?? '', [MusicGameCheck::FIXED, MusicGameCheck::WARN], true)) {
+                $notes[] = $label . $stored['game']['message'];
             }
             $title = count($files) === 1 && $titleIn !== '' ? $titleIn
                 : MusicTitleSimilarity::titleFromFilename((string) $stored['original_name']);

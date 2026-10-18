@@ -188,6 +188,8 @@ $communityChildren = array_values(array_filter([
         : null,
     ['label' => 'Raccourcis du portail', 'href' => url('back-office/dashboard-pins'), 'active' => $navAt('back-office/dashboard-pins')],
     ['label' => 'Tenues mises en avant', 'href' => url('back-office/dashboard-tenues'), 'active' => $navAt('back-office/dashboard-tenues')],
+    ['label' => 'Équipement des joueurs', 'href' => url('back-office/equipement-joueurs'), 'active' => $navAt('back-office/equipement-joueurs')],
+    ['label' => 'Kits par rôle', 'href' => url('back-office/kits-roles'), 'active' => $navAt('back-office/kits-roles')],
     ['label' => 'Catégories du forum', 'href' => url('back-office/categories'), 'active' => $navAt('back-office/categories')],
 ], static fn (?array $row): bool => is_array($row)));
 

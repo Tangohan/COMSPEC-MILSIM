@@ -94,6 +94,25 @@ if (_page isEqualTo "ATHENA") then {
         [{ ["ATHENA"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
     };
 };
+// Service Athena choisi mais pas connecté au compte : bandeau qui ouvre l'app Athena (touché), après 25 s puis au plus
+// toutes les 10 min. Vérifié toutes les 15 s (sans Overwatch, l'état vient de la DLL).
+if (_page isNotEqualTo "ATHENA" && {diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_LoginCheckAt", 0])}) then {
+    missionNamespace setVariable ["COMSPEC_ATAK_LoginCheckAt", diag_tickTime + 15];
+    if (([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "on") exitWith {};
+    private _auth = if ([] call comspec_atak_native_fnc_bridge) then {
+        private _a = missionNamespace getVariable ["comspec_overwatch_auth_state", ""];
+        if (_a isEqualType "") then { _a } else { str _a }
+    } else {
+        ((["GetAuthState", []] call comspec_atak_native_fnc_extensionCall) splitString "|") param [1, ""]
+    };
+    if (_auth isEqualTo "READY") exitWith { missionNamespace setVariable ["COMSPEC_ATAK_LoginSince", -1]; };
+    private _since = missionNamespace getVariable ["COMSPEC_ATAK_LoginSince", -1];
+    if (_since < 0) exitWith { missionNamespace setVariable ["COMSPEC_ATAK_LoginSince", diag_tickTime]; };
+    if (diag_tickTime - _since > 25 && {diag_tickTime >= (missionNamespace getVariable ["COMSPEC_ATAK_LoginNagAt", 0])}) then {
+        missionNamespace setVariable ["COMSPEC_ATAK_LoginNagAt", diag_tickTime + 600];
+        ["WARNING", "Non connecté à votre compte Athena : touchez ici pour vous connecter", 8, 40, "ATHENA"] call comspec_atak_native_fnc_notify;
+    };
+};
 if (_page isEqualTo "MAP") then {
     [] call comspec_atak_native_fnc_mapOverlayUpdate;
     [] call comspec_atak_native_fnc_routeBanner;

@@ -10,6 +10,7 @@
     Pose : [] pour un socle de la mission (Eden, Zeus), [monde, posASL, vectorDir, vectorUp, UID] pour un socle
     posé avec le kit, recréé au lancement de la mission sur la même carte (réglage « Mémoriser les socles posés »).
     Identifiant : attribut Eden « Identifiant du socle » (le même d'une mission à l'autre), sinon carte + position.
+    Kit socle (Item_COMSPEC_ATAK_DockKit) posé par Zeus en cours de partie : remplacé par le socle déplié ("zeusKit").
     Clients -> serveur (CBA) : comspec_atak_native_dockPut, _dockTake, _dockDeploy, _dockPack ;
     réponse au client : comspec_atak_native_dockResult [action, ok, message, données].
 
@@ -63,6 +64,27 @@ switch (_act) do {
                 };
             } forEach (keys _db);
         };
+        // Kit socle posé en cours de partie (Zeus) : la valise pliée devient le socle déplié, rangeable comme un socle
+        // posé avec le kit. Un kit placé dans l'éditeur (time = 0) reste une valise à ramasser.
+        ["Item_COMSPEC_ATAK_DockKit", "init", {
+            params ["_h"];
+            if (time <= 0 || {is3DEN}) exitWith {};
+            [{
+                params ["_h"];
+                if (isNull _h) exitWith {};
+                ["zeusKit", [_h]] call comspec_atak_native_fnc_dockServer;
+            }, [_h]] call CBA_fnc_execNextFrame;
+        }, false, [], false] call CBA_fnc_addClassEventHandler;
+        // Filet si le porte-objet n'a pas les événements étendus CBA : création d'entité côté serveur.
+        addMissionEventHandler ["EntityCreated", {
+            params ["_h"];
+            if (time <= 0 || {!(_h isKindOf "Item_COMSPEC_ATAK_DockKit")}) exitWith {};
+            [{
+                params ["_h"];
+                if (isNull _h) exitWith {};
+                ["zeusKit", [_h]] call comspec_atak_native_fnc_dockServer;
+            }, [_h]] call CBA_fnc_execNextFrame;
+        }];
         ["comspec_atak_native_dockPut", { ["put", _this] call comspec_atak_native_fnc_dockServer; }] call CBA_fnc_addEventHandler;
         ["comspec_atak_native_dockTake", { ["take", _this] call comspec_atak_native_fnc_dockServer; }] call CBA_fnc_addEventHandler;
         ["comspec_atak_native_dockDeploy", { ["deploy", _this] call comspec_atak_native_fnc_dockServer; }] call CBA_fnc_addEventHandler;
@@ -177,6 +199,28 @@ switch (_act) do {
         ["save"] call comspec_atak_native_fnc_dockServer;
         [_unit, "take", true, format ["Téléphone repris (emplacement %1, %2 %%)%3", _slot + 1, floor (_s select 3), ["", format [" · appartient à %1", _s select 1]] select !_mine],
             [_s select 2, _s select 3, _s select 4, _mine]] call _reply;
+    };
+    case "zeusKit": {
+        _a params [["_h", objNull]];
+        if (isNull _h) exitWith {};
+        private _pos = getPosASL _h;
+        private _dir = getDir _h;
+        deleteVehicle _h;
+        private _o = createVehicle [_class, ASLToATL _pos, [], 0, "CAN_COLLIDE"];
+        _o setDir _dir;
+        _o setPosASL _pos;
+        _o setVectorUp (surfaceNormal (getPosATL _o));
+        private _id = format ["kit|zeus|%1|%2", (call _utc), floor random 1e5];
+        _o setVariable ["COMSPEC_ATAK_DockId", _id, true];
+        _o setVariable ["COMSPEC_ATAK_DockKit", true, true];
+        // Pose vide : un socle posé par Zeus n'est pas recréé aux parties suivantes (il appartient à cette partie).
+        _db set [_id, [call _empty, [], call _utc]];
+        (missionNamespace getVariable ["COMSPEC_ATAK_DockObjs", []]) pushBack _o;
+        // Le socle reste éditable par les Zeus (déplacer, supprimer).
+        { _x addCuratorEditableObjects [[_o], false]; } forEach allCurators;
+        ["publish", [_o, (_db get _id) select 0]] call comspec_atak_native_fnc_dockServer;
+        ["save"] call comspec_atak_native_fnc_dockServer;
+        diag_log format ["[COMSPEC ATAK NATIVE][INFO][DOCK] Kit socle posé par Zeus : socle déplié %1", _id];
     };
     case "deploy": {
         _a params [["_unit", objNull], ["_pos", []], ["_dir", 0]];

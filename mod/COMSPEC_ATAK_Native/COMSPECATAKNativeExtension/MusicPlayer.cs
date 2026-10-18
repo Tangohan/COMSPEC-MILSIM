@@ -126,10 +126,24 @@ public static partial class Extension
         _musicLength = 0;
         _musicPosition = 0;
         var open = Mci("open \"" + source + "\" type mpegvideo alias " + MusicAlias);
+        if (open.StartsWith("#ERR", StringComparison.Ordinal) && File.Exists(source))
+        {
+            // Second essai sur une copie nettoyée (balise ID3v2 et octets parasites retirés avant la première trame).
+            string? clean = null;
+            try { clean = MusicCleanCopy(source); } catch { /* fichier illisible : on garde la première erreur */ }
+            if (clean != null)
+            {
+                var retry = Mci("open \"" + clean + "\" type mpegvideo alias " + MusicAlias);
+                if (!retry.StartsWith("#ERR", StringComparison.Ordinal)) open = retry;
+            }
+        }
         if (open.StartsWith("#ERR", StringComparison.Ordinal))
         {
             _musicState = "error";
-            _musicError = "format non lu (" + open.Substring(1) + ")";
+            var real = File.Exists(source) ? MusicSniff(source) : "";
+            _musicError = real.Length > 0
+                ? "pas un vrai MP3 (" + real + " renommé) : reconvertir en MP3"
+                : "format non lu (" + open.Substring(1) + ")";
             return;
         }
         _musicOpen = true;
@@ -148,6 +162,81 @@ public static partial class Extension
         _musicTitle = title;
         _musicError = "";
         _musicState = "playing";
+    }
+
+    /// <summary>
+    /// MCI (DirectShow) ne cherche le début du son que dans les premiers Ko du fichier : derrière une grosse balise ID3v2
+    /// (pochette de plusieurs centaines de Ko, courante sur les MP3 tirés d'une vidéo YouTube) ou des octets parasites,
+    /// il ne trouve aucune trame et l'ouverture échoue (erreur MCI 277) alors que le fichier est un MP3 valide.
+    /// Écrit dans le cache une copie qui commence à la première trame MPEG, ou renvoie null s'il n'y a rien à retirer.
+    /// </summary>
+    private static string? MusicCleanCopy(string path)
+    {
+        var info = new FileInfo(path);
+        if (!info.Exists || info.Length < 64 || info.Length > MusicMaxDownloadBytes) return null;
+        var key = path + "|" + info.Length.ToString(CultureInfo.InvariantCulture) + "|" + info.LastWriteTimeUtc.Ticks.ToString(CultureInfo.InvariantCulture);
+        var target = Path.Combine(MusicCacheFolder(), "clean_" + Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(key))).Substring(0, 16).ToLowerInvariant() + ".mp3");
+        if (File.Exists(target) && new FileInfo(target).Length > 0) return target;
+        var data = File.ReadAllBytes(path);
+        var start = 0;
+        // Balises ID3v2 (parfois plusieurs à la suite) : taille « syncsafe » sur 4 octets, + 10 si pied de balise.
+        while (data.Length - start > 10 && data[start] == (byte)'I' && data[start + 1] == (byte)'D' && data[start + 2] == (byte)'3')
+        {
+            var size = (data[start + 6] & 0x7F) << 21 | (data[start + 7] & 0x7F) << 14 | (data[start + 8] & 0x7F) << 7 | (data[start + 9] & 0x7F);
+            start += 10 + size + ((data[start + 5] & 0x10) != 0 ? 10 : 0);
+        }
+        var frame = MusicFindFrame(data, Math.Min(start, data.Length));
+        if (frame <= 0) return null;
+        var tmp = target + ".part";
+        using (var dst = File.Create(tmp)) dst.Write(data, frame, data.Length - frame);
+        File.Move(tmp, target, true);
+        MusicTrimCache(MusicCacheFolder());
+        return target;
+    }
+
+    private static readonly int[] Mp3Rates1 = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320];
+    private static readonly int[] Mp3Rates2 = [0, 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160];
+    private static readonly int[] Mp3Samples = [44100, 48000, 32000];
+
+    /// <summary>Longueur d'une trame MPEG audio Layer III commençant à i, ou 0 si ce n'est pas un en-tête valide.</summary>
+    private static int MusicFrameLength(byte[] d, int i)
+    {
+        if (i + 4 > d.Length || d[i] != 0xFF || (d[i + 1] & 0xE0) != 0xE0) return 0;
+        var version = (d[i + 1] >> 3) & 3;   // 3 = MPEG-1, 2 = MPEG-2, 0 = MPEG-2.5, 1 = réservé
+        var layer = (d[i + 1] >> 1) & 3;     // 1 = Layer III
+        var rateIdx = (d[i + 2] >> 4) & 15;
+        var srIdx = (d[i + 2] >> 2) & 3;
+        if (version == 1 || layer != 1 || rateIdx == 0 || rateIdx == 15 || srIdx == 3) return 0;
+        var sr = Mp3Samples[srIdx] >> (version == 3 ? 0 : version == 2 ? 1 : 2);
+        var kbps = (version == 3 ? Mp3Rates1 : Mp3Rates2)[rateIdx];
+        var pad = (d[i + 2] >> 1) & 1;
+        return (version == 3 ? 144000 : 72000) * kbps / sr + pad;
+    }
+
+    /// <summary>Première trame MPEG suivie d'une deuxième trame valide (évite les faux en-têtes dans les données d'image).</summary>
+    private static int MusicFindFrame(byte[] d, int from)
+    {
+        var limit = Math.Min(d.Length - 4, from + 4 * 1024 * 1024);
+        for (var i = Math.Max(0, from); i < limit; i++)
+        {
+            var len = MusicFrameLength(d, i);
+            if (len > 0 && (i + len + 4 > d.Length || MusicFrameLength(d, i + len) > 0)) return i;
+        }
+        return -1;
+    }
+
+    /// <summary>Vrai format d'un fichier d'après ses premiers octets, quand ce n'est pas du MPEG audio ("" sinon).</summary>
+    private static string MusicSniff(string path)
+    {
+        var head = new byte[12];
+        using (var f = File.OpenRead(path)) { if (f.Read(head, 0, head.Length) < head.Length) return ""; }
+        var ascii = Encoding.ASCII.GetString(head);
+        if (ascii.Substring(4, 4) == "ftyp") return "M4A/MP4";
+        if (head[0] == 0x1A && head[1] == 0x45 && head[2] == 0xDF && head[3] == 0xA3) return "WebM";
+        if (ascii.StartsWith("OggS", StringComparison.Ordinal)) return "Ogg/Opus";
+        if (ascii.StartsWith("fLaC", StringComparison.Ordinal)) return "FLAC";
+        if (ascii.StartsWith("<", StringComparison.Ordinal) || ascii.StartsWith("{", StringComparison.Ordinal)) return "page web";
+        return "";
     }
 
     private static string MusicResolveFile(string reference)

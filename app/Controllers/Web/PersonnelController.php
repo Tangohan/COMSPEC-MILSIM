@@ -904,6 +904,14 @@ class PersonnelController
             $atakDistance = null;
         }
 
+        // Montre de l'app Garmin de l'ATAK natif (Body Battery, pas, sommeil, activités), envoyée par le PC du joueur.
+        $atakGarmin = null;
+        try {
+            $atakGarmin = (new \App\Repositories\AtakGarminRepository())->summaryForUser((int) $tenantId, $uid);
+        } catch (\Throwable) {
+            $atakGarmin = null;
+        }
+
         // Encadrement : corriger le temps par rôle (déplacer vers le bon rôle) et voir le journal des corrections.
         $canCorrectRoleTime = $previewAs === null && $this->canCorrectRoleTime();
         $roleTimeMoves = [];
@@ -1116,6 +1124,7 @@ class PersonnelController
             'armaPlaytime' => $armaPlaytime,
             'atakRoleTimes' => $atakRoleTimes,
             'atakDistance' => $atakDistance,
+            'atakGarmin' => $atakGarmin,
             'atakPlayStats' => $atakPlayStats,
             'canCorrectRoleTime' => $canCorrectRoleTime,
             'roleTimeMoves' => $roleTimeMoves,

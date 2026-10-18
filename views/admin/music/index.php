@@ -221,11 +221,12 @@ $tabs = [
       function startUpload(files) {
         if (scope) scope.disabled = false;
         submit.disabled = true; progress.hidden = false;
-        var ok = 0, errors = [], i = 0;
+        var ok = 0, errors = [], notes = [], i = 0;
         var next = function () {
           if (i >= files.length) {
-            progress.textContent = ok + ' morceau(x) en ligne' + (errors.length ? ', ' + errors.length + ' refusé(s) : ' + errors.join(' ') : '.');
-            if (errors.length === 0) { window.location.reload(); } else { submit.disabled = false; setTimeout(function () { if (ok > 0) window.location.reload(); }, 6000); }
+            progress.textContent = ok + ' morceau(x) en ligne' + (errors.length ? ', ' + errors.length + ' refusé(s) : ' + errors.join(' ') : '.')
+              + (notes.length ? ' Test de lecture en jeu : ' + notes.join(' ') : '');
+            if (errors.length === 0 && notes.length === 0) { window.location.reload(); } else { submit.disabled = false; setTimeout(function () { if (ok > 0) window.location.reload(); }, 6000); }
             return;
           }
           var f = files[i];
@@ -236,7 +237,7 @@ $tabs = [
           if (files.length > 1) fd.set('title', '');
           fetch(form.action, { method: 'POST', body: fd, credentials: 'same-origin', headers: { Accept: 'application/json' } })
             .then(function (r) { return r.json().catch(function () { return { done: 0, errors: [f.name + ' : réponse inattendue du serveur (' + r.status + ').'] }; }); })
-            .then(function (j) { ok += j.done || 0; errors = errors.concat(j.errors || []); })
+            .then(function (j) { ok += j.done || 0; errors = errors.concat(j.errors || []); notes = notes.concat(j.notes || []); })
             .catch(function () { errors.push(f.name + ' : envoi interrompu.'); })
             .then(function () { i++; next(); });
         };
@@ -286,6 +287,7 @@ $tabs = [
               <option value="global_add">Ajouter à la playlist globale</option>
               <option value="global_remove">Retirer de la playlist globale</option>
             <?php endif; ?>
+            <option value="game_check">Tester la lecture en jeu (et réparer les MP3)</option>
             <option value="delete">Supprimer définitivement</option>
           </select>
           <input class="ath-field__input msca-bulk__note" name="note" maxlength="255" placeholder="Motif (masquage, facultatif)">

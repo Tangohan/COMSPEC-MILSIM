@@ -10,7 +10,7 @@ private _edit = if (_name isEqualTo "") then {
         ["name", ""], ["pos", _pos], ["text", ""], ["desc", ""],
         ["type", profileNamespace getVariable ["COMSPEC_ATAK_LastMarkerType", "mil_dot"]],
         ["color", profileNamespace getVariable ["COMSPEC_ATAK_LastMarkerColor", "ColorRed"]],
-        ["size", "1"], ["dir", "0"], ["alpha", "1"], ["channel", str currentChannel], ["shape", "ICON"]
+        ["size", "1"], ["dir", "0"], ["alpha", "1"], ["channel", str (["channel"] call comspec_atak_native_fnc_markerPlace)], ["shape", "ICON"]
     ]
 } else {
     createHashMapFromArray [

@@ -63,7 +63,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 
 // Check de démarrage (fn_startupCheck), par joueur : résultat du contrôle du mod posté dans le salon de debug du Discord Athena.
 ["comspec_atak_native_startup_report", "CHECKBOX",
-    ["Envoyer le check de démarrage", "Coché par défaut : au début de chaque mission, le résultat du contrôle du mod (versions, DLL, connexion Athena, FPS, erreurs) est posté avec votre pseudo et votre indicatif dans le salon de debug du Discord Athena, pour aider au dépannage. Ni UID Steam, ni adresse IP. Décocher pour ne rien envoyer."],
+    ["Envoyer le check de démarrage", "Coché par défaut : quand vous vous liez à Athena en jeu (ou si la liaison échoue), le résultat du contrôle du mod (versions, DLL, connexion, numéro et IMEI attribués, terminal porté, FPS, erreurs) est posté avec votre pseudo et votre indicatif dans le salon de debug du Discord Athena, pour aider au dépannage. Ni UID Steam, ni adresse IP. Décocher pour ne rien envoyer."],
     ["COMSPEC", "ATAK · Debug"], true, 0] call comspec_atak_native_fnc_addSetting;
 
 // Taille du téléphone en plein écran (par joueur) : 60 à 100 %, centré. Aussi dans Réglages > Emplacement du téléphone.
@@ -86,6 +86,13 @@ missionNamespace setVariable ["COMSPEC_ATAK_MenuLang", missionNamespace getVaria
 ["comspec_atak_native_map_place_style", "LIST",
     ["Style des noms de lieux", "Comment le téléphone écrit les villes, villages et lieux-dits sur sa carte. Tactique : capitales grasses détourées (par défaut). Étiquette : plaque sombre et losange de couleur. Discret : petit texte clair. Classique : couleurs de la carte Arma."],
     ["COMSPEC", "ATAK · Carte"], [["tactical", "tag", "quiet", "classic"], ["Tactique", "Étiquette", "Discret", "Classique (avant)"], 0], 0] call comspec_atak_native_fnc_addSetting;
+// Pose des marqueurs (fn_markerPlace) : menu ouvert par « Mettre un marqueur » (clic droit) et le double clic, canal.
+["comspec_atak_native_marker_menu", "LIST",
+    ["Menu de pose des marqueurs", "Ce qui s'ouvre avec « Mettre un marqueur » du clic droit et le double clic sur la carte. Palette : icônes par camp, couleur, taille et canal, puis VALIDER au point cliqué (par défaut). Éditeur complet : le formulaire titre, description, type, couleur, taille, orientation, opacité et canal."],
+    ["COMSPEC", "ATAK · Carte"], [["palette", "editor"], ["Palette d'icônes", "Éditeur complet"], 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_marker_channel", "LIST",
+    ["Canal des marqueurs", "Canal sur lequel le téléphone pose les marqueurs (palette, traits, LZ, éditeur). Général : vus de tous les joueurs (par défaut). Se change aussi à chaque pose, ligne CANAL de la palette."],
+    ["COMSPEC", "ATAK · Carte"], [[0, 1, 2, 3, 4, 5], ["Général", "Camp", "Commandement", "Groupe", "Véhicule", "Direct"], 0], 0] call comspec_atak_native_fnc_addSetting;
 {
     _x params ["_k", "_t", "_h"];
     [_k, "CHECKBOX", [_t, _h], ["COMSPEC", "ATAK · Carte"], true, 0] call comspec_atak_native_fnc_addSetting;
@@ -116,6 +123,30 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
 ["comspec_atak_native_selfie_invert_y", "CHECKBOX",
     ["Selfie : inverser haut / bas", "Désactivé par défaut. Coché : en mode selfie, la souris vers le haut cadre vers le bas (et inversement). Réglage personnel."],
     ["COMSPEC", "ATAK · Photo"], false, 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_blur_type", "LIST",
+    ["Flou automatique des visages", "Les visages visibles sur une photo du mode photo sont floutés par Athena à la réception (l'original n'est pas gardé). Mouvement : traîne selon l'angle. Pixel : mosaïque. Carré noir : cache opaque. Flou gaussien : flou doux (par défaut). Aucun : photo telle quelle. La touche B du mode photo change le type pour la partie. Réglage personnel."],
+    ["COMSPEC", "ATAK · Photo"], [["gauss", "motion", "pixel", "black", "off"], ["Flou gaussien", "Mouvement", "Pixel", "Carré noir", "Aucun"], 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_blur_target", "LIST",
+    ["Visages floutés", "Alliés (par défaut) : seulement les visages de votre camp et des camps amis, vous compris en selfie. Tout le monde : aussi les ennemis et les civils."],
+    ["COMSPEC", "ATAK · Photo"], [["allies", "all"], ["Alliés", "Tout le monde"], 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_blur_force", "SLIDER",
+    ["Flou : force", "1 à 100 (60 par défaut) : intensité du flou, taille des pixels de la mosaïque ou longueur de la traîne."],
+    ["COMSPEC", "ATAK · Photo"], [1, 100, 60, 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_blur_opacity", "SLIDER",
+    ["Flou : opacité", "0 à 100 % (100 par défaut) : à 50 %, le visage reste deviné sous le flou ou le carré noir."],
+    ["COMSPEC", "ATAK · Photo"], [0, 100, 100, 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_blur_size", "SLIDER",
+    ["Flou : taille", "50 à 300 % (130 par défaut) : taille de la zone floutée par rapport à la tête (au-delà de 100 %, cou et casque compris)."],
+    ["COMSPEC", "ATAK · Photo"], [50, 300, 130, 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_blur_angle", "SLIDER",
+    ["Flou : angle", "0 à 179° (0 par défaut, horizontal) : direction de la traîne du flou de mouvement."],
+    ["COMSPEC", "ATAK · Photo"], [0, 179, 0, 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_blur_range", "SLIDER",
+    ["Flou : portée", "Distance maximale des visages floutés, en mètres (150 par défaut). Au-delà, un visage est trop petit pour être reconnu."],
+    ["COMSPEC", "ATAK · Photo"], [20, 600, 150, 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_dating_black", "CHECKBOX",
+    ["Photos de profil sur fond noir", "Activé par défaut : dans Tinder (profils joueurs, HVT et SSE), la personne est filmée dans un studio noir (copie locale de sa tenue et de son visage) au lieu de son décor. Décocher pour la filmer en direct là où elle se trouve. Réglage personnel."],
+    ["COMSPEC", "ATAK · Photo"], true, 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_gesture_finger", "CHECKBOX",
     ["Gestes doigt d'honneur", "Désactivé par défaut. Coché : les touches CBA « Doigt d'honneur » et « Doigt d'honneur libre (maintenir) » jouent le geste (à attribuer dans les touches COMSPEC ATAK)."],
     ["COMSPEC", "ATAK · Gestes"], false, 1] call comspec_atak_native_fnc_addSetting;
@@ -134,6 +165,42 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
 ["comspec_atak_native_device_tablets", "CHECKBOX",
     ["Les tablettes et DAGR comptent aussi", "ItemcTab, MicroDAGR (cTab) et MicroDAGR (ACE) ouvrent aussi le téléphone."],
     _cat, false, 1, _recompute] call comspec_atak_native_fnc_addSetting;
+
+// Objet exigé par type d'interface (Réglages > Personnaliser > Modèle) : vide = n'importe quel terminal reconnu.
+// Classes exactes ou mots cherchés dans la classe, séparés par des virgules ; sans l'objet, le modèle n'est pas
+// proposé et le téléphone reprend le S7 (la tablette de bord des véhicules n'est pas concernée).
+private _uiCat = ["COMSPEC", "ATAK · Objets par interface"];
+{
+    _x params ["_k", "_name", "_def"];
+    [format ["comspec_atak_native_ui_items_%1", _k], "EDITBOX",
+        [format ["Objet exigé : %1", _name], format ["Classes ou mots (séparés par des virgules) d'un objet à porter pour utiliser l'interface %1. Vide : tout terminal ATAK reconnu suffit.", _name]],
+        _uiCat, _def, 1, { missionNamespace setVariable ["COMSPEC_ATAK_ModelOkCache", createHashMap]; }] call comspec_atak_native_fnc_addSetting;
+} forEach [
+    ["s7", "Durci S7", ""], ["iphone", "V2 Enhanced", ""], ["rugged", "Xiaomi X3D", ""], ["sonim", "Sonim XP8", ""],
+    ["plate", "Support JPC", ""], ["flip", "Étui Multicam", ""], ["ribbed", "Coque nervurée", ""],
+    ["keys", "Tablette", "tablet,tablette,ctab"]
+];
+// [modèle, unité] -> l'unité porte-t-elle l'objet exigé pour ce modèle ? (cache 2 s : fn_layoutGet l'appelle souvent).
+missionNamespace setVariable ["COMSPEC_ATAK_ModelOk", {
+    params [["_model", "s7"], ["_unit", player]];
+    private _cache = missionNamespace getVariable ["COMSPEC_ATAK_ModelOkCache", createHashMap];
+    missionNamespace setVariable ["COMSPEC_ATAK_ModelOkCache", _cache];
+    (_cache getOrDefault [_model, [-10, true]]) params ["_t", "_ok"];
+    if (diag_tickTime - _t < 2) exitWith { _ok };
+    private _want = ((toLower (missionNamespace getVariable [format ["comspec_atak_native_ui_items_%1", _model], ""])) splitString ",; ") apply { trim _x } select { _x isNotEqualTo "" };
+    private _have = ((assignedItems _unit) + (items _unit)) apply { toLower _x };
+    _ok = (count _want) isEqualTo 0 || {(_have findIf { private _i = _x; (_want findIf { _i isEqualTo _x || {(_i find _x) >= 0} }) >= 0 }) >= 0};
+    _cache set [_model, [diag_tickTime, _ok]];
+    _ok
+}];
+
+// ATAK en 3D et lumières vues par les autres (retour de jeu : coupés par défaut).
+["comspec_atak_native_phone_3d", "CHECKBOX",
+    ["ATAK en 3D visible", "Désactivé par défaut. Coché : le téléphone peut être accroché au gilet (modèle 3D vu par tous) et l'ATAK peut s'ouvrir sur la tablette du JPC (en test). Décoché : aucun modèle 3D de l'ATAK n'est porté."],
+    ["COMSPEC", "ATAK · Affichage"], false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_stowed_damage", "CHECKBOX",
+    ["Téléphone rangé : peut être détruit", "Activé par défaut. Coché : le téléphone rangé (poche, gilet) peut aussi être abîmé ou détruit par les balles, explosions et chutes, comme en main. Décoché : seul le téléphone sorti s'abîme."],
+    ["COMSPEC", "ATAK · Accès au téléphone"], true, 1] call comspec_atak_native_fnc_addSetting;
 
 // Gilets qui ont déjà un ATAK modélisé (fn_vestBuiltin) : notre téléphone n'y est pas accroché, sauf choix du joueur (menu ACE).
 private _vestReset = { missionNamespace setVariable ["COMSPEC_ATAK_VestBuiltinCache", createHashMap]; };
@@ -169,8 +236,14 @@ private _sim = ["COMSPEC", "ATAK · Simulation"];
     ["Dégâts du téléphone", "Selon où il est porté (en main, sur le gilet, en poche, dans le sac), la partie du corps touchée, la munition et ce que le gilet arrête : balles, éclats, souffle, chutes, accidents et eau peuvent ne rien faire, rayer ou fêler l'écran, tuer des pixels, abîmer la batterie, le haut-parleur, le GPS ou l'antenne, éteindre ou détruire le téléphone. Réparation : kit de réparation ou caisse à outils, ou nouvel appareil (actions ACE). Réalisme ATAK d'Overwatch : niveau 1 = extinction seulement, 2 = jamais détruit."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_dirt_sim", "CHECKBOX",
-    ["Saleté et sang sur l'écran", "Poussière dehors (plus vite couché, en véhicule ouvert, après une explosion), gouttes de pluie, traces de doigts, sang sur l'écran et la coque après un soin. Nettoyage : action ACE « Nettoyer l'écran du téléphone » ou app Profil. Chaque joueur peut aussi le couper dans Réglages > Réalisme."],
+    ["Saleté et sang sur l'écran", "Poussière dehors (plus vite couché, en véhicule ouvert, après une explosion), traces de doigts, sang sur l'écran et la coque (soins, blessures, homme tué tout près, mains en sang). Nettoyage sans kit ni objet, autant de fois qu'on veut : action ACE « Nettoyer l'écran » ou « Nettoyage complet », app Profil, Réglages. Chaque joueur peut aussi le couper dans Réglages > Réalisme."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_blood_style", "LIST",
+    ["Sang sur l'écran", "Discret : quelques taches pâles. Réaliste : éclaboussures, traces de doigts, coulures, paumes. Gore : taches plus grandes et plus nombreuses, nappes épaisses et mains entières."],
+    _sim, [[0, 1, 2], ["Discret", "Réaliste", "Gore"], 1], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_clean_items", "EDITBOX",
+    ["Kits de nettoyage (en plus)", "Le nettoyage se fait toujours sans objet. Avec un de ces objets (classes exactes, séparées par des virgules), un coup de chiffon va deux fois plus vite et enlève tout, sang compris. L'objet n'est pas consommé. Vide : aucun kit."],
+    _sim, "ACE_fieldDressing,ACE_elasticBandage,ACE_packingBandage,ACE_quikclot", 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_ew_open", "CHECKBOX",
     ["Guerre électronique ouverte à tous", "Coché : tout porteur de téléphone peut brouiller et goniométrer. Décoché : réservé aux unités COMSPEC_ATAK_EwOperator ou au rôle « guerre électronique / brouilleur / SIGINT »."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
@@ -266,6 +339,9 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_vehicle_gateways", "CHECKBOX",
     ["Passerelles de véhicule et PC mobile", "Permet à l'équipage de faire de n'importe quel véhicule un relais ATAK (4 km) ou un poste de commandement à mât (10 km). Désactivé par défaut, peu réaliste : seuls les relais posés par la mission (module Eden ou Zeus « ATAK · Relais ») portent le réseau."],
+    _sim, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_relay_only", "CHECKBOX",
+    ["Réseau exclusivement par relais", "Le réseau ATAK ne passe que par les relais de la mission (pylônes, module « ATAK · Relais »). Hors de portée de tout relais, ou si la mission n'en a aucun, le téléphone n'a plus aucun réseau : messages, photos et positions attendent le retour d'un relais. Décoché : sans relais, le téléphone garde sa liaison directe."],
     _sim, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_aar", "CHECKBOX",
     ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s (et les pertes amies) pour l'app Rejeu. Décocher pour ne rien enregistrer."],
@@ -370,8 +446,8 @@ private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
     ["Tablette des véhicules", "Conducteur, tireur, chef de bord et tourelles d'un véhicule terrestre ou d'un bateau ont l'ATAK sur une tablette durcie de bord, sans téléphone porté. « Kit » : seulement les véhicules où le kit terminal a été installé (action ACE)."],
     _team, [["all", "kit", "off"], ["Tous les véhicules", "Avec le kit installé", "Aucun"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_screen_glow", "CHECKBOX",
-    ["Lueur des écrans la nuit", "Un téléphone allumé de nuit éclaire son porteur et se voit de loin (encore plus aux JVN). Mode nuit, véhicule et filtre d'écran JVN la réduisent."],
-    _team, true, 1] call comspec_atak_native_fnc_addSetting;
+    ["Lueur des écrans la nuit", "Désactivé par défaut : aucune lumière de l'ATAK n'est visible par les autres joueurs. Coché : un téléphone allumé de nuit éclaire son porteur et se voit de loin (encore plus aux JVN) ; mode nuit, véhicule et filtre d'écran JVN la réduisent."],
+    _team, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_screen_time", "CHECKBOX",
     ["Temps d'écran et temps par rôle", "Compte le temps du téléphone allumé (en main, porté, par app) et le temps de jeu par rôle (pilote, chef d'équipe…). Visible dans l'app Temps d'écran et envoyé à Athena (fiche du membre, back-office)."],
     _team, true, 1] call comspec_atak_native_fnc_addSetting;

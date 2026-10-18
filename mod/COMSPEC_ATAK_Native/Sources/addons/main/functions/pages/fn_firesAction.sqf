@@ -105,8 +105,11 @@ switch (_action) do {
         private _rem = trim (_f getOrDefault ["nr", ""]);
         private _esc = { params ["_s"]; [[[_s, "\", "\\"] call CBA_fnc_replace, """", "\"""] call CBA_fnc_replace, toString [10], " "] call CBA_fnc_replace };
         private _mapId = missionNamespace getVariable ["COMSPEC_MapId", missionNamespace getVariable ["comspec_overwatch_map_id", 1]];
-        private _json = format ['{"mapId":%1,"author":"%2","jtac":"%2","mission_kind":"CAS","remarks":"%3","lines":{%4}}', _mapId, [[] call _me] call _esc, [_rem] call _esc,
-            (_lines apply { format ['"line%1":"%2"', _forEachIndex + 1, [_x] call _esc] }) joinString ","];
+        // Géométrie posée par l'app JTAC (objet JSON déjà formé), servie une seule fois : l'app CAS seule n'en a pas.
+        private _geo = _f getOrDefault ["geo", ""];
+        _f deleteAt "geo";
+        private _json = format ['{"mapId":%1,"author":"%2","jtac":"%2","mission_kind":"CAS","remarks":"%3","lines":{%4}%5}', _mapId, [[] call _me] call _esc, [_rem] call _esc,
+            (_lines apply { format ['"line%1":"%2"', _forEachIndex + 1, [_x] call _esc] }) joinString ",", ["", format [',"geo":%1', _geo]] select (_geo isNotEqualTo "")];
         // DLL à jour : vrai 9-line sur Athena (pilotes et web). Sinon : ordre CAS lisible.
         private _ok = false;
         if (_bridge) then {

@@ -72,6 +72,7 @@ class CfgFunctions {
             class bioTemplates {};
             class headBag {};
             class bioAnimate {};
+            class bioBloodStain {};
         };
     };
 };

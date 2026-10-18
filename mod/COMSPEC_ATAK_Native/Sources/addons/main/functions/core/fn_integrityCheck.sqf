@@ -130,7 +130,7 @@ switch (toLower _mode) do {
             private _r = "COMSPECATAKNativeExtension" callExtension ["Ping", []];
             if (_r isEqualType []) then { _r = _r param [0, ""]; };
             if (!(_r isEqualType "") || {(_r select [0, 3]) isNotEqualTo "OK|"}) then {
-                ["dll", "WARNING", "La DLL native de COMSPEC ATAK ne répond pas : pas de connexion Athena. Vérifiez COMSPECATAKNativeExtension_x64.dll dans @COMSPEC_ATAK_Native."] call _raise;
+                ["dll", "WARNING", "La DLL native de COMSPEC ATAK ne répond pas : pas de connexion Athena. BattlEye actif ? Désactivez-le dans le lanceur Arma 3 et relancez le jeu ; sinon vérifiez COMSPECATAKNativeExtension_x64.dll dans @COMSPEC_ATAK_Native."] call _raise;
             };
         };
         ["INFO", "INTEGRITY", format ["Contrôle de l'installation : code %1, config %2, %3 anomalie(s)", _code, _cfg, count (missionNamespace getVariable ["COMSPEC_ATAK_Integrity", []])]] call comspec_atak_native_fnc_log;

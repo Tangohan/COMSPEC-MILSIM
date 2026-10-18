@@ -778,14 +778,24 @@
             <French>Pylône relais monopole 20 m (ruine)</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_FREQ_NAME">
-            <Original>Bande de fréquence</Original>
-            <English>Frequency band</English>
-            <French>Bande de fréquence</French>
+            <Original>Fréquence</Original>
+            <English>Frequency</English>
+            <French>Fréquence</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYONLY_NAME">
+            <Original>Réseau exclusivement par relais</Original>
+            <English>Network through relays only</English>
+            <French>Réseau exclusivement par relais</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_RELAYONLY_TIP">
+            <Original>Coché sur un des modules : dans toute la mission, le réseau ATAK ne passe que par les relais. Hors de portée de tout relais, ou sans aucun relais en service, le téléphone n'a plus aucun réseau (messages en attente). Même effet que le réglage serveur Réseau exclusivement par relais.</Original>
+            <English>Checked on any module: across the whole mission, the ATAK network only runs through relays. Out of range of every relay, or with no working relay, the phone has no network at all (messages wait). Same as the server setting Network through relays only.</English>
+            <French>Coché sur un des modules : dans toute la mission, le réseau ATAK ne passe que par les relais. Hors de portée de tout relais, ou sans aucun relais en service, le téléphone n'a plus aucun réseau (messages en attente). Même effet que le réglage serveur Réseau exclusivement par relais.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_FREQ_TIP">
-            <Original>Bande radio du relais, retenue pour les fréquences à venir (brouillage, compatibilité). Automatique : aucune bande imposée.</Original>
-            <English>Relay radio band, stored for upcoming frequency features (jamming, compatibility). Automatic: no band set.</English>
-            <French>Bande radio du relais, retenue pour les fréquences à venir (brouillage, compatibilité). Automatique : aucune bande imposée.</French>
+            <Original>Canal radio du relais. Deux relais en service sur le même canal, dont les portées se couvrent, se brouillent : débit réduit, perte et latence en hausse. Automatique : premier canal libre de la bande C (4 940 à 4 975 MHz) parmi les relais voisins.</Original>
+            <English>Relay radio channel. Two working relays on the same channel whose ranges overlap interfere: lower throughput, more loss and latency. Automatic: first free C-band channel (4,940 to 4,975 MHz) among neighbouring relays.</English>
+            <French>Canal radio du relais. Deux relais en service sur le même canal, dont les portées se couvrent, se brouillent : débit réduit, perte et latence en hausse. Automatique : premier canal libre de la bande C (4 940 à 4 975 MHz) parmi les relais voisins.</French>
         </Key>
         <Key ID="STR_COMSPEC_ATAK_CFG_FREQ_AUTO">
             <Original>Automatique</Original>
