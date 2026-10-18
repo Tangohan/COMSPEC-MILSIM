@@ -42,7 +42,6 @@ class CfgFunctions {
             class startSyncLoops {};
             class sendFactionSettings {};
             class sendTacticalAlert {};
-            class tacticalAlertDialogShow {};
             class saluteDialogShow {};
             class saluteDialogSubmit {};
             class ssePersonDialogShow {};
@@ -70,7 +69,6 @@ class CfgFunctions {
             class sseApplyProfile {};
             class sseProfilePreset {};
             class sseEdenWriteField {};
-            class sseModuleTargets {};
             // Fiches de renseignement simplifiées (rédacteur plein cadre ATAK)
             class intelNoteCatalog {};
             class intelNoteCache {};
@@ -112,7 +110,6 @@ class CfgFunctions {
             class diagIsolateLaunch {};
             class diagIsolateStart {};
             class diagIsolateStop {};
-            class diagIsolateShow {};
             class diagIsolateOnLoad {};
             class diagChecks {};
             class diagAction {};
@@ -203,15 +200,11 @@ class CfgFunctions {
             class outboxFlush {};
             class outboxState {};
             class wallClockSeconds {};
-            class submitChat {};
-            class submitChatPhoto {};
-            class openHub {};
             class openTabletView {};
             class tabletChatSend {};
             class tabletChatLines {};
             class tabletChatPush {};
             class tabletFlightManifestSend {};
-            class hubSelect {};
             class getRadioState {};
             class getRadioTxState {};
             class scanRadioProximity {};
@@ -241,14 +234,9 @@ class CfgFunctions {
             class submitFlightManifest {};
             class manifestCtrl {};
             class collectAircraftLoadout {};
-            class requestFireSolution {};
-            class receiveFireSolution {};
-            class displayFireSolution {};
             class pilotResponse {};
-            class openCASDialog {};
             class receiveCASRequest {};
             class updateCASState {};
-            class checkCASLine {};
             class sendCASAck {};
             class sendCASStatus {};
             class receiveMapShape {};
@@ -266,16 +254,12 @@ class CfgFunctions {
             class markBcePhotoCapture {};
             class syncLaserCode {};
             class receiveDangerZone {};
-            class updateDangerZone {};
             class deleteDangerZone {};
             class checkPlayerInDangerZone {};
             class warnDangerZoneEntry {};
             class pollTacticalZones {};
             class sendLogisticsStatus {};
             class initLogisticsLoop {};
-            class receiveIFFChallenge {};
-            class submitIFFResponse {};
-            class updateIFFMarkerState {};
             class registerEventHandler {};
             class publishEvent {};
             class issueOrder {};
@@ -319,7 +303,6 @@ class CfgFunctions {
             class briefingBoardShow {};
             class briefingBoardStep {};
             class refreshBriefingSlides {};
-            class setBriefingScreens {};
             class loadGoogleBriefing {};
             class applyGoogleBriefingSlide {};
             class googleBriefingStep {};
@@ -333,7 +316,6 @@ class CfgFunctions {
             class accountLinkSubmit {};
             class measureLatency {};
             class refreshAccountLinkStatusBar {};
-            class showAthenaLinkHelp {};
             class showBetaAccessNote {};
             class openNdaDialog {};
             class decorateMainMenu {};
@@ -439,9 +421,6 @@ class CfgFunctions {
             class syncAtakRealism {};
             class realismErrorMessage {};
             class certStatusLabel {};
-            class callsignDialogShow {};
-            class callsignDialogOnLoad {};
-            class callsignDialogSubmit {};
             class playAtakNotification {};
             class getAtakSoundVolume {};
             class setAtakSoundSetting {};
@@ -464,7 +443,6 @@ class CfgFunctions {
             class detectLoadedMods {};
             class refreshLinkStatus {};
             class updateStatusBadges {};
-            class chatDialogOnLoad {};
             class appendLinkLog {};
             class appendModuleLog {};
             class isModModuleEnabled {};
@@ -519,8 +497,6 @@ class CfgFunctions {
             class applyTenantExperience {};
             class showExperienceGuide {};
             class portalLabel {};
-            class toggleLogCategory {};
-            class showDebugInfo {};
             class profileWrap {};
             class profileReport {};
             class getPlayerAvatarInfo {};
@@ -575,11 +551,8 @@ class CfgFunctions {
             class gridPosition {};
             class mgrsGrid {};
             class formatHeading {};
-            class trackPacketLoss {};
-            class recordPacketSent {};
             class recordPacketReceived {};
             class getPacketLossStats {};
-            class handlePositionUpdateCallback {};
             class simulateNetworkDisconnect {};
             class isNetworkDisconnected {};
             class refreshLinkState {};
@@ -873,8 +846,6 @@ class CfgFactionClasses
 };
 
 #include "ui_base.hpp"
-#include "display.hpp"
-#include "display_hub.hpp"
 #include "display_cas.hpp"
 #include "display_cas_request.hpp"
 #include "display_flight_manifest.hpp"
@@ -884,7 +855,6 @@ class CfgFactionClasses
 #include "display_athena_auth.hpp"
 #include "display_nda.hpp"
 #include "display_athena_choice.hpp"
-#include "display_callsign.hpp"
 #include "display_salute.hpp"
 #include "display_sse_person.hpp"
 #include "display_intel_note.hpp"
@@ -961,8 +931,10 @@ class CfgVehicles
         };
     };
     
+    // Ancien tableau des relais (fenêtre par-dessus le jeu au lancement) : masqué dans Eden, remplacé par le module
+    // ATAK · Relais et le tableau TBR de l'ATAK natif. Les missions qui l'ont déjà posé se chargent toujours.
     class COMSPEC_ModuleRelayDashboard: Module_F {
-        scope = 2;
+        scope = 1;
         displayName = "$STR_COMSPEC_OW_CFG_5A2FEC5375";
         icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa";
         category = "COMSPEC_ATAK";

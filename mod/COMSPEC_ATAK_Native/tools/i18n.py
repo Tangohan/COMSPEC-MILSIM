@@ -342,7 +342,7 @@ if SSE:
     STRINGTABLE = os.path.join(ADDON, "main", "stringtable.xml")
 if CONNECT:
     # connect : modules Eden/Zeus et objets (config.cpp, modules/, relais Zeus) ; écrans exclus (traduits au chargement).
-    CFG_FILES = ["config.cpp", "CfgZeusRelayModules.hpp"] + sorted(
+    CFG_FILES = ["config.cpp"] + sorted(
         os.path.join("modules", f) for f in os.listdir(os.path.join(ADDON, "modules")) if f.endswith(".hpp"))
     CFG_PREFIX = "STR_COMSPEC_OW_CFG_"
 CFG_ATTR = re.compile(r'\b(displayName|description|tooltip|name|displayNameShort|descriptionShort)(\s*=\s*)"((?:[^"]|"")*)"')

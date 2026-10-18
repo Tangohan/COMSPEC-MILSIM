@@ -38,23 +38,23 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Regroupement : réseau qui suit la météo et la charge, français complet, Resynch qui renvoie tout, Réglages, fluidité et correctifs (ATAK natif 2.1.1.AB - Denver, COMSPEC Link 2.0.89)
+## Regroupement : réseau qui suit la météo et la charge, français complet, Resynch qui renvoie tout, Réglages, fluidité, nettoyage et correctifs (ATAK natif 2.2.0.AB - Denver, COMSPEC Link 2.0.89)
 
 ### Résumé joueur
 Type : nouveauté
-FR : COMSPEC ATAK 2.1.1 « Denver » : un réseau qui suit la météo, le français partout, un Resynch complet et une série de correctifs
+FR : COMSPEC ATAK 2.2.0 « Denver » : un réseau qui suit la météo, le français partout, un Resynch complet et une série de correctifs
 - Pluie, orage, vent et surcharge des relais comptent maintenant sur le réseau, avec des pertes par rafales ; nouveau bouton Conditions réseau dans le menu Échap, réglable par l'admin ou le Zeus et imposable depuis le site.
 - Le réglage Français traduit enfin tout : écrans d'Overwatch, menus, actions ACE et noms automatiques des marqueurs suivent la langue du mod, sans relancer la mission.
 - L'app Synchro renvoie tout ce qui manque à Athena et montre l'état de chaque catégorie ; l'app Réglages montre l'état de la liaison et cherche n'importe quel réglage ; le code de liaison Athena se renouvelle tout seul.
-- Téléphone plus fluide, surtout rangé ; photo plein écran sans main devant la vue (touche B pour le flou) ; l'image du drone ne reste plus noire ; pouls et nom du blessé dans l'app Médical ; guide réseau et capture de carte Zeus réparés.
-EN : COMSPEC ATAK 2.1.1 "Denver": a network that follows the weather, French everywhere, a complete Resynch and a batch of fixes
+- Téléphone plus fluide, surtout rangé ; photo plein écran sans main devant la vue (touche B pour le flou) ; l'image du drone ne reste plus noire ; pouls et nom du blessé dans l'app Médical ; guide réseau et capture de carte Zeus réparés ; plus de vieilles fenêtres par-dessus le jeu.
+EN : COMSPEC ATAK 2.2.0 "Denver": a network that follows the weather, French everywhere, a complete Resynch and a batch of fixes
 - Rain, storms, wind and relay congestion now count on the network, with losses in bursts; new Network conditions button in the Escape menu, set by the admin or Zeus and enforceable from the website.
 - The French setting now translates everything: Overwatch screens, menus, ACE actions and automatic marker names follow the mod language, without restarting the mission.
 - The Synchro app resends everything Athena is missing and shows the state of each category; the Settings app shows your link status and searches any setting; the Athena link code renews itself.
-- A smoother phone, especially when stowed; fullscreen camera with no hand in front of the view (B key for blur); the drone picture no longer stays black; pulse and casualty name in the Medical app; network guide and Zeus map capture fixed.
+- A smoother phone, especially when stowed; fullscreen camera with no hand in front of the view (B key for blur); the drone picture no longer stays black; pulse and casualty name in the Medical app; network guide and Zeus map capture fixed; no more old windows over the game.
 
 ### Détail technique
-Regroupe #893, #894, #896, #897, #898, #899, #900, #905, #906, #908 et #909. `VERSION_STR` « 2.1.1 » (seul comparé), nom affiché « 2.1.1.AB - Denver ». COMSPEC Link 2.0.89 (#909) : DLL à recompiler (build_mod.bat). Le bouton du menu principal de #909 est retiré (#893 garde le guide réseau dans Eden seulement) ; le bouton Conditions réseau du menu Échap reste. main.pbo reconstruit avec HEMTT 1.22 (build « 2026.10.18 5d418bd », `i18n/fr.txt` inclus, 96,5 Mo, sous la limite GitHub de 100 Mo). `comspec_overwatch_connect.pbo` repris de #898 puis repatché avec `fn_forceSyncData.sqf` de #900 ; `comspec_sse_core.pbo` patché par #898. Site à déployer (#909 : Contrôle serveur > Réseau et simulation, `POST /api/atak/net-conditions`, sans migration).
+Regroupe #893, #894, #896, #897, #898, #899, #900, #905, #906, #908, #909 et #910. `VERSION_STR` « 2.2.0 » (seul comparé), nom affiché « 2.2.0.AB - Denver » (passage en 2.2.0 : nouveautés réseau et Réglages, nettoyage de #910). COMSPEC Link 2.0.89 (#909) : DLL à recompiler (build_mod.bat). Le bouton du menu principal de #909 est retiré (#893 garde le guide réseau dans Eden seulement) ; le bouton Conditions réseau du menu Échap reste. main.pbo reconstruit avec HEMTT 1.22 (build « 2026.10.18 5d418bd », `i18n/fr.txt` inclus, 96,5 Mo, sous la limite GitHub de 100 Mo). `comspec_overwatch_connect.pbo` et `comspec_overwatch_main.pbo` repris de #910 puis repatchés avec les sources fusionnées (#898, #900) ; `comspec_sse_core.pbo` patché par #898. Site à déployer (#909 : Contrôle serveur > Réseau et simulation, `POST /api/atak/net-conditions`, sans migration).
 
 #### Le réglage Français traduit tout, noms automatiques des marqueurs (#898)
 - `i18n/fr.txt` (anglais vers français) chargé en français, assemblé par `tools/i18n.py fr` depuis `tools/i18n_fr_source.tsv` et les stringtables ; `fn_tr` et les écrans (ATAK, connect, SSE) traduisent dès qu'un dictionnaire est chargé ; langue lue dans le profil CBA dès le preInit ; menus CBA vidés au changement de langue ; actions ACE retraduites à chaque affichage. Noms automatiques des marqueurs (palette, LOCK, détections drone, END/FIN) posés dans la langue du mod et relus par `fn_markerAutoName`.
@@ -213,6 +213,29 @@ EN : The phone network follows weather and load, and is set from the Escape menu
 - Site : groupe « Réseau et simulation radio » dans Contrôle serveur (13 règles, « Laisser au serveur » par défaut), bloc « Conditions appliquées en jeu » et bouton pour les garder comme règles (`/back-office/atak/controle-serveur/reseau-adopter`). Stockage dans `experience_config.net_live`, sans migration.
 - Guide réseau : rubrique « Météo, surcharge et pertes de paquets ».
 - À tester en jeu : bouton Conditions réseau en solo et en multijoueur (admin connecté, Zeus, simple joueur en lecture seule) ; appliquer un modèle et voir la notification chez tous ; arrivée d'un joueur après application (JIP) ; pluie forte et orage (Zeus météo) et lecture de la page Réseau ; plusieurs joueurs qui envoient des photos sur un même relais (surcharge) ; perte minimale 20 % (renvois, remise en file) ; règle imposée depuis le site (verrouillée dans la fenêtre) avec Link 2.0.89 ; bloc « Conditions appliquées en jeu » sur le site.
+
+
+#### Nettoyage : plus de vieilles fenêtres hors du téléphone (#910)
+
+##### Résumé joueur de la PR
+Type : correctif
+FR : Plus de vieilles fenêtres par-dessus le jeu
+- Le briefing diffusé s'ouvre dans l'app Briefing du téléphone, plus dans l'ancien tableau, Zeus compris.
+- La question « Votre unité utilise-t-elle Athéna ? » se répond dans le téléphone (app Athena ou Réglages).
+- En Zeus ou sans téléphone, plus aucun écran Athena ne s'affiche au chargement.
+EN : No more old windows over the game
+- A shared briefing opens in the phone's Briefing app, no longer in the old board, Zeus included.
+- The question "Does your unit use Athena?" is answered in the phone (Athena app or Settings).
+- As Zeus or without a phone, no Athena screen shows up while loading any more.
+
+##### Détail technique
+- Overwatch connect embarqué : `fn_loadGoogleBriefing` et `fn_extensionCallback` (`google_deck_ready`) n'ouvrent plus `COMSPEC_Briefing_Dialog` quand `comspec_atak_native_main` est chargé (l'événement JIP l'ouvrait chez tous les clients, Zeus et sans téléphone compris) ; une notification « ouvrez l'app Briefing » par présentation, aux porteurs de téléphone.
+- `XEH_postInitClient` : premier lancement en mission (connexion directe, aperçu Eden, Zeus) sans choix du service Athéna -> `["notify"] call comspec_atak_native_fnc_athenaChoice` au lieu de `COMSPEC_AthenaChoice_Dialog`. La question reste au menu principal et au menu Échap. App Athena : boutons OUI / NON à la place de CHOISIR ; Réglages : bouton « Revoir la question » retiré ; `["show"]` ouvre le téléphone sur Réglages.
+- `fn_athenaLink` : l'indice `hintSilent` du code de connexion seulement si le joueur a un téléphone (`fn_hasDevice`).
+- Zeus : Ctrl + double-clic sur un joueur n'ouvre plus l'ancien panneau ATAK d'Overwatch (`COMSPEC_ZeusAtakPlayerActionsRegistered`, remplacé par « ATAK · Contrôle Zeus »). Ancien module « tableau des relais » masqué dans Eden (`scope = 1`, les missions existantes se chargent). Logo de démarrage d'Overwatch main plus affiché en double avec celui du natif.
+- Code mort retiré d'Overwatch connect (aucun appelant, atak_athena compris) : fenêtres `COMSPEC_Chat_Dialog` (`display.hpp`), `COMSPEC_Hub_Dialog`, `COMSPEC_Callsign_Dialog`, `CfgZeusRelayModules.hpp` (jamais inclus), et 27 fonctions (chat, hub, indicatif, solution de tir, IFF, perte de paquets, `handlePositionUpdateCallback`, `diagIsolateShow`, `tacticalAlertDialogShow`, `openCASDialog`, `showAthenaLinkHelp`, `sseModuleTargets`, `setBriefingScreens`, `checkCASLine`, `updateDangerZone`). ATAK natif : `fn_settingsSave` et `fn_photoTake` (sans appelant).
+- `comspec_overwatch_connect.pbo` et `comspec_overwatch_main.pbo` repatchés (`tools/pbo_patch.py --changed`, `--rm`). 3 phrases ajoutées à `i18n/en.txt`.
+- À tester en jeu : aperçu Eden sans téléphone et en Zeus avec un profil neuf (aucune fenêtre, pas d'indice Athena) ; avec téléphone et profil neuf (notification Service Athéna, OUI dans l'app Athena) ; briefing Google diffusé par un chef (pas de tableau, app Briefing, Zeus sans fenêtre, joueur JIP) ; Ctrl + double-clic en Zeus ; écran de démarrage (un seul logo) ; menu Échap > Service Athéna toujours là.
 
 ## Regroupement : réseau radio réaliste, apps refaites, synchro allégée, icônes des objets (ATAK natif 2.1.0.AB - Denver, COMSPEC Link 2.0.88)
 
