@@ -585,6 +585,22 @@ class Container
             ),
             \App\Services\Cron\Jobs\PhotoCompressCronJob::class => new \App\Services\Cron\Jobs\PhotoCompressCronJob(),
             \App\Services\Cron\Jobs\PlanEndWarningCronJob::class => new \App\Services\Cron\Jobs\PlanEndWarningCronJob(),
+            \App\Services\Email\MailBudgetGate::class => new \App\Services\Email\MailBudgetGate(
+                self::get(\App\Repositories\EmailDeliveryRepository::class)
+            ),
+            \App\Services\Cron\Jobs\MailQueueCronJob::class => new \App\Services\Cron\Jobs\MailQueueCronJob(
+                new \App\Services\Email\MailQueueProcessor(
+                    self::get(\App\Repositories\AsyncJobRepository::class),
+                    self::get(\App\Services\EmailService::class)
+                )
+            ),
+            \App\Services\Cron\Jobs\OpsMailDigestCronJob::class => new \App\Services\Cron\Jobs\OpsMailDigestCronJob(
+                new \App\Services\Email\OpsMailDigestService(
+                    new \App\Repositories\EmailDigestRepository(),
+                    self::get(\App\Services\EmailService::class),
+                    self::get(\App\Services\Email\MailBudgetGate::class)
+                )
+            ),
             \App\Repositories\AtakReportRoutingRepository::class => new \App\Repositories\AtakReportRoutingRepository(),
             \App\Services\Tactical\AtakBridgeModulesService::class => new \App\Services\Tactical\AtakBridgeModulesService(),
             \App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob::class => new \App\Services\Cron\Jobs\AtakReportRoutingEscalationsCronJob(
@@ -638,6 +654,8 @@ class Container
                     self::get(\App\Services\Cron\Jobs\AdvancementSeniorityCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PhotoCompressCronJob::class),
                     self::get(\App\Services\Cron\Jobs\PlanEndWarningCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\MailQueueCronJob::class),
+                    self::get(\App\Services\Cron\Jobs\OpsMailDigestCronJob::class),
                 ],
                 self::get(\App\Repositories\CronJobRunRepository::class)
             ),

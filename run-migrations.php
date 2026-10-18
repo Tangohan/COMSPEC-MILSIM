@@ -3931,6 +3931,13 @@ $migrationRunner->step('plan_gifts', static function () use ($planGiftMigrate, $
     $planGiftMigrate($pdo);
 });
 
+// Envois d'e-mails sous quota : récapitulatif des alertes d'exploitation, compteur du jour.
+$emailDigestMigrate = require $root . '/bootstrap/email_digest_migration.php';
+$migrationRunner->step('email_digest', static function () use ($emailDigestMigrate, $pdo): void {
+    echo "Migration email_digest_items (récapitulatif des alertes e-mail)...\n";
+    $emailDigestMigrate($pdo);
+});
+
 $atakSendQueueMigrate = require $root . '/bootstrap/atak_send_queue_migration.php';
 $migrationRunner->step('atak_send_queue', static function () use ($atakSendQueueMigrate, $pdo): void {
     echo "Migration atak_send_queue_snapshots / atak_send_queue_history (files d'envoi vers Athena)...\n";
