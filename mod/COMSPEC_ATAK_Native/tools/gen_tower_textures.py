@@ -14,7 +14,8 @@ sauf indication), tirés d'un bruit périodique (FFT) pour qu'aucune couture ne 
   tower_sign    panneaux (512 x 256, UV propres) : danger électrique / RF, identifiant du site, consignes
   tower_fence   grillage simple torsion de l'enclos (_ca, transparence)
   tower_net     filet de camouflage (_ca, transparence) : lanières vert / brun / sable sur maille
-Pour chacun (sauf câble et feu) : _nohq (normales) et _smdi (reflets) du shader Super (rvmat tower_<nom>.rvmat).
+Pour chacun (sauf câble et feu) : _nohq (normales) et _smdi (reflets, tenus bas : acier patiné et peinture mates en jeu)
+du shader Super (rvmat tower_<nom>.rvmat).
 
     python3 gen_tower_textures.py      # écrit render/tower_*_co.png
     puis  hemtt utils paa convert render/tower_X_co.png ../Sources/addons/towers/data/tower_X_co.paa
@@ -120,7 +121,7 @@ def galva():
     dull = np.clip((noise(1.9) - 0.45) * 2.0, 0, 1)
     rgb = rgb * (1 - 0.12 * dull[..., None]) + 0.12 * dull[..., None] * np.array([0.78, 0.79, 0.78])
     save("tower_galva", rgb)
-    maps("tower_galva", 0.6 * fine + 0.4 * edge + 2.0 * rust, 6.0, 0.55 - 0.25 * dull - 0.45 * rust + 0.1 * (sp - 0.5), 0.45 - 0.2 * dull)
+    maps("tower_galva", 0.6 * fine + 0.4 * edge + 2.0 * rust, 6.0, 0.32 - 0.15 * dull - 0.28 * rust + 0.06 * (sp - 0.5), 0.3 - 0.12 * dull)
 
 
 def dark():
@@ -135,7 +136,7 @@ def dark():
     rust = np.clip((noise(1.1) - 0.78) * 5, 0, 1) * np.clip((fine - 0.5) * 4, 0, 1)
     rgb = rgb * (1 - 0.7 * rust[..., None]) + 0.7 * rust[..., None] * np.array([0.30, 0.17, 0.09])
     save("tower_dark", rgb)
-    maps("tower_dark", noise(0.9) + 2.5 * rust, 5.0, 0.32 - 0.18 * chalk - 0.3 * rust, 0.4 - 0.15 * chalk)
+    maps("tower_dark", noise(0.9) + 2.5 * rust, 5.0, 0.2 - 0.1 * chalk - 0.18 * rust, 0.28 - 0.1 * chalk)
 
 
 def radome():
@@ -149,7 +150,7 @@ def radome():
     grime = np.clip((noise(2.0, aniso=(0.3, 1.0)) - 0.5) * 1.2, 0, 1)
     rgb -= (0.08 * grime)[..., None]
     save("tower_radome", rgb)
-    maps("tower_radome", fine, 2.0, 0.22 - 0.15 * st - 0.08 * grime, 0.35 * np.ones_like(st))
+    maps("tower_radome", fine, 2.0, 0.14 - 0.08 * st - 0.05 * grime, 0.25 * np.ones_like(st))
 
 
 def box():
@@ -161,7 +162,7 @@ def box():
     dust = np.clip((noise(1.6) - 0.55) * 1.5, 0, 1)
     rgb = rgb * (1 - 0.15 * dust[..., None]) + 0.15 * dust[..., None] * np.array([0.55, 0.50, 0.42])
     save("tower_box", rgb)
-    maps("tower_box", fine, 2.5, 0.35 - 0.2 * dust, 0.45 * np.ones_like(dust))
+    maps("tower_box", fine, 2.5, 0.2 - 0.1 * dust, 0.3 * np.ones_like(dust))
 
 
 def concrete():
@@ -188,7 +189,7 @@ def grating():
     rgb = tint(base, (1.0, 1.01, 1.03))
     save("tower_grating", rgb)
     bars = (bar_x | bar_y).astype(float)
-    maps("tower_grating", bars, 3.0, 0.5 * bars, 0.45 * np.ones_like(bars))
+    maps("tower_grating", bars, 3.0, 0.3 * bars, 0.3 * np.ones_like(bars))
 
 
 def light():
@@ -216,7 +217,7 @@ def olive():
     rust = np.clip((noise(1.1) - 0.8) * 5, 0, 1) * np.clip((fine - 0.5) * 4, 0, 1)
     rgb = rgb * (1 - 0.6 * rust[..., None]) + 0.6 * rust[..., None] * np.array([0.32, 0.18, 0.09])
     save("tower_olive", rgb)
-    maps("tower_olive", noise(0.9) + 1.5 * chip + 2.0 * rust, 5.0, 0.30 - 0.15 * chalk - 0.25 * rust, 0.38 - 0.12 * chalk)
+    maps("tower_olive", noise(0.9) + 1.5 * chip + 2.0 * rust, 5.0, 0.18 - 0.08 * chalk - 0.15 * rust, 0.26 - 0.08 * chalk)
 
 
 def sign():
