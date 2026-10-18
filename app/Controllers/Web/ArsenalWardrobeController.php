@@ -57,7 +57,51 @@ class ArsenalWardrobeController
             $dotation = [];
         }
 
-        return $this->hubView(false, $wardrobes, $collections, $classes, $dotation, $this->roleKitsForMember($tenantId, $userId));
+        return $this->hubView(
+            false,
+            $wardrobes,
+            $collections,
+            $classes,
+            $dotation,
+            $this->roleKitsForMember($tenantId, $userId),
+            $this->playerKits()?->forUser($tenantId, $userId),
+        );
+    }
+
+    /**
+     * « Mon kit en jeu » → tenue personnelle (mise à jour à chaque enregistrement, jamais dupliquée).
+     */
+    public function saveMyGameKit(Request $request, array $params = []): Response
+    {
+        $gate = $this->gate();
+        if ($gate instanceof Response) {
+            return $gate;
+        }
+        [$tenantId, $userId] = $gate;
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Rechargez la page et recommencez.');
+
+            return Response::redirect(url('equipment'));
+        }
+        $result = $this->playerKits()?->saveAsWardrobe($tenantId, $userId, '', false)
+            ?? ['ok' => false, 'error' => 'Enregistrement impossible.'];
+        if (!$result['ok']) {
+            Session::flash('error', (string) ($result['error'] ?? 'Enregistrement impossible.'));
+
+            return Response::redirect(url('equipment'));
+        }
+        Session::flash('success', 'Votre kit en jeu est enregistré dans vos tenues.');
+
+        return Response::redirect(url('equipment') . '?tenue=' . (int) $result['id']);
+    }
+
+    private function playerKits(): ?\App\Services\GameEquipment\PlayerKitService
+    {
+        try {
+            return \App\Core\Container::get(\App\Services\GameEquipment\PlayerKitService::class);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
@@ -178,7 +222,11 @@ class ArsenalWardrobeController
             return Response::redirect(url('equipment'));
         }
         $row['mine'] = (int) ($row['user_id'] ?? 0) === $userId;
-        $loadoutItems = ArsenalLoadoutItems::grouped((string) ($row['payload_text'] ?? ''));
+        $payloadText = (string) ($row['payload_text'] ?? '');
+        $loadoutItems = ArsenalLoadoutItems::grouped(
+            $payloadText,
+            $this->playerKits()?->catalogFor($tenantId, ArsenalLoadoutItems::classes($payloadText)) ?? [],
+        );
         $kinds = ArsenalLoadoutItems::presentKinds((string) ($row['payload_text'] ?? ''));
         unset($row['payload_text']);
 
@@ -705,6 +753,7 @@ class ArsenalWardrobeController
      * @param list<array<string, mixed>> $classes
      * @param list<array<string, mixed>> $dotation
      * @param list<array<string, mixed>> $roleKits
+     * @param array<string, mixed>|null $myGameKit dernier kit porté en jeu (PlayerKitService::forUser)
      */
     private function hubView(
         bool $migrationMissing,
@@ -713,6 +762,7 @@ class ArsenalWardrobeController
         array $classes,
         array $dotation = [],
         array $roleKits = [],
+        ?array $myGameKit = null,
     ): Response {
         $mine = array_values(array_filter($wardrobes, static fn (array $w): bool => !empty($w['mine'])));
 
@@ -727,6 +777,7 @@ class ArsenalWardrobeController
             'equipmentClasses' => $classes,
             'dotationItems' => $dotation,
             'roleKits' => $roleKits,
+            'myGameKit' => $myGameKit,
             'canManageCatalog' => $this->canManageCatalog(),
             'canManageDotation' => $this->canManageDotation(),
             'equipmentKindLabels' => ArsenalLoadoutItems::kindLabels(),

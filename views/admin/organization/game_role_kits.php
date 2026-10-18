@@ -78,6 +78,23 @@ $fmtDate = static function (string $raw): string {
                 <?php if ((string) $k['description'] !== ''): ?>
                 <p class="bo-ge-kit__desc"><?= $h((string) $k['description']) ?></p>
                 <?php endif; ?>
+                <?php
+                $kitIcons = [];
+                foreach (\App\Support\ArsenalLoadoutItems::classes((string) ($k['payload_text'] ?? '')) as $kc) {
+                    $u = \App\Repositories\GameItemIconRepository::urlFor($kc);
+                    if ($u !== null && !in_array($u, $kitIcons, true)) {
+                        $kitIcons[$kc] = $u;
+                    }
+                    if (count($kitIcons) >= 8) {
+                        break;
+                    }
+                }
+                ?>
+                <?php if ($kitIcons !== []): ?>
+                <div class="bo-ge-kit__icons" aria-hidden="true">
+                    <?php foreach ($kitIcons as $kc => $u): ?><img src="<?= $h($u) ?>" alt="" title="<?= $h((string) $kc) ?>" loading="lazy" decoding="async" width="40" height="40"><?php endforeach; ?>
+                </div>
+                <?php endif; ?>
                 <p class="bo-ge-kit__meta"><?= (int) ($k['item_count'] ?? 0) ?> objet(s) · modifié le <?= $h($fmtDate((string) $k['updated_at'])) ?></p>
                 <div class="bo-ge-kit__mods">
                     <span class="bo-ge-kit__label">Mods requis</span>

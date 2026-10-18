@@ -110,4 +110,18 @@ final class PaaDecoderTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $repo->pathForHash('../../x');
     }
+
+    public function testIconsAreWiredIntoEquipmentViews(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $routes = (string) file_get_contents($root . '/routes/web.php');
+        self::assertStringContainsString("'/equipment/icones/{file}'", $routes);
+        self::assertStringContainsString("'/api/atak/item-icons'", $routes);
+        self::assertStringContainsString('GameItemIconRepository::urlFor', (string) file_get_contents($root . '/views/admin/organization/game_equipment.php'));
+        self::assertStringContainsString('GameItemIconRepository::urlFor', (string) file_get_contents($root . '/views/admin/organization/game_role_kits.php'));
+        self::assertStringContainsString("\$it['icon']", (string) file_get_contents($root . '/views/admin/organization/partials/game_player_kits.php'));
+        self::assertStringContainsString('it.icon', (string) file_get_contents($root . '/public/assets/js/equipment-catalog.js'));
+        // Sans communauté en session : pas d’icône, pas de requête.
+        self::assertNull(GameItemIconRepository::urlFor('arifle_MX_F'));
+    }
 }

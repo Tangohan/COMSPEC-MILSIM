@@ -496,6 +496,10 @@ class Container
                 self::get(\App\Repositories\ArsenalWardrobeRepository::class),
                 self::get(\App\Repositories\PersonnelJobRoleRepository::class)
             ),
+            \App\Services\GameEquipment\PlayerKitService::class => new \App\Services\GameEquipment\PlayerKitService(
+                self::get(\App\Repositories\GameEquipmentRepository::class),
+                self::get(\App\Repositories\ArsenalWardrobeRepository::class)
+            ),
             \App\Controllers\Admin\Organization\GameEquipmentAdminController::class => new \App\Controllers\Admin\Organization\GameEquipmentAdminController(
                 self::get(\App\Repositories\GameEquipmentRepository::class),
                 self::get(\App\Repositories\GameRoleKitRepository::class),

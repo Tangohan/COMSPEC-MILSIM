@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\Core\Session;
 use App\Services\GameEquipment\PaaDecoder;
 use App\Support\LazyDatabaseConnection;
 use PDO;
@@ -27,6 +28,10 @@ final class GameItemIconRepository
     public const STATUSES = ['ok', 'not_found', 'invalid'];
 
     private static ?bool $ready = null;
+
+    /** @var array<string, string> classe en minuscules → empreinte, pour la communauté de la requête */
+    private static array $tenantHashes = [];
+    private static int $tenantHashesFor = 0;
 
     public function __construct(?PDO $pdo = null, private ?string $storageDir = null)
     {
@@ -183,7 +188,44 @@ final class GameItemIconRepository
 
     public static function urlForHash(string $hash): string
     {
-        return '/back-office/equipement-joueurs/icones/' . $hash . '.png';
+        $path = 'equipment/icones/' . $hash . '.png';
+
+        return function_exists('url') ? url($path) : '/' . $path;
+    }
+
+    /**
+     * URL d’icône d’une classe pour la communauté connectée (null sans icône). Toutes les icônes de la communauté
+     * sont lues en une requête au premier appel, puis gardées pour la requête HTTP : appelable objet par objet.
+     */
+    public static function urlFor(string $class): ?string
+    {
+        $class = strtolower(trim($class));
+        $tenantId = (int) Session::get('tenant_id');
+        if ($class === '' || $tenantId < 1) {
+            return null;
+        }
+        if (self::$tenantHashesFor !== $tenantId) {
+            self::$tenantHashesFor = $tenantId;
+            self::$tenantHashes = [];
+            try {
+                $repo = new self();
+                if ($repo->schemaReady()) {
+                    $st = $repo->pdo()->prepare(
+                        'SELECT class_name, icon_hash FROM game_item_icons
+                         WHERE tenant_id = ? AND status = \'ok\' AND icon_hash IS NOT NULL LIMIT 20000'
+                    );
+                    $st->execute([$tenantId]);
+                    foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                        self::$tenantHashes[strtolower((string) $row['class_name'])] = (string) $row['icon_hash'];
+                    }
+                }
+            } catch (\Throwable) {
+                // Pas d’icône plutôt qu’une page en erreur.
+            }
+        }
+        $hash = self::$tenantHashes[$class] ?? null;
+
+        return $hash !== null ? self::urlForHash($hash) : null;
     }
 
     public function tenantHasHash(int $tenantId, string $hash): bool
