@@ -1,11 +1,14 @@
 /*
     Panneau SITUATION de la carte : sans sélection, résumé de la mission ; avec une unité sélectionnée (clic),
     sa fiche ATAK : indicatif, nom, grade et fonction, groupe, état, position, distance et gisement, déplacement,
-    téléphone (en ligne, batterie, signal), identité ORBAT. Les calques sont des boutons sous ce texte (fn_pageMap).
+    téléphone (en ligne, batterie, signal), identité ORBAT. Le texte vit dans la section « Situation » du volet
+    (fn_pageMap, contrôle COMSPEC_ATAK_InspTextCtrl) ; fond de carte et calques sont les sections suivantes.
+    Params : [texte seul] : true renvoie le texte (non traduit) sans rien afficher, pour le rendu du volet.
 */
+params [["_build", false]];
 disableSerialization;
 private _d = [] call comspec_atak_native_fnc_display;
-if (isNull _d) exitWith {};
+if (isNull _d && {!_build}) exitWith {};
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 private _e = _s getOrDefault ["selectedEntity", createHashMap];
 private _dim = { format ["<t color='#8a9a93'>%1</t>", _this] };
@@ -72,20 +75,23 @@ if ((count _e) isEqualTo 0) then {
     _lines pushBack format ["%1 %2 · il y a %3 s", "Liaison :" call _dim, _fresh, round (diag_tickTime - (_e getOrDefault ["updated", diag_tickTime]))];
     _text = format ["<t size='0.9'>%1</t>", _lines joinString "<br/>"];
 };
-// Deux lignes vides : le bandeau « SITUATION · REPLIER » recouvre le haut du panneau.
-private _ctl = _d displayCtrl 88541;
-// Le texte s'arrête au-dessus des calques (posés en bas du panneau par fn_pageMap) au lieu de passer dessous.
-private _bottom = uiNamespace getVariable ["COMSPEC_ATAK_InspTextBottom", -1];
-if (_bottom > 0) then {
-    (ctrlPosition _ctl) params ["_cx", "_cy", "_cw"];
-    _ctl ctrlSetPosition [_cx, _cy, _cw, (_bottom - _cy) max 0];
-    _ctl ctrlCommit 0;
+if (_build) exitWith { _text };
+// Autre unité cliquée (ou sélection levée) : en-tête de section et fiche changent, la carte est redessinée.
+if ((uiNamespace getVariable ["COMSPEC_ATAK_InspSelKey", ""]) isNotEqualTo (["", _e getOrDefault ["callsign", "CONTACT"]] select ((count _e) > 0))
+    && {missionNamespace getVariable ["COMSPEC_ATAK_InspOpen", false]}
+    && {(_s getOrDefault ["pageDrawn", ""]) isEqualTo "MAP"} && {!(([] call comspec_atak_native_fnc_layoutGet) get "mini")}) exitWith {
+    uiNamespace setVariable ["COMSPEC_ATAK_InspSelKey", ["", _e getOrDefault ["callsign", "CONTACT"]] select ((count _e) > 0)];
+    [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
 };
-// Tout doit se lire : texte réduit pas à pas (jusqu'aux deux tiers) tant qu'il dépasse la hauteur du panneau.
-private _avail = (ctrlPosition _ctl) select 3;
-{
-    _ctl ctrlSetStructuredText parseText ((format ["<t size='%1'><t size='1.1'> </t><br/><br/>%2</t>", _x, _text]) call comspec_atak_native_fnc_tr);
-    if ((ctrlTextHeight _ctl) <= _avail) exitWith {};
-} forEach [1, 0.92, 0.84, 0.76, 0.68];
+private _ctl = uiNamespace getVariable ["COMSPEC_ATAK_InspTextCtrl", controlNull];
+if (isNull _ctl) exitWith {};
+_ctl ctrlSetStructuredText parseText ((_text) call comspec_atak_native_fnc_tr);
+// Le volet est posé à la hauteur du texte du rendu : une fiche qui gagne ou perd des lignes (montée en véhicule,
+// téléphone abîmé) redessine la carte pour que rien ne soit coupé ni ne laisse un trou (au plus toutes les 2 s).
+private _dh = (ctrlTextHeight _ctl) - ((ctrlPosition _ctl) select 3);
+if ((abs _dh) > (([] call comspec_atak_native_fnc_layoutGet) get "fontSmall") * 0.5 && {diag_tickTime > (uiNamespace getVariable ["COMSPEC_ATAK_InspReflow", 0])}) then {
+    uiNamespace setVariable ["COMSPEC_ATAK_InspReflow", diag_tickTime + 2];
+    [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+};
 // Pas de notification ici : ce panneau est redessiné chaque seconde (fn_statusUpdate). Le bandeau « indicatif · grille »
 // de l'écran réduit part une seule fois, au clic sur l'unité (fn_mapSelect).

@@ -2,7 +2,7 @@
     Formulaire défilant (pages Athena, Réseau, Réglages, éditeur de marqueur).
     Params : [lignes, rectangle, dans la zone de contenu (true) ou absolu sur le display (false), couleur du fond]
     Lignes :
-      ["title", texte]                       ["text", texte structuré]
+      ["title", texte]                       ["text", texte structuré, couleur du fond, variable uiNamespace du contrôle]
       ["edit", clé, libellé, valeur]          ["memo", clé, libellé, valeur, nb lignes]
       ["combo", clé, libellé, [[texte, donnée, image, couleur]...], donnée choisie, [libellé du bouton, code]]
           bouton (facultatif) à droite de la liste, sur la même ligne : code appelé avec [donnée choisie]
@@ -95,7 +95,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _y = _y + _rowH;
         };
         case "text": {
-            _row params ["", "_txt", ["_tbg", []]];
+            _row params ["", "_txt", ["_tbg", []], ["_keep", ""]];
             private _card = (count _tbg) isEqualTo 4;
             private _ix = [0, _pad / 2] select _card;
             private _cb = controlNull;
@@ -106,6 +106,8 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _t ctrlSetPosition [_pad + _ix, _y + _ix / 2, _w - 2 * _ix, _h];
             _t ctrlCommit 0;
             if (_card) then { _cb ctrlSetPosition [_pad, _y, _w, _h + _ix]; _cb ctrlCommit 0; _h = _h + _ix; };
+            // Texte rafraîchi ensuite sans redessiner la page (panneau SITUATION de la carte) : contrôle gardé sous ce nom.
+            if (_keep isNotEqualTo "") then { uiNamespace setVariable [_keep, _t]; };
             _y = _y + _h + ([_pad / 2, pixelH * 2] select _card);
         };
         case "strip": {
@@ -307,29 +309,36 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             // Section repliable (sous-menu) : grande cible de clic, titre à gauche, résumé et chevron à droite.
             // Retour de jeu : « certains sous-menus sont trop peu visibles ». Carte plus claire et bordée, titre toujours
             // en blanc, barre d'accent plus large, résumé en gris clair ; ouverte, le contenu est encadré d'un filet.
-            _row params ["", "_title", ["_sub", ""], ["_open", false], ["_code", {}]];
+            // Part du titre réglable (volet étroit de la carte : titre large, compteur court) ; un titre ou un résumé
+            // qui passe à la ligne agrandit la carte au lieu d'être coupé.
+            _row params ["", "_title", ["_sub", ""], ["_open", false], ["_code", {}], ["_tw", 0.5]];
             private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
             private _h = _rowH * 1.25;
             _y = _y + _pad / 3;
+            private _cs = _h * 0.5;
+            private _cw = _cs / _ratio;
+            private _tW = _w * _tw;
+            // Fond d'abord (l'ordre de création fait l'empilement), à la hauteur finale une fois les textes mesurés.
             private _card = ["COMSPEC_RscText", [_pad, _y, _w, _h]] call _mk;
             _card ctrlSetBackgroundColor ([[0.12, 0.145, 0.132, 1], [0.15, 0.185, 0.165, 1]] select _open);
+            private _t = ["COMSPEC_RscStructuredText", [_pad * 1.9, _y, _tW, _h]] call _mk;
+            _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#f2f6f3'>%1</t>", toUpper _title]) call comspec_atak_native_fnc_tr);
+            private _sw = _w * (0.95 - _tw) - _cw - _pad;
+            private _st = ["COMSPEC_RscStructuredText", [_pad + _w - _cw - _pad * 1.5 - _sw, _y, _sw, _h]] call _mk;
+            _st ctrlSetStructuredText parseText ((format ["<t align='right' size='0.85' color='#c9d4ce'>%1</t>", _sub]) call comspec_atak_native_fnc_tr);
+            _h = _h max ((ctrlTextHeight _t) + _pad / 2) max ((ctrlTextHeight _st) + _pad / 2);
+            _t ctrlSetPosition [_pad * 1.9, _y + (((_h - (ctrlTextHeight _t)) / 2) max 0), _tW, ctrlTextHeight _t];
+            _t ctrlCommit 0;
+            _st ctrlSetPosition [_pad + _w - _cw - _pad * 1.5 - _sw, _y + (((_h - (ctrlTextHeight _st)) / 2) max 0), _sw, ctrlTextHeight _st];
+            _st ctrlCommit 0;
+            _card ctrlSetPositionH _h;
+            _card ctrlCommit 0;
             {
                 private _ln = ["COMSPEC_RscText", [_pad, _y + _x, _w, pixelH]] call _mk;
                 _ln ctrlSetBackgroundColor [1, 1, 1, [0.10, 0.16] select _open];
             } forEach [0, _h - pixelH];
             private _bar = ["COMSPEC_RscText", [_pad, _y, pixelW * 6, _h]] call _mk;
             _bar ctrlSetBackgroundColor ([[0.55, 0.62, 0.58, 1], _acc] select _open);
-            private _cs = _h * 0.5;
-            private _cw = _cs / _ratio;
-            private _t = ["COMSPEC_RscStructuredText", [_pad * 1.9, _y, _w * 0.5, _h]] call _mk;
-            _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' color='#f2f6f3'>%1</t>", toUpper _title]) call comspec_atak_native_fnc_tr);
-            _t ctrlSetPosition [_pad * 1.9, _y + (((_h - (ctrlTextHeight _t)) / 2) max 0), _w * 0.5, ctrlTextHeight _t];
-            _t ctrlCommit 0;
-            private _sw = _w * 0.45 - _cw - _pad;
-            private _st = ["COMSPEC_RscStructuredText", [_pad + _w - _cw - _pad * 1.5 - _sw, _y, _sw, _h]] call _mk;
-            _st ctrlSetStructuredText parseText ((format ["<t align='right' size='0.85' color='#c9d4ce'>%1</t>", _sub]) call comspec_atak_native_fnc_tr);
-            _st ctrlSetPosition [_pad + _w - _cw - _pad * 1.5 - _sw, _y + (((_h - (ctrlTextHeight _st)) / 2) max 0), _sw, ctrlTextHeight _st];
-            _st ctrlCommit 0;
             private _ch = ["COMSPEC_RscPicture", [_pad + _w - _cw - _pad * 0.75, _y + (_h - _cs) / 2, _cw, _cs], format ["\z\comspec_atak_native\addons\main\data\%1.paa", ["ui_chevron_down", "ui_chevron_up"] select _open]] call _mk;
             _ch ctrlSetTextColor ([[0.92, 0.95, 0.93, 1], _acc] select _open);
             private _b = ["COMSPEC_RscButtonOverlay", [_pad, _y, _w, _h]] call _mk;
