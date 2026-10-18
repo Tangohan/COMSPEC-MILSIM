@@ -62,6 +62,28 @@ EN : Recon notes finally reach the command post
 - Points simples (`mil_dot`, `hd_dot`) : le point ne remplit qu'un quart de son image et la couleur par défaut est noire. Téléphone (`fn_mapGameMarkers`) : symbole doublé, éclairci s'il est trop sombre. Site (`arma-map-markers.js`) : rond plein cerclé de blanc au lieu du PNG, et le libellé « Repère · indicatif » n'est plus masqué (seul « Repère » nu l'est).
 - Non testé en jeu. À tester : une reco envoyée apparaît sur le site (calque Notes reco, fil RECO), au journal Activité et dans Discord ; POINTÉ CARTE ; jeu lancé avec BattlEye puis sans ; point simple noir posé en jeu, visible au téléphone et sur le site. Il faut recompiler la DLL (build_mod.bat) et reconstruire main.pbo au regroupement.
 
+## Menu SSE d'Eden, MP3 refusés, check de liaison sur Discord (ATAK natif, numéro attribué au regroupement)
+
+### Résumé joueur
+Type : correctif
+FR : Le menu COMSPEC SSE d'Eden s'ouvre, les MP3 refusés se lisent, la liaison en jeu est confirmée sur Discord
+- Eden : chaque entrée du menu COMSPEC SSE ouvre le manuel dans une fenêtre de l'éditeur, avec la liste des chapitres à gauche (plus d'erreur de script).
+- App Musique : un MP3 qui affichait « format non lu » (souvent un MP3 tiré d'une vidéo, avec une grosse pochette) se lit maintenant. Un faux MP3 (M4A, WebM ou Opus renommé) le dit clairement.
+- Site : chaque morceau envoyé est testé pour le jeu ; le bouton « Tester la lecture en jeu » répare aussi les morceaux déjà en ligne.
+- Quand tu te lies à Athena en jeu, le salon de debug du Discord reçoit une confirmation : numéro et IMEI attribués, terminal porté, ou l'erreur de connexion.
+EN : The Eden COMSPEC SSE menu opens, rejected MP3s play, in-game linking is confirmed on Discord
+- Eden: every entry of the COMSPEC SSE menu opens the manual in an editor window, with the chapter list on the left (no more script error).
+- Music app: an MP3 that showed "format not read" (often an MP3 taken from a video, with a large cover picture) now plays. A fake MP3 (renamed M4A, WebM or Opus) says so clearly.
+- Site: every uploaded track is tested for the game; the "Test in-game playback" action also repairs tracks already online.
+- When you link to Athena in game, the Discord debug channel gets a confirmation: assigned number and IMEI, terminal carried, or the connection error.
+
+### Détail technique
+- @COMSPEC_SSE guide : les actions du menu d'Eden appelaient `BIS_fnc_openFieldManual`, qui y cherche un écran parent et tombe sur un booléen (erreur `createDisplay` ligne 40 de fn_openFieldManual.sqf). Elles passent par `comspec_sse_fnc_openGuide`, qui dans Eden attend la fermeture du menu (uiSleep 0.05) puis ouvre sa propre fenêtre sur l'écran 313 (liste des chapitres CfgHints + texte). comspec_sse_guide.pbo patché avec tools/pbo_patch.py.
+- DLL native (MusicPlayer.cs) : si MCI refuse d'ouvrir un fichier local (ERR277 = MCIERR_INTERNAL), copie dans le cache sans balise ID3v2 ni octets avant la première trame MPEG (deux trames valides de suite), second essai ; sinon le vrai format est reconnu (ftyp, WebM, OggS, fLaC, page web). À recompiler avec build_mod.bat.
+- Site : `App\Support\MusicGameCheck` (même recherche de trame), appelé par `MusicTrackStorage::storeFromUpload` (MP3 réparé sur place, faux MP3 refusé, note dans la réponse) et par la nouvelle action groupée `game_check` de /admin/musique et /back-office/ressources/musique (taille et sha1 mis à jour). Pas de migration.
+- fn_startupCheck : envoi à la liaison (`COMSPEC_AthenaReady` vrai, identité du téléphone reçue) ou, sans liaison 2 min après le contrôle d'installation, avec l'erreur (`comspec_overwatch_auth_error`, `COMSPEC_LinkDetail`) ; nouveau rapport à chaque nouvelle liaison dans la mission. Champ `trigger` (link, link_failed) ; étapes `link`, `phone` (numéro, IMEI, attribué par Athena ou provisoire), `terminal` (objet porté, modèle) ; l'étape `account` est remplacée par `link`. Aucune nouvelle commande DLL.
+- TEST VIDÉO : le flux réel du drone (I) est créé en premier.
+
 ## Regroupement : app Plan refaite, partage des caméras, nouvelle app Distances (ATAK natif 1.96.0, COMSPEC Link 2.0.86)
 
 ### Résumé joueur

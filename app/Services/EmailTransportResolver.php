@@ -119,8 +119,9 @@ final class EmailTransportResolver
         $pass = trim((string) ($smtp['password'] ?? ''));
         $enc = strtolower((string) ($smtp['encryption'] ?? 'tls'));
 
-        if ($host === '' && in_array($mailerType, ['sendgrid', 'mailgun', 'ses'], true)) {
+        if ($host === '' && in_array($mailerType, ['brevo', 'sendgrid', 'mailgun', 'ses'], true)) {
             $host = match ($mailerType) {
+                'brevo' => 'smtp-relay.brevo.com',
                 'sendgrid' => 'smtp.sendgrid.net',
                 'mailgun' => 'smtp.mailgun.org',
                 'ses' => trim((string) \env('AWS_SES_SMTP_HOST', 'email-smtp.eu-west-1.amazonaws.com')),

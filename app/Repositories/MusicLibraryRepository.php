@@ -195,6 +195,12 @@ final class MusicLibraryRepository
         }
     }
 
+    /** Fichier réécrit sur le serveur (contrôle « lisible en jeu ») : nouvelle taille et empreinte. */
+    public function updateTrackFile(int $id, int $sizeBytes, string $sha1): void
+    {
+        $this->db->execute('UPDATE music_tracks SET size_bytes = ?, sha1 = ?, updated_at = NOW() WHERE id = ?', [$sizeBytes, $sha1, $id]);
+    }
+
     public function setTrackStatus(int $id, string $status, int $moderatorId, string $note = ''): void
     {
         $this->db->execute(

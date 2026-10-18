@@ -27,6 +27,9 @@ final class AtakStartupCheckService
         'ext' => ['Extension', 'Extension'],
         'athena' => ['Connexion Athena', 'Athena link'],
         'account' => ['Compte Athena', 'Athena account'],
+        'link' => ['Liaison en jeu', 'In-game link'],
+        'phone' => ['Numéro et IMEI', 'Number and IMEI'],
+        'terminal' => ['Terminal', 'Terminal'],
         'update' => ['Mise à jour', 'Update'],
         'deps' => ['CBA · ACE · radio', 'CBA · ACE · radio'],
         'mods' => ['Mods COMSPEC', 'COMSPEC mods'],
@@ -35,6 +38,13 @@ final class AtakStartupCheckService
     ];
 
     private const ICONS = ['ok' => '✅', 'warn' => '⚠️', 'fail' => '❌', 'off' => '➖'];
+
+    /** Déclencheur envoyé par le mod : [titre FR, titre EN]. « start » : mods d'avant le check à la liaison. */
+    public const TRIGGERS = [
+        'start' => ['Check de démarrage', 'Startup check'],
+        'link' => ['Liaison en jeu', 'In-game link'],
+        'link_failed' => ['Liaison impossible', 'Link failed'],
+    ];
 
     /** Même rapport (joueur + session) : un seul message. Au plus 6 par joueur et par heure, 20 par minute en tout. */
     private const DEDUPE_SECONDS = 6 * 3600;
@@ -99,7 +109,7 @@ final class AtakStartupCheckService
      *
      * @param array<string, mixed> $body
      * @return array{atak:string, config:string, link:string, link_expected:string, arma:string, player:string,
-     *   callsign:string, player_key:string, session:string, world:string, mission:string, mp:bool,
+     *   callsign:string, player_key:string, session:string, world:string, mission:string, mp:bool, trigger:string,
      *   steps:list<array{id:string, status:string, detail:string}>}|null
      */
     public static function normalize(array $body): ?array
@@ -130,6 +140,7 @@ final class AtakStartupCheckService
         $key = preg_replace('/[^A-Za-z0-9_-]/', '', (string) (is_scalar($body['player_key'] ?? null) ? $body['player_key'] : ''));
         $session = preg_replace('/[^A-Za-z0-9_-]/', '', (string) (is_scalar($body['session'] ?? null) ? $body['session'] : ''));
         $player = $str('player', 48);
+        $trigger = strtolower(trim((string) (is_scalar($body['trigger'] ?? null) ? $body['trigger'] : '')));
 
         return [
             'atak' => $atak,
@@ -144,13 +155,14 @@ final class AtakStartupCheckService
             'world' => $str('world', 40),
             'mission' => $str('mission', 60),
             'mp' => in_array(strtolower(trim((string) (is_scalar($body['mp'] ?? null) ? $body['mp'] : ''))), ['1', 'true'], true),
+            'trigger' => array_key_exists($trigger, self::TRIGGERS) ? $trigger : 'start',
             'steps' => $steps,
         ];
     }
 
     /**
      * @param array{atak:string, config:string, link:string, link_expected:string, arma:string, player:string,
-     *   callsign:string, world:string, mission:string, mp:bool,
+     *   callsign:string, world:string, mission:string, mp:bool, trigger?:string,
      *   steps:list<array{id:string, status:string, detail:string}>} $report
      * @return array<string, mixed>
      */
@@ -200,12 +212,14 @@ final class AtakStartupCheckService
             $fields[] = ['name' => 'Carte / Map', 'value' => $where . ($report['mp'] ? '' : ' (solo)'), 'inline' => true];
         }
 
+        [$titleFr, $titleEn] = self::TRIGGERS[$report['trigger'] ?? 'start'] ?? self::TRIGGERS['start'];
+
         return [
-            'title' => mb_substr($icon . ' Check de démarrage · ' . $who, 0, 256),
+            'title' => mb_substr($icon . ' ' . $titleFr . ' · ' . $who, 0, 256),
             'description' => mb_substr($summary . "\n\n" . implode("\n", $lines), 0, 4000),
             'color' => $fails > 0 ? 0xE5483A : ($warns > 0 ? 0xF2AB33 : 0x5CC76B),
             'fields' => $fields,
-            'footer' => ['text' => 'Check de démarrage du mod · Mod startup check'],
+            'footer' => ['text' => $titleFr . ' · ' . $titleEn],
             'timestamp' => gmdate('c'),
         ];
     }
