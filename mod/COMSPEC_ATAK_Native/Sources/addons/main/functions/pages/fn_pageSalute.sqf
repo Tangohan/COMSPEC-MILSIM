@@ -65,15 +65,15 @@ private _fit = {
     while { (ctrlTextWidth _c) > _w && {_f > _fh * _min} } do { _f = _f * 0.92; _c ctrlSetFontHeight ((_f) max COMSPEC_ATAK_FontMin); };
 };
 
-// Lettres dans l'ordre S-A-L-U-T-E (en paysage : S, A, L à gauche, U, T, E à droite) : clé du brouillon, lettre,
-// libellé, exemple, valeur par défaut.
+// Lettres dans l'ordre doctrinal S-A-L-U-T-E (retour de jeu 1.97.0 : Unité passait avant Lieu) :
+// clé du brouillon, lettre, libellé, exemple, valeur par défaut.
 private _fields = [
-    ["sS", "S", "Taille", "nombre et type · ex. 6 PAX, 2 pick-up", ""],
-    ["sA", "A", "Activité", "ce qu'ils font · ex. patrouille vers le nord", ""],
-    ["sL", "L", "Lieu", "carroyage de 6 à 10 chiffres", [getPosASL player, 8] call comspec_atak_native_fnc_gridRef],
-    ["sU", "U", "Unité / tenue", "uniforme, insignes, signes distinctifs", ""],
-    ["sT", "T", "Heure", "heure de l'observation", [dayTime, "HH:MM"] call BIS_fnc_timeToString],
-    ["sE", "E", "Équipement", "armes, véhicules, matériel", ""]
+    ["sS", "S", "Volume (Size)", "nombre et type · ex. 6 PAX, 2 pick-up", ""],
+    ["sA", "A", "Activité (Activity)", "ce qu'ils font · ex. patrouille vers le nord", ""],
+    ["sL", "L", "Localisation (Location)", "carroyage de 6 à 10 chiffres", [getPosASL player, 8] call comspec_atak_native_fnc_gridRef],
+    ["sU", "U", "Unité, tenue (Unit)", "uniforme, insignes, signes distinctifs", ""],
+    ["sT", "T", "Heure d'observation (Time)", "heure de l'observation", [dayTime, "HH:MM"] call BIS_fnc_timeToString],
+    ["sE", "E", "Équipement (Equipment)", "armes, véhicules, matériel", ""]
 ];
 private _val = { params ["_k", "_def"]; _d getOrDefault [_k, _def] };
 private _filled = { (trim ([_x select 0, _x select 4] call _val)) isNotEqualTo "" } count _fields;

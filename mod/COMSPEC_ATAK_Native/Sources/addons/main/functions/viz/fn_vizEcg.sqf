@@ -68,8 +68,20 @@ private _pfh = [{
             private _cls = _v getOrDefault ["hemClass", 0];
             // Pas de pouls : le moniteur n'a plus de signal, « --- » plutôt qu'un chiffre impossible.
             if (_vHr) then { _lines pushBack format ["FC<t align='right'>%1</t>", [[format ["%1 bpm", _hr], _hr >= 50 && {_hr <= 110}] call _col, "<t color='#e5483a'>0 · pas de pouls</t>"] select (_hr <= 0)]; };
-            if (_vBp) then { _lines pushBack format ["PNI<t align='right'>%1</t>", [format ["%1 [%2] <t size='0.75' color='#8a9a93'>%3 s</t>", [format ["%1/%2", _sys, _v getOrDefault ["dia", 0]], _sys >= 90] call _col, _v getOrDefault ["map", 0], _v getOrDefault ["nibpAge", 0]], "---"] select (_sys < 0)]; };
-            if (_vSpo) then { _lines pushBack format ["SpO2<t align='right'>%1</t>", [[format ["%1 %%", _spo], _spo >= 94] call _col, "--- <t size='0.75' color='#8a9a93'>pas de signal</t>"] select (_spo < 0)]; };
+            // Tension et SpO2 : seulement après une mesure au brassard et à l'oxymètre (action ACE), avec son âge.
+            private _age = _v getOrDefault ["nibpAge", -1];
+            private _when = ["", format [" <t size='0.75' color='#8a9a93'>il y a %1 min</t>", floor (_age / 60)]] select (_age >= 60);
+            private _none = "<t color='#8a9a93'>non mesurée</t>";
+            if (_vBp) then { _lines pushBack format ["Tension<t align='right'>%1</t>", switch (true) do {
+                case (_age < 0): { _none };
+                case (_sys < 0): { "--- <t size='0.75' color='#8a9a93'>imprenable</t>" };
+                default { format ["%1%2", [format ["%1/%2", _sys, _v getOrDefault ["dia", 0]], _sys >= 90] call _col, _when] };
+            }]; };
+            if (_vSpo) then { _lines pushBack format ["SpO2<t align='right'>%1</t>", switch (true) do {
+                case (_age < 0): { _none };
+                case (_spo < 0): { "--- <t size='0.75' color='#8a9a93'>pas de signal</t>" };
+                default { format ["%1%2", [format ["%1 %%", _spo], _spo >= 94] call _col, _when] };
+            }]; };
             if (_vHr) then { _lines pushBack format ["F. resp.<t align='right'>%1</t>", [format ["%1 /min", _rr], _rr >= 10 && {_rr <= 24}] call _col]; };
             // Volume de sang : aucun moniteur ne le mesure ; le soignant estime la perte (classe d'hémorragie).
             if (_vBlood) then { _lines pushBack format ["Hémorragie<t align='right'>%1</t>", [["aucune", "classe I", "classe II", "classe III", "classe IV"] select _cls, _cls < 2] call _col]; };
