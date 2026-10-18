@@ -38,9 +38,43 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Guide réseau : toutes les rubriques s'ouvrent, guide seulement dans Eden (ATAK natif 2.1.1)
+## Regroupement : français complet, Resynch qui renvoie tout, correctifs photo, drone, médical et capture (ATAK natif 2.1.1.AB - Denver, COMSPEC Link 2.0.88)
 
 ### Résumé joueur
+Type : correctif
+FR : COMSPEC ATAK 2.1.1 « Denver » : le français partout, un Resynch complet et une série de correctifs
+- Le réglage Français traduit enfin tout : écrans d'Overwatch, menus, actions ACE et noms automatiques des marqueurs suivent la langue du mod, sans relancer la mission.
+- L'app Synchro renvoie tout ce qui manque à Athena (carte du camp, plan de briefing, équipes, montre Garmin, tenues modifiées, objets) et montre l'état de chaque catégorie.
+- Photo plein écran sans main devant la vue, avec la touche B pour le flou ; l'image du drone ne reste plus noire ; le pouls et le nom du blessé reviennent dans l'app Médical.
+- Le guide « Réseau et simulation » ouvre chaque rubrique (dans Eden seulement), et la capture de la carte par Zeus démarre de nouveau.
+EN : COMSPEC ATAK 2.1.1 "Denver": French everywhere, a complete Resynch and a batch of fixes
+- The French setting now translates everything: Overwatch screens, menus, ACE actions and automatic marker names follow the mod language, without restarting the mission.
+- The Synchro app resends everything Athena is missing (side map, briefing plan, teams, Garmin watch, changed loadouts, items) and shows the state of each category.
+- Fullscreen camera with no hand in front of the view, with the B key for blur; the drone picture no longer stays black; the casualty's pulse and name are back in the Medical app.
+- The "Network and simulation" guide opens every section (in Eden only), and the Zeus map capture starts again.
+
+### Détail technique
+Regroupe #893, #894, #896, #897, #898, #899 et #900. `VERSION_STR` « 2.1.1 » (seul comparé), nom affiché « 2.1.1.AB - Denver ». COMSPEC Link inchangé (2.0.88), pas de DLL à recompiler. main.pbo reconstruit avec HEMTT 1.22 (build « 2026.10.18 5d418bd », `i18n/fr.txt` inclus, 96,5 Mo, sous la limite GitHub de 100 Mo). `comspec_overwatch_connect.pbo` repris de #898 puis repatché avec `fn_forceSyncData.sqf` de #900 ; `comspec_sse_core.pbo` patché par #898. Rien à déployer côté site.
+
+#### Le réglage Français traduit tout, noms automatiques des marqueurs (#898)
+- `i18n/fr.txt` (anglais vers français) chargé en français, assemblé par `tools/i18n.py fr` depuis `tools/i18n_fr_source.tsv` et les stringtables ; `fn_tr` et les écrans (ATAK, connect, SSE) traduisent dès qu'un dictionnaire est chargé ; langue lue dans le profil CBA dès le preInit ; menus CBA vidés au changement de langue ; actions ACE retraduites à chaque affichage. Noms automatiques des marqueurs (palette, LOCK, détections drone, END/FIN) posés dans la langue du mod et relus par `fn_markerAutoName`.
+- À tester en jeu : passer en Français puis en English sans relancer (menus CBA, actions ACE, note bêta, écrans connect, SSE) ; marqueurs automatiques posés en anglais relus en français.
+
+#### Photo plein écran : plus de main devant la vue, touche B (#894)
+- Bras baissé par défaut en objectif arrière, réglage CBA personnel « Photo : téléphone levé en main » pour la remettre ; B « flou <type> » dans la barre des raccourcis ; B, H et F1 gardés par le mode photo (`fn_keyBlock`).
+- À tester en jeu : objectif arrière sans main, réglage coché, selfie, B pendant la visée.
+
+#### App Médical : pouls et nom du patient (#896)
+- `fn_medVitals` publie de nouveau la fréquence cardiaque d'un patient vivant (régression 1.97.0) ; repli sur le pseudo du joueur sans indicatif Athena ; en-tête du moniteur agrandi.
+- À tester en jeu : moniteur, Suivi des troupes et bilan d'un blessé non relié à Athena.
+
+#### Capture de la carte Zeus (#897)
+- « Ciel dégagé à midi » : `_noon` recevait la météo au lieu de la date (erreur setDate, capture arrêtée au départ) ; échelle du rendu plan fixée une fois ; Échap arrête depuis la carte ; pas arrondi à 5 m ; `map_stitch.py` réunit plusieurs captures d'une même hauteur.
+- À tester en jeu : module Zeus « Capture de la carte » avec Ciel dégagé à midi, rendu plan, deux villes à la même hauteur.
+
+#### Guide réseau : toutes les rubriques s'ouvrent, guide seulement dans Eden (#893)
+
+##### Résumé joueur de la PR
 Type : correctif
 FR : Le guide « Réseau et simulation » affiche enfin chaque rubrique
 - Cliquer sur une rubrique du guide (Relais, Brouillage, Envois, Le téléphone…) affiche bien son texte et son schéma ; avant, la fenêtre restait sur « Vue d'ensemble ».
@@ -49,13 +83,13 @@ EN : The "Network and simulation" guide now opens every section
 - Clicking a section of the guide (Relays, Jamming, Transmissions, The phone…) now shows its text and diagram; before, the window stayed on "Overview".
 - The guide button is gone from the game's main menu: the guide opens in the Eden editor, COMSPEC ATAK menu > Guide: network and simulation.
 
-### Détail technique
+##### Détail technique
 - `fn_netGuide` : le gestionnaire LBSelChanged appelait `fn_tr` à chaque clic ; il s'exécute hors du script qui a créé la fenêtre (namespace de l'interface), où la fonction peut manquer : erreur, rien n'était mis à jour (l'affichage initial, fait dans le script, marchait). Textes et schémas de chaque rubrique sont maintenant traduits et mis en forme à l'ouverture ; le clic n'utilise plus que des commandes du moteur et `lbCurSel`. Cause déduite du code et de la capture, non reproduite en jeu.
 - Menu principal (TTRD) : `fn_mainMenuButton` et son Extended_DisplayLoad RscDisplayMain retirés, clés de stringtable du bouton supprimées ; seule entrée restante : Display3DEN > COMSPEC ATAK > Guide.
 
-## Drone : image de la caméra noire dans le téléphone (ATAK natif 2.1.1)
+#### Drone : image de la caméra noire dans le téléphone (#899)
 
-### Résumé joueur
+##### Résumé joueur de la PR
 Type : correctif
 FR : L'image du drone ne doit plus rester noire dans le téléphone
 - Après la caméra plein écran, après être sorti de l'app Drone ou après un zoom, l'image du drone repart sur un flux neuf au lieu de rester noire.
@@ -64,16 +98,15 @@ EN : The drone picture should no longer stay black in the phone
 - After the full-screen camera, after leaving the Drone app or after zooming, the drone picture restarts on a fresh feed instead of staying black.
 - If it still stays black, the VIDEO TEST button (Drone > SETTINGS) shows a new view J: a plain camera attached to the drone. Tell us whether J and I show a picture.
 
-### Détail technique
+##### Détail technique
 - `fn_droneAction` : cible de rendu neuve à chaque création de la caméra du flux (anneau de 8 noms par qualité `comspecdronefeed<q><n>`) ; #830 était revenu à un nom fixe (`comspec_dronelive`) repris juste après un `Terminate` (retour de VUE DIRECTE, page quittée, caméra libérée à 5 s). Caméra créée comme la lettre F du TEST VIDÉO (posée, rendu lancé, `camCommit 0`, accrochée une fois) ; la boucle de la nacelle ne fait plus que l'orienter et ne la raccroche que si le point bouge. Zoom : caméra décrochée, `camCommit`, raccrochée dans la même image. Effet de vision reposé sur chaque cible neuve.
 - `fn_pipCheck` : plus de rebranchement de la texture après coup (Drone et Photo, les deux vues noires, étaient les seules à reposer la texture ; Vidéo Live et le TEST VIDÉO la posent une fois). Nouvelle ligne RPT `[CAMERA] DRONE état` toutes les 15 s tant que l'image est à l'écran (cible, âge, rendu, hauteur, distance au drone, accroche, champ, vision, PiP, i/s, PROBLÈME repéré). TEST VIDÉO : la lettre H (thermique, déjà vue bonne) devient J, caméra de script accrochée au drone.
 - Cause déduite du code (aucune reproduction en jeu possible ici) : à tester en jeu, vision nuit et jour, avant et après CAMÉRA PLEIN ÉCRAN, avant et après un zoom.
 
----
 
-## Resynch : tout ce qui est nouveau remonte, et compte rendu par catégorie (ATAK natif 2.1.1)
+#### Resynch : tout ce qui est nouveau remonte, et compte rendu par catégorie (#900)
 
-### Résumé joueur
+##### Résumé joueur de la PR
 Type : nouveauté
 FR : L'app Synchro renvoie enfin tout, et dit clairement ce qui est parti
 - Le Resynch renvoie maintenant aussi la carte du camp, le plan de briefing, les escouades et équipes, la montre Garmin, les tenues modifiées depuis leur dernier envoi, le catalogue de tes objets avec leurs icônes et la liste des mods.
@@ -84,12 +117,13 @@ EN : The Synchro app now resends everything, and clearly says what went out
 - Only what Athena is missing goes out again: photos already sent and icons already on the website are not resent, and reopening the app no longer resends everything if the last resync is less than 5 minutes old.
 - New page: an overall status at the top (up to date, or what did not go out), one card per category with its icon and state (resent, up to date, queued, not sent), the time of the last resync and a button that shows how long until you can run it again.
 
-### Détail technique
+##### Détail technique
 - `fn_resynchRun` (natif) : après `comspec_overwatch_connect_fnc_forceSyncData`, renvoie la carte du camp (instantané `COMSPEC_ATAK_MkSnap` vidé si ce joueur est le relais du camp, sinon le relais est nommé), `planWeb ["force"]`, `squadSync [true]`, `garminTick ["push"]` (nouveau mode : profil écrit et envoyé sans clore l'activité), tenues déjà sur le site dont le sha local diffère du registre (`arsenalLedger`) via `arsenalPushAll [noms]`, et lit la file d'envoi (`COMSPEC_ATAK_NetQueue` + `SendQueue.Status`). Les tenues jamais partagées ne sont pas envoyées (le partage reste un choix fait dans Tenues Athena).
 - `forceSyncData` (connect) : vide `COMSPEC_OpCatalogSentKey`, `COMSPEC_OpModsSentKey` et `COMSPEC_ItemIconsSent` avant la fiche opérateur (catalogue, mods et icônes repartent une fois ; `Item.Icons` n'envoie que les icônes absentes du site), lit le résultat de la fiche (validée, en attente, refusée, écarts signalés) et écrit `COMSPEC_LastResynchItems` = `[[clé, état, titre, détail]...]`. `COMSPEC_LastResynchSummary` (ancien affichage) est gardé tel quel.
 - `fn_pageResynch` refait : carte d'état globale, bouton « RELANCER LE RESYNCH » / « PATIENTEZ N S » (délai de 15 s de `forceSyncData`), nouvelle ligne `cells` de `fn_formRender` (grille de cartes, deux colonnes en paysage : icône de l'app, liseré et état en couleur). Lancement automatique à l'ouverture seulement si le dernier renvoi a plus de 5 min.
 - `comspec_overwatch_connect.pbo` repatché (`tools/pbo_patch.py`, `fn_forceSyncData.sqf`). main.pbo à reconstruire au regroupement. COMSPEC Link inchangé (2.0.88). `i18n/en.txt` : 76 entrées.
 - À tester en jeu : ouvrir Synchro (renvoi auto), relancer (bouton en attente 15 s), rouvrir l'app avant 5 min (pas de renvoi), vérifier sur Athena le plan de briefing, les équipes, la montre Garmin sur la fiche du membre, une tenue modifiée, les icônes du kit ; couper la liaison puis Resynch (ligne « Liaison Athena »).
+
 
 ## Regroupement : réseau radio réaliste, apps refaites, synchro allégée, icônes des objets (ATAK natif 2.1.0.AB - Denver, COMSPEC Link 2.0.88)
 
