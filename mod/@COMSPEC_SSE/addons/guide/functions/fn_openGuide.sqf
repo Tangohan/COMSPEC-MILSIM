@@ -61,7 +61,7 @@ if (is3DEN) exitWith {
     _title ctrlSetPosition [_x0, _y0 - 5 * _u, _w, 5 * _u];
     _title ctrlSetBackgroundColor [0.10, 0.30, 0.16, 1];
     _title ctrlSetTextColor [1, 1, 1, 1];
-    _title ctrlSetText ("  " + getText (_root >> "displayName"));
+    _title ctrlSetText ((("  " + getText (_root >> "displayName"))) call comspec_sse_fnc_tr);
     _title ctrlCommit 0;
 
     private _lw = _w * 0.3;
@@ -77,7 +77,7 @@ if (is3DEN) exitWith {
     _txt ctrlCommit 0;
     _d setVariable ["comspec_sse_guide", [_txt, _gw - 3 * _u, _u, _chapter]];
     {
-        private _i = _list lbAdd getText (_root >> _x >> "displayName");
+        private _i = _list lbAdd ((getText (_root >> _x >> "displayName")) call comspec_sse_fnc_tr);
         _list lbSetData [_i, _x];
     } forEach _ids;
     _list ctrlAddEventHandler ["LBSelChanged", {
@@ -86,8 +86,8 @@ if (is3DEN) exitWith {
         (_d getVariable ["comspec_sse_guide", []]) params ["_txt", "_tw", "_u", "_chapter"];
         if (isNil "_txt") exitWith {};
         private _cfg = configFile >> "CfgHints" >> "COMSPEC_SSE" >> (_ctrl lbData _i);
-        _txt ctrlSetStructuredText parseText format ["<t size='1.15' font='RobotoCondensedBold'>%1</t><br/><br/>%2",
-            getText (_cfg >> "displayName"), [_cfg, false] call _chapter];
+        _txt ctrlSetStructuredText parseText ((format ["<t size='1.15' font='RobotoCondensedBold'>%1</t><br/><br/>%2",
+            getText (_cfg >> "displayName"), [_cfg, false] call _chapter]) call comspec_sse_fnc_tr);
         _txt ctrlSetPosition [0, 0, _tw, 1];
         _txt ctrlCommit 0;
         _txt ctrlSetPosition [0, 0, _tw, (ctrlTextHeight _txt) + 2 * _u];

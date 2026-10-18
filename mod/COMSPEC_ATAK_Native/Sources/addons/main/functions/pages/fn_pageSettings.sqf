@@ -423,14 +423,17 @@ private _athena = [
 ];
 
 // Langue du mod : même réglage que CBA (COMSPEC > Langue / Language, en tête), libellés bilingues ; le changer redessine la page et les menus CBA (fn_langApply).
-// Langues des mods de traduction chargés (fn_langList) : un bouton chacune, entre ENGLISH et AUTO.
-private _langSet = missionNamespace getVariable ["comspec_atak_native_language", "auto"];
+// ENGLISH (par défaut depuis 2.1.0), FRANÇAIS, puis les langues des mods de traduction chargés (fn_langList), puis AUTO.
+private _langSet = missionNamespace getVariable ["comspec_atak_native_language", "en"];
 private _langs = [] call comspec_atak_native_fnc_langList;
-private _langBtns = [["FRANÇAIS", { ["comspec_atak_native_language", "fr", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "fr"]];
+private _langBtns = [
+    ["ENGLISH", { ["comspec_atak_native_language", "en", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "en"],
+    ["FRANÇAIS", { ["comspec_atak_native_language", "fr", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "fr"]
+];
 {
     _x params ["_code", "_name"];
     _langBtns pushBack [toUpper _name, compile format ["['comspec_atak_native_language', '%1', 0, 'client'] call CBA_settings_fnc_set;", _code], _langSet isEqualTo _code];
-} forEach _langs;
+} forEach (_langs select { (_x select 0) isNotEqualTo "en" });
 _langBtns pushBack ["AUTO", { ["comspec_atak_native_language", "auto", 0, "client"] call CBA_settings_fnc_set; }, _langSet isEqualTo "auto"];
 // Quatre boutons par ligne au plus (plusieurs mods de traduction chargés) : lignes suivantes sans libellé.
 private _lang = [["section", "Langue / Language", "Langue du téléphone / Phone language"]];

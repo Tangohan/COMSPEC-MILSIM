@@ -829,8 +829,8 @@ class CfgWeapons
     {
         scope = 2;
         author = "COMSPEC";
-        displayName = "Terminal biométrique SEEK";
-        descriptionShort = "Terminal d’enrôlement biométrique de terrain. Permet d’ouvrir une fiche de renseignement interpersonnel (SSE) sur une personne contrôlée.";
+        displayName = "$STR_COMSPEC_OW_CFG_DEFCAEDD09";
+        descriptionShort = "$STR_COMSPEC_OW_CFG_D5C520E67E";
         picture = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
         model = "\A3\weapons_F\ammo\mag_univ.p3d";
 
@@ -848,19 +848,19 @@ class CfgFactionClasses
     class NO_CATEGORY;
     class COMSPEC_Roleplay : NO_CATEGORY
     {
-        displayName = "COMSPEC Roleplay";
+        displayName = "$STR_COMSPEC_OW_CFG_72D54FC9E9";
         priority = 2;
         side = 7;
     };
     class COMSPEC_Outils : NO_CATEGORY
     {
-        displayName = "COMSPEC Outils";
+        displayName = "$STR_COMSPEC_OW_CFG_00AE881D17";
         priority = 2;
         side = 7;
     };
     class COMSPEC_ATAK : NO_CATEGORY
     {
-        displayName = "COMSPEC ATAK";
+        displayName = "$STR_COMSPEC_OW_CFG_AE461ABCB5";
         priority = 2;
         side = 7;
         icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa";
@@ -926,7 +926,7 @@ class CfgVehicles
     // Modules Zeus pour gestion des relais en jeu
     class COMSPEC_ModuleScanRelays: Module_F {
         scope = 2;
-        displayName = "Scanner réseau relais";
+        displayName = "$STR_COMSPEC_OW_CFG_D04248E677";
         icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa";
         category = "COMSPEC_ATAK";
         function = "comspec_overwatch_connect_fnc_zeusModuleScanRelays";
@@ -937,28 +937,28 @@ class CfgVehicles
         
         class Arguments {
             class ScanRadius {
-                displayName = "Rayon de scan (m)";
-                description = "Distance maximum pour détecter les relais";
+                displayName = "$STR_COMSPEC_OW_CFG_64CDA735DA";
+                description = "$STR_COMSPEC_OW_CFG_F5B75017DE";
                 typeName = "NUMBER";
                 defaultValue = 5000;
             };
             class AutoUpload {
-                displayName = "Upload automatique";
-                description = "Remonter automatiquement les relais détectés";
+                displayName = "$STR_COMSPEC_OW_CFG_EA0A853A02";
+                description = "$STR_COMSPEC_OW_CFG_22E71CD3F3";
                 typeName = "BOOL";
                 defaultValue = 1;
             };
         };
         
         class ModuleDescription {
-            description = "Scanne tous les relais radio dans un rayon et les remonte vers le serveur ATHENA. Affiche un rapport style relevé terrain avec feedback visuel.";
+            description = "$STR_COMSPEC_OW_CFG_3EA68EFD33";
             sync[] = {};
         };
     };
     
     class COMSPEC_ModuleRelayDashboard: Module_F {
         scope = 2;
-        displayName = "Tableau de bord relais";
+        displayName = "$STR_COMSPEC_OW_CFG_5A2FEC5375";
         icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\signal_ca.paa";
         category = "COMSPEC_ATAK";
         function = "comspec_overwatch_connect_fnc_openRelayDashboard";
@@ -968,14 +968,14 @@ class CfgVehicles
         isDisposable = 0;
         
         class ModuleDescription {
-            description = "Ouvre le tableau de bord des relais radio avec statut en temps réel, détection d'erreurs, et actions de gestion.";
+            description = "$STR_COMSPEC_OW_CFG_1B834F3DE2";
             sync[] = {};
         };
     };
     
     class COMSPEC_ModuleResyncRelay: Module_F {
         scope = 2;
-        displayName = "Resync relais";
+        displayName = "$STR_COMSPEC_OW_CFG_9BE0C2885D";
         icon = "\a3\ui_f\data\IGUI\Cfg\simpleTasks\types\upload_ca.paa";
         category = "COMSPEC_ATAK";
         function = "comspec_overwatch_connect_fnc_zeusResyncRelay";
@@ -985,7 +985,7 @@ class CfgVehicles
         isDisposable = 0;
         
         class ModuleDescription {
-            description = "Resynchronise immédiatement un relais spécifique vers le serveur ATHENA. Placez le module sur le relais.";
+            description = "$STR_COMSPEC_OW_CFG_3D21C9B243";
             sync[] = {};
         };
     };
