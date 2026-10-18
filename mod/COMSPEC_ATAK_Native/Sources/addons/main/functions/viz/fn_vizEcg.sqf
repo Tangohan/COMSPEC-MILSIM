@@ -15,7 +15,8 @@ private _mk = { params ["_c", "_p", ["_t", ""]]; [_c, _p, _t] call comspec_atak_
 private _bg = ["COMSPEC_RscPanel", _rect] call _mk;
 _bg ctrlSetBackgroundColor [0.02, 0.03, 0.025, 0.98];
 private _gw = _w * 0.6;
-private _head = ["COMSPEC_RscStructuredText", [_x0 + _pad, _y0 + _pad / 2, _gw - _pad, _fs * 2.6]] call _mk;
+// Assez haut pour les deux lignes (retour de jeu 2.1.0 : le nom du blessé était coupé à mi-hauteur).
+private _head = ["COMSPEC_RscStructuredText", [_x0 + _pad, _y0 + _pad / 2, _gw - _pad, _fs * 3.6]] call _mk;
 private _vit = ["COMSPEC_RscStructuredText", [_x0 + _gw + _pad, _y0 + _pad / 2, _w - _gw - _pad * 2, _h - _pad]] call _mk;
 private _sep = ["COMSPEC_RscText", [_x0 + _gw, _y0 + _pad, pixelW, _h - _pad * 2]] call _mk;
 _sep ctrlSetBackgroundColor [0.2, 0.25, 0.22, 1];
@@ -58,7 +59,7 @@ private _pfh = [{
         private _lab = createHashMapFromArray [["cardiac_arrest", ["ARRÊT CARDIAQUE", "#e5483a"]], ["unconscious", ["INCONSCIENT", "#e5483a"]], ["critical", ["CRITIQUE", "#f2ab33"]], ["wounded", ["BLESSÉ", "#e8b84a"]], ["kia", ["KIA", "#8a9a93"]], ["none", ["AUCUN BLESSÉ", "#8a9a93"]]] getOrDefault [_state, ["STABLE", "#5cc76b"]];
         if (!_vState && {!(_state in ["kia", "none"])}) then { _lab = ["SUIVI", "#8a9a93"]; };
         _head ctrlSetStructuredText parseText ((format ["<t size='0.75' color='#8a9a93'>BLESSÉ SUIVI</t>  <t size='0.75' color='%3'>● %2</t><br/><t size='1.25' font='COMSPEC_BarlowBold'>%1</t>",
-            [[_u, true] call comspec_atak_native_fnc_unitCallsign, "—"] select (isNull _u), _lab select 0, _lab select 1]) call comspec_atak_native_fnc_tr);
+            [[_u] call comspec_atak_native_fnc_unitCallsign, "—"] select (isNull _u), _lab select 0, _lab select 1]) call comspec_atak_native_fnc_tr);
         private _col = { params ["_t", "_ok"]; format ["<t color='%1'>%2</t>", ["#f2ab33", "#5cc76b"] select _ok, _t] };
         private _lines = [];
         if (!isNull _u) then {
