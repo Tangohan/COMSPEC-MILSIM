@@ -97,7 +97,7 @@ switch (_act) do {
                     _cam camCommit 0;
                 };
                 _name setPiPEffect [[0, 2] select (_mode isEqualTo "thermal")];
-                _cam setVariable ["pipTest", [_k, _mode, _pos]];
+                [_cam, "pipTest", [_k, _mode, _pos], true] call comspec_atak_native_fnc_camVar;
                 _tex = format ["#(argb,%1,%1,1)r2t(%2,%3)", _size, _name, _aspect];
             };
             // Image aux proportions de la texture (pixels carrés), la plus grande qui tient dans la case.
@@ -127,7 +127,7 @@ switch (_act) do {
             private _eye = eyePos player;
             private _dir = getCameraViewDirection player;
             {
-                (_x getVariable ["pipTest", ["", "", []]]) params ["", "_mode"];
+                (([_x, "pipTest", ["", "", []]] call comspec_atak_native_fnc_camVar)) params ["", "_mode"];
                 switch (_mode) do {
                     case "photo": {
                         private _p = _eye vectorAdd (_dir vectorMultiply 0.3);
@@ -154,7 +154,7 @@ switch (_act) do {
         // devant lui : la caméra n'était pas là où le script l'avait posée).
         [{
             {
-                (_x getVariable ["pipTest", ["", "", []]]) params ["_k", "_mode", "_want"];
+                (([_x, "pipTest", ["", "", []]] call comspec_atak_native_fnc_camVar)) params ["_k", "_mode", "_want"];
                 private _at = getPosASL _x;
                 ["INFO", "CAMERA", format ["TEST VIDÉO %1 : caméra à %2 m du joueur, %3 m au-dessus du sol, à %4 m de la position posée au départ, regarde %5",
                     _k, round ((_at distance (eyePos player)) * 10) / 10, round (((_at select 2) - getTerrainHeightASL _at) * 10) / 10,
@@ -175,7 +175,7 @@ switch (_act) do {
         if (!isNull _top) then { _top closeDisplay 2; };
         {
             if (!isNull _x) then {
-                private _k = (_x getVariable ["pipTest", ["a"]]) select 0;
+                private _k = (([_x, "pipTest", ["a"]] call comspec_atak_native_fnc_camVar)) select 0;
                 _x cameraEffect ["Terminate", "Back", "comspecpiptest" + toLower _k];
                 camDestroy _x;
             };
