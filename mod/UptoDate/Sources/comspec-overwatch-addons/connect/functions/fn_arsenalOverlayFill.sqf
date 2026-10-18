@@ -1,109 +1,240 @@
 /*
-    Redessine le panneau Tenues Athena depuis les données chargées : onglets (avec compteurs),
-    liste de collections, liste filtrée (recherche + collection), état et actions selon l'onglet.
+    Redessine le panneau Tenues Athena depuis les données chargées (arsenalOverlayRefresh) : onglets et pastilles de
+    synchro, filtre d'état et collections (pastilles) avec compteurs, liste filtrée (recherche, état, collection) et
+    triée, heure de chargement, action groupée. La sélection est remise à zéro.
 */
 params [["_display", displayNull, [displayNull]]];
 if (isNull _display) exitWith {};
 private _grp = _display getVariable ["COMSPEC_ArsenalOverlay", controlNull];
 if (isNull _grp) exitWith {};
-private _tab = _grp getVariable ["COMSPEC_ArsenalTab", "cloud"];
+(_grp getVariable ["COMSPEC_ArsenalFonts", ["RobotoCondensed", "RobotoCondensedBold", "RobotoCondensedLight"]]) params ["_fR", "_fB"];
+private _tab = _grp getVariable ["COMSPEC_ArsenalTab", "local"];
 private _cloud = _grp getVariable ["COMSPEC_ArsenalCloudRows", []];
 private _local = _grp getVariable ["COMSPEC_ArsenalLocalRows", []];
+private _offline = _grp getVariable ["COMSPEC_ArsenalOffline", false];
 private _isCloud = _tab isEqualTo "cloud";
 private _rows = [_local, _cloud] select _isCloud;
 private _collIdx = [2, 3] select _isCloud;
+private _guiH = ((((safezoneW / safezoneH) min 1.2) / 1.2) / 25);
+// État affiché d'une ligne (voir arsenalStateInfo).
+private _stateOf = if (_isCloud) then {
+    { switch (true) do { case (_this select 11): { "new" }; case ((_this select 10) in ["in", "diff"]): { _this select 10 }; case (_this select 8): { "mine" }; default { "out" }; } }
+} else { { _this select 4 } };
+private _pendingStates = ["new", "gone", "local", "diff"];
 
-// Onglets.
-(_grp getVariable ["COMSPEC_ArsenalTabs", []]) params [["_tc", controlNull], ["_tl", controlNull]];
+// Onglets : actif = texte clair et soulignement vert ; compteurs.
+(_grp getVariable ["COMSPEC_ArsenalTabs", []]) params [["_tc", controlNull], ["_tl", controlNull], ["_uc", controlNull], ["_ul", controlNull]];
 {
-    _x params ["_c", "_on", "_label"];
+    _x params ["_c", "_u", "_on", "_label"];
     if (!isNull _c) then {
-        _c ctrlSetText ((_label) call comspec_overwatch_connect_fnc_tr);
-        _c ctrlSetBackgroundColor ([[0.10, 0.17, 0.20, 1], [0.16, 0.48, 0.38, 1]] select _on);
+        _c ctrlSetText _label;
+        _c ctrlSetTextColor ([[0.56, 0.65, 0.59, 1], [0.93, 0.97, 0.94, 1]] select _on);
+        _c ctrlSetBackgroundColor ([[0.05, 0.06, 0.055, 1], [0.08, 0.13, 0.10, 1]] select _on);
     };
-} forEach [[_tc, _isCloud, format ["COMMUNAUTÉ (%1)", count _cloud]], [_tl, !_isCloud, format ["MES TENUES (%1)", count _local]]];
+    if (!isNull _u) then { _u ctrlShow _on; };
+} forEach [
+    [_tc, _uc, _isCloud, format [("COMMUNAUTÉ (%1)") call comspec_overwatch_connect_fnc_tr, count _cloud]],
+    [_tl, _ul, !_isCloud, format [("MES TENUES (%1)") call comspec_overwatch_connect_fnc_tr, count _local]]
+];
 
-// Collections de l'onglet, la sélection est gardée si elle existe encore.
-private _combo = _grp getVariable ["COMSPEC_ArsenalCombo", controlNull];
-private _cur = if (isNull _combo || {(lbCurSel _combo) < 0}) then { "" } else { _combo lbData (lbCurSel _combo) };
-if ((_grp getVariable ["COMSPEC_ArsenalComboTab", ""]) isNotEqualTo _tab) then { _cur = ""; };
-_grp setVariable ["COMSPEC_ArsenalComboTab", _tab];
-private _counts = createHashMap;
-{ private _k = _x select _collIdx; _counts set [_k, (_counts getOrDefault [_k, 0]) + 1]; } forEach _rows;
-private _keys = keys _counts;
-_keys sort true;
-if (!isNull _combo) then {
-    _grp setVariable ["COMSPEC_ArsenalUiLock", true];
-    lbClear _combo;
-    private _i0 = _combo lbAdd ((format ["Toutes les collections (%1)", count _rows]) call comspec_overwatch_connect_fnc_tr);
-    _combo lbSetData [_i0, ""];
-    private _sel = 0;
-    { private _i = _combo lbAdd ((format ["%1 (%2)", _x, _counts get _x]) call comspec_overwatch_connect_fnc_tr); _combo lbSetData [_i, _x]; if (_x isEqualTo _cur) then { _sel = _i; }; } forEach _keys;
-    _combo lbSetCurSel _sel;
-    _grp setVariable ["COMSPEC_ArsenalUiLock", false];
-    if (_sel isEqualTo 0) then { _cur = ""; };
+// Pastilles : tenues locales à envoyer (orange) ou « tout est sur le site » (vert), nouvelles de la communauté.
+private _nPend = { (_x select 4) in _pendingStates } count _local;
+private _nNew = { _x select 11 } count _cloud;
+(_grp getVariable ["COMSPEC_ArsenalPills", []]) params [["_pp", controlNull], ["_pn", controlNull]];
+private _right = ((ctrlPosition _grp) select 2) - 0.012;
+{
+    _x params ["_c", "_text", "_bg", "_fg", "_show"];
+    if (isNull _c) then { continue };
+    _c ctrlShow _show;
+    if (!_show) then { continue };
+    _c ctrlSetText _text;
+    _c ctrlSetBackgroundColor _bg;
+    _c ctrlSetTextColor _fg;
+    private _tw = (ctrlTextWidth _c) + 0.024;
+    (ctrlPosition _c) params ["", "_py", "", "_ph"];
+    _c ctrlSetPosition [_right - _tw, _py, _tw, _ph];
+    _c ctrlCommit 0;
+    _right = _right - _tw - 0.006;
+} forEach [
+    [_pp, if (_nPend > 0) then { format [("%1 À ENVOYER AU SITE") call comspec_overwatch_connect_fnc_tr, _nPend] } else { ("TOUT EST SUR LE SITE") call comspec_overwatch_connect_fnc_tr },
+        [[0.10, 0.22, 0.13, 1], [0.95, 0.67, 0.20, 1]] select (_nPend > 0), [[0.36, 0.78, 0.42, 1], [0.08, 0.06, 0.02, 1]] select (_nPend > 0),
+        !_offline && {_local isNotEqualTo []}],
+    [_pn, format [("%1 NOUVELLE(S)") call comspec_overwatch_connect_fnc_tr, _nNew], [0.36, 0.78, 0.42, 1], [0.03, 0.06, 0.04, 1], _nNew > 0]
+];
+
+// Filtre d'état avec compteurs, selon l'onglet.
+private _stateKey = _grp getVariable ["COMSPEC_ArsenalStateKey", "all"];
+private _groups = if (_isCloud) then {
+    [["all", "Toutes les tenues", []], ["new", "Nouvelles", ["new"]], ["out", "Pas dans mon arsenal", ["out", "mine", "diff", "new"]], ["mine", "Partagées par moi", []]]
+} else {
+    [["all", "Tous les états", []], ["pending", "Pas à jour sur le site", _pendingStates], ["remote", "Modifiées sur le site", ["remote"]], ["synced", "Sur le site", ["synced", "unknown", "comm"]]]
 };
+private _match = {
+    params ["_r", "_k"];
+    switch (_k) do {
+        case "all": { true };
+        case "mine": { _r select 8 };
+        case "out": { ((_r select 10) isNotEqualTo "in") };
+        default { private _g = _groups select (_groups findIf { (_x select 0) isEqualTo _k }); ((_r call _stateOf) in (_g select 2)) };
+    }
+};
+if ((_groups findIf { (_x select 0) isEqualTo _stateKey }) < 0) then { _stateKey = "all"; };
+private _sc = _grp getVariable ["COMSPEC_ArsenalStateCombo", controlNull];
+if (!isNull _sc) then {
+    _grp setVariable ["COMSPEC_ArsenalUiLock", true];
+    lbClear _sc;
+    {
+        _x params ["_k", "_label"];
+        private _n = { [_x, _k] call _match } count _rows;
+        private _i = _sc lbAdd format ["%1 (%2)", (_label) call comspec_overwatch_connect_fnc_tr, _n];
+        _sc lbSetData [_i, _k];
+        if (_k isEqualTo _stateKey) then { _sc lbSetCurSel _i; };
+    } forEach _groups;
+    _grp setVariable ["COMSPEC_ArsenalUiLock", false];
+};
+_grp setVariable ["COMSPEC_ArsenalStateKey", _stateKey];
 
-// Filtre : collection puis recherche (plusieurs mots, tous requis).
+// Recherche (plusieurs mots, tous requis), puis état ; les collections se comptent sur ce résultat.
 private _search = _grp getVariable ["COMSPEC_ArsenalSearch", controlNull];
 private _q = if (isNull _search) then { "" } else { toLower trim (ctrlText _search) };
 private _ph = _grp getVariable ["COMSPEC_ArsenalSearchPh", controlNull];
 if (!isNull _ph) then { _ph ctrlShow (_q isEqualTo ""); };
 private _words = _q splitString " ";
-private _shown = _rows select {
+private _base = _rows select {
     private _r = _x;
-    (_cur isEqualTo "" || {(_r select _collIdx) isEqualTo _cur})
-    && { private _hay = toLower ([_r select 1, _r select _collIdx, [_r param [4, ""], ""] select !_isCloud] joinString " "); (_words findIf { (_hay find _x) < 0 }) < 0 }
+    [_r, _stateKey] call _match
+    && {
+        private _st = ([_r call _stateOf, _isCloud] call comspec_overwatch_connect_fnc_arsenalStateInfo) select 0;
+        private _hay = toLower ([_r select 1, _r select _collIdx, [_r param [4, ""], ""] select !_isCloud, _st, (_st) call comspec_overwatch_connect_fnc_tr] joinString " ");
+        (_words findIf { (_hay find _x) < 0 }) < 0
+    }
 };
-if (_isCloud) then {
-    _shown = [_shown, [], { format ["%1|%2|%3", if ((_x param [6, false]) isEqualTo true) then { "0" } else { "1" }, toLower (_x param [3, ""]), toLower (_x param [2, ""])] }, "ASCEND"] call BIS_fnc_sortBy;
-} else {
-    _shown = [_shown, [], { format ["%1|%2", toLower (_x select 2), toLower (_x select 1)] }, "ASCEND"] call BIS_fnc_sortBy;
+
+// Collections en pastilles : « Toutes » puis par nombre de tenues ; la sélection est gardée si elle existe encore.
+private _coll = _grp getVariable ["COMSPEC_ArsenalColl", ""];
+private _counts = createHashMap;
+{ private _k = _x select _collIdx; _counts set [_k, (_counts getOrDefault [_k, 0]) + 1]; } forEach _base;
+if (_coll isNotEqualTo "" && {!(_coll in _counts)}) then { _coll = ""; };
+_grp setVariable ["COMSPEC_ArsenalColl", _coll];
+private _keys = [keys _counts, [], { format ["%1|%2", 100000 - (_counts get _x), toLower _x] }, "ASCEND"] call BIS_fnc_sortBy;
+private _chipDefs = [["", format ["%1 · %2", ("Toutes") call comspec_overwatch_connect_fnc_tr, count _base]]] + (_keys apply { [_x, format ["%1 · %2", _x, _counts get _x]] });
+{ ctrlDelete _x; } forEach (_grp getVariable ["COMSPEC_ArsenalChips", []]);
+private _chips = [];
+(_grp getVariable ["COMSPEC_ArsenalChipBand", [0, 0, 0, 0]]) params ["_bx", "_by", "_bw", "_bh"];
+(_grp getVariable ["COMSPEC_ArsenalChipArrows", []]) params [["_aPrev", controlNull], ["_aNext", controlNull]];
+private _arrW = if (isNull _aPrev) then { 0 } else { ((ctrlPosition _aPrev) select 2) + 0.004 };
+private _off = ((_grp getVariable ["COMSPEC_ArsenalChipOffset", 0]) min ((count _chipDefs) - 1)) max 0;
+private _cx = _bx + ([0, _arrW] select (_off > 0));
+private _limit = _bx + _bw - _arrW;
+private _more = false;
+for "_i" from _off to ((count _chipDefs) - 1) do {
+    (_chipDefs select _i) params ["_k", "_label"];
+    private _on = _k isEqualTo _coll;
+    private _c = _display ctrlCreate [["COMSPEC_RscButtonAtak", "COMSPEC_RscButtonAtakPrimary"] select _on, -1, _grp];
+    _c ctrlSetFont ([_fR, _fB] select _on);
+    _c ctrlSetFontHeight (_guiH * 0.7);
+    _c ctrlSetText _label;
+    private _cw = (ctrlTextWidth _c) + 0.02;
+    if ((_cx + _cw) > _limit && {_i > _off}) exitWith { ctrlDelete _c; _more = true; };
+    _c ctrlSetPosition [_cx, _by, _cw, _bh];
+    _c ctrlCommit 0;
+    _c setVariable ["act", "chip"];
+    _c setVariable ["arg", _k];
+    _c ctrlSetTooltip (if (_k isEqualTo "") then { ("Afficher toutes les collections") call comspec_overwatch_connect_fnc_tr } else { format [("Afficher la collection « %1 »") call comspec_overwatch_connect_fnc_tr, _k] });
+    _c ctrlAddEventHandler ["ButtonClick", { params ["_c"]; ["chip", _c getVariable ["arg", ""]] call comspec_overwatch_connect_fnc_arsenalOverlayAction; }];
+    _chips pushBack _c;
+    _cx = _cx + _cw + 0.004;
+};
+_grp setVariable ["COMSPEC_ArsenalChips", _chips];
+_grp setVariable ["COMSPEC_ArsenalChipOffset", _off];
+if (!isNull _aPrev) then { _aPrev ctrlShow (_off > 0); };
+if (!isNull _aNext) then { _aNext ctrlShow _more; };
+
+// Liste : collection, puis tri.
+private _shown = _base select { _coll isEqualTo "" || {(_x select _collIdx) isEqualTo _coll} };
+private _sort = _grp getVariable ["COMSPEC_ArsenalSort", "coll"];
+private _nameIdx = [1, 2] select _isCloud;
+_shown = switch (_sort) do {
+    case "name": { [_shown, [], { toLower (_x select _nameIdx) }, "ASCEND"] call BIS_fnc_sortBy };
+    case "state": { [_shown, [], { format ["%1|%2", ([_x call _stateOf, _isCloud] call comspec_overwatch_connect_fnc_arsenalStateInfo) select 4, toLower (_x select _nameIdx)] }, "ASCEND"] call BIS_fnc_sortBy };
+    case "recent": {
+        if (_isCloud) then { [_shown, [], { format ["%1|%2", _x select 5, toLower (_x select 2)] }, "DESCEND"] call BIS_fnc_sortBy } else { private _rv = +_shown; reverse _rv; _rv }
+    };
+    default {
+        if (_isCloud) then {
+            [_shown, [], { format ["%1|%2|%3", ["1", "0"] select (_x select 6), toLower (_x select 3), toLower (_x select 2)] }, "ASCEND"] call BIS_fnc_sortBy
+        } else {
+            [_shown, [], { format ["%1|%2", toLower (_x select 2), toLower (_x select 1)] }, "ASCEND"] call BIS_fnc_sortBy
+        }
+    };
 };
 _grp setVariable ["COMSPEC_ArsenalShown", _shown];
 
+private _dot = "\a3\ui_f\data\map\markers\military\dot_ca.paa";
 private _list = _grp getVariable ["COMSPEC_ArsenalList", controlNull];
 if (!isNull _list) then {
     _grp setVariable ["COMSPEC_ArsenalUiLock", true];
     lnbClear _list;
     {
-        private _r = if (_isCloud) then {
-            // Favori : étoile devant le nom (jamais de « select » sur une valeur qui peut manquer : affichait « any »).
-            private _star = if ((_x param [6, false]) isEqualTo true) then { "★ " } else { "" };
-            _list lnbAddRow (([_star + (_x param [2, ""]), _x param [3, ""], _x param [4, ""]]) call comspec_overwatch_connect_fnc_tr)
-        } else {
-            _list lnbAddRow (([_x select 1, _x select 2, ""]) call comspec_overwatch_connect_fnc_tr)
-        };
+        private _st = [_x call _stateOf, _isCloud] call comspec_overwatch_connect_fnc_arsenalStateInfo;
+        _st params ["_label", "_rgba"];
+        private _star = if (_isCloud && {_x select 6}) then { "★ " } else { "" };
+        private _r = _list lnbAddRow ["", _star + (_x select _nameIdx), _x select _collIdx, (_label) call comspec_overwatch_connect_fnc_tr];
         _list lnbSetValue [[_r, 0], _forEachIndex];
-        _list lnbSetColor [[_r, 1], [0.55, 0.68, 0.64, 1]];
-        _list lnbSetColor [[_r, 2], [0.55, 0.68, 0.64, 1]];
+        if (_label isNotEqualTo "") then {
+            _list lnbSetPicture [[_r, 0], _dot];
+            _list lnbSetPictureColor [[_r, 0], _rgba];
+            _list lnbSetPictureColorSelected [[_r, 0], _rgba];
+        };
+        _list lnbSetColor [[_r, 2], [0.56, 0.65, 0.59, 1]];
+        _list lnbSetColor [[_r, 3], _rgba];
     } forEach _shown;
+    // État vide : une phrase qui dit pourquoi et quoi faire.
     if ((count _shown) isEqualTo 0) then {
         private _msg = switch (true) do {
-            case (_isCloud && {_grp getVariable ["COMSPEC_ArsenalOffline", false]}): { "Hors ligne : reliez votre compte Athena (ATAK, app Athena)" };
-            case ((count _rows) isEqualTo 0): { ["Aucune tenue dans votre arsenal : enregistrez la tenue portée en bas", "Aucune tenue partagée par l'organisation"] select _isCloud };
-            default { "Aucune tenue ne correspond à la recherche" };
+            case (_isCloud && {_offline}): { "Athena hors ligne : reliez votre compte Athena (ATAK, app Athena), puis Actualiser." };
+            case ((count _rows) isEqualTo 0): { ["Aucune tenue dans votre arsenal : habillez le mannequin, nommez la tenue en bas, puis Enregistrer.", "Aucune tenue partagée par l'organisation pour l'instant."] select _isCloud };
+            case (_stateKey isEqualTo "pending"): { "Tout est à jour sur le site." };
+            case (_stateKey isEqualTo "new"): { "Rien de nouveau depuis votre dernière visite." };
+            default { "Aucune tenue ne correspond : changez la recherche, l'état ou la collection." };
         };
-        private _r = _list lnbAddRow (([_msg, "", ""]) call comspec_overwatch_connect_fnc_tr);
+        private _r = _list lnbAddRow ["", (_msg) call comspec_overwatch_connect_fnc_tr, "", ""];
         _list lnbSetValue [[_r, 0], -1];
-        _list lnbSetColor [[_r, 0], [0.55, 0.62, 0.6, 1]];
+        _list lnbSetColor [[_r, 1], [0.56, 0.65, 0.59, 1]];
     };
     _grp setVariable ["COMSPEC_ArsenalUiLock", false];
 };
 
-// État, actions et aide selon l'onglet.
+// Heure de chargement et nombre affiché.
 private _status = _grp getVariable ["COMSPEC_ArsenalStatus", controlNull];
 if (!isNull _status) then {
-    _status ctrlSetStructuredText parseText ((format ["<t align='right' size='0.8' color='#7f9c94'>%1<br/>%2 affichée(s) sur %3</t>",
-        if (_grp getVariable ["COMSPEC_ArsenalOffline", false]) then { "<t color='#e0a050'>Athena hors ligne</t>" } else { format ["Chargé à %1", _grp getVariable ["COMSPEC_ArsenalLoadedAt", "--:--"]] },
-        count _shown, count _rows]) call comspec_overwatch_connect_fnc_tr);
+    _status ctrlSetStructuredText parseText (format ["<t align='right' size='0.78' color='#8fa596'>%1 · %2</t>",
+        if (_offline) then { format ["<t color='#e0a050'>%1</t>", ("Athena hors ligne") call comspec_overwatch_connect_fnc_tr] } else { format [("Chargé à %1") call comspec_overwatch_connect_fnc_tr, _grp getVariable ["COMSPEC_ArsenalLoadedAt", "--:--"]] },
+        format [("%1 affichée(s) sur %2") call comspec_overwatch_connect_fnc_tr, count _shown, count _rows]]);
 };
+
+// Action groupée : Mes tenues -> envoyer seulement celles qui ne sont pas à jour sur le site (rien n'est renvoyé
+// pour rien) ; Communauté -> importer celles qui ne sont pas (ou pas identiques) dans mon arsenal.
+private _bulkRows = if (_isCloud) then { _shown select { (_x select 10) isNotEqualTo "in" } } else { _shown select { (_x select 4) in _pendingStates } };
+_grp setVariable ["COMSPEC_ArsenalBulkRows", _bulkRows];
 private _bulk = _grp getVariable ["COMSPEC_ArsenalBulk", controlNull];
 if (!isNull _bulk) then {
-    _bulk ctrlSetText ((format [["PARTAGER %1 TENUE(S) AFFICHÉE(S)", "IMPORTER %1 TENUE(S) AFFICHÉE(S)"] select _isCloud, count _shown]) call comspec_overwatch_connect_fnc_tr);
-    _bulk ctrlEnable ((count _shown) > 0);
+    private _n = count _bulkRows;
+    _bulk ctrlSetText (switch (true) do {
+        case (_isCloud && {_n > 0}): { format [("IMPORTER %1 TENUE(S) DANS MON ARSENAL") call comspec_overwatch_connect_fnc_tr, _n] };
+        case (_isCloud): { ("TOUT EST DANS MON ARSENAL") call comspec_overwatch_connect_fnc_tr };
+        case (_n > 0): { format [("ENVOYER %1 TENUE(S) AU SITE") call comspec_overwatch_connect_fnc_tr, _n] };
+        default { ("RIEN À ENVOYER AU SITE") call comspec_overwatch_connect_fnc_tr };
+    });
+    _bulk ctrlSetTooltip (([
+        "Envoie au site les tenues affichées qui n'y sont pas encore, ou qui ont changé ici. Les autres ne sont pas renvoyées.",
+        "Importe dans votre arsenal les tenues affichées que vous n'avez pas encore, ou pas dans cette version. Une tenue du même nom est remplacée."
+    ] select _isCloud) call comspec_overwatch_connect_fnc_tr);
+    _bulk ctrlEnable (_n > 0 && {!_offline});
 };
 _grp setVariable ["COMSPEC_ArsenalSelected", -1];
 [_display, [], ""] call comspec_overwatch_connect_fnc_arsenalOverlayPreview;
-[_grp, ["Mes tenues : cliquez pour l'aperçu, double-clic pour enfiler, puis Partager pour la donner à l'organisation.",
-    "Communauté : cliquez pour l'aperçu, double-clic pour enfiler ; Importer la garde dans votre arsenal ACE."] select _isCloud] call (_grp getVariable ["COMSPEC_ArsenalSetHint", {}]);
+[_grp, [
+    "Cliquez une tenue pour l'aperçu, double-clic pour l'enfiler. La pastille de couleur dit si elle est déjà sur le site.",
+    "Cliquez une tenue pour l'aperçu, double-clic pour l'enfiler ; Importer la garde dans votre arsenal ACE."
+] select _isCloud] call (_grp getVariable ["COMSPEC_ArsenalSetHint", {}]);
