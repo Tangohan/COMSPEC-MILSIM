@@ -293,6 +293,17 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(758, '2026-10-18', 'Portail Athena 1.7.0 « Denver » : chaque version porte un nom de ville', 'Le portail passe en version 1.7.0 et s’appelle Denver. Désormais, chaque nouvelle version du site reçoit le nom d’une ville américaine, jamais réutilisé ; les correctifs gardent le nom de leur version. Toutes les versions jusqu’à 1.6 restent Phoenix, la prochaine sera Austin. La bannière « Production en ligne » affiche le nom de ville et les versions à jour de l’ATAK en jeu, de COMSPEC Link et d’Overwatch. Rechargez le portail (Ctrl+F5).', [
+                'Nom de ville à côté du numéro de version du portail (Phoenix, Denver, puis Austin…)',
+                'Versions de COMSPEC ATAK et COMSPEC Link lues directement dans le mod, toujours à jour',
+            ], [
+                'La bannière affiche le nom de ville seul, sans le mot « Opération »',
+                'Les cartes de la bannière suivent l’ATAK en jeu, COMSPEC Link et le poste de commandement Overwatch',
+            ], [
+                'La date de dernière mise en production restait bloquée au 28 septembre',
+            ], ['atak', 'command'], [
+                'Ouvrez Nouveautés de l’organisation : la bannière indique Portail Athena v1.7.0 et Denver, avec ATAK 1.96.0 et Link 2.0.86.',
+            ], 'Portail Athena'),
             $pr(757, '2026-10-14', 'JNET : les reco du jeu remontent dans l’espace de l’unité', 'Les notes de reco, photos et rapports envoyés depuis l’ATAK en jeu arrivent désormais dans JNET. Chacun devient un échange de l’unité de l’opérateur, remonté vers son échelon supérieur : la chaîne de commandement le voit dans « Remonté » et dans le flux commun. Une reco modifiée en jeu met à jour son échange. Les photos confidentielles ou liées au bureau SSE ne montrent jamais l’image, seulement un lien d’ouverture sur Athena. Rechargez le portail (Ctrl+F5).', [
                 'Reco, photos et rapports ATAK (Contact, SALUTE, BDA, FRAGO…) relayés dans l’espace JNET de l’unité',
                 'Badge d’origine « Reco terrain », « Photo terrain » ou « Rapport ATAK », vignette de la photo et lien vers la carte',

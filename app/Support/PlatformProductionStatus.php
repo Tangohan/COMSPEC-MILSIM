@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Support;
 
 /**
- * Instantané production (portail + pack jeu) pour bannières back-office.
- * Source : storage/app_version.json (+ date Git si le dépôt est disponible).
+ * Instantané production (portail + mods) pour bannières back-office.
+ * Source : storage/app_version.json (+ date Git si le dépôt est disponible). Les versions
+ * de l’ATAK natif et de COMSPEC Link viennent d’AtakReleaseInfo (fichiers du mod), pour
+ * suivre chaque release sans retoucher le fichier de version.
  */
 final class PlatformProductionStatus
 {
@@ -19,12 +21,15 @@ final class PlatformProductionStatus
      *   overwatch_version: string,
      *   athena_version: string,
      *   extension_version: string,
+     *   atak_version: string,
+     *   link_version: string,
      *   pack_label: string,
      *   git_sha: string,
      *   bulletin_title: string,
      *   bulletin_url: string,
      *   codename: string,
      *   codename_label: string,
+     *   codename_state: string,
      *   major: int
      * }
      */
@@ -39,13 +44,24 @@ final class PlatformProductionStatus
         $pack = is_array($file['pack'] ?? null) ? $file['pack'] : [];
         $overwatch = self::cleanVersion($pack['overwatch'] ?? $file['overwatch_version'] ?? '');
         $athena = self::cleanVersion($pack['athena'] ?? $file['athena_version'] ?? '');
-        $extension = self::cleanVersion($pack['extension'] ?? $file['extension_version'] ?? '');
+        $native = AtakReleaseInfo::latest();
+        $atak = self::cleanVersion($native['atak_native'] ?? '');
+        if ($atak === '') {
+            $atak = self::cleanVersion($pack['atak'] ?? '');
+        }
+        $link = self::cleanVersion($native['link'] ?? '');
+        if ($link === '') {
+            $link = self::cleanVersion($pack['link'] ?? $pack['extension'] ?? $file['extension_version'] ?? '');
+        }
+        $extension = $link;
 
         $fileAt = self::parseDate($file['updated_at'] ?? null);
         $git = self::gitHeadMeta();
         $deployedAt = $fileAt;
         $source = 'fichier';
-        if ($git['at'] instanceof \DateTimeImmutable) {
+        $gitAt = $git['at'] instanceof \DateTimeImmutable ? $git['at'] : self::gitDeployTime();
+        if ($gitAt instanceof \DateTimeImmutable) {
+            $git['at'] = $gitAt;
             if ($deployedAt === null || $git['at'] >= $deployedAt) {
                 $deployedAt = $git['at'];
                 $source = 'dépôt';
@@ -56,6 +72,9 @@ final class PlatformProductionStatus
         if ($sha === '' && $git['sha'] !== '') {
             $sha = $git['sha'];
         }
+        if ($sha === '') {
+            $sha = BuildVersion::gitHead(base_path('.git'));
+        }
 
         $bulletin = DevDispatchCatalog::forProductionBanner();
         $bulletinTitle = is_array($bulletin) ? trim((string) ($bulletin['title'] ?? '')) : '';
@@ -65,21 +84,21 @@ final class PlatformProductionStatus
         }
 
         $packParts = [];
+        if ($atak !== '') {
+            $packParts[] = 'ATAK ' . $atak;
+        }
+        if ($link !== '') {
+            $packParts[] = 'Link ' . $link;
+        }
         if ($overwatch !== '') {
             $packParts[] = 'Overwatch ' . $overwatch;
         }
-        if ($athena !== '') {
-            $packParts[] = 'Athena ' . $athena;
-        }
-        if ($extension !== '') {
-            $packParts[] = 'Extension ' . $extension;
-        }
 
-        $codeVersion = $overwatch !== '' ? $overwatch : $platform;
+        // Le nom de ville suit la version du portail (X.Y), plus celle du pack Overwatch.
+        $codeMeta = PackCodenameCatalog::forVersion($platform);
         $fromFile = trim((string) ($file['codename'] ?? ''));
-        $codeMeta = PackCodenameCatalog::forVersion($codeVersion);
-        $codename = $fromFile !== '' ? $fromFile : (string) ($codeMeta['name'] ?? '');
-        $codenameLabel = $codename !== '' ? ('Opération ' . $codename) : (string) ($codeMeta['label'] ?? '');
+        $codename = (string) ($codeMeta['name'] ?? '') !== '' ? (string) $codeMeta['name'] : $fromFile;
+        $codenameState = $codename === (string) ($codeMeta['name'] ?? '') ? (string) ($codeMeta['state'] ?? '') : '';
 
         return [
             'platform_version' => $platform,
@@ -89,13 +108,16 @@ final class PlatformProductionStatus
             'overwatch_version' => $overwatch,
             'athena_version' => $athena,
             'extension_version' => $extension,
+            'atak_version' => $atak,
+            'link_version' => $link,
             'pack_label' => $packParts !== [] ? implode(' · ', $packParts) : 'Pack non renseigné',
             'git_sha' => $sha !== '' ? substr($sha, 0, 7) : '',
             'bulletin_title' => $bulletinTitle,
             'bulletin_url' => $bulletinUrl,
             'codename' => $codename,
-            'codename_label' => $codenameLabel,
-            'major' => (int) ($codeMeta['major'] ?? PackCodenameCatalog::majorOf($codeVersion)),
+            'codename_label' => $codename,
+            'codename_state' => $codenameState,
+            'major' => (int) ($codeMeta['major'] ?? PackCodenameCatalog::majorOf($platform)),
         ];
     }
 
@@ -111,6 +133,33 @@ final class PlatformProductionStatus
         $raw = json_decode((string) file_get_contents($path), true);
 
         return is_array($raw) ? $raw : [];
+    }
+
+    /**
+     * Heure du dernier déploiement sans lancer git (PHP-FPM ne peut pas toujours) :
+     * `git pull` réécrit la référence de la branche et FETCH_HEAD.
+     */
+    private static function gitDeployTime(): ?\DateTimeImmutable
+    {
+        $gitDir = base_path('.git');
+        if (!is_dir($gitDir)) {
+            return null;
+        }
+        $candidates = [$gitDir . '/FETCH_HEAD', $gitDir . '/ORIG_HEAD', $gitDir . '/HEAD'];
+        $head = trim((string) @file_get_contents($gitDir . '/HEAD'));
+        if (str_starts_with($head, 'ref:')) {
+            $ref = trim(substr($head, 4));
+            if ($ref !== '' && !str_contains($ref, '..')) {
+                array_unshift($candidates, $gitDir . '/' . $ref);
+            }
+        }
+        $latest = 0;
+        foreach ($candidates as $file) {
+            $t = is_file($file) ? (int) @filemtime($file) : 0;
+            $latest = max($latest, $t);
+        }
+
+        return $latest > 0 ? (new \DateTimeImmutable('@' . $latest)) : null;
     }
 
     private static function cleanVersion(mixed $value): string
