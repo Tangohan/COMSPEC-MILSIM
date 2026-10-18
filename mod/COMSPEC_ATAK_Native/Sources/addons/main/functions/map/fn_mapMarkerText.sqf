@@ -33,6 +33,8 @@ if (_now > (_cand select 0)) then {
         private _m = _y;
         private _txt = _m getOrDefault ["text", ""];
         if (_txt isEqualTo "") then { continue };
+        // Nom posé automatiquement (palette, LOCK…) : relu dans la langue du mod, quelle que soit celle de son auteur.
+        _txt = [_txt] call comspec_atak_native_fnc_markerAutoName;
         if ((toUpper (_m getOrDefault ["shape", "ICON"])) isNotEqualTo "ICON") then { continue };
         if ((_m getOrDefault ["alpha", 1]) <= 0.05) then { continue };
         private _type = _m getOrDefault ["type", "mil_dot"];
@@ -56,7 +58,7 @@ if (_now > (_cand select 0)) then {
         if (_sz < 0) then { _sz = getNumber (configFile >> "CfgMarkers" >> _type >> "size"); if (_sz <= 0) then { _sz = 32; }; _sizeCache set [_type, _sz]; };
         _sz = _sz * (((_m getOrDefault ["size", [1, 1]]) param [0, 1]) max 0.3);
         private _id = _m getOrDefault ["id", _x];
-        private _eni = ((toLower _type) select [0, 2]) isEqualTo "o_" || {(toUpper (_txt select [0, 4])) isEqualTo "ENI "};
+        private _eni = ((toLower _type) select [0, 2]) isEqualTo "o_" || {(toUpper (_txt select [0, 4])) in ["ENI ", "ENY "]};
         // LOCK 098 · MH-6M Little Bird (drone) -> ["LOCK 098", "MH-6M Little Bird · drone"]
         private _lock = [];
         if ((_txt select [0, 5]) isEqualTo "LOCK " && {(_txt find " · ") > 0}) then {

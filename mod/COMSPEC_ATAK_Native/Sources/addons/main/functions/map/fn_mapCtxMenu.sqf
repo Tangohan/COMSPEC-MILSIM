@@ -267,7 +267,7 @@ switch (_mode) do {
             _rows pushBack ["NOFLYALL", "Retirer toutes les zones", format ["%1 zones, tout le camp", _nf], _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
         };
         if (_m isNotEqualTo "") then {
-            _rows pushBack ["DELETE", ["Supprimer le marqueur", "Effacer cette alerte"] select (([_m] call comspec_atak_native_fnc_markerDeletable) isEqualTo 2), [markerText _m, ""] select ((markerText _m) isEqualTo ""), _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
+            _rows pushBack ["DELETE", ["Supprimer le marqueur", "Effacer cette alerte"] select (([_m] call comspec_atak_native_fnc_markerDeletable) isEqualTo 2), [([markerText _m] call comspec_atak_native_fnc_markerAutoName), ""] select ((markerText _m) isEqualTo ""), _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
         };
         // Repères d'alerte reçus (CONTACT, WIA, SALUTE, PANIQUE…, locaux à ce téléphone) : tous d'un coup.
         private _na = { (_x find "COMSPEC_ALERT_") isEqualTo 0 || {(_x find "COMSPEC_PANIC_") isEqualTo 0} } count allMapMarkers;
@@ -367,7 +367,7 @@ switch (_mode) do {
                 [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 1]] select (_dist >= 1000), _az]) call comspec_atak_native_fnc_tr);
         };
         _hd ctrlSetFontHeight (_fs * 0.95);
-        if (_m isNotEqualTo "") then { _hd ctrlSetTooltip ((format ["Marqueur pointé : %1", [markerText _m, _m] select ((markerText _m) isEqualTo "")]) call comspec_atak_native_fnc_tr); };
+        if (_m isNotEqualTo "") then { _hd ctrlSetTooltip ((format ["Marqueur pointé : %1", [([markerText _m] call comspec_atak_native_fnc_markerAutoName), _m] select ((markerText _m) isEqualTo "")]) call comspec_atak_native_fnc_tr); };
         private _ry = _y0 + pixelH * 6 + _headH;
         private _ih = _rowH * 0.56;
         private _iw = _ih / _ratio;

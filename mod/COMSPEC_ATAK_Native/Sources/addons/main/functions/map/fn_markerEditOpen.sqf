@@ -14,7 +14,7 @@ private _edit = if (_name isEqualTo "") then {
     ]
 } else {
     createHashMapFromArray [
-        ["name", _name], ["pos", getMarkerPos _name], ["text", markerText _name], ["desc", (_notes getOrDefault [_name, ["", ""]]) select 0],
+        ["name", _name], ["pos", getMarkerPos _name], ["text", ([markerText _name] call comspec_atak_native_fnc_markerAutoName)], ["desc", (_notes getOrDefault [_name, ["", ""]]) select 0],
         ["type", markerType _name], ["color", markerColor _name], ["size", str ((markerSize _name) select 0)],
         ["dir", str round markerDir _name], ["alpha", str markerAlpha _name], ["channel", str markerChannel _name], ["shape", markerShape _name]
     ]
