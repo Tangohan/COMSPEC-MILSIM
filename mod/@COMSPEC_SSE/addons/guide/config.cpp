@@ -3,7 +3,7 @@
 /*
     Tutoriels du SSE :
       - manuel de terrain (Field Manual, catégorie COMSPEC SSE), lisible dans Eden, en jeu et au Zeus ;
-      - menu « COMSPEC SSE » dans la barre de menus d'Eden ;
+      - menu « COMSPEC SSE » dans la barre de menus d'Eden, avec le tableau de bord SSE de la mission ouverte ;
       - Zeus : manuel et exercice complet posé en un clic ;
       - ACE : « Guide SSE (manuel) ».
 */
@@ -26,6 +26,10 @@ class CfgFunctions {
             file = "z\comspec_sse\addons\guide\functions";
             class guideExercise {};
             class openGuide {};
+            class openDashboard {};
+            class dashCollect {};
+            class dashSite {};
+            class dashRender {};
         };
     };
 };
@@ -225,8 +229,9 @@ class Display3DEN {
                 items[] += {"COMSPEC_SSE_Menu"};
                 class COMSPEC_SSE_Menu {
                     text = "COMSPEC SSE";
-                    items[] = {"COMSPEC_SSE_MenuEden", "COMSPEC_SSE_MenuStart", "COMSPEC_SSE_MenuLinks", "COMSPEC_SSE_MenuCampaigns", "COMSPEC_SSE_MenuZeus", "COMSPEC_SSE_MenuDatasets", "COMSPEC_SSE_MenuCaseRef", "COMSPEC_SSE_MenuModMission", "COMSPEC_SSE_MenuModPeople", "COMSPEC_SSE_MenuModDigital", "COMSPEC_SSE_MenuModTools", "COMSPEC_SSE_MenuDocuments", "COMSPEC_SSE_MenuItems", "COMSPEC_SSE_MenuModels", "COMSPEC_SSE_MenuCustom"};
+                    items[] = {"COMSPEC_SSE_MenuDashboard", "COMSPEC_SSE_MenuEden", "COMSPEC_SSE_MenuStart", "COMSPEC_SSE_MenuLinks", "COMSPEC_SSE_MenuCampaigns", "COMSPEC_SSE_MenuZeus", "COMSPEC_SSE_MenuDatasets", "COMSPEC_SSE_MenuCaseRef", "COMSPEC_SSE_MenuModMission", "COMSPEC_SSE_MenuModPeople", "COMSPEC_SSE_MenuModDigital", "COMSPEC_SSE_MenuModTools", "COMSPEC_SSE_MenuDocuments", "COMSPEC_SSE_MenuItems", "COMSPEC_SSE_MenuModels", "COMSPEC_SSE_MenuCustom"};
                 };
+                class COMSPEC_SSE_MenuDashboard { text = "$STR_COMSPEC_SSE_CFG_519542D0B0"; action = "[] call comspec_sse_fnc_openDashboard"; };
                 class COMSPEC_SSE_MenuEden { text = "$STR_COMSPEC_SSE_CFG_D2BC59B49C"; action = "['Eden'] call comspec_sse_fnc_openGuide"; };
                 class COMSPEC_SSE_MenuStart { text = "$STR_COMSPEC_SSE_CFG_20FDBBF21A"; action = "['Start'] call comspec_sse_fnc_openGuide"; };
                 class COMSPEC_SSE_MenuLinks { text = "$STR_COMSPEC_SSE_CFG_DB6388D385"; action = "['Links'] call comspec_sse_fnc_openGuide"; };

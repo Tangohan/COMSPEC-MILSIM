@@ -55,6 +55,22 @@ Le même contenu, en plus court, est dans le jeu : **Échap › Manuel de terrai
 | **Ce que les joueurs ont transmis** | — | Bureau SSE › Dossiers, la page de l'affaire. |
 | **Les supports numériques scénarisés** | — | Bureau SSE › **17 Exploitation numérique**. |
 
+### Le tableau de bord SSE (Eden)
+
+Eden › menu **COMSPEC SSE** › **Tableau de bord SSE** ouvre une vue en lecture seule de tout le SSE de la mission ouverte. Rien n'est modifié dans la carte et rien n'est envoyé au site.
+
+| Onglet | Ce qu'on y voit |
+|---|---|
+| **Synthèse** | Mission, nombre de personnes, objets, modules, organisations, liaisons et réseaux SSE, module Campagne, état du site, et les **contrôles** : module Lier des entités avec moins de deux entités, identifiant biométrique en double, parenté ou empreintes vers un nom introuvable, organisation parente absente, campagne absente du site ou de type différent, personne de la carte sous avis de recherche… |
+| **Entités** | Chaque personne, objet et module SSE avec ses attributs réglés, ses synchronisations, ses liaisons, sa fiche dans la campagne du site et un éventuel avis de recherche. **Sélectionner dans Eden** ferme la fenêtre et amène la caméra sur l'entité. |
+| **Liaisons** | Tous les liens, rangés par origine : modules Organisation et Lier des entités, attributs Organisation, biométrie (parenté, empreintes latentes), contenu des objets (propriétaire apparent, compte, contacts, organisation), modules appliqués aux entités ; puis les réseaux (même ID réseau). |
+| **Organigramme** | Organisations de la carte et de la campagne du site fusionnées : organisations filles, membres classés par rôle, cellules, objets rattachés, personnages récurrents sans organisation. Chaque élément porte sa source : [Eden], [site] ou [Eden + site]. |
+| **Items et membres** | Les objets reliés à chaque personne, les objets rattachés aux organisations, les objets SSE sans lien, et le registre des scellés de la campagne du site. |
+| **Campagne** | Les modules de mission de la carte avec tous leurs réglages, et la configuration complète de la campagne lue sur le site : graine, dates, missions jouées, journal, personnages récurrents. |
+| **Site Athena** | Les campagnes de la communauté (choisir celle à lire), et les avis de recherche croisés avec les personnes de la carte. |
+
+Le site est lu par la DLL COMSPEC Link avec les commandes qu'elle connaît déjà (campagnes et avis de recherche). Sans liaison ouverte depuis le démarrage du jeu, la fenêtre restaure la session Athena mémorisée ou utilise la clé de communauté du profil ; si le site reste injoignable, lancez une fois l'aperçu de la mission pour relier le compte, puis **Actualiser depuis le site**.
+
 ---
 
 ## 3. Tutoriel 1 : une première mission SSE
