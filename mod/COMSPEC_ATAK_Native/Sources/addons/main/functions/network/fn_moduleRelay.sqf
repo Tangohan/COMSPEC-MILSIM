@@ -7,7 +7,8 @@
     d'attributs ZEN, fn_relayZeus).
     Types (préréglages, chaque valeur à 0 ou « préréglage » prend celle du type) :
       portable  : radio relais au sol, 1,5 km, 4 Mbit/s, antenne à 2,5 m, 8 places
-      mat       : mât tactique, 3 km, 8 Mbit/s, antenne à 10 m, 24 places
+      mat       : mât tactique, 3 km, 8 Mbit/s, antenne à 10 m, 24 places ;
+                  sans objet synchronisé, crée le mât relais 3D de 12 m (COMSPEC_ATAK_RelayTower_M12)
       tour      : tour fixe, 6 km, 20 Mbit/s, antenne à 25 m (hauteur réelle sur un pylône COMSPEC), 64 places ;
                   sans objet synchronisé, crée la tour relais 3D de 40 m (COMSPEC_ATAK_RelayTower_40)
       satellite : terminal satellite, 1 km, 10 Mbit/s, antenne à 2 m, 16 places
@@ -58,7 +59,7 @@ private _apply = {
     _vals params ["_name", "_kind", "_side", "_range", "_mb", "_h", "_slots", "_aut", "_up", "_on", "_indes", "_req", ["_freq", 0], ["_only", false]];
     private _preset = createHashMapFromArray [
         ["portable", [1500, 4, 2.5, 8, 0, ["Land_PortableLongRangeRadio_F", "Land_SurvivalRadio_F"]]],
-        ["mat", [3000, 8, 10, 24, 0, ["Land_Antenna_01_F", "Land_TTowerSmall_1_F"]]],
+        ["mat", [3000, 8, 10, 24, 0, ["COMSPEC_ATAK_RelayTower_M12", "Land_TTowerSmall_1_F", "Land_Antenna_01_F"]]],
         ["tour", [6000, 20, 25, 64, 0, ["COMSPEC_ATAK_RelayTower_40", "Land_TTowerBig_2_F", "Land_TTowerBig_1_F", "Land_TTowerSmall_2_F"]]],
         ["satellite", [1000, 10, 2, 16, 0, ["Land_SatelliteAntenna_01_F", "Land_Antenna_01_F"]]]
     ] getOrDefault [_kind, [3000, 8, 10, 24, 0, ["Land_Antenna_01_F"]]];
@@ -72,7 +73,10 @@ private _apply = {
     _range = (_range max 100) min 30000;
     if (_name isEqualTo "") then { _name = format ["Relais %1", mapGridPosition _logicPos]; };
     private _targets = +(_ctx get "targets");
-    if (_targets isEqualTo [] && {!isNull (_ctx get "near")}) then { _targets pushBack (_ctx get "near"); };
+    // Zeus : l'objet proche (mur, bâtiment de la carte) n'est repris que si c'est déjà un relais ; sinon le module crée son
+    // objet 3D (lâcher le module sur un objet pour l'équiper).
+    private _near = _ctx getOrDefault ["near", objNull];
+    if (_targets isEqualTo [] && {!isNull _near} && {!(_ctx get "zeus") || {_near getVariable ["COMSPEC_AtakRelay", false]}}) then { _targets pushBack _near; };
     if (_targets isEqualTo []) then {
         _cls = _cls select { isClass (configFile >> "CfgVehicles" >> _x) };
         if (_cls isEqualTo []) exitWith {};
@@ -84,6 +88,7 @@ private _apply = {
     };
     if (_targets isEqualTo []) exitWith {
         ["comspec_atak_native_dataNote", ["Relais : aucun objet pour porter l'antenne."]] call CBA_fnc_localEvent;
+        if (_ctx get "zeus") then { ["feedback", ["Relais : aucun objet pour porter l'antenne."]] call comspec_atak_native_fnc_zeusMenu; };
     };
     private _list = (missionNamespace getVariable ["COMSPEC_AtakRelays", []]) select { !isNull _x };
     {
@@ -122,8 +127,10 @@ private _apply = {
     if (_req) then { missionNamespace setVariable ["COMSPEC_ATAK_RelaysRequired", true, true]; };
     if (_only) then { missionNamespace setVariable ["COMSPEC_ATAK_RelayOnly", true, true]; };
     missionNamespace setVariable ["COMSPEC_ATAK_RelayCache", nil, true];
-    ["comspec_atak_native_dataNote", [format ["Relais %1 posé : %2 m, %3 Mbit/s, %4%5.", _name, round _range, _mb, ["répéteur", "raccordé"] select (_up isNotEqualTo "repeater"),
-        ["", format [", %1 MHz", _freq]] select (_freq > 0)]]] call CBA_fnc_localEvent;
+    private _msg = format ["Relais %1 posé : %2 m, %3 Mbit/s, %4%5.", _name, round _range, _mb, ["répéteur", "raccordé"] select (_up isNotEqualTo "repeater"),
+        ["", format [", %1 MHz", _freq]] select (_freq > 0)];
+    ["comspec_atak_native_dataNote", [_msg]] call CBA_fnc_localEvent;
+    if (_ctx get "zeus") then { ["feedback", [_msg]] call comspec_atak_native_fnc_zeusMenu; };
 };
 
 private _args = [_ctx, getPosATL _logic, getDir _logic];
