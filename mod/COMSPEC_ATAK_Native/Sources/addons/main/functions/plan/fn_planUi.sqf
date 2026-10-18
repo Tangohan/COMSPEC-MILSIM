@@ -87,7 +87,8 @@ private _hex = {
 private _btn = {
     params ["_rect", "_label", "_code", ["_state", ""], ["_tip", ""], ["_enabled", true]];
     private _b = ["COMSPEC_RscButton", _rect, _label] call _mk;
-    _b ctrlSetFontHeight ((_fs * 0.86) max COMSPEC_ATAK_FontMin);
+    // Libellé plus large que le bouton : police réduite pour qu'il tienne (fn_textFit).
+    [_b, (_fs * 0.86) max COMSPEC_ATAK_FontMin] call comspec_atak_native_fnc_textFit;
     switch (_state) do {
         case "on": { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
         case "blue": { _b ctrlSetBackgroundColor [0.12, 0.32, 0.55, 0.95]; };
@@ -326,6 +327,16 @@ switch (true) do {
 
 // ---- Menus déroulants et clic droit ----
 // Lignes : [clé, libellé, précision, code, rouge] ; ligne "-" : séparateur. Fermés par un clic sur la carte ou Échap.
+// La carte reçoit aussi les clics faits sur les menus posés par-dessus : son MouseButtonDown fermait le menu, qui était
+// redessiné sans ses boutons avant leur ButtonClick (« Créer une salle ne fait rien »). Chaque menu est donc une zone
+// bloquée pour la carte (_blocks), et chaque ligne une zone cliquable (_hits) jouée par fn_planMap au clic ; le bouton
+// la joue aussi, une seule fois grâce à _once.
+private _blocks = [];
+private _hits = [];
+private _once = {
+    params ["_code"];
+    compile format ["if ((diag_tickTime - (uiNamespace getVariable ['COMSPEC_ATAK_PlanHitT', -1])) > 0.4) then { uiNamespace setVariable ['COMSPEC_ATAK_PlanHitT', diag_tickTime]; call %1; };", _code]
+};
 private _menu = {
     params ["_x0", "_y0", "_w", "_title", "_sub", "_rows", ["_edgeCol", _acc]];
     private _rh = _font * 1.45;
@@ -346,10 +357,13 @@ private _menu = {
         [[_x0 + pixelW * 10, _ry + (_rh - _font * 0.95) / 2, _w - pixelW * 20, _rh],
             format ["<t font='COMSPEC_BarlowBold' size='0.95' color='%1'>%2</t><t size='0.72' color='#7d8c85' align='right'>%3</t>", ["#e6efe9", "#f2685c"] select _red, _lab, (_s regexReplace ["[<>&]", ""]) select [0, 30]]] call _stext;
         private _b = ["COMSPEC_RscButtonOverlay", [_x0, _ry, _w, _rh]] call _mk;
-        _b ctrlAddEventHandler ["ButtonClick", _code];
+        private _run = [_code] call _once;
+        _b ctrlAddEventHandler ["ButtonClick", _run];
         _b ctrlAddEventHandler ["ButtonClick", { [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame; }];
+        _hits pushBack [[_x0, _ry, _w, _rh], _run];
         _ry = _ry + _rh;
     } forEach _rows;
+    _blocks pushBack [_x0, _y0, _w, _h];
     [_x0, _y0, _w, _h]
 };
 private _mw = ((_font * 16) / _ratio) min (_bw * 0.45);
@@ -382,10 +396,16 @@ if (_menuName isEqualTo "ROOM") then {
             [["NEW", "Créer une salle", "un code est donné", ["roomNew"] call _act]], [0.18, 0.42, 0.66, 1]] call _menu;
         private _ey = (_r select 1) + (_r select 3) + _gap;
         [[_r select 0, _ey, _mw, _rowH * 1.25 + _gap * 2], [0.035, 0.042, 0.038, 0.98]] call _panel;
+        _blocks pushBack [_r select 0, _ey, _mw, _rowH * 1.25 + _gap * 2];
         private _e = [[(_r select 0) + _gap, _ey + _gap, _mw * 0.55, _rowH], uiNamespace getVariable ["COMSPEC_ATAK_PlanRoomInput", ""], "Code de la salle (5 caractères, ex. K7Q2M)",
             { params ["_c"]; ["roomInput", ctrlText _c] call comspec_atak_native_fnc_planAction; }] call _edit;
         _e ctrlAddEventHandler ["KeyUp", { params ["_c"]; ["roomInput", ctrlText _c] call comspec_atak_native_fnc_planAction; }];
-        [[(_r select 0) + _mw * 0.55 + _gap * 2, _ey + _gap, _mw * 0.45 - _gap * 3, _rowH], "REJOINDRE", { ["roomJoin", ""] call comspec_atak_native_fnc_planAction; }, "on", "Rejoindre la salle de ce code"] call _btn;
+        // Rejoindre : le code tapé est relu dans le champ (sa perte de focus n'arrive pas toujours avant le clic).
+        private _join = [compile format ["private _e = (uiNamespace getVariable ['COMSPEC_ATAK_PlanCtrls', createHashMap]) getOrDefault ['roomEdit', controlNull]; if (!isNull _e) then { ['roomInput', ctrlText _e] call comspec_atak_native_fnc_planAction; }; ['roomJoin', ''] call comspec_atak_native_fnc_planAction;"]] call _once;
+        _ctrls set ["roomEdit", _e];
+        private _jr = [(_r select 0) + _mw * 0.55 + _gap * 2, _ey + _gap, _mw * 0.45 - _gap * 3, _rowH];
+        [_jr, "REJOINDRE", _join, "on", "Rejoindre la salle de ce code"] call _btn;
+        _hits pushBack [_jr, _join];
     } else {
         private _rv = missionNamespace getVariable ["COMSPEC_ATAK_PlanRoom_" + _room, []];
         private _who = (allPlayers select { (_x getVariable ["COMSPEC_PlanRoom", ""]) isEqualTo _room }) apply { name _x };
@@ -442,7 +462,8 @@ if ((count _ctx) > 0) then {
 };
 _rects set ["map", [_mx, _my, _mw, _mh]];
 // Zones de la carte couvertes par un panneau (palette ; l'aide ajoute le sien) : un clic n'y pose rien.
-_rects set ["block", [[], [_rects getOrDefault ["pal", []]]] select (_ui get "pal")];
+_rects set ["block", _blocks + ([[], [_rects getOrDefault ["pal", []]]] select (_ui get "pal"))];
+_rects set ["hits", _hits];
 uiNamespace setVariable ["COMSPEC_ATAK_PlanRects", _rects];
 uiNamespace setVariable ["COMSPEC_ATAK_PlanChrome", _list];
 // Aide et tutoriel par-dessus tout (leurs contrôles rejoignent la même liste).

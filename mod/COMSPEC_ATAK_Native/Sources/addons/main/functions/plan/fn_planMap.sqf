@@ -87,11 +87,20 @@ switch (_ev) do {
             }, _map, 1.5] call CBA_fnc_waitUntilAndExecute;
         };
         if (_btn isNotEqualTo 0) exitWith {};
+        private _pr = uiNamespace getVariable ["COMSPEC_ATAK_PlanRects", createHashMap];
+        // Ligne de menu (SALLE, EXPORTER, clic droit) sous le clic : la carte reçoit aussi ce clic ; la ligne est jouée ici
+        // (une seule fois avec son ButtonClick, fn_planUi _once), au lieu de fermer le menu avant que le bouton réponde.
+        private _hit = {};
+        {
+            (_x select 0) params ["_hx", "_hy", "_hw", "_hh"];
+            if (_mx >= _hx && {_mx <= _hx + _hw} && {_my >= _hy} && {_my <= _hy + _hh}) exitWith { _hit = _x select 1; };
+        } forEach (_pr getOrDefault ["hits", []]);
+        if (_hit isNotEqualTo {}) exitWith { call _hit; };
         // Clic sous la palette d'outils ou le panneau d'aide (fond sans bouton) : rien n'est posé sur la carte.
         private _blocked = false;
         {
             if ((count _x) isEqualTo 4 && {_mx >= (_x select 0)} && {_mx <= (_x select 0) + (_x select 2)} && {_my >= (_x select 1)} && {_my <= (_x select 1) + (_x select 3)}) exitWith { _blocked = true; };
-        } forEach ((uiNamespace getVariable ["COMSPEC_ATAK_PlanRects", createHashMap]) getOrDefault ["block", []]);
+        } forEach (_pr getOrDefault ["block", []]);
         if (_blocked) exitWith {};
         // Menu ouvert (clic droit, EXPORTER, SALLE) : ce clic le ferme seulement.
         if ((_ui get "menu") isNotEqualTo "" || {(count (_ui get "ctx")) > 0}) exitWith {
