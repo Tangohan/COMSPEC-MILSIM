@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.86";
+    private const string ExtensionVersion = "2.0.87";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -4215,6 +4215,9 @@ public static partial class Extension
             {
                 var json = args[0] ?? "{}";
                 if (string.IsNullOrWhiteSpace(json)) return "ERR|payload_vide";
+                // Guillemets doublés par callExtension : sans normalisation, PHP lisait un corps vide et
+                // répondait 400 « Indiquez une observation » (aucune reco n'arrivait au poste). 2.0.87.
+                json = EnrichAtakPayload(json);
                 var response = SendJsonPost(_baseUrl + "/api/recon/notes", json, token);
                 var body = ReadContentUtf8(response, token);
                 var safeBody = (body ?? "").Replace("\n", " ").Replace("\r", "").Replace("|", "/");
@@ -8572,7 +8575,7 @@ public static partial class Extension
             {
                 var json = args[0] ?? "{}";
                 if (string.IsNullOrWhiteSpace(json)) return;
-                EnqueueOrSend(_baseUrl + "/api/recon/notes", json);
+                EnqueueOrSend(_baseUrl + "/api/recon/notes", EnrichAtakPayload(json));
                 return;
             }
 

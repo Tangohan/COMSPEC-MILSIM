@@ -5,7 +5,7 @@
       - en-tête : RECO, heure, lieu le plus proche et carroyage visé ;
       - QUOI : sept tuiles à icône (véhicule, groupe armé, position, mine, civil, infrastructure, autre) ;
       - FIABILITÉ : vu directement / rapporté ;
-      - OÙ : carroyage (saisie libre 6 à 10 chiffres), MA POSITION ou SOUS MON REGARD (point visé, 200 m), distance et azimut ;
+      - OÙ : carroyage (saisie libre 6 à 10 chiffres), MA POSITION ou POINTÉ CARTE (point touché sur la carte du téléphone), distance et azimut ;
       - OBSERVATION : 140 caractères avec compteur, puis ENVOYER ;
       - DERNIÈRES NOTES de la session, en cartes de la couleur de leur type.
     Paysage : QUOI et FIABILITÉ à gauche, OÙ et OBSERVATION à droite. Portrait : l'un sous l'autre (défilement).
@@ -184,7 +184,7 @@ if ((count _gp) >= 2) then {
 _y = _y + _rowH + _pad * 0.6;
 private _qb = (_wR - _gap) / 2;
 {
-    _x params ["_t", "_icon", "_set", "_tip"];
+    _x params ["_t", "_icon", "_set", "_tip", ["_raw", false]];
     private _bx = _xR + _forEachIndex * (_qb + _gap);
     [[_bx, _y, _qb, _rowH], _cTile] call _box;
     private _ih = _rowH * 0.6;
@@ -193,10 +193,11 @@ private _qb = (_wR - _gap) / 2;
     private _c = ["COMSPEC_RscText", [_bx + _pad + _ih / _ratio, _y, _qb - _pad * 1.5 - _ih / _ratio, _rowH], _t, _fs * 0.85, _cText, true] call _lbl;
     private _fh = _fs * 0.85;
     while { (ctrlTextWidth _c) > (_qb - _pad * 1.5 - _ih / _ratio) && {_fh > _fs * 0.6} } do { _fh = _fh * 0.92; _c ctrlSetFontHeight ((_fh) max COMSPEC_ATAK_FontMin); };
-    [[_bx, _y, _qb, _rowH], compile format [_redo, _set], _tip] call _hit;
+    [[_bx, _y, _qb, _rowH], compile ([format [_redo, _set], _set] select _raw), _tip] call _hit;
 } forEach [
     ["MA POSITION", "ui_gps", "(uiNamespace getVariable ['COMSPEC_ATAK_RecoDraft', createHashMap]) set ['grid', [getPosASL player, 8] call comspec_atak_native_fnc_gridRef];", "Ma position"],
-    ["SOUS MON REGARD", "reco_eye", "(uiNamespace getVariable ['COMSPEC_ATAK_RecoDraft', createHashMap]) set ['grid', [([] call comspec_overwatch_connect_fnc_reconLookPos), 8] call comspec_atak_native_fnc_gridRef];", "Point visé, jusqu'à 200 m"]
+    // Le point est touché sur la carte du téléphone (fn_mapMouseButtonDown, clé recoPick), puis retour ici.
+    ["POINTÉ CARTE", "map_marker", "[] call comspec_atak_native_fnc_recoDraftSave; (uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['recoPick', true]; ['MAP'] call comspec_atak_native_fnc_navigate; ['INFO', 'Touchez la carte pour placer le point de la reco', 4, 20] call comspec_atak_native_fnc_notify;", "Touchez la carte pour placer le point", true]
 ];
 _y = _y + _rowH + _pad;
 

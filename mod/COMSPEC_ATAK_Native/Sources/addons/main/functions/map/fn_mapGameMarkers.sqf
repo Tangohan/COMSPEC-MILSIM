@@ -3,6 +3,7 @@
     plus (showMarkers = 0 dans COMSPEC_RscMapAtak). Arma les dessinait à taille fixe en pixels (symboles OTAN de 32 px),
     énormes sur le petit écran du téléphone porté à côté de textes à l'échelle de l'écran. Ici :
       ICON       symbole du marqueur à l'échelle de l'écran de l'ATAK (comme les unités), réglage « taille des symboles » ;
+               point simple (…_dot) doublé et éclairci s'il est noir, sinon invisible ;
       RECTANGLE  zone à la brosse du marqueur (Solid, Border, hachures...) ;
       ELLIPSE    idem ;
       POLYLINE   trait d'un pixel (les traits épais ou fléchés sont repassés par fn_strokeDraw).
@@ -48,6 +49,12 @@ if (_now > (_cache select 0) || {(count allMapMarkers) isNotEqualTo (_cache sele
                 private _c = [markerColor _x, _type] call _rgbOf;
                 _c set [3, (_c select 3) * _a];
                 (markerSize _x) params [["_sw", 1], ["_sh", 1]];
+                // Point simple (mil_dot, hd_dot) : le point ne remplit qu'un quart de son image, noir par défaut ; dessiné
+                // ainsi il faisait 7 px sombres sur la carte, invisible. Agrandi, et éclairci s'il est trop sombre.
+                if ((count _type) > 3 && {((toLower _type) select [(count _type) - 3]) isEqualTo "dot"}) then {
+                    _sw = _sw * 2; _sh = _sh * 2;
+                    if (((_c select 0) + (_c select 1) + (_c select 2)) < 0.45) then { _c = [0.96, 0.84, 0.25, _c select 3]; };
+                };
                 _list pushBack [0, _x, _ic select 0, _c, (_ic select 1) * (abs _sw), (_ic select 1) * (abs _sh), markerDir _x, [0, 1] select ((_ic select 2) > 0)];
             };
             case "POLYLINE": {
