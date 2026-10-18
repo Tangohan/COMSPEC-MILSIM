@@ -54,7 +54,7 @@ EN : Relays and Bluetooth redone, Garmin app, realistic blood and health, blurre
 - Cleaner phone: lock screen, back key everywhere, mini screen movable with the mouse, adjustable alerts, photo and selfie in mini; your allies' faces are blurred in your photos (4 styles), Tinder and SSE profiles show on a black background, Zeus can capture the whole map and your role's kits are offered in the Athena wardrobes. Refused MP3 files now play and the Eden COMSPEC SSE menu is fixed.
 
 ### Détail technique
-Regroupe #840, #841, #844, #845, #847, #848, #849, #850, #851 et #854 (une seule version : ATAK natif 1.97.0, COMSPEC Link 2.0.87 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.18 b191c86 » posée par tools/stamp_build.py puis remise à vide ; towers.pbo de #850 repris tel quel, seule à changer ses sources ; comspec_overwatch_connect.pbo de #851 repatché avec les sources connect de #854 par tools/pbo_patch.py).
+Regroupe #840, #841, #844, #845, #847, #848, #849, #850, #851 et #854 (une seule version : ATAK natif 1.97.0, COMSPEC Link 2.0.87 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.18 59e32bf » posée par tools/stamp_build.py puis remise à vide ; towers.pbo de #850 repris tel quel, seule à changer ses sources ; comspec_overwatch_connect.pbo de #851 repatché avec les sources connect de #854 par tools/pbo_patch.py).
 
 #### Marqueurs au clic droit (VALIDER, à la suite, canal Général), fiche d'étiquette, alertes effaçables (#840)
 
