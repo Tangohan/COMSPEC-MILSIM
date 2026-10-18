@@ -44,6 +44,10 @@
           et pastille d'icône à la couleur de gravité, titre en gras, heure / compteur à droite, texte en dessous ;
           clic sur la carte = code ouvrir ({} : rien), croix à droite = code fermer ({} : pas de croix)
       ["empty", icône, titre, sous-titre]   état vide centré : grande icône pâle, titre et explication
+      ["status", image, couleur RGBA, titre, texte, action]   carte d'état (app Athena) : liseré et titre à la couleur de
+          l'état, image carrée à gauche, explication dessous, action à faire en ambre (facultative) ; hauteur au contenu
+      ["check", niveau, libellé, valeur, aide]   étape d'une chaîne (liaison) : pastille d'icône (niveau "ok" | "now" |
+          "warn" | "ko" | "todo" | "off"), libellé à gauche, valeur à droite, aide en petit dessous ; hauteur au contenu
     L'aide (facultative) s'affiche en infobulle. Hauteur occupée par le contenu : uiNamespace COMSPEC_ATAK_FormH ;
     fond du formulaire : (contrôle renvoyé) getVariable "bg".
     Les champs sont lisibles ensuite par [clé] call comspec_atak_native_fnc_formValue.
@@ -83,6 +87,12 @@ private _mk = {
     if (_text isNotEqualTo "") then { _c ctrlSetText ((_text) call comspec_atak_native_fnc_tr); };
     _c ctrlCommit 0;
     _c
+};
+// Libellé de bouton plus large que le bouton (anglais, police TRÈS GRAND) : la police rétrécit au lieu de couper le texte.
+private _fit = {
+    params ["_b", "_bw", "_fh"];
+    private _tw = ctrlTextWidth _b;
+    if (_tw > _bw * 0.9) then { _b ctrlSetFontHeight ((_fh * _bw * 0.9 / _tw) max COMSPEC_ATAK_FontMin); };
 };
 private _lineIdx = 0; // lignes "line" : fond alterné
 {
@@ -412,6 +422,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 private _b = ["COMSPEC_RscButton", [_pad + _forEachIndex * _sw, _y, _sw - _pad / 6, _rowH * 0.9], _text] call _mk;
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlSetFontHeight (_fs * 0.9);
+                [_b, _sw - _pad / 6, _fs * 0.9] call _fit;
                 // Option non choisie mais disponible : fond clair-sombre et texte blanc (ne doit pas sembler désactivée).
                 if (_active) then { _b ctrlSetBackgroundColor _acc; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; } else { _b ctrlSetBackgroundColor [0.12, 0.145, 0.13, 1]; _b ctrlSetTextColor [0.92, 0.96, 0.93, 1]; };
                 [_b, _code] call _click;
@@ -619,6 +630,75 @@ private _lineIdx = 0; // lignes "line" : fond alterné
             _t ctrlCommit 0;
             _y = _y + _h + _pad * 2;
         };
+        case "status": {
+            // Carte d'état : la situation en toutes lettres, sans code ni jargon (app Athena).
+            _row params ["", "_pic", ["_col", [0.36, 0.78, 0.42, 1]], ["_title", ""], ["_txt", ""], ["_act", ""]];
+            private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+            private _ih = _font * 2.6;
+            private _iw = _ih * _ratio;
+            private _ip = _pad * 0.9;
+            private _card = ["COMSPEC_RscText", [_pad, _y, _w, _ih + _ip * 2]] call _mk;
+            _card ctrlSetBackgroundColor [0.085, 0.105, 0.095, 1];
+            private _bar = ["COMSPEC_RscText", [_pad, _y, pixelW * 6, _ih + _ip * 2]] call _mk;
+            _bar ctrlSetBackgroundColor _col;
+            // Photo Athena téléchargée : logo dessous, comme la ligne "hero", si le fichier ne se charge pas.
+            if (_pic isNotEqualTo "" && {(_pic select [0, 1]) isNotEqualTo "\"}) then {
+                ["COMSPEC_RscPicture", [_pad + _ip, _y + _ip, _iw, _ih], "\z\comspec_atak_native\addons\main\data\logo_atak.paa"] call _mk;
+            };
+            if (_pic isNotEqualTo "") then { (["COMSPEC_RscPicture", [_pad + _ip, _y + _ip, _iw, _ih], _pic] call _mk) ctrlSetTextColor [1, 1, 1, 1]; };
+            private _hex = (_col select [0, 3]) apply { private _v = round ((_x max 0 min 1) * 255); (["0123456789abcdef" select [floor (_v / 16), 1], "0123456789abcdef" select [_v mod 16, 1]]) joinString "" };
+            private _tx = _pad + _ip * 2 + _iw;
+            private _tw = _w - _iw - _ip * 3;
+            private _t = ["COMSPEC_RscStructuredText", [_tx, _y + _ip, _tw, _ih]] call _mk;
+            _t ctrlSetStructuredText parseText ((format ["<t size='1.12' font='COMSPEC_BarlowBold' color='#%1'>%2</t>%3%4", _hex joinString "", _title,
+                ["", format ["<br/><t size='0.88' color='#d6e0db'>%1</t>", _txt]] select (_txt isNotEqualTo ""),
+                ["", format ["<br/><t size='0.88' color='#e8b84a'>%1</t>", _act]] select (_act isNotEqualTo "")]) call comspec_atak_native_fnc_tr);
+            private _th = ctrlTextHeight _t;
+            private _h = (_th max _ih) + _ip * 2;
+            _t ctrlSetPosition [_tx, _y + _ip + (((_ih - _th) / 2) max 0), _tw, _th];
+            _t ctrlCommit 0;
+            { _x ctrlSetPositionH _h; _x ctrlCommit 0; } forEach [_card, _bar];
+            _y = _y + _h + _pad / 2;
+        };
+        case "check": {
+            // Étape de la liaison : pastille (fait, en cours, à revoir, bloquant, pas encore, sans objet), libellé, valeur.
+            _row params ["", ["_lvl", "todo"], ["_label", ""], ["_value", ""], ["_help", ""]];
+            private _ratio = uiNamespace getVariable ["COMSPEC_ATAK_Ratio", pixelH / pixelW];
+            ([
+                ["ok", "ui_check", [0.36, 0.78, 0.42, 1], "#8fe39b"],
+                ["now", "ui_repeat", [0.95, 0.67, 0.2, 1], "#f2c66b"],
+                ["warn", "ui_dot", [0.95, 0.67, 0.2, 1], "#f2c66b"],
+                ["ko", "ui_close", [0.9, 0.28, 0.23, 1], "#ff8a7a"],
+                ["off", "ui_minus", [0.45, 0.52, 0.49, 1], "#a9b8b1"]
+            ] select { (_x select 0) isEqualTo _lvl }) params [["_def", ["todo", "ui_dot", [0.45, 0.52, 0.49, 1], "#c9d4ce"]]];
+            _def params ["", "_icon", "_icol", "_vhex"];
+            private _is = _fs * 1.15;
+            private _isw = _is * _ratio;
+            private _lx = _pad * 1.6 + _isw;
+            private _lw = _w * 0.42;
+            private _vx = _lx + _lw;
+            private _vw = _pad + _w - _vx - _pad * 0.5;
+            private _a = ["COMSPEC_RscStructuredText", [_lx, _y, _lw, _fs * 1.3]] call _mk;
+            _a ctrlSetStructuredText parseText ((format ["<t size='0.9' color='#eef4f0'>%1</t>", _label]) call comspec_atak_native_fnc_tr);
+            private _b = ["COMSPEC_RscStructuredText", [_vx, _y, _vw, _fs * 1.3]] call _mk;
+            _b ctrlSetStructuredText parseText ((format ["<t size='0.9' align='right' color='%1'>%2</t>", _vhex, _value]) call comspec_atak_native_fnc_tr);
+            private _rh = ((ctrlTextHeight _a) max (ctrlTextHeight _b)) max (_fs * 1.3);
+            { _x ctrlSetPositionH _rh; _x ctrlCommit 0; } forEach [_a, _b];
+            private _p = ["COMSPEC_RscPicture", [_pad * 0.9, _y + (((_fs * 1.3) - _is) / 2), _isw, _is], format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon]] call _mk;
+            _p ctrlSetTextColor _icol;
+            _y = _y + _rh;
+            if (_help isNotEqualTo "") then {
+                private _hc = ["COMSPEC_RscStructuredText", [_lx, _y, _w - _lx + _pad * 0.5, _fs]] call _mk;
+                _hc ctrlSetStructuredText parseText ((format ["<t size='0.78' color='#b4c1bb'>%1</t>", _help]) call comspec_atak_native_fnc_tr);
+                private _hh = ctrlTextHeight _hc;
+                _hc ctrlSetPositionH _hh; _hc ctrlCommit 0;
+                _y = _y + _hh;
+            };
+            // Filet entre les étapes.
+            private _ln = ["COMSPEC_RscText", [_lx, _y + pixelH * 2, _w - _lx + _pad * 0.5, pixelH]] call _mk;
+            _ln ctrlSetBackgroundColor [1, 1, 1, 0.07];
+            _y = _y + pixelH * 6;
+        };
         case "gap": { _y = _y + _pad; };
         case "person": {
             _row params ["", "_pic", "_text", ["_btns", []], ["_picColor", [1, 1, 1, 1]]];
@@ -727,6 +807,7 @@ private _lineIdx = 0; // lignes "line" : fond alterné
                 private _b = [["COMSPEC_RscButton", "COMSPEC_RscButtonPrimary"] select _primary, [_pad + _forEachIndex * (_bw + _pad / 2), _y, _bw, _rowH], _label] call _mk;
                 if (_tip isNotEqualTo "") then { _b ctrlSetTooltip ((_tip) call comspec_atak_native_fnc_tr); };
                 _b ctrlSetFontHeight _fs;
+                [_b, _bw, _fs] call _fit;
                 _b ctrlEnable _enabled;
                 [_b, _code] call _click;
             } forEach _btns;
