@@ -1398,6 +1398,32 @@ class UserRepository
     }
 
     /**
+     * Retire ce Steam ID des autres comptes de la communauté : un Steam ne doit mener qu'à un seul compte,
+     * sinon la connexion Steam automatique du jeu ouvre l'un ou l'autre au hasard (LIMIT 1 ci-dessus).
+     *
+     * @return list<int> comptes dont le Steam a été retiré
+     */
+    public function detachSteamFromOtherUsers(int $tenantId, string $steamId, int $keepUserId): array
+    {
+        $sid = \App\Support\SteamId::normalize($steamId);
+        if ($sid === null || $tenantId < 1) {
+            return [];
+        }
+        $stmt = $this->pdo()->prepare('SELECT id FROM users WHERE tenant_id = ? AND steam_id = ? AND id <> ?');
+        $stmt->execute([$tenantId, $sid, $keepUserId]);
+        $ids = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
+        if ($ids === []) {
+            return [];
+        }
+        $clear = $this->pdo()->prepare('UPDATE users SET steam_id = NULL WHERE tenant_id = ? AND id = ? AND steam_id = ?');
+        foreach ($ids as $id) {
+            $clear->execute([$tenantId, $id, $sid]);
+        }
+
+        return $ids;
+    }
+
+    /**
      * Compte Athena lié à un Steam ID (tous tenants). Utile pour la liaison Arma sans code court.
      *
      * @return array<string, mixed>|null
