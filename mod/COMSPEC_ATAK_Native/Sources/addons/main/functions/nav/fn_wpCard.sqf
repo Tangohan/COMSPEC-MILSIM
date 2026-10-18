@@ -1,7 +1,7 @@
 /*
     Fiche des points de passage, au-dessus de la carte en mode POINTS DE PASSAGE (fn_pageMap) :
     - nouvelle étape : aperçu, nom (vide : nom automatique CP 3, RP 1…), type, partage (moi seul, groupe, camp),
-      « à la suite », VALIDER au point choisi d'un clic droit ; un clic gauche pose tout de suite ;
+      « plusieurs étapes », VALIDER au point choisi d'un clic droit ; un clic gauche pose tout de suite ;
     - étape existante (clic sur l'étape, ou MODIFIER L'ÉTAPE du clic droit) : nom, type, DÉPLACER ICI (clic droit pour
       le nouveau point), avant / après dans l'ordre, NAVIGUER, SUPPRIMER, NOUVELLE ÉTAPE.
     Params : [[x, y, w, h] zone disponible] -> bas de la fiche
@@ -159,7 +159,7 @@ private _th = _rh * 1.6;
 } forEach _types;
 _y = _y + _th + _pad / 2;
 
-// 4. Partage (Groupe par défaut : l'itinéraire suit en direct chez les équipiers) et pose à la suite.
+// 4. Partage (Groupe par défaut : l'itinéraire suit en direct chez les équipiers) et pose de plusieurs étapes.
 ["PARTAGE", _y] call _lab;
 private _sw = (_fw * 0.66) / 3;
 {
@@ -183,7 +183,7 @@ if (_edit) then {
     _nb ctrlAddEventHandler ["ButtonClick", { ["new"] call comspec_atak_native_fnc_wpAction; }];
 } else {
     private _series = profileNamespace getVariable ["COMSPEC_ATAK_WpSeries", true];
-    private _sb = ["COMSPEC_RscButton", [_ox, _y, _ow, _rh], ["☐  À la suite", "☑  À la suite"] select _series] call _mk;
+    private _sb = ["COMSPEC_RscButton", [_ox, _y, _ow, _rh], ["☐  Plusieurs étapes", "☑  Plusieurs étapes"] select _series] call _mk;
     _sb ctrlSetFontHeight ((_fs * 0.78) max COMSPEC_ATAK_FontMin);
     if (_series) then { _sb ctrlSetTextColor _green; };
     _sb ctrlSetTooltip (("Après VALIDER, la fiche reste ouverte pour l'étape suivante") call comspec_atak_native_fnc_tr);
