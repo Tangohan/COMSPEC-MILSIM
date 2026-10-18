@@ -633,6 +633,16 @@ a.eq-hub__link-btn {
   color: var(--eq-muted);
   font-variant-numeric: tabular-nums;
 }
+.eq-hub__item-group li > span {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.eq-hub__item-group li .eq-hub__item-seen {
+  align-self: center;
+  color: var(--eq-muted);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
 .eq-hub__qv-empty {
   color: var(--eq-muted);
   font-size: 0.88rem;
@@ -821,4 +831,80 @@ a.eq-rolekits__card:hover {
 .eq-rolekits__mods {
   font-size: 12px;
   color: var(--eq-muted, #6b7280);
+}
+
+/* ── Mon kit en jeu (dernier loadout remonté par le mod) ───────────── */
+
+.eq-mykit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 20px;
+}
+
+.eq-mykit__card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--eq-line, rgba(127, 127, 127, 0.25));
+  border-left: 3px solid var(--eq-accent, #2a9d6f);
+  background: var(--eq-card, transparent);
+  border-radius: 10px;
+}
+
+.eq-mykit__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.eq-mykit__lead {
+  flex: 1 1 280px;
+  margin: 0;
+  color: var(--eq-muted, #6b7280);
+  font-size: 13px;
+}
+
+.eq-mykit__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.eq-mykit__actions form {
+  margin: 0;
+}
+
+.eq-mykit__sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px 18px;
+}
+
+.eq-mykit__sec h3 {
+  margin: 0 0 4px;
+  color: var(--eq-accent, #2a9d6f);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.eq-mykit__sec ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  color: var(--eq-ink, inherit);
+}
+
+.eq-mykit__sec em {
+  color: var(--eq-muted, #6b7280);
+  font-style: normal;
 }
