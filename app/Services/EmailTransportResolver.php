@@ -14,9 +14,12 @@ final class EmailTransportResolver
     /** @var array<string, mixed> */
     private array $config;
 
-    public function __construct()
+    /**
+     * @param array<string, mixed>|null $config autre configuration que celle du .env (compte d'envoi d'une communauté)
+     */
+    public function __construct(?array $config = null)
     {
-        $this->config = \email_config();
+        $this->config = $config ?? \email_config();
     }
 
     /**
@@ -77,12 +80,20 @@ final class EmailTransportResolver
             $this->configureSmtp($mail, $mailerType);
             $mail->send();
 
-            return ['ok' => true, 'transport' => $mailerType, 'provider_id' => null];
+            return ['ok' => true, 'transport' => $this->transportLabel($mailerType), 'provider_id' => null];
         } catch (\Throwable $e) {
             $err = $mail->ErrorInfo !== '' ? $mail->ErrorInfo : $e->getMessage();
 
-            return ['ok' => false, 'transport' => $mailerType, 'error' => $err];
+            return ['ok' => false, 'transport' => $this->transportLabel($mailerType), 'error' => $err];
         }
+    }
+
+    /** « community:brevo » pour un compte de communauté : il ne compte pas dans le quota de la plateforme. */
+    private function transportLabel(string $mailerType): string
+    {
+        $label = (string) ($this->config['transport_label'] ?? '');
+
+        return $label !== '' ? $label : $mailerType;
     }
 
     /**

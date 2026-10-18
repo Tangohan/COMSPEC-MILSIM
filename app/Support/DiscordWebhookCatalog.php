@@ -24,6 +24,8 @@ final class DiscordWebhookCatalog
     public const KEY_ATAK_TACTICAL_ALERTS = 'atak_tactical_alerts';
     /** Notes de l'app Reco du téléphone (type, observation, carroyage, auteur). */
     public const KEY_ATAK_RECON_NOTES = 'atak_recon_notes';
+    /** Check de démarrage du mod de chaque joueur de la communauté (étapes, versions, carte). */
+    public const KEY_ATAK_STARTUP_CHECK = 'atak_startup_check';
 
     public const MODE_OFF = 'off';
     public const MODE_DEFAULT = 'default';
@@ -75,6 +77,13 @@ final class DiscordWebhookCatalog
                 'group' => 'Téléphone ATAK',
                 'label' => 'Notes de reco',
                 'hint' => 'Chaque note envoyée depuis l’app Reco du téléphone : type (véhicule, groupe armé…), observation, fiabilité, carroyage et auteur. Mentions et liens retirés.',
+                'default_mode' => self::MODE_OFF,
+            ],
+            [
+                'key' => self::KEY_ATAK_STARTUP_CHECK,
+                'group' => 'Téléphone ATAK',
+                'label' => 'Check de démarrage du mod',
+                'hint' => 'Quand un joueur de la communauté lie son téléphone en jeu : étapes vérifiées (mod, DLL, compte, téléphone, terminal…), versions et carte, en français et en anglais. Utile pour aider un joueur bloqué. Liens, adresses IP et dossiers Windows retirés.',
                 'default_mode' => self::MODE_OFF,
             ],
             [
