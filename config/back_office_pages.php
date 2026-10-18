@@ -59,6 +59,18 @@ return [
         ['path' => 'back-office/configuration', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Configuration', 'subtitle' => 'Tous les réglages de votre communauté au même endroit : identité, structure, accès, recrutement, contenu et modération.', 'css' => ['back-office-configuration.css']],
         ['path' => 'back-office/integrations', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Intégrations externes', 'subtitle' => 'Reliez Discord et les autres services : choix des salons, envoi des photos et des transmissions, clés d’accès.'],
         ['path' => 'back-office/dashboard-pins', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ', 'title' => 'Raccourcis du portail', 'subtitle' => 'Les liens épinglés sur le tableau de bord des membres.'],
+        ['path' => 'back-office/equipement-joueurs', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ÉQUIPEMENT', 'title' => 'Équipement des joueurs', 'subtitle' => 'Ce que les joueurs portent réellement en jeu, remonté par le mod : armes, gilets, casques, optiques, radios et mods chargés.', 'css' => ['back-office-game-equipment.css'], 'quick' => [
+            ['label' => 'Kits par rôle', 'href' => 'back-office/kits-roles'],
+            ['label' => 'Tenues de la communauté', 'href' => 'equipment'],
+        ]],
+        ['path' => 'back-office/kits-roles/nouveau', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ÉQUIPEMENT', 'title' => 'Nouveau kit', 'subtitle' => 'Composez le kit à partir de l’équipement vu en jeu. Il sera proposé dans l’arsenal à toute la communauté.', 'css' => ['back-office-game-equipment.css'], 'quick' => [
+            ['label' => 'Kits par rôle', 'href' => 'back-office/kits-roles'],
+            ['label' => 'Équipement des joueurs', 'href' => 'back-office/equipement-joueurs'],
+        ]],
+        ['path' => 'back-office/kits-roles', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · ÉQUIPEMENT', 'title' => 'Kits par rôle', 'subtitle' => 'Des kits prêts à porter pour chaque fonction, publiés dans la collection « Kits par rôle » de l’arsenal en jeu.', 'css' => ['back-office-game-equipment.css'], 'quick' => [
+            ['label' => 'Nouveau kit', 'href' => 'back-office/kits-roles/nouveau'],
+            ['label' => 'Équipement des joueurs', 'href' => 'back-office/equipement-joueurs'],
+        ]],
         ['path' => 'back-office/dashboard-tenues/create', 'group' => 'Communauté', 'kicker' => 'COMMUNAUTÉ · TABLEAU DE BORD', 'title' => 'Mettre une tenue en avant', 'css' => ['dashboard-impact.css'], 'quick' => [
             ['label' => 'Vitrine', 'href' => 'back-office/dashboard-tenues'],
             ['label' => 'Tableau de bord', 'href' => 'dashboard'],
