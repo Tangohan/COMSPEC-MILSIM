@@ -4454,9 +4454,8 @@
 ["ESSAYER LA POIGNÉE", "", "TRY THE HANDLE"],
 ["Est", "", "East"],
 ["estimation d'entraînement, à valider par le chef d'équipe", "", "training estimate, to be validated by the team leader"],
-["et se termine après 90 s d'arrêt.", "", "and ends after 90 s without moving."],
-
 ["et saisissez le code.", "", "and enter the code."],
+["et se termine après 90 s d'arrêt.", "", "and ends after 90 s without moving."],
 ["ex. 1 BMP, 2 PKM", "", "e.g. 1 BMP, 2 PKM"],
 ["ex. 2 x 81 mm, FPV", "", "e.g. 2 x 81 mm, FPV"],
 ["ex. 6 hommes, 2 pick-up", "", "e.g. 6 men, 2 pickups"],
