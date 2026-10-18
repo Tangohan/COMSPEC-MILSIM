@@ -276,6 +276,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     ["publish"] call comspec_atak_native_fnc_compromise;
 }, 5] call CBA_fnc_addPerFrameHandler;
 
+// Session Athena perdue en cours de partie : un nouveau code est proposé tout de suite (fn_athenaLink « watch »).
+[{ ["watch"] call comspec_atak_native_fnc_athenaLink; }, 10] call CBA_fnc_addPerFrameHandler;
+
 // Tous les marqueurs de la carte vers le web (relais unique par camp).
 [{ [] call comspec_atak_native_fnc_markerWebSweep; }, 15] call CBA_fnc_addPerFrameHandler;
 
