@@ -12,6 +12,7 @@ use App\Core\Response;
 use App\Core\Session;
 use App\Repositories\MusicLibraryRepository;
 use App\Services\Auth\AuthService;
+use App\Support\MusicTitleSimilarity;
 use App\Support\MusicTrackStorage;
 
 /**
@@ -106,6 +107,11 @@ final class MusicAdminController
             'total' => $tracks['total'],
             'stats' => $this->music->adminStats($scopeTenant),
             'uploaders' => $this->music->adminTopUploaders($scopeTenant),
+            'uploaderDefaultAlias' => (static function (array $u): string {
+                $callsign = trim((string) ($u['callsign'] ?? ''));
+
+                return $callsign !== '' ? $callsign : trim((string) ($u['display_name'] ?? ''));
+            })((array) ($this->authService->user() ?? [])),
             'tenants' => $platform ? $this->music->adminTenantBreakdown() : [],
             'playlists' => $this->music->adminPlaylists($scopeTenant),
             'globalPlaylist' => $global,
@@ -281,10 +287,20 @@ final class MusicAdminController
         $global = $toGlobal ? $this->music->globalPlaylist() : null;
         $durations = array_map('floatval', explode(',', (string) $request->input('durations', '')));
         $titleIn = trim((string) $request->input('title', ''));
+        $alias = mb_substr(trim((string) $request->input('uploader_alias', '')), 0, 80);
+        $forceDuplicates = (string) $request->input('confirm_duplicates', '') === '1';
         $done = 0;
         $errors = [];
         foreach ($files as $i => $file) {
             $label = trim((string) ($file['name'] ?? 'fichier')) . ' : ';
+            $candidate = count($files) === 1 && $titleIn !== '' ? $titleIn : MusicTitleSimilarity::titleFromFilename((string) ($file['name'] ?? ''));
+            if (!$forceDuplicates) {
+                $similar = $this->music->findSimilarTitles($candidate, $platform ? null : $tenantId, 3);
+                if ($similar !== []) {
+                    $errors[] = $label . 'titre proche de « ' . $similar[0]['title'] . ' » déjà en ligne. Confirmez l’envoi pour le mettre quand même.';
+                    continue;
+                }
+            }
             if (!$platform && $this->music->userUsageBytes($userId) >= MusicTrackStorage::USER_QUOTA_BYTES) {
                 $errors[] = $label . 'quota atteint (300 Mo).';
                 continue;
@@ -300,10 +316,11 @@ final class MusicAdminController
                 continue;
             }
             $title = count($files) === 1 && $titleIn !== '' ? $titleIn
-                : trim((string) preg_replace('/[_]+/', ' ', pathinfo((string) $stored['original_name'], PATHINFO_FILENAME)));
+                : MusicTitleSimilarity::titleFromFilename((string) $stored['original_name']);
             $id = $this->music->createTrack([
                 'tenant_id' => $tenantId,
                 'uploader_user_id' => $userId,
+                'uploader_alias' => $alias,
                 'scope' => $scope,
                 'title' => $title !== '' ? $title : 'Morceau sans titre',
                 'artist' => $request->input('artist', ''),
@@ -326,6 +343,43 @@ final class MusicAdminController
         $where = $toGlobal ? ' dans la playlist globale' : ($scope === 'community' ? ' dans la bibliothèque communautaire' : ' dans la bibliothèque de l\'organisation');
 
         return $finish($done, $errors, $done . ' morceau(x) en ligne' . $where . ($playlist !== null ? ' et dans « ' . $playlist['name'] . ' »' : '') . '.');
+    }
+
+    public function platformDuplicates(Request $request, array $params = []): Response
+    {
+        return $this->duplicates($request, true);
+    }
+
+    public function tenantDuplicates(Request $request, array $params = []): Response
+    {
+        return $this->duplicates($request, false);
+    }
+
+    /**
+     * Pré-contrôle avant envoi : pour chaque titre proposé, les morceaux déjà en ligne qui lui ressemblent.
+     * Réponse : {"matches": {"<titre>": [{title, artist, uploader_name, tenant_name, score}]}}.
+     */
+    private function duplicates(Request $request, bool $platform): Response
+    {
+        $ctx = $this->ctx();
+        if ($ctx instanceof Response) {
+            return Response::json(['ok' => false, 'matches' => []], 401);
+        }
+        [$tenantId] = $ctx;
+        if (!Csrf::validate((string) $request->input('_csrf_token', ''))) {
+            return Response::json(['ok' => false, 'error' => 'Session expirée. Rechargez la page.', 'matches' => []], 419);
+        }
+        $titles = $request->input('titles', []);
+        $titles = is_array($titles) ? array_slice(array_values(array_filter(array_map(static fn ($t): string => mb_substr(trim((string) $t), 0, 160), $titles))), 0, 50) : [];
+        $matches = [];
+        foreach ($titles as $title) {
+            $found = $this->music->findSimilarTitles($title, $platform ? null : $tenantId, 3);
+            if ($found !== []) {
+                $matches[$title] = $found;
+            }
+        }
+
+        return Response::json(['ok' => true, 'matches' => (object) $matches]);
     }
 
     /**

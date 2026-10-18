@@ -341,7 +341,7 @@ if (_interactive) then {
             // [libellé, espace (P profil, M mission, C réglage CBA du joueur), variable, défaut, clé communauté (verrou Athena) ou ""]
             private _layers = [
                 ["Alliés", "P", "COMSPEC_ATAK_LayerFriends", true, ""],
-                ["Cartouches", "P", "COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"],
+                ["Coordonnées repères", "P", "COMSPEC_ATAK_MarkerTags", true, "native_marker_tags"],
                 ["Noms des repères", "C", "comspec_atak_native_map_show_marker_text", true, ""],
                 ["Villes", "C", "comspec_atak_native_map_show_cities", true, ""],
                 ["Villages", "C", "comspec_atak_native_map_show_villages", true, ""],

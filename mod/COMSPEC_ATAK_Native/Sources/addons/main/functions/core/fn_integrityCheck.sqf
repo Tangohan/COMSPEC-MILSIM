@@ -18,9 +18,12 @@
 */
 params [["_mode", "start"], ["_simulate", ""]];
 
-// -1, 0, 1 : "1.9.0" < "1.10.0".
+// -1, 0, 1 : "1.9.0" < "1.10.0". Seuls MAJEUR.MINEUR.CORRECTIF comptent : une empreinte de build après un espace
+// (« 1.94.0 - 2026.10.14 a1b2c3d ») est ignorée (docs/VERSIONING.md).
 private _cmp = {
     params ["_a", "_b"];
+    _a = (_a splitString " ") param [0, ""];
+    _b = (_b splitString " ") param [0, ""];
     private _va = (_a splitString ".") apply { parseNumber _x };
     private _vb = (_b splitString ".") apply { parseNumber _x };
     private _r = 0;

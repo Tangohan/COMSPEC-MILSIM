@@ -236,6 +236,7 @@ final class MusicLibraryController
         $id = $this->music->createTrack([
             'tenant_id' => $tenantId,
             'uploader_user_id' => $userId,
+            'uploader_alias' => mb_substr(trim((string) $request->input('uploader_alias', '')), 0, 80),
             'scope' => $scope,
             'title' => $title !== '' ? $title : 'Morceau sans titre',
             'artist' => $request->input('artist', ''),
@@ -281,6 +282,7 @@ final class MusicLibraryController
             'artist' => $request->input('artist', ''),
             'genre' => $request->input('genre', ''),
             'scope' => (string) $request->input('scope', (string) $track['scope']),
+            'uploader_alias' => mb_substr(trim((string) $request->input('uploader_alias', (string) ($track['uploader_alias'] ?? ''))), 0, 80),
         ]);
         Session::flash('success', 'Morceau mis à jour.');
 

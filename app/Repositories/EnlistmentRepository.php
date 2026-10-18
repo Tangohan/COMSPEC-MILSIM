@@ -530,34 +530,16 @@ class EnlistmentRepository
 
     /**
      * Dernières candidatures (tous statuts), pour tableau de bord org.
-     * Colonnes larges (dossier, canal, affectation, portail) pour alimenter un tableau dense.
+     * Toutes les colonnes : le tableau staff s'appuie sur les mêmes champs que le bureau recrutement
+     * (étape de pipeline, date d'entretien, date de décision, rattachement, portail).
      *
      * @return list<array<string, mixed>>
      */
     public function recentForTenantDashboard(int $tenantId, int $limit = 12): array
     {
         $limit = max(1, min(50, $limit));
-        $cols = [
-            'id', 'first_name', 'last_name', 'email', 'callsign', 'country', 'experience',
-            'specialty', 'platform', 'availability', 'status', 'reviewed_by', 'reviewed_at',
-            'reviewer_comment', 'submitter_user_id', 'created_at', 'updated_at',
-        ];
-        if ($this->hasAccountColumns()) {
-            $cols[] = 'submitted_via';
-            $cols[] = 'consent_sharing_at';
-        }
-        if ($this->hasRecruitmentOpeningIdColumn()) {
-            $cols[] = 'recruitment_opening_id';
-        }
-        if ($this->hasPortalStatusDisplayColumns()) {
-            $cols[] = 'candidate_portal_status_mode';
-            $cols[] = 'candidate_portal_status_manual_text';
-            $cols[] = 'candidate_portal_status_manual_band';
-        }
-        $select = implode(', ', $cols);
         $stmt = $this->pdo->prepare(
-            "SELECT {$select}
-             FROM enlistments WHERE tenant_id = ?
+            "SELECT * FROM enlistments WHERE tenant_id = ?
              ORDER BY COALESCE(updated_at, created_at) DESC, id DESC
              LIMIT {$limit}"
         );

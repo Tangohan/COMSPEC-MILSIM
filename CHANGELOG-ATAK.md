@@ -61,6 +61,85 @@ EN : New Distances app: your steps, kilometres and pilot hours
 
 ---
 
+## Regroupement : drone comme Vidéo Live, téléphone en main pour les photos, carte plus lisible, antenne, numéro de build (ATAK natif 1.95.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : App Drone refaite, téléphone en main pour les photos, carte plus lisible
+- L'image du drone s'affiche comme celle des caméras fixes de Vidéo Live ; l'app Drone montre la liste des drones à gauche (choisir pour piloter, ou appairer un drone tout proche), l'image et les commandes à droite, avec la rangée JOUR / VISION NOCTURNE / THERMIQUE.
+- En mode photo, ton personnage tient son téléphone devant lui et la photo part de l'objectif au dos ; en selfie, l'objectif se place face à ton visage même tête baissée. Si la formule de ta communauté n'inclut pas la carte Athena, une fenêtre explique une fois pourquoi ta photo n'est pas partie.
+- Sur la petite carte du téléphone, les noms des repères sont plus grands et les symboles de la mission sont à l'échelle de l'écran ; le calque « Cartouches » s'appelle maintenant « Coordonnées repères ».
+- L'antenne d'extension part du port de la coque au lieu de flotter au-dessus, le texte des boutons verts n'a plus de contour noir, et Réglages, Crédits et Statut affichent la version avec la date du build.
+EN : Drone app redone, phone in hand for photos, clearer map
+- The drone picture is shown like the fixed cameras in Live Video; the Drone app lists drones on the left (pick one to fly it, or pair a drone close by), with the picture and controls on the right and the DAY / NIGHT VISION / THERMAL row.
+- In photo mode, your character holds the phone in front of them and the photo is taken from the rear lens; in selfie mode, the lens moves in front of your face even with your head down. If your community's plan does not include the Athena map, a window explains once why your photo was not sent.
+- On the phone's small map, marker names are larger and mission symbols scale with the screen; the "Labels" layer is now called "Marker coords".
+- The extension antenna starts from the case port instead of floating above it, green button labels no longer have a black outline, and Settings, Credits and Status show the version with the build date.
+
+### Détail technique
+Regroupe #820, #822, #825, #826, #827, #829, #830 et #831 (une seule version : ATAK natif 1.95.0, COMSPEC Link inchangé 2.0.85 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.14 2544731 » posée par tools/stamp_build.py puis remise à vide ; sans texHeaders.bin, que HEMTT ne produit pas et dont l’ancienne copie ne décrit plus les textures d’antenne régénérées).
+
+#### Numéro de build complet dans le téléphone (#822)
+
+- Règle de numérotation commune : `docs/VERSIONING.md` (MAJEUR.MINEUR.CORRECTIF, MINEUR +1 par sortie ou regroupement, CORRECTIF +1 pour un correctif seul d'une version déjà sortie, empreinte de build jamais comparée).
+- `build_info.hpp` (`BUILD_STAMP`, vide dans le dépôt) inclus par `script_component.hpp` ; posé par `build_mod.bat` (git + PowerShell) ou `tools/stamp_build.py`, puis remis à vide.
+- `COMSPEC_ATAK_NativeBuild` = « VERSION_STR - empreinte » (« - dev » sans empreinte) : Réglages, Crédits, Statut, app Debug (Vue d'ensemble, DLL), page texte STATUT, dump debug, check de démarrage Discord, RPT (BOOT) et journal de session COMSPEC (module VERSION, au postInit client).
+- `COMSPEC_ATAK_NativeVersion` et `mod_version` envoyés au site restent `MAJEUR.MINEUR.CORRECTIF` ; `fn_integrityCheck` ignore tout ce qui suit un espace dans les versions comparées.
+- Test : `AtakReleaseInfoTest::testBuildStampIsNeverCommitted`.
+
+#### Photo refusée faute de carte Athena : une fenêtre claire au joueur (#820)
+
+- XEH_postInitClient (retour des photos) : quand le dernier refus porte `feature_unavailable` (connect, 1.93.0), `BIS_fnc_guiMessage` sur l'écran de jeu (attend la fermeture du menu Échap), une fois par session (`COMSPEC_ATAK_PlanModalShown`), à la place de la notification « Photo refusée par Athena ». Textes FR, traduits dans i18n/en.txt.
+- À tester en jeu : communauté sans la carte, prendre deux photos. La fenêtre s'ouvre une seule fois, lisible en FR et en EN (Réglages > Langue), OK la ferme. Communauté avec la carte : aucune fenêtre, envoi normal.
+
+#### Texte des boutons verts moins gras (#825)
+
+- `COMSPEC_RscButton` (ui/controls.hpp) : `shadow=0`. La classe héritait du `shadow=2` du RscButton du jeu (contour noir du texte), qui doublait l'épaisseur du texte noir sur fond vert. Touche tous les boutons du téléphone (classes dérivées comprises) ; police inchangée (Roboto Condensed Bold, ou la police choisie dans Réglages > Police).
+
+#### Antenne d'extension fixée sur la coque (#826)
+
+- Cause : l'antenne était dessinée avec « garder les proportions » (style 2096) dans un cadre 384 x 1536 qui dépasse
+  de la coque. Au moindre écart entre le rapport de pixels calculé et l'écran, Arma recentrait l'image dans ce cadre
+  très haut et elle remontait d'environ 50 px de texture, alors que la coque (style 48) est étirée sur le sien.
+  L'antenne utilise maintenant COMSPEC_RscPhone (style 48), comme la coque et le câble DL-7 ; idem pour le dos,
+  la batterie externe et l'antenne de « Voir l'arrière ».
+- Le port SMA était placé pour le S7 seul : décalage par modèle (rugged, iphone, sonim, tablet, keys, plate, flip,
+  ribbed) vers le bord haut de chaque coque, mesuré sur les rendus.
+- gen_assets.py : bossage moulé et écrou six pans sous l'embase (`_boss_svg`), absent de l'icône d'inventaire.
+  antenna_*_land/port/back.paa régénérés.
+
+#### Carte du téléphone : noms des repères plus lisibles, symboles de la mission à l'échelle de l'écran (#827)
+
+- `COMSPEC_RscMapAtak` : `showMarkers=0` (la carte Arma dessinait les marqueurs à taille fixe en pixels, 32 px pour l'OTAN) ; `COMSPEC_RscMapJtac` garde `showMarkers=1`.
+- Nouveau `fn_mapGameMarkers` : redessine allMapMarkers (ICON à `taille CfgMarkers x markerSize x 0,62 x écran (0,45..1,2) x réglage symboles`, RECTANGLE / ELLIPSE à la brosse CfgMarkerBrushes avec bordure, POLYLINE en trait fin). Propriétés relues toutes les secondes ou dès que le nombre de marqueurs change, position lue à chaque image.
+- `fn_mapMarkerText` : texte 0,021 -> 0,024, ligne 2 0,86 -> 0,9, plaque 0,84 -> 0,93 d'opacité, texte blanc pur ; décalage du nom calculé sur la taille réellement dessinée (`COMSPEC_ATAK_MkScale`).
+- `fn_mapOnDraw` : plancher du facteur texte écran 0,8 -> 0,95 (noms de lieux, indicatifs, repères).
+- Non testé en jeu. À vérifier : téléphone porté et plein écran (S7 et un autre terminal), zoom loin / moyen / près ; symboles OTAN plus petits et une seule fois (si un grand symbole Arma reste dessiné sous le petit, `showMarkers` n'est pas pris en compte par le jeu) ; zones pleines, bordées et hachurées ; traits tracés à la main ; carte JTAC inchangée.
+
+#### Drone : image rendue comme les caméras fixes de Vidéo Live, liste des drones à gauche (#830)
+
+- Caméra du flux créée comme celle de `fn_camView` (cible au nom fixe, texture carrée rapport 1, contrôle COMSPEC_RscPhone, pas de camCommit à la création) et raccrochée au drone à chaque image ; zoom par camSetPos + camCommit puis raccrochage.
+- App Drone en grand format couché : liste à gauche (flotte : choisir = piloter ; drones à moins de 15 m : choisir = appairer), image et commandes à droite, rangée JOUR / VISION NOCTURNE / THERMIQUE comme Vidéo Live.
+- À tester en jeu : image du drone (plus d'écran noir), zoom, JOUR / NV / THERMIQUE, piloter un drone de la flotte, appairer un drone posé à moins de 15 m.
+
+#### Appareil photo : le téléphone dans la main, selfie face au visage (#831)
+
+- `fn_gestureSelfie` : mode `photo` = même pose que le selfie (bras tendu, téléphone du profil accroché à la main droite) ; mode `rear` = position de l'objectif arrière (dos du téléphone).
+- `fn_photoMode` : objectif arrière placé sur le téléphone tenu en main (caméra scriptée même sans zoom, visée à la souris comme au zoom). Réglage CBA « Animation de l'appareil photo » : défaut `comspec_atak_native_fnc_gestureSelfie` ; l'ancienne valeur `gesturePoint` est reprise comme le nouveau défaut.
+- Selfie (`lens`) : on ne peut pas tourner la tête d'un joueur par script, donc l'objectif suit la tête. Orientation lue sur l'os `head` (`selectionVectorDirAndUp`, repli `eyeDirection`), site borné à -35°/+50°. Tête à moins de 12° du téléphone : objectif sur le téléphone ; au-delà, glisse vers l'axe du visage (complet à 30°). Journal `[PHOTO] Selfie : visage à X° du téléphone…` toutes les 3 s.
+
+À vérifier en jeu :
+- Mode photo (objectif arrière) : le S7 est dans la main droite, bien orienté (écran vers soi), et l'image n'est pas masquée par la main ou le téléphone ; visée et zoom à la souris.
+- Autre joueur : voit le téléphone dans la main pendant la photo, puis le téléphone disparaît à la sortie.
+- Selfie en entrant tête baissée ou tournée : le visage est cadré de face. Relever la ligne `Selfie : visage à …` du journal si ce n'est pas le cas (elle dit si l'orientation vient de l'os de la tête ou du regard).
+- Passage photo ↔ selfie (R) sans que le bras retombe ; sortie (Espace) : bras baissé, arme reprise.
+
+#### Calque « Cartouches » renommé « Coordonnées repères » (#829)
+
+- Le libellé faisait penser à des munitions. Même réglage (`COMSPEC_ATAK_MarkerTags` / `native_marker_tags`) : nom et coordonnées E / N sous les repères, en zoom rapproché. CALQUES de la carte : « Coordonnées repères » ; Réglages > Carte et page Expérience ATAK du site : « Coordonnées des repères ». en.txt et modèle communautaire mis à jour.
+
+---
+
 ## Objets d'inventaire en vraie 3D, pylônes relais retravaillés jour et nuit (ATAK natif 1.94.0)
 
 ### Résumé joueur

@@ -50,7 +50,7 @@ final class AtakMissionDataQuickWinsAssetTest extends TestCase
         self::assertStringContainsString('_reportData set ["mission_key", _missionKey]', $rep);
         self::assertStringContainsString("\$extra['mission_key']", $ctrl);
         self::assertStringContainsString('->setMissionKey($reportId', $ctrl);
-        self::assertStringContainsString('$repo->addItems($tenantId, (int) $user[\'id\'], $p[\'items\'], null, $missionKey)', $ctrl);
+        self::assertStringContainsString('$repo->addItems($tenantId, (int) $user[\'id\'], $p[\'items\'], null, $missionKey, \App\Repositories\AtakScreenTimeRepository::SOURCE_SERVER)', $ctrl);
         self::assertStringContainsString('mission_key, logged_at', $replay);
         self::assertStringContainsString('function listSessions', $replay);
         self::assertStringContainsString('day, mission_key, kind, item_key', $screen);

@@ -92,8 +92,10 @@ switch (toUpper _mode) do {
             _st set ["nextPose", diag_tickTime + 1.2];
             // Animation réglable (CBA « ATAK · Photo ») : action/geste, animation CfgMoves ou fonction.
             private _self = _st getOrDefault ["selfie", false];
-            private _anim = trim (missionNamespace getVariable [["comspec_atak_native_photo_anim", "comspec_atak_native_selfie_anim"] select _self, "gesturePoint"]);
-            if (_self && {_anim isEqualTo ""}) then { _anim = trim (missionNamespace getVariable ["comspec_atak_native_photo_anim", "gesturePoint"]); };
+            private _anim = trim (missionNamespace getVariable [["comspec_atak_native_photo_anim", "comspec_atak_native_selfie_anim"] select _self, "comspec_atak_native_fnc_gestureSelfie"]);
+            if (_self && {_anim isEqualTo ""}) then { _anim = trim (missionNamespace getVariable ["comspec_atak_native_photo_anim", "comspec_atak_native_fnc_gestureSelfie"]); };
+            // Ancienne valeur par défaut (main tendue sans téléphone) : remplacée par le téléphone tenu en main.
+            if ((toLower _anim) isEqualTo "gesturepoint") then { _anim = "comspec_atak_native_fnc_gestureSelfie"; };
             // Passage selfie <-> photo : la fonction de l'animation précédente remet sa pose à zéro.
             private _prev = _st getOrDefault ["lastAnim", ""];
             if (_prev isNotEqualTo _anim && {(toLower _prev) find "_fnc_" >= 0}) then {
@@ -127,6 +129,7 @@ switch (toUpper _mode) do {
         private _eye = eyePos player;
         private _tPos = _eye;
         private _tDir = [0, 1, 0];
+        private _rear = [];
         if (_selfie) then {
             // Corps figé pendant le selfie : la souris déplace le bras, pas le joueur.
             private _h = _st getOrDefault ["heading", getDir player];
@@ -161,6 +164,9 @@ switch (toUpper _mode) do {
                 _tDir = [(sin _ay) * (cos _ap), (cos _ay) * (cos _ap), sin _ap];
             };
             _tPos = _eye vectorAdd (_tDir vectorMultiply 0.25);
+            // Téléphone en main (fn_gestureSelfie, mode photo) : l'objectif arrière est au dos du téléphone.
+            _rear = [player, "rear"] call comspec_atak_native_fnc_gestureSelfie;
+            if (_rear isNotEqualTo []) then { _tPos = _rear select 0; };
         };
         // Transition douce (passage selfie / objectif arrière).
         private _k = 1;
@@ -173,8 +179,8 @@ switch (toUpper _mode) do {
             if (_k >= 1) then { _st set ["tr0", -1]; };
         };
         private _cam = _st getOrDefault ["cam", objNull];
-        // Vue naturelle sans zoom ni selfie : pas de caméra scriptée.
-        if (!_selfie && {_zoom < 1.01} && {_k >= 1} && {abs ((_st getOrDefault ["fov", 0.75]) - 0.75) < 0.01}) exitWith {
+        // Vue naturelle sans zoom ni selfie : pas de caméra scriptée (sauf téléphone en main : il cacherait la vue).
+        if (!_selfie && {_rear isEqualTo []} && {_zoom < 1.01} && {_k >= 1} && {abs ((_st getOrDefault ["fov", 0.75]) - 0.75) < 0.01}) exitWith {
             if (!isNull _cam) then { _cam cameraEffect ["terminate", "back"]; camDestroy _cam; _st set ["cam", objNull]; };
         };
         if (isNull _cam) then {

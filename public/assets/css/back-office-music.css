@@ -476,3 +476,19 @@
 .msca-check { display: flex; gap: 0.5rem; align-items: center; font-size: 0.88rem; }
 .msca-progress { padding: 0.55rem 0.75rem; border: 1px solid var(--msc-acc-line); border-radius: 6px; background: var(--msc-acc-soft); font-size: 0.86rem; }
 .msc-tab__icon + .msc-tab__label:last-child { grid-row: 1 / 3; }
+
+/* Doublons probables avant mise en ligne */
+.msca-dup {
+  margin-top: 0.75rem;
+  border: 1px solid #fcd34d;
+  border-radius: 12px;
+  background: #fffbeb;
+  padding: 0.85rem 1rem;
+  color: #78350f;
+}
+.msca-dup[hidden] { display: none; }
+.msca-dup__title { margin: 0; font-size: 13px; font-weight: 800; }
+.msca-dup__text { margin: 0.25rem 0 0.5rem; font-size: 12.5px; }
+.msca-dup__list { margin: 0 0 0.6rem; padding-left: 1.1rem; font-size: 12.5px; line-height: 1.55; }
+.msca-dup .msca-check { color: inherit; }
+html[data-bo-theme="dark"] .msca-dup { border-color: #78350f; background: #2a2110; color: #fde68a; }

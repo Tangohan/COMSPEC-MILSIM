@@ -214,7 +214,7 @@ private _place = [
 private _map = [
     ["COMSPEC_ATAK_Labels", true, "native_map_labels", "Indicatifs des unités", "Nom à côté de chaque symbole ami"] call _profSwitch,
     ["COMSPEC_ATAK_LabelStyle", "FULL", "Cartouches des unités", [["COMPLET", "FULL"], ["INDICATIF SEUL", "CALLSIGN"], ["AUCUN", "NONE"]], "Boîte sombre près du symbole : indicatif, puis distance et azimut depuis moi en zoom rapproché ; contacts ENI bordés de rouge avec heure et auteur"] call _profSegment,
-    ["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags", "Cartouches des repères", "Nom et coordonnées E / N sous le repère"] call _profSwitch,
+    ["COMSPEC_ATAK_MarkerTags", true, "native_marker_tags", "Coordonnées des repères", "Nom et coordonnées E / N sous le repère, en zoom rapproché"] call _profSwitch,
     ["comspec_atak_native_map_marker_style", "plate", "Noms des repères", [["PLAQUE", "plate"], ["PILULE", "pill"], ["CARTOUCHE", "card"], ["CONTOUR", "outline"], ["CLASSIQUE", "classic"]], "Repères et cibles accrochées (LOCK) : plaque sombre au liseré de couleur, pilule, cartouche relié avec distance et azimut, texte détouré ou texte Arma d'avant"] call _cbaSegment,
     ["comspec_atak_native_map_place_style", "tactical", "Noms des lieux", [["TACTIQUE", "tactical"], ["ÉTIQUETTE", "tag"], ["DISCRET", "quiet"], ["CLASSIQUE", "classic"]], "Villes, villages, lieux-dits et sites : capitales détourées, plaque sombre, petit texte clair ou couleurs Arma d'avant"] call _cbaSegment,
     ["comspec_atak_native_map_show_marker_text", "", "Afficher les noms des repères", "Les symboles restent, seul le texte disparaît (aussi dans CALQUES)", true] call _cbaSwitch,
@@ -399,7 +399,7 @@ private _cat = _s getOrDefault ["setCat", ""];
 private _sel = (_cats select { (_x select 0) isEqualTo _cat }) param [0, []];
 private _rows = [];
 if ((count _sel) isEqualTo 0) then {
-    _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_settings.paa", format ["<t size='1.3' font='COMSPEC_BarlowBold'>Réglages</t><br/><t color='#8a9a93'>COMSPEC ATAK %1%2</t>", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""], ["", format [" · %1 réglage(s) imposé(s) par %2", _lockedCount, ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")]] select (_lockedCount > 0)]];
+    _rows pushBack ["hero", "\z\comspec_atak_native\addons\main\data\app_settings.paa", format ["<t size='1.3' font='COMSPEC_BarlowBold'>Réglages</t><br/><t color='#8a9a93'>COMSPEC ATAK %1%2</t>", missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", "?"]], ["", format [" · %1 réglage(s) imposé(s) par %2", _lockedCount, ["votre communauté", _tenantName] select (_tenantName isNotEqualTo "")]] select (_lockedCount > 0)]];
     {
         _x params ["_k", "_t", "_sub", "_icon", "_r"];
         _rows pushBack ["person", format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon], format ["<t font='COMSPEC_BarlowBold'>%1</t><br/><t size='0.8' color='#8a9a93'>%2</t>", _t, _sub],

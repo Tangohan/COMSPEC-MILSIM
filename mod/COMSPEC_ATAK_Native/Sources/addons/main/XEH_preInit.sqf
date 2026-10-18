@@ -13,6 +13,10 @@ missionNamespace setVariable ["COMSPEC_ATAK_NativeVersion", VERSION_STR];
 // Versions compilées dans ce code : fn_integrityCheck les compare à la config chargée, à la DLL et au site.
 missionNamespace setVariable ["COMSPEC_ATAK_CodeVersion", VERSION_STR];
 missionNamespace setVariable ["COMSPEC_ATAK_LinkExpected", LINK_VERSION_STR];
+// Version complète pour les humains (Réglages, Debug, journal, support) : « 1.94.0 - 2026.10.14 a1b2c3d ».
+// Les comparaisons de versions n'utilisent que COMSPEC_ATAK_NativeVersion (MAJEUR.MINEUR.CORRECTIF).
+missionNamespace setVariable ["COMSPEC_ATAK_NativeBuild", VERSION_STR + " - " + ([BUILD_STAMP, "dev"] select (BUILD_STAMP isEqualTo ""))];
+diag_log format ["[COMSPEC ATAK NATIVE][INFO][BOOT] COMSPEC ATAK %1 (COMSPEC Link attendu %2)", missionNamespace getVariable "COMSPEC_ATAK_NativeBuild", LINK_VERSION_STR];
 diag_log "[COMSPEC ATAK NATIVE][BOOT][CANARY] native_client_v1_4_0_loaded";
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] UI generation: native-rsc-v1";
 [] call comspec_atak_native_fnc_stateInit;
@@ -101,8 +105,8 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
     ["Item obligatoire pour avoir l'ATAK", "Activé par défaut : il faut porter un téléphone (ItemAndroid de cTab ou équivalent d'un autre mod) pour sortir ou prendre le téléphone. Décocher pour donner l'ATAK à tout le monde."],
     _cat, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_photo_anim", "EDITBOX",
-    ["Animation de l'appareil photo", "Jouée tant que l'appareil photo est ouvert (vue normale). Nom d'une action ou d'un geste (ex. gesturePoint), d'une animation (CfgMoves, ex. AmovPercMstpSrasWrflDnon_AinvPercMstpSrasWrflDnon), ou d'une fonction (ex. mon_fnc_photoPose, appelée avec [joueur, ""photo""]). Vide : aucune animation."],
-    ["COMSPEC", "ATAK · Photo"], "gesturePoint", 1] call comspec_atak_native_fnc_addSetting;
+    ["Animation de l'appareil photo", "Jouée tant que l'appareil photo est ouvert (vue normale). Par défaut comspec_atak_native_fnc_gestureSelfie : téléphone du profil (S7 par défaut) tenu en main devant le visage, la photo part de son objectif arrière. Sinon nom d'une action ou d'un geste (ex. gestureGo ; gesturePoint, l'ancienne valeur, reprend le téléphone en main), d'une animation (CfgMoves, ex. AmovPercMstpSrasWrflDnon_AinvPercMstpSrasWrflDnon), ou d'une fonction (ex. mon_fnc_photoPose, appelée avec [joueur, ""photo""]). Vide : aucune animation."],
+    ["COMSPEC", "ATAK · Photo"], "comspec_atak_native_fnc_gestureSelfie", 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_selfie_anim", "EDITBOX",
     ["Animation du selfie", "Jouée en mode selfie. Par défaut comspec_atak_native_fnc_gestureSelfie : bras droit tendu devant le visage, téléphone tourné vers soi. Même format : action ou geste, animation CfgMoves, ou fonction appelée avec [joueur, ""selfie""] (puis [joueur, ""exit""] à la fermeture). Vide : on garde l'animation de l'appareil photo."],
     ["COMSPEC", "ATAK · Photo"], "comspec_atak_native_fnc_gestureSelfie", 1] call comspec_atak_native_fnc_addSetting;

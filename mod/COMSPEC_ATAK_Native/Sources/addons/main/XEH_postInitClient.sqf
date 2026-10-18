@@ -1,6 +1,10 @@
 if (!hasInterface) exitWith {};
 private _perfT0 = diag_tickTime;
 diag_log "[COMSPEC ATAK NATIVE][INFO][BOOT] Client PostInit complete";
+// Version complète en tête du journal de session COMSPEC (le .log que les joueurs envoient au support).
+if (!isNil "comspec_overwatch_connect_fnc_log") then {
+    ["INFO", "VERSION", format ["COMSPEC ATAK %1 · COMSPEC Link attendu %2 · mission %3", missionNamespace getVariable ["COMSPEC_ATAK_NativeBuild", "?"], missionNamespace getVariable ["COMSPEC_ATAK_LinkExpected", "?"], missionName]] call comspec_overwatch_connect_fnc_log;
+};
 // PBO ou DLL périmés, versions plus récentes sur Athena : signalés dans les notifications du téléphone.
 ["start"] call comspec_atak_native_fnc_integrityCheck;
 // Check de démarrage posté dans le salon Discord de debug d'Athena (une fois par mission, réglage CBA pour refuser).
@@ -210,7 +214,25 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     missionNamespace setVariable ["COMSPEC_ATAK_PhotoSeen", [_up, _ko]];
     if ((_up != _up0 || {_ko != _ko0}) && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "GALLERY"}) then { ["GALLERY"] call comspec_atak_native_fnc_pageRender; };
     if (_up > _up0) then { ["SUCCESS", format ["%1 photo(s) reçue(s) par Athena", _up - _up0], 4, 30] call comspec_atak_native_fnc_notify; };
-    if (_ko > _ko0) then { ["WARNING", format ["Photo refusée par Athena : %1", (missionNamespace getVariable ["COMSPEC_LastReconUploadResult", []]) param [1, "voir l'app Galerie"]], 6, 40] call comspec_atak_native_fnc_notify; };
+    if (_ko > _ko0) then {
+        private _last = missionNamespace getVariable ["COMSPEC_LastReconUploadResult", []];
+        // Refus de la formule (403 feature_unavailable) : une fenêtre claire, une fois par session, au lieu d'une simple notification.
+        if (((_last param [2, ""]) find "feature_unavailable") >= 0) then {
+            if !(missionNamespace getVariable ["COMSPEC_ATAK_PlanModalShown", false]) then {
+                missionNamespace setVariable ["COMSPEC_ATAK_PlanModalShown", true];
+                [] spawn {
+                    waitUntil { uiSleep 0.5; !isNull (findDisplay 46) && {isNull (findDisplay 49)} };
+                    private _msg = format ["%1<br/><br/>%2<br/><br/>%3",
+                        "Ta photo n'a pas été envoyée à Athena." call comspec_atak_native_fnc_tr,
+                        "La formule de ta communauté n'inclut pas la carte et les liaisons Athena, donc Athena refuse les envois du jeu." call comspec_atak_native_fnc_tr,
+                        "Préviens l'administrateur de ta communauté sur Athena. Ce n'est pas un bug, inutile de le signaler." call comspec_atak_native_fnc_tr];
+                    [parseText _msg, "Carte Athena non incluse" call comspec_atak_native_fnc_tr, "OK", false, findDisplay 46] call BIS_fnc_guiMessage;
+                };
+            };
+        } else {
+            ["WARNING", format ["Photo refusée par Athena : %1", _last param [1, "voir l'app Galerie"]], 6, 40] call comspec_atak_native_fnc_notify;
+        };
+    };
 }, 2] call CBA_fnc_addPerFrameHandler;
 
 // Rattachement ORBAT (Athena) et icône choisie : partagés pour le filtre et l'affichage des autres téléphones.

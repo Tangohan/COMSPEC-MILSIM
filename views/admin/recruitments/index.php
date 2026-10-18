@@ -11,6 +11,7 @@ $nSubmitted = (int) ($counts['submitted'] ?? 0);
 $nReviewed = (int) ($counts['reviewed'] ?? 0);
 $nRejected = (int) ($counts['rejected'] ?? 0);
 $nBlocked = (int) ($counts['blocked'] ?? 0);
+$nCancelled = (int) ($counts['cancelled'] ?? 0);
 $nTotal = array_sum($counts);
 $enlistmentSlaHours = max(1, (int) ($enlistmentSlaHours ?? 72));
 $submittedOlderThanSla = max(0, (int) ($submittedOlderThanSla ?? 0));
@@ -48,6 +49,11 @@ $statusMeta = static function (string $st): array {
             'class' => 'bg-emerald-50 text-emerald-950 ring-emerald-200/80 border-emerald-200',
             'bar' => 'bg-emerald-600',
             'label' => 'Acceptée',
+        ],
+        'cancelled' => [
+            'class' => 'bg-stone-100 text-stone-700 ring-stone-200 border-stone-200',
+            'bar' => 'bg-stone-400',
+            'label' => 'Annulée',
         ],
         default => [
             'class' => 'bg-stone-100 text-stone-800 ring-stone-200 border-stone-200',
@@ -304,8 +310,8 @@ $formatHoursShort = static function (?int $hours): string {
         <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5" role="status">
             <p class="text-sm font-semibold text-amber-950">
                 <?= $staffRetrosDueCount === 1
-                    ? '1 dossier a plus de 30 jours sans bilan d’équipe.'
-                    : $staffRetrosDueCount . ' dossiers ont plus de 30 jours sans bilan d’équipe.' ?>
+                    ? '1 recrue acceptée il y a plus de 30 jours attend son bilan d’intégration.'
+                    : $staffRetrosDueCount . ' recrues acceptées il y a plus de 30 jours attendent leur bilan d’intégration.' ?>
                 <span class="font-normal text-amber-900/80">La colonne Bilan les signale aussi ligne par ligne.</span>
             </p>
             <a href="<?= htmlspecialchars($staffRetrosDueFirstId > 0 ? url('back-office/recruitments/' . $staffRetrosDueFirstId . '?dossier=1#bilan-recrutement') : url('back-office/recruitments'), ENT_QUOTES, 'UTF-8') ?>" class="inline-flex min-h-[2.25rem] items-center rounded-lg bg-emerald-600 px-3 text-[11px] font-bold uppercase tracking-wide text-white transition hover:bg-emerald-500">Renseigner un bilan</a>
@@ -319,7 +325,7 @@ $formatHoursShort = static function (?int $hours): string {
                         <p class="text-[10px] font-bold uppercase tracking-[0.28em] text-stone-500">Bureau recrutement</p>
                         <h1 class="mt-0.5 text-xl font-black tracking-tight text-stone-900 sm:text-2xl">Dossiers de candidature</h1>
                         <p class="mt-1.5 max-w-3xl text-sm leading-relaxed text-stone-600">
-                            Tableau de suivi : délais d’action et bilans d’équipe visibles sur chaque ligne.
+                            Tableau de suivi : étape du parcours, délai sans action (dossiers à traiter), durée de traitement (dossiers tranchés) et bilan d’intégration 30 jours après l’acceptation.
                         </p>
                     </div>
                     <div class="flex flex-wrap gap-1.5">
@@ -382,6 +388,9 @@ $formatHoursShort = static function (?int $hours): string {
                         <?= $filterLink('reviewed', $statusCurrentForPills, 'Acceptées', $nReviewed, $baseList) ?>
                         <?= $filterLink('rejected', $statusCurrentForPills, 'Refusées', $nRejected, $baseList) ?>
                         <?= $filterLink('blocked', $statusCurrentForPills, 'Non admis', $nBlocked, $baseList) ?>
+                        <?php if ($nCancelled > 0): ?>
+                            <?= $filterLink('cancelled', $statusCurrentForPills, 'Annulées', $nCancelled, $baseList) ?>
+                        <?php endif; ?>
                     </div>
 
                     <form method="post" action="<?= htmlspecialchars(url('back-office/recruitments/settings')) ?>" class="flex flex-wrap items-end gap-2 rounded-lg border border-stone-200 bg-stone-50/90 px-3 py-2">
@@ -428,8 +437,8 @@ $formatHoursShort = static function (?int $hours): string {
                                     <th>Affectation</th>
                                     <th>Rôle</th>
                                     <th>Dernière action</th>
-                                    <th>Délai / alerte</th>
-                                    <th>Bilan</th>
+                                    <th>Délai</th>
+                                    <th>Bilan 30 j</th>
                                     <th>Lien compte</th>
                                     <th class="text-right">Ouvrir</th>
                                 </tr>
@@ -444,13 +453,8 @@ $formatHoursShort = static function (?int $hours): string {
                                     $fn = (string) ($e['first_name'] ?? '');
                                     $ln = (string) ($e['last_name'] ?? '');
                                     $full = trim($fn . ' ' . $ln) ?: '—';
-                                    $isSubmitted = $st === 'submitted';
-                                    $slaBreached = !empty($e['submitted_sla_breached']);
-                                    $ageHours = isset($e['submitted_age_hours']) ? (int) $e['submitted_age_hours'] : null;
-                                    $ageDays = isset($e['enlistment_age_days']) ? (int) $e['enlistment_age_days'] : null;
                                     $lastActionAt = trim((string) ($e['last_action_at'] ?? ''));
                                     $retroStatus = (string) ($e['staff_retro_status'] ?? 'waiting');
-                                    $retroDoneAt = trim((string) ($e['staff_retro_done_at'] ?? ''));
                                     $instructorLabel = trim((string) ($e['instructor_label'] ?? ''));
                                     $assignmentUnit = trim((string) ($e['assignment_unit_label'] ?? ''));
                                     $assignmentRole = trim((string) ($e['assignment_role_label'] ?? ''));
@@ -460,61 +464,24 @@ $formatHoursShort = static function (?int $hours): string {
                                         $defineUrl = url('back-office/recruitments/' . $fid . '?dossier=1#coordination-dossier');
                                     }
 
-                                    $slaLabel = 'Sans objet';
-                                    $slaBadge = 'recruitment-sheets__badge--muted';
-                                    $slaMeta = '';
-                                    if ($isSubmitted && $ageHours !== null) {
-                                        if ($slaBreached) {
-                                            $over = max(0, $ageHours - $enlistmentSlaHours);
-                                            $slaLabel = 'En retard';
-                                            $slaBadge = 'recruitment-sheets__badge--late';
-                                            $slaMeta = $formatHoursShort($ageHours) . ' · seuil ' . $enlistmentSlaHours . ' h (+' . $formatHoursShort($over) . ')';
-                                        } else {
-                                            $remaining = max(0, $enlistmentSlaHours - $ageHours);
-                                            $watchFrom = (int) max(0, $enlistmentSlaHours - max(1, (int) ceil($enlistmentSlaHours / 4)));
-                                            if ($ageHours >= $watchFrom) {
-                                                $slaLabel = 'À surveiller';
-                                                $slaBadge = 'recruitment-sheets__badge--watch';
-                                            } else {
-                                                $slaLabel = 'OK';
-                                                $slaBadge = 'recruitment-sheets__badge--ok';
-                                            }
-                                            $slaMeta = $formatHoursShort($ageHours) . ' / ' . $enlistmentSlaHours . ' h · reste ' . $formatHoursShort($remaining);
-                                        }
-                                    } elseif (!$isSubmitted) {
-                                        $slaMeta = 'Dossier déjà instruit';
-                                    }
+                                    // Délai et bilan : calculés une fois par EnlistmentStaffRowEnricher (mêmes règles que le tableau de bord).
+                                    $sheetBadge = static fn (string $tone): string => match ($tone) {
+                                        'emerald' => 'recruitment-sheets__badge--ok',
+                                        'amber', 'orange' => 'recruitment-sheets__badge--watch',
+                                        'rose' => 'recruitment-sheets__badge--late',
+                                        default => 'recruitment-sheets__badge--muted',
+                                    };
+                                    $delay = is_array($e['delay'] ?? null) ? $e['delay'] : ['label' => '—', 'tone' => 'muted', 'meta' => ''];
+                                    $slaLabel = (string) $delay['label'];
+                                    $slaBadge = $sheetBadge((string) $delay['tone']);
+                                    $slaMeta = (string) $delay['meta'];
 
-                                    $bilanLabel = '—';
-                                    $bilanBadge = 'recruitment-sheets__badge--muted';
-                                    $bilanMeta = '';
-                                    $bilanHref = null;
-                                    if ($retroStatus === 'done') {
-                                        $bilanLabel = 'Fait';
-                                        $bilanBadge = 'recruitment-sheets__badge--done';
-                                        if ($retroDoneAt !== '') {
-                                            $bilanMeta = 'Le ' . date('d/m/Y', strtotime($retroDoneAt) ?: time());
-                                        } elseif ($ageDays !== null) {
-                                            $bilanMeta = $ageDays . ' j depuis réception';
-                                        }
-                                    } elseif ($retroStatus === 'due') {
-                                        $bilanLabel = 'À faire';
-                                        $bilanBadge = 'recruitment-sheets__badge--late';
-                                        $bilanMeta = ($ageDays !== null ? $ageDays . ' j' : '30 j+') . ' sans bilan';
-                                        $bilanHref = url('back-office/recruitments/' . $fid . '?dossier=1#bilan-recrutement');
-                                    } elseif ($retroStatus === 'not_applicable') {
-                                        $bilanLabel = 'Non concerné';
-                                        $bilanBadge = 'recruitment-sheets__badge--muted';
-                                        $bilanMeta = $st === 'blocked' ? 'Candidature non admise' : 'Candidature refusée';
-                                    } elseif ($retroStatus === 'waiting') {
-                                        $bilanLabel = 'Pas encore';
-                                        $bilanBadge = 'recruitment-sheets__badge--muted';
-                                        $daysLeft = $ageDays !== null ? max(0, 30 - $ageDays) : 30;
-                                        $bilanMeta = 'Dans ' . $daysLeft . ' j';
-                                    } elseif ($retroStatus === 'unavailable') {
-                                        $bilanLabel = 'Indisponible';
-                                        $bilanBadge = 'recruitment-sheets__badge--muted';
-                                    }
+                                    $retro = is_array($e['retro'] ?? null) ? $e['retro'] : ['label' => '—', 'tone' => 'muted', 'meta' => '', 'actionable' => false];
+                                    $bilanLabel = (string) $retro['label'];
+                                    $bilanBadge = $retroStatus === 'done' ? 'recruitment-sheets__badge--done' : $sheetBadge((string) $retro['tone']);
+                                    $bilanMeta = (string) $retro['meta'];
+                                    $bilanHref = !empty($retro['actionable']) ? url('back-office/recruitments/' . $fid . '?dossier=1#bilan-recrutement') : null;
+                                    $stageInfo = is_array($e['stage'] ?? null) ? $e['stage'] : null;
                                     ?>
                                     <tr>
                                         <td class="whitespace-nowrap text-stone-700 tabular-nums">
@@ -530,6 +497,9 @@ $formatHoursShort = static function (?int $hours): string {
                                         <td class="max-w-[12rem] truncate text-stone-700" title="<?= htmlspecialchars((string) ($e['email'] ?? '')) ?>"><?= htmlspecialchars((string) ($e['email'] ?? '—')) ?></td>
                                         <td>
                                             <span class="inline-flex items-center rounded border px-1.5 py-0.5 text-[11px] font-bold ring-1 <?= htmlspecialchars($meta['class']) ?>"><?= htmlspecialchars($meta['label']) ?></span>
+                                            <?php if ($stageInfo !== null && (int) $stageInfo['index'] > 0): ?>
+                                                <span class="recruitment-sheets__meta">Étape <?= (int) $stageInfo['index'] ?>/<?= (int) $stageInfo['total'] ?> · <?= htmlspecialchars((string) $stageInfo['label']) ?></span>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <?php if ($instructorLabel !== ''): ?>
@@ -545,6 +515,9 @@ $formatHoursShort = static function (?int $hours): string {
                                         <td>
                                             <?php if ($assignmentUnit !== ''): ?>
                                                 <span class="font-semibold text-stone-900"><?= htmlspecialchars($assignmentUnit) ?></span>
+                                                <?php if ((string) ($e['assignment_source'] ?? '') === 'member'): ?>
+                                                    <span class="recruitment-sheets__meta">Unité actuelle du membre</span>
+                                                <?php endif; ?>
                                                 <?php if ($assignmentOpening !== ''): ?>
                                                     <span class="recruitment-sheets__meta truncate max-w-[10rem]" title="<?= htmlspecialchars($assignmentOpening) ?>"><?= htmlspecialchars($assignmentOpening) ?></span>
                                                 <?php endif; ?>
@@ -639,7 +612,7 @@ $formatHoursShort = static function (?int $hours): string {
                                                 </span>
                                             <?php endif; ?>
                                             <?php if ($retroStatus === 'due'): ?>
-                                                <span class="recruitment-sheets__badge recruitment-sheets__badge--late">Bilan à faire<?= $ageDays !== null ? ' · ' . $ageDays . ' j' : '' ?></span>
+                                                <a href="<?= htmlspecialchars(url('back-office/recruitments/' . $fid . '?dossier=1#bilan-recrutement'), ENT_QUOTES, 'UTF-8') ?>" class="recruitment-sheets__badge recruitment-sheets__badge--late">Bilan à faire · <?= htmlspecialchars((string) (($e['retro'] ?? [])['meta'] ?? '')) ?></a>
                                             <?php elseif ($retroStatus === 'done'): ?>
                                                 <span class="recruitment-sheets__badge recruitment-sheets__badge--done">Bilan fait<?= !empty($e['staff_retro_done_at']) ? ' · ' . date('d/m', strtotime((string) $e['staff_retro_done_at']) ?: time()) : '' ?></span>
                                             <?php endif; ?>
