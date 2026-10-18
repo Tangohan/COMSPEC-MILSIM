@@ -68,7 +68,7 @@ KIND_WORDS = {
 }
 # Noms de produits lisibles, repérés dans le titre de l'entrée
 PRODUCTS = [
-    (r"ATAK natif\s+(\d+\.\d+\.\d+)", "Mod ATAK {}"),
+    (r"ATAK natif\s+(\d+\.\d+\.\d+(?:\.[A-Za-z]+)?(?:\s+-\s+[A-Z][\w-]*)?)", "Mod ATAK {}"),
     (r"COMSPEC Link\s+(\d+\.\d+\.\d+)", "COMSPEC Link {}"),
 ]
 
@@ -163,7 +163,7 @@ def changelog_entry(versions: list[str], path: str = CHANGELOG) -> tuple[str, st
     parts = re.split(r"^## (?!#)", text, flags=re.M)
     for part in parts[1:]:
         head, _, body = part.partition("\n")
-        if any(re.search(rf"(?<![\d.]){re.escape(v)}(?![\d.])", head) for v in versions):
+        if any(re.search(rf"(?<![\d.]){re.escape(v)}(?!\d|\.\d)", head) for v in versions):
             return head.strip(), body
     return None
 

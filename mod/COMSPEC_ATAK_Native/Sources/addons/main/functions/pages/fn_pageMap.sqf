@@ -379,6 +379,7 @@ if (_interactive) then {
             _fl ctrlSetFontHeight ((_lfs) max COMSPEC_ATAK_FontMin);
             _fl ctrlSetTextColor [0.80, 0.86, 0.82, 1];
             private _styles = [["TOPO", "TOPO"], ["CLAIR", "LIGHT"], ["SOMBRE", "DARK"], ["NUIT", "NIGHT"]];
+            if ((["info"] call comspec_atak_native_fnc_photoMap) isNotEqualTo []) then { _styles pushBack ["PHOTO", "PHOTO"]; };
             private _cw = (_sw - _flw - _gap * ((count _styles) - 1)) / (count _styles);
             {
                 _x params ["_t", "_k"];
@@ -437,7 +438,8 @@ if (_interactive) then {
         case "FLAT": { "TERRAIN PLAT : clic pour chercher, clic sur une LZ = marqueur" };
         case "LOS": { "LIGNE DE VUE : clic sur la cible" };
         case "ROUTE": { "GPS : clic sur la destination" };
-        case "WP": { "POINTS DE PASSAGE : clic pour ajouter une étape" };
+        // POINTS DE PASSAGE : la fiche d'étape dit elle-même comment poser et se ferme par ✕ (fn_wpCard).
+        case "WP": { "" };
         case "LINE": { "TRAIT : clic A puis clic B" };
         case "DRAW": { "DESSIN : maintenir le clic gauche (lissé au relâchement)" };
         case "DRONE": { switch (_s getOrDefault ["droneMapSub", "GOTO"]) do {
@@ -462,6 +464,11 @@ if (_interactive) then {
     if (_mode isEqualTo "DRONE" && {alive (missionNamespace getVariable ["COMSPEC_ATAK_Drone", objNull])}) then {
         private _hx = _bx + _pad * 2 + ((_mh * 0.24) min (_font * 3.6)) / _ratio;
         ["mapBar", [_hx, _by + _pad * 2 + _fs * 1.5, (_tx - _hx - _pad * 2) max (_font * 6 / _ratio)]] call comspec_atak_native_fnc_droneAction;
+    };
+    // Fiche des points de passage : nom, type, partage, VALIDER ; ou l'étape cliquée (renommer, déplacer, supprimer).
+    if (_mode isEqualTo "WP" && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
+        private _hx = _bx + _pad * 2 + ((_mh * 0.24) min (_font * 3.6)) / _ratio;
+        [[_hx, _by + _pad * 2 + _fs * 1.5, (_tx - _hx - _pad * 2) max (_font * 6 / _ratio), _mh * 0.7]] call comspec_atak_native_fnc_wpCard;
     };
     // Palette masquée pendant l'édition d'un marqueur : un seul panneau à la fois.
     if (_mode isEqualTo "MARKER" && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {

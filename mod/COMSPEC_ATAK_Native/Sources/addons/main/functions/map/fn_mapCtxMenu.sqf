@@ -1,12 +1,13 @@
 /*
     Menu contextuel de la carte (clic droit sans glisser) : VOIR LA CAMÉRA (équipier pointé), PING, MARQUEUR, Y ALLER,
-    CENTRER ICI, COPIER LA GRILLE, CHAMP DE VISION ICI (fn_reliefAction depuis le point), EFFACER LE CHAMP DE VISION
+    POINT DE PASSAGE (fiche de pose de l'étape au point, fn_wpAction "open"), CENTRER ICI, COPIER LA GRILLE, CHAMP DE VISION ICI (fn_reliefAction depuis le point), EFFACER LE CHAMP DE VISION
     et EFFACER LA LIGNE DE VUE (quand il y en a un sur la carte), ZONE INTERDITE AU DRONE (poser, ou retirer celle
     sous le clic), RETIRER TOUTES LES ZONES (camp), SUPPRIMER (marqueur joueur ou alerte pointés), EFFACER LES ALERTES (repères
     d'alerte reçus). MARQUEUR ouvre la palette au point (fn_markerPlace) ou l'éditeur complet (réglage d'addon). Drone appairé et en vie : ORDRE AU DRONE
     ouvre un sous-menu ALLER, RECHERCHER, STATIONNAIRE, ATTERRIR au point cliqué (fn_droneAction "mapOrder"), et RETOUR. Équipier pointé : aussi CHAMP DE VISION de l'équipier
     et LOCALISER PAR RELAIS (triangulation de 6 à 10 s, fn_relayNet). EFFACER LES LOCALISATIONS quand il y en a une
     (triangulation en cours ou faite, géolocalisation GE, résultat de RECHERCHER).
+    Étape de l'itinéraire pointée : MODIFIER L'ÉTAPE, NAVIGUER VERS L'ÉTAPE et SUPPRIMER L'ÉTAPE (fn_wpAt, fn_wpAction).
     Relais pointé (calque Relais) : la fiche du relais remplace l'en-tête (état, fréquence, perte, latence, débit, portée,
     structure, alimentation, places, liaison, distance) avec RELAIS PRÉFÉRÉ, COUVERTURE AUTOUR, Y ALLER, CENTRER ;
     au clic gauche la fiche seule (["open", [carte, écran, true]]), au clic droit la fiche puis les lignes habituelles.
@@ -64,9 +65,11 @@ switch (_mode) do {
             private _dd2 = [(_sp select 0) - (_screen select 0), (_sp select 1) - (_screen select 1)] distance2D [0, 0];
             if (_dd2 < _near) then { _near = _dd2; _who = _x; };
         } forEach (allPlayers select { _x isNotEqualTo player && {alive _x} && {side group _x isEqualTo side group player} && {[_x] call comspec_atak_native_fnc_hasDevice} });
-        if (_card) then { _m = ""; _who = objNull; };
+        // Étape de l'itinéraire pointée : MODIFIER, NAVIGUER VERS, SUPPRIMER L'ÉTAPE.
+        private _wpi = [_map, _screen] call comspec_atak_native_fnc_wpAt;
+        if (_card) then { _m = ""; _who = objNull; _wpi = -1; };
         _s set ["mapCtx", createHashMapFromArray [["pos", [_w select 0, _w select 1, 0]], ["marker", _m], ["unit", [netId _who, ""] select (isNull _who)], ["at", diag_tickTime],
-            ["relay", _rl], ["card", _card]]];
+            ["relay", _rl], ["card", _card], ["wp", _wpi]]];
         [] call _unbindEsc;
         private _d = [] call comspec_atak_native_fnc_display;
         if (!isNull _d) then {
@@ -103,6 +106,11 @@ switch (_mode) do {
         switch (_arg) do {
             case "PING": { ["send", _pos] call comspec_atak_native_fnc_mapPing; };
             case "MARKER": { ["open", _pos] call comspec_atak_native_fnc_markerPlace; };
+            // Points de passage : fiche de pose au point (nom, type, partage, VALIDER), ou l'étape pointée.
+            case "WPADD": { ["open", _pos] call comspec_atak_native_fnc_wpAction; };
+            case "WPEDIT": { ["edit", _c getOrDefault ["wp", -1]] call comspec_atak_native_fnc_wpAction; };
+            case "WPGO": { ["goto", _c getOrDefault ["wp", -1]] call comspec_atak_native_fnc_wpAction; };
+            case "WPDEL": { ["del", _c getOrDefault ["wp", -1]] call comspec_atak_native_fnc_wpAction; };
             case "ROUTE": { [_pos, "Point de la carte"] spawn comspec_atak_native_fnc_routeCompute; };
             case "CENTER": { _s set ["mapFollow", false]; [_pos] call comspec_atak_native_fnc_mapCenter; };
             case "COPY": {
@@ -189,11 +197,25 @@ switch (_mode) do {
         private _rows = [
             ["PING", "Ping", "signal au groupe", "\A3\ui_f\data\map\markers\military\circle_CA.paa", [1, 0.85, 0.15, 1]],
             ["MARKER", "Mettre un marqueur", ["palette, canal", "éditeur complet"] select ((missionNamespace getVariable ["comspec_atak_native_marker_menu", "palette"]) isEqualTo "editor"), _dir + "map_marker.paa", _acc],
+            ["WPADD", "Point de passage", format ["étape %1 · %2", (count ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["pts", []])) + 1,
+                toLower (["shareName", profileNamespace getVariable ["COMSPEC_ATAK_WpShare", 1]] call comspec_atak_native_fnc_wpAction)], _dir + "app_waypoints.paa", [0.95, 0.75, 0.18, 1]],
             ["ROUTE", "Y aller", "itinéraire GPS", _dir + "map_route.paa", [0.40, 0.65, 1, 1]],
             ["CENTER", "Centrer ici", "", _dir + "map_center.paa", [0.86, 0.91, 0.88, 1]],
             ["COPY", "Copier la grille", "10 chiffres", _dir + "map_grid.paa", [0.86, 0.91, 0.88, 1]],
             ["VIEW", "Champ de vision ici", format ["rayon %1 m", _s getOrDefault ["rlRadius", 1000]], _dir + "app_relief.paa", [0.36, 0.78, 0.42, 1]]
         ];
+        // Étape pointée : ses lignes en tête (la liste a pu changer depuis l'ouverture : index revérifié).
+        private _wpPts = (missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["pts", []];
+        private _wpi = _c getOrDefault ["wp", -1];
+        if (_wpi >= 0 && {_wpi < count _wpPts}) then {
+            private _wpn = (_wpPts select _wpi) select 1;
+            private _wpc = (["type", (_wpPts select _wpi) param [2, "WP"]] call comspec_atak_native_fnc_wpAction) select 3;
+            _rows insert [0, [
+                ["WPEDIT", "Modifier l'étape", format ["%1. %2", _wpi + 1, _wpn], _dir + "app_waypoints.paa", _wpc],
+                ["WPGO", "Naviguer vers l'étape", _wpn, _dir + "map_route.paa", [0.36, 0.78, 0.42, 1]]
+            ]];
+            _rows pushBack ["WPDEL", "Supprimer l'étape", _wpn, _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
+        };
         // Relais pointé : sa fiche (entrée de fn_relayNet "list", relue à chaque rendu) et ses actions en tête.
         private _rl = _c getOrDefault ["relay", objNull];
         private _re = if (isNull _rl) then { [] } else { ["entry", _rl] call comspec_atak_native_fnc_relayNet };
@@ -358,7 +380,7 @@ switch (_mode) do {
             _ic ctrlSetTextColor _col;
             private _t = ["COMSPEC_RscStructuredText", [_x0 + pixelW * 16 + _iw * 1.45, _ry + (_rowH - _font * 0.95) / 2, _w - _iw * 1.45 - pixelW * 24, _rowH]] call _mk;
             _t ctrlSetStructuredText parseText ((format ["<t font='COMSPEC_BarlowBold' size='0.95' color='%1'>%2</t><t size='0.75' color='#7d8c85' align='right'>%3</t>",
-                ["#e6efe9", "#f2685c"] select (_key in ["DELETE", "ALERTSDEL", "VIEWDEL", "LOSDEL", "NOFLYALL"]), _label, (_sub regexReplace ["[<>&]", ""]) select [0, 22]]) call comspec_atak_native_fnc_tr);
+                ["#e6efe9", "#f2685c"] select (_key in ["DELETE", "WPDEL", "ALERTSDEL", "VIEWDEL", "LOSDEL", "NOFLYALL"]), _label, (_sub regexReplace ["[<>&]", ""]) select [0, 22]]) call comspec_atak_native_fnc_tr);
             _t ctrlSetFontHeight _font;
             private _b = ["COMSPEC_RscButtonOverlay", [_x0, _ry, _w, _rowH]] call _mk;
             _b ctrlAddEventHandler ["ButtonClick", compile format ["['act', '%1'] call comspec_atak_native_fnc_mapCtxMenu;", _key]];

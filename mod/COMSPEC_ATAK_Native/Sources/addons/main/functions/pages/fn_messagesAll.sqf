@@ -11,7 +11,10 @@ params [["_channel", ""]];
 private _data = uiNamespace getVariable ["COMSPEC_ATAK_Data", createHashMap];
 private _bridge = [] call comspec_atak_native_fnc_bridge;
 private _lastOf = { params ["_a"]; if (_a isEqualType [] && {_a isNotEqualTo []}) then { _a select -1 } else { 0 } };
-private _srcs = if (_bridge) then { [missionNamespace getVariable ["COMSPEC_Comms_Messages", []], _data getOrDefault ["inbox", []]] } else {
+// Hors connexion (fn_offline) : le fil Athena reste celui de la perte du signal ; mes messages en file s'y affichent.
+private _comms = ["var", ["COMSPEC_Comms_Messages", []]] call comspec_atak_native_fnc_offline;
+if !(_comms isEqualType []) then { _comms = []; };
+private _srcs = if (_bridge) then { [_comms, _data getOrDefault ["inbox", []], _data getOrDefault ["pendingOut", []]] } else {
     [_data getOrDefault ["messages", []], _data getOrDefault ["inbox", []], _data getOrDefault ["outbox", []]]
 };
 private _sig = [_bridge, name player] + (_srcs apply { [count _x, [_x] call _lastOf] });
@@ -50,7 +53,11 @@ if ([] call comspec_atak_native_fnc_bridge) then {
             if (_channel isEqualTo "" || {_ch isEqualTo _channel}) then {
                 [createHashMapFromArray [["id", _id], ["author", [_author, "Moi"] select (_mine && {_author isEqualTo ""})], ["body", _text], ["time", (_time splitString " ") param [1, _time]], ["stamp", _time], ["mine", _mine]], "CHAT"] call _add;
             };
-        } forEach (missionNamespace getVariable ["COMSPEC_Comms_Messages", []]);
+        } forEach _comms;
+        // Envoyés sans signal (fn_chatSend) : « En attente de réseau » jusqu'au départ de la file.
+        {
+            if (_channel isEqualTo "" || {(_x getOrDefault ["channel", "general"]) isEqualTo _channel}) then { [_x, "CHAT"] call _add; };
+        } forEach (_data getOrDefault ["pendingOut", []]);
     };
 } else {
     { [_x, "CHAT"] call _add; } forEach (_data getOrDefault ["messages", []]);

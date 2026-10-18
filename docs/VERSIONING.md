@@ -1,21 +1,29 @@
 # Numéros de version du mod (ATAK natif, COMSPEC Link)
 
-Règle commune à toutes les PR et à tous les fils de travail. Depuis ATAK natif 1.94.0.
+Règle commune à toutes les PR et à tous les fils de travail. Depuis ATAK natif 1.94.0 ; MAJEUR passé à 2 par TTRD le
+2026-10-18 (ATAK natif 2.0.1, nom affiché « 2.0.1.AB - Denver »).
 
 ## Ce que voit le joueur
 
 ```
-COMSPEC ATAK 1.94.0 - 2026.10.14 a1b2c3d
-             │  │  │   │          └─ commit du dépôt au moment du build (support : retrouver le code exact)
-             │  │  │   └─ date du build (UTC)
-             │  │  └─ CORRECTIF : correctifs d'une version déjà sortie
-             │  └─ MINEUR : une version par sortie (PR seule ou regroupement)
-             └─ MAJEUR : 1, ne change que sur décision de TTRD (rupture complète)
+COMSPEC ATAK 2.0.1.AB - Denver · 2026.10.18 a1b2c3d
+             │ │ │ │    │        │          └─ commit du dépôt au moment du build (support : retrouver le code exact)
+             │ │ │ │    │        └─ date du build (UTC)
+             │ │ │ │    └─ nom de la version, choisi par TTRD (2.0.1 : Denver, comme le portail Athena 1.7)
+             │ │ │ └─ étiquette donnée par TTRD (AB), gardée telle quelle
+             │ │ └─ CORRECTIF : correctifs d'une version déjà sortie
+             │ └─ MINEUR : une version par sortie (PR seule ou regroupement)
+             └─ MAJEUR : 2 depuis le 2026-10-18, ne change que sur décision de TTRD
 ```
+
+Le nom affiché (`VERSION_NAME`, ex. « 2.0.1.AB - Denver ») n'est **jamais comparé** : il commence toujours par
+`VERSION_STR` suivi d'un point, et un test PHP le vérifie. Tout ce qui compare (versionStr de CfgPatches, contrôle
+d'intégrité, site, `mod_version`) lit `VERSION_STR` seul. Les titres du changelog et des PR peuvent porter le nom
+complet : `(ATAK natif 2.0.1.AB - Denver, COMSPEC Link 2.0.88)`.
 
 Affichée dans Réglages, Crédits, Statut, l'app Debug, en tête du journal de session COMSPEC (le .log envoyé au
 support), dans le RPT et dans le check de démarrage Discord. Un main.pbo construit sans empreinte affiche
-`1.94.0 - dev`.
+`2.0.1.AB - Denver · dev`.
 
 ## Quand monter quel chiffre
 
@@ -24,7 +32,7 @@ support), dans le RPT et dans le check de démarrage Discord. Un main.pbo constr
 | Nouvelle sortie sur main (nouveauté, refonte, plusieurs correctifs) | 1.93.0 → 1.94.0 | MINEUR +1, CORRECTIF à 0 |
 | Regroupement de plusieurs PR natives (une seule PR fusionnée) | 1.94.0 → 1.95.0 | MINEUR +1 **une fois** pour tout le lot |
 | Correctif seul d'une version déjà sur main, sans nouveauté | 1.94.0 → 1.94.1 → 1.94.2 | CORRECTIF +1 |
-| Rupture complète (sauvegardes, protocole, mod incompatible) | 1.x → 2.0.0 | MAJEUR, TTRD décide |
+| Rupture complète, ou décision de TTRD | 1.97.0 → 2.0.1 | MAJEUR, TTRD décide (et le nom affiché) |
 
 - Une PR native en attente d'un regroupement ne réserve pas de numéro : le fil de regroupement attribue le numéro
   du lot au moment de fusionner (prochain MINEUR libre).
@@ -41,7 +49,7 @@ support), dans le RPT et dans le check de démarrage Discord. Un main.pbo constr
 
 | Fichier | Valeur |
 |---|---|
-| `mod/COMSPEC_ATAK_Native/Sources/addons/main/script_component.hpp` | `VERSION`, `VERSION_STR` (ATAK natif), `LINK_VERSION_STR` (DLL attendue) |
+| `mod/COMSPEC_ATAK_Native/Sources/addons/main/script_component.hpp` | `VERSION`, `VERSION_STR` (ATAK natif), `VERSION_NAME` (nom affiché), `LINK_VERSION_STR` (DLL attendue) |
 | `mod/UptoDate/COMSPECExtension/COMSPECExtension.csproj` | `Version`, `InformationalVersion` (Link) |
 | `mod/UptoDate/COMSPECExtension/Extension.cs` | `ExtensionVersion` (Link) |
 | `CHANGELOG-ATAK.md` | titre de l'entrée : `(ATAK natif 1.94.0)` ou `(ATAK natif 1.94.0, COMSPEC Link 2.0.86)` + « Résumé joueur » |

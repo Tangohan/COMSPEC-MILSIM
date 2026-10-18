@@ -35,6 +35,9 @@ if (_button isEqualTo 0) exitWith {
     // Outil DRONE : le clic devient un ordre au drone appairé (aller ici, point de route, zone).
     if ((_s getOrDefault ["mapMode","SELECT"]) isEqualTo "DRONE") exitWith { ["mapClick", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_droneAction; true };
     if (["DOWN", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_markerStroke) exitWith { true };
+    // Étape de l'itinéraire sous le curseur (sélection ou mode étapes) : sa fiche s'ouvre (renommer, type, déplacer).
+    private _wi = if ((_s getOrDefault ["mapMode","SELECT"]) in ["SELECT","WP"] && {!_shift && !_ctrl && !_alt}) then { [_map, [_mx, _my]] call comspec_atak_native_fnc_wpAt } else { -1 };
+    if (_wi >= 0) exitWith { ["edit", _wi] call comspec_atak_native_fnc_wpAction; true };
     // Sélection : un marqueur sous le curseur passe avant les unités.
     // Relais du calque Relais sous le curseur : sa fiche (état, fréquence, perte, santé) et ses actions.
     if ((_s getOrDefault ["mapMode","SELECT"]) isEqualTo "SELECT" && {!_shift && !_ctrl && !_alt}
@@ -59,8 +62,9 @@ if (_button isEqualTo 0) exitWith {
     true
 };
 if (_button isEqualTo 1) exitWith {
-    // Mode MARQUEUR : le clic droit choisit le point de pose (au relâchement, fn_markerPlace "anchor"), il ne quitte plus.
-    if (!((_s getOrDefault ["mapMode","SELECT"]) in ["SELECT","MARKER"]) || {(count (_s getOrDefault ["drawStroke",[]])) > 0}) then {
+    // Modes MARQUEUR et POINTS DE PASSAGE : le clic droit choisit le point de pose (au relâchement, fn_markerPlace /
+    // fn_wpAction "anchor"), il ne quitte plus.
+    if (!((_s getOrDefault ["mapMode","SELECT"]) in ["SELECT","MARKER","WP"]) || {(count (_s getOrDefault ["drawStroke",[]])) > 0}) then {
         _s set ["drawStroke",[]];
         ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
         [{ ["MAP"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;

@@ -38,6 +38,65 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Regroupement : mode hors connexion, points de passage, fond photo de la carte (ATAK natif 2.0.1.AB - Denver, COMSPEC Link 2.0.87)
+
+### Résumé joueur
+Type : nouveauté
+FR : COMSPEC ATAK 2.0.1 « Denver » : hors connexion, points de passage, fond photo, et tout ce qu'apportait la 1.97
+- Sans signal, le téléphone garde ses dernières données et le dit ; messages, comptes rendus, MEDEVAC et alertes attendent et arrivent au retour du réseau, et tes SMS et messages restent après une reconnexion. La batterie dépend de l'app ouverte et de la musique, et les notifications se trient par Messages, Missions et Réseau.
+- Points de passage refaits : clic droit pour poser, nom et type de chaque étape, itinéraire partagé en direct avec ton groupe. La capture de la carte devient un vrai fond photo qui s'affine au zoom, sur le site et dans le téléphone.
+- Déjà en 1.97 : marqueurs au clic droit, fiche de chaque relais, pylônes 3D refaits, partage Bluetooth (photos, musiques, itinéraires, fiches SEEK), notes de reco transmises au poste, app JTAC stable.
+- Aussi en 1.97 : nouvelle app Garmin, sang réaliste et nettoyage sans kit, tension et oxygène mesurés, téléphone verrouillable avec touche retour, visages de tes alliés floutés sur tes photos, kits de ton rôle dans les tenues Athena.
+EN : COMSPEC ATAK 2.0.1 "Denver": offline mode, waypoints, photo basemap, and everything 1.97 brought
+- With no signal the phone keeps its latest data and says so; messages, reports, MEDEVAC and alerts wait and arrive when the network is back, and your texts and messages survive a reconnection. Battery drain depends on the open app and the music, and notifications can be sorted by Messages, Missions and Network.
+- Waypoints redone: right-click to place, a name and type for each waypoint, the route shared live with your group. The map capture now becomes a real photo basemap that sharpens as you zoom, on the website and in the phone.
+- Already in 1.97: right-click markers, a card for each relay, redone 3D towers, Bluetooth sharing (photos, music, routes, SEEK files), recon notes reaching the command post, a stable JTAC app.
+- Also in 1.97: new Garmin app, realistic blood and cleaning without a kit, measured blood pressure and oxygen, a lockable phone with a back key, your allies' faces blurred in your photos, your role's kits in the Athena wardrobes.
+
+### Détail technique
+Regroupe #857, #858 et #859. Première version de MAJEUR 2 décidée par TTRD : `VERSION_STR` « 2.0.1 » (seul comparé) et nom affiché `VERSION_NAME` « 2.0.1.AB - Denver » (docs/VERSIONING.md). La 1.97.0 n'a pas été annoncée : ce Résumé joueur la couvre aussi. COMSPEC Link inchangée (2.0.87). main.pbo reconstruit avec HEMTT 1.17.2, empreinte « 2026.10.18 aa7ecf3 » posée par tools/stamp_build.py puis remise à vide.
+
+#### Points de passage refaits : pose au clic droit, noms, types, itinéraire partagé en direct (#857)
+##### Résumé joueur de la PR
+Type : nouveauté
+FR : Points de passage refaits, plus rapides et lisibles
+- Clic droit sur la carte puis « Point de passage » : une fiche s'ouvre pour donner un nom, choisir le type (étape, départ, point de contrôle, ralliement, objectif, LZ, arrivée) et le partage, puis VALIDER. Avec « À la suite », on enchaîne les étapes ; un clic gauche pose tout de suite.
+- L'itinéraire est partagé en direct avec ton groupe (ou ton camp, ou toi seul) : chaque étape posée, modifiée ou supprimée apparaît aussitôt chez les autres, sans couper leur navigation.
+- Sur la carte : traits épais à la couleur de chaque étape, flèche de sens, distance et azimut des tronçons, étapes numérotées et nommées. Clique une étape pour la renommer, changer son type, la déplacer, la remonter ou la supprimer.
+- L'app Itinéraire montre le type de chaque étape, permet d'inverser l'itinéraire et de « Faire naviguer le groupe ».
+EN : Waypoints redone, faster and easier to read
+- Right-click the map then "Waypoint": a card opens to give a name, pick the type (waypoint, start, checkpoint, rally point, objective, LZ, finish) and the sharing, then CONFIRM. With "In a row" you chain waypoints; a left-click places one right away.
+- The route is shared live with your group (or your side, or only you): every waypoint placed, edited or deleted shows up at once for the others, without stopping their navigation.
+- On the map: thick lines in each waypoint's colour, direction arrows, leg distance and bearing, numbered and named waypoints. Click a waypoint to rename it, change its type, move it, reorder it or delete it.
+- The Route app shows each waypoint's type, can reverse the route and "Send group on route".
+
+##### Détail technique
+- `fn_wpAction` : étapes `[pos, nom, type]` (une étape `[pos, nom]` d'avant vaut le type WP), sept types (WP, SP, CP, RP, OBJ, LZ, FIN) avec couleur et symbole CfgMarkers, nom automatique par type (« CP 3 »), actions open / anchor / place / edit / new / rename / retype / move / up / down / reverse, partage profil `COMSPEC_ATAK_WpShare` (0 moi seul, 1 groupe par défaut, 2 camp) et pose à la suite `COMSPEC_ATAK_WpSeries` (oui par défaut). Chaque modification part en direct une seconde après la dernière (`sync`, événement `comspec_atak_native_waypoints` avec le drapeau « en direct » : pas de vibreur, navigation gardée) ; « Faire naviguer le groupe » (`push`) envoie et lance la navigation. 30 étapes au plus (20 avant).
+- `fn_wpCard` (nouveau) : fiche du mode POINTS DE PASSAGE sur la carte (nom, type, partage, à la suite, VALIDER ; pour une étape existante TERMINÉ, DÉPLACER ICI, AVANT / APRÈS, NAVIGUER, SUPPRIMER). `fn_wpDraw` (nouveau) : rendu de l'itinéraire sorti de `fn_mapOnDraw` (traits épais, chevrons, distances au zoom, tronçons passés estompés, point choisi et trait vers le curseur). `fn_wpAt` (nouveau) : étape sous le curseur.
+- Carte : clic droit en mode POINTS DE PASSAGE = point de pose (ne quitte plus l'outil), clic gauche sur une étape = sa fiche (aussi en sélection). Menu clic droit : POINT DE PASSAGE, et sur une étape MODIFIER L'ÉTAPE, NAVIGUER VERS L'ÉTAPE, SUPPRIMER L'ÉTAPE.
+- Serveur : un itinéraire effacé n'est plus rejoué aux arrivants.
+- Bâti sur le regroupement 1.97.0 (#853) pour reprendre son menu clic droit ; main.pbo non reconstruit (fait au regroupement).
+
+**À tester en jeu** : clic droit > Point de passage, nom saisi puis VALIDER, Entrée dans le champ nom, À la suite coché et décoché, clic gauche en mode étapes ; clic sur une étape (sélection et mode étapes), renommer, changer le type, DÉPLACER ICI après un clic droit, AVANT / APRÈS, SUPPRIMER ; à deux dans le même groupe, une étape posée ou supprimée apparaît chez l'autre sans couper sa navigation ; partage Camp avec un joueur d'un autre groupe ; Moi seul n'envoie rien ; « Faire naviguer le groupe » ; arrivée en cours de partie (itinéraire du groupe rejoué) ; lisibilité des traits et noms sur carte claire et sombre, en mini et en plein écran ; envoi d'un itinéraire en Bluetooth.
+
+#### Capture de la carte multi-hauteurs : orthophoto à niveaux de détail pour le site et le téléphone (#858)
+
+- `fn_mapCapture` (satellite) : téléobjectif (fov 0,12) monté environ 6 fois plus haut pour la même emprise, presque sans perspective ; cadrage mesuré par `worldToScreen` et altitudes du terrain sous chaque image notés dans le RPT (`CMAPL`, `CMAPS`). Options Zeus « Ciel dégagé à midi » et « Cacher unités et véhicules », lignes en aller-retour, estimation en Go et minutes.
+- `tools/map_stitch.py --pyramid` : chaque point du sol pris dans l'image la plus centrée puis redressé sur le relief ; toutes les hauteurs dans une pyramide z/x/y WebP en mètres Arma. `--upload` l'envoie au site, `--addon` fabrique la PBO du téléphone (`@COMSPEC_ATAK_Photo`, PAA via HEMTT ≥ 1.15, sinon JPG).
+- Site : `AtakMapPhotoStore` + `AtakMapPhotoController` : `GET /map-photo/{carte}/{rendu}/{z}/{x}/{y}.webp` (tuile absente découpée dans son ancêtre, cache), `POST /api/atak/map-photo/upload` en paquets ZIP avec la clé plateforme `X_COMSPEC_KEY`. Calque « Photo COMSPEC » dans `atak_map_fond_layers`. VPS : `storage/map-photo/` inscriptible par PHP.
+- ATAK natif : `fn_photoMap` dessine les tuiles visibles sous les symboles quand le style PHOTO est choisi (Réglages > Carte, CALQUES), proposé seulement si la carte a un fond.
+- À tester en jeu : module Zeus « Capture de la carte » sur Stratis (Satellite, hauteurs 1200 et 400, carte entière puis une ville) sans interface ni unités ; `map_stitch.py --pyramid` avec le RPT ; `--upload` puis calque Photo COMSPEC sur la carte ATAK web ; `--addon` et `@COMSPEC_ATAK_Photo` : fond PHOTO dans le téléphone, tuiles jointives (sinon donner la valeur `COMSPEC_ATAK_PhotoPx`).
+
+#### Fonctionnement hors connexion, consommation par app, centre de notifications trié (#859)
+
+- `fn_offline` (nouveau) : `online`, `tick` (boucle de 2 s de la file), `hold`, `var`, `state`. L'état réseau reste celui de `fn_linkQuality` / `fn_relayNet`. Les variables de COMSPEC Link (messages, alertes, ordres, renseignement) sont figées hors réseau ; `remoteSync` ne tourne plus sans signal.
+- Réceptions retenues hors réseau puis rejouées au retour (`CBA_fnc_localEvent`) : medevac, medevacStatus, bda, report, reportRcpt, orderAck, cas, logi, alert, panic, waypoints (y compris les mises à jour en direct de #857).
+- Sauvegarde profil `COMSPEC_ATAK_OfflineSave` par `COMSPEC_ATAK_MissionKey` (toutes les 30 s, disque toutes les 2 min). `fn_netSend` : clé optionnelle (la dernière remplace la précédente en file), envois urgents gardés si la file est pleine ; `fn_markerWeb` passe par la file ; `fn_chatSend` : messages en attente affichés « En attente de réseau ».
+- App Réseau : section « Hors connexion » ; Messagerie et Tâches : heure des données. Batterie selon l'app ouverte (carte et GPS, flux vidéo, données) et la musique. Notifications : filtres Messages, Missions, Réseau. CBA (ATAK · Simulation) : `comspec_atak_native_offline_hold`, `comspec_atak_native_offline_save`. Pas de changement de DLL.
+- À tester en jeu : sous-sol ou mode avion (notification « Hors connexion », « fil du HH:MM ») ; message Athena hors réseau « En attente de réseau » puis envoyé ; compte rendu / MEDEVAC / alerte d'un autre joueur reçus seulement à la sortie avec « Synchro après … » ; marqueur modifié deux fois hors réseau = un seul envoi ; quitter et rejoindre : SMS et messages toujours là ; app Réseau (Hors connexion, détail batterie) ; filtres du centre de notifications.
+
+---
+
 ## Regroupement : marqueurs, relais, Bluetooth, app Garmin, sang et santé, téléphone, flou des visages, kits par rôle, Reco, JTAC (ATAK natif 1.97.0, COMSPEC Link 2.0.87)
 
 ### Résumé joueur

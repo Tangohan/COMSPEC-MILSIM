@@ -3,7 +3,8 @@
       - Réglages rapides en une barre : mode avion, Bluetooth, silencieux, et le volet rapide complet.
       - État du mod épinglé en tête (fn_integrityCheck : PBO en double, DLL périmée, mise à jour disponible),
         rouge ou orange selon la gravité ; clic : app Debug, onglet DLL. Ces cartes restent tant que l'anomalie existe.
-      - Filtres par gravité (Toutes, Alertes, Infos, Messages) avec leur nombre.
+      - Filtres (Toutes, Messages, Missions, Réseau, Alertes, Infos) avec leur nombre : messages d'abord, puis ordres,
+        briefing, comptes rendus (Missions) et liaison, relais, hors connexion (Réseau), puis la gravité.
       - Une carte par notification : icône de l'app, source, texte, « il y a 3 min », « ×3 » pour un texte répété ;
         clic : ouvre l'app concernée quand on la connaît ; croix : efface cette notification seule.
       - État vide soigné ; « Tout effacer » efface ce que le filtre affiche.
@@ -56,8 +57,16 @@ private _all = +(_s getOrDefault ["notifHistory", []]);
 reverse _all;
 _all = _all select { !((_x getOrDefault ["message", ""]) in _integTexts) };
 private _metas = _all apply { [_x] call comspec_atak_native_fnc_notifMeta };
-private _kindOf = { params ["_n", "_m"]; switch (true) do { case ((_m get "sev") isNotEqualTo "INFO"): { "ALERT" }; case ((_n getOrDefault ["type", ""]) isEqualTo "MESSAGE"): { "MSG" }; default { "INFO" }; } };
-private _counts = createHashMapFromArray [["ALL", count _all], ["ALERT", 0], ["INFO", 0], ["MSG", 0]];
+private _missionPages = ["TASK", "BRIEFING", "REPORTS", "PLAN", "LOGI", "MEDICAL", "JTAC", "FIRES", "WAYPOINTS"];
+private _netPages = ["NETWORK", "WAVERELAY", "RESYNCH", "ATHENA", "BLUETOOTH"];
+private _kindOf = { params ["_n", "_m"]; switch (true) do {
+    case ((_n getOrDefault ["type", ""]) isEqualTo "MESSAGE"): { "MSG" };
+    case ((_m get "page") in _missionPages): { "MISSION" };
+    case ((_m get "page") in _netPages): { "NET" };
+    case ((_m get "sev") isNotEqualTo "INFO"): { "ALERT" };
+    default { "INFO" };
+} };
+private _counts = createHashMapFromArray [["ALL", count _all], ["ALERT", 0], ["INFO", 0], ["MSG", 0], ["MISSION", 0], ["NET", 0]];
 { private _k = [_x, _metas select _forEachIndex] call _kindOf; _counts set [_k, (_counts get _k) + 1]; } forEach _all;
 private _filter = _s getOrDefault ["notifFilter", "ALL"];
 if ((_counts getOrDefault [_filter, 0]) isEqualTo 0) then { _filter = "ALL"; };
@@ -73,7 +82,7 @@ _rows pushBack ["section", "Notifications", switch (true) do {
 if ((count _all) > 0) then {
     private _fBtn = { params ["_label", "_k"]; [format ["%1 (%2)", _label, _counts get _k], compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['notifFilter', '%1']; [{ ['NOTIFS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _k], _filter isEqualTo _k] };
     private _opts = [["TOUTES", "ALL"] call _fBtn];
-    { if ((_counts get (_x select 1)) > 0) then { _opts pushBack (_x call _fBtn); }; } forEach [["ALERTES", "ALERT"], ["INFOS", "INFO"], ["MESSAGES", "MSG"]];
+    { if ((_counts get (_x select 1)) > 0) then { _opts pushBack (_x call _fBtn); }; } forEach [["MESSAGES", "MSG"], ["MISSIONS", "MISSION"], ["RÉSEAU", "NET"], ["ALERTES", "ALERT"], ["INFOS", "INFO"]];
     if ((count _opts) > 2) then { _rows pushBack ["segment", "", _opts]; };
 };
 

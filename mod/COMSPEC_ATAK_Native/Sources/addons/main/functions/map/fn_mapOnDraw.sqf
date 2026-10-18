@@ -77,6 +77,8 @@ if (isNil "_mkIconCache") then { _mkIconCache = createHashMap; uiNamespace setVa
 private _allyRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_AllyColor","BLUE"],[0.28,0.70,1,1]];
 private _selfRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_SelfColor","CYAN"],[0.20,0.90,0.95,1]];
 
+// Fond PHOTO (capture de la carte) : tuiles sous tous les symboles.
+if (_bgStyle isEqualTo "PHOTO") then { [_map] call comspec_atak_native_fnc_photoMap; };
 // Fond de carte (Réglages > Carte ou CALQUES) : voile sous tous les symboles (dessiné en premier).
 private _veil = switch (_bgStyle) do {
     case "LIGHT": { [1, 1, 1, 0.38] };
@@ -199,23 +201,6 @@ if (profileNamespace getVariable ["COMSPEC_ATAK_PlanOnMap2", true]) then {
     if (_planRoom isNotEqualTo "") then { [_map, (missionNamespace getVariable ["COMSPEC_ATAK_PlanRoom_" + _planRoom, [0, [], ""]]) param [1, []], 0.85] call comspec_atak_native_fnc_planDraw; };
     private _planDraft = missionNamespace getVariable ["COMSPEC_ATAK_PlanDraft", []];
     if ((count _planDraft) > 0) then { [_map, _planDraft, 0.55] call comspec_atak_native_fnc_planDraw; };
-};
-
-// Points de passage : traits pointillés entre étapes, étape active en vert, trait de cap depuis moi en navigation.
-private _wp = missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap];
-private _wpts = _wp getOrDefault ["pts", []];
-if ((count _wpts) > 0) then {
-    private _wi = _wp getOrDefault ["idx", 0];
-    private _dash = {
-        params ["_a", "_b", "_c"];
-        private _n = ((round ((_a distance2D _b) / 40)) max 1) min 60;
-        for "_k" from 0 to (_n - 1) step 2 do { _map drawLine [_a vectorAdd ((_b vectorDiff _a) vectorMultiply (_k / _n)), _a vectorAdd ((_b vectorDiff _a) vectorMultiply ((_k + 1) / _n)), _c]; };
-    };
-    for "_i" from 0 to ((count _wpts) - 2) do { [(_wpts select _i) select 0, (_wpts select (_i + 1)) select 0, [0.95, 0.75, 0.18, 0.9]] call _dash; };
-    if (_wp getOrDefault ["nav", false]) then { _map drawArrow [getPosATL vehicle player, (_wpts select _wi) select 0, [0.36, 0.78, 0.42, 0.9]]; };
-    {
-        _map drawIcon ["\A3\ui_f\data\map\markers\military\flag_CA.paa", [[0.95, 0.75, 0.18, 1], [0.36, 0.85, 0.42, 1]] select (_forEachIndex isEqualTo _wi), _x select 0, 22 * _k * _is, 22 * _k * _is, 0, _x select 1, 2, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
-    } forEach _wpts;
 };
 
 // Guerre électronique : position brouillée (GPS) et pistes BFT dégradées.
@@ -427,6 +412,9 @@ if ((count _anchor) >= 2 && {(_state getOrDefault ["mapMode","SELECT"]) isEqualT
     _map drawIcon [_dot, [0.36, 0.78, 0.42, 1], _ap, 6, 6, 0, "  " + (("POINT DE POSE · VALIDER") call comspec_atak_native_fnc_tr), 2, 0.026 * _ts, (COMSPEC_ATAK_FontSet select 1), "right"];
 };
 
+// Points de passage : tronçons, étapes nommées et typées, point choisi en mode POINTS DE PASSAGE (fn_wpDraw).
+[_map, _k * _is, _ts, _cursor] call comspec_atak_native_fnc_wpDraw;
+
 // Mesure A -> B (ou A -> curseur tant que B n'est pas posé)
 private _measure = +(_state getOrDefault ["mapMeasure",[]]);
 if ((count _measure) isEqualTo 1 && {(count _cursor) >= 2}) then { _measure pushBack [_cursor select 0,_cursor select 1,0]; };
@@ -604,7 +592,7 @@ if (_spanX > 1 && {_spanY > 1}) then {
     if (_si < 0) then { _si = (count _steps) - 1; };
     private _step = _steps select _si;
     private _gs = 0.019 * _k * _ts;
-    private _light = _bgStyle in ["DARK", "NIGHT"];
+    private _light = _bgStyle in ["DARK", "NIGHT", "PHOTO"];
     private _gc = [[0.05, 0.05, 0.05, 0.95], [0.90, 0.94, 0.91, 0.95]] select _light;
     private _none = "#(argb,8,8,3)color(0,0,0,0)";
     private _cfgGrid = configFile >> "CfgWorlds" >> worldName >> "Grid";

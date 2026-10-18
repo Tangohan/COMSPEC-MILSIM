@@ -176,17 +176,17 @@ if (!isNil "zen_custom_modules_fnc_register") then {
 // MEDEVAC du camp : demandes et suivi (app Médical, onglet MEDEVAC).
 // Caméra partagée avec moi (fn_camShare : NFC, Bluetooth ou relais).
 ["comspec_atak_native_camShare", { ["recv", _this] call comspec_atak_native_fnc_camShare; }] call CBA_fnc_addEventHandler;
-["comspec_atak_native_medevac", { ["recv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
-["comspec_atak_native_bda", { ["recv", _this] call comspec_atak_native_fnc_bdaAction; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_medevac", { if (["hold", ["comspec_atak_native_medevac", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_bda", { if (["hold", ["comspec_atak_native_bda", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_bdaAction; }] call CBA_fnc_addEventHandler;
 // Comptes rendus du camp (app Comptes rendus) : tous les types, rejoués par la synchro serveur.
-["comspec_atak_native_report", { ["recv", _this] call comspec_atak_native_fnc_reportAction; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_report", { if (["hold", ["comspec_atak_native_report", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_reportAction; }] call CBA_fnc_addEventHandler;
 // Accusés de lecture et de réception des comptes rendus (l'auteur les garde).
-["comspec_atak_native_reportRcpt", { ["rcpt", _this] call comspec_atak_native_fnc_reportAction; }] call CBA_fnc_addEventHandler;
-["comspec_atak_native_medevacStatus", { ["statusRecv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_reportRcpt", { if (["hold", ["comspec_atak_native_reportRcpt", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["rcpt", _this] call comspec_atak_native_fnc_reportAction; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_medevacStatus", { if (["hold", ["comspec_atak_native_medevacStatus", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["statusRecv", _this] call comspec_atak_native_fnc_medicalAction; }] call CBA_fnc_addEventHandler;
 // Ordres : réponses des joueurs du camp (app Tâches, qui a vu / reçu / exécute).
-["comspec_atak_native_orderAck", { ["recv", _this] call comspec_atak_native_fnc_orderAck; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_orderAck", { if (["hold", ["comspec_atak_native_orderAck", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_orderAck; }] call CBA_fnc_addEventHandler;
 // App JTAC : brief, appels du JTAC et réponses de l'équipage (CAS), envoyés aux seuls intéressés.
-["comspec_atak_native_cas", { ["recv", _this] call comspec_atak_native_fnc_jtacAction; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_cas", { if (["hold", ["comspec_atak_native_cas", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_jtacAction; }] call CBA_fnc_addEventHandler;
 // App JTAC ouverte en contrôle (ou vue équipage) : position et géométrie de l'appareil rafraîchies.
 [{ ["tick"] call comspec_atak_native_fnc_jtacAction; }, 3] call CBA_fnc_addPerFrameHandler;
 private _eh = addMissionEventHandler ["ExtensionCallback", { _this call comspec_atak_native_fnc_extensionCallback }];
@@ -348,6 +348,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 
 // PANIQUE d'un allié : alerte rouge, vibration, repère local sur la carte pendant 10 min.
 ["comspec_atak_native_panic", {
+    if (["hold", ["comspec_atak_native_panic", _this]] call comspec_atak_native_fnc_offline) exitWith {};
     params ["_who", "_pos", "_grid"];
     if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {};
     ["WARNING", format ["PANIQUE · %1 · %2", _who, _grid], 12, 90] call comspec_atak_native_fnc_notify;
@@ -362,6 +363,7 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
 
 // Alertes rapides et SALUTE d'un allié (aussi sans Athena) : notification, vibreur, journal de l'app Alertes, repère 10 min.
 ["comspec_atak_native_alert", {
+    if (["hold", ["comspec_atak_native_alert", _this]] call comspec_atak_native_fnc_offline) exitWith {};
     params ["_type", "_who", "_pos", "_grid", ["_text", ""], ["_side", ""]];
     if (_side isNotEqualTo str side group player || {!([player] call comspec_atak_native_fnc_hasDevice)}) exitWith {};
     // Bilan de blessé (liaison ATAK) : son état n'est pas gardé si je masque l'état médical dans les alertes (fn_medShow).
@@ -524,7 +526,9 @@ addMissionEventHandler ["EntityKilled", {
 }];
 
 // Débit simulé : la file d'envoi part dès que le réseau revient, et les SMS restés chez l'opérateur arrivent.
+// Hors connexion (fn_offline) : données figées, réceptions retenues, synchro et bilan au retour, sauvegarde du profil.
 [{
+    ["tick"] call comspec_atak_native_fnc_offline;
     private _inbox = missionNamespace getVariable ["COMSPEC_ATAK_P2pInbox", []];
     if ((count _inbox) > 0 && {[] call comspec_atak_native_fnc_p2pReachable}) then {
         missionNamespace setVariable ["COMSPEC_ATAK_P2pInbox", []];
@@ -779,7 +783,7 @@ addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screen
 }] call CBA_fnc_addEventHandler;
 
 // Logistique : demandes et statuts du camp ; guerre électronique : brouilleurs partagés.
-["comspec_atak_native_logi", { ["recv", _this] call comspec_atak_native_fnc_logisticsAction; }] call CBA_fnc_addEventHandler;
+["comspec_atak_native_logi", { if (["hold", ["comspec_atak_native_logi", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["recv", _this] call comspec_atak_native_fnc_logisticsAction; }] call CBA_fnc_addEventHandler;
 // Décisions du poste web sur les demandes logistiques (mode passerelle).
 [{ ["poll"] call comspec_atak_native_fnc_logiWeb; }, 20] call CBA_fnc_addPerFrameHandler;
 [{ ["tick"] call comspec_atak_native_fnc_ewAction; }, 5] call CBA_fnc_addPerFrameHandler;
@@ -811,14 +815,15 @@ addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screen
     };
 }, 1] call CBA_fnc_addPerFrameHandler;
 
-// Points de passage : itinéraire reçu d'un membre du groupe, et passage automatique à l'étape suivante.
-["comspec_atak_native_waypoints", { ["receive", _this] call comspec_atak_native_fnc_wpAction; }] call CBA_fnc_addEventHandler;
+// Points de passage : itinéraire reçu d'un membre du groupe (envoi, ou mise à jour en direct), et passage automatique à
+// l'étape suivante.
+["comspec_atak_native_waypoints", { if (["hold", ["comspec_atak_native_waypoints", _this]] call comspec_atak_native_fnc_offline) exitWith {}; ["receive", _this] call comspec_atak_native_fnc_wpAction; }] call CBA_fnc_addEventHandler;
 // Synchro à l'arrivée : le serveur rejoue les demandes logistiques / MEDEVAC du camp et l'itinéraire du groupe (sans alerte).
 ["comspec_atak_native_syncData", {
     params [["_log", []], ["_route", []]];
     missionNamespace setVariable ["COMSPEC_ATAK_Replaying", true];
     { _x params ["_ev", "_args"]; [_ev, _args] call CBA_fnc_localEvent; } forEach _log;
-    if ((count _route) >= 2 && {(count ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["pts", []])) isEqualTo 0}) then {
+    if ((count _route) >= 2 && {(count (_route select 0)) > 0} && {(count ((missionNamespace getVariable ["COMSPEC_ATAK_Waypoints", createHashMap]) getOrDefault ["pts", []])) isEqualTo 0}) then {
         ["receive", [_route select 0, _route select 1, false]] call comspec_atak_native_fnc_wpAction;
     };
     missionNamespace setVariable ["COMSPEC_ATAK_Replaying", false];
