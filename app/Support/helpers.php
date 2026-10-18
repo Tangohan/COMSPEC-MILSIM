@@ -1119,6 +1119,20 @@ if (!function_exists('atak_map_fond_layers')) {
                 ];
             }
         }
+        // Fonds capturés en jeu par le mod (capture de la carte, tools/map_stitch.py --pyramid --upload).
+        $world = \App\Support\AtakMapPhotoStore::world($slug);
+        if ($world !== null) {
+            $store = new \App\Support\AtakMapPhotoStore();
+            foreach ([
+                'sat' => ['photo-comspec', 'Photo COMSPEC', 'Vue satellite capturée en jeu, bâtiments et arbres compris'],
+                'plan' => ['plan-comspec', 'Plan COMSPEC', 'Carte du jeu capturée en jeu, très détaillée'],
+            ] as $mode => [$id, $label, $help]) {
+                $spec = $store->overlaySpec($world, $mode, url(''));
+                if ($spec !== null) {
+                    $layers[] = ['id' => $id, 'label' => $label, 'help' => $help, 'kind' => 'overlay', 'spec' => $spec];
+                }
+            }
+        }
 
         return $layers;
     }

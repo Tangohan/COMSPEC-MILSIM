@@ -77,6 +77,8 @@ if (isNil "_mkIconCache") then { _mkIconCache = createHashMap; uiNamespace setVa
 private _allyRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_AllyColor","BLUE"],[0.28,0.70,1,1]];
 private _selfRgb = _palette getOrDefault [profileNamespace getVariable ["COMSPEC_ATAK_SelfColor","CYAN"],[0.20,0.90,0.95,1]];
 
+// Fond PHOTO (capture de la carte) : tuiles sous tous les symboles.
+if (_bgStyle isEqualTo "PHOTO") then { [_map] call comspec_atak_native_fnc_photoMap; };
 // Fond de carte (Réglages > Carte ou CALQUES) : voile sous tous les symboles (dessiné en premier).
 private _veil = switch (_bgStyle) do {
     case "LIGHT": { [1, 1, 1, 0.38] };
@@ -590,7 +592,7 @@ if (_spanX > 1 && {_spanY > 1}) then {
     if (_si < 0) then { _si = (count _steps) - 1; };
     private _step = _steps select _si;
     private _gs = 0.019 * _k * _ts;
-    private _light = _bgStyle in ["DARK", "NIGHT"];
+    private _light = _bgStyle in ["DARK", "NIGHT", "PHOTO"];
     private _gc = [[0.05, 0.05, 0.05, 0.95], [0.90, 0.94, 0.91, 0.95]] select _light;
     private _none = "#(argb,8,8,3)color(0,0,0,0)";
     private _cfgGrid = configFile >> "CfgWorlds" >> worldName >> "Grid";
