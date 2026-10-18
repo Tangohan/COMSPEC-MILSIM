@@ -490,6 +490,13 @@ try {
     echo '  [ATTENTION] training_course_lms_platform_version : ' . $e->getMessage() . "\n";
     $migrationRunner->warn('training_course_lms_platform_version', $e);
 }
+$trainingUrlDeliveryMigrate = require $root . '/bootstrap/training_url_delivery_migration.php';
+try {
+    $trainingUrlDeliveryMigrate($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] training_url_delivery : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('training_url_delivery', $e);
+}
 $trainingCoursesLmsScopeMigrate = require $root . '/bootstrap/training_courses_lms_scope_migration.php';
 try {
     $trainingCoursesLmsScopeMigrate($pdo);
@@ -3936,6 +3943,13 @@ $planGiftMigrate = require $root . '/bootstrap/plan_gift_migration.php';
 $migrationRunner->step('plan_gifts', static function () use ($planGiftMigrate, $pdo): void {
     echo "Migration plan_gifts / plan_gift_notices (formules offertes)...\n";
     $planGiftMigrate($pdo);
+});
+
+// Envois d'e-mails sous quota : récapitulatif des alertes d'exploitation, compteur du jour.
+$emailDigestMigrate = require $root . '/bootstrap/email_digest_migration.php';
+$migrationRunner->step('email_digest', static function () use ($emailDigestMigrate, $pdo): void {
+    echo "Migration email_digest_items (récapitulatif des alertes e-mail)...\n";
+    $emailDigestMigrate($pdo);
 });
 
 $atakSendQueueMigrate = require $root . '/bootstrap/atak_send_queue_migration.php';

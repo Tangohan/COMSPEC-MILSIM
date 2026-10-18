@@ -83,6 +83,21 @@ final class SecurityHeadersCspWorkerTest extends TestCase
         self::assertSame($src, SecurityHeadersMiddleware::ensureWorkerSrc($src));
     }
 
+    public function testFrameSrcAllowsHttpsDocumentViewers(): void
+    {
+        unset($_ENV['APP_CSP']);
+        self::assertMatchesRegularExpression("/frame-src 'self' https:/i", (string) $this->headerFromMiddleware());
+
+        $src = "default-src 'self'; script-src 'self'";
+        self::assertSame($src . "; frame-src 'self' https:", SecurityHeadersMiddleware::ensureFrameSrcHttps($src));
+        self::assertSame(
+            "frame-src https: 'self' https://www.youtube.com; script-src 'self'",
+            SecurityHeadersMiddleware::ensureFrameSrcHttps("frame-src 'self' https://www.youtube.com; script-src 'self'")
+        );
+        self::assertSame("frame-src 'none'", SecurityHeadersMiddleware::ensureFrameSrcHttps("frame-src 'none'"));
+        self::assertSame("frame-src 'self' https:", SecurityHeadersMiddleware::ensureFrameSrcHttps("frame-src 'self' https:"));
+    }
+
     public function testConnectSrcGainsDataForDeckGlIcons(): void
     {
         $src = "script-src 'self'; connect-src 'self' https: wss:";
