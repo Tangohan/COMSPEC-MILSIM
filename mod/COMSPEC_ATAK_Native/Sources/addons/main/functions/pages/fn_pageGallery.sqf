@@ -246,7 +246,7 @@ if (_tab isEqualTo "SENT") exitWith {
         if ((toUpper _kind) isEqualTo "PHOTO") then {
             _lines pushBack format ["<t color='#8a9a93'>%1</t>  %2<br/><t size='0.85'>%3</t>", [_time] call _esc, [_title] call _esc, [_text] call _esc];
         };
-    } forEach (missionNamespace getVariable ["COMSPEC_Athena_AlertInbox", []]);
+    } forEach (["var", ["COMSPEC_Athena_AlertInbox", []]] call comspec_atak_native_fnc_offline);
     reverse _lines;
     private _watch = _droneList select { ((_x select 1) param [8, ""]) in ["SENDING", "FAILED"] };
     private _rows = _head + [

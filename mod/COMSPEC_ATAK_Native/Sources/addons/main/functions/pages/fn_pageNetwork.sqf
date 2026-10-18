@@ -404,6 +404,16 @@ if !(_sim) then {
     { _x call _info; } forEach (_lq get "factors");
 };
 
+// --- Hors connexion (fn_offline) : données figées, réceptions retenues, envois en file ---
+(["state"] call comspec_atak_native_fnc_offline) params ["_offNow", "_offSync", "_offFor", "_offHeld"];
+private _offQueue = count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []]);
+["Hors connexion", ["Sans signal, le téléphone garde ses données et envoie tout au retour du réseau", "Le téléphone ne reçoit plus : vous consultez les données enregistrées"] select _offNow] call _section;
+["État", ["<t color='#5cc76b'>en ligne</t>", format ["<t color='#f2ab33'>hors connexion depuis %1</t>", [format ["%1 s", round _offFor], format ["%1 min", floor (_offFor / 60)]] select (_offFor >= 60)]] select _offNow] call _info;
+["Dernière synchro", [_offSync, "—"] select (_offSync isEqualTo "")] call _info;
+["Envois en file", [str _offQueue, format ["<t color='#f2ab33'>%1</t>", _offQueue]] select (_offQueue > 0)] call _info;
+["Reçus en attente au relais", [str _offHeld, format ["<t color='#f2ab33'>%1</t>", _offHeld]] select (_offHeld > 0)] call _info;
+if !(missionNamespace getVariable ["comspec_atak_native_offline_hold", true]) then { ["<t color='#8a9a93'>Rétention coupée par le serveur : comptes rendus et alertes arrivent même sans signal.</t>"] call _para; };
+
 // --- File d'envoi Athena (journal de COMSPEC Link 2.0.65, lu en mémoire sans réseau) ---
 private _sqRaw = if (_bridge && {!(missionNamespace getVariable ["COMSPEC_ATAK_SendQNo", false])}) then { ("COMSPECExtension" callExtension ["SendQueue.Status", []]) select 0 } else { "" };
 if ((_sqRaw select [0, 3]) isEqualTo "OK|") then {

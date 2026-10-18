@@ -136,7 +136,7 @@ if (_page isEqualTo "MAP") then {
 // Vibration à l'arrivée d'un message (Athena, alerte TOC ou message direct).
 private _inCount = ({(_x getOrDefault ["dir", ""]) isEqualTo "in"} count (_data getOrDefault ["p2p", []])) + (count (_data getOrDefault ["inbox", []]));
 _inCount = _inCount + (if ([] call comspec_atak_native_fnc_bridge) then {
-    {!(_x param [5, false])} count (missionNamespace getVariable ["COMSPEC_Comms_Messages", []])
+    {!(_x param [5, false])} count (["var", ["COMSPEC_Comms_Messages", []]] call comspec_atak_native_fnc_offline)
 } else {
     {!(_x get "mine")} count ([] call comspec_atak_native_fnc_messagesAll)
 });

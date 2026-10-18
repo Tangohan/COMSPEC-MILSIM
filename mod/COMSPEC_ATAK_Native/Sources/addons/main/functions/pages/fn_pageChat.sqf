@@ -268,7 +268,7 @@ private _drawList = {
     private _state = switch (true) do {
         case (!_bridge): { ["TOC local · SMS directs", "#f2ab33"] };
         case (!_ready): { ["Athena non connecté", "#f2ab33"] };
-        case (!_net): { ["Hors réseau · envoi différé", "#f2ab33"] };
+        case (!_net): { [format ["Hors réseau · fil du %1 · envoi différé", (["state"] call comspec_atak_native_fnc_offline) select 1], "#f2ab33"] };
         default { ["Athena connecté", _accHex] };
     };
     if (!_bridge && {_netBars isEqualTo 0}) then { _state = ["Hors réseau · SMS en attente du signal", "#f2ab33"]; };
