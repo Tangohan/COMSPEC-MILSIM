@@ -46,15 +46,15 @@ FR : COMSPEC ATAK 2.1.1 « Denver » : le français partout, un Resynch complet 
 - Le réglage Français traduit enfin tout : écrans d'Overwatch, menus, actions ACE et noms automatiques des marqueurs suivent la langue du mod, sans relancer la mission.
 - L'app Synchro renvoie tout ce qui manque à Athena (carte du camp, plan de briefing, équipes, montre Garmin, tenues modifiées, objets) et montre l'état de chaque catégorie.
 - Photo plein écran sans main devant la vue, avec la touche B pour le flou ; l'image du drone ne reste plus noire ; le pouls et le nom du blessé reviennent dans l'app Médical.
-- Le guide « Réseau et simulation » ouvre chaque rubrique (dans Eden seulement), et la capture de la carte par Zeus démarre de nouveau.
+- L'app Réglages montre l'état de la liaison et cherche n'importe quel réglage ; le code de liaison Athena se renouvelle tout seul ; le guide réseau ouvre chaque rubrique et la capture de la carte par Zeus démarre de nouveau.
 EN : COMSPEC ATAK 2.1.1 "Denver": French everywhere, a complete Resynch and a batch of fixes
 - The French setting now translates everything: Overwatch screens, menus, ACE actions and automatic marker names follow the mod language, without restarting the mission.
 - The Synchro app resends everything Athena is missing (side map, briefing plan, teams, Garmin watch, changed loadouts, items) and shows the state of each category.
 - Fullscreen camera with no hand in front of the view, with the B key for blur; the drone picture no longer stays black; the casualty's pulse and name are back in the Medical app.
-- The "Network and simulation" guide opens every section (in Eden only), and the Zeus map capture starts again.
+- The Settings app shows your link status and searches any setting; the Athena link code renews itself; the network guide opens every section and the Zeus map capture starts again.
 
 ### Détail technique
-Regroupe #893, #894, #896, #897, #898, #899 et #900. `VERSION_STR` « 2.1.1 » (seul comparé), nom affiché « 2.1.1.AB - Denver ». COMSPEC Link inchangé (2.0.88), pas de DLL à recompiler. main.pbo reconstruit avec HEMTT 1.22 (build « 2026.10.18 5d418bd », `i18n/fr.txt` inclus, 96,5 Mo, sous la limite GitHub de 100 Mo). `comspec_overwatch_connect.pbo` repris de #898 puis repatché avec `fn_forceSyncData.sqf` de #900 ; `comspec_sse_core.pbo` patché par #898. Rien à déployer côté site.
+Regroupe #893, #894, #896, #897, #898, #899, #900, #905 et #906. `VERSION_STR` « 2.1.1 » (seul comparé), nom affiché « 2.1.1.AB - Denver ». COMSPEC Link inchangé (2.0.88), pas de DLL à recompiler. main.pbo reconstruit avec HEMTT 1.22 (build « 2026.10.18 5d418bd », `i18n/fr.txt` inclus, 96,5 Mo, sous la limite GitHub de 100 Mo). `comspec_overwatch_connect.pbo` repris de #898 puis repatché avec `fn_forceSyncData.sqf` de #900 ; `comspec_sse_core.pbo` patché par #898. Rien à déployer côté site.
 
 #### Le réglage Français traduit tout, noms automatiques des marqueurs (#898)
 - `i18n/fr.txt` (anglais vers français) chargé en français, assemblé par `tools/i18n.py fr` depuis `tools/i18n_fr_source.tsv` et les stringtables ; `fn_tr` et les écrans (ATAK, connect, SSE) traduisent dès qu'un dictionnaire est chargé ; langue lue dans le profil CBA dès le preInit ; menus CBA vidés au changement de langue ; actions ACE retraduites à chaque affichage. Noms automatiques des marqueurs (palette, LOCK, détections drone, END/FIN) posés dans la langue du mod et relus par `fn_markerAutoName`.
@@ -123,6 +123,42 @@ EN : The Synchro app now resends everything, and clearly says what went out
 - `fn_pageResynch` refait : carte d'état globale, bouton « RELANCER LE RESYNCH » / « PATIENTEZ N S » (délai de 15 s de `forceSyncData`), nouvelle ligne `cells` de `fn_formRender` (grille de cartes, deux colonnes en paysage : icône de l'app, liseré et état en couleur). Lancement automatique à l'ouverture seulement si le dernier renvoi a plus de 5 min.
 - `comspec_overwatch_connect.pbo` repatché (`tools/pbo_patch.py`, `fn_forceSyncData.sqf`). main.pbo à reconstruire au regroupement. COMSPEC Link inchangé (2.0.88). `i18n/en.txt` : 76 entrées.
 - À tester en jeu : ouvrir Synchro (renvoi auto), relancer (bouton en attente 15 s), rouvrir l'app avant 5 min (pas de renvoi), vérifier sur Athena le plan de briefing, les équipes, la montre Garmin sur la fiche du membre, une tenue modifiée, les icônes du kit ; couper la liaison puis Resynch (ligne « Liaison Athena »).
+
+
+#### App Réglages : état de la liaison, recherche, Athéna et synchronisation, À propos (#905)
+
+##### Résumé joueur de la PR
+Type : nouveauté
+FR : L'app Réglages se met à jour
+- En haut des Réglages, tu vois tout de suite si ton téléphone est connecté et synchronisé avec le poste.
+- Un champ de recherche trouve n'importe quel réglage (par exemple « nuit » ou « boussole ») sans ouvrir chaque catégorie.
+- Nouvelles catégories « Athéna et synchronisation » et « À propos du téléphone » : synchro, envois en attente, Resynch, versions et identité du téléphone.
+- La touche retour te ramène à la liste des Réglages au lieu de fermer l'app.
+EN : The Settings app gets an upgrade
+- At the top of Settings you can see right away whether your phone is connected and synced with the command post.
+- A search field finds any setting (for example "night" or "compass") without opening every category.
+- New "Athena and sync" and "About phone" categories: sync, pending sends, Resynch, versions and phone identity.
+- The back key takes you to the Settings list instead of closing the app.
+
+##### Détail technique
+- Tout est dans `fn_pageSettings.sqf` (réutilise `fn_athenaStatus`, `fn_offline`, `fn_syncStats`, `fn_phoneIdent`, `fn_extVersion` ; DLL interrogée seulement sur la page À propos), `backSub` pour la touche retour. Carte : « Rétablir la carte par défaut » en deux appuis. Traductions dans `i18n/en.txt`, modèle communautaire régénéré. DLL inchangée.
+- À tester en jeu : carte d'état de l'accueil (connecté, non lié, Athéna sur Non), recherche en français et en anglais, touche retour dans une catégorie et dans une recherche, boutons RESYNCH / APP ATHENA / DÉTAIL, versions sur À propos (Link en vert si la DLL correspond).
+
+
+#### Liaison Athena : code renouvelé tout seul, nouveau code si la session tombe (#906)
+
+##### Résumé joueur de la PR
+Type : correctif
+FR : Le code de liaison Athena se renouvelle tout seul
+- Un code qui expire pendant que l'app Athena est à l'écran est remplacé automatiquement, plus besoin d'appuyer sur NOUVEAU CODE.
+- Si ta session Athena tombe en pleine partie (expirée, révoquée, Steam lié à un autre compte), le téléphone te propose aussitôt un nouveau code.
+EN : The Athena link code now renews itself
+- A code that expires while the Athena app is on screen is replaced automatically, no need to press NEW CODE.
+- If your Athena session drops mid-game (expired, revoked, Steam linked to another account), the phone offers a new code right away.
+
+##### Détail technique
+- `fn_athenaLink` : troisième paramètre `auto` (3 renouvellements au plus, remis à zéro par une demande manuelle) et action `watch`, appelée toutes les 10 s par un PFH de `XEH_postInitClient.sqf` ; une session ouverte qui tombe sur une erreur de session (SESSION_EXPIRED, révocation, refresh, 401, STEAM_NOT_LINKED) propose un code une fois par perte (notification + indice). `fn_athenaStatus` renvoie le `code` d'erreur brut. Côté site : #904 (déjà sur main).
+- À tester en jeu : app Athena ouverte sans session au-delà de 10 min (nouveau code tout seul) ; session ouverte puis appareil révoqué sur le site (notification de code en ~10 s).
 
 
 ## Regroupement : réseau radio réaliste, apps refaites, synchro allégée, icônes des objets (ATAK natif 2.1.0.AB - Denver, COMSPEC Link 2.0.88)
