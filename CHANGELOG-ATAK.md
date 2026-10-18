@@ -43,12 +43,12 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 ### Résumé joueur
 Type : correctif
 FR : Les notes de reco arrivent enfin au poste
-- Les notes envoyées depuis l'app Reco apparaissent maintenant sur la carte du site, dans le fil de renseignement et dans le journal du poste.
+- Les notes envoyées depuis l'app Reco apparaissent maintenant sur la carte du site, dans le fil de renseignement et dans le journal du poste. Chaque communauté peut aussi les recevoir dans un salon Discord (Intégrations).
 - Dans l'app Reco, « Sous mon regard » est remplacé par « Pointé carte » : touchez la carte du téléphone pour placer le point de la note.
 - L'app Athena prévient en rouge quand le jeu tourne avec BattlEye : la liaison ne peut pas se faire tant qu'il est actif.
 - Les points simples posés sur la carte sont bien visibles, en jeu comme sur le site.
 EN : Recon notes finally reach the command post
-- Notes sent from the Recon app now show on the site map, in the intelligence feed and in the command post log.
+- Notes sent from the Recon app now show on the site map, in the intelligence feed and in the command post log. Each community can also receive them in a Discord channel (Integrations).
 - In the Recon app, "Under my gaze" is replaced by "Pick on map": tap the phone map to place the note's point.
 - The Athena app warns in red when the game runs with BattlEye: the link cannot connect while it is on.
 - Simple dots placed on the map are now clearly visible, in game and on the site.
@@ -56,7 +56,7 @@ EN : Recon notes finally reach the command post
 ### Détail technique
 - Cause des recos perdues : la commande synchrone `RECON.Note` de COMSPEC Link postait le JSON tel que livré par `callExtension` (guillemets doublés). PHP lisait un corps vide et répondait 400 « Indiquez une observation » ; rien n'était enregistré (RECO 0 sur le site). 2.0.87 passe le corps par `EnrichAtakPayload` (normalisation + jeton de session, Steam, version), dans les chemins synchrone et asynchrone.
 - `POST /api/recon/notes` : une entrée « Renseignement » au journal Activité par nouvelle note (type, texte, carroyage, auteur), et un `error_log [atak/recon-notes]` quand une note est refusée vide ou illisible.
-- Webhook Discord `DISCORD_RECON_WEBHOOK` (nouveau, `.env` du VPS) : une carte par note (type, observation, fiabilité, carroyage, auteur, communauté), envoyée après la réponse, 30 par minute au plus, mentions et liens neutralisés. Vide : rien n'est posté. `ReconNoteDiscordService`.
+- Relais Discord par communauté « Notes de reco » (Back-office > Intégrations, groupe Téléphone ATAK, désactivé par défaut, salon commun ou salon à part) : une carte par note (type, observation, fiabilité, carroyage, auteur), envoyée après la réponse, 30 par minute et par communauté au plus, mentions et liens neutralisés. `ReconNoteDiscordService`, clé `atak_recon_notes`.
 - App Reco : bouton POINTÉ CARTE (clé `recoPick` de `COMSPEC_ATAK_State`, lue par `fn_mapMouseButtonDown`, retour sur l'app avec le carroyage 8 chiffres).
 - App Athena : si la DLL de liaison ne répond pas (relu toutes les 20 s), pastille « BATTLEYE ACTIF » et encadré rouge avec la marche à suivre. Même indice dans le contrôle d'intégrité du mode natif seul.
 - Points simples (`mil_dot`, `hd_dot`) : le point ne remplit qu'un quart de son image et la couleur par défaut est noire. Téléphone (`fn_mapGameMarkers`) : symbole doublé, éclairci s'il est trop sombre. Site (`arma-map-markers.js`) : rond plein cerclé de blanc au lieu du PNG, et le libellé « Repère · indicatif » n'est plus masqué (seul « Repère » nu l'est).
