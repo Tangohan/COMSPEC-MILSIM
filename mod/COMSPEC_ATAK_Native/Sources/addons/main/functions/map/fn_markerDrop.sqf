@@ -2,6 +2,8 @@
     Pose un marqueur joueur, comme la carte Arma : il est partagé avec le canal choisi dans la palette (Général par
     défaut, fn_markerPlace "channel") et COMSPEC Link l'envoie à Athena (EH MarkerCreated). Canal refusé par le
     serveur (Général désactivé…) : posé sur le canal Camp, puis sur le canal courant.
+    DURÉE de la palette (profil COMSPEC_ATAK_MarkerTtl, minutes, 0 permanent) : effacé à l'échéance. Le camp, le type et
+    la couleur posés vont en tête des RÉCENTS de la palette (profil COMSPEC_ATAK_MarkerRecent).
 */
 params ["_pos", ["_kind", ""]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
@@ -40,6 +42,16 @@ _m setMarkerColorLocal _color;
 _m setMarkerSizeLocal [_size, _size];
 _m setMarkerText format ["%1 %2", _prefix, _index];
 [_m] call comspec_atak_native_fnc_markerWeb;
-["SUCCESS", format ["%1 %2 · %3 · canal %4", _prefix, _index, mapGridPosition _pos, ["channelName", _channel] call comspec_atak_native_fnc_markerPlace], 3, 20] call comspec_atak_native_fnc_notify;
+// Durée choisie dans la palette (DURÉE) : le marqueur s'efface tout seul à l'échéance, pour tout le canal.
+private _ttl = profileNamespace getVariable ["COMSPEC_ATAK_MarkerTtl", 0];
+if !(_ttl isEqualType 0) then { _ttl = 0; };
+if (_ttl > 0) then {
+    [{ if ((markerShape _this) isNotEqualTo "") then { deleteMarker _this; }; }, _m, _ttl * 60] call CBA_fnc_waitAndExecute;
+};
+// Récents de la palette : ce camp, ce type et cette couleur en tête (6 au plus, gardés dans le profil).
+private _rec = [_aff, _type, _s getOrDefault ["markerColor", "AUTO"]];
+profileNamespace setVariable ["COMSPEC_ATAK_MarkerRecent", ([_rec] + ((profileNamespace getVariable ["COMSPEC_ATAK_MarkerRecent", []]) select { _x isNotEqualTo _rec })) select [0, 6]];
+["SUCCESS", format ["%1 %2 · %3 · canal %4%5", _prefix, _index, mapGridPosition _pos, ["channelName", _channel] call comspec_atak_native_fnc_markerPlace,
+    ["", format [" · effacé dans %1 min", _ttl]] select (_ttl > 0)], 3, 20] call comspec_atak_native_fnc_notify;
 if (_s getOrDefault ["markerEditAfter", false]) then { [_m] call comspec_atak_native_fnc_markerEditOpen; };
 _m
