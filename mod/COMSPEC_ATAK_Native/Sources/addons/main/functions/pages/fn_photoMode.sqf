@@ -3,9 +3,10 @@
     Clic gauche : photo envoyée sur ATAK web (plusieurs possibles). R : selfie (téléphone à bout de bras, tourné vers soi,
     cadrage à la souris dans la limite du bras). Molette ou + / - : zoom numérique x1 à x8, visée à la souris pendant
     le zoom (caméra scriptée). F : flash AUTO / OUI / NON (AUTO : nuit ou intérieur très sombre).
+    B : type de flou automatique des visages (gaussien, mouvement, pixel, carré noir, aucun ; fn_photoFaces).
     Espace : quitter et reprendre le téléphone. H (ou F1) : afficher / replier la barre des raccourcis, repliée
     d'elle-même quelques secondes après l'ouverture.
-    Params : ["ENTER" | "SHOOT" | "SELFIE" | "ZOOM" | "FLASH" | "HELP" | "MOUSE" | "FRAME" | "HUD" | "EXIT", légende, argument]
+    Params : ["ENTER" | "SHOOT" | "SELFIE" | "ZOOM" | "FLASH" | "BLUR" | "HELP" | "MOUSE" | "FRAME" | "HUD" | "EXIT", légende, argument]
 */
 params [["_mode", "ENTER"], ["_caption", ""], ["_arg", 0]];
 if (!hasInterface) exitWith { false };
@@ -49,6 +50,8 @@ switch (toUpper _mode) do {
                     [{ if ((uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) && {(currentWeapon player) isNotEqualTo ""}) then { player action ["SwitchWeapon", player, player, 299]; }; }, [], 0.1] call CBA_fnc_waitAndExecute;
                     true
                 };
+                // B : type de flou des visages.
+                if (_key isEqualTo 0x30) exitWith { ["BLUR"] call comspec_atak_native_fnc_photoMode; true };
                 // T : marque la cible sous le réticule (cadre jaune « VISÉ »).
                 if (_key isEqualTo 0x14) exitWith { ["mark", "PHONE"] call comspec_atak_native_fnc_lockAction; true };
                 if (_key in [0x0D, 0x4E]) exitWith { ["ZOOM", "", 1] call comspec_atak_native_fnc_photoMode; true };
@@ -239,6 +242,16 @@ switch (toUpper _mode) do {
         ["HUD"] call comspec_atak_native_fnc_photoMode;
         true
     };
+    case "BLUR": {
+        if (!_active) exitWith { false };
+        // Type de flou des visages pour la partie (le réglage CBA reste le point de départ).
+        private _types = ["gauss", "motion", "pixel", "black", "off"];
+        private _cur = uiNamespace getVariable ["COMSPEC_ATAK_BlurType", missionNamespace getVariable ["comspec_atak_native_blur_type", "gauss"]];
+        uiNamespace setVariable ["COMSPEC_ATAK_BlurType", _types select ((((_types find _cur) max 0) + 1) mod 5)];
+        playSound "ClickSoft";
+        ["HUD"] call comspec_atak_native_fnc_photoMode;
+        true
+    };
     case "HELP": {
         if (!_active) exitWith { false };
         private _open = !(_st getOrDefault ["helpOpen", true]);
@@ -257,9 +270,12 @@ switch (toUpper _mode) do {
         private _z = _st getOrDefault ["zoom", 1];
         private _fl = _st getOrDefault ["flash", "AUTO"];
         private _zs = { params ["_v"]; [_v toFixed 1, str _v] select ((_v mod 1) isEqualTo 0) };
-        (_cam displayCtrl 5) ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold'><t color='#f2d36b'>%1</t>   <t color='#6d7a74'>|</t>   ZOOM <t color='#5cc76b'>x%2</t>   <t color='#6d7a74'>|</t>   FLASH <t color='%3'>%4</t></t>",
+        private _bt = uiNamespace getVariable ["COMSPEC_ATAK_BlurType", missionNamespace getVariable ["comspec_atak_native_blur_type", "gauss"]];
+        private _bl = (createHashMapFromArray [["gauss", "GAUSSIEN"], ["motion", "MOUVEMENT"], ["pixel", "PIXEL"], ["black", "CARRÉ NOIR"]]) getOrDefault [_bt, "COUPÉ"];
+        (_cam displayCtrl 5) ctrlSetStructuredText parseText ((format ["<t align='center' font='COMSPEC_BarlowBold'><t color='#f2d36b'>%1</t>   <t color='#6d7a74'>|</t>   ZOOM <t color='#5cc76b'>x%2</t>   <t color='#6d7a74'>|</t>   FLASH <t color='%3'>%4</t>   <t color='#6d7a74'>|</t>   VISAGES <t color='%5'>%6</t></t>",
             ["OBJECTIF ARRIÈRE", "SELFIE"] select _selfie, [_z] call _zs, ["#e8eadf", "#f2ab33"] select (_fl isEqualTo "ON"),
-            createHashMapFromArray [["AUTO", "AUTO"], ["ON", "FORCÉ"], ["OFF", "COUPÉ"]] get _fl]) call comspec_atak_native_fnc_tr);
+            createHashMapFromArray [["AUTO", "AUTO"], ["ON", "FORCÉ"], ["OFF", "COUPÉ"]] get _fl,
+            ["#5cc76b", "#8a9a93"] select (_bl isEqualTo "COUPÉ"), _bl]) call comspec_atak_native_fnc_tr);
         // Échelle de zoom à droite : palier en cours en vert.
         (_cam displayCtrl 6) ctrlSetStructuredText parseText ((((_zoomSteps apply {
             private _on = abs (_x - _z) < 0.01;
@@ -281,7 +297,7 @@ switch (toUpper _mode) do {
         private _open = _st getOrDefault ["helpOpen", true];
         private _keys = switch (true) do {
             case (!_open): { [["CLIC", "photo", 1], "|", ["H", "aide", 2], ["ESPACE", "quitter", 2]] };
-            case (_selfie): { [["CLIC", "photo", 1], "|", ["MOLETTE", "zoom", 0], ["SOURIS", "cadrer", 0], "|", ["F", _flash, 0], ["R", "objectif arrière", 0], "|", ["H", "masquer", 2], ["ESPACE", "quitter", 2]] };
+            case (_selfie): { [["CLIC", "photo", 1], "|", ["MOLETTE", "zoom", 0], ["SOURIS", "cadrer", 0], "|", ["F", _flash, 0], ["B", "flou", 0], ["R", "objectif arrière", 0], "|", ["H", "masquer", 2], ["ESPACE", "quitter", 2]] };
             default { [["CLIC", "photo", 1], ["T", "marquer", 0], "|", ["MOLETTE", "zoom", 0], ["SOURIS", "viser", 0], "|", ["F", _flash, 0], ["R", "selfie", 0], "|", ["H", "masquer", 2], ["ESPACE", "quitter", 2]] };
         };
         private _kh = safeZoneH * 0.03;
@@ -417,8 +433,8 @@ switch (toUpper _mode) do {
              ["flash", ["off", "on"] select _fire], ["model", profileNamespace getVariable ["COMSPEC_ATAK_PhoneModel", "s7"]],
              ["atak", missionNamespace getVariable ["COMSPEC_ATAK_NativeVersion", ""]]],
             _viewDir];
-        [_fire, [_px, _py, _pz], _meta] spawn {
-            params ["_fire", "_phone", "_meta"];
+        [_fire, [_px, _py, _pz], _meta, _st getOrDefault ["selfie", false]] spawn {
+            params ["_fire", "_phone", "_meta", "_selfie"];
             disableSerialization;
             private _ctx = uiNamespace getVariable ["COMSPEC_ATAK_PhotoCtx", []];
             private _caption = _ctx param [3, ""];
@@ -443,10 +459,21 @@ switch (toUpper _mode) do {
                 _light setLightDayLight (sunOrMoon >= 0.5);
             };
             uiSleep 0.12;
+            // Visages à flouer, repérés sur l'image qui part (Athena floute à la réception).
+            private _faces = [_selfie] call comspec_atak_native_fnc_photoFaces;
+            (_meta select 9) append _faces;
             // Débit simulé : sans réseau, la photo reste sur le poste (app Galerie pour la retransmettre).
             private _noNet = (([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0;
             private _ok = if (_noNet) then {
-                screenshot format ["comspec_atak_%1.png", floor (diag_tickTime * 10)];
+                private _shot = format ["comspec_atak_%1.png", floor (diag_tickTime * 10)];
+                screenshot _shot;
+                // Visages gardés avec le nom du fichier : l'envoi depuis la Galerie les floute aussi (40 photos au plus).
+                if (_faces isNotEqualTo []) then {
+                    private _kept = profileNamespace getVariable ["COMSPEC_ATAK_PhotoFaces", []];
+                    if !(_kept isEqualType []) then { _kept = []; };
+                    _kept pushBack [toLower _shot, _faces];
+                    profileNamespace setVariable ["COMSPEC_ATAK_PhotoFaces", _kept select [((count _kept) - 40) max 0]];
+                };
                 ["WARNING", "Pas de réseau : photo gardée sur le poste, à envoyer depuis l'app Galerie", 5, 40] call comspec_atak_native_fnc_notify;
                 false
             } else { ["", _caption, "CTAB", "", false, false, true, _meta] call comspec_overwatch_connect_fnc_captureReconImage };

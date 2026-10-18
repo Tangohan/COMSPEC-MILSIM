@@ -65,5 +65,14 @@ _payload set ["mission_name", _missionTitle];
 _payload set ["mission_id", _environment getOrDefault ["mission_id", _missionFolder]];
 _payload set ["world_name", _environment getOrDefault ["world_name", ""]];
 _payload set ["fingerprint", _fp];
+// Objets portés avec leur mod (top des armes, gilets… et kits par rôle d'Athena).
+_payload set ["item_catalog", [_equipment getOrDefault ["loadout", []]] call comspec_overwatch_connect_fnc_collectItemCatalog];
+// Mods chargés : à l'enregistrement, puis seulement quand la liste change (elle ne bouge pas en cours de partie).
+private _mods = [] call comspec_overwatch_connect_fnc_collectLoadedMods;
+private _modsKey = str (_mods apply { _x get "dir" });
+if ((toLower _event) isEqualTo "register" || {(missionNamespace getVariable ["COMSPEC_OpModsSentKey", ""]) isNotEqualTo _modsKey}) then {
+    _payload set ["mods", _mods];
+    _payload set ["mods_key", _modsKey];
+};
 
 _payload

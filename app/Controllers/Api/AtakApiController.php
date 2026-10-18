@@ -12332,6 +12332,16 @@ class AtakApiController
                 'device_type' => $deviceNorm !== '' ? $deviceNorm : 'CTAB',
                 'captured_at' => ReconCapturedAt::unixFromPosted($_POST['capturedAt'] ?? $_POST['captured_at'] ?? null),
             ] + $photoMeta;
+            // Visages floutés par le mode photo du téléphone (cadres envoyés par le jeu), avant tout le reste :
+            // l'original gardé par la correction de couleur ne doit pas montrer les visages.
+            $faceBlur = \App\Support\PhotoFaceBlur::fromExtra((string) ($_POST['photo_extra'] ?? ''));
+            if ($faceBlur !== null) {
+                try {
+                    \App\Support\PhotoFaceBlur::applyFile($path, $faceBlur);
+                } catch (\Throwable $blurErr) {
+                    error_log('[atak/recon-images] face blur ' . $blurErr->getMessage());
+                }
+            }
             // Captures d'Arma délavées : niveaux et tons moyens corrigés avant l'incrustation (original gardé à côté).
             if (!\App\Support\PhotoAutoLevel::skipsProfile($data['fx_profile'] ?? null, $deviceNorm)) {
                 try {

@@ -28,7 +28,11 @@ private _fnc_send = {
         };
     } forEach [["COMSPEC_Athena_PhotoDead", "profile"], ["COMSPEC_Athena_PhotoFailed", "mission"], ["COMSPEC_Athena_PhotoSeen", "mission"], ["COMSPEC_Athena_PhotoUploaded", "mission"]];
     private _caption = format ["%1 · retransmise · %2", [player] call comspec_atak_native_fnc_unitCallsign, _name];
-    [_path, _caption, "CTAB", "", true, false, false] call comspec_overwatch_connect_fnc_captureReconImage
+    // Visages repérés à la prise (photo gardée faute de réseau, fn_photoMode) : floutés aussi au renvoi.
+    private _kept = profileNamespace getVariable ["COMSPEC_ATAK_PhotoFaces", []];
+    private _i = if (_kept isEqualType []) then { _kept findIf { (_x param [0, ""]) isEqualTo (toLower _name) } } else { -1 };
+    private _meta = if (_i >= 0) then { ["", "", false, "", false, "phone", "", [], -1, (_kept select _i) param [1, []]] } else { [] };
+    [_path, _caption, "CTAB", "", true, false, false, _meta] call comspec_overwatch_connect_fnc_captureReconImage
 };
 switch (_action) do {
     case "list": {

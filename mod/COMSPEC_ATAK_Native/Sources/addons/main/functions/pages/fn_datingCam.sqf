@@ -4,6 +4,8 @@
     (profils HVT / SSE) : on voit son vrai visage, sa tenue, son décor.
     Trois photos : 0 portrait serré, 1 buste, 2 en pied de trois quarts. Anneau de 4 cibles comme l'app Photo.
     La caméra ne tourne que tant que l'app Tinder est affichée (vérifié à chaque image), sinon elle est détruite.
+    Fond noir : la caméra filme une copie de la personne dans un studio noir local (fn_blackStage, réglage CBA
+    « Photos de profil sur fond noir ») ; sans copie possible, la vraie personne dans son décor comme avant.
     Params :
       ["bind", [unité, photo, proportions]] → texture r2t à poser dans un RscPicture ("" sans PiP)
       ["stop"]
@@ -34,6 +36,7 @@ private _stop = {
     private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DateCam", objNull];
     if (!isNull _cam) then { _cam cameraEffect ["Terminate", "Back", _cam getVariable ["r2t", ""]]; camDestroy _cam; };
     missionNamespace setVariable ["COMSPEC_ATAK_DateCam", objNull];
+    ["stop"] call comspec_atak_native_fnc_blackStage;
     private _pfh = missionNamespace getVariable ["COMSPEC_ATAK_DateCamPfh", -1];
     if (_pfh >= 0) then { [_pfh] call CBA_fnc_removePerFrameHandler; };
     missionNamespace setVariable ["COMSPEC_ATAK_DateCamPfh", -1];
@@ -54,6 +57,9 @@ switch (_act) do {
             _cam setVariable ["r2t", _name];
             missionNamespace setVariable ["COMSPEC_ATAK_DateCam", _cam];
         };
+        _cam setVariable ["source", _u];
+        private _clone = ["unit", _u] call comspec_atak_native_fnc_blackStage;
+        if (!isNull _clone) then { _u = _clone; };
         _cam setVariable ["unit", _u];
         _cam setVariable ["shot", _shot];
         ([_u, _shot] call _pose) params ["_pos", "_dir", "_up", "_fov"];
@@ -63,9 +69,12 @@ switch (_act) do {
             missionNamespace setVariable ["COMSPEC_ATAK_DateCamPfh", [{
                 private _cam = missionNamespace getVariable ["COMSPEC_ATAK_DateCam", objNull];
                 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+                private _src = if (isNull _cam) then { objNull } else { _cam getVariable ["source", objNull] };
                 private _u = if (isNull _cam) then { objNull } else { _cam getVariable ["unit", objNull] };
+                // Studio noir : tenue de la copie tenue à jour (et copie recréée si elle a disparu).
+                if (!isNull _src && {_u isNotEqualTo _src}) then { _u = ["unit", _src] call comspec_atak_native_fnc_blackStage; if (isNull _u) then { _u = _src; }; _cam setVariable ["unit", _u]; };
                 // Hors de Tinder, téléphone fermé ou personne disparue : caméra coupée.
-                if (isNull _cam || {isNull _u} || {(_s getOrDefault ["activePage", ""]) isNotEqualTo "DATING"}
+                if (isNull _cam || {isNull _src} || {(_s getOrDefault ["activePage", ""]) isNotEqualTo "DATING"}
                     || {isNull (uiNamespace getVariable ["COMSPEC_ATAK_Display", displayNull])} || {!alive player}) exitWith { ["stop"] call comspec_atak_native_fnc_datingCam; };
                 ([_u, _cam getVariable ["shot", 0]] call (missionNamespace getVariable "COMSPEC_ATAK_DateCamPose")) params ["_pos", "_dir", "_up", "_fov"];
                 _cam setPosASL _pos; _cam setVectorDirAndUp [_dir, _up]; _cam camSetFov _fov; _cam camCommit 0;

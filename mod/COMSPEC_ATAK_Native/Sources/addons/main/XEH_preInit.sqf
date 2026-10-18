@@ -116,6 +116,30 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
 ["comspec_atak_native_selfie_invert_y", "CHECKBOX",
     ["Selfie : inverser haut / bas", "Désactivé par défaut. Coché : en mode selfie, la souris vers le haut cadre vers le bas (et inversement). Réglage personnel."],
     ["COMSPEC", "ATAK · Photo"], false, 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_blur_type", "LIST",
+    ["Flou automatique des visages", "Les visages visibles sur une photo du mode photo sont floutés par Athena à la réception (l'original n'est pas gardé). Mouvement : traîne selon l'angle. Pixel : mosaïque. Carré noir : cache opaque. Flou gaussien : flou doux (par défaut). Aucun : photo telle quelle. La touche B du mode photo change le type pour la partie. Réglage personnel."],
+    ["COMSPEC", "ATAK · Photo"], [["gauss", "motion", "pixel", "black", "off"], ["Flou gaussien", "Mouvement", "Pixel", "Carré noir", "Aucun"], 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_blur_target", "LIST",
+    ["Visages floutés", "Alliés (par défaut) : seulement les visages de votre camp et des camps amis, vous compris en selfie. Tout le monde : aussi les ennemis et les civils."],
+    ["COMSPEC", "ATAK · Photo"], [["allies", "all"], ["Alliés", "Tout le monde"], 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_blur_force", "SLIDER",
+    ["Flou : force", "1 à 100 (60 par défaut) : intensité du flou, taille des pixels de la mosaïque ou longueur de la traîne."],
+    ["COMSPEC", "ATAK · Photo"], [1, 100, 60, 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_blur_opacity", "SLIDER",
+    ["Flou : opacité", "0 à 100 % (100 par défaut) : à 50 %, le visage reste deviné sous le flou ou le carré noir."],
+    ["COMSPEC", "ATAK · Photo"], [0, 100, 100, 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_blur_size", "SLIDER",
+    ["Flou : taille", "50 à 300 % (130 par défaut) : taille de la zone floutée par rapport à la tête (au-delà de 100 %, cou et casque compris)."],
+    ["COMSPEC", "ATAK · Photo"], [50, 300, 130, 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_blur_angle", "SLIDER",
+    ["Flou : angle", "0 à 179° (0 par défaut, horizontal) : direction de la traîne du flou de mouvement."],
+    ["COMSPEC", "ATAK · Photo"], [0, 179, 0, 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_blur_range", "SLIDER",
+    ["Flou : portée", "Distance maximale des visages floutés, en mètres (150 par défaut). Au-delà, un visage est trop petit pour être reconnu."],
+    ["COMSPEC", "ATAK · Photo"], [20, 600, 150, 0], 0] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_dating_black", "CHECKBOX",
+    ["Photos de profil sur fond noir", "Activé par défaut : dans Tinder (profils joueurs, HVT et SSE), la personne est filmée dans un studio noir (copie locale de sa tenue et de son visage) au lieu de son décor. Décocher pour la filmer en direct là où elle se trouve. Réglage personnel."],
+    ["COMSPEC", "ATAK · Photo"], true, 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_gesture_finger", "CHECKBOX",
     ["Gestes doigt d'honneur", "Désactivé par défaut. Coché : les touches CBA « Doigt d'honneur » et « Doigt d'honneur libre (maintenir) » jouent le geste (à attribuer dans les touches COMSPEC ATAK)."],
     ["COMSPEC", "ATAK · Gestes"], false, 1] call comspec_atak_native_fnc_addSetting;
