@@ -14,6 +14,8 @@ $typoChoices = is_array($cooperationTypologyChoices ?? null) ? $cooperationTypol
 $prioChoices = is_array($cooperationPriorityChoices ?? null) ? $cooperationPriorityChoices : [];
 $tenantChoices = is_array($cooperationTenantChoices ?? null) ? $cooperationTenantChoices : [];
 $fieldsOn = !empty($interteamProposalFieldsEnabled);
+$prefillPartnerId = (int) ($cooperationPrefillPartnerId ?? 0);
+$prefillTitle = (string) ($cooperationPrefillTitle ?? '');
 $wizardSteps = ['Intitulé & cadrage', 'Unités à inviter', 'Récapitulatif & envoi'];
 ?>
 <div class="max-w-3xl mx-auto px-6 py-10">
@@ -42,7 +44,7 @@ $wizardSteps = ['Intitulé & cadrage', 'Unités à inviter', 'Récapitulatif & e
             <legend class="coop-wizard__legend">1. Intitulé & cadrage</legend>
             <div>
                 <label for="itm-title" class="block text-sm font-semibold text-slate-900">Intitulé <span class="text-rose-700" aria-hidden="true">*</span></label>
-                <input id="itm-title" name="title" type="text" required minlength="3" maxlength="255" aria-describedby="itm-title-msg" class="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Ex. Exercice conjoint — coordination entre unités" data-summary="title">
+                <input id="itm-title" name="title" type="text" required minlength="3" maxlength="255" aria-describedby="itm-title-msg" class="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" placeholder="Ex. Exercice conjoint — coordination entre unités" data-summary="title" value="<?= $h($prefillTitle) ?>">
                 <p id="itm-title-msg" class="fr-message">Entre 3 et 255 caractères. Un intitulé explicite aide les unités invitées à décider.</p>
             </div>
             <?php if ($fieldsOn): ?>
@@ -87,7 +89,7 @@ $wizardSteps = ['Intitulé & cadrage', 'Unités à inviter', 'Récapitulatif & e
                 <?php foreach ($tenantChoices as $t): ?>
                 <li data-unit-name="<?= $h(mb_strtolower((string) $t['name'])) ?>">
                     <label class="coop-wizard__unit">
-                        <input type="checkbox" name="partner_tenant_ids[]" value="<?= (int) $t['id'] ?>" data-unit-label="<?= $h((string) $t['name']) ?>">
+                        <input type="checkbox" name="partner_tenant_ids[]" value="<?= (int) $t['id'] ?>" data-unit-label="<?= $h((string) $t['name']) ?>"<?= (int) $t['id'] === $prefillPartnerId ? ' checked' : '' ?>>
                         <span><?= $h((string) $t['name']) ?></span>
                     </label>
                 </li>

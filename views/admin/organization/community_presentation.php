@@ -400,7 +400,15 @@ $profileChecklistPercent = $profileChecklistTotal > 0 ? (int) round(($profileChe
                 <div class="grid gap-4 sm:grid-cols-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Style d’alerte</label>
-                        <?php $hlStyleSel = in_array(($c['public_highlight_style'] ?? 'info'), ['info', 'warning', 'success'], true) ? (string) $c['public_highlight_style'] : 'info'; ?>
+                        <?php
+                        // Même garde que TenantCommunityProfileService::publicShowcasePayload :
+                        // ne pas relire $c['public_highlight_style'] après ?? (clé absente → 500).
+                        $hlStyleSel = in_array(
+                            ($hlStyleRaw = strtolower(trim((string) ($c['public_highlight_style'] ?? 'info')))),
+                            ['info', 'warning', 'success'],
+                            true
+                        ) ? $hlStyleRaw : 'info';
+                        ?>
                         <select name="public_highlight_style" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">
                             <option value="info" <?= $hlStyleSel === 'info' ? 'selected' : '' ?>>Information</option>
                             <option value="warning" <?= $hlStyleSel === 'warning' ? 'selected' : '' ?>>Attention</option>

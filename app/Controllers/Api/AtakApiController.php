@@ -6985,7 +6985,7 @@ class AtakApiController
 
         $missionKey = \App\Support\AtakMissionKey::normalize($body['mission_key'] ?? null);
 
-        return Response::json(['ok' => true, 'matched' => true, 'recorded' => $repo->addItems($tenantId, (int) $user['id'], $items, null, $missionKey)]);
+        return Response::json(['ok' => true, 'matched' => true, 'recorded' => $repo->addItems($tenantId, (int) $user['id'], $items, null, $missionKey, \App\Repositories\AtakScreenTimeRepository::SOURCE_PHONE)]);
     }
 
     /**
@@ -7024,7 +7024,7 @@ class AtakApiController
                 continue;
             }
             $matched++;
-            $recorded += $repo->addItems($tenantId, (int) $user['id'], $p['items'], null, $missionKey);
+            $recorded += $repo->addItems($tenantId, (int) $user['id'], $p['items'], null, $missionKey, \App\Repositories\AtakScreenTimeRepository::SOURCE_SERVER);
         }
 
         return Response::json(['ok' => true, 'matched' => $matched, 'unmatched' => $unmatched, 'recorded' => $recorded]);

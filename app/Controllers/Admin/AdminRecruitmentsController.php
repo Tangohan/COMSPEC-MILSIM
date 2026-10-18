@@ -87,140 +87,12 @@ class AdminRecruitmentsController
         }
         $tenantSettings = $this->tenantRepository->getSettings((int) $tenantId);
         $slaHours = TenantRecruitmentSettings::enlistmentSlaHoursFromSettings($tenantSettings);
-        $submittedOlderThanSla = 0;
-
-        $staffRetroDoneMap = [];
-        $retroTableReady = false;
-        $listIds = [];
-        foreach ($enlistments as $er) {
-            $eid = (int) ($er['id'] ?? 0);
-            if ($eid > 0) {
-                $listIds[] = $eid;
-            }
-        }
-        try {
-            $retroTableReady = $this->recruitmentEngagementRepository->retroTableExists();
-            if ($retroTableReady && $listIds !== []) {
-                $staffRetroDoneMap = $this->recruitmentEngagementRepository->mapStaffRetroDoneIds((int) $tenantId, $listIds);
-            }
-        } catch (\Throwable) {
-            $staffRetroDoneMap = [];
-            $retroTableReady = false;
-        }
-        // File de secours : bilans journalisés dans le chronologie même si la table rétro diverge.
-        if ($listIds !== []) {
-            try {
-                if ($this->enlistmentTimelineRepository->tableExists()) {
-                    foreach ($this->enlistmentTimelineRepository->mapStaffRetroDoneFromTimeline((int) $tenantId, $listIds) as $tid => $doneAt) {
-                        $tid = (int) $tid;
-                        if ($tid < 1 || array_key_exists($tid, $staffRetroDoneMap)) {
-                            continue;
-                        }
-                        $staffRetroDoneMap[$tid] = (string) $doneAt;
-                    }
-                }
-            } catch (\Throwable) {
-            }
-        }
-
-        $reviewerIds = [];
-        $openingIds = [];
-        foreach ($enlistments as $er) {
-            $rid = (int) ($er['reviewed_by'] ?? 0);
-            if ($rid > 0) {
-                $reviewerIds[$rid] = $rid;
-            }
-            $oid = (int) ($er['recruitment_opening_id'] ?? 0);
-            if ($oid > 0) {
-                $openingIds[$oid] = $oid;
-            }
-        }
-        $reviewerUsers = $reviewerIds !== []
-            ? $this->userRepository->findByIdsForTenant((int) $tenantId, array_values($reviewerIds))
-            : [];
-        $openingsById = [];
-        if ($openingIds !== [] && $this->recruitmentOpeningRepository->tablesExist()) {
-            foreach ($openingIds as $oid) {
-                $orow = $this->recruitmentOpeningRepository->findByIdForTenant((int) $oid, (int) $tenantId);
-                if ($orow) {
-                    $openingsById[(int) $oid] = $orow;
-                }
-            }
-        }
-        $jobRoleLabels = [];
-        try {
-            $jobRoleRepo = new \App\Repositories\PersonnelJobRoleRepository();
-            foreach ($openingsById as $orow) {
-                $jrid = (int) ($orow['personnel_job_role_id'] ?? 0);
-                if ($jrid > 0 && !isset($jobRoleLabels[$jrid])) {
-                    $jr = $jobRoleRepo->findRoleById($jrid, (int) $tenantId);
-                    $lab = trim((string) (($jr ?? [])['name'] ?? ''));
-                    if ($lab === '') {
-                        $lab = trim((string) (($jr ?? [])['title'] ?? ''));
-                    }
-                    $jobRoleLabels[$jrid] = $lab !== '' ? $lab : '';
-                }
-            }
-        } catch (\Throwable) {
-            $jobRoleLabels = [];
-        }
-
-        foreach ($enlistments as &$row) {
-            $isSubmitted = ((string) ($row['status'] ?? '')) === 'submitted';
-            $ageHours = $this->submittedAgeHours($row);
-            $row['submitted_age_hours'] = $ageHours;
-            $row['submitted_sla_breached'] = $isSubmitted && $ageHours !== null && $ageHours > $slaHours;
-            if (!empty($row['submitted_sla_breached'])) {
-                $submittedOlderThanSla++;
-            }
-
-            $lastAction = trim((string) ($row['updated_at'] ?? ''));
-            if ($lastAction === '') {
-                $lastAction = trim((string) ($row['created_at'] ?? ''));
-            }
-            $row['last_action_at'] = $lastAction !== '' ? $lastAction : null;
-
-            $ageDays = $this->enlistmentAgeDays($row);
-            $row['enlistment_age_days'] = $ageDays;
-            $eid = (int) ($row['id'] ?? 0);
-            $doneAt = $eid > 0 && array_key_exists($eid, $staffRetroDoneMap)
-                ? trim((string) $staffRetroDoneMap[$eid])
-                : null;
-            $row['staff_retro_done_at'] = $doneAt !== null && $doneAt !== '' ? $doneAt : null;
-            $statusForRetro = (string) ($row['status'] ?? '');
-            if ($doneAt !== null) {
-                // Bilan déjà enregistré (aujourd’hui ou avant) — prioritaire sur le calendrier 30 j.
-                $row['staff_retro_status'] = 'done';
-            } elseif (EnlistmentRecruitmentEngagementRepository::isRetroExcludedStatus($statusForRetro)) {
-                $row['staff_retro_status'] = 'not_applicable';
-            } elseif (!$retroTableReady) {
-                $row['staff_retro_status'] = 'unavailable';
-            } elseif ($ageDays !== null && $ageDays >= 30) {
-                $row['staff_retro_status'] = 'due';
-            } else {
-                $row['staff_retro_status'] = 'waiting';
-            }
-
-            $reviewedById = (int) ($row['reviewed_by'] ?? 0);
-            $row['instructor_user_id'] = $reviewedById > 0 ? $reviewedById : null;
-            $row['instructor_label'] = $reviewedById > 0
-                ? $this->displayLabelForTenantUser($reviewerUsers[$reviewedById] ?? null, $reviewedById)
-                : '';
-
-            $oid = (int) ($row['recruitment_opening_id'] ?? 0);
-            $opening = $oid > 0 ? ($openingsById[$oid] ?? null) : null;
-            $unitLabel = $opening ? trim((string) ($opening['unit_name'] ?? '')) : '';
-            $jrid = $opening ? (int) ($opening['personnel_job_role_id'] ?? 0) : 0;
-            $roleLabel = $jrid > 0 ? trim((string) ($jobRoleLabels[$jrid] ?? '')) : '';
-            if ($roleLabel === '') {
-                $roleLabel = trim((string) ($row['specialty'] ?? ''));
-            }
-            $row['assignment_unit_label'] = $unitLabel;
-            $row['assignment_role_label'] = $roleLabel;
-            $row['assignment_opening_title'] = $opening ? trim((string) ($opening['title'] ?? '')) : '';
-            $row['assignment_define_url'] = url('back-office/recruitments/' . $eid . '?dossier=1#coordination-dossier');
-        }
-        unset($row);
+        $enlistments = (new \App\Services\Recruitment\EnlistmentStaffRowEnricher())->enrich((int) $tenantId, $enlistments, $slaHours);
+        $submittedOlderThanSla = count(array_filter(
+            $enlistments,
+            static fn (array $row): bool => !empty($row['submitted_sla_breached'])
+        ));
+        $retroTableReady = $this->recruitmentEngagementRepository->retroTableExists();
 
         $staffRetrosDueCount = 0;
         $staffRetrosDueFirstId = 0;
@@ -357,15 +229,18 @@ class AdminRecruitmentsController
         }
 
         $enlistmentAgeDays = $this->enlistmentAgeDays($row);
+        // Bilan 30 jours : uniquement pour une candidature acceptée, compté depuis l’acceptation.
         $statusForRetro = (string) ($row['status'] ?? '');
-        $retroExcludedStatus = EnlistmentRecruitmentEngagementRepository::isRetroExcludedStatus($statusForRetro);
-        $retroWindowEligible = !$retroExcludedStatus
-            && $enlistmentAgeDays !== null
-            && $enlistmentAgeDays >= 30;
-        // Message « pas de bilan » si l’âge atteintrait sinon la fenêtre (ex. ancre #bilan-recrutement).
-        $retroNotApplicable = $retroExcludedStatus
-            && $enlistmentAgeDays !== null
-            && $enlistmentAgeDays >= 30;
+        $retroAnchor = \App\Support\EnlistmentStatusCatalog::retroAnchor($row);
+        $retroDaysSinceAcceptance = \App\Support\EnlistmentStatusCatalog::daysSince($retroAnchor);
+        $retroDueDate = null;
+        if ($retroAnchor !== null && ($anchorTs = strtotime($retroAnchor)) !== false) {
+            $retroDueDate = date('d/m/Y', strtotime('+' . \App\Support\EnlistmentStatusCatalog::RETRO_DELAY_DAYS . ' days', $anchorTs));
+        }
+        $retroWindowEligible = $statusForRetro === 'reviewed'
+            && $retroDaysSinceAcceptance !== null
+            && $retroDaysSinceAcceptance >= \App\Support\EnlistmentStatusCatalog::RETRO_DELAY_DAYS;
+        $retroNotApplicable = \App\Support\EnlistmentStatusCatalog::isClosed($statusForRetro);
         $engagementTablesReady = $this->recruitmentEngagementRepository->engagementReady();
         $staffRetroRow = $engagementTablesReady
             ? $this->recruitmentEngagementRepository->findRetro((int) $tenantId, $id, EnlistmentRecruitmentEngagementRepository::SCOPE_STAFF_ONE_MONTH)
@@ -452,6 +327,8 @@ class AdminRecruitmentsController
             'enlistmentAgeDays' => $enlistmentAgeDays,
             'retroWindowEligible' => $retroWindowEligible,
             'retroNotApplicable' => $retroNotApplicable,
+            'retroDaysSinceAcceptance' => $retroDaysSinceAcceptance,
+            'retroDueDate' => $retroDueDate,
             'enlistmentEngagementTablesReady' => $engagementTablesReady,
             'recruiterPicksTableReady' => $this->recruitmentEngagementRepository->picksTableExists(),
             'staffRetroFeedback' => $staffRetroRow,
@@ -610,11 +487,8 @@ class AdminRecruitmentsController
         if (!$row) {
             return Response::redirect(url('back-office/recruitments'));
         }
-        if (EnlistmentRecruitmentEngagementRepository::isRetroExcludedStatus((string) ($row['status'] ?? ''))) {
-            $statusMsg = ((string) ($row['status'] ?? '')) === 'blocked'
-                ? 'Pas de bilan pour une candidature non admise.'
-                : 'Pas de bilan pour une candidature refusée.';
-            Session::flash('error', $statusMsg);
+        if ((string) ($row['status'] ?? '') !== 'reviewed') {
+            Session::flash('error', 'Le bilan 30 jours ne concerne que les candidatures acceptées.');
 
             return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
@@ -623,14 +497,14 @@ class AdminRecruitmentsController
 
             return Response::redirect($this->recruitmentDossierShowUrl($id));
         }
-        $ageDays = $this->enlistmentAgeDays($row);
+        $daysSinceAcceptance = \App\Support\EnlistmentStatusCatalog::daysSince(\App\Support\EnlistmentStatusCatalog::retroAnchor($row));
         $existingStaffRetro = $this->recruitmentEngagementRepository->findRetro(
             (int) $tenantId,
             $id,
             EnlistmentRecruitmentEngagementRepository::SCOPE_STAFF_ONE_MONTH
         );
-        if (($ageDays === null || $ageDays < 30) && $existingStaffRetro === null) {
-            Session::flash('error', 'Le bilan équipe n’est proposé qu’à partir de 30 jours après la réception du dossier.');
+        if (($daysSinceAcceptance === null || $daysSinceAcceptance < \App\Support\EnlistmentStatusCatalog::RETRO_DELAY_DAYS) && $existingStaffRetro === null) {
+            Session::flash('error', 'Le bilan équipe est proposé 30 jours après l’acceptation du candidat.');
 
             return Response::redirect($this->recruitmentDossierShowUrl($id));
         }

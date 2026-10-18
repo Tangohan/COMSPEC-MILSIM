@@ -2844,6 +2844,15 @@ try {
     $migrationRunner->warn('organization_catalog', $e);
 }
 
+require_once $root . '/bootstrap/community_ecosystem_migration.php';
+try {
+    echo "Migration hub inter-communautés (recommandations, avis, bourse)...\n";
+    run_community_ecosystem_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] community_ecosystem : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('community_ecosystem', $e);
+}
+
 $trainingOnboardingBulk = $root . '/bootstrap/training_onboarding_bulk_assign.php';
 if (is_file($trainingOnboardingBulk)) {
     require_once $trainingOnboardingBulk;

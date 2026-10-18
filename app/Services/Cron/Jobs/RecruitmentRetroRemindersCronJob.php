@@ -42,7 +42,7 @@ final class RecruitmentRetroRemindersCronJob implements CronJobInterface
 
     public function description(): string
     {
-        return 'Envoie un rappel unique à l’équipe et au candidat lorsque le bilan après 30 jours est attendu.';
+        return 'Envoie un rappel unique à l’équipe et au candidat lorsque le bilan, 30 jours après l’acceptation, est attendu.';
     }
 
     public function run(): array
@@ -112,7 +112,7 @@ final class RecruitmentRetroRemindersCronJob implements CronJobInterface
                             $tenantId,
                             'recruitment_retro_due',
                             'Bilan recrutement à renseigner',
-                            'Le dossier de ' . $name . ' a plus de ' . $age . ' jours. Laissez une courte note pour améliorer le processus.',
+                            $name . ' a été accepté il y a ' . $age . ' jours. Faites le bilan d’intégration : une note et quelques lignes suffisent.',
                             $url,
                             null
                         );
