@@ -221,6 +221,8 @@ $renderRank = static function (string $kind, array $rows, bool $big) use ($h, $i
     </section>
     <?php endif; ?>
 
+    <?php include __DIR__ . '/partials/game_player_kits.php'; ?>
+
     <section class="bo-ge-section" id="ge-mods" aria-labelledby="ge-mods-t">
         <header class="bo-ge-section__head">
             <span class="bo-ge-section__icon"><?= $icon('puzzle') ?></span>

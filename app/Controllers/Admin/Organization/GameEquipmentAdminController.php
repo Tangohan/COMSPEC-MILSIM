@@ -12,6 +12,7 @@ use App\Core\Session;
 use App\Repositories\GameEquipmentRepository;
 use App\Repositories\GameRoleKitRepository;
 use App\Services\GameEquipment\GameItemKinds;
+use App\Services\GameEquipment\PlayerKitService;
 use App\Services\GameEquipment\RoleKitLoadout;
 use App\Services\GameEquipment\RoleKitService;
 
@@ -64,7 +65,45 @@ final class GameEquipmentAdminController
             'geItemMods' => $itemMods,
             'geModPlayers' => $ready ? $this->equipment->playersWithMods($tenantId, $days) : 0,
             'geKitCount' => count($this->kits->listForTenant($tenantId)),
+            'gePlayerKits' => $this->playerKits()->recent($tenantId, $days),
+            'csrf' => Csrf::token(),
         ]);
+    }
+
+    /**
+     * Enregistre le dernier kit porté par un joueur comme tenue d’arsenal (collection « Kits des joueurs »).
+     */
+    public function saveKit(Request $request, array $params = []): Response
+    {
+        $deny = $this->denyUnlessManage();
+        if ($deny !== null) {
+            return $deny;
+        }
+        $back = url('back-office/equipement-joueurs') . '?jours=' . (int) $request->input('jours', '30') . '#kits-portes';
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Rechargez la page et recommencez.');
+
+            return Response::redirect($back);
+        }
+        $result = $this->playerKits()->saveAsWardrobe(
+            (int) Session::get('tenant_id'),
+            (int) Session::get('user_id'),
+            (string) ($params['steam'] ?? ''),
+            true,
+        );
+        if (!$result['ok']) {
+            Session::flash('error', (string) ($result['error'] ?? 'Enregistrement impossible.'));
+
+            return Response::redirect($back);
+        }
+        Session::flash('success', 'Kit enregistré comme tenue (collection « ' . PlayerKitService::COLLECTION_NAME . ' »), récupérable dans l’arsenal en jeu.');
+
+        return Response::redirect($back);
+    }
+
+    private function playerKits(): PlayerKitService
+    {
+        return \App\Core\Container::get(PlayerKitService::class);
     }
 
     public function kits(Request $request, array $params = []): Response

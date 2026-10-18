@@ -6,6 +6,14 @@ $collections = $collections ?? [];
 $equipmentClasses = $equipmentClasses ?? [];
 $dotationItems = $dotationItems ?? [];
 $roleKits = is_array($roleKits ?? null) ? $roleKits : [];
+$myGameKit = is_array($myGameKit ?? null) ? $myGameKit : null;
+$myGameKitWardrobeId = 0;
+foreach ($mineWardrobes as $mw) {
+    if ((string) ($mw['slug'] ?? '') === \App\Services\GameEquipment\PlayerKitService::MEMBER_SLUG) {
+        $myGameKitWardrobeId = (int) ($mw['id'] ?? 0);
+        break;
+    }
+}
 $canManageCatalog = !empty($canManageCatalog);
 $canManageDotation = !empty($canManageDotation);
 $equipmentKindLabels = is_array($equipmentKindLabels ?? null) ? $equipmentKindLabels : \App\Support\ArsenalLoadoutItems::kindLabels();
@@ -153,6 +161,44 @@ $mineCatalog = array_map(static function (array $w): array {
                 </li>
                 <?php endforeach; ?>
             </ul>
+        </section>
+        <?php endif; ?>
+
+        <?php if ($myGameKit !== null): ?>
+        <?php $mkWhen = strtotime((string) ($myGameKit['last_seen_at'] ?? '')) ?: null; ?>
+        <section class="eq-mykit" aria-labelledby="eq-mykit-heading">
+            <div class="eq-hub__section-head">
+                <h2 id="eq-mykit-heading">Mon kit en jeu</h2>
+            </div>
+            <div class="eq-mykit__card">
+                <div class="eq-mykit__top">
+                    <p class="eq-mykit__lead">
+                        Dernier équipement que vous avez porté en jeu<?= $mkWhen !== null ? ', le ' . $h(date('d/m/Y à H:i', $mkWhen)) : '' ?><?= (string) ($myGameKit['role'] ?? '') !== '' ? ' (<span translate="no">' . $h((string) $myGameKit['role']) . '</span>)' : '' ?>.
+                        Remonté automatiquement par le mod, rien à saisir.
+                    </p>
+                    <div class="eq-mykit__actions">
+                        <form method="post" action="<?= $h(url('equipment/mon-kit/tenue')) ?>">
+                            <input type="hidden" name="_csrf_token" value="<?= $h($csrfToken) ?>">
+                            <button type="submit" class="eq-hub__btn"><?= $myGameKitWardrobeId > 0 ? 'Mettre à jour ma tenue' : 'Enregistrer dans mes tenues' ?></button>
+                        </form>
+                        <?php if ($myGameKitWardrobeId > 0): ?>
+                        <a class="eq-hub__btn eq-hub__btn--ghost" href="<?= $h(url('equipment') . '?tenue=' . $myGameKitWardrobeId) ?>">Voir la tenue</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div class="eq-mykit__sections">
+                    <?php foreach ($myGameKit['sections'] as $sec): ?>
+                    <div class="eq-mykit__sec">
+                        <h3><?= $h((string) $sec['title']) ?></h3>
+                        <ul>
+                            <?php foreach ($sec['items'] as $it): ?>
+                            <li><span translate="no"><?= $h((string) $it['name']) ?></span><?php if ((int) $it['qty'] > 1): ?> <em>×<?= (int) $it['qty'] ?></em><?php endif; ?></li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
         </section>
         <?php endif; ?>
 

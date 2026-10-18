@@ -1,0 +1,162 @@
+/**
+ * Back-office — Équipement des joueurs › Kits portés (views/admin/organization/partials/game_player_kits.php).
+ * S’appuie sur les jetons de .bo-ge (back-office-game-equipment.css) ; le mode nuit passe par les --ath-*.
+ */
+
+.bo-pk__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bo-pk__card {
+  border: 1px solid var(--ath-line);
+  border-radius: var(--ge-radius-sm, 8px);
+  background: var(--ath-surface);
+}
+
+.bo-pk__card[open] {
+  border-color: var(--ge-accent, var(--ath-accent));
+}
+
+.bo-pk__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.bo-pk__head::-webkit-details-marker {
+  display: none;
+}
+
+.bo-pk__head:focus-visible {
+  outline: 2px solid var(--ge-accent, var(--ath-accent));
+  outline-offset: 2px;
+  border-radius: var(--ge-radius-sm, 8px);
+}
+
+.bo-pk__who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.bo-pk__name {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bo-pk__meta,
+.bo-pk__mission {
+  color: var(--ath-muted);
+  font-size: 12px;
+}
+
+.bo-pk__weapon {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.bo-pk__count {
+  color: var(--ath-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.bo-pk__saved {
+  justify-self: start;
+  background: var(--ge-accent-soft, rgba(18, 209, 142, 0.12));
+  color: var(--ge-accent, var(--ath-accent));
+}
+
+.bo-pk__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 14px 14px;
+  border-top: 1px solid var(--ath-line-soft, var(--ath-line));
+}
+
+.bo-pk__sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px 18px;
+  padding-top: 10px;
+}
+
+.bo-pk__sec-title {
+  margin: 0 0 4px;
+  color: var(--ath-subtle, var(--ath-muted));
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.bo-pk__objs {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.bo-pk__objs li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.bo-pk__obj {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.bo-pk__qty {
+  color: var(--ath-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.bo-pk__players {
+  margin-left: auto;
+  color: var(--ath-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.bo-pk__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.bo-pk__actions form {
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .bo-pk__head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .bo-pk__weapon {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
