@@ -38,23 +38,23 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Regroupement : marqueurs, relais, Bluetooth, app Garmin, sang et santé, téléphone, Reco, JTAC (ATAK natif 1.97.0, COMSPEC Link 2.0.87)
+## Regroupement : marqueurs, relais, Bluetooth, app Garmin, sang et santé, téléphone, flou des visages, kits par rôle, Reco, JTAC (ATAK natif 1.97.0, COMSPEC Link 2.0.87)
 
 ### Résumé joueur
 Type : nouveauté
-FR : Relais et Bluetooth refaits, app Garmin, sang et santé réalistes, marqueurs au clic droit
+FR : Relais et Bluetooth refaits, app Garmin, sang et santé réalistes, visages floutés, marqueurs au clic droit
 - Carte : clic droit à l'endroit voulu puis VALIDER pour poser un marqueur (canal Général par défaut), alertes effaçables, fiche de chaque relais au clic (fréquence, perte, santé) ; pylônes 3D refaits et réseau par relais seulement si la mission l'impose. La carte JTAC ne saute plus et le 9-LINE s'affiche sur Overwatch.
 - Bluetooth : envoie photos, musiques, position, itinéraire, plan ou fiches SEEK à un téléphone appairé ; SEEK montre ce que l'équipe a déjà fait sur une personne ; le vibreur BFT transmet un message rapide. Les notes de l'app Reco arrivent enfin au poste, et l'app Athena prévient quand l'anti-triche du jeu bloque la liaison.
-- Nouvelle app Garmin (Body Battery, cœur, stress, sommeil, activités, défis) ; sang sur l'écran réaliste (Discret, Réaliste ou Gore), nettoyage sans kit, moniteur médical cohérent et ADN sur les taches de sang.
-- Téléphone plus propre : verrouillage, touche retour partout, mini déplaçable à la souris, alertes réglables, photo et selfie en mini ; MP3 refusés désormais lus et menu COMSPEC SSE d'Eden réparé.
-EN : Relays and Bluetooth redone, Garmin app, realistic blood and health, right-click markers
+- Nouvelle app Garmin (Body Battery, cœur, stress, sommeil, activités, défis), envoyée sur ta fiche du site ; sang sur l'écran réaliste (Discret, Réaliste ou Gore), nettoyage sans kit, tension et oxygène affichés seulement après une mesure, ADN sur les taches de sang, SALUTE dans l'ordre.
+- Téléphone plus propre : verrouillage, touche retour partout, mini déplaçable à la souris, alertes réglables, photo et selfie en mini ; les visages de tes alliés sont floutés sur tes photos (4 styles), les profils Tinder et SSE s'affichent sur fond noir, Zeus peut capturer toute la carte et les kits de ton rôle sont proposés dans les tenues Athena. MP3 refusés désormais lus et menu COMSPEC SSE d'Eden réparé.
+EN : Relays and Bluetooth redone, Garmin app, realistic blood and health, blurred faces, right-click markers
 - Map: right-click where you want, then CONFIRM to place a marker (Global channel by default), alerts can be cleared, click a relay to see its card (frequency, loss, health); 3D towers redone and relay-only networks when the mission requires it. The JTAC map no longer jumps and the 9-LINE shows on Overwatch.
 - Bluetooth: send photos, music, position, route, plan or SEEK files to a paired phone; SEEK shows what the team already did on a person; the BFT buzzer sends a quick message. Reco app notes finally reach the command post, and the Athena app warns when the game's anti-cheat blocks the link.
-- New Garmin app (Body Battery, heart rate, stress, sleep, activities, challenges); realistic blood on the screen (Subtle, Realistic or Gore), cleaning without a kit, a consistent medical monitor and DNA on blood stains.
-- Cleaner phone: lock screen, back key everywhere, mini screen movable with the mouse, adjustable alerts, photo and selfie in mini; refused MP3 files now play and the Eden COMSPEC SSE menu is fixed.
+- New Garmin app (Body Battery, heart rate, stress, sleep, activities, challenges), sent to your member file on the site; realistic blood on the screen (Subtle, Realistic or Gore), cleaning without a kit, blood pressure and oxygen shown only after a measurement, DNA on blood stains, SALUTE in order.
+- Cleaner phone: lock screen, back key everywhere, mini screen movable with the mouse, adjustable alerts, photo and selfie in mini; your allies' faces are blurred in your photos (4 styles), Tinder and SSE profiles show on a black background, Zeus can capture the whole map and your role's kits are offered in the Athena wardrobes. Refused MP3 files now play and the Eden COMSPEC SSE menu is fixed.
 
 ### Détail technique
-Regroupe #840, #841, #844, #845, #847, #848, #849, #850 et #851 (une seule version : ATAK natif 1.97.0, COMSPEC Link 2.0.87 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.18 b191c86 » posée par tools/stamp_build.py puis remise à vide ; towers.pbo de #850 et comspec_overwatch_connect.pbo de #851 repris tels quels, seuls à changer ces sources).
+Regroupe #840, #841, #844, #845, #847, #848, #849, #850, #851 et #854 (une seule version : ATAK natif 1.97.0, COMSPEC Link 2.0.87 ; main.pbo reconstruit depuis les sources avec HEMTT 1.17.2, empreinte « 2026.10.18 b191c86 » posée par tools/stamp_build.py puis remise à vide ; towers.pbo de #850 repris tel quel, seule à changer ses sources ; comspec_overwatch_connect.pbo de #851 repatché avec les sources connect de #854 par tools/pbo_patch.py).
 
 #### Marqueurs au clic droit (VALIDER, à la suite, canal Général), fiche d'étiquette, alertes effaçables (#840)
 
@@ -165,6 +165,14 @@ Version provisoire : le fil de regroupement attribue le numéro du lot (docs/VER
 ##### BFT : vibreur avec message et alerte à l'écran
 - `fn_pageBft` / `fn_bftAction` : VIBRER ouvre un composeur (6 messages prêts, texte libre de 80 caractères, `<>` retirés, 5 s entre deux envois vers la même personne) ; l'événement `comspec_atak_native_buzz` porte maintenant texte, position et émetteur (anciens appels compatibles).
 - `fn_buzzAlert` (nouveau) : alerte orange sur l'écran du téléphone, gardée 2 min (affichée à l'ouverture si le téléphone était rangé, redessinée après chaque page par `fn_fx raise`), boutons VU (`comspec_atak_native_buzzAck` → « X a vu votre message » chez l'émetteur), CARTE, FERMER.
+
+#### Flou des visages, fond noir des profils, capture de la carte, équipement des joueurs et kits par rôle (#854)
+
+- Flou automatique des visages (BLUE FORCE ALLY) : à la prise de vue, `fn_photoFaces` repère les têtes visibles (alliés par défaut, ou tout le monde) et envoie leurs cadres dans `photo_extra` (DLL inchangée) ; le site les floute à la réception (`App\Support\PhotoFaceBlur`, GD). Quatre types (gaussien, mouvement, pixel, carré noir), réglages force, opacité, taille et angle (CBA « ATAK · Photo »), touche B en mode photo pour changer de type.
+- Profils Tinder / SSE filmés sur un clone local dans un studio noir (`fn_blackStage`, désactivable).
+- Module Zeus « COMSPEC ATAK › Capture de la carte » (`fn_mapCapture`) : satellite, 3D 45° et plan à plusieurs hauteurs ; `tools/map_stitch.py` assemble une mosaïque géoréférencée et des tuiles z/x/y.
+- Overwatch connect : la fiche opérateur envoie le catalogue des objets portés et les mods chargés (`fn_collectItemCatalog`, `fn_collectLoadedMods`) ; ingestion par `GameItemUsageRecorder` (try/catch). Site : `/back-office/equipement-joueurs`, `/back-office/kits-roles` (kits publiés comme tenues d'arsenal « Kits par rôle »), bloc « Kits proposés pour mon rôle » sur `/equipment`. Migration `migrations/20261018000001_game_item_usage.sql` (`php run-migrations.php`).
+- À tester en jeu : photo avec des alliés dans le champ (visages floutés sur le site, pour les 4 types) ; profil Tinder / SSE sur fond noir ; module Zeus « Capture de la carte » sur une petite zone puis `map_stitch.py` ; après connexion, `/back-office/equipement-joueurs` se remplit, créer un kit puis l'appliquer depuis « Tenues Athena ».
 
 ---
 
