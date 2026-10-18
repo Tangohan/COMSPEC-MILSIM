@@ -18,7 +18,7 @@ class CfgFunctions {
         };
         class ui { file="z\comspec_atak_native\addons\main\functions\ui";
             class display {}; class open {}; class close {}; class hudToggle {}; class interactToggle {}; class orientationToggle {}; class phoneDrag {}; class formRender {}; class formValue {}; class keyBlock {}; class fullAlert {}; class vibrate {}; class dataBarEnabled {}; class displayLoad {}; class displayUnload {}; class layoutGet {}; class layoutApply {}; class fontSet {}; class fontApply {}; class fontText {}; class navigate {}; class back {}; class modeToggle {};
-            class pageRender {}; class pageClear {}; class pageCtrl {}; class tileCreate {}; class appList {}; class appBadge {}; class chatUnread {}; class dockRender {}; class launcherRender {}; class deviceOverlay {}; class appVisible {}; class accent {};
+            class pageRender {}; class pageClear {}; class pageCtrl {}; class textFit {}; class tileCreate {}; class appList {}; class appBadge {}; class chatUnread {}; class dockRender {}; class launcherRender {}; class deviceOverlay {}; class appVisible {}; class accent {};
             class statusUpdate {}; class inspectorUpdate {}; class abbrev {}; class notify {}; class notificationsRender {}; class notifCenter {}; class notifMeta {}; class powerFx {}; class overlayFront {}; class foreignHud {}; class screenSurface {};
             class fx {}; class toast {}; class buzzAlert {}; class quickSettings {}; class lockScreen {}; class tr {}; class langApply {}; class langList {}; class langResolve {}; class addSetting {}; class aceAction {}; class zenAction {}; class zenModule {}; class trMenu {}; class menuRelang {};
         };

@@ -38,6 +38,26 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## App Plan : texte du tutoriel entier, salle collaborative qui se crée (ATAK natif, numéro au regroupement)
+
+### Résumé joueur
+Type : correctif
+FR : App Plan : tutoriel lisible et salles qui marchent
+- La fiche du tutoriel s'agrandit selon le texte de l'étape : plus de paragraphe coupé, et les boutons PASSER, PRÉCÉDENT, SUIVANT s'affichent en entier.
+- « Créer une salle » crée bien la salle et affiche son code. REJOINDRE et les autres lignes des menus SALLE, EXPORTER et du clic droit répondent au premier clic.
+- Les libellés trop longs pour leur bouton (par exemple SALLE avec son code et le nombre de joueurs) sont réduits pour tenir au lieu d'être coupés.
+EN : Plan app: readable tutorial and working rooms
+- The tutorial card grows with the step's text: no more cut-off paragraph, and the SKIP, PREVIOUS, NEXT buttons show in full.
+- "Create a room" now creates the room and shows its code. JOIN and the other entries of the ROOM, EXPORT and right-click menus respond on the first click.
+- Labels too long for their button (for example ROOM with its code and player count) are shrunk to fit instead of being cut.
+
+### Détail technique
+- Cause de « Créer une salle ne fait rien » : la carte reçoit aussi les clics faits sur les menus posés par-dessus. Son MouseButtonDown fermait le menu et le redessinait sans ses boutons avant leur ButtonClick. Chaque menu (et le panneau du code de salle) est maintenant une zone bloquée pour la carte, et chaque ligne une zone cliquable jouée par fn_planMap au clic, une seule fois avec son ButtonClick (fn_planUi `_once`). Le code de salle est relu dans le champ au clic sur REJOINDRE.
+- Tutoriel (fn_planHelp) : fiche plus large (24 hauteurs de police, 70 % de la carte au plus), hauteur mesurée avec ctrlTextHeight au lieu d'une hauteur fixe ; posée à droite de la palette sans la couvrir.
+- Nouveau fn_textFit : réduit la police d'un bouton dont le libellé dépasse (mesuré sur un texte provisoire, ctrlTextWidth ne mesurant que le texte simple), jamais sous 70 %. Utilisé par tous les boutons de l'app Plan et de son aide ; réutilisable par les autres apps.
+- Pas de régression commune des polices : fn_fontSet, fn_fontApply, fn_fontText et ui/fonts.hpp n'ont pas changé depuis 1.85.0. Les sous-libellés de la palette n'étaient pas coupés : la fiche du tutoriel les recouvrait.
+- À tester en jeu : tutoriel étapes 1 à 10 (en français, en anglais, en TRÈS GRAND) ; SALLE > Créer une salle (le code s'affiche, SALLE XXXXX · 1 en haut) ; taper un code puis REJOINDRE depuis un autre joueur ; lignes du menu EXPORTER et du clic droit ; un clic sur la carte hors menu le ferme toujours.
+
 ## Regroupement : mode hors connexion, points de passage, fond photo de la carte (ATAK natif 2.0.1.AB - Denver, COMSPEC Link 2.0.87)
 
 ### Résumé joueur

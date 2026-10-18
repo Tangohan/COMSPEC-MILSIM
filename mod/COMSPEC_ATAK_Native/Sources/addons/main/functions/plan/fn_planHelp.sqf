@@ -44,7 +44,7 @@ private _mk = {
 private _btn = {
     params ["_r", "_t", "_code", ["_on", false]];
     private _b = ["COMSPEC_RscButton", _r, _t] call _mk;
-    _b ctrlSetFontHeight ((_fs * 0.86) max COMSPEC_ATAK_FontMin);
+    [_b, (_fs * 0.86) max COMSPEC_ATAK_FontMin] call comspec_atak_native_fnc_textFit;
     if (_on) then { _b ctrlSetBackgroundColor [0.36, 0.78, 0.42, 0.95]; _b ctrlSetTextColor [0.03, 0.05, 0.04, 1]; };
     _b ctrlAddEventHandler ["ButtonClick", _code];
     _b ctrlAddEventHandler ["ButtonClick", { [{ [] call comspec_atak_native_fnc_overlayFront; }] call CBA_fnc_execNextFrame; }];
@@ -56,6 +56,7 @@ private _card = {
     _br ctrlSetBackgroundColor [_acc select 0, _acc select 1, _acc select 2, 0.9];
     private _bg = ["COMSPEC_RscText", _r] call _mk;
     _bg ctrlSetBackgroundColor [0.03, 0.045, 0.038, 0.97];
+    [_br, _bg]
 };
 private _bh2 = (_font * 1.3) min (_bh * 0.075);
 private _ip = pixelW * 12;
@@ -72,21 +73,29 @@ if (_tuto >= 0) then {
         private _f = ["COMSPEC_RscText", _x] call _mk;
         _f ctrlSetBackgroundColor _acc;
     } forEach [[_zx, _zy, _zw, _t], [_zx, _zy + _zh - _t, _zw, _t], [_zx, _zy, _tw, _zh], [_zx + _zw - _tw, _zy, _tw, _zh]];
-    // Fiche à côté de la zone, dans la carte, sans la couvrir si possible.
-    private _cw = ((_font * 19) / _ratio) min (_mw * 0.6);
-    private _ch = _font * 6.6;
+    // Fiche à côté de la zone, dans la carte, sans la couvrir si possible. Sa hauteur suit le texte de l'étape (mesuré) :
+    // une hauteur fixe coupait les longues étapes (« … et POINTS » rogné), surtout en TRÈS GRAND ou en anglais.
+    private _cw = ((_font * 24) / _ratio) min (_mw * 0.7);
     private _cx = if ((_zx + _zw + _cw + pixelW * 20) < (_mx + _mw)) then { _zx + _zw + pixelW * 16 } else { _mx + (_mw - _cw) / 2 };
     if (_zone isEqualTo "map") then { _cx = _mx + (_mw - _cw) / 2; };
-    private _cy = if (_zone in ["bottom"]) then { _my + _mh - _ch - pixelH * 16 } else { _my + (_mh - _ch) / 3 };
     _cx = (_cx max (_mx + pixelW * 8)) min (_mx + _mw - _cw - pixelW * 8);
-    private _r = [_cx, _cy, _cw, _ch];
-    [_r] call _card;
-    (_rects getOrDefault ["block", []]) pushBack _r;
-    private _st = ["COMSPEC_RscStructuredText", [_cx + _ip, _cy + pixelH * 10, _cw - _ip * 2, _ch - _bh2 - pixelH * 24]] call _mk;
+    private _cardCtrls = [[_cx, _my, _cw, _font * 6]] call _card;
+    private _st = ["COMSPEC_RscStructuredText", [_cx + _ip, _my, _cw - _ip * 2, _font * 6]] call _mk;
     _st ctrlSetFontHeight _fs;
     _st ctrlSetStructuredText parseText ((format ["<t size='0.72' color='%1' font='COMSPEC_BarlowBold'>TUTORIEL · ÉTAPE %2 / %3</t><br/><t font='COMSPEC_BarlowBold' size='1.25' color='#eef3ef'>%4</t><br/><t size='0.92' color='#c9d6cf'>%5</t>",
         ([_acc] call { params ["_c"]; private _h = "0123456789abcdef"; "#" + (((_c select [0, 3]) apply { private _v = round ((_x max 0 min 1) * 255); (_h select [floor (_v / 16), 1]) + (_h select [_v mod 16, 1]) }) joinString "") }),
         _tuto + 1, count _steps, _title, _text]) call comspec_atak_native_fnc_tr);
+    private _textH = (ctrlTextHeight _st) + pixelH * 4;
+    private _ch = ((pixelH * 10) + _textH + pixelH * 14 + _bh2 + pixelH * 10) min (_mh - pixelH * 16);
+    private _cy = if (_zone in ["bottom"]) then { _my + _mh - _ch - pixelH * 16 } else { _my + (_mh - _ch) / 3 };
+    _cy = (_cy max (_my + pixelH * 8)) min (_my + _mh - _ch - pixelH * 8);
+    private _r = [_cx, _cy, _cw, _ch];
+    _cardCtrls params ["_br", "_bg"];
+    _br ctrlSetPosition [_cx - pixelW, _cy - pixelH, _cw + pixelW * 2, _ch + pixelH * 2];
+    _bg ctrlSetPosition _r;
+    _st ctrlSetPosition [_cx + _ip, _cy + pixelH * 10, _cw - _ip * 2, _ch - _bh2 - pixelH * 24];
+    { _x ctrlCommit 0; } forEach [_br, _bg, _st];
+    (_rects getOrDefault ["block", []]) pushBack _r;
     private _by2 = _cy + _ch - _bh2 - pixelH * 10;
     private _w3 = (_cw - _ip * 2 - pixelW * 16) / 3;
     [[_cx + _ip, _by2, _w3, _bh2], "PASSER", { ["tutoEnd"] call comspec_atak_native_fnc_planAction; }] call _btn;
