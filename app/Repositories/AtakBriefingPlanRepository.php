@@ -122,6 +122,7 @@ class AtakBriefingPlanRepository
                 'width' => max(1, min(3, (int) ($it['width'] ?? 2))),
                 'num' => max(0, min(999, (int) ($it['num'] ?? 0))),
                 'author' => self::clean($it['author'] ?? '', 40),
+                'desc' => self::clean($it['desc'] ?? '', 300),
             ];
         }
 

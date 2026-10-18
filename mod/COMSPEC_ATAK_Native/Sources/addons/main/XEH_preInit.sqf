@@ -274,6 +274,12 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_video_relays", "CHECKBOX",
     ["Flux vidéo selon les relais", "Quand la mission pose des relais ATAK, les flux vidéo (drone, caméra casque, Live cam, caméras fixes) passent par eux : débit, définition (1080p à image par image), images par seconde, latence et défauts d'image suivent la distance aux relais, le nombre de bonds et la perte d'un relais. Sans relais dans la mission, rien ne change. Décocher pour garder les flux comme avant."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_camera_share", "LIST",
+    ["Partage des caméras", "Partage obligatoire : une caméra fixe n'est visible que de son poseur, la caméra d'un téléphone que de son porteur, jusqu'à ce qu'ils la partagent (app Vidéo live > PARTAGER, par NFC, Bluetooth ou relais, à un ATAK ou à TOUS). Tout le camp : chaque ATAK voit toutes les caméras du camp sans partage (comme avant)."],
+    _sim, [[0, 1], ["Partage obligatoire", "Tout le camp voit tout"], 0], 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_bt_range", "SLIDER",
+    ["Portée Bluetooth (m)", "Distance maximale entre deux téléphones pour l'appairage, l'envoi de sons et le partage de caméras par Bluetooth. Le NFC reste à 2 m (téléphones dos à dos)."],
+    _sim, [5, 100, 15, 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_drone_strike", "CHECKBOX",
     ["Drones armés", "Permet de fixer une charge (roquette RPG, charge de démolition, grenade) sur un drone et de l'envoyer en tir et oublie ou en recherche et frappe."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
@@ -369,10 +375,18 @@ private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
 ["comspec_atak_native_screen_time", "CHECKBOX",
     ["Temps d'écran et temps par rôle", "Compte le temps du téléphone allumé (en main, porté, par app) et le temps de jeu par rôle (pilote, chef d'équipe…). Visible dans l'app Temps d'écran et envoyé à Athena (fiche du membre, back-office)."],
     _team, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_distance", "CHECKBOX",
+    ["Distances parcourues", "Le serveur compte pour chaque joueur les pas, les kilomètres à pied, en véhicule, en vol et en saut, et les heures de pilote par appareil. Visible dans l'app Distances et envoyé à Athena (fiche du membre)."],
+    _team, true, 1] call comspec_atak_native_fnc_addSetting;
 // App Plan (carte de briefing) : qui modifie le plan partagé du camp ; le serveur seul l'écrit (fn_planServer).
 ["comspec_atak_native_plan_edit", "LIST",
     ["Plan de briefing : édition", "Qui peut dessiner sur le plan partagé du camp (app Plan). Les autres le voient et préparent leur brouillon, ajouté ensuite par un chef."],
     _team, [[0, 1, 2], ["Tout le monde", "Chefs de groupe, Zeus et admins", "Zeus et admins seulement"], 1], 1] call comspec_atak_native_fnc_addSetting;
+// App Plan : historique ANNULER / RÉTABLIR (ce que le serveur a changé pour moi) et salle collaborative créée.
+if (hasInterface) then {
+    ["comspec_atak_native_planDiff", { ["histPush", _this] call comspec_atak_native_fnc_planAction; }] call CBA_fnc_addEventHandler;
+    ["comspec_atak_native_planRoom", { ["roomJoin", _this param [0, ""]] call comspec_atak_native_fnc_planAction; }] call CBA_fnc_addEventHandler;
+};
 if (isServer) then {
     ["comspec_atak_native_planSrv", { _this call comspec_atak_native_fnc_planServer; }] call CBA_fnc_addEventHandler;
     // Le serveur a le mod : posé dès le preInit (aussi en solo et en partie hébergée), sans attendre XEH_postInitServer.

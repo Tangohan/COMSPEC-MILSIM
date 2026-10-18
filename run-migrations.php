@@ -3897,6 +3897,13 @@ $migrationRunner->step('atak_squads_screen_time', static function () use ($atakS
     $atakSquadsMigrate($pdo);
 });
 
+// App Distances de l'ATAK natif : distances parcourues par session et heures de pilote par appareil (COMSPEC Link 2.0.86).
+$atakDistanceMigrate = require $root . '/bootstrap/atak_distance_migration.php';
+$migrationRunner->step('atak_distance', static function () use ($atakDistanceMigrate, $pdo): void {
+    echo "Migration atak_distance_stats / atak_pilot_time (distances parcourues, heures de pilote)...\n";
+    $atakDistanceMigrate($pdo);
+});
+
 // Corrections du temps par rôle par l'encadrement (déplacer vers le bon rôle, journal annulable).
 $migrationRunner->step('atak_role_time_moves', static function () use ($pdo): void {
     echo "Migration atak_role_time_moves (corrections du temps par rôle)...\n";
