@@ -4,14 +4,25 @@
                    passerelles de véhicule et PC mobiles du camp (si le réglage serveur les autorise). Caché 2 s ("force" : non).
                    [[objet, position antenne ASL, nom, type ("relay" | "gw" | "cp"), portée m, Mbit/s reçus du réseau,
                      en service, état ("" | "détruit" | "éteint" | "batterie vide" | "brouillé" | "sans liaison"),
-                     téléphones à portée, places (0 = illimité), batterie % (-1 = secteur), raccordé, relais amont du répéteur]...]
+                     téléphones à portée, places (0 = illimité), batterie % (-1 = secteur), raccordé, relais amont du répéteur,
+                     fréquence MHz, fréquence automatique, perte %, structure % (100 - dégâts), santé ("nominal" | "dégradé" |
+                     "critique" | "hors service"), bonds jusqu'au relais raccordé (0 = raccordé, -1 = sans liaison),
+                     relais sur le même canal à portée, latence ms]...]
                    Variables d'un relais : COMSPEC_AtakRelayRange, Throughput, Name, Height (m, défaut 4), Slots, Side,
-                   On (défaut vrai), Freq (bande en MHz, 0 = automatique ; retenue pour les fréquences à venir, pas
-                   encore utilisée dans les calculs), Batt et Autonomy (minutes), Root (raccordé par satellite ou fibre, défaut vrai ; sinon
-                   répéteur qui doit voir un relais raccordé). Débit : dégâts, brouilleurs, chaîne des répéteurs, saturation.
+                   On (défaut vrai), Freq (canal en MHz, 0 = automatique : premier canal libre du plan 4 940-4 975 MHz
+                   qu'aucun relais voisin n'occupe), Batt et Autonomy (minutes), Root (raccordé par satellite ou fibre, défaut vrai ; sinon
+                   répéteur qui doit voir un relais raccordé). Débit : dégâts, brouilleurs, relais voisins sur le même canal
+                   (interférences), chaîne des répéteurs, saturation. La perte du relais cumule les mêmes causes.
+                   Réseau exclusivement par relais (fn_relayNet "only") : sans relais reçu, aucun réseau.
       "best"     : meilleur relais reçu par le téléphone (fn_linkQuality, page Réseau). Relais utilisé perdu : toast
                    « Relais perdu : X (raison), liaison dégradée » ou « bascule sur Y ».
+                 Relais préféré (fiche du relais sur la carte, uiNamespace COMSPEC_ATAK_RelayPin) : gardé tant qu'il est reçu.
       "power"    : [relais, "on" | "off" | "battery"] ; "info" : [relais] fiche en notification ; "sweep" : batteries (serveur).
+      "entry"    : [relais] -> son entrée de "list" ou [].
+      "only"     : vrai si le réseau passe exclusivement par les relais (réglage serveur comspec_atak_native_relay_only,
+                   case « Réseau exclusivement par relais » d'un module « ATAK · Relais », ou mode réaliste d'Athena).
+      "required" : vrai si les relais sont obligatoires (mode « only » ou case « Relais obligatoires »).
+      "pin"      : [relais ou objNull] préfère ce relais (objNull : retour au choix automatique).
       "link"     : [position antenne ASL, portée, Mbit/s, position ASL visée] -> [qualité 0-1, Mbit/s, perte %] ;
                    portée réduite à 35 % quand le relief coupe la ligne (même règle que le maillage Wave Relay).
       "coverage" : calcule en tâche de fond une grille 41 x 41 autour du centre donné (ou de moi), rayon rcRadius
@@ -53,6 +64,7 @@ switch (_act) do {
             } forEach _jam;
             _m
         };
+        private _jf = [];
         {
             if (isNull _x || {!(_x getVariable ["COMSPEC_AtakRelay", false])}) then { continue };
             // Relais réservé à un camp (module « ATAK · Relais ») : invisible pour les autres.
@@ -66,6 +78,7 @@ switch (_act) do {
             private _slots = [_x getVariable ["COMSPEC_AtakRelaySlots", 0], 0] call _num;
             private _batt = [_x getVariable ["COMSPEC_AtakRelayBatt", -1], -1] call _num;
             private _root = _x getVariable ["COMSPEC_AtakRelayRoot", true];
+            private _freq = round ([_x getVariable ["COMSPEC_AtakRelayFreq", 0], 0] call _num);
             private _ant = (getPosASL _x) vectorAdd [0, 0, _h];
             private _st = switch (true) do {
                 case (!alive _x || {damage _x >= 0.95}): { "détruit" };
@@ -73,13 +86,35 @@ switch (_act) do {
                 case (_batt isEqualTo 0): { "batterie vide" };
                 default { "" };
             };
-            private _m = _mb * (1 - 0.7 * damage _x) * ([_ant] call _jamAt);
+            private _j = [_ant] call _jamAt;
+            private _m = _mb * (1 - 0.7 * damage _x) * _j;
             if (_st isEqualTo "" && {_m < 0.05}) then { _st = "brouillé"; };
-            _out pushBack [_x, _ant, _n, "relay", _r, _m, _st isEqualTo "", _st, 0, _slots, _batt, _root isEqualTo true, objNull];
+            _jf pushBack _j;
+            _out pushBack [_x, _ant, _n, "relay", _r, _m, _st isEqualTo "", _st, 0, _slots, _batt, _root isEqualTo true, objNull,
+                _freq max 0, _freq <= 0, 0, round (100 * (1 - damage _x)), "", 0, 0, 0];
         } forEach (missionNamespace getVariable ["COMSPEC_AtakRelays", []]);
+        // Fréquences automatiques : premier canal du plan (bande C, 8 canaux de 5 MHz) qu'aucun relais voisin (portées qui
+        // se chevauchent) n'occupe déjà ; les canaux fixés par la mission sont pris en premier.
+        private _plan = [4940, 4945, 4950, 4955, 4960, 4965, 4970, 4975];
+        {
+            if !(_x select 14) then { continue };
+            private _me = _x;
+            private _used = (_out select { _x isNotEqualTo _me && {(_x select 13) > 0} && {((_x select 1) distance2D (_me select 1)) < ((_x select 4) + (_me select 4))} }) apply { _x select 13 };
+            _x set [13, (_plan select { !(_x in _used) }) param [0, _plan select (_forEachIndex mod 8)]];
+        } forEach _out;
+        // Interférences : chaque relais en service sur le même canal dont la portée couvre l'antenne divise le débit
+        // et ajoute de la perte.
+        {
+            if !(_x select 6) then { continue };
+            private _me = _x;
+            private _co = { _x isNotEqualTo _me && {_x select 6} && {(_x select 13) isEqualTo (_me select 13)} && {((_x select 1) distance (_me select 1)) < ((_x select 4) max (_me select 4))} } count _out;
+            _x set [19, _co];
+            if (_co > 0) then { _x set [5, (_x select 5) / (1 + 0.35 * _co)]; };
+        } forEach _out;
         // Répéteurs : sans liaison propre (satellite, fibre), un relais doit voir un relais raccordé, de proche en proche.
         // Débit du répéteur = le plus faible de la chaîne, réduit par la qualité de chaque bond.
         private _feed = _out apply { [-1, _x select 5] select ((_x select 6) && {_x select 11}) };
+        private _hop = _feed apply { [-1, 0] select (_x >= 0) };
         private _queue = [];
         { if (_x >= 0) then { _queue pushBack _forEachIndex; }; } forEach _feed;
         while { _queue isNotEqualTo [] } do {
@@ -94,48 +129,77 @@ switch (_act) do {
                 if (_d > _reach) then { continue };
                 private _q = 1 - (_d / _reach) ^ 2;
                 _feed set [_forEachIndex, (_x select 5) min ((_feed select _i) * (0.45 + 0.55 * _q))];
+                _hop set [_forEachIndex, (_hop select _i) + 1];
                 _x set [12, _a select 0];
                 _queue pushBack _forEachIndex;
             } forEach _out;
         };
         {
+            _x set [18, _hop select _forEachIndex];
             if !(_x select 6) then { continue };
             private _f = _feed select _forEachIndex;
             if (_f < 0) then { _x set [6, false]; _x set [7, "sans liaison"]; _x set [5, 0]; } else { _x set [5, _f]; };
         } forEach _out;
         {
             _x params ["_o", "_m", "_r", "_mb", "_n"];
-            _out pushBack [_o, (getPosASL _o) vectorAdd [0, 0, [3, 9] select (_m isEqualTo "cp")], _n, ["gw", "cp"] select (_m isEqualTo "cp"), _r, _mb, true, "", 0, 0, -1, true, objNull];
+            _out pushBack [_o, (getPosASL _o) vectorAdd [0, 0, [3, 9] select (_m isEqualTo "cp")], _n, ["gw", "cp"] select (_m isEqualTo "cp"), _r, _mb, true, "", 0, 0, -1, true, objNull,
+                4985, false, 0, round (100 * (1 - damage _o)), "", 0, 0, 0];
+            _jf pushBack 1;
         } forEach (["list"] call comspec_atak_native_fnc_vehicleGateway);
         // Saturation : au-delà de ses places, le débit du relais se partage entre les téléphones à portée.
         private _users = allPlayers select { alive _x && {str side group _x isEqualTo _side} && {[_x] call comspec_atak_native_fnc_hasDevice} };
         {
-            if !(_x select 6) then { continue };
-            private _ap = _x select 1;
-            private _r = _x select 4;
-            private _u = { (_x distance2D _ap) < _r } count _users;
-            _x set [8, _u];
-            private _sl = _x select 9;
-            if (_sl > 0 && {_u > _sl}) then { _x set [5, (_x select 5) * _sl / _u]; };
+            private _sat = 0;
+            if (_x select 6) then {
+                private _ap = _x select 1;
+                private _r = _x select 4;
+                private _u = { (_x distance2D _ap) < _r } count _users;
+                _x set [8, _u];
+                private _sl = _x select 9;
+                if (_sl > 0 && {_u > _sl}) then { _x set [5, (_x select 5) * _sl / _u]; _sat = (_u - _sl) / _sl; };
+            };
+            // Perte du relais : dégâts, brouillage, canal partagé, bonds des répéteurs, saturation (causes indépendantes).
+            private _dmg = 100 - (_x select 16);
+            private _keep = (1 - 0.4 * _dmg / 100) * (1 - 0.8 * (1 - (_jf select _forEachIndex))) * (1 - ((0.07 * (_x select 19)) min 0.6))
+                * (1 - ((0.03 * ((_x select 18) max 0)) min 0.3)) * (1 - ((0.2 * _sat) min 0.4));
+            private _loss = [100, round (100 * (1 - _keep))] select (_x select 6);
+            _x set [15, _loss];
+            _x set [20, [0, round (4 + 9 * ((_x select 18) max 0) + 6 * (_x select 19) + 25 * (1 - (_jf select _forEachIndex)) + 15 * (_sat min 2))] select (_x select 6)];
+            // Santé : hors service, critique (structure < 50 %, batterie < 10 %, perte > 40 %), dégradé, nominal.
+            private _bt = _x select 10;
+            _x set [17, switch (true) do {
+                case !(_x select 6): { "hors service" };
+                case (_dmg >= 50 || {_bt >= 0 && {_bt < 10}} || {_loss > 40}): { "critique" };
+                case (_dmg >= 10 || {_bt >= 0 && {_bt < 25}} || {_loss > 12} || {_sat > 0}): { "dégradé" };
+                default { "nominal" };
+            }];
         } forEach _out;
         missionNamespace setVariable ["COMSPEC_ATAK_RelayCache", [diag_tickTime, _out]];
         _out
     };
     case "best": {
-        // Meilleur relais ou passerelle reçu par le téléphone : [objet, nom, distance, Mbit/s, perte %, type, portée effective,
-        // téléphones à portée, places, batterie %] ou []. Hystérésis : celui déjà accroché est gardé 20 % au-delà de sa portée.
+        // Meilleur relais ou passerelle reçu par le téléphone : [objet, nom, distance, Mbit/s, perte % (lien radio et
+        // relais), type, portée effective, téléphones à portée, places, batterie %, fréquence MHz, santé, latence ms du
+        // relais] ou []. Hystérésis : celui déjà accroché est gardé 20 % au-delà de sa portée. Relais préféré (fiche du
+        // relais sur la carte) : choisi tant qu'il est reçu.
         private _last = uiNamespace getVariable ["COMSPEC_ATAK_RelayLast", objNull];
+        private _pin = uiNamespace getVariable ["COMSPEC_ATAK_RelayPin", objNull];
         private _eye = eyePos player;
         private _best = [];
+        private _pinned = false;
         {
-            _x params ["_o", "_ant", "_n", "_k", "_r", "_mb", "_ok", "", "_u", "_sl", "_bt"];
+            _x params ["_o", "_ant", "_n", "_k", "_r", "_mb", "_ok", "", "_u", "_sl", "_bt", "", "", "_fq", "", "_rl", "", "_hl", "", "", "_lat"];
             if (!_ok) then { continue };
             private _rr = [_r, _r * 1.2] select (_o isEqualTo _last);
             private _l = ["link", [_ant, _rr, _mb, _eye]] call comspec_atak_native_fnc_relayNet;
             if ((_l select 1) <= 0) then { continue };
-            if (_best isEqualTo [] || {(_l select 1) > (_best select 3)}) then {
+            private _isPin = !isNull _pin && {_o isEqualTo _pin};
+            if (_pinned && {!_isPin}) then { continue };
+            if (_isPin || {_best isEqualTo []} || {(_l select 1) > (_best select 3)}) then {
                 private _eff = [_rr, _rr * 0.35] select (terrainIntersectASL [_ant, _eye]);
-                _best = [_o, _n, _ant distance _eye, _l select 1, _l select 2, _k, _eff, _u, _sl, _bt];
+                private _loss = round (100 - (100 - (_l select 2)) * (100 - _rl) / 100);
+                _best = [_o, _n, _ant distance _eye, _l select 1, _loss, _k, _eff, _u, _sl, _bt, _fq, _hl, _lat];
+                _pinned = _isPin;
             };
         } forEach (["list"] call comspec_atak_native_fnc_relayNet);
         // Relais perdu (détruit, coupé, batterie vide, brouillé, sans liaison, ou hors de portée) : toast sur le téléphone,
@@ -149,7 +213,7 @@ switch (_act) do {
             private _still = _why isEqualTo "" && {((["link", [_old select 1, (_old select 4) * 1.2, _old select 5, _eye]] call comspec_atak_native_fnc_relayNet) select 1) > 0};
             if (!_still) then {
                 private _msg = if (_why isNotEqualTo "") then { format ["Relais perdu : %1 (%2)", _lastN, _why] } else { format ["Hors de portée : %1", _lastN] };
-                _msg = _msg + ([", liaison dégradée", format [", bascule sur %1", _best select 1]] select (_best isNotEqualTo []));
+                _msg = _msg + ([[", liaison dégradée", ", plus aucun réseau"] select (["only"] call comspec_atak_native_fnc_relayNet), format [", bascule sur %1", _best select 1]] select (_best isNotEqualTo []));
                 if !([_msg, 4] call comspec_atak_native_fnc_toast) then { ["WARNING", _msg, 4, 30] call comspec_atak_native_fnc_notify; };
             };
         };
@@ -170,15 +234,39 @@ switch (_act) do {
         playSound "ClickSoft";
         true
     };
+    case "entry": {
+        private _o = _arg;
+        ((["list"] call comspec_atak_native_fnc_relayNet) select { (_x select 0) isEqualTo _o }) param [0, []]
+    };
+    case "only": {
+        (missionNamespace getVariable ["comspec_atak_native_relay_only", false])
+            || {missionNamespace getVariable ["COMSPEC_ATAK_RelayOnly", false]}
+            || {missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]}
+    };
+    case "required": {
+        (["only"] call comspec_atak_native_fnc_relayNet) || {missionNamespace getVariable ["COMSPEC_ATAK_RelaysRequired", false]}
+    };
+    case "pin": {
+        private _o = _arg;
+        if (!(_o isEqualType objNull)) then { _o = objNull; };
+        private _was = uiNamespace getVariable ["COMSPEC_ATAK_RelayPin", objNull];
+        if (!isNull _o && {_o isEqualTo _was}) then { _o = objNull; };
+        uiNamespace setVariable ["COMSPEC_ATAK_RelayPin", _o];
+        uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", nil];
+        private _msg = if (isNull _o) then { "Relais : choix automatique du meilleur relais" } else { format ["Relais préféré : %1 (gardé tant qu'il est reçu)", _o getVariable ["COMSPEC_AtakRelayName", "Relais"]] };
+        if !([_msg, 3] call comspec_atak_native_fnc_toast) then { ["INFO", _msg, 3, 20] call comspec_atak_native_fnc_notify; };
+        !isNull _o
+    };
     case "info": {
         // [relais] : fiche du relais en notification (action ACE « État du relais »).
         private _o = _arg;
         private _e = ((["list", "force"] call comspec_atak_native_fnc_relayNet) select { (_x select 0) isEqualTo _o }) param [0, []];
         if (_e isEqualTo []) exitWith { ["INFO", "Relais d'un autre réseau : aucune information", 3, 20] call comspec_atak_native_fnc_notify; };
-        _e params ["", "", "_n", "", "_r", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "_root"];
-        ["INFO", format ["%1 : %2 · portée %3 m · %4 Mbit/s · %5 téléphone(s)%6 · %7 · %8",
-            _n, ["en service", _st] select !_ok, round _r, _mb toFixed 1, _u, ["", format [" / %1 places", _sl]] select (_sl > 0),
-            ["sur secteur", format ["batterie %1 %%", round _bt]] select (_bt >= 0), ["répéteur", "raccordé"] select _root], 8, 30] call comspec_atak_native_fnc_notify;
+        _e params ["", "", "_n", "", "_r", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "_root", "", "_fq", "_auto", "_loss", "_hp", "_hl"];
+        ["INFO", format ["%1 : %2 · %9 MHz · perte %10 %% · structure %11 %% · portée %3 m · %4 Mbit/s · %5 téléphone(s)%6 · %7 · %8",
+            _n, [_hl, _st] select !_ok, round _r, _mb toFixed 1, _u, ["", format [" / %1 places", _sl]] select (_sl > 0),
+            ["sur secteur", format ["batterie %1 %%", round _bt]] select (_bt >= 0), ["répéteur", "raccordé"] select _root,
+            _fq, _loss, _hp], 8, 30] call comspec_atak_native_fnc_notify;
     };
     case "sweep": {
         // Serveur, toutes les 30 s : les relais allumés sur batterie se vident (COMSPEC_AtakRelayAutonomy minutes pour 100 %).

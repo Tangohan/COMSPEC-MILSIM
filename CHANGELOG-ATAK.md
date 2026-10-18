@@ -165,6 +165,42 @@ EN : Cleaner phone: lock screen, back key, mouse layout, notifications and Perso
 - Athena : volet AIDE À LA CONNEXION dans l'app ; bandeau WARNING qui ouvre l'app Athena quand le service est choisi mais la session absente (25 s puis toutes les 10 min, `fn_statusUpdate`).
 - Dictionnaire anglais complété (`tools/i18n.py merge`).
 
+
+## Relais : clic sur la carte, fréquence, perte et santé, édition Zeus, réseau exclusivement par relais, pylônes 3D refaits (ATAK natif, numéro au regroupement)
+
+### Résumé joueur
+Type : nouveauté
+FR : Relais plus lisibles et plus réalistes
+- Sur la carte du téléphone, un clic gauche sur un relais ouvre sa fiche (état, fréquence, perte, latence, débit, portée, structure, alimentation) ; le clic droit ajoute les actions du relais au menu habituel : en faire ton relais préféré, voir sa couverture, s'y rendre.
+- L'app Réseau et la carte montrent pour chaque relais sa fréquence, son taux de perte et son état de santé ; deux relais proches réglés sur le même canal se gênent et perdent du débit.
+- Les missions peuvent imposer un réseau exclusivement par relais : sans relais à portée, plus aucun réseau, et les messages attendent le retour de la liaison. En Zeus, les attributs d'un relais se modifient directement (nom, fréquence, portée, débit, alimentation…) et un menu « ATAK · Relais » permet d'allumer, couper, réparer ou changer la batterie.
+- Les pylônes ont été refaits : tête circulaire avec passerelle, antennes de secteur, boîtiers radio, câbles à bagues jaunes et rouges, local technique, groupe électrogène et clôture barbelée.
+EN : Relays are clearer and more realistic
+- On the phone map, a left click on a relay opens its sheet (status, frequency, loss, latency, throughput, range, structure, power); a right click adds the relay actions to the usual menu: make it your preferred relay, show its coverage, go there.
+- The Network app and the map show each relay's frequency, loss rate and health; two nearby relays set to the same channel interfere and lose throughput.
+- Missions can require a relay-only network: with no relay in range there is no network at all, and messages wait until the link is back. In Zeus, relay attributes can be edited directly (name, frequency, range, throughput, power…) and an "ATAK · Relais" menu turns relays on or off, repairs them or swaps the battery.
+- The towers were rebuilt: circular head with walkway, sector antennas, radio units, cables with yellow and red bands, equipment shelter, generator and barbed-wire fence.
+
+### Détail technique
+- `fn_relayNet` : l'entrée « list » passe à 21 champs (fréquence MHz, canal auto, perte %, structure %, santé nominal/dégradé/critique/hors service, sauts, nombre de relais sur le même canal, latence ms). Plan de canaux auto 4940–4975 MHz (pas de 5 MHz, premier canal libre parmi les relais qui se recouvrent), passerelles en 4985. Interférence co-canal : débit / (1 + 0,35 n). Perte = produit des causes (dégâts, brouillage, co-canal, sauts, saturation). « best » rend fréquence, santé, latence et suit le relais épinglé (`uiNamespace COMSPEC_ATAK_RelayPin`). Nouvelles actions `entry`, `only`, `required`, `pin`.
+- `fn_linkQuality` : en mode exclusivement par relais et sans relais, multiplicateur 0 et facteur « Aucun relais reçu (réseau exclusivement par relais) », y compris si la simulation réseau est coupée ; latence du relais ajoutée, facteur si le relais est dégradé ou critique.
+- Réglage CBA serveur `comspec_atak_native_relay_only` (défaut non), case « Réseau exclusivement par relais » du module Relais (variable `COMSPEC_ATAK_RelayOnly`), variable de mission `COMSPEC_LinkViaRelays` toujours prise en compte. Combo Fréquence du module : canaux C1–C8.
+- `fn_moduleRelay` : posé en Zeus sur un relais existant, le formulaire reprend ses valeurs et modifie le relais (uid et batterie conservés).
+- Nouveau `fn_relayZeus` : attributs ZEN « Relais · … » (nom, en service, fréquence, portée, débit, hauteur, places, réseau du camp, liaison, alimentation, batterie) appliqués à tous les relais sélectionnés, menu contextuel ZEN « ATAK · Relais » (fiche, allumer, couper, batterie neuve, réparer, réseau exclusivement par relais).
+- Carte : `fn_mapCtxMenu` mode `relayAt` et fiche relais (mode carte au clic gauche en mode SÉLECTION, lignes ajoutées au clic droit) ; `fn_meshDraw` étiquette MHz/perte/canal partagé/santé, anneau du relais préféré ; `fn_pageNetwork` lignes de relais sur 3 lignes avec la santé.
+- `tools/model_relay_towers.py` : tête circulaire (double anneau, bras, caillebotis annulaire, 3 panneaux par secteur, RRU, AAU, GPS), jarretières avec bagues jaune/rouge, colliers, feeders en chaînette, échelle à câbles, local technique (porte, clim, entrée de câbles), groupe électrogène, clôture barbelée ; 30/40/50 m, m12, m20 et ruines réexportés (LOD1 30 m ≈ 19k, 40 m ≈ 29k, 50 m ≈ 38k triangles). Pour garder towers.pbo sous les 100 Mo de GitHub (93,6 Mo) : ruines sans le niveau complet (jarretières et colliers arrachés), LOD de tir = pièces de la géométrie, géométrie des ruines en tronçons de 10 m.
+- main.pbo et towers.pbo reconstruits avec HEMTT 1.17.2 sur main à jour (ATAK natif 1.96.0), empreinte posée puis remise à vide ; la version sera fixée au regroupement.
+
+### À tester en jeu
+- Carte du téléphone en mode SÉLECTION : clic gauche sur un relais → fiche ; clic droit → actions relais puis menu habituel ; « Relais préféré » puis « Choix automatique ».
+- App Réseau et carte : fréquence, perte, latence et santé affichées ; abîmer un pylône → dégradé puis critique (orange).
+- Deux relais proches réglés sur le même canal en Eden : « canal partagé » et débit plus bas.
+- Réglage CBA « Réseau exclusivement par relais » puis la case du module : sans relais, plus de réseau et messages en attente ; retour du réseau en s'approchant d'un relais.
+- Zeus : double clic sur un pylône (attributs « Relais · … »), menu clic droit « ATAK · Relais », module Relais posé sur un relais existant.
+- Nouveaux pylônes 30/40/50 m et mâts 12/20 m : tête, câbles, local, groupe, clôture ; fluidité à distance (LOD) et ruines après destruction.
+
+---
+
 ## Regroupement : app Plan refaite, partage des caméras, nouvelle app Distances (ATAK natif 1.96.0, COMSPEC Link 2.0.86)
 
 ### Résumé joueur

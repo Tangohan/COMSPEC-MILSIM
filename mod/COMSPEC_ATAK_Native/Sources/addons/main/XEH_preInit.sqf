@@ -313,6 +313,9 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_vehicle_gateways", "CHECKBOX",
     ["Passerelles de véhicule et PC mobile", "Permet à l'équipage de faire de n'importe quel véhicule un relais ATAK (4 km) ou un poste de commandement à mât (10 km). Désactivé par défaut, peu réaliste : seuls les relais posés par la mission (module Eden ou Zeus « ATAK · Relais ») portent le réseau."],
     _sim, false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_relay_only", "CHECKBOX",
+    ["Réseau exclusivement par relais", "Le réseau ATAK ne passe que par les relais de la mission (pylônes, module « ATAK · Relais »). Hors de portée de tout relais, ou si la mission n'en a aucun, le téléphone n'a plus aucun réseau : messages, photos et positions attendent le retour d'un relais. Décoché : sans relais, le téléphone garde sa liaison directe."],
+    _sim, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_aar", "CHECKBOX",
     ["Rejeu de mission", "Chaque téléphone enregistre les positions de son camp toutes les 10 s (et les pertes amies) pour l'app Rejeu. Décocher pour ne rien enregistrer."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;

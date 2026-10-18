@@ -1,7 +1,6 @@
-/*
-    Clic gauche : action de l'outil actif. Clic droit : quitte l'outil (retour à la sélection), sinon menu contextuel
-    (au relâchement) ; en mode MARQUEUR, choisit le point de pose de la palette.
-*/
+/* Clic gauche : action de l'outil actif (en sélection, sur un relais du calque Relais : sa fiche). Clic droit : quitte l'outil
+   (retour à la sélection), sinon menu contextuel (au relâchement ; sur un relais, la fiche du relais en tête) ; en mode
+   MARQUEUR, choisit le point de pose de la palette. */
 params ["_map","_button","_mx","_my",["_shift",false],["_ctrl",false],["_alt",false]];
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _world = _map ctrlMapScreenToWorld [_mx,_my];
@@ -37,6 +36,12 @@ if (_button isEqualTo 0) exitWith {
     if ((_s getOrDefault ["mapMode","SELECT"]) isEqualTo "DRONE") exitWith { ["mapClick", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_droneAction; true };
     if (["DOWN", [_world select 0, _world select 1, 0]] call comspec_atak_native_fnc_markerStroke) exitWith { true };
     // Sélection : un marqueur sous le curseur passe avant les unités.
+    // Relais du calque Relais sous le curseur : sa fiche (état, fréquence, perte, santé) et ses actions.
+    if ((_s getOrDefault ["mapMode","SELECT"]) isEqualTo "SELECT" && {!_shift && !_ctrl && !_alt}
+        && {!isNull (["relayAt", [_map, [_mx, _my]]] call comspec_atak_native_fnc_mapCtxMenu)}) exitWith {
+        ["open", [_map, [_mx, _my], true]] call comspec_atak_native_fnc_mapCtxMenu;
+        true
+    };
     if ((_s getOrDefault ["mapMode","SELECT"]) isEqualTo "SELECT" && {!_shift && !_ctrl && !_alt}) then {
         private _m = [_map,[_mx,_my]] call comspec_atak_native_fnc_markerAt;
         if (_m isNotEqualTo "") exitWith {
