@@ -242,7 +242,6 @@
 ["%1 sur %2 sélectionné(s)", "", "%1 of %2 selected"],
 ["%1 sur brancard", "", "%1 on stretcher"],
 ["%1 sur la carte", "", "%1 on the map"],
-
 ["%1 sur le canal", "", "%1 on the channel"],
 ["%1 tenue(s) de la communauté ajoutée(s) à l’arsenal.", "", "%1 community loadout(s) added to the arsenal."],
 ["%1 thèmes au maximum.", "", "%1 themes maximum."],
@@ -2322,9 +2321,8 @@
 ["Canal poste encore refusé — reconnectez-vous ou utilisez un nouveau code Appairer.", "", "Station channel still refused — sign in again or use a new Pair code."],
 ["Canal radio : %1", "", "Radio channel: %1"],
 ["Canal radio supprimé.", "", "Radio channel deleted."],
-["Canal sur lequel le téléphone pose les marqueurs (palette, traits, LZ, éditeur). Général : vus de tous les joueurs (par défaut). Se change aussi à chaque pose, ligne CANAL de la palette.", "", "Channel the phone places markers on (palette, lines, LZ, editor). Global: seen by every player (default). Can also be changed for each placement, CHANNEL row of the palette."],
-
 ["Canal radio. Deux relais voisins sur le même canal se brouillent : débit réduit, perte et latence en hausse.", "", "Radio channel. Two neighbouring relays on the same channel interfere: lower throughput, more loss and latency."],
+["Canal sur lequel le téléphone pose les marqueurs (palette, traits, LZ, éditeur). Général : vus de tous les joueurs (par défaut). Se change aussi à chaque pose, ligne CANAL de la palette.", "", "Channel the phone places markers on (palette, lines, LZ, editor). Global: seen by every player (default). Can also be changed for each placement, CHANNEL row of the palette."],
 ["Canal TOC", "", "TOC channel"],
 ["Canal véhicule", "", "Vehicle channel"],
 ["Canaliser", "", "Canalize"],
@@ -7910,7 +7908,6 @@
 ["Perte de paquets", "", "Packet loss"],
 ["Perte minimale %3 %%", "", "Minimum loss %3 %%"],
 ["Perte sanguine estimée", "", "Estimated blood loss"],
-
 ["Perte · latence", "", "Loss · latency"],
 ["pertes %4%%", "", "loss %4%%"],
 ["Pertes amies", "", "Friendly losses"],
