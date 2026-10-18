@@ -967,5 +967,20 @@
             <English>Connected GPS watch: steps, heart rate, stress, sleep, Body Battery and activities, read in the Garmin app of the ATAK phone. Wear it in the watch slot.</English>
             <French>Montre GPS connectée : pas, fréquence cardiaque, stress, sommeil, Body Battery et activités, lus dans l'app Garmin du téléphone ATAK. À porter dans l'emplacement montre.</French>
         </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_838F8C2B63">
+            <Original>#rrggbb, vide = couleur du thème.</Original>
+            <English>#rrggbb, empty = theme colour.</English>
+            <French>#rrggbb, vide = couleur du thème.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_AB5C9325A0">
+            <Original>Image de la mission (ex. images\logo.paa) en tête de l'écran de connexion.</Original>
+            <English>Mission image (e.g. images\logo.paa) at the top of the sign-in screen.</English>
+            <French>Image de la mission (ex. images\logo.paa) en tête de l'écran de connexion.</French>
+        </Key>
+        <Key ID="STR_COMSPEC_ATAK_CFG_297613D47A">
+            <Original>Exécuté sur le serveur à la fin d'un téléchargement. params ["_object", "_player", "_files"]. Aussi : événement CBA comspec_atak_native_dataDownloaded.</Original>
+            <English>Run on the server when a download finishes. params ["_object", "_player", "_files"]. Also: CBA event comspec_atak_native_dataDownloaded.</English>
+            <French>Exécuté sur le serveur à la fin d'un téléchargement. params ["_object", "_player", "_files"]. Aussi : événement CBA comspec_atak_native_dataDownloaded.</French>
+        </Key>
     </Package>
 </Project>

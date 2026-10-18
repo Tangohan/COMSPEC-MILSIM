@@ -42,19 +42,19 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ### Résumé joueur
 Type : correctif
-FR : COMSPEC ATAK 2.1.1 « Denver » : le français partout, un Resynch complet et une série de correctifs
+FR : COMSPEC ATAK 2.1.1 « Denver » : le français partout, un Resynch complet, un téléphone plus fluide et une série de correctifs
 - Le réglage Français traduit enfin tout : écrans d'Overwatch, menus, actions ACE et noms automatiques des marqueurs suivent la langue du mod, sans relancer la mission.
 - L'app Synchro renvoie tout ce qui manque à Athena (carte du camp, plan de briefing, équipes, montre Garmin, tenues modifiées, objets) et montre l'état de chaque catégorie.
-- Photo plein écran sans main devant la vue, avec la touche B pour le flou ; l'image du drone ne reste plus noire ; le pouls et le nom du blessé reviennent dans l'app Médical.
+- Téléphone plus fluide, surtout rangé ; photo plein écran sans main devant la vue, avec la touche B pour le flou ; l'image du drone ne reste plus noire ; le pouls et le nom du blessé reviennent dans l'app Médical.
 - L'app Réglages montre l'état de la liaison et cherche n'importe quel réglage ; le code de liaison Athena se renouvelle tout seul ; le guide réseau ouvre chaque rubrique et la capture de la carte par Zeus démarre de nouveau.
-EN : COMSPEC ATAK 2.1.1 "Denver": French everywhere, a complete Resynch and a batch of fixes
+EN : COMSPEC ATAK 2.1.1 "Denver": French everywhere, a complete Resynch, a smoother phone and a batch of fixes
 - The French setting now translates everything: Overwatch screens, menus, ACE actions and automatic marker names follow the mod language, without restarting the mission.
 - The Synchro app resends everything Athena is missing (side map, briefing plan, teams, Garmin watch, changed loadouts, items) and shows the state of each category.
-- Fullscreen camera with no hand in front of the view, with the B key for blur; the drone picture no longer stays black; the casualty's pulse and name are back in the Medical app.
+- A smoother phone, especially when stowed; fullscreen camera with no hand in front of the view, with the B key for blur; the drone picture no longer stays black; the casualty's pulse and name are back in the Medical app.
 - The Settings app shows your link status and searches any setting; the Athena link code renews itself; the network guide opens every section and the Zeus map capture starts again.
 
 ### Détail technique
-Regroupe #893, #894, #896, #897, #898, #899, #900, #905 et #906. `VERSION_STR` « 2.1.1 » (seul comparé), nom affiché « 2.1.1.AB - Denver ». COMSPEC Link inchangé (2.0.88), pas de DLL à recompiler. main.pbo reconstruit avec HEMTT 1.22 (build « 2026.10.18 5d418bd », `i18n/fr.txt` inclus, 96,5 Mo, sous la limite GitHub de 100 Mo). `comspec_overwatch_connect.pbo` repris de #898 puis repatché avec `fn_forceSyncData.sqf` de #900 ; `comspec_sse_core.pbo` patché par #898. Rien à déployer côté site.
+Regroupe #893, #894, #896, #897, #898, #899, #900, #905, #906 et #908. `VERSION_STR` « 2.1.1 » (seul comparé), nom affiché « 2.1.1.AB - Denver ». COMSPEC Link inchangé (2.0.88), pas de DLL à recompiler. main.pbo reconstruit avec HEMTT 1.22 (build « 2026.10.18 5d418bd », `i18n/fr.txt` inclus, 96,5 Mo, sous la limite GitHub de 100 Mo). `comspec_overwatch_connect.pbo` repris de #898 puis repatché avec `fn_forceSyncData.sqf` de #900 ; `comspec_sse_core.pbo` patché par #898. Rien à déployer côté site.
 
 #### Le réglage Français traduit tout, noms automatiques des marqueurs (#898)
 - `i18n/fr.txt` (anglais vers français) chargé en français, assemblé par `tools/i18n.py fr` depuis `tools/i18n_fr_source.tsv` et les stringtables ; `fn_tr` et les écrans (ATAK, connect, SSE) traduisent dès qu'un dictionnaire est chargé ; langue lue dans le profil CBA dès le preInit ; menus CBA vidés au changement de langue ; actions ACE retraduites à chaque affichage. Noms automatiques des marqueurs (palette, LOCK, détections drone, END/FIN) posés dans la langue du mod et relus par `fn_markerAutoName`.
@@ -160,6 +160,32 @@ EN : The Athena link code now renews itself
 - `fn_athenaLink` : troisième paramètre `auto` (3 renouvellements au plus, remis à zéro par une demande manuelle) et action `watch`, appelée toutes les 10 s par un PFH de `XEH_postInitClient.sqf` ; une session ouverte qui tombe sur une erreur de session (SESSION_EXPIRED, révocation, refresh, 401, STEAM_NOT_LINKED) propose un code une fois par perte (notification + indice). `fn_athenaStatus` renvoie le `code` d'erreur brut. Côté site : #904 (déjà sur main).
 - À tester en jeu : app Athena ouverte sans session au-delà de 10 min (nouveau code tout seul) ; session ouverte puis appareil révoqué sur le site (notification de code en ~10 s).
 
+
+#### Fluidité : moins de calculs téléphone rangé, carte et menu des apps allégés, derniers textes traduits (#908)
+
+##### Résumé joueur de la PR
+Type : amélioration
+FR : Le téléphone coûte moins d'images par seconde, surtout rangé
+- Téléphone rangé, la qualité du réseau et le meilleur relais sont recalculés moins souvent : beaucoup moins de calculs de relief et de bâtiments en fond, près des relais surtout.
+- La carte ne relit plus tous les marqueurs de la mission chaque seconde : seulement quand un marqueur est posé, modifié ou supprimé.
+- Le menu des apps se redessine plus vite (recherche, épinglage, pastilles), et la lueur d'écran et la musique ne travaillent plus pour rien quand elles ne servent pas.
+- Derniers textes encore en français en mode anglais traduits (débits du réseau, fiches SEEK et SSE en Bluetooth, trois infobulles de modules Eden).
+EN : The phone costs fewer frames per second, especially when stowed
+- With the phone stowed, network quality and the best relay are recomputed less often: far fewer terrain and building checks in the background, especially near relays.
+- The map no longer rereads every mission marker each second: only when a marker is placed, changed or deleted.
+- The apps menu redraws faster (search, pinning, badges), and screen glow and music no longer do work when they are not in use.
+- Last texts still in French in English mode are translated (network throughput, SEEK and SSE records over Bluetooth, three Eden module tooltips).
+
+##### Détail technique
+- `fn_linkQuality` : cache 6 s téléphone fermé (2 s ouvert) ; un cache vidé exprès (antenne, dégâts, mode avion, brouillage, test de débit) vide aussi le meilleur relais.
+- `fn_relayNet "best"` : résultat gardé 1,5 s ouvert / 6 s fermé (`COMSPEC_ATAK_RelayBest`, vidé par `"pin"`) ; `"list"` ne compte plus les téléphones (hasDevice sur chaque joueur) quand aucun relais n'est en service.
+- Marqueurs : compteur `COMSPEC_ATAK_MkRev` (EH MarkerCreated / Deleted / Updated). `fn_mapGameMarkers` relit sur changement (sinon 5 s au lieu de 1 s), `fn_localDataRefresh` sur changement (2 s avec marqueurs Athena, sinon 10 s), `fn_markerWebSweep` (relais du camp, 15 s) ne sérialise plus rien sans changement.
+- `fn_localDataRefresh` : pistes Athena non parcourues quand l'indicatif a déjà trouvé la sienne. `fn_natoSymbol` : cache vidé d'un coup au-delà de 400 unités (plus de copie des clés à chaque image).
+- `fn_feedLink "publish"` : variation de palier diffusée seulement si elle tient deux tours (relais changé ou coupure : aussitôt).
+- `fn_screenGlow "tick"` : sortie immédiate réglage serveur coupé (défaut). `fn_musicTick` : `MusicStatus` (DLL, appel bloquant) au plus toutes les 1,5 s, position extrapolée entre deux. `fn_phoneSecurity` : catalogue cherché dans le HashMap. `fn_relayEden` : éditeur relu toutes les 1,5 s sans tour posée.
+- Lanceur : pastilles calculées une fois par app, mesure des libellés de tuile gardée (`COMSPEC_ATAK_TileFit`, plus de contrôle créé et supprimé par tuile à chaque redessin).
+- i18n : 14 entrées dans `en.txt` (+ modèle communautaire regénéré), 3 infobulles de `modules.hpp` en `$STR_COMSPEC_ATAK_CFG_*`. main.pbo à reconstruire au regroupement. COMSPEC Link inchangé.
+- À tester en jeu : barres de signal et bascule de relais téléphone ouvert et rangé (près d'un relais, en marchant), toast « relais perdu » ; poser, déplacer et supprimer un marqueur (carte du téléphone, et sur Athena pour le relais du camp) ; marqueurs Athena reçus ; recherche, épinglage et pastille Messages dans le menu des apps ; musique DLL (barre de lecture, fin de piste) ; aperçu de tour relais dans Eden ; mode anglais : page Réseau > débits, Bluetooth > fiches SEEK.
 
 ## Regroupement : réseau radio réaliste, apps refaites, synchro allégée, icônes des objets (ATAK natif 2.1.0.AB - Denver, COMSPEC Link 2.0.88)
 

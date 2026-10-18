@@ -7,14 +7,15 @@
       RECTANGLE  zone à la brosse du marqueur (Solid, Border, hachures...) ;
       ELLIPSE    idem ;
       POLYLINE   trait d'un pixel (les traits épais ou fléchés sont repassés par fn_strokeDraw).
-    Propriétés relues une fois par seconde (ou dès qu'un marqueur apparaît ou disparaît) ; position des symboles lue
+    Propriétés relues dès qu'un marqueur est créé, modifié ou supprimé (sinon toutes les 5 s) ; position des symboles lue
     à chaque image (une cible suivie bouge). Les noms sont écrits par fn_mapMarkerText.
     Params : [carte, facteur des symboles (écran x réglage)]
 */
 params ["_map", "_mk"];
 private _now = diag_tickTime;
 private _cache = uiNamespace getVariable ["COMSPEC_ATAK_GmList", [-1, -1, []]];
-if (_now > (_cache select 0) || {(count allMapMarkers) isNotEqualTo (_cache select 1)}) then {
+private _rev = [count allMapMarkers, missionNamespace getVariable ["COMSPEC_ATAK_MkRev", 0]];
+if (_now > (_cache select 0) || {_rev isNotEqualTo (_cache select 1)}) then {
     private _cfg = uiNamespace getVariable "COMSPEC_ATAK_GmCfg";
     if (isNil "_cfg") then { _cfg = createHashMap; uiNamespace setVariable ["COMSPEC_ATAK_GmCfg", _cfg]; };
     private _rgbOf = {
@@ -81,7 +82,8 @@ if (_now > (_cache select 0) || {(count allMapMarkers) isNotEqualTo (_cache sele
             };
         };
     } forEach allMapMarkers;
-    _cache = [_now + 1, count allMapMarkers, _list];
+    // Relu dès qu'un marqueur change (compteur COMSPEC_ATAK_MkRev, XEH_postInitClient), sinon toutes les 5 s par sécurité.
+    _cache = [_now + 5, _rev, _list];
     uiNamespace setVariable ["COMSPEC_ATAK_GmList", _cache];
 };
 
