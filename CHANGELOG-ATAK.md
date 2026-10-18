@@ -38,6 +38,26 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Resynch : tout ce qui est nouveau remonte, et compte rendu par catégorie (ATAK natif 2.1.1)
+
+### Résumé joueur
+Type : nouveauté
+FR : L'app Synchro renvoie enfin tout, et dit clairement ce qui est parti
+- Le Resynch renvoie maintenant aussi la carte du camp, le plan de briefing, les escouades et équipes, la montre Garmin, les tenues modifiées depuis leur dernier envoi, le catalogue de tes objets avec leurs icônes et la liste des mods.
+- Seul ce qui manque à Athena repart : les photos déjà transmises et les icônes déjà sur le site ne sont pas renvoyées, et rouvrir l'app ne relance plus tout si le dernier renvoi a moins de 5 minutes.
+- Nouvelle page : un état global en haut (à jour, ou ce qui n'est pas parti), une carte par catégorie avec son icône et son état (renvoyé, à jour, en file, pas parti), l'heure du dernier renvoi et un bouton qui affiche le délai avant de pouvoir relancer.
+EN : The Synchro app now resends everything, and clearly says what went out
+- Resynch now also resends the side map, the briefing plan, squads and teams, the Garmin watch, loadouts changed since they were last sent, your item catalogue with its icons and the mod list.
+- Only what Athena is missing goes out again: photos already sent and icons already on the website are not resent, and reopening the app no longer resends everything if the last resync is less than 5 minutes old.
+- New page: an overall status at the top (up to date, or what did not go out), one card per category with its icon and state (resent, up to date, queued, not sent), the time of the last resync and a button that shows how long until you can run it again.
+
+### Détail technique
+- `fn_resynchRun` (natif) : après `comspec_overwatch_connect_fnc_forceSyncData`, renvoie la carte du camp (instantané `COMSPEC_ATAK_MkSnap` vidé si ce joueur est le relais du camp, sinon le relais est nommé), `planWeb ["force"]`, `squadSync [true]`, `garminTick ["push"]` (nouveau mode : profil écrit et envoyé sans clore l'activité), tenues déjà sur le site dont le sha local diffère du registre (`arsenalLedger`) via `arsenalPushAll [noms]`, et lit la file d'envoi (`COMSPEC_ATAK_NetQueue` + `SendQueue.Status`). Les tenues jamais partagées ne sont pas envoyées (le partage reste un choix fait dans Tenues Athena).
+- `forceSyncData` (connect) : vide `COMSPEC_OpCatalogSentKey`, `COMSPEC_OpModsSentKey` et `COMSPEC_ItemIconsSent` avant la fiche opérateur (catalogue, mods et icônes repartent une fois ; `Item.Icons` n'envoie que les icônes absentes du site), lit le résultat de la fiche (validée, en attente, refusée, écarts signalés) et écrit `COMSPEC_LastResynchItems` = `[[clé, état, titre, détail]...]`. `COMSPEC_LastResynchSummary` (ancien affichage) est gardé tel quel.
+- `fn_pageResynch` refait : carte d'état globale, bouton « RELANCER LE RESYNCH » / « PATIENTEZ N S » (délai de 15 s de `forceSyncData`), nouvelle ligne `cells` de `fn_formRender` (grille de cartes, deux colonnes en paysage : icône de l'app, liseré et état en couleur). Lancement automatique à l'ouverture seulement si le dernier renvoi a plus de 5 min.
+- `comspec_overwatch_connect.pbo` repatché (`tools/pbo_patch.py`, `fn_forceSyncData.sqf`). main.pbo à reconstruire au regroupement. COMSPEC Link inchangé (2.0.88). `i18n/en.txt` : 76 entrées.
+- À tester en jeu : ouvrir Synchro (renvoi auto), relancer (bouton en attente 15 s), rouvrir l'app avant 5 min (pas de renvoi), vérifier sur Athena le plan de briefing, les équipes, la montre Garmin sur la fiche du membre, une tenue modifiée, les icônes du kit ; couper la liaison puis Resynch (ligne « Liaison Athena »).
+
 ## Regroupement : réseau radio réaliste, apps refaites, synchro allégée, icônes des objets (ATAK natif 2.1.0.AB - Denver, COMSPEC Link 2.0.88)
 
 ### Résumé joueur
