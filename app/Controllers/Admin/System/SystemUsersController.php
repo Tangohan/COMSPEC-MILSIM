@@ -25,6 +25,9 @@ use App\Services\Audit\AuditService;
 use App\Services\Identity\UserIdentityMergeService;
 use App\Support\PortalAccessChoice;
 use App\Repositories\AccountPurgeRequestRepository;
+use App\Repositories\LoginAttemptRepository;
+use App\Repositories\PlatformAccountBanRepository;
+use App\Services\Account\PlatformAccountBanService;
 
 /**
  * Annuaire global des comptes (toutes communautés) — administration plateforme.
@@ -38,6 +41,9 @@ final class SystemUsersController
         private ?AccountDeletionService $accountDeletion = null,
         private ?AccountPurgeService $accountPurge = null,
         private ?AccountPurgeRequestRepository $purgeRequests = null,
+        private ?PlatformAccountBanRepository $banRepository = null,
+        private ?PlatformAccountBanService $banService = null,
+        private ?LoginAttemptRepository $loginAttemptRepository = null,
     ) {
         $this->audit ??= new AuditService();
         $this->purgeRequests ??= new AccountPurgeRequestRepository();
@@ -60,7 +66,7 @@ final class SystemUsersController
         $tenantFilter = (int) $request->query('tenant_id', 0);
         $page = max(1, (int) $request->query('page', 1));
         $perPage = 50;
-        $allowedStatus = ['active', 'inactive', 'pending_verification', 'deleted'];
+        $allowedStatus = ['active', 'inactive', 'pending_verification', 'deleted', 'no_org', 'banned'];
         if ($status !== '' && !in_array($status, $allowedStatus, true)) {
             $status = '';
         }
@@ -74,11 +80,18 @@ final class SystemUsersController
         );
         $total = (int) ($result['total'] ?? 0);
         $pages = max(1, (int) ceil($total / $perPage));
+        $groups = $this->decorateDirectoryGroups(is_array($result['groups'] ?? null) ? $result['groups'] : []);
+        $realTenants = array_values(array_filter(
+            $this->tenants->listOverviewForPlatform(),
+            static fn (array $t): bool => !PortalAccessChoice::isPlaceholderTenant($t)
+        ));
 
         return Response::view('layout.main', [
             'title' => 'Comptes utilisateurs',
             'content' => 'admin.system.users',
-            'platformUserGroups' => $result['groups'] ?? [],
+            'isPlatformAdminShell' => true,
+            'backOfficePageCss' => ['platform-admin-users.css'],
+            'platformUserGroups' => $groups,
             'platformUsers' => [], // rétrocompat partielle si une vue externe lit encore la clé
             'platformUsersTotal' => $total,
             'platformUsersPage' => $page,
@@ -86,10 +99,377 @@ final class SystemUsersController
             'platformUsersQ' => $q,
             'platformUsersStatus' => $status,
             'platformUsersTenantId' => $tenantFilter,
-            'platformTenants' => $this->tenants->listOverviewForPlatform(),
+            'platformTenants' => $realTenants,
             'pendingPurgeRequests' => $this->purgeRequests->listPending(50),
             'pendingPurgeRequestsCount' => $this->purgeRequests->countPending(),
+            'platformBansCount' => $this->bans()->countActive(),
         ]);
+    }
+
+    /**
+     * Prépare l’affichage : le sas « pas d’organisation » n’est jamais présenté comme une communauté,
+     * on note les bannissements en cours et les adresses réseau connues (pour le bannissement).
+     *
+     * @param list<array<string, mixed>> $groups
+     * @return list<array<string, mixed>>
+     */
+    private function decorateDirectoryGroups(array $groups): array
+    {
+        $bans = $this->bans()->activeByEmails(array_map(
+            static fn (array $g): string => (string) ($g['email'] ?? ''),
+            $groups
+        ));
+        $attempts = $this->loginAttempts();
+        foreach ($groups as &$group) {
+            $memberships = is_array($group['memberships'] ?? null) ? $group['memberships'] : [];
+            $real = [];
+            $placeholders = [];
+            foreach ($memberships as $m) {
+                if (PortalAccessChoice::membershipIsPlaceholder($m)) {
+                    $placeholders[] = $m;
+                } else {
+                    $real[] = $m;
+                }
+            }
+            $hasLive = false;
+            foreach ($real as $m) {
+                if (empty($m['deleted_at']) && (string) ($m['membership_status'] ?? 'active') === 'active') {
+                    $hasLive = true;
+                    break;
+                }
+            }
+            $group['memberships'] = $real;
+            $group['account_anchor'] = $real[0] ?? $placeholders[0] ?? $memberships[0] ?? null;
+            $group['no_org'] = !$hasLive;
+            $key = strtolower(trim((string) ($group['email'] ?? '')));
+            $group['ban'] = $bans[$key] ?? null;
+            $group['known_ips'] = [];
+            if ($attempts !== null && $key !== '') {
+                try {
+                    $group['known_ips'] = $attempts->listRecentSuccessIpsForEmail($key, 180, 6);
+                } catch (\Throwable) {
+                    $group['known_ips'] = [];
+                }
+            }
+        }
+        unset($group);
+
+        return $groups;
+    }
+
+    private function bans(): PlatformAccountBanRepository
+    {
+        return $this->banRepository ??= new PlatformAccountBanRepository();
+    }
+
+    private function banService(): PlatformAccountBanService
+    {
+        return $this->banService ??= new PlatformAccountBanService($this->users, $this->bans());
+    }
+
+    private function loginAttempts(): ?LoginAttemptRepository
+    {
+        try {
+            return $this->loginAttemptRepository ??= new LoginAttemptRepository();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Retire la personne d’une communauté sans rien effacer : l’appartenance passe « quittée »,
+     * l’accès à cette communauté est coupé, la fiche et l’historique restent (réintégration possible).
+     */
+    public function removeMembership(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $actorId = (int) Session::get('user_id');
+        $userId = (int) $request->input('user_id');
+        $tenantId = (int) $request->input('tenant_id');
+        if ($userId < 1 || $tenantId < 1) {
+            Session::flash('error', 'Demande invalide.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        if ($userId === $actorId) {
+            Session::flash('error', 'Vous ne pouvez pas vous retirer vous-même depuis cet écran.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $target = $this->users->findById($userId, null);
+        $tenant = $this->tenants->findById($tenantId);
+        if ($target === null || $tenant === null) {
+            Session::flash('error', 'Compte ou communauté introuvable.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+
+        $memberships = $this->users->communityMemberships();
+        $memberships->leave($userId, $tenantId);
+        $memberships->upsertProfile($userId, $tenantId, ['status' => 'inactive']);
+        if ((int) ($target['tenant_id'] ?? 0) === $tenantId) {
+            // Session ouverte sur cette communauté : elle sera fermée à la requête suivante.
+            $this->users->bumpSessionEpoch($userId);
+        }
+
+        $this->audit->logChange(
+            AuditAction::USER_MEMBERSHIP_REMOVED,
+            $tenantId,
+            $actorId,
+            'user',
+            $userId,
+            ['membership' => 'active', 'tenant_id' => $tenantId],
+            ['membership' => 'left', 'tenant_id' => $tenantId, 'platform_directory' => true],
+        );
+
+        $who = $this->personLabel($target);
+        Session::flash(
+            'success',
+            $who . ' ne fait plus partie de « ' . community_display_name($tenant) . ' ». Sa fiche reste dans l’annuaire :'
+            . ' le bouton « Réintégrer » annule ce retrait.'
+        );
+
+        return Response::redirect($this->backUrl($request));
+    }
+
+    /** Annule un retrait : l’appartenance redevient active et la fiche retrouve son nom. */
+    public function restoreMembership(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $actorId = (int) Session::get('user_id');
+        $userId = (int) $request->input('user_id');
+        $tenantId = (int) $request->input('tenant_id');
+        $target = $userId > 0 ? $this->users->findById($userId, null) : null;
+        $tenant = $tenantId > 0 ? $this->tenants->findById($tenantId) : null;
+        if ($target === null || $tenant === null || !empty($target['deleted_at'])) {
+            Session::flash('error', 'Compte ou communauté introuvable (un compte anonymisé ne peut pas être réintégré).');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $ban = $this->bans()->findActiveForEmail((string) ($target['email'] ?? ''));
+        if ($ban !== null) {
+            Session::flash('error', 'Cette personne est bannie du site : levez d’abord le bannissement.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+
+        $memberships = $this->users->communityMemberships();
+        $profile = ['status' => 'active'];
+        $current = $memberships->findProfile($userId, $tenantId) ?? [];
+        if ((string) ($current['display_name'] ?? '') === AccountDeletionService::DELETED_DISPLAY_NAME) {
+            $global = trim((string) ($target['display_name'] ?? ''));
+            if ($global !== '' && $global !== AccountDeletionService::DELETED_DISPLAY_NAME) {
+                $profile['display_name'] = $global;
+            }
+            $callsign = trim((string) ($target['callsign'] ?? ''));
+            if ($callsign !== '') {
+                $profile['callsign'] = $callsign;
+            }
+        }
+        $memberships->ensureMembership($userId, $tenantId, $profile);
+
+        $this->audit->logChange(
+            AuditAction::USER_MEMBERSHIP_RESTORED,
+            $tenantId,
+            $actorId,
+            'user',
+            $userId,
+            ['membership' => 'left', 'tenant_id' => $tenantId],
+            ['membership' => 'active', 'tenant_id' => $tenantId, 'platform_directory' => true],
+        );
+        Session::flash(
+            'success',
+            $this->personLabel($target) . ' fait de nouveau partie de « ' . community_display_name($tenant) . ' ».'
+        );
+
+        return Response::redirect($this->backUrl($request));
+    }
+
+    /** Bannit la personne de tout le site (voir PlatformAccountBanService). */
+    public function ban(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $actorId = (int) Session::get('user_id');
+        $email = strtolower(trim((string) $request->input('email', '')));
+        $ips = $request->input('block_ips', []);
+        $ips = is_array($ips) ? array_map('strval', $ips) : [(string) $ips];
+        $extra = trim((string) $request->input('extra_ips', ''));
+        if ($extra !== '') {
+            $ips[] = $extra;
+        }
+        $result = $this->banService()->ban(
+            $email,
+            (string) $request->input('reason', ''),
+            $ips,
+            (string) $request->input('block_steam', '') === '1',
+            $actorId
+        );
+        if (!$result['ok']) {
+            Session::flash('error', (string) ($result['error'] ?? 'Bannissement impossible.'));
+
+            return Response::redirect($this->backUrl($request));
+        }
+
+        $this->audit->logChange(
+            AuditAction::USER_BANNED,
+            0,
+            $actorId,
+            'user',
+            0,
+            ['email' => $email],
+            [
+                'email' => $email,
+                'ban_id' => (int) ($result['ban_id'] ?? 0),
+                'reason' => mb_substr(trim((string) $request->input('reason', '')), 0, 500),
+                'blocked_ips' => (int) ($result['blocked_ips'] ?? 0),
+                'steam_blocked' => !empty($result['steam_blocked']),
+            ],
+        );
+
+        $bits = ['connexion et inscription refusées pour ' . $email];
+        if (!empty($result['steam_blocked'])) {
+            $bits[] = 'Steam ID refusé par le mod';
+        }
+        if ((int) ($result['blocked_ips'] ?? 0) > 0) {
+            $bits[] = (int) $result['blocked_ips'] . ' adresse(s) réseau bloquée(s)';
+        }
+        Session::flash('success', 'Personne bannie du site : ' . implode(', ', $bits) . '. Ses sessions ouvertes sont fermées.');
+
+        return Response::redirect($this->backUrl($request));
+    }
+
+    public function unban(Request $request, array $params = []): Response
+    {
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $actorId = (int) Session::get('user_id');
+        $email = strtolower(trim((string) $request->input('email', '')));
+        $result = $this->banService()->lift($email, $actorId);
+        if (!$result['ok']) {
+            Session::flash('error', (string) ($result['error'] ?? 'Levée impossible.'));
+
+            return Response::redirect($this->backUrl($request));
+        }
+        $this->audit->logChange(
+            AuditAction::USER_UNBANNED,
+            0,
+            $actorId,
+            'user',
+            0,
+            ['email' => $email, 'banned' => true],
+            ['email' => $email, 'banned' => false, 'restored_accounts' => (int) ($result['restored'] ?? 0)],
+        );
+        Session::flash('success', 'Bannissement levé : la personne peut de nouveau se connecter, ses fiches ont retrouvé leur état d’avant.');
+
+        return Response::redirect($this->backUrl($request));
+    }
+
+    /** Bloque une adresse réseau sur tout le site (connexion, inscription, mod). */
+    public function blockIp(Request $request, array $params = []): Response
+    {
+        $email = strtolower(trim((string) $request->input('email', '')));
+        $back = $email !== '' ? url('admin/users/person') . '?email=' . rawurlencode($email) . '#reseau' : url('admin/users');
+        if (!Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée.');
+
+            return Response::redirect($back);
+        }
+        $ip = trim((string) $request->input('ip', ''));
+        $reason = trim((string) $request->input('reason', ''));
+        if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
+            Session::flash('error', 'Adresse réseau invalide.');
+
+            return Response::redirect($back);
+        }
+        try {
+            /** @var \App\Services\Moderation\IndicatorBlocklistService $blocklist */
+            $blocklist = Container::get(\App\Services\Moderation\IndicatorBlocklistService::class);
+            /** @var \App\Repositories\BlockedIndicatorRepository $indicators */
+            $indicators = Container::get(\App\Repositories\BlockedIndicatorRepository::class);
+            if ($indicators->isIpBlockedGlobally($ip)) {
+                Session::flash('success', 'Cette adresse réseau était déjà bloquée.');
+
+                return Response::redirect($back);
+            }
+            $blocklist->addIpBlock(
+                (int) Session::get('user_id'),
+                'global',
+                null,
+                $ip,
+                $reason !== '' ? $reason : ('Bloquée depuis le dossier de ' . $email),
+                null
+            );
+        } catch (\Throwable $e) {
+            Session::flash('error', $e->getMessage());
+
+            return Response::redirect($back);
+        }
+        Session::flash('success', 'Adresse réseau bloquée sur tout le site. Pour la débloquer : Liste de restriction.');
+
+        return Response::redirect($back);
+    }
+
+    /**
+     * Adresses réseau des dernières connexions réussies, avec l’état de blocage.
+     *
+     * @return list<array{ip: string, last_seen: string, logins: int, blocked: bool}>
+     */
+    private function knownIpsWithBlockState(string $email): array
+    {
+        $attempts = $this->loginAttempts();
+        if ($attempts === null) {
+            return [];
+        }
+        try {
+            $rows = $attempts->listRecentSuccessIpsForEmail($email, 180, 20);
+            /** @var \App\Repositories\BlockedIndicatorRepository $indicators */
+            $indicators = Container::get(\App\Repositories\BlockedIndicatorRepository::class);
+            $out = [];
+            foreach ($rows as $row) {
+                $ip = (string) ($row['ip'] ?? '');
+                if ($ip === '') {
+                    continue;
+                }
+                $out[] = [
+                    'ip' => $ip,
+                    'last_seen' => (string) ($row['last_seen'] ?? ''),
+                    'logins' => (int) ($row['logins'] ?? 0),
+                    'blocked' => $indicators->isIpBlockedGlobally($ip),
+                ];
+            }
+
+            return $out;
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** @param array<string, mixed> $user */
+    private function personLabel(array $user): string
+    {
+        foreach (['callsign', 'display_name', 'email'] as $key) {
+            $v = trim((string) ($user[$key] ?? ''));
+            if ($v !== '' && $v !== AccountDeletionService::DELETED_DISPLAY_NAME) {
+                return $v;
+            }
+        }
+
+        return 'Cette personne';
     }
 
     /**
@@ -229,6 +609,10 @@ final class SystemUsersController
             'personMemberships' => $dossierMemberships,
             'personMergePreview' => $mergePreview,
             'personIsPlatformAdmin' => $this->users->emailHasPlatformAdmin($email),
+            'personBan' => $this->bans()->findActiveForEmail($email),
+            'personKnownIps' => $this->knownIpsWithBlockState($email),
+            'isPlatformAdminShell' => true,
+            'backOfficePageCss' => ['platform-admin-users.css'],
         ]);
     }
 
@@ -930,6 +1314,10 @@ final class SystemUsersController
 
     private function backUrl(Request $request): string
     {
+        $person = strtolower(trim((string) $request->input('return_person', '')));
+        if ($person !== '' && filter_var($person, FILTER_VALIDATE_EMAIL)) {
+            return url('admin/users/person') . '?email=' . rawurlencode($person);
+        }
         $q = trim((string) $request->input('return_q', ''));
         $status = trim((string) $request->input('return_status', ''));
         $tenantId = (int) $request->input('return_tenant_id', 0);

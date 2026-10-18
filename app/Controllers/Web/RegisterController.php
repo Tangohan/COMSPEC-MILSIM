@@ -235,6 +235,12 @@ final class RegisterController
 
             return Response::redirect(url('register'));
         }
+        $registerIp = trim($request->ip());
+        if ($registerIp !== '' && $this->indicatorBlocklist->isIpBlockedForLogin($tenantId, $registerIp)) {
+            $flashBack('Les inscriptions depuis ce réseau sont bloquées. Contactez l’administration du site si vous pensez qu’il s’agit d’une erreur.', 'email');
+
+            return Response::redirect(url('register'));
+        }
 
         $roleId = $this->roleRepository->getIdBySlug($tenantId, 'member');
         $hash = password_hash($password, PASSWORD_ARGON2ID);

@@ -60,7 +60,12 @@ final class CommunitySettingsHubAssetTest extends TestCase
 
         self::assertStringContainsString("['label' => 'Paramètres', 'href' => url('back-office/community')", $nav);
         self::assertStringNotContainsString('Paramètres d’inscription', $nav);
-        self::assertStringContainsString('?onglet=inscription', $pages);
+        // Les rubriques (dont Inscription) sont désormais une seule navigation dans la page :
+        // plus de boutons d’en-tête en doublon pour les paramètres de la communauté.
+        $settings = (string) file_get_contents($root . '/views/admin/organization/settings.php');
+        self::assertStringContainsString('data-settings-tab="inscription"', $settings);
+        self::assertStringNotContainsString("'href' => 'back-office/community?onglet=inscription'", $pages);
+        self::assertStringContainsString('back-office-community-settings.css', $pages);
         self::assertStringNotContainsString("'path' => 'back-office/community/inscription'", $configNav);
         self::assertStringContainsString('Mise à niveau', $configNav);
     }

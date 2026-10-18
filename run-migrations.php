@@ -2567,6 +2567,14 @@ try {
     $migrationRunner->warn('account_purge_requests', $e);
 }
 
+require_once $root . '/bootstrap/platform_account_bans_migration.php';
+try {
+    run_platform_account_bans_migration($pdo);
+} catch (Throwable $e) {
+    echo '  [ATTENTION] platform_account_bans : ' . $e->getMessage() . "\n";
+    $migrationRunner->warn('platform_account_bans', $e);
+}
+
 $personnelCorrectionRequestsMigrate = require $root . '/bootstrap/personnel_correction_requests_migration.php';
 try {
     echo "Migration personnel_correction_requests (corrections RH fiche opérateur)...\n";

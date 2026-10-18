@@ -2866,6 +2866,12 @@ class UserRepository
         } elseif (!$hasMemberships) {
             $parts[] = $this->sqlLegacyPlatformDirectorySiblingFilter('u', $hasDeletedAt);
         }
+        if ($status === 'no_org') {
+            $parts[] = 'NOT ' . $this->sqlEmailHasLiveRealCommunityPredicate('u', $hasMemberships, $hasDeletedAt);
+        } elseif ($status === 'banned') {
+            $banned = (new PlatformAccountBanRepository($pdo))->sqlActiveBanExists('u.email');
+            $parts[] = $banned ?? '1 = 0';
+        }
 
         $where = implode(' AND ', $parts);
         $fromUsers = $hasMemberships
@@ -2957,6 +2963,34 @@ class UserRepository
     }
 
     /**
+     * Vrai si l’adresse de la fiche a encore une appartenance active à une vraie communauté
+     * (hors sas « pas d’organisation »).
+     */
+    private function sqlEmailHasLiveRealCommunityPredicate(string $alias, bool $hasMemberships, bool $hasDeletedAt): string
+    {
+        $pdo = $this->pdo();
+        $a = $alias !== '' ? $alias : 'u';
+        $notDefault = SqlText::notEqualsLiteral($pdo, '__t.slug', 'default');
+        $alive = $hasDeletedAt ? 'AND __u.deleted_at IS NULL' : '';
+        if ($hasMemberships) {
+            $active = SqlText::equalsLiteral($pdo, '__m.status', 'active');
+
+            return '(EXISTS (
+                SELECT 1 FROM users __u
+                INNER JOIN user_community_memberships __m ON __m.user_id = __u.id AND ' . $active . '
+                INNER JOIN tenants __t ON __t.id = __m.tenant_id AND ' . $notDefault . '
+                WHERE LOWER(TRIM(__u.email)) = LOWER(TRIM(' . $a . '.email)) ' . $alive . '
+            ))';
+        }
+
+        return '(EXISTS (
+            SELECT 1 FROM users __u
+            INNER JOIN tenants __t ON __t.id = __u.tenant_id AND ' . $notDefault . '
+            WHERE LOWER(TRIM(__u.email)) = LOWER(TRIM(' . $a . '.email)) ' . $alive . '
+        ))';
+    }
+
+    /**
      * Filtre historique (plusieurs lignes users par e-mail) : masquer le tenant système
      * dès qu’une vraie communauté existe pour la même adresse.
      */
@@ -3000,14 +3034,15 @@ class UserRepository
                        COALESCE(p.status, u.status) AS status,
                        u.created_at, u.updated_at, {$deletedSelect},
                        t.name AS tenant_name, t.slug AS tenant_slug,
-                       r.name AS role_name
+                       r.name AS role_name,
+                       m.status AS membership_status, m.left_at AS membership_left_at
                 FROM users u
                 INNER JOIN user_community_memberships m ON m.user_id = u.id
                 INNER JOIN tenants t ON t.id = m.tenant_id
                 LEFT JOIN user_community_profiles p ON p.user_id = u.id AND p.tenant_id = m.tenant_id
                 LEFT JOIN roles r ON r.id = COALESCE(p.role_id, u.role_id)
                 WHERE {$emailIn} AND {$pack['sql']}
-                ORDER BY u.updated_at DESC, t.name ASC, u.id DESC";
+                ORDER BY u.updated_at DESC, CASE WHEN m.status = 'active' THEN 0 ELSE 1 END ASC, t.name ASC, u.id DESC";
         $stmt = $this->pdo()->prepare($sql);
         $stmt->execute($params);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];

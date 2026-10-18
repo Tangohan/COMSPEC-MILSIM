@@ -91,13 +91,13 @@ final class PlatformUserProfileEditAssetTest extends TestCase
         $list = (string) file_get_contents($root . '/views/admin/system/users.php');
         $person = (string) file_get_contents($root . '/views/admin/system/user_person.php');
 
-        self::assertStringContainsString("admin/users/' . \$siteUid . '/edit", $list);
+        self::assertStringContainsString("admin/users/' . \$anchorId . '/edit", $list);
         self::assertStringContainsString("admin/users/' . \$uid . '/edit", $list);
         self::assertStringContainsString('Modifier', $list);
         self::assertStringContainsString("admin/users/' . \$uid . '/edit", $person);
         self::assertStringContainsString('Modifier la fiche', $person);
-        self::assertStringContainsString('Compte actif', $list);
-        self::assertStringContainsString('En attente de vérification de l’e-mail', $list);
+        self::assertStringContainsString('Membre actif', $list);
+        self::assertStringContainsString('E-mail pas encore vérifié', $list);
         self::assertStringContainsString('Compte actif', $person);
     }
 
