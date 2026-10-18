@@ -2,10 +2,9 @@
     Guide « Réseau ATAK et simulation » : comment le réseau fonctionne et ce que le mod simule, pour les joueurs et les
     mission makers. Fenêtre à nous (sommaire à gauche, schéma et texte à droite), ouverte :
       - dans Eden, menu COMSPEC ATAK > Guide : réseau et simulation (config.cpp, Display3DEN) ;
-      - au menu principal d'Arma, bouton « COMSPEC ATAK · Guide réseau » (fn_mainMenuButton) ;
       - en mission, sur l'écran de jeu ou de pause.
     Pas de BIS_fnc_openFieldManual : lancé depuis la barre d'Eden il échoue (voir fn_relayEden "help").
-    Langue : celle du mod (COMSPEC_ATAK_Lang) ; au menu principal, le dictionnaire est chargé à la première ouverture
+    Langue : celle du mod (COMSPEC_ATAK_Lang) ; s'il n'est pas encore chargé (Eden), le dictionnaire l'est à l'ouverture
     (réglage « Langue / Language » s'il est connu, sinon la langue du jeu). Schémas : data\netguide_<nom>_<fr|en>.paa
     (tools/gen_net_guide.py).
     Params : [section à ouvrir (0), écran parent (displayNull : Eden, pause ou jeu)]
