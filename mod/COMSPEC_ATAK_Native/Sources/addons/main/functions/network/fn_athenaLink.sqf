@@ -3,19 +3,22 @@
     Le jeu demande un code court (COMSPEC Link PairStart) ; le joueur l'autorise sur athena.ttrd.fr/lier,
     connecté à son compte ; le jeu reçoit alors sa session (compte, communauté, Steam associé) par PairStatus.
     Aux parties suivantes, la session est restaurée ou la connexion Steam suffit : plus rien à faire.
-    Params : [action, option]
-      ["start"]          nouveau code (remplace l'ancien) et attente de l'autorisation
+    Params : [action, option, auto]
+      ["start"]          nouveau code (remplace l'ancien) et attente de l'autorisation ; un code qui expire pendant que
+                         l'app Athena est à l'écran est renouvelé tout seul, 3 fois au plus (["start", false, true])
       ["offer", ouvrir]  au lancement sans session : un code (gardé s'il est encore valable), une notification,
                          et la page ouverte dans le navigateur si « ouvrir » (juste après « Oui » au service Athéna)
       ["open"]           ouvre la page /lier avec le code déjà rempli (COMSPEC Link 2.0.72+)
       ["cancel"]         abandonne le code en cours
+      ["watch"]          toutes les 10 s (XEH_postInitClient) : une session perdue en cours de partie (expirée, révoquée,
+                         Steam détaché) propose aussitôt un nouveau code, au lieu d'attendre que le joueur ouvre l'app
       ["show"]           téléphone en main sur l'app Athena, onglet COMPTE (remplace les anciennes fenêtres
                          « Lier le jeu à Athena » et « Connexion Athena » de COMSPEC Overwatch). Dans les
                          90 premières secondes de la mission, rien ne s'ouvre : juste le code et la notification.
     État : uiNamespace « COMSPEC_ATAK_AthenaLink » = [état, code, échéance diag_tickTime, adresse, adresse complète, détail]
       état : "" (aucun), "asking", "pending", "approved", "expired", "error".
 */
-params [["_action", "start"], ["_open", false]];
+params [["_action", "start"], ["_open", false], ["_auto", false]];
 _action = toLower _action;
 private _bridge = [] call comspec_atak_native_fnc_bridge;
 private _link = uiNamespace getVariable ["COMSPEC_ATAK_AthenaLink", ["", "", 0, "", "", ""]];
@@ -39,6 +42,18 @@ switch (_action) do {
             [true] call comspec_atak_native_fnc_open;
         };
         [{ ["ATHENA"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+    };
+    case "watch": {
+        if (!hasInterface || {([] call comspec_atak_native_fnc_athenaMode) isNotEqualTo "on"}) exitWith {};
+        private _st = [] call comspec_atak_native_fnc_athenaStatus;
+        if (_st get "logged") exitWith { uiNamespace setVariable ["COMSPEC_ATAK_AthenaWasLogged", true]; };
+        if !(uiNamespace getVariable ["COMSPEC_ATAK_AthenaWasLogged", false]) exitWith {};
+        private _lost = (_st getOrDefault ["code", ""]) in ["SESSION_EXPIRED", "SESSION_REVOKED", "TOKEN_REVOKED", "REFRESH_REVOKED", "INVALID_REFRESH", "UNAUTHORIZED", "C2_UNAUTHORIZED", "HTTP_401", "STEAM_NOT_LINKED", "C2_STEAM_NOT_LINKED"];
+        if (!_lost) exitWith {};
+        // Une seule proposition par perte : le drapeau revient quand la session est rouverte.
+        uiNamespace setVariable ["COMSPEC_ATAK_AthenaWasLogged", false];
+        ["WARN", "ATHENA", format ["Session Athena perdue en cours de partie (%1) : nouveau code proposé", _st get "code"]] call comspec_atak_native_fnc_log;
+        if (!_live) then { ["offer", false] call comspec_atak_native_fnc_athenaLink; };
     };
     case "cancel": {
         uiNamespace setVariable ["COMSPEC_ATAK_AthenaLink", ["", "", 0, "", "", ""]];
@@ -66,6 +81,8 @@ switch (_action) do {
         ["start"] call comspec_atak_native_fnc_athenaLink;
     };
     case "start": {
+        // Code demandé par le joueur : le compteur de renouvellements automatiques repart à zéro.
+        if (!_auto) then { uiNamespace setVariable ["COMSPEC_ATAK_AthenaLinkRenew", 0]; };
         private _token = diag_tickTime;
         uiNamespace setVariable ["COMSPEC_ATAK_AthenaLinkToken", _token];
         uiNamespace setVariable ["COMSPEC_ATAK_AthenaLink", ["asking", "", 0, "", "", ""]];
@@ -131,6 +148,16 @@ switch (_action) do {
             };
             if !(call _mine) exitWith {};
             if (_result isEqualTo "") then { _result = "expired"; };
+            // Code expiré pendant que le joueur regarde l'app Athena (il est peut-être en train de le taper) :
+            // un nouveau code tout de suite plutôt qu'un « expiré » à relancer à la main. 3 fois au plus.
+            private _renew = uiNamespace getVariable ["COMSPEC_ATAK_AthenaLinkRenew", 0];
+            private _onScreen = !isNull ([] call comspec_atak_native_fnc_display)
+                && {((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["activePage", ""]) isEqualTo "ATHENA"};
+            if (_result isEqualTo "expired" && {_renew < 3} && {_onScreen}) exitWith {
+                uiNamespace setVariable ["COMSPEC_ATAK_AthenaLinkRenew", _renew + 1];
+                ["INFO", "ATHENA", format ["Code de connexion %1 expiré, app Athena ouverte : nouveau code (%2/3)", _code, _renew + 1]] call comspec_atak_native_fnc_log;
+                ["start", false, true] call comspec_atak_native_fnc_athenaLink;
+            };
             uiNamespace setVariable ["COMSPEC_ATAK_AthenaLink", [_result, _code, 0, _uri, _full, ""]];
             ["INFO", "ATHENA", format ["Code de connexion %1 : %2", _code, _result]] call comspec_atak_native_fnc_log;
             if (_result isEqualTo "approved") then {
