@@ -60,7 +60,12 @@ MATS = {
     "sign": ("tower_sign", "tower_sign", 1.0, 0.45, 0.0),
     "net": ("tower_net", "tower_net", 2.0, 0.85, 0.0),
     "fence": ("tower_fence", "tower_net", 1.0, 0.5, 0.6),
+    # Bagues de repérage des jarretières (texture procédurale du jeu, pas de fichier) : jaune et rouge.
+    "tape_y": ("#(argb,8,8,3)color(0.85,0.62,0.05,1,CO)", "tower_matte", 1.0, 0.6, 0.0),
+    "tape_r": ("#(argb,8,8,3)color(0.62,0.06,0.04,1,CO)", "tower_matte", 1.0, 0.6, 0.0),
 }
+# Couleur de l'aperçu Cycles des matières procédurales.
+PROC = {"tape_y": (0.85, 0.62, 0.05), "tape_r": (0.62, 0.06, 0.04)}
 # Matières sans volume propre (panneaux collés, filet) : ni ombre, ni collision, ni tir.
 THIN = ("sign", "net", "fence")
 
@@ -215,6 +220,114 @@ def rot_z(deg):
     return Matrix.Rotation(math.radians(deg), 3, "Z")
 
 
+def spline(pts, seg):
+    """Points d'une courbe de Catmull-Rom passant par pts, seg tronçons entre deux points."""
+    P = [Vector(p) for p in pts]
+    out = []
+    for i in range(len(P) - 1):
+        p0, p1, p2, p3 = P[max(i - 1, 0)], P[i], P[i + 1], P[min(i + 2, len(P) - 1)]
+        for k in range(seg):
+            t = k / seg
+            t2, t3 = t * t, t * t * t
+            out.append(0.5 * ((2 * p1) + (p2 - p0) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (3 * p1 - p0 - 3 * p2 + p3) * t3))
+    out.append(P[-1])
+    return out
+
+
+def sweep(B, pts, r, n=5, mat="cable"):
+    """Câble souple : tube continu le long des points (une seule pièce, bouts fermés, flancs lissés)."""
+    pts = [Vector(p) for p in pts]
+    if len(pts) < 2:
+        return
+    prof = [(r * math.cos(2 * math.pi * i / n), r * math.sin(2 * math.pi * i / n)) for i in range(n)]
+    verts = []
+    a_prev = None
+    for i, p in enumerate(pts):
+        t = (pts[min(i + 1, len(pts) - 1)] - pts[max(i - 1, 0)]).normalized()
+        # Repère transporté d'un anneau au suivant (pas de vrille brutale quand le câble passe à la verticale).
+        a = (a_prev if a_prev is not None else Vector((0, 0, 1)))
+        a = a - t * t.dot(a)
+        if a.length < 1e-4:
+            a = t.orthogonal()
+        a.normalize()
+        a_prev = a
+        b = t.cross(a)
+        verts += [p + a * x + b * y for x, y in prof]
+    faces = []
+    for k in range(len(pts) - 1):
+        o = k * n
+        faces += [(o + i, o + (i + 1) % n, o + n + (i + 1) % n, o + n + i) for i in range(n)]
+    sides = len(faces)
+    faces.append(tuple(reversed(range(n))))
+    faces.append(tuple(range((len(pts) - 1) * n, len(pts) * n)))
+    B.add(verts, faces, mat, smooth=sides)
+
+
+def jumper(B, pts, r=0.009, tapes=()):
+    """Jarretière noire (LOD 1 seulement) : courbe par les points, bagues de couleur près du premier point."""
+    if B.detail > 0:
+        return
+    sweep(B, spline(pts, 2), r, 4, "cable")
+    p0, p1 = Vector(pts[0]), Vector(pts[1])
+    d = (p1 - p0).normalized()
+    for k, m in enumerate(tapes):
+        q = p0 + d * (0.05 + 0.035 * k)
+        B.tube(q, q + d * 0.025, r * 1.35, 4, m)
+
+
+def clamp(B, c, r, axis=(0, 0, 1), side=(1, 0, 0), w=0.06):
+    """Collier de fixation boulonné autour d'un tube de rayon r (de près) : bague, deux oreilles, boulons."""
+    if B.detail > 0:
+        return
+    c, ax = Vector(c), Vector(axis).normalized()
+    sd = Vector(side)
+    sd = (sd - ax * ax.dot(sd)).normalized()
+    nb = ax.cross(sd)
+    B.lathe(c - ax * (w / 2), ax, [(r + 0.01, 0.0), (r + 0.01, w)], 8, "galva")
+    for s_ in (-1, 1):
+        e = c + sd * s_ * (r + 0.025)
+        B.tube(e - nb * 0.035, e + nb * 0.035, 0.008, 4, "dark", ax)
+
+
+def aau(B, base, az, h=0.85, w=0.44, d=0.17, pipe_r=0.038):
+    """AAU (antenne active « massive MIMO ») : caisson épais à face radôme, dos à ailettes, deux brides."""
+    B.group("equip")
+    base = Vector(base)
+    rz = rot_z(az)
+    fwd, side = rz @ Vector((1, 0, 0)), rz @ Vector((0, 1, 0))
+    B.tube(base + Vector((0, 0, -0.3)), base + Vector((0, 0, h + 0.3)), pipe_r, 8, "galva")
+    c = base + fwd * (pipe_r + 0.06 + d / 2) + Vector((0, 0, h / 2))
+    B.cuboid(c + fwd * (d * 0.2), (d * 0.6, w, h), rz, "radome")
+    B.cuboid(c - fwd * (d * 0.3), (d * 0.4, w * 0.94, h * 0.96), rz, "box")
+    if B.detail == 0:
+        for k in range(-4, 5):
+            B.cuboid(c - fwd * (d * 0.52) + side * (k * w * 0.1), (0.04, 0.006, h * 0.86), rz, "box")
+        for zz in (0.2, h - 0.2):
+            clamp(B, base + Vector((0, 0, zz)), pipe_r, (0, 0, 1), side)
+        for k in (-1, 0, 1):
+            q = c - Vector((0, 0, h / 2)) + side * (k * 0.08)
+            B.tube(q, q - Vector((0, 0, 0.05)), 0.014, 6, "galva")
+            jumper(B, [q - Vector((0, 0, 0.05)), q - Vector((0, 0, 0.22)) - fwd * 0.04, base + side * (k * 0.03) + fwd * 0.05 + Vector((0, 0, -0.15)),
+                       base + side * (k * 0.03) + fwd * 0.05 + Vector((0, 0, -0.45))], 0.009, ("tape_y",) if k else ("tape_r",))
+    elif B.detail == 1:
+        for zz in (0.2, h - 0.2):
+            B.cuboid(base + Vector((0, 0, zz)) + fwd * (pipe_r + 0.03), (0.06, 0.10, 0.05), rz, "galva")
+    B.kind = "struct"
+
+
+def gps_antenna(B, base, arm_to=None):
+    """Antenne GPS de synchronisation : champignon blanc sur un tube court, console vers le pylône."""
+    if B.detail > 1:
+        return
+    B.group("equip")
+    base = Vector(base)
+    if arm_to is not None:
+        B.tube(Vector(arm_to), base, 0.022, 6, "galva", (0, 0, 1))
+    B.tube(base, base + Vector((0, 0, 0.35)), 0.018, 6, "galva")
+    B.lathe(base + Vector((0, 0, 0.35)), (0, 0, 1), [(0.03, 0.0), (0.075, 0.02), (0.075, 0.05), (0.05, 0.085), (0.0, 0.095)], 12, "radome")
+    B.kind = "struct"
+
+
 # --------------------------------------------------------------------------------------------------------------------
 # Treillis : jambes, membrures horizontales, croix de Saint-André, entretoises de plan.
 # --------------------------------------------------------------------------------------------------------------------
@@ -343,17 +456,26 @@ def panel_antenna(B, base, az, h=2.0, w=0.30, d=0.12, tilt=3.0, pipe_r=0.038):
     if B.detail <= 1:
         for s_ in (-1, 1):
             B.cuboid(c + up * s_ * (h / 2 - 0.015), (d * 1.02, w * 1.02, 0.03), rz, "box")
-        # Brides haute et basse.
+        # Brides haute et basse : colliers sur le tube, bras de réglage du tilt jusqu'au dos du panneau.
         for zz in (0.25, h - 0.25):
             p = base + Vector((0, 0, zz))
-            B.cuboid(p + fwd * (pipe_r + 0.025), (0.06, 0.10, 0.05), rz, "galva")
+            if B.detail == 0:
+                clamp(B, p, pipe_r, (0, 0, 1), side)
+                for s_ in (-1, 1):
+                    B.beam(p + side * s_ * 0.05, c - fwd * (d / 2) + up * (zz - h / 2) + side * s_ * 0.05, 0.012, 0.035, (0, 0, 1), "galva")
+            else:
+                B.cuboid(p + fwd * (pipe_r + 0.025), (0.06, 0.10, 0.05), rz, "galva")
     if B.detail == 0:
-        # Connecteurs sous le panneau et jarretières noires vers le bas.
-        for k in (-1, 1):
-            q = c - up * (h / 2) + side * (k * w * 0.22)
-            B.tube(q, q - Vector((0, 0, 0.06)), 0.014, 6, "box")
-            B.tube(q - Vector((0, 0, 0.06)), q - Vector((0, 0, 0.30)) - fwd * 0.06, 0.008, 4, "cable")
-            B.tube(q - Vector((0, 0, 0.30)) - fwd * 0.06, base + Vector((0, 0, -0.25)) + side * k * 0.03, 0.008, 4, "cable")
+        # Connecteurs DIN sous le panneau (quatre sur les larges), jarretières noires en boucle jusqu'au tube,
+        # bagues de repérage jaunes et rouges (photos de référence).
+        ks = (-0.33, -0.11, 0.11, 0.33) if w >= 0.3 else (-0.22, 0.22)
+        for j, k in enumerate(ks):
+            q = c - up * (h / 2) + side * (k * w)
+            B.tube(q, q - up * 0.05, 0.016, 8, "galva")
+            B.tube(q - up * 0.05, q - up * 0.09, 0.013, 6, "dark")
+            foot = base + side * (k * 0.08) + fwd * (pipe_r + 0.03) + Vector((0, 0, -0.45 - 0.04 * j))
+            jumper(B, [q - up * 0.09, q - up * 0.32 + fwd * 0.03, (q + foot) / 2 + fwd * 0.10 - Vector((0, 0, 0.12)), foot, foot - Vector((0, 0, 0.25))],
+                   0.0095, (("tape_y", "tape_r") if j % 2 else ("tape_r",)))
     B.kind = "struct"
 
 
@@ -368,7 +490,12 @@ def rru(B, pos, az):
         for k in range(-3, 4):
             B.cuboid(p + fwd * 0.10 + (rz @ Vector((0, k * 0.04, 0))), (0.05, 0.006, 0.38), rz, "box")
         B.cuboid(p - fwd * 0.09, (0.04, 0.12, 0.20), rz, "galva")
-        B.tube(p - Vector((0, 0, 0.21)), p - Vector((0, 0, 0.5)) - fwd * 0.08, 0.009, 4, "cable")
+        side = rz @ Vector((0, 1, 0))
+        for k in (-1, 0, 1):
+            q = p - Vector((0, 0, 0.21)) + side * (k * 0.07)
+            B.tube(q, q - Vector((0, 0, 0.04)), 0.012, 6, "dark")
+            jumper(B, [q - Vector((0, 0, 0.04)), q - Vector((0, 0, 0.2)) + fwd * 0.03, q - Vector((0, 0, 0.42)) - fwd * 0.1, q - Vector((0, 0, 0.75)) - fwd * 0.12],
+                   0.009, ("tape_y",) if k else ("tape_r", "tape_y"))
     B.kind = "struct"
 
 
@@ -379,13 +506,27 @@ def dish(B, pos, az, r=0.45, depth=0.32, elev=0.0):
     rz = rot_z(az)
     fwd = rz @ Matrix.Rotation(math.radians(elev), 3, "Y") @ Vector((1, 0, 0))
     # Jupe (cylindre) puis radôme légèrement bombé à l'avant, cône arrière gris.
-    B.lathe(pos, fwd, [(r * 0.35, -depth * 0.9), (r * 0.9, -depth * 0.45), (r, -depth * 0.25), (r, 0.0), (r * 1.01, 0.02)], 20, "box")
-    B.lathe(pos + fwd * 0.02, fwd, [(r * 1.01, 0.0), (r * 0.8, 0.025), (r * 0.45, 0.04), (0.0, 0.045)], 20, "radome")
+    # Jupe blanche profonde (« tambour » des photos de référence), radôme plat, cône arrière gris.
+    B.lathe(pos, fwd, [(r * 0.35, -depth * 0.9), (r * 0.9, -depth * 0.55), (r, -depth * 0.35), (r, 0.0), (r * 1.015, 0.02)], 24, "radome")
+    B.lathe(pos + fwd * 0.02, fwd, [(r * 1.015, 0.0), (r * 0.8, 0.025), (r * 0.45, 0.04), (0.0, 0.045)], 24, "radome")
     B.lathe(pos - fwd * depth * 0.9, fwd, [(0.0, -0.12), (r * 0.22, -0.06), (r * 0.35, 0.0)], 10, "box")
+    if B.detail <= 1:
+        # Bague de serrage du radôme et unité radio extérieure (ODU) au dos.
+        B.lathe(pos - fwd * 0.005, fwd, [(r * 1.03, 0.0), (r * 1.03, 0.03)], 24, "galva")
+        side = fwd.cross(Vector((0, 0, 1))).normalized()
+        odu = pos - fwd * (depth * 0.9 + 0.2)
+        B.cuboid(odu, (0.16, 0.26, 0.26), Matrix((fwd, side, fwd.cross(side))).transposed(), "box")
+        if B.detail == 0:
+            for k in range(-3, 4):
+                B.cuboid(odu + side * (k * 0.033) + Vector((0, 0, 0.135)), (0.12, 0.005, 0.02), Matrix((fwd, side, fwd.cross(side))).transposed(), "box")
+            B.tube(odu + Vector((0, 0, 0.13)) - side * 0.06, odu + Vector((0, 0, 0.17)) - side * 0.06, 0.008, 6, "dark")
+            B.tube(odu + Vector((0, 0, 0.17)) - side * 0.06, odu + Vector((0, 0, 0.17)) + side * 0.06, 0.008, 6, "dark", (0, 0, 1))
+            B.tube(odu + Vector((0, 0, 0.13)) + side * 0.06, odu + Vector((0, 0, 0.17)) + side * 0.06, 0.008, 6, "dark")
     # Bride et bras vers le support.
     B.beam(pos - fwd * depth * 0.6, pos - fwd * (depth + 0.45), 0.06, 0.06, (0, 0, 1), "galva")
     if B.detail == 0:
-        B.tube(pos - fwd * (depth + 0.1), pos - fwd * (depth + 0.3) - Vector((0, 0, 0.7)), 0.012, 6, "cable")
+        jumper(B, [pos - fwd * (depth * 0.9 + 0.2) - Vector((0, 0, 0.13)), pos - fwd * (depth + 0.32) - Vector((0, 0, 0.35)),
+                   pos - fwd * (depth + 0.42) - Vector((0, 0, 0.8)), pos - fwd * (depth + 0.45) - Vector((0, 0, 1.4))], 0.012, ("tape_y",))
     B.kind = "struct"
     return pos - fwd * (depth + 0.45)
 
@@ -486,9 +627,17 @@ def cable_run(B, x, y, z0, z1, n=6, along=(1, 0, 0)):
             B.beam(base - al * 0.17 + Vector((0, 0, z)), base + al * 0.17 + Vector((0, 0, z)), 0.03, 0.008, (0, 0, 1), "galva")
             z += 0.8 if B.detail == 0 else 1.6
     nrm = al.cross(Vector((0, 0, 1)))
-    for k in range(n if B.detail == 0 else 2):
-        off = al * (-0.12 + 0.24 * k / max(1, n - 1)) + nrm * 0.03
-        B.tube(base + off + Vector((0, 0, z0)), base + off + Vector((0, 0, z1)), 0.013 if B.detail == 0 else 0.03, 6, "cable")
+    # Faisceau de feeders : deux nappes de câbles noirs (photos de référence), colliers de maintien tous les 1,2 m.
+    rows = ((0.03, n), (0.065, max(2, n - 2))) if B.detail == 0 else ((0.03, 2),)
+    for dn, cnt in rows:
+        for k in range(cnt):
+            off = al * (-0.12 + 0.24 * k / max(1, cnt - 1)) + nrm * dn
+            B.tube(base + off + Vector((0, 0, z0)), base + off + Vector((0, 0, z1)), 0.013 if B.detail == 0 else 0.03, 6, "cable")
+    if B.detail == 0:
+        z = z0 + 0.6
+        while z < z1:
+            B.beam(base - al * 0.16 + nrm * 0.085 + Vector((0, 0, z)), base + al * 0.16 + nrm * 0.085 + Vector((0, 0, z)), 0.02, 0.012, (0, 0, 1), "dark")
+            z += 1.2
 
 
 def platform(B, lat, z, overhang=0.45, rail=1.1):
@@ -665,6 +814,28 @@ def sector_ring(B, lat, z, arm, az_list, panels_per, h, w, tilt=3.0, rru_on=True
 # --------------------------------------------------------------------------------------------------------------------
 # Les trois pylônes
 # --------------------------------------------------------------------------------------------------------------------
+def rru_rack(B, lat, z, face, n=3):
+    """Grappe de RRU à mi-hauteur (planche « Telecom Tower Components ») : deux traverses boulonnées sur une face du
+    pylône, tubes courts, RRU à ailettes côte à côte, jarretières vers le chemin de câbles."""
+    nf = lat.face_normal(face)
+    a, b = lat.corner(face, z), lat.corner(face + 1, z)
+    a.z = b.z = z
+    al = (b - a).normalized()
+    off = nf * 0.18
+    for dz in (0.0, 0.55):
+        B.tube(a + off + al * 0.15 + Vector((0, 0, dz)), b + off - al * 0.15 + Vector((0, 0, dz)), 0.035, 8, "galva", (0, 0, 1))
+        for q in (a + al * 0.15, b - al * 0.15):
+            B.beam(q + Vector((0, 0, dz)), q + off + Vector((0, 0, dz)), 0.05, 0.05, (0, 0, 1), "galva")
+    L = (b - a).length - 0.5
+    az = math.degrees(math.atan2(nf.y, nf.x))
+    for k in range(n):
+        q = a + off + al * (0.25 + L * (k + 0.5) / n)
+        B.group("equip")
+        B.tube(q + Vector((0, 0, -0.35)), q + Vector((0, 0, 0.9)), 0.03, 8, "galva")
+        B.kind = "struct"
+        rru(B, q + Vector((0, 0, 0.3)), az)
+
+
 def panel_levels(z0, z1, step):
     zs = []
     z = z0
@@ -705,15 +876,17 @@ def tower_30(B):
 def tower_40(B):
     """Tour triangulaire 40 m galvanisée, plate-forme de tête, paraboles, enclos technique (photo de référence 2)."""
     lat = Lattice(3, [(0, 3.4), (34, 1.3), (40, 1.3)], panel_levels(0, 40, 2.0), "tube", 0.075, 0.07, "galva", "X")
-    site_pad(B, -3.0, -5.6, 3.0, 2.6)
+    site_pad(B, -6.8, -5.6, 3.0, 2.6)
     lat.build(B)
     B.mat = "galva"
     ladder(B, 0.0, -0.05, 0.3, 39.5)
     cable_run(B, 0.0, 0.33, 0.3, 37.0, 8, (1, 0, 0))
     platform(B, lat, 35.6, 0.5)
     B.mat = "galva"
-    # Tête : trois bras longs, deux panneaux par secteur (photo), RRU sous chaque panneau.
-    sector_ring(B, lat, 37.0, 1.5, (90, 210, 330), 2, 1.5, 0.30, 3.0, True, 0.65)
+    # Tête circulaire : trois secteurs de trois panneaux, RRU, AAU, fouets, GPS (planches de référence).
+    head_ring(B, lat, 37.0, 39.2, 1.95, (90, 210, 330), (0.0, 0.33))
+    B.mat = "galva"
+    rru_rack(B, lat, 32.4, 0, 3)
     B.mat = "galva"
     # Faisceaux hertziens : grande parabole sur une face, petite plus bas.
     for z, az, r in ((31.0, 30.0, 0.45), (27.0, 150.0, 0.30)):
@@ -737,6 +910,10 @@ def tower_40(B):
     ac_unit(B, (-1.6, -3.5, 0.1), 90.0)
     cable_bridge(B, (0.0, -2.9, 0.0), (0.0, -0.9, 0.0), 2.4, 5)
     fence(B, (0.0, -4.0, 0.0), 5.4, 2.6, 2.0)
+    # Local technique et groupe électrogène hors de l'enclos, chemin de câbles vers le pylône.
+    shelter(B, (-5.0, -1.4, 0.0), 180.0, (2.2, 3.0, 2.5))
+    cable_bridge(B, (-3.6, -0.6, 0.0), (-1.2, -0.4, 0.0), 2.4, 5)
+    generator(B, (-5.2, -4.4, 0.0), 0.0)
     site_sign(B, (-2.75, -5.4, 0.1), -90.0)
     return lat
 
@@ -744,7 +921,7 @@ def tower_40(B):
 def tower_50(B):
     """Pylône élancé carré 50 m galvanisé, paliers, balisage, enclos technique (photo de référence 3)."""
     lat = Lattice(4, [(0, 4.0), (40, 1.15), (50, 1.15)], panel_levels(0, 50, 2.5), "angle", 0.12, 0.07, "galva", "X")
-    site_pad(B, -3.2, -3.2, 6.6, 3.2)
+    site_pad(B, -3.2, -7.4, 6.6, 3.2)
     lat.build(B)
     B.mat = "galva"
     ladder(B, 0.0, -0.05, 0.3, 49.5)
@@ -752,8 +929,11 @@ def tower_50(B):
     for z in (15.0, 30.0, 44.0):
         platform(B, lat, z, 0.45 if z < 40 else 0.6)
     B.mat = "galva"
-    sector_ring(B, lat, 46.6, 0.55, (0, 120, 240), 2, 2.0, 0.30, 2.0, True, 0.35)
-    sector_ring(B, lat, 41.0, 0.45, (60, 180, 300), 1, 1.4, 0.26, 4.0, True)
+    head_ring(B, lat, 46.4, 48.8, 2.1, (0, 120, 240), (0.0, 0.32), 2.5, 2.0, 0.34)
+    B.mat = "galva"
+    sector_ring(B, lat, 41.0, 0.45, (60, 180, 300), 2, 1.4, 0.26, 4.0, True, 0.3)
+    B.mat = "galva"
+    rru_rack(B, lat, 36.0, 1, 4)
     B.mat = "galva"
     for z, az, r in ((38.5, 60.0, 0.32), (33.0, 200.0, 0.45)):
         fwd = rot_z(az) @ Vector((1, 0, 0))
@@ -772,6 +952,9 @@ def tower_50(B):
     ac_unit(B, (3.8, 1.6, 0.1), 0.0)
     cable_bridge(B, (3.35, 0.0, 0.0), (1.6, 0.0, 0.0), 2.6, 5)
     fence(B, (4.6, -0.2, 0.0), 3.4, 5.6, 2.0)
+    shelter(B, (0.0, -5.6, 0.0), -90.0, (2.2, 3.2, 2.5))
+    cable_bridge(B, (0.0, -4.4, 0.0), (0.0, -1.7, 0.0), 2.4, 6)
+    generator(B, (4.4, -5.4, 0.0), 90.0)
     site_sign(B, (6.4, -2.9, 0.1), 0.0)
     return lat
 
@@ -838,7 +1021,7 @@ def mesh_panel(B, a, b, h):
     B.quad((a + b) / 2 + Vector((0, 0, h / 2)), nrm, (0, 0, 1), L, h - 0.1, "fence", (0, 0, L, h - 0.1), both=True)
 
 
-def fence(B, c, sx, sy, h=2.0, gate=True):
+def fence(B, c, sx, sy, h=2.0, gate=True, barbed=True):
     """Enclos grillagé (poteaux, lisse haute, grillage) autour des armoires d'un monopole."""
     B.kind = "ground"
     c = Vector(c)
@@ -852,6 +1035,17 @@ def fence(B, c, sx, sy, h=2.0, gate=True):
             t = p + d * (L * j / k)
             B.tube(t, t + Vector((0, 0, h)), 0.03, 8, "galva")
         B.tube(p + Vector((0, 0, h)), q + Vector((0, 0, h)), 0.022, 6, "galva", (0, 0, 1))
+        # Bavolet de barbelés : bras inclinés vers l'extérieur sur chaque poteau, trois fils tendus.
+        if barbed and B.detail <= 1:
+            out = d.cross(Vector((0, 0, 1)))
+            if out.dot((p + q) / 2 - c) < 0:
+                out = -out
+            arm = out * 0.3 + Vector((0, 0, 0.3))
+            for j in range(k + 1):
+                t = p + d * (L * j / k) + Vector((0, 0, h))
+                B.beam(t, t + arm, 0.03, 0.006, d, "galva")
+            for f in (0.35, 0.68, 1.0):
+                B.tube(p + Vector((0, 0, h)) + arm * f, q + Vector((0, 0, h)) + arm * f, 0.004, 4, "galva", (0, 0, 1))
         if gate and i == 0:
             # Portail : le grillage s'arrête sur 1,2 m au milieu du côté.
             m = (p + q) / 2
@@ -862,6 +1056,125 @@ def fence(B, c, sx, sy, h=2.0, gate=True):
     B.kind = "struct"
 
 
+def shelter(B, pos, az, size=(2.4, 3.2, 2.6)):
+    """Local technique préfabriqué (photos de référence) : murs gris clair, dalle de toit débordante, porte, grille
+    d'aération, climatiseur mural, traversée de câbles et panneau danger."""
+    B.kind = "ground"
+    pos = Vector(pos)
+    rz = rot_z(az)
+    fwd, side = rz @ Vector((1, 0, 0)), rz @ Vector((0, 1, 0))
+    sx, sy, sz = size
+    B.cuboid(pos + Vector((0, 0, -0.15)), (sx + 0.5, sy + 0.5, 0.5), rz, "concrete")
+    B.cuboid(pos + Vector((0, 0, 0.1 + sz / 2)), (sx, sy, sz), rz, "box")
+    B.cuboid(pos + Vector((0, 0, 0.1 + sz + 0.08)), (sx + 0.3, sy + 0.3, 0.16), rz, "concrete")
+    if B.detail <= 2:
+        # Porte (face avant) et panneau danger.
+        B.cuboid(pos + fwd * (sx / 2 + 0.01) + side * (sy * 0.15) + Vector((0, 0, 0.1 + 1.05)), (0.03, 0.95, 2.05), rz, "dark")
+        B.quad(pos + fwd * (sx / 2 + 0.03) + side * (sy * 0.15) + Vector((0, 0, 1.65)), fwd, (0, 0, 1), 0.25, 0.25, "sign", (0.0, 0.0, 0.5, 1.0))
+    if B.detail <= 1:
+        B.cuboid(pos + fwd * (sx / 2 + 0.035) + side * (sy * 0.15 - 0.36) + Vector((0, 0, 1.15)), (0.04, 0.03, 0.18), rz, "galva")
+        # Grille d'aération haute et climatiseur mural sur le côté.
+        B.cuboid(pos + fwd * (sx / 2 + 0.01) + side * (-sy * 0.3) + Vector((0, 0, sz - 0.35)), (0.02, 0.6, 0.35), rz, "dark")
+        ac_unit(B, pos + side * (-sy / 2 - 0.22) + Vector((0, 0, 0.8)), az - 90.0)
+        B.kind = "ground"
+        # Traversée de câbles (arrière, en haut) vers le chemin de câbles.
+        B.cuboid(pos - fwd * (sx / 2 + 0.05) + Vector((0, 0, sz - 0.3)), (0.1, 0.5, 0.3), rz, "galva")
+    B.kind = "struct"
+    return pos - fwd * (sx / 2 + 0.1)
+
+
+def generator(B, pos, az, size=(1.8, 0.95, 1.25)):
+    """Groupe électrogène de secours (capot vert, châssis sombre, ouïes, échappement, réservoir)."""
+    B.kind = "ground"
+    pos = Vector(pos)
+    rz = rot_z(az)
+    fwd, side = rz @ Vector((1, 0, 0)), rz @ Vector((0, 1, 0))
+    lx, ly, lz = size
+    B.cuboid(pos + Vector((0, 0, -0.1)), (lx + 0.4, ly + 0.4, 0.4), rz, "concrete")
+    B.cuboid(pos + Vector((0, 0, 0.18)), (lx + 0.06, ly + 0.06, 0.16), rz, "dark")
+    B.cuboid(pos + Vector((0, 0, 0.26 + lz / 2)), (lx, ly, lz), rz, "olive")
+    if B.detail <= 1:
+        for k in range(6):
+            B.cuboid(pos + side * (ly / 2 + 0.004) + fwd * (-lx * 0.3) + Vector((0, 0, 0.5 + k * 0.1)), (lx * 0.3, 0.01, 0.025), rz, "dark")
+        B.cuboid(pos + fwd * (lx / 2 + 0.004) + Vector((0, 0, 0.26 + lz * 0.6)), (0.01, ly * 0.4, lz * 0.3), rz, "dark")
+        ex = pos + fwd * (-lx * 0.35) + side * (ly * 0.2) + Vector((0, 0, 0.26 + lz))
+        B.tube(ex, ex + Vector((0, 0, 0.45)), 0.04, 8, "dark")
+        B.tube(ex + Vector((0, 0, 0.45)), ex + Vector((0, 0, 0.5)) + fwd * 0.1, 0.045, 8, "dark")
+    B.kind = "struct"
+
+
+def head_ring(B, lat, z0, z1, R, sectors, feed, tall=2.4, short=1.9, w=0.32):
+    """Tête circulaire (planche « sommet d'antenne ») : deux couronnes de tubes reliées au pylône par six bras,
+    plancher caillebotis ; par secteur trois tubes verticaux portant trois panneaux (le central plus haut) et deux RRU
+    tournées vers l'intérieur, une AAU et un fouet entre deux secteurs, une antenne GPS ; faisceau de jarretières de
+    chaque secteur vers le chemin de câbles (feed : (x, y)).
+    Couronnes et bras se plient avec le pylône (ruine), les équipements sont des pièces rigides."""
+    n = 18 if B.detail <= 1 else 9
+    rin = max(0.25, lat.radius(z0) * 0.85)
+    for z in (z0, z1):
+        pts = [Vector((R * math.cos(2 * math.pi * k / n), R * math.sin(2 * math.pi * k / n), z)) for k in range(n)]
+        for k in range(n):
+            B.tube(pts[k], pts[(k + 1) % n], 0.042, 8, "galva", (0, 0, 1))
+    for k in range(6):
+        a = math.radians(30 + k * 60)
+        d = Vector((math.cos(a), math.sin(a), 0))
+        for z in (z0, z1):
+            B.tube(d * rin + Vector((0, 0, z)), d * R + Vector((0, 0, z)), 0.048, 8, "galva", (0, 0, 1))
+        if B.detail <= 2:
+            # Jambe de force sous la couronne basse, montant entre les deux couronnes.
+            B.tube(d * rin + Vector((0, 0, z0 - 1.4)), d * (R * 0.8) + Vector((0, 0, z0)), 0.038, 8, "galva", (0, 0, 1))
+            B.tube(d * R + Vector((0, 0, z0)), d * R + Vector((0, 0, z1)), 0.035, 8, "galva")
+    if B.detail <= 2:
+        # Passerelle annulaire en caillebotis sous les tubes (anneau de 16 trapèzes, centre ouvert).
+        m = 16 if B.detail <= 1 else 8
+        for k in range(m):
+            a0, a1 = 2 * math.pi * k / m, 2 * math.pi * (k + 1) / m
+            ri = max(rin, R * 0.55)
+            q = [Vector((rr * math.cos(a), rr * math.sin(a), 0)) for rr, a in ((ri, a0), (R * 0.97, a0), (R * 0.97, a1), (ri, a1))]
+            B.prism(Vector((0, 0, z0 - 0.05)), Vector((0, 0, z0 - 0.01)), [(v.x, v.y) for v in q], (1, 0, 0), (0, 1, 0), "grating")
+    for si, az_s in enumerate(sectors):
+        for off, hh in ((-24.0, short), (0.0, tall), (24.0, short)):
+            a = math.radians(az_s + off)
+            d = Vector((math.cos(a), math.sin(a), 0))
+            pp = d * (R + 0.09)
+            base = pp + Vector((0, 0, z0 + (z1 - z0) / 2 - hh / 2 - 0.1))
+            panel_antenna(B, base, az_s + off, hh, w if off == 0 else w * 0.85, 0.13, 3.0 if off == 0 else 5.0)
+            B.group("equip")
+            # Tube de fixation prolongé jusqu'aux deux couronnes, colliers aux croisements.
+            lo, hi = min(base.z - 0.35, z0 - 0.25), max(base.z + hh + 0.25, z1 + 0.35)
+            B.tube(pp + Vector((0, 0, lo)), pp + Vector((0, 0, hi)), 0.038, 8, "galva")
+            for z in (z0, z1):
+                B.tube(pp + Vector((0, 0, z)), d * R + Vector((0, 0, z)), 0.03, 6, "galva", (0, 0, 1))
+                clamp(B, pp + Vector((0, 0, z)), 0.038, (0, 0, 1), d)
+            B.kind = "struct"
+            if off != 0:
+                rru(B, pp + Vector((0, 0, z0 + 0.62)), az_s + off + 180.0)
+        # Faisceau du secteur : des pieds de tubes vers le pylône puis le chemin de câbles.
+        if B.detail == 0:
+            a = math.radians(az_s)
+            d = Vector((math.cos(a), math.sin(a), 0))
+            f = Vector((feed[0], feed[1], 0))
+            for j in range(3):
+                o = Vector((-d.y, d.x, 0)) * (0.035 * (j - 1))
+                # Câble qui pend entre le pied du tube et le pylône (chaînette), puis descend le long du pylône.
+                tip = d * (rin + 0.06) + o + Vector((0, 0, z0 - 0.45))
+                sweep(B, spline([d * (R + 0.09) + o + Vector((0, 0, z0 - 0.55)), d * ((R + rin) / 2) + o + Vector((0, 0, z0 - 0.85 - 0.05 * j)),
+                                 tip, tip * 0.5 + f * 0.5 + Vector((0, 0, z0 - 1.2)) * 0.5, f + o * 0.5 + Vector((0, 0, z0 - 2.2))], 4), 0.014, 5, "cable")
+        # Entre deux secteurs : AAU sur son tube, fouet omnidirectionnel au-dessus.
+        a = math.radians(az_s + 60.0)
+        d = Vector((math.cos(a), math.sin(a), 0))
+        pp = d * (R + 0.09)
+        if si % 2 == 0:
+            aau(B, pp + Vector((0, 0, z0 + 0.35)), az_s + 60.0)
+        whip(B, pp + Vector((0, 0, z1 + 0.35)), 1.6 if si % 2 else 1.1, 0.018)
+        B.group("equip")
+        B.tube(pp + Vector((0, 0, z0 - 0.2)), pp + Vector((0, 0, z1 + 0.35)), 0.035, 8, "galva")
+        B.tube(pp + Vector((0, 0, z1)), d * R + Vector((0, 0, z1)), 0.03, 6, "galva", (0, 0, 1))
+        B.kind = "struct"
+    a = math.radians(sectors[0] + 30.0)
+    gps_antenna(B, Vector((math.cos(a), math.sin(a), 0)) * (R + 0.25) + Vector((0, 0, z1 + 0.05)), Vector((math.cos(a), math.sin(a), 0)) * R + Vector((0, 0, z1)))
+
+
 def tower_m20(B):
     """Monopole 20 m (photo de référence 4) : fût galvanisé en quatre tronçons, échelons, trois secteurs serrés en
     tête, RRU, petite parabole, balisage ; armoires et climatisation sous filet de camouflage, dans un enclos."""
@@ -870,13 +1183,13 @@ def tower_m20(B):
     lat.build(B, 4)
     step_bolts(B, lat, 2.6, 18.0)
     B.mat = "galva"
-    sector_ring(B, lat, 18.0, 0.28, (20, 140, 260), 1, 1.5, 0.28, 2.0, True)
-    sector_ring(B, lat, 16.2, 0.22, (80, 200, 320), 1, 1.0, 0.24, 3.0, False)
+    head_ring(B, lat, 17.6, 19.3, 1.2, (20, 140, 260), (0.0, 0.0), 1.6, 1.3, 0.28)
+    sector_ring(B, lat, 15.4, 0.22, (80, 200, 320), 1, 1.0, 0.24, 3.0, False)
     B.mat = "galva"
     fwd = rot_z(-30) @ Vector((1, 0, 0))
-    pos = Vector((0, 0, 19.3)) + fwd * (lat.radius(19.3) + 0.45)
+    pos = Vector((0, 0, 13.6)) + fwd * (lat.radius(13.6) + 0.45)
     anchor = dish(B, pos, -30.0, 0.30, 0.22)
-    B.tube(anchor, Vector((0, 0, 19.3)) + fwd * lat.radius(19.3) * 0.8, 0.035, 8, "galva", (0, 0, 1))
+    B.tube(anchor, Vector((0, 0, 13.6)) + fwd * lat.radius(13.6) * 0.8, 0.035, 8, "galva", (0, 0, 1))
     top_pole(B, 20.0, 1.2, 0.05, True, True)
     whip(B, (0.18, 0.0, 20.3), 1.2, 0.016)
     cabinet(B, (3.2, 0.6, 0.0), 0.0, (0.75, 1.2, 1.6))
@@ -1116,7 +1429,7 @@ def a3_materials():
         m = bpy.data.materials.new("a3_" + k)
         p = m.a3ob_properties_material
         p.texture_type = "TEX"
-        p.texture_path = TEX + tex + ("_ca.paa" if k in ("net", "fence") else "_co.paa")
+        p.texture_path = tex if tex.startswith("#") else TEX + tex + ("_ca.paa" if k in ("net", "fence") else "_co.paa")
         p.material_path = TEX + rv + ".rvmat"
         out[k] = m
     return out
@@ -1309,14 +1622,16 @@ def preview_materials():
         b.inputs["Roughness"].default_value = rough
         b.inputs["Metallic"].default_value = metal
         path = os.path.join(RENDER, tex + ("_ca.png" if k in ("net", "fence") else "_co.png"))
-        if os.path.exists(path):
+        if k in PROC:
+            b.inputs["Base Color"].default_value = (*PROC[k], 1)
+        elif os.path.exists(path):
             img = n.new("ShaderNodeTexImage")
             img.image = bpy.data.images.load(path)
             nt.links.new(img.outputs["Color"], b.inputs["Base Color"])
             if k in ("net", "fence"):
                 nt.links.new(img.outputs["Alpha"], b.inputs["Alpha"])
         # Relief et reflets : mêmes cartes _nohq / _smdi que le shader Super du jeu.
-        nq = os.path.join(RENDER, tex + "_nohq.png")
+        nq = os.path.join(RENDER, tex.lstrip("#") + "_nohq.png")
         if os.path.exists(nq):
             ni = n.new("ShaderNodeTexImage")
             ni.image = bpy.data.images.load(nq)

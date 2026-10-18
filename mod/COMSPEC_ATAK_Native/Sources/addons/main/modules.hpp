@@ -415,6 +415,14 @@ class COMSPEC_ATAK_Module_Relay: COMSPEC_ATAK_Module_DataBase {
                 class V2 { name = "L 1,4 GHz"; value = 1400; };
                 class V3 { name = "S 2,4 GHz"; value = 2400; };
                 class V4 { name = "C 4,9 GHz"; value = 4900; };
+                class C1 { name = "C 4 940 MHz"; value = 4940; };
+                class C2 { name = "C 4 945 MHz"; value = 4945; };
+                class C3 { name = "C 4 950 MHz"; value = 4950; };
+                class C4 { name = "C 4 955 MHz"; value = 4955; };
+                class C5 { name = "C 4 960 MHz"; value = 4960; };
+                class C6 { name = "C 4 965 MHz"; value = 4965; };
+                class C7 { name = "C 4 970 MHz"; value = 4970; };
+                class C8 { name = "C 4 975 MHz"; value = 4975; };
             };
         };
         class StartOn {
@@ -441,6 +449,15 @@ class COMSPEC_ATAK_Module_Relay: COMSPEC_ATAK_Module_DataBase {
             property = "COMSPEC_ATAK_Module_Relay_Required";
             control = "Checkbox";
             expression = "_this setVariable ['Required',_value,true];";
+            defaultValue = "false";
+            typeName = "BOOL";
+        };
+        class RelayOnly {
+            displayName = "$STR_COMSPEC_ATAK_CFG_RELAYONLY_NAME";
+            tooltip = "$STR_COMSPEC_ATAK_CFG_RELAYONLY_TIP";
+            property = "COMSPEC_ATAK_Module_Relay_RelayOnly";
+            control = "Checkbox";
+            expression = "_this setVariable ['RelayOnly',_value,true];";
             defaultValue = "false";
             typeName = "BOOL";
         };

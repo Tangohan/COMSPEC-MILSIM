@@ -5,7 +5,11 @@
     sous le clic), RETIRER TOUTES LES ZONES (camp), SUPPRIMER (marqueur joueur pointé). Drone appairé et en vie : ORDRE AU DRONE
     ouvre un sous-menu ALLER, RECHERCHER, STATIONNAIRE, ATTERRIR au point cliqué (fn_droneAction "mapOrder"), et RETOUR. Équipier pointé : aussi CHAMP DE VISION de l'équipier
     et LOCALISER PAR RELAIS (triangulation, fn_relayNet).
-    ["open", [contrôle carte, position écran]]  ouvre le menu au curseur (en-tête : grille, altitude, distance et azimut)
+    Relais pointé (calque Relais) : la fiche du relais remplace l'en-tête (état, fréquence, perte, latence, débit, portée,
+    structure, alimentation, places, liaison, distance) avec RELAIS PRÉFÉRÉ, COUVERTURE AUTOUR, Y ALLER, CENTRER ;
+    au clic gauche la fiche seule (["open", [carte, écran, true]]), au clic droit la fiche puis les lignes habituelles.
+    ["open", [contrôle carte, position écran, fiche seule]]  ouvre le menu au curseur (en-tête : grille, altitude, distance et azimut)
+    ["relayAt", [contrôle carte, position écran]] -> relais du calque Relais sous le curseur, ou objNull
     ["close"]                                    ferme (clic ailleurs, Échap, choix d'une ligne)
     ["act", clé]                                 exécute une ligne (DRONE / BACK : ouvre / referme le sous-menu drone)
     ["render"]                                   dessine le menu (fn_pageMap, par-dessus la carte, et l'ouverture)
@@ -28,10 +32,25 @@ private _unbindEsc = {
     uiNamespace setVariable ["COMSPEC_ATAK_MapCtxKey", -1];
 };
 switch (_mode) do {
-    case "open": {
+    case "relayAt": {
         _arg params ["_map", "_screen"];
+        if (isNull _map || {!(profileNamespace getVariable ["COMSPEC_ATAK_RelaysLayer", true])}) exitWith { objNull };
+        private _near = 0.022 * (uiNamespace getVariable ["COMSPEC_ATAK_MapTs", 1]);
+        private _hit = objNull;
+        {
+            private _sp = _map ctrlMapWorldToScreen (getPosASLVisual (_x select 0));
+            private _dd = [(_sp select 0) - (_screen select 0), (_sp select 1) - (_screen select 1)] distance2D [0, 0];
+            if (_dd < _near) then { _near = _dd; _hit = _x select 0; };
+        } forEach (["list"] call comspec_atak_native_fnc_relayNet);
+        _hit
+    };
+    case "open": {
+        _arg params ["_map", "_screen", ["_card", false]];
         if (isNull _map) exitWith {};
         private _w = _map ctrlMapScreenToWorld _screen;
+        private _rl = ["relayAt", [_map, _screen]] call comspec_atak_native_fnc_mapCtxMenu;
+        if (_card && {isNull _rl}) exitWith {};
+        if (!isNull _rl) then { _w = getPosASL _rl; };
         private _m = [_map, _screen] call comspec_atak_native_fnc_markerAt;
         // Mêmes règles que la suppression (fn_markerDelete) : seuls les marqueurs posés par les joueurs.
         if ((_m find "_USER_DEFINED") isNotEqualTo 0) then { _m = ""; };
@@ -43,7 +62,9 @@ switch (_mode) do {
             private _dd2 = [(_sp select 0) - (_screen select 0), (_sp select 1) - (_screen select 1)] distance2D [0, 0];
             if (_dd2 < _near) then { _near = _dd2; _who = _x; };
         } forEach (allPlayers select { _x isNotEqualTo player && {alive _x} && {side group _x isEqualTo side group player} && {[_x] call comspec_atak_native_fnc_hasDevice} });
-        _s set ["mapCtx", createHashMapFromArray [["pos", [_w select 0, _w select 1, 0]], ["marker", _m], ["unit", [netId _who, ""] select (isNull _who)], ["at", diag_tickTime]]];
+        if (_card) then { _m = ""; _who = objNull; };
+        _s set ["mapCtx", createHashMapFromArray [["pos", [_w select 0, _w select 1, 0]], ["marker", _m], ["unit", [netId _who, ""] select (isNull _who)], ["at", diag_tickTime],
+            ["relay", _rl], ["card", _card]]];
         [] call _unbindEsc;
         private _d = [] call comspec_atak_native_fnc_display;
         if (!isNull _d) then {
@@ -104,6 +125,11 @@ switch (_mode) do {
             };
             case "VIEW": { ["compute", [_pos select 0, _pos select 1]] call comspec_atak_native_fnc_reliefAction; };
             case "VIEWU": { ["compute", _c getOrDefault ["unit", ""]] call comspec_atak_native_fnc_reliefAction; };
+            case "RPIN": { ["pin", _c getOrDefault ["relay", objNull]] call comspec_atak_native_fnc_relayNet; };
+            case "RCOV": {
+                profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", true];
+                ["coverage", [_pos select 0, _pos select 1]] call comspec_atak_native_fnc_relayNet;
+            };
             case "LOCATE": {
                 profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", true];
                 ["locate", _c getOrDefault ["unit", ""]] call comspec_atak_native_fnc_relayNet;
@@ -152,6 +178,20 @@ switch (_mode) do {
             ["COPY", "Copier la grille", "10 chiffres", _dir + "map_grid.paa", [0.86, 0.91, 0.88, 1]],
             ["VIEW", "Champ de vision ici", format ["rayon %1 m", _s getOrDefault ["rlRadius", 1000]], _dir + "app_relief.paa", [0.36, 0.78, 0.42, 1]]
         ];
+        // Relais pointé : sa fiche (entrée de fn_relayNet "list", relue à chaque rendu) et ses actions en tête.
+        private _rl = _c getOrDefault ["relay", objNull];
+        private _re = if (isNull _rl) then { [] } else { ["entry", _rl] call comspec_atak_native_fnc_relayNet };
+        private _card = (_c getOrDefault ["card", false]) && {_re isNotEqualTo []};
+        if (_re isNotEqualTo []) then {
+            private _pinned = _rl isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_RelayPin", objNull]);
+            private _relRows = [
+                ["RPIN", ["Relais préféré", "Choix automatique"] select _pinned, ["garder ce relais", "meilleur relais reçu"] select _pinned, _dir + "app_waverelay.paa", _acc],
+                ["RCOV", "Couverture autour", format ["rayon %1 km", round ((_s getOrDefault ["rcRadius", 5000]) / 1000)], _dir + "app_network.paa", [0.28, 0.70, 1, 1]],
+                ["ROUTE", "Y aller", "itinéraire GPS", _dir + "map_route.paa", [0.40, 0.65, 1, 1]],
+                ["CENTER", "Centrer ici", "", _dir + "map_center.paa", [0.86, 0.91, 0.88, 1]]
+            ];
+            if (_card) then { _rows = _relRows; } else { _rows = _relRows + (_rows select { !((_x select 0) in ["ROUTE", "CENTER"]) }); };
+        };
         private _cu = objectFromNetId (_c getOrDefault ["unit", ""]);
         if (!isNull _cu && {alive _cu}) then {
             private _cs = [_cu, true] call comspec_atak_native_fnc_unitCallsign;
@@ -201,6 +241,35 @@ switch (_mode) do {
         private _rowH = _font * 1.55;
         private _headH = _font * 2.05;
         private _w = ((_font * 15) / _ratio) min (_bw * 0.9); // place pour le raccourci à droite des libellés longs
+        // Fiche du relais : lignes « libellé · valeur » sous le nom.
+        private _stats = [];
+        if (_re isNotEqualTo []) then {
+            _re params ["_o", "_ant", "_n", "_k", "_r", "_mb", "_ok", "_st", "_u", "_sl", "_bt", "_root", "_up", "_fq", "_auto", "_loss", "_hp", "_hl", "_hops", "_co", "_lat"];
+            private _hc = createHashMapFromArray [["nominal", "#5cd96b"], ["dégradé", "#f2ab33"], ["critique", "#f2685c"], ["hors service", "#9aa39e"]];
+            private _km = { params ["_m"]; [format ["%1 m", round _m], format ["%1 km", (_m / 1000) toFixed 1]] select (_m >= 1000) };
+            private _dme = player distance2D _ant;
+            private _mine = _o isEqualTo (uiNamespace getVariable ["COMSPEC_ATAK_RelayLast", objNull]);
+            private _T = { _this call comspec_atak_native_fnc_tr };
+            private _tri = { params ["_v", "_a", "_b"]; ["#5cd96b", "#f2ab33", "#f2685c"] select ((parseNumber (_v > _a)) + (parseNumber (_v > _b))) };
+            _stats = [
+                ["État", format ["<t color='%1'>%2</t>%3", _hc getOrDefault [_hl, "#e6efe9"], _hl call _T, ["", format [" (%1)", _st call _T]] select (!_ok && {_st isNotEqualTo ""})]],
+                ["Fréquence", format ["%1 MHz · %2%3", _fq, ["fixe", "auto"] select _auto call _T, ["", format [" · <t color='#f2ab33'>%1</t>", format ["%1 sur le canal" call _T, _co]]] select (_co > 0)]],
+                ["Perte · latence", ["<t color='#9aa39e'>" + ("aucun trafic" call _T) + "</t>", format ["<t color='%1'>%2 %%</t> · %3 ms", [_loss, 12, 40] call _tri, _loss, _lat]] select _ok],
+                ["Débit · portée", format ["%1 Mbit/s · %2", _mb toFixed 1, [_r] call _km]],
+                ["Structure · alim.", format ["<t color='%1'>%2 %%</t> · %3", [100 - _hp, 10, 50] call _tri, _hp,
+                    ["secteur" call _T, format ["<t color='%1'>%2</t>", ["#e6efe9", "#f2ab33"] select (_bt < 25), format ["batterie %1 %%" call _T, round _bt]]] select (_bt >= 0)]],
+                ["Téléphones", [format ["%1 · %2", _u, "illimité" call _T], format ["<t color='%1'>%2</t>", ["#e6efe9", "#f2ab33"] select (_u > _sl), format ["%1 / %2 places" call _T, _u, _sl]]] select (_sl > 0)],
+                ["Liaison", switch (true) do {
+                    case (_k isNotEqualTo "relay"): { ["passerelle de véhicule", "poste de commandement"] select (_k isEqualTo "cp") call _T };
+                    case (_hops < 0): { "<t color='#f2685c'>" + ("sans liaison" call _T) + "</t>" };
+                    case (_hops isEqualTo 0): { "raccordé (satellite ou fibre)" call _T };
+                    default { format ["répéteur · %1 bond(s) via %2" call _T, _hops, ((_up getVariable ["COMSPEC_AtakRelayName", "relais"]) regexReplace ["[<>&]", ""]) select [0, 18]] };
+                }],
+                ["Distance", format ["%1 · %2°%3", [_dme] call _km, round (player getDir _ant), ["", " · <t color='#5cd96b'>" + ("utilisé" call _T) + "</t>"] select _mine]]
+            ];
+            _headH = _font * (1.35 + 0.98 * (count _stats)) + pixelH * 6;
+            _w = ((_font * 19) / _ratio) min (_bw * 0.95);
+        };
         private _h = _headH + _rowH * (count _rows) + pixelH * 8;
         private _sp = _map ctrlMapWorldToScreen _pos;
         // Ouvert à droite et sous le curseur, recalé dans la carte s'il déborde (à gauche / au-dessus du point).
@@ -235,9 +304,16 @@ switch (_mode) do {
         private _dist = _me distance2D _pos;
         private _az = round (_me getDir _pos);
         private _hd = ["COMSPEC_RscStructuredText", [_x0 + pixelW * 8, _y0 + pixelH * 5, _w - pixelW * 16, _headH]] call _mk;
-        _hd ctrlSetStructuredText parseText ((format ["<t font='EtelkaMonospaceProBold' size='0.95' color='#e6efe9'>%1</t><br/><t size='0.78' color='#8a9a93'>%2 m · %3 · %4°</t>",
-            [_pos, 8] call comspec_atak_native_fnc_gridRef, round (getTerrainHeightASL _pos),
-            [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 1]] select (_dist >= 1000), _az]) call comspec_atak_native_fnc_tr);
+        if (_stats isNotEqualTo []) then {
+            // Fiche du relais : nom et grille, puis une ligne par donnée (libellé à gauche, valeur à droite).
+            private _lines = _stats apply { format ["<t size='0.8' color='#8a9a93'>%1</t><t size='0.8' align='right' color='#e6efe9'>%2</t>", (_x select 0) call comspec_atak_native_fnc_tr, _x select 1] };
+            _hd ctrlSetStructuredText parseText (((format ["<t font='COMSPEC_BarlowBold' size='1' color='#e6efe9'>%1</t><t size='0.78' align='right' color='#8a9a93'>%2</t><br/>%3",
+                ((_re select 2) regexReplace ["[<>&]", ""]) select [0, 26], [_pos, 8] call comspec_atak_native_fnc_gridRef, _lines joinString "<br/>"])) call comspec_atak_native_fnc_tr);
+        } else {
+            _hd ctrlSetStructuredText parseText ((format ["<t font='EtelkaMonospaceProBold' size='0.95' color='#e6efe9'>%1</t><br/><t size='0.78' color='#8a9a93'>%2 m · %3 · %4°</t>",
+                [_pos, 8] call comspec_atak_native_fnc_gridRef, round (getTerrainHeightASL _pos),
+                [format ["%1 m", round _dist], format ["%1 km", (_dist / 1000) toFixed 1]] select (_dist >= 1000), _az]) call comspec_atak_native_fnc_tr);
+        };
         _hd ctrlSetFontHeight (_fs * 0.95);
         if (_m isNotEqualTo "") then { _hd ctrlSetTooltip ((format ["Marqueur pointé : %1", [markerText _m, _m] select ((markerText _m) isEqualTo "")]) call comspec_atak_native_fnc_tr); };
         private _ry = _y0 + pixelH * 6 + _headH;

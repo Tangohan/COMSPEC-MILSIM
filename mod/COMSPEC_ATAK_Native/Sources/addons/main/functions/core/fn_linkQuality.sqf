@@ -5,6 +5,7 @@
     véhicule, pluie et brouillard, zone radio, brouilleurs de mission (COMSPEC_ATAK_Jammers = [[pos, rayon]...], force en 7e élément),
     brouillage Zeus ciblé et brouilleurs Crows Electronic Warfare (fn_zeusJam),
     état du téléphone. Réglage serveur comspec_atak_native_net_sim : coupé, débit plein et sans délai.
+    Réseau exclusivement par relais (fn_relayNet "only") : sans relais reçu, aucun réseau (même simulation coupée).
 */
 // Mode avion (fn_airplaneMode) : aucun réseau, même simulation coupée ; les envois partent en file comme sans signal.
 if (missionNamespace getVariable ["COMSPEC_ATAK_Airplane", false]) exitWith {
@@ -14,7 +15,12 @@ private _cache = uiNamespace getVariable ["COMSPEC_ATAK_LinkQ", []];
 if ((count _cache) isEqualTo 2 && {diag_tickTime - (_cache select 0) < 2}) exitWith { _cache select 1 };
 private _q = createHashMap;
 if !(missionNamespace getVariable ["comspec_atak_native_net_sim", true]) exitWith {
-    _q = createHashMapFromArray [["bars", 4], ["kbps", 5000], ["latency", 40], ["loss", 0], ["label", "Simulation coupée"], ["factors", []], ["sim", false]];
+    // Réseau exclusivement par relais : même sans simulation de débit, aucun relais reçu = aucun réseau.
+    _q = if ((["only"] call comspec_atak_native_fnc_relayNet) && {(["best"] call comspec_atak_native_fnc_relayNet) isEqualTo []}) then {
+        createHashMapFromArray [["bars", 0], ["kbps", 0], ["latency", 0], ["loss", 100], ["label", "Aucun relais"], ["factors", [["Aucun relais reçu (réseau exclusivement par relais)", "aucun réseau"]]], ["sim", true]]
+    } else {
+        createHashMapFromArray [["bars", 4], ["kbps", 5000], ["latency", 40], ["loss", 0], ["label", "Simulation coupée"], ["factors", []], ["sim", false]]
+    };
     uiNamespace setVariable ["COMSPEC_ATAK_LinkQ", [diag_tickTime, _q]];
     _q
 };
@@ -26,8 +32,10 @@ private _kbps = 4000;
 // Meilleur relais reçu (fn_relayNet "best") : relais de la mission (module « ATAK · Relais » ou Overwatch), passerelle
 // de véhicule ou PC mobile ; relief, batterie, brouillage, chaîne des répéteurs et saturation déjà comptés.
 private _best = ["best"] call comspec_atak_native_fnc_relayNet;
-// Relais obligatoires : mode réaliste d'Athena, ou case « Relais obligatoires » d'un module « ATAK · Relais » de la mission.
-private _req = (missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]) || {missionNamespace getVariable ["COMSPEC_ATAK_RelaysRequired", false]};
+// Relais obligatoires : case « Relais obligatoires » d'un module « ATAK · Relais » (presque plus de réseau sans relais).
+// Réseau exclusivement par relais : réglage serveur, case du module ou mode réaliste d'Athena (aucun réseau sans relais).
+private _only = ["only"] call comspec_atak_native_fnc_relayNet;
+private _req = _only || {missionNamespace getVariable ["COMSPEC_ATAK_RelaysRequired", false]};
 private _bridge = [] call comspec_atak_native_fnc_bridge;
 if (_bridge) then {
     private _link = toLower (missionNamespace getVariable ["COMSPEC_LinkState", "offline"]);
@@ -47,9 +55,13 @@ if (_bridge) then {
         _f pushBack [format ["Zone %1", _zone getOrDefault ["name", "radio"]], format ["perte %1 %%", _loss]];
     };
 };
-if (_req && {_best isEqualTo []}) then { _mul = _mul * 0.1; _f pushBack ["Aucun relais à portée", "-90 %"]; };
+if (_req && {_best isEqualTo []}) then {
+    if (_only) then { _mul = 0; _f pushBack ["Aucun relais reçu (réseau exclusivement par relais)", "aucun réseau"]; } else { _mul = _mul * 0.1; _f pushBack ["Aucun relais à portée", "-90 %"]; };
+};
 if (_best isNotEqualTo []) then {
-    _best params ["", "_gn", "_gd", "_gmb", "_gl", "_gk", "", "_gu", "_gs"];
+    _best params ["", "_gn", "_gd", "_gmb", "_gl", "_gk", "", "_gu", "_gs", "", ["_gf", 0], ["_gh", ""], ["_glat", 0]];
+    _lat = _lat + _glat;
+    if (_gh in ["dégradé", "critique"]) then { _f pushBack [format ["Relais %1 (%2 MHz)", _gh, _gf], format ["perte %1 %%", _gl]]; };
     // Relais obligatoires : on a le débit du relais ; sinon il ne fait qu'améliorer le direct.
     if (_req) then { _kbps = (round (_gmb * 1000)) max 200; _loss = _loss max _gl; } else { _kbps = _kbps max round (_gmb * 1000); };
     _f pushBack [format ["%1 %2 à %3 m", createHashMapFromArray [["relay", "Relais"], ["gw", "Passerelle"], ["cp", "Poste de commandement"]] getOrDefault [_gk, "Relais"], _gn, round _gd], format ["%1 Mbit/s", _gmb toFixed 1]];
