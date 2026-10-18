@@ -4,6 +4,8 @@ name: Discord changelog
 # publiée), sans lien GitHub. La carte reprend seulement le « Résumé joueur »
 # de la version dans CHANGELOG-ATAK.md (règle en tête de ce fichier). Le webhook est le secret DISCORD_RELEASES_WEBHOOK.
 # Pour ne pas annoncer une PR : label « discord:skip » ou « [skip discord] » dans le titre.
+# Une seule annonce par version : les PR fusionnées par un regroupement et les entrées
+# du journal déjà présentes avant la fusion ne sont pas reprises (voir le script).
 
 on:
   pull_request:
@@ -27,6 +29,9 @@ jobs:
             .github/scripts
             CHANGELOG-ATAK.md
           sparse-checkout-cone-mode: false
+          filter: blob:none
+      - name: Fetch main history (one announcement per version)
+        run: git fetch --no-tags --filter=blob:none --depth=300 origin "+refs/heads/main:refs/remotes/origin/main"
       - name: Post to Discord
         env:
           DISCORD_RELEASES_WEBHOOK: ${{ secrets.DISCORD_RELEASES_WEBHOOK }}
