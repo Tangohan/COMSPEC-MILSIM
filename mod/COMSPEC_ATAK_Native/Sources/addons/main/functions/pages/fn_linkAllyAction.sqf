@@ -318,14 +318,18 @@ switch (_action) do {
         { if (_x isEqualType [] && {(_x param [0, ""]) isEqualType ""}) then { _meds pushBackUnique (_x select 0); }; } forEach (_u getVariable ["ace_medical_medications", []]);
         private _tri = _u getVariable ["ace_medical_triageLevel", 0];
         if !(_tri isEqualType 0) then { _tri = 0; };
+        // Constantes cohérentes (fn_medVitals) : pas de tension ni de SpO2 sans pouls, perte de sang en classes ATLS.
+        private _mv = [_u] call comspec_atak_native_fnc_medVitals;
         // Lignes du bilan, réduites aux données affichées.
         private _lines = [
             ["state", "Conscience", _consc],
             ["bleed", "Hémorragie", _bleedTxt],
             ["tq", "Garrots", [_tqTxt, "aucun"] select (_tqTxt isEqualTo "")],
             ["fractures", "Fractures", [_frTxt, "aucune"] select (_frTxt isEqualTo "")],
-            ["hr", "Pouls", [format ["%1/min", round _hr], "non mesurable"] select !_ace],
-            ["blood", "Volume sanguin", format ["%1 %%", round ((_bv / 6) * 100)]],
+            ["hr", "Pouls", [[format ["%1/min", _mv get "hr"], "absent"] select ((_mv get "hr") <= 0), "non mesurable"] select !_ace],
+            ["bp", "Tension", [format ["%1/%2", _mv get "sys", _mv get "dia"], "imprenable"] select ((_mv get "sys") < 0)],
+            ["spo2", "SpO2", [format ["%1 %%", _mv get "spo2"], "pas de signal"] select ((_mv get "spo2") < 0)],
+            ["blood", "Perte sanguine estimée", [["< 15 % (classe I)", "15-30 % (classe II)", "30-40 % (classe III)", "> 40 % (classe IV)"] select (((_mv get "hemClass") - 1) max 0), "aucune"] select ((_mv get "hemClass") isEqualTo 0)],
             ["pain", "Douleur", _painTxt],
             ["meds", "Médicaments", [_meds joinString ", ", "aucun relevé"] select ((count _meds) isEqualTo 0)],
             ["triage", "Triage", ["non posé", "T3 (mineur, vert)", "T2 (différé, jaune)", "T1 (immédiat, rouge)", "T4 (décédé, noir)"] param [_tri, "non posé"]],

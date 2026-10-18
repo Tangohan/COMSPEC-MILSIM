@@ -3,6 +3,8 @@
 */
 if (isServer) then {
     ["comspec_sse_bioReq", { _this call comspec_sse_fnc_bioServerHandle }] call CBA_fnc_addEventHandler;
+    // Taches de sang au sol : latentes et ADN (fn_bioBloodStain).
+    ["server"] call comspec_sse_fnc_bioBloodStain;
     // L'état d'un corps dépend du temps écoulé depuis la mort (rigidité, cornée).
     addMissionEventHandler ["EntityKilled", {
         params ["_u"];
