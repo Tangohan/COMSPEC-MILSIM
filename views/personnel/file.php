@@ -1124,6 +1124,68 @@ if ($personnelFileIsRhFull) {
                                 <p class="mt-3 text-[10px] text-slate-500">Compté par le serveur de jeu (app Distances du téléphone ATAK) et remonté toutes les 10 minutes. Les pas sont estimés d’après l’allure ; les heures de pilote comptent le temps aux commandes, moteur allumé.</p>
                             </div>
                             <?php endif; ?>
+                            <?php
+                            $atakGarmin = is_array($atakGarmin ?? null) ? $atakGarmin : null;
+                            $gmDur = static function (int $s): string {
+                                $m = intdiv($s, 60);
+
+                                return $m < 60 ? $m . ' min' : intdiv($m, 60) . ' h ' . str_pad((string) ($m % 60), 2, '0', STR_PAD_LEFT);
+                            };
+                            ?>
+                            <?php if ($atakGarmin !== null): ?>
+                            <?php
+                            $gmBb = (int) $atakGarmin['body_battery'];
+                            $gmWeek = array_reverse($atakGarmin['week']);
+                            $gmMax = max(1, (int) $atakGarmin['step_goal'], ...array_map(static fn (array $d): int => (int) $d['steps'], $gmWeek ?: [['steps' => 0]]));
+                            $gmSynced = strtotime((string) $atakGarmin['synced_at']);
+                            ?>
+                            <div id="garmin" class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4 sm:col-span-2 xl:col-span-1">
+                                <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Montre Garmin en jeu</p>
+                                <div class="mt-2 flex items-end gap-4">
+                                    <div>
+                                        <p class="text-[11px] text-slate-500">Body Battery</p>
+                                        <p class="text-2xl font-black tabular-nums <?= $gmBb >= 60 ? 'text-sky-600' : ($gmBb >= 25 ? 'text-amber-600' : 'text-rose-600') ?>"><?= $gmBb ?></p>
+                                    </div>
+                                    <dl class="grid flex-1 grid-cols-3 gap-2 text-xs">
+                                        <div><dt class="text-slate-500">Cœur</dt><dd class="tabular-nums font-bold text-slate-900"><?= (int) $atakGarmin['heart_rate'] ?> bpm</dd></div>
+                                        <div><dt class="text-slate-500">Repos</dt><dd class="tabular-nums font-bold text-slate-900"><?= (int) $atakGarmin['avg_rest_hr'] > 0 ? (int) $atakGarmin['avg_rest_hr'] : (int) $atakGarmin['rest_hr'] ?> bpm</dd></div>
+                                        <div><dt class="text-slate-500">Stress</dt><dd class="tabular-nums font-bold text-slate-900"><?= (int) $atakGarmin['stress'] ?></dd></div>
+                                    </dl>
+                                </div>
+                                <div class="mt-3 h-1.5 rounded-full bg-slate-200/80" aria-hidden="true"><div class="h-1.5 rounded-full bg-sky-500" style="width: <?= max(2, min(100, $gmBb)) ?>%"></div></div>
+                                <?php if ($gmWeek !== []): ?>
+                                <p class="mt-4 text-[9px] font-black uppercase tracking-widest text-slate-500">Pas, derniers jours joués</p>
+                                <div class="mt-2 flex h-16 items-end gap-1.5" role="img" aria-label="Pas par jour">
+                                    <?php foreach ($gmWeek as $gd): ?>
+                                    <?php $gs = (int) $gd['steps']; ?>
+                                    <div class="flex flex-1 flex-col items-center gap-1" title="<?= htmlspecialchars(date('d/m', (int) strtotime((string) $gd['day'])) . ' : ' . number_format($gs, 0, ',', ' ') . ' pas', ENT_QUOTES, 'UTF-8') ?>">
+                                        <div class="w-full rounded-t <?= $gs >= (int) $atakGarmin['step_goal'] ? 'bg-emerald-500' : 'bg-sky-500' ?>" style="height: <?= max(4, (int) round(48 * $gs / $gmMax)) ?>px"></div>
+                                        <span class="text-[9px] tabular-nums text-slate-500"><?= htmlspecialchars(date('d/m', (int) strtotime((string) $gd['day'])), ENT_QUOTES, 'UTF-8') ?></span>
+                                    </div>
+                                    <?php endforeach; ?>
+                                </div>
+                                <?php endif; ?>
+                                <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                                    <div><dt class="text-slate-500">Pas, moyenne par jour joué</dt><dd class="tabular-nums font-bold text-slate-900"><?= number_format((int) $atakGarmin['avg_steps'], 0, ',', ' ') ?> <span class="font-normal text-slate-500">/ objectif <?= number_format((int) $atakGarmin['step_goal'], 0, ',', ' ') ?></span></dd></div>
+                                    <div><dt class="text-slate-500">Sommeil, moyenne</dt><dd class="tabular-nums font-bold text-slate-900"><?= htmlspecialchars($gmDur((int) $atakGarmin['avg_sleep_s']), ENT_QUOTES, 'UTF-8') ?></dd></div>
+                                    <div><dt class="text-slate-500">Stress moyen</dt><dd class="tabular-nums font-bold text-slate-900"><?= (int) $atakGarmin['avg_stress'] ?></dd></div>
+                                    <div><dt class="text-slate-500">Courses</dt><dd class="tabular-nums font-bold text-slate-900"><?= (int) $atakGarmin['totals']['run_n'] ?> <span class="font-normal text-slate-500">· <?= htmlspecialchars($distKm((int) $atakGarmin['totals']['run_m']), ENT_QUOTES, 'UTF-8') ?></span></dd></div>
+                                </dl>
+                                <?php if ($atakGarmin['activities'] !== []): ?>
+                                <p class="mt-4 text-[9px] font-black uppercase tracking-widest text-slate-500">Dernières activités</p>
+                                <ul class="mt-2 divide-y divide-slate-200/70 text-xs">
+                                    <?php foreach ($atakGarmin['activities'] as $ga): ?>
+                                    <?php $gaKmh = (int) $ga['seconds'] > 0 ? 3.6 * (int) $ga['meters'] / (int) $ga['seconds'] : 0; ?>
+                                    <li class="flex items-baseline justify-between gap-3 py-1.5">
+                                        <span class="min-w-0 truncate"><span class="font-semibold text-slate-800"><?= htmlspecialchars((string) $ga['label'], ENT_QUOTES, 'UTF-8') ?></span><?php if ((string) $ga['place'] !== ''): ?> <span class="text-slate-500">· <?= htmlspecialchars((string) $ga['place'], ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?><br><span class="text-[10px] text-slate-500"><?= htmlspecialchars(date('d/m', (int) strtotime((string) $ga['day'])) . ' ' . (string) $ga['started_at'], ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($gmDur((int) $ga['seconds']), ENT_QUOTES, 'UTF-8') ?></span></span>
+                                        <span class="shrink-0 text-right tabular-nums font-bold text-slate-900"><?= htmlspecialchars($distKm((int) $ga['meters']), ENT_QUOTES, 'UTF-8') ?><br><span class="text-[10px] font-normal text-slate-500"><?= number_format($gaKmh, 1, ',', ' ') ?> km/h</span></span>
+                                    </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                                <?php endif; ?>
+                                <p class="mt-3 text-[10px] text-slate-500">Mesuré par la montre de l’app Garmin du téléphone ATAK, sur le PC du joueur, et envoyé toutes les 5 minutes<?php if ($gmSynced !== false): ?> (dernier envoi le <?= htmlspecialchars(date('d/m à H:i', $gmSynced), ENT_QUOTES, 'UTF-8') ?>)<?php endif; ?>. Fréquence cardiaque d’ACE quand le mod est chargé, sinon estimée.</p>
+                            </div>
+                            <?php endif; ?>
                             <?php if ($accountCreatedDisplay !== null): ?>
                             <div class="rounded-2xl border border-slate-100 bg-slate-50/80 p-4">
                                 <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Membre depuis</p>

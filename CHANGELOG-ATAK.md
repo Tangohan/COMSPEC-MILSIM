@@ -38,7 +38,7 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
-## Nouvelle app Garmin : montre connectée (ATAK natif, numéro au regroupement)
+## Nouvelle app Garmin : montre connectée, envoyée sur la fiche du site (ATAK natif et COMSPEC Link 2.0.87, numéros au regroupement)
 
 ### Résumé joueur
 Type : nouveauté
@@ -46,19 +46,23 @@ FR : Nouvelle app Garmin, ta montre connectée dans l'ATAK
 - Accueil façon Garmin Connect : Body Battery du jour et sa courbe, fréquence cardiaque, stress, sommeil et pas, puis le résumé d'hier et des 7 derniers jours.
 - Tes courses, marches, trajets, vols, sauts, sorties en bateau et nages s'enregistrent seuls, avec le lieu, la distance, le temps et l'allure ou la vitesse.
 - Onglet Défis : objectif de pas du jour (réglable de 6 000 à 15 000), 100 000 pas, marathon de la semaine, 5 km d'une traite, un saut, Body Battery à 80.
-- La Body Battery baisse avec l'effort et le stress au combat, remonte au repos, quand tu dors (ou es inconscient) et pendant que tu ne joues pas. La montre garde 14 jours sur ton PC.
+- La Body Battery baisse avec l'effort et le stress au combat, et remonte au repos, quand tu dors (ou es inconscient) et pendant que tu ne joues pas.
+- Ta montre arrive sur ta fiche du site toutes les 5 minutes : Body Battery, pas des derniers jours, sommeil, stress et dernières activités.
 EN : New Garmin app, your smartwatch inside the ATAK
 - Garmin Connect style home: today's Body Battery and its chart, heart rate, stress, sleep and steps, then yesterday and the last 7 days.
 - Your runs, walks, rides, flights, jumps, boat trips and swims are recorded on their own, with the place, distance, time and pace or speed.
 - Challenges tab: daily step goal (adjustable from 6,000 to 15,000), 100,000 steps, weekly marathon, 5 km in one go, one jump, Body Battery at 80.
-- Body Battery drains with effort and combat stress, and recharges at rest, while you sleep (or are unconscious) and while you are not playing. The watch keeps 14 days on your PC.
+- Body Battery drains with effort and combat stress, and recharges at rest, while you sleep (or are unconscious) and while you are not playing.
+- Your watch reaches your member file on the site every 5 minutes: Body Battery, steps of the last days, sleep, stress and latest activities.
 
 ### Détail technique
 - Nouvelle app `Garmin` (section Navigation, ordre 20, icône app_garmin) : `fn_pageGarmin` dessine trois onglets (Accueil, Défis, Activités) sur fond sombre, barre d'onglets fixe en bas ; onglet gardé dans `COMSPEC_ATAK_State` (`gmTab`).
 - `fn_garminTick` (client, PFH 2 s dans XEH_postInitClient, sauvegarde aussi à `Ended`) : pas et distances avec les règles de `fn_distanceServer` (plus la nage), activités reconnues seules (close après 90 s d'arrêt ou au changement de genre, distance minimale par type, lieu par `nearestLocations`, 40 gardées), stress (suppression, ennemi < 300 m, blessures, COMBAT), fréquence cardiaque (`ace_medical_heartRate` sinon estimée), sommeil (inconscient ou immobile allongé / assis au calme > 2 min), Body Battery (+20/h sommeil, +8/h repos, -6 à -46/h effort et stress, +12/h hors du jeu au retour).
-- Données par jour réel du PC dans `profileNamespace COMSPEC_ATAK_Garmin` (paires, 14 jours, courbe à 5 min gardée pour aujourd'hui et hier), écrites toutes les 5 min. Rien n'est envoyé au site : pas de nouvelle commande COMSPEC Link.
+- Données par jour réel du PC dans `profileNamespace COMSPEC_ATAK_Garmin` (paires, 14 jours, courbe à 5 min gardée pour aujourd'hui et hier), écrites toutes les 5 min.
+- Envoi au site à chaque écriture (5 min et fin de mission) : nouvelle commande COMSPEC Link 2.0.87 `Garmin.Report` -> POST /api/atak/garmin (`AtakApiController::garmin`, joueur reconnu comme pour ScreenTime.Report). Photo entière : état, 14 jours sans les courbes, 40 activités. `AtakGarminRepository` valide et plafonne ; jours en `GREATEST` (un profil effacé ne fait pas baisser un jour reçu), activités en `INSERT IGNORE`. Tables `atak_garmin_days`, `atak_garmin_activities`, `atak_garmin_status` (bootstrap/atak_garmin_migration.php, étape `atak_garmin` de run-migrations.php). Carte « Montre Garmin en jeu » sur la fiche du membre. L'app affiche « Envoyé au site il y a … min » ou la raison du non-envoi.
+- Sur le VPS : lancer run-migrations.php. Dans le jeu : la DLL COMSPEC Link 2.0.87 est nécessaire pour l'envoi.
 - 18 icônes (app_garmin, g_*) dans tools/gen_assets.py ; textes anglais ajoutés à en.txt.
-- À tester en jeu : ouvrir l'app (Navigation > Garmin), courir 500 m puis s'arrêter 90 s (activité « Course à pied » dans Activités), monter en véhicule et rouler 1 km, s'allonger 2 min sans ennemi (Sommeil augmente, Body Battery remonte), se faire tirer dessus (Stress monte), changer l'objectif de pas dans Défis, quitter et revenir (Body Battery rechargée, message « rechargés pendant … hors du jeu »), passer le téléphone en anglais.
+- À tester en jeu : ouvrir l'app (Navigation > Garmin), courir 500 m puis s'arrêter 90 s (activité « Course à pied » dans Activités), monter en véhicule et rouler 1 km, s'allonger 2 min sans ennemi (Sommeil augmente, Body Battery remonte), se faire tirer dessus (Stress monte), changer l'objectif de pas dans Défis, quitter et revenir (Body Battery rechargée, message « rechargés pendant … hors du jeu »), passer le téléphone en anglais, vérifier après 5 min la carte « Montre Garmin en jeu » sur sa fiche du site.
 
 ## Regroupement : app Plan refaite, partage des caméras, nouvelle app Distances (ATAK natif 1.96.0, COMSPEC Link 2.0.86)
 

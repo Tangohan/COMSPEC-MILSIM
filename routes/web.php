@@ -2399,6 +2399,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/screen-time', [AtakApiController::class, 'screenTime']);
     $router->post('/api/atak/screen-time/batch', [AtakApiController::class, 'screenTimeBatch']);
     $router->post('/api/atak/distance/batch', [AtakApiController::class, 'distanceBatch']);
+    $router->post('/api/atak/garmin', [AtakApiController::class, 'garmin']);
     $router->post('/api/atak/send-queue/report', [AtakApiController::class, 'sendQueueReport']);
     $router->post('/api/atak/game-session/discover', [AtakApiController::class, 'gameSessionDiscover']);
     $router->post('/api/atak/game-session/join', [AtakApiController::class, 'gameSessionJoin']);
