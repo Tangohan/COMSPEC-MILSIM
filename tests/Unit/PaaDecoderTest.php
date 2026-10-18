@@ -123,5 +123,8 @@ final class PaaDecoderTest extends TestCase
         self::assertStringContainsString('it.icon', (string) file_get_contents($root . '/public/assets/js/equipment-catalog.js'));
         // Sans communauté en session : pas d’icône, pas de requête.
         self::assertNull(GameItemIconRepository::urlFor('arifle_MX_F'));
+        // Repli : icônes livrées pour nos objets SSE.
+        self::assertStringContainsString('assets/img/game-items/comspec_sse_camera.png', (string) GameItemIconRepository::urlFor('COMSPEC_SSE_Camera'));
+        self::assertNull(GameItemIconRepository::bundledUrl('../../config'));
     }
 }
