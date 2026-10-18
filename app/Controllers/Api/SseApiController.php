@@ -511,8 +511,9 @@ final class SseApiController
                 'message' => 'Impossible de recevoir la photo. Vérifiez la liaison puis réessayez.',
             ], 400);
         }
-        $maxBytes = 12 * 1024 * 1024;
-        if (!empty($file['size']) && (int) $file['size'] > $maxBytes) {
+        if (!empty($file['size']) && (int) $file['size'] > TerrainUploadedImage::MAX_FILE_BYTES) {
+            error_log(sprintf('[sse/photos] file_too_large size=%d name=%s', (int) $file['size'], (string) ($file['name'] ?? '')));
+
             return Response::json([
                 'error' => 'file_too_large',
                 'message' => 'La photo est trop lourde. Essayez une capture plus légère.',
