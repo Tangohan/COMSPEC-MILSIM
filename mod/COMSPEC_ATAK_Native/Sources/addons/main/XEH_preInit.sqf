@@ -337,6 +337,12 @@ private _pow = ["COMSPEC", "ATAK · Batterie et mémoire"];
 ["comspec_atak_native_net_sim", "CHECKBOX",
     ["Débit réseau simulé", "Bâtiments, relief, véhicule, météo, brouilleurs, relais et dégâts réduisent le débit : messages et photos partent avec un délai, se perdent et repartent, ou attendent le retour du réseau."],
     _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_offline_hold", "CHECKBOX",
+    ["Fonctionnement hors connexion", "Sans signal, le téléphone garde ses dernières données (fil Athena, ordres, alertes, unités) et retient comptes rendus, MEDEVAC, alertes, appels JTAC et itinéraires reçus : tout arrive au retour du réseau, avec un bilan. Décoché : ils arrivent même sans signal."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_offline_save", "CHECKBOX",
+    ["Données gardées entre deux connexions", "SMS, messages, ordres et alertes du téléphone sont enregistrés dans le profil du joueur pour la mission en cours : après un crash ou une reconnexion au serveur, ils restent consultables même sans réseau."],
+    _sim, true, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_vehicle_gateways", "CHECKBOX",
     ["Passerelles de véhicule et PC mobile", "Permet à l'équipage de faire de n'importe quel véhicule un relais ATAK (4 km) ou un poste de commandement à mât (10 km). Désactivé par défaut, peu réaliste : seuls les relais posés par la mission (module Eden ou Zeus « ATAK · Relais ») portent le réseau."],
     _sim, false, 1] call comspec_atak_native_fnc_addSetting;

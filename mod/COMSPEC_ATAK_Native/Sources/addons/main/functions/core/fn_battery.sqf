@@ -1,7 +1,7 @@
 /*
     Batterie simulée du téléphone (profil COMSPEC_ATAK_BatterySim et réglage serveur comspec_atak_native_battery_sim).
     Consommation par minute selon l'usage : veille, écran porté ou en main, mode nuit (écran sombre),
-    appareil photo, live cam, guidage GPS, envois de données de la dernière minute, recherche de réseau
+    appareil photo, live cam, app ouverte (carte et GPS, flux vidéo, traitement de données), musique, guidage GPS, envois de données de la dernière minute, recherche de réseau
     quand le signal est faible, brouilleur actif. Réglages serveur : autonomie écran en main comspec_atak_native_battery_hours
     (3 h par défaut, tous les usages suivent la même proportion), charge de départ comspec_atak_native_battery_start,
     recharge en véhicule comspec_atak_native_battery_vehicle.
@@ -32,6 +32,23 @@ if (_open) then {
     _f pushBack [["Écran porté", "Écran en main"] select (_s getOrDefault ["interactive", false]), _scr];
 } else {
     _f pushBack ["Veille", 0.12];
+};
+// App au premier plan : la carte et le GPS, un flux vidéo (drone, poursuite, JTAC) ou un traitement de données tirent plus.
+if (_open) then {
+    private _page = _s getOrDefault ["activePage", ""];
+    private _app = switch (true) do {
+        case (_page in ["DRONE", "LIVECAM", "TRACKING", "JTAC"]): { ["Flux vidéo", 0.3] };
+        case (_page in ["MAP", "BFT", "PLAN", "RELIEF", "GPS", "WAYPOINTS", "FIRES"]): { ["Carte et GPS", 0.1] };
+        case (_page in ["SSE", "DATALINK", "RECO", "GALLERY"]): { ["Traitement de données", 0.08] };
+        default { [] };
+    };
+    if (_app isNotEqualTo []) then { _f pushBack [format ["App : %1", _app select 0], _app select 1]; };
+};
+// Musique en lecture, aussi téléphone rangé ; le haut-parleur consomme plus que les écouteurs.
+private _mus = missionNamespace getVariable ["COMSPEC_ATAK_Music", createHashMap];
+if ((_mus getOrDefault ["kind", ""]) isNotEqualTo "" && {!(_mus getOrDefault ["paused", false])}) then {
+    private _spk = _mus getOrDefault ["speaker", false];
+    _f pushBack [["Musique (écouteurs)", "Musique (haut-parleur)"] select _spk, [0.06, 0.18] select _spk];
 };
 if (uiNamespace getVariable ["COMSPEC_ATAK_PhotoMode", false]) then { _f pushBack ["Appareil photo", 0.7]; };
 if (!isNull (missionNamespace getVariable ["COMSPEC_ATAK_LivecamCam", objNull])) then { _f pushBack ["Live cam", 1.0]; };
