@@ -176,8 +176,21 @@
         });
     }
 
+    // Lien direct vers une fenêtre (ex. « À traiter » → fiche#eff-dlg-jobs) : on l'ouvre au chargement.
+    function openDialogFromHash() {
+        var id = window.location.hash.replace('#', '');
+        if (!/^eff-dlg-[a-z0-9-]+$/i.test(id)) {
+            return;
+        }
+        var dialog = document.getElementById(id);
+        if (dialog && typeof dialog.showModal === 'function' && !dialog.open) {
+            dialog.showModal();
+        }
+    }
+
     function init() {
         initDialogs();
+        openDialogFromHash();
         initFilters();
         initElevationKind();
         initJobPicker();

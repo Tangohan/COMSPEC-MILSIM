@@ -21,6 +21,8 @@
             submitBtns.forEach(function (btn) {
                 btn.disabled = checked === 0;
             });
+            // La barre d'actions groupées ne s'affiche en entier qu'avec une sélection.
+            bar.classList.toggle('is-active', checked > 0);
             if (selectAll) {
                 selectAll.checked = checked > 0 && checked === checks.length;
             }
