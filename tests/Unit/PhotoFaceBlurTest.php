@@ -55,11 +55,12 @@ final class PhotoFaceBlurTest extends TestCase
         foreach (PhotoFaceBlur::TYPES as $type) {
             $im = $this->checker();
             $before = imagecolorat($im, 300, 150);
-            $center = [imagecolorat($im, 100, 50), imagecolorat($im, 101, 50), imagecolorat($im, 102, 50), imagecolorat($im, 103, 50)];
+            // Échantillons sur des cases blanches et noires du damier (sinon le carré noir ne change rien).
+            $center = [imagecolorat($im, 100, 50), imagecolorat($im, 104, 50), imagecolorat($im, 108, 50), imagecolorat($im, 112, 50)];
             $n = PhotoFaceBlur::apply($im, ['type' => $type, 'force' => 70, 'opacity' => 100, 'size' => 100, 'angle' => 0, 'faces' => [[0.2, 0.15, 0.1, 0.2]]]);
             self::assertSame(1, $n, $type);
             self::assertSame($before, imagecolorat($im, 300, 150), $type . ' hors cadre');
-            $after = [imagecolorat($im, 100, 50), imagecolorat($im, 101, 50), imagecolorat($im, 102, 50), imagecolorat($im, 103, 50)];
+            $after = [imagecolorat($im, 100, 50), imagecolorat($im, 104, 50), imagecolorat($im, 108, 50), imagecolorat($im, 112, 50)];
             self::assertNotSame($center, $after, $type . ' dans le cadre');
             imagedestroy($im);
         }
