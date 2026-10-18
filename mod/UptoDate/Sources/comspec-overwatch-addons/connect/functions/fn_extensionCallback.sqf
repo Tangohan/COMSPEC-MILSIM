@@ -243,7 +243,8 @@ switch (_function) do {
         missionNamespace setVariable ["COMSPEC_GoogleBriefingPath", _path];
         missionNamespace setVariable ["COMSPEC_GoogleBriefingRequestId", ""];
 
-        if (isNull (findDisplay 9970)) then {
+        // ATAK natif : diapositive lue par l'app BRIEFING du téléphone, pas d'ancien tableau de briefing.
+        if (isNull (findDisplay 9970) && {!isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")}) then {
             createDialog "COMSPEC_Briefing_Dialog";
         };
 

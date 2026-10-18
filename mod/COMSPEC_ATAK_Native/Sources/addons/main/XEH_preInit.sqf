@@ -256,6 +256,8 @@ private _sim = ["COMSPEC", "ATAK · Simulation"];
 // d'Overwatch) est remplacé par « ATAK · Contrôle Zeus » (fn_zeusMenu), qui agit sur l'ATAK natif.
 missionNamespace setVariable ["COMSPEC_ZenAtakPlayerContextRegistered", true];
 missionNamespace setVariable ["COMSPEC_AceAtakZeusInteractRegistered", true];
+// Ctrl + double-clic sur un joueur en Zeus : plus l'ancien panneau ATAK d'Overwatch (fn_zeusShowPlayerAtak).
+missionNamespace setVariable ["COMSPEC_ZeusAtakPlayerActionsRegistered", true];
 private _geo = ["COMSPEC", "ATAK · Géolocalisation (GEOLOC)"];
 ["comspec_atak_native_geoloc_enabled", "CHECKBOX",
     ["Traçage des téléphones", "App GE (guerre électronique), onglet GÉOLOC : localiser un téléphone à partir de son numéro, de son IMEI ou de son adresse MAC (roleplay)."],

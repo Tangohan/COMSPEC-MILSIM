@@ -417,7 +417,6 @@ private _athena = [
     ], "Oui : COMSPEC Link, synchro avec le poste, compte lié. Non : ATAK local sur le serveur, rien n'est envoyé."],
     ["info", "État", _athState],
     ["buttons", [
-        ["REVOIR LA QUESTION", { ["show"] call comspec_atak_native_fnc_athenaChoice; }, false, _bridge],
         ["LIER MON COMPTE", { ["link"] call comspec_atak_native_fnc_athenaChoice; }, true, _bridge && {_athMode isEqualTo "on"} && {!_athReady}]
     ]],
     ["text", "<t size='0.8' color='#8a9a93'>Aussi dans le menu Échap, bouton Service Athéna.</t>"]

@@ -38,6 +38,28 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Nettoyage : plus de vieilles fenêtres hors du téléphone (ATAK natif 2.2.0.AB - Denver)
+
+### Résumé joueur
+Type : correctif
+FR : Plus de vieilles fenêtres par-dessus le jeu
+- Le briefing diffusé s'ouvre dans l'app Briefing du téléphone, plus dans l'ancien tableau, Zeus compris.
+- La question « Votre unité utilise-t-elle Athéna ? » se répond dans le téléphone (app Athena ou Réglages).
+- En Zeus ou sans téléphone, plus aucun écran Athena ne s'affiche au chargement.
+EN : No more old windows over the game
+- A shared briefing opens in the phone's Briefing app, no longer in the old board, Zeus included.
+- The question "Does your unit use Athena?" is answered in the phone (Athena app or Settings).
+- As Zeus or without a phone, no Athena screen shows up while loading any more.
+
+### Détail technique
+- Overwatch connect embarqué : `fn_loadGoogleBriefing` et `fn_extensionCallback` (`google_deck_ready`) n'ouvrent plus `COMSPEC_Briefing_Dialog` quand `comspec_atak_native_main` est chargé (l'événement JIP l'ouvrait chez tous les clients, Zeus et sans téléphone compris) ; une notification « ouvrez l'app Briefing » par présentation, aux porteurs de téléphone.
+- `XEH_postInitClient` : premier lancement en mission (connexion directe, aperçu Eden, Zeus) sans choix du service Athéna -> `["notify"] call comspec_atak_native_fnc_athenaChoice` au lieu de `COMSPEC_AthenaChoice_Dialog`. La question reste au menu principal et au menu Échap. App Athena : boutons OUI / NON à la place de CHOISIR ; Réglages : bouton « Revoir la question » retiré ; `["show"]` ouvre le téléphone sur Réglages.
+- `fn_athenaLink` : l'indice `hintSilent` du code de connexion seulement si le joueur a un téléphone (`fn_hasDevice`).
+- Zeus : Ctrl + double-clic sur un joueur n'ouvre plus l'ancien panneau ATAK d'Overwatch (`COMSPEC_ZeusAtakPlayerActionsRegistered`, remplacé par « ATAK · Contrôle Zeus »). Ancien module « tableau des relais » masqué dans Eden (`scope = 1`, les missions existantes se chargent). Logo de démarrage d'Overwatch main plus affiché en double avec celui du natif.
+- Code mort retiré d'Overwatch connect (aucun appelant, atak_athena compris) : fenêtres `COMSPEC_Chat_Dialog` (`display.hpp`), `COMSPEC_Hub_Dialog`, `COMSPEC_Callsign_Dialog`, `CfgZeusRelayModules.hpp` (jamais inclus), et 27 fonctions (chat, hub, indicatif, solution de tir, IFF, perte de paquets, `handlePositionUpdateCallback`, `diagIsolateShow`, `tacticalAlertDialogShow`, `openCASDialog`, `showAthenaLinkHelp`, `sseModuleTargets`, `setBriefingScreens`, `checkCASLine`, `updateDangerZone`). ATAK natif : `fn_settingsSave` et `fn_photoTake` (sans appelant).
+- main.pbo reconstruit (HEMTT 1.22) ; `comspec_overwatch_connect.pbo` et `comspec_overwatch_main.pbo` repatchés (`tools/pbo_patch.py --changed`, `--rm`). 3 phrases ajoutées à `i18n/en.txt`.
+- À tester en jeu : aperçu Eden sans téléphone et en Zeus avec un profil neuf (aucune fenêtre, pas d'indice Athena) ; avec téléphone et profil neuf (notification Service Athéna, OUI dans l'app Athena) ; briefing Google diffusé par un chef (pas de tableau, app Briefing, Zeus sans fenêtre, joueur JIP) ; Ctrl + double-clic en Zeus ; écran de démarrage (un seul logo) ; menu Échap > Service Athéna toujours là.
+
 ## Regroupement : réseau radio réaliste, apps refaites, synchro allégée, icônes des objets (ATAK natif 2.1.0.AB - Denver, COMSPEC Link 2.0.88)
 
 ### Résumé joueur
