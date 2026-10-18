@@ -35,6 +35,14 @@ final class SseFacePhotoRoutingAssetTest extends TestCase
         self::assertStringContainsString("\\x89PNG", $helper);
     }
 
+    public function testFichePhotoAcceptsLargeNativeCaptures(): void
+    {
+        $sse = (string) file_get_contents(dirname(__DIR__, 2) . '/app/Controllers/Api/SseApiController.php');
+        self::assertStringNotContainsString('$maxBytes = 12 * 1024 * 1024;', $sse);
+        self::assertStringContainsString('TerrainUploadedImage::MAX_FILE_BYTES', $sse);
+        self::assertGreaterThanOrEqual(64 * 1024 * 1024, \App\Support\TerrainUploadedImage::MAX_FILE_BYTES);
+    }
+
     public function testGameDoesNotForwardSeekFaceToReconNotify(): void
     {
         $root = dirname(__DIR__, 2) . '/mod/UptoDate/Sources/comspec-overwatch-addons';
