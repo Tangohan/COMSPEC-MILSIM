@@ -106,6 +106,8 @@ if (_lang isNotEqualTo "fr" && {_loaded isNotEqualTo _lang}) then {
 missionNamespace setVariable ["COMSPEC_ATAK_Lang", _lang];
 // Changement en cours de partie : les menus CBA COMSPEC suivent (fn_menuRelang ne fait rien si la langue est la même).
 if (_redraw) then { [] call comspec_atak_native_fnc_menuRelang; };
+// Noms des touches COMSPEC (Contrôles > Configurer les addons) dans la nouvelle langue.
+if (_redraw) then { [] call comspec_atak_native_fnc_keyRelang; };
 if (_redraw && {hasInterface}) then {
     private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
     private _page = _s getOrDefault ["activePage", ""];
