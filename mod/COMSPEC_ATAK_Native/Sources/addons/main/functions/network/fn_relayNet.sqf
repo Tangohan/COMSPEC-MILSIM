@@ -115,7 +115,7 @@ switch (_act) do {
         } forEach _out;
         // Répéteurs : sans liaison propre (satellite, fibre), un relais doit voir un relais raccordé, de proche en proche.
         // Débit du répéteur = le plus faible de la chaîne, réduit par la qualité de chaque bond.
-        private _real = missionNamespace getVariable ["comspec_atak_native_net_realism", 1];
+        private _real = (["realism"] call comspec_atak_native_fnc_netCond);
         private _feed = _out apply { [-1, _x select 5] select ((_x select 6) && {_x select 11}) };
         private _hop = _feed apply { [-1, 0] select (_x >= 0) };
         private _queue = [];
@@ -198,7 +198,7 @@ switch (_act) do {
         private _eye = eyePos player;
         private _best = [];
         private _pinned = false;
-        private _real = missionNamespace getVariable ["comspec_atak_native_net_realism", 1];
+        private _real = (["realism"] call comspec_atak_native_fnc_netCond);
         // Bilan radio (fn_radioLink) : la portée du relais est celle de la voie montante (le téléphone émet bien moins
         // fort que le relais) ; la voie descendante a 4 dB de plus, d'où une frange « réception seule » au-delà de la
         // portée, où l'on reçoit encore sans pouvoir émettre. Terminal de bord ou passerelle (antenne de toit) : +3 dB.
@@ -286,7 +286,7 @@ switch (_act) do {
         ((["list"] call comspec_atak_native_fnc_relayNet) select { (_x select 0) isEqualTo _o }) param [0, []]
     };
     case "only": {
-        (missionNamespace getVariable ["comspec_atak_native_relay_only", false])
+        (["relayOnly"] call comspec_atak_native_fnc_netCond)
             || {missionNamespace getVariable ["COMSPEC_ATAK_RelayOnly", false]}
             || {missionNamespace getVariable ["COMSPEC_LinkViaRelays", false]}
     };
@@ -331,7 +331,7 @@ switch (_act) do {
         // [antenne ASL, portée, Mbit/s, cible ASL, mode ("fast" relief seul | "full" + feuillage et bâtiments),
         //  objets ignorés, gain dB en plus] -> [qualité 0-1, Mbit/s, perte %, marge dB, [[cause, dB]...], MCS 0-7 (-1 : aucun)].
         _arg params ["_ant", "_range", "_mb", "_p", ["_mode", "fast"], ["_ign", []], ["_extra", 0]];
-        if ((missionNamespace getVariable ["comspec_atak_native_net_realism", 1]) isEqualTo 0) exitWith {
+        if ((["realism"] call comspec_atak_native_fnc_netCond) isEqualTo 0) exitWith {
             // Modèle simplifié (ancien) : portée x 0,35 derrière le relief, qualité 1 - (d / portée)².
             private _d = _ant distance _p;
             private _eff = _range;

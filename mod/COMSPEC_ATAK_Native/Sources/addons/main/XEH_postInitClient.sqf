@@ -205,6 +205,9 @@ missionNamespace setVariable ["COMSPEC_ATAK_ExtensionEH", _eh, false];
     };
 }, 2] call CBA_fnc_addPerFrameHandler;
 
+// Surcharge du réseau : trafic émis par ce téléphone, publié toutes les 10 s s'il change (fn_netLoad).
+[{ ["publish"] call comspec_atak_native_fnc_netLoad; }, 10] call CBA_fnc_addPerFrameHandler;
+
 // Réglages de réalisme de la communauté (Athena) : appliqués à tous dès qu'ils changent.
 [{
     private _raw = missionNamespace getVariable ["COMSPEC_TenantExperienceRaw", ""];

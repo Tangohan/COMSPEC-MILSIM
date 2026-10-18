@@ -1817,6 +1817,7 @@ return function (Router $router) {
     $router->post('/back-office/ressources/atak-config/purge', [AdminAtakConfigController::class, 'purgeData'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/controle-serveur', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/regles', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeRules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->post('/back-office/atak/controle-serveur/reseau-adopter', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'adoptNetwork'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/fonctions', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeModules'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->post('/back-office/atak/controle-serveur/relais', [\App\Controllers\Admin\AdminOverwatchServerControlController::class, 'storeRelays'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/relays-network', [\App\Controllers\Admin\AdminAtakRelaysController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
@@ -2470,6 +2471,8 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/mod-modules', [AtakApiController::class, 'modModules']);
     $router->get('/api/atak/experience', [AtakApiController::class, 'experience']);
     $router->post('/api/atak/experience', [AtakApiController::class, 'experience']);
+    $router->get('/api/atak/net-conditions', [AtakApiController::class, 'netConditions']);
+    $router->post('/api/atak/net-conditions', [AtakApiController::class, 'netConditions']);
     $router->get('/api/atak/orders', [AtakApiController::class, 'ordersIndex']);
     $router->post('/api/atak/orders', [AtakApiController::class, 'ordersStore']);
     $router->get('/api/atak/orders/recipients', [AtakApiController::class, 'ordersRecipients']);

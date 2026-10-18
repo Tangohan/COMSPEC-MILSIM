@@ -239,6 +239,7 @@ final class AtakExperienceService
                     ['value' => 'on', 'label' => 'Complétion automatique'],
                 ],
             ],
+            ...$this->networkCatalog(),
             [
                 'id' => 'radio_proximity',
                 'label' => 'Écoute radio à proximité',
@@ -303,6 +304,126 @@ final class AtakExperienceService
     }
 
     /**
+     * Conditions réseau de l'ATAK natif (simulation radio : météo, surcharge, pertes de paquets…).
+     * « Laisser au serveur » : le serveur décide (réglages CBA, ou menu Échap > Conditions réseau en partie) ;
+     * toute autre valeur s'impose à tous les joueurs de la communauté (COMSPEC Link 2.0.89, clés net_*).
+     * Les valeurs sont celles que le jeu envoie (on / off, nombres en texte) : NetConditions.Report.
+     *
+     * @return list<array{id: string, label: string, description: string, type: string, default: mixed, group: string, surface: string, choices: list<array{value: string, label: string}>}>
+     */
+    public function networkCatalog(): array
+    {
+        $server = ['value' => 'player', 'label' => 'Laisser au serveur (menu Échap en jeu)'];
+        $onOff = fn (string $on, string $off): array => [
+            $server,
+            ['value' => 'on', 'label' => $on],
+            ['value' => 'off', 'label' => $off],
+        ];
+        $nums = function (array $values, string $unit) use ($server): array {
+            $out = [$server];
+            foreach ($values as $v => $label) {
+                $out[] = ['value' => (string) $v, 'label' => $label !== '' ? $label : $v . ' ' . $unit];
+            }
+
+            return $out;
+        };
+        $row = fn (string $id, string $label, string $description, array $choices): array => [
+            'id' => $id,
+            'label' => $label,
+            'description' => $description,
+            'type' => 'list',
+            'default' => 'player',
+            'group' => 'reseau',
+            'surface' => 'control',
+            'choices' => $choices,
+        ];
+
+        return [
+            $row('net_sim', 'Débit réseau simulé', 'Bâtiments, relief, météo, brouilleurs, relais et dégâts réduisent le débit : les envois partent avec un délai, se perdent ou attendent le retour du réseau.', $onOff('Toujours simuler', 'Couper la simulation (débit plein)')),
+            $row('net_realism', 'Réalisme de la simulation radio', 'Réaliste : bilan radio en dB (relief, Fresnel, forêt, bâtiments). Exigeant : forêt et bâtiments comptés en entier. Simplifié : ancien modèle.', [
+                $server,
+                ['value' => '1', 'label' => 'Réaliste'],
+                ['value' => '2', 'label' => 'Exigeant'],
+                ['value' => '0', 'label' => 'Simplifié (ancien modèle)'],
+            ]),
+            $row('net_weather', 'Météo sur le réseau', 'Pluie sur le trajet, antennes mouillées, bruit des orages et vent fort réduisent la marge radio ; orage et vent font perdre des paquets par rafales.', $onOff('Toujours compter la météo', 'Ignorer la météo')),
+            $row('net_weather_k', 'Intensité de la météo', '100 % : valeurs réelles à 4,9 GHz. Au-dessus, la météo pèse davantage (scénario dégradé).', $nums([0 => '', 50 => '', 100 => '100 % (réel)', 150 => '', 200 => ''], '%')),
+            $row('net_congestion', 'Surcharge du réseau', 'Les téléphones à portée d’un même relais se partagent son canal : débit en baisse, latence et collisions quand il se remplit.', $onOff('Toujours simuler la surcharge', 'Ignorer la surcharge')),
+            $row('net_bg_load', 'Trafic de fond', 'Part de la capacité de chaque relais déjà occupée par d’autres utilisateurs (vidéo, synchronisations, unités hors jeu).', $nums([0 => '', 10 => '', 25 => '', 50 => '', 75 => '', 90 => ''], '%')),
+            $row('net_loss', 'Pertes de paquets', 'Des envois se perdent par rafales selon la qualité du lien et repartent automatiquement.', $onOff('Toujours simuler les pertes', 'Aucune perte')),
+            $row('net_loss_floor', 'Perte minimale', 'Pertes imposées partout, même avec un excellent signal (zone dégradée).', $nums([0 => '', 1 => '', 3 => '', 5 => '', 10 => '', 20 => ''], '%')),
+            $row('net_latency_add', 'Latence ajoutée', 'Délai ajouté à chaque envoi, par exemple une liaison satellite vers le poste (600 ms).', $nums([0 => '', 50 => '', 150 => '', 300 => '', 600 => '600 ms (satellite)', 1200 => '1 200 ms'], 'ms')),
+            $row('net_relay_only', 'Réseau exclusivement par relais', 'Hors de portée de tout relais de la mission, aucun réseau.', $onOff('Toujours exiger un relais', 'Garder la liaison directe')),
+            $row('net_gateways', 'Passerelles de véhicule et PC mobile', 'L’équipage peut faire d’un véhicule un relais ATAK ou un poste de commandement à mât.', $onOff('Toujours autoriser', 'Toujours interdire')),
+            $row('net_offline_hold', 'Fonctionnement hors connexion', 'Sans signal, le téléphone garde ses données et retient ce qui arrive jusqu’au retour du réseau.', $onOff('Toujours activer', 'Toujours couper')),
+            $row('net_video_relays', 'Flux vidéo selon les relais', 'Débit, définition et latence des flux vidéo suivent les relais de la mission.', $onOff('Toujours activer', 'Toujours couper')),
+        ];
+    }
+
+    /**
+     * Conditions réseau appliquées en jeu (menu Échap de l'ATAK natif, via COMSPEC Link) : gardées pour la page
+     * Contrôle serveur, sans toucher aux règles de la communauté.
+     *
+     * @param array<string, mixed> $body
+     * @return array<string, mixed>
+     */
+    public function recordLiveNetwork(int $tenantId, array $body, ?string $steamUid = null): array
+    {
+        $choices = [];
+        foreach ($this->networkCatalog() as $row) {
+            $choices[$row['id']] = array_column($row['choices'], 'value');
+        }
+        $in = is_array($body['conditions'] ?? null) ? $body['conditions'] : [];
+        $conditions = [];
+        foreach ($choices as $id => $allowed) {
+            if (!array_key_exists($id, $in) || !is_scalar($in[$id])) {
+                continue;
+            }
+            $val = (string) $in[$id];
+            if ($val !== 'player' && in_array($val, $allowed, true)) {
+                $conditions[$id] = $val;
+            }
+        }
+        $text = static fn (mixed $v, int $max): string => mb_substr(trim(is_scalar($v) ? (string) $v : ''), 0, $max);
+        $live = [
+            'conditions' => $conditions,
+            'applied_by' => $text($body['applied_by'] ?? '', 64),
+            'steam_uid' => $steamUid !== null ? $text($steamUid, 32) : '',
+            'mission' => $text($body['mission'] ?? '', 120),
+            'world' => $text($body['world'] ?? '', 64),
+            'server' => $text($body['server'] ?? '', 120),
+            'reset' => !empty($body['reset']),
+            'at' => gmdate('c'),
+        ];
+
+        $repo = new \App\Repositories\TenantAtakConfigRepository();
+        $raw = $repo->getExperienceConfigRaw($tenantId);
+        $raw = is_array($raw) ? $raw : [];
+        $raw['net_live'] = $live;
+        $repo->saveExperienceConfig($tenantId, $raw);
+
+        return $live;
+    }
+
+    /**
+     * Reprend comme règles de la communauté les conditions appliquées en dernier en jeu.
+     *
+     * @return int nombre de conditions reprises
+     */
+    public function adoptLiveNetwork(int $tenantId): int
+    {
+        $settings = $this->get($tenantId)['settings'];
+        $live = is_array($settings['net_live'] ?? null) ? $settings['net_live'] : [];
+        $conditions = is_array($live['conditions'] ?? null) ? $live['conditions'] : [];
+        if ($conditions === []) {
+            return 0;
+        }
+        $this->put($tenantId, $conditions);
+
+        return count($conditions);
+    }
+
+    /**
      * @return array<string, string>
      */
     public function groupLabels(): array
@@ -312,6 +433,7 @@ final class AtakExperienceService
             'liaison' => 'Liaison et équipement',
             'carte' => 'Carte du poste',
             'realisme' => 'Réalisme du téléphone',
+            'reseau' => 'Réseau et simulation radio',
             'fonctions' => 'Fonctions de mission',
         ];
     }
@@ -327,6 +449,7 @@ final class AtakExperienceService
         }
         $out['guide_custom'] = '';
         $out['server_control_reviewed'] = false;
+        $out['net_live'] = [];
 
         return $out;
     }

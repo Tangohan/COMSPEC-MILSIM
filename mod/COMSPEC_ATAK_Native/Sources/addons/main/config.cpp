@@ -34,7 +34,7 @@ class CfgFunctions {
         class network { file="z\comspec_atak_native\addons\main\functions\network";
             class extensionCall {}; class relayTower {}; class relayTowerRuin {}; class relayEden {}; class relayZeus {}; class extAwait {}; class extensionCallback {}; class serverPresence {}; class remoteSync {}; class importLegacyData {};
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
-            class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class radioLink {}; class netGuide {}; class offline {}; class relayNet {}; class videoLink {}; class moduleRelay {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {}; class athenaStatus {}; class feedLink {}; class extVersion {};
+            class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class radioLink {}; class netGuide {}; class netCond {}; class netWeather {}; class netLoad {}; class netConfig {}; class offline {}; class relayNet {}; class videoLink {}; class moduleRelay {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {}; class athenaStatus {}; class feedLink {}; class extVersion {};
         };
         class viz { file="z\comspec_atak_native\addons\main\functions\viz";
             class vizEcg {}; class vizSpectrum {}; class vizPlayer {};
@@ -546,6 +546,9 @@ class Extended_PreInit_EventHandlers { class comspec_atak_native_main { init="ca
 class Extended_DisplayLoad_EventHandlers {
     // Menu principal (fn_mainMenuButton, exclu de tools/i18n.py wrap : fn_tr pas encore là) : bouton « COMSPEC ATAK · Guide réseau » (fn_mainMenuButton -> fn_netGuide), rien d'autre.
     class RscDisplayMain { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_mainMenuButton.sqf'"; };
+    // Menu Échap (solo et multijoueur) : bouton « Conditions réseau » (fn_netConfig), sous la barre COMSPEC d'Overwatch.
+    class RscDisplayInterrupt { comspec_atak_native_netcfg="['button', _this select 0] call comspec_atak_native_fnc_netConfig"; };
+    class RscDisplayMPInterrupt { comspec_atak_native_netcfg="['button', _this select 0] call comspec_atak_native_fnc_netConfig"; };
     class RscDisplayStart { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_introSplash.sqf'"; };
     class RscDisplayLoadMission { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf'"; };
     class RscDisplayLoading { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf'"; };

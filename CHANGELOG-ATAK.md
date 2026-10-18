@@ -38,6 +38,32 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Réseau : météo, surcharge, pertes en rafales et Conditions réseau du menu Échap (ATAK natif 2.1.1.AB - Denver, COMSPEC Link 2.0.89)
+
+### Résumé joueur
+Type : nouveauté
+FR : Le réseau du téléphone suit la météo et la charge, et se règle depuis le menu Échap
+- Pluie, orage et vent fort comptent maintenant sur le réseau : antennes mouillées, bruit des éclairs, signal qui fluctue. Le brouillard, lui, ne change rien, comme en vrai.
+- Quand beaucoup de téléphones utilisent le même relais, le canal se remplit : le débit baisse, la latence monte et des paquets se perdent. Les pertes arrivent par rafales, comme sur une vraie radio.
+- Nouveau bouton Conditions réseau dans le menu Échap : chacun y voit ce qui coûte du signal en ce moment. Un administrateur du serveur ou un Zeus y règle la météo, la surcharge, les pertes et la latence pour tout le serveur, avec des modèles prêts à l'emploi.
+- Les administrateurs de la communauté peuvent imposer ces conditions depuis la page Contrôle serveur du site, qui affiche aussi celles appliquées en jeu.
+EN : The phone network follows weather and load, and is set from the Escape menu
+- Rain, storms and strong wind now count on the network: wet antennas, lightning noise, a fluctuating signal. Fog changes nothing, as in real life.
+- When many phones use the same relay, its channel fills up: throughput drops, latency rises and packets are lost. Losses come in bursts, as on a real radio.
+- New Network conditions button in the Escape menu: everyone sees what is costing signal right now. A server admin or a Zeus sets weather, congestion, losses and latency there for the whole server, with ready-made presets.
+- Community admins can enforce these conditions from the Server control page of the website, which also shows the ones applied in game.
+
+### Détail technique
+- `fn_netCond` : conditions effectives, règle du site (`net_*` de `COMSPEC_TenantExperience`) > menu Échap (`COMSPEC_ATAK_NetCond`, diffusée, JIP) > CBA. Toutes les lectures de `net_sim`, `net_realism`, `relay_only`, `vehicle_gateways`, `offline_hold`, `video_relays` passent par lui. Nouveaux réglages CBA (tous actifs par défaut) : `net_weather`, `net_weather_k`, `net_congestion`, `net_bg_load`, `net_loss`, `net_loss_floor`, `net_latency_add`.
+- `fn_netWeather` : pluie ITU-R P.838 à 4,9 GHz sur le trajet, radômes mouillés, bruit d'orage (`lightnings`, ciel couvert), vent > 8 m/s ; ajoutés au bilan de `fn_radioLink` (le débit suit la MCS) ; sans relais, équivalent sur la liaison directe. Brouillard : aucun effet, affiché.
+- `fn_netLoad` : trafic émis publié par joueur (`COMSPEC_ATAK_NetLoad`, 10 s, seulement s'il change), charge du relais = trafic à portée + trafic de fond ; partage au-delà de 100 %, rendement CSMA, file M/M/1, collisions (`fn_linkQuality`).
+- `fn_netSend` : pertes Gilbert-Elliott (rafales d'environ 3 envois), aucune perte si la condition est coupée ; perte minimale et latence ajoutée dans `fn_linkQuality`.
+- `fn_netConfig` : bouton du menu Échap (`RscDisplayInterrupt`/`RscDisplayMPInterrupt`, sous la barre COMSPEC), fenêtre avec source de chaque condition, modèles, conditions du moment ; application contrôlée côté serveur (admin, hôte, Zeus), notification à tous, envoi au site `NetConditions.Report`.
+- COMSPEC Link 2.0.89 : `GetExperience` transmet toutes les clés `net_*` ; `NetConditions.Report` -> `POST /api/atak/net-conditions`. DLL à recompiler (build_mod.bat).
+- Site : groupe « Réseau et simulation radio » dans Contrôle serveur (13 règles, « Laisser au serveur » par défaut), bloc « Conditions appliquées en jeu » et bouton pour les garder comme règles (`/back-office/atak/controle-serveur/reseau-adopter`). Stockage dans `experience_config.net_live`, sans migration.
+- Guide réseau : rubrique « Météo, surcharge et pertes de paquets ».
+- À tester en jeu : bouton Conditions réseau en solo et en multijoueur (admin connecté, Zeus, simple joueur en lecture seule) ; appliquer un modèle et voir la notification chez tous ; arrivée d'un joueur après application (JIP) ; pluie forte et orage (Zeus météo) et lecture de la page Réseau ; plusieurs joueurs qui envoient des photos sur un même relais (surcharge) ; perte minimale 20 % (renvois, remise en file) ; règle imposée depuis le site (verrouillée dans la fenêtre) avec Link 2.0.89 ; bloc « Conditions appliquées en jeu » sur le site.
+
 ## Regroupement : réseau radio réaliste, apps refaites, synchro allégée, icônes des objets (ATAK natif 2.1.0.AB - Denver, COMSPEC Link 2.0.88)
 
 ### Résumé joueur

@@ -412,7 +412,7 @@ private _offQueue = count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue"
 ["Dernière synchro", [_offSync, "—"] select (_offSync isEqualTo "")] call _info;
 ["Envois en file", [str _offQueue, format ["<t color='#f2ab33'>%1</t>", _offQueue]] select (_offQueue > 0)] call _info;
 ["Reçus en attente au relais", [str _offHeld, format ["<t color='#f2ab33'>%1</t>", _offHeld]] select (_offHeld > 0)] call _info;
-if !(missionNamespace getVariable ["comspec_atak_native_offline_hold", true]) then { ["<t color='#8a9a93'>Rétention coupée par le serveur : comptes rendus et alertes arrivent même sans signal.</t>"] call _para; };
+if !(["offlineHold"] call comspec_atak_native_fnc_netCond) then { ["<t color='#8a9a93'>Rétention coupée par le serveur : comptes rendus et alertes arrivent même sans signal.</t>"] call _para; };
 
 // --- Synchronisation avec Athena (fn_syncStats : volume par canal compté par COMSPEC Link 2.0.88) ---
 // Ce qui part et revient, canal par canal : la fiche opérateur ne repart que si elle change, et Athena ne renvoie plus
