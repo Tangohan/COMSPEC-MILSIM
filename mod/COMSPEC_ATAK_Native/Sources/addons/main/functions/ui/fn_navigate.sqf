@@ -29,6 +29,15 @@ _s set ["history", _history];
 // Retour arrière ou redessin sans empilement : fn_pageRender retrouve le défilement de la page.
 _s set ["scrollRestore", !_push];
 _s set ["activePage", _page];
+// Lanceur : apps récentes (profil, gardées d'une partie à l'autre) et apps déjà ouvertes (fin de la pastille NOUVEAU).
+if (_push && {!(_page in ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES"])}) then {
+    private _rec = profileNamespace getVariable ["COMSPEC_ATAK_AppRecent", []];
+    if !(_rec isEqualType []) then { _rec = []; };
+    _rec = [_page] + (_rec - [_page]);
+    profileNamespace setVariable ["COMSPEC_ATAK_AppRecent", _rec select [0, 12]];
+    private _seen = profileNamespace getVariable ["COMSPEC_ATAK_AppSeen", []];
+    if (_seen isEqualType [] && {!(_page in _seen)}) then { _seen pushBack _page; profileNamespace setVariable ["COMSPEC_ATAK_AppSeen", _seen]; };
+};
 
 [_page] call comspec_atak_native_fnc_pageRender;
 // Mouvement (fn_fx) : l'app s'ouvre en grandissant depuis le point touché ; l'accueil revient en fondu.

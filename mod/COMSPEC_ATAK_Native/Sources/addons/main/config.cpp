@@ -113,8 +113,8 @@ class COMSPEC_ATAK_Apps {
     class Waypoints   { name="Itinéraire"; page="WAYPOINTS"; section="Navigation"; order=14; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_waypoints.paa"; };
     class Relief      { name="Relief"; page="RELIEF"; section="Navigation"; order=16; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_relief.paa"; };
     class Weather     { name="Météo"; page="WEATHER"; section="Navigation"; order=18; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_weather.paa"; };
-    class Distance    { name="Distances"; page="DISTANCE"; function="comspec_atak_native_fnc_pageDistance"; section="Navigation"; order=19; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_distance.paa"; };
-    class Garmin      { name="Garmin"; page="GARMIN"; function="comspec_atak_native_fnc_pageGarmin"; section="Navigation"; order=20; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_garmin.paa"; };
+    class Distance    { name="Distances"; page="DISTANCE"; new=1; function="comspec_atak_native_fnc_pageDistance"; section="Navigation"; order=19; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_distance.paa"; };
+    class Garmin      { name="Garmin"; page="GARMIN"; new=1; function="comspec_atak_native_fnc_pageGarmin"; section="Navigation"; order=20; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_garmin.paa"; };
     class Chat        { name="Messages"; page="CHAT"; section="Communication"; order=30; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_chat.paa"; };
     class Group       { name="Groupe"; page="GROUP"; section="Communication"; order=32; dock=1; icon="\z\comspec_atak_native\addons\main\data\app_group.paa"; };
     class Alerts      { name="Alertes"; page="ALERTS"; section="Communication"; order=34; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_alerts.paa"; };
