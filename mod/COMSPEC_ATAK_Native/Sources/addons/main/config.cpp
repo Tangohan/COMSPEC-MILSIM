@@ -104,6 +104,7 @@ class CfgFunctions {
 //   page    : page du routeur ouverte au clic
 //   icon    : texture PAA (icônes COMSPEC dans data\, générées par tools/gen_assets.py)
 //   section : regroupement dans le lanceur ; order : tri croissant ; dock=1 : raccourci du dock
+//   wip=1   : app en chantier (W.I.P) : tuile grisée avec bandeau, ne s'ouvre pas, code gardé
 // Sections (dans l'ordre) : Navigation 10+, Communication 30+, Appui et feux 50+, Spécialités 70+,
 // Renseignement 110+, Mission 200+, Système 300+, Civil 395+.
 class COMSPEC_ATAK_Apps {
@@ -126,7 +127,7 @@ class COMSPEC_ATAK_Apps {
     class Drone       { name="Drone"; page="DRONE"; section="Appui et feux"; order=54; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_drone.paa"; };
     class Medical     { name="Médical"; page="MEDICAL"; section="Spécialités"; order=70; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_medical.paa"; };
     class Sniper      { name="Sniper"; page="SNIPER"; section="Spécialités"; order=72; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_sniper.paa"; };
-    class Breach      { name="Brèche"; page="BREACH"; section="Spécialités"; order=74; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_breach.paa"; };
+    class Breach      { name="Brèche"; page="BREACH"; section="Spécialités"; order=74; dock=0; wip=1; icon="\z\comspec_atak_native\addons\main\data\app_breach.paa"; };
     class Explo       { name="Explosifs"; page="EXPLO"; section="Spécialités"; order=76; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_explo.paa"; };
     class Ew          { name="GE"; page="EW"; section="Spécialités"; order=78; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_ew.paa"; };
     class DroneDetect { name="Anti-drone"; page="DRONEDETECT"; section="Spécialités"; order=80; dock=0; icon="\z\comspec_atak_native\addons\main\data\app_dronedetect.paa"; };

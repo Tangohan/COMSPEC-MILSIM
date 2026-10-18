@@ -3,6 +3,11 @@ _page = toUpper _page;
 // Sous-pages sans icône au lanceur : PATCHES (Réglages > Patch au dos).
 private _allowed = ["LAUNCHER", "RECENTS", "NOTIFS", "PATCHES"] +(([] call comspec_atak_native_fnc_appList) apply { _x get "page" });
 if !(_page in _allowed) then { _page = "LAUNCHER"; };
+// App en chantier (config wip=1, ex. Brèche) : affichée grisée au lanceur, ne s'ouvre d'aucune façon (tuile, dock, recherche).
+if ((([] call comspec_atak_native_fnc_appList) findIf { (_x get "page") isEqualTo _page && {_x getOrDefault ["wip", false]} }) >= 0) exitWith {
+    ["Application en chantier (W.I.P), bientôt disponible", 2] call comspec_atak_native_fnc_toast;
+    false
+};
 
 private _s = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
 // Touche accueil (coque ou barre d'app) sur l'écran de verrouillage : déverrouille.

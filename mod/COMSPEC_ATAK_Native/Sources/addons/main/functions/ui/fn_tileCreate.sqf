@@ -2,8 +2,9 @@
     Tuile d'application : fond, icône, libellé, pastille, et un bouton transparent par-dessus.
     _group = controlNull pour créer sur le display (dock, rail), sinon dans le controls group.
     Retourne la liste des contrôles créés (à suivre par l'appelant pour la suppression).
+    _wip : app en chantier (config wip=1) : icône et libellé grisés, bandeau « W.I.P », le clic n'ouvre rien.
 */
-params ["_display", "_group", "_pos", "_icon", ["_label", ""], ["_badge", 0], ["_page", "LAUNCHER"], ["_font", 0.02]];
+params ["_display", "_group", "_pos", "_icon", ["_label", ""], ["_badge", 0], ["_page", "LAUNCHER"], ["_font", 0.02], ["_wip", false]];
 disableSerialization;
 _pos params ["_x0", "_y0", "_w", "_h"];
 private _made = [];
@@ -49,13 +50,22 @@ private _iconH = ((_h - _labelH) * 0.58) min (_w * (uiNamespace getVariable ["CO
 private _iconW = _iconH * pixelW / pixelH;
 private _pic = ["COMSPEC_RscPicture", [_x0 + (_w - _iconW) / 2, _y0 + (_h - _labelH - _iconH) / 2, _iconW, _iconH]] call _mk;
 _pic ctrlSetText ((_icon) call comspec_atak_native_fnc_tr);
-_pic ctrlSetTextColor [0.93, 0.97, 0.94, 1];
+_pic ctrlSetTextColor ([[0.93, 0.97, 0.94, 1], [0.6, 0.64, 0.62, 0.35]] select _wip);
 if (_labelH > 0) then {
     private _t = [["COMSPEC_RscTextCenter", "COMSPEC_RscTextCenterMulti"] select _two, [_x0 + _w * 0.03, _y0 + _h - _labelH - _h * 0.06, _w * 0.94, _labelH]] call _mk;
     _t ctrlSetFontHeight _fh;
     _t ctrlSetText _labelTxt; // i18n:brut (déjà traduit)
+    if (_wip) then { _t ctrlSetTextColor [0.6, 0.64, 0.62, 0.6]; };
 };
-if (_badge > 0) then {
+if (_wip) then {
+    private _rh = _font * 1.05;
+    private _r = ["COMSPEC_RscTextCenter", [_x0 + _w * 0.12, _y0 + (_h - _labelH - _rh) / 2, _w * 0.76, _rh]] call _mk;
+    _r ctrlSetBackgroundColor [0.85, 0.6, 0.12, 0.92];
+    _r ctrlSetTextColor [0.06, 0.06, 0.05, 1];
+    _r ctrlSetFontHeight (_font * 0.85);
+    _r ctrlSetText (("W.I.P") call comspec_atak_native_fnc_tr);
+};
+if (_badge > 0 && {!_wip}) then {
     private _bh = _font * 1.1;
     private _bw = _bh * pixelW / pixelH * 1.4;
     private _b = ["COMSPEC_RscBadge", [_x0 + _w - _bw - _w * 0.04, _y0 + _h * 0.05, _bw, _bh]] call _mk;
@@ -64,10 +74,12 @@ if (_badge > 0) then {
 };
 private _btn = ["COMSPEC_RscButtonOverlay", [_x0, _y0, _w, _h]] call _mk;
 _btn setVariable ["page", _page];
-_btn ctrlSetTooltip ((_label) call comspec_atak_native_fnc_tr);
+_btn ctrlSetTooltip ([_labelTxt, _labelTxt + " (W.I.P)"] select _wip); // i18n:brut (déjà traduit)
+_btn setVariable ["wip", _wip];
 // La navigation supprime cette tuile : on la diffère d'une image pour ne pas détruire le bouton dans son propre handler.
 _btn ctrlAddEventHandler ["ButtonClick", {
     params ["_c"];
+    if (_c getVariable ["wip", false]) exitWith { ["Application en chantier (W.I.P), bientôt disponible", 2] call comspec_atak_native_fnc_toast; };
     [{ [_this] call comspec_atak_native_fnc_navigate; }, _c getVariable ["page", "LAUNCHER"]] call CBA_fnc_execNextFrame;
 }];
 _made

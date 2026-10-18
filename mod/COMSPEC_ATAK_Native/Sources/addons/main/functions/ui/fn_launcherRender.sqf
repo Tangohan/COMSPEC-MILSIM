@@ -117,7 +117,7 @@ if (_filter isNotEqualTo "") then {
     {
         private _col = _forEachIndex mod _cols;
         private _row = floor (_forEachIndex / _cols);
-        private _tile = [_d, _g, [_pad + _col * (_tw + _pad), _y + _row * (_th + _pad), _tw, _th], _x get "icon", _x get "name", [_x get "page"] call comspec_atak_native_fnc_appBadge, _x get "page", _font] call comspec_atak_native_fnc_tileCreate;
+        private _tile = [_d, _g, [_pad + _col * (_tw + _pad), _y + _row * (_th + _pad), _tw, _th], _x get "icon", _x get "name", [_x get "page"] call comspec_atak_native_fnc_appBadge, _x get "page", _font, _x getOrDefault ["wip", false]] call comspec_atak_native_fnc_tileCreate;
         private _list = uiNamespace getVariable ["COMSPEC_ATAK_PageControls", []];
         _list append _tile;
         uiNamespace setVariable ["COMSPEC_ATAK_PageControls", _list];
