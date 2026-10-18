@@ -145,32 +145,38 @@ _note ctrlSetStructuredText parseText (((format ["<t size='0.85' color='#9AA59C'
 _note ctrlCommit 0;
 
 // Affichage d'une section : schéma (ou rien), titre, paragraphes à puces ; hauteur du texte ajustée pour le défilement.
-uiNamespace setVariable ["COMSPEC_ATAK_NetGuide", [_sections apply { [(_x select 0) call comspec_atak_native_fnc_tr, [(_x select 1) call _pic, ""] select ((_x select 1) isEqualTo ""), (_x select 2) apply { _x call comspec_atak_native_fnc_tr }] }, _ih, _u]];
+// Textes traduits et mis en forme ici, une fois : le gestionnaire de clic de la liste ne fait qu'afficher. Il s'exécute
+// hors de ce script (namespace de l'interface, menu principal, Eden), où nos fonctions (fn_tr…) peuvent manquer :
+// un appel de fonction dans le clic échouait et la fenêtre restait sur « Vue d'ensemble » (2.1.0).
+private _pages = _sections apply {
+    _x params ["_t", "_k", "_paras"];
+    private _body = format ["<t size='1.35' color='#7ED38A' font='RobotoCondensedBold'>%1</t><br/>", _t call comspec_atak_native_fnc_tr];
+    { _body = _body + format ["<br/><t color='#7ED38A'>• </t>%1<br/>", _x call comspec_atak_native_fnc_tr]; } forEach _paras;
+    [[_k call _pic, ""] select (_k isEqualTo ""), _body]
+};
+uiNamespace setVariable ["COMSPEC_ATAK_NetGuide", [_pages, _ih, _u]];
 private _show = {
     params ["_d", "_i"];
-    (uiNamespace getVariable ["COMSPEC_ATAK_NetGuide", [[], 0, 0]]) params ["_secs", "_ih", "_u"];
-    private _s = _secs param [_i, []];
+    (uiNamespace getVariable ["COMSPEC_ATAK_NetGuide", [[], 0, 0]]) params ["_pages", "_ih", "_u"];
+    private _s = _pages param [_i, []];
     if (_s isEqualTo []) exitWith {};
-    _s params ["_t", "_p", "_paras"];
+    _s params ["_p", "_body"];
     private _pc = _d displayCtrl 102;
     private _tx = _d displayCtrl 103;
-    _pc ctrlSetText ((_p) call comspec_atak_native_fnc_tr);
+    _pc ctrlSetText _p; // i18n:brut (chemin d'image)
     _pc ctrlShow (_p isNotEqualTo "");
     private _y = [0, _ih + _u] select (_p isNotEqualTo "");
-    private _body = format ["<t size='1.35' color='#7ED38A' font='RobotoCondensedBold'>%1</t><br/>", _t];
-    { _body = _body + format ["<br/><t color='#7ED38A'>• </t>%1<br/>", _x]; } forEach _paras;
-    _tx ctrlSetStructuredText parseText ((_body) call comspec_atak_native_fnc_tr);
+    _tx ctrlSetStructuredText parseText _body; // i18n:brut (déjà traduit)
     private _pos = ctrlPosition _tx;
     _tx ctrlSetPosition [_pos select 0, _y, _pos select 2, 0.01];
     _tx ctrlCommit 0;
     _tx ctrlSetPosition [_pos select 0, _y, _pos select 2, (ctrlTextHeight _tx) + 2 * _u];
     _tx ctrlCommit 0;
-    (_d displayCtrl 101) ctrlSetScrollValues [0, -1];
 };
 uiNamespace setVariable ["COMSPEC_ATAK_NetGuideShow", _show];
 _list ctrlAddEventHandler ["LBSelChanged", {
-    params ["_c", "_i"];
-    [ctrlParent _c, _i] call (uiNamespace getVariable "COMSPEC_ATAK_NetGuideShow");
+    params ["_c"];
+    [ctrlParent _c, lbCurSel _c] call (uiNamespace getVariable ["COMSPEC_ATAK_NetGuideShow", {}]);
 }];
 _list lbSetCurSel ((_sec max 0) min ((count _sections) - 1));
 [_d, lbCurSel _list] call _show;

@@ -166,7 +166,23 @@ EN : The phone only sends and downloads what changed
 - ATAK natif, app Réseau : partie « Synchronisation avec Athena » (`fn_syncStats` nouveau, `fn_pageNetwork`) ; bandeau de dépannage d'Overwatch : « Débit » compte maintenant les deux sens (avant, seulement les retours).
 - À tester en jeu : la fiche part une fois à la connexion puis à un changement de tenue (journal « changé : … ») ; la page Réseau montre des réponses « inchangées » quand rien ne bouge ; messages, marqueurs, formes et ordres arrivent toujours ; la fiche et les écarts restent à jour sur le site (fiche opérateur du membre).
 
-#### Réseau : bilan radio réaliste et guide du réseau (#891)
+#### Guide réseau : toutes les rubriques s'ouvrent (ATAK natif 2.1.1)
+
+### Résumé joueur
+Type : correctif
+FR : Le guide « Réseau et simulation » affiche enfin chaque rubrique
+- Cliquer sur une rubrique du guide (Relais, Brouillage, Envois, Le téléphone…) affiche bien son texte et son schéma ; avant, la fenêtre restait sur « Vue d'ensemble ».
+- Vaut pour le guide ouvert depuis le menu principal comme depuis l'éditeur Eden.
+EN : The "Network and simulation" guide now opens every section
+- Clicking a section of the guide (Relays, Jamming, Transmissions, The phone…) now shows its text and diagram; before, the window stayed on "Overview".
+- Works for the guide opened from the main menu as well as from the Eden editor.
+
+### Détail technique
+- `fn_netGuide` : le gestionnaire LBSelChanged appelait `fn_tr` à chaque clic ; il s'exécute hors du script qui a créé la fenêtre (namespace de l'interface), où la fonction peut manquer : erreur, rien n'était mis à jour (l'affichage initial, fait dans le script, marchait). Textes et schémas de chaque rubrique sont maintenant traduits et mis en forme à l'ouverture ; le clic n'utilise plus que des commandes du moteur et `lbCurSel`. Cause déduite du code et de la capture, non reproduite en jeu.
+
+---
+
+## Réseau : bilan radio réaliste et guide du réseau (#891)
 
 ##### Résumé joueur de la PR
 Type : nouveauté
