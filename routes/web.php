@@ -702,6 +702,7 @@ return function (Router $router) {
     $router->get('/documents/{id}/download', [DocumentsController::class, 'download'], $mwDocuments);
     $router->get('/documents/{slug}', [DocumentsController::class, 'show'], $mwDocuments);
     $router->get('/equipment', [ArsenalWardrobeController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/equipment/icones/{file}', [GameEquipmentAdminController::class, 'memberIcon'], [AuthMiddleware::class]);
     $router->get('/equipment/covers/{tenantId}/{file}', [ArsenalWardrobeController::class, 'streamCover'], [AuthMiddleware::class]);
     $router->get('/equipment/wardrobes', [ArsenalWardrobeController::class, 'redirectHub'], [AuthMiddleware::class]);
     $router->post('/equipment/collections', [ArsenalWardrobeController::class, 'storeCollection'], [AuthMiddleware::class]);

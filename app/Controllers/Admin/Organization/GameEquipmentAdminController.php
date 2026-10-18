@@ -117,7 +117,21 @@ final class GameEquipmentAdminController
         if ($deny !== null) {
             return $deny;
         }
-        $file = (string) ($params['file'] ?? '');
+        return $this->servePng((string) ($params['file'] ?? ''));
+    }
+
+    /** Même icône pour les membres (aperçu des tenues sur /equipment) : connecté, empreinte de sa communauté. */
+    public function memberIcon(Request $request, array $params = []): Response
+    {
+        if (!Session::get('user_id')) {
+            return Response::redirect(url('login'));
+        }
+
+        return $this->servePng((string) ($params['file'] ?? ''));
+    }
+
+    private function servePng(string $file): Response
+    {
         $notFound = (new Response())->setStatusCode(404)->header('Content-Type', 'text/plain; charset=UTF-8')->setBody('Not found');
         if (preg_match('/^([a-f0-9]{64})\.png$/', $file, $m) !== 1) {
             return $notFound;

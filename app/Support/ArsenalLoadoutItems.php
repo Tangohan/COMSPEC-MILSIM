@@ -181,7 +181,7 @@ final class ArsenalLoadoutItems
     /**
      * Ligne d’objet : nom affiché en jeu s’il est connu, sinon nom déduit de la classe.
      *
-     * @return array{name: string, qty: int, class: string, players?: int}
+     * @return array{name: string, qty: int, class: string, players?: int, icon?: string}
      */
     private static function item(string $class, int $qty = 1, string $fallback = ''): array
     {
@@ -196,6 +196,11 @@ final class ArsenalLoadoutItems
         $row = ['name' => $name, 'qty' => max(1, $qty), 'class' => trim($class)];
         if ($known !== null && isset($known['players'])) {
             $row['players'] = (int) $known['players'];
+        }
+        // Icône de l’objet (texture du jeu convertie, envoyée par COMSPEC Link 2.0.88), absente tant qu’elle n’est pas arrivée.
+        $icon = \App\Repositories\GameItemIconRepository::urlFor($row['class']);
+        if ($icon !== null) {
+            $row['icon'] = $icon;
         }
 
         return $row;

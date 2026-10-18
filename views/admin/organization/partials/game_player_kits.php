@@ -63,6 +63,7 @@ $pkWhen = static function (string $raw): string {
                             <ul class="bo-pk__objs">
                                 <?php foreach ($sec['items'] as $it): ?>
                                 <li>
+                                    <?php if (!empty($it['icon'])): ?><img class="bo-pk__ico" src="<?= $h((string) $it['icon']) ?>" alt="" loading="lazy" decoding="async" width="32" height="32"><?php endif; ?>
                                     <span class="bo-pk__obj" translate="no" title="<?= $h((string) ($it['class'] ?? '')) ?>"><?= $h((string) $it['name']) ?></span>
                                     <?php if ((int) $it['qty'] > 1): ?><span class="bo-pk__qty">×<?= (int) $it['qty'] ?></span><?php endif; ?>
                                     <?php if ((int) ($it['players'] ?? 0) > 1): ?><span class="bo-pk__players" title="Joueurs qui l’ont porté sur la période"><?= (int) $it['players'] ?> joueurs</span><?php endif; ?>
