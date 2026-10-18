@@ -484,6 +484,7 @@ class CfgFunctions {
             class atakSignalState {};
             class pendingSyncCount {};
             class seekHistoryPush {};
+            class sseTeamLog {};
             class ecotiIlluminateZone {};
             class ecotiRouteEdit {};
             class ecotiApplyHudSetting {};

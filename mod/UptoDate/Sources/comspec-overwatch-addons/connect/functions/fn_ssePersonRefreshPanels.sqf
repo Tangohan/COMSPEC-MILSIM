@@ -394,6 +394,20 @@ if ((count _query) >= 3 && {_qd isEqualType createHashMap} && {(count _qd) > 0})
     { _rows pushBack format ["<t size='0.42' color='%1'>Latente %2 : %3 (%4)</t>", _cWarn, _x select 0, _x select 1, _x select 2]; } forEach (_qd getOrDefault ["latents", []]);
     if ((_qd getOrDefault ["note", ""]) isNotEqualTo "") then { _rows pushBack format ["<t size='0.40' color='%1'>%2</t>", _cMute, _qd get "note"]; };
 };
+// Ce que nos autres joueurs ont déjà fait sur ce même sujet (fn_sseTeamLog, partagé par l'unité visée).
+if (!isNull _bt) then {
+    private _team = ["get", _bt] call comspec_overwatch_connect_fnc_sseTeamLog;
+    private _others = _team select { (_x param [2, ""]) isNotEqualTo (getPlayerUID player) };
+    if ((count _team) > 0) then {
+        _rows pushBack format ["<t size='0.44' font='TahomaB' color='%1'>ÉQUIPE SUR CE SUJET</t><t size='0.42' color='%2'>  ·  %3 action(s) d'autres opérateurs</t>", _cBlue, _cMute, count _others];
+        {
+            _x params [["_hh", ""], ["_cs", ""], ["_uid", ""], ["_what", ""], ["_det", ""]];
+            private _mine = _uid isEqualTo (getPlayerUID player);
+            _rows pushBack format ["<t size='0.42' color='%1'>%2  </t><t size='0.42' font='TahomaB' color='%3'>%4</t><t size='0.42' color='%5'>  %6</t><t size='0.40' color='%1'>%7</t>",
+                _cMute, _hh, [_cBlue, _cMute] select _mine, [_cs, "vous"] select _mine, _cInk, _what, ["", format ["  ·  %1", _det]] select (_det isNotEqualTo "")];
+        } forEach (_team select [0, 6]);
+    };
+};
 if (_bioMsg isNotEqualTo "") then { _rows pushBack _bioMsg; };
 private _bioCtrl = _disp displayCtrl 9522;
 if (!isNull _bioCtrl) then { _bioCtrl ctrlSetStructuredText parseText (((_rows joinString "<br/>")) call comspec_overwatch_connect_fnc_tr); };

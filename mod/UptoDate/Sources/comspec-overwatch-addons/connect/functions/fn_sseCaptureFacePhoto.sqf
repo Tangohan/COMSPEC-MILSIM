@@ -176,7 +176,9 @@ if (!isNull _disp) then {
     uiNamespace setVariable ["COMSPEC_SsePerson_PhotoMeta", _meta];
     if (!isNull _target) then {
         _target setVariable ["comspec_sse_facePhotoStem", _png, false];
-        _target setVariable ["comspec_sse_facePhotoMeta", _meta, false];
+        // Publique : le SEEK d'un équipier voit qu'un cliché du visage existe déjà (journal d'équipe, synthèse).
+        _target setVariable ["comspec_sse_facePhotoMeta", _meta, true];
+        [_target, "Photo du visage", format ["%1 · qualité %2", _angle, _q]] call comspec_overwatch_connect_fnc_sseTeamLog;
     };
 
     // Le viseur garde l'image du cliché.

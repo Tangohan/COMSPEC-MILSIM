@@ -3052,6 +3052,11 @@ public static partial class Extension
         {
             return ClipCommand(function, args);
         }
+        // Transfert de photos et de musiques entre téléphones par l'app Bluetooth (BtTransfer.cs).
+        if (function != null && function.StartsWith("Bt", StringComparison.Ordinal))
+        {
+            return BtCommand(function, args);
+        }
 #endif
 
         if (function == "MemStats")

@@ -153,6 +153,7 @@ switch (_act) do {
         if (_shade) then { ["build"] call comspec_atak_native_fnc_quickSettings; };
         if (_lock || _shade) then { ["front"] call comspec_atak_native_fnc_fx; [] call comspec_atak_native_fnc_overlayFront; };
         [] call comspec_atak_native_fnc_toast;
+        ["draw"] call comspec_atak_native_fnc_buzzAlert;
         true
     };
     default { false };
