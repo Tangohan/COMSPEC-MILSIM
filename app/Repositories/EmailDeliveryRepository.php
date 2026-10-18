@@ -99,11 +99,14 @@ class EmailDeliveryRepository
         return (int) $stmt->fetchColumn();
     }
 
-    /** Envois réellement partis chez le fournisseur depuis $since (le mode fichier de développement ne compte pas). */
+    /**
+     * Envois réellement partis chez le fournisseur de la plateforme depuis $since (le mode fichier de développement
+     * et les comptes d'envoi des communautés, « community:… », ne comptent pas).
+     */
     public function countSentSince(string $since): int
     {
         $stmt = $this->pdo->prepare(
-            "SELECT COUNT(*) FROM email_deliveries WHERE created_at >= ? AND status = 'sent' AND transport <> 'file'"
+            "SELECT COUNT(*) FROM email_deliveries WHERE created_at >= ? AND status = 'sent' AND transport <> 'file' AND transport NOT LIKE 'community:%'"
         );
         $stmt->execute([$since]);
 

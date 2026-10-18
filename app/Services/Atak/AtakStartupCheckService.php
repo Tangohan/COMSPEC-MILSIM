@@ -4,14 +4,21 @@ declare(strict_types=1);
 
 namespace App\Services\Atak;
 
+use App\Repositories\TenantRepository;
+use App\Services\Integrations\DiscordEventRelayService;
 use App\Services\Integrations\DiscordWebhookService;
 use App\Services\Security\FileRateLimiter;
+use App\Support\DiscordWebhookCatalog;
 
 /**
- * Check de démarrage du mod ATAK natif (fn_startupCheck, commande DLL StartupCheck) relayé dans le salon Discord
- * de debug de la plateforme : un message court par joueur et par session, lisible par les joueurs (FR puis EN).
+ * Check de démarrage du mod ATAK natif (fn_startupCheck, commande DLL StartupCheck) relayé sur Discord :
+ * un message court par joueur et par session, lisible par les joueurs (FR puis EN).
  *
- * Salon : webhook DISCORD_DEBUG_WEBHOOK dans le .env du VPS. Sans lui, le rapport est accepté et rien n'est posté.
+ * Salon : celui que la communauté du joueur a choisi dans Back-office > Intégrations > Relais Discord,
+ * « Check de démarrage du mod » (désactivé par défaut). La communauté est reconnue au nom que le jeu envoie une fois
+ * le joueur lié (« lié · Nom »), ou au champ « community » ; un nom porté par deux communautés n'est relayé nulle part.
+ * DISCORD_DEBUG_WEBHOOK (.env, facultatif) : copie de tous les checks pour l'équipe de développement de la plateforme,
+ * y compris ceux des joueurs non liés. Sans salon, le rapport est accepté et rien n'est posté.
  * Rien n'est enregistré en base. Aucune adresse IP, aucun UID Steam (le mod n'envoie qu'une empreinte), aucun lien :
  * les textes du mod sont nettoyés (liens, adresses IP, dossier utilisateur Windows, mentions) avant Discord.
  */
@@ -51,19 +58,36 @@ final class AtakStartupCheckService
     private const PLAYER_MAX_PER_HOUR = 6;
     private const GLOBAL_MAX_PER_MINUTE = 20;
 
+    /** Au plus 20 checks par minute dans le salon d'une même communauté. */
+    private const COMMUNITY_MAX_PER_MINUTE = 20;
+
     /** @var \Closure(string, array<string, mixed>): array{ok:bool, error?:string} */
     private \Closure $sender;
 
+    /** @var \Closure(string): ?array{tenant:int, url:?string} */
+    private \Closure $communityChannel;
+
     /**
+     * @param string|null $webhookUrl salon de la plateforme (null : DISCORD_DEBUG_WEBHOOK)
      * @param (\Closure(string, array<string, mixed>): array{ok:bool, error?:string})|null $sender envoi Discord (tests)
+     * @param (\Closure(string): ?array{tenant:int, url:?string})|null $communityChannel nom de communauté -> salon (tests)
      */
     public function __construct(
         private ?string $webhookUrl = null,
         private FileRateLimiter $limiter = new FileRateLimiter(),
         private DiscordWebhookService $discord = new DiscordWebhookService(),
-        ?\Closure $sender = null
+        ?\Closure $sender = null,
+        ?\Closure $communityChannel = null
     ) {
-        $this->sender = $sender ?? fn (string $url, array $embed): array => $this->discord->sendRawEmbed($url, $embed, 'Athena · Debug');
+        $this->sender = $sender ?? fn (string $url, array $embed): array => $this->discord->sendRawEmbed($url, $embed, 'Athena · Check');
+        $this->communityChannel = $communityChannel ?? static function (string $name): ?array {
+            $ids = (new TenantRepository())->findIdsByName($name);
+            if (count($ids) !== 1) {
+                return null;
+            }
+
+            return ['tenant' => $ids[0], 'url' => (new DiscordEventRelayService())->resolveUrl($ids[0], DiscordWebhookCatalog::KEY_ATAK_STARTUP_CHECK)];
+        };
     }
 
     /**
@@ -77,8 +101,16 @@ final class AtakStartupCheckService
         if ($report === null) {
             return ['ok' => false, 'status' => 'invalid', 'http' => 400];
         }
-        $url = $this->webhookUrl ?? self::configuredWebhook();
-        if ($url === '' || !$this->discord->isValidWebhookUrl($url)) {
+        $targets = [];
+        $community = $this->community($report['community']);
+        if ($community !== null && $this->discord->isValidWebhookUrl((string) $community['url'])) {
+            $targets['community'] = (string) $community['url'];
+        }
+        $platform = $this->webhookUrl ?? self::configuredWebhook();
+        if ($platform !== '' && $this->discord->isValidWebhookUrl($platform) && !in_array($platform, $targets, true)) {
+            $targets['platform'] = $platform;
+        }
+        if ($targets === []) {
             return ['ok' => true, 'status' => 'no_channel', 'http' => 200];
         }
         $player = $report['player_key'];
@@ -89,14 +121,63 @@ final class AtakStartupCheckService
             || $this->limiter->hit('atak_startup_global', 60) > self::GLOBAL_MAX_PER_MINUTE) {
             return ['ok' => true, 'status' => 'throttled', 'http' => 200];
         }
-        $sent = ($this->sender)($url, self::buildEmbed($report));
-        if (!($sent['ok'] ?? false)) {
-            error_log('[atak/startup-check] Discord : ' . (string) ($sent['error'] ?? 'échec'));
-
+        if (isset($targets['community'])
+            && $this->limiter->hit('atak_startup_tenant:' . (int) ($community['tenant'] ?? 0), 60) > self::COMMUNITY_MAX_PER_MINUTE) {
+            unset($targets['community']);
+            if ($targets === []) {
+                return ['ok' => true, 'status' => 'throttled', 'http' => 200];
+            }
+        }
+        $embed = self::buildEmbed($report);
+        $posted = 0;
+        foreach ($targets as $where => $url) {
+            $sent = ($this->sender)($url, $embed);
+            if ($sent['ok'] ?? false) {
+                $posted++;
+            } else {
+                error_log('[atak/startup-check] Discord (' . $where . ') : ' . (string) ($sent['error'] ?? 'échec'));
+            }
+        }
+        if ($posted === 0) {
             return ['ok' => false, 'status' => 'discord_failed', 'http' => 502];
         }
 
         return ['ok' => true, 'status' => 'posted', 'http' => 200];
+    }
+
+    /** @return array{tenant:int, url:?string}|null */
+    private function community(string $name): ?array
+    {
+        if ($name === '') {
+            return null;
+        }
+        try {
+            return ($this->communityChannel)($name);
+        } catch (\Throwable $e) {
+            error_log('[atak/startup-check] communauté : ' . $e->getMessage());
+
+            return null;
+        }
+    }
+
+    /**
+     * Nom de la communauté du joueur : champ « community » s'il est envoyé, sinon la fin de l'étape « link » quand le
+     * joueur est lié (« ok|lié · 1er RPIMa »). Texte brut, sans la mise en forme Discord.
+     *
+     * @param array<string, mixed> $body
+     */
+    public static function communityName(array $body): string
+    {
+        $raw = is_scalar($body['community'] ?? null) ? (string) $body['community'] : '';
+        if ($raw === '') {
+            $link = is_string($body['step_link'] ?? null) ? $body['step_link'] : '';
+            if (preg_match('/^\s*ok\s*\|\s*li(?:é|e) · (.+)$/su', $link, $m) === 1) {
+                $raw = $m[1];
+            }
+        }
+        $raw = trim((string) preg_replace('/[\x00-\x1F\x7F]+/u', ' ', mb_check_encoding($raw, 'UTF-8') ? $raw : ''));
+
+        return mb_strlen($raw) <= 120 ? $raw : '';
     }
 
     public static function configuredWebhook(): string
@@ -110,7 +191,7 @@ final class AtakStartupCheckService
      * @param array<string, mixed> $body
      * @return array{atak:string, config:string, link:string, link_expected:string, arma:string, player:string,
      *   callsign:string, player_key:string, session:string, world:string, mission:string, mp:bool, trigger:string,
-     *   steps:list<array{id:string, status:string, detail:string}>}|null
+     *   community:string, steps:list<array{id:string, status:string, detail:string}>}|null
      */
     public static function normalize(array $body): ?array
     {
@@ -156,6 +237,7 @@ final class AtakStartupCheckService
             'mission' => $str('mission', 60),
             'mp' => in_array(strtolower(trim((string) (is_scalar($body['mp'] ?? null) ? $body['mp'] : ''))), ['1', 'true'], true),
             'trigger' => array_key_exists($trigger, self::TRIGGERS) ? $trigger : 'start',
+            'community' => self::communityName($body),
             'steps' => $steps,
         ];
     }

@@ -17,6 +17,9 @@ declare(strict_types=1);
  * @var list<array{id:string,label:string,masked:string}> $discord_relays
  * @var bool $use_community_relay
  * @var bool $community_relay_ready
+ * @var array<string, mixed> $mail_sender
+ * @var array<string, array{label:string, host:string, port:int, encryption:string, username:string}> $mail_providers
+ * @var string $admin_email
  */
 
 $keys = is_array($integration_keys ?? null) ? $integration_keys : [];
@@ -28,6 +31,10 @@ $discordState = is_array($discord_state ?? null) ? $discord_state : ['default_ur
 $sseRelays = is_array($discord_relays ?? null) ? $discord_relays : [];
 $useCommunityRelay = !empty($use_community_relay);
 $communityRelayReady = !empty($community_relay_ready);
+$mailSender = is_array($mail_sender ?? null) ? $mail_sender : [];
+$mailProviders = is_array($mail_providers ?? null) ? $mail_providers : [];
+$mailProvider = (string) ($mailSender['provider'] ?? 'smtp');
+$adminEmail = (string) ($admin_email ?? '');
 $discordDefaultUrl = (string) ($discordState['default_url'] ?? '');
 $discordEventState = is_array($discordState['events'] ?? null) ? $discordState['events'] : [];
 $discordGroups = [];
@@ -109,7 +116,8 @@ $flashSuccess = \App\Core\Session::getFlash('success');
     <p class="ath-note__text">
         Reliez Discord à votre communauté : un salon commun pour ce qui n’a pas de salon à part,
         puis un choix pour chaque type d’événement (candidatures, effectifs, opérations, photos Quick Picture…).
-        Les transmissions terrain peuvent viser des salons supplémentaires. Les jetons d’accès servent aux outils qui viennent lire le calendrier.
+        Les transmissions terrain peuvent viser des salons supplémentaires. Les e-mails de la communauté peuvent partir de votre propre compte d’envoi.
+        Les jetons d’accès servent aux outils qui viennent lire le calendrier.
     </p>
 </div>
 
@@ -207,6 +215,113 @@ $flashSuccess = \App\Core\Session::getFlash('success');
         <div class="ath-form__actions" style="margin-top:10px;">
             <button type="submit" class="ath-btn">Envoyer un message d’essai</button>
         </div>
+    </form>
+</section>
+
+<section id="emails-communaute" class="ath-card ath-rise" style="padding:18px 20px;margin-bottom:22px;">
+    <h2 class="ath-section-title" style="margin-top:0;">E-mails de la communauté</h2>
+    <p class="ath-item__meta" style="margin:0 0 6px;">
+        Les e-mails liés à votre communauté (invitations, candidatures, effectifs, codes de connexion, mots de passe…) partent de
+        <strong>votre</strong> compte d’envoi : à votre nom, depuis votre adresse, sur votre quota.
+        Sans compte d’envoi actif, ces e-mails restent sur l’envoi commun d’Athena, s’il existe ; sinon ils ne partent pas.
+    </p>
+    <p class="ath-item__meta" style="margin:0 0 12px;">
+        <?php if (!empty($mailSender['ready'])): ?>
+            <strong>Actif</strong> : les e-mails partent de <?= $h((string) ($mailSender['from_address'] ?? '')) ?>.
+        <?php elseif (!empty($mailSender['enabled'])): ?>
+            <strong>Incomplet</strong> : renseignez l’expéditeur et le serveur.
+        <?php else: ?>
+            <strong>Coupé</strong> : aucun compte d’envoi propre à la communauté.
+        <?php endif; ?>
+    </p>
+    <div class="ath-discord-howto">
+        <p class="ath-discord-howto__title">Ce qu’il faut renseigner</p>
+        <ol class="ath-discord-howto__list">
+            <li>Un <strong>expéditeur</strong> : une adresse de votre domaine, par exemple <code>no-reply@votre-communaute.fr</code>.</li>
+            <li>Un <strong>serveur d’envoi</strong> : celui de votre hébergeur (OVH, Hostinger, Gmail avec mot de passe d’application…) ou un service d’envoi comme Brevo (300 e-mails par jour gratuits).</li>
+            <li>L’<strong>identifiant</strong> et le <strong>mot de passe</strong> (ou la clé SMTP) donnés par ce service. Le mot de passe est chiffré et n’est jamais réaffiché.</li>
+            <li>Enregistrez, puis envoyez-vous un <strong>e-mail d’essai</strong>.</li>
+        </ol>
+        <p class="ath-discord-howto__note">
+            Pour que vos e-mails n’arrivent pas en indésirables, déclarez le service d’envoi dans le DNS de votre domaine (enregistrements SPF et DKIM indiqués par le service).
+        </p>
+    </div>
+    <form method="post" action="<?= $h(url('back-office/integrations/emails')) ?>" class="ath-form" autocomplete="off">
+        <?= \App\Core\Csrf::field() ?>
+        <label class="ath-check" style="margin-bottom:12px;">
+            <input type="hidden" name="enabled" value="0">
+            <input type="checkbox" name="enabled" value="1" <?= !empty($mailSender['enabled']) ? 'checked' : '' ?>>
+            <span>Envoyer les e-mails de la communauté avec ce compte</span>
+        </label>
+        <div class="ath-form__grid">
+            <label class="ath-field">
+                <span class="ath-field__label">Adresse d’expéditeur</span>
+                <input type="email" name="from_address" maxlength="190" class="ath-field__input" value="<?= $h((string) ($mailSender['from_address'] ?? '')) ?>" placeholder="no-reply@votre-communaute.fr">
+            </label>
+            <label class="ath-field">
+                <span class="ath-field__label">Nom affiché</span>
+                <input type="text" name="from_name" maxlength="80" class="ath-field__input" value="<?= $h((string) ($mailSender['from_name'] ?? '')) ?>" placeholder="Votre communauté">
+            </label>
+            <label class="ath-field">
+                <span class="ath-field__label">Adresse de réponse (facultatif)</span>
+                <input type="email" name="reply_to" maxlength="190" class="ath-field__input" value="<?= $h((string) ($mailSender['reply_to'] ?? '')) ?>" placeholder="contact@votre-communaute.fr">
+                <span class="ath-field__help">Là où arrivent les réponses des destinataires.</span>
+            </label>
+            <label class="ath-field">
+                <span class="ath-field__label">Service d’envoi</span>
+                <select name="provider" class="ath-field__input">
+                    <?php foreach ($mailProviders as $pk => $pv): ?>
+                        <option value="<?= $h((string) $pk) ?>" <?= $mailProvider === $pk ? 'selected' : '' ?>><?= $h((string) ($pv['label'] ?? $pk)) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label class="ath-field">
+                <span class="ath-field__label">Serveur SMTP</span>
+                <input type="text" name="host" maxlength="190" spellcheck="false" class="ath-field__input" value="<?= $h((string) ($mailSender['host'] ?? '')) ?>" placeholder="smtp.votre-hebergeur.fr">
+                <span class="ath-field__help">Laissez vide pour Brevo, SendGrid, Mailgun ou Amazon SES (serveur connu, SES en Irlande).</span>
+            </label>
+            <label class="ath-field">
+                <span class="ath-field__label">Port</span>
+                <select name="port" class="ath-field__input">
+                    <?php foreach ([587 => '587 (recommandé)', 465 => '465', 2525 => '2525', 25 => '25'] as $port => $portLabel): ?>
+                        <option value="<?= (int) $port ?>" <?= (int) ($mailSender['port'] ?? 587) === $port ? 'selected' : '' ?>><?= $h($portLabel) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label class="ath-field">
+                <span class="ath-field__label">Chiffrement</span>
+                <select name="encryption" class="ath-field__input">
+                    <?php foreach (['tls' => 'STARTTLS (port 587)', 'ssl' => 'SSL (port 465)', 'none' => 'Aucun (déconseillé)'] as $enc => $encLabel): ?>
+                        <option value="<?= $h($enc) ?>" <?= (string) ($mailSender['encryption'] ?? 'tls') === $enc ? 'selected' : '' ?>><?= $h($encLabel) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label class="ath-field">
+                <span class="ath-field__label">Identifiant</span>
+                <input type="text" name="username" maxlength="190" spellcheck="false" autocomplete="off" class="ath-field__input" value="<?= $h((string) ($mailSender['username'] ?? '')) ?>" placeholder="Souvent l’adresse d’expéditeur">
+                <span class="ath-field__help">SendGrid : laissez vide (« apikey » est mis tout seul).</span>
+            </label>
+            <div class="ath-field">
+                <label class="ath-field__label" for="mail-sender-password">Mot de passe ou clé SMTP</label>
+                <input type="password" id="mail-sender-password" name="password" maxlength="500" autocomplete="new-password" class="ath-field__input" placeholder="<?= !empty($mailSender['has_password']) ? 'Enregistré · laissez vide pour le garder' : '' ?>">
+                <?php if (!empty($mailSender['has_password'])): ?>
+                    <label class="ath-check" style="margin-top:6px;">
+                        <input type="checkbox" name="clear_password" value="1">
+                        <span>Effacer le mot de passe enregistré</span>
+                    </label>
+                <?php endif; ?>
+            </div>
+        </div>
+        <div class="ath-form__actions" style="margin-top:16px;">
+            <button type="submit" class="ath-btn ath-btn--solid">Enregistrer le compte d’envoi</button>
+        </div>
+    </form>
+    <form method="post" action="<?= $h(url('back-office/integrations/emails/essai')) ?>" style="margin-top:14px;">
+        <?= \App\Core\Csrf::field() ?>
+        <p class="ath-item__meta" style="margin:0 0 8px;">
+            L’essai part tout de suite avec le réglage enregistré<?= $adminEmail !== '' ? ', vers ' . $h($adminEmail) : '' ?>. En cas d’échec, le message d’erreur du serveur s’affiche ici.
+        </p>
+        <button type="submit" class="ath-btn" <?= !empty($mailSender['ready']) ? '' : 'disabled' ?>>Envoyer un e-mail d’essai</button>
     </form>
 </section>
 

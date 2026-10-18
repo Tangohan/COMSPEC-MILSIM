@@ -48,6 +48,19 @@ class TenantRepository
         return $row ?: null;
     }
 
+    /**
+     * Communautés portant exactement ce nom (le jeu ne connaît que le nom affiché de la communauté liée).
+     *
+     * @return list<int>
+     */
+    public function findIdsByName(string $name, int $limit = 2): array
+    {
+        $stmt = $this->pdo()->prepare('SELECT id FROM tenants WHERE name = ? ORDER BY id LIMIT ' . max(1, min(10, $limit)));
+        $stmt->execute([$name]);
+
+        return array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN));
+    }
+
     public function findBySlug(string $slug): ?array
     {
         $slugEq = SqlText::equals($this->pdo(), 'slug');

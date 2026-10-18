@@ -9,6 +9,7 @@ use App\Repositories\EmailDigestRepository;
 use App\Services\Email\EmailEvents;
 use App\Services\Email\MailBudget;
 use App\Services\Email\MailBudgetGate;
+use App\Services\Email\TenantMailSender;
 use App\Services\Integrations\DiscordEventRelayService;
 use App\Support\HtmlTranslator;
 
@@ -21,7 +22,8 @@ final class EmailService
         private EmailTemplateEngine $templateEngine,
         private EmailDeliveryRepository $deliveryRepository,
         private ?MailBudgetGate $budgetGate = null,
-        private ?EmailDigestRepository $digestRepository = null
+        private ?EmailDigestRepository $digestRepository = null,
+        private ?TenantMailSender $tenantSender = null
     ) {}
 
     /** Dernier message d’erreur après un envoi échoué (même requête HTTP). */
@@ -84,11 +86,19 @@ final class EmailService
         $mailerType = (string) ($cfg['default_mailer'] ?? 'file');
         $reply = $replyTo !== null && trim((string) $replyTo) !== '' ? trim((string) $replyTo) : null;
 
-        if ($mailerType !== 'file'
-            && $this->holdForBudget($eventCode, $to, $subject, $htmlBody, $textBody, $tenantId, $reply, $payloadSummary, $campaignId, $mailerType)) {
-            return true;
+        // Compte d'envoi de la communauté : son expéditeur, son serveur, son quota (pas celui de la plateforme).
+        $community = $this->communityTransport($tenantId);
+        if ($community !== null) {
+            $transport = $community;
+            $mailerType = 'community';
+        } else {
+            $transport = $this->transportResolver;
+            if ($mailerType !== 'file'
+                && $this->holdForBudget($eventCode, $to, $subject, $htmlBody, $textBody, $tenantId, $reply, $payloadSummary, $campaignId, $mailerType)) {
+                return true;
+            }
         }
-        $result = $this->transportResolver->sendMessage(
+        $result = $transport->sendMessage(
             $to,
             $subject,
             $htmlBody,
@@ -122,6 +132,20 @@ final class EmailService
         }
 
         return $result['ok'];
+    }
+
+    private function communityTransport(?int $tenantId): ?EmailTransportResolver
+    {
+        if ($tenantId === null || $tenantId < 2) {
+            return null;
+        }
+        try {
+            $config = ($this->tenantSender ??= new TenantMailSender())->transportConfig($tenantId);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        return $config !== null ? new EmailTransportResolver($config) : null;
     }
 
     /**

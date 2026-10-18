@@ -39,13 +39,13 @@ final class AtakStartupCheckServiceTest extends TestCase
     }
 
     /** @param list<array<string, mixed>> $sent */
-    private function service(array &$sent, ?string $webhook = self::WEBHOOK): AtakStartupCheckService
+    private function service(array &$sent, ?string $webhook = self::WEBHOOK, ?\Closure $community = null): AtakStartupCheckService
     {
         return new AtakStartupCheckService($webhook, new FileRateLimiter(), sender: function (string $url, array $embed) use (&$sent): array {
-            $sent[] = $embed;
+            $sent[] = $embed + ['_url' => $url];
 
             return ['ok' => true];
-        });
+        }, communityChannel: $community ?? static fn (string $name): ?array => null);
     }
 
     public function testPostsOneEmbedPerPlayerSession(): void
@@ -111,6 +111,45 @@ final class AtakStartupCheckServiceTest extends TestCase
         $result = $this->service($sent, '')->handle($this->body('s1'));
 
         self::assertTrue($result['ok']);
+        self::assertSame('no_channel', $result['status']);
+        self::assertSame([], $sent);
+    }
+
+    public function testLinkedPlayerGoesToHisCommunityChannel(): void
+    {
+        $sent = [];
+        $asked = [];
+        $community = static function (string $name) use (&$asked): ?array {
+            $asked[] = $name;
+
+            return $name === '1er RPIMa' ? ['tenant' => 7, 'url' => 'https://discord.com/api/webhooks/7/commu'] : null;
+        };
+        $body = $this->body('s' . bin2hex(random_bytes(6)));
+        $body['trigger'] = 'link';
+        $body['step_link'] = 'ok|lié · 1er RPIMa';
+
+        self::assertSame('posted', $this->service($sent, '', $community)->handle($body)['status']);
+        self::assertSame(['1er RPIMa'], $asked);
+        self::assertCount(1, $sent);
+        self::assertSame('https://discord.com/api/webhooks/7/commu', $sent[0]['_url']);
+
+        // Avec le salon facultatif de la plateforme : une copie de plus.
+        $sent = [];
+        $body['session'] = 's' . bin2hex(random_bytes(6));
+        $this->service($sent, self::WEBHOOK, $community)->handle($body);
+        self::assertSame(['https://discord.com/api/webhooks/7/commu', self::WEBHOOK], array_column($sent, '_url'));
+    }
+
+    public function testUnlinkedPlayerHasNoCommunity(): void
+    {
+        self::assertSame('', AtakStartupCheckService::communityName(['step_link' => 'fail|non lié : jeton expiré']));
+        self::assertSame('1er RPIMa', AtakStartupCheckService::communityName(['step_link' => 'ok|lié · 1er RPIMa']));
+        self::assertSame('Task Force', AtakStartupCheckService::communityName(['community' => 'Task Force', 'step_link' => 'ok|lié · Autre']));
+
+        $sent = [];
+        $body = $this->body('s' . bin2hex(random_bytes(6)));
+        $body['step_link'] = 'fail|non lié';
+        $result = $this->service($sent, '', static fn (string $name): ?array => ['tenant' => 7, 'url' => 'https://discord.com/api/webhooks/7/commu'])->handle($body);
         self::assertSame('no_channel', $result['status']);
         self::assertSame([], $sent);
     }

@@ -560,7 +560,7 @@ if (!function_exists('email_file_mailer_notice')) {
         $m = strtolower((string) (email_config()['default_mailer'] ?? ''));
 
         return $m === 'file'
-            ? 'Le courrier est en mode « fichier » : les messages sont enregistrés dans storage/mail-outbox/ sur le serveur, ils ne partent pas sur Internet. Pour un envoi réel, configurez SMTP (MAIL_MAILER=smtp et MAIL_HOST, etc.) dans .env.'
+            ? 'Le courrier est en mode « fichier » : les messages sont enregistrés dans storage/mail-outbox/ sur le serveur, ils ne partent pas sur Internet. Pour un envoi réel, chaque communauté peut saisir son compte d’envoi dans Intégrations > E-mails de la communauté, ou configurez SMTP (MAIL_MAILER=smtp et MAIL_HOST, etc.) dans .env.'
             : '';
     }
 }
