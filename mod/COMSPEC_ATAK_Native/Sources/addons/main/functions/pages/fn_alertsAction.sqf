@@ -62,8 +62,13 @@ switch (_action) do {
     case "map": {
         private _e = (missionNamespace getVariable ["COMSPEC_ATAK_AlertLog", []]) param [_arg, []];
         if ((count _e) < 3) exitWith {};
+        _s set ["mapFollow", false];
         ["MAP"] call comspec_atak_native_fnc_navigate;
-        [{ [_this, 0.05] call comspec_atak_native_fnc_mapCenter; }, [(_e select 2) select 0, (_e select 2) select 1]] call CBA_fnc_execNextFrame;
+        // Carte posée à sa place (fn_pageMap) avant le centrage : 0,15 s, puis le point clignote au centre (ping local).
+        [{
+            [_this, 0.05] call comspec_atak_native_fnc_mapCenter;
+            ["recv", [[_this select 0, _this select 1, 0], "ALERTE", player]] call comspec_atak_native_fnc_mapPing;
+        }, [(_e select 2) select 0, (_e select 2) select 1], 0.15] call CBA_fnc_waitAndExecute;
     };
     case "clearLog": { missionNamespace setVariable ["COMSPEC_ATAK_AlertLog", []]; call _render; };
     case "saluteClear": {

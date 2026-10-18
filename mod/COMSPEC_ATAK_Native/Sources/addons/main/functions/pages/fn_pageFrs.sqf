@@ -315,6 +315,7 @@ if (_pjOn && {_view isNotEqualTo ""}) then {
                 _rows pushBack ["person", _dir + "ui_gallery.paa", format ["%1<br/><t size='0.75' color='#9a9a9a'>%2</t>", [_name] call _esc, ["", "déjà jointe"] select _in],
                     [["JOINDRE", compile format ["['add', %1] call comspec_atak_native_fnc_frsAction;", _i], true, !_in]], [0.8, 0.8, 0.8, 1]];
             };
+            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["FRS", { ["back"] call comspec_atak_native_fnc_frsAction; }]];
             _rows pushBack ["buttons", [["RETOUR AUX PIÈCES", { ["back"] call comspec_atak_native_fnc_frsAction; }]]];
         };
         case "sent": {
@@ -356,6 +357,7 @@ if (_pjOn && {_view isNotEqualTo ""}) then {
                             { if (_x isEqualTo "") then { _rows pushBack ["text", "<t size='0.8' color='#9a9a9a'>Photo au format PNG : visible sur Athena seulement.</t>"]; } else { _rows pushBack ["image", _x]; }; } forEach _imgs;
                         };
                     };
+                    (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["FRS", { ["libOpen", ""] call comspec_atak_native_fnc_frsAction; }]];
                     _rows pushBack ["buttons", [["RETOUR À LA LISTE", { ["libOpen", ""] call comspec_atak_native_fnc_frsAction; }]]];
                 } else {
                     _rows pushBack ["title", format ["Fiches Athena (%1)", count _notes]];
@@ -371,6 +373,7 @@ if (_pjOn && {_view isNotEqualTo ""}) then {
                     _rows pushBack ["buttons", [[format ["ACTUALISER%1", ["", format [" (%1)", _at]] select (_at isNotEqualTo "")], compile format ["['load', %1] call comspec_atak_native_fnc_frsLibrary;", str _scope]]]];
                 };
             };
+            (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["FRS", { ["back"] call comspec_atak_native_fnc_frsAction; }]];
             _rows pushBack ["buttons", [["RETOUR AUX PIÈCES", { ["back"] call comspec_atak_native_fnc_frsAction; }]]];
         };
     };

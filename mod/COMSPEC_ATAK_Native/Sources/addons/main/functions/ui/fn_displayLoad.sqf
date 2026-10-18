@@ -26,6 +26,9 @@ uiNamespace setVariable ["COMSPEC_ATAK_ShadeOpen", false];
 uiNamespace setVariable ["COMSPEC_ATAK_ShadeCtrls", []];
 uiNamespace setVariable ["COMSPEC_ATAK_ShadeHandle", []];
 uiNamespace setVariable ["COMSPEC_ATAK_ToastPill", []];
+// Mode disposition (fn_phoneDrag) : terminé quand le téléphone se referme.
+uiNamespace setVariable ["COMSPEC_ATAK_Arrange", false];
+uiNamespace setVariable ["COMSPEC_ATAK_ArrangeCtrls", []];
 // Écran 3D du JPC : une carte ne se dessine pas dans une texture UI, vue aérienne à la place (fn_jpcMap).
 if (_texture) then { ["init", _display] call comspec_atak_native_fnc_jpcMap; };
 // Textes fixes de l'écran (ui/displays.hpp) dans la langue du téléphone (fn_tr ; sans effet en français).

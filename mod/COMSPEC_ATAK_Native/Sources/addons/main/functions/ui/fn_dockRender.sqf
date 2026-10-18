@@ -4,6 +4,8 @@ private _d = ([] call comspec_atak_native_fnc_display);
 if (isNull _d) exitWith { false };
 { ctrlDelete _x; } forEach (uiNamespace getVariable ["COMSPEC_ATAK_DockControls", []]);
 
+// Écran de verrouillage affiché : ni dock ni rail par-dessus (il revient au déverrouillage, fn_lockScreen "unlock").
+if (uiNamespace getVariable ["COMSPEC_ATAK_LockUp", false]) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []]; true };
 private _l = [] call comspec_atak_native_fnc_layoutGet;
 // Carte en mode PETIT : dock et rail retirés (fn_layoutGet).
 if (((_l get "dockRect") select 3) <= 0 && {((_l get "rail") select 2) <= 0}) exitWith { uiNamespace setVariable ["COMSPEC_ATAK_DockControls", []]; true };

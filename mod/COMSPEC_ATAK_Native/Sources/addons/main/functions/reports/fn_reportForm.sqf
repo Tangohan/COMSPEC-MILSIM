@@ -88,6 +88,7 @@ private _toolBtns = [];
 } forEach (_m getOrDefault ["tools", []]);
 private _bar = [];
 if ((count _toolBtns) > 0) then { _bar pushBack ["Propositions", _toolBtns]; };
+(uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) set ["backSub", ["REPORTS", ["back"] call _act]];
 _bar pushBack ["Fiche", [["‹ RETOUR", ["back"] call _act, "", "Retour à la liste ; la fiche reste en brouillon"], ["EFFACER", ["clear"] call _act, "", "Repart d'une fiche vide"]]];
 _rows pushBack ["bar", _bar];
 

@@ -24,7 +24,9 @@
                    estimée (puissance reçue, bruitée selon la qualité du lien) ; position par moindres carrés.
                    Résultat ajouté à missionNamespace COMSPEC_ATAK_Trilat (10 dernières, effacées au bout de 10 min) :
                    [nom, position estimée ou [], rayon d'erreur m, [[position source, distance estimée]...], heure, netId].
-      "trilatClear" : efface les triangulations.
+      "trilatClear" : efface les triangulations (et celle en cours).
+      "locateStart" : [netId visé] lance la triangulation : les relais écoutent 6 à 10 s (bandeau), puis "locate".
+                   Annulable par "trilatClear" (menu clic droit de la carte : « Effacer les localisations »).
 */
 params [["_act", "list"], ["_arg", []]];
 private _now = [time, serverTime] select isMultiplayer;
@@ -270,7 +272,25 @@ switch (_act) do {
         [_best select 1, _best select 2, _best select 3]
     };
     case "clear": { missionNamespace setVariable ["COMSPEC_ATAK_Coverage", nil]; };
-    case "trilatClear": { missionNamespace setVariable ["COMSPEC_ATAK_Trilat", []]; };
+    case "trilatClear": { missionNamespace setVariable ["COMSPEC_ATAK_Trilat", []]; missionNamespace setVariable ["COMSPEC_ATAK_TrilatPending", []]; };
+    case "locateStart": {
+        // Retour de jeu : la localisation tombait instantanément. Les relais écoutent d'abord l'émission de la cible.
+        private _id = _arg;
+        if (_id isEqualType objNull) then { _id = netId _id; };
+        if (isNull (objectFromNetId _id)) exitWith { ["WARNING", "Appareil introuvable", 3, 20] call comspec_atak_native_fnc_notify; };
+        private _dur = 6 + random 4;
+        private _token = diag_tickTime;
+        missionNamespace setVariable ["COMSPEC_ATAK_TrilatPending", [_id, _token, diag_tickTime + _dur]];
+        ["INFO", format ["Triangulation en cours : écoute des relais pendant %1 s…", round _dur], 4, 20] call comspec_atak_native_fnc_notify;
+        [{
+            params ["_id", "_token"];
+            // Annulée (« Effacer les localisations ») ou remplacée par une autre : rien.
+            if (((missionNamespace getVariable ["COMSPEC_ATAK_TrilatPending", []]) param [1, -1]) isNotEqualTo _token) exitWith {};
+            missionNamespace setVariable ["COMSPEC_ATAK_TrilatPending", []];
+            ["locate", _id] call comspec_atak_native_fnc_relayNet;
+        }, [_id, _token], _dur] call CBA_fnc_waitAndExecute;
+        true
+    };
     case "locate": {
         private _t = _arg;
         if (_t isEqualType "") then { _t = objectFromNetId _t; };

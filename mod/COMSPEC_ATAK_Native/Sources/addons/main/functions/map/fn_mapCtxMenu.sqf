@@ -4,7 +4,8 @@
     et EFFACER LA LIGNE DE VUE (quand il y en a un sur la carte), ZONE INTERDITE AU DRONE (poser, ou retirer celle
     sous le clic), RETIRER TOUTES LES ZONES (camp), SUPPRIMER (marqueur joueur pointé). Drone appairé et en vie : ORDRE AU DRONE
     ouvre un sous-menu ALLER, RECHERCHER, STATIONNAIRE, ATTERRIR au point cliqué (fn_droneAction "mapOrder"), et RETOUR. Équipier pointé : aussi CHAMP DE VISION de l'équipier
-    et LOCALISER PAR RELAIS (triangulation, fn_relayNet).
+    et LOCALISER PAR RELAIS (triangulation de 6 à 10 s, fn_relayNet). EFFACER LES LOCALISATIONS quand il y en a une
+    (triangulation en cours ou faite, géolocalisation GE, résultat de RECHERCHER).
     ["open", [contrôle carte, position écran]]  ouvre le menu au curseur (en-tête : grille, altitude, distance et azimut)
     ["close"]                                    ferme (clic ailleurs, Échap, choix d'une ligne)
     ["act", clé]                                 exécute une ligne (DRONE / BACK : ouvre / referme le sous-menu drone)
@@ -106,7 +107,14 @@ switch (_mode) do {
             case "VIEWU": { ["compute", _c getOrDefault ["unit", ""]] call comspec_atak_native_fnc_reliefAction; };
             case "LOCATE": {
                 profileNamespace setVariable ["COMSPEC_ATAK_MeshOnMap", true];
-                ["locate", _c getOrDefault ["unit", ""]] call comspec_atak_native_fnc_relayNet;
+                ["locateStart", _c getOrDefault ["unit", ""]] call comspec_atak_native_fnc_relayNet;
+            };
+            case "LOCDEL": {
+                // Triangulations par relais (et celle en cours), géolocalisations GE et résultat de la recherche.
+                ["trilatClear"] call comspec_atak_native_fnc_relayNet;
+                missionNamespace setVariable ["COMSPEC_ATAK_GeoTracks", []];
+                ["clear"] call comspec_atak_native_fnc_mapSearch;
+                ["INFO", "Localisations effacées de la carte", 2, 20] call comspec_atak_native_fnc_notify;
             };
             // Ordres au drone : envoyés à l'image suivante, hors du clic d'un bouton que "close" vient d'effacer ; le
             // journal du drone note chaque étape et un bandeau dit pourquoi un ordre est refusé (fn_droneAction "mapOrder").
@@ -165,6 +173,13 @@ switch (_mode) do {
         private _vs = missionNamespace getVariable ["COMSPEC_ATAK_Viewshed", []];
         if ((count _vs) > 0) then {
             _rows pushBack ["VIEWDEL", "Effacer le champ de vision", _vs param [13, ""], _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
+        };
+        // Localisations affichées (triangulation par relais, en cours ou faite, géolocalisation, recherche) : les effacer.
+        private _nLoc = (count (missionNamespace getVariable ["COMSPEC_ATAK_Trilat", []])) + (count (missionNamespace getVariable ["COMSPEC_ATAK_GeoTracks", []]))
+            + ([0, 1] select ((count (missionNamespace getVariable ["COMSPEC_ATAK_TrilatPending", []])) > 0))
+            + ([0, 1] select ((count ((uiNamespace getVariable ["COMSPEC_ATAK_MapSearch", createHashMap]) getOrDefault ["hit", createHashMap])) > 0));
+        if (_nLoc > 0) then {
+            _rows pushBack ["LOCDEL", "Effacer les localisations", format ["%1 sur la carte", _nLoc], _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];
         };
         if ((count (missionNamespace getVariable ["COMSPEC_ATAK_ReliefLos", []])) > 0) then {
             _rows pushBack ["LOSDEL", "Effacer la ligne de vue", "", _dir + "ui_close.paa", [0.95, 0.30, 0.25, 1]];

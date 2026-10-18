@@ -4,12 +4,14 @@
     sans passer par le centre de notifications. Un seul toast à la fois : le nouveau remplace l'ancien.
     Params : [texte, durée en s (1 à 8, 2,5 par défaut)]
     Sans texte : redessine le toast en cours (fn_fx « raise », après un rendu de page) pour qu'il reste devant.
-    Renvoie true si le toast est affiché (false : téléphone fermé, ou pendant un rejeu).
+    Renvoie true si le toast est affiché (false : téléphone fermé, pendant un rejeu, ou petits messages désactivés
+    dans Réglages > Alertes, profil COMSPEC_ATAK_Toasts).
 */
 params [["_text", ""], ["_dur", 2.5]];
 disableSerialization;
 private _now = diag_tickTime;
 private _new = _text isNotEqualTo "";
+if (_new && {!(profileNamespace getVariable ["COMSPEC_ATAK_Toasts", true])}) exitWith { false };
 if (!_new) then {
     (uiNamespace getVariable ["COMSPEC_ATAK_Toast", []]) params [["_t", ""], ["_end", -1]];
     _text = _t;
