@@ -662,6 +662,7 @@ if (_dv isNotEqualTo "OFF") then {
                 ["PETITE FENÊTRE", ["view", "INSET"] call _act, "", "Réduit la vue du drone dans un coin de la carte", 1.2],
                 ["RETOUR À LA CARTE", ["view", "OFF"] call _act, "", "Ferme la vue du drone et revient à la carte", 1.4]
             ];
+            _s set ["backSub", ["MAP", ["view", "OFF"] call _act]];
             // Largeur de chaque bouton d'après son texte affiché (traduit) : chaque libellé tient en entier. Si la
             // rangée déborde, la police baisse pour tous ; s'il reste de la place, elle est partagée entre les boutons.
             private _gap = _pad * 0.8;

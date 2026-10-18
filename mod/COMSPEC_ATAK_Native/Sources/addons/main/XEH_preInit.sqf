@@ -142,6 +142,42 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
     ["Les tablettes et DAGR comptent aussi", "ItemcTab, MicroDAGR (cTab) et MicroDAGR (ACE) ouvrent aussi le téléphone."],
     _cat, false, 1, _recompute] call comspec_atak_native_fnc_addSetting;
 
+// Objet exigé par type d'interface (Réglages > Personnaliser > Modèle) : vide = n'importe quel terminal reconnu.
+// Classes exactes ou mots cherchés dans la classe, séparés par des virgules ; sans l'objet, le modèle n'est pas
+// proposé et le téléphone reprend le S7 (la tablette de bord des véhicules n'est pas concernée).
+private _uiCat = ["COMSPEC", "ATAK · Objets par interface"];
+{
+    _x params ["_k", "_name", "_def"];
+    [format ["comspec_atak_native_ui_items_%1", _k], "EDITBOX",
+        [format ["Objet exigé : %1", _name], format ["Classes ou mots (séparés par des virgules) d'un objet à porter pour utiliser l'interface %1. Vide : tout terminal ATAK reconnu suffit.", _name]],
+        _uiCat, _def, 1, { missionNamespace setVariable ["COMSPEC_ATAK_ModelOkCache", createHashMap]; }] call comspec_atak_native_fnc_addSetting;
+} forEach [
+    ["s7", "Durci S7", ""], ["iphone", "V2 Enhanced", ""], ["rugged", "Xiaomi X3D", ""], ["sonim", "Sonim XP8", ""],
+    ["plate", "Support JPC", ""], ["flip", "Étui Multicam", ""], ["ribbed", "Coque nervurée", ""],
+    ["keys", "Tablette", "tablet,tablette,ctab"]
+];
+// [modèle, unité] -> l'unité porte-t-elle l'objet exigé pour ce modèle ? (cache 2 s : fn_layoutGet l'appelle souvent).
+missionNamespace setVariable ["COMSPEC_ATAK_ModelOk", {
+    params [["_model", "s7"], ["_unit", player]];
+    private _cache = missionNamespace getVariable ["COMSPEC_ATAK_ModelOkCache", createHashMap];
+    missionNamespace setVariable ["COMSPEC_ATAK_ModelOkCache", _cache];
+    (_cache getOrDefault [_model, [-10, true]]) params ["_t", "_ok"];
+    if (diag_tickTime - _t < 2) exitWith { _ok };
+    private _want = ((toLower (missionNamespace getVariable [format ["comspec_atak_native_ui_items_%1", _model], ""])) splitString ",; ") apply { trim _x } select { _x isNotEqualTo "" };
+    private _have = ((assignedItems _unit) + (items _unit)) apply { toLower _x };
+    _ok = (count _want) isEqualTo 0 || {(_have findIf { private _i = _x; (_want findIf { _i isEqualTo _x || {(_i find _x) >= 0} }) >= 0 }) >= 0};
+    _cache set [_model, [diag_tickTime, _ok]];
+    _ok
+}];
+
+// ATAK en 3D et lumières vues par les autres (retour de jeu : coupés par défaut).
+["comspec_atak_native_phone_3d", "CHECKBOX",
+    ["ATAK en 3D visible", "Désactivé par défaut. Coché : le téléphone peut être accroché au gilet (modèle 3D vu par tous) et l'ATAK peut s'ouvrir sur la tablette du JPC (en test). Décoché : aucun modèle 3D de l'ATAK n'est porté."],
+    ["COMSPEC", "ATAK · Affichage"], false, 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_stowed_damage", "CHECKBOX",
+    ["Téléphone rangé : peut être détruit", "Activé par défaut. Coché : le téléphone rangé (poche, gilet) peut aussi être abîmé ou détruit par les balles, explosions et chutes, comme en main. Décoché : seul le téléphone sorti s'abîme."],
+    ["COMSPEC", "ATAK · Accès au téléphone"], true, 1] call comspec_atak_native_fnc_addSetting;
+
 // Gilets qui ont déjà un ATAK modélisé (fn_vestBuiltin) : notre téléphone n'y est pas accroché, sauf choix du joueur (menu ACE).
 private _vestReset = { missionNamespace setVariable ["COMSPEC_ATAK_VestBuiltinCache", createHashMap]; };
 ["comspec_atak_native_vest_atak_items", "EDITBOX",
@@ -380,8 +416,8 @@ private _team = ["COMSPEC", "ATAK · Équipes et suivi"];
     ["Tablette des véhicules", "Conducteur, tireur, chef de bord et tourelles d'un véhicule terrestre ou d'un bateau ont l'ATAK sur une tablette durcie de bord, sans téléphone porté. « Kit » : seulement les véhicules où le kit terminal a été installé (action ACE)."],
     _team, [["all", "kit", "off"], ["Tous les véhicules", "Avec le kit installé", "Aucun"], 0], 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_screen_glow", "CHECKBOX",
-    ["Lueur des écrans la nuit", "Un téléphone allumé de nuit éclaire son porteur et se voit de loin (encore plus aux JVN). Mode nuit, véhicule et filtre d'écran JVN la réduisent."],
-    _team, true, 1] call comspec_atak_native_fnc_addSetting;
+    ["Lueur des écrans la nuit", "Désactivé par défaut : aucune lumière de l'ATAK n'est visible par les autres joueurs. Coché : un téléphone allumé de nuit éclaire son porteur et se voit de loin (encore plus aux JVN) ; mode nuit, véhicule et filtre d'écran JVN la réduisent."],
+    _team, false, 1] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_screen_time", "CHECKBOX",
     ["Temps d'écran et temps par rôle", "Compte le temps du téléphone allumé (en main, porté, par app) et le temps de jeu par rôle (pilote, chef d'équipe…). Visible dans l'app Temps d'écran et envoyé à Athena (fiche du membre, back-office)."],
     _team, true, 1] call comspec_atak_native_fnc_addSetting;

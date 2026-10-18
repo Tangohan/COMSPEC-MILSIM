@@ -9,6 +9,8 @@
       Commandes   : GALERIE (ouvre l'app Galerie, nombre de photos), déclencheur au centre, SELFIE (objectif avant).
       Légende     : facultative, envoyée avec la photo (clé photoCaption de l'état, gardée au redessin).
     Portrait : commandes sous le viseur ; paysage : commandes en colonne à droite.
+    Téléphone en MINI : pas de viseur en direct (une vignette minuscule d'une caméra qui suit la tête, retour de jeu :
+    « une caméra trop bizarre ») ; l'app propose PHOTO et SELFIE en plein écran (fn_photoMode) et la Galerie.
 */
 disableSerialization;
 private _l = [] call comspec_atak_native_fnc_layoutGet;
@@ -33,6 +35,29 @@ private _zoom = _st getOrDefault ["camZoom", 1];
 ([] call comspec_atak_native_fnc_accent) params ["_acc"];
 // Légende tapée : relue du champ avant chaque action qui redessine la page.
 private _keep = "private _e = uiNamespace getVariable ['COMSPEC_ATAK_PhotoCaptionEdit', controlNull]; if (!isNull _e) then { (uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['photoCaption', ctrlText _e]; };";
+
+if ((_l get "mode") isEqualTo "MINI") exitWith {
+    ["stop"] call comspec_atak_native_fnc_photoCam;
+    private _lib = uiNamespace getVariable ["COMSPEC_ATAK_PhotoLib", []];
+    private _nPh = (count _lib) + ({ _x isEqualType [] } count (profileNamespace getVariable ["COMSPEC_ATAK_DronePhotos", []]));
+    private _ic = (_bh * 0.22) min (_bw / _ratio * 0.3);
+    private _i = ["COMSPEC_RscPicture", [(_bw - _ic * _ratio) / 2, _bh * 0.08, _ic * _ratio, _ic], _dir + "ui_photocam.paa"] call _mk;
+    _i ctrlSetTextColor ([[0.45, 0.5, 0.47, 1], _acc] select _canShoot);
+    private _t = ["COMSPEC_RscStructuredText", [_pad, _bh * 0.08 + _ic + _pad / 2, _bw - _pad * 2, _font * 3.2]] call _mk;
+    _t ctrlSetStructuredText parseText ((switch (true) do {
+        case (!_bridge): { "<t align='center' color='#e5483a'>COMSPEC Overwatch absent</t><br/><t align='center' size='0.8' color='#b4c1bb'>Ni prise de vue ni envoi possibles</t>" };
+        case (!_ready): { "<t align='center' color='#f2ab33'>Athena non connecté</t><br/><t align='center' size='0.8' color='#b4c1bb'>Connectez-vous dans l'app Athena pour photographier</t>" };
+        default { "<t align='center' font='COMSPEC_BarlowBold'>Appareil photo</t><br/><t align='center' size='0.8' color='#b4c1bb'>La prise de vue passe en plein écran. Espace pour revenir.</t>" };
+    }) call comspec_atak_native_fnc_tr);
+    private _rows = [
+        ["buttons", [["PHOTO", { [{ ["ENTER", (uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["photoCaption", ""]] call comspec_atak_native_fnc_photoMode; }] call CBA_fnc_execNextFrame; }, true, _canShoot],
+            ["SELFIE", { [{ if (["ENTER", ""] call comspec_atak_native_fnc_photoMode) then { [{ ["SELFIE"] call comspec_atak_native_fnc_photoMode; }, [], 0.3] call CBA_fnc_waitAndExecute; }; }] call CBA_fnc_execNextFrame; }, false, _canShoot]]],
+        ["buttons", [[format ["GALERIE (%1)", _nPh], { [{ ["GALLERY"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame; }]]]
+    ];
+    private _ry = _bh * 0.08 + _ic + _font * 3.6;
+    [_rows, [_pad, _ry, _bw - _pad * 2, _bh - _ry]] call comspec_atak_native_fnc_formRender;
+    true
+};
 
 // Ligne d'état : où part la photo.
 private _stH = _fs * 1.5;

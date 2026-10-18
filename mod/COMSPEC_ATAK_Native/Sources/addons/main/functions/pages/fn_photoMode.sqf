@@ -144,8 +144,9 @@ switch (toUpper _mode) do {
             private _lens = [player, "lens"] call comspec_atak_native_fnc_gestureSelfie;
             if (_lens isNotEqualTo []) then {
                 _lens params ["_lp", "_ld"];
-                private _ya = ((_ld select 0) atan2 (_ld select 1)) + (_st getOrDefault ["yaw", 0]);
-                private _pa = (((asin (((_ld select 2) max -1) min 1)) + (_st getOrDefault ["pitch", 10]) - 10) max -80) min 80;
+                // Souris : léger recadrage autour du visage (25° au plus), le visage reste dans l'image.
+                private _ya = ((_ld select 0) atan2 (_ld select 1)) + (((_st getOrDefault ["yaw", 0]) max -25) min 25);
+                private _pa = (((asin (((_ld select 2) max -1) min 1)) + ((((_st getOrDefault ["pitch", 10]) - 10) max -20) min 20)) max -80) min 80;
                 _tPos = _lp;
                 _tDir = [(sin _ya) * (cos _pa), (cos _ya) * (cos _pa), sin _pa];
             };

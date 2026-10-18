@@ -4,7 +4,7 @@
     et dessine pour lui la lueur des joueurs proches (lumière locale accrochée au torse, éclat visible de loin).
     Atténuée par le mode nuit (rouge, sombre), dans un véhicule, et surtout par le filtre d'écran JVN
     (objet COMSPEC_ATAK_NvgFilter posé : profil COMSPEC_ATAK_NvgFilter) qui coupe le proche infrarouge.
-    Réglage serveur comspec_atak_native_screen_glow.
+    Réglage serveur comspec_atak_native_screen_glow (désactivé par défaut : aucune lumière visible par les autres).
     Params : [action]  "filter" (filtre posé ?) | "toggle" (poser / retirer) | "level" | "tick" (client, chaque seconde)
 */
 params [["_act", "tick"]];
@@ -22,7 +22,7 @@ switch (_act) do {
         !_on
     };
     case "level": {
-        if !(missionNamespace getVariable ["comspec_atak_native_screen_glow", true]) exitWith { 0 };
+        if !(missionNamespace getVariable ["comspec_atak_native_screen_glow", false]) exitWith { 0 };
         private _d = [] call comspec_atak_native_fnc_display;
         if (isNull _d || {!alive player} || {sunOrMoon >= 0.5}) exitWith { 0 };
         if ((([] call comspec_atak_native_fnc_deviceHealth) getOrDefault ["state", "OK"]) in ["OFF", "BROKEN"]) exitWith { 0 };

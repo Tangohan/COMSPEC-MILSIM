@@ -78,7 +78,7 @@ addMissionEventHandler ["MarkerCreated", {
 addMissionEventHandler ["MarkerDeleted", { params ["_m"]; (missionNamespace getVariable ["COMSPEC_ATAK_MarkerMeta", createHashMap]) deleteAt _m; }];
 // Position de la miniature : coin suivant (réglage profil COMSPEC_ATAK_MiniAnchor, aussi dans Réglages).
 missionNamespace setVariable ["COMSPEC_ATAK_KeyPosition", {
-    private _list = ["BR", "BL", "TL", "TR", "MR", "ML"];
+    private _list = ["BR", "BC", "BL", "TL", "TC", "TR", "MR", "ML"];
     private _cur = _list find toUpper (profileNamespace getVariable ["COMSPEC_ATAK_MiniAnchor", "BR"]);
     private _next = _list select ((_cur max 0) + 1) mod (count _list);
     profileNamespace setVariable ["COMSPEC_ATAK_MiniAnchor", _next];

@@ -151,6 +151,9 @@ if (_tab isEqualTo "LIB") exitWith {
         if (_kind isEqualTo "DRONE") then { _s set ["dronePhEdit", -1]; };
         _kind = "";
     };
+    // Galerie seule ou incrustée dans l'app Photos : le sous-écran appartient à la page affichée.
+    private _st1 = uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap];
+    _st1 set ["backSub", [_st1 getOrDefault ["activePage", ""], ["LIB"] call _go]];
     private _back = ["bar", [["", [["RETOUR À LA GALERIE", ["LIB"] call _go, "", "Revenir à la liste des photos (la fiche est enregistrée)"]]]]];
     switch (true) do {
         case (_di >= 0): {

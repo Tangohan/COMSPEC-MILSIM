@@ -6,6 +6,8 @@ private _state = uiNamespace getVariable ["COMSPEC_ATAK_State",createHashMap];
 private _selected = (_state getOrDefault ["selectedEntity",createHashMap]) getOrDefault ["id",""];
 private _labels = (["COMSPEC_ATAK_Labels", true, "native_map_labels"] call comspec_atak_native_fnc_pref) select 0;
 private _scale = ctrlMapScale _map;
+// Boussole fluide : aiguille et cadran suivent le cap à chaque image (fn_mapOverlayUpdate, boussole seulement).
+[false, true] call comspec_atak_native_fnc_mapOverlayUpdate;
 // Téléphone porté (ou « Suivre ma position ») : la carte suit le joueur à chaque image, sans à-coup.
 // fn_mapCenter pose le premier centrage et son décalage (comspec_lastAim) ; ensuite on glisse du même écart que le joueur.
 if (!(_state getOrDefault ["interactive", false]) || {_state getOrDefault ["mapFollow", false]}) then {
