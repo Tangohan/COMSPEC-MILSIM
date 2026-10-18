@@ -15,6 +15,11 @@ namespace App\Support;
 final class AtakTranslationTemplate
 {
     public const TEMPLATE = 'mod/COMSPEC_ATAK_Native/localisation/template/xx.txt';
+    /** Catégorie et fichier source de chaque phrase (tools/i18n_categories.py) ; facultatif. */
+    public const CATEGORIES = 'mod/COMSPEC_ATAK_Native/localisation/template/categories.json';
+
+    /** @var array<string, array<string, true>> clés des phrases par empreinte du modèle */
+    private static array $keySets = [];
 
     private const LINE = '/\[\s*"((?:[^"]|"")*)"\s*,\s*"((?:[^"]|"")*)"\s*(?:,\s*"((?:[^"]|"")*)"\s*)?\]/u';
 
@@ -54,6 +59,71 @@ final class AtakTranslationTemplate
         return $out;
     }
 
+    /** Clé d'une phrase (packs partagés, categories.json) : sha1 du texte français, 16 caractères hexadécimaux. */
+    public static function keyHash(string $fr): string
+    {
+        return substr(sha1($fr), 0, 16);
+    }
+
+    /**
+     * Modèle complet pour l'atelier : [clé, français, anglais, catégorie, fichier source], plus les libellés des
+     * catégories ({id: {fr, en}}). Sans categories.json, tout est dans « other ».
+     *
+     * @return array{entries: list<array{0: string, 1: string, 2: string, 3: string, 4: string}>, categories: array<string, array{fr: string, en: string}>}
+     */
+    public static function catalog(?string $root = null): array
+    {
+        $cats = self::categoryData($root);
+        $out = [];
+        foreach (self::entries($root) as [$fr, $en]) {
+            $h = self::keyHash($fr);
+            $c = $cats['strings'][$h] ?? null;
+            $cat = is_array($c) && is_string($c[0] ?? null) ? $c[0] : 'other';
+            $file = is_array($c) && is_string($c[1] ?? null) ? $c[1] : '';
+            $out[] = [$h, $fr, $en, $cat, $file];
+        }
+        $labels = [];
+        foreach ($cats['categories'] as $id => $l) {
+            if (is_string($id) && is_array($l)) {
+                $labels[$id] = ['fr' => (string) ($l['fr'] ?? $id), 'en' => (string) ($l['en'] ?? $id)];
+            }
+        }
+        if (!isset($labels['other'])) {
+            $labels['other'] = ['fr' => 'Autres', 'en' => 'Other'];
+        }
+
+        return ['entries' => $out, 'categories' => $labels];
+    }
+
+    /** La phrase de clé $h existe-t-elle dans le modèle publié ? (écritures des packs partagés) */
+    public static function hasKey(string $h, ?string $root = null): bool
+    {
+        $fp = self::fingerprint($root) . '|' . ($root ?? '');
+        if (!isset(self::$keySets[$fp])) {
+            $set = [];
+            foreach (self::entries($root) as [$fr]) {
+                $set[self::keyHash($fr)] = true;
+            }
+            self::$keySets = [$fp => $set];
+        }
+
+        return isset(self::$keySets[$fp][$h]);
+    }
+
+    /**
+     * @return array{categories: array<mixed>, strings: array<mixed>}
+     */
+    private static function categoryData(?string $root): array
+    {
+        $path = rtrim($root ?? base_path(), '/') . '/' . self::CATEGORIES;
+        $data = is_file($path) ? json_decode((string) file_get_contents($path), true) : null;
+
+        return [
+            'categories' => is_array($data['categories'] ?? null) ? $data['categories'] : [],
+            'strings' => is_array($data['strings'] ?? null) ? $data['strings'] : [],
+        ];
+    }
+
     /** Empreinte du modèle (ETag de GET /traduire-atak/modele.json) : change à chaque régénération. */
     public static function fingerprint(?string $root = null): string
     {
@@ -62,7 +132,9 @@ final class AtakTranslationTemplate
             return 'none';
         }
 
-        return substr((string) md5_file($path), 0, 16);
+        $cat = rtrim($root ?? base_path(), '/') . '/' . self::CATEGORIES;
+
+        return substr(md5((string) md5_file($path) . (is_file($cat) ? (string) md5_file($cat) : '')), 0, 16);
     }
 
     private static function path(?string $root): string

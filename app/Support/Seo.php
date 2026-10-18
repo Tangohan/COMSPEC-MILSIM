@@ -38,6 +38,8 @@ final class Seo
         '/documents',
         '/forum',
         '/jnet/',
+        // Packs de langue partagés (liens secrets) : jamais indexés.
+        '/traduire-atak/p/',
         '/connect',
         '/lier',
     ];

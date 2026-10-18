@@ -312,6 +312,18 @@ return function (Router $router) {
     $router->get('/atak-natif', [SitePagesController::class, 'atakNative']);
     $router->get('/traduire-atak', [SitePagesController::class, 'translateAtak']);
     $router->get('/traduire-atak/modele.json', [SitePagesController::class, 'translateAtakTemplate']);
+    // Packs de langue partagés : la page s'ouvre par le lien (jeton dans le fragment #), l'API lit X-Pack-Token.
+    $router->get('/traduire-atak/p/{id}', [SitePagesController::class, 'translateAtak']);
+    $router->post('/api/traduire-atak/packs', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'create']);
+    $router->get('/api/traduire-atak/packs/{id}', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'show']);
+    $router->get('/api/traduire-atak/packs/{id}/history', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'history']);
+    $router->post('/api/traduire-atak/packs/{id}/strings', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'write']);
+    $router->post('/api/traduire-atak/packs/{id}/bulk', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'bulk']);
+    $router->post('/api/traduire-atak/packs/{id}/suggestions/{sid}', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'decide']);
+    $router->post('/api/traduire-atak/packs/{id}/revert', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'revert']);
+    $router->post('/api/traduire-atak/packs/{id}/settings', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'settings']);
+    $router->post('/api/traduire-atak/packs/{id}/rotate', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'rotate']);
+    $router->post('/api/traduire-atak/packs/{id}/delete', [\App\Controllers\Api\AtakTranslationPackApiController::class, 'delete']);
     $router->get('/renseignement-sse', fn () => \App\Core\Response::redirect(url('sse')));
 
     $router->get('/acces-demonstration', [DemoNdaController::class, 'show']);
