@@ -15,7 +15,8 @@ Sources/addons/main/i18n/en.txt : un tableau [["français", "anglais"], ...] lu 
   python3 tools/i18n.py community F  crée ou met à jour le fichier F d'un mod de traduction communautaire (autre langue,
                                      localisation/README.md) : lignes ["français", "traduction", "anglais"], traductions
                                      gardées, phrases nouvelles ajoutées vides, phrases disparues retirées ; écrit aussi
-                                     localisation/template/xx.txt quand F est omis
+                                     localisation/template/xx.txt (et categories.json, tools/i18n_categories.py)
+                                     quand F est omis
   python3 tools/i18n.py stringtable  noms d'objets et modules Eden/Zeus (config.cpp, modules.hpp) -> stringtable.xml
                                      (--sse : tout le SSE ; --connect : config.cpp et modules/ d'Overwatch connect)
                                      ($STR_..., langue du jeu ; anglais pris dans en.txt)
@@ -439,6 +440,10 @@ def main():
             os.remove(path)
         total, done = save_community(path, pairs)
         print(f"{path} : {done}/{total} phrases traduites ({total - done} restent en anglais)")
+        if len(sys.argv) <= 2:
+            # Catégories des phrases pour l'atelier /traduire-atak du site (template/categories.json).
+            import subprocess
+            subprocess.run([sys.executable, os.path.join(ROOT, "tools", "i18n_categories.py")], check=False)
     elif cmd == "merge":
         pairs = load_dict()
         with open(sys.argv[2], encoding="utf-8") as f:

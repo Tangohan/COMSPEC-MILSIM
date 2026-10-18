@@ -268,17 +268,21 @@ final class SitePagesController
      */
     public function translateAtak(Request $request, array $params = []): Response
     {
+        // /traduire-atak/p/{id} : pack partagé (le jeton reste dans le fragment #, lu par la page).
+        $packId = \App\Repositories\AtakTranslationPackRepository::validPublicId($params['id'] ?? null) ?? '';
+
         return Response::view('layout.marketing', [
             'content' => 'site.atak_translate',
+            'packId' => $packId,
             'title' => __('site.atakt_meta_title'),
             'meta_description' => __('site.atakt_meta_description'),
             'marketingActive' => 'traduire-atak',
-            'marketingStyles' => [asset_url('assets/css/atak-native.css'), asset_url('assets/css/atak-translate.css') . '?v=1'],
-            'marketingScripts' => [asset_url('assets/js/atak-translate.js') . '?v=1'],
+            'marketingStyles' => [asset_url('assets/css/atak-native.css'), asset_url('assets/css/atak-translate.css') . '?v=2'],
+            'marketingScripts' => [asset_url('assets/js/atak-translate.js') . '?v=2'],
         ]);
     }
 
-    /** Modèle de traduction de la version publiée : [[français, anglais], ...] (voir AtakTranslationTemplate). */
+    /** Modèle de traduction de la version publiée, avec catégories (voir AtakTranslationTemplate::catalog). */
     public function translateAtakTemplate(Request $request, array $params = []): Response
     {
         $etag = '"' . AtakTranslationTemplate::fingerprint() . '"';
@@ -287,9 +291,13 @@ final class SitePagesController
         }
         $release = AtakReleaseInfo::latest();
 
+        $catalog = AtakTranslationTemplate::catalog();
+
         return Response::json([
             'version' => $release['atak_native'],
-            'entries' => AtakTranslationTemplate::entries(),
+            'categories' => $catalog['categories'],
+            // [clé, français, anglais, catégorie, fichier source]
+            'entries' => $catalog['entries'],
         ])->header('ETag', $etag)->header('Cache-Control', 'public, max-age=600');
     }
 }
