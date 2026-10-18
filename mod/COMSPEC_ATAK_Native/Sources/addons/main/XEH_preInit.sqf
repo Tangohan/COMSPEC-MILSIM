@@ -116,6 +116,9 @@ private _recompute = { [true] call comspec_atak_native_fnc_deviceCatalog; };
 ["comspec_atak_native_photo_anim", "EDITBOX",
     ["Animation de l'appareil photo", "Jouée tant que l'appareil photo est ouvert (vue normale). Par défaut comspec_atak_native_fnc_gestureSelfie : téléphone du profil (S7 par défaut) tenu en main devant le visage, la photo part de son objectif arrière. Sinon nom d'une action ou d'un geste (ex. gestureGo ; gesturePoint, l'ancienne valeur, reprend le téléphone en main), d'une animation (CfgMoves, ex. AmovPercMstpSrasWrflDnon_AinvPercMstpSrasWrflDnon), ou d'une fonction (ex. mon_fnc_photoPose, appelée avec [joueur, ""photo""]). Vide : aucune animation."],
     ["COMSPEC", "ATAK · Photo"], "comspec_atak_native_fnc_gestureSelfie", 1] call comspec_atak_native_fnc_addSetting;
+["comspec_atak_native_photo_arm", "CHECKBOX",
+    ["Photo : téléphone levé en main", "Désactivé par défaut : en objectif arrière, le bras reste baissé (la main ne passe pas devant la vue plein écran). Coché : bras levé, téléphone en main (animation de l'appareil photo ci-dessus), visible des autres joueurs. Le selfie garde toujours le téléphone en main. Réglage personnel."],
+    ["COMSPEC", "ATAK · Photo"], false, 0] call comspec_atak_native_fnc_addSetting;
 ["comspec_atak_native_selfie_anim", "EDITBOX",
     ["Animation du selfie", "Jouée en mode selfie. Par défaut comspec_atak_native_fnc_gestureSelfie : bras droit tendu devant le visage, téléphone tourné vers soi. Même format : action ou geste, animation CfgMoves, ou fonction appelée avec [joueur, ""selfie""] (puis [joueur, ""exit""] à la fermeture). Vide : on garde l'animation de l'appareil photo."],
     ["COMSPEC", "ATAK · Photo"], "comspec_atak_native_fnc_gestureSelfie", 1] call comspec_atak_native_fnc_addSetting;
