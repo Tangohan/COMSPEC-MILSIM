@@ -75,7 +75,7 @@ class CfgFunctions {
             class json {}; class squadSnapshot {}; class squadSync {}; class pageInterTeam {}; class interTeamAction {}; class ftRoleSync {};
         };
         class screen { file="z\comspec_atak_native\addons\main\functions\screen";
-            class roleKey {}; class screenTime {}; class pageScreenTime {}; class playTimeServer {}; class distanceServer {}; class pageDistance {};
+            class roleKey {}; class screenTime {}; class pageScreenTime {}; class playTimeServer {}; class distanceServer {}; class pageDistance {}; class distanceLog {};
         };
         class garmin { file="z\comspec_atak_native\addons\main\functions\garmin";
             class garminTick {}; class pageGarmin {};

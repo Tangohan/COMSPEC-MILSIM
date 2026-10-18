@@ -748,7 +748,9 @@ if (!isNil "ace_interact_menu_fnc_createAction") then {
 [{ ["tick"] call comspec_atak_native_fnc_screenTime; }, 5] call CBA_fnc_addPerFrameHandler;
 // Montre Garmin : pas, fréquence cardiaque, stress, Body Battery, sommeil et activités, gardés dans le profil du joueur.
 [{ ["tick"] call comspec_atak_native_fnc_garminTick; }, 2] call CBA_fnc_addPerFrameHandler;
-addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; }];
+// App Distances : carnet des missions, carrière et records gardés sur ce PC (compteurs poussés par le serveur toutes les 15 s).
+[{ ["tick"] call comspec_atak_native_fnc_distanceLog; }, 15] call CBA_fnc_addPerFrameHandler;
+addMissionEventHandler ["Ended", { ["flush"] call comspec_atak_native_fnc_screenTime; [true] call comspec_atak_native_fnc_squadSync; ["save"] call comspec_atak_native_fnc_garminTick; ["save"] call comspec_atak_native_fnc_distanceLog; }];
 // Arrivée en cours de partie : mon équipe de feu d'un ancien groupe ne me suit pas.
 [{ ["comspec_atak_native_ftCheck", [player]] call CBA_fnc_serverEvent; }, [], 5] call CBA_fnc_waitAndExecute;
 // Rôles d'Athena et rôle mémorisé du joueur, réappliqué à l'arrivée et à la réapparition (fn_ftRoleSync).
