@@ -10,15 +10,66 @@ namespace App\Support;
 final class ArsenalLoadoutItems
 {
     /**
-     * @return list<array{title: string, items: list<array{name: string, qty: int}}}>
+     * Catalogue des objets vus en jeu (clé = classe en minuscules), actif le temps d’un appel à grouped().
+     *
+     * @var array<string, array{name?: string, players?: int}>
      */
-    public static function grouped(string $payload): array
+    private static array $catalog = [];
+
+    /**
+     * @param array<string, array{name?: string, players?: int}> $catalog noms affichés en jeu et nombre de joueurs
+     *        qui portent l’objet (GameEquipmentRepository::catalogueFor), clé = classe en minuscules
+     * @return list<array{title: string, items: list<array{name: string, qty: int, class: string, players?: int}>}>
+     */
+    public static function grouped(string $payload, array $catalog = []): array
     {
         $loadout = self::parse($payload);
         if ($loadout === []) {
             return [];
         }
 
+        self::$catalog = $catalog;
+        try {
+            return self::sections($loadout);
+        } finally {
+            self::$catalog = [];
+        }
+    }
+
+    /**
+     * Toutes les classes d’objets d’une tenue (armes, accessoires, chargeurs, contenus, objets assignés).
+     *
+     * @return list<string>
+     */
+    public static function classes(string $payload): array
+    {
+        $out = [];
+        $walk = static function (mixed $node) use (&$walk, &$out): void {
+            if (is_string($node)) {
+                $c = trim($node);
+                if ($c !== '' && strlen($c) <= 128 && preg_match('/^[A-Za-z0-9_.\-]+$/', $c) === 1) {
+                    $out[strtolower($c)] = $c;
+                }
+
+                return;
+            }
+            if (is_array($node)) {
+                foreach ($node as $child) {
+                    $walk($child);
+                }
+            }
+        };
+        $walk(self::parse($payload));
+
+        return array_values($out);
+    }
+
+    /**
+     * @param list<mixed> $loadout
+     * @return list<array{title: string, items: list<array{name: string, qty: int, class: string, players?: int}>}>
+     */
+    private static function sections(array $loadout): array
+    {
         $sections = [];
         self::pushWeapon($sections, 'Arme', $loadout[0] ?? null);
         self::pushWeapon($sections, 'Lanceur', $loadout[1] ?? null);
@@ -52,7 +103,7 @@ final class ArsenalLoadoutItems
             && isset($decoded[0])
             && is_array($decoded[0])
             && count($decoded[0]) >= 9
-            && is_numeric($decoded[1] ?? null)
+            && (is_numeric($decoded[1] ?? null) || is_array($decoded[1] ?? null))
         ) {
             $decoded = $decoded[0];
         }
@@ -127,6 +178,29 @@ final class ArsenalLoadoutItems
         ];
     }
 
+    /**
+     * Ligne d’objet : nom affiché en jeu s’il est connu, sinon nom déduit de la classe.
+     *
+     * @return array{name: string, qty: int, class: string, players?: int}
+     */
+    private static function item(string $class, int $qty = 1, string $fallback = ''): array
+    {
+        $known = self::$catalog[strtolower(trim($class))] ?? null;
+        $name = trim((string) ($known['name'] ?? ''));
+        if ($name === '') {
+            $name = self::displayName($class);
+            if ($fallback !== '' && ($name === '' || strcasecmp($name, 'Item') === 0)) {
+                $name = $fallback;
+            }
+        }
+        $row = ['name' => $name, 'qty' => max(1, $qty), 'class' => trim($class)];
+        if ($known !== null && isset($known['players'])) {
+            $row['players'] = (int) $known['players'];
+        }
+
+        return $row;
+    }
+
     public static function displayName(string $class): string
     {
         $class = trim($class);
@@ -186,7 +260,7 @@ final class ArsenalLoadoutItems
         $items = [];
         $container = $slot[0] ?? '';
         if (is_string($container) && $container !== '') {
-            $items[] = ['name' => self::displayName($container), 'qty' => 1];
+            $items[] = self::item($container);
         }
         $cargo = $slot[1] ?? [];
         foreach (self::cargoItems($cargo) as $row) {
@@ -208,7 +282,7 @@ final class ArsenalLoadoutItems
         }
         $sections[] = [
             'title' => $title,
-            'items' => [['name' => self::displayName($value), 'qty' => 1]],
+            'items' => [self::item($value)],
         ];
     }
 
@@ -227,11 +301,7 @@ final class ArsenalLoadoutItems
             if (!is_string($cls) || trim($cls) === '') {
                 continue;
             }
-            $name = self::displayName($cls);
-            if ($name === '' || strcasecmp($name, 'Item') === 0) {
-                $name = $fallback;
-            }
-            $items[] = ['name' => $name, 'qty' => 1];
+            $items[] = self::item($cls, 1, $fallback);
         }
         $items = self::mergeQty($items);
         if ($items !== []) {
@@ -251,12 +321,13 @@ final class ArsenalLoadoutItems
         if (!is_string($weapon) || $weapon === '') {
             return [];
         }
-        $weaponName = self::displayName($weapon);
-        $items = [['name' => $weaponName, 'qty' => 1]];
+        $first = self::item($weapon);
+        $weaponName = $first['name'];
+        $items = [$first];
         foreach ([1, 2, 3, 6] as $i) {
             $acc = $slot[$i] ?? '';
             if (is_string($acc) && $acc !== '') {
-                $items[] = ['name' => self::displayName($acc), 'qty' => 1];
+                $items[] = self::item($acc);
             }
         }
         foreach ([4, 5] as $i) {
@@ -268,11 +339,11 @@ final class ArsenalLoadoutItems
             if (!is_string($cls) || $cls === '') {
                 continue;
             }
-            $magName = self::displayName($cls);
-            if ($magName === '' || strcasecmp($magName, $weaponName) === 0) {
+            $mag = self::item($cls);
+            if ($mag['name'] === '' || strcasecmp($mag['name'], $weaponName) === 0) {
                 continue;
             }
-            $items[] = ['name' => $magName, 'qty' => 1];
+            $items[] = $mag;
         }
 
         return self::mergeQty($items);
@@ -306,7 +377,7 @@ final class ArsenalLoadoutItems
             if ($qty < 1) {
                 $qty = 1;
             }
-            $items[] = ['name' => self::displayName($first), 'qty' => $qty];
+            $items[] = self::item($first, $qty);
         }
 
         return $items;
@@ -358,14 +429,16 @@ final class ArsenalLoadoutItems
                 $qty = 1;
             }
             if (!isset($acc[$name])) {
-                $acc[$name] = 0;
+                $acc[$name] = $row;
+                $acc[$name]['name'] = $name;
+                $acc[$name]['qty'] = 0;
                 $order[] = $name;
             }
-            $acc[$name] += $qty;
+            $acc[$name]['qty'] += $qty;
         }
         $out = [];
         foreach ($order as $name) {
-            $out[] = ['name' => $name, 'qty' => $acc[$name]];
+            $out[] = $acc[$name];
         }
 
         return $out;
