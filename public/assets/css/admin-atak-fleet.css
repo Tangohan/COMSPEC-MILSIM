@@ -1,0 +1,232 @@
+/**
+ * Administration du site — Parc ATAK des joueurs (/admin/parc-atak).
+ * S'appuie sur la coque .pa (platform-admin.css) : couleurs par jetons --pa-*, le mode nuit suit sans règle dédiée
+ * (sauf les teintes d'alerte ci-dessous).
+ */
+
+.paf {
+  --paf-danger: #b42318;
+  --paf-danger-soft: #fdecea;
+}
+
+html[data-bo-theme="dark"] .paf {
+  --paf-danger: #f58b9b;
+  --paf-danger-soft: rgba(240, 92, 112, 0.12);
+}
+
+.paf-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.paf .paf-link { color: var(--pa-mint); font-weight: 700; text-decoration: none; }
+.paf .paf-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.paf .pa-hero .paf-link { color: #7fe3bd; }
+
+.paf-muted { color: var(--pa-muted); }
+.paf-strong { margin: 0; font-weight: 700; }
+.paf-hint { margin: 0; color: var(--pa-subtle); font-size: 12.5px; line-height: 1.5; }
+.paf-mono { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; word-break: break-all; }
+.paf-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.paf-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pa-muted);
+}
+
+.paf-field { display: block; margin: 0; min-width: 0; }
+.paf-field input,
+.paf-field select,
+.paf-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--pa-line);
+  border-radius: 10px;
+  background: var(--pa-surface);
+  color: var(--pa-ink);
+  font: inherit;
+  font-size: 13.5px;
+}
+.paf-field textarea { resize: vertical; }
+
+.paf-check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--pa-ink-2); }
+
+.paf-row { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 560px) { .paf-row { grid-template-columns: 1fr 1fr; } }
+
+.paf-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.paf-btn--danger {
+  border: 1px solid var(--paf-danger);
+  background: var(--paf-danger-soft);
+  color: var(--paf-danger);
+}
+.paf-btn--danger:hover { background: var(--paf-danger); color: #fff; }
+.paf .pa-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Chiffres ── */
+
+.paf-kpis { margin-bottom: 18px; }
+
+/* ── Onglets ── */
+
+.paf-tabs__n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--pa-line-soft);
+  color: var(--pa-muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.paf-tabs .is-active .paf-tabs__n { background: var(--pa-tone-mint-bg); color: var(--pa-tone-mint-fg); }
+
+/* ── Recherche ── */
+
+.paf-search {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  align-items: end;
+  padding: 14px 16px;
+  border: 1px solid var(--pa-line);
+  border-radius: 14px;
+  background: var(--pa-surface);
+  box-shadow: var(--pa-shadow);
+}
+@media (min-width: 860px) {
+  .paf-search { grid-template-columns: minmax(0, 1fr) 14rem 12rem auto; }
+}
+.paf-search__actions { display: flex; gap: 8px; }
+
+/* ── Actions groupées ── */
+
+.paf-bulk {
+  padding: 14px 16px;
+  border: 1px solid var(--pa-line);
+  border-radius: 14px;
+  background: var(--pa-surface);
+  box-shadow: var(--pa-shadow);
+}
+.paf-bulk__head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-bottom: 12px; }
+.paf-bulk__grid { display: grid; grid-template-columns: 1fr; gap: 10px; align-items: start; }
+@media (min-width: 980px) { .paf-bulk__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.paf-act {
+  border: 1px solid var(--pa-line);
+  border-radius: 12px;
+  background: var(--pa-surface-2);
+}
+.paf-act + .paf-act { margin-top: 10px; }
+.paf-bulk__grid .paf-act + .paf-act { margin-top: 0; }
+.paf-act > summary {
+  padding: 10px 14px;
+  font-size: 13.5px;
+  font-weight: 750;
+  cursor: pointer;
+  list-style-position: inside;
+}
+.paf-act__body { display: flex; flex-direction: column; gap: 10px; padding: 4px 14px 14px; }
+.paf-act__body > .pa-btn { align-self: flex-start; }
+.paf-retire { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--pa-line); display: flex; flex-direction: column; gap: 10px; }
+.paf-retire .pa-btn, .paf-act__body form > .pa-btn { align-self: flex-start; }
+.paf-act__body form > .paf-hint { margin-bottom: 8px; }
+
+/* ── Tableau ── */
+
+.paf-table { min-width: 60rem; }
+.paf-table th, .paf-table td { padding-left: 0.7rem; padding-right: 0.7rem; }
+.paf-table td.paf-states { min-width: 7.5rem; }
+.paf-table p { margin: 0; }
+.paf-col-check { width: 2.5rem; }
+.paf-states { display: flex; flex-wrap: wrap; gap: 4px; }
+.paf-table td.paf-states { display: table-cell; }
+.paf-table td.paf-states .pa-pill { margin: 0 4px 4px 0; }
+.paf-table tr.is-blocked td { background: color-mix(in srgb, var(--paf-danger-soft) 60%, transparent); }
+
+/* ── Fiche ── */
+
+.paf-grid { display: grid; grid-template-columns: 1fr; gap: 0 18px; align-items: start; }
+@media (min-width: 1100px) { .paf-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
+
+.paf-dl { display: grid; grid-template-columns: 1fr; gap: 0; margin: 12px 0 0; }
+.paf-dl > div {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--pa-line-soft);
+}
+.paf-dl > div:last-child { border-bottom: 0; }
+.paf-dl dt { color: var(--pa-muted); font-size: 12.5px; }
+.paf-dl dd { margin: 0; font-size: 13.5px; font-weight: 600; word-break: break-word; }
+
+.paf-sub { margin: 18px 0 8px; font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--pa-muted); }
+
+.paf-bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.paf-bars li { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) 5rem; gap: 10px; align-items: center; font-size: 13px; }
+.paf-bars__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.paf-bars__track { height: 8px; border-radius: 999px; background: var(--pa-line-soft); overflow: hidden; }
+.paf-bars__track > span { display: block; height: 100%; border-radius: inherit; background: var(--pa-mint); }
+.paf-bars__value { text-align: right; font-variant-numeric: tabular-nums; color: var(--pa-ink-2); }
+
+.paf-list { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; }
+
+.paf-actions-card .pa-card__title { margin-bottom: 12px; }
+
+.paf-blocked {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--paf-danger);
+  border-left-width: 3px;
+  border-radius: 12px;
+  background: var(--paf-danger-soft);
+  font-size: 13.5px;
+}
+.paf-blocked p { margin: 0; }
+.paf-blocked form { margin-top: 4px; }
+
+.paf-msgs { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.paf-msg { padding: 10px 12px; border: 1px solid var(--pa-line); border-radius: 12px; background: var(--pa-surface-2); font-size: 13px; }
+.paf-msg__head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.paf-msg__body { margin: 6px 0; line-height: 1.5; }
+.paf-msg p { margin: 4px 0; }
+.paf-msg form { margin-top: 6px; }
+
+.paf-log { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; }
+.paf-log li {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 2px 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--pa-line-soft);
+  font-size: 13px;
+}
+.paf-log li:last-child { border-bottom: 0; }
+.paf-log__when { grid-row: span 2; color: var(--pa-muted); font-variant-numeric: tabular-nums; }
+.paf-log__who { color: var(--pa-muted); font-size: 12.5px; }
+
+@media (max-width: 640px) {
+  .paf-dl > div { grid-template-columns: 1fr; gap: 2px; }
+  .paf-bars li { grid-template-columns: minmax(0, 1fr) 4.5rem; }
+  .paf-bars__track { grid-column: 1 / -1; grid-row: 2; }
+  .paf-log li { grid-template-columns: 1fr; }
+  .paf-log__when { grid-row: auto; }
+}
