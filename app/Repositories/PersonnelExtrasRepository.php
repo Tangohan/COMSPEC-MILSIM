@@ -84,6 +84,12 @@ class PersonnelExtrasRepository
     /** Crée une ligne personnel_extras si elle n'existe pas. */
     public function ensureRecord(int $userId): void
     {
+        // Pas de doublon quand la clé unique inclut un tenant_id NULL.
+        $exists = $this->pdo->prepare('SELECT 1 FROM personnel_extras WHERE user_id = ? LIMIT 1');
+        $exists->execute([$userId]);
+        if ($exists->fetchColumn()) {
+            return;
+        }
         $stmt = $this->pdo->prepare('INSERT IGNORE INTO personnel_extras (user_id, created_at, updated_at) VALUES (?, NOW(), NOW())');
         $stmt->execute([$userId]);
     }

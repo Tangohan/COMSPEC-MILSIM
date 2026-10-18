@@ -1,228 +1,135 @@
 <?php
-$tab = $tab ?? 'fr';
-$gradesFr = $gradesFr ?? [];
-$gradesUs = $gradesUs ?? [];
-$categories = $categories ?? [];
-$gcfRaw = $gradeCategoryFilterId ?? null;
-$gradeCategoryFilterId = ($gcfRaw !== null && (int) $gcfRaw > 0) ? (int) $gcfRaw : null;
-$gradeDisplayService = $gradeDisplayService ?? null;
+/**
+ * Référentiel des grades de la communauté.
+ *
+ * Une liste par système (France, États-Unis), groupée par catégorie et classée du grade le plus élevé au plus bas.
+ * Les grades du catalogue partagé se masquent / se réaffichent (rien n'est supprimé) ; les grades créés par la
+ * communauté appartiennent au système d'avancement et sont présentés à part.
+ */
+
+use App\Support\GradeSelectOptions;
+
+$tab = ($tab ?? 'fr') === 'us' ? 'us' : 'fr';
+$gradesFr = is_array($gradesFr ?? null) ? $gradesFr : [];
+$gradesUs = is_array($gradesUs ?? null) ? $gradesUs : [];
 $tenantExtras = is_array($tenantExtras ?? null) ? $tenantExtras : [];
 $tenantSystemCode = strtoupper(trim((string) ($tenantSystemCode ?? 'FR_CLASSIC')));
-$flashSuccess = \App\Core\Session::getFlash('success');
-$flashError = \App\Core\Session::getFlash('error');
-$gradesQuerySuffix = static function (string $t, ?int $catId): string {
-    $q = '?tab=' . rawurlencode($t);
-    if ($catId !== null && $catId > 0) {
-        $q .= '&categorie=' . $catId;
-    }
+$h = static fn (mixed $v): string => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
-    return $q;
+$rows = $tab === 'us' ? $gradesUs : $gradesFr;
+$visible = array_values(array_filter($rows, static fn (array $g): bool => !empty($g['is_enabled'])));
+$hidden = GradeSelectOptions::sorted(array_values(array_filter($rows, static fn (array $g): bool => empty($g['is_enabled']))));
+$groups = GradeSelectOptions::groups($visible, $tab === 'us' ? 'US' : 'FR');
+$systemName = $tab === 'us' ? 'américains' : 'français';
+$communitySystem = str_starts_with($tenantSystemCode, 'US') ? 'us' : 'fr';
+$renamed = static function (array $g): bool {
+    return trim((string) ($g['label_long'] ?? '')) !== trim((string) ($g['catalog_label_long'] ?? $g['label_long'] ?? ''))
+        || trim((string) ($g['label_short'] ?? '')) !== trim((string) ($g['catalog_label_short'] ?? $g['label_short'] ?? ''));
 };
+$tabUrl = static fn (string $t): string => url('back-office/referentiels/grades') . '?tab=' . rawurlencode($t);
 ?>
-<div class="bo-legacy bo-legacy--5xl">
-    <div class="flex items-center justify-between mb-6">
-        <h1 class="text-2xl font-black text-slate-900">Référentiel des grades</h1>
-        <div class="flex items-center gap-3">
-            <a href="<?= url('back-office/organisation/grades') ?>" class="text-sm font-medium text-slate-600 underline hover:text-slate-900">Règles d’avancement →</a>
-            <a href="<?= url('back-office/referentiels/grades/catalogue') ?>" class="text-sm font-medium text-emerald-800 underline hover:text-emerald-950">Catalogue OTAN / audit →</a>
-            <a href="<?= url('back-office/referentiels/competences') ?>" class="text-sm font-medium text-slate-600 underline hover:text-slate-900">Matrice de compétences →</a>
-            <a href="<?= url('back-office/referentiels/grades/create') ?>?tab=<?= rawurlencode($tab === 'us' ? 'us' : 'fr') ?>" class="px-4 py-2 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800">Nouveau grade</a>
-        </div>
-    </div>
-    <?php if ($flashSuccess): ?>
-    <p class="mb-4 text-sm text-emerald-700 bg-emerald-50 px-3 py-2 rounded"><?= htmlspecialchars($flashSuccess) ?></p>
-    <?php endif; ?>
-    <?php if ($flashError): ?>
-    <p class="mb-4 text-sm text-red-700 bg-red-50 px-3 py-2 rounded"><?= htmlspecialchars($flashError) ?></p>
-    <?php endif; ?>
-    <p class="mb-6 text-sm text-slate-600">Catalogue partagé FR_CLASSIC / US_CLASSIC. Cette communauté réutilise ces grades, les adapte (libellés, visibilité) et peut en ajouter sans modifier les autres communautés. Système actuel : <strong><?= htmlspecialchars($tenantSystemCode, ENT_QUOTES, 'UTF-8') ?></strong>.</p>
+<div class="bo-legacy bo-legacy--5xl grd-ref">
+    <header class="grd-ref__head">
+        <p class="grd-ref__lead">Les grades proposés dans les fiches membres viennent d’un catalogue commun à toutes les communautés. Ici, vous choisissez lesquels afficher et vous pouvez renommer un grade : les autres communautés ne sont pas touchées.</p>
+        <nav class="grd-ref__links" aria-label="Pages liées">
+            <a href="<?= $h(url('back-office/organisation/grades')) ?>">Règles d’avancement</a>
+            <a href="<?= $h(url('back-office/referentiels/grades/catalogue')) ?>">Catalogue OTAN et audit</a>
+        </nav>
+    </header>
 
-    <nav class="flex flex-wrap gap-2 border-b border-slate-200 mb-6">
-        <a href="<?= url('back-office/referentiels/grades') . $gradesQuerySuffix('fr', $gradeCategoryFilterId) ?>" class="px-4 py-2 text-sm font-medium <?= $tab === 'fr' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-600 hover:text-slate-900' ?>">Grades français</a>
-        <a href="<?= url('back-office/referentiels/grades') . $gradesQuerySuffix('us', $gradeCategoryFilterId) ?>" class="px-4 py-2 text-sm font-medium <?= $tab === 'us' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-600 hover:text-slate-900' ?>">Grades américains</a>
-        <a href="<?= url('back-office/referentiels/grades') ?>?tab=otan" class="px-4 py-2 text-sm font-medium <?= $tab === 'otan' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-600 hover:text-slate-900' ?>">Correspondances OTAN</a>
-        <a href="<?= url('back-office/referentiels/grades') ?>?tab=categories" class="px-4 py-2 text-sm font-medium <?= $tab === 'categories' ? 'border-b-2 border-slate-900 text-slate-900' : 'text-slate-600 hover:text-slate-900' ?>">Catégories</a>
+    <nav class="grd-ref__tabs" aria-label="Systèmes de grades">
+        <?php foreach (['fr' => ['Grades français', count($gradesFr)], 'us' => ['Grades américains', count($gradesUs)]] as $key => [$label, $count]): ?>
+            <a href="<?= $h($tabUrl($key)) ?>" class="<?= $tab === $key ? 'is-active' : '' ?>" <?= $tab === $key ? 'aria-current="page"' : '' ?>>
+                <?= $h($label) ?>
+                <?php if ($communitySystem === $key): ?><span class="grd-ref__badge grd-ref__badge--accent">Système de la communauté</span><?php endif; ?>
+            </a>
+        <?php endforeach; ?>
     </nav>
 
-    <?php if ($tab === 'fr' || $tab === 'us'): ?>
-    <form method="get" action="<?= url('back-office/referentiels/grades') ?>" class="mb-6 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-slate-50/80 p-4">
-        <input type="hidden" name="tab" value="<?= htmlspecialchars($tab, ENT_QUOTES, 'UTF-8') ?>">
-        <div class="min-w-[12rem]">
-            <label for="grade-cat-filter" class="block text-xs font-semibold text-slate-600 mb-1">Filtrer par catégorie</label>
-            <select id="grade-cat-filter" name="categorie" class="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm">
-                <option value="0">Toutes les catégories</option>
-                <?php foreach ($categories as $c):
-                    $cid = (int) ($c['id'] ?? 0);
-                    if ($cid < 1) {
-                        continue;
-                    }
-                    $sel = $gradeCategoryFilterId !== null && $gradeCategoryFilterId === $cid ? ' selected' : '';
-                    ?>
-                <option value="<?= $cid ?>"<?= $sel ?>><?= htmlspecialchars((string) ($c['label'] ?? ''), ENT_QUOTES, 'UTF-8') ?></option>
-                <?php endforeach; ?>
-            </select>
+    <section class="grd-ref__panel">
+        <div class="grd-ref__panel-head">
+            <h2><?= count($visible) ?> grades <?= $h($systemName) ?> affichés</h2>
+            <p>Classés par catégorie, du plus élevé au plus bas. « Masquer » retire un grade des listes sans rien supprimer.</p>
         </div>
-        <button type="submit" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Appliquer</button>
-        <?php if ($gradeCategoryFilterId !== null && $gradeCategoryFilterId > 0): ?>
-        <a href="<?= url('back-office/referentiels/grades') . $gradesQuerySuffix($tab, null) ?>" class="text-sm font-medium text-slate-600 underline hover:text-slate-900 py-2">Réinitialiser le filtre</a>
+        <?php if ($groups === []): ?>
+            <p class="grd-ref__empty">Aucun grade <?= $h($systemName) ?> affiché.</p>
         <?php endif; ?>
-    </form>
-    <?php endif; ?>
-
-    <?php if ($tab === 'fr'): ?>
-    <table class="w-full border border-slate-200 rounded-lg overflow-hidden">
-        <thead class="bg-slate-50 border-b border-slate-200">
-            <tr>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Code</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Court</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Long</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">OTAN</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Catégorie</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Ordre</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Rendu</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($gradesFr as $g): ?>
-            <tr class="border-b border-slate-100 hover:bg-slate-50 <?= empty($g['is_enabled']) ? 'opacity-50' : '' ?>">
-                <td class="p-3 font-mono text-sm"><?= htmlspecialchars($g['code']) ?></td>
-                <td class="p-3"><?= htmlspecialchars($g['label_short']) ?><?php if (!empty($g['has_override'])): ?> <span class="text-xs text-emerald-700">communauté</span><?php endif; ?></td>
-                <td class="p-3"><?= htmlspecialchars($g['label_long']) ?></td>
-                <td class="p-3"><?= htmlspecialchars($g['label_otan'] ?? '—') ?></td>
-                <td class="p-3 text-slate-600"><?= htmlspecialchars($g['category_label'] ?? '') ?></td>
-                <td class="p-3"><?= (int) $g['sort_order'] ?></td>
-                <td class="p-3 text-sm text-slate-600">
-                    <?php if ($gradeDisplayService): ?>
-                    Classique: <?= htmlspecialchars($gradeDisplayService->formatForUser($g, 'classic', 'FR')) ?>
-                    · OTAN: <?= htmlspecialchars($gradeDisplayService->getOtan($g) ?? '—') ?>
-                    · Hybride: <?= htmlspecialchars($gradeDisplayService->getFull($g)) ?>
-                    <?php endif; ?>
-                </td>
-                <td class="p-3">
-                    <a href="<?= url('back-office/referentiels/grades/' . $g['id'] . '/edit') ?>" class="text-slate-700 hover:underline text-sm">Modifier</a>
-                    <?php if (!empty($g['is_enabled'])): ?>
-                    · <form action="<?= url('back-office/referentiels/grades/' . $g['id'] . '/deactivate') ?>" method="post" class="inline" onsubmit="return confirm('Désactiver ce grade ?');">
-                        <?= \App\Core\Csrf::field() ?>
-                        <button type="submit" class="text-red-600 hover:underline text-sm">Supprimer</button>
-                    </form>
-                    <?php endif; ?>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-    <?php if (empty($gradesFr)): ?>
-    <p class="text-slate-500">Aucun grade français.</p>
-    <?php endif; ?>
-    <?php endif; ?>
-
-    <?php if ($tab === 'us'): ?>
-    <table class="w-full border border-slate-200 rounded-lg overflow-hidden">
-        <thead class="bg-slate-50 border-b border-slate-200">
-            <tr>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Code</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Court</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Long</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">OTAN</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Catégorie</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Ordre</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Rendu</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($gradesUs as $g): ?>
-            <tr class="border-b border-slate-100 hover:bg-slate-50 <?= empty($g['is_enabled']) ? 'opacity-50' : '' ?>">
-                <td class="p-3 font-mono text-sm"><?= htmlspecialchars($g['code']) ?></td>
-                <td class="p-3"><?= htmlspecialchars($g['label_short']) ?><?php if (!empty($g['has_override'])): ?> <span class="text-xs text-emerald-700">communauté</span><?php endif; ?></td>
-                <td class="p-3"><?= htmlspecialchars($g['label_long']) ?></td>
-                <td class="p-3"><?= htmlspecialchars($g['label_otan'] ?? '—') ?></td>
-                <td class="p-3 text-slate-600"><?= htmlspecialchars($g['category_label'] ?? '') ?></td>
-                <td class="p-3"><?= (int) $g['sort_order'] ?></td>
-                <td class="p-3 text-sm text-slate-600">
-                    <?php if ($gradeDisplayService): ?>
-                    Classique: <?= htmlspecialchars($gradeDisplayService->formatForUser($g, 'classic', 'US')) ?>
-                    · OTAN: <?= htmlspecialchars($gradeDisplayService->getOtan($g) ?? '—') ?>
-                    · Hybride: <?= htmlspecialchars($gradeDisplayService->getFull($g)) ?>
-                    <?php endif; ?>
-                </td>
-                <td class="p-3">
-                    <a href="<?= url('back-office/referentiels/grades/' . $g['id'] . '/edit') ?>" class="text-slate-700 hover:underline text-sm">Modifier</a>
-                    <?php if (!empty($g['is_enabled'])): ?>
-                    · <form action="<?= url('back-office/referentiels/grades/' . $g['id'] . '/deactivate') ?>" method="post" class="inline" onsubmit="return confirm('Désactiver ce grade ?');">
-                        <?= \App\Core\Csrf::field() ?>
-                        <button type="submit" class="text-red-600 hover:underline text-sm">Supprimer</button>
-                    </form>
-                    <?php endif; ?>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-    <?php if (empty($gradesUs)): ?>
-    <p class="text-slate-500">Aucun grade américain.</p>
-    <?php endif; ?>
-    <?php endif; ?>
-
-    <?php if ($tenantExtras !== [] && ($tab === 'fr' || $tab === 'us')): ?>
-    <section class="mt-10">
-        <h2 class="text-lg font-black text-slate-900 mb-3">Grades propres à la communauté</h2>
-        <p class="text-sm text-slate-600 mb-4">Ajoutés ici, ils n’existent que pour cette communauté. L’historique et l’avancement les réutilisent.</p>
-        <table class="w-full border border-slate-200 rounded-lg overflow-hidden">
-            <thead class="bg-slate-50 border-b border-slate-200">
-                <tr>
-                    <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Code</th>
-                    <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Libellé</th>
-                    <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Filière</th>
-                    <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Statut</th>
-                    <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($tenantExtras as $extra): ?>
-                <tr class="border-b border-slate-100 hover:bg-slate-50">
-                    <td class="p-3 font-mono text-sm"><?= htmlspecialchars((string) ($extra['code'] ?? '')) ?></td>
-                    <td class="p-3"><?= htmlspecialchars((string) ($extra['label'] ?? '')) ?></td>
-                    <td class="p-3 text-slate-600"><?= htmlspecialchars((string) ($extra['filiere_label'] ?? '—')) ?></td>
-                    <td class="p-3"><?= !empty($extra['archived_at']) ? 'Archivé' : 'Actif' ?></td>
-                    <td class="p-3">
-                        <a href="<?= url('back-office/organisation/grades/' . (int) ($extra['id'] ?? 0) . '/edit') ?>" class="text-slate-700 hover:underline text-sm">Modifier</a>
-                    </td>
-                </tr>
+        <?php foreach ($groups as $group): ?>
+            <h3 class="grd-ref__group"><?= $h($group['label']) ?> <small><?= count($group['grades']) ?></small></h3>
+            <ul class="grd-ref__list">
+                <?php foreach ($group['grades'] as $g): ?>
+                    <?php $gid = (int) ($g['id'] ?? 0); ?>
+                    <li class="grd-ref__row">
+                        <span class="grd-ref__short"><?= $h($g['label_short'] ?? '') ?></span>
+                        <span class="grd-ref__name">
+                            <strong><?= $h($g['label_long'] ?? '') ?></strong>
+                            <?php if ($renamed($g)): ?>
+                                <span class="grd-ref__badge" title="Nom du catalogue : <?= $h($g['catalog_label_long'] ?? '') ?>">Renommé</span>
+                            <?php endif; ?>
+                        </span>
+                        <span class="grd-ref__otan"><?= $h(($g['label_otan'] ?? '') !== '' ? $g['label_otan'] : '—') ?></span>
+                        <span class="grd-ref__actions">
+                            <a href="<?= $h(url('back-office/referentiels/grades/' . $gid . '/edit')) ?>">Renommer</a>
+                            <form action="<?= $h(url('back-office/referentiels/grades/' . $gid . '/deactivate')) ?>" method="post" onsubmit="return confirm('Masquer ce grade ? Il ne sera plus proposé dans les fiches membres (les membres qui l’ont déjà le gardent).');">
+                                <?= \App\Core\Csrf::field() ?>
+                                <button type="submit">Masquer</button>
+                            </form>
+                        </span>
+                    </li>
                 <?php endforeach; ?>
-            </tbody>
-        </table>
+            </ul>
+        <?php endforeach; ?>
+
+        <?php if ($hidden !== []): ?>
+            <details class="grd-ref__hidden">
+                <summary><?= count($hidden) ?> grade<?= count($hidden) > 1 ? 's' : '' ?> masqué<?= count($hidden) > 1 ? 's' : '' ?></summary>
+                <ul class="grd-ref__list">
+                    <?php foreach ($hidden as $g): ?>
+                        <?php $gid = (int) ($g['id'] ?? 0); ?>
+                        <li class="grd-ref__row grd-ref__row--hidden">
+                            <span class="grd-ref__short"><?= $h($g['label_short'] ?? '') ?></span>
+                            <span class="grd-ref__name"><strong><?= $h($g['label_long'] ?? '') ?></strong> <span class="grd-ref__muted"><?= $h($g['category_label'] ?? '') ?></span></span>
+                            <span class="grd-ref__otan"><?= $h(($g['label_otan'] ?? '') !== '' ? $g['label_otan'] : '—') ?></span>
+                            <span class="grd-ref__actions">
+                                <form action="<?= $h(url('back-office/referentiels/grades/' . $gid . '/reactivate')) ?>" method="post">
+                                    <?= \App\Core\Csrf::field() ?>
+                                    <button type="submit" class="grd-ref__restore">Réafficher</button>
+                                </form>
+                            </span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </details>
+        <?php endif; ?>
     </section>
-    <?php endif; ?>
 
-    <?php if ($tab === 'otan'): ?>
-    <p class="text-slate-600">Les codes OTAN sont définis au niveau de chaque grade (colonne label_otan). Les équivalences sont visibles dans les onglets Grades français et Grades américains.</p>
-    <?php endif; ?>
-
-    <?php if ($tab === 'categories'): ?>
-    <table class="w-full border border-slate-200 rounded-lg overflow-hidden">
-        <thead class="bg-slate-50 border-b border-slate-200">
-            <tr>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Code</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Libellé</th>
-                <th class="text-left p-3 text-xs font-semibold text-slate-600 uppercase">Ordre</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($categories as $c): ?>
-            <tr class="border-b border-slate-100 hover:bg-slate-50">
-                <td class="p-3 font-mono text-sm"><?= htmlspecialchars($c['code']) ?></td>
-                <td class="p-3"><?= htmlspecialchars($c['label']) ?></td>
-                <td class="p-3"><?= (int) $c['sort_order'] ?></td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-    <?php if (empty($categories)): ?>
-    <p class="text-slate-500">Aucune catégorie.</p>
-    <?php endif; ?>
-    <?php endif; ?>
-
-    <p class="mt-8 text-sm text-slate-500"><a href="<?= url('back-office') ?>" class="underline">Retour au back-office</a></p>
+    <section class="grd-ref__panel grd-ref__panel--extras">
+        <div class="grd-ref__panel-head grd-ref__panel-head--row">
+            <div>
+                <h2>Grades d’avancement créés par la communauté</h2>
+                <p>Ces grades n’existent pas dans le catalogue. Ils servent aux règles d’avancement et aux campagnes (paliers, conditions, historique). Ils ne remplacent pas les grades ci-dessus : pour changer le nom d’un grade affiché sur les fiches, utilisez « Renommer ».</p>
+            </div>
+            <a class="grd-ref__btn" href="<?= $h(url('back-office/referentiels/grades/create') . '?tab=' . rawurlencode($tab)) ?>">Créer un grade d’avancement</a>
+        </div>
+        <?php if ($tenantExtras === []): ?>
+            <p class="grd-ref__empty">Aucun grade propre à la communauté.</p>
+        <?php else: ?>
+            <ul class="grd-ref__list">
+                <?php foreach ($tenantExtras as $extra): ?>
+                    <li class="grd-ref__row<?= !empty($extra['archived_at']) ? ' grd-ref__row--hidden' : '' ?>">
+                        <span class="grd-ref__short"><?= $h($extra['short_label'] ?? $extra['code'] ?? '') ?></span>
+                        <span class="grd-ref__name">
+                            <strong><?= $h($extra['label'] ?? '') ?></strong>
+                            <span class="grd-ref__badge grd-ref__badge--community">Créé par la communauté</span>
+                            <?php if (!empty($extra['archived_at'])): ?><span class="grd-ref__badge">Archivé</span><?php endif; ?>
+                        </span>
+                        <span class="grd-ref__otan"><?= $h($extra['filiere_label'] ?? '—') ?></span>
+                        <span class="grd-ref__actions">
+                            <a href="<?= $h(url('back-office/organisation/grades/' . (int) ($extra['id'] ?? 0) . '/edit')) ?>">Modifier</a>
+                        </span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        <?php endif; ?>
+    </section>
 </div>

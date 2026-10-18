@@ -30,12 +30,19 @@ final class GradeReferentielAssetTest extends TestCase
         );
         $routes = (string) file_get_contents(dirname(__DIR__, 2) . '/routes/web.php');
 
-        self::assertStringContainsString("grades/create') ?>?tab=", $view);
-        self::assertStringContainsString("/' . \$g['id'] . '/edit", $view);
-        self::assertStringContainsString("/' . \$g['id'] . '/deactivate", $view);
-        self::assertStringContainsString('>Supprimer</button>', $view);
+        // Les grades du catalogue se masquent / se réaffichent (rien n'est supprimé) ; les grades
+        // créés par la communauté sont des grades d'avancement, présentés à part.
+        self::assertStringContainsString("url('back-office/referentiels/grades/create')", $view);
+        self::assertStringContainsString("/' . \$gid . '/edit", $view);
+        self::assertStringContainsString("/' . \$gid . '/deactivate", $view);
+        self::assertStringContainsString("/' . \$gid . '/reactivate", $view);
+        self::assertStringContainsString('>Masquer</button>', $view);
+        self::assertStringContainsString('>Réafficher</button>', $view);
+        self::assertStringNotContainsString('>Supprimer</button>', $view);
+        self::assertStringContainsString('Grades d’avancement créés par la communauté', $view);
         self::assertStringContainsString("/{id}/edit'", $routes);
         self::assertStringContainsString("/{id}/update'", $routes);
         self::assertStringContainsString("/{id}/deactivate'", $routes);
+        self::assertStringContainsString("/{id}/reactivate'", $routes);
     }
 }
