@@ -38,6 +38,32 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Réseau : bilan radio réaliste et guide du réseau (ATAK natif 2.1.0)
+
+### Résumé joueur
+Type : nouveauté
+FR : Un réseau radio plus réaliste, et un guide pour le comprendre
+- Le signal tient compte du relief entre toi et le relais, de la forêt et des bâtiments traversés : monter sur une crête ou sortir d'un sous-bois redonne des barres.
+- Au bord de la couverture, tu peux encore recevoir sans pouvoir émettre (« Réception seule ») : tes envois attendent et partent dès que tu te rapproches. Un message qui échoue trois fois repart en file au lieu d'arriver quand même, et une photo lourde retarde le message suivant.
+- Près d'un relais, ton signal résiste mieux à un brouilleur ; au bord de la couverture, il tombe vite.
+- Nouveau guide « Réseau et simulation » avec schémas : bouton COMSPEC ATAK en haut à gauche du menu principal, et menu COMSPEC ATAK dans l'éditeur Eden.
+EN : A more realistic radio network, and a guide to understand it
+- The signal accounts for the terrain between you and the relay, and for the forest and buildings in the way: climbing a ridge or leaving a wood brings your bars back.
+- At the edge of coverage you can still receive without being able to transmit ("Receive only"): your messages wait and leave as soon as you get closer. A message that fails three times goes back to the queue instead of arriving anyway, and a heavy photo delays the next message.
+- Near a relay your signal holds up better against a jammer; at the edge of coverage it drops fast.
+- New "Network and simulation" guide with diagrams: COMSPEC ATAK button at the top left of the main menu, and COMSPEC ATAK menu in the Eden editor.
+
+### Détail technique
+- Nouveau `fn_radioLink` : bilan radio en dB à 4,9 GHz. Marge en espace libre `20 log10(portée / distance)` (la portée de mission reste la portée d'un lien dégagé), profil du terrain avec courbure terrestre (k = 4/3), diffraction en lame de couteau ITU-R P.526 sur l'arête principale (+2 dB par crête secondaire, plafond 40 dB), feuillage par Weissberger là où le rayon passe à moins de 20 m du sol (arbres comptés par `nearestTerrainObjects`, +20 % sous la pluie), bâtiments traversés sur les 1 500 derniers mètres (12 dB chacun).
+- `fn_relayNet` : `"link"` renvoie aussi marge, pertes détaillées et MCS ; débit par modulation adaptative (8 paliers) et perte `40·e^(-marge/5)`. `"best"` : passe rapide (relief) puis calcul complet sur les 3 meilleurs, voie descendante +4 dB (frange réception seule), terminal de bord +3 dB, évanouissements ±2 dB par relais, plus en mouvement. Bonds entre répéteurs sur le même bilan.
+- `fn_linkQuality` : causes en dB dans la page Réseau, clés `tx`, `margin`, `jitter` ; relief non compté deux fois avec un relais ; pluie et brouillard sans effet à 4,9 GHz (seul le feuillage mouillé compte) ; brouilleurs selon le rapport J/S (burn-through) ; batterie < 10 % émission réduite ; pertes et gigue en mouvement rapide.
+- `fn_netSend` : canal partagé (`COMSPEC_ATAK_NetBusyUntil`), gigue, urgents en tête de file, 3e échec = retour en file, réception seule = file. Maillage Wave Relay (`fn_waveRelayAction`) sur le même bilan.
+- Réglage serveur « Réalisme de la simulation radio » (`comspec_atak_native_net_realism`) : Réaliste (défaut), Exigeant, Simplifié (ancien modèle, portée x 0,35 derrière le relief).
+- Guide `fn_netGuide` (10 sections, 5 schémas FR/EN `data/netguide_*.paa`, `tools/gen_net_guide.py`) : menu Eden COMSPEC ATAK > Guide, bouton du menu principal (`fn_mainMenuButton`, Extended_DisplayLoad de RscDisplayMain). `fn_langApply` : un texte avec « % » sans numéro est maintenant traduit tel quel.
+- À tester en jeu : barres et page Réseau derrière une crête, en forêt et en ville ; frange réception seule ; brouilleur près et loin d'un relais ; file d'envoi (photo puis message) ; guide depuis Eden et depuis le menu principal ; FPS avec 10 relais.
+
+---
+
 ## Regroupement : mode hors connexion, points de passage, fond photo de la carte (ATAK natif 2.0.1.AB - Denver, COMSPEC Link 2.0.87)
 
 ### Résumé joueur

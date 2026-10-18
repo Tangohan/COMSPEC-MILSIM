@@ -34,7 +34,7 @@ class CfgFunctions {
         class network { file="z\comspec_atak_native\addons\main\functions\network";
             class extensionCall {}; class relayTower {}; class relayTowerRuin {}; class relayEden {}; class relayZeus {}; class extAwait {}; class extensionCallback {}; class serverPresence {}; class remoteSync {}; class importLegacyData {};
             class pollUnits {}; class pollMarkers {}; class pollOrders {}; class pollChat {};
-            class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class offline {}; class relayNet {}; class videoLink {}; class moduleRelay {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {}; class feedLink {}; class extVersion {};
+            class p2pSend {}; class p2pReceive {}; class p2pAck {}; class p2pReachable {}; class p2pDate {}; class athenaSignal {}; class netSend {}; class radioLink {}; class netGuide {}; class offline {}; class relayNet {}; class videoLink {}; class moduleRelay {}; class bridge {}; class avatarPath {}; class athenaMode {}; class athenaChoice {}; class athenaLink {}; class feedLink {}; class extVersion {};
         };
         class viz { file="z\comspec_atak_native\addons\main\functions\viz";
             class vizEcg {}; class vizSpectrum {}; class vizPlayer {};
@@ -496,16 +496,17 @@ class CfgHints {
     };
 };
 
-// Eden : menu COMSPEC ATAK (TBR, tableau des relais ; aide relais) et aperçu des tours posées par le module relais.
+// Eden : menu COMSPEC ATAK (TBR, tableau des relais ; aide relais ; guide réseau et simulation, fn_netGuide) et aperçu des tours posées par le module relais.
 class ctrlMenuStrip;
 class Display3DEN {
     class Controls {
         class MenuStrip: ctrlMenuStrip {
             class Items {
                 items[] += {"COMSPEC_ATAK_Menu"};
-                class COMSPEC_ATAK_Menu { text = "COMSPEC ATAK"; items[] = {"COMSPEC_ATAK_MenuRelays", "COMSPEC_ATAK_MenuRelayHelp"}; };
+                class COMSPEC_ATAK_Menu { text = "COMSPEC ATAK"; items[] = {"COMSPEC_ATAK_MenuRelays", "COMSPEC_ATAK_MenuRelayHelp", "COMSPEC_ATAK_MenuNetGuide"}; };
                 class COMSPEC_ATAK_MenuRelays { text = "$STR_COMSPEC_ATAK_CFG_TBR_MENU"; action = "['table'] call comspec_atak_native_fnc_relayEden"; };
                 class COMSPEC_ATAK_MenuRelayHelp { text = "$STR_COMSPEC_ATAK_CFG_TBR_HELP"; action = "['help'] call comspec_atak_native_fnc_relayEden"; };
+                class COMSPEC_ATAK_MenuNetGuide { text = "$STR_COMSPEC_ATAK_CFG_NETGUIDE_MENU"; action = "[] call comspec_atak_native_fnc_netGuide"; };
             };
         };
     };
@@ -525,6 +526,8 @@ class Extended_PreInit_EventHandlers { class comspec_atak_native_main { init="ca
 // Intro du mod sur l'écran de démarrage d'Arma (une fois par lancement du jeu), jamais sur le menu principal.
 // Marque COMSPEC (emblème, « OVERWATCH · ATAK NATIF », version) sur les chargements de mission.
 class Extended_DisplayLoad_EventHandlers {
+    // Menu principal (fn_mainMenuButton, exclu de tools/i18n.py wrap : fn_tr pas encore là) : bouton « COMSPEC ATAK · Guide réseau » (fn_mainMenuButton -> fn_netGuide), rien d'autre.
+    class RscDisplayMain { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_mainMenuButton.sqf'"; };
     class RscDisplayStart { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_introSplash.sqf'"; };
     class RscDisplayLoadMission { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf'"; };
     class RscDisplayLoading { comspec_atak_native_main="(_this select 0) call compile preprocessFileLineNumbers '\z\comspec_atak_native\addons\main\functions\ui\fn_loadingBadge.sqf'"; };

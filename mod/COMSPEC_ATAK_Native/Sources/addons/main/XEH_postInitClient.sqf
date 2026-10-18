@@ -536,7 +536,9 @@ addMissionEventHandler ["EntityKilled", {
     };
     private _queue = missionNamespace getVariable ["COMSPEC_ATAK_NetQueue", []];
     if ((count _queue) isEqualTo 0) exitWith {};
-    if ((([] call comspec_atak_native_fnc_linkQuality) get "bars") isEqualTo 0) exitWith {};
+    // Réception seule (hors de portée d'émission) : la file attend aussi.
+    private _lq = [] call comspec_atak_native_fnc_linkQuality;
+    if ((_lq get "bars") isEqualTo 0 || {!(_lq getOrDefault ["tx", true])}) exitWith {};
     // Au plus 5 envois toutes les 2 s : vider toute la file d'un coup figeait le jeu au retour du réseau.
     private _batch = _queue select [0, 5];
     missionNamespace setVariable ["COMSPEC_ATAK_NetQueue", _queue select [5]];
