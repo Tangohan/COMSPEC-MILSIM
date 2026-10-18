@@ -45,7 +45,7 @@ public static partial class Extension
     /// <summary>Groupe sanguin ACE / plaque, remonté vers Athena au client-init.</summary>
     private static string _bloodType = "";
     /// <summary>Version de la DLL NativeAOT (remontée vers Athena).</summary>
-    private const string ExtensionVersion = "2.0.87";
+    private const string ExtensionVersion = "2.0.88";
     /// <summary>Jeton de session court renvoyé par client-init (anti-spoof serveur).</summary>
     private static string _sessionToken = "";
     /// <summary>Expiration UTC du jeton opaque ATAK (expires_in client-init, défaut 4 h).</summary>
@@ -1549,6 +1549,7 @@ public static partial class Extension
             var response = HttpClient.SendAsync(req).GetAwaiter().GetResult();
             var sentCode = (int)response.StatusCode;
             JournalHttp(started, sentCode);
+            NoteTrafficUntracked(req, response);
             // Issue notée après la remise en file éventuelle (finally) pour distinguer nouvel essai et échec.
             try
             {
@@ -2279,15 +2280,20 @@ public static partial class Extension
     private static HttpResponseMessage SendTimed(HttpRequestMessage req, CancellationToken token)
     {
         var started = DateTime.UtcNow.Ticks;
+        // gzip + empreinte de la dernière réponse (304 = inchangée, copie gardée resservie) ; volume compté par canal.
+        PrepareTrackedRequest(req);
+        var outBytes = EstimateRequestBytes(req);
         try
         {
             var resp = HttpClient.SendAsync(req, token).GetAwaiter().GetResult();
             JournalHttp(started, (int)resp.StatusCode);
+            FinishTrackedResponse(req, resp, outBytes, token);
             return resp;
         }
         catch
         {
             JournalHttp(started, -1);
+            NoteTraffic(TrafficChannelKey(req.RequestUri), outBytes, 0, -1);
             throw;
         }
     }
@@ -2366,11 +2372,11 @@ public static partial class Extension
         return "OK|" + payload;
     }
 
-    private static HttpResponseMessage SendJsonPost(string url, string jsonBody, CancellationToken token)
+    private static HttpResponseMessage SendJsonPost(string url, string jsonBody, CancellationToken token, bool gzip = false)
     {
         using var req = new HttpRequestMessage(HttpMethod.Post, url)
         {
-            Content = JsonContent(jsonBody)
+            Content = gzip ? GzipJsonContent(jsonBody) : JsonContent(jsonBody)
         };
         AttachApiKeyHeader(req);
         var started = DateTime.UtcNow.Ticks;
@@ -2989,6 +2995,9 @@ public static partial class Extension
         // File d'envoi suivie (app Réseau du téléphone) : lue en mémoire, sans réseau.
         if (function == "SendQueue.Status")
             return JournalStatusForSqf();
+        // Volume échangé avec Athena par canal (app Réseau du téléphone, bandeau de dépannage) : en mémoire, sans réseau.
+        if (function == "SyncStats")
+            return SyncStatsForSqf();
         // Sonde légère : confirme que la DLL répond (chargée et non bloquée, ex. par BattlEye).
         if (function is "Ping" or "Warmup" or "GetExtensionVersion")
         {
@@ -11735,7 +11744,8 @@ public static partial class Extension
             if (!TryBuildRequestUri(_baseUrl, path, out var uri, out var err) || uri is null)
                 return FormatAtakExtArray("ERROR", err);
             var payload = EnrichOperatorProfilePayload(json);
-            var resp = SendJsonPost(uri.AbsoluteUri, payload, cts.Token);
+            // Fiche (équipement, catalogue, mods) : 10 à 25 Ko en clair, compressée en gzip (Athena la décompresse).
+            var resp = SendJsonPost(uri.AbsoluteUri, payload, cts.Token, gzip: true);
             var body = ReadContentUtf8(resp, cts.Token);
             if (resp.IsSuccessStatusCode)
                 return FormatOperatorProfileResponse(body);

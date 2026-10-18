@@ -38,6 +38,29 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Synchronisation : seulement ce qui change, et son état dans l'app Réseau (ATAK natif 2.1.0, COMSPEC Link 2.0.88)
+
+### Résumé joueur
+Type : performance
+FR : Le téléphone n'envoie et ne retélécharge plus que ce qui change
+- Ta fiche opérateur part à la connexion, puis seulement quand ton équipement, ton indicatif, ton grade ou tes versions changent (avec un rappel tous les quarts d'heure). Avant, elle pouvait repartir toutes les dix secondes.
+- Le catalogue de tes objets et la liste de tes mods ne partent qu'une fois, puis seulement s'ils changent.
+- Quand rien n'a bougé sur Athena (messages, marqueurs, formes, ordres…), le téléphone ne retélécharge plus la liste ; le reste voyage compressé.
+- Nouvelle partie « Synchronisation avec Athena » dans l'app Réseau : état de la liaison, volume envoyé et reçu, dernier envoi de ta fiche et pourquoi, ce qui attend d'être envoyé, et le détail canal par canal.
+EN : The phone only sends and downloads what changed
+- Your operator profile is sent on connection, then only when your gear, callsign, rank or versions change (with a reminder every quarter hour). Before, it could go out every ten seconds.
+- Your item catalogue and mod list are sent once, then only when they change.
+- When nothing changed on Athena (messages, markers, shapes, orders…), the phone no longer downloads the list again; the rest travels compressed.
+- New "Sync with Athena" part in the Network app: link state, volume sent and received, your profile's last send and why, what is waiting to be sent, and the detail channel by channel.
+
+### Détail technique
+- Overwatch connect, `fn_syncOperatorProfile` : le délai d'attente après un refus ou une réponse « pending » n'était jamais appliqué (`exitWith` dans un bloc `then` ne quittait que ce bloc) : une fiche refusée, en 401 au démarrage ou en 404 repartait à chaque contrôle de 8 s. Sortie remise au niveau du script ; un refus durable (4xx, compte bloqué, migration) attend 1, 2, 4… 10 min. Le libellé du journal dit pourquoi la fiche part (« fiche opérateur (changé : gilet, 14.2 Ko) », « rappel 15 min », « première connexion ») : si « → fiche opérateur » revient encore souvent, le champ en cause est écrit. Variables lues par l'app Réseau : `COMSPEC_OperatorLastSentAt`, `COMSPEC_OperatorLastWhat`, `COMSPEC_OperatorLastBytes`, `COMSPEC_OperatorSentCount`.
+- `fn_operatorProfileTick` : contrôle léger (empreinte seule, sans catalogue ni mods, nouveau 4e paramètre `_light` de `fn_buildOperatorProfile`), rappel « heartbeat » toutes les 15 min qui garde à jour les écarts et `update_required` calculés par le site. `item_catalog` comme `mods` : envoyés à l'enregistrement puis seulement quand leur clé change (`COMSPEC_OpCatalogSentKey`, enregistrée au succès) ; les clés ne partent plus au site. Côté site, un sync sans catalogue relève les objets depuis l'équipement et garde le nom et le mod déjà connus (`GameEquipmentRepository::recordItems`).
+- COMSPEC Link 2.0.88, `Extension_SyncStats.cs` : `SendTimed` (GET des interrogations et la plupart des POST) annonce `Accept-Encoding: gzip`, envoie `If-None-Match` avec l'empreinte gardée de la dernière réponse ; sur 304 la copie gardée est resservie en 200 (96 réponses de 512 Ko au plus), l'appelant ne voit aucune différence. Compteurs par chemin d'API (octets envoyés et reçus sur le réseau, appels, réponses inchangées, octets évités, âge et dernier code), fenêtre glissante de 5 min, commande `SyncStats` (en mémoire, sans réseau). File d'envoi et lots de télémétrie comptés aussi. Fiche opérateur postée en gzip (`HttpJsonBody` la décompresse déjà).
+- Site, `GameApiResponseCompactor` (appelé par `Application` juste avant l'envoi) : pour COMSPEC Link seulement (User-Agent `COMSPECExtension/` ou `COMSPECATAKNativeExtension/`), GET `/api/…` 200 JSON : `ETag` faible sur le corps, 304 sans corps si `If-None-Match` correspond, sinon gzip au-delà de 1 Ko. Navigateurs et site inchangés. Une réponse qui contient l'heure du serveur (ordres) ne vaut jamais 304, elle est seulement compressée.
+- ATAK natif, app Réseau : partie « Synchronisation avec Athena » (`fn_syncStats` nouveau, `fn_pageNetwork`) ; bandeau de dépannage d'Overwatch : « Débit » compte maintenant les deux sens (avant, seulement les retours).
+- À tester en jeu : la fiche part une fois à la connexion puis à un changement de tenue (journal « changé : … ») ; la page Réseau montre des réponses « inchangées » quand rien ne bouge ; messages, marqueurs, formes et ordres arrivent toujours ; la fiche et les écarts restent à jour sur le site (fiche opérateur du membre).
+
 ## Regroupement : mode hors connexion, points de passage, fond photo de la carte (ATAK natif 2.0.1.AB - Denver, COMSPEC Link 2.0.87)
 
 ### Résumé joueur
