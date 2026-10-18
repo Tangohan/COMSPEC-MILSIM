@@ -3,10 +3,10 @@
     ["open", pos]      ouvre la pose au point (menu du clic droit, double clic) : palette, ou éditeur complet selon le
                        réglage d'addon « Menu de pose des marqueurs » (comspec_atak_native_marker_menu)
     ["anchor", pos]    choisit le point de pose (clic droit en mode MARQUEUR), la palette reste ouverte
-    ["validate"]       VALIDER : pose le marqueur au point choisi ; « À la suite » garde la palette ouverte
+    ["validate"]       VALIDER : pose le marqueur au point choisi ; « Plusieurs marqueurs » garde la palette ouverte
     ["close"]          ferme la palette (retour à la sélection)
     ["fold"]           replie / déplie la palette (gardé dans le profil)
-    ["series"]         bascule « À la suite » (gardé dans le profil)
+    ["series"]         bascule « Plusieurs marqueurs » (gardé dans le profil)
     ["setChannel", n]  canal des prochains marqueurs
     ["channel"]        -> canal des marqueurs posés par le téléphone (défaut : réglage d'addon, Général)
     ["channelName", n] -> nom du canal n (Général, Camp, Commandement, Groupe, Véhicule, Direct)
@@ -63,7 +63,7 @@ switch (_mode) do {
         private _m = [_pos] call comspec_atak_native_fnc_markerDrop;
         if (_m isEqualTo "") exitWith { false };
         _s set ["markerAnchor", []];
-        // Une seule pose : retour à la sélection ; « À la suite » : la palette reste pour le marqueur suivant.
+        // Une seule pose : retour à la sélection ; « Plusieurs marqueurs » : la palette reste pour le marqueur suivant.
         if (!(profileNamespace getVariable ["COMSPEC_ATAK_MarkerSeries", false]) && {(count (_s getOrDefault ["markerEdit", createHashMap])) isEqualTo 0}) then {
             ["SELECT"] call comspec_atak_native_fnc_mapToolSet;
         };

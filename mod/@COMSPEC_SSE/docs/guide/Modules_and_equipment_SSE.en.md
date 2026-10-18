@@ -55,6 +55,22 @@ A shorter version of the same content is in the game: **Escape › Field Manual 
 | **What players sent** | — | SSE Office › Cases, the case page. |
 | **Scripted digital devices** | — | SSE Office › **17 Digital exploitation**. |
 
+### The SSE dashboard (Eden)
+
+Eden › **COMSPEC SSE** menu › **SSE dashboard** opens a read-only view of all the SSE content of the open mission. Nothing is changed in the map and nothing is sent to the site.
+
+| Tab | What it shows |
+|---|---|
+| **Overview** | Mission, number of SSE people, objects, modules, organizations, links and networks, Campaign module, site status, and the **checks**: Link entities module with fewer than two entities, duplicate biometric ID, kinship or prints pointing to an unknown name, missing parent organization, campaign missing from the site or with a different type, person on the map under a BOLO… |
+| **Entities** | Every SSE person, object and module with its set attributes, synchronizations, links, its record in the site campaign and any BOLO. **Select in Eden** closes the window and moves the camera to the entity. |
+| **Links** | All links, grouped by origin: Organization and Link entities modules, Organization attributes, biometrics (kinship, latent prints), object content (apparent owner, account, contacts, organization), modules applied to entities; then networks (same network ID). |
+| **Org chart** | Organizations from the map and from the site campaign merged: child organizations, members sorted by role, cells, attached objects, recurring characters without an organization. Each item shows its source: [Eden], [site] or [Eden + site]. |
+| **Items and members** | Objects linked to each person, objects attached to organizations, SSE objects without links, and the seal register of the site campaign. |
+| **Campaign** | The map's mission modules with all their settings, and the full configuration of the campaign read from the site: seed, dates, missions played, log, recurring characters. |
+| **Athena site** | The community's campaigns (pick the one to read), and the BOLOs cross-checked against the people on the map. |
+
+The site is read through the COMSPEC Link DLL using commands it already knows (campaigns and BOLOs). With no link opened since the game started, the window restores the saved Athena session or uses the community key from the profile; if the site stays unreachable, run the mission preview once to link the account, then **Refresh from site**.
+
 ---
 
 ## 3. Tutorial 1: a first SSE mission

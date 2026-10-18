@@ -714,6 +714,7 @@ return function (Router $router) {
     $router->get('/documents/{id}/download', [DocumentsController::class, 'download'], $mwDocuments);
     $router->get('/documents/{slug}', [DocumentsController::class, 'show'], $mwDocuments);
     $router->get('/equipment', [ArsenalWardrobeController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/equipment/icones/{file}', [GameEquipmentAdminController::class, 'memberIcon'], [AuthMiddleware::class]);
     $router->get('/equipment/covers/{tenantId}/{file}', [ArsenalWardrobeController::class, 'streamCover'], [AuthMiddleware::class]);
     $router->get('/equipment/wardrobes', [ArsenalWardrobeController::class, 'redirectHub'], [AuthMiddleware::class]);
     $router->post('/equipment/collections', [ArsenalWardrobeController::class, 'storeCollection'], [AuthMiddleware::class]);
@@ -723,6 +724,7 @@ return function (Router $router) {
     $router->post('/equipment/tenues/{id}', [ArsenalWardrobeController::class, 'updateWardrobe'], [AuthMiddleware::class]);
     $router->post('/equipment/tenues/{id}/delete', [ArsenalWardrobeController::class, 'destroyWardrobe'], [AuthMiddleware::class]);
     $router->get('/equipment/tenues/{id}', [ArsenalWardrobeController::class, 'showWardrobe'], [AuthMiddleware::class]);
+    $router->post('/equipment/mon-kit/tenue', [ArsenalWardrobeController::class, 'saveMyGameKit'], [AuthMiddleware::class]);
     $router->post('/equipment/fiches', [ArsenalWardrobeController::class, 'storeFiche'], [AuthMiddleware::class]);
     $router->post('/equipment/fiches/{id}', [ArsenalWardrobeController::class, 'updateFiche'], [AuthMiddleware::class]);
     $router->get('/equipment/fiches/{id}', [ArsenalWardrobeController::class, 'showFiche'], [AuthMiddleware::class]);
@@ -1298,6 +1300,7 @@ return function (Router $router) {
     $router->post('/back-office/dashboard-tenues/{id}/move', [DashboardWardrobePinsAdminController::class, 'move'], [AuthMiddleware::class]);
     // Équipement remonté par le mod et kits par rôle (publiés comme tenues d’arsenal).
     $router->get('/back-office/equipement-joueurs', [GameEquipmentAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/equipement-joueurs/kits/{steam}/tenue', [GameEquipmentAdminController::class, 'saveKit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/equipement-joueurs/icones/{file}', [GameEquipmentAdminController::class, 'icon'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/kits-roles', [GameEquipmentAdminController::class, 'kits'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/kits-roles/nouveau', [GameEquipmentAdminController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

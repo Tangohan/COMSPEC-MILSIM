@@ -414,6 +414,56 @@ private _offQueue = count (missionNamespace getVariable ["COMSPEC_ATAK_NetQueue"
 ["Reçus en attente au relais", [str _offHeld, format ["<t color='#f2ab33'>%1</t>", _offHeld]] select (_offHeld > 0)] call _info;
 if !(missionNamespace getVariable ["comspec_atak_native_offline_hold", true]) then { ["<t color='#8a9a93'>Rétention coupée par le serveur : comptes rendus et alertes arrivent même sans signal.</t>"] call _para; };
 
+// --- Synchronisation avec Athena (fn_syncStats : volume par canal compté par COMSPEC Link 2.0.88) ---
+// Ce qui part et revient, canal par canal : la fiche opérateur ne repart que si elle change, et Athena ne renvoie plus
+// une liste (messages, marqueurs, formes, ordres…) qui n'a pas bougé depuis le dernier passage.
+if (_bridge) then {
+    private _ko = { params ["_b"]; switch (true) do { case (_b >= 1e6): { format ["%1 Mo", (_b / 1e6) toFixed 1] }; case (_b >= 1e4): { format ["%1 ko", round (_b / 1000)] }; default { format ["%1 ko", (_b / 1000) toFixed 1] }; } };
+    private _ss = [] call comspec_atak_native_fnc_syncStats;
+    ["Synchronisation avec Athena", "Seul ce qui change est envoyé ; une liste inchangée n'est pas retéléchargée"] call _section;
+    ["Liaison", switch (true) do {
+        case (_link in ["linked", "online", "connected"]): { "<t color='#5cc76b'>connectée</t>" };
+        case (_link isEqualTo "degraded"): { "<t color='#f2ab33'>dégradée</t>" };
+        case (_link isEqualTo "connecting"): { "<t color='#f2ab33'>connexion…</t>" };
+        default { "<t color='#e5483a'>hors ligne</t>" };
+    }] call _info;
+    if (_ss get "ok") then {
+        private _sp = _ss get "span";
+        ["Volume (5 dernières min)", format ["envoyé %1/min · reçu %2/min", [(_ss get "wOut") * 60 / _sp] call _ko, [(_ss get "wIn") * 60 / _sp] call _ko]] call _info;
+        ["Depuis le lancement", format ["envoyé %1 · reçu %2 · %3 requêtes", [_ss get "out"] call _ko, [_ss get "in"] call _ko, _ss get "calls"]] call _info;
+        ["Réponses inchangées", format ["%1 · %2 non retéléchargés", _ss get "same", [_ss get "saved"] call _ko]] call _info;
+    } else {
+        ["<t color='#8a9a93'>Le détail par canal demande COMSPEC Link 2.0.88 ou plus récent.</t>"] call _para;
+    };
+    // Fiche opérateur (Overwatch connect : fn_syncOperatorProfile).
+    private _fAt = missionNamespace getVariable ["COMSPEC_OperatorLastSentAt", -1];
+    private _fWhat = missionNamespace getVariable ["COMSPEC_OperatorLastWhat", ""];
+    private _fBack = (missionNamespace getVariable ["COMSPEC_OperatorProfileBackoffUntil", 0]) - diag_tickTime;
+    ["Fiche opérateur", if (_fAt isEqualType 0 && {_fAt > 0}) then {
+        format ["%1 · %2 · %3 · %4 envoi(s)%5", [diag_tickTime - _fAt] call _ageTxt, [_fWhat] call _esc,
+            [missionNamespace getVariable ["COMSPEC_OperatorLastBytes", 0]] call _ko, missionNamespace getVariable ["COMSPEC_OperatorSentCount", 0],
+            ["", format ["<br/><t color='#f2ab33'>nouvel essai dans %1 s</t>", round _fBack]] select (_fBack > 0)]
+    } else { ["pas encore envoyée", format ["<t color='#f2ab33'>pas encore envoyée · nouvel essai dans %1 s</t>", round _fBack]] select (_fBack > 0) }] call _info;
+    ["<t size='0.8' color='#8a9a93'>La fiche part à la connexion, puis seulement si l'équipement, l'indicatif, le grade ou les versions changent, avec un rappel toutes les 15 min. Catalogue d'objets et liste des mods : une fois, puis seulement s'ils changent.</t>"] call _para;
+    // En attente : file du téléphone (hors connexion), tampon d'Overwatch (comptes rendus rédigés), reçus retenus au relais.
+    private _obx = 0;
+    if (!isNil "comspec_overwatch_connect_fnc_outboxState") then { _obx = (["get"] call comspec_overwatch_connect_fnc_outboxState) getOrDefault ["count", 0]; };
+    private _wait = _offQueue + _obx;
+    ["En attente d'envoi", [format ["<t color='#5cc76b'>rien</t>"], format ["<t color='#f2ab33'>%1 (téléphone %2 · comptes rendus %3)</t>", _wait, _offQueue, _obx]] select (_wait > 0)] call _info;
+    if (_ss get "ok") then {
+        private _rows = _ss get "rows";
+        if (_rows isEqualTo []) then { ["<t color='#8a9a93'>Aucun échange avec Athena pour l'instant.</t>"] call _para; };
+        {
+            _x params ["_lbl", "_path", "_calls", "_bo", "_bi", "_same", "_age", "_code"];
+            private _err = _code < 0 || {_code >= 400};
+            [[_lbl] call _esc, format ["envoyé %1 · reçu %2<br/><t color='#8a9a93'>%3 appel(s)%4 · %5%6</t>", [_bo] call _ko, [_bi] call _ko, _calls,
+                ["", format [" · %1 %% inchangé", round (100 * _same / (_calls max 1))]] select (_same > 0),
+                [_age] call _ageTxt,
+                ["", format [" · <t color='#e5483a'>%1</t>", ["délai dépassé", format ["erreur %1", _code]] select (_code >= 0)]] select _err]] call _info;
+        } forEach (_rows select [0, 12]);
+    };
+};
+
 // --- File d'envoi Athena (journal de COMSPEC Link 2.0.65, lu en mémoire sans réseau) ---
 private _sqRaw = if (_bridge && {!(missionNamespace getVariable ["COMSPEC_ATAK_SendQNo", false])}) then { ("COMSPECExtension" callExtension ["SendQueue.Status", []]) select 0 } else { "" };
 if ((_sqRaw select [0, 3]) isEqualTo "OK|") then {

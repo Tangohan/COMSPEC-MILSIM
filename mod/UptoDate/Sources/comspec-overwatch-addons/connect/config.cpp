@@ -159,6 +159,10 @@ class CfgFunctions {
             class arsenalDeleteLocal {};
             class arsenalDeleteCloud {};
             class arsenalInitOverlay {};
+            class arsenalHash {};
+            class arsenalLedger {};
+            class arsenalStateInfo {};
+            class arsenalMarkSeen {};
             class sendIntel {};
             class initACE {};
             class initACEAthena {};
@@ -362,6 +366,7 @@ class CfgFunctions {
             class collectOperatorLoadout {};
             class collectItemCatalog {};
             class collectLoadedMods {};
+            class sendItemIcons {};
             class collectOperatorVersions {};
             class collectOperatorEnvironment {};
             class operatorProfileFingerprint {};

@@ -1169,3 +1169,33 @@ html[data-bo-theme="dark"] .bo-ge-picker::backdrop {
 html[data-bo-theme="dark"] .bo-ge-picker {
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
 }
+
+/* Icônes des objets (textures du jeu converties, COMSPEC Link 2.0.88). Fond sombre : beaucoup d'icônes Arma
+   sont claires sur fond transparent, comme dans l'arsenal. */
+.bo-ge-rank__row:has(> .bo-ge-itemico) {
+  grid-template-columns: 22px 48px minmax(0, 1fr) auto;
+}
+
+.bo-ge-itemico,
+.bo-ge-kit__icons img {
+  display: block;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  padding: 3px;
+  border-radius: 6px;
+  background: #1d2125;
+  box-sizing: border-box;
+}
+
+.bo-ge-kit__icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 2px;
+}
+
+.bo-ge-kit__icons img {
+  width: 40px;
+  height: 40px;
+}

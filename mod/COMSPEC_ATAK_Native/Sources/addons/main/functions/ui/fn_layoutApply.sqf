@@ -161,7 +161,8 @@ _wc ctrlShow (_page isEqualTo "LAUNCHER" && {_wall in _walls});
 (_d displayCtrl 88530) ctrlShow _isMap;
 (_d displayCtrl 88531) ctrlShow !_isMap;
 (_d displayCtrl 88540) ctrlShow (_isMap && {_inspW > 0});
-(_d displayCtrl 88541) ctrlShow (_isMap && {_inspW > 0});
+// Texte SITUATION : il vit désormais dans le volet défilant de la carte (fn_pageMap, fn_inspectorUpdate).
+(_d displayCtrl 88541) ctrlShow false;
 
 [] call comspec_atak_native_fnc_dockRender;
 // Câble DL-7 branché (app Extraction) : suit la coque.

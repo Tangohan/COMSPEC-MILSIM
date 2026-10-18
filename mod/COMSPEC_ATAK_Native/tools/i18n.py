@@ -38,7 +38,7 @@ TR = "comspec_atak_native_fnc_tr"
 SINKS_BINARY = {"ctrlsettext", "ctrlsetstructuredtext", "ctrlsettooltip", "lbadd", "lbsettext", "lnbaddrow", "lnbsettext", "lbsettooltip", "ctrlsetstructuredtext"}
 SINKS_UNARY = {"hint", "hintsilent", "systemchat", "hintc"}
 # Fichiers à ne pas toucher : la traduction elle-même.
-SKIP_FILES = {"fn_tr.sqf", "fn_langApply.sqf", "fn_aceAction.sqf", "fn_zenAction.sqf", "fn_zenModule.sqf"}
+SKIP_FILES = {"fn_tr.sqf", "fn_langApply.sqf", "fn_aceAction.sqf", "fn_zenAction.sqf", "fn_zenModule.sqf", "fn_mainMenuButton.sqf"}
 IDENT = re.compile(r"[A-Za-z0-9_]")
 # Addon Overwatch connect embarqué dans @COMSPEC_ATAK_Native (--connect) et mod SSE (--sse) : mêmes règles, même
 # dictionnaire. Leur fn_tr passe la main à celui de l'ATAK natif quand il est chargé ; leurs écrans traduisent leurs
