@@ -116,9 +116,9 @@ private _okModels = _models select { (_x select 1) isEqualTo "s7" || {[_x select
 private _noModels = (_models - _okModels) apply { _x select 0 };
 private _modelHelp = "La couleur de coque ne change que le S7. TABLETTE : tablette durcie.";
 if ((count _noModels) > 0) then { _modelHelp = _modelHelp + format [" Objet requis manquant pour : %1.", _noModels joinString ", "]; };
-private _modelRows = [];
-for "_i" from 0 to ((count _okModels) - 1) step 4 do {
-    _modelRows pushBack (["COMSPEC_ATAK_PhoneModel", "s7", ["", "Modèle du téléphone"] select (_i isEqualTo 0), _okModels select [_i, 4], ["", _modelHelp] select (_i + 4 >= count _okModels)] call _profSegment);
+private _modelRows = [["COMSPEC_ATAK_PhoneModel", "s7", "Modèle du téléphone", _okModels select [0, 4], ["", _modelHelp] select (4 >= count _okModels)] call _profSegment];
+for "_i" from 4 to ((count _okModels) - 1) step 4 do {
+    _modelRows pushBack (["COMSPEC_ATAK_PhoneModel", "s7", "", _okModels select [_i, 4], ["", _modelHelp] select (_i + 4 >= count _okModels)] call _profSegment);
 };
 private _perso = [["section", "Téléphone", "Modèle, coque et antenne"]] + _modelRows + [
     ["COMSPEC_ATAK_Shell", "auto", "Coque", [["AUTO", "auto"], ["JOUR", "day"], ["NUIT", "night"]], "auto : nuit après le coucher du soleil"] call _profSegment,
@@ -186,7 +186,7 @@ private _perso = [["section", "Téléphone", "Modèle, coque et antenne"]] + _mo
 _perso pushBack (["patch", "Patch au dos", format ["Porté : %1", (["name", profileNamespace getVariable ["COMSPEC_ATAK_Patch", "none"]] call comspec_atak_native_fnc_patchCatalog) regexReplace ["[<>&]", ""]]] call _fold);
 if (["patch"] call _foldOpen) then {
     _perso append [
-        ["COMSPEC_ATAK_Patch", "none", "Patch", [["AUCUN", "none"], ["FRANCE", "fr"], ["FRANCE BD", "fr_sub"], ["USA", "us"], ["USA BD", "us_ir"]]] call _profSegment,
+        ["COMSPEC_ATAK_Patch", "none", "Patch au dos", [["AUCUN", "none"], ["FRANCE", "fr"], ["FRANCE BD", "fr_sub"], ["USA", "us"], ["USA BD", "us_ir"]]] call _profSegment,
         ["COMSPEC_ATAK_Patch", "none", "", [["CRÂNE", "skull"], ["CROIX", "crusader"], ["ALIEN", "alien"], ["COMSPEC", "comspec"], ["NOMINATIF", "name"]]] call _profSegment,
         ["COMSPEC_ATAK_Patch", "none", "", [["INSIGNE DE L'UNIFORME", "uniform"]], "Patch velcro visible avec « Voir l'arrière » ; BD = basse visibilité. Nominatif : votre nom, ou le texte ci-dessous. Insignes des mods et de la mission (RHS, 3CB, unités…) : « Choisir un insigne » ci-dessous"] call _profSegment,
         // Tous les patchs (nos patchs, insignes CfgUnitInsignia des mods et de la mission) : page PATCHES dédiée avec
