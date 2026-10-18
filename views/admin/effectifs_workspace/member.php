@@ -142,7 +142,67 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
 }
 
 ?>
-<section class="eff-fiche-hero">
+<?php
+    $civilFields = [
+        'birth_place' => 'Lieu de naissance',
+        'family_situation' => 'Situation familiale',
+        'sex' => 'Sexe',
+        'nationality' => 'Nationalité',
+        'blood_type' => 'Groupe sanguin',
+        'languages' => 'Langues parlées',
+        'weight_kg' => 'Poids',
+        'nickname_primary' => 'Surnom',
+        'motto' => 'Devise',
+    ];
+    $civilValue = static function (string $key) use ($profile): string {
+        $v = trim((string) ($profile[$key] ?? ''));
+        if ($key === 'weight_kg' && $v !== '' && (int) $v > 0) {
+            return (int) $v . ' kg';
+        }
+
+        return $v;
+    };
+    $civilFilled = 0;
+    foreach (array_keys($civilFields) as $civilKey) {
+        if ($civilValue($civilKey) !== '') {
+            $civilFilled++;
+        }
+    }
+    ?>
+<?php
+    $renderRhList = static function (array $rows, callable $label): void {
+        if ($rows === []) {
+            echo '<p class="eff-card__lead">Aucune donnée enregistrée.</p>';
+            return;
+        }
+        echo '<ul class="eff-card__list">';
+        foreach ($rows as $row) {
+            echo '<li>' . htmlspecialchars($label($row), ENT_QUOTES, 'UTF-8') . '</li>';
+        }
+        echo '</ul>';
+    };
+    ?>
+<?php
+$missing = [];
+if ($fonction === '' && $jobRoles === []) {
+    $missing[] = ['Fonction', '#eff-dlg-jobs', $canManageAssignments && $jobRolesAvailable];
+}
+if ($grade === '') {
+    $missing[] = ['Grade', '#grade', $canManageGrades];
+}
+if ($assignments === [] && $unit === '') {
+    $missing[] = ['Unité', '#unite', $canManageAssignments];
+}
+if ($avatarUrl === '') {
+    $missing[] = ['Image opérateur', '#eff-dlg-portrait', $canEditProfiles];
+}
+if ($civilFilled < count($civilFields)) {
+    $missing[] = ['État civil (' . $civilFilled . '/' . count($civilFields) . ')', '#eff-dlg-civil', $canEditProfiles];
+}
+$checks = 5;
+$fileScore = (int) round((($checks - count($missing)) / $checks) * 100);
+?>
+<section class="eff-fiche-hero eff-fiche-hero--v2">
     <div class="eff-fiche-hero__nav">
         <a class="eff-fiche-hero__back" href="<?= htmlspecialchars(effectifs_workspace_url(), ENT_QUOTES, 'UTF-8') ?>">← Tableur des effectifs</a>
         <a class="eff-fiche-hero__back" href="<?= htmlspecialchars(url('personnel/' . $id), ENT_QUOTES, 'UTF-8') ?>">Voir la fiche</a>
@@ -161,7 +221,7 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
         <?php endif; ?>
         </div>
         <div class="eff-fiche-hero__id">
-            <p class="eff-page-kicker">Fiche membre</p>
+            <p class="eff-page-kicker">Fiche membre<?php if ($grade !== ''): ?> · <?= $h($grade) ?><?php endif; ?></p>
             <h1 class="eff-page-title"><?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?></h1>
             <p class="eff-fiche-hero__meta">
                 <?php if ($callsign !== ''): ?>
@@ -174,8 +234,8 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
             </p>
             <div class="eff-fiche-chips">
                 <span class="eff-tag <?= $status === 'active' ? 'eff-tag--unit' : 'eff-tag--warn' ?>"><?= htmlspecialchars($statusLabel($status), ENT_QUOTES, 'UTF-8') ?></span>
-                <?php if ($grade !== ''): ?>
-                    <span class="eff-tag eff-tag--grade"><?= htmlspecialchars($grade, ENT_QUOTES, 'UTF-8') ?></span>
+                <?php if ($fonction !== ''): ?>
+                    <span class="eff-tag"><?= $h($fonction) ?></span>
                 <?php endif; ?>
                 <?php if ($unit !== ''): ?>
                     <span class="eff-tag eff-tag--unit"><?= htmlspecialchars($unit, ENT_QUOTES, 'UTF-8') ?></span>
@@ -186,23 +246,61 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
                     <span class="eff-tag"><?= htmlspecialchars($seniorityLabel, ENT_QUOTES, 'UTF-8') ?></span>
                 <?php endif; ?>
             </div>
+            <div class="eff-fiche-hero__actions">
+                <?php if ($canEditProfiles): ?>
+                    <button type="button" class="ath-btn" data-dialog-open="eff-dlg-civil">État civil</button>
+                <?php endif; ?>
+                <?php if ($canManageAssignments && $jobRolesAvailable && $jobRolePickerGroups !== []): ?>
+                    <button type="button" class="ath-btn" data-dialog-open="eff-dlg-jobs">Fonctions</button>
+                <?php endif; ?>
+                <?php if ($canRequestElevation && $elevationCooldownSeconds < 1): ?>
+                    <button type="button" class="ath-btn" data-dialog-open="eff-dlg-elevation">Demander une élévation</button>
+                <?php endif; ?>
+                <?php if ($canManageStatus): ?>
+                    <button type="button" class="ath-btn" data-dialog-open="eff-dlg-depart">Départ</button>
+                <?php endif; ?>
+            </div>
         </div>
+        <aside class="eff-fiche-score<?= $fileScore < 60 ? ' is-low' : '' ?>" aria-label="Complétude du dossier">
+            <p class="eff-fiche-score__k">Dossier</p>
+            <p class="eff-fiche-score__v"><?= $fileScore ?> %</p>
+            <div class="eff-fiche-score__bar"><span style="width:<?= $fileScore ?>%"></span></div>
+            <?php if ($missing === []): ?>
+                <p class="eff-fiche-score__ok">Tout est renseigné.</p>
+            <?php else: ?>
+                <p class="eff-fiche-score__lead">À compléter :</p>
+                <div class="eff-fiche-score__fix">
+                    <?php foreach ($missing as [$mLabel, $mHref, $mCan]): ?>
+                        <?php if ($mCan && str_starts_with($mHref, '#eff-dlg-')): ?>
+                            <button type="button" class="eff-fix-link" data-dialog-open="<?= $h(substr($mHref, 1)) ?>"><?= $h($mLabel) ?></button>
+                        <?php elseif ($mCan): ?>
+                            <a class="eff-fix-link" href="<?= $h($mHref) ?>"><?= $h($mLabel) ?></a>
+                        <?php else: ?>
+                            <span class="eff-pill"><?= $h($mLabel) ?></span>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </aside>
     </div>
 </section>
 
-<nav class="bo-eff-jump" aria-label="Rubriques du dossier">
-    <strong>Dossier RH complet</strong>
-    <a href="#modifier-dossier">État civil</a>
-    <a href="#fonctions">Fonctions</a>
-    <a href="#qualifications">Qualifications</a>
-    <a href="#absences">Absences</a>
-    <a href="#documents-rh">Documents RH</a>
-    <a href="#mobilite">Mobilité</a>
+<nav class="bo-eff-jump bo-eff-jump--v2" aria-label="Dossier RH complet : rubriques">
+    <a href="#identite">Identité</a>
+    <a href="#poste">Poste</a>
+    <a href="#carriere">Carrière</a>
+    <a href="#suivi-rh">Suivi RH</a>
     <a href="#historique-rh">Historique</a>
 </nav>
 
-<div class="eff-fiche-grid">
-    <article class="eff-card">
+<div class="eff-fiche-sections">
+    <section class="eff-fiche-section" id="identite" aria-labelledby="identite-titre">
+        <header class="eff-fiche-section__head">
+            <h2 class="eff-fiche-section__title" id="identite-titre">Identité</h2>
+            <p>Qui est la personne : compte, surnom et identité jouée en mission.</p>
+        </header>
+        <div class="eff-fiche-grid">
+    <article class="eff-card" id="situation">
         <h2 class="eff-card__title">Situation</h2>
         <dl class="eff-dl">
             <div>
@@ -261,34 +359,6 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
             <?php endif; ?>
         </dl>
     </article>
-
-    <?php
-    $civilFields = [
-        'birth_place' => 'Lieu de naissance',
-        'family_situation' => 'Situation familiale',
-        'sex' => 'Sexe',
-        'nationality' => 'Nationalité',
-        'blood_type' => 'Groupe sanguin',
-        'languages' => 'Langues parlées',
-        'weight_kg' => 'Poids',
-        'nickname_primary' => 'Surnom',
-        'motto' => 'Devise',
-    ];
-    $civilValue = static function (string $key) use ($profile): string {
-        $v = trim((string) ($profile[$key] ?? ''));
-        if ($key === 'weight_kg' && $v !== '' && (int) $v > 0) {
-            return (int) $v . ' kg';
-        }
-
-        return $v;
-    };
-    $civilFilled = 0;
-    foreach (array_keys($civilFields) as $civilKey) {
-        if ($civilValue($civilKey) !== '') {
-            $civilFilled++;
-        }
-    }
-    ?>
     <article class="eff-card" id="modifier-dossier">
         <div class="eff-card__head">
             <h2 class="eff-card__title">État civil du personnage</h2>
@@ -307,45 +377,15 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
             <?php endforeach; ?>
         </dl>
     </article>
-
-    <article class="eff-card" id="anciennete">
-        <h2 class="eff-card__title">Ancienneté</h2>
-        <p class="eff-card__lead">L’ancienneté réelle reprend la date la plus ancienne : arrivée dans la communauté ou avant l’ouverture du site.</p>
-        <dl class="eff-dl">
-            <div>
-                <dt>Ancienneté réelle</dt>
-                <dd><?= htmlspecialchars($seniorityLabel !== '' && $seniorityLabel !== '—' ? $seniorityLabel : 'Non renseignée', ENT_QUOTES, 'UTF-8') ?></dd>
-            </div>
-            <div>
-                <dt>Dans la communauté</dt>
-                <dd><?= htmlspecialchars($communityTenureLabel !== '' ? $communityTenureLabel : '—', ENT_QUOTES, 'UTF-8') ?></dd>
-            </div>
-            <div>
-                <dt>Avant le site</dt>
-                <dd><?= htmlspecialchars($preTenureLabel !== '' ? $preTenureLabel : '—', ENT_QUOTES, 'UTF-8') ?></dd>
-            </div>
-            <?php if ($orgFoundingDate !== ''): ?>
-            <div>
-                <dt>Création de l’organisation</dt>
-                <dd><?= htmlspecialchars($fmtDate($orgFoundingDate), ENT_QUOTES, 'UTF-8') ?></dd>
-            </div>
-            <?php endif; ?>
-        </dl>
-        <?php if ($canEditProfiles): ?>
-            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/anciennete'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
-                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                <input type="hidden" name="return_to" value="member">
-                <label for="eff-member-enlist">Arrivée dans la communauté (sur Athena)</label>
-                <input id="eff-member-enlist" type="date" name="enlistment_date" value="<?= htmlspecialchars($enlistmentStart, ENT_QUOTES, 'UTF-8') ?>">
-                <label for="eff-member-pre">Arrivée avant le site</label>
-                <input id="eff-member-pre" type="date" name="pre_platform_start_date" value="<?= htmlspecialchars($prePlatformStart, ENT_QUOTES, 'UTF-8') ?>">
-                <p class="eff-card__hint">Si la personne était déjà membre avant l’ouverture du site, indiquez sa date d’arrivée réelle. Sinon laissez vide.</p>
-                <button type="submit" class="eff-btn eff-btn--primary">Enregistrer l’ancienneté</button>
-            </form>
-        <?php endif; ?>
-    </article>
-
-    <article class="eff-card">
+        </div>
+    </section>
+    <section class="eff-fiche-section" id="poste" aria-labelledby="poste-titre">
+        <header class="eff-fiche-section__head">
+            <h2 class="eff-fiche-section__title" id="poste-titre">Poste</h2>
+            <p>Où elle sert, ce qu’elle fait et ce qu’elle peut faire sur le site.</p>
+        </header>
+        <div class="eff-fiche-grid">
+    <article class="eff-card" id="unite">
         <h2 class="eff-card__title">Unité</h2>
         <p class="eff-card__lead">L’affectation indique dans quelle équipe la personne est rattachée. L’affectation principale place la personne dans l’organigramme et sur la fiche.</p>
         <?php if ($assignments !== []): ?>
@@ -402,25 +442,27 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
             <p class="eff-card__hint">Chef non désigné pour cette unité. <a href="<?= htmlspecialchars(effectifs_workspace_url('chaine'), ENT_QUOTES, 'UTF-8') ?>">Ouvrir la chaîne de commandement</a></p>
         <?php endif; ?>
         <?php if ($canManageAssignments): ?>
-            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/affectation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
-                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                <input type="hidden" name="return_to" value="member">
-                <label for="eff-member-unit">Unité de rattachement</label>
-                <select id="eff-member-unit" name="unit_id">
-                    <option value="0">Retirer l’affectation</option>
-                    <?php foreach ($units as $u): ?>
-                        <option value="<?= (int) ($u['id'] ?? 0) ?>" <?= $unitId === (int) ($u['id'] ?? 0) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars((string) ($u['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-                <label for="eff-member-unit-reason">Motif du changement</label>
-                <input id="eff-member-unit-reason" type="text" name="reason" maxlength="255" placeholder="Ex. Renfort, rotation, remplacement">
-                <button type="submit" class="eff-btn eff-btn--primary">Enregistrer l’affectation</button>
-            </form>
+            <details class="eff-card__edit">
+                <summary>Changer d’unité</summary>
+                <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/affectation'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="return_to" value="member">
+                    <label for="eff-member-unit">Unité de rattachement</label>
+                    <select id="eff-member-unit" name="unit_id">
+                        <option value="0">Retirer l’affectation</option>
+                        <?php foreach ($units as $u): ?>
+                            <option value="<?= (int) ($u['id'] ?? 0) ?>" <?= $unitId === (int) ($u['id'] ?? 0) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars((string) ($u['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <label for="eff-member-unit-reason">Motif du changement</label>
+                    <input id="eff-member-unit-reason" type="text" name="reason" maxlength="255" placeholder="Ex. Renfort, rotation, remplacement">
+                    <button type="submit" class="eff-btn eff-btn--primary">Enregistrer l’affectation</button>
+                </form>
+            </details>
         <?php endif; ?>
     </article>
-
     <article class="eff-card" id="fonctions">
         <div class="eff-card__head">
             <h2 class="eff-card__title">Fonctions</h2>
@@ -445,8 +487,34 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
             <p class="eff-card__hint">La gestion des fonctions sera disponible après application des migrations.</p>
         <?php endif; ?>
     </article>
-
-    <article class="eff-card">
+    <?php if ($canManageGrades): ?>
+    <article class="eff-card" id="grade">
+        <h2 class="eff-card__title">Grade</h2>
+        <p class="eff-card__value"><?= $h($grade !== '' ? $grade : 'Aucun grade') ?></p>
+        <details class="eff-card__edit">
+            <summary>Changer le grade</summary>
+            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/grade'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
+                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                <input type="hidden" name="return_to" value="member">
+                <label for="eff-member-grade">Grade affiché</label>
+                <select id="eff-member-grade" name="grade_id">
+                    <option value="">Aucun grade</option>
+                    <?php foreach ($gradeGroups as $gradeGroup): ?>
+                        <optgroup label="<?= $h($gradeGroup['label']) ?>">
+                            <?php foreach ($gradeGroup['grades'] as $g): ?>
+                                <?php $gid = (int) ($g['id'] ?? 0); ?>
+                                <option value="<?= $gid ?>" <?= $gradeId === $gid ? 'selected' : '' ?>><?= $h(\App\Support\GradeSelectOptions::label($g)) ?></option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                    <?php endforeach; ?>
+                </select>
+                <p class="eff-card__hint">Grades classés du plus élevé au plus bas. <a href="<?= $h(url('back-office/referentiels/grades')) ?>">Gérer le référentiel des grades</a></p>
+                <button type="submit" class="eff-btn eff-btn--primary">Enregistrer le grade</button>
+            </form>
+        </details>
+    </article>
+    <?php endif; ?>
+    <article class="eff-card" id="acces">
         <h2 class="eff-card__title">Niveau d’accès</h2>
         <?php
         $currentAccessKey = (string) ($currentAccessKey ?? \App\Services\Rbac\CommunityAccessProfiles::MEMBER);
@@ -459,53 +527,78 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
             <?php endif; ?>
         </p>
         <?php if ($canManageRoles && $orgRoles !== []): ?>
-            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/roles'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
-                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                <input type="hidden" name="return_to" value="member">
-                <fieldset class="eff-role-grid">
-                    <legend>Attribuer l’accès</legend>
-                    <?php foreach ($orgRoles as $accessRole): ?>
-                        <?php $rid = (int) ($accessRole['id'] ?? 0); ?>
-                        <label>
-                            <input type="radio" name="access_role_id" value="<?= $rid ?>" <?= (int) ($currentAccessRoleId ?? 0) === $rid ? 'checked' : '' ?>>
-                            <span>
-                                <strong><?= htmlspecialchars((string) ($accessRole['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
-                                <em><?= htmlspecialchars((string) ($accessRole['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></em>
-                            </span>
-                        </label>
-                    <?php endforeach; ?>
-                </fieldset>
-                <button type="submit" class="eff-btn eff-btn--primary">Enregistrer l’accès</button>
-            </form>
+            <details class="eff-card__edit">
+                <summary>Changer le niveau</summary>
+                <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/roles'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="return_to" value="member">
+                    <fieldset class="eff-role-grid">
+                        <legend>Attribuer l’accès</legend>
+                        <?php foreach ($orgRoles as $accessRole): ?>
+                            <?php $rid = (int) ($accessRole['id'] ?? 0); ?>
+                            <label>
+                                <input type="radio" name="access_role_id" value="<?= $rid ?>" <?= (int) ($currentAccessRoleId ?? 0) === $rid ? 'checked' : '' ?>>
+                                <span>
+                                    <strong><?= htmlspecialchars((string) ($accessRole['name'] ?? ''), ENT_QUOTES, 'UTF-8') ?></strong>
+                                    <em><?= htmlspecialchars((string) ($accessRole['description'] ?? ''), ENT_QUOTES, 'UTF-8') ?></em>
+                                </span>
+                            </label>
+                        <?php endforeach; ?>
+                    </fieldset>
+                    <button type="submit" class="eff-btn eff-btn--primary">Enregistrer l’accès</button>
+                </form>
+            </details>
             <p class="eff-card__hint"><a href="<?= htmlspecialchars(effectifs_workspace_url('roles'), ENT_QUOTES, 'UTF-8') ?>">Corriger ce qu’un niveau a le droit de faire</a></p>
         <?php endif; ?>
     </article>
-
-    <?php if ($canManageGrades): ?>
-    <article class="eff-card">
-        <h2 class="eff-card__title">Grade</h2>
-        <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/grade'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
-            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-            <input type="hidden" name="return_to" value="member">
-            <label for="eff-member-grade">Grade affiché</label>
-            <select id="eff-member-grade" name="grade_id">
-                <option value="">Aucun grade</option>
-                <?php foreach ($gradeGroups as $gradeGroup): ?>
-                    <optgroup label="<?= $h($gradeGroup['label']) ?>">
-                        <?php foreach ($gradeGroup['grades'] as $g): ?>
-                            <?php $gid = (int) ($g['id'] ?? 0); ?>
-                            <option value="<?= $gid ?>" <?= $gradeId === $gid ? 'selected' : '' ?>><?= $h(\App\Support\GradeSelectOptions::label($g)) ?></option>
-                        <?php endforeach; ?>
-                    </optgroup>
-                <?php endforeach; ?>
-            </select>
-            <p class="eff-card__hint">Grades classés du plus élevé au plus bas. <a href="<?= $h(url('back-office/referentiels/grades')) ?>">Gérer le référentiel des grades</a></p>
-            <button type="submit" class="eff-btn eff-btn--primary">Enregistrer le grade</button>
-        </form>
+        </div>
+    </section>
+    <section class="eff-fiche-section" id="carriere" aria-labelledby="carriere-titre">
+        <header class="eff-fiche-section__head">
+            <h2 class="eff-fiche-section__title" id="carriere-titre">Carrière</h2>
+            <p>Ancienneté, état du compte, élévations et départs.</p>
+        </header>
+        <div class="eff-fiche-grid">
+    <article class="eff-card" id="anciennete">
+        <h2 class="eff-card__title">Ancienneté</h2>
+        <p class="eff-card__lead">L’ancienneté réelle reprend la date la plus ancienne : arrivée dans la communauté ou avant l’ouverture du site.</p>
+        <dl class="eff-dl">
+            <div>
+                <dt>Ancienneté réelle</dt>
+                <dd><?= htmlspecialchars($seniorityLabel !== '' && $seniorityLabel !== '—' ? $seniorityLabel : 'Non renseignée', ENT_QUOTES, 'UTF-8') ?></dd>
+            </div>
+            <div>
+                <dt>Dans la communauté</dt>
+                <dd><?= htmlspecialchars($communityTenureLabel !== '' ? $communityTenureLabel : '—', ENT_QUOTES, 'UTF-8') ?></dd>
+            </div>
+            <div>
+                <dt>Avant le site</dt>
+                <dd><?= htmlspecialchars($preTenureLabel !== '' ? $preTenureLabel : '—', ENT_QUOTES, 'UTF-8') ?></dd>
+            </div>
+            <?php if ($orgFoundingDate !== ''): ?>
+            <div>
+                <dt>Création de l’organisation</dt>
+                <dd><?= htmlspecialchars($fmtDate($orgFoundingDate), ENT_QUOTES, 'UTF-8') ?></dd>
+            </div>
+            <?php endif; ?>
+        </dl>
+        <?php if ($canEditProfiles): ?>
+            <details class="eff-card__edit">
+                <summary>Modifier les dates</summary>
+                <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/anciennete'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="return_to" value="member">
+                    <label for="eff-member-enlist">Arrivée dans la communauté (sur Athena)</label>
+                    <input id="eff-member-enlist" type="date" name="enlistment_date" value="<?= htmlspecialchars($enlistmentStart, ENT_QUOTES, 'UTF-8') ?>">
+                    <label for="eff-member-pre">Arrivée avant le site</label>
+                    <input id="eff-member-pre" type="date" name="pre_platform_start_date" value="<?= htmlspecialchars($prePlatformStart, ENT_QUOTES, 'UTF-8') ?>">
+                    <p class="eff-card__hint">Si la personne était déjà membre avant l’ouverture du site, indiquez sa date d’arrivée réelle. Sinon laissez vide.</p>
+                    <button type="submit" class="eff-btn eff-btn--primary">Enregistrer l’ancienneté</button>
+                </form>
+            </details>
+        <?php endif; ?>
     </article>
-    <?php endif; ?>
-
-    <article class="eff-card">
+    <article class="eff-card" id="statut">
         <h2 class="eff-card__title">Statut du compte</h2>
         <p class="eff-card__lead">Position administrative : <strong><?= htmlspecialchars($dutyPosition !== '' ? $dutyPosition : 'Non attribuée', ENT_QUOTES, 'UTF-8') ?></strong>.</p>
         <?php if ($dutyPosition === \App\Services\Personnel\PersonnelDutyPositionService::LABEL_TRAINING): ?>
@@ -519,23 +612,25 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
             <?php endif; ?>
         <?php endif; ?>
         <?php if ($canManageStatus): ?>
-            <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/statut'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
-                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
-                <input type="hidden" name="return_to" value="member">
-                <label for="eff-quick-status">État du compte</label>
-                <select id="eff-quick-status" name="status">
-                    <option value="active" <?= $status === 'active' ? 'selected' : '' ?>>Compte actif</option>
-                    <option value="inactive" <?= $status === 'inactive' ? 'selected' : '' ?>>Compte inactif</option>
-                    <option value="pending_verification" <?= $status === 'pending_verification' ? 'selected' : '' ?>>E-mail à vérifier</option>
-                </select>
-                <button type="submit" class="eff-btn eff-btn--ghost">Enregistrer le statut</button>
-            </form>
+            <details class="eff-card__edit">
+                <summary>Changer l’état du compte</summary>
+                <form method="post" action="<?= htmlspecialchars(effectifs_workspace_url('membres/' . $id . '/statut'), ENT_QUOTES, 'UTF-8') ?>" class="eff-card__form">
+                    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="return_to" value="member">
+                    <label for="eff-quick-status">État du compte</label>
+                    <select id="eff-quick-status" name="status">
+                        <option value="active" <?= $status === 'active' ? 'selected' : '' ?>>Compte actif</option>
+                        <option value="inactive" <?= $status === 'inactive' ? 'selected' : '' ?>>Compte inactif</option>
+                        <option value="pending_verification" <?= $status === 'pending_verification' ? 'selected' : '' ?>>E-mail à vérifier</option>
+                    </select>
+                    <button type="submit" class="eff-btn eff-btn--ghost">Enregistrer le statut</button>
+                </form>
+            </details>
         <?php else: ?>
             <p class="eff-card__lead"><?= htmlspecialchars($statusLabel($status), ENT_QUOTES, 'UTF-8') ?></p>
         <?php endif; ?>
     </article>
-
-    <article class="eff-card">
+    <article class="eff-card" id="elevation">
         <h2 class="eff-card__title">Élévation</h2>
         <?php if ($elevationHistory !== []): ?>
             <ul class="eff-card__list eff-card__list--scroll">
@@ -563,9 +658,8 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
             <p class="eff-card__lead">Les changements de grade, de fonction ou d’affectation passent par une demande d’élévation.</p>
         <?php endif; ?>
     </article>
-
     <?php if ($canManageStatus): ?>
-    <article class="eff-card">
+    <article class="eff-card" id="depart">
         <h2 class="eff-card__title">Départ</h2>
         <?php if ($latestDeparture !== null): ?>
             <?php
@@ -585,20 +679,14 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
         <button type="button" class="eff-btn eff-btn--ghost" data-dialog-open="eff-dlg-depart">Enregistrer un départ</button>
     </article>
     <?php endif; ?>
-
-    <?php
-    $renderRhList = static function (array $rows, callable $label): void {
-        if ($rows === []) {
-            echo '<p class="eff-card__lead">Aucune donnée enregistrée.</p>';
-            return;
-        }
-        echo '<ul class="eff-card__list">';
-        foreach ($rows as $row) {
-            echo '<li>' . htmlspecialchars($label($row), ENT_QUOTES, 'UTF-8') . '</li>';
-        }
-        echo '</ul>';
-    };
-    ?>
+        </div>
+    </section>
+    <section class="eff-fiche-section" id="suivi-rh" aria-labelledby="suivi-rh-titre">
+        <header class="eff-fiche-section__head">
+            <h2 class="eff-fiche-section__title" id="suivi-rh-titre">Suivi RH</h2>
+            <p>Qualifications, absences, pièces du dossier et souhaits de mobilité.</p>
+        </header>
+        <div class="eff-fiche-grid">
     <article class="eff-card" id="qualifications">
         <h2 class="eff-card__title">Qualifications</h2>
         <?php
@@ -609,7 +697,7 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
         <?php else: ?>
             <ul class="space-y-3 mb-4">
                 <?php foreach ($qualifications as $q):
-                    $name = trim((string) ($q['definition_name'] ?? $q['qualification_name'] ?? $q['name'] ?? 'Qualification'));
+                    $qName = trim((string) ($q['definition_name'] ?? $q['qualification_name'] ?? $q['name'] ?? 'Qualification'));
                     $level = trim((string) ($q['level_name'] ?? $q['level'] ?? ''));
                     $adminSt = \App\Support\QualificationAdminStatus::normalize((string) ($q['admin_status'] ?? $q['status'] ?? ''));
                     $temporalLabel = '';
@@ -627,7 +715,7 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
                     <img src="<?= htmlspecialchars($badgeUrl, ENT_QUOTES, 'UTF-8') ?>" alt="" class="w-10 h-10 object-contain shrink-0">
                     <div class="min-w-0 flex-1">
                         <div class="font-semibold text-slate-900">
-                            <?= htmlspecialchars($name, ENT_QUOTES, 'UTF-8') ?>
+                            <?= htmlspecialchars($qName, ENT_QUOTES, 'UTF-8') ?>
                             <?php if ($level !== ''): ?><span class="text-slate-500 font-normal">— <?= htmlspecialchars($level, ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
                             <?php if ($isPrimary): ?><span class="ml-1 text-[10px] uppercase tracking-wider text-emerald-800">Principale</span><?php endif; ?>
                         </div>
@@ -668,7 +756,6 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
             <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(url('back-office/referentiels/qualifications'), ENT_QUOTES, 'UTF-8') ?>">Référentiel</a>
         </div>
     </article>
-
     <article class="eff-card" id="absences">
         <h2 class="eff-card__title">Absences</h2>
         <?php $renderRhList($absences, static function (array $a) use ($fmtDate, $absenceReasonLabels): string {
@@ -677,7 +764,6 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
             return ($absenceReasonLabels[$reason] ?? $reason) . ' · ' . $period;
         }); ?>
     </article>
-
     <article class="eff-card" id="documents-rh">
         <h2 class="eff-card__title">Documents RH</h2>
         <?php $renderRhList($hrDocuments, static function (array $d) use ($hrDocumentTypeLabels, $fmtDate): string {
@@ -687,7 +773,6 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
         }); ?>
         <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(effectifs_workspace_url('documents-rh?user_id=' . $id), ENT_QUOTES, 'UTF-8') ?>">Ajouter ou ouvrir une pièce</a>
     </article>
-
     <article class="eff-card" id="mobilite">
         <h2 class="eff-card__title">Mobilité et souhaits</h2>
         <?php $renderRhList($mobilityRequests, static function (array $r) use ($mobilityTypeLabels, $fmtDate): string {
@@ -697,8 +782,15 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
         }); ?>
         <a class="eff-btn eff-btn--ghost" href="<?= htmlspecialchars(effectifs_workspace_url('mobilite?user_id=' . $id), ENT_QUOTES, 'UTF-8') ?>">Traiter la mobilité</a>
     </article>
-
-    <article class="eff-card" id="historique-rh" style="grid-column:1/-1">
+        </div>
+    </section>
+    <section class="eff-fiche-section" id="historique" aria-labelledby="historique-titre">
+        <header class="eff-fiche-section__head">
+            <h2 class="eff-fiche-section__title" id="historique-titre">Historique</h2>
+            <p>Tout ce qui a changé dans le dossier, du plus récent au plus ancien.</p>
+        </header>
+        <div class="eff-fiche-grid eff-fiche-grid--single">
+    <article class="eff-card" id="historique-rh">
         <h2 class="eff-card__title">Historique RH et bilans</h2>
         <?php $combinedHistory = array_merge($orgHistory, $serviceHistory, $stageBilans); ?>
         <?php $renderRhList($combinedHistory, static function (array $h) use ($fmtDate): string {
@@ -707,6 +799,8 @@ if (is_string($medalRackJson) && $medalRackJson !== '') {
             return ($date !== '' ? $date . ' · ' : '') . $label;
         }); ?>
     </article>
+        </div>
+    </section>
 </div>
 
 <?php /* Fenêtres de la fiche : ouvertes par les boutons [data-dialog-open] (eff-member.js). */ ?>
