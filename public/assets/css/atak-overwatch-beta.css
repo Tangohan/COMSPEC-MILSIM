@@ -1485,3 +1485,13 @@ body.ow-theme-day .ow-topbar,body.ow-theme-day .ow-settings,body.ow-theme-day .o
 .ow-task-dot.is-off{background:var(--athena-muted)}
 .ow-task-none{margin:8px 0 0;color:var(--athena-muted);font-size:11px}
 .ow-task-card footer{margin-top:8px;display:flex;justify-content:flex-end}
+/* Géométrie des appuis JTAC (cible, IP, FAH, distance de risque) */
+.ow-jtac-geo-label{background:transparent;border:0;pointer-events:none}
+.ow-jtac-geo-label span{display:inline-block;transform:translate(-50%,-50%);white-space:nowrap;font:700 11px/1.2 ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;padding:1px 4px;border-radius:3px;background:rgba(8,12,10,.72);color:#e6ece9}
+.ow-jtac-geo-label.is-amber span{color:#f2ab33}.ow-jtac-geo-label.is-red span{color:#ff6a5c}.ow-jtac-geo-label.is-green span{color:#5cc76b}
+.ow-jtac-geo-target{background:transparent;border:0}
+.ow-jtac-geo-target span{display:block;width:12px;height:12px;margin:3px;transform:rotate(45deg);border:2px solid #e5483a;background:rgba(229,72,58,.35);box-shadow:0 0 0 2px rgba(0,0,0,.45)}
+.ow-jtac-geo-target.is-dc span{background:#e5483a}
+.leaflet-tooltip.ow-jtac-geo-tip{background:rgba(8,12,10,.85);border:1px solid rgba(255,255,255,.12);color:#e6ece9;font:700 11px/1.2 ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;padding:2px 5px;box-shadow:none}
+.leaflet-tooltip.ow-jtac-geo-tip::before{display:none}
+.leaflet-tooltip.ow-jtac-geo-tip.is-red{color:#ff6a5c}.leaflet-tooltip.ow-jtac-geo-tip.is-green{color:#5cc76b}.leaflet-tooltip.ow-jtac-geo-tip.is-cyan{color:#33e6f2}
