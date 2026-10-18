@@ -402,6 +402,11 @@ private _lock = ["COMSPEC", "ATAK · Marquage au viseur"];
     ["Portée du marquage au téléphone", "Distance maximale en mètres pour marquer et suivre une cible à l'appareil photo du téléphone (la caméra du drone garde sa portée de capteur)."],
     _lock, [100, 2000, 800, 0], 1] call comspec_atak_native_fnc_addSetting;
 
+// App Garmin : la montre Garmin (objet COMSPEC_ATAK_GarminWatch) portée dans l'emplacement montre.
+["comspec_atak_native_garmin_watch", "CHECKBOX",
+    ["Montre Garmin obligatoire", "Activé par défaut : l'app Garmin ne mesure rien (pas, cardio, stress, sommeil, activités) et n'envoie rien au site tant que le joueur ne porte pas la « Montre Garmin » dans l'emplacement montre. Décocher pour que le téléphone mesure seul."],
+    ["COMSPEC", "ATAK · Garmin"], true, 1] call comspec_atak_native_fnc_addSetting;
+
 // Extraction de données au câble DL-7 (app Extraction, modules Zeus / Eden « ATAK · Données »).
 private _data = ["COMSPEC", "ATAK · Extraction de données"];
 ["comspec_atak_native_data_cable", "CHECKBOX",

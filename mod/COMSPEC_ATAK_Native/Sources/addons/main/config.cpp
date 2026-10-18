@@ -3,7 +3,7 @@ class CfgPatches {
     class comspec_atak_native_main {
         name="COMSPEC ATAK Native Standalone"; author="COMSPEC"; requiredVersion=2.14;
         requiredAddons[]={"A3_UI_F","A3_Weapons_F","A3_Modules_F","A3_Anims_F_Config_Sdr","cba_main","cba_xeh","3DEN"};
-        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset","COMSPEC_ATAK_Module_DatingProfile","COMSPEC_ATAK_Module_ZeusControl","COMSPEC_ATAK_Module_ZeusJammer"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
+        units[]={"Item_COMSPEC_ATAK_Battery","Item_COMSPEC_ATAK_RepairKit","Item_COMSPEC_ATAK_DataCable","Item_COMSPEC_ATAK_Antenna_Stub","Item_COMSPEC_ATAK_Antenna_Whip","Item_COMSPEC_ATAK_Antenna_Patch","Item_COMSPEC_ATAK_PowerBank","Item_COMSPEC_ATAK_NvgFilter","Item_COMSPEC_ATAK_VehicleKit","Item_COMSPEC_ATAK_Camera","Item_COMSPEC_ATAK_DockKit","Item_COMSPEC_ATAK_GarminWatch","COMSPEC_ATAK_ChargingDock","COMSPEC_ATAK_Module_DataNode","COMSPEC_ATAK_Module_DataFile","COMSPEC_ATAK_Module_DataReset","COMSPEC_ATAK_Module_DatingProfile","COMSPEC_ATAK_Module_ZeusControl","COMSPEC_ATAK_Module_ZeusJammer"}; weapons[]={"COMSPEC_ATAK_Battery","COMSPEC_ATAK_RepairKit","COMSPEC_ATAK_DataCable","COMSPEC_ATAK_Antenna_Stub","COMSPEC_ATAK_Antenna_Whip","COMSPEC_ATAK_Antenna_Patch","COMSPEC_ATAK_PowerBank","COMSPEC_ATAK_NvgFilter","COMSPEC_ATAK_VehicleKit","COMSPEC_ATAK_Camera","COMSPEC_ATAK_DockKit","COMSPEC_ATAK_GarminWatch"}; version=1.8; versionStr=VERSION_STR; versionAr[]={1,8,0};
     };
 };
 // Langues du mod en plus du français (fn_langList). Un mod de traduction communautaire ajoute sa propre classe
@@ -169,6 +169,7 @@ class COMSPEC_ATAK_Apps {
 // Batterie de rechange du téléphone (action ACE « Changer la batterie ATAK », consommée au changement).
 class CfgWeapons {
     class ItemCore;
+    class ItemWatch;
     class InventoryItem_Base_F;
     class COMSPEC_ATAK_Battery: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
@@ -276,6 +277,15 @@ class CfgWeapons {
         model="\z\comspec_atak_native\addons\items\data\item3d_dock.p3d";
         type=4096; detectRange=-1; simulation="ItemMineDetector";
         class ItemInfo: InventoryItem_Base_F { mass=80; };
+    };
+    // Montre GPS Garmin (app Garmin, fn_garminTick) : se porte dans l'emplacement montre (remplace la montre du jeu,
+    // touche O). Obligatoire pour l'app Garmin tant que le réglage serveur « Montre Garmin obligatoire » est coché.
+    class COMSPEC_ATAK_GarminWatch: ItemWatch {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="$STR_COMSPEC_ATAK_CFG_957A6195AE";
+        descriptionShort="$STR_COMSPEC_ATAK_CFG_0AFE1639F8";
+        picture="\z\comspec_atak_native\addons\main\data\item_garminwatch.paa";
+        model="\z\comspec_atak_native\addons\items\data\item3d_garminwatch.p3d";
     };
     class COMSPEC_ATAK_Phone: ItemCore {
         scope=2; scopeCurator=2; author="COMSPEC";
@@ -448,6 +458,13 @@ class CfgVehicles {
                 expression="if (_value isNotEqualTo '') then { _this setVariable ['COMSPEC_ATAK_DockId', _value, true]; };";
             };
         };
+    };
+    class Item_COMSPEC_ATAK_GarminWatch: Item_Base_F {
+        scope=2; scopeCurator=2; author="COMSPEC";
+        displayName="$STR_COMSPEC_ATAK_CFG_957A6195AE";
+        model="\z\comspec_atak_native\addons\items\data\item3d_garminwatch.p3d"; editorPreview="\z\comspec_atak_native\addons\items\data\item3d_garminwatch_preview.jpg";
+        vehicleClass="Items"; editorCategory="EdCat_Equipment"; editorSubcategory="EdSubcat_InventoryItems";
+        class TransportItems { class _xx_COMSPEC_ATAK_GarminWatch { name="COMSPEC_ATAK_GarminWatch"; count=1; }; };
     };
     class Item_COMSPEC_ATAK_Phone: Item_Base_F {
         scope=2; scopeCurator=2; author="COMSPEC";

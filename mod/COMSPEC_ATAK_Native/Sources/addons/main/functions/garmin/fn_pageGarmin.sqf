@@ -18,6 +18,9 @@ if (isNil { missionNamespace getVariable "COMSPEC_ATAK_Gm" }) then { ["tick"] ca
 private _gm = missionNamespace getVariable ["COMSPEC_ATAK_Gm", createHashMap];
 private _days = _gm getOrDefault ["days", createHashMap];
 private _goal = _gm getOrDefault ["goal", 10000];
+// Montre Garmin portée (fn_garminTick ; toujours vrai si le réglage serveur « Montre Garmin obligatoire » est décoché).
+private _worn = _gm getOrDefault ["worn", true];
+if (!_worn) then { _tab = "NOWATCH"; };
 
 // --- Couleurs (thème sombre de l'app) ---
 private _cBg = [0.065, 0.065, 0.065, 1];
@@ -36,7 +39,11 @@ private _data = "\z\comspec_atak_native\addons\main\data\";
 
 // --- Briques de dessin (coordonnées de la zone de contenu, défilante) ---
 private _box = { params ["_x", "_y", "_w", "_h", "_col"]; private _c = ["COMSPEC_RscText", [_x, _y, _w, _h]] call comspec_atak_native_fnc_pageCtrl; _c ctrlSetBackgroundColor _col; _c };
-private _txt = { params ["_x", "_y", "_w", "_h", "_t"]; private _c = ["COMSPEC_RscStructuredText", [_x, _y, _w, _h]] call comspec_atak_native_fnc_pageCtrl; _c ctrlSetStructuredText parseText ((_t) call comspec_atak_native_fnc_tr); _c };
+// Texte : taille de base = _f (corps de texte du téléphone), sinon la classe garde 0.024 * safeZoneH, plus grande que les
+// boîtes mesurées en _f : lignes rognées en bas (« Chargée », « Repos »...), surtout en plein écran et en paysage.
+private _txt = { params ["_x", "_y", "_w", "_h", "_t"]; private _c = ["COMSPEC_RscStructuredText", [_x, _y, _w, _h]] call comspec_atak_native_fnc_pageCtrl; _c ctrlSetFontHeight _f; _c ctrlSetStructuredText parseText ((_t) call comspec_atak_native_fnc_tr); _c };
+// Paragraphe de longueur variable : boîte ajustée à la hauteur réelle du texte (retours à la ligne en portrait), _y avancé.
+private _para = { params ["_t", ["_min", 0]]; private _c = [_x0, _y, _W, _f * 2, _t] call _txt; private _h = (ctrlTextHeight _c) max _min; _c ctrlSetPositionH _h; _c ctrlCommit 0; _y = _y + _h + _f * 0.3; _c };
 private _ico = { params ["_x", "_y", "_s", "_name", "_hex"]; private _c = ["COMSPEC_RscPicture", [_x, _y, _s, _s], _data + _name + ".paa"] call comspec_atak_native_fnc_pageCtrl; _c ctrlSetTextColor ([_hex] call _rgb); _c };
 private _click = {
     params ["_rect", "_code", ["_inGroup", true]];
@@ -141,17 +148,18 @@ private _bg = [0, 0, _bw, _bh, _cBg] call _box;
 private _call = [player] call comspec_atak_native_fnc_unitCallsign;
 private _syncAgo = round (diag_tickTime - (_gm getOrDefault ["tick", diag_tickTime]));
 [_x0, _y, _f * 1.6, "app_garmin", "#ffffff"] call _ico;
-[_x0 + _f * 2, _y - _f * 0.1, _W - _f * 6, _f * 2, format ["<t font='COMSPEC_BarlowBold' size='1.15'>%1</t><br/><t size='0.8' color='%2'>Montre synchronisée il y a %3 s</t>", [_call, name player] select (_call isEqualTo ""), _hDim, _syncAgo]] call _txt;
+[_x0 + _f * 2, _y - _f * 0.15, _W - _f * 6, _f * 2.4, format ["<t font='COMSPEC_BarlowBold' size='1.15'>%1</t><br/><t size='0.8' color='%2'>%3</t>", [_call, name player] select (_call isEqualTo ""), [_hDim, _hOrange] select !_worn,
+    [format ["Montre synchronisée il y a %1 s", _syncAgo], "Montre non portée"] select !_worn]] call _txt;
 [_x0 + _W - _f * 1.7, _y, _f * 1.6, "g_sync", "#ffffff"] call _ico;
 [[_x0 + _W - _f * 2, _y - _f * 0.2, _f * 2, _f * 2], { ["tick"] call comspec_atak_native_fnc_garminTick; ['GARMIN'] call comspec_atak_native_fnc_pageRender; }] call _click;
-_y = _y + _f * 2.4;
+_y = _y + _f * 2.6;
 
 // Titre de section + lien à droite.
 private _head = {
     params ["_t", ["_link", ""], ["_code", {}]];
-    [_x0, _y, _W * 0.7, _f * 1.8, format ["<t font='COMSPEC_BarlowBold' size='1.45'>%1</t>", _t]] call _txt;
+    [_x0, _y, _W * 0.7, _f * 1.9, format ["<t font='COMSPEC_BarlowBold' size='1.45'>%1</t>", _t]] call _txt;
     if (_link isNotEqualTo "") then {
-        [_x0 + _W * 0.5, _y + _f * 0.3, _W * 0.5, _f * 1.4, format ["<t align='right' color='%1'>%2</t>", _hBlue, _link]] call _txt;
+        [_x0 + _W * 0.5, _y + _f * 0.25, _W * 0.5, _f * 1.5, format ["<t align='right' color='%1'>%2</t>", _hBlue, _link]] call _txt;
         [[_x0 + _W * 0.6, _y, _W * 0.4, _f * 1.8], _code] call _click;
     };
     _y = _y + _f * 2.1;
@@ -166,14 +174,27 @@ private _list = {
         private _ry = _y + _forEachIndex * _rh;
         if (_forEachIndex > 0) then { [_x0, _ry, _W, _f * 0.05, _cLine] call _box; };
         [_x0 + _f * 0.6, _ry + _f * 0.55, _f * 1.2, _icon, _hex] call _ico;
-        [_x0 + _f * 2.3, _ry + _f * 0.45, _W * 0.42, _f * 1.5, format ["<t size='1.05'>%1</t>", _lbl]] call _txt;
-        [_x0 + _W * 0.48, _ry + _f * 0.45, _W * 0.45, _f * 1.5, format ["<t size='1.05'>%1</t>", _val]] call _txt;
+        [_x0 + _f * 2.3, _ry + _f * 0.4, _W * 0.46 - _f * 2.3, _f * 1.6, format ["<t size='1.05'>%1</t>", _lbl]] call _txt;
+        [_x0 + _W * 0.48, _ry + _f * 0.4, _W * 0.52 - _f * 2.2, _f * 1.6, format ["<t size='1.05'>%1</t>", _val]] call _txt;
         if (_ok) then { [_x0 + _W - _f * 1.9, _ry + _f * 0.5, _f * 1.3, "g_check", _hGreen] call _ico; };
     } forEach _rows;
     _y = _y + _rh * (count _rows) + _gap * 2;
 };
 
 switch (_tab) do {
+    case "NOWATCH": {
+        // Pas de montre au poignet : la montre, ce qu'il faut faire, dernières mesures gardées sur ce PC.
+        private _cardH = _f * 13;
+        [_x0, _y, _W, _cardH, _cCard] call _box;
+        private _ps = _f * 6.5;
+        private _pic = ["COMSPEC_RscPicture", [_x0 + (_W - _ps) / 2, _y + _f * 0.6, _ps, _ps], _data + "item_garminwatch.paa"] call comspec_atak_native_fnc_pageCtrl;
+        [_x0 + _f, _y + _f * 7.4, _W - _f * 2, _f * 1.9, "<t align='center' font='COMSPEC_BarlowBold' size='1.4'>Aucune montre Garmin</t>"] call _txt;
+        private _y0 = _y;
+        _y = _y + _f * 9.3;
+        private _c = [format ["<t align='center' color='%1'>Portez la « Montre Garmin » dans l'emplacement montre de l'inventaire pour mesurer les pas, la fréquence cardiaque, le stress, le sommeil, la Body Battery et les activités.<br/>Les mesures déjà prises restent sur ce PC et reviennent avec la montre.</t>", _hDim]] call _para;
+        _c ctrlSetPositionX (_x0 + _f); _c ctrlSetPositionW (_W - _f * 2); _c ctrlCommit 0;
+        _y = (_y max (_y0 + _cardH)) + _gap;
+    };
     case "ACTS": {
         ["Activités"] call _head;
         private _cur = _gm getOrDefault ["cur", []];
@@ -184,12 +205,11 @@ switch (_tab) do {
         ];
         if (_cur isNotEqualTo []) then {
             _cur params ["_k", "_m", "_s"];
-            [_x0, _y, _W, _f * 1.5, format ["<t color='%1'>● EN COURS</t>  <t color='%2'>%3 · %4 km · %5</t>", _hGreen, _hDim, toUpper _k, [_m] call _km, [_s] call _clock]] call _txt;
+            [_x0, _y, _W, _f * 1.6, format ["<t color='%1'>● EN COURS</t>  <t color='%2'>%3 · %4 km · %5</t>", _hGreen, _hDim, toUpper _k, [_m] call _km, [_s] call _clock]] call _txt;
             _y = _y + _f * 1.8;
         };
         if ((count _acts) isEqualTo 0) then {
-            [_x0, _y, _W, _f * 5, format ["<t align='center' color='%1'>Pas encore d'activité.<br/>Une course, une marche, un trajet, un vol ou un saut s'enregistre seul dès que vous bougez,<br/>et se termine après 90 s d'arrêt.</t>", _hDim]] call _txt;
-            _y = _y + _f * 5.5;
+            [format ["<t align='center' color='%1'>Pas encore d'activité.<br/>Une course, une marche, un trajet, un vol ou un saut s'enregistre seul dès que vous bougez,<br/>et se termine après 90 s d'arrêt.</t>", _hDim]] call _para;
         };
         private _lastDay = "";
         {
@@ -199,20 +219,20 @@ switch (_tab) do {
             if (_dk isNotEqualTo _lastDay) then {
                 _lastDay = _dk;
                 (_dk splitString "-") params [["_yy", ""], ["_mm", ""], ["_dd", ""]];
-                [_x0, _y, _W, _f * 1.4, format ["<t color='%1'>• %2/%3/%4</t>", _hDim, _dd, _mm, _yy]] call _txt;
+                [_x0, _y, _W, _f * 1.5, format ["<t color='%1'>• %2/%3/%4</t>", _hDim, _dd, _mm, _yy]] call _txt;
                 _y = _y + _f * 1.5;
             };
             private _ch = _f * 4.6;
             [_x0, _y, _W, _ch, [_th] call _rgb] call _box;
             [_x0 + _W * 0.7, _y, _W * 0.3, _ch, [1, 1, 1, 0.06]] call _box;
             [_x0 + _f * 0.7, _y + _f * 0.55, _f * 1.1, _ti, "#ffffff"] call _ico;
-            [_x0 + _f * 2.1, _y + _f * 0.4, _W - _f * 2.6, _f * 1.4, format ["<t size='1.05'>%1 %2</t><t size='0.8' color='#aaffffff'>  %3</t>", _a getOrDefault ["place", ""], _tl, _a getOrDefault ["at", ""]]] call _txt;
+            [_x0 + _f * 2.1, _y + _f * 0.35, _W - _f * 2.6, _f * 1.5, format ["<t size='1.05'>%1 %2</t><t size='0.8' color='#aaffffff'>  %3</t>", _a getOrDefault ["place", ""], _tl, _a getOrDefault ["at", ""]]] call _txt;
             private _m = _a getOrDefault ["m", 0];
             private _s = _a getOrDefault ["sec", 0];
-            [_x0 + _f * 0.7, _y + _f * 1.8, _W * 0.42, _f * 2.6, format ["<t font='COMSPEC_BarlowBold' size='2.4'>%1</t><t size='1'> KM</t>", [_m] call _km]] call _txt;
-            [_x0 + _W * 0.45, _y + _f * 2, _W * 0.25, _f * 2.4, format ["<t size='0.8'>TEMPS</t><br/><t size='1.35'>%1</t>", [_s] call _clock]] call _txt;
+            [_x0 + _f * 0.7, _y + _f * 1.7, _W * 0.42, _f * 2.8, format ["<t font='COMSPEC_BarlowBold' size='2.4'>%1</t><t size='1'> KM</t>", [_m] call _km]] call _txt;
+            [_x0 + _W * 0.45, _y + _f * 1.9, _W * 0.25, _f * 2.6, format ["<t size='0.8'>TEMPS</t><br/><t size='1.35'>%1</t>", [_s] call _clock]] call _txt;
             private _pv = if (_pace) then { format ["<t size='0.8'>ALLURE</t><br/><t size='1.35'>%1 /km</t>", [(_s / ((_m / 1000) max 0.001)) min 5999] call _clock] } else { format ["<t size='0.8'>VITESSE</t><br/><t size='1.35'>%1 km/h</t>", round (3.6 * _m / (_s max 1))] };
-            [_x0 + _W * 0.72, _y + _f * 2, _W * 0.28, _f * 2.4, _pv] call _txt;
+            [_x0 + _W * 0.72, _y + _f * 1.9, _W * 0.28 - _f * 0.3, _f * 2.6, _pv] call _txt;
             _y = _y + _ch + _gap * 2;
         } forEach _acts;
     };
@@ -238,8 +258,8 @@ switch (_tab) do {
             [_x0 + _f * 0.4, _y + _f * 0.6, _f * 2.2, _f * 2.2, [0.24, 0.24, 0.24, 1]] call _box;
             [_x0 + _f * 0.75, _y + _f * 0.95, _f * 1.5, [_icon, "g_laurel"] select _done, [_hex, "#f2c94c"] select _done] call _ico;
             private _vt = switch (_unit) do { case "km": { format ["%1 / %2 km", [_v, 1] call _km, [_target, 1] call _km] }; case "steps": { format ["%1 / %2", [_v] call _thou, [_target] call _thou] }; default { format ["%1 / %2", round _v, _target] } };
-            [_x0 + _f * 3.2, _y + _f * 0.35, _W - _f * 3.6, _f * 1.5, format ["<t size='1.05' font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='%2'>%3</t>", _t, _hDim, _sub]] call _txt;
-            [_x0 + _f * 3.2, _y + _f * 1.75, _W - _f * 3.6, _f * 1.3, format ["<t size='0.9' color='%1'>%2</t>%3", [_hDim, _hGreen] select _done, _vt, ["", "  <t size='0.9' color='#35b55a'>RELEVÉ</t>"] select _done]] call _txt;
+            [_x0 + _f * 3.2, _y + _f * 0.3, _W - _f * 3.6, _f * 1.5, format ["<t size='1.05' font='COMSPEC_BarlowBold'>%1</t>  <t size='0.8' color='%2'>%3</t>", _t, _hDim, _sub]] call _txt;
+            [_x0 + _f * 3.2, _y + _f * 1.65, _W - _f * 3.6, _f * 1.35, format ["<t size='0.9' color='%1'>%2</t>%3", [_hDim, _hGreen] select _done, _vt, ["", "  <t size='0.9' color='#35b55a'>RELEVÉ</t>"] select _done]] call _txt;
             private _pw = _W - _f * 4;
             [_x0 + _f * 3.2, _y + _f * 3, _pw, _f * 0.25, [0.27, 0.27, 0.27, 1]] call _box;
             [_x0 + _f * 3.2, _y + _f * 3, _pw * ((_v / _target) min 1) max (_f * 0.05), _f * 0.25, [[_hex] call _rgb, [_hGreen] call _rgb] select _done] call _box;
@@ -253,7 +273,7 @@ switch (_tab) do {
             private _on = _x isEqualTo _goal;
             private _r = [_x0 + _forEachIndex * (_ow + _gap), _y, _ow, _f * 1.8];
             [_r select 0, _r select 1, _r select 2, _r select 3, [_cCard, [_hBlue] call _rgb] select _on] call _box;
-            [_r select 0, (_r select 1) + _f * 0.25, _r select 2, _f * 1.4, format ["<t align='center'>%1</t>", [_x] call _thou]] call _txt;
+            [_r select 0, (_r select 1) + _f * 0.2, _r select 2, _f * 1.5, format ["<t align='center'>%1</t>", [_x] call _thou]] call _txt;
             [_r, compile format ["(missionNamespace getVariable ['COMSPEC_ATAK_Gm', createHashMap]) set ['goal', %1]; ['GARMIN'] call comspec_atak_native_fnc_pageRender;", _x]] call _click;
         } forEach _opts;
         _y = _y + _f * 2.4;
@@ -266,17 +286,17 @@ switch (_tab) do {
         [_x0, _y, _W, _cardH, _cCard] call _box;
         [_x0 + _f * 0.6, _y + _f * 0.6, _f * 1.4, "g_battery", _hBlue] call _ico;
         [_x0 + _f * 2.4, _y + _f * 0.6, _W * 0.5, _f * 1.5, "<t size='1.05'>Body Battery</t>"] call _txt;
-        [_x0 + _f * 0.6, _y + _f * 2.2, _W * 0.4, _f * 3.4, format ["<t size='3.2'>%1</t>", _bbv]] call _txt;
-        [_x0 + _W * 0.45, _y + _f * 2.4, _W * 0.25, _f * 2.6, format ["<t size='1.4'>+%1</t><br/><t color='%2'>Chargée</t>", round (_td getOrDefault ["bb_up", 0]), _hDim]] call _txt;
-        [_x0 + _W * 0.7, _y + _f * 2.4, _W * 0.3, _f * 2.6, format ["<t size='1.4'>-%1</t><br/><t color='%2'>Énergie dépensée</t>", round (_td getOrDefault ["bb_down", 0]), _hDim]] call _txt;
+        [_x0 + _f * 0.6, _y + _f * 2.1, _W * 0.4, _f * 3.7, format ["<t size='3.2'>%1</t>", _bbv]] call _txt;
+        [_x0 + _W * 0.45, _y + _f * 2.3, _W * 0.25, _f * 2.9, format ["<t size='1.4'>+%1</t><br/><t color='%2'>Chargée</t>", round (_td getOrDefault ["bb_up", 0]), _hDim]] call _txt;
+        [_x0 + _W * 0.7, _y + _f * 2.3, _W * 0.3 - _f * 0.4, _f * 2.9, format ["<t size='1.4'>-%1</t><br/><t color='%2'>Énergie dépensée</t>", round (_td getOrDefault ["bb_down", 0]), _hDim]] call _txt;
         [_x0 + _f * 0.8, _y + _f * 6, _W - _f * 1.6, _f * 5.2, "battery", _todayB] call _chart;
         systemTime params ["", "", "", "_hNow", "_mNow"];
-        [_x0 + _f * 0.6, _y + _f * 11.4, _W * 0.3, _f * 1.3, format ["<t color='%1'>00 h</t>", _hDim]] call _txt;
-        [_x0 + _W * 0.3, _y + _f * 11.4, _W * 0.7 - _f * 0.6, _f * 1.3, format ["<t align='right' color='%1'>%2:%3 · 24 h</t>", _hDim, [_hNow] call _two, [_mNow] call _two]] call _txt;
+        [_x0 + _f * 0.6, _y + _f * 11.3, _W * 0.3, _f * 1.5, format ["<t color='%1'>00 h</t>", _hDim]] call _txt;
+        [_x0 + _W * 0.3, _y + _f * 11.3, _W * 0.7 - _f * 0.6, _f * 1.5, format ["<t align='right' color='%1'>%2:%3 · 24 h</t>", _hDim, [_hNow] call _two, [_mNow] call _two]] call _txt;
         _y = _y + _cardH + _gap;
         (_gm getOrDefault ["away", [0, 0]]) params ["_away", "_gain"];
         if (_gain >= 1) then {
-            [_x0, _y, _W, _f * 1.4, format ["<t size='0.85' color='%1'>+%2 rechargés pendant %3 hors du jeu</t>", _hDim, round _gain, [_away] call _hm]] call _txt;
+            [_x0, _y, _W, _f * 1.5, format ["<t size='0.85' color='%1'>+%2 rechargés pendant %3 hors du jeu</t>", _hDim, round _gain, [_away] call _hm]] call _txt;
             _y = _y + _f * 1.6;
         };
         _y = _y + _gap;
@@ -285,7 +305,7 @@ switch (_tab) do {
         ["Aperçu"] call _head;
         private _cw = (_W - _gap) / 2;
         private _ch = _f * 9.5;
-        private _card = { params ["_col", "_row", "_icon", "_hex", "_t"]; private _cx = _x0 + _col * (_cw + _gap); private _cy = _y + _row * (_ch + _gap); [_cx, _cy, _cw, _ch, _cCard] call _box; [_cx + _f * 0.6, _cy + _f * 0.6, _f * 1.3, _icon, _hex] call _ico; [_cx + _f * 2.3, _cy + _f * 0.55, _cw - _f * 2.6, _f * 1.5, format ["<t size='1.0'>%1</t>", _t]] call _txt; [_cx, _cy] };
+        private _card = { params ["_col", "_row", "_icon", "_hex", "_t"]; private _cx = _x0 + _col * (_cw + _gap); private _cy = _y + _row * (_ch + _gap); [_cx, _cy, _cw, _ch, _cCard] call _box; [_cx + _f * 0.6, _cy + _f * 0.6, _f * 1.3, _icon, _hex] call _ico; [_cx + _f * 2.3, _cy + _f * 0.5, _cw - _f * 2.6, _f * 1.6, format ["<t size='1.0'>%1</t>", _t]] call _txt; [_cx, _cy] };
         // Fréquence cardiaque : valeur, zones, repos.
         private _hr = round (_gm getOrDefault ["hr", 60]);
         ([0, 0, "g_heart", _hRed, "Fréquence cardiaque"] call _card) params ["_cx", "_cy"];
@@ -294,7 +314,7 @@ switch (_tab) do {
         { [_cx + _f * 0.8 + _forEachIndex * _zw, _cy + _f * 5.7, _zw * 0.94, _f * 0.3, [_x] call _rgb] call _box; } forEach ["#6b6b6b", _hBlue, _hGreen, _hOrange, "#e53935"];
         private _zx = _cx + _f * 0.8 + (_cw - _f * 1.6) * ((_hr - 40) / 160 max 0 min 1);
         [_zx - _f * 0.15, _cy + _f * 5.45, _f * 0.3, _f * 0.8, [1, 1, 1, 1]] call _box;
-        [_cx + _f * 0.6, _cy + _f * 6.6, _cw - _f * 1.2, _f * 2.6, format ["<t size='1.5'>%1 bpm</t><br/><t color='%2'>Repos</t>", [_td] call _restHr, _hDim]] call _txt;
+        [_cx + _f * 0.6, _cy + _f * 6.4, _cw - _f * 1.2, _f * 2.9, format ["<t size='1.5'>%1 bpm</t><br/><t color='%2'>Repos</t>", [_td] call _restHr, _hDim]] call _txt;
         // Stress : valeur, part calme / stressée du jour, courbe.
         private _sv = round (_gm getOrDefault ["stress", 0]);
         ([1, 0, "g_stress", _hOrange, "Stress"] call _card) params ["_cx", "_cy"];
@@ -306,22 +326,22 @@ switch (_tab) do {
         [_cx + _f * 0.8, _cy + _f * 6.3, _cw - _f * 1.6, _f * 2.3, "stress", _todayB] call _chart;
         // Sommeil / repos : durée, phases.
         ([0, 1, "g_sleep", _hBlue, "Sommeil"] call _card) params ["_cx", "_cy"];
-        [_cx + _f * 0.6, _cy + _f * 2.2, _cw - _f * 1.2, _f * 2.6, format ["<t size='1.6'>%1</t><br/><t color='%2'>Durée (repos et inconscience)</t>", [_td getOrDefault ["sleep_s", 0]] call _hm, _hDim]] call _txt;
-        [_cx + _f * 0.8, _cy + _f * 5.2, _cw - _f * 1.6, _f * 3.4, "sleep", _todayB] call _chart;
+        [_cx + _f * 0.6, _cy + _f * 2.1, _cw - _f * 1.2, _f * 3, format ["<t size='1.6'>%1</t><br/><t color='%2'>Durée (repos et inconscience)</t>", [_td getOrDefault ["sleep_s", 0]] call _hm, _hDim]] call _txt;
+        [_cx + _f * 0.8, _cy + _f * 5.4, _cw - _f * 1.6, _f * 3.2, "sleep", _todayB] call _chart;
         // Pas : du jour, objectif, distance.
         private _steps = _td getOrDefault ["steps", 0];
         ([1, 1, "g_steps", _hBlue, "Pas"] call _card) params ["_cx", "_cy"];
         [_cx + _f * 0.6, _cy + _f * 2.4, _cw - _f * 1.2, _f * 3, format ["<t size='2.3'>%1</t>", [_steps] call _thou]] call _txt;
         [_cx + _f * 0.8, _cy + _f * 5.6, _cw - _f * 1.6, _f * 0.3, [0.27, 0.27, 0.27, 1]] call _box;
         [_cx + _f * 0.8, _cy + _f * 5.6, (_cw - _f * 1.6) * ((_steps / _goal) min 1) max (_f * 0.05), _f * 0.3, [[_hBlue] call _rgb, [_hGreen] call _rgb] select (_steps >= _goal)] call _box;
-        [_cx + _f * 0.6, _cy + _f * 6.3, _cw - _f * 1.2, _f * 2.6, format ["<t color='%1'>Objectif %2</t><br/><t size='1.2'>%3 km</t>", _hDim, [_goal] call _thou, [_td getOrDefault ["foot_m", 0]] call _km]] call _txt;
+        [_cx + _f * 0.6, _cy + _f * 6.2, _cw - _f * 1.2, _f * 2.9, format ["<t color='%1'>Objectif %2</t><br/><t size='1.2'>%3 km</t>", _hDim, [_goal] call _thou, [_td getOrDefault ["foot_m", 0]] call _km]] call _txt;
         _y = _y + 2 * (_ch + _gap) + _gap;
 
         // --- Hier ---
         private _yd = [_yest] call _dayOf;
         ["Hier"] call _head;
         if ((count _yd) isEqualTo 0) then {
-            [_x0, _y, _W, _f * 1.6, format ["<t color='%1'>Pas de partie hier.</t>", _hDim]] call _txt;
+            [_x0, _y, _W, _f * 1.7, format ["<t color='%1'>Pas de partie hier.</t>", _hDim]] call _txt;
             _y = _y + _f * 2.2;
         } else {
             [[
@@ -346,8 +366,7 @@ switch (_tab) do {
             ["g_stress", _hOrange, "Stress", format ["%1 Moyenne", round (_stSum / _n)]],
             ["g_sleep", _hBlue, "Sommeil", format ["%1 moyenne", [(["sleep_s"] call _sum) / _n] call _hm]]
         ]] call _list;
-        [_x0, _y, _W, _f * 2.4, format ["<t size='0.8' color='%1'>Mesures de la montre portée en jeu, gardées sur ce PC (14 jours). Fréquence cardiaque d'ACE quand le mod est chargé, sinon estimée d'après l'effort, la fatigue et le stress.</t>", _hDim]] call _txt;
-        _y = _y + _f * 2.6;
+        [format ["<t size='0.8' color='%1'>Mesures de la montre portée en jeu, gardées sur ce PC (14 jours). Fréquence cardiaque d'ACE quand le mod est chargé, sinon estimée d'après l'effort, la fatigue et le stress.</t>", _hDim]] call _para;
         // Envoi au site (fiche du membre), toutes les 5 min.
         (_gm getOrDefault ["web", [-1, ""]]) params ["_wt", "_ws"];
         private _web = switch (true) do {
@@ -356,8 +375,7 @@ switch (_tab) do {
             case (_ws isEqualTo "SANS LIAISON"): { "Pas envoyé au site : téléphone non relié à Athena" };
             default { format ["Pas envoyé au site : %1", _ws] };
         };
-        [_x0, _y, _W, _f * 1.3, format ["<t size='0.8' color='%1'>%2</t>", _hDim, _web]] call _txt;
-        _y = _y + _f * 1.5;
+        [format ["<t size='0.8' color='%1'>%2</t>", _hDim, _web]] call _para;
     };
 };
 
@@ -366,7 +384,8 @@ _y = _y + _tabH + _gap;
 _bg ctrlSetPosition [0, 0, _bw, _y max _bh];
 _bg ctrlCommit 0;
 
-// --- Barre d'onglets, fixe en bas ---
+// --- Barre d'onglets, fixe en bas (pas sans montre : un seul écran) ---
+if (!_worn) exitWith { true };
 private _ty = _by + _bh - _tabH;
 private _tb = ["COMSPEC_RscText", [_bx, _ty, _bw, _tabH], "", false] call comspec_atak_native_fnc_pageCtrl;
 _tb ctrlSetBackgroundColor [0.04, 0.04, 0.04, 0.98];
@@ -379,7 +398,8 @@ private _tw = _bw / (count _tabs);
     private _tx = _bx + _forEachIndex * _tw;
     private _p = ["COMSPEC_RscPicture", [_tx + (_tw - _f * 1.3) / 2, _ty + _f * 0.25, _f * 1.3, _f * 1.3], _data + _icon + ".paa", false] call comspec_atak_native_fnc_pageCtrl;
     _p ctrlSetTextColor ([_hex] call _rgb);
-    private _c = ["COMSPEC_RscStructuredText", [_tx, _ty + _f * 1.55, _tw, _f * 1.1], "", false] call comspec_atak_native_fnc_pageCtrl;
+    private _c = ["COMSPEC_RscStructuredText", [_tx, _ty + _f * 1.5, _tw, _f * 1.15], "", false] call comspec_atak_native_fnc_pageCtrl;
+    _c ctrlSetFontHeight _f;
     _c ctrlSetStructuredText parseText ((format ["<t align='center' size='0.8' color='%1'>%2</t>", _hex, _lbl]) call comspec_atak_native_fnc_tr);
     [[_tx, _ty, _tw, _tabH], compile format ["(uiNamespace getVariable ['COMSPEC_ATAK_State', createHashMap]) set ['gmTab', '%1']; ['GARMIN'] call comspec_atak_native_fnc_pageRender;", _k], false] call _click;
 } forEach _tabs;
