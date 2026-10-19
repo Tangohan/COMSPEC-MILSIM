@@ -321,9 +321,7 @@ CASE_SRC = {
     "tablet": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_tablet_front.png"),
     "sonim": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_sonim_front.png"),
     "keys": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_keys_front.png"),
-    "plate": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_plate_front.png"),
-    "flip": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_flip_front.png"),
-    "ribbed": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_ribbed_front.png"),
+    "s23": os.path.join(os.path.dirname(os.path.abspath(__file__)), "render", "phone_s23_front.png"),
 }
 
 

@@ -11207,6 +11207,7 @@
 ["samedi", "", "Saturday"],
 ["SAMEDI", "", "SATURDAY"],
 ["Samsung Galaxy S7 en coque tactique, ATAK COMSPEC installé. Suffit pour ouvrir le téléphone, sans autre mod.", "", "Samsung Galaxy S7 in a tactical case, with COMSPEC ATAK installed. Enough to open the phone, no other mod needed."],
+["Samsung S23 durci", "", "Rugged Samsung S23"],
 ["Sanction quand les essais sont épuisés.", "", "Penalty when attempts run out."],
 ["Sang", "", "Blood"],
 ["sang %1 %%", "", "blood %1 %%"],
