@@ -6,7 +6,7 @@ class CfgPatches {
         units[] = {};
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
-        requiredAddons[] = {"comspec_sse_core"};
+        requiredAddons[] = {"comspec_sse_core", "comspec_atak_native_main"};
         author = "COMSPEC";
         VERSION_CONFIG;
     };
@@ -39,6 +39,7 @@ class CfgFunctions {
             class resolveComplexity {};
             class getNarrativePools {};
             class getThemePack {};
+            class seededMapGrid {};
             class createModel {};
             class registerBuiltinModels {};
             class saveModel {};

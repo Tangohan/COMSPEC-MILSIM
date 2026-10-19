@@ -50,6 +50,11 @@ private _processed = 0;
 
 comspec_sse_txQueue = _remaining;
 missionNamespace setVariable ["comspec_sse_txQueue", comspec_sse_txQueue];
-// Sauvegarde du profil (écriture disque) laissée à la boucle de 3 min (network XEH_postInit).
-[format ["flushQueue sent=%1 remaining=%2 dropped=%3 batch=%4", _sent, count _remaining, _dropped, _processed], "WARN"] call comspec_sse_fnc_log;
+// Profil réécrit dès que la file change, même vide : sinon les envois déjà transmis
+// restaient sur le disque et repartaient à la mission suivante.
+if ((_sent + _dropped) > 0) then { [] call comspec_sse_fnc_persistQueue; };
+if (_dropped > 0) then {
+    ["comspec_sse_txDropped", [_dropped]] call CBA_fnc_localEvent;
+};
+[format ["flushQueue sent=%1 remaining=%2 dropped=%3 batch=%4", _sent, count _remaining, _dropped, _processed]] call comspec_sse_fnc_log;
 _sent

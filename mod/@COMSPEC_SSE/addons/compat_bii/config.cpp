@@ -11,7 +11,8 @@ class CfgPatches {
             "comspec_sse_core",
             "comspec_sse_intel",
             "comspec_sse_biometrics",
-            "comspec_sse_interaction"
+            "comspec_sse_interaction",
+            "comspec_atak_native_main"
         };
         author = "COMSPEC";
         VERSION_CONFIG;

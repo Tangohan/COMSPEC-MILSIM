@@ -10,7 +10,8 @@ class CfgPatches {
         requiredAddons[] = {
             "comspec_sse_core",
             "comspec_sse_generator",
-            "comspec_sse_interaction"
+            "comspec_sse_interaction",
+            "comspec_atak_native_main"
         };
         author = "COMSPEC";
         VERSION_CONFIG;

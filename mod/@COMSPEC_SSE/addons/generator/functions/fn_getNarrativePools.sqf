@@ -1,15 +1,18 @@
 /*
     Pools narratifs enrichis pour la génération SSE.
-    [_region] call comspec_sse_fnc_getNarrativePools
+    [_region, _seed] call comspec_sse_fnc_getNarrativePools
     _region: IRAQ | SYRIA | LEVANT | AFRICA_SAHEL | RUSSIA | GENERIC | RANDOM
+    _seed >= 0 : région RANDOM tirée de façon déterministe.
 */
 params [
-    ["_region", "GENERIC", [""]]
+    ["_region", "GENERIC", [""]],
+    ["_seed", -1, [0]]
 ];
 
 _region = toUpper _region;
 if (_region == "RANDOM") then {
-    _region = ["IRAQ", "SYRIA", "LEVANT", "AFRICA_SAHEL", "RUSSIA", "GENERIC"] select ((floor random 6));
+    private _i = if (_seed >= 0) then { ([_seed, "region"] call comspec_sse_fnc_hash) mod 6 } else { floor random 6 };
+    _region = ["IRAQ", "SYRIA", "LEVANT", "AFRICA_SAHEL", "RUSSIA", "GENERIC"] select _i;
 };
 
 private _firstNames = switch (_region) do {

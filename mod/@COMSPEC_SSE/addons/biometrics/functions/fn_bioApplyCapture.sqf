@@ -15,8 +15,9 @@ if !(_cap getOrDefault ["ok", false]) exitWith {
     false
 };
 
-private _bio = [_target, "biometrics"] call comspec_sse_fnc_getSection;
-if (isNil "_bio" || {!(_bio isEqualType createHashMap)}) then { _bio = createHashMap; };
+// Seules les clés de cette modalité sont envoyées : fusion côté serveur, sans écraser
+// le relevé qu'un autre opérateur fait au même moment sur le même sujet.
+private _bio = createHashMap;
 private _q = _cap get "quality";
 private _seed = [_target] call comspec_sse_fnc_getSeed;
 switch (_modality) do {
@@ -38,7 +39,7 @@ switch (_modality) do {
     };
 };
 _bio set [format ["%1Attempt", _modality], _cap get "attempt"];
-[_target, "biometrics", _bio, true] call comspec_sse_fnc_setSection;
+["merge", _target, ["biometrics", _bio]] call comspec_sse_fnc_recordOp;
 
 private _lines = [format ["%1 : qualité %2%% (tentative %3) · réf. %4", _label, _q, _cap get "attempt", _cap get "labRef"]];
 if (_modality isEqualTo "empreintes") then {

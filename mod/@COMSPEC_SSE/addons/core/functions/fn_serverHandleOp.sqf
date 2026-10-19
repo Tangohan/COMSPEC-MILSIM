@@ -10,6 +10,19 @@ params [
 ];
 
 if (!isServer) exitWith { false };
+if (isNull _target) exitWith { false };
+
+// Contrôles : l'acteur doit être sur place (ou Zeus) ; la génération est réservée à Zeus / au serveur.
+private _isZeus = !isNull _unit && {!isNull getAssignedCuratorLogic _unit};
+private _near = !isNull _unit && {alive _unit} && {(_unit distance _target) < 30};
+if (!isNull _unit && {!_isZeus} && {!_near}) exitWith {
+    [format ["serverOp %1 refusée : %2 trop loin de %3", _op, name _unit, _target], "WARN"] call comspec_sse_fnc_log;
+    false
+};
+if ((toLower _op) isEqualTo "generate" && {!isNull _unit} && {!_isZeus}) exitWith {
+    [format ["serverOp generate refusée : %1 n'est pas Zeus", name _unit], "WARN"] call comspec_sse_fnc_log;
+    false
+};
 
 [format ["serverOp %1 by %2 on %3", _op, name _unit, _target]] call comspec_sse_fnc_log;
 
@@ -26,10 +39,7 @@ switch (toLower _op) do {
     };
     case "collect": {
         _args params [["_quality", 50], ["_entry", createHashMap]];
-        private _coc = [_target, "chainOfCustody"] call comspec_sse_fnc_getSection;
-        if (isNil "_coc" || {!(_coc isEqualType [])}) then { _coc = []; };
-        _coc pushBack _entry;
-        [_target, "chainOfCustody", _coc, true] call comspec_sse_fnc_setSection;
+        ["append", _target, ["chainOfCustody", [_entry]]] call comspec_sse_fnc_recordOp;
         [_target, "COLLECTED", true] call comspec_sse_fnc_setState;
     };
     case "markexploited": {

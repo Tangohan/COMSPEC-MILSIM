@@ -49,7 +49,7 @@ class CfgPatches {
         };
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
-        requiredAddons[] = {"comspec_sse_core", "comspec_sse_generator", "comspec_sse_intel", "comspec_sse_ui", "comspec_sse_main", "comspec_sse_eden", "comspec_sse_network", "cba_xeh", "A3_Modules_F"};
+        requiredAddons[] = {"comspec_sse_core", "comspec_sse_generator", "comspec_sse_intel", "comspec_sse_ui", "comspec_sse_main", "comspec_sse_eden", "comspec_sse_network", "cba_xeh", "A3_Modules_F", "comspec_atak_native_main"};
         author = "COMSPEC";
         VERSION_CONFIG;
     };
@@ -1388,7 +1388,7 @@ class CfgVehicles {
 // distants du pack SSE seraient rejetés en silence quand les deux mods sont chargés.
 class CfgRemoteExec {
     class Functions {
-        class comspec_sse_fnc_setCaseReference { allowedTargets = 0; jip = 1; };
+        class comspec_sse_fnc_setCaseReference { allowedTargets = 2; jip = 0; };
         class comspec_sse_fnc_applyProfile { allowedTargets = 2; };
         class comspec_sse_fnc_linkEntities { allowedTargets = 2; };
         class comspec_sse_fnc_giveSeek { allowedTargets = 0; };

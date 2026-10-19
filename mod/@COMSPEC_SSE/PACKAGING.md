@@ -76,6 +76,12 @@ Get-ChildItem .\..\publisher\@COMSPEC_SSE -Recurse -File |
 # → doit ne rien retourner
 ```
 
+## Dépendances Workshop
+
+Tous les addons SSE déclarent `comspec_atak_native_main` dans `requiredAddons` (et `requiredVersion = 2.14`, via la macro `REQUIRED_VERSION` de `addons/main/script_mod.hpp`, recopiée par `tools/sync_headers.py`) : sans COMSPEC ATAK Native, Arma refuse de charger le SSE.
+
+Sur la fiche Workshop du SSE (3790566777), **Required items** doit lister à la main : CBA A3, ACE3 et **COMSPEC ATAK Native (3684656708)**. Le Publisher ne le fait pas tout seul. COMSPEC Overwatch reste optionnel : ne pas l’ajouter.
+
 ## Signature PBO (optionnel)
 
 Aucune clé n’est versionnée dans ce dépôt.

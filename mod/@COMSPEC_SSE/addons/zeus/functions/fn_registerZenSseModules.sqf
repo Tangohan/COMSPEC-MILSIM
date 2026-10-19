@@ -25,7 +25,7 @@ private _icon = "\A3\ui_f\data\igui\cfg\simpletasks\types\intel_ca.paa";
                 _values params ["_ref"];
                 private _clean = toUpper (trim _ref);
                 // Diffusé à tous (et aux joueurs qui rejoignent) : le dossier est un contexte d'élément.
-                [_clean] remoteExecCall ["comspec_sse_fnc_setCaseReference", 0, "comspec_sse_caseReferenceJIP"];
+                [_clean] remoteExecCall ["comspec_sse_fnc_setCaseReference", 2];
                 [["Dossier SSE actif effacé.", format ["Dossier SSE actif : %1", _clean]] select (_clean isNotEqualTo "")] call comspec_sse_fnc_zeusNotify;
             },
             {},

@@ -32,14 +32,13 @@ if (_mode isEqualTo "near") exitWith {
     } forEach (missionNamespace getVariable ["COMSPEC_SSE_BloodTraces", []]);
     _best
 };
-// Retour à l'opérateur : notification dans le téléphone ATAK natif, jamais sur l'écran du jeu.
-// Sans l'ATAK natif (SSE seul), la bulle d'aide reste le seul retour possible.
+// Retour à l'opérateur : notification dans le téléphone ATAK natif (dépendance obligatoire),
+// jamais sur l'écran du jeu.
 if (_mode isEqualTo "say") exitWith {
     _args params [["_txt", ""], ["_type", "INFO"]];
     if (!hasInterface || {_txt isEqualTo ""}) exitWith {};
     private _t = _txt call comspec_sse_fnc_tr;
-    if (!isNil "comspec_atak_native_fnc_notify") exitWith { [_type, (_t splitString endl) joinString " · ", 8, 30] call comspec_atak_native_fnc_notify; };
-    hint _t;
+    [_type, (_t splitString endl) joinString " · ", 8, 30] call comspec_atak_native_fnc_notify;
 };
 
 switch (_mode) do {
