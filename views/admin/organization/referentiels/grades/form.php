@@ -3,7 +3,7 @@ $grade = $grade ?? null;
 $systems = $systems ?? [];
 $categories = $categories ?? [];
 $isEdit = $grade !== null;
-$returnTab = ($returnTab ?? 'fr') === 'us' ? 'us' : 'fr';
+$returnTab = in_array($returnTab ?? 'fr', ['us', 'perso'], true) ? $returnTab : 'fr';
 $flashError = \App\Core\Session::getFlash('error');
 $tenantOwned = !empty($tenantOwned);
 $catalogLocked = $isEdit;

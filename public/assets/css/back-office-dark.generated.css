@@ -4872,6 +4872,14 @@ html[data-bo-theme="dark"] .grd-ref__hidden > summary {
 html[data-bo-theme="dark"] .grd-ref__empty {
   color: var(--ath-muted, #aebdb6);
 }
+html[data-bo-theme="dark"] .grd-ref__count {
+  border: 1px solid #2b363b;
+  background: #19252b;
+  color: #67c3ea;
+}
+html[data-bo-theme="dark"] .grd-ref__foot {
+  color: var(--ath-muted, #aebdb6);
+}
 
 /* ——— back-office-refresh.css ——— */
 html[data-bo-theme="dark"] .ath-shell, html[data-bo-theme="dark"] .bo-shell {

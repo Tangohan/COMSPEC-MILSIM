@@ -253,3 +253,20 @@ html[data-bo-theme="dark"] .fs {
 }
 html[data-bo-theme="dark"] .fs .fs-btn--primary,
 html[data-bo-theme="dark"] .fs .fs-seg label:has(input:checked) { background: #0f766e; border-color: #0f766e; color: #fff; }
+
+/* Référentiel des grades : compteur de l'onglet actif « Grades personnalisés ». */
+html[data-bo-theme="dark"] .grd-ref__tabs a.is-active .grd-ref__count {
+  border-color: #e0e6e3;
+  background: #e0e6e3;
+  color: #0c1116;
+}
+html[data-bo-theme="dark"] .grd-ref__btn {
+  border-color: #e0e6e3;
+  background: #e0e6e3;
+  color: #0c1116;
+}
+html[data-bo-theme="dark"] .grd-ref__btn:hover {
+  border-color: #34d399;
+  background: #34d399;
+  color: #0c1116;
+}
