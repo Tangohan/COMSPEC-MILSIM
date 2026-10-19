@@ -262,3 +262,37 @@
     justify-content: flex-start;
   }
 }
+
+/* Raccourci : système de grades de la communauté */
+.grd-ref__system {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  margin: 1rem 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--ath-line, #e3e8ea);
+  border-left: 3px solid var(--ath-accent, #12d18e);
+  background: var(--ath-surface, #fff);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--ath-muted, #6d7a80);
+}
+.grd-ref__system p { margin: 0; max-width: 46rem; }
+.grd-ref__system strong { color: var(--ath-ink, #0c1116); }
+.grd-ref__system.is-other { border-left-color: #d97706; background: color-mix(in srgb, #d97706 7%, var(--ath-surface, #fff)); }
+.grd-ref__switch {
+  min-height: 2.25rem;
+  padding: 0 0.9rem;
+  border: 1px solid var(--ath-ink, #0c1116);
+  background: var(--ath-ink, #0c1116);
+  color: var(--ath-surface, #fff);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.grd-ref__system:not(.is-other) .grd-ref__switch { background: transparent; color: var(--ath-ink, #0c1116); }
+.grd-ref__switch:hover { opacity: 0.88; }

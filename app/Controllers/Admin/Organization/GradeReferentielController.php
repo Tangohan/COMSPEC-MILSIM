@@ -71,6 +71,49 @@ class GradeReferentielController
         ]);
     }
 
+    /**
+     * Raccourci : change le système de grades de la communauté (français ↔ américain) depuis le référentiel.
+     * Les grades déjà attribués aux membres sont conservés ; les listes proposent ensuite le nouveau système.
+     */
+    public function setSystem(Request $request, array $params = []): Response
+    {
+        $tenantId = (int) Session::get('tenant_id');
+        if ($tenantId < 1) {
+            return Response::redirect(url('login'));
+        }
+        $code = strtoupper(trim((string) $request->input('grade_system_code', '')));
+        $tab = str_starts_with($code, 'US') ? 'us' : 'fr';
+        $back = url('back-office/referentiels/grades') . '?tab=' . $tab;
+        if (!$request->isPost() || !Csrf::validate($request->input('_csrf_token'))) {
+            Session::flash('error', 'Session expirée. Merci de réessayer.');
+
+            return Response::redirect($back);
+        }
+        if (!in_array($code, ['FR_CLASSIC', 'US_CLASSIC'], true)) {
+            Session::flash('error', 'Système de grades inconnu.');
+
+            return Response::redirect($back);
+        }
+        $settings = $this->tenantRepository->getSettings($tenantId);
+        $current = strtoupper(trim((string) ($settings['grade_system_code'] ?? ''))) ?: 'FR_CLASSIC';
+        if ($current === $code) {
+            Session::flash('info', 'La communauté utilise déjà ce système de grades.');
+
+            return Response::redirect($back);
+        }
+        $this->tenantRepository->mergeSettings($tenantId, ['grade_system_code' => $code]);
+        try {
+            $this->templates->completeForTenant($tenantId, $code);
+        } catch (\Throwable) {
+            // l’échelle se complète aussi à l’ouverture du référentiel
+        }
+        Session::flash('success', $code === 'US_CLASSIC'
+            ? 'La communauté utilise maintenant les grades américains. Les grades déjà attribués sont conservés.'
+            : 'La communauté utilise maintenant les grades français. Les grades déjà attribués sont conservés.');
+
+        return Response::redirect($back);
+    }
+
     public function create(Request $request, array $params = []): Response
     {
         if (!(int) Session::get('tenant_id')) {

@@ -1497,6 +1497,7 @@ return function (Router $router) {
     $router->get('/back-office/referentiels/grades', [GradeReferentielController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/grades/catalogue', [RankCatalogAdminController::class, 'index'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/catalogue/audit', [RankCatalogAdminController::class, 'runAudit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/referentiels/grades/systeme', [GradeReferentielController::class, 'setSystem'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/grades/create', [GradeReferentielController::class, 'create'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/referentiels/grades/store', [GradeReferentielController::class, 'store'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->get('/back-office/referentiels/grades/{id}/edit', [GradeReferentielController::class, 'edit'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);

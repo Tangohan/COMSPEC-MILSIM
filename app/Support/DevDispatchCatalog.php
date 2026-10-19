@@ -293,22 +293,11 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
-            $pr(974, '2026-10-19', 'PASS RH : un formulaire de création entièrement refait', 'Créer un PASS devient clair. Chaque condition n’affiche plus que les champs utiles à son type (une formation, une qualification, un nombre d’heures…) au lieu de dix listes à la fois, et se lit en clair : « A validé la formation « JTAC » », « Au moins 40 h de jeu validées ». Un aperçu en direct montre le PASS tel qu’il sera exigé, des modèles permettent de démarrer en un clic, et un PASS enregistré peut être testé sur un membre. Rechargez le portail (Ctrl+F5).', [
-                'Palette « Ajouter une condition » par famille : compétences, temps de jeu, hiérarchie',
-                'Phrase lisible sous chaque condition, avec ce qu’il reste à compléter',
-                'Aperçu en direct du PASS : code, usages, règle ET / OU et liste des conditions',
-                'Modèles de départ : Expérience de terrain, Spécialiste, Encadrement',
-                'Tester un PASS enregistré sur un membre : rempli ou non, condition par condition',
-                'Code court proposé à partir du nom',
-            ], [
-                'Seuls les champs utiles au type de condition sont affichés',
-                'Usages (poste, avancement, notation) présentés en cartes expliquées, interrupteur « PASS actif »',
-                'Choix ET / OU visible entre chaque condition',
-                'Envoi bloqué tant qu’une condition est incomplète, avec la condition mise en évidence',
-            ], [
-                'Le bouton Enregistrer du formulaire était presque invisible',
-            ], ['personnel'], [
-                'Back-office → Personnel → PASS RH → Créer un PASS : cliquez le modèle « Encadrement », choisissez le grade, puis enregistrez. Sur la page du PASS, cherchez un membre dans « Tester sur un membre ».',
+            $pr(973, '2026-10-19', 'Grades : changer le système de la communauté en un clic', 'Le référentiel des grades indique désormais quel système la communauté utilise (français ou américain) et permet de passer à l’autre directement depuis l’onglet, sans repasser par l’assistant de création. Les grades déjà attribués aux membres sont conservés ; les listes proposent ensuite les grades du nouveau système. Rechargez le portail (Ctrl+F5).', [
+                'Bandeau « Votre communauté utilise les grades … » sous les onglets du référentiel',
+                'Bouton « Utiliser les grades américains / français pour la communauté », avec confirmation',
+            ], [], [], ['personnel'], [
+                'Back-office → Référentiels → Grades, onglet Grades américains : cliquez « Utiliser les grades américains pour la communauté ». Le badge « Système de la communauté » passe sur cet onglet.',
             ], 'Portail Athena'),
             $pr(934, '2026-10-19', 'Annuaire des communautés : des cartes qui mettent les unités en valeur', 'Les cartes de l’annuaire public montrent enfin la vie de chaque unité. La bannière et la couleur de la communauté habillent la carte, et quatre chiffres apparaissent sous l’en-tête : membres, actifs sur 30 jours, unités de l’ORBAT et opérations par mois. Les opérations à venir, la note des avis et l’ancienneté sur Athena s’affichent quand elles existent. Une communauté épinglée passe en vitrine pleine largeur. Rechargez le portail (Ctrl+F5).', [
                 'Chiffres sur chaque carte : membres, actifs 30 jours, unités ORBAT, opérations par mois',
