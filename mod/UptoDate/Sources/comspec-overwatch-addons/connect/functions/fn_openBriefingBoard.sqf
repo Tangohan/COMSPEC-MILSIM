@@ -8,6 +8,18 @@ if (!hasInterface) exitWith {};
 
 if (!(missionNamespace getVariable ["comspec_overwatch_enabled", true])) exitWith {};
 
+// ATAK natif : le briefing se lit dans l'app BRIEFING du téléphone, jamais dans l'ancien tableau plein écran (COMSPEC_Briefing_Dialog)
+// ouvert par-dessus le jeu (menu ACE « Briefing / diaporama », vue « briefing » de l'ancienne tablette, commande web briefing:board).
+if (isClass (configFile >> "CfgPatches" >> "comspec_atak_native_main")) exitWith {
+    if !([player] call comspec_atak_native_fnc_hasDevice) exitWith {
+        ["WARNING", "Équipez un téléphone ATAK pour consulter le briefing.", 5, 30, "BRIEFING"] call comspec_atak_native_fnc_notify;
+    };
+    if (isNull ([] call comspec_atak_native_fnc_display) || {!((uiNamespace getVariable ["COMSPEC_ATAK_State", createHashMap]) getOrDefault ["interactive", false])}) then {
+        [true] call comspec_atak_native_fnc_open;
+    };
+    [{ ["BRIEFING"] call comspec_atak_native_fnc_navigate; }] call CBA_fnc_execNextFrame;
+};
+
 
 
 // Prefer UI ATAK Enhanced
