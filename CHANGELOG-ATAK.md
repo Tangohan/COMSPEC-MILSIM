@@ -43,12 +43,12 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 ### Résumé joueur
 Type : nouveauté
 FR : Carte plus lisible, arsenal réparé, plus rien par-dessus le jeu
-- Carte : le curseur et ta position tiennent dans un bandeau compact en bas à gauche (grille, distance, azimut), avec ton cap et ton indicatif à la couleur de ton équipe de feu ; les noms des repères ne passent plus dessous.
+- Carte : le curseur et ta position tiennent dans un bandeau compact en bas à gauche (grille, distance, azimut), avec ton cap en direct et ton indicatif à la couleur de ton équipe de feu ; les noms des repères ne passent plus dessous, et le cercle de l'unité sélectionnée garde la même taille au zoom.
 - Arsenal ACE : on peut de nouveau taper un nom (Tenues Athena et Mes équipements), et Mes tenues gagne la sélection multiple, la suppression en une fois et Annuler.
 - Le briefing s'ouvre dans l'app BRIEFING et une demande CAS arrive en notification du téléphone, au lieu des anciennes fenêtres plein écran ; une diapositive Athena noire s'affiche, ou le téléphone dit pourquoi.
 - Aussi : arrivée en mission plus fluide, plus de carrés noirs dans Vidéo Live sur un drone du camp, capture de la carte Zeus avec reprise, et la tablette sur le JPC passe en chantier (W.I.P).
 EN : Clearer map, arsenal fixed, nothing over the game any more
-- Map: the cursor and your position fit in one compact bar at the bottom left (grid, distance, bearing), with your heading and your callsign in your fire team colour; marker names no longer slide under it.
+- Map: the cursor and your position fit in one compact bar at the bottom left (grid, distance, bearing), with your live heading and your callsign in your fire team colour; marker names no longer slide under it, and the selected unit's ring keeps the same size at any zoom.
 - ACE arsenal: you can type a name again (Athena outfits and My loadouts), and My outfits gets multiple selection, delete in one go and Undo.
 - The briefing opens in the BRIEFING app and a CAS request arrives as a phone notification, instead of the old full-screen windows; a black Athena slide now shows, or the phone says why.
 - Also: smoother mission start, no more black squares in Live video on a friendly drone, Zeus map capture that resumes, and the tablet on the JPC becomes work in progress (W.I.P).
@@ -66,6 +66,9 @@ EN : Clearer map, arsenal fixed, nothing over the game any more
 - `fn_pageMap.sqf` : panneau curseur et carte « moi » fusionnés en un bandeau à deux cases (même hauteur, liseré vert à gauche, filet séparateur), largeur calée sur le texte ; repli sur 3 lignes si la case est trop étroite ; flèche de navigation des points de passage posée au-dessus du bandeau.
 - `fn_mapOverlayUpdate.sqf` : hiérarchie valeur principale (taille 1,2, grasse) / détails (0,85, gris) ; azimut sur 3 chiffres, distance en km au-delà de 1 000 m ; points cardinaux selon `COMSPEC_ATAK_Lang` ; case « moi » : cap, indicatif à la couleur de l'équipe de feu (`fn_ftInfo`) et grille en main.
 - `fn_mapHudRects.sqf` (nouveau) : rectangles du bandeau et du cap relatifs à la carte ; `fn_mapMarkerText`, `fn_mapPlaceText` (via `COMSPEC_ATAK_LblRects`) et `fn_mapLabels` les évitent.
+- `fn_mapOnDraw.sqf` : anneau de sélection en icône à taille fixe (2,1 × le symbole) au lieu d'une ellipse de 18 × échelle m.
+- `fn_mapOverlayUpdate.sqf` : case « moi » mise à jour par la boussole à chaque degré (`_meUpdate`) ; cap sous la boussole sur 3 chiffres.
+- `fn_mapMarkerText.sqf` : plaques des zones en main à 0,020 (porté : 0,024 inchangé), hauteur 1,22, fond 0,82.
 - `i18n/en.txt` : « CURSEUR » -> « CURSOR ».
 - #988, arsenal ACE :
 - Cause (Retour arrière) : `ace_arsenal_fnc_onKeyDown` garde toutes les touches tant qu'aucune de ses barres de recherche n'a le focus ; Retour arrière y appelle `buttonHide`, Ctrl+C / Ctrl+V exportent ou importent. Nos champs (recherche, nom de la tenue) posent `ace_arsenal_leftSearchbarFocus` en SetFocus / KillFocus, comme les barres d'ACE.
