@@ -3,7 +3,7 @@
 [
     "comspec_sse_caseReference",
     "EDITBOX",
-    ["Référence dossier SSE", "Ex. SSE-2026-0007 — rattachement Athena."],
+    ["Référence du dossier SSE", "Ex. SSE-2026-0007 : sert à rattacher la mission au bon dossier sur Athena."],
     ["COMSPEC SSE", "Réseau"],
     "",
     1,
@@ -17,7 +17,7 @@
 [
     "comspec_sse_mapId",
     "EDITBOX",
-    ["Identifiant carte / contexte", "mapId Athena (souvent 1)."],
+    ["Numéro de carte Athena", "Numéro de la carte Athena de la mission (en général 1)."],
     ["COMSPEC SSE", "Réseau"],
     "1",
     1,
@@ -28,7 +28,7 @@
 [
     "comspec_sse_preferExtension",
     "CHECKBOX",
-    ["Préférer l'extension COMSPEC", "Tente SubmitSsePerson / SendSSE avant sendIntel texte."],
+    ["Passer par COMSPEC Link en priorité", "Envoie les fiches SSE complètes via COMSPEC Link, et ne passe à l'envoi en simple texte que si ça échoue."],
     ["COMSPEC SSE", "Réseau"],
     true,
     1,

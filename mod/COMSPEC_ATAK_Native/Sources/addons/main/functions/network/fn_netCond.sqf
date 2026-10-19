@@ -15,7 +15,7 @@ private _defs = missionNamespace getVariable "COMSPEC_ATAK_NetDefs";
 if (isNil "_defs") then {
     _defs = [
         ["sim", "comspec_atak_native_net_sim", "net_sim", "bool", true, [], []],
-        ["realism", "comspec_atak_native_net_realism", "net_realism", "num", 1, [1, 2, 0], ["Réaliste", "Exigeant", "Simplifié (ancien modèle)"]],
+        ["realism", "comspec_atak_native_net_realism", "net_realism", "num", 1, [1, 2, 0], ["Réaliste", "Exigeant", "Simplifié (ancien calcul)"]],
         ["weather", "comspec_atak_native_net_weather", "net_weather", "bool", true, [], []],
         ["weatherK", "comspec_atak_native_net_weather_k", "net_weather_k", "num", 100, [0, 50, 100, 150, 200], ["0 %", "50 %", "100 % (réel)", "150 %", "200 %"]],
         ["congestion", "comspec_atak_native_net_congestion", "net_congestion", "bool", true, [], []],

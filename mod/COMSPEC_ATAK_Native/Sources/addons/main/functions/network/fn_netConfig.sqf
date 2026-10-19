@@ -122,11 +122,11 @@ switch (_mode) do {
             [("Lecture seule : seul un administrateur du serveur (#login), l'hôte ou un Zeus peut appliquer des conditions." call _T), ("Choisissez les conditions puis Appliquer au serveur : tous les joueurs les reçoivent tout de suite." call _T)] select _edit, _who];
         _head ctrlCommit 0;
         private _labels = createHashMapFromArray [
-            ["sim", "Débit réseau simulé"], ["realism", "Réalisme de la simulation radio"], ["weather", "Météo sur le réseau"],
-            ["weatherK", "Intensité de la météo"], ["congestion", "Surcharge du réseau"], ["bgLoad", "Trafic de fond"],
-            ["loss", "Pertes de paquets"], ["lossFloor", "Perte minimale"], ["latencyAdd", "Latence ajoutée"],
-            ["relayOnly", "Réseau exclusivement par relais"], ["gateways", "Passerelles de véhicule et PC mobile"],
-            ["offlineHold", "Fonctionnement hors connexion"], ["videoRelays", "Flux vidéo selon les relais"]
+            ["sim", "Réseau réaliste"], ["realism", "Niveau de réalisme radio"], ["weather", "La météo gêne le réseau"],
+            ["weatherK", "Intensité de la météo"], ["congestion", "Saturation du réseau"], ["bgLoad", "Réseau déjà occupé"],
+            ["loss", "Envois perdus"], ["lossFloor", "Pertes minimum"], ["latencyAdd", "Délai ajouté"],
+            ["relayOnly", "Réseau uniquement par les relais"], ["gateways", "Véhicules relais et PC mobile"],
+            ["offlineHold", "Mode hors connexion"], ["videoRelays", "Vidéo dépendante des relais"]
         ];
         private _srcTxt = createHashMapFromArray [["site", ["Imposé par le site", "#E0B050"]], ["server", ["Appliqué en jeu", "#7ED38A"]], ["cba", ["Réglage serveur", "#9AA59C"]]];
         private _rowH = 6.4 * _u;

@@ -89,7 +89,7 @@ final class EcotiHudAssetTest extends TestCase
         );
 
         self::assertStringContainsString('comspec_overwatch_ecoti_hud', $pre);
-        self::assertStringContainsString('Affichage situation (JVN)', $pre);
+        self::assertStringContainsString('Infos tactiques dans les JVN', $pre);
         self::assertStringContainsString('comspec_overwatch_ecoti_theme', $pre);
         self::assertStringContainsString('comspec_overwatch_ecoti_show_unit_outline', $pre);
         self::assertStringContainsString('comspec_overwatch_ecoti_tube_fx', $pre);
