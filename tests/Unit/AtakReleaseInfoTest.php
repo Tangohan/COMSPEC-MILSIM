@@ -99,6 +99,33 @@ final class AtakReleaseInfoTest extends TestCase
         }
     }
 
+    public function testPlayerNotesKeepTitleAndBulletsApart(): void
+    {
+        $dir = sys_get_temp_dir() . '/atak-release-notes-' . bin2hex(random_bytes(4));
+        mkdir($dir);
+        file_put_contents($dir . '/CHANGELOG-ATAK.md', "# CHANGELOG\n\n## Carte (ATAK natif 1.1.0)\n\n### Résumé joueur\nType : nouveauté\n"
+            . "FR : La carte change\n- Un point.\n- Deux points.\nEN : The map changes\n- One dot.\n\n### Détail technique\n- interne\n");
+        try {
+            $notes = AtakReleaseInfo::playerNotes('1.1.0', $dir);
+            self::assertSame(['title' => 'La carte change', 'bullets' => ['Un point.', 'Deux points.']], $notes['fr']);
+            self::assertSame(['title' => 'The map changes', 'bullets' => ['One dot.']], $notes['en']);
+            self::assertSame(['title' => '', 'bullets' => []], AtakReleaseInfo::playerNotes('9.9.9', $dir)['fr']);
+        } finally {
+            @unlink($dir . '/CHANGELOG-ATAK.md');
+            @rmdir($dir);
+        }
+    }
+
+    public function testVersionNameIsReadFromTheModSources(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $name = AtakReleaseInfo::versionName($root);
+
+        // La page publique /atak-natif en tire le nom de code (« Denver »).
+        self::assertNotNull($name);
+        self::assertStringStartsWith((string) AtakReleaseInfo::latest($root)['atak_native'], $name);
+    }
+
     public function testVersionEndpointNeedsNoApiKey(): void
     {
         self::assertFalse(ComspecApiKeyAuth::pathRequiresProtection('/api/atak/version'));
