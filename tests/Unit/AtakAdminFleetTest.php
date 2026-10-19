@@ -98,4 +98,31 @@ final class AtakAdminFleetTest extends TestCase
             self::assertArrayHasKey($action, Fleet::ACTIONS);
         }
     }
+
+    public function testBackOfficeFleetIsLimitedToTheActiveCommunity(): void
+    {
+        $routes = $this->read('routes/web.php');
+        self::assertStringContainsString("'/back-office/atak/parc-atak'", $routes);
+        self::assertStringContainsString("'/back-office/atak/parc-atak/compromission/annuler'", $routes);
+        // Le retrait définitif reste à l'administration de la plateforme.
+        self::assertStringNotContainsString("'/back-office/atak/parc-atak/retirer'", $routes);
+        self::assertMatchesRegularExpression('/\$boFleetMw = \[AuthMiddleware::class, TenantResourceAdminMiddleware::class\]/', $routes);
+
+        $controller = (new \ReflectionClass(\App\Controllers\Admin\BackOfficeAtakFleetController::class))->newInstanceWithoutConstructor();
+        $scope = new \ReflectionMethod($controller, 'scopeTenantId');
+        $previous = $_SESSION ?? null;
+        try {
+            $_SESSION = ['tenant_id' => 7];
+            self::assertSame(7, $scope->invoke($controller));
+            // Sans communauté active : jamais « toutes les communautés ».
+            $_SESSION = [];
+            self::assertNotSame(0, $scope->invoke($controller));
+        } finally {
+            $_SESSION = $previous ?? [];
+        }
+        $admin = (new \ReflectionClass(AdminAtakFleetController::class))->newInstanceWithoutConstructor();
+        self::assertSame(0, (new \ReflectionMethod($admin, 'scopeTenantId'))->invoke($admin));
+        self::assertArrayHasKey('gestion', Fleet::COMPROMISE_SOURCES);
+        self::assertArrayHasKey('note_gestion', Fleet::ACTIONS);
+    }
 }

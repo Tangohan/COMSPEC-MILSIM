@@ -1952,6 +1952,20 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/admin/parc-atak/compromission/annuler', [\App\Controllers\Admin\AdminAtakFleetController::class, 'undoCompromise'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/parc-atak/certificat', [\App\Controllers\Admin\AdminAtakFleetController::class, 'certificate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/parc-atak/note', [\App\Controllers\Admin\AdminAtakFleetController::class, 'note'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Même parc côté gestion, limité aux ATAK de la communauté active (pas de retrait ni de blocage toutes communautés).
+    $boFleet = \App\Controllers\Admin\BackOfficeAtakFleetController::class;
+    $boFleetMw = [AuthMiddleware::class, TenantResourceAdminMiddleware::class];
+    $router->get('/back-office/atak/parc-atak', [$boFleet, 'index'], $boFleetMw);
+    $router->get('/back-office/atak/parc-atak/fiche', [$boFleet, 'show'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/bloquer', [$boFleet, 'block'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/debloquer', [$boFleet, 'unblock'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/deconnecter', [$boFleet, 'disconnect'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/message', [$boFleet, 'message'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/message/annuler', [$boFleet, 'cancelMessage'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/compromission', [$boFleet, 'compromise'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/compromission/annuler', [$boFleet, 'undoCompromise'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/certificat', [$boFleet, 'certificate'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/note', [$boFleet, 'note'], $boFleetMw);
     $lmsAdminMw = [AuthMiddleware::class, NonDefaultTenantMiddleware::class];
     $router->get('/admin/training', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, ''), $lmsAdminMw);
     $router->get('/admin/training/courses', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'courses'), $lmsAdminMw);
