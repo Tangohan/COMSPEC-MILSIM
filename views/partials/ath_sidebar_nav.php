@@ -213,6 +213,7 @@ $messagesChildren = [
 
 $doctrineChildren = [
     ['label' => 'Doctrine et SOP', 'href' => url('back-office/doctrine'), 'active' => $navAt('back-office/doctrine')],
+    ['label' => 'Fichiers partagés', 'href' => url('back-office/partage'), 'active' => $navAt('back-office/partage')],
     ['label' => 'Types de documents', 'href' => url('back-office/documents/types'), 'active' => $navAt('back-office/documents/types')],
     ['label' => 'Nomenclature', 'href' => url('back-office/documents/nomenclature'), 'active' => $navAt('back-office/documents/nomenclature')],
     ['label' => 'Conformité', 'href' => url('back-office/documents/compliance'), 'active' => $navAt('back-office/documents/compliance')],
@@ -233,6 +234,7 @@ $cooperationChildren = [
 
 $atakDeviceChildren = [
     ['label' => 'Parc de terminaux', 'href' => url('back-office/atak/realisme'), 'active' => $navAtakDevicesActive],
+    ['label' => 'Parc ATAK des membres', 'href' => url('back-office/atak/parc-atak'), 'active' => $navAt('back-office/atak/parc-atak')],
     ['label' => 'Sessions et connexions', 'href' => url('back-office/atak/operateurs'), 'active' => $navAtakSessionsActive],
     ['label' => 'Certificats', 'href' => url('back-office/atak/certificats'), 'active' => $navAtakCertsActive],
     ['label' => 'Fiche opérateur', 'href' => url('back-office/atak/fiche-operateur'), 'active' => $navAtakOpActive],

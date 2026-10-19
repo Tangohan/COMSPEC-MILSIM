@@ -33,6 +33,11 @@ final class AtakModReportGravityTest extends TestCase
         self::assertSame(Gravity::CRITICAL, Gravity::classify('auto', 'error', 'Plantage', '', 'nimporte'));
     }
 
+    public function testUnsharedBriefingDeckIsLow(): void
+    {
+        self::assertSame(Gravity::LOW, Gravity::classify('auto', 'error', 'google_deck_error — Présentation inaccessible ou non publique.'));
+    }
+
     public function testMailRulesAndLabels(): void
     {
         self::assertTrue(Gravity::mailsOps('player', Gravity::LOW));

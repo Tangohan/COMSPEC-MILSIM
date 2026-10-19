@@ -2625,6 +2625,24 @@ class AtakApiController
             static fn (\App\Services\Monitoring\AtakModReportDiscordTicketService $t) => $t->onReport($reportId)
         );
 
+        // Copie dans le salon Discord de la communauté du joueur (« Signalements du mod »), après la réponse au jeu.
+        if ($result['created'] && $steam !== null) {
+            try {
+                $accounts = $this->modReports()->linkedAccountsBySteam([$steam]);
+                \App\Services\Integrations\CommunityModReportRelay::defer((int) ($accounts[$steam]['tenant_id'] ?? 0), [
+                    'gravity' => $result['gravity'],
+                    'source' => $source,
+                    'channel' => $channel,
+                    'message' => $message,
+                    'callsign' => $callsign,
+                    'player_name' => $playerName,
+                    'mod_version' => $modVersion,
+                    'extension_version' => $extVersion,
+                ]);
+            } catch (\Throwable) {
+            }
+        }
+
         // Signalement joueur (Échap > Signaler un problème) ou erreur automatique critique : e-mail à
         // l'exploitation, jamais bloquant. Les autres détections automatiques restent sur la page.
         if ($result['created']) {
@@ -3308,6 +3326,14 @@ class AtakApiController
         }
         try {
             $row = $this->casRepo->createMedevac($tenantId, $mapId, $author, $body);
+        } catch (\PDOException $e) {
+            // Erreur base (communauté supprimée, donnée refusée) : réponse explicite plutôt que 503 générique.
+            error_log('medevacStore: ' . $e->getMessage());
+
+            return Response::json([
+                'error' => 'medevac_store_failed',
+                'message' => 'La demande MEDEVAC n’a pas pu être enregistrée sur Athena. Réessayez ; si cela continue, prévenez l’administration.',
+            ], 500);
         } catch (\RuntimeException $e) {
             if ($e->getMessage() === 'migration_required') {
                 return Response::json([
@@ -6688,11 +6714,17 @@ class AtakApiController
                 $existing = $realism->findTerminalByUid($tenantId, $terminalUidPos);
                 $prev = strtolower((string) ($existing['compromise_state'] ?? 'none'));
                 if ($existing !== null && $prev !== $compromisePos) {
-                    $realism->setTerminalCompromise(
+                    $updated = $realism->setTerminalCompromise(
                         $tenantId,
                         $terminalUidPos,
                         $compromisePos,
                         $compromisePos === 'none' ? null : 'Remonté depuis le terrain'
+                    );
+                    (new \App\Repositories\AtakAdminControlRepository())->recordCompromise(
+                        $updated ?? $existing,
+                        $compromisePos,
+                        $compromisePos === 'none' ? null : 'Remonté depuis le terrain',
+                        'position'
                     );
                     if ($compromisePos !== 'none') {
                         $this->activityLog->record(

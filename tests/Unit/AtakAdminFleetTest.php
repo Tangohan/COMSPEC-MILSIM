@@ -71,4 +71,58 @@ final class AtakAdminFleetTest extends TestCase
         self::assertStringContainsString("'/api/atak/admin-control/pending'", $routes);
         self::assertStringContainsString('run_atak_admin_control_migration', $this->read('run-migrations.php'));
     }
+
+    public function testCompromiseHistoryIsNewestFirst(): void
+    {
+        $sorted = AdminAtakFleetController::sortCompromises([
+            ['id' => 0, 'ts' => 100, 'legacy' => true],
+            ['id' => 4, 'ts' => 300],
+            ['id' => 5, 'ts' => 300],
+            ['id' => 2, 'ts' => 200],
+        ]);
+        self::assertSame([5, 4, 2, 0], array_column($sorted, 'id'));
+    }
+
+    public function testCompromisesAreRecordedAndUndoable(): void
+    {
+        // Les compromissions du jeu, du poste de commandement et des positions alimentent l'historique de la fiche.
+        self::assertStringContainsString('recordCompromise(', $this->read('app/Controllers/Api/AtakRealismApiController.php'));
+        self::assertStringContainsString('recordCompromise(', $this->read('app/Controllers/Api/AtakApiController.php'));
+        self::assertStringContainsString('atak_compromise_events', $this->read('bootstrap/atak_admin_control_migration.php'));
+        $routes = $this->read('routes/web.php');
+        foreach (['compromission', 'compromission/annuler', 'certificat', 'note'] as $path) {
+            self::assertStringContainsString("'/admin/parc-atak/{$path}'", $routes);
+        }
+        self::assertArrayHasKey('compromis', Fleet::STATES);
+        foreach (['compromise', 'compromise_undo', 'cert_revoke', 'cert_restore', 'note'] as $action) {
+            self::assertArrayHasKey($action, Fleet::ACTIONS);
+        }
+    }
+
+    public function testBackOfficeFleetIsLimitedToTheActiveCommunity(): void
+    {
+        $routes = $this->read('routes/web.php');
+        self::assertStringContainsString("'/back-office/atak/parc-atak'", $routes);
+        self::assertStringContainsString("'/back-office/atak/parc-atak/compromission/annuler'", $routes);
+        // Le retrait définitif reste à l'administration de la plateforme.
+        self::assertStringNotContainsString("'/back-office/atak/parc-atak/retirer'", $routes);
+        self::assertMatchesRegularExpression('/\$boFleetMw = \[AuthMiddleware::class, TenantResourceAdminMiddleware::class\]/', $routes);
+
+        $controller = (new \ReflectionClass(\App\Controllers\Admin\BackOfficeAtakFleetController::class))->newInstanceWithoutConstructor();
+        $scope = new \ReflectionMethod($controller, 'scopeTenantId');
+        $previous = $_SESSION ?? null;
+        try {
+            $_SESSION = ['tenant_id' => 7];
+            self::assertSame(7, $scope->invoke($controller));
+            // Sans communauté active : jamais « toutes les communautés ».
+            $_SESSION = [];
+            self::assertNotSame(0, $scope->invoke($controller));
+        } finally {
+            $_SESSION = $previous ?? [];
+        }
+        $admin = (new \ReflectionClass(AdminAtakFleetController::class))->newInstanceWithoutConstructor();
+        self::assertSame(0, (new \ReflectionMethod($admin, 'scopeTenantId'))->invoke($admin));
+        self::assertArrayHasKey('gestion', Fleet::COMPROMISE_SOURCES);
+        self::assertArrayHasKey('note_gestion', Fleet::ACTIONS);
+    }
 }

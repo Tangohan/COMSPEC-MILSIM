@@ -128,4 +128,32 @@ final class TenantMailSenderTest extends TestCase
         self::assertNull(SecretCipher::decrypt(substr($c, 0, -2) . 'xx'));
         self::assertNull(SecretCipher::decrypt('en-clair'));
     }
+    public function testPlatformAccountIsStoredApartAndCountsInPlatformQuota(): void
+    {
+        $repo = $this->repo();
+        $stored = '';
+        $sender = new TenantMailSender(
+            $repo,
+            static fn (string $host): array => ['203.0.113.10'],
+            static function () use (&$stored): string {
+                return $stored;
+            },
+            static function (string $json) use (&$stored): void {
+                $stored = $json;
+            }
+        );
+
+        self::assertNull($sender->transportConfig(TenantMailSender::PLATFORM));
+        self::assertTrue($sender->save(TenantMailSender::PLATFORM, $this->form(['from_address' => 'no-reply@athena.example']))['ok']);
+        self::assertSame([], $repo->settings, 'l’envoi commun ne touche à aucune communauté');
+        self::assertStringNotContainsString('cle-smtp-secrete', $stored);
+
+        $cfg = $sender->transportConfig(TenantMailSender::PLATFORM);
+        self::assertNotNull($cfg);
+        self::assertSame('platform:brevo', $cfg['transport_label']);
+        self::assertStringStartsNotWith('community:', $cfg['transport_label']);
+        self::assertSame('no-reply@athena.example', $cfg['from_address']);
+        self::assertSame('cle-smtp-secrete', $cfg['smtp']['password']);
+        self::assertNull($sender->transportConfig(1));
+    }
 }

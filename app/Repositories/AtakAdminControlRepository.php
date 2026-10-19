@@ -34,6 +34,28 @@ final class AtakAdminControlRepository
         'message' => 'Message imposé',
         'message_cancel' => 'Message annulé',
         'sessions' => 'Déconnexion forcée',
+        'compromise' => 'Compromission déclarée',
+        'compromise_undo' => 'Compromission annulée',
+        'cert_revoke' => 'Certificat révoqué',
+        'cert_restore' => 'Certificat rétabli',
+        'note' => 'Note interne',
+        'note_gestion' => 'Note de la gestion',
+    ];
+
+    /** États de compromission d'un ATAK (atak_terminals.compromise_state). */
+    public const COMPROMISE_STATES = [
+        'captured' => 'Capturé',
+        'compromised' => 'Compromis',
+        'none' => 'Contrôle rétabli',
+    ];
+
+    /** D'où vient une compromission. */
+    public const COMPROMISE_SOURCES = [
+        'game' => 'En jeu (validée sur le terrain)',
+        'position' => 'Remontée du terrain',
+        'web' => 'Poste de commandement',
+        'admin' => 'Administration du site',
+        'gestion' => 'Gestion de la communauté',
     ];
 
     /** Filtres d'état de la liste. */
@@ -41,6 +63,7 @@ final class AtakAdminControlRepository
         '' => 'Tous',
         'actifs' => 'Vus depuis 7 jours',
         'bloques' => 'Bloqués',
+        'compromis' => 'Compromis',
         'messages' => 'Message en attente',
         'dormants' => 'Sans signe depuis 30 jours',
     ];
@@ -528,7 +551,7 @@ final class AtakAdminControlRepository
      *
      * @return list<array<string, mixed>>
      */
-    public function blocksFor(?int $userId, ?string $steamUid, ?string $terminalUid): array
+    public function blocksFor(?int $userId, ?string $steamUid, ?string $terminalUid, int $tenantId = 0): array
     {
         if (!$this->ready()) {
             return [];
@@ -536,6 +559,11 @@ final class AtakAdminControlRepository
         [$match, $args] = $this->targetMatch($userId, $steamUid, $terminalUid);
         if ($match === '') {
             return [];
+        }
+        // Vue d'une communauté : ses blocages et ceux de la plateforme (toutes communautés), jamais ceux d'une autre.
+        if ($tenantId > 0) {
+            $match .= ' AND (b.tenant_id IS NULL OR b.tenant_id = ?)';
+            $args[] = $tenantId;
         }
 
         return $this->rows(
@@ -599,7 +627,7 @@ final class AtakAdminControlRepository
     }
 
     /** @return list<array<string, mixed>> */
-    public function messagesFor(?int $userId, ?string $steamUid, ?string $terminalUid): array
+    public function messagesFor(?int $userId, ?string $steamUid, ?string $terminalUid, int $tenantId = 0): array
     {
         if (!$this->ready()) {
             return [];
@@ -607,6 +635,10 @@ final class AtakAdminControlRepository
         [$match, $args] = $this->targetMatch($userId, $steamUid, $terminalUid);
         if ($match === '') {
             return [];
+        }
+        if ($tenantId > 0) {
+            $match .= ' AND b.tenant_id = ?';
+            $args[] = $tenantId;
         }
 
         return $this->rows(
@@ -755,6 +787,244 @@ final class AtakAdminControlRepository
         }
     }
 
+    // ── Compromissions ──────────────────────────────────────────────────────
+
+    /**
+     * Inscrit une compromission (ou un retour au contrôle) dans l'historique de l'ATAK.
+     *
+     * @param array<string, mixed> $terminal fiche atak_terminals (id, tenant_id, terminal_uid, indicatif)
+     * @param list<int> $certificateIds certificats révoqués par cet événement
+     */
+    public function recordCompromise(
+        array $terminal,
+        string $state,
+        ?string $reason,
+        string $source,
+        array $certificateIds = [],
+        ?int $actorId = null,
+        string $actorLabel = ''
+    ): int {
+        $tenantId = (int) ($terminal['tenant_id'] ?? 0);
+        $uid = trim((string) ($terminal['terminal_uid'] ?? ''));
+        if ($tenantId < 1 || $uid === '' || !isset(self::COMPROMISE_STATES[$state]) || !$this->ready()) {
+            return 0;
+        }
+        $ids = array_values(array_filter(array_map('intval', $certificateIds), static fn (int $id): bool => $id > 0));
+        try {
+            $this->pdo()->prepare(
+                'INSERT INTO atak_compromise_events
+                    (tenant_id, terminal_id, terminal_uid, label, state, reason, source, certificate_ids, actor_user_id, actor_label, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UTC_TIMESTAMP())'
+            )->execute([
+                $tenantId,
+                ((int) ($terminal['id'] ?? 0)) ?: null,
+                mb_substr($uid, 0, 64),
+                mb_substr(self::playerLabel($terminal), 0, 190),
+                $state,
+                $reason !== null && trim($reason) !== '' ? mb_substr(trim($reason), 0, 255) : null,
+                isset(self::COMPROMISE_SOURCES[$source]) ? $source : 'game',
+                $ids !== [] ? mb_substr(implode(',', $ids), 0, 500) : null,
+                $actorId,
+                $actorLabel !== '' ? mb_substr($actorLabel, 0, 190) : null,
+            ]);
+
+            return (int) $this->pdo()->lastInsertId();
+        } catch (\Throwable) {
+            // L'historique ne doit jamais empêcher la compromission.
+            return 0;
+        }
+    }
+
+    /**
+     * Historique des compromissions d'un ATAK, plus récentes d'abord.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function compromiseEventsFor(int $tenantId, string $terminalUid, int $limit = 50): array
+    {
+        if ($tenantId < 1 || trim($terminalUid) === '' || !$this->ready()) {
+            return [];
+        }
+
+        return $this->rows(
+            'SELECT * FROM atak_compromise_events WHERE tenant_id = ? AND terminal_uid = ?
+             ORDER BY created_at DESC, id DESC LIMIT ' . max(1, min(200, $limit)),
+            [$tenantId, trim($terminalUid)]
+        );
+    }
+
+    /** @return array<string, mixed>|null */
+    public function findCompromiseEvent(int $id): ?array
+    {
+        if ($id < 1 || !$this->ready()) {
+            return null;
+        }
+
+        return $this->rows('SELECT * FROM atak_compromise_events WHERE id = ? LIMIT 1', [$id])[0] ?? null;
+    }
+
+    /**
+     * Déclare l'ATAK capturé ou compromis depuis l'administration. « Compromis » révoque ses certificats valides,
+     * comme une compromission validée sur le terrain.
+     *
+     * @param array<string, mixed> $terminal
+     * @return array{event_id: int, revoked: int}
+     */
+    public function markCompromised(array $terminal, string $state, string $reason, bool $revokeCertificates, ?int $actorId, string $actorLabel, string $source = 'admin'): array
+    {
+        $source = isset(self::COMPROMISE_SOURCES[$source]) ? $source : 'admin';
+        $tenantId = (int) ($terminal['tenant_id'] ?? 0);
+        $id = (int) ($terminal['id'] ?? 0);
+        $state = $state === 'compromised' ? 'compromised' : 'captured';
+        if ($tenantId < 1 || $id < 1) {
+            return ['event_id' => 0, 'revoked' => 0];
+        }
+        $this->exec(
+            'UPDATE atak_terminals SET compromise_state = ?, compromised_at = UTC_TIMESTAMP(), compromise_reason = ?, updated_at = UTC_TIMESTAMP()
+             WHERE tenant_id = ? AND id = ?',
+            [$state, mb_substr($reason !== '' ? $reason : ($source === 'gestion' ? 'Déclaré par la gestion de la communauté' : 'Déclaré par l’administration du site'), 0, 255), $tenantId, $id]
+        );
+        $revoked = [];
+        if ($revokeCertificates) {
+            foreach ($this->certificatesFor($id) as $c) {
+                if (in_array((string) $c['status'], ['active', 'issued'], true) && $this->setCertificateRevoked($terminal, (int) $c['id'], true, 'keyCompromise')) {
+                    $revoked[] = (int) $c['id'];
+                }
+            }
+        }
+
+        return [
+            'event_id' => $this->recordCompromise($terminal, $state, $reason, $source, $revoked, $actorId, $actorLabel),
+            'revoked' => count($revoked),
+        ];
+    }
+
+    /**
+     * Annule une compromission : l'ATAK repasse sous contrôle (si l'événement annulé est la compromission en cours)
+     * et, au choix, les certificats qu'elle avait révoqués sont rétablis (sauf expirés).
+     * Sans événement (compromission plus ancienne que l'historique), on annule l'état en cours.
+     *
+     * @param array<string, mixed> $terminal
+     * @param array<string, mixed>|null $event
+     * @return array{cleared: bool, restored: int}
+     */
+    public function undoCompromise(array $terminal, ?array $event, bool $restoreCertificates, string $note, ?int $actorId, string $actorLabel, string $source = 'admin'): array
+    {
+        $source = isset(self::COMPROMISE_SOURCES[$source]) ? $source : 'admin';
+        $tenantId = (int) ($terminal['tenant_id'] ?? 0);
+        $id = (int) ($terminal['id'] ?? 0);
+        $uid = (string) ($terminal['terminal_uid'] ?? '');
+        if ($tenantId < 1 || $id < 1) {
+            return ['cleared' => false, 'restored' => 0];
+        }
+        $current = (string) ($terminal['compromise_state'] ?? 'none');
+        $isCurrent = !in_array($current, ['', 'none'], true);
+        if ($event !== null) {
+            // N'annule l'état en cours que si aucune compromission plus récente (encore valable) ne le porte.
+            foreach ($this->compromiseEventsFor($tenantId, $uid, 200) as $e) {
+                if ((int) $e['id'] === (int) $event['id']) {
+                    break;
+                }
+                if ((string) $e['state'] !== 'none' && empty($e['undone_at'])) {
+                    $isCurrent = false;
+                    break;
+                }
+            }
+        }
+
+        $restored = 0;
+        if ($restoreCertificates) {
+            $certIds = $event !== null
+                ? array_filter(array_map('intval', explode(',', (string) ($event['certificate_ids'] ?? ''))))
+                : $this->certificatesRevokedByCompromise($terminal);
+            foreach ($certIds as $certId) {
+                if ($this->setCertificateRevoked($terminal, (int) $certId, false)) {
+                    $restored++;
+                }
+            }
+        }
+
+        if ($isCurrent) {
+            $this->exec(
+                "UPDATE atak_terminals SET compromise_state = 'none', compromised_at = NULL, compromise_reason = NULL, updated_at = UTC_TIMESTAMP()
+                 WHERE tenant_id = ? AND id = ?",
+                [$tenantId, $id]
+            );
+        }
+        $note = mb_substr(trim($note), 0, 255);
+        $where = $event !== null ? 'id = ?' : "tenant_id = ? AND terminal_uid = ? AND state <> 'none'";
+        $args = $event !== null ? [(int) $event['id']] : [$tenantId, $uid];
+        $this->exec(
+            'UPDATE atak_compromise_events SET undone_at = UTC_TIMESTAMP(), undone_by_user_id = ?, undone_by_label = ?, undo_note = ?
+             WHERE undone_at IS NULL AND ' . $where,
+            array_merge([$actorId, mb_substr($actorLabel, 0, 190), $note !== '' ? $note : null], $args)
+        );
+        if ($isCurrent) {
+            $this->recordCompromise($terminal, 'none', $note !== '' ? $note : ($source === 'gestion' ? 'Compromission annulée par la gestion de la communauté' : 'Compromission annulée par l’administration du site'), $source, [], $actorId, $actorLabel);
+        }
+
+        return ['cleared' => $isCurrent, 'restored' => $restored];
+    }
+
+    /**
+     * Certificats d'un ATAK révoqués pour compromission (motif keyCompromise) depuis sa compromission en cours.
+     *
+     * @param array<string, mixed> $terminal
+     * @return list<int>
+     */
+    private function certificatesRevokedByCompromise(array $terminal): array
+    {
+        $since = \App\Support\UtcDateTime::timestamp($terminal['compromised_at'] ?? null);
+        $out = [];
+        foreach ($this->certificatesFor((int) ($terminal['id'] ?? 0)) as $c) {
+            if ((string) $c['status'] !== 'revoked' || (string) ($c['revoked_reason'] ?? '') !== 'keyCompromise') {
+                continue;
+            }
+            $at = \App\Support\UtcDateTime::timestamp($c['revoked_at'] ?? null);
+            if ($since === null || ($at !== null && $at >= $since - 120)) {
+                $out[] = (int) $c['id'];
+            }
+        }
+
+        return $out;
+    }
+
+    // ── Certificats ─────────────────────────────────────────────────────────
+
+    /**
+     * Révoque ou rétablit un certificat de l'ATAK. Un certificat expiré n'est jamais rétabli.
+     *
+     * @param array<string, mixed> $terminal
+     */
+    public function setCertificateRevoked(array $terminal, int $certificateId, bool $revoke, string $reason = 'Révoqué par l’administration du site'): bool
+    {
+        $tenantId = (int) ($terminal['tenant_id'] ?? 0);
+        $terminalId = (int) ($terminal['id'] ?? 0);
+        if ($tenantId < 1 || $terminalId < 1 || $certificateId < 1) {
+            return false;
+        }
+        try {
+            if ($revoke) {
+                $st = $this->pdo()->prepare(
+                    "UPDATE atak_certificates SET status = 'revoked', revoked_at = UTC_TIMESTAMP(), revoked_reason = ?, updated_at = UTC_TIMESTAMP()
+                     WHERE tenant_id = ? AND terminal_id = ? AND id = ? AND status IN ('active', 'issued')"
+                );
+                $st->execute([mb_substr($reason, 0, 255), $tenantId, $terminalId, $certificateId]);
+            } else {
+                $st = $this->pdo()->prepare(
+                    "UPDATE atak_certificates SET status = 'active', revoked_at = NULL, revoked_reason = NULL, updated_at = UTC_TIMESTAMP()
+                     WHERE tenant_id = ? AND terminal_id = ? AND id = ? AND status = 'revoked'
+                       AND (expires_at IS NULL OR expires_at > UTC_TIMESTAMP())"
+                );
+                $st->execute([$tenantId, $terminalId, $certificateId]);
+            }
+
+            return $st->rowCount() === 1;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
     // ── Journal ─────────────────────────────────────────────────────────────
 
     /**
@@ -785,12 +1055,15 @@ final class AtakAdminControlRepository
     }
 
     /** @return list<array<string, mixed>> */
-    public function recentActions(int $limit = 40, ?int $userId = null, ?string $terminalUid = null): array
+    public function recentActions(int $limit = 40, ?int $userId = null, ?string $terminalUid = null, int $tenantId = 0): array
     {
         if (!$this->ready()) {
             return [];
         }
         $limit = max(1, min(200, $limit));
+        // Vue d'une communauté : seulement les actions sur ses ATAK.
+        // Les notes internes de l'administration de la plateforme ne sont pas montrées à la gestion.
+        $scope = $tenantId > 0 ? ' AND a.tenant_id = ' . $tenantId . " AND a.action <> 'note'" : '';
         if ($userId !== null || $terminalUid !== null) {
             $match = [];
             $args = [];
@@ -807,14 +1080,14 @@ final class AtakAdminControlRepository
             }
 
             return $this->rows(
-                'SELECT * FROM atak_admin_actions WHERE ' . implode(' OR ', $match) . ' ORDER BY id DESC LIMIT ' . $limit,
+                'SELECT a.* FROM atak_admin_actions a WHERE (' . implode(' OR ', $match) . ')' . $scope . ' ORDER BY a.id DESC LIMIT ' . $limit,
                 $args
             );
         }
 
         return $this->rows(
             'SELECT a.*, tn.name AS tenant_name FROM atak_admin_actions a LEFT JOIN tenants tn ON tn.id = a.tenant_id
-             ORDER BY a.id DESC LIMIT ' . $limit
+             WHERE 1 = 1' . $scope . ' ORDER BY a.id DESC LIMIT ' . $limit
         );
     }
 

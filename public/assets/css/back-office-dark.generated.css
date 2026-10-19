@@ -3015,6 +3015,11 @@ html[data-bo-theme="dark"] .bo-setup__progress-meta {
   color: #a2b3ab;
 }
 
+/* ——— back-office-integrations.css ——— */
+html[data-bo-theme="dark"] .bo-int-switch__thumb {
+  background: #111513;
+}
+
 /* ——— back-office-intel-intake.css ——— */
 html[data-bo-theme="dark"] .rmt {
   --rmt-bg: var(--ds-color-bg, #141917);
@@ -4475,6 +4480,47 @@ html[data-bo-theme="dark"] .bo-recovery__shortcut {
 html[data-bo-theme="dark"] .bo-recovery__shortcut:hover {
   border-color: #313942;
   background: #18202a;
+}
+
+/* ——— back-office-partage.css ——— */
+html[data-bo-theme="dark"] .fs {
+  --fs-bg: #131816;
+  --fs-surface: #111513;
+  --fs-soft: #161b18;
+  --fs-line: #2b3430;
+  --fs-text: #dae1de;
+  --fs-muted: #9da8b8;
+}
+html[data-bo-theme="dark"] .fs__notice {
+  background: #2b2819;
+  color: #ec9665;
+}
+html[data-bo-theme="dark"] .fs-panel--warn {
+  background: linear-gradient(0deg, var(--fs-surface), #2b2819);
+}
+html[data-bo-theme="dark"] .fs-row__icon--pdf {
+  color: #e86868;
+}
+html[data-bo-theme="dark"] .fs-row__icon--image {
+  color: #6f90ec;
+}
+html[data-bo-theme="dark"] .fs-row__icon--archive {
+  color: #a87fe8;
+}
+html[data-bo-theme="dark"] .fs-row__icon--media {
+  color: #ec659d;
+}
+html[data-bo-theme="dark"] .fs-level--view {
+  background: #1a262e;
+  color: #5ac0f6;
+}
+html[data-bo-theme="dark"] .fs-level--upload {
+  background: #342f1e;
+  color: #f09761;
+}
+html[data-bo-theme="dark"] .fs-level--manage {
+  background: #1b2f22;
+  color: #71e09b;
 }
 
 /* ——— back-office-rail.css ——— */
@@ -6251,6 +6297,116 @@ html[data-bo-theme="dark"] .dash-start-card__text {
 }
 html[data-bo-theme="dark"] .dash-start-card__list li {
   color: #dee4e1;
+}
+html[data-bo-theme="dark"] .dash-zone--signatures {
+  background: #2a2318;
+}
+html[data-bo-theme="dark"] .dash-sign__stat {
+  border: 1px solid #2d3732;
+  background: #111513;
+}
+html[data-bo-theme="dark"] .dash-sign__stat strong {
+  color: #dee4e1;
+}
+html[data-bo-theme="dark"] .dash-sign__stat span {
+  color: #b4c1bb;
+}
+html[data-bo-theme="dark"] .dash-sign__stat.is-alert {
+  background: #2b2819;
+}
+html[data-bo-theme="dark"] .dash-sign__stat.is-alert strong {
+  color: #f79e5a;
+}
+html[data-bo-theme="dark"] .dash-sign__stat.is-danger {
+  border-color: #382a2a;
+  background: #2a1818;
+}
+html[data-bo-theme="dark"] .dash-sign__stat.is-danger strong {
+  color: #e86868;
+}
+html[data-bo-theme="dark"] .dash-sign__item {
+  border: 1px solid #2d3732;
+  background: #111513;
+}
+html[data-bo-theme="dark"] .dash-sign__ref {
+  color: #d6ddda;
+}
+html[data-bo-theme="dark"] .dash-sign__version {
+  background: #181d1a;
+  color: #c9d3ce;
+}
+html[data-bo-theme="dark"] .dash-sign__flag {
+  background: #2a1819;
+  color: #f06184;
+}
+html[data-bo-theme="dark"] .dash-sign__title {
+  color: #dee4e1;
+}
+html[data-bo-theme="dark"] .dash-sign__hint {
+  color: #b4c1bb;
+}
+html[data-bo-theme="dark"] .dash-sign__deadline {
+  color: #f09761;
+}
+html[data-bo-theme="dark"] .dash-sign__btn--ghost {
+  border-color: #303b36;
+  background: #111513;
+  color: #d6ddda;
+}
+html[data-bo-theme="dark"] .dash-sign__btn--ghost:hover {
+  background: #141816;
+}
+html[data-bo-theme="dark"] .dash-sign__links a {
+  color: #f09761;
+}
+html[data-bo-theme="dark"] .dash-sign-modal__panel {
+  background: #111513;
+}
+html[data-bo-theme="dark"] .dash-sign-modal__head {
+  border-bottom: 1px solid #2d3732;
+  background: linear-gradient(180deg, #2a2318 0%, #111513 100%);
+}
+html[data-bo-theme="dark"] .dash-sign-modal__kicker {
+  color: #f79e5a;
+}
+html[data-bo-theme="dark"] .dash-sign-modal__title {
+  color: #dee4e1;
+}
+html[data-bo-theme="dark"] .dash-sign-modal__lead {
+  color: #c0cbc6;
+}
+html[data-bo-theme="dark"] .dash-sign-modal__x {
+  color: #c0cbc6;
+}
+html[data-bo-theme="dark"] .dash-sign-modal__x:hover {
+  background: #161b18;
+}
+html[data-bo-theme="dark"] .dash-sign-modal__item {
+  border: 1px solid #2d3732;
+  background: #111513;
+}
+html[data-bo-theme="dark"] .dash-sign-modal__doc {
+  color: #dee4e1;
+}
+html[data-bo-theme="dark"] .dash-sign-modal__check {
+  background: #141816;
+  color: #d6ddd9;
+}
+html[data-bo-theme="dark"] .dash-sign-modal__status {
+  color: #c0cbc6;
+}
+html[data-bo-theme="dark"] .dash-sign-modal__status.is-err {
+  color: #e86868;
+}
+html[data-bo-theme="dark"] .dash-sign-modal__done {
+  color: #57f9cb;
+}
+html[data-bo-theme="dark"] .dash-sign-modal__foot {
+  border-top: 1px solid #2d3732;
+  background: #141816;
+}
+html[data-bo-theme="dark"] .dash-sign-modal__progress {
+  color: #c0cbc6;
 }
 
 /* ——— decorations-kit.css ——— */

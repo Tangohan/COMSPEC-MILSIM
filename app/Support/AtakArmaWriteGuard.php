@@ -45,7 +45,8 @@ final class AtakArmaWriteGuard
 
         $steamRaw = $this->extractSteamRaw($request, $body);
         $steam = $steamRaw !== '' ? SteamId::normalize($steamRaw) : null;
-        if ($steamRaw !== '' && $steam === null) {
+        // _SP_PLAYER_ (solo / hôte local) : pas d'identifiant, on poursuit comme sans Steam au lieu d'un 400 répété.
+        if ($steamRaw !== '' && $steam === null && !SteamId::isPlaceholder($steamRaw)) {
             $this->log($tenantId, false, 'Données jeu refusées — identifiant Steam invalide', [
                 'reason' => 'invalid_steam_uid',
             ]);
