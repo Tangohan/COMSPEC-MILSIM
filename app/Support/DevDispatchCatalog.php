@@ -293,6 +293,15 @@ final class DevDispatchCatalog
         };
 
         return array_merge([
+            $pr(924, '2026-10-19', 'Accueil : aperçu de la plateforme avec une unité fictive', 'La page d’accueil publique montre enfin Athena en action. Une nouvelle section « Voyez-le tourner » présente six écrans d’une unité imaginaire, TF ORION : son ORBAT avec les effectifs par unité, un tableau des opérateurs (qualifications, présence, statut), le centre de commandement, une formation en cours, le briefing d’une manœuvre avec carte et slots, et l’extranet JNET alimenté par l’ATAK en jeu. Toutes les données sont inventées et signalées comme telles. Rechargez le portail (Ctrl+F5).', [
+                'Section « Voyez-le tourner » sur l’accueil : six écrans de démonstration à onglets',
+                'ORBAT, personnel, commandement, formation, manœuvre et JNET d’une unité fictive',
+                'Version anglaise de la démonstration',
+            ], [
+                'Onglets utilisables au clavier (flèches, Début, Fin) et lien direct #apercu-orbat, #apercu-jnet…',
+            ], [], ['platform'], [
+                'Ouvrez l’accueil public, descendez sous « Un portail pensé pour commander » et parcourez les six onglets de l’aperçu.',
+            ], 'Portail Athena'),
             $pr(866, '2026-10-18', 'Bureau recrutement : la file se range par prochaine action', 'La file des candidatures devient un tableau en colonnes : À prendre, En instruction, Entretien, En attente, Intégration et Bilan 30 jours. Chaque carte dit ce qu’il faut faire, qui le porte et si c’est en retard, avec un bouton qui mène au bon endroit de la fiche. Des filtres rapides isolent vos dossiers, ceux sans recruteur et ceux en retard ; la liste complète reste disponible. La fiche candidat s’ouvre sur une barre de pilotage : frise des 4 étapes, prochaine action, référent et délai. Rechargez le portail (Ctrl+F5).', [
                 'Tableau en colonnes par prochaine action, trié du plus urgent au moins urgent',
                 'Filtres rapides « Mes dossiers », « Sans recruteur », « En retard » et recherche par nom, e-mail ou n° de dossier',
