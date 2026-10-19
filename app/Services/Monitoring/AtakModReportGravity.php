@@ -111,6 +111,10 @@ final class AtakModReportGravity
         if (\App\Support\AtakPlanAccess::isDenialReport($message, $detail)) {
             return self::LOW;
         }
+        // Présentation de briefing non partagée : réglage de la communauté (vérifié à l'enregistrement du lien), pas un bug du mod.
+        if (str_contains($text, 'google_deck_error')) {
+            return self::LOW;
+        }
         $sev = strtolower(trim($severity));
         if (in_array($sev, ['warn', 'warning', 'info'], true)) {
             return self::LOW;

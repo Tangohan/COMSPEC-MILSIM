@@ -341,6 +341,12 @@ return function (Router $router) {
     $router->post('/c/{slug}/medias/{id}/like', [CommunityController::class, 'toggleMediaLike']);
     $router->get('/reels', [CommunityController::class, 'reelsRedirect']);
     $router->post('/c/{slug}/contact', [CommunityController::class, 'contactPublic']);
+    // Édition en place de la vitrine (gestionnaires de la communauté) : brouillon, publication, images.
+    $router->post('/c/{slug}/page-editor/draft', [\App\Controllers\Web\CommunityPageEditorController::class, 'saveDraft'], [AuthMiddleware::class]);
+    $router->post('/c/{slug}/page-editor/publish', [\App\Controllers\Web\CommunityPageEditorController::class, 'publish'], [AuthMiddleware::class]);
+    $router->post('/c/{slug}/page-editor/discard', [\App\Controllers\Web\CommunityPageEditorController::class, 'discard'], [AuthMiddleware::class]);
+    $router->post('/c/{slug}/page-editor/block', [\App\Controllers\Web\CommunityPageEditorController::class, 'renderBlock'], [AuthMiddleware::class]);
+    $router->post('/c/{slug}/page-editor/image', [\App\Controllers\Web\CommunityPageEditorController::class, 'uploadImage'], [AuthMiddleware::class]);
     $router->get('/c/{slug}/forum', [CommunityController::class, 'enterForum'], $mwForum);
     $router->get('/c/{slug}/enlistment/enter', [CommunityController::class, 'enterEnlistment'], [AuthMiddleware::class, EnlistmentModuleSanctionMiddleware::class]);
     $router->get('/c/{slug}/setup', [CommunityController::class, 'setupForm'], [AuthMiddleware::class]);
@@ -706,6 +712,20 @@ return function (Router $router) {
     $router->get('/documents/gestion/{id}/historique', [AdminDocumentsController::class, 'history'], $mwDocuments);
     $router->get('/documents/gestion/{id}/acces', [AdminDocumentsController::class, 'access'], $mwDocuments);
     $router->get('/documents/mes-documents', [\App\Controllers\Web\DocumentInboxController::class, 'index'], $mwDocuments);
+    // Fichiers partagés de la communauté : rien n'est visible sans partage (contrôle dans le contrôleur, élément par élément).
+    $router->get('/partage', [\App\Controllers\Web\FileShareController::class, 'index'], [AuthMiddleware::class]);
+    $router->get('/partage/fichiers/{id}', [\App\Controllers\Web\FileShareController::class, 'download'], [AuthMiddleware::class]);
+    $router->post('/partage/fichiers/{id}/renommer', [\App\Controllers\Web\FileShareController::class, 'renameFile'], [AuthMiddleware::class]);
+    $router->post('/partage/fichiers/{id}/supprimer', [\App\Controllers\Web\FileShareController::class, 'deleteFile'], [AuthMiddleware::class]);
+    $router->post('/partage/dossiers', [\App\Controllers\Web\FileShareController::class, 'createFolder'], [AuthMiddleware::class]);
+    $router->post('/partage/dossiers/{id}/modifier', [\App\Controllers\Web\FileShareController::class, 'updateFolder'], [AuthMiddleware::class]);
+    $router->post('/partage/dossiers/{id}/supprimer', [\App\Controllers\Web\FileShareController::class, 'deleteFolder'], [AuthMiddleware::class]);
+    $router->post('/partage/dossiers/{id}/fichiers', [\App\Controllers\Web\FileShareController::class, 'upload'], [AuthMiddleware::class]);
+    $router->post('/partage/dossiers/{id}/reprendre', [\App\Controllers\Web\FileShareController::class, 'takeOver'], [AuthMiddleware::class]);
+    $router->post('/partage/acces', [\App\Controllers\Web\FileShareController::class, 'share'], [AuthMiddleware::class]);
+    $router->post('/partage/acces/{id}/retirer', [\App\Controllers\Web\FileShareController::class, 'unshare'], [AuthMiddleware::class]);
+    $router->post('/partage/corbeille/{type}/{id}/restaurer', [\App\Controllers\Web\FileShareController::class, 'restore'], [AuthMiddleware::class]);
+    $router->post('/partage/corbeille/{type}/{id}/supprimer', [\App\Controllers\Web\FileShareController::class, 'purge'], [AuthMiddleware::class]);
     $router->get('/documents/doctrine/{id}', [DoctrineDocumentsController::class, 'show'], $mwDocuments);
     $router->post('/documents/doctrine/{id}/acknowledge', [DoctrineDocumentsController::class, 'acknowledge'], $mwDocuments);
     $router->post('/documents/{id}/unlock', [DocumentsController::class, 'unlock'], $mwDocuments);
@@ -1326,6 +1346,10 @@ return function (Router $router) {
     $router->post('/back-office/integrations/discord/essai', [OrganizationIntegrationsController::class, 'testDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/emails', [OrganizationIntegrationsController::class, 'saveMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/emails/essai', [OrganizationIntegrationsController::class, 'testMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/plateforme/discord', [OrganizationIntegrationsController::class, 'savePlatformDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/plateforme/discord/essai', [OrganizationIntegrationsController::class, 'testPlatformDiscord'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/plateforme/emails', [OrganizationIntegrationsController::class, 'savePlatformMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
+    $router->post('/back-office/integrations/plateforme/emails/essai', [OrganizationIntegrationsController::class, 'testPlatformMail'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/sse-relais', [OrganizationIntegrationsController::class, 'storeSseRelay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/sse-relais/communaute', [OrganizationIntegrationsController::class, 'saveSseCommunity'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
     $router->post('/back-office/integrations/sse-relais/{relayId}/supprimer', [OrganizationIntegrationsController::class, 'deleteSseRelay'], [AuthMiddleware::class, OrganizationAdminMiddleware::class]);
@@ -1854,6 +1878,7 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->get('/back-office/atak/escouades', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/temps-ecran', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'screenTime'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/metriques-joueurs', [\App\Controllers\Admin\AdminPlayerMetricsController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
+    $router->get('/back-office/partage', [\App\Controllers\Web\FileShareController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/heures', [\App\Controllers\Admin\AdminAtakSquadsController::class, 'hours'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     $router->get('/back-office/atak/files-envoi', [\App\Controllers\Admin\AdminAtakSendQueueController::class, 'index'], [AuthMiddleware::class, TenantResourceAdminMiddleware::class]);
     // Remontées : comptes rendus et fiches de renseignement suivis comme des pull requests (contrôle d'accès dans le contrôleur).
@@ -1920,6 +1945,33 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/admin/atak-mod-reports/bulk', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'bulk'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/atak-mod-reports/reply', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'reply'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
     $router->post('/admin/atak-mod-reports/gravity', [\App\Controllers\Admin\AdminAtakModReportsController::class, 'updateGravity'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Parc ATAK des joueurs, toutes communautés : chiffres de jeu, blocage appliqué par l'API, retrait, messages imposés.
+    $router->get('/admin/parc-atak', [\App\Controllers\Admin\AdminAtakFleetController::class, 'index'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->get('/admin/parc-atak/fiche', [\App\Controllers\Admin\AdminAtakFleetController::class, 'show'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/bloquer', [\App\Controllers\Admin\AdminAtakFleetController::class, 'block'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/debloquer', [\App\Controllers\Admin\AdminAtakFleetController::class, 'unblock'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/retirer', [\App\Controllers\Admin\AdminAtakFleetController::class, 'retire'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/deconnecter', [\App\Controllers\Admin\AdminAtakFleetController::class, 'disconnect'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/message', [\App\Controllers\Admin\AdminAtakFleetController::class, 'message'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/message/annuler', [\App\Controllers\Admin\AdminAtakFleetController::class, 'cancelMessage'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/compromission', [\App\Controllers\Admin\AdminAtakFleetController::class, 'compromise'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/compromission/annuler', [\App\Controllers\Admin\AdminAtakFleetController::class, 'undoCompromise'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/certificat', [\App\Controllers\Admin\AdminAtakFleetController::class, 'certificate'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    $router->post('/admin/parc-atak/note', [\App\Controllers\Admin\AdminAtakFleetController::class, 'note'], [AuthMiddleware::class, SystemAdminMiddleware::class]);
+    // Même parc côté gestion, limité aux ATAK de la communauté active (pas de retrait ni de blocage toutes communautés).
+    $boFleet = \App\Controllers\Admin\BackOfficeAtakFleetController::class;
+    $boFleetMw = [AuthMiddleware::class, TenantResourceAdminMiddleware::class];
+    $router->get('/back-office/atak/parc-atak', [$boFleet, 'index'], $boFleetMw);
+    $router->get('/back-office/atak/parc-atak/fiche', [$boFleet, 'show'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/bloquer', [$boFleet, 'block'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/debloquer', [$boFleet, 'unblock'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/deconnecter', [$boFleet, 'disconnect'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/message', [$boFleet, 'message'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/message/annuler', [$boFleet, 'cancelMessage'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/compromission', [$boFleet, 'compromise'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/compromission/annuler', [$boFleet, 'undoCompromise'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/certificat', [$boFleet, 'certificate'], $boFleetMw);
+    $router->post('/back-office/atak/parc-atak/note', [$boFleet, 'note'], $boFleetMw);
     $lmsAdminMw = [AuthMiddleware::class, NonDefaultTenantMiddleware::class];
     $router->get('/admin/training', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, ''), $lmsAdminMw);
     $router->get('/admin/training/courses', fn (\App\Core\Request $r, array $p) => training_lms_admin_redirect_from_legacy($r, 'courses'), $lmsAdminMw);
@@ -2436,6 +2488,9 @@ $router->post('/back-office/atak/briefing-slides/{id}/toggle-publish', [AdminBri
     $router->post('/api/atak/screen-time', [AtakApiController::class, 'screenTime']);
     $router->post('/api/atak/screen-time/batch', [AtakApiController::class, 'screenTimeBatch']);
     $router->post('/api/atak/distance/batch', [AtakApiController::class, 'distanceBatch']);
+    // Serveur Arma : messages imposés et blocages décidés dans /admin/parc-atak.
+    $router->post('/api/atak/admin-control/pending', [AtakApiController::class, 'adminControlPending']);
+    $router->post('/api/atak/admin-control/ack', [AtakApiController::class, 'adminControlAck']);
     $router->post('/api/atak/item-icons/missing', [AtakApiController::class, 'itemIconsMissing']);
     $router->post('/api/atak/item-icons', [AtakApiController::class, 'itemIconUpload']);
     $router->post('/api/atak/garmin', [AtakApiController::class, 'garmin']);
