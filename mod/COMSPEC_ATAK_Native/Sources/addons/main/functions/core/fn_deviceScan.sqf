@@ -16,7 +16,8 @@ private _out = [];
 if ((count _patterns) > 0) then {
     {
         private _cls = toLower (configName _x);
-        if ((_patterns findIf { (_cls find _x) >= 0 }) >= 0 && {(_skip findIf { (_cls find _x) >= 0 }) < 0} && {(_cls find "comspec_atak_") isNotEqualTo 0} && {(getNumber (_x >> "scope")) >= 2}) then { _out pushBackUnique _cls; };
+        // Pièces saisies du SSE (COMSPEC_SSE_Smartphone…) : des preuves, pas le téléphone du joueur.
+        if ((_patterns findIf { (_cls find _x) >= 0 }) >= 0 && {(_skip findIf { (_cls find _x) >= 0 }) < 0} && {(_cls find "comspec_atak_") isNotEqualTo 0} && {(_cls find "comspec_sse_") isNotEqualTo 0} && {(getNumber (_x >> "scope")) >= 2}) then { _out pushBackUnique _cls; };
     } forEach ("isClass _x" configClasses (configFile >> "CfgWeapons"));
 };
 _store set [_key, _out];
