@@ -407,12 +407,77 @@ _appsRows pushBack ["section", "Applications", format ["%1 app(s) cachée(s) du 
 
 private _rule = ["require_equipment"] call comspec_atak_native_fnc_tenantRule;
 private _require = if (_rule in ["on", "off"]) then { _rule isEqualTo "on" } else { missionNamespace getVariable ["comspec_atak_native_require_item", true] };
+// Accès et touches : deux cartes d'état (item requis, téléphone sur soi), puis les raccourcis par groupe. Chaque
+// touche se change ici (fn_keybinds : appui sur la touche affichée, puis sur la nouvelle touche) ou dans le menu CBA.
+private _catalogN = count ([] call comspec_atak_native_fnc_deviceCatalog);
+private _hasDev = [player, true] call comspec_atak_native_fnc_hasDevice;
 private _access = [
-    ["section", "Accès et touches", ""],
-    ["info", "Item requis", [["non", format ["oui · %1 items reconnus", count ([] call comspec_atak_native_fnc_deviceCatalog)]] select _require, "imposé par la communauté"] select (_rule in ["on", "off"])],
-    ["info", "Sortir / ranger (porté)", "Ctrl+U"],
-    ["info", "Prendre en main / reposer", "Ctrl+Maj+U"],
-    ["text", "<t size='0.8' color='#8a9a93'>En main, glissez la coque pour l'ajuster à partir du coin choisi. Touches modifiables dans les réglages CBA.</t>"]
+    ["section", "Accès au téléphone", "Ce qu'il faut sur soi pour ouvrir l'ATAK"],
+    ["cells", [
+        ["\z\comspec_atak_native\addons\main\data\ui_check.paa", [[0.36, 0.78, 0.42, 1], [0.55, 0.6, 0.57, 1]] select !_require, "Item requis",
+            format ["<t color='%1'>%2</t>", ["#5cc76b", "#8a9a93"] select !_require, [["NON", "OUI"] select _require, "IMPOSÉ"] select (_rule in ["on", "off"])],
+            [["N'importe quel joueur peut ouvrir l'ATAK", format ["Un des %1 items reconnus, équipé ou dans le sac", _catalogN]] select _require,
+                format ["Réglé par votre communauté : %1", ["pas d'item", "item obligatoire"] select _require]] select (_rule in ["on", "off"])],
+        ["\z\comspec_atak_native\addons\main\data\ui_hand.paa", [[0.95, 0.67, 0.2, 1], [0.36, 0.78, 0.42, 1]] select _hasDev, "Sur vous",
+            format ["<t color='%1'>%2</t>", ["#f2ab33", "#5cc76b"] select _hasDev, ["NON", "OUI"] select _hasDev],
+            ["Aucun ATAK dans votre équipement", "Votre téléphone est bien dans l'équipement"] select _hasDev]
+    ], 2]
+];
+private _capAct = ["capturing"] call comspec_atak_native_fnc_keybinds;
+private _accent = ([] call comspec_atak_native_fnc_accent) select 0;
+private _kbAll = ["list"] call comspec_atak_native_fnc_keybinds;
+private _changed = 0;
+{
+    _x params ["_grp", "_gTitle", "_gSub", ["_folded", false]];
+    private _items = _kbAll select { (_x select 1) isEqualTo _grp };
+    private _open = true;
+    if (_folded) then {
+        _access pushBack ([_grp, _gTitle, _gSub] call _fold);
+        _open = [_grp] call _foldOpen;
+    } else {
+        _access pushBack ["section", _gTitle, _gSub];
+    };
+    {
+        _x params ["_id", "", "_title", "_help", "_icon"];
+        (["get", _id] call comspec_atak_native_fnc_keybinds) params ["_cur", "_def"];
+        if (_cur isNotEqualTo _def) then { _changed = _changed + 1; };
+        if (_open) then {
+            private _users = ["users", _cur, _id] call comspec_atak_native_fnc_keybinds;
+            private _note = switch (true) do {
+                case (_capAct isEqualTo _id): { "<br/><t size='0.8' color='#f2ab33'>Appuyez sur la nouvelle touche (avec Ctrl, Maj ou Alt si besoin). Échap : annuler.</t>" };
+                case ((count _users) > 0): { format ["<br/><t size='0.8' color='#f2ab33'>Même touche que : %1</t>", _users joinString ", "] };
+                default { format ["<br/><t size='0.8' color='#8a9a93'>%1</t>", _help] };
+            };
+            private _keyBtn = switch (true) do {
+                case (_capAct isEqualTo _id): { ["APPUYEZ…", compile "['capture', ''] call comspec_atak_native_fnc_keybinds;", "red", true, "Échap ou nouvel appui : annuler"] };
+                case (_cur isEqualTo []): { ["AUCUNE", compile format ["['capture', '%1'] call comspec_atak_native_fnc_keybinds;", _id], false, true, "Pas de touche : appuyez pour en choisir une"] };
+                default { [toUpper (["name", _cur] call comspec_atak_native_fnc_keybinds), compile format ["['capture', '%1'] call comspec_atak_native_fnc_keybinds;", _id], true, true, "Appuyez, puis tapez la nouvelle touche"] };
+            };
+            _access pushBack ["person", format ["\z\comspec_atak_native\addons\main\data\%1.paa", _icon],
+                format ["<t font='COMSPEC_BarlowBold'>%1</t>%2", _title, _note],
+                [_keyBtn, ["DÉFAUT", compile format ["['reset', '%1'] call comspec_atak_native_fnc_keybinds; [{ ['SETTINGS'] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;", _id], false, _cur isNotEqualTo _def,
+                    format ["Touche par défaut : %1", ["name", _def] call comspec_atak_native_fnc_keybinds]]],
+                [[0.55, 0.6, 0.57, 1], _accent] select (_cur isNotEqualTo [])];
+        };
+    } forEach _items;
+} forEach [
+    ["PHONE", "Prendre le téléphone", "Sortir, ranger, prendre en main"],
+    ["MINI", "Miniature et carte", "Téléphone porté dans un coin de l'écran"],
+    ["QUICK", "Raccourcis rapides", "Sans ouvrir le téléphone"],
+    ["DRONE", "Drone et marquage", "Drone appairé, réticule", true],
+    ["GESTURE", "Gestes", "Gestes du personnage", true]
+];
+_access append [
+    ["buttons", [[[format ["TOUTES LES TOUCHES PAR DÉFAUT (%1 changée(s))", _changed], "CONFIRMER : TOUCHES PAR DÉFAUT"] select (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_KeyResetArm", -10]) < 5), {
+        if (diag_tickTime - (uiNamespace getVariable ["COMSPEC_ATAK_KeyResetArm", -10]) < 5) then {
+            uiNamespace setVariable ["COMSPEC_ATAK_KeyResetArm", -10];
+            [format ["%1 touche(s) remise(s) par défaut", ["resetAll"] call comspec_atak_native_fnc_keybinds], 2.5] call comspec_atak_native_fnc_toast;
+        } else {
+            uiNamespace setVariable ["COMSPEC_ATAK_KeyResetArm", diag_tickTime];
+        };
+        [{ ["SETTINGS"] call comspec_atak_native_fnc_pageRender; }] call CBA_fnc_execNextFrame;
+    }, false, _changed > 0, "Deux appuis : remet toutes les touches de l'ATAK comme à l'installation"]]],
+    ["text", "<t size='0.8' color='#8a9a93'>Les touches choisies ici sont les mêmes que dans Échap > Options > Contrôles > Configurer les addons > COMSPEC ATAK. En main, glissez la coque pour l'ajuster à partir du coin choisi.</t>"]
 ];
 
 // Service Athéna : la question du premier lancement (Oui : COMSPEC Link et synchro ; Non : ATAK local).
@@ -550,7 +615,7 @@ private _cats = [
     ["APPS", "Applications", format ["%1 app(s) cachée(s)", count (profileNamespace getVariable ["COMSPEC_ATAK_HiddenApps", []])], "ui_apps", _appsRows],
     ["HW", "Matériel et réseau", "Mode avion, Bluetooth, dégâts, réseau simulé, caméra en direct", "app_network", _hw + _live],
     ["REAL", "Réalisme", ["Données médicales, saleté de l'écran", "Roleplay, données médicales, réglages imposés"] select _bridge, "app_status", _real],
-    ["ACCESS", "Accès et touches", "Item requis, raccourcis clavier", "ui_link", _access],
+    ["ACCESS", "Accès et touches", format ["Item requis, %1 raccourcis clavier réglables ici", count _kbAll], "ui_hand", _access],
     ["ABOUT", "À propos du téléphone", format ["%1 · COMSPEC ATAK %2", _modelName, _build], "ui_help", _about]
 ];
 private _sel = (_cats select { (_x select 0) isEqualTo _cat }) param [0, []];
