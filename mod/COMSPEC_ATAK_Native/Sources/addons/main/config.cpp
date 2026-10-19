@@ -10,6 +10,9 @@ class CfgPatches {
 // (localisation/README.md) : elle apparaît dans le réglage « Langue / Language » sans toucher à ce mod.
 class CfgComspecLanguages {
     class en { name="English"; file="\z\comspec_atak_native\addons\main\i18n\en.txt"; gameLanguage[]={"English"}; };
+    // Chinois simplifié : traduction communautaire de RickLeo et MOYA (pack comspec_atak_zh 1.1), intégrée au mod ;
+    // les textes qu'elle ne couvre pas restent en anglais (en.txt est chargé d'abord).
+    class zh_cn { name="简体中文"; file="\z\comspec_atak_native\addons\main\i18n\zh_cn.txt"; gameLanguage[]={"Chinesesimp"}; };
 };
 class CfgFunctions {
     class comspec_atak_native { tag="comspec_atak_native";
