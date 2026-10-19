@@ -155,6 +155,7 @@ return [
                     'slot' => 'primary',
                     'links' => [
                         ['label' => 'Mes documents', 'path' => 'documents/mes-documents', 'any_permissions' => ['documents.view', 'doctrine.view'], 'description' => 'Lectures obligatoires et accusés'],
+                        ['label' => 'Fichiers partagés', 'path' => 'partage', 'description' => 'Dossiers et fichiers partagés avec vous'],
                         ['label' => 'Bibliothèque', 'path' => 'documents', 'permission' => 'documents.view', 'description' => 'Consulter les documents publiés'],
                         ['label' => 'Collections', 'path' => 'documents/collections', 'permission' => 'documents.view', 'description' => 'Parcourir les collections documentaires'],
                         ['label' => 'Gestion documentaire', 'path' => 'documents/gestion', 'permission' => 'documents.upload', 'description' => 'Ajouter, classer et suivre les versions'],
@@ -381,6 +382,7 @@ return [
                         ['label' => 'Publications formation', 'path' => 'formation/publications', 'any_permissions' => ['training.publications.manage', 'training.manage', 'training.publish', 'admin.access'], 'description' => 'Back-office publications, versionning et change log'],
                         ['label' => 'Gestion documentaire', 'path' => 'documents/gestion', 'any_permissions' => ['admin.system', 'documents.upload', 'admin.access']],
                         ['label' => 'Doctrine & SOP', 'path' => 'back-office/doctrine', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
+                        ['label' => 'Fichiers partagés', 'path' => 'back-office/partage', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access']],
                         ['label' => 'Coopérations inter-unités', 'path' => 'back-office/cooperation/missions', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access', 'interteam.missions.manage', 'interteam.missions.respond', 'cooperation.missions.view', 'cooperation.missions.manage', 'cooperation.missions.create', 'cooperation.missions.respond']],
                         ['label' => 'Nouvelle coopération', 'path' => 'back-office/cooperation/missions/create', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access', 'interteam.missions.manage', 'cooperation.missions.manage', 'cooperation.missions.create']],
                         ['label' => 'Types et modèles de coopération', 'path' => 'back-office/cooperation/catalog', 'any_permissions' => ['admin.system', 'admin.organization', 'admin.access', 'interteam.missions.manage', 'cooperation.missions.manage', 'cooperation.catalog.manage']],
@@ -428,6 +430,7 @@ return [
                         ['label' => 'Export conformité', 'path' => 'back-office/conformite/export-dossier', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Dossier réglementaire pour audit'],
                         ['label' => 'Intégrations externes', 'path' => 'back-office/integrations', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Relais Discord (salon commun, salons à part, photos Quick Picture) et jetons d’accès'],
                         ['label' => 'Doctrine & SOP', 'path' => 'back-office/doctrine', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'SOP versionnées, date d’effet et accusés de lecture'],
+                        ['label' => 'Fichiers partagés', 'path' => 'back-office/partage', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Dossiers et fichiers privés, ouverts seulement sur partage'],
                         ['label' => 'Indicateurs d’activité', 'path' => 'back-office/analytics', 'any_permissions' => ['admin.organization', 'admin.access']],
                         ['label' => 'Conversion communautés', 'path' => 'back-office/analytics/conversion', 'any_permissions' => ['admin.organization', 'admin.access'], 'description' => 'Entonnoir visites → CTA → candidatures → acceptations'],
                         ['label' => 'Configuration générale', 'path' => 'back-office/configuration', 'any_permissions' => ['admin.organization', 'admin.access']],
