@@ -38,6 +38,23 @@ Changelog Steam (copier-coller) : [Overwatch 1.6.12](docs/dev/STEAM-CHANGELOG-20
 
 ---
 
+## Drone : le flux DRONES DU CAMP suit la vue du terminal UAV (ATAK natif 2.3.4.AB - Denver)
+
+### Résumé joueur
+Type : correctif
+FR : Vidéo Live montre enfin ce que voit l'opérateur du drone
+- L'image d'un drone du camp dans Vidéo Live suit maintenant exactement la vue du terminal UAV de l'opérateur : même direction, même siège (nacelle ou pilote), même zoom et même vision.
+- Quand l'opérateur ferme son terminal, l'image garde la dernière orientation qu'il avait choisie.
+EN : Live video now shows what the drone operator sees
+- A friendly drone's picture in Live video now matches the operator's UAV terminal view: same direction, same seat (camera pod or pilot), same zoom and same vision mode.
+- When the operator closes the terminal, the picture keeps the last orientation they had chosen.
+
+### Détail technique
+- `fn_livecamUav.sqf` : caméra attachée sans suivre l'os de la nacelle ; direction lue via `weaponDirection` (siège nacelle) ou `getPilotCameraDirection` (siège pilote).
+- `XEH_postInitClient.sqf` : la machine de l'opérateur publie `COMSPEC_UavView` [siège, fov, vision] sur le drone (diffusé, rafraîchi < 1 s).
+- `fn_livecamStop.sqf` : nettoyage de l'état de suivi.
+- main.pbo reconstruit avec HEMTT, `verify_build.py` OK. Link inchangé (2.0.90).
+
 ## Regroupement : flux nacelle des drones du camp dans Vidéo Live, drone retiré de la flotte rendu au terminal UAV, contrôle des PBO au build (ATAK natif 2.3.3.AB - Denver)
 
 ### Résumé joueur
