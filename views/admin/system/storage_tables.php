@@ -13,7 +13,7 @@ $totalBytes = array_sum(array_column($tables, 'bytes'));
 $storageTab = 'data';
 ?>
 <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-6">
-    <header>
+    <header class="pa-head">
         <p class="text-[11px] font-semibold uppercase tracking-wider text-amber-800 mb-1">Administration du site — toutes les communautés</p>
         <h1 class="text-2xl font-black text-slate-900">Explorateur de données</h1>
         <p class="mt-2 text-sm text-slate-600 leading-relaxed max-w-3xl">
