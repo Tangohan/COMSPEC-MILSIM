@@ -45,13 +45,13 @@ Type : nouveauté
 FR : Carte : un bandeau d'information plus clair
 - Le curseur et ta position tiennent dans un seul bandeau compact en bas à gauche : la grille en grand, la distance et l'azimut à côté, le MGRS et l'altitude en petit dessous.
 - La case de droite donne ton cap en grand, ton indicatif à la couleur de ton équipe de feu (la même que l'anneau autour de ton symbole) et le nom de l'équipe.
-- Les noms des repères, des lieux et les cartouches des unités ne passent plus sous le bandeau.
+- Les noms des repères, des lieux et les cartouches des unités ne passent plus sous le bandeau, et les plaques des zones (« Z ENT MÉDICALE ») sont plus petites quand le téléphone est en main.
 - Le cercle vert autour de l'unité sélectionnée garde la même taille quel que soit le zoom, et ton cap suit en direct quand tu tournes.
 - Les points cardinaux s'affichent dans la langue du téléphone (NW, SW, W en anglais) et « CURSEUR » devient « CURSOR ».
 EN : Map: a clearer information bar
 - The cursor and your position now sit in one compact bar at the bottom left: the grid in large type, distance and bearing next to it, MGRS and altitude in small type below.
 - The right-hand box shows your heading in large type, your callsign in your fire team colour (the same as the ring around your symbol) and the team name.
-- Marker names, place names and unit tags no longer slide under the bar.
+- Marker names, place names and unit tags no longer slide under the bar, and zone plates are smaller when the phone is in your hand.
 - The green ring around the selected unit keeps the same size at any zoom, and your heading follows live as you turn.
 - Compass points follow the phone language (NW, SW, W in English) and the cursor label reads "CURSOR".
 
@@ -61,6 +61,7 @@ EN : Map: a clearer information bar
 - `fn_mapHudRects.sqf` (nouveau) : rectangles du bandeau et du cap relatifs à la carte ; `fn_mapMarkerText`, `fn_mapPlaceText` (via `COMSPEC_ATAK_LblRects`) et `fn_mapLabels` les évitent.
 - `fn_mapOnDraw.sqf` : anneau de sélection en icône à taille fixe (2,1 × le symbole) au lieu d'une ellipse de 18 × échelle m.
 - `fn_mapOverlayUpdate.sqf` : case « moi » mise à jour par la boussole à chaque degré (`_meUpdate`) ; cap sous la boussole sur 3 chiffres.
+- `fn_mapMarkerText.sqf` : plaques en main à 0,020 (porté : 0,024 inchangé), hauteur 1,22, fond 0,82.
 - `i18n/en.txt` : « CURSEUR » -> « CURSOR ».
 - main.pbo reconstruit avec HEMTT, `verify_build.py` OK. Link inchangé (2.0.90).
 
